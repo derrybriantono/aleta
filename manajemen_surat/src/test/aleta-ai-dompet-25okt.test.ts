@@ -142,13 +142,13 @@ const jenisMutasi = async (db: AletaDatabase, id: string) => (await daftarMutasi
 
 // ─── 1. Migrasi ──────────────────────────────────────────────────────────────
 
-describe("migrasi 0088 - berkas = DDL schema.ts, jurnal idx 76, ikut cadangan", () => {
+describe("migrasi 0088 - berkas = DDL schema.ts, jurnal idx 80, ikut cadangan", () => {
   const SQL = path.join(process.cwd(), "drizzle", "0088_aleta_ai_dompet.sql");
 
-  it("jurnal: 0088 sekali di idx 76 (sesudah 0083), tanpa lubang, when naik", () => {
+  it("jurnal: 0088 sekali di idx 80 (sesudah 0087), tanpa lubang, when naik", () => {
     const j = JSON.parse(readFileSync(path.join(process.cwd(), "drizzle/meta/_journal.json"), "utf8")) as { entries: Array<{ idx: number; tag: string; when: number }> };
     j.entries.forEach((e, i) => expect(e.idx).toBe(i));
-    expect(j.entries.filter((e) => e.tag.startsWith("0088_"))).toEqual([expect.objectContaining({ idx: 76, tag: "0088_aleta_ai_dompet" })]);
+    expect(j.entries.filter((e) => e.tag.startsWith("0088_"))).toEqual([expect.objectContaining({ idx: 80, tag: "0088_aleta_ai_dompet" })]);
     for (let i = 1; i < j.entries.length; i += 1) expect(j.entries[i]?.when).toBeGreaterThan(j.entries[i - 1]?.when ?? 0);
     expect(existsSync(SQL)).toBe(true);
   });

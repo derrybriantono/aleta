@@ -143,7 +143,8 @@ Catatan kewenangan:
 | Kehadiran pihak untuk BAS | U | U | U | U | U | U | U | - | - | - | - | U | - | - | - | - |
 | Isi Court Calendar ke SIPP | U | U | - | - | U | U | U | - | - | - | - | - | - | - | - | - |
 | Tarik dokumen belum diunggah (e-Court) | P | P | P | P | P | P | P | - | - | - | - | - | - | - | - | - |
-| Kasir (jurnal, harian, pengingat, rekap) | U | U | - | - | U | U | - | - | U | - | - | - | - | - | - | - |
+| Kasir (menulis jurnal, setoran, saklar otomatis) | U | U | - | - | - | - | - | - | U | - | - | - | - | - | - | - |
+| Kasir (membaca jurnal, usulan, harian, pengingat, rekap) | L | L | - | - | L | L | - | - | L | - | - | - | - | - | - | - |
 | Cetak relaas massal | P | P | - | - | - | - | - | P | - | - | - | - | - | - | - | - |
 | Verifikasi dokumen e-Court (hakim) | U | U | U | U | - | - | - | - | - | - | - | - | - | - | - | - |
 | TTE salinan putusan (panitera) | U | U | - | - | U | U | - | - | - | - | - | - | - | - | - | - |

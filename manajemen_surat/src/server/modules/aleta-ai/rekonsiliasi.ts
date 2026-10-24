@@ -14,10 +14,13 @@ import { ApiError } from "@/server/shared/errors";
  *      juga saldo_setelah mutasi terakhir = saldo sekarang (rantai utuh).
  *   2. pendapatan giliran hari itu (aleta_ai_obrolan_pesan.biaya_rp) = jumlah
  *      potongan di buku mutasi yang merujuk giliran-giliran itu.
+ *   2b. tugas T9: untuk tiap tugas yang jalannya dipotong hari itu, biaya_rp
+ *      tugas (akumulasi semua jalan) = jumlah potongan mutasi jalan-jalannya
+ *      (rujukan id tugas, id:2, id:3, ...).
  *   3. tahanan menggantung: rujukan dengan "tahan" tetapi tanpa "lepas" yang
  *      lebih tua dari 24 jam (giliran/tugas T9 yang tidak pernah ditutup).
  *
- * status: 'selisih' bila (1) atau (2) tidak cocok; 'menggantung' bila hanya
+ * status: 'selisih' bila (1), (2) atau (2b) tidak cocok; 'menggantung' bila hanya
  * (3); selain itu 'seimbang'. Pemeriksaan hanya MEMBACA - tidak ada saldo yang
  * dikoreksi otomatis; koreksi tetap mutasi "koreksi" oleh Super Admin.
  */
@@ -26,6 +29,7 @@ export type SelisihRekonsiliasi =
   | { jenis: "saldo"; penggunaId: string; saldoRp: number; jumlahMutasiRp: number; selisihRp: number }
   | { jenis: "rantai"; penggunaId: string; saldoRp: number; saldoSetelahTerakhirRp: number }
   | { jenis: "pendapatan"; pendapatanGiliranRp: number; potongMutasiRp: number; selisihRp: number }
+  | { jenis: "tugas"; tugasId: string; biayaTugasRp: number; potongMutasiRp: number; selisihRp: number }
   | { jenis: "tahanan"; penggunaId: string; rujukanId: string; ditahanRp: number; sejak: string };
 
 export type HasilRekonsiliasi = {
@@ -97,6 +101,26 @@ export async function jalankanRekonsiliasi(
   const potongMutasiRp = potong.filter((m) => idGiliran.has(m.rujukan_id)).reduce((n, m) => n - Number(m.jumlah_rp), 0);
   if (pendapatanGiliranRp !== potongMutasiRp) {
     rincian.push({ jenis: "pendapatan", pendapatanGiliranRp, potongMutasiRp, selisihRp: pendapatanGiliranRp - potongMutasiRp });
+  }
+
+  // 2b. Tugas T9 yang dipotong hari itu: biaya_rp tugas = jumlah potongan SEMUA jalannya.
+  const idTugas = new Set(potong.filter((m) => m.rujukan_id.startsWith("ait-") && m.rujukan_id.split(":")[0]).map((m) => m.rujukan_id.split(":")[0] as string));
+  if (idTugas.size > 0) {
+    const potongTugas = await db.queryAll<{ rujukan_id: string; jumlah_rp: number | string }>(
+      `SELECT rujukan_id, jumlah_rp FROM aleta_ai_mutasi WHERE jenis = 'potong' AND rujukan_id LIKE 'ait-%'`
+    );
+    const perTugas = new Map<string, number>();
+    for (const m of potongTugas) {
+      const id = m.rujukan_id.split(":")[0] as string;
+      if (idTugas.has(id)) perTugas.set(id, (perTugas.get(id) ?? 0) - Number(m.jumlah_rp));
+    }
+    const tugas = await db.queryAll<{ id: string; biaya_rp: number | string }>(`SELECT id, biaya_rp FROM aleta_ai_tugas WHERE id LIKE 'ait-%'`);
+    const biayaTugas = new Map(tugas.map((t) => [t.id, Number(t.biaya_rp)]));
+    for (const id of [...idTugas].sort()) {
+      const b = biayaTugas.get(id) ?? 0;
+      const p = perTugas.get(id) ?? 0;
+      if (b !== p) rincian.push({ jenis: "tugas", tugasId: id, biayaTugasRp: b, potongMutasiRp: p, selisihRp: b - p });
+    }
   }
 
   // 3. Tahanan menggantung (seluruh waktu, bukan hanya hari itu).

@@ -1,5 +1,6 @@
 import type { AletaDatabase } from "@/server/db/client";
 import { tanggalLokal } from "@/server/modules/aleta-ai/kurs";
+import { bacaPengaturan } from "@/server/modules/aleta-ai/pengaturan";
 import { getUsersFromDb } from "@/server/modules/organization/service";
 import { ApiError } from "@/server/shared/errors";
 import { createXlsxWorkbook } from "@/server/shared/xlsx";
@@ -15,6 +16,12 @@ import { createXlsxWorkbook } from "@/server/shared/xlsx";
  *   biaya MDR Rp = jumlah biaya_mdr_rp (bagian MDR QRIS dalam harga giliran
  *                  yang terpotong; tahap 4)
  *   laba         = pendapatan - biaya API Rp - biaya MDR Rp
+ *
+ * Tugas T9 (cowork) ikut dihitung: biaya API dari catatan per panggilan
+ * (aleta_ai_penggunaan jenis "tugas"), pendapatan = potongan mutasi jalan tugas
+ * (rujukan "ait-..."; satu jalan = satu "giliran"), MDR = bagian MDR dalam
+ * potongan itu (harga = pokok + pokok x MDR%). Pendapatan laporan karena itu
+ * tetap sama dengan jumlah potongan di buku mutasi.
  *
  * Tahap 4: rentang beberapa bulan (perBulan), ekspor CSV/XLSX.
  */
@@ -34,13 +41,15 @@ type BarisPesan = {
   biaya_mdr_rp: number | string | null;
   gratis: number | string;
   dibuat_at: string;
+  /** Hitungan giliran baris ini (bawaan 1; baris biaya per panggilan tugas = 0). */
+  giliran?: number;
 };
 
 export type Kumpulan = { giliran: number; gratis: number; token: number; biayaUsd: number; biayaApiRp: number; biayaMdrRp: number; pendapatanRp: number; labaRp: number };
 const kosong = (): Kumpulan => ({ giliran: 0, gratis: 0, token: 0, biayaUsd: 0, biayaApiRp: 0, biayaMdrRp: 0, pendapatanRp: 0, labaRp: 0 });
 
 function tambah(k: Kumpulan, b: BarisPesan) {
-  k.giliran += 1;
+  k.giliran += b.giliran ?? 1;
   if (Number(b.gratis) === 1) k.gratis += 1;
   k.token += Number(b.token_masuk) + Number(b.token_keluar) + Number(b.token_cache_tulis) + Number(b.token_cache_baca);
   k.biayaUsd += Number(b.biaya_usd);
@@ -74,6 +83,57 @@ export async function laporanBulanan(db: AletaDatabase, bulanMasukan?: string) {
 const BATAS_RENTANG_BULAN = 24;
 
 /** Laporan dari bulan `dari` sampai `sampai` (YYYY-MM, termasuk keduanya), dengan rincian per bulan. */
+/** Baris laporan dari tugas T9: biaya per panggilan model + pendapatan per jalan (potongan mutasi). */
+async function barisTugas(db: AletaDatabase, awal: string, akhir: string): Promise<BarisPesan[]> {
+  const pakai = await db.queryAll<{
+    pengguna_id: string;
+    kelompok: string;
+    model: string;
+    token_masuk: number | string;
+    token_keluar: number | string;
+    token_cache_tulis: number | string;
+    token_cache_baca: number | string;
+    biaya_usd: number | string;
+    biaya_api_rp: number | string;
+    dibuat_at: string;
+  }>(
+    `SELECT pengguna_id, kelompok, model, token_masuk, token_keluar, token_cache_tulis, token_cache_baca, biaya_usd, biaya_api_rp, dibuat_at
+     FROM aleta_ai_penggunaan WHERE jenis = 'tugas' AND dibuat_at >= ? AND dibuat_at < ? LIMIT 500000`,
+    [awal, akhir]
+  );
+  const potong = await db.queryAll<{ pengguna_id: string; rujukan_id: string; jumlah_rp: number | string; dibuat_at: string }>(
+    `SELECT pengguna_id, rujukan_id, jumlah_rp, dibuat_at FROM aleta_ai_mutasi WHERE jenis = 'potong' AND rujukan_id LIKE 'ait-%' AND jumlah_rp <> 0 AND dibuat_at >= ? AND dibuat_at < ?`,
+    [awal, akhir]
+  );
+  const hasil: BarisPesan[] = pakai.map((b) => ({ ...b, pemilik_id: b.pengguna_id, status: "selesai", biaya_rp: 0, biaya_mdr_rp: 0, gratis: 0, giliran: 0 }));
+  if (potong.length === 0) return hasil;
+  // Jalan tugas ditutup lebih dulu daripada diperbarui_at tugasnya (ditulis sesudah potong).
+  const tugas = await db.queryAll<{ id: string; kelompok: string; model: string }>(`SELECT id, kelompok, model FROM aleta_ai_tugas WHERE diperbarui_at >= ?`, [awal]);
+  const petaTugas = new Map(tugas.map((t) => [t.id, t]));
+  const mdr = Math.max(0, (await bacaPengaturan(db)).mdrPersen ?? 0);
+  for (const m of potong) {
+    const t = petaTugas.get(m.rujukan_id.split(":")[0] ?? "");
+    const rp = -Number(m.jumlah_rp);
+    hasil.push({
+      pemilik_id: m.pengguna_id,
+      kelompok: t?.kelompok ?? "",
+      model: t?.model ?? "",
+      status: "selesai",
+      token_masuk: 0,
+      token_keluar: 0,
+      token_cache_tulis: 0,
+      token_cache_baca: 0,
+      biaya_usd: 0,
+      biaya_api_rp: 0,
+      biaya_rp: rp,
+      biaya_mdr_rp: (rp * mdr) / (100 + mdr),
+      gratis: 0,
+      dibuat_at: m.dibuat_at,
+    });
+  }
+  return hasil;
+}
+
 export async function laporanRentang(db: AletaDatabase, dariMasukan?: string, sampaiMasukan?: string) {
   const dari = rentangBulan(dariMasukan || tanggalLokal().slice(0, 7));
   const sampai = rentangBulan(sampaiMasukan || dari.bulan);
@@ -87,6 +147,7 @@ export async function laporanRentang(db: AletaDatabase, dariMasukan?: string, sa
      FROM aleta_ai_obrolan_pesan WHERE peran = 'ai' AND status <> 'berjalan' AND dibuat_at >= ? AND dibuat_at < ? LIMIT 500000`,
     [dari.awal, sampai.akhir]
   );
+  baris.push(...(await barisTugas(db, dari.awal, sampai.akhir)));
   const pengguna = new Map((await getUsersFromDb(db)).map((u) => [String(u.id), { nama: String(u.name ?? ""), peran: String(u.roleId ?? "") }]));
 
   const total = kosong();

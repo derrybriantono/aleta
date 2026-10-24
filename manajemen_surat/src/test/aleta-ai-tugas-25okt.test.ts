@@ -28,12 +28,17 @@ import { IN_MEMORY_TABLE_PERSISTENCE_ORDER, createAletaDatabase, type AletaDatab
 import { DDL_ALETA_AI_TEMPLAT_KIRIMAN, DDL_ALETA_AI_TUGAS } from "@/server/db/schema";
 import type { PelakuAi } from "@/server/modules/aleta-ai/akses";
 import { suntikSumberDataAi, type SumberDataAi } from "@/server/modules/aleta-ai/alat";
+import { pemakaianHariIni, PESAN_BATAS_HARIAN } from "@/server/modules/aleta-ai/batas";
 import { susunBerkas } from "@/server/modules/aleta-ai/berkas-keluaran";
 import { GalatKlienAi, suntikKlienAi, type HasilAi, type KlienAi, type OpsiAlir } from "@/server/modules/aleta-ai/klien";
 import { konfirmasiKiriman, kirimanUntukAlur, usulkanKiriman } from "@/server/modules/aleta-ai/kiriman";
 import { simpanKurs, tanggalLokal } from "@/server/modules/aleta-ai/kurs";
+import { laporanRentang } from "@/server/modules/aleta-ai/laporan";
 import { bacaPengaturan, bacaTarif, simpanPengaturan } from "@/server/modules/aleta-ai/pengaturan";
+import { parameterHarga } from "@/server/modules/aleta-ai/perkiraan";
 import { proyekAktif, unggahProyek } from "@/server/modules/aleta-ai/proyek";
+import { jalankanRekonsiliasi } from "@/server/modules/aleta-ai/rekonsiliasi";
+import { jumlahPekerjaanAiBerjalan } from "@/server/modules/aleta-ai/saklar";
 import { saldoPengguna, tahanDana, terapkanMutasi, verifikasiSaldo } from "@/server/modules/aleta-ai/saldo";
 import { muatPenyamar } from "@/server/modules/aleta-ai/samaran";
 import { jalankanAlatBantu, namaBerkasCetak, pelariAntrian, suntikPelariSandbox, type PelariSandbox, type PermintaanSandbox } from "@/server/modules/aleta-ai/sandbox";
@@ -581,7 +586,8 @@ describe("tugas (cowork): kebocoran, berkas, berhenti/lanjut/bertahan, saklar, g
     db.queryAll<{ jenis: string; jumlah_rp: number; rujukan_id: string }>(`SELECT jenis, jumlah_rp, rujukan_id FROM aleta_ai_mutasi WHERE pengguna_id = ? AND rujukan_id LIKE ? ORDER BY dibuat_at, id`, [p.id, `${id}%`]);
   const hargaUsd = async (usd: number) => {
     const pg = await bacaPengaturan(db);
-    return hitungHarga(usd, 16000, { marginPersen: pg.marginPersen, penyanggaKursPersen: pg.penyanggaKursPersen, minimumRp: pg.minimumRp, pembulatanRp: pg.pembulatanRp }).tagihRp;
+    // Rumus harga T10 (termasuk MDR) - sama dengan pelari tugas sesudah digabung.
+    return hitungHarga(usd, 16000, parameterHarga(pg)).tagihRp;
   };
   const usdLangkah = async (id: string, kode: string) =>
     Number((await db.queryOne<{ u: number }>(`SELECT biaya_usd AS u FROM aleta_ai_tugas_langkah WHERE tugas_id = ? AND kode = ?`, [id, kode]))?.u ?? 0);
@@ -839,6 +845,79 @@ describe("tugas (cowork): kebocoran, berkas, berhenti/lanjut/bertahan, saklar, g
     expect((await verifikasiSaldo(db, HAKIM.id)).seimbang).toBe(true);
   });
 
+  // ─── Gabungan T9 + T10 (integrasi awan 24 Okt) ───────────────────────────
+  it("SAKLAR SEKETIKA (T10): jalan tugas terdaftar; mematikan saklar memutus panggilan tanpa menunggu pantau berkala", async () => {
+    const tanda = { mulai: false };
+    suntikKlienAi(new KlienTiruan((langkah, _p, opsi) => (langkah === "susun" ? tungguPutus(opsi, tanda) : null)));
+    const id = await tugasBaru();
+    const awal = jumlahPekerjaanAiBerjalan();
+    // Pantau berkala praktis mati (1 jam): yang memutus hanyalah daftarkanPekerjaanAi -> hentikanSemuaPekerjaanAi.
+    const jalan = jalankanTugas(db, HAKIM, await ambilAlihTugas(db, HAKIM, id), { sekarang: SEKARANG, jedaPantauMs: 3_600_000 });
+    await sampai(() => tanda.mulai);
+    expect(jumlahPekerjaanAiBerjalan()).toBe(awal + 1);
+    const t0 = Date.now();
+    await simpanPengaturan(db, SUPER.id, { aktif: false });
+    const h = await jalan;
+    expect(Date.now() - t0).toBeLessThan(2_000);
+    expect(h.status).toBe("dihentikan");
+    expect(h.pesan).toBe(PESAN_DIHENTIKAN_SAKLAR);
+    expect(jumlahPekerjaanAiBerjalan()).toBe(awal);
+    // Satu jalan = satu tahan (sekali), ditutup lepas + potong; saldo tetap = jumlah mutasi.
+    expect((await mutasiTugas(HAKIM, id)).map((m) => m.jenis)).toEqual(["tahan", "lepas", "potong"]);
+    expect((await verifikasiSaldo(db, HAKIM.id)).seimbang).toBe(true);
+  });
+
+  it("BATAS HARIAN (T10) berlaku untuk tugas: pemakaian tugas terhitung; perkiraan yang melampaui batas ditolak sebelum model dipanggil", async () => {
+    const pakai = await pemakaianHariIni(db, HAKIM.id);
+    const tokenTugas = await db.queryOne<{ n: number }>(
+      `SELECT COALESCE(SUM(token_masuk + token_keluar + token_cache_tulis + token_cache_baca), 0) AS n FROM aleta_ai_penggunaan WHERE pengguna_id = ? AND jenis = 'tugas'`,
+      [HAKIM.id]
+    );
+    expect(Number(tokenTugas?.n)).toBeGreaterThan(0);
+    expect(pakai.token).toBe(Number(tokenTugas?.n));
+    const potong = await db.queryOne<{ n: number }>(`SELECT COALESCE(SUM(-jumlah_rp), 0) AS n FROM aleta_ai_mutasi WHERE pengguna_id = ? AND jenis = 'potong' AND rujukan_id LIKE 'ait-%'`, [HAKIM.id]);
+    expect(pakai.rp).toBe(Number(potong?.n));
+
+    const lama = (await bacaPengaturan(db)).batasHarianToken;
+    await simpanPengaturan(db, SUPER.id, { batasHarianToken: pakai.token + 10 });
+    try {
+      const klien = new KlienTiruan();
+      suntikKlienAi(klien);
+      const id = await tugasBaru();
+      const h = await jalanSampaiAkhir(HAKIM, id);
+      expect(h.status).toBe("gagal");
+      expect(h.pesan).toBe(PESAN_BATAS_HARIAN);
+      expect(klien.panggilan).toHaveLength(0);
+      expect((await mutasiTugas(HAKIM, id)).filter((m) => m.jenis !== "lepas" || Number(m.jumlah_rp) !== 0)).toEqual([]);
+    } finally {
+      await simpanPengaturan(db, SUPER.id, { batasHarianToken: lama });
+    }
+  });
+
+  it("LAPORAN LABA & REKONSILIASI (T10) memuat tugas T9: pendapatan = potongan mutasi; biaya tugas = potongan jalan-jalannya", async () => {
+    const bulan = tanggalLokal().slice(0, 7);
+    const lap = await laporanRentang(db, bulan, bulan);
+    const potong = await db.queryOne<{ n: number }>(`SELECT COALESCE(SUM(-jumlah_rp), 0) AS n FROM aleta_ai_mutasi WHERE jenis = 'potong'`);
+    expect(Number(potong?.n)).toBeGreaterThan(0);
+    expect(lap.pendapatanRp).toBe(Number(potong?.n));
+    const api = await db.queryOne<{ n: number }>(`SELECT COALESCE(SUM(biaya_api_rp), 0) AS n FROM aleta_ai_penggunaan WHERE jenis = 'tugas'`);
+    expect(lap.biayaApiRp).toBeCloseTo(Number(api?.n), 6);
+    expect(lap.biayaMdrRp).toBeGreaterThan(0);
+    expect(lap.labaRp).toBeCloseTo(lap.pendapatanRp - lap.biayaApiRp - lap.biayaMdrRp, 6);
+
+    const rapi = await jalankanRekonsiliasi(db, { tanggal: tanggalLokal() });
+    expect(rapi.rincian.filter((r) => r.jenis === "tugas" || r.jenis === "pendapatan")).toEqual([]);
+    const satu = (await db.queryOne<{ id: string }>(`SELECT id FROM aleta_ai_tugas WHERE pemilik_id = ? AND biaya_rp > 0 LIMIT 1`, [HAKIM.id]))!.id;
+    await db.run(`UPDATE aleta_ai_tugas SET biaya_rp = biaya_rp + 7 WHERE id = ?`, [satu]);
+    try {
+      const rusak = await jalankanRekonsiliasi(db, { tanggal: tanggalLokal() });
+      expect(rusak.status).toBe("selisih");
+      expect(rusak.rincian.filter((r) => r.jenis === "tugas")).toEqual([expect.objectContaining({ jenis: "tugas", tugasId: satu, selisihRp: 7 })]);
+    } finally {
+      await db.run(`UPDATE aleta_ai_tugas SET biaya_rp = biaya_rp - 7 WHERE id = ?`, [satu]);
+    }
+  });
+
   it("SALDO HABIS: berhenti \"saldo habis\" sebelum langkah yang tak tertutup; hasil sementara tersimpan; isi saldo lalu lanjut dari langkah terakhir", async () => {
     const H = pelaku("usr-h-saldo", "Hakim Satu", "hakim");
     // Tanpa saldo: berhenti sebelum memanggil model, tanpa menahan apa pun.
@@ -855,7 +934,7 @@ describe("tugas (cowork): kebocoran, berkas, berhenti/lanjut/bertahan, saklar, g
     await terapkanMutasi(db, { penggunaId: H.id, jenis: "isi", jumlahRp: S, catatan: "uji" });
     const pg = await bacaPengaturan(db);
     const tarif = (await bacaTarif(db)).find((x) => x.model === "claude-opus-5-5")!;
-    const faktor = 16000 * (1 + pg.penyanggaKursPersen / 100) * (1 + pg.marginPersen / 100);
+    const faktor = 16000 * (1 + pg.penyanggaKursPersen / 100) * (1 + pg.marginPersen / 100) * (1 + (pg.mdrPersen ?? 0) / 100);
     const keluar = Math.floor((((S - 700) / faktor) * 1e6) / tarif.keluarPerJuta);
     const klien = new KlienTiruan((langkah) => (langkah === "rencana" ? { penggunaan: { masuk: 0, keluar, cacheTulis: 0, cacheBaca: 0 } } : null));
     suntikKlienAi(klien);

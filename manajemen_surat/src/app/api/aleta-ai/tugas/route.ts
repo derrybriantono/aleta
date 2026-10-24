@@ -5,7 +5,7 @@ import { getDatabase } from "@/server/db/client";
 import { pelakuAi } from "@/server/modules/aleta-ai/akses";
 import { bacaTimpaanKemampuan } from "@/server/modules/aleta-ai/kemampuan";
 import { ALAT_BANTU, pelariSandbox } from "@/server/modules/aleta-ai/sandbox";
-import { ambilAlihTugas, buatTugas, cekHakTugas, daftarTugas, jalankanTugas } from "@/server/modules/aleta-ai/tugas";
+import { ambilAlihTugas, buatTugas, cekHakTugas, daftarTugas, jalankanTugas, pastikanLajuTugas } from "@/server/modules/aleta-ai/tugas";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { created, handleRouteError, ok } from "@/server/shared/http";
 
@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
     const db = await getDatabase();
     const pelaku = await pelakuAi(db, await resolveActorUserId(request));
     const badan = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+    await pastikanLajuTugas(db, pelaku);
     const { id } = await buatTugas(db, pelaku, badan);
     if (badan.mulai !== false) {
       const tugas = await ambilAlihTugas(db, pelaku, id);

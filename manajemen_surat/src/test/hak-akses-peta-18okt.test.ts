@@ -166,8 +166,9 @@ describe("3. peran lain sesuai keputusan", () => {
     expect(jenisDokumenAkun({ admin: false, golongan: ["pp"], saklar: { ppPutusan: true, hakimBas: true } })).not.toContain("rel");
   });
 
-  it("Kasir hanya kasir, panitera, panmud (+Admin); PP, hakim, juru sita tidak", () => {
-    expect(tanpaPengelola(siapa("aksi.sidang.kasir"))).toEqual(["kasir", "panitera", "panmud"]);
+  it("Kasir: menulis hanya pelaksana kasir (+Admin); panitera/panmud memakai di ekstensi; PP, hakim, juru sita tidak", () => {
+    // T3 (23 Okt, keputusan 12 Okt): panitera & panmud mengawasi - tidak menulis jurnal kasir di portal.
+    expect(tanpaPengelola(siapa("aksi.sidang.kasir"))).toEqual(["kasir"]);
     expect(butir("ekstensi.sipp.perkara.kasir").hak.panitera).toBe("P");
     expect(butir("ekstensi.sipp.perkara.kasir").hak.pp).toBeUndefined();
   });

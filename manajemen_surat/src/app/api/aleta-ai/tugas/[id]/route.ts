@@ -2,7 +2,7 @@ import { type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
 import { pelakuAi } from "@/server/modules/aleta-ai/akses";
-import { ambilAlihTugas, ambilTugas, hentikanTugas, jalankanTugas } from "@/server/modules/aleta-ai/tugas";
+import { ambilAlihTugas, ambilTugas, hentikanTugas, jalankanTugas, pastikanLajuTugas } from "@/server/modules/aleta-ai/tugas";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ApiError } from "@/server/shared/errors";
 import { handleRouteError, ok } from "@/server/shared/http";
@@ -37,6 +37,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const aksi = String(badan.aksi ?? "");
     if (aksi === "hentikan") return ok(await hentikanTugas(db, pelaku, id));
     if (aksi === "lanjutkan" || aksi === "mulai") {
+      await pastikanLajuTugas(db, pelaku);
       const tugas = await ambilAlihTugas(db, pelaku, id);
       void jalankanTugas(db, pelaku, tugas).catch(() => undefined);
       return ok(await ambilTugas(db, pelaku, id));

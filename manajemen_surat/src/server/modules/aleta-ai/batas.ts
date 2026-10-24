@@ -34,14 +34,28 @@ export function awalBulanIso(sekarang: Date): string {
   return new Date(`${tanggalLokal(sekarang).slice(0, 7)}-01T00:00:00+08:00`).toISOString();
 }
 
-/** Rupiah ditagih dan token terpakai pengguna sejak awal hari (giliran percakapan). */
+/**
+ * Rupiah ditagih dan token terpakai pengguna sejak awal hari: giliran percakapan
+ * DAN tugas T9 (token = catatan per panggilan aleta_ai_penggunaan jenis "tugas";
+ * rupiah = potongan mutasi yang merujuk jalan tugas, rujukan "ait-...").
+ */
 export async function pemakaianHariIni(db: AletaDatabase, penggunaId: string, sekarang: Date = new Date()): Promise<{ rp: number; token: number }> {
+  const awal = awalHariIso(sekarang);
   const baris = await db.queryOne<{ rp: number | string | null; tok: number | string | null }>(
     `SELECT COALESCE(SUM(biaya_rp), 0) AS rp, COALESCE(SUM(token_masuk + token_keluar + token_cache_tulis + token_cache_baca), 0) AS tok
      FROM aleta_ai_obrolan_pesan WHERE pemilik_id = ? AND peran = 'ai' AND dibuat_at >= ?`,
-    [penggunaId, awalHariIso(sekarang)]
+    [penggunaId, awal]
   );
-  return { rp: Number(baris?.rp ?? 0), token: Number(baris?.tok ?? 0) };
+  const tugasTok = await db.queryOne<{ tok: number | string | null }>(
+    `SELECT COALESCE(SUM(token_masuk + token_keluar + token_cache_tulis + token_cache_baca), 0) AS tok
+     FROM aleta_ai_penggunaan WHERE pengguna_id = ? AND jenis = 'tugas' AND dibuat_at >= ?`,
+    [penggunaId, awal]
+  );
+  const tugasRp = await db.queryOne<{ rp: number | string | null }>(
+    `SELECT COALESCE(SUM(jumlah_rp), 0) AS rp FROM aleta_ai_mutasi WHERE pengguna_id = ? AND jenis = 'potong' AND rujukan_id LIKE 'ait-%' AND dibuat_at >= ?`,
+    [penggunaId, awal]
+  );
+  return { rp: Number(baris?.rp ?? 0) - Number(tugasRp?.rp ?? 0), token: Number(baris?.tok ?? 0) + Number(tugasTok?.tok ?? 0) };
 }
 
 /** Biaya API (Rp, kurs dasar) seluruh satker sejak awal bulan - dari catatan per panggilan (aleta_ai_penggunaan). */

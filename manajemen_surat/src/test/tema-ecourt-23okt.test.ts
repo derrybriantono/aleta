@@ -343,7 +343,8 @@ describe("8 - manifest dan popup", () => {
     expect(tema.js).toEqual(["tema-pusat.js", "ecourt-tema.js"]);
     expect(tema.css).toEqual(["ecourt-tema.css"]);
     const masuk = entri.find((c) => (c.js as string[]).includes("ecourt-masuk.js"))!;
-    expect(masuk.js).toEqual(["ecourt-masuk.js"]);
+    // T1 (ALETA Ai tahap 2b) menambah gelembung chat SESUDAH skrip masuk; skrip masuk tetap pertama.
+    expect(masuk.js).toEqual(["ecourt-masuk.js", "aleta-ai-gelembung.js"]);
     expect(masuk.run_at).toBe("document_idle");
     expect(manifest.version).toBe("1.205.38");
   });

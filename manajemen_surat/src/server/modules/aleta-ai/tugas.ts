@@ -29,10 +29,13 @@ import { bubuhkanTanda, MIME_BERKAS, namaBerkas, susunBerkas, type BerkasJadi } 
 import { ambilKlienAi, jinakkanGalat, type HasilAi, type KlienAi } from "@/server/modules/aleta-ai/klien";
 import { bacaTimpaanKemampuan } from "@/server/modules/aleta-ai/kemampuan";
 import { kursBerlaku } from "@/server/modules/aleta-ai/kurs";
-import { biayaPanggilan, PESAN_DITOLAK, PESAN_NONAKTIF_KUNCI, PESAN_NONAKTIF_PROYEK, PESAN_NONAKTIF_SAKLAR } from "@/server/modules/aleta-ai/mesin";
+import { periksaBatas } from "@/server/modules/aleta-ai/batas";
+import { biayaPanggilan, izinkanLaju, PESAN_DITOLAK, PESAN_NONAKTIF_KUNCI, PESAN_NONAKTIF_PROYEK, PESAN_NONAKTIF_SAKLAR } from "@/server/modules/aleta-ai/mesin";
 import { bukaIsi, sandiIsi } from "@/server/modules/aleta-ai/percakapan";
 import { bacaPengaturan, bacaRute, bacaTarif, catatJejak, type PengaturanAi } from "@/server/modules/aleta-ai/pengaturan";
+import { parameterHarga } from "@/server/modules/aleta-ai/perkiraan";
 import { proyekAktif, type ProyekAktif } from "@/server/modules/aleta-ai/proyek";
+import { aletaAiDihentikan, daftarkanPekerjaanAi, dibatalkanSaklar } from "@/server/modules/aleta-ai/saklar";
 import { saldoPengguna, selesaikanTahanan, tahanDana, tambahTahanan } from "@/server/modules/aleta-ai/saldo";
 import { muatPenyamar, simpanPenyamar } from "@/server/modules/aleta-ai/samaran";
 import { alatApiBantu, cetakLewatSandbox, jalankanAlatBantu, NAMA_ALAT_API_BANTU, pelariSandbox } from "@/server/modules/aleta-ai/sandbox";
@@ -84,12 +87,13 @@ export const pesanSaldoHabis = (saldo: number, perluRp: number) =>
   `Berhenti: saldo habis. Saldo ALETA Ai Anda (Rp${saldo.toLocaleString("id-ID")}) tidak cukup untuk langkah berikutnya (perkiraan Rp${perluRp.toLocaleString("id-ID")}). Hasil yang sudah ada tersimpan dan hanya pemakaian yang dipotong; isi saldo lalu tekan Lanjutkan.`;
 
 /**
- * SAKLAR DARURAT - satu fungsi kecil supaya mudah diganti saat digabung
- * dengan T10 (dompet lengkap) yang mungkin menambah fungsi saklar sendiri.
- * Sekarang: saklar ALETA Ai yang SUDAH ada (pengaturan "aktif").
+ * SAKLAR DARURAT - sumber yang sama dengan percakapan (saklar.ts T10): baca
+ * pengaturan "aktif" SEGAR tanpa tembolok; galat baca = anggap mati (aman).
+ * Tiap jalan tugas juga didaftarkan (daftarkanPekerjaanAi) sehingga mematikan
+ * saklar memutus panggilan model yang sedang berjalan SEKETIKA.
  */
 export async function saklarDaruratMenyala(db: AletaDatabase): Promise<boolean> {
-  return !(await bacaPengaturan(db)).aktif;
+  return aletaAiDihentikan(db);
 }
 
 // ----------------------------------------------------------------------------
@@ -383,10 +387,6 @@ export async function ambilAlihTugas(db: AletaDatabase, pelaku: PelakuAi, id: st
 // Pelari
 // ----------------------------------------------------------------------------
 
-function parameterHarga(p: PengaturanAi) {
-  return { marginPersen: p.marginPersen, penyanggaKursPersen: p.penyanggaKursPersen, minimumRp: p.minimumRp, pembulatanRp: p.pembulatanRp };
-}
-
 export type OpsiPelari = { sekarang?: Date; jedaPantauMs?: number };
 
 class Berhenti extends Error {
@@ -417,10 +417,12 @@ type Kerja = {
   ditahan: number;
   jedaPantauMs: number;
   sekarang: Date;
+  /** Kendali jalan ini, terdaftar di saklar darurat (dibatalkan = saklar dimatikan). */
+  kendali: AbortController;
 };
 
 async function periksaHenti(k: Kerja): Promise<void> {
-  if (await saklarDaruratMenyala(k.db)) throw new Berhenti("dihentikan", PESAN_DIHENTIKAN_SAKLAR);
+  if (dibatalkanSaklar(k.kendali.signal) || (await saklarDaruratMenyala(k.db))) throw new Berhenti("dihentikan", PESAN_DIHENTIKAN_SAKLAR);
   const b = await ambilBaris(k.db, k.tugas.id);
   if (!b || Number(b.segmen) !== k.segmen) throw new Berhenti("dijeda", "Tugas diambil alih jalan lain.");
   if (Number(b.minta_berhenti) === 1) throw new Berhenti("dijeda", PESAN_DIJEDA);
@@ -431,6 +433,13 @@ async function periksaHenti(k: Kerja): Promise<void> {
 async function panggilModel(k: Kerja, langkahId: string, p: PermintaanAi): Promise<HasilAi> {
   const kendali = new AbortController();
   let alasan: Berhenti | null = null;
+  // Saklar darurat dimatikan di proses ini -> kendali jalan dibatalkan -> panggilan ini diputus seketika.
+  const putusSaklar = () => {
+    if (!alasan) alasan = new Berhenti("dihentikan", PESAN_DIHENTIKAN_SAKLAR);
+    kendali.abort();
+  };
+  if (k.kendali.signal.aborted) putusSaklar();
+  else k.kendali.signal.addEventListener("abort", putusSaklar, { once: true });
   const pantau = setInterval(() => {
     periksaHenti(k).catch((e: unknown) => {
       if (e instanceof Berhenti && !alasan) {
@@ -460,6 +469,7 @@ async function panggilModel(k: Kerja, langkahId: string, p: PermintaanAi): Promi
     return h;
   } finally {
     clearInterval(pantau);
+    k.kendali.signal.removeEventListener("abort", putusSaklar);
   }
 }
 
@@ -539,6 +549,13 @@ function perkiraanUsd(k: Kerja, n: number): number {
   const { sistem, pesan } = hitungKarakterPermintaan(contoh);
   const t = k.tarif.get(k.rute.model);
   return t ? biayaUsd(t, { masuk: perkirakanTokenDariKarakter(pesan), cacheTulis: perkirakanTokenDariKarakter(sistem), cacheBaca: 0, keluar: k.rute.perkiraanKeluaran }) * n : 0;
+}
+
+/** Perkiraan token (masuk + sistem + keluaran) untuk n langkah model - untuk batas harian token. */
+function perkiraanToken(k: Kerja, n: number): number {
+  if (n <= 0) return 0;
+  const { sistem, pesan } = hitungKarakterPermintaan(permintaan(k, "x".repeat(8000)));
+  return (perkirakanTokenDariKarakter(pesan) + perkirakanTokenDariKarakter(sistem) + k.rute.perkiraanKeluaran) * n;
 }
 
 const LANGKAH_MODEL: readonly KodeLangkah[] = ["rencana", "susun", "periksa"];
@@ -739,6 +756,14 @@ function petaTeks(v: unknown, f: (s: string) => string): unknown {
   return v;
 }
 
+/** Batas laju T10 (pesan per menit per pengguna, hitungan yang sama dengan percakapan) untuk mulai/lanjutkan tugas. */
+export async function pastikanLajuTugas(db: AletaDatabase, pelaku: PelakuAi, sekarang: Date = new Date()): Promise<void> {
+  const pengaturan = await bacaPengaturan(db);
+  if (!izinkanLaju(pelaku.id, pengaturan.batasLajuPerMenit, sekarang.getTime())) {
+    throw new ApiError(429, "Terlalu banyak permintaan dalam satu menit. Tunggu sebentar lalu coba lagi.");
+  }
+}
+
 /**
  * Menjalankan tugas yang SUDAH diambil alih (ambilAlihTugas). Tidak melempar:
  * akhir apa pun ditulis ke tabel.
@@ -748,6 +773,8 @@ export async function jalankanTugas(db: AletaDatabase, pelaku: PelakuAi, tugas: 
   const rujukan = rujukanJalan(tugas.id, segmen);
   let k: Kerja | null = null;
   let akhir: { status: StatusTugas; pesan: string } = { status: "gagal", pesan: "Terjadi gangguan." };
+  const kendali = new AbortController();
+  const lepasSaklar = daftarkanPekerjaanAi(kendali);
 
   try {
     if (await saklarDaruratMenyala(db)) throw new Berhenti("dihentikan", PESAN_NONAKTIF_SAKLAR);
@@ -780,10 +807,23 @@ export async function jalankanTugas(db: AletaDatabase, pelaku: PelakuAi, tugas: 
       ditahan: 0,
       jedaPantauMs: opsi.jedaPantauMs ?? JEDA_PANTAU_MS,
       sekarang,
+      kendali,
     };
 
     let semua = await db.queryAll<BarisLangkah>(`SELECT * FROM aleta_ai_tugas_langkah WHERE tugas_id = ? ORDER BY urutan`, [tugas.id]);
     const sisa = semua.filter((l) => l.status !== "selesai" && l.status !== "dilewati").map((l) => l.kode as KodeLangkah);
+
+    // Batas pemakaian (T10, pola mesin.ts) SEBELUM jalan dimulai, atas perkiraan sisa langkah.
+    // Batas laju diperiksa di rute (pastikanLajuTugas) - per permintaan pengguna, bukan per jalan.
+    const nModel = sisa.filter((s) => LANGKAH_MODEL.includes(s)).length;
+    const usdSisa = perkiraanUsd(k, nModel);
+    const hargaSisa = hitungHarga(usdSisa, k.kurs, parameterHarga(k.pengaturan), { gratis: pelaku.superAdmin });
+    const batas = await periksaBatas(db, pelaku, k.pengaturan, sekarang, {
+      tambahanRp: hargaSisa.tagihRp,
+      tambahanToken: perkiraanToken(k, nModel),
+      tambahanApiRp: hargaSisa.biayaApiRp,
+    });
+    if (!batas.ok) throw new Berhenti("gagal", batas.alasan);
 
     // Satu jalan = satu tahan saldo.
     if (!pelaku.superAdmin) {
@@ -793,7 +833,7 @@ export async function jalankanTugas(db: AletaDatabase, pelaku: PelakuAi, tugas: 
       const satuLangkah = sisa.some((s) => LANGKAH_MODEL.includes(s)) ? hitungHarga(perkiraanUsd(k, 1), k.kurs, parameterHarga(k.pengaturan)).hargaRp : 0;
       if (saldo < satuLangkah) throw new Berhenti("saldo-habis", pesanSaldoHabis(saldo, satuLangkah));
       const awal = Math.min(saldo, tahan);
-      if (awal > 0 && !(await tahanDana(db, pelaku.id, awal, rujukan))) throw new Berhenti("saldo-habis", pesanSaldoHabis(saldo, satuLangkah));
+      if (awal > 0 && !(await tahanDana(db, pelaku.id, awal, rujukan, { sekali: true }))) throw new Berhenti("saldo-habis", pesanSaldoHabis(saldo, satuLangkah));
       k.ditahan = awal;
       await db.run(`UPDATE aleta_ai_tugas SET tahan_rp = ? WHERE id = ?`, [awal, tugas.id]);
     }
@@ -820,6 +860,7 @@ export async function jalankanTugas(db: AletaDatabase, pelaku: PelakuAi, tugas: 
   } catch (e) {
     akhir = e instanceof Berhenti ? { status: e.status, pesan: e.pesan } : { status: "gagal", pesan: jinakkanGalat(e).message };
   } finally {
+    lepasSaklar();
     if (k) {
       try {
         await simpanPenyamar(db, tugas.id, k.penyamar);
