@@ -281,8 +281,11 @@ describe("borang menyusun saksi", () => {
     const wadah = panel.querySelector(".aleta-ssk");
     tombolDi(wadah, "Susun pertanyaan dan jawaban").click();
     await tunggu(() => wadah.querySelectorAll(".aleta-ssk-saksi").length === 2, "dua saksi tersusun");
-    const t = wadah.querySelector('.aleta-ssk-saksi .aleta-ssk-baris[data-butir="q-penutup"] textarea');
-    t.value = "sudah cukup disunting";
+    // 23 Okt (T2, keputusan pengguna): butir penutup tidak lagi ditampilkan; suntingan petugas diuji pada baris terakhir yang tampil
+    expect(wadah.querySelector('.aleta-ssk-baris[data-butir="q-penutup"]')).toBeNull();
+    const semuaBaris = wadah.querySelector(".aleta-ssk-saksi").querySelectorAll(".aleta-ssk-baris textarea");
+    const t = semuaBaris[semuaBaris.length - 1];
+    t.value = "keterangan terakhir disunting petugas";
     const simpan = tombolDi(wadah, "Simpan ke ABT");
     expect(simpan.hidden).toBe(false);
     simpan.click();
@@ -296,7 +299,8 @@ describe("borang menyusun saksi", () => {
     expect(permintaan[1].alamat).toContain("no_var=2022");
     const data0 = JSON.parse(new URLSearchParams(permintaan[0].badan).get("data") as string);
     expect(data0.length).toBeGreaterThanOrEqual(10);
-    expect(data0[data0.length - 1].jawab).toBe("sudah cukup disunting");
+    expect(data0[data0.length - 1].jawab).toBe("keterangan terakhir disunting petugas");
+    expect(data0.some((b: any) => /^(?:saya\s+)?sudah\s+cukup/i.test(b.jawab))).toBe(false);
     expect(JSON.stringify(permintaan)).not.toMatch(/aleta/i);
     expect(JSON.stringify(data0)).not.toMatch(/ya, |sayang/i);
     w.close;

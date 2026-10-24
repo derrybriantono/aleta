@@ -72,8 +72,11 @@ describe("katalog lama tidak dikurangi", () => {
   it("jumlah butir per saksi pada itsbat dua pemohon naik dari 20 menjadi 28 (tingkat bawaan)", () => {
     const lama = muat(CAD, "itsbat-nikah.json");
     const hitung = (kat: any) => susun(kat, { keadaan: { bentuk: "permohonan-berdua" } }).saksi[0].baris.length;
-    expect(hitung(lama)).toBe(20);
-    expect(hitung(IN)).toBe(28);
+    // 23 Okt (T2, keputusan pengguna): butir penutup tidak lagi disusun/ditampilkan - satu butir lebih sedikit pada
+    // keduanya; tambahan 8 butir katalog baru tetap utuh.
+    expect(hitung(lama)).toBe(19);
+    expect(hitung(IN)).toBe(27);
+    expect(susun(IN, { keadaan: { bentuk: "permohonan-berdua" } }).saksi[0].baris.some((b: any) => /penutup/.test(String(b.butir)))).toBe(false);
   });
 });
 

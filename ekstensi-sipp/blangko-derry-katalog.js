@@ -467,6 +467,8 @@
       const butir = m.pertanyaanAktif(kat, keadaan, s.pihak, { tingkat });
       const baris = [];
       butir.forEach((q) => {
+        // T2 (25 Okt, keputusan pengguna): butir penutup tidak ditampilkan dan tidak disimpan untuk semua jenis perkara
+        if (q.kelompok === "penutup") return;
         const asal = peta.get(q.id);
         const mentah = m.pilihTeksPertanyaan(q, ke, benih);
         const kodeTanya = kodeDi(mentah);

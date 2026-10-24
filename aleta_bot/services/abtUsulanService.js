@@ -5349,6 +5349,10 @@ function susunKeteranganSaksiSdg(opsi) {
   const contohPelanggaran = [];
   const perluDiisi = [];
   const terisiDariPosita = [];
+  // T2 (25 Okt, keputusan pengguna): sebab perselisihan yang dibaca dari POSITA (bukan dipilih petugas) = saran,
+  // belum dikuatkan saksi. Hanya jawaban "penyebab" yang memang menerangkan sebab (bukan tidak tahu / ragu / tahu pisah).
+  const saranSebab = [];
+  const MODUS_TANPA_SEBAB = new Set(["tidak-tahu", "tidak-melihat", "tahu-pisah", "ragu"]);
 
   const susun = (saksi, ke) => {
     const m = modusUntuk(saksi.m);
@@ -5529,6 +5533,10 @@ function susunKeteranganSaksiSdg(opsi) {
       if (ke === 1 && perlu) perluDiisi.push({ no, tanya });
       const butir = { no, tanya, jawab: akhir, perluDiisi: perlu, varian };
       if (kosongSeluruhnya) butir.belumTerisi = true;
+      if (asalAlasan === "posita" && m.alasan === alasan && kel.kelompok === "penyebab" && !kosongSeluruhnya && !MODUS_TANPA_SEBAB.has(m.modus)) {
+        butir.saran = true;
+        if (!saranSebab.some((x) => x.no === no)) saranSebab.push({ no, tanya, alasan: alasan.slice() });
+      }
       if (pilihan.length) butir.pilihan = pilihan;
       return butir;
     });
@@ -5566,6 +5574,8 @@ function susunKeteranganSaksiSdg(opsi) {
     terisiDariData,
     // Jawaban yang tidak punya sumber sama sekali: berbunyi TANDA_BELUM_TERISI.
     belumTerisi,
+    // Nomor jawaban yang sebabnya hanya dari posita - panel menandainya "saran, belum dikuatkan saksi".
+    saranSebab,
     tandaBelumTerisi: TANDA_BELUM_TERISI,
     identik,
     alasan,
@@ -5579,6 +5589,7 @@ function susunKeteranganSaksiSdg(opsi) {
         ? `Upaya rukun diisi dari ${terisiDariData.map((x) => (x.sumber === "1268" ? "variabel 1268" : x.sumber)).join(", ")} - periksa dahulu. `
         : "") +
       (belumTerisi.length ? `${belumTerisi.length} jawaban belum terisi dan bertanda "${TANDA_BELUM_TERISI}". ` : "") +
+      (saranSebab.length ? "Sebab perselisihan diambil dari posita - saran, belum dikuatkan saksi; sesuaikan dengan keterangan saksi. " : "") +
       (perluDiisi.length
         ? `${perluDiisi.length} jawaban masih memuat titik-titik atau pilihan templat dan menunggu keterangan saksi yang sesungguhnya.`
         : "Seluruh jawaban tersusun; baca kembali sebelum disimpan ke ABT."),

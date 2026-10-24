@@ -1054,8 +1054,14 @@
         // fakta perkara (gugatan > data SIPP) hanya mengisi yang KOSONG: variabel ABT yang belum terisi dan slot yang dipetakan butir (slotDari)
         const dariGugatan = [];
         const faktaPerkara = laRaya(m.fakta) ? m.fakta : {};
+        // T2: variabel ABT jenis non-cerai yang KOSONG, nilainya dihitung bot dari isian blangko > data SIPP > posita
+        const variabelFakta = laRaya(m.variabelFakta) ? m.variabelFakta : {};
         const catatFakta = (nama, kunciFakta, f) => {
-          if (!dariGugatan.some((x) => x.nama === nama)) dariGugatan.push({ nama, kunci: kunciFakta, sumber: String(f.sumber || ""), yakin: String(f.yakin || "cukup"), ket: String(f.ket || "") });
+          if (dariGugatan.some((x) => x.nama === nama)) return;
+          const isi = { nama, kunci: kunciFakta, sumber: String(f.sumber || ""), yakin: String(f.yakin || "cukup"), ket: String(f.ket || "") };
+          // sebab/alasan yang hanya didalilkan posita: saran, bukan keterangan pasti (keputusan T2)
+          if (f.saran) Object.assign(isi, { yakin: "ragu", saran: true });
+          dariGugatan.push(isi);
         };
         if (laRaya(q.slotDari) && jenis !== "ragu" && jenis !== "tidak-tahu") {
           for (const [namaSlot, kunciFakta] of Object.entries(q.slotDari)) {
@@ -1072,7 +1078,13 @@
           const info = KODE_KE_FAKTA[kode];
           const f = info && faktaPerkara[info.kunci];
           const teks = f ? formatFaktaUntukKode(kode, f.nilai, m.acuan) : "";
-          if (!teks) return v;
+          if (!teks) {
+            const vf = variabelFakta[kode];
+            const t = vf && typeof vf.teks === "string" ? vf.teks.trim() : "";
+            if (!t || tidakTerisi(t)) return v;
+            catatFakta(`#${kode}#`, String(vf.label || `variabel ${kode}`), vf);
+            return t;
+          }
           catatFakta(`#${kode}#`, info.kunci, f);
           return teks;
         };
