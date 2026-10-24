@@ -12,7 +12,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest
 
 import { hitungHarga } from "@/lib/aleta-ai/biaya";
 import type { PermintaanAi } from "@/lib/aleta-ai/penyusun";
-import { dataAsliTersisa } from "@/lib/aleta-ai/samaran";
+import { dataAsliTersisa, Penyamar } from "@/lib/aleta-ai/samaran";
 import {
   adaKataAleta,
   bacaRujukan,
@@ -121,7 +121,7 @@ const ASLI = {
   penggugatAlamat: "Jalan Mawar Rekaan Nomor 7 RT 001",
   tergugat: "Budi Rekaan bin Umar Fiktif",
   tergugatNik: "7203011203880002",
-  saksi: "Rahmat Rekaan",
+  saksi: "Rahmat Rekaan bin Ahmad",
   saksiNik: "7203015555550009",
   saksiTelepon: "085299990000",
 };
@@ -310,6 +310,36 @@ describe("penjaga keluaran: rujukan & kata ALETA", () => {
     const h = tanpaKataAleta("Disusun ALETA Ai, dicek aleta dan ALETA_08 untuk Penggugat.");
     expect(adaKataAleta(h)).toBe(false);
     expect(h).toContain("untuk Penggugat");
+  });
+});
+
+// ─── 3b. Penyamaran teks bebas (keputusan pengguna 24 Okt: "sebisa mungkin") ─
+
+describe("penyamaran teks bebas: nama menurut sebutan, bin/binti, alamat, lahir/umur, NIK berkelompok", () => {
+  const CONTOH: Array<[string, string[]]> = [
+    ["Saksi Rahmat Rekaan bin Ahmad menerangkan bahwa Penggugat dan Tergugat sering bertengkar.", ["Rahmat Rekaan", "Ahmad"]],
+    ["Saksi II: Nurhayati Rekaan, umur 45 tahun, tinggal di Jalan Kenanga Rekaan No. 3 RT 002/RW 001, Kelurahan Talise Rekaan, Kecamatan Mantikulore.", ["Nurhayati Rekaan", "45 tahun", "Kenanga Rekaan", "RT 002", "Talise Rekaan"]],
+    ["anak bernama Muhammad Fiktif Rekaan, lahir di Palu, 12 Maret 2015, dan almarhumah Hj. Aminah Rekaan.", ["Muhammad Fiktif Rekaan", "12 Maret 2015", "Aminah Rekaan"]],
+    ["Pewaris Haji Umar Rekaan bin La Fiktif meninggalkan ahli waris Andi Rekaan dan istri Wa Ode Rekaan.", ["Umar Rekaan", "La Fiktif", "Andi Rekaan", "Wa Ode Rekaan"]],
+    ["NIK 7203 0145 0990 0001, KK 7203011111110001, Sdr. Budi Rekaan, Ibu Sitti Rekaan hadir di Dusun Rekaan Jaya.", ["7203014509900001", "7203011111110001", "Budi Rekaan", "Sitti Rekaan", "Rekaan Jaya"]],
+    ["Termohon Konvensi Laode Rekaan dan Pemohon Andi Rekaan Fiktif hadir; Sdri. Rina Rekaan tidak hadir.", ["Laode Rekaan", "Andi Rekaan Fiktif", "Rina Rekaan"]],
+  ];
+
+  it.each(CONTOH)("%s", (teks, asli) => {
+    const p = new Penyamar();
+    const s = p.samarkan(teks);
+    expect(dataAsliTersisa(s, asli)).toEqual([]);
+    // Dua arah: kode dikembalikan persis.
+    expect(p.pulihkan(s)).toBe(teks.replace("7203 0145 0990 0001", "7203014509900001"));
+  });
+
+  it("tanpa positif palsu pada istilah pengadilan, sebutan tanpa nama, dan kata biasa", () => {
+    const teks =
+      "Majelis Hakim Pengadilan Agama Donggala memanggil Penggugat dan Tergugat. Bapak Ketua Majelis membuka sidang; Kuasa Hukum Penggugat hadir. " +
+      "Saksi pertama dan saksi kedua disumpah. Perkara berjalan lancar, usia perkawinan 10 tahun, Ibu Kota provinsi. Menimbang Pasal 116 huruf f Kompilasi Hukum Islam.";
+    const p = new Penyamar();
+    expect(p.samarkan(teks)).toBe(teks);
+    expect(p.entri()).toEqual([]);
   });
 });
 
@@ -509,10 +539,8 @@ describe("tugas (cowork): kebocoran, berkas, berhenti/lanjut/bertahan, saklar, g
 
     // KEBOCORAN: tidak satu pun nilai asli (pihak dari SIPP rekaan + saksi dari instruksi) keluar ke model.
     const terkirim = JSON.stringify(klien.panggilan.map((x) => x.p));
-    // Kontrak penyamar tahap 2 (T1): nama yang DIKETAHUI (data SIPP) + pola NIK/telepon/email/rekening.
-    // Nama bebas di instruksi ("Saksi Rahmat Rekaan") belum dikenali - dicatat di laporan T9.
-    const { saksi: _namaBebas, ...dikenali } = ASLI;
-    expect(dataAsliTersisa(terkirim, [...Object.values(dikenali), "Siti Rekaan", "Budi Rekaan", "Jalan Mawar Rekaan", "Dusun Melati Rekaan"])).toEqual([]);
+    // Termasuk nama BEBAS di instruksi ("Saksi Rahmat Rekaan bin Ahmad") - pengenal pola penyamar.
+    expect(dataAsliTersisa(terkirim, [...Object.values(ASLI), "Siti Rekaan", "Budi Rekaan", "Jalan Mawar Rekaan", "Dusun Melati Rekaan"])).toEqual([]);
     expect(terkirim).toContain("[NAMA-");
     expect(terkirim).toContain(NOMOR);
 
