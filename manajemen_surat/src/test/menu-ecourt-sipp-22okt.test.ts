@@ -518,7 +518,8 @@ describe("pendaftaran: manifest, popup, penyusun", () => {
     const grup = MANIFEST.content_scripts.filter((c: any) => (c.js || []).includes("ecourt-masuk.js"));
     expect(grup.length).toBe(1);
     expect(grup[0].matches).toEqual(["https://ecourt.mahkamahagung.go.id/*"]);
-    expect(grup[0].js).toEqual(["ecourt-masuk.js"]);
+    // 23 Okt (keputusan pengguna): gelembung chat ALETA Ai ikut di e-Court, lewat relai pekerja latar.
+    expect(grup[0].js).toEqual(["ecourt-masuk.js", "aleta-ai-gelembung.js"]);
     expect(grup[0].all_frames).toBeUndefined();
     expect(grup[0].css).toBeUndefined();
     // tidak ada skrip ALETA lain yang menyentuh e-Court

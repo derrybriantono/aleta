@@ -37,6 +37,7 @@ const L2 = (id: string): Baris => ({ id: `ideL2${id}`, kunci: `ideL2${id}`, bagi
 /** SATU-SATUNYA tabel kebenaran: id kotak, kunci simpanan, bagian (kode kelompok UI Baru), bawaan, berkas pembaca. */
 const TABEL: Baris[] = [
   { id: "panelRingkas", kunci: "panelRingkas", bagian: "tampilan", bawaan: false, pembaca: ["panel-alat.js"] },
+  { id: "aletaAiGelembung", kunci: "aletaAiGelembung", bagian: "tampilan", bawaan: true, pembaca: ["aleta-ai-gelembung.js"] },
   { id: "tandaiHalaman", kunci: "tandaiHalaman", bagian: "sipp", bawaan: true, pembaca: ["konten.js", "panel-alat.js"] },
   { id: "sisipJadwal", kunci: "sisipJadwal", bagian: "sipp", bawaan: false, pembaca: ["konten.js"] },
   { id: "pratinjauBasRelaas", kunci: "pratinjauBasRelaas", bagian: "sipp", bawaan: true, pembaca: ["pratinjau-bas-relaas.js"] },

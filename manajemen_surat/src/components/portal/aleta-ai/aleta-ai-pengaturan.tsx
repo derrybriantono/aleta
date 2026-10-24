@@ -12,6 +12,8 @@ import { Switch } from "@/components/ui/switch";
 import { ambil, kirimJson } from "@/lib/aleta-ai/klien";
 import { LABEL_MODE, formatRupiah, type PengaturanAi } from "@/lib/aleta-ai/kontrak";
 
+import { MatriksKemampuanAi } from "./matriks-kemampuan";
+
 /**
  * Pengaturan ALETA Ai - hanya Super Admin. Satu-satunya layar yang menyebut
  * nama model; pengguna biasa hanya melihat label mode.
@@ -389,6 +391,10 @@ export function AletaAiPengaturan({ pengguna }: { pengguna: PenggunaPilihan[] })
         </Button>
         <Pesan teks={pesanSimpan.teks} baik={pesanSimpan.baik} />
       </div>
+
+      <Bagian judul="Kemampuan per peran" deskripsi="Apa yang boleh dibuat ALETA Ai untuk tiap peran. Berlaku di server pada setiap permintaan, juga lewat ekstensi.">
+        <MatriksKemampuanAi />
+      </Bagian>
 
       <Bagian judul="Proyek ALETA AI PA V4.5" deskripsi="Satu sumber pengetahuan (Core Prompt dan modul). Unggah berkas ZIP versi baru bila ada pembaruan.">
         <div className="flex flex-wrap items-center gap-2">

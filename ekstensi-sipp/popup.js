@@ -54,6 +54,8 @@ const SAKLAR_PANEL = {
   /* Gembok panel di SIPP dan portal - kunci yang sama dengan tombol gembok di panel (panel-alat.js ALAT_GEMBOK_KUNCI). */
   gembokSipp: ["gembokKepalaSipp", false],
   gembokAleta: ["gembokKepalaAleta", false],
+  /* T1 tahap 2b (23 Okt): gelembung chat ALETA Ai di SIPP, ABT, dan portal (aleta-ai-gelembung.js), bawaan MENYALA. */
+  aletaAiGelembung: ["aletaAiGelembung", true],
 };
 const SEMUA_SAKLAR_POPUP = { ...SAKLAR_DERRY, ...SAKLAR_SIPP_IDE, ...SAKLAR_ABT, ...SAKLAR_PANEL };
 /**
@@ -146,6 +148,7 @@ const KUNCI_SETELAN_AKUN = [
   "temaEcourt",
   "gembokKepalaAbt",
   "panelRingkas",
+  "aletaAiGelembung",
   "gembokKepalaSipp",
   "gembokKepalaAleta",
   /* Saklar penanda SIPP (popup-ide-l2.js) - per akun seperti saklar lain (audit 17 Okt). */
@@ -201,6 +204,7 @@ const BAWAAN_AKUN = {
   temaEcourt: true,
   gembokKepalaAbt: false,
   panelRingkas: false,
+  aletaAiGelembung: true,
   gembokKepalaSipp: false,
   gembokKepalaAleta: false,
   skalaHuruf: 100,
@@ -2360,7 +2364,7 @@ function pasangRingkas(gayaUi) {
  * `unsur` = elemen lain yang ikut (kotak penanda SIPP).
  */
 const KELOMPOK_SAKLAR = [
-  { kode: "tampilan", judul: "Tampilan", isi: ["panelRingkas"] },
+  { kode: "tampilan", judul: "Tampilan", isi: ["panelRingkas", "aletaAiGelembung"] },
   { kode: "sipp", judul: "SIPP", isi: ["tandaiHalaman", "sisipJadwal", "pratinjauBasRelaas", "menuAtasSipp", "sippPenyatu", "sippTampilDobel", "gembokSipp"], unsur: ["ideL2Kotak"] },
   { kode: "ecourt", judul: "E-Court", isi: ["ecourtTema"] },
   { kode: "abt", judul: "ABT", isi: ["suntingLangsungAbt", "cetakTigaBerkas", "gembokAbt"] },

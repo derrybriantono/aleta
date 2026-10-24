@@ -1,3 +1,4 @@
+import type { PenggunaGolongan } from "@/lib/matriks-peran";
 import { getEffectiveRoleId } from "@/lib/permissions";
 import type { AletaDatabase } from "@/server/db/client";
 import { getUserByIdFromDb, requireActorUser } from "@/server/modules/organization/service";
@@ -16,12 +17,27 @@ export type PelakuAi = {
   nama: string;
   peranId: string;
   superAdmin: boolean;
+  /** Tahap 2a: jabatan & peran tambahan untuk golongan matriks-peran (kosong = dari peranId saja). */
+  positionId?: string;
+  peranTambahan?: string[];
 };
+
+/** Bentuk masukan golonganPengguna (matriks-peran.ts) dari pelaku ALETA Ai. */
+export function golonganPelakuAi(pelaku: PelakuAi): PenggunaGolongan {
+  return { id: pelaku.id, roleId: pelaku.peranId, positionId: pelaku.positionId ?? "", additionalRoleIds: pelaku.peranTambahan ?? [] };
+}
 
 export async function pelakuAi(db: AletaDatabase, actorUserId: string | null | undefined): Promise<PelakuAi> {
   const pengguna = await requireActorUser(db, actorUserId);
   const peranId = String(getEffectiveRoleId(pengguna) ?? pengguna.roleId ?? "");
-  return { id: String(pengguna.id), nama: String(pengguna.name ?? ""), peranId, superAdmin: peranId === "super-admin" };
+  return {
+    id: String(pengguna.id),
+    nama: String(pengguna.name ?? ""),
+    peranId,
+    superAdmin: peranId === "super-admin",
+    positionId: String(pengguna.positionId ?? ""),
+    peranTambahan: (pengguna.additionalRoleIds ?? []).map((x) => String(x)),
+  };
 }
 
 export function wajibSuperAdmin(pelaku: PelakuAi): void {

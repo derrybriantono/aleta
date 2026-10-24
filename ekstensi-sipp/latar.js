@@ -10,6 +10,21 @@ try {
   /* tanpa pemeriksaan */
 }
 
+// ALETA Ai (23 Okt 2026): relai gelembung chat di e-Court -> rute ALETA Ai portal (aleta-ai-relai.js).
+// Ekstensi tidak memegang kunci API; yang diteruskan hanya tiga permintaan yang dikenal.
+try {
+  if (typeof importScripts === "function") importScripts("aleta-ai-relai.js");
+  if (typeof AletaAiRelai !== "undefined") {
+    AletaAiRelai.pasangRelaiAletaAi(
+      chrome,
+      (alamat, opsi) => fetch(alamat, opsi),
+      async () => asalPortalHidup(((await chrome.storage.local.get(["asalPortal"])) || {}).asalPortal)
+    );
+  }
+} catch {
+  /* tanpa relai: gelembung di e-Court tidak tampil */
+}
+
 /**
  * ============================================================================
  * PEKERJA LATAR - SATU-SATUNYA TEMPAT PEMBARUAN DAPAT DIMINTA
@@ -3655,6 +3670,7 @@ const KUNCI_SETELAN_AKUN = [
   "temaEcourt",
   "gembokKepalaAbt",
   "panelRingkas",
+  "aletaAiGelembung",
   "gembokKepalaSipp",
   "gembokKepalaAleta",
   /* Saklar penanda SIPP (popup-ide-l2.js) - per akun seperti saklar lain (audit 17 Okt). */

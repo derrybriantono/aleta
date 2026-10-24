@@ -42,6 +42,8 @@ export type RincianPercakapan = { id: string; judul: string; pesan: PesanAi[] };
 export type PeristiwaAlir =
   | { jenis: "perkiraan"; mode: string; label?: string; perkiraanRp: number }
   | { jenis: "teks"; delta: string }
+  /** Tahap 2a: ALETA Ai sedang membaca data (alat baca-saja). */
+  | { jenis: "alat"; nama?: string; label: string }
   | { jenis: "selesai"; pesanId: string; mode: string; label?: string; biayaRp: number; saldoRp: number }
   | { jenis: "gagal"; pesan: string };
 

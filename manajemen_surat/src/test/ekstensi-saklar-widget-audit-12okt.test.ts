@@ -380,6 +380,8 @@ describe("A. popup: tiap saklar menulis kunci dan nilai yang benar (dan membaca 
     { id: "panelRingkas", kunci: "panelRingkas", bawaan: false },
     { id: "gembokSipp", kunci: "gembokKepalaSipp", bawaan: false },
     { id: "gembokAleta", kunci: "gembokKepalaAleta", bawaan: false },
+    // 23 Okt (ALETA Ai tahap 2b): gelembung chat ALETA Ai di SIPP, ABT, portal - bawaan menyala.
+    { id: "aletaAiGelembung", kunci: "aletaAiGelembung", bawaan: true },
   ];
 
   it.each(STATIS)("$id: kunci tak ada = bawaan ($bawaan); dibalik menulis $kunci, dibalik lagi kembali", async ({ id, kunci, bawaan }) => {
