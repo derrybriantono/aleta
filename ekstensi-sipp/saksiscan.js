@@ -2223,10 +2223,10 @@ const saksibantuKeadaan = {
   dataJanji: null,
   dataPesan: "",
   kotak: null,
+  kotakRef: null,
   lajur: null,
   jam: null,
   pantau: null,
-  potretSaksi: "",
   potretRef: "",
   pilihan: { dasar: "", sasaran: "", sasaranDipilih: false, ditulis: "", namaSaat: "" },
   borangSaksiEl: null,
@@ -2317,6 +2317,13 @@ function saksibantuBorangSaksi() {
   return ke && String(ke.value) === "13" ? f : null;
 }
 
+/** Blangko saksi (pihak_ke 13) walau sedang disembunyikan SIPP selama Cari -> Tambah Referensi Data Pihak. */
+function saksibantuBorangSaksiAda() {
+  const f = document.querySelector(SAKSISCAN_BORANG_SAKSI);
+  const ke = f ? f.querySelector("#pihak_ke") : null;
+  return ke && String(ke.value) === "13" ? f : null;
+}
+
 function saksibantuNilai(f, penunjuk) {
   const el = f ? f.querySelector(penunjuk) : null;
   return el ? String(el.value || "").trim() : "";
@@ -2384,7 +2391,7 @@ function saksibantuHasilKini(kotak) {
 
 /** Tulis ke Keterangan SIPP. `paksa` = petugas sudah menyetujui menimpa isian lain. */
 async function saksibantuTulisKeterangan(kotak, paksa) {
-  const f = saksibantuBorangSaksi();
+  const f = saksibantuBorangSaksiAda();
   const status = kotak.querySelector(".aleta-c2-sbantu-status");
   const hasil = saksibantuHasilKini(kotak);
   if (!f || !hasil) return;
@@ -2503,7 +2510,7 @@ function saksibantuBuatKotak() {
   simpanDaftar.addEventListener("click", () => void saksibantuSimpanKeDaftar(kotak));
   ganti.addEventListener("click", () => void saksibantuTulisKeterangan(kotak, true));
   rapikan.addEventListener("click", async () => {
-    const f = saksibantuBorangSaksi();
+    const f = saksibantuBorangSaksiAda();
     const rapi = rapikan.dataset.rapi || "";
     if (!f || !rapi) return;
     const ok = await saksibantuIsiMedan(SAKSISCAN_BORANG_SAKSI, "#keterangan", "teks", rapi);
@@ -2517,17 +2524,17 @@ function saksibantuBuatKotak() {
 }
 
 /** Sesuaikan kotak dengan keadaan blangko saksi - dipanggil tiap pemantauan. */
-function saksibantuSegarkanKotak(f) {
-  const kotak = saksibantuKeadaan.kotak;
+function saksibantuSegarkanKotak(f, kotak, fRef) {
   if (!kotak) return;
   const data = saksibantuKeadaan.data;
   const konteks = data && data.konteks;
   const yangMenghadirkan = saksibantuNilai(f, "#saksi_pihak_ke") || "1";
   const kini = saksibantuNilai(f, "#keterangan");
   const nama = saksibantuNilai(f, "#fullname");
-  const potret = [yangMenghadirkan, kini, nama, data ? "1" : "0", saksibantuKeadaan.dataPesan].join("|");
-  if (potret === saksibantuKeadaan.potretSaksi) return;
-  saksibantuKeadaan.potretSaksi = potret;
+  const dipilih = saksibantuKeadaan.pilihan;
+  const potret = [yangMenghadirkan, kini, nama, data ? "1" : "0", saksibantuKeadaan.dataPesan, dipilih.dasar, dipilih.sasaran, saksibantuDaftarHubungan().length].join("|");
+  if (potret === kotak.dataset.potret) return;
+  kotak.dataset.potret = potret;
 
   const hub = kotak.querySelector(".aleta-c2-sbantu-hub");
   const sasaran = kotak.querySelector(".aleta-c2-sbantu-sasaran");
@@ -2540,6 +2547,8 @@ function saksibantuSegarkanKotak(f) {
   const kunci = pilihan.sasaranDipilih ? pilihan.sasaran : saksibantuKunciSasaran(urai && urai.dasar ? urai.pihak : null, konteks, yangMenghadirkan);
   saksibantuIsiPilihanSasaran(sasaran, konteks, kunci);
   if (!pilihan.sasaranDipilih) pilihan.sasaran = sasaran.value;
+  // Pilihan yang dibuat di kotak lain (blangko saksi <-> Tambah Referensi Data Pihak) ikut tampil di sini.
+  if (hub.value !== "__ketik__" && pilihan.dasar && hub.value !== pilihan.dasar && Array.from(hub.options).some((o) => o.value === pilihan.dasar)) hub.value = pilihan.dasar;
   // Keterangan yang sudah ada -> pilih dasarnya di daftar (bila ada).
   if (!hub.value && urai && urai.dasar && Array.from(hub.options).some((o) => o.value === urai.dasar)) hub.value = urai.dasar;
   const h = saksibantuHasilKini(kotak);
@@ -2574,7 +2583,7 @@ function saksibantuSegarkanKotak(f) {
 
   // Saksi yang sama sudah tercatat di perkara ini.
   const peringatan = kotak.querySelector(".aleta-c2-sbantu-peringatan");
-  const sama = nama ? saksibantuSaksiSamaDiPerkara(nama, konteks) : null;
+  const sama = nama && !fRef ? saksibantuSaksiSamaDiPerkara(nama, konteks) : null;
   // Blangko Edit saksi: SIPP hanya mencetak tombol Hapus bila act == "edit".
   const sedangEdit = Boolean(f.querySelector("#hapus"));
   if (sama && !sedangEdit) {
@@ -2590,7 +2599,7 @@ function saksibantuPasangKotak(f) {
   if (!ket || !ket.parentElement) return;
   if (saksibantuKeadaan.kotak && saksibantuKeadaan.kotak.isConnected && ket.parentElement.contains(saksibantuKeadaan.kotak)) return;
   if (!saksibantuKeadaan.kotak) saksibantuKeadaan.kotak = saksibantuBuatKotak();
-  saksibantuKeadaan.potretSaksi = "";
+  saksibantuKeadaan.kotak.dataset.potret = "";
   ket.parentElement.appendChild(saksibantuKeadaan.kotak);
 }
 
@@ -2651,6 +2660,10 @@ function saksibantuBuatLajur() {
   const lajur = saksiscanEl("div", "aleta-c2-sbantu aleta-c2-sbantu-ref");
   const kepala = saksiscanEl("div", "aleta-c2-sbantu-judul", "Usulan ALETA - periksa sebelum Simpan");
   lajur.appendChild(kepala);
+  // T7 (23 Okt): pilihan hubungan saksi juga di sini - sama dengan kotak di blangko saksi, satu pilihan bersama.
+  const kotakHub = saksibantuBuatKotak();
+  saksibantuKeadaan.kotakRef = kotakHub;
+  lajur.appendChild(kotakHub);
   const label = saksiscanEl("label", "aleta-c2-sbantu-saklar");
   const kotak = document.createElement("input");
   kotak.type = "checkbox";
@@ -2955,7 +2968,7 @@ async function saksibantuPeriksa() {
   if (!saksibantuKeadaan.data && !saksibantuKeadaan.dataJanji) void saksibantuMuatData(false).then(() => saksibantuJadwalkanBantu());
   if (fs) {
     saksibantuPasangKotak(fs);
-    saksibantuSegarkanKotak(fs);
+    saksibantuSegarkanKotak(fs, saksibantuKeadaan.kotak, null);
   }
   if (fr) {
     // Tiap kali blangko data pihak MUNCUL (Tambah/Edit baru) catatannya baru:
@@ -2966,6 +2979,7 @@ async function saksibantuPeriksa() {
     }
     saksibantuKeadaan.refTampak = true;
     saksibantuPasangLajur(fr);
+    saksibantuSegarkanKotak(ada, saksibantuKeadaan.kotakRef, fr);
     await saksibantuSegarkanLajur(fr);
   } else {
     saksibantuKeadaan.refTampak = false;
@@ -2986,9 +3000,9 @@ function saksibantuBersihkan() {
   if (saksibantuKeadaan.kotak && saksibantuKeadaan.kotak.isConnected) saksibantuKeadaan.kotak.remove();
   if (saksibantuKeadaan.lajur && saksibantuKeadaan.lajur.isConnected) saksibantuKeadaan.lajur.remove();
   saksibantuKeadaan.kotak = null;
+  saksibantuKeadaan.kotakRef = null;
   saksibantuKeadaan.lajur = null;
   saksibantuKeadaan.ref = null;
-  saksibantuKeadaan.potretSaksi = "";
   saksibantuKeadaan.potretRef = "";
   saksibantuKeadaan.pilihan = { dasar: "", sasaran: "", sasaranDipilih: false, ditulis: "", namaSaat: "" };
   saksibantuKeadaan.borangSaksiEl = null;
