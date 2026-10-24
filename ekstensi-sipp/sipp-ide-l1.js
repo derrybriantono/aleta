@@ -73,7 +73,9 @@
    * konten.js yang memegang mesinnya; `tombol` = tombol baca-saja di bagian
    * itu yang menyusun usulan (tanpa pola: hanya bagiannya dibuka - mis.
    * Penetapan, yang menulis lewat tombol Tetapkan di panel sendiri);
-   * `dalam` = kartu ALETA yang sudah ada di jendela itu sendiri.
+   * `dalam` = kartu ALETA yang sudah ada di jendela itu sendiri;
+   * `lipat` = pita bawaan TERLIPAT (T6, 23 Okt): hanya kepala (logo + judul)
+   * yang tampak, isinya dibuka dengan klik; pilihan diingat lewat lipat seragam.
    */
   const aksiForm = (f) => String((f && f.getAttribute && f.getAttribute("action")) || "");
   const JENDELA = [
@@ -90,7 +92,7 @@
     { kode: "ppp", judul: "Penunjukan Panitera Pengganti", cocok: (f) => f.id === "frm_panitera", bagian: "penunjukan" },
     { kode: "pjs", judul: "Penunjukan Juru Sita", cocok: (f) => f.id === "frm_juru_sita", bagian: "penunjukan" },
     { kode: "phs", judul: "Penetapan Hari Sidang", cocok: (f) => f.id === "frm_sidang_pertama", bagian: "penunjukan" },
-    { kode: "saksi", judul: "Saksi / Pihak", cocok: (f) => f.id === "frm_user", dalam: ".aleta-c2-saksi, .aleta-c2-saksi-pemicu, .aleta-c2-sbantu" },
+    { kode: "saksi", judul: "Saksi / Pihak", cocok: (f) => f.id === "frm_user", dalam: ".aleta-c2-saksi, .aleta-c2-saksi-pemicu, .aleta-c2-sbantu", lipat: true },
     { kode: "court-calendar", judul: "Court Calendar", cocok: (f) => f.id === "frm_input_cc", bagian: "courtCalendarOtomatis" },
   ];
 
@@ -628,6 +630,11 @@
 .aleta-l1-kecil{color:#555}
 .aleta-l1-sorot{outline:2px solid #e0a800!important;outline-offset:1px}
 .aleta-l1-kosong-chip{margin-right:6px;font-family:inherit;font-size:inherit;padding:2px 10px;border:1px solid #74440a;border-radius:999px;background:#9a5b06;color:#fff;font-weight:600;cursor:pointer}
+.aleta-l1-lipat-kepala{display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+.aleta-l1-lipat-kepala:focus-visible{outline:2px solid var(--aleta-merek,#007640);outline-offset:1px}
+html:not([data-aleta-kulit="modern"]) .aleta-l1-lipat-kepala>.aleta-lipat-panah{color:var(--aleta-tulisan-lembut,inherit)}
+html:not([data-aleta-kulit="modern"]) .aleta-l1-lipat-kepala>.aleta-lipat-panah::before{content:"▸"}
+html:not([data-aleta-kulit="modern"]) .aleta-l1-lipat-kepala[aria-expanded="true"]>.aleta-lipat-panah::before{content:"▾"}
 .aleta-l1-toast{position:fixed;right:16px;bottom:16px;z-index:2147483000;max-width:380px;padding:9px 12px;border-radius:6px;background:#007640;color:#fff;font-family:inherit;font-size:14px;box-shadow:0 2px 10px rgba(0,0,0,.3)}
 html[data-aleta-tema-sipp="gelap"] .aleta-l1-pita{background:rgba(47,158,68,.10);color:#dfe8e2}
 html[data-aleta-tema-sipp="gelap"] .aleta-l1-tombol.aleta-l1-utama,html[data-aleta-tema-sipp="gelap"] .aleta-l1-chip,html[data-aleta-tema-sipp="gelap"] .aleta-l1-logo{background:#1c5539;border-color:#1c5539}
@@ -713,10 +720,31 @@ html[data-aleta-tema-sipp="gelap"] .aleta-l1-awas{color:#f3e2b5}
     );
   }
 
+  /**
+   * Pita terlipat membuka SENDIRI bila muncul peringatan BARU (kuning/merah),
+   * supaya peringatan tidak tersembunyi. Peringatan yang sama yang sudah
+   * dilihat tidak membuka paksa lagi bila pengguna menutupnya; yang hilang
+   * lalu muncul kembali dihitung baru. Bukaan otomatis tidak disimpan sebagai
+   * pilihan pengguna (ingatan lipat dikembalikan ke nilai sebelumnya).
+   */
+  function bukaBilaPeringatanBaru(p, sumber, daftar) {
+    if (!p || !p.pita) return;
+    const peta = p.peringatanTerlihat || (p.peringatanTerlihat = {});
+    const lama = peta[sumber] || new Set();
+    peta[sumber] = new Set(daftar);
+    const l = p.pita.__aletaLipat;
+    if (!l || l.terbuka() || !daftar.some((t) => !lama.has(t))) return;
+    const kunci = p.pita.getAttribute("data-kunci") || "";
+    const sebelum = kunci && typeof alatLipatDiingat === "function" ? alatLipatDiingat(kunci) : undefined;
+    l.buka(true);
+    if (kunci && typeof alatSimpanLipat === "function") alatSimpanLipat(kunci, sebelum === undefined ? false : sebelum);
+  }
+
   function kabar(p, teks, gagal) {
     if (!p || !p.kabar) return;
     setelTeks(p.kabar, teks || "");
     p.kabar.classList.toggle("aleta-l1-gagal", Boolean(gagal));
+    bukaBilaPeringatanBaru(p, "kabar", gagal && teks ? [teks] : []);
   }
 
   function isiDenganAleta(p) {
@@ -774,11 +802,19 @@ html[data-aleta-tema-sipp="gelap"] .aleta-l1-awas{color:#f3e2b5}
     tIsi.setAttribute("data-l1", "isi");
     const tKosong = tombol("Loncat ke yang kosong", "Sorot dan lompat ke kolom yang masih kosong (wajib lebih dulu)");
     tKosong.setAttribute("data-l1", "kosong");
-    baris.append(logo, judul, tIsi, hitung, tKosong);
     const kabarEl = el("div", "aleta-l1-kabar");
     kabarEl.setAttribute("data-l1", "kabar");
     kabarEl.setAttribute("aria-live", "polite");
-    pita.append(baris, kabarEl);
+    if (j.lipat) {
+      // Kepala lipatan = logo + judul; tombol, hitungan, dan kabar jadi isi.
+      const kepala = el("div", "aleta-l1-lipat-kepala");
+      kepala.append(logo, judul);
+      baris.append(tIsi, hitung, tKosong);
+      pita.append(kepala, baris, kabarEl);
+    } else {
+      baris.append(logo, judul, tIsi, hitung, tKosong);
+      pita.append(baris, kabarEl);
+    }
 
     const p = { form, jendela: j, pita, hitung, kabar: kabarEl, tIsi, chip: null, putusan: null };
     tIsi.addEventListener("click", () => isiDenganAleta(p));
@@ -835,6 +871,20 @@ html[data-aleta-tema-sipp="gelap"] .aleta-l1-awas{color:#f3e2b5}
     if (p.putusan) segarkanPutusan(p);
   }
 
+  /**
+   * Pita bawaan terlipat lewat lipat seragam panel (alatJadikanLipat, asal
+   * "kartu"): buka/tutup diingat per jendela di chrome.storage "lipatTerbuka".
+   * Tanpa fungsinya pita tetap terbuka - fungsi tidak pernah hilang.
+   */
+  function lipatkanPita(pita, kode) {
+    if (typeof alatJadikanLipat !== "function") return null;
+    try {
+      return alatJadikanLipat(pita, { kunci: `sipp-ide-l1:${kode}`, terbuka: false, kepala: pita.querySelector(":scope > .aleta-l1-lipat-kepala") });
+    } catch {
+      return null;
+    }
+  }
+
   function pasangPita(form) {
     if (form.__aletaL1) {
       if (form.__aletaL1.pita.isConnected) return form.__aletaL1;
@@ -844,6 +894,7 @@ html[data-aleta-tema-sipp="gelap"] .aleta-l1-awas{color:#f3e2b5}
     if (!j || !form.parentNode) return null;
     const p = bangunPita(form, j);
     form.parentNode.insertBefore(p.pita, form);
+    if (j.lipat) lipatkanPita(p.pita, j.kode);
     form.__aletaL1 = p;
     pitaHidup.add(p);
     segarkanPita(p);
