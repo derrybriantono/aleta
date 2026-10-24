@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { PanelLeftOpen, Settings2, Sparkles, Wallet } from "lucide-react";
+import { ListChecks, PanelLeftOpen, Settings2, Sparkles, Wallet } from "lucide-react";
 
 import {
   formatRupiah,
@@ -336,6 +336,15 @@ export function AletaAiChat() {
             {judulAktif ? <span className="text-muted-foreground">/ </span> : null}
             {judulAktif || ""}
           </h2>
+          <Link
+            href="/aleta-ai/tugas"
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-border/80 bg-background/60 px-2.5 text-sm font-medium hover:bg-accent/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            title="Tugas bertahap dan berkas hasil"
+          >
+            <ListChecks className="size-4 text-muted-foreground" aria-hidden="true" />
+            <span className="hidden sm:inline">Tugas</span>
+            <span className="sr-only sm:hidden">Tugas</span>
+          </Link>
           <Link
             href="/aleta-ai/saldo"
             className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-border/80 bg-background/60 px-2.5 text-sm font-medium hover:bg-accent/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

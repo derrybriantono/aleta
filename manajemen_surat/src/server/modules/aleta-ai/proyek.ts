@@ -3,6 +3,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { bacaMenuPemicu, isiPemicuModul, judulModulDari, type LampiranProyek, type ModulProyek, type PemicuMenu } from "@/lib/aleta-ai/proyek";
 import { withTransaction, type AletaDatabase } from "@/server/db/client";
 import { catatJejak } from "@/server/modules/aleta-ai/pengaturan";
+import { simpanTemplatProyek } from "@/server/modules/aleta-ai/templat";
 import { bacaDaftarZip } from "@/server/modules/aleta-ai/zip-baca";
 import { ApiError } from "@/server/shared/errors";
 
@@ -249,6 +250,14 @@ export async function unggahProyek(db: AletaDatabase, olehId: string, masukan: {
   });
   cacheAktif = null;
 
+  // Tahap 3: isi templat (HTML/RTF/DOCX/XLSX) disimpan per versi untuk berkas keluaran tugas.
+  const peringatan = [...hasil.peringatan];
+  try {
+    peringatan.push(...(await simpanTemplatProyek(db, id, masukan.bita)).peringatan);
+  } catch {
+    peringatan.push("Templat berkas proyek tidak terbaca; berkas tugas memakai susunan bawaan.");
+  }
+
   await catatJejak(db, {
     penggunaId: olehId,
     peranId: "super-admin",
@@ -256,7 +265,7 @@ export async function unggahProyek(db: AletaDatabase, olehId: string, masukan: {
     hasil: "ok",
     ringkas: `Versi ${Number(baris.versi)}: ${hasil.modul.length} modul, ${hasil.menu.length} pemicu, ${hasil.lampiran.length} lampiran`,
   });
-  return { tidakBerubah: false, proyek: ringkasDari(baris), peringatan: hasil.peringatan };
+  return { tidakBerubah: false, proyek: ringkasDari(baris), peringatan };
 }
 
 /**

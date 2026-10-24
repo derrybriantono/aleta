@@ -1,0 +1,34 @@
+# =============================================================================
+# Sandbox alat bantu ALETA Ai (tahap 3) - DIPASANG SESI LAPTOP di server.
+# =============================================================================
+#   1. salin skrip aleta/*.py dari proyek V4.5 ke ./skrip/ (TIDAK ke repo);
+#   2. salin izin.contoh.json -> ./izin.json, sesuaikan nama skrip per alat
+#      (kunci = id alat di manajemen_surat/src/server/modules/aleta-ai/sandbox.ts);
+#   3. docker compose -f sandbox-alat/docker-compose.yml up -d --build
+#   4. portal: env ALETA_SANDBOX_SPOOL=<folder spool yang sama, mis. /srv/aleta/sandbox-spool>
+#      (volume yang sama dipasang ke kontainer portal).
+# Tanpa ALETA_SANDBOX_SPOOL fitur alat bantu MATI (alat tidak ditawarkan ke model).
+# =============================================================================
+services:
+  sandbox-alat:
+    build: .
+    image: aleta-sandbox-alat:1
+    restart: unless-stopped
+    network_mode: none
+    read_only: true
+    user: "10001:10001"
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 2g
+    memswap_limit: 2g
+    cpus: "1.0"
+    pids_limit: 256
+    tmpfs:
+      - /tmp:size=512m,mode=1777
+    environment:
+      SANDBOX_MEMORI_MB: "1536"  # LibreOffice (soffice) memesan memori virtual besar
+      SANDBOX_BATAS_DETIK: "60"
+    volumes:
+      - ${ALETA_SANDBOX_SPOOL_HOST:-/srv/aleta/sandbox-spool}:/spool
+      - ./skrip:/skrip:ro
+      - ./izin.json:/etc/sandbox-alat/izin.json:ro

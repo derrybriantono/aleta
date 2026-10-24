@@ -426,6 +426,12 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_batas_perangkat",
   "aleta_tiket_perangkat",
   "aleta_setelan_jejak_masuk",
+  // 25 Oktober 2026 (0086-0087): ALETA Ai tahap 3 - tugas, berkas keluaran, templat proyek, kiriman.
+  "aleta_ai_tugas",
+  "aleta_ai_tugas_langkah",
+  "aleta_ai_berkas",
+  "aleta_ai_proyek_berkas",
+  "aleta_ai_kiriman",
   "feedback_requests",
   "user_notification_reads",
   "knowledge_base_regulations",

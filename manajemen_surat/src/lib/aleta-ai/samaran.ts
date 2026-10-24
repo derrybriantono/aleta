@@ -23,16 +23,28 @@
  *
  * Angka rekap, nomor perkara, nama pejabat pengadilan (majelis/PP/JS), dan
  * jenis perkara TIDAK disamarkan (rencana 10.2).
+ *
+ * PENGENAL POLA TEKS BEBAS (T9, keputusan pengguna 24 Okt: "sebisa mungkin"):
+ *   - nama sesudah sebutan: saksi (I/II/pertama...), Penggugat/Tergugat/
+ *     Pemohon/Termohon/Pelawan/Terlawan, Pewaris, ahli waris, anak, istri/
+ *     suami, Sdr./Sdri./Saudara/Bapak/Ibu, almarhum/almarhumah, bernama,
+ *     atas nama; dan rangkaian "X bin/binti Y" di mana pun;
+ *   - NIK/KK 16 angka (juga berkelompok 4-4-4-4), telepon, email, rekening;
+ *   - alamat rinci (Jalan/Jl./Dusun/Desa/Kelurahan/Lorong/Gang/Perumahan,
+ *     RT/RW) - sampai koma/titik koma/baris baru atau Kecamatan/Kabupaten;
+ *   - tempat & tanggal lahir dan umur (jenis LAHIR).
+ * Positif palsu dicegah daftar KATA_BUKAN_NAMA (istilah pengadilan, sebutan
+ * pihak, urutan, wilayah): rangkaian nama berhenti di kata itu.
  */
 
-export type JenisSamaran = "NAMA" | "NIK" | "ALAMAT" | "TELEPON" | "EMAIL" | "REKENING";
-export const JENIS_SAMARAN: readonly JenisSamaran[] = ["NAMA", "NIK", "ALAMAT", "TELEPON", "EMAIL", "REKENING"];
+export type JenisSamaran = "NAMA" | "NIK" | "ALAMAT" | "TELEPON" | "EMAIL" | "REKENING" | "LAHIR";
+export const JENIS_SAMARAN: readonly JenisSamaran[] = ["NAMA", "NIK", "ALAMAT", "TELEPON", "EMAIL", "REKENING", "LAHIR"];
 
 export type EntriSamaran = { kode: string; jenis: JenisSamaran; asli: string };
 
-const POLA_KODE = /\[\s*(NAMA|NIK|ALAMAT|TELEPON|EMAIL|REKENING)[-_ ](\d{1,5})\s*\]/g;
+const POLA_KODE = /\[\s*(NAMA|NIK|ALAMAT|TELEPON|EMAIL|REKENING|LAHIR)[-_ ](\d{1,5})\s*\]/g;
 const POLA_EMAIL = /[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+/g;
-const POLA_NIK = /(?<![\d])\d{16}(?![\d])/g;
+const POLA_NIK = /(?<![\d])(?:\d{16}|\d{4}[ .]\d{4}[ .]\d{4}[ .]\d{4})(?![\d])/g;
 const POLA_TELEPON = /(?<![\d+])(?:\+62|62|0)\s?8\d{1,3}[\s.-]?\d{3,4}[\s.-]?\d{3,5}(?![\d])/g;
 const POLA_REKENING = /(\b(?:no(?:mor)?\.?\s*)?rek(?:ening)?\.?\s*(?:no(?:mor)?\.?\s*)?[:.]?\s*)(\d[\d .-]{6,22}\d)/gi;
 
@@ -69,10 +81,93 @@ function sebutanNama(nama: string): string[] {
   return hasil;
 }
 
+// ─── Pengenal pola teks bebas ────────────────────────────────────────────────
+
+const BULAN = "Januari|Februari|Pebruari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|Nopember|November|Desember";
+const TANGGAL = `\\d{1,2}[\\s/.-]+(?:\\d{1,2}|${BULAN})[\\s/.-]+\\d{4}`;
+/** "lahir di Donggala, 5 September 1990" / "tanggal lahir 05-09-1990" / "Palu, 12 Maret 1988" sesudah "tempat/tanggal lahir". */
+const POLA_LAHIR = new RegExp(
+  `(\\b(?:tempat\\s*(?:dan|/|,)?\\s*tanggal\\s+lahir|tempat\\s+lahir|tanggal\\s+lahir|tgl\\.?\\s*lahir|lahir\\s+(?:di|pada|tanggal))\\s*:?\\s*)((?:[\\p{L} .'-]{2,40},?\\s*)?${TANGGAL}|[\\p{Lu}][\\p{L}'-]+(?:\\s+[\\p{Lu}][\\p{L}'-]+)?)`,
+  "giu"
+);
+/** Umur orang ("umur 36 tahun"), bukan usia perkawinan/kandungan. */
+const POLA_UMUR = /(?<!(?:perkawinan|pernikahan|kandungan|perkara)\s)(\b(?:umur|usia|berumur|berusia)\s*:?\s*)(\d{1,3}\s*tahun)/giu;
+/** Alamat rinci: kata kunci jalan/dusun/desa ... sampai pemisah. Huruf besar wajib ("berjalan" bukan alamat). */
+const POLA_ALAMAT =
+  /(?<![\p{L}])(?:Jalan|Jl\.|Jln\.?|JALAN|Dusun|Dsn\.?|DUSUN|Desa|DESA|Kelurahan|Kel\.|KELURAHAN|Lorong|Lr\.|Gang|Gg\.|Kompleks|Komplek|Perumahan|Perum\.?|RT\.?\s*\d)[^,;\n()[\]]{1,80}?(?=\s*(?:[,;\n()]|(?<!\b(?:No|NO|Nomor|Jl|Jln|Gg|Kel|Dsn|Lr|Perum|Kav|Blok))\.(?:\s|$)|$|\s+(?:Kecamatan|Kec\.|Kabupaten|Kab\.|Kota|Provinsi|KECAMATAN|KABUPATEN|KOTA|PROVINSI)\b))/gu;
+
+/** Kata yang menghentikan rangkaian nama (istilah pengadilan, sebutan, urutan, wilayah, kata sambung). */
+const KATA_BUKAN_NAMA = new Set(
+  (
+    "pengadilan agama negeri tinggi mahkamah agung majelis hakim ketua wakil anggota panitera pengganti jurusita juru sita mediator kuasa hukum advokat prinsipal " +
+    "penggugat tergugat pemohon termohon pelawan terlawan pewaris ahli waris saksi anak istri isteri suami turut intervensi konvensi rekonvensi asal kasasi banding peninjauan kembali " +
+    "pertama kedua ketiga keempat kelima keenam ketujuh kedelapan i ii iii iv v vi vii viii ix x " +
+    "nomor no nik kk rt rw jalan dusun desa kelurahan kecamatan kabupaten kota provinsi republik indonesia " +
+    "islam kompilasi hukum undang-undang uu pasal ayat huruf perma sema pp yang dan atau dengan tersebut telah pada di ke dari dalam untuk bahwa adalah melawan " +
+    "menurut mohon menyatakan memberi memberikan keterangan menerangkan hadir tidak sah sebagai selaku beserta kepada oleh"
+  ).split(/\s+/)
+);
+const KATA_SAMBUNG_NAMA = new Set(["bin", "binti", "bt", "bt.", "binti.", "al", "el", "as", "ash", "ad", "an", "ar", "at", "az", "van", "de", "da"]);
+const POLA_KATA_NAMA = /^(?:\p{Lu}[\p{L}'’`-]*\.?|\p{Lu}\.)$/u;
+
+/** Sebutan yang diikuti nama orang. */
+const POLA_SEBUTAN =
+  /(?<![\p{L}])(?:saksi(?:\s+(?:ke-?\s*)?(?:I{1,3}|IV|V|\d|pertama|kedua|ketiga|keempat|kelima)(?![\p{L}]))?|penggugat|tergugat|pemohon|termohon|pelawan|terlawan|pewaris|ahli\s+waris|anak(?:\s+(?:kandung|angkat))?|istri|isteri|suami|sdr\.|sdri\.|saudara|saudari|bapak|ibu|almarhum(?:ah)?|alm\.|almh\.|bernama|atas\s+nama|a\.n\.)(?:\s+(?:I{1,3}|IV|V|Konvensi|Rekonvensi|Asal))?\s*[:,]?[ \t]+/giu;
+
+/** Rangkaian nama mulai dari `awal` (berhenti di kata bukan nama / tanda baca / baris baru). */
+function rangkaiNama(teks: string, awal: number): string {
+  const sisa = teks.slice(awal, awal + 160);
+  const kata = sisa.split(/(?<=\S)(?=[ \t]+)/);
+  const ambil: string[] = [];
+  for (const mentah of kata) {
+    const k = mentah.trim();
+    if (!k) break;
+    const bersih = k.replace(/[,;:)]+$/, "");
+    const bawah = bersih.toLowerCase();
+    const sambung = KATA_SAMBUNG_NAMA.has(bawah) && ambil.length > 0;
+    if (!sambung && (!POLA_KATA_NAMA.test(bersih) || KATA_BUKAN_NAMA.has(bawah.replace(/\.$/, "")))) break;
+    ambil.push(bersih);
+    if (bersih !== k || ambil.length >= 8) break; // tanda baca menutup nama
+  }
+  while (ambil.length && KATA_SAMBUNG_NAMA.has(ambil[ambil.length - 1]!.toLowerCase())) ambil.pop();
+  // Titik akhir kalimat bukan bagian nama (singkatan pendek seperti "H." tetap).
+  const akhir = ambil.length - 1;
+  if (akhir >= 0 && /\.$/.test(ambil[akhir]!) && ambil[akhir]!.length > 4) ambil[akhir] = ambil[akhir]!.slice(0, -1);
+  const nama = ambil.join(" ");
+  // Satu huruf/gelar saja ("H.", "Drs.") bukan nama.
+  return ambil.some((k) => k.replace(/\.$/, "").length >= 3) ? nama : "";
+}
+
+/** Nama-nama di teks bebas menurut sebutan dan pola "X bin/binti Y". */
+export function kenaliNamaBebas(teks: string): string[] {
+  const hasil = new Set<string>();
+  const t = String(teks ?? "");
+  for (const m of t.matchAll(POLA_SEBUTAN)) {
+    const nama = rangkaiNama(t, (m.index ?? 0) + m[0].length);
+    if (nama) hasil.add(nama);
+  }
+  // "X bin Y" / "X binti Y" di mana pun: mundur ke awal rangkaian nama sebelum bin/binti.
+  for (const m of t.matchAll(/(?<![\p{L}])(?:bin|binti)[ \t]+\p{Lu}/gu)) {
+    const sebelum = t.slice(Math.max(0, (m.index ?? 0) - 80), m.index ?? 0);
+    const kataSebelum = sebelum.split(/[ \t]+/).filter(Boolean);
+    let i = kataSebelum.length;
+    while (i > 0) {
+      const k = kataSebelum[i - 1]!;
+      if (!POLA_KATA_NAMA.test(k) || KATA_BUKAN_NAMA.has(k.toLowerCase().replace(/\.$/, "")) || /[,;:]$/.test(k)) break;
+      i -= 1;
+    }
+    if (i === kataSebelum.length) continue;
+    const mulai = (m.index ?? 0) - kataSebelum.slice(i).join(" ").length - 1;
+    const nama = rangkaiNama(t, Math.max(0, mulai));
+    if (/\s(?:bin|binti)\s/i.test(nama)) hasil.add(nama);
+  }
+  return [...hasil];
+}
+
 export class Penyamar {
   private readonly perNilai = new Map<string, EntriSamaran>();
   private readonly perKode = new Map<string, EntriSamaran>();
-  private readonly nomor: Record<JenisSamaran, number> = { NAMA: 0, NIK: 0, ALAMAT: 0, TELEPON: 0, EMAIL: 0, REKENING: 0 };
+  private readonly nomor: Record<JenisSamaran, number> = { NAMA: 0, NIK: 0, ALAMAT: 0, TELEPON: 0, EMAIL: 0, REKENING: 0, LAHIR: 0 };
   /** Entri yang dibuat sejak penyamar dimuat (untuk disimpan). */
   readonly baru: EntriSamaran[] = [];
   private pola: RegExp | null = null;
@@ -129,8 +224,13 @@ export class Penyamar {
     if (!hasil) return hasil;
     hasil = hasil.replace(POLA_EMAIL, (m) => this.daftar("EMAIL", m));
     hasil = hasil.replace(POLA_REKENING, (_m, awal: string, angka: string) => `${awal}${this.daftar("REKENING", angka.replace(/[ .-]/g, ""))}`);
-    hasil = hasil.replace(POLA_NIK, (m) => this.daftar("NIK", m));
+    hasil = hasil.replace(POLA_NIK, (m) => this.daftar("NIK", m.replace(/[ .]/g, "")));
     hasil = hasil.replace(POLA_TELEPON, (m) => this.daftar("TELEPON", m.replace(/[\s.-]/g, "")));
+    hasil = hasil.replace(POLA_LAHIR, (_m, awal: string, nilai: string) => `${awal}${this.daftar("LAHIR", nilai)}`);
+    hasil = hasil.replace(POLA_UMUR, (_m, awal: string, nilai: string) => `${awal}${this.daftar("LAHIR", nilai)}`);
+    hasil = hasil.replace(POLA_ALAMAT, (m) => this.daftar("ALAMAT", m));
+    // Nama dari pola didaftarkan dulu, lalu SEMUA sebutannya (juga yang muncul lebih awal) diganti.
+    for (const nama of kenaliNamaBebas(hasil)) this.daftar("NAMA", nama);
     const pola = this.polaNilai();
     if (pola) hasil = hasil.replace(pola, (m) => this.perNilai.get(normal(m))?.kode ?? m);
     return hasil;
