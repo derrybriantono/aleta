@@ -14,7 +14,7 @@ Panduan ini MENGGANTIKAN kartu tugas "Gabung semua hasil 23 Okt dan pasang ke se
 | :--- | :--- | :--- | :--- |
 | 1 | `fitur/kalender-libur-sidang` | uji kalender `e3fa87c9` | |
 | 2 | `fitur/t6-kartu-saksi-terlipat` | pita saksi terlipat + terbuka saat peringatan | |
-| 3 | `fitur/t7-t8-referensi-pihak` | hubungan saksi + isian otomatis | agama Islam masih usulan |
+| 3 | `fitur/t7-t8-referensi-pihak` | hubungan saksi + isian otomatis | agama Islam otomatis untuk pihak pertama (`42bba875`); pihak kedua tetap usulan |
 | 4 | `fitur/t2-saksi-semua-jenis` | saksi semua jenis perkara | bot WAJIB dimulai ulang |
 | 5 | `fitur/t4-tema-ekeuangan-ecourt` | tema e-Court/E-Keuangan | `content_scripts` baru |
 | 6 | `fitur/t3-kasir-jurnal-keuangan` | tombol Kasir di Jurnal Keuangan | |
@@ -111,7 +111,7 @@ Panduan ini MENGGANTIKAN kartu tugas "Gabung semua hasil 23 Okt dan pasang ke se
 8. **Papan kemajuan:** perbarui dengan commit, angka uji, dan versi. Tambahkan 15 fitur `docs/rancangan/fitur-admin-23okt/README.md` sebagai `menunggu`.
 
 ## Pertanyaan pengguna yang masih terbuka (laporkan, jangan menunggu)
-- **T7+T8:** agama Islam otomatis di luar alur saksi? Masih usulan.
+- **T7+T8:** agama Islam kini otomatis untuk PIHAK PERTAMA (Penggugat/Pemohon); pihak kedua tetap usulan karena bisa non-Muslim. Tanyakan Derry apakah pihak kedua juga perlu otomatis.
 - **Sudah diputuskan Derry 24 Okt:** MDR 1%; batas satker Rp5 jt termasuk Super Admin; kuota hibah hangus akhir bulan; koreksi saldo perlu; penyamaran T9 diperluas; satu tahan per jalan tugas; templat mengikuti mekanisme V4.5.
 - **T10 rekonsiliasi harian: DIBUAT** (keputusan Derry 24 Okt, commit `1687e32e`).
   - Pukul 01.00 WITA memeriksa data kemarin; lonceng "perlu perhatian" hanya untuk Super Admin bila ada selisih atau tahanan menggantung lebih dari 24 jam.
