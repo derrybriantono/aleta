@@ -2,7 +2,7 @@
 
 Urutan pengerjaan semua butir di `README.md` (C0, U1–U19, K1–K16) dan fitur admin pilihan (no. 1, 2+3, 5, 6 dari `docs/rancangan/fitur-admin-23okt/README.md`). Tampilan tiap butir ada di kanvas "Tampilan Rencana Upgrade ALETA".
 
-**Belum ada yang dikerjakan.** Tahapan ini berlaku sesudah Derry menyetujui keputusan di bagian akhir.
+**24 Okt: Derry menyetujui semua saran ("kerjakan semua tahap").** Pembagian kerja sesi awan per rantai ada di `docs/awan/rantai-upgrade-24okt.md`. Bagian penggabungan di Tahap 0 dikerjakan di awan menjadi `integrasi-awan-24okt`; pengukuran, rilis, dan pasang tetap di laptop.
 
 ## Cara kerja tiap tahap
 
@@ -134,7 +134,7 @@ Retensi 2 tahun; data hanya di Postgres kantor.
 | :--- | :--- |
 | `fitur/ketepatan-isian` | U3 + U4: layar Ketepatan isian dari data Tahap 4 (migrasi 0092); ambang naik ≥95% dari minimal 30 kejadian; persetujuan Super Admin + Derry. Kebenaran isi saksi diukur, bukan hanya tingkat terisi. |
 
-Butuh data lapangan: dimulai paling cepat **2–4 minggu** sesudah Tahap 4 terpasang supaya hitungannya bermakna.
+Kode dibuat sekarang; usulan naik/turun baru bermakna sesudah data lapangan terkumpul **2–4 minggu** sejak Tahap 4 terpasang.
 
 ## Tahap 7 — Gelombang 3: saksi (awan)
 
@@ -156,7 +156,7 @@ Butuh data lapangan: dimulai paling cepat **2–4 minggu** sesudah Tahap 4 terpa
 
 ## Tahap 9 — K-3 arsitektur + OTP (awan, uji berat di laptop)
 
-Hanya dikerjakan bila uji beban sesudah Tahap 5 belum memenuhi sasaran untuk jumlah perangkat yang diukur di Tahap 0, atau bila server akan dipakai lebih banyak satker.
+K14, K15, dan OTP tidak bergantung pada uji beban, jadi ikut dikerjakan sekarang (rantai B dan E). K4, K5, dan K1 tahap 2 hanya dikerjakan bila uji beban sesudah Tahap 5 belum memenuhi sasaran untuk jumlah perangkat yang diukur di Tahap 0, atau bila server akan dipakai lebih banyak satker.
 
 | Cabang | Butir |
 | :--- | :--- |
