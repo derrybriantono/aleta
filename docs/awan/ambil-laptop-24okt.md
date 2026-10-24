@@ -11,7 +11,8 @@ Panduan untuk sesi Claude Code **LAPTOP**. Isinya: menggabungkan semua kerja clo
 ```
 git fetch origin, lalu baca docs/awan/ambil-laptop-24okt.md dari origin/fitur/panduan-laptop-24okt
 (git show origin/fitur/panduan-laptop-24okt:docs/awan/ambil-laptop-24okt.md) dan kerjakan
-Bagian 1 sampai 3, lalu audit Bagian 5a (baca saja). Bagian 4 hanya untuk rantai yang laporannya sudah ada di origin.
+Bagian 1 sampai 3, audit Bagian 5a (baca saja), lalu Bagian 6 sesuai urutannya.
+Bagian 4 hanya untuk rantai yang laporannya sudah ada di origin.
 Perbarui papan kemajuan di setiap langkah. Laporkan ke saya dalam bahasa Indonesia.
 ```
 
@@ -130,6 +131,27 @@ Website satker dihosting di server kantor. Belum ada laporan terkena, jadi ini p
    SIPP, ABT, dan ALETA **tidak** dimasukkan Cloudflare.
 6. Cadangan website di luar server, dengan uji pulih.
 7. Ideal jangka menengah: website dipindah ke kontainer/VM terpisah dari SIPP/ABT/ALETA.
+
+## Bagian 6 — Keamanan tambahan menuju skor 85–90 (keputusan Derry 24 Okt)
+
+Dikerjakan di **laptop**, bukan oleh rantai cloud. Ketentuannya:
+- satu butir satu cabang `fitur/<nama>` dari `integrasi-1205-39`;
+- aturan bersama di `docs/awan/rantai-upgrade-24okt.md` berlaku: saklar mati bawaan, uji sasaran + `tsc` + lint, push tiap commit hijau, tanpa naik versi;
+- nomor migrasi cadangan untuk laptop: **0107, 0108, 0109**;
+- cloud rantai E sejajar mengerjakan OTP/authenticator (E5) dan penjaga integritas (E6), jadi jangan menyentuh berkas inti E5 kecuali butir 6c di bawah.
+
+**Urutan bila kuota laptop terbatas:** Bagian 1–3 → 5a → 6a → 6b → 6c → 6d → 5b → 6e → 6f.
+
+| Urut | Cabang | Butir | Bawaan sesudah dipasang |
+| :--- | :--- | :--- | :--- |
+| 6a | `fitur/kebijakan-sandi` | Admin 8: panjang minimal 10; tolak sandi umum, nama, NIP, username; campuran huruf-angka; larang pakai ulang 5 sandi terakhir; masa berlaku opsional; "paksa ganti saat masuk berikutnya" per akun; daftar akun yang belum memenuhi. Berlaku hanya untuk sandi **baru/diganti**, sehingga sandi lama tetap bisa masuk. Migrasi 0107 bila perlu riwayat sandi (simpan hash saja). | Aturan baru aktif untuk penggantian sandi; paksa ganti mati |
+| 6b | `fitur/batas-jaringan-peran` | Admin 12: daftar subnet kantor (mis. 192.168.10.0/24, 192.168.9.0/24) dan aturan per peran: mana pun / kantor saja / luar kantor wajib verifikasi (menyambung E5 bila sudah digabung). IP dibaca dari ujung XFF (`alamatIpPeramban`). Penolakan tercatat di Riwayat Masuk. Migrasi 0108. | Semua peran "mana pun", sehingga perilakunya sama dengan sekarang |
+| 6c | `fitur/pengaman-aksi-admin` | Admin 13: aksi berdampak besar meminta **sandi ulang + ketik konfirmasi**. Contoh aksi: hapus massal >20 baris, pulihkan cadangan, ubah hak peran, angkat Admin/Super Admin, matikan audit/ubah retensi, Lihat sebagai, ubah batas perangkat/jaringan, nyalakan OTP. Kode WhatsApp/authenticator ditambahkan sebagai langkah kedua sesudah E5 digabung (kait disiapkan). Semua tercatat `appendAuditLog`. | Mati; dinyalakan Super Admin |
+| 6d | `fitur/uji-pulih-cadangan` | Admin 4: mingguan (saran Minggu 03.00, sesudah pencocokan Cermin 02.00). Cadangan terbaru dipulihkan ke basis data sementara, migrasi diperiksa, jumlah baris tabel penting dicocokkan, basis data sementara dihapus, lalu laporan ke Pusat kesehatan + WhatsApp admin bila gagal. Tidak pernah menyentuh basis data produksi. Migrasi 0109 (hasil uji). | Mati |
+| 6e | — (server) | **HTTPS di jaringan kantor**, dimulai dari ALETA. Pilihan: CA internal (mis. `step-ca`/`mkcert`, sertifikat akar dipasang di PC kantor) atau Let's Encrypt DNS-01 bila kantor memegang domain. Vhost 443 untuk `/aleta`, kuki `Secure`, dan alamat portal di ekstensi (`alamat-portal.js`, `host_permissions` manifest) menerima https **dan** http selama peralihan. **Uji dulu di kembaran laptop**, lalu jendela pemeliharaan (admin 5). SIPP/ABT menyusul hanya bila tidak mengganggu aplikasi Badilag. Sesudah ini passkey (E5) dan aplikasi Android layar penuh bisa dipakai. | http tetap jalan selama peralihan |
+| 6f | — (server) | **Pindahkan website satker ke kontainer/VM terpisah** dari SIPP/ABT/ALETA. Dikerjakan sesudah 5b terbukti stabil. Rancang dulu, lalu minta persetujuan Derry: berkas dan DB website disalin, Apache depan meneruskan domain website ke kontainer, uji, lalu pindah pada jendela pemeliharaan. Cadangan lama disimpan sampai seminggu stabil. | — |
+
+Sesudah tiap butir: perbarui papan kemajuan, catat skor keamanan perkiraan per bidang (lihat percakapan 24 Okt: sekarang ±45, sasaran 85–90), dan laporkan ke Derry.
 
 ## Bila kuota cloud habis: kerjakan rantai di laptop
 
