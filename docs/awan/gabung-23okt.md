@@ -21,8 +21,8 @@ Panduan ini MENGGANTIKAN kartu tugas "Gabung semua hasil 23 Okt dan pasang ke se
 | 7 | `fitur/t5-panduan-kasir-sorot` | panduan kasir bersorot | |
 | 8 | `fitur/t1-aleta-ai-tahap2` | ALETA Ai tahap 2 | migrasi **0084** |
 | 9 | `fitur/audit-login-perangkat` | riwayat masuk, batas perangkat, pencabutan sesi, MAC, batas laju IP ujung | migrasi **0085** |
-| 10 | `fitur/t10-dompet-aleta-ai` | Dompet lengkap (rumus harga+MDR, kurs JISDOR, kuota, batas satker, perkiraan biaya, laporan laba, struk) | migrasi **0088** (0089 tidak dipakai) |
-| 11 | `fitur/t9-aleta-ai-tugas` | Tugas/cowork, berkas DOCX/RTF/PDF/HTML/XLSX, sandbox Python, kirim ke alur | migrasi **0086, 0087**; sudah memuat merge T1 |
+| 10 | `fitur/t10-dompet-aleta-ai` | Dompet lengkap: rumus harga + MDR **1%**, kurs JISDOR, kuota hibah per peran (**hangus akhir bulan**), batas satker Rp5 jt/bulan, perkiraan biaya, laporan laba, struk, **koreksi saldo Super Admin** | migrasi **0088** (0089 tidak dipakai) |
+| 11 | `fitur/t9-aleta-ai-tugas` | Tugas/cowork; berhenti "saldo habis" lalu lanjut; penyamaran teks bebas diperluas; keluaran mengikuti V4.5 (HTML = templat + `window.SIDANG`/`KOMPARASI`; putusan = naskah berpenanda ALETA_08 dicetak `aleta_putusan_docx.py` di sandbox, dengan cadangan); kirim ke alur | migrasi **0086, 0087**; sudah memuat merge T1 |
 | 12 | `fitur/pwa-pasang` | Pasang di HP | |
 | 13 | `fitur/rencana-fitur-admin` | dokumen rencana 15 fitur admin | |
 | 14 | opsional `fitur/awan-cabang-dasar` | perbaikan kecil AWAN.md | lewati bila sudah benar |
@@ -68,7 +68,7 @@ Panduan ini MENGGANTIKAN kartu tugas "Gabung semua hasil 23 Okt dan pasang ke se
   | T5 | `panduan-kasir-sorot` |
   | T1 | `aleta-ai-tahap2a-23okt`, `aleta-ai-gelembung-23okt`, `aleta-ai-matriks-kemampuan-23okt` |
   | Audit login | `jejak-masuk-perangkat`, `jejak-masuk-pencabutan`, `jejak-masuk-layar`, `jejak-masuk-batas-laju`, `pembaru-otomatis-23okt` |
-  | T10 | `aleta-ai-dompet-25okt`, `aleta-ai-server-20okt` |
+  | T10 | `aleta-ai-dompet-25okt` (35), `aleta-ai-server-20okt` |
   | T9 | `aleta-ai-tugas-25okt`, `aleta-ai-tugas-layar-25okt` |
   | Pasang di HP | `pasang-aplikasi-23okt`, `ikon-aplikasi-23okt` |
 
@@ -85,11 +85,17 @@ Panduan ini MENGGANTIKAN kartu tugas "Gabung semua hasil 23 Okt dan pasang ke se
    - batas perangkat: bawaan tanpa batas;
    - isi saldo berbayar: `isiBerbayarAktif` mati;
    - sandbox Python: tanpa `ALETA_SANDBOX_SPOOL` berarti mati.
-4. **Sandbox Python (T9).** Siapkan berkasnya, tetapi nyalakan hanya bila pengguna setuju:
-   - salin skrip `aleta/*.py` V4.5 ke `sandbox-alat/skrip/` (JANGAN di-commit);
-   - buat `izin.json` dari `izin.contoh.json` sesuai nama skrip asli;
-   - jalankan `docker compose -f sandbox-alat/docker-compose.yml up -d --build`;
-   - isi env `ALETA_SANDBOX_SPOOL` dan pasang volumenya ke kontainer portal.
+4. **Sandbox Python (T9).** Siapkan berkasnya, tetapi nyalakan hanya bila pengguna setuju.
+   - Bentuk argumen di `sandbox-alat/izin.contoh.json` sudah dicocokkan dengan kode V4.5 tanggal 23-24 Okt. Periksa ulang bila V4.5 berubah.
+   - `aleta_putusan_docx.py` membutuhkan `aleta_format.py` dan `aleta_alat.py` di folder yang sama, ditambah `python-docx` dan LibreOffice di image sandbox.
+   - `bismillah.jpeg` diletakkan di `/skrip`.
+   - Langkah:
+     - salin skrip `aleta/*.py` V4.5 ke `sandbox-alat/skrip/` (JANGAN di-commit);
+     - buat `izin.json` dari `izin.contoh.json`;
+     - jalankan `docker compose -f sandbox-alat/docker-compose.yml up -d --build`;
+     - isi env `ALETA_SANDBOX_SPOOL` dan pasang volumenya ke kontainer portal;
+     - uji satu draf putusan rekaan sampai berkas .rtf terbuka di Word.
+   - Templat HTML V4.5 (`ALETA_13`, `ALETA_18`, dan seterusnya) dibaca dari zip proyek yang diunggah Super Admin. Unggah ulang zip V4.5 sesudah migrasi 0087.
 5. **Audit login di server:**
    - uji ARP: `docker compose exec aleta_bot node -e "console.log(require('./services/arpPerangkatService').bacaArp('192.168.10.X'))"`;
    - `ip -4 addr` dan `ip route`;
@@ -106,7 +112,9 @@ Panduan ini MENGGANTIKAN kartu tugas "Gabung semua hasil 23 Okt dan pasang ke se
 
 ## Pertanyaan pengguna yang masih terbuka (laporkan, jangan menunggu)
 - **T7+T8:** agama Islam otomatis di luar alur saksi? Masih usulan.
-- **T10:**
+- **Sudah diputuskan Derry 24 Okt:** MDR 1%; batas satker Rp5 jt termasuk Super Admin; kuota hibah hangus akhir bulan; koreksi saldo perlu; penyamaran T9 diperluas; satu tahan per jalan tugas; templat mengikuti mekanisme V4.5.
+- **T10 (masih terbuka):** penjadwal rekonsiliasi harian (sudah dijelaskan ke Derry, menunggu ya/tidak).
+- **T10 (lama, abaikan bila sudah dijawab):**
   1. MDR 0,7% dipungut selama QRIS belum ada, atau 0% dulu?
   2. Batas satker Rp5.000.000 biaya API/bulan, termasuk Super Admin: cocok?
   3. Ambang saldo menipis Rp5.000.
