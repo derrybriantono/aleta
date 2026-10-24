@@ -33,6 +33,7 @@ import { apiPath } from "@/lib/base-path";
 import { tujuanKembaliAman } from "@/lib/tujuan-kembali";
 import { adalahGangguan, pesanGangguan } from "@/lib/pesan-gangguan";
 import { APP_VERSION } from "@/lib/patch-notes";
+import { TombolPasangAplikasi } from "@/components/layout/pasang-aplikasi";
 import {
   bacaPilihanIsiOtomatis,
   lupakanSandiDiEkstensi,
@@ -736,6 +737,11 @@ export default function LoginPage() {
                 >
                   {!isClientReady ? "Menyiapkan login..." : isSubmitting ? "Memverifikasi akun..." : "Login"}
                 </Button>
+
+                {/* 23 Okt 2026: di HP halaman login yang pertama dibuka - tawarkan pasang di sini juga. */}
+                <div className="flex justify-center text-xs">
+                  <TombolPasangAplikasi />
+                </div>
 
                 <div className="text-center text-[11px] leading-5 text-muted-foreground dark:text-slate-400">
                   <a

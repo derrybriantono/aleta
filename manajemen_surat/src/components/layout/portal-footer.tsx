@@ -13,6 +13,7 @@ import {
 import type { SVGProps } from "react";
 
 import { AletaLogo } from "@/components/branding/aleta-logo";
+import { TombolPasangAplikasi } from "@/components/layout/pasang-aplikasi";
 import { Badge } from "@/components/ui/badge";
 import { usePortal } from "@/lib/app-state";
 import { VERSI_EKSTENSI_TERBARU } from "@/lib/catatan-ekstensi";
@@ -257,6 +258,7 @@ export function PortalFooter() {
             <Link href="/masukan" className="font-medium text-primary underline-offset-4 hover:underline">
               Masukan
             </Link>
+            <TombolPasangAplikasi />
           </div>
         </div>
         <div className="mt-3 border-t border-border/70 pt-3 text-[11px] leading-5 text-muted-foreground">
@@ -394,6 +396,7 @@ export function PortalFooter() {
               <Link href="/masukan" className="font-medium text-primary underline-offset-4 transition hover:underline">
                 Beri Masukan
               </Link>
+              <TombolPasangAplikasi pemisah={<span className="px-1">|</span>} />
             </p>
             <a
               href={COPYRIGHT_URL}
