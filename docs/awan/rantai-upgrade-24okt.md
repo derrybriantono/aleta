@@ -49,6 +49,7 @@ Derry menyetujui semua saran di `docs/rancangan/upgrade-otomatisasi-24okt/TAHAPA
 | E Ukur & admin | 0094, 0095, 0104 |
 | B Ekstensi & PC tua | 0098, 0099, 0100 |
 | F Server | 0105, 0106 |
+| G Tenggat & berkas e-Court | 0110, 0111 |
 
 ## Rantai A — Cermin Perkara (Tahap 2, K2/K6, K13, U17)
 
@@ -118,6 +119,18 @@ Dasar: **`origin/fitur/jejak-isian`** (C1), bukan `integrasi-awan-24okt`.
 | F1 | `fitur/kolam-sipp` | K3: kolam interaktif terpisah dari latar, `acquireTimeout`/`queueLimit`, putus kueri lambat; ukuran dari pengaturan (diisi laptop dari `max_connections`) |
 | F2 | `fitur/port-8008` | K7 sisi kode: portal dan widget memakai alamat 8008 bila tersedia, kembali ke :80 bila tidak. Pemasangan Apache dicatat sebagai langkah laptop |
 | F3 | `fitur/riwayat-tunda-putus` | U19 |
+
+## Rantai G — Tenggat perkara dan berkas e-Court (permintaan Derry 24 Okt; UPGRADE fitur lama, bukan fitur baru)
+
+Dikerjakan **sesudah rantai A** (memakai Cermin bila saklarnya menyala; tanpa Cermin tetap jalan lewat jalur lama). Fitur lama tidak dikurangi dan tidak digandakan. Kembangkan berkas yang sudah ada:
+- `src/lib/penjaga-tenggat.ts`, `aleta_bot/services/penjagaTenggatService.js`, `appealDeadlineService.js`, `ikrarTalakService.js`;
+- `jawabMenjawabEcourtService.js`, `buktiEcourtService.js`, `tanyaJawabEcourtService.js`;
+- `ekstensi-sipp/blangko-derry-isian.js`.
+
+| Urut | Cabang | Butir |
+| :--- | :--- | :--- |
+| G1 | `fitur/penjaga-tenggat-terjadwal` | Upgrade penjaga tenggat yang sekarang hanya dibaca saat diminta. Isinya:<br>- **jadwal harian** hari kerja pagi (saran 07.30 WITA) + hitung mundur;<br>- aturan baru di `ATURAN_TENGGAT`: **banding 14 hari** (memakai `appealDeadlineService`, per pihak, dari tanggal putusan atau pemberitahuan putusan bagi yang tidak hadir), **kasasi 14 hari** sejak putusan banding diberitahukan, **mediasi 30 hari** (dari `BATAS_MEDIASI_HARI`);<br>- aturan lama tetap: 5 bulan, ikrar 6 bulan, akta cerai, relaas, direktori, anonimisasi;<br>- **pengingat WhatsApp per orang**: hakim/PP/panitera hanya menerima perkara mereka, ringkas satu pesan per hari, plus lonceng portal;<br>- layar "Tenggat" di portal, saringan per majelis/PP.<br>Saklar pengingat WA **mati bawaan**. Dasar hukum tiap aturan ditulis di kode dan diberi tanda [PERLU VERIFIKASI Derry] sebelum dinyalakan. Migrasi 0110 bila perlu catatan kirim (supaya tidak ganda). |
+| G2 | `fitur/ecourt-kesimpulan-bukti` | Upgrade pembaca berkas e-Court **selain gugatan** (gugatan sudah ada di SIPP, tidak dibaca ulang). Isinya:<br>- **kesimpulan para pihak** mendapat isian tanya-jawab/ringkasan seperti jawaban, replik, dan duplik (6112–6114), dengan kode ABT dari daftar variabel blangko Derry;<br>- **daftar alat bukti** (P.x/T.x) diisi otomatis ke ABT seperti tanya-jawab: hanya baris kosong, hanya hasil "rapi", selain itu tetap usulan/tombol Salin;<br>- **pemetaan bukti ↔ keterangan saksi** sebagai usulan, untuk susun saksi/pertimbangan;<br>- pembersih tata letak replik/duplik yang "tidak rapi" diperbaiki;<br>- skrip ukur ketepatan pada berkas sungguhan **dijalankan di laptop** (berkas asli tidak masuk repo; laporan angka saja).<br>SIPP tetap hanya dibaca. Saklar isi otomatis **mati bawaan**; hanya blangko milik `derry_briantono`. Migrasi 0111 bila perlu. |
 
 ## Ditunda (keputusan 8 di TAHAPAN)
 
