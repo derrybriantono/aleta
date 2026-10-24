@@ -3,12 +3,10 @@ import { randomUUID } from "node:crypto";
 import {
   biayaUsd,
   biayaUsdBanyak,
-  bulatkanKeAtas,
   hitungHarga,
   jumlahkanPenggunaan,
   PENGGUNAAN_NOL,
   perkirakanTokenDariKarakter,
-  type ParameterHarga,
   type PenggunaanToken,
   type Tarif,
 } from "@/lib/aleta-ai/biaya";
@@ -41,10 +39,15 @@ import { ambilKlienAi, GalatKlienAi, jinakkanGalat, type HasilAi, type KlienAi }
 import { bacaTimpaanKemampuan } from "@/server/modules/aleta-ai/kemampuan";
 import { muatPenyamar, simpanPenyamar } from "@/server/modules/aleta-ai/samaran";
 import { kursBerlaku, segarkanKursBilaPerlu, tanggalLokal, type PengambilKurs } from "@/server/modules/aleta-ai/kurs";
+import { pastikanKuotaBulanIni } from "@/server/modules/aleta-ai/kuota";
+import { periksaBatas } from "@/server/modules/aleta-ai/batas";
 import { ambilMilik, bukaIsi, JUDUL_BAWAAN, riwayatUntukPermintaan, sandiIsi } from "@/server/modules/aleta-ai/percakapan";
 import { bacaPengaturan, bacaRute, bacaTarif, catatJejak, type PengaturanAi } from "@/server/modules/aleta-ai/pengaturan";
+import { nilaiPerkiraan, parameterHarga, rupiahPerkiraan, type PerkiraanBiaya } from "@/server/modules/aleta-ai/perkiraan";
 import { proyekAktif } from "@/server/modules/aleta-ai/proyek";
+import { dibatalkanSaklar, pantauSaklar } from "@/server/modules/aleta-ai/saklar";
 import { saldoPengguna, selesaikanTahanan, tahanDana, tambahTahanan } from "@/server/modules/aleta-ai/saldo";
+import { ApiError } from "@/server/shared/errors";
 
 /**
  * ============================================================================
@@ -196,10 +199,6 @@ type Percobaan = {
   usd: number;
 };
 
-function parameterHarga(p: PengaturanAi): ParameterHarga {
-  return { marginPersen: p.marginPersen, penyanggaKursPersen: p.penyanggaKursPersen, minimumRp: p.minimumRp, pembulatanRp: p.pembulatanRp };
-}
-
 /** Biaya satu panggilan; tarif model yang tak dikenal (mis. model fallback) memakai tarif model yang diminta. */
 export function biayaPanggilan(tarif: ReadonlyMap<string, Tarif>, modelDiminta: string, h: HasilAi): { usd: number; penggunaan: PenggunaanToken } {
   if (h.iterasi.length > 0) {
@@ -212,7 +211,7 @@ export function biayaPanggilan(tarif: ReadonlyMap<string, Tarif>, modelDiminta: 
   return { usd: t ? biayaUsd(t, h.penggunaan) : 0, penggunaan: h.penggunaan };
 }
 
-type Perkiraan = { tokenMasuk: number; usd: number; perkiraanRp: number; tahanRp: number };
+type Perkiraan = { tokenMasuk: number; usd: number; perkiraanRp: number; tahanRp: number; biayaApiRp: number };
 
 async function perkirakanGiliran(
   klien: KlienAi,
@@ -238,19 +237,7 @@ async function perkirakanGiliran(
   const tokenSistem = Math.round(tokenMasuk * bagianSistem);
   const t = tarif.get(rute.model);
   const usd = t ? biayaUsd(t, { masuk: tokenMasuk - tokenSistem, cacheTulis: tokenSistem, cacheBaca: 0, keluar: rute.perkiraanKeluaran }) : 0;
-  const harga = hitungHarga(usd, kursDasar, parameterHarga(pengaturan), { gratis });
-  const tahanRp = gratis ? 0 : bulatkanKeAtas(harga.hargaRp * pengaturan.faktorTahan, pengaturan.pembulatanRp);
-  return { tokenMasuk, usd, perkiraanRp: harga.tagihRp, tahanRp };
-}
-
-async function pemakaianHariIni(db: AletaDatabase, penggunaId: string, sekarang: Date): Promise<{ rp: number; token: number }> {
-  const awalHari = new Date(`${tanggalLokal(sekarang)}T00:00:00+08:00`).toISOString();
-  const baris = await db.queryOne<{ rp: number | string | null; tok: number | string | null }>(
-    `SELECT COALESCE(SUM(biaya_rp), 0) AS rp, COALESCE(SUM(token_masuk + token_keluar + token_cache_tulis + token_cache_baca), 0) AS tok
-     FROM aleta_ai_obrolan_pesan WHERE pemilik_id = ? AND peran = 'ai' AND dibuat_at >= ?`,
-    [penggunaId, awalHari]
-  );
-  return { rp: Number(baris?.rp ?? 0), token: Number(baris?.tok ?? 0) };
+  return { tokenMasuk, usd, ...rupiahPerkiraan(usd, kursDasar, pengaturan, gratis) };
 }
 
 // ----------------------------------------------------------------------------
@@ -330,11 +317,13 @@ export async function* kirimPesan(
     yield gagal("Terlalu banyak pesan dalam satu menit. Tunggu sebentar lalu kirim lagi.");
     return;
   }
-  const hariIni = await pemakaianHariIni(db, pelaku.id, sekarang);
-  if (hariIni.token >= pengaturan.batasHarianToken || (!pelaku.superAdmin && hariIni.rp >= pengaturan.batasHarianRp)) {
-    yield gagal("Batas pemakaian harian ALETA Ai Anda sudah tercapai. Coba lagi besok.");
+  const batasAwal = await periksaBatas(db, pelaku, pengaturan, sekarang);
+  if (!batasAwal.ok) {
+    yield gagal(batasAwal.alasan);
     return;
   }
+  // Kuota hibah per peran (bila diatur Super Admin): sekali per bulan, tercatat sebagai mutasi "kuota".
+  await pastikanKuotaBulanIni(db, pelaku, sekarang);
   if (!pelaku.superAdmin) {
     const saldo = await saldoPengguna(db, pelaku.id);
     if (saldo < pengaturan.minimumRp) {
@@ -417,6 +406,17 @@ export async function* kirimPesan(
   let permintaan = buatPermintaan(rute);
   let perkiraan = await perkirakanGiliran(klien, permintaan, rute, tarif, kurs.kurs, pengaturan, pelaku.superAdmin);
 
+  const batasPerkiraan = await periksaBatas(db, pelaku, pengaturan, sekarang, {
+    tambahanRp: perkiraan.perkiraanRp,
+    tambahanToken: perkiraan.tokenMasuk + rute.perkiraanKeluaran,
+    tambahanApiRp: perkiraan.biayaApiRp,
+  });
+  if (!batasPerkiraan.ok) {
+    await catatPemakaianTanpaPesan(db, pelaku, percakapanId, percobaan, kurs.kurs);
+    yield gagal(batasPerkiraan.alasan);
+    return;
+  }
+
   const pesanId = `aip-${randomUUID()}`;
   let ditahan = 0;
   if (!pelaku.superAdmin) {
@@ -453,6 +453,8 @@ export async function* kirimPesan(
   const kendali = new AbortController();
   const putus = () => kendali.abort();
   opsi.sinyal?.addEventListener("abort", putus, { once: true });
+  // Saklar darurat: dimatikan Super Admin -> giliran ini dihentikan seketika (tidak dipotong).
+  const lepasPantau = pantauSaklar(db, kendali);
 
   let status: "selesai" | "terpotong" | "ditolak" | "gagal" = "gagal";
   let jawaban = "";
@@ -486,7 +488,7 @@ export async function* kirimPesan(
 
     await db.run(
       `UPDATE aleta_ai_obrolan_pesan SET isi = ?, kelompok = ?, model = ?, effort = ?, mode_label = ?, status = ?, token_masuk = ?, token_keluar = ?, token_cache_tulis = ?, token_cache_baca = ?,
-         biaya_usd = ?, kurs_dasar = ?, kurs = ?, biaya_api_rp = ?, biaya_rp = ?, perkiraan_rp = ?, gratis = ? WHERE id = ?`,
+         biaya_usd = ?, kurs_dasar = ?, kurs = ?, kurs_tanggal = ?, kurs_sumber = ?, biaya_api_rp = ?, biaya_mdr_rp = ?, biaya_rp = ?, perkiraan_rp = ?, gratis = ? WHERE id = ?`,
       [
         sandiIsi(jawaban),
         rute.kelompok,
@@ -501,7 +503,11 @@ export async function* kirimPesan(
         totalUsd,
         harga.kursDasar,
         harga.kurs,
+        kurs.tanggal,
+        kurs.sumber.slice(0, 120),
         harga.biayaApiRp,
+        // MDR mengikuti yang benar-benar terpotong (giliran gagal/gratis = 0).
+        potong.dipotongRp > 0 ? harga.biayaMdrRp * (potong.dipotongRp / Math.max(1, harga.tagihRp)) : 0,
         potong.dipotongRp,
         perkiraan.perkiraanRp,
         pelaku.superAdmin ? 1 : 0,
@@ -579,7 +585,11 @@ export async function* kirimPesan(
       if (galat || !h) {
         status = "gagal";
         pesanGagal = galat?.kode ?? "lain";
-        if (galat?.kode !== "dibatalkan") {
+        if (dibatalkanSaklar(kendali.signal)) {
+          pesanGagal = "saklar-darurat";
+          await tutup();
+          yield gagal(PESAN_NONAKTIF_SAKLAR);
+        } else if (galat?.kode !== "dibatalkan") {
           const tutupHasil = await tutup();
           void tutupHasil;
           yield gagal(galat?.message ?? "Terjadi gangguan pada layanan AI.");
@@ -675,6 +685,7 @@ export async function* kirimPesan(
       return;
     }
   } finally {
+    lepasPantau();
     opsi.sinyal?.removeEventListener("abort", putus);
     // Putus tengah jalan (pelanggan menutup SSE) atau galat tak terduga: hentikan
     // panggilan dan tetap lepaskan tahanan.
@@ -704,4 +715,66 @@ async function catatPemakaianTanpaPesan(db: AletaDatabase, pelaku: PelakuAi, per
       [`aiu-${randomUUID()}`, percakapanId, pelaku.id, pelaku.peranId, p.jenis, p.model, p.effort, p.kelompok, p.penggunaan.masuk, p.penggunaan.keluar, p.penggunaan.cacheTulis, p.penggunaan.cacheBaca, p.usd, kurs, p.usd * kurs, new Date().toISOString()]
     );
   }
+}
+
+// ----------------------------------------------------------------------------
+// Perkiraan biaya SEBELUM giliran berjalan (tahap 4)
+// ----------------------------------------------------------------------------
+
+/**
+ * Perkiraan rupiah untuk pesan yang BELUM dikirim: rute dari pemicu atau kata
+ * kunci (pengklasifikasi berbayar TIDAK dipanggil di sini), token masuk dari
+ * count_tokens (gratis) atau karakter/4, keluaran = perkiraan kelompok.
+ * Tidak menahan dana, tidak mencatat apa pun, tidak memakai jatah batas laju.
+ * Bila nanti pengklasifikasi memilih kelompok lain, peristiwa "perkiraan" di
+ * awal giliran memuat angka barunya sebelum dana ditahan.
+ */
+export async function perkirakanPesan(
+  db: AletaDatabase,
+  pelaku: PelakuAi,
+  percakapanId: string,
+  masukan: MasukanPesan,
+  opsi: { sekarang?: Date } = {}
+): Promise<PerkiraanBiaya> {
+  const sekarang = opsi.sekarang ?? new Date();
+  const teksPengguna = teks(masukan.teks);
+  const kodePemicu = teks(masukan.pemicu);
+  if (!teksPengguna && !kodePemicu) throw new ApiError(400, "Tulis pertanyaan Anda dulu, atau pilih salah satu tombol cepat.");
+  if (teksPengguna.length > BATAS_KARAKTER_PESAN_PENGGUNA) throw new ApiError(400, "Pesan terlalu panjang.");
+  if (percakapanId && !(await ambilMilik(db, pelaku.id, percakapanId))) throw new ApiError(404, "Percakapan tidak ditemukan.");
+  const proyek = await proyekAktif(db);
+  if (!proyek) throw new ApiError(409, PESAN_NONAKTIF_PROYEK);
+
+  const pengaturan = await bacaPengaturan(db);
+  const kurs = await kursBerlaku(db, sekarang);
+  const tarif = new Map((await bacaTarif(db)).map((t) => [t.model, t]));
+  const tabel = tabelRuteDari(await bacaRute(db));
+
+  let pemicu: PemicuMenu | null = kodePemicu ? (proyek.menu.find((p) => p.kode === kodePemicu) ?? null) : null;
+  if (!pemicu) pemicu = cariPemicuDiAwalTeks(proyek.menu, teksPengguna);
+  const diawaliAlias = pemicu ? cariPemicuDiAwalTeks([pemicu], teksPengguna) !== null : false;
+  const teksKerja = pemicu && !diawaliAlias ? `${pemicu.label}${teksPengguna ? `\n${teksPengguna}` : ""}` : teksPengguna;
+  let klas: HasilKlasifikasi = pemicu ? { kelompok: pemicu.kelompok, yakin: 1, sumber: "pemicu" } : klasifikasiKataKunci(teksKerja);
+  if (klas.sumber !== "pemicu" && terlaluRagu(klas)) {
+    const naik = naikSatuTingkat(tabel, klas.kelompok, pelaku.peranId);
+    if (naik) klas = { ...klas, kelompok: naik.kelompok };
+  }
+  const pilihan = pilihRute(tabel, klas.kelompok, pelaku.peranId);
+  if (!pilihan.ok) throw new ApiError(403, pilihan.alasan);
+  const rute = pilihan.rute;
+
+  const riwayat = percakapanId ? await riwayatUntukPermintaan(db, percakapanId) : [];
+  const modul = pilihModul({ modul: proyek.modul, teks: teksKerja, pemicu, kelompok: rute.kelompok, labelMode: rute.label }).terpilih;
+  const permintaan = susunPermintaan({ rute, corePrompt: proyek.corePrompt, modul, riwayat, teksPengguna: teksKerja, fallback: tarif.get(rute.model)?.fallback === true });
+  const klien = ambilKlienAi() ?? { alirkan: async () => Promise.reject(new Error("tanpa klien")) };
+  const perkiraan = await perkirakanGiliran(klien, permintaan, rute, tarif, kurs.kurs, pengaturan, pelaku.superAdmin);
+  const hasil = await nilaiPerkiraan(
+    db,
+    pelaku,
+    pengaturan,
+    { kelompok: rute.kelompok, label: rute.label, tokenMasuk: perkiraan.tokenMasuk, tokenKeluar: rute.perkiraanKeluaran, perkiraanRp: perkiraan.perkiraanRp, tahanRp: perkiraan.tahanRp, biayaApiRp: perkiraan.biayaApiRp, kurs },
+    sekarang
+  );
+  if (!ambilKlienAi() && hasil.bolehJalan) return { ...hasil, bolehJalan: false, alasan: PESAN_NONAKTIF_KUNCI };
+  return hasil;
 }

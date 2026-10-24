@@ -1000,7 +1000,8 @@ describe("ALETA Ai server: saldo, mesin, hak, rute HTTP (pg-mem)", () => {
     expect(lap.ringkasan.giliran).toBeGreaterThan(5);
     expect(lap.ringkasan.pendapatanRp).toBeGreaterThan(0);
     expect(lap.ringkasan.biayaApiRp).toBeGreaterThan(0);
-    expect(lap.ringkasan.labaRp).toBeCloseTo(lap.ringkasan.pendapatanRp - lap.ringkasan.biayaApiRp, 6);
+    // Tahap 4 (T10): laba = pendapatan - biaya API - MDR QRIS.
+    expect(lap.ringkasan.labaRp).toBeCloseTo(lap.ringkasan.pendapatanRp - lap.ringkasan.biayaApiRp - lap.ringkasan.biayaMdrRp, 6);
     expect(lap.ringkasan.gratis).toBeGreaterThanOrEqual(1);
     expect(lap.perModel.map((m) => m.model)).toEqual(expect.arrayContaining([MODEL_OPUS, MODEL_SONNET]));
     expect(lap.perKelompok.length).toBeGreaterThan(1);
@@ -1162,7 +1163,7 @@ describe("ALETA Ai server: saldo, mesin, hak, rute HTTP (pg-mem)", () => {
 
       const { GET: laporan } = await import("@/app/api/aleta-ai/laporan/route");
       const lap = await json(await laporan(req("/api/aleta-ai/laporan")));
-      expect(lap.data).toEqual(expect.objectContaining({ pendapatanRp: expect.any(Number), biayaApiRp: expect.any(Number), biayaMdrRp: 0, labaRp: expect.any(Number) }));
+      expect(lap.data).toEqual(expect.objectContaining({ pendapatanRp: expect.any(Number), biayaApiRp: expect.any(Number), biayaMdrRp: expect.any(Number), labaRp: expect.any(Number) })); // MDR terisi sejak tahap 4
       for (const kelompok of ["perPengguna", "perPeran", "perKelompok", "perModel"]) {
         const baris = lap.data?.[kelompok] as Array<Record<string, unknown>>;
         expect(baris.length).toBeGreaterThan(0);

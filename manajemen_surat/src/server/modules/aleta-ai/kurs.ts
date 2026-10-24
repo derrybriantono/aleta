@@ -9,12 +9,13 @@ import { describeNetworkError, outboundFetch } from "@/server/shared/outbound-ht
  *
  * Harga dalam rupiah mengikuti kurs harian. Kurs diambil otomatis SEKALI per
  * hari (malas: saat ada giliran pertama hari itu, atau saat Super Admin
- * membuka halaman kurs) dari sumber publik yang dapat dijangkau server, lalu
+ * membuka halaman kurs) dari kurs tengah JISDOR Bank Indonesia (cadangan:
+ * sumber kurs terbuka) yang dapat dijangkau server, lalu
  * disimpan beserta tanggal dan sumbernya. Bila pengambilan gagal, kurs
  * tersimpan terakhir dipakai (ditandai "basi"); bila belum pernah ada, kurs
  * awal dari pengaturan.
  *
- * Penyangga kurs (bawaan +3%) ditambahkan di rumus harga (biaya.ts), bukan di
+ * Penyangga kurs (bawaan +3%) ditambahkan di rumus harga (lib/aleta-ai/biaya.ts), bukan di
  * sini: yang disimpan di sini adalah kurs tengah apa adanya.
  */
 
@@ -40,41 +41,124 @@ export function kursWajar(n: unknown): n is number {
   return typeof n === "number" && Number.isFinite(n) && n >= KURS_MIN && n <= KURS_MAKS;
 }
 
-const SUMBER_PUBLIK: ReadonlyArray<{ nama: string; url: string; baca: (j: unknown) => number | undefined }> = [
-  {
-    nama: "open.er-api.com",
-    url: "https://open.er-api.com/v6/latest/USD",
-    baca: (j) => {
-      const o = j as { result?: string; rates?: { IDR?: number } };
-      return o?.result === "success" ? o.rates?.IDR : undefined;
-    },
-  },
-  {
-    nama: "frankfurter.app",
-    url: "https://api.frankfurter.app/latest?from=USD&to=IDR",
-    baca: (j) => (j as { rates?: { IDR?: number } })?.rates?.IDR,
-  },
-];
-
-/** Pengambil bawaan: mencoba sumber publik berurutan, memakai yang pertama berhasil dan wajar. */
-export const ambilKursPublik: PengambilKurs = async () => {
-  const gagal: string[] = [];
-  for (const sumber of SUMBER_PUBLIK) {
-    try {
-      const respons = await outboundFetch(sumber.url, { headers: { Accept: "application/json" } }, 6000);
-      if (!respons.ok) {
-        gagal.push(`${sumber.nama}: HTTP ${respons.status}`);
-        continue;
-      }
-      const kurs = sumber.baca(await respons.json());
-      if (kursWajar(kurs)) return { kurs, sumber: sumber.nama };
-      gagal.push(`${sumber.nama}: nilai tidak wajar`);
-    } catch (error) {
-      gagal.push(`${sumber.nama}: ${describeNetworkError(error)}`);
-    }
-  }
-  throw new Error(`Kurs tidak dapat diambil (${gagal.join("; ")})`);
+type SumberKurs = {
+  nama: string;
+  url: string;
+  /** Membaca badan jawaban (teks mentah); undefined = tidak ditemukan. */
+  baca: (badan: string) => number | undefined;
 };
+
+const BULAN_ID: Record<string, number> = {
+  januari: 1, februari: 2, maret: 3, april: 4, mei: 5, juni: 6, juli: 7, agustus: 8, september: 9, oktober: 10, november: 11, desember: 12,
+  jan: 1, feb: 2, mar: 3, apr: 4, jun: 6, jul: 7, agu: 8, agt: 8, aug: 8, sep: 9, okt: 10, oct: 10, nov: 11, des: 12, dec: 12, may: 5,
+};
+
+/** "16.234,00" / "16,234.00" / "16234.5" -> angka; undefined bila tidak terbaca. */
+export function angkaKurs(teksAngka: string): number | undefined {
+  const t = teksAngka.replace(/[^\d.,]/g, "");
+  if (!t) return undefined;
+  let n: number;
+  if (/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(t)) n = Number(t.replace(/\./g, "").replace(",", "."));
+  else if (/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(t)) n = Number(t.replace(/,/g, ""));
+  else n = Number(t.replace(",", "."));
+  return Number.isFinite(n) ? n : undefined;
+}
+
+/**
+ * Kurs JISDOR dari halaman Bank Indonesia (HTML). Halaman memuat tabel
+ * "Tanggal | Kurs" terbaru di atas; yang diambil = baris bertanggal paling
+ * akhir yang nilainya wajar. Pengurai sengaja longgar (tag dibuang, tanggal
+ * Indonesia "23 Oktober 2026" atau "23 Okt 2026", angka "16.234,00") karena
+ * susunan halaman BI dapat berubah; bila tidak terbaca, sumber berikutnya dipakai.
+ */
+export function bacaJisdorBi(html: string): number | undefined {
+  const teksPolos = html
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/\s+/g, " ");
+  const pola = /(\d{1,2})\s+([A-Za-z]{3,9})\s+(\d{4})\s+(?:Rp\.?\s*)?(\d{1,3}(?:[.,]\d{3})+(?:[.,]\d{1,2})?)/g;
+  let terbaik: { kunci: number; kurs: number } | null = null;
+  for (const m of teksPolos.matchAll(pola)) {
+    const bulan = BULAN_ID[(m[2] ?? "").toLowerCase()];
+    const kurs = angkaKurs(m[4] ?? "");
+    if (!bulan || !kursWajar(kurs)) continue;
+    const kunci = Number(m[3]) * 10_000 + bulan * 100 + Number(m[1]);
+    if (!terbaik || kunci > terbaik.kunci) terbaik = { kunci, kurs };
+  }
+  return terbaik?.kurs;
+}
+
+const bacaJson = (ambilIdr: (j: unknown) => unknown) => (badan: string) => {
+  try {
+    const n = ambilIdr(JSON.parse(badan) as unknown);
+    return typeof n === "number" ? n : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+/**
+ * Urutan sumber: kurs tengah JISDOR Bank Indonesia lebih dulu (keputusan
+ * pengguna 19 Okt 2026), lalu sumber kurs terbuka sebagai cadangan. Alamat
+ * JISDOR dapat diganti lewat env ALETA_AI_KURS_JISDOR_URL bila BI memindahkan
+ * halamannya (tanpa rilis).
+ */
+export function sumberKursBawaan(): SumberKurs[] {
+  return [
+    {
+      nama: "JISDOR Bank Indonesia",
+      url: process.env.ALETA_AI_KURS_JISDOR_URL?.trim() || "https://www.bi.go.id/id/statistik/informasi-kurs/jisdor/default.aspx",
+      baca: bacaJisdorBi,
+    },
+    {
+      nama: "open.er-api.com",
+      url: "https://open.er-api.com/v6/latest/USD",
+      baca: bacaJson((j) => {
+        const o = j as { result?: string; rates?: { IDR?: number } };
+        return o?.result === "success" ? o.rates?.IDR : undefined;
+      }),
+    },
+    {
+      nama: "frankfurter.app",
+      url: "https://api.frankfurter.app/latest?from=USD&to=IDR",
+      baca: bacaJson((j) => (j as { rates?: { IDR?: number } })?.rates?.IDR),
+    },
+  ];
+}
+
+export type PengambilHttp = (url: string, init: RequestInit, batasMs: number) => Promise<Response>;
+
+/**
+ * Pengambil kurs yang mencoba sumber berurutan dan memakai yang pertama
+ * berhasil dan wajar. `http` dapat disuntik (uji memakai HTTP tiruan; cloud
+ * dan uji tidak pernah bergantung pada situs luar).
+ */
+export function buatPengambilKurs(opsi: { http?: PengambilHttp; sumber?: SumberKurs[] } = {}): PengambilKurs {
+  const http = opsi.http ?? outboundFetch;
+  return async () => {
+    const gagal: string[] = [];
+    for (const sumber of opsi.sumber ?? sumberKursBawaan()) {
+      try {
+        const respons = await http(sumber.url, { headers: { Accept: "application/json, text/html;q=0.9" } }, 8000);
+        if (!respons.ok) {
+          gagal.push(`${sumber.nama}: HTTP ${respons.status}`);
+          continue;
+        }
+        const kurs = sumber.baca(await respons.text());
+        if (kursWajar(kurs)) return { kurs, sumber: sumber.nama };
+        gagal.push(`${sumber.nama}: nilai tidak terbaca atau tidak wajar`);
+      } catch (error) {
+        gagal.push(`${sumber.nama}: ${describeNetworkError(error)}`);
+      }
+    }
+    throw new Error(`Kurs tidak dapat diambil (${gagal.join("; ")})`);
+  };
+}
+
+/** Pengambil bawaan: JISDOR BI, lalu sumber terbuka. */
+export const ambilKursPublik: PengambilKurs = () => buatPengambilKurs()();
 
 type BarisKurs = { tanggal: string; kurs: number | string; sumber: string; diambil_at: string };
 

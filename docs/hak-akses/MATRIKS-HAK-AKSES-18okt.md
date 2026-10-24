@@ -170,6 +170,8 @@ Catatan kewenangan:
 | Mengatur pengecualian batas perangkat per akun | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Mengatur batas perangkat per peran dan setelan riwayat masuk | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Peta perkara & beban konseptor | L | L | L | L | L | L | - | - | - | - | - | - | - | L | - | - |
+| Dompet ALETA Ai milik sendiri (saldo, mutasi, perkiraan biaya, struk) | L | L | L | L | L | L | L | L | L | L | L | L | L | L | L | L |
+| Kelola dompet ALETA Ai (isi & koreksi saldo, kuota peran, laporan laba, ekspor, rekonsiliasi) | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Tunda otomatis 16.30 dan putus otomatis gugur / tidak dapat diterima | U | P | P | P | P | P | P | L | L | L | L | L | L | L | L | L |
 | Tautan rahasia Jadwal Sidang (tanpa masuk akun) | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 
@@ -194,6 +196,7 @@ Catatan kewenangan:
 - **Membaca lembar BAS dan naskahnya**: Hanya atas perkara yang ia tangani (majelis, PP, atau juru sitanya); Ketua, Wakil, dan Admin semua perkara.
 - **Menyusun dan menyimpan lembar BAS**: Hanya atas perkara yang ia tangani (majelis, PP, atau juru sitanya); Ketua, Wakil, dan Admin semua perkara.
 - **Menyimpan isian perkara untuk naskah (Kelas B)**: Hanya atas perkara yang ia tangani (majelis, PP, atau juru sitanya); Ketua, Wakil, dan Admin semua perkara.
+- **Dompet ALETA Ai milik sendiri (saldo, mutasi, perkiraan biaya, struk)**: Hanya atas perkara yang ia tangani (majelis, PP, atau juru sitanya); Ketua, Wakil, dan Admin semua perkara.
 - **Tunda otomatis 16.30 dan putus otomatis gugur / tidak dapat diterima**: Saklar dan Jalankan sekarang HANYA Super Admin (keputusan 22 Okt 2026). Mengecualikan satu perkara (Jangan tunda/putus otomatis, Ikutkan lagi) mengikuti aksi Tunda / Putus sidang. Tidak tampil pada tautan rahasia Jadwal Sidang.
 - **Tautan rahasia Jadwal Sidang (tanpa masuk akun)**: Mengelola tautan hanya Super Admin dan Admin. Pemakai tautan tidak mendapat unduhan berkas, Kasir, antrean, tunda/putus otomatis, pilih hakim, maupun penetapan; tulisannya terbatas daftar izin rute dan 60 tindakan per jam.
 

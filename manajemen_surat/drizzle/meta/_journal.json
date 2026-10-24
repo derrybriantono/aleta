@@ -547,6 +547,13 @@
       "when": 1792231200001,
       "tag": "0085_aleta_jejak_masuk_perangkat",
       "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1792260000001,
+      "tag": "0088_aleta_ai_dompet",
+      "breakpoints": true
     }
   ]
 }

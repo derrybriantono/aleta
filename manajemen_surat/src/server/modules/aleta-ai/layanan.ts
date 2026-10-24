@@ -3,6 +3,7 @@ import type { AletaDatabase } from "@/server/db/client";
 import type { PelakuAi } from "@/server/modules/aleta-ai/akses";
 import { ambilKlienAi, kunciApiTerpasang } from "@/server/modules/aleta-ai/klien";
 import { kursBerlaku, kursTersimpanTerakhir, segarkanKursBilaPerlu, type PengambilKurs } from "@/server/modules/aleta-ai/kurs";
+import { bacaKuotaPeran, pastikanKuotaBulanIni } from "@/server/modules/aleta-ai/kuota";
 import { PESAN_NONAKTIF_KUNCI, PESAN_NONAKTIF_PROYEK, PESAN_NONAKTIF_SAKLAR } from "@/server/modules/aleta-ai/mesin";
 import { bacaPengaturan, bacaRute, bacaTarif } from "@/server/modules/aleta-ai/pengaturan";
 import { proyekAktif } from "@/server/modules/aleta-ai/proyek";
@@ -18,6 +19,9 @@ export type RingkasAi = {
   aktif: boolean;
   alasanNonaktif?: string;
   saldoRp: number;
+  /** Tahap 4: saldo di bawah ambang pengaturan (bukan Super Admin). */
+  saldoMenipis: boolean;
+  ambangSaldoMenipisRp: number;
   superAdmin: boolean;
   pemicu: Array<{ kode: string; label: string; kelompok: string; mode: string; grup: string }>;
   proyekVersi: number;
@@ -38,10 +42,14 @@ export async function ringkasAi(db: AletaDatabase, pelaku: PelakuAi): Promise<Ri
     })
     .map((p) => ({ kode: p.kode, label: p.label, kelompok: p.grup, mode: tabel.get(p.kelompok)?.label ?? "Cepat", grup: p.grupHuruf }));
 
+  await pastikanKuotaBulanIni(db, pelaku);
+  const saldoRp = await saldoPengguna(db, pelaku.id);
   return {
     aktif: !alasan,
     ...(alasan ? { alasanNonaktif: alasan } : {}),
-    saldoRp: await saldoPengguna(db, pelaku.id),
+    saldoRp,
+    saldoMenipis: !pelaku.superAdmin && pengaturan.ambangSaldoMenipisRp > 0 && saldoRp < pengaturan.ambangSaldoMenipisRp,
+    ambangSaldoMenipisRp: pengaturan.ambangSaldoMenipisRp,
     superAdmin: pelaku.superAdmin,
     pemicu,
     proyekVersi: proyek?.versi ?? 0,
@@ -49,7 +57,8 @@ export async function ringkasAi(db: AletaDatabase, pelaku: PelakuAi): Promise<Ri
 }
 
 export async function tampilSaldo(db: AletaDatabase, pelaku: PelakuAi) {
-  return { saldoRp: await saldoPengguna(db, pelaku.id), mutasi: await daftarMutasi(db, pelaku.id, 100) };
+  const mutasi = (await daftarMutasi(db, pelaku.id, 100)).map((m) => ({ ...m, keterangan: m.catatan || m.jenis, saldoSesudahRp: m.saldoSetelah }));
+  return { saldoRp: await saldoPengguna(db, pelaku.id), mutasi };
 }
 
 export async function tampilKurs(db: AletaDatabase, opsi: { segarkan?: boolean; pengambil?: PengambilKurs } = {}) {
@@ -69,13 +78,14 @@ export async function tampilKurs(db: AletaDatabase, opsi: { segarkan?: boolean; 
 }
 
 export async function tampilPengaturan(db: AletaDatabase) {
-  const [pengaturan, tarif, rute, kurs] = await Promise.all([bacaPengaturan(db), bacaTarif(db), bacaRute(db), tampilKurs(db)]);
+  const [pengaturan, tarif, rute, kurs, kuotaPeran] = await Promise.all([bacaPengaturan(db), bacaTarif(db), bacaRute(db), tampilKurs(db), bacaKuotaPeran(db)]);
   // `margin` dan `penyanggaKurs` = nama pendek yang sama dengan marginPersen/penyanggaKursPersen (PERSEN, 30 = 30%).
   return {
     pengaturan: { ...pengaturan, margin: pengaturan.marginPersen, penyanggaKurs: pengaturan.penyanggaKursPersen },
     tarif,
     rute,
     kurs,
+    kuotaPeran,
     kunciTerpasang: kunciApiTerpasang(),
   };
 }

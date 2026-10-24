@@ -80,6 +80,17 @@ export async function register() {
     mulaiPutusOtomatisBerkala(getDatabase);
   }
   /* === AKHIR PUTUS OTOMATIS === */
+  /* === ALETA Ai REKONSILIASI 24 Okt (T10) === detak 5 menit; SEKALI per tanggal memeriksa kemarin pada jam pemicu
+     (bawaan 01.00 WITA, diatur Super Admin; saklar bawaan MENYALA) dan sekali saat server menyala bila kemarin belum
+     diperiksa. Hanya membaca; selisih tampil di lonceng Super Admin. Matikan seluruhnya dengan ALETA_AI_REKONSILIASI=0. */
+  if (process.env.ALETA_AI_REKONSILIASI !== "0") {
+    const [{ mulaiRekonsiliasiBerkala }, { getDatabase }] = await Promise.all([
+      import("@/server/modules/aleta-ai/rekonsiliasi"),
+      import("@/server/db/client"),
+    ]);
+    mulaiRekonsiliasiBerkala(getDatabase);
+  }
+  /* === AKHIR ALETA Ai REKONSILIASI === */
   if (process.env.ALETA_SINKRON_PENJADWAL === "0") return;
   const { mulaiPenjadwalSinkron } = await import("@/server/modules/sinkron/penjadwal");
   mulaiPenjadwalSinkron();

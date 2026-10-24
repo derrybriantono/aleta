@@ -856,6 +856,45 @@ export const DDL_ALETA_AI = {
 } as const;
 
 /**
+ * ALETA Ai tahap 4 - dompet lengkap (0088, 25 Okt 2026, T10): kuota hibah per
+ * peran, rekonsiliasi harian, dan kolom MDR + kurs per giliran. Cermin PERSIS
+ * dari drizzle/0088_aleta_ai_dompet.sql; penjaga aleta-ai-dompet-25okt.test.ts
+ * membandingkan keduanya. Tanpa kunci asing.
+ */
+export const DDL_ALETA_AI_DOMPET = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_ai_kuota_peran (
+  peran_id TEXT PRIMARY KEY,
+  kuota_bulanan_rp INTEGER NOT NULL DEFAULT 0,
+  diubah_oleh TEXT NOT NULL DEFAULT '',
+  diubah_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_ai_rekonsiliasi (
+  id TEXT PRIMARY KEY,
+  tanggal TEXT NOT NULL,
+  dijalankan_at TEXT NOT NULL,
+  oleh_id TEXT NOT NULL DEFAULT '',
+  jumlah_pengguna INTEGER NOT NULL DEFAULT 0,
+  jumlah_selisih INTEGER NOT NULL DEFAULT 0,
+  tahanan_menggantung INTEGER NOT NULL DEFAULT 0,
+  pendapatan_giliran_rp INTEGER NOT NULL DEFAULT 0,
+  potong_mutasi_rp INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'seimbang',
+  rincian_json TEXT NOT NULL DEFAULT '[]'
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_ai_rekonsiliasi_tanggal ON aleta_ai_rekonsiliasi(tanggal)`,
+    `CREATE INDEX IF NOT EXISTS idx_ai_mutasi_rujukan ON aleta_ai_mutasi(rujukan_id)`,
+  ],
+  kolom: [
+    `ALTER TABLE aleta_ai_obrolan_pesan ADD COLUMN IF NOT EXISTS biaya_mdr_rp DOUBLE PRECISION NOT NULL DEFAULT 0`,
+    `ALTER TABLE aleta_ai_obrolan_pesan ADD COLUMN IF NOT EXISTS kurs_tanggal TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_ai_obrolan_pesan ADD COLUMN IF NOT EXISTS kurs_sumber TEXT NOT NULL DEFAULT ''`,
+  ],
+} as const;
+
+/**
  * Unggah Putusan Terjadwal (0080, 21 Okt 2026, agen B3): jadwal, butir (satu
  * perkara), berkas yang diunggah, dan jejak jujur. Cermin PERSIS dari
  * drizzle/0080_aleta_putusan_terjadwal.sql; penjaga putusan-terjadwal-layanan-21okt.test.ts
@@ -2301,6 +2340,8 @@ const schemaStatements = [
   ...DDL_TAUTAN_JADWAL.tabel,
   // ALETA Ai tahap 1: proyek V4.5, percakapan, saldo, tarif, rute (0078).
   ...DDL_ALETA_AI.tabel,
+  // ALETA Ai tahap 4: kuota hibah per peran, rekonsiliasi harian (0088).
+  ...DDL_ALETA_AI_DOMPET.tabel,
   // Unggah Putusan Terjadwal: jadwal, butir, berkas, jejak (0080).
   ...DDL_PUTUSAN_TERJADWAL.tabel,
   // Arsip hasil mediasi per perkara (0081).
@@ -4260,6 +4301,7 @@ const indexStatements = [
   ...DDL_BLANGKO_PRIBADI.indeks,
   ...DDL_TAUTAN_JADWAL.indeks,
   ...DDL_ALETA_AI.indeks,
+  ...DDL_ALETA_AI_DOMPET.indeks,
   ...DDL_PUTUSAN_TERJADWAL.indeks,
   ...DDL_MEDIASI_ARSIP.indeks,
   ...DDL_SIDANG_KELILING_HAKIM.indeks,
@@ -4795,6 +4837,8 @@ const migrationStatements = [
   ...DDL_TAUTAN_SIPP_SUMBER.kolom,
   // Ruas tambahan pola/templat kamus deteksi (0063).
   ...DDL_KAMUS_RUAS_TAMBAHAN.kolom,
+  // ALETA Ai tahap 4: MDR dan kurs (tanggal, sumber) per giliran (0088).
+  ...DDL_ALETA_AI_DOMPET.kolom,
 ];
 
 const aletaSippSchemaStatements = [
