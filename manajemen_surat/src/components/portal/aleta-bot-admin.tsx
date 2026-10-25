@@ -30,6 +30,7 @@ import React, { type ReactNode, useCallback, useEffect, useMemo, useRef, useStat
 
 import { AletaBotAntrianOnlinePanel } from "@/components/portal/aleta-bot-antrian-online";
 import { AletaBotEcourtPanel } from "@/components/portal/aleta-bot-ecourt";
+import { AletaBotKolamSipp } from "@/components/portal/aleta-bot-kolam-sipp";
 import { AletaBotManualSendPanel } from "@/components/portal/aleta-bot-manual-send";
 import { PageIntro } from "@/components/portal/shared";
 import { Badge } from "@/components/ui/badge";
@@ -5011,6 +5012,7 @@ export function AletaBotAdminPanel() {
               </Button>
             </CardContent>
           </Card>
+          <AletaBotKolamSipp />
         </TabsContent> : null}
 
         <TabsContent value="templates" id="templates">

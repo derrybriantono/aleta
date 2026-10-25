@@ -9,20 +9,30 @@ const sippDatabase =
     : "") ||
   "SIPP";
 
-const db = mysql.createPool({
-  // sesuaikan konfigurasi dengan server
-  host: process.env.ALETA_BOT_DB_SIPP_HOST || process.env.ALETA_BOT_DB_HOST || "localhost",
-  port: Number(process.env.ALETA_BOT_DB_SIPP_PORT || process.env.ALETA_BOT_DB_PORT || 3306),
-  user: process.env.ALETA_BOT_DB_SIPP_USER || process.env.ALETA_BOT_DB_USER || "root",
-  password: process.env.ALETA_BOT_DB_SIPP_PASSWORD || process.env.ALETA_BOT_DB_PASSWORD || "",
-  database: sippDatabase,
-  multipleStatements: true,
-  // Batas sambungan ditulis eksplisit. Sebelumnya mengandalkan bawaan driver
-  // (10) tanpa pernah disebut, sehingga tidak ada yang dapat menghitung berapa
-  // banyak query serentak yang sanggup ditanggung SIPP dari bot.
-  connectionLimit: Math.max(1, Math.min(50, Number(process.env.ALETA_BOT_DB_CONNECTION_LIMIT || 10))),
-  connectTimeout: Math.max(1000, Number(process.env.ALETA_BOT_DB_CONNECT_TIMEOUT_MS || 5000))
-});
+const kolamSippService = require("./services/kolamSippService");
+
+// Opsi kolam dipakai dua kali: kolam utama (juga kolam latar) dan, hanya bila
+// dinyalakan di pengaturan, kolam interaktif untuk layar. Bawaannya satu kolam
+// seperti sebelumnya.
+function opsiKolamSipp(batas) {
+  return {
+    // sesuaikan konfigurasi dengan server
+    host: process.env.ALETA_BOT_DB_SIPP_HOST || process.env.ALETA_BOT_DB_HOST || "localhost",
+    port: Number(process.env.ALETA_BOT_DB_SIPP_PORT || process.env.ALETA_BOT_DB_PORT || 3306),
+    user: process.env.ALETA_BOT_DB_SIPP_USER || process.env.ALETA_BOT_DB_USER || "root",
+    password: process.env.ALETA_BOT_DB_SIPP_PASSWORD || process.env.ALETA_BOT_DB_PASSWORD || "",
+    database: sippDatabase,
+    multipleStatements: true,
+    // Batas sambungan ditulis eksplisit. Sebelumnya mengandalkan bawaan driver
+    // (10) tanpa pernah disebut, sehingga tidak ada yang dapat menghitung berapa
+    // banyak query serentak yang sanggup ditanggung SIPP dari bot.
+    // Nilainya kini dapat diubah saat berjalan dari pengaturan (kolamSippService).
+    connectionLimit: Math.max(1, Math.min(50, Number(batas))),
+    connectTimeout: Math.max(1000, Number(process.env.ALETA_BOT_DB_CONNECT_TIMEOUT_MS || 5000))
+  };
+}
+
+const db = mysql.createPool(opsiKolamSipp(kolamSippService.setelan().batas));
 
 // -----------------------------------------------------------------------------
 // Dukungan TANGGAL ACUAN untuk seluruh sumber data jalur lama.
@@ -47,6 +57,19 @@ const penjagaTandaSipp = require("./services/penjagaTandaSipp");
 require("./services/penjagaKembaran").pasang(db, "sipp");
 
 const originalQuery = db.query.bind(db);
+
+// Pelaksana kolam: dengan setelan bawaan hanya meneruskan ke originalQuery (perilaku
+// lama persis). Bila "kolam terpisah"/"gagal cepat"/"putus kueri lambat" dinyalakan,
+// layar dan kerja latar dilayani kolam berbeda.
+const pelaksanaKolam = kolamSippService.pasangPelaksana({
+  utama: db,
+  queryAsli: originalQuery,
+  buatKolamKedua: () => {
+    const kedua = mysql.createPool(opsiKolamSipp(kolamSippService.setelan().batasInteraktif));
+    require("./services/penjagaKembaran").pasang(kedua, "sipp");
+    return kedua;
+  },
+});
 
 function sqlTextOf(target) {
   if (typeof target === "string") return target;
@@ -112,7 +135,7 @@ db.query = function queryWithReferenceDate(sql, ...rest) {
   // bergaya aliran (streaming) diteruskan apa adanya agar tidak berubah sifat.
   const callbackIndex = rest.length - 1;
   const callback = callbackIndex >= 0 && typeof rest[callbackIndex] === "function" ? rest[callbackIndex] : null;
-  if (!callback) return originalQuery(options, ...rest);
+  if (!callback) return pelaksanaKolam.jalankan(options, rest);
 
   // Pemutus arus: saat SIPP sedang bermasalah, permintaan baru ditolak cepat
   // tanpa menyentuh database sama sekali. Terus mencoba hanya menempati
@@ -145,7 +168,7 @@ db.query = function queryWithReferenceDate(sql, ...rest) {
     return callback(error, result, fields);
   };
 
-  return originalQuery(options, ...forwarded);
+  return pelaksanaKolam.jalankan(options, forwarded);
 };
 
 module.exports = db;

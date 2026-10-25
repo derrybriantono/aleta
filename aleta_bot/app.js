@@ -201,6 +201,10 @@ app.use(express.json({ limit: "1mb" }));
 // MODE KEMBARAN: satu permintaan = satu kelompok antrean sinkron. Dipasang SESUDAH pembaca
 // badan supaya konteks bertahan sampai penangan rute. Di mode biasa tidak berbuat apa-apa.
 app.use(require("./services/penjagaKembaran").middlewareExpress());
+// KOLAM SIPP: permintaan dari portal ditandai "layar" (interaktif) atau "latar" supaya, bila
+// kolam terpisah dinyalakan di pengaturan, kerja latar tidak merebut sambungan layar.
+// Dengan setelan bawaan tanda ini tidak mengubah apa pun.
+app.use("/internal/aleta-bot", require("./services/kolamSippService").middlewareExpress());
 app.use(express.static("public"));
 
 app.get("/", (req, res) => {
