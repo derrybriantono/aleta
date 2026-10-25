@@ -13,13 +13,14 @@ import { ApiError } from "@/server/shared/errors";
  * perilaku masuk persis seperti sebelumnya. Pengguna boleh mendaftarkan
  * authenticator lebih dulu; kodenya baru ditagih setelah Super Admin menyalakan.
  *
- * Aturan per peran (bila salah satu saklar menyala):
- *   wajib       Super Admin/Admin bawaan: kode diminta di perangkat baru atau
- *               dari luar jaringan kantor.
- *   luar-kantor hakim/pejabat bawaan: kode HANYA diminta dari luar jaringan kantor.
- *   opsional    peran lain bawaan: kode diminta hanya bila orangnya sendiri
- *               sudah mendaftarkan authenticator (perangkat baru / luar kantor).
- *   mati        tidak pernah.
+ * Aturan per peran (bila salah satu saklar menyala). BAWAAN SEMUA PERAN = mati (keputusan Derry 26 Okt 2026,
+ * termasuk Super Admin dan Admin): menyalakan saklar saja tidak membuat siapa pun dimintai kode; Super Admin
+ * memilih aturan tiap peran sendiri.
+ *   wajib       kode diminta di perangkat baru atau dari luar jaringan kantor.
+ *   luar-kantor kode HANYA diminta dari luar jaringan kantor.
+ *   opsional    kode diminta hanya bila orangnya sendiri sudah mendaftarkan authenticator
+ *               (perangkat baru / luar kantor).
+ *   mati        tidak pernah (bawaan).
  * "Percayai perangkat ini" menahan kode selama MASA_TEPERCAYA_HARI (30 hari).
  *
  * Passkey (WebAuthn) hanya sah di HTTPS atau localhost; selama ALETA berjalan
@@ -36,7 +37,7 @@ export const MASA_TEPERCAYA_HARI_BAWAAN = 30;
 export const MASA_TEPERCAYA_HARI_MAKS = 90;
 export const SUBNET_KANTOR_BAWAAN: readonly string[] = ["192.168.10.0/24", "192.168.9.0/24", "127.0.0.1/32", "::1/128"];
 
-/** Peran yang bawaannya "luar-kantor": hakim dan pejabat. */
+/** Peran hakim dan pejabat: daftar acuan untuk layar (bukan lagi bawaan aturan; bawaan semua peran = mati). */
 export const PERAN_PEJABAT: readonly string[] = ["hakim", "ketua", "wakil-ketua", "sekretaris", "panitera", "panitera-muda", "kasubag", "pejabat-struktural"];
 
 export type PengaturanVerifikasi = {
@@ -60,10 +61,9 @@ export const PENGATURAN_VERIFIKASI_BAWAAN: PengaturanVerifikasi = {
   diubahPada: "",
 };
 
-export function aturanBawaanPeran(roleId: string): AturanVerifikasi {
-  if (roleId === "super-admin" || roleId === "admin") return "wajib";
-  if (PERAN_PEJABAT.includes(roleId)) return "luar-kantor";
-  return "opsional";
+/** Keputusan Derry 26 Okt 2026: tidak ada peran yang dimintai kode sampai Super Admin memilihnya. */
+export function aturanBawaanPeran(_roleId: string): AturanVerifikasi {
+  return "mati";
 }
 
 export function aturanUntukPeran(p: PengaturanVerifikasi, roleId: string): AturanVerifikasi {

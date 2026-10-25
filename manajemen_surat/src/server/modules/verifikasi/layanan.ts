@@ -496,7 +496,7 @@ export async function statusAkunVerifikasi(db: AletaDatabase, userId: string, ki
     perangkatTepercaya: tepercaya,
     nomorWhatsapp: samarkanNomor(a?.whatsapp_number ?? ""),
     saklar: { otpWhatsapp: p.otpWhatsapp, authenticator: p.authenticator },
-    aturan: a ? aturanUntukPeran(p, a.role_id) : "opsional",
+    aturan: a ? aturanUntukPeran(p, a.role_id) : "mati",
   };
 }
 

@@ -92,7 +92,8 @@ beforeEach(async () => {
   __setelUlangKaitUntukUji();
 });
 
-const nyalakan = (p: Record<string, unknown>) => simpanPengaturanVerifikasi(db(), p, { id: "u-sa", nama: "SA" }, KINI);
+// Bawaan aturan semua peran = "mati" (26 Okt 2026): uji ini memilih "luar-kantor" untuk hakim secara eksplisit.
+const nyalakan = (p: Record<string, unknown>) => simpanPengaturanVerifikasi(db(), { aturanPeran: { hakim: "luar-kantor" }, ...p }, { id: "u-sa", nama: "SA" }, KINI);
 async function pasangAuthenticator(userId: string) {
   const { rahasia } = await mulaiPendaftaranAuthenticator(db(), { id: userId, username: userId }, KINI);
   await konfirmasiAuthenticator(db(), userId, kodeTotp(rahasia, KINI), KINI);
@@ -106,7 +107,7 @@ describe("satu sumber jaringan kantor", () => {
     await pasangAuthenticator("u-hakim");
     const s = await sumberJaringanKantor(db(), { subnetKantor: ["192.168.10.0/24"] });
     expect(s.sumber).toBe("verifikasi");
-    // hakim = aturan bawaan "luar-kantor": di kantor tanpa kode, di luar kantor dengan kode.
+    // hakim = aturan "luar-kantor" (dipilih Super Admin): di kantor tanpa kode, di luar kantor dengan kode.
     expect(await putuskanMasuk(db(), { userId: "u-hakim", perangkatId: PERANGKAT, ip: IP_192, kini: KINI })).toMatchObject({ perlu: false, sebab: "dalam-kantor" });
     expect(await putuskanMasuk(db(), { userId: "u-hakim", perangkatId: PERANGKAT, ip: IP_LUAR, kini: KINI })).toMatchObject({ perlu: true, sebab: "luar-kantor" });
   });
