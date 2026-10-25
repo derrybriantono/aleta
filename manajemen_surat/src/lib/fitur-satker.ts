@@ -70,6 +70,9 @@ export const FITUR_KATALOG_SAKSI_DB = "katalog-saksi-basis-data";
 /** Saklar C3/U7 (25 Okt 2026): tombol cerai lama di ABT memanggil mesin katalog; bawaan MATI. */
 export const FITUR_MESIN_SAKSI_TUNGGAL = "mesin-saksi-tunggal";
 
+/** Saklar C5/U9 (25 Okt 2026): saran keadaan perkara non-cerai dari posita/petitum dan 2557/2558 dari BAS; bawaan MATI. */
+export const FITUR_FAKTA_NON_CERAI = "fakta-non-cerai";
+
 /** Saklar tahap awal Blangko Saya (18 Okt 2026): mati = hanya Super Admin; menyala = semua peran yang berhak. */
 export const FITUR_BLANGKO_SAYA_SEMUA_PERAN = "blangko-saya-semua-peran";
 
@@ -123,6 +126,14 @@ export const KATALOG_FITUR_SATKER: readonly FiturKatalog[] = [
     bagian: "ekstensi",
     keterangan:
       "Mati: tombol Susun keterangan saksi 1 & 2 di ABT memakai bank templat ABT dan mesin lama. Nyalakan agar tombol itu memanggil mesin katalog yang sama dengan Susun saksi (2-5 saksi Penggugat, 4 Tergugat, 7 jenis keterangan) lengkap dengan alat sunting baris; bank templat ABT tetap dapat dipilih lewat tautan Cara lama.",
+    bawaan: "mati",
+  },
+  {
+    kode: FITUR_FAKTA_NON_CERAI,
+    nama: "Keadaan dan fakta saksi perkara non-cerai",
+    bagian: "ekstensi",
+    keterangan:
+      "Mati: Susun saksi menanyakan semua keadaan perkara non-cerai kepada petugas, dan 2557/2558 (berapa kali saksi melihat dan mendengar pertengkaran) diketik tangan. Nyalakan agar posita dan petitum dibaca menjadi SARAN keadaan (dengan kalimat sumber dan tombol Pakai; tidak ada yang terisi sendiri) dan angka 2557/2558 dibaca dari BAS yang sudah tersimpan sebagai usulan ragu.",
     bawaan: "mati",
   },
   {

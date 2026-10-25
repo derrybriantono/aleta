@@ -3413,12 +3413,22 @@ function pasangPenjagaCetak(jatiDiri, lapor) {
 }
 
 async function mintaUsulan(muatan) {
+  // C5/U9 (25 Okt 2026): saklar Fitur Satker "fakta-non-cerai" (bawaan MATI; gagal bertanya = mati) meminta bot juga membaca
+  // 2557/2558 (berapa kali saksi melihat/mendengar pertengkaran) dari BAS yang sudah tersimpan. Mati = muatan persis seperti dulu.
+  let muatanKirim = muatan;
+  if (muatan && (muatan.sumber === "sipp" || muatan.sumber === "semua") && globalThis.AletaSaklarFitur) {
+    try {
+      if (await globalThis.AletaSaklarFitur.aktif("fakta-non-cerai")) muatanKirim = { ...muatan, kaliPertengkaranBas: true };
+    } catch {
+      /* tanpa saklar: muatan lama */
+    }
+  }
   const respons = await alatAmbil(ALETA_API_ABT, {
     method: "POST",
     credentials: "include",
     cache: "no-store",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(muatan),
+    body: JSON.stringify(muatanKirim),
   }, "Membaca usulan");
   if (!respons.ok) throw new Error(alatPesanGagal(null, respons.status, "Membaca usulan"));
   const luar = await respons.json();

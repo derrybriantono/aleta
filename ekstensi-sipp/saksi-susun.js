@@ -260,6 +260,10 @@
       // fakta perkara dari gugatan, data SIPP, dan isian blangko (hanya perceraian): {kunci: {nilai, yakin, sumber, ket}}
       fakta: {},
       faktaStatus: "",
+      // C5/U9: saran keadaan perkara non-cerai dari posita/petitum ([{kunci, nilai, jamak, yakin, sumber, kalimat}]); hanya saran
+      saranKeadaan: [],
+      saklarSaran: false,
+      janjiFakta: null,
       // keterangan anak, calon, dan orang tua (hanya jenis perkara yang punya katalog keterangan, mis. dispensasi kawin)
       ket: null,
       tab: "saksi",
@@ -342,6 +346,8 @@
       S.hasil = null;
       S.fakta = {};
       S.faktaStatus = "";
+      S.saranKeadaan = [];
+      S.janjiFakta = null;
       S.perButir = {};
       const turun = turunkanKeadaan(kat, { teks: teksHalaman(), peta: peta(), alur: kenali().alur });
       S.keadaan = m.keadaanBawaan(kat, turun);
@@ -351,6 +357,7 @@
         { pihak: "P", jenis: "melihat", sumber: "", berbeda: [], keadaan: {}, daftar: [] },
       ];
       aturKeterangan(kat);
+      void muatSaranKeadaan(kat);
     }
 
     /**
@@ -476,12 +483,69 @@
       gambarUlang();
     }
 
+    /** Nilai keadaan sebagai himpunan teks (untuk membandingkan isian sekarang dengan saran). */
+    const himpunanNilai = (n) => new Set([].concat(n === undefined || n === null ? [] : n).map(String));
+    const samaNilai = (a, b) => {
+      const x = himpunanNilai(a);
+      const y = himpunanNilai(b);
+      return x.size === y.size && Array.from(x).every((v) => y.has(v));
+    };
+
+    /**
+     * C5/U9: "Saran keadaan dari posita". HANYA saran: tidak ada keadaan yang terisi sendiri; petugas menekan Pakai (satu isian) atau
+     * Pakai semua saran. Saran yang sama dengan isian sekarang tidak ditampilkan. Tanpa saran = tidak ada yang digambar.
+     */
+    function gambarSaranKeadaan(kotak, sumberKat) {
+      if (sumberKat !== S.kat || !saranAktif()) return;
+      const dikenal = new Map(m.keadaanUntukBorang(sumberKat).filter((f) => !f.perSaksi).map((f) => [f.kunci, f]));
+      const daftar = (S.saranKeadaan || []).filter(
+        (sr) => sr && dikenal.has(sr.kunci) && keadaanRelevan(sr.kunci, sumberKat) && !samaNilai(S.keadaan[sr.kunci], sr.nilai)
+      );
+      if (!daftar.length) return;
+      const labelNilai = (kunci, n) =>
+        (sumberKat.keadaan && sumberKat.keadaan[kunci] && sumberKat.keadaan[kunci].labelNilai && sumberKat.keadaan[kunci].labelNilai[n]) ||
+        m.LABEL_NILAI_BAKU[n] ||
+        (n.length === 1 ? n : n.replace(/-/g, " "));
+      const kotakSaran = buat("div", "aleta-sdg-ruas aleta-sdg-saran");
+      kotakSaran.setAttribute("data-saran-keadaan", "1");
+      kotakSaran.appendChild(buat("span", "aleta-abt-label", "Saran keadaan dari posita (periksa dulu; belum dikuatkan saksi)"));
+      const pakai = (sr) => {
+        S.keadaan[sr.kunci] = sr.jamak ? [].concat(sr.nilai).map(String) : String([].concat(sr.nilai)[0]);
+      };
+      for (const sr of daftar) {
+        const baris = buat("div", "aleta-abt-kabar");
+        baris.setAttribute("data-saran-kunci", sr.kunci);
+        const nilaiTampil = [].concat(sr.nilai).map((n) => labelNilai(sr.kunci, String(n))).join(", ");
+        baris.appendChild(buat("span", "", `${dikenal.get(sr.kunci).label}: ${nilaiTampil}`));
+        if (sr.kalimat) baris.title = `Dibaca dari ${sr.sumber === "petitum" ? "petitum" : "posita"}: ${sr.kalimat}`;
+        const tombol = buat("button", "aleta-sdg-tombol", "Pakai");
+        tombol.type = "button";
+        tombol.addEventListener("click", () => {
+          pakai(sr);
+          ubahKeadaan();
+        });
+        baris.appendChild(tombol);
+        kotakSaran.appendChild(baris);
+      }
+      if (daftar.length > 1) {
+        const semua = buat("button", "aleta-sdg-tombol", "Pakai semua saran");
+        semua.type = "button";
+        semua.addEventListener("click", () => {
+          for (const sr of daftar) pakai(sr);
+          ubahKeadaan();
+        });
+        kotakSaran.appendChild(semua);
+      }
+      kotak.appendChild(kotakSaran);
+    }
+
     /** Isian keadaan perkara. `kat` = katalog sumber isian (saksi atau keterangan); `kecuali` = kunci yang digambar tempat lain. */
     function gambarKeadaan(form, kat, kecuali) {
       const sumberKat = kat || S.kat;
       const tanpa = kecuali || [];
       const kotak = buat("div", "aleta-sdg-alasan");
       kotak.appendChild(buat("div", "aleta-abt-label", "Keadaan perkara"));
+      gambarSaranKeadaan(kotak, sumberKat);
       for (const f of m.keadaanUntukBorang(sumberKat)) {
         if (tanpa.includes(f.kunci)) continue;
         if (f.perSaksi) continue; // digambar pada baris tiap saksi
@@ -1133,8 +1197,38 @@
         .slice(0, 60);
     }
 
+    /** C5/U9: saklar Fitur Satker "fakta-non-cerai" (bawaan MATI; gagal bertanya = mati). Hanya katalog non-cerai. */
+    const SAKLAR_SARAN = "fakta-non-cerai";
+    const saranAktif = () => Boolean(S.saklarSaran) && pakaiFakta() && !katalogCerai();
+
+    /**
+     * Membuka borang non-cerai: bila saklar menyala, fakta perkara (dan saran keadaan) dimuat saat borang dibuka, bukan baru saat
+     * Susun, supaya saran tampil di "Keadaan perkara". Borang digambar ulang SEKALI bila belum ada hasil yang sedang dibaca.
+     */
+    async function muatSaranKeadaan(kat) {
+      try {
+        if (!globalThis.AletaSaklarFitur || !pakaiFakta() || katalogCerai()) return;
+        S.saklarSaran = await globalThis.AletaSaklarFitur.aktif(SAKLAR_SARAN);
+        if (!S.saklarSaran || S.kat !== kat) return;
+        await pastikanFakta(false);
+        if (S.kat === kat && !S.hasil && S.saranKeadaan.length && !wadah.hidden) gambarUlang();
+      } catch {
+        /* tanpa saran: perilaku lama */
+      }
+    }
+
     /** Memuat fakta perkara sekali per pembukaan (atau paksa). Gagal = tanpa fakta; isian petugas dan variabel ABT tetap dipakai. */
-    async function pastikanFakta(paksa) {
+    function pastikanFakta(paksa) {
+      if (!pakaiFakta()) return Promise.resolve();
+      if (!paksa && S.janjiFakta) return S.janjiFakta;
+      const janji = muatFakta(paksa).finally(() => {
+        if (S.janjiFakta === janji) S.janjiFakta = null;
+      });
+      S.janjiFakta = janji;
+      return janji;
+    }
+
+    async function muatFakta(paksa) {
       if (!pakaiFakta()) return;
       if (!paksa && (S.faktaStatus === "ada" || S.faktaStatus === "kosong")) return;
       const api = globalThis.AletaBdJawabanKatalog;
@@ -1152,14 +1246,18 @@
         }
         const { alur, id } = kenali();
         const kodeVariabel = kodeVariabelKosong(v);
+        const mintaSaran = saranAktif();
         S.fakta = await api.ambilFakta({
           perkara: { nomorPerkara: nomor(), jenisPerkaraId: id, alurPerkaraId: alur },
           sebutan: { P: sebutan("0046", ""), T: sebutan("0047", "") },
           posita: v("5125"),
           tanggalSidang: v("0033"),
           variabel,
-          ...(kodeVariabel.length ? { kodeVariabel, kunciKatalog: S.kat.kunci } : {}),
+          ...(kodeVariabel.length ? { kodeVariabel } : {}),
+          ...(kodeVariabel.length || mintaSaran ? { kunciKatalog: S.kat.kunci } : {}),
+          ...(mintaSaran ? { keadaanNonCerai: true } : {}),
         });
+        S.saranKeadaan = mintaSaran && S.fakta && Array.isArray(S.fakta.keadaanSaran) ? S.fakta.keadaanSaran : [];
         const adaVariabel = Boolean(S.fakta && S.fakta.variabel && Object.keys(S.fakta.variabel).length);
         S.faktaStatus = Object.keys(S.fakta || {}).length || adaVariabel ? "ada" : "kosong";
       } catch {

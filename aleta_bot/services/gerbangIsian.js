@@ -59,13 +59,15 @@ const dikecualikan = (u) => {
  * Keputusan gerbang untuk satu usulan (tidak mengubah apa pun).
  * @returns {{ keyakinan: string, status: string, diturunkan: boolean, entri: object|null, asal: string }}
  */
-function putuskan(u, gerbangLuar) {
+function putuskan(u, gerbangLuar, jenis) {
   const G = muat(gerbangLuar);
   const y = String((u && u.keyakinan) || "");
   const asal = asalDari(u);
   if (!u || (y !== "pasti" && y !== "cukup") || dikecualikan(u)) return { keyakinan: y, status: "dikecualikan", diturunkan: false, entri: null, asal };
   const kode = String(u.kode || "").padStart(4, "0");
-  const entri = ((G.kode || {})[kode] || { asal: {} }).asal[asal] || null;
+  let entri = ((G.kode || {})[kode] || { asal: {} }).asal[asal] || null;
+  // C5/U9 (25 Okt 2026): ketepatan per jenis perkara (diisi data U3). Tanpa `perJenis` atau tanpa jenis: entri umum, persis seperti dulu.
+  if (entri && entri.perJenis && jenis && entri.perJenis[String(jenis)]) entri = { ...entri, ...entri.perJenis[String(jenis)] };
   if (!entri) return { keyakinan: "ragu", status: "tanpa-ukuran", diturunkan: true, entri: null, asal };
   if (entri.status === "saran") return { keyakinan: "ragu", status: "saran", diturunkan: true, entri, asal };
   const maks = entri.pangkatMaks || "cukup";
@@ -83,14 +85,14 @@ const KALIMAT = {
 /**
  * Menerapkan gerbang pada daftar usulan (di tempat; mengembalikan daftar yang sama). Aman dipanggil dua kali.
  * @param {Array} usulan
- * @param {{gerbang?: object}} [opsi]
+ * @param {{gerbang?: object, jenis?: string|number}} [opsi]  jenis = id jenis perkara (memilih entri `perJenis` bila ada)
  */
 function terapkan(usulan, opsi) {
   const o = opsi || {};
   if (!Array.isArray(usulan) || process.env.ALETA_GERBANG_ISIAN === "mati") return usulan;
   for (const u of usulan) {
     if (!u || typeof u !== "object" || u.gerbang) continue;
-    const r = putuskan(u, o.gerbang);
+    const r = putuskan(u, o.gerbang, o.jenis);
     if (r.status === "dikecualikan") continue;
     const e = r.entri;
     u.gerbang = { status: r.status, asal: r.asal, diturunkan: r.diturunkan, ...(e ? { n: e.n, banding: e.banding, cocok: e.cocok, persen: e.persen } : {}) };
