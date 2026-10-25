@@ -1001,20 +1001,20 @@ export const AKSI = {
   },
   // 25 Okt 2026 (rantai E): Pusat kesehatan, catatan galat, hasil uji beban.
   "kesehatan.lihat": {
-    label: "Melihat Pusat kesehatan sistem, catatan galat, dan hasil uji beban",
+    label: "Melihat Pusat kesehatan sistem, catatan error, dan hasil uji beban",
     crud: "R",
     golongan: [],
     lingkup: "semua",
     rute: ["GET /api/admin/kesehatan", "GET /api/admin/catatan-galat", "GET /api/admin/uji-beban"],
-    alasan: "Keadaan server, bot, SIPP/ABT, galat, dan versi ekstensi tiap PC adalah urusan pengelola - Admin dan Super Admin.",
+    alasan: "Keadaan server, bot, SIPP/ABT, error, dan versi ekstensi tiap PC adalah urusan pengelola - Admin dan Super Admin.",
   },
   "galat.kelola": {
-    label: "Menandai catatan galat sudah ditangani",
+    label: "Menandai catatan error sudah ditangani",
     crud: "U",
     golongan: [],
     lingkup: "semua",
     rute: ["POST /api/admin/catatan-galat"],
-    alasan: "Menandai galat ditangani mengubah daftar kerja pengembang - Admin dan Super Admin.",
+    alasan: "Menandai error ditangani mengubah daftar kerja pengembang - Admin dan Super Admin.",
   },
   "kesehatan.atur": {
     label: "Menyalakan pemeriksaan berkala dan peringatan WhatsApp Pusat kesehatan; mengimpor hasil uji beban",

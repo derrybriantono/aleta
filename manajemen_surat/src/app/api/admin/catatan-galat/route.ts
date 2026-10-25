@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     const id = request.nextUrl.searchParams.get("id");
     if (id) {
       const r = await rincianGalat(db, id);
-      if (!r) throw new ApiError(404, "Kelompok galat tidak ditemukan.");
+      if (!r) throw new ApiError(404, "Kelompok error tidak ditemukan.");
       return ok({ ...r, teks: teksUntukPengembang(r.kelompok, r.kejadian) });
     }
     return ok({
@@ -48,9 +48,9 @@ export async function POST(request: NextRequest) {
       () => ({}) as { id?: string; ditangani?: boolean; catatan?: string }
     );
     const id = String(b.id ?? "");
-    if (!id) throw new ApiError(400, "Kelompok galat belum dipilih.");
+    if (!id) throw new ApiError(400, "Kelompok error belum dipilih.");
     const berhasil = await tandaiGalat(db, id, { id: actor.id, nama: actor.name ?? actor.id }, b.ditangani !== false, String(b.catatan ?? ""));
-    if (!berhasil) throw new ApiError(404, "Kelompok galat tidak ditemukan.");
+    if (!berhasil) throw new ApiError(404, "Kelompok error tidak ditemukan.");
     await appendAuditLog(db, {
       id: await nextPrefixedId(db, "audit_logs", "adt"),
       actorUserId: actor.id,

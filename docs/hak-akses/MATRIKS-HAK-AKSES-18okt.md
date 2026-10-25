@@ -170,8 +170,8 @@ Catatan kewenangan:
 | Melihat riwayat masuk, sesi aktif, dan perangkat semua akun; mengeluarkan sesi | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Mengatur pengecualian batas perangkat per akun | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Mengatur batas perangkat per peran dan setelan riwayat masuk | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
-| Melihat Pusat kesehatan sistem, catatan galat, dan hasil uji beban | L | L | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
-| Menandai catatan galat sudah ditangani | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Melihat Pusat kesehatan sistem, catatan error, dan hasil uji beban | L | L | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Menandai catatan error sudah ditangani | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Menyalakan pemeriksaan berkala dan peringatan WhatsApp Pusat kesehatan; mengimpor hasil uji beban | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Menyalakan Mode pemeliharaan, mengatur pesan dan jadwalnya | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Lihat sebagai akun atau peran (pratinjau menu dan hak, baca-saja, tercatat) | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |

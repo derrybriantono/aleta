@@ -288,7 +288,7 @@ const KOMPONEN: Array<{ kunci: string; nama: string; kelompok: Komponen["kelompo
   { kunci: "cadangan", nama: "Cadangan", kelompok: "data" },
   { kunci: "server", nama: "Prosesor, memori, disk server", kelompok: "server" },
   { kunci: "ekstensi", nama: "Ekstensi di PC pengguna", kelompok: "klien" },
-  { kunci: "galat", nama: "Galat 24 jam", kelompok: "layanan" },
+  { kunci: "galat", nama: "Error 24 jam", kelompok: "layanan" },
   { kunci: "uji-beban", nama: "Uji beban terakhir", kelompok: "server" },
   { kunci: "integritas", nama: "Integritas berkas website/server", kelompok: "server" },
 ];

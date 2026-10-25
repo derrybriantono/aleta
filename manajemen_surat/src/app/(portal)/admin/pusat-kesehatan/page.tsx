@@ -15,7 +15,7 @@ export default function PusatKesehatanPage() {
       <PageIntro
         eyebrow="Pusat Kendali"
         title="Pusat Kesehatan Sistem"
-        description="Keadaan portal, bot, WhatsApp, SIPP, ABT, e-Court, cadangan, server, dan ekstensi di tiap PC; catatan galat; serta hasil uji beban terakhir."
+        description="Keadaan portal, bot, WhatsApp, SIPP, ABT, e-Court, cadangan, server, dan ekstensi di tiap PC; catatan error; serta hasil uji beban terakhir."
       />
       {boleh ? <PusatKesehatanPanel /> : <AccessDeniedCard />}
     </div>

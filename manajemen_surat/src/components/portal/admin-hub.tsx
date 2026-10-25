@@ -385,7 +385,7 @@ export function AdminHub() {
             <AdminMenuAction
               href="/admin/pusat-kesehatan"
               title="Pusat kesehatan sistem"
-              description="Satu layar untuk keadaan portal, bot, WhatsApp, SIPP, ABT, e-Court, cadangan, server, dan versi ekstensi tiap PC; catatan galat; hasil uji beban."
+              description="Satu layar untuk keadaan portal, bot, WhatsApp, SIPP, ABT, e-Court, cadangan, server, dan versi ekstensi tiap PC; catatan error; hasil uji beban."
               icon={<Server className="h-5 w-5 text-emerald-600" />}
               badge="Kesehatan"
             />

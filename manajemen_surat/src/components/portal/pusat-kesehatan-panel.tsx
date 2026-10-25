@@ -116,7 +116,7 @@ export function PusatKesehatanPanel() {
       <Tabs defaultValue="keadaan">
         <TabsList>
           <TabsTrigger value="keadaan">Keadaan</TabsTrigger>
-          <TabsTrigger value="galat">Catatan galat</TabsTrigger>
+          <TabsTrigger value="galat">Catatan error</TabsTrigger>
           <TabsTrigger value="uji-beban">Uji beban</TabsTrigger>
           {data?.bolehAtur && <TabsTrigger value="pengaturan">Pengaturan</TabsTrigger>}
         </TabsList>
@@ -192,7 +192,7 @@ function TabGalat() {
       setDaftar((await ambil<{ galat: KelompokGalat[] }>(`/api/admin/catatan-galat?${kueri.toString()}`)).galat);
       setGalat("");
     } catch (e) {
-      setGalat(e instanceof Error ? e.message : "Catatan galat belum dapat dimuat.");
+      setGalat(e instanceof Error ? e.message : "Catatan error belum dapat dimuat.");
     }
   }, [sumber, status]);
 
@@ -208,7 +208,7 @@ function TabGalat() {
         setGalat("");
       })
       .catch((e) => {
-        if (!batal) setGalat(e instanceof Error ? e.message : "Catatan galat belum dapat dimuat.");
+        if (!batal) setGalat(e instanceof Error ? e.message : "Catatan error belum dapat dimuat.");
       });
     return () => {
       batal = true;
@@ -247,13 +247,13 @@ function TabGalat() {
     <div className="space-y-4">
       {galat && <p className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{galat}</p>}
       <div className="flex flex-wrap gap-3">
-        <NativeSelect className="w-48" value={sumber} onChange={(e) => setSumber(e.target.value)} aria-label="Sumber galat">
+        <NativeSelect className="w-48" value={sumber} onChange={(e) => setSumber(e.target.value)} aria-label="Sumber error">
           <option value="">Semua sumber</option>
           <option value="server">Server</option>
           <option value="peramban">Peramban</option>
           <option value="ekstensi">Ekstensi</option>
         </NativeSelect>
-        <NativeSelect className="w-48" value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Status galat">
+        <NativeSelect className="w-48" value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Status error">
           <option value="baru">Belum ditangani</option>
           <option value="ditangani">Sudah ditangani</option>
           <option value="">Semua</option>
@@ -261,7 +261,7 @@ function TabGalat() {
       </div>
       <Card className="bg-card">
         <CardContent className="space-y-2 pt-6">
-          {daftar.length === 0 && <p className="text-sm text-muted-foreground">Tidak ada galat yang cocok.</p>}
+          {daftar.length === 0 && <p className="text-sm text-muted-foreground">Tidak ada error yang cocok.</p>}
           {daftar.map((g) => (
             <button
               key={g.id}
@@ -396,7 +396,7 @@ function TabUjiBeban({ bolehAtur }: { bolehAtur: boolean }) {
                   <th className="pb-2 pr-3">Dijalankan</th>
                   <th className="pb-2 pr-3">Perangkat</th>
                   <th className="pb-2 pr-3">p95 (ms)</th>
-                  <th className="pb-2 pr-3">Galat</th>
+                  <th className="pb-2 pr-3">Error</th>
                   <th className="pb-2 pr-3">Kueri SIPP/menit</th>
                   <th className="pb-2 pr-3">Sambungan SIPP</th>
                   <th className="pb-2">CPU / RAM laptop</th>

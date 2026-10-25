@@ -149,7 +149,7 @@ export function periksaWhatsapp(status: Hasil<BotStatusMentah>, kini: Date) {
     { label: "Keadaan", nilai: kode },
     { label: "Terakhir tersambung", nilai: umurTeks(wa.lastConnectedAt ?? null, kini) },
   ];
-  if (wa.lastError) rincian.push({ label: "Galat terakhir", nilai: String(wa.lastError).slice(0, 160) });
+  if (wa.lastError) rincian.push({ label: "Error terakhir", nilai: String(wa.lastError).slice(0, 160) });
   // Bot sengaja dimatikan (mis. mode uji sejak September): bukan tanda bahaya.
   if (b.botEnabled === false) return { warna: "kelabu" as Warna, ringkas: "WhatsApp sengaja dimatikan di pengaturan bot.", rincian };
   if (WA_HIJAU.has(kode)) return { warna: "hijau" as Warna, ringkas: "WhatsApp tersambung.", rincian };
@@ -233,10 +233,10 @@ export function periksaEcourt(jadwal: Hasil<{ jadwal?: JadwalEcourtMentah | null
     { label: "Penarikan berkala", nilai: j.pengaturan?.aktif ? "menyala" : "dimatikan" },
     { label: "Selesai terakhir", nilai: umurTeks(j.terakhirSelesai ?? null, kini) },
   ];
-  if (j.terakhirGalat) rincian.push({ label: "Galat terakhir", nilai: String(j.terakhirGalat).slice(0, 160) });
+  if (j.terakhirGalat) rincian.push({ label: "Error terakhir", nilai: String(j.terakhirGalat).slice(0, 160) });
   if (!j.pengaturan?.aktif) return { warna: "kelabu" as Warna, ringkas: "Penarikan berkala e-Court dimatikan.", rincian };
   if (j.sedangJalan) return { warna: "hijau" as Warna, ringkas: "Penarikan e-Court sedang berjalan.", rincian };
-  if (j.terakhirGalat) return { warna: "kuning" as Warna, ringkas: "Putaran e-Court terakhir mencatat galat.", rincian };
+  if (j.terakhirGalat) return { warna: "kuning" as Warna, ringkas: "Putaran e-Court terakhir mencatat error.", rincian };
   const jarakJam = Math.max(1, Number(j.pengaturan?.jarakJam ?? 6));
   const umurJam = j.terakhirSelesai ? (kini.getTime() - new Date(j.terakhirSelesai).getTime()) / 3_600_000 : Infinity;
   // Putaran hanya berjalan di jam kerja: yang dianggap macet adalah > 3x jarak (min. 24 jam).
@@ -306,16 +306,16 @@ export function periksaEkstensi(perangkat: PerangkatEkstensi[], versiTerbaru: st
 }
 
 export function periksaGalat(ringkas: RingkasGalat | null) {
-  if (!ringkas) return { warna: "kelabu" as Warna, ringkas: "Catatan galat belum terbaca.", rincian: [] };
+  if (!ringkas) return { warna: "kelabu" as Warna, ringkas: "Catatan error belum terbaca.", rincian: [] };
   const rincian = [
-    { label: "Kelompok galat baru (24 jam)", nilai: String(ringkas.kelompokBaru) },
+    { label: "Kelompok error baru (24 jam)", nilai: String(ringkas.kelompokBaru) },
     { label: "Kejadian tercatat (24 jam)", nilai: String(ringkas.kejadian24Jam) },
     ...ringkas.teratas.slice(0, 3).map((t) => ({ label: `${t.sumber} x${t.jumlah}`, nilai: t.pesan.slice(0, 100) })),
   ];
   const warna: Warna = ringkas.kelompokBaru >= 10 ? "merah" : ringkas.kelompokBaru > 0 ? "kuning" : "hijau";
   return {
     warna,
-    ringkas: ringkas.kelompokBaru ? `${ringkas.kelompokBaru} kelompok galat baru dalam 24 jam.` : "Tidak ada galat baru dalam 24 jam.",
+    ringkas: ringkas.kelompokBaru ? `${ringkas.kelompokBaru} kelompok error baru dalam 24 jam.` : "Tidak ada error baru dalam 24 jam.",
     rincian,
   };
 }
@@ -360,7 +360,7 @@ export function periksaUjiBeban(uji: UjiBebanRingkas | null, kini: Date) {
   const buruk = uji.galatPersen > 1 || uji.p95Ms > 3000;
   return {
     warna: buruk ? ("kuning" as Warna) : ("hijau" as Warna),
-    ringkas: `${uji.perangkat} perangkat tiruan: p95 ${Math.round(uji.p95Ms)} ms, galat ${uji.galatPersen}%.`,
+    ringkas: `${uji.perangkat} perangkat tiruan: p95 ${Math.round(uji.p95Ms)} ms, error ${uji.galatPersen}%.`,
     rincian,
   };
 }
