@@ -223,6 +223,9 @@ const BERKAS = [
   "antrean-server.js",
   // Berkas cetak massal dan pemeriksa sisa blangko dikerjakan server (K14, rantai B, 25 Okt 2026); dimuat sesudah antrean-server.js.
   "berkas-server.js",
+  // Perkara terakhir dan versi ekstensi mengikuti pengguna (U16, rantai B, 25 Okt 2026); dimuat di blok SIPP dan portal, dan di popup.
+  "konteks-server.js",
+  "popup-versi-pc.js",
   "tema-awal.js",
   // Pusat tema (terang | gelap | sistem): satu sumber kebenaran, dimuat sebelum tema-awal.js (SIPP, ABT, portal).
   "tema-pusat.js",

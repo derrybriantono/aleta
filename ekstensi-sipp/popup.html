@@ -944,6 +944,11 @@
     <span class="keadaan-label">Versi</span>
     <span class="keadaan-nilai kosong" id="versiEkstensi">memuat…</span>
   </div>
+  <!-- U16 (25 Okt 2026): peringatan bila PC lain akun ini memakai versi ekstensi yang berbeda. Tersembunyi bila saklar server mati. -->
+  <div class="keadaan-baris" id="versiPcLainBaris" hidden>
+    <span class="keadaan-label">PC lain</span>
+    <span class="keadaan-nilai" id="versiPcLain" role="status"></span>
+  </div>
   <div class="keadaan-baris">
     <span class="keadaan-label">Pembaruan otomatis</span>
     <span class="keadaan-nilai kosong" id="pembaruStatus">memeriksa…</span>
@@ -1424,5 +1429,7 @@
 <script src="alamat-portal.js"></script>
 <script src="daftar-fitur.js"></script>
 <script src="popup.js"></script>
+<script src="konteks-server.js"></script>
 <script src="popup-ide-l2.js"></script>
+<script src="popup-versi-pc.js"></script>
 <script src="popup-ringan.js"></script>

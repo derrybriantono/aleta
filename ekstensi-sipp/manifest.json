@@ -58,6 +58,7 @@
         "mode-ringan.js",
         "antrean-server.js",
         "berkas-server.js",
+        "konteks-server.js",
         "deteksi-sisa-blangko.js",
         "panel-alat.js",
         "jurusita.js",
@@ -159,6 +160,7 @@
       "js": [
         "pengamat-bersama.js",
         "mode-ringan.js",
+        "konteks-server.js",
         "deteksi-sisa-blangko.js",
         "panel-alat.js",
         "aleta.js",

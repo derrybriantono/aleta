@@ -51,7 +51,7 @@ afterEach(async () => {
 describe("lib: pembersih saklar", () => {
   it("bawaan semua mati; hanya boolean true sejati yang menyalakan; kunci asing dibuang", () => {
     expect(Object.values(SAKLAR_KINERJA_BAWAAN).every((v) => v === false)).toBe(true);
-    expect(Object.keys(SAKLAR_KINERJA_BAWAAN).sort()).toEqual(["antreanDiServer", "berkasDiServer", "modeRinganOtomatis", "pengamatTunggal"]);
+    expect(Object.keys(SAKLAR_KINERJA_BAWAAN).sort()).toEqual(["antreanDiServer", "berkasDiServer", "konteksDiServer", "modeRinganOtomatis", "pengamatTunggal"]);
     expect(bersihkanKinerja(null)).toEqual({ ...SAKLAR_KINERJA_BAWAAN });
     expect(bersihkanKinerja({ pengamatTunggal: "true" })).toEqual({ ...SAKLAR_KINERJA_BAWAAN });
     expect(bersihkanKinerja({ pengamatTunggal: 1, lain: true })).toEqual({ ...SAKLAR_KINERJA_BAWAAN });

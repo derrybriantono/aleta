@@ -22,6 +22,8 @@ export type SaklarKinerja = {
   antreanDiServer: boolean;
   /** K14: cetak massal (ZIP/PDF gabungan) dan pemeriksa sisa blangko dikerjakan server; peramban menerima hasil jadi. Jalur lama tetap sebagai cadangan. */
   berkasDiServer: boolean;
+  /** U16: perkara terakhir dan versi ekstensi per PC disimpan di server per pengguna; mengikuti petugas ke PC lain. */
+  konteksDiServer: boolean;
 };
 
 export const SAKLAR_KINERJA_BAWAAN: Readonly<SaklarKinerja> = Object.freeze({
@@ -29,6 +31,7 @@ export const SAKLAR_KINERJA_BAWAAN: Readonly<SaklarKinerja> = Object.freeze({
   modeRinganOtomatis: false,
   antreanDiServer: false,
   berkasDiServer: false,
+  konteksDiServer: false,
 });
 
 export const KETERANGAN_KINERJA: Readonly<Record<keyof SaklarKinerja, { judul: string; isi: string }>> = {
@@ -47,6 +50,10 @@ export const KETERANGAN_KINERJA: Readonly<Record<keyof SaklarKinerja, { judul: s
   berkasDiServer: {
     judul: "Berkas cetak massal dikerjakan server",
     isi: "Cetak massal Blangko Derry (ZIP RTF atau PDF gabungan) dan pemeriksaan sisa blangko dikerjakan server; peramban cukup mengirim naskah satu per satu lalu menerima hasil jadi, dan boleh ditutup selagi server bekerja. Hasil disimpan di memori server paling lama dua jam dan tidak pernah ditulis ke disk atau basis data. Bila server gagal, jalur lama di peramban dipakai. Mati = seperti dulu.",
+  },
+  konteksDiServer: {
+    judul: "Perkara terakhir dan versi ekstensi mengikuti pengguna",
+    isi: "Daftar perkara yang terakhir dibuka di SIPP (hanya nomor, jenis, dan pintu masuknya; tanpa isi perkara atau NIK) disimpan per pengguna di server, jadi muncul juga di PC lain. Versi ekstensi tiap PC dicatat supaya ekstensi memperingatkan bila PC lain memakai versi yang berbeda. Mati = hanya di PC masing-masing seperti dulu.",
   },
 };
 

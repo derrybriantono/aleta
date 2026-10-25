@@ -4386,6 +4386,8 @@ async function catatRiwayatPerkaraSipp(nomor, konteks) {
       ...lama.filter((x) => x && x.nomor !== nomor),
     ].slice(0, 8);
     await chrome.storage.local.set({ [KUNCI_RIWAYAT_SIPP]: baru });
+    // U16 (rantai B): salinan ke server per pengguna, hanya bila saklar konteksDiServer menyala (mati = tidak ada yang dikirim).
+    if (globalThis.ALETA_KONTEKS_SERVER) globalThis.ALETA_KONTEKS_SERVER.catat();
   } catch {
     /* riwayat hanya kemudahan */
   }

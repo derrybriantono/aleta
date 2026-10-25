@@ -222,6 +222,12 @@ export async function simpanSetelanPengguna(
   }
   const kunci = masukan.kunci;
 
+  // Rantai B (U16): setelan lintas PC hanya berlaku bila Super Admin menyalakan saklar kinerja.konteksDiServer.
+  // Menghapus (nilai null) tetap diizinkan supaya pengguna dapat membersihkan sisa.
+  if ((kunci === "konteks.perkara" || kunci === "perangkat.versi") && masukan.nilai !== null && !(await bacaKinerja(db)).konteksDiServer) {
+    throw new ApiError(409, "Sinkron perkara terakhir dan versi ekstensi antar PC belum dinyalakan Super Admin.");
+  }
+
   let normal: ReturnType<typeof normalkanSetelan> | null = null;
   if (masukan.nilai !== null) {
     try {

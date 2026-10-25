@@ -3978,7 +3978,7 @@ const ALAT_SETELAN_SINGGAH = ["widget.tata"];
  * mengirimnya (akun sudah pernah menyimpan) - tanpa itu bentuk singgahan
  * tetap persis seperti 1 Okt ({"widget.tata": ...} saja).
  */
-const ALAT_SETELAN_SINGGAH_BILA_ADA = ["panel.bawaan"];
+const ALAT_SETELAN_SINGGAH_BILA_ADA = ["panel.bawaan", "konteks.perkara", "perangkat.versi"];
 
 function alatBersihSetelanSinggah(x) {
   if (!x || typeof x !== "object" || Array.isArray(x)) return undefined;
