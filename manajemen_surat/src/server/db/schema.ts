@@ -976,6 +976,62 @@ export const DDL_JEJAK_ISIAN = {
 } as const;
 
 /**
+ * Ketepatan isian (0092, 25 Okt 2026, rantai D butir D1 = U3 + U4): angka lapangan per isian x pengisi x
+ * jenis perkara x bulan (turunan dari jejak isian 0091, boleh dihitung ulang) dan keputusan Super Admin atas
+ * usulan naik/turun gerbang isian. Diisi HANYA bila saklar Fitur Satker "ketepatan-isian" menyala (bawaan
+ * MATI). Kenaikan tidak pernah otomatis. Cermin PERSIS dari drizzle/0092_aleta_ketepatan_isian.sql; penjaga
+ * ketepatan-isian-25okt.test.ts membandingkan keduanya. Tanpa kunci asing dan tanpa CHECK.
+ */
+export const DDL_KETEPATAN_ISIAN = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_ketepatan_isian (
+  id TEXT PRIMARY KEY,
+  kode TEXT NOT NULL DEFAULT '',
+  pengisi TEXT NOT NULL DEFAULT '',
+  jenis_perkara TEXT NOT NULL DEFAULT '',
+  bulan TEXT NOT NULL DEFAULT '',
+  usulan INTEGER NOT NULL DEFAULT 0,
+  diterima INTEGER NOT NULL DEFAULT 0,
+  diubah INTEGER NOT NULL DEFAULT 0,
+  diubah_otomatis INTEGER NOT NULL DEFAULT 0,
+  diketik INTEGER NOT NULL DEFAULT 0,
+  bertahan INTEGER NOT NULL DEFAULT 0,
+  presisi DOUBLE PRECISION,
+  dihitung_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_ketepatan_keputusan (
+  id TEXT PRIMARY KEY,
+  kode TEXT NOT NULL DEFAULT '',
+  pengisi TEXT NOT NULL DEFAULT '',
+  jenis_perkara TEXT NOT NULL DEFAULT '',
+  arah TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'usulan',
+  dari_status TEXT NOT NULL DEFAULT '',
+  ke_status TEXT NOT NULL DEFAULT '',
+  jumlah INTEGER NOT NULL DEFAULT 0,
+  bertahan INTEGER NOT NULL DEFAULT 0,
+  presisi DOUBLE PRECISION NOT NULL DEFAULT 0,
+  bulan_awal TEXT NOT NULL DEFAULT '',
+  bulan_akhir TEXT NOT NULL DEFAULT '',
+  dapat_diterapkan SMALLINT NOT NULL DEFAULT 0,
+  berlaku SMALLINT NOT NULL DEFAULT 0,
+  catatan TEXT NOT NULL DEFAULT '',
+  dibuat_at TEXT NOT NULL,
+  diputuskan_oleh TEXT NOT NULL DEFAULT '',
+  diputuskan_nama TEXT NOT NULL DEFAULT '',
+  diputuskan_at TEXT NOT NULL DEFAULT '',
+  dicabut_oleh TEXT NOT NULL DEFAULT '',
+  dicabut_at TEXT NOT NULL DEFAULT ''
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_ketepatan_isian_kode ON aleta_ketepatan_isian(kode, bulan)`,
+    `CREATE INDEX IF NOT EXISTS idx_ketepatan_keputusan_status ON aleta_ketepatan_keputusan(status, berlaku)`,
+    `CREATE INDEX IF NOT EXISTS idx_ketepatan_keputusan_kunci ON aleta_ketepatan_keputusan(kode, pengisi, jenis_perkara)`,
+  ],
+} as const;
+
+/**
  * Unggah Putusan Terjadwal (0080, 21 Okt 2026, agen B3): jadwal, butir (satu
  * perkara), berkas yang diunggah, dan jejak jujur. Cermin PERSIS dari
  * drizzle/0080_aleta_putusan_terjadwal.sql; penjaga putusan-terjadwal-layanan-21okt.test.ts
@@ -2537,6 +2593,8 @@ const schemaStatements = [
   ...DDL_ALETA_AI_DOMPET.tabel,
   // Jejak isian dan butir saksi (0091, rantai C): usulan vs final, nilai sebelum untuk Urungkan.
   ...DDL_JEJAK_ISIAN.tabel,
+  // Ketepatan isian (0092, rantai D): angka lapangan bulanan dan keputusan naik/turun gerbang.
+  ...DDL_KETEPATAN_ISIAN.tabel,
   // Unggah Putusan Terjadwal: jadwal, butir, berkas, jejak (0080).
   ...DDL_PUTUSAN_TERJADWAL.tabel,
   // Arsip hasil mediasi per perkara (0081).
@@ -4501,6 +4559,7 @@ const indexStatements = [
   ...DDL_ALETA_AI.indeks,
   ...DDL_ALETA_AI_DOMPET.indeks,
   ...DDL_JEJAK_ISIAN.indeks,
+  ...DDL_KETEPATAN_ISIAN.indeks,
   ...DDL_PUTUSAN_TERJADWAL.indeks,
   ...DDL_MEDIASI_ARSIP.indeks,
   ...DDL_SIDANG_KELILING_HAKIM.indeks,

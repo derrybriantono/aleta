@@ -3266,7 +3266,7 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
     // selain itu menjadi saran "ragu". Satu tempat untuk semua sumber usulan (sipp, saksi, itsbat, posita-lain).
     try {
       const gerbang = require("../services/gerbangIsian");
-      for (const bag of [jawaban.sipp, jawaban.saksi, jawaban.itsbat, jawaban.positaLain]) if (bag && Array.isArray(bag.usulan)) gerbang.terapkan(bag.usulan);
+      for (const bag of [jawaban.sipp, jawaban.saksi, jawaban.itsbat, jawaban.positaLain]) if (bag && Array.isArray(bag.usulan)) gerbang.terapkan(bag.usulan, { jenis: req.body?.jenisPerkara });
     } catch (galatGerbang) {
       jawaban.gerbangGalat = String((galatGerbang && galatGerbang.message) || galatGerbang).slice(0, 160);
     }

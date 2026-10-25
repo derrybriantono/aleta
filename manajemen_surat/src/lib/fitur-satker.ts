@@ -1,5 +1,6 @@
 import { BAGIAN_FITUR_EKSTENSI } from "@/lib/daftar-fitur-ekstensi";
 import { KODE_FITUR_JEJAK_ISIAN } from "@/lib/jejak-isian";
+import { KODE_FITUR_KETEPATAN_ISIAN } from "@/lib/ketepatan-isian";
 
 /**
  * ============================================================================
@@ -109,6 +110,14 @@ export const KATALOG_FITUR_SATKER: readonly FiturKatalog[] = [
     bagian: "portal",
     keterangan:
       "Mati: tidak ada yang dicatat. Nyalakan agar susun saksi dan Blangko Derry mencatat usulan versus hasil akhir (dasar ukuran ketepatan), isian dibaca ulang dari ABT sesudah disimpan, dan Urungkan dapat dijalankan dari PC mana pun. Disimpan 2 tahun di server kantor.",
+    bawaan: "mati",
+  },
+  {
+    kode: KODE_FITUR_KETEPATAN_ISIAN,
+    nama: "Ketepatan isian",
+    bagian: "portal",
+    keterangan:
+      "Mati: gerbang isian bot memakai berkas bawaan saja. Nyalakan agar layar Ketepatan isian menghitung ketepatan dari lapangan dan mengusulkan isian yang layak terisi sendiri (atau harus turun). Usulan tidak pernah berlaku sebelum Super Admin menyetujuinya. Butuh saklar Jejak isian menyala agar ada datanya.",
     bawaan: "mati",
   },
   portal("putusan-advance", "Putusan Advance", "Draf putusan lengkap oleh konseptor dan hakim."),
