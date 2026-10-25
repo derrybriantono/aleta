@@ -3766,6 +3766,9 @@ const ALETA_COBA_BOLEH = [
   // Berkas cetak massal dikerjakan server (K14, rantai B): naskah RTF milik pemanggil dikirim ke portal kita sendiri, diperiksa/diubah ke
   // PDF/dibungkus ZIP di memori server, dan dipulangkan. Tidak menyentuh SIPP, ABT, maupun WhatsApp; mati bawaan di portal.
   /\/aleta\/api\/aleta-ecourt\/berkas-server(?:\/periksa-sisa)?(?:[?#]|$)/,
+  // Pemeriksa ejaan nama pihak (U18, rantai B): satu nama dikirim, usulan dikembalikan. Kamus tidak pernah dikirim; tidak ada yang
+  // disimpan, ditulis ke SIPP/ABT/e-Court, maupun dikirim lewat WhatsApp. Mati bawaan di portal.
+  /\/aleta\/api\/aleta-ecourt\/alias-nama\/periksa(?:[?#]|$)/,
   // Menandai komentar hakim atas BAS "selesai" (tahap 6-7): catatan internal
   // antar-petugas, tidak menyentuh SIPP, ABT, maupun WhatsApp.
   /\/aleta\/api\/aleta-ecourt\/bas-komentar(?:[?#]|$)/,

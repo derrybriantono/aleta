@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { JENIS_SAMARAN, Penyamar, type EntriSamaran, type JenisSamaran } from "@/lib/aleta-ai/samaran";
 import type { AletaDatabase } from "@/server/db/client";
+import { kamusUntukSamaran } from "@/server/modules/aleta-ecourt/alias-nama";
 import { bukaIsi, sandiIsi } from "@/server/modules/aleta-ai/percakapan";
 
 /**
@@ -21,7 +22,10 @@ export async function muatPenyamar(db: AletaDatabase, percakapanId: string): Pro
     if (!asli || !JENIS_SAMARAN.includes(b.jenis as JenisSamaran)) continue;
     entri.push({ kode: b.kode, jenis: b.jenis as JenisSamaran, asli });
   }
-  return new Penyamar(entri);
+  const penyamar = new Penyamar(entri);
+  // U18 (rantai B): kamus alias nama hanya dipakai bila Super Admin menyalakan saklar kinerja.ejaanNamaPihak (kosong = tidak berubah).
+  penyamar.pakaiAlias(await kamusUntukSamaran(db));
+  return penyamar;
 }
 
 /** Menyimpan entri yang BARU dibuat penyamar (yang lama tidak ditulis ulang). */

@@ -225,6 +225,8 @@ const BERKAS = [
   "berkas-server.js",
   // Perkara terakhir dan versi ekstensi mengikuti pengguna (U16, rantai B, 25 Okt 2026); dimuat di blok SIPP dan portal, dan di popup.
   "konteks-server.js",
+  // Pemeriksa ejaan nama pihak di formulir pihak SIPP (U18, rantai B, 25 Okt 2026): hanya usulan, mati bawaan.
+  "ejaan-nama.js",
   "popup-versi-pc.js",
   "tema-awal.js",
   // Pusat tema (terang | gelap | sistem): satu sumber kebenaran, dimuat sebelum tema-awal.js (SIPP, ABT, portal).

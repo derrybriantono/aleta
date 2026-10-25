@@ -255,7 +255,7 @@ describe("rute tampilan ekstensi (pg-mem berbenih)", () => {
       expect(r.status).toBe(200);
       // "profil" ditambah kontrak K4 (30 Sep 2026) - profil saklar per peran; "kinerja" (25 Okt 2026, rantai B) - saklar kinerja Super Admin, semua mati bawaan.
       expect(Object.keys(r.isi.data).sort()).toEqual(["dibuatPada", "keteranganSetelan", "kinerja", "profil", "setelan", "tampilan", "versi"]);
-      expect(r.isi.data.kinerja).toEqual({ pengamatTunggal: false, modeRinganOtomatis: false, antreanDiServer: false, berkasDiServer: false, konteksDiServer: false });
+      expect(r.isi.data.kinerja).toEqual({ pengamatTunggal: false, modeRinganOtomatis: false, antreanDiServer: false, berkasDiServer: false, konteksDiServer: false, ejaanNamaPihak: false });
       expect(r.isi.data.tampilan).toMatchObject({ mode: "lama", sumber: "bawaan", diterapkan: false, fitur: {}, labelMode: "Lama" });
       expect(r.isi.data.versi).toMatch(/^[0-9a-f]{16}$/);
       expect(r.isi.data.setelan).toEqual({});

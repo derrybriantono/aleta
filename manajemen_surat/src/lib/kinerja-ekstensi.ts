@@ -24,6 +24,8 @@ export type SaklarKinerja = {
   berkasDiServer: boolean;
   /** U16: perkara terakhir dan versi ekstensi per PC disimpan di server per pengguna; mengikuti petugas ke PC lain. */
   konteksDiServer: boolean;
+  /** U18: pemeriksa ejaan dan nama pihak memakai kamus alias di server (hanya usulan; tidak pernah menulis ke SIPP/ABT). */
+  ejaanNamaPihak: boolean;
 };
 
 export const SAKLAR_KINERJA_BAWAAN: Readonly<SaklarKinerja> = Object.freeze({
@@ -32,6 +34,7 @@ export const SAKLAR_KINERJA_BAWAAN: Readonly<SaklarKinerja> = Object.freeze({
   antreanDiServer: false,
   berkasDiServer: false,
   konteksDiServer: false,
+  ejaanNamaPihak: false,
 });
 
 export const KETERANGAN_KINERJA: Readonly<Record<keyof SaklarKinerja, { judul: string; isi: string }>> = {
@@ -54,6 +57,10 @@ export const KETERANGAN_KINERJA: Readonly<Record<keyof SaklarKinerja, { judul: s
   konteksDiServer: {
     judul: "Perkara terakhir dan versi ekstensi mengikuti pengguna",
     isi: "Daftar perkara yang terakhir dibuka di SIPP (hanya nomor, jenis, dan pintu masuknya; tanpa isi perkara atau NIK) disimpan per pengguna di server, jadi muncul juga di PC lain. Versi ekstensi tiap PC dicatat supaya ekstensi memperingatkan bila PC lain memakai versi yang berbeda. Mati = hanya di PC masing-masing seperti dulu.",
+  },
+  ejaanNamaPihak: {
+    judul: "Pemeriksa ejaan dan nama pihak (kamus alias)",
+    isi: "Admin dan Super Admin dapat mengisi kamus nama baku beserta varian ejaannya. Pemeriksa memberi tahu bila satu nama ditulis berbeda di SIPP, blangko, dan BAS, atau bila nama yang diketik di formulir pihak SIPP adalah varian dari nama baku. Hanya usulan: tidak pernah menulis ke SIPP, ABT, atau e-Court. Kamus juga membantu ALETA Ai mengenali satu orang yang namanya ditulis berbeda. Mati = tidak ada pemeriksaan dan kamus tidak dipakai.",
   },
 };
 
