@@ -18,6 +18,22 @@ import type { Terkena } from "@/server/shared/singgah-singkat";
 
 const TANGGAL_ISO = /^\d{4}-\d{2}-\d{2}$/;
 
+/**
+ * Saat (ms) tulisan perkara TERAKHIR yang berhasil lewat gerbang bot, dicatat
+ * SINKRON begitu tulisan selesai - sebelum jawabannya sampai ke peramban. Layar
+ * yang membaca cermin memakainya untuk "baca tulisan sendiri": selama jendela
+ * panas belum dihitung ulang SESUDAH saat ini, cermin belum menyusul tulisan itu
+ * dan layar membaca SIPP (lihat cerminMenyusulTulisan di pembaruan.ts).
+ */
+let tulisTerakhirMs = 0;
+export function tulisCerminTerakhirMs() {
+  return tulisTerakhirMs;
+}
+/** Hanya untuk uji. */
+export function aturTulisCerminTerakhir(ms: number) {
+  tulisTerakhirMs = ms;
+}
+
 /** Tanggal ISO yang disebut badan permintaan (tanggal sidang berikut, tanggal sinkron, ...). */
 export function tanggalDariBadanTulisan(bodi: unknown): string[] {
   let isi: unknown = bodi;
@@ -40,6 +56,7 @@ export function tanggalDariBadanTulisan(bodi: unknown): string[] {
 
 export function cerminSetelahTulisan(terkena: Terkena | undefined, bodi?: unknown) {
   if (terkena && terkena.ruang.length === 0) return;
+  tulisTerakhirMs = Date.now();
   if (process.env.NODE_ENV === "test" && process.env.ALETA_CERMIN_SETELAH_TULISAN !== "1") return;
   const tanggal = tanggalDariBadanTulisan(bodi);
   void import("@/server/modules/cermin/pembaruan")

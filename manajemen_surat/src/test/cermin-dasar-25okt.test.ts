@@ -500,15 +500,15 @@ describe("D. bot - tidak ada satu pun tulisan ke SIPP", () => {
   const tanpaKomentar = (teks: string) => teks.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
 
   it("cerminService.js dan cerminRoutes.js: tanpa kata kunci tulis/skema SQL dan tanpa rute selain GET", () => {
-    for (const b of ["aleta_bot/services/cerminService.js", "aleta_bot/services/cerminPembaruanService.js", "aleta_bot/routes/cerminRoutes.js"]) {
+    for (const b of ["aleta_bot/services/cerminService.js", "aleta_bot/services/cerminPembaruanService.js", "aleta_bot/services/jadwalPelengkapService.js", "aleta_bot/routes/cerminRoutes.js"]) {
       const kode = tanpaKomentar(baca(b));
       expect(kode, b).not.toMatch(/\b(INSERT|UPDATE|DELETE|REPLACE|ALTER|DROP|TRUNCATE|CREATE|GRANT|TRIGGER)\b/);
       expect(kode, b).not.toMatch(/router\.(post|put|patch|delete)\(/);
       expect(kode, b).not.toMatch(/v_pihak_perkara/);
     }
     const rute = baca("aleta_bot/routes/cerminRoutes.js");
-    expect(rute.match(/router\.get\(/g)?.length).toBe(7);
-    expect(rute.match(/wajibToken/g)!.length).toBeGreaterThanOrEqual(8); // definisi + tujuh rute
+    expect(rute.match(/router\.get\(/g)?.length).toBe(8);
+    expect(rute.match(/wajibToken/g)!.length).toBeGreaterThanOrEqual(9); // definisi + delapan rute
   });
 
   it("dipasang di /internal/aleta-bot/cermin", () => {

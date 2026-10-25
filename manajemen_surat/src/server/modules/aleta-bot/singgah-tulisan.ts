@@ -22,6 +22,10 @@ export const RUANG_SINGGAH = {
   antrian: "antrian-sidang",
   tag: "tag-perkara",
   pegawai: "pegawai-penunjukan",
+  /** K1 tahap 1 (A4): bacaan ringan Jadwal (kolom yang berubah sepanjang hari), dibagi semua layar. */
+  ringan: "jadwal-ringan",
+  /** K1 tahap 1 (A4): keadaan "sedang disidang" hari ini, dibagi semua layar dan widget. */
+  disidang: "jadwal-disidang",
 } as const;
 
 const AWALAN_BOT = "/internal/aleta-bot";
@@ -66,16 +70,22 @@ export function terkenaTulisan(path: string, bodi?: unknown, hariIni?: string): 
   // memuat HARI INI. Hitungan tag Status Perkara tidak bergantung pada
   // pemanggilan/pemberitahuan.
   if (p === "/antrian/panggil" || p === "/antrian/pemberitahuan") {
-    return { ruang: [RUANG_SINGGAH.antrian, RUANG_SINGGAH.jadwal], tanggal: [hari] };
+    return { ruang: [RUANG_SINGGAH.antrian, RUANG_SINGGAH.jadwal, RUANG_SINGGAH.ringan, RUANG_SINGGAH.disidang], tanggal: [hari] };
   }
   // Kehadiran hari ini juga bisa mengubah penanda perkara (tag).
   if (p === "/antrian/hadir" || p === "/antrian/batal-hadir" || p === "/antrian/kehadiran/keadaan") {
-    return { ruang: [RUANG_SINGGAH.antrian, RUANG_SINGGAH.jadwal, RUANG_SINGGAH.tag], tanggal: [hari] };
+    return {
+      ruang: [RUANG_SINGGAH.antrian, RUANG_SINGGAH.jadwal, RUANG_SINGGAH.ringan, RUANG_SINGGAH.disidang, RUANG_SINGGAH.tag],
+      tanggal: [hari],
+    };
   }
   // Sinkron antrian satu tanggal: bertanggal bila badannya menyebutnya.
   if (p === "/antrian/sinkron") {
     const t = tanggalDariBadan(bodi);
-    return { ruang: [RUANG_SINGGAH.antrian, RUANG_SINGGAH.jadwal], ...(t ? { tanggal: [t] } : {}) };
+    return {
+      ruang: [RUANG_SINGGAH.antrian, RUANG_SINGGAH.jadwal, RUANG_SINGGAH.ringan, RUANG_SINGGAH.disidang],
+      ...(t ? { tanggal: [t] } : {}),
+    };
   }
 
   // Sidang (tunda, putus, ikrar), penetapan: mengubah jadwal, antrian, dan
@@ -83,7 +93,7 @@ export function terkenaTulisan(path: string, bodi?: unknown, hariIni?: string): 
   // sidang aslinya tidak ada di badan (hanya jadwalId), jadi semua kunci
   // jadwal dibuang.
   if (p.startsWith("/sidang/") || p.startsWith("/penetapan/") || p.startsWith("/dokumen-penetapan/")) {
-    return { ruang: [RUANG_SINGGAH.jadwal, RUANG_SINGGAH.antrian, RUANG_SINGGAH.tag] };
+    return { ruang: [RUANG_SINGGAH.jadwal, RUANG_SINGGAH.antrian, RUANG_SINGGAH.ringan, RUANG_SINGGAH.disidang, RUANG_SINGGAH.tag] };
   }
 
   return undefined;

@@ -15,6 +15,9 @@
  *                                      (pembaruan berkala) + tanggal sidangnya
  *   GET /id-perkara?setelahId&batas    daftar ringan id + waktu (pencocokan mingguan)
  *   GET /id-sidang?dari&sampai         daftar ringan sidang satu jendela (idem)
+ *   GET /pelengkap-jadwal?waktu&baris  keterangan LANGSUNG layar Jadwal yang tidak
+ *                                      boleh basi (peta antrian, waktu antrian,
+ *                                      kehadiran rinci) untuk baris "perkaraId~tanggal,..."
  */
 
 const crypto = require("crypto");
@@ -23,6 +26,7 @@ const express = require("express");
 const { readRuntimeConfig } = require("../config/runtime-config");
 const cerminService = require("../services/cerminService");
 const cerminPembaruanService = require("../services/cerminPembaruanService");
+const jadwalPelengkapService = require("../services/jadwalPelengkapService");
 
 const router = express.Router();
 
@@ -147,6 +151,21 @@ router.get("/id-sidang", wajibToken, async (req, res) => {
       return;
     }
     res.json({ ok: true, ...(await cerminPembaruanService.idSidang({ dari, sampai })) });
+  } catch (error) {
+    galat(res, error);
+  }
+});
+
+router.get("/pelengkap-jadwal", wajibToken, async (req, res) => {
+  try {
+    // "perkaraId~YYYY-MM-DD" dipisah koma; yang tidak sah dibuang, paling banyak 500.
+    const baris = String(req.query.baris || "")
+      .split(",")
+      .map((x) => x.split("~"))
+      .map(([id, tanggal]) => ({ perkaraId: String(id || "").trim(), tanggalSidang: String(tanggal || "").trim() }))
+      .filter((b) => b.perkaraId && TANGGAL.test(b.tanggalSidang))
+      .slice(0, 500);
+    res.json(await jadwalPelengkapService.pelengkapJadwal({ baris, waktu: String(req.query.waktu || "") === "1" }));
   } catch (error) {
     galat(res, error);
   }

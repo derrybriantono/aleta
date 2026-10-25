@@ -135,7 +135,10 @@ describe("terkenaTulisan - jalur ke bot", () => {
 
   it("panggil/pemberitahuan: antrian + jadwal HARI INI saja; tag dan pegawai tidak", () => {
     const t = terkenaTulisan("/internal/aleta-bot/antrian/panggil", "{}", hari);
-    expect(t).toEqual({ ruang: [RUANG_SINGGAH.antrian, RUANG_SINGGAH.jadwal], tanggal: [hari] });
+    expect(t).toEqual({
+      ruang: [RUANG_SINGGAH.antrian, RUANG_SINGGAH.jadwal, RUANG_SINGGAH.ringan, RUANG_SINGGAH.disidang],
+      tanggal: [hari],
+    });
   });
 
   it("hadir/batal-hadir/keadaan: ikut tag perkara", () => {
@@ -155,7 +158,7 @@ describe("terkenaTulisan - jalur ke bot", () => {
   it("tunda/putus/penetapan: jadwal, antrian, tag - bukan daftar pegawai", () => {
     for (const p of ["/sidang/tunda", "/sidang/putus", "/penetapan/tulis", "/dokumen-penetapan/terbitkan"]) {
       const t = terkenaTulisan(`/internal/aleta-bot${p}`, "{}", hari);
-      expect(t?.ruang).toEqual([RUANG_SINGGAH.jadwal, RUANG_SINGGAH.antrian, RUANG_SINGGAH.tag]);
+      expect(t?.ruang).toEqual([RUANG_SINGGAH.jadwal, RUANG_SINGGAH.antrian, RUANG_SINGGAH.ringan, RUANG_SINGGAH.disidang, RUANG_SINGGAH.tag]);
       expect(t?.tanggal).toBeUndefined();
     }
   });

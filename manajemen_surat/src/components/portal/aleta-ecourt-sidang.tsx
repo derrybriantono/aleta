@@ -4706,6 +4706,8 @@ export function AletaEcourtSidang({
   const memuatRef = useRef(false);
   // 22 Okt 2026: waktu bacaan terakhir (ringan/lengkap) untuk tanda "diperbarui hh:mm:ss"; di luar state agar layar tidak dilukis ulang.
   const [penyimpanDiperbarui] = useState(buatPenyimpanDiperbarui);
+  // A4 (25 Okt 2026): bila daftar dibaca dari Cermin Perkara - kapan cermin terakhir dihitung ulang (null = dari SIPP seperti biasa).
+  const [cerminJadwal, setCerminJadwal] = useState<{ diperbaruiPada: string | null } | null>(null);
   const [galat, setGalat] = useState("");
 
   const [kalenderTerbuka, setKalenderTerbuka] = useState(false);
@@ -5755,6 +5757,7 @@ export function AletaEcourtSidang({
         kesiapan?: unknown;
         antrian?: unknown;
         waktuAntrian?: unknown;
+        cermin?: unknown;
       };
       const rentang = `${mulai}|${akhir}`;
       if (!data?.available) {
@@ -5789,6 +5792,7 @@ export function AletaEcourtSidang({
       );
       const waktu = (data.waktuAntrian ?? WAKTU_ANTRIAN_KOSONG) as WaktuAntrian;
       setWaktuAntrian(waktu);
+      setCerminJadwal((data.cermin ?? null) as { diperbaruiPada: string | null } | null);
       // Date.now() di sini hanya menandai KAPAN data diterima; yang berjalan
       // dihitung dari beda Date.now() sesudahnya, tidak dari jam komputernya.
       const sekarangMs = bacaWaktu(waktu.sekarang);
@@ -6827,6 +6831,15 @@ export function AletaEcourtSidang({
                 {(pertamaMuat && memuat) || !tampil(tampilan, "tanda-diperbarui") ? null : (
                   <TandaDiperbarui penyimpan={penyimpanDiperbarui} awalan={tampil(tampilan, "tanggal-dan-jumlah") ? " · " : ""} />
                 )}
+                {/* A4: daftar dibaca dari Cermin Perkara; antrian dan kehadiran tetap langsung dari sumbernya. */}
+                {cerminJadwal && !(pertamaMuat && memuat) ? (
+                  <span data-testid="tanda-cermin" title="Daftar sidang dibaca dari salinan keadaan perkara SIPP di ALETA (Cermin Perkara). Antrian dan kehadiran tetap langsung.">
+                    {" · Cermin · diperbarui "}
+                    {cerminJadwal.diperbaruiPada
+                      ? new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Makassar", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(cerminJadwal.diperbaruiPada)).replace(":", ".")
+                      : "-"}
+                  </span>
+                ) : null}
               </p>
             </div>
             ) : null}

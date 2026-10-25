@@ -38,6 +38,7 @@ import { KUNCI_JEJAK, bacaJejak, tulisJejak } from "@/server/modules/cermin/jeja
 import { sumberPengaturanCermin } from "@/server/modules/cermin/pengaturan";
 import { muatKeadaanPemindai } from "@/server/modules/cermin/pemindai";
 import { gantiSidangRentang, hapusPerkaraCermin, simpanKelompokPerkara } from "@/server/modules/cermin/penyimpan";
+import { tulisCerminTerakhirMs } from "@/server/modules/cermin/setelah-tulisan";
 
 export type DepsPembaruan = {
   db: () => Promise<AletaDatabase>;
@@ -80,9 +81,11 @@ type Wadah = {
   /** Pewaktu penggabung tulisan beruntun (satu putaran untuk banyak tulisan). */
   pewaktu: ReturnType<typeof setTimeout> | null;
   segeraMs: number;
+  /** Saat (ms) jendela panas terakhir MULAI dihitung ulang dan selesai dengan baik. */
+  panasMulaiMs: number;
 };
 const SIMPAN = globalThis as unknown as { __aletaCerminPembaruan?: Wadah };
-const wadahBaru = (): Wadah => ({ jalan: false, terakhirMs: 0, kotor: false, tanggalKotor: new Set(), pewaktu: null, segeraMs: 0 });
+const wadahBaru = (): Wadah => ({ jalan: false, terakhirMs: 0, kotor: false, tanggalKotor: new Set(), pewaktu: null, segeraMs: 0, panasMulaiMs: 0 });
 function wadah(): Wadah {
   SIMPAN.__aletaCerminPembaruan ??= wadahBaru();
   return SIMPAN.__aletaCerminPembaruan;
@@ -209,7 +212,9 @@ export async function putaranPembaruan(deps: DepsPembaruan = depsPembaruanAsli, 
       const panasJatuhTempo = !k.panasTerakhir || sekarang.getTime() - (Date.parse(k.panasTerakhir) || 0) >= p.panasMenit * 60_000;
       const peringatan: string[] = [];
       if (panasJatuhTempo || w.kotor) {
+        const panasMulaiMs = Date.now();
         const h = await segarkanRentangSidang(deps, panas.dari, panas.sampai, iso);
+        w.panasMulaiMs = panasMulaiMs;
         ditulis += h.ditulis;
         tanggalDibaca += panas.dari === panas.sampai ? 1 : Math.round((Date.parse(panas.sampai) - Date.parse(panas.dari)) / 86_400_000) + 1;
         peringatan.push(...h.peringatan);
@@ -254,6 +259,16 @@ export async function putaranPembaruan(deps: DepsPembaruan = depsPembaruanAsli, 
   } finally {
     w.jalan = false;
   }
+}
+
+/**
+ * Sudah menyusul tulisan terakhir lewat ALETA? Benar bila jendela panas
+ * terakhir MULAI dihitung (dan berhasil) sesudah tulisan terakhir. Salah berarti
+ * cermin belum memuat tulisan itu: layar yang membaca cermin harus membaca SIPP
+ * dulu supaya petugas yang baru menyimpan tidak melihat data sebelum simpanannya.
+ */
+export function cerminMenyusulTulisan(): boolean {
+  return wadah().panasMulaiMs >= tulisCerminTerakhirMs();
 }
 
 /** Jeda penggabung tulisan beruntun (ms). */
