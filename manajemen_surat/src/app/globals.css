@@ -384,3 +384,22 @@ html.aleta-ganti-tema *::after {
   animation-duration: 0.001s !important;
   animation-delay: 0s !important;
 }
+
+/*
+ * Mode ringan (K16, 25 Okt 2026): PC tua tidak menggambar hiasan. Atribut dipasang PenandaModeRingan
+ * (components/layout/mode-ringan.tsx) hanya bila pengguna memilih nyala, atau Super Admin menyalakan
+ * saklar otomatis dan komputer terdeteksi sederhana. Tanpa atribut, tidak ada yang berubah.
+ * Hanya hiasan: animasi, transisi, kabur latar, gulir halus. Tidak ada fungsi yang disembunyikan.
+ */
+html[data-aleta-ringan],
+html[data-aleta-ringan] *,
+html[data-aleta-ringan] *::before,
+html[data-aleta-ringan] *::after {
+  animation-duration: 0.001s !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+  transition: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  scroll-behavior: auto !important;
+}

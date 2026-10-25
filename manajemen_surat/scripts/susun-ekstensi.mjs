@@ -216,6 +216,9 @@ const BERKAS = [
   "deteksi-sisa-blangko.js",
   // Pengamat bersama (K12, 25 Okt 2026): satu MutationObserver, pewaktu yang berhenti di tab tersembunyi; dimuat PALING DEPAN di tiga kelompok skrip konten.
   "pengamat-bersama.js",
+  // Mode ringan untuk PC tua (K16, 25 Okt 2026): hiasan dimatikan, pewaktu diperlambat; dimuat tepat sesudah pengamat-bersama.js.
+  "mode-ringan.js",
+  "popup-ringan.js",
   "tema-awal.js",
   // Pusat tema (terang | gelap | sistem): satu sumber kebenaran, dimuat sebelum tema-awal.js (SIPP, ABT, portal).
   "tema-pusat.js",

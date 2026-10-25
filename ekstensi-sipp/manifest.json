@@ -55,6 +55,7 @@
       ],
       "js": [
         "pengamat-bersama.js",
+        "mode-ringan.js",
         "deteksi-sisa-blangko.js",
         "panel-alat.js",
         "jurusita.js",
@@ -114,6 +115,7 @@
       ],
       "js": [
         "pengamat-bersama.js",
+        "mode-ringan.js",
         "deteksi-sisa-blangko.js",
         "panel-alat.js",
         "jurusita.js",
@@ -152,6 +154,7 @@
       ],
       "js": [
         "pengamat-bersama.js",
+        "mode-ringan.js",
         "deteksi-sisa-blangko.js",
         "panel-alat.js",
         "aleta.js",

@@ -48,6 +48,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { AletaLogo } from "@/components/branding/aleta-logo";
 import { PortalFooter } from "@/components/layout/portal-footer";
+import { TombolModeRingan } from "@/components/layout/mode-ringan";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { TombolBantuanTutorial } from "@/components/portal/tutorial-bantuan";
 import { UserAvatar } from "@/components/portal/user-avatar";
@@ -1485,6 +1486,7 @@ export function PortalShellV2({ children }: { children: React.ReactNode }) {
                   ) : null}
 
                   <ThemeToggle />
+                  <TombolModeRingan />
 
                   {isAdminTier ? (
                     <Button variant="outline" size="icon" aria-label="Buka Panel Admin" title="Panel Admin" asChild>

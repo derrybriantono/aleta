@@ -50,11 +50,13 @@ afterEach(async () => {
 
 describe("lib: pembersih saklar", () => {
   it("bawaan semua mati; hanya boolean true sejati yang menyalakan; kunci asing dibuang", () => {
-    expect(SAKLAR_KINERJA_BAWAAN.pengamatTunggal).toBe(false);
-    expect(bersihkanKinerja(null)).toEqual({ pengamatTunggal: false });
-    expect(bersihkanKinerja({ pengamatTunggal: "true" })).toEqual({ pengamatTunggal: false });
-    expect(bersihkanKinerja({ pengamatTunggal: 1, lain: true })).toEqual({ pengamatTunggal: false });
-    expect(bersihkanKinerja({ pengamatTunggal: true, lain: true })).toEqual({ pengamatTunggal: true });
+    expect(Object.values(SAKLAR_KINERJA_BAWAAN).every((v) => v === false)).toBe(true);
+    expect(Object.keys(SAKLAR_KINERJA_BAWAAN).sort()).toEqual(["modeRinganOtomatis", "pengamatTunggal"]);
+    expect(bersihkanKinerja(null)).toEqual({ ...SAKLAR_KINERJA_BAWAAN });
+    expect(bersihkanKinerja({ pengamatTunggal: "true" })).toEqual({ ...SAKLAR_KINERJA_BAWAAN });
+    expect(bersihkanKinerja({ pengamatTunggal: 1, lain: true })).toEqual({ ...SAKLAR_KINERJA_BAWAAN });
+    expect(bersihkanKinerja({ pengamatTunggal: true, lain: true })).toEqual({ ...SAKLAR_KINERJA_BAWAAN, pengamatTunggal: true });
+    expect(bersihkanKinerja({ modeRinganOtomatis: true })).toEqual({ ...SAKLAR_KINERJA_BAWAAN, modeRinganOtomatis: true });
   });
 });
 
@@ -70,7 +72,7 @@ describe("rute /ekstensi/kinerja", () => {
       aktor = siapa;
       const r = await panggil("GET");
       expect(r.status).toBe(200);
-      expect(r.isi.data.saklar).toEqual({ pengamatTunggal: false });
+      expect(r.isi.data.saklar).toEqual({ ...SAKLAR_KINERJA_BAWAAN });
       expect(r.isi.data.bolehMengubah).toBe(boleh);
       expect(r.isi.data.keterangan.pengamatTunggal.judul).toMatch(/Pengamat tunggal/);
     }
@@ -82,26 +84,35 @@ describe("rute /ekstensi/kinerja", () => {
       expect((await panggil("PUT", { pengamatTunggal: true })).status).toBe(403);
     }
     aktor = "usr-super";
-    expect((await panggil("GET")).isi.data.saklar).toEqual({ pengamatTunggal: false });
+    expect((await panggil("GET")).isi.data.saklar).toEqual({ ...SAKLAR_KINERJA_BAWAAN });
   });
 
   it("Super Admin menyalakan dan mematikan; tercatat di audit dengan sebelum dan sesudah", async () => {
     const hidup = await panggil("PUT", { pengamatTunggal: true });
     expect(hidup.status).toBe(200);
-    expect(hidup.isi.data.saklar).toEqual({ pengamatTunggal: true });
-    expect((await panggil("GET")).isi.data.saklar).toEqual({ pengamatTunggal: true });
+    expect(hidup.isi.data.saklar).toEqual({ ...SAKLAR_KINERJA_BAWAAN, pengamatTunggal: true });
+    expect((await panggil("GET")).isi.data.saklar).toEqual({ ...SAKLAR_KINERJA_BAWAAN, pengamatTunggal: true });
     const mati = await panggil("PUT", { pengamatTunggal: false });
-    expect(mati.isi.data.saklar).toEqual({ pengamatTunggal: false });
+    expect(mati.isi.data.saklar).toEqual({ ...SAKLAR_KINERJA_BAWAAN });
     const baris = await db!.prepare("SELECT actor_user_id, payload_json FROM audit_logs WHERE action = ? ORDER BY created_at ASC").all<any>("UPDATE_KINERJA_EKSTENSI");
     expect(baris).toHaveLength(2);
     expect(baris[0].actor_user_id).toBe("usr-super");
-    expect(JSON.parse(baris[0].payload_json)).toEqual({ sebelum: { pengamatTunggal: false }, sesudah: { pengamatTunggal: true } });
+    expect(JSON.parse(baris[0].payload_json)).toEqual({ sebelum: { ...SAKLAR_KINERJA_BAWAAN }, sesudah: { ...SAKLAR_KINERJA_BAWAAN, pengamatTunggal: true } });
+  });
+
+  it("saklar mode ringan otomatis berdiri sendiri: menyalakannya tidak menyentuh saklar lain", async () => {
+    const r = await panggil("PUT", { modeRinganOtomatis: true });
+    expect(r.isi.data.saklar).toEqual({ pengamatTunggal: false, modeRinganOtomatis: true });
+    const lagi = await panggil("PUT", { pengamatTunggal: true });
+    expect(lagi.isi.data.saklar).toEqual({ pengamatTunggal: true, modeRinganOtomatis: true });
+    aktor = "usr-hakim";
+    expect((await panggil("GET", undefined, "tampilan")).isi.data.kinerja).toEqual({ pengamatTunggal: true, modeRinganOtomatis: true });
   });
 
   it("masukan tidak sah ditolak 400 tanpa menyimpan: bukan obyek, bukan boolean", async () => {
     expect((await panggil("PUT", [true])).status).toBe(400);
     expect((await panggil("PUT", { pengamatTunggal: "ya" })).status).toBe(400);
-    expect((await panggil("GET")).isi.data.saklar).toEqual({ pengamatTunggal: false });
+    expect((await panggil("GET")).isi.data.saklar).toEqual({ ...SAKLAR_KINERJA_BAWAAN });
     const n = await db!.prepare("SELECT COUNT(*) AS n FROM audit_logs WHERE action = ?").all<any>("UPDATE_KINERJA_EKSTENSI");
     expect(Number(n[0].n)).toBe(0);
   });
@@ -112,14 +123,14 @@ describe("GET /ekstensi/tampilan memuat ruas kinerja", () => {
     aktor = "usr-hakim";
     const awal = await panggil("GET", undefined, "tampilan");
     expect(awal.status).toBe(200);
-    expect(awal.isi.data.kinerja).toEqual({ pengamatTunggal: false });
+    expect(awal.isi.data.kinerja).toEqual({ ...SAKLAR_KINERJA_BAWAAN });
     expect(awal.isi.data.tampilan).toBeTruthy();
     expect(awal.isi.data.versi).toBeTruthy();
     aktor = "usr-super";
     await panggil("PUT", { pengamatTunggal: true });
     aktor = "usr-hakim";
     const kini = await panggil("GET", undefined, "tampilan");
-    expect(kini.isi.data.kinerja).toEqual({ pengamatTunggal: true });
+    expect(kini.isi.data.kinerja).toEqual({ ...SAKLAR_KINERJA_BAWAAN, pengamatTunggal: true });
     // versi tampilan tidak bergeser karena saklar kinerja (layar tidak perlu digambar ulang)
     expect(kini.isi.data.versi).toBe(awal.isi.data.versi);
   });
