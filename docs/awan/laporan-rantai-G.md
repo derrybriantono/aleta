@@ -9,7 +9,7 @@ Dasar: `origin/fitur/kabar-perubahan` (8265d6df, ujung rantai A).
 | Urut | Cabang | Commit ujung kode | Keterangan |
 | :--- | :--- | :--- | :--- |
 | G1 | `fitur/penjaga-tenggat-terjadwal` | `d9639e68` | sudah di-push |
-| G2 | `fitur/ecourt-kesimpulan-bukti` | lihat `git log -3` di cabang (commit kode lalu commit laporan ini) | bertumpuk di G1 |
+| G2 | `fitur/ecourt-kesimpulan-bukti` | `8ea3c521` (kode terakhir; fitur di `1d4fa13a`; ujung cabang = commit laporan ini) | bertumpuk di G1, sudah di-push |
 
 ## Angka uji
 
