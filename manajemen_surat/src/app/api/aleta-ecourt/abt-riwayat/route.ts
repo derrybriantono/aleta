@@ -1,8 +1,10 @@
 import { type NextRequest } from "next/server";
 
+import { samaLonggar } from "@/lib/jejak-isian";
 import { getDatabase } from "@/server/db/client";
 import { bacaRiwayat, catatRiwayat } from "@/server/modules/aleta-ecourt/abt-riwayat";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { catatJejakIsian } from "@/server/modules/aleta-ecourt/jejak-isian";
 import { catatKoreksi } from "@/server/modules/aleta-ecourt/kamus-deteksi";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -79,6 +81,8 @@ export async function POST(request: NextRequest) {
 
     const tercatat = [];
     let koreksi = 0;
+    // C1 (25 Okt): salinan LENGKAP perubahan panel untuk Urungkan lintas PC - hanya bila saklar "jejak-isian" menyala.
+    const untukJejak: Array<Record<string, unknown>> = [];
     for (const satu of daftarMentah.slice(0, 50)) {
       const isi = (satu ?? {}) as Record<string, unknown>;
       const baris = await catatRiwayat(db, String(actorUserId ?? ""), {
@@ -121,6 +125,51 @@ export async function POST(request: NextRequest) {
         }
       }
       /* === AKHIR KAMUS-DB === */
+
+      // tanpaJejak: pemanggil (Blangko Derry) sudah mencatat jejaknya sendiri langsung ke rute jejak-isian.
+      if (baris && isi.tanpaJejak !== true) {
+        const k = isi.koreksi && typeof isi.koreksi === "object" && !Array.isArray(isi.koreksi) ? (isi.koreksi as Record<string, unknown>) : null;
+        const hasilKoreksi = String(k?.hasil ?? "");
+        const caraPanel = String(isi.cara ?? "");
+        untukJejak.push({
+          perkaraId: String(isi.perkaraId ?? ""),
+          nomorPerkara: String(isi.nomorPerkara ?? ""),
+          jenisBlangko: "panel",
+          kode: String(isi.kode ?? ""),
+          namaVariabel: String(isi.nama ?? ""),
+          nilaiUsulan: k ? String(k.usulan ?? "") : "",
+          asalUsulan: k ? "panel" : "",
+          keyakinan: k ? String(k.keyakinan ?? "") : "",
+          kodePola: k ? String(k.kodePola ?? "") : "",
+          nilaiSebelum: String(isi.sebelum ?? ""),
+          nilaiFinal: String(isi.sesudah ?? ""),
+          // Cara dihitung dari usulan vs nilai akhir (sama dengan aturan koreksi), bukan dipercaya dari ekstensi;
+          // "dipilih" (bunyi dipilih petugas dari pilihan) dianggap saran diterima.
+          cara: /^dikembalikan/i.test(caraPanel)
+            ? "diurungkan"
+            : k
+              ? hasilKoreksi === "dipilih"
+                ? "saran-diterima"
+                : !String(k.usulan ?? "").trim()
+                  ? "diketik"
+                  : samaLonggar(String(k.usulan ?? ""), String(isi.sesudah ?? ""))
+                    ? "saran-diterima"
+                    : "diubah"
+              : "sunting-panel",
+          jalur: /^dikembalikan/i.test(caraPanel) ? "urungkan" : "panel-abt",
+          blangko: `panel: ${caraPanel}`.slice(0, 300),
+          urungkanDari: String(isi.urungkanDari ?? ""),
+          pada: String(isi.pada ?? ""),
+        });
+      }
+    }
+
+    if (untukJejak.length) {
+      try {
+        await catatJejakIsian(db, { id: String(actorUserId ?? "") }, untukJejak, { tanpaKoreksi: true });
+      } catch {
+        /* jejak lengkap tertinggal - riwayat (dipotong) dan salinan peramban tetap ada */
+      }
     }
 
     return ok({ ok: true, tercatat: tercatat.length, koreksi });

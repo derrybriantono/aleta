@@ -406,6 +406,9 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   // 25 Oktober 2026 (0088): ALETA Ai tahap 4 - kuota hibah per peran, rekonsiliasi harian.
   "aleta_ai_kuota_peran",
   "aleta_ai_rekonsiliasi",
+  // 25 Oktober 2026 (0091): rantai C butir C1 - jejak isian ABT dan butir tanya-jawab saksi. Tanpa kunci asing.
+  "aleta_saksi_butir",
+  "aleta_isian_jejak",
   // 21 Oktober 2026 (0080): Unggah Putusan Terjadwal. Tanpa kunci asing - urutannya bebas.
   "aleta_putusan_jadwal",
   "aleta_putusan_jadwal_butir",

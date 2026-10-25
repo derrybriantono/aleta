@@ -1,4 +1,5 @@
 import { BAGIAN_FITUR_EKSTENSI } from "@/lib/daftar-fitur-ekstensi";
+import { KODE_FITUR_JEJAK_ISIAN } from "@/lib/jejak-isian";
 
 /**
  * ============================================================================
@@ -100,6 +101,14 @@ export const KATALOG_FITUR_SATKER: readonly FiturKatalog[] = [
     nama: "Blangko Saya untuk semua peran",
     bagian: "portal",
     keterangan: "Mati: Blangko Saya (buat blangko sendiri) hanya untuk Super Admin. Nyalakan agar hakim, panitera, dan konseptor juga dapat memakainya.",
+    bawaan: "mati",
+  },
+  {
+    kode: KODE_FITUR_JEJAK_ISIAN,
+    nama: "Jejak isian dan butir saksi",
+    bagian: "portal",
+    keterangan:
+      "Mati: tidak ada yang dicatat. Nyalakan agar susun saksi dan Blangko Derry mencatat usulan versus hasil akhir (dasar ukuran ketepatan), isian dibaca ulang dari ABT sesudah disimpan, dan Urungkan dapat dijalankan dari PC mana pun. Disimpan 2 tahun di server kantor.",
     bawaan: "mati",
   },
   portal("putusan-advance", "Putusan Advance", "Draf putusan lengkap oleh konseptor dan hakim."),

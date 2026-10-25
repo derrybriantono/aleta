@@ -895,6 +895,87 @@ export const DDL_ALETA_AI_DOMPET = {
 } as const;
 
 /**
+ * Jejak isian dan butir saksi (0091, 25 Okt 2026, rantai C butir C1 = U1 + U2 + U6):
+ * satu baris per butir tanya-jawab saksi yang disimpan petugas, dan satu baris per
+ * penyimpanan satu isian ABT (nilai usulan, nilai sebelum yang utuh untuk Urungkan,
+ * nilai final, cara, hasil baca-ulang). Diisi HANYA bila saklar Fitur Satker
+ * "jejak-isian" menyala (bawaan MATI). Retensi 2 tahun. Cermin PERSIS dari
+ * drizzle/0091_aleta_jejak_isian.sql; penjaga jejak-isian-25okt.test.ts
+ * membandingkan keduanya. Tanpa kunci asing dan tanpa CHECK.
+ */
+export const DDL_JEJAK_ISIAN = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_saksi_butir (
+  id TEXT PRIMARY KEY,
+  perkara_id TEXT NOT NULL DEFAULT '',
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  sidang TEXT NOT NULL DEFAULT '',
+  saksi_ke INTEGER NOT NULL DEFAULT 0,
+  pihak TEXT NOT NULL DEFAULT '',
+  jalur TEXT NOT NULL DEFAULT '',
+  variabel TEXT NOT NULL DEFAULT '',
+  katalog TEXT NOT NULL DEFAULT '',
+  versi_katalog TEXT NOT NULL DEFAULT '',
+  jenis_perkara TEXT NOT NULL DEFAULT '',
+  butir TEXT NOT NULL DEFAULT '',
+  varian TEXT NOT NULL DEFAULT '',
+  jenis_keterangan TEXT NOT NULL DEFAULT '',
+  nomor_butir INTEGER NOT NULL DEFAULT 0,
+  pertanyaan TEXT NOT NULL DEFAULT '',
+  usulan TEXT NOT NULL DEFAULT '',
+  teks_final TEXT NOT NULL DEFAULT '',
+  hasil TEXT NOT NULL DEFAULT '',
+  kemiripan DOUBLE PRECISION NOT NULL DEFAULT 0,
+  sumber_fakta TEXT NOT NULL DEFAULT '',
+  keyakinan TEXT NOT NULL DEFAULT '',
+  kode_pola TEXT NOT NULL DEFAULT '',
+  pengguna_id TEXT NOT NULL DEFAULT '',
+  pengguna_nama TEXT NOT NULL DEFAULT '',
+  pada TEXT NOT NULL,
+  dibuat_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_isian_jejak (
+  id TEXT PRIMARY KEY,
+  perkara_id TEXT NOT NULL DEFAULT '',
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  jenis_perkara TEXT NOT NULL DEFAULT '',
+  blangko TEXT NOT NULL DEFAULT '',
+  jenis_blangko TEXT NOT NULL DEFAULT '',
+  kode TEXT NOT NULL DEFAULT '',
+  nama_variabel TEXT NOT NULL DEFAULT '',
+  nilai_usulan TEXT NOT NULL DEFAULT '',
+  asal_usulan TEXT NOT NULL DEFAULT '',
+  keyakinan TEXT NOT NULL DEFAULT '',
+  kode_pola TEXT NOT NULL DEFAULT '',
+  nilai_sebelum TEXT NOT NULL DEFAULT '',
+  sebelum_dipotong SMALLINT NOT NULL DEFAULT 0,
+  nilai_final TEXT NOT NULL DEFAULT '',
+  final_dipotong SMALLINT NOT NULL DEFAULT 0,
+  cara TEXT NOT NULL DEFAULT '',
+  hasil TEXT NOT NULL DEFAULT '',
+  terverifikasi TEXT NOT NULL DEFAULT '',
+  nilai_terbaca TEXT NOT NULL DEFAULT '',
+  jalur TEXT NOT NULL DEFAULT '',
+  urungkan_dari TEXT NOT NULL DEFAULT '',
+  diurungkan_oleh TEXT NOT NULL DEFAULT '',
+  diurungkan_at TEXT NOT NULL DEFAULT '',
+  pengguna_id TEXT NOT NULL DEFAULT '',
+  pengguna_nama TEXT NOT NULL DEFAULT '',
+  pada TEXT NOT NULL,
+  dibuat_at TEXT NOT NULL
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_saksi_butir_perkara ON aleta_saksi_butir(perkara_id, pada)`,
+    `CREATE INDEX IF NOT EXISTS idx_saksi_butir_katalog ON aleta_saksi_butir(katalog, hasil)`,
+    `CREATE INDEX IF NOT EXISTS idx_saksi_butir_pada ON aleta_saksi_butir(pada)`,
+    `CREATE INDEX IF NOT EXISTS idx_isian_jejak_kode ON aleta_isian_jejak(kode, hasil)`,
+    `CREATE INDEX IF NOT EXISTS idx_isian_jejak_perkara ON aleta_isian_jejak(perkara_id, pada)`,
+    `CREATE INDEX IF NOT EXISTS idx_isian_jejak_pada ON aleta_isian_jejak(pada)`,
+  ],
+} as const;
+
+/**
  * Unggah Putusan Terjadwal (0080, 21 Okt 2026, agen B3): jadwal, butir (satu
  * perkara), berkas yang diunggah, dan jejak jujur. Cermin PERSIS dari
  * drizzle/0080_aleta_putusan_terjadwal.sql; penjaga putusan-terjadwal-layanan-21okt.test.ts
@@ -2454,6 +2535,8 @@ const schemaStatements = [
   ...DDL_ALETA_AI.tabel,
   // ALETA Ai tahap 4: kuota hibah per peran, rekonsiliasi harian (0088).
   ...DDL_ALETA_AI_DOMPET.tabel,
+  // Jejak isian dan butir saksi (0091, rantai C): usulan vs final, nilai sebelum untuk Urungkan.
+  ...DDL_JEJAK_ISIAN.tabel,
   // Unggah Putusan Terjadwal: jadwal, butir, berkas, jejak (0080).
   ...DDL_PUTUSAN_TERJADWAL.tabel,
   // Arsip hasil mediasi per perkara (0081).
@@ -4417,6 +4500,7 @@ const indexStatements = [
   ...DDL_TAUTAN_JADWAL.indeks,
   ...DDL_ALETA_AI.indeks,
   ...DDL_ALETA_AI_DOMPET.indeks,
+  ...DDL_JEJAK_ISIAN.indeks,
   ...DDL_PUTUSAN_TERJADWAL.indeks,
   ...DDL_MEDIASI_ARSIP.indeks,
   ...DDL_SIDANG_KELILING_HAKIM.indeks,

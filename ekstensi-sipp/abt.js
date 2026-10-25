@@ -2463,7 +2463,35 @@ async function bacaRiwayat(perkaraId) {
   // memakainya sebagai pengenal akan menggandakan seluruh baris.
   const sudah = new Set(lokal.map((x) => `${x.pada}|${x.kode}`));
   const gabung = lokal.slice();
+
+  // ==========================================================================
+  // JEJAK LENGKAP DARI SERVER (rantai C, C1 = U6) - SAKLAR "jejak-isian", BAWAAN MATI
+  // ==========================================================================
+  //
+  // Bila saklar menyala, server menyimpan nilai SEBELUM yang utuh (aleta_isian_jejak), sehingga perubahan yang dibuat di PC lain tetap
+  // dapat diurungkan dari PC ini (dengan konfirmasi). Saklar mati / gagal bertanya: tidak ada tambahan apa pun, daftar seperti dulu.
+  // Catatan yang sama dengan salinan peramban (kode sama, waktu sama atau berselisih <= 15 detik dengan isi akhir sama) tidak digandakan.
+  let lengkap = [];
+  try {
+    const J = globalThis.AletaJejakIsian;
+    if (J && typeof J.jejakPerkara === "function") lengkap = (await J.jejakPerkara(perkaraId)).map((b) => J.keRiwayat(b));
+  } catch {
+    lengkap = [];
+  }
+  const serupa = (a, b) => {
+    if (String(a.kode) !== String(b.kode)) return false;
+    if (a.pada === b.pada) return true;
+    const selisih = Math.abs(new Date(a.pada).getTime() - new Date(b.pada).getTime());
+    return Number.isFinite(selisih) && selisih <= 15000 && String(a.sesudah || "").replace(/\s+/g, " ").trim().toLowerCase() === String(b.sesudah || "").replace(/\s+/g, " ").trim().toLowerCase();
+  };
+  for (const satu of lengkap) {
+    if (gabung.some((x) => serupa(x, satu))) continue;
+    sudah.add(`${satu.pada}|${satu.kode}`);
+    gabung.push(satu);
+  }
+
   for (const satu of jauh) {
+    if (lengkap.length && gabung.some((x) => x.dariServerLengkap && serupa(x, satu))) continue;
     const kunci = `${satu.pada}|${satu.kode}`;
     if (sudah.has(kunci)) continue;
     sudah.add(kunci);
@@ -5360,6 +5388,23 @@ function susunPanelAbt(jatiDiri) {
       // Salinan lengkapnya ada di peramban tempat perubahan itu dikerjakan.
       // Karena itu tombolnya tidak digambar di sini, dan sebabnya disebut -
       // bukan dibiarkan tampak seperti fitur yang rusak.
+      //
+      // RANTAI C (C1/U6, saklar "jejak-isian"): catatan dari server yang LENGKAP (nilai sebelumnya tidak terpotong) dari PC lain dapat
+      // dikembalikan di sini, dengan konfirmasi dua langkah, selama masih perubahan terbaru untuk variabelnya dan belum dikembalikan.
+      // Catatan lengkap yang dapat dikembalikan ditandai dariPeladen:false (jejak-isian.js keRiwayat) sehingga lolos penjaga di bawah;
+      // yang terpotong / sudah dikembalikan / sudah tertimpa perubahan lebih baru berhenti di sini dengan sebabnya.
+      const dariServerLengkap = catatan.dariServerLengkap === true && catatan.utuh === true;
+      if (catatan.dariServerLengkap === true && !(dariServerLengkap && catatan.bisaDiurungkan !== false)) {
+        kartu.appendChild(
+          buatElemen(
+            "div",
+            "aleta-abt-kabar",
+            `Dicatat di server${catatan.oleh ? ` oleh ${catatan.oleh}` : ""}. ${catatan.utuh ? "Sudah ada perubahan yang lebih baru untuk variabel ini, atau sudah dikembalikan." : "Isinya dipotong, jadi tidak dapat dikembalikan dari sini."}`
+          )
+        );
+        wadahRiwayat.appendChild(kartu);
+        continue;
+      }
       if (catatan.dariPeladen) {
         kartu.appendChild(
           buatElemen(
@@ -5373,11 +5418,27 @@ function susunPanelAbt(jatiDiri) {
         wadahRiwayat.appendChild(kartu);
         continue;
       }
+      if (dariServerLengkap) {
+        kartu.appendChild(buatElemen("div", "aleta-abt-kabar", `Dicatat di server${catatan.oleh ? ` oleh ${catatan.oleh}` : ""} (PC lain). Mengembalikannya menimpa isi variabel ini sekarang.`));
+      }
 
       const urung = buatElemen("button", "aleta-abt-batal", "Kembalikan yang sebelumnya");
       urung.type = "button";
       const kabarUrung = buatElemen("div", "aleta-abt-kabar");
+      let menungguYakin = false;
       urung.addEventListener("click", async () => {
+        if (dariServerLengkap && !menungguYakin) {
+          // Konfirmasi dua langkah: tekan sekali lagi untuk benar-benar menimpa.
+          menungguYakin = true;
+          urung.textContent = "Yakin? Tekan lagi untuk mengembalikan";
+          setTimeout(() => {
+            if (!urung.disabled) {
+              menungguYakin = false;
+              urung.textContent = "Kembalikan yang sebelumnya";
+            }
+          }, 8000);
+          return;
+        }
         urung.disabled = true;
         kabarUrung.textContent = "Mengembalikan…";
         try {
@@ -5400,6 +5461,7 @@ function susunPanelAbt(jatiDiri) {
             sesudah: catatan.sebelum,
             cara: "dikembalikan",
             pada: new Date().toISOString(),
+            ...(dariServerLengkap && catatan.idJejak ? { urungkanDari: catatan.idJejak } : {}),
           });
           kabarUrung.textContent = "Sudah dikembalikan.";
         } catch (galat) {
@@ -5888,6 +5950,9 @@ function susunPanelAbt(jatiDiri) {
           dipilih: false,
           habis: Boolean(varian && varian.habis),
           nVarian: varian ? Number(varian.n) || 1 : 0,
+          // C1 (U1): usulan mesin DISIMPAN SEBELUM petugas menyunting kotak (b.jawab di atas diubah oleh input petugas).
+          usulan: satuParagrafSaksi(b.jawab),
+          usulanMeta: b.usulan && typeof b.usulan === "object" ? { sumber: String(b.usulan.sumber || ""), yakin: String(b.usulan.yakin || ""), kodePola: String(b.usulan.kodePola || "") } : null,
         };
       })
     );
@@ -6123,7 +6188,7 @@ function susunPanelAbt(jatiDiri) {
           });
 
           kolom.appendChild(baris);
-          kolomIsian[k].push({ no: b.no, tanya: b.tanya, jawab });
+          kolomIsian[k].push({ no: b.no, tanya: b.tanya, jawab, butir: b });
         });
 
         // Menjatuhkan di ruang kosong kolom berarti "taruh di paling bawah".
@@ -6211,6 +6276,34 @@ function susunPanelAbt(jatiDiri) {
         const baris = kolomIsian[i]
           .map((x, n) => ({ no: String(n + 1), tanya: x.tanya, jawab: satuParagrafSaksi(x.jawab.value) }))
           .filter((x) => x.jawab);
+        // C1 (U1): butir untuk jejak - usulan mesin vs teks final; dikirim hanya sesudah tersimpan dan hanya bila saklar menyala.
+        const jejakButir = kolomIsian[i].map((x) => {
+          const final = satuParagrafSaksi(x.jawab.value);
+          const asli = x.butir || {};
+          // Jawaban berpilihan: yang dipilih petugas dari pilihan mesin adalah usulan mesin juga.
+          const dipilihMesin = asli.pilihan && asli.dipilih && asli.pilihanKe !== undefined ? String(asli.pilihan[asli.pilihanKe] || "") : "";
+          const meta = asli.usulanMeta || {};
+          return {
+            perkaraId: jatiDiri.perkaraId,
+            nomorPerkara: nomorPerkaraAbt(),
+            sidang: String(urutan),
+            saksiKe: daftarKolom[i].ke,
+            pihak: daftarKolom[i].pihak,
+            jalur: "cerai-lama",
+            variabel: kodeVar,
+            katalog: "",
+            jenisPerkara: sebutJenisPerkara(nomorPerkaraAbt()),
+            butir: "",
+            nomorButir: final ? baris.findIndex((y) => y.tanya === x.tanya && y.jawab === final) + 1 : 0,
+            pertanyaan: x.tanya,
+            usulan: dipilihMesin || String(asli.usulan || ""),
+            teksFinal: final,
+            sumberFakta: meta.sumber || "",
+            keyakinan: meta.yakin || "",
+            kodePola: meta.kodePola || "",
+            pada: new Date().toISOString(),
+          };
+        });
         hasilSimpan.textContent = `Menyimpan keterangan ${nama} (${i + 1} dari ${dataSaksi.length})…`;
         try {
           const sebelum = nilaiVariabel(kodeVar);
@@ -6228,7 +6321,13 @@ function susunPanelAbt(jatiDiri) {
             sesudah: `${baris.length} tanya-jawab dari blangko tanya jawab ${templat}`,
             cara: `disusun ALETA dari blangko tanya jawab ${templat}, diperiksa dan disimpan petugas` + (hasil.asalAlasan === "posita" ? " (sama dengan gugatan)" : ""),
             pada: new Date().toISOString(),
+            tanpaJejak: true, // butir saksi dicatat di tabel butir sendiri
           });
+          try {
+            if (globalThis.AletaJejakIsian && typeof globalThis.AletaJejakIsian.catatButir === "function") void globalThis.AletaJejakIsian.catatButir(jejakButir);
+          } catch {
+            /* jejak tertinggal; keterangan saksi sudah tersimpan di ABT */
+          }
         } catch (galat) {
           gagal.push(`${nama}: ${String((galat && galat.message) || galat)}`);
         }
@@ -13513,7 +13612,7 @@ async function t6GambarRiwayatVar(k, kode, kotak) {
     kotak.appendChild(el);
   };
   for (const x of daftar.slice(0, 10)) {
-    const catatan = x.dariPeladen ? (x.dipotong ? "(dicatat dari peramban lain, isinya dipotong)" : "(dicatat dari peramban lain)") : "";
+    const catatan = x.dariServerLengkap ? `(dicatat di server${x.oleh ? ` oleh ${x.oleh}` : ""} - kembalikan lewat "Lihat riwayat perubahan")` : x.dariPeladen ? (x.dipotong ? "(dicatat dari peramban lain, isinya dipotong)" : "(dicatat dari peramban lain)") : "";
     baris(new Date(x.pada).toLocaleString("id-ID"), String(x.cara || ""), x.sesudah, catatan);
   }
   const tertua = daftar[Math.min(daftar.length, 10) - 1];

@@ -1414,6 +1414,48 @@
       wadah.appendChild(form);
     }
 
+    /** Satu butir untuk jejak: usulan mesin (jawaban hasil susun) vs teks final di kotak (kosong = butir tidak disimpan). */
+    function entriButir(i, el, tanya, final, nomorButir) {
+      const sk = S.hasil.saksi[i] || {};
+      const butirId = el.getAttribute("data-butir") || "";
+      const mesinBaris = (sk.baris || []).find((x) => x.butir === butirId) || null;
+      const dariGugatan = mesinBaris && Array.isArray(mesinBaris.dariGugatan) ? mesinBaris.dariGugatan : [];
+      const sumber = Array.from(new Set(dariGugatan.flatMap((x) => String(x.sumber || "").split(" + ").filter(Boolean)))).join(" + ");
+      const yakin = dariGugatan.some((x) => x.yakin === "ragu") ? "ragu" : dariGugatan.some((x) => x.yakin === "cukup") ? "cukup" : dariGugatan.length ? "yakin" : "";
+      const jati = typeof k.jatiDiri === "function" ? k.jatiDiri() : null;
+      return {
+        perkaraId: jati ? jati.perkaraId : "",
+        nomorPerkara: nomor(),
+        sidang: String(S.urutan || (typeof k.urutanSidang === "function" ? k.urutanSidang() : "1")),
+        saksiKe: sk.ke || i + 1,
+        pihak: sk.pihak || (S.saksi[i] ? S.saksi[i].pihak : ""),
+        jalur: "katalog",
+        katalog: S.kat.kunci,
+        versiKatalog: String(S.kat.versi || ""),
+        jenisPerkara: String((typeof k.jenisPerkaraTeks === "function" ? k.jenisPerkaraTeks() : "") || S.kat.judul || ""),
+        butir: butirId,
+        varian: mesinBaris ? String(mesinBaris.varian || "") : "",
+        jenisKeterangan: mesinBaris ? String(mesinBaris.jenis || "") : "",
+        nomorButir,
+        pertanyaan: tanya,
+        usulan: mesinBaris ? String(mesinBaris.jawab || "") : "",
+        teksFinal: final,
+        sumberFakta: sumber,
+        keyakinan: yakin,
+        kodePola: `${S.kat.kunci}/${butirId}`,
+        pada: new Date().toISOString(),
+      };
+    }
+    /** Mengirim butir ke server bila saklar menyala. Tidak pernah melempar dan tidak ditunggu. */
+    function catatButirSaksi(daftar) {
+      try {
+        const J = globalThis.AletaJejakIsian;
+        if (J && typeof J.catatButir === "function") void J.catatButir(daftar);
+      } catch {
+        /* jejak tertinggal; keterangan saksi sudah tersimpan di ABT */
+      }
+    }
+
     async function simpan() {
       if (!S.hasil) return;
       tombolSimpan.disabled = true;
@@ -1452,11 +1494,14 @@
         }
         const kolom = wadahHasil.querySelectorAll(".aleta-ssk-saksi")[i];
         const baris = [];
+        // C1 (U1): usulan mesin vs teks final per butir - dikirim ke server SESUDAH tersimpan, hanya bila saklar "jejak-isian" menyala.
+        const jejakButir = [];
         if (kolom) {
           for (const el of Array.from(kolom.querySelectorAll(".aleta-ssk-baris"))) {
             const tanya = String((el.querySelector(".aleta-ssk-tanya") || {}).textContent || "").replace(/^\d+\.\s*/, "");
             const jawab = String((el.querySelector("textarea") || {}).value || "").trim();
             if (jawab) baris.push({ no: String(baris.length + 1), tanya, jawab });
+            jejakButir.push(entriButir(i, el, tanya, jawab, jawab ? baris.length : 0));
           }
         }
         kabarBorang.textContent = `Menyimpan keterangan ${nama} (${i + 1} dari ${S.hasil.saksi.length})…`;
@@ -1478,8 +1523,10 @@
               sesudah: `${baris.length} tanya-jawab dari katalog ${S.kat.judul}`,
               cara: `disusun dari katalog ${S.kat.judul} (${labelJenisSaksi(S.saksi[i].jenis)}), diperiksa dan disimpan petugas`,
               pada: new Date().toISOString(),
+              tanpaJejak: true, // butir saksi dicatat di tabel butir sendiri; variabel tanya-jawab tidak dapat diurungkan sebagai teks
             });
           }
+          catatButirSaksi(jejakButir.map((e) => Object.assign(e, { variabel: kode })));
         } catch (galat) {
           gagal.push(`${nama}: ${String((galat && galat.message) || galat)}`);
         }

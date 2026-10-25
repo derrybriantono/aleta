@@ -322,6 +322,7 @@
     tjBuka: null,
     tjSisi: true,
     tjRiw: { u: [], r: [] },
+    konfirmPulih: null, // C1: { kode, idx, sampai } - konfirmasi dua langkah mengembalikan catatan server
     tjMenu: false, // 19 Okt (tahap 2): menu "Lainnya" tanya jawab saksi terbuka
     tjLipat: false, // 19 Okt (tahap 2): lipatan "Lihat keterangan saksi" (putusan / peran hakim, hanya baca) terbuka
     tjTujuan: null, // 19 Okt (tahap 2): { kunci, i, aksi: "tukar"|"salin" } - memilih saksi tujuan bila saksinya lebih dari dua
@@ -1527,6 +1528,8 @@
     S.nilai = {};
     S.isi = {};
     S.diketik.clear();
+    otoTulis.clear(); // C1: nilai yang ALETA tulis sendiri milik blangko/perkara sebelumnya tidak terbawa
+    jejakTerakhir.clear();
     S.tersimpan = {};
     S.ganti = {};
     S.saran = {};
@@ -1755,7 +1758,12 @@
           const nilai = h && h.ok ? String(h.nilai || "").trim() : "";
           if (!nilai || /#\d{4,5}#|(?:^|[\s(.,;:/])_+(?=$|[\s),.;:/])|^\.{2,}$|^…+$/.test(nilai)) continue;
           if (S.susunan !== d || terisi(b)) return;
-          await jadwalkanSimpan(b.kode, nilai, true);
+          konteksJejak.set(b.kode, { usulan: nilai, asal: "bawaan-abt", yakin: "", otomatis: true });
+          try {
+            await jadwalkanSimpan(b.kode, nilai, true);
+          } finally {
+            konteksJejak.delete(b.kode);
+          }
         } catch {
           /* satu isian gagal: tetap kosong, tanpa mengganggu yang lain */
         }
@@ -1793,7 +1801,12 @@
       }
       if (S.susunan !== d || ada()) return;
       S.el7 = keputusan;
-      await jadwalkanSimpan("7139", keputusan.nilai, true);
+      konteksJejak.set("7139", { usulan: String(keputusan.nilai), asal: "e-litigasi", yakin: "", otomatis: true });
+      try {
+        await jadwalkanSimpan("7139", keputusan.nilai, true);
+      } finally {
+        konteksJejak.delete("7139");
+      }
       renderIsian();
     } catch {
       /* tanpa keputusan: isian tetap kosong */
@@ -1827,7 +1840,15 @@
   /** Tulis satu isian dari SIPP lewat jalur simpan yang sama dengan ketikan; gagal = isian dikembalikan seperti semula. */
   async function tulisIsianSipp(b, nilai, asal, yakin, ganti) {
     const sebelum = String(S.isi[b.kode] || "");
-    const ok = await jadwalkanSimpan(b.kode, nilai, true);
+    // C1: tombol "Input ke ABT" / "Input semua yang pasti" menandai S.diketik lebih dulu = keputusan petugas (saran diterima);
+    // selainnya ALETA menulis sendiri.
+    konteksJejak.set(b.kode, { usulan: String(nilai), asal: String(asal || "isi-sipp"), yakin: String(yakin || ""), otomatis: !S.diketik.has(b.kode) });
+    let ok = false;
+    try {
+      ok = await jadwalkanSimpan(b.kode, nilai, true);
+    } finally {
+      konteksJejak.delete(b.kode);
+    }
     if (!ok) {
       // Penolakan (huruf di luar ABT, kata terlarang, ABT menolak): isian tetap seperti semula, bukan seolah-olah terisi.
       if (sebelum) S.isi[b.kode] = sebelum;
@@ -1840,7 +1861,7 @@
     S.dariSipp.add(b.kode);
     try {
       if (typeof catatRiwayat === "function") {
-        void catatRiwayat({ perkaraId: perkaraId(), kode: b.kode, nama: b.nama, sebelum, sesudah: String(S.isi[b.kode] || nilai), cara: ganti ? `bawaan kueri ABT yang mentah diganti otomatis di Blangko Derry dari ${asal} (${yakin})` : `diisi otomatis di Blangko Derry dari ${asal} (${yakin})`, pada: new Date().toISOString() });
+        void catatRiwayat({ perkaraId: perkaraId(), kode: b.kode, nama: b.nama, sebelum, sesudah: String(S.isi[b.kode] || nilai), cara: ganti ? `bawaan kueri ABT yang mentah diganti otomatis di Blangko Derry dari ${asal} (${yakin})` : `diisi otomatis di Blangko Derry dari ${asal} (${yakin})`, pada: new Date().toISOString(), tanpaJejak: true });
       }
     } catch {
       /* jejak tidak tersedia: isiannya tetap tersimpan di ABT */
@@ -2310,7 +2331,8 @@
    * Saran untuk isian kosong: draf H-7, lalu hasil mesin SIPP/saksi (didahulukan), lalu bawaan kueri popup ABT. HTML dibuang; bawaan popup
    * yang jelas mentah (potongan posita panjang, bertag) tidak disarankan sama sekali.
    */
-  const saranUntuk = (b, opsi) => {
+  /** Saran + PENGISINYA (draf-h7 / isi-sipp / bawaan-abt) untuk jejak isian (C1); saranUntuk memakai nilainya. */
+  const saranDetail = (b, opsi) => {
     const m = mesinIsi();
     const bersih = (v) => (m ? m.bersihkanNilai(b.kode, v) : String(v || ""));
     const h7 = S.saranH7 && S.saranH7[b.kode] ? S.saranH7[b.kode].nilai : "";
@@ -2319,14 +2341,19 @@
     // 19 Okt (isian 2): saran harus sesuai MAKNA isiannya - kalimat ghaib di "Awal perselisihan" atau potongan posita di "KUA" tidak
     // pernah ditawarkan; lebih baik kotak kosong daripada saran yang salah.
     const sesuai = (v) => !m || m.sahBentuk(b.kode, v, b.nama);
-    const calon = [h7, sipp, popup]
-      .map((v) => bersih(v).trim())
-      .filter((v) => v && sesuai(v))
-      .map((v) => (m ? m.rapikanBentuk(b.kode, v, b.nama) : v));
+    const calon = [
+      [h7, "draf-h7", ""],
+      [sipp, "isi-sipp", S.saranSipp[b.kode] ? String(S.saranSipp[b.kode].keyakinan || "") : ""],
+      [popup, "bawaan-abt", ""],
+    ]
+      .map(([v, asal, yakin]) => ({ nilai: bersih(v).trim(), asal, yakin }))
+      .filter((c) => c.nilai && sesuai(c.nilai))
+      .map((c) => ({ ...c, nilai: m ? m.rapikanBentuk(b.kode, c.nilai, b.nama) : c.nilai }));
     if (calon.length) return calon[0];
     // Contoh umum per isian ("belum dikaruniai anak", tanggal pengumuman contoh): hanya samar di kotak, TIDAK untuk pengisian massal.
-    return opsi && opsi.tanpaUmum ? "" : bersih(b.saran || "");
+    return { nilai: opsi && opsi.tanpaUmum ? "" : bersih(b.saran || ""), asal: "", yakin: "" };
   };
+  const saranUntuk = (b, opsi) => saranDetail(b, opsi).nilai;
   /**
    * Huruf alasan A-H dari isian 8503, dibaca seperti kueri ABT (REPLACE 'DAN', '&', ',', spasi, '+', '/', '.', '-' lalu INSTR
    * per huruf; FASAKH/MURTAD = H) tanpa mengarang: "F dan B" = BF, "Murtad" = H. Bentuk pilihan ALETA "F · uraian"
@@ -2642,6 +2669,28 @@
   // Menyimpan satu isian ke ABT (edit_data) - hanya bila peran sesuai
   // ──────────────────────────────────────────────────────────────────────────
   const antreSimpan = new Map();
+  // ──────────────────────────────────────────────────────────────────────────
+  // JEJAK ISIAN (rantai C, C1 = U2 + U6, 25 Okt 2026). Saklar server "jejak-isian", BAWAAN MATI.
+  // Mati: simpanIsian persis seperti sebelumnya (tanpa baca-ulang, tanpa catatan). Menyala: tiap penyimpanan dibaca ulang dari ABT
+  // (tidak sama -> ditandai merah), dan usulan vs hasil akhir + nilai SEBELUM (utuh, untuk Urungkan dari PC mana pun) dicatat di server.
+  // ──────────────────────────────────────────────────────────────────────────
+  const JI = () => (typeof globalThis !== "undefined" && globalThis.AletaJejakIsian) || null;
+  /** kode -> { usulan, asal, yakin, otomatis }: konteks yang dipasang pemanggil sesaat sebelum jadwalkanSimpan (dipakai sekali). */
+  const konteksJejak = new Map();
+  /** kode -> { nilai, asal, yakin }: nilai yang ALETA tulis sendiri sejak blangko dibuka (bahan cara "diubah-otomatis"). */
+  const otoTulis = new Map();
+  /** kode -> nilai akhir (baku) yang terakhir dicatat di sesi ini: penyimpanan berulang nilai yang sama tidak dicatat dua kali. */
+  const jejakTerakhir = new Map();
+  let sedangUrungkan = false;
+  async function jejakIsianAktif() {
+    const j = JI();
+    if (!j) return false;
+    try {
+      return (await j.aktif()) === true;
+    } catch {
+      return false;
+    }
+  }
   /** Isian yang hanya hurufnya disimpan ke ABT (lihat simpanIsian) - Tes putusan memperlakukannya sama supaya pratinjau setia. */
   const KODE_HURUF_SAJA_TES = new Set(["8503", "9463", "9475", "9790", "9820", "9865"]);
   /**
@@ -2733,14 +2782,22 @@
     }
     S.tersimpan[kode] = "menyimpan";
     renderStatusIsian(kode);
+    const konteksJ = konteksJejak.get(kode);
+    konteksJejak.delete(kode);
+    const jejakAktif = await jejakIsianAktif();
     try {
-      const h = await klienAbt().simpanIsian(kode, perkaraId(), nilai, { verifikasi: false });
+      const h = await klienAbt().simpanIsian(kode, perkaraId(), nilai, { verifikasi: jejakAktif });
+      if (jejakAktif && h && h.tersimpan) catatJejakSimpan(kode, nilai, h, konteksJ);
       if (S.isi[kode] !== nilai) return true; // sudah diketik lagi: hasil ini tidak dipakai
-      S.tersimpan[kode] = h.ok ? "tersimpan" : `gagal: ${h.pesan || "ABT menolak"}`;
+      S.tersimpan[kode] = h.ok ? "tersimpan" : jejakAktif && h.tersimpan && h.terverifikasi === false ? BEDA_BACA_ULANG : `gagal: ${h.pesan || "ABT menolak"}`;
       if (h.ok) {
         S.nilai[kode] = { status: String(nilai).trim() ? "terisi" : "kosong", teks: String(nilai) };
         S.prat.kotor = true;
         S.peringat = false;
+      } else if (jejakAktif && h.tersimpan && h.terverifikasi === false && h.nilaiBaru != null) {
+        // ABT menyimpan, tetapi bacaan ulangnya berbeda: layar mengikuti isi ABT yang sebenarnya, dan statusnya merah.
+        S.nilai[kode] = { status: String(h.nilaiBaru).trim() ? "terisi" : "kosong", teks: String(h.nilaiBaru) };
+        S.prat.kotor = true;
       }
     } catch (e) {
       S.tersimpan[kode] = `gagal: ${String((e && e.message) || e)}`;
@@ -2750,6 +2807,75 @@
     if (kode === "8503") renderIsian();
     laporKeKerangka();
     return S.tersimpan[kode] === "tersimpan";
+  }
+
+  const BEDA_BACA_ULANG = "gagal: tersimpan, tetapi bacaan ulang dari ABT berbeda - periksa isinya";
+  /**
+   * Mencatat satu penyimpanan isian yang BERHASIL ditulis ke ABT: usulan (beserta pengisinya) vs nilai akhir, nilai sebelum yang
+   * utuh, dan hasil baca-ulang. Tidak pernah melempar; gagal mencatat tidak menggagalkan penyimpanan. Urungkan dicatat lewat
+   * catatRiwayat (urungkanDari) supaya hanya satu baris.
+   */
+  function catatJejakSimpan(kode, nilai, h, ctx) {
+    try {
+      const J = JI();
+      if (!J || !S.pk || !S.blangko || sedangUrungkan) return;
+      const sebelum = h.nilaiLama == null ? "" : String(h.nilaiLama);
+      const b = S.susunan && Array.isArray(S.susunan.isian) ? S.susunan.isian.find((x) => x.kode === kode) || null : null;
+      const ditulisOto = Boolean(ctx && ctx.otomatis);
+      let usulan = "";
+      let asal = "";
+      let yakin = "";
+      let dariOto = false;
+      if (ctx) {
+        usulan = String(ctx.usulan || "");
+        asal = String(ctx.asal || "");
+        yakin = String(ctx.yakin || "");
+      } else if (otoTulis.has(kode)) {
+        const o = otoTulis.get(kode);
+        usulan = o.nilai;
+        asal = o.asal;
+        yakin = o.yakin;
+        dariOto = true;
+      } else if (b && !(S.nilai[kode] && S.nilai[kode].status === "terisi")) {
+        // Saran samar hanya tampil di kotak yang KOSONG menurut portal (ABT menampilkan bawaan hitungannya sendiri bagi variabel yang
+        // belum tersimpan, jadi nilai lama dari popup tidak dapat dipakai sebagai tanda kosong); di kotak berisi tidak ada usulan.
+        const sr = saranDetail(b, { tanpaUmum: true });
+        usulan = sr.nilai;
+        asal = sr.asal;
+        yakin = sr.yakin;
+      }
+      const sama = KODE_HURUF_SAJA_TES.has(kode) ? (a, c) => J.samaLonggar(nilaiSimpan8503(a), c) : undefined;
+      const cara = J.tentukanCara({ ditulisOtomatis: ditulisOto, usulan, usulanDariOtomatis: dariOto, final: nilai }, sama);
+      // Tidak ada yang berubah di ABT (nilai yang sama disimpan ulang) bukan peristiwa - KECUALI saran yang diterima atau tulisan otomatis:
+      // menyimpan saran menjadikannya nilai ABT (ABT menampilkan bawaan hitungannya sendiri bagi variabel yang belum tersimpan).
+      if (J.samaLonggar(sebelum, nilai) && cara !== "saran-diterima" && cara !== "otomatis") return;
+      // Nilai akhir yang sama dengan yang terakhir dicatat untuk isian ini di sesi ini (mis. blur dua kali) tidak dicatat lagi.
+      if (jejakTerakhir.get(kode) === J.bakuBanding(nilai)) return;
+      jejakTerakhir.set(kode, J.bakuBanding(nilai));
+      if (ditulisOto) otoTulis.set(kode, { nilai, asal, yakin });
+      else if (dariOto) otoTulis.delete(kode);
+      void J.catatIsian({
+        perkaraId: String(perkaraId()),
+        nomorPerkara: nomorPerkara(),
+        jenisPerkara: String(S.pk.jenisPerkara || ""),
+        blangko: String(S.blangko.berkas || ""),
+        jenisBlangko: String(S.blangko.jenis || ""),
+        kode,
+        namaVariabel: b ? String(b.nama || "") : "",
+        nilaiUsulan: usulan,
+        asalUsulan: J.penandaAsal(asal),
+        keyakinan: yakin,
+        nilaiSebelum: sebelum,
+        nilaiFinal: nilai,
+        cara,
+        terverifikasi: h.terverifikasi === true ? "ya" : h.terverifikasi === false ? "beda" : "tidak-dicek",
+        nilaiTerbaca: h.terverifikasi === false && h.nilaiBaru != null ? String(h.nilaiBaru) : "",
+        jalur: "blangko-derry",
+        pada: new Date().toISOString(),
+      });
+    } catch {
+      /* jejak tertinggal; isian sudah tersimpan di ABT */
+    }
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -3818,6 +3944,52 @@
   function tjSiap(kunciDaftar) {
     return kunciDaftar.length > 0 && kunciDaftar.every((k) => S.tj[k] && S.tj[k].dimuat && !S.tj[k].memuat);
   }
+  /**
+   * C1 (U1): butir keterangan saksi yang BARU tersimpan ke ABT - usulan mesin (r.otomatis, atau kalimat dasar katalog r.dasar) vs teks
+   * final di penyunting. Hanya saksi (bukan jawaban/replik/duplik). Tidak pernah melempar dan tidak ditunggu; saklar server mati =
+   * tidak ada yang dikirim.
+   */
+  function catatButirTj(kunci, t, rows) {
+    try {
+      const J = JI();
+      if (!J || typeof J.catatButir !== "function" || !S.pk) return;
+      const m = /^saksi\s+(\d+)\s+([pt])\b/i.exec(String(kunci));
+      if (!m) return;
+      const pada = new Date().toISOString();
+      const daftar = rows
+        .map((r, i) => {
+          const usulan = r.otomatis !== undefined ? String(r.otomatis) : r.dasar !== undefined ? String(r.dasar) : "";
+          const kunciJawaban = String(r.kunciJawaban || "");
+          const katalog = kunciJawaban ? kunciJawaban.split("/")[0] : "";
+          const meta = r.usulan && typeof r.usulan === "object" ? r.usulan : {};
+          return {
+            perkaraId: String(perkaraId()),
+            nomorPerkara: nomorPerkara(),
+            sidang: String(t.sidang || ""),
+            saksiKe: Number(m[1]),
+            pihak: m[2].toUpperCase(),
+            jalur: "blangko-derry",
+            variabel: String(t.kode || ""),
+            katalog,
+            jenisPerkara: String(S.pk.jenisPerkara || ""),
+            butir: String(r.butir || ""),
+            jenisKeterangan: String(r.jenisKat || ""),
+            nomorButir: i + 1,
+            pertanyaan: String(r.tanya || ""),
+            usulan,
+            teksFinal: String(r.jawab || ""),
+            sumberFakta: String(meta.sumber || ""),
+            keyakinan: String(meta.yakin || ""),
+            kodePola: katalog && r.butir ? `${katalog}/${r.butir}` : String(meta.kodePola || ""),
+            pada,
+          };
+        })
+        .filter((e) => e.usulan.trim() || e.teksFinal.trim());
+      if (daftar.length) void J.catatButir(daftar);
+    } catch {
+      /* jejak tertinggal; keterangan saksi sudah tersimpan di ABT */
+    }
+  }
   var PESAN_TJ_BELUM_TERBACA = "Keterangan yang sudah ada di ABT belum terbaca - tunggu sampai selesai dibaca, atau tutup lalu buka lagi tanya jawab ini bila pembacaannya gagal. Tidak disimpan supaya keterangan lama tidak terhapus.";
   async function simpanTj(kunciDaftar) {
     if (!bolehTulis()) return toast(sebabTakTulis(`Tanya jawab ${NAMA_JENIS[S.blangko.jenis].toLowerCase()} hanya disimpan ${NAMA_PERAN[JENIS_PERAN[S.blangko.jenis]]}.`));
@@ -3870,6 +4042,7 @@
           t.berubah = false;
           t.rows = rows.map((r, i) => ({ ...r, no: String(i + 1) }));
           t.tersimpanJam = jamSekarang();
+          catatButirTj(kunci, t, t.rows);
           S.prat.kotor = true;
           S.peringat = false;
           const it = tjItem(kunci);
@@ -4133,8 +4306,14 @@
         .slice(0, 8)
         .map((x, idx) => {
           const waktu = String(x.pada || "").slice(0, 10) ? `${tglIndo(String(x.pada).slice(0, 10))} ${String(x.pada).slice(11, 16)}` : "";
-          const bisa = bolehTulis() && !samaKet(x.sebelum, skrg);
-          return `<div class="bd-ketriw-baris"><span class="bd-catat">${esc(waktu)} · ${esc(potong(x.cara || "", 70))}: "${esc(potong(x.sebelum || "(kosong)", 80))}" → "${esc(potong(x.sesudah || "(kosong)", 80))}"</span>${bisa ? ` <button type="button" class="bd-tautankecil" data-bd2="ketpulih" data-ket="${esc(kode)}" data-idx="${idx}">kembalikan ↺</button>` : ""}</div>`;
+          // C1: catatan dari server yang isinya DIPOTONG tidak pernah ditawarkan untuk dikembalikan (akan menimpa isian dengan potongan);
+          // catatan lengkap dari server (PC lain) dapat dikembalikan dengan konfirmasi dua langkah.
+          const dipotong = x.dariPeladen === true && x.dipotong === true && x.utuh !== true;
+          const sudahDiurungkan = x.dariServerLengkap === true && x.bisaDiurungkan === false;
+          const bisa = bolehTulis() && !samaKet(x.sebelum, skrg) && !dipotong && !sudahDiurungkan;
+          const yakinTekan = S.konfirmPulih && S.konfirmPulih.kode === kode && S.konfirmPulih.idx === idx && Date.now() < S.konfirmPulih.sampai;
+          const dariServer = x.dariServerLengkap === true ? ` · dicatat di server${x.oleh ? ` oleh ${esc(x.oleh)}` : ""}` : "";
+          return `<div class="bd-ketriw-baris"><span class="bd-catat">${esc(waktu)} · ${esc(potong(x.cara || "", 70))}: "${esc(potong(x.sebelum || "(kosong)", 80))}" → "${esc(potong(x.sesudah || "(kosong)", 80))}"${dariServer}</span>${bisa ? ` <button type="button" class="bd-tautankecil" data-bd2="ketpulih" data-ket="${esc(kode)}" data-idx="${idx}">${yakinTekan ? "yakin? kembalikan ↺" : "kembalikan ↺"}</button>` : ""}</div>`;
         })
         .join("") +
       `</div>`
@@ -4250,13 +4429,27 @@
     if (aksi === "ketpulih") {
       const x = ((S.ketRiwayat[kode] || {}).daftar || [])[idx];
       if (!x) return undefined;
+      // C1: perubahan yang dicatat di SERVER (PC lain) ditimpakan ke ABT hanya sesudah konfirmasi dua langkah.
+      if (x.dariServerLengkap === true && !(S.konfirmPulih && S.konfirmPulih.kode === kode && S.konfirmPulih.idx === idx && Date.now() < S.konfirmPulih.sampai)) {
+        S.konfirmPulih = { kode, idx, sampai: Date.now() + 10000 };
+        toast(`Ini perubahan ${x.oleh || "petugas lain"} yang dicatat di server. Tekan "kembalikan" sekali lagi untuk memastikan.`);
+        return segarKartu(kode);
+      }
+      S.konfirmPulih = null;
       const lama = String(S.isi[kode] || "");
       S.diketik.add(kode);
-      const ok = await jadwalkanSimpan(kode, String(x.sebelum || ""), true);
+      sedangUrungkan = true;
+      let ok = false;
+      try {
+        ok = await jadwalkanSimpan(kode, String(x.sebelum || ""), true);
+      } finally {
+        sedangUrungkan = false;
+      }
       if (ok) {
         S.dariSipp.delete(kode);
+        otoTulis.delete(kode);
         try {
-          if (typeof catatRiwayat === "function") void catatRiwayat({ perkaraId: perkaraId(), kode, nama: b.nama, sebelum: lama, sesudah: String(x.sebelum || ""), cara: "dikembalikan dari riwayat di Blangko Derry", pada: new Date().toISOString() });
+          if (typeof catatRiwayat === "function") void catatRiwayat({ perkaraId: perkaraId(), kode, nama: b.nama, sebelum: lama, sesudah: String(x.sebelum || ""), cara: "dikembalikan dari riwayat di Blangko Derry", pada: new Date().toISOString(), urungkanDari: x.idJejak || "" });
         } catch {
           /* jejak tidak tersedia */
         }
@@ -7314,6 +7507,8 @@
     S.galatSusunan = "";
     S.isi = {};
     S.diketik.clear();
+    otoTulis.clear();
+    jejakTerakhir.clear();
     S.tesIsian = {};
     S.nilai = {};
     S.tersimpan = {};

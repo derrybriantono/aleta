@@ -40,6 +40,7 @@ import { AletaEcourtTampilanEkstensi } from "@/components/portal/aleta-ecourt-ta
 import { AletaEcourtTemplatHukum } from "@/components/portal/aleta-ecourt-templat-hukum";
 import { AletaEcourtAbtWajib } from "@/components/portal/aleta-ecourt-abt-wajib";
 import { AletaEcourtKamusSumber } from "@/components/portal/aleta-ecourt-kamus-sumber";
+import { AletaEcourtJejakIsian } from "@/components/portal/aleta-ecourt-jejak-isian";
 import { AletaEcourtKamusDeteksi } from "@/components/portal/aleta-ecourt-kamus-deteksi";
 import { AletaEcourtPemetaanBlangko } from "@/components/portal/aleta-ecourt-pemetaan-blangko";
 import { AletaEcourtPetaPenetapan } from "@/components/portal/aleta-ecourt-peta-penetapan";
@@ -409,6 +410,8 @@ export function AletaEcourtAdmin() {
             jejak koreksi (D2), label pustaka kalimat (D3). Hanya Super Admin/
             Admin. Jangkar #kamus-deteksi. */}
         <AletaEcourtKamusDeteksi />
+        {/* C1 (25 Okt 2026): angka lapangan jejak isian dan butir saksi (saklar Fitur satker bawaan mati). Jangkar #jejak-isian. */}
+        <AletaEcourtJejakIsian />
         {/* Pemetaan blangko putusan, relaas, dan pemberitahuan putusan
             (butir 17, 30 Sep 2026). Jangkar #pemetaan-blangko - tab Juru Sita
             di ekstensi menautkan ke sini. */}

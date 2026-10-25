@@ -89,6 +89,9 @@ const BERKAS = [
   "saksiscan.js",
   // Alamat <-> wilayah, isi dengan Tab, dan pengingat merah di blangko data pihak/kuasa SIPP (22 Okt 2026).
   "pihak-lengkap.js",
+  // Jejak isian dan butir saksi (rantai C, C1, 25 Okt 2026): pembantu bersama abt.js, saksi-susun.js, blangko-derry-isian.js.
+  // Saklar server "jejak-isian" (bawaan mati) - tanpa itu tidak ada yang dikirim.
+  "jejak-isian.js",
   // Susun saksi menurut keadaan dan jenis perkara (18 Okt 2026): mesin katalog
   // (murni, tanpa DOM), data katalog yang DIHASILKAN dari saksi-katalog/*.json
   // oleh scripts/susun-saksi-katalog.mjs, dan borangnya. Dimuat di ABT sebelum
