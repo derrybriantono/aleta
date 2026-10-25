@@ -9,6 +9,7 @@ import {
   simpanKebijakanSandi,
   type UbahKebijakanSandi,
 } from "@/server/modules/keamanan/kebijakan-sandi";
+import { tegakkanPengaman } from "@/server/modules/keamanan/pengaman-aksi";
 import { appendAuditLog } from "@/server/shared/audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ApiError } from "@/server/shared/errors";
@@ -43,6 +44,8 @@ export async function POST(request: NextRequest) {
     const db = await getDatabase();
     const actor = await pastikanAksi(db, await resolveActorUserId(request), "keamanan.atur");
     const body = await readJsonBody<UbahKebijakanSandi>(request).catch(() => ({}) as UbahKebijakanSandi);
+    // Pengaman aksi admin (Bagian 6c): mati bawaan -> tidak berbuat apa pun.
+    await tegakkanPengaman(db, request, actor, "sandi.ubah-kebijakan", { rincian: { aktif: body.aktif ?? null, panjangMin: body.panjangMin ?? null } });
     let baru;
     try {
       baru = await simpanKebijakanSandi(

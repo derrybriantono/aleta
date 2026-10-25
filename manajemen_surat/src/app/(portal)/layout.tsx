@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { PortalShellV2 } from "@/components/layout/portal-shell-v2";
 import { GantiSandiWajib } from "@/components/portal/ganti-sandi-wajib";
 import { JaringanDitolak } from "@/components/portal/jaringan-ditolak";
+import { PengamanAksiGlobal } from "@/components/portal/keamanan/pengaman-aksi-global";
 import { PitaKembaran } from "@/components/portal/pita-kembaran";
 import { getAuth } from "@/lib/auth";
 import { getDatabase } from "@/server/db/client";
@@ -53,6 +54,7 @@ export default async function PortalLayout({
 
   return (
     <>
+      <PengamanAksiGlobal />
       <PitaKembaran />
       <Suspense fallback={<div className="min-h-screen bg-background" />}>
         <PortalShellV2>{children}</PortalShellV2>

@@ -18,6 +18,7 @@ import {
   type KonfigurasiJaringan,
 } from "@/server/modules/keamanan/jaringan";
 import { verifikasiLuarKantorTerdaftar } from "@/server/modules/keamanan/kait";
+import { tegakkanPengaman } from "@/server/modules/keamanan/pengaman-aksi";
 import { appendAuditLog } from "@/server/shared/audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ApiError } from "@/server/shared/errors";
@@ -113,6 +114,11 @@ export async function POST(request: NextRequest) {
         );
       }
     }
+
+    // Pengaman aksi admin (Bagian 6c): mati bawaan -> tidak berbuat apa pun.
+    await tegakkanPengaman(db, request, actor, "jaringan.ubah-batas", {
+      rincian: { aksi: body.aksi, cidr: cidrBaru ?? null, roleId: body.roleId ?? null, aturan: body.aturan ?? null },
+    });
 
     try {
       if (body.aksi === "tambah-subnet") await tambahSubnetKantor(db, { cidr: cidrBaru!, label: body.label }, actor.id);

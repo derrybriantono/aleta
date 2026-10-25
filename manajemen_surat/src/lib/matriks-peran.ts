@@ -1005,7 +1005,7 @@ export const AKSI = {
     crud: "R",
     golongan: [],
     lingkup: "semua",
-    rute: ["GET /api/admin/keamanan/sandi", "GET /api/admin/keamanan/jaringan"],
+    rute: ["GET /api/admin/keamanan/sandi", "GET /api/admin/keamanan/jaringan", "GET /api/admin/keamanan/pengaman"],
     alasan: "Setelan keamanan memuat aturan sandi, daftar jaringan kantor, dan hasil uji pulih cadangan - hanya Admin dan Super Admin yang membaca.",
   },
   "keamanan.atur": {
@@ -1013,7 +1013,7 @@ export const AKSI = {
     crud: "CUD",
     golongan: [],
     lingkup: "semua",
-    rute: ["POST /api/admin/keamanan/sandi", "POST /api/admin/keamanan/sandi/paksa-ganti", "POST /api/admin/keamanan/jaringan"],
+    rute: ["POST /api/admin/keamanan/sandi", "POST /api/admin/keamanan/sandi/paksa-ganti", "POST /api/admin/keamanan/jaringan", "POST /api/admin/keamanan/pengaman"],
     alasan: "Kebijakan sandi, batas jaringan, pengaman aksi, dan uji pulih berlaku untuk seluruh satker dan dapat mengunci orang keluar - hanya Super Admin.",
     hanyaSuperAdmin: true,
   },
