@@ -118,7 +118,8 @@
         "basmassal.js",
         "jejak-isian.js",
         "saksi-katalog.js",
-        "saksi-katalog-data.js",
+        "saksi-katalog-indeks.js",
+        "saksi-katalog-muat.js",
         "saksi-susun.js",
         "isi-sipp-bersama.js",
         "abt.js",
@@ -230,6 +231,15 @@
       "resources": [
         "ikon/aleta-32.png",
         "ikon/aleta-128.png"
+      ],
+      "matches": [
+        "http://192.168.10.10/*",
+        "http://127.0.0.1/*"
+      ]
+    },
+    {
+      "resources": [
+        "saksi-katalog-jenis/*.json"
       ],
       "matches": [
         "http://192.168.10.10/*",

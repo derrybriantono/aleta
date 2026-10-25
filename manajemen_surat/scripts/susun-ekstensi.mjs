@@ -97,7 +97,11 @@ const BERKAS = [
   // oleh scripts/susun-saksi-katalog.mjs, dan borangnya. Dimuat di ABT sebelum
   // abt.js; borang dipasang abt.js lewat globalThis.AletaSaksiSusun.
   "saksi-katalog.js",
+  // Data seluruh katalog (satu skrip): TIDAK lagi disuntik ke halaman ABT (K10) - dipakai portal untuk Panduan pertanyaan saksi
+  // (server) dan uji. Peramban memuat saksi-katalog-indeks.js + saksi-katalog-muat.js dan isi per jenis dari saksi-katalog-jenis/.
   "saksi-katalog-data.js",
+  "saksi-katalog-indeks.js",
+  "saksi-katalog-muat.js",
   "saksi-susun.js",
   // Isi dari SIPP - mesin bersama (19 Okt 2026): pembobotan usulan, keputusan tulis/saran, dan
   // pembacaan sumber untuk "Isi otomatis dari SIPP" di Blangko Derry. Murni (tanpa DOM), dimuat di ABT
@@ -251,6 +255,19 @@ const BERKAS = [
   "pembaru/pasang-pembaru-aleta.cmd",
   "PASANG.md",
 ];
+
+// K10 (25 Okt 2026): isi katalog Susun saksi per jenis perkara (JSON, dibaca skrip konten lewat web_accessible_resources).
+// DIHASILKAN scripts/susun-saksi-katalog.mjs; daftarnya disapu dari folder (satu berkas per jenis) supaya katalog baru tidak terlewat.
+// Folder yang daftarnya disapu seperti ini ditulis di BERKAS_FOLDER_DINAMIS (uji ekstensi-versi-tanam membacanya).
+const BERKAS_FOLDER_DINAMIS = [
+  "saksi-katalog-jenis/",
+];
+for (const awalan of BERKAS_FOLDER_DINAMIS) {
+  const folderDinamis = path.resolve(process.cwd(), "..", "ekstensi-sipp", awalan);
+  if (fs.existsSync(folderDinamis)) {
+    for (const nama of fs.readdirSync(folderDinamis).filter((n) => n.endsWith(".json")).sort()) BERKAS.push(`${awalan}${nama}`);
+  }
+}
 
 // Ikon TIDAK dapat ditanam sebagai teks: ia berkas PNG, dan membacanya sebagai
 // utf8 merusak bitanya tanpa satu pun galat. Karena itu ikon ditanam terpisah

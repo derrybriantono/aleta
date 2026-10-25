@@ -40,6 +40,9 @@
 
   const Mesin = () => globalThis.AletaSaksiKatalog;
   const DataKatalog = () => (Array.isArray(globalThis.ALETA_SAKSI_KATALOG_DATA) ? globalThis.ALETA_SAKSI_KATALOG_DATA : []);
+  // K10 (25 Okt 2026): halaman ABT hanya memuat INDEKS katalog; isi katalog dimuat per jenis perkara oleh saksi-katalog-muat.js
+  // ke larik DataKatalog() yang sama. Tanpa pemuat (uji lama yang memuat seluruh data), semuanya persis seperti dulu.
+  const Muat = () => (globalThis.AletaSaksiKatalogMuat && globalThis.AletaSaksiKatalogMuat.ada() ? globalThis.AletaSaksiKatalogMuat : null);
 
   // ──────────────────────────────────────────────────────────────────────
   // Pengenal jenis dan keadaan (fungsi murni - diuji langsung)
@@ -54,6 +57,8 @@
   /** Katalog yang mungkin untuk alur ini (dipakai bila jenis perkara tidak terbaca: petugas memilih). */
   function kandidatKatalog(alur) {
     const a = String(alur || "").trim();
+    const pemuat = Muat();
+    if (pemuat) return pemuat.kandidat(a);
     return DataKatalog().filter((kat) => {
       if (!kat || kat.contoh === true || !kat.syarat || (kat.tambahanUntuk && kat.tambahanUntuk.length)) return false;
       const alurSah = (kat.syarat.alurPerkaraId || []).map(String);
@@ -309,10 +314,14 @@
     }
 
     /** Jenis perkara halaman ini -> katalog (atau null). */
-    function kenali() {
+    function kenaliPerkaraHalaman() {
       const teks = typeof k.jenisPerkaraTeks === "function" ? k.jenisPerkaraTeks() : "";
       const id = typeof k.idJenisPerkara === "function" ? k.idJenisPerkara(teks) : "";
       const alur = typeof k.alurPerkara === "function" ? k.alurPerkara(nomor()) : "";
+      return { teks, id, alur };
+    }
+    function kenali() {
+      const { teks, id, alur } = kenaliPerkaraHalaman();
       const nama = `${teks} ${document.title || ""}`;
       return { kat: katalogUntuk({ jenisPerkaraId: id, alurPerkaraId: alur, nama }), alur, teks, id };
     }
@@ -1405,10 +1414,23 @@
       const kandidat = kandidatKatalog(alur);
       const sel = pilihan([["", "- pilih jenis perkara -"], ...kandidat.map((c) => [c.kunci, c.judul])], "", (v) => {
         const kat = kandidat.find((c) => c.kunci === v);
-        if (kat) {
-          atur(kat);
-          gambarUlang();
-        }
+        if (!kat) return;
+        const pakai = () => {
+          // isi katalog (bukan hanya butir indeks) - sudah termuat dengan paketnya
+          const penuh = DataKatalog().find((c) => c && c.kunci === v);
+          if (penuh) {
+            atur(penuh);
+            gambarUlang();
+          }
+        };
+        const pemuat = Muat();
+        if (pemuat && !pemuat.sudahDimuat(v)) {
+          sel.disabled = true;
+          void pemuat.siapkanKunci(v).then(() => {
+            sel.disabled = false;
+            pakai();
+          });
+        } else pakai();
       });
       form.appendChild(label("Jenis perkara", sel));
       wadah.appendChild(form);
@@ -1556,13 +1578,30 @@
 
     // singgahan: simpan dari blangko, baca di halaman tanya-jawab
     const n = nomor();
-    const kodeSimpan = kodeDipakaiKatalog(DataKatalog());
+    const kodeSimpan = kodeDipakaiKatalog(Muat() ? Muat().untukKodeVariabel() : DataKatalog());
     const p = peta();
     if (p && p.size >= 5) tulisSinggahan(n, p, kodeSimpan);
     void bacaSinggahan(n).then((c) => {
       S.singgahan = c || {};
     });
     segarkanTombol();
+    // K10: isi katalog jenis perkara halaman ini dimuat sekarang; tombol dinilai ulang begitu paketnya terpasang.
+    if (Muat()) {
+      const { id, alur, teks } = kenaliPerkaraHalaman();
+      void Muat()
+        .siapkan({ jenisPerkaraId: id, alurPerkaraId: alur, nama: `${teks} ${document.title || ""}` })
+        .then(() => {
+          segarkanTombol();
+          // tab keterangan (katalog tambahan) baru tersedia sesudah dimuat: bila borang sudah terbuka, gambar ulang
+          if (!wadah.hidden && S.kat) {
+            const { kat } = kenali();
+            if (kat && S.kat.kunci === kat.kunci && !S.ket) {
+              aturKeterangan(S.kat);
+              gambarUlang();
+            }
+          }
+        });
+    }
     // Mode tampilan (Lama/Baru/UI Baru) baru diketahui sesudah pengaturan terbaca: tombol dinilai ulang.
     try {
       document.addEventListener("aleta-uji-berubah", segarkanTombol);

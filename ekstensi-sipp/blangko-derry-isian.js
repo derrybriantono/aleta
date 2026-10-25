@@ -3651,12 +3651,40 @@
     };
   }
   let ktMemoKenal = { kunci: "", hasil: null };
+  // K10 (25 Okt 2026): isi katalog saksi dimuat per jenis perkara (saksi-katalog-muat.js), bukan 9,4 MB di tiap halaman ABT.
+  // Hasil kenali() diingat per perkara DAN per versi muat: katalog yang baru terpasang membuat hasilnya dihitung ulang.
+  const ktPemuat = () => (typeof globalThis !== "undefined" && globalThis.AletaSaksiKatalogMuat && globalThis.AletaSaksiKatalogMuat.ada() ? globalThis.AletaSaksiKatalogMuat : null);
+  const ktSedangMuat = new Set();
   /** Hasil kenali() untuk perkara yang terbuka (diingat per perkara); null bila modul katalog belum termuat. */
   function ktKenal() {
     const K = KT();
     if (!K || !S.pk) return null;
     const o = ktPerkaraObj();
-    const kunci = JSON.stringify(o);
+    const pemuat = ktPemuat();
+    const kunci = JSON.stringify(o) + (pemuat ? `|${pemuat.versi()}` : "");
+    if (pemuat) {
+      const kunciPerkara = JSON.stringify(o);
+      if (!ktSedangMuat.has(kunciPerkara)) {
+        ktSedangMuat.add(kunciPerkara);
+        const sebelum = pemuat.versi();
+        // id jenis/alur diturunkan modul katalog sendiri (dari id, atau dari nama jenis) - sama dengan yang dipakai kenali()
+        const awal = K.kenali(o) || {};
+        void pemuat.siapkan({ jenisPerkaraId: awal.jenisId || o.jenisPerkaraId, alurPerkaraId: awal.alurId || o.alurPerkaraId, nama: o.jenisPerkara }).then(() => {
+          // Katalog baru terpasang: hitung ulang dan gambar ulang panel yang bergantung padanya.
+          if (pemuat.versi() !== sebelum && S.pk && JSON.stringify(ktPerkaraObj()) === kunciPerkara) {
+            ktMemoKenal = { kunci: "", hasil: null };
+            try {
+              if (S.susunan) {
+                renderIsian();
+                renderTj();
+              }
+            } catch {
+              /* gambar ulang hanya kenyamanan */
+            }
+          }
+        });
+      }
+    }
     if (ktMemoKenal.kunci !== kunci) ktMemoKenal = { kunci, hasil: K.kenali(o) };
     return ktMemoKenal.hasil;
   }

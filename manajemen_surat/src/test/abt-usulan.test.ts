@@ -1225,8 +1225,9 @@ describe("nomor 3 - panel ABT lengkap perkakasnya", () => {
     // (abt.js memanggil AletaSaksiSusun.pasang saat bagian tanya-jawab disusun).
     // 22 Okt: menu-atas.js paling belakang - di ABT hanya mengarahkan ke Blangko ABT by Derry sesudah login.
     // 23 Okt (T1, ALETA Ai tahap 2b): aleta-ai-gelembung.js sesudah menu-atas.js - pop-up chat, tidak menyentuh abt.js.
+    // 25 Okt (rantai C, C2/K10): saksi-katalog-data.js (9,4 MB) tidak lagi disuntik ke halaman ABT; indeks kecil + pemuat per jenis perkara.
     // 25 Okt (rantai C, C1): jejak-isian.js (pembantu jejak isian/butir saksi, saklar server bawaan mati) sesudah basmassal.js, sebelum katalog saksi.
-    expect(entri?.js).toEqual(["deteksi-sisa-blangko.js", "panel-alat.js", "jurusita.js", "basmassal.js", "jejak-isian.js", "saksi-katalog.js", "saksi-katalog-data.js", "saksi-susun.js", "isi-sipp-bersama.js", "abt.js", "checklist.js", "abt-klien.js", "blangko-derry.js", "blangko-derry-saksi.js", "blangko-derry-saksi-tampil.js", "blangko-derry-katalog.js", "blangko-derry-jawab-katalog.js", "blangko-derry-isian.js", "blangko-derry-massal.js", "konseptor-langkah.js", "putusan-advance.js", "sipp-ide-l1.js", "abt-gulir.js", "menu-atas.js", "aleta-ai-gelembung.js"]);
+    expect(entri?.js).toEqual(["deteksi-sisa-blangko.js", "panel-alat.js", "jurusita.js", "basmassal.js", "jejak-isian.js", "saksi-katalog.js", "saksi-katalog-indeks.js", "saksi-katalog-muat.js", "saksi-susun.js", "isi-sipp-bersama.js", "abt.js", "checklist.js", "abt-klien.js", "blangko-derry.js", "blangko-derry-saksi.js", "blangko-derry-saksi-tampil.js", "blangko-derry-katalog.js", "blangko-derry-jawab-katalog.js", "blangko-derry-isian.js", "blangko-derry-massal.js", "konseptor-langkah.js", "putusan-advance.js", "sipp-ide-l1.js", "abt-gulir.js", "menu-atas.js", "aleta-ai-gelembung.js"]);
   });
 
   it("tujuh perkakas ada semuanya", () => {
