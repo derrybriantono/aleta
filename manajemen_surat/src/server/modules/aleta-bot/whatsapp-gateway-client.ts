@@ -22,6 +22,7 @@ import type { PermintaanRekap, RekapPetugas } from "@/lib/rekap-petugas";
 import type { WaktuAntrian } from "@/lib/tiga-jarak-sidang";
 import type { PembebananIkrar } from "@/lib/pembebanan-ikrar";
 import { sanitizePublicErrorMessage } from "@/server/shared/error-sanitizer";
+import { RUANG_SINGGAH, terkenaTulisan } from "@/server/modules/aleta-bot/singgah-tulisan";
 import { singgahSingkat, tandaiTulisan, ttlDariEnv } from "@/server/shared/singgah-singkat";
 
 export type WhatsappRuntimeMode = "aleta_bot" | "legacy_portal" | "disabled";
@@ -188,8 +189,11 @@ async function gatewayFetch<T>(
   // Performa muat 19 Okt: tulisan lewat bot (tunda, putus, kehadiran, ...)
   // membuang singgahan jadwal SEBELUM dikirim dan SESUDAH dijawab - bacaan
   // yang berjalan di antaranya tidak disimpan (lihat singgah-singkat.ts).
+  // K2 (25 Okt 2026): hanya singgahan yang TERKENA tulisan ini yang dibuang;
+  // jalur yang tidak dikenal membuang semuanya (lihat singgah-tulisan.ts).
   const menulis = permintaanMenulis(path, permintaan.method);
-  if (menulis) tandaiTulisan();
+  const terkena = menulis ? terkenaTulisan(path, permintaan.body) : undefined;
+  if (menulis) tandaiTulisan(terkena);
 
   try {
     const url = `${getGatewayBaseUrl()}${path}`;
@@ -292,7 +296,7 @@ async function gatewayFetch<T>(
     };
   } finally {
     clearTimeout(timeout);
-    if (menulis) tandaiTulisan();
+    if (menulis) tandaiTulisan(terkena);
   }
 }
 
@@ -2228,7 +2232,7 @@ export async function getGatewayTagPerkara(params: {
   const jalur = `/internal/aleta-bot/sipp/status-perkara/tag?${kueri.toString()}`;
   const ttl = kueri.get("katalogSaja") === "1" ? 0 : ttlDariEnv("ALETA_SINGGAH_TAG_MS", process.env.NODE_ENV === "test" ? 0 : 30_000);
   return singgahSingkat(
-    "tag-perkara",
+    RUANG_SINGGAH.tag,
     kueri.toString(),
     ttl,
     () =>
@@ -3427,8 +3431,21 @@ export async function getGatewayPromptPutusan(
   return gatewayFetch(`/internal/aleta-bot/sipp/prompt-putusan?${kueri.toString()}`);
 }
 
+/**
+ * Peta antrian hari berjalan. K2 (25 Okt 2026): disinggahkan 2 detik
+ * (ALETA_SINGGAH_ANTRIAN_MS; mati di lingkungan uji) dan dibagi bersama oleh
+ * layar Jadwal, layar publik, dan antrean ruang, sehingga 100 layar membaca
+ * satu kali per 2 detik, bukan masing-masing. Dibuang seketika oleh tulisan
+ * antrian/sidang/penetapan (lihat singgah-tulisan.ts); galat tidak disimpan.
+ */
 export async function getGatewayAntrianSidang(): Promise<GatewayResult<AntrianSidangGateway>> {
-  return gatewayFetch("/internal/aleta-bot/antrian/sidang");
+  return singgahSingkat(
+    RUANG_SINGGAH.antrian,
+    "semua",
+    ttlDariEnv("ALETA_SINGGAH_ANTRIAN_MS", process.env.NODE_ENV === "test" ? 0 : 2000),
+    () => gatewayFetch<AntrianSidangGateway>("/internal/aleta-bot/antrian/sidang"),
+    { simpanBila: (hasil) => hasil.ok === true }
+  );
 }
 
 export type KehadiranBaris = {
@@ -4131,7 +4148,7 @@ export type PegawaiPenunjukan = {
 export async function gatewayPegawaiPenunjukan() {
   const ttl = ttlDariEnv("ALETA_SINGGAH_PEGAWAI_MS", process.env.NODE_ENV === "test" ? 0 : 60_000);
   return singgahSingkat(
-    "pegawai-penunjukan",
+    RUANG_SINGGAH.pegawai,
     "semua",
     ttl,
     () =>
