@@ -404,6 +404,13 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_ai_rute",
   "aleta_ai_jejak",
   // 25 Oktober 2026 (0088): ALETA Ai tahap 4 - kuota hibah per peran, rekonsiliasi harian.
+  // Cermin Perkara (0090): salinan keadaan perkara SIPP.
+  "aleta_cermin_perkara",
+  "aleta_cermin_sidang",
+  "aleta_cermin_pihak",
+  "aleta_cermin_mediasi",
+  "aleta_cermin_tag",
+  "aleta_cermin_jejak",
   "aleta_ai_kuota_peran",
   "aleta_ai_rekonsiliasi",
   // 21 Oktober 2026 (0080): Unggah Putusan Terjadwal. Tanpa kunci asing - urutannya bebas.

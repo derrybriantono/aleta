@@ -4507,6 +4507,8 @@ app.use("/internal/aleta-bot/kamus-deteksi", require("./routes/kamusDeteksiRoute
 app.use("/internal/aleta-bot/abt-pengaturan", require("./routes/abtPengaturanRoutes"));
 // Status fitur per satker (banyak satker, Tahap 0): portal mendorong, bot menerima; gagal ke sisi menyala.
 app.use("/internal/aleta-bot/fitur-satker", require("./routes/fiturSatkerRoutes"));
+// Cermin Perkara (C0, 25 Okt 2026): bahan pemindai portal - HANYA GET dan hanya membaca SIPP.
+app.use("/internal/aleta-bot/cermin", require("./routes/cerminRoutes"));
 try {
   const muatKamus = require("./services/kamusDeteksiLapis").mulaiPemuatLapis();
   console.log(

@@ -372,6 +372,7 @@ Dari salinan lokal ABT (hanya dibaca, paket yang siap; yang berjalan di server d
 | Backup Sistem | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Sumber Daya Server | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Sinkron dan cadangan | U | L | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Pemantau Cermin Perkara | U | L | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Sinkron kembaran (mode laptop saat server mati) | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Fitur Satker (stabil, uji coba, mati per fitur) | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Integrasi e-Court (akun, akses ekstensi, penarikan) | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
