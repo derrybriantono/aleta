@@ -15,7 +15,33 @@ Dikerjakan di laptop (worktree `D:/aleta-dev/wt/w72`), bertumpuk: E1 sampai E6 s
 
 ## Uji
 
-HASIL_UJI
+Uji sasaran baru (semuanya hijau di ujung rantai):
+
+| Berkas | Isi | Hasil |
+| :--- | :--- | :--- |
+| `src/test/lihat-sebagai-25okt.test.ts` | E4: alasan, sebab menu = `aplikasiTampil`, sesi 30 menit, audit, catatan pemilik, rute | 14 hijau |
+| `src/test/verifikasi-dua-langkah-25okt.test.ts` | E5: vektor RFC 6238, aturan per peran, migrasi 0095, keputusan masuk, tiket/kode/cadangan, kait, rute | 44 hijau |
+| `src/test/verifikasi-layar-25okt.test.tsx` | E5: layar kode di halaman masuk | 3 hijau |
+| `src/test/penjaga-integritas-25okt.test.ts` | E6: aturan deteksi, folder nyata tidak berubah, baru/berubah/hilang, aman, peringatan, halaman publik, detak, rute, migrasi 0104 | 29 hijau |
+| `src/test/panel-admin-layar-25okt.test.tsx` | E4/E5/E6: panel Lihat sebagai, Verifikasi, Verifikasi Saya, Integritas (perilaku tombol di jsdom) | 6 hijau |
+
+`npx tsc --noEmit`: bersih. ESLint berkas baru E4/E5/E6: bersih. `npm run lint:jangan-bertambah`: 46 (dasar 45); tambahan satu dari `scripts/uji-beban.d.mts` (E1), bukan dari E4 sampai E6.
+
+Uji penuh sekali di ujung E6 (`ALETA_UJI_TMP=D:/Aplikasi/aleta/tmp/ujiRE ALETA_UJI_UTAS=2 node scripts/periksa-uji.mjs`, dijalankan setelah `ujiRC`, `ujiRF`, `ujiR6` tenang 5 menit dan memori bebas di atas 3 GB): 937 berkas hijau, 2 dilewati, 14 merah (12 uji gagal, 1 habis waktu). Sesudah dibereskan dan dijalankan ulang sendiri:
+
+| Berkas merah | Sebab | Keadaan akhir |
+| :--- | :--- | :--- |
+| `db-boot-ulang-20okt` | berkas yang saya sunting berakhir CRLF di salinan kerja (uji membaca teks sumber dengan LF) | **dibereskan** (LF dikembalikan), hijau |
+| `istilah-tampilan` | 29 tulisan "galat" di kode E2 (Pusat kesehatan); permintaan Derry 30 Sep: tampilan memakai "error" | **dibereskan** di cabang E6 (hanya teks tampil; kunci `galat` tetap), hijau; dokumen matriks hak dibangkitkan ulang |
+| `arsip-cadangan` | habis waktu 300 dtk saat beban tinggi | hijau bila dijalankan sendirian |
+| `aleta-ai-dompet-25okt`, `blangko-derry-isi-otomatis-19okt`, `referensi-pihak-isian-t8-23okt` | merah hanya saat beban penuh (urutan/pewaktu) | hijau bila dijalankan sendirian |
+| `docx-tabel-gambar`, `eviden-skp-cetak`, `xlsx-lembar-bebas` | `public/mahkamah-agung-logo.png` tidak ada di worktree | merah karena lingkungan (bukan dari rantai ini) |
+| `w2a-kebendaan`, `w3b-blangko-baru-21okt` | folder `abt-paket/` tidak ada di worktree | merah karena lingkungan |
+| `root-redirect` | beranda mengarah ke /setup karena basis data lokal worktree kosong | merah karena lingkungan |
+| `tema-ecourt-23okt` | uji masih mengharapkan manifest 1.205.38 (dasar sudah 1.205.39) | merah sejak dasar (bukan dari rantai ini) |
+| `alamat-desa-ketik-22okt` | uji pewaktu (pencarian kurang dari 25 ms) gagal di laptop yang sedang dipakai banyak agen | merah karena beban |
+
+Tidak ada kegagalan yang berasal dari berkas E4, E5, atau E6. Delapan berkas di tabel terakhir tetap merah di worktree ini karena lingkungan; tidak dibuktikan dengan lari dasar terpisah.
 
 ## Saklar baru dan bawaannya
 
