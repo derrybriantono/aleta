@@ -168,7 +168,7 @@ describe("B. aturan murni", () => {
     expect(PENGATURAN_CERMIN_BAWAAN).toMatchObject({ mediasiHariLalu: 3, mediasiHariDepan: 21, mediasiMenit: 10, selangTagMenit: 10 });
     const p = bersihkanPengaturanCermin({ mediasiHariLalu: 999, mediasiHariDepan: -5, mediasiMenit: 0, selangTagMenit: 99999 })!;
     expect(p).toMatchObject({ mediasiHariLalu: 31, mediasiHariDepan: 0, mediasiMenit: 1, selangTagMenit: 240 });
-    expect(p.layar).toEqual({ mediasi: false, status: false, jadwal: false, ekstensi: false });
+    expect(p.layar).toEqual({ mediasi: false, status: false, jadwal: false, ekstensi: false, kabar: false });
   });
 
   it("keadaan mediasi/tag yang rusak jatuh ke awal; daftar dibatasi", () => {

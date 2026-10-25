@@ -421,7 +421,7 @@ export function CerminPerkaraPanel() {
               <CardTitle className="text-base">Saklar</CardTitle>
               <p className="text-xs text-muted-foreground">
                 Semua mati bawaan. Nyalakan pemindai lebih dulu; sesudah pemindaian 100% dan pencocokan bersih, nyalakan layar satu per satu: Jadwal Mediasi,
-                Status Perkara, Jadwal Sidang, lalu panel ekstensi. Layar yang saklarnya mati membaca SIPP seperti sebelum ada cermin.
+                Status Perkara, Jadwal Sidang, lalu panel ekstensi dan terakhir kabar perubahan. Layar yang saklarnya mati membaca SIPP seperti sebelum ada cermin.
                 {bolehMengubah ? "" : " Hanya Super Admin yang dapat mengubah saklar."}
               </p>
             </CardHeader>

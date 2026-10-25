@@ -36,6 +36,9 @@ const ALETA_BERKAS = "/aleta/api/aleta-ecourt/berkas";
 // penilaian SK. Kapabilitasnya SAMA dengan sipp-konteks ("panel"), jadi menu
 // tambahan ini tidak membuka satu pun pintu baru bagi peran mana pun.
 const ALETA_API_STATUS = "/aleta/api/aleta-ecourt/status-perkara";
+// Kabar perubahan data SIPP (A8 / U17): satu baca ringan ke jejak Cermin Perkara. Kapabilitasnya
+// "panel", sama dengan sipp-konteks; saklar Kabar perubahan di Pemantau Cermin Perkara MATI bawaan.
+const ALETA_API_KABAR = "/aleta/api/aleta-ecourt/kabar-perubahan";
 const ALETA_API_PENUNJUKAN = "/aleta/api/aleta-bot/penunjukan";
 // Namanya "borang", bukan "formulir".
 //
@@ -16093,6 +16096,147 @@ document.addEventListener("visibilitychange", () => {
   void segarkan();
 });
 
+/**
+ * Kabar perubahan data SIPP (A8 / U17, 25 Okt 2026).
+ *
+ * Halaman perkara SIPP tidak menyegarkan dirinya. Selama panel ini terlihat, tiap
+ * 30 detik (hanya saat tab terlihat) ia menanyakan ke portal apakah Cermin Perkara
+ * mencatat perubahan data perkara ini SESUDAH keadaan yang dibaca petugas. Bila ya,
+ * pita di puncak panel memberi kabar bersama pukul perubahannya dan tombol
+ * "Muat ulang halaman". Yang dikabarkan hanya BAGIAN yang berubah dan pukulnya -
+ * cermin tidak menyimpan siapa yang mengubah, jadi tidak ada nama petugas.
+ *
+ * Diam sepenuhnya bila saklarnya mati, cermin tertinggal, atau portal tidak menjawab
+ * (tanpa pita, tanpa galat). Hanya membaca; tidak menulis ke SIPP.
+ */
+const JEDA_KABAR_MS = 30000;
+
+function kabarKeadaan() {
+  if (!globalThis.__aletaKabar) {
+    globalThis.__aletaKabar = { nomor: "", token: "", berubah: null, sibuk: false, diamSampai: 0, jam: null };
+  }
+  return globalThis.__aletaKabar;
+}
+
+function kabarKalimat(berubah) {
+  const bagian = (berubah.bagian || []).map((b) => (b === "sidang" ? "jadwal sidang" : "data perkara"));
+  const apa = bagian.length ? bagian.join(" dan ") : "data perkara";
+  const jam = jamCerminPanel(berubah.diubahPada);
+  return berubah.dariAleta
+    ? `${apa[0].toUpperCase()}${apa.slice(1)} berubah pukul ${jam} - mungkin dari tindakan di ALETA. Muat ulang halaman SIPP untuk melihatnya.`
+    : `${apa[0].toUpperCase()}${apa.slice(1)} perkara ini berubah di SIPP pukul ${jam}. Muat ulang halaman SIPP untuk melihatnya.`;
+}
+
+/** Memasang / membuang pita kabar pada panel. Idempoten; dipanggil tiap panel digambar dan tiap tanya selesai. */
+function kabarPasangPita(panel) {
+  if (!panel || typeof panel.querySelector !== "function") return;
+  const k = kabarKeadaan();
+  const lama = panel.querySelector("#aleta-kabar");
+  if (!k.berubah) {
+    if (lama) lama.remove();
+    return;
+  }
+  if (lama) return;
+  const pita = buatElemen("div", "aleta-pita-luring aleta-pita-luring-segar");
+  pita.id = "aleta-kabar";
+  pita.setAttribute("data-kabar", "1");
+  pita.setAttribute("role", "status");
+  pita.appendChild(buatElemen("span", "", kabarKalimat(k.berubah)));
+  const muat = buatElemen("button", "aleta-tombol aleta-tombol-kecil", "Muat ulang halaman");
+  muat.type = "button";
+  muat.addEventListener("click", () => location.reload());
+  const abai = buatElemen("button", "aleta-tombol aleta-tombol-kecil", "Abaikan");
+  abai.type = "button";
+  abai.addEventListener("click", () => {
+    k.berubah = null;
+    tanpaPengamat(() => kabarPasangPita(document.getElementById(PENANDA)));
+  });
+  pita.appendChild(document.createTextNode(" "));
+  pita.appendChild(muat);
+  pita.appendChild(document.createTextNode(" "));
+  pita.appendChild(abai);
+  panel.insertBefore(pita, panel.firstChild);
+}
+
+/** Kabar hanya di tampilan baru: tampilan Lama (Klasik) harus identik dengan sebelum Tahap 7, termasuk permintaannya. */
+function kabarModeBoleh() {
+  try {
+    return typeof alatUjiMode === "function" && String(alatUjiMode() || "lama") !== "lama";
+  } catch {
+    return false;
+  }
+}
+
+async function kabarPeriksa() {
+  const k = kabarKeadaan();
+  if (!kabarModeBoleh() || k.sibuk || document.visibilityState !== "visible" || Date.now() < k.diamSampai) return;
+  const panel = document.getElementById(PENANDA);
+  const nomor = nomorTerakhir;
+  // Hanya panel satu perkara (bukan panel daftar, bukan ajakan masuk / panel ditolak).
+  if (!panel || !nomor || nomor === "*daftar*" || (panel.dataset && panel.dataset.mode === "daftar")) return;
+  if (k.nomor !== nomor) {
+    k.nomor = nomor;
+    k.token = "";
+    k.berubah = null;
+  }
+  k.sibuk = true;
+  try {
+    const url = `${ALETA_API_KABAR}?nomor=${encodeURIComponent(nomor)}${k.token ? `&sejak=${encodeURIComponent(k.token)}` : ""}`;
+    const pembatal = new AbortController();
+    const batas = setTimeout(() => pembatal.abort(), 8000);
+    let respons;
+    try {
+      respons = await fetch(url, { credentials: "include", cache: "no-store", signal: pembatal.signal });
+    } finally {
+      clearTimeout(batas);
+    }
+    if (!respons.ok) {
+      // 401/403/5xx: diam dan coba lagi nanti (tidak menambah beban portal yang sedang berat).
+      k.diamSampai = Date.now() + 120000;
+      return;
+    }
+    const hasil = await respons.json();
+    const kabar = (hasil && hasil.data ? hasil.data : hasil || {}).kabar;
+    if (k.nomor !== nomorTerakhir) return; // perkara berganti selagi menunggu
+    if (!kabar || kabar.aktif !== true) {
+      // Saklar mati / cermin tertinggal / belum tercermin: tanpa pita, tanya lagi 5 menit kemudian.
+      k.diamSampai = Date.now() + 300000;
+      k.berubah = null;
+      tanpaPengamat(() => kabarPasangPita(document.getElementById(PENANDA)));
+      return;
+    }
+    if (!k.token) {
+      // Tanya pertama = keadaan dasar yang sedang dibaca petugas.
+      k.token = String(kabar.token || "");
+    } else if (kabar.berubah) {
+      k.berubah = { diubahPada: kabar.diubahPada, bagian: kabar.bagian || [], dariAleta: kabar.kemungkinanDariAleta === true };
+    }
+    tanpaPengamat(() => kabarPasangPita(document.getElementById(PENANDA)));
+  } catch {
+    k.diamSampai = Date.now() + 120000;
+  } finally {
+    k.sibuk = false;
+  }
+}
+
+/** Menyalakan pemantau sekali (idempoten); tanya pertama segera, berikutnya tiap JEDA_KABAR_MS. */
+function kabarMulaiPantau() {
+  const k = kabarKeadaan();
+  // Perkara baru dibuka: keadaan dasar diambil sebentar lagi (nomorTerakhir baru terisi sesudah panel tergambar).
+  if (nomorTerakhir && k.nomor !== nomorTerakhir && !k.segera) {
+    k.segera = setTimeout(() => {
+      k.segera = null;
+      void kabarPeriksa();
+    }, 1500);
+  }
+  if (k.jam) return;
+  k.jam = setInterval(() => void kabarPeriksa(), JEDA_KABAR_MS);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") void kabarPeriksa();
+  });
+  void kabarPeriksa();
+}
+
 function tampilkan(elemen) {
   tanpaPengamat(() => {
     const lama = document.getElementById(PENANDA);
@@ -16108,7 +16252,9 @@ function tampilkan(elemen) {
     // Petunjuk dua detik untuk tiap tombol yang bertitle - pembantu bersama
     // di panel-alat.js, yang sama dengan panel ABT dan ALETA.
     alatPasangPetunjuk(elemen);
+    kabarPasangPita(elemen);
   });
+  kabarMulaiPantau();
 }
 
 let nomorTerakhir = "";

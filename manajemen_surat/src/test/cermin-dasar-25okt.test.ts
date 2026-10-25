@@ -659,7 +659,7 @@ describe("E. rute admin Pemantau Cermin Perkara", () => {
     expect(lihat.status).toBe(200);
     expect(lihat.isi.data.bolehMengubah).toBe(false);
     expect(lihat.isi.data.pengaturan.pemindaiAktif).toBe(false);
-    expect(lihat.isi.data.layar.map((l: { aktif: boolean }) => l.aktif)).toEqual([false, false, false, false]);
+    expect(lihat.isi.data.layar.map((l: { aktif: boolean }) => l.aktif)).toEqual([false, false, false, false, false]);
     expect(lihat.isi.data.keadaan.status).toBe("belum");
     expect(lihat.isi.data.persen).toBe(0);
     expect((await panggil("PUT", { pemindaiAktif: true })).status).toBe(403);

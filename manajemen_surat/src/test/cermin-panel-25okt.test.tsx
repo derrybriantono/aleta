@@ -22,6 +22,7 @@ function halaman(ubah: Partial<HalamanPemantauCermin> = {}): HalamanPemantauCerm
       { kunci: "status", label: "Status Perkara", aktif: false },
       { kunci: "jadwal", label: "Jadwal Sidang, layar publik, dan antrean", aktif: false },
       { kunci: "ekstensi", label: "Panel ekstensi di SIPP/ABT", aktif: false },
+      { kunci: "kabar", label: "Kabar perubahan data SIPP di panel ekstensi", aktif: false },
     ],
     keadaan,
     pembaruan: keadaanPembaruanAwal(),
@@ -70,7 +71,7 @@ describe("CerminPerkaraPanel", () => {
     expect(screen.getByTestId("cermin-status").textContent).toMatch(/belum dimulai/i);
     expect(screen.getByTestId("cermin-kemajuan").textContent).toContain("0%");
     const saklar = Array.from(container.querySelectorAll('button[role="switch"]')) as HTMLElement[];
-    expect(saklar).toHaveLength(5); // pemindai + empat layar
+    expect(saklar).toHaveLength(6); // pemindai + lima layar
     for (const s of saklar) expect(s.getAttribute("aria-checked"), s.getAttribute("aria-label") ?? "").toBe("false");
     expect(screen.getByText("Matikan semua (bawaan)")).toBeTruthy();
   });
@@ -101,7 +102,7 @@ describe("CerminPerkaraPanel", () => {
     await waitFor(() => expect(panggilan.some((p) => p.method === "PUT")).toBe(true));
     const put = JSON.parse(panggilan.find((p) => p.method === "PUT")!.body);
     expect(put.pemindaiAktif).toBe(true);
-    expect(put.layar).toEqual({ mediasi: false, status: false, jadwal: false, ekstensi: false });
+    expect(put.layar).toEqual({ mediasi: false, status: false, jadwal: false, ekstensi: false, kabar: false });
   });
 
   it("galat rute tampil sebagai pesan, bukan [object Object]", async () => {

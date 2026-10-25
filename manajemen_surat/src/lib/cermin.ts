@@ -16,7 +16,7 @@
 /** Layar yang dapat membaca cermin; saklarnya per layar (dinyalakan satu per satu). */
 import { waktuPengadilan } from "@/lib/waktu-pengadilan";
 
-export const LAYAR_CERMIN = ["mediasi", "status", "jadwal", "ekstensi"] as const;
+export const LAYAR_CERMIN = ["mediasi", "status", "jadwal", "ekstensi", "kabar"] as const;
 export type LayarCermin = (typeof LAYAR_CERMIN)[number];
 
 export const LABEL_LAYAR_CERMIN: Record<LayarCermin, string> = {
@@ -24,6 +24,7 @@ export const LABEL_LAYAR_CERMIN: Record<LayarCermin, string> = {
   status: "Status Perkara",
   jadwal: "Jadwal Sidang, layar publik, dan antrean",
   ekstensi: "Panel ekstensi di SIPP/ABT",
+  kabar: "Kabar perubahan data SIPP di panel ekstensi",
 };
 
 export const UKURAN_KELOMPOK = { min: 50, maks: 500, bawaan: 300 } as const;
@@ -84,7 +85,7 @@ export type PengaturanCermin = {
 
 export const PENGATURAN_CERMIN_BAWAAN: PengaturanCermin = {
   pemindaiAktif: false,
-  layar: { mediasi: false, status: false, jadwal: false, ekstensi: false },
+  layar: { mediasi: false, status: false, jadwal: false, ekstensi: false, kabar: false },
   ukuranKelompok: UKURAN_KELOMPOK.bawaan,
   jedaDetik: JEDA_KELOMPOK_DETIK.bawaan,
   selangPembaruanDetik: SELANG_PEMBARUAN_DETIK.bawaan,
