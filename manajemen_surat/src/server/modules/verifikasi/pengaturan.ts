@@ -1,4 +1,5 @@
 import type { AletaDatabase } from "@/server/db/client";
+import { bacaKonfigurasiJaringan, dalamJaringanKantor } from "@/server/modules/keamanan/jaringan";
 import { bacaSetelanJson, simpanSetelanSistem } from "@/server/modules/kesehatan/setelan";
 import { ApiError } from "@/server/shared/errors";
 
@@ -123,6 +124,30 @@ export function ipDiKantor(ip: string, subnet: readonly string[]): boolean {
   const bersih = String(ip ?? "").trim();
   if (!bersih) return false;
   return subnet.some((c) => ipDalamCidr(bersih, c));
+}
+
+/**
+ * Satu sumber daftar jaringan kantor (gabung rantai E + Bagian 6, 26 Okt 2026): bila Pengaturan Keamanan
+ * (batas jaringan per peran, tabel aleta_subnet_kantor) punya jaringan AKTIF, itulah daftar yang berlaku untuk
+ * verifikasi dua langkah juga. Tanpa satu pun jaringan aktif di sana (bawaan), daftar milik verifikasi sendiri
+ * dipakai persis seperti sebelumnya. Gagal membaca = daftar milik verifikasi.
+ */
+export async function sumberJaringanKantor(db: AletaDatabase, p: Pick<PengaturanVerifikasi, "subnetKantor">) {
+  try {
+    const konfig = await bacaKonfigurasiJaringan(db, { singgah: true });
+    const aktif = konfig.subnet.filter((s) => s.aktif);
+    if (aktif.length > 0) return { sumber: "keamanan" as const, daftar: aktif.map((s) => s.cidr), subnet: konfig.subnet };
+  } catch {
+    /* jatuh ke daftar milik verifikasi */
+  }
+  return { sumber: "verifikasi" as const, daftar: [...p.subnetKantor], subnet: null };
+}
+
+/** Apakah alamat ini di jaringan kantor menurut satu sumber di atas? Alamat kosong = di luar (lebih ketat). */
+export async function ipDiKantorEfektif(db: AletaDatabase, ip: string, p: Pick<PengaturanVerifikasi, "subnetKantor">): Promise<boolean> {
+  const sumber = await sumberJaringanKantor(db, p);
+  if (sumber.sumber === "keamanan" && sumber.subnet) return dalamJaringanKantor(String(ip ?? "").trim(), sumber.subnet);
+  return ipDiKantor(ip, sumber.daftar);
 }
 
 // ---------------------------------------------------------------------------

@@ -110,6 +110,14 @@ export async function register() {
     mulaiTenggatBerkala(getDatabase);
   }
   /* === AKHIR PENJAGA TENGGAT TERJADWAL === */
+  /* === KAIT KEAMANAN 26 Okt (gabung rantai E + Bagian 6) === mengisi kait keamanan/kait.ts: langkah kedua pengaman aksi admin
+     (authenticator E5) dan laporan uji pulih gagal ke Catatan error Pusat kesehatan (E2). Tidak mengubah bawaan: saklar
+     authenticator, saklar langkah kedua, dan saklar uji pulih tetap MATI sampai Super Admin menyalakannya. */
+  {
+    const { sambungkanKaitKeamananAman } = await import("@/server/modules/keamanan/sambung-kait");
+    sambungkanKaitKeamananAman();
+  }
+  /* === AKHIR KAIT KEAMANAN === */
   /* === UJI PULIH CADANGAN 25 Okt (Bagian 6d) === detak 5 menit; jalan SEKALI per minggu (bawaan Minggu 03.00 WITA, sesudah
      pencocokan Cermin 02.00) HANYA bila saklar Super Admin menyala (bawaan MATI). Memulihkan cadangan ALETA terbaru ke basis data
      SEMENTARA aleta_ujipulih_*, memeriksa, lalu menghapusnya - tidak pernah menyentuh basis data produksi. Matikan seluruhnya

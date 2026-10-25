@@ -10,6 +10,7 @@ import {
   aturanBawaanPeran,
   bacaPengaturanVerifikasi,
   saklarMenyala,
+  sumberJaringanKantor,
   simpanPengaturanVerifikasi,
 } from "@/server/modules/verifikasi/pengaturan";
 import { appendAuditLog } from "@/server/shared/audit";
@@ -28,8 +29,10 @@ async function ringkasan(db: Awaited<ReturnType<typeof getDatabase>>) {
   );
   const terdaftar: Record<string, number> = {};
   for (const b of baris) terdaftar[b.role_id] = Number(b.n);
+  const jaringan = await sumberJaringanKantor(db, p);
   return {
     pengaturan: p,
+    jaringanKantor: { sumber: jaringan.sumber, daftar: jaringan.daftar },
     peran: roles.map((r) => ({ id: r.id, nama: r.name ?? r.id, bawaan: aturanBawaanPeran(r.id), terdaftar: terdaftar[r.id] ?? 0 })),
     masaTepercayaMaks: MASA_TEPERCAYA_HARI_MAKS,
   };

@@ -4,7 +4,7 @@ import type { AletaDatabase } from "@/server/db/client";
 import {
   aturanUntukPeran,
   bacaPengaturanVerifikasi,
-  ipDiKantor,
+  ipDiKantorEfektif,
   saklarMenyala,
   type PengaturanVerifikasi,
 } from "@/server/modules/verifikasi/pengaturan";
@@ -176,7 +176,7 @@ export async function putuskanMasuk(
 
   if (await adaLolos(db, m.userId, m.perangkatId, "tepercaya", kini)) return { perlu: false, sebab: "tepercaya" };
 
-  const diKantor = ipDiKantor(m.ip, p.subnetKantor);
+  const diKantor = await ipDiKantorEfektif(db, m.ip, p);
   if (aturan === "luar-kantor" && diKantor) return { perlu: false, sebab: "dalam-kantor" };
 
   const metode = await metodeTersedia(db, p, a);
@@ -553,6 +553,28 @@ export async function periksaKodeKedua(
   await db.run("UPDATE aleta_verifikasi_tantangan SET selesai_pada = ? WHERE id = ?", [iso(kini), t.baris.id]);
   await catatAudit(db, m.userId, "VERIFIKASI_LOLOS", { metode: m.metode, jalur: "aksi" });
   return true;
+}
+
+/**
+ * Langkah kedua untuk pengaman aksi admin (Bagian 6c), disambungkan lewat keamanan/kait.ts.
+ * HANYA authenticator (kode 6 angka dari aplikasi di HP) dan kode cadangan: kode WhatsApp butuh tiket yang
+ * dikirim lebih dulu dan kotak konfirmasi pengaman tidak punya tahap itu, jadi tidak ditawarkan di sini.
+ * Tersedia hanya bila saklar authenticator menyala DAN akun itu sudah mendaftarkan authenticator; selebihnya
+ * pengaman memakai sandi ulang + kata konfirmasi saja (tidak ada yang terkunci).
+ */
+export async function authenticatorUntukAksiTersedia(db: AletaDatabase, userId: string): Promise<boolean> {
+  const p = await bacaPengaturanVerifikasi(db);
+  if (!p.authenticator) return false;
+  return authenticatorAktif(db, userId);
+}
+
+/** Memeriksa kode authenticator atau kode cadangan untuk satu aksi. Benar = true (kode sekali pakai); salah = false. */
+export async function periksaKodeAuthenticatorAksi(db: AletaDatabase, userId: string, kode: string, kini: Date = new Date()): Promise<boolean> {
+  if (!(await authenticatorUntukAksiTersedia(db, userId))) return false;
+  const bersih = String(kode ?? "").replace(/\s+/g, "");
+  const benar = /^\d{6}$/.test(bersih) ? await cocokAuthenticator(db, userId, bersih, kini) : await cocokKodeCadangan(db, userId, kode, kini);
+  await catatAudit(db, userId, benar ? "VERIFIKASI_LOLOS" : "VERIFIKASI_GAGAL", { metode: /^\d{6}$/.test(bersih) ? "authenticator" : "cadangan", jalur: "aksi" });
+  return benar;
 }
 
 /** Hanya untuk uji. */

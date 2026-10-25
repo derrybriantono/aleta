@@ -17,7 +17,13 @@ import type { PengaturanVerifikasi } from "@/server/modules/verifikasi/pengatura
  * bawaan: selama kedua saklar mati, tidak ada pengguna yang dimintai kode.
  */
 type Peran = { id: string; nama: string; bawaan: string; terdaftar: number };
-type Data = { pengaturan: PengaturanVerifikasi; peran: Peran[]; masaTepercayaMaks: number };
+type Data = {
+  pengaturan: PengaturanVerifikasi;
+  peran: Peran[];
+  masaTepercayaMaks: number;
+  /** Sumber daftar jaringan kantor yang berlaku: "keamanan" = Pengaturan Keamanan (batas jaringan), "verifikasi" = daftar di panel ini. */
+  jaringanKantor?: { sumber: "keamanan" | "verifikasi"; daftar: string[] };
+};
 
 async function panggil<T>(url: string, init?: RequestInit): Promise<T> {
   const r = await fetch(apiPath(url), { credentials: "include", cache: "no-store", ...init, headers: { "content-type": "application/json" } });
@@ -173,10 +179,16 @@ export function VerifikasiPanel({ bolehAtur }: { bolehAtur: boolean }) {
               <label htmlFor="subnet-verifikasi" className="text-sm font-medium text-foreground">
                 Jaringan kantor (satu per baris, contoh 192.168.10.0/24)
               </label>
+              {data?.jaringanKantor?.sumber === "keamanan" && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Daftar ini dipakai bersama Pengaturan Keamanan (batas jaringan per peran). Untuk mengubahnya, buka Pengaturan Keamanan.
+                </p>
+              )}
               <textarea
                 id="subnet-verifikasi"
                 rows={3}
                 value={subnet}
+                readOnly={data?.jaringanKantor?.sumber === "keamanan"}
                 onChange={(e) => setSubnet(e.target.value)}
                 className="mt-1 w-full rounded-xl border border-input/90 bg-card/70 p-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
               />
