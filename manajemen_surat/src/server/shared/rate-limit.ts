@@ -13,7 +13,9 @@ type RateLimitScope =
   | "admin-manual-reset"
   | "hr-public-lookup"
   | "hr-public-submit"
-  | "hr-public-status";
+  | "hr-public-status"
+  | "ganti-sandi"
+  | "pengaman-aksi";
 
 type RateLimitBucket = {
   attempts: number;
@@ -90,6 +92,19 @@ const RATE_LIMIT_CONFIG: Record<RateLimitScope, RateLimitConfig> = {
     windowMs: 10 * 60 * 1000,
     blockMs: 10 * 60 * 1000,
     message: "Terlalu banyak percobaan cek status. Coba lagi beberapa menit.",
+  },
+  // Bagian 6 (25 Okt 2026): ganti sandi sendiri (sandi lama diperiksa) dan sandi ulang pengaman aksi admin.
+  "ganti-sandi": {
+    maxAttempts: 5,
+    windowMs: 15 * 60 * 1000,
+    blockMs: 15 * 60 * 1000,
+    message: "Terlalu banyak percobaan ganti sandi. Coba lagi beberapa menit lagi.",
+  },
+  "pengaman-aksi": {
+    maxAttempts: 5,
+    windowMs: 15 * 60 * 1000,
+    blockMs: 15 * 60 * 1000,
+    message: "Terlalu banyak sandi keliru pada konfirmasi aksi. Coba lagi beberapa menit lagi.",
   },
 };
 

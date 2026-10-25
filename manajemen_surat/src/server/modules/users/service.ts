@@ -17,6 +17,7 @@ import {
 } from "@/server/modules/external-apps/service";
 import { getPositionByIdFromDb, getUserByIdFromDb, getUsersFromDb, requireActorUser } from "@/server/modules/organization/service";
 import { hashSecret } from "@/server/shared/security";
+import { bacaKebijakanSandi, catatSandiTersimpan, tegakkanKebijakanSandi } from "@/server/modules/keamanan/kebijakan-sandi";
 import { cabutSesiAkun, type AlasanCabut } from "@/server/modules/perangkat/sesi";
 
 type ManagedUserPayload = {
@@ -271,7 +272,7 @@ function validatePasswordStrength(password: string): void {
   }
 }
 
-function generateTempPassword(): string {
+function generateTempPassword(panjang = 8): string {
   const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
   const lower = "abcdefghjkmnpqrstuvwxyz";
   const digits = "23456789";
@@ -287,6 +288,8 @@ function generateTempPassword(): string {
     pick(digits),
     pick(digits),
   ];
+  // Kebijakan sandi (6a): sandi sementara mengikuti panjang minimal bila lebih dari 8. Bawaan tetap 8.
+  while (chars.length < panjang) chars.push(pick(lower + digits));
 
   for (let i = chars.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -294,6 +297,16 @@ function generateTempPassword(): string {
   }
 
   return chars.join("");
+}
+
+/** Panjang sandi sementara: 8 seperti dulu, kecuali kebijakan sandi menyala dengan minimal lebih panjang. */
+async function panjangSandiSementara(db: AletaDatabase) {
+  try {
+    const k = await bacaKebijakanSandi(db);
+    return k.aktif ? Math.max(8, k.panjangMin) : 8;
+  } catch {
+    return 8;
+  }
 }
 
 function mapUserForApi(
@@ -665,7 +678,10 @@ export async function createManagedUserInDb(
   await ensureAssignableRoleInDb(db, roleId);
   await validateRoleChangeGuards(db, actor, null, roleId);
 
-  return withTransaction(db, async (tx) => {
+  // Kebijakan sandi (6a): mati bawaan; menyala -> sandi akun baru ikut aturan.
+  await tegakkanKebijakanSandi(db, { sandi: password, identitas: { username, nama: name, nip, email, whatsapp: whatsappNumber } });
+
+  const akunBaru = await withTransaction(db, async (tx) => {
     const now = new Date().toISOString();
     const userId = await nextPrefixedId(tx, "users", "usr");
     const passwordHash = hashSecret(password);
@@ -733,6 +749,9 @@ export async function createManagedUserInDb(
     const externalCredentials = await getExternalCredentialSummariesForUser(tx, userId);
     return mapUserForApi(user, password, externalCredentials);
   });
+  // Dicatat SESUDAH transaksi: tabel riwayat yang belum ada tidak boleh membatalkan pembuatan akun.
+  await catatSandiTersimpan(db, { userId: akunBaru.id, sandi: password, sementara: true, olehId: actor.id });
+  return akunBaru;
 }
 
 export async function updateManagedUserInDb(
@@ -829,7 +848,16 @@ export async function updateManagedUserInDb(
     await validateBlockChangeGuards(db, actor, currentUser, nextIsActive);
   }
 
-  return withTransaction(db, async (tx) => {
+  // Kebijakan sandi (6a): mati bawaan; menyala -> sandi baru ikut aturan.
+  if (trimmedPassword) {
+    await tegakkanKebijakanSandi(db, {
+      userId: currentUser.id,
+      sandi: trimmedPassword,
+      identitas: { username: nextUsername, nama: nextName, nip: nextNip, email: nextEmail, whatsapp: nextWhatsappNumber },
+    });
+  }
+
+  const hasilUbah = await withTransaction(db, async (tx) => {
     const now = new Date().toISOString();
     const passwordHash = trimmedPassword ? hashSecret(trimmedPassword) : null;
 
@@ -927,6 +955,11 @@ export async function updateManagedUserInDb(
     const externalCredentials = await getExternalCredentialSummariesForUser(tx, currentUser.id);
     return mapUserForApi(updatedUser, trimmedPassword, externalCredentials);
   });
+  // Admin yang mengatur sandi akun LAIN mengetahui sandi itu -> dianggap sementara (dipaksa ganti bila kebijakan menyala).
+  if (trimmedPassword) {
+    await catatSandiTersimpan(db, { userId: currentUser.id, sandi: trimmedPassword, sementara: !isSelfUpdate, olehId: actor.id });
+  }
+  return hasilUbah;
 }
 
 // ─── Password Recovery — Jalur OTP WhatsApp ───────────────────────────────────
@@ -1025,7 +1058,9 @@ export async function confirmPasswordRecoveryInDb(
     throw new ApiError(404, "Akun tujuan reset password tidak ditemukan.");
   }
 
-  return withTransaction(db, async (tx) => {
+  await tegakkanKebijakanSandi(db, { userId, sandi: normalizedPassword });
+
+  const hasilPulih = await withTransaction(db, async (tx) => {
     const now = new Date().toISOString();
     const passwordHash = hashSecret(normalizedPassword);
 
@@ -1062,6 +1097,8 @@ export async function confirmPasswordRecoveryInDb(
       updatedAt: now,
     };
   });
+  await catatSandiTersimpan(db, { userId, sandi: normalizedPassword, olehId: userId });
+  return hasilPulih;
 }
 
 // ─── Password Recovery — Jalur Bantuan Admin ──────────────────────────────────
@@ -1203,7 +1240,9 @@ export async function resolveAdminResetRequestInDb(
     throw new ApiError(403, "Admin tidak dapat memproses permintaan reset untuk Super Admin.");
   }
 
-  return withTransaction(db, async (tx) => {
+  const panjangSementara = await panjangSandiSementara(db);
+  let sandiSementara = "";
+  const hasilProses = await withTransaction(db, async (tx) => {
     const now = new Date().toISOString();
 
     if (action === "reject") {
@@ -1226,7 +1265,8 @@ export async function resolveAdminResetRequestInDb(
     }
 
     // Approve: generate temp password, reset the user's password
-    const tempPassword = generateTempPassword();
+    const tempPassword = generateTempPassword(panjangSementara);
+    sandiSementara = tempPassword;
     const passwordHash = hashSecret(tempPassword);
     const targetUser = await getUserByIdFromDb(tx, request.user_id);
 
@@ -1263,6 +1303,8 @@ export async function resolveAdminResetRequestInDb(
 
     return { tempPassword };
   });
+  if (sandiSementara) await catatSandiTersimpan(db, { userId: request.user_id, sandi: sandiSementara, sementara: true, olehId: actor.id });
+  return hasilProses;
 }
 
 // ─── Password Recovery — Jalur Reset Manual Admin ─────────────────────────────
@@ -1282,10 +1324,10 @@ export async function adminManualResetPasswordInDb(
     throw new ApiError(403, "Anda tidak memiliki hak untuk mereset password akun ini.");
   }
 
-  const tempPassword = generateTempPassword();
+  const tempPassword = generateTempPassword(await panjangSandiSementara(db));
   const passwordHash = hashSecret(tempPassword);
 
-  return withTransaction(db, async (tx) => {
+  const hasilReset = await withTransaction(db, async (tx) => {
     const now = new Date().toISOString();
 
     await tx.prepare(
@@ -1314,4 +1356,6 @@ export async function adminManualResetPasswordInDb(
 
     return { tempPassword };
   });
+  await catatSandiTersimpan(db, { userId: targetUserId, sandi: tempPassword, sementara: true, olehId: actor.id });
+  return hasilReset;
 }

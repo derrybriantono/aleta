@@ -1381,6 +1381,27 @@ export const TUTORIAL: readonly Tutorial[] = [
     kataKunci: ["login", "masuk", "perangkat", "sesi", "IP", "MAC", "batas perangkat", "riwayat"],
   },
   {
+    id: "pengelola-pengaturan-keamanan",
+    judul: "Pengaturan Keamanan",
+    ringkas: "Kebijakan sandi, batas jaringan per peran, pengaman aksi berdampak besar, dan uji pulih cadangan. Semua saklar mati sampai dinyalakan.",
+    kelompok: "pengelola",
+    mencakup: { aksi: ["keamanan.lihat", "keamanan.atur"] },
+    halaman: ["/admin/keamanan"],
+    tautan: { teks: "Buka Pengaturan Keamanan", href: "/admin/keamanan" },
+    langkah: [
+      "Buka Pusat Kendali, lalu Pengaturan Keamanan. Admin dapat melihat; hanya Super Admin yang dapat mengubah.",
+      "Kebijakan sandi: nyalakan saklar, lalu atur panjang minimal, tolak sandi umum atau yang memuat nama/NIP, larangan memakai ulang sandi lama, dan masa berlaku. Aturan hanya berlaku untuk sandi yang baru dibuat atau diganti. Akun dapat ditandai agar mengganti sandi saat masuk berikutnya.",
+      "Batas jaringan: isi daftar jaringan kantor, lalu pilih per peran apakah boleh masuk dari mana pun atau hanya dari jaringan kantor. Bawaannya semua peran boleh dari mana pun. Penolakan tercatat di Riwayat Masuk.",
+      "Pengaman aksi: bila menyala, aksi berdampak besar (mengubah hak peran, mengangkat Admin, memulihkan cadangan, menghapus banyak baris, dan sebagainya) meminta sandi ulang dan mengetik kata konfirmasi.",
+      "Uji pulih cadangan: bila menyala, tiap Minggu dini hari cadangan terbaru dipulihkan ke basis data sementara, diperiksa, lalu dihapus. Basis data yang dipakai ALETA tidak pernah disentuh. Hasilnya tampil di sini.",
+    ],
+    peringatan: [
+      "Sebelum membatasi jaringan, isi daftar jaringan kantor dengan benar; layar menolak aturan yang akan mengunci akun Anda sendiri.",
+      "Semua perubahan tercatat di Audit Trail. Sandi tidak pernah disimpan atau ditampilkan.",
+    ],
+    kataKunci: ["sandi", "kebijakan sandi", "jaringan", "subnet", "pengaman", "konfirmasi", "cadangan", "uji pulih", "keamanan"],
+  },
+  {
     id: "pengelola-akun-akses",
     judul: "Manajemen Akun dan Akses Menu",
     ringkas: "Mengatur siapa memegang jabatan apa, dan aplikasi apa yang terbuka untuk tiap peran.",

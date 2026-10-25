@@ -1241,6 +1241,37 @@ export const DDL_SIDANG_KELILING_HAKIM = {
 } as const;
 
 /**
+ * Kebijakan sandi + setelan keamanan (0107, 25 Okt 2026, Bagian 6a). Cermin PERSIS dari
+ * drizzle/0107_aleta_kebijakan_sandi.sql; penjaga kebijakan-sandi-25okt.test.ts membandingkan keduanya.
+ * Tanpa kunci asing. Riwayat sandi hanya sidik berkunci, bukan sandi.
+ */
+export const DDL_KEBIJAKAN_SANDI = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_setelan_keamanan (
+  kunci TEXT PRIMARY KEY,
+  nilai TEXT NOT NULL DEFAULT '',
+  diubah_oleh TEXT NOT NULL DEFAULT '',
+  diubah_pada TEXT NOT NULL DEFAULT ''
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_riwayat_sandi (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  sidik TEXT NOT NULL,
+  dibuat_pada TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_status_sandi (
+  user_id TEXT PRIMARY KEY,
+  diganti_pada TEXT NOT NULL DEFAULT '',
+  versi_kebijakan INTEGER NOT NULL DEFAULT 0,
+  paksa_ganti INTEGER NOT NULL DEFAULT 0,
+  paksa_oleh TEXT NOT NULL DEFAULT '',
+  paksa_pada TEXT NOT NULL DEFAULT ''
+)`,
+  ],
+  indeks: [`CREATE INDEX IF NOT EXISTS idx_riwayat_sandi_akun ON aleta_riwayat_sandi(user_id, dibuat_pada)`],
+} as const;
+
+/**
  * Jejak masuk & perangkat (0085, 23 Okt 2026). Cermin PERSIS dari
  * drizzle/0085_aleta_jejak_masuk_perangkat.sql; penjaga
  * jejak-masuk-perangkat.test.ts membandingkan keduanya. Tanpa kunci asing.
@@ -2467,6 +2498,8 @@ const schemaStatements = [
   // ALETA Ai tahap 3: tugas, langkah, berkas keluaran (0086); templat proyek & kiriman (0087).
   ...DDL_ALETA_AI_TUGAS.tabel,
   ...DDL_ALETA_AI_TEMPLAT_KIRIMAN.tabel,
+  // Kebijakan sandi + setelan keamanan (0107).
+  ...DDL_KEBIJAKAN_SANDI.tabel,
   `CREATE TABLE IF NOT EXISTS aleta_uji_mandiri (
     id TEXT PRIMARY KEY,
     dijalankan_at TEXT NOT NULL,
@@ -4424,6 +4457,7 @@ const indexStatements = [
   ...DDL_JEJAK_PERANGKAT.indeks,
   ...DDL_ALETA_AI_TUGAS.indeks,
   ...DDL_ALETA_AI_TEMPLAT_KIRIMAN.indeks,
+  ...DDL_KEBIJAKAN_SANDI.indeks,
   `CREATE INDEX IF NOT EXISTS idx_uji_mandiri_waktu ON aleta_uji_mandiri(dijalankan_at)`,
   // Satu kedudukan hanya boleh punya SATU catatan per pertemuan - tanpa ini,
   // simpan dua kali menghasilkan dua baris yang saling bertentangan.

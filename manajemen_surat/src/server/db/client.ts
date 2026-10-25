@@ -432,6 +432,10 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_ai_berkas",
   "aleta_ai_proyek_berkas",
   "aleta_ai_kiriman",
+  // 25 Oktober 2026 (0107): setelan keamanan, riwayat sandi (sidik), status sandi per akun. Tanpa kunci asing.
+  "aleta_setelan_keamanan",
+  "aleta_riwayat_sandi",
+  "aleta_status_sandi",
   "feedback_requests",
   "user_notification_reads",
   "knowledge_base_regulations",
