@@ -54,6 +54,7 @@
         "http://127.0.0.1/index.php/*"
       ],
       "js": [
+        "portal-jalur.js",
         "deteksi-sisa-blangko.js",
         "panel-alat.js",
         "jurusita.js",
@@ -112,6 +113,7 @@
         "http://127.0.0.1/aps_badilag/*"
       ],
       "js": [
+        "portal-jalur.js",
         "deteksi-sisa-blangko.js",
         "panel-alat.js",
         "jurusita.js",

@@ -994,6 +994,45 @@ export const DDL_ALETA_CERMIN_PERKARA = {
 } as const;
 
 /**
+ * Jejak tunda/putus otomatis terstruktur (0105, 25 Okt 2026, U19): satu baris per
+ * (fitur, tanggal sidang, jadwal sidang). Cermin PERSIS dari
+ * drizzle/0105_aleta_otomatis_jejak.sql; penjaga otomatis-jejak-25okt.test.ts
+ * membandingkan keduanya. Tanpa kunci asing dan tanpa CHECK.
+ */
+export const DDL_OTOMATIS_JEJAK = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_otomatis_jejak (
+  id TEXT PRIMARY KEY,
+  fitur TEXT NOT NULL,
+  tanggal TEXT NOT NULL,
+  jadwal_id TEXT NOT NULL,
+  perkara_id TEXT NOT NULL DEFAULT '',
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  jenis_perkara TEXT NOT NULL DEFAULT '',
+  keputusan TEXT NOT NULL,
+  aturan TEXT NOT NULL DEFAULT '',
+  nomor_aturan INTEGER NOT NULL DEFAULT 0,
+  tanggal_tunda TEXT NOT NULL DEFAULT '',
+  hasil TEXT NOT NULL DEFAULT '',
+  kering INTEGER NOT NULL DEFAULT 0,
+  ditolak_penjaga INTEGER NOT NULL DEFAULT 0,
+  dibatalkan_petugas INTEGER NOT NULL DEFAULT 0,
+  pesan TEXT NOT NULL DEFAULT '',
+  edoc TEXT NOT NULL DEFAULT '',
+  pemicu TEXT NOT NULL DEFAULT '',
+  jam TEXT NOT NULL DEFAULT '',
+  dibuat_pada TEXT NOT NULL,
+  diubah_pada TEXT NOT NULL
+)`,
+  ],
+  indeks: [
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_otomatis_jejak_kunci ON aleta_otomatis_jejak(fitur, tanggal, jadwal_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_otomatis_jejak_tanggal ON aleta_otomatis_jejak(tanggal)`,
+    `CREATE INDEX IF NOT EXISTS idx_otomatis_jejak_aturan ON aleta_otomatis_jejak(fitur, aturan, tanggal)`,
+  ],
+} as const;
+
+/**
  * Cermin Perkara (0096, 25 Okt 2026, A5): empat tanggal dasar lingkup Status Perkara. Cermin PERSIS dari
  * drizzle/0096_aleta_cermin_perkara_tanggal.sql; penjaga cermin-status-25okt.test.ts membandingkan keduanya.
  */
@@ -2605,6 +2644,8 @@ const schemaStatements = [
   // ALETA Ai tahap 3: tugas, langkah, berkas keluaran (0086); templat proyek & kiriman (0087).
   ...DDL_ALETA_AI_TUGAS.tabel,
   ...DDL_ALETA_AI_TEMPLAT_KIRIMAN.tabel,
+  // Jejak tunda/putus otomatis terstruktur (0105).
+  ...DDL_OTOMATIS_JEJAK.tabel,
   `CREATE TABLE IF NOT EXISTS aleta_uji_mandiri (
     id TEXT PRIMARY KEY,
     dijalankan_at TEXT NOT NULL,
@@ -4564,6 +4605,7 @@ const indexStatements = [
   ...DDL_JEJAK_PERANGKAT.indeks,
   ...DDL_ALETA_AI_TUGAS.indeks,
   ...DDL_ALETA_AI_TEMPLAT_KIRIMAN.indeks,
+  ...DDL_OTOMATIS_JEJAK.indeks,
   `CREATE INDEX IF NOT EXISTS idx_uji_mandiri_waktu ON aleta_uji_mandiri(dijalankan_at)`,
   // Satu kedudukan hanya boleh punya SATU catatan per pertemuan - tanpa ini,
   // simpan dua kali menghasilkan dua baris yang saling bertentangan.

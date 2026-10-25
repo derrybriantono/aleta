@@ -1225,7 +1225,8 @@ describe("nomor 3 - panel ABT lengkap perkakasnya", () => {
     // (abt.js memanggil AletaSaksiSusun.pasang saat bagian tanya-jawab disusun).
     // 22 Okt: menu-atas.js paling belakang - di ABT hanya mengarahkan ke Blangko ABT by Derry sesudah login.
     // 23 Okt (T1, ALETA Ai tahap 2b): aleta-ai-gelembung.js sesudah menu-atas.js - pop-up chat, tidak menyentuh abt.js.
-    expect(entri?.js).toEqual(["deteksi-sisa-blangko.js", "panel-alat.js", "jurusita.js", "basmassal.js", "saksi-katalog.js", "saksi-katalog-data.js", "saksi-susun.js", "isi-sipp-bersama.js", "abt.js", "checklist.js", "abt-klien.js", "blangko-derry.js", "blangko-derry-saksi.js", "blangko-derry-saksi-tampil.js", "blangko-derry-katalog.js", "blangko-derry-jawab-katalog.js", "blangko-derry-isian.js", "blangko-derry-massal.js", "konseptor-langkah.js", "putusan-advance.js", "sipp-ide-l1.js", "abt-gulir.js", "menu-atas.js", "aleta-ai-gelembung.js"]);
+    // 25 Okt (K7): portal-jalur.js paling depan - membungkus fetch bacaan /aleta/api ke port 8008 (cadangan port 80).
+    expect(entri?.js).toEqual(["portal-jalur.js", "deteksi-sisa-blangko.js", "panel-alat.js", "jurusita.js", "basmassal.js", "saksi-katalog.js", "saksi-katalog-data.js", "saksi-susun.js", "isi-sipp-bersama.js", "abt.js", "checklist.js", "abt-klien.js", "blangko-derry.js", "blangko-derry-saksi.js", "blangko-derry-saksi-tampil.js", "blangko-derry-katalog.js", "blangko-derry-jawab-katalog.js", "blangko-derry-isian.js", "blangko-derry-massal.js", "konseptor-langkah.js", "putusan-advance.js", "sipp-ide-l1.js", "abt-gulir.js", "menu-atas.js", "aleta-ai-gelembung.js"]);
   });
 
   it("tujuh perkakas ada semuanya", () => {

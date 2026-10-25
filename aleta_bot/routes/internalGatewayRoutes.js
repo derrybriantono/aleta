@@ -16,6 +16,7 @@ const ecourtStoreService = require("../services/ecourtStoreService");
 const optOutService = require("../services/optOutService");
 const queryMetricsService = require("../services/queryMetricsService");
 const queryGuardService = require("../services/queryGuardService");
+const kolamSippService = require("../services/kolamSippService");
 const caseSnapshotService = require("../services/caseSnapshotService");
 const sippCircuitBreaker = require("../services/sippCircuitBreakerService");
 const serviceAnalyticsService = require("../services/serviceAnalyticsService");
@@ -414,6 +415,11 @@ router.get("/security/token-health", requireInternalToken, (req, res) => {
 router.post("/config/sync", requireInternalToken, (req, res) => {
   try {
     const config = writeRuntimeConfig(req.body || {});
+    // Ukuran/perilaku kolam SIPP dikirim portal bersama setelan lain; tanpa kuncinya
+    // (portal lama / belum pernah disimpan) setelan kolam tidak disentuh.
+    if (req.body && req.body.kolamSipp && typeof req.body.kolamSipp === "object") {
+      kolamSippService.terapkan(req.body.kolamSipp);
+    }
     dynamicNotificationSchedulerService.refreshSchedules();
     startWhatsappClientAfterConfigSync(config);
 
@@ -431,6 +437,7 @@ router.post("/config/sync", requireInternalToken, (req, res) => {
       // hanya query berat yang jarang dijalankan.
       queryPerformance: queryMetricsService.getSnapshot({ limit: 10 }),
       queryGuard: queryGuardService.getGuardConfig(),
+      kolamSipp: kolamSippService.status(),
       // Potret perkara: rasio jawaban yang dilayani tanpa menyentuh SIPP.
       // Inilah angka penentu berhasil atau tidaknya penurunan beban.
       caseSnapshot: caseSnapshotService.getStats(),

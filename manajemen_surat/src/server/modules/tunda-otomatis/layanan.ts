@@ -18,6 +18,7 @@ import { getGatewayJadwalSidang, postGatewayTundaSidang } from "@/server/modules
 import { panggilBotJadwalSidang } from "@/server/modules/aleta-ecourt/jadwal-sidang-gateway";
 import { bacaHariLibur } from "@/server/modules/hari-libur/sumber";
 import { bacaKehadiranSidang } from "@/server/modules/aleta-ecourt/kehadiran-rinci";
+import { catatTundaHari } from "@/server/modules/otomatis-jejak/jejak";
 
 /**
  * ============================================================================
@@ -177,6 +178,8 @@ export async function bacaCatatanHari(db: AletaDatabase, tanggal: string): Promi
 
 async function simpanCatatanHari(db: AletaDatabase, c: CatatanHari) {
   await tulisKunci(db, kunciHari(c.tanggal), c);
+  // U19: jejak terstruktur berdampingan dengan blob; tidak pernah melempar.
+  await catatTundaHari(db, c);
 }
 
 // ============================================================================
@@ -437,6 +440,8 @@ export async function bacaDaftarHari(
       }
       return { ...b, tulis: { ...b.tulis, status, pesan: status === "tertulis" ? "Tertulis di SIPP." : pesan, dikerjakanPada: teks(a.jadwal) || b.tulis.dikerjakanPada } };
     });
+    // U19: status antrean yang berubah (diantrekan -> tertulis/gagal/batal) ikut ke jejak terstruktur.
+    await catatTundaHari(db, { tanggal, jalan: catatan.jalan, butir });
     return { ...dasar, tahap: "jalan", jalan: catatan.jalan, butir, galat: catatan.jalan.galat };
   }
   const w = wadah();

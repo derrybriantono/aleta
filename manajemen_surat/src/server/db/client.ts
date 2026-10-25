@@ -441,6 +441,8 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_ai_berkas",
   "aleta_ai_proyek_berkas",
   "aleta_ai_kiriman",
+  // 25 Oktober 2026 (0105): jejak tunda/putus otomatis terstruktur (U19). Tanpa kunci asing.
+  "aleta_otomatis_jejak",
   "feedback_requests",
   "user_notification_reads",
   "knowledge_base_regulations",

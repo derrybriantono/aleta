@@ -80,6 +80,7 @@ import {
   LEGACY_NOTIFIKASI_QUERY_CATALOG,
   LEGACY_NOTIFIKASI_QUERY_DEFINITIONS,
 } from "@/server/modules/aleta-bot/legacy-notifikasi-catalog";
+import { bacaKolamSippTersimpan } from "@/server/modules/aleta-bot/kolam-sipp";
 import { SIPP_ADDITIONAL_QUERY_DEFINITIONS } from "@/server/modules/aleta-bot/sipp-additional-query-sources";
 import { DEFAULT_PUBLIC_QA_KNOWLEDGE } from "@/server/modules/aleta-bot/public-qa-knowledge-seed";
 import { formatAletaBotTemplateValue } from "@/server/modules/aleta-bot/template-renderer";
@@ -7768,6 +7769,9 @@ async function writeAletaBotRuntimeConfig(
   // messageDelayMs manual: knob-nya sudah ada (jeda, rate limit, worker, jendela
   // kirim), portal hanya mengisi nilainya lalu bot menghormatinya seperti biasa.
   const riskPreset = resolveSendingRiskPreset(settings.sendingRiskLevel);
+  // Kolam SIPP (K3): hanya dikirim bila Super Admin pernah menyimpannya; tanpa kunci ini bot
+  // memakai bawaannya (satu kolam, perilaku lama).
+  const kolamSipp = await bacaKolamSippTersimpan(db).catch(() => null);
   const payload = {
     version: 1,
     updatedAt: new Date().toISOString(),
@@ -7778,6 +7782,7 @@ async function writeAletaBotRuntimeConfig(
     kirimPihakEnabled: settings.kirimPihakEnabled,
     kirimSaatLengkap: settings.kirimSaatLengkap,
     pesanNonaktif: settings.pesanNonaktif,
+    ...(kolamSipp ? { kolamSipp } : {}),
     adminWhatsappNumber: settings.adminWhatsappNumber,
     adminWhatsappChatId: settings.adminWhatsappNumber ? `${settings.adminWhatsappNumber}@c.us` : "",
     sendingRiskLevel: riskPreset.level,
