@@ -1381,6 +1381,28 @@ export const TUTORIAL: readonly Tutorial[] = [
     kataKunci: ["login", "masuk", "perangkat", "sesi", "IP", "MAC", "batas perangkat", "riwayat"],
   },
   {
+    id: "pengelola-pusat-kesehatan",
+    judul: "Pusat Kesehatan Sistem dan Catatan Galat",
+    ringkas: "Keadaan portal, bot, WhatsApp, SIPP, ABT, e-Court, cadangan, server, dan versi ekstensi tiap PC; galat yang terjadi; hasil uji beban.",
+    kelompok: "pengelola",
+    mencakup: { aksi: ["kesehatan.lihat", "galat.kelola", "kesehatan.atur"] },
+    halaman: ["/admin/pusat-kesehatan"],
+    tautan: { teks: "Buka Pusat Kesehatan", href: "/admin/pusat-kesehatan" },
+    langkah: [
+      "Buka Pusat Kendali, lalu Pusat kesehatan sistem. Tiap kartu berwarna: hijau baik, kuning perlu diperhatikan, merah bermasalah, abu-abu tidak terukur atau sengaja dimatikan.",
+      "Tekan Periksa sekarang untuk pemeriksaan baru, termasuk uji sambung ke SIPP, ABT, dan antrian sidang.",
+      "Tab Catatan galat: galat server, peramban, dan ekstensi dikelompokkan dengan jumlah kejadiannya. Buka satu kelompok, salin teksnya untuk pengembang, lalu tandai sudah ditangani.",
+      "Tab Uji beban: hasil uji beban dari kembaran laptop. Super Admin mengimpor berkas hasilnya di sini.",
+      "Tab Pengaturan (Super Admin): menyalakan pemeriksaan tiap menit dan peringatan WhatsApp ke admin. Keduanya mati sampai dinyalakan.",
+    ],
+    peringatan: [
+      "Abu-abu bukan tanda bahaya. Ekstensi yang masih versi lama hanya kuning karena PC itu tetap berfungsi.",
+      "Peringatan WhatsApp tidak dapat terkirim bila bot atau WhatsApp itu sendiri yang mati; tanda merah dan lonceng portal tetap muncul.",
+      "Catatan galat tidak memuat sandi, token, atau data perkara, dan dihapus setelah 90 hari.",
+    ],
+    kataKunci: ["kesehatan", "galat", "error", "uji beban", "bot", "sipp", "monitor", "status sistem"],
+  },
+  {
     id: "pengelola-akun-akses",
     judul: "Manajemen Akun dan Akses Menu",
     ringkas: "Mengatur siapa memegang jabatan apa, dan aplikasi apa yang terbuka untuk tiap peran.",

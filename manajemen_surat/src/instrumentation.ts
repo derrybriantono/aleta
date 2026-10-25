@@ -91,6 +91,18 @@ export async function register() {
     mulaiRekonsiliasiBerkala(getDatabase);
   }
   /* === AKHIR ALETA Ai REKONSILIASI === */
+  /* === PUSAT KESEHATAN 25 Okt (E2) === detak 60 detik; BARU bekerja bila Super Admin menyalakan "pemeriksaan berkala"
+     (saklar MATI bawaan): memeriksa semua komponen, mencatat riwayat, dan - bila saklar WhatsApp juga menyala - memberi
+     tahu admin saat komponen MERAH dua pemeriksaan berturut-turut. Hanya membaca. Matikan seluruhnya dengan
+     ALETA_KESEHATAN_BERKALA=0. */
+  if (process.env.ALETA_KESEHATAN_BERKALA !== "0") {
+    const [{ mulaiKesehatanBerkala }, { getDatabase }] = await Promise.all([
+      import("@/server/modules/kesehatan/layanan"),
+      import("@/server/db/client"),
+    ]);
+    mulaiKesehatanBerkala(getDatabase);
+  }
+  /* === AKHIR PUSAT KESEHATAN === */
   if (process.env.ALETA_SINKRON_PENJADWAL === "0") return;
   const { mulaiPenjadwalSinkron } = await import("@/server/modules/sinkron/penjadwal");
   mulaiPenjadwalSinkron();

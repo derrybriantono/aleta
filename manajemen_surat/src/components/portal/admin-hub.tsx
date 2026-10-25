@@ -381,6 +381,13 @@ export function AdminHub() {
               icon={<Server className="h-5 w-5 text-sky-600" />}
               badge="Pemantau"
             />
+            <AdminMenuAction
+              href="/admin/pusat-kesehatan"
+              title="Pusat kesehatan sistem"
+              description="Satu layar untuk keadaan portal, bot, WhatsApp, SIPP, ABT, e-Court, cadangan, server, dan versi ekstensi tiap PC; catatan galat; hasil uji beban."
+              icon={<Server className="h-5 w-5 text-emerald-600" />}
+              badge="Kesehatan"
+            />
           </div>
         </div>
 

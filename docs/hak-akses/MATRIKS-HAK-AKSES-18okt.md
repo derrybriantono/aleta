@@ -170,6 +170,9 @@ Catatan kewenangan:
 | Melihat riwayat masuk, sesi aktif, dan perangkat semua akun; mengeluarkan sesi | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Mengatur pengecualian batas perangkat per akun | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Mengatur batas perangkat per peran dan setelan riwayat masuk | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Melihat Pusat kesehatan sistem, catatan galat, dan hasil uji beban | L | L | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Menandai catatan galat sudah ditangani | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Menyalakan pemeriksaan berkala dan peringatan WhatsApp Pusat kesehatan; mengimpor hasil uji beban | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Peta perkara & beban konseptor | L | L | L | L | L | L | - | - | - | - | - | - | - | L | - | - |
 | Dompet ALETA Ai milik sendiri (saldo, mutasi, perkiraan biaya, struk) | L | L | L | L | L | L | L | L | L | L | L | L | L | L | L | L |
 | Kelola dompet ALETA Ai (isi & koreksi saldo, kuota peran, laporan laba, ekspor, rekonsiliasi) | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |

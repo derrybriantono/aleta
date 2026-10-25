@@ -999,6 +999,32 @@ export const AKSI = {
     alasan: "Batas per peran berlaku untuk seluruh satker dan dapat mengeluarkan banyak orang sekaligus - hanya Super Admin.",
     hanyaSuperAdmin: true,
   },
+  // 25 Okt 2026 (rantai E): Pusat kesehatan, catatan galat, hasil uji beban.
+  "kesehatan.lihat": {
+    label: "Melihat Pusat kesehatan sistem, catatan galat, dan hasil uji beban",
+    crud: "R",
+    golongan: [],
+    lingkup: "semua",
+    rute: ["GET /api/admin/kesehatan", "GET /api/admin/catatan-galat", "GET /api/admin/uji-beban"],
+    alasan: "Keadaan server, bot, SIPP/ABT, galat, dan versi ekstensi tiap PC adalah urusan pengelola - Admin dan Super Admin.",
+  },
+  "galat.kelola": {
+    label: "Menandai catatan galat sudah ditangani",
+    crud: "U",
+    golongan: [],
+    lingkup: "semua",
+    rute: ["POST /api/admin/catatan-galat"],
+    alasan: "Menandai galat ditangani mengubah daftar kerja pengembang - Admin dan Super Admin.",
+  },
+  "kesehatan.atur": {
+    label: "Menyalakan pemeriksaan berkala dan peringatan WhatsApp Pusat kesehatan; mengimpor hasil uji beban",
+    crud: "CUD",
+    golongan: [],
+    lingkup: "semua",
+    rute: ["POST /api/admin/kesehatan (pengaturan)", "POST /api/admin/uji-beban"],
+    alasan: "Pemeriksaan berkala menanyai bot dan peringatan WhatsApp mengirim pesan ke admin - hanya Super Admin yang menyalakannya (mati bawaan).",
+    hanyaSuperAdmin: true,
+  },
   // Analitik
   "analitik.peta-beban": {
     label: "Peta perkara & beban konseptor",

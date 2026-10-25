@@ -4493,6 +4493,8 @@ async function kirimDataPerangkat(opsi) {
     osRinci: dariPembantu ? String(dariPembantu.osRinci || "") : "",
     mac: dariPembantu && Array.isArray(dariPembantu.mac) ? dariPembantu.mac.slice(0, 4) : [],
     akunWindows: dariPembantu ? String(dariPembantu.akunWindows || "") : "",
+    // Pusat kesehatan (25 Okt 2026): versi ekstensi di PC ini, dibandingkan dengan versi terbaru.
+    versiEkstensi: (function () { try { return chrome.runtime.getManifest().version; } catch { return ""; } })(),
     petunjuk: await petunjukPeramban(),
   };
   let r;
@@ -4522,3 +4524,46 @@ async function kirimDataPerangkat(opsi) {
   };
 }
 /* === AKHIR JEJAK-MASUK === */
+/* === GALAT-EKSTENSI 25 Okt === galat pekerja latar dilaporkan ke Catatan galat portal (Admin > Pusat kesehatan).
+   Portal membersihkan isinya (sandi, token, alamat berkueri, NIK) sebelum menyimpan; di sini hanya dibatasi satu laporan
+   per 5 detik per sesi pekerja. Tidak pernah melempar dan tidak mengubah perilaku apa pun. */
+let laporGalatTerakhir = 0;
+async function laporGalatEkstensi(jenis, pesan, stack) {
+  try {
+    const kini = Date.now();
+    if (kini - laporGalatTerakhir < 5000) return;
+    laporGalatTerakhir = kini;
+    const s = await chrome.storage.local.get(["asalPortal"]);
+    const asal = await asalPortalHidup(s && s.asalPortal);
+    if (!asal) return;
+    await fetch(`${asal}/api/portal/galat`, {
+      method: "POST",
+      credentials: "include",
+      cache: "no-store",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        sumber: "ekstensi",
+        jenis: String(jenis || "Error").slice(0, 60),
+        pesan: String(pesan || "").slice(0, 500),
+        stack: String(stack || "").slice(0, 1500),
+        lokasi: "ekstensi/latar",
+        halaman: "latar",
+        versi: chrome.runtime.getManifest().version,
+      }),
+    });
+  } catch {
+    /* melapor gagal: dilewati */
+  }
+}
+// Hanya di pekerja latar sungguhan (uji dan konteks lain tidak punya pendengar kejadian global).
+if (typeof self !== "undefined" && self && typeof self.addEventListener === "function") {
+  self.addEventListener("error", (e) => {
+    void laporGalatEkstensi((e && e.error && e.error.name) || "Error", e && e.message, e && e.error && e.error.stack);
+  });
+  self.addEventListener("unhandledrejection", (e) => {
+    const r = e && e.reason;
+    void laporGalatEkstensi((r && r.name) || "UnhandledRejection", (r && r.message) || String(r), r && r.stack);
+  });
+}
+/* === AKHIR GALAT-EKSTENSI === */
+

@@ -895,6 +895,84 @@ export const DDL_ALETA_AI_DOMPET = {
 } as const;
 
 /**
+ * Pusat kesehatan + catatan galat + hasil uji beban (0094, 25 Okt 2026, rantai E):
+ * kelompok galat dan kejadiannya, hasil uji beban yang diimpor, warna terakhir
+ * tiap komponen, riwayat pemeriksaan, dan versi ekstensi per PC. Cermin PERSIS
+ * dari drizzle/0094_aleta_kesehatan_galat.sql; penjaga pusat-kesehatan-25okt.test.ts
+ * membandingkan keduanya. Tanpa kunci asing dan tanpa CHECK: nilai sah dijaga
+ * modul (src/server/modules/kesehatan/*).
+ */
+export const DDL_KESEHATAN_GALAT = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_catatan_galat (
+  id TEXT PRIMARY KEY,
+  sidik TEXT NOT NULL,
+  sumber TEXT NOT NULL,
+  jenis TEXT NOT NULL DEFAULT '',
+  pesan TEXT NOT NULL DEFAULT '',
+  lokasi TEXT NOT NULL DEFAULT '',
+  jumlah INTEGER NOT NULL DEFAULT 1,
+  pertama_at TEXT NOT NULL,
+  terakhir_at TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'baru',
+  ditangani_oleh TEXT NOT NULL DEFAULT '',
+  ditangani_at TEXT NOT NULL DEFAULT '',
+  catatan TEXT NOT NULL DEFAULT ''
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_catatan_galat_kejadian (
+  id TEXT PRIMARY KEY,
+  galat_id TEXT NOT NULL,
+  waktu TEXT NOT NULL,
+  halaman TEXT NOT NULL DEFAULT '',
+  akun_id TEXT NOT NULL DEFAULT '',
+  akun_nama TEXT NOT NULL DEFAULT '',
+  peramban TEXT NOT NULL DEFAULT '',
+  versi TEXT NOT NULL DEFAULT '',
+  potongan_stack TEXT NOT NULL DEFAULT ''
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_uji_beban_hasil (
+  id TEXT PRIMARY KEY,
+  diimpor_at TEXT NOT NULL,
+  diimpor_oleh TEXT NOT NULL DEFAULT '',
+  dibuat_at TEXT NOT NULL,
+  perangkat INTEGER NOT NULL DEFAULT 0,
+  profil TEXT NOT NULL DEFAULT '',
+  sasaran TEXT NOT NULL DEFAULT '',
+  durasi_detik INTEGER NOT NULL DEFAULT 0,
+  p95_ms DOUBLE PRECISION NOT NULL DEFAULT 0,
+  galat_persen DOUBLE PRECISION NOT NULL DEFAULT 0,
+  hasil_json TEXT NOT NULL DEFAULT '{}'
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_kesehatan_status (
+  kunci TEXT PRIMARY KEY,
+  warna TEXT NOT NULL DEFAULT 'kelabu',
+  sejak TEXT NOT NULL,
+  diperiksa_at TEXT NOT NULL,
+  merah_berturut INTEGER NOT NULL DEFAULT 0,
+  diperingatkan_at TEXT NOT NULL DEFAULT '',
+  ringkas TEXT NOT NULL DEFAULT ''
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_kesehatan_riwayat (
+  id TEXT PRIMARY KEY,
+  waktu TEXT NOT NULL,
+  warna TEXT NOT NULL DEFAULT 'kelabu',
+  ringkas_json TEXT NOT NULL DEFAULT '{}'
+)`,
+  ],
+  indeks: [
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_catatan_galat_sidik ON aleta_catatan_galat(sidik)`,
+    `CREATE INDEX IF NOT EXISTS idx_catatan_galat_terakhir ON aleta_catatan_galat(terakhir_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_catatan_galat_kejadian_galat ON aleta_catatan_galat_kejadian(galat_id, waktu)`,
+    `CREATE INDEX IF NOT EXISTS idx_catatan_galat_kejadian_waktu ON aleta_catatan_galat_kejadian(waktu)`,
+    `CREATE INDEX IF NOT EXISTS idx_uji_beban_hasil_dibuat ON aleta_uji_beban_hasil(dibuat_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_kesehatan_riwayat_waktu ON aleta_kesehatan_riwayat(waktu)`,
+  ],
+  kolom: [
+    `ALTER TABLE aleta_perangkat ADD COLUMN IF NOT EXISTS versi_ekstensi TEXT NOT NULL DEFAULT ''`,
+  ],
+} as const;
+
+/**
  * Unggah Putusan Terjadwal (0080, 21 Okt 2026, agen B3): jadwal, butir (satu
  * perkara), berkas yang diunggah, dan jejak jujur. Cermin PERSIS dari
  * drizzle/0080_aleta_putusan_terjadwal.sql; penjaga putusan-terjadwal-layanan-21okt.test.ts
@@ -2454,6 +2532,8 @@ const schemaStatements = [
   ...DDL_ALETA_AI.tabel,
   // ALETA Ai tahap 4: kuota hibah per peran, rekonsiliasi harian (0088).
   ...DDL_ALETA_AI_DOMPET.tabel,
+  // Pusat kesehatan, catatan galat, hasil uji beban (0094).
+  ...DDL_KESEHATAN_GALAT.tabel,
   // Unggah Putusan Terjadwal: jadwal, butir, berkas, jejak (0080).
   ...DDL_PUTUSAN_TERJADWAL.tabel,
   // Arsip hasil mediasi per perkara (0081).
@@ -4417,6 +4497,7 @@ const indexStatements = [
   ...DDL_TAUTAN_JADWAL.indeks,
   ...DDL_ALETA_AI.indeks,
   ...DDL_ALETA_AI_DOMPET.indeks,
+  ...DDL_KESEHATAN_GALAT.indeks,
   ...DDL_PUTUSAN_TERJADWAL.indeks,
   ...DDL_MEDIASI_ARSIP.indeks,
   ...DDL_SIDANG_KELILING_HAKIM.indeks,
@@ -4956,6 +5037,8 @@ const migrationStatements = [
   ...DDL_KAMUS_RUAS_TAMBAHAN.kolom,
   // ALETA Ai tahap 4: MDR dan kurs (tanggal, sumber) per giliran (0088).
   ...DDL_ALETA_AI_DOMPET.kolom,
+  // Versi ekstensi per PC (0094).
+  ...DDL_KESEHATAN_GALAT.kolom,
 ];
 
 const aletaSippSchemaStatements = [
