@@ -11434,7 +11434,7 @@ function alatPasangGembok(panel, kepala, situs, opsi) {
   });
   alatDengarkanGembok();
   if (pilihan.ringkas !== false) {
-    if (panel.aletaPewaktuRingkas) (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.hapus : clearInterval)(panel.aletaPewaktuRingkas);
+    if (panel.aletaPewaktuRingkas) (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.hapus : (i) => clearInterval(i))(panel.aletaPewaktuRingkas);
     const periksa = () => {
       let hidup = false;
       try {
@@ -11443,11 +11443,11 @@ function alatPasangGembok(panel, kepala, situs, opsi) {
         hidup = true;
       }
       if (!hidup && panel.aletaPewaktuRingkas) {
-        (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.hapus : clearInterval)(panel.aletaPewaktuRingkas);
+        (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.hapus : (i) => clearInterval(i))(panel.aletaPewaktuRingkas);
         panel.aletaPewaktuRingkas = 0;
       }
     };
-    panel.aletaPewaktuRingkas = (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.interval : setInterval)(periksa, ALAT_RINGKAS_SELANG);
+    panel.aletaPewaktuRingkas = (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.interval : (f, m) => setInterval(f, m))(periksa, ALAT_RINGKAS_SELANG);
     void siap.then(periksa);
     alatPasangTunjukHalus(
       panel,

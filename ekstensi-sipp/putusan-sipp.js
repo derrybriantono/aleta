@@ -931,7 +931,7 @@
   let detak = null;
   function mulaiDetak() {
     if (detak) return;
-    detak = (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.denyut : setInterval)(() => {
+    detak = (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.denyut : (f, m) => setInterval(f, m))(() => {
       try {
         pasang(document);
       } catch {
