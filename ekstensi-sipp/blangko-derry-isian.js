@@ -2043,6 +2043,8 @@
       laporKeKerangka();
       // Tgl Nikah dari bukti P (akta nikah): hanya SARAN - tanggal akta tidak selalu tanggal nikah.
       ringkas.saran += saranTanggalNikahDariBukti(perlu());
+      ringkas.saran += await saranDariIsianPerkara(perlu());
+      if (S.susunan !== d || S.pk !== pk) return null;
       renderIsian();
       S.isiSipp.hasil = { ...ringkas, saat: Date.now() };
       if (manual && !senyap) {
@@ -2788,6 +2790,7 @@
     try {
       const h = await klienAbt().simpanIsian(kode, perkaraId(), nilai, { verifikasi: jejakAktif });
       if (jejakAktif && h && h.tersimpan) catatJejakSimpan(kode, nilai, h, konteksJ);
+      if (h && h.ok) cerminSekali(kode, nilai);
       if (S.isi[kode] !== nilai) return true; // sudah diketik lagi: hasil ini tidak dipakai
       S.tersimpan[kode] = h.ok ? "tersimpan" : jejakAktif && h.tersimpan && h.terverifikasi === false ? BEDA_BACA_ULANG : `gagal: ${h.pesan || "ABT menolak"}`;
       if (h.ok) {
@@ -2807,6 +2810,45 @@
     if (kode === "8503") renderIsian();
     laporKeKerangka();
     return S.tersimpan[kode] === "tersimpan";
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // ISIAN SEKALI PER PERKARA (rantai D, D2 = U11, 25 Okt 2026). Saklar server "isian-sekali", BAWAAN MATI (mati: tidak ada yang
+  // diingat dan tidak ada saran tambahan). Isian manual yang belum punya sumber otomatis (mis. nomor penetapan prodeo) diingat server
+  // per perkara begitu tersimpan ke ABT, dan blangko lain perkara itu menampilkannya sebagai SARAN (Tab / Input ke ABT). Tidak pernah
+  // ditulis sendiri ke ABT: isian yang sengaja dikosongkan petugas tidak boleh terisi lagi diam-diam.
+  // ──────────────────────────────────────────────────────────────────────────
+  /** Mengingat isian yang baru tersimpan ke ABT (hanya kode yang diingat server; tidak pernah melempar). */
+  function cerminSekali(kode, nilai) {
+    try {
+      const j = JI();
+      if (!j || typeof j.catatSekali !== "function" || !S.pk || sedangUrungkan || tes()) return;
+      void j.catatSekali({ perkaraId: String(perkaraId()), nomorPerkara: nomorPerkara(), kode, nilai });
+    } catch {
+      /* ingatan tertinggal; isiannya sudah tersimpan di ABT */
+    }
+  }
+  /** Saran dari ingatan server untuk isian yang masih kosong; mengembalikan banyaknya saran baru. */
+  async function saranDariIsianPerkara(daftar) {
+    try {
+      const j = JI();
+      if (!j || typeof j.bacaSekali !== "function") return 0;
+      const d = S.susunan;
+      const pk = S.pk;
+      const peta = await j.bacaSekali(perkaraId());
+      if (S.susunan !== d || S.pk !== pk || !peta.size) return 0;
+      let n = 0;
+      for (const b of daftar || []) {
+        const ada = peta.get(b.kode);
+        if (!ada || (b.jenis !== "teks" && b.jenis !== "tanggal") || !sedangKosong(b)) continue;
+        if ((S.saranSipp[b.kode] && S.saranSipp[b.kode].nilai) || (S.saranH7 && S.saranH7[b.kode])) continue;
+        S.saranSipp[b.kode] = { nilai: ada.nilai, keyakinan: "ragu", asal: "isian perkara tersimpan" };
+        n += 1;
+      }
+      return n;
+    } catch {
+      return 0;
+    }
   }
 
   const BEDA_BACA_ULANG = "gagal: tersimpan, tetapi bacaan ulang dari ABT berbeda - periksa isinya";

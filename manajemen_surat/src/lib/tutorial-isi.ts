@@ -683,6 +683,7 @@ export const TUTORIAL: readonly Tutorial[] = [
       "Tarik data dari e-Court menampilkan persen dan garis proses menurut tahap yang sungguh berjalan. Tanggal KTP pihak dibaca dari berkas KTP e-Court, dan pengaturan serta riwayat penarikannya ada di sini.",
       "Kamus variabel ABT menjelaskan arti, sumber, dan keadaan tiap variabel blangko, termasuk yang masih diisi manual dan yang rawan tanda petik.",
       "Kamus deteksi dan kalimat memungkinkan Admin melihat, menambah, menguji, dan menonaktifkan pola deteksi serta kalimat siap pakai tanpa menunggu rilis. Koreksi petugas atas usulan tercatat dan menjadi calon pola untuk ditinjau.",
+      "Isian manual yang diingat per perkara (saklar di Fitur Satker, bawaan mati) mendaftar isian Blangko Derry yang belum punya sumber otomatis, dari yang paling sering diketik. Isian itu cukup diketik sekali: di blangko lain perkara yang sama ia muncul sebagai saran, dan Anda sendiri yang menekan Tab untuk memasukkannya ke ABT.",
       "Ketepatan isian (saklar di Fitur Satker, bawaan mati) menghitung seberapa sering usulan isian diterima petugas tanpa diubah. Isian yang tepat 95% atau lebih dari sedikitnya 30 kejadian diusulkan boleh terisi sendiri, yang meleset diusulkan kembali menjadi saran. Usulan baru berlaku setelah Super Admin menyetujuinya. Layar ini juga menunjukkan seberapa benar isi keterangan saksi.",
     ],
     peringatan: [

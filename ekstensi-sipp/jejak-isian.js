@@ -36,6 +36,7 @@
 (function () {
   const API = "/aleta/api/aleta-ecourt/jejak-isian";
   const API_BUTIR = "/aleta/api/aleta-ecourt/saksi-butir";
+  const API_SEKALI = "/aleta/api/aleta-ecourt/isian-sekali";
   const TTL_YA_MS = 5 * 60 * 1000;
   const TTL_GAGAL_MS = 30 * 1000;
   const BATAS_KIRIM = 60;
@@ -98,6 +99,65 @@
   function lupakan() {
     cache = null;
     janji = null;
+    cacheSekali = null;
+    janjiSekali = null;
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // ISIAN SEKALI PER PERKARA (D2, 25 Okt 2026): isian manual yang belum punya sumber otomatis diingat server per perkara,
+  // dan blangko lain perkara itu menampilkannya sebagai SARAN. Saklar sendiri (Fitur Satker "isian-sekali", bawaan mati);
+  // gagal bertanya = MATI. Tidak pernah menulis ke ABT dan tidak pernah melempar.
+  // ──────────────────────────────────────────────────────────────────────────
+  let cacheSekali = null; // { aktif, kode:Set, saat, gagal }
+  let janjiSekali = null;
+
+  /** Saklar isian sekali + daftar kode yang diingat. Dijawab dari ingatan bila masih segar; gagal = { aktif:false }. */
+  function infoSekali(paksa) {
+    const kini = Date.now();
+    if (!paksa && cacheSekali && kini - cacheSekali.saat < (cacheSekali.gagal ? TTL_GAGAL_MS : TTL_YA_MS)) return Promise.resolve(cacheSekali);
+    if (janjiSekali) return janjiSekali;
+    janjiSekali = (async () => {
+      const d = await ambilJson(`${API_SEKALI}?bagian=saklar`);
+      const ok = d && typeof d.aktif === "boolean";
+      cacheSekali = ok
+        ? { aktif: d.aktif, kode: new Set(Array.isArray(d.kode) ? d.kode.map((k) => teks(k)) : []), saat: Date.now(), gagal: false }
+        : { aktif: false, kode: new Set(), saat: Date.now(), gagal: true };
+      janjiSekali = null;
+      return cacheSekali;
+    })();
+    return janjiSekali;
+  }
+
+  /** Nilai yang diingat untuk satu perkara: Map kode -> { nilai, diisiOleh, diubahAt }; kosong bila saklar mati atau gagal. */
+  async function bacaSekali(perkaraId) {
+    const hasil = new Map();
+    const id = teks(perkaraId);
+    if (!id) return hasil;
+    const info = await infoSekali();
+    if (!info.aktif) return hasil;
+    const d = await ambilJson(`${API_SEKALI}?perkaraId=${encodeURIComponent(id)}`);
+    if (!d || d.aktif === false || !Array.isArray(d.isian)) return hasil;
+    for (const x of d.isian) if (x && teks(x.kode) && teks(x.nilai)) hasil.set(teks(x.kode), { nilai: String(x.nilai), diisiOleh: teks(x.diisiOleh), diubahAt: teks(x.diubahAt) });
+    return hasil;
+  }
+
+  /** Mengingat satu isian yang baru disimpan ke ABT; hanya kode yang diingat server. Tidak pernah melempar. */
+  async function catatSekali(e) {
+    try {
+      const kode = teks(e && e.kode);
+      if (!kode || !teks(e.perkaraId)) return null;
+      const info = await infoSekali();
+      if (!info.aktif || !info.kode.has(kode)) return null;
+      const r = await fetch(API_SEKALI, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ perkaraId: teks(e.perkaraId), nomorPerkara: teks(e.nomorPerkara), kode, nilai: String(e.nilai == null ? "" : e.nilai) }),
+      });
+      return r && r.ok ? buka(await r.json()) : null;
+    } catch {
+      return null; // ingatan tertinggal; isian sudah tersimpan di ABT
+    }
   }
 
   async function kirim(alamat, daftar) {
@@ -222,6 +282,9 @@
     catatIsian,
     catatButir,
     jejakPerkara,
+    infoSekali,
+    bacaSekali,
+    catatSekali,
     keRiwayat,
     tentukanCara,
     penandaAsal,
@@ -230,5 +293,6 @@
     bakuBanding,
     API,
     API_BUTIR,
+    API_SEKALI,
   });
 })();
