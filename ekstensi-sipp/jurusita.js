@@ -696,6 +696,13 @@ function jurusitaSebutan(nomorPerkara, jenisPerkara, alurPerkaraId, jenisPerkara
   const alur = Number(alurPerkaraId) || 0;
   const jenisId = Number(jenisPerkaraId) || 0;
   if (alur === 122 || alur === 123) return { pertama: "Penuntut Umum", kedua: "Terdakwa", k1: "penggugat", k2: "tergugat" };
+  // Perlawanan dan bantahan (D5, kembaran sebutan-pihak.ts): sebutannya sendiri, sebelum aturan alur gugatan.
+  const namaLawan = String(jenisPerkara || "");
+  const nomorLawan = String(nomorPerkara || "");
+  if (alur !== 16 && jenisId !== 346 && jenisId !== 341) {
+    if (/perlawanan|verzet|derden/i.test(namaLawan) || /\/Pdt\.Plw\b/i.test(nomorLawan)) return { pertama: "Pelawan", kedua: "Terlawan", k1: "pelawan", k2: "terlawan" };
+    if (/bantahan/i.test(namaLawan) || /\/Pdt\.Bth\b/i.test(nomorLawan)) return { pertama: "Pembantah", kedua: "Terbantah", k1: "pembantah", k2: "terbantah" };
+  }
   const permohonan =
     alur === 16 || jenisId === 346 || jenisId === 341
       ? true

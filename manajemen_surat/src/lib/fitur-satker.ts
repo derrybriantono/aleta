@@ -1,5 +1,10 @@
 import { BAGIAN_FITUR_EKSTENSI } from "@/lib/daftar-fitur-ekstensi";
+import { KODE_FITUR_HURUF_BELAJAR } from "@/lib/huruf-alasan-belajar";
+import { KODE_FITUR_ISIAN_SEKALI } from "@/lib/isian-sekali";
+import { KODE_FITUR_ISIAN_SIDANG } from "@/lib/isian-sidang";
 import { KODE_FITUR_JEJAK_ISIAN } from "@/lib/jejak-isian";
+import { KODE_FITUR_KETEPATAN_ISIAN } from "@/lib/ketepatan-isian";
+import { KODE_FITUR_WAJIB_CETAK } from "@/lib/wajib-cetak";
 
 /**
  * ============================================================================
@@ -153,6 +158,46 @@ export const KATALOG_FITUR_SATKER: readonly FiturKatalog[] = [
     bagian: "portal",
     keterangan:
       "Mati: ekstensi memakai katalog Susun saksi yang tertanam di ekstensi. Nyalakan agar perbaikan katalog yang disimpan di layar Katalog saksi (Pengaturan, Admin) langsung berlaku tanpa rilis ekstensi; JSON tertanam tetap menjadi cadangan bila portal tak terjangkau.",
+    bawaan: "mati",
+  },
+  {
+    kode: KODE_FITUR_KETEPATAN_ISIAN,
+    nama: "Ketepatan isian",
+    bagian: "portal",
+    keterangan:
+      "Mati: gerbang isian bot memakai berkas bawaan saja. Nyalakan agar layar Ketepatan isian menghitung ketepatan dari lapangan dan mengusulkan isian yang layak terisi sendiri (atau harus turun). Usulan tidak pernah berlaku sebelum Super Admin menyetujuinya. Butuh saklar Jejak isian menyala agar ada datanya.",
+    bawaan: "mati",
+  },
+  {
+    kode: KODE_FITUR_ISIAN_SEKALI,
+    nama: "Isian sekali per perkara",
+    bagian: "portal",
+    keterangan:
+      "Mati: isian manual Blangko Derry tidak diingat per perkara. Nyalakan agar isian yang belum punya sumber otomatis (mis. nomor penetapan prodeo) cukup diketik sekali: blangko lain perkara itu menampilkannya sebagai saran. Petugas tetap yang memasukkannya ke ABT.",
+    bawaan: "mati",
+  },
+  {
+    kode: KODE_FITUR_WAJIB_CETAK,
+    nama: "Daftar wajib sebelum cetak",
+    bagian: "portal",
+    keterangan:
+      "Mati: pengingat cetak seperti biasa. Nyalakan agar ALETA mencatat kelengkapan semua jenis blangko, mengingatkan isian yang biasanya sudah terisi saat blangko itu dicetak, dan mengusulkan isian bukan-identitas dari perkara serupa yang sudah putus. Hanya saran; tidak pernah menahan cetak dan tidak pernah menulis ke ABT sendiri.",
+    bawaan: "mati",
+  },
+  {
+    kode: KODE_FITUR_HURUF_BELAJAR,
+    nama: "Huruf alasan yang belajar dari hakim",
+    bagian: "portal",
+    keterangan:
+      "Mati: huruf alasan perceraian (8503) persis seperti biasa. Nyalakan agar Blangko Derry menambahkan pertimbangan dari kebiasaan hakim dan majelis (jejak isian) serta saran dasar hukum per huruf dari pustaka pertimbangan (yang belum terverifikasi bertanda [PERLU VERIFIKASI]). Hanya usulan; huruf tetap keputusan hakim dan tidak pernah diisi sendiri.",
+    bawaan: "mati",
+  },
+  {
+    kode: KODE_FITUR_ISIAN_SIDANG,
+    nama: "Isian BAS per sidang",
+    bagian: "portal",
+    keterangan:
+      "Mati: isian ketikan BAS satu per perkara seperti biasa (BAS sidang berikutnya menimpa yang sebelumnya di ABT). Nyalakan agar ALETA menyimpan isian BAS per sidang; saat BAS sidang tertentu dicetak, isian sidang itu dipakai sementara lalu ABT dipulihkan seperti semula.",
     bawaan: "mati",
   },
   portal("putusan-advance", "Putusan Advance", "Draf putusan lengkap oleh konseptor dan hakim."),

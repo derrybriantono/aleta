@@ -36,6 +36,10 @@
 (function () {
   const API = "/aleta/api/aleta-ecourt/jejak-isian";
   const API_BUTIR = "/aleta/api/aleta-ecourt/saksi-butir";
+  const API_SEKALI = "/aleta/api/aleta-ecourt/isian-sekali";
+  const API_WAJIB = "/aleta/api/aleta-ecourt/wajib-cetak";
+  const API_HURUF = "/aleta/api/aleta-ecourt/huruf-alasan";
+  const API_SIDANG = "/aleta/api/aleta-ecourt/isian-sidang";
   const TTL_YA_MS = 5 * 60 * 1000;
   const TTL_GAGAL_MS = 30 * 1000;
   const BATAS_KIRIM = 60;
@@ -98,6 +102,258 @@
   function lupakan() {
     cache = null;
     janji = null;
+    cacheSekali = null;
+    janjiSekali = null;
+    cacheWajib = null;
+    janjiWajib = null;
+    wajibBerkas.clear();
+    cacheHuruf = null;
+    janjiHuruf = null;
+    cacheSidang = null;
+    janjiSidang = null;
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // ISIAN SEKALI PER PERKARA (D2, 25 Okt 2026): isian manual yang belum punya sumber otomatis diingat server per perkara,
+  // dan blangko lain perkara itu menampilkannya sebagai SARAN. Saklar sendiri (Fitur Satker "isian-sekali", bawaan mati);
+  // gagal bertanya = MATI. Tidak pernah menulis ke ABT dan tidak pernah melempar.
+  // ──────────────────────────────────────────────────────────────────────────
+  let cacheSekali = null; // { aktif, kode:Set, saat, gagal }
+  let janjiSekali = null;
+
+  /** Saklar isian sekali + daftar kode yang diingat. Dijawab dari ingatan bila masih segar; gagal = { aktif:false }. */
+  function infoSekali(paksa) {
+    const kini = Date.now();
+    if (!paksa && cacheSekali && kini - cacheSekali.saat < (cacheSekali.gagal ? TTL_GAGAL_MS : TTL_YA_MS)) return Promise.resolve(cacheSekali);
+    if (janjiSekali) return janjiSekali;
+    janjiSekali = (async () => {
+      const d = await ambilJson(`${API_SEKALI}?bagian=saklar`);
+      const ok = d && typeof d.aktif === "boolean";
+      cacheSekali = ok
+        ? { aktif: d.aktif, kode: new Set(Array.isArray(d.kode) ? d.kode.map((k) => teks(k)) : []), saat: Date.now(), gagal: false }
+        : { aktif: false, kode: new Set(), saat: Date.now(), gagal: true };
+      janjiSekali = null;
+      return cacheSekali;
+    })();
+    return janjiSekali;
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // DAFTAR WAJIB SEBELUM CETAK + SALIN DARI PERKARA SERUPA (D3, 25 Okt 2026): server mencatat kelengkapan SEMUA jenis blangko
+  // (saat berubah dan saat dicetak), mengingatkan isian yang biasanya sudah terisi ketika blangko itu dicetak, dan mengusulkan
+  // isian bukan-identitas dari perkara serupa yang sudah putus. Saklar sendiri (Fitur Satker "wajib-sebelum-cetak", bawaan mati);
+  // gagal bertanya = MATI. Hanya mengingatkan dan menyarankan: tidak pernah menahan cetak dan tidak pernah menulis ke ABT.
+  // ──────────────────────────────────────────────────────────────────────────
+  let cacheWajib = null; // { aktif, saat, gagal }
+  let janjiWajib = null;
+  const wajibBerkas = new Map(); // berkas -> { saat, data }
+
+  function aktifWajib(paksa) {
+    const kini = Date.now();
+    if (!paksa && cacheWajib && kini - cacheWajib.saat < (cacheWajib.gagal ? TTL_GAGAL_MS : TTL_YA_MS)) return Promise.resolve(cacheWajib.aktif);
+    if (janjiWajib) return janjiWajib;
+    janjiWajib = (async () => {
+      const d = await ambilJson(`${API_WAJIB}?bagian=saklar`);
+      cacheWajib = d && typeof d.aktif === "boolean" ? { aktif: d.aktif, saat: Date.now(), gagal: false } : { aktif: false, saat: Date.now(), gagal: true };
+      janjiWajib = null;
+      return cacheWajib.aktif;
+    })();
+    return janjiWajib;
+  }
+
+  /** Melaporkan kelengkapan satu blangko (atau saat dicetak). Tidak pernah melempar; saklar mati = tidak mengirim apa pun. */
+  async function laporWajib(detail) {
+    try {
+      if (!detail || !teks(detail.perkaraId) || !teks(detail.berkas) || !Array.isArray(detail.isian) || !detail.isian.length) return null;
+      if (!(await aktifWajib())) return null;
+      const r = await fetch(API_WAJIB, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          aksi: "lapor",
+          perkaraId: teks(detail.perkaraId),
+          nomorPerkara: teks(detail.nomorPerkara),
+          berkas: teks(detail.berkas),
+          jenisBlangko: teks(detail.jenisBlangko),
+          jenisPerkara: teks(detail.jenisPerkara),
+          isian: detail.isian.map((i) => ({ kode: teks(i.kode), terisi: Boolean(i.terisi) })),
+          dicetak: detail.dicetak === true,
+          fakta: detail.fakta && typeof detail.fakta === "object" ? detail.fakta : {},
+        }),
+      });
+      return r && r.ok ? buka(await r.json()) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Isian yang biasanya sudah terisi saat blangko ini dicetak: { cukupData, wajib:[{kode, terisi, dari, rasio}] }; kosong bila mati/gagal. */
+  async function bacaWajib(berkas) {
+    const kosong = { cukupData: false, wajib: [] };
+    const nama = teks(berkas);
+    if (!nama) return kosong;
+    try {
+      if (!(await aktifWajib())) return kosong;
+      const ada = wajibBerkas.get(nama);
+      if (ada && Date.now() - ada.saat < TTL_YA_MS) return ada.data;
+      const d = await ambilJson(`${API_WAJIB}?berkas=${encodeURIComponent(nama)}`);
+      const data = d && d.aktif !== false && Array.isArray(d.wajib) ? { cukupData: d.cukupData === true, wajib: d.wajib } : kosong;
+      wajibBerkas.set(nama, { saat: Date.now(), data });
+      return data;
+    } catch {
+      return kosong;
+    }
+  }
+
+  /** Usulan isian dari perkara serupa yang sudah putus untuk kode yang masih kosong: [{kode, nilai, jumlah, dari, nomorPerkara}]. */
+  async function usulSerupa(m) {
+    try {
+      if (!m || !teks(m.perkaraId) || !Array.isArray(m.kode) || !m.kode.length) return [];
+      if (!(await aktifWajib())) return [];
+      const r = await fetch(API_WAJIB, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ aksi: "serupa", perkaraId: teks(m.perkaraId), nomorPerkara: teks(m.nomorPerkara), jenisPerkara: teks(m.jenisPerkara), fakta: m.fakta || {}, kode: m.kode.map((k) => teks(k)) }),
+      });
+      const d = r && r.ok ? buka(await r.json()) : null;
+      return d && d.aktif !== false && Array.isArray(d.usulan) ? d.usulan : [];
+    } catch {
+      return [];
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // HURUF ALASAN YANG BELAJAR DARI HAKIM (D4, 25 Okt 2026): server menambahkan PERTIMBANGAN (kebiasaan hakim/majelis, kecocokan pola)
+  // dan SARAN dasar hukum per huruf (bertanda [PERLU VERIFIKASI] bila belum terverifikasi). Saklar sendiri (Fitur Satker
+  // "huruf-alasan-belajar", bawaan mati); gagal bertanya = MATI. Hanya usulan: tidak pernah menulis ke ABT.
+  // ──────────────────────────────────────────────────────────────────────────
+  let cacheHuruf = null; // { aktif, saat, gagal }
+  let janjiHuruf = null;
+
+  function aktifHuruf(paksa) {
+    const kini = Date.now();
+    if (!paksa && cacheHuruf && kini - cacheHuruf.saat < (cacheHuruf.gagal ? TTL_GAGAL_MS : TTL_YA_MS)) return Promise.resolve(cacheHuruf.aktif);
+    if (janjiHuruf) return janjiHuruf;
+    janjiHuruf = (async () => {
+      const d = await ambilJson(`${API_HURUF}?bagian=saklar`);
+      cacheHuruf = d && typeof d.aktif === "boolean" ? { aktif: d.aktif, saat: Date.now(), gagal: false } : { aktif: false, saat: Date.now(), gagal: true };
+      janjiHuruf = null;
+      return cacheHuruf.aktif;
+    })();
+    return janjiHuruf;
+  }
+
+  /** Pertimbangan huruf alasan: { belajar:{pertimbangan, pola, usulanBeda...}, dasarHukum:[{huruf, daftar}] }; null bila mati/gagal. */
+  async function belajarHuruf(m) {
+    try {
+      if (!m || !(await aktifHuruf())) return null;
+      const r = await fetch(API_HURUF, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jenisPerkara: teks(m.jenisPerkara), hurufMesin: teks(m.hurufMesin), majelis: Array.isArray(m.majelis) ? m.majelis.map((x) => teks(x)).filter(Boolean) : [] }),
+      });
+      const d = r && r.ok ? buka(await r.json()) : null;
+      return d && d.aktif !== false && d.belajar ? d : null;
+    } catch {
+      return null;
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // ISIAN BAS PER SIDANG (D6, 25 Okt 2026): server menyimpan isian ketikan BAS per (perkara, sidang, nomor variabel); saat BAS sidang
+  // tertentu dicetak, ekstensi memakainya sementara di ABT lalu memulihkan ABT. Saklar sendiri (Fitur Satker "isian-per-sidang",
+  // bawaan mati); gagal bertanya = MATI. Berkas ini hanya bertanya dan mencatat; penulisan sementara ke ABT ada di
+  // blangko-derry-isian.js (terapkanIsianSidang).
+  // ──────────────────────────────────────────────────────────────────────────
+  let cacheSidang = null; // { aktif, saat, gagal }
+  let janjiSidang = null;
+
+  function aktifSidang(paksa) {
+    const kini = Date.now();
+    if (!paksa && cacheSidang && kini - cacheSidang.saat < (cacheSidang.gagal ? TTL_GAGAL_MS : TTL_YA_MS)) return Promise.resolve(cacheSidang.aktif);
+    if (janjiSidang) return janjiSidang;
+    janjiSidang = (async () => {
+      const d = await ambilJson(`${API_SIDANG}?bagian=saklar`);
+      cacheSidang = d && typeof d.aktif === "boolean" ? { aktif: d.aktif, saat: Date.now(), gagal: false } : { aktif: false, saat: Date.now(), gagal: true };
+      janjiSidang = null;
+      return cacheSidang.aktif;
+    })();
+    return janjiSidang;
+  }
+
+  /** Jawaban saklar yang sudah diingat tanpa jaringan: true/false, atau null bila belum pernah ditanyakan. */
+  function aktifSidangSegera() {
+    return cacheSidang ? cacheSidang.aktif : null;
+  }
+
+  /** Isian BAS yang tersimpan untuk satu sidang: Map kode -> nilai (nilai kosong ikut); null bila saklar mati atau gagal membaca. */
+  async function bacaSidang(perkaraId, sidang) {
+    try {
+      const id = teks(perkaraId);
+      const sd = Math.round(Number(sidang) || 0);
+      if (!id || sd < 1 || !(await aktifSidang())) return null;
+      const d = await ambilJson(`${API_SIDANG}?perkaraId=${encodeURIComponent(id)}&sidang=${sd}`);
+      if (!d || d.aktif === false || !Array.isArray(d.isian)) return null;
+      const peta = new Map();
+      for (const x of d.isian) if (x && teks(x.kode)) peta.set(teks(x.kode), String(x.nilai == null ? "" : x.nilai));
+      return peta;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Mengingat satu isian BAS untuk satu sidang (sesudah tersimpan ke ABT). Tidak pernah melempar. */
+  async function catatSidang(e) {
+    try {
+      const kode = teks(e && e.kode);
+      const sd = Math.round(Number(e && e.sidang) || 0);
+      if (!kode || sd < 1 || !teks(e.perkaraId)) return null;
+      if (!(await aktifSidang())) return null;
+      const r = await fetch(API_SIDANG, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ perkaraId: teks(e.perkaraId), nomorPerkara: teks(e.nomorPerkara), sidang: sd, kode, nilai: String(e.nilai == null ? "" : e.nilai) }),
+      });
+      return r && r.ok ? buka(await r.json()) : null;
+    } catch {
+      return null; // ingatan tertinggal; isian sudah tersimpan di ABT
+    }
+  }
+
+  /** Nilai yang diingat untuk satu perkara: Map kode -> { nilai, diisiOleh, diubahAt }; kosong bila saklar mati atau gagal. */
+  async function bacaSekali(perkaraId) {
+    const hasil = new Map();
+    const id = teks(perkaraId);
+    if (!id) return hasil;
+    const info = await infoSekali();
+    if (!info.aktif) return hasil;
+    const d = await ambilJson(`${API_SEKALI}?perkaraId=${encodeURIComponent(id)}`);
+    if (!d || d.aktif === false || !Array.isArray(d.isian)) return hasil;
+    for (const x of d.isian) if (x && teks(x.kode) && teks(x.nilai)) hasil.set(teks(x.kode), { nilai: String(x.nilai), diisiOleh: teks(x.diisiOleh), diubahAt: teks(x.diubahAt) });
+    return hasil;
+  }
+
+  /** Mengingat satu isian yang baru disimpan ke ABT; hanya kode yang diingat server. Tidak pernah melempar. */
+  async function catatSekali(e) {
+    try {
+      const kode = teks(e && e.kode);
+      if (!kode || !teks(e.perkaraId)) return null;
+      const info = await infoSekali();
+      if (!info.aktif || !info.kode.has(kode)) return null;
+      const r = await fetch(API_SEKALI, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ perkaraId: teks(e.perkaraId), nomorPerkara: teks(e.nomorPerkara), kode, nilai: String(e.nilai == null ? "" : e.nilai) }),
+      });
+      return r && r.ok ? buka(await r.json()) : null;
+    } catch {
+      return null; // ingatan tertinggal; isian sudah tersimpan di ABT
+    }
   }
 
   async function kirim(alamat, daftar) {
@@ -222,6 +478,19 @@
     catatIsian,
     catatButir,
     jejakPerkara,
+    infoSekali,
+    bacaSekali,
+    catatSekali,
+    aktifWajib,
+    laporWajib,
+    bacaWajib,
+    usulSerupa,
+    aktifHuruf,
+    belajarHuruf,
+    aktifSidang,
+    aktifSidangSegera,
+    bacaSidang,
+    catatSidang,
     keRiwayat,
     tentukanCara,
     penandaAsal,
@@ -230,5 +499,9 @@
     bakuBanding,
     API,
     API_BUTIR,
+    API_SEKALI,
+    API_WAJIB,
+    API_HURUF,
+    API_SIDANG,
   });
 })();

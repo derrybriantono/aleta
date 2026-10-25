@@ -1,3 +1,5 @@
+import { paraSebutan, sebutanBerurut } from "@/lib/sebutan-pihak";
+
 /**
  * ============================================================================
  * SET PERTANYAAN SAKSI DASAR PER JENIS PERKARA (F3.3, 16 Okt 2026)
@@ -906,14 +908,15 @@ export function isiTanda(teks: string, jenis: KodeJenisSaksi, k: KonteksSaksi): 
   const T = k.sebutanT || (P === "Penggugat" ? "Tergugat" : "Termohon");
   const talak = jenis === "ct" || (P === "Pemohon" && (jenis === "nafkah" || jenis === "hadhanah"));
   const jamak = (k.jumlahP || 1) > 1;
+  // Bentuk jamak dan urutan ("para Pemohon", "Pemohon I", "Pemohon II") ditulis di SATU tempat: sebutan-pihak.ts.
   const peta: Record<string, string> = {
     P,
     T,
     suami: talak ? P : T,
     isteri: talak ? T : P,
-    Pp: jamak ? `para ${P}` : P,
-    P1: jamak ? `${P} I` : P,
-    P2: jamak ? `${P} II` : T,
+    Pp: paraSebutan(P, k.jumlahP),
+    P1: sebutanBerurut(P, 1, k.jumlahP),
+    P2: jamak ? sebutanBerurut(P, 2, k.jumlahP) : T,
     ajuan: talak ? `memohon izin menjatuhkan talak terhadap ${T}` : `mengajukan gugatan cerai terhadap ${T}`,
   };
   const h = teks.replace(/\{(\w+)\}/g, (m, kunci: string) => (kunci in peta ? peta[kunci] : m));

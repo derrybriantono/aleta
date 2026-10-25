@@ -707,6 +707,8 @@ export const TUTORIAL: readonly Tutorial[] = [
       "Tarik data dari e-Court menampilkan persen dan garis proses menurut tahap yang sungguh berjalan. Tanggal KTP pihak dibaca dari berkas KTP e-Court, dan pengaturan serta riwayat penarikannya ada di sini.",
       "Kamus variabel ABT menjelaskan arti, sumber, dan keadaan tiap variabel blangko, termasuk yang masih diisi manual dan yang rawan tanda petik.",
       "Kamus deteksi dan kalimat memungkinkan Admin melihat, menambah, menguji, dan menonaktifkan pola deteksi serta kalimat siap pakai tanpa menunggu rilis. Koreksi petugas atas usulan tercatat dan menjadi calon pola untuk ditinjau.",
+      "Isian manual yang diingat per perkara (saklar di Fitur Satker, bawaan mati) mendaftar isian Blangko Derry yang belum punya sumber otomatis, dari yang paling sering diketik. Isian itu cukup diketik sekali: di blangko lain perkara yang sama ia muncul sebagai saran, dan Anda sendiri yang menekan Tab untuk memasukkannya ke ABT.",
+      "Ketepatan isian (saklar di Fitur Satker, bawaan mati) menghitung seberapa sering usulan isian diterima petugas tanpa diubah. Isian yang tepat 95% atau lebih dari sedikitnya 30 kejadian diusulkan boleh terisi sendiri, yang meleset diusulkan kembali menjadi saran. Usulan baru berlaku setelah Super Admin menyetujuinya. Layar ini juga menunjukkan seberapa benar isi keterangan saksi.",
     ],
     peringatan: [
       "Pengaturan ini berlaku untuk seluruh satuan kerja. Ubah hanya bila Anda yakin.",
@@ -921,6 +923,9 @@ export const TUTORIAL: readonly Tutorial[] = [
       "Alat bukti surat memakai kode P otomatis. Pilih meterai dan pencocokannya, atau pakai Tulis manual bila bukti tidak ada di daftar.",
       "Tanya jawab saksi dapat berupa saksi tunggal atau berdampingan, dan dapat disusun lewat Susun Keterangan Saksi.",
       "Pratinjau dapat dilipat dan disunting. Sebelum Cetak, ALETA mengingatkan isian yang kosong, tetapi isian tidak wajib yang kosong tidak menahan cetak.",
+      "Bila saklar Isian BAS per sidang menyala (bawaan mati), isian ketikan BAS tersimpan per sidang. Saat Anda mencetak BAS sidang tertentu, isian sidang itu dipakai sementara di ABT, naskah diambil, lalu ABT dipulihkan seperti semula; BAS sidang lain tidak ikut berubah. Bila cetak terputus, ABT dipulihkan begitu perkara dibuka lagi.",
+      "Bila saklar Huruf alasan yang belajar dari hakim menyala (bawaan mati), di bawah kotak alasan perceraian muncul pertimbangan dari pilihan Anda dan majelis pada perkara sejenis, serta saran dasar hukum per huruf (bertanda [PERLU VERIFIKASI] bila belum terverifikasi). Itu usulan: huruf tetap keputusan Anda dan baru berubah bila Anda menekan Pakai huruf.",
+      "Bila saklar Daftar wajib sebelum cetak menyala (bawaan mati), ALETA belajar dari cetak sebelumnya: isian yang biasanya sudah terisi saat blangko itu dicetak ikut diingatkan bila masih kosong, dan isian bukan-identitas yang sama-sama ditulis dua perkara serupa yang sudah putus muncul sebagai saran. Anda tetap yang memutuskan; Tetap cetak selalu ada.",
       "Tanda tangan dapat ditambahkan per akun, supaya yang tercetak sesuai pejabat yang menandatangani.",
     ],
     peringatan: [

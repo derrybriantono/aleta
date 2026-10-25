@@ -1410,6 +1410,123 @@ export const DDL_SAKSI_KIRIM_BAS = {
 } as const;
 
 /**
+ * Ketepatan isian (0092, 25 Okt 2026, rantai D butir D1 = U3 + U4): angka lapangan per isian x pengisi x
+ * jenis perkara x bulan (turunan dari jejak isian 0091, boleh dihitung ulang) dan keputusan Super Admin atas
+ * usulan naik/turun gerbang isian. Diisi HANYA bila saklar Fitur Satker "ketepatan-isian" menyala (bawaan
+ * MATI). Kenaikan tidak pernah otomatis. Cermin PERSIS dari drizzle/0092_aleta_ketepatan_isian.sql; penjaga
+ * ketepatan-isian-25okt.test.ts membandingkan keduanya. Tanpa kunci asing dan tanpa CHECK.
+ */
+export const DDL_KETEPATAN_ISIAN = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_ketepatan_isian (
+  id TEXT PRIMARY KEY,
+  kode TEXT NOT NULL DEFAULT '',
+  pengisi TEXT NOT NULL DEFAULT '',
+  jenis_perkara TEXT NOT NULL DEFAULT '',
+  bulan TEXT NOT NULL DEFAULT '',
+  usulan INTEGER NOT NULL DEFAULT 0,
+  diterima INTEGER NOT NULL DEFAULT 0,
+  diubah INTEGER NOT NULL DEFAULT 0,
+  diubah_otomatis INTEGER NOT NULL DEFAULT 0,
+  diketik INTEGER NOT NULL DEFAULT 0,
+  bertahan INTEGER NOT NULL DEFAULT 0,
+  presisi DOUBLE PRECISION,
+  dihitung_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_ketepatan_keputusan (
+  id TEXT PRIMARY KEY,
+  kode TEXT NOT NULL DEFAULT '',
+  pengisi TEXT NOT NULL DEFAULT '',
+  jenis_perkara TEXT NOT NULL DEFAULT '',
+  arah TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'usulan',
+  dari_status TEXT NOT NULL DEFAULT '',
+  ke_status TEXT NOT NULL DEFAULT '',
+  jumlah INTEGER NOT NULL DEFAULT 0,
+  bertahan INTEGER NOT NULL DEFAULT 0,
+  presisi DOUBLE PRECISION NOT NULL DEFAULT 0,
+  bulan_awal TEXT NOT NULL DEFAULT '',
+  bulan_akhir TEXT NOT NULL DEFAULT '',
+  dapat_diterapkan SMALLINT NOT NULL DEFAULT 0,
+  berlaku SMALLINT NOT NULL DEFAULT 0,
+  catatan TEXT NOT NULL DEFAULT '',
+  dibuat_at TEXT NOT NULL,
+  diputuskan_oleh TEXT NOT NULL DEFAULT '',
+  diputuskan_nama TEXT NOT NULL DEFAULT '',
+  diputuskan_at TEXT NOT NULL DEFAULT '',
+  dicabut_oleh TEXT NOT NULL DEFAULT '',
+  dicabut_at TEXT NOT NULL DEFAULT ''
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_ketepatan_isian_kode ON aleta_ketepatan_isian(kode, bulan)`,
+    `CREATE INDEX IF NOT EXISTS idx_ketepatan_keputusan_status ON aleta_ketepatan_keputusan(status, berlaku)`,
+    `CREATE INDEX IF NOT EXISTS idx_ketepatan_keputusan_kunci ON aleta_ketepatan_keputusan(kode, pengisi, jenis_perkara)`,
+  ],
+} as const;
+
+/**
+ * Riwayat kelengkapan blangko sebelum cetak (0102, 25 Okt 2026, rantai D butir D3 = U13): satu baris per keadaan
+ * kelengkapan (isian terisi/kosong tanpa nilainya) dan satu baris saat blangko dicetak, untuk SEMUA jenis blangko.
+ * Dasar "isian yang biasanya sudah terisi saat cetak". Diisi HANYA bila saklar Fitur Satker "wajib-sebelum-cetak"
+ * menyala (bawaan MATI). Retensi 2 tahun. Cermin PERSIS dari drizzle/0102_aleta_blangko_lapor.sql; penjaga
+ * wajib-sebelum-cetak-25okt.test.ts membandingkan keduanya. Tanpa kunci asing dan tanpa CHECK.
+ */
+export const DDL_BLANGKO_LAPOR = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_blangko_lapor (
+  id TEXT PRIMARY KEY,
+  perkara_id TEXT NOT NULL DEFAULT '',
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  berkas TEXT NOT NULL DEFAULT '',
+  jenis_blangko TEXT NOT NULL DEFAULT '',
+  jenis_perkara TEXT NOT NULL DEFAULT '',
+  isian TEXT NOT NULL DEFAULT '',
+  terisi INTEGER NOT NULL DEFAULT 0,
+  jumlah INTEGER NOT NULL DEFAULT 0,
+  dicetak SMALLINT NOT NULL DEFAULT 0,
+  pengguna_id TEXT NOT NULL DEFAULT '',
+  pengguna_nama TEXT NOT NULL DEFAULT '',
+  pada TEXT NOT NULL,
+  dibuat_at TEXT NOT NULL
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_blangko_lapor_berkas ON aleta_blangko_lapor(berkas, dicetak)`,
+    `CREATE INDEX IF NOT EXISTS idx_blangko_lapor_perkara ON aleta_blangko_lapor(perkara_id, berkas, pada)`,
+    `CREATE INDEX IF NOT EXISTS idx_blangko_lapor_pada ON aleta_blangko_lapor(pada)`,
+  ],
+} as const;
+
+/**
+ * Isian BAS per sidang (0103, 25 Okt 2026, rantai D butir D6 = U12): satu baris per (perkara, sidang, nomor variabel) berisi
+ * nilai isian ketikan BAS sidang itu. ABT hanya menyimpan satu nilai per (no_var, perkara); lapisan ini membuat BAS sidang
+ * beruntun tidak saling menimpa. Diisi HANYA bila saklar Fitur Satker "isian-per-sidang" menyala (bawaan MATI). Cermin PERSIS
+ * dari drizzle/0103_aleta_isian_sidang.sql; penjaga isian-per-sidang-25okt.test.ts membandingkan keduanya. Tanpa kunci asing
+ * dan tanpa CHECK.
+ */
+export const DDL_ISIAN_SIDANG = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_isian_sidang (
+  id TEXT PRIMARY KEY,
+  perkara_id TEXT NOT NULL DEFAULT '',
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  sidang INTEGER NOT NULL DEFAULT 0,
+  no_var TEXT NOT NULL DEFAULT '',
+  nilai TEXT NOT NULL DEFAULT '',
+  diisi_oleh TEXT NOT NULL DEFAULT '',
+  diisi_at TEXT NOT NULL,
+  diubah_oleh TEXT NOT NULL DEFAULT '',
+  diubah_at TEXT NOT NULL
+)`,
+  ],
+  indeks: [
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_isian_sidang_kunci ON aleta_isian_sidang(perkara_id, sidang, no_var)`,
+    `CREATE INDEX IF NOT EXISTS idx_isian_sidang_perkara ON aleta_isian_sidang(perkara_id, sidang)`,
+  ],
+} as const;
+
+/**
  * Unggah Putusan Terjadwal (0080, 21 Okt 2026, agen B3): jadwal, butir (satu
  * perkara), berkas yang diunggah, dan jejak jujur. Cermin PERSIS dari
  * drizzle/0080_aleta_putusan_terjadwal.sql; penjaga putusan-terjadwal-layanan-21okt.test.ts
@@ -3053,6 +3170,12 @@ const schemaStatements = [
   ...DDL_ALETA_AI_DOMPET.tabel,
   // Jejak isian dan butir saksi (0091, rantai C): usulan vs final, nilai sebelum untuk Urungkan.
   ...DDL_JEJAK_ISIAN.tabel,
+  // Ketepatan isian (0092, rantai D): angka lapangan bulanan dan keputusan naik/turun gerbang.
+  ...DDL_KETEPATAN_ISIAN.tabel,
+  // Riwayat kelengkapan blangko sebelum cetak (0102, rantai D): isian biasanya terisi saat cetak.
+  ...DDL_BLANGKO_LAPOR.tabel,
+  // Isian BAS per sidang (0103, rantai D): BAS beruntun tidak saling menimpa.
+  ...DDL_ISIAN_SIDANG.tabel,
   // Katalog saksi di basis data dengan versi (0093, rantai C).
   ...DDL_SAKSI_KATALOG.tabel,
   // Jejak kirim keterangan saksi ke BAS SIPP (0101, rantai C).
@@ -5038,6 +5161,9 @@ const indexStatements = [
   ...DDL_ALETA_AI.indeks,
   ...DDL_ALETA_AI_DOMPET.indeks,
   ...DDL_JEJAK_ISIAN.indeks,
+  ...DDL_KETEPATAN_ISIAN.indeks,
+  ...DDL_BLANGKO_LAPOR.indeks,
+  ...DDL_ISIAN_SIDANG.indeks,
   ...DDL_SAKSI_KATALOG.indeks,
   ...DDL_SAKSI_KIRIM_BAS.indeks,
   ...DDL_ALETA_TENGGAT_KIRIM.indeks,

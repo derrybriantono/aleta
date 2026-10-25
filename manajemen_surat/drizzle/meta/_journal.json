@@ -589,6 +589,27 @@
       "when": 1792370000001,
       "tag": "0110_aleta_tenggat_kirim",
       "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1792267200001,
+      "tag": "0092_aleta_ketepatan_isian",
+      "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1792270800001,
+      "tag": "0102_aleta_blangko_lapor",
+      "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1792274400001,
+      "tag": "0103_aleta_isian_sidang",
+      "breakpoints": true
     }
   ]
 }

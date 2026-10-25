@@ -4513,6 +4513,7 @@ app.use("/internal/aleta-bot/abt-pengaturan", require("./routes/abtPengaturanRou
 app.use("/internal/aleta-bot/fitur-satker", require("./routes/fiturSatkerRoutes"));
 // Cermin Perkara (C0, 25 Okt 2026): bahan pemindai portal - HANYA GET dan hanya membaca SIPP.
 app.use("/internal/aleta-bot/cermin", require("./routes/cerminRoutes"));
+app.use("/internal/aleta-bot/gerbang-isian", require("./routes/gerbangIsianRoutes"));
 try {
   const muatKamus = require("./services/kamusDeteksiLapis").mulaiPemuatLapis();
   console.log(

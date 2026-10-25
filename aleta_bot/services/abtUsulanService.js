@@ -2497,8 +2497,10 @@ function dariPositaItsbat(posita, pihak) {
   const kalimat = kalimatPosita(posita);
   const sumber = (k) => (k ? [{ saksi: 0, asal: "posita", kalimat: k }] : []);
   const cari = (wajib, terlarang) => cariButir(kalimat, wajib, terlarang);
-  const sebut1 = (pihak && pihak.pemohon) || "Pemohon I";
-  const sebut2 = (pihak && pihak.pemohon2) || "Pemohon II";
+  // Bawaan sebutan dua pemohon dari satu sumber (sebutanPihakService, D5): "Pemohon I" / "Pemohon II".
+  const [bawaan1, bawaan2] = require("./sebutanPihakService").daftarSebutanBerurut("Pemohon", 2);
+  const sebut1 = (pihak && pihak.pemohon) || bawaan1;
+  const sebut2 = (pihak && pihak.pemohon2) || bawaan2;
   const lolos = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
   // Tanggal nikah - "pada tanggal 07 Mei 2017 telah terjadi pernikahan".

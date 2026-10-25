@@ -145,6 +145,15 @@ export async function simpanPengaturanFitur(db: AletaDatabase, aktor: { id: stri
     });
   });
   const bot = await dorongFiturKeBot(db);
+  // D1 (25 Okt 2026): saklar Ketepatan isian berubah -> bot menerima keputusan gerbang yang berlaku (atau melepasnya bila mati).
+  if (berubah.some((x) => x.kode === "ketepatan-isian")) {
+    try {
+      const { dorongGerbangKeBot } = await import("@/server/modules/aleta-ecourt/ketepatan-isian");
+      await dorongGerbangKeBot(db);
+    } catch {
+      /* bot belum menerima: ia memakai berkas gerbang bawaan */
+    }
+  }
   return { ok: true, berubah: berubah.length, bot, ...(await bacaLayarFitur(db)) };
 }
 
