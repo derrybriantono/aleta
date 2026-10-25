@@ -920,6 +920,10 @@ describe("tugas (cowork): kebocoran, berkas, berhenti/lanjut/bertahan, saklar, g
 
   it("SALDO HABIS: berhenti \"saldo habis\" sebelum langkah yang tak tertutup; hasil sementara tersimpan; isi saldo lalu lanjut dari langkah terakhir", async () => {
     const H = pelaku("usr-h-saldo", "Hakim Satu", "hakim");
+    // Uji ini tentang SALDO, bukan batas harian T10 (bawaan Rp100.000 < biaya "rencana" di bawah):
+    // batas harian dinaikkan selama uji, lalu dikembalikan.
+    const batasAwal = (await bacaPengaturan(db)).batasHarianRp;
+    await simpanPengaturan(db, SUPER.id, { batasHarianRp: 10_000_000 });
     // Tanpa saldo: berhenti sebelum memanggil model, tanpa menahan apa pun.
     const awal = new KlienTiruan();
     suntikKlienAi(awal);
@@ -960,6 +964,7 @@ describe("tugas (cowork): kebocoran, berkas, berhenti/lanjut/bertahan, saklar, g
     expect(jalan).toHaveLength(2);
     for (const r of jalan) expect(m.filter((x) => x.rujukan_id === r).map((x) => x.jenis)).toEqual(["tahan", "lepas", "potong"]);
     expect((await verifikasiSaldo(db, H.id)).seimbang).toBe(true);
+    await simpanPengaturan(db, SUPER.id, { batasHarianRp: batasAwal });
   });
 
   it("PENOLAKAN model: hasil sementara tersimpan, langkah ditolak tidak ditagih, saldo = pemakaian sebelumnya", async () => {

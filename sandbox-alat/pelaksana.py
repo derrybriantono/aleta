@@ -35,7 +35,10 @@
 import json
 import os
 import re
-import resource
+try:
+    import resource  # hanya ada di Linux (kontainer sandbox)
+except ImportError:  # Windows (laptop pengembang): batas sumber daya dilewati, batas waktu tetap
+    resource = None
 import shutil
 import subprocess
 import sys
@@ -102,6 +105,8 @@ def baca_izin():
 
 
 def batasi(detik):
+    if resource is None or not hasattr(os, "setsid"):
+        return None
     def pasang():
         os.setsid()
         resource.setrlimit(resource.RLIMIT_AS, (MEMORI_MB * 1024 * 1024,) * 2)
