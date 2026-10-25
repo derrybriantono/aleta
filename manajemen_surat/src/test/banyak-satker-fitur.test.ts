@@ -25,6 +25,7 @@ import {
 import { FITUR_BLANGKO_SAYA_SEMUA_PERAN } from "@/lib/fitur-satker";
 import { KODE_FITUR_HURUF_BELAJAR } from "@/lib/huruf-alasan-belajar";
 import { KODE_FITUR_ISIAN_SEKALI } from "@/lib/isian-sekali";
+import { KODE_FITUR_ISIAN_SIDANG } from "@/lib/isian-sidang";
 import { KODE_FITUR_JEJAK_ISIAN } from "@/lib/jejak-isian";
 import { KODE_FITUR_KETEPATAN_ISIAN } from "@/lib/ketepatan-isian";
 import { KODE_FITUR_WAJIB_CETAK } from "@/lib/wajib-cetak";
@@ -120,8 +121,8 @@ describe("A - matriks saklar (murni)", () => {
  * Pengecualian TUNGGAL (18 Okt 2026, butir 10): saklar tahap awal Blangko Saya. Fitur baru ini belum pernah menyala di
  * satker mana pun, jadi bawaannya MATI (hanya Super Admin) sampai dibuka; "fitur lama tidak boleh berkurang" tidak terlanggar.
  */
-// 25 Okt 2026 (rantai C, C1): saklar jejak isian juga fitur baru yang bawaannya MATI. Rantai D: begitu pula Ketepatan isian (D1) Isian sekali per perkara (D2), dan Daftar wajib sebelum cetak (D3), dan Huruf alasan yang belajar (D4).
-const BAWAAN_MATI = new Set([FITUR_BLANGKO_SAYA_SEMUA_PERAN, KODE_FITUR_JEJAK_ISIAN, KODE_FITUR_KETEPATAN_ISIAN, KODE_FITUR_ISIAN_SEKALI, KODE_FITUR_WAJIB_CETAK, KODE_FITUR_HURUF_BELAJAR]);
+// 25 Okt 2026 (rantai C, C1): saklar jejak isian juga fitur baru yang bawaannya MATI. Rantai D: begitu pula Ketepatan isian (D1) Isian sekali per perkara (D2), dan Daftar wajib sebelum cetak (D3), Huruf alasan yang belajar (D4), dan Isian BAS per sidang (D6).
+const BAWAAN_MATI = new Set([FITUR_BLANGKO_SAYA_SEMUA_PERAN, KODE_FITUR_JEJAK_ISIAN, KODE_FITUR_KETEPATAN_ISIAN, KODE_FITUR_ISIAN_SEKALI, KODE_FITUR_WAJIB_CETAK, KODE_FITUR_HURUF_BELAJAR, KODE_FITUR_ISIAN_SIDANG]);
 const FITUR_LAMA = KATALOG_FITUR_SATKER.filter((f) => !BAWAAN_MATI.has(f.kode));
 const hanyaLama = (peta: Record<string, unknown>) => Object.entries(peta).filter(([k]) => !BAWAAN_MATI.has(k)).map(([, v]) => v);
 

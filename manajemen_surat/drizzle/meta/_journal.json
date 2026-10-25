@@ -589,6 +589,13 @@
       "when": 1792270800001,
       "tag": "0102_aleta_blangko_lapor",
       "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1792274400001,
+      "tag": "0103_aleta_isian_sidang",
+      "breakpoints": true
     }
   ]
 }

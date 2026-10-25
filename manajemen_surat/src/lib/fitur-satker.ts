@@ -1,6 +1,7 @@
 import { BAGIAN_FITUR_EKSTENSI } from "@/lib/daftar-fitur-ekstensi";
 import { KODE_FITUR_HURUF_BELAJAR } from "@/lib/huruf-alasan-belajar";
 import { KODE_FITUR_ISIAN_SEKALI } from "@/lib/isian-sekali";
+import { KODE_FITUR_ISIAN_SIDANG } from "@/lib/isian-sidang";
 import { KODE_FITUR_JEJAK_ISIAN } from "@/lib/jejak-isian";
 import { KODE_FITUR_KETEPATAN_ISIAN } from "@/lib/ketepatan-isian";
 import { KODE_FITUR_WAJIB_CETAK } from "@/lib/wajib-cetak";
@@ -145,6 +146,14 @@ export const KATALOG_FITUR_SATKER: readonly FiturKatalog[] = [
     bagian: "portal",
     keterangan:
       "Mati: huruf alasan perceraian (8503) persis seperti biasa. Nyalakan agar Blangko Derry menambahkan pertimbangan dari kebiasaan hakim dan majelis (jejak isian) serta saran dasar hukum per huruf dari pustaka pertimbangan (yang belum terverifikasi bertanda [PERLU VERIFIKASI]). Hanya usulan; huruf tetap keputusan hakim dan tidak pernah diisi sendiri.",
+    bawaan: "mati",
+  },
+  {
+    kode: KODE_FITUR_ISIAN_SIDANG,
+    nama: "Isian BAS per sidang",
+    bagian: "portal",
+    keterangan:
+      "Mati: isian ketikan BAS satu per perkara seperti biasa (BAS sidang berikutnya menimpa yang sebelumnya di ABT). Nyalakan agar ALETA menyimpan isian BAS per sidang; saat BAS sidang tertentu dicetak, isian sidang itu dipakai sementara lalu ABT dipulihkan seperti semula.",
     bawaan: "mati",
   },
   portal("putusan-advance", "Putusan Advance", "Draf putusan lengkap oleh konseptor dan hakim."),

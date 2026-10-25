@@ -39,6 +39,7 @@
   const API_SEKALI = "/aleta/api/aleta-ecourt/isian-sekali";
   const API_WAJIB = "/aleta/api/aleta-ecourt/wajib-cetak";
   const API_HURUF = "/aleta/api/aleta-ecourt/huruf-alasan";
+  const API_SIDANG = "/aleta/api/aleta-ecourt/isian-sidang";
   const TTL_YA_MS = 5 * 60 * 1000;
   const TTL_GAGAL_MS = 30 * 1000;
   const BATAS_KIRIM = 60;
@@ -108,6 +109,8 @@
     wajibBerkas.clear();
     cacheHuruf = null;
     janjiHuruf = null;
+    cacheSidang = null;
+    janjiSidang = null;
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -256,6 +259,68 @@
       return d && d.aktif !== false && d.belajar ? d : null;
     } catch {
       return null;
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // ISIAN BAS PER SIDANG (D6, 25 Okt 2026): server menyimpan isian ketikan BAS per (perkara, sidang, nomor variabel); saat BAS sidang
+  // tertentu dicetak, ekstensi memakainya sementara di ABT lalu memulihkan ABT. Saklar sendiri (Fitur Satker "isian-per-sidang",
+  // bawaan mati); gagal bertanya = MATI. Berkas ini hanya bertanya dan mencatat; penulisan sementara ke ABT ada di
+  // blangko-derry-isian.js (terapkanIsianSidang).
+  // ──────────────────────────────────────────────────────────────────────────
+  let cacheSidang = null; // { aktif, saat, gagal }
+  let janjiSidang = null;
+
+  function aktifSidang(paksa) {
+    const kini = Date.now();
+    if (!paksa && cacheSidang && kini - cacheSidang.saat < (cacheSidang.gagal ? TTL_GAGAL_MS : TTL_YA_MS)) return Promise.resolve(cacheSidang.aktif);
+    if (janjiSidang) return janjiSidang;
+    janjiSidang = (async () => {
+      const d = await ambilJson(`${API_SIDANG}?bagian=saklar`);
+      cacheSidang = d && typeof d.aktif === "boolean" ? { aktif: d.aktif, saat: Date.now(), gagal: false } : { aktif: false, saat: Date.now(), gagal: true };
+      janjiSidang = null;
+      return cacheSidang.aktif;
+    })();
+    return janjiSidang;
+  }
+
+  /** Jawaban saklar yang sudah diingat tanpa jaringan: true/false, atau null bila belum pernah ditanyakan. */
+  function aktifSidangSegera() {
+    return cacheSidang ? cacheSidang.aktif : null;
+  }
+
+  /** Isian BAS yang tersimpan untuk satu sidang: Map kode -> nilai (nilai kosong ikut); null bila saklar mati atau gagal membaca. */
+  async function bacaSidang(perkaraId, sidang) {
+    try {
+      const id = teks(perkaraId);
+      const sd = Math.round(Number(sidang) || 0);
+      if (!id || sd < 1 || !(await aktifSidang())) return null;
+      const d = await ambilJson(`${API_SIDANG}?perkaraId=${encodeURIComponent(id)}&sidang=${sd}`);
+      if (!d || d.aktif === false || !Array.isArray(d.isian)) return null;
+      const peta = new Map();
+      for (const x of d.isian) if (x && teks(x.kode)) peta.set(teks(x.kode), String(x.nilai == null ? "" : x.nilai));
+      return peta;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Mengingat satu isian BAS untuk satu sidang (sesudah tersimpan ke ABT). Tidak pernah melempar. */
+  async function catatSidang(e) {
+    try {
+      const kode = teks(e && e.kode);
+      const sd = Math.round(Number(e && e.sidang) || 0);
+      if (!kode || sd < 1 || !teks(e.perkaraId)) return null;
+      if (!(await aktifSidang())) return null;
+      const r = await fetch(API_SIDANG, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ perkaraId: teks(e.perkaraId), nomorPerkara: teks(e.nomorPerkara), sidang: sd, kode, nilai: String(e.nilai == null ? "" : e.nilai) }),
+      });
+      return r && r.ok ? buka(await r.json()) : null;
+    } catch {
+      return null; // ingatan tertinggal; isian sudah tersimpan di ABT
     }
   }
 
@@ -422,6 +487,10 @@
     usulSerupa,
     aktifHuruf,
     belajarHuruf,
+    aktifSidang,
+    aktifSidangSegera,
+    bacaSidang,
+    catatSidang,
     keRiwayat,
     tentukanCara,
     penandaAsal,
@@ -433,5 +502,6 @@
     API_SEKALI,
     API_WAJIB,
     API_HURUF,
+    API_SIDANG,
   });
 })();

@@ -1065,6 +1065,34 @@ export const DDL_BLANGKO_LAPOR = {
 } as const;
 
 /**
+ * Isian BAS per sidang (0103, 25 Okt 2026, rantai D butir D6 = U12): satu baris per (perkara, sidang, nomor variabel) berisi
+ * nilai isian ketikan BAS sidang itu. ABT hanya menyimpan satu nilai per (no_var, perkara); lapisan ini membuat BAS sidang
+ * beruntun tidak saling menimpa. Diisi HANYA bila saklar Fitur Satker "isian-per-sidang" menyala (bawaan MATI). Cermin PERSIS
+ * dari drizzle/0103_aleta_isian_sidang.sql; penjaga isian-per-sidang-25okt.test.ts membandingkan keduanya. Tanpa kunci asing
+ * dan tanpa CHECK.
+ */
+export const DDL_ISIAN_SIDANG = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_isian_sidang (
+  id TEXT PRIMARY KEY,
+  perkara_id TEXT NOT NULL DEFAULT '',
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  sidang INTEGER NOT NULL DEFAULT 0,
+  no_var TEXT NOT NULL DEFAULT '',
+  nilai TEXT NOT NULL DEFAULT '',
+  diisi_oleh TEXT NOT NULL DEFAULT '',
+  diisi_at TEXT NOT NULL,
+  diubah_oleh TEXT NOT NULL DEFAULT '',
+  diubah_at TEXT NOT NULL
+)`,
+  ],
+  indeks: [
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_isian_sidang_kunci ON aleta_isian_sidang(perkara_id, sidang, no_var)`,
+    `CREATE INDEX IF NOT EXISTS idx_isian_sidang_perkara ON aleta_isian_sidang(perkara_id, sidang)`,
+  ],
+} as const;
+
+/**
  * Unggah Putusan Terjadwal (0080, 21 Okt 2026, agen B3): jadwal, butir (satu
  * perkara), berkas yang diunggah, dan jejak jujur. Cermin PERSIS dari
  * drizzle/0080_aleta_putusan_terjadwal.sql; penjaga putusan-terjadwal-layanan-21okt.test.ts
@@ -2630,6 +2658,8 @@ const schemaStatements = [
   ...DDL_KETEPATAN_ISIAN.tabel,
   // Riwayat kelengkapan blangko sebelum cetak (0102, rantai D): isian biasanya terisi saat cetak.
   ...DDL_BLANGKO_LAPOR.tabel,
+  // Isian BAS per sidang (0103, rantai D): BAS beruntun tidak saling menimpa.
+  ...DDL_ISIAN_SIDANG.tabel,
   // Unggah Putusan Terjadwal: jadwal, butir, berkas, jejak (0080).
   ...DDL_PUTUSAN_TERJADWAL.tabel,
   // Arsip hasil mediasi per perkara (0081).
@@ -4596,6 +4626,7 @@ const indexStatements = [
   ...DDL_JEJAK_ISIAN.indeks,
   ...DDL_KETEPATAN_ISIAN.indeks,
   ...DDL_BLANGKO_LAPOR.indeks,
+  ...DDL_ISIAN_SIDANG.indeks,
   ...DDL_PUTUSAN_TERJADWAL.indeks,
   ...DDL_MEDIASI_ARSIP.indeks,
   ...DDL_SIDANG_KELILING_HAKIM.indeks,
