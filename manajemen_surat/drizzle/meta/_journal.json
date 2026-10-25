@@ -568,6 +568,20 @@
       "when": 1792260000001,
       "tag": "0088_aleta_ai_dompet",
       "breakpoints": true
+    },
+    {
+      "idx": 81,
+      "version": "7",
+      "when": 1792350000001,
+      "tag": "0090_aleta_cermin_perkara",
+      "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1792360000001,
+      "tag": "0096_aleta_cermin_perkara_tanggal",
+      "breakpoints": true
     }
   ]
 }

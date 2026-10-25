@@ -11,6 +11,7 @@ import {
   getGatewayTagPerkara,
   gatewayPegawaiPenunjukan,
   getGatewayKesiapanBanyak,
+  getGatewayPenunjukanUsulan,
   permintaanMenulis,
   postGatewayTundaSidang,
 } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
@@ -181,8 +182,11 @@ describe("jadwal sidang bersinggah + invalidasi oleh tulisan", () => {
   });
 
   it("rentang/pilihan berbeda tidak berbagi jawaban", async () => {
-    await getGatewayJadwalSidangSinggah(dasar);
+    // K2 (25 Okt 2026): `waktu: false` kini MEMINJAM jawaban `waktu: true`
+    // yang sudah ada (himpunan-atas) - dijaga singgah-jadwal-25okt.test.ts.
+    // Yang tetap: rentang lain dan arah sebaliknya bertanya sendiri.
     await getGatewayJadwalSidangSinggah({ ...dasar, waktu: false });
+    await getGatewayJadwalSidangSinggah(dasar);
     await getGatewayJadwalSidangSinggah({ ...dasar, sampai: "2026-10-20" });
     expect(jadwalKeBot()).toBe(3);
     expect(kunciSinggahJadwal(dasar)).not.toBe(kunciSinggahJadwal({ ...dasar, batas: 500 }));
@@ -225,12 +229,17 @@ describe("jadwal sidang bersinggah + invalidasi oleh tulisan", () => {
     expect(jadwalKeBot()).toBe(2);
   });
 
-  it("daftar hakim bersinggah; tulisan apa pun membuangnya", async () => {
+  it("daftar hakim bersinggah; tulisan penunjukan/tak dikenal membuangnya", async () => {
     await gatewayPegawaiPenunjukan();
     await gatewayPegawaiPenunjukan();
     const keBot = () => alamat.filter((a) => a.url.includes("/penunjukan/pegawai")).length;
     expect(keBot()).toBe(1);
+    // K2: tunda tidak menyentuh daftar hakim; jalur tulisan yang tidak dikenal
+    // (penunjukan) membuang semuanya.
     await postGatewayTundaSidang({});
+    await gatewayPegawaiPenunjukan();
+    expect(keBot()).toBe(1);
+    await getGatewayPenunjukanUsulan({} as never);
     await gatewayPegawaiPenunjukan();
     expect(keBot()).toBe(2);
   });

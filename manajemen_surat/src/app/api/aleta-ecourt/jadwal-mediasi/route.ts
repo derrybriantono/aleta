@@ -4,6 +4,7 @@ import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { pastikanTab } from "@/server/modules/akses/hak-peran";
 import { getGatewayJadwalMediasi } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
+import { bacaMediasiDariCermin } from "@/server/modules/cermin/mediasi";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
@@ -38,12 +39,16 @@ export async function GET(request: NextRequest) {
     await pastikanTab(db, actorUserId, "mediasi", "Jadwal Mediasi");
 
     const p = request.nextUrl.searchParams;
-    const hasil = await getGatewayJadwalMediasi({
+    const masukan = {
       dari: String(p.get("dari") || "").trim(),
       sampai: String(p.get("sampai") || "").trim(),
       cari: String(p.get("cari") || "").trim(),
       batas: Number(p.get("batas")) || 200,
-    });
+    };
+    // A5 (25 Okt 2026): dari Cermin Perkara bila saklar `mediasi` menyala dan cermin segar (tanpa
+    // pencarian, rentang di jendela mediasi); selain itu SIPP lewat bot seperti sebelumnya.
+    const dariCermin = await bacaMediasiDariCermin(masukan);
+    const hasil = dariCermin ?? (await getGatewayJadwalMediasi(masukan));
 
     if (!hasil.ok) {
       return ok({
@@ -60,6 +65,8 @@ export async function GET(request: NextRequest) {
       terbaca: hasil.data?.terbaca ?? false,
       alasan: hasil.data?.alasan ?? "",
       mediasi: hasil.data?.mediasi ?? [],
+      // A5: daftar ini dibaca dari Cermin Perkara - layar menampilkan "Cermin - diperbarui hh.mm"; null = dari SIPP.
+      cermin: (hasil.data as { cermin?: { diperbaruiPada: string | null } } | undefined)?.cermin ?? null,
     });
   } catch (error) {
     return handleAdminRouteError(error, request, {

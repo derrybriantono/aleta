@@ -375,6 +375,13 @@ export function AdminHub() {
               />
             )}
             <AdminMenuAction
+              href="/admin/cermin-perkara"
+              title="Pemantau Cermin Perkara"
+              description="Salinan keadaan perkara SIPP di basis data ALETA: kemajuan pemindaian awal, isi cermin, dan saklar per layar (mati bawaan). Hanya untuk dibaca."
+              icon={<Database className="h-5 w-5 text-violet-600" />}
+              badge="Cermin"
+            />
+            <AdminMenuAction
               href="/admin/sumber-daya"
               title="Sumber daya server"
               description="RAM, CPU, disk, dan GPU yang dipakai ALETA dibanding seluruh server, dengan rincian tiap aplikasi (ALETA dipisah dari SIPP, ABT, MariaDB, dan layanan lain)."

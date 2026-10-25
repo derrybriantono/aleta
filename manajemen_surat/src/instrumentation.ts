@@ -49,6 +49,14 @@ export async function register() {
     mulaiAgenH7Berkala(getDatabase);
   }
   /* === AKHIR AGEN H-7 === */
+  /* === CERMIN PERKARA 25 Okt (C0) === pemindai awal keadaan perkara SIPP ke basis data ALETA: berkelompok, hanya di jendela
+     malam (bawaan 18.00-06.30 WITA), bisa dilanjutkan, hanya MEMBACA SIPP lewat bot. Saklar pemindai MATI bawaan (layar Pemantau
+     Cermin Perkara, dibaca tiap detak); saat mati detak tidak menembak bot sama sekali. Matikan detaknya dengan ALETA_CERMIN_PEMINDAI=0. */
+  if (process.env.ALETA_CERMIN_PEMINDAI !== "0") {
+    const { mulaiCerminBerkala } = await import("@/server/modules/cermin/berkala");
+    mulaiCerminBerkala();
+  }
+  /* === AKHIR CERMIN PERKARA === */
   /* === PUTUSAN TERJADWAL 21 Okt (B3) === pelaksana server unggah putusan terjadwal: tiap 30 detik mengerjakan paling
      banyak SATU butir e-Doc (putusan + anonimisasi) yang jatuh tempo, di dalam jendela jam kerja jadwalnya, atas akun
      SIPP penjadwal, lewat jalur tulis unggah-sipp yang sudah ada. Pengisian Putusan Akhir TIDAK dikerjakan di sini

@@ -66,6 +66,44 @@ const SET_WAKTU = `,
            lama_sidang_detik = excluded.lama_sidang_detik`;
 
 /**
+ * Isi yang akan ditulis sama persis dengan yang tersimpan? Hanya kolom yang
+ * SET-nya benar-benar menimpa yang dibandingkan: kolom berdetik (0051) hanya
+ * bila waktunya terbaca pada pemuatan ini (adaWaktu), sebab bila tidak, SET
+ * tidak menyentuhnya dan nilai tersimpan tetap apa pun isi baris masuknya.
+ * Normalisasinya sama dengan dariBaris/penulisan: teks dipangkas, angka kosong
+ * = null, online = 0/1.
+ */
+function samaDenganTersimpan(lama: RekamAntrianTersimpan | undefined, baru: BarisRekamAntrian): boolean {
+  if (!lama) return false;
+  const adaWaktu = baru.adaWaktu === true;
+  return (
+    lama.tanggalSidang === teks(baru.tanggalSidang) &&
+    lama.sidangId === teks(baru.sidangId) &&
+    lama.perkaraId === teks(baru.perkaraId) &&
+    lama.nomorPerkara === teks(baru.nomorPerkara) &&
+    lama.ruangan === teks(baru.ruangan) &&
+    lama.nomorAntrian === angka(baru.nomorAntrian) &&
+    lama.urutanRuang === angka(baru.urutanRuang) &&
+    lama.waktuAmbil === teks(baru.waktuAmbil) &&
+    lama.jamPanggil === teks(baru.jamPanggil) &&
+    lama.online === Boolean(baru.online) &&
+    lama.keadaan === teks(baru.keadaan) &&
+    lama.namaPetugas === teks(baru.namaPetugas) &&
+    lama.jarakSebelumMenit === angka(baru.jarakSebelumMenit) &&
+    lama.jarakBerikutMenit === angka(baru.jarakBerikutMenit) &&
+    (!adaWaktu ||
+      (lama.waktuAmbilLengkap === teks(baru.waktuAmbilLengkap) &&
+        lama.jamJadwal === teks(baru.jamJadwal) &&
+        lama.waktuPanggilPertama === teks(baru.waktuPanggilPertama) &&
+        lama.waktuPanggilLengkap === teks(baru.waktuPanggilLengkap) &&
+        lama.jumlahPanggil === (Number(baru.jumlahPanggil) || 0) &&
+        lama.menungguDetik === angka(baru.menungguDetik) &&
+        lama.jarakSebelumDetik === angka(baru.jarakSebelumDetik) &&
+        lama.lamaSidangDetik === angka(baru.lamaSidangDetik)))
+  );
+}
+
+/**
  * Menulis - atau memperbarui - rekaman antrian.
  *
  * ============================================================================
@@ -112,110 +150,136 @@ const SET_WAKTU = `,
 export async function rekamAntrian(
   db: AletaDatabase,
   baris: BarisRekamAntrian[]
-): Promise<{ ditulis: number; gagal: string }> {
+): Promise<{ ditulis: number; gagal: string; dilewati?: number }> {
   if (!Array.isArray(baris) || baris.length === 0) return { ditulis: 0, gagal: "" };
 
   const sekarang = new Date().toISOString();
   let ditulis = 0;
+  let dilewati = 0;
   try {
+    // ========================================================================
+    // DIBANDINGKAN DULU, HANYA YANG BERUBAH YANG DITULIS (K6, 25 Okt 2026)
+    // ========================================================================
+    //
+    // Rute jadwal memanggil fungsi ini pada SETIAP muat penuh (45 detik per
+    // layar; ±133 transaksi per menit pada 100 perangkat), padahal isi
+    // barisnya jarang berubah. Kini baris tersimpannya dibaca SEKALI (satu
+    // SELECT berindeks, tanpa fsync) dan dibandingkan dengan yang akan
+    // ditulis; baris yang isinya sama persis dilewati, dan bila semuanya sama
+    // tidak ada transaksi sama sekali. Perbandingannya atas basis data, bukan
+    // ingatan proses: baris yang terhapus dari luar atau proses yang baru
+    // mulai ulang tetap benar. direkam_at hanya bergeser bila isinya berubah
+    // (tidak ada pembaca yang bergantung padanya selain tampilan rekaman).
+    const idSemua = [...new Set(baris.filter((b) => b && b.id).map((b) => b.id))];
+    const tersimpan = new Map<string, RekamAntrianTersimpan>();
+    for (let mulai = 0; mulai < idSemua.length; mulai += 200) {
+      const bagian = idSemua.slice(mulai, mulai + 200);
+      const rows = await db.queryAll<Record<string, unknown>>(
+        `SELECT * FROM aleta_rekam_antrian WHERE id IN (${bagian.map(() => "?").join(", ")})`,
+        bagian
+      );
+      for (const row of rows) tersimpan.set(teks(row.id), dariBaris(row));
+    }
+
+    // Diurutkan menurut id: dua muat jadwal yang serentak mengunci baris
+    // dalam urutan yang sama, sehingga transaksinya tidak saling menunggu
+    // melingkar (deadlock). Tiap baris berdiri sendiri - urutannya tidak
+    // mengubah isi rekaman.
+    const urut = [...baris].sort((a, b) => (String(a.id) < String(b.id) ? -1 : String(a.id) > String(b.id) ? 1 : 0));
+    const perluTulis: BarisRekamAntrian[] = [];
+    for (const asli of urut) {
+      if (!asli.id || !asli.sidangId || !asli.tanggalSidang) continue;
+      // Hari lampau digabung dengan yang tersimpan, tidak ditimpa (lihat di atas).
+      const satu = asli.lampau ? gabungRekamLampau(tersimpan.get(asli.id), asli) : asli;
+      if (samaDenganTersimpan(tersimpan.get(satu.id), satu)) {
+        dilewati += 1;
+        continue;
+      }
+      perluTulis.push(satu);
+    }
+
     // ========================================================================
     // SATU TRANSAKSI, BUKAN SATU COMMIT PER BARIS (performa muat 19 Okt 2026)
     // ========================================================================
     //
-    // Rekaman ini ditulis pada SETIAP muat Jadwal Sidang. Sampai 1.205.11 tiap
-    // baris satu INSERT ... ON CONFLICT dengan commit sendiri - satu fsync WAL
-    // per baris di disk berputar server (synchronous_commit on): sebulan
-    // ±160 sidang = ±160 fsync berurutan sebelum jadwalnya dijawab. Kini satu
+    // Rekaman ini ditulis pada muat Jadwal Sidang. Sampai 1.205.11 tiap baris
+    // satu INSERT ... ON CONFLICT dengan commit sendiri - satu fsync WAL per
+    // baris di disk berputar server (synchronous_commit on): sebulan ±160
+    // sidang = ±160 fsync berurutan sebelum jadwalnya dijawab. Kini satu
     // transaksi: isinya sama, satu fsync. Gagal = seluruhnya dibatalkan
     // (ditulis 0), tidak lagi sebagian - jadwalnya tetap terjawab.
-    ditulis = await withTransaction(db, async (tx) => {
-      let jumlah = 0;
-      const idLampau = [...new Set(baris.filter((b) => b.lampau && b.id).map((b) => b.id))];
-      const tersimpan = new Map<string, RekamAntrianTersimpan>();
-      for (let mulai = 0; mulai < idLampau.length; mulai += 200) {
-        const bagian = idLampau.slice(mulai, mulai + 200);
-        const rows = await tx.queryAll<Record<string, unknown>>(
-          `SELECT * FROM aleta_rekam_antrian WHERE id IN (${bagian.map(() => "?").join(", ")})`,
-          bagian
-        );
-        for (const row of rows) tersimpan.set(teks(row.id), dariBaris(row));
-      }
-
-      // Diurutkan menurut id: dua muat jadwal yang serentak mengunci baris
-      // dalam urutan yang sama, sehingga transaksinya tidak saling menunggu
-      // melingkar (deadlock). Tiap baris berdiri sendiri - urutannya tidak
-      // mengubah isi rekaman.
-      const urut = [...baris].sort((a, b) => (String(a.id) < String(b.id) ? -1 : String(a.id) > String(b.id) ? 1 : 0));
-      for (const asli of urut) {
-        if (!asli.id || !asli.sidangId || !asli.tanggalSidang) continue;
-        const satu = asli.lampau ? gabungRekamLampau(tersimpan.get(asli.id), asli) : asli;
-        const adaWaktu = satu.adaWaktu === true;
-        await tx.run(
-          `INSERT INTO aleta_rekam_antrian
-             (id, tanggal_sidang, sidang_id, perkara_id, nomor_perkara, ruangan,
-              nomor_antrian, urutan_ruang, waktu_ambil, jam_panggil, online, keadaan,
-              nama_petugas, jarak_sebelum_menit, jarak_berikut_menit,
-              pertama_direkam_at, direkam_at,
-              waktu_ambil_lengkap, jam_jadwal, waktu_panggil_pertama, waktu_panggil_lengkap,
-              jumlah_panggil, menunggu_detik, jarak_sebelum_detik, lama_sidang_detik)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-           ON CONFLICT (id) DO UPDATE SET
-             tanggal_sidang = excluded.tanggal_sidang,
-             sidang_id = excluded.sidang_id,
-             perkara_id = excluded.perkara_id,
-             nomor_perkara = excluded.nomor_perkara,
-             ruangan = excluded.ruangan,
-             nomor_antrian = excluded.nomor_antrian,
-             urutan_ruang = excluded.urutan_ruang,
-             waktu_ambil = excluded.waktu_ambil,
-             jam_panggil = excluded.jam_panggil,
-             online = excluded.online,
-             keadaan = excluded.keadaan,
-             nama_petugas = excluded.nama_petugas,
-             jarak_sebelum_menit = excluded.jarak_sebelum_menit,
-             jarak_berikut_menit = excluded.jarak_berikut_menit,
-             direkam_at = excluded.direkam_at${adaWaktu ? SET_WAKTU : ""}`,
-          [
-            satu.id,
-            satu.tanggalSidang,
-            satu.sidangId,
-            satu.perkaraId,
-            satu.nomorPerkara,
-            satu.ruangan,
-            satu.nomorAntrian,
-            satu.urutanRuang,
-            satu.waktuAmbil,
-            satu.jamPanggil,
-            satu.online ? 1 : 0,
-            satu.keadaan,
-            satu.namaPetugas,
-            satu.jarakSebelumMenit,
-            satu.jarakBerikutMenit,
-            sekarang,
-            sekarang,
-            // Baris BARU tanpa waktu terbaca mendapat bawaan kolomnya; baris
-            // lama tidak disentuh karena SET-nya tidak menyebut kolom ini.
-            adaWaktu ? satu.waktuAmbilLengkap || "" : "",
-            adaWaktu ? satu.jamJadwal || "" : "",
-            adaWaktu ? satu.waktuPanggilPertama || "" : "",
-            adaWaktu ? satu.waktuPanggilLengkap || "" : "",
-            adaWaktu ? Number(satu.jumlahPanggil) || 0 : 0,
-            adaWaktu ? satu.menungguDetik ?? null : null,
-            adaWaktu ? satu.jarakSebelumDetik ?? null : null,
-            adaWaktu ? satu.lamaSidangDetik ?? null : null,
-          ]
-        );
-        jumlah += 1;
-      }
-      return jumlah;
-    });
+    if (perluTulis.length > 0) {
+      ditulis = await withTransaction(db, async (tx) => {
+        let jumlah = 0;
+        for (const satu of perluTulis) {
+          const adaWaktu = satu.adaWaktu === true;
+          await tx.run(
+            `INSERT INTO aleta_rekam_antrian
+               (id, tanggal_sidang, sidang_id, perkara_id, nomor_perkara, ruangan,
+                nomor_antrian, urutan_ruang, waktu_ambil, jam_panggil, online, keadaan,
+                nama_petugas, jarak_sebelum_menit, jarak_berikut_menit,
+                pertama_direkam_at, direkam_at,
+                waktu_ambil_lengkap, jam_jadwal, waktu_panggil_pertama, waktu_panggil_lengkap,
+                jumlah_panggil, menunggu_detik, jarak_sebelum_detik, lama_sidang_detik)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             ON CONFLICT (id) DO UPDATE SET
+               tanggal_sidang = excluded.tanggal_sidang,
+               sidang_id = excluded.sidang_id,
+               perkara_id = excluded.perkara_id,
+               nomor_perkara = excluded.nomor_perkara,
+               ruangan = excluded.ruangan,
+               nomor_antrian = excluded.nomor_antrian,
+               urutan_ruang = excluded.urutan_ruang,
+               waktu_ambil = excluded.waktu_ambil,
+               jam_panggil = excluded.jam_panggil,
+               online = excluded.online,
+               keadaan = excluded.keadaan,
+               nama_petugas = excluded.nama_petugas,
+               jarak_sebelum_menit = excluded.jarak_sebelum_menit,
+               jarak_berikut_menit = excluded.jarak_berikut_menit,
+               direkam_at = excluded.direkam_at${adaWaktu ? SET_WAKTU : ""}`,
+            [
+              satu.id,
+              satu.tanggalSidang,
+              satu.sidangId,
+              satu.perkaraId,
+              satu.nomorPerkara,
+              satu.ruangan,
+              satu.nomorAntrian,
+              satu.urutanRuang,
+              satu.waktuAmbil,
+              satu.jamPanggil,
+              satu.online ? 1 : 0,
+              satu.keadaan,
+              satu.namaPetugas,
+              satu.jarakSebelumMenit,
+              satu.jarakBerikutMenit,
+              sekarang,
+              sekarang,
+              // Baris BARU tanpa waktu terbaca mendapat bawaan kolomnya; baris
+              // lama tidak disentuh karena SET-nya tidak menyebut kolom ini.
+              adaWaktu ? satu.waktuAmbilLengkap || "" : "",
+              adaWaktu ? satu.jamJadwal || "" : "",
+              adaWaktu ? satu.waktuPanggilPertama || "" : "",
+              adaWaktu ? satu.waktuPanggilLengkap || "" : "",
+              adaWaktu ? Number(satu.jumlahPanggil) || 0 : 0,
+              adaWaktu ? satu.menungguDetik ?? null : null,
+              adaWaktu ? satu.jarakSebelumDetik ?? null : null,
+              adaWaktu ? satu.lamaSidangDetik ?? null : null,
+            ]
+          );
+          jumlah += 1;
+        }
+        return jumlah;
+      });
+    }
   } catch (kesalahan) {
     return {
       ditulis: 0,
       gagal: kesalahan instanceof Error ? kesalahan.message : "gagal merekam antrian",
     };
   }
-  return { ditulis, gagal: "" };
+  return { ditulis, gagal: "", ...(dilewati > 0 ? { dilewati } : {}) };
 }
 
 /** Rekaman satu rentang tanggal, urut per hari lalu per ruang lalu urutannya. */

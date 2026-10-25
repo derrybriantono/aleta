@@ -895,6 +895,118 @@ export const DDL_ALETA_AI_DOMPET = {
 } as const;
 
 /**
+ * Cermin Perkara (0090, 25 Okt 2026, C0): salinan keadaan perkara SIPP di basis
+ * data ALETA - perkara, sidang, pihak, mediasi, penanda Status Perkara, dan
+ * jejak pemindai. Cermin PERSIS dari drizzle/0090_aleta_cermin_perkara.sql;
+ * penjaga cermin-dasar-25okt.test.ts membandingkan keduanya. Tanpa kunci asing
+ * dan tanpa CHECK: nilai sah dijaga modul (src/server/modules/cermin/*).
+ */
+export const DDL_ALETA_CERMIN_PERKARA = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_cermin_perkara (
+  perkara_id TEXT PRIMARY KEY,
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  jenis_perkara_id INTEGER,
+  jenis_perkara_nama TEXT NOT NULL DEFAULT '',
+  alur_perkara_id INTEGER,
+  tanggal_pendaftaran TEXT NOT NULL DEFAULT '',
+  prodeo INTEGER NOT NULL DEFAULT 0,
+  tahapan_terakhir_id INTEGER,
+  tahapan_terakhir_text TEXT NOT NULL DEFAULT '',
+  proses_terakhir_id INTEGER,
+  proses_terakhir_text TEXT NOT NULL DEFAULT '',
+  majelis_hakim TEXT NOT NULL DEFAULT '',
+  panitera_pengganti TEXT NOT NULL DEFAULT '',
+  jurusita TEXT NOT NULL DEFAULT '',
+  sidang_pertama TEXT NOT NULL DEFAULT '',
+  sidang_terakhir TEXT NOT NULL DEFAULT '',
+  sidang_berikut TEXT NOT NULL DEFAULT '',
+  jumlah_sidang INTEGER NOT NULL DEFAULT 0,
+  tanggal_putusan TEXT NOT NULL DEFAULT '',
+  status_putusan TEXT NOT NULL DEFAULT '',
+  putusan_verstek INTEGER NOT NULL DEFAULT 0,
+  tanggal_minutasi TEXT NOT NULL DEFAULT '',
+  tanggal_bht TEXT NOT NULL DEFAULT '',
+  status_mediasi TEXT NOT NULL DEFAULT '',
+  sisa_panjar DOUBLE PRECISION,
+  penanda_json TEXT NOT NULL DEFAULT '{}',
+  sipp_diperbarui TEXT NOT NULL DEFAULT '',
+  cermin_diperbarui TEXT NOT NULL,
+  sidik TEXT NOT NULL DEFAULT ''
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_cermin_sidang (
+  sidang_id TEXT PRIMARY KEY,
+  perkara_id TEXT NOT NULL DEFAULT '',
+  tanggal_sidang TEXT NOT NULL DEFAULT '',
+  jam_sidang TEXT NOT NULL DEFAULT '',
+  ruangan TEXT NOT NULL DEFAULT '',
+  agenda TEXT NOT NULL DEFAULT '',
+  ditunda INTEGER NOT NULL DEFAULT 0,
+  baris_json TEXT NOT NULL DEFAULT '{}',
+  sipp_diperbarui TEXT NOT NULL DEFAULT '',
+  cermin_diperbarui TEXT NOT NULL,
+  sidik TEXT NOT NULL DEFAULT ''
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_cermin_pihak (
+  id TEXT PRIMARY KEY,
+  perkara_id TEXT NOT NULL DEFAULT '',
+  sisi INTEGER NOT NULL DEFAULT 0,
+  urutan INTEGER NOT NULL DEFAULT 0,
+  nama TEXT NOT NULL DEFAULT '',
+  sebutan TEXT NOT NULL DEFAULT '',
+  kuasa TEXT NOT NULL DEFAULT '',
+  alamat_ringkas TEXT NOT NULL DEFAULT '',
+  cermin_diperbarui TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_cermin_mediasi (
+  id TEXT PRIMARY KEY,
+  perkara_id TEXT NOT NULL DEFAULT '',
+  tanggal TEXT NOT NULL DEFAULT '',
+  mediator TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT '',
+  baris_json TEXT NOT NULL DEFAULT '{}',
+  sipp_diperbarui TEXT NOT NULL DEFAULT '',
+  cermin_diperbarui TEXT NOT NULL,
+  sidik TEXT NOT NULL DEFAULT ''
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_cermin_tag (
+  perkara_id TEXT NOT NULL,
+  tag_kunci TEXT NOT NULL,
+  cermin_diperbarui TEXT NOT NULL,
+  PRIMARY KEY (perkara_id, tag_kunci)
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_cermin_jejak (
+  kunci TEXT PRIMARY KEY,
+  nilai_json TEXT NOT NULL DEFAULT '{}',
+  diperbarui_at TEXT NOT NULL
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_cermin_perkara_nomor ON aleta_cermin_perkara(nomor_perkara)`,
+    `CREATE INDEX IF NOT EXISTS idx_cermin_perkara_sipp ON aleta_cermin_perkara(sipp_diperbarui)`,
+    `CREATE INDEX IF NOT EXISTS idx_cermin_sidang_tanggal ON aleta_cermin_sidang(tanggal_sidang, jam_sidang)`,
+    `CREATE INDEX IF NOT EXISTS idx_cermin_sidang_perkara ON aleta_cermin_sidang(perkara_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_cermin_pihak_perkara ON aleta_cermin_pihak(perkara_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_cermin_mediasi_tanggal ON aleta_cermin_mediasi(tanggal)`,
+    `CREATE INDEX IF NOT EXISTS idx_cermin_mediasi_perkara ON aleta_cermin_mediasi(perkara_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_cermin_tag_kunci ON aleta_cermin_tag(tag_kunci, perkara_id)`,
+  ],
+} as const;
+
+/**
+ * Cermin Perkara (0096, 25 Okt 2026, A5): empat tanggal dasar lingkup Status Perkara. Cermin PERSIS dari
+ * drizzle/0096_aleta_cermin_perkara_tanggal.sql; penjaga cermin-status-25okt.test.ts membandingkan keduanya.
+ */
+export const DDL_ALETA_CERMIN_PERKARA_TANGGAL = {
+  kolom: [
+    `ALTER TABLE aleta_cermin_perkara ADD COLUMN IF NOT EXISTS tanggal_sidang_maks TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_cermin_perkara ADD COLUMN IF NOT EXISTS tanggal_akta TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_cermin_perkara ADD COLUMN IF NOT EXISTS tanggal_relaas TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_cermin_perkara ADD COLUMN IF NOT EXISTS tanggal_ikrar TEXT NOT NULL DEFAULT ''`,
+  ],
+} as const;
+
+/**
  * Unggah Putusan Terjadwal (0080, 21 Okt 2026, agen B3): jadwal, butir (satu
  * perkara), berkas yang diunggah, dan jejak jujur. Cermin PERSIS dari
  * drizzle/0080_aleta_putusan_terjadwal.sql; penjaga putusan-terjadwal-layanan-21okt.test.ts
@@ -2454,6 +2566,8 @@ const schemaStatements = [
   ...DDL_ALETA_AI.tabel,
   // ALETA Ai tahap 4: kuota hibah per peran, rekonsiliasi harian (0088).
   ...DDL_ALETA_AI_DOMPET.tabel,
+  // Cermin Perkara: perkara, sidang, pihak, mediasi, penanda, jejak (0090).
+  ...DDL_ALETA_CERMIN_PERKARA.tabel,
   // Unggah Putusan Terjadwal: jadwal, butir, berkas, jejak (0080).
   ...DDL_PUTUSAN_TERJADWAL.tabel,
   // Arsip hasil mediasi per perkara (0081).
@@ -4417,6 +4531,7 @@ const indexStatements = [
   ...DDL_TAUTAN_JADWAL.indeks,
   ...DDL_ALETA_AI.indeks,
   ...DDL_ALETA_AI_DOMPET.indeks,
+  ...DDL_ALETA_CERMIN_PERKARA.indeks,
   ...DDL_PUTUSAN_TERJADWAL.indeks,
   ...DDL_MEDIASI_ARSIP.indeks,
   ...DDL_SIDANG_KELILING_HAKIM.indeks,
@@ -4956,6 +5071,7 @@ const migrationStatements = [
   ...DDL_KAMUS_RUAS_TAMBAHAN.kolom,
   // ALETA Ai tahap 4: MDR dan kurs (tanggal, sumber) per giliran (0088).
   ...DDL_ALETA_AI_DOMPET.kolom,
+  ...DDL_ALETA_CERMIN_PERKARA_TANGGAL.kolom,
 ];
 
 const aletaSippSchemaStatements = [
