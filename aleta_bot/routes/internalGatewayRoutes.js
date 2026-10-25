@@ -2741,6 +2741,22 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
         }
       }
       /* === AKHIR U6 === */
+      /* === C5 25 Okt === */
+      // 2557/2558 (berapa kali saksi melihat/mendengar pertengkaran) dibaca dari BAS yang SUDAH tersimpan (HANYA SELECT). Hanya bila
+      // ekstensi memintanya (saklar Fitur Satker "fakta-non-cerai" menyala); tidak pernah menimpa usulan yang sudah berisi.
+      if (req.body?.kaliPertengkaranBas === true && jawaban.sipp && Array.isArray(jawaban.sipp.usulan)) {
+        try {
+          const kali = await require("../services/kaliPertengkaranBas").usulanDariPerkara(nomorPerkara);
+          for (const u of kali) {
+            const i = jawaban.sipp.usulan.findIndex((x) => x && x.kode === u.kode);
+            if (i < 0) jawaban.sipp.usulan.push(u);
+            else if (!String(jawaban.sipp.usulan[i].nilai || "").trim()) jawaban.sipp.usulan[i] = u;
+          }
+        } catch (_galatKali) {
+          /* tambahan; tidak pernah menggagalkan usulan SIPP */
+        }
+      }
+      /* === AKHIR C5 === */
     }
     // Itsbat nikah - fakta pernikahan dari posita permohonan. Positanya
     // dikirim ekstensi dari halaman ABT (variabel 5125), bukan dibaca dari
@@ -2947,7 +2963,10 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
       const positaMasuk = String(req.body?.posita || "");
       const positaKurang = positaMasuk.replace(/<[^>]*>/g, " ").trim().length < 50;
       // 21 Okt 2026 (W2a-K1): gugatan harta bersama dan kewarisan juga dibaca PETITUM-nya (daftar objek dan ahli waris ada di petitum)
-      const perluPetitum = /\b(?:348|364)\b|harta\s*bersama|waris/i.test(String(req.body?.jenisPerkara || "") + " " + String(req.body?.kunciKatalog || ""));
+      // C5/U9: saran keadaan non-cerai juga membaca petitum (daftar objek, hak yang dituntut) - hanya bila ekstensi memintanya.
+      const perluPetitum =
+        req.body?.keadaanNonCerai === true ||
+        /\b(?:348|364)\b|harta\s*bersama|waris/i.test(String(req.body?.jenisPerkara || "") + " " + String(req.body?.kunciKatalog || ""));
       const [konteksSipp, sippSaksi, alamatPihakSipp] = await Promise.all([
         (positaKurang || perluPetitum) && nomorPerkara ? abtUsulanService.konteksPerkaraSaksi(nomorPerkara).catch(() => null) : null,
         nomorPerkara ? isiSumber.bacaSippSaksi(nomorPerkara).catch(() => null) : null,
@@ -2984,6 +3003,22 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
           sipp: sippSaksi,
         });
       }
+      /* === C5 25 Okt === */
+      // Saran keadaan perkara non-cerai dari posita/petitum (hanya saran; tidak ada yang terisi sendiri). Murni, tanpa bacaan baru.
+      if (req.body?.keadaanNonCerai === true) {
+        try {
+          jawaban.keadaanNonCerai = require("../services/keadaanNonCerai").turunkanKeadaan({
+            kunciKatalog: String(req.body?.kunciKatalog || "").slice(0, 60),
+            posita: positaKurang && konteksSipp && konteksSipp.posita ? konteksSipp.posita : positaMasuk,
+            petitum: String(req.body?.petitum || (konteksSipp && konteksSipp.petitum) || "").slice(0, 60000),
+            alur: String(req.body?.alur || "").slice(0, 20),
+            jenisPerkaraId: (/\b(\d{3})\b/.exec(String(req.body?.jenisPerkara || "")) || [])[1] || "",
+          });
+        } catch (_galatKeadaan) {
+          jawaban.keadaanNonCerai = { ok: false, saran: [] };
+        }
+      }
+      /* === AKHIR C5 === */
     }
     // Keterangan saksi SDG - disusun dari templat pertanyaan yang ekstensi
     // ambil lewat halaman penyunting ABT sendiri (load_template). Dua saksi,
@@ -3273,7 +3308,8 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
     // selain itu menjadi saran "ragu". Satu tempat untuk semua sumber usulan (sipp, saksi, itsbat, posita-lain).
     try {
       const gerbang = require("../services/gerbangIsian");
-      for (const bag of [jawaban.sipp, jawaban.saksi, jawaban.itsbat, jawaban.positaLain]) if (bag && Array.isArray(bag.usulan)) gerbang.terapkan(bag.usulan);
+      const jenisGerbang = (/\b(\d{3})\b/.exec(String(req.body?.jenisPerkara || "")) || [])[1] || "";
+      for (const bag of [jawaban.sipp, jawaban.saksi, jawaban.itsbat, jawaban.positaLain]) if (bag && Array.isArray(bag.usulan)) gerbang.terapkan(bag.usulan, { jenis: jenisGerbang });
     } catch (galatGerbang) {
       jawaban.gerbangGalat = String((galatGerbang && galatGerbang.message) || galatGerbang).slice(0, 160);
     }

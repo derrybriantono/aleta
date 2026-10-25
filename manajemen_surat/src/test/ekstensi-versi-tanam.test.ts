@@ -159,7 +159,10 @@ describe("tidak ada berkas ekstensi yang lolos tanpa keputusan", () => {
     const awalanKecuali = bagianAwalan
       ? [...bagianAwalan[1].replace(/\/\/[^\n]*/g, "").matchAll(/"([^"]+)"/g)].map((m) => m[1])
       : [];
-    const adaDiFolder = sapuFolder(folderEkstensi).filter((n) => !awalanKecuali.some((aw) => n.startsWith(aw)));
+    // Folder yang daftarnya disapu penyusun sendiri (K10: saksi-katalog-jenis/): tiap berkas jenis ikut tertanam tanpa disebut satu per satu.
+    const bagianDinamis = /BERKAS_FOLDER_DINAMIS = \[([\s\S]*?)\];/.exec(penyusunIsi);
+    const awalanDinamis = bagianDinamis ? [...bagianDinamis[1].replace(/\/\/[^\n]*/g, "").matchAll(/"([^"]+)"/g)].map((m) => m[1]) : [];
+    const adaDiFolder = sapuFolder(folderEkstensi).filter((n) => !awalanKecuali.some((aw) => n.startsWith(aw)) && !awalanDinamis.some((aw) => n.startsWith(aw)));
 
     for (const nama of adaDiFolder) {
       expect(

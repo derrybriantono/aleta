@@ -118,9 +118,13 @@
         "panel-alat.js",
         "jurusita.js",
         "basmassal.js",
+        "jejak-isian.js",
+        "saklar-fitur.js",
         "saksi-katalog.js",
-        "saksi-katalog-data.js",
+        "saksi-katalog-indeks.js",
+        "saksi-katalog-muat.js",
         "saksi-susun.js",
+        "saksi-ke-bas.js",
         "isi-sipp-bersama.js",
         "abt.js",
         "checklist.js",
@@ -231,6 +235,15 @@
       "resources": [
         "ikon/aleta-32.png",
         "ikon/aleta-128.png"
+      ],
+      "matches": [
+        "http://192.168.10.10/*",
+        "http://127.0.0.1/*"
+      ]
+    },
+    {
+      "resources": [
+        "saksi-katalog-jenis/*.json"
       ],
       "matches": [
         "http://192.168.10.10/*",

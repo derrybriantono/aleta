@@ -1263,6 +1263,153 @@ export const DDL_PENJAGA_INTEGRITAS = {
 } as const;
 
 /**
+ * Jejak isian dan butir saksi (0091, 25 Okt 2026, rantai C butir C1 = U1 + U2 + U6):
+ * satu baris per butir tanya-jawab saksi yang disimpan petugas, dan satu baris per
+ * penyimpanan satu isian ABT (nilai usulan, nilai sebelum yang utuh untuk Urungkan,
+ * nilai final, cara, hasil baca-ulang). Diisi HANYA bila saklar Fitur Satker
+ * "jejak-isian" menyala (bawaan MATI). Retensi 2 tahun. Cermin PERSIS dari
+ * drizzle/0091_aleta_jejak_isian.sql; penjaga jejak-isian-25okt.test.ts
+ * membandingkan keduanya. Tanpa kunci asing dan tanpa CHECK.
+ */
+export const DDL_JEJAK_ISIAN = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_saksi_butir (
+  id TEXT PRIMARY KEY,
+  perkara_id TEXT NOT NULL DEFAULT '',
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  sidang TEXT NOT NULL DEFAULT '',
+  saksi_ke INTEGER NOT NULL DEFAULT 0,
+  pihak TEXT NOT NULL DEFAULT '',
+  jalur TEXT NOT NULL DEFAULT '',
+  variabel TEXT NOT NULL DEFAULT '',
+  katalog TEXT NOT NULL DEFAULT '',
+  versi_katalog TEXT NOT NULL DEFAULT '',
+  jenis_perkara TEXT NOT NULL DEFAULT '',
+  butir TEXT NOT NULL DEFAULT '',
+  varian TEXT NOT NULL DEFAULT '',
+  jenis_keterangan TEXT NOT NULL DEFAULT '',
+  nomor_butir INTEGER NOT NULL DEFAULT 0,
+  pertanyaan TEXT NOT NULL DEFAULT '',
+  usulan TEXT NOT NULL DEFAULT '',
+  teks_final TEXT NOT NULL DEFAULT '',
+  hasil TEXT NOT NULL DEFAULT '',
+  kemiripan DOUBLE PRECISION NOT NULL DEFAULT 0,
+  sumber_fakta TEXT NOT NULL DEFAULT '',
+  keyakinan TEXT NOT NULL DEFAULT '',
+  kode_pola TEXT NOT NULL DEFAULT '',
+  pengguna_id TEXT NOT NULL DEFAULT '',
+  pengguna_nama TEXT NOT NULL DEFAULT '',
+  pada TEXT NOT NULL,
+  dibuat_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_isian_jejak (
+  id TEXT PRIMARY KEY,
+  perkara_id TEXT NOT NULL DEFAULT '',
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  jenis_perkara TEXT NOT NULL DEFAULT '',
+  blangko TEXT NOT NULL DEFAULT '',
+  jenis_blangko TEXT NOT NULL DEFAULT '',
+  kode TEXT NOT NULL DEFAULT '',
+  nama_variabel TEXT NOT NULL DEFAULT '',
+  nilai_usulan TEXT NOT NULL DEFAULT '',
+  asal_usulan TEXT NOT NULL DEFAULT '',
+  keyakinan TEXT NOT NULL DEFAULT '',
+  kode_pola TEXT NOT NULL DEFAULT '',
+  nilai_sebelum TEXT NOT NULL DEFAULT '',
+  sebelum_dipotong SMALLINT NOT NULL DEFAULT 0,
+  nilai_final TEXT NOT NULL DEFAULT '',
+  final_dipotong SMALLINT NOT NULL DEFAULT 0,
+  cara TEXT NOT NULL DEFAULT '',
+  hasil TEXT NOT NULL DEFAULT '',
+  terverifikasi TEXT NOT NULL DEFAULT '',
+  nilai_terbaca TEXT NOT NULL DEFAULT '',
+  jalur TEXT NOT NULL DEFAULT '',
+  urungkan_dari TEXT NOT NULL DEFAULT '',
+  diurungkan_oleh TEXT NOT NULL DEFAULT '',
+  diurungkan_at TEXT NOT NULL DEFAULT '',
+  pengguna_id TEXT NOT NULL DEFAULT '',
+  pengguna_nama TEXT NOT NULL DEFAULT '',
+  pada TEXT NOT NULL,
+  dibuat_at TEXT NOT NULL
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_saksi_butir_perkara ON aleta_saksi_butir(perkara_id, pada)`,
+    `CREATE INDEX IF NOT EXISTS idx_saksi_butir_katalog ON aleta_saksi_butir(katalog, hasil)`,
+    `CREATE INDEX IF NOT EXISTS idx_saksi_butir_pada ON aleta_saksi_butir(pada)`,
+    `CREATE INDEX IF NOT EXISTS idx_isian_jejak_kode ON aleta_isian_jejak(kode, hasil)`,
+    `CREATE INDEX IF NOT EXISTS idx_isian_jejak_perkara ON aleta_isian_jejak(perkara_id, pada)`,
+    `CREATE INDEX IF NOT EXISTS idx_isian_jejak_pada ON aleta_isian_jejak(pada)`,
+  ],
+} as const;
+
+/**
+ * Katalog saksi di basis data dengan versi (0093, 25 Okt 2026, rantai C butir C4 = U8): penimpa berversi atas katalog
+ * Susun saksi yang tertanam di ekstensi. Disajikan portal HANYA bila saklar Fitur Satker "katalog-saksi-basis-data"
+ * menyala (bawaan MATI). Cermin PERSIS dari drizzle/0093_aleta_saksi_katalog.sql; penjaga katalog-saksi-db-25okt.test.ts
+ * membandingkan keduanya. Tanpa kunci asing dan tanpa CHECK.
+ */
+export const DDL_SAKSI_KATALOG = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_saksi_katalog (
+  kunci TEXT PRIMARY KEY,
+  judul TEXT NOT NULL DEFAULT '',
+  versi_aktif INTEGER NOT NULL DEFAULT 0,
+  diubah_oleh TEXT NOT NULL DEFAULT '',
+  diubah_nama TEXT NOT NULL DEFAULT '',
+  diubah_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_saksi_katalog_versi (
+  id TEXT PRIMARY KEY,
+  kunci TEXT NOT NULL,
+  versi INTEGER NOT NULL,
+  isi_json TEXT NOT NULL,
+  sidik TEXT NOT NULL DEFAULT '',
+  catatan TEXT NOT NULL DEFAULT '',
+  dasar_versi INTEGER NOT NULL DEFAULT 0,
+  dibuat_oleh TEXT NOT NULL DEFAULT '',
+  dibuat_nama TEXT NOT NULL DEFAULT '',
+  dibuat_at TEXT NOT NULL
+)`,
+  ],
+  indeks: [
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_saksi_katalog_versi_kunci ON aleta_saksi_katalog_versi(kunci, versi)`,
+  ],
+} as const;
+
+/**
+ * Jejak kirim keterangan saksi ke BAS SIPP (0101, 25 Okt 2026, rantai C butir C6 = U10): satu baris per percobaan (pratinjau,
+ * kirim, gagal, dobel). Hanya sidik dan hitungan - isi BAS tidak disimpan. Cermin PERSIS dari
+ * drizzle/0101_aleta_saksi_kirim_bas.sql; penjaga saksi-ke-bas-sipp-25okt.test.ts membandingkan keduanya.
+ */
+export const DDL_SAKSI_KIRIM_BAS = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_saksi_kirim_bas (
+  id TEXT PRIMARY KEY,
+  perkara_id TEXT NOT NULL DEFAULT '',
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  sidang_id TEXT NOT NULL DEFAULT '',
+  urutan_sidang INTEGER NOT NULL DEFAULT 0,
+  tahap TEXT NOT NULL DEFAULT 'pratinjau',
+  hasil TEXT NOT NULL DEFAULT '',
+  jumlah_saksi INTEGER NOT NULL DEFAULT 0,
+  jumlah_jawaban INTEGER NOT NULL DEFAULT 0,
+  jumlah_hilang INTEGER NOT NULL DEFAULT 0,
+  ukuran INTEGER NOT NULL DEFAULT 0,
+  sidik TEXT NOT NULL DEFAULT '',
+  catatan TEXT NOT NULL DEFAULT '',
+  pengguna_id TEXT NOT NULL DEFAULT '',
+  pengguna_nama TEXT NOT NULL DEFAULT '',
+  pada TEXT NOT NULL
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_saksi_kirim_bas_perkara ON aleta_saksi_kirim_bas(perkara_id, pada)`,
+    `CREATE INDEX IF NOT EXISTS idx_saksi_kirim_bas_pada ON aleta_saksi_kirim_bas(pada)`,
+  ],
+} as const;
+
+/**
  * Unggah Putusan Terjadwal (0080, 21 Okt 2026, agen B3): jadwal, butir (satu
  * perkara), berkas yang diunggah, dan jejak jujur. Cermin PERSIS dari
  * drizzle/0080_aleta_putusan_terjadwal.sql; penjaga putusan-terjadwal-layanan-21okt.test.ts
@@ -2904,6 +3051,12 @@ const schemaStatements = [
   ...DDL_ALETA_AI.tabel,
   // ALETA Ai tahap 4: kuota hibah per peran, rekonsiliasi harian (0088).
   ...DDL_ALETA_AI_DOMPET.tabel,
+  // Jejak isian dan butir saksi (0091, rantai C): usulan vs final, nilai sebelum untuk Urungkan.
+  ...DDL_JEJAK_ISIAN.tabel,
+  // Katalog saksi di basis data dengan versi (0093, rantai C).
+  ...DDL_SAKSI_KATALOG.tabel,
+  // Jejak kirim keterangan saksi ke BAS SIPP (0101, rantai C).
+  ...DDL_SAKSI_KIRIM_BAS.tabel,
   ...DDL_ALETA_TENGGAT_KIRIM.tabel,
   // Cermin Perkara: perkara, sidang, pihak, mediasi, penanda, jejak (0090).
   ...DDL_ALETA_CERMIN_PERKARA.tabel,
@@ -4884,6 +5037,9 @@ const indexStatements = [
   ...DDL_TAUTAN_JADWAL.indeks,
   ...DDL_ALETA_AI.indeks,
   ...DDL_ALETA_AI_DOMPET.indeks,
+  ...DDL_JEJAK_ISIAN.indeks,
+  ...DDL_SAKSI_KATALOG.indeks,
+  ...DDL_SAKSI_KIRIM_BAS.indeks,
   ...DDL_ALETA_TENGGAT_KIRIM.indeks,
   ...DDL_ALETA_CERMIN_PERKARA.indeks,
   ...DDL_KESEHATAN_GALAT.indeks,

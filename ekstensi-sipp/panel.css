@@ -11551,6 +11551,11 @@ html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-
 .aleta-ssk-saksi { display: flex; flex-direction: column; gap: 6px; padding: 6px 0; border-top: 1px solid rgba(127, 127, 127, 0.35); }
 .aleta-ssk-baris { display: flex; flex-direction: column; gap: 3px; padding: 4px 6px; border-left: 3px solid transparent; }
 .aleta-ssk-tanya { font-size: calc(12px * var(--aleta-skala-huruf, 1)); font-weight: 600; }
+/* C3/U7 (25 Okt 2026): alat sunting baris borang katalog (saklar mesin-saksi-tunggal) - token warna saja */
+.aleta-ssk-alat { display: flex; align-items: baseline; gap: 4px; flex-wrap: wrap; }
+.aleta-ssk-tt { cursor: text; }
+.aleta-ssk-tt:focus { outline: 1px solid var(--aleta-merek); border-radius: 3px; }
+.aleta-ssk-cara-lama { align-self: flex-start; margin: 2px 0; }
 .aleta-ssk-jawab {
   font: inherit;
   font-size: calc(12.5px * var(--aleta-skala-huruf, 1));

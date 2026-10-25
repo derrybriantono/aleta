@@ -234,7 +234,7 @@
         r.jawab = usul;
         r.otomatis = usul;
         // Kontrak bersama {teks, yakin, sumber} (+ ket untuk ikon i) dari pengisi jawaban bersumber; tampilan menghitung r.asal darinya.
-        if (b.usulan && typeof b.usulan === "object" && b.usulan.yakin) r.usulan = { teks: usul, yakin: String(b.usulan.yakin), sumber: String(b.usulan.sumber || ""), ket: String(b.usulan.ket || "") };
+        if (b.usulan && typeof b.usulan === "object" && b.usulan.yakin) r.usulan = { teks: usul, yakin: String(b.usulan.yakin), sumber: String(b.usulan.sumber || ""), ket: String(b.usulan.ket || ""), ...(b.usulan.kodePola ? { kodePola: String(b.usulan.kodePola) } : {}) };
         else delete r.usulan;
         hasil.terisi += 1;
         if (adaTitik(usul)) hasil.tetapTitik += 1;

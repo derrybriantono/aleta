@@ -872,6 +872,9 @@ export function usulCalonDariKoreksi(
   const kelompokNilai = new Map<string, BarisKoreksi[]>();
   for (const k of koreksi) {
     if (k.hasil !== "disunting" && k.hasil !== "diketik") continue;
+    // 25 Okt (C1): koreksi butir saksi (variabel "saksi-<kode>") hanya untuk statistik per pola - teks keterangan
+    // saksi memuat nama asli dan tidak pernah menjadi calon templat.
+    if (/^saksi-/i.test(k.variabel)) continue;
     const bentuk = bentukBakuNilai(k.nilaiAkhir);
     if (bentuk.length < 3) continue;
     const kunci = `${k.variabel}|${bentuk}`;

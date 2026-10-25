@@ -431,6 +431,14 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_integritas_temuan",
   "aleta_integritas_aman",
   "aleta_integritas_pindai",
+  // 25 Oktober 2026 (0091): rantai C butir C1 - jejak isian ABT dan butir tanya-jawab saksi. Tanpa kunci asing.
+  "aleta_saksi_butir",
+  "aleta_isian_jejak",
+  // 25 Oktober 2026 (0093): rantai C butir C4 - katalog saksi di basis data dengan versi. Tanpa kunci asing.
+  "aleta_saksi_katalog",
+  "aleta_saksi_katalog_versi",
+  // 25 Oktober 2026 (0101): rantai C butir C6 - jejak kirim keterangan saksi ke BAS SIPP. Tanpa kunci asing.
+  "aleta_saksi_kirim_bas",
   // 21 Oktober 2026 (0080): Unggah Putusan Terjadwal. Tanpa kunci asing - urutannya bebas.
   "aleta_putusan_jadwal",
   "aleta_putusan_jadwal_butir",

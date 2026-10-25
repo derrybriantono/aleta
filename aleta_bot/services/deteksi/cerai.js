@@ -49,7 +49,7 @@ const VARIABEL = Object.freeze([
   { kode: "6054", nama: "Nafkah iddah / 6055 mut'ah / 6071-6072 nafkah anak / 7120 madliyah", sumber: "petitum+berkas-ecourt", oleh: "isiGugatanService" },
   { kode: "0709", nama: "Hadhanah (pemegang hak asuh) / 0711 / 2004 / 5110 / 5171", sumber: "petitum+posita", oleh: "deteksi/hadhanah.js, isiGugatanService" },
   { kode: "1214", nama: "Alat bukti CG/CT (bagian tanggal KTP) / 9955 / 9911", sumber: "ktp-ecourt", oleh: "ekstensi (KTP-TEKS)" },
-  { kode: "2557", nama: "Berapa kali saksi melihat bertengkar (2558)", sumber: "saksi-sipp", oleh: "belum - tidak tertulis di posita" },
+  { kode: "2557", nama: "Berapa kali saksi melihat bertengkar (2558)", sumber: "saksi-sipp", oleh: "kaliPertengkaranBas (saklar fakta-non-cerai; dibaca dari BAS tersimpan, hanya usulan ragu)" },
   { kode: "8433", nama: "Alasan cabut", sumber: "sipp (penetapan cabut)", oleh: "belum - tidak tertulis di posita" },
   { kode: "8436", nama: "Kesimpulan Penggugat / 8437 Tergugat", sumber: "berkas-ecourt (kesimpulan)", oleh: "belum" },
   { kode: "7178", nama: "Status panggilan tidak patut", sumber: "relaas", oleh: "belum" },

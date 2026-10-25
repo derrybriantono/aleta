@@ -22,7 +22,8 @@ import {
   type SaluranSatker,
   type StatusFitur,
 } from "@/lib/fitur-satker";
-import { FITUR_BLANGKO_SAYA_SEMUA_PERAN } from "@/lib/fitur-satker";
+import { FITUR_BLANGKO_SAYA_SEMUA_PERAN, FITUR_FAKTA_NON_CERAI, FITUR_KATALOG_SAKSI_DB, FITUR_MESIN_SAKSI_TUNGGAL, FITUR_SAKSI_KE_BAS_SIPP } from "@/lib/fitur-satker";
+import { KODE_FITUR_JEJAK_ISIAN } from "@/lib/jejak-isian";
 import { moduleVisibility, modules } from "@/lib/mock-data";
 import { createAletaDatabase, type AletaDatabase } from "@/server/db/client";
 import {
@@ -115,7 +116,8 @@ describe("A - matriks saklar (murni)", () => {
  * Pengecualian TUNGGAL (18 Okt 2026, butir 10): saklar tahap awal Blangko Saya. Fitur baru ini belum pernah menyala di
  * satker mana pun, jadi bawaannya MATI (hanya Super Admin) sampai dibuka; "fitur lama tidak boleh berkurang" tidak terlanggar.
  */
-const BAWAAN_MATI = new Set([FITUR_BLANGKO_SAYA_SEMUA_PERAN]);
+// 25 Okt 2026 (rantai C, C1): saklar jejak isian juga fitur baru yang bawaannya MATI.
+const BAWAAN_MATI = new Set([FITUR_BLANGKO_SAYA_SEMUA_PERAN, KODE_FITUR_JEJAK_ISIAN, FITUR_MESIN_SAKSI_TUNGGAL, FITUR_KATALOG_SAKSI_DB, FITUR_FAKTA_NON_CERAI, FITUR_SAKSI_KE_BAS_SIPP]);
 const FITUR_LAMA = KATALOG_FITUR_SATKER.filter((f) => !BAWAAN_MATI.has(f.kode));
 const hanyaLama = (peta: Record<string, unknown>) => Object.entries(peta).filter(([k]) => !BAWAAN_MATI.has(k)).map(([, v]) => v);
 
