@@ -22,6 +22,7 @@ import type { PermintaanRekap, RekapPetugas } from "@/lib/rekap-petugas";
 import type { WaktuAntrian } from "@/lib/tiga-jarak-sidang";
 import type { PembebananIkrar } from "@/lib/pembebanan-ikrar";
 import { sanitizePublicErrorMessage } from "@/server/shared/error-sanitizer";
+import { cerminSetelahTulisan } from "@/server/modules/cermin/setelah-tulisan";
 import { RUANG_SINGGAH, terkenaTulisan } from "@/server/modules/aleta-bot/singgah-tulisan";
 import { singgahSingkat, tandaiTulisan, ttlDariEnv } from "@/server/shared/singgah-singkat";
 
@@ -194,6 +195,8 @@ async function gatewayFetch<T>(
   const menulis = permintaanMenulis(path, permintaan.method);
   const terkena = menulis ? terkenaTulisan(path, permintaan.body) : undefined;
   if (menulis) tandaiTulisan(terkena);
+  // A3: tulisan yang berhasil masuk cermin seketika (lihat cermin/setelah-tulisan.ts).
+  let tulisBerhasil = false;
 
   try {
     const url = `${getGatewayBaseUrl()}${path}`;
@@ -263,6 +266,7 @@ async function gatewayFetch<T>(
       };
     }
 
+    tulisBerhasil = true;
     return { ok: true, data: json as T };
   } catch (err) {
     const errCode =
@@ -296,7 +300,10 @@ async function gatewayFetch<T>(
     };
   } finally {
     clearTimeout(timeout);
-    if (menulis) tandaiTulisan(terkena);
+    if (menulis) {
+      tandaiTulisan(terkena);
+      if (tulisBerhasil) cerminSetelahTulisan(terkena, permintaan.body);
+    }
   }
 }
 

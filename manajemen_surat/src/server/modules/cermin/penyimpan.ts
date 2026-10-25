@@ -180,3 +180,49 @@ export async function hitunganCermin(db: AletaDatabase) {
     sidangTerbaru: s[0]?.terbaru ?? "",
   };
 }
+
+/**
+ * Menggantikan seluruh sidang cermin pada [dari, sampai] dengan `sidang` hasil
+ * bacaan SIPP: yang berubah/baru ditulis, yang sudah tidak ada di SIPP (dihapus
+ * atau dipindah tanggal) dihapus dari cermin. Penghapusan HANYA bila bacaan
+ * tidak terpotong batas baris - bacaan terpotong tidak boleh menghapus apa pun.
+ */
+export async function gantiSidangRentang(
+  db: AletaDatabase,
+  dari: string,
+  sampai: string,
+  sidang: SidangSumber[],
+  opsi: { terpotong?: boolean; sekarang?: string } = {}
+): Promise<HasilSimpan & { dihapus: number }> {
+  const sekarang = opsi.sekarang ?? new Date().toISOString();
+  const simpan = await simpanJendelaSidang(db, { sidang }, sekarang);
+  let dihapus = 0;
+  if (!opsi.terpotong) {
+    const ada = new Set(sidang.map((s) => String(s.sidangId)));
+    const lama = await db.queryAll<{ sidang_id: string }>("SELECT sidang_id FROM aleta_cermin_sidang WHERE tanggal_sidang >= ? AND tanggal_sidang <= ?", [dari, sampai]);
+    const hapus = lama.map((r) => String(r.sidang_id)).filter((id) => !ada.has(id));
+    for (let mulai = 0; mulai < hapus.length; mulai += 500) {
+      const bagian = hapus.slice(mulai, mulai + 500);
+      await db.run(`DELETE FROM aleta_cermin_sidang WHERE sidang_id IN (${bagian.map(() => "?").join(", ")})`, bagian);
+    }
+    dihapus = hapus.length;
+  }
+  return { ...simpan, dihapus };
+}
+
+/** Menghapus perkara (dan sidang, pihak, mediasi, penanda-nya) dari cermin - perkara yang sudah tidak ada di SIPP. */
+export async function hapusPerkaraCermin(db: AletaDatabase, id: string[]): Promise<number> {
+  const unik = [...new Set(id.map(String))];
+  for (let mulai = 0; mulai < unik.length; mulai += 500) {
+    const bagian = unik.slice(mulai, mulai + 500);
+    const tanda = bagian.map(() => "?").join(", ");
+    await withTransaction(db, async (tx) => {
+      await tx.run(`DELETE FROM aleta_cermin_perkara WHERE perkara_id IN (${tanda})`, bagian);
+      await tx.run(`DELETE FROM aleta_cermin_sidang WHERE perkara_id IN (${tanda})`, bagian);
+      await tx.run(`DELETE FROM aleta_cermin_pihak WHERE perkara_id IN (${tanda})`, bagian);
+      await tx.run(`DELETE FROM aleta_cermin_mediasi WHERE perkara_id IN (${tanda})`, bagian);
+      await tx.run(`DELETE FROM aleta_cermin_tag WHERE perkara_id IN (${tanda})`, bagian);
+    });
+  }
+  return unik.length;
+}

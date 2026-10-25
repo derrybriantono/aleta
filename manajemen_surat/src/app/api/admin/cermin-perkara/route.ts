@@ -26,7 +26,7 @@ export const dynamic = "force-dynamic";
  *   GET                       -> pengaturan, kemajuan pemindai, hitungan tabel
  *   PUT {pemindaiAktif, layar, ukuranKelompok, jedaDetik, jendelaMulai, jendelaSelesai}
  *   PUT {bawaan: true}        -> kembali ke bawaan (semua mati)
- *   POST {aksi: "putaran-sekarang" | "lanjutkan" | "ulang", konfirmasi?}
+ *   POST {aksi: "putaran-sekarang" | "lanjutkan" | "ulang" | "pembaruan-sekarang" | "pencocokan-sekarang", konfirmasi?}
  *
  * Tidak ada yang ditulis ke SIPP/ABT.
  */
@@ -85,8 +85,11 @@ export async function POST(request: NextRequest) {
     actorUserId = await resolveActorUserId(request);
     const badan = await bacaBadan(request);
     const aksi = String(badan.aksi || "");
-    if (aksi !== "putaran-sekarang" && aksi !== "lanjutkan" && aksi !== "ulang") {
-      throw new ApiError(400, 'Aksi tidak dikenal (yang tersedia: "putaran-sekarang", "lanjutkan", "ulang").');
+    if (!["putaran-sekarang", "lanjutkan", "ulang", "pembaruan-sekarang", "pencocokan-sekarang"].includes(aksi)) {
+      throw new ApiError(
+        400,
+        'Aksi tidak dikenal (yang tersedia: "putaran-sekarang", "lanjutkan", "ulang", "pembaruan-sekarang", "pencocokan-sekarang").'
+      );
     }
     const hasil = await aksiPemantauCermin(db, actorUserId, aksi as AksiPemantauCermin, { konfirmasi: badan.konfirmasi === true });
     return ok({ ...hasil, halaman: await halamanPemantauCermin(db, actorUserId) });

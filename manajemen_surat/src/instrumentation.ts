@@ -53,8 +53,8 @@ export async function register() {
      malam (bawaan 18.00-06.30 WITA), bisa dilanjutkan, hanya MEMBACA SIPP lewat bot. Saklar pemindai MATI bawaan (layar Pemantau
      Cermin Perkara, dibaca tiap detak); saat mati detak tidak menembak bot sama sekali. Matikan detaknya dengan ALETA_CERMIN_PEMINDAI=0. */
   if (process.env.ALETA_CERMIN_PEMINDAI !== "0") {
-    const { mulaiPemindaiCerminBerkala } = await import("@/server/modules/cermin/pemindai");
-    mulaiPemindaiCerminBerkala();
+    const { mulaiCerminBerkala } = await import("@/server/modules/cermin/berkala");
+    mulaiCerminBerkala();
   }
   /* === AKHIR CERMIN PERKARA === */
   /* === PUTUSAN TERJADWAL 21 Okt (B3) === pelaksana server unggah putusan terjadwal: tiap 30 detik mengerjakan paling

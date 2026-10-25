@@ -11,9 +11,12 @@ import {
   LABEL_LAYAR_CERMIN,
   LAYAR_CERMIN,
   dalamJendelaJam,
+  pencocokanBersih,
   perkiraanSelesai,
   persenKemajuan,
+  type KeadaanPembaruan,
   type KeadaanPemindai,
+  type KeadaanPencocokan,
   type LayarCermin,
   type PengaturanCermin,
 } from "@/lib/cermin";
@@ -22,6 +25,8 @@ import type { AletaDatabase } from "@/server/db/client";
 import { pastikanAdminIstimewa } from "@/server/modules/aleta-ecourt/akses";
 import { pengaturanCerminBerlaku, simpanPengaturanCermin } from "@/server/modules/cermin/pengaturan";
 import { hitunganCermin } from "@/server/modules/cermin/penyimpan";
+import { depsPembaruanAsli, muatKeadaanPembaruan, putaranPembaruan, type HasilPembaruan } from "@/server/modules/cermin/pembaruan";
+import { jalankanPencocokan, muatKeadaanPencocokan, type HasilJalanPencocokan } from "@/server/modules/cermin/pencocokan";
 import {
   keadaanProsesPemindai,
   lanjutkanPemindai,
@@ -39,6 +44,8 @@ export type HalamanPemantauCermin = {
   pengaturan: PengaturanCermin;
   layar: Array<{ kunci: LayarCermin; label: string; aktif: boolean }>;
   keadaan: KeadaanPemindai;
+  pembaruan: KeadaanPembaruan;
+  pencocokan: KeadaanPencocokan & { bersih: boolean };
   persen: number;
   perkiraanSelesai: string | null;
   jendela: { mulai: string; selesai: string; dalamJendelaSekarang: boolean; jamSekarang: string };
@@ -57,9 +64,11 @@ async function adalahSuperAdmin(db: AletaDatabase, actorUserId: string | null | 
 
 export async function halamanPemantauCermin(db: AletaDatabase, actorUserId: string | null | undefined): Promise<HalamanPemantauCermin> {
   await pastikanAdminIstimewa(db, actorUserId, "membuka Pemantau Cermin Perkara");
-  const [pengaturan, keadaan, hitungan, bolehMengubah] = await Promise.all([
+  const [pengaturan, keadaan, pembaruan, pencocokan, hitungan, bolehMengubah] = await Promise.all([
     pengaturanCerminBerlaku(db),
     muatKeadaanPemindai(db),
+    muatKeadaanPembaruan(db),
+    muatKeadaanPencocokan(db),
     hitunganCermin(db),
     adalahSuperAdmin(db, actorUserId),
   ]);
@@ -71,6 +80,8 @@ export async function halamanPemantauCermin(db: AletaDatabase, actorUserId: stri
     pengaturan,
     layar: LAYAR_CERMIN.map((kunci) => ({ kunci, label: LABEL_LAYAR_CERMIN[kunci], aktif: pengaturan.layar[kunci] === true })),
     keadaan,
+    pembaruan,
+    pencocokan: { ...pencocokan, bersih: pencocokanBersih(pencocokan.terakhir) },
     persen: persenKemajuan(keadaan),
     perkiraanSelesai: perkiraanSelesai(keadaan, kini, { mulai: pengaturan.jendelaMulai, selesai: pengaturan.jendelaSelesai }),
     jendela: {
@@ -96,18 +107,24 @@ export async function simpanPengaturanPemantauCermin(db: AletaDatabase, actorUse
   await simpanPengaturanCermin(db, actorUserId, masukan);
 }
 
-export type AksiPemantauCermin = "putaran-sekarang" | "lanjutkan" | "ulang";
+export type AksiPemantauCermin = "putaran-sekarang" | "lanjutkan" | "ulang" | "pembaruan-sekarang" | "pencocokan-sekarang";
 
 export async function aksiPemantauCermin(
   db: AletaDatabase,
   actorUserId: string | null | undefined,
   aksi: AksiPemantauCermin,
   opsi: { konfirmasi?: boolean } = {}
-): Promise<{ aksi: AksiPemantauCermin; hasil?: HasilPutaran }> {
+): Promise<{ aksi: AksiPemantauCermin; hasil?: HasilPutaran | HasilPembaruan | HasilJalanPencocokan }> {
   await pastikanSuperAdmin(db, actorUserId);
   if (aksi === "putaran-sekarang") {
     // Satu kelompok sekarang, melewati saklar dan jendela jam (tindakan Super Admin yang sadar).
     return { aksi, hasil: await putaranPemindai(undefined, { paksa: true }) };
+  }
+  if (aksi === "pembaruan-sekarang") {
+    return { aksi, hasil: await putaranPembaruan(depsPembaruanAsli, { paksa: true }) };
+  }
+  if (aksi === "pencocokan-sekarang") {
+    return { aksi, hasil: await jalankanPencocokan(depsPembaruanAsli, { pemicu: "tombol" }) };
   }
   if (aksi === "lanjutkan") {
     await lanjutkanPemindai(db);

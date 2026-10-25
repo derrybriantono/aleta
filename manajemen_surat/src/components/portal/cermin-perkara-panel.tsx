@@ -1,6 +1,6 @@
 "use client";
 
-import { Database, Loader2, Pause, Play, RefreshCw, RotateCcw } from "lucide-react";
+import { Database, Loader2, Pause, Play, RefreshCw, RotateCcw, ShieldCheck } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { PageIntro } from "@/components/portal/shared";
@@ -237,6 +237,85 @@ export function CerminPerkaraPanel() {
             </CardContent>
           </Card>
 
+          <Card className="border-border/80" data-testid="cermin-pembaruan">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <RefreshCw className="h-4 w-4" /> Pembaruan berkala
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Sesudah pemindaian awal selesai, cermin dijaga terbaru: tiap {draf.selangPembaruanDetik} detik hanya perkara yang berubah di SIPP yang dibaca ulang, sidang{" "}
+                {draf.panasHariLalu} hari lalu sampai {draf.panasHariDepan} hari ke depan dihitung ulang tiap {draf.panasMenit} menit, dan tulisan lewat ALETA masuk seketika.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              {data.keadaan.status !== "selesai" ? (
+                <p className="text-muted-foreground">Menunggu pemindaian awal selesai.</p>
+              ) : (
+                <>
+                  <p data-testid="cermin-pembaruan-terakhir">
+                    Putaran terakhir {tanggalJamWita(data.pembaruan.putaranTerakhir)}
+                    {data.pembaruan.terakhir
+                      ? ` - ${angka(data.pembaruan.terakhir.perkara)} perkara tersentuh, ${angka(data.pembaruan.terakhir.tanggal)} tanggal sidang dihitung ulang, ${angka(data.pembaruan.terakhir.ditulis)} baris ditulis (${angka(data.pembaruan.terakhir.ms)} md)`
+                      : ""}
+                    .
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Tanda waktu SIPP {data.pembaruan.tanda || "-"} · antrean tanggal {angka(data.pembaruan.antrianTanggal.length)}.
+                  </p>
+                  {data.pembaruan.galat.terakhir ? (
+                    <p className="text-xs leading-5 text-rose-700 dark:text-rose-300" data-testid="cermin-pembaruan-galat">
+                      Galat terakhir ({data.pembaruan.galat.beruntun}x beruntun, {tanggalJamWita(data.pembaruan.galat.pada)}): {data.pembaruan.galat.terakhir}
+                    </p>
+                  ) : null}
+                  {data.pembaruan.tidakTerbaca.length ? (
+                    <p className="text-xs leading-5 text-amber-800 dark:text-amber-300">Tabel SIPP yang tidak terbaca: {data.pembaruan.tidakTerbaca.join("; ")}.</p>
+                  ) : null}
+                </>
+              )}
+              {bolehMengubah ? (
+                <Button size="sm" variant="outline" disabled={menyimpan} onClick={() => void kirim("POST", { aksi: "pembaruan-sekarang" }, "Satu putaran pembaruan dijalankan.")}>
+                  <Play className="mr-1.5 h-4 w-4" /> Perbarui sekarang
+                </Button>
+              ) : null}
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/80" data-testid="cermin-pencocokan">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <ShieldCheck className="h-4 w-4" /> Pencocokan mingguan
+                {data.pencocokan.terakhir ? (
+                  <Badge variant={data.pencocokan.bersih ? "success" : "warning"} data-testid="cermin-pencocokan-status">
+                    {data.pencocokan.bersih ? "Bersih" : "Ada selisih (sudah diperbaiki)"}
+                  </Badge>
+                ) : (
+                  <Badge variant="muted">Belum pernah</Badge>
+                )}
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Tiap Minggu 02.00 WITA: daftar ringan SIPP dibandingkan dengan cermin untuk menangkap data yang dihapus di SIPP dan baris yang tidak punya kolom waktu.
+                Syarat menyalakan layar: pemindaian 100% dan pencocokan pertama bersih.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              {data.pencocokan.terakhir ? (
+                <p data-testid="cermin-pencocokan-hasil">
+                  {tanggalJamWita(data.pencocokan.terakhir.pada)} ({data.pencocokan.terakhir.pemicu === "tombol" ? "tombol" : "terjadwal"}, {angka(data.pencocokan.terakhir.ms)} md) - perkara:{" "}
+                  {angka(data.pencocokan.terakhir.perkaraDihapus)} dihapus, {angka(data.pencocokan.terakhir.perkaraDitambah)} ditambah, {angka(data.pencocokan.terakhir.perkaraDiperbaiki)} diperbaiki; sidang:{" "}
+                  {angka(data.pencocokan.terakhir.sidangDihapus)} dihapus, {angka(data.pencocokan.terakhir.sidangDitambah)} ditambah, {angka(data.pencocokan.terakhir.sidangDiperbaiki)} diperbaiki.
+                  {data.pencocokan.terakhir.catatan ? ` ${data.pencocokan.terakhir.catatan}` : ""}
+                </p>
+              ) : (
+                <p className="text-muted-foreground">Pencocokan pertama berjalan Minggu 02.00 WITA berikutnya, atau jalankan sekarang sesudah pemindaian selesai.</p>
+              )}
+              {bolehMengubah ? (
+                <Button size="sm" variant="outline" disabled={menyimpan || data.keadaan.status !== "selesai"} onClick={() => void kirim("POST", { aksi: "pencocokan-sekarang" }, "Pencocokan dijalankan.")}>
+                  <Play className="mr-1.5 h-4 w-4" /> Cocokkan sekarang
+                </Button>
+              ) : null}
+            </CardContent>
+          </Card>
+
           <Card className="border-border/80">
             <CardHeader className="pb-2">
               <CardTitle className="text-base">Isi cermin</CardTitle>
@@ -343,6 +422,56 @@ export function CerminPerkaraPanel() {
                     value={draf.jendelaSelesai}
                     disabled={!bolehMengubah}
                     onChange={(e) => ubah((p) => ({ ...p, jendelaSelesai: e.target.value }))}
+                  />
+                </label>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-4">
+                <label className="space-y-1 text-xs text-muted-foreground">
+                  Selang pembaruan (detik)
+                  <input
+                    type="number"
+                    className="block w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+                    value={draf.selangPembaruanDetik}
+                    min={30}
+                    max={3600}
+                    disabled={!bolehMengubah}
+                    onChange={(e) => ubah((p) => ({ ...p, selangPembaruanDetik: Number(e.target.value) }))}
+                  />
+                </label>
+                <label className="space-y-1 text-xs text-muted-foreground">
+                  Hitung ulang sidang panas (menit)
+                  <input
+                    type="number"
+                    className="block w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+                    value={draf.panasMenit}
+                    min={1}
+                    max={60}
+                    disabled={!bolehMengubah}
+                    onChange={(e) => ubah((p) => ({ ...p, panasMenit: Number(e.target.value) }))}
+                  />
+                </label>
+                <label className="space-y-1 text-xs text-muted-foreground">
+                  Panas: hari ke belakang
+                  <input
+                    type="number"
+                    className="block w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+                    value={draf.panasHariLalu}
+                    min={0}
+                    max={7}
+                    disabled={!bolehMengubah}
+                    onChange={(e) => ubah((p) => ({ ...p, panasHariLalu: Number(e.target.value) }))}
+                  />
+                </label>
+                <label className="space-y-1 text-xs text-muted-foreground">
+                  Panas: hari ke depan
+                  <input
+                    type="number"
+                    className="block w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+                    value={draf.panasHariDepan}
+                    min={0}
+                    max={30}
+                    disabled={!bolehMengubah}
+                    onChange={(e) => ubah((p) => ({ ...p, panasHariDepan: Number(e.target.value) }))}
                   />
                 </label>
               </div>

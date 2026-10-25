@@ -59,11 +59,38 @@ export type SidangSumber = {
 
 export type JendelaSidang = { dari: string; sampai: string; terpotong: boolean; sidang: SidangSumber[] };
 
-/** Antarmuka bot yang dipakai pemindai; uji menggantinya. */
+export type PerubahanSumber = {
+  sejak: string;
+  /** Waktu SIPP terakhir yang termuat; pembaruan berikutnya mulai dari sini (dikurangi tumpang tindih). */
+  tandaBaru: string;
+  terpotong: boolean;
+  jumlahTersentuh: number;
+  perkaraId: string[];
+  tanggalSidang: string[];
+  tidakTerbaca: Array<{ tabel: string; sebab: string }>;
+};
+
+export type IdPerkaraSumber = { perkara: Array<{ perkaraId: string; waktu: string }>; terakhirId: number; habis: boolean };
+
+export type IdSidangSumber = {
+  dari: string;
+  sampai: string;
+  sidang: Array<{ sidangId: string; perkaraId: string; tanggalSidang: string; waktu: string }>;
+};
+
+/** Antarmuka bot yang dipakai pemindai awal; uji menggantinya. */
 export type BotCermin = {
   ringkasan: () => Promise<HasilBotCermin<RingkasanSumber>>;
   perkara: (setelahId: number, batas: number) => Promise<HasilBotCermin<KelompokPerkara>>;
   sidang: (dari: string, sampai: string) => Promise<HasilBotCermin<JendelaSidang>>;
+};
+
+/** Ditambah rute pembaruan berkala dan pencocokan mingguan. */
+export type BotCerminLengkap = BotCermin & {
+  perkaraId: (id: string[]) => Promise<HasilBotCermin<{ perkara: PerkaraSumber[] }>>;
+  perubahan: (sejak: string, batas: number) => Promise<HasilBotCermin<PerubahanSumber>>;
+  idPerkara: (setelahId: number, batas: number) => Promise<HasilBotCermin<IdPerkaraSumber>>;
+  idSidang: (dari: string, sampai: string) => Promise<HasilBotCermin<IdSidangSumber>>;
 };
 
 function alamatBot() {
@@ -121,10 +148,17 @@ export async function panggilBotCermin<T>(jalur: string, timeoutMs = 60_000): Pr
 }
 
 /** Bot sungguhan lewat HTTP. */
-export const botCerminAsli: BotCermin = {
+export const botCerminAsli: BotCerminLengkap = {
   ringkasan: () => panggilBotCermin<RingkasanSumber>("/ringkasan", 30_000),
   perkara: (setelahId, batas) =>
     panggilBotCermin<KelompokPerkara>(`/perkara?setelahId=${encodeURIComponent(String(setelahId))}&batas=${encodeURIComponent(String(batas))}`),
   sidang: (dari, sampai) =>
     panggilBotCermin<JendelaSidang>(`/sidang?dari=${encodeURIComponent(dari)}&sampai=${encodeURIComponent(sampai)}`, 90_000),
+  perkaraId: (id) => panggilBotCermin<{ perkara: PerkaraSumber[] }>(`/perkara-id?id=${encodeURIComponent(id.join(","))}`),
+  perubahan: (sejak, batas) =>
+    panggilBotCermin<PerubahanSumber>(`/perubahan?sejak=${encodeURIComponent(sejak)}&batas=${encodeURIComponent(String(batas))}`),
+  idPerkara: (setelahId, batas) =>
+    panggilBotCermin<IdPerkaraSumber>(`/id-perkara?setelahId=${encodeURIComponent(String(setelahId))}&batas=${encodeURIComponent(String(batas))}`),
+  idSidang: (dari, sampai) =>
+    panggilBotCermin<IdSidangSumber>(`/id-sidang?dari=${encodeURIComponent(dari)}&sampai=${encodeURIComponent(sampai)}`),
 };

@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { CerminPerkaraPanel, kalimatKemajuan } from "@/components/portal/cermin-perkara-panel";
-import { PENGATURAN_CERMIN_BAWAAN, keadaanPemindaiAwal, persenKemajuan } from "@/lib/cermin";
+import { PENGATURAN_CERMIN_BAWAAN, keadaanPembaruanAwal, keadaanPemindaiAwal, persenKemajuan } from "@/lib/cermin";
 import type { HalamanPemantauCermin } from "@/server/modules/cermin/pemantau";
 
 /**
@@ -24,6 +24,8 @@ function halaman(ubah: Partial<HalamanPemantauCermin> = {}): HalamanPemantauCerm
       { kunci: "ekstensi", label: "Panel ekstensi di SIPP/ABT", aktif: false },
     ],
     keadaan,
+    pembaruan: keadaanPembaruanAwal(),
+    pencocokan: { terakhir: null, riwayat: [], bersih: false },
     persen: persenKemajuan(keadaan),
     perkiraanSelesai: null,
     jendela: { mulai: "18:00", selesai: "06:30", dalamJendelaSekarang: true, jamSekarang: "22:00" },

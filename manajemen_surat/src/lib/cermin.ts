@@ -28,6 +28,18 @@ export const LABEL_LAYAR_CERMIN: Record<LayarCermin, string> = {
 
 export const UKURAN_KELOMPOK = { min: 50, maks: 500, bawaan: 300 } as const;
 export const JEDA_KELOMPOK_DETIK = { min: 2, maks: 600, bawaan: 15 } as const;
+/** Pembaruan berkala (sesudah pemindaian awal selesai): selang antar putaran. */
+export const SELANG_PEMBARUAN_DETIK = { min: 30, maks: 3600, bawaan: 60 } as const;
+/**
+ * Jendela PANAS: sidang pada [hari ini - lalu, hari ini + depan] dihitung ulang
+ * tiap `menit` menit, sebab sebagian bahannya (relaas, kehadiran, saksi,
+ * berkas e-Court) berubah tanpa menyentuh kolom waktu tabel jadwal.
+ */
+export const JENDELA_PANAS = {
+  hariLalu: { min: 0, maks: 7, bawaan: 1 },
+  hariDepan: { min: 0, maks: 30, bawaan: 7 },
+  menit: { min: 1, maks: 60, bawaan: 3 },
+} as const;
 
 /** Bentuk yang disimpan (aleta_ekstensi_setelan) dan dikirim ke layar. */
 export type PengaturanCermin = {
@@ -39,6 +51,12 @@ export type PengaturanCermin = {
   ukuranKelompok: number;
   /** Jeda antar kelompok, detik. */
   jedaDetik: number;
+  /** Selang pembaruan berkala dari kolom waktu SIPP, detik. */
+  selangPembaruanDetik: number;
+  /** Jendela panas (lihat JENDELA_PANAS). */
+  panasHariLalu: number;
+  panasHariDepan: number;
+  panasMenit: number;
   /** Jendela jam pemindaian awal (WITA, HH:MM); melewati tengah malam diperbolehkan. */
   jendelaMulai: string;
   jendelaSelesai: string;
@@ -51,6 +69,10 @@ export const PENGATURAN_CERMIN_BAWAAN: PengaturanCermin = {
   layar: { mediasi: false, status: false, jadwal: false, ekstensi: false },
   ukuranKelompok: UKURAN_KELOMPOK.bawaan,
   jedaDetik: JEDA_KELOMPOK_DETIK.bawaan,
+  selangPembaruanDetik: SELANG_PEMBARUAN_DETIK.bawaan,
+  panasHariLalu: JENDELA_PANAS.hariLalu.bawaan,
+  panasHariDepan: JENDELA_PANAS.hariDepan.bawaan,
+  panasMenit: JENDELA_PANAS.menit.bawaan,
   jendelaMulai: "18:00",
   jendelaSelesai: "06:30",
 };
@@ -78,6 +100,10 @@ export function bersihkanPengaturanCermin(mentah: unknown): PengaturanCermin | n
     layar,
     ukuranKelompok: jepit(x.ukuranKelompok, UKURAN_KELOMPOK.min, UKURAN_KELOMPOK.maks, UKURAN_KELOMPOK.bawaan),
     jedaDetik: jepit(x.jedaDetik, JEDA_KELOMPOK_DETIK.min, JEDA_KELOMPOK_DETIK.maks, JEDA_KELOMPOK_DETIK.bawaan),
+    selangPembaruanDetik: jepit(x.selangPembaruanDetik, SELANG_PEMBARUAN_DETIK.min, SELANG_PEMBARUAN_DETIK.maks, SELANG_PEMBARUAN_DETIK.bawaan),
+    panasHariLalu: jepit(x.panasHariLalu, JENDELA_PANAS.hariLalu.min, JENDELA_PANAS.hariLalu.maks, JENDELA_PANAS.hariLalu.bawaan),
+    panasHariDepan: jepit(x.panasHariDepan, JENDELA_PANAS.hariDepan.min, JENDELA_PANAS.hariDepan.maks, JENDELA_PANAS.hariDepan.bawaan),
+    panasMenit: jepit(x.panasMenit, JENDELA_PANAS.menit.min, JENDELA_PANAS.menit.maks, JENDELA_PANAS.menit.bawaan),
     jendelaMulai: mulai,
     jendelaSelesai: selesai,
     ...(typeof x.diubahOleh === "string" ? { diubahOleh: x.diubahOleh } : {}),
@@ -266,4 +292,163 @@ export function perkiraanSelesai(
     }
   }
   return sisa > 0 ? null : new Date(t).toISOString();
+}
+
+// ---------------------------------------------------------------------------
+// Pembaruan berkala (kunci jejak "pembaruan") dan pencocokan mingguan ("pencocokan")
+// ---------------------------------------------------------------------------
+
+export type KeadaanPembaruan = {
+  /** Waktu SIPP terakhir yang termuat ('YYYY-MM-DD HH:MM:SS'); kosong = belum dimulai. */
+  tanda: string;
+  putaranTerakhir: string;
+  panasTerakhir: string;
+  /** Tanggal sidang yang menunggu dihitung ulang (diproses beberapa per putaran). */
+  antrianTanggal: string[];
+  terakhir: { perkara: number; tanggal: number; ditulis: number; ms: number; pada: string } | null;
+  galat: { terakhir: string; pada: string; beruntun: number };
+  tidakTerbaca: string[];
+};
+
+export function keadaanPembaruanAwal(): KeadaanPembaruan {
+  return {
+    tanda: "",
+    putaranTerakhir: "",
+    panasTerakhir: "",
+    antrianTanggal: [],
+    terakhir: null,
+    galat: { terakhir: "", pada: "", beruntun: 0 },
+    tidakTerbaca: [],
+  };
+}
+
+const TANGGAL_ISO = /^\d{4}-\d{2}-\d{2}$/;
+
+export function bersihkanKeadaanPembaruan(mentah: unknown): KeadaanPembaruan {
+  const dasar = keadaanPembaruanAwal();
+  if (!mentah || typeof mentah !== "object") return dasar;
+  const x = mentah as Record<string, any>;
+  const teks = (n: unknown) => (typeof n === "string" ? n : "");
+  const angka = (n: unknown) => (Number.isFinite(Number(n)) && Number(n) >= 0 ? Math.floor(Number(n)) : 0);
+  const g = x.galat && typeof x.galat === "object" ? x.galat : {};
+  const t = x.terakhir && typeof x.terakhir === "object" ? x.terakhir : null;
+  return {
+    tanda: teks(x.tanda),
+    putaranTerakhir: teks(x.putaranTerakhir),
+    panasTerakhir: teks(x.panasTerakhir),
+    antrianTanggal: Array.isArray(x.antrianTanggal)
+      ? x.antrianTanggal.filter((d: unknown) => typeof d === "string" && TANGGAL_ISO.test(d)).slice(0, 400)
+      : [],
+    terakhir: t
+      ? { perkara: angka(t.perkara), tanggal: angka(t.tanggal), ditulis: angka(t.ditulis), ms: angka(t.ms), pada: teks(t.pada) }
+      : null,
+    galat: { terakhir: teks(g.terakhir), pada: teks(g.pada), beruntun: angka(g.beruntun) },
+    tidakTerbaca: Array.isArray(x.tidakTerbaca) ? x.tidakTerbaca.filter((d: unknown) => typeof d === "string").slice(0, 20) : [],
+  };
+}
+
+export type HasilPencocokan = {
+  pada: string;
+  ms: number;
+  perkaraDihapus: number;
+  perkaraDitambah: number;
+  perkaraDiperbaiki: number;
+  sidangDihapus: number;
+  sidangDitambah: number;
+  sidangDiperbaiki: number;
+  tanggalDisegarkan: number;
+  pemicu: "mingguan" | "tombol";
+  catatan: string;
+};
+
+export type KeadaanPencocokan = { terakhir: HasilPencocokan | null; riwayat: HasilPencocokan[] };
+
+export function bersihkanKeadaanPencocokan(mentah: unknown): KeadaanPencocokan {
+  if (!mentah || typeof mentah !== "object") return { terakhir: null, riwayat: [] };
+  const x = mentah as Record<string, any>;
+  const angka = (n: unknown) => (Number.isFinite(Number(n)) && Number(n) >= 0 ? Math.floor(Number(n)) : 0);
+  const satu = (h: any): HasilPencocokan | null =>
+    h && typeof h === "object" && typeof h.pada === "string"
+      ? {
+          pada: h.pada,
+          ms: angka(h.ms),
+          perkaraDihapus: angka(h.perkaraDihapus),
+          perkaraDitambah: angka(h.perkaraDitambah),
+          perkaraDiperbaiki: angka(h.perkaraDiperbaiki),
+          sidangDihapus: angka(h.sidangDihapus),
+          sidangDitambah: angka(h.sidangDitambah),
+          sidangDiperbaiki: angka(h.sidangDiperbaiki),
+          tanggalDisegarkan: angka(h.tanggalDisegarkan),
+          pemicu: h.pemicu === "tombol" ? "tombol" : "mingguan",
+          catatan: typeof h.catatan === "string" ? h.catatan : "",
+        }
+      : null;
+  const riwayat = (Array.isArray(x.riwayat) ? x.riwayat : [])
+    .map(satu)
+    .filter((h: HasilPencocokan | null): h is HasilPencocokan => h !== null)
+    .slice(-8);
+  return { terakhir: satu(x.terakhir), riwayat };
+}
+
+/** Bersih = pencocokan tidak menemukan apa pun yang perlu diperbaiki. */
+export function pencocokanBersih(h: HasilPencocokan | null): boolean {
+  return (
+    h !== null &&
+    h.perkaraDihapus + h.perkaraDitambah + h.perkaraDiperbaiki + h.sidangDihapus + h.sidangDitambah + h.sidangDiperbaiki === 0
+  );
+}
+
+/** Hari dalam pekan (0 = Minggu) dari tanggal ISO. */
+export function hariPekan(tanggal: string): number {
+  const [t, b, h] = tanggal.split("-").map(Number);
+  return new Date(Date.UTC(t, (b || 1) - 1, h || 1)).getUTCDay();
+}
+
+/** Pencocokan mingguan: Minggu pukul 02.00 WITA. */
+export const PENCOCOKAN = { hari: 0, jam: "02:00" } as const;
+
+/**
+ * Apakah pencocokan mingguan sudah waktunya? Hari Minggu pukul >= 02.00 WITA
+ * dan belum ada pencocokan pada tanggal itu (terakhirPada = ISO UTC atau '').
+ */
+export function pencocokanJatuhTempo(sekarang: Date, terakhirPada: string): boolean {
+  const { tanggal, jam } = waktuPengadilan(sekarang);
+  if (hariPekan(tanggal) !== PENCOCOKAN.hari) return false;
+  if (jam.slice(0, 5) < PENCOCOKAN.jam) return false;
+  if (!terakhirPada) return true;
+  const t = Date.parse(terakhirPada);
+  if (!Number.isFinite(t)) return true;
+  return waktuPengadilan(new Date(t)).tanggal !== tanggal;
+}
+
+// ---------------------------------------------------------------------------
+// Waktu SIPP ('YYYY-MM-DD HH:MM:SS', jam dinding WITA tanpa zona)
+// ---------------------------------------------------------------------------
+
+const WAKTU_SIPP = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/;
+
+function utcDariWaktuSipp(w: string): number | null {
+  const m = WAKTU_SIPP.exec(w);
+  if (!m) return null;
+  return Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]), Number(m[4]), Number(m[5]), Number(m[6]));
+}
+
+/** Geser waktu SIPP sebanyak `detik` (boleh negatif); tidak sah -> teks kosong. */
+export function geserWaktuSipp(w: string, detik: number): string {
+  const ms = utcDariWaktuSipp(w);
+  if (ms === null) return "";
+  return new Date(ms + detik * 1000).toISOString().slice(0, 19).replace("T", " ");
+}
+
+/** Waktu SIPP (jam dinding WITA) dari saat ISO UTC. */
+export function waktuSippDari(saat: Date): string {
+  const { tanggal, jam } = waktuPengadilan(saat);
+  return `${tanggal} ${jam}`;
+}
+
+/** Waktu SIPP yang lebih baru dari yang lain; kosong dikalahkan. */
+export function waktuSippTerbaru(a: string, b: string): string {
+  if (!a) return b;
+  if (!b) return a;
+  return a >= b ? a : b;
 }

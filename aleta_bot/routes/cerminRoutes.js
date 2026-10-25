@@ -10,6 +10,11 @@
  *   GET /perkara?setelahId&batas       satu kelompok perkara (perkara_id > setelahId)
  *   GET /sidang?dari&sampai            sidang pada satu jendela tanggal (baris
  *                                      persis seperti layar Jadwal Sidang)
+ *   GET /perkara-id?id=1,2,3           perkara menurut id (paling banyak 500)
+ *   GET /perubahan?sejak&batas         perkara yang tersentuh sejak waktu SIPP T
+ *                                      (pembaruan berkala) + tanggal sidangnya
+ *   GET /id-perkara?setelahId&batas    daftar ringan id + waktu (pencocokan mingguan)
+ *   GET /id-sidang?dari&sampai         daftar ringan sidang satu jendela (idem)
  */
 
 const crypto = require("crypto");
@@ -17,6 +22,7 @@ const express = require("express");
 
 const { readRuntimeConfig } = require("../config/runtime-config");
 const cerminService = require("../services/cerminService");
+const cerminPembaruanService = require("../services/cerminPembaruanService");
 
 const router = express.Router();
 
@@ -85,6 +91,62 @@ router.get("/sidang", wajibToken, async (req, res) => {
       return;
     }
     res.json({ ok: true, ...(await cerminService.sidangJendela({ dari, sampai })) });
+  } catch (error) {
+    galat(res, error);
+  }
+});
+
+router.get("/perkara-id", wajibToken, async (req, res) => {
+  try {
+    const id = String(req.query.id || "")
+      .split(",")
+      .map((x) => x.trim())
+      .filter(Boolean);
+    res.json({ ok: true, ...(await cerminService.perkaraDenganId(id)) });
+  } catch (error) {
+    galat(res, error);
+  }
+});
+
+router.get("/perubahan", wajibToken, async (req, res) => {
+  try {
+    const hasil = await cerminPembaruanService.perubahanSejak({
+      sejak: String(req.query.sejak || ""),
+      batas: Number(req.query.batas) || undefined,
+    });
+    if (hasil.ok === false) {
+      res.status(400).json(hasil);
+      return;
+    }
+    res.json(hasil);
+  } catch (error) {
+    galat(res, error);
+  }
+});
+
+router.get("/id-perkara", wajibToken, async (req, res) => {
+  try {
+    res.json({
+      ok: true,
+      ...(await cerminPembaruanService.idPerkara({
+        setelahId: Number(req.query.setelahId) || 0,
+        batas: Number(req.query.batas) || undefined,
+      })),
+    });
+  } catch (error) {
+    galat(res, error);
+  }
+});
+
+router.get("/id-sidang", wajibToken, async (req, res) => {
+  try {
+    const dari = String(req.query.dari || "");
+    const sampai = String(req.query.sampai || "") || dari;
+    if (!TANGGAL.test(dari) || !TANGGAL.test(sampai) || sampai < dari) {
+      res.status(400).json({ ok: false, error: "tanggal_tidak_sah", message: "dari/sampai harus YYYY-MM-DD dan dari <= sampai." });
+      return;
+    }
+    res.json({ ok: true, ...(await cerminPembaruanService.idSidang({ dari, sampai })) });
   } catch (error) {
     galat(res, error);
   }

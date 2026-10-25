@@ -105,32 +105,19 @@ async function ringkasanSumber() {
   };
 }
 
-/**
- * Satu kelompok perkara: perkara_id > setelahId, urut naik, paling banyak
- * `batas`. Ringkasan identitas, pelaksana, sidang, dan akhir perkara per
- * perkara. Kueri bantu semuanya `perkara_id IN (...)` atas kelompok itu.
- */
-async function kelompokPerkara({ setelahId = 0, batas = 300 } = {}) {
-  const awal = Math.max(0, Number(setelahId) || 0);
-  const jumlah = Math.min(Math.max(Number(batas) || 300, 1), BATAS_PERKARA);
-  const hariIni = tanggalHariIni();
-
-  const dasar = await runQuery(
-    `SELECT perkara_id AS perkaraId, nomor_perkara AS nomorPerkara,
+const KOLOM_DASAR = `perkara_id AS perkaraId, nomor_perkara AS nomorPerkara,
             jenis_perkara_id AS jenisPerkaraId, jenis_perkara_nama AS jenisPerkaraNama,
             alur_perkara_id AS alurPerkaraId, tanggal_pendaftaran AS tanggalPendaftaran,
             prodeo AS prodeo,
             tahapan_terakhir_id AS tahapanTerakhirId, tahapan_terakhir_text AS tahapanTerakhirText,
             proses_terakhir_id AS prosesTerakhirId, proses_terakhir_text AS prosesTerakhirText,
-            diinput_tanggal AS diinput, diperbaharui_tanggal AS diperbaharui, diedit_tanggal AS diedit
-       FROM perkara
-      WHERE perkara_id > ?
-      ORDER BY perkara_id ASC
-      LIMIT ?`,
-    [awal, jumlah]
-  );
-  if (dasar.length === 0) return { perkara: [], terakhirId: awal, habis: true };
+            diinput_tanggal AS diinput, diperbaharui_tanggal AS diperbaharui, diedit_tanggal AS diedit`;
 
+/**
+ * Melengkapi baris dasar tabel perkara dengan penetapan, putusan, dan sidang -
+ * kueri bantu semuanya `perkara_id IN (...)` atas kelompok itu (berindeks).
+ */
+async function lengkapiPerkara(dasar, hariIni) {
   const id = idSah(dasar.map((r) => r.perkaraId));
   const [penetapan, putusan, sidang] = await Promise.all([
     runQuery(
@@ -210,8 +197,49 @@ async function kelompokPerkara({ setelahId = 0, batas = 300 } = {}) {
     };
   });
 
+  return perkara;
+}
+
+/**
+ * Satu kelompok perkara: perkara_id > setelahId, urut naik, paling banyak
+ * `batas`. Ringkasan identitas, pelaksana, sidang, dan akhir perkara per
+ * perkara.
+ */
+async function kelompokPerkara({ setelahId = 0, batas = 300 } = {}) {
+  const awal = Math.max(0, Number(setelahId) || 0);
+  const jumlah = Math.min(Math.max(Number(batas) || 300, 1), BATAS_PERKARA);
+  const hariIni = tanggalHariIni();
+
+  const dasar = await runQuery(
+    `SELECT ${KOLOM_DASAR}
+       FROM perkara
+      WHERE perkara_id > ?
+      ORDER BY perkara_id ASC
+      LIMIT ?`,
+    [awal, jumlah]
+  );
+  if (dasar.length === 0) return { perkara: [], terakhirId: awal, habis: true };
+  const perkara = await lengkapiPerkara(dasar, hariIni);
   const terakhirId = Number(dasar[dasar.length - 1].perkaraId) || awal;
   return { perkara, terakhirId, habis: dasar.length < jumlah };
+}
+
+/**
+ * Perkara menurut daftar id (paling banyak 500). Perkara yang tidak ada di SIPP
+ * (dihapus) TIDAK ikut di hasil - portal menghapusnya dari cermin.
+ */
+async function perkaraDenganId(daftarId) {
+  const id = idSah(daftarId).slice(0, BATAS_PERKARA);
+  if (id.length === 0) return { perkara: [] };
+  const dasar = await runQuery(
+    `SELECT ${KOLOM_DASAR}
+       FROM perkara
+      WHERE perkara_id IN (?)
+      ORDER BY perkara_id ASC`,
+    [id]
+  );
+  if (dasar.length === 0) return { perkara: [] };
+  return { perkara: await lengkapiPerkara(dasar, tanggalHariIni()) };
 }
 
 /**
@@ -258,6 +286,7 @@ module.exports = {
   BATAS_SIDANG,
   ringkasanSumber,
   kelompokPerkara,
+  perkaraDenganId,
   sidangJendela,
   // Untuk uji.
   _tanggalIso: tanggalIso,
