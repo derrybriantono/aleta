@@ -1045,6 +1045,24 @@ export const AKSI = {
     alasan: "Membuka tampilan menu orang lain menyentuh privasi pegawai - hanya Super Admin, dengan alasan wajib, batas 30 menit, dan tercatat di audit serta di halaman Akun pemilik.",
     hanyaSuperAdmin: true,
   },
+  // 25 Okt 2026 (rantai E, E5): verifikasi dua langkah (OTP WhatsApp + authenticator), mati bawaan.
+  "verifikasi.atur": {
+    label: "Menyalakan verifikasi dua langkah (OTP WhatsApp, authenticator), aturan per peran, dan jaringan kantor",
+    crud: "CU",
+    golongan: [],
+    lingkup: "semua",
+    rute: ["GET|POST /api/admin/verifikasi"],
+    alasan: "Verifikasi dua langkah dapat mengunci seluruh pegawai di luar - hanya Super Admin yang menyalakannya (mati bawaan).",
+    hanyaSuperAdmin: true,
+  },
+  "verifikasi.bantu": {
+    label: "Membantu pengguna yang kehilangan HP: kode cadangan dan reset authenticator",
+    crud: "CU",
+    golongan: [],
+    lingkup: "semua",
+    rute: ["POST /api/admin/verifikasi/bantuan"],
+    alasan: "Admin dan Super Admin membantu pengguna biasa; hanya Super Admin yang boleh membantu akun Admin atau Super Admin.",
+  },
   // Analitik
   "analitik.peta-beban": {
     label: "Peta perkara & beban konseptor",

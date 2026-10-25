@@ -4,6 +4,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@/lib/auth";
 import { getDatabase } from "@/server/db/client";
 import { KODE_BATAS_PERANGKAT } from "@/server/modules/perangkat/kait-auth";
+import { KODE_VERIFIKASI_DIPERLUKAN } from "@/server/modules/verifikasi/kait-masuk";
 import { catatPeristiwaAman } from "@/server/modules/perangkat/jejak";
 import { denganIpKlien, idPerangkatDariHeader } from "@/server/modules/perangkat/jaringan";
 import { tolakJalurLamaBilaSippNonaktif } from "@/server/modules/portal/masuk-sipp-plugin";
@@ -156,7 +157,7 @@ export async function POST(request: NextRequest) {
         const isi = (await response.clone().json().catch(() => null)) as { code?: string } | null;
         // Penolakan batas perangkat: password BENAR, sudah dicatat kait sesi -
         // bukan percobaan gagal dan tidak menambah hitungan pembatas laju.
-        if (isi?.code === KODE_BATAS_PERANGKAT) return response;
+        if (isi?.code === KODE_BATAS_PERANGKAT || isi?.code === KODE_VERIFIKASI_DIPERLUKAN) return response;
         await gagalEmail(db, request, {
           alasan: response.status === 429 ? "batas percobaan" : loginUser ? "sandi salah" : "akun tak dikenal",
           userId: loginUser?.id ?? null,

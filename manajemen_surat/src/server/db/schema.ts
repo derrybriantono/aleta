@@ -973,6 +973,61 @@ export const DDL_KESEHATAN_GALAT = {
 } as const;
 
 /**
+ * Verifikasi dua langkah: authenticator, tantangan, perangkat tepercaya, kode cadangan
+ * (0095, 25 Okt 2026, rantai E). Cermin PERSIS dari drizzle/0095_aleta_verifikasi_dua_langkah.sql;
+ * penjaga verifikasi-dua-langkah-25okt.test.ts membandingkan keduanya.
+ */
+export const DDL_VERIFIKASI_DUA_LANGKAH = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_verifikasi_authenticator (
+  user_id TEXT PRIMARY KEY,
+  rahasia_enc TEXT NOT NULL,
+  aktif INTEGER NOT NULL DEFAULT 0,
+  dibuat_pada TEXT NOT NULL,
+  aktif_pada TEXT NOT NULL DEFAULT '',
+  langkah_terakhir INTEGER NOT NULL DEFAULT -1
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_verifikasi_tantangan (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  perangkat_id TEXT NOT NULL DEFAULT '',
+  jalur TEXT NOT NULL DEFAULT '',
+  dibuat_pada TEXT NOT NULL,
+  kedaluwarsa_pada TEXT NOT NULL,
+  percobaan INTEGER NOT NULL DEFAULT 0,
+  kode_wa_hash TEXT NOT NULL DEFAULT '',
+  kode_wa_kedaluwarsa TEXT NOT NULL DEFAULT '',
+  kirim_terakhir TEXT NOT NULL DEFAULT '',
+  jumlah_kirim INTEGER NOT NULL DEFAULT 0,
+  selesai_pada TEXT NOT NULL DEFAULT ''
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_verifikasi_lolos (
+  user_id TEXT NOT NULL,
+  perangkat_id TEXT NOT NULL,
+  jenis TEXT NOT NULL,
+  metode TEXT NOT NULL DEFAULT '',
+  dibuat_pada TEXT NOT NULL,
+  sampai TEXT NOT NULL,
+  PRIMARY KEY (user_id, perangkat_id, jenis)
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_verifikasi_kode_cadangan (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  kode_hash TEXT NOT NULL,
+  dibuat_pada TEXT NOT NULL,
+  dibuat_oleh TEXT NOT NULL DEFAULT '',
+  dipakai_pada TEXT NOT NULL DEFAULT ''
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_verifikasi_tantangan_akun ON aleta_verifikasi_tantangan(user_id, kedaluwarsa_pada)`,
+    `CREATE INDEX IF NOT EXISTS idx_verifikasi_lolos_sampai ON aleta_verifikasi_lolos(sampai)`,
+    `CREATE INDEX IF NOT EXISTS idx_verifikasi_kode_cadangan_akun ON aleta_verifikasi_kode_cadangan(user_id, dipakai_pada)`,
+  ],
+  kolom: [],
+} as const;
+
+/**
  * Unggah Putusan Terjadwal (0080, 21 Okt 2026, agen B3): jadwal, butir (satu
  * perkara), berkas yang diunggah, dan jejak jujur. Cermin PERSIS dari
  * drizzle/0080_aleta_putusan_terjadwal.sql; penjaga putusan-terjadwal-layanan-21okt.test.ts
@@ -2534,6 +2589,8 @@ const schemaStatements = [
   ...DDL_ALETA_AI_DOMPET.tabel,
   // Pusat kesehatan, catatan galat, hasil uji beban (0094).
   ...DDL_KESEHATAN_GALAT.tabel,
+  // Verifikasi dua langkah (0095).
+  ...DDL_VERIFIKASI_DUA_LANGKAH.tabel,
   // Unggah Putusan Terjadwal: jadwal, butir, berkas, jejak (0080).
   ...DDL_PUTUSAN_TERJADWAL.tabel,
   // Arsip hasil mediasi per perkara (0081).
@@ -4498,6 +4555,7 @@ const indexStatements = [
   ...DDL_ALETA_AI.indeks,
   ...DDL_ALETA_AI_DOMPET.indeks,
   ...DDL_KESEHATAN_GALAT.indeks,
+  ...DDL_VERIFIKASI_DUA_LANGKAH.indeks,
   ...DDL_PUTUSAN_TERJADWAL.indeks,
   ...DDL_MEDIASI_ARSIP.indeks,
   ...DDL_SIDANG_KELILING_HAKIM.indeks,

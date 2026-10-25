@@ -1423,6 +1423,26 @@ export const TUTORIAL: readonly Tutorial[] = [
     kataKunci: ["pemeliharaan", "maintenance", "pasang", "update", "jadwal", "tutup sementara"],
   },
   {
+    id: "pengelola-verifikasi-dua-langkah",
+    judul: "Verifikasi Dua Langkah",
+    ringkas: "OTP WhatsApp dan authenticator untuk masuk dari perangkat baru atau luar kantor, mati sampai dinyalakan Super Admin.",
+    kelompok: "pengelola",
+    mencakup: { aksi: ["verifikasi.atur", "verifikasi.bantu"] },
+    halaman: ["/admin/verifikasi-dua-langkah", "/account"],
+    tautan: { teks: "Buka Verifikasi Dua Langkah", href: "/admin/verifikasi-dua-langkah" },
+    langkah: [
+      "Minta pengguna memasang authenticator lebih dulu di halaman Akun (kode QR boleh dipindai di dua HP). Kode belum ditagih selama saklar mati.",
+      "Super Admin membuka Pusat Kendali, lalu Verifikasi Dua Langkah, memilih aturan tiap peran dan daftar jaringan kantor, lalu menyalakan OTP WhatsApp dan atau authenticator.",
+      "Sesudah menyala, kode hanya diminta di perangkat baru atau dari luar jaringan kantor; pengguna dapat mencentang Percayai perangkat ini (30 hari).",
+      "Bila HP hilang, Admin atau Super Admin membuat kode cadangan sekali pakai atau mereset authenticator pengguna itu.",
+    ],
+    peringatan: [
+      "Passkey belum aktif: hanya sah bila ALETA dibuka lewat HTTPS.",
+      "Akun tanpa authenticator dan tanpa nomor WhatsApp tidak dikunci; kejadiannya dicatat di log server.",
+    ],
+    kataKunci: ["otp", "verifikasi", "dua langkah", "authenticator", "kode whatsapp", "kode cadangan", "2fa"],
+  },
+  {
     id: "pengelola-lihat-sebagai-menu",
     judul: "Lihat Sebagai: kenapa menu tersembunyi",
     ringkas: "Memeriksa menu yang tampil bagi sebuah akun atau peran, dan kenapa menu lain tersembunyi.",

@@ -424,6 +424,13 @@ export function AdminHub() {
                 badge="Super Admin"
               />
               <AdminMenuAction
+                href="/admin/verifikasi-dua-langkah"
+                title="Verifikasi Dua Langkah"
+                description="OTP WhatsApp dan authenticator untuk perangkat baru atau luar kantor; bantu pengguna yang kehilangan HP."
+                icon={<ShieldCheck className="h-5 w-5 text-primary" />}
+                badge="Security"
+              />
+              <AdminMenuAction
                 href="/admin/lihat-sebagai"
                 title="Lihat Sebagai"
                 description="Periksa menu yang tampil bagi sebuah akun atau peran dan kenapa menu lain tersembunyi (baca-saja, tercatat)."
