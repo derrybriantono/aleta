@@ -65,7 +65,7 @@ Menulis ke SIPP, jadi berlapis. "BAS di SIPP" di sini = e-Doc BAS sidang (kolom 
 | `katalog-saksi-db-25okt` | hijau bila dijalankan sendirian (17 uji, 87 dtk); pernah gagal pada tahap kumpul saat laptop sibuk dengan agen lain, lalu hijau diulang |
 | `npx tsc --noEmit` | bersih |
 | lint (`eslint . --format json`) | 45 galat = dasar 45; tidak ada pelanggaran di berkas yang diubah. `npm run lint:jangan-bertambah` kehabisan memori di laptop yang sedang dipakai 4 agen; jalankan dengan `NODE_OPTIONS=--max-old-space-size=3072` |
-| Uji penuh | lihat bagian bawah |
+| Uji penuh (`periksa-uji`, 21.15-22.33, ujung C6 sebelum perbaikan kecil di bawah) | 10 berkas merah (salah hasil, tidak diulang). Tidak satu pun disebabkan C5/C6: `bawaan-abt-itsbat-18okt` (3), `elitigasi-7139-otomatis-17okt` (1), `aleta-ai-dompet-25okt` (1) dan `istilah-tampilan` (1) merah juga di ujung C4 (`92f6b74a`) pada pemeriksaan terpisah; `tema-ecourt-23okt` mengharap versi manifest 1.205.38 padahal dasar 1.205.39; `root-redirect` (redirect ke /setup), `docx-tabel-gambar`, `eviden-skp-cetak`, `xlsx-lembar-bebas` (gagal kumpul), `alamat-desa-ketik-22okt` (batas waktu ukur 5 ms; hijau diulang) adalah lingkungan laptop. `istilah-tampilan` diperbaiki di C6 (tulisan C3 "di borang" menjadi "di blangko") dan kini hijau. Sisanya perlu diperiksa pemilik cabangnya / sesudah gabung |
 
 ## Langkah laptop/server sesudah gabung
 

@@ -6822,7 +6822,7 @@ function susunPanelAbt(jatiDiri) {
   tombolSdg.addEventListener("click", async () => {
     if (await pakaiMesinTunggal()) {
       kabar.className = "aleta-abt-kabar";
-      kabar.textContent = "Memakai mesin katalog yang sama dengan Susun saksi menurut keadaan perkara. Bank templat ABT: tautan Cara lama di borang.";
+      kabar.textContent = "Memakai mesin katalog yang sama dengan Susun saksi menurut keadaan perkara. Bank templat ABT: tautan Cara lama di blangko.";
       susunKatalog.buka();
       return;
     }
