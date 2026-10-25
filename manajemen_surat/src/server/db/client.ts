@@ -443,6 +443,15 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_ai_kiriman",
   // 25 Oktober 2026 (0105): jejak tunda/putus otomatis terstruktur (U19). Tanpa kunci asing.
   "aleta_otomatis_jejak",
+  // 25 Oktober 2026 (0107): setelan keamanan, riwayat sandi (sidik), status sandi per akun. Tanpa kunci asing.
+  "aleta_setelan_keamanan",
+  "aleta_riwayat_sandi",
+  "aleta_status_sandi",
+  // 25 Oktober 2026 (0108): jaringan kantor + aturan jaringan per peran. Tanpa kunci asing.
+  "aleta_subnet_kantor",
+  "aleta_aturan_jaringan_peran",
+  // 25 Oktober 2026 (0109): hasil uji pulih cadangan mingguan. Tanpa kunci asing.
+  "aleta_uji_pulih",
   "feedback_requests",
   "user_notification_reads",
   "knowledge_base_regulations",

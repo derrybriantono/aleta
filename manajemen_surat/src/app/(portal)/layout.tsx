@@ -3,9 +3,14 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { PortalShellV2 } from "@/components/layout/portal-shell-v2";
+import { GantiSandiWajib } from "@/components/portal/ganti-sandi-wajib";
+import { JaringanDitolak } from "@/components/portal/jaringan-ditolak";
+import { PengamanAksiGlobal } from "@/components/portal/keamanan/pengaman-aksi-global";
 import { PitaKembaran } from "@/components/portal/pita-kembaran";
 import { getAuth } from "@/lib/auth";
 import { getDatabase } from "@/server/db/client";
+import { periksaJaringanSesi } from "@/server/modules/keamanan/jaringan";
+import { wajibGantiSandi } from "@/server/modules/keamanan/kebijakan-sandi";
 import { getUserByIdFromDb } from "@/server/modules/organization/service";
 
 export const dynamic = "force-dynamic";
@@ -17,8 +22,9 @@ export default async function PortalLayout({
   children: React.ReactNode;
 }) {
   const auth = await getAuth();
+  const permintaanHeaders = await headers();
   const session = await auth.api.getSession({
-    headers: await headers(),
+    headers: permintaanHeaders,
   });
 
   if (!session?.user) {
@@ -32,8 +38,23 @@ export default async function PortalLayout({
     redirect("/login");
   }
 
+  // Batas jaringan per peran (Bagian 6b): bawaan semua peran "mana pun" -> selalu lolos.
+  const jaringan = await periksaJaringanSesi(db, {
+    userId: session.user.id,
+    sessionId: String(session.session?.id ?? ""),
+    headers: permintaanHeaders,
+  });
+  if (!jaringan.lolos) return <JaringanDitolak pesan={jaringan.pesan} />;
+
+  // Kebijakan sandi (Bagian 6a): mati bawaan; menyala -> akun yang dipaksa ganti atau sandinya kedaluwarsa menggantinya dulu.
+  const gantiSandi = await wajibGantiSandi(db, session.user.id);
+  if (gantiSandi.wajib && gantiSandi.alasan) {
+    return <GantiSandiWajib alasan={gantiSandi.alasan} nama={actor.name} />;
+  }
+
   return (
     <>
+      <PengamanAksiGlobal />
       <PitaKembaran />
       <Suspense fallback={<div className="min-h-screen bg-background" />}>
         <PortalShellV2>{children}</PortalShellV2>

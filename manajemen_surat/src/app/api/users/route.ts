@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
+import { tegakkanPengaman } from "@/server/modules/keamanan/pengaman-aksi";
 import { requireActorUser } from "@/server/modules/organization/service";
 import { createManagedUserInDb, listUsersFromDb } from "@/server/modules/users/service";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
@@ -53,6 +54,12 @@ export async function POST(request: NextRequest) {
     }>(request);
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
+    // Pengaman aksi admin (Bagian 6c): mengangkat akun baru langsung menjadi Admin/Super Admin.
+    if (body.roleOverride === "admin" || body.roleOverride === "super-admin") {
+      await tegakkanPengaman(db, request, await requireActorUser(db, actorUserId), "akun.angkat-admin", {
+        rincian: { username: body.username, roleOverride: body.roleOverride },
+      });
+    }
     const user = await createManagedUserInDb(db, actorUserId, body);
 
     return created({

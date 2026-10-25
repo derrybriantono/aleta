@@ -2,6 +2,7 @@ import { APIError } from "better-auth/api";
 
 import { type AletaDatabase } from "@/server/db/client";
 import { buatTiket, ringkasPerangkat, tegakkanBatas } from "@/server/modules/perangkat/batas";
+import { periksaJaringanAkun } from "@/server/modules/keamanan/jaringan";
 import { JALUR_MASUK, catatPeristiwaAman, catatPerangkat, jalurDariPath } from "@/server/modules/perangkat/jejak";
 import {
   MASA_KUKI_PERANGKAT_DETIK,
@@ -80,14 +81,33 @@ export function kaitSesiPerangkat(ambilDb: () => Promise<AletaDatabase>) {
 
           let db: AletaDatabase | null = null;
           let hasil: Awaited<ReturnType<typeof tegakkanBatas>> | null = null;
+          let jaringan: Awaited<ReturnType<typeof periksaJaringanAkun>> | null = null;
           // Batas hanya untuk MASUK (email/sipp/sipp-sesi). Sesi yang dibuat
           // Better Auth di jalur lain (mis. ganti password) tidak ditolak.
           const jalurMasuk = (JALUR_MASUK as readonly string[]).includes(jalur);
           try {
             db = await ambilDb();
-            if (jalurMasuk) hasil = await tegakkanBatas(db, { userId: String(data.userId), perangkatId });
+            if (jalurMasuk) {
+              // Batas jaringan per peran (Bagian 6b) SEBELUM batas perangkat: masuk yang ditolak karena jaringan
+              // tidak boleh mengeluarkan perangkat lama. Bawaan semua peran "mana pun" -> selalu lolos.
+              jaringan = await periksaJaringanAkun(db, { userId: String(data.userId), headers, tahap: "masuk" });
+              if (jaringan.lolos) hasil = await tegakkanBatas(db, { userId: String(data.userId), perangkatId });
+            }
           } catch (galat) {
             console.warn("[BATAS PERANGKAT] tidak dapat diperiksa; masuk diteruskan:", galat instanceof Error ? galat.message : "tidak diketahui");
+          }
+          if (db && jaringan && !jaringan.lolos) {
+            await catatPeristiwaAman(db, {
+              peristiwa: "MASUK_DITOLAK_JARINGAN",
+              alasan: jaringan.alasan,
+              jalur,
+              userId: String(data.userId),
+              perangkatId,
+              headers,
+              ingat: ingatDari(ctx),
+              rincian: { aturan: jaringan.aturan },
+            });
+            throw new APIError("FORBIDDEN", { message: jaringan.pesan, code: jaringan.kode });
           }
           if (db && hasil && !hasil.lolos) {
             const perangkat = await ringkasPerangkat(db, String(data.userId), hasil.perangkat);

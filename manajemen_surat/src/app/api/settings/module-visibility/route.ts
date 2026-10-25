@@ -6,6 +6,7 @@ import {
   getModuleVisibilityFromDb,
   updateModuleVisibilityInDb,
 } from "@/server/modules/settings/service";
+import { tegakkanPengaman } from "@/server/modules/keamanan/pengaman-aksi";
 import { requireActorUser } from "@/server/modules/organization/service";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ApiError } from "@/server/shared/errors";
@@ -43,6 +44,10 @@ export async function PUT(request: NextRequest) {
 
     const db = await getDatabase();
     const actorUserId = await resolveActorUserId(request);
+    // Pengaman aksi admin (Bagian 6c): mati bawaan -> tidak berbuat apa pun.
+    await tegakkanPengaman(db, request, await requireActorUser(db, actorUserId), "peran.ubah-hak", {
+      rincian: { roleId: body.roleId, moduleId: body.moduleId, enabled: Boolean(body.enabled) },
+    });
     const items = await updateModuleVisibilityInDb(db, {
       actorUserId,
       roleId: body.roleId,

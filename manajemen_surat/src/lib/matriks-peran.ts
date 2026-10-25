@@ -999,6 +999,24 @@ export const AKSI = {
     alasan: "Batas per peran berlaku untuk seluruh satker dan dapat mengeluarkan banyak orang sekaligus - hanya Super Admin.",
     hanyaSuperAdmin: true,
   },
+  // 25 Okt 2026 (Bagian 6): Pengaturan Keamanan - kebijakan sandi, batas jaringan, pengaman aksi admin, uji pulih cadangan.
+  "keamanan.lihat": {
+    label: "Melihat Pengaturan Keamanan (kebijakan sandi, batas jaringan, pengaman aksi, uji pulih cadangan)",
+    crud: "R",
+    golongan: [],
+    lingkup: "semua",
+    rute: ["GET /api/admin/keamanan/sandi", "GET /api/admin/keamanan/jaringan", "GET /api/admin/keamanan/pengaman", "GET /api/admin/keamanan/uji-pulih"],
+    alasan: "Setelan keamanan memuat aturan sandi, daftar jaringan kantor, dan hasil uji pulih cadangan - hanya Admin dan Super Admin yang membaca.",
+  },
+  "keamanan.atur": {
+    label: "Mengubah Pengaturan Keamanan dan menjalankan uji pulih cadangan",
+    crud: "CUD",
+    golongan: [],
+    lingkup: "semua",
+    rute: ["POST /api/admin/keamanan/sandi", "POST /api/admin/keamanan/sandi/paksa-ganti", "POST /api/admin/keamanan/jaringan", "POST /api/admin/keamanan/pengaman", "POST /api/admin/keamanan/uji-pulih"],
+    alasan: "Kebijakan sandi, batas jaringan, pengaman aksi, dan uji pulih berlaku untuk seluruh satker dan dapat mengunci orang keluar - hanya Super Admin.",
+    hanyaSuperAdmin: true,
+  },
   // Analitik
   "analitik.peta-beban": {
     label: "Peta perkara & beban konseptor",

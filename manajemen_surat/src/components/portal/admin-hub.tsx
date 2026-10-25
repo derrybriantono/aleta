@@ -359,6 +359,13 @@ export function AdminHub() {
               />
             )}
             <AdminMenuAction
+              href="/admin/keamanan"
+              title="Pengaturan Keamanan"
+              description="Kebijakan sandi, batas jaringan per peran, pengaman aksi berdampak besar, dan uji pulih cadangan. Semua saklar mati sampai dinyalakan Super Admin."
+              icon={<ShieldCheck className="h-5 w-5 text-rose-600" />}
+              badge="Keamanan"
+            />
+            <AdminMenuAction
               href="/admin/sinkron-cadangan"
               title="Sinkron & cadangan"
               description="Cadangan otomatis ALETA, SIPP, ABT, dan antrian ke laptop dan Google Drive, serta berkas seluruh perkara ke Google Drive."
