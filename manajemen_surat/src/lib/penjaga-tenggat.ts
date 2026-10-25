@@ -63,13 +63,27 @@
  * dihitung sebagai tenggat yang lewat.
  */
 
+import { sebutanSatuPihak } from "@/lib/sebutan-pihak";
+
 /** Batas cakrawala: yang lebih tua dari ini dihitung sebagai tumpukan lama. */
 export const CAKRAWALA_BULAN = 24;
 
 /** Status putusan SIPP yang berarti perceraiannya DIKABULKAN. */
 export const STATUS_DIKABULKAN = 62;
 
-export type Tingkat = "lewat" | "menjelang" | "catatan";
+/**
+ * Tanda yang WAJIB menempel pada dasar hukum setiap aturan baru (G1, 25 Okt 2026) sampai Derry memeriksanya.
+ * Aturan bertanda ini tampil di layar Tenggat dengan lencana "belum diperiksa", dan TIDAK ikut pengingat
+ * WhatsApp sebelum Super Admin memasukkannya ke daftar aturan pengingat (tutup ganda yang disengaja).
+ */
+export const TANDA_VERIFIKASI = "[PERLU VERIFIKASI Derry]";
+
+/**
+ * Tingkat butir. "berjalan" HANYA muncul bila pemanggil meminta hitung mundur (layar Tenggat): masa hak
+ * (banding/kasasi) yang masih panjang atau mediasi yang masih dalam 30 hari. Laporan WhatsApp tidak pernah
+ * memuatnya - ia bukan kelalaian, hanya jam yang sedang berjalan.
+ */
+export type Tingkat = "lewat" | "menjelang" | "berjalan" | "catatan";
 
 export type FaktaTenggat = {
   perkaraId: string;
@@ -81,6 +95,23 @@ export type FaktaTenggat = {
   statusPutusanId: number | null;
   /** Keterangan tambahan yang ikut ditampilkan, mis. majelis atau agenda. */
   keterangan?: string;
+  /** Petugas perkara (teks, nama dipisah koma) - dasar pengingat per orang. Kosong = tidak ada penerima pribadi. */
+  majelis?: string;
+  panitera?: string;
+  jurusita?: string;
+  mediator?: string;
+  /** Pihak yang dihitung (1 = pihak pertama, 2 = pihak kedua) pada aturan per pihak (banding). */
+  pihakKe?: number;
+  alurPerkaraId?: number;
+  jenisPerkaraId?: number;
+  /** Batas TEGAS dari pembaca fakta (mis. 6 bulan kalender ikrar). Menang atas tanggalAcuan + batasHari. */
+  tanggalBatas?: string;
+  /** Dari mana hitungan dimulai: putusan diucapkan, atau pemberitahuan putusan. */
+  dasarMulai?: "putusan" | "pemberitahuan";
+  /** Salah bila kehadiran/dasar mulai tidak pasti: masa hak tidak boleh dinyatakan "sudah berakhir". */
+  pasti?: boolean;
+  /** Benar bila hitungan BELUM dimulai karena pemberitahuan putusan belum tercatat. */
+  menunggu?: boolean;
 };
 
 export type Butir = {
@@ -101,6 +132,19 @@ export type Butir = {
   tingkat: Tingkat;
   tindakan: string;
   keterangan: string;
+  /** Hari terakhir menurut aturan (yyyy-mm-dd), atau "" bila aturan tidak punya batas ke depan. */
+  tanggalBatas: string;
+  /** Sebutan pihak yang dihitung ("Penggugat"), atau "" pada aturan yang tidak per pihak. */
+  pihak: string;
+  /** Petugas perkara - dasar penyaringan "perkara saya" dan pengingat pribadi. */
+  majelis: string;
+  panitera: string;
+  jurusita: string;
+  mediator: string;
+  /** Aturannya masih bertanda [PERLU VERIFIKASI Derry]. */
+  perluVerifikasi: boolean;
+  /** Hitungan belum dimulai (pemberitahuan putusan belum tercatat). */
+  menunggu: boolean;
 };
 
 export type Aturan = {
@@ -132,6 +176,17 @@ export type Aturan = {
    * dalam kepala mesin yang tidak berarti apa-apa bagi yang membacanya.
    */
   acuanDiDepan?: boolean;
+  /**
+   * Masa HAK para pihak (banding, kasasi), bukan kewajiban petugas. Akibatnya: lewat batas BUKAN "lewat
+   * tenggat" (tidak menuduh siapa pun) melainkan catatan "masa berakhir, periksa langkah berikutnya", dan
+   * hanya selama `jendelaCatatanHari` hari sesudahnya supaya tidak menjadi tumpukan.
+   */
+  masaHak?: boolean;
+  jendelaCatatanHari?: number;
+  /** Aturan baru yang dasar hukumnya belum diperiksa Derry (lihat TANDA_VERIFIKASI). */
+  perluVerifikasi?: boolean;
+  /** Sebut hari terakhirnya pada tiap baris laporan ("batas 29-10-2026"). */
+  tampilBatas?: boolean;
 };
 
 /**
@@ -235,8 +290,85 @@ export const ATURAN_TENGGAT: Aturan[] = [
   },
 ];
 
+/**
+ * ============================================================================
+ * ATURAN BARU (G1, 25 Okt 2026) - banding, kasasi, mediasi
+ * ============================================================================
+ *
+ * Dipisah dari ATURAN_TENGGAT dengan sengaja: nilaiTenggat() tanpa opsi memakai ATURAN_TENGGAT saja, jadi
+ * rute dan laporan lama berbunyi persis seperti sebelum G1. Aturan di bawah dinyalakan oleh jadwal harian /
+ * layar Tenggat (opsi.aturan = SEMUA_ATURAN).
+ *
+ * HUKUM ACARA: Pengadilan Agama di luar Jawa-Madura memakai RBg, BUKAN HIR. Semua dasar di bawah ditulis
+ * apa adanya dari ingatan pengembang dan WAJIB diperiksa Derry (${TANDA_VERIFIKASI}) sebelum aturannya
+ * dimasukkan ke pengingat WhatsApp. Angka hari TIDAK diukur atas SIPP (SIPP mati sampai 26 Okt) - skrip ukur
+ * dijalankan di laptop (lihat laporan-rantai-G).
+ */
+export const ATURAN_BARU: Aturan[] = [
+  {
+    kode: "banding-14-hari",
+    judul: "Masa banding 14 hari",
+    // [PERLU VERIFIKASI Derry] Pasal 199 RBg: permohonan banding dalam 14 hari sejak putusan diucapkan, atau
+    // sejak diberitahukan bagi pihak yang tidak hadir (Pasal 7 UU 20/1947 untuk Jawa-Madura). Cara hitung
+    // per pihak mengikuti appealDeadlineService (aturan lama, tidak digandakan).
+    dasar: "Pasal 199 RBg - 14 hari sejak putusan diucapkan, atau sejak diberitahukan bagi pihak yang tidak hadir " + TANDA_VERIFIKASI,
+    batasHari: 14,
+    // Hanya 3 hari terakhir yang masuk pengingat; sisanya tampil sebagai "berjalan" di layar Tenggat.
+    peringatanHari: 3,
+    tindakan:
+      "Pastikan pemberitahuan putusan sudah disampaikan ke pihak yang tidak hadir; bila masa berakhir tanpa banding, periksa pernyataan BHT.",
+    hanyaDikabulkan: false,
+    masaHak: true,
+    // Putusan lebih dari 30 hari sesudah masa berakhir dan belum BHT adalah urusan lain (BHT/akta), bukan catatan masa banding.
+    jendelaCatatanHari: 30,
+    perluVerifikasi: true,
+    tampilBatas: true,
+  },
+  {
+    kode: "kasasi-14-hari",
+    judul: "Masa kasasi 14 hari",
+    // [PERLU VERIFIKASI Derry] Pasal 46 ayat (1) UU 14/1985 jo UU 5/2004 jo UU 3/2009: 14 hari sejak putusan
+    // (banding) diberitahukan kepada pemohon kasasi. Hitungan memakai tanggal pemberitahuan putusan banding
+    // di SIPP; tanpa tanggal itu hanya catatan "belum berjalan".
+    dasar: "Pasal 46 ayat (1) UU 14/1985 jo UU 3/2009 - 14 hari sejak putusan banding diberitahukan " + TANDA_VERIFIKASI,
+    batasHari: 14,
+    peringatanHari: 3,
+    tindakan:
+      "Pastikan putusan banding sudah diberitahukan ke para pihak; bila masa berakhir tanpa kasasi, periksa pernyataan BHT.",
+    hanyaDikabulkan: false,
+    masaHak: true,
+    jendelaCatatanHari: 30,
+    perluVerifikasi: true,
+    tampilBatas: true,
+  },
+  {
+    kode: "mediasi-30-hari",
+    judul: "Mediasi melewati 30 hari tanpa laporan mediator",
+    // [PERLU VERIFIKASI Derry] Pasal 24 ayat (2) PERMA 1/2016: 30 hari sejak penetapan perintah melakukan
+    // mediasi (di sini: penetapan penunjukan mediator di SIPP). Ayat (3) memungkinkan perpanjangan atas
+    // kesepakatan para pihak - perpanjangan TIDAK terbaca dari SIPP, jadi butir ini hanya mengingatkan.
+    dasar: "Pasal 24 ayat (2) PERMA 1/2016 - 30 hari sejak penetapan mediator (perpanjangan tidak terbaca dari SIPP) " + TANDA_VERIFIKASI,
+    // Harus sama dengan sippJadwalSidangService.BATAS_MEDIASI_HARI (dijaga uji).
+    batasHari: 30,
+    peringatanHari: 7,
+    tindakan: "Minta laporan mediator, atau pastikan ada penetapan perpanjangan mediasi.",
+    hanyaDikabulkan: false,
+    perluVerifikasi: true,
+    tampilBatas: true,
+  },
+];
+
+/** Aturan lama + baru: dipakai jadwal harian dan layar Tenggat. */
+export const SEMUA_ATURAN: Aturan[] = [...ATURAN_TENGGAT, ...ATURAN_BARU];
+
+/** Peta ketujuh aturan LAMA (bentuk dan isinya tidak berubah; dijaga penjaga-tenggat.test.ts). */
 export const PETA_ATURAN: ReadonlyMap<string, Aturan> = new Map(
   ATURAN_TENGGAT.map((a) => [a.kode, a])
+);
+
+/** Peta SEMUA aturan (lama + baru G1): dipakai laporan, layar Tenggat, dan jadwal harian. */
+export const PETA_SEMUA_ATURAN: ReadonlyMap<string, Aturan> = new Map(
+  SEMUA_ATURAN.map((a) => [a.kode, a])
 );
 
 /** Tanggal ISO yyyy-mm-dd dari Date atau teks, atau "" bila tidak terbaca. */
@@ -272,13 +404,92 @@ export function tumpukanLama(tanggalAcuan: string, acuanHariIni: string): boolea
   return selisihHari(tanggalAcuan, acuanHariIni) > CAKRAWALA_BULAN * 30;
 }
 
+/** "2026-10-29" -> "29-10-2026"; selain itu apa adanya. */
+export function tanggalPendek(iso: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ""));
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : String(iso || "");
+}
+
+export type OpsiNilai = {
+  /** Aturan yang dinilai. Bawaan: ATURAN_TENGGAT (perilaku lama persis). */
+  aturan?: readonly Aturan[];
+  /** Ikut menghasilkan butir "berjalan" (hitung mundur) untuk layar Tenggat. Bawaan: tidak. */
+  hitungMundur?: boolean;
+};
+
+/** Sebutan pihak butir ("Penggugat") dari nomor sebutan di fakta; "" bila fakta tidak per pihak. */
+function sebutPihakFakta(fakta: FaktaTenggat): string {
+  if (!fakta.pihakKe) return "";
+  return sebutanSatuPihak(fakta.pihakKe, {
+    alurPerkaraId: fakta.alurPerkaraId ?? null,
+    jenisPerkaraId: fakta.jenisPerkaraId ?? null,
+    jenisPerkaraNama: fakta.jenisPerkara,
+    nomorPerkara: fakta.nomorPerkara,
+  });
+}
+
+/** Kalimat dasar hitungan satu pihak: "Penggugat, dihitung dari putusan 12-10-2026". */
+function keteranganPihak(fakta: FaktaTenggat, pihak: string, acuan: string): string {
+  if (!pihak) return "";
+  const dasar = fakta.dasarMulai === "pemberitahuan" ? "pemberitahuan" : "putusan";
+  const ragu = fakta.pasti === false ? " (kehadiran saat putusan tidak tercatat)" : "";
+  return `${pihak}, dihitung dari ${dasar} ${tanggalPendek(acuan)}${ragu}`;
+}
+
+function tambahHariIso(iso: string, hari: number): string {
+  const t = new Date(`${iso}T12:00:00Z`);
+  if (Number.isNaN(t.getTime())) return "";
+  t.setUTCDate(t.getUTCDate() + hari);
+  return tanggalIso(t.toISOString());
+}
+
+type BahanButir = {
+  acuan: string;
+  batas: string;
+  pihak: string;
+  selisih: number;
+  acuanHariIni: string;
+  tingkat: Tingkat;
+  menunggu: boolean;
+  keterangan: string;
+};
+
+function susunButir(aturan: Aturan, fakta: FaktaTenggat, s: BahanButir): Butir {
+  return {
+    aturan: aturan.kode,
+    judul: aturan.judul,
+    perkaraId: String(fakta.perkaraId || ""),
+    nomorPerkara: String(fakta.nomorPerkara || ""),
+    jenisPerkara: String(fakta.jenisPerkara || ""),
+    tanggalAcuan: s.acuan,
+    selisihHari: s.selisih,
+    hariKePeristiwa: selisihHari(s.acuanHariIni, s.acuan),
+    tingkat: s.tingkat,
+    tindakan: aturan.tindakan,
+    keterangan: s.keterangan,
+    tanggalBatas: s.batas,
+    pihak: s.pihak,
+    majelis: String(fakta.majelis || ""),
+    panitera: String(fakta.panitera || ""),
+    jurusita: String(fakta.jurusita || ""),
+    mediator: String(fakta.mediator || ""),
+    perluVerifikasi: Boolean(aturan.perluVerifikasi),
+    menunggu: s.menunggu,
+  };
+}
+
 /**
  * Menilai satu fakta terhadap satu aturan.
  *
  * Pulang null bila tidak ada yang perlu disebut - dan itulah keadaan yang
  * paling sering, sebagaimana seharusnya.
  */
-export function nilaiSatu(aturan: Aturan, fakta: FaktaTenggat, acuanHariIni: string): Butir | null {
+export function nilaiSatu(
+  aturan: Aturan,
+  fakta: FaktaTenggat,
+  acuanHariIni: string,
+  opsi: Pick<OpsiNilai, "hitungMundur"> = {}
+): Butir | null {
   const acuan = tanggalIso(fakta.tanggalAcuan);
   if (!acuan) return null;
 
@@ -287,16 +498,56 @@ export function nilaiSatu(aturan: Aturan, fakta: FaktaTenggat, acuanHariIni: str
   // supaya yang membacanya melihatnya sebelum melihat hitungannya.
   if (aturan.hanyaDikabulkan && fakta.statusPutusanId !== STATUS_DIKABULKAN) return null;
 
-  const lewatHari = selisihHari(acuan, acuanHariIni) - aturan.batasHari;
+  const pihak = sebutPihakFakta(fakta);
+  const batasTegas = tanggalIso(fakta.tanggalBatas);
+  const batas = batasTegas || (aturan.batasHari >= 0 && !aturan.acuanDiDepan ? tambahHariIso(acuan, aturan.batasHari) : "");
+
+  // Hitungan yang BELUM dimulai (pihak tidak hadir, pemberitahuan putusan belum tercatat): hanya catatan, tanpa tanggal.
+  if (fakta.menunggu) {
+    if (!aturan.masaHak) return null;
+    const umur = selisihHari(acuan, acuanHariIni);
+    // Lama sesudah itu urusannya bukan lagi catatan masa hak, melainkan pemberitahuan yang tidak pernah dibuat.
+    if (umur < 0 || umur > (aturan.jendelaCatatanHari ?? 30) + aturan.batasHari) return null;
+    return susunButir(aturan, fakta, {
+      acuan,
+      batas: "",
+      pihak,
+      selisih: -aturan.batasHari,
+      acuanHariIni,
+      tingkat: "catatan",
+      menunggu: true,
+      keterangan: [
+        pihak ? `${pihak}: pemberitahuan putusan belum tercatat - masa belum berjalan` : "pemberitahuan belum tercatat - masa belum berjalan",
+        `dasar ${tanggalPendek(acuan)}, ${umur} hari lalu`,
+      ].join(" · "),
+    });
+  }
+
+  const lewatHari = batas ? selisihHari(batas, acuanHariIni) : selisihHari(acuan, acuanHariIni) - aturan.batasHari;
 
   let tingkat: Tingkat;
   if (aturan.selaluCatatan) {
     if (lewatHari < 0) return null;
     tingkat = "catatan";
+  } else if (aturan.masaHak) {
+    if (lewatHari > 0) {
+      // Masa hak berakhir BUKAN kelalaian. Hanya catatan, dan hanya bila yakin pihaknya hadir/diberitahu.
+      if (fakta.pasti === false) return null;
+      if (lewatHari > (aturan.jendelaCatatanHari ?? 30)) return null;
+      tingkat = "catatan";
+    } else if (aturan.peringatanHari > 0 && lewatHari >= -aturan.peringatanHari) {
+      tingkat = "menjelang";
+    } else if (opsi.hitungMundur) {
+      tingkat = "berjalan";
+    } else {
+      return null;
+    }
   } else if (lewatHari > 0) {
     tingkat = "lewat";
   } else if (aturan.peringatanHari > 0 && lewatHari >= -aturan.peringatanHari) {
     tingkat = "menjelang";
+  } else if (opsi.hitungMundur && aturan.tampilBatas && aturan.batasHari > 0 && !aturan.acuanDiDepan && Boolean(batas)) {
+    tingkat = "berjalan";
   } else {
     return null;
   }
@@ -305,19 +556,16 @@ export function nilaiSatu(aturan: Aturan, fakta: FaktaTenggat, acuanHariIni: str
   // di tempat lain dan disebut satu baris.
   if (tingkat === "lewat" && tumpukanLama(acuan, acuanHariIni)) return null;
 
-  return {
-    aturan: aturan.kode,
-    judul: aturan.judul,
-    perkaraId: String(fakta.perkaraId || ""),
-    nomorPerkara: String(fakta.nomorPerkara || ""),
-    jenisPerkara: String(fakta.jenisPerkara || ""),
-    tanggalAcuan: acuan,
-    selisihHari: lewatHari,
-    hariKePeristiwa: selisihHari(acuanHariIni, acuan),
+  return susunButir(aturan, fakta, {
+    acuan,
+    batas,
+    pihak,
+    selisih: lewatHari,
+    acuanHariIni,
     tingkat,
-    tindakan: aturan.tindakan,
-    keterangan: String(fakta.keterangan || ""),
-  };
+    menunggu: false,
+    keterangan: [keteranganPihak(fakta, pihak, acuan), String(fakta.keterangan || "")].filter(Boolean).join(" · "),
+  });
 }
 
 export type Rapor = {
@@ -327,32 +575,36 @@ export type Rapor = {
   hitung: { lewat: number; menjelang: number; catatan: number };
   /** Yang lebih tua daripada cakrawala, per aturan. Disebut, tidak dirinci. */
   tumpukanLama: Record<string, number>;
+  /** Jumlah butir "berjalan" (hitung mundur) - terpisah supaya `hitung` lama tidak berubah bentuk. */
+  berjalan: number;
 };
 
 /** Menilai seluruh fakta, dikelompokkan menurut kode aturan. */
 export function nilaiTenggat(
   fakta: Record<string, FaktaTenggat[]>,
-  acuanHariIni: string
+  acuanHariIni: string,
+  opsi: OpsiNilai = {}
 ): Rapor {
   const butir: Butir[] = [];
   const lama: Record<string, number> = {};
+  const daftarAturan = opsi.aturan ?? ATURAN_TENGGAT;
 
-  for (const aturan of ATURAN_TENGGAT) {
+  for (const aturan of daftarAturan) {
     for (const satu of fakta[aturan.kode] || []) {
       const acuan = tanggalIso(satu.tanggalAcuan);
       const layak = !aturan.hanyaDikabulkan || satu.statusPutusanId === STATUS_DIKABULKAN;
-      if (layak && acuan && tumpukanLama(acuan, acuanHariIni)) {
+      if (layak && acuan && !aturan.masaHak && tumpukanLama(acuan, acuanHariIni)) {
         const lewat = selisihHari(acuan, acuanHariIni) - aturan.batasHari;
         if (lewat > 0) lama[aturan.kode] = (lama[aturan.kode] || 0) + 1;
       }
-      const hasil = nilaiSatu(aturan, satu, acuanHariIni);
+      const hasil = nilaiSatu(aturan, satu, acuanHariIni, { hitungMundur: opsi.hitungMundur });
       if (hasil) butir.push(hasil);
     }
   }
 
   // Yang paling lama terlampaui berdiri di atas. Dalam satu aturan, yang
   // paling mendesak dikerjakan lebih dahulu - bukan menurut nomor perkara.
-  const bobot: Record<Tingkat, number> = { lewat: 0, menjelang: 1, catatan: 2 };
+  const bobot: Record<Tingkat, number> = { lewat: 0, menjelang: 1, berjalan: 2, catatan: 3 };
   butir.sort(
     (a, b) =>
       bobot[a.tingkat] - bobot[b.tingkat] ||
@@ -369,6 +621,7 @@ export function nilaiTenggat(
       catatan: butir.filter((x) => x.tingkat === "catatan").length,
     },
     tumpukanLama: lama,
+    berjalan: butir.filter((x) => x.tingkat === "berjalan").length,
   };
 }
 
@@ -420,6 +673,10 @@ export type OpsiLaporan = {
   /** Alamat portal untuk membuka rinciannya. */
   tautan?: string;
   batasRinci?: number;
+  /** Judul kepala. Bawaan "PENJAGA TENGGAT"; pengingat pribadi memakai "PENGINGAT TENGGAT". */
+  judul?: string;
+  /** Baris tambahan tepat di bawah tanggal (mis. nama penerima). */
+  sapaan?: string;
 };
 
 /**
@@ -441,8 +698,9 @@ export function susunLaporanHarian(rapor: Rapor, opsi: OpsiLaporan = {}): string
   const baris: string[] = [];
   const satker = opsi.satker ? ` ${opsi.satker}` : "";
 
-  baris.push(`*PENJAGA TENGGAT${satker}*`);
+  baris.push(`*${opsi.judul || "PENJAGA TENGGAT"}${satker}*`);
   baris.push(tanggalPanjang(rapor.acuan));
+  if (opsi.sapaan) baris.push(opsi.sapaan);
   baris.push("");
 
   if (rapor.butir.length === 0) {
@@ -467,6 +725,8 @@ export function susunLaporanHarian(rapor: Rapor, opsi: OpsiLaporan = {}): string
   const kepala: Record<Tingkat, string> = {
     lewat: "⚠ SUDAH LEWAT TENGGAT",
     menjelang: "◷ MENJELANG",
+    // "berjalan" tidak pernah masuk laporan WhatsApp (urutTingkat di atas tidak memuatnya); ada di sini hanya agar Record lengkap.
+    berjalan: "◔ BERJALAN",
     catatan: "· CATATAN",
   };
 
@@ -485,7 +745,7 @@ export function susunLaporanHarian(rapor: Rapor, opsi: OpsiLaporan = {}): string
     }
 
     for (const [kode, daftar] of perAturan) {
-      const aturan = PETA_ATURAN.get(kode);
+      const aturan = PETA_SEMUA_ATURAN.get(kode);
       baris.push("", `${daftar[0].judul} (${daftar.length})`);
       if (aturan) baris.push(`_${aturan.dasar}_`);
       for (const b of daftar.slice(0, batas)) {
@@ -494,7 +754,8 @@ export function susunLaporanHarian(rapor: Rapor, opsi: OpsiLaporan = {}): string
         const sisa = aturan?.acuanDiDepan
           ? `sidang ${sebutPeristiwa(b.hariKePeristiwa)}`
           : sebutSelisih(b.selisihHari);
-        const tambahan = b.keterangan ? ` · ${b.keterangan}` : "";
+        const batasTeks = aturan?.tampilBatas && b.tanggalBatas ? ` · batas ${tanggalPendek(b.tanggalBatas)}` : "";
+        const tambahan = (b.keterangan ? ` · ${b.keterangan}` : "") + batasTeks;
         baris.push(`• ${b.nomorPerkara} — ${sisa}${tambahan}`);
       }
       if (daftar.length > batas) baris.push(`  _…${daftar.length - batas} perkara lagi_`);

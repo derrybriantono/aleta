@@ -99,6 +99,17 @@ export async function register() {
     mulaiRekonsiliasiBerkala(getDatabase);
   }
   /* === AKHIR ALETA Ai REKONSILIASI === */
+  /* === PENJAGA TENGGAT TERJADWAL 25 Okt (G1) === detak 5 menit; jalan SEKALI per hari kerja pada jam pemicu (bawaan 07.30 WITA)
+     HANYA bila saklar jadwal Super Admin menyala (bawaan MATI: tidak ada pembacaan SIPP sama sekali). Hanya MEMBACA SIPP lewat bot;
+     pengingat WhatsApp pribadi punya saklar terpisah (bawaan MATI). Matikan seluruhnya dengan ALETA_PENJAGA_TENGGAT=0. */
+  if (process.env.ALETA_PENJAGA_TENGGAT !== "0") {
+    const [{ mulaiTenggatBerkala }, { getDatabase }] = await Promise.all([
+      import("@/server/modules/penjaga-tenggat/layanan"),
+      import("@/server/db/client"),
+    ]);
+    mulaiTenggatBerkala(getDatabase);
+  }
+  /* === AKHIR PENJAGA TENGGAT TERJADWAL === */
   if (process.env.ALETA_SINKRON_PENJADWAL === "0") return;
   const { mulaiPenjadwalSinkron } = await import("@/server/modules/sinkron/penjadwal");
   mulaiPenjadwalSinkron();

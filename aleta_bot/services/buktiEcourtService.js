@@ -31,6 +31,7 @@
 
 const T = require("./tuntutanDeteksiService");
 const TJ = require("./tanyaJawabEcourtService");
+const J_NOMOR_HALAMAN = require("./jawabMenjawabEcourtService").RE_NOMOR_HALAMAN;
 
 const KODE = Object.freeze({
   // S6 20 Okt: + hibah 9804/9805 (gugatan) dan 9810 (permohonan), wakaf 9834/9835 dan 9840, mafqud 9873 - daftar P.1/T.1 yang sama.
@@ -242,6 +243,64 @@ function kalimatButirElektronik(b) {
   return `${b.uraian.replace(/[\s,;:.]+$/, "")}, diberi tanda ${b.kode}`;
 }
 
+// ─── Daftar bukti "rapi" (G2, 25 Okt 2026) ───────────────────────────────────
+
+/**
+ * Ambang daftar bukti yang boleh ditulis OTOMATIS ke isian ABT yang kosong (saklar Super Admin, bawaan MATI).
+ * Semua ukuran harus terpenuhi; satu saja gagal -> tetap usulan "ragu" + tombol Salin, tidak ditulis sendiri.
+ * Ambangnya belum diukur atas berkas sungguhan (skrip ukur: manajemen_surat/scripts/ukur-berkas-ecourt-g2.ts).
+ */
+const AMBANG_BUKTI = Object.freeze({ butirMin: 1, butirMaks: 40, uraianMin: 8, uraianMaks: 600 });
+
+/**
+ * Sisa kop/penutup di uraian bukti. SENGAJA bukan TJ.sisaKop: pemeriksa itu menandai "NIK 7201..." dan "NIP ..." sebagai sisa kop surat,
+ * padahal uraian bukti KTP memang memuat NIK. Yang dicari di sini hanya yang pasti bukan uraian bukti: salam, penutup, tanda tangan,
+ * nama kuasa, garis isian, surel dan alamat web.
+ */
+const RE_SISA_BUKTI = /hormat\s+(?:kami|saya)|wassalam|assalamu|bismillah|\bttd\b|tanda\s+tangan|kuasa\s+hukum|\badvokat\b|\bS\.?\s?H\.?\s*(?:,|\.|\s*M\.?\s?H)|_{3,}|\.{6,}|https?:\/\/|www\.|@[a-z0-9.-]+\.[a-z]{2,}/i;
+function sisaKopBukti(uraian) {
+  const alasan = [];
+  for (const u of uraian) {
+    if (RE_SISA_BUKTI.test(u)) alasan.push("kop, penutup, atau tanda tangan tersisa");
+    if (J_NOMOR_HALAMAN.test(u.trim())) alasan.push("nomor halaman tersisa");
+  }
+  return [...new Set(alasan)];
+}
+
+/**
+ * Apakah daftar bukti SATU PIHAK rapi? Ukurannya:
+ *   1. ada butir, tidak lebih dari 40;
+ *   2. SEMUA butir bertanda P/T tertulis di berkas (bukan dari urutan baris);
+ *   3. nomornya berurutan 1..n tanpa lubang dan tanpa kembar;
+ *   4. bukan hasil OCR;
+ *   5. seluruh butir dari SATU berkas (daftar susulan yang saling timpa tidak ditulis otomatis);
+ *   6. tidak ada kode yang tertulis berbeda di dua berkas;
+ *   7. tiap uraian 8 sampai 600 huruf, tanpa karakter rusak / huruf berserak / sisa kop, tanda tangan, nomor halaman.
+ * @param {object[]} milik butir satu pihak (dengan .dok)
+ * @param {Set<string>} bentrokKode kode yang tertulis berbeda di dua berkas
+ * @returns {{rapi:boolean, alasan:string[]}}
+ */
+function nilaiRapiBukti(milik, bentrokKode) {
+  const alasan = [];
+  const daftar = Array.isArray(milik) ? milik : [];
+  if (daftar.length < AMBANG_BUKTI.butirMin) return { rapi: false, alasan: ["tidak ada butir bukti"] };
+  if (daftar.length > AMBANG_BUKTI.butirMaks) alasan.push(`butir bukti terlalu banyak (${daftar.length})`);
+  if (daftar.some((b) => b.kodeDariUrutan)) alasan.push("nomor P/T diambil dari urutan butir (tidak tertulis di berkas)");
+  const nomor = daftar.map((b) => b.no).sort((a, b) => a - b);
+  if (nomor.some((n, i) => n !== i + 1)) alasan.push("nomor bukti tidak berurutan dari 1");
+  if (daftar.some((b) => b.dok && b.dok.baca === "ocr")) alasan.push("daftar dibaca OCR");
+  const berkas = new Set(daftar.map((b) => b.dok));
+  if (berkas.size > 1) alasan.push("butir berasal dari lebih dari satu berkas");
+  if (daftar.some((b) => bentrokKode && bentrokKode.has(b.kode))) alasan.push("ada nomor bukti yang tertulis berbeda di dua berkas");
+  const uraian = daftar.map((b) => b.uraian);
+  if (uraian.some((u) => u.replace(/[^A-Za-z]/g, "").length < AMBANG_BUKTI.uraianMin)) alasan.push("ada uraian bukti yang terlalu pendek");
+  if (uraian.some((u) => u.length > AMBANG_BUKTI.uraianMaks)) alasan.push("ada uraian bukti yang terlalu panjang (kemungkinan beberapa butir menyatu)");
+  alasan.push(...TJ.cacatKarakter(uraian.join(" ")));
+  alasan.push(...sisaKopBukti(uraian));
+  const unik = [...new Set(alasan)];
+  return { rapi: unik.length === 0, alasan: unik };
+}
+
 // ─── Surat keterangan KUA ────────────────────────────────────────────────────
 
 const RE_KUA_KONTEKS =
@@ -340,17 +399,39 @@ function susunBukti(m) {
   }
   // Satu kode = satu butir; butir dari berkas yang lebih dulu dipakai (daftar susulan tidak menimpa).
   const perKode = new Map();
+  const bentrokKode = new Set();
   for (const b of semua) {
     const k = b.kode;
     if (!perKode.has(k)) perKode.set(k, b);
-    else if (perKode.get(k).uraian.toLowerCase() !== b.uraian.toLowerCase()) hasil.catatan.push(`Bukti ${k} tertulis berbeda di dua berkas daftar bukti - dipakai yang pertama, periksa.`);
+    else if (perKode.get(k).uraian.toLowerCase() !== b.uraian.toLowerCase()) {
+      bentrokKode.add(k);
+      hasil.catatan.push(`Bukti ${k} tertulis berbeda di dua berkas daftar bukti - dipakai yang pertama, periksa.`);
+    }
   }
   hasil.butir = [...perKode.values()].map(({ dok, ...b }) => ({ ...b, sumber: dok.judul, baca: dok.baca || "teks" }));
   hasil.butir.sort((a, b) => (a.pihak === b.pihak ? a.no - b.no : a.pihak === "P" ? -1 : 1));
 
+  // G2: isi otomatis daftar bukti hanya bila Super Admin menyalakannya (x.otomatis) DAN daftar pihak itu rapi.
+  const otomatis = Boolean(x.otomatis);
+  hasil.otomatis = { aktif: otomatis, P: { rapi: false, alasan: [], baris: [] }, T: { rapi: false, alasan: [], baris: [] } };
+
   for (const pihak of ["P", "T"]) {
-    const milik = [...perKode.values()].filter((b) => b.pihak === pihak);
+    const milik = [...perKode.values()].filter((b) => b.pihak === pihak).sort((a, b) => a.no - b.no);
     if (!milik.length) continue;
+    const rapiInfo = nilaiRapiBukti(milik, bentrokKode);
+    // Penyunting bukti ekstensi hanya memegang bukti SURAT dan menomori ulang menurut urutan baris. Daftar yang memuat bukti elektronik
+    // (P.4 tangkapan layar di antara P.3 dan P.5) akan bergeser nomornya bila elektroniknya dibuang, jadi tidak ditulis ke penyunting itu;
+    // usulan untuk variabel bukti lain (yang menulis kode P/T apa adanya) tidak terpengaruh.
+    const campurElektronik = milik.some((b) => b.elektronik);
+    const alasanRows = campurElektronik ? [...rapiInfo.alasan, "daftar memuat bukti elektronik (nomor P/T tidak dapat dijaga di penyunting bukti surat)"] : rapiInfo.alasan;
+    hasil.otomatis[pihak] = {
+      rapi: rapiInfo.rapi && !campurElektronik,
+      alasan: alasanRows,
+      // Baris untuk penyunting bukti ekstensi: seluruh uraian di satu kolom (nama), kolom lain dikosongkan - nomor, tanggal, dan
+      // penerbit sudah ada di uraian, jadi tidak ditulis dua kali. Kode P/T disusun ulang ekstensi menurut urutan.
+      baris: rapiInfo.rapi && !campurElektronik ? milik.map((b) => ({ kode: b.kode, nm: b.uraian })) : [],
+    };
+    const yakin = otomatis && rapiInfo.rapi ? "cukup" : "ragu";
     const surat = milik.filter((b) => !b.elektronik);
     const elek = milik.filter((b) => b.elektronik);
     const dari = milik[0].dok;
@@ -359,7 +440,12 @@ function susunBukti(m) {
     const rapiCatatan = [];
     if (ocr) rapiCatatan.push("daftar dibaca OCR");
     if (urutan) rapiCatatan.push("nomor P/T diambil dari urutan butir (tidak tertulis di berkas)");
-    const catatanDasar = `Daftar bukti diunggah ${pihak === "P" ? "Penggugat/Pemohon" : "Tergugat/Termohon"} di e-Court; tanda P/T akhir ditetapkan majelis di persidangan, dan meterai serta pencocokan dengan aslinya diperiksa majelis - periksa dan sunting.${rapiCatatan.length ? ` (${rapiCatatan.join("; ")})` : ""}`;
+    const keteranganFormat = rapiInfo.rapi
+      ? otomatis
+        ? " Daftar rapi: ditulis otomatis ke isian yang masih kosong."
+        : " Daftar rapi (isi otomatis belum dinyalakan Super Admin)."
+      : ` Format daftar tidak rapi (${rapiInfo.alasan.slice(0, 2).join("; ")}), silakan salin dan periksa.`;
+    const catatanDasar = `Daftar bukti diunggah ${pihak === "P" ? "Penggugat/Pemohon" : "Tergugat/Termohon"} di e-Court; tanda P/T akhir ditetapkan majelis di persidangan, dan meterai serta pencocokan dengan aslinya diperiksa majelis - periksa dan sunting.${rapiCatatan.length ? ` (${rapiCatatan.join("; ")})` : ""}${keteranganFormat}`;
     if (surat.length) {
       const nilai = surat.map((b, i) => kalimatButirSurat(b, i + 1)).join("<br>");
       const kodes = pihak === "P" ? KODE.suratP : KODE.suratT;
@@ -369,6 +455,7 @@ function susunBukti(m) {
             kode,
             nama: `Alat bukti surat ${pihak === "P" ? "Penggugat/Pemohon" : "Tergugat/Termohon"} (daftar ${pihak}.1 dst.)`,
             nilai,
+            keyakinan: yakin,
             sumber: sumber(dari.judul, surat.map((b) => b.uraian).join("; "), dari.baca),
             kodePola: "bukti-daftar-ecourt",
             catatan: catatanDasar,
@@ -377,7 +464,7 @@ function susunBukti(m) {
       }
       hasil.kalimat.push({
         kode: `bukti-surat-${pihak === "P" ? "0046" : "0047"}`,
-        label: `Daftar bukti surat ${pihak === "P" ? "Penggugat/Pemohon" : "Tergugat/Termohon"} (e-Court) - ${surat.length} butir`,
+        label: `Daftar bukti surat ${pihak === "P" ? "Penggugat/Pemohon" : "Tergugat/Termohon"} (e-Court) - ${surat.length} butir${rapiInfo.rapi ? "" : " - format tidak rapi, silakan salin dan periksa"}`,
         bagian: "bukti",
         jenis: "",
         teks: surat.map((b, i) => kalimatButirSurat(b, i + 1)).join("\n"),
@@ -390,6 +477,7 @@ function susunBukti(m) {
           kode: pihak === "P" ? KODE.elektronikP : KODE.elektronikT,
           nama: `Bukti elektronik ${pihak === "P" ? "Penggugat/Pemohon" : "Tergugat/Termohon"}`,
           nilai: elek.map(kalimatButirElektronik).join(";<br>"),
+          keyakinan: yakin,
           sumber: sumber(dari.judul, elek.map((b) => b.uraian).join("; "), dari.baca),
           kodePola: "bukti-elektronik-ecourt",
           catatan: catatanDasar,
@@ -452,4 +540,4 @@ function susunBukti(m) {
   return hasil;
 }
 
-module.exports = { KODE, butirDariJudul, uraiTanggal, kenaliJenisBukti, ekstrakRincian, uraiDaftarBukti, kalimatButirSurat, kalimatButirElektronik, suratKuaDariPosita, suratKuaDariBerkas, susunBukti, RE_JUDUL_DAFTAR };
+module.exports = { KODE, AMBANG_BUKTI, nilaiRapiBukti, butirDariJudul, uraiTanggal, kenaliJenisBukti, ekstrakRincian, uraiDaftarBukti, kalimatButirSurat, kalimatButirElektronik, suratKuaDariPosita, suratKuaDariBerkas, susunBukti, RE_JUDUL_DAFTAR };

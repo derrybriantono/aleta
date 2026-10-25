@@ -1007,6 +1007,29 @@ export const DDL_ALETA_CERMIN_PERKARA_TANGGAL = {
 } as const;
 
 /**
+ * Penjaga Tenggat Terjadwal (0110, 25 Okt 2026, G1): catatan kirim pengingat WhatsApp per penerima per tanggal.
+ * Cermin PERSIS dari drizzle/0110_aleta_tenggat_kirim.sql; penjaga tenggat-terjadwal-25okt.test.ts
+ * membandingkan keduanya. Tanpa kunci asing.
+ */
+export const DDL_ALETA_TENGGAT_KIRIM = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_tenggat_kirim (
+  id TEXT PRIMARY KEY,
+  tanggal TEXT NOT NULL,
+  penerima_id TEXT NOT NULL,
+  penerima_nama TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'diklaim',
+  jumlah_butir INTEGER NOT NULL DEFAULT 0,
+  antrean_id TEXT NOT NULL DEFAULT '',
+  keterangan TEXT NOT NULL DEFAULT '',
+  dibuat_at TEXT NOT NULL,
+  diubah_at TEXT NOT NULL
+)`,
+  ],
+  indeks: [`CREATE INDEX IF NOT EXISTS idx_tenggat_kirim_tanggal ON aleta_tenggat_kirim(tanggal)`],
+} as const;
+
+/**
  * Unggah Putusan Terjadwal (0080, 21 Okt 2026, agen B3): jadwal, butir (satu
  * perkara), berkas yang diunggah, dan jejak jujur. Cermin PERSIS dari
  * drizzle/0080_aleta_putusan_terjadwal.sql; penjaga putusan-terjadwal-layanan-21okt.test.ts
@@ -2566,6 +2589,7 @@ const schemaStatements = [
   ...DDL_ALETA_AI.tabel,
   // ALETA Ai tahap 4: kuota hibah per peran, rekonsiliasi harian (0088).
   ...DDL_ALETA_AI_DOMPET.tabel,
+  ...DDL_ALETA_TENGGAT_KIRIM.tabel,
   // Cermin Perkara: perkara, sidang, pihak, mediasi, penanda, jejak (0090).
   ...DDL_ALETA_CERMIN_PERKARA.tabel,
   // Unggah Putusan Terjadwal: jadwal, butir, berkas, jejak (0080).
@@ -4531,6 +4555,7 @@ const indexStatements = [
   ...DDL_TAUTAN_JADWAL.indeks,
   ...DDL_ALETA_AI.indeks,
   ...DDL_ALETA_AI_DOMPET.indeks,
+  ...DDL_ALETA_TENGGAT_KIRIM.indeks,
   ...DDL_ALETA_CERMIN_PERKARA.indeks,
   ...DDL_PUTUSAN_TERJADWAL.indeks,
   ...DDL_MEDIASI_ARSIP.indeks,

@@ -4229,7 +4229,7 @@ export async function gatewayFaktaBuktiPertimbangan(nomor: string): Promise<
  * src/lib/penjaga-tenggat.ts. Tiap pembaca fakta gagal sendiri-sendiri, jadi
  * `gagal` dapat berisi sebagian kode aturan tanpa membuat seluruhnya gagal.
  */
-export async function getGatewayPenjagaTenggat(acuan = ""): Promise<
+export async function getGatewayPenjagaTenggat(acuan = "", opsi: { baru?: boolean } = {}): Promise<
   GatewayResult<{
     acuan: string;
     fakta: Record<string, unknown[]>;
@@ -4237,6 +4237,8 @@ export async function getGatewayPenjagaTenggat(acuan = ""): Promise<
   }>
 > {
   const params = new URLSearchParams({ acuan });
+  // baru=1 (G1): ikut banding/kasasi/mediasi + petugas perkara; tanpa itu jawaban sama dengan sebelum G1.
+  if (opsi.baru) params.set("baru", "1");
   return gatewayFetch(`/internal/aleta-bot/sipp/penjaga-tenggat?${params.toString()}`);
 }
 
@@ -5324,6 +5326,8 @@ export async function postGatewayIsiGugatan(muatan: {
   sebutan: { lawan: string; pelaku: string };
   majelis?: string;
   dokumen: Array<{ judul: string; peran: string; teks: string; baca: "teks" | "ocr"; penuntutKode: string; jenis?: string; pengunggah?: string; diunggah?: string }>;
+  /** G2 (25 Okt 2026): saklar isi otomatis daftar bukti / tanya-jawab kesimpulan. Tanpa kunci = mati (keluaran seperti sebelum G2). */
+  otomatis?: { bukti: boolean; kesimpulan: boolean };
 }) {
   return gatewayFetch<Record<string, unknown>>("/internal/aleta-bot/abt/isi-gugatan", {
     method: "POST",

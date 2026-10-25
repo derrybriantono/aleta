@@ -6054,7 +6054,8 @@ router.get("/sipp/jadwal-sidang/kalender", requireInternalToken, async (req, res
  */
 router.get("/sipp/penjaga-tenggat", requireInternalToken, async (req, res) => {
   try {
-    const hasil = await penjagaTenggatService.bacaFakta(String(req.query.acuan || ""));
+    // baru=1 (G1): banding/kasasi/mediasi + petugas perkara. Tanpa itu bentuk dan isinya sama dengan sebelum G1.
+    const hasil = await penjagaTenggatService.bacaFakta(String(req.query.acuan || ""), { baru: String(req.query.baru || "") === "1" });
     res.json({ ok: true, ...hasil });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
@@ -7782,6 +7783,11 @@ router.post("/abt/isi-gugatan", requireInternalToken, async (req, res) => {
       },
       majelis: /^(?:Majelis Hakim|Hakim|Hakim Tunggal)$/.test(String(req.body?.majelis || "")) ? String(req.body.majelis) : undefined,
       dokumen: Array.isArray(req.body?.dokumen) ? req.body.dokumen : [],
+      // G2 (25 Okt 2026): saklar isi otomatis daftar bukti / tanya-jawab kesimpulan dari portal (Super Admin). Tanpa kunci = MATI.
+      otomatis: {
+        bukti: req.body?.otomatis?.bukti === true,
+        kesimpulan: req.body?.otomatis?.kesimpulan === true,
+      },
     });
     // KONTAK-EC 11 Okt: kontak pihak/kuasa dari teks yang sama + ringkasan untuk variabel ABT.
     hasil.kontak = await kontakDariIsiGugatan(req.body, hasil);

@@ -318,6 +318,7 @@
     el7Saran: null, // 19 Okt (isian 2): saran 1/2 bila belum cukup pasti untuk ditulis
     menuSaran: null,
     bukti: { P: null, T: null },
+    buktiOto: {}, // G2: pihak ("P"/"T") -> { status: "ditulis"|"salin", pesan, teks }: keadaan penulisan otomatis daftar bukti dari e-Court
     tj: {}, // kunci -> { kode, rows:[{no,tanya,jawab}], templates:[], dimuat, berubah, sidang }
     tjBuka: null,
     tjSisi: true,
@@ -1540,6 +1541,7 @@
     S.el7 = null;
     S.el7Saran = null;
     S.bukti = { P: null, T: null };
+    S.buktiOto = {};
     S.tj = {};
     S.tjBuka = null;
     S.semua = null;
@@ -2182,9 +2184,24 @@
   });
   const API_ISI_GUGATAN_JM = "/aleta/api/aleta-ecourt/isi-gugatan";
   const jmSedangDitulis = new Set();
+  /**
+   * G2 (25 Okt 2026): penyunting tanya-jawab KESIMPULAN. Kodenya TIDAK ditulis di sini: dicari dari daftar variabel blangko (kunci
+   * "kesimpulan lisan <0046|0047>" - kunci yang disusun portal dari nama variabel tanya-jawab ABT). Blangko tanpa variabel itu = tidak ada
+   * yang ditulis. Enam variabel tetap (6112-6114) tidak berubah.
+   */
+  const POLA_KUNCI_KESIMPULAN = /^kesimpulan\b.*\b(0046|0047)\b/;
+  function infoTjJm(b) {
+    if (!b || b.jenis !== "tj" || !b.tj) return null;
+    const tetap = TJ_JAWAB_MENJAWAB[b.tj.kunci];
+    if (tetap) return b.tj.kodeSunting === tetap.kode ? tetap : null;
+    const m = POLA_KUNCI_KESIMPULAN.exec(String(b.tj.kunci || ""));
+    return m && b.tj.kodeSunting ? { peran: "kesimpulan", kode: b.tj.kodeSunting, pihak: m[1] } : null;
+  }
   function agendaMemuatPeran(peran, agenda) {
     const t = String(agenda || "").toLowerCase();
     if (!t) return false;
+    // G2: kesimpulan punya agendanya sendiri; "jawab menjawab" bukan agenda kesimpulan.
+    if (peran === "kesimpulan") return /\bkesimpulan\b/.test(t);
     if (/jawab[\s-]*menjawab/.test(t)) return true;
     if (peran === "jawaban") return /\bjawab(?:an)?\b/.test(t);
     if (peran === "replik") return /\breplik\b/.test(t);
@@ -2232,12 +2249,12 @@
       S.tjOto = {};
       if (!S.pk || !S.blangko || !bolehTulis() || cfg().tjJawab === false) return;
       // Penyunting harus tepat variabelnya (6112/6113/6114): kode lain tidak ditulis.
-      const butir = d.isian.filter((b) => b.jenis === "tj" && b.tj && TJ_JAWAB_MENJAWAB[b.tj.kunci] && b.tj.kodeSunting === TJ_JAWAB_MENJAWAB[b.tj.kunci].kode);
+      const butir = d.isian.filter((b) => infoTjJm(b));
       if (!butir.length) return;
       const pilih = S.pk.sidangDipilih;
       if (!pilih || !(Number(pilih.urutan) > 0)) return;
       // Hemat bacaan: sidang yang agendanya tidak menyebut jawaban/replik/duplik (atau jawab-menjawab) bukan tujuan berkas mana pun.
-      if (!butir.some((b) => agendaMemuatPeran(TJ_JAWAB_MENJAWAB[b.tj.kunci].peran, pilih.agenda))) return;
+      if (!butir.some((b) => agendaMemuatPeran(infoTjJm(b).peran, pilih.agenda))) return;
       const sb = sebutan();
       const q = new URLSearchParams({ nomor: nomorPerkara(), lawan: sb.P, pelaku: sb.T });
       const isi = await ambilPortal(`${API_ISI_GUGATAN_JM}?${q.toString()}`, {}, "Membaca jawab-menjawab dari e-Court");
@@ -2246,9 +2263,10 @@
       const kalimat = Array.isArray(isi && isi.kalimat) ? isi.kalimat : [];
       S.tjOto = S.tjOto || {};
       for (const b of butir) {
-        const info = TJ_JAWAB_MENJAWAB[b.tj.kunci];
+        const info = infoTjJm(b);
         const kunci = b.tj.kunci;
-        const calon = daftarTj.filter((t) => t && t.kode === info.kode);
+        // G2: kesimpulan dicocokkan menurut peran + pihak, dan hanya bila Super Admin mengizinkan (izinOtomatis); 6112-6114 menurut kode.
+        const calon = daftarTj.filter((t) => t && (info.peran === "kesimpulan" ? t.peran === "kesimpulan" && t.pihak === info.pihak && t.izinOtomatis === true : t.kode === info.kode));
         if (!calon.length) continue;
         const t = calon.length === 1 ? calon[0] : null;
         const sasaran = sidangTujuanJm(info.peran, t ? t.diunggah : "", S.pk.sidang);
@@ -2904,10 +2922,44 @@
     renderIsian();
     toast(n ? `${n} tanggal KTP diisi dari berkas e-Court. Periksa sebelum cetak.` : pihak.length ? "Tanggal KTP pada bukti sudah sama dengan yang terbaca dari berkas e-Court." : "Belum ada tanggal KTP yang terbaca dari berkas e-Court perkara ini.");
   }
+  /**
+   * G2 (25 Okt 2026): daftar alat bukti dari e-Court yang "rapi" mengisi penyunting bukti HANYA bila isian ABT-nya KOSONG (tidak ada nilai
+   * tersimpan, tidak ada bawaan blangko, tidak ada simpanan peramban), saklar Super Admin menyala (buktiOtomatis.aktif), dan bot menilai
+   * daftar pihak itu rapi. Sekali per (perkara, pihak): baris yang kemudian dihapus petugas tidak diisi lagi. Tidak rapi -> tetap isian bawaan,
+   * dengan keterangan dan tombol Salin. Bacaan atau penyimpanan gagal = tidak menulis.
+   */
+  async function barisBuktiEcourt(pihak) {
+    try {
+      if (!S.pk || !bolehTulis()) return null;
+      const tanda = `bdBuktiOto:${perkaraId()}:${pihak}`;
+      if ((await bacaPenyimpanan(tanda))[tanda]) return null;
+      const sb = sebutan();
+      const q = new URLSearchParams({ nomor: nomorPerkara(), lawan: sb.P, pelaku: sb.T, bukti: "1" });
+      const isi = await ambilPortal(`${API_ISI_GUGATAN_JM}?${q.toString()}`, {}, "Membaca daftar bukti dari e-Court");
+      const bo = isi && isi.buktiOtomatis;
+      if (!bo || bo.aktif !== true) return null;
+      const o = bo[pihak];
+      if (!o || !Array.isArray(o.baris)) return null;
+      const kalimat = Array.isArray(isi.kalimat) ? isi.kalimat.find((k) => k && k.kode === `bukti-surat-${pihak === "P" ? "0046" : "0047"}`) : null;
+      const salin = (pesan) => {
+        S.buktiOto[pihak] = { status: "salin", pesan, teks: kalimat ? String(kalimat.teks || "") : "" };
+        return null;
+      };
+      if (o.rapi !== true || !o.baris.length) return o.rapi === false && Array.isArray(o.alasan) && o.alasan.length ? salin("Format daftar bukti di e-Court tidak rapi, silakan salin dan periksa.") : null;
+      const nama = o.baris.map((r) => String((r && r.nm) || "").trim());
+      if (nama.some((t) => !t) || hurufDiLuarAbt(nama.join(" ")).length) return salin("Format daftar bukti di e-Court tidak rapi (ada huruf yang tidak dapat disimpan ABT), silakan salin dan periksa.");
+      void tulisPenyimpanan({ [tanda]: { saat: Date.now(), baris: nama.length } });
+      S.buktiOto[pihak] = { status: "ditulis", pesan: `Daftar bukti ditulis otomatis dari berkas e-Court (${nama.length} butir) pukul ${jamSekarang()}. Periksa sebelum dipakai; meterai dan pencocokan diisi majelis.` };
+      return nama.map((n) => buktiBaru(n, ""));
+    } catch {
+      return null;
+    }
+  }
   async function siapkanBukti() {
     if (!S.susunan) return;
     for (const b of S.susunan.isian.filter((x) => x.khusus === "bukti")) {
       const pihak = b.pihak;
+      let dariEcourt = false;
       const s = await bacaPenyimpanan(`bdBukti:${perkaraId()}:${pihak}`);
       const simpanan = s[`bdBukti:${perkaraId()}:${pihak}`];
       let rows = null;
@@ -2930,6 +2982,13 @@
           /* tanpa bawaan */
         }
         if (!rows || !rows.length) {
+          const baruEcourt = await barisBuktiEcourt(pihak);
+          if (baruEcourt && baruEcourt.length) {
+            rows = baruEcourt;
+            dariEcourt = true;
+          }
+        }
+        if (!rows || !rows.length) {
           const sb = sebutan();
           rows = pihak === "P" ? [buktiBaru(`Fotokopi Kartu Tanda Penduduk Elektronik (KTP-el) atas nama ${sb.P}`, "Pemerintah Kabupaten"), buktiBaru("Fotokopi Kutipan Akta Nikah", "Kantor Urusan Agama Kecamatan")] : [buktiBaru(`Fotokopi Kartu Tanda Penduduk Elektronik (KTP-el) atas nama ${sb.T}`, "Pemerintah Kabupaten")];
         }
@@ -2949,7 +3008,7 @@
         }
       }
       S.bukti[pihak] = rows;
-      if (berubahNomor && bolehTulis()) simpanBukti(pihak, false);
+      if ((berubahNomor || dariEcourt) && bolehTulis()) simpanBukti(pihak, false);
     }
     renderIsian();
     laporKeKerangka();
@@ -4370,8 +4429,15 @@
     const rows = S.bukti[b.pihak];
     const w = b.pihak;
     if (!rows) return `<div class="bd-f lebar" data-f="${b.kode}"><div class="bd-fh"><label>${esc(b.nama)}</label>${ikonSumber(`bukti:${w}`, b.nama, ketItem(b))}</div><p class="bd-catat">Membaca bukti bawaan dari ABT…</p></div>`;
+    // G2: keterangan penulisan otomatis daftar bukti dari e-Court (ditulis / tidak rapi -> Salin).
+    const oto = S.buktiOto && S.buktiOto[w];
+    const keteranganOto = oto
+      ? oto.status === "salin"
+        ? `<p class="bd-peringatan" role="status">${esc(oto.pesan)}${oto.teks ? ` <button type="button" class="bd-btn kecil" data-bd2="salinjm" data-kunci="bukti:${esc(w)}">Salin</button>` : ""}</p>`
+        : `<p class="bd-catat" role="status">${esc(oto.pesan)}</p>`
+      : "";
     return (
-      `<div class="bd-f lebar" data-f="${b.kode}"><div class="bd-fh"><label>${esc(b.nama)}</label>${ikonSumber(`bukti:${w}`, b.nama, ketItem(b))}<span class="bd-status" data-status="${b.kode}">${esc(teksStatus(S.tersimpan[b.kode] || ""))}</span></div>` +
+      `<div class="bd-f lebar" data-f="${b.kode}"><div class="bd-fh"><label>${esc(b.nama)}</label>${ikonSumber(`bukti:${w}`, b.nama, ketItem(b))}<span class="bd-status" data-status="${b.kode}">${esc(teksStatus(S.tersimpan[b.kode] || ""))}</span></div>${keteranganOto}` +
       rows
         .map((r, i) => {
           const kode = `${w}.${i + 1}`;
@@ -6573,7 +6639,8 @@
       return renderTj();
     }
     if (kode === "salinjm") {
-      const o = S.tjOto && S.tjOto[String(aksi.getAttribute("data-kunci") || "")];
+      const kunciSalin = String(aksi.getAttribute("data-kunci") || "");
+      const o = kunciSalin.startsWith("bukti:") ? S.buktiOto && S.buktiOto[kunciSalin.slice(6)] : S.tjOto && S.tjOto[kunciSalin];
       if (!o || !o.teks) return toast("Tidak ada teks untuk disalin.");
       return void salinTeksJm(o.teks).then((ok) => toast(ok ? "Teks tersalin - tempel di penyunting lalu periksa." : "Gagal menyalin - pilih teks lalu Ctrl+C."));
     }
@@ -7329,6 +7396,7 @@
     S.el7Saran = null;
     S.saranH7 = {}; // F4.2: saran draf H-7 milik perkara sebelumnya tidak terbawa.
     S.bukti = { P: null, T: null };
+    S.buktiOto = {};
     S.tj = {};
     S.tjBuka = null;
     S.semua = null;
