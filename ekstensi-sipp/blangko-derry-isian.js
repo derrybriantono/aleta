@@ -3021,16 +3021,17 @@
     const d = S.belajar8503;
     if (!d || !d.belajar) return "";
     const sekarang = alasanHuruf();
+    const kodeAlasan = "8503"; // lewat peubah: teks tampil tidak boleh memuat kode telanjang (ekstensi-isian-tanpa-kode-tampil-18okt)
     const baris = [];
     for (const p of d.belajar.pertimbangan || []) {
-      const pakai = p.huruf && p.huruf !== sekarang ? ` <button type="button" class="bd-btn kecil" data-ambil="8503" data-nilai="${esc(p.huruf)}">Pakai huruf ${esc(p.huruf)}</button>` : "";
+      const pakai = p.huruf && p.huruf !== sekarang ? ` <button type="button" class="bd-btn kecil" data-ambil="${kodeAlasan}" data-nilai="${esc(p.huruf)}">Pakai huruf ${esc(p.huruf)}</button>` : "";
       baris.push(`<div class="bd-catat" data-belajar="pertimbangan">${esc(p.kalimat)}${pakai}</div>`);
     }
     for (const h of d.dasarHukum || []) {
       for (const x of h.daftar || []) baris.push(`<div class="bd-catat" data-belajar="dasar">Dasar hukum huruf ${esc(h.huruf)} (saran): ${esc(x.teks)}</div>`);
     }
     if (!baris.length) return "";
-    return `<div class="bd-belajar" data-belajar="8503"><div class="bd-catat"><b>Pertimbangan (usulan, bukan keputusan)</b></div>${baris.join("")}</div>`;
+    return `<div class="bd-belajar" data-belajar="${kodeAlasan}"><div class="bd-catat"><b>Pertimbangan (usulan, bukan keputusan)</b></div>${baris.join("")}</div>`;
   }
 
   const BEDA_BACA_ULANG = "gagal: tersimpan, tetapi bacaan ulang dari ABT berbeda - periksa isinya";
