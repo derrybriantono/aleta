@@ -52,6 +52,10 @@ function buka(o: Opsi = {}) {
       onChanged: { addListener: (f: any) => pendengar.push(f) },
     },
   };
+  // Jeda setiap setInterval yang dipasang di halaman dicatat: ukuran yang menentukan, bukan hitungan detak (rapuh saat beban).
+  const jeda: number[] = [];
+  const asliInterval = w.setInterval.bind(w);
+  w.setInterval = (fn: unknown, ms: number, ...sisa: unknown[]) => (jeda.push(ms), asliInterval(fn, ms, ...sisa));
   const ctx = (dom as unknown as { getInternalVMContext(): vm.Context }).getInternalVMContext();
   if (!o.tanpaHub) vm.runInContext(HUB, ctx, { filename: "pengamat-bersama.js" });
   vm.runInContext(RINGAN, ctx, { filename: "mode-ringan.js" });
@@ -59,7 +63,7 @@ function buka(o: Opsi = {}) {
     simpan[kunci] = nilai;
     for (const f of pendengar) f({ [kunci]: { newValue: nilai } }, "local");
   };
-  return { w, d: w.document as Document, R: w.ALETA_RINGAN, P: w.ALETA_PENGAMAT, ubah };
+  return { w, d: w.document as Document, R: w.ALETA_RINGAN, P: w.ALETA_PENGAMAT, ubah, jeda };
 }
 type H = ReturnType<typeof buka>;
 const ringan = (h: H) => h.d.documentElement.hasAttribute("data-aleta-ringan");
@@ -140,20 +144,33 @@ describe("saklar menyala", () => {
     expect(ringan(h)).toBe(false);
   });
 
-  it("pewaktu hub benar-benar lebih jarang saat ringan", async () => {
-    async function hitung(ringanNyala: boolean) {
+  it("pewaktu hub dipasang dengan jeda dua kali lipat saat ringan, jeda semula saat tidak", async () => {
+    async function jedaDipasang(ringanNyala: boolean) {
       const h = buka({ memori: 4, saklarOtomatis: ringanNyala });
       if (ringanNyala) await sampai(h, true);
       else await tunggu(30);
-      let n = 0;
-      h.P.interval(() => void n++, 20);
-      await tunggu(330);
-      return n;
+      const sebelum = h.jeda.length;
+      const id = h.P.interval(() => undefined, 20);
+      const dipasang = h.jeda.slice(sebelum);
+      h.P.hapus(id);
+      return dipasang;
     }
-    const biasa = await hitung(false);
-    const hemat = await hitung(true);
-    expect(biasa).toBeGreaterThan(hemat);
-    expect(hemat).toBeGreaterThanOrEqual(2);
+    expect(await jedaDipasang(false)).toEqual([20]);
+    expect(await jedaDipasang(true)).toEqual([40]);
+  });
+
+  it("pilihan tiba sesudah pewaktu dipasang: jeda dipasang ulang di tempat (dua kali lipat, lalu kembali)", async () => {
+    const h = buka({ memori: 16, inti: 16 });
+    await tunggu(30);
+    const id = h.P.interval(() => undefined, 20);
+    expect(h.jeda).toContain(20);
+    h.ubah("modeRingan", "nyala");
+    await sampai(h, true);
+    expect(h.jeda[h.jeda.length - 1]).toBe(40);
+    h.ubah("modeRingan", "mati");
+    await sampai(h, false);
+    expect(h.jeda[h.jeda.length - 1]).toBe(20);
+    h.P.hapus(id);
   });
 });
 

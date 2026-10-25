@@ -348,7 +348,7 @@ describe("ekstensi - widget Lama sidang dan Blangko Derry BAS", () => {
     expect(CHECKLIST).toContain("const SKORS_SEGAR_MS = 60 * 1000;");
     expect(CHECKLIST).toContain("`${ALAMAT_SKORS}?tanggal=${tanggalHariIniSkors()}`");
     // K12 (rantai B): clearInterval dibungkus ALETA_PENGAMAT.hapus bila hub ada; urutannya (hapus pewaktu, null, buang akar) tetap.
-    expect(CHECKLIST).toMatch(/if \(jamSkors\) (?:clearInterval|\(globalThis\.ALETA_PENGAMAT \? globalThis\.ALETA_PENGAMAT\.hapus : clearInterval\))\(jamSkors\);\n\s+jamSkors = null;\n\s+if \(akar\) akar\.remove\(\);/);
+    expect(CHECKLIST).toMatch(/if \(jamSkors\) (?:clearInterval|\(globalThis\.ALETA_PENGAMAT \? globalThis\.ALETA_PENGAMAT\.hapus : \(i\) => clearInterval\(i\)\))\(jamSkors\);\n\s+jamSkors = null;\n\s+if \(akar\) akar\.remove\(\);/);
     // Tidak ada tulisan dari widget ke rute skors.
     expect(CHECKLIST).not.toMatch(/ALAMAT_SKORS[^\n]*method:\s*"POST"/);
   });
