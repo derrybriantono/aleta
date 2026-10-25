@@ -231,6 +231,8 @@ const BERKAS = [
   // Alamat portal yang hidup (K1, 19 Okt 2026): port 8008 dengan cadangan
   // port 80 - dimuat latar.js (importScripts) dan popup.html.
   "alamat-portal.js",
+  // Jalur cepat widget SIPP/ABT ke port 8008 (K7, 25 Okt 2026): skrip konten, hanya membaca (GET), cadangan port 80.
+  "portal-jalur.js",
   // Daftar 120 saklar fitur ide (tahap 1, 1.172.0) - dimuat popup.html
   // sebelum popup.js. Disusun dari berkas ide, bukan disunting tangan.
   "daftar-fitur.js",
