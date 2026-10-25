@@ -582,6 +582,13 @@
       "when": 1792267200001,
       "tag": "0093_aleta_saksi_katalog",
       "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1792270800001,
+      "tag": "0101_aleta_saksi_kirim_bas",
+      "breakpoints": true
     }
   ]
 }

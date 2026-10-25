@@ -1634,6 +1634,14 @@
       form.appendChild(kabarBorang);
       wadahHasil = buat("div", "aleta-sdg-hasil");
       form.appendChild(wadahHasil);
+      // C6/U10: tombol kirim keterangan saksi ke BAS SIPP - hanya bila abt.js menyediakan kaitnya DAN saklar menyala (tersembunyi bila tidak).
+      if (k.kirimBas && globalThis.AletaSaksiKeBas) {
+        try {
+          globalThis.AletaSaksiKeBas.pasangTombol(aksi, form, k.kirimBas, buat);
+        } catch {
+          /* tanpa tombol: perilaku lama */
+        }
+      }
       wadah.appendChild(form);
     }
 

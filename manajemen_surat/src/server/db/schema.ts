@@ -1010,6 +1010,38 @@ export const DDL_SAKSI_KATALOG = {
 } as const;
 
 /**
+ * Jejak kirim keterangan saksi ke BAS SIPP (0101, 25 Okt 2026, rantai C butir C6 = U10): satu baris per percobaan (pratinjau,
+ * kirim, gagal, dobel). Hanya sidik dan hitungan - isi BAS tidak disimpan. Cermin PERSIS dari
+ * drizzle/0101_aleta_saksi_kirim_bas.sql; penjaga saksi-ke-bas-sipp-25okt.test.ts membandingkan keduanya.
+ */
+export const DDL_SAKSI_KIRIM_BAS = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_saksi_kirim_bas (
+  id TEXT PRIMARY KEY,
+  perkara_id TEXT NOT NULL DEFAULT '',
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  sidang_id TEXT NOT NULL DEFAULT '',
+  urutan_sidang INTEGER NOT NULL DEFAULT 0,
+  tahap TEXT NOT NULL DEFAULT 'pratinjau',
+  hasil TEXT NOT NULL DEFAULT '',
+  jumlah_saksi INTEGER NOT NULL DEFAULT 0,
+  jumlah_jawaban INTEGER NOT NULL DEFAULT 0,
+  jumlah_hilang INTEGER NOT NULL DEFAULT 0,
+  ukuran INTEGER NOT NULL DEFAULT 0,
+  sidik TEXT NOT NULL DEFAULT '',
+  catatan TEXT NOT NULL DEFAULT '',
+  pengguna_id TEXT NOT NULL DEFAULT '',
+  pengguna_nama TEXT NOT NULL DEFAULT '',
+  pada TEXT NOT NULL
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_saksi_kirim_bas_perkara ON aleta_saksi_kirim_bas(perkara_id, pada)`,
+    `CREATE INDEX IF NOT EXISTS idx_saksi_kirim_bas_pada ON aleta_saksi_kirim_bas(pada)`,
+  ],
+} as const;
+
+/**
  * Unggah Putusan Terjadwal (0080, 21 Okt 2026, agen B3): jadwal, butir (satu
  * perkara), berkas yang diunggah, dan jejak jujur. Cermin PERSIS dari
  * drizzle/0080_aleta_putusan_terjadwal.sql; penjaga putusan-terjadwal-layanan-21okt.test.ts
@@ -2573,6 +2605,8 @@ const schemaStatements = [
   ...DDL_JEJAK_ISIAN.tabel,
   // Katalog saksi di basis data dengan versi (0093, rantai C).
   ...DDL_SAKSI_KATALOG.tabel,
+  // Jejak kirim keterangan saksi ke BAS SIPP (0101, rantai C).
+  ...DDL_SAKSI_KIRIM_BAS.tabel,
   // Unggah Putusan Terjadwal: jadwal, butir, berkas, jejak (0080).
   ...DDL_PUTUSAN_TERJADWAL.tabel,
   // Arsip hasil mediasi per perkara (0081).
@@ -4538,6 +4572,7 @@ const indexStatements = [
   ...DDL_ALETA_AI_DOMPET.indeks,
   ...DDL_JEJAK_ISIAN.indeks,
   ...DDL_SAKSI_KATALOG.indeks,
+  ...DDL_SAKSI_KIRIM_BAS.indeks,
   ...DDL_PUTUSAN_TERJADWAL.indeks,
   ...DDL_MEDIASI_ARSIP.indeks,
   ...DDL_SIDANG_KELILING_HAKIM.indeks,
