@@ -544,7 +544,7 @@
       setTimeout(() => void periksaSekarang(), 3000);
       setTimeout(() => void periksaSekarang(), 16000);
       // tetap: poll ini bukan penyegar tampilan - ia harus berdetak walau tab tersembunyi (hanya pemimpin yang menanyakan).
-      if (!detak) detak = (globalThis.ALETA_PENGAMAT ? (f, ms) => globalThis.ALETA_PENGAMAT.interval(f, ms, { tetap: true, ringan: false }) : setInterval)(() => void periksaSekarang(), JEDA_DETAK_MS);
+      if (!detak) detak = (globalThis.ALETA_PENGAMAT ? (f, ms) => globalThis.ALETA_PENGAMAT.interval(f, ms, { tetap: true, ringan: false }) : (f, m) => setInterval(f, m))(() => void periksaSekarang(), JEDA_DETAK_MS);
     } catch {
       /* tambahan: kegagalannya tidak boleh mengganggu SIPP */
     }

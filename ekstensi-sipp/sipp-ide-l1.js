@@ -920,9 +920,9 @@ html[data-aleta-tema-sipp="gelap"] .aleta-l1-awas{color:#f3e2b5}
 
   function mulaiDetak() {
     if (detak) return;
-    detak = (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.interval : setInterval)(() => {
+    detak = (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.interval : (f, m) => setInterval(f, m))(() => {
       if (segarkanSemua()) return;
-      (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.hapus : clearInterval)(detak);
+      (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.hapus : (i) => clearInterval(i))(detak);
       detak = null;
     }, DETAK_MS);
   }

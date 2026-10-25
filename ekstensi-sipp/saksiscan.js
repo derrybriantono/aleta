@@ -2960,7 +2960,7 @@ async function saksibantuPeriksa() {
   const fr = saksibantuBorangRef();
   if (!fs && !fr) {
     if (saksibantuKeadaan.pantau) {
-      (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.hapus : clearInterval)(saksibantuKeadaan.pantau);
+      (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.hapus : (i) => clearInterval(i))(saksibantuKeadaan.pantau);
       saksibantuKeadaan.pantau = null;
     }
     return false;
@@ -2988,13 +2988,13 @@ async function saksibantuPeriksa() {
       saksibantuKeadaan.ref = null;
     }
   }
-  if (!saksibantuKeadaan.pantau) saksibantuKeadaan.pantau = (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.interval : setInterval)(() => saksibantuJadwalkanBantu(), SAKSIBANTU_JEDA_PANTAU_MS);
+  if (!saksibantuKeadaan.pantau) saksibantuKeadaan.pantau = (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.interval : (f, m) => setInterval(f, m))(() => saksibantuJadwalkanBantu(), SAKSIBANTU_JEDA_PANTAU_MS);
   return true;
 }
 
 function saksibantuBersihkan() {
   if (saksibantuKeadaan.pantau) {
-    (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.hapus : clearInterval)(saksibantuKeadaan.pantau);
+    (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.hapus : (i) => clearInterval(i))(saksibantuKeadaan.pantau);
     saksibantuKeadaan.pantau = null;
   }
   if (saksibantuKeadaan.kotak && saksibantuKeadaan.kotak.isConnected) saksibantuKeadaan.kotak.remove();
