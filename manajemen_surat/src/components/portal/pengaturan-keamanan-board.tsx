@@ -1,5 +1,6 @@
 "use client";
 
+import { PanelJaringan } from "@/components/portal/keamanan/panel-jaringan";
 import { PanelSandi } from "@/components/portal/keamanan/panel-sandi";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePortal } from "@/lib/app-state";
@@ -18,9 +19,13 @@ export function PengaturanKeamananBoard() {
     <Tabs defaultValue="sandi">
       <TabsList>
         <TabsTrigger value="sandi">Kebijakan sandi</TabsTrigger>
+        <TabsTrigger value="jaringan">Batas jaringan</TabsTrigger>
       </TabsList>
       <TabsContent value="sandi">
         <PanelSandi bolehUbah={bolehUbah} />
+      </TabsContent>
+      <TabsContent value="jaringan">
+        <PanelJaringan bolehUbah={bolehUbah} />
       </TabsContent>
     </Tabs>
   );

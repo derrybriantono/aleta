@@ -436,6 +436,9 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_setelan_keamanan",
   "aleta_riwayat_sandi",
   "aleta_status_sandi",
+  // 25 Oktober 2026 (0108): jaringan kantor + aturan jaringan per peran. Tanpa kunci asing.
+  "aleta_subnet_kantor",
+  "aleta_aturan_jaringan_peran",
   "feedback_requests",
   "user_notification_reads",
   "knowledge_base_regulations",
