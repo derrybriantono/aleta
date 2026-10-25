@@ -18,11 +18,14 @@ export type SaklarKinerja = {
   pengamatTunggal: boolean;
   /** K16: komputer sederhana (memori <= 4 GB atau <= 2 inti) otomatis memakai mode ringan; pilihan pengguna tetap menang. */
   modeRinganOtomatis: boolean;
+  /** K15: antrean cetak/relaas massal dan catatan putusan terjadwal disalin ke Postgres supaya dapat dilanjutkan sesudah Chrome ditutup. */
+  antreanDiServer: boolean;
 };
 
 export const SAKLAR_KINERJA_BAWAAN: Readonly<SaklarKinerja> = Object.freeze({
   pengamatTunggal: false,
   modeRinganOtomatis: false,
+  antreanDiServer: false,
 });
 
 export const KETERANGAN_KINERJA: Readonly<Record<keyof SaklarKinerja, { judul: string; isi: string }>> = {
@@ -33,6 +36,10 @@ export const KETERANGAN_KINERJA: Readonly<Record<keyof SaklarKinerja, { judul: s
   modeRinganOtomatis: {
     judul: "Mode ringan otomatis untuk PC tua",
     isi: "Komputer dengan memori 4 GB atau kurang, atau 2 inti, otomatis mematikan hiasan (animasi, transisi, kabur latar) dan memperlambat pewaktu di ekstensi dan portal. Pengguna tetap bisa memilih sendiri nyala atau mati, dan pilihan itu menang. Tidak ada fungsi yang dikurangi.",
+  },
+  antreanDiServer: {
+    judul: "Antrean kerja peramban disalin ke server",
+    isi: "Antrean cetak massal, relaas massal, dan catatan putusan terjadwal disalin ke basis data (hanya keadaan pengerjaan: nomor perkara, nama berkas, status; tanpa isi putusan atau NIK). Sesudah Chrome ditutup atau komputer diganti, pemiliknya ditawari melanjutkan; tidak ada yang dijalankan sendiri. Mati = antrean hanya di peramban seperti dulu.",
   },
 };
 

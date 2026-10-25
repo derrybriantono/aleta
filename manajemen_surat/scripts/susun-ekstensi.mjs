@@ -219,6 +219,8 @@ const BERKAS = [
   // Mode ringan untuk PC tua (K16, 25 Okt 2026): hiasan dimatikan, pewaktu diperlambat; dimuat tepat sesudah pengamat-bersama.js.
   "mode-ringan.js",
   "popup-ringan.js",
+  // Salinan antrean kerja peramban ke basis data (K15, rantai B, 25 Okt 2026); dimuat sesudah mode-ringan.js di blok SIPP dan ABT.
+  "antrean-server.js",
   "tema-awal.js",
   // Pusat tema (terang | gelap | sistem): satu sumber kebenaran, dimuat sebelum tema-awal.js (SIPP, ABT, portal).
   "tema-pusat.js",

@@ -568,6 +568,13 @@
       "when": 1792260000001,
       "tag": "0088_aleta_ai_dompet",
       "breakpoints": true
+    },
+    {
+      "idx": 81,
+      "version": "7",
+      "when": 1792261000001,
+      "tag": "0098_aleta_antrean_peramban",
+      "breakpoints": true
     }
   ]
 }

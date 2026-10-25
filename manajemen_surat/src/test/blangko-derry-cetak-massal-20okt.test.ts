@@ -767,3 +767,115 @@ describe("H. pembantu murni", () => {
     await expect(gabungkanPdf([new Uint8Array([9])])).rejects.toThrow("Tidak ada PDF");
   });
 });
+
+// ============================================================================
+// I. K15 (rantai B, 25 Okt 2026) - antrean cetak massal disalin ke server; yang terputus ditawarkan lagi
+// ============================================================================
+type CatatanAntrean = { jenis: string; kunci: string; data: any; opsi: any };
+function antreanServerTiruan(opsi: { aktif?: boolean; tertinggal?: any[] } = {}) {
+  const catatan: CatatanAntrean[] = [];
+  const akhir: Array<{ jenis: string; kunci: string; status: string }> = [];
+  return {
+    catatan,
+    akhir,
+    obyek: {
+      tungguSiap: async () => undefined,
+      aktif: () => opsi.aktif !== false,
+      catat: async (jenis: string, kunci: string, data: any, o: any) => (catatan.push({ jenis, kunci, data, opsi: o }), true),
+      akhiri: async (jenis: string, kunci: string, status: string) => (akhir.push({ jenis, kunci, status }), true),
+      tertinggal: async () => opsi.tertinggal ?? [],
+    },
+  };
+}
+const TERPUTUS = (butir: Array<{ nomor: string; berkas: string; status: string }>, ubah: Record<string, unknown> = {}) => ({
+  jenis: "cetak-massal",
+  kunci: `bas|${TGL}`,
+  perangkat: "pc-lain",
+  ringkas: "x",
+  selesai: butir.filter((b) => b.status === "selesai").length,
+  total: butir.length,
+  diubahPada: "2026-10-25T01:00:00.000Z",
+  muatan: { jenis: "bas", tanggal: TGL, format: "rtf", ttd: true, butir },
+  ...ubah,
+});
+
+describe("I. antrean cetak massal di server (K15)", () => {
+  it("selesai bersih: tiap perkara disalin (nomor, blangko, status - tanpa isi dokumen) lalu salinan ditutup 'selesai'", async () => {
+    const h = buka({ orang: "pp" });
+    const a = antreanServerTiruan();
+    h.w.ALETA_ANTREAN_SERVER = a.obyek;
+    await bukaMassal(h);
+    klik(h, '[data-ms="pilihsiap"]');
+    klik(h, '[data-ms="cetak"]');
+    await sampai(() => massal(h).keadaan().jalan === "" && unduhan(h).length === 1, "selesai", 15000);
+    expect(a.catatan.length).toBeGreaterThanOrEqual(2);
+    expect(a.catatan.every((c) => c.jenis === "cetak-massal" && c.kunci === `bas|${TGL}`)).toBe(true);
+    const terakhir = a.catatan[a.catatan.length - 1].data;
+    expect(terakhir.total).toBe(2);
+    expect(terakhir.muatan.butir.map((b: { nomor: string; status: string }) => [b.nomor.slice(0, 3), b.status])).toEqual([["581", "selesai"], ["582", "selesai"]]);
+    // keadaan saja: tidak ada RTF/NIK/nama pihak dalam muatan
+    const teks = JSON.stringify(a.catatan.map((c) => c.data));
+    expect(teks).not.toMatch(/rtf1|Penggugat|Tergugat|binti|bin /);
+    expect(a.akhir).toEqual([{ jenis: "cetak-massal", kunci: `bas|${TGL}`, status: "selesai" }]);
+  });
+
+  it("ada yang gagal: salinan TIDAK ditutup dan keadaan terakhir disalin segera (supaya dapat dilanjutkan)", async () => {
+    const h = buka({ orang: "pp", naskahGagal: ["10154"] });
+    const a = antreanServerTiruan();
+    h.w.ALETA_ANTREAN_SERVER = a.obyek;
+    await bukaMassal(h);
+    klik(h, '[data-ms="pilihsiap"]');
+    klik(h, '[data-ms="cetak"]');
+    await sampai(() => massal(h).keadaan().jalan === "" && unduhan(h).length === 1, "selesai", 15000);
+    expect(a.akhir).toEqual([]);
+    const akhirCatat = a.catatan[a.catatan.length - 1];
+    expect(akhirCatat.opsi).toEqual({ segera: true });
+    expect(akhirCatat.data.muatan.butir.map((b: { nomor: string; status: string }) => [b.nomor.slice(0, 3), b.status])).toEqual([["581", "gagal"], ["582", "selesai"]]);
+    expect(akhirCatat.data.selesai).toBe(1);
+  });
+
+  it("antrean terputus untuk jenis + tanggal yang sama: HANYA perkara yang belum selesai dicentang kembali, dengan catatan; tidak jalan sendiri", async () => {
+    const h = buka({ orang: "pp" });
+    const a = antreanServerTiruan({
+      tertinggal: [TERPUTUS([{ nomor: "581/Pdt.G/2026/PA.Dgl", berkas: BLANGKO_BAS, status: "selesai" }, { nomor: "582/Pdt.G/2026/PA.Dgl", berkas: BLANGKO_BAS_1, status: "menunggu" }])],
+    });
+    h.w.ALETA_ANTREAN_SERVER = a.obyek;
+    await bukaMassal(h);
+    const k = massal(h).keadaan();
+    expect(k.pilih).toHaveLength(1);
+    expect(qq(h, "[data-mscek]:checked")).toHaveLength(1);
+    expect(akar(h).textContent).toContain("Cetak massal sebelumnya belum selesai");
+    expect(akar(h).textContent).toContain("1 dari 2 perkara sudah selesai. 1 yang belum sudah dicentang kembali");
+    expect(k.jalan).toBe("");
+    expect(unduhan(h)).toEqual([]);
+    // setelah Cetak, catatan hilang
+    klik(h, '[data-ms="cetak"]');
+    await sampai(() => massal(h).keadaan().jalan === "" && unduhan(h).length === 1, "selesai", 15000);
+    expect(akar(h).textContent).not.toContain("Cetak massal sebelumnya belum selesai");
+  });
+
+  it("tanggal atau jenis lain, atau semua butir sudah selesai, atau saklar server mati: tidak ada yang dicentang", async () => {
+    for (const kasus of [
+      { tertinggal: [TERPUTUS([{ nomor: "582/Pdt.G/2026/PA.Dgl", berkas: BLANGKO_BAS_1, status: "menunggu" }], { muatan: { jenis: "bas", tanggal: "2026-01-01", format: "rtf", butir: [{ nomor: "582/Pdt.G/2026/PA.Dgl", berkas: "x", status: "menunggu" }] } })] },
+      { tertinggal: [TERPUTUS([{ nomor: "582/Pdt.G/2026/PA.Dgl", berkas: BLANGKO_BAS_1, status: "menunggu" }], { muatan: { jenis: "put", tanggal: TGL, format: "rtf", butir: [{ nomor: "582/Pdt.G/2026/PA.Dgl", berkas: "x", status: "menunggu" }] } })] },
+      { tertinggal: [TERPUTUS([{ nomor: "581/Pdt.G/2026/PA.Dgl", berkas: BLANGKO_BAS, status: "selesai" }])] },
+      { aktif: false, tertinggal: [TERPUTUS([{ nomor: "582/Pdt.G/2026/PA.Dgl", berkas: BLANGKO_BAS_1, status: "menunggu" }])] },
+    ]) {
+      const h = buka({ orang: "pp" });
+      h.w.ALETA_ANTREAN_SERVER = antreanServerTiruan(kasus).obyek;
+      await bukaMassal(h);
+      expect(massal(h).keadaan().pilih).toEqual([]);
+      expect(akar(h).textContent).not.toContain("Cetak massal sebelumnya belum selesai");
+    }
+  });
+
+  it("tanpa modul antrean-server.js (jalur lama) cetak massal bekerja persis seperti dulu", async () => {
+    const h = buka({ orang: "pp" });
+    expect(h.w.ALETA_ANTREAN_SERVER).toBeUndefined();
+    await bukaMassal(h);
+    klik(h, '[data-ms="pilihsiap"]');
+    klik(h, '[data-ms="cetak"]');
+    await sampai(() => massal(h).keadaan().jalan === "" && unduhan(h).length === 1, "selesai", 15000);
+    expect(akar(h).textContent).toContain("2 dari 2 berhasil dicetak.");
+  });
+});

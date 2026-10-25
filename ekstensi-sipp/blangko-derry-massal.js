@@ -244,6 +244,7 @@
     henti: false,
     kemajuan: null, // { selesai, total, sekarang }
     ringkasan: null,
+    pulih: null, // K15: antrean terputus yang ditawarkan lagi dari server { selesai, total, jumlah, waktu }
     picker: null, // { id, cari }
     urut: 0,
     potret: null,
@@ -434,6 +435,66 @@
       /* penyimpanan tidak tersedia: tanda "sudah dicetak" tidak tampil */
     }
   }
+  // ───────────────────────────────────────────────────────
+  // K15 - antrean di server (hanya bila Super Admin menyalakan saklar antreanDiServer; mati = tidak ada yang dikirim/dibaca)
+  // ───────────────────────────────────────────────────────
+  const kunciAntrean = () => `${M.jenis}|${M.tanggal}`;
+  function statusKeServer(b) {
+    return b.status === "selesai" || b.status === "cek" ? "selesai" : b.status === "gagal" ? "gagal" : "menunggu";
+  }
+  /** Keadaan pengerjaan saja: nomor perkara, nama blangko, status. Tidak ada isi dokumen. */
+  function muatanAntrean(dipilih) {
+    return { jenis: M.jenis, tanggal: M.tanggal, format: M.format, ttd: M.ttd === true, butir: dipilih.map((b) => ({ nomor: b.nomor, berkas: tanpaRtf(b.berkas), status: statusKeServer(b) })) };
+  }
+  function cerminAntrean(dipilih, selesaiN, segera) {
+    const A = globalThis.ALETA_ANTREAN_SERVER;
+    if (!A) return;
+    void A.catat(
+      "cetak-massal",
+      kunciAntrean(),
+      { ringkas: `Cetak massal ${JUDUL_JENIS[M.jenis] || M.jenis} ${M.tanggal}: ${selesaiN} dari ${dipilih.length}`, selesai: selesaiN, total: dipilih.length, muatan: muatanAntrean(dipilih) },
+      { segera: segera === true }
+    );
+  }
+  function akhiriCermin() {
+    const A = globalThis.ALETA_ANTREAN_SERVER;
+    if (A) void A.akhiri("cetak-massal", kunciAntrean(), "selesai");
+  }
+  /**
+   * Antrean cetak massal yang terputus (Chrome ditutup di tengah jalan, atau PC lain) untuk jenis + tanggal yang sama:
+   * perkara yang BELUM selesai dicentang kembali dan diberi catatan. Tidak menjalankan apa pun; petugas menekan Cetak sendiri.
+   */
+  async function tawarkanAntreanTerputus() {
+    const A = globalThis.ALETA_ANTREAN_SERVER;
+    if (!A) return;
+    let daftar = [];
+    try {
+      await A.tungguSiap();
+      if (!A.aktif()) return;
+      daftar = await A.tertinggal("cetak-massal");
+    } catch {
+      return;
+    }
+    const cocok = daftar.find((x) => x && x.muatan && x.muatan.jenis === M.jenis && x.muatan.tanggal === M.tanggal && Array.isArray(x.muatan.butir));
+    if (!cocok) return;
+    const belum = new Set(cocok.muatan.butir.filter((b) => b.status !== "selesai").map((b) => b.nomor));
+    if (!belum.size) return;
+    const hasil = new Set();
+    for (const b of M.baris) {
+      if (hasil.size >= BATAS_DOKUMEN) break;
+      if (belum.has(b.nomor) && b.berkas) hasil.add(b.id);
+    }
+    if (!hasil.size) return;
+    M.pilih = hasil;
+    if (cocok.muatan.format === "rtf" || cocok.muatan.format === "pdf") M.format = cocok.muatan.format;
+    M.pulih = { selesai: cocok.selesai, total: cocok.total, jumlah: hasil.size, waktu: String(cocok.diubahPada || "") };
+  }
+  function pulihHtml() {
+    const p = M.pulih;
+    if (!p || M.ringkasan) return "";
+    return `<div class="bd-ms-ringkasan" role="status"><b>Cetak massal sebelumnya belum selesai</b><p>${esc(String(p.selesai))} dari ${esc(String(p.total))} perkara sudah selesai. ${esc(String(p.jumlah))} yang belum sudah dicentang kembali; tekan Cetak bila ingin melanjutkan.</p></div>`;
+  }
+
   async function muat() {
     const d = driver();
     if (!d || !M.jenis) return;
@@ -443,6 +504,7 @@
     M.baris = [];
     M.pilih = new Set();
     M.ringkasan = null;
+    M.pulih = null;
     gambar();
     try {
       await bacaPernah();
@@ -461,6 +523,7 @@
         else tetapkanBlangko(b);
       }
       M.baris = baris;
+      await tawarkanAntreanTerputus();
     } catch (e) {
       if (nomor !== M.urut) return;
       M.galat = String((e && e.message) || e);
@@ -569,6 +632,7 @@
       `<span class="bd-catat" id="bd-ms-hitung">${pilihJumlah} dipilih dari ${M.baris.length}${pilihJumlah > BATAS_DOKUMEN ? ` · paling banyak ${BATAS_DOKUMEN} sekali jalan` : ""}</span>` +
       `<button type="button" class="bd-btn kecil" data-ms="isi" ${sibuk || !pilihJumlah ? "disabled" : ""}>Isi otomatis semua</button></div>` +
       badan +
+      pulihHtml() +
       ringkasanHtml() +
       `<div class="bd-ms-kaki"><div class="bd-ms-format" role="radiogroup" aria-label="Bentuk hasil">` +
       `<label class="bd-cek"><input type="radio" name="bd-ms-format" value="rtf" ${M.format === "rtf" ? "checked" : ""} ${sibuk ? "disabled" : ""}> RTF (satu ZIP)</label>` +
@@ -733,6 +797,7 @@
           gagal.push({ nomor: b.nomor, sebab: b.catatan });
         }
         M.kemajuan.selesai += 1;
+        cerminAntrean(dipilih, M.kemajuan.selesai, false);
         segarkanBaris();
         if (!M.henti) await jeda();
       }
@@ -772,6 +837,10 @@
         }
       }
     }
+    // K15: selesai bersih = salinan di server ditutup; dihentikan/ada yang gagal = keadaan terakhir disalin supaya dapat dilanjutkan.
+    M.pulih = null;
+    if (!M.henti && gagal.length === 0) akhiriCermin();
+    else cerminAntrean(dipilih, dipilih.filter((b) => b.status === "selesai" || b.status === "cek").length, true);
     const cek = dipilih.filter((b) => b.status === "cek");
     // Yang gagal tercentang kembali supaya dapat diulang; yang berhasil dilepas.
     M.pilih = new Set(dipilih.filter((b) => b.status === "gagal").map((b) => b.id));

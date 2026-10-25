@@ -51,7 +51,7 @@ afterEach(async () => {
 describe("lib: pembersih saklar", () => {
   it("bawaan semua mati; hanya boolean true sejati yang menyalakan; kunci asing dibuang", () => {
     expect(Object.values(SAKLAR_KINERJA_BAWAAN).every((v) => v === false)).toBe(true);
-    expect(Object.keys(SAKLAR_KINERJA_BAWAAN).sort()).toEqual(["modeRinganOtomatis", "pengamatTunggal"]);
+    expect(Object.keys(SAKLAR_KINERJA_BAWAAN).sort()).toEqual(["antreanDiServer", "modeRinganOtomatis", "pengamatTunggal"]);
     expect(bersihkanKinerja(null)).toEqual({ ...SAKLAR_KINERJA_BAWAAN });
     expect(bersihkanKinerja({ pengamatTunggal: "true" })).toEqual({ ...SAKLAR_KINERJA_BAWAAN });
     expect(bersihkanKinerja({ pengamatTunggal: 1, lain: true })).toEqual({ ...SAKLAR_KINERJA_BAWAAN });
@@ -102,11 +102,11 @@ describe("rute /ekstensi/kinerja", () => {
 
   it("saklar mode ringan otomatis berdiri sendiri: menyalakannya tidak menyentuh saklar lain", async () => {
     const r = await panggil("PUT", { modeRinganOtomatis: true });
-    expect(r.isi.data.saklar).toEqual({ pengamatTunggal: false, modeRinganOtomatis: true });
+    expect(r.isi.data.saklar).toEqual({ ...SAKLAR_KINERJA_BAWAAN, modeRinganOtomatis: true });
     const lagi = await panggil("PUT", { pengamatTunggal: true });
-    expect(lagi.isi.data.saklar).toEqual({ pengamatTunggal: true, modeRinganOtomatis: true });
+    expect(lagi.isi.data.saklar).toEqual({ ...SAKLAR_KINERJA_BAWAAN, pengamatTunggal: true, modeRinganOtomatis: true });
     aktor = "usr-hakim";
-    expect((await panggil("GET", undefined, "tampilan")).isi.data.kinerja).toEqual({ pengamatTunggal: true, modeRinganOtomatis: true });
+    expect((await panggil("GET", undefined, "tampilan")).isi.data.kinerja).toEqual({ ...SAKLAR_KINERJA_BAWAAN, pengamatTunggal: true, modeRinganOtomatis: true });
   });
 
   it("masukan tidak sah ditolak 400 tanpa menyimpan: bukan obyek, bukan boolean", async () => {

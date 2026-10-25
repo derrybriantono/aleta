@@ -2248,12 +2248,94 @@ function tahanMuatUlang(cegah, versiSekarang, versiBaru) {
   };
 }
 
+/*
+ * K15 (25 Okt 2026): salinan putaran relaas ke basis data supaya dapat ditawarkan lagi sesudah Chrome ditutup
+ * (gudangRelaas() = chrome.storage.session, hilang bersama Chrome). HANYA bila Super Admin menyalakan saklar
+ * kinerja.antreanDiServer (singgahan tampilanServer); mati = tidak ada satu permintaan pun. Gagal-aman: kegagalan
+ * penyalinan TIDAK PERNAH menghentikan putaran. Isinya hanya keadaan pengerjaan (nomor perkara, nama berkas, status).
+ */
+const RELAAS_CERMIN_JEDA_MS = 15000;
+let relaasCerminTerakhir = 0;
+
+async function relaasCerminNyala() {
+  try {
+    const s = await chrome.storage.local.get("tampilanServer");
+    const k = s && s.tampilanServer && s.tampilanServer.kinerja;
+    return Boolean(k && k.antreanDiServer === true);
+  } catch {
+    return false;
+  }
+}
+
+/** Bentuk muatan + status yang dikirim ke server untuk satu putaran. Murni (diuji). */
+function relaasMuatanCermin(pekerjaan) {
+  const butir = Array.isArray(pekerjaan && pekerjaan.butir) ? pekerjaan.butir : [];
+  const selesai = butir.filter((b) => b && b.keadaan === "selesai").length;
+  // Putaran yang dihentikan petugas dengan sengaja tidak ditawarkan lagi; yang selesai pun ditutup.
+  const status = pekerjaan && pekerjaan.selesai ? (pekerjaan.dihentikan ? "dibuang" : "selesai") : "jalan";
+  return {
+    status,
+    ringkas: `Relaas massal ${(pekerjaan && pekerjaan.tanggal) || ""}: ${selesai} dari ${butir.length}`.trim(),
+    selesai,
+    total: butir.length,
+    muatan: { pekerjaan },
+  };
+}
+
+async function cerminRelaasKeServer(pekerjaan, paksa) {
+  try {
+    if (!pekerjaan || !pekerjaan.id || !(await relaasCerminNyala())) return;
+    const asal = relaasAsalPortal(pekerjaan.asal);
+    if (!asal) return;
+    const m = relaasMuatanCermin(pekerjaan);
+    const kini = Date.now();
+    if (m.status === "jalan" && !paksa && kini - relaasCerminTerakhir < RELAAS_CERMIN_JEDA_MS) return;
+    relaasCerminTerakhir = kini;
+    const alamat = `${asal}/aleta/api/aleta-ecourt/ekstensi/antrean`;
+    const badan =
+      m.status === "jalan"
+        ? { jenis: "relaas-massal", kunci: String(pekerjaan.id), perangkat: "pekerja-latar", ringkas: m.ringkas, selesai: m.selesai, total: m.total, muatan: m.muatan, status: "jalan" }
+        : { jenis: "relaas-massal", kunci: String(pekerjaan.id), status: m.status };
+    await fetch(alamat, {
+      method: m.status === "jalan" ? "PUT" : "POST",
+      credentials: "include",
+      cache: "no-store",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(badan),
+    });
+  } catch {
+    /* penyalinan hanya pelengkap: putaran tidak boleh terganggu */
+  }
+}
+
 /** MELEMPAR bila gagal - putaran yang tidak dapat menyimpan kemajuannya harus berhenti. */
 async function simpanRelaas(pekerjaan) {
   if (Array.isArray(pekerjaan.catatan) && pekerjaan.catatan.length > RELAAS_CATATAN_MAKS) {
     pekerjaan.catatan = pekerjaan.catatan.slice(-RELAAS_CATATAN_MAKS);
   }
   await gudangRelaas().set({ [KUNCI_RELAAS]: pekerjaan });
+  void cerminRelaasKeServer(pekerjaan, Boolean(pekerjaan.selesai || pekerjaan.tertahan));
+}
+
+/**
+ * Memulihkan putaran relaas dari salinan server ke gudang lokal sebagai putaran TERTAHAN (tidak jalan sendiri; petugas
+ * menekan Lanjutkan). Hanya bila tidak ada putaran lokal yang belum selesai. Bentuknya diperiksa ulang: pekerja ini
+ * mengambil halaman ABT dengan kuki petugas, jadi alamat dan butir dari luar tidak dipercaya begitu saja.
+ */
+function relaasPulihkanBentuk(masuk) {
+  const p = masuk && typeof masuk === "object" ? masuk : null;
+  if (!p || typeof p.id !== "string" || !/^relaas-[A-Za-z0-9-]{3,80}$/.test(p.id)) return { sebab: "id putaran tidak sah" };
+  if (!Array.isArray(p.butir) || !p.butir.length || p.butir.length > 400) return { sebab: "daftar butir tidak sah" };
+  const asal = relaasAsalPortal(p.asal);
+  const dasar = relaasDasarAbt(p.asalAbt);
+  if (!asal || !dasar || !dasar.toLowerCase().startsWith(`${asal.toLowerCase()}/`)) return { sebab: "alamat portal atau ABT tidak sah" };
+  const butir = [];
+  for (const b of p.butir) {
+    if (!b || typeof b !== "object" || !/^\d+$/.test(String(b.perkaraId || "")) || typeof b.berkas !== "string" || !b.berkas) return { sebab: "butir tidak sah" };
+    if (!RELAAS_GOLONGAN.includes(String(b.golongan || ""))) return { sebab: "golongan butir tidak dikenal" };
+    butir.push({ ...b, percobaan: Number(b.percobaan) || 0 });
+  }
+  return { pekerjaan: { ...p, butir, asal, asalAbt: dasar, selesai: false, dihentikan: false, waktuBerikut: 0, tertahan: { sebab: "Dipulihkan dari server sesudah Chrome ditutup. Dokumen yang tertinggal 'sedang' diperiksa lewat riwayat unduhan sebelum dilanjutkan. Tekan Lanjutkan bila ingin meneruskan.", perluMasuk: "", pada: Date.now() } } };
 }
 
 async function dimintaBerhenti(id) {
@@ -3100,6 +3182,16 @@ async function layaniRelaasTindakan(pesan) {
     }
     if (!pelariRelaasHidup) void jalankanRelaas();
     return { ok: true, pekerjaan };
+  }
+
+  if (pesan.jenis === "relaas-pulihkan") {
+    const ada = await muatRelaas();
+    if (ada && !ada.selesai) return { ok: false, sebab: "Masih ada putaran relaas di ekstensi ini; selesaikan atau hentikan dahulu.", pekerjaan: ada };
+    const h = relaasPulihkanBentuk(pesan.pekerjaan);
+    if (h.sebab) return { ok: false, sebab: h.sebab, pekerjaan: ada };
+    await gudangRelaas().remove(KUNCI_RELAAS_HENTI);
+    await simpanRelaas(h.pekerjaan);
+    return { ok: true, pekerjaan: h.pekerjaan, ringkas: relaasRingkas(h.pekerjaan) };
   }
 
   if (pesan.jenis === "relaas-bersihkan") {

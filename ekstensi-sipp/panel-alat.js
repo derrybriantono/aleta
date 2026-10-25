@@ -3760,6 +3760,9 @@ const ALETA_COBA_BOLEH = [
   // Setelan PRIBADI (tahap 5): urutan pintasan, tanda checklist - tidak
   // mengirim apa pun ke luar dan tidak menyentuh SIPP, ABT, maupun WhatsApp.
   /\/aleta\/api\/aleta-ecourt\/ekstensi\/setelan(?:[?#]|$)/,
+  // Salinan antrean kerja peramban ke basis data (K15, rantai B): hanya keadaan pengerjaan milik pemanggil, mati bawaan di portal;
+  // tidak menyentuh SIPP, ABT, maupun WhatsApp.
+  /\/aleta\/api\/aleta-ecourt\/ekstensi\/antrean(?:[?#]|$)/,
   // Menandai komentar hakim atas BAS "selesai" (tahap 6-7): catatan internal
   // antar-petugas, tidak menyentuh SIPP, ABT, maupun WhatsApp.
   /\/aleta\/api\/aleta-ecourt\/bas-komentar(?:[?#]|$)/,
