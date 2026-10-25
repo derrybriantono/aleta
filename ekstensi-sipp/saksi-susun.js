@@ -1588,7 +1588,7 @@
         pihak: sk.pihak || (S.saksi[i] ? S.saksi[i].pihak : ""),
         jalur: "katalog",
         katalog: S.kat.kunci,
-        versiKatalog: String(S.kat.versi || ""),
+        versiKatalog: String(S.kat.versiKatalog || S.kat.versi || ""),
         jenisPerkara: String((typeof k.jenisPerkaraTeks === "function" ? k.jenisPerkaraTeks() : "") || S.kat.judul || ""),
         butir: butirId,
         varian: mesinBaris ? String(mesinBaris.varian || "") : "",

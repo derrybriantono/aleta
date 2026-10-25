@@ -114,6 +114,8 @@ function bukaDunia(): Dunia {
   const gagalKan = new Set<string>();
   w.chrome = { runtime: { getURL: (p: string) => `chrome-extension://uji/${p}` } };
   w.fetch = async (alamat: string) => {
+    // C4: pemuat lebih dulu menanyakan portal (saklar basis data); di uji ini portal tidak menjawab -> JSON tertanam. Bukan "berkas jenis".
+    if (String(alamat).includes("/aleta/api/")) return new Response("", { status: 404 });
     const berkas = String(alamat).replace("chrome-extension://uji/", "");
     diminta.push(berkas);
     const nama = path.basename(berkas);

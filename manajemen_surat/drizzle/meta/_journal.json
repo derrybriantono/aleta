@@ -575,6 +575,13 @@
       "when": 1792263600001,
       "tag": "0091_aleta_jejak_isian",
       "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1792267200001,
+      "tag": "0093_aleta_saksi_katalog",
+      "breakpoints": true
     }
   ]
 }

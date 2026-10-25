@@ -64,6 +64,9 @@ export type FiturKatalog = {
   bawaan: StatusFitur;
 };
 
+/** Saklar C4/U8 (25 Okt 2026): portal menyajikan penimpa katalog saksi dari basis data; bawaan MATI. */
+export const FITUR_KATALOG_SAKSI_DB = "katalog-saksi-basis-data";
+
 /** Saklar C3/U7 (25 Okt 2026): tombol cerai lama di ABT memanggil mesin katalog; bawaan MATI. */
 export const FITUR_MESIN_SAKSI_TUNGGAL = "mesin-saksi-tunggal";
 
@@ -120,6 +123,14 @@ export const KATALOG_FITUR_SATKER: readonly FiturKatalog[] = [
     bagian: "ekstensi",
     keterangan:
       "Mati: tombol Susun keterangan saksi 1 & 2 di ABT memakai bank templat ABT dan mesin lama. Nyalakan agar tombol itu memanggil mesin katalog yang sama dengan Susun saksi (2-5 saksi Penggugat, 4 Tergugat, 7 jenis keterangan) lengkap dengan alat sunting baris; bank templat ABT tetap dapat dipilih lewat tautan Cara lama.",
+    bawaan: "mati",
+  },
+  {
+    kode: FITUR_KATALOG_SAKSI_DB,
+    nama: "Katalog saksi dari basis data",
+    bagian: "portal",
+    keterangan:
+      "Mati: ekstensi memakai katalog Susun saksi yang tertanam di ekstensi. Nyalakan agar perbaikan katalog yang disimpan di layar Katalog saksi (Pengaturan, Admin) langsung berlaku tanpa rilis ekstensi; JSON tertanam tetap menjadi cadangan bila portal tak terjangkau.",
     bawaan: "mati",
   },
   portal("putusan-advance", "Putusan Advance", "Draf putusan lengkap oleh konseptor dan hakim."),

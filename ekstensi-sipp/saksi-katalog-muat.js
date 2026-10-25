@@ -20,12 +20,70 @@
  * Sumber isi: berkas JSON di paket ekstensi (web_accessible_resources, tanpa izin baru); ingatan
  * halaman menyimpannya selama halaman hidup, dan peramban menyimpan berkasnya. Gagal memuat = false
  * (tombol Susun saksi tetap tersembunyi, tidak ada yang ditebak) - tidak pernah melempar.
+ *
+ * ============================================================================
+ * C4/U8 (25 Okt 2026): PORTAL SEBAGAI SUMBER PERTAMA, JSON TERTANAM SEBAGAI CADANGAN
+ * ============================================================================
+ *
+ * Bila saklar Fitur Satker "katalog-saksi-basis-data" menyala (bawaan MATI), portal menyajikan indeks efektif
+ * (GET /aleta/api/aleta-ecourt/saksi-katalog?bagian=indeks) dan isi katalog yang disunting di basis data
+ * (?kunci=): perbaikan kalimat langsung berlaku tanpa rilis ekstensi. Saklar mati, portal tak terjangkau,
+ * atau jawabannya aneh = indeks dan JSON TERTANAM dipakai persis seperti sebelumnya. Isi dari portal yang
+ * gagal diambil jatuh ke JSON tertanam kunci yang sama.
  */
 (function () {
   const Mesin = () => globalThis.AletaSaksiKatalog;
   const daftar = (x) => (Array.isArray(x) ? x : []);
 
-  const indeks = () => daftar(globalThis.ALETA_SAKSI_KATALOG_INDEKS);
+  const indeksTertanam = () => daftar(globalThis.ALETA_SAKSI_KATALOG_INDEKS);
+  const API_PORTAL = "/aleta/api/aleta-ecourt/saksi-katalog";
+  const TTL_PORTAL_MS = 5 * 60 * 1000;
+  const TTL_GAGAL_MS = 30 * 1000;
+  const BATAS_TUNGGU_MS = 3000;
+  // sumber portal: indeks efektif hanya dipakai bila portal berkata aktif:true
+  const portal = { aktif: false, indeks: [], saat: 0, gagal: false, janji: null };
+
+  /** Indeks yang berlaku: dari portal (saklar menyala) atau yang tertanam. */
+  const indeks = () => (portal.aktif && portal.indeks.length ? portal.indeks : indeksTertanam());
+
+  async function ambilPortal(alamat) {
+    const kendali = typeof AbortController === "function" ? new AbortController() : null;
+    const pewaktu = kendali ? setTimeout(() => kendali.abort(), BATAS_TUNGGU_MS) : null;
+    try {
+      const r = await fetch(alamat, { credentials: "include", cache: "no-store", ...(kendali ? { signal: kendali.signal } : {}) });
+      if (!r || !r.ok) return null;
+      const j = await r.json();
+      return j && j.data ? j.data : j;
+    } catch {
+      return null;
+    } finally {
+      if (pewaktu) clearTimeout(pewaktu);
+    }
+  }
+
+  /** Menyegarkan indeks dari portal (paling sering tiap 5 menit; 30 detik bila gagal). Tidak pernah melempar. */
+  function segarkanPortal(paksa) {
+    const kini = Date.now();
+    if (!paksa && portal.saat && kini - portal.saat < (portal.gagal ? TTL_GAGAL_MS : TTL_PORTAL_MS)) return Promise.resolve(portal.aktif);
+    if (portal.janji) return portal.janji;
+    portal.janji = (async () => {
+      const d = await ambilPortal(`${API_PORTAL}?bagian=indeks`);
+      const sah = d && d.aktif === true && Array.isArray(d.indeks) && d.indeks.length > 0 && d.indeks.every((k) => k && typeof k.kunci === "string" && k.syarat && typeof k.syarat === "object");
+      if (sah) {
+        portal.aktif = true;
+        portal.indeks = d.indeks;
+        portal.gagal = false;
+      } else {
+        portal.aktif = false;
+        portal.indeks = [];
+        portal.gagal = !(d && d.aktif === false); // aktif:false = jawaban sah (saklar mati), bukan kegagalan
+      }
+      portal.saat = Date.now();
+      portal.janji = null;
+      return portal.aktif;
+    })();
+    return portal.janji;
+  }
   function data() {
     if (!Array.isArray(globalThis.ALETA_SAKSI_KATALOG_DATA)) globalThis.ALETA_SAKSI_KATALOG_DATA = [];
     return globalThis.ALETA_SAKSI_KATALOG_DATA;
@@ -53,9 +111,21 @@
     if (janji.has(butir.kunci)) return janji.get(butir.kunci);
     const p = (async () => {
       try {
-        const r = await fetch(alamat(butir.berkas), { cache: "force-cache" });
-        if (!r || !r.ok) throw new Error(`status ${r && r.status}`);
-        const kat = await r.json();
+        let kat = null;
+        if (butir.sumber === "basis-data") {
+          // C4: isi yang disunting di basis data; gagal diambil = jatuh ke JSON tertanam kunci yang sama (cadangan).
+          const d = await ambilPortal(`${API_PORTAL}?kunci=${encodeURIComponent(butir.kunci)}`);
+          if (d && d.aktif === true && d.isi && d.isi.kunci === butir.kunci) {
+            kat = d.isi;
+            kat.versiKatalog = `db${Number(d.versiDb) || 0}`;
+          }
+        }
+        if (!kat) {
+          const berkas = butir.berkas || `saksi-katalog-jenis/${butir.kunci}.json`;
+          const r = await fetch(alamat(berkas), { cache: "force-cache" });
+          if (!r || !r.ok) throw new Error(`status ${r && r.status}`);
+          kat = await r.json();
+        }
         if (!kat || kat.kunci !== butir.kunci) throw new Error("kunci katalog tidak cocok");
         if (!sudahAda(butir.kunci)) {
           data().push(kat);
@@ -82,6 +152,7 @@
 
   /** Memuat paket satu katalog (utama + tambahan + keterangan). true bila SEMUANYA kini tersedia. */
   async function siapkanKunci(kunci) {
+    await segarkanPortal();
     const butir = new Map(indeks().map((k) => [k.kunci, k]));
     const hasil = await Promise.all(paketKunci(kunci).map((k) => muatSatu(butir.get(k) || (sudahAda(k) ? { kunci: k } : null))));
     return hasil.every(Boolean);
@@ -98,6 +169,7 @@
    * true bila perkara ini tidak punya katalog (tidak ada yang perlu dimuat) atau semuanya termuat.
    */
   async function siapkan(perkara) {
+    await segarkanPortal();
     const utama = kenaliDiIndeks(perkara);
     if (!utama) return true;
     return siapkanKunci(utama.kunci);
@@ -120,6 +192,9 @@
 
   globalThis.AletaSaksiKatalogMuat = Object.freeze({
     ada: () => indeks().length > 0,
+    segarkanPortal,
+    /** "bawaan" (tertanam) atau "portal" (saklar katalog-saksi-basis-data menyala): asal indeks yang berlaku. */
+    asalIndeks: () => (portal.aktif && portal.indeks.length ? "portal" : "bawaan"),
     indeks,
     siapkan,
     siapkanKunci,

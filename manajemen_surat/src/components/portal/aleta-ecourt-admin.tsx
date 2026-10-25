@@ -41,6 +41,7 @@ import { AletaEcourtTemplatHukum } from "@/components/portal/aleta-ecourt-templa
 import { AletaEcourtAbtWajib } from "@/components/portal/aleta-ecourt-abt-wajib";
 import { AletaEcourtKamusSumber } from "@/components/portal/aleta-ecourt-kamus-sumber";
 import { AletaEcourtJejakIsian } from "@/components/portal/aleta-ecourt-jejak-isian";
+import { AletaEcourtSaksiKatalog } from "@/components/portal/aleta-ecourt-saksi-katalog";
 import { AletaEcourtKamusDeteksi } from "@/components/portal/aleta-ecourt-kamus-deteksi";
 import { AletaEcourtPemetaanBlangko } from "@/components/portal/aleta-ecourt-pemetaan-blangko";
 import { AletaEcourtPetaPenetapan } from "@/components/portal/aleta-ecourt-peta-penetapan";
@@ -412,6 +413,8 @@ export function AletaEcourtAdmin() {
         <AletaEcourtKamusDeteksi />
         {/* C1 (25 Okt 2026): angka lapangan jejak isian dan butir saksi (saklar Fitur satker bawaan mati). Jangkar #jejak-isian. */}
         <AletaEcourtJejakIsian />
+        {/* C4 (25 Okt 2026): penyunting katalog saksi berversi (saklar Fitur satker bawaan mati). Jangkar #katalog-saksi. */}
+        <AletaEcourtSaksiKatalog />
         {/* Pemetaan blangko putusan, relaas, dan pemberitahuan putusan
             (butir 17, 30 Sep 2026). Jangkar #pemetaan-blangko - tab Juru Sita
             di ekstensi menautkan ke sini. */}

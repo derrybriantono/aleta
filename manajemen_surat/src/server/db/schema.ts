@@ -976,6 +976,40 @@ export const DDL_JEJAK_ISIAN = {
 } as const;
 
 /**
+ * Katalog saksi di basis data dengan versi (0093, 25 Okt 2026, rantai C butir C4 = U8): penimpa berversi atas katalog
+ * Susun saksi yang tertanam di ekstensi. Disajikan portal HANYA bila saklar Fitur Satker "katalog-saksi-basis-data"
+ * menyala (bawaan MATI). Cermin PERSIS dari drizzle/0093_aleta_saksi_katalog.sql; penjaga katalog-saksi-db-25okt.test.ts
+ * membandingkan keduanya. Tanpa kunci asing dan tanpa CHECK.
+ */
+export const DDL_SAKSI_KATALOG = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_saksi_katalog (
+  kunci TEXT PRIMARY KEY,
+  judul TEXT NOT NULL DEFAULT '',
+  versi_aktif INTEGER NOT NULL DEFAULT 0,
+  diubah_oleh TEXT NOT NULL DEFAULT '',
+  diubah_nama TEXT NOT NULL DEFAULT '',
+  diubah_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_saksi_katalog_versi (
+  id TEXT PRIMARY KEY,
+  kunci TEXT NOT NULL,
+  versi INTEGER NOT NULL,
+  isi_json TEXT NOT NULL,
+  sidik TEXT NOT NULL DEFAULT '',
+  catatan TEXT NOT NULL DEFAULT '',
+  dasar_versi INTEGER NOT NULL DEFAULT 0,
+  dibuat_oleh TEXT NOT NULL DEFAULT '',
+  dibuat_nama TEXT NOT NULL DEFAULT '',
+  dibuat_at TEXT NOT NULL
+)`,
+  ],
+  indeks: [
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_saksi_katalog_versi_kunci ON aleta_saksi_katalog_versi(kunci, versi)`,
+  ],
+} as const;
+
+/**
  * Unggah Putusan Terjadwal (0080, 21 Okt 2026, agen B3): jadwal, butir (satu
  * perkara), berkas yang diunggah, dan jejak jujur. Cermin PERSIS dari
  * drizzle/0080_aleta_putusan_terjadwal.sql; penjaga putusan-terjadwal-layanan-21okt.test.ts
@@ -2537,6 +2571,8 @@ const schemaStatements = [
   ...DDL_ALETA_AI_DOMPET.tabel,
   // Jejak isian dan butir saksi (0091, rantai C): usulan vs final, nilai sebelum untuk Urungkan.
   ...DDL_JEJAK_ISIAN.tabel,
+  // Katalog saksi di basis data dengan versi (0093, rantai C).
+  ...DDL_SAKSI_KATALOG.tabel,
   // Unggah Putusan Terjadwal: jadwal, butir, berkas, jejak (0080).
   ...DDL_PUTUSAN_TERJADWAL.tabel,
   // Arsip hasil mediasi per perkara (0081).
@@ -4501,6 +4537,7 @@ const indexStatements = [
   ...DDL_ALETA_AI.indeks,
   ...DDL_ALETA_AI_DOMPET.indeks,
   ...DDL_JEJAK_ISIAN.indeks,
+  ...DDL_SAKSI_KATALOG.indeks,
   ...DDL_PUTUSAN_TERJADWAL.indeks,
   ...DDL_MEDIASI_ARSIP.indeks,
   ...DDL_SIDANG_KELILING_HAKIM.indeks,
