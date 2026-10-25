@@ -57,6 +57,20 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.39",
+    dirilis: "2026-10-25T12:10:00+08:00",
+    judul: "Hasil kerja 23-24 Okt: saksi semua jenis, referensi pihak, kasir, tema e-Court, ALETA Ai tahap 2-4, riwayat masuk",
+    butir: [
+      "Keterangan saksi otomatis untuk semua jenis perkara, tidak hanya cerai.",
+      "Form saksi: kartu ALETA terlipat bawaan; Referensi Data Pihak mendapat Hubungan saksi dan isian otomatis kolom yang dapat dideteksi.",
+      "Tombol Kasir ALETA di Jurnal Keuangan Perkara (pop-up) dan panduan langkah kerja kasir bersorot.",
+      "Mode gelap/terang untuk situs e-Court Mahkamah Agung dan E-Keuangan.",
+      "ALETA Ai tahap 2-4 (alat data, tugas, dompet) - tetap MATI sampai diaktifkan Super Admin.",
+      "Riwayat masuk dan perangkat, pencabutan sesi, Pasang di HP.",
+      "Kalender libur Jadwal Sidang diperbaiki.",
+    ],
+  },
+  {
     versi: "1.205.38",
     dirilis: "2026-10-23T17:45:00+08:00",
     judul: "Kalender libur Jadwal Sidang tidak terpotong",
