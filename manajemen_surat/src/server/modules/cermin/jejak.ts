@@ -9,6 +9,9 @@ export const KUNCI_JEJAK = {
   pemindai: "pemindai",
   pembaruan: "pembaruan",
   pencocokan: "pencocokan",
+  mediasi: "mediasi",
+  tag: "tag",
+  tagKatalog: "tag-katalog",
 } as const;
 
 export async function bacaJejak(db: AletaDatabase, kunci: string): Promise<unknown | null> {

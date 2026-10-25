@@ -255,6 +255,13 @@ class SippPalsu {
         };
         return { ok: true, data };
       },
+      mediasi: async (dari, sampai) => {
+        this.panggilan.push(`mediasi:${dari}:${sampai}`);
+        if (this.rusak) return gagal();
+        return { ok: true, data: { dari, sampai, terbaca: true, alasan: "", terpotong: false, mediasi: [] } };
+      },
+      tagKatalog: async () => ({ ok: true, data: { tag: [], kelompok: [], dasar: [], batasId: 20000 } }),
+      tagPerkara: async (kunci) => ({ ok: true, data: { kunci, perkaraId: [], terpotong: false } }),
       idSidang: async (dari, sampai) => {
         this.panggilan.push(`idSidang:${dari}:${sampai}`);
         if (this.rusak) return gagal();

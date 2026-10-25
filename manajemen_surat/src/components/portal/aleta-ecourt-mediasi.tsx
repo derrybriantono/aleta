@@ -85,6 +85,7 @@ import {
   useUrutan,
   urutkan,
 } from "@/components/portal/tabel-kendali";
+import { KETERANGAN_CERMIN, teksCermin } from "@/lib/cermin-tampil";
 
 type Mediasi = {
   mediasiId: string;
@@ -847,6 +848,8 @@ export function AletaEcourtMediasi({
   const [memuat, setMemuat] = useState(true);
   const [pesan, setPesan] = useState("");
   const [alasan, setAlasan] = useState("");
+  // A5 (25 Okt 2026): bila daftar dibaca dari Cermin Perkara (saklar Mediasi menyala dan cermin segar).
+  const [cerminMediasi, setCerminMediasi] = useState<{ diperbaruiPada: string | null } | null>(null);
   const sedangMuat = useRef(false);
 
   // ==========================================================================
@@ -984,6 +987,7 @@ export function AletaEcourtMediasi({
         laporBerhasilMediasi();
         setAlasan(String(data?.alasan || ""));
         setMediasi(Array.isArray(data?.mediasi) ? (data.mediasi as Mediasi[]) : []);
+        setCerminMediasi((data?.cermin ?? null) as { diperbaruiPada: string | null } | null);
         rentangTampil.current = rentang;
       } catch (galat) {
         if (!laporGagalMediasi(galat)) {
@@ -1328,6 +1332,12 @@ export function AletaEcourtMediasi({
               Pencarian lanjutan
               {cariLanjut.jumlahAktif > 0 ? ` (${cariLanjut.jumlahAktif})` : ""}
             </Button>
+
+            {cerminMediasi && !memuat ? (
+              <span className="text-xs text-muted-foreground" data-testid="tanda-cermin-mediasi" title={KETERANGAN_CERMIN}>
+                {teksCermin(cerminMediasi)}
+              </span>
+            ) : null}
 
             {adaPenyaringTabel ? (
               <>

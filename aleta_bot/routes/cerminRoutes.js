@@ -15,6 +15,10 @@
  *                                      (pembaruan berkala) + tanggal sidangnya
  *   GET /id-perkara?setelahId&batas    daftar ringan id + waktu (pencocokan mingguan)
  *   GET /id-sidang?dari&sampai         daftar ringan sidang satu jendela (idem)
+ *   GET /mediasi?dari&sampai           pertemuan mediasi satu jendela tanggal (baris
+ *                                      persis seperti layar Jadwal Mediasi)
+ *   GET /tag-katalog                   katalog tag Status Perkara (tanpa menyentuh SIPP)
+ *   GET /tag-perkara?kunci             seluruh perkara_id yang memenuhi satu tag
  *   GET /pelengkap-jadwal?waktu&baris  keterangan LANGSUNG layar Jadwal yang tidak
  *                                      boleh basi (peta antrian, waktu antrian,
  *                                      kehadiran rinci) untuk baris "perkaraId~tanggal,..."
@@ -27,6 +31,7 @@ const { readRuntimeConfig } = require("../config/runtime-config");
 const cerminService = require("../services/cerminService");
 const cerminPembaruanService = require("../services/cerminPembaruanService");
 const jadwalPelengkapService = require("../services/jadwalPelengkapService");
+const cerminTagService = require("../services/cerminTagService");
 
 const router = express.Router();
 
@@ -166,6 +171,41 @@ router.get("/pelengkap-jadwal", wajibToken, async (req, res) => {
       .filter((b) => b.perkaraId && TANGGAL.test(b.tanggalSidang))
       .slice(0, 500);
     res.json(await jadwalPelengkapService.pelengkapJadwal({ baris, waktu: String(req.query.waktu || "") === "1" }));
+  } catch (error) {
+    galat(res, error);
+  }
+});
+
+router.get("/mediasi", wajibToken, async (req, res) => {
+  try {
+    const dari = String(req.query.dari || "");
+    const sampai = String(req.query.sampai || "") || dari;
+    if (!TANGGAL.test(dari) || !TANGGAL.test(sampai) || sampai < dari) {
+      res.status(400).json({ ok: false, error: "tanggal_tidak_sah", message: "dari/sampai harus YYYY-MM-DD dan dari <= sampai." });
+      return;
+    }
+    res.json({ ok: true, ...(await cerminService.mediasiJendela({ dari, sampai })) });
+  } catch (error) {
+    galat(res, error);
+  }
+});
+
+router.get("/tag-katalog", wajibToken, (_req, res) => {
+  try {
+    res.json({ ok: true, ...cerminTagService.katalogTag() });
+  } catch (error) {
+    galat(res, error);
+  }
+});
+
+router.get("/tag-perkara", wajibToken, async (req, res) => {
+  try {
+    const hasil = await cerminTagService.perkaraUntukTag(String(req.query.kunci || ""));
+    if (hasil.ok === false) {
+      res.status(400).json(hasil);
+      return;
+    }
+    res.json(hasil);
   } catch (error) {
     galat(res, error);
   }

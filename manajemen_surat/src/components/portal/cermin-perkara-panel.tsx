@@ -280,6 +280,79 @@ export function CerminPerkaraPanel() {
             </CardContent>
           </Card>
 
+          <Card className="border-border/80" data-testid="cermin-mediasi">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <RefreshCw className="h-4 w-4" /> Jadwal Mediasi
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Pertemuan mediasi {draf.mediasiHariLalu} hari lalu sampai {draf.mediasiHariDepan} hari ke depan dihitung ulang tiap {draf.mediasiMenit} menit
+                dan seketika setelah tulisan lewat ALETA. Di luar jendela itu, atau dengan pencarian, layar membaca SIPP.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              {data.keadaan.status !== "selesai" ? (
+                <p className="text-muted-foreground">Menunggu pemindaian awal selesai.</p>
+              ) : (
+                <p data-testid="cermin-mediasi-terakhir">
+                  {data.mediasi.terakhir
+                    ? `Terakhir dihitung ${tanggalJamWita(data.mediasi.terakhir)} - ${angka(data.mediasi.baris)} pertemuan (${angka(data.mediasi.ditulis)} ditulis, ${angka(data.mediasi.dihapus)} dihapus, ${angka(data.mediasi.ms)} md).`
+                    : "Belum pernah dihitung."}
+                </p>
+              )}
+              {data.mediasi.galat.terakhir ? (
+                <p className="text-xs leading-5 text-rose-700 dark:text-rose-300" data-testid="cermin-mediasi-galat">
+                  Galat terakhir ({data.mediasi.galat.beruntun}x beruntun, {tanggalJamWita(data.mediasi.galat.pada)}): {data.mediasi.galat.terakhir}
+                </p>
+              ) : null}
+              {bolehMengubah ? (
+                <Button size="sm" variant="outline" disabled={menyimpan} onClick={() => void kirim("POST", { aksi: "mediasi-sekarang" }, "Jadwal Mediasi dihitung ulang.")}>
+                  <Play className="mr-1.5 h-4 w-4" /> Hitung ulang sekarang
+                </Button>
+              ) : null}
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/80" data-testid="cermin-tag">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <RefreshCw className="h-4 w-4" /> Penanda Status Perkara
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Anggota tiap penanda dihitung SIPP di latar tiap {draf.selangTagMenit} menit (lebih cepat bila ada tulisan), sehingga hitungan penanda cukup
+                satu kali baca. Hitungan dipakai layar hanya bila siklus lengkap dan tidak terpotong.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              {data.keadaan.status !== "selesai" ? (
+                <p className="text-muted-foreground">Menunggu pemindaian awal selesai.</p>
+              ) : (
+                <>
+                  <p data-testid="cermin-tag-siklus">
+                    {data.tag.siklusSelesai ? `Siklus lengkap terakhir ${tanggalJamWita(data.tag.siklusSelesai)}.` : "Belum ada siklus lengkap."}
+                    {data.tag.antrian.length > 0 ? ` Sedang berjalan: ${angka(data.tag.total - data.tag.antrian.length)} dari ${angka(data.tag.total)} penanda.` : ""}
+                  </p>
+                  {data.tag.tidakLengkap.length > 0 ? (
+                    <p className="text-xs leading-5 text-amber-800 dark:text-amber-300">Terpotong pagu: {data.tag.tidakLengkap.join(", ")} - layar tetap membaca SIPP.</p>
+                  ) : null}
+                  {data.tag.gagal.length > 0 ? (
+                    <p className="text-xs leading-5 text-amber-800 dark:text-amber-300">Gagal dihitung pada siklus ini: {data.tag.gagal.join(", ")}.</p>
+                  ) : null}
+                </>
+              )}
+              {data.tag.galat.terakhir ? (
+                <p className="text-xs leading-5 text-rose-700 dark:text-rose-300" data-testid="cermin-tag-galat">
+                  Galat terakhir ({data.tag.galat.beruntun}x beruntun, {tanggalJamWita(data.tag.galat.pada)}): {data.tag.galat.terakhir}
+                </p>
+              ) : null}
+              {bolehMengubah ? (
+                <Button size="sm" variant="outline" disabled={menyimpan} onClick={() => void kirim("POST", { aksi: "tag-sekarang" }, "Satu detak penanda dijalankan.")}>
+                  <Play className="mr-1.5 h-4 w-4" /> Mulai siklus sekarang
+                </Button>
+              ) : null}
+            </CardContent>
+          </Card>
+
           <Card className="border-border/80" data-testid="cermin-pencocokan">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
@@ -472,6 +545,56 @@ export function CerminPerkaraPanel() {
                     max={30}
                     disabled={!bolehMengubah}
                     onChange={(e) => ubah((p) => ({ ...p, panasHariDepan: Number(e.target.value) }))}
+                  />
+                </label>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-4">
+                <label className="space-y-1 text-xs text-muted-foreground">
+                  Mediasi: hari ke belakang
+                  <input
+                    type="number"
+                    className="block w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+                    value={draf.mediasiHariLalu}
+                    min={0}
+                    max={31}
+                    disabled={!bolehMengubah}
+                    onChange={(e) => ubah((p) => ({ ...p, mediasiHariLalu: Number(e.target.value) }))}
+                  />
+                </label>
+                <label className="space-y-1 text-xs text-muted-foreground">
+                  Mediasi: hari ke depan
+                  <input
+                    type="number"
+                    className="block w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+                    value={draf.mediasiHariDepan}
+                    min={0}
+                    max={90}
+                    disabled={!bolehMengubah}
+                    onChange={(e) => ubah((p) => ({ ...p, mediasiHariDepan: Number(e.target.value) }))}
+                  />
+                </label>
+                <label className="space-y-1 text-xs text-muted-foreground">
+                  Hitung ulang mediasi (menit)
+                  <input
+                    type="number"
+                    className="block w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+                    value={draf.mediasiMenit}
+                    min={1}
+                    max={120}
+                    disabled={!bolehMengubah}
+                    onChange={(e) => ubah((p) => ({ ...p, mediasiMenit: Number(e.target.value) }))}
+                  />
+                </label>
+                <label className="space-y-1 text-xs text-muted-foreground">
+                  Selang penanda status (menit)
+                  <input
+                    type="number"
+                    className="block w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+                    value={draf.selangTagMenit}
+                    min={2}
+                    max={240}
+                    disabled={!bolehMengubah}
+                    onChange={(e) => ubah((p) => ({ ...p, selangTagMenit: Number(e.target.value) }))}
                   />
                 </label>
               </div>

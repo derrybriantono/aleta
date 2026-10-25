@@ -501,6 +501,9 @@ describe("D. kembali ke SIPP (jalur lama) dan baca-tulisan-sendiri", () => {
       perubahan: async (sejak) => ({ ok: true, data: { sejak, tandaBaru: sejak, terpotong: false, jumlahTersentuh: 0, perkaraId: [], tanggalSidang: [], tidakTerbaca: [] } }),
       idPerkara: async () => ({ ok: false, error: "x" }),
       idSidang: async () => ({ ok: false, error: "x" }),
+      mediasi: async (dari, sampai) => ({ ok: true, data: { dari, sampai, terbaca: true, alasan: "", terpotong: false, mediasi: [] } }),
+      tagKatalog: async () => ({ ok: false, error: "x" }),
+      tagPerkara: async () => ({ ok: false, error: "x" }),
       sidang: async (dari, sampai) => ({
         ok: true,
         data: {

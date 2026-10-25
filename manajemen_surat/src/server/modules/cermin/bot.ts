@@ -39,6 +39,11 @@ export type PerkaraSumber = {
   putusanVerstek: number;
   tanggalMinutasi: string;
   tanggalBht: string;
+  /** A5: tanggal dasar lingkup Status Perkara. Bot lama tidak mengirimnya (jatuh ke kosong). */
+  sidangMaks?: string;
+  tanggalAkta?: string;
+  tanggalRelaas?: string;
+  tanggalIkrar?: string;
   sippDiperbarui: string;
 };
 
@@ -58,6 +63,25 @@ export type SidangSumber = {
 };
 
 export type JendelaSidang = { dari: string; sampai: string; terpotong: boolean; sidang: SidangSumber[] };
+
+/** Satu pertemuan mediasi = keluaran daftarJadwalMediasi apa adanya. */
+export type MediasiSumber = Record<string, unknown> & { mediasiId?: string; perkaraId?: string; tanggal?: string; jam?: string; nomorPerkara?: string };
+export type JendelaMediasi = {
+  dari: string;
+  sampai: string;
+  terbaca: boolean;
+  alasan: string;
+  terpotong: boolean;
+  mediasi: MediasiSumber[];
+};
+
+export type KatalogTagSumber = {
+  tag: Array<{ kunci: string; label: string; kelompok: string; nada: string; judul: string; balik: boolean }>;
+  kelompok: Array<{ kunci: string; label: string }>;
+  dasar: Array<{ kunci: string; label: string }>;
+  batasId: number;
+};
+export type PerkaraTagSumber = { kunci: string; perkaraId: string[]; terpotong: boolean };
 
 export type PerubahanSumber = {
   sejak: string;
@@ -91,6 +115,11 @@ export type BotCerminLengkap = BotCermin & {
   perubahan: (sejak: string, batas: number) => Promise<HasilBotCermin<PerubahanSumber>>;
   idPerkara: (setelahId: number, batas: number) => Promise<HasilBotCermin<IdPerkaraSumber>>;
   idSidang: (dari: string, sampai: string) => Promise<HasilBotCermin<IdSidangSumber>>;
+  /** A5: pertemuan mediasi satu jendela tanggal. */
+  mediasi: (dari: string, sampai: string) => Promise<HasilBotCermin<JendelaMediasi>>;
+  /** A5: katalog tag dan anggota tiap tag atas seluruh register. */
+  tagKatalog: () => Promise<HasilBotCermin<KatalogTagSumber>>;
+  tagPerkara: (kunci: string) => Promise<HasilBotCermin<PerkaraTagSumber>>;
 };
 
 function alamatBot() {
@@ -161,4 +190,8 @@ export const botCerminAsli: BotCerminLengkap = {
     panggilBotCermin<IdPerkaraSumber>(`/id-perkara?setelahId=${encodeURIComponent(String(setelahId))}&batas=${encodeURIComponent(String(batas))}`),
   idSidang: (dari, sampai) =>
     panggilBotCermin<IdSidangSumber>(`/id-sidang?dari=${encodeURIComponent(dari)}&sampai=${encodeURIComponent(sampai)}`),
+  mediasi: (dari, sampai) =>
+    panggilBotCermin<JendelaMediasi>(`/mediasi?dari=${encodeURIComponent(dari)}&sampai=${encodeURIComponent(sampai)}`, 90_000),
+  tagKatalog: () => panggilBotCermin<KatalogTagSumber>("/tag-katalog", 20_000),
+  tagPerkara: (kunci) => panggilBotCermin<PerkaraTagSumber>(`/tag-perkara?kunci=${encodeURIComponent(kunci)}`, 120_000),
 };

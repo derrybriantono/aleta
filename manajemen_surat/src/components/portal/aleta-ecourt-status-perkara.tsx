@@ -115,6 +115,7 @@ import { cn } from "@/lib/utils";
 import { kelasTulisanPutusan, warnaStatusPutusan } from "@/lib/warna-putusan";
 import { relaasElektronik } from "@/lib/hasil-relaas";
 import { LencanaKepatutanRelaas, LencanaRetur, kepatutanBarisRelaas } from "@/components/portal/lencana-kepatutan-relaas";
+import { KETERANGAN_CERMIN, teksCermin } from "@/lib/cermin-tampil";
 
 /**
  * Status satu perkara.
@@ -1494,6 +1495,7 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
           kelompok: data.kelompok ?? [],
           dasar: data.dasar ?? [],
           batasId: data.batasId ?? null,
+          cermin: data.cermin ?? null,
         });
       } catch (kesalahan) {
         if (dibatalkan) return;
@@ -2661,6 +2663,8 @@ type KatalogTag = {
   kelompok: KelompokTag[];
   dasar: DasarTanggalTag[];
   batasId?: number | null;
+  /** A5: hitungan dibaca dari Cermin Perkara (null/tak ada = dari SIPP). */
+  cermin?: { diperbaruiPada: string | null } | null;
 };
 
 /**
@@ -2856,6 +2860,12 @@ export function PanelTagPerkara({
               : "seluruh register"}{" "}
             — {Number(lingkup.perkara || 0).toLocaleString("id-ID")} perkara.
             {dipilih.length > 1 ? " Beberapa tag digabung dengan DAN." : ""}
+            {katalog?.cermin ? (
+              <span data-testid="tanda-cermin-tag" title={KETERANGAN_CERMIN}>
+                {" · "}
+                {teksCermin(katalog.cermin)}
+              </span>
+            ) : null}
           </>
         ) : (
           "Belum ada angka."

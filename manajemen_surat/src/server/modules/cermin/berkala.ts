@@ -11,6 +11,7 @@
 import { pencocokanJatuhTempo } from "@/lib/cermin";
 import { depsPembaruanAsli, putaranPembaruan, type DepsPembaruan } from "@/server/modules/cermin/pembaruan";
 import { pencocokanBilaJatuhTempo } from "@/server/modules/cermin/pencocokan";
+import { putaranTag } from "@/server/modules/cermin/tag";
 import { DETAK_PEMINDAI_MS, putaranPemindai } from "@/server/modules/cermin/pemindai";
 
 type Wadah = { detak: NodeJS.Timeout | null; sedang: boolean };
@@ -27,7 +28,7 @@ export function aturUlangCerminBerkala() {
   SIMPAN.__aletaCerminBerkala = { detak: null, sedang: false };
 }
 
-/** Satu detak: pemindai awal lalu pembaruan lalu pencocokan (urut, tidak bertumpuk). */
+/** Satu detak: pemindai awal, pembaruan (sidang + mediasi), penanda Status Perkara, lalu pencocokan (urut, tidak bertumpuk). */
 export async function detakCermin(deps: DepsPembaruan = depsPembaruanAsli) {
   const w = wadah();
   if (w.sedang) return;
@@ -35,6 +36,7 @@ export async function detakCermin(deps: DepsPembaruan = depsPembaruanAsli) {
   try {
     await putaranPemindai(deps);
     await putaranPembaruan(deps);
+    await putaranTag(deps);
     await pencocokanBilaJatuhTempo(deps, pencocokanJatuhTempo);
   } catch {
     // Tiap tahap sudah mencatat galatnya sendiri; detak tidak boleh mati.

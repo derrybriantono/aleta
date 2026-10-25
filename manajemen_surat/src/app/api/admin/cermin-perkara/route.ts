@@ -85,10 +85,10 @@ export async function POST(request: NextRequest) {
     actorUserId = await resolveActorUserId(request);
     const badan = await bacaBadan(request);
     const aksi = String(badan.aksi || "");
-    if (!["putaran-sekarang", "lanjutkan", "ulang", "pembaruan-sekarang", "pencocokan-sekarang"].includes(aksi)) {
+    if (!["putaran-sekarang", "lanjutkan", "ulang", "pembaruan-sekarang", "pencocokan-sekarang", "mediasi-sekarang", "tag-sekarang"].includes(aksi)) {
       throw new ApiError(
         400,
-        'Aksi tidak dikenal (yang tersedia: "putaran-sekarang", "lanjutkan", "ulang", "pembaruan-sekarang", "pencocokan-sekarang").'
+        'Aksi tidak dikenal (yang tersedia: "putaran-sekarang", "lanjutkan", "ulang", "pembaruan-sekarang", "pencocokan-sekarang", "mediasi-sekarang", "tag-sekarang").'
       );
     }
     const hasil = await aksiPemantauCermin(db, actorUserId, aksi as AksiPemantauCermin, { konfirmasi: badan.konfirmasi === true });

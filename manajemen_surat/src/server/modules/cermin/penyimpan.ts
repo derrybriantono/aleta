@@ -49,8 +49,9 @@ export async function simpanKelompokPerkara(db: AletaDatabase, perkara: PerkaraS
               tahapan_terakhir_id, tahapan_terakhir_text, proses_terakhir_id, proses_terakhir_text,
               majelis_hakim, panitera_pengganti, jurusita, sidang_pertama, sidang_terakhir, sidang_berikut, jumlah_sidang,
               tanggal_putusan, status_putusan, putusan_verstek, tanggal_minutasi, tanggal_bht,
+              tanggal_sidang_maks, tanggal_akta, tanggal_relaas, tanggal_ikrar,
               sipp_diperbarui, cermin_diperbarui, sidik)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT (perkara_id) DO UPDATE SET
              nomor_perkara = excluded.nomor_perkara,
              jenis_perkara_id = excluded.jenis_perkara_id,
@@ -74,6 +75,10 @@ export async function simpanKelompokPerkara(db: AletaDatabase, perkara: PerkaraS
              putusan_verstek = excluded.putusan_verstek,
              tanggal_minutasi = excluded.tanggal_minutasi,
              tanggal_bht = excluded.tanggal_bht,
+             tanggal_sidang_maks = excluded.tanggal_sidang_maks,
+             tanggal_akta = excluded.tanggal_akta,
+             tanggal_relaas = excluded.tanggal_relaas,
+             tanggal_ikrar = excluded.tanggal_ikrar,
              sipp_diperbarui = excluded.sipp_diperbarui,
              cermin_diperbarui = excluded.cermin_diperbarui,
              sidik = excluded.sidik`,
@@ -101,6 +106,10 @@ export async function simpanKelompokPerkara(db: AletaDatabase, perkara: PerkaraS
             p.putusanVerstek ? 1 : 0,
             p.tanggalMinutasi,
             p.tanggalBht,
+            p.sidangMaks ?? "",
+            p.tanggalAkta ?? "",
+            p.tanggalRelaas ?? "",
+            p.tanggalIkrar ?? "",
             p.sippDiperbarui,
             sekarang,
             sidik,

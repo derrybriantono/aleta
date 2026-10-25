@@ -2238,23 +2238,37 @@ export async function getGatewayTagPerkara(params: {
   // perlu disinggahkan.
   const jalur = `/internal/aleta-bot/sipp/status-perkara/tag?${kueri.toString()}`;
   const ttl = kueri.get("katalogSaja") === "1" ? 0 : ttlDariEnv("ALETA_SINGGAH_TAG_MS", process.env.NODE_ENV === "test" ? 0 : 30_000);
+  type DataTag = {
+    ok: boolean;
+    katalogSaja?: boolean;
+    jumlah: Record<string, number> | null;
+    lingkup: { dari: string; sampai: string; perkara: number } | null;
+    tag: Array<{ kunci: string; label: string; kelompok: string; nada: string; judul: string }>;
+    kelompok: Array<{ kunci: string; label: string }>;
+    dasar: Array<{ kunci: string; label: string }>;
+    batasId?: number;
+    /** A5: hitungan ini dibaca dari Cermin Perkara (saklar Status Perkara menyala dan cermin segar). */
+    cermin?: { diperbaruiPada: string | null };
+  };
   return singgahSingkat(
     RUANG_SINGGAH.tag,
     kueri.toString(),
     ttl,
-    () =>
-      gatewayFetch<{
-        ok: boolean;
-        katalogSaja?: boolean;
-        jumlah: Record<string, number> | null;
-        lingkup: { dari: string; sampai: string; perkara: number } | null;
-        tag: Array<{ kunci: string; label: string; kelompok: string; nada: string; judul: string }>;
-        kelompok: Array<{ kunci: string; label: string }>;
-        dasar: Array<{ kunci: string; label: string }>;
-        batasId?: number;
-      }>(jalur, {
-        timeoutMs: TIMEOUT_PERAMBAN_MS,
-      }),
+    async (): Promise<GatewayResult<DataTag>> => {
+      // A5 (25 Okt 2026): hitungan dari Cermin Perkara bila saklar `status` menyala dan cermin
+      // segar - SATU kueri Postgres, bukan sembilan belas kueri penyisir SIPP. Selain itu,
+      // dan di lingkungan uji (kecuali ALETA_CERMIN_STATUS_UJI=1), jalur lama persis.
+      if (process.env.NODE_ENV !== "test" || process.env.ALETA_CERMIN_STATUS_UJI === "1") {
+        try {
+          const { bacaTagDariCermin } = await import("@/server/modules/cermin/status-cermin");
+          const dariCermin = await bacaTagDariCermin(params || {});
+          if (dariCermin) return dariCermin as unknown as GatewayResult<DataTag>;
+        } catch {
+          // Cermin tak terbaca: jalur lama.
+        }
+      }
+      return gatewayFetch<DataTag>(jalur, { timeoutMs: TIMEOUT_PERAMBAN_MS });
+    },
     { simpanBila: (hasil) => hasil.ok === true }
   );
 }

@@ -994,6 +994,19 @@ export const DDL_ALETA_CERMIN_PERKARA = {
 } as const;
 
 /**
+ * Cermin Perkara (0096, 25 Okt 2026, A5): empat tanggal dasar lingkup Status Perkara. Cermin PERSIS dari
+ * drizzle/0096_aleta_cermin_perkara_tanggal.sql; penjaga cermin-status-25okt.test.ts membandingkan keduanya.
+ */
+export const DDL_ALETA_CERMIN_PERKARA_TANGGAL = {
+  kolom: [
+    `ALTER TABLE aleta_cermin_perkara ADD COLUMN IF NOT EXISTS tanggal_sidang_maks TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_cermin_perkara ADD COLUMN IF NOT EXISTS tanggal_akta TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_cermin_perkara ADD COLUMN IF NOT EXISTS tanggal_relaas TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_cermin_perkara ADD COLUMN IF NOT EXISTS tanggal_ikrar TEXT NOT NULL DEFAULT ''`,
+  ],
+} as const;
+
+/**
  * Unggah Putusan Terjadwal (0080, 21 Okt 2026, agen B3): jadwal, butir (satu
  * perkara), berkas yang diunggah, dan jejak jujur. Cermin PERSIS dari
  * drizzle/0080_aleta_putusan_terjadwal.sql; penjaga putusan-terjadwal-layanan-21okt.test.ts
@@ -5058,6 +5071,7 @@ const migrationStatements = [
   ...DDL_KAMUS_RUAS_TAMBAHAN.kolom,
   // ALETA Ai tahap 4: MDR dan kurs (tanggal, sumber) per giliran (0088).
   ...DDL_ALETA_AI_DOMPET.kolom,
+  ...DDL_ALETA_CERMIN_PERKARA_TANGGAL.kolom,
 ];
 
 const aletaSippSchemaStatements = [

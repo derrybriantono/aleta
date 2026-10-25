@@ -40,6 +40,18 @@ export const JENDELA_PANAS = {
   hariDepan: { min: 0, maks: 30, bawaan: 7 },
   menit: { min: 1, maks: 60, bawaan: 3 },
 } as const;
+/**
+ * Jadwal Mediasi (A5): pertemuan pada [hari ini - lalu, hari ini + depan]
+ * dihitung ulang tiap `menit` menit (lebih jarang dari sidang: tiap baris
+ * mediasi memerlukan pembacaan lama mediasi dari view SIPP).
+ */
+export const JENDELA_MEDIASI = {
+  hariLalu: { min: 0, maks: 31, bawaan: 3 },
+  hariDepan: { min: 0, maks: 90, bawaan: 21 },
+  menit: { min: 1, maks: 120, bawaan: 10 },
+} as const;
+/** Penanda Status Perkara (A5): selang antar siklus penghitungan seluruh tag, menit. */
+export const SELANG_TAG_MENIT = { min: 2, maks: 240, bawaan: 10 } as const;
 
 /** Bentuk yang disimpan (aleta_ekstensi_setelan) dan dikirim ke layar. */
 export type PengaturanCermin = {
@@ -57,6 +69,12 @@ export type PengaturanCermin = {
   panasHariLalu: number;
   panasHariDepan: number;
   panasMenit: number;
+  /** Jendela Jadwal Mediasi (lihat JENDELA_MEDIASI). */
+  mediasiHariLalu: number;
+  mediasiHariDepan: number;
+  mediasiMenit: number;
+  /** Selang siklus penanda Status Perkara, menit. */
+  selangTagMenit: number;
   /** Jendela jam pemindaian awal (WITA, HH:MM); melewati tengah malam diperbolehkan. */
   jendelaMulai: string;
   jendelaSelesai: string;
@@ -73,6 +91,10 @@ export const PENGATURAN_CERMIN_BAWAAN: PengaturanCermin = {
   panasHariLalu: JENDELA_PANAS.hariLalu.bawaan,
   panasHariDepan: JENDELA_PANAS.hariDepan.bawaan,
   panasMenit: JENDELA_PANAS.menit.bawaan,
+  mediasiHariLalu: JENDELA_MEDIASI.hariLalu.bawaan,
+  mediasiHariDepan: JENDELA_MEDIASI.hariDepan.bawaan,
+  mediasiMenit: JENDELA_MEDIASI.menit.bawaan,
+  selangTagMenit: SELANG_TAG_MENIT.bawaan,
   jendelaMulai: "18:00",
   jendelaSelesai: "06:30",
 };
@@ -104,6 +126,10 @@ export function bersihkanPengaturanCermin(mentah: unknown): PengaturanCermin | n
     panasHariLalu: jepit(x.panasHariLalu, JENDELA_PANAS.hariLalu.min, JENDELA_PANAS.hariLalu.maks, JENDELA_PANAS.hariLalu.bawaan),
     panasHariDepan: jepit(x.panasHariDepan, JENDELA_PANAS.hariDepan.min, JENDELA_PANAS.hariDepan.maks, JENDELA_PANAS.hariDepan.bawaan),
     panasMenit: jepit(x.panasMenit, JENDELA_PANAS.menit.min, JENDELA_PANAS.menit.maks, JENDELA_PANAS.menit.bawaan),
+    mediasiHariLalu: jepit(x.mediasiHariLalu, JENDELA_MEDIASI.hariLalu.min, JENDELA_MEDIASI.hariLalu.maks, JENDELA_MEDIASI.hariLalu.bawaan),
+    mediasiHariDepan: jepit(x.mediasiHariDepan, JENDELA_MEDIASI.hariDepan.min, JENDELA_MEDIASI.hariDepan.maks, JENDELA_MEDIASI.hariDepan.bawaan),
+    mediasiMenit: jepit(x.mediasiMenit, JENDELA_MEDIASI.menit.min, JENDELA_MEDIASI.menit.maks, JENDELA_MEDIASI.menit.bawaan),
+    selangTagMenit: jepit(x.selangTagMenit, SELANG_TAG_MENIT.min, SELANG_TAG_MENIT.maks, SELANG_TAG_MENIT.bawaan),
     jendelaMulai: mulai,
     jendelaSelesai: selesai,
     ...(typeof x.diubahOleh === "string" ? { diubahOleh: x.diubahOleh } : {}),
@@ -451,4 +477,157 @@ export function waktuSippTerbaru(a: string, b: string): string {
   if (!a) return b;
   if (!b) return a;
   return a >= b ? a : b;
+}
+
+// ---------------------------------------------------------------------------
+// Jadwal Mediasi (kunci jejak "mediasi") dan penanda Status Perkara (kunci "tag")
+// ---------------------------------------------------------------------------
+
+export type KeadaanMediasi = {
+  /** ISO UTC: kapan jendela mediasi terakhir selesai dihitung ulang dengan baik; kosong = belum pernah. */
+  terakhir: string;
+  dari: string;
+  sampai: string;
+  baris: number;
+  ditulis: number;
+  dihapus: number;
+  ms: number;
+  galat: { terakhir: string; pada: string; beruntun: number };
+  peringatan: string[];
+};
+
+export function keadaanMediasiAwal(): KeadaanMediasi {
+  return { terakhir: "", dari: "", sampai: "", baris: 0, ditulis: 0, dihapus: 0, ms: 0, galat: { terakhir: "", pada: "", beruntun: 0 }, peringatan: [] };
+}
+
+export function bersihkanKeadaanMediasi(mentah: unknown): KeadaanMediasi {
+  const dasar = keadaanMediasiAwal();
+  if (!mentah || typeof mentah !== "object") return dasar;
+  const x = mentah as Record<string, any>;
+  const teks = (n: unknown) => (typeof n === "string" ? n : "");
+  const angka = (n: unknown) => (Number.isFinite(Number(n)) && Number(n) >= 0 ? Math.floor(Number(n)) : 0);
+  const g = x.galat && typeof x.galat === "object" ? x.galat : {};
+  return {
+    terakhir: teks(x.terakhir),
+    dari: teks(x.dari),
+    sampai: teks(x.sampai),
+    baris: angka(x.baris),
+    ditulis: angka(x.ditulis),
+    dihapus: angka(x.dihapus),
+    ms: angka(x.ms),
+    galat: { terakhir: teks(g.terakhir), pada: teks(g.pada), beruntun: angka(g.beruntun) },
+    peringatan: Array.isArray(x.peringatan) ? x.peringatan.filter((d: unknown) => typeof d === "string").slice(-10) : [],
+  };
+}
+
+export type KeadaanTag = {
+  /** ISO UTC: awal siklus yang sedang/terakhir berjalan. */
+  siklusMulai: string;
+  /** ISO UTC: kapan SEMUA tag siklus terakhir selesai; kosong = belum ada siklus lengkap. */
+  siklusSelesai: string;
+  /** ISO UTC: awal siklus yang SELESAI itu (patokan baca-tulisan-sendiri). */
+  siklusSelesaiMulai: string;
+  /** Kunci tag yang menunggu dihitung pada siklus ini. */
+  antrian: string[];
+  /** Jumlah tag pada siklus ini. */
+  total: number;
+  /** Tag yang daftar id-nya terpotong pagu bot (hitungan cermin untuk tag ini TIDAK boleh dipercaya). */
+  tidakLengkap: string[];
+  /** Tag yang gagal dihitung pada siklus ini. */
+  gagal: string[];
+  /** Ada tulisan lewat ALETA sejak siklus terakhir dimulai (ISO UTC), kosong = tidak. */
+  kotorSejak: string;
+  galat: { terakhir: string; pada: string; beruntun: number };
+};
+
+export function keadaanTagAwal(): KeadaanTag {
+  return { siklusMulai: "", siklusSelesai: "", siklusSelesaiMulai: "", antrian: [], total: 0, tidakLengkap: [], gagal: [], kotorSejak: "", galat: { terakhir: "", pada: "", beruntun: 0 } };
+}
+
+export function bersihkanKeadaanTag(mentah: unknown): KeadaanTag {
+  const dasar = keadaanTagAwal();
+  if (!mentah || typeof mentah !== "object") return dasar;
+  const x = mentah as Record<string, any>;
+  const teks = (n: unknown) => (typeof n === "string" ? n : "");
+  const angka = (n: unknown) => (Number.isFinite(Number(n)) && Number(n) >= 0 ? Math.floor(Number(n)) : 0);
+  const daftar = (n: unknown) => (Array.isArray(n) ? n.filter((d: unknown) => typeof d === "string").slice(0, 400) : []);
+  const g = x.galat && typeof x.galat === "object" ? x.galat : {};
+  return {
+    siklusMulai: teks(x.siklusMulai),
+    siklusSelesai: teks(x.siklusSelesai),
+    siklusSelesaiMulai: teks(x.siklusSelesaiMulai),
+    antrian: daftar(x.antrian),
+    total: angka(x.total),
+    tidakLengkap: daftar(x.tidakLengkap),
+    gagal: daftar(x.gagal),
+    kotorSejak: teks(x.kotorSejak),
+    galat: { terakhir: teks(g.terakhir), pada: teks(g.pada), beruntun: angka(g.beruntun) },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Lingkup Status Perkara: dasar tanggal -> kolom aleta_cermin_perkara, dan rentang periode
+// ---------------------------------------------------------------------------
+
+/**
+ * Dasar tanggal lingkup (kunci SAMA dengan DASAR_TANGGAL di tagPerkaraService.js)
+ * -> kolom aleta_cermin_perkara. TERTUTUP: kunci asing jatuh ke "daftar", seperti
+ * jalur lama (nama kolom tidak pernah datang dari luar).
+ */
+export const KOLOM_DASAR_TANGGAL: Record<string, string> = {
+  daftar: "tanggal_pendaftaran",
+  putus: "tanggal_putusan",
+  bht: "tanggal_bht",
+  minutasi: "tanggal_minutasi",
+  sidang: "tanggal_sidang_maks",
+  akta: "tanggal_akta",
+  relaas: "tanggal_relaas",
+  ikrar: "tanggal_ikrar",
+};
+
+export function kolomDasarTanggal(dasar: string): string {
+  return Object.prototype.hasOwnProperty.call(KOLOM_DASAR_TANGGAL, dasar) ? KOLOM_DASAR_TANGGAL[dasar] : KOLOM_DASAR_TANGGAL.daftar;
+}
+
+const dua = (n: number) => String(n).padStart(2, "0");
+const isoUtc = (d: Date) => `${d.getUTCFullYear()}-${dua(d.getUTCMonth() + 1)}-${dua(d.getUTCDate())}`;
+
+/**
+ * Rentang tanggal lingkup menurut periode - SAMA dengan rentang() di
+ * tagPerkaraService.js + rentangPeriode() di petaPerkaraService.js, dengan
+ * "hari ini" = tanggal WITA yang diberikan pemanggil. total -> kosong (tanpa saringan).
+ */
+export function rentangLingkupTag(periode: string, acuan: string, dari: string, sampai: string, hariIni: string): { dari: string; sampai: string } {
+  const p = String(periode || "total");
+  if (p === "total") return { dari: "", sampai: "" };
+  const acuanSah = TANGGAL_ISO.test(String(acuan || ""));
+  const tgl = acuanSah ? acuan : hariIni;
+  const [ty, tb, th] = tgl.split("-").map(Number);
+  const d = new Date(Date.UTC(ty, tb - 1, th));
+  if (p === "hari" || p === "kemarin") {
+    if (p === "kemarin") d.setUTCDate(d.getUTCDate() - 1);
+    return { dari: isoUtc(d), sampai: isoUtc(d) };
+  }
+  if (p === "rentang") return { dari: String(dari || ""), sampai: String(sampai || "") };
+  const tahun = d.getUTCFullYear();
+  if (p === "tahun") return { dari: `${tahun}-01-01`, sampai: `${tahun}-12-31` };
+  if (p === "semester") {
+    const awal = d.getUTCMonth() < 6 ? 1 : 7;
+    return { dari: `${tahun}-${dua(awal)}-01`, sampai: awal === 1 ? `${tahun}-06-30` : `${tahun}-12-31` };
+  }
+  if (p === "triwulan") {
+    const awal = Math.floor(d.getUTCMonth() / 3) * 3 + 1;
+    return { dari: `${tahun}-${dua(awal)}-01`, sampai: isoUtc(new Date(Date.UTC(tahun, awal + 2, 0))) };
+  }
+  if (p === "bulan") {
+    const bulan = d.getUTCMonth() + 1;
+    return { dari: `${tahun}-${dua(bulan)}-01`, sampai: isoUtc(new Date(Date.UTC(tahun, bulan, 0))) };
+  }
+  // Pekan (Senin-Minggu) - bawaan jalur lama untuk periode lain.
+  const hari = d.getUTCDay() === 0 ? 7 : d.getUTCDay();
+  const senin = new Date(d);
+  senin.setUTCDate(d.getUTCDate() - (hari - 1));
+  const minggu = new Date(senin);
+  minggu.setUTCDate(senin.getUTCDate() + 6);
+  return { dari: isoUtc(senin), sampai: isoUtc(minggu) };
 }

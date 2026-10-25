@@ -37,6 +37,7 @@ import { botCerminAsli, type BotCerminLengkap, type SidangSumber } from "@/serve
 import { KUNCI_JEJAK, bacaJejak, tulisJejak } from "@/server/modules/cermin/jejak";
 import { sumberPengaturanCermin } from "@/server/modules/cermin/pengaturan";
 import { muatKeadaanPemindai } from "@/server/modules/cermin/pemindai";
+import { putaranMediasi } from "@/server/modules/cermin/mediasi";
 import { gantiSidangRentang, hapusPerkaraCermin, simpanKelompokPerkara } from "@/server/modules/cermin/penyimpan";
 import { tulisCerminTerakhirMs } from "@/server/modules/cermin/setelah-tulisan";
 
@@ -211,6 +212,7 @@ export async function putaranPembaruan(deps: DepsPembaruan = depsPembaruanAsli, 
       const panas = tanggalPanas(sekarang, p);
       const panasJatuhTempo = !k.panasTerakhir || sekarang.getTime() - (Date.parse(k.panasTerakhir) || 0) >= p.panasMenit * 60_000;
       const peringatan: string[] = [];
+      const kotorMediasi = w.kotor;
       if (panasJatuhTempo || w.kotor) {
         const panasMulaiMs = Date.now();
         const h = await segarkanRentangSidang(deps, panas.dari, panas.sampai, iso);
@@ -228,6 +230,14 @@ export async function putaranPembaruan(deps: DepsPembaruan = depsPembaruanAsli, 
         w.tanggalKotor.clear();
       }
       w.kotor = false;
+
+      // 2b. Jadwal Mediasi (A5): jendela mediasi dihitung ulang menurut selangnya sendiri, atau
+      // seketika bila ada tulisan. Gagalnya tercatat sendiri dan tidak mengganggu pembaruan sidang.
+      try {
+        await putaranMediasi({ db: deps.db, bot: deps.bot, pengaturan: deps.pengaturan, sekarang: deps.sekarang }, { paksa: kotorMediasi });
+      } catch {
+        // dicatat di keadaan mediasi
+      }
 
       // 3. Tanggal antre (beberapa per putaran).
       const diproses = k.antrianTanggal.slice(0, MAKS_TANGGAL_PER_PUTARAN);

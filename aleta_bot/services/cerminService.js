@@ -119,7 +119,7 @@ const KOLOM_DASAR = `perkara_id AS perkaraId, nomor_perkara AS nomorPerkara,
  */
 async function lengkapiPerkara(dasar, hariIni) {
   const id = idSah(dasar.map((r) => r.perkaraId));
-  const [penetapan, putusan, sidang] = await Promise.all([
+  const [penetapan, putusan, sidang, akta, relaas, ikrar] = await Promise.all([
     runQuery(
       `SELECT perkara_id AS perkaraId, majelis_hakim_text AS majelis,
               panitera_pengganti_text AS panitera, jurusita_text AS jurusita,
@@ -143,6 +143,7 @@ async function lengkapiPerkara(dasar, hariIni) {
       `SELECT perkara_id AS perkaraId, COUNT(*) AS jumlah,
               MAX(CASE WHEN tanggal_sidang <= ? THEN tanggal_sidang END) AS terakhir,
               MIN(CASE WHEN tanggal_sidang > ? THEN tanggal_sidang END) AS berikut,
+              MAX(tanggal_sidang) AS maks,
               MAX(diinput_tanggal) AS diinput, MAX(diperbaharui_tanggal) AS diperbaharui,
               MAX(diedit_tanggal) AS diedit
          FROM perkara_jadwal_sidang
@@ -150,13 +151,33 @@ async function lengkapiPerkara(dasar, hariIni) {
         GROUP BY perkara_id`,
       [hariIni, hariIni, id]
     ),
+    // Tanggal dasar lingkup Status Perkara (A5): akta cerai terbit, relaas dilaksanakan, ikrar talak.
+    // Tabelnya baku di SIPP PA; kegagalannya TIDAK ditelan (pemindai mencatat galat) supaya hitungan
+    // per dasar tanggal dari cermin tidak diam-diam salah.
+    runQuery(`SELECT perkara_id AS perkaraId, MAX(tgl_akta_cerai) AS tanggal FROM perkara_akta_cerai WHERE perkara_id IN (?) GROUP BY perkara_id`, [id]),
+    runQuery(`SELECT perkara_id AS perkaraId, MAX(tanggal_relaas) AS tanggal FROM perkara_pelaksanaan_relaas WHERE perkara_id IN (?) GROUP BY perkara_id`, [id]),
+    runQuery(`SELECT perkara_id AS perkaraId, MAX(tgl_ikrar_talak) AS tanggal FROM perkara_ikrar_talak WHERE perkara_id IN (?) GROUP BY perkara_id`, [id]),
   ]);
+  const petaTanggal = (rows) => new Map(rows.map((x) => [String(x.perkaraId), tanggalIso(x.tanggal)]));
+  const petaAkta = petaTanggal(akta);
+  const petaRelaas = petaTanggal(relaas);
+  const petaIkrar = petaTanggal(ikrar);
 
   const petaPenetapan = new Map(penetapan.map((r) => [String(r.perkaraId), r]));
   // Beberapa baris putusan per perkara bisa ada (kunci utama: perkara_id +
   // tanggal_putusan); yang dipakai yang TERAKHIR (urut naik -> timpa).
   const petaPutusan = new Map();
-  for (const r of putusan) petaPutusan.set(String(r.perkaraId), r);
+  // Minutasi dan BHT: yang TERBARU di antara semua baris putusan (sama dengan MAX() jalur lama).
+  const maksMinutasi = new Map();
+  const maksBht = new Map();
+  for (const r of putusan) {
+    const kunci = String(r.perkaraId);
+    petaPutusan.set(kunci, r);
+    const m = tanggalIso(r.tanggalMinutasi);
+    if (m && m > (maksMinutasi.get(kunci) || "")) maksMinutasi.set(kunci, m);
+    const b = tanggalIso(r.tanggalBht);
+    if (b && b > (maksBht.get(kunci) || "")) maksBht.set(kunci, b);
+  }
   const petaSidang = new Map(sidang.map((r) => [String(r.perkaraId), r]));
 
   const perkara = dasar.map((r) => {
@@ -186,8 +207,12 @@ async function lengkapiPerkara(dasar, hariIni) {
       tanggalPutusan: tanggalIso(p.tanggalPutusan),
       statusPutusan: String(p.statusNama || "").trim(),
       putusanVerstek: String(p.verstek || "").toUpperCase() === "Y" || Number(p.verstek) === 1 ? 1 : 0,
-      tanggalMinutasi: tanggalIso(p.tanggalMinutasi),
-      tanggalBht: tanggalIso(p.tanggalBht),
+      tanggalMinutasi: maksMinutasi.get(kunci) || "",
+      tanggalBht: maksBht.get(kunci) || "",
+      sidangMaks: tanggalIso(s.maks),
+      tanggalAkta: petaAkta.get(kunci) || "",
+      tanggalRelaas: petaRelaas.get(kunci) || "",
+      tanggalIkrar: petaIkrar.get(kunci) || "",
       sippDiperbarui: terbaru(
         r.diinput, r.diperbaharui, r.diedit,
         t.diinput, t.diperbaharui, t.diedit,
@@ -281,6 +306,25 @@ async function sidangJendela({ dari, sampai } = {}) {
   };
 }
 
+/**
+ * Pertemuan mediasi pada satu jendela tanggal. `mediasi` = keluaran
+ * daftarJadwalMediasi apa adanya (satu-satunya sumber bentuknya). `terbaca` false
+ * (tabel/kolom tidak dikenal) atau `terpotong` (mencapai batas baris) berarti
+ * pemanggil TIDAK boleh menghapus apa pun di cermin.
+ */
+async function mediasiJendela({ dari, sampai } = {}) {
+  const hasil = await sippJadwalSidangService.daftarJadwalMediasi({ dari, sampai, cari: "", batas: BATAS_SIDANG });
+  const daftar = Array.isArray(hasil && hasil.mediasi) ? hasil.mediasi : [];
+  return {
+    dari: String((hasil && hasil.dari) || dari || ""),
+    sampai: String((hasil && hasil.sampai) || sampai || ""),
+    terbaca: Boolean(hasil && hasil.terbaca),
+    alasan: String((hasil && hasil.alasan) || ""),
+    terpotong: daftar.length >= BATAS_SIDANG,
+    mediasi: daftar,
+  };
+}
+
 module.exports = {
   BATAS_PERKARA,
   BATAS_SIDANG,
@@ -288,6 +332,7 @@ module.exports = {
   kelompokPerkara,
   perkaraDenganId,
   sidangJendela,
+  mediasiJendela,
   // Untuk uji.
   _tanggalIso: tanggalIso,
   _waktuIso: waktuIso,

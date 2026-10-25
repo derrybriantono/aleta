@@ -14,8 +14,10 @@ import {
   pencocokanBersih,
   perkiraanSelesai,
   persenKemajuan,
+  type KeadaanMediasi,
   type KeadaanPembaruan,
   type KeadaanPemindai,
+  type KeadaanTag,
   type KeadaanPencocokan,
   type LayarCermin,
   type PengaturanCermin,
@@ -27,6 +29,8 @@ import { pengaturanCerminBerlaku, simpanPengaturanCermin } from "@/server/module
 import { hitunganCermin } from "@/server/modules/cermin/penyimpan";
 import { depsPembaruanAsli, muatKeadaanPembaruan, putaranPembaruan, type HasilPembaruan } from "@/server/modules/cermin/pembaruan";
 import { jalankanPencocokan, muatKeadaanPencocokan, type HasilJalanPencocokan } from "@/server/modules/cermin/pencocokan";
+import { depsMediasiAsli, muatKeadaanMediasi, putaranMediasi, type HasilMediasi } from "@/server/modules/cermin/mediasi";
+import { depsTagAsli, muatKeadaanTag, putaranTag, type HasilTag } from "@/server/modules/cermin/tag";
 import {
   keadaanProsesPemindai,
   lanjutkanPemindai,
@@ -46,6 +50,8 @@ export type HalamanPemantauCermin = {
   keadaan: KeadaanPemindai;
   pembaruan: KeadaanPembaruan;
   pencocokan: KeadaanPencocokan & { bersih: boolean };
+  mediasi: KeadaanMediasi;
+  tag: KeadaanTag;
   persen: number;
   perkiraanSelesai: string | null;
   jendela: { mulai: string; selesai: string; dalamJendelaSekarang: boolean; jamSekarang: string };
@@ -64,11 +70,13 @@ async function adalahSuperAdmin(db: AletaDatabase, actorUserId: string | null | 
 
 export async function halamanPemantauCermin(db: AletaDatabase, actorUserId: string | null | undefined): Promise<HalamanPemantauCermin> {
   await pastikanAdminIstimewa(db, actorUserId, "membuka Pemantau Cermin Perkara");
-  const [pengaturan, keadaan, pembaruan, pencocokan, hitungan, bolehMengubah] = await Promise.all([
+  const [pengaturan, keadaan, pembaruan, pencocokan, mediasi, tag, hitungan, bolehMengubah] = await Promise.all([
     pengaturanCerminBerlaku(db),
     muatKeadaanPemindai(db),
     muatKeadaanPembaruan(db),
     muatKeadaanPencocokan(db),
+    muatKeadaanMediasi(db),
+    muatKeadaanTag(db),
     hitunganCermin(db),
     adalahSuperAdmin(db, actorUserId),
   ]);
@@ -82,6 +90,8 @@ export async function halamanPemantauCermin(db: AletaDatabase, actorUserId: stri
     keadaan,
     pembaruan,
     pencocokan: { ...pencocokan, bersih: pencocokanBersih(pencocokan.terakhir) },
+    mediasi,
+    tag,
     persen: persenKemajuan(keadaan),
     perkiraanSelesai: perkiraanSelesai(keadaan, kini, { mulai: pengaturan.jendelaMulai, selesai: pengaturan.jendelaSelesai }),
     jendela: {
@@ -107,14 +117,21 @@ export async function simpanPengaturanPemantauCermin(db: AletaDatabase, actorUse
   await simpanPengaturanCermin(db, actorUserId, masukan);
 }
 
-export type AksiPemantauCermin = "putaran-sekarang" | "lanjutkan" | "ulang" | "pembaruan-sekarang" | "pencocokan-sekarang";
+export type AksiPemantauCermin =
+  | "putaran-sekarang"
+  | "lanjutkan"
+  | "ulang"
+  | "pembaruan-sekarang"
+  | "pencocokan-sekarang"
+  | "mediasi-sekarang"
+  | "tag-sekarang";
 
 export async function aksiPemantauCermin(
   db: AletaDatabase,
   actorUserId: string | null | undefined,
   aksi: AksiPemantauCermin,
   opsi: { konfirmasi?: boolean } = {}
-): Promise<{ aksi: AksiPemantauCermin; hasil?: HasilPutaran | HasilPembaruan | HasilJalanPencocokan }> {
+): Promise<{ aksi: AksiPemantauCermin; hasil?: HasilPutaran | HasilPembaruan | HasilJalanPencocokan | HasilMediasi | HasilTag }> {
   await pastikanSuperAdmin(db, actorUserId);
   if (aksi === "putaran-sekarang") {
     // Satu kelompok sekarang, melewati saklar dan jendela jam (tindakan Super Admin yang sadar).
@@ -122,6 +139,12 @@ export async function aksiPemantauCermin(
   }
   if (aksi === "pembaruan-sekarang") {
     return { aksi, hasil: await putaranPembaruan(depsPembaruanAsli, { paksa: true }) };
+  }
+  if (aksi === "mediasi-sekarang") {
+    return { aksi, hasil: await putaranMediasi(depsMediasiAsli, { paksa: true }) };
+  }
+  if (aksi === "tag-sekarang") {
+    return { aksi, hasil: await putaranTag(depsTagAsli, { paksa: true }) };
   }
   if (aksi === "pencocokan-sekarang") {
     return { aksi, hasil: await jalankanPencocokan(depsPembaruanAsli, { pemicu: "tombol" }) };

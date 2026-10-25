@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { CerminPerkaraPanel, kalimatKemajuan } from "@/components/portal/cermin-perkara-panel";
-import { PENGATURAN_CERMIN_BAWAAN, keadaanPembaruanAwal, keadaanPemindaiAwal, persenKemajuan } from "@/lib/cermin";
+import { PENGATURAN_CERMIN_BAWAAN, keadaanMediasiAwal, keadaanPembaruanAwal, keadaanPemindaiAwal, keadaanTagAwal, persenKemajuan } from "@/lib/cermin";
 import type { HalamanPemantauCermin } from "@/server/modules/cermin/pemantau";
 
 /**
@@ -26,6 +26,8 @@ function halaman(ubah: Partial<HalamanPemantauCermin> = {}): HalamanPemantauCerm
     keadaan,
     pembaruan: keadaanPembaruanAwal(),
     pencocokan: { terakhir: null, riwayat: [], bersih: false },
+    mediasi: keadaanMediasiAwal(),
+    tag: keadaanTagAwal(),
     persen: persenKemajuan(keadaan),
     perkiraanSelesai: null,
     jendela: { mulai: "18:00", selesai: "06:30", dalamJendelaSekarang: true, jamSekarang: "22:00" },
