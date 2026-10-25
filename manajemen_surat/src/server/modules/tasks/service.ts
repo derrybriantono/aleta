@@ -32,6 +32,7 @@ import { daftarAksesTerbaru } from "@/server/modules/satker/akses-global";
 import { namaAdaDi } from "@/lib/perkara-sendiri";
 import { pemberitahuanTundaOtomatis } from "@/server/modules/tunda-otomatis/layanan";
 import { pemberitahuanRekonsiliasi } from "@/server/modules/aleta-ai/rekonsiliasi";
+import { bolehLihatKesehatan, pemberitahuanKesehatan } from "@/server/modules/kesehatan/layanan";
 import { pemberitahuanPutusOtomatis } from "@/server/modules/putus-otomatis/layanan";
 import { lihatSemuaTenggat, pemberitahuanTenggat } from "@/server/modules/penjaga-tenggat/layanan";
 
@@ -575,6 +576,33 @@ async function buildAdminSettingsTasks(
       }
     } catch {
       /* tabel uji pulih tak terbaca: tidak menambah pemberitahuan */
+    }
+  }
+
+  // Pusat kesehatan (25 Okt, E2): komponen MERAH dua pemeriksaan berturut-turut - Admin dan Super Admin.
+  // Kosong bila saklar "pemeriksaan berkala" mati (tidak ada yang memperbarui statusnya).
+  if (bolehLihatKesehatan(actor)) {
+    try {
+      for (const p of await pemberitahuanKesehatan(db)) {
+        tasks.push({
+          id: `system_task:${p.id}`,
+          entityType: "system_task",
+          entityId: p.id,
+          sourceApp: "admin",
+          sourceLabel: "Pusat kesehatan",
+          title: p.judul,
+          description: p.uraian,
+          href: "/admin/pusat-kesehatan",
+          status: "Perlu perhatian",
+          priority: "high",
+          sourceType: "system_task",
+          createdAt: p.waktu,
+          footer: "Pusat kesehatan",
+          seen: isSeen(readSet, "system_task", p.id),
+        });
+      }
+    } catch {
+      /* status kesehatan tak terbaca: tidak menambah pemberitahuan */
     }
   }
 

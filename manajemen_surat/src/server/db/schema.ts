@@ -1069,6 +1069,200 @@ export const DDL_ALETA_TENGGAT_KIRIM = {
 } as const;
 
 /**
+ * Pusat kesehatan + catatan galat + hasil uji beban (0094, 25 Okt 2026, rantai E):
+ * kelompok galat dan kejadiannya, hasil uji beban yang diimpor, warna terakhir
+ * tiap komponen, riwayat pemeriksaan, dan versi ekstensi per PC. Cermin PERSIS
+ * dari drizzle/0094_aleta_kesehatan_galat.sql; penjaga pusat-kesehatan-25okt.test.ts
+ * membandingkan keduanya. Tanpa kunci asing dan tanpa CHECK: nilai sah dijaga
+ * modul (src/server/modules/kesehatan/*).
+ */
+export const DDL_KESEHATAN_GALAT = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_catatan_galat (
+  id TEXT PRIMARY KEY,
+  sidik TEXT NOT NULL,
+  sumber TEXT NOT NULL,
+  jenis TEXT NOT NULL DEFAULT '',
+  pesan TEXT NOT NULL DEFAULT '',
+  lokasi TEXT NOT NULL DEFAULT '',
+  jumlah INTEGER NOT NULL DEFAULT 1,
+  pertama_at TEXT NOT NULL,
+  terakhir_at TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'baru',
+  ditangani_oleh TEXT NOT NULL DEFAULT '',
+  ditangani_at TEXT NOT NULL DEFAULT '',
+  catatan TEXT NOT NULL DEFAULT ''
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_catatan_galat_kejadian (
+  id TEXT PRIMARY KEY,
+  galat_id TEXT NOT NULL,
+  waktu TEXT NOT NULL,
+  halaman TEXT NOT NULL DEFAULT '',
+  akun_id TEXT NOT NULL DEFAULT '',
+  akun_nama TEXT NOT NULL DEFAULT '',
+  peramban TEXT NOT NULL DEFAULT '',
+  versi TEXT NOT NULL DEFAULT '',
+  potongan_stack TEXT NOT NULL DEFAULT ''
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_uji_beban_hasil (
+  id TEXT PRIMARY KEY,
+  diimpor_at TEXT NOT NULL,
+  diimpor_oleh TEXT NOT NULL DEFAULT '',
+  dibuat_at TEXT NOT NULL,
+  perangkat INTEGER NOT NULL DEFAULT 0,
+  profil TEXT NOT NULL DEFAULT '',
+  sasaran TEXT NOT NULL DEFAULT '',
+  durasi_detik INTEGER NOT NULL DEFAULT 0,
+  p95_ms DOUBLE PRECISION NOT NULL DEFAULT 0,
+  galat_persen DOUBLE PRECISION NOT NULL DEFAULT 0,
+  hasil_json TEXT NOT NULL DEFAULT '{}'
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_kesehatan_status (
+  kunci TEXT PRIMARY KEY,
+  warna TEXT NOT NULL DEFAULT 'kelabu',
+  sejak TEXT NOT NULL,
+  diperiksa_at TEXT NOT NULL,
+  merah_berturut INTEGER NOT NULL DEFAULT 0,
+  diperingatkan_at TEXT NOT NULL DEFAULT '',
+  ringkas TEXT NOT NULL DEFAULT ''
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_kesehatan_riwayat (
+  id TEXT PRIMARY KEY,
+  waktu TEXT NOT NULL,
+  warna TEXT NOT NULL DEFAULT 'kelabu',
+  ringkas_json TEXT NOT NULL DEFAULT '{}'
+)`,
+  ],
+  indeks: [
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_catatan_galat_sidik ON aleta_catatan_galat(sidik)`,
+    `CREATE INDEX IF NOT EXISTS idx_catatan_galat_terakhir ON aleta_catatan_galat(terakhir_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_catatan_galat_kejadian_galat ON aleta_catatan_galat_kejadian(galat_id, waktu)`,
+    `CREATE INDEX IF NOT EXISTS idx_catatan_galat_kejadian_waktu ON aleta_catatan_galat_kejadian(waktu)`,
+    `CREATE INDEX IF NOT EXISTS idx_uji_beban_hasil_dibuat ON aleta_uji_beban_hasil(dibuat_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_kesehatan_riwayat_waktu ON aleta_kesehatan_riwayat(waktu)`,
+  ],
+  kolom: [
+    `ALTER TABLE aleta_perangkat ADD COLUMN IF NOT EXISTS versi_ekstensi TEXT NOT NULL DEFAULT ''`,
+  ],
+} as const;
+
+/**
+ * Verifikasi dua langkah: authenticator, tantangan, perangkat tepercaya, kode cadangan
+ * (0095, 25 Okt 2026, rantai E). Cermin PERSIS dari drizzle/0095_aleta_verifikasi_dua_langkah.sql;
+ * penjaga verifikasi-dua-langkah-25okt.test.ts membandingkan keduanya.
+ */
+export const DDL_VERIFIKASI_DUA_LANGKAH = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_verifikasi_authenticator (
+  user_id TEXT PRIMARY KEY,
+  rahasia_enc TEXT NOT NULL,
+  aktif INTEGER NOT NULL DEFAULT 0,
+  dibuat_pada TEXT NOT NULL,
+  aktif_pada TEXT NOT NULL DEFAULT '',
+  langkah_terakhir INTEGER NOT NULL DEFAULT -1
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_verifikasi_tantangan (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  perangkat_id TEXT NOT NULL DEFAULT '',
+  jalur TEXT NOT NULL DEFAULT '',
+  dibuat_pada TEXT NOT NULL,
+  kedaluwarsa_pada TEXT NOT NULL,
+  percobaan INTEGER NOT NULL DEFAULT 0,
+  kode_wa_hash TEXT NOT NULL DEFAULT '',
+  kode_wa_kedaluwarsa TEXT NOT NULL DEFAULT '',
+  kirim_terakhir TEXT NOT NULL DEFAULT '',
+  jumlah_kirim INTEGER NOT NULL DEFAULT 0,
+  selesai_pada TEXT NOT NULL DEFAULT ''
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_verifikasi_lolos (
+  user_id TEXT NOT NULL,
+  perangkat_id TEXT NOT NULL,
+  jenis TEXT NOT NULL,
+  metode TEXT NOT NULL DEFAULT '',
+  dibuat_pada TEXT NOT NULL,
+  sampai TEXT NOT NULL,
+  PRIMARY KEY (user_id, perangkat_id, jenis)
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_verifikasi_kode_cadangan (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  kode_hash TEXT NOT NULL,
+  dibuat_pada TEXT NOT NULL,
+  dibuat_oleh TEXT NOT NULL DEFAULT '',
+  dipakai_pada TEXT NOT NULL DEFAULT ''
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_verifikasi_tantangan_akun ON aleta_verifikasi_tantangan(user_id, kedaluwarsa_pada)`,
+    `CREATE INDEX IF NOT EXISTS idx_verifikasi_lolos_sampai ON aleta_verifikasi_lolos(sampai)`,
+    `CREATE INDEX IF NOT EXISTS idx_verifikasi_kode_cadangan_akun ON aleta_verifikasi_kode_cadangan(user_id, dipakai_pada)`,
+  ],
+  kolom: [],
+} as const;
+
+/**
+ * Penjaga integritas berkas website/SIPP/ABT (0104, 25 Okt 2026, rantai E): baseline sidik,
+ * temuan, daftar diketahui aman, riwayat pindai. Cermin PERSIS dari
+ * drizzle/0104_aleta_penjaga_integritas.sql; penjaga penjaga-integritas-25okt.test.ts
+ * membandingkan keduanya.
+ */
+export const DDL_PENJAGA_INTEGRITAS = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_integritas_berkas (
+  folder_id TEXT NOT NULL,
+  jalur TEXT NOT NULL,
+  sha256 TEXT NOT NULL DEFAULT '',
+  ukuran INTEGER NOT NULL DEFAULT 0,
+  diubah_at TEXT NOT NULL DEFAULT '',
+  dilihat_at TEXT NOT NULL,
+  PRIMARY KEY (folder_id, jalur)
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_integritas_temuan (
+  id TEXT PRIMARY KEY,
+  folder_id TEXT NOT NULL,
+  jalur TEXT NOT NULL,
+  jenis TEXT NOT NULL,
+  aturan TEXT NOT NULL DEFAULT '',
+  baris INTEGER NOT NULL DEFAULT 0,
+  sha256 TEXT NOT NULL DEFAULT '',
+  ukuran INTEGER NOT NULL DEFAULT 0,
+  pertama_at TEXT NOT NULL,
+  terakhir_at TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'baru',
+  ditangani_oleh TEXT NOT NULL DEFAULT '',
+  ditangani_at TEXT NOT NULL DEFAULT '',
+  diperingatkan_at TEXT NOT NULL DEFAULT ''
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_integritas_aman (
+  folder_id TEXT NOT NULL,
+  jalur TEXT NOT NULL,
+  sha256 TEXT NOT NULL,
+  alasan TEXT NOT NULL DEFAULT '',
+  dibuat_oleh TEXT NOT NULL DEFAULT '',
+  dibuat_at TEXT NOT NULL,
+  PRIMARY KEY (folder_id, jalur, sha256)
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_integritas_pindai (
+  id TEXT PRIMARY KEY,
+  folder_id TEXT NOT NULL,
+  jenis TEXT NOT NULL DEFAULT 'rutin',
+  mulai_at TEXT NOT NULL,
+  selesai_at TEXT NOT NULL DEFAULT '',
+  jumlah_berkas INTEGER NOT NULL DEFAULT 0,
+  temuan_baru INTEGER NOT NULL DEFAULT 0,
+  galat TEXT NOT NULL DEFAULT ''
+)`,
+  ],
+  indeks: [
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_integritas_temuan_kunci ON aleta_integritas_temuan(folder_id, jalur, jenis, aturan)`,
+    `CREATE INDEX IF NOT EXISTS idx_integritas_temuan_status ON aleta_integritas_temuan(status, terakhir_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_integritas_pindai_mulai ON aleta_integritas_pindai(folder_id, mulai_at)`,
+  ],
+  kolom: [],
+} as const;
+
+/**
  * Unggah Putusan Terjadwal (0080, 21 Okt 2026, agen B3): jadwal, butir (satu
  * perkara), berkas yang diunggah, dan jejak jujur. Cermin PERSIS dari
  * drizzle/0080_aleta_putusan_terjadwal.sql; penjaga putusan-terjadwal-layanan-21okt.test.ts
@@ -2713,6 +2907,12 @@ const schemaStatements = [
   ...DDL_ALETA_TENGGAT_KIRIM.tabel,
   // Cermin Perkara: perkara, sidang, pihak, mediasi, penanda, jejak (0090).
   ...DDL_ALETA_CERMIN_PERKARA.tabel,
+  // Pusat kesehatan, catatan galat, hasil uji beban (0094).
+  ...DDL_KESEHATAN_GALAT.tabel,
+  // Verifikasi dua langkah (0095).
+  ...DDL_VERIFIKASI_DUA_LANGKAH.tabel,
+  // Penjaga integritas berkas (0104).
+  ...DDL_PENJAGA_INTEGRITAS.tabel,
   // Unggah Putusan Terjadwal: jadwal, butir, berkas, jejak (0080).
   ...DDL_PUTUSAN_TERJADWAL.tabel,
   // Arsip hasil mediasi per perkara (0081).
@@ -4686,6 +4886,9 @@ const indexStatements = [
   ...DDL_ALETA_AI_DOMPET.indeks,
   ...DDL_ALETA_TENGGAT_KIRIM.indeks,
   ...DDL_ALETA_CERMIN_PERKARA.indeks,
+  ...DDL_KESEHATAN_GALAT.indeks,
+  ...DDL_VERIFIKASI_DUA_LANGKAH.indeks,
+  ...DDL_PENJAGA_INTEGRITAS.indeks,
   ...DDL_PUTUSAN_TERJADWAL.indeks,
   ...DDL_MEDIASI_ARSIP.indeks,
   ...DDL_SIDANG_KELILING_HAKIM.indeks,
@@ -5230,6 +5433,8 @@ const migrationStatements = [
   // ALETA Ai tahap 4: MDR dan kurs (tanggal, sumber) per giliran (0088).
   ...DDL_ALETA_AI_DOMPET.kolom,
   ...DDL_ALETA_CERMIN_PERKARA_TANGGAL.kolom,
+  // Versi ekstensi per PC (0094).
+  ...DDL_KESEHATAN_GALAT.kolom,
 ];
 
 const aletaSippSchemaStatements = [

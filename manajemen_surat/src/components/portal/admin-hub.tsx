@@ -5,6 +5,7 @@ import {
   BriefcaseBusiness,
   Database,
   DatabaseBackup,
+  Eye,
   Globe,
   Landmark,
   LayoutDashboard,
@@ -395,6 +396,13 @@ export function AdminHub() {
               icon={<Server className="h-5 w-5 text-sky-600" />}
               badge="Pemantau"
             />
+            <AdminMenuAction
+              href="/admin/pusat-kesehatan"
+              title="Pusat kesehatan sistem"
+              description="Satu layar untuk keadaan portal, bot, WhatsApp, SIPP, ABT, e-Court, cadangan, server, dan versi ekstensi tiap PC; catatan error; hasil uji beban."
+              icon={<Server className="h-5 w-5 text-emerald-600" />}
+              badge="Kesehatan"
+            />
           </div>
         </div>
 
@@ -421,6 +429,34 @@ export function AdminHub() {
                 title="Kontrol Akses (RBAC)"
       description="Atur akses tampilan modul dan hak akses fitur berdasarkan peran jabatan."
                 badge="Security"
+              />
+              <AdminMenuAction
+                href="/admin/pemeliharaan"
+                title="Mode Pemeliharaan"
+                description="Beri tahu pengguna sebelum pemasangan, hentikan perubahan data selama pemasangan, dan buka kembali sendiri."
+                icon={<PackageCheck className="h-5 w-5 text-amber-600" />}
+                badge="Super Admin"
+              />
+              <AdminMenuAction
+                href="/admin/penjaga-integritas"
+                title="Penjaga Integritas Berkas"
+                description="Pantau folder website satker, SIPP, dan ABT (baca-saja): PHP baru, webshell, kata judi online."
+                icon={<ShieldCheck className="h-5 w-5 text-rose-600" />}
+                badge="Security"
+              />
+              <AdminMenuAction
+                href="/admin/verifikasi-dua-langkah"
+                title="Verifikasi Dua Langkah"
+                description="OTP WhatsApp dan authenticator untuk perangkat baru atau luar kantor; bantu pengguna yang kehilangan HP."
+                icon={<ShieldCheck className="h-5 w-5 text-primary" />}
+                badge="Security"
+              />
+              <AdminMenuAction
+                href="/admin/lihat-sebagai"
+                title="Lihat Sebagai"
+                description="Periksa menu yang tampil bagi sebuah akun atau peran dan kenapa menu lain tersembunyi (baca-saja, tercatat)."
+                icon={<Eye className="h-5 w-5 text-primary" />}
+                badge="Super Admin"
               />
               <AdminMenuAction
                 href="/admin/audit-trail"

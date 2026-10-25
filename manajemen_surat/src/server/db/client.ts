@@ -415,6 +415,22 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_ai_rekonsiliasi",
   // 25 Oktober 2026 (0110): catatan kirim pengingat WhatsApp penjaga tenggat terjadwal.
   "aleta_tenggat_kirim",
+  // 25 Oktober 2026 (0094): Pusat kesehatan, catatan galat, hasil uji beban (rantai E).
+  "aleta_catatan_galat",
+  "aleta_catatan_galat_kejadian",
+  "aleta_uji_beban_hasil",
+  "aleta_kesehatan_status",
+  "aleta_kesehatan_riwayat",
+  // 25 Oktober 2026 (0095): verifikasi dua langkah (rantai E).
+  "aleta_verifikasi_authenticator",
+  "aleta_verifikasi_tantangan",
+  "aleta_verifikasi_lolos",
+  "aleta_verifikasi_kode_cadangan",
+  // 25 Oktober 2026 (0104): penjaga integritas berkas (rantai E).
+  "aleta_integritas_berkas",
+  "aleta_integritas_temuan",
+  "aleta_integritas_aman",
+  "aleta_integritas_pindai",
   // 21 Oktober 2026 (0080): Unggah Putusan Terjadwal. Tanpa kunci asing - urutannya bebas.
   "aleta_putusan_jadwal",
   "aleta_putusan_jadwal_butir",

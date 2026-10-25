@@ -100,6 +100,8 @@ export type DataEkstensi = {
   mac?: unknown;
   akunWindows?: unknown;
   petunjuk?: { platform?: unknown; platformVersion?: unknown; model?: unknown; fullVersionList?: unknown } | null;
+  /** Versi ekstensi di PC itu (manifest) - Pusat kesehatan membandingkannya dengan versi terbaru. */
+  versiEkstensi?: unknown;
 };
 
 /** Windows: platformVersion >= 13 = Windows 11 (aturan resmi client hints). */
@@ -126,6 +128,7 @@ export async function terimaDataEkstensi(
   const osRinci =
     String(m.data.osRinci ?? "").replace(/[^\w .()/-]/g, "").slice(0, 80) || osDariPetunjuk(m.data.petunjuk ?? null);
   const model = String(m.data.petunjuk?.model ?? "").replace(/[^\w .-]/g, "").slice(0, 60);
+  const versiEkstensi = String(m.data.versiEkstensi ?? "").replace(/[^\w.+-]/g, "").slice(0, 30);
   const akunWindows = setelan.catatAkunWindows ? String(m.data.akunWindows ?? "").replace(/[^\w .\\@-]/g, "").slice(0, 64) : "";
 
   const ada = await db.queryOne<{ id: string }>("SELECT id FROM aleta_perangkat WHERE perangkat_id = ? AND user_id = ?", [m.perangkatId, m.userId]);
@@ -139,9 +142,10 @@ export async function terimaDataEkstensi(
        mac = CASE WHEN ? <> '' THEN ? ELSE mac END,
        mac_sumber = CASE WHEN ? <> '' THEN ? ELSE mac_sumber END,
        mac_catatan = CASE WHEN ? <> '' THEN '' ELSE mac_catatan END,
+       versi_ekstensi = CASE WHEN ? <> '' THEN ? ELSE versi_ekstensi END,
        data_ekstensi_pada = ?
      WHERE id = ?`,
-    [namaKomputer, namaKomputer, osRinci, osRinci, model, model, akunWindows, mac, mac, mac, SUMBER_MAC_EKSTENSI, mac, new Date().toISOString(), ada.id]
+    [namaKomputer, namaKomputer, osRinci, osRinci, model, model, akunWindows, mac, mac, mac, SUMBER_MAC_EKSTENSI, mac, versiEkstensi, versiEkstensi, new Date().toISOString(), ada.id]
   );
   // Peristiwa sesi ini yang sudah tercatat ikut mendapat nama komputer & MAC.
   await db.run(

@@ -6204,6 +6204,19 @@ router.get("/sipp/berkas-perkara", requireInternalToken, async (req, res) => {
   }
 });
 
+/**
+ * Kesehatan untuk Pusat kesehatan portal (E2): pemutus arus SIPP dan, bila
+ * ?ping=1, apakah SIPP/ABT/antrian menjawab SELECT 1. Hanya membaca.
+ */
+router.get("/kesehatan", requireInternalToken, async (req, res) => {
+  try {
+    const kesehatanService = require("../services/kesehatanService");
+    res.json(await kesehatanService.susunKesehatan({ ping: String(req.query.ping || "") === "1" }));
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
 /** Keadaan penjadwal penarikan e-Court. */
 router.get("/ecourt/jadwal", requireInternalToken, (req, res) => {
   try {

@@ -132,6 +132,11 @@ export function kaitSesiPerangkat(ambilDb: () => Promise<AletaDatabase>) {
               perangkat,
             });
           }
+          // Verifikasi dua langkah (E5, 25 Okt 2026): mati bawaan; saklar mati = tidak ada yang berubah.
+          if (db && jalurMasuk) {
+            const { tegakkanVerifikasi } = await import("@/server/modules/verifikasi/kait-masuk");
+            await tegakkanVerifikasi(db, { userId: String(data.userId), perangkatId, ip, jalur });
+          }
           return ip ? { data: { ipAddress: ip } } : undefined;
         },
 

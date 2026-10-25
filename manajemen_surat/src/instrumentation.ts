@@ -122,6 +122,39 @@ export async function register() {
     mulaiUjiPulihBerkala(getDatabase);
   }
   /* === AKHIR UJI PULIH CADANGAN === */
+  /* === PUSAT KESEHATAN 25 Okt (E2) === detak 60 detik; BARU bekerja bila Super Admin menyalakan "pemeriksaan berkala"
+     (saklar MATI bawaan): memeriksa semua komponen, mencatat riwayat, dan - bila saklar WhatsApp juga menyala - memberi
+     tahu admin saat komponen MERAH dua pemeriksaan berturut-turut. Hanya membaca. Matikan seluruhnya dengan
+     ALETA_KESEHATAN_BERKALA=0. */
+  if (process.env.ALETA_KESEHATAN_BERKALA !== "0") {
+    const [{ mulaiKesehatanBerkala }, { getDatabase }] = await Promise.all([
+      import("@/server/modules/kesehatan/layanan"),
+      import("@/server/db/client"),
+    ]);
+    mulaiKesehatanBerkala(getDatabase);
+  }
+  /* === AKHIR PUSAT KESEHATAN === */
+  /* === MODE PEMELIHARAAN 25 Okt (E3) === detak 60 detik; hanya mengirim SATU WhatsApp 15 menit sebelum jadwal mulai bila
+     Super Admin mencentang kabar WhatsApp (mati bawaan). Mode pemeliharaannya sendiri dinilai tiap permintaan, bukan di sini.
+     Matikan detaknya dengan ALETA_PEMELIHARAAN_DETAK=0. */
+  if (process.env.ALETA_PEMELIHARAAN_DETAK !== "0") {
+    const [{ mulaiPemeliharaanBerkala }, { getDatabase }] = await Promise.all([
+      import("@/server/modules/pemeliharaan/layanan"),
+      import("@/server/db/client"),
+    ]);
+    mulaiPemeliharaanBerkala(getDatabase);
+  }
+  /* === AKHIR MODE PEMELIHARAAN === */
+  /* === PENJAGA INTEGRITAS BERKAS 25 Okt (E6) === detak 60 detik; SAKLAR MATI bawaan = tidak berbuat apa-apa (tidak membaca folder, tidak mengirim pesan).
+     Folder terdaftar hanya DIBACA. Matikan detaknya dengan ALETA_INTEGRITAS_DETAK=0. */
+  if (process.env.ALETA_INTEGRITAS_DETAK !== "0") {
+    const [{ mulaiIntegritasBerkala }, { getDatabase }] = await Promise.all([
+      import("@/server/modules/integritas/layanan"),
+      import("@/server/db/client"),
+    ]);
+    mulaiIntegritasBerkala(getDatabase);
+  }
+  /* === AKHIR PENJAGA INTEGRITAS === */
   if (process.env.ALETA_SINKRON_PENJADWAL === "0") return;
   const { mulaiPenjadwalSinkron } = await import("@/server/modules/sinkron/penjadwal");
   mulaiPenjadwalSinkron();

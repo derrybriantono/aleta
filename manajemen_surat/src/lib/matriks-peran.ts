@@ -1017,6 +1017,88 @@ export const AKSI = {
     alasan: "Kebijakan sandi, batas jaringan, pengaman aksi, dan uji pulih berlaku untuk seluruh satker dan dapat mengunci orang keluar - hanya Super Admin.",
     hanyaSuperAdmin: true,
   },
+  // 25 Okt 2026 (rantai E): Pusat kesehatan, catatan galat, hasil uji beban.
+  "kesehatan.lihat": {
+    label: "Melihat Pusat kesehatan sistem, catatan error, dan hasil uji beban",
+    crud: "R",
+    golongan: [],
+    lingkup: "semua",
+    rute: ["GET /api/admin/kesehatan", "GET /api/admin/catatan-galat", "GET /api/admin/uji-beban"],
+    alasan: "Keadaan server, bot, SIPP/ABT, error, dan versi ekstensi tiap PC adalah urusan pengelola - Admin dan Super Admin.",
+  },
+  "galat.kelola": {
+    label: "Menandai catatan error sudah ditangani",
+    crud: "U",
+    golongan: [],
+    lingkup: "semua",
+    rute: ["POST /api/admin/catatan-galat"],
+    alasan: "Menandai error ditangani mengubah daftar kerja pengembang - Admin dan Super Admin.",
+  },
+  "kesehatan.atur": {
+    label: "Menyalakan pemeriksaan berkala dan peringatan WhatsApp Pusat kesehatan; mengimpor hasil uji beban",
+    crud: "CUD",
+    golongan: [],
+    lingkup: "semua",
+    rute: ["POST /api/admin/kesehatan (pengaturan)", "POST /api/admin/uji-beban"],
+    alasan: "Pemeriksaan berkala menanyai bot dan peringatan WhatsApp mengirim pesan ke admin - hanya Super Admin yang menyalakannya (mati bawaan).",
+    hanyaSuperAdmin: true,
+  },
+  // 25 Okt 2026 (rantai E, E3): mode pemeliharaan portal.
+  "pemeliharaan.atur": {
+    label: "Menyalakan Mode pemeliharaan, mengatur pesan dan jadwalnya",
+    crud: "CUD",
+    golongan: [],
+    lingkup: "semua",
+    rute: ["GET|POST /api/admin/pemeliharaan"],
+    alasan: "Mode pemeliharaan menghentikan perubahan data seluruh pegawai - hanya Super Admin yang menyalakannya (mati bawaan). Admin hanya dikecualikan bila Super Admin mencentangnya.",
+    hanyaSuperAdmin: true,
+  },
+  // 25 Okt 2026 (rantai E, E4): Lihat sebagai pengguna/peran (pratinjau menu dan hak, baca-saja).
+  "lihat-sebagai.pakai": {
+    label: "Lihat sebagai akun atau peran (pratinjau menu dan hak, baca-saja, tercatat)",
+    crud: "CU",
+    golongan: [],
+    lingkup: "semua",
+    rute: ["GET|POST|DELETE /api/admin/lihat-sebagai"],
+    alasan: "Membuka tampilan menu orang lain menyentuh privasi pegawai - hanya Super Admin, dengan alasan wajib, batas 30 menit, dan tercatat di audit serta di halaman Akun pemilik.",
+    hanyaSuperAdmin: true,
+  },
+  // 25 Okt 2026 (rantai E, E5): verifikasi dua langkah (OTP WhatsApp + authenticator), mati bawaan.
+  "verifikasi.atur": {
+    label: "Menyalakan verifikasi dua langkah (OTP WhatsApp, authenticator), aturan per peran, dan jaringan kantor",
+    crud: "CU",
+    golongan: [],
+    lingkup: "semua",
+    rute: ["GET|POST /api/admin/verifikasi"],
+    alasan: "Verifikasi dua langkah dapat mengunci seluruh pegawai di luar - hanya Super Admin yang menyalakannya (mati bawaan).",
+    hanyaSuperAdmin: true,
+  },
+  "verifikasi.bantu": {
+    label: "Membantu pengguna yang kehilangan HP: kode cadangan dan reset authenticator",
+    crud: "CU",
+    golongan: [],
+    lingkup: "semua",
+    rute: ["POST /api/admin/verifikasi/bantuan"],
+    alasan: "Admin dan Super Admin membantu pengguna biasa; hanya Super Admin yang boleh membantu akun Admin atau Super Admin.",
+  },
+  // 25 Okt 2026 (rantai E, E6): penjaga integritas berkas website/SIPP/ABT (baca-saja, mati bawaan).
+  "integritas.lihat": {
+    label: "Melihat temuan penjaga integritas berkas (PHP mencurigakan, webshell, kata judi online)",
+    crud: "R",
+    golongan: [],
+    lingkup: "semua",
+    rute: ["GET /api/admin/integritas"],
+    alasan: "Temuan keamanan website/server hanya untuk pengelola: Super Admin dan Admin.",
+  },
+  "integritas.atur": {
+    label: "Mengatur penjaga integritas: folder yang dijaga, memindai sekarang, menandai temuan ditangani atau diketahui aman",
+    crud: "CUD",
+    golongan: [],
+    lingkup: "semua",
+    rute: ["POST /api/admin/integritas", "POST /api/admin/integritas/temuan", "POST /api/admin/integritas/pindai"],
+    alasan: "Folder yang dibaca dan daftar diketahui aman menentukan apa yang dianggap berbahaya - hanya Super Admin (mati bawaan).",
+    hanyaSuperAdmin: true,
+  },
   // Analitik
   "analitik.peta-beban": {
     label: "Peta perkara & beban konseptor",

@@ -38,10 +38,25 @@ export function bacaBatasPerangkat(isi: unknown): InfoBatasPerangkat | null {
   return { tiket: x.tiket, pesan: String(x.message ?? ""), perangkat };
 }
 
+/** Penolakan verifikasi dua langkah (E5, 25 Okt 2026): tiket 10 menit + cara yang tersedia. */
+export type InfoVerifikasi = {
+  tiket: string;
+  pesan: string;
+  metode: Array<"whatsapp" | "authenticator" | "cadangan">;
+};
+
+/** Jawaban 403 code VERIFIKASI_DIPERLUKAN -> info, atau null. */
+export function bacaVerifikasiDiperlukan(isi: unknown): InfoVerifikasi | null {
+  const x = isi as { code?: unknown; tiket?: unknown; message?: unknown; metode?: unknown } | null;
+  if (!x || x.code !== "VERIFIKASI_DIPERLUKAN" || typeof x.tiket !== "string" || !x.tiket) return null;
+  const metode = (Array.isArray(x.metode) ? x.metode : []).filter((m): m is InfoVerifikasi["metode"][number] => m === "whatsapp" || m === "authenticator" || m === "cadangan");
+  return { tiket: x.tiket, pesan: String(x.message ?? ""), metode };
+}
+
 export type HasilMasukSipp =
   | { jenis: "masuk"; lewat: "sipp" | "aleta"; usernameSipp: string; catatan: string }
   | { jenis: "bukan-sipp" }
-  | { jenis: "tolak"; status: number; pesan: string; batas?: InfoBatasPerangkat | null };
+  | { jenis: "tolak"; status: number; pesan: string; batas?: InfoBatasPerangkat | null; verifikasi?: InfoVerifikasi | null };
 
 export const KUNCI_ISI_OTOMATIS_SIPP = "aleta:isi-otomatis-sipp";
 
@@ -88,11 +103,13 @@ export async function masukLewatSipp(
   if (![400, 401, 403, 429].includes(jawaban.status)) return { jenis: "bukan-sipp" };
 
   const batas = bacaBatasPerangkat(isi);
+  const verifikasi = bacaVerifikasiDiperlukan(isi);
   return {
     jenis: "tolak",
     status: jawaban.status,
     pesan: String(isi?.message || "Login belum berhasil. Silakan coba lagi."),
     ...(batas ? { batas } : {}),
+    ...(verifikasi ? { verifikasi } : {}),
   };
 }
 
