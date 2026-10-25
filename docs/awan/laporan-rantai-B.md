@@ -5,14 +5,18 @@ Tidak ada versi yang dinaikkan, tidak ada yang dipasang, tidak ada yang digabung
 
 ## 1. Cabang dan commit ujung
 
-| Urut | Cabang | Commit | Butir |
+| Urut | Cabang | Commit ujung | Butir |
 | :--- | :--- | :--- | :--- |
-| B1 | `fitur/pengamat-tunggal` | `c577bfb7` | K12 |
-| B2 | `fitur/mode-ringan` | `6f01c4ea` | K16 |
-| B3 | `fitur/data-peramban-ke-db` | `d1e5e7fd` | K15 |
-| B4 | `fitur/berkas-di-server` | `9e9d24ec` | K14 |
-| B5 | `fitur/konteks-server` | `2b8b6107` | U16 |
-| B6 | `fitur/ejaan-nama-pihak` | lihat `git log` cabang ini (commit laporan menyusul commit `8b16a679`) | U18 |
+| B1 | `fitur/pengamat-tunggal` | `417ee4a8` | K12 |
+| B2 | `fitur/mode-ringan` | `27066ca4` | K16 |
+| B3 | `fitur/data-peramban-ke-db` | `f5e3bfbb` | K15 |
+| B4 | `fitur/berkas-di-server` | `2fb9accf` | K14 |
+| B5 | `fitur/konteks-server` | `72ddd8b5` | U16 |
+| B6 | `fitur/ejaan-nama-pihak` | `3fe32a0c` (commit laporan ini menyusul di atasnya) | U18 |
+
+Cabang bertumpuk: tiap cabang sudah memuat (lewat `git merge`, bukan rebase) perbaikan uji penjaga teks dari B1 (commit `6f1175bc` dan `417ee4a8`), jadi
+ujung rantai = B6 sudah lengkap. `ekstensi-berkas.ts` (tertanam) bentrok di tiap merge dan ditanam ulang dengan
+`ALETA_TANAM_PAKSA=1 node scripts/susun-ekstensi.mjs` - sesi utama cukup menanam ulang lagi sesudah menggabung.
 
 Ujung rantai = cabang B6. Laporan ini ada di cabang B6.
 
@@ -94,7 +98,7 @@ Kegagalan yang tidak berasal dari perubahan saya (diperiksa satu per satu, hijau
   hanya saat banyak proses uji berjalan bersamaan (berkas tertanam kini ±17 MB); hijau bila dijalankan sendirian.
 - `aleta-ai-tugas-25okt` (pelaksana Python sungguhan): lingkungan laptop.
 
-HASIL UJI PENUH: lihat bagian 8 (diisi sesudah dijalankan).
+HASIL UJI PENUH: lihat bagian 8.
 
 ## 6. Keputusan yang saya ambil (pilihan paling aman, mohon ditinjau)
 
@@ -129,7 +133,26 @@ HASIL UJI PENUH: lihat bagian 8 (diisi sesudah dijalankan).
 
 ## 8. Uji penuh
 
-(diisi di bawah setelah dijalankan)
+Dijalankan SEKALI di ujung B6 (sebelum dua perbaikan di bawah): `ALETA_UJI_TMP=D:\Aplikasi\aleta\tmp\ujiRB ALETA_UJI_UTAS=2 node scripts/periksa-uji.mjs`
+(menunggu ujiRC/ujiRE/ujiR6 tenang >= 5 menit dan memori >= 3 GB; log `D:\aleta-dev\kerja\hasil-vitest-2026-10-25T16-04-32-399Z.txt`):
+
+**958 berkas: 947 hijau, 2 dilewati, 9 merah; 18.027 uji: 17.997 hijau, 20 dilewati, 10 merah.** Uraian 9 berkas merah:
+
+| Berkas | Sebab | Keadaan sekarang |
+| :--- | :--- | :--- |
+| `abt-unduhan-dan-posita` | **dari saya**: blok pemimpin tab di `latar.js` jatuh di irisan teks yang diperiksa uji penjaga (`.then(`) | diperbaiki (B1 `6f1175bc`), hijau |
+| `skors-sidang-f31` | **dari saya**: uji menggrep teks `clearInterval(jamSkors)` yang kini dibungkus hub | diperbaiki (B1), hijau |
+| `w2a-kebendaan`, `w3b-blangko-baru-21okt` | berkas tak terlacak (`abt-paket/*/data`, `rtf`) belum disalin ke worktree baru | disalin dari w33 (tidak di-commit), hijau |
+| `alamat-desa-ketik-22okt` | uji waktu ("< 25 ms") merah saat laptop dibebani agen lain | hijau bila sendirian |
+| `arsip-cadangan` | habis waktu (bukan salah hasil) saat beban | hijau bila sendirian |
+| `root-redirect` | butuh `.env.local` (diarahkan ke /setup); `.env` sengaja tidak disalin | lingkungan |
+| `tema-ecourt-23okt` | menuntut `manifest.version` 1.205.38; dasar sudah 1.205.39 | merah juga di dasar |
+| `referensi-pihak-isian-t8-23okt` | uji balapan: kotak usulan dicek sesaat sesudah kolom terisi | **merah-hijau acak juga di dasar** (w33: gagal sekali, lulus sekali) |
+
+Ditambah satu temuan dari uji penuh yang saya perbaiki sendiri: cadangan `setInterval`/`clearInterval` kini `(f, m) => setInterval(f, m)` (bukan fungsi tak terikat) - B1 `417ee4a8`.
+Sesudah perbaikan, uji sasaran seluruh berkas `-25okt` rantai B + semua yang merah di atas yang berasal dari saya + regresi terkait di ujung B6: **33 berkas, 865 uji hijau, 1 merah**
+(`referensi-pihak-isian-t8-23okt`, acak di dasar). `tsc --noEmit` bersih di ujung B6. Uji penuh TIDAK diulang (aturan: sekali).
+Tidak ada uji yang di-skip atau dinonaktifkan.
 
 ## 9. Pertanyaan terbuka (tidak menghentikan pekerjaan; pilihan aman sudah diambil)
 
