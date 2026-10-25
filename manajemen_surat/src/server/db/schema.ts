@@ -1032,6 +1032,39 @@ export const DDL_KETEPATAN_ISIAN = {
 } as const;
 
 /**
+ * Riwayat kelengkapan blangko sebelum cetak (0102, 25 Okt 2026, rantai D butir D3 = U13): satu baris per keadaan
+ * kelengkapan (isian terisi/kosong tanpa nilainya) dan satu baris saat blangko dicetak, untuk SEMUA jenis blangko.
+ * Dasar "isian yang biasanya sudah terisi saat cetak". Diisi HANYA bila saklar Fitur Satker "wajib-sebelum-cetak"
+ * menyala (bawaan MATI). Retensi 2 tahun. Cermin PERSIS dari drizzle/0102_aleta_blangko_lapor.sql; penjaga
+ * wajib-sebelum-cetak-25okt.test.ts membandingkan keduanya. Tanpa kunci asing dan tanpa CHECK.
+ */
+export const DDL_BLANGKO_LAPOR = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_blangko_lapor (
+  id TEXT PRIMARY KEY,
+  perkara_id TEXT NOT NULL DEFAULT '',
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  berkas TEXT NOT NULL DEFAULT '',
+  jenis_blangko TEXT NOT NULL DEFAULT '',
+  jenis_perkara TEXT NOT NULL DEFAULT '',
+  isian TEXT NOT NULL DEFAULT '',
+  terisi INTEGER NOT NULL DEFAULT 0,
+  jumlah INTEGER NOT NULL DEFAULT 0,
+  dicetak SMALLINT NOT NULL DEFAULT 0,
+  pengguna_id TEXT NOT NULL DEFAULT '',
+  pengguna_nama TEXT NOT NULL DEFAULT '',
+  pada TEXT NOT NULL,
+  dibuat_at TEXT NOT NULL
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_blangko_lapor_berkas ON aleta_blangko_lapor(berkas, dicetak)`,
+    `CREATE INDEX IF NOT EXISTS idx_blangko_lapor_perkara ON aleta_blangko_lapor(perkara_id, berkas, pada)`,
+    `CREATE INDEX IF NOT EXISTS idx_blangko_lapor_pada ON aleta_blangko_lapor(pada)`,
+  ],
+} as const;
+
+/**
  * Unggah Putusan Terjadwal (0080, 21 Okt 2026, agen B3): jadwal, butir (satu
  * perkara), berkas yang diunggah, dan jejak jujur. Cermin PERSIS dari
  * drizzle/0080_aleta_putusan_terjadwal.sql; penjaga putusan-terjadwal-layanan-21okt.test.ts
@@ -2595,6 +2628,8 @@ const schemaStatements = [
   ...DDL_JEJAK_ISIAN.tabel,
   // Ketepatan isian (0092, rantai D): angka lapangan bulanan dan keputusan naik/turun gerbang.
   ...DDL_KETEPATAN_ISIAN.tabel,
+  // Riwayat kelengkapan blangko sebelum cetak (0102, rantai D): isian biasanya terisi saat cetak.
+  ...DDL_BLANGKO_LAPOR.tabel,
   // Unggah Putusan Terjadwal: jadwal, butir, berkas, jejak (0080).
   ...DDL_PUTUSAN_TERJADWAL.tabel,
   // Arsip hasil mediasi per perkara (0081).
@@ -4560,6 +4595,7 @@ const indexStatements = [
   ...DDL_ALETA_AI_DOMPET.indeks,
   ...DDL_JEJAK_ISIAN.indeks,
   ...DDL_KETEPATAN_ISIAN.indeks,
+  ...DDL_BLANGKO_LAPOR.indeks,
   ...DDL_PUTUSAN_TERJADWAL.indeks,
   ...DDL_MEDIASI_ARSIP.indeks,
   ...DDL_SIDANG_KELILING_HAKIM.indeks,

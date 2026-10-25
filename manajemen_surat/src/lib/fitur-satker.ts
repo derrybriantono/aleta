@@ -2,6 +2,7 @@ import { BAGIAN_FITUR_EKSTENSI } from "@/lib/daftar-fitur-ekstensi";
 import { KODE_FITUR_ISIAN_SEKALI } from "@/lib/isian-sekali";
 import { KODE_FITUR_JEJAK_ISIAN } from "@/lib/jejak-isian";
 import { KODE_FITUR_KETEPATAN_ISIAN } from "@/lib/ketepatan-isian";
+import { KODE_FITUR_WAJIB_CETAK } from "@/lib/wajib-cetak";
 
 /**
  * ============================================================================
@@ -127,6 +128,14 @@ export const KATALOG_FITUR_SATKER: readonly FiturKatalog[] = [
     bagian: "portal",
     keterangan:
       "Mati: isian manual Blangko Derry tidak diingat per perkara. Nyalakan agar isian yang belum punya sumber otomatis (mis. nomor penetapan prodeo) cukup diketik sekali: blangko lain perkara itu menampilkannya sebagai saran. Petugas tetap yang memasukkannya ke ABT.",
+    bawaan: "mati",
+  },
+  {
+    kode: KODE_FITUR_WAJIB_CETAK,
+    nama: "Daftar wajib sebelum cetak",
+    bagian: "portal",
+    keterangan:
+      "Mati: pengingat cetak seperti biasa. Nyalakan agar ALETA mencatat kelengkapan semua jenis blangko, mengingatkan isian yang biasanya sudah terisi saat blangko itu dicetak, dan mengusulkan isian bukan-identitas dari perkara serupa yang sudah putus. Hanya saran; tidak pernah menahan cetak dan tidak pernah menulis ke ABT sendiri.",
     bawaan: "mati",
   },
   portal("putusan-advance", "Putusan Advance", "Draf putusan lengkap oleh konseptor dan hakim."),

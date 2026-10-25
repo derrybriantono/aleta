@@ -2045,6 +2045,8 @@
       ringkas.saran += saranTanggalNikahDariBukti(perlu());
       ringkas.saran += await saranDariIsianPerkara(perlu());
       if (S.susunan !== d || S.pk !== pk) return null;
+      ringkas.saran += await saranDariPerkaraSerupa(perlu());
+      if (S.susunan !== d || S.pk !== pk) return null;
       renderIsian();
       S.isiSipp.hasil = { ...ringkas, saat: Date.now() };
       if (manual && !senyap) {
@@ -2659,12 +2661,17 @@
     a.laporIsian(nomorPerkara(), { a: h.a, t: h.t, jenis: S.blangko ? S.blangko.jenis : "", dicetak: S.cetakTercatat });
     // F1.6: rincian isian untuk checklist konseptor (konseptor-langkah.js) - hanya diumumkan, tidak ditulis di sini.
     if (S.blangko && S.susunan) {
-      const isian = daftarPerlu().map((b) => {
-        const [x, y] = nilaiTerisi(b);
-        return { kode: b.kode, nama: b.nama, jenis: b.jenis, khusus: b.khusus || "", terisi: y > 0 && x >= y };
-      });
+      const isian = isianKelengkapan();
       document.dispatchEvent(new CustomEvent("aleta-bd-isian", { detail: { perkaraId: String(S.pk.perkaraId || ""), nomorPerkara: nomorPerkara(), jenis: S.blangko.jenis, berkas: S.blangko.berkas, isian } }));
+      jadwalkanLaporWajib();
     }
+  }
+  /** Isian blangko yang terbuka beserta terisi/kosongnya (checklist konseptor dan riwayat kelengkapan). */
+  function isianKelengkapan() {
+    return daftarPerlu().map((b) => {
+      const [x, y] = nilaiTerisi(b);
+      return { kode: b.kode, nama: b.nama, jenis: b.jenis, khusus: b.khusus || "", terisi: y > 0 && x >= y };
+    });
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -2843,6 +2850,136 @@
         if (!ada || (b.jenis !== "teks" && b.jenis !== "tanggal") || !sedangKosong(b)) continue;
         if ((S.saranSipp[b.kode] && S.saranSipp[b.kode].nilai) || (S.saranH7 && S.saranH7[b.kode])) continue;
         S.saranSipp[b.kode] = { nilai: ada.nilai, keyakinan: "ragu", asal: "isian perkara tersimpan" };
+        n += 1;
+      }
+      return n;
+    } catch {
+      return 0;
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // DAFTAR WAJIB SEBELUM CETAK + SALIN DARI PERKARA SERUPA (rantai D, D3 = U13, 25 Okt 2026). Saklar server
+  // "wajib-sebelum-cetak", BAWAAN MATI (mati: tidak ada laporan, tidak ada pengingat tambahan, tidak ada saran tambahan).
+  // Menyala: kelengkapan SEMUA jenis blangko dilaporkan ke server (saat berubah dan saat dicetak); sebelum Cetak, isian yang
+  // BIASANYA sudah terisi saat blangko itu dicetak tetapi masih kosong ikut diingatkan; isian kosong bukan-identitas diberi SARAN
+  // dari perkara serupa yang sudah putus. Hanya mengingatkan dan menyarankan: dialog "Tetap cetak" tetap ada, dan tidak ada
+  // yang ditulis ke ABT sendiri.
+  // ──────────────────────────────────────────────────────────────────────────
+  const JEDA_LAPOR_WAJIB_MS = 3000;
+  let jamLaporWajib = null;
+  let tandaLaporWajib = "";
+  /** Pola kasar perkara (tanpa nama, tanggal, nomor) untuk mencari perkara serupa. */
+  function faktaPolaPerkara() {
+    // S.pk = detail peristiwa perkara { nomorPerkara, perkaraId, jenisPerkara, sidang[], perkara }; catatan perkara ada di S.pk.perkara.
+    const pk = { ...(S.pk || {}), ...((S.pk && S.pk.perkara) || {}) };
+    const fakta = {};
+    if (pk.alurPerkaraId) fakta.alur = String(pk.alurPerkaraId);
+    fakta.ghaib = Boolean(pk.ghaib);
+    fakta.prodeo = Boolean(pk.prodeo);
+    if (pk.lewatEcourt === true || pk.lewatEcourt === false) fakta.ecourt = pk.lewatEcourt;
+    const p = pk.pihak || {};
+    if (Array.isArray(p.penggugat)) fakta.jumlahP = p.penggugat.length;
+    if (Array.isArray(p.tergugat)) fakta.jumlahT = p.tergugat.length;
+    const sd = Array.isArray(pk.sidang) ? pk.sidang : [];
+    fakta.verstek = sd.some((x) => /verstek/i.test(String((x && x.ket) || "")));
+    return fakta;
+  }
+  function rincianLaporWajib(dicetak) {
+    if (!S.pk || !S.blangko || !S.susunan) return null;
+    const isian = isianKelengkapan().map((i) => ({ kode: i.kode, terisi: i.terisi }));
+    if (!isian.length) return null;
+    return {
+      perkaraId: String(S.pk.perkaraId || ""),
+      nomorPerkara: nomorPerkara(),
+      berkas: String(S.blangko.berkas || ""),
+      jenisBlangko: String(S.blangko.jenis || ""),
+      jenisPerkara: String(S.pk.jenisPerkara || ""),
+      isian,
+      dicetak: dicetak === true,
+      fakta: faktaPolaPerkara(),
+    };
+  }
+  /** Melaporkan kelengkapan sesudah jeda singkat dan hanya bila berubah. Tidak pernah melempar. */
+  function jadwalkanLaporWajib() {
+    try {
+      const j = JI();
+      if (!j || typeof j.laporWajib !== "function" || tes()) return;
+      clearTimeout(jamLaporWajib);
+      jamLaporWajib = setTimeout(() => {
+        try {
+          const d = rincianLaporWajib(false);
+          if (!d) return;
+          const tanda = `${d.perkaraId}|${d.berkas}|${d.isian.map((i) => `${i.kode}:${i.terisi ? 1 : 0}`).join(",")}`;
+          if (tanda === tandaLaporWajib) return;
+          tandaLaporWajib = tanda;
+          void j.laporWajib(d);
+        } catch {
+          /* laporan tertinggal; tidak memengaruhi isian */
+        }
+      }, JEDA_LAPOR_WAJIB_MS);
+    } catch {
+      /* laporan tertinggal */
+    }
+  }
+  /** Keadaan kelengkapan SAAT blangko dicetak (bahan belajar "isian yang biasanya terisi"). */
+  function laporCetakWajib() {
+    try {
+      const j = JI();
+      if (!j || typeof j.laporWajib !== "function" || tes()) return;
+      const d = rincianLaporWajib(true);
+      if (d) void j.laporWajib(d);
+    } catch {
+      /* laporan tertinggal */
+    }
+  }
+  /**
+   * Menambah ke daftar kosong sebelum cetak: isian yang BIASANYA terisi saat blangko ini dicetak. Isian "tidak wajib" yang di
+   * lapangan hampir selalu terisi dinaikkan menjadi "penting". Saklar mati / data belum cukup / gagal = daftar tidak berubah.
+   */
+  async function tambahWajibBiasanya(kos) {
+    try {
+      const j = JI();
+      if (!j || typeof j.bacaWajib !== "function" || !S.blangko) return kos;
+      const w = await j.bacaWajib(S.blangko.berkas);
+      if (!w || !w.cukupData || !Array.isArray(w.wajib) || !w.wajib.length) return kos;
+      const peta = new Map(w.wajib.map((x) => [String(x.kode), x]));
+      const catat = (it) => `biasanya terisi (${it.terisi} dari ${it.dari} cetak)`;
+      const hasil = kos.map((x) => {
+        const it = peta.get(String(x.b.kode));
+        return it ? { ...x, nama: `${x.nama} - ${catat(it)}`, tingkat: "penting" } : x;
+      });
+      const sudah = new Set(kos.map((x) => String(x.b.kode)));
+      for (const b of daftarPerlu()) {
+        const it = peta.get(String(b.kode));
+        if (!it || sudah.has(String(b.kode))) continue;
+        const [x, y] = nilaiTerisi(b);
+        if (y > 0 && x >= y) continue;
+        hasil.push({ b, nama: `${b.khusus === "bukti" ? `nama ${b.nama.toLowerCase()}` : b.jenis === "tj" ? `tanya jawab ${b.tj.sebutan.toLowerCase()}` : b.nama} - ${catat(it)}`, tingkat: "penting" });
+      }
+      return hasil;
+    } catch {
+      return kos;
+    }
+  }
+  /** Saran dari perkara serupa yang sudah putus untuk isian teks yang kosong dan belum bersaran; mengembalikan banyaknya saran baru. */
+  async function saranDariPerkaraSerupa(daftar) {
+    try {
+      const j = JI();
+      if (!j || typeof j.usulSerupa !== "function" || tes()) return 0;
+      const d = S.susunan;
+      const pk = S.pk;
+      const calon = (daftar || []).filter(
+        (b) => b.jenis === "teks" && sedangKosong(b) && !(S.saranSipp[b.kode] && S.saranSipp[b.kode].nilai) && !(S.saranH7 && S.saranH7[b.kode])
+      );
+      if (!calon.length || !pk) return 0;
+      const usulan = await j.usulSerupa({ perkaraId: perkaraId(), nomorPerkara: nomorPerkara(), jenisPerkara: String(pk.jenisPerkara || ""), fakta: faktaPolaPerkara(), kode: calon.map((b) => b.kode) });
+      if (S.susunan !== d || S.pk !== pk || !usulan.length) return 0;
+      let n = 0;
+      for (const u of usulan) {
+        const b = calon.find((x) => x.kode === String(u.kode));
+        if (!b || !sedangKosong(b) || (S.saranSipp[b.kode] && S.saranSipp[b.kode].nilai)) continue;
+        S.saranSipp[b.kode] = { nilai: String(u.nilai), keyakinan: "ragu", asal: "perkara serupa" };
         n += 1;
       }
       return n;
@@ -6342,7 +6479,8 @@
     try {
       catatLog("meminta naskah dari ABT…");
       const rtf = await ambilRtf(S.prat.kotor);
-      const kos = cfg().ingat !== false ? kosongRinci() : [];
+      let kos = cfg().ingat !== false ? kosongRinci() : [];
+      if (cfg().ingat !== false) kos = await tambahWajibBiasanya(kos);
       const hs = S.prat.penanda.map(namaPenanda);
       // Keputusan 17 Okt (F1.5): hanya isian Penting dan penanda # tersisa yang menahan cetak; isian Tidak wajib
       // yang kosong tidak - cetak langsung jalan dengan catatan kecil. Bila ada yang menahan, daftar Tidak wajib tetap ikut tampil.
@@ -6484,6 +6622,7 @@
     if (!tes()) {
       S.cetakTercatat[`${nomor}|${j}`] = jamSekarang();
       void tulisPenyimpanan({ [`${K_CETAK}:${nomor}|${j}`]: jamSekarang() });
+      laporCetakWajib();
     }
     for (const h of hasil) catatLog(h);
     toast(hasil.join(" · "));
@@ -7839,6 +7978,7 @@
         const jam = jamSekarang();
         S.cetakTercatat[`${nomor}|${S.blangko.jenis}`] = jam;
         void tulisPenyimpanan({ [`${K_CETAK}:${nomor}|${S.blangko.jenis}`]: jam });
+        laporCetakWajib();
       }
       return hasil;
     }

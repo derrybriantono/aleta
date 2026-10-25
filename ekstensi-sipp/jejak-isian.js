@@ -37,6 +37,7 @@
   const API = "/aleta/api/aleta-ecourt/jejak-isian";
   const API_BUTIR = "/aleta/api/aleta-ecourt/saksi-butir";
   const API_SEKALI = "/aleta/api/aleta-ecourt/isian-sekali";
+  const API_WAJIB = "/aleta/api/aleta-ecourt/wajib-cetak";
   const TTL_YA_MS = 5 * 60 * 1000;
   const TTL_GAGAL_MS = 30 * 1000;
   const BATAS_KIRIM = 60;
@@ -101,6 +102,9 @@
     janji = null;
     cacheSekali = null;
     janjiSekali = null;
+    cacheWajib = null;
+    janjiWajib = null;
+    wajibBerkas.clear();
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -126,6 +130,92 @@
       return cacheSekali;
     })();
     return janjiSekali;
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // DAFTAR WAJIB SEBELUM CETAK + SALIN DARI PERKARA SERUPA (D3, 25 Okt 2026): server mencatat kelengkapan SEMUA jenis blangko
+  // (saat berubah dan saat dicetak), mengingatkan isian yang biasanya sudah terisi ketika blangko itu dicetak, dan mengusulkan
+  // isian bukan-identitas dari perkara serupa yang sudah putus. Saklar sendiri (Fitur Satker "wajib-sebelum-cetak", bawaan mati);
+  // gagal bertanya = MATI. Hanya mengingatkan dan menyarankan: tidak pernah menahan cetak dan tidak pernah menulis ke ABT.
+  // ──────────────────────────────────────────────────────────────────────────
+  let cacheWajib = null; // { aktif, saat, gagal }
+  let janjiWajib = null;
+  const wajibBerkas = new Map(); // berkas -> { saat, data }
+
+  function aktifWajib(paksa) {
+    const kini = Date.now();
+    if (!paksa && cacheWajib && kini - cacheWajib.saat < (cacheWajib.gagal ? TTL_GAGAL_MS : TTL_YA_MS)) return Promise.resolve(cacheWajib.aktif);
+    if (janjiWajib) return janjiWajib;
+    janjiWajib = (async () => {
+      const d = await ambilJson(`${API_WAJIB}?bagian=saklar`);
+      cacheWajib = d && typeof d.aktif === "boolean" ? { aktif: d.aktif, saat: Date.now(), gagal: false } : { aktif: false, saat: Date.now(), gagal: true };
+      janjiWajib = null;
+      return cacheWajib.aktif;
+    })();
+    return janjiWajib;
+  }
+
+  /** Melaporkan kelengkapan satu blangko (atau saat dicetak). Tidak pernah melempar; saklar mati = tidak mengirim apa pun. */
+  async function laporWajib(detail) {
+    try {
+      if (!detail || !teks(detail.perkaraId) || !teks(detail.berkas) || !Array.isArray(detail.isian) || !detail.isian.length) return null;
+      if (!(await aktifWajib())) return null;
+      const r = await fetch(API_WAJIB, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          aksi: "lapor",
+          perkaraId: teks(detail.perkaraId),
+          nomorPerkara: teks(detail.nomorPerkara),
+          berkas: teks(detail.berkas),
+          jenisBlangko: teks(detail.jenisBlangko),
+          jenisPerkara: teks(detail.jenisPerkara),
+          isian: detail.isian.map((i) => ({ kode: teks(i.kode), terisi: Boolean(i.terisi) })),
+          dicetak: detail.dicetak === true,
+          fakta: detail.fakta && typeof detail.fakta === "object" ? detail.fakta : {},
+        }),
+      });
+      return r && r.ok ? buka(await r.json()) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Isian yang biasanya sudah terisi saat blangko ini dicetak: { cukupData, wajib:[{kode, terisi, dari, rasio}] }; kosong bila mati/gagal. */
+  async function bacaWajib(berkas) {
+    const kosong = { cukupData: false, wajib: [] };
+    const nama = teks(berkas);
+    if (!nama) return kosong;
+    try {
+      if (!(await aktifWajib())) return kosong;
+      const ada = wajibBerkas.get(nama);
+      if (ada && Date.now() - ada.saat < TTL_YA_MS) return ada.data;
+      const d = await ambilJson(`${API_WAJIB}?berkas=${encodeURIComponent(nama)}`);
+      const data = d && d.aktif !== false && Array.isArray(d.wajib) ? { cukupData: d.cukupData === true, wajib: d.wajib } : kosong;
+      wajibBerkas.set(nama, { saat: Date.now(), data });
+      return data;
+    } catch {
+      return kosong;
+    }
+  }
+
+  /** Usulan isian dari perkara serupa yang sudah putus untuk kode yang masih kosong: [{kode, nilai, jumlah, dari, nomorPerkara}]. */
+  async function usulSerupa(m) {
+    try {
+      if (!m || !teks(m.perkaraId) || !Array.isArray(m.kode) || !m.kode.length) return [];
+      if (!(await aktifWajib())) return [];
+      const r = await fetch(API_WAJIB, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ aksi: "serupa", perkaraId: teks(m.perkaraId), nomorPerkara: teks(m.nomorPerkara), jenisPerkara: teks(m.jenisPerkara), fakta: m.fakta || {}, kode: m.kode.map((k) => teks(k)) }),
+      });
+      const d = r && r.ok ? buka(await r.json()) : null;
+      return d && d.aktif !== false && Array.isArray(d.usulan) ? d.usulan : [];
+    } catch {
+      return [];
+    }
   }
 
   /** Nilai yang diingat untuk satu perkara: Map kode -> { nilai, diisiOleh, diubahAt }; kosong bila saklar mati atau gagal. */
@@ -285,6 +375,10 @@
     infoSekali,
     bacaSekali,
     catatSekali,
+    aktifWajib,
+    laporWajib,
+    bacaWajib,
+    usulSerupa,
     keRiwayat,
     tentukanCara,
     penandaAsal,
@@ -294,5 +388,6 @@
     API,
     API_BUTIR,
     API_SEKALI,
+    API_WAJIB,
   });
 })();

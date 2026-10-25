@@ -412,6 +412,8 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   // 25 Oktober 2026 (0092): rantai D butir D1 - angka ketepatan isian bulanan dan keputusan naik/turun gerbang. Tanpa kunci asing.
   "aleta_ketepatan_isian",
   "aleta_ketepatan_keputusan",
+  // 25 Oktober 2026 (0102): rantai D butir D3 - riwayat kelengkapan blangko sebelum cetak. Tanpa kunci asing.
+  "aleta_blangko_lapor",
   // 21 Oktober 2026 (0080): Unggah Putusan Terjadwal. Tanpa kunci asing - urutannya bebas.
   "aleta_putusan_jadwal",
   "aleta_putusan_jadwal_butir",
