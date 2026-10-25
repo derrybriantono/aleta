@@ -38,6 +38,7 @@
   const API_BUTIR = "/aleta/api/aleta-ecourt/saksi-butir";
   const API_SEKALI = "/aleta/api/aleta-ecourt/isian-sekali";
   const API_WAJIB = "/aleta/api/aleta-ecourt/wajib-cetak";
+  const API_HURUF = "/aleta/api/aleta-ecourt/huruf-alasan";
   const TTL_YA_MS = 5 * 60 * 1000;
   const TTL_GAGAL_MS = 30 * 1000;
   const BATAS_KIRIM = 60;
@@ -105,6 +106,8 @@
     cacheWajib = null;
     janjiWajib = null;
     wajibBerkas.clear();
+    cacheHuruf = null;
+    janjiHuruf = null;
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -215,6 +218,44 @@
       return d && d.aktif !== false && Array.isArray(d.usulan) ? d.usulan : [];
     } catch {
       return [];
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // HURUF ALASAN YANG BELAJAR DARI HAKIM (D4, 25 Okt 2026): server menambahkan PERTIMBANGAN (kebiasaan hakim/majelis, kecocokan pola)
+  // dan SARAN dasar hukum per huruf (bertanda [PERLU VERIFIKASI] bila belum terverifikasi). Saklar sendiri (Fitur Satker
+  // "huruf-alasan-belajar", bawaan mati); gagal bertanya = MATI. Hanya usulan: tidak pernah menulis ke ABT.
+  // ──────────────────────────────────────────────────────────────────────────
+  let cacheHuruf = null; // { aktif, saat, gagal }
+  let janjiHuruf = null;
+
+  function aktifHuruf(paksa) {
+    const kini = Date.now();
+    if (!paksa && cacheHuruf && kini - cacheHuruf.saat < (cacheHuruf.gagal ? TTL_GAGAL_MS : TTL_YA_MS)) return Promise.resolve(cacheHuruf.aktif);
+    if (janjiHuruf) return janjiHuruf;
+    janjiHuruf = (async () => {
+      const d = await ambilJson(`${API_HURUF}?bagian=saklar`);
+      cacheHuruf = d && typeof d.aktif === "boolean" ? { aktif: d.aktif, saat: Date.now(), gagal: false } : { aktif: false, saat: Date.now(), gagal: true };
+      janjiHuruf = null;
+      return cacheHuruf.aktif;
+    })();
+    return janjiHuruf;
+  }
+
+  /** Pertimbangan huruf alasan: { belajar:{pertimbangan, pola, usulanBeda...}, dasarHukum:[{huruf, daftar}] }; null bila mati/gagal. */
+  async function belajarHuruf(m) {
+    try {
+      if (!m || !(await aktifHuruf())) return null;
+      const r = await fetch(API_HURUF, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jenisPerkara: teks(m.jenisPerkara), hurufMesin: teks(m.hurufMesin), majelis: Array.isArray(m.majelis) ? m.majelis.map((x) => teks(x)).filter(Boolean) : [] }),
+      });
+      const d = r && r.ok ? buka(await r.json()) : null;
+      return d && d.aktif !== false && d.belajar ? d : null;
+    } catch {
+      return null;
     }
   }
 
@@ -379,6 +420,8 @@
     laporWajib,
     bacaWajib,
     usulSerupa,
+    aktifHuruf,
+    belajarHuruf,
     keRiwayat,
     tentukanCara,
     penandaAsal,
@@ -389,5 +432,6 @@
     API_BUTIR,
     API_SEKALI,
     API_WAJIB,
+    API_HURUF,
   });
 })();

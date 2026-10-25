@@ -1534,6 +1534,7 @@
     S.ganti = {};
     S.saran = {};
     S.saranSipp = {};
+    S.belajar8503 = null;
     S.info = {};
     S.bunyi = {};
     S.ketBuka = new Set();
@@ -2046,6 +2047,8 @@
       ringkas.saran += await saranDariIsianPerkara(perlu());
       if (S.susunan !== d || S.pk !== pk) return null;
       ringkas.saran += await saranDariPerkaraSerupa(perlu());
+      if (S.susunan !== d || S.pk !== pk) return null;
+      await muatBelajarHuruf();
       if (S.susunan !== d || S.pk !== pk) return null;
       renderIsian();
       S.isiSipp.hasil = { ...ringkas, saat: Date.now() };
@@ -2986,6 +2989,48 @@
     } catch {
       return 0;
     }
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // HURUF ALASAN YANG BELAJAR DARI HAKIM (rantai D, D4 = U14, 25 Okt 2026). Saklar server "huruf-alasan-belajar", BAWAAN MATI
+  // (mati: kotak 8503 persis seperti biasa). Menyala: di bawah kotak 8503 tampil PERTIMBANGAN dari kebiasaan hakim ini, anggota
+  // majelis lain, dan kecocokan pola (jejak isian), beserta saran dasar hukum per huruf (bertanda [PERLU VERIFIKASI] bila belum
+  // terverifikasi). Tetap usulan: tombol "Pakai huruf X" ditekan hakim sendiri; tidak ada yang diisi atau disimpan otomatis.
+  // ──────────────────────────────────────────────────────────────────────────
+  /** Pertimbangan huruf alasan untuk blangko yang terbuka; true bila ada yang baru tampil. */
+  async function muatBelajarHuruf() {
+    try {
+      const j = JI();
+      if (!j || typeof j.belajarHuruf !== "function" || tes() || !S.pk || !S.susunan) return false;
+      if (!daftarIsiOtomatis().some((b) => b.kode === "8503")) return false;
+      const d = S.susunan;
+      const pk = S.pk;
+      const saran = (S.saranSipp && S.saranSipp["8503"] && S.saranSipp["8503"].nilai) || "";
+      const perkara = pk.perkara || {};
+      const majelis = String(pk.majelisNama || perkara.majelisNama || "").trim();
+      const hasil = await j.belajarHuruf({ jenisPerkara: String(pk.jenisPerkara || ""), hurufMesin: hurufAlasanDari(saran), majelis: majelis ? [majelis] : [] });
+      if (S.susunan !== d || S.pk !== pk) return false;
+      S.belajar8503 = hasil || null;
+      return Boolean(hasil);
+    } catch {
+      return false;
+    }
+  }
+  /** Catatan di bawah kotak 8503: pertimbangan (usulan) + dasar hukum. Kosong bila saklar mati atau belum ada yang berarti. */
+  function belajarHtml8503() {
+    const d = S.belajar8503;
+    if (!d || !d.belajar) return "";
+    const sekarang = alasanHuruf();
+    const baris = [];
+    for (const p of d.belajar.pertimbangan || []) {
+      const pakai = p.huruf && p.huruf !== sekarang ? ` <button type="button" class="bd-btn kecil" data-ambil="8503" data-nilai="${esc(p.huruf)}">Pakai huruf ${esc(p.huruf)}</button>` : "";
+      baris.push(`<div class="bd-catat" data-belajar="pertimbangan">${esc(p.kalimat)}${pakai}</div>`);
+    }
+    for (const h of d.dasarHukum || []) {
+      for (const x of h.daftar || []) baris.push(`<div class="bd-catat" data-belajar="dasar">Dasar hukum huruf ${esc(h.huruf)} (saran): ${esc(x.teks)}</div>`);
+    }
+    if (!baris.length) return "";
+    return `<div class="bd-belajar" data-belajar="8503"><div class="bd-catat"><b>Pertimbangan (usulan, bukan keputusan)</b></div>${baris.join("")}</div>`;
   }
 
   const BEDA_BACA_ULANG = "gagal: tersimpan, tetapi bacaan ulang dari ABT berbeda - periksa isinya";
@@ -4720,6 +4765,7 @@
       (b.kode === "7139" && S.el7Saran && !v.trim() ? `<span class="bd-catat bd-el7">Saran: ${esc(S.el7Saran.keterangan)}</span>` : "") +
       `<span class="bd-status" data-status="${b.kode}">${esc(teksStatus(st, b.kode))}</span>` +
       (b.kode === "8503" ? (() => { const w = peringatan8503(); return `<span class="bd-peringatan" data-peringatan="8503" role="alert" ${w ? "" : "hidden"}>${esc(w)}</span>`; })() : "") +
+      (b.kode === "8503" ? belajarHtml8503() : "") +
       `</div>`
     );
   }
@@ -7695,6 +7741,7 @@
     S.tersimpan = {};
     S.saran = {};
     S.saranSipp = {};
+    S.belajar8503 = null;
     S.info = {};
     S.bunyi = {};
     S.bahanSaksi = null;

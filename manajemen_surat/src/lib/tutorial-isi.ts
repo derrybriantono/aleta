@@ -899,6 +899,7 @@ export const TUTORIAL: readonly Tutorial[] = [
       "Alat bukti surat memakai kode P otomatis. Pilih meterai dan pencocokannya, atau pakai Tulis manual bila bukti tidak ada di daftar.",
       "Tanya jawab saksi dapat berupa saksi tunggal atau berdampingan, dan dapat disusun lewat Susun Keterangan Saksi.",
       "Pratinjau dapat dilipat dan disunting. Sebelum Cetak, ALETA mengingatkan isian yang kosong, tetapi isian tidak wajib yang kosong tidak menahan cetak.",
+      "Bila saklar Huruf alasan yang belajar dari hakim menyala (bawaan mati), di bawah kotak alasan perceraian muncul pertimbangan dari pilihan Anda dan majelis pada perkara sejenis, serta saran dasar hukum per huruf (bertanda [PERLU VERIFIKASI] bila belum terverifikasi). Itu usulan: huruf tetap keputusan Anda dan baru berubah bila Anda menekan Pakai huruf.",
       "Bila saklar Daftar wajib sebelum cetak menyala (bawaan mati), ALETA belajar dari cetak sebelumnya: isian yang biasanya sudah terisi saat blangko itu dicetak ikut diingatkan bila masih kosong, dan isian bukan-identitas yang sama-sama ditulis dua perkara serupa yang sudah putus muncul sebagai saran. Anda tetap yang memutuskan; Tetap cetak selalu ada.",
       "Tanda tangan dapat ditambahkan per akun, supaya yang tercetak sesuai pejabat yang menandatangani.",
     ],

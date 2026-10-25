@@ -10,6 +10,7 @@ import { labelJenis, type KelompokKebenaran, type RingkasanBulananSaksi } from "
 import { getEffectiveRoleId } from "@/lib/permissions";
 import { usePortal } from "@/lib/app-state";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
+import type { RingkasanHuruf } from "@/server/modules/aleta-ecourt/huruf-alasan-belajar";
 import type { KeputusanKetepatan, LayarKetepatan } from "@/server/modules/aleta-ecourt/ketepatan-isian";
 
 /**
@@ -62,6 +63,70 @@ function TabelKebenaran({ judul, baris }: { judul: string; baris: Array<Kelompok
 
 const namaStatus = (s: string) =>
   s === "otomatis" ? "terisi sendiri" : s === "terstruktur" ? "terisi sendiri (dari data SIPP)" : s === "saran" ? "hanya saran" : s === "tanpa-ukuran" ? "belum diukur" : s === "belum-diketahui" ? "belum diketahui" : s;
+
+/**
+ * Kecocokan huruf alasan perceraian (D4): usulan mesin versus pilihan akhir hakim, per jenis perkara dan huruf usulan.
+ * Tanpa nama hakim. Saklar &quot;Huruf alasan yang belajar dari hakim&quot; ada di Fitur satker (bawaan mati).
+ */
+function KecocokanHurufAlasan() {
+  const [data, setData] = useState<RingkasanHuruf | null>(null);
+  const [galat, setGalat] = useState("");
+  const [memuat, setMemuat] = useState(false);
+  const muat = useCallback(async () => {
+    setMemuat(true);
+    setGalat("");
+    try {
+      const jawab = await fetch(apiPath("/api/aleta-ecourt/huruf-alasan?bagian=ringkasan"), AMBIL);
+      const j = await jawab.json();
+      if (!jawab.ok) throw new Error(j?.error?.message || "Kecocokan huruf alasan tidak dapat dibaca.");
+      setData(j.data as RingkasanHuruf);
+    } catch (e) {
+      setGalat(pesanGalatPortal(e, "Kecocokan huruf alasan tidak dapat dimuat."));
+    } finally {
+      setMemuat(false);
+    }
+  }, []);
+  return (
+    <div className="space-y-2">
+      <div className="text-sm font-medium">Kecocokan huruf alasan perceraian</div>
+      <Button type="button" variant="outline" size="sm" onClick={() => void muat()} disabled={memuat}>
+        {memuat ? "Memuat..." : data ? "Segarkan" : "Muat kecocokan huruf alasan"}
+      </Button>
+      {galat ? <p className="text-sm text-destructive">{galat}</p> : null}
+      {data && !data.aktif ? <p className="text-sm">Saklar &quot;Huruf alasan yang belajar dari hakim&quot; mati.</p> : null}
+      {data?.aktif ? (
+        data.perPola.length ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="text-muted-foreground">
+                <tr>
+                  <th className="py-1 pr-3">Jenis perkara</th>
+                  <th className="pr-3">Huruf usulan</th>
+                  <th className="pr-3">Perkara</th>
+                  <th className="pr-3">Pilihan akhir sama</th>
+                  <th>Pilihan akhir terbanyak</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.perPola.map((p) => (
+                  <tr key={`${p.jenis}|${p.usulan}`} className="border-t border-border">
+                    <td className="py-1 pr-3">{labelJenis(p.jenis)}</td>
+                    <td className="pr-3">{p.usulan}</td>
+                    <td className="pr-3">{p.n}</td>
+                    <td className="pr-3">{persen(p.persenCocok)}</td>
+                    <td>{p.sebaran[0] ? `${p.sebaran[0].huruf} (${p.sebaran[0].persen}%)` : "-"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">Belum ada pilihan huruf alasan yang tercatat.</p>
+        )
+      ) : null}
+    </div>
+  );
+}
 
 export function AletaEcourtKetepatanIsian() {
   const { currentUser } = usePortal();
@@ -279,6 +344,7 @@ export function AletaEcourtKetepatanIsian() {
             ) : null}
           </div>
         ) : null}
+        <KecocokanHurufAlasan />
       </CardContent>
     </Card>
   );
