@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -97,10 +97,6 @@ export function AletaEcourtJejakIsian() {
     }
   }, []);
 
-  useEffect(() => {
-    void muat();
-  }, [muat]);
-
   return (
     <Card id="jejak-isian">
       <CardHeader>
@@ -115,7 +111,7 @@ export function AletaEcourtJejakIsian() {
       </CardHeader>
       <CardContent className="space-y-4">
         <Button type="button" variant="outline" size="sm" onClick={() => void muat()} disabled={memuat}>
-          {memuat ? "Memuat..." : "Segarkan"}
+          {memuat ? "Memuat..." : laporan ? "Segarkan" : "Muat angka"}
         </Button>
         {galat ? <p className="text-sm text-destructive">{galat}</p> : null}
         {laporan ? (
