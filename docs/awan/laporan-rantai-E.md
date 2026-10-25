@@ -11,7 +11,7 @@ Dikerjakan di laptop (worktree `D:/aleta-dev/wt/w72`), bertumpuk: E1 sampai E6 s
 | E3 | `fitur/mode-pemeliharaan` | `ccecf0ab` | mode pemeliharaan (agen sebelumnya) |
 | E4 | `fitur/lihat-sebagai` | `eafc102c` | Lihat sebagai akun/peran |
 | E5 | `fitur/otp-whatsapp` | `2c1e15b4` | verifikasi dua langkah, migrasi 0095 |
-| E6 | `fitur/penjaga-integritas-berkas` | lihat `git log` cabang ini (commit laporan di ujung) | penjaga integritas berkas, migrasi 0104 |
+| E6 | `fitur/penjaga-integritas-berkas` | `8030e664` (ujung cabang; commit fitur `6bcdc336`, lalu uji layar, perbaikan istilah, laporan) | penjaga integritas berkas, migrasi 0104 |
 
 ## Uji
 
