@@ -225,6 +225,20 @@ const BERKAS = [
   // garis isian, tulisan merah). Salinan JS dari src/lib/deteksi-sisa-blangko.ts;
   // dimuat paling depan di blok skrip konten SIPP/ABT/portal.
   "deteksi-sisa-blangko.js",
+  // Pengamat bersama (K12, 25 Okt 2026): satu MutationObserver, pewaktu yang berhenti di tab tersembunyi; dimuat PALING DEPAN di tiga kelompok skrip konten.
+  "pengamat-bersama.js",
+  // Mode ringan untuk PC tua (K16, 25 Okt 2026): hiasan dimatikan, pewaktu diperlambat; dimuat tepat sesudah pengamat-bersama.js.
+  "mode-ringan.js",
+  "popup-ringan.js",
+  // Salinan antrean kerja peramban ke basis data (K15, rantai B, 25 Okt 2026); dimuat sesudah mode-ringan.js di blok SIPP dan ABT.
+  "antrean-server.js",
+  // Berkas cetak massal dan pemeriksa sisa blangko dikerjakan server (K14, rantai B, 25 Okt 2026); dimuat sesudah antrean-server.js.
+  "berkas-server.js",
+  // Perkara terakhir dan versi ekstensi mengikuti pengguna (U16, rantai B, 25 Okt 2026); dimuat di blok SIPP dan portal, dan di popup.
+  "konteks-server.js",
+  // Pemeriksa ejaan nama pihak di formulir pihak SIPP (U18, rantai B, 25 Okt 2026): hanya usulan, mati bawaan.
+  "ejaan-nama.js",
+  "popup-versi-pc.js",
   "tema-awal.js",
   // Pusat tema (terang | gelap | sistem): satu sumber kebenaran, dimuat sebelum tema-awal.js (SIPP, ABT, portal).
   "tema-pusat.js",

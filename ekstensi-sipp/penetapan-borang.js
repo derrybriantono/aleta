@@ -904,7 +904,7 @@
       }
       if (!document.body) return;
       document.addEventListener("aleta-uji-berubah", () => jadwalkan());
-      new MutationObserver((daftar) => {
+      new (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.Pengamat : MutationObserver)((daftar) => {
         if (daftar.every(dariAletaSaja)) return;
         jadwalkan();
       }).observe(document.body, { childList: true, subtree: true });

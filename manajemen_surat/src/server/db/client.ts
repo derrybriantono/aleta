@@ -446,6 +446,10 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_blangko_lapor",
   // 25 Oktober 2026 (0103): rantai D butir D6 - isian BAS per sidang. Tanpa kunci asing.
   "aleta_isian_sidang",
+  // 25 Oktober 2026 (0098): antrean kerja peramban (cetak massal, relaas massal, catatan putusan terjadwal).
+  "aleta_antrean_peramban",
+  // 25 Oktober 2026 (0100): kamus alias nama pihak (pemeriksa ejaan, penyamaran ALETA Ai).
+  "aleta_alias_nama",
   // 21 Oktober 2026 (0080): Unggah Putusan Terjadwal. Tanpa kunci asing - urutannya bebas.
   "aleta_putusan_jadwal",
   "aleta_putusan_jadwal_butir",

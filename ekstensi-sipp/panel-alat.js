@@ -3760,6 +3760,15 @@ const ALETA_COBA_BOLEH = [
   // Setelan PRIBADI (tahap 5): urutan pintasan, tanda checklist - tidak
   // mengirim apa pun ke luar dan tidak menyentuh SIPP, ABT, maupun WhatsApp.
   /\/aleta\/api\/aleta-ecourt\/ekstensi\/setelan(?:[?#]|$)/,
+  // Salinan antrean kerja peramban ke basis data (K15, rantai B): hanya keadaan pengerjaan milik pemanggil, mati bawaan di portal;
+  // tidak menyentuh SIPP, ABT, maupun WhatsApp.
+  /\/aleta\/api\/aleta-ecourt\/ekstensi\/antrean(?:[?#]|$)/,
+  // Berkas cetak massal dikerjakan server (K14, rantai B): naskah RTF milik pemanggil dikirim ke portal kita sendiri, diperiksa/diubah ke
+  // PDF/dibungkus ZIP di memori server, dan dipulangkan. Tidak menyentuh SIPP, ABT, maupun WhatsApp; mati bawaan di portal.
+  /\/aleta\/api\/aleta-ecourt\/berkas-server(?:\/periksa-sisa)?(?:[?#]|$)/,
+  // Pemeriksa ejaan nama pihak (U18, rantai B): satu nama dikirim, usulan dikembalikan. Kamus tidak pernah dikirim; tidak ada yang
+  // disimpan, ditulis ke SIPP/ABT/e-Court, maupun dikirim lewat WhatsApp. Mati bawaan di portal.
+  /\/aleta\/api\/aleta-ecourt\/alias-nama\/periksa(?:[?#]|$)/,
   // Menandai komentar hakim atas BAS "selesai" (tahap 6-7): catatan internal
   // antar-petugas, tidak menyentuh SIPP, ABT, maupun WhatsApp.
   /\/aleta\/api\/aleta-ecourt\/bas-komentar(?:[?#]|$)/,
@@ -3944,6 +3953,12 @@ function alatBersihTampilanServer(x) {
   // dan portal lama tetap berbentuk persis seperti sebelumnya.
   const setelan = alatBersihSetelanSinggah(x.setelan);
   if (setelan) hasil.setelan = setelan;
+  // Saklar kinerja Super Admin (rantai B, 25 Okt 2026): hanya boolean sejati; tanpa ruas = semua mati.
+  if (x.kinerja && typeof x.kinerja === "object" && !Array.isArray(x.kinerja)) {
+    const kinerja = {};
+    for (const [k, v] of Object.entries(x.kinerja)) if (v === true && /^[A-Za-z]{2,40}$/.test(k)) kinerja[k] = true;
+    hasil.kinerja = kinerja;
+  }
   return hasil;
 }
 
@@ -3966,7 +3981,7 @@ const ALAT_SETELAN_SINGGAH = ["widget.tata"];
  * mengirimnya (akun sudah pernah menyimpan) - tanpa itu bentuk singgahan
  * tetap persis seperti 1 Okt ({"widget.tata": ...} saja).
  */
-const ALAT_SETELAN_SINGGAH_BILA_ADA = ["panel.bawaan"];
+const ALAT_SETELAN_SINGGAH_BILA_ADA = ["panel.bawaan", "konteks.perkara", "perangkat.versi"];
 
 function alatBersihSetelanSinggah(x) {
   if (!x || typeof x !== "object" || Array.isArray(x)) return undefined;
@@ -4073,6 +4088,7 @@ async function alatSegarkanTampilanServer(paksa) {
         diambil: Date.now(),
         profil: data && data.profil,
         setelan: alatSetelanDariJawaban(data),
+        kinerja: data && data.kinerja,
       });
     } catch {
       baru = tetap();
@@ -6625,7 +6641,7 @@ function alatJagaPemilihBerkasSipp(doc) {
           if (!d.getElementById("popup_msg")) return pulihkan();
           batas = setTimeout(pulihkan, ALAT_PEMILIH_BATAS_MS);
           if (typeof MutationObserver === "function" && d.body) {
-            pengamat = new MutationObserver(() => {
+            pengamat = new (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.Pengamat : MutationObserver)(() => {
               if (selesaiSipp()) pulihkan();
             });
             pengamat.observe(d.body, { childList: true, subtree: true, characterData: true });
@@ -11418,7 +11434,7 @@ function alatPasangGembok(panel, kepala, situs, opsi) {
   });
   alatDengarkanGembok();
   if (pilihan.ringkas !== false) {
-    if (panel.aletaPewaktuRingkas) clearInterval(panel.aletaPewaktuRingkas);
+    if (panel.aletaPewaktuRingkas) (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.hapus : (i) => clearInterval(i))(panel.aletaPewaktuRingkas);
     const periksa = () => {
       let hidup = false;
       try {
@@ -11427,11 +11443,11 @@ function alatPasangGembok(panel, kepala, situs, opsi) {
         hidup = true;
       }
       if (!hidup && panel.aletaPewaktuRingkas) {
-        clearInterval(panel.aletaPewaktuRingkas);
+        (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.hapus : (i) => clearInterval(i))(panel.aletaPewaktuRingkas);
         panel.aletaPewaktuRingkas = 0;
       }
     };
-    panel.aletaPewaktuRingkas = setInterval(periksa, ALAT_RINGKAS_SELANG);
+    panel.aletaPewaktuRingkas = (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.interval : (f, m) => setInterval(f, m))(periksa, ALAT_RINGKAS_SELANG);
     void siap.then(periksa);
     alatPasangTunjukHalus(
       panel,

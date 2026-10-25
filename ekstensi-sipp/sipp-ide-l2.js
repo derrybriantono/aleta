@@ -551,7 +551,7 @@ html[data-aleta-tema-sipp="gelap"] .aleta-sisip.aleta-l2-lima[data-nol]{backgrou
   }
 
   if (typeof MutationObserver === "function" && document.body) {
-    new MutationObserver((daftar) => {
+    new (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.Pengamat : MutationObserver)((daftar) => {
       for (const u of daftar) {
         const berubah = [...Array.from(u.addedNodes || []), ...Array.from(u.removedNodes || [])];
         if (!berubah.length) continue;

@@ -1306,11 +1306,61 @@ function jurusitaKalimatJawaban(jawab, jumlah) {
 
 /* ─── 6a. Putaran (keadaan cetak) ─────────────────────────────────────────── */
 
+/**
+ * K15 (25 Okt 2026): tidak ada putaran di ekstensi ini, tetapi server menyimpan salinan putaran relaas milik akun ini yang
+ * belum selesai (Chrome ditutup di tengah jalan, atau PC lain). Ditawarkan SEKALI per panel: Pulihkan (menjadi putaran
+ * TERTAHAN yang harus dilanjutkan sendiri) atau Buang. Hanya bila Super Admin menyalakan saklar antreanDiServer.
+ */
+async function jurusitaTawarkanPulih(kotak, pantau) {
+  if (kotak.getAttribute("data-pulih-diperiksa")) return;
+  kotak.setAttribute("data-pulih-diperiksa", "1");
+  const A = typeof globalThis !== "undefined" ? globalThis.ALETA_ANTREAN_SERVER : null;
+  if (!A) return;
+  try {
+    await A.tungguSiap();
+    if (!A.aktif()) return;
+    const daftar = await A.tertinggal("relaas-massal");
+    const x = daftar.find((i) => i && i.muatan && i.muatan.pekerjaan && !i.muatan.pekerjaan.selesai);
+    if (!x || !kotak.isConnected || !kotak.hidden) return;
+    kotak.hidden = false;
+    kotak.textContent = "";
+    const kepala = jurusitaEl("div", "aleta-jurusita-putaran-kepala");
+    kepala.appendChild(
+      jurusitaEl("span", "aleta-jurusita-putaran-teks", `Putaran relaas yang terputus ditemukan: ${x.selesai}/${x.total} selesai (${String(x.diubahPada || "").slice(0, 16).replace("T", " ")} UTC).`)
+    );
+    const pulih = jurusitaTombol("Pulihkan", "aleta-jurusita-tombol-kecil");
+    pulih.addEventListener("click", async () => {
+      pulih.disabled = true;
+      const j = await jurusitaKirim("relaas-pulihkan", { pekerjaan: x.muatan.pekerjaan }, JURUSITA_BATAS_PESAN_MS);
+      if (j && j.ok) {
+        jurusitaGambarPutaran(kotak, j, pantau);
+        pantau();
+      } else {
+        pulih.disabled = false;
+        kepala.appendChild(jurusitaEl("div", "aleta-jurusita-kabar aleta-jurusita-kabar-salah", String((j && j.sebab) || "Putaran tidak dapat dipulihkan.")));
+      }
+    });
+    const buang = jurusitaTombol("Buang", "aleta-jurusita-tombol-kecil");
+    buang.addEventListener("click", async () => {
+      buang.disabled = true;
+      await A.akhiri("relaas-massal", x.kunci, "dibuang");
+      kotak.hidden = true;
+      kotak.textContent = "";
+    });
+    kepala.appendChild(pulih);
+    kepala.appendChild(buang);
+    kotak.appendChild(kepala);
+  } catch {
+    /* tambahan: kegagalannya tidak boleh mengganggu panel */
+  }
+}
+
 function jurusitaGambarPutaran(kotak, jawab, pantau) {
   kotak.textContent = "";
   const p = jawab && jawab.pekerjaan;
   if (!p) {
     kotak.hidden = true;
+    void jurusitaTawarkanPulih(kotak, pantau);
     return false;
   }
   kotak.hidden = false;

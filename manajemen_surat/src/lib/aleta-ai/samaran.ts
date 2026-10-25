@@ -171,6 +171,8 @@ export class Penyamar {
   /** Entri yang dibuat sejak penyamar dimuat (untuk disimpan). */
   readonly baru: EntriSamaran[] = [];
   private pola: RegExp | null = null;
+  /** Kamus alias nama (U18): kunci normal setiap nama baku/varian -> nama baku. Kosong = tanpa kamus (bawaan). */
+  private readonly aliasKeBaku = new Map<string, string>();
 
   constructor(entri: readonly EntriSamaran[] = []) {
     for (const e of entri) this.muat(e);
@@ -192,6 +194,22 @@ export class Penyamar {
     this.pola = null;
   }
 
+  /**
+   * Kamus alias nama (U18, rantai B): varian ejaan seorang tokoh diikat ke KODE SAMARAN nama bakunya, jadi
+   * "Muhamad Alwi" dan "Moh. Alwi" menjadi [NAMA-1] yang sama dengan "Muhammad Alwi". Tanpa kamus perilaku tidak berubah.
+   */
+  pakaiAlias(kamus: ReadonlyArray<{ baku: string; varian: readonly string[] }>): void {
+    this.aliasKeBaku.clear();
+    for (const e of kamus) {
+      const baku = String(e?.baku ?? "").replace(/\s+/g, " ").trim();
+      if (!baku) continue;
+      for (const v of [baku, ...(e.varian ?? [])]) {
+        const k = normal(v);
+        if (k.length >= PANJANG_MIN_CARI) this.aliasKeBaku.set(k, baku);
+      }
+    }
+  }
+
   entri(): EntriSamaran[] {
     return [...this.perKode.values()];
   }
@@ -202,6 +220,15 @@ export class Penyamar {
     if (!bersih) return String(asli ?? "");
     const ada = this.perNilai.get(normal(bersih));
     if (ada) return ada.kode;
+    if (jenis === "NAMA" && this.aliasKeBaku.size) {
+      const baku = this.aliasKeBaku.get(normal(bersih));
+      if (baku && normal(baku) !== normal(bersih)) {
+        const kode = this.daftar("NAMA", baku);
+        const tokoh = this.perNilai.get(normal(baku));
+        if (tokoh) this.ikat(bersih, tokoh);
+        return kode;
+      }
+    }
     this.nomor[jenis] += 1;
     const e: EntriSamaran = { kode: `[${jenis}-${this.nomor[jenis]}]`, jenis, asli: bersih };
     this.muat(e);
@@ -231,6 +258,16 @@ export class Penyamar {
     hasil = hasil.replace(POLA_ALAMAT, (m) => this.daftar("ALAMAT", m));
     // Nama dari pola didaftarkan dulu, lalu SEMUA sebutannya (juga yang muncul lebih awal) diganti.
     for (const nama of kenaliNamaBebas(hasil)) this.daftar("NAMA", nama);
+    if (this.aliasKeBaku.size) {
+      const rendah = normal(hasil);
+      for (const k of this.aliasKeBaku.keys()) {
+        if (!rendah.includes(k)) continue;
+        // Hanya bila benar-benar kata utuh di teks (bukan potongan kata lain).
+        const pola = new RegExp(`(?<![\\p{L}\\p{N}])${k.split(" ").map(escapeRegex).join("\\s+")}(?![\\p{L}\\p{N}])`, "iu");
+        const cocok = pola.exec(hasil);
+        if (cocok) this.daftar("NAMA", cocok[0]);
+      }
+    }
     const pola = this.polaNilai();
     if (pola) hasil = hasil.replace(pola, (m) => this.perNilai.get(normal(m))?.kode ?? m);
     return hasil;

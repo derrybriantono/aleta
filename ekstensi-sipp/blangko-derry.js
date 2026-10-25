@@ -2302,7 +2302,7 @@
       // Bilah kiri ABT belum ada (halaman lain, atau belum tergambar): menunggu sebentar.
       if (typeof MutationObserver === "function" && document.body) {
         const batas = setTimeout(() => pengamat && pengamat.disconnect(), 10000);
-        pengamat = new MutationObserver(() => {
+        pengamat = new (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.Pengamat : MutationObserver)(() => {
           try {
             if (!tombolDerry()) return;
             pengamat.disconnect();

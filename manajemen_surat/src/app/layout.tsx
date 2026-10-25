@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import "@/app/globals.css";
 import { DEFAULT_INSTITUTION_LOGO_PATH } from "@/lib/institution-logo";
 import { InstallGate } from "@/components/install/install-gate";
+import { PenandaModeRingan } from "@/components/layout/mode-ringan";
 import { PendengarPasangAplikasi } from "@/components/layout/pasang-aplikasi";
 import { PortalProvider } from "@/lib/app-state";
 import { withBasePath } from "@/lib/base-path";
@@ -48,6 +49,7 @@ export default function RootLayout({
           <PortalProvider>
             <InstallGate />
             <PendengarPasangAplikasi />
+            <PenandaModeRingan />
             {children}
           </PortalProvider>
         </GlobalLoadingProvider>

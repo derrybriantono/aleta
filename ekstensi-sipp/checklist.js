@@ -3978,7 +3978,7 @@
   }
 
   function hentikanJamSd() {
-    if (sd.jam) clearInterval(sd.jam);
+    if (sd.jam) (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.hapus : (i) => clearInterval(i))(sd.jam);
     sd.jam = null;
   }
 
@@ -4003,7 +4003,7 @@
         }
       });
     }
-    if (!sd.jam) sd.jam = setInterval(detakSd, DETAK_SD_MS);
+    if (!sd.jam) sd.jam = (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.interval : (f, m) => setInterval(f, m))(detakSd, DETAK_SD_MS);
     if (!sd.jalan && Date.now() - sd.terakhir >= DETAK_SD_MS - 500) void mintaSumberDaya();
   }
 
@@ -4142,7 +4142,7 @@
   }
 
   function hentikanJamKh() {
-    if (kh.jam) clearInterval(kh.jam);
+    if (kh.jam) (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.hapus : (i) => clearInterval(i))(kh.jam);
     kh.jam = null;
   }
 
@@ -4153,7 +4153,7 @@
       hentikanJamKh();
       return;
     }
-    if (!kh.jam) kh.jam = setInterval(() => aturJamKh(), DETAK_KH_MS);
+    if (!kh.jam) kh.jam = (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.interval : (f, m) => setInterval(f, m))(() => aturJamKh(), DETAK_KH_MS);
     // Detak sumber daya yang hidup membawa kehadiran dalam denyutnya - tidak
     // ada permintaan kedua. Tanpa detak itu (bukan Super Admin): jam sendiri.
     if (sd.jam && !denyut.tidakAda) return;
@@ -4287,7 +4287,7 @@
   }
 
   function hentikanJamH7() {
-    if (h7.jam) clearInterval(h7.jam);
+    if (h7.jam) (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.hapus : (i) => clearInterval(i))(h7.jam);
     h7.jam = null;
   }
 
@@ -4298,7 +4298,7 @@
       hentikanJamH7();
       return;
     }
-    if (!h7.jam) h7.jam = setInterval(() => aturJamH7(), DETAK_H7_MS);
+    if (!h7.jam) h7.jam = (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.interval : (f, m) => setInterval(f, m))(() => aturJamH7(), DETAK_H7_MS);
     if (!h7.jalan && Date.now() - h7.terakhir >= DETAK_H7_MS - 500) void mintaDrafH7();
   }
 
@@ -4957,13 +4957,13 @@
   function aturSkorsPortal() {
     const perlu = Boolean(bayang && bayang.querySelector(".aleta-cmw-skors") && akar && akar.isConnected);
     if (!perlu) {
-      if (jamSkors) clearInterval(jamSkors);
+      if (jamSkors) (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.hapus : (i) => clearInterval(i))(jamSkors);
       jamSkors = null;
       return;
     }
     if (Date.now() - skorsPortal.diterima >= SKORS_SEGAR_MS) void muatSkorsPortal();
     if (jamSkors) return;
-    jamSkors = setInterval(() => {
+    jamSkors = (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.interval : (f, m) => setInterval(f, m))(() => {
       if (!bayang || !bayang.querySelector(".aleta-cmw-skors") || !akar || !akar.isConnected) return aturSkorsPortal();
       if (Date.now() - skorsPortal.diterima >= SKORS_SEGAR_MS) void muatSkorsPortal();
       else gambarUlangBlokSkors();
@@ -4975,12 +4975,12 @@
     const b = keadaan.lamaSidang.berjalan;
     const perlu = Boolean(bayang && bayang.querySelector(".aleta-cmw-jam") && b && !b.skorsSejak && akar && akar.isConnected);
     if (!perlu) {
-      if (jamSidang) clearInterval(jamSidang);
+      if (jamSidang) (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.hapus : (i) => clearInterval(i))(jamSidang);
       jamSidang = null;
       return;
     }
     if (jamSidang) return;
-    jamSidang = setInterval(() => {
+    jamSidang = (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.interval : (f, m) => setInterval(f, m))(() => {
       const kini = keadaan.lamaSidang.berjalan;
       if (!bayang || !kini || kini.skorsSejak) return aturJamSidang();
       for (const j of Array.from(bayang.querySelectorAll(".aleta-cmw-jam"))) j.textContent = formatDurasi(lamaBerjalan(kini));
@@ -6585,9 +6585,9 @@
     if (jamCatatan) simpanCatatan();
     if (jamTunda) clearTimeout(jamTunda);
     jamTunda = null;
-    if (jamSidang) clearInterval(jamSidang);
+    if (jamSidang) (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.hapus : (i) => clearInterval(i))(jamSidang);
     jamSidang = null;
-    if (jamSkors) clearInterval(jamSkors);
+    if (jamSkors) (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.hapus : (i) => clearInterval(i))(jamSkors);
     jamSkors = null;
     if (akar) akar.remove();
   }
@@ -6771,7 +6771,7 @@
 
   function mulaiJam() {
     if (jamBerkala) return;
-    jamBerkala = setInterval(() => {
+    jamBerkala = (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.interval : (f, m) => setInterval(f, m))(() => {
       if (!akar || !akar.isConnected) return;
       // Tab di belakang tidak meminta apa pun: lima tab SIPP yang terbuka
       // berarti lima permintaan tiap lima menit untuk layar yang tidak dilihat
@@ -6785,7 +6785,7 @@
   }
 
   function hentikanJam() {
-    if (jamBerkala) clearInterval(jamBerkala);
+    if (jamBerkala) (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.hapus : (i) => clearInterval(i))(jamBerkala);
     jamBerkala = null;
   }
 
@@ -7050,7 +7050,7 @@
   // dipasang kembali.
   if (JENIS === "portal") {
     let jalurTerakhir = location.pathname;
-    setInterval(() => {
+    (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.denyut : (f, m) => setInterval(f, m))(() => {
       const pindah = location.pathname !== jalurTerakhir;
       jalurTerakhir = location.pathname;
       if (pindah || (bolehTampilWidget() && akar && !akar.isConnected)) evaluasi();

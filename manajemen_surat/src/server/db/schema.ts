@@ -1527,6 +1527,57 @@ export const DDL_ISIAN_SIDANG = {
 } as const;
 
 /**
+ * Kamus alias nama pihak (0100, 25 Okt 2026, rantai B / U18). Cermin PERSIS dari drizzle/0100_aleta_alias_nama.sql;
+ * penjaga alias-nama-25okt.test.ts membandingkan keduanya. Tanpa kunci asing dan tanpa CHECK: nilai sah dijaga
+ * modul alias-nama.ts.
+ */
+export const DDL_ALIAS_NAMA = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_alias_nama (
+  id TEXT PRIMARY KEY,
+  baku TEXT NOT NULL,
+  varian TEXT NOT NULL,
+  baku_kunci TEXT NOT NULL,
+  varian_kunci TEXT NOT NULL,
+  sumber TEXT NOT NULL DEFAULT 'manual',
+  dibuat_oleh TEXT NOT NULL DEFAULT '',
+  dibuat_pada TEXT NOT NULL,
+  diubah_pada TEXT NOT NULL
+)`,
+  ],
+  indeks: [
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_alias_nama_unik ON aleta_alias_nama(baku_kunci, varian_kunci)`,
+    `CREATE INDEX IF NOT EXISTS idx_alias_nama_varian ON aleta_alias_nama(varian_kunci)`,
+  ],
+} as const;
+
+/**
+ * Antrean kerja peramban di basis data (0098, 25 Okt 2026, rantai B / K15): salinan keadaan antrean
+ * cetak massal, relaas massal, dan catatan putusan terjadwal. Cermin PERSIS dari
+ * drizzle/0098_aleta_antrean_peramban.sql; penjaga antrean-peramban-25okt.test.ts membandingkan keduanya.
+ * Tanpa kunci asing dan tanpa CHECK: nilai sah dijaga modul antrean-peramban.ts.
+ */
+export const DDL_ANTREAN_PERAMBAN = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_antrean_peramban (
+  pengguna_id TEXT NOT NULL,
+  jenis TEXT NOT NULL,
+  kunci TEXT NOT NULL,
+  perangkat TEXT NOT NULL DEFAULT '',
+  ringkas TEXT NOT NULL DEFAULT '',
+  selesai INTEGER NOT NULL DEFAULT 0,
+  total INTEGER NOT NULL DEFAULT 0,
+  muatan_json TEXT NOT NULL DEFAULT '{}',
+  status TEXT NOT NULL DEFAULT 'jalan',
+  dibuat_pada TEXT NOT NULL,
+  diubah_pada TEXT NOT NULL,
+  PRIMARY KEY (pengguna_id, jenis, kunci)
+)`,
+  ],
+  indeks: [`CREATE INDEX IF NOT EXISTS idx_antrean_peramban_status ON aleta_antrean_peramban(pengguna_id, status)`],
+} as const;
+
+/**
  * Unggah Putusan Terjadwal (0080, 21 Okt 2026, agen B3): jadwal, butir (satu
  * perkara), berkas yang diunggah, dan jejak jujur. Cermin PERSIS dari
  * drizzle/0080_aleta_putusan_terjadwal.sql; penjaga putusan-terjadwal-layanan-21okt.test.ts
@@ -3168,6 +3219,10 @@ const schemaStatements = [
   ...DDL_ALETA_AI.tabel,
   // ALETA Ai tahap 4: kuota hibah per peran, rekonsiliasi harian (0088).
   ...DDL_ALETA_AI_DOMPET.tabel,
+  // Antrean kerja peramban di basis data (0098, rantai B / K15).
+  ...DDL_ANTREAN_PERAMBAN.tabel,
+  // Kamus alias nama pihak (0100, rantai B / U18).
+  ...DDL_ALIAS_NAMA.tabel,
   // Jejak isian dan butir saksi (0091, rantai C): usulan vs final, nilai sebelum untuk Urungkan.
   ...DDL_JEJAK_ISIAN.tabel,
   // Ketepatan isian (0092, rantai D): angka lapangan bulanan dan keputusan naik/turun gerbang.
@@ -5160,6 +5215,8 @@ const indexStatements = [
   ...DDL_TAUTAN_JADWAL.indeks,
   ...DDL_ALETA_AI.indeks,
   ...DDL_ALETA_AI_DOMPET.indeks,
+  ...DDL_ANTREAN_PERAMBAN.indeks,
+  ...DDL_ALIAS_NAMA.indeks,
   ...DDL_JEJAK_ISIAN.indeks,
   ...DDL_KETEPATAN_ISIAN.indeks,
   ...DDL_BLANGKO_LAPOR.indeks,

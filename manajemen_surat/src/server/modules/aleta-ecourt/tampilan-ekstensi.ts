@@ -26,6 +26,7 @@ import { type AletaDatabase, withTransaction } from "@/server/db/client";
 import { bolehMenyuntingAkses } from "@/server/modules/aleta-ecourt/akses";
 import { profilUntukPengguna, type ProfilPengguna } from "@/server/modules/aleta-ecourt/profil-saklar";
 import { getUsersFromDb, requireActorUser } from "@/server/modules/organization/service";
+import { bacaKinerja } from "@/server/modules/aleta-ecourt/kinerja-ekstensi";
 import { appendAuditLog } from "@/server/shared/audit";
 import { ApiError } from "@/server/shared/errors";
 import { nextPrefixedId } from "@/server/shared/ids";
@@ -192,6 +193,8 @@ export async function tampilanUntukPengguna(
     versi: versiTampilan(tampilan, profil),
     profil,
     setelan: await bacaSetelanPengguna(db, pengguna.id),
+    // Saklar kinerja Super Admin (rantai B, 25 Okt 2026); semua mati bila belum pernah diatur.
+    kinerja: await bacaKinerja(db),
     keteranganSetelan: keteranganSetelan(),
     dibuatPada: new Date().toISOString(),
   };
@@ -218,6 +221,12 @@ export async function simpanSetelanPengguna(
     throw new ApiError(400, `Kunci setelan tidak diizinkan. Yang diizinkan: ${KUNCI_SETELAN.join(", ")}.`);
   }
   const kunci = masukan.kunci;
+
+  // Rantai B (U16): setelan lintas PC hanya berlaku bila Super Admin menyalakan saklar kinerja.konteksDiServer.
+  // Menghapus (nilai null) tetap diizinkan supaya pengguna dapat membersihkan sisa.
+  if ((kunci === "konteks.perkara" || kunci === "perangkat.versi") && masukan.nilai !== null && !(await bacaKinerja(db)).konteksDiServer) {
+    throw new ApiError(409, "Sinkron perkara terakhir dan versi ekstensi antar PC belum dinyalakan Super Admin.");
+  }
 
   let normal: ReturnType<typeof normalkanSetelan> | null = null;
   if (masukan.nilai !== null) {
