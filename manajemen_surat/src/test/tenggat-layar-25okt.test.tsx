@@ -68,7 +68,7 @@ afterEach(() => {
 });
 
 describe("TenggatLayar", () => {
-  it("rangkuman, baris, dan hitung mundur tampil; aturan baru bertanda dasar belum diperiksa", async () => {
+  it("rangkuman, baris, dan hitung mundur tampil; aturan baru berdasar sudah diperiksa Derry (tanpa lencana belum diperiksa)", async () => {
     tiruFetch(data());
     render(<TenggatLayar />);
     await waitFor(() => expect(screen.getByText("1/Pdt.G/2026/PA.Dgl")).toBeTruthy());
@@ -78,10 +78,18 @@ describe("TenggatLayar", () => {
     // hitung mundur dan batas
     expect(screen.getByText(/tinggal 2 hari \(batas 28-10-2026\)/)).toBeTruthy();
     expect(screen.getByText(/tinggal 14 hari \(batas 09-11-2026\)/)).toBeTruthy();
-    expect(screen.getAllByText(/dasar belum diperiksa/i).length).toBeGreaterThan(0);
-    // dasar tiap aturan tertulis, dengan tanda
-    expect(screen.getAllByText(/\[PERLU VERIFIKASI Derry\]/).length).toBe(ATURAN_BARU.length);
+    expect(screen.queryAllByText(/dasar belum diperiksa/i).length).toBe(0);
+    // dasar tiap aturan tertulis, dengan catatan sudah diperiksa Derry 26 Okt 2026
+    expect(screen.queryAllByText(/PERLU VERIFIKASI/).length).toBe(0);
+    expect(screen.getAllByText(/diperiksa Derry 26 Okt 2026/).length).toBe(ATURAN_BARU.length);
     for (const a of ATURAN_TENGGAT.slice(0, 1)) expect(screen.getAllByText(new RegExp(a.judul.slice(0, 12))).length).toBeGreaterThan(0);
+  });
+
+  it("aturan yang dasarnya memang belum diperiksa tetap berlencana (lencana tidak dihapus, hanya aturan G1 yang lolos)", async () => {
+    tiruFetch(data({ aturan: [{ kode: "contoh", judul: "Aturan contoh", dasar: "Dasar contoh", perluVerifikasi: true }] }));
+    render(<TenggatLayar />);
+    await waitFor(() => expect(screen.getByText("1/Pdt.G/2026/PA.Dgl")).toBeTruthy());
+    expect(screen.getAllByText(/dasar belum diperiksa/i).length).toBeGreaterThan(0);
   });
 
   it("saringan tingkat dan majelis mengurangi baris", async () => {

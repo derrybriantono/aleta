@@ -342,7 +342,7 @@ async function anonimisasiHilang(acuan) {
  * tujuh aturan di atas persis seperti sebelumnya.
  *
  * Semua pembaca di bagian ini juga HANYA MEMBACA. Dasar hukum tiap aturan ditulis di mesin aturan portal
- * (src/lib/penjaga-tenggat.ts) dengan tanda [PERLU VERIFIKASI Derry]; di sini hanya tertulis angka yang
+ * (src/lib/penjaga-tenggat.ts) dengan catatan "diperiksa Derry 26 Okt 2026"; di sini hanya tertulis angka yang
  * dipakai kueri.
  */
 

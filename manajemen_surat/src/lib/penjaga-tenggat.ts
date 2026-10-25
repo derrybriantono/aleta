@@ -72,11 +72,13 @@ export const CAKRAWALA_BULAN = 24;
 export const STATUS_DIKABULKAN = 62;
 
 /**
- * Tanda yang WAJIB menempel pada dasar hukum setiap aturan baru (G1, 25 Okt 2026) sampai Derry memeriksanya.
- * Aturan bertanda ini tampil di layar Tenggat dengan lencana "belum diperiksa", dan TIDAK ikut pengingat
- * WhatsApp sebelum Super Admin memasukkannya ke daftar aturan pengingat (tutup ganda yang disengaja).
+ * Catatan pemeriksaan dasar hukum aturan baru (G1). Tadinya setiap aturan bertanda "[PERLU VERIFIKASI Derry]"
+ * (25 Okt 2026); Derry memeriksa dan menyetujui dasarnya pada 26 Okt 2026, jadi tandanya diganti catatan ini
+ * dan lencana "dasar belum diperiksa" di layar Tenggat tidak muncul lagi. Aturan baru TETAP tidak ikut
+ * pengingat WhatsApp sebelum Super Admin memasukkannya ke daftar aturan pengingat (tutup ganda yang disengaja,
+ * saklar jadwal dan pengingat tetap mati bawaan).
  */
-export const TANDA_VERIFIKASI = "[PERLU VERIFIKASI Derry]";
+export const CATATAN_DIPERIKSA = "(diperiksa Derry 26 Okt 2026)";
 
 /**
  * Tingkat butir. "berjalan" HANYA muncul bila pemanggil meminta hitung mundur (layar Tenggat): masa hak
@@ -141,7 +143,7 @@ export type Butir = {
   panitera: string;
   jurusita: string;
   mediator: string;
-  /** Aturannya masih bertanda [PERLU VERIFIKASI Derry]. */
+  /** Dasar hukumnya belum diperiksa Derry (aturan G1 sudah diperiksa 26 Okt 2026, jadi salah). */
   perluVerifikasi: boolean;
   /** Hitungan belum dimulai (pemberitahuan putusan belum tercatat). */
   menunggu: boolean;
@@ -183,7 +185,7 @@ export type Aturan = {
    */
   masaHak?: boolean;
   jendelaCatatanHari?: number;
-  /** Aturan baru yang dasar hukumnya belum diperiksa Derry (lihat TANDA_VERIFIKASI). */
+  /** Dasar hukum belum diperiksa Derry. Aturan G1 sudah diperiksa 26 Okt 2026 (lihat CATATAN_DIPERIKSA). */
   perluVerifikasi?: boolean;
   /** Sebut hari terakhirnya pada tiap baris laporan ("batas 29-10-2026"). */
   tampilBatas?: boolean;
@@ -300,18 +302,18 @@ export const ATURAN_TENGGAT: Aturan[] = [
  * layar Tenggat (opsi.aturan = SEMUA_ATURAN).
  *
  * HUKUM ACARA: Pengadilan Agama di luar Jawa-Madura memakai RBg, BUKAN HIR. Semua dasar di bawah ditulis
- * apa adanya dari ingatan pengembang dan WAJIB diperiksa Derry (${TANDA_VERIFIKASI}) sebelum aturannya
- * dimasukkan ke pengingat WhatsApp. Angka hari TIDAK diukur atas SIPP (SIPP mati sampai 26 Okt) - skrip ukur
+ * apa adanya dan sudah diperiksa Derry 26 Okt 2026 (lihat CATATAN_DIPERIKSA);
+ * aturannya tetap hanya masuk pengingat WhatsApp bila Super Admin memilihnya. Angka hari TIDAK diukur atas SIPP (SIPP mati sampai 26 Okt) - skrip ukur
  * dijalankan di laptop (lihat laporan-rantai-G).
  */
 export const ATURAN_BARU: Aturan[] = [
   {
     kode: "banding-14-hari",
     judul: "Masa banding 14 hari",
-    // [PERLU VERIFIKASI Derry] Pasal 199 RBg: permohonan banding dalam 14 hari sejak putusan diucapkan, atau
+    // Pasal 199 RBg: permohonan banding dalam 14 hari sejak putusan diucapkan, atau
     // sejak diberitahukan bagi pihak yang tidak hadir (Pasal 7 UU 20/1947 untuk Jawa-Madura). Cara hitung
     // per pihak mengikuti appealDeadlineService (aturan lama, tidak digandakan).
-    dasar: "Pasal 199 RBg - 14 hari sejak putusan diucapkan, atau sejak diberitahukan bagi pihak yang tidak hadir " + TANDA_VERIFIKASI,
+    dasar: "Pasal 199 RBg - 14 hari sejak putusan diucapkan, atau sejak diberitahukan bagi pihak yang tidak hadir " + CATATAN_DIPERIKSA,
     batasHari: 14,
     // Hanya 3 hari terakhir yang masuk pengingat; sisanya tampil sebagai "berjalan" di layar Tenggat.
     peringatanHari: 3,
@@ -321,16 +323,16 @@ export const ATURAN_BARU: Aturan[] = [
     masaHak: true,
     // Putusan lebih dari 30 hari sesudah masa berakhir dan belum BHT adalah urusan lain (BHT/akta), bukan catatan masa banding.
     jendelaCatatanHari: 30,
-    perluVerifikasi: true,
+    perluVerifikasi: false,
     tampilBatas: true,
   },
   {
     kode: "kasasi-14-hari",
     judul: "Masa kasasi 14 hari",
-    // [PERLU VERIFIKASI Derry] Pasal 46 ayat (1) UU 14/1985 jo UU 5/2004 jo UU 3/2009: 14 hari sejak putusan
+    // Pasal 46 ayat (1) UU 14/1985 jo UU 5/2004 jo UU 3/2009: 14 hari sejak putusan
     // (banding) diberitahukan kepada pemohon kasasi. Hitungan memakai tanggal pemberitahuan putusan banding
     // di SIPP; tanpa tanggal itu hanya catatan "belum berjalan".
-    dasar: "Pasal 46 ayat (1) UU 14/1985 jo UU 3/2009 - 14 hari sejak putusan banding diberitahukan " + TANDA_VERIFIKASI,
+    dasar: "Pasal 46 ayat (1) UU 14/1985 jo UU 3/2009 - 14 hari sejak putusan banding diberitahukan " + CATATAN_DIPERIKSA,
     batasHari: 14,
     peringatanHari: 3,
     tindakan:
@@ -338,22 +340,22 @@ export const ATURAN_BARU: Aturan[] = [
     hanyaDikabulkan: false,
     masaHak: true,
     jendelaCatatanHari: 30,
-    perluVerifikasi: true,
+    perluVerifikasi: false,
     tampilBatas: true,
   },
   {
     kode: "mediasi-30-hari",
     judul: "Mediasi melewati 30 hari tanpa laporan mediator",
-    // [PERLU VERIFIKASI Derry] Pasal 24 ayat (2) PERMA 1/2016: 30 hari sejak penetapan perintah melakukan
+    // Pasal 24 ayat (2) PERMA 1/2016: 30 hari sejak penetapan perintah melakukan
     // mediasi (di sini: penetapan penunjukan mediator di SIPP). Ayat (3) memungkinkan perpanjangan atas
     // kesepakatan para pihak - perpanjangan TIDAK terbaca dari SIPP, jadi butir ini hanya mengingatkan.
-    dasar: "Pasal 24 ayat (2) PERMA 1/2016 - 30 hari sejak penetapan mediator (perpanjangan tidak terbaca dari SIPP) " + TANDA_VERIFIKASI,
+    dasar: "Pasal 24 ayat (2) PERMA 1/2016 - 30 hari sejak penetapan mediator (perpanjangan tidak terbaca dari SIPP) " + CATATAN_DIPERIKSA,
     // Harus sama dengan sippJadwalSidangService.BATAS_MEDIASI_HARI (dijaga uji).
     batasHari: 30,
     peringatanHari: 7,
     tindakan: "Minta laporan mediator, atau pastikan ada penetapan perpanjangan mediasi.",
     hanyaDikabulkan: false,
-    perluVerifikasi: true,
+    perluVerifikasi: false,
     tampilBatas: true,
   },
 ];

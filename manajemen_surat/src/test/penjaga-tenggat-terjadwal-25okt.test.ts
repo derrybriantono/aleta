@@ -13,7 +13,7 @@ import {
   PETA_SEMUA_ATURAN,
   SEMUA_ATURAN,
   STATUS_DIKABULKAN,
-  TANDA_VERIFIKASI,
+  CATATAN_DIPERIKSA,
   nilaiTenggat,
   susunLaporanHarian,
   type FaktaTenggat,
@@ -68,11 +68,13 @@ function fakta(ubah: Partial<FaktaTenggat> = {}): FaktaTenggat {
 describe("aturan baru G1 - banding 14 hari per pihak, kasasi 14 hari, mediasi 30 hari", () => {
   const nilai = (f: Record<string, FaktaTenggat[]>, hitungMundur = false, hari = HARI) => nilaiTenggat(f, hari, { aturan: SEMUA_ATURAN, hitungMundur });
 
-  it("semua aturan baru bertanda [PERLU VERIFIKASI Derry] di dasarnya dan perluVerifikasi benar; aturan lama tidak berubah", () => {
+  it("semua aturan baru bercatatan diperiksa Derry 26 Okt 2026 (tanpa tanda belum diperiksa); aturan lama tidak berubah", () => {
     expect(ATURAN_BARU.map((a) => a.kode)).toEqual(["banding-14-hari", "kasasi-14-hari", "mediasi-30-hari"]);
     for (const a of ATURAN_BARU) {
-      expect(a.dasar).toContain(TANDA_VERIFIKASI);
-      expect(a.perluVerifikasi).toBe(true);
+      expect(a.dasar).toContain(CATATAN_DIPERIKSA);
+      expect(a.dasar).toContain("diperiksa Derry 26 Okt 2026");
+      expect(a.dasar).not.toContain("PERLU VERIFIKASI");
+      expect(a.perluVerifikasi).toBe(false);
     }
     for (const a of ATURAN_TENGGAT) expect(a.perluVerifikasi).toBeUndefined();
     expect(ATURAN_TENGGAT.map((a) => a.kode)).toEqual([
@@ -150,7 +152,7 @@ describe("aturan baru G1 - banding 14 hari per pihak, kasasi 14 hari, mediasi 30
 
   it("kasasi: batas 14 hari sejak pemberitahuan putusan banding", () => {
     const r = nilai({ "kasasi-14-hari": [fakta({ tanggalAcuan: "2026-10-14", tanggalBatas: "2026-10-28", dasarMulai: "pemberitahuan", pasti: true })] });
-    expect(r.butir[0]).toMatchObject({ aturan: "kasasi-14-hari", tingkat: "menjelang", selisihHari: -2, perluVerifikasi: true });
+    expect(r.butir[0]).toMatchObject({ aturan: "kasasi-14-hari", tingkat: "menjelang", selisihHari: -2, perluVerifikasi: false });
   });
 
   it("mediasi: lewat 30 hari = LEWAT (kewajiban petugas), 4 hari lagi = menjelang, 9 hari = berjalan", () => {

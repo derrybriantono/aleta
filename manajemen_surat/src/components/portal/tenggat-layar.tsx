@@ -372,7 +372,7 @@ export function TenggatLayar() {
         <p className="font-medium">Dasar tiap aturan</p>
         {aturanBelumDiperiksa.length > 0 ? (
           <p className="mt-1 text-muted-foreground">
-            Aturan bertanda &quot;dasar belum diperiksa&quot; ditulis dari ingatan pengembang dan menunggu pemeriksaan Derry; belum ikut pengingat WhatsApp sampai Super Admin memilihnya.
+            Aturan bertanda &quot;dasar belum diperiksa&quot; menunggu pemeriksaan; belum ikut pengingat WhatsApp sampai Super Admin memilihnya.
           </p>
         ) : null}
         <ul className="mt-2 flex flex-col gap-1">

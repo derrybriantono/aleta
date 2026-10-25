@@ -7,8 +7,8 @@
  *
  *   1. SETELAN: saklar jadwal harian dan saklar pengingat WhatsApp. KEDUANYA MATI bawaan. Pengingat
  *      WhatsApp hanya jalan bila jadwal juga menyala, dan hanya untuk aturan yang tercantum di
- *      `aturanPengingat` (bawaan: tujuh aturan lama; tiga aturan baru bertanda [PERLU VERIFIKASI Derry]
- *      harus dimasukkan Super Admin sesudah Derry memeriksa dasar hukumnya).
+ *      `aturanPengingat` (bawaan: tujuh aturan lama; tiga aturan baru, dasar hukumnya sudah diperiksa Derry
+ *      26 Okt 2026, harus dimasukkan Super Admin sendiri bila pengingatnya mau dinyalakan).
  *   2. PENERIMA PRIBADI: satu orang hanya menerima perkara yang NAMANYA tercantum sebagai majelis,
  *      panitera pengganti, jurusita (atau mediator). Tidak ada "gagal-terbuka" seperti layar: bila namanya
  *      tidak tercantum di perkara mana pun, ia tidak menerima apa-apa. Pesan WhatsApp ke orang yang salah
