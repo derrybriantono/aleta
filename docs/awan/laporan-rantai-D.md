@@ -9,11 +9,11 @@ Dikerjakan di laptop (worktree `w76`), bukan di awan. Dasar: `origin/fitur/jejak
 | D1 | `fitur/ketepatan-isian` | `cef626ec` (isi: `4cddf4cc`) | U3 + U4 |
 | D2 | `fitur/tutup-isian-manual` | `2a47b645` | U11 |
 | D3 | `fitur/wajib-sebelum-cetak` | `7e7e2ee4` | U13 |
-| D4 | `fitur/huruf-alasan-belajar` | `3f53fd0d` | U14 |
-| D5 | `fitur/sebutan-pihak` | `1d023403` | U15 |
-| D6 | `fitur/isian-per-sidang` | tip cabang ini (isi: `57e34f6f`, ditambah commit laporan) | U12 |
+| D4 | `fitur/huruf-alasan-belajar` | `cbcd82ab` (isi: `3f53fd0d`) | U14 |
+| D5 | `fitur/sebutan-pihak` | `014c3307` (merge perbaikan D4; isi: `1d023403`) | U15 |
+| D6 | `fitur/isian-per-sidang` | tip cabang ini (merge `5223922b`; isi: `57e34f6f`; ditambah commit laporan) | U12 |
 
-`cef626ec` hanya memendekkan satu langkah panduan agar lolos uji batas 400 huruf (uji itu baru ketahuan di D2); D2-D6 sudah dibangun di atasnya.
+`cef626ec` hanya memendekkan satu langkah panduan agar lolos uji batas 400 huruf (uji itu baru ketahuan di D2); D2-D6 sudah dibangun di atasnya. `cbcd82ab` memperbaiki kode isian yang tertulis telanjang di teks tampil D4 (ketahuan uji penuh); karena cabang sudah di-push, perbaikannya DIGABUNG ke D5 dan D6 (merge, tanpa force-push), bukan ditulis ulang. `ekstensi-berkas.ts` ditanam ulang di tiap merge.
 
 ## Saklar baru (Fitur Satker; semuanya bawaan MATI, mati = perilaku lama persis)
 
@@ -63,7 +63,7 @@ Uji ekstensi menjalankan `blangko-derry-isian.js` dan kawan-kawannya SUNGGUHAN d
 
 Catatan uji tidak stabil (bukan dari rantai D): `jejak-isian-25okt` "retensi 2 tahun ... penyimpanan sendiri ikut membersihkan sesekali" menunggu 50 ms untuk pembersihan latar dan sempat merah sekali saat mesin sibuk; hijau pada ulangan.
 
-Hasil uji penuh (`periksa-uji.mjs`): lihat bagian paling bawah.
+Hasil uji penuh (`periksa-uji.mjs`): lihat bagian "Uji penuh" di bawah.
 
 ## Yang perlu dikerjakan di laptop/server sesudah gabung
 
@@ -85,3 +85,20 @@ Hasil uji penuh (`periksa-uji.mjs`): lihat bagian paling bawah.
 6. **D5**: jenis perlawanan/bantahan dikenali dari nama jenis atau kode register nomor perkara (`Pdt.Plw`, `Pdt.Bth`); `alur_perkara_id`/`jenis_perkara_id` SIPP-nya belum diketahui. Mohon dicek di SIPP Donggala begitu ada perkara perlawanan/bantahan; bila SIPP memakai id khusus, tambahkan di `sebutan-pihak.ts` dan ketiga salinannya.
 7. **D6 hanya BAS** (putusan dan relaas tidak memakai lapisan ini) dan hanya isian teks/tanggal; tanya-jawab saksi dan isian multi-sidang sudah per sidang di ABT. Pratinjau tetap memakai isi ABT saat ini (bukan isian sidang); hanya cetak (dan cetak massal) yang menerapkan isian sidang. Perlu diputuskan apakah pratinjau juga harus per sidang.
 8. Skrip `lint:jangan-bertambah` mencatat banyak baris "BARU" pada berkas lain (catatan utang di dasar C1 tertinggal); mohon `--rapatkan` oleh sesi utama sesudah gabung.
+
+## Uji penuh (sekali, di ujung D6)
+
+`ALETA_UJI_TMP=D:\Aplikasi\aleta\tmp\ujiRD ALETA_UJI_UTAS=2 node scripts/periksa-uji.mjs` dari `manajemen_surat/` di `w76`, dijalankan baru setelah folder `ujiRC`/`ujiRE`/`ujiRB` tenang 5 menit dan memori bebas >= 3 GB (menunggu sekitar 70 menit karena uji penuh rantai B). Sebelum perbaikan D4: 958 berkas, 943 hijau, 13 merah; 18.024 uji, 17.991 lulus, 13 gagal. Log: `D:\aleta-dev\kerja\hasil-vitest-2026-10-25T17-24-54-757Z.txt`. Tidak ada berkas habis waktu. Tidak ada yang diulang dalam rangkaian penuh; 13 berkas itu saya periksa terpisah:
+
+| Berkas merah | Sebab | Keadaan |
+| :--- | :--- | :--- |
+| `docx-tabel-gambar`, `eviden-skp-cetak`, `xlsx-lembar-bebas` | `public/mahkamah-agung-logo.png` tidak ikut ke worktree baru (berkas tak terlacak) | hijau sesudah disalin dari `w33` (tidak di-commit) |
+| `w2a-kebendaan`, `w3b-blangko-baru-21okt` | `abt-paket/` tak terlacak tidak ikut ke worktree baru | hijau sesudah disalin dari `w33` (tidak di-commit) |
+| `ekstensi-isian-tanpa-kode-tampil-18okt` | **salah rantai D** (D4): literal `data-ambil="8503"` di teks tampil | diperbaiki `cbcd82ab`, hijau |
+| `performa-denyut-susulan-19okt`, `blangko-derry-isi-otomatis-19okt` | merah hanya pada putaran penuh (waktu/beban mesin) | hijau saat dijalankan sendiri (7 dan 52 uji) |
+| `bawaan-abt-itsbat-18okt` (3 uji), `elitigasi-7139-otomatis-17okt` (1 uji) | **sudah merah di dasar C1**: kode C1 memakai `konteksJejak` di jalur simpan, sedangkan harness uji lama mengiris sumber tanpa peubah itu sehingga penyimpanan tertelan galat. Bukan dari rantai D | tidak diubah (urusan rantai C; perbaikan = beri harness peubah `konteksJejak`) |
+| `root-redirect` (2 uji) | mengarah ke `/setup` (bergantung keadaan basis data lokal), tidak disentuh rantai D | tetap merah, di luar rantai D |
+| `tema-ecourt-23okt` (1 uji) | menuntut versi manifest `1.205.38`, dasar sudah `1.205.39`; tidak disentuh rantai D | tetap merah, di luar rantai D |
+| `alamat-desa-ketik-22okt` (1 uji) | batas "pencarian < 5 ms" terlampaui saat mesin sibuk | tetap merah di laptop ini, di luar rantai D |
+
+Jadi sesudah perbaikan, merah yang tersisa (9 uji di 5 berkas: `bawaan-abt-itsbat-18okt`, `elitigasi-7139-otomatis-17okt`, `root-redirect`, `tema-ecourt-23okt`, `alamat-desa-ketik-22okt`) ada tanpa rantai D; rantai D tidak menambah merah. Keterangan "sudah merah di dasar C1" untuk dua berkas pertama disimpulkan dari kode (`git show origin/fitur/jejak-isian`: jalur simpan memakai `konteksJejak`, kedua uji tidak menyediakannya), bukan dari menjalankan ulang dasar C1.
