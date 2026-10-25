@@ -64,6 +64,9 @@ export type FiturKatalog = {
   bawaan: StatusFitur;
 };
 
+/** Saklar C3/U7 (25 Okt 2026): tombol cerai lama di ABT memanggil mesin katalog; bawaan MATI. */
+export const FITUR_MESIN_SAKSI_TUNGGAL = "mesin-saksi-tunggal";
+
 /** Saklar tahap awal Blangko Saya (18 Okt 2026): mati = hanya Super Admin; menyala = semua peran yang berhak. */
 export const FITUR_BLANGKO_SAYA_SEMUA_PERAN = "blangko-saya-semua-peran";
 
@@ -109,6 +112,14 @@ export const KATALOG_FITUR_SATKER: readonly FiturKatalog[] = [
     bagian: "portal",
     keterangan:
       "Mati: tidak ada yang dicatat. Nyalakan agar susun saksi dan Blangko Derry mencatat usulan versus hasil akhir (dasar ukuran ketepatan), isian dibaca ulang dari ABT sesudah disimpan, dan Urungkan dapat dijalankan dari PC mana pun. Disimpan 2 tahun di server kantor.",
+    bawaan: "mati",
+  },
+  {
+    kode: FITUR_MESIN_SAKSI_TUNGGAL,
+    nama: "Mesin saksi tunggal (tombol cerai lama memakai mesin katalog)",
+    bagian: "ekstensi",
+    keterangan:
+      "Mati: tombol Susun keterangan saksi 1 & 2 di ABT memakai bank templat ABT dan mesin lama. Nyalakan agar tombol itu memanggil mesin katalog yang sama dengan Susun saksi (2-5 saksi Penggugat, 4 Tergugat, 7 jenis keterangan) lengkap dengan alat sunting baris; bank templat ABT tetap dapat dipilih lewat tautan Cara lama.",
     bawaan: "mati",
   },
   portal("putusan-advance", "Putusan Advance", "Draf putusan lengkap oleh konseptor dan hakim."),

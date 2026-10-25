@@ -4787,6 +4787,9 @@ function susunPanelAbt(jatiDiri) {
           halamanTanyaJawab: () => halamanTanyaJawab(),
           t6Aktif: () => t6Aktif(),
           bolehAbt: (kunci) => bolehAbt(kunci),
+          // C3/U7: alat sunting baris + tautan "Cara lama" hanya bila saklar mesin-saksi-tunggal menyala.
+          mesinTunggal: () => (globalThis.AletaSaklarFitur ? globalThis.AletaSaklarFitur.segera("mesin-saksi-tunggal") === true : false),
+          caraLama: () => void jalankanSdgLama(),
         })
       : { tombol: null, wadah: null };
   if (susunKatalog.tombol) tombolBaris.appendChild(susunKatalog.tombol);
@@ -6790,7 +6793,30 @@ function susunPanelAbt(jatiDiri) {
     });
   }
 
+  // C3/U7 (25 Okt 2026): saklar Fitur Satker "mesin-saksi-tunggal" (bawaan MATI). Menyala dan jenis perkaranya punya katalog:
+  // tombol ini memanggil mesin katalog yang sama dengan "Susun saksi menurut keadaan perkara" (borang saksi-susun.js, lengkap
+  // dengan alat sunting baris); bank templat ABT / mesin lama tetap dapat dipakai lewat tautan "Cara lama" di borang itu.
+  // Mati / katalog tidak ada / gagal bertanya: jalankanSdgLama() persis seperti sebelumnya.
+  async function pakaiMesinTunggal() {
+    try {
+      const sf = globalThis.AletaSaklarFitur;
+      if (!sf || typeof sf.aktif !== "function") return false;
+      if (!(await sf.aktif("mesin-saksi-tunggal"))) return false;
+      return Boolean(susunKatalog.tombol && !susunKatalog.tombol.hidden && typeof susunKatalog.buka === "function");
+    } catch {
+      return false;
+    }
+  }
   tombolSdg.addEventListener("click", async () => {
+    if (await pakaiMesinTunggal()) {
+      kabar.className = "aleta-abt-kabar";
+      kabar.textContent = "Memakai mesin katalog yang sama dengan Susun saksi menurut keadaan perkara. Bank templat ABT: tautan Cara lama di borang.";
+      susunKatalog.buka();
+      return;
+    }
+    await jalankanSdgLama();
+  });
+  async function jalankanSdgLama() {
     tombolSdg.disabled = true;
     kabar.className = "aleta-abt-kabar";
     kabar.textContent = "Membaca daftar blangko tanya jawab ABT…";
@@ -6844,7 +6870,7 @@ function susunPanelAbt(jatiDiri) {
     } finally {
       tombolSdg.disabled = false;
     }
-  });
+  }
 
 
   // Pelapor keadaan dipinjamkan ke penjaga cetak: penerbitan tiga berkas

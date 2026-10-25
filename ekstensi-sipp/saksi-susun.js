@@ -399,6 +399,16 @@
       else tombol.title = "Jenis perkara tidak terbaca di halaman ini; pilih jenis perkaranya di form.";
     }
     hasil.segarkan = segarkanTombol;
+    // C3/U7: membuka borang dari luar (tombol cerai lama saat saklar mesin-saksi-tunggal menyala).
+    hasil.buka = () => {
+      if (wadah.hidden) tombol.click();
+    };
+    // Saklar ditanyakan lebih awal supaya alat sunting baris sudah diketahui saat borang digambar.
+    try {
+      if (globalThis.AletaSaklarFitur) void globalThis.AletaSaklarFitur.aktif("mesin-saksi-tunggal");
+    } catch {
+      /* tanpa saklar: perilaku lama */
+    }
 
     // ── gambar ──────────────────────────────────────────────────────────
     function buat(tag, kelas, teks) {
@@ -1213,7 +1223,115 @@
       return typeof k.variabelSaksi === "function" ? k.variabelSaksi(s.pihak, keDiPihak + 1) : "";
     }
 
+    // ── C3/U7: alat sunting baris (bawaan MATI; saklar Fitur Satker mesin-saksi-tunggal) ────────────────────────────
+    // Kemampuan penyunting lama yang kini tersedia juga di borang katalog: pertanyaan dapat disunting, baris dapat
+    // dinaikkan/diturunkan, dipindah ke saksi berikutnya (disisipkan, tidak menimpa), disalin, dihapus, dan ditambah.
+    const alatBarisAktif = () => typeof k.mesinTunggal === "function" && k.mesinTunggal() === true;
+
+    function buatTanyaDapatSunting(no, teksTanya) {
+      const el = buat("div", "aleta-ssk-tanya");
+      el.appendChild(buat("span", "aleta-ssk-no", `${no}. `));
+      const isi = buat("span", "aleta-ssk-tt", teksTanya);
+      isi.contentEditable = "true";
+      isi.title = "Pertanyaannya boleh disunting - yang tersimpan ke ABT yang terbaca di sini.";
+      el.appendChild(isi);
+      return el;
+    }
+
+    /** Menomori ulang baris satu kolom (tampilan saja; nomor yang disimpan dihitung ulang saat menyimpan). */
+    function renomori(kolomEl) {
+      let n = 0;
+      for (const baris of Array.from(kolomEl.querySelectorAll(".aleta-ssk-baris"))) {
+        n += 1;
+        const no = baris.querySelector(".aleta-ssk-no");
+        if (no) no.textContent = `${n}. `;
+      }
+    }
+
+    function buatBarisManual(teksTanya, teksJawab, salinan) {
+      const baris = buat("div", "aleta-ssk-baris");
+      baris.setAttribute("data-butir", "");
+      baris.setAttribute("data-saksi", "-1");
+      if (salinan) baris.setAttribute("data-salinan", "1");
+      baris.appendChild(buatTanyaDapatSunting(0, teksTanya));
+      const jawab = document.createElement("textarea");
+      jawab.className = "aleta-ssk-jawab";
+      jawab.rows = 2;
+      jawab.value = teksJawab;
+      jawab.addEventListener("input", () => jawab.setAttribute("data-disunting", "1"));
+      baris.appendChild(jawab);
+      baris.insertBefore(buatAlatBaris(baris), baris.firstChild);
+      return baris;
+    }
+
+    function buatTombolTambah(kolomEl, indeks) {
+      const tambah = buat("button", "aleta-sdg-tambah", "+ Tambah keterangan");
+      tambah.type = "button";
+      tambah.addEventListener("click", () => {
+        kolomEl.insertBefore(buatBarisManual("Pertanyaan baru", "", false), tambah);
+        renomori(kolomEl);
+      });
+      tambah.setAttribute("data-kolom", String(indeks));
+      return tambah;
+    }
+
+    function buatAlatBaris(baris) {
+      const alat = buat("div", "aleta-ssk-alat");
+      const tb = (teks, judul, kerja) => {
+        const t = buat("button", "aleta-sdg-tombol", teks);
+        t.type = "button";
+        t.title = judul;
+        t.addEventListener("click", (e) => {
+          e.preventDefault();
+          kerja();
+        });
+        alat.appendChild(t);
+      };
+      const kolomDari = () => baris.parentNode;
+      const semuaKolom = () => Array.from(baris.closest(".aleta-ssk").querySelectorAll(".aleta-ssk-saksi"));
+      tb("↑", "Naikkan", () => {
+        const induk = kolomDari();
+        const atas = baris.previousElementSibling;
+        if (atas && atas.classList.contains("aleta-ssk-baris")) induk.insertBefore(baris, atas);
+        renomori(induk);
+      });
+      tb("↓", "Turunkan", () => {
+        const induk = kolomDari();
+        const bawah = baris.nextElementSibling;
+        if (bawah && bawah.classList.contains("aleta-ssk-baris")) induk.insertBefore(bawah, baris);
+        renomori(induk);
+      });
+      tb("⇄", "Pindahkan ke saksi berikutnya - disisipkan sebagai baris tambahan di sana", () => {
+        const semua = semuaKolom();
+        if (semua.length < 2) return;
+        const asal = kolomDari();
+        const tujuan = semua[(semua.indexOf(asal) + 1) % semua.length];
+        const tambah = tujuan.querySelector("button.aleta-sdg-tambah");
+        tujuan.insertBefore(baris, tambah);
+        renomori(asal);
+        renomori(tujuan);
+      });
+      tb("⧉", "Salin ke saksi berikutnya - yang ini tetap di tempatnya", () => {
+        const semua = semuaKolom();
+        if (semua.length < 2) return;
+        const asal = kolomDari();
+        const tujuan = semua[(semua.indexOf(asal) + 1) % semua.length];
+        const teksTanya = String((baris.querySelector(".aleta-ssk-tt") || baris.querySelector(".aleta-ssk-tanya") || {}).textContent || "");
+        const teksJawab = String((baris.querySelector("textarea") || {}).value || "");
+        const tambah = tujuan.querySelector("button.aleta-sdg-tambah");
+        tujuan.insertBefore(buatBarisManual(teksTanya, teksJawab, true), tambah);
+        renomori(tujuan);
+      });
+      tb("✕", "Hapus keterangan ini", () => {
+        const induk = kolomDari();
+        baris.remove();
+        renomori(induk);
+      });
+      return alat;
+    }
+
     function gambarHasil(wadahHasil) {
+      const alatBaris = alatBarisAktif();
       wadahHasil.textContent = "";
       const h = S.hasil;
       if (!h) return;
@@ -1231,7 +1349,9 @@
           if (b.tandaKuning) baris.classList.add("aleta-ssk-kuning");
           if (b.kosong.length) baris.classList.add("aleta-ssk-merah");
           for (const x of b.kosong) semuaKosong.add(x);
-          const tanya = buat("div", "aleta-ssk-tanya", `${b.no}. ${b.tanya}`);
+          // C3/U7: dengan saklar mesin-saksi-tunggal menyala, pertanyaan dapat disunting; nomornya terpisah dalam span sendiri
+          // (teks tanya-jawab yang disimpan tetap dibaca dari textContent tanpa awalan nomor).
+          const tanya = alatBaris ? buatTanyaDapatSunting(b.no, b.tanya) : buat("div", "aleta-ssk-tanya", `${b.no}. ${b.tanya}`);
           const jawab = document.createElement("textarea");
           jawab.className = "aleta-ssk-jawab";
           jawab.rows = 2;
@@ -1287,8 +1407,10 @@
             if (nk.kode) kabarKosong.title = `Kode isian: ${nk.kode}`;
             baris.appendChild(kabarKosong);
           }
+          if (alatBaris) baris.insertBefore(buatAlatBaris(baris), baris.firstChild);
           kolom.appendChild(baris);
         }
+        if (alatBaris) kolom.appendChild(buatTombolTambah(kolom, i));
         wadahHasil.appendChild(kolom);
       });
       if (semuaKosong.size) {
@@ -1330,6 +1452,16 @@
       }
       const form = buat("div", "aleta-sdg-form");
       form.appendChild(buat("div", "aleta-abt-label", `Susun saksi - ${S.kat.judul}`));
+      if (alatBarisAktif() && typeof k.caraLama === "function" && /^cerai-/.test(String(S.kat.kunci || ""))) {
+        const lama = buat("button", "aleta-sdg-tombol aleta-ssk-cara-lama", "Cara lama (bank templat ABT)");
+        lama.type = "button";
+        lama.title = "Tombol Susun keterangan saksi 1 & 2 yang lama: memakai blangko tanya jawab ABT dan mesin bot.";
+        lama.addEventListener("click", () => {
+          wadah.hidden = true;
+          k.caraLama();
+        });
+        form.appendChild(lama);
+      }
       for (const c of S.kat.catatanPetugas || []) form.appendChild(buat("div", "aleta-abt-kabar", c));
       // hanya dasar hukum yang sudah terverifikasi yang ditampilkan; yang belum tetap metadata
       const dasar = (S.kat.dasarHukum || []).filter((d) => d.status === "terverifikasi");
@@ -1440,7 +1572,10 @@
     function entriButir(i, el, tanya, final, nomorButir) {
       const sk = S.hasil.saksi[i] || {};
       const butirId = el.getAttribute("data-butir") || "";
-      const mesinBaris = (sk.baris || []).find((x) => x.butir === butirId) || null;
+      // baris yang dipindah dari saksi lain tetap mencari usulan mesinnya di saksi ASAL (data-saksi); salinan dan baris manual tanpa usulan
+      const asalSaksi = el.hasAttribute("data-saksi") ? Number(el.getAttribute("data-saksi")) : i;
+      const skAsal = el.getAttribute("data-salinan") === "1" ? {} : S.hasil.saksi[asalSaksi] || {};
+      const mesinBaris = butirId ? (skAsal.baris || []).find((x) => x.butir === butirId) || null : null;
       const dariGugatan = mesinBaris && Array.isArray(mesinBaris.dariGugatan) ? mesinBaris.dariGugatan : [];
       const sumber = Array.from(new Set(dariGugatan.flatMap((x) => String(x.sumber || "").split(" + ").filter(Boolean)))).join(" + ");
       const yakin = dariGugatan.some((x) => x.yakin === "ragu") ? "ragu" : dariGugatan.some((x) => x.yakin === "cukup") ? "cukup" : dariGugatan.length ? "yakin" : "";
