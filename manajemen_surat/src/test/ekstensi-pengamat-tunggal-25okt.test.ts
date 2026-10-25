@@ -330,10 +330,11 @@ describe("satu tab per PC", () => {
 
 describe("terpasang di manifest dan pemanggil", () => {
   const manifest = JSON.parse(baca("manifest.json"));
-  it("pengamat-bersama.js dimuat paling awal di tiga kelompok skrip konten", () => {
+  it("pengamat-bersama.js dimuat paling awal di tiga kelompok skrip konten (hanya pembungkus fetch portal-jalur.js yang boleh mendahului)", () => {
     const kelompok = manifest.content_scripts.filter((c: any) => c.js.includes("pengamat-bersama.js"));
     expect(kelompok).toHaveLength(3);
-    for (const k of kelompok) expect(k.js[0]).toBe("pengamat-bersama.js");
+    // Gabung rantai 26 Okt: portal-jalur.js (F/K7) paling depan di SIPP dan ABT; ia tidak memakai pewaktu atau pengamat.
+    for (const k of kelompok) expect(k.js[0] === "portal-jalur.js" ? k.js[1] : k.js[0]).toBe("pengamat-bersama.js");
   });
 
   it("pengamat badan halaman memakai Pengamat bersama dengan cadangan MutationObserver asli", () => {

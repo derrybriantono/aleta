@@ -36,7 +36,7 @@ import { tulisSetelanSistem } from "@/server/modules/satker/setelan";
  * ============================================================================
  *
  * pg-mem + rute HTTP sungguhan; data rekaan. Yang dijaga:
- *   1. migrasi 0102 = DDL schema.ts, jurnal idx 83 (tanpa lubang), ikut cadangan; saklar bawaan MATI
+ *   1. migrasi 0102 = DDL schema.ts, jurnal idx 91 (tanpa lubang), ikut cadangan; saklar bawaan MATI
  *   2. aturan murni: pembersih laporan, tanda isian, belajar "biasanya terisi" (8 cetak, 90%), penyaring identitas, usulan serupa
  *   3. saklar mati: tidak satu baris pun ditulis, tidak ada pengingat, tidak ada usulan
  *   4. riwayat: satu baris per keadaan berbeda, satu baris tiap cetak, batas per perkara + blangko, cetak dipertahankan, retensi 2 tahun
@@ -102,13 +102,13 @@ const lapor = (tambah: Record<string, unknown> = {}) => ({
 
 // ─── 1. Migrasi dan saklar ───────────────────────────────────────────────────
 
-describe("migrasi 0102 - berkas = DDL schema.ts, jurnal idx 83, ikut cadangan", () => {
+describe("migrasi 0102 - berkas = DDL schema.ts, jurnal idx 91, ikut cadangan", () => {
   const SQL = path.join(process.cwd(), "drizzle", "0102_aleta_blangko_lapor.sql");
 
-  it("jurnal: 0102 sekali di idx 83 tepat sesudah 0092, tanpa lubang, when naik", () => {
+  it("jurnal: 0102 sekali di idx 91 sesudah 0101, tanpa lubang, when naik", () => {
     const j = JSON.parse(readFileSync(path.join(process.cwd(), "drizzle/meta/_journal.json"), "utf8")) as { entries: Array<{ idx: number; tag: string; when: number }> };
     j.entries.forEach((e, i) => expect(e.idx).toBe(i));
-    expect(j.entries.filter((e) => e.tag.startsWith("0102_"))).toEqual([expect.objectContaining({ idx: 83, tag: "0102_aleta_blangko_lapor" })]);
+    expect(j.entries.filter((e) => e.tag.startsWith("0102_"))).toEqual([expect.objectContaining({ idx: 91, tag: "0102_aleta_blangko_lapor" })]);
     expect(j.entries[82]?.tag).toBe("0092_aleta_ketepatan_isian");
     for (let i = 1; i < j.entries.length; i += 1) expect(j.entries[i]?.when).toBeGreaterThan(j.entries[i - 1]?.when ?? 0);
     expect(existsSync(SQL)).toBe(true);

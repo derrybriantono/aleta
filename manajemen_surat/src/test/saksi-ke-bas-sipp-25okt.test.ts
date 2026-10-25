@@ -45,10 +45,10 @@ const pernyataan = (sql: string) =>
 describe("migrasi 0101, jurnal, saklar", () => {
   const SQL = path.join(process.cwd(), "drizzle", "0101_aleta_saksi_kirim_bas.sql");
 
-  it("jurnal: 0101 sekali di idx 83 (sesudah 0093), tanpa lubang, when naik", () => {
+  it("jurnal: 0101 sekali di idx 90 (sesudah 0100), tanpa lubang, when naik", () => {
     const j = JSON.parse(readFileSync(path.join(process.cwd(), "drizzle/meta/_journal.json"), "utf8")) as { entries: Array<{ idx: number; tag: string; when: number }> };
     j.entries.forEach((e, i) => expect(e.idx).toBe(i));
-    expect(j.entries.filter((e) => e.tag.startsWith("0101_"))).toEqual([expect.objectContaining({ idx: 83, tag: "0101_aleta_saksi_kirim_bas" })]);
+    expect(j.entries.filter((e) => e.tag.startsWith("0101_"))).toEqual([expect.objectContaining({ idx: 90, tag: "0101_aleta_saksi_kirim_bas" })]);
     expect(j.entries[82]?.tag.startsWith("0093_")).toBe(true);
     for (let i = 1; i < j.entries.length; i += 1) expect(j.entries[i]?.when).toBeGreaterThan(j.entries[i - 1]?.when ?? 0);
     expect(existsSync(SQL)).toBe(true);

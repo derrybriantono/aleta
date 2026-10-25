@@ -676,7 +676,7 @@ describe("penjadwal harian dan pengingat WhatsApp pribadi", () => {
 
 // ─── 5. Migrasi 0110 ─────────────────────────────────────────────────────────
 
-describe("migrasi 0110 - berkas = DDL schema.ts, jurnal idx 83, ikut cadangan", () => {
+describe("migrasi 0110 - berkas = DDL schema.ts, jurnal idx 98, ikut cadangan", () => {
   const SQL = path.join(process.cwd(), "drizzle", "0110_aleta_tenggat_kirim.sql");
   const pernyataan = (s: string) =>
     s
@@ -687,10 +687,10 @@ describe("migrasi 0110 - berkas = DDL schema.ts, jurnal idx 83, ikut cadangan", 
       .map((x) => x.replace(/\s+/g, " ").trim())
       .filter(Boolean);
 
-  it("jurnal: 0110 sekali di idx 83, tanpa lubang, when naik", () => {
+  it("jurnal: 0110 sekali di idx 98, tanpa lubang, when naik", () => {
     const j = JSON.parse(readFileSync(path.join(process.cwd(), "drizzle/meta/_journal.json"), "utf8")) as { entries: Array<{ idx: number; tag: string; when: number }> };
     j.entries.forEach((e, i) => expect(e.idx).toBe(i));
-    expect(j.entries.filter((e) => e.tag.startsWith("0110_"))).toEqual([expect.objectContaining({ idx: 83, tag: "0110_aleta_tenggat_kirim" })]);
+    expect(j.entries.filter((e) => e.tag.startsWith("0110_"))).toEqual([expect.objectContaining({ idx: 98, tag: "0110_aleta_tenggat_kirim" })]);
     for (let i = 1; i < j.entries.length; i += 1) expect(j.entries[i]?.when).toBeGreaterThan(j.entries[i - 1]?.when ?? 0);
     expect(existsSync(SQL)).toBe(true);
   });

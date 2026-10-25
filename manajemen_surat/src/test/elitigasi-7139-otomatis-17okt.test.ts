@@ -259,7 +259,7 @@ describe("lapisan Blangko Derry (blangko-derry-isian.js): isiElitigasiOtomatis",
       if (opsi.sebelumSelesai) opsi.sebelumSelesai(S);
       return opsi.keputusan === undefined ? { nilai: "1", keterangan: "E-Litigasi: penuh (Tergugat ber-email)" } : opsi.keputusan;
     };
-    const f = new Function("S", "bolehTulis", "nomorPerkara", "jadwalkanSimpan", "renderIsian", "el7Ambil7139x", `${opsi.tanpaMesin ? "var el7Ambil7139;" : "const el7Ambil7139 = el7Ambil7139x;"}\n${fungsi}\nreturn isiElitigasiOtomatis;`);
+    const f = new Function("S", "bolehTulis", "nomorPerkara", "jadwalkanSimpan", "renderIsian", "el7Ambil7139x", "konteksJejak", `${opsi.tanpaMesin ? "var el7Ambil7139;" : "const el7Ambil7139 = el7Ambil7139x;"}\n${fungsi}\nreturn isiElitigasiOtomatis;`);
     const isi = f(
       S,
       () => opsi.bisaTulis !== false,
@@ -272,7 +272,8 @@ describe("lapisan Blangko Derry (blangko-derry-isian.js): isiElitigasiOtomatis",
       () => {
         digambar += 1;
       },
-      el7Ambil7139
+      el7Ambil7139,
+      new Map() // konteksJejak (rantai C1): peta jejak isian milik lapisan
     );
     return { S, d, tersimpan, isi: () => isi(d), digambar: () => digambar };
   }

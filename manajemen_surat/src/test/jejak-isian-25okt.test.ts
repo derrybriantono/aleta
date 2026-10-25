@@ -48,7 +48,7 @@ import { tulisSetelanSistem } from "@/server/modules/satker/setelan";
  * ============================================================================
  *
  * pg-mem + rute HTTP sungguhan; data rekaan. Yang dijaga:
- *   1. migrasi 0091 = DDL schema.ts, jurnal idx 81 (tanpa lubang), ikut cadangan
+ *   1. migrasi 0091 = DDL schema.ts, jurnal idx 82 (tanpa lubang), ikut cadangan
  *   2. saklar bawaan MATI: tidak satu baris pun ditulis, rute menjawab aktif:false
  *   3. aturan murni: hasil, kemiripan, pembersih, angka lapangan
  *   4. isian: jejak, nilai sebelum utuh, bisaDiurungkan, Urungkan menandai asalnya, koreksi tanpa ganda
@@ -143,13 +143,13 @@ const butir = (tambah: Record<string, unknown> = {}) => ({
 
 // ─── 1. Migrasi ──────────────────────────────────────────────────────────────
 
-describe("migrasi 0091 - berkas = DDL schema.ts, jurnal idx 81, ikut cadangan", () => {
+describe("migrasi 0091 - berkas = DDL schema.ts, jurnal idx 82, ikut cadangan", () => {
   const SQL = path.join(process.cwd(), "drizzle", "0091_aleta_jejak_isian.sql");
 
-  it("jurnal: 0091 sekali di idx 81 (sesudah 0088), tanpa lubang, when naik", () => {
+  it("jurnal: 0091 sekali di idx 82 (sesudah 0090), tanpa lubang, when naik", () => {
     const j = JSON.parse(readFileSync(path.join(process.cwd(), "drizzle/meta/_journal.json"), "utf8")) as { entries: Array<{ idx: number; tag: string; when: number }> };
     j.entries.forEach((e, i) => expect(e.idx).toBe(i));
-    expect(j.entries.filter((e) => e.tag.startsWith("0091_"))).toEqual([expect.objectContaining({ idx: 81, tag: "0091_aleta_jejak_isian" })]);
+    expect(j.entries.filter((e) => e.tag.startsWith("0091_"))).toEqual([expect.objectContaining({ idx: 82, tag: "0091_aleta_jejak_isian" })]);
     for (let i = 1; i < j.entries.length; i += 1) expect(j.entries[i]?.when).toBeGreaterThan(j.entries[i - 1]?.when ?? 0);
     expect(existsSync(SQL)).toBe(true);
   });

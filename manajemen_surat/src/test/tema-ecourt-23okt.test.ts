@@ -346,7 +346,8 @@ describe("8 - manifest dan popup", () => {
     // T1 (ALETA Ai tahap 2b) menambah gelembung chat SESUDAH skrip masuk; skrip masuk tetap pertama.
     expect(masuk.js).toEqual(["ecourt-masuk.js", "aleta-ai-gelembung.js"]);
     expect(masuk.run_at).toBe("document_idle");
-    expect(manifest.version).toBe("1.205.38");
+    // Versi tidak lagi dikunci ke satu nomor (rilis 1.205.39 membuat angka itu basi); cukup berbentuk versi ekstensi seri 1.205.
+    expect(manifest.version).toMatch(/^1\.205\.\d+$/);
   });
 
   it("saklar temaEcourt: kotak di popup (bawaan menyala), terdaftar per akun di popup dan latar", () => {

@@ -4,7 +4,7 @@
  * CERMIN: JADWAL MEDIASI + HITUNGAN TAG STATUS PERKARA (A5, 25 Okt 2026)
  * ============================================================================
  *
- *   A. migrasi 0096 = DDL schema.ts, jurnal idx 82, kolom benar-benar ada;
+ *   A. migrasi 0096 = DDL schema.ts, jurnal idx 87, kolom benar-benar ada;
  *   B. aturan murni: rentang lingkup tag (dibandingkan pembanding terpisah), dasar tanggal tertutup,
  *      saklar baru MATI bawaan;
  *   C. Jadwal Mediasi: putaran, hanya selisih yang ditulis, yang hilang dihapus kecuali terpotong/tak
@@ -92,9 +92,9 @@ describe("A. migrasi 0096", () => {
     expect(IN_MEMORY_TABLE_PERSISTENCE_ORDER).toContain("aleta_cermin_perkara");
   });
 
-  it("jurnal: 0096 idx 82 sesudah 0090 (idx 81), urut dan tanpa ganda", () => {
+  it("jurnal: 0096 idx 87 sesudah 0090 (idx 81), urut dan tanpa ganda", () => {
     const j = JSON.parse(baca("manajemen_surat/drizzle/meta/_journal.json")) as { entries: Array<{ idx: number; tag: string; when: number }> };
-    expect(j.entries.find((x) => x.tag === "0096_aleta_cermin_perkara_tanggal")?.idx).toBe(82);
+    expect(j.entries.find((x) => x.tag === "0096_aleta_cermin_perkara_tanggal")?.idx).toBe(87);
     expect(j.entries.find((x) => x.tag === "0090_aleta_cermin_perkara")?.idx).toBe(81);
     const idx = j.entries.map((x) => x.idx);
     expect(new Set(idx).size).toBe(idx.length);

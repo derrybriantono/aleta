@@ -20,7 +20,7 @@ import { tulisSetelanSistem } from "@/server/modules/satker/setelan";
  * ============================================================================
  *
  * pg-mem + rute HTTP sungguhan; data rekaan. Yang dijaga:
- *   1. migrasi 0103 = DDL schema.ts, jurnal idx 84 (tanpa lubang), ikut cadangan; saklar bawaan MATI
+ *   1. migrasi 0103 = DDL schema.ts, jurnal idx 92 (tanpa lubang), ikut cadangan; saklar bawaan MATI
  *   2. pembersih masukan: sidang 1..99, nomor isian, kata ALETA, panjang
  *   3. saklar mati: tidak menulis, tidak membaca
  *   4. satu baris per (perkara, sidang, nomor variabel); sidang dan perkara terpisah; kosong ikut disimpan; aleta_isian_perkara tidak tersentuh
@@ -64,13 +64,13 @@ async function panggil(cara: "GET" | "POST", opsi: { query?: string; badan?: unk
 
 const masukan = (tambah: Record<string, unknown> = {}) => ({ perkaraId: "10018", nomorPerkara: "533/Pdt.G/2026/PA.Dgl", sidang: 2, kode: "0007", nilai: "dikaruniai 2 orang anak", ...tambah });
 
-describe("migrasi 0103 - berkas = DDL schema.ts, jurnal idx 84, ikut cadangan", () => {
+describe("migrasi 0103 - berkas = DDL schema.ts, jurnal idx 92, ikut cadangan", () => {
   const SQL = path.join(process.cwd(), "drizzle", "0103_aleta_isian_sidang.sql");
 
-  it("jurnal: 0103 sekali di idx 84 tepat sesudah 0102, tanpa lubang, when naik", () => {
+  it("jurnal: 0103 sekali di idx 92 tepat sesudah 0102, tanpa lubang, when naik", () => {
     const j = JSON.parse(readFileSync(path.join(process.cwd(), "drizzle/meta/_journal.json"), "utf8")) as { entries: Array<{ idx: number; tag: string; when: number }> };
     j.entries.forEach((e, i) => expect(e.idx).toBe(i));
-    expect(j.entries.filter((e) => e.tag.startsWith("0103_"))).toEqual([expect.objectContaining({ idx: 84, tag: "0103_aleta_isian_sidang" })]);
+    expect(j.entries.filter((e) => e.tag.startsWith("0103_"))).toEqual([expect.objectContaining({ idx: 92, tag: "0103_aleta_isian_sidang" })]);
     expect(j.entries[83]?.tag).toBe("0102_aleta_blangko_lapor");
     for (let i = 1; i < j.entries.length; i += 1) expect(j.entries[i]?.when).toBeGreaterThan(j.entries[i - 1]?.when ?? 0);
     expect(existsSync(SQL)).toBe(true);

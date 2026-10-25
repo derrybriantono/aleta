@@ -15,7 +15,7 @@ import { bacaKamus } from "@/server/modules/aleta-ecourt/alias-nama";
  * ============================================================================
  * U18 - KAMUS ALIAS NAMA PIHAK, SISI SERVER (rantai B, 25 Okt 2026)
  * ============================================================================
- *   1. migrasi 0100 = DDL schema.ts, jurnal idx 82 tanpa lubang, tabel ikut cadangan;
+ *   1. migrasi 0100 = DDL schema.ts, jurnal idx 89 tanpa lubang, tabel ikut cadangan;
  *   2. kamus hanya Admin dan Super Admin (hakim 403); tambah/hapus dengan audit tanpa nama orang; pasangan ganda tidak dobel;
  *   3. pemeriksa: saklar kinerja.ejaanNamaPihak mati = { tersedia: false }; menyala = usulan atas nama yang dikirim, kamus tidak bocor;
  *   4. penyamaran ALETA Ai: varian ejaan memakai KODE SAMARAN nama baku HANYA bila saklar menyala; mati = perilaku lama.
@@ -72,10 +72,10 @@ afterEach(async () => {
 });
 
 describe("migrasi 0100", () => {
-  it("jurnal idx 82 bertag 0100 sekali tanpa lubang; DDL berkas = DDL schema.ts; tabel ikut cadangan dan terbentuk", async () => {
+  it("jurnal idx 89 bertag 0100 sekali tanpa lubang; DDL berkas = DDL schema.ts; tabel ikut cadangan dan terbentuk", async () => {
     const jurnal = JSON.parse(readFileSync(JURNAL, "utf8")) as { entries: { idx: number; tag: string }[] };
     jurnal.entries.forEach((e, i) => expect(e.idx).toBe(i));
-    expect(jurnal.entries.filter((e) => e.tag.startsWith("0100_"))).toEqual([expect.objectContaining({ idx: 82, tag: "0100_aleta_alias_nama" })]);
+    expect(jurnal.entries.filter((e) => e.tag.startsWith("0100_"))).toEqual([expect.objectContaining({ idx: 89, tag: "0100_aleta_alias_nama" })]);
     expect(existsSync(SQL)).toBe(true);
     expect(pernyataan(readFileSync(SQL, "utf8"))).toEqual([...DDL_ALIAS_NAMA.tabel, ...DDL_ALIAS_NAMA.indeks].map((s) => pernyataan(s)[0]));
     expect(IN_MEMORY_TABLE_PERSISTENCE_ORDER).toContain("aleta_alias_nama");

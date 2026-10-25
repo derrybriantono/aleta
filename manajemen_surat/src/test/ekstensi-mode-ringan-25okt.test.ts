@@ -217,6 +217,7 @@ describe("terpasang di manifest", () => {
   it("mode-ringan.js dimuat tepat sesudah pengamat-bersama.js di tiga kelompok skrip konten", () => {
     const kelompok = manifest.content_scripts.filter((c: any) => c.js.includes("mode-ringan.js"));
     expect(kelompok).toHaveLength(3);
-    for (const k of kelompok) expect(k.js.slice(0, 2)).toEqual(["pengamat-bersama.js", "mode-ringan.js"]);
+    // Gabung rantai 26 Okt: portal-jalur.js (F/K7) boleh mendahului di SIPP dan ABT.
+    for (const k of kelompok) expect((k.js[0] === "portal-jalur.js" ? k.js.slice(1) : k.js).slice(0, 2)).toEqual(["pengamat-bersama.js", "mode-ringan.js"]);
   });
 });

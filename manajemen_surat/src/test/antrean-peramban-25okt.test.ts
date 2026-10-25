@@ -14,7 +14,7 @@ import { sapuAntreanBasi } from "@/server/modules/aleta-ecourt/antrean-peramban"
  * ============================================================================
  * K15 - ANTREAN KERJA PERAMBAN DI BASIS DATA, SISI SERVER (rantai B, 25 Okt 2026)
  * ============================================================================
- *   1. migrasi 0098 = DDL schema.ts, jurnal idx 81 tanpa lubang, tabel ikut cadangan;
+ *   1. migrasi 0098 = DDL schema.ts, jurnal idx 88 tanpa lubang, tabel ikut cadangan;
  *   2. saklar kinerja.antreanDiServer mati (bawaan): tulisan ditolak halus, bacaan kosong, tidak ada baris;
  *   3. menyala: upsert, hanya milik pemanggil (pengguna dari sesi), akhiri idempoten, sapu antrean basi;
  *   4. masukan tidak sah ditolak 400; muatan dibatasi.
@@ -80,10 +80,10 @@ afterEach(async () => {
 });
 
 describe("migrasi 0098", () => {
-  it("jurnal idx 81 bertag 0098 sekali, tanpa lubang; berkas SQL ada", () => {
+  it("jurnal idx 88 bertag 0098 sekali, tanpa lubang; berkas SQL ada", () => {
     const jurnal = JSON.parse(readFileSync(JURNAL, "utf8")) as { entries: { idx: number; tag: string }[] };
     jurnal.entries.forEach((e, i) => expect(e.idx).toBe(i));
-    expect(jurnal.entries.filter((e) => e.tag.startsWith("0098_"))).toEqual([expect.objectContaining({ idx: 81, tag: "0098_aleta_antrean_peramban" })]);
+    expect(jurnal.entries.filter((e) => e.tag.startsWith("0098_"))).toEqual([expect.objectContaining({ idx: 88, tag: "0098_aleta_antrean_peramban" })]);
     expect(existsSync(SQL)).toBe(true);
   });
 

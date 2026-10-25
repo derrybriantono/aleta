@@ -35,7 +35,7 @@ import { tulisSetelanSistem } from "@/server/modules/satker/setelan";
  * ============================================================================
  *
  * pg-mem + rute HTTP sungguhan + pemuat ekstensi di jsdom; data rekaan. Yang dijaga:
- *   1. migrasi 0093 = DDL schema.ts, jurnal idx 82 tanpa lubang, ikut cadangan, saklar bawaan MATI
+ *   1. migrasi 0093 = DDL schema.ts, jurnal idx 84 tanpa lubang, ikut cadangan, saklar bawaan MATI
  *   2. saklar mati: portal menjawab aktif:false (ekstensi memakai JSON tertanam), tidak menyajikan penimpa
  *   3. hak menyunting: Super Admin atau akun terdaftar; admin biasa dan hakim ditolak; hanya Super Admin mengatur daftar
  *   4. pemeriksaan: katalog rusak / memuat kata "Aleta" / kunci tidak cocok ditolak; yang sah lolos; pratinjau menyusun
@@ -90,13 +90,13 @@ const sunting = (kunci: string, judul: string) => {
 
 // ─── 1. Migrasi, jurnal, saklar ──────────────────────────────────────────────
 
-describe("migrasi 0093 - berkas = DDL schema.ts, jurnal idx 82, ikut cadangan, saklar mati", () => {
+describe("migrasi 0093 - berkas = DDL schema.ts, jurnal idx 84, ikut cadangan, saklar mati", () => {
   const SQL = path.join(process.cwd(), "drizzle", "0093_aleta_saksi_katalog.sql");
 
-  it("jurnal: 0093 sekali di idx 82 (sesudah 0091), tanpa lubang, when naik", () => {
+  it("jurnal: 0093 sekali di idx 84 (sesudah 0092), tanpa lubang, when naik", () => {
     const j = JSON.parse(readFileSync(path.join(process.cwd(), "drizzle/meta/_journal.json"), "utf8")) as { entries: Array<{ idx: number; tag: string; when: number }> };
     j.entries.forEach((e, i) => expect(e.idx).toBe(i));
-    expect(j.entries.filter((e) => e.tag.startsWith("0093_"))).toEqual([expect.objectContaining({ idx: 82, tag: "0093_aleta_saksi_katalog" })]);
+    expect(j.entries.filter((e) => e.tag.startsWith("0093_"))).toEqual([expect.objectContaining({ idx: 84, tag: "0093_aleta_saksi_katalog" })]);
     expect(j.entries[81]?.tag.startsWith("0091_")).toBe(true);
     for (let i = 1; i < j.entries.length; i += 1) expect(j.entries[i]?.when).toBeGreaterThan(j.entries[i - 1]?.when ?? 0);
     expect(existsSync(SQL)).toBe(true);
