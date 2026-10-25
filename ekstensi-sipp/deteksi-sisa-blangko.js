@@ -883,6 +883,24 @@
   }
 
   /**
+   * K14 (25 Okt 2026): naskah RTF besar diperiksa SERVER bila Super Admin menyalakan saklar berkasDiServer
+   * (ALETA_BERKAS_SERVER, berkas-server.js) - aturan yang sama, PC tua tidak menguraikan puluhan ribu paragraf.
+   * Server tidak aktif / menolak / putus / bentuk bukan RTF -> pemeriksa lokal seperti dulu.
+   */
+  async function periksaBitaServerAtauLokal(bita, nama, opsi) {
+    try {
+      const B = akar.ALETA_BERKAS_SERVER;
+      if (B && typeof B.periksaSisaRtf === "function" && kenaliBentuk(bita, nama) === "rtf") {
+        const h = await B.periksaSisaRtf(bita);
+        if (h && h.dibaca && h.hasil && Array.isArray(h.hasil.temuan)) return { dibaca: true, bentuk: "rtf", hasil: h.hasil };
+      }
+    } catch {
+      /* jatuh ke pemeriksa lokal */
+    }
+    return periksaBita(bita, nama, opsi);
+  }
+
+  /**
    * Memeriksa satu naskah dan, bila ada temuan, menanyakan petugas.
    * @param sumber Blob | File | ArrayBuffer | Uint8Array | string (RTF/teks)
    * @param opsi { nama, jenis, aksi: "unduh"|"unggah", bacaPdf?, tanpaDialog? }
@@ -896,7 +914,7 @@
       if (!bita) return { lanjut: true, periksa: false, temuan: [] };
       const kunci = kunciBerkas(o.nama, bita.length, o.jenis);
       if (sudahDilanjutkan(kunci)) return { lanjut: true, periksa: false, temuan: [] };
-      const h = await periksaBita(bita, o.nama, { bacaPdf: o.bacaPdf });
+      const h = await periksaBitaServerAtauLokal(bita, o.nama, { bacaPdf: o.bacaPdf });
       if (!h.dibaca || !h.hasil || !h.hasil.temuan.length) return { lanjut: true, periksa: h.dibaca, temuan: [] };
       if (o.tanpaDialog) return { lanjut: true, periksa: true, temuan: h.hasil.temuan };
       const sekarang = Date.now();

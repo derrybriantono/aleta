@@ -3763,6 +3763,9 @@ const ALETA_COBA_BOLEH = [
   // Salinan antrean kerja peramban ke basis data (K15, rantai B): hanya keadaan pengerjaan milik pemanggil, mati bawaan di portal;
   // tidak menyentuh SIPP, ABT, maupun WhatsApp.
   /\/aleta\/api\/aleta-ecourt\/ekstensi\/antrean(?:[?#]|$)/,
+  // Berkas cetak massal dikerjakan server (K14, rantai B): naskah RTF milik pemanggil dikirim ke portal kita sendiri, diperiksa/diubah ke
+  // PDF/dibungkus ZIP di memori server, dan dipulangkan. Tidak menyentuh SIPP, ABT, maupun WhatsApp; mati bawaan di portal.
+  /\/aleta\/api\/aleta-ecourt\/berkas-server(?:\/periksa-sisa)?(?:[?#]|$)/,
   // Menandai komentar hakim atas BAS "selesai" (tahap 6-7): catatan internal
   // antar-petugas, tidak menyentuh SIPP, ABT, maupun WhatsApp.
   /\/aleta\/api\/aleta-ecourt\/bas-komentar(?:[?#]|$)/,

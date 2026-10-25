@@ -879,3 +879,182 @@ describe("I. antrean cetak massal di server (K15)", () => {
     expect(akar(h).textContent).toContain("2 dari 2 berhasil dicetak.");
   });
 });
+
+// ============================================================================
+// J. K14 (rantai B, 25 Okt 2026) - berkas cetak massal dikerjakan server; jalur lama tetap sebagai cadangan
+// ============================================================================
+type OpsiBerkasServer = {
+  buatNull?: boolean;
+  tolakButirKe?: number;
+  mulaiNull?: boolean;
+  akhirGagal?: boolean;
+  perluDicek?: string[];
+  daftar?: any[];
+};
+function berkasServerTiruan(w: any, o: OpsiBerkasServer = {}) {
+  const catatan = { buat: [] as any[], butir: [] as Array<{ nama: string; teks: string }>, mulai: [] as string[], hapus: [] as string[], unduh: [] as string[] };
+  let daftar = o.daftar ?? [];
+  const obyek = {
+    aktif: () => true,
+    tungguSiap: async () => undefined,
+    buat: async (x: any) => (catatan.buat.push(x), o.buatNull ? null : { id: "bk-1", batas: {} }),
+    kirimButir: async (_id: string, x: { nama: string; bita: Uint8Array }) => {
+      catatan.butir.push({ nama: x.nama, teks: Buffer.from(x.bita).toString("latin1") });
+      return o.tolakButirKe !== undefined && catatan.butir.length === o.tolakButirKe ? false : true;
+    },
+    mulai: async (id: string) => (catatan.mulai.push(id), o.mulaiNull ? null : { id, status: "jalan", selesaiButir: 0, jumlahButir: catatan.butir.length }),
+    tunggu: async (_id: string, opsi: any) => {
+      opsi?.padaKabar?.({ selesaiButir: 1, jumlahButir: catatan.butir.length });
+      if (o.akhirGagal) return { status: "gagal", galat: "bot mati" };
+      return {
+        status: "selesai",
+        jumlahButir: catatan.butir.length,
+        selesaiButir: catatan.butir.length,
+        ringkasan: `${catatan.butir.length} naskah RTF dalam satu ZIP.`,
+        hasil: { nama: "Cetak massal - dari server.zip", tipe: "application/zip", ukuran: 11 },
+        perluDicek: (o.perluDicek ?? []).map((nama) => ({ nama, jumlah: 2 })),
+        gagal: [],
+      };
+    },
+    unduh: async (id: string) => (catatan.unduh.push(id), new w.Blob(["SERVER-ZIP"], { type: "application/zip" })),
+    daftar: async () => daftar,
+    hapus: async (id: string) => {
+      catatan.hapus.push(id);
+      daftar = daftar.filter((x) => x.id !== id);
+      return true;
+    },
+    periksaSisaRtf: async () => null,
+  };
+  return { catatan, obyek };
+}
+
+describe("J. berkas cetak massal dikerjakan server (K14)", () => {
+  it("RTF: naskah dikirim satu per satu, server menyusun ZIP, peramban hanya mengunduh hasil jadi (tidak menyusun ZIP sendiri)", async () => {
+    const h = buka({ orang: "pp" });
+    const s = berkasServerTiruan(h.w);
+    h.w.ALETA_BERKAS_SERVER = s.obyek;
+    await bukaMassal(h);
+    klik(h, '[data-ms="pilihsiap"]');
+    klik(h, '[data-ms="cetak"]');
+    await sampai(() => massal(h).keadaan().jalan === "" && unduhan(h).length === 1, "selesai", 15000);
+    expect(s.catatan.buat).toEqual([{ format: "rtf", nama: `Cetak massal - BAS - ${TGL}` }]);
+    expect(s.catatan.butir).toHaveLength(2);
+    expect(s.catatan.butir.every((b) => b.teks.startsWith("{\\rtf1") && /\.rtf$/.test(b.nama))).toBe(true);
+    expect(s.catatan.butir[0].teks).toContain("Nomor 581/Pdt.G/2026/PA.Dgl");
+    expect(s.catatan.mulai).toEqual(["bk-1"]);
+    const u = unduhan(h)[0];
+    expect(u.nama).toBe("Cetak massal - dari server.zip");
+    expect(dariDataUrl(u.alamat).toString("latin1")).toBe("SERVER-ZIP");
+    expect(akar(h).textContent).toContain("2 dari 2 berhasil dicetak.");
+    expect(akar(h).textContent).toContain("Disusun di server");
+    expect(s.catatan.hapus).toEqual(["bk-1"]);
+  });
+
+  it("naskah yang diperiksa server masih berisi sisa blangko ditandai 'Perlu dicek' (tetap ikut hasil)", async () => {
+    const h = buka({ orang: "pp" });
+    const s = berkasServerTiruan(h.w, { perluDicek: [`581_Pdt.G_2026_PA.Dgl - ${BLANGKO_BAS}.rtf`] });
+    h.w.ALETA_BERKAS_SERVER = s.obyek;
+    await bukaMassal(h);
+    klik(h, '[data-ms="pilihsiap"]');
+    klik(h, '[data-ms="cetak"]');
+    await sampai(() => massal(h).keadaan().jalan === "" && unduhan(h).length === 1, "selesai", 15000);
+    const baris = massal(h).keadaan().baris as Array<{ nomor: string; status: string; catatan?: string }>;
+    const b581 = baris.find((b) => b.nomor.startsWith("581"))!;
+    const b582 = baris.find((b) => b.nomor.startsWith("582"))!;
+    expect(b581.status).toBe("cek");
+    expect(b581.catatan).toContain("diperiksa server");
+    expect(b582.catatan || "").not.toContain("diperiksa server");
+    expect(akar(h).textContent).toContain("Perlu dicek lagi");
+  });
+
+  it("server tidak mau membuat pekerjaan (saklar mati / galat): jalur lama persis, ZIP disusun peramban", async () => {
+    const h = buka({ orang: "pp" });
+    const s = berkasServerTiruan(h.w, { buatNull: true });
+    h.w.ALETA_BERKAS_SERVER = s.obyek;
+    await bukaMassal(h);
+    klik(h, '[data-ms="pilihsiap"]');
+    klik(h, '[data-ms="cetak"]');
+    await sampai(() => massal(h).keadaan().jalan === "" && unduhan(h).length === 1, "selesai", 15000);
+    expect(s.catatan.butir).toEqual([]);
+    expect(Object.keys(bacaZip(dariDataUrl(unduhan(h)[0].alamat)))).toHaveLength(2);
+    expect(unduhan(h)[0].nama).toBe(`Cetak massal - BAS - ${TGL}.zip`);
+  });
+
+  it("server menolak naskah kedua di tengah jalan: pekerjaan dihapus, ZIP lengkap (kedua naskah) disusun peramban", async () => {
+    const h = buka({ orang: "pp" });
+    const s = berkasServerTiruan(h.w, { tolakButirKe: 2 });
+    h.w.ALETA_BERKAS_SERVER = s.obyek;
+    await bukaMassal(h);
+    klik(h, '[data-ms="pilihsiap"]');
+    klik(h, '[data-ms="cetak"]');
+    await sampai(() => massal(h).keadaan().jalan === "" && unduhan(h).length === 1, "selesai", 15000);
+    expect(s.catatan.hapus).toContain("bk-1");
+    expect(s.catatan.mulai).toEqual([]);
+    expect(Object.keys(bacaZip(dariDataUrl(unduhan(h)[0].alamat)))).toHaveLength(2);
+    expect(akar(h).textContent).toContain("2 dari 2 berhasil dicetak.");
+  });
+
+  it("server gagal sesudah dimulai (mulai null, atau pekerjaan berstatus gagal): jalur lama dari naskah yang masih dipegang peramban", async () => {
+    for (const o of [{ mulaiNull: true }, { akhirGagal: true }]) {
+      const h = buka({ orang: "pp" });
+      const s = berkasServerTiruan(h.w, o);
+      h.w.ALETA_BERKAS_SERVER = s.obyek;
+      await bukaMassal(h);
+      klik(h, '[data-ms="pilihsiap"]');
+      klik(h, '[data-ms="cetak"]');
+      await sampai(() => massal(h).keadaan().jalan === "" && unduhan(h).length === 1, "selesai", 15000);
+      expect(Object.keys(bacaZip(dariDataUrl(unduhan(h)[0].alamat)))).toHaveLength(2);
+      expect(unduhan(h)[0].nama).toBe(`Cetak massal - BAS - ${TGL}.zip`);
+    }
+  });
+
+  it("PDF dengan tanda tangan sah dicentang tidak memakai server (gambar tanda tangan tidak dikirim)", async () => {
+    const BARIS = [{ id: 11, namaPejabat: "Hakim Satu, S.H.", disahkan: true, penggunaId: "u-hs", disahkanPada: "2026-10-19T01:00:00.000Z" }];
+    const h = buka({ orang: "hakim", ttd: { baris: BARIS, akunId: "u-hs" } });
+    const s = berkasServerTiruan(h.w);
+    h.w.ALETA_BERKAS_SERVER = s.obyek;
+    await bukaMassal(h);
+    klik(h, '[data-ms="pilihsiap"]');
+    klik(h, 'input[name="bd-ms-format"][value="pdf"]');
+    expect((q(h, "#bd-ms-ttd") as HTMLInputElement).checked).toBe(true);
+    klik(h, '[data-ms="cetak"]');
+    await sampai(() => massal(h).keadaan().jalan === "" && unduhan(h).length >= 1, "selesai", 20000);
+    expect(s.catatan.buat).toEqual([]);
+    expect(h.pdfRtf.length).toBeGreaterThan(0); // dikonversi satu per satu seperti dulu
+  });
+
+  it("PDF tanpa tanda tangan: peramban TIDAK mengonversi sendiri (itu pekerjaan server), hanya mengirim RTF", async () => {
+    const h = buka({ orang: "pp" });
+    const s = berkasServerTiruan(h.w);
+    h.w.ALETA_BERKAS_SERVER = s.obyek;
+    await bukaMassal(h);
+    klik(h, '[data-ms="pilihsiap"]');
+    klik(h, 'input[name="bd-ms-format"][value="pdf"]');
+    const ttd = q(h, "#bd-ms-ttd") as HTMLInputElement;
+    ttd.checked = false;
+    ttd.dispatchEvent(new h.w.Event("change", { bubbles: true }));
+    klik(h, '[data-ms="cetak"]');
+    await sampai(() => massal(h).keadaan().jalan === "" && unduhan(h).length === 1, "selesai", 15000);
+    expect(s.catatan.buat[0].format).toBe("pdf");
+    expect(s.catatan.butir).toHaveLength(2);
+    expect(h.pdfRtf).toEqual([]);
+    expect(h.gabung).toEqual([]);
+  });
+
+  it("hasil yang sudah disusun di server (mis. Chrome sempat ditutup) tampil di jendela, dapat diunduh dan dihapus", async () => {
+    const h = buka({ orang: "pp" });
+    const s = berkasServerTiruan(h.w, { daftar: [{ id: "bk-lama", status: "selesai", hasil: { nama: "Cetak massal - lama.zip", tipe: "application/zip", ukuran: 4096 } }, { id: "bk-jalan", status: "jalan" }] });
+    h.w.ALETA_BERKAS_SERVER = s.obyek;
+    await bukaMassal(h);
+    expect(akar(h).textContent).toContain("Hasil yang sudah disusun di server");
+    expect(akar(h).textContent).toContain("Cetak massal - lama.zip");
+    expect(akar(h).textContent).not.toContain("bk-jalan");
+    klik(h, '[data-ms="srv-unduh"]');
+    await sampai(() => unduhan(h).length === 1, "diunduh");
+    expect(unduhan(h)[0].nama).toBe("Cetak massal - lama.zip");
+    expect(s.catatan.unduh).toEqual(["bk-lama"]);
+    klik(h, '[data-ms="srv-hapus"]');
+    await sampai(() => !(akar(h).textContent || "").includes("Hasil yang sudah disusun di server"), "daftar kosong");
+    expect(s.catatan.hapus).toEqual(["bk-lama"]);
+  });
+});

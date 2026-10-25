@@ -221,6 +221,8 @@ const BERKAS = [
   "popup-ringan.js",
   // Salinan antrean kerja peramban ke basis data (K15, rantai B, 25 Okt 2026); dimuat sesudah mode-ringan.js di blok SIPP dan ABT.
   "antrean-server.js",
+  // Berkas cetak massal dan pemeriksa sisa blangko dikerjakan server (K14, rantai B, 25 Okt 2026); dimuat sesudah antrean-server.js.
+  "berkas-server.js",
   "tema-awal.js",
   // Pusat tema (terang | gelap | sistem): satu sumber kebenaran, dimuat sebelum tema-awal.js (SIPP, ABT, portal).
   "tema-pusat.js",
