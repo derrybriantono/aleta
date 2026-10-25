@@ -91,6 +91,18 @@ export async function register() {
     mulaiRekonsiliasiBerkala(getDatabase);
   }
   /* === AKHIR ALETA Ai REKONSILIASI === */
+  /* === UJI PULIH CADANGAN 25 Okt (Bagian 6d) === detak 5 menit; jalan SEKALI per minggu (bawaan Minggu 03.00 WITA, sesudah
+     pencocokan Cermin 02.00) HANYA bila saklar Super Admin menyala (bawaan MATI). Memulihkan cadangan ALETA terbaru ke basis data
+     SEMENTARA aleta_ujipulih_*, memeriksa, lalu menghapusnya - tidak pernah menyentuh basis data produksi. Matikan seluruhnya
+     dengan ALETA_UJI_PULIH=0. */
+  if (process.env.ALETA_UJI_PULIH !== "0") {
+    const [{ mulaiUjiPulihBerkala }, { getDatabase }] = await Promise.all([
+      import("@/server/modules/keamanan/uji-pulih"),
+      import("@/server/db/client"),
+    ]);
+    mulaiUjiPulihBerkala(getDatabase);
+  }
+  /* === AKHIR UJI PULIH CADANGAN === */
   if (process.env.ALETA_SINKRON_PENJADWAL === "0") return;
   const { mulaiPenjadwalSinkron } = await import("@/server/modules/sinkron/penjadwal");
   mulaiPenjadwalSinkron();

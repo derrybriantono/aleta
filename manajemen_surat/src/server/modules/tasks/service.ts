@@ -549,6 +549,34 @@ async function buildAdminSettingsTasks(
     /* jejak masuk tidak terbaca: tidak menambah pemberitahuan */
   }
 
+  // Uji pulih cadangan (Bagian 6d): uji mingguan terakhir yang GAGAL - Admin dan Super Admin. Saklar mati = tabel kosong = tak ada butir.
+  if (isPrivilegedAdmin(actor)) {
+    try {
+      // Dimuat saat dibutuhkan: modul uji pulih membawa klien pg dan pembongkar arsip.
+      const { pemberitahuanUjiPulih } = await import("@/server/modules/keamanan/uji-pulih");
+      for (const p of await pemberitahuanUjiPulih(db)) {
+        tasks.push({
+          id: `system_task:${p.id}`,
+          entityType: "system_task",
+          entityId: p.id,
+          sourceApp: "admin",
+          sourceLabel: "Pengaturan Keamanan",
+          title: p.judul,
+          description: p.uraian,
+          href: "/admin/keamanan",
+          status: "Perlu perhatian",
+          priority: "high",
+          sourceType: "system_task",
+          createdAt: p.waktu,
+          footer: "Uji pulih cadangan",
+          seen: isSeen(readSet, "system_task", p.id),
+        });
+      }
+    } catch {
+      /* tabel uji pulih tak terbaca: tidak menambah pemberitahuan */
+    }
+  }
+
   // ALETA Ai (24 Okt, T10): rekonsiliasi harian yang tidak cocok - HANYA Super Admin (uang pengelola).
   if (String(getEffectiveRoleId(actor) ?? actor.roleId ?? "") === "super-admin") {
     try {

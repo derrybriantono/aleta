@@ -1297,6 +1297,32 @@ export const DDL_BATAS_JARINGAN = {
 } as const;
 
 /**
+ * Uji pulih cadangan (0109, 25 Okt 2026, Bagian 6d). Cermin PERSIS dari
+ * drizzle/0109_aleta_uji_pulih.sql; penjaga uji-pulih-cadangan-25okt.test.ts membandingkan keduanya.
+ * Tanpa kunci asing.
+ */
+export const DDL_UJI_PULIH = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_uji_pulih (
+  id TEXT PRIMARY KEY,
+  mulai_pada TEXT NOT NULL,
+  selesai_pada TEXT NOT NULL DEFAULT '',
+  pemicu TEXT NOT NULL DEFAULT 'manual',
+  oleh TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'berjalan',
+  tingkat TEXT NOT NULL DEFAULT '',
+  bundel TEXT NOT NULL DEFAULT '',
+  berkas TEXT NOT NULL DEFAULT '',
+  pesan TEXT NOT NULL DEFAULT '',
+  durasi_ms INTEGER NOT NULL DEFAULT 0,
+  dibersihkan INTEGER NOT NULL DEFAULT 0,
+  rincian TEXT NOT NULL DEFAULT '{}'
+)`,
+  ],
+  indeks: [`CREATE INDEX IF NOT EXISTS idx_uji_pulih_waktu ON aleta_uji_pulih(mulai_pada)`],
+} as const;
+
+/**
  * Jejak masuk & perangkat (0085, 23 Okt 2026). Cermin PERSIS dari
  * drizzle/0085_aleta_jejak_masuk_perangkat.sql; penjaga
  * jejak-masuk-perangkat.test.ts membandingkan keduanya. Tanpa kunci asing.
@@ -2527,6 +2553,8 @@ const schemaStatements = [
   ...DDL_KEBIJAKAN_SANDI.tabel,
   // Batas jaringan per peran (0108).
   ...DDL_BATAS_JARINGAN.tabel,
+  // Uji pulih cadangan (0109).
+  ...DDL_UJI_PULIH.tabel,
   `CREATE TABLE IF NOT EXISTS aleta_uji_mandiri (
     id TEXT PRIMARY KEY,
     dijalankan_at TEXT NOT NULL,
@@ -4486,6 +4514,7 @@ const indexStatements = [
   ...DDL_ALETA_AI_TEMPLAT_KIRIMAN.indeks,
   ...DDL_KEBIJAKAN_SANDI.indeks,
   ...DDL_BATAS_JARINGAN.indeks,
+  ...DDL_UJI_PULIH.indeks,
   `CREATE INDEX IF NOT EXISTS idx_uji_mandiri_waktu ON aleta_uji_mandiri(dijalankan_at)`,
   // Satu kedudukan hanya boleh punya SATU catatan per pertemuan - tanpa ini,
   // simpan dua kali menghasilkan dua baris yang saling bertentangan.

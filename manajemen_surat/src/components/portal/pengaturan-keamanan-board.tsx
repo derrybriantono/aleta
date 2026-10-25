@@ -3,6 +3,7 @@
 import { PanelJaringan } from "@/components/portal/keamanan/panel-jaringan";
 import { PanelPengaman } from "@/components/portal/keamanan/panel-pengaman";
 import { PanelSandi } from "@/components/portal/keamanan/panel-sandi";
+import { PanelUjiPulih } from "@/components/portal/keamanan/panel-uji-pulih";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePortal } from "@/lib/app-state";
 import { bolehAksiLayar } from "@/lib/matriks-peran";
@@ -22,6 +23,7 @@ export function PengaturanKeamananBoard() {
         <TabsTrigger value="sandi">Kebijakan sandi</TabsTrigger>
         <TabsTrigger value="jaringan">Batas jaringan</TabsTrigger>
         <TabsTrigger value="pengaman">Pengaman aksi</TabsTrigger>
+        <TabsTrigger value="pulih">Uji pulih cadangan</TabsTrigger>
       </TabsList>
       <TabsContent value="sandi">
         <PanelSandi bolehUbah={bolehUbah} />
@@ -31,6 +33,9 @@ export function PengaturanKeamananBoard() {
       </TabsContent>
       <TabsContent value="pengaman">
         <PanelPengaman bolehUbah={bolehUbah} />
+      </TabsContent>
+      <TabsContent value="pulih">
+        <PanelUjiPulih bolehUbah={bolehUbah} />
       </TabsContent>
     </Tabs>
   );
