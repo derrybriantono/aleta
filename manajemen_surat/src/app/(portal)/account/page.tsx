@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Eye, EyeOff, Save, ShieldCheck } from "lucide-react";
 
 import { getResolvedActingAssignment } from "@/core/organization/service";
+import { CatatanDilihatSuperAdmin } from "@/components/portal/catatan-dilihat";
 import { PerangkatSaya } from "@/components/portal/perangkat-saya";
 import { UserAvatar } from "@/components/portal/user-avatar";
 import { EmptyState, PageIntro } from "@/components/portal/shared";
@@ -280,6 +281,7 @@ function AccountEditor({
         </Card>
       </div>
       <PerangkatSaya />
+      <CatatanDilihatSuperAdmin />
     </div>
   );
 }

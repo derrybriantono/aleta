@@ -1423,6 +1423,27 @@ export const TUTORIAL: readonly Tutorial[] = [
     kataKunci: ["pemeliharaan", "maintenance", "pasang", "update", "jadwal", "tutup sementara"],
   },
   {
+    id: "pengelola-lihat-sebagai-menu",
+    judul: "Lihat Sebagai: kenapa menu tersembunyi",
+    ringkas: "Memeriksa menu yang tampil bagi sebuah akun atau peran, dan kenapa menu lain tersembunyi.",
+    kelompok: "pengelola",
+    mencakup: { aksi: ["lihat-sebagai.pakai"] },
+    halaman: ["/admin/lihat-sebagai"],
+    tautan: { teks: "Buka Lihat Sebagai", href: "/admin/lihat-sebagai" },
+    langkah: [
+      "Buka Pusat Kendali, lalu Lihat Sebagai (hanya Super Admin).",
+      "Pilih akun atau peran, tulis alasan (paling sedikit 10 huruf), lalu tekan Mulai melihat.",
+      "Baca daftar aplikasi: tiap baris menyebut tampil atau tersembunyi beserta sebabnya (Akses Menu per peran atau matriks hak).",
+      "Tekan Akhiri bila selesai; sesi berakhir sendiri setelah 30 menit.",
+    ],
+    peringatan: [
+      "Ini pratinjau baca-saja: Anda tidak masuk sebagai orang itu dan tidak melihat data perkaranya.",
+      "Pilihan Lihat sebagai di Panduan dan di ekstensi tetap ada untuk menirukan tampilan; halaman ini melengkapinya dengan sebab tampil atau tersembunyi, alasan wajib, dan catatan audit.",
+      "Setiap pemeriksaan tercatat di audit, dan pemilik akun melihat catatan dilihat oleh Super Admin di halaman Akun.",
+    ],
+    kataKunci: ["lihat sebagai", "menu hilang", "menu tersembunyi", "kenapa tidak muncul", "akses menu", "peran"],
+  },
+  {
     id: "pengelola-akun-akses",
     judul: "Manajemen Akun dan Akses Menu",
     ringkas: "Mengatur siapa memegang jabatan apa, dan aplikasi apa yang terbuka untuk tiap peran.",

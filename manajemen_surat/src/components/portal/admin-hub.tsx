@@ -5,6 +5,7 @@ import {
   BriefcaseBusiness,
   Database,
   DatabaseBackup,
+  Eye,
   Globe,
   Landmark,
   LayoutDashboard,
@@ -420,6 +421,13 @@ export function AdminHub() {
                 title="Mode Pemeliharaan"
                 description="Beri tahu pengguna sebelum pemasangan, hentikan perubahan data selama pemasangan, dan buka kembali sendiri."
                 icon={<PackageCheck className="h-5 w-5 text-amber-600" />}
+                badge="Super Admin"
+              />
+              <AdminMenuAction
+                href="/admin/lihat-sebagai"
+                title="Lihat Sebagai"
+                description="Periksa menu yang tampil bagi sebuah akun atau peran dan kenapa menu lain tersembunyi (baca-saja, tercatat)."
+                icon={<Eye className="h-5 w-5 text-primary" />}
                 badge="Super Admin"
               />
               <AdminMenuAction

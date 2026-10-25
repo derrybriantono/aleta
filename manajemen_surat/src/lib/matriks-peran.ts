@@ -1035,6 +1035,16 @@ export const AKSI = {
     alasan: "Mode pemeliharaan menghentikan perubahan data seluruh pegawai - hanya Super Admin yang menyalakannya (mati bawaan). Admin hanya dikecualikan bila Super Admin mencentangnya.",
     hanyaSuperAdmin: true,
   },
+  // 25 Okt 2026 (rantai E, E4): Lihat sebagai pengguna/peran (pratinjau menu dan hak, baca-saja).
+  "lihat-sebagai.pakai": {
+    label: "Lihat sebagai akun atau peran (pratinjau menu dan hak, baca-saja, tercatat)",
+    crud: "CU",
+    golongan: [],
+    lingkup: "semua",
+    rute: ["GET|POST|DELETE /api/admin/lihat-sebagai"],
+    alasan: "Membuka tampilan menu orang lain menyentuh privasi pegawai - hanya Super Admin, dengan alasan wajib, batas 30 menit, dan tercatat di audit serta di halaman Akun pemilik.",
+    hanyaSuperAdmin: true,
+  },
   // Analitik
   "analitik.peta-beban": {
     label: "Peta perkara & beban konseptor",
