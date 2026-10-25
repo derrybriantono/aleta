@@ -106,6 +106,8 @@ describe("ekstensi: jeda tiruan manusia tidak lagi ada di jalur isi/tekan layar"
   });
 
   it("alatJedaManusia / s2JedaTulis hanya dipakai di tulisan database beruntun: baris Court Calendar KEDUA dst. dan upload e-Doc lewat bot", () => {
+    // K11: tiap berkas dibaca apa adanya (konten.js = inti; modul panelnya berkas sendiri), bukan gabungan uji.
+    process.env.ALETA_KONTEN_MENTAH = "1";
     const pakai: string[] = [];
     for (const berkas of readdirSync(EKSTENSI).filter((n) => n.endsWith(".js"))) {
       const baris = sumber(berkas).split("\n");
@@ -116,9 +118,10 @@ describe("ekstensi: jeda tiruan manusia tidak lagi ada di jalur isi/tekan layar"
     }
     // abt.js: a2JedaTulis adalah no-op sejak 5 Okt (tanpa jeda di ABT) - tiga panggilan lama.
     const bukanAbt = pakai.filter((x) => !x.startsWith("abt.js:"));
-    expect(bukanAbt.map((x) => x.split(":")[0])).toEqual(["konten.js", "konten.js", "konten.js", "konten.js"]);
-    const konten = sumber("konten.js").split("\n");
-    const isi = bukanAbt.map((x) => konten[Number(x.split(":")[1]) - 1].trim());
+    // K11 (26 Okt 2026): konten.js dipecah menjadi inti + modul panel; semuanya tetap "konten" (empat pemakaian).
+    expect(bukanAbt.map((x) => x.split(":")[0].replace(/^konten-panel-[a-z]+\.js$/, "konten.js"))).toEqual(["konten.js", "konten.js", "konten.js", "konten.js"]);
+    const isi = bukanAbt.map((x) => sumber(x.split(":")[0]).split("\n")[Number(x.split(":")[1]) - 1].trim());
+    delete process.env.ALETA_KONTEN_MENTAH;
     expect(isi.filter((b) => b.includes('s2JedaTulis("unggah"'))).toHaveLength(2);
     // Satu di badan pembungkus s2JedaTulis, satu di Court Calendar (sesudah baris pertama).
     expect(isi.filter((b) => b.includes("await alatJedaManusia(") && b.includes('"simpan"'))).toHaveLength(2);

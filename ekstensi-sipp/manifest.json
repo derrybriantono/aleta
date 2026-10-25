@@ -7,7 +7,8 @@
   "permissions": [
     "storage",
     "downloads",
-    "nativeMessaging"
+    "nativeMessaging",
+    "scripting"
   ],
   "host_permissions": [
     "http://192.168.10.10/*",
@@ -68,6 +69,7 @@
         "pihak-lengkap.js",
         "ejaan-nama.js",
         "penunjukan-statistik.js",
+        "modul-malas.js",
         "konten.js",
         "tarik-satu-perkara.js",
         "checklist.js",

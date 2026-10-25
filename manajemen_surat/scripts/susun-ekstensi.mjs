@@ -68,7 +68,13 @@ const BERKAS = [
   // Statistik beban penetapan (20 Okt 2026, B1): tampilan saja, dipakai papan konten.js
   // dan panel penetapan-sipp.js dari objek usulan.statistik yang sama.
   "penunjukan-statistik.js",
+  // Modul malas (K11, 26 Okt 2026): pemuat di halaman + tiga potongan konten.js yang disuntikkan pekerja latar
+  // tepat sebelum dipakai (panel perkara / panel daftar / bagian bersama). Tanpa salah satunya panel tidak muncul.
+  "modul-malas.js",
   "konten.js",
+  "konten-panel-bersama.js",
+  "konten-panel-perkara.js",
+  "konten-panel-daftar.js",
   "abt.js",
   "aleta.js",
   "panel-alat.js",

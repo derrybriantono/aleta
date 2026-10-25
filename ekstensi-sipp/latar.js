@@ -810,8 +810,42 @@ async function tampilkanPdfTitipan(pesan) {
 }
 
 
+/*
+ * MODUL MALAS (K11, 26 Okt 2026) - lihat modul-malas.js.
+ *
+ * Skrip konten meminta berkas kode (potongan konten.js) disuntikkan ke dunia
+ * terasing halamannya sendiri tepat sebelum dipakai. Hanya berkas dalam daftar
+ * ini yang mau disuntikkan, hanya dari skrip konten ekstensi ini, hanya ke bingkai
+ * pengirimnya sendiri. Pekerja latar tidak menyimpan apa pun: halaman sendiri yang
+ * mencatat berkas mana sudah dimuat, sebab menyuntik dua kali = const ganda.
+ */
+const BERKAS_MODUL_MALAS = new Set(["konten-panel-bersama.js", "konten-panel-perkara.js", "konten-panel-daftar.js"]);
+
+async function layaniMuatModul(pesan, pengirim) {
+  const tab = pengirim && pengirim.tab;
+  if (!tab || typeof tab.id !== "number" || (pengirim.id && pengirim.id !== chrome.runtime.id)) return { ok: false, sebab: "pengirim" };
+  const berkas = Array.isArray(pesan.berkas) ? pesan.berkas.map((b) => String(b)) : [];
+  if (!berkas.length || berkas.length > 12 || berkas.some((b) => !BERKAS_MODUL_MALAS.has(b))) return { ok: false, sebab: "berkas" };
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId: tab.id, frameIds: [typeof pengirim.frameId === "number" ? pengirim.frameId : 0] },
+      files: berkas,
+    });
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, sebab: String((e && e.message) || e).slice(0, 200) };
+  }
+}
+
 chrome.runtime.onMessage.addListener((pesan, pengirim, jawab) => {
   if (!pesan || pesan.sumber !== "aleta-panel") return undefined;
+
+  if (pesan.jenis === "muat-modul") {
+    layaniMuatModul(pesan, pengirim)
+      .then(jawab)
+      .catch(() => jawab({ ok: false, sebab: "gagal" }));
+    return true; // jawaban menyusul
+  }
 
   if (pesan.jenis === "aleta-pemimpin") {
     layaniPemimpin(pesan, pengirim)

@@ -90,7 +90,7 @@ describe("berkas yang dihasilkan", () => {
     const war = (manifest.web_accessible_resources as Array<{ resources: string[]; matches: string[] }>).find((w) => w.resources.includes("saksi-katalog-jenis/*.json"));
     expect(war).toBeTruthy();
     expect(war!.matches).toEqual(expect.arrayContaining(["http://192.168.10.10/*", "http://127.0.0.1/*"]));
-    expect(manifest.permissions).toEqual(["storage", "downloads", "nativeMessaging"]); // tidak ada izin "scripting" baru
+    expect(manifest.permissions).toEqual(["storage", "downloads", "nativeMessaging", "scripting"]); // K10 sendiri tanpa izin baru; "scripting" datang dari K11 (modul malas)
   });
 
   it("semua berkas baru ikut tertanam di paket ekstensi", () => {
