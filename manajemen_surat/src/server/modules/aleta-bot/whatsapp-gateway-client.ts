@@ -4229,7 +4229,7 @@ export async function gatewayFaktaBuktiPertimbangan(nomor: string): Promise<
  * src/lib/penjaga-tenggat.ts. Tiap pembaca fakta gagal sendiri-sendiri, jadi
  * `gagal` dapat berisi sebagian kode aturan tanpa membuat seluruhnya gagal.
  */
-export async function getGatewayPenjagaTenggat(acuan = ""): Promise<
+export async function getGatewayPenjagaTenggat(acuan = "", opsi: { baru?: boolean } = {}): Promise<
   GatewayResult<{
     acuan: string;
     fakta: Record<string, unknown[]>;
@@ -4237,6 +4237,8 @@ export async function getGatewayPenjagaTenggat(acuan = ""): Promise<
   }>
 > {
   const params = new URLSearchParams({ acuan });
+  // baru=1 (G1): ikut banding/kasasi/mediasi + petugas perkara; tanpa itu jawaban sama dengan sebelum G1.
+  if (opsi.baru) params.set("baru", "1");
   return gatewayFetch(`/internal/aleta-bot/sipp/penjaga-tenggat?${params.toString()}`);
 }
 

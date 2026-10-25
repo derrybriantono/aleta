@@ -6054,7 +6054,8 @@ router.get("/sipp/jadwal-sidang/kalender", requireInternalToken, async (req, res
  */
 router.get("/sipp/penjaga-tenggat", requireInternalToken, async (req, res) => {
   try {
-    const hasil = await penjagaTenggatService.bacaFakta(String(req.query.acuan || ""));
+    // baru=1 (G1): banding/kasasi/mediasi + petugas perkara. Tanpa itu bentuk dan isinya sama dengan sebelum G1.
+    const hasil = await penjagaTenggatService.bacaFakta(String(req.query.acuan || ""), { baru: String(req.query.baru || "") === "1" });
     res.json({ ok: true, ...hasil });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
