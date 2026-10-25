@@ -357,13 +357,18 @@ export async function jalankanPemeriksaan(db: AletaDatabase, opsi: { ping?: bool
 
 export type KirimPeringatan = (penerima: Array<{ id: string; nama: string; nomor: string }>, pesan: string, kunci: string) => Promise<{ terkirim: number; gagal: number }>;
 
-async function penerimaPeringatan(db: AletaDatabase, pengaturan: PengaturanKesehatan) {
-  const peran = pengaturan.penerima === "super-admin" ? ["super-admin"] : ["super-admin", "admin"];
+/** Admin (atau hanya Super Admin) aktif yang punya nomor WhatsApp - penerima peringatan sistem. */
+export async function daftarPenerimaAdmin(db: AletaDatabase, penerima: "admin" | "super-admin") {
+  const peran = penerima === "super-admin" ? ["super-admin"] : ["super-admin", "admin"];
   const baris = await db.queryAll<{ id: string; name: string; whatsapp_number: string; role_id: string }>(
     `SELECT id, name, whatsapp_number, role_id FROM users WHERE is_active = 1 AND deleted_at IS NULL AND role_id IN (${peran.map(() => "?").join(", ")})`,
     peran
   );
   return baris.filter((b) => String(b.whatsapp_number || "").replace(/\D/g, "").length >= 8).map((b) => ({ id: b.id, nama: b.name, nomor: b.whatsapp_number }));
+}
+
+async function penerimaPeringatan(db: AletaDatabase, pengaturan: PengaturanKesehatan) {
+  return daftarPenerimaAdmin(db, pengaturan.penerima);
 }
 
 export async function kirimPeringatanWhatsapp(

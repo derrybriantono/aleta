@@ -1025,6 +1025,16 @@ export const AKSI = {
     alasan: "Pemeriksaan berkala menanyai bot dan peringatan WhatsApp mengirim pesan ke admin - hanya Super Admin yang menyalakannya (mati bawaan).",
     hanyaSuperAdmin: true,
   },
+  // 25 Okt 2026 (rantai E, E3): mode pemeliharaan portal.
+  "pemeliharaan.atur": {
+    label: "Menyalakan Mode pemeliharaan, mengatur pesan dan jadwalnya",
+    crud: "CUD",
+    golongan: [],
+    lingkup: "semua",
+    rute: ["GET|POST /api/admin/pemeliharaan"],
+    alasan: "Mode pemeliharaan menghentikan perubahan data seluruh pegawai - hanya Super Admin yang menyalakannya (mati bawaan). Admin hanya dikecualikan bila Super Admin mencentangnya.",
+    hanyaSuperAdmin: true,
+  },
   // Analitik
   "analitik.peta-beban": {
     label: "Peta perkara & beban konseptor",

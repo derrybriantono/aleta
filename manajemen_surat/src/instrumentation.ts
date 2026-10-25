@@ -103,6 +103,17 @@ export async function register() {
     mulaiKesehatanBerkala(getDatabase);
   }
   /* === AKHIR PUSAT KESEHATAN === */
+  /* === MODE PEMELIHARAAN 25 Okt (E3) === detak 60 detik; hanya mengirim SATU WhatsApp 15 menit sebelum jadwal mulai bila
+     Super Admin mencentang kabar WhatsApp (mati bawaan). Mode pemeliharaannya sendiri dinilai tiap permintaan, bukan di sini.
+     Matikan detaknya dengan ALETA_PEMELIHARAAN_DETAK=0. */
+  if (process.env.ALETA_PEMELIHARAAN_DETAK !== "0") {
+    const [{ mulaiPemeliharaanBerkala }, { getDatabase }] = await Promise.all([
+      import("@/server/modules/pemeliharaan/layanan"),
+      import("@/server/db/client"),
+    ]);
+    mulaiPemeliharaanBerkala(getDatabase);
+  }
+  /* === AKHIR MODE PEMELIHARAAN === */
   if (process.env.ALETA_SINKRON_PENJADWAL === "0") return;
   const { mulaiPenjadwalSinkron } = await import("@/server/modules/sinkron/penjadwal");
   mulaiPenjadwalSinkron();

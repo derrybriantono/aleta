@@ -1403,6 +1403,26 @@ export const TUTORIAL: readonly Tutorial[] = [
     kataKunci: ["kesehatan", "galat", "error", "uji beban", "bot", "sipp", "monitor", "status sistem"],
   },
   {
+    id: "pengelola-pemeliharaan",
+    judul: "Mode Pemeliharaan",
+    ringkas: "Memberi tahu pengguna sebelum pemasangan, menghentikan perubahan data selama pemasangan, dan membuka kembali sendiri.",
+    kelompok: "pengelola",
+    mencakup: { aksi: ["pemeliharaan.atur"] },
+    halaman: ["/admin/pemeliharaan"],
+    tautan: { teks: "Buka Mode Pemeliharaan", href: "/admin/pemeliharaan" },
+    langkah: [
+      "Buka Pusat Kendali, lalu Mode Pemeliharaan (hanya Super Admin).",
+      "Tulis pesan untuk pengguna. Isi jadwal mulai dan selesai bila pemasangan sudah dijadwalkan; pengguna melihat pita pemberitahuan sejak satu jam sebelumnya.",
+      "Centang kabar WhatsApp bila admin perlu diingatkan 15 menit sebelum mulai, dan centang Admin tetap boleh masuk bila perlu.",
+      "Tekan Nyalakan sekarang untuk memulai tanpa jadwal, dan Matikan sekarang untuk menutup. Layar pengguna terbuka sendiri.",
+    ],
+    peringatan: [
+      "Selama aktif, pengguna biasa tidak dapat menyimpan perubahan apa pun, termasuk lewat ekstensi di halaman SIPP. Bacaan tetap jalan.",
+      "Layar antrean dan jadwal publik tidak terpengaruh. Pekerjaan bot yang sudah berjalan di server tidak dihentikan.",
+    ],
+    kataKunci: ["pemeliharaan", "maintenance", "pasang", "update", "jadwal", "tutup sementara"],
+  },
+  {
     id: "pengelola-akun-akses",
     judul: "Manajemen Akun dan Akses Menu",
     ringkas: "Mengatur siapa memegang jabatan apa, dan aplikasi apa yang terbuka untuk tiap peran.",

@@ -42,6 +42,15 @@ export function extractActorUserId(request: NextRequest, fallbackUserId?: string
  * basis data adalah akibat yang jauh lebih besar daripada sebabnya.
  */
 export async function resolveActorUserId(request: NextRequest, fallbackUserId?: string | null) {
+  const id = await resolveActorUserIdDasar(request, fallbackUserId);
+  // Penjaga permintaan (rantai E, 25 Okt 2026): mode pemeliharaan menolak menulis; DI LUAR try/catch
+  // resolveActorUserIdDasar supaya penolakannya tidak ditelan menjadi "tanpa pengguna".
+  if (!id) return id;
+  const { terapkanPenjagaPermintaan } = await import("@/server/shared/penjaga-permintaan");
+  return terapkanPenjagaPermintaan(request, String(id));
+}
+
+async function resolveActorUserIdDasar(request: NextRequest, fallbackUserId?: string | null) {
   // TAUTAN JADWAL SIDANG (20 Okt 2026): permintaan yang membawa rahasia tautan
   // diperiksa DI SINI dan tidak pernah jatuh ke sesi akun - di luar blok try
   // di bawah, supaya penolakannya (jaringan luar, dicabut, rute tak diizinkan,

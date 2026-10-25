@@ -416,6 +416,13 @@ export function AdminHub() {
                 badge="Security"
               />
               <AdminMenuAction
+                href="/admin/pemeliharaan"
+                title="Mode Pemeliharaan"
+                description="Beri tahu pengguna sebelum pemasangan, hentikan perubahan data selama pemasangan, dan buka kembali sendiri."
+                icon={<PackageCheck className="h-5 w-5 text-amber-600" />}
+                badge="Super Admin"
+              />
+              <AdminMenuAction
                 href="/admin/audit-trail"
                 title="Audit Trail"
                 description="Monitor seluruh perubahan penting sistem dan aktivitas administratif dalam satu jejak audit."
