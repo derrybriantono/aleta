@@ -740,7 +740,7 @@ export async function jalankanUjiPulih(db: AletaDatabase, opsi: OpsiUjiPulih): P
     const pulih = await jalan(
       "Pulihkan ke basis data sementara",
       () => mesin.pulihkan(dbSementara, sql, opsi.batasPsqlMs ?? Number(process.env.ALETA_UJI_PULIH_BATAS_MENIT || 30) * 60_000),
-      (h) => `${h.galat.length} baris galat dari psql`
+      (h) => `${h.galat.length} baris kesalahan dari psql`
     );
     rincian.galatPsql = pulih.galat.length;
     rincian.contohGalatPsql = pulih.galat.slice(0, 5);

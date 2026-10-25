@@ -271,7 +271,7 @@ export function PanelUjiPulih({ bolehUbah }: { bolehUbah: boolean }) {
                             </table>
                           )}
                           <p className="text-xs text-muted-foreground">
-                            Migrasi: hasil pulih {b.rincian.migrasi.pulih ?? "-"} dari produksi {b.rincian.migrasi.produksi ?? "-"}. Galat psql: {b.rincian.galatPsql}.{" "}
+                            Migrasi: hasil pulih {b.rincian.migrasi.pulih ?? "-"} dari produksi {b.rincian.migrasi.produksi ?? "-"}. Pesan kesalahan dari pemulihan: {b.rincian.galatPsql}.{" "}
                             {b.dibersihkan ? "Basis data sementara sudah dihapus." : "Basis data sementara BELUM terhapus."}
                           </p>
                         </td>
