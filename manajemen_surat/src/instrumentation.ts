@@ -114,6 +114,16 @@ export async function register() {
     mulaiPemeliharaanBerkala(getDatabase);
   }
   /* === AKHIR MODE PEMELIHARAAN === */
+  /* === PENJAGA INTEGRITAS BERKAS 25 Okt (E6) === detak 60 detik; SAKLAR MATI bawaan = tidak berbuat apa-apa (tidak membaca folder, tidak mengirim pesan).
+     Folder terdaftar hanya DIBACA. Matikan detaknya dengan ALETA_INTEGRITAS_DETAK=0. */
+  if (process.env.ALETA_INTEGRITAS_DETAK !== "0") {
+    const [{ mulaiIntegritasBerkala }, { getDatabase }] = await Promise.all([
+      import("@/server/modules/integritas/layanan"),
+      import("@/server/db/client"),
+    ]);
+    mulaiIntegritasBerkala(getDatabase);
+  }
+  /* === AKHIR PENJAGA INTEGRITAS === */
   if (process.env.ALETA_SINKRON_PENJADWAL === "0") return;
   const { mulaiPenjadwalSinkron } = await import("@/server/modules/sinkron/penjadwal");
   mulaiPenjadwalSinkron();

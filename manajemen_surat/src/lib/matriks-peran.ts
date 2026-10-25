@@ -1063,6 +1063,24 @@ export const AKSI = {
     rute: ["POST /api/admin/verifikasi/bantuan"],
     alasan: "Admin dan Super Admin membantu pengguna biasa; hanya Super Admin yang boleh membantu akun Admin atau Super Admin.",
   },
+  // 25 Okt 2026 (rantai E, E6): penjaga integritas berkas website/SIPP/ABT (baca-saja, mati bawaan).
+  "integritas.lihat": {
+    label: "Melihat temuan penjaga integritas berkas (PHP mencurigakan, webshell, kata judi online)",
+    crud: "R",
+    golongan: [],
+    lingkup: "semua",
+    rute: ["GET /api/admin/integritas"],
+    alasan: "Temuan keamanan website/server hanya untuk pengelola: Super Admin dan Admin.",
+  },
+  "integritas.atur": {
+    label: "Mengatur penjaga integritas: folder yang dijaga, memindai sekarang, menandai temuan ditangani atau diketahui aman",
+    crud: "CUD",
+    golongan: [],
+    lingkup: "semua",
+    rute: ["POST /api/admin/integritas", "POST /api/admin/integritas/temuan", "POST /api/admin/integritas/pindai"],
+    alasan: "Folder yang dibaca dan daftar diketahui aman menentukan apa yang dianggap berbahaya - hanya Super Admin (mati bawaan).",
+    hanyaSuperAdmin: true,
+  },
   // Analitik
   "analitik.peta-beban": {
     label: "Peta perkara & beban konseptor",

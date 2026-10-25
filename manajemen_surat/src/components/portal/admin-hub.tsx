@@ -424,6 +424,13 @@ export function AdminHub() {
                 badge="Super Admin"
               />
               <AdminMenuAction
+                href="/admin/penjaga-integritas"
+                title="Penjaga Integritas Berkas"
+                description="Pantau folder website satker, SIPP, dan ABT (baca-saja): PHP baru, webshell, kata judi online."
+                icon={<ShieldCheck className="h-5 w-5 text-rose-600" />}
+                badge="Security"
+              />
+              <AdminMenuAction
                 href="/admin/verifikasi-dua-langkah"
                 title="Verifikasi Dua Langkah"
                 description="OTP WhatsApp dan authenticator untuk perangkat baru atau luar kantor; bantu pengguna yang kehilangan HP."

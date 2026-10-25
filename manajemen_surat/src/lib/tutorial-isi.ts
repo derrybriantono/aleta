@@ -1443,6 +1443,26 @@ export const TUTORIAL: readonly Tutorial[] = [
     kataKunci: ["otp", "verifikasi", "dua langkah", "authenticator", "kode whatsapp", "kode cadangan", "2fa"],
   },
   {
+    id: "pengelola-penjaga-integritas",
+    judul: "Penjaga Integritas Berkas",
+    ringkas: "Memantau folder website satker, SIPP, dan ABT (baca-saja) terhadap PHP baru, webshell, dan kata judi online.",
+    kelompok: "pengelola",
+    mencakup: { aksi: ["integritas.lihat", "integritas.atur"] },
+    halaman: ["/admin/penjaga-integritas"],
+    tautan: { teks: "Buka Penjaga Integritas", href: "/admin/penjaga-integritas" },
+    langkah: [
+      "Pastikan folder website sudah dipasang (mount) baca-saja ke server ALETA, lalu buka Pusat Kendali, Penjaga Integritas Berkas (Super Admin).",
+      "Daftarkan folder (nama, jalur, jenis, dan nama folder unggahan) dan, bila perlu, alamat halaman publik website. Nyalakan penjaga: pemindaian awal mencatat sidik semua berkas tanpa mengirim peringatan.",
+      "Sesudah itu berkas PHP baru atau berubah, PHP di folder unggahan, pola webshell, dan kata judi online muncul sebagai temuan dan dikabarkan lewat WhatsApp ke admin.",
+      "Periksa tiap temuan, bersihkan di server, lalu tekan Sudah ditangani. Untuk pembaruan resmi, tekan Diketahui aman agar sidik berkas itu tidak dilaporkan lagi.",
+    ],
+    peringatan: [
+      "ALETA hanya membaca folder itu: tidak ada berkas yang ditulis, dipindah, atau dihapus otomatis, dan isi berkas mencurigakan tidak disalin.",
+      "Kata judi online baru dihitung bila minimal dua kata berbeda ada di satu halaman, supaya imbauan resmi tidak disalahkan.",
+    ],
+    kataKunci: ["integritas", "judol", "judi online", "webshell", "website", "php", "keamanan", "peretasan", "slot", "togel"],
+  },
+  {
     id: "pengelola-lihat-sebagai-menu",
     judul: "Lihat Sebagai: kenapa menu tersembunyi",
     ringkas: "Memeriksa menu yang tampil bagi sebuah akun atau peran, dan kenapa menu lain tersembunyi.",

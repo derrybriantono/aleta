@@ -400,11 +400,11 @@ describe("layanan Pusat kesehatan", () => {
   }, 180000);
   afterAll(async () => db?.close());
 
-  it("satu pemeriksaan penuh: 13 komponen, warna masuk akal, PC dengan ekstensi lama terdaftar kuning", async () => {
+  it("satu pemeriksaan penuh: 14 komponen, warna masuk akal, PC dengan ekstensi lama terdaftar kuning", async () => {
     const hasil = await jalankanPemeriksaan(db, { ping: true, deps: depsTiruan() });
-    expect(hasil.komponen.map((k) => k.kunci)).toEqual(["portal", "basis-data", "bot", "whatsapp", "sipp", "abt", "antrian", "ecourt", "cadangan", "server", "ekstensi", "galat", "uji-beban"]);
+    expect(hasil.komponen.map((k) => k.kunci)).toEqual(["portal", "basis-data", "bot", "whatsapp", "sipp", "abt", "antrian", "ecourt", "cadangan", "server", "ekstensi", "galat", "uji-beban", "integritas"]);
     const w = Object.fromEntries(hasil.komponen.map((k) => [k.kunci, k.warna]));
-    expect(w).toMatchObject({ portal: "hijau", "basis-data": "hijau", bot: "hijau", whatsapp: "hijau", sipp: "hijau", abt: "hijau", antrian: "hijau", ecourt: "hijau", cadangan: "hijau", server: "hijau", ekstensi: "kuning", galat: "hijau", "uji-beban": "kelabu" });
+    expect(w).toMatchObject({ portal: "hijau", "basis-data": "hijau", bot: "hijau", whatsapp: "hijau", sipp: "hijau", abt: "hijau", antrian: "hijau", ecourt: "hijau", cadangan: "hijau", server: "hijau", ekstensi: "kuning", galat: "hijau", "uji-beban": "kelabu", integritas: "kelabu" });
     // ekstensi kuning dan uji beban kelabu TIDAK menentukan warna keseluruhan
     expect(hasil.warna).toBe("hijau");
     expect(KOMPONEN_PENENTU.has("ekstensi")).toBe(false);

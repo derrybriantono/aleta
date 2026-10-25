@@ -31,6 +31,7 @@ import {
   periksaEcourt,
   periksaEkstensi,
   periksaGalat,
+  periksaIntegritas,
   periksaPortal,
   periksaServer,
   periksaSambungan,
@@ -289,10 +290,16 @@ const KOMPONEN: Array<{ kunci: string; nama: string; kelompok: Komponen["kelompo
   { kunci: "ekstensi", nama: "Ekstensi di PC pengguna", kelompok: "klien" },
   { kunci: "galat", nama: "Galat 24 jam", kelompok: "layanan" },
   { kunci: "uji-beban", nama: "Uji beban terakhir", kelompok: "server" },
+  { kunci: "integritas", nama: "Integritas berkas website/server", kelompok: "server" },
 ];
 
 /** Komponen yang ikut menentukan warna keseluruhan dan boleh memicu peringatan. Ekstensi dan uji beban hanya informasi. */
-export const KOMPONEN_PENENTU = new Set(["portal", "basis-data", "bot", "whatsapp", "sipp", "abt", "antrian", "ecourt", "cadangan", "server", "galat"]);
+export const KOMPONEN_PENENTU = new Set(["portal", "basis-data", "bot", "whatsapp", "sipp", "abt", "antrian", "ecourt", "cadangan", "server", "galat", "integritas"]);
+
+async function ringkasIntegritasAman(db: AletaDatabase) {
+  const { ringkasIntegritas } = await import("@/server/modules/integritas/layanan");
+  return ringkasIntegritas(db);
+}
 
 export async function jalankanPemeriksaan(db: AletaDatabase, opsi: { ping?: boolean; deps?: DepsKesehatan } = {}): Promise<HasilKesehatan> {
   const deps = opsi.deps ?? (await depsAsli());
@@ -301,7 +308,7 @@ export async function jalankanPemeriksaan(db: AletaDatabase, opsi: { ping?: bool
   const mulai = Date.now();
   const kosong = { ok: false as const, error: "tidak menjawab dalam batas waktu" };
 
-  const [status, kesehatanBot, sumber, ecourt, cadangan, ukuran, perangkat, galat, uji] = await Promise.all([
+  const [status, kesehatanBot, sumber, ecourt, cadangan, ukuran, perangkat, galat, uji, integritas] = await Promise.all([
     dengan(deps.botStatus(), 7000, kosong),
     dengan(deps.botKesehatan(opsi.ping ?? false), 10_000, kosong),
     dengan(deps.sumberDaya(), 8000, kosong),
@@ -311,6 +318,7 @@ export async function jalankanPemeriksaan(db: AletaDatabase, opsi: { ping?: bool
     dengan(perangkatEkstensi(db), 4000, [] as PerangkatEkstensi[]),
     dengan(ringkasGalat(db, kini), 3000, null),
     dengan(ujiBebanTerakhir(db), 3000, null),
+    dengan(ringkasIntegritasAman(db), 3000, null),
   ]);
 
   // Basis data ALETA: diukur sendiri (dua pembacaan terkecil).
@@ -339,6 +347,7 @@ export async function jalankanPemeriksaan(db: AletaDatabase, opsi: { ping?: bool
     ekstensi: periksaEkstensi(perangkat, deps.versiEkstensiTerbaru, kini),
     galat: periksaGalat(galat),
     "uji-beban": periksaUjiBeban(uji, kini),
+    integritas: periksaIntegritas(integritas, kini),
   };
   const durasi = Date.now() - mulai;
   const komponen = KOMPONEN.map((k) => bentukKomponen(k, isi[k.kunci], diukurPada, durasi));

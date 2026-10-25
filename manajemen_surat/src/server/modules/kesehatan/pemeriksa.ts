@@ -320,6 +320,32 @@ export function periksaGalat(ringkas: RingkasGalat | null) {
   };
 }
 
+export type IntegritasRingkas = {
+  aktif: boolean;
+  folder: number;
+  halaman: number;
+  temuanBaru: number;
+  perJenis: Array<{ label: string; jumlah: number }>;
+  pindaiTerakhir: string;
+  galatTerakhir: string;
+};
+
+/** Penjaga integritas berkas (E6): kelabu bila mati, MERAH selama ada temuan baru, kuning bila pindai terakhir bergalat atau sudah lama. */
+export function periksaIntegritas(r: IntegritasRingkas | null, kini: Date) {
+  if (!r) return { warna: "kelabu" as Warna, ringkas: "Penjaga integritas belum terbaca.", rincian: [] };
+  if (!r.aktif) return { warna: "kelabu" as Warna, ringkas: "Penjaga integritas berkas mati (Super Admin menyalakannya di Pusat Kendali).", rincian: [] };
+  const rincian = [
+    { label: "Folder dijaga", nilai: String(r.folder) },
+    { label: "Halaman publik diperiksa", nilai: String(r.halaman) },
+    { label: "Pindai terakhir", nilai: r.pindaiTerakhir ? umurTeks(r.pindaiTerakhir, kini) : "belum pernah" },
+    ...r.perJenis.map((j) => ({ label: j.label, nilai: String(j.jumlah) })),
+  ];
+  if (r.temuanBaru > 0) return { warna: "merah" as Warna, ringkas: `${r.temuanBaru} temuan baru di berkas website/server perlu diperiksa.`, rincian };
+  if (!r.pindaiTerakhir) return { warna: "kuning" as Warna, ringkas: "Penjaga menyala tetapi belum memindai.", rincian };
+  if (r.galatTerakhir) return { warna: "kuning" as Warna, ringkas: `Pindai terakhir bermasalah: ${r.galatTerakhir.slice(0, 120)}`, rincian };
+  return { warna: "hijau" as Warna, ringkas: "Tidak ada temuan baru pada berkas yang dijaga.", rincian };
+}
+
 export function periksaUjiBeban(uji: UjiBebanRingkas | null, kini: Date) {
   if (!uji) return { warna: "kelabu" as Warna, ringkas: "Belum ada hasil uji beban yang diimpor.", rincian: [] };
   const rincian = [

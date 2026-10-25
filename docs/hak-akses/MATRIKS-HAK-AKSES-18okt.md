@@ -177,6 +177,8 @@ Catatan kewenangan:
 | Lihat sebagai akun atau peran (pratinjau menu dan hak, baca-saja, tercatat) | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Menyalakan verifikasi dua langkah (OTP WhatsApp, authenticator), aturan per peran, dan jaringan kantor | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Membantu pengguna yang kehilangan HP: kode cadangan dan reset authenticator | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Melihat temuan penjaga integritas berkas (PHP mencurigakan, webshell, kata judi online) | L | L | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Mengatur penjaga integritas: folder yang dijaga, memindai sekarang, menandai temuan ditangani atau diketahui aman | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Peta perkara & beban konseptor | L | L | L | L | L | L | - | - | - | - | - | - | - | L | - | - |
 | Dompet ALETA Ai milik sendiri (saldo, mutasi, perkiraan biaya, struk) | L | L | L | L | L | L | L | L | L | L | L | L | L | L | L | L |
 | Kelola dompet ALETA Ai (isi & koreksi saldo, kuota peran, laporan laba, ekspor, rekonsiliasi) | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |

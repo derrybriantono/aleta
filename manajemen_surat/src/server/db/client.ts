@@ -417,6 +417,11 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_verifikasi_tantangan",
   "aleta_verifikasi_lolos",
   "aleta_verifikasi_kode_cadangan",
+  // 25 Oktober 2026 (0104): penjaga integritas berkas (rantai E).
+  "aleta_integritas_berkas",
+  "aleta_integritas_temuan",
+  "aleta_integritas_aman",
+  "aleta_integritas_pindai",
   // 21 Oktober 2026 (0080): Unggah Putusan Terjadwal. Tanpa kunci asing - urutannya bebas.
   "aleta_putusan_jadwal",
   "aleta_putusan_jadwal_butir",

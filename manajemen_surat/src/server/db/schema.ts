@@ -1028,6 +1028,67 @@ export const DDL_VERIFIKASI_DUA_LANGKAH = {
 } as const;
 
 /**
+ * Penjaga integritas berkas website/SIPP/ABT (0104, 25 Okt 2026, rantai E): baseline sidik,
+ * temuan, daftar diketahui aman, riwayat pindai. Cermin PERSIS dari
+ * drizzle/0104_aleta_penjaga_integritas.sql; penjaga penjaga-integritas-25okt.test.ts
+ * membandingkan keduanya.
+ */
+export const DDL_PENJAGA_INTEGRITAS = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_integritas_berkas (
+  folder_id TEXT NOT NULL,
+  jalur TEXT NOT NULL,
+  sha256 TEXT NOT NULL DEFAULT '',
+  ukuran INTEGER NOT NULL DEFAULT 0,
+  diubah_at TEXT NOT NULL DEFAULT '',
+  dilihat_at TEXT NOT NULL,
+  PRIMARY KEY (folder_id, jalur)
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_integritas_temuan (
+  id TEXT PRIMARY KEY,
+  folder_id TEXT NOT NULL,
+  jalur TEXT NOT NULL,
+  jenis TEXT NOT NULL,
+  aturan TEXT NOT NULL DEFAULT '',
+  baris INTEGER NOT NULL DEFAULT 0,
+  sha256 TEXT NOT NULL DEFAULT '',
+  ukuran INTEGER NOT NULL DEFAULT 0,
+  pertama_at TEXT NOT NULL,
+  terakhir_at TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'baru',
+  ditangani_oleh TEXT NOT NULL DEFAULT '',
+  ditangani_at TEXT NOT NULL DEFAULT '',
+  diperingatkan_at TEXT NOT NULL DEFAULT ''
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_integritas_aman (
+  folder_id TEXT NOT NULL,
+  jalur TEXT NOT NULL,
+  sha256 TEXT NOT NULL,
+  alasan TEXT NOT NULL DEFAULT '',
+  dibuat_oleh TEXT NOT NULL DEFAULT '',
+  dibuat_at TEXT NOT NULL,
+  PRIMARY KEY (folder_id, jalur, sha256)
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_integritas_pindai (
+  id TEXT PRIMARY KEY,
+  folder_id TEXT NOT NULL,
+  jenis TEXT NOT NULL DEFAULT 'rutin',
+  mulai_at TEXT NOT NULL,
+  selesai_at TEXT NOT NULL DEFAULT '',
+  jumlah_berkas INTEGER NOT NULL DEFAULT 0,
+  temuan_baru INTEGER NOT NULL DEFAULT 0,
+  galat TEXT NOT NULL DEFAULT ''
+)`,
+  ],
+  indeks: [
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_integritas_temuan_kunci ON aleta_integritas_temuan(folder_id, jalur, jenis, aturan)`,
+    `CREATE INDEX IF NOT EXISTS idx_integritas_temuan_status ON aleta_integritas_temuan(status, terakhir_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_integritas_pindai_mulai ON aleta_integritas_pindai(folder_id, mulai_at)`,
+  ],
+  kolom: [],
+} as const;
+
+/**
  * Unggah Putusan Terjadwal (0080, 21 Okt 2026, agen B3): jadwal, butir (satu
  * perkara), berkas yang diunggah, dan jejak jujur. Cermin PERSIS dari
  * drizzle/0080_aleta_putusan_terjadwal.sql; penjaga putusan-terjadwal-layanan-21okt.test.ts
@@ -2591,6 +2652,8 @@ const schemaStatements = [
   ...DDL_KESEHATAN_GALAT.tabel,
   // Verifikasi dua langkah (0095).
   ...DDL_VERIFIKASI_DUA_LANGKAH.tabel,
+  // Penjaga integritas berkas (0104).
+  ...DDL_PENJAGA_INTEGRITAS.tabel,
   // Unggah Putusan Terjadwal: jadwal, butir, berkas, jejak (0080).
   ...DDL_PUTUSAN_TERJADWAL.tabel,
   // Arsip hasil mediasi per perkara (0081).
@@ -4556,6 +4619,7 @@ const indexStatements = [
   ...DDL_ALETA_AI_DOMPET.indeks,
   ...DDL_KESEHATAN_GALAT.indeks,
   ...DDL_VERIFIKASI_DUA_LANGKAH.indeks,
+  ...DDL_PENJAGA_INTEGRITAS.indeks,
   ...DDL_PUTUSAN_TERJADWAL.indeks,
   ...DDL_MEDIASI_ARSIP.indeks,
   ...DDL_SIDANG_KELILING_HAKIM.indeks,
