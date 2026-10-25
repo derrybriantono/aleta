@@ -172,6 +172,15 @@ Catatan kewenangan:
 | Mengatur batas perangkat per peran dan setelan riwayat masuk | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Melihat Pengaturan Keamanan (kebijakan sandi, batas jaringan, pengaman aksi, uji pulih cadangan) | L | L | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Mengubah Pengaturan Keamanan dan menjalankan uji pulih cadangan | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Melihat Pusat kesehatan sistem, catatan error, dan hasil uji beban | L | L | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Menandai catatan error sudah ditangani | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Menyalakan pemeriksaan berkala dan peringatan WhatsApp Pusat kesehatan; mengimpor hasil uji beban | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Menyalakan Mode pemeliharaan, mengatur pesan dan jadwalnya | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Lihat sebagai akun atau peran (pratinjau menu dan hak, baca-saja, tercatat) | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Menyalakan verifikasi dua langkah (OTP WhatsApp, authenticator), aturan per peran, dan jaringan kantor | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Membantu pengguna yang kehilangan HP: kode cadangan dan reset authenticator | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Melihat temuan penjaga integritas berkas (PHP mencurigakan, webshell, kata judi online) | L | L | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Mengatur penjaga integritas: folder yang dijaga, memindai sekarang, menandai temuan ditangani atau diketahui aman | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Peta perkara & beban konseptor | L | L | L | L | L | L | - | - | - | - | - | - | - | L | - | - |
 | Dompet ALETA Ai milik sendiri (saldo, mutasi, perkiraan biaya, struk) | L | L | L | L | L | L | L | L | L | L | L | L | L | L | L | L |
 | Kelola dompet ALETA Ai (isi & koreksi saldo, kuota peran, laporan laba, ekspor, rekonsiliasi) | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
