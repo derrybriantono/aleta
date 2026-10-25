@@ -7783,6 +7783,11 @@ router.post("/abt/isi-gugatan", requireInternalToken, async (req, res) => {
       },
       majelis: /^(?:Majelis Hakim|Hakim|Hakim Tunggal)$/.test(String(req.body?.majelis || "")) ? String(req.body.majelis) : undefined,
       dokumen: Array.isArray(req.body?.dokumen) ? req.body.dokumen : [],
+      // G2 (25 Okt 2026): saklar isi otomatis daftar bukti / tanya-jawab kesimpulan dari portal (Super Admin). Tanpa kunci = MATI.
+      otomatis: {
+        bukti: req.body?.otomatis?.bukti === true,
+        kesimpulan: req.body?.otomatis?.kesimpulan === true,
+      },
     });
     // KONTAK-EC 11 Okt: kontak pihak/kuasa dari teks yang sama + ringkasan untuk variabel ABT.
     hasil.kontak = await kontakDariIsiGugatan(req.body, hasil);

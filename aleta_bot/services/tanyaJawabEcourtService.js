@@ -39,6 +39,14 @@ const TUJUAN = Object.freeze({
   duplik: Object.freeze({ kode: "6114", rujukan: "2020", kunci: "duplik lisan 0047", pihak: "0047", nama: "Duplik" }),
 });
 
+/**
+ * G2 (25 Okt 2026): kesimpulan Penggugat/Pemohon DAN Tergugat/Termohon. TERPISAH dari TUJUAN supaya keluaran lama tidak berubah: hanya dipakai
+ * bila pemanggil meminta (`denganKesimpulan`, saklar Super Admin). Tidak ada kode tetap: kolom tanya-jawab kesimpulan (bila blangko
+ * memilikinya) dicari ekstensi dari daftar variabel blangko lewat kunci "kesimpulan lisan <pihak>", jadi kode ABT-nya datang dari data
+ * blangko Derry, bukan ditebak di sini. `dinamis`: kunci dan pihak mengikuti pengunggah.
+ */
+const TUJUAN_KESIMPULAN = Object.freeze({ kode: "", rujukan: "", kunci: "kesimpulan lisan", pihak: "", nama: "Kesimpulan", dinamis: true });
+
 const AMBANG = Object.freeze({
   butirMin: 2,
   butirMaks: 30,
@@ -136,8 +144,9 @@ function tanyaJawabDariSurat(m) {
   const x = m || {};
   const k = x.k || {};
   const sebutan = x.sebutan || { lawan: "Penggugat", pelaku: "Tergugat" };
-  const tujuan = TUJUAN[k.peran] || null;
-  const hasil = { rapi: false, alasan: [], peran: k.peran || "", kode: tujuan ? tujuan.kode : "", rujukan: tujuan ? tujuan.rujukan : "", kunci: tujuan ? tujuan.kunci : "", pihak: k.pihak || "", baris: [], ukuran: {}, diunggah: String(x.diunggah || "").slice(0, 10) };
+  const tujuan = TUJUAN[k.peran] || (x.denganKesimpulan && k.peran === "kesimpulan" ? TUJUAN_KESIMPULAN : null);
+  const kunciTujuan = tujuan ? (tujuan.dinamis ? `${tujuan.kunci} ${k.pihak || ""}`.trim() : tujuan.kunci) : "";
+  const hasil = { rapi: false, alasan: [], peran: k.peran || "", kode: tujuan ? tujuan.kode : "", rujukan: tujuan ? tujuan.rujukan : "", kunci: kunciTujuan, pihak: k.pihak || "", baris: [], ukuran: {}, diunggah: String(x.diunggah || "").slice(0, 10) };
   if (!tujuan) {
     hasil.alasan.push("bukan jawaban, replik, atau duplik");
     return hasil;
@@ -147,7 +156,7 @@ function tanyaJawabDariSurat(m) {
   if (k.turut) alasan.push("diajukan oleh Turut Tergugat/Termohon");
   if (k.rekonvensiDuplik) alasan.push("rereplik (duplik rekonvensi) tidak punya kolom tanya-jawab sendiri");
   if (!k.pihak) alasan.push("pengunggah tidak dikenali");
-  else if (k.pihak !== tujuan.pihak) alasan.push("pengunggah tidak cocok dengan kolom tanya-jawabnya");
+  else if (!tujuan.dinamis && k.pihak !== tujuan.pihak) alasan.push("pengunggah tidak cocok dengan kolom tanya-jawabnya");
   if (x.baca === "ocr") alasan.push("dibaca OCR");
   if ((x.banyakSePeran || 1) > 1) alasan.push(`ada ${x.banyakSePeran} berkas ${tujuan.nama.toLowerCase()} - tidak jelas yang dipakai`);
 
@@ -228,4 +237,4 @@ function keteranganFormat(h) {
     : "Format berkas tidak rapi, silakan salin dan periksa.";
 }
 
-module.exports = { TUJUAN, AMBANG, tanyaJawabDariSurat, keteranganFormat, cacatKarakter, amankan, terstruktur, sisaKop };
+module.exports = { TUJUAN, TUJUAN_KESIMPULAN, AMBANG, tanyaJawabDariSurat, keteranganFormat, cacatKarakter, amankan, terstruktur, sisaKop };

@@ -191,6 +191,11 @@ export function TenggatLayar() {
             <Button type="button" size="sm" variant="outline" disabled={Boolean(sibuk)} onClick={() => void kirim({ aksi: "jalankan" }, "jalankan")}>
               Jalankan sekarang
             </Button>
+            {data.wa && data.wa.gagal > 0 ? (
+              <Button type="button" size="sm" variant="outline" disabled={Boolean(sibuk)} onClick={() => void kirim({ aksi: "jalankan", ulangiGagal: true }, "ulang")}>
+                Kirim ulang yang gagal ({data.wa.gagal})
+              </Button>
+            ) : null}
             {setelan.diubahOleh ? <span className="text-xs text-muted-foreground">Terakhir diubah {setelan.diubahOleh}.</span> : null}
           </div>
           {!setelan.jadwal ? (

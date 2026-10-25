@@ -3,8 +3,9 @@ import { type NextRequest } from "next/server";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { pastikanAksi } from "@/server/modules/akses/hak-peran";
-import { sebutanAman, type HasilIsiGugatan } from "@/server/modules/aleta-ecourt/isi-gugatan";
-import { bacaGugatanEcourt } from "@/server/modules/aleta-ecourt/isi-sipp-sumber";
+import { sebutanAman } from "@/server/modules/aleta-ecourt/isi-gugatan";
+import { bacaSetelanBerkas } from "@/server/modules/aleta-ecourt/berkas-otomatis";
+import { bacaGugatanSinggah } from "@/server/modules/aleta-ecourt/isi-gugatan-singgah";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
@@ -25,10 +26,10 @@ export const dynamic = "force-dynamic";
  * menimbangnya dengan kamus deteksi. Hanya membaca - tidak ada yang ditulis ke
  * ABT (penulisnya panel ABT sesudah petugas mencentang). Hasil disinggahkan
  * 30 menit per perkara supaya PDF/OCR tidak dibaca ulang tiap halaman dibuka.
+ *
+ * G2 (25 Okt 2026): saklar isi otomatis daftar bukti dan tanya-jawab kesimpulan (Super Admin, bawaan MATI) dibaca dari
+ * pengaturan dan diteruskan ke bot; jawaban memuat `otomatis` (saklar yang berlaku). Saklar MATI = jawaban seperti sebelum G2.
  */
-const SINGGAH_MS = 30 * 60 * 1000;
-const singgah = new Map<string, { sampai: number; hasil: HasilIsiGugatan }>();
-
 export async function GET(request: NextRequest) {
   let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
   let actorUserId: string | null = null;
@@ -46,17 +47,11 @@ export async function GET(request: NextRequest) {
     const majelis = /^(?:Majelis Hakim|Hakim|Hakim Tunggal)$/.test(majelisMasuk) ? majelisMasuk : undefined;
     // JJ2: bukti=1 = baca juga berkas bukti (daftar bukti, surat keterangan KUA); hanya diminta panel bila halamannya memuat variabel bukti.
     const denganBukti = q.get("bukti") === "1";
-    const kunci = `${nomor}|${sebutan.lawan}|${sebutan.pelaku}|${majelis || ""}|${denganBukti ? "bukti" : ""}`;
-    const lama = singgah.get(kunci);
-    if (q.get("ulang") !== "1" && lama && lama.sampai > Date.now()) return ok({ ...lama.hasil, dariSinggahan: true });
+    const setelan = await bacaSetelanBerkas(db);
+    const otomatis = { bukti: setelan.bukti, kesimpulan: setelan.kesimpulan };
 
-    // 19 Okt: pembaca yang sama dengan agen draf putusan (isi-sipp-sumber.ts).
-    const hasil = await bacaGugatanEcourt(nomor, sebutan, majelis, { denganBukti });
-    singgah.set(kunci, { sampai: Date.now() + SINGGAH_MS, hasil });
-    if (singgah.size > 300) {
-      for (const [k, v] of singgah) if (v.sampai <= Date.now()) singgah.delete(k);
-    }
-    return ok(hasil);
+    const { hasil, dariSinggahan } = await bacaGugatanSinggah(nomor, sebutan, majelis, { denganBukti, otomatis, ulang: q.get("ulang") === "1" });
+    return ok(dariSinggahan ? { ...hasil, dariSinggahan: true } : hasil);
   } catch (error) {
     return handleAdminRouteError(error, request, {
       db,

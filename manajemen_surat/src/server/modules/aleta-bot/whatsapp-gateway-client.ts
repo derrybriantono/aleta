@@ -5326,6 +5326,8 @@ export async function postGatewayIsiGugatan(muatan: {
   sebutan: { lawan: string; pelaku: string };
   majelis?: string;
   dokumen: Array<{ judul: string; peran: string; teks: string; baca: "teks" | "ocr"; penuntutKode: string; jenis?: string; pengunggah?: string; diunggah?: string }>;
+  /** G2 (25 Okt 2026): saklar isi otomatis daftar bukti / tanya-jawab kesimpulan. Tanpa kunci = mati (keluaran seperti sebelum G2). */
+  otomatis?: { bukti: boolean; kesimpulan: boolean };
 }) {
   return gatewayFetch<Record<string, unknown>>("/internal/aleta-bot/abt/isi-gugatan", {
     method: "POST",

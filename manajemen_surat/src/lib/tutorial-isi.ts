@@ -250,6 +250,7 @@ export const TUTORIAL: readonly Tutorial[] = [
       "Baca tingkatnya: Lewat tenggat perlu dikerjakan, Menjelang tinggal sedikit waktu, Berjalan masih panjang, Catatan hanya keterangan.",
       "Tombol Periksa langsung sekarang membaca ulang dari SIPP. Hasil pagi dibuat pada hari kerja pukul 07.30 WITA bila jadwal dinyalakan.",
       "Super Admin menyalakan jadwal harian dan pengingat WhatsApp pribadi di bagian atas layar. Keduanya mati bawaan.",
+      "Di bagian bawah layar Super Admin juga mengatur isi otomatis dari berkas e-Court: daftar alat bukti, kesimpulan para pihak, dan usulan tautan bukti dengan keterangan saksi. Ketiganya mati bawaan; hanya isian yang masih kosong dan hanya berkas yang rapi yang pernah ditulis, sisanya tetap usulan dengan tombol Salin.",
     ],
     peringatan: [
       "Masa banding dan kasasi adalah hak para pihak, bukan kelalaian petugas. Angkanya perkiraan dari SIPP; yang berlaku tetap catatan pengadilan.",
