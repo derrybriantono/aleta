@@ -6,6 +6,7 @@ import { pastikanAksi } from "@/server/modules/akses/hak-peran";
 import { sebutanAman } from "@/server/modules/aleta-ecourt/isi-gugatan";
 import { bacaSetelanBerkas } from "@/server/modules/aleta-ecourt/berkas-otomatis";
 import { bacaGugatanSinggah } from "@/server/modules/aleta-ecourt/isi-gugatan-singgah";
+import { bacaGugatanEcourt } from "@/server/modules/aleta-ecourt/isi-sipp-sumber";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
@@ -50,7 +51,8 @@ export async function GET(request: NextRequest) {
     const setelan = await bacaSetelanBerkas(db);
     const otomatis = { bukti: setelan.bukti, kesimpulan: setelan.kesimpulan };
 
-    const { hasil, dariSinggahan } = await bacaGugatanSinggah(nomor, sebutan, majelis, { denganBukti, otomatis, ulang: q.get("ulang") === "1" });
+    // 19 Okt: pembaca yang sama dengan agen draf putusan (bacaGugatanEcourt, isi-sipp-sumber.ts).
+    const { hasil, dariSinggahan } = await bacaGugatanSinggah(nomor, sebutan, majelis, { denganBukti, otomatis, ulang: q.get("ulang") === "1" }, bacaGugatanEcourt);
     return ok(dariSinggahan ? { ...hasil, dariSinggahan: true } : hasil);
   } catch (error) {
     return handleAdminRouteError(error, request, {

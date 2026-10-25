@@ -6,6 +6,7 @@ import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { bacaSetelanBerkas } from "@/server/modules/aleta-ecourt/berkas-otomatis";
 import { sebutanAman } from "@/server/modules/aleta-ecourt/isi-gugatan";
 import { bacaGugatanSinggah } from "@/server/modules/aleta-ecourt/isi-gugatan-singgah";
+import { bacaGugatanEcourt } from "@/server/modules/aleta-ecourt/isi-sipp-sumber";
 import { pastikanAksi } from "@/server/modules/akses/hak-peran";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
     if (saksi.length === 0) return ok({ aktif: true, usulan: [], catatan: ["Belum ada keterangan saksi yang dikirim."] });
 
     const sebutan = { lawan: sebutanAman(String(badan.lawan ?? ""), "Penggugat"), pelaku: sebutanAman(String(badan.pelaku ?? ""), "Tergugat") };
-    const { hasil } = await bacaGugatanSinggah(nomor, sebutan, undefined, { denganBukti: true, otomatis: { bukti: setelan.bukti, kesimpulan: setelan.kesimpulan } });
+    const { hasil } = await bacaGugatanSinggah(nomor, sebutan, undefined, { denganBukti: true, otomatis: { bukti: setelan.bukti, kesimpulan: setelan.kesimpulan } }, bacaGugatanEcourt);
     const bukti = (Array.isArray(hasil.bukti) ? hasil.bukti : []) as ButirBukti[];
     if (bukti.length === 0) return ok({ aktif: true, usulan: [], catatan: ["Daftar bukti e-Court perkara ini belum terbaca."] });
     return ok({ aktif: true, usulan: petakanBuktiSaksi(bukti, saksi), catatan: [] });
