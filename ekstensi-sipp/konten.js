@@ -16822,7 +16822,7 @@ function perubahanDariAleta(perubahan) {
   return [...ditambah, ...dihapus].every(elemenAleta);
 }
 
-const pengamat = new MutationObserver((daftar) => {
+const pengamat = new (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.Pengamat : MutationObserver)((daftar) => {
   let adaDariSipp = false;
   for (const perubahan of daftar) {
     if (!perubahanDariAleta(perubahan)) {
@@ -27665,7 +27665,7 @@ async function k5Periksa() {
  */
 function k5Pantau(ada) {
   if (ada && !k5Keadaan_.pantau) {
-    k5Keadaan_.pantau = setInterval(() => {
+    k5Keadaan_.pantau = (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.interval : setInterval)(() => {
       void k5Periksa()
         .then((masih) => {
           if (!masih) k5Pantau(false);
@@ -27673,7 +27673,7 @@ function k5Pantau(ada) {
         .catch(() => k5Pantau(false));
     }, K5_JEDA_PANTAU_MS);
   } else if (!ada && k5Keadaan_.pantau) {
-    clearInterval(k5Keadaan_.pantau);
+    (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.hapus : clearInterval)(k5Keadaan_.pantau);
     k5Keadaan_.pantau = null;
   }
 }
@@ -27692,7 +27692,7 @@ function k5Mulai() {
   if (typeof document === "undefined" || !document.body || globalThis.__aletaK5Terpasang) return false;
   globalThis.__aletaK5Terpasang = true;
   try {
-    k5Keadaan_.pengamat = new MutationObserver((daftar) => {
+    k5Keadaan_.pengamat = new (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.Pengamat : MutationObserver)((daftar) => {
       const luar = daftar.some((m) => !(m.target && m.target.closest && m.target.closest(".aleta-k5-kontak")));
       if (luar) k5Jadwalkan();
     });
@@ -27923,7 +27923,7 @@ async function pkPeriksa() {
 
 function pkPantau(ada) {
   if (ada && !pkKeadaan.pantau) {
-    pkKeadaan.pantau = setInterval(() => {
+    pkKeadaan.pantau = (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.interval : setInterval)(() => {
       void pkPeriksa()
         .then((masih) => {
           if (!masih) pkPantau(false);
@@ -27931,7 +27931,7 @@ function pkPantau(ada) {
         .catch(() => pkPantau(false));
     }, PK_JEDA_PANTAU_MS);
   } else if (!ada && pkKeadaan.pantau) {
-    clearInterval(pkKeadaan.pantau);
+    (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.hapus : clearInterval)(pkKeadaan.pantau);
     pkKeadaan.pantau = null;
   }
 }
@@ -27950,7 +27950,7 @@ function pkMulai() {
   if (typeof document === "undefined" || !document.body || globalThis.__aletaPkTerpasang) return false;
   globalThis.__aletaPkTerpasang = true;
   try {
-    pkKeadaan.pengamat = new MutationObserver((daftar) => {
+    pkKeadaan.pengamat = new (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.Pengamat : MutationObserver)((daftar) => {
       const luar = daftar.some((m) => !(m.target && m.target.closest && m.target.closest(".aleta-pk-pekerjaan")));
       if (luar) pkJadwalkan();
     });

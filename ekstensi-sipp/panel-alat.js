@@ -3944,6 +3944,12 @@ function alatBersihTampilanServer(x) {
   // dan portal lama tetap berbentuk persis seperti sebelumnya.
   const setelan = alatBersihSetelanSinggah(x.setelan);
   if (setelan) hasil.setelan = setelan;
+  // Saklar kinerja Super Admin (rantai B, 25 Okt 2026): hanya boolean sejati; tanpa ruas = semua mati.
+  if (x.kinerja && typeof x.kinerja === "object" && !Array.isArray(x.kinerja)) {
+    const kinerja = {};
+    for (const [k, v] of Object.entries(x.kinerja)) if (v === true && /^[A-Za-z]{2,40}$/.test(k)) kinerja[k] = true;
+    hasil.kinerja = kinerja;
+  }
   return hasil;
 }
 
@@ -4073,6 +4079,7 @@ async function alatSegarkanTampilanServer(paksa) {
         diambil: Date.now(),
         profil: data && data.profil,
         setelan: alatSetelanDariJawaban(data),
+        kinerja: data && data.kinerja,
       });
     } catch {
       baru = tetap();
@@ -6625,7 +6632,7 @@ function alatJagaPemilihBerkasSipp(doc) {
           if (!d.getElementById("popup_msg")) return pulihkan();
           batas = setTimeout(pulihkan, ALAT_PEMILIH_BATAS_MS);
           if (typeof MutationObserver === "function" && d.body) {
-            pengamat = new MutationObserver(() => {
+            pengamat = new (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.Pengamat : MutationObserver)(() => {
               if (selesaiSipp()) pulihkan();
             });
             pengamat.observe(d.body, { childList: true, subtree: true, characterData: true });
@@ -11418,7 +11425,7 @@ function alatPasangGembok(panel, kepala, situs, opsi) {
   });
   alatDengarkanGembok();
   if (pilihan.ringkas !== false) {
-    if (panel.aletaPewaktuRingkas) clearInterval(panel.aletaPewaktuRingkas);
+    if (panel.aletaPewaktuRingkas) (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.hapus : clearInterval)(panel.aletaPewaktuRingkas);
     const periksa = () => {
       let hidup = false;
       try {
@@ -11427,11 +11434,11 @@ function alatPasangGembok(panel, kepala, situs, opsi) {
         hidup = true;
       }
       if (!hidup && panel.aletaPewaktuRingkas) {
-        clearInterval(panel.aletaPewaktuRingkas);
+        (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.hapus : clearInterval)(panel.aletaPewaktuRingkas);
         panel.aletaPewaktuRingkas = 0;
       }
     };
-    panel.aletaPewaktuRingkas = setInterval(periksa, ALAT_RINGKAS_SELANG);
+    panel.aletaPewaktuRingkas = (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.interval : setInterval)(periksa, ALAT_RINGKAS_SELANG);
     void siap.then(periksa);
     alatPasangTunjukHalus(
       panel,

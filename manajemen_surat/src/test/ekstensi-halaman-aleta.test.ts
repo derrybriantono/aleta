@@ -168,7 +168,7 @@ describe("berkasnya benar-benar dimuat dan ditanam", () => {
     );
     expect(entri).toBeTruthy();
     // checklist.js - widget checklist milestone; aleta-ai-gelembung.js (23 Okt, ALETA Ai tahap 2b) paling belakang.
-    expect(entri.js).toEqual(["deteksi-sisa-blangko.js", "panel-alat.js", "aleta.js", "checklist.js", "aleta-ai-gelembung.js"]);
+    expect(entri.js).toEqual(["pengamat-bersama.js", "deteksi-sisa-blangko.js", "panel-alat.js", "aleta.js", "checklist.js", "aleta-ai-gelembung.js"]);
     expect(entri.css).toEqual(["panel.css"]);
   });
 

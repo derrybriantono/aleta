@@ -881,7 +881,7 @@ function t4TerapkanLetak() {
  */
 function t4AturPengecil(panel) {
   if (t4PengecilPewaktu) {
-    clearInterval(t4PengecilPewaktu);
+    (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.hapus : clearInterval)(t4PengecilPewaktu);
     t4PengecilPewaktu = 0;
   }
   const semua = document.getElementById(PENANDA_ALETA);
@@ -891,7 +891,7 @@ function t4AturPengecil(panel) {
   }
   const periksa = () => {
     if (!panel.isConnected) {
-      clearInterval(t4PengecilPewaktu);
+      (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.hapus : clearInterval)(t4PengecilPewaktu);
       t4PengecilPewaktu = 0;
       return;
     }
@@ -940,7 +940,7 @@ function t4AturPengecil(panel) {
         !panel.classList.contains("aleta-panel-lencana")
     );
   }
-  t4PengecilPewaktu = setInterval(() => {
+  t4PengecilPewaktu = (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.interval : setInterval)(() => {
     try {
       periksa();
     } catch {
@@ -3289,7 +3289,7 @@ try {
 // dijalankan sekali, jadi perpindahan dari /login ke /portal harus dikejar
 // sendiri - dan panel yang sudah ada dibiarkan, tidak dibangun ulang.
 let jalurTerakhir = location.pathname;
-setInterval(() => {
+(globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.denyut : setInterval)(() => {
   if (location.pathname === jalurTerakhir) return;
   jalurTerakhir = location.pathname;
   void pasangPortal();

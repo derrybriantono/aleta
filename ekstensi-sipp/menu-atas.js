@@ -729,7 +729,7 @@
       }
       if (!document.body) return;
       terapkan();
-      new MutationObserver((daftar) => {
+      new (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.Pengamat : MutationObserver)((daftar) => {
         const dariKita = daftar.every((m) => {
           const t = m.target;
           if (t && t.nodeType === 1 && t.closest && t.closest(".aleta-sisip")) return true;

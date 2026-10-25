@@ -332,6 +332,8 @@
     setKeadaan("bekerja", `Mengisi Putusan Akhir ${rec.nomorPerkara}…`, rec);
     spanduk(`Putusan terjadwal: mengisi dan menyimpan Putusan Akhir ${rec.nomorPerkara}… jangan menutup atau memuat ulang halaman ini.`, { nada: "kerja" });
     let hasil = { hasil: "gagal", catatan: "tidak diketahui" };
+    // K12: selama pengerjaan, tab tersembunyi tidak boleh menahan kejadian/pewaktu apa pun.
+    const lepasSibuk = globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.sibuk("putusan-terjadwal") : () => undefined;
     try {
       catatanKini = { ...rec };
       await simpanCatatan({ tahap: "jalan" });
@@ -362,6 +364,7 @@
       hasil = { hasil: "gagal", catatan: sebaris((galat && galat.message) || galat) };
     }
     const ok = await laporAman(rec.id, hasil.hasil, hasil.catatan);
+    lepasSibuk();
     hentikanDetakJantung();
     await hapusPenyimpanan(KUNCI_AKTIF);
     bekerja = false;
@@ -456,6 +459,12 @@
     try {
       // Catatan pengerjaan yang tertinggal (menuju / menyimpan / terputus) diselesaikan lebih dulu.
       if (await lanjutkanCatatan()) return { diam: false, alasan: "melanjutkan" };
+      // K12: dengan saklar "pengamat tunggal" menyala, hanya SATU tab SIPP per PC yang menanyakan giliran ke portal
+      // (tab yang terlihat didahulukan). Tanpa saklar, atau pekerja latar tak menjawab, semua tab bertanya seperti dulu.
+      // Pengerjaan butir tidak terpengaruh: klaim di portal tetap atomik dan catatan yang terputus sudah dilanjutkan di atas.
+      if (o.paksa !== true && globalThis.ALETA_PENGAMAT && globalThis.ALETA_PENGAMAT.nyala() && !(await globalThis.ALETA_PENGAMAT.pemimpin("putusan-terjadwal", JEDA_DETAK_MS * 2 + 15000))) {
+        return { diam: true, alasan: "bukan_pemimpin" };
+      }
       const r = await giliran();
       const d = r.data && typeof r.data === "object" ? r.data : {};
       if (!r.ok || d.ada !== true) {
@@ -534,7 +543,8 @@
       // Pemeriksaan pertama sesudah halaman tenang (konten.js memuat peran dan fungsi yang dipakai).
       setTimeout(() => void periksaSekarang(), 3000);
       setTimeout(() => void periksaSekarang(), 16000);
-      if (!detak) detak = setInterval(() => void periksaSekarang(), JEDA_DETAK_MS);
+      // tetap: poll ini bukan penyegar tampilan - ia harus berdetak walau tab tersembunyi (hanya pemimpin yang menanyakan).
+      if (!detak) detak = (globalThis.ALETA_PENGAMAT ? (f, ms) => globalThis.ALETA_PENGAMAT.interval(f, ms, { tetap: true, ringan: false }) : setInterval)(() => void periksaSekarang(), JEDA_DETAK_MS);
     } catch {
       /* tambahan: kegagalannya tidak boleh mengganggu SIPP */
     }

@@ -1620,7 +1620,7 @@
   let jamDenyut = null;
   function mulai() {
     if (jamDenyut || typeof document === "undefined") return;
-    jamDenyut = setInterval(denyut, JEDA_DETAK_MS);
+    jamDenyut = (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.interval : setInterval)(denyut, JEDA_DETAK_MS);
     denyut();
   }
 

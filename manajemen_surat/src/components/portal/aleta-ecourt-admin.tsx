@@ -33,6 +33,7 @@ import { AletaEcourtSkMajelis } from "@/components/portal/aleta-ecourt-sk-majeli
 import { AletaEcourtNomorSk } from "@/components/portal/aleta-ecourt-nomor-sk";
 import { AletaEcourtJadwal } from "@/components/portal/aleta-ecourt-jadwal";
 /* === 12OKT-E === */
+import { AletaEcourtKinerja } from "@/components/portal/aleta-ecourt-kinerja";
 import { AletaEcourtKtpPihak } from "@/components/portal/aleta-ecourt-ktp-pihak";
 import { AletaEcourtProfilProjectAi } from "@/components/portal/aleta-ecourt-profil-project-ai";
 /* === AKHIR 12OKT-E === */
@@ -188,6 +189,8 @@ export function AletaEcourtAdmin() {
       {/* === AKHIR 12OKT-E === */}
       {/* Profil Project ALETA AI (18 Okt 2026): hanya tampil bagi Super Admin. */}
       <AletaEcourtProfilProjectAi />
+      {/* Saklar kinerja untuk PC tua (rantai B): hanya tampil bagi Super Admin. Jangkar #kinerja-ekstensi. */}
+      <AletaEcourtKinerja />
 
       <Card>
         <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">

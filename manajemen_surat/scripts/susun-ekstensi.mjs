@@ -214,6 +214,8 @@ const BERKAS = [
   // garis isian, tulisan merah). Salinan JS dari src/lib/deteksi-sisa-blangko.ts;
   // dimuat paling depan di blok skrip konten SIPP/ABT/portal.
   "deteksi-sisa-blangko.js",
+  // Pengamat bersama (K12, 25 Okt 2026): satu MutationObserver, pewaktu yang berhenti di tab tersembunyi; dimuat PALING DEPAN di tiga kelompok skrip konten.
+  "pengamat-bersama.js",
   "tema-awal.js",
   // Pusat tema (terang | gelap | sistem): satu sumber kebenaran, dimuat sebelum tema-awal.js (SIPP, ABT, portal).
   "tema-pusat.js",

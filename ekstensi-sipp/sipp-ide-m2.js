@@ -892,7 +892,7 @@ html[data-aleta-tema-sipp="gelap"] .aleta-m2-gagal{color:#ff9d92}
       if (/\/aps_badilag\//i.test(String(location.pathname || "")) || !document.body) return;
       // Tampilan yang berganti tanpa kunci ujiTampilan (mis. tampilan dari server) juga diikuti.
       document.addEventListener("aleta-uji-berubah", () => jadwalkan());
-      new MutationObserver((daftar) => {
+      new (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.Pengamat : MutationObserver)((daftar) => {
         if (daftar.every(dariAletaSaja)) return;
         jadwalkan();
       }).observe(document.body, { childList: true, subtree: true });

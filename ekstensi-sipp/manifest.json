@@ -54,6 +54,7 @@
         "http://127.0.0.1/index.php/*"
       ],
       "js": [
+        "pengamat-bersama.js",
         "deteksi-sisa-blangko.js",
         "panel-alat.js",
         "jurusita.js",
@@ -112,6 +113,7 @@
         "http://127.0.0.1/aps_badilag/*"
       ],
       "js": [
+        "pengamat-bersama.js",
         "deteksi-sisa-blangko.js",
         "panel-alat.js",
         "jurusita.js",
@@ -149,6 +151,7 @@
         "http://127.0.0.1/aleta/*"
       ],
       "js": [
+        "pengamat-bersama.js",
         "deteksi-sisa-blangko.js",
         "panel-alat.js",
         "aleta.js",

@@ -920,9 +920,9 @@ html[data-aleta-tema-sipp="gelap"] .aleta-l1-awas{color:#f3e2b5}
 
   function mulaiDetak() {
     if (detak) return;
-    detak = setInterval(() => {
+    detak = (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.interval : setInterval)(() => {
       if (segarkanSemua()) return;
-      clearInterval(detak);
+      (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.hapus : clearInterval)(detak);
       detak = null;
     }, DETAK_MS);
   }
@@ -1430,7 +1430,7 @@ html[data-aleta-tema-sipp="gelap"] .aleta-l1-awas{color:#f3e2b5}
       document.addEventListener("submit", saatKirim, true);
       // Lama <-> Baru/UI Baru (popup, atau tampilan dari server) diikuti seketika.
       document.addEventListener("aleta-uji-berubah", () => jadwalkan());
-      new MutationObserver((daftar) => {
+      new (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.Pengamat : MutationObserver)((daftar) => {
         if (daftar.every(dariAletaSaja)) return;
         jadwalkan();
       }).observe(document.body, { childList: true, subtree: true });

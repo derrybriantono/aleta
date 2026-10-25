@@ -809,8 +809,74 @@ async function tampilkanPdfTitipan(pesan) {
   return { ok: true, tab: tab && tab.id };
 }
 
+/*
+ * PEMIMPIN SATU TAB PER PC (K12, 25 Okt 2026) - lihat pengamat-bersama.js.
+ *
+ * Kerja yang cukup dikerjakan SEKALI per PC (memeriksa putusan terjadwal ke portal)
+ * tidak perlu diulang oleh tiap tab SIPP yang terbuka. Tab bertanya di sini; pekerja
+ * latar MV3 tidak mengingat variabel modul, jadi catatan pemimpin disimpan di
+ * chrome.storage.session. Sewa berlaku ttl dan diperpanjang tiap tab pemimpin
+ * bertanya lagi; tab yang ditutup melepaskannya (tabs.onRemoved) atau sewanya habis.
+ * Tab yang terlihat boleh mengambil alih dari tab tersembunyi.
+ */
+const KUNCI_PEMIMPIN = "aletaPemimpinTab";
+
+function putusPemimpin(catatan, minta, sekarang) {
+  const kini = Number(sekarang) || Date.now();
+  const semua = catatan && typeof catatan === "object" ? { ...catatan } : {};
+  const kunci = String(minta.kunci || "");
+  const ttl = Math.min(Math.max(Number(minta.ttlMs) || 60000, 5000), 10 * 60 * 1000);
+  const pemegang = semua[kunci];
+  const hidup = pemegang && Number(pemegang.sampai) > kini;
+  const sama = hidup && pemegang.tab === minta.tab;
+  const rebut = !hidup || sama || (pemegang.terlihat === false && minta.terlihat === true);
+  if (rebut) {
+    semua[kunci] = { tab: minta.tab, idHalaman: minta.idHalaman, terlihat: minta.terlihat === true, sampai: kini + ttl };
+  }
+  for (const [k, v] of Object.entries(semua)) if (!v || Number(v.sampai) <= kini) delete semua[k];
+  return { pemimpin: rebut, catatan: semua };
+}
+
+let rantaiPemimpin = Promise.resolve();
+function layaniPemimpin(pesan, pengirim) {
+  const tab = pengirim && pengirim.tab ? pengirim.tab.id : -1;
+  const kerja = rantaiPemimpin.then(async () => {
+    const g = gudangAntreanKerja();
+    if (!g) return { pemimpin: true };
+    const isi = await g.get(KUNCI_PEMIMPIN);
+    const hasil = putusPemimpin(isi && isi[KUNCI_PEMIMPIN], { kunci: pesan.kunci, ttlMs: pesan.ttlMs, terlihat: pesan.terlihat, tab, idHalaman: String(pesan.idHalaman || "") });
+    await g.set({ [KUNCI_PEMIMPIN]: hasil.catatan });
+    return { pemimpin: hasil.pemimpin };
+  });
+  rantaiPemimpin = kerja.catch(() => undefined);
+  return kerja;
+}
+
+try {
+  chrome.tabs.onRemoved.addListener((tabId) => {
+    rantaiPemimpin = rantaiPemimpin.then(async () => {
+      const g = gudangAntreanKerja();
+      if (!g) return;
+      const isi = await g.get(KUNCI_PEMIMPIN);
+      const c = (isi && isi[KUNCI_PEMIMPIN]) || {};
+      let ubah = false;
+      for (const [k, v] of Object.entries(c)) if (v && v.tab === tabId) { delete c[k]; ubah = true; }
+      if (ubah) await g.set({ [KUNCI_PEMIMPIN]: c });
+    }).catch(() => undefined);
+  });
+} catch {
+  /* tanpa API tab: sewa habis sendiri */
+}
+
 chrome.runtime.onMessage.addListener((pesan, pengirim, jawab) => {
   if (!pesan || pesan.sumber !== "aleta-panel") return undefined;
+
+  if (pesan.jenis === "aleta-pemimpin") {
+    layaniPemimpin(pesan, pengirim)
+      .then(jawab)
+      .catch(() => jawab({ pemimpin: true }));
+    return true;
+  }
 
   // Menu ABT By Derry / ALETA di bilah atas SIPP (22 Okt 2026) - lihat menu-atas.js.
   if (pesan.jenis === "menu-buka-tab" || pesan.jenis === "menu-ecourt-buka" || pesan.jenis === "menu-ecourt-nama") {

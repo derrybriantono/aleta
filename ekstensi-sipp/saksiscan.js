@@ -1783,7 +1783,7 @@ function saksiscanPasang() {
   globalThis.__aletaSaksiscanTerpasang = true;
   if (!document.body) return false;
   try {
-    saksiscanKeadaan.pengamat = new MutationObserver((daftar) => {
+    saksiscanKeadaan.pengamat = new (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.Pengamat : MutationObserver)((daftar) => {
       // Perubahan di dalam kartu/pemicu sendiri tidak perlu memeriksa ulang.
       const luar = daftar.some((m) => {
         const t = m.target;
@@ -2960,7 +2960,7 @@ async function saksibantuPeriksa() {
   const fr = saksibantuBorangRef();
   if (!fs && !fr) {
     if (saksibantuKeadaan.pantau) {
-      clearInterval(saksibantuKeadaan.pantau);
+      (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.hapus : clearInterval)(saksibantuKeadaan.pantau);
       saksibantuKeadaan.pantau = null;
     }
     return false;
@@ -2988,13 +2988,13 @@ async function saksibantuPeriksa() {
       saksibantuKeadaan.ref = null;
     }
   }
-  if (!saksibantuKeadaan.pantau) saksibantuKeadaan.pantau = setInterval(() => saksibantuJadwalkanBantu(), SAKSIBANTU_JEDA_PANTAU_MS);
+  if (!saksibantuKeadaan.pantau) saksibantuKeadaan.pantau = (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.interval : setInterval)(() => saksibantuJadwalkanBantu(), SAKSIBANTU_JEDA_PANTAU_MS);
   return true;
 }
 
 function saksibantuBersihkan() {
   if (saksibantuKeadaan.pantau) {
-    clearInterval(saksibantuKeadaan.pantau);
+    (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.hapus : clearInterval)(saksibantuKeadaan.pantau);
     saksibantuKeadaan.pantau = null;
   }
   if (saksibantuKeadaan.kotak && saksibantuKeadaan.kotak.isConnected) saksibantuKeadaan.kotak.remove();
