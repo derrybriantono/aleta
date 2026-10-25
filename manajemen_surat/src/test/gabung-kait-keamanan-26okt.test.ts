@@ -24,7 +24,8 @@ import { kodeTotp } from "@/server/modules/verifikasi/totp";
  * ============================================================================
  *
  *   1. satu sumber jaringan kantor: tanpa jaringan aktif di Pengaturan Keamanan = daftar verifikasi sendiri
- *      (persis seperti dulu); ada jaringan aktif = daftar itu yang berlaku untuk verifikasi dua langkah juga
+ *      (+ loopback, persis seperti dulu); ada jaringan aktif = GABUNGAN (union) kedua daftar + loopback, bukan
+ *      saling menggantikan (keputusan Derry 26 Okt 2026)
  *   2. langkah kedua pengaman aksi: authenticator/kode cadangan, tersedia hanya bila saklar authenticator menyala
  *      DAN akun sudah mendaftar; kode tidak bisa dipakai ulang
  *   3. laporan uji pulih: hanya yang GAGAL masuk Catatan error Pusat kesehatan
@@ -112,16 +113,32 @@ describe("satu sumber jaringan kantor", () => {
     expect(await putuskanMasuk(db(), { userId: "u-hakim", perangkatId: PERANGKAT, ip: IP_LUAR, kini: KINI })).toMatchObject({ perlu: true, sebab: "luar-kantor" });
   });
 
-  it("ada jaringan aktif di Pengaturan Keamanan: itu yang berlaku (juga untuk verifikasi dua langkah)", async () => {
-    await nyalakan({ authenticator: true });
+  it("ada jaringan aktif di Pengaturan Keamanan: digabung (union) dengan daftar verifikasi, tidak saling menggantikan; loopback ikut", async () => {
+    await nyalakan({ authenticator: true, subnetKantor: ["192.168.10.0/24"] });
     await pasangAuthenticator("u-hakim");
     await tambahSubnetKantor(db(), { cidr: "36.70.0.0/16", label: "kantor baru" }, "u-sa", KINI);
     kosongkanSinggahJaringan();
     const s = await sumberJaringanKantor(db(), { subnetKantor: ["192.168.10.0/24"] });
-    expect(s).toMatchObject({ sumber: "keamanan", daftar: ["36.70.0.0/16"] });
-    // sekarang alamat 36.70.x di kantor dan 192.168.10.x di luar
-    expect(await putuskanMasuk(db(), { userId: "u-hakim", perangkatId: PERANGKAT, ip: IP_LUAR, kini: KINI })).toMatchObject({ perlu: false, sebab: "dalam-kantor" });
-    expect(await putuskanMasuk(db(), { userId: "u-hakim", perangkatId: PERANGKAT, ip: IP_192, kini: KINI })).toMatchObject({ perlu: true, sebab: "luar-kantor" });
+    expect(s.sumber).toBe("gabungan");
+    expect(s.daftar).toEqual(expect.arrayContaining(["192.168.10.0/24", "36.70.0.0/16", "127.0.0.1/32", "::1/128"]));
+    expect(s.daftar.length).toBe(new Set(s.daftar).size);
+    // kedua daftar berlaku: 36.70.x (Keamanan) dan 192.168.10.x (verifikasi) sama-sama di kantor, loopback juga
+    const putus = (ip: string) => putuskanMasuk(db(), { userId: "u-hakim", perangkatId: PERANGKAT, ip, kini: KINI });
+    expect(await putus(IP_LUAR)).toMatchObject({ perlu: false, sebab: "dalam-kantor" });
+    expect(await putus(IP_192)).toMatchObject({ perlu: false, sebab: "dalam-kantor" });
+    expect(await putus("127.0.0.1")).toMatchObject({ perlu: false, sebab: "dalam-kantor" });
+    // di luar keduanya tetap diminta kode; alamat kosong tetap di luar
+    expect(await putus("8.8.8.8")).toMatchObject({ perlu: true, sebab: "luar-kantor" });
+    expect(await putus("")).toMatchObject({ perlu: true, sebab: "luar-kantor" });
+  });
+
+  it("loopback tetap di kantor walau dihapus dari daftar verifikasi dan tanpa jaringan Keamanan", async () => {
+    await nyalakan({ authenticator: true, subnetKantor: ["192.168.10.0/24"] });
+    await pasangAuthenticator("u-hakim");
+    const s = await sumberJaringanKantor(db(), { subnetKantor: ["192.168.10.0/24"] });
+    expect(s.sumber).toBe("verifikasi");
+    expect(s.daftar).toEqual(["192.168.10.0/24", "127.0.0.1/32", "::1/128"]);
+    expect(await putuskanMasuk(db(), { userId: "u-hakim", perangkatId: PERANGKAT, ip: "127.0.0.1", kini: KINI })).toMatchObject({ perlu: false, sebab: "dalam-kantor" });
   });
 
   it("jaringan yang dinonaktifkan tidak dihitung; alamat kosong tetap di luar kantor", async () => {
