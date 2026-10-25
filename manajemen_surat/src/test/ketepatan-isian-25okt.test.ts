@@ -140,7 +140,7 @@ describe("migrasi 0092 - berkas = DDL schema.ts, jurnal idx 83, ikut cadangan", 
     const j = JSON.parse(readFileSync(path.join(process.cwd(), "drizzle/meta/_journal.json"), "utf8")) as { entries: Array<{ idx: number; tag: string; when: number }> };
     j.entries.forEach((e, i) => expect(e.idx).toBe(i));
     expect(j.entries.filter((e) => e.tag.startsWith("0092_"))).toEqual([expect.objectContaining({ idx: 83, tag: "0092_aleta_ketepatan_isian" })]);
-    expect(j.entries[81]?.tag).toBe("0091_aleta_jejak_isian");
+    expect(j.entries[82]?.tag).toBe("0091_aleta_jejak_isian");
     for (let i = 1; i < j.entries.length; i += 1) expect(j.entries[i]?.when).toBeGreaterThan(j.entries[i - 1]?.when ?? 0);
     expect(existsSync(SQL)).toBe(true);
   });
