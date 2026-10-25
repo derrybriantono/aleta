@@ -27665,7 +27665,7 @@ async function k5Periksa() {
  */
 function k5Pantau(ada) {
   if (ada && !k5Keadaan_.pantau) {
-    k5Keadaan_.pantau = (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.interval : setInterval)(() => {
+    k5Keadaan_.pantau = (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.interval : (f, m) => setInterval(f, m))(() => {
       void k5Periksa()
         .then((masih) => {
           if (!masih) k5Pantau(false);
@@ -27673,7 +27673,7 @@ function k5Pantau(ada) {
         .catch(() => k5Pantau(false));
     }, K5_JEDA_PANTAU_MS);
   } else if (!ada && k5Keadaan_.pantau) {
-    (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.hapus : clearInterval)(k5Keadaan_.pantau);
+    (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.hapus : (i) => clearInterval(i))(k5Keadaan_.pantau);
     k5Keadaan_.pantau = null;
   }
 }
@@ -27923,7 +27923,7 @@ async function pkPeriksa() {
 
 function pkPantau(ada) {
   if (ada && !pkKeadaan.pantau) {
-    pkKeadaan.pantau = (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.interval : setInterval)(() => {
+    pkKeadaan.pantau = (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.interval : (f, m) => setInterval(f, m))(() => {
       void pkPeriksa()
         .then((masih) => {
           if (!masih) pkPantau(false);
@@ -27931,7 +27931,7 @@ function pkPantau(ada) {
         .catch(() => pkPantau(false));
     }, PK_JEDA_PANTAU_MS);
   } else if (!ada && pkKeadaan.pantau) {
-    (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.hapus : clearInterval)(pkKeadaan.pantau);
+    (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.hapus : (i) => clearInterval(i))(pkKeadaan.pantau);
     pkKeadaan.pantau = null;
   }
 }
