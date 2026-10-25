@@ -28,6 +28,7 @@ import {
   type BahanSidang,
   type SumberTundaOtomatis,
 } from "@/server/modules/tunda-otomatis/layanan";
+import { catatPutusHari } from "@/server/modules/otomatis-jejak/jejak";
 import { appendAuditLog } from "@/server/shared/audit";
 import { nextPrefixedId } from "@/server/shared/ids";
 
@@ -160,7 +161,11 @@ export async function bacaCatatanHariPutus(db: AletaDatabase, tanggal: string): 
   };
 }
 
-const simpanCatatan = (db: AletaDatabase, c: CatatanHariPutus) => tulisKunci(db, kunciHariPutus(c.tanggal), c);
+const simpanCatatan = async (db: AletaDatabase, c: CatatanHariPutus) => {
+  await tulisKunci(db, kunciHariPutus(c.tanggal), c);
+  // U19: jejak terstruktur berdampingan dengan blob; tidak pernah melempar.
+  await catatPutusHari(db, c);
+};
 
 // ============================================================================
 // SUMBER (dapat disuntik untuk uji)

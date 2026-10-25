@@ -34,6 +34,7 @@ import { AletaEcourtNomorSk } from "@/components/portal/aleta-ecourt-nomor-sk";
 import { AletaEcourtJadwal } from "@/components/portal/aleta-ecourt-jadwal";
 /* === 12OKT-E === */
 import { AletaEcourtKtpPihak } from "@/components/portal/aleta-ecourt-ktp-pihak";
+import { OtomatisKetepatan } from "@/components/portal/otomatis-ketepatan";
 import { AletaEcourtProfilProjectAi } from "@/components/portal/aleta-ecourt-profil-project-ai";
 /* === AKHIR 12OKT-E === */
 import { AletaEcourtTampilanEkstensi } from "@/components/portal/aleta-ecourt-tampilan-ekstensi";
@@ -186,6 +187,8 @@ export function AletaEcourtAdmin() {
           Sesudah penarikan: berkas KTP datang dari arsip yang ditarik di atas. Jangkar #ktp-pihak. */}
       <AletaEcourtKtpPihak />
       {/* === AKHIR 12OKT-E === */}
+      {/* Ketepatan tunda/putus otomatis per aturan (U19, 25 Okt 2026). Jangkar #ketepatan-otomatis. */}
+      <OtomatisKetepatan />
       {/* Profil Project ALETA AI (18 Okt 2026): hanya tampil bagi Super Admin. */}
       <AletaEcourtProfilProjectAi />
 
