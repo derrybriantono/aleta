@@ -62,7 +62,7 @@ const LABEL_STATUS: Record<string, { teks: string; varian: "success" | "warning"
   berjalan: { teks: "Berjalan", varian: "info" },
   jeda: { teks: "Jeda (di luar jam pemindaian)", varian: "warning" },
   selesai: { teks: "Selesai", varian: "success" },
-  galat: { teks: "Berhenti karena galat", varian: "danger" },
+  galat: { teks: "Berhenti karena kesalahan", varian: "danger" },
 };
 
 export function CerminPerkaraPanel() {
@@ -200,7 +200,7 @@ export function CerminPerkaraPanel() {
               </p>
               {data.keadaan.galat.terakhir ? (
                 <p className="text-xs leading-5 text-rose-700 dark:text-rose-300" data-testid="cermin-galat">
-                  Galat terakhir ({data.keadaan.galat.beruntun}x beruntun, {tanggalJamWita(data.keadaan.galat.pada)}): {data.keadaan.galat.terakhir}
+                  Kesalahan terakhir ({data.keadaan.galat.beruntun}x beruntun, {tanggalJamWita(data.keadaan.galat.pada)}): {data.keadaan.galat.terakhir}
                 </p>
               ) : null}
               {data.keadaan.peringatan.length ? (
@@ -264,7 +264,7 @@ export function CerminPerkaraPanel() {
                   </p>
                   {data.pembaruan.galat.terakhir ? (
                     <p className="text-xs leading-5 text-rose-700 dark:text-rose-300" data-testid="cermin-pembaruan-galat">
-                      Galat terakhir ({data.pembaruan.galat.beruntun}x beruntun, {tanggalJamWita(data.pembaruan.galat.pada)}): {data.pembaruan.galat.terakhir}
+                      Kesalahan terakhir ({data.pembaruan.galat.beruntun}x beruntun, {tanggalJamWita(data.pembaruan.galat.pada)}): {data.pembaruan.galat.terakhir}
                     </p>
                   ) : null}
                   {data.pembaruan.tidakTerbaca.length ? (
@@ -302,7 +302,7 @@ export function CerminPerkaraPanel() {
               )}
               {data.mediasi.galat.terakhir ? (
                 <p className="text-xs leading-5 text-rose-700 dark:text-rose-300" data-testid="cermin-mediasi-galat">
-                  Galat terakhir ({data.mediasi.galat.beruntun}x beruntun, {tanggalJamWita(data.mediasi.galat.pada)}): {data.mediasi.galat.terakhir}
+                  Kesalahan terakhir ({data.mediasi.galat.beruntun}x beruntun, {tanggalJamWita(data.mediasi.galat.pada)}): {data.mediasi.galat.terakhir}
                 </p>
               ) : null}
               {bolehMengubah ? (
@@ -342,7 +342,7 @@ export function CerminPerkaraPanel() {
               )}
               {data.tag.galat.terakhir ? (
                 <p className="text-xs leading-5 text-rose-700 dark:text-rose-300" data-testid="cermin-tag-galat">
-                  Galat terakhir ({data.tag.galat.beruntun}x beruntun, {tanggalJamWita(data.tag.galat.pada)}): {data.tag.galat.terakhir}
+                  Kesalahan terakhir ({data.tag.galat.beruntun}x beruntun, {tanggalJamWita(data.tag.galat.pada)}): {data.tag.galat.terakhir}
                 </p>
               ) : null}
               {bolehMengubah ? (

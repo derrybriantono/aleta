@@ -405,6 +405,11 @@ describe("bunyi mentah tidak tertinggal di jalur yang dilihat petugas", () => {
     //   kontak e-Court (KONTAK-EC, 1.193.0) - fetch hanya CADANGAN bila
     //                         alatAmbil tidak ada; jalur utamanya alatAmbil.
     //   kategori pekerjaan (PEKERJAAN, 11 Okt) - sama: fetch hanya cadangan.
-    expect(mentah).toBe(10);
+    //   kabar perubahan (A8 / U17, 25 Okt) - pemantau berkala tiap 30 detik yang DIAM bila gagal
+    //                         (tanpa pesan ke petugas) dan mundur sendiri (2-5 menit) bila portal
+    //                         tidak sehat. alatAmbil sengaja dihindari: ia mengulang sekali pada
+    //                         5xx / galat jaringan, yang justru menggandakan beban portal yang
+    //                         sedang berat oleh pertanyaan yang tidak ditunggu siapa pun.
+    expect(mentah).toBe(11);
   });
 });
