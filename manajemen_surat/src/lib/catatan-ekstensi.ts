@@ -57,6 +57,25 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.40",
+    dirilis: "2026-10-26T12:41:00+08:00",
+    judul: "Perbaikan kalender, prodeo, alamat ganda; halaman lebih ringan; fitur rantai upgrade (mati bawaan)",
+    butir: [
+      "Kalender pemilih tanggal di form Tunda/Putus Jadwal Sidang, Jadwal Mediasi, dan dialog tidak lagi terpotong.",
+      "Perkara prodeo terdeteksi dari SIPP dan e-Court; lencana Prodeo kini juga tampil di Status Perkara.",
+      "Alamat pihak tidak lagi tercetak ganda di blangko ABT by Derry Briantono.",
+      "Halaman SIPP dan ABT lebih ringan: kode ekstensi dimuat sesuai halaman yang dibuka.",
+      "Cermin Perkara, kabar perubahan, jejak isian, katalog saksi, ketepatan isian, isian per sidang, sebutan pihak satu sumber.",
+      "Pusat kesehatan, mode pemeliharaan, verifikasi dua langkah, penjaga integritas berkas, kebijakan sandi, batas jaringan, pengaman aksi admin, uji pulih cadangan.",
+      "Pengingat tenggat (banding, kasasi, mediasi), kesimpulan dan daftar alat bukti e-Court, mode ringan untuk PC tua.",
+      "Semua fitur baru MATI sampai dinyalakan Super Admin; perilaku lama tidak berubah.",
+      "Pemasang pembaru otomatis tidak lagi berhenti pada profil Chrome tanpa daftar ekstensi; tersedia juga pemasang untuk macOS (unduhan mengenali sistem).",
+      "Putusan Otomatis: kunci perkara tidak lagi menahan pemiliknya sendiri; e-Doc putusan/anonimisasi yang terputus karena halaman dimuat ulang dilanjutkan otomatis.",
+      "Blangko ABT by Derry Briantono: perkara konsep sementara (tunjuk konseptor) tampil paling atas, dengan saklar tampil/sembunyi.",
+      "Jadwal Mediasi: tombol Tunda mediasi yang tertulis ke SIPP persis seperti tombol Tunda di SIPP.",
+    ],
+  },
+  {
     versi: "1.205.39",
     dirilis: "2026-10-25T12:10:00+08:00",
     judul: "Hasil kerja 23-24 Okt: saksi semua jenis, referensi pihak, kasir, tema e-Court, ALETA Ai tahap 2-4, riwayat masuk",
