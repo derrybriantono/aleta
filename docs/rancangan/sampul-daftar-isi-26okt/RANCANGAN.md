@@ -457,4 +457,25 @@ Urutan di kertas: kop, judul dan nomor (ringkas, dua kolom), band fokus (bila ad
 
 - **Paket ABT** `abt-paket/sampul-daftar-isi-26okt/` (lengkap, PASANG.md): lihat berkas itu untuk PRASYARAT, pasang, pulih.
 - **Pratinjau** `artifact-*.html`: tanpa blok pernikahan dan anak untuk cerai, riwayat sidang dominan, tiga ukuran kertas dengan baris 12/15/18.
-- **Portal, bot, dan ekstensi**: lihat bagian 15 (diisi saat tahap itu selesai).
+- **Portal, bot, dan ekstensi**: lihat bagian 15.
+
+## 15. Portal, bot, dan ekstensi (dibangun 26 Okt 2026)
+
+Semuanya di balik saklar Fitur Satker **`berkas-perkara-khusus`** (bagian "ekstensi", bawaan **MATI**). Mati, gagal bertanya, atau Tes putusan = kedua blangko dibuka seperti blangko biasa; perilaku lama tidak berubah.
+
+| Lapisan | Berkas | Isi |
+|---|---|---|
+| Migrasi | `manajemen_surat/drizzle/0112_aleta_berkas_perkara.sql`, jurnal idx 98, `schema.ts`, `client.ts` | tabel `aleta_berkas_susunan` (baris daftar isi yang disunting), `aleta_berkas_sampul` (ciri tangan dan isian), `aleta_berkas_bawaan` (halaman bawaan per jenis dokumen) |
+| Portal | `src/lib/berkas-perkara.ts` (murni), `src/server/modules/berkas-perkara/{layanan,akses}.ts`, rute `api/aleta-ecourt/sampul-berkas` (GET fakta + sunting, PUT simpan) dan `.../sampul-berkas/naskah` (POST: RTF terisi) | hak: sampul = folder PTSP, daftar isi = folder BAS, Super Admin/Admin keduanya; nilai timpa hanya blok 5700-5779 dan 5800-5859, teks bernama aplikasi ditolak |
+| Bot | `aleta_bot/services/berkasPerkaraService.js`, operasi `berkas.fakta` dan `berkas.pelajari` di jembatan; `pdf-lib` di `package.json` (belum dipasang; pembaca struktur PDF sendiri sebagai cadangan) | baca saja: jenis perkara, ciri otomatis, isian khas, riwayat sidang, dokumen yang ADA beserta halaman (PDF `/Count` + jumlah `/Type /Page`, DOCX `app.xml`, e-Doc SIPP dan arsip e-Court) |
+| Ekstensi | `ekstensi-sipp/blangko-derry-berkas.js`, kaitan di `blangko-derry-isian.js`, CSS di `blangko-derry.css`, manifest | layar kerja Sampul / Daftar isi (di bawah); varian F4/Legal disembunyikan dari daftar blangko |
+
+**Layar kerja.** Tab Sampul: 25 ciri (hijau = dari data perkara, emas = diubah tangan, klik untuk menyalakan/mematikan, "kembalikan ke otomatis"), isian umum dan isian khas jenis perkara (14 jenis + "lain"), pilihan kertas A4/F4/Legal yang diingat per pengguna, pratinjau dari naskah sungguhan (RTF yang sama dengan yang dicetak). Tab Daftar isi: baris dokumen yang ada menurut bundel dan bagian, halaman pasti / perkiraan / manual (ketik 3 atau 5-9), geser, sembunyikan, tambah baris, dokumen khas jenis perkara, Bundel B mulai 1 atau melanjutkan A, "Hitung ulang dari arsip" (ketikan petugas tidak diubah), ringkasan halaman per bundel. Sunting disimpan otomatis setelah jeda (1,4 detik) di ALETA; tidak ada yang ditulis ke SIPP atau ABT.
+
+**Yang ditimpa ke ABT.** Sampul: `5801` (ciri, selalu) dan hanya isian yang diubah tangan (`5836` mediator, `5837` hasil mediasi, `5839` konseptor, `5840` PBT, `5842` fokus, `5843` pokok perkara); selebihnya dihitung ABT. Daftar isi: `5851-5854` (Bundel A) dan `5856-5859` (Bundel B), dihitung di portal dari baris kiriman klien.
+
+**Diukur atas SIPP lab (`sipp_donggala`, 12 perkara dari 12 jenis).** Tidak satu pun kueri galat; jenis, ciri, majelis, riwayat, dan dokumen terbaca (14 sampai 46 dokumen per perkara). Berkas e-Doc tidak ada di laptop, jadi halaman di lab selalu perkiraan; angka pasti diukur sebelumnya atas 216 berkas server (98,6% dua cara hitung sepakat). Kunci baris relaas ganda (satu sidang, banyak percobaan panggilan) diberi akhiran `-2`, `-3`.
+
+**Uji.** `berkas-perkara-26okt.test.ts` (18: lib murni, saklar mati bawaan, migrasi sejajar jurnal dan cadangan JSON, penyimpanan atas pg-mem, layanan bot), `berkas-perkara-ekstensi-26okt.test.ts` (10: kembaran murni ekstensi = lib portal, layar di jsdom), `tabel-cadangan-terdaftar`, `banyak-satker-fitur`, K11 (dua pernyataan diperbarui: berkas baru `blangko-derry-berkas.js` dan `blangko-derry-isian.js` hanya bertambah pengait), `abt-usulan` (daftar skrip manifest). `tsc` bersih (heap 6 GB); lint tidak bertambah. Ekstensi ditanam ulang tanpa menaikkan versi (1.205.40).
+
+**Belum.** (1) Halaman putusan RTF dari PDF buatan panel (butir C): sementara perkiraan 13 atau tombol "hitung dari PDF" pada baris putusan (pilih berkas PDF). (2) RTF sampul FINAL menunggu pilihan Derry antara tata letak riwayat dominan dan usulan cetak awal; paket memuat versi riwayat dominan sementara. (3) Paket ABT belum dipasang di server (sesi utama yang memasang) dan uji di MariaDB 5.5 server belum dijalankan. (4) Tampilan RTF di Word/WPS belum diperiksa mata; pratinjau di layar memakai pengubah RTF ke HTML panel. (5) `pdf-lib` belum dipasang di bot (tanpa `npm install`); tanpanya dua cara hitung yang tidak sepakat ditandai perkiraan. (6) `berkas.pelajari` (median halaman dari arsip) sudah ada di bot tetapi belum punya tombol/rute admin untuk menyimpannya ke `aleta_berkas_bawaan`.

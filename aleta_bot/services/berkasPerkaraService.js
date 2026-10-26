@@ -409,15 +409,22 @@ async function fakta(params = {}, deps = {}) {
     tersaji.push({ n, sisi, r });
   }
   tersaji.sort((a, b) => a.n - b.n || a.sisi - b.sisi);
+  const kunciPakai = new Set();
+  const kunciUnik = (dasar) => {
+    let k = dasar;
+    for (let i = 2; kunciPakai.has(k); i += 1) k = `${dasar}-${i}`;
+    kunciPakai.add(k);
+    return k;
+  };
   for (const { n, sisi, r } of tersaji) {
     const e = String(r.ket_temu || "") === "E";
     const sebut = sisi === 1 ? sebP : sebT;
     const hal = await halamanBaris(r.doc_relaas, "relaas", deps);
-    tambah("A", G3, `${e ? "esummons" : "relaas"}:${n}:${sisi === 1 ? "p" : "t"}`, `${e ? "Panggilan e-Summons" : "Relaas Panggilan"} ${sebut} ke ${n}`, r.tanggal_relaas, hal.halaman ? hal : bawaan("relaas", hal.dasar), e ? "lewat e-Court" : "");
+    tambah("A", G3, kunciUnik(`${e ? "esummons" : "relaas"}:${n}:${sisi === 1 ? "p" : "t"}`), `${e ? "Panggilan e-Summons" : "Relaas Panggilan"} ${sebut} ke ${n}`, r.tanggal_relaas, hal.halaman ? hal : bawaan("relaas", hal.dasar), e ? "lewat e-Court" : "");
     const berkasResi = String(r.doc_resi || "").startsWith("resources/");
     if (berkasResi || String(r.no_resi_pos || "").trim()) {
       const hr = berkasResi ? await halamanBaris(r.doc_resi, "resi", deps) : bawaan("resi", "nomor resi tercatat, berkas resi belum ada");
-      tambah("A", G3, `resi:${n}:${sisi === 1 ? "p" : "t"}`, `Bukti Surat Tercatat ${sebut} ke ${n}`, r.tanggal_relaas, hr.halaman ? hr : bawaan("resi", hr.dasar), "nomor resi tercantum");
+      tambah("A", G3, kunciUnik(`resi:${n}:${sisi === 1 ? "p" : "t"}`), `Bukti Surat Tercatat ${sebut} ke ${n}`, r.tanggal_relaas, hr.halaman ? hr : bawaan("resi", hr.dasar), "nomor resi tercantum");
     }
   }
   if (med && med.penetapan_penunjukan_mediator) tambah("A", G3, "mediator", "Penetapan Penunjukan Mediator", med.penetapan_penunjukan_mediator, bawaan("mediator"));
