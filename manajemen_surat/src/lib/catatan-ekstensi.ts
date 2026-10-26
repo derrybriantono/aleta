@@ -59,7 +59,7 @@ export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
     versi: "1.205.41",
     dirilis: "2026-10-26T15:55:00+08:00",
-    judul: "Sampul dan daftar isi berkas; mode gelap SIPP & e-Court; latar pop-up redup; kotak acuan tidak tercetak",
+    judul: "Sampul, daftar isi, dan ceklist berkas; mode gelap SIPP & e-Court; latar pop-up redup; kotak acuan tidak tercetak",
     butir: [
       "Semua pop-up: latar belakang kini redup dengan kabur ringan, tidak lagi putih menyilaukan di mode gelap.",
       "Mode gelap: kotak putih di SIPP dan e-Court (linimasa sidang, detil pendaftaran, panel informasi, kolom cari) kini ikut gelap dan terbaca.",
@@ -67,6 +67,7 @@ export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
       "Tanggal pengumuman kedua diambil dari sidang berikutnya.",
       "Blangko ABT by Derry Briantono: Sampul Berkas Perkara (cetak awal, bawaan) dan sampul lengkap, A4/F4/Legal, ciri perkara otomatis, lampiran bila perlu.",
       "Daftar Isi Berkas dengan nomor halaman otomatis yang bisa diubah manual, di layar kerja khusus panel Blangko Derry.",
+      "Ceklist Berkas Perkara (Meja I): daftar dokumen menurut jenis dan keadaan perkara, Ada/Tidak ada terisi otomatis dari penetapan, kasir, dan e-Court.",
     ],
   },
   {
