@@ -59,9 +59,10 @@ export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
     versi: "1.205.41",
     dirilis: "2026-10-26T15:55:00+08:00",
-    judul: "Sampul dan daftar isi berkas; latar pop-up redup; kotak acuan tidak tercetak",
+    judul: "Sampul dan daftar isi berkas; mode gelap SIPP & e-Court; latar pop-up redup; kotak acuan tidak tercetak",
     butir: [
       "Semua pop-up: latar belakang kini redup dengan kabur ringan, tidak lagi putih menyilaukan di mode gelap.",
+      "Mode gelap: kotak putih di SIPP dan e-Court (linimasa sidang, detil pendaftaran, panel informasi, kolom cari) kini ikut gelap dan terbaca.",
       "Cetak blangko ABT: kotak acuan variabel di badan naskah tidak lagi ikut tercetak.",
       "Tanggal pengumuman kedua diambil dari sidang berikutnya.",
       "Blangko ABT by Derry Briantono: Sampul Berkas Perkara (cetak awal, bawaan) dan sampul lengkap, A4/F4/Legal, ciri perkara otomatis, lampiran bila perlu.",
