@@ -11719,3 +11719,227 @@ html[data-aleta-kulit="modern"] #aleta-panel-abt[data-t6="ui"]:not(.aleta-panel-
     flex: 1 1 100%;
   }
 }
+
+
+/* ==========================================================================
+   KOTAK PUTIH SISA DI SIPP - PANEL INFORMASI, KOLOM CARI, PANEL KANAN (26 Okt)
+   ==========================================================================
+
+   Tangkapan layar monitoring_sync_antrian: panel kanan "INFORMASI" (penjelasan
+   sinkronisasi + tombol) masih putih dengan tulisan abu sangat pucat, dan kolom
+   "Ketik kata kunci" abu terang. Nama kelas halaman itu tidak dapat dibuka dari
+   cloud, jadi ditutup dari tiga arah: (1) nama kerangka Bootstrap/AdminLTE
+   yang lazim, (2) kelas yang MEMUAT kata panel/card/informasi, (3) gaya
+   sebaris yang menyebut dirinya putih atau tulisan gelap, ditambah kolom isian
+   di luar #konten. Tulisan di dalam kotak dipaksa terang lewat :where()
+   (kekhususan rendah), sehingga .text-red/.text-green/font[color] yang sudah
+   dipetakan di atas tetap menang. Halaman ABT tidak disentuh; hanya warna. */
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(
+  [class*="panel"]:not([class*="aleta"]), [class*="card"]:not([class*="aleta"]), [class*="informasi"]:not([class*="aleta"]), [class*="information"]:not([class*="aleta"])
+):not([class*="heading"]):not([class*="header"]):not([class*="title"]):not([class*="footer"]):where(div, section, article, aside, ul, ol, li, fieldset, form) {
+  background-color: var(--s-permukaan) !important;
+  color: var(--s-tulisan) !important;
+  border-color: var(--s-garis) !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(
+  .panel-body, .panel-default, .panel-info, .panel-footer, .panel-collapse, .well-sm, .well-lg, .jumbotron, .callout,
+  .bg-white, .bg-light, .bg-default, .bg-body, .white-bg, .white-box, .box-white, .content-box, .main-box,
+  .card, .card-body, .card-block, .card-footer, .box-solid, .box-info, .box-primary, .box-default, .box-success, .box-warning, .box-danger,
+  .tabbable, .tabs-container, .list-group, .list-group-item, .informasi, .keterangan, .info-panel, .sidebar-right, .right-panel,
+  .col-right, .kolom-kanan, .dataTables_scroll, .dataTables_scrollBody, .dataTables_scrollHead, .form-horizontal
+) {
+  background-color: var(--s-permukaan) !important;
+  color: var(--s-tulisan) !important;
+  border-color: var(--s-garis) !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(.card-header, .panel-footer, .box-solid > .box-header) {
+  background-color: var(--s-permukaan-2) !important;
+  color: var(--s-tulisan) !important;
+  border-color: var(--s-garis) !important;
+}
+
+/* Tulisan di dalam kotak-kotak itu: pucat dipaksa terbaca. */
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :where(
+  [class*="panel"]:not([class*="aleta"]), [class*="card"]:not([class*="aleta"]), [class*="informasi"]:not([class*="aleta"]), [class*="information"]:not([class*="aleta"]),
+  .box, .box-body, .well, .callout, .jumbotron, .bg-white, .bg-light, .white-bg, .white-box, .informasi, .keterangan, .tab-pane
+) :where(p, span, div, li, label, small, b, strong, em, dt, dd, h1, h2, h3, h4, h5, h6, td, th):where(:not([style*="color:" i])) {
+  color: var(--s-tulisan) !important;
+}
+
+/* Kolom isian dan pencarian di luar #konten (mis. "Ketik kata kunci"). */
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :where(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="file"]):not([type="image"]):not([type="color"]):not([type="range"]),
+  select,
+  textarea
+) {
+  background-color: var(--s-permukaan-2) !important;
+  color: var(--s-tulisan) !important;
+  border-color: var(--s-garis) !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :where(
+  .dataTables_filter, .dataTables_length, .search-box, .searchbox, .input-group, .form-group
+) :where(label) {
+  color: var(--s-tulisan) !important;
+}
+
+/* Gaya sebaris putih / abu terang. */
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background:#fff" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background:white" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background:rgb(255,255,255)" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background:rgb(255, 255, 255)" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background:#fafafa" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background:#f9f9f9" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background:#f8f9fa" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background:#f5f5f5" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background:#f4f4f4" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background:#f7f7f7" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background:#fcfcfc" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background:#fefefe" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background:whitesmoke" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background:#eee" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background:#f1f1f1" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background:#f2f2f2" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background:#ececec" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background:#e9ecef" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background: #fff" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background: white" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background: rgb(255,255,255)" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background: rgb(255, 255, 255)" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background: #fafafa" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background: #f9f9f9" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background: #f8f9fa" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background: #f5f5f5" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background: #f4f4f4" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background: #f7f7f7" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background: #fcfcfc" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background: #fefefe" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background: whitesmoke" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background: #eee" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background: #f1f1f1" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background: #f2f2f2" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background: #ececec" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background: #e9ecef" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color:#fff" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color:white" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color:rgb(255,255,255)" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color:rgb(255, 255, 255)" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color:#fafafa" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color:#f9f9f9" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color:#f8f9fa" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color:#f5f5f5" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color:#f4f4f4" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color:#f7f7f7" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color:#fcfcfc" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color:#fefefe" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color:whitesmoke" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color:#eee" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color:#f1f1f1" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color:#f2f2f2" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color:#ececec" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color:#e9ecef" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color: #fff" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color: white" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color: rgb(255,255,255)" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color: rgb(255, 255, 255)" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color: #fafafa" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color: #f9f9f9" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color: #f8f9fa" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color: #f5f5f5" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color: #f4f4f4" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color: #f7f7f7" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color: #fcfcfc" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color: #fefefe" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color: whitesmoke" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color: #eee" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color: #f1f1f1" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color: #f2f2f2" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color: #ececec" i],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color: #e9ecef" i] {
+  background-color: var(--s-permukaan) !important;
+  color: var(--s-tulisan) !important;
+  border-color: var(--s-garis) !important;
+}
+
+/* Gaya sebaris tulisan gelap di atas latar gelap. */
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style^="color:#000" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=";color:#000" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=" color:#000" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style^="color:#111" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=";color:#111" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=" color:#111" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style^="color:#222" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=";color:#222" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=" color:#222" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style^="color:#333" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=";color:#333" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=" color:#333" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style^="color:#444" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=";color:#444" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=" color:#444" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style^="color:#555" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=";color:#555" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=" color:#555" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style^="color:#666" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=";color:#666" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=" color:#666" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style^="color:#777" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=";color:#777" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=" color:#777" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style^="color:black" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=";color:black" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=" color:black" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style^="color:dimgray" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=";color:dimgray" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=" color:dimgray" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style^="color: #000" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=";color: #000" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=" color: #000" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style^="color: #111" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=";color: #111" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=" color: #111" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style^="color: #222" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=";color: #222" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=" color: #222" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style^="color: #333" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=";color: #333" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=" color: #333" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style^="color: #444" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=";color: #444" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=" color: #444" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style^="color: #555" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=";color: #555" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=" color: #555" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style^="color: #666" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=";color: #666" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=" color: #666" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style^="color: #777" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=";color: #777" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=" color: #777" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style^="color: black" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=";color: black" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=" color: black" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style^="color: dimgray" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=";color: dimgray" i]:not([style*="background" i]),
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*=" color: dimgray" i]:not([style*="background" i]) {
+  color: var(--s-tulisan) !important;
+}
+
+/* Kotak bernama bebas di kolom grid / badan kotak (panel kanan "INFORMASI" dan
+   sejenisnya yang kelasnya tidak terdaftar). Pemilih dalam :where() sehingga
+   peta SIPP bernama di atas tetap menang; yang berwarna sengaja, bagian panel
+   ALETA, dan gaya sebaris berlatar dilewati. */
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :where([class*="col-"], .row, .content, .box-body, .panel-body, .tab-pane, .tab-content, .modal-body, .well) > :where(div, section, aside, fieldset, form):where(
+  :not([class*="bg-"]):not([class*="alert"]):not([class*="label"]):not([class*="badge"]):not([class*="progress"]):not([class*="btn"]):not([class*="callout"]):not([class*="small-box"]):not([class*="info-box"]):not([class*="aleta"]):not([class*="navbar"]):not([class*="header"]):not([class*="title"]):not([style*="background" i]):not([id*="aleta"]):not(#atas):not(#cssmenu):not(#footer):not(.cke):not([class*="cke_"]):not([class*="select2"]):not([class*="popup"]):not([class*="modal"])
+) {
+  background-color: var(--s-permukaan) !important;
+  color: var(--s-tulisan) !important;
+  border-color: var(--s-garis) !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :where([class*="col-"] > div, .box-body > div, .panel-body > div) :where(p, span, small, b, strong, em, dt, dd, label, li, font):where(:not([style*="color:" i]):not([class*="label"]):not([class*="badge"]):not([class*="btn"]):not([class*="text-"]):not([class*="aleta"])) {
+  color: var(--s-tulisan) !important;
+}

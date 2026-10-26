@@ -72,6 +72,304 @@ html[data-aleta-tema-ecourt="gelap"] :is(
   border-color: var(--ec-garis, #34404c) !important;
 }
 
+/* --- Kotak putih yang tidak tertangkap daftar kelas di atas (26 Okt) ----------
+   Tangkapan layar pengguna: kartu linimasa Persidangan, pembungkus tab
+   Pendaftaran (e-Payment, Tambah Panjar, Penunjukan Pihak, Biaya Perkara), dan
+   judul-judulnya masih putih dengan tulisan abu pucat. Nama kelas e-Court tidak
+   dapat dibuka dari cloud, jadi ditutup dari tiga arah sekaligus:
+     1. nama kerangka tema yang lazim (Gentelella x_*, Metronic portlet, Inspinia
+        ibox, Ace widget, AdminLTE/Bootstrap) dan linimasa (cbp_tm*, timeline-*);
+     2. nama kelas yang MEMUAT kata panel / portlet / card / timeline;
+     3. gaya sebaris yang menyebut dirinya putih atau tulisan gelap.
+   Tulisan di dalam kotak-kotak itu dipaksa terang lewat :where() - kekhususan
+   rendah, sehingga tulisan bermakna (.text-danger, .alert-*, tautan) di bawah
+   tetap menang. Hanya warna; tidak ada ukuran, tampilan, atau isi. */
+
+/* Wildcard nama kelas - sengaja dibatasi ke elemen pembungkus (bukan gambar). */
+html[data-aleta-tema-ecourt="gelap"] :is(
+  [class*="panel"]:not([class*="aleta"]), [class*="portlet"]:not([class*="aleta"]), [class*="card"]:not([class*="aleta"]), [class*="ibox"]:not([class*="aleta"])
+):not([class*="heading"]):not([class*="header"]):not([class*="title"]):not([class*="footer"]):where(div, section, article, aside, ul, ol, li, fieldset, form, header, footer) {
+  background-color: var(--ec-permukaan, #1b2128) !important;
+  color: var(--ec-tulisan, #dde3ea) !important;
+  border-color: var(--ec-garis, #34404c) !important;
+}
+
+html[data-aleta-tema-ecourt="gelap"] :is(
+  .x_panel, .x_content, .x_title, .tile-stats, .tile_count, .right_col, .main_container,
+  .portlet, .portlet-body, .portlet.light, .portlet.box, .m-portlet, .m-portlet__body, .kt-portlet, .kt-portlet__body,
+  .ibox-content, .ibox-footer, .widget-box, .widget-body, .widget-main, .info-box, .info-box-content,
+  .page-content, .page-content-wrapper, .page-container, .page-inner, .content-body, .main-panel, .main-content-inner,
+  .bg-white, .bg-light, .bg-default, .bg-body, .white-bg, .white-box, .box-white, .content-box, .main-box, .section-content,
+  .card-block, .card-content, .panel-collapse, .panel-info, .panel-primary, .panel-success, .panel-warning, .panel-danger,
+  .box-solid, .box-info, .box-primary, .box-default, .box-success, .box-warning, .box-danger,
+  .nav-tabs-custom, .tabs-container, .tabbable, .table-responsive, .dataTables_scroll, .dataTables_scrollBody,
+  .dataTables_scrollHead, .dt-container, .form-horizontal, .callout, .list-group, .invoice, .detail, .detil
+) {
+  background-color: var(--ec-permukaan, #1b2128) !important;
+  color: var(--ec-tulisan, #dde3ea) !important;
+  border-color: var(--ec-garis, #34404c) !important;
+}
+
+html[data-aleta-tema-ecourt="gelap"] :is(
+  .portlet-title, .m-portlet__head, .kt-portlet__head, .ibox-title, .widget-header, .box-header.with-border
+) {
+  background-color: var(--ec-permukaan-2, #222a33) !important;
+  color: var(--ec-tulisan, #dde3ea) !important;
+  border-color: var(--ec-garis, #34404c) !important;
+}
+
+/* Judul bagian ("Detil Pendaftaran Gugatan", "Pendaftaran Perkara (e-Filing)"). */
+html[data-aleta-tema-ecourt="gelap"] :is(
+  [class*="title"]:not([class*="aleta"]), [class*="heading"]:not([class*="aleta"]), .caption, .caption-subject, .page-title, .section-title,
+  .x_title, .portlet-title, .ibox-title, .widget-header, .panel-heading, .card-header
+) :where(h1, h2, h3, h4, h5, h6, span, b, strong, small, a:not(.btn), div, i:not([class*="fa"]):not([class*="icon"])):where(:not([style*="color:" i])) {
+  color: var(--ec-tulisan, #dde3ea) !important;
+}
+
+html[data-aleta-tema-ecourt="gelap"] :is(
+  .x_title, .portlet-title, .ibox-title, .widget-header, .panel-heading, .card-header, .panel-title, .card-title, .caption
+):where(h1, h2, h3, h4, h5, h6, span, b, strong, small, div):where(:not([style*="color:" i])) {
+  color: var(--ec-tulisan, #dde3ea) !important;
+}
+
+/* Tulisan di dalam kotak: pucat dipaksa terbaca (kekhususan rendah). */
+html[data-aleta-tema-ecourt="gelap"] :is(
+  .x_panel, .x_content, .portlet-body, .ibox-content, .widget-main, .panel-body, .card-body, .box-body,
+  .well, .callout, .page-content, .tab-pane
+) :where(p, span, div, li, label, small, b, strong, em, dt, dd, h1, h2, h3, h4, h5, h6, td, th, font):where(:not([style*="color:" i])) {
+  color: var(--ec-tulisan, #dde3ea) !important;
+}
+
+/* Pembungkus bernama bebas di dalam tab / badan kotak (panel besar Pendaftaran
+   dan kartu linimasa Persidangan yang kelasnya tidak terdaftar). Seluruh
+   pemilihnya dalam :where() - kekhususan 0,1,1 - sehingga aturan bernama di
+   berkas ini (alert, tombol, kepala tabel) tetap menang. Yang berwarna sengaja
+   (bg-*, alert, label, progres, tombol, lencana, gaya sebaris berlatar) dilewati. */
+html[data-aleta-tema-ecourt="gelap"] :where(
+  .tab-content, .tab-pane, [role="tabpanel"], .ui-tabs-panel, .modal-body, .panel-body, .card-body, .box-body,
+  .x_content, .portlet-body, .ibox-content, .widget-main, .page-content, .content-body
+) :where(div, section, article, aside, fieldset, form, ul, ol, li):where(
+  :not([class*="bg-"]):not([class*="alert"]):not([class*="label"]):not([class*="badge"]):not([class*="progress"]):not([class*="btn"]):not([class*="callout"]):not([class*="aleta"]):not([class*="icon"]):not([class*="dot"]):not([class*="line"]):not([style*="background" i]):not(.fa):not([class*="navbar"]):not([class*="nav-"]):not([class*="caret"]):not([class*="arrow"])
+) {
+  background-color: var(--ec-permukaan, #1b2128) !important;
+  color: var(--ec-tulisan, #dde3ea) !important;
+  border-color: var(--ec-garis, #34404c) !important;
+}
+
+html[data-aleta-tema-ecourt="gelap"] :where(.tab-content, .tab-pane, [role="tabpanel"], .ui-tabs-panel) :where(p, span, small, b, strong, em, dt, dd, h1, h2, h3, h4, h5, h6, label, td, th, font):where(:not([style*="color:" i]):not([class*="label"]):not([class*="badge"]):not([class*="btn"]):not([class*="text-"])) {
+  color: var(--ec-tulisan, #dde3ea) !important;
+}
+
+/* --- Linimasa agenda sidang (tab Persidangan) ------------------------------ */
+html[data-aleta-tema-ecourt="gelap"] :is(
+  .timeline-item, .timeline-panel, .timeline-body, .timeline-heading, .timeline-header, .timeline-footer,
+  .timeline-content, .timeline-box, .timeline-card, .timeline-text, .timeline-detail, .timeline-inner, .timeline-description,
+  .cbp_tmlabel, .cd-timeline-content, .vertical-timeline-content, .tl-content, .tl-body,
+  .timeline > li > div, .timeline > li > .timeline-item, .timeline-block > div
+):not([class*="badge"]):not([class*="icon"]):not([class*="dot"]):not([class*="marker"]):not([class*="point"]):not([class*="timeline-line"]):not([class*="connector"]) {
+  background-color: var(--ec-permukaan-2, #222a33) !important;
+  color: var(--ec-tulisan, #dde3ea) !important;
+  border-color: var(--ec-garis, #34404c) !important;
+}
+
+html[data-aleta-tema-ecourt="gelap"] :is(
+  [class*="timeline"]:not([class*="aleta"]):where(div, section, article, p, li)
+):not([class*="badge"]):not([class*="icon"]):not([class*="dot"]):not([class*="marker"]):not([class*="point"]):not([class*="timeline-line"]):not([class*="connector"]) {
+  background-color: var(--ec-permukaan-2, #222a33) !important;
+  color: var(--ec-tulisan, #dde3ea) !important;
+  border-color: var(--ec-garis, #34404c) !important;
+}
+
+/* Semua tulisan di dalam linimasa (Agenda Sidang, Alasan di Tunda, tanggal, pukul). */
+html[data-aleta-tema-ecourt="gelap"] :is(
+  [class*="timeline"]:not([class*="aleta"]), .cbp_tmtimeline, .cbp_tmlabel, .cd-timeline-content, .tl-content
+) :where(p, span, div, li, ol, ul, small, b, strong, em, time, dt, dd, label, h1, h2, h3, h4, h5, h6, td, th, font):where(:not([style*="color:" i])) {
+  color: var(--ec-tulisan, #dde3ea) !important;
+}
+
+/* Kolom jam di kiri linimasa ("10:07:00") dan penanda waktu lain. */
+html[data-aleta-tema-ecourt="gelap"] :is(
+  .time, .times, .timeline-time, .tl-time, .cbp_tmtime, .event-time, .timeline-date, .tl-date,
+  [class*="time-"]:not([class*="aleta"]), [class*="-time"]:not([class*="aleta"]), .cbp_tmtime > span, .timeline > li > .time, .timeline-item > .time
+) {
+  color: var(--ec-tulisan-lembut, #a3afbd) !important;
+}
+
+html[data-aleta-tema-ecourt="gelap"] :is(
+  .time, .times, .timeline-time, .tl-time, .cbp_tmtime, .event-time, .timeline-date, .tl-date
+) :where(span, small, b, strong, i, div) {
+  color: var(--ec-tulisan, #dde3ea) !important;
+}
+
+html[data-aleta-tema-ecourt="gelap"] :is([class*="timeline"]:not([class*="aleta"]), .cbp_tmtimeline, .cbp_tmlabel) :where(a:not(.btn)) {
+  color: var(--ec-tautan, #7db4ff) !important;
+}
+
+/* Panah segitiga kartu: dibangun dari garis tepi, jadi hanya sisi kiri dan
+   kanan yang diwarnai (sisi atas-bawah transparan agar segitiganya utuh). */
+html[data-aleta-tema-ecourt="gelap"] :is(
+  .timeline-item, .timeline-panel, .timeline-content, .timeline-box, .timeline-card,
+  .cbp_tmlabel, .cd-timeline-content, .vertical-timeline-content, .tl-content,
+  .timeline > li > div, [class*="timeline"]:not([class*="aleta"]):where(div, article, section)
+):not([class*="badge"]):not([class*="icon"])::before,
+html[data-aleta-tema-ecourt="gelap"] :is(
+  .timeline-item, .timeline-panel, .timeline-content, .timeline-box, .timeline-card,
+  .cbp_tmlabel, .cd-timeline-content, .vertical-timeline-content, .tl-content,
+  .timeline > li > div, [class*="timeline"]:not([class*="aleta"]):where(div, article, section)
+):not([class*="badge"]):not([class*="icon"])::after {
+  border-left-color: var(--ec-permukaan-2, #222a33) !important;
+  border-right-color: var(--ec-permukaan-2, #222a33) !important;
+}
+
+html[data-aleta-tema-ecourt="gelap"] :is(
+  .timeline-item, .timeline-panel, .timeline-content, .timeline-card, .cbp_tmlabel, .tl-content
+) :where([class*="arrow"]) {
+  border-left-color: var(--ec-permukaan-2, #222a33) !important;
+  border-right-color: var(--ec-permukaan-2, #222a33) !important;
+}
+
+/* --- Gaya sebaris yang menyebut dirinya putih / tulisan gelap ---------------- */
+html[data-aleta-tema-ecourt="gelap"] [style*="background:#fff" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background:white" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background:rgb(255,255,255)" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background:rgb(255, 255, 255)" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background:#fafafa" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background:#f9f9f9" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background:#f8f9fa" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background:#f5f5f5" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background:#f4f4f4" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background:#f7f7f7" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background:#fcfcfc" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background:#fefefe" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background:whitesmoke" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background:#eee" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background:#f1f1f1" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background:#f2f2f2" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background:#ececec" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background:#e9ecef" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background: #fff" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background: white" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background: rgb(255,255,255)" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background: rgb(255, 255, 255)" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background: #fafafa" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background: #f9f9f9" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background: #f8f9fa" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background: #f5f5f5" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background: #f4f4f4" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background: #f7f7f7" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background: #fcfcfc" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background: #fefefe" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background: whitesmoke" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background: #eee" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background: #f1f1f1" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background: #f2f2f2" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background: #ececec" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background: #e9ecef" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color:#fff" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color:white" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color:rgb(255,255,255)" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color:rgb(255, 255, 255)" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color:#fafafa" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color:#f9f9f9" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color:#f8f9fa" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color:#f5f5f5" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color:#f4f4f4" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color:#f7f7f7" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color:#fcfcfc" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color:#fefefe" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color:whitesmoke" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color:#eee" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color:#f1f1f1" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color:#f2f2f2" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color:#ececec" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color:#e9ecef" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color: #fff" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color: white" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color: rgb(255,255,255)" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color: rgb(255, 255, 255)" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color: #fafafa" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color: #f9f9f9" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color: #f8f9fa" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color: #f5f5f5" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color: #f4f4f4" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color: #f7f7f7" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color: #fcfcfc" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color: #fefefe" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color: whitesmoke" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color: #eee" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color: #f1f1f1" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color: #f2f2f2" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color: #ececec" i],
+html[data-aleta-tema-ecourt="gelap"] [style*="background-color: #e9ecef" i] {
+  background-color: var(--ec-permukaan, #1b2128) !important;
+  color: var(--ec-tulisan, #dde3ea) !important;
+  border-color: var(--ec-garis, #34404c) !important;
+}
+
+html[data-aleta-tema-ecourt="gelap"] [style^="color:#000" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=";color:#000" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=" color:#000" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style^="color:#111" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=";color:#111" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=" color:#111" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style^="color:#222" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=";color:#222" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=" color:#222" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style^="color:#333" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=";color:#333" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=" color:#333" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style^="color:#444" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=";color:#444" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=" color:#444" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style^="color:#555" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=";color:#555" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=" color:#555" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style^="color:#666" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=";color:#666" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=" color:#666" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style^="color:#777" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=";color:#777" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=" color:#777" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style^="color:black" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=";color:black" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=" color:black" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style^="color:dimgray" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=";color:dimgray" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=" color:dimgray" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style^="color: #000" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=";color: #000" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=" color: #000" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style^="color: #111" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=";color: #111" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=" color: #111" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style^="color: #222" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=";color: #222" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=" color: #222" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style^="color: #333" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=";color: #333" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=" color: #333" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style^="color: #444" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=";color: #444" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=" color: #444" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style^="color: #555" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=";color: #555" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=" color: #555" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style^="color: #666" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=";color: #666" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=" color: #666" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style^="color: #777" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=";color: #777" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=" color: #777" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style^="color: black" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=";color: black" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=" color: black" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style^="color: dimgray" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=";color: dimgray" i]:not([style*="background" i]),
+html[data-aleta-tema-ecourt="gelap"] [style*=" color: dimgray" i]:not([style*="background" i]) {
+  color: var(--ec-tulisan, #dde3ea) !important;
+}
+
+
 html[data-aleta-tema-ecourt="gelap"] :is(.card-header, .panel-heading, .box-header, .modal-header, .accordion-button) {
   background-color: var(--ec-permukaan-2, #222a33) !important;
   color: var(--ec-tulisan, #dde3ea) !important;
