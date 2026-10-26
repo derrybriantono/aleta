@@ -55,6 +55,9 @@ import { periksaIntegritas } from "@/server/modules/kesehatan/pemeriksa";
  * ini ("Permission denied") sehingga tidak dapat dibaca atau dijalankan.
  */
 
+// Peringatan WhatsApp digabung dengan jendela tahan (26 Okt 2026); uji ini memeriksa pengiriman langsung (jendela 0). Penggabungan diuji di peringatan-gabungan-26okt.
+process.env.ALETA_PERINGATAN_GABUNG_MENIT = "0";
+
 const ctx = vi.hoisted(() => ({ db: null as unknown }));
 
 vi.mock("@/server/db/client", async (asli) => ({

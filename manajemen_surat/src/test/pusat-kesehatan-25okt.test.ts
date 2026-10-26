@@ -69,6 +69,9 @@ import { utama as ujiBebanUtama } from "../../scripts/uji-beban.mjs";
  * Tanpa jaringan: bot, WhatsApp, dan sinkron adalah jawaban tiruan.
  */
 
+// Peringatan WhatsApp digabung dengan jendela tahan (26 Okt 2026); uji ini memeriksa pengiriman langsung (jendela 0). Penggabungan diuji di peringatan-gabungan-26okt.
+process.env.ALETA_PERINGATAN_GABUNG_MENIT = "0";
+
 const ctx = vi.hoisted(() => ({ db: null as unknown, aktor: null as string | null }));
 
 vi.mock("@/server/db/client", async (asli) => ({
