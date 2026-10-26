@@ -77,6 +77,9 @@ export const FITUR_KATALOG_SAKSI_DB = "katalog-saksi-basis-data";
 /** Saklar C3/U7 (25 Okt 2026): tombol cerai lama di ABT memanggil mesin katalog; bawaan MATI. */
 export const FITUR_MESIN_SAKSI_TUNGGAL = "mesin-saksi-tunggal";
 
+/** Saklar layar kerja khusus Sampul dan Daftar Isi di panel Blangko ABT by Derry (26 Okt 2026); bawaan MATI. */
+export const FITUR_BERKAS_PERKARA = "berkas-perkara-khusus";
+
 /** Saklar C5/U9 (25 Okt 2026): saran keadaan perkara non-cerai dari posita/petitum dan 2557/2558 dari BAS; bawaan MATI. */
 export const FITUR_FAKTA_NON_CERAI = "fakta-non-cerai";
 
@@ -144,6 +147,14 @@ export const KATALOG_FITUR_SATKER: readonly FiturKatalog[] = [
     bagian: "ekstensi",
     keterangan:
       "Mati: Susun saksi menanyakan semua keadaan perkara non-cerai kepada petugas, dan 2557/2558 (berapa kali saksi melihat dan mendengar pertengkaran) diketik tangan. Nyalakan agar posita dan petitum dibaca menjadi SARAN keadaan (dengan kalimat sumber dan tombol Pakai; tidak ada yang terisi sendiri) dan angka 2557/2558 dibaca dari BAS yang sudah tersimpan sebagai usulan ragu.",
+    bawaan: "mati",
+  },
+  {
+    kode: FITUR_BERKAS_PERKARA,
+    nama: "Layar kerja Sampul dan Daftar Isi berkas",
+    bagian: "ekstensi",
+    keterangan:
+      "Mati: blangko Sampul Berkas Perkara dan Daftar Isi Berkas di panel Blangko ABT by Derry dibuka seperti blangko biasa. Nyalakan agar keduanya memakai layar kerja khusus: ciri otomatis atau tangan, isian khas jenis perkara, pilihan kertas A4/F4/Legal, daftar isi yang dapat disunting dengan nomor halaman otomatis (pasti, perkiraan, manual). Sunting disimpan di ALETA, tidak ditulis ke SIPP maupun ABT.",
     bawaan: "mati",
   },
   {

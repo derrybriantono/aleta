@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pratinjau Sampul Berkas Perkara</title>
+<style>
+  :root{
+    --tinta:#14181f; --redup:#5b6472; --garis:#14181f; --garis-tipis:#9aa3b0; --latar:#e9ecf1; --kertas:#fff;
+    --aksen:#0e4a5c; --aksen-muda:#e6f0f3; --abu:#f3f4f6;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--latar);color:var(--tinta);font-family:Calibri,"Segoe UI",Arial,sans-serif;font-size:10.5pt;line-height:1.35}
+
+  /* ---------- panel pratinjau (tidak ikut dicetak) ---------- */
+  .panel{max-width:210mm;margin:14px auto 0;padding:12px 16px;background:#fff;border:1px solid #cfd5de;border-radius:10px}
+  .panel h1{font-size:13pt;margin:0 0 4px}
+  .panel p{margin:4px 0;color:var(--redup);font-size:9.5pt}
+  .panel .sakelar{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px}
+  .panel label{display:inline-flex;align-items:center;gap:5px;font-size:9.5pt;cursor:pointer}
+  .panel .tombol{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap}
+  .panel button{font:inherit;font-size:9.5pt;padding:4px 10px;border:1px solid #9aa3b0;background:#fff;border-radius:6px;cursor:pointer}
+  .panel button:hover{background:var(--abu)}
+
+  /* ---------- kertas A4 ---------- */
+  .kertas{width:210mm;min-height:297mm;margin:14px auto;background:var(--kertas);padding:12mm 13mm 11mm;
+          box-shadow:0 2px 14px rgba(20,24,31,.16);position:relative}
+  .kop{display:flex;align-items:center;justify-content:space-between;border-bottom:2.2pt solid var(--garis);padding-bottom:5pt}
+  .kop .satker{font-weight:700;letter-spacing:.06em;font-size:12.5pt}
+  .kop .sub{font-size:8.5pt;color:var(--redup);margin-top:1pt}
+  .kop .jilid{border:1.6pt solid var(--garis);padding:3pt 10pt;font-weight:800;letter-spacing:.14em;font-size:11pt;text-align:center}
+  .kop .jilid small{display:block;font-size:7.5pt;font-weight:600;letter-spacing:.08em;color:var(--redup)}
+
+  .judul{margin:12pt 0 0;text-align:center}
+  .judul .atas{font-size:9pt;letter-spacing:.32em;color:var(--redup);font-weight:700}
+  .judul .jenis{font-size:17pt;font-weight:800;letter-spacing:.02em;margin-top:2pt;line-height:1.15}
+  .nomor{margin:8pt auto 0;border:2.4pt solid var(--garis);padding:6pt 10pt;text-align:center;width:88%;position:relative}
+  .nomor:after{content:"";position:absolute;inset:3pt;border:.6pt solid var(--garis)}
+  .nomor .lbl{font-size:8pt;letter-spacing:.3em;color:var(--redup);font-weight:700}
+  .nomor .no{font-size:22pt;font-weight:800;letter-spacing:.03em;line-height:1.15}
+  .nomor .thn{font-size:9pt;color:var(--redup);letter-spacing:.12em}
+
+  .judul-bagian{display:flex;align-items:center;gap:8pt;margin:11pt 0 4pt;font-size:8.5pt;font-weight:800;letter-spacing:.22em}
+  .judul-bagian:after{content:"";flex:1;border-top:.8pt solid var(--garis)}
+  .judul-bagian .ket{font-weight:500;letter-spacing:0;color:var(--redup);font-size:8pt}
+
+  /* ---------- kotak ciri (tag) ---------- */
+  .ciri{border:1.2pt solid var(--garis);padding:6pt 7pt 5pt;min-height:34pt}
+  .chips{display:flex;flex-wrap:wrap;gap:4pt 5pt;margin:0;padding:0;list-style:none}
+  .chip{display:inline-flex;align-items:center;gap:4pt;border:1.3pt solid var(--garis);border-radius:3pt;padding:1.5pt 6pt 1.5pt 4pt;
+        font-weight:800;font-size:8.8pt;letter-spacing:.04em;white-space:nowrap;background:#fff}
+  .chip .g{font-size:7.5pt;line-height:1}
+  .chip .s{font-weight:600;font-size:7.6pt;letter-spacing:0;border-left:.8pt solid var(--garis);padding-left:4pt;margin-left:1pt}
+  .chip.penting{border:3pt double var(--garis);padding:.5pt 5pt .5pt 3pt;background:var(--abu)}
+  .chip.tersembunyi{display:none}
+  .ciri .kosong{display:none;color:var(--redup);font-style:italic}
+  .ciri.tanpa .kosong{display:block}
+  .legenda{display:flex;gap:12pt;flex-wrap:wrap;margin-top:4pt;font-size:7.5pt;color:var(--redup)}
+  .legenda b{color:var(--tinta)}
+
+  /* ---------- pihak ---------- */
+  .pihak{display:grid;grid-template-columns:1fr 1fr;border:1.2pt solid var(--garis)}
+  .pihak > div{padding:5pt 7pt}
+  .pihak > div + div{border-left:1.2pt solid var(--garis)}
+  .pihak .peran{font-size:7.8pt;font-weight:800;letter-spacing:.18em;color:var(--redup)}
+  .pihak .nama{font-size:11.5pt;font-weight:800;margin:1pt 0 2pt}
+  .pihak .baris{font-size:9pt;display:flex;gap:4pt}
+  .pihak .baris span:first-child{min-width:46pt;color:var(--redup)}
+  .pihak .kuasa{margin-top:3pt;font-size:8.6pt;border-top:.6pt dashed var(--garis-tipis);padding-top:2pt}
+  .pihak .dua{margin-top:4pt;padding-top:3pt;border-top:.6pt dashed var(--garis-tipis)}
+
+  /* ---------- tabel isian ---------- */
+  table{border-collapse:collapse;width:100%}
+  .isi td,.isi th{border:.9pt solid var(--garis);padding:2.2pt 5pt;vertical-align:top;font-size:9.2pt}
+  .isi th{background:var(--aksen-muda);font-size:8pt;letter-spacing:.1em;text-align:left;font-weight:800}
+  .isi td.l{width:20%;color:var(--redup);font-size:8.4pt;background:#fafbfc}
+  .isi td.v{font-weight:600}
+  .isi .kosong{color:#b3bac5;font-weight:400}
+  .dua-kolom{display:grid;grid-template-columns:1fr 1fr;gap:8pt}
+
+  .sidang th,.sidang td{font-size:8.6pt}
+  .sidang td{height:15pt}
+  .sidang td.n{width:7%;text-align:center;font-weight:700}
+  .sidang td.t{width:21%}
+  .sidang td.a{width:24%}
+  .sidang .kel{font-size:7pt;font-weight:800;border:.8pt solid var(--garis);padding:0 2pt;border-radius:2pt;margin-left:3pt}
+
+  .akhir{margin-top:7pt}
+  .akhir td{text-align:center;padding:3pt 4pt}
+  .akhir .l{display:block;font-size:7.3pt;letter-spacing:.12em;color:var(--redup);font-weight:800}
+  .akhir .v{font-size:10pt;font-weight:800}
+  .ikrar{margin-top:5pt}
+  .ikrar.tersembunyi{display:none}
+
+  .kaki{position:absolute;left:13mm;right:13mm;bottom:8mm;display:flex;justify-content:space-between;font-size:7.5pt;color:var(--redup);border-top:.6pt solid var(--garis-tipis);padding-top:3pt}
+
+  .catatan{max-width:210mm;margin:0 auto 24px;padding:10px 16px;font-size:9.5pt;color:var(--redup)}
+  .catatan b{color:var(--tinta)}
+  .catatan code{background:#fff;border:1px solid #d6dbe3;border-radius:4px;padding:0 4px;font-size:8.8pt}
+
+  @media (max-width:820px){
+    .kertas{width:auto;min-height:0;margin:10px;padding:14px 12px 40px}
+    .panel,.catatan{margin-left:10px;margin-right:10px}
+    .kaki{left:12px;right:12px;bottom:10px}
+    .pihak{grid-template-columns:1fr}
+    .pihak > div + div{border-left:0;border-top:1.2pt solid var(--garis)}
+    .dua-kolom{grid-template-columns:1fr}
+    .nomor{width:100%}
+    .nomor .no{font-size:17pt}
+    .judul .jenis{font-size:14pt}
+  }
+  @media print{
+    @page{size:A4;margin:0}
+    body{background:#fff}
+    .panel,.catatan{display:none}
+    .kertas{margin:0;box-shadow:none;width:210mm;min-height:297mm}
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  }
+</style>
+</head>
+<body>
+
+<div class="panel">
+  <h1>Pratinjau: Sampul Berkas Perkara (menu PTSP)</h1>
+  <p>Contoh memakai data rekaan. Centang atau cabut ciri di bawah untuk melihat bagaimana ciri yang tidak berlaku disembunyikan: kotaknya mengecil, tidak ada petak kosong. Bila tidak ada satu pun ciri, kotak memuat satu kalimat netral.</p>
+  <div class="sakelar" id="sakelar"></div>
+  <div class="tombol">
+    <button type="button" id="semua">Nyalakan semua</button>
+    <button type="button" id="tak">Matikan semua</button>
+    <button type="button" id="contoh">Contoh perkara umum</button>
+    <button type="button" id="ct">Cerai talak (blok ikrar muncul)</button>
+    <button type="button" onclick="window.print()">Cetak</button>
+  </div>
+</div>
+
+<div class="kertas" id="kertas">
+  <div class="kop">
+    <div>
+      <div class="satker">PENGADILAN AGAMA DONGGALA</div>
+      <div class="sub">Berkas perkara tingkat pertama</div>
+    </div>
+    <div class="jilid">BUNDEL A<small>BERKAS PERKARA</small></div>
+  </div>
+
+  <div class="judul">
+    <div class="atas">SAMPUL BERKAS PERKARA</div>
+    <div class="jenis" id="jenis">Cerai Gugat Kumulasi Hak Asuh Anak</div>
+    <div class="nomor">
+      <div class="lbl">PERKARA NOMOR</div>
+      <div class="no" id="nomor">214/Pdt.G/2026/PA.Dgl</div>
+      <div class="thn">TAHUN 2026 &nbsp;&middot;&nbsp; TERDAFTAR 12 Maret 2026</div>
+    </div>
+  </div>
+
+  <div class="judul-bagian">CIRI PERKARA <span class="ket">menyala hanya bila berlaku</span></div>
+  <div class="ciri" id="ciri">
+    <ul class="chips" id="chips"></ul>
+    <div class="kosong">Tidak ada ciri khusus pada perkara ini.</div>
+  </div>
+  <div class="legenda">
+    <span><b>&#9632;</b> pendaftaran dan biaya</span>
+    <span><b>&#9679;</b> pihak</span>
+    <span><b>&#9650;</b> proses</span>
+    <span>bingkai ganda = ciri yang mengubah cara pemeriksaan</span>
+  </div>
+
+  <div class="judul-bagian">PARA PIHAK</div>
+  <div class="pihak">
+    <div>
+      <div class="peran">PENGGUGAT</div>
+      <div class="nama">SITI AMINAH binti RAHMAT</div>
+      <div class="baris"><span>Pekerjaan</span><span>Mengurus rumah tangga</span></div>
+      <div class="baris"><span>Alamat</span><span>Jl. Melati No. 12, Kel. Boya, Kec. Banawa, Kab. Donggala</span></div>
+      <div class="kuasa"><b>Kuasa:</b> Budi Santoso, S.H., M.H. (Advokat)</div>
+    </div>
+    <div>
+      <div class="peran">TERGUGAT</div>
+      <div class="nama">ANDI WIJAYA bin HASAN</div>
+      <div class="baris"><span>Pekerjaan</span><span>Pegawai Negeri Sipil (guru)</span></div>
+      <div class="baris"><span>Alamat</span><span>Tidak diketahui tempat tinggalnya di Indonesia (terakhir: Jl. Kenanga No. 5, Kab. Donggala)</span></div>
+      <div class="dua" id="pihak2" hidden>
+        <div class="peran">PENGGUGAT II</div>
+        <div class="nama">NURHAYATI binti SALEH</div>
+        <div class="baris"><span>Alamat</span><span>Jl. Cempaka No. 3, Kab. Donggala</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="judul-bagian">MAJELIS DAN PETUGAS</div>
+  <div class="dua-kolom">
+    <table class="isi">
+      <tr><td class="l">Ketua Majelis</td><td class="v">Drs. H. Ahmad Fauzi, M.H.</td></tr>
+      <tr><td class="l">Hakim Anggota I</td><td class="v">Dra. Hj. Rahmawati, M.H.</td></tr>
+      <tr><td class="l">Hakim Anggota II</td><td class="v">Muhammad Yusuf, S.H.I., M.H.</td></tr>
+      <tr><td class="l">Konseptor</td><td class="v kosong">&mdash;</td></tr>
+    </table>
+    <table class="isi">
+      <tr><td class="l">Panitera Pengganti</td><td class="v">Siti Nurjannah, S.H.</td></tr>
+      <tr><td class="l">Jurusita Pengganti</td><td class="v">Abdul Rahman, S.H.</td></tr>
+      <tr><td class="l">Mediator</td><td class="v">Dra. Hj. Rahmawati, M.H.</td></tr>
+      <tr><td class="l">Hasil mediasi</td><td class="v">Tidak berhasil</td></tr>
+    </table>
+  </div>
+
+  <div class="judul-bagian">TANGGAL PENTING</div>
+  <table class="isi">
+    <tr>
+      <td class="l">Daftar perkara</td><td class="v">12 Maret 2026</td>
+      <td class="l">Penetapan PP/JS</td><td class="v">13 Maret 2026</td>
+    </tr>
+    <tr>
+      <td class="l">Penetapan Majelis (PMH)</td><td class="v">13 Maret 2026</td>
+      <td class="l">Penetapan mediator</td><td class="v">24 Maret 2026</td>
+    </tr>
+    <tr>
+      <td class="l">Penetapan Hari Sidang (PHS)</td><td class="v">13 Maret 2026</td>
+      <td class="l">Laporan mediator</td><td class="v">7 April 2026</td>
+    </tr>
+  </table>
+
+  <div class="judul-bagian">RIWAYAT SIDANG <span class="ket">tabel terisi dari jadwal sidang, baris sisa untuk catatan tangan</span></div>
+  <table class="isi sidang">
+    <tr><th>NO</th><th>TGL SIDANG</th><th>ALASAN PENUNDAAN</th><th>AGENDA SIDANG / KET.</th></tr>
+    <tr><td class="n">1</td><td class="t">24 Maret 2026</td><td class="a">Tergugat belum dipanggil patut</td><td>Pemeriksaan identitas<span class="kel">KELILING</span></td></tr>
+    <tr><td class="n">2</td><td class="t">7 April 2026</td><td class="a">Mediasi</td><td>Mediasi dan pembacaan gugatan</td></tr>
+    <tr><td class="n">3</td><td class="t">21 April 2026</td><td class="a">Pembuktian lanjutan</td><td>Pembuktian Penggugat (surat dan saksi)</td></tr>
+    <tr><td class="n">4</td><td class="t">5 Mei 2026</td><td class="a"></td><td>Pembacaan putusan</td></tr>
+    <tr><td class="n">5</td><td class="t"></td><td class="a"></td><td></td></tr>
+    <tr><td class="n">6</td><td class="t"></td><td class="a"></td><td></td></tr>
+    <tr><td class="n">7</td><td class="t"></td><td class="a"></td><td></td></tr>
+    <tr><td class="n">8</td><td class="t"></td><td class="a"></td><td></td></tr>
+  </table>
+
+  <table class="isi akhir">
+    <tr>
+      <td><span class="l">TGL PUTUS</span><span class="v">5 Mei 2026</span></td>
+      <td><span class="l">TGL MINUTASI</span><span class="v">8 Mei 2026</span></td>
+      <td><span class="l">TGL PBT</span><span class="v">8 Mei 2026</span></td>
+      <td><span class="l">TGL BHT</span><span class="v">22 Mei 2026</span></td>
+    </tr>
+  </table>
+
+  <div class="ikrar tersembunyi" id="ikrar" style="padding:2pt 2pt;font-size:9.2pt;margin-top:5pt">
+    <b style="letter-spacing:.14em;font-size:8pt">IKRAR TALAK</b> &nbsp;
+    PMH <b>10 Juni 2026</b> &nbsp;&middot;&nbsp; PHS <b>10 Juni 2026</b> &nbsp;&middot;&nbsp; Sidang ikrar <b>24 Juni 2026</b> &nbsp;&middot;&nbsp; Pen. eks. Ps. 71 <b>&mdash;</b>
+  </div>
+
+  <div class="kaki"><span>Hijriah putusan: 17 Zulkaidah 1447 H</span><span>Sampul dicetak otomatis dari data perkara</span></div>
+</div>
+
+<div class="catatan">
+  <b>Cara kerja (versi RTF).</b>
+  Setiap kotak di atas adalah satu isian <code>#NNNN#</code> pada berkas RTF. Kotak <i>Ciri perkara</i> adalah satu isian (<code>#5801#</code>) yang mengembalikan deretan ciri yang berlaku, dipisah spasi, masing-masing berbentuk
+  <code>[&#9632; PRODEO]</code>; ciri yang tidak berlaku tidak menghasilkan apa pun sehingga tidak ada celah. Bingkai ganda di sini diwujudkan di RTF dengan tanda kurung siku tebal dan huruf kapital. Blok <i>Ikrar</i> hanya terbit untuk cerai talak: berupa satu baris teks tanpa kotak (kotak tetap di RTF tidak dapat disembunyikan) yang diterbitkan sepenuhnya oleh satu isian (<code>#5829#</code>) dan kosong untuk jenis lain. Tabel riwayat sidang memakai 12 baris tetap; tiap sel adalah isian (<code>#5860#</code> s.d. <code>#5895#</code>, tiga per baris) yang kosong bila sidang ke-n belum ada, sehingga baris sisa tetap tersedia untuk tulisan tangan dan satu baris yang melipat tidak menggeser baris lain.
+  Bentuk huruf (&#9632; &#9679; &#9650;, kurung, huruf tebal) tetap terbaca pada cetakan hitam-putih.
+</div>
+
+<script>
+(function(){
+  var T = [
+    {k:"prodeo", n:"PRODEO", g:"■", s:"", on:1},
+    {k:"ecourt", n:"e-COURT", g:"■", s:"", on:1},
+    {k:"kuasa", n:"KUASA HUKUM", g:"■", s:"P", on:1},
+    {k:"insidentil", n:"KUASA INSIDENTIL", g:"■", s:"", on:0},
+    {k:"ghaib", n:"GHAIB", g:"●", s:"T", on:1, p:1},
+    {k:"mafqud", n:"MAFQUD", g:"●", s:"", on:0, p:1},
+    {k:"pns", n:"PNS/ASN", g:"●", s:"T", on:1},
+    {k:"pppk", n:"PPPK", g:"●", s:"", on:0},
+    {k:"tni", n:"TNI", g:"●", s:"", on:0},
+    {k:"polri", n:"POLRI", g:"●", s:"", on:0},
+    {k:"bumn", n:"BUMN/BUMD", g:"●", s:"", on:0},
+    {k:"disabilitas", n:"DISABILITAS", g:"●", s:"P", on:1},
+    {k:"penerjemah", n:"PENERJEMAH", g:"●", s:"", on:1},
+    {k:"wna", n:"WNA", g:"●", s:"", on:0},
+    {k:"verstek", n:"VERSTEK", g:"▲", s:"", on:1, p:1},
+    {k:"kumulasi", n:"KUMULASI", g:"▲", s:"2", on:1},
+    {k:"rekonvensi", n:"REKONVENSI", g:"▲", s:"", on:0},
+    {k:"mediasi", n:"MEDIASI", g:"▲", s:"gagal", on:1},
+    {k:"sita", n:"SITA", g:"▲", s:"", on:1},
+    {k:"keliling", n:"SIDANG KELILING", g:"▲", s:"", on:1},
+    {k:"tunggal", n:"HAKIM TUNGGAL", g:"▲", s:"", on:0},
+    {k:"sederhana", n:"GUGATAN SEDERHANA", g:"▲", s:"", on:0},
+    {k:"verzet", n:"VERZET", g:"▲", s:"", on:0},
+    {k:"dispensasi", n:"DISPENSASI KAWIN", g:"▲", s:"", on:0},
+    {k:"ikrar", n:"IKRAR TALAK", g:"▲", s:"", on:0}
+  ];
+  var ul = document.getElementById("chips"), sak = document.getElementById("sakelar"), ciri = document.getElementById("ciri");
+  var jenis = document.getElementById("jenis"), nomor = document.getElementById("nomor");
+  function el(t,c,x){var e=document.createElement(t); if(c) e.className=c; if(x!=null) e.textContent=x; return e;}
+  T.forEach(function(t){
+    var li = el("li","chip"+(t.p?" penting":""));
+    li.id = "c-"+t.k;
+    li.appendChild(el("span","g",t.g));
+    li.appendChild(el("span","",t.n));
+    if(t.s) li.appendChild(el("span","s",t.s));
+    ul.appendChild(li);
+    var lb = el("label"), cb = document.createElement("input");
+    cb.type="checkbox"; cb.checked=!!t.on; cb.dataset.k=t.k;
+    lb.appendChild(cb); lb.appendChild(document.createTextNode(t.n));
+    sak.appendChild(lb);
+    cb.addEventListener("change", segarkan);
+  });
+  (function(){
+    var lb = el("label"), cb = document.createElement("input");
+    cb.type = "checkbox";
+    lb.appendChild(cb); lb.appendChild(document.createTextNode("(blok) Pemohon/Penggugat II"));
+    sak.appendChild(lb);
+    cb.addEventListener("change", function(){ document.getElementById("pihak2").hidden = !cb.checked; });
+  })();
+  function segarkan(){
+    var ada = 0;
+    T.forEach(function(t){
+      var cb = sak.querySelector('input[data-k="'+t.k+'"]');
+      var li = document.getElementById("c-"+t.k);
+      li.classList.toggle("tersembunyi", !cb.checked);
+      if(cb.checked) ada++;
+    });
+    ciri.classList.toggle("tanpa", ada===0);
+    ul.style.display = ada===0 ? "none" : "flex";
+  }
+  function setel(fn){
+    sak.querySelectorAll("input[data-k]").forEach(function(cb){ cb.checked = fn(cb.dataset.k); });
+    segarkan();
+  }
+  document.getElementById("semua").onclick = function(){ setel(function(){return true;}); };
+  document.getElementById("tak").onclick = function(){ setel(function(){return false;}); };
+  document.getElementById("contoh").onclick = function(){
+    jenis.textContent = "Cerai Gugat"; nomor.textContent = "301/Pdt.G/2026/PA.Dgl";
+    document.getElementById("ikrar").classList.add("tersembunyi");
+    setel(function(k){ return ["ecourt","kuasa","mediasi"].indexOf(k)>=0; });
+  };
+  document.getElementById("ct").onclick = function(){
+    jenis.textContent = "Cerai Talak"; nomor.textContent = "188/Pdt.G/2026/PA.Dgl";
+    document.getElementById("ikrar").classList.remove("tersembunyi");
+    setel(function(k){ return ["ecourt","pns","mediasi","ikrar"].indexOf(k)>=0; });
+  };
+  segarkan();
+})();
+</script>
+</body>
+</html>

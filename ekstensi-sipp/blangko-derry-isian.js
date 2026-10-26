@@ -463,6 +463,41 @@
   }
   const perkaraId = () => (S.pk && S.pk.perkaraId ? String(S.pk.perkaraId) : "");
   const nomorPerkara = () => (S.pk && S.pk.nomorPerkara) || "";
+
+  // ───────────────────────────────────────────────────────
+  // Sampul Berkas Perkara & Daftar Isi Berkas (26 Okt 2026): layar kerja khusus bila saklar "berkas-perkara-khusus" menyala
+  // ───────────────────────────────────────────────────────
+  const BK = () => globalThis.AletaBerkasKhusus || null;
+  /** "sampul" | "daftar-isi" bila berkas itu layar khusus DAN saklarnya menyala (mati/gagal bertanya/Tes putusan = blangko biasa). */
+  async function berkasKhususSiap(berkas) {
+    const bk = BK();
+    if (!bk || tes()) return "";
+    const jenis = bk.jenisLayar(berkas);
+    if (!jenis) return "";
+    const sf = globalThis.AletaSaklarFitur;
+    try {
+      return sf && (await sf.aktif(bk.KODE_SAKLAR)) === true ? jenis : "";
+    } catch {
+      return "";
+    }
+  }
+  function hostBerkas() {
+    return {
+      ambilPortal,
+      unduh,
+      pdfDari,
+      namaUnduhan,
+      rtfKeHtml: (rtf) => rtfKeHtml(rtf, null),
+      toast,
+      bacaPenyimpanan,
+      tulisPenyimpanan,
+      sebagaiPeran: () => {
+        const a = api();
+        const kd = a && typeof a.keadaan === "function" ? a.keadaan() : null;
+        return !tes() && adm() && kd && kd.sebagai && kd.sebagai.nama && kd.sebagai.peran ? String(kd.sebagai.peran) : "";
+      },
+    };
+  }
   /** Urutan sidang ABT (d): urutan SIPP bila ada, bila tidak nomor urut daftar. */
   const sidangUrutan = () => {
     if (!S.pk) return "";
@@ -675,6 +710,8 @@
       const h = await klienAbt().daftarBerkas(k.a);
       if (!h.ok) throw new Error(h.pesan || "Kelompok tidak terbaca.");
       k.berkas = h.berkas.map((b) => ({ berkas: b.berkas, a: b.a, b: b.b }));
+      // 26 Okt 2026: sampul lengkap menjadi pilihan KEDUA (cetak awal bawaan di atas).
+      k.berkas.sort((x, y) => Number(/^Sampul Berkas Perkara \(Lengkap\)/i.test(x.berkas)) - Number(/^Sampul Berkas Perkara \(Lengkap\)/i.test(y.berkas)));
       k.judul = namaMenuTampil(h.kelompok || k.nama);
       void tulisPenyimpanan({ [K_BERKAS]: { asal: asalAbtDerry(), saat: Date.now(), kelompok: S.menu.kelompok.map((x) => ({ nama: x.nama, berkas: x.berkas, judul: x.judul || "" })) } });
     } catch (e) {
@@ -1523,6 +1560,8 @@
     if (!kelompokBoleh({ ...k, ikrar: adalahBlangkoIkrar(k.jenis, b.berkas) })) return toast(`${NAMA_JENIS[k.jenis] || "Blangko"} di menu ${namaMenuTampil(k.nama)} bukan untuk peran ${adm() ? "akun yang sedang dilihat" : "akun Anda"}.`);
     tutupModal();
     const blangko = { berkas: b.berkas, kelompok: k.nama, judul: k.judul || namaMenuTampil(k.nama), a: b.a, b: b.b, jenis: k.jenis, folder: folderUntuk(k), peranKunci: kunciPeranSekarang() };
+    if (BK()) BK().tutup();
+    blangko.khusus = await berkasKhususSiap(b.berkas);
     S.blangko = blangko;
     S.susunan = null;
     S.galatSusunan = "";
@@ -1564,6 +1603,10 @@
     void autoCentangTtd();
     await periksaHakBlangko(blangko, kelompokNama);
     if (S.blangko !== blangko || blangko.hak !== "ok") return;
+    if (blangko.khusus) {
+      renderIsian();
+      return;
+    }
     await muatSusunan();
   }
 
@@ -5132,6 +5175,14 @@
       w.innerHTML = `<div class="bd-peringatan" role="alert">${esc(S.galatSusunan)} <button type="button" class="bd-btn kecil" data-bd2="ulangsusunan">Coba lagi</button></div>`;
       return;
     }
+    if (S.blangko.khusus) {
+      if (S.blangko.hak !== "ok") {
+        w.innerHTML = `<p class="bd-catat" role="status">Memeriksa hak buka blangko ini…</p>`;
+        return;
+      }
+      void BK().buka(w, hostBerkas(), { jenis: S.blangko.khusus, bentuk: BK().bentukDari(S.blangko.berkas), perkaraId: perkaraId(), nomor: nomorPerkara() });
+      return;
+    }
     if (!S.susunan) {
       w.innerHTML = `<p class="bd-catat" role="status">Membaca isian blangko ini…</p>`;
       return;
@@ -6187,6 +6238,10 @@
       w.innerHTML = `<p class="bd-catat">Pratinjau tampil sesudah blangko dipilih.</p>`;
       return;
     }
+    if (S.blangko.khusus) {
+      w.innerHTML = `<p class="bd-catat">Pratinjau naskah ada di layar kerja pada langkah isian.</p>`;
+      return;
+    }
     const p = S.prat;
     const sunting = p.suntingPenuh;
     w.innerHTML =
@@ -6702,6 +6757,10 @@
     if (!w) return;
     if (!S.blangko) {
       w.innerHTML = `<p class="bd-catat">Pilihan cetak tampil sesudah blangko dipilih.</p>`;
+      return;
+    }
+    if (S.blangko.khusus) {
+      w.innerHTML = `<p class="bd-catat">Tombol cetak ada di layar kerja pada langkah isian.</p>`;
       return;
     }
     const j = S.blangko.jenis;
@@ -7983,6 +8042,7 @@
    * tidak boleh terbawa; saran dihitung ulang menurut peran yang sekarang.
    */
   function lepasBlangkoPerkara() {
+    if (BK()) BK().tutup();
     if (S.modal) {
       S.modal = null;
       const m = wadah && wadah.akar ? cari("#bd-modal", wadah.akar) : null;

@@ -1,0 +1,603 @@
+<title>Pratinjau Daftar Isi</title>
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap");
+
+:root{
+  --bg:#f3f4f7; --panel:#ffffff; --ink:#151a22; --muted:#5d6676; --line:#dbe0e8; --accent:#0e5a70; --accent-ink:#ffffff;
+  --accent-soft:#e2f0f4; --chip-off:#f4f5f8; --focus:#1456d1; --shadow:0 1px 2px rgba(20,26,34,.06),0 12px 34px rgba(20,26,34,.14);
+  --ui:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --serif:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --p-ink:#141a22; --p-muted:#5a6372; --p-line:#141a22; --p-thin:#c5ccd6; --p-soft:#f3f5f8; --p-wash:#e7f0f3;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e1217; --panel:#171c23; --ink:#e9edf3; --muted:#9ba6b6; --line:#2a323d; --accent:#6cc4de; --accent-ink:#04222b;
+    --accent-soft:#16303a; --chip-off:#1d232c; --focus:#7fb0ff; --shadow:0 1px 2px rgba(0,0,0,.4),0 14px 38px rgba(0,0,0,.55);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e1217; --panel:#171c23; --ink:#e9edf3; --muted:#9ba6b6; --line:#2a323d; --accent:#6cc4de; --accent-ink:#04222b;
+  --accent-soft:#16303a; --chip-off:#1d232c; --focus:#7fb0ff; --shadow:0 1px 2px rgba(0,0,0,.4),0 14px 38px rgba(0,0,0,.55);
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--ui);font-size:14px;line-height:1.45}
+[hidden]{display:none !important}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2.5px solid var(--focus);outline-offset:2px;border-radius:6px}
+
+.halaman{max-width:1240px;margin:0 auto;padding:18px 16px 40px}
+.kepala-halaman{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin-bottom:16px}
+.kepala-halaman h1{margin:0;font-size:20px;font-weight:700;letter-spacing:-.01em}
+.lencana{display:inline-flex;align-items:center;gap:6px;border:1px dashed var(--muted);color:var(--muted);border-radius:999px;padding:3px 11px;font-size:12px;font-weight:500}
+.lencana:before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.sp{flex:1}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;background:var(--panel);overflow:hidden}
+.seg button{border:0;background:transparent;padding:5px 11px;font-size:12.5px;cursor:pointer;color:var(--muted)}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+
+.tata{display:grid;grid-template-columns:minmax(0,330px) minmax(0,1fr);gap:22px;align-items:start}
+@media (max-width:920px){.tata{grid-template-columns:minmax(0,1fr)}}
+
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 2px rgba(20,26,34,.05)}
+@media (min-width:921px){.panel{position:sticky;top:14px;max-height:calc(100vh - 28px);overflow:auto}}
+.panel summary{list-style:none;cursor:pointer;padding:13px 16px;font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px}
+.panel summary::-webkit-details-marker{display:none}
+.panel summary:after{content:"";margin-left:auto;width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:transform .2s}
+.panel details[open] summary:after{transform:rotate(-135deg)}
+.panel.tetap summary{cursor:default}
+.panel.tetap summary:after{display:none}
+.panel .isi{padding:0 16px 16px;display:grid;gap:16px}
+.ringkas{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ringkas div{padding:9px 12px;border-radius:10px;background:var(--accent-soft)}
+.ringkas b{display:block;font-size:22px;font-variant-numeric:tabular-nums;line-height:1.1}
+.ringkas span{color:var(--muted);font-size:12px}
+.grup h2{margin:0 0 7px;font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:700;display:flex;align-items:center;gap:6px}
+.grup h2 i{font-style:normal;color:var(--accent);font-size:12px}
+.grup label.l{display:block;font-size:12.5px;color:var(--muted);margin-bottom:4px}
+.grup select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel)}
+.pil{display:flex;flex-wrap:wrap;gap:6px}
+.pil button{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--chip-off);color:var(--ink);border-radius:999px;padding:5px 10px 5px 8px;font-size:12.5px;cursor:pointer;transition:background .15s,border-color .15s}
+.pil button .g{font-size:10px;color:var(--muted)}
+.pil button:hover{border-color:var(--muted)}
+.pil button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.pil button[aria-pressed="true"] .g{color:var(--accent-ink)}
+.baris-kendali{display:flex;flex-wrap:wrap;gap:8px}
+.tombol{border:1px solid var(--line);background:var(--panel);border-radius:9px;padding:6px 11px;font-size:12.5px;cursor:pointer}
+.tombol:hover{background:var(--accent-soft)}
+.stepper{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.stepper button{border:0;background:var(--chip-off);width:38px;height:36px;font-size:18px;cursor:pointer}
+.stepper button:hover:not(:disabled){background:var(--accent-soft)}
+.stepper button:disabled{opacity:.4;cursor:default}
+.stepper output{min-width:44px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
+.sakelar{display:flex;align-items:center;gap:9px;font-size:13px;cursor:pointer}
+.sakelar input{width:17px;height:17px;accent-color:var(--accent)}
+.sakelar-daftar{display:grid;gap:8px}
+.catatan-panel{font-size:12.5px;color:var(--muted)}
+.catatan-panel details{border:1px solid var(--line);border-radius:10px;padding:8px 11px}
+.catatan-panel summary{cursor:pointer;font-weight:600;color:var(--ink);padding:0}
+.catatan-panel p{margin:8px 0 0}
+.catatan-panel code{background:var(--chip-off);border-radius:4px;padding:0 4px;font-size:11.5px}
+
+.layar{min-width:0}
+.alat-layar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:10px;color:var(--muted);font-size:12.5px}
+.gulir{overflow-x:auto;padding-bottom:6px}
+.bingkai{margin:0 auto;position:relative}
+.kertas{position:absolute;left:0;top:0;width:794px;min-height:1123px;transform-origin:top left;background:#fff;color:var(--p-ink);
+  font-family:var(--serif);font-size:13px;line-height:1.35;padding:40px 46px 54px;box-shadow:var(--shadow);overflow:hidden;border-radius:3px}
+.kertas:before{content:"CONTOH";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-32deg);font:700 170px/1 var(--ui);letter-spacing:.06em;
+  color:rgba(20,26,34,.045);pointer-events:none;z-index:0;white-space:nowrap}
+.kertas>*{position:relative;z-index:1}
+
+.k-kop{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;padding-bottom:10px;border-bottom:2.5px solid var(--p-line)}
+.k-kop .satker{font:700 17px/1.15 var(--ui);letter-spacing:.09em}
+.k-kop .sub{font:400 11.5px/1.3 var(--ui);color:var(--p-muted);margin-top:3px}
+.k-kop .jilid{border:2px solid var(--p-line);padding:5px 14px;text-align:center;font:800 14px/1.1 var(--ui);letter-spacing:.2em}
+.k-judul{text-align:center;margin-top:18px}
+.k-judul .atas{font:700 10.5px/1 var(--ui);letter-spacing:.42em;color:var(--p-muted)}
+.k-judul .judul{font:700 25px/1.15 var(--serif);margin-top:7px;letter-spacing:.03em}
+.k-judul .no{font:700 20px/1.2 var(--serif);margin-top:4px}
+
+.kepala{display:grid;grid-template-columns:1fr 1fr;border:1.5px solid var(--p-line);margin-top:14px}
+.kepala .sel{padding:6px 11px;border-right:1px solid var(--p-thin);border-bottom:1px solid var(--p-thin);min-width:0}
+.kepala .sel:nth-child(2n){border-right:0}
+.kepala .sel.lebar{grid-column:1/-1;border-right:0;border-bottom:0}
+.sel .l{font:600 8.5px/1.1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--p-muted)}
+.sel .v{font:600 12.5px/1.3 var(--serif);margin-top:3px;overflow-wrap:anywhere}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin:5px 0 0;padding:0;list-style:none}
+.chip{display:inline-flex;align-items:center;gap:5px;border:1.4px solid var(--p-line);border-radius:4px;padding:1px 7px 1px 5px;font:800 9.5px/1.5 var(--ui);letter-spacing:.05em;white-space:nowrap;background:#fff;color:var(--p-ink)}
+.chip .g{font-size:8px}
+.chip .s{font:600 8.5px/1.2 var(--ui);letter-spacing:0;border-left:1px solid var(--p-line);padding-left:5px}
+.chip.pent{border:3.5px double var(--p-line);padding:0 5px 0 3px;background:var(--p-soft)}
+.kosong-ciri{font:italic 400 11px/1.4 var(--ui);color:var(--p-muted);margin:5px 0 0}
+
+.tabel-wadah{overflow-x:auto;margin-top:14px}
+table.di{width:100%;border-collapse:collapse;font:400 12px/1.3 var(--ui);border:1.5px solid var(--p-line)}
+table.di th{background:var(--p-wash);border-bottom:1.5px solid var(--p-line);padding:5px 8px;text-align:left;font:700 8.5px/1.2 var(--ui);letter-spacing:.16em}
+table.di td{border-bottom:1px solid var(--p-thin);padding:4px 8px;vertical-align:top}
+table.di td.no{width:44px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
+table.di td.tg{width:130px;white-space:nowrap;font-variant-numeric:tabular-nums}
+table.di td.hl{width:74px;text-align:center;color:#9aa3b0;letter-spacing:.1em}
+table.di td.dok .ket{color:var(--p-muted);font-size:10.5px}
+table.di td.dok .ket:before{content:" \00B7  "}
+table.di tr.bundel td{background:var(--p-ink);color:#fff;font:800 10.5px/1 var(--ui);letter-spacing:.3em;padding:7px 8px}
+table.di tr.bagian td{background:var(--p-soft);font:700 9px/1.2 var(--ui);letter-spacing:.18em;padding:5px 8px;color:#2c3440}
+table.di tr.kos td{color:var(--p-muted);font-style:italic;padding:7px 8px}
+table.di tr.baru td{animation:sorot 1.8s ease-out}
+@keyframes sorot{from{background:#cfe8ef}to{background:transparent}}
+table.di tr.baru td.dok{box-shadow:inset 3px 0 0 var(--accent)}
+@media (prefers-reduced-motion: reduce){
+  table.di tr.baru td{animation:none}
+  table.di tr.baru td.dok{box-shadow:inset 4px 0 0 var(--accent)}
+}
+.k-akhir{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-top:14px;font:400 11px/1.4 var(--ui);color:var(--p-muted)}
+.k-akhir .ttd{width:200px;text-align:center;color:var(--p-ink);font-size:11.5px}
+.k-akhir .ttd .nama{margin-top:40px;font-weight:700;text-decoration:underline}
+.k-kaki{position:absolute !important;left:46px;right:46px;bottom:20px;display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--p-thin);padding-top:6px;font:400 10px/1.3 var(--ui);color:var(--p-muted)}
+
+.cetak-ket{font-size:12.5px;color:var(--muted);margin-top:10px}
+.rtf-catatan{margin-top:14px}
+.rtf-catatan details{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:13px;color:var(--muted)}
+.rtf-catatan summary{cursor:pointer;font-weight:600;color:var(--ink)}
+.rtf-catatan p{margin:8px 0 0}
+.rtf-catatan code{background:var(--chip-off);border-radius:4px;padding:0 4px;font-size:12px}
+
+.fokus{margin-top:12px;border:1.5px solid var(--p-line);background:var(--p-soft);padding:7px 14px;text-align:center}
+.fokus .l{font:700 9px/1 var(--ui);letter-spacing:.34em;color:var(--p-muted)}
+.fokus .v{font:700 17px/1.25 var(--serif);margin-top:5px}
+.catatan-kecil{font-size:12.5px;color:var(--muted)}
+.catatan-kecil code{background:var(--chip-off);border-radius:4px;padding:0 4px;font-size:11.5px}
+</style>
+
+<div class="halaman">
+  <header class="kepala-halaman">
+    <h1>Pratinjau Daftar Isi</h1>
+    <span class="lencana">Pratinjau rancangan &mdash; data rekaan</span>
+    <span class="sp"></span>
+    <div class="seg" role="group" aria-label="Tema tampilan">
+      <button type="button" data-tema="auto" aria-pressed="true">Otomatis</button>
+      <button type="button" data-tema="light" aria-pressed="false">Terang</button>
+      <button type="button" data-tema="dark" aria-pressed="false">Gelap</button>
+    </div>
+  </header>
+
+  <div class="tata">
+    <aside class="panel" id="panel">
+      <details id="detail" open>
+        <summary>Kendali pratinjau</summary>
+        <div class="isi">
+          <div class="ringkas" aria-live="polite">
+            <div><b id="jml-dok">0</b><span>dokumen terdaftar</span></div>
+            <div><b id="jml-tag">0</b><span id="jml-tag-ket">dari 25 ciri aktif</span></div>
+          </div>
+
+          <section class="grup">
+            <h2>Jenis perkara</h2>
+            <label class="l" for="jenis">Dokumen khas mengikuti jenis perkara</label>
+            <select id="jenis"></select>
+          </section>
+
+          <section class="grup">
+            <h2>Ukuran kertas</h2>
+            <label class="l" for="kertas-pilih">Bawaan A4; pilihan diingat per pengguna</label>
+            <select id="kertas-pilih"></select>
+            <p class="catatan-kecil" style="margin-top:6px">Header RTF: <code id="rtf-header"></code></p>
+          </section>
+
+          <section class="grup">
+            <h2>Jumlah sidang</h2>
+            <div class="stepper" role="group" aria-label="Jumlah sidang">
+              <button type="button" id="n-kurang" aria-label="Kurangi jumlah sidang">&minus;</button>
+              <output id="n-nilai" aria-live="polite">4</output>
+              <button type="button" id="n-tambah" aria-label="Tambah jumlah sidang">+</button>
+            </div>
+          </section>
+
+          <section class="grup">
+            <h2>Contoh cepat</h2>
+            <div class="baris-kendali">
+              <button type="button" class="tombol" data-cepat="kecil">Sederhana (1 sidang)</button>
+              <button type="button" class="tombol" data-cepat="besar">Perkara besar</button>
+              <button type="button" class="tombol" data-cepat="bawaan">Ciri bawaan jenis</button>
+            </div>
+          </section>
+
+          <section class="grup"><h2><i>&#9632;</i> Pendaftaran dan biaya</h2><div class="pil" id="pil-a"></div></section>
+          <section class="grup"><h2><i>&#9679;</i> Pihak</h2><div class="pil" id="pil-b"></div></section>
+          <section class="grup"><h2><i>&#9650;</i> Proses</h2><div class="pil" id="pil-c"></div></section>
+
+          <section class="grup">
+            <h2>Dokumen yang ada</h2>
+            <div class="sakelar-daftar">
+              <label class="sakelar"><input type="checkbox" id="kuasaT"> Kuasa pihak lawan</label>
+              <label class="sakelar"><input type="checkbox" id="bukti" checked> Bukti surat</label>
+              <label class="sakelar"><input type="checkbox" id="saksi" checked> Saksi</label>
+              <label class="sakelar"><input type="checkbox" id="putus" checked> Sudah putus</label>
+              <label class="sakelar"><input type="checkbox" id="bht" checked> Sudah berkekuatan hukum tetap</label>
+              <label class="sakelar"><input type="checkbox" id="banding"> Banding</label>
+              <label class="sakelar"><input type="checkbox" id="tambah"> Tambahan panjar</label>
+            </div>
+          </section>
+
+          <section class="catatan-panel">
+            <details>
+              <summary>Bagaimana ini jadi RTF</summary>
+              <p>Tabel RTF-nya satu baris tinggi dengan empat kolom (No, Jenis Dokumen, Tanggal, Halaman). Tiap kolom diisi satu isian bergaris banyak (<code>#5851#</code> s.d. <code>#5854#</code> Bundel A, <code>#5856#</code> s.d. <code>#5859#</code> Bundel B) yang menerbitkan satu baris per dokumen yang ada. Keempat kolom dibangun dari himpunan baris yang sama sehingga selalu sejajar.</p>
+              <p>Dokumen khas jenis perkara (dispensasi kawin, itsbat, waris, dan seterusnya) adalah baris tambahan pada himpunan yang sama, dipilih menurut jenis perkara. Ukuran kertas hanya mengubah <code>\paperw</code> dan <code>\paperh</code>; kertas yang lebih tinggi memuat lebih banyak baris per lembar.</p>
+            </details>
+          </section>
+        </div>
+      </details>
+    </aside>
+
+    <main class="layar">
+      <div class="alat-layar">
+        <div class="seg" role="group" aria-label="Ukuran tampilan kertas">
+          <button type="button" data-ukuran="fit" aria-pressed="true">Muat layar</button>
+          <button type="button" data-ukuran="asli" aria-pressed="false">Ukuran asli</button>
+        </div>
+        <span id="skala-ket">kertas A4</span>
+      </div>
+      <div class="gulir" id="gulir">
+        <div class="bingkai" id="bingkai">
+          <article class="kertas" id="kertas" aria-label="Pratinjau daftar isi berkas">
+            <div class="k-kop">
+              <div><div class="satker">PENGADILAN AGAMA CONTOH</div><div class="sub">Daftar isi berkas perkara tingkat pertama</div></div>
+              <div class="jilid">BUNDEL A &middot; B</div>
+            </div>
+            <div class="k-judul">
+              <div class="atas">UNTUK PANITERA SIDANG</div>
+              <div class="judul">DAFTAR ISI BERKAS</div>
+              <div class="no" id="nomor">Nomor 214/Pdt.G/2026/PA.Cth</div>
+            </div>
+
+            <div class="kepala">
+              <div class="sel"><div class="l" id="l-p">Penggugat</div><div class="v" id="v-p"></div></div>
+              <div class="sel"><div class="l" id="l-t">Tergugat</div><div class="v" id="v-t"></div></div>
+              <div class="sel"><div class="l">Majelis</div><div class="v" id="v-maj"></div></div>
+              <div class="sel"><div class="l">Panitera sidang / minutasi</div><div class="v">Siti Nurjannah, S.H. / <span id="v-mnt">8 Mei 2026</span></div></div>
+              <div class="sel lebar" id="v-fokus-sel" hidden><div class="l" id="v-fokus-l"></div><div class="v" id="v-fokus-v"></div></div>
+              <div class="sel lebar"><div class="l">Ciri perkara</div>
+                <ul class="chips" id="chips"></ul>
+                <p class="kosong-ciri" id="kosong" hidden>Tidak ada ciri khusus pada perkara ini.</p>
+              </div>
+            </div>
+
+            <div class="tabel-wadah">
+              <table class="di">
+                <thead><tr><th>NO</th><th>JENIS DOKUMEN</th><th>TANGGAL</th><th style="text-align:center">HALAMAN</th></tr></thead>
+                <tbody id="isi"></tbody>
+              </table>
+            </div>
+
+            <div class="k-akhir">
+              <div id="jumlah">0 dokumen terdaftar. Kolom halaman diisi tangan saat berkas dijilid.</div>
+              <div class="ttd"><span id="ttd-tgl">8 Mei 2026</span><br>Panitera Pengganti,<div class="nama">Siti Nurjannah, S.H.</div></div>
+            </div>
+            <div class="k-kaki"><span>Daftar isi dicetak otomatis dari data perkara</span><span id="k-jenis">Cerai Gugat</span></div>
+          </article>
+        </div>
+      </div>
+      <p class="cetak-ket">Hasil akhir dicetak dari Word setelah blangko dipasang. Baris yang baru muncul disorot sesaat. Halaman ini hanya pratinjau rancangan.</p>
+    </main>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+  function el(tag, cls, txt){ var e = document.createElement(tag); if(cls) e.className = cls; if(txt != null) e.textContent = txt; return e; }
+  var G = {a:"\u25A0", b:"\u25CF", c:"\u25B2"};
+  var BL = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+  var URUT = ["","Pertama","Kedua","Ketiga","Keempat","Kelima","Keenam","Ketujuh","Kedelapan"];
+
+  /* ===== data bersama: jenis perkara, kertas (disalin ke tiap halaman pratinjau) ===== */
+  var KERTAS = {
+    a4:{nama:"A4 (210 x 297 mm)", w:794, h:1123, rtf:"\\paperw11906\\paperh16838", baris:12},
+    f4:{nama:"F4 / Folio (215 x 330 mm)", w:812, h:1247, rtf:"\\paperw12189\\paperh18709", baris:15},
+    legal:{nama:"Legal (216 x 356 mm)", w:816, h:1346, rtf:"\\paperw12246\\paperh20183", baris:18}
+  };
+  var URUTKERTAS = ["a4","f4","legal"];
+  // sumber: SIPP = kolom/tabel SIPP; ABT = isian ABT (data_teks/data_tanggal); tangan = diketik petugas
+  var JENIS = {
+    cg:{nama:"Cerai Gugat", no:"214/Pdt.G/2026/PA.Cth", P:"PENGGUGAT", T:"TERGUGAT", kat:"gugatan", n:4, kum:" Kumulasi Hak Asuh Anak",
+      auto:["ecourt","kuasa","pns","verstek","kumulasi","mediasi","keliling"],
+      blok:null,
+      khas:[["aktanikah","Kutipan Akta Nikah",1,"perkiraan","lampiran gugatan; berkas tidak terdaftar sendiri"]]},
+    ct:{nama:"Cerai Talak", no:"188/Pdt.G/2026/PA.Cth", P:"PEMOHON", T:"TERMOHON", kat:"gugatan", n:3, ikrar:true, kum:" Kumulasi Harta Bersama",
+      auto:["ecourt","pns","mediasi","ikrar"],
+      blok:null,
+      khas:[["aktanikah","Kutipan Akta Nikah",1,"perkiraan","lampiran permohonan"],["izin","Surat Izin Atasan (bila PNS/TNI/Polri)",1,"perkiraan","perkara_izin_cerai; berkas tidak terdaftar"]]},
+    "in":{nama:"Itsbat Nikah", no:"77/Pdt.P/2026/PA.Cth", P:"PEMOHON I", P2:"PEMOHON II", T:"", kat:"permohonan", n:2, pengumuman:true,
+      pN:"MUHAMMAD IKHSAN bin LUKMAN", p2N:"NURUL AINI binti HASAN",
+      fokus:{l:"PASANGAN YANG DIITSBATKAN", v:"MUHAMMAD IKHSAN bin LUKMAN dan NURUL AINI binti HASAN"},
+      auto:["ecourt","kuasa"],
+      blok:{j:"PERNIKAHAN YANG DIITSBATKAN", r:[
+        {k:"b1", l:"Tanggal menikah", v:"20 Agustus 2008", asal:"SIPP", w:1}, {k:"b2", l:"Tempat menikah", v:"Desa Contoh, Kec. Contoh", asal:"SIPP", w:1},
+        {k:"b3", l:"Alasan itsbat", v:"Nikah di bawah tangan", asal:"SIPP", w:1}, {k:"b4", l:"Wali nikah", v:"", asal:"ABT", w:0}]},
+      khas:[["pengumuman","Pengumuman Itsbat Nikah (14 hari)",1,"perkiraan","tanggal dari isian pengumuman; berkas tidak terdaftar"],["ketkua","Surat Keterangan KUA Tidak Tercatat",1,"perkiraan","lampiran permohonan"]]},
+    dk:{nama:"Dispensasi Kawin", no:"41/Pdt.P/2026/PA.Cth", P:"PEMOHON (ORANG TUA / WALI)", T:"", kat:"permohonan", n:2, tunggal:true,
+      pN:"AHMAD HIDAYAT bin SALEH dan SRI WAHYUNI binti ALI", pPek:"Petani", pAlamat:"Desa Contoh, Kec. Contoh, Kab. Contoh",
+      fokus:{l:"ANAK YANG DIMOHONKAN DISPENSASI", v:"RIZKI PRATAMA bin AHMAD HIDAYAT (laki-laki, 17 tahun 4 bulan)"},
+      auto:["ecourt","tunggal","dispensasi"],
+      blok:{j:"ANAK DAN CALON PASANGAN", r:[
+        {k:"b1", l:"Calon pasangan", v:"NURUL AINI binti HASAN (19 tahun)", asal:"ABT", w:1}, {k:"b2", l:"Tgl lahir anak", v:"14 November 2008", asal:"ABT", w:1},
+        {k:"b3", l:"Alasan dispensasi", v:"Menghindari zina / hubungan cinta", asal:"SIPP", w:1}, {k:"b4", l:"Pemohon adalah", v:"Ayah dan ibu kandung", asal:"ABT", w:0}]},
+      khas:[["tolakkua","Surat Penolakan KUA (pencatatan nikah)",1,"perkiraan","lampiran permohonan"],["konseling","Rekomendasi / Hasil Konseling Anak dan Calon",2,"perkiraan","berkas bukan e-Doc"],["ketanak","Keterangan Anak dan Calon Pasangan (identitas, akta lahir)",3,"perkiraan","lampiran permohonan"]]},
+    aua:{nama:"Asal Usul Anak", no:"52/Pdt.P/2026/PA.Cth", P:"PEMOHON", T:"", kat:"permohonan", n:2,
+      fokus:{l:"ANAK YANG DIMOHONKAN ASAL USULNYA", v:"MUHAMMAD FARHAN (lahir 3 Januari 2019)"},
+      auto:["ecourt"],
+      blok:{j:"DATA ANAK", r:[
+        {k:"b1", l:"Tanggal lahir", v:"3 Januari 2019", asal:"SIPP", w:1}, {k:"b2", l:"Tempat lahir", v:"Contoh", asal:"SIPP", w:1},
+        {k:"b3", l:"Orang tua", v:"MUHAMMAD IKHSAN dan NURUL AINI", asal:"SIPP", w:1}, {k:"b4", l:"Jenis permohonan", v:"Penetapan asal usul anak", asal:"SIPP", w:0}]},
+      khas:[["aktalahir","Akta / Surat Keterangan Kelahiran Anak",1,"perkiraan","lampiran permohonan"],["ketbidan","Surat Keterangan Bidan / Rumah Sakit",1,"perkiraan","lampiran permohonan"]]},
+    wali:{nama:"Perwalian", no:"36/Pdt.P/2026/PA.Cth", P:"PEMOHON (CALON WALI)", T:"", kat:"permohonan", n:2,
+      fokus:{l:"ANAK YANG DIMOHONKAN PERWALIANNYA", v:"AISYAH ZAHRA binti ALM. YUSUF (lahir 9 Maret 2014)"},
+      auto:["ecourt"],
+      blok:{j:"DATA ANAK DAN WALI", r:[
+        {k:"b1", l:"Tanggal lahir anak", v:"9 Maret 2014", asal:"ABT", w:1}, {k:"b2", l:"Sebab perwalian", v:"Kedua orang tua meninggal dunia", asal:"tangan", w:1},
+        {k:"b3", l:"Calon wali", v:"HASAN bin SALEH (paman)", asal:"SIPP", w:1}, {k:"b4", l:"Harta anak", v:"", asal:"ABT", w:0}]},
+      khas:[["kematian","Surat Kematian Orang Tua Anak",1,"perkiraan","lampiran permohonan"],["kk","Kartu Keluarga Anak dan Calon Wali",1,"perkiraan","lampiran permohonan"]]},
+    asuh:{nama:"Hak Asuh Anak", no:"119/Pdt.G/2026/PA.Cth", P:"PENGGUGAT", T:"TERGUGAT", kat:"gugatan", n:3,
+      fokus:{l:"ANAK YANG DIPERSENGKETAKAN", v:"ALIF RAMADHAN (6 tahun) dan SYIFA (3 tahun)"},
+      auto:["ecourt","kuasa","mediasi"],
+      blok:{j:"DATA ANAK", r:[
+        {k:"b1", l:"Jumlah anak", v:"2 orang", asal:"SIPP", w:1}, {k:"b2", l:"Diasuh saat ini oleh", v:"Tergugat (ayah)", asal:"SIPP", w:1},
+        {k:"b3", l:"Nafkah anak dituntut", v:"Rp 1.500.000 per bulan", asal:"SIPP", w:0}]},
+      khas:[["aktalahir","Akta Kelahiran Anak",2,"perkiraan","lampiran gugatan"]]},
+    adhol:{nama:"Wali Adhol", no:"18/Pdt.P/2026/PA.Cth", P:"PEMOHON (CALON MEMPELAI)", T:"TERMOHON (WALI)", kat:"permohonan", n:2, tunggal:true,
+      pN:"NURUL AINI binti HASAN", tN:"HASAN bin ABDULLAH (ayah kandung)",
+      fokus:{l:"CALON MEMPELAI", v:"NURUL AINI binti HASAN dan MUHAMMAD IKHSAN bin LUKMAN"},
+      auto:["ecourt","tunggal"],
+      blok:{j:"CALON MEMPELAI DAN WALI", r:[
+        {k:"b1", l:"Calon suami", v:"MUHAMMAD IKHSAN bin LUKMAN", asal:"ABT", w:1}, {k:"b2", l:"Wali yang adhal", v:"Ayah kandung", asal:"SIPP", w:1},
+        {k:"b3", l:"Alasan penolakan wali", v:"", asal:"tangan", w:1}]},
+      khas:[["tolakkua","Surat Penolakan KUA (wali enggan menikahkan)",1,"perkiraan","lampiran permohonan"],["ketwali","Keterangan Calon Mempelai dan Wali",2,"perkiraan","lampiran permohonan"]]},
+    poligami:{nama:"Izin Poligami", no:"9/Pdt.G/2026/PA.Cth", P:"PEMOHON", T:"TERMOHON (ISTRI)", kat:"gugatan", n:3,
+      pN:"ANDI WIJAYA bin HASAN", tN:"SITI AMINAH binti RAHMAT",
+      fokus:{l:"CALON ISTRI KEDUA", v:"SITI RAHMAWATI binti AKBAR (janda)"},
+      auto:["ecourt","kuasa","mediasi"],
+      blok:{j:"CALON ISTRI DAN ALASAN", r:[
+        {k:"b1", l:"Status calon istri", v:"Janda", asal:"ABT", w:1}, {k:"b2", l:"Alasan poligami", v:"Istri tidak dapat melahirkan keturunan", asal:"SIPP", w:1},
+        {k:"b3", l:"Persetujuan istri", v:"Ada, tertulis", asal:"ABT", w:1}, {k:"b4", l:"Penghasilan pemohon", v:"", asal:"ABT", w:0}]},
+      khas:[["setuju","Surat Persetujuan Istri",1,"perkiraan","lampiran permohonan"],["gaji","Keterangan Penghasilan Pemohon",1,"perkiraan","lampiran permohonan"],["adil","Surat Pernyataan Berlaku Adil",1,"perkiraan","lampiran permohonan"]]},
+    waris:{nama:"Kewarisan", no:"64/Pdt.G/2026/PA.Cth", P:"PENGGUGAT", T:"TERGUGAT", kat:"gugatan", n:4,
+      fokus:{l:"PEWARIS", v:"ALM. H. ABDUL KADIR bin SALEH (wafat 4 Februari 2025)"},
+      auto:["ecourt","kuasa","mediasi"],
+      blok:{j:"PEWARIS DAN AHLI WARIS", r:[
+        {k:"b1", l:"Tanggal wafat", v:"4 Februari 2025", asal:"ABT", w:1}, {k:"b2", l:"Jumlah ahli waris", v:"9 orang", asal:"ABT", w:1}, {k:"b3", l:"Harta waris", v:"2 bidang tanah, 1 rumah", asal:"ABT", w:0}]},
+      khas:[["kematian","Surat Kematian Pewaris",1,"perkiraan","lampiran gugatan"],["silsilah","Silsilah / Keterangan Ahli Waris",2,"perkiraan","lampiran gugatan"],["milik","Bukti Kepemilikan Harta Waris",6,"perkiraan","lampiran gugatan"]]},
+    paw:{nama:"Penetapan Ahli Waris", no:"88/Pdt.P/2026/PA.Cth", P:"PEMOHON (AHLI WARIS)", T:"", kat:"permohonan", n:2,
+      pN:"RAHMAT bin KADIR dan 4 pemohon lainnya",
+      fokus:{l:"PEWARIS", v:"ALM. H. ABDUL KADIR bin SALEH (wafat 4 Februari 2025)"},
+      auto:["ecourt"],
+      blok:{j:"PEWARIS DAN AHLI WARIS", r:[
+        {k:"b1", l:"Tanggal wafat", v:"4 Februari 2025", asal:"ABT", w:1}, {k:"b2", l:"Jumlah ahli waris", v:"5 orang", asal:"ABT", w:1}, {k:"b3", l:"Keperluan penetapan", v:"Pengurusan tabungan peninggalan", asal:"tangan", w:0}]},
+      khas:[["kematian","Surat Kematian Pewaris",1,"perkiraan","lampiran permohonan"],["silsilah","Silsilah / Keterangan Ahli Waris dari Desa",2,"perkiraan","lampiran permohonan"],["kk","Kartu Keluarga Para Pemohon",1,"perkiraan","lampiran permohonan"]]},
+    hb:{nama:"Harta Bersama", no:"27/Pdt.G/2026/PA.Cth", P:"PENGGUGAT", T:"TERGUGAT", kat:"gugatan", n:4,
+      fokus:{l:"BEKAS SUAMI DAN ISTRI", v:"putusan cerai Nomor 150/Pdt.G/2025/PA.Cth, berkekuatan hukum tetap 12 November 2025"},
+      auto:["ecourt","kuasa","mediasi","sita"],
+      blok:{j:"PUTUSAN CERAI DAN OBJEK", r:[
+        {k:"b1", l:"Putusan cerai", v:"150/Pdt.G/2025/PA.Cth", asal:"ABT", w:1}, {k:"b2", l:"Objek harta", v:"3 objek", asal:"ABT", w:1}, {k:"b3", l:"Nilai sengketa", v:"Rp 450.000.000", asal:"SIPP", w:0}]},
+      khas:[["aktacerai","Akta Cerai / Putusan Cerai",1,"perkiraan","lampiran gugatan"],["milik","Bukti Kepemilikan Objek Harta",5,"perkiraan","lampiran gugatan"]]},
+    es:{nama:"Ekonomi Syariah", no:"6/Pdt.G.S/2026/PA.Cth", P:"PENGGUGAT", T:"TERGUGAT", kat:"gugatan", n:3,
+      fokus:{l:"OBJEK SENGKETA", v:"Pembiayaan murabahah pembelian kendaraan (akad 10 Januari 2024)"},
+      auto:["ecourt","kuasa","sederhana"],
+      blok:{j:"AKAD DAN NILAI", r:[
+        {k:"b1", l:"Akad", v:"Murabahah", asal:"SIPP", w:1}, {k:"b2", l:"Bidang", v:"Perbankan syariah", asal:"SIPP", w:1}, {k:"b3", l:"Nilai sengketa", v:"Rp 85.000.000", asal:"SIPP", w:1}]},
+      khas:[["akad","Akad / Perjanjian Pembiayaan",8,"perkiraan","lampiran gugatan"],["somasi","Surat Peringatan (Somasi)",1,"perkiraan","lampiran gugatan"]]},
+    batal:{nama:"Pembatalan Nikah", no:"15/Pdt.G/2026/PA.Cth", P:"PENGGUGAT", T:"TERGUGAT", kat:"gugatan", n:3,
+      fokus:{l:"PERNIKAHAN YANG DIBATALKAN", v:"antara ANDI WIJAYA dan SITI AMINAH (nikah 3 Mei 2022)"},
+      auto:["ecourt","mediasi"],
+      blok:{j:"PERNIKAHAN", r:[
+        {k:"b1", l:"Tanggal nikah", v:"3 Mei 2022", asal:"SIPP", w:1}, {k:"b2", l:"KUA", v:"KUA Kec. Contoh", asal:"SIPP", w:1}, {k:"b3", l:"Alasan pembatalan", v:"Pernikahan tanpa izin istri pertama", asal:"SIPP", w:1}]},
+      khas:[["aktanikah","Kutipan Akta Nikah yang Dibatalkan",1,"perkiraan","lampiran gugatan"]]}
+  };
+  var URUTJENIS = ["cg","ct","in","dk","aua","wali","asuh","adhol","poligami","waris","paw","hb","es","batal"];
+
+
+  var TAGS = [
+    {k:"prodeo", n:"PRODEO", g:"a"}, {k:"ecourt", n:"e-COURT", g:"a"},
+    {k:"kuasa", n:"KUASA HUKUM", g:"a", s:"P"}, {k:"insidentil", n:"KUASA INSIDENTIL", g:"a"},
+    {k:"ghaib", n:"GHAIB", g:"b", s:"T", p:1}, {k:"mafqud", n:"MAFQUD", g:"b", p:1}, {k:"pns", n:"PNS/ASN", g:"b", s:"T"},
+    {k:"pppk", n:"PPPK", g:"b"}, {k:"tni", n:"TNI", g:"b"}, {k:"polri", n:"POLRI", g:"b"}, {k:"bumn", n:"BUMN/BUMD", g:"b"},
+    {k:"disabilitas", n:"DISABILITAS", g:"b", s:"P"}, {k:"penerjemah", n:"PENERJEMAH", g:"b"}, {k:"wna", n:"WNA", g:"b"},
+    {k:"verstek", n:"VERSTEK", g:"c", p:1}, {k:"kumulasi", n:"KUMULASI", g:"c", s:"2"}, {k:"rekonvensi", n:"REKONVENSI", g:"c"},
+    {k:"mediasi", n:"MEDIASI", g:"c"}, {k:"sita", n:"SITA", g:"c"}, {k:"keliling", n:"SIDANG KELILING", g:"c"},
+    {k:"tunggal", n:"HAKIM TUNGGAL", g:"c"}, {k:"sederhana", n:"GUGATAN SEDERHANA", g:"c"}, {k:"verzet", n:"VERZET", g:"c"},
+    {k:"dispensasi", n:"DISPENSASI KAWIN", g:"c"}, {k:"ikrar", n:"IKRAR TALAK", g:"c"}
+  ];
+  var S = {jenis:"cg", on:{}, n:4, kuasaT:false, bukti:true, saksi:true, putus:true, bht:true, banding:false, tambah:false, ukuran:"fit", kertas:"a4"};
+  try{ var kt = window.localStorage.getItem("bdKertas"); if(kt && KERTAS[kt]) S.kertas = kt; }catch(e){}
+  function J(){ return JENIS[S.jenis]; }
+  function K(){ return KERTAS[S.kertas]; }
+  function pendek(s){ var w = (s || "").split(" ")[0]; return w ? w.charAt(0) + w.slice(1).toLowerCase() : ""; }
+  function tgl(h){ var d = new Date(2026, 2, 1 + h); return d.getDate() + " " + BL[d.getMonth()] + " " + d.getFullYear(); }
+
+  var pilBtn = {}, chipLi = {};
+  TAGS.forEach(function(t){
+    var b = el("button"); b.type = "button"; b.setAttribute("aria-pressed","false");
+    b.appendChild(el("span","g",G[t.g])); b.appendChild(el("span","",t.n));
+    b.addEventListener("click", function(){ S.on[t.k] = !S.on[t.k]; gambar(); });
+    $("pil-" + t.g).appendChild(b); pilBtn[t.k] = b;
+    var li = el("li","chip" + (t.p ? " pent" : "")); li.hidden = true;
+    li.appendChild(el("span","g",G[t.g])); li.appendChild(el("span","",t.n));
+    if(t.s) li.appendChild(el("span","s",t.s));
+    $("chips").appendChild(li); chipLi[t.k] = li;
+  });
+  URUTJENIS.forEach(function(k){ var o = el("option","", JENIS[k].nama + " (" + JENIS[k].no + ")"); o.value = k; $("jenis").appendChild(o); });
+  URUTKERTAS.forEach(function(k){ var o = el("option","", KERTAS[k].nama + (k === "a4" ? " - bawaan" : "")); o.value = k; $("kertas-pilih").appendChild(o); });
+  $("kertas-pilih").value = S.kertas;
+
+  // ---- susunan baris menurut perkara dan ciri
+  function susun(){
+    var j = J(), P = pendek(j.P), T = pendek(j.T), n = S.n, on = S.on, r = [], kat = j.kat, cerai = S.jenis === "cg" || S.jenis === "ct";
+    function B(x){ r.push({t:"b", dok:x}); }
+    function Gp(x){ r.push({t:"g", dok:x}); }
+    function D(dok, tg, ket){ r.push({t:"d", dok:dok, tg:tg, ket:ket || ""}); }
+    var pht = on.tunggal;
+    B("BUNDEL A");
+    Gp("I. PENDAFTARAN");
+    D("Surat " + (kat === "gugatan" ? "Gugatan" : "Permohonan") + " " + P, tgl(0));
+    if(on.prodeo){ D("Surat Keterangan Tidak Mampu (SKTM)", tgl(0)); D("Surat Permohonan Prodeo", tgl(0)); D("Pertimbangan Panitera", tgl(1)); D("Pertimbangan Sekretaris", tgl(1)); D("Penetapan Ketua tentang Prodeo", tgl(1)); }
+    if(on.kuasa) D("Surat Kuasa Khusus " + P, tgl(0));
+    if(on.insidentil) D("Surat Kuasa Insidentil dan Izin Ketua", tgl(0));
+    if(S.kuasaT && T) D("Surat Kuasa Khusus " + T, tgl(20));
+    D("Surat Kuasa Untuk Membayar", tgl(0));
+    if(!on.prodeo) D("Slip Setoran Panjar Biaya Perkara", tgl(0));
+    if((j.khas || []).length){ Gp("I-B. DOKUMEN KHAS " + j.nama.toUpperCase()); j.khas.forEach(function(x){ D(x[1], tgl(0)); }); }
+    Gp("II. PENETAPAN AWAL");
+    D(pht ? "Penetapan Hakim Tunggal" : "Penetapan Majelis Hakim", tgl(1));
+    D("Penunjukan Panitera Pengganti", tgl(1));
+    D("Penunjukan Jurusita Pengganti", tgl(1));
+    D("Penetapan Hari Sidang (PHS)", tgl(1));
+    if(j.pengumuman) D("Pengumuman Itsbat Nikah (14 hari)", tgl(5));
+    if(on.ghaib) D("Pengumuman Panggilan " + (T || "Pihak") + " (ghaib) lewat media", tgl(8), "dua kali, selang satu bulan");
+    if(on.mafqud) D("Pengumuman Pemanggilan Orang Hilang (mafqud)", tgl(8));
+    if(on.penerjemah) D("Penetapan Penunjukan Penerjemah", tgl(2));
+    Gp("III. PEMERIKSAAN DI PERSIDANGAN");
+    for(var i = 1; i <= n; i++){
+      var base = 14 * i;
+      if(on.ghaib){
+        D("Relaas Panggilan " + P + " ke " + i, tgl(base - 8));
+        if(i >= 2) D("Relaas Panggilan " + (T || "Pihak") + " (ghaib) ke " + i, tgl(base - 6), "lewat Bupati/Camat dan pengumuman");
+      } else {
+        if(on.ecourt) D("Panggilan Elektronik (e-Summons) " + P + " ke " + i, tgl(base - 8), "lewat e-Court");
+        else D("Relaas Panggilan " + P + " ke " + i, tgl(base - 8), "diserahkan langsung");
+        if(T && i <= 3){ D("Relaas Panggilan " + T + " ke " + i, tgl(base - 6), "Pos Surat Tercatat"); D("Bukti Surat Tercatat " + T + " ke " + i, tgl(base - 6), "nomor resi tercantum"); }
+      }
+      if(i === 1 && on.mediasi){ D("Penetapan Penunjukan Mediator", tgl(base)); D("Laporan Hasil Mediasi", tgl(base + 14), "tidak berhasil"); }
+      D("Berita Acara Sidang " + URUT[Math.min(i, 8)], tgl(base), (i === 1 && on.keliling) ? "sidang keliling" : "");
+      if(i === 2 && T && !on.ghaib && !on.verstek) D("Jawaban " + T, tgl(base));
+      if(i === 3 && S.bukti){ D("Daftar Bukti Surat " + P + " (P.1 s.d. P.5)", tgl(base)); if(T && !on.ghaib && !on.verstek) D("Daftar Bukti Surat " + T + " (T.1 s.d. T.2)", tgl(base)); }
+      if(i === n - 1 && n >= 3 && S.saksi) D("Keterangan Saksi " + P + " (2 orang)", tgl(base));
+      if(i === n && n >= 2 && on.kuasa && on.ecourt && kat === "gugatan") D("Kesimpulan " + P, tgl(base));
+    }
+    if(on.sita){ D("Penetapan Sita Jaminan", tgl(30)); D("Berita Acara Sita Jaminan", tgl(34)); }
+    if(S.tambah) D("Tambahan Panjar Biaya Perkara", tgl(40));
+    var rom = "IV";
+    if(on.ikrar){
+      Gp("IV. IKRAR TALAK");
+      D("Penetapan Majelis Hakim Sidang Ikrar Talak", tgl(14 * n + 10)); D("Penetapan Hari Sidang Ikrar Talak", tgl(14 * n + 10));
+      D("Relaas Panggilan " + P + " ke Sidang Ikrar", tgl(14 * n + 12)); if(T) D("Relaas Panggilan " + T + " ke Sidang Ikrar", tgl(14 * n + 12));
+      D("Berita Acara Sidang Ikrar Talak", tgl(14 * n + 28)); rom = "V";
+    }
+    var pen = kat === "permohonan";
+    if(S.putus){ Gp(rom + ". " + (pen ? "PENETAPAN" : "PUTUSAN")); D(pen ? "Penetapan" : "Putusan", tgl(14 * n + 2)); D("Salinan " + (pen ? "Penetapan" : "Putusan"), tgl(14 * n + 3), on.ecourt ? "salinan elektronik" : ""); }
+    B("BUNDEL B");
+    if(S.putus){
+      Gp("PASCA PUTUSAN");
+      D("Relaas Pemberitahuan Isi " + (pen ? "Penetapan" : "Putusan") + " kepada " + P, tgl(14 * n + 4));
+      if(T){ D("Relaas Pemberitahuan Isi Putusan kepada " + T, tgl(14 * n + 5), "Pos Surat Tercatat"); D("Bukti Surat Tercatat Pemberitahuan Putusan " + T, tgl(14 * n + 5)); }
+      D("Penetapan Minutasi", tgl(14 * n + 6), "tanggal minutasi");
+      if(S.bht){
+        D("Akta Pernyataan Berkekuatan Hukum Tetap (BHT)", tgl(14 * n + 20));
+        if(cerai){ D("Akta Cerai Nomor 0123/AC/2026/PA.Cth", tgl(14 * n + 21)); D("Tanda Terima Akta Cerai " + P, tgl(14 * n + 22)); if(T) D("Tanda Terima Akta Cerai " + T, tgl(14 * n + 23)); }
+      }
+    }
+    if(S.banding){
+      Gp("UPAYA HUKUM");
+      D("Akta Permohonan Banding", tgl(14 * n + 10)); D("Memori Banding", tgl(14 * n + 16)); D("Kontra Memori Banding", tgl(14 * n + 22));
+      D("Pemberitahuan Memeriksa Berkas (inzage)", tgl(14 * n + 18)); D("Pengiriman Berkas ke Pengadilan Tinggi Agama", tgl(14 * n + 30));
+    }
+    if(!S.putus && !S.banding) r.push({t:"k", dok:"Belum ada dokumen (perkara belum putus)"});
+    return r;
+  }
+
+  var lama = null, sorotTimer = null;
+  function gambar(){
+    var j = J(), rows = susun(), tb = $("isi"), no = 0, baru = {}, ada = {};
+    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    tb.textContent = "";
+    rows.forEach(function(x){
+      var tr = el("tr");
+      if(x.t === "b"){ tr.className = "bundel"; var c = el("td","",x.dok); c.colSpan = 4; tr.appendChild(c); }
+      else if(x.t === "g"){ tr.className = "bagian"; var c2 = el("td","",x.dok); c2.colSpan = 4; tr.appendChild(c2); }
+      else if(x.t === "k"){ tr.className = "kos"; var c3 = el("td","",x.dok); c3.colSpan = 4; tr.appendChild(c3); }
+      else {
+        no++; ada[x.dok] = 1;
+        if(lama && !lama[x.dok]){ tr.className = "baru"; baru[x.dok] = 1; }
+        tr.appendChild(el("td","no",String(no)));
+        var td = el("td","dok",x.dok); if(x.ket) td.appendChild(el("span","ket",x.ket)); tr.appendChild(td);
+        tr.appendChild(el("td","tg",x.tg)); tr.appendChild(el("td","hl","\u2026\u2026"));
+      }
+      tb.appendChild(tr);
+    });
+    lama = ada;
+    $("jumlah").textContent = no + " dokumen terdaftar. Kolom halaman diisi tangan saat berkas dijilid.";
+    $("jml-dok").textContent = no;
+    $("nomor").textContent = "Nomor " + j.no;
+    $("l-p").textContent = pendek(j.P); $("l-t").textContent = j.T ? pendek(j.T) : "\u2014";
+    $("v-p").textContent = j.pN || "SITI AMINAH binti RAHMAT";
+    $("v-t").textContent = j.T ? (j.tN || "ANDI WIJAYA bin HASAN") : "\u2014";
+    $("v-maj").textContent = S.on.tunggal ? "Muhammad Yusuf, S.H.I., M.H. (hakim tunggal)" : "Drs. H. Ahmad Fauzi, M.H.; Dra. Hj. Rahmawati, M.H.; Muhammad Yusuf, S.H.I., M.H.";
+    $("v-mnt").textContent = S.putus ? "8 Mei 2026" : "\u2014"; $("ttd-tgl").textContent = S.putus ? "8 Mei 2026" : "\u2014";
+    $("k-jenis").textContent = j.nama;
+    var fs = $("v-fokus-sel"); fs.hidden = !j.fokus; if(j.fokus){ $("v-fokus-l").textContent = j.fokus.l; $("v-fokus-v").textContent = j.fokus.v; }
+    var nt = 0;
+    TAGS.forEach(function(t){ var on = !!S.on[t.k]; if(on) nt++; chipLi[t.k].hidden = !on; pilBtn[t.k].setAttribute("aria-pressed", on ? "true" : "false"); });
+    $("chips").hidden = nt === 0; $("kosong").hidden = nt > 0; $("jml-tag").textContent = nt; $("jml-tag-ket").textContent = "dari " + TAGS.length + " ciri aktif";
+    $("n-nilai").textContent = S.n; $("n-kurang").disabled = S.n <= 1; $("n-tambah").disabled = S.n >= 8;
+    ["kuasaT","bukti","saksi","putus","bht","banding","tambah"].forEach(function(k){ $(k).checked = !!S[k]; });
+    $("jenis").value = S.jenis; $("rtf-header").textContent = K().rtf;
+    clearTimeout(sorotTimer);
+    if(reduce && Object.keys(baru).length){ sorotTimer = setTimeout(function(){ Array.prototype.forEach.call(tb.querySelectorAll("tr.baru"), function(r){ r.classList.remove("baru"); }); }, 2200); }
+    skala();
+  }
+  function setJenis(k){
+    S.jenis = k; S.on = {}; (JENIS[k].auto || []).forEach(function(x){ S.on[x] = true; }); S.n = JENIS[k].n; lama = null; gambar();
+  }
+  $("jenis").addEventListener("change", function(){ setJenis(this.value); });
+  $("kertas-pilih").addEventListener("change", function(){ S.kertas = this.value; try{ window.localStorage.setItem("bdKertas", S.kertas); }catch(e){} gambar(); });
+  $("n-kurang").addEventListener("click", function(){ if(S.n > 1){ S.n--; gambar(); } });
+  $("n-tambah").addEventListener("click", function(){ if(S.n < 8){ S.n++; gambar(); } });
+  ["kuasaT","bukti","saksi","putus","bht","banding","tambah"].forEach(function(k){ $(k).addEventListener("change", function(){ S[k] = this.checked; gambar(); }); });
+  Array.prototype.forEach.call(document.querySelectorAll("[data-cepat]"), function(b){
+    b.addEventListener("click", function(){
+      var c = b.getAttribute("data-cepat"), j = J();
+      if(c === "kecil"){ S.on = {verstek:true}; S.n = 1; S.kuasaT = false; S.bukti = false; S.saksi = false; S.putus = true; S.bht = true; S.banding = false; S.tambah = false; }
+      else if(c === "besar"){ S.on = {ecourt:true, kuasa:true, mediasi:true, sita:true, keliling:true, kumulasi:true}; S.n = 6; S.kuasaT = true; S.bukti = true; S.saksi = true; S.putus = true; S.bht = true; S.banding = true; S.tambah = true; }
+      else { S.on = {}; (j.auto || []).forEach(function(x){ S.on[x] = true; }); S.n = j.n; }
+      if(j.ikrar && c !== "bawaan") S.on.ikrar = true;
+      gambar();
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll("[data-tema]"), function(b){
+    b.addEventListener("click", function(){
+      var v = b.getAttribute("data-tema");
+      if(v === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", v);
+      Array.prototype.forEach.call(document.querySelectorAll("[data-tema]"), function(x){ x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
+    });
+  });
+  function skala(){
+    var wad = $("gulir"), ker = $("kertas"), bing = $("bingkai"), k = K();
+    ker.style.width = k.w + "px"; ker.style.minHeight = k.h + "px";
+    var s = S.ukuran === "fit" ? Math.min(1, (wad.clientWidth || k.w) / k.w) : 1;
+    ker.style.transform = "scale(" + s + ")";
+    bing.style.width = Math.round(k.w * s) + "px"; bing.style.height = Math.round(ker.offsetHeight * s) + "px";
+    var tinggi = $("isi").offsetHeight, lembar = Math.max(1, Math.ceil(tinggi / (k.h - 340)));
+    $("skala-ket").textContent = "kertas " + k.nama.split(" (")[0] + ", skala " + Math.round(s * 100) + "% \u00B7 perkiraan " + lembar + " lembar cetak";
+  }
+  Array.prototype.forEach.call(document.querySelectorAll("[data-ukuran]"), function(b){
+    b.addEventListener("click", function(){
+      S.ukuran = b.getAttribute("data-ukuran");
+      Array.prototype.forEach.call(document.querySelectorAll("[data-ukuran]"), function(x){ x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
+      skala();
+    });
+  });
+  if(window.ResizeObserver){ var ro = new ResizeObserver(function(){ skala(); }); ro.observe($("gulir")); ro.observe($("kertas")); } else { window.addEventListener("resize", skala); }
+  var mq = window.matchMedia ? window.matchMedia("(min-width: 921px)") : {matches:true, addEventListener:function(){}};
+  function atur(awal){ $("panel").classList.toggle("tetap", mq.matches); if(mq.matches) $("detail").open = true; else if(awal === true) $("detail").open = false; }
+  $("detail").addEventListener("toggle", function(){ if(mq.matches && !$("detail").open) $("detail").open = true; });
+  if(mq.addEventListener) mq.addEventListener("change", atur); else if(mq.addListener) mq.addListener(atur);
+  atur(true);
+  setJenis("cg");
+  window.__uji = {S:S, setJenis:setJenis};
+})();
+</script>

@@ -415,6 +415,10 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_ai_rekonsiliasi",
   // 25 Oktober 2026 (0110): catatan kirim pengingat WhatsApp penjaga tenggat terjadwal.
   "aleta_tenggat_kirim",
+  // 26 Oktober 2026 (0112): sunting sampul dan daftar isi berkas (halaman manual, ciri tangan, bawaan halaman).
+  "aleta_berkas_susunan",
+  "aleta_berkas_sampul",
+  "aleta_berkas_bawaan",
   // 25 Oktober 2026 (0094): Pusat kesehatan, catatan galat, hasil uji beban (rantai E).
   "aleta_catatan_galat",
   "aleta_catatan_galat_kejadian",

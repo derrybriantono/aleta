@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pratinjau Daftar Isi Berkas</title>
+<style>
+  :root{
+    --tinta:#14181f; --redup:#5b6472; --garis:#14181f; --tipis:#aab2be; --latar:#e9ecf1; --kertas:#fff;
+    --aksen:#0e4a5c; --muda:#e6f0f3; --abu:#f3f4f6;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--latar);color:var(--tinta);font-family:Calibri,"Segoe UI",Arial,sans-serif;font-size:10.5pt;line-height:1.35}
+
+  .panel{max-width:210mm;margin:14px auto 0;padding:12px 16px;background:#fff;border:1px solid #cfd5de;border-radius:10px}
+  .panel h1{font-size:13pt;margin:0 0 4px}
+  .panel p{margin:4px 0;color:var(--redup);font-size:9.5pt}
+  .kontrol{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:8px;align-items:center}
+  .kontrol label{display:inline-flex;align-items:center;gap:5px;font-size:9.5pt;cursor:pointer}
+  .kontrol select,.kontrol input[type=number]{font:inherit;font-size:9.5pt;padding:2px 4px;border:1px solid #9aa3b0;border-radius:5px}
+  .tombol{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap}
+  .tombol button{font:inherit;font-size:9.5pt;padding:4px 10px;border:1px solid #9aa3b0;background:#fff;border-radius:6px;cursor:pointer}
+  .tombol button:hover{background:var(--abu)}
+
+  .kertas{width:210mm;min-height:297mm;margin:14px auto;background:var(--kertas);padding:12mm 14mm 14mm;box-shadow:0 2px 14px rgba(20,24,31,.16)}
+  .kop{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2.2pt solid var(--garis);padding-bottom:5pt}
+  .kop .satker{font-weight:800;letter-spacing:.06em;font-size:12pt}
+  .kop .sub{font-size:8.5pt;color:var(--redup)}
+  .kop .jilid{border:1.6pt solid var(--garis);padding:3pt 10pt;font-weight:800;letter-spacing:.14em;font-size:10.5pt;text-align:center}
+  h2.judul{margin:11pt 0 0;text-align:center;font-size:15pt;letter-spacing:.06em}
+  .nomor{text-align:center;margin:2pt 0 7pt;font-size:11.5pt;font-weight:800;letter-spacing:.03em}
+
+  .kepala{display:grid;grid-template-columns:1fr 1fr;border:1.1pt solid var(--garis);margin-bottom:8pt}
+  .kepala > div{padding:3pt 7pt;font-size:9pt}
+  .kepala > div + div{border-left:1.1pt solid var(--garis)}
+  .kepala b{display:block;font-size:7.6pt;letter-spacing:.16em;color:var(--redup)}
+  .kepala .tags{grid-column:1/-1;border-left:0;border-top:.8pt solid var(--garis)}
+  .tagkecil{display:inline-block;border:1pt solid var(--garis);border-radius:2pt;padding:0 4pt;margin:1pt 3pt 1pt 0;font-size:7.8pt;font-weight:800;letter-spacing:.04em}
+
+  table.di{width:100%;border-collapse:collapse}
+  table.di th{background:var(--muda);border:.9pt solid var(--garis);padding:3pt 5pt;font-size:8pt;letter-spacing:.1em;text-align:left}
+  table.di td{border:.9pt solid var(--garis);padding:2.4pt 5pt;font-size:9.3pt;vertical-align:top}
+  table.di td.no{width:7%;text-align:center;font-weight:700}
+  table.di td.tg{width:21%;white-space:nowrap}
+  table.di td.hl{width:10%;text-align:center;color:#8a93a1}
+  table.di td.dok .ket{font-size:8pt;color:var(--redup)}
+  table.di td.dok .ket:before{content:" \00B7  "}
+  table.di td.dok{white-space:normal}
+  table.di tr.bundel td{background:var(--garis);color:#fff;font-weight:800;letter-spacing:.16em;font-size:9pt;border-color:var(--garis)}
+  table.di tr.bagian td{background:var(--abu);font-weight:800;font-size:8.4pt;letter-spacing:.1em}
+  table.di tr.kosong td{color:var(--redup);font-style:italic}
+  table.di tr{break-inside:avoid}
+  table.di tr.baru td.dok{border-left:3pt double var(--garis)}
+  .gantung{font-size:8.6pt;color:var(--redup);margin-top:6pt}
+  .ttd{display:flex;justify-content:flex-end;margin-top:14pt}
+  .ttd div{width:62mm;text-align:center;font-size:9.5pt}
+  .ttd .nama{margin-top:34pt;font-weight:700;text-decoration:underline}
+
+  .catatan{max-width:210mm;margin:0 auto 24px;padding:10px 16px;font-size:9.5pt;color:var(--redup)}
+  .catatan b{color:var(--tinta)}
+  .catatan code{background:#fff;border:1px solid #d6dbe3;border-radius:4px;padding:0 4px;font-size:8.8pt}
+  .catatan li{margin:2px 0}
+
+  @media (max-width:820px){
+    .kertas{width:auto;min-height:0;margin:10px;padding:14px 12px 20px}
+    .panel,.catatan{margin-left:10px;margin-right:10px}
+    .kepala{grid-template-columns:1fr}
+    .kepala > div + div{border-left:0;border-top:.8pt solid var(--garis)}
+    table.di td.tg{white-space:normal}
+  }
+  @media print{
+    @page{size:A4;margin:10mm 12mm}
+    body{background:#fff}
+    .panel,.catatan{display:none}
+    .kertas{margin:0;box-shadow:none;width:auto;min-height:0;padding:0}
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    thead{display:table-header-group}
+  }
+</style>
+</head>
+<body>
+
+<div class="panel">
+  <h1>Pratinjau: Daftar Isi Berkas (untuk Panitera Sidang)</h1>
+  <p>Baris muncul sesuai dokumen yang benar-benar ada pada perkara. Ubah isian di bawah untuk melihat daftar tumbuh dan menyusut. Nomor urut dihitung ulang otomatis; kolom halaman dibiarkan titik-titik untuk ditulis tangan saat berkas dijilid. Baris bertepi ganda di sebelah kiri = baris yang baru muncul karena isian terakhir yang diubah.</p>
+  <div class="kontrol">
+    <label>Jenis
+      <select id="jenis">
+        <option value="cg">Cerai Gugat</option>
+        <option value="ct">Cerai Talak (ada ikrar)</option>
+        <option value="in">Itsbat Nikah (ada pengumuman)</option>
+        <option value="dk">Dispensasi Kawin / permohonan lain</option>
+      </select>
+    </label>
+    <label>Jumlah sidang <input id="n" type="number" min="1" max="8" value="4" style="width:3.4em"></label>
+    <label><input type="checkbox" id="prodeo"> Prodeo</label>
+    <label><input type="checkbox" id="kuasaP" checked> Kuasa Penggugat</label>
+    <label><input type="checkbox" id="kuasaT"> Kuasa Tergugat</label>
+    <label><input type="checkbox" id="ecourt" checked> e-Court (e-Summons)</label>
+    <label><input type="checkbox" id="ghaib"> Ghaib (panggilan lewat pengumuman)</label>
+    <label><input type="checkbox" id="mediasi" checked> Mediasi</label>
+    <label><input type="checkbox" id="bukti" checked> Bukti surat</label>
+    <label><input type="checkbox" id="saksi" checked> Saksi</label>
+    <label><input type="checkbox" id="sita"> Sita jaminan</label>
+    <label><input type="checkbox" id="putus" checked> Sudah putus</label>
+    <label><input type="checkbox" id="bht" checked> Sudah BHT</label>
+    <label><input type="checkbox" id="banding"> Banding</label>
+    <label><input type="checkbox" id="tambah"> Tambahan panjar</label>
+  </div>
+  <div class="tombol">
+    <button type="button" id="r-kecil">Perkara sederhana (verstek 1 sidang)</button>
+    <button type="button" id="r-besar">Perkara besar</button>
+    <button type="button" onclick="window.print()">Cetak</button>
+  </div>
+</div>
+
+<div class="kertas">
+  <div class="kop">
+    <div><div class="satker">PENGADILAN AGAMA DONGGALA</div><div class="sub">Daftar isi berkas perkara tingkat pertama</div></div>
+    <div class="jilid">BUNDEL A &middot; B</div>
+  </div>
+  <h2 class="judul">DAFTAR ISI BERKAS</h2>
+  <div class="nomor" id="nomor">Nomor 214/Pdt.G/2026/PA.Dgl</div>
+  <div class="kepala">
+    <div><b>PENGGUGAT</b><span id="pg">SITI AMINAH binti RAHMAT</span></div>
+    <div><b>TERGUGAT</b><span id="tg">ANDI WIJAYA bin HASAN</span></div>
+    <div><b>MAJELIS</b>Drs. H. Ahmad Fauzi, M.H. (KM); Dra. Hj. Rahmawati, M.H.; Muhammad Yusuf, S.H.I., M.H.</div>
+    <div><b>PANITERA SIDANG / MINUTASI</b><span id="pp">Siti Nurjannah, S.H. / <span id="mnt">8 Mei 2026</span></span></div>
+    <div class="tags"><b>CIRI PERKARA</b><span id="tagsp"></span></div>
+  </div>
+
+  <table class="di">
+    <thead><tr><th>NO</th><th>JENIS DOKUMEN</th><th>TANGGAL</th><th>HALAMAN</th></tr></thead>
+    <tbody id="isi"></tbody>
+  </table>
+  <div class="gantung" id="jumlah"></div>
+  <div class="ttd"><div>Donggala, <span id="tgl-ttd">8 Mei 2026</span><br>Panitera Pengganti,<div class="nama">Siti Nurjannah, S.H.</div></div></div>
+</div>
+
+<div class="catatan">
+  <b>Cara kerja (versi RTF).</b>
+  <ul>
+    <li>Kepala (nomor, pihak, majelis, PP, minutasi, ciri) memakai isian biasa <code>#0001#</code>, <code>#0098#</code>, <code>#0012#</code>, dan seterusnya.</li>
+    <li>Tabel RTF-nya berupa satu baris tinggi dengan empat kolom (No, Jenis Dokumen, Tanggal, Halaman). Tiap kolom diisi satu isian bergaris banyak (<code>#5851#</code> s.d. <code>#5854#</code> untuk Bundel A, <code>#5856#</code> s.d. <code>#5859#</code> untuk Bundel B) yang menerbitkan satu baris per dokumen yang ada, dipisah baris baru; keempat kolom selalu sama panjang sehingga barisnya sejajar. Nomor urut dihitung di isian itu. Judul bagian ditebalkan. Satu dokumen = satu baris (nama dokumen dipendekkan agar tidak melipat), karena itu keterangan tampil sebaris.</li>
+    <li>Urutan dalam Bundel A mengikuti kronologi pemeriksaan: pendaftaran, penetapan awal, lalu per sidang (panggilan, relaas, BAS, dokumen yang diajukan pada sidang itu), sebelum putusan.</li>
+    <li>Susunan Bundel A/B di sini adalah usulan yang masih perlu diverifikasi terhadap naskah Buku II terbaru; lihat RANCANGAN.md.</li>
+  </ul>
+</div>
+
+<script>
+(function(){
+  var BL = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+  function tgl(h){ // h = hari sejak 1 Maret 2026
+    var d = new Date(2026,2,1+h); return d.getDate()+" "+BL[d.getMonth()]+" "+d.getFullYear();
+  }
+  function q(id){return document.getElementById(id);}
+  var terakhir = "";
+  var lama = {};
+
+  function bangun(){
+    var jenis = q("jenis").value, n = Math.max(1, Math.min(8, parseInt(q("n").value||"1",10)));
+    var o = {};
+    ["prodeo","kuasaP","kuasaT","ecourt","ghaib","mediasi","bukti","saksi","sita","putus","bht","banding","tambah"].forEach(function(k){ o[k]=q(k).checked; });
+    var P = jenis==="in"||jenis==="dk" ? "Pemohon" : (jenis==="ct" ? "Pemohon" : "Penggugat");
+    var T = jenis==="in"||jenis==="dk" ? "" : (jenis==="ct" ? "Termohon" : "Tergugat");
+    var r = []; // {t:'b'|'g'|'d'|'k', dok, ket, tgl, baru}
+    function B(x){ r.push({t:"b",dok:x}); }
+    function G(x){ r.push({t:"g",dok:x}); }
+    function D(dok,tg,ket){ r.push({t:"d",dok:dok,tg:tg,ket:ket}); }
+
+    B("BUNDEL A");
+    G("I. PENDAFTARAN");
+    D("Surat "+(jenis==="cg"?"Gugatan":"Permohonan")+" "+P, tgl(0));
+    if(o.prodeo){
+      D("Surat Keterangan Tidak Mampu (SKTM)", tgl(0));
+      D("Surat Permohonan Prodeo", tgl(0));
+      D("Pertimbangan Panitera", tgl(1));
+      D("Pertimbangan Sekretaris", tgl(1));
+      D("Penetapan Ketua tentang Prodeo", tgl(1));
+    }
+    if(o.kuasaP) D("Surat Kuasa Khusus "+P, tgl(0));
+    if(o.kuasaT && T) D("Surat Kuasa Khusus "+T, tgl(20));
+    D("Surat Kuasa Untuk Membayar", tgl(0));
+    if(!o.prodeo) D("Slip Setoran Panjar Biaya Perkara", tgl(0));
+
+    G("II. PENETAPAN AWAL");
+    D(n>=1?"Penetapan Majelis Hakim"+(jenis==="dk"?" / Hakim Tunggal":""):"", tgl(1));
+    D("Penunjukan Panitera Pengganti", tgl(1));
+    D("Penunjukan Jurusita Pengganti", tgl(1));
+    D("Penetapan Hari Sidang (PHS)", tgl(1));
+    if(jenis==="in") D("Pengumuman Itsbat Nikah", tgl(5));
+    if(o.ghaib) D("Pengumuman Panggilan "+(T||"Pihak")+" (ghaib) melalui media", tgl(8), "diumumkan dua kali, selang satu bulan");
+
+    G("III. PEMERIKSAAN DI PERSIDANGAN");
+    var pihakPos = (jenis==="dk"||jenis==="in");
+    for(var i=1;i<=n;i++){
+      var base = 14*i;
+      if(!pihakPos && !o.ghaib){
+        if(o.ecourt) D("Panggilan Elektronik (e-Summons) "+P+" ke "+i, tgl(base-8), "melalui e-Court");
+        else D("Relaas Panggilan "+P+" ke "+i, tgl(base-8), "diserahkan langsung");
+        if(i===1 || (jenis!=="cg" && jenis!=="ct") ){
+          D("Relaas Panggilan "+T+" ke "+i, tgl(base-6), "dikirim lewat Pos Surat Tercatat");
+          D("Bukti Surat Tercatat "+T+" ke "+i, tgl(base-6), "nomor resi tercantum");
+        } else if(i<=3){
+          D("Relaas Panggilan "+T+" ke "+i, tgl(base-6), "dikirim lewat Pos Surat Tercatat");
+          D("Bukti Surat Tercatat "+T+" ke "+i, tgl(base-6), "nomor resi tercantum");
+        }
+      } else if(o.ghaib){
+        D("Relaas Panggilan "+P+" ke "+i, tgl(base-8));
+        if(i>=2) D("Relaas Panggilan "+(T||"Pihak")+" (ghaib) ke "+i, tgl(base-6), "melalui Bupati/Camat setempat dan pengumuman");
+      } else {
+        D("Relaas Panggilan "+P+" ke "+i, tgl(base-8));
+      }
+      if(i===1 && o.mediasi){
+        D("Penetapan Penunjukan Mediator", tgl(base));
+        D("Laporan Hasil Mediasi", tgl(base+14), "mediasi tidak berhasil");
+      }
+      var ord = ["","Pertama","Kedua","Ketiga","Keempat","Kelima","Keenam","Ketujuh","Kedelapan"][i];
+      D("Berita Acara Sidang "+ord, tgl(base), i===1 && jenis==="cg" && o.ecourt?"sidang keliling":null);
+      if(i===2 && jenis!=="dk" && !o.ghaib && T) D("Jawaban "+T, tgl(base));
+      if(i===3 && o.bukti){
+        D("Daftar Bukti Surat "+P+" (P.1 s.d. P.5)", tgl(base));
+        if(T && !o.ghaib) D("Daftar Bukti Surat "+T+" (T.1 s.d. T.2)", tgl(base));
+      }
+      if(i===n-1 && n>=3 && o.saksi) D("Keterangan Saksi "+P+" (2 orang)", tgl(base));
+      if(i===n && n>=2 && o.kuasaP && o.ecourt && jenis==="cg") D("Kesimpulan "+P, tgl(base));
+    }
+    if(o.sita){
+      D("Penetapan Sita Jaminan", tgl(30));
+      D("Berita Acara Sita Jaminan", tgl(34));
+    }
+    if(o.tambah) D("Tambahan Panjar Biaya Perkara", tgl(40));
+
+    if(jenis==="ct"){
+      G("IV. IKRAR TALAK");
+      D("Penetapan Majelis Hakim Sidang Ikrar Talak", tgl(14*n+10));
+      D("Penetapan Hari Sidang Ikrar Talak", tgl(14*n+10));
+      D("Relaas Panggilan "+P+" ke Sidang Ikrar Talak", tgl(14*n+12));
+      D("Relaas Panggilan "+T+" ke Sidang Ikrar Talak", tgl(14*n+12));
+      D("Berita Acara Sidang Ikrar Talak", tgl(14*n+28));
+    }
+
+    if(o.putus){
+      G((jenis==="ct"?"V":"IV")+". PUTUSAN / PENETAPAN");
+      D(jenis==="dk"||jenis==="in" ? "Penetapan" : "Putusan", tgl(14*n+2));
+      D("Salinan "+(jenis==="dk"||jenis==="in"?"Penetapan":"Putusan"), tgl(14*n+3), o.ecourt?"salinan elektronik":null);
+    }
+
+    B("BUNDEL B");
+    if(o.putus){
+      G("PASCA PUTUSAN");
+      D("Relaas Pemberitahuan Isi "+(jenis==="dk"||jenis==="in"?"Penetapan":"Putusan")+" kepada "+P, tgl(14*n+4));
+      if(T) D("Relaas Pemberitahuan Isi Putusan kepada "+T, tgl(14*n+5), "dikirim lewat Pos Surat Tercatat");
+      if(T) D("Bukti Surat Tercatat Pemberitahuan Putusan "+T, tgl(14*n+5));
+      D("Penetapan Minutasi", tgl(14*n+6), "tanggal minutasi");
+      if(o.bht){
+        D("Akta Pernyataan Berkekuatan Hukum Tetap (BHT)", tgl(14*n+20));
+        if(jenis==="cg"||jenis==="ct"){
+          D("Akta Cerai Nomor 0123/AC/2026/PA.Dgl", tgl(14*n+21));
+          D("Tanda Terima Akta Cerai "+P, tgl(14*n+22));
+          if(T) D("Tanda Terima Akta Cerai "+T, tgl(14*n+23));
+        }
+      }
+    }
+    if(o.banding){
+      G("UPAYA HUKUM");
+      D("Akta Permohonan Banding", tgl(14*n+10));
+      D("Memori Banding", tgl(14*n+16));
+      D("Kontra Memori Banding", tgl(14*n+22));
+      D("Pemberitahuan Memeriksa Berkas (inzage)", tgl(14*n+18));
+      D("Pengiriman Berkas ke Pengadilan Tinggi Agama", tgl(14*n+30));
+    }
+    if(!o.putus && r.filter(function(x){return x.t==="b"}).length===2){
+      // Bundel B kosong: satu baris kosong keterangan
+      var idx = r.map(function(x){return x.dok}).indexOf("BUNDEL B");
+      r.splice(idx+1,0,{t:"k",dok:"Belum ada dokumen (perkara belum putus)"});
+    }
+    return {rows:r, jenis:jenis, P:P, T:T, o:o, n:n};
+  }
+
+  function gambar(){
+    var h = bangun(), rows = h.rows, tb = q("isi"), no = 0, adaBaru = 0;
+    var kunciLama = lama, kunciBaru = {};
+    tb.innerHTML = "";
+    rows.forEach(function(x){
+      var tr = document.createElement("tr");
+      if(x.t==="b"){ tr.className="bundel"; tr.innerHTML="<td colspan='4'>"+x.dok+"</td>"; }
+      else if(x.t==="g"){ tr.className="bagian"; tr.innerHTML="<td colspan='4'>"+x.dok+"</td>"; }
+      else if(x.t==="k"){ tr.className="kosong"; tr.innerHTML="<td colspan='4'>"+x.dok+"</td>"; }
+      else {
+        no++;
+        var k = x.dok; kunciBaru[k]=1;
+        if(Object.keys(kunciLama).length && !kunciLama[k]){ tr.className="baru"; adaBaru++; }
+        tr.innerHTML = "<td class='no'>"+no+"</td><td class='dok'>"+x.dok+(x.ket?"<span class='ket'>"+x.ket+"</span>":"")+"</td><td class='tg'>"+x.tg+"</td><td class='hl'>&hellip;&hellip;</td>";
+      }
+      tb.appendChild(tr);
+    });
+    lama = kunciBaru;
+    q("jumlah").textContent = no+" dokumen terdaftar. Kolom halaman diisi tangan saat berkas dijilid.";
+    var nom = {cg:"214/Pdt.G/2026/PA.Dgl", ct:"188/Pdt.G/2026/PA.Dgl", "in":"77/Pdt.P/2026/PA.Dgl", dk:"41/Pdt.P/2026/PA.Dgl"}[h.jenis];
+    q("nomor").textContent = "Nomor "+nom;
+    q("pg").textContent = h.jenis==="dk"||h.jenis==="in" ? "SITI AMINAH binti RAHMAT (Pemohon)" : "SITI AMINAH binti RAHMAT";
+    q("tg").textContent = h.T ? "ANDI WIJAYA bin HASAN" : "—";
+    var tags = [];
+    if(h.o.prodeo) tags.push("■ PRODEO");
+    if(h.o.ecourt) tags.push("■ e-COURT");
+    if(h.o.kuasaP||h.o.kuasaT) tags.push("■ KUASA HUKUM");
+    if(h.o.ghaib) tags.push("● GHAIB");
+    if(h.o.mediasi) tags.push("▲ MEDIASI");
+    if(h.o.sita) tags.push("▲ SITA");
+    if(h.jenis==="ct") tags.push("▲ IKRAR TALAK");
+    if(h.jenis==="dk") tags.push("▲ DISPENSASI KAWIN");
+    q("tagsp").innerHTML = tags.map(function(t){return "<span class='tagkecil'>"+t+"</span>";}).join("") || "—";
+  }
+
+  ["jenis","n","prodeo","kuasaP","kuasaT","ecourt","ghaib","mediasi","bukti","saksi","sita","putus","bht","banding","tambah"].forEach(function(id){
+    q(id).addEventListener("change", gambar); q(id).addEventListener("input", gambar);
+  });
+  function setel(v){
+    Object.keys(v).forEach(function(k){ var e=q(k); if(e.type==="checkbox") e.checked=!!v[k]; else e.value=v[k]; });
+    lama = {}; gambar();
+  }
+  q("r-kecil").onclick = function(){ setel({jenis:"cg", n:1, prodeo:0,kuasaP:0,kuasaT:0,ecourt:0,ghaib:0,mediasi:0,bukti:0,saksi:0,sita:0,putus:1,bht:1,banding:0,tambah:0}); };
+  q("r-besar").onclick = function(){ setel({jenis:"cg", n:6, prodeo:0,kuasaP:1,kuasaT:1,ecourt:1,ghaib:0,mediasi:1,bukti:1,saksi:1,sita:1,putus:1,bht:1,banding:1,tambah:1}); };
+  gambar();
+})();
+</script>
+</body>
+</html>
