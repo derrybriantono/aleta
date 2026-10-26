@@ -44,6 +44,7 @@ import { KontakPihak } from "@/components/portal/kontak-para-pihak";
 import { TanggalKtpPihak } from "@/components/portal/status-perkara-ktp-pihak";
 /* === AKHIR 12OKT-E === */
 import { Badge } from "@/components/ui/badge";
+import { LencanaProdeo } from "@/components/portal/penanda-perkara-pihak";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -749,6 +750,9 @@ export type Status = {
   penanda: {
     ghaib: boolean | null;
     sumberGhaib: string[];
+    /** 26 Okt 2026: bot lama tidak mengirimnya; null = tidak terbaca. */
+    prodeo?: boolean | null;
+    sumberProdeo?: string[];
     instansi: Array<{
       kunci: string;
       label: string;
@@ -3150,6 +3154,10 @@ function IsiStatus({
             ghaib
           </Badge>
         ) : null}
+
+        {/* Prodeo (26 Okt 2026): satu sumber dengan Jadwal Sidang - kolom prodeo
+            SIPP atau persetujuan prodeo e-Court. Kasir tidak menagih panjar. */}
+        {status.penanda?.prodeo === true ? <LencanaProdeo sumber={status.penanda.sumberProdeo} /> : null}
 
         {/* Mafqud tidak punya kolomnya sendiri di SIPP - yang dihitung
             pencirinya menurut SK: tundaan sidang 3 x 90 hari. Karena itu

@@ -1902,7 +1902,7 @@ async function jenisPerkaraDari(perkaraId) {
 
 async function penandaPerkara(perkaraId, { tanggalPhs = "", sidangPertama = "" } = {}) {
   const id = Number(perkaraId);
-  if (!Number.isFinite(id) || id <= 0) return { ghaib: null, instansi: [], sumber: [] };
+  if (!Number.isFinite(id) || id <= 0) return { ghaib: null, prodeo: null, sumberProdeo: [], instansi: [], sumber: [] };
 
   // Penciri ghaib TIDAK ditulis ulang di sini - lihat penandaGhaibBanyakPerkara
   // di atas, yang juga dipakai Antrian Sidang. Peta tanggalnya tetap dikirim
@@ -1948,6 +1948,10 @@ async function penandaPerkara(perkaraId, { tanggalPhs = "", sidangPertama = "" }
     });
   }
 
+  // 26 Okt 2026: prodeo ikut menjadi penanda perkara - satu sumber dengan Jadwal Sidang
+  // (prodeoPerkaraService). null = tidak terbaca, bukan "bukan prodeo".
+  const tandaProdeo = await require("./prodeoPerkaraService").penandaProdeoPerkara(id);
+
   const mafqud = await mafqudPerkara(id);
   // Butir 31: izin atasan hanya bila jenis perkaranya perceraian/poligami.
   // Jenis tidak terbaca = perilaku lama (instansi saja), supaya kegagalan
@@ -1959,6 +1963,8 @@ async function penandaPerkara(perkaraId, { tanggalPhs = "", sidangPertama = "" }
     // null berarti belum dapat dinilai - tidak satu pun sumber terbaca.
     ghaib: pihak.terbaca || kolom.pihakGhaib || kolom.vGhaib || jarak !== null ? ghaib : null,
     sumberGhaib: sumber,
+    prodeo: tandaProdeo.prodeo,
+    sumberProdeo: tandaProdeo.sumberProdeo,
     instansi,
     perluIzinAtasan: jenisButuhIzin && instansi.some((x) => ["pns", "tni", "polri"].includes(x.kunci)),
     pihakTerbaca: pihak.terbaca,

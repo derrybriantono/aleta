@@ -17,9 +17,10 @@
  *              dengan kelonggaran 120 hari SK 048/2024 dan layar Status Perkara
  *              (empat sumber; yang menyala disebut sumbernya). Dua penciri
  *              untuk satu pertanyaan pernah membuat dua layar berselisih.
- *   PRODEO     perkara.prodeo = 1 - kolom yang sama dengan kueri bot lama
- *              ("monev prodeo", daftar sidang WhatsApp). Diukur di
- *              sipp_donggala: 118 dari 10.216 perkara.
+ *   PRODEO     prodeoPerkaraService (26 Okt 2026): perkara.prodeo = 1 - kolom yang
+ *              sama dengan kueri bot lama ("monev prodeo", daftar sidang WhatsApp)
+ *              - ditambah persetujuan prodeo dari e-Court. Satu sumber dengan layar
+ *              Status Perkara. Diukur di sipp_donggala: 124 dari 10.273 perkara.
  *   NON E-COURT  bukan dihitung di sini: baris jadwal sudah membawa
  *              `lewatEcourt` (perkara_efiling_id). Yang ditambahkan di sini
  *              hanya KETERBACAANNYA (lihat sippJadwalSidangService) - peta e-Court
@@ -41,6 +42,7 @@
 const { cleanText } = require("./ecourtTextService");
 const pekerjaanPihakService = require("./pekerjaanPihakService");
 const izinCeraiService = require("./izinCeraiService");
+const prodeoPerkaraService = require("./prodeoPerkaraService");
 
 /** Kunci penggolongan pekerjaan yang diberi lencana (DESA, BUKAN, LAIN, KOSONG tidak). */
 const KUNCI_BERLENCANA = Object.freeze(["PNS", "PPPK", "POLRI", "TNI", "BUMN", "BUMD"]);
@@ -96,22 +98,12 @@ function runQueryBawaan(sql, params = []) {
 /**
  * Perkara berprodeo, untuk sekumpulan perkara. Hanya yang prodeo punya kunci.
  * Melempar bila kolomnya tidak terbaca - pemanggil mencatatnya sebagai tidak terbaca.
+ *
+ * 26 Okt 2026: sumbernya SATU, dipakai juga Status Perkara - lihat prodeoPerkaraService
+ * (perkara.prodeo = 1, ditambah persetujuan prodeo dari e-Court).
  */
 async function prodeoBanyakPerkara(daftarPerkaraId, deps = {}) {
-  const id = idBersih(daftarPerkaraId);
-  const hasil = {};
-  if (id.length === 0) return hasil;
-  const kueri = deps.kueri || runQueryBawaan;
-  const skema = deps.skema || require("./sippSkemaService");
-  // Pemasangan SIPP yang belum punya kolomnya: tidak ada yang bisa ditandai prodeo,
-  // dan itu BUKAN galat (tidak ada yang dituduh).
-  if (!(await skema.kolomAda("perkara", "prodeo"))) return hasil;
-  const rows = await kueri(
-    `SELECT perkara_id AS perkaraId FROM perkara WHERE prodeo = 1 AND perkara_id IN (${id.map(() => "?").join(", ")})`,
-    id
-  );
-  for (const baris of rows) hasil[String(baris.perkaraId)] = true;
-  return hasil;
+  return prodeoPerkaraService.prodeoBanyakPerkara(daftarPerkaraId, deps);
 }
 
 /**
@@ -173,7 +165,7 @@ async function bahanPenanda(daftarPerkaraId, deps = {}) {
   const [ghaib, prodeo, pekerjaan] = await Promise.all([
     // penandaGhaibBanyakPerkara sudah gagal-tertutup sendiri (himpunan kosong).
     aman(() => tahapan().penandaGhaibBanyakPerkara(id), ""),
-    aman(() => prodeoBanyakPerkara(id, deps), "prodeo"),
+    aman(() => prodeoPerkaraService.sumberProdeoBanyakPerkara(id, deps), "prodeo"),
     aman(() => pekerjaanPihakBanyakPerkara(id, deps), "pekerjaan"),
   ]);
   // Izin cerai bergantung pada lencana pekerjaan; pekerjaan tak terbaca = tidak menyimpulkan apa pun.
@@ -205,6 +197,9 @@ function ruasBaris(bahan, perkaraId) {
       ghaibSumber: g ? g.sumber || [] : [],
       prodeo: Boolean(bahan.prodeo[kunci]),
     },
+    // 26 Okt 2026: dari mana prodeonya dikenali (keterangan lencana), terpisah dari
+    // penandaPerkara agar bentuk lama tidak berubah.
+    penandaProdeoSumber: Array.isArray(bahan.prodeo[kunci]) ? bahan.prodeo[kunci] : [],
     penandaPihak: bahan.pekerjaan[kunci] || [],
     penandaProdeoTerbaca: bahan.terbaca.prodeo,
     penandaPekerjaanTerbaca: bahan.terbaca.pekerjaan,
