@@ -304,7 +304,7 @@
     q("tg").textContent = h.T ? "ANDI WIJAYA bin HASAN" : "—";
     var tags = [];
     if(h.o.prodeo) tags.push("■ PRODEO");
-    tags.push(h.o.ecourt ? "■ e-COURT" : "■ NON e-COURT");
+    if(h.o.ecourt) tags.push("■ e-COURT");
     if(h.o.kuasaP||h.o.kuasaT) tags.push("■ KUASA HUKUM");
     if(h.o.ghaib) tags.push("● GHAIB");
     if(h.o.mediasi) tags.push("▲ MEDIASI");

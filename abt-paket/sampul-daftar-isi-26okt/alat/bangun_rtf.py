@@ -7,7 +7,12 @@
 import os, sys
 
 LEBAR = 10506           # lebar isi A4 dalam twip (margin 700)
-HAL = (11906, 16838)
+HAL = (11906, 16838)   # A4 (bawaan); diganti per ukuran lewat KERTAS
+KERTAS = {   # kode: (nama berkas, lebar twip, tinggi twip, baris riwayat sidang)
+    'a4': ('', 11906, 16838, 12),                 # 210 x 297 mm
+    'f4': (' (F4)', 12189, 18709, 18),            # 215 x 330 mm (Folio)
+    'legal': (' (Legal)', 12246, 20183, 20),      # 216 x 356 mm
+}
 
 def esc(t):
     out = []
@@ -103,7 +108,9 @@ def judul_bagian(teks, ket=None):
 K_SEL = (10, 10, 10, 10)
 
 # --------------------------------------------------------------------------------------------------------------------
-def sampul():
+def sampul(kertas='a4'):
+    global HAL
+    HAL = (KERTAS[kertas][1], KERTAS[kertas][2])
     s = kepala_rtf()
     # kop
     w = [7300, LEBAR - 7300]
@@ -129,6 +136,8 @@ def sampul():
             p_sel([run('TAHUN #0191#   -   TERDAFTAR #1061#', sz=17, sp=20)], al='c', sa=40),
         ])],
     }])
+    # fokus perkara (nama anak, pasangan, pewaris, dan seterusnya; kosong untuk cerai)
+    s += par([run('#5842#', sz=22)], al='c', sb=120, sa=40)
     # ciri
     s += judul_bagian('CIRI PERKARA', 'hanya yang berlaku')
     s += tabel([{
@@ -141,7 +150,7 @@ def sampul():
     s += judul_bagian('PARA PIHAK')
     half = LEBAR // 2
     kiri = sel([
-        par([run('#8146#', b=True, sz=15, sp=60)], intbl='mid', sb=40),
+        par([run('#5841#', b=True, sz=15, sp=60)], intbl='mid', sb=40),
         par([run('#0098#', b=True, sz=22)], intbl='mid'),
         par([run('Pekerjaan: #0100#', sz=17)], intbl='mid'),
         par([run('Alamat: #0101#', sz=17)], intbl='mid'),
@@ -178,6 +187,8 @@ def sampul():
         baris4('Penetapan Majelis (PMH)', '#1060#', 'Penetapan mediator', '#0055#'),
         baris4('Penetapan Hari Sidang (PHS)', '#1064#', 'Laporan mediator', '#8012#'),
     ])
+    # pokok perkara menurut jenis (satu isian bergaris banyak; kosong bila tidak ada)
+    s += par([run('#5843#', sz=17)], sb=120, sa=40)
     # riwayat sidang
     s += judul_bagian('RIWAYAT SIDANG')
     w4 = [600, 2300, 3300, LEBAR - 600 - 2300 - 3300]
@@ -185,7 +196,8 @@ def sampul():
            'sel': [sel(p_sel([run(t, b=True, sz=14, sp=30)])) for t in ('NO', 'TGL SIDANG', 'ALASAN PENUNDAAN', 'AGENDA SIDANG / KET.')]}
     baris = [kep]
     kode = 5860
-    for n in range(1, 13):
+    for n in range(1, KERTAS[kertas][3] + 1):
+        if n == 13: kode = 5700   # baris 13 dst. memakai blok 5700-5723
         baris.append({'lebar': w4, 'brd': [K_SEL] * 4, 'tinggi': 300,
                       'sel': [sel(p_sel([run(str(n), b=True, sz=16)], al='c')),
                               sel(p_sel([run('#%d#' % kode, sz=16)])),
@@ -207,7 +219,9 @@ def sampul():
     return s
 
 # --------------------------------------------------------------------------------------------------------------------
-def daftar_isi():
+def daftar_isi(kertas='a4'):
+    global HAL
+    HAL = (KERTAS[kertas][1], KERTAS[kertas][2])
     s = kepala_rtf()
     w = [7300, LEBAR - 7300]
     s += tabel([{
@@ -265,10 +279,11 @@ if __name__ == '__main__':
     akar = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     tuj = os.path.join(akar, 'rtf')
     os.makedirs(tuj, exist_ok=True)
-    for nama, fn in (('Sampul Berkas Perkara.rtf', sampul), ('Daftar Isi Berkas.rtf', daftar_isi)):
-        isi = fn()
-        # aman: tidak ada nama aplikasi
-        assert 'aleta' not in isi.lower()
-        with open(os.path.join(tuj, nama), 'wb') as f:
-            f.write(isi.encode('ascii'))
-        print(nama, len(isi))
+    for kode, (akhiran, w, h, baris) in KERTAS.items():
+        for dasar, fn in (('Sampul Berkas Perkara', sampul), ('Daftar Isi Berkas', daftar_isi)):
+            isi = fn(kode)
+            assert 'aleta' not in isi.lower()   # tidak boleh ada nama aplikasi di isi blangko
+            nama = dasar + akhiran + '.rtf'
+            with open(os.path.join(tuj, nama), 'wb') as f:
+                f.write(isi.encode('ascii'))
+            print(nama, len(isi))
