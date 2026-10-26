@@ -249,12 +249,17 @@
    "jumlahPernyataan": 2
   },
   "abt-klien.js": {
-   "byte": 50059,
-   "sidik": "44bd659e95367a2decf58a1149225ab10d7624d1",
+   "byte": 56884,
+   "sidik": "37c868239260ab36b5a0179c788ed898f3c013dd",
    "nama": [
     "ABT_KLIEN_JEDA_TULIS_MS",
+    "ABT_KOTAK_UKURAN_MAKS",
+    "abtKlienBarisKotakKecil",
+    "abtKlienBuangKotakPenanda",
     "abtKlienBuat",
+    "abtKlienBufDariLatin1",
     "abtKlienEntitas",
+    "abtKlienLatin1",
     "abtKlienNamaDariHeader",
     "abtKlienNetralkanPetik",
     "abtKlienPeriksaRtf",
@@ -273,7 +278,7 @@
     "abtKlienUraiView"
    ],
    "ekspor": [],
-   "jumlahPernyataan": 21
+   "jumlahPernyataan": 26
   },
   "abt.js": {
    "byte": 1003847,
