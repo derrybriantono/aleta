@@ -2300,8 +2300,8 @@
    "jumlahPernyataan": 2
   },
   "blangko-derry.js": {
-   "byte": 118814,
-   "sidik": "92d8e334d06e437ddf0466350ea33af13f80a274",
+   "byte": 123414,
+   "sidik": "92c5be8037a7962068777d570b1641ec1dc04834",
    "nama": [],
    "ekspor": [
     "aletaBlangkoDerry",
@@ -3565,7 +3565,7 @@
     "3da77de4ff91",
     "8bc608ef5b94",
     "47963a9a2685",
-    "e48f79a6daa8",
+    "032f7863a903",
     "803d9e8de73b",
     "8b71d3d81384",
     "a1fa644f2817",
@@ -4881,8 +4881,8 @@
    "jumlahPernyataan": 2
   },
   "penetapan-kerja.js": {
-   "byte": 14202,
-   "sidik": "de6fb390b2399cf003f2a39341b259fffa44b28d",
+   "byte": 20622,
+   "sidik": "a8489ee9bef573b7a0287c5b5fc3f6071964e385",
    "nama": [],
    "ekspor": [
     "aletaPenetapanKerja"
@@ -4975,8 +4975,8 @@
    "jumlahPernyataan": 2
   },
   "putusan-edoc-sekaligus.js": {
-   "byte": 33742,
-   "sidik": "2d03144c620efc8b328562a46f1fe7eacc81a248",
+   "byte": 44011,
+   "sidik": "73e8521cd7c03d58382b4b09525bcde96281a801",
    "nama": [],
    "ekspor": [
     "aletaPutusanEdoc"
@@ -4984,8 +4984,8 @@
    "jumlahPernyataan": 2
   },
   "putusan-sipp.js": {
-   "byte": 43446,
-   "sidik": "a5128d32d6cc10ccc1620c1db8a69cfd8e552041",
+   "byte": 43527,
+   "sidik": "dad04a54aabdc2e2e284d967462a339f902de98b",
    "nama": [],
    "ekspor": [
     "aletaPutusanSipp",

@@ -4598,6 +4598,8 @@ export async function ambilKunciPenetapanGateway(payload: {
   ttlDetik?: number;
   /** Token lama yang masih dipegang - diperpanjang, tidak ditolak oleh dirinya sendiri. */
   token?: string;
+  /** Peramban yang berdetak: kunci basi pemilik yang sama (jenis pekerjaan sama) boleh diambil alih. */
+  ambilAlih?: boolean;
 }) {
   return gatewayFetch<Record<string, unknown>>("/internal/aleta-bot/penetapan/kunci", {
     method: "POST",

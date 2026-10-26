@@ -48,9 +48,25 @@ export async function POST(request: NextRequest) {
       tujuan: String(badan.tujuan || "peramban").slice(0, 80),
       ttlDetik: Number(badan.ttlDetik) > 0 ? Number(badan.ttlDetik) : undefined,
       token: token || undefined,
+      ambilAlih: badan.ambilAlih === true,
     });
     if (r.ok) return ok(r.data);
-    return ok({ ok: false, alasan: r.error === "sedang_dikerjakan" ? "sedang_dikerjakan" : "kunci_tidak_tersedia", pesan: r.error, ...(r.badan ? { oleh: r.badan.oleh, sampai: r.badan.sampai, tujuan: r.badan.tujuan } : {}) });
+    return ok({
+      ok: false,
+      alasan: r.error === "sedang_dikerjakan" ? "sedang_dikerjakan" : "kunci_tidak_tersedia",
+      pesan: r.error,
+      ...(r.badan
+        ? {
+            oleh: r.badan.oleh,
+            sampai: r.badan.sampai,
+            tujuan: r.badan.tujuan,
+            sejak: r.badan.sejak,
+            terakhirAktif: r.badan.terakhirAktif,
+            milikSendiri: r.badan.milikSendiri,
+            tungguDetik: r.badan.tungguDetik,
+          }
+        : {}),
+    });
   } catch (error) {
     return handleAdminRouteError(error, request, {
       db,

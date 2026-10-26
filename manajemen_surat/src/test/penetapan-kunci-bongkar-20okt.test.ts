@@ -5,6 +5,8 @@ import path from "node:path";
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { basisKunciTiruan as basisTiruan } from "./kunci-basis-tiruan";
+
 /**
  * Kunci penetapan per perkara (bot) dan "bongkar hanya atas perintah" (20 Okt
  * 2026, agen P1). Kunci diuji atas basis data ALETA tiruan yang meniru
@@ -13,51 +15,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const AKAR = path.resolve(process.cwd(), "..");
 const require_ = createRequire(path.join(AKAR, "aleta_bot/package.json"));
 const baca = (p: string) => readFileSync(path.join(AKAR, p), "utf8");
-
-function basisTiruan() {
-  const baris = new Map<number, { token: string; pemilik: string; tujuan: string; sampai: number }>();
-  const jam = { sekarang: 1_000_000 };
-  const query = async (sql: string, p: unknown[] = []) => {
-    const s = sql.replace(/\s+/g, " ").trim();
-    if (/^CREATE TABLE/i.test(s)) return {};
-    if (/^UPDATE .* SET sampai = DATE_ADD\(UTC_TIMESTAMP\(\), INTERVAL \? SECOND\) WHERE perkara_id = \? AND token = \? AND sampai >= UTC_TIMESTAMP\(\)/i.test(s)) {
-      const [ttl, id, token] = p as [number, number, string];
-      const b = baris.get(id);
-      if (b && b.token === token && b.sampai >= jam.sekarang) {
-        b.sampai = jam.sekarang + ttl;
-        return { affectedRows: 1 };
-      }
-      return { affectedRows: 0 };
-    }
-    if (/^DELETE FROM .* WHERE perkara_id = \? AND sampai < UTC_TIMESTAMP\(\)/i.test(s)) {
-      const id = p[0] as number;
-      const b = baris.get(id);
-      if (b && b.sampai < jam.sekarang) baris.delete(id);
-      return { affectedRows: 1 };
-    }
-    if (/^INSERT IGNORE INTO/i.test(s)) {
-      const [id, token, pemilik, tujuan, ttl] = p as [number, string, string, string, number];
-      if (baris.has(id)) return { affectedRows: 0 };
-      baris.set(id, { token, pemilik, tujuan, sampai: jam.sekarang + ttl });
-      return { affectedRows: 1 };
-    }
-    if (/^DELETE FROM .* WHERE perkara_id = \? AND token = \?/i.test(s)) {
-      const [id, token] = p as [number, string];
-      const b = baris.get(id);
-      if (b && b.token === token) {
-        baris.delete(id);
-        return { affectedRows: 1 };
-      }
-      return { affectedRows: 0 };
-    }
-    if (/^SELECT perkara_id, token/i.test(s)) {
-      const b = baris.get(p[0] as number);
-      return b ? [{ perkara_id: p[0], token: b.token, pemilik: b.pemilik, tujuan: b.tujuan, diambil: "x", sampai: `s${b.sampai}`, hidup: b.sampai >= jam.sekarang ? 1 : 0 }] : [];
-    }
-    throw new Error(`SQL tak dikenal: ${s.slice(0, 80)}`);
-  };
-  return { db: { query }, jam, baris };
-}
 
 const muatKunci = (db: unknown) => (require_(path.join(AKAR, "aleta_bot/services/penetapanKunciService.js")) as any).buatLayanan({ db });
 

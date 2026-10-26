@@ -5400,6 +5400,11 @@ function bagianIsiPutusan(nomorPerkara) {
         selesaiOto({ ok: false, tahap: "kunci", pesan: kunci.pesan });
         return;
       }
+      // Kunci sisa pekerjaan terputus milik pengguna ini diambil alih: disebut terang-terangan.
+      if (kunci.catatan) {
+        hasilTerap.className = "aleta-abt-kabar";
+        hasilTerap.textContent = kunci.catatan;
+      }
       let h;
       try {
         h = await (async () => {
@@ -5649,9 +5654,30 @@ function bagianIsiPutusan(nomorPerkara) {
             });
         }
       }
-      const hasilSimpan = opsiSimpanA30
-        ? await simpanPutusanLaluBuka(nomorPerkara, hasilTerap, opsiSimpanA30)
-        : await simpanPutusanLaluBuka(nomorPerkara, hasilTerap);
+      // 26 Okt 2026: niat e-Doc dicatat SEBELUM Simpan. Halaman yang dimuat ulang sesudah Putusan Akhir tersimpan
+      // mematikan skrip ini sebelum e-Doc terunggah (perkara 615): catatan yang masih ada saat halaman perkara
+      // termuat lagi dilanjutkan oleh modul e-Doc. Jalan yang selesai melapor menghapusnya di bawah.
+      const modEdocTunda = edocAbt ? globalThis.aletaPutusanEdoc : null;
+      if (modEdocTunda && typeof modEdocTunda.catatTertunda === "function") {
+        await modEdocTunda
+          .catatTertunda({
+            nomorPerkara,
+            denganPutusan: !(opsiOto && opsiOto.denganPutusan === false),
+            denganAnonim: !(opsiOto && opsiOto.denganAnonim === false),
+            putusan: putusanOto,
+            putusanRtf: putusanRtfOto,
+            anonim: anonimPilihan || null,
+          })
+          .catch(() => false);
+      }
+      let hasilSimpan;
+      try {
+        hasilSimpan = opsiSimpanA30
+          ? await simpanPutusanLaluBuka(nomorPerkara, hasilTerap, opsiSimpanA30)
+          : await simpanPutusanLaluBuka(nomorPerkara, hasilTerap);
+      } finally {
+        if (modEdocTunda && typeof modEdocTunda.hapusTertunda === "function") await modEdocTunda.hapusTertunda(nomorPerkara).catch(() => false);
+      }
       terap.disabled = false;
       hasilTerap.className = hasilSimpan.ok
         ? "aleta-abt-kabar"

@@ -69,6 +69,18 @@
     }
   }
 
+  // ───────────────────────────────────────────────────────────────────────
+  // Kunci perkara: detak, pelepasan yang dipastikan, dan pesan yang jelas (26 Okt 2026)
+  // ───────────────────────────────────────────────────────────────────────
+  // Kunci dipegang ke portal/bot selama pekerjaan berjalan. Selama halaman hidup, kunci DIPERPANJANG tiap
+  // DETAK_MS (kedaluwarsanya TTL_PERAMBAN_DETIK sesudah detak terakhir); halaman yang dimuat ulang atau ditutup
+  // berhenti berdetak, sehingga kuncinya basi dalam hitungan detik: pemilik yang sama boleh mengambilnya alih,
+  // pengguna lain menunggu kedaluwarsa. Pelepasan diulang bila gagal - dulu kegagalan melepas diam-diam
+  // meninggalkan kunci tertahan sampai kedaluwarsa dan menghalangi pemiliknya sendiri.
+  const DETAK_MS = 25000;
+  const TTL_PERAMBAN_DETIK = 120;
+  const dipegang = new Map(); // token -> { perkaraId, tujuan, pewaktu, sibuk }
+
   async function kunci(aksi, perkaraId, token, tujuan) {
     try {
       const respons = await panggil(
@@ -76,7 +88,13 @@
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ perkaraId, aksi, token: token || "", tujuan: tujuan || "peramban" }),
+          body: JSON.stringify({
+            perkaraId,
+            aksi,
+            token: token || "",
+            tujuan: tujuan || "peramban",
+            ...(aksi === "lepas" ? {} : { ttlDetik: TTL_PERAMBAN_DETIK, ambilAlih: true }),
+          }),
         },
         aksi === "lepas" ? "Melepas kunci penetapan" : "Mengambil kunci penetapan"
       );
@@ -87,8 +105,123 @@
     }
   }
 
-  const ambilKunci = (perkaraId, tujuan, token) => kunci("ambil", perkaraId, token, tujuan);
-  const lepasKunci = (perkaraId, token) => (token ? kunci("lepas", perkaraId, token) : Promise.resolve({ ok: true }));
+  function hentikanDetak(token) {
+    const rec = dipegang.get(token);
+    if (!rec) return;
+    clearInterval(rec.pewaktu);
+    dipegang.delete(token);
+  }
+
+  function mulaiDetak(perkaraId, token, tujuan) {
+    if (!token || dipegang.has(token) || typeof setInterval !== "function") return;
+    const rec = { perkaraId, tujuan, pewaktu: null, sibuk: false };
+    rec.pewaktu = setInterval(async () => {
+      if (rec.sibuk) return;
+      rec.sibuk = true;
+      try {
+        // Token lama + kunci masih berlaku = diperpanjang. Kunci yang sudah hilang (diambil orang lain sesudah
+        // kedaluwarsa) tidak direbut kembali: berhenti berdetak, pekerjaan menyelesaikan langkahnya sendiri.
+        const r = await kunci("ambil", perkaraId, token, tujuan);
+        if (!(r && r.ok === true && String(r.token) === String(token))) hentikanDetak(token);
+      } finally {
+        rec.sibuk = false;
+      }
+    }, DETAK_MS);
+    if (rec.pewaktu && typeof rec.pewaktu.unref === "function") rec.pewaktu.unref();
+    dipegang.set(token, rec);
+  }
+
+  const jeda = (ms) => new Promise((selesai) => setTimeout(selesai, ms));
+
+  const jamMenit = (utc) => {
+    // "2026-10-26 03:40:44" (UTC, dari basis data ALETA) -> jam setempat "11.40"
+    const d = new Date(String(utc || "").replace(" ", "T") + "Z");
+    if (!Number.isFinite(d.getTime())) return "";
+    return `${String(d.getHours()).padStart(2, "0")}.${String(d.getMinutes()).padStart(2, "0")}`;
+  };
+  const namaTujuan = (tujuan) => {
+    const t = String(tujuan || "");
+    if (t === "putusan-otomatis") return "Putusan Otomatis";
+    if (/^isi-borang-/.test(t)) return "Pengisian borang";
+    if (t === "kerjakan-penetapan") return "Penetapan";
+    return t || "pekerjaan lain";
+  };
+  const rapikan = (t) => String(t == null ? "" : t).replace(/\s+/g, " ").trim();
+
+  /**
+   * Kalimat untuk pengguna dari jawaban kunci.
+   *  - ditolak, milik pengguna sendiri : pekerjaan sebelumnya masih tercatat, kapan bebas;
+   *  - ditolak, milik orang lain       : siapa, apa, sejak kapan;
+   *  - diambil alih                    : pekerjaan sebelumnya terputus, dilanjutkan oleh pengguna.
+   */
+  function kalimatKunci(r) {
+    if (!r) return "";
+    if (r.ok === true && r.diambilAlih) {
+      const d = r.diambilAlih;
+      const sejak = jamMenit(d.sejak);
+      return `${namaTujuan(d.tujuan)} sebelumnya masih tercatat berjalan${sejak ? ` sejak ${sejak}` : ""} tetapi sudah tidak aktif (halaman dimuat ulang atau ditutup) - dilanjutkan oleh Anda.`;
+    }
+    if (r.alasan !== "sedang_dikerjakan") return "";
+    const sejak = jamMenit(r.sejak);
+    const tunggu = Number(r.tungguDetik) > 0 ? Number(r.tungguDetik) : 0;
+    if (r.milikSendiri === true) {
+      const aktif = jamMenit(r.terakhirAktif);
+      return (
+        `${namaTujuan(r.tujuan)} Anda sebelumnya masih tercatat berjalan${sejak ? ` sejak ${sejak}` : ""}${aktif ? ` (terakhir aktif ${aktif})` : ""}. ` +
+        `Bila halaman atau tab-nya sudah ditutup, tunggu ${tunggu || "beberapa"} detik lalu ulangi - kunci dilepas sendiri dan pekerjaannya dapat Anda lanjutkan.`
+      );
+    }
+    const oleh = rapikan(r.oleh);
+    return (
+      `Perkara ini sedang dikerjakan${oleh ? ` oleh ${oleh}` : ""}${r.tujuan ? ` (${rapikan(r.tujuan)})` : ""}${sejak ? ` sejak ${sejak}` : ""} - ` +
+      `tunggu selesai${tunggu ? ` (paling lama sekitar ${tunggu} detik bila halamannya sudah ditutup)` : ""} supaya tidak tertulis ganda, lalu ulangi.`
+    );
+  }
+
+  /**
+   * Mengambil kunci satu perkara. `token` (bila ada) = kunci yang SUDAH dipegang pekerjaan yang sama:
+   * diperpanjang, tidak ditolak oleh dirinya sendiri (langkah dalam satu jalan memakai token jalannya).
+   * Jawaban sukses membawa `catatan` bila sisa pekerjaan terputus milik pengguna ini diambil alih;
+   * jawaban ditolak membawa `kalimat` (pesan siap tampil).
+   */
+  async function ambilKunci(perkaraId, tujuan, token) {
+    const r = await kunci("ambil", perkaraId, token, tujuan);
+    if (r && r.ok === true && r.token) {
+      mulaiDetak(perkaraId, String(r.token), tujuan || "peramban");
+      const catatan = kalimatKunci(r);
+      return catatan ? { ...r, catatan } : r;
+    }
+    const kalimatTolak = kalimatKunci(r);
+    return kalimatTolak ? { ...r, kalimat: kalimatTolak } : r;
+  }
+
+  /** Melepas kunci; gagal melepas diulang (sambungan/latar sesaat tidak menjawab), bukan dibiarkan diam-diam. */
+  async function lepasKunci(perkaraId, token) {
+    if (!token) return { ok: true };
+    hentikanDetak(String(token));
+    let r = null;
+    for (let ke = 0; ke < 3; ke += 1) {
+      r = await kunci("lepas", perkaraId, token);
+      if (r && r.ok === true) return r;
+      await jeda(300 * (ke + 1));
+    }
+    return r;
+  }
+
+  // Halaman dimuat ulang / ditutup di tengah jalan: kunci yang masih dipegang dilepas sekarang juga, bukan
+  // menunggu kedaluwarsa (yang tidak sempat dilepas basi sendiri setelah detak berhenti).
+  try {
+    if (typeof addEventListener === "function") {
+      addEventListener("pagehide", () => {
+        for (const [token, rec] of Array.from(dipegang.entries())) {
+          hentikanDetak(token);
+          void kunci("lepas", rec.perkaraId, token);
+        }
+      });
+    }
+  } catch {
+    /* kunci tetap basi sendiri */
+  }
 
   /** Kabar tiruan untuk e6UnggahEdocPenetapan: teksnya diteruskan ke callback kemajuan. */
   function kabarKemajuan(pada, jenis) {
@@ -186,7 +319,7 @@
               jenis: j,
               status: langkah[j] ? (sibuk ? "dilewati" : "gagal") : "dilewati",
               sebab: langkah[j] ? alasan : "tidak_dicentang",
-              bunyi: langkah[j] ? kalimat(alasan) : "",
+              bunyi: langkah[j] ? (sibuk && k && k.kalimat ? k.kalimat : kalimat(alasan)) : "",
             })),
           };
         }
@@ -296,5 +429,5 @@
     }
   }
 
-  globalThis.aletaPenetapanKerja = { kerjakan, keadaan, ambilKunci, lepasKunci, URUTAN };
+  globalThis.aletaPenetapanKerja = { kerjakan, keadaan, ambilKunci, lepasKunci, kalimatKunci, URUTAN };
 })();
