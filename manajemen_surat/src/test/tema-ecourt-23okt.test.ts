@@ -288,7 +288,7 @@ describe("7 - CSS: hanya warna, lewat token, berlaku hanya bila ada penanda", ()
   });
 
   it("hanya properti warna (tanpa ukuran huruf, tampilan, posisi, isi)", () => {
-    const boleh = /^(--ec-[a-z0-9-]+|background-color|color|border-color|color-scheme|opacity)$/;
+    const boleh = /^(--ec-[a-z0-9-]+|background-color|color|border-color|border-(top|right|bottom|left)-color|color-scheme|opacity)$/;
     for (const b of blok) {
       for (const dekl of b.isi.split(";").map((x) => x.trim()).filter(Boolean)) {
         const nama = dekl.slice(0, dekl.indexOf(":")).trim();
