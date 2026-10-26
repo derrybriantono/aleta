@@ -1,10 +1,13 @@
 import { type NextRequest } from "next/server";
 
 import { bolehBasMassal, golonganPengguna } from "@/lib/matriks-peran";
+import { petakanKonsepSementara } from "@/lib/konsep-sementara-panel";
 import { isPrivilegedAdmin } from "@/lib/permissions";
 import { waktuPengadilan } from "@/lib/waktu-pengadilan";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { bacaKredensialSipp } from "@/server/modules/aleta-ecourt/checklist-milestone";
+import { bacaKonseptorSementara } from "@/server/modules/aleta-ecourt/konseptor-sementara";
 import { bacaTidakAktif } from "@/server/modules/aleta-ecourt/orang-tidak-aktif";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -138,6 +141,36 @@ export async function GET(request: NextRequest) {
       cariNomor: nomorCari,
       tidakAktif,
     });
+
+    // 26 Okt 2026: "konsep sementara" = perkara yang di Jadwal Sidang diberi "tunjuk konseptor". Dibaca dari tabel yang SAMA
+    // (aleta_konseptor_sementara) pada tiap muat - tanpa singgahan sendiri, jadi tunjukan yang berubah ikut berubah di muat berikutnya.
+    // Gagal membaca (tabel belum ada) tidak menghilangkan daftar perkaranya. PTSP (baca saja, cari nomor) tidak memakainya.
+    if (!cariNomorSatker && hasil.perkara.length > 0) {
+      try {
+        const tunjukan = await bacaKonseptorSementara(db, hasil.perkara.map((p) => p.perkaraId));
+        if (Object.keys(tunjukan).length > 0) {
+          let usernames: string[] = [];
+          if (!(lihatSemua && !sebagaiNama)) {
+            try {
+              usernames = (await bacaKredensialSipp(db))
+                .filter((k) => k.userId === String(actor?.id ?? "") && k.username)
+                .map((k) => k.username);
+            } catch {
+              /* tanpa username: dicocokkan lewat nama saja */
+            }
+          }
+          const peta = petakanKonsepSementara(tunjukan, {
+            semua: lihatSemua && !sebagaiNama,
+            sebagaiNama,
+            usernames,
+            nama: [String(actor?.name ?? "")].filter(Boolean),
+          });
+          for (const p of hasil.perkara) if (peta[p.perkaraId]) p.konsepSementara = peta[p.perkaraId];
+        }
+      } catch {
+        /* tabel aleta_konseptor_sementara belum terpasang: daftar tetap tampil tanpa penanda */
+      }
+    }
 
     return ok({
       hariIni,
