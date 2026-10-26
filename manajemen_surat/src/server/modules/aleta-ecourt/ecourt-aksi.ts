@@ -24,6 +24,7 @@
 import { type AletaDatabase } from "@/server/db/client";
 import { appendAuditLog } from "@/server/shared/audit";
 import { nextPrefixedId } from "@/server/shared/ids";
+import { cerminSetelahTulisan } from "@/server/modules/cermin/setelah-tulisan";
 import { tandaiTulisan } from "@/server/shared/singgah-singkat";
 
 // ---------------------------------------------------------------------------
@@ -100,7 +101,11 @@ export async function panggilBot<T>(
     };
   } finally {
     clearTimeout(waktu);
-    if (menulis) tandaiTulisan();
+    if (menulis) {
+      tandaiTulisan();
+      // A3: tulisan masuk cermin seketika (lihat cermin/setelah-tulisan.ts).
+      cerminSetelahTulisan(undefined, body);
+    }
   }
 }
 

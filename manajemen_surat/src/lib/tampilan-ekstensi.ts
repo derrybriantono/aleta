@@ -1,4 +1,5 @@
 import { DAFTAR_FITUR_EKSTENSI, KODE_FITUR_EKSTENSI } from "@/lib/daftar-fitur-ekstensi";
+import { GalatKonteks, normalkanKonteksPerkara, normalkanVersiPerangkat } from "@/lib/konteks-server";
 
 /**
  * ============================================================================
@@ -209,7 +210,7 @@ export const KUNCI_PENGATURAN_SINKRON = [
 
 const PENGATURAN_SINKRON = new Set<string>(KUNCI_PENGATURAN_SINKRON);
 
-export const KUNCI_SETELAN = ["checklist.tanda", "pintasan.portal", "pengaturan.ekstensi", "widget.tata", "panel.bawaan"] as const;
+export const KUNCI_SETELAN = ["checklist.tanda", "pintasan.portal", "pengaturan.ekstensi", "widget.tata", "panel.bawaan", "konteks.perkara", "perangkat.versi"] as const;
 export type KunciSetelan = (typeof KUNCI_SETELAN)[number];
 
 export function kunciSetelanSah(x: unknown): x is KunciSetelan {
@@ -223,6 +224,9 @@ export const BATAS_BITA_SETELAN: Record<KunciSetelan, number> = {
   "pengaturan.ekstensi": 16384,
   "widget.tata": 8192,
   "panel.bawaan": 512,
+  // Rantai B (U16, 25 Okt 2026): perkara terakhir lintas PC dan versi ekstensi per PC; aturan di lib/konteks-server.ts.
+  "konteks.perkara": 8192,
+  "perangkat.versi": 4096,
 };
 
 export const BATAS_TANDA_CHECKLIST = 500;
@@ -299,6 +303,24 @@ function normalkanPintasan(nilai: unknown) {
   const n = nilai as Record<string, unknown>;
   const dibuang = Object.keys(n).filter((k) => k !== "urutan" && k !== "sembunyi");
   return { nilai: { urutan: daftarTeks(n.urutan, "urutan"), sembunyi: daftarTeks(n.sembunyi, "sembunyi") }, dibuang };
+}
+
+function normalkanKonteksPerkaraSetelan(nilai: unknown) {
+  try {
+    return normalkanKonteksPerkara(nilai);
+  } catch (galat) {
+    if (galat instanceof GalatKonteks) throw new GalatSetelan(galat.message);
+    throw galat;
+  }
+}
+
+function normalkanVersiPerangkatSetelan(nilai: unknown) {
+  try {
+    return normalkanVersiPerangkat(nilai);
+  } catch (galat) {
+    if (galat instanceof GalatKonteks) throw new GalatSetelan(galat.message);
+    throw galat;
+  }
 }
 
 function normalkanPengaturan(nilai: unknown) {
@@ -462,7 +484,11 @@ export function normalkanSetelan(
           ? normalkanTataWidget(nilai)
           : kunci === "panel.bawaan"
             ? normalkanBawaanPanel(nilai)
-            : normalkanPengaturan(nilai);
+            : kunci === "konteks.perkara"
+              ? normalkanKonteksPerkaraSetelan(nilai)
+              : kunci === "perangkat.versi"
+                ? normalkanVersiPerangkatSetelan(nilai)
+                : normalkanPengaturan(nilai);
 
   let json: string;
   try {

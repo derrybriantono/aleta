@@ -162,6 +162,9 @@
   const POLA_PERMOHONAN =
     /permohonan|cerai\s*talak|istbat|itsbat|isbat|pengesahan\s*perkawinan|dispensasi|wali\s*adh[oa]l|poligami|asal.?usul|perwalian|pengangkatan|penetapan\s*ahli\s*waris|p3hp|pencegahan\s*perkawinan|penolakan\s*perkawinan|pengesahan\s*anak|izin\s*kawin|perkawinan\s*campuran/i;
 
+  const POLA_PERLAWANAN = /perlawanan|verzet|derden/i;
+  const POLA_BANTAHAN = /bantahan/i;
+
   /**
    * Sebutan para pihak, berjenjang dan memakai NOMOR sebelum kata (kembaran sebutan-pihak.ts):
    *   alur 122/123 -> Penuntut Umum/Terdakwa; alur 16, atau jenis 346/341 -> Pemohon/Termohon (meski bernomor /Pdt.G/);
@@ -177,6 +180,15 @@
     if (alur === 122 || alur === 123) return { P: "Penuntut Umum", T: "Terdakwa", surat: "dakwaan", sumber: "alur" };
     if (alur === 16) return permohonan("alur");
     if (jenis === 346 || jenis === 341) return permohonan("jenis");
+    // Perlawanan dan bantahan (D5): sebutannya sendiri, sebelum aturan alur gugatan (SIPP memberi keduanya alur gugatan).
+    {
+      const namaLawan = rapat(NAMA_PERKARA(p));
+      const nomorLawan = rapat(p.nomorPerkara);
+      if (namaLawan && POLA_PERLAWANAN.test(namaLawan)) return { P: "Pelawan", T: "Terlawan", surat: "perlawanan", sumber: "kata" };
+      if (/\/Pdt\.Plw\b/i.test(nomorLawan)) return { P: "Pelawan", T: "Terlawan", surat: "perlawanan", sumber: "nomor" };
+      if (namaLawan && POLA_BANTAHAN.test(namaLawan)) return { P: "Pembantah", T: "Terbantah", surat: "bantahan", sumber: "kata" };
+      if (/\/Pdt\.Bth\b/i.test(nomorLawan)) return { P: "Pembantah", T: "Terbantah", surat: "bantahan", sumber: "nomor" };
+    }
     if (alur) return gugatan("alur");
     const nama = rapat(NAMA_PERKARA(p));
     if (nama) return POLA_PERMOHONAN.test(nama) ? permohonan("kata") : gugatan("kata");

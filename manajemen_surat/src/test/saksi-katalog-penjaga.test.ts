@@ -117,14 +117,17 @@ describe("data ekstensi = hasil susun katalog", () => {
 
   it("ekstensi: tiga skrip baru terdaftar di penanaman dan dimuat di ABT sebelum abt.js", () => {
     const tanam = readFileSync(path.join(REPO, "manajemen_surat/scripts/susun-ekstensi.mjs"), "utf8");
-    for (const f of ["saksi-katalog.js", "saksi-katalog-data.js", "saksi-susun.js"]) expect(tanam, f).toContain(`"${f}"`);
+    for (const f of ["saksi-katalog.js", "saksi-katalog-data.js", "saksi-katalog-indeks.js", "saksi-katalog-muat.js", "saksi-susun.js"]) expect(tanam, f).toContain(`"${f}"`);
     expect(tanam).toContain('"saksi-katalog/"');
     const manifest = JSON.parse(readFileSync(path.join(AKAR, "manifest.json"), "utf8"));
     const abt = manifest.content_scripts.find((c: any) => c.js.includes("abt.js"));
     const urut = abt.js as string[];
     expect(urut.indexOf("saksi-katalog.js")).toBeGreaterThanOrEqual(0);
-    expect(urut.indexOf("saksi-katalog.js")).toBeLessThan(urut.indexOf("saksi-katalog-data.js"));
-    expect(urut.indexOf("saksi-katalog-data.js")).toBeLessThan(urut.indexOf("saksi-susun.js"));
+    // K10 (25 Okt 2026): data lengkap TIDAK disuntik ke ABT; yang dimuat indeks kecil lalu pemuat per jenis perkara.
+    expect(urut).not.toContain("saksi-katalog-data.js");
+    expect(urut.indexOf("saksi-katalog.js")).toBeLessThan(urut.indexOf("saksi-katalog-indeks.js"));
+    expect(urut.indexOf("saksi-katalog-indeks.js")).toBeLessThan(urut.indexOf("saksi-katalog-muat.js"));
+    expect(urut.indexOf("saksi-katalog-muat.js")).toBeLessThan(urut.indexOf("saksi-susun.js"));
     expect(urut.indexOf("saksi-susun.js")).toBeLessThan(urut.indexOf("abt.js"));
   });
 });

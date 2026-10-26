@@ -643,7 +643,9 @@ describe("C2. sambungan statis: bot, manifest, tanam", () => {
     expect(rutebot).toMatch(/router\.get\("\/ecourt\/tarik-satu", requireInternalToken/);
     const manifest = JSON.parse(baca("manifest.json"));
     const skripSipp = manifest.content_scripts.find((c: { js: string[]; matches: string[] }) => c.js.includes("konten.js") && c.matches.some((m: string) => m.includes("/SIPP/")));
-    expect(skripSipp.js).toContain("tarik-satu-perkara.js");
+    // K11 (26 Okt 2026): modul malas, disuntik hanya di alamat detail perkara (pola yang SAMA dengan gerbang skripnya)
+    expect(skripSipp.js).not.toContain("tarik-satu-perkara.js");
+    expect(baca("modul-malas.js")).toContain('{ id: "tarik-satu-perkara", url: /detil[_-]?perkara|detail[_-]?perkara/i }');
     // Tidak di ABT (aps_badilag) - hanya SIPP.
     const abt = manifest.content_scripts.filter((c: { matches: string[] }) => c.matches.some((m: string) => m.includes("aps_badilag")));
     expect(abt.every((c: { js: string[] }) => !c.js.includes("tarik-satu-perkara.js"))).toBe(true);

@@ -816,6 +816,20 @@
      (bagian 3b). Tersembunyi bagi yang bukan Super Admin. -->
 <!-- 13 (12 Okt sore): BAWAAN DICIUTKAN. Ringkasan satu baris (tampilan yang
      dicoba + tindakan nyata) selalu terlihat; isinya dibuka dengan menekannya. -->
+<!-- 25 Okt 2026 (K16): mode ringan untuk PC tua. Pilihan PER PC (chrome.storage.local "modeRingan"): otomatis (bawaan) | nyala | mati.
+     Otomatis hanya bekerja bila Super Admin menyalakan saklarnya; nyala/mati selalu dihormati. Pembacanya mode-ringan.js. -->
+<div id="bagianModeRingan" class="bagian-uji">
+  <div class="uji-kepala">
+    <span class="baris-warna-label">mode ringan</span>
+    <span class="uji-seg" role="group" aria-label="Mode ringan untuk komputer ini">
+      <button type="button" id="ringanOtomatis" data-ringan="otomatis" aria-pressed="true">Otomatis</button>
+      <button type="button" id="ringanNyala" data-ringan="nyala" aria-pressed="false">Nyala</button>
+      <button type="button" id="ringanMati" data-ringan="mati" aria-pressed="false">Mati</button>
+    </span>
+  </div>
+  <p id="ringanKet" class="saklar-ket"></p>
+</div>
+
 <div id="bagianUji" class="bagian-uji" hidden>
   <details id="ujiBagianLaci" class="uji-ringkas">
     <summary id="ujiRingkasan">Tampilan uji</summary>
@@ -929,6 +943,11 @@
   <div class="keadaan-baris">
     <span class="keadaan-label">Versi</span>
     <span class="keadaan-nilai kosong" id="versiEkstensi">memuat…</span>
+  </div>
+  <!-- U16 (25 Okt 2026): peringatan bila PC lain akun ini memakai versi ekstensi yang berbeda. Tersembunyi bila saklar server mati. -->
+  <div class="keadaan-baris" id="versiPcLainBaris" hidden>
+    <span class="keadaan-label">PC lain</span>
+    <span class="keadaan-nilai" id="versiPcLain" role="status"></span>
   </div>
   <div class="keadaan-baris">
     <span class="keadaan-label">Pembaruan otomatis</span>
@@ -1410,4 +1429,7 @@
 <script src="alamat-portal.js"></script>
 <script src="daftar-fitur.js"></script>
 <script src="popup.js"></script>
+<script src="konteks-server.js"></script>
 <script src="popup-ide-l2.js"></script>
+<script src="popup-versi-pc.js"></script>
+<script src="popup-ringan.js"></script>

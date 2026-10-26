@@ -2048,17 +2048,17 @@
   let detak = null;
   function mulaiDetak() {
     if (detak) return;
-    detak = setInterval(() => {
+    detak = (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.denyut : (f, m) => setInterval(f, m))(() => {
       try {
         pasang(document);
       } catch {
         /* tambahan: kegagalannya tidak boleh mengganggu SIPP */
       }
     }, 1500);
-    pewaktuLencana = setInterval(() => void bacaLencana(), 60000);
+    pewaktuLencana = (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.interval : (f, m) => setInterval(f, m))(() => void bacaLencana(), 60000);
     setTimeout(() => void bacaLencana(), 4000);
     // Antrean yang terbuka disegarkan tiap 30 detik agar status terbaru tampak tanpa menekan apa pun.
-    setInterval(() => {
+    (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.interval : (f, m) => setInterval(f, m))(() => {
       if (S && S.akar && !S.akar.hidden && S.tab === "antrean") void muatAntrean();
     }, 30000);
   }

@@ -1483,7 +1483,7 @@ html[data-aleta-tema-sipp="gelap"] .aleta-m1-cek div.aleta-m1-info{color:#bfe6cc
       // dan saatKirim() memeriksa aktifSekarang() sendiri (audit 17 Okt).
       document.addEventListener("submit", saatKirim, true);
       document.addEventListener("aleta-uji-berubah", () => jadwalkan());
-      new MutationObserver((daftar) => {
+      new (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.Pengamat : MutationObserver)((daftar) => {
         if (daftar.every(dariAletaSaja)) return;
         jadwalkan();
       }).observe(document.body, { childList: true, subtree: true });

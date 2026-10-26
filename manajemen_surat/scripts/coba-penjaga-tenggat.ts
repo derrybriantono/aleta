@@ -4,11 +4,16 @@
  *
  * Tidak mengirim apa pun. Tidak menyentuh WhatsApp. Dijalankan dengan:
  *   npx tsx scripts/coba-penjaga-tenggat.ts 2026-09-15
+ *   npx tsx scripts/coba-penjaga-tenggat.ts 2026-09-15 --baru     (G1: + banding 14 hari, kasasi 14 hari, mediasi 30 hari, hitung mundur)
+ *
+ * Dengan --baru yang dicetak adalah laporan harian lama PLUS angka tiap aturan baru (jumlah fakta, dan jumlah butir per tingkat) untuk
+ * mengukur apakah aturan baru menuduh terlalu banyak sebelum pengingat WhatsApp dinyalakan. Nama pihak dan isi perkara tidak dicetak.
  */
 import { createRequire } from "node:module";
 import path from "node:path";
 
 import {
+  SEMUA_ATURAN,
   type FaktaTenggat,
   nilaiTenggat,
   susunLaporanHarian,
@@ -34,10 +39,13 @@ require_("dotenv").config({ path: path.join(akarBot, ".env") });
 const layanan = require_("./services/penjagaTenggatService.js");
 
 async function utama() {
-  const acuan = process.argv[2] || "";
-  const { acuan: hari, fakta, gagal } = await layanan.bacaFakta(acuan);
+  const acuan = process.argv[2] && !process.argv[2].startsWith("--") ? process.argv[2] : "";
+  const baru = process.argv.includes("--baru");
+  const { acuan: hari, fakta, gagal } = await layanan.bacaFakta(acuan, { baru });
 
-  const rapor = nilaiTenggat(fakta as Record<string, FaktaTenggat[]>, hari);
+  const rapor = baru
+    ? nilaiTenggat(fakta as Record<string, FaktaTenggat[]>, hari, { aturan: SEMUA_ATURAN, hitungMundur: true })
+    : nilaiTenggat(fakta as Record<string, FaktaTenggat[]>, hari);
 
   console.log("=".repeat(64));
   console.log(susunLaporanHarian(rapor, { satker: "PA Donggala" }));
@@ -47,7 +55,16 @@ async function utama() {
       .map(([k, v]) => `${k}=${(v as unknown[]).length}`)
       .join(" ")}`
   );
-  console.log(`butir: ${rapor.butir.length}  hitung: ${JSON.stringify(rapor.hitung)}`);
+  console.log(`butir: ${rapor.butir.length}  hitung: ${JSON.stringify(rapor.hitung)}${baru ? `  berjalan: ${rapor.berjalan}` : ""}`);
+  if (baru) {
+    for (const a of SEMUA_ATURAN) {
+      const butir = rapor.butir.filter((b) => b.aturan === a.kode);
+      const per = (t: string) => butir.filter((b) => b.tingkat === t).length;
+      console.log(
+        `  ${a.kode.padEnd(24)} fakta=${String(((fakta as Record<string, unknown[]>)[a.kode] || []).length).padStart(4)}  lewat=${per("lewat")} menjelang=${per("menjelang")} berjalan=${per("berjalan")} catatan=${per("catatan")}`
+      );
+    }
+  }
   if (Object.keys(gagal).length) console.log(`gagal: ${JSON.stringify(gagal)}`);
   process.exit(0);
 }

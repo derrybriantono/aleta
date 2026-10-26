@@ -186,7 +186,16 @@ function kenaliJenis(d) {
 const RE_NOMOR_HALAMAN = /^(?:[-–—]\s*)?(?:hal(?:aman)?\.?\s*)?\d{1,3}(?:\s*(?:dari|\/|of)\s*\d{1,3})?(?:\s*[-–—])?$/i;
 const RE_IDENTITAS = /^(?:nama(?:\s+lengkap)?|nik|no\.?\s*nik|tempat\s*(?:\/|dan|,)?\s*(?:tgl\.?|tanggal)\.?\s*lahir|tempat\s+tanggal\s+lahir|tempat\/tanggal\s+lahir|ttl|umur|usia|pekerjaan|agama|alamat(?:\s+tempat\s+tinggal)?|pendidikan(?:\s+terakhir)?|kewarganegaraan|status(?:\s+perkawinan)?|no\.?\s*(?:hp|telp|telepon|wa)|telepon|telp|hp|e-?mail|surel|domisili)\s*[:\-–]/i;
 const RE_SALAM = /^(?:bismillah\S*|assalamu\W*alaikum\b.*|assalamualaikum\b.*|puji\s+syukur\b.*|yth\.?\b.*|kepada\s+yth\b.*|kepada\s+yang\s+terhormat\b.*|yang\s+terhormat\b.*|dengan\s+hormat\s*[,.:]?|hal\s*:.*|perihal\s*:.*|lampiran\s*:.*|lamp\.?\s*:.*|sifat\s*:.*|perkara\s+(?:no|nomor)\b.*|nomor\s+perkara\b.*|no\.?\s*perkara\b.*|register\s+perkara\b.*)$/i;
-const RE_TANGGAL_TEMPAT = /^[A-Z][A-Za-z ]{2,25},\s*\d{1,2}\s+(?:januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)\s+\d{4}\.?$/i;
+// G2 (25 Okt 2026): singkatan bulan ("Palu, 5 Okt 2026") ikut dikenali sebagai penutup surat.
+const RE_TANGGAL_TEMPAT = /^[A-Z][A-Za-z ]{2,25},\s*\d{1,2}\s+(?:januari|jan|februari|feb|maret|mar|april|apr|mei|juni|jun|juli|jul|agustus|agu|agt|september|sept|sep|oktober|okt|november|nov|nop|desember|des)\.?\s+\d{4}\.?$/i;
+// G2: kepala berulang berisi nomor perkara ("REPLIK PENGGUGAT PERKARA NOMOR 12/Pdt.G/2026/PA.Xyz") pada surat dua halaman, yang lolos dari
+// penyapu kepala-kaki berulang (butuh tiga halaman). Harus DIMULAI kata kepala dan BERAKHIR nomor perkara, supaya baris sambungan dalil yang
+// kebetulan memuat nomor perkara di tengah kalimat tidak ikut terbuang.
+const RE_KEPALA_PERKARA = /^(?:replik|duplik|jawaban|kesimpulan|dalam\s+perkara|perkara|register|nomor|no\.?)[^.]{0,70}?\d{1,5}\s*\/\s*Pdt\.[GP]\S*\s*\/\s*\d{4}\S*\s*$/i;
+// G2: blok tanda tangan di ujung surat tanpa kata penutup "Demikian ..." ("Kuasa Hukum Tergugat", "Tergugat,", "(Budi Santoso, S.H.)").
+const RE_BLOK_TTD = /^(?:kuasa\s+hukum\b|para\s+kuasa\b|advokat\b|penasihat\s+hukum\b|(?:penggugat|tergugat|pemohon|termohon)(?:\s+(?:konvensi|rekon[pv]ensi))?\s*[,.]?$|ttd\b|dto\b|\(?[A-Z][A-Za-z.'-]+(?:\s+[A-Za-z.'-]+){0,4}\)?\s*,?\s*(?:S\.?\s?H\.?|M\.?\s?H\.?|S\.?\s?Ag\.?)\b.{0,40}$)/i;
+// G2: gambar penanda butir hasil ekstraksi PDF (huruf font Symbol/Wingdings) dan penanda butir lain yang sama artinya.
+const RE_GLIF_BUTIR = /^[\uF0B7\uF0A7\uF0D8\uF0FC\u25CF\u25AA\u25A0\u25E6\u2022\u00B7\u2023]\s*/;
 const RE_KONTAK = /(?:https?:\/\/|www\.|@[a-z0-9.-]+\.[a-z]{2,}|\b0\d{2,3}[- ]?\d{6,9}\b)/i;
 
 const RE_KATA_PEMBUKA = /^(?:Berdasarkan|Demikian|Hormat|Wassalam|Wabillah|Billahi|Oleh\s+karena|Dengan\s+demikian|Maka\b|Mohon|Memohon|Selanjutnya|Adapun|Sehubungan|Untuk\s+itu|Kuasa\s+Hukum|Tertanda|Atas\s+(?:perhatian|kebijaksanaan)|Terima\s+kasih|Petitum|Primair|Subsidair)/;
@@ -198,12 +207,52 @@ const RE_PETITUM = /^(?:\(?\d{1,2}[.)]\s*)?(?:bahwa\s+)?(?:(?:berdasarkan|maka|o
 const RE_DEFINISI = /\bselanjutnya\s+(?:disebut|disingkat)\b|\bdalam\s+(?:rekon[pv]ensi|konvensi)\s+disebut\b|\bsebagai\s+(?:penggugat|tergugat)\s+rekon[pv]ensi\s*$/i;
 const RE_KUTIPAN_HUKUM = /\bpasal\s+\d+[^.]{0,100}\b(?:berbunyi|menyatakan|menentukan|mengatur)\b|\byurisprudensi\b|\bputusan\s+mahkamah\s+agung\b|\bsurat\s+edaran\b|\bfirman\s+allah\b|\bQS\.?\s/i;
 
+/**
+ * G2 (25 Okt 2026): perbaikan tata letak yang paling sering membuat replik/duplik "tidak rapi", dikerjakan per halaman SEBELUM baris
+ * dipecah jadi paragraf:
+ *   - penanda butir berupa glif font (bulatan, kotak) diganti "- " supaya jadi butir sendiri;
+ *   - nomor butir yang terbaca BERDIRI SENDIRI di satu baris ("1." lalu isinya di baris berikutnya) disatukan dengan isinya,
+ *     sehingga butir tidak menempel ke butir sebelumnya;
+ *   - kata yang dipenggal tanda hubung di ujung baris panjang ("pem-" / "bayaran") disambung.
+ * Tidak mengarang kalimat: hanya menggeser/menggabung teks yang sudah ada.
+ */
+let perapianBarisAktif = true;
+/** Hanya untuk skrip ukur/uji: mematikan perapian baris per halaman sementara (perilaku sebelum G2) untuk membandingkan angka. */
+function aturPerapianBaris(aktif) {
+  perapianBarisAktif = aktif !== false;
+}
+
+function rapikanBarisHalaman(baris) {
+  if (!perapianBarisAktif) return baris;
+  const hasil = [];
+  for (let i = 0; i < baris.length; i += 1) {
+    let l = baris[i];
+    if (!l) {
+      hasil.push(l);
+      continue;
+    }
+    l = l.replace(RE_GLIF_BUTIR, "- ");
+    // Nomor/huruf butir berdiri sendiri + baris isi berikutnya (tidak kosong).
+    if (/^\(?(?:\d{1,2}|[a-z])[.)]$/i.test(l) && baris[i + 1]) {
+      l = `${l} ${baris[i + 1].replace(RE_GLIF_BUTIR, "")}`;
+      i += 1;
+    }
+    // Pemenggalan kata di ujung baris panjang; baris sesudahnya diawali huruf kecil (bukan butir baru).
+    while (l.length >= 40 && /[a-z]-$/.test(l) && baris[i + 1] && /^[a-z]/.test(baris[i + 1])) {
+      l = `${l.slice(0, -1)}${baris[i + 1]}`;
+      i += 1;
+    }
+    hasil.push(l);
+  }
+  return hasil;
+}
+
 /** Teks surat -> halaman -> baris (kepala/kaki berulang dan nomor halaman dibuang; dihitung). */
 function barisSurat(teks) {
   const rapi = T.rapikanTeks(teks);
   // Baris kosong di pangkal/ujung halaman dibuang: batas halaman tidak menutup paragraf yang terpotong.
-  const halaman = rapi.split("\f").map((h) => h.trim().split("\n").map((l) => l.replace(/[ \t ]+/g, " ").trim()));
-  const dibuang = { nomorHalaman: 0, berulang: 0 };
+  const halaman = rapi.split("\f").map((h) => rapikanBarisHalaman(h.trim().split("\n").map((l) => l.replace(/[ \t ]+/g, " ").trim())));
+  const dibuang = { nomorHalaman: 0, berulang: 0, kepalaPerkara: 0 };
   const hitung = new Map();
   const kunci = (l) => l.toLowerCase().replace(/\d+/g, "#");
   if (halaman.length >= 3) {
@@ -212,7 +261,8 @@ function barisSurat(teks) {
   const ambangUlang = Math.max(3, Math.ceil(halaman.length * 0.6));
   const baris = [];
   halaman.forEach((h) => {
-    for (const l of h) {
+    for (let bi = 0; bi < h.length; bi += 1) {
+      const l = h[bi];
       if (!l) {
         baris.push("");
         continue;
@@ -223,6 +273,14 @@ function barisSurat(teks) {
       }
       if (halaman.length >= 3 && l.length <= 130 && (hitung.get(kunci(l)) || 0) >= ambangUlang && !RE_AWAL_PARAGRAF.test(l)) {
         dibuang.berulang += 1;
+        continue;
+      }
+      // G2: kepala yang memuat nomor perkara pada surat 1-2 halaman (penyapu berulang butuh >= 3 halaman). Hanya yang diawali kata kepala,
+      // berakhir nomor perkara, pendek, DAN berdiri sendiri (awal halaman atau didahului baris kosong) - baris sambungan dalil yang kebetulan
+      // berbunyi "Nomor 55/Pdt.G/2020/PA.Xyz" di tengah kalimat tidak pernah memenuhi keempatnya.
+      const berdiriSendiri = bi === 0 || !h[bi - 1] || baris.length === 0 || baris[baris.length - 1] === "";
+      if (l.length <= 110 && berdiriSendiri && RE_KEPALA_PERKARA.test(l) && !RE_AWAL_PARAGRAF.test(l)) {
+        dibuang.kepalaPerkara += 1;
         continue;
       }
       baris.push(l);
@@ -320,6 +378,13 @@ function bersihkanSurat(teks) {
   }
   hitung.penutup = semua.length - akhir;
   const isi = semua.slice(awal, akhir);
+  // G2: blok tanda tangan tanpa kata penutup "Demikian ..." di depannya dilepas dari ujung isi (hanya paragraf pendek yang berbentuk blok TTD).
+  while (isi.length > 1) {
+    const ujung = isi[isi.length - 1];
+    if (ujung.judul || ujung.teks.length > 140 || !RE_BLOK_TTD.test(ujung.teks.trim())) break;
+    isi.pop();
+    hitung.penutup += 1;
+  }
   // 3. Petitum: dari paragraf "mohon ... Majelis" / PETITUM / PRIMAIR sampai penutup.
   let awalPetitum = -1;
   for (let i = 0; i < isi.length; i += 1) {
@@ -728,6 +793,10 @@ module.exports = {
   RE_SALAM,
   RE_IDENTITAS,
   RE_TANGGAL_TEMPAT,
+  RE_KEPALA_PERKARA,
+  RE_BLOK_TTD,
+  rapikanBarisHalaman,
+  aturPerapianBaris,
   RE_KONTAK,
   RE_KUTIPAN_HUKUM,
   RE_DEFINISI,

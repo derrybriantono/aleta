@@ -49,6 +49,14 @@ export async function register() {
     mulaiAgenH7Berkala(getDatabase);
   }
   /* === AKHIR AGEN H-7 === */
+  /* === CERMIN PERKARA 25 Okt (C0) === pemindai awal keadaan perkara SIPP ke basis data ALETA: berkelompok, hanya di jendela
+     malam (bawaan 18.00-06.30 WITA), bisa dilanjutkan, hanya MEMBACA SIPP lewat bot. Saklar pemindai MATI bawaan (layar Pemantau
+     Cermin Perkara, dibaca tiap detak); saat mati detak tidak menembak bot sama sekali. Matikan detaknya dengan ALETA_CERMIN_PEMINDAI=0. */
+  if (process.env.ALETA_CERMIN_PEMINDAI !== "0") {
+    const { mulaiCerminBerkala } = await import("@/server/modules/cermin/berkala");
+    mulaiCerminBerkala();
+  }
+  /* === AKHIR CERMIN PERKARA === */
   /* === PUTUSAN TERJADWAL 21 Okt (B3) === pelaksana server unggah putusan terjadwal: tiap 30 detik mengerjakan paling
      banyak SATU butir e-Doc (putusan + anonimisasi) yang jatuh tempo, di dalam jendela jam kerja jadwalnya, atas akun
      SIPP penjadwal, lewat jalur tulis unggah-sipp yang sudah ada. Pengisian Putusan Akhir TIDAK dikerjakan di sini
@@ -91,6 +99,70 @@ export async function register() {
     mulaiRekonsiliasiBerkala(getDatabase);
   }
   /* === AKHIR ALETA Ai REKONSILIASI === */
+  /* === PENJAGA TENGGAT TERJADWAL 25 Okt (G1) === detak 5 menit; jalan SEKALI per hari kerja pada jam pemicu (bawaan 07.30 WITA)
+     HANYA bila saklar jadwal Super Admin menyala (bawaan MATI: tidak ada pembacaan SIPP sama sekali). Hanya MEMBACA SIPP lewat bot;
+     pengingat WhatsApp pribadi punya saklar terpisah (bawaan MATI). Matikan seluruhnya dengan ALETA_PENJAGA_TENGGAT=0. */
+  if (process.env.ALETA_PENJAGA_TENGGAT !== "0") {
+    const [{ mulaiTenggatBerkala }, { getDatabase }] = await Promise.all([
+      import("@/server/modules/penjaga-tenggat/layanan"),
+      import("@/server/db/client"),
+    ]);
+    mulaiTenggatBerkala(getDatabase);
+  }
+  /* === AKHIR PENJAGA TENGGAT TERJADWAL === */
+  /* === KAIT KEAMANAN 26 Okt (gabung rantai E + Bagian 6) === mengisi kait keamanan/kait.ts: langkah kedua pengaman aksi admin
+     (authenticator E5) dan laporan uji pulih gagal ke Catatan error Pusat kesehatan (E2). Tidak mengubah bawaan: saklar
+     authenticator, saklar langkah kedua, dan saklar uji pulih tetap MATI sampai Super Admin menyalakannya. */
+  {
+    const { sambungkanKaitKeamananAman } = await import("@/server/modules/keamanan/sambung-kait");
+    sambungkanKaitKeamananAman();
+  }
+  /* === AKHIR KAIT KEAMANAN === */
+  /* === UJI PULIH CADANGAN 25 Okt (Bagian 6d) === detak 5 menit; jalan SEKALI per minggu (bawaan Minggu 03.00 WITA, sesudah
+     pencocokan Cermin 02.00) HANYA bila saklar Super Admin menyala (bawaan MATI). Memulihkan cadangan ALETA terbaru ke basis data
+     SEMENTARA aleta_ujipulih_*, memeriksa, lalu menghapusnya - tidak pernah menyentuh basis data produksi. Matikan seluruhnya
+     dengan ALETA_UJI_PULIH=0. */
+  if (process.env.ALETA_UJI_PULIH !== "0") {
+    const [{ mulaiUjiPulihBerkala }, { getDatabase }] = await Promise.all([
+      import("@/server/modules/keamanan/uji-pulih"),
+      import("@/server/db/client"),
+    ]);
+    mulaiUjiPulihBerkala(getDatabase);
+  }
+  /* === AKHIR UJI PULIH CADANGAN === */
+  /* === PUSAT KESEHATAN 25 Okt (E2) === detak 60 detik; BARU bekerja bila Super Admin menyalakan "pemeriksaan berkala"
+     (saklar MATI bawaan): memeriksa semua komponen, mencatat riwayat, dan - bila saklar WhatsApp juga menyala - memberi
+     tahu admin saat komponen MERAH dua pemeriksaan berturut-turut. Hanya membaca. Matikan seluruhnya dengan
+     ALETA_KESEHATAN_BERKALA=0. */
+  if (process.env.ALETA_KESEHATAN_BERKALA !== "0") {
+    const [{ mulaiKesehatanBerkala }, { getDatabase }] = await Promise.all([
+      import("@/server/modules/kesehatan/layanan"),
+      import("@/server/db/client"),
+    ]);
+    mulaiKesehatanBerkala(getDatabase);
+  }
+  /* === AKHIR PUSAT KESEHATAN === */
+  /* === MODE PEMELIHARAAN 25 Okt (E3) === detak 60 detik; hanya mengirim SATU WhatsApp 15 menit sebelum jadwal mulai bila
+     Super Admin mencentang kabar WhatsApp (mati bawaan). Mode pemeliharaannya sendiri dinilai tiap permintaan, bukan di sini.
+     Matikan detaknya dengan ALETA_PEMELIHARAAN_DETAK=0. */
+  if (process.env.ALETA_PEMELIHARAAN_DETAK !== "0") {
+    const [{ mulaiPemeliharaanBerkala }, { getDatabase }] = await Promise.all([
+      import("@/server/modules/pemeliharaan/layanan"),
+      import("@/server/db/client"),
+    ]);
+    mulaiPemeliharaanBerkala(getDatabase);
+  }
+  /* === AKHIR MODE PEMELIHARAAN === */
+  /* === PENJAGA INTEGRITAS BERKAS 25 Okt (E6) === detak 60 detik; SAKLAR MATI bawaan = tidak berbuat apa-apa (tidak membaca folder, tidak mengirim pesan).
+     Folder terdaftar hanya DIBACA. Matikan detaknya dengan ALETA_INTEGRITAS_DETAK=0. */
+  if (process.env.ALETA_INTEGRITAS_DETAK !== "0") {
+    const [{ mulaiIntegritasBerkala }, { getDatabase }] = await Promise.all([
+      import("@/server/modules/integritas/layanan"),
+      import("@/server/db/client"),
+    ]);
+    mulaiIntegritasBerkala(getDatabase);
+  }
+  /* === AKHIR PENJAGA INTEGRITAS === */
   if (process.env.ALETA_SINKRON_PENJADWAL === "0") return;
   const { mulaiPenjadwalSinkron } = await import("@/server/modules/sinkron/penjadwal");
   mulaiPenjadwalSinkron();

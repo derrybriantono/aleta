@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
+import { tegakkanPengaman } from "@/server/modules/keamanan/pengaman-aksi";
+import { getUserByIdFromDb, requireActorUser } from "@/server/modules/organization/service";
 import { sesiPemanggil } from "@/server/modules/perangkat/sesi-pemanggil";
 import { getUserForApiById, updateManagedUserInDb } from "@/server/modules/users/service";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
@@ -71,6 +73,16 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }>(request);
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
+    // Pengaman aksi admin (Bagian 6c): hanya saat peran BERUBAH menjadi Admin/Super Admin
+    // (menyimpan ulang akun Admin yang sama tidak meminta konfirmasi).
+    if (body.roleOverride === "admin" || body.roleOverride === "super-admin") {
+      const sekarang = await getUserByIdFromDb(db, id);
+      if (sekarang && sekarang.roleId !== body.roleOverride) {
+        await tegakkanPengaman(db, request, await requireActorUser(db, actorUserId), "akun.angkat-admin", {
+          rincian: { userId: id, dari: sekarang.roleId, ke: body.roleOverride },
+        });
+      }
+    }
     const user = await updateManagedUserInDb(db, {
       actorUserId,
       userId: id,

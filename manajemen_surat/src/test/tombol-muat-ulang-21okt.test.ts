@@ -247,10 +247,11 @@ describe("tombol Muat ulang di halaman perkara SIPP", () => {
     expect(TARIK).not.toMatch(/location\.reload\(/);
   });
 
-  it("manifest memuat tarik-satu-perkara.js dan muat-ulang-sipp.js pada halaman SIPP", () => {
+  it("manifest memuat muat-ulang-sipp.js pada halaman SIPP; tarik-satu-perkara.js modul malas di halaman perkara (K11)", () => {
     const m = JSON.parse(baca("manifest.json"));
     const js: string[] = m.content_scripts.flatMap((c: { js?: string[] }) => c.js || []);
-    expect(js).toContain("tarik-satu-perkara.js");
+    expect(js).not.toContain("tarik-satu-perkara.js");
+    expect(baca("modul-malas.js")).toContain('"tarik-satu-perkara": modul([], ["tarik-satu-perkara.js"])');
     expect(js).toContain("muat-ulang-sipp.js");
   });
 });

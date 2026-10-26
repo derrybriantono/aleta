@@ -16,6 +16,7 @@ const ecourtStoreService = require("../services/ecourtStoreService");
 const optOutService = require("../services/optOutService");
 const queryMetricsService = require("../services/queryMetricsService");
 const queryGuardService = require("../services/queryGuardService");
+const kolamSippService = require("../services/kolamSippService");
 const caseSnapshotService = require("../services/caseSnapshotService");
 const sippCircuitBreaker = require("../services/sippCircuitBreakerService");
 const serviceAnalyticsService = require("../services/serviceAnalyticsService");
@@ -414,6 +415,11 @@ router.get("/security/token-health", requireInternalToken, (req, res) => {
 router.post("/config/sync", requireInternalToken, (req, res) => {
   try {
     const config = writeRuntimeConfig(req.body || {});
+    // Ukuran/perilaku kolam SIPP dikirim portal bersama setelan lain; tanpa kuncinya
+    // (portal lama / belum pernah disimpan) setelan kolam tidak disentuh.
+    if (req.body && req.body.kolamSipp && typeof req.body.kolamSipp === "object") {
+      kolamSippService.terapkan(req.body.kolamSipp);
+    }
     dynamicNotificationSchedulerService.refreshSchedules();
     startWhatsappClientAfterConfigSync(config);
 
@@ -431,6 +437,7 @@ router.post("/config/sync", requireInternalToken, (req, res) => {
       // hanya query berat yang jarang dijalankan.
       queryPerformance: queryMetricsService.getSnapshot({ limit: 10 }),
       queryGuard: queryGuardService.getGuardConfig(),
+      kolamSipp: kolamSippService.status(),
       // Potret perkara: rasio jawaban yang dilayani tanpa menyentuh SIPP.
       // Inilah angka penentu berhasil atau tidaknya penurunan beban.
       caseSnapshot: caseSnapshotService.getStats(),
@@ -2734,6 +2741,22 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
         }
       }
       /* === AKHIR U6 === */
+      /* === C5 25 Okt === */
+      // 2557/2558 (berapa kali saksi melihat/mendengar pertengkaran) dibaca dari BAS yang SUDAH tersimpan (HANYA SELECT). Hanya bila
+      // ekstensi memintanya (saklar Fitur Satker "fakta-non-cerai" menyala); tidak pernah menimpa usulan yang sudah berisi.
+      if (req.body?.kaliPertengkaranBas === true && jawaban.sipp && Array.isArray(jawaban.sipp.usulan)) {
+        try {
+          const kali = await require("../services/kaliPertengkaranBas").usulanDariPerkara(nomorPerkara);
+          for (const u of kali) {
+            const i = jawaban.sipp.usulan.findIndex((x) => x && x.kode === u.kode);
+            if (i < 0) jawaban.sipp.usulan.push(u);
+            else if (!String(jawaban.sipp.usulan[i].nilai || "").trim()) jawaban.sipp.usulan[i] = u;
+          }
+        } catch (_galatKali) {
+          /* tambahan; tidak pernah menggagalkan usulan SIPP */
+        }
+      }
+      /* === AKHIR C5 === */
     }
     // Itsbat nikah - fakta pernikahan dari posita permohonan. Positanya
     // dikirim ekstensi dari halaman ABT (variabel 5125), bukan dibaca dari
@@ -2940,7 +2963,10 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
       const positaMasuk = String(req.body?.posita || "");
       const positaKurang = positaMasuk.replace(/<[^>]*>/g, " ").trim().length < 50;
       // 21 Okt 2026 (W2a-K1): gugatan harta bersama dan kewarisan juga dibaca PETITUM-nya (daftar objek dan ahli waris ada di petitum)
-      const perluPetitum = /\b(?:348|364)\b|harta\s*bersama|waris/i.test(String(req.body?.jenisPerkara || "") + " " + String(req.body?.kunciKatalog || ""));
+      // C5/U9: saran keadaan non-cerai juga membaca petitum (daftar objek, hak yang dituntut) - hanya bila ekstensi memintanya.
+      const perluPetitum =
+        req.body?.keadaanNonCerai === true ||
+        /\b(?:348|364)\b|harta\s*bersama|waris/i.test(String(req.body?.jenisPerkara || "") + " " + String(req.body?.kunciKatalog || ""));
       const [konteksSipp, sippSaksi, alamatPihakSipp] = await Promise.all([
         (positaKurang || perluPetitum) && nomorPerkara ? abtUsulanService.konteksPerkaraSaksi(nomorPerkara).catch(() => null) : null,
         nomorPerkara ? isiSumber.bacaSippSaksi(nomorPerkara).catch(() => null) : null,
@@ -2977,6 +3003,22 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
           sipp: sippSaksi,
         });
       }
+      /* === C5 25 Okt === */
+      // Saran keadaan perkara non-cerai dari posita/petitum (hanya saran; tidak ada yang terisi sendiri). Murni, tanpa bacaan baru.
+      if (req.body?.keadaanNonCerai === true) {
+        try {
+          jawaban.keadaanNonCerai = require("../services/keadaanNonCerai").turunkanKeadaan({
+            kunciKatalog: String(req.body?.kunciKatalog || "").slice(0, 60),
+            posita: positaKurang && konteksSipp && konteksSipp.posita ? konteksSipp.posita : positaMasuk,
+            petitum: String(req.body?.petitum || (konteksSipp && konteksSipp.petitum) || "").slice(0, 60000),
+            alur: String(req.body?.alur || "").slice(0, 20),
+            jenisPerkaraId: (/\b(\d{3})\b/.exec(String(req.body?.jenisPerkara || "")) || [])[1] || "",
+          });
+        } catch (_galatKeadaan) {
+          jawaban.keadaanNonCerai = { ok: false, saran: [] };
+        }
+      }
+      /* === AKHIR C5 === */
     }
     // Keterangan saksi SDG - disusun dari templat pertanyaan yang ekstensi
     // ambil lewat halaman penyunting ABT sendiri (load_template). Dua saksi,
@@ -3266,7 +3308,8 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
     // selain itu menjadi saran "ragu". Satu tempat untuk semua sumber usulan (sipp, saksi, itsbat, posita-lain).
     try {
       const gerbang = require("../services/gerbangIsian");
-      for (const bag of [jawaban.sipp, jawaban.saksi, jawaban.itsbat, jawaban.positaLain]) if (bag && Array.isArray(bag.usulan)) gerbang.terapkan(bag.usulan);
+      const jenisGerbang = (/\b(\d{3})\b/.exec(String(req.body?.jenisPerkara || "")) || [])[1] || "";
+      for (const bag of [jawaban.sipp, jawaban.saksi, jawaban.itsbat, jawaban.positaLain]) if (bag && Array.isArray(bag.usulan)) gerbang.terapkan(bag.usulan, { jenis: jenisGerbang });
     } catch (galatGerbang) {
       jawaban.gerbangGalat = String((galatGerbang && galatGerbang.message) || galatGerbang).slice(0, 160);
     }
@@ -6054,7 +6097,8 @@ router.get("/sipp/jadwal-sidang/kalender", requireInternalToken, async (req, res
  */
 router.get("/sipp/penjaga-tenggat", requireInternalToken, async (req, res) => {
   try {
-    const hasil = await penjagaTenggatService.bacaFakta(String(req.query.acuan || ""));
+    // baru=1 (G1): banding/kasasi/mediasi + petugas perkara. Tanpa itu bentuk dan isinya sama dengan sebelum G1.
+    const hasil = await penjagaTenggatService.bacaFakta(String(req.query.acuan || ""), { baru: String(req.query.baru || "") === "1" });
     res.json({ ok: true, ...hasil });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
@@ -6191,6 +6235,19 @@ router.get("/sipp/berkas-perkara", requireInternalToken, async (req, res) => {
       `attachment; filename="${encodeURIComponent(info.fileName || acuan.judul)}"`
     );
     require("fs").createReadStream(jalurLokal).pipe(res);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Kesehatan untuk Pusat kesehatan portal (E2): pemutus arus SIPP dan, bila
+ * ?ping=1, apakah SIPP/ABT/antrian menjawab SELECT 1. Hanya membaca.
+ */
+router.get("/kesehatan", requireInternalToken, async (req, res) => {
+  try {
+    const kesehatanService = require("../services/kesehatanService");
+    res.json(await kesehatanService.susunKesehatan({ ping: String(req.query.ping || "") === "1" }));
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }
@@ -7782,6 +7839,11 @@ router.post("/abt/isi-gugatan", requireInternalToken, async (req, res) => {
       },
       majelis: /^(?:Majelis Hakim|Hakim|Hakim Tunggal)$/.test(String(req.body?.majelis || "")) ? String(req.body.majelis) : undefined,
       dokumen: Array.isArray(req.body?.dokumen) ? req.body.dokumen : [],
+      // G2 (25 Okt 2026): saklar isi otomatis daftar bukti / tanya-jawab kesimpulan dari portal (Super Admin). Tanpa kunci = MATI.
+      otomatis: {
+        bukti: req.body?.otomatis?.bukti === true,
+        kesimpulan: req.body?.otomatis?.kesimpulan === true,
+      },
     });
     // KONTAK-EC 11 Okt: kontak pihak/kuasa dari teks yang sama + ringkasan untuk variabel ABT.
     hasil.kontak = await kontakDariIsiGugatan(req.body, hasil);

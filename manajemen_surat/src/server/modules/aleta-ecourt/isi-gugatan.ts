@@ -148,6 +148,7 @@ export type DepsIsiGugatan = {
     sebutan: { lawan: string; pelaku: string };
     majelis?: string;
     dokumen: Array<Omit<DokumenTerbaca, "halaman">>;
+    otomatis?: { bukti: boolean; kesimpulan: boolean };
   }) => Promise<Record<string, unknown> | null>;
 };
 
@@ -204,7 +205,13 @@ export type HasilIsiGugatan = {
   /** JJ2 18 Okt: butir daftar bukti P.n/T.n terbaca, dan surat keterangan KUA (bukti P.3 itsbat). */
   bukti?: unknown[];
   suratKua?: Record<string, unknown> | null;
+  /** G2 25 Okt: per pihak, apakah daftar bukti e-Court rapi untuk ditulis otomatis ke penyunting bukti (aktif = saklar Super Admin). */
+  buktiOtomatis?: Record<string, unknown> | null;
+  /** G2 25 Okt: saklar yang berlaku saat pembacaan ini (bukti, kesimpulan). */
+  otomatis?: { bukti: boolean; kesimpulan: boolean } | null;
 };
+
+export type OpsiOtomatisBerkas = { bukti: boolean; kesimpulan: boolean };
 
 /** Baca berkas e-Court perkara -> usulan bot. OCR paling banyak sekali. */
 export async function bacaIsiGugatan(
@@ -212,7 +219,7 @@ export async function bacaIsiGugatan(
   sebutan: { lawan: string; pelaku: string },
   deps: DepsIsiGugatan,
   majelis?: string,
-  opsi: { denganBukti?: boolean } = {}
+  opsi: { denganBukti?: boolean; otomatis?: OpsiOtomatisBerkas } = {}
 ): Promise<HasilIsiGugatan> {
   const catatan: string[] = [];
   const kosong = (c: string[]): HasilIsiGugatan => ({ ada: false, tuntutan: [], anak: [], jawab: [], usulan: [], kalimat: [], diabaikan: [], dokumen: [], catatan: c });
@@ -271,6 +278,8 @@ export async function bacaIsiGugatan(
       sebutan,
       majelis,
       dokumen: terbacaDok.map(({ halaman: _h, ...x }) => x),
+      // Hanya dikirim bila ada yang menyala: bot lama yang belum mengenal kuncinya tidak terganggu.
+      ...(opsi.otomatis && (opsi.otomatis.bukti || opsi.otomatis.kesimpulan) ? { otomatis: opsi.otomatis } : {}),
     })
     .catch(() => null);
   if (!jawaban || jawaban.ok === false) {
@@ -293,6 +302,9 @@ export async function bacaIsiGugatan(
     tanyaJawab: larik("tanyaJawab"),
     bukti: larik("bukti"),
     suratKua: jawaban.suratKua && typeof jawaban.suratKua === "object" ? (jawaban.suratKua as Record<string, unknown>) : null,
+    // G2 25 Okt
+    buktiOtomatis: jawaban.buktiOtomatis && typeof jawaban.buktiOtomatis === "object" ? (jawaban.buktiOtomatis as Record<string, unknown>) : null,
+    otomatis: jawaban.otomatis && typeof jawaban.otomatis === "object" ? (jawaban.otomatis as { bukti: boolean; kesimpulan: boolean }) : null,
   };
 }
 

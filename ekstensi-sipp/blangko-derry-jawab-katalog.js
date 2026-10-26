@@ -190,10 +190,16 @@
         saksiIsi: [],
         ...(kodeVariabel.length ? { kodeVariabel } : {}),
         ...(teks(r.kunciKatalog) ? { kunciKatalog: teks(r.kunciKatalog).slice(0, 60) } : {}),
+        // C5/U9: saran keadaan perkara non-cerai dari posita/petitum (saklar Fitur Satker "fakta-non-cerai"; hanya diminta bila menyala)
+        ...(r.keadaanNonCerai === true ? { keadaanNonCerai: true } : {}),
       });
       if (!data || data.available === false) return {};
       const fakta = petakanFakta(data.faktaPerkara);
       Object.defineProperty(fakta, "variabel", { value: kodeVariabel.length ? petakanVariabel(data.isiJawaban) : {}, enumerable: false });
+      Object.defineProperty(fakta, "keadaanSaran", {
+        value: data.keadaanNonCerai && Array.isArray(data.keadaanNonCerai.saran) ? data.keadaanNonCerai.saran : [],
+        enumerable: false,
+      });
       return fakta;
     } catch {
       return {};

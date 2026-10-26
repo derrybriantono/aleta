@@ -32,7 +32,9 @@ import { daftarAksesTerbaru } from "@/server/modules/satker/akses-global";
 import { namaAdaDi } from "@/lib/perkara-sendiri";
 import { pemberitahuanTundaOtomatis } from "@/server/modules/tunda-otomatis/layanan";
 import { pemberitahuanRekonsiliasi } from "@/server/modules/aleta-ai/rekonsiliasi";
+import { bolehLihatKesehatan, pemberitahuanKesehatan } from "@/server/modules/kesehatan/layanan";
 import { pemberitahuanPutusOtomatis } from "@/server/modules/putus-otomatis/layanan";
+import { lihatSemuaTenggat, pemberitahuanTenggat } from "@/server/modules/penjaga-tenggat/layanan";
 
 export type TaskQuery = {
   source?: string | null;
@@ -547,6 +549,61 @@ async function buildAdminSettingsTasks(
     }
   } catch {
     /* jejak masuk tidak terbaca: tidak menambah pemberitahuan */
+  }
+
+  // Uji pulih cadangan (Bagian 6d): uji mingguan terakhir yang GAGAL - Admin dan Super Admin. Saklar mati = tabel kosong = tak ada butir.
+  if (isPrivilegedAdmin(actor)) {
+    try {
+      // Dimuat saat dibutuhkan: modul uji pulih membawa klien pg dan pembongkar arsip.
+      const { pemberitahuanUjiPulih } = await import("@/server/modules/keamanan/uji-pulih");
+      for (const p of await pemberitahuanUjiPulih(db)) {
+        tasks.push({
+          id: `system_task:${p.id}`,
+          entityType: "system_task",
+          entityId: p.id,
+          sourceApp: "admin",
+          sourceLabel: "Pengaturan Keamanan",
+          title: p.judul,
+          description: p.uraian,
+          href: "/admin/keamanan",
+          status: "Perlu perhatian",
+          priority: "high",
+          sourceType: "system_task",
+          createdAt: p.waktu,
+          footer: "Uji pulih cadangan",
+          seen: isSeen(readSet, "system_task", p.id),
+        });
+      }
+    } catch {
+      /* tabel uji pulih tak terbaca: tidak menambah pemberitahuan */
+    }
+  }
+
+  // Pusat kesehatan (25 Okt, E2): komponen MERAH dua pemeriksaan berturut-turut - Admin dan Super Admin.
+  // Kosong bila saklar "pemeriksaan berkala" mati (tidak ada yang memperbarui statusnya).
+  if (bolehLihatKesehatan(actor)) {
+    try {
+      for (const p of await pemberitahuanKesehatan(db)) {
+        tasks.push({
+          id: `system_task:${p.id}`,
+          entityType: "system_task",
+          entityId: p.id,
+          sourceApp: "admin",
+          sourceLabel: "Pusat kesehatan",
+          title: p.judul,
+          description: p.uraian,
+          href: "/admin/pusat-kesehatan",
+          status: "Perlu perhatian",
+          priority: "high",
+          sourceType: "system_task",
+          createdAt: p.waktu,
+          footer: "Pusat kesehatan",
+          seen: isSeen(readSet, "system_task", p.id),
+        });
+      }
+    } catch {
+      /* status kesehatan tak terbaca: tidak menambah pemberitahuan */
+    }
   }
 
   // ALETA Ai (24 Okt, T10): rekonsiliasi harian yang tidak cocok - HANYA Super Admin (uang pengelola).
@@ -1244,7 +1301,25 @@ async function buildTundaOtomatisTasks(db: AletaDatabase, readSet: Set<string>, 
     // Putus otomatis (22 Okt): peringatan pagi "akan diputus otomatis" dan hasilnya - mendesak.
     const putus = await pemberitahuanPutusOtomatis(db, opsi).catch(() => []);
     const daftar = [...putus, ...(await pemberitahuanTundaOtomatis(db, opsi))];
-    return daftar.map((p) => ({
+    // Penjaga tenggat terjadwal (G1): ringkasan harian; kosong bila saklar jadwal mati (bawaan).
+    const tenggat = await pemberitahuanTenggat(db, { nama: opsi.nama, lihatSemua: lihatSemuaTenggat(actor) }).catch(() => []);
+    const butirTenggat: TaskItem[] = tenggat.map((p) => ({
+      id: `system_task:${p.id}`,
+      entityType: "system_task" as const,
+      entityId: p.id,
+      sourceApp: "aleta-bot",
+      sourceLabel: "Penjaga tenggat",
+      title: p.judul,
+      description: p.uraian,
+      href: "/aleta-ecourt/tenggat",
+      status: p.penting ? "Perlu ditindak" : "Dicatat",
+      priority: p.penting ? ("urgent" as const) : ("normal" as const),
+      sourceType: "system_task" as const,
+      createdAt: p.waktu,
+      footer: "Penjaga tenggat",
+      seen: isSeen(readSet, "system_task", p.id),
+    }));
+    return [...butirTenggat, ...daftar.map((p) => ({
       id: `system_task:${p.id}`,
       entityType: "system_task" as const,
       entityId: p.id,
@@ -1259,7 +1334,7 @@ async function buildTundaOtomatisTasks(db: AletaDatabase, readSet: Set<string>, 
       createdAt: p.waktu,
       footer: p.id.startsWith("putus") ? "Putus otomatis" : "Tunda otomatis",
       seen: isSeen(readSet, "system_task", p.id),
-    }));
+    }))];
   } catch {
     return [];
   }

@@ -2,6 +2,7 @@ import { type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
 import { pastikanAksi } from "@/server/modules/akses/hak-peran";
+import { tegakkanPengaman } from "@/server/modules/keamanan/pengaman-aksi";
 import { bacaSetelanJejak, simpanSetelanJejak, type SetelanJejak } from "@/server/modules/perangkat/jejak";
 import { appendAuditLog } from "@/server/shared/audit";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -29,6 +30,10 @@ export async function POST(request: NextRequest) {
     const db = await getDatabase();
     const actor = await pastikanAksi(db, await resolveActorUserId(request), "perangkat.batas-peran");
     const body = await readJsonBody<Partial<SetelanJejak>>(request).catch(() => ({}) as Partial<SetelanJejak>);
+    // Pengaman aksi admin (Bagian 6c): hanya saat masa simpan riwayat masuk benar-benar berubah.
+    if (body.retensiHari !== undefined && Number(body.retensiHari) !== (await bacaSetelanJejak(db)).retensiHari) {
+      await tegakkanPengaman(db, request, actor, "audit.ubah-retensi", { rincian: { retensiHari: Number(body.retensiHari) } });
+    }
     let setelan: SetelanJejak;
     try {
       setelan = await simpanSetelanJejak(db, body, actor.id);

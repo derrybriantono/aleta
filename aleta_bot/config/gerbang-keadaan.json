@@ -1,0 +1,6 @@
+{
+ "skema": "gerbang-keadaan/1",
+ "versi": 1,
+ "catatan": "Saran keadaan perkara non-cerai (services/keadaanNonCerai.js) selalu 'ragu' sampai ketepatannya terukur di lapangan. Rantai D (U3, layar Ketepatan isian) mengisi berkas ini, kunci '<katalog>.<keadaan>' -> { status: 'otomatis', n, presisi } atau { perJenis: { '<jenisPerkaraId>': { status, n, presisi } } }. 'cukup' hanya bila status otomatis, n >= 30 dan presisi >= 0,95. Kosong = semua 'ragu'.",
+ "kode": {}
+}

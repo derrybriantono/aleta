@@ -791,18 +791,30 @@
     if (!objek) return null;
     const dipakaiSudah = terpakai instanceof Set ? terpakai : new Set();
     let daftarKalimat;
-    if (jenis === "berbeda") daftarKalimat = ke === 1 ? daftar(objek.saksi1) : daftar(objek.saksi2);
-    else daftarKalimat = ke % 2 === 1 ? daftar(objek.saksi1) : daftar(objek.saksi2);
+    // `varian` (C1, 25 Okt): penanda kalimat yang terpilih - "<daftar>:<indeks>", daftar s1 = saksi1, s2 = saksi2 - untuk laporan
+    // "% butir diterima tanpa diubah" per varian (U1). Hanya tambahan pada hasil; teks dan urutan pilihan tidak berubah.
+    let daftarKe = "s1";
+    if (jenis === "berbeda") {
+      daftarKe = ke === 1 ? "s1" : "s2";
+      daftarKalimat = ke === 1 ? daftar(objek.saksi1) : daftar(objek.saksi2);
+    } else {
+      daftarKe = ke % 2 === 1 ? "s1" : "s2";
+      daftarKalimat = ke % 2 === 1 ? daftar(objek.saksi1) : daftar(objek.saksi2);
+    }
     if (!daftarKalimat.length) return null;
     const mulai = fnv1a32([benih, q.id, jenis, ke].join("|")) % daftarKalimat.length;
     const cadangan = ke % 2 === 1 ? daftar(objek.saksi2) : daftar(objek.saksi1);
+    const daftarCadangan = ke % 2 === 1 ? "s2" : "s1";
     for (let i = 0; i < daftarKalimat.length; i += 1) {
       const kal = daftarKalimat[(mulai + i) % daftarKalimat.length];
-      if (!dipakaiSudah.has(rapikan(kal))) return { teks: kal, objek };
+      if (!dipakaiSudah.has(rapikan(kal))) return { teks: kal, objek, varian: `${daftarKe}:${(mulai + i) % daftarKalimat.length}` };
     }
     // saksi sebanyak itu melampaui daftarnya sendiri: ambil dari daftar lawannya
-    for (const kal of cadangan) if (!dipakaiSudah.has(rapikan(kal))) return { teks: kal, objek };
-    return { teks: daftarKalimat[mulai], objek };
+    for (let i = 0; i < cadangan.length; i += 1) {
+      const kal = cadangan[i];
+      if (!dipakaiSudah.has(rapikan(kal))) return { teks: kal, objek, varian: `${daftarCadangan}:${i}` };
+    }
+    return { teks: daftarKalimat[mulai], objek, varian: `${daftarKe}:${mulai}` };
   }
 
   /** Rumusan pertanyaan saksi ke-n: teksVarian bila ada (deterministik), selain itu teks. */
@@ -1106,6 +1118,8 @@
         };
         // 20 Okt (S7): jawaban dengan penanda ⟦#kode#⟧/⟦{slot}⟧ di tempat yang belum terisi (non-enumerable)
         Object.defineProperty(barisIni, "jawabKode", { value: jawab.mentah || jawab.teks, enumerable: false });
+        // C1: penanda kalimat (varian) yang dipilih mesin - non-enumerable supaya bentuk baris yang dibandingkan uji tidak berubah.
+        Object.defineProperty(barisIni, "varian", { value: pilih.varian || "", enumerable: false });
         baris.push(barisIni);
         if (jenis === "ragu" || jenis === "tidak-tahu") {
           ragu.set(q.id, (ragu.get(q.id) || 0) + 1);

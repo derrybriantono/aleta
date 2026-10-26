@@ -7,6 +7,7 @@ import {
 } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { kapabilitasPeran, pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { bolehUnggahPutusan } from "@/server/modules/aleta-ecourt/hak-putusan";
+import { keadaanPerkaraDariCermin } from "@/server/modules/cermin/keadaan-perkara";
 import { bolehKasir, bolehMengerjakanKasir } from "@/lib/kasir-jurnal";
 import { golonganMenuEkstensi } from "@/lib/matriks-peran";
 import { roles as daftarPeran } from "@/lib/mock-data";
@@ -57,12 +58,16 @@ export async function GET(request: NextRequest) {
     // Nama SELALU dari akun yang login, tidak pernah dari permintaan.
     // Bila nama boleh dikirim pemanggil, siapa pun yang punya akun portal
     // dapat memunculkan tombol verifikasi atas nama hakim mana pun.
-    const hasil = await getGatewaySippKonteks(nomor, actor.name);
+    // A6 (25 Okt 2026): "Keadaan perkara" dari Cermin Perkara - satu baca Postgres, dibaca
+    // BERSAMAAN dengan bot. Null bila saklar Panel ekstensi mati (bawaan) atau cermin tertinggal.
+    const [hasil, keadaanCermin] = await Promise.all([getGatewaySippKonteks(nomor, actor.name), keadaanPerkaraDariCermin(nomor)]);
     if (!hasil.ok) {
       return ok({
         available: false,
         message: hasil.error || "ALETA Bot belum dapat dihubungi.",
         konteks: null,
+        // Panel tetap dapat digambar ringan dari salinan ini bila ada (ekstensi: susunPanelCermin).
+        keadaanCermin,
       });
     }
 
@@ -101,6 +106,7 @@ export async function GET(request: NextRequest) {
       available: true,
       message: "",
       konteks: hasil.data ?? null,
+      keadaanCermin,
       pengguna: {
         nama: actor.name,
         peran: peran ? peran.name : String(actor.roleId || ""),

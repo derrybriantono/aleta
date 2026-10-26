@@ -244,6 +244,8 @@
     henti: false,
     kemajuan: null, // { selesai, total, sekarang }
     ringkasan: null,
+    hasilServer: [], // K14: pekerjaan berkas yang selesai di server
+    pulih: null, // K15: antrean terputus yang ditawarkan lagi dari server { selesai, total, jumlah, waktu }
     picker: null, // { id, cari }
     urut: 0,
     potret: null,
@@ -434,6 +436,93 @@
       /* penyimpanan tidak tersedia: tanda "sudah dicetak" tidak tampil */
     }
   }
+  // ───────────────────────────────────────────────────────
+  // K15 - antrean di server (hanya bila Super Admin menyalakan saklar antreanDiServer; mati = tidak ada yang dikirim/dibaca)
+  // ───────────────────────────────────────────────────────
+  const kunciAntrean = () => `${M.jenis}|${M.tanggal}`;
+  function statusKeServer(b) {
+    return b.status === "selesai" || b.status === "cek" ? "selesai" : b.status === "gagal" ? "gagal" : "menunggu";
+  }
+  /** Keadaan pengerjaan saja: nomor perkara, nama blangko, status. Tidak ada isi dokumen. */
+  function muatanAntrean(dipilih) {
+    return { jenis: M.jenis, tanggal: M.tanggal, format: M.format, ttd: M.ttd === true, butir: dipilih.map((b) => ({ nomor: b.nomor, berkas: tanpaRtf(b.berkas), status: statusKeServer(b) })) };
+  }
+  function cerminAntrean(dipilih, selesaiN, segera) {
+    const A = globalThis.ALETA_ANTREAN_SERVER;
+    if (!A) return;
+    void A.catat(
+      "cetak-massal",
+      kunciAntrean(),
+      { ringkas: `Cetak massal ${JUDUL_JENIS[M.jenis] || M.jenis} ${M.tanggal}: ${selesaiN} dari ${dipilih.length}`, selesai: selesaiN, total: dipilih.length, muatan: muatanAntrean(dipilih) },
+      { segera: segera === true }
+    );
+  }
+  function akhiriCermin() {
+    const A = globalThis.ALETA_ANTREAN_SERVER;
+    if (A) void A.akhiri("cetak-massal", kunciAntrean(), "selesai");
+  }
+  /**
+   * Antrean cetak massal yang terputus (Chrome ditutup di tengah jalan, atau PC lain) untuk jenis + tanggal yang sama:
+   * perkara yang BELUM selesai dicentang kembali dan diberi catatan. Tidak menjalankan apa pun; petugas menekan Cetak sendiri.
+   */
+  async function tawarkanAntreanTerputus() {
+    const A = globalThis.ALETA_ANTREAN_SERVER;
+    if (!A) return;
+    let daftar = [];
+    try {
+      await A.tungguSiap();
+      if (!A.aktif()) return;
+      daftar = await A.tertinggal("cetak-massal");
+    } catch {
+      return;
+    }
+    const cocok = daftar.find((x) => x && x.muatan && x.muatan.jenis === M.jenis && x.muatan.tanggal === M.tanggal && Array.isArray(x.muatan.butir));
+    if (!cocok) return;
+    const belum = new Set(cocok.muatan.butir.filter((b) => b.status !== "selesai").map((b) => b.nomor));
+    if (!belum.size) return;
+    const hasil = new Set();
+    for (const b of M.baris) {
+      if (hasil.size >= BATAS_DOKUMEN) break;
+      if (belum.has(b.nomor) && b.berkas) hasil.add(b.id);
+    }
+    if (!hasil.size) return;
+    M.pilih = hasil;
+    if (cocok.muatan.format === "rtf" || cocok.muatan.format === "pdf") M.format = cocok.muatan.format;
+    M.pulih = { selesai: cocok.selesai, total: cocok.total, jumlah: hasil.size, waktu: String(cocok.diubahPada || "") };
+  }
+  function pulihHtml() {
+    const p = M.pulih;
+    if (!p || M.ringkasan) return "";
+    return `<div class="bd-ms-ringkasan" role="status"><b>Cetak massal sebelumnya belum selesai</b><p>${esc(String(p.selesai))} dari ${esc(String(p.total))} perkara sudah selesai. ${esc(String(p.jumlah))} yang belum sudah dicentang kembali; tekan Cetak bila ingin melanjutkan.</p></div>`;
+  }
+
+  /** K14: pekerjaan berkas milik akun ini yang sudah selesai di server (mungkin ditinggal menutup Chrome). */
+  async function muatHasilServer() {
+    M.hasilServer = [];
+    const B = serverBerkas();
+    if (!B) return;
+    try {
+      const daftar = await B.daftar();
+      M.hasilServer = daftar.filter((x) => x && x.status === "selesai" && x.hasil);
+    } catch {
+      M.hasilServer = [];
+    }
+  }
+  function hasilServerHtml() {
+    if (!M.hasilServer || !M.hasilServer.length) return "";
+    return (
+      `<div class="bd-ms-ringkasan" role="status"><b>Hasil yang sudah disusun di server</b>` +
+      M.hasilServer
+        .map(
+          (x) =>
+            `<p>${esc(x.hasil.nama)} <span class="bd-catat">(${esc(String(Math.round(x.hasil.ukuran / 1024)))} KB)</span> ` +
+            `<button type="button" class="bd-btn kecil" data-ms="srv-unduh" data-srv="${esc(x.id)}">Unduh</button> ` +
+            `<button type="button" class="bd-btn kecil" data-ms="srv-hapus" data-srv="${esc(x.id)}">Hapus</button></p>`
+        )
+        .join("") +
+      `</div>`
+    );
+  }
   async function muat() {
     const d = driver();
     if (!d || !M.jenis) return;
@@ -443,6 +532,7 @@
     M.baris = [];
     M.pilih = new Set();
     M.ringkasan = null;
+    M.pulih = null;
     gambar();
     try {
       await bacaPernah();
@@ -461,6 +551,8 @@
         else tetapkanBlangko(b);
       }
       M.baris = baris;
+      await tawarkanAntreanTerputus();
+      await muatHasilServer();
     } catch (e) {
       if (nomor !== M.urut) return;
       M.galat = String((e && e.message) || e);
@@ -569,6 +661,8 @@
       `<span class="bd-catat" id="bd-ms-hitung">${pilihJumlah} dipilih dari ${M.baris.length}${pilihJumlah > BATAS_DOKUMEN ? ` · paling banyak ${BATAS_DOKUMEN} sekali jalan` : ""}</span>` +
       `<button type="button" class="bd-btn kecil" data-ms="isi" ${sibuk || !pilihJumlah ? "disabled" : ""}>Isi otomatis semua</button></div>` +
       badan +
+      hasilServerHtml() +
+      pulihHtml() +
       ringkasanHtml() +
       `<div class="bd-ms-kaki"><div class="bd-ms-format" role="radiogroup" aria-label="Bentuk hasil">` +
       `<label class="bd-cek"><input type="radio" name="bd-ms-format" value="rtf" ${M.format === "rtf" ? "checked" : ""} ${sibuk ? "disabled" : ""}> RTF (satu ZIP)</label>` +
@@ -700,6 +794,87 @@
     }
     return hasil;
   }
+  /** Jalur LAMA: ZIP / PDF gabungan disusun di peramban. Pulang kalimat hasil. */
+  async function rakitLokal(hasil, pdf, d, nama) {
+    let teksHasil = "";
+    try {
+      if (pdf) {
+        const potongan = await gabungkan(hasil.map((x) => x.h.pdf));
+        if (potongan.length === 1) {
+          const u = await d.unduh(new Blob([potongan[0].bita], { type: "application/pdf" }), `${nama}.pdf`);
+          teksHasil = u.ok ? `${hasil.length} perkara digabung menjadi satu PDF (${potongan[0].halaman} halaman): "${nama}.pdf".` : `PDF gabungan gagal diunduh: ${u.pesan}`;
+        } else {
+          const pakai = new Set();
+          const zip = buatZip(potongan.map((p, i) => ({ nama: namaUnik(`${nama} bagian ${i + 1}.pdf`, pakai), bita: p.bita })));
+          const u = await d.unduh(new Blob([zip], { type: "application/zip" }), `${nama}.zip`);
+          teksHasil = u.ok ? `${hasil.length} perkara terlalu besar untuk satu PDF; hasil dibagi ${potongan.length} PDF di dalam "${nama}.zip".` : `ZIP gagal diunduh: ${u.pesan}`;
+        }
+      } else {
+        const pakai = new Set();
+        const zip = buatZip(hasil.map((x) => ({ nama: namaUnik(x.h.namaRtf, pakai), bita: x.h.rtf })));
+        const u = await d.unduh(new Blob([zip], { type: "application/zip" }), `${nama}.zip`);
+        teksHasil = u.ok ? `${hasil.length} naskah RTF dalam satu ZIP: "${nama}.zip".` : `ZIP gagal diunduh: ${u.pesan}`;
+      }
+    } catch (e) {
+      // Penggabung PDF tidak tersedia (server belum diperbarui) atau gagal: PDF tiap perkara tetap diberikan dalam satu ZIP.
+      try {
+        const pakai = new Set();
+        const zip = buatZip(hasil.map((x) => ({ nama: namaUnik(x.h.namaPdf || x.h.namaRtf, pakai), bita: x.h.pdf || x.h.rtf })));
+        const u = await d.unduh(new Blob([zip], { type: "application/zip" }), `${nama}.zip`);
+        teksHasil = u.ok ? `PDF tidak dapat digabung (${String((e && e.message) || e)}); PDF tiap perkara diberikan dalam satu ZIP "${nama}.zip".` : `ZIP gagal diunduh: ${u.pesan}`;
+      } catch (e2) {
+        teksHasil = `Hasil tidak dapat disimpan: ${String((e2 && e2.message) || e2)}`;
+      }
+    }
+    return teksHasil;
+  }
+
+  // ───────────────────────────────────────────────────────
+  // K14 - berkas dikerjakan server (hanya bila Super Admin menyalakan saklar berkasDiServer; mati = jalur lama di atas)
+  // ───────────────────────────────────────────────────────
+  const serverBerkas = () => globalThis.ALETA_BERKAS_SERVER || null;
+  /**
+   * Menyuruh server menyusun hasil dari naskah yang sudah terkirim, menunggu, lalu mengunduh hasil jadi.
+   * Pulang { ok, teks }. ok:false = server gagal; pemanggil memakai jalur lama dari naskah yang masih dipegang peramban.
+   */
+  async function rakitServer(B, kerja, hasil, d, nama) {
+    try {
+      const mulai = await B.mulai(kerja.id);
+      if (!mulai) return { ok: false, teks: "" };
+      M.ringkasan = { judul: "Server menyusun hasil", teks: "Naskah sudah di server. Anda boleh menutup halaman ini; hasil menunggu di server dan muncul lagi di jendela Cetak massal.", cek: [], gagal: [] };
+      gambar();
+      const akhir = await B.tunggu(kerja.id, {
+        padaKabar: (s) => {
+          M.ringkasan = { judul: "Server menyusun hasil", teks: `${s.selesaiButir} dari ${s.jumlahButir} naskah diperiksa. Anda boleh menutup halaman ini; hasil menunggu di server.`, cek: [], gagal: [] };
+          gambar();
+        },
+      });
+      if (!akhir || akhir.status !== "selesai" || !akhir.hasil) return { ok: false, teks: "" };
+      const blob = await B.unduh(kerja.id);
+      if (!blob) return { ok: false, teks: "" };
+      const u = await d.unduh(blob, akhir.hasil.nama);
+      // Naskah yang masih berisi sisa blangko / perbaikan (diperiksa server) ditandai "Perlu dicek".
+      const perluDicek = new Set((akhir.perluDicek || []).map((x) => x.nama));
+      for (const x of hasil) {
+        if (perluDicek.has(x.h.namaRtf)) {
+          x.baris.status = "cek";
+          x.baris.catatan = "Naskah masih berisi sisa blangko atau catatan perbaikan (diperiksa server).";
+        }
+      }
+      void B.hapus(kerja.id);
+      return { ok: true, teks: u.ok ? `${akhir.ringkasan} Disusun di server: "${akhir.hasil.nama}".` : `Hasil dari server gagal diunduh: ${u.pesan}` };
+    } catch {
+      return { ok: false, teks: "" };
+    }
+  }
+  /** PDF yang belum ada (server ditinggalkan di tengah jalan) dibuat di peramban lewat jalur lama. */
+  async function lengkapiPdfLokal(hasil, d) {
+    for (const x of hasil) {
+      if (x.h.pdf) continue;
+      x.h = await d.cetakSatu(x.baris.item, { pdf: true, ttd: M.ttd, isiOto: false });
+    }
+  }
+
   async function cetakSemua() {
     const dipilih = awal("cetak");
     if (!dipilih) return;
@@ -708,6 +883,17 @@
     gambar();
     const hasil = [];
     const gagal = [];
+    // K14: bila server sanggup, naskah dikirim ke sana dan hasil jadi diterima kembali. Tanda tangan sah dibubuhkan
+    // di peramban (gambar tanda tangan tidak dikirim), jadi PDF bertanda tangan tetap memakai jalur lama.
+    const B = serverBerkas();
+    let kerjaServer = null;
+    if (B && (!pdf || !M.ttd)) {
+      try {
+        kerjaServer = await B.buat({ format: pdf ? "pdf" : "rtf", nama: `Cetak massal - ${NAMA_BERKAS_JENIS[M.jenis]} - ${M.tanggal}` });
+      } catch {
+        kerjaServer = null;
+      }
+    }
     try {
       await d.siramSimpan();
       if (!M.potret) M.potret = d.potret();
@@ -717,7 +903,7 @@
         M.kemajuan.sekarang = nomorPendek(b.nomor);
         segarkanBaris();
         try {
-          const h = await d.cetakSatu(b.item, { pdf, ttd: pdf && M.ttd, isiOto: false });
+          const h = await d.cetakSatu(b.item, { pdf: pdf && !kerjaServer, ttd: pdf && M.ttd && !kerjaServer, isiOto: false });
           const n = nilaiKeadaan(h.keadaan);
           // Cetak selesai walau ada yang perlu dicek: naskah tetap ikut, perkaranya ditandai supaya diperiksa.
           b.status = n.status === "cek" ? "cek" : "selesai";
@@ -727,12 +913,21 @@
           M.pernah.set(`${b.nomor}|${tanpaRtf(b.berkas)}`, b.pernah);
           if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) void Promise.resolve(chrome.storage.local.set({ [`${K_CETAK_BLANGKO}:${b.nomor}|${tanpaRtf(b.berkas)}`]: b.pernah })).catch(() => undefined);
           hasil.push({ baris: b, h });
+          if (kerjaServer) {
+            const diterima = await B.kirimButir(kerjaServer.id, { nama: h.namaRtf, bita: h.rtf }).catch(() => false);
+            if (!diterima) {
+              // Server menolak / putus: tinggalkan, sisanya memakai jalur lama (PDF yang belum ada dibuat ulang di peramban).
+              void B.hapus(kerjaServer.id);
+              kerjaServer = null;
+            }
+          }
         } catch (e) {
           b.status = "gagal";
           b.catatan = String((e && e.message) || e);
           gagal.push({ nomor: b.nomor, sebab: b.catatan });
         }
         M.kemajuan.selesai += 1;
+        cerminAntrean(dipilih, M.kemajuan.selesai, false);
         segarkanBaris();
         if (!M.henti) await jeda();
       }
@@ -742,36 +937,30 @@
     let teksHasil = "";
     if (hasil.length) {
       const nama = `Cetak massal - ${NAMA_BERKAS_JENIS[M.jenis]} - ${M.tanggal}`;
-      try {
-        if (pdf) {
-          const potongan = await gabungkan(hasil.map((x) => x.h.pdf));
-          if (potongan.length === 1) {
-            const u = await d.unduh(new Blob([potongan[0].bita], { type: "application/pdf" }), `${nama}.pdf`);
-            teksHasil = u.ok ? `${hasil.length} perkara digabung menjadi satu PDF (${potongan[0].halaman} halaman): "${nama}.pdf".` : `PDF gabungan gagal diunduh: ${u.pesan}`;
-          } else {
-            const pakai = new Set();
-            const zip = buatZip(potongan.map((p, i) => ({ nama: namaUnik(`${nama} bagian ${i + 1}.pdf`, pakai), bita: p.bita })));
-            const u = await d.unduh(new Blob([zip], { type: "application/zip" }), `${nama}.zip`);
-            teksHasil = u.ok ? `${hasil.length} perkara terlalu besar untuk satu PDF; hasil dibagi ${potongan.length} PDF di dalam "${nama}.zip".` : `ZIP gagal diunduh: ${u.pesan}`;
-          }
-        } else {
-          const pakai = new Set();
-          const zip = buatZip(hasil.map((x) => ({ nama: namaUnik(x.h.namaRtf, pakai), bita: x.h.rtf })));
-          const u = await d.unduh(new Blob([zip], { type: "application/zip" }), `${nama}.zip`);
-          teksHasil = u.ok ? `${hasil.length} naskah RTF dalam satu ZIP: "${nama}.zip".` : `ZIP gagal diunduh: ${u.pesan}`;
-        }
-      } catch (e) {
-        // Penggabung PDF tidak tersedia (server belum diperbarui) atau gagal: PDF tiap perkara tetap diberikan dalam satu ZIP.
-        try {
-          const pakai = new Set();
-          const zip = buatZip(hasil.map((x) => ({ nama: namaUnik(x.h.namaPdf || x.h.namaRtf, pakai), bita: x.h.pdf || x.h.rtf })));
-          const u = await d.unduh(new Blob([zip], { type: "application/zip" }), `${nama}.zip`);
-          teksHasil = u.ok ? `PDF tidak dapat digabung (${String((e && e.message) || e)}); PDF tiap perkara diberikan dalam satu ZIP "${nama}.zip".` : `ZIP gagal diunduh: ${u.pesan}`;
-        } catch (e2) {
-          teksHasil = `Hasil tidak dapat disimpan: ${String((e2 && e2.message) || e2)}`;
+      let selesaiServer = false;
+      if (kerjaServer && !M.henti) {
+        const r = await rakitServer(B, kerjaServer, hasil, d, nama);
+        if (r.ok) {
+          teksHasil = r.teks;
+          selesaiServer = true;
         }
       }
+      if (!selesaiServer) {
+        if (kerjaServer) void B.hapus(kerjaServer.id);
+        if (pdf) {
+          try {
+            await lengkapiPdfLokal(hasil, d);
+          } catch {
+            /* PDF yang tidak dapat dibuat jatuh ke ZIP RTF di rakitLokal */
+          }
+        }
+        teksHasil = await rakitLokal(hasil, pdf, d, nama);
+      }
     }
+    // K15: selesai bersih = salinan di server ditutup; dihentikan/ada yang gagal = keadaan terakhir disalin supaya dapat dilanjutkan.
+    M.pulih = null;
+    if (!M.henti && gagal.length === 0) akhiriCermin();
+    else cerminAntrean(dipilih, dipilih.filter((b) => b.status === "selesai" || b.status === "cek").length, true);
     const cek = dipilih.filter((b) => b.status === "cek");
     // Yang gagal tercentang kembali supaya dapat diulang; yang berhasil dilepas.
     M.pilih = new Set(dipilih.filter((b) => b.status === "gagal").map((b) => b.id));
@@ -832,6 +1021,25 @@
       }
       if (kode === "isi") return void isiSemua();
       if (kode === "cetak") return void cetakSemua();
+      if (kode === "srv-unduh" || kode === "srv-hapus") {
+        const idSrv = aksi.getAttribute("data-srv");
+        const B = serverBerkas();
+        if (!B || !idSrv) return;
+        if (kode === "srv-hapus") {
+          void B.hapus(idSrv).then(() => muatHasilServer().then(gambar));
+          return;
+        }
+        void (async () => {
+          const item = (M.hasilServer || []).find((x) => x.id === idSrv);
+          const blob = await B.unduh(idSrv);
+          const d2 = driver();
+          if (blob && item && d2) await d2.unduh(blob, item.hasil.nama);
+          else toast("Hasil tidak dapat diunduh; mungkin sudah kedaluwarsa.");
+          await muatHasilServer();
+          gambar();
+        })();
+        return;
+      }
       if (kode === "henti") {
         M.henti = true;
         return gambar();

@@ -568,6 +568,132 @@
       "when": 1792260000001,
       "tag": "0088_aleta_ai_dompet",
       "breakpoints": true
+    },
+    {
+      "idx": 81,
+      "version": "7",
+      "when": 1792261800001,
+      "tag": "0090_aleta_cermin_perkara",
+      "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1792263600001,
+      "tag": "0091_aleta_jejak_isian",
+      "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1792265400001,
+      "tag": "0092_aleta_ketepatan_isian",
+      "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1792267200001,
+      "tag": "0093_aleta_saksi_katalog",
+      "breakpoints": true
+    },
+    {
+      "idx": 85,
+      "version": "7",
+      "when": 1792269000001,
+      "tag": "0094_aleta_kesehatan_galat",
+      "breakpoints": true
+    },
+    {
+      "idx": 86,
+      "version": "7",
+      "when": 1792270800001,
+      "tag": "0095_aleta_verifikasi_dua_langkah",
+      "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "7",
+      "when": 1792272600001,
+      "tag": "0096_aleta_cermin_perkara_tanggal",
+      "breakpoints": true
+    },
+    {
+      "idx": 88,
+      "version": "7",
+      "when": 1792274400001,
+      "tag": "0098_aleta_antrean_peramban",
+      "breakpoints": true
+    },
+    {
+      "idx": 89,
+      "version": "7",
+      "when": 1792276200001,
+      "tag": "0100_aleta_alias_nama",
+      "breakpoints": true
+    },
+    {
+      "idx": 90,
+      "version": "7",
+      "when": 1792278000001,
+      "tag": "0101_aleta_saksi_kirim_bas",
+      "breakpoints": true
+    },
+    {
+      "idx": 91,
+      "version": "7",
+      "when": 1792279800001,
+      "tag": "0102_aleta_blangko_lapor",
+      "breakpoints": true
+    },
+    {
+      "idx": 92,
+      "version": "7",
+      "when": 1792281600001,
+      "tag": "0103_aleta_isian_sidang",
+      "breakpoints": true
+    },
+    {
+      "idx": 93,
+      "version": "7",
+      "when": 1792283400001,
+      "tag": "0104_aleta_penjaga_integritas",
+      "breakpoints": true
+    },
+    {
+      "idx": 94,
+      "version": "7",
+      "when": 1792285200001,
+      "tag": "0105_aleta_otomatis_jejak",
+      "breakpoints": true
+    },
+    {
+      "idx": 95,
+      "version": "7",
+      "when": 1792287000001,
+      "tag": "0107_aleta_kebijakan_sandi",
+      "breakpoints": true
+    },
+    {
+      "idx": 96,
+      "version": "7",
+      "when": 1792288800001,
+      "tag": "0108_aleta_batas_jaringan",
+      "breakpoints": true
+    },
+    {
+      "idx": 97,
+      "version": "7",
+      "when": 1792290600001,
+      "tag": "0109_aleta_uji_pulih",
+      "breakpoints": true
+    },
+    {
+      "idx": 98,
+      "version": "7",
+      "when": 1792292400001,
+      "tag": "0110_aleta_tenggat_kirim",
+      "breakpoints": true
     }
   ]
 }

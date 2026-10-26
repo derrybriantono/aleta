@@ -55,6 +55,7 @@ import {
 } from "@/lib/jadwal-tampil-url";
 /* === 12OKT-C: kartu ruang sidang & mediator === */
 import { PitaRuangSidang } from "@/components/portal/pita-ruang-sidang";
+import { BarisTabelRingan, sidik, tabelRinganAktif, useAlatBaris } from "@/components/portal/baris-tabel-ringan";
 import { TombolTundaOtomatis } from "@/components/portal/tunda-otomatis-panel";
 import { PemilihTanggalSidang } from "@/components/ui/pemilih-tanggal-sidang";
 import { TombolBlangkoDerry } from "@/components/portal/tombol-blangko-derry";
@@ -4708,6 +4709,8 @@ export function AletaEcourtSidang({
   const memuatRef = useRef(false);
   // 22 Okt 2026: waktu bacaan terakhir (ringan/lengkap) untuk tanda "diperbarui hh:mm:ss"; di luar state agar layar tidak dilukis ulang.
   const [penyimpanDiperbarui] = useState(buatPenyimpanDiperbarui);
+  // A4 (25 Okt 2026): bila daftar dibaca dari Cermin Perkara - kapan cermin terakhir dihitung ulang (null = dari SIPP seperti biasa).
+  const [cerminJadwal, setCerminJadwal] = useState<{ diperbaruiPada: string | null } | null>(null);
   const [galat, setGalat] = useState("");
 
   const [kalenderTerbuka, setKalenderTerbuka] = useState(false);
@@ -5757,6 +5760,7 @@ export function AletaEcourtSidang({
         kesiapan?: unknown;
         antrian?: unknown;
         waktuAntrian?: unknown;
+        cermin?: unknown;
       };
       const rentang = `${mulai}|${akhir}`;
       if (!data?.available) {
@@ -5791,6 +5795,7 @@ export function AletaEcourtSidang({
       );
       const waktu = (data.waktuAntrian ?? WAKTU_ANTRIAN_KOSONG) as WaktuAntrian;
       setWaktuAntrian(waktu);
+      setCerminJadwal((data.cermin ?? null) as { diperbaruiPada: string | null } | null);
       // Date.now() di sini hanya menandai KAPAN data diterima; yang berjalan
       // dihitung dari beda Date.now() sesudahnya, tidak dari jam komputernya.
       const sekarangMs = bacaWaktu(waktu.sekarang);
@@ -6262,6 +6267,77 @@ export function AletaEcourtSidang({
   const adaSaklarKeliling = !modeUrl && satuTanggalJadwal && Boolean(kh.keliling) && tampil(tampilan, "saklar-sidang-keliling");
   const warnaBaris = tampil(tampilan, "warna-baris");
   const statusPutusanTampil = tampil(tampilan, "status-putusan");
+
+  // ==========================================================================
+  // K13 (25 Okt 2026) - TABEL JADWAL RINGAN: hanya baris yang berubah digambar ulang
+  // ==========================================================================
+  //
+  // Saklar MATI bawaan (lihat baris-tabel-ringan.tsx): mati = tiap baris digambar
+  // langsung seperti dulu. Menyala = baris dibungkus memo yang dibandingkan lewat
+  // daftar `deps` di bawah. Isi daftar itu = SEMUA yang dibaca baris dari luar:
+  //   - depsBarisBersama: keadaan layar yang sama untuk setiap baris (mengubahnya
+  //     menggambar ulang semua baris, seperti sebelumnya);
+  //   - sisanya diiris PER BARIS di tempatnya (peta antrian, tanda selesai, tiga jarak ...):
+  //     berubahnya antrian satu perkara tidak menggambar ulang yang lain.
+  // Fungsi pemicu (klik) lewat `alat`: bila saklar menyala, pembungkus stabil yang meneruskan ke versi terbaru.
+  // Uji penjaga (cermin-tabel-ringan-25okt) mencocokkan daftar ini dengan semua
+  // peubah yang dibaca baris, sehingga peubah baru yang terlupa ketahuan.
+  const tabelRingan = useMemo(() => tabelRinganAktif(), []);
+  const alat = useAlatBaris(tabelRingan, {
+    onBukaStatus,
+    onBukaTunda,
+    muatTanggal,
+    muatTunjukan,
+    muatKeterangan,
+    segarkanRingan,
+    muatUlang: tandaSelesai.muatUlang,
+    alihSaksi: saksiLipat.alih,
+    tarikBelumUpload: tarikBelumUpload.tarik,
+    infoRuangSidang,
+    sebutTetangga,
+    buka,
+  });
+  // Hasil pengait aslinya; baris membentuk salinan dengan pemicu dari `alat` (bernama sama supaya isi baris tetap).
+  const tandaSelesaiHook = tandaSelesai;
+  const saksiLipatHook = saksiLipat;
+  const tarikBelumUploadHook = tarikBelumUpload;
+  // Pemanggilan SAAT MENGGAMBAR memakai fungsi asli (bukan pembungkus): nilai putaran ini.
+  const infoLangsung = infoRuangSidang;
+  const tetanggaLangsung = sebutTetangga;
+  const depsBarisBersama: readonly unknown[] = tabelRingan
+    ? [
+        tampilan,
+        bolehJalannya,
+        bolehTulisKeterangan,
+        satuTanggalJadwal,
+        modeUrl,
+        dari,
+        sampai,
+        nilaiKesiapan,
+        patokanWaktu,
+        saat,
+        hakim,
+        pilihanHakim,
+        aktifPenandaPerkara,
+        aktifPenandaPekerjaan,
+        aktifPanggilSaksi,
+        aktifPihakHadir,
+        kolomTabel,
+        warnaBaris,
+        statusPutusanTampil,
+        setelanAps,
+        jenisBlangkoPeran,
+        institutionIdentity?.courtName,
+        currentUser,
+        verifikasi,
+        waktuAntrian.hariIni,
+        hariIni(),
+        Boolean(onBukaStatus),
+        Boolean(onBukaTunda),
+        // kh dibentuk ulang tiap gambar, tetapi tiap ruasnya stabil.
+        ...Object.values(kh),
+      ]
+    : [];
 
   return (
     <UnduhTertutupTautan.Provider value={Boolean(modeUrl)}>
@@ -6829,6 +6905,15 @@ export function AletaEcourtSidang({
                 {(pertamaMuat && memuat) || !tampil(tampilan, "tanda-diperbarui") ? null : (
                   <TandaDiperbarui penyimpan={penyimpanDiperbarui} awalan={tampil(tampilan, "tanggal-dan-jumlah") ? " · " : ""} />
                 )}
+                {/* A4: daftar dibaca dari Cermin Perkara; antrian dan kehadiran tetap langsung dari sumbernya. */}
+                {cerminJadwal && !(pertamaMuat && memuat) ? (
+                  <span data-testid="tanda-cermin" title="Daftar sidang dibaca dari salinan keadaan perkara SIPP di ALETA (Cermin Perkara). Antrian dan kehadiran tetap langsung.">
+                    {" · Cermin · diperbarui "}
+                    {cerminJadwal.diperbaruiPada
+                      ? new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Makassar", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(cerminJadwal.diperbaruiPada)).replace(":", ".")
+                      : "-"}
+                  </span>
+                ) : null}
               </p>
             </div>
             ) : null}
@@ -7815,6 +7900,12 @@ export function AletaEcourtSidang({
               ) : (
                 sidangTampil.map((baris, urutan) => {
                   const kunci = `${baris.nomorPerkara}|${baris.sidangId}`;
+                  // K13: fungsi pemicu dibaca dari `alat` (fungsi asli bila tabel ringan mati; pembungkus
+                  // stabil bila menyala). Nama yang sama sengaja dipakai supaya isi baris tidak berubah.
+                  const { onBukaStatus, onBukaTunda, muatTanggal, muatTunjukan, muatKeterangan, segarkanRingan, infoRuangSidang, sebutTetangga, buka } = alat;
+                  const tandaSelesai = { ...tandaSelesaiHook, muatUlang: alat.muatUlang };
+                  const saksiLipat = { ...saksiLipatHook, alih: alat.alihSaksi };
+                  const tarikBelumUpload = { ...tarikBelumUploadHook, tarik: alat.tarikBelumUpload };
                   // Dihitung SEKALI di sini, lalu dipakai barisnya dan sel
                   // antriannya. Lihat sidangSelesaiHariIni: ia juga membaca
                   // hasil sidang, sehingga perkara yang sudah diputus menurut
@@ -7848,7 +7939,7 @@ export function AletaEcourtSidang({
                   /* === 12OKT-C: mediator di Majelis & Petugas (butir 6) === */
                   const mediatorIni = tampil(tampilan, "mediator-majelis") ? mediatorBaris(baris) : "";
                   /* === AKHIR 12OKT-C === */
-                  return (
+                  const gambarBaris = () => (
                     <Fragment key={kunci}>
                       {/* ==================================================
                           BARISNYA TIDAK DAPAT DITEKAN - HANYA TOMBOL RINCIAN
@@ -9503,6 +9594,61 @@ export function AletaEcourtSidang({
                         </tr>
                       ) : null}
                     </Fragment>
+                  );
+                  // K13: saklar mati = jalur lama persis (baris digambar langsung).
+                  if (!tabelRingan) return gambarBaris();
+                  const pid = String(baris.perkaraId);
+                  const berbuka = dibuka === kunci;
+                  const kunciHadirIni = kunciKehadiran(baris.perkaraId, baris.tanggalSidang);
+                  return (
+                    <BarisTabelRingan
+                      key={kunci}
+                      gambar={gambarBaris}
+                      deps={[
+                        ...depsBarisBersama,
+                        urutan,
+                        sidik(baris),
+                        sidik(sidangSelesai),
+                        sidik(selesaiTanda),
+                        sidik(tigaBaris),
+                        // Teks tetangga tiga jarak bergantung pada daftar sidang (perkara lain).
+                        tigaBaris
+                          ? [tigaBaris.tunggu, tigaBaris.dariSebelumnya, tigaBaris.lamaSidang]
+                              .map((j) => (j.tetangga ? tetanggaLangsung(j.tetangga, baris.tanggalSidang) : ""))
+                              .join("|")
+                          : "",
+                        sidik(berjalanIni),
+                        sidik(skorsIni),
+                        ruangIni,
+                        bisaDipanggilIni,
+                        sidik(aksiRuang),
+                        infoLangsung(String(baris.perkaraId)).nomorPerkara,
+                        aksiRuang.asal ? infoLangsung(String(aksiRuang.asal.perkaraId)).nomorPerkara : "",
+                        mediatorIni,
+                        sidik(nilaiKesiapan ? kesiapan[kunci] : undefined),
+                        sidik(tunjukan[pid]),
+                        sidik(checklistTanpaTunjukan[pid]),
+                        sidik(drafH7[pid]),
+                        sidik(keterangan[pid]),
+                        keteranganKunci === kunci,
+                        tunjukKunci === kunci,
+                        berbuka,
+                        catat?.kunci === kunci ? catat.jalan : "",
+                        berbuka ? rincian : null,
+                        berbuka && memuatRincian,
+                        berbuka ? lebarTampak : 0,
+                        sidik(antrianUntuk(antrian.peta, baris)),
+                        sidik(antrian.kehadiran?.[kunciHadirIni]?.hadir),
+                        sidik(barisWaktuPerKunci[kunciTiga]),
+                        sidik(disidangPerKunci[kunciTiga]),
+                        sidik(hadirIni(baris)),
+                        sidik(pernahDiskorsIni(baris)),
+                        saksiLipat.terbuka(kunciBarisSaksi(baris.perkaraId, "P")),
+                        saksiLipat.terbuka(kunciBarisSaksi(baris.perkaraId, "T")),
+                        sidik(tarikBelumUpload.keadaanUntuk(baris.nomorPerkara)),
+                        sidik(tampil(tampilan, "verifikasi-majelis") ? penandaVerifikasi(baris, verifikasi, hariIni()) : null),
+                      ]}
+                    />
                   );
                 })
               )}

@@ -2,6 +2,7 @@ import { type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
 import { pastikanAksi } from "@/server/modules/akses/hak-peran";
+import { tegakkanPengaman } from "@/server/modules/keamanan/pengaman-aksi";
 import { bacaKebijakanSemua, hapusKebijakan, simpanKebijakan, type Perilaku } from "@/server/modules/perangkat/batas";
 import { appendAuditLog } from "@/server/shared/audit";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -37,6 +38,8 @@ export async function POST(request: NextRequest) {
     const db = await getDatabase();
     const body = await readJsonBody<Badan>(request).catch(() => ({}) as Badan);
     const actor = await pastikanAksi(db, await resolveActorUserId(request), aksiUntuk(body.cakupan));
+    // Pengaman aksi admin (Bagian 6c): mati bawaan -> tidak berbuat apa pun.
+    await tegakkanPengaman(db, request, actor, "perangkat.ubah-batas", { rincian: { cakupan: body.cakupan, sasaran: body.sasaran, maks: body.maks } });
     try {
       await simpanKebijakan(
         db,
@@ -73,6 +76,7 @@ export async function DELETE(request: NextRequest) {
     const cakupan = request.nextUrl.searchParams.get("cakupan");
     const sasaran = String(request.nextUrl.searchParams.get("sasaran") ?? "");
     const actor = await pastikanAksi(db, await resolveActorUserId(request), aksiUntuk(cakupan));
+    await tegakkanPengaman(db, request, actor, "perangkat.ubah-batas", { rincian: { cakupan, sasaran, hapus: true } });
     const n = await hapusKebijakan(db, cakupan as "peran" | "akun", sasaran);
     await appendAuditLog(db, {
       id: await nextPrefixedId(db, "audit_logs", "adt"),

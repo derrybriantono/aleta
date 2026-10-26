@@ -698,7 +698,7 @@
       pasang();
       if (!detak) {
         // Murah: beberapa pembacaan DOM. Kepala SIPP dapat digambar ulang sewaktu-waktu.
-        detak = setInterval(() => {
+        detak = (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.denyut : (f, m) => setInterval(f, m))(() => {
           try {
             pasang();
           } catch {
@@ -724,3 +724,4 @@
   };
   void mulai();
 })();
+(globalThis.__aletaModulSelesai || (globalThis.__aletaModulSelesai = new Set())).add("tarik-satu-perkara.js"); // K11-SELESAI

@@ -24,6 +24,7 @@ import { useEffect, useState, type FormEvent } from "react";
 
 import { AletaLogo } from "@/components/branding/aleta-logo";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { KodeVerifikasiMasuk } from "@/components/portal/kode-verifikasi-masuk";
 import { PilihPerangkatMasuk } from "@/components/portal/pilih-perangkat-masuk";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -38,8 +39,10 @@ import {
   bacaPilihanIsiOtomatis,
   lupakanSandiDiEkstensi,
   bacaBatasPerangkat,
+  bacaVerifikasiDiperlukan,
   masukLewatSipp,
   type InfoBatasPerangkat,
+  type InfoVerifikasi,
   simpanPilihanIsiOtomatis,
   titipSandiKeEkstensi,
 } from "@/lib/masuk-sipp-klien";
@@ -145,6 +148,8 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   // Batas perangkat penuh (23 Okt 2026): tiket + daftar perangkat untuk dipilih.
   const [batasPerangkat, setBatasPerangkat] = useState<InfoBatasPerangkat | null>(null);
+  // Verifikasi dua langkah (E5, 25 Okt 2026): tiket + cara yang tersedia; mati bawaan sehingga tidak pernah muncul sebelum dinyalakan Super Admin.
+  const [verifikasi, setVerifikasi] = useState<InfoVerifikasi | null>(null);
 
   // Recovery shared fields
   const [recoveryPath, setRecoveryPath] = useState<RecoveryPath>("otp");
@@ -250,6 +255,7 @@ export default function LoginPage() {
     setError("");
     setLoginNotice("");
     setBatasPerangkat(null);
+    setVerifikasi(null);
 
     try {
       // ======================================================================
@@ -264,6 +270,10 @@ export default function LoginPage() {
       if (sipp.jenis === "tolak") {
         if (sipp.batas) {
           setBatasPerangkat(sipp.batas);
+          return;
+        }
+        if (sipp.verifikasi) {
+          setVerifikasi(sipp.verifikasi);
           return;
         }
         throw new Error(sipp.pesan);
@@ -303,6 +313,11 @@ export default function LoginPage() {
           const batas = bacaBatasPerangkat(authError);
           if (batas) {
             setBatasPerangkat(batas);
+            return;
+          }
+          const perluKode = bacaVerifikasiDiperlukan(authError);
+          if (perluKode) {
+            setVerifikasi(perluKode);
             return;
           }
           throw new Error(getAuthErrorMessage(authError));
@@ -716,6 +731,17 @@ export default function LoginPage() {
                     onBatal={() => setBatasPerangkat(null)}
                     onLanjut={() => {
                       setBatasPerangkat(null);
+                      void handleLogin();
+                    }}
+                  />
+                ) : null}
+
+                {verifikasi ? (
+                  <KodeVerifikasiMasuk
+                    info={verifikasi}
+                    onBatal={() => setVerifikasi(null)}
+                    onLanjut={() => {
+                      setVerifikasi(null);
                       void handleLogin();
                     }}
                   />

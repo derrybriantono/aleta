@@ -594,7 +594,8 @@ describe("server: pemasang disusun dari satu sumber, sidik paket konsisten", () 
     expect(manifest.key).toBeUndefined();
     expect(manifest.permissions).toContain("nativeMessaging");
     expect(JSON.stringify(manifest)).not.toContain('"tabs"');
-    expect(manifest.permissions).not.toContain("scripting");
+    // K11 (26 Okt 2026) sengaja menambah "scripting" (modul malas, tanpa peringatan pasang); pembaru sendiri tidak memakainya.
+    expect(manifest.permissions).toContain("scripting");
     const zip = zipEkstensiUnduh();
     const teks = zip.toString("latin1");
     expect(teks).toContain("ekstensi-sipp/pembaru/pembaru-aleta.ps1");

@@ -21,7 +21,7 @@ export function bacaGugatanEcourt(
   nomor: string,
   sebutan: { lawan: string; pelaku: string },
   majelis?: string,
-  opsi: { denganBukti?: boolean } = {}
+  opsi: { denganBukti?: boolean; otomatis?: { bukti: boolean; kesimpulan: boolean } } = {}
 ): Promise<HasilIsiGugatan> {
   return bacaIsiGugatan(
     nomor,

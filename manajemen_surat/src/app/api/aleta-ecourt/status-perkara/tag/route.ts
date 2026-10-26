@@ -69,6 +69,8 @@ export async function GET(request: NextRequest) {
       kelompok: hasil.data.kelompok ?? [],
       dasar: hasil.data.dasar ?? [],
       batasId: hasil.data.batasId ?? null,
+      // A5: hitungan dibaca dari Cermin Perkara (null = dari SIPP seperti biasa).
+      cermin: (hasil.data as { cermin?: { diperbaruiPada: string | null } }).cermin ?? null,
     });
   } catch (error) {
     return handleAdminRouteError(error, request, {

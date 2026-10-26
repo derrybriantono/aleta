@@ -68,8 +68,19 @@ const BERKAS = [
   // Statistik beban penetapan (20 Okt 2026, B1): tampilan saja, dipakai papan konten.js
   // dan panel penetapan-sipp.js dari objek usulan.statistik yang sama.
   "penunjukan-statistik.js",
+  // Modul malas (K11, 26 Okt 2026): pemuat di halaman + tiga potongan konten.js yang disuntikkan pekerja latar
+  // tepat sebelum dipakai (panel perkara / panel daftar / bagian bersama). Tanpa salah satunya panel tidak muncul.
+  "modul-malas.js",
   "konten.js",
+  "konten-kontak.js",
+  "konten-panel-bersama.js",
+  "konten-panel-perkara.js",
+  "konten-panel-daftar.js",
   "abt.js",
+  // Potongan abt.js yang dimuat saat dipakai (K11 tahap 3): panel blangko / beranda ABT.
+  "abt-panel-bersama.js",
+  "abt-panel-blangko.js",
+  "abt-panel-beranda.js",
   "aleta.js",
   "panel-alat.js",
   // Widget checklist milestone - skrip konten tersendiri, terpisah dari panel
@@ -89,13 +100,24 @@ const BERKAS = [
   "saksiscan.js",
   // Alamat <-> wilayah, isi dengan Tab, dan pengingat merah di blangko data pihak/kuasa SIPP (22 Okt 2026).
   "pihak-lengkap.js",
+  // Jejak isian dan butir saksi (rantai C, C1, 25 Okt 2026): pembantu bersama abt.js, saksi-susun.js, blangko-derry-isian.js.
+  // Saklar server "jejak-isian" (bawaan mati) - tanpa itu tidak ada yang dikirim.
+  "jejak-isian.js",
+  // Saklar Fitur Satker yang ditanyakan ekstensi (C3, 25 Okt 2026): fitur baru bawaan mati; gagal bertanya = mati.
+  "saklar-fitur.js",
   // Susun saksi menurut keadaan dan jenis perkara (18 Okt 2026): mesin katalog
   // (murni, tanpa DOM), data katalog yang DIHASILKAN dari saksi-katalog/*.json
   // oleh scripts/susun-saksi-katalog.mjs, dan borangnya. Dimuat di ABT sebelum
   // abt.js; borang dipasang abt.js lewat globalThis.AletaSaksiSusun.
   "saksi-katalog.js",
+  // Data seluruh katalog (satu skrip): TIDAK lagi disuntik ke halaman ABT (K10) - dipakai portal untuk Panduan pertanyaan saksi
+  // (server) dan uji. Peramban memuat saksi-katalog-indeks.js + saksi-katalog-muat.js dan isi per jenis dari saksi-katalog-jenis/.
   "saksi-katalog-data.js",
+  "saksi-katalog-indeks.js",
+  "saksi-katalog-muat.js",
   "saksi-susun.js",
+  // Kirim keterangan saksi ke BAS SIPP (C6/U10, 25 Okt 2026): tombol + pratinjau; saklar "saksi-ke-bas-sipp" bawaan mati.
+  "saksi-ke-bas.js",
   // Isi dari SIPP - mesin bersama (19 Okt 2026): pembobotan usulan, keputusan tulis/saran, dan
   // pembacaan sumber untuk "Isi otomatis dari SIPP" di Blangko Derry. Murni (tanpa DOM), dimuat di ABT
   // sebelum abt.js dan blangko-derry-isian.js.
@@ -214,6 +236,20 @@ const BERKAS = [
   // garis isian, tulisan merah). Salinan JS dari src/lib/deteksi-sisa-blangko.ts;
   // dimuat paling depan di blok skrip konten SIPP/ABT/portal.
   "deteksi-sisa-blangko.js",
+  // Pengamat bersama (K12, 25 Okt 2026): satu MutationObserver, pewaktu yang berhenti di tab tersembunyi; dimuat PALING DEPAN di tiga kelompok skrip konten.
+  "pengamat-bersama.js",
+  // Mode ringan untuk PC tua (K16, 25 Okt 2026): hiasan dimatikan, pewaktu diperlambat; dimuat tepat sesudah pengamat-bersama.js.
+  "mode-ringan.js",
+  "popup-ringan.js",
+  // Salinan antrean kerja peramban ke basis data (K15, rantai B, 25 Okt 2026); dimuat sesudah mode-ringan.js di blok SIPP dan ABT.
+  "antrean-server.js",
+  // Berkas cetak massal dan pemeriksa sisa blangko dikerjakan server (K14, rantai B, 25 Okt 2026); dimuat sesudah antrean-server.js.
+  "berkas-server.js",
+  // Perkara terakhir dan versi ekstensi mengikuti pengguna (U16, rantai B, 25 Okt 2026); dimuat di blok SIPP dan portal, dan di popup.
+  "konteks-server.js",
+  // Pemeriksa ejaan nama pihak di formulir pihak SIPP (U18, rantai B, 25 Okt 2026): hanya usulan, mati bawaan.
+  "ejaan-nama.js",
+  "popup-versi-pc.js",
   "tema-awal.js",
   // Pusat tema (terang | gelap | sistem): satu sumber kebenaran, dimuat sebelum tema-awal.js (SIPP, ABT, portal).
   "tema-pusat.js",
@@ -231,6 +267,8 @@ const BERKAS = [
   // Alamat portal yang hidup (K1, 19 Okt 2026): port 8008 dengan cadangan
   // port 80 - dimuat latar.js (importScripts) dan popup.html.
   "alamat-portal.js",
+  // Jalur cepat widget SIPP/ABT ke port 8008 (K7, 25 Okt 2026): skrip konten, hanya membaca (GET), cadangan port 80.
+  "portal-jalur.js",
   // Daftar 120 saklar fitur ide (tahap 1, 1.172.0) - dimuat popup.html
   // sebelum popup.js. Disusun dari berkas ide, bukan disunting tangan.
   "daftar-fitur.js",
@@ -248,6 +286,19 @@ const BERKAS = [
   "pembaru/pasang-pembaru-aleta.cmd",
   "PASANG.md",
 ];
+
+// K10 (25 Okt 2026): isi katalog Susun saksi per jenis perkara (JSON, dibaca skrip konten lewat web_accessible_resources).
+// DIHASILKAN scripts/susun-saksi-katalog.mjs; daftarnya disapu dari folder (satu berkas per jenis) supaya katalog baru tidak terlewat.
+// Folder yang daftarnya disapu seperti ini ditulis di BERKAS_FOLDER_DINAMIS (uji ekstensi-versi-tanam membacanya).
+const BERKAS_FOLDER_DINAMIS = [
+  "saksi-katalog-jenis/",
+];
+for (const awalan of BERKAS_FOLDER_DINAMIS) {
+  const folderDinamis = path.resolve(process.cwd(), "..", "ekstensi-sipp", awalan);
+  if (fs.existsSync(folderDinamis)) {
+    for (const nama of fs.readdirSync(folderDinamis).filter((n) => n.endsWith(".json")).sort()) BERKAS.push(`${awalan}${nama}`);
+  }
+}
 
 // Ikon TIDAK dapat ditanam sebagai teks: ia berkas PNG, dan membacanya sebagai
 // utf8 merusak bitanya tanpa satu pun galat. Karena itu ikon ditanam terpisah

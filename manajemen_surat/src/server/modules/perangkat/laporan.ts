@@ -55,7 +55,7 @@ export type SaringanJejak = {
   perHalaman?: number;
 };
 
-const PERISTIWA_GAGAL = ["MASUK_GAGAL", "MASUK_DITOLAK_BATAS_PERANGKAT"];
+const PERISTIWA_GAGAL = ["MASUK_GAGAL", "MASUK_DITOLAK_BATAS_PERANGKAT", "MASUK_DITOLAK_JARINGAN"];
 
 export async function cariJejak(db: AletaDatabase, s: SaringanJejak) {
   const syarat: string[] = [];

@@ -120,10 +120,81 @@ function computeAppealDeadline({
   };
 }
 
+/**
+ * G1 (25 Okt 2026) - tenggang untuk SEMUA pihak sekaligus, dipakai penjaga tenggat terjadwal.
+ *
+ * Satu perkara = paling banyak dua baris (pihak 1 dan pihak 2, yang kedua hanya bila perkaranya
+ * punya pihak kedua). Aturan tiap baris tetap computeAppealDeadline() di atas - tidak digandakan.
+ *
+ * `kehadiranPasti` salah bila sandi kehadiran saat putusan tidak dikenal (kosong, 5-15): angka tetap
+ * dihitung sejak putusan (arah yang lebih hati-hati), tetapi PEMANGGIL tidak boleh menyatakan "masa
+ * banding sudah berakhir" karena pihaknya mungkin sebenarnya tidak hadir dan tenggangnya lebih panjang.
+ * Putusan VERSTEK: pihak kedua (Tergugat/Termohon) tidak hadir menurut definisinya - dihitung sejak
+ * pemberitahuan walau sandi kehadiran di SIPP berkata lain.
+ */
+const SANDI_HADIR_DIKENAL = new Set([1, 2, 3, 4]);
+
+function computeAppealWindows({
+  tanggalPutusan = "",
+  tanggalBht = "",
+  dihadiriOleh = null,
+  verstek = false,
+  pemberitahuan = {},
+  adaPihak2 = true,
+  today = new Date(),
+} = {}) {
+  const hasil = [];
+  const pihakDiperiksa = adaPihak2 ? [1, 2] : [1];
+  for (const pihakKe of pihakDiperiksa) {
+    const wajibVerstek = Boolean(verstek) && pihakKe === 2;
+    // verstek: dipaksa "pihak 2 tidak hadir" (sandi 2 = pihak 2 tidak hadir pada partyNeedsNotification).
+    const sandi = wajibVerstek ? (Number(dihadiriOleh) === 3 || Number(dihadiriOleh) === 4 ? 4 : 2) : dihadiriOleh;
+    const hitung = computeAppealDeadline({
+      tanggalPutusan,
+      tanggalBht,
+      dihadiriOleh: sandi,
+      tanggalPemberitahuan: (pemberitahuan && pemberitahuan[pihakKe]) || "",
+      pihakKe,
+      today,
+    });
+    const pasti = wajibVerstek || SANDI_HADIR_DIKENAL.has(Number(dihadiriOleh));
+    hasil.push({ pihakKe, kehadiranPasti: pasti, ...hitung });
+  }
+  return hasil;
+}
+
+/** Tenggang kasasi (UU 14/1985 jo UU 5/2004 jo UU 3/2009 Pasal 46 ayat (1)): 14 hari sejak putusan banding diberitahukan. */
+const KASASI_DAYS = 14;
+
+/**
+ * Menghitung tenggang kasasi dari tanggal pemberitahuan putusan banding.
+ * Tanpa tanggal pemberitahuan hitungannya BELUM dimulai ("menunggu_beritahu"), bukan ditebak.
+ */
+function computeKasasiDeadline({ tanggalPutusanBanding = "", tanggalPemberitahuan = "", tanggalBht = "", today = new Date() } = {}) {
+  const putusan = toIsoDate(tanggalPutusanBanding);
+  if (!putusan) return { status: "belum_putus_banding" };
+  if (toIsoDate(tanggalBht)) return { status: "sudah_bht", tanggalBht: toIsoDate(tanggalBht) };
+  const pemberitahuan = toIsoDate(tanggalPemberitahuan);
+  if (!pemberitahuan) return { status: "menunggu_beritahu", tanggalPutusanBanding: putusan };
+  const batas = addDays(pemberitahuan, KASASI_DAYS);
+  const sisa = daysBetween(toIsoDate(today), batas);
+  if (sisa === null) return { status: "belum_putus_banding" };
+  return {
+    status: sisa >= 0 ? "berjalan" : "habis",
+    dasar: "pemberitahuan",
+    tanggalMulai: pemberitahuan,
+    tanggalBatas: batas,
+    sisaHari: sisa,
+  };
+}
+
 module.exports = {
   APPEAL_DAYS,
+  KASASI_DAYS,
   addDays,
   computeAppealDeadline,
+  computeAppealWindows,
+  computeKasasiDeadline,
   daysBetween,
   partyNeedsNotification,
 };
