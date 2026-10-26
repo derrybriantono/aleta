@@ -57,7 +57,7 @@ Halaman yang memang memakai semua fitur (perkara, blangko ABT) memuat hampir sem
 ## Angka uji
 
 - Sasaran per tahap: `npx tsc --noEmit` bersih; `npm run lint:jangan-bertambah` 45 = 45; 393 berkas uji yang menyebut `ekstensi-sipp` hijau (4 yang merah di tahap 3 diperbaiki dan hijau).
-- Uji penuh: lihat bagian bawah (diisi sesudah selesai).
+- Uji penuh (`periksa-uji.mjs`, utas 2, commit `8587d8d4`): 1.014 berkas, 1.007 hijau, 19.053 uji lulus. Merah: `root-redirect` (butuh .env.local) dan `referensi-pihak-isian-t8-23okt` (acak) - dua-duanya sudah diketahui di dasar; `jejak-isian-25okt` (retensi 2 tahun memakai tanggal tetap 2024-10-26 terhadap jam nyata 26 Okt 2026 - bom waktu uji, tidak terkait K11, merah juga di dasar bila dijalankan hari ini); `performa-denyut-susulan-19okt` dan `arsip-cadangan` (habis waktu/beban) hijau bila dijalankan sendirian.
 
 ## Langkah uji tangan sesudah dipasang (SIPP/ABT nyata)
 
