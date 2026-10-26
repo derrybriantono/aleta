@@ -14,7 +14,7 @@ type Rincian = { tanggal: string; fitur: FiturOtomatis; nomorPerkara: string; ke
 
 type Laporan =
   | { tersedia: false; pesan: string }
-  | { tersedia: true; hari: number; dari: string; sampai: string; jumlahBaris: number; aturan: RingkasAturan[]; dilewati: RingkasSebab[]; rincian: Rincian[] };
+  | { tersedia: true; hari: number; dari: string; sampai: string; jumlahBaris: number; aturan: RingkasAturan[]; dilewati: RingkasSebab[]; rincian: Rincian[]; jejakAktif?: boolean };
 
 function pesanGalat(isi: unknown, cadangan: string): string {
   const x = isi as { error?: { message?: string }; message?: string } | null;
@@ -127,6 +127,11 @@ export function OtomatisKetepatan() {
             <p className="text-xs text-muted-foreground">
               {laporan.dari} sampai {laporan.sampai}: {laporan.jumlahBaris} sidang tercatat.
             </p>
+            {laporan.jejakAktif === false ? (
+              <p className="text-sm text-muted-foreground">
+                Pencatatan jejak sedang mati, jadi sidang baru tidak dicatat di sini. Super Admin dapat menyalakannya di Fitur Satker (Jejak tunda dan putus otomatis).
+              </p>
+            ) : null}
             {laporan.aturan.length === 0 ? (
               <p className="text-sm text-muted-foreground">Belum ada tunda atau putus otomatis yang tercatat pada rentang ini.</p>
             ) : (

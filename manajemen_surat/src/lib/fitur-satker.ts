@@ -4,6 +4,7 @@ import { KODE_FITUR_ISIAN_SEKALI } from "@/lib/isian-sekali";
 import { KODE_FITUR_ISIAN_SIDANG } from "@/lib/isian-sidang";
 import { KODE_FITUR_JEJAK_ISIAN } from "@/lib/jejak-isian";
 import { KODE_FITUR_KETEPATAN_ISIAN } from "@/lib/ketepatan-isian";
+import { KODE_FITUR_JEJAK_OTOMATIS } from "@/lib/otomatis-jejak";
 import { KODE_FITUR_WAJIB_CETAK } from "@/lib/wajib-cetak";
 
 /**
@@ -198,6 +199,14 @@ export const KATALOG_FITUR_SATKER: readonly FiturKatalog[] = [
     bagian: "portal",
     keterangan:
       "Mati: isian ketikan BAS satu per perkara seperti biasa (BAS sidang berikutnya menimpa yang sebelumnya di ABT). Nyalakan agar ALETA menyimpan isian BAS per sidang; saat BAS sidang tertentu dicetak, isian sidang itu dipakai sementara lalu ABT dipulihkan seperti semula.",
+    bawaan: "mati",
+  },
+  {
+    kode: KODE_FITUR_JEJAK_OTOMATIS,
+    nama: "Jejak tunda dan putus otomatis",
+    bagian: "portal",
+    keterangan:
+      "Mati: tunda dan putus otomatis berjalan seperti biasa tetapi tidak ada baris jejak per sidang yang disimpan (riwayat harian lama tetap ada). Nyalakan agar tiap sidang yang diputuskan otomatis tercatat (aturan, hasil, ditolak atau tidak) dan layar Ketepatan Tunda dan Putus Otomatis terisi.",
     bawaan: "mati",
   },
   portal("putusan-advance", "Putusan Advance", "Draf putusan lengkap oleh konseptor dan hakim."),
