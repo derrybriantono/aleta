@@ -1,5 +1,6 @@
 import { type NextRequest } from "next/server";
 
+import { berkasVarianUkuran } from "@/lib/berkas-perkara";
 import { golonganPengguna } from "@/lib/matriks-peran";
 import { isPrivilegedAdmin } from "@/lib/permissions";
 import { jalurBlangkoTerhapus } from "@/lib/tugas-blangko";
@@ -126,6 +127,7 @@ async function indeksDerry(): Promise<IndeksDerry> {
         const jalur = teks(b.jalur);
         const m = jalur.match(/^derry_briantono\/([^/]+)\/([^/]+)$/);
         if (!m || jalurBlangkoTerhapus(jalur)) continue; // I7 17 Okt: derry_briantono/terhapus bukan blangko aktif
+        if (berkasVarianUkuran(m[2])) continue; // 26 Okt: varian F4/Legal sampul & daftar isi dipilih di layar kerja, bukan di daftar
         if (!folder.has(m[1])) folder.set(m[1], []);
         folder.get(m[1])!.push(m[2]);
       }
@@ -144,7 +146,7 @@ async function indeksDerry(): Promise<IndeksDerry> {
           kelompok.map((nama) => callAletaBotSippBridge<JawabanKatalogFolder>("blangko.katalog", { folder: `${AKAR_DERRY}/${nama}` }, { timeoutMs: 15000 }).catch(() => null))
         );
         jawaban.forEach((j, idx) => {
-          const daftar = j && j.ok && j.data?.ada ? (j.data.blangko ?? []).map((b) => teks(b.berkas)).filter(Boolean) : [];
+          const daftar = j && j.ok && j.data?.ada ? (j.data.blangko ?? []).map((b) => teks(b.berkas)).filter((n) => Boolean(n) && !berkasVarianUkuran(n)) : [];
           folder.set(kelompok[idx], daftar);
         });
       }

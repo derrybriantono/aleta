@@ -1069,6 +1069,49 @@ export const DDL_ALETA_TENGGAT_KIRIM = {
 } as const;
 
 /**
+ * Sampul berkas dan daftar isi berkas (0112, 26 Okt 2026): sunting petugas, halaman manual, ciri tangan, bawaan halaman.
+ * Cermin PERSIS dari drizzle/0112_aleta_berkas_perkara.sql; berkas-perkara-26okt.test.ts membandingkan keduanya. Tanpa kunci asing.
+ */
+export const DDL_ALETA_BERKAS_PERKARA = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_berkas_susunan (
+  id TEXT PRIMARY KEY,
+  perkara_id TEXT NOT NULL,
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  bundel TEXT NOT NULL,
+  kunci TEXT NOT NULL,
+  tampil INTEGER NOT NULL DEFAULT 1,
+  urutan INTEGER NOT NULL DEFAULT 0,
+  halaman_teks TEXT NOT NULL DEFAULT '',
+  judul_manual TEXT NOT NULL DEFAULT '',
+  tanggal_manual TEXT NOT NULL DEFAULT '',
+  tambahan INTEGER NOT NULL DEFAULT 0,
+  diubah_oleh TEXT NOT NULL DEFAULT '',
+  diubah_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_berkas_sampul (
+  id TEXT PRIMARY KEY,
+  perkara_id TEXT NOT NULL,
+  jenis TEXT NOT NULL,
+  kunci TEXT NOT NULL,
+  nilai TEXT NOT NULL DEFAULT '',
+  diubah_oleh TEXT NOT NULL DEFAULT '',
+  diubah_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_berkas_bawaan (
+  jenis_dokumen TEXT PRIMARY KEY,
+  halaman INTEGER NOT NULL,
+  jumlah_contoh INTEGER NOT NULL DEFAULT 0,
+  diperbarui_at TEXT NOT NULL
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_berkas_susunan_perkara ON aleta_berkas_susunan(perkara_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_berkas_sampul_perkara ON aleta_berkas_sampul(perkara_id)`,
+  ],
+} as const;
+
+/**
  * Pusat kesehatan + catatan galat + hasil uji beban (0094, 25 Okt 2026, rantai E):
  * kelompok galat dan kejadiannya, hasil uji beban yang diimpor, warna terakhir
  * tiap komponen, riwayat pemeriksaan, dan versi ekstensi per PC. Cermin PERSIS
@@ -3202,6 +3245,7 @@ const schemaStatements = [
   // Katalog saksi di basis data dengan versi (0093, rantai C).
   ...DDL_SAKSI_KATALOG.tabel,
   ...DDL_ALETA_TENGGAT_KIRIM.tabel,
+  ...DDL_ALETA_BERKAS_PERKARA.tabel,
   // Cermin Perkara: perkara, sidang, pihak, mediasi, penanda, jejak (0090).
   ...DDL_ALETA_CERMIN_PERKARA.tabel,
   // Pusat kesehatan, catatan galat, hasil uji beban (0094).
@@ -5189,6 +5233,7 @@ const indexStatements = [
   ...DDL_ISIAN_SIDANG.indeks,
   ...DDL_SAKSI_KATALOG.indeks,
   ...DDL_ALETA_TENGGAT_KIRIM.indeks,
+  ...DDL_ALETA_BERKAS_PERKARA.indeks,
   ...DDL_ALETA_CERMIN_PERKARA.indeks,
   ...DDL_KESEHATAN_GALAT.indeks,
   ...DDL_VERIFIKASI_DUA_LANGKAH.indeks,

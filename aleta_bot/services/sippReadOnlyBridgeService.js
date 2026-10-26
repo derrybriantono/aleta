@@ -3213,6 +3213,8 @@ async function handleBridgeOperation(operation, params = {}) {
     "ecourt.dokumenPerkara": getDokumenECourt,
     "blangko.baca": bacaBlangko,
     "blangko.isi": isiBlangko,
+    "berkas.fakta": (params) => require("./berkasPerkaraService").fakta(params),
+    "berkas.pelajari": (params) => require("./berkasPerkaraService").pelajari(params),
     "tes.cariPerkara": cariPerkaraTes,
     "abt.nilaiPenanda": nilaiPenandaAbt,
     "blangko.pohon": getPohonBlangko,
