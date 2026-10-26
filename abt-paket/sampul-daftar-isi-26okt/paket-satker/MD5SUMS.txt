@@ -1,0 +1,19 @@
+066150d866daa41ee1b7afbcb1ad015f  abt-sampul-daftar-isi-26okt-FUNGSI.sql
+c94d0288ad541430b52af708e940dcd3  abt-sampul-daftar-isi-26okt-PASANG.sql
+7870e20abd0c5ada591d9100d8866084  abt-sampul-daftar-isi-26okt-PERIKSA.sql
+9a8df2b62a16da0498782c22f9bebdee  abt-sampul-daftar-isi-26okt-PRASYARAT.sql
+3c657afcfa40a0a0bdb68372bfaca3bf  abt-sampul-daftar-isi-26okt-PULIH.sql
+6c0887b0e2c5ee4015f6c70b32102147  berkas_rtf.py
+5b6004169e2ab0b482d31e53a931ea9b  daftar-rtf.tsv
+cfa64fcb3c90cab36fcb706da5561db2  folder-ada.txt
+b28b52ab1d903813df3edee682d2989b  folder-baru.txt
+867e56bdf912ce33d30fe8e114b0b06f  nomor-variabel.txt
+c63858e05f1b1193a661a8ed571a12ab  pasang-satker.sh
+346c212265668f7353deb63a37929f8f  pulih-satker.sh
+b04f27a4aa50d1e18a9b3a4ac6a03dc9  rtf/derry_briantono/98b Berkas Perkara - BAS/Daftar Isi Berkas (F4).rtf
+80a61b6d07edbae4d2b47bda77c7e289  rtf/derry_briantono/98b Berkas Perkara - BAS/Daftar Isi Berkas (Legal).rtf
+c1cb738f60405bddbaa8814d9887f045  rtf/derry_briantono/98b Berkas Perkara - BAS/Daftar Isi Berkas.rtf
+d7b3b4b8fa334a0c90bb7469c30ca77a  rtf/derry_briantono/99 PTSP/Sampul Berkas Perkara (F4).rtf
+46c60ade1da290ce15d757668c28f93f  rtf/derry_briantono/99 PTSP/Sampul Berkas Perkara (Legal).rtf
+f8cdac8b516accc0091f453b0d3d4b6d  rtf/derry_briantono/99 PTSP/Sampul Berkas Perkara.rtf
+d8e98c0d0f2941ae9b33dc09d926fc03  uji-kueri.tsv

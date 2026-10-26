@@ -415,3 +415,46 @@ G. **Sampul per jenis**: daftar 14 jenis, blok pokok perkara, dan dokumen khas d
 H. **Kertas**: sebutan "Legal" yang dimaksud 216 x 356 mm atau F4 215 x 330 mm? Bila hanya salah satu yang dipakai, yang lain dihapus dari pilihan.
 I. **Resi pos**: 46% nilai `doc_resi` berupa angka (bukan jalur berkas). Itu e-Summons yang tak punya berkas, atau berkas resi belum diunggah? Menentukan apakah barisnya tetap ditampilkan.
 J. **Daftar isi**: baris untuk court calendar, replik, duplik, simpulan, dan putusan sela (ada di daftar Bundel A SIPP) ikut ditampilkan bila ada berkasnya di arsip e-Court?
+
+---
+
+## 14. Keputusan Derry 26 Okt (malam) dan pembangunan versi produksi
+
+**"Sepakat A-J"**: seluruh rekomendasi bagian 13 disetujui.
+
+| Butir | Keputusan |
+|---|---|
+| A | Bundel B mulai dari 1; halaman sampul tidak dihitung |
+| B | Cetakan TANPA tanda "perkiraan" (angka biasa); penanda sumber hanya di layar kerja |
+| C | Halaman putusan RTF dihitung dari PDF yang dibuat panel (Cetak PDF / unggah e-Doc); sebelum itu perkiraan 13 |
+| D | Halaman manual disimpan di ALETA saja (tidak ditulis ke ABT/SIPP) |
+| E | `pdf-lib` boleh ditambahkan ke bot (dengan pembaca `/Count` sendiri sebagai cadangan, 98,6% cocok) |
+| F | Layar kerja khusus: B untuk sampul, A untuk daftar isi |
+| G | 14 jenis perkara, blok pokok perkara, dan dokumen khas disetujui |
+| H | Kertas F4 215x330 DAN Legal 216x356 disediakan, bawaan A4 |
+| I | Arti `doc_resi` angka ditelusuri sendiri (di bawah); jalur aman dipakai |
+| J | Court calendar, replik, duplik, kesimpulan, putusan sela ikut bila ada berkasnya (di arsip e-Court; panel) |
+| tambahan | **Blok "PERNIKAHAN DAN ANAK" dihapus untuk Cerai Gugat dan Cerai Talak** (jenis lain tetap punya bloknya) |
+| tambahan | **Riwayat sidang paling dominan** di sampul (lihat 14.2) |
+| tambahan | **Tag NON e-COURT dihapus** (bagian 13) |
+
+### 14.1 Jawaban butir I: arti `doc_resi` bernilai angka (baca-saja, perkara daftar 2026)
+
+Nilai angka itu seluruhnya **`0`** (1.310 dari 2.844 baris relaas). 1.279 dari 1.310 berkolom `ket_temu = 'E'` (panggilan elektronik / e-Summons) dan hampir semuanya tanpa nomor resi pos (1.305 dari 1.310); jadi `0` = "tidak ada resi" karena e-Summons memang tidak punya resi, **bukan** berkas resi yang belum diunggah. Kode SIPP (`data_relaas_c.php`) hanya menyimpan jalur resi bila hasil relaas "S" (serah terima pos), selain itu `NULL`. **Jalur aman yang dipakai**: baris "Bukti Surat Tercatat" muncul hanya bila `doc_resi` berawalan `resources/` (berkas ada) atau `no_resi_pos` terisi (resi tercatat tanpa berkas: halaman perkiraan); `doc_resi = 0` tidak pernah membuat baris. Sudah diterapkan di fungsi ABT dan di panel.
+
+### 14.2 Sampul: riwayat sidang paling dominan; cerai tanpa blok pernikahan dan anak
+
+Urutan di kertas: kop, judul dan nomor (ringkas, dua kolom), band fokus (bila ada), ciri, **RIWAYAT SIDANG (bagian terbesar: judul gelap dengan huruf lebar, lima kolom NO / TGL SIDANG / HADIR / AGENDA-HASIL / ALASAN PENUNDAAN-KET., baris tinggi 7 mm sampai 8 mm, huruf isian 11 sampai 13 pt)**, lalu blok lain dipadatkan tanpa menghilangkan informasi: para pihak (dua kolom), majelis dan petugas (empat kolom dua baris), tanggal penting (enam sel), pokok perkara (hanya jenis non-cerai), putusan (empat sel), baris ikrar (cerai talak), hijriah. Kolom **HADIR** dari sandi `dihadiri_oleh` SIPP (1 = P T, 2 = P, 3 = T, 4 = -, 5 = I). Jumlah baris riwayat **disesuaikan karena ruang lebih lega**: A4 **12** (tetap), F4 **15** (dulu 18), Legal **18** (dulu 20), karena tiap baris kini jauh lebih tinggi; catatan: catatan jumlah baris sebelumnya (12/18/20) diganti. Variabel riwayat: 20 baris x 4 kolom di 5700-5779. Terbukti di Microsoft Word: semua sampul 1 lembar pada A4, F4, dan Legal untuk empat jenis perkara contoh (cerai gugat, cerai talak, itsbat nikah, dispensasi kawin) dengan renderer php56 ABT asli.
+
+**Catatan**: sesi utama mengusulkan sampul yang dicetak SAAT PENDAFTARAN atau sesudah PHS (`artifact-sampul-cetak-awal.html`): yang belum diketahui berupa kotak/garis isian tangan, riwayat sidang dengan kolom paraf PP, ciri susulan berupa kotak centang, penutup berkas di bawah. RTF sampul final **ditahan** sampai Derry memilih antara versi ini dan versi itu; RTF sampul di paket sekarang = versi "riwayat dominan" sementara.
+
+### 14.3 Temuan renderer php56 ABT asli (26 Okt) yang mengubah rancangan
+
+- Entitas numerik > 255 menjadi **byte UTF-8 mentah** di RTF (rusak di Word). Tanda ciri di keluaran ABT diganti ASCII: `[+ PRODEO]`, `[* GHAIB T]`, `[> VERSTEK]`; panel mengisi sendiri ■ ● ▲ lewat `\u`.
+- `<b>` dan `<i>` dibuang renderer; `<br>` menjadi `\par`. Kontrol RTF (`\u`, `\b`, `\trowd`) dari variabel tidak lolos. Jadi tabel yang barisnya berubah memakai satu tabel statis berkolom empat dengan satu variabel bergaris banyak per kolom (sudah terbukti sejajar).
+
+### 14.4 Yang dibangun (cabang `fitur/sampul-daftar-isi`)
+
+- **Paket ABT** `abt-paket/sampul-daftar-isi-26okt/` (lengkap, PASANG.md): lihat berkas itu untuk PRASYARAT, pasang, pulih.
+- **Pratinjau** `artifact-*.html`: tanpa blok pernikahan dan anak untuk cerai, riwayat sidang dominan, tiga ukuran kertas dengan baris 12/15/18.
+- **Portal, bot, dan ekstensi**: lihat bagian 15 (diisi saat tahap itu selesai).

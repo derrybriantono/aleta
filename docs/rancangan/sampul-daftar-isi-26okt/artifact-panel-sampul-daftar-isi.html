@@ -259,6 +259,56 @@ details.lipat p,details.lipat li{font-size:13px;color:var(--muted)}
 details.lipat code{font-family:var(--mono);font-size:12px;background:var(--panel2);padding:0 4px;border-radius:4px}
 .dk-kertas{display:grid;gap:0}
 .hlk{white-space:nowrap}
+
+/* ===== sampul: riwayat sidang dominan, blok lain dipadatkan ===== */
+.k-judul2{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-top:12px}
+.k-judul2 .kj-kiri{flex:1;min-width:0}
+.k-judul2 .atas2{font:700 9.5px/1 var(--ui);letter-spacing:.4em;color:var(--p-muted)}
+.k-judul2 .jenis{font:700 24px/1.15 var(--serif);margin-top:6px}
+.k-judul2 .k-nomor{margin:0;width:52%;padding:8px 12px 6px}
+.k-judul2 .k-nomor .no{font:700 28px/1.1 var(--serif);margin-top:3px}
+.k-judul2 .k-nomor .thn{font:500 9.5px/1.3 var(--ui);letter-spacing:.1em;margin-top:2px}
+.sek.kecil{margin:calc(var(--ruang,18px) * .55) 0 4px;font-size:8.5px}
+.kertas .legenda{margin-top:3px;font-size:9px;white-space:pre-wrap}
+.kertas .ciri{padding:6px 9px;min-height:30px}
+.kertas .fokus{margin-top:9px;padding:5px 12px}
+.kertas .fokus .v{font-size:15px;margin-top:3px}
+.rw{margin-top:calc(var(--ruang,18px) * .7);border:2.5px solid var(--p-line)}
+.rw-judul{display:flex;align-items:baseline;gap:12px;background:var(--p-ink);color:#fff;padding:7px 12px}
+.rw-judul b{font:800 15px/1 var(--ui);letter-spacing:.34em}
+.rw-judul span{font:400 10px/1.3 var(--ui);opacity:.85}
+table.rwt{width:100%;border-collapse:collapse;table-layout:fixed;font:400 13px/1.3 var(--serif)}
+table.rwt th{background:var(--p-wash);border-bottom:2px solid var(--p-line);border-right:1px solid var(--p-thin);padding:5px 8px;text-align:left;font:800 9.5px/1.2 var(--ui);letter-spacing:.14em}
+table.rwt th.n{width:46px;text-align:center}
+table.rwt th.t{width:132px}
+table.rwt th.h{width:64px;text-align:center}
+table.rwt th.g{width:auto}
+table.rwt th.a{width:34%}
+table.rwt td{height:29px;padding:3px 8px;border-bottom:1px solid var(--p-thin);border-right:1px solid var(--p-thin);vertical-align:middle;overflow:hidden}
+table.rwt td:last-child,table.rwt th:last-child{border-right:0}
+table.rwt td.n{text-align:center;font:800 14px var(--ui);background:var(--p-soft)}
+table.rwt td.h{text-align:center;font:700 11px var(--ui);letter-spacing:.06em}
+table.rwt tbody tr:nth-child(even) td{background:rgba(231,240,236,.28)}
+table.rwt tbody tr:nth-child(even) td.n{background:var(--p-soft)}
+.rw-ket{padding:3px 10px;font:400 9px/1.3 var(--ui);color:var(--p-muted);border-top:1px solid var(--p-thin)}
+.kel{font:800 8px/1 var(--ui);border:1px solid var(--p-line);border-radius:3px;padding:1px 4px;margin-left:6px;letter-spacing:.06em}
+.padat .pihak{font-size:11px}
+.padat .pihak .sisi{padding:5px 10px}
+.padat .pihak .nama{font-size:13.5px;margin:3px 0 2px}
+.padat .pihak dl{font-size:10px;gap:1px 6px;grid-template-columns:52px 1fr}
+.kisi.empat.rapat .sel,.kisi.enam.rapat .sel{padding:3px 8px}
+.kisi.empat.rapat .sel .v,.kisi.enam.rapat .sel .v{font-size:11px;margin-top:1px;min-height:14px}
+.kisi.enam{grid-template-columns:repeat(6,1fr)}
+.kisi.enam .sel{border-bottom:0}
+.kisi.enam .sel:nth-child(6n){border-right:0}
+.kisi.empat.rapat .sel{text-align:left}
+.kisi.empat.pusat .sel{text-align:center}
+.kisi.empat .sel:nth-child(4n){border-right:0}
+.kisi.empat.rapat .sel{border-bottom:1px solid var(--p-thin)}
+.kisi.empat.rapat .sel:nth-last-child(-n+4){border-bottom:0}
+.padat .ikrar{margin-top:6px;font:400 10.5px/1.4 var(--ui)}
+.padat .ikrar b.h{font:800 9px/1 var(--ui);letter-spacing:.24em;margin-right:8px}
+.isi-f:empty:after{content:"\2014";color:#b0b7c3}
 </style>
 
 <header class="atas">
@@ -347,7 +397,7 @@ details.lipat code{font-family:var(--mono);font-size:12px;background:var(--panel
           <div class="grupt"><h3>&#9650; Proses</h3><div class="tagpil" id="sp-c"></div></div>
           <div class="bar"><button type="button" class="tbl-btn kecil" id="s-oto">&#8634; Kembalikan semua ciri ke otomatis</button><span class="catatan-kecil" id="s-otoket"></span></div>
         </div>
-        <div class="kartu">
+        <div class="kartu" id="s-khas-kartu">
           <h2><span id="s-khas-j">Isian khas</span> <small>sumber: SIPP, isian ABT, atau tangan</small></h2>
           <div id="s-khas" style="display:grid;gap:8px"></div>
         </div>
@@ -367,51 +417,7 @@ details.lipat code{font-family:var(--mono);font-size:12px;background:var(--panel
         </div>
         <div class="gulir" id="s-gulir">
           <div class="bingkai" id="s-bingkai">
-            <article class="kertas sorot" id="s-kertas" aria-label="Pratinjau sampul berkas perkara">
-              <div class="k-kop"><div><div class="satker">PENGADILAN AGAMA CONTOH</div><div class="sub">Berkas perkara tingkat pertama</div></div><div class="jilid">BUNDEL A</div></div>
-              <div class="k-judul">
-                <div class="atas2">SAMPUL BERKAS PERKARA</div>
-                <div class="jenis" id="p-jenis">Cerai Gugat</div>
-                <div class="k-nomor"><div class="lbl">PERKARA NOMOR</div><div class="no" id="p-nomor">214/Pdt.G/2026/PA.Cth</div><div class="thn">TAHUN 2026 &nbsp;&middot;&nbsp; TERDAFTAR 12 MARET 2026</div></div>
-              </div>
-              <div class="fokus" id="p-fokus" hidden><div class="l" id="p-fokus-l"></div><div class="v" id="p-fokus-v"></div></div>
-              <div class="sek">CIRI PERKARA</div>
-              <div class="ciri"><ul class="chips" id="p-chips"></ul><p class="kos" id="p-kos" hidden>Tidak ada ciri khusus pada perkara ini.</p></div>
-              <div class="sek">PARA PIHAK</div>
-              <div class="pihak" id="p-pihak"></div>
-              <div class="sek">MAJELIS DAN PETUGAS</div>
-              <div class="kisi dua">
-                <div class="sel"><div class="l">Ketua Majelis</div><div class="v">Drs. H. Ahmad Fauzi, M.H.</div></div>
-                <div class="sel"><div class="l">Panitera Pengganti</div><div class="v">Siti Nurjannah, S.H.</div></div>
-                <div class="sel"><div class="l">Hakim Anggota I</div><div class="v" id="ha1">Dra. Hj. Rahmawati, M.H.</div></div>
-                <div class="sel"><div class="l">Jurusita / Pengganti</div><div class="v">Abdul Rahman, S.H.</div></div>
-                <div class="sel"><div class="l">Hakim Anggota II</div><div class="v" id="ha2">Muhammad Yusuf, S.H.I., M.H.</div></div>
-                <div class="sel"><div class="l">Mediator</div><div class="v"><span class="isi-f" data-f="mediator" id="p-mediator" tabindex="0"></span></div></div>
-                <div class="sel"><div class="l">Konseptor</div><div class="v"><span class="isi-f" data-f="konseptor" id="p-konseptor" tabindex="0"></span></div></div>
-                <div class="sel"><div class="l">Hasil mediasi</div><div class="v"><span class="isi-f" data-f="hasilmed" id="p-hasilmed" tabindex="0"></span></div></div>
-              </div>
-              <div class="sek">TANGGAL PENTING</div>
-              <div class="kisi tiga">
-                <div class="sel"><div class="l">Daftar perkara</div><div class="v">12 Maret 2026</div></div>
-                <div class="sel"><div class="l">Penetapan Majelis (PMH)</div><div class="v">13 Maret 2026</div></div>
-                <div class="sel"><div class="l">Penetapan Hari Sidang (PHS)</div><div class="v">13 Maret 2026</div></div>
-                <div class="sel"><div class="l">Penetapan PP / JS</div><div class="v">13 Maret 2026</div></div>
-                <div class="sel"><div class="l">Penetapan mediator</div><div class="v"><span class="isi-f" data-f="tglmed" id="p-tglmed" tabindex="0"></span></div></div>
-                <div class="sel"><div class="l">Laporan mediator</div><div class="v"><span class="isi-f" data-f="tgllap" id="p-tgllap" tabindex="0"></span></div></div>
-              </div>
-              <div class="sek" id="p-blokj">POKOK PERKARA</div>
-              <div class="kisi dua" id="p-blok"></div>
-              <div class="sek">RIWAYAT SIDANG <span style="font:400 10px var(--sans);letter-spacing:0;color:var(--p-muted)" id="p-ukuran"></span></div>
-              <table class="tb"><thead><tr><th>NO</th><th>TGL SIDANG</th><th>ALASAN PENUNDAAN</th><th>AGENDA SIDANG / KET.</th></tr></thead><tbody id="p-sidang"></tbody></table>
-              <div class="sek">PUTUSAN</div>
-              <div class="kisi empat">
-                <div class="sel"><div class="l">Tgl putus</div><div class="v"><span class="isi-f" data-f="tglputus" id="p-tglputus" tabindex="0"></span></div></div>
-                <div class="sel"><div class="l">Tgl minutasi</div><div class="v"><span class="isi-f" data-f="tglminutasi" id="p-tglminutasi" tabindex="0"></span></div></div>
-                <div class="sel"><div class="l">Tgl PBT</div><div class="v"><span class="isi-f" data-f="tglpbt" id="p-tglpbt" tabindex="0"></span></div></div>
-                <div class="sel"><div class="l">Tgl BHT</div><div class="v"><span class="isi-f" data-f="tglbht" id="p-tglbht" tabindex="0"></span></div></div>
-              </div>
-              <div class="k-kaki"><span>Hijriah putusan: 17 Zulkaidah 1447 H</span><span>Sampul dicetak otomatis dari data perkara</span></div>
-            </article>
+            <article class="kertas sorot" id="s-kertas" aria-label="Pratinjau sampul berkas perkara"></article>
           </div>
         </div>
       </div>
@@ -518,21 +524,19 @@ details.lipat code{font-family:var(--mono);font-size:12px;background:var(--panel
   /* ===== data bersama: jenis perkara, kertas (disalin ke tiap halaman pratinjau) ===== */
   var KERTAS = {
     a4:{nama:"A4 (210 x 297 mm)", w:794, h:1123, rtf:"\\paperw11906\\paperh16838", baris:12},
-    f4:{nama:"F4 / Folio (215 x 330 mm)", w:812, h:1247, rtf:"\\paperw12189\\paperh18709", baris:18},
-    legal:{nama:"Legal (216 x 356 mm)", w:816, h:1346, rtf:"\\paperw12246\\paperh20183", baris:20}
+    f4:{nama:"F4 / Folio (215 x 330 mm)", w:812, h:1247, rtf:"\\paperw12189\\paperh18709", baris:15},
+    legal:{nama:"Legal (216 x 356 mm)", w:816, h:1346, rtf:"\\paperw12246\\paperh20183", baris:18}
   };
   var URUTKERTAS = ["a4","f4","legal"];
   // sumber: SIPP = kolom/tabel SIPP; ABT = isian ABT (data_teks/data_tanggal); tangan = diketik petugas
   var JENIS = {
     cg:{nama:"Cerai Gugat", no:"214/Pdt.G/2026/PA.Cth", P:"PENGGUGAT", T:"TERGUGAT", kat:"gugatan", n:4, kum:" Kumulasi Hak Asuh Anak",
       auto:["ecourt","kuasa","pns","verstek","kumulasi","mediasi","keliling"],
-      blok:{j:"PERNIKAHAN DAN ANAK", r:[
-        {k:"b1", l:"Tanggal nikah", v:"12 Juni 2015", asal:"SIPP", w:1}, {k:"b2", l:"KUA / tempat nikah", v:"KUA Kec. Contoh", asal:"SIPP", w:1}, {k:"b3", l:"Anak", v:"2 orang", asal:"SIPP", w:0}]},
+      blok:null,
       khas:[["aktanikah","Kutipan Akta Nikah",1,"perkiraan","lampiran gugatan; berkas tidak terdaftar sendiri"]]},
     ct:{nama:"Cerai Talak", no:"188/Pdt.G/2026/PA.Cth", P:"PEMOHON", T:"TERMOHON", kat:"gugatan", n:3, ikrar:true, kum:" Kumulasi Harta Bersama",
       auto:["ecourt","pns","mediasi","ikrar"],
-      blok:{j:"PERNIKAHAN DAN ANAK", r:[
-        {k:"b1", l:"Tanggal nikah", v:"3 Mei 2012", asal:"SIPP", w:1}, {k:"b2", l:"KUA / tempat nikah", v:"KUA Kec. Contoh", asal:"SIPP", w:1}, {k:"b3", l:"Anak", v:"1 orang", asal:"SIPP", w:0}]},
+      blok:null,
       khas:[["aktanikah","Kutipan Akta Nikah",1,"perkiraan","lampiran permohonan"],["izin","Surat Izin Atasan (bila PNS/TNI/Polri)",1,"perkiraan","perkara_izin_cerai; berkas tidak terdaftar"]]},
     "in":{nama:"Itsbat Nikah", no:"77/Pdt.P/2026/PA.Cth", P:"PEMOHON I", P2:"PEMOHON II", T:"", kat:"permohonan", n:2, pengumuman:true,
       pN:"MUHAMMAD IKHSAN bin LUKMAN", p2N:"NURUL AINI binti HASAN",
@@ -622,6 +626,109 @@ details.lipat code{font-family:var(--mono);font-size:12px;background:var(--panel
   var URUTJENIS = ["cg","ct","in","dk","aua","wali","asuh","adhol","poligami","waris","paw","hb","es","batal"];
 
 
+  /* ===== kertas sampul: tata letak "riwayat sidang paling dominan" (dipakai bersama oleh halaman pratinjau) ===== */
+  var SIDANG_CONTOH = [
+    ["24 Maret 2026","Pemeriksaan identitas dan pembacaan gugatan","Tergugat belum dipanggil patut","P","k"],
+    ["7 April 2026","Mediasi dan jawaban","Mediasi tidak berhasil","P T",""],
+    ["21 April 2026","Pembuktian Penggugat (surat dan saksi)","Pembuktian lanjutan","P T",""],
+    ["5 Mei 2026","Pembacaan putusan","","P T",""],
+    ["19 Mei 2026","Pemeriksaan lanjutan","Menunggu kelengkapan berkas","P",""],
+    ["2 Juni 2026","Agenda tambahan","","P T",""], ["16 Juni 2026","Agenda tambahan","","P T",""], ["30 Juni 2026","Agenda tambahan","","P T",""],
+    ["14 Juli 2026","Agenda tambahan","","P T",""], ["28 Juli 2026","Agenda tambahan","","P T",""], ["11 Agustus 2026","Agenda tambahan","","P T",""], ["25 Agustus 2026","Agenda tambahan","","P T",""],
+    ["8 September 2026","Agenda tambahan","","P T",""], ["22 September 2026","Agenda tambahan","","P T",""], ["6 Oktober 2026","Agenda tambahan","","P T",""], ["20 Oktober 2026","Agenda tambahan","","P T",""],
+    ["3 November 2026","Agenda tambahan","","P T",""], ["17 November 2026","Agenda tambahan","","P T",""]
+  ];
+  /* c: {J, K, on(k), sid, v(k) -> {t, kos, aktif}, klik} ; menulis seluruh isi kertas ke `ker` */
+  function renderSampul(ker, c){
+    var j = c.J, K = c.K;
+    function E(tag, cls, txt){ var e = document.createElement(tag); if(cls) e.className = cls; if(txt != null) e.textContent = txt; return e; }
+    function A(p, ch){ p.appendChild(ch); return ch; }
+    function isi(k){
+      var s = E("span", "isi-f"), v = c.v(k);
+      if(c.klik){ s.setAttribute("data-f", k); s.id = "p-" + k; s.tabIndex = 0; s.setAttribute("role", "button"); }
+      s.textContent = v.aktif === false ? "\u2014" : v.t;
+      if(v.kos) s.classList.add("kos-f");
+      return s;
+    }
+    function sel(label, node, cls){ var d = E("div", "sel" + (cls ? " " + cls : "")); A(d, E("div", "l", label)); var vv = A(d, E("div", "v")); if(typeof node === "string") vv.textContent = node; else vv.appendChild(node); return d; }
+    function sek(t, ket, cls){ var d = E("div", "sek" + (cls ? " " + cls : ""), t); if(ket) A(d, E("em", "", ket)); return d; }
+    ker.textContent = "";
+    // kop
+    var kop = A(ker, E("div", "k-kop")), kl = A(kop, E("div"));
+    A(kl, E("div", "satker", "PENGADILAN AGAMA CONTOH")); A(kl, E("div", "sub", "Berkas perkara tingkat pertama"));
+    var jl = A(kop, E("div", "jilid", "BUNDEL A")); A(jl, E("small", "", "BERKAS PERKARA"));
+    // judul + nomor (ringkas, dua kolom)
+    var jd = A(ker, E("div", "k-judul2"));
+    var kiri = A(jd, E("div", "kj-kiri"));
+    A(kiri, E("div", "atas2", "SAMPUL BERKAS PERKARA"));
+    A(kiri, E("div", "jenis", j.nama + (c.on("kumulasi") && j.kum ? j.kum : "")));
+    var nb = A(jd, E("div", "k-nomor"));
+    A(nb, E("div", "lbl", "PERKARA NOMOR")); A(nb, E("div", "no", j.no)); A(nb, E("div", "thn", "TAHUN 2026  \u00B7  TERDAFTAR 12 MARET 2026"));
+    // fokus
+    if(j.fokus){ var fk = A(ker, E("div", "fokus")); A(fk, E("div", "l", j.fokus.l)); A(fk, E("div", "v", j.fokus.v)); }
+    // ciri
+    A(ker, sek("CIRI PERKARA", "menyala hanya bila berlaku", "kecil"));
+    var cr = A(ker, E("div", "ciri")), ul = A(cr, E("ul", "chips")), n = 0;
+    c.tags.forEach(function(t){
+      if(!c.on(t.k)) return; n++;
+      var li = A(ul, E("li", "chip" + (t.p ? " pent" : "")));
+      A(li, E("span", "g", c.glyph[t.g])); A(li, E("span", "", t.n)); if(t.s) A(li, E("span", "s", t.s));
+    });
+    if(!n){ ul.hidden = true; A(cr, E("p", "kos", "Tidak ada ciri khusus pada perkara ini.")); }
+    A(ker, E("div", "legenda", "\u25A0 pendaftaran dan biaya    \u25CF pihak    \u25B2 proses    bingkai ganda = ciri yang mengubah cara pemeriksaan"));
+    // ===== RIWAYAT SIDANG: bagian terbesar dan paling menonjol =====
+    var rw = A(ker, E("div", "rw"));
+    var rh = A(rw, E("div", "rw-judul")); A(rh, E("b", "", "RIWAYAT SIDANG")); A(rh, E("span", "", K.baris + " baris \u00B7 " + K.nama.split(" (")[0] + " \u00B7 diisi dari jadwal sidang, sisanya untuk tulisan tangan"));
+    var tb = A(rw, E("table", "rwt")), th = A(tb, E("thead")), tr0 = A(th, E("tr"));
+    [["NO","n"],["TGL SIDANG","t"],["HADIR","h"],["AGENDA / HASIL","g"],["ALASAN PENUNDAAN / KET.","a"]].forEach(function(x){ A(tr0, E("th", x[1], x[0])); });
+    var tbd = A(tb, E("tbody"));
+    for(var i = 0; i < K.baris; i++){
+      var d = i < c.sid ? SIDANG_CONTOH[i] : null, tr = A(tbd, E("tr"));
+      A(tr, E("td", "n", String(i + 1))); A(tr, E("td", "t", d ? d[0] : "")); A(tr, E("td", "h", d ? d[3] : ""));
+      var ag = A(tr, E("td", "g", d ? d[1] : "")); if(d && d[4] === "k" && c.on("keliling")) A(ag, E("span", "kel", "KELILING"));
+      A(tr, E("td", "a", d ? d[2] : ""));
+    }
+    A(rw, E("div", "rw-ket", "HADIR: P = pihak pertama, T = pihak kedua (sandi kehadiran SIPP); kosong = belum dicatat"));
+    // ===== blok lain dipadatkan =====
+    var pd = A(ker, E("div", "padat"));
+    // pihak
+    A(pd, sek("PARA PIHAK", "", "kecil"));
+    var ph = A(pd, E("div", "pihak" + (j.T ? "" : " satu")));
+    function sisi(peran, nama, baris){
+      var s = E("div", "sisi"); A(s, E("div", "peran", peran)); A(s, E("div", "nama", nama));
+      var dl = A(s, E("dl")); baris.forEach(function(r){ A(dl, E("dt", "", r[0])); var dd = A(dl, E("dd")); if(typeof r[1] === "string") dd.textContent = r[1]; else dd.appendChild(r[1]); });
+      return s;
+    }
+    var s1 = A(ph, sisi(j.P, j.pN || "SITI AMINAH binti RAHMAT", [["Pekerjaan", j.pPek || "Mengurus rumah tangga"], ["Alamat", j.pAlamat || "Jl. Melati No. 12, Kel. Contoh, Kab. Contoh"], ["Kuasa", c.on("kuasa") ? "Budi Santoso, S.H., M.H." : "\u2014"]]));
+    if(j.P2){ var t2 = A(s1, E("div", "tambah")); A(t2, E("div", "peran", j.P2)); A(t2, E("div", "nama", j.p2N)); }
+    if(j.T) A(ph, sisi(j.T, j.tN || "ANDI WIJAYA bin HASAN", [["Pekerjaan", isi("pekerjaanT")], ["Alamat", "Jl. Kenanga No. 5, Kel. Contoh, Kab. Contoh"], ["Kuasa", isi("kuasaT")]]));
+    // majelis dan petugas
+    A(pd, sek("MAJELIS DAN PETUGAS", "", "kecil"));
+    var mj = A(pd, E("div", "kisi empat rapat")), tg = c.on("tunggal");
+    A(mj, sel("Ketua Majelis", "Drs. H. Ahmad Fauzi, M.H.")); A(mj, sel("Hakim Anggota I", tg ? "\u2014" : "Dra. Hj. Rahmawati, M.H."));
+    A(mj, sel("Hakim Anggota II", tg ? "\u2014" : "Muhammad Yusuf, S.H.I., M.H.")); A(mj, sel("Panitera Pengganti", "Siti Nurjannah, S.H."));
+    A(mj, sel("Jurusita / Pengganti", "Abdul Rahman, S.H.")); A(mj, sel("Mediator", isi("mediator"))); A(mj, sel("Hasil mediasi", isi("hasilmed"))); A(mj, sel("Konseptor", isi("konseptor")));
+    // tanggal penting
+    A(pd, sek("TANGGAL PENTING", "", "kecil"));
+    var tp = A(pd, E("div", "kisi enam rapat"));
+    [["Daftar perkara","12 Mar 2026"],["PMH","13 Mar 2026"],["PHS","13 Mar 2026"],["Penetapan PP / JS","13 Mar 2026"]].forEach(function(x){ A(tp, sel(x[0], x[1])); });
+    A(tp, sel("Penetapan mediator", isi("tglmed"))); A(tp, sel("Laporan mediator", isi("tgllap")));
+    // pokok perkara (bukan cerai)
+    if(j.blok){
+      A(pd, sek(j.blok.j, "", "kecil"));
+      var bl = A(pd, E("div", "kisi empat rapat"));
+      j.blok.r.forEach(function(r){ A(bl, sel(r.l, isi(r.k))); });
+      while(bl.children.length % 4) A(bl, E("div", "sel"));
+    }
+    // putusan
+    A(pd, sek("PUTUSAN", "", "kecil"));
+    var pt = A(pd, E("div", "kisi empat rapat pusat"));
+    A(pt, sel("Tgl putus", isi("tglputus"))); A(pt, sel("Tgl minutasi", isi("tglminutasi"))); A(pt, sel("Tgl PBT", isi("tglpbt"))); A(pt, sel("Tgl BHT", isi("tglbht")));
+    if(c.on("ikrar")){ var ik = A(pd, E("div", "ikrar")); A(ik, E("b", "h", "IKRAR TALAK")); ik.appendChild(document.createTextNode(" PMH 10 Juni 2026 \u00B7 PHS ikrar 10 Juni 2026 \u00B7 Sidang ikrar 24 Juni 2026 \u00B7 Pen. eks. Ps. 71 \u2014")); }
+    var kk = A(ker, E("div", "k-kaki")); A(kk, E("span", "", c.hijri)); A(kk, E("span", "", "Sampul dicetak otomatis dari data perkara"));
+  }
+
+
   var ST = {jenis:"cg", kertas:"a4"};
   try{ var kt = window.localStorage.getItem("bdKertas"); if(kt && KERTAS[kt]) ST.kertas = kt; }catch(e){}
   function J(){ return JENIS[ST.jenis]; }
@@ -659,7 +766,7 @@ details.lipat code{font-family:var(--mono);font-size:12px;background:var(--panel
   function skala(p){
     var gulir = $(p + "-gulir"), ker = $(p === "s" ? "s-kertas" : "d-kertas"), bing = $(p + "-bingkai"), k = K();
     ker.style.width = k.w + "px"; ker.style.minHeight = k.h + "px";
-    ker.style.setProperty("--ruang", (18 + Math.round((k.h - 1123) / 14)) + "px");
+    ker.style.setProperty("--ruang", (16 + Math.round((k.h - 1123) / 22)) + "px");
     var s = UK[p] === "fit" ? Math.min(1, (gulir.clientWidth || k.w) / k.w) : 1;
     ker.style.transform = "scale(" + s + ")";
     bing.style.width = Math.round(k.w * s) + "px";
@@ -708,7 +815,7 @@ details.lipat code{font-family:var(--mono);font-size:12px;background:var(--panel
   var TGN = {};   // penimpaan tangan: k -> true/false
   function setAuto(){ AUTO = {}; (J().auto || []).forEach(function(k){ AUTO[k] = true; }); }
   function efektif(k){ return Object.prototype.hasOwnProperty.call(TGN, k) ? TGN[k] : !!AUTO[k]; }
-  var pilBtn = {}, chipLi = {};
+  var pilBtn = {};
   TAGS.forEach(function(t){
     var b = el("button"); b.type = "button";
     b.appendChild(el("span","g",G[t.g])); b.appendChild(el("span","",t.n)); var kec = el("small","",""); b.appendChild(kec);
@@ -718,9 +825,6 @@ details.lipat code{font-family:var(--mono);font-size:12px;background:var(--panel
       segarSampul(); gambarD();
     });
     $("sp-" + t.g).appendChild(b); pilBtn[t.k] = {b:b, kec:kec};
-    var li = el("li","chip" + (t.p ? " pent" : "")); li.hidden = true;
-    li.appendChild(el("span","g",G[t.g])); li.appendChild(el("span","",t.n)); if(t.s) li.appendChild(el("span","s",t.s));
-    $("p-chips").appendChild(li); chipLi[t.k] = li;
   });
 
   /* ================= SAMPUL: isian (umum + khas jenis perkara) ================= */
@@ -741,7 +845,7 @@ details.lipat code{font-family:var(--mono);font-size:12px;background:var(--panel
     FIELDS.push({k:"tglminutasi", l:"Tgl minutasi", auto:"8 Mei 2026", wajib:true, asal:"SIPP", box:"s-fields"});
     FIELDS.push({k:"tglpbt", l:"Tgl PBT", auto:"", wajib:true, asal:"SIPP", box:"s-fields"});
     FIELDS.push({k:"tglbht", l:"Tgl BHT", auto:"", wajib:true, asal:"SIPP", box:"s-fields"});
-    (j.blok.r || []).forEach(function(r){ FIELDS.push({k:r.k, l:r.l, auto:r.v, wajib:!!r.w, asal:r.asal, box:"s-khas", khas:true}); });
+    ((j.blok && j.blok.r) || []).forEach(function(r){ FIELDS.push({k:r.k, l:r.l, auto:r.v, wajib:!!r.w, asal:r.asal, box:"s-khas", khas:true}); });
     FIELDS.forEach(function(f){
       var r = el("div","f"); var lb = el("label","",f.l); lb.setAttribute("for","s-in-" + f.k);
       var inp = el("input"); inp.type = "text"; inp.id = "s-in-" + f.k; inp.autocomplete = "off";
@@ -750,7 +854,7 @@ details.lipat code{font-family:var(--mono);font-size:12px;background:var(--panel
       r.appendChild(lb); r.appendChild(inp); r.appendChild(asal);
       $(f.box).appendChild(r); fRow[f.k] = {r:r, inp:inp, asal:asal};
     });
-    $("s-khas-j").textContent = "Isian khas " + j.nama;
+    $("s-khas-j").textContent = "Isian khas " + j.nama; $("s-khas-kartu").hidden = !(j.blok && j.blok.r.length);
   }
   function nilai(f){ return Object.prototype.hasOwnProperty.call(NIL, f.k) ? NIL[f.k] : f.auto; }
   function aktifField(f){ return !f.butuh || efektif(f.butuh); }
@@ -760,42 +864,15 @@ details.lipat code{font-family:var(--mono);font-size:12px;background:var(--panel
 
   function gambarPaper(){
     var j = J(), k = K();
-    $("p-jenis").textContent = j.nama + (efektif("kumulasi") && j.kum ? j.kum : "");
-    $("p-nomor").textContent = j.no;
-    var fk = $("p-fokus"); fk.hidden = !j.fokus;
-    if(j.fokus){ $("p-fokus-l").textContent = j.fokus.l; $("p-fokus-v").textContent = j.fokus.v; }
-    // pihak
-    var box = $("p-pihak"); box.textContent = ""; box.classList.toggle("satu", !j.T);
-    function dl(rows){ var d = el("dl"); rows.forEach(function(r){ d.appendChild(el("dt","",r[0])); var dd = el("dd"); if(typeof r[1] === "string") dd.textContent = r[1]; else dd.appendChild(r[1]); d.appendChild(dd); }); return d; }
-    function isi(f){ var s = el("span","isi-f"); s.setAttribute("data-f", f); s.id = "p-" + f; s.tabIndex = 0; s.setAttribute("role","button"); return s; }
-    var s1 = el("div","sisi"); s1.appendChild(el("div","peran", j.P)); s1.appendChild(el("div","nama", j.pN || "SITI AMINAH binti RAHMAT"));
-    s1.appendChild(dl([["Pekerjaan", j.pPek || "Mengurus rumah tangga"], ["Alamat", j.pAlamat || "Jl. Melati No. 12, Kel. Contoh, Kab. Contoh"], ["Kuasa", efektif("kuasa") ? "Budi Santoso, S.H., M.H." : "\u2014"]]));
-    if(j.P2){ var t2 = el("div","tambah"); t2.appendChild(el("div","peran", j.P2)); t2.appendChild(el("div","nama", j.p2N)); s1.appendChild(t2); }
-    box.appendChild(s1);
-    if(j.T){
-      var s2 = el("div","sisi"); s2.appendChild(el("div","peran", j.T)); s2.appendChild(el("div","nama", j.tN || "ANDI WIJAYA bin HASAN"));
-      s2.appendChild(dl([["Pekerjaan", isi("pekerjaanT")], ["Alamat", "Jl. Kenanga No. 5, Kel. Contoh, Kab. Contoh"], ["Kuasa", isi("kuasaT")]]));
-      box.appendChild(s2);
-    }
-    // majelis
-    var tg = efektif("tunggal");
-    $("ha1").textContent = tg ? "\u2014" : "Dra. Hj. Rahmawati, M.H."; $("ha2").textContent = tg ? "\u2014" : "Muhammad Yusuf, S.H.I., M.H.";
-    // blok khas
-    $("p-blokj").textContent = j.blok.j; var bl = $("p-blok"); bl.textContent = "";
-    j.blok.r.forEach(function(r){
-      var c = el("div","sel"); c.appendChild(el("div","l", r.l)); var v = el("div","v"); v.appendChild(isi(r.k)); c.appendChild(v); bl.appendChild(c);
-    });
-    if(j.blok.r.length % 2) bl.appendChild(el("div","sel"));
-    // riwayat sidang
-    var tb = $("p-sidang"); tb.textContent = "";
-    var n = Math.min(j.n, 4);
-    var contoh = [["24 Maret 2026","Tergugat belum dipanggil patut","Pemeriksaan identitas"],["7 April 2026","Mediasi","Mediasi dan pembacaan"],["21 April 2026","Pembuktian lanjutan","Pembuktian"],["5 Mei 2026","","Pembacaan putusan"]];
-    for(var i = 0; i < k.baris; i++){
-      var tr = el("tr"), d = i < n ? contoh[i] : null;
-      tr.appendChild(el("td","n", String(i + 1))); tr.appendChild(el("td","t", d ? d[0] : "")); tr.appendChild(el("td","a", d ? d[1] : "")); tr.appendChild(el("td","", d ? d[2] : ""));
-      tb.appendChild(tr);
-    }
-    $("p-ukuran").textContent = k.baris + " baris riwayat sidang (" + k.nama.split(" (")[0] + ")";
+    renderSampul($("s-kertas"), {J:j, K:k, sid:Math.min(j.n, k.baris), tags:TAGS, glyph:G, on:efektif, klik:true,
+      hijri:"Hijriah putusan: 17 Zulkaidah 1447 H",
+      v:function(f){
+        var fd = FIELDS.filter(function(x){ return x.k === f; })[0];
+        if(!fd) return {t:"", aktif:false};
+        var akt = aktifField(fd), t = nilai(fd);
+        return {t:t, aktif:akt, kos:akt && fd.wajib && !t.trim()};
+      }});
+    $("p-ukuran") && ($("p-ukuran").textContent = "");
   }
 
   function segarSampul(dariKetik){
@@ -803,20 +880,16 @@ details.lipat code{font-family:var(--mono);font-size:12px;background:var(--panel
     TAGS.forEach(function(t){
       var on = efektif(t.k), oto = !!AUTO[t.k], tgn = on !== oto;
       if(on) n++;
-      chipLi[t.k].hidden = !on;
       var pb = pilBtn[t.k]; pb.b.className = on ? (tgn ? "tgn" : "oto") : (tgn ? "mati-tgn" : "");
       pb.b.setAttribute("aria-pressed", on ? "true" : "false");
       pb.kec.textContent = on ? (tgn ? "\u270E tangan" : "\u2713 oto") : (tgn ? "\u270E mati" : "");
       pb.kec.hidden = !on && !tgn;
       pb.b.title = "Sumber otomatis: " + t.sumber + (oto ? " (menyala)" : " (tidak menyala)");
     });
-    $("p-chips").hidden = n === 0; $("p-kos").hidden = n > 0;
     $("s-nciri").textContent = n + " dari " + TAGS.length + " aktif";
     var banyakTgn = TAGS.filter(function(t){ return efektif(t.k) !== !!AUTO[t.k]; }).length;
     $("s-oto").disabled = banyakTgn === 0;
     $("s-otoket").textContent = banyakTgn ? banyakTgn + " ciri diubah tangan" : "semua ciri sesuai otomatis";
-    gambarPaper();
-
     var wajib = 0, terisi = 0;
     FIELDS.forEach(function(f){
       var akt = aktifField(f), v = nilai(f), kos = akt && f.wajib && !v.trim();
@@ -828,11 +901,10 @@ details.lipat code{font-family:var(--mono);font-size:12px;background:var(--panel
       fr.asal.className = "chipx " + (!akt ? "" : tangan ? "ragu" : v ? "ok" : (f.wajib ? "belum" : ""));
       fr.asal.textContent = !akt ? "tidak berlaku" : tangan ? "\u270E diubah tangan" : v ? "\u2713 " + ASAL[f.asal] : (f.wajib ? "\u26A0 kosong" : "opsional");
       if(akt && f.wajib){ wajib++; if(v.trim()) terisi++; }
-      var pe = $("p-" + f.k);
-      if(pe){ pe.textContent = akt ? v : "\u2014"; pe.classList.toggle("kos-f", akt && f.wajib && !v.trim()); }
     });
     $("s-prog-t").textContent = "Kelengkapan " + terisi + " dari " + wajib + " isian wajib";
     $("s-prog-b").style.width = (wajib ? Math.round(100 * terisi / wajib) : 100) + "%";
+    gambarPaper();
     $("s-kertas").classList.toggle("sorot", $("s-sorot").checked);
     skala("s");
   }

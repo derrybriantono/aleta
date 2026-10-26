@@ -1,19 +1,17 @@
--- DRAF 26 Okt 2026 - TIDAK DIUJI, BELUM DIPASANG KE MANA PUN.
--- Fungsi tersimpan untuk Daftar Isi Berkas (blangko Derry, menu PTSP). Hanya basis ABT (aps_badilag).
--- Tidak ada kata nama aplikasi; nama fungsi netral (pola isian_rtf_*).
--- Penanda __SIPP__ diganti nama basis SIPP saat pasang (server: SIPP; lab laptop: nama basis uji) - pola paket x6/x9.
--- Kompatibel MariaDB 5.5: kursor, tanpa CTE/JSON/fungsi jendela, tanpa GROUP_CONCAT panjang.
+-- Fungsi tersimpan Daftar Isi Berkas (blangko Derry). Hanya basis ABT (aps_badilag). Nama netral (pola isian_rtf_*), tanpa nama aplikasi.
+-- Penanda __SIPP__ = nama basis SIPP (server: SIPP); pasang-satker.sh menggantinya. aps_badilag. diganti nama basis ABT di lab.
+-- MariaDB 5.5: kursor, tanpa CTE/JSON/fungsi jendela; nomor urut dihitung di fungsi (bukan variabel sesi).
 --
 -- isian_rtf_daftar_isi(pid, bundel, kol)
---   bundel 'A' = pendaftaran sampai putusan; 'B' = pasca putusan dan administrasi (usulan, perlu diverifikasi - RANCANGAN.md bagian 4)
---   kol 1 = nomor, 2 = jenis dokumen, 3 = tanggal, 4 = halaman (titik-titik)
--- Keempat kolom dibangun dari himpunan baris yang SAMA dan urutan SAMA, sehingga selalu sama panjang dan sejajar
--- (satu dokumen satu baris; nama dokumen <= 52 karakter).
--- Yang BELUM ada di draf ini (belum diukur atas SIPP): pengumuman ghaib, salinan putusan, sita, jawaban/replik/duplik/kesimpulan,
--- daftar bukti P/T, keterangan saksi, upaya hukum (banding/kasasi/PK), eksekusi, bagian IKRAR TALAK. Lihat RANCANGAN.md bagian 4.2 dan 4.3.
+--   bundel 'A' = pendaftaran sampai putusan (urutan mengikuti Bundel A SIPP: ref_document_bundel); 'B' = pasca putusan
+--   kol 1 = nomor, 2 = jenis dokumen, 3 = tanggal, 4 = halaman ("......", diisi tangan atau oleh panel saat cetak)
+-- Keempat kolom dibangun dari himpunan baris yang SAMA dan urutan SAMA sehingga selalu sama panjang dan sejajar; satu dokumen satu baris
+-- (nama dokumen <= 52 karakter). Baris hanya muncul bila datanya ada. Resi pos tercatat hanya muncul bila ada berkas resi atau nomor resi
+-- (doc_resi bernilai 0 = e-Summons tanpa resi: tidak ada baris). Dokumen khas jenis perkara dan dokumen e-Court (jawaban, replik, duplik,
+-- kesimpulan, bukti, saksi, sita) tidak terbaca dari SIPP: ditambahkan oleh panel saat cetak.
 DELIMITER $$
 DROP FUNCTION IF EXISTS isian_rtf_daftar_isi$$
-CREATE FUNCTION isian_rtf_daftar_isi(pid INT, bundel CHAR(1), kol INT) RETURNS LONGTEXT CHARSET utf8mb4
+CREATE FUNCTION isian_rtf_daftar_isi(pid INT, bundel CHAR(1), kol INT) RETURNS LONGTEXT CHARSET latin1
   READS SQL DATA SQL SECURITY INVOKER COMMENT 'daftar isi berkas: satu kolom, baris dipisah <br>'
 BEGIN
   DECLARE habis INT DEFAULT 0;
@@ -26,9 +24,8 @@ BEGIN
   DECLARE o LONGTEXT CHARSET latin1 DEFAULT '';
   DECLARE sep VARCHAR(4) CHARSET latin1 DEFAULT '';
   DECLARE judul VARCHAR(60) CHARSET latin1;
-  DECLARE sebut1 VARCHAR(12) CHARSET latin1;
-  DECLARE sebut2 VARCHAR(12) CHARSET latin1;
-  DECLARE permohonan INT DEFAULT 0;
+  DECLARE sb1 VARCHAR(12) CHARSET latin1 DEFAULT 'Pemohon';
+  DECLARE sb2 VARCHAR(12) CHARSET latin1 DEFAULT 'Termohon';
   DECLARE cur CURSOR FOR
     SELECT x.g, x.s, x.d, x.t FROM (
       -- ============ BUNDEL A, I. PENDAFTARAN (grup 1)
@@ -39,10 +36,10 @@ BEGIN
       UNION ALL
       SELECT 1, 16, 'Surat Permohonan Prodeo', p.tanggal_surat FROM __SIPP__.perkara p WHERE p.perkara_id = pid AND p.prodeo = 1
       UNION ALL
-      SELECT 1, 20, 'Surat Kuasa Khusus Pemohon/Penggugat', k.tanggal_kuasa FROM __SIPP__.perkara_pengacara k
+      SELECT 1, 20, CONCAT('Surat Kuasa Khusus ', sb1), k.tanggal_kuasa FROM __SIPP__.perkara_pengacara k
         WHERE k.perkara_id = pid AND k.pihak_ke = 1 AND k.aktif = 'Y' AND k.urutan = 1
       UNION ALL
-      SELECT 1, 21, 'Surat Kuasa Khusus Termohon/Tergugat', k.tanggal_kuasa FROM __SIPP__.perkara_pengacara k
+      SELECT 1, 21, CONCAT('Surat Kuasa Khusus ', sb2), k.tanggal_kuasa FROM __SIPP__.perkara_pengacara k
         WHERE k.perkara_id = pid AND k.pihak_ke = 2 AND k.aktif = 'Y' AND k.urutan = 1
       UNION ALL
       SELECT 1, 30, 'Surat Kuasa Untuk Membayar', p.tanggal_pendaftaran FROM __SIPP__.perkara p WHERE p.perkara_id = pid
@@ -68,17 +65,33 @@ BEGIN
                 FROM __SIPP__.perkara_jadwal_sidang s1
                WHERE s1.perkara_id = pid AND IFNULL(s1.ikrar_talak, 'T') <> 'Y' AND s1.tanggal_sidang <= CURDATE()) n
       UNION ALL
-      -- relaas panggilan per pihak (sisi 1 = Pemohon/Penggugat, sisi 2 = Termohon/Tergugat) per sidang
-      SELECT 3, n.no * 100 + 10 + r.sisi, CAST(CONCAT('Relaas Panggilan ', IF(r.sisi = 1, 'Pemohon/Penggugat', 'Termohon/Tergugat'), ' ke ', n.no) AS CHAR(90)), r.tanggal_relaas
+      -- relaas / panggilan elektronik per pihak (sisi 1 = Pemohon/Penggugat, sisi 2 = Termohon/Tergugat) per sidang
+      SELECT 3, n.no * 100 + 10 + r.sisi,
+             CAST(CONCAT(IF(r.ket_temu = 'E', 'Panggilan e-Summons ', 'Relaas Panggilan '), IF(r.sisi = 1, sb1, sb2), ' ke ', n.no) AS CHAR(90)), r.tanggal_relaas
+        FROM (SELECT s1.id, (SELECT COUNT(*) FROM __SIPP__.perkara_jadwal_sidang s2
+                       WHERE s2.perkara_id = s1.perkara_id AND IFNULL(s2.ikrar_talak, 'T') <> 'Y'
+                         AND (s2.tanggal_sidang < s1.tanggal_sidang OR (s2.tanggal_sidang = s1.tanggal_sidang AND s2.id <= s1.id))) AS no
+                FROM __SIPP__.perkara_jadwal_sidang s1 WHERE s1.perkara_id = pid AND IFNULL(s1.ikrar_talak, 'T') <> 'Y') n
+        JOIN (SELECT a.sidang_id, a.tanggal_relaas, a.ket_temu, 1 AS sisi FROM __SIPP__.perkara_pelaksanaan_relaas a
+                JOIN __SIPP__.perkara_pihak1 b ON b.perkara_id = a.perkara_id AND b.pihak_id = a.pihak_id WHERE a.perkara_id = pid AND a.tanggal_relaas IS NOT NULL
+              UNION ALL
+              SELECT a.sidang_id, a.tanggal_relaas, a.ket_temu, 2 FROM __SIPP__.perkara_pelaksanaan_relaas a
+                JOIN __SIPP__.perkara_pihak2 b ON b.perkara_id = a.perkara_id AND b.pihak_id = a.pihak_id WHERE a.perkara_id = pid AND a.tanggal_relaas IS NOT NULL) r
+          ON r.sidang_id = n.id
+      UNION ALL
+      -- bukti surat tercatat (pos): hanya bila ada berkas resi atau nomor resi (doc_resi = 0 berarti tanpa resi)
+      SELECT 3, n.no * 100 + 20 + r.sisi, CAST(CONCAT('Bukti Surat Tercatat ', IF(r.sisi = 1, sb1, sb2), ' ke ', n.no) AS CHAR(90)), r.tanggal_relaas
         FROM (SELECT s1.id, (SELECT COUNT(*) FROM __SIPP__.perkara_jadwal_sidang s2
                        WHERE s2.perkara_id = s1.perkara_id AND IFNULL(s2.ikrar_talak, 'T') <> 'Y'
                          AND (s2.tanggal_sidang < s1.tanggal_sidang OR (s2.tanggal_sidang = s1.tanggal_sidang AND s2.id <= s1.id))) AS no
                 FROM __SIPP__.perkara_jadwal_sidang s1 WHERE s1.perkara_id = pid AND IFNULL(s1.ikrar_talak, 'T') <> 'Y') n
         JOIN (SELECT a.sidang_id, a.tanggal_relaas, 1 AS sisi FROM __SIPP__.perkara_pelaksanaan_relaas a
-                JOIN __SIPP__.perkara_pihak1 b ON b.perkara_id = a.perkara_id AND b.pihak_id = a.pihak_id WHERE a.perkara_id = pid AND a.tanggal_relaas IS NOT NULL
+                JOIN __SIPP__.perkara_pihak1 b ON b.perkara_id = a.perkara_id AND b.pihak_id = a.pihak_id
+               WHERE a.perkara_id = pid AND a.tanggal_relaas IS NOT NULL AND (IFNULL(a.doc_resi, '') LIKE 'resources/%' OR IFNULL(a.no_resi_pos, '') <> '')
               UNION ALL
               SELECT a.sidang_id, a.tanggal_relaas, 2 FROM __SIPP__.perkara_pelaksanaan_relaas a
-                JOIN __SIPP__.perkara_pihak2 b ON b.perkara_id = a.perkara_id AND b.pihak_id = a.pihak_id WHERE a.perkara_id = pid AND a.tanggal_relaas IS NOT NULL) r
+                JOIN __SIPP__.perkara_pihak2 b ON b.perkara_id = a.perkara_id AND b.pihak_id = a.pihak_id
+               WHERE a.perkara_id = pid AND a.tanggal_relaas IS NOT NULL AND (IFNULL(a.doc_resi, '') LIKE 'resources/%' OR IFNULL(a.no_resi_pos, '') <> '')) r
           ON r.sidang_id = n.id
       UNION ALL
       SELECT 3, 160, 'Penetapan Penunjukan Mediator', m.penetapan_penunjukan_mediator FROM __SIPP__.perkara_mediasi m
@@ -90,10 +103,13 @@ BEGIN
       UNION ALL
       SELECT 4, 10, CAST(IF(p.alur_perkara_id = 16 OR u.status_putusan_id IN (7, 37, 67), 'Penetapan', 'Putusan') AS CHAR(90)), u.tanggal_putusan
         FROM __SIPP__.perkara_putusan u JOIN __SIPP__.perkara p ON p.perkara_id = u.perkara_id WHERE u.perkara_id = pid AND u.tanggal_putusan IS NOT NULL
-      -- ============ BUNDEL B (grup 10 ke atas)
+      -- ============ BUNDEL B (grup 10 ke atas): pasca putusan
       UNION ALL
       SELECT 10, 10, 'Relaas Pemberitahuan Isi Putusan/Penetapan', w.tanggal_pemberitahuan_putusan FROM __SIPP__.perkara_putusan_pemberitahuan_putusan w
         WHERE w.perkara_id = pid AND w.tanggal_pemberitahuan_putusan IS NOT NULL
+      UNION ALL
+      SELECT 10, 11, 'Bukti Surat Tercatat Pemberitahuan Putusan', w.tanggal_pemberitahuan_putusan FROM __SIPP__.perkara_putusan_pemberitahuan_putusan w
+        WHERE w.perkara_id = pid AND w.tanggal_pemberitahuan_putusan IS NOT NULL AND (IFNULL(w.edoc_resi, '') LIKE 'resources/%' OR IFNULL(w.no_resi_pos, '') <> '')
       UNION ALL
       SELECT 10, 20, 'Penetapan Minutasi', u.tanggal_minutasi FROM __SIPP__.perkara_putusan u WHERE u.perkara_id = pid AND u.tanggal_minutasi IS NOT NULL
       UNION ALL
@@ -101,14 +117,17 @@ BEGIN
       UNION ALL
       SELECT 10, 40, CAST(CONCAT('Akta Cerai Nomor ', IFNULL(c.nomor_akta_cerai, '-')) AS CHAR(90)), c.tgl_akta_cerai FROM __SIPP__.perkara_akta_cerai c WHERE c.perkara_id = pid AND c.tgl_akta_cerai IS NOT NULL
       UNION ALL
-      SELECT 10, 41, 'Tanda Terima Akta Cerai Pemohon/Penggugat', c.tgl_penyerahan_akta_cerai FROM __SIPP__.perkara_akta_cerai c WHERE c.perkara_id = pid AND c.tgl_penyerahan_akta_cerai IS NOT NULL
+      SELECT 10, 41, CONCAT('Tanda Terima Akta Cerai ', sb1), c.tgl_penyerahan_akta_cerai FROM __SIPP__.perkara_akta_cerai c WHERE c.perkara_id = pid AND c.tgl_penyerahan_akta_cerai IS NOT NULL
       UNION ALL
-      SELECT 10, 42, 'Tanda Terima Akta Cerai Termohon/Tergugat', c.tgl_penyerahan_akta_cerai_pihak2 FROM __SIPP__.perkara_akta_cerai c WHERE c.perkara_id = pid AND c.tgl_penyerahan_akta_cerai_pihak2 IS NOT NULL
+      SELECT 10, 42, CONCAT('Tanda Terima Akta Cerai ', sb2), c.tgl_penyerahan_akta_cerai_pihak2 FROM __SIPP__.perkara_akta_cerai c WHERE c.perkara_id = pid AND c.tgl_penyerahan_akta_cerai_pihak2 IS NOT NULL
     ) x
     WHERE (bundel = 'A' AND x.g < 10) OR (bundel = 'B' AND x.g >= 10)
     ORDER BY x.g, x.s, x.t;
   DECLARE CONTINUE HANDLER FOR NOT FOUND SET habis = 1;
 
+  -- sebutan pihak menurut jenis perkara (sama dengan variabel 0046/0047): permohonan/cerai talak = Pemohon/Termohon, selain itu Penggugat/Tergugat
+  SELECT IF(q.alur_perkara_id = 16 OR q.jenis_perkara_id IN (346, 341), 'Pemohon', 'Penggugat'), IF(q.alur_perkara_id = 16 OR q.jenis_perkara_id IN (346, 341), 'Termohon', 'Tergugat')
+    INTO sb1, sb2 FROM __SIPP__.perkara q WHERE q.perkara_id = pid;
   OPEN cur;
   baca: LOOP
     FETCH cur INTO g, s, d, t;
@@ -129,6 +148,6 @@ BEGIN
         ELSE '......' END);
   END LOOP;
   CLOSE cur;
-  RETURN CONVERT(CAST(o AS BINARY) USING utf8mb4);
+  RETURN o;
 END$$
 DELIMITER ;

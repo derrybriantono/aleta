@@ -300,21 +300,19 @@ table.di tr.baru td.dok{box-shadow:inset 3px 0 0 var(--accent)}
   /* ===== data bersama: jenis perkara, kertas (disalin ke tiap halaman pratinjau) ===== */
   var KERTAS = {
     a4:{nama:"A4 (210 x 297 mm)", w:794, h:1123, rtf:"\\paperw11906\\paperh16838", baris:12},
-    f4:{nama:"F4 / Folio (215 x 330 mm)", w:812, h:1247, rtf:"\\paperw12189\\paperh18709", baris:18},
-    legal:{nama:"Legal (216 x 356 mm)", w:816, h:1346, rtf:"\\paperw12246\\paperh20183", baris:20}
+    f4:{nama:"F4 / Folio (215 x 330 mm)", w:812, h:1247, rtf:"\\paperw12189\\paperh18709", baris:15},
+    legal:{nama:"Legal (216 x 356 mm)", w:816, h:1346, rtf:"\\paperw12246\\paperh20183", baris:18}
   };
   var URUTKERTAS = ["a4","f4","legal"];
   // sumber: SIPP = kolom/tabel SIPP; ABT = isian ABT (data_teks/data_tanggal); tangan = diketik petugas
   var JENIS = {
     cg:{nama:"Cerai Gugat", no:"214/Pdt.G/2026/PA.Cth", P:"PENGGUGAT", T:"TERGUGAT", kat:"gugatan", n:4, kum:" Kumulasi Hak Asuh Anak",
       auto:["ecourt","kuasa","pns","verstek","kumulasi","mediasi","keliling"],
-      blok:{j:"PERNIKAHAN DAN ANAK", r:[
-        {k:"b1", l:"Tanggal nikah", v:"12 Juni 2015", asal:"SIPP", w:1}, {k:"b2", l:"KUA / tempat nikah", v:"KUA Kec. Contoh", asal:"SIPP", w:1}, {k:"b3", l:"Anak", v:"2 orang", asal:"SIPP", w:0}]},
+      blok:null,
       khas:[["aktanikah","Kutipan Akta Nikah",1,"perkiraan","lampiran gugatan; berkas tidak terdaftar sendiri"]]},
     ct:{nama:"Cerai Talak", no:"188/Pdt.G/2026/PA.Cth", P:"PEMOHON", T:"TERMOHON", kat:"gugatan", n:3, ikrar:true, kum:" Kumulasi Harta Bersama",
       auto:["ecourt","pns","mediasi","ikrar"],
-      blok:{j:"PERNIKAHAN DAN ANAK", r:[
-        {k:"b1", l:"Tanggal nikah", v:"3 Mei 2012", asal:"SIPP", w:1}, {k:"b2", l:"KUA / tempat nikah", v:"KUA Kec. Contoh", asal:"SIPP", w:1}, {k:"b3", l:"Anak", v:"1 orang", asal:"SIPP", w:0}]},
+      blok:null,
       khas:[["aktanikah","Kutipan Akta Nikah",1,"perkiraan","lampiran permohonan"],["izin","Surat Izin Atasan (bila PNS/TNI/Polri)",1,"perkiraan","perkara_izin_cerai; berkas tidak terdaftar"]]},
     "in":{nama:"Itsbat Nikah", no:"77/Pdt.P/2026/PA.Cth", P:"PEMOHON I", P2:"PEMOHON II", T:"", kat:"permohonan", n:2, pengumuman:true,
       pN:"MUHAMMAD IKHSAN bin LUKMAN", p2N:"NURUL AINI binti HASAN",
