@@ -692,7 +692,7 @@ describe("migrasi 0110 - berkas = DDL schema.ts, jurnal idx 98, ikut cadangan", 
   it("jurnal: 0110 sekali di idx 98, tanpa lubang, when naik", () => {
     const j = JSON.parse(readFileSync(path.join(process.cwd(), "drizzle/meta/_journal.json"), "utf8")) as { entries: Array<{ idx: number; tag: string; when: number }> };
     j.entries.forEach((e, i) => expect(e.idx).toBe(i));
-    expect(j.entries.filter((e) => e.tag.startsWith("0110_"))).toEqual([expect.objectContaining({ idx: 98, tag: "0110_aleta_tenggat_kirim" })]);
+    expect(j.entries.filter((e) => e.tag.startsWith("0110_"))).toEqual([expect.objectContaining({ idx: 97, tag: "0110_aleta_tenggat_kirim" })]);
     for (let i = 1; i < j.entries.length; i += 1) expect(j.entries[i]?.when).toBeGreaterThan(j.entries[i - 1]?.when ?? 0);
     expect(existsSync(SQL)).toBe(true);
   });

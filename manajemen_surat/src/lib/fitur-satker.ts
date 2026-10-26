@@ -80,9 +80,6 @@ export const FITUR_MESIN_SAKSI_TUNGGAL = "mesin-saksi-tunggal";
 /** Saklar C5/U9 (25 Okt 2026): saran keadaan perkara non-cerai dari posita/petitum dan 2557/2558 dari BAS; bawaan MATI. */
 export const FITUR_FAKTA_NON_CERAI = "fakta-non-cerai";
 
-/** Saklar C6/U10 (25 Okt 2026): tombol kirim keterangan saksi ke BAS SIPP (MENULIS ke SIPP, atas persetujuan petugas); bawaan MATI. */
-export const FITUR_SAKSI_KE_BAS_SIPP = "saksi-ke-bas-sipp";
-
 /** Saklar tahap awal Blangko Saya (18 Okt 2026): mati = hanya Super Admin; menyala = semua peran yang berhak. */
 export const FITUR_BLANGKO_SAYA_SEMUA_PERAN = "blangko-saya-semua-peran";
 
@@ -144,14 +141,6 @@ export const KATALOG_FITUR_SATKER: readonly FiturKatalog[] = [
     bagian: "ekstensi",
     keterangan:
       "Mati: Susun saksi menanyakan semua keadaan perkara non-cerai kepada petugas, dan 2557/2558 (berapa kali saksi melihat dan mendengar pertengkaran) diketik tangan. Nyalakan agar posita dan petitum dibaca menjadi SARAN keadaan (dengan kalimat sumber dan tombol Pakai; tidak ada yang terisi sendiri) dan angka 2557/2558 dibaca dari BAS yang sudah tersimpan sebagai usulan ragu.",
-    bawaan: "mati",
-  },
-  {
-    kode: FITUR_SAKSI_KE_BAS_SIPP,
-    nama: "Kirim keterangan saksi ke BAS SIPP",
-    bagian: "ekstensi",
-    keterangan:
-      "Mati: tidak ada tombol dan tidak ada yang ditulis ke SIPP. Nyalakan agar Susun saksi (ABT) menampilkan Kirim keterangan saksi ke BAS SIPP: BAS sidang dicetak dari ABT, diperiksa (keterangan saksi ada di naskah, tanpa sisa isian, tanpa tanda aplikasi), diperlihatkan sebagai pratinjau, e-Doc di SIPP dibaca ulang, lalu dikirim HANYA setelah petugas menyetujui. E-Doc yang sudah ada tidak diganti. Setiap percobaan tercatat (2 tahun).",
     bawaan: "mati",
   },
   {

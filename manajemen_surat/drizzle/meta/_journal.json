@@ -635,61 +635,54 @@
     {
       "idx": 90,
       "version": "7",
-      "when": 1792278000001,
-      "tag": "0101_aleta_saksi_kirim_bas",
-      "breakpoints": true
-    },
-    {
-      "idx": 91,
-      "version": "7",
       "when": 1792279800001,
       "tag": "0102_aleta_blangko_lapor",
       "breakpoints": true
     },
     {
-      "idx": 92,
+      "idx": 91,
       "version": "7",
       "when": 1792281600001,
       "tag": "0103_aleta_isian_sidang",
       "breakpoints": true
     },
     {
-      "idx": 93,
+      "idx": 92,
       "version": "7",
       "when": 1792283400001,
       "tag": "0104_aleta_penjaga_integritas",
       "breakpoints": true
     },
     {
-      "idx": 94,
+      "idx": 93,
       "version": "7",
       "when": 1792285200001,
       "tag": "0105_aleta_otomatis_jejak",
       "breakpoints": true
     },
     {
-      "idx": 95,
+      "idx": 94,
       "version": "7",
       "when": 1792287000001,
       "tag": "0107_aleta_kebijakan_sandi",
       "breakpoints": true
     },
     {
-      "idx": 96,
+      "idx": 95,
       "version": "7",
       "when": 1792288800001,
       "tag": "0108_aleta_batas_jaringan",
       "breakpoints": true
     },
     {
-      "idx": 97,
+      "idx": 96,
       "version": "7",
       "when": 1792290600001,
       "tag": "0109_aleta_uji_pulih",
       "breakpoints": true
     },
     {
-      "idx": 98,
+      "idx": 97,
       "version": "7",
       "when": 1792292400001,
       "tag": "0110_aleta_tenggat_kirim",

@@ -437,8 +437,6 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   // 25 Oktober 2026 (0093): rantai C butir C4 - katalog saksi di basis data dengan versi. Tanpa kunci asing.
   "aleta_saksi_katalog",
   "aleta_saksi_katalog_versi",
-  // 25 Oktober 2026 (0101): rantai C butir C6 - jejak kirim keterangan saksi ke BAS SIPP. Tanpa kunci asing.
-  "aleta_saksi_kirim_bas",
   // 25 Oktober 2026 (0092): rantai D butir D1 - angka ketepatan isian bulanan dan keputusan naik/turun gerbang. Tanpa kunci asing.
   "aleta_ketepatan_isian",
   "aleta_ketepatan_keputusan",
