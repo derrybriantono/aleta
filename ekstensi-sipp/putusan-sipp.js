@@ -758,6 +758,7 @@
         if (r.anonim) setStatus("anonim", "gagal", kunci.pesan);
         return;
       }
+      if (kunci.catatan && ctx.laporan) ctx.laporan.textContent = kunci.catatan;
       let hasil;
       try {
         hasil = await mod.jalankan({

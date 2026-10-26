@@ -994,6 +994,7 @@ router.post("/penetapan/kunci", requireInternalToken, async (req, res) => {
       tujuan: String(badan.tujuan || "kerjakan"),
       ttlDetik: badan.ttlDetik,
       tokenLama: String(badan.token || ""),
+      ambilAlih: badan.ambilAlih === true,
     });
     res.status(hasil.ok ? 200 : 409).json(hasil);
   } catch (error) {

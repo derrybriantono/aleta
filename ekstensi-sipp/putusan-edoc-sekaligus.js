@@ -548,7 +548,7 @@
    * kunci yang tidak dapat diminta karena sebab lain (rute belum ada, akses) tidak menahan pekerjaan,
    * sebab kuncinya pagar tambahan; Putusan Akhir tetap dijaga bukti simpan dan cek e-Doc.
    */
-  async function ambilKunci(nomorPerkara, perkaraIdTahu) {
+  async function ambilKunci(nomorPerkara, perkaraIdTahu, opsi) {
     const k = globalThis.aletaPenetapanKerja;
     if (!k || typeof k.ambilKunci !== "function") return TANPA_KUNCI;
     try {
@@ -558,16 +558,34 @@
         perkaraId = cari ? String((await cari(nomorPerkara)) || "") : "";
       }
       if (!/^\d+$/.test(perkaraId)) return TANPA_KUNCI;
-      const r = await k.ambilKunci(Number(perkaraId), KUNCI_TUJUAN);
+      // `opsi.token` = kunci yang sudah dipegang jalan yang SAMA (mis. Putusan Akhir -> e-Doc dalam satu tekan
+      // tombol): diperpanjang, tidak ditolak oleh dirinya sendiri.
+      const r = await k.ambilKunci(Number(perkaraId), KUNCI_TUJUAN, (opsi && opsi.token) || undefined);
       if (r && r.ok === true && r.token) {
         const token = String(r.token);
-        return { ok: true, token, lepas: async () => { try { await k.lepasKunci(Number(perkaraId), token); } catch { /* kunci kedaluwarsa sendiri */ } } };
+        return {
+          ok: true,
+          token,
+          // Sisa pekerjaan terputus milik pengguna ini yang diambil alih: pemanggil menampilkannya.
+          catatan: String(r.catatan || ""),
+          // Kunci pinjaman (token jalan induk): yang melepasnya jalan induk itu sendiri.
+          lepas: async () => {
+            if (opsi && opsi.token) return;
+            try {
+              await k.lepasKunci(Number(perkaraId), token);
+            } catch {
+              /* kunci kedaluwarsa sendiri */
+            }
+          },
+        };
       }
       if (r && r.alasan === "sedang_dikerjakan") {
         const oleh = sebaris(r.oleh);
         return {
           ok: false,
-          pesan: `Perkara ini sedang dikerjakan${oleh ? ` oleh ${oleh}` : ""}${r.tujuan ? ` (${sebaris(r.tujuan)})` : ""} - tunggu selesai supaya tidak tertulis ganda, lalu ulangi.`,
+          pesan:
+            r.kalimat ||
+            `Perkara ini sedang dikerjakan${oleh ? ` oleh ${oleh}` : ""}${r.tujuan ? ` (${sebaris(r.tujuan)})` : ""} - tunggu selesai supaya tidak tertulis ganda, lalu ulangi.`,
           lepas: async () => undefined,
         };
       }
@@ -630,6 +648,205 @@
     return tombol;
   }
 
+  // ───────────────────────────────────────────────────────────────────────
+  // e-Doc yang terputus: dilanjutkan sesudah halaman dimuat ulang (26 Okt 2026)
+  // ───────────────────────────────────────────────────────────────────────
+  // Putusan Akhir tersimpan di SIPP SEBELUM e-Doc diunggah. Halaman SIPP dapat dimuat ulang di antaranya
+  // (SIPP sendiri, atau petugas me-refresh) - skrip halaman mati, e-Doc tidak pernah dikerjakan dan kunci
+  // perkara tidak dilepas (perkara 615/Pdt.G/2026/PA.Dgl). Karena itu niat "Putusan Otomatis + e-Doc" dicatat di
+  // penyimpanan ekstensi SEBELUM Simpan ditekan dan dihapus begitu jalan ini selesai melaporkan; catatan yang
+  // masih ada saat halaman perkara itu termuat berarti jalannya terputus, dan e-Doc dilanjutkan di sini
+  // (e-Doc yang sudah ada di SIPP tetap tidak diganti: cekSlot di jalankan()).
+  const KUNCI_TERTUNDA = "putusanEdocTertunda";
+  const BATAS_TERTUNDA_MS = 20 * 60 * 1000;
+  const BATAS_BERKAS_BYTE = 4 * 1024 * 1024;
+  const kunciNomor = (nomor) => sebaris(nomor).toUpperCase();
+
+  async function bacaPeta() {
+    try {
+      const s = await chrome.storage.local.get([KUNCI_TERTUNDA]);
+      const peta = s && s[KUNCI_TERTUNDA];
+      return peta && typeof peta === "object" ? { ...peta } : {};
+    } catch {
+      return {};
+    }
+  }
+
+  async function tulisPeta(peta) {
+    try {
+      await chrome.storage.local.set({ [KUNCI_TERTUNDA]: peta });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async function berkasKeTeks(berkas) {
+    if (!berkas || typeof berkas !== "object") return null;
+    if (Number(berkas.size) > BATAS_BERKAS_BYTE) return { hilang: true, nama: String(berkas.name || "") };
+    const isi =
+      typeof berkas.arrayBuffer === "function"
+        ? await berkas.arrayBuffer()
+        : await new Promise((selesai, gagal) => {
+            const pembaca = new FileReader();
+            pembaca.onload = () => selesai(pembaca.result);
+            pembaca.onerror = () => gagal(pembaca.error);
+            pembaca.readAsArrayBuffer(berkas);
+          });
+    const bita = new Uint8Array(isi);
+    let biner = "";
+    for (let i = 0; i < bita.length; i += 0x8000) biner += String.fromCharCode.apply(null, bita.subarray(i, i + 0x8000));
+    return { nama: String(berkas.name || ""), tipe: String(berkas.type || ""), b64: btoa(biner) };
+  }
+
+  function teksKeBerkas(t) {
+    if (!t || !t.b64) return null;
+    const biner = atob(t.b64);
+    const bita = new Uint8Array(biner.length);
+    for (let i = 0; i < biner.length; i += 1) bita[i] = biner.charCodeAt(i);
+    return new File([bita], t.nama || "berkas", { type: t.tipe || "application/octet-stream" });
+  }
+
+  /**
+   * Mencatat niat e-Doc sebelum Simpan ditekan.
+   * @param {{nomorPerkara:string, perkaraId?:string, denganPutusan?:boolean, denganAnonim?:boolean,
+   *          putusan?:File|null, putusanRtf?:File|null, anonim?:File|null}} p
+   */
+  async function catatTertunda(p) {
+    const nomor = kunciNomor(p && p.nomorPerkara);
+    if (!nomor) return false;
+    let rec;
+    try {
+      rec = {
+        nomorPerkara: sebaris(p.nomorPerkara),
+        perkaraId: sebaris(p.perkaraId),
+        denganPutusan: p.denganPutusan !== false,
+        denganAnonim: p.denganAnonim !== false,
+        putusan: await berkasKeTeks(p.putusan),
+        putusanRtf: await berkasKeTeks(p.putusanRtf),
+        anonim: await berkasKeTeks(p.anonim),
+        pada: Date.now(),
+      };
+    } catch {
+      return false;
+    }
+    const peta = await bacaPeta();
+    for (const [k, v] of Object.entries(peta)) if (!v || Date.now() - Number(v.pada || 0) > BATAS_TERTUNDA_MS) delete peta[k];
+    peta[nomor] = rec;
+    return tulisPeta(peta);
+  }
+
+  async function hapusTertunda(nomorPerkara) {
+    const nomor = kunciNomor(nomorPerkara);
+    const peta = await bacaPeta();
+    if (!(nomor in peta)) return false;
+    delete peta[nomor];
+    return tulisPeta(peta);
+  }
+
+  /**
+   * Melanjutkan e-Doc yang terputus untuk perkara yang sedang dibuka. Catatan DIKLAIM (dihapus) sebelum
+   * bekerja: dua tab tidak mengerjakannya dua kali, dan kegagalan tidak diulang diam-diam (tombol
+   * "Ulangi unggah e-Doc saja" tetap ada). Pulang { ada:false } bila tidak ada yang terputus.
+   */
+  async function lanjutkanTertunda(p) {
+    const arg = p || {};
+    const nomor = kunciNomor(arg.nomorPerkara);
+    if (!nomor) return { ada: false };
+    const peta = await bacaPeta();
+    const rec = peta[nomor];
+    if (!rec) return { ada: false };
+    delete peta[nomor];
+    await tulisPeta(peta);
+    if (Date.now() - Number(rec.pada || 0) > BATAS_TERTUNDA_MS) return { ada: false, kedaluwarsa: true };
+
+    const hasil = { ada: true, ok: false, bunyi: "", langkah: [] };
+    // Berkas yang dipilih petugas terlalu besar untuk dititipkan: tidak diganti diam-diam dengan cetakan ABT.
+    const hilang = [rec.putusan, rec.putusanRtf, rec.anonim].some((t) => t && t.hilang);
+    if (hilang) {
+      hasil.bunyi =
+        "Putusan Akhir sudah tersimpan, tetapi halaman dimuat ulang sebelum e-Doc terunggah dan berkas yang Anda pilih terlalu besar untuk dititipkan. " +
+        "Pilih berkasnya lagi di tombol Putusan Otomatis lalu jalankan hanya e-Doc.";
+      return hasil;
+    }
+    if (arg.kabar) arg.kabar.textContent = "Melanjutkan e-Doc yang terputus karena halaman dimuat ulang…";
+
+    // Kunci dari halaman sebelumnya dilepas saat halaman ditutup; bila gagal ia basi sendiri (maks ~75 detik).
+    let kunci = await ambilKunci(rec.nomorPerkara, rec.perkaraId);
+    const jedaMs = Number.isFinite(Number(arg.jedaKunciMs)) ? Number(arg.jedaKunciMs) : 10000;
+    for (let ke = 0; ke < 10 && kunci && kunci.ok === false; ke += 1) {
+      if (arg.kabar) arg.kabar.textContent = `${kunci.pesan} Mencoba lagi sendiri…`;
+      await new Promise((selesai) => setTimeout(selesai, jedaMs));
+      kunci = await ambilKunci(rec.nomorPerkara, rec.perkaraId);
+    }
+    if (!kunci || kunci.ok === false) {
+      hasil.bunyi = (kunci && kunci.pesan) || "Perkara masih dikerjakan pekerjaan lain; e-Doc belum dilanjutkan.";
+      return hasil;
+    }
+    try {
+      const h = await jalankan({
+        nomorPerkara: rec.nomorPerkara,
+        perkaraId: rec.perkaraId || undefined,
+        kabar: arg.kabar,
+        wadah: arg.wadah,
+        denganPutusan: rec.denganPutusan !== false,
+        denganAnonim: rec.denganAnonim !== false,
+        putusan: teksKeBerkas(rec.putusan),
+        putusanRtf: teksKeBerkas(rec.putusanRtf),
+        anonim: teksKeBerkas(rec.anonim),
+      });
+      return { ...h, ada: true };
+    } finally {
+      await kunci.lepas();
+    }
+  }
+
+  /** Di halaman detail perkara: bila e-Doc terputus untuk perkara ini, lanjutkan dan laporkan. */
+  async function periksaTertunda() {
+    const adaHalaman = fungsi("alamatHalamanPerkara");
+    if (adaHalaman && !adaHalaman()) return { ada: false };
+    const peta = await bacaPeta();
+    // Catatan yang lewat batas (berikut berkas yang dititipkan) dibuang di mana pun halamannya.
+    let berubah = false;
+    for (const [k, v] of Object.entries(peta)) {
+      if (!v || Date.now() - Number(v.pada || 0) > BATAS_TERTUNDA_MS) {
+        delete peta[k];
+        berubah = true;
+      }
+    }
+    if (berubah) await tulisPeta(peta);
+    if (!Object.keys(peta).length) return { ada: false };
+    const cari = fungsi("cariNomorPerkara");
+    let nomor = "";
+    for (let ke = 0; ke < 20 && !nomor; ke += 1) {
+      try {
+        nomor = cari ? sebaris(cari()) : "";
+      } catch {
+        nomor = "";
+      }
+      if (!nomor) await new Promise((selesai) => setTimeout(selesai, 1000));
+    }
+    if (!nomor || !(kunciNomor(nomor) in peta)) return { ada: false };
+    const kotak = el("div", "aleta-abt-kabar");
+    kotak.setAttribute("data-b2-lanjut", "1");
+    kotak.style.cssText = "position:fixed;right:16px;bottom:16px;z-index:2147483000;max-width:420px;padding:10px 12px;background:#fff;border:1px solid #888;border-radius:6px;box-shadow:0 2px 10px rgba(0,0,0,.25);font-size:13px";
+    document.body.appendChild(kotak);
+    const h = await lanjutkanTertunda({ nomorPerkara: nomor, kabar: kotak, wadah: null });
+    if (!h.ada) {
+      kotak.remove();
+      return h;
+    }
+    const lapor = fungsi("b2LaporkanEdoc");
+    const ditangani = h.langkah && h.langkah.length && lapor ? lapor(nomor, null, h, "Putusan Akhir tersimpan di SIPP.") : false;
+    if (ditangani) kotak.remove();
+    else {
+      kotak.textContent = h.bunyi || (h.ok ? "e-Doc selesai." : "e-Doc belum selesai.");
+      kotak.className = h.ok ? "aleta-abt-kabar" : "aleta-abt-kabar aleta-abt-gagal";
+      if (typeof gambarLangkah === "function" && h.langkah && h.langkah.length) gambarLangkah(kotak, "Hasil e-Doc yang dilanjutkan", h.langkah);
+    }
+    return h;
+  }
+
   globalThis.aletaPutusanEdoc = {
     KUNCI_SAKLAR,
     barisSaklar,
@@ -644,5 +861,20 @@
     gambarLangkah,
     pasangUlang,
     bersihNama,
+    catatTertunda,
+    hapusTertunda,
+    lanjutkanTertunda,
+    periksaTertunda,
   };
+
+  // Halaman perkara termuat: e-Doc yang terputus (halaman dimuat ulang di tengah jalan) dilanjutkan.
+  try {
+    if (typeof document !== "undefined" && typeof setTimeout === "function") {
+      const mulai = () => setTimeout(() => void periksaTertunda().catch(() => undefined), 1500);
+      if (document.readyState === "complete") mulai();
+      else if (typeof addEventListener === "function") addEventListener("load", mulai, { once: true });
+    }
+  } catch {
+    /* tambahan: tidak boleh mengganggu SIPP */
+  }
 })();
