@@ -307,7 +307,7 @@ export function AletaAiTugas() {
       ) : null}
 
       {usulan ? (
-        <div role="dialog" aria-modal="true" aria-label="Konfirmasi kiriman" className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div role="dialog" aria-modal="true" aria-label="Konfirmasi kiriman" className="fixed inset-0 z-50 flex items-center justify-center tirai-latar p-4">
           <div className="max-h-[85vh] w-full max-w-2xl space-y-3 overflow-auto rounded-2xl border border-border bg-card p-4 shadow-lg">
             <p className="text-sm font-semibold">Kirim ke {usulan.label}?</p>
             <p className="text-xs text-muted-foreground">Periksa isi di bawah. Nilai ini baru masuk ke alur sesudah Anda menekan &quot;Ya, kirim&quot;; menyimpan ke SIPP/ABT tetap dilakukan petugas di alur itu.</p>

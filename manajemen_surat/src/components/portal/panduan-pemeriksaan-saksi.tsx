@@ -221,7 +221,7 @@ function JendelaPanduSaksi({ onTutup, ...props }: PropsPanduanSaksi & { onTutup:
   return createPortal(
     <div
       data-pandu-saksi-jendela=""
-      className="fixed inset-0 z-[150] flex items-stretch justify-center bg-black/50 sm:items-center sm:p-4"
+      className="fixed inset-0 z-[150] flex items-stretch justify-center tirai-latar sm:items-center sm:p-4"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onTutup();
       }}

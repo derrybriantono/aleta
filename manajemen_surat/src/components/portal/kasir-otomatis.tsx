@@ -601,7 +601,7 @@ export function DialogKasirHarian({ onTutup, tabAwal, hanyaBaca = false }: { onT
   if (typeof document === "undefined") return null;
   return createPortal(
     <>
-    <div className="fixed inset-0 z-[65] flex items-start justify-center overflow-y-auto bg-black/40 p-2 sm:p-4" role="dialog" aria-modal="true" aria-label="Kasir harian" onClick={onTutup}>
+    <div className="fixed inset-0 z-[65] flex items-start justify-center overflow-y-auto tirai-latar p-2 sm:p-4" role="dialog" aria-modal="true" aria-label="Kasir harian" onClick={onTutup}>
       <div className="my-4 w-full max-w-5xl rounded-lg border bg-card p-4 text-card-foreground shadow-lg" onClick={(e) => e.stopPropagation()}>
         <div className="mb-3 flex items-start justify-between gap-2">
           <div>

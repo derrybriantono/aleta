@@ -371,7 +371,7 @@ export function JlfVariableReviewPage({ nomorPerkara, initialTemplateId }: { nom
       </Card>
 
       {editing ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center tirai-latar p-4">
           <div className="max-h-[calc(100dvh-2rem)] w-full max-w-2xl overflow-y-auto rounded-2xl border border-border bg-card p-5 shadow-panel">
             <div className="flex items-start justify-between gap-3">
               <div>

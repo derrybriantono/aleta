@@ -243,7 +243,7 @@ export function LetterTemplateManager({ currentUser }: { currentUser: Parameters
       </CardContent>
 
       {form ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center tirai-latar p-4">
           <div className="max-h-[92vh] w-full max-w-5xl overflow-auto rounded-[1.4rem] border border-border bg-card p-5 shadow-2xl">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>

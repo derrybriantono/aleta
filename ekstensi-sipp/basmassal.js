@@ -2751,6 +2751,11 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
   /** Kotak pilihan jam kerja (keputusan 104) - Antrekan bawaan, Tulis sekarang. */
   function tanyaJamKerjaKasir(pesan) {
     return new Promise((selesai) => {
+      // Latar redup + agak kabur di belakang kotak (26 Okt 2026); token bersama di panel.css.
+      const tirai = document.createElement("div");
+      tirai.className = "aleta-tirai-latar";
+      tirai.setAttribute("aria-hidden", "true");
+      tirai.style.cssText = "position:fixed;inset:0;z-index:2147483645;background:var(--aleta-tirai-warna,rgba(15,23,42,.38));-webkit-backdrop-filter:var(--aleta-tirai-filter,none);backdrop-filter:var(--aleta-tirai-filter,none)";
       const kotak = document.createElement("div");
       kotak.setAttribute("role", "alertdialog");
       kotak.style.cssText =
@@ -2771,6 +2776,7 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
           : "background:#fff;color:#78350f;border:1px solid #b45309;border-radius:6px;padding:6px 14px;cursor:pointer";
         b.addEventListener("click", () => {
           kotak.remove();
+          tirai.remove();
           selesai(nilai);
         });
         return b;
@@ -2778,6 +2784,7 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
       const antre = tombol("Antrekan", "antrekan", true);
       baris.append(antre, tombol("Tulis sekarang", "sekarang", false));
       kotak.append(teks, baris);
+      document.body.appendChild(tirai);
       document.body.appendChild(kotak);
       antre.focus();
     });

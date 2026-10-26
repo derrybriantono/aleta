@@ -2143,7 +2143,7 @@ function f43PasangGaya() {
   const g = document.createElement("style");
   g.id = "aleta-f43-gaya";
   g.textContent = `
-.aleta-f43-tirai{position:fixed;inset:0;z-index:2147483600;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;padding:16px;font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.aleta-f43-tirai{position:fixed;inset:0;z-index:2147483600;background:var(--aleta-tirai-warna,rgba(15,23,42,.38));-webkit-backdrop-filter:var(--aleta-tirai-filter,none);backdrop-filter:var(--aleta-tirai-filter,none);display:flex;align-items:center;justify-content:center;padding:16px;font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 .aleta-f43-kotak{background:#fff;color:#0f172a;border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,.35);width:min(920px,100%);max-height:calc(100vh - 32px);display:flex;flex-direction:column;overflow:hidden}
 .aleta-f43-kepala{padding:16px 20px 10px;border-bottom:1px solid #e2e8f0}
 .aleta-f43-kepala h2{margin:0 0 4px;font-size:19px;font-weight:700}
@@ -2755,7 +2755,7 @@ function f41PasangGaya() {
   const g = document.createElement("style");
   g.id = "aleta-f41-gaya";
   g.textContent = `
-.aleta-f41-tirai{position:fixed;inset:0;z-index:2147483500;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;padding:16px;font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#0f172a}
+.aleta-f41-tirai{position:fixed;inset:0;z-index:2147483500;background:var(--aleta-tirai-warna,rgba(15,23,42,.38));-webkit-backdrop-filter:var(--aleta-tirai-filter,none);backdrop-filter:var(--aleta-tirai-filter,none);display:flex;align-items:center;justify-content:center;padding:16px;font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#0f172a}
 .aleta-f41-kotak{background:#fff;border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,.35);width:min(1000px,100%);max-height:calc(100vh - 32px);display:flex;flex-direction:column;overflow:hidden}
 .aleta-f41-kepala{display:flex;gap:12px;align-items:flex-start;padding:16px 20px 8px}
 .aleta-f41-kepala h2{margin:0 0 2px;font-size:19px;font-weight:700}

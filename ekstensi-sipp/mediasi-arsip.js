@@ -229,8 +229,8 @@
     :host { all: initial; }
     * { box-sizing: border-box; }
     .latar { --bg:#ffffff; --fg:#0f172a; --muted:#475569; --garis:#e2e8f0; --aksen:#1d4ed8; --aksen-fg:#fff; --sekunder:#f1f5f9; --awas-bg:#fffbeb; --awas-fg:#78350f; --awas-garis:#f59e0b; --galat:#b91c1c; --ok:#15803d;
-      position:fixed; inset:0; display:flex; align-items:center; justify-content:center; padding:16px; background:rgba(2,6,23,.55); font:14px/1.5 system-ui,"Segoe UI",Arial,sans-serif; color:var(--fg); }
-    .latar[data-tema="gelap"] { --bg:#111827; --fg:#f1f5f9; --muted:#94a3b8; --garis:#334155; --aksen:#3b82f6; --sekunder:#1e293b; --awas-bg:#422006; --awas-fg:#fde68a; --galat:#f87171; --ok:#4ade80; }
+      position:fixed; inset:0; display:flex; align-items:center; justify-content:center; padding:16px; background:rgba(15,23,42,.38); -webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px); font:14px/1.5 system-ui,"Segoe UI",Arial,sans-serif; color:var(--fg); }
+    .latar[data-tema="gelap"] { background:rgba(5,8,12,.62); -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px); --bg:#111827; --fg:#f1f5f9; --muted:#94a3b8; --garis:#334155; --aksen:#3b82f6; --sekunder:#1e293b; --awas-bg:#422006; --awas-fg:#fde68a; --galat:#f87171; --ok:#4ade80; }
     .kotak { width:min(560px,100%); max-height:92vh; overflow:auto; background:var(--bg); border:1px solid var(--garis); border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,.4); padding:18px 20px; outline:none; }
     h2 { margin:0 0 4px; font-size:17px; } .sub { color:var(--muted); font-size:13px; margin-bottom:12px; }
     .seret { border:2px dashed var(--garis); border-radius:12px; padding:22px 12px; text-align:center; background:var(--sekunder); cursor:pointer; }
@@ -259,6 +259,27 @@
   }
 
   /** Dasar dialog: kepala, badan, pesan, baris tombol. Mengembalikan pengendali. */
+  /**
+   * Latar redup + agak kabur (26 Okt 2026): nilai dibaca dari token bersama di panel.css (-terang / -gelap;
+   * kabur dibuang mode ringan dan prefers-reduced-transparency) lalu dipasang sebagai gaya baris pada latar.
+   * Tanpa token, nilai harfiah di GAYA berlaku. Lewat gaya baris supaya teks gaya Shadow DOM tidak memuat nama token.
+   */
+  function pasangTirai(latar, tema) {
+    try {
+      const cs = getComputedStyle(document.documentElement);
+      const t = tema === "terang" ? "terang" : "gelap";
+      const warna = cs.getPropertyValue("--aleta-tirai-warna-" + t).trim();
+      const kabur = cs.getPropertyValue("--aleta-tirai-kabur-" + t).trim();
+      if (warna) latar.style.background = warna;
+      if (kabur) {
+        latar.style.setProperty("backdrop-filter", kabur);
+        latar.style.setProperty("-webkit-backdrop-filter", kabur);
+      }
+    } catch {
+      /* gaya harfiah di GAYA berlaku */
+    }
+  }
+
   function bukaDialog(judul, sub) {
     tutupDialog();
     const host = document.createElement("div");
@@ -270,6 +291,7 @@
     gaya.textContent = GAYA;
     const latar = el("div", "latar");
     latar.setAttribute("data-tema", "terang");
+    pasangTirai(latar, "terang");
     const kotak = el("section", "kotak");
     kotak.setAttribute("role", "dialog");
     kotak.setAttribute("aria-modal", "true");
@@ -297,10 +319,12 @@
         // menguraikan "ikuti sistem". Cermin temaPanel hanya cadangan.
         if (globalThis.AletaTemaPusat) {
           latar.setAttribute("data-tema", globalThis.AletaTemaPusat.keadaan().resolusi === "terang" ? "terang" : "gelap");
+          pasangTirai(latar, latar.getAttribute("data-tema"));
           return;
         }
         const s = await chrome.storage.local.get([KUNCI_TEMA]);
         latar.setAttribute("data-tema", s && s[KUNCI_TEMA] === "terang" ? "terang" : s && s[KUNCI_TEMA] === "gelap" ? "gelap" : "terang");
+        pasangTirai(latar, latar.getAttribute("data-tema"));
       } catch {
         /* tema terang */
       }

@@ -2720,7 +2720,7 @@ export default function AletaSippPage() {
 
                   {canRenderDetailPortal && selectedTableName ? createPortal((
                     <div
-                      className="fixed inset-0 z-[100] flex items-start justify-center overflow-hidden bg-slate-950/75 px-4 pb-[6vh] pt-[7vh] backdrop-blur-sm"
+                      className="fixed inset-0 z-[100] flex items-start justify-center overflow-hidden tirai-latar px-4 pb-[6vh] pt-[7vh]"
                       role="dialog"
                       aria-modal="true"
                       aria-labelledby="dictionary-detail-title"
@@ -3143,7 +3143,7 @@ export default function AletaSippPage() {
                 </div>
 
                 {canRenderDetailPortal && selectedQueryKey ? createPortal((
-                  <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-hidden bg-slate-950/75 px-4 pb-[6vh] pt-[7vh] backdrop-blur-sm" role="dialog" aria-modal="true" onClick={closeQueryDetail}>
+                  <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-hidden tirai-latar px-4 pb-[6vh] pt-[7vh]" role="dialog" aria-modal="true" onClick={closeQueryDetail}>
                     <Card className="max-h-[87vh] w-full max-w-6xl overflow-hidden border-border/80 bg-background shadow-2xl" onClick={(event) => event.stopPropagation()}>
                       <CardHeader className="sticky top-0 z-10 border-b border-border/80 bg-background/95 backdrop-blur">
                         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -3484,7 +3484,7 @@ export default function AletaSippPage() {
                 </div>
 
                 {canRenderDetailPortal && selectedVariableKey ? createPortal((
-                  <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-hidden bg-slate-950/75 px-4 pb-[6vh] pt-[7vh] backdrop-blur-sm" role="dialog" aria-modal="true" onClick={closeVariableDetail}>
+                  <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-hidden tirai-latar px-4 pb-[6vh] pt-[7vh]" role="dialog" aria-modal="true" onClick={closeVariableDetail}>
                     <Card className="max-h-[87vh] w-full max-w-6xl overflow-hidden border-border/80 bg-background shadow-2xl" onClick={(event) => event.stopPropagation()}>
                       <CardHeader className="sticky top-0 z-10 border-b border-border/80 bg-background/95 backdrop-blur">
                         <div className="flex flex-wrap items-start justify-between gap-3">

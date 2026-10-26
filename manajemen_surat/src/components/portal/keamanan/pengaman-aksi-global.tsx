@@ -119,7 +119,7 @@ export function PengamanAksiGlobal() {
   const lengkap = sandi.length > 0 && ketik.trim().length > 0 && (!p.perluKodeKedua || kode.trim().length > 0);
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4" data-pengaman-aksi>
+    <div className="fixed inset-0 z-[200] flex items-center justify-center tirai-latar p-4" data-pengaman-aksi>
       <form
         role="dialog"
         aria-modal="true"
