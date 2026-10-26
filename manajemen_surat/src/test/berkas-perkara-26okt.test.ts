@@ -122,7 +122,7 @@ describe("B - saklar dan migrasi", () => {
     const f = KATALOG_FITUR_SATKER.find((x) => x.kode === FITUR_BERKAS_PERKARA);
     expect(f).toBeTruthy();
     expect(f?.bawaan).toBe("mati");
-    expect(keadaanFitur(FITUR_BERKAS_PERKARA, {}, undefined as never)).toBeDefined();
+    expect(keadaanFitur(FITUR_BERKAS_PERKARA, {}).menyala).toBe(false);
   });
 
   it("migrasi 0112 memuat tiga tabel, jurnal idx 98, tanpa kata aplikasi dalam DDL", () => {

@@ -193,7 +193,8 @@ describe("peta fitur K11: kelompok manifest dan modul malas", () => {
   it("berkas yang baru di manifest hanya modul-malas.js, dan css tidak berubah", () => {
     const lama = new Set(sebelum.kelompok.flatMap((k) => k.js));
     const baru = sesudah.kelompok.flatMap((k) => k.js).filter((j) => !lama.has(j));
-    expect([...new Set(baru)]).toEqual(["modul-malas.js"]);
+    // 26 Okt 2026: blangko-derry-berkas.js = layar kerja Sampul/Daftar Isi (berkas baru yang SENGAJA ditambahkan di luar K11).
+    expect([...new Set(baru)]).toEqual(["modul-malas.js", "blangko-derry-berkas.js"]);
     expect(sesudah.kelompok.map((k) => k.css)).toEqual(sebelum.kelompok.map((k) => k.css));
   });
 
@@ -243,7 +244,8 @@ describe("peta fitur K11: kelompok manifest dan modul malas", () => {
   });
 
   it("berkas lain yang tidak disentuh K11 identik byte demi byte dengan sebelumnya", () => {
-    const diubah = new Set(["konten.js", "abt.js", "manifest.json", "latar.js"]);
+    // blangko-derry-isian.js: 26 Okt 2026 hanya MENAMBAH pengait layar kerja Sampul/Daftar Isi (blangko-derry-berkas.js); nama tingkat atas lama dijaga uji di bawah.
+    const diubah = new Set(["konten.js", "abt.js", "manifest.json", "latar.js", "blangko-derry-isian.js"]);
     for (const [nama, info] of Object.entries(sebelum.berkas)) {
       if (diubah.has(nama) || !sesudah.berkas[nama]) continue;
       // berkas yang sengaja disentuh didaftarkan di KEMBALI_DISENTUH

@@ -698,3 +698,67 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar .bd-tescarihasil { display: grid; gap: 6px; margin-bottom: 8px; }
 #aleta-bd-akar .bd-tespk { display: grid; gap: 2px; text-align: left; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); color: var(--fg); font: inherit; cursor: pointer; }
 #aleta-bd-akar .bd-tespk:hover, #aleta-bd-akar .bd-tespk:focus-visible { border-color: var(--accentln); background: var(--accentbg); outline: none; }
+
+/* ===== Sampul Berkas Perkara & Daftar Isi Berkas (26 Okt 2026): layar kerja khusus ===== */
+#aleta-bd-akar .bk { display: flex; flex-direction: column; gap: 12px; }
+#aleta-bd-akar .bk-kepala { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+#aleta-bd-akar .bk-tab { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+#aleta-bd-akar .bk-tab button { background: var(--panel); border: 0; padding: 7px 16px; font-weight: 600; }
+#aleta-bd-akar .bk-tab button[aria-selected="true"] { background: var(--hijau); color: #fff; }
+#aleta-bd-akar .bk-kertasp, #aleta-bd-akar .bk-bar label { display: inline-flex; gap: 6px; align-items: center; color: var(--muted); }
+#aleta-bd-akar .bk select, #aleta-bd-akar .bk input[type="text"], #aleta-bd-akar .bk textarea { background: var(--deep); border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; color: var(--fg); max-width: 100%; }
+#aleta-bd-akar .bk textarea { width: 100%; resize: vertical; }
+#aleta-bd-akar .bk-info { color: var(--muted); font-size: 13px; }
+#aleta-bd-akar .bk-simpan { color: var(--accent); font-size: 12.5px; min-width: 7ch; }
+#aleta-bd-akar .bk-dua { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 12px; }
+#aleta-bd-akar .bk-dua > .bk-kartu:first-child { grid-column: 1 / -1; }
+@media (max-width: 860px) { #aleta-bd-akar .bk-dua { grid-template-columns: minmax(0, 1fr); } }
+#aleta-bd-akar .bk-kartu { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+#aleta-bd-akar .bk-kartu h3 { margin: 0; font-size: 15px; color: var(--fg); background: none; border: 0; padding: 0; }
+#aleta-bd-akar .bk-kartu h3 small { color: var(--muted); font-weight: 400; margin-left: 8px; }
+#aleta-bd-akar .bk-ciriwadah { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 760px) { #aleta-bd-akar .bk-ciriwadah { grid-template-columns: minmax(0, 1fr); } }
+#aleta-bd-akar .bk-kel { display: flex; flex-wrap: wrap; gap: 6px; align-content: flex-start; }
+#aleta-bd-akar .bk-ciri { background: var(--deep); border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; font-size: 12.8px; display: inline-flex; gap: 5px; align-items: center; }
+#aleta-bd-akar .bk-ciri .g { color: var(--muted); }
+#aleta-bd-akar .bk-ciri small { color: var(--muted); font-size: 11px; }
+#aleta-bd-akar .bk-ciri.oto { background: var(--okbg); border-color: var(--okln); color: var(--ok); }
+#aleta-bd-akar .bk-ciri.tgn { background: var(--accentbg); border-color: var(--accentln); color: var(--accent); }
+#aleta-bd-akar .bk-ciri.mati-tgn { border-style: dashed; color: var(--muted); text-decoration: line-through; }
+#aleta-bd-akar .bk-f { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+#aleta-bd-akar .bk-f label { font-size: 12.8px; color: var(--muted); }
+#aleta-bd-akar .bk-f small { color: var(--muted); font-size: 11.8px; }
+#aleta-bd-akar .bk-reset { background: none; border: 0; color: var(--accent); text-decoration: underline; padding: 0 0 0 6px; font-size: 11.8px; }
+#aleta-bd-akar .bk-catat { color: var(--muted); font-size: 12.8px; }
+#aleta-bd-akar .bk-galat { background: var(--warnbg); border: 1px solid var(--warn); color: var(--warn); border-radius: 10px; padding: 10px 12px; }
+#aleta-bd-akar .bk-bar { gap: 10px 14px; }
+#aleta-bd-akar .bk-ringkas { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+#aleta-bd-akar .bk-ringkas .rk { background: var(--deep); border: 1px solid var(--line); border-radius: 10px; padding: 6px 12px; font-size: 13px; }
+#aleta-bd-akar .bk-ringkas small { color: var(--muted); }
+#aleta-bd-akar .bk-tabel-gulir { overflow-x: auto; }
+#aleta-bd-akar .bk-tabel { width: 100%; border-collapse: collapse; font-size: 13.2px; }
+#aleta-bd-akar .bk-tabel th { text-align: left; color: var(--muted); font-weight: 600; padding: 6px 8px; border-bottom: 1px solid var(--line); background: none; }
+#aleta-bd-akar .bk-tabel td { padding: 5px 8px; border-bottom: 1px solid var(--line); vertical-align: top; background: none; color: var(--fg); }
+#aleta-bd-akar .bk-tabel tr.bundel td { background: var(--hijau); color: #fff; font-weight: 700; letter-spacing: .04em; }
+#aleta-bd-akar .bk-tabel tr.grup td { background: var(--panel2); color: var(--accent); font-size: 12px; font-weight: 700; }
+#aleta-bd-akar .bk-tabel tr.tersembunyi td { opacity: .5; text-decoration: line-through; }
+#aleta-bd-akar .bk-tabel td.geser, #aleta-bd-akar .bk-tabel td.aksi { white-space: nowrap; }
+#aleta-bd-akar .bk-tabel .ikon { background: var(--deep); border: 1px solid var(--line); border-radius: 6px; min-width: 28px; min-height: 28px; padding: 0 4px; }
+#aleta-bd-akar .bk-tabel .ikon:disabled { opacity: .35; cursor: default; }
+#aleta-bd-akar .bk-tabel .hlbox { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; }
+#aleta-bd-akar .bk-tabel .hlbox input { width: 7ch; text-align: center; }
+#aleta-bd-akar .bk-tabel .hlbox input[aria-invalid="true"] { border-color: var(--warn); }
+#aleta-bd-akar .bk-tabel .rentang { font-variant-numeric: tabular-nums; }
+#aleta-bd-akar .bk-tabel .sbr { font-size: 11.8px; border-radius: 999px; padding: 1px 8px; border: 1px solid var(--line); color: var(--muted); }
+#aleta-bd-akar .bk-tabel .sbr.pasti { color: var(--ok); border-color: var(--okln); background: var(--okbg); }
+#aleta-bd-akar .bk-tabel .sbr.perkiraan { color: var(--warn); border-color: var(--warn); background: var(--warnbg); }
+#aleta-bd-akar .bk-tabel .sbr.manual { color: var(--accent); border-color: var(--accentln); background: var(--accentbg); }
+#aleta-bd-akar .bk-tabel .peringatan { color: var(--warn); font-size: 11.8px; }
+#aleta-bd-akar .bk-tabel .bk-in { width: 100%; min-width: 14ch; }
+#aleta-bd-akar .bk-pdf { display: block; font-size: 11.8px; color: var(--muted); margin-top: 4px; }
+#aleta-bd-akar .bk-cetak { align-items: center; gap: 10px; }
+#aleta-bd-akar .bk-pil { display: inline-flex; gap: 5px; align-items: center; }
+#aleta-bd-akar .bk-log { margin: 0; padding-left: 18px; color: var(--muted); font-size: 12.8px; }
+#aleta-bd-akar .bk-prat > summary { cursor: pointer; font-weight: 600; padding: 6px 0; }
+#aleta-bd-akar .bk-kertas { max-height: 70vh; overflow: auto; }
+@media (prefers-reduced-motion: no-preference) { #aleta-bd-akar .bk-ciri { transition: background .15s, border-color .15s; } }
