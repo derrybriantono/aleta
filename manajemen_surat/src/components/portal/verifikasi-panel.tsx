@@ -134,7 +134,7 @@ export function VerifikasiPanel({ bolehAtur }: { bolehAtur: boolean }) {
               </Badge>
             </CardTitle>
             <CardDescription>
-              Kedua saklar mati bawaan: selama mati, tidak ada pengguna yang dimintai kode. Aturan tiap peran juga "mati" bawaan; menyalakan saklar belum meminta kode dari siapa pun sampai Anda memilih aturan peran. Pengguna boleh memasang authenticator lebih dulu di halaman Akun. Kode hanya diminta di perangkat baru atau dari
+              Kedua saklar mati bawaan: selama mati, tidak ada pengguna yang dimintai kode. Aturan tiap peran juga &quot;mati&quot; bawaan; menyalakan saklar belum meminta kode dari siapa pun sampai Anda memilih aturan peran. Pengguna boleh memasang authenticator lebih dulu di halaman Akun. Kode hanya diminta di perangkat baru atau dari
               luar jaringan kantor.
             </CardDescription>
           </CardHeader>
