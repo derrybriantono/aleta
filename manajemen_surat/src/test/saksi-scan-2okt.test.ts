@@ -1015,9 +1015,13 @@ describe("F. manifest, susun-ekstensi, penjaga TDZ", () => {
   it("saksiscan.js hanya di SIPP: sesudah basmassal.js, sebelum konten.js; tidak di ABT/portal", () => {
     const m = JSON.parse(baca("manifest.json")) as { content_scripts: Array<{ js?: string[] }> };
     const sipp = m.content_scripts.find((x) => (x.js || []).includes("konten.js"))!.js!;
-    expect(sipp.indexOf("saksiscan.js")).toBeGreaterThan(sipp.indexOf("basmassal.js"));
-    expect(sipp.indexOf("saksiscan.js")).toBeLessThan(sipp.indexOf("konten.js"));
-    expect(sipp.indexOf("saksiscan.js")).toBeGreaterThan(sipp.indexOf("panel-alat.js"));
+    // K11 (26 Okt 2026): modul malas - bukan di manifest, disuntik pekerja latar bila blangko pihak/saksi muncul
+    // (form#frm_ref_pihak / frm_ref_pengacara / frm_user) atau bersama panel perkara (saksiscanBuka dst.).
+    expect(sipp).not.toContain("saksiscan.js");
+    const pemuat = baca("modul-malas.js");
+    expect(pemuat).toContain('saksiscan: modul([], ["saksiscan.js"])');
+    expect(pemuat).toContain('{ id: "saksiscan", selektor: "form#frm_ref_pihak, form#frm_ref_pengacara, form#frm_user" }');
+    expect(pemuat).toMatch(/"panel-perkara": modul\(\[[^\]]*"saksiscan"/);
     for (const utama of ["abt.js", "aleta.js"]) {
       expect(m.content_scripts.find((x) => (x.js || []).includes(utama))!.js!, utama).not.toContain("saksiscan.js");
     }

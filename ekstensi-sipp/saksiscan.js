@@ -3026,3 +3026,4 @@ function saksibantuJadwalkanBantu() {
 }
 
 saksiscanPasang();
+(globalThis.__aletaModulSelesai || (globalThis.__aletaModulSelesai = new Set())).add("saksiscan.js"); // K11-SELESAI

@@ -45,12 +45,34 @@
   const pelari = akar.chrome && akar.chrome.runtime;
   if (!pelari || typeof pelari.sendMessage !== "function") return;
 
+  const modul = (pra, berkas) => Object.freeze({ pra: Object.freeze(pra), berkas: Object.freeze(berkas) });
   /** id -> prasyarat (modul lain, dimuat lebih dulu) dan berkas (berurutan). */
   const DAFTAR = Object.freeze({
-    "panel-bersama": Object.freeze({ pra: Object.freeze([]), berkas: Object.freeze(["konten-panel-bersama.js"]) }),
-    "panel-perkara": Object.freeze({ pra: Object.freeze(["panel-bersama"]), berkas: Object.freeze(["konten-panel-perkara.js"]) }),
-    "panel-daftar": Object.freeze({ pra: Object.freeze(["panel-bersama"]), berkas: Object.freeze(["konten-panel-daftar.js"]) }),
+    // potongan konten.js (panel) - dipanggil penunggu di konten.js
+    "panel-bersama": modul([], ["konten-panel-bersama.js"]),
+    "panel-perkara": modul(["panel-bersama", "jurusita", "saksiscan"], ["konten-panel-perkara.js"]),
+    "panel-daftar": modul(["panel-bersama", "jurusita"], ["konten-panel-daftar.js"]),
+    // pustaka yang hanya dipakai panel (jurusita.js) atau juga blangko pihak (saksiscan.js)
+    jurusita: modul([], ["jurusita.js"]),
+    saksiscan: modul([], ["saksiscan.js"]),
+    // dimuat bila blangko / halamannya muncul (lihat PEMICU)
+    pihak: modul(["saksiscan"], ["pihak-lengkap.js", "konten-kontak.js"]),
+    "penetapan-borang": modul([], ["penetapan-borang.js"]),
+    "tarik-satu-perkara": modul([], ["tarik-satu-perkara.js"]),
   });
+
+  /**
+   * PEMICU - modul yang berdiri sendiri dan baru bekerja bila halaman memuat blangko tertentu:
+   * selektor = SATU ATAU LEBIH penunjuk yang SAMA dengan yang dipakai modul itu sendiri untuk
+   * mengenali blangkonya (superset: ada di DOM, tampak atau tidak); url = pola alamat halaman.
+   * Bila salah satu cocok, modul dimuat dan memulai dirinya seperti saat dimuat manifest.
+   */
+  const PEMICU = Object.freeze([
+    Object.freeze({ id: "saksiscan", selektor: "form#frm_ref_pihak, form#frm_ref_pengacara, form#frm_user" }),
+    Object.freeze({ id: "pihak", selektor: "form#frm_ref_pihak, form#frm_ref_pengacara" }),
+    Object.freeze({ id: "penetapan-borang", selektor: "form#frm_majelis, form#frm_panitera, form#frm_juru_sita, form#frm_sidang_pertama" }),
+    Object.freeze({ id: "tarik-satu-perkara", url: /detil[_-]?perkara|detail[_-]?perkara/i }),
+  ]);
 
   const BATAS_JAWABAN_MS = 10000;
   const JEDA_ULANG_GAGAL_MS = 3000;
@@ -127,5 +149,64 @@
     }
   }
 
-  akar.AletaModul = Object.freeze({ siap, pastikan, daftar: DAFTAR, berkasUntuk });
+  // --------------------------------------------------------------------------
+  // Pemicu: memuat modul mandiri begitu blangko / halamannya ada
+  // --------------------------------------------------------------------------
+  const diSipp = () => {
+    try {
+      const j = String((akar.location && akar.location.pathname) || "");
+      return !/\/aps_badilag\//i.test(j) && !/^\/aleta(?:\/|$)/i.test(j);
+    } catch {
+      return false;
+    }
+  };
+
+  function cocokPemicu(p) {
+    try {
+      if (p.url && p.url.test(String((akar.location && akar.location.pathname) || ""))) return true;
+      return Boolean(p.selektor && akar.document && akar.document.querySelector(p.selektor));
+    } catch {
+      return false;
+    }
+  }
+
+  function pasangPemicu() {
+    if (!akar.document || !diSipp()) return;
+    const menunggu = new Set(PEMICU);
+    let jam = null;
+    let pengamat = null;
+    const periksa = () => {
+      jam = null;
+      for (const p of [...menunggu]) {
+        if (siap(p.id)) {
+          menunggu.delete(p);
+          continue;
+        }
+        if (!cocokPemicu(p)) continue;
+        // dibiarkan menunggu sampai berhasil: gagal = dicoba lagi pada perubahan DOM berikutnya
+        void pastikan(p.id).then((ok) => {
+          if (ok) menunggu.delete(p);
+        });
+      }
+      if (!menunggu.size && pengamat) {
+        pengamat.disconnect();
+        pengamat = null;
+      }
+    };
+    const jadwalkan = () => {
+      if (!jam) jam = setTimeout(periksa, 150);
+    };
+    periksa();
+    if (!menunggu.size || !akar.document.body) return;
+    try {
+      const Pengamat = akar.ALETA_PENGAMAT ? akar.ALETA_PENGAMAT.Pengamat : akar.MutationObserver;
+      pengamat = new Pengamat(jadwalkan);
+      pengamat.observe(akar.document.body, { childList: true, subtree: true });
+    } catch {
+      /* tanpa pengamat: pemicu hanya diperiksa sekali */
+    }
+  }
+
+  akar.AletaModul = Object.freeze({ siap, pastikan, daftar: DAFTAR, pemicu: PEMICU, berkasUntuk });
+  pasangPemicu();
 })(globalThis);

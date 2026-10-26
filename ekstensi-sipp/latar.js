@@ -819,7 +819,17 @@ async function tampilkanPdfTitipan(pesan) {
  * pengirimnya sendiri. Pekerja latar tidak menyimpan apa pun: halaman sendiri yang
  * mencatat berkas mana sudah dimuat, sebab menyuntik dua kali = const ganda.
  */
-const BERKAS_MODUL_MALAS = new Set(["konten-panel-bersama.js", "konten-panel-perkara.js", "konten-panel-daftar.js"]);
+const BERKAS_MODUL_MALAS = new Set([
+  "konten-panel-bersama.js",
+  "konten-panel-perkara.js",
+  "konten-panel-daftar.js",
+  "konten-kontak.js",
+  "jurusita.js",
+  "saksiscan.js",
+  "pihak-lengkap.js",
+  "penetapan-borang.js",
+  "tarik-satu-perkara.js",
+]);
 
 async function layaniMuatModul(pesan, pengirim) {
   const tab = pengirim && pengirim.tab;

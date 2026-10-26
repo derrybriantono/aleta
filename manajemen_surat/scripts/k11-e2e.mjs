@@ -69,6 +69,13 @@ const halaman = {
       `<form id="frm_ref_pihak"><input id="pihak_fullname" name="fullname"><input id="pihak_email" name="email"><input id="pihak_no_tlp" name="tlp">` +
         `<select id="pihak_provinsi"><option value="">-</option></select><button type="button">Simpan</button></form>`
     ),
+  formPenetapan: () =>
+    rangka(
+      `<form id="frm_majelis" action="/index.php/f_validate_input"><input type="hidden" id="action" value="add"><table><tr><td>Nomor Perkara</td><td>${NOMOR}</td></tr>` +
+        `<tr><td>Ketua</td><td><select id="hakim_ketua"><option value="">-</option></select></td></tr></table><button type="button">Simpan</button></form>`
+    ),
+  formSaksi: () =>
+    rangka(`<form id="frm_user"><input id="pihak_ke" value="13"><textarea id="keterangan"></textarea><input id="pihak_fullname"></form>`),
   cetak: () => rangka(`<p>Relaas panggilan ${NOMOR}</p>`, "Cetak"),
   abtBeranda: () => rangka(`<h2>ABT</h2><p>Aplikasi Blangko Terpadu</p>`, "ABT"),
   // Beranda ABT sungguhan: #navbar .accordion + .pricing_inner_w3ls (halamanBerandaAbt)
@@ -93,9 +100,13 @@ const SKENARIO = [
   { nama: "sipp-laporan", jalur: "/index.php/laporan_umum", html: halaman.laporan },
   { nama: "sipp-daftar-perkara", jalur: "/index.php/perkara_list", html: halaman.daftar },
   { nama: "sipp-perkara", jalur: "/index.php/perkara_detil_agama/abc123", html: halaman.perkara },
+  { nama: "sipp-detil-perkara-ui", jalur: "/index.php/detil_perkara_agama", html: halaman.perkara, simpanan: { ujiTampilan: "ui", ujiIzinkanNyata: true } },
   { nama: "sipp-perkara-ui", jalur: "/index.php/perkara_detil_agama/abc123", html: halaman.perkara, simpanan: { ujiTampilan: "ui", ujiIzinkanNyata: true } },
   { nama: "sipp-daftar-ui", jalur: "/index.php/perkara_list", html: halaman.daftar, simpanan: { ujiTampilan: "ui", ujiIzinkanNyata: true } },
   { nama: "sipp-form-pihak", jalur: "/index.php/pihak_list", html: halaman.formPihak },
+  { nama: "sipp-form-pihak-ui", jalur: "/index.php/pihak_list_ui", html: halaman.formPihak, simpanan: { ujiTampilan: "ui", ujiIzinkanNyata: true } },
+  { nama: "sipp-form-penetapan-ui", jalur: "/index.php/perkara_detil_agama/form1", html: halaman.formPenetapan, simpanan: { ujiTampilan: "ui", ujiIzinkanNyata: true } },
+  { nama: "sipp-form-saksi-ui", jalur: "/index.php/saksi_form", html: halaman.formSaksi, simpanan: { ujiTampilan: "ui", ujiIzinkanNyata: true } },
   { nama: "sipp-cetak", jalur: "/index.php/c_template_relaas_agama/popup_relaas/1", html: halaman.cetak },
   { nama: "abt-beranda", jalur: "/aps_badilag/index.php/abt", html: halaman.abtBeranda },
   { nama: "abt-beranda-penuh", jalur: "/aps_badilag/index.php/abt/beranda", html: halaman.abtBerandaPenuh },

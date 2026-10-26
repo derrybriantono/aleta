@@ -28,7 +28,7 @@ import { fileURLToPath } from "node:url";
  * pecahannya dijaga k11-peta-fitur-26okt.test.ts (pernyataan per pernyataan terhadap
  * konten.js yang lama). Tanpa fixture, jatuh ke penyambungan sederhana.
  */
-export const PECAHAN_KONTEN = ["konten.js", "konten-panel-bersama.js", "konten-panel-perkara.js", "konten-panel-daftar.js"] as const;
+export const PECAHAN_KONTEN = ["konten.js", "konten-kontak.js", "konten-panel-bersama.js", "konten-panel-perkara.js", "konten-panel-daftar.js"] as const;
 
 const POLA_KONTEN = /(?:^|[\\/])ekstensi-sipp[\\/]konten\.js$/;
 const sidik = (teks: string) => createHash("sha1").update(teks).digest("hex").slice(0, 12);

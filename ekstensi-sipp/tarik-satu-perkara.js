@@ -724,3 +724,4 @@
   };
   void mulai();
 })();
+(globalThis.__aletaModulSelesai || (globalThis.__aletaModulSelesai = new Set())).add("tarik-satu-perkara.js"); // K11-SELESAI

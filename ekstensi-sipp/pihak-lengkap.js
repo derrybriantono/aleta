@@ -1651,3 +1651,4 @@
 
   if (typeof document !== "undefined" && !globalThis.ALETA_PIHAK_LENGKAP_MANUAL) mulai();
 })();
+(globalThis.__aletaModulSelesai || (globalThis.__aletaModulSelesai = new Set())).add("pihak-lengkap.js"); // K11-SELESAI

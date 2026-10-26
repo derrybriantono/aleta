@@ -608,11 +608,18 @@ describe("cetak massal juru sita", () => {
 describe("pemasangan di ekstensi", () => {
   const manifest = JSON.parse(baca("manifest.json")) as { content_scripts: Array<{ js?: string[] }> };
   it("jurusita.js dimuat di SIPP dan ABT, sesudah panel-alat.js dan sebelum konten.js/abt.js", () => {
-    for (const utama of ["konten.js", "abt.js"]) {
-      const js = manifest.content_scripts.find((x) => (x.js || []).includes(utama))!.js!;
-      expect(js.indexOf("jurusita.js"), utama).toBeGreaterThan(js.indexOf("panel-alat.js"));
-      expect(js.indexOf("jurusita.js"), utama).toBeLessThan(js.indexOf(utama));
-    }
+    // ABT: tetap di manifest, sesudah panel-alat.js dan sebelum abt.js.
+    const jsAbt = manifest.content_scripts.find((x) => (x.js || []).includes("abt.js"))!.js!;
+    expect(jsAbt.indexOf("jurusita.js")).toBeGreaterThan(jsAbt.indexOf("panel-alat.js"));
+    expect(jsAbt.indexOf("jurusita.js")).toBeLessThan(jsAbt.indexOf("abt.js"));
+    // SIPP (K11, 26 Okt 2026): tidak lagi di manifest; modul malas, prasyarat panel perkara dan panel daftar
+    // (satu-satunya pemakainya: konten-panel-perkara.js / konten-panel-daftar.js), disuntik sebelum panel digambar.
+    const jsSipp = manifest.content_scripts.find((x) => (x.js || []).includes("konten.js"))!.js!;
+    expect(jsSipp).not.toContain("jurusita.js");
+    const pemuat = baca("modul-malas.js");
+    expect(pemuat).toContain('jurusita: modul([], ["jurusita.js"])');
+    expect(pemuat).toMatch(/"panel-perkara": modul\(\[[^\]]*"jurusita"/);
+    expect(pemuat).toMatch(/"panel-daftar": modul\(\[[^\]]*"jurusita"/);
   });
 
   it("susun-ekstensi menanam jurusita.js dan penjaga TDZ menyisirnya", () => {

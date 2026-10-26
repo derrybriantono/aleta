@@ -2794,3 +2794,4 @@ async function aletaJurusitaPasangMassal(wadah, opsi) {
 globalThis.aletaJurusitaPasang = aletaJurusitaPasang;
 globalThis.aletaJurusitaBoleh = aletaJurusitaBoleh;
 globalThis.aletaJurusitaPasangMassal = aletaJurusitaPasangMassal;
+(globalThis.__aletaModulSelesai || (globalThis.__aletaModulSelesai = new Set())).add("jurusita.js"); // K11-SELESAI

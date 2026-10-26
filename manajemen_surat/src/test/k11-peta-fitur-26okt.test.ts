@@ -39,7 +39,7 @@ const baca = (b: string) => readFileSync(path.join(EKS, b), "utf8").replace(/\r\
 
 const sebelum = JSON.parse(readFileSync(path.join(process.cwd(), "src/test/fixtures/k11-peta-fitur-sebelum.json"), "utf8")) as ReturnType<typeof bangunPeta>;
 
-const PECAHAN = ["konten.js", "konten-panel-bersama.js", "konten-panel-perkara.js", "konten-panel-daftar.js"];
+const PECAHAN = ["konten.js", "konten-kontak.js", "konten-panel-bersama.js", "konten-panel-perkara.js", "konten-panel-daftar.js"];
 const SEBELUM_ENV = process.env.ALETA_KONTEN_MENTAH;
 
 // pembacaan mentah: konten.js yang dibaca di sini adalah INTI, bukan gabungan (lihat k11-konten-gabungan.ts).
@@ -91,8 +91,8 @@ describe("peta fitur K11: pernyataan konten.js", () => {
         baru.set(kunci, (baru.get(kunci) || 0) + 1);
       }
     }
-    // lem: dua fungsi penunggu + satu penanda selesai per modul (3)
-    expect(lem.sort()).toEqual(["modulPanelSiap", "pastikanModulPanel", "selesai", "selesai", "selesai"]);
+    // lem: dua fungsi penunggu + satu penanda selesai per modul (4)
+    expect(lem.sort()).toEqual(["modulPanelSiap", "pastikanModulPanel", "selesai", "selesai", "selesai", "selesai"]);
     const hilang: string[] = [];
     const tambah: string[] = [];
     for (const [k, n] of lama) if ((baru.get(k) || 0) !== n) hilang.push(k);
@@ -132,6 +132,7 @@ describe("peta fitur K11: pintu antar-modul", () => {
 
   it("inti hanya merujuk susunPanel dan susunPanelDaftar ke modul", () => {
     expect(rujukan("konten.js", "konten-panel-bersama.js")).toEqual([]);
+    expect(rujukan("konten.js", "konten-kontak.js")).toEqual([]);
     expect(rujukan("konten.js", "konten-panel-perkara.js")).toEqual(["susunPanel"]);
     expect(rujukan("konten.js", "konten-panel-daftar.js")).toEqual(["susunPanelDaftar"]);
   });
@@ -197,9 +198,10 @@ describe("peta fitur K11: kelompok manifest dan modul malas", () => {
   });
 
   it("modul malas tidak ganda di manifest dan semua berkasnya ada", () => {
-    const dimanifest = new Set(sesudah.kelompok.flatMap((k) => k.js));
+    // kelompok SIPP (yang memuat konten.js): modul malas tidak boleh juga dimuat manifest (const ganda); ABT boleh memuat jurusita.js sendiri
+    const dimanifest = new Set(sesudah.kelompok.find((k) => k.js.includes("konten.js"))!.js);
     for (const b of berkasModul) {
-      expect(dimanifest.has(b), `${b} jangan dimuat manifest dan modul malas sekaligus`).toBe(false);
+      expect(dimanifest.has(b), `${b} jangan dimuat manifest SIPP dan modul malas sekaligus`).toBe(false);
       expect(() => baca(b)).not.toThrow();
     }
   });
@@ -244,15 +246,30 @@ describe("peta fitur K11: kelompok manifest dan modul malas", () => {
     const diubah = new Set(["konten.js", "manifest.json", "latar.js"]);
     for (const [nama, info] of Object.entries(sebelum.berkas)) {
       if (diubah.has(nama) || !sesudah.berkas[nama]) continue;
-      // berkas yang sengaja disentuh tahap berikutnya didaftarkan di KEMBALI_DISENTUH
+      // berkas yang sengaja disentuh didaftarkan di KEMBALI_DISENTUH
       if (KEMBALI_DISENTUH.includes(nama)) continue;
       expect(sesudah.berkas[nama].sidik, nama).toBe(info.sidik);
+    }
+  });
+
+  it("berkas lama yang jadi modul malas hanya bertambah SATU baris penanda selesai di ujungnya", () => {
+    for (const nama of KEMBALI_DISENTUH) {
+      const baris = baca(nama).split("\n");
+      expect(baris[baris.length - 1], nama).toBe("");
+      const penanda = baris[baris.length - 2];
+      expect(penanda, nama).toBe(`(globalThis.__aletaModulSelesai || (globalThis.__aletaModulSelesai = new Set())).add("${nama}"); // K11-SELESAI`);
+      const tanpa = baris.slice(0, -2).join("\n") + "\n";
+      expect(sidikPenuh(tanpa), nama).toBe(sebelum.berkas[nama].sidik);
     }
   });
 });
 
 /** Berkas lama yang SENGAJA diubah K11 (tahap berikutnya menambah di sini; uji di atas lalu memeriksa nama/ekspornya saja). */
-const KEMBALI_DISENTUH: string[] = [];
+const KEMBALI_DISENTUH: string[] = ["jurusita.js", "saksiscan.js", "pihak-lengkap.js", "penetapan-borang.js", "tarik-satu-perkara.js"];
+
+function sidikPenuh(teks: string): string {
+  return createRequire(import.meta.url)("node:crypto").createHash("sha1").update(teks).digest("hex").slice(0, 40);
+}
 
 function sidikPendek(teks: string): string {
   // sama dengan scripts/k11-peta.mjs: sha1 (12 heks) dari teks pernyataan
@@ -288,7 +305,7 @@ describe("pemuat modul malas (modul-malas.js)", () => {
     const { pemuat, disuntik } = buatLingkungan();
     expect(pemuat.siap("panel-perkara")).toBe(false);
     expect(await pemuat.pastikan("panel-perkara")).toBe(true);
-    expect(disuntik).toEqual(["konten-panel-bersama.js", "konten-panel-perkara.js"]);
+    expect(disuntik).toEqual(["konten-panel-bersama.js", "jurusita.js", "saksiscan.js", "konten-panel-perkara.js"]);
     expect(pemuat.siap("panel-perkara")).toBe(true);
     expect(pemuat.siap("panel-bersama")).toBe(true);
     expect(pemuat.siap("panel-daftar")).toBe(false);
@@ -299,7 +316,7 @@ describe("pemuat modul malas (modul-malas.js)", () => {
     const hasil = await Promise.all([pemuat.pastikan("panel-perkara"), pemuat.pastikan("panel-daftar"), pemuat.pastikan("panel-perkara"), pemuat.pastikan("panel-bersama")]);
     expect(hasil).toEqual([true, true, true, true]);
     expect(await pemuat.pastikan("panel-perkara")).toBe(true);
-    expect([...disuntik].sort()).toEqual(["konten-panel-bersama.js", "konten-panel-daftar.js", "konten-panel-perkara.js"]);
+    expect([...disuntik].sort()).toEqual(["jurusita.js", "konten-panel-bersama.js", "konten-panel-daftar.js", "konten-panel-perkara.js", "saksiscan.js"]);
     expect(new Set(disuntik).size).toBe(disuntik.length);
   });
 

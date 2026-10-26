@@ -72,6 +72,7 @@ const BERKAS = [
   // tepat sebelum dipakai (panel perkara / panel daftar / bagian bersama). Tanpa salah satunya panel tidak muncul.
   "modul-malas.js",
   "konten.js",
+  "konten-kontak.js",
   "konten-panel-bersama.js",
   "konten-panel-perkara.js",
   "konten-panel-daftar.js",

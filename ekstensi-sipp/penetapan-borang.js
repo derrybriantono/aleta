@@ -923,3 +923,4 @@
   };
   void mulai();
 })();
+(globalThis.__aletaModulSelesai || (globalThis.__aletaModulSelesai = new Set())).add("penetapan-borang.js"); // K11-SELESAI
