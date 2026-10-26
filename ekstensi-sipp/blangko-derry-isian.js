@@ -6137,6 +6137,17 @@
     const bersih = bersihkanHeaderPenanda(h.rtf);
     h.rtf = bersih.rtf;
     S.prat.headerDibuang = bersih.jumlah;
+    // Kotak acuan variabel di BADAN naskah (tabel mengambang berhuruf 1 pt): klien ABT sudah membuangnya; jalur Tes putusan tidak
+    // lewat klien itu, jadi dibersihkan lagi di sini (idempoten) dan hitungan titik-titik dihitung ulang dari naskah bersih.
+    S.prat.kotakDibuang = h.kotakDibuang || 0;
+    if (typeof abtKlienBuangKotakPenanda === "function") {
+      const kotak = abtKlienBuangKotakPenanda(h.rtf);
+      if (kotak.jumlah) {
+        h.rtf = kotak.rtf;
+        S.prat.kotakDibuang += kotak.jumlah;
+        if (typeof abtKlienPeriksaRtf === "function") h.periksa = abtKlienPeriksaRtf(latin1(h.rtf));
+      }
+    }
     // Putusan: paragraf kalimat penutup keterangan saksi dibuang dari keluaran cetak saja (ABT/SIPP dan BAS tidak disentuh).
     S.prat.penutupDibuang = 0;
     if (S.blangko.jenis === "put") {

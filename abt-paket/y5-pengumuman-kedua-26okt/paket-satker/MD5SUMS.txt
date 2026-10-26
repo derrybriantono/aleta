@@ -1,0 +1,5 @@
+c3af0de12102456a3d7816f84ad38002  abt-y5-pengumuman-kedua-26okt-PASANG.sql
+76f7da88c523455702531cb4c9327ffe  abt-y5-pengumuman-kedua-26okt-PERIKSA.sql
+ae4913a4328b71c2ed73766d2bc3d0ec  abt-y5-pengumuman-kedua-26okt-PULIH.sql
+836e8722106a1a0ac7a34e82a37c44ad  pasang-satker.sh
+27a6de404dc20d6d2942c9e5a14426bf  pulih-satker.sh
