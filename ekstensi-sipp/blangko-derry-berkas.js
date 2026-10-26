@@ -399,6 +399,7 @@
   function jenisLayar(berkas) {
     const n = String(berkas || "").trim();
     if (/^Sampul Berkas Perkara( \(Lengkap\))?\.rtf$/i.test(n)) return "sampul";
+    if (/^Ceklist Berkas Perkara\.rtf$/i.test(n)) return "ceklist";
     if (/^Daftar Isi Berkas\.rtf$/i.test(n)) return "daftar-isi";
     return "";
   }
@@ -681,6 +682,14 @@
     const dasar = { perkaraId: ST.perkaraId, jenis: tab, kertas: ST.kertas };
     const peran = H.sebagaiPeran ? H.sebagaiPeran() : "";
     if (peran) dasar.sebagaiPeran = peran;
+    if (tab === "ceklist") {
+      const f = ST.fakta || {};
+      const tangan = {};
+      for (const [k, v] of Object.entries(ST.tangan)) if (/^c_[a-z_]{2,20}$/.test(k)) tangan[k.slice(2)] = Boolean(v);
+      return Object.assign(dasar, {
+        ceklist: { jenis: (f.perkara || {}).jenis || "lain", lawan: lawanPerkara(), sebutan: { p: (f.perkara || {}).sebutanP, t: (f.perkara || {}).sebutanT }, tangan, fakta: f.ceklist || {} },
+      });
+    }
     if (tab === "sampul") {
       const j = jumlahPihak();
       const badan = Object.assign(dasar, { nilai: nilaiTimpaSampul(), bentuk: ST.bentuk, lawan: lawanPerkara() });
@@ -714,7 +723,7 @@
     const d = await H.ambilPortal(API_NASKAH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(badanNaskah(tab)), batasMs: 120000 }, "Menyusun naskah");
     const rtf = atob(String((d && d.rtfBase64) || ""));
     if (rtf.length < 6 || rtf.slice(0, 5) !== "{\\rtf") throw new Error("Naskah yang diterima bukan RTF.");
-    return { rtf, kosong: d.kosong || [], galatMesin: d.mesinGalat || "", lampiran: Array.isArray(d.lampiran) ? d.lampiran : [], muatPihak: d.muatPihak || 0 };
+    return { rtf, ceklist: d.ceklist || null, kosong: d.kosong || [], galatMesin: d.mesinGalat || "", lampiran: Array.isArray(d.lampiran) ? d.lampiran : [], muatPihak: d.muatPihak || 0 };
   }
 
   function jadwalPratinjau(tunggu) {
@@ -734,6 +743,10 @@
       ST.prat.kunci = kunci;
       ST.prat.kosong = n.kosong;
       ST.lampiran = n.lampiran;
+      if (ST.tab === "ceklist") {
+        ST.cek = n.ceklist;
+        isiCeklist();
+      }
       ST.muatPihak = n.muatPihak;
     } catch (e) {
       ST.prat.galat = String((e && e.message) || e);
@@ -771,7 +784,7 @@
     try {
       await simpanSekarang();
       const n = await ambilNaskah(ST.tab);
-      const dasarNama = ST.tab === "sampul" ? "Sampul Berkas Perkara.rtf" : "Daftar Isi Berkas.rtf";
+      const dasarNama = ST.tab === "sampul" ? "Sampul Berkas Perkara.rtf" : ST.tab === "ceklist" ? "Ceklist Berkas Perkara.rtf" : "Daftar Isi Berkas.rtf";
       const hasil = [];
       if (fmt.rtf) {
         const u = await H.unduh(new Blob([Uint8Array.from(n.rtf, (c) => c.charCodeAt(0))], { type: "application/rtf" }), H.namaUnduhan(ST.nomor, dasarNama, "rtf"));
@@ -801,7 +814,7 @@
     k.innerHTML =
       `<label class="bk-pil"><input type="checkbox" data-bk-fmt="rtf" checked> RTF</label>` +
       `<label class="bk-pil"><input type="checkbox" data-bk-fmt="pdf" checked> PDF</label>` +
-      `<button type="button" class="bd-btn utama" data-bk="cetak" ${ST.sibuk ? "disabled" : ""}>${ST.sibuk ? "Sedang mencetak…" : ST.tab === "sampul" ? "Cetak sampul" : "Cetak daftar isi"}</button>` +
+      `<button type="button" class="bd-btn utama" data-bk="cetak" ${ST.sibuk ? "disabled" : ""}>${ST.sibuk ? "Sedang mencetak…" : ST.tab === "sampul" ? "Cetak sampul" : ST.tab === "ceklist" ? "Cetak ceklist" : "Cetak daftar isi"}</button>` +
       (ST.log.length ? `<ul class="bk-log">${ST.log.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : "");
   }
 
@@ -821,18 +834,52 @@
     const f = ST.fakta;
     W.innerHTML =
       `<div class="bk">` +
-      `<div class="bk-kepala"><div class="bk-tab" role="tablist" aria-label="Sampul atau daftar isi">` +
-      `<button type="button" role="tab" aria-selected="${ST.tab === "sampul"}" data-bk="tab" data-bkv="sampul">Sampul</button>` +
-      `<button type="button" role="tab" aria-selected="${ST.tab === "daftar-isi"}" data-bk="tab" data-bkv="daftar-isi">Daftar isi</button></div>` +
+      `<div class="bk-kepala">${
+        ST.tab === "ceklist"
+          ? `<div class="bk-tab" aria-label="Ceklist berkas perkara"><button type="button" aria-selected="true" tabindex="-1">Ceklist berkas (Meja I)</button></div>`
+          : `<div class="bk-tab" role="tablist" aria-label="Sampul atau daftar isi"><button type="button" role="tab" aria-selected="${ST.tab === "sampul"}" data-bk="tab" data-bkv="sampul">Sampul</button><button type="button" role="tab" aria-selected="${ST.tab === "daftar-isi"}" data-bk="tab" data-bkv="daftar-isi">Daftar isi</button></div>`
+      }` +
       `<label class="bk-kertasp">Kertas <select data-bk-kertas>${[["a4", "A4 (210 x 297 mm)"], ["f4", "F4 (215 x 330 mm)"], ["legal", "Legal (216 x 356 mm)"]].map(([k, n]) => `<option value="${k}" ${ST.kertas === k ? "selected" : ""}>${n}</option>`).join("")}</select></label>` +
       `<span class="bk-info">${esc(f.perkara.jenisNama || "")} · ${esc(ST.nomor)}</span><span class="bk-simpan" data-bk-simpan aria-live="polite"></span></div>` +
-      (ST.tab === "sampul" ? htmlSampul() : htmlDaftarIsi()) +
+      (ST.tab === "sampul" ? htmlSampul() : ST.tab === "ceklist" ? htmlCeklist() : htmlDaftarIsi()) +
       `<div class="bk-cetak bd-baris" data-bk-cetak></div>` +
       `<details class="bk-prat" ${ST.prat.terbuka ? "open" : ""}><summary data-bk="prat-toggle">Pratinjau naskah (susunan yang sama dengan yang dicetak)</summary><div data-bk-prat></div></details>` +
       `</div>`;
     gambarCetak();
     isiPratinjau();
     if (ST.tab === "daftar-isi") isiTabel();
+  }
+
+  /** Ceklist berkas Meja I: daftar dokumen datang dari portal (satu sumber) lewat pratinjau; di sini petugas menimpa yang tidak terbaca otomatis. */
+  function htmlCeklist() {
+    return `<section class="bk-kartu" aria-label="Ceklist berkas perkara"><h3>Ceklist berkas perkara <small>otomatis dari e-Court, e-Doc, penetapan, dan kasir; sisanya diperiksa petugas</small></h3><div data-bk-cek>${htmlBarisCeklist()}</div></section>`;
+  }
+  const SIFAT_TOMBOL = { "": "belum diperiksa", ok: "ada", no: "tidak ada" };
+  function htmlBarisCeklist() {
+    const c = ST.cek;
+    if (!c) return `<p class="bk-catat" role="status">Daftar dokumen disusun saat pratinjau dimuat\u2026</p>`;
+    let no = 0;
+    const rows = c.baris
+      .map((r) => {
+        if (r.grup) return `<tr class="grup"><td colspan="4">${esc(r.grup)}</td></tr>`;
+        no += 1;
+        if (r.tangan) return `<tr><td>${no}</td><td colspan="3" class="bk-ket">baris tambahan ditulis tangan</td></tr>`;
+        const tangan = Object.prototype.hasOwnProperty.call(ST.tangan, `c_${r.kunci}`);
+        return (
+          `<tr data-key="${esc(r.kunci)}"><td>${no}</td><td>${esc(r.nama)} <small>${esc(r.sifat)}${r.kecil ? ` \u00B7 ${esc(r.kecil)}` : ""}</small></td>` +
+          `<td><button type="button" class="bk-ciri ${r.st === "ok" ? (tangan ? "tgn" : "oto") : r.st === "no" ? (tangan ? "tgn" : "mati-tgn") : ""}" data-bk="cek" data-bkv="${esc(r.kunci)}" aria-label="Ubah status ${esc(r.nama)}" title="klik: ada, tidak ada, kembali ke otomatis">${r.st === "ok" ? "\u2713 ada" : r.st === "no" ? "\u2717 tidak ada" : "belum diperiksa"}${r.oto ? " <small>OTO</small>" : tangan ? " <small>tangan</small>" : ""}</button></td>` +
+          `<td class="bk-ket">${esc(r.sumber)}</td></tr>`
+        );
+      })
+      .join("");
+    return (
+      `<p class="bk-catat bk-pihak"><b>${c.ringkas.ada}</b> ada (otomatis atau dicentang) \u00B7 <b>${c.ringkas.belum}</b> belum ada, minta ke pihak \u00B7 <b>${c.ringkas.petugas}</b> diperiksa petugas</p>` +
+      `<div class="bk-tabel-gulir"><table class="bk-tabel"><thead><tr><th>No</th><th>Dokumen</th><th>Status</th><th>Sumber / keterangan</th></tr></thead><tbody>${rows}</tbody></table></div>`
+    );
+  }
+  function isiCeklist() {
+    const k = W && W.querySelector("[data-bk-cek]");
+    if (k && ST) k.innerHTML = htmlBarisCeklist();
   }
 
   function htmlBentuk() {
@@ -1114,6 +1161,15 @@
       gambar();
       jadwalSimpan();
       jadwalPratinjau();
+    } else if (aksi === "cek") {
+      // putaran status: otomatis -> ada -> tidak ada -> otomatis
+      const kunci = `c_${v}`;
+      if (!Object.prototype.hasOwnProperty.call(ST.tangan, kunci)) ST.tangan[kunci] = true;
+      else if (ST.tangan[kunci] === true) ST.tangan[kunci] = false;
+      else delete ST.tangan[kunci];
+      ST.prat.kunci = "";
+      jadwalSimpan();
+      jadwalPratinjau(300);
     } else if (aksi === "alasan") {
       const a = alasanEfektif();
       const b = a && a.butir.find((x) => x.kunci === v);
@@ -1300,6 +1356,7 @@
     ST = barukan(info.jenis);
     ST.jenisBlangko = info.jenis;
     ST.bentuk = info.bentuk === "lengkap" ? "lengkap" : "awal";
+    if (info.jenis === "ceklist") ST.tab = "ceklist";
     ST.perkaraId = String(info.perkaraId);
     ST.nomor = String(info.nomor || "");
     if (!W.__bkPasang) {

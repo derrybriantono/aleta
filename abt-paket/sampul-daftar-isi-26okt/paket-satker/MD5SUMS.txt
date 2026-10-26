@@ -1,18 +1,21 @@
 066150d866daa41ee1b7afbcb1ad015f  abt-sampul-daftar-isi-26okt-FUNGSI.sql
-ee89d63c6010c3cf572b713bd624c2c9  abt-sampul-daftar-isi-26okt-PASANG.sql
-2209bb37e87b573a63b332f8b2800d97  abt-sampul-daftar-isi-26okt-PERIKSA.sql
-d754373eb4d027f551e351233980dc13  abt-sampul-daftar-isi-26okt-PRASYARAT.sql
-810a098aa62bc730275b547461d279b4  abt-sampul-daftar-isi-26okt-PULIH.sql
+91c456889b5552adda584ebad770845b  abt-sampul-daftar-isi-26okt-PASANG.sql
+bb4364919d965ec4af206eb0267b0574  abt-sampul-daftar-isi-26okt-PERIKSA.sql
+fed828fa2c9959ceb25f7039367880c5  abt-sampul-daftar-isi-26okt-PRASYARAT.sql
+ffe59c5425bd7f5ab4421f995386f093  abt-sampul-daftar-isi-26okt-PULIH.sql
 6c0887b0e2c5ee4015f6c70b32102147  berkas_rtf.py
-8935c847f43dd7853ec603e6982a6674  daftar-rtf.tsv
+77c3bb34a4378baab72fb65bae66bfec  daftar-rtf.tsv
 cfa64fcb3c90cab36fcb706da5561db2  folder-ada.txt
 b28b52ab1d903813df3edee682d2989b  folder-baru.txt
-ee7dc69bc6374a58b4e3afcab73c92b5  nomor-variabel.txt
-fba617befc11604ba4f8c2d686734697  pasang-satker.sh
-5a214e1a6eacc2b48305d4e97e8c9ac9  pulih-satker.sh
+66402739f9aea5c860197997feaaa334  nomor-variabel.txt
+d87a25026c6d2bb4411f1b04eec2f1dd  pasang-satker.sh
+9d1d3c5954222f624027e705ed61325b  pulih-satker.sh
 56156c0c278511c01b9d83950ad64b74  rtf/derry_briantono/98b Berkas Perkara - BAS/Daftar Isi Berkas (F4).rtf
 e76c3baa3b5f5ec492c26ccb62c575a4  rtf/derry_briantono/98b Berkas Perkara - BAS/Daftar Isi Berkas (Legal).rtf
 1652813daf12bc3e5d8d120e01a1ac07  rtf/derry_briantono/98b Berkas Perkara - BAS/Daftar Isi Berkas.rtf
+db282f47ee9ff3e65c076cef26d42f46  rtf/derry_briantono/99 PTSP/Ceklist Berkas Perkara (F4).rtf
+689b7c1dde4f77e88f04932d2d7cf7ec  rtf/derry_briantono/99 PTSP/Ceklist Berkas Perkara (Legal).rtf
+8a0d62553ee2de280612f711428d2fe4  rtf/derry_briantono/99 PTSP/Ceklist Berkas Perkara.rtf
 2dbae010c2022aa4ad331866bae40e15  rtf/derry_briantono/99 PTSP/Sampul Berkas Perkara (F4).rtf
 6fac7cdf9647e69c361c44182ca3a3e1  rtf/derry_briantono/99 PTSP/Sampul Berkas Perkara (Legal).rtf
 ccdda2fd48bd3dd37b248991ebbb1694  rtf/derry_briantono/99 PTSP/Sampul Berkas Perkara (Lengkap) (F4).rtf
@@ -28,4 +31,4 @@ a93ae10133d4bec09c06a301b6d0c643  rtf/derry_briantono/99 PTSP/Sampul Berkas Perk
 77e0f7ed78ab5d0644ebb4dd1ae3fdf4  rtf/derry_briantono/99 PTSP/Sampul Berkas Perkara (Pihak Banyak) (Legal).rtf
 22cdfe645a9dd98a58f0ef29edfec4fb  rtf/derry_briantono/99 PTSP/Sampul Berkas Perkara (Pihak Banyak).rtf
 a75abda68bb7005fb48187506cc8ac39  rtf/derry_briantono/99 PTSP/Sampul Berkas Perkara.rtf
-3bd56ef835c8cfda1bf4724341a2060f  uji-kueri.tsv
+d39cd4ee7f2e0c15b97496fe09a46037  uji-kueri.tsv

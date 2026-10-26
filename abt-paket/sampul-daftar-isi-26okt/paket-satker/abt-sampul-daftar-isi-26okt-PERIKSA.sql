@@ -1,4 +1,4 @@
--- Paket ABT "abt-sampul-daftar-isi-26okt" (26 Okt 2026): sampul berkas perkara dan daftar isi berkas (blangko Derry). 171 variabel baru (5700-5779, 5800-5899), fungsi isian_rtf_daftar_isi, satu baris abt_menu (98b Berkas Perkara - BAS), enam blangko RTF.
+-- Paket ABT "abt-sampul-daftar-isi-26okt" (26 Okt 2026): sampul berkas perkara dan daftar isi berkas (blangko Derry). 177 variabel baru (5700-5779, 5800-5899), fungsi isian_rtf_daftar_isi, satu baris abt_menu (98b Berkas Perkara - BAS), enam blangko RTF.
 -- PERIKSA (baca saja): tiap variabel, baris menu, dan fungsi persis isi paket. Baris terakhir harus: SEMUA COCOK
 SELECT label, ok FROM (
 SELECT 'variabel 5802' AS label, (SELECT COUNT(*) FROM abt_variabel v WHERE v.no_var = 5802 AND MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)) = '5af466cea78c4f7bb95425e510dba2b4') AS ok
@@ -152,6 +152,12 @@ UNION ALL SELECT 'variabel 5833' AS label, (SELECT COUNT(*) FROM abt_variabel v 
 UNION ALL SELECT 'variabel 5834' AS label, (SELECT COUNT(*) FROM abt_variabel v WHERE v.no_var = 5834 AND MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)) = '8e0362eee636d944b566268a335592a9') AS ok
 UNION ALL SELECT 'variabel 5835' AS label, (SELECT COUNT(*) FROM abt_variabel v WHERE v.no_var = 5835 AND MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)) = 'c636516ef240aee6760e20e738cb625c') AS ok
 UNION ALL SELECT 'variabel 5847' AS label, (SELECT COUNT(*) FROM abt_variabel v WHERE v.no_var = 5847 AND MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)) = 'b970ea532dee03e548984a230724f153') AS ok
+UNION ALL SELECT 'variabel 5850' AS label, (SELECT COUNT(*) FROM abt_variabel v WHERE v.no_var = 5850 AND MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)) = '8300116c9efb872e0635a08f228ab518') AS ok
+UNION ALL SELECT 'variabel 5848' AS label, (SELECT COUNT(*) FROM abt_variabel v WHERE v.no_var = 5848 AND MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)) = '4b2bf5d3da483d458e1b83cd4f33d2db') AS ok
+UNION ALL SELECT 'variabel 5849' AS label, (SELECT COUNT(*) FROM abt_variabel v WHERE v.no_var = 5849 AND MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)) = 'a860d328550f2a38fc088796c2c419ba') AS ok
+UNION ALL SELECT 'variabel 5838' AS label, (SELECT COUNT(*) FROM abt_variabel v WHERE v.no_var = 5838 AND MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)) = '88d083a0ffe61720f6dbe98441e36d60') AS ok
+UNION ALL SELECT 'variabel 5855' AS label, (SELECT COUNT(*) FROM abt_variabel v WHERE v.no_var = 5855 AND MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)) = 'c1f1c8124f16a65c135dfb05ee100de8') AS ok
+UNION ALL SELECT 'variabel 5860' AS label, (SELECT COUNT(*) FROM abt_variabel v WHERE v.no_var = 5860 AND MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)) = '45d656a1be7f08b23c255bfa30a1be8d') AS ok
 UNION ALL SELECT 'variabel 5870' AS label, (SELECT COUNT(*) FROM abt_variabel v WHERE v.no_var = 5870 AND MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)) = '7003464962f09b6c18a9c2bd82b03772') AS ok
 UNION ALL SELECT 'variabel 5871' AS label, (SELECT COUNT(*) FROM abt_variabel v WHERE v.no_var = 5871 AND MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)) = 'fe1af41193083bb79d594acb7d849f4c') AS ok
 UNION ALL SELECT 'variabel 5872' AS label, (SELECT COUNT(*) FROM abt_variabel v WHERE v.no_var = 5872 AND MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)) = 'a04a3ff8eca1c99354a2d17b693cf1a5') AS ok
@@ -176,7 +182,7 @@ UNION ALL SELECT 'menu 98b Berkas Perkara - BAS', (SELECT COUNT(*) FROM abt_menu
 UNION ALL SELECT 'fungsi isian_rtf_daftar_isi', (SELECT COUNT(*) FROM information_schema.routines WHERE routine_schema = DATABASE() AND routine_name = 'isian_rtf_daftar_isi')
 ) c WHERE ok <> 1
 UNION ALL
-SELECT IF(COUNT(*) = 173, 'SEMUA COCOK', CONCAT(173 - COUNT(*), ' TIDAK COCOK')), COUNT(*) FROM (
+SELECT IF(COUNT(*) = 179, 'SEMUA COCOK', CONCAT(179 - COUNT(*), ' TIDAK COCOK')), COUNT(*) FROM (
 SELECT 'variabel 5802' AS label, (SELECT COUNT(*) FROM abt_variabel v WHERE v.no_var = 5802 AND MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)) = '5af466cea78c4f7bb95425e510dba2b4') AS ok
 UNION ALL SELECT 'variabel 5803' AS label, (SELECT COUNT(*) FROM abt_variabel v WHERE v.no_var = 5803 AND MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)) = '4f1dbcf45685a3b738fc0680163097d4') AS ok
 UNION ALL SELECT 'variabel 5805' AS label, (SELECT COUNT(*) FROM abt_variabel v WHERE v.no_var = 5805 AND MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)) = '2adec61fd9bbb8b52daa34b0600158d2') AS ok
@@ -328,6 +334,12 @@ UNION ALL SELECT 'variabel 5833' AS label, (SELECT COUNT(*) FROM abt_variabel v 
 UNION ALL SELECT 'variabel 5834' AS label, (SELECT COUNT(*) FROM abt_variabel v WHERE v.no_var = 5834 AND MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)) = '8e0362eee636d944b566268a335592a9') AS ok
 UNION ALL SELECT 'variabel 5835' AS label, (SELECT COUNT(*) FROM abt_variabel v WHERE v.no_var = 5835 AND MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)) = 'c636516ef240aee6760e20e738cb625c') AS ok
 UNION ALL SELECT 'variabel 5847' AS label, (SELECT COUNT(*) FROM abt_variabel v WHERE v.no_var = 5847 AND MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)) = 'b970ea532dee03e548984a230724f153') AS ok
+UNION ALL SELECT 'variabel 5850' AS label, (SELECT COUNT(*) FROM abt_variabel v WHERE v.no_var = 5850 AND MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)) = '8300116c9efb872e0635a08f228ab518') AS ok
+UNION ALL SELECT 'variabel 5848' AS label, (SELECT COUNT(*) FROM abt_variabel v WHERE v.no_var = 5848 AND MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)) = '4b2bf5d3da483d458e1b83cd4f33d2db') AS ok
+UNION ALL SELECT 'variabel 5849' AS label, (SELECT COUNT(*) FROM abt_variabel v WHERE v.no_var = 5849 AND MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)) = 'a860d328550f2a38fc088796c2c419ba') AS ok
+UNION ALL SELECT 'variabel 5838' AS label, (SELECT COUNT(*) FROM abt_variabel v WHERE v.no_var = 5838 AND MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)) = '88d083a0ffe61720f6dbe98441e36d60') AS ok
+UNION ALL SELECT 'variabel 5855' AS label, (SELECT COUNT(*) FROM abt_variabel v WHERE v.no_var = 5855 AND MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)) = 'c1f1c8124f16a65c135dfb05ee100de8') AS ok
+UNION ALL SELECT 'variabel 5860' AS label, (SELECT COUNT(*) FROM abt_variabel v WHERE v.no_var = 5860 AND MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)) = '45d656a1be7f08b23c255bfa30a1be8d') AS ok
 UNION ALL SELECT 'variabel 5870' AS label, (SELECT COUNT(*) FROM abt_variabel v WHERE v.no_var = 5870 AND MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)) = '7003464962f09b6c18a9c2bd82b03772') AS ok
 UNION ALL SELECT 'variabel 5871' AS label, (SELECT COUNT(*) FROM abt_variabel v WHERE v.no_var = 5871 AND MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)) = 'fe1af41193083bb79d594acb7d849f4c') AS ok
 UNION ALL SELECT 'variabel 5872' AS label, (SELECT COUNT(*) FROM abt_variabel v WHERE v.no_var = 5872 AND MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)) = 'a04a3ff8eca1c99354a2d17b693cf1a5') AS ok
