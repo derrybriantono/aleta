@@ -278,6 +278,7 @@ def semua():
     import sys
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     from sampul_awal import sampul_awal
+    from ceklist import ceklist
     """{nama berkas: isi RTF (str ASCII)}: sampul cetak awal (berlawanan, permohonan), sampul lengkap, daftar isi; masing-masing tiga ukuran kertas."""
     hasil = {}
     for kode, (akhiran, w, h, baris) in KERTAS.items():
@@ -288,6 +289,7 @@ def semua():
             (nama_berkas('Sampul Berkas Perkara', 'awal', akhiran, False, True), lambda k=kode: sampul_awal(k, False, True)),
             (nama_berkas('Sampul Berkas Perkara', 'lengkap', akhiran), lambda k=kode: sampul(k)),
             (nama_berkas('Daftar Isi Berkas', 'awal', akhiran), lambda k=kode: daftar_isi(k)),
+            ('Ceklist Berkas Perkara' + akhiran + '.rtf', lambda k=kode: ceklist(k)),
         ]
         for nama, fn in butir:
             isi = fn()

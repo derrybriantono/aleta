@@ -233,6 +233,16 @@ sql(5835, 'CATATAN SAMPUL: KETERANGAN (diisi saat naskah disusun; ABT langsung: 
 sql(5847, 'INTERVENSI SAMPUL AWAL (OTOMATIS: pihak intervensi dari SIPP, tiga nama sebaris; kosong bila tidak ada)',
     "SELECT CONCAT('INTERVENSI (',COUNT(*),')  ',GROUP_CONCAT(CASE WHEN a.urutan<=3 THEN CONCAT(ELT(a.urutan,%s),'. ',a.nama) END ORDER BY a.urutan SEPARATOR '  -  '),"
     "IF(COUNT(*)>3,CONCAT('  -  dan ',COUNT(*)-3,' lainnya (lampiran)'),'')) AS data FROM perkara_pihak3 a WHERE a.perkara_id=%s HAVING COUNT(*)>0" % (ROMAWI, P))
+# ---- CEKLIST BERKAS PERKARA (Meja I): kerangka lewat variabel; tabel dokumen disusun portal (paragraf penanda 5850)
+sql(5850, 'CEKLIST: PENANDA TABEL (diganti tabel dokumen saat naskah disusun; ABT langsung: keterangan)', "SELECT 'Tabel dokumen disusun otomatis saat dicetak dari panel Blangko.' AS data")
+sql(5848, 'CEKLIST: RINGKASAN (diisi saat naskah disusun; ABT langsung: kosong)', "SELECT '' AS data")
+sql(5849, 'CEKLIST: PANITERA PENGGANTI (dari penetapan PPP; kosong = garis titik)',
+    "SELECT IFNULL(NULLIF(TRIM(REPLACE(REPLACE(panitera_pengganti_text,'Panitera Pengganti:',''),'Panitera Pengganti :','')),''),'.................................') AS data FROM perkara_penetapan WHERE perkara_id=%s" % P)
+sql(5838, 'CEKLIST: PETUGAS MEJA I (akun pencetak; diisi saat naskah disusun)', "SELECT '.................................' AS data")
+sql(5855, 'CEKLIST: KOTA DAN TANGGAL (diisi saat naskah disusun)', "SELECT '.................., ..................' AS data")
+sql(5860, 'CEKLIST: PENANDA JENIS PERKARA (CT/CG menyala sesuai perkara; jenis lain satu kode)',
+    "SELECT (CASE p.jenis_perkara_id WHEN 346 THEN '[X] CT   [ ] CG' WHEN 347 THEN '[ ] CT   [X] CG' WHEN 362 THEN '[X] DK' WHEN 360 THEN '[X] IN' WHEN 364 THEN '[X] WR' WHEN 371 THEN '[X] PAW' WHEN 348 THEN '[X] HB' "
+    "WHEN 370 THEN '[X] ES' WHEN 358 THEN '[X] AU' WHEN 354 THEN '[X] PW' WHEN 363 THEN '[X] WA' WHEN 341 THEN '[X] IP' ELSE '[X] LN' END) AS data FROM perkara p WHERE p.perkara_id=%s" % P)
 KODE_HADIR = 5870   # baris n (1..20): kotak hadir P / T
 for n in range(1, 21):
     sql(KODE_HADIR + n - 1, 'RIWAYAT SIDANG SAMPUL AWAL baris %d: kotak hadir P/T (terisi bila sidang itu sudah tercatat; permohonan hanya P)' % n,

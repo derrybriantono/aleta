@@ -541,3 +541,28 @@ Word (render php56 ABT asli atas 6 perkara contoh x 12 varian sampul awal, terma
 **Cakupan atas SIPP produksi (salinan `sipp_donggala`, baca saja, 2025 ke atas):** cerai gugat 1.052 dari 1.100 perkara (95,6%) minimal satu huruf (f 1.041, a 471, d 398, c 33, h 4, g 3, e 2); cerai talak 212 dari 235 (90,2%); itsbat 416 dari 416 (huruf e 415; d 1; b 1); dispensasi 15 dari 26 (57,7%; hamil 14); penetapan ahli waris 16 dari 29 (55,2%); harta bersama 7 dari 7; kewarisan 6 dari 6. Yang tidak terdeteksi berarti baris ALASAN dan lampirannya tidak dicetak untuk perkara itu.
 
 **Ukuran satu lembar.** Render php56 ABT asli atas 6 perkara contoh (cerai gugat, cerai talak, dispensasi kawin, kewarisan 14 pihak, penetapan ahli waris 32 pihak, ekonomi syariah) x 12 varian sampul awal x tiga kertas: 72 hasil, semua 1 lembar di Word (A4 210x297, F4 215x330, Legal 216x356). Tinggi baris riwayat: A4 300 twip (pihak banyak 250), F4 330 (290), Legal 350 (310) - sama dengan mode rapat artifact. Daftar isi (tidak berubah) dan sampul lengkap tetap satu lembar.
+
+## 17. Ceklist Berkas Perkara (Meja I / Pendaftaran), pasangan sampul cetak awal
+
+Rancangan: `artifact-ceklist-berkas.html`. Blangko Derry `Ceklist Berkas Perkara.rtf` (+ F4, Legal) di folder `99 PTSP` yang sama dengan sampul (paket `abt-sampul-daftar-isi-26okt`); layar kerja di panel Blangko ABT (saklar `berkas-perkara-khusus`, bawaan MATI, sama dengan sampul dan daftar isi).
+
+**Isi.** Kop satker, kotak MEJA I / PENDAFTARAN, judul, nomor perkara, penanda jenis (CT/CG menyala sesuai perkara; jenis lain satu kode: DK, IN, WR, PAW, HB, ES, ...), identitas pihak I dan II dan tanggal daftar (+ "[+ e-COURT]" hanya bila e-Court; NON e-Court tidak disebut). Tabel NO | JENIS SURAT / DOKUMEN | SIFAT (WAJIB / BILA ADA) | ADA | TIDAK ADA | SUMBER / KETERANGAN dalam kelompok PENDAFTARAN, PENETAPAN AWAL, IDENTITAS DAN BUKTI AWAL, TAMBAHAN (4 baris tulis tangan). Ringkasan "n ada (otomatis), n belum ada - minta ke pihak, n diperiksa petugas". Tanda tangan kiri "Mengetahui, Panitera Pengganti" (nama dari penetapan PPP; garis titik bila belum), kanan "<kota satker>, <tanggal>" Petugas Meja I (akun pencetak). Kaki: keterangan tanda OTO.
+
+**Daftar dokumen menurut jenis dan keadaan** (yang tidak berlaku tidak dicetak): gugatan/permohonan; SKUM; bukti setor panjar ATAU SKTM bila prodeo; surat kuasa + kartu advokat dan BA sumpah bila berkuasa; PMH, PPP, PJS, PHS; KTP pihak; buku nikah (cerai, itsbat, pembatalan); KK; buku nikah asli (fisik, cerai); izin atasan bila pihak PNS/TNI/Polri; keterangan ghaib bila ghaib; akta lahir anak bila ada tuntutan anak; dispensasi (penolakan KUA, akta lahir anak + calon, KTP/KK calon dan orang tua, rekomendasi); itsbat (keterangan KUA, keterangan kades); kewarisan dan penetapan ahli waris (surat kematian, silsilah, bukti kepemilikan/peninggalan); harta bersama (akta cerai, bukti kepemilikan); asal usul anak, perwalian, hak asuh, wali adhol, izin poligami, ekonomi syariah, pembatalan nikah dengan pola yang sama.
+
+**Ada / Tidak ada otomatis (OTO) HANYA dari sumber pasti**; yang lain dikosongkan untuk dicentang petugas (klik di layar panel: otomatis, ada, tidak ada, kembali):
+
+| Dokumen | Sumber otomatis |
+|---|---|
+| PMH, PPP, PJS, PHS | `perkara_penetapan`: terbit = ada; belum terbit = tidak ada |
+| SKUM, bukti setor panjar | kasir (`perkara_biaya` panjar): tercatat = ada; belum = tidak ada; prodeo tanpa panjar = petugas |
+| SKTM (prodeo) | judul dokumen e-Court memuat SKTM/KIS/PKH = ada; tidak ditemukan padahal daftar dokumen terbaca = tidak ada |
+| Izin atasan | `izinCeraiService`: ada / belum ada; belum terbaca atau belum dicatat = petugas |
+| Surat kuasa | judul e-Court atau kuasa terdaftar di SIPP (`perkara_pengacara`) |
+| KTP, buku nikah, KK, akta lahir, keterangan ghaib/KUA/desa, surat kematian, silsilah, kepemilikan, dan seterusnya | judul dokumen e-Court dan arsip e-Court (BUKAN kolom cermin `berkas_pdf` yang basi): ditemukan = ada; **tidak ditemukan = petugas, bukan "tidak ada"** (dokumen ini sering berada di dalam satu berkas "Dokumen Bukti") |
+| Buku nikah asli, fotokopi bermeterai | selalu petugas (dokumen fisik) |
+
+**Susunan.** Kerangka lewat variabel ABT; tabel disusun portal (`ceklist-berkas.ts`, baris tabel sungguhan) dan menggantikan paragraf penanda `#5850#` pada RTF hasil isian. Nama PP, petugas (akun pencetak), kota (dari identitas satker aktif), dan tanggal dikirim sebagai nilai timpa. Tanpa satu kata nama aplikasi di blangko, variabel, maupun nama ABT.
+
+**Ukuran satu lembar.** Render ABT asli ditempeli tabel hasil susunan portal untuk 15 jenis perkara x 2 keadaan (semua dokumen berlaku: prodeo, berkuasa, ghaib, ada anak, izin atasan; dan tanpa satu pun) x A4, F4, Legal = 90 naskah: semua 1 lembar di Word.
+

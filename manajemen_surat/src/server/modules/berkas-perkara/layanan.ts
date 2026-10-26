@@ -147,7 +147,7 @@ export async function simpanSunting(
   if (opsi.tag && typeof opsi.tag === "object") {
     await db.run("DELETE FROM aleta_berkas_sampul WHERE perkara_id = ? AND jenis = 'tag'", [perkaraId]);
     for (const [k, v] of Object.entries(opsi.tag)) {
-      if (!KUNCI_CIRI.includes(k) && !(k.startsWith("s_") && KUNCI_SUSULAN.includes(k.slice(2))) && !/^a_[a-h1-4]$/.test(k)) {
+      if (!KUNCI_CIRI.includes(k) && !(k.startsWith("s_") && KUNCI_SUSULAN.includes(k.slice(2))) && !/^a_[a-h1-4]$/.test(k) && !/^c_[a-z_]{2,20}$/.test(k)) {
         ditolak.push(`ciri ${k}: tidak dikenal`);
         continue;
       }

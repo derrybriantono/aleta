@@ -18,7 +18,7 @@
  */
 
 export type KodeKertas = "a4" | "f4" | "legal";
-export type JenisBlangkoBerkas = "sampul" | "daftar-isi";
+export type JenisBlangkoBerkas = "sampul" | "daftar-isi" | "ceklist";
 /** Bentuk sampul: "awal" = sampul cetak awal (bawaan, keputusan Derry 26 Okt); "lengkap" = sampul lengkap (blangko pilihan kedua). */
 export type BentukSampul = "awal" | "lengkap";
 export type SumberHalaman = "pasti" | "perkiraan" | "manual";
@@ -39,7 +39,7 @@ export function kodeKertasSah(x: unknown): x is KodeKertas {
 const AKAR_DERRY = "derry_briantono";
 export const FOLDER_SAMPUL = `${AKAR_DERRY}/99 PTSP`;
 export const FOLDER_DAFTAR_ISI = `${AKAR_DERRY}/98b Berkas Perkara - BAS`;
-const DASAR_BERKAS: Readonly<Record<JenisBlangkoBerkas, string>> = { sampul: "Sampul Berkas Perkara", "daftar-isi": "Daftar Isi Berkas" };
+const DASAR_BERKAS: Readonly<Record<JenisBlangkoBerkas, string>> = { sampul: "Sampul Berkas Perkara", "daftar-isi": "Daftar Isi Berkas", ceklist: "Ceklist Berkas Perkara" };
 
 /**
  * Folder dan nama berkas RTF (dipasang paket ABT abt-sampul-daftar-isi-26okt). Sampul = folder PTSP, daftar isi = folder BAS Panitera Sidang.
@@ -56,16 +56,16 @@ export function berkasBlangko(
   const tengah =
     jenis !== "sampul" ? "" : bentuk === "lengkap" ? " (Lengkap)" : lawan ? (opsi.banyak ? " (Pihak Banyak)" : "") : opsi.banyak ? " (Permohonan Pihak Banyak)" : " (Permohonan)";
   return {
-    folder: jenis === "sampul" ? FOLDER_SAMPUL : FOLDER_DAFTAR_ISI,
+    folder: jenis === "daftar-isi" ? FOLDER_DAFTAR_ISI : FOLDER_SAMPUL,
     berkas: `${DASAR_BERKAS[jenis]}${tengah}${KERTAS[kertas].akhiran}.rtf`,
-    jenisFolder: jenis === "sampul" ? "ptsp" : "bas",
+    jenisFolder: jenis === "daftar-isi" ? "bas" : "ptsp",
   };
 }
 
 /** Berkas varian (ukuran F4/Legal, "(Permohonan)", "(Pihak Banyak)") tidak ditampilkan di daftar blangko: ukuran dipilih di layar kerja, varian dipilih menurut perkara. */
 export function berkasVarianUkuran(nama: string): boolean {
   const n = String(nama || "").trim();
-  if (/^(Sampul Berkas Perkara( \((Permohonan|Lengkap|Pihak Banyak|Permohonan Pihak Banyak)\))?|Daftar Isi Berkas) \((F4|Legal)\)\.rtf$/i.test(n)) return true;
+  if (/^(Sampul Berkas Perkara( \((Permohonan|Lengkap|Pihak Banyak|Permohonan Pihak Banyak)\))?|Daftar Isi Berkas|Ceklist Berkas Perkara) \((F4|Legal)\)\.rtf$/i.test(n)) return true;
   return /^Sampul Berkas Perkara \((Permohonan|Pihak Banyak|Permohonan Pihak Banyak)\)\.rtf$/i.test(n);
 }
 
@@ -75,6 +75,7 @@ export function jenisLayarBerkas(folder: string, nama: string): JenisBlangkoBerk
   const n = String(nama || "").trim();
   if (f === "99 PTSP" && /^Sampul Berkas Perkara( \(Lengkap\))?\.rtf$/i.test(n)) return "sampul";
   if (f === "98b Berkas Perkara - BAS" && /^Daftar Isi Berkas\.rtf$/i.test(n)) return "daftar-isi";
+  if (f === "99 PTSP" && /^Ceklist Berkas Perkara\.rtf$/i.test(n)) return "ceklist";
   return "";
 }
 

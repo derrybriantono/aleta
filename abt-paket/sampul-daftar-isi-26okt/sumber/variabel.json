@@ -906,6 +906,42 @@
   "sql_query": "SELECT CONCAT('INTERVENSI (',COUNT(*),')  ',GROUP_CONCAT(CASE WHEN a.urutan<=3 THEN CONCAT(ELT(a.urutan,'I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI','XVII','XVIII','XIX','XX'),'. ',a.nama) END ORDER BY a.urutan SEPARATOR '  -  '),IF(COUNT(*)>3,CONCAT('  -  dan ',COUNT(*)-3,' lainnya (lampiran)'),'')) AS data FROM perkara_pihak3 a WHERE a.perkara_id=#perkara_id# HAVING COUNT(*)>0"
  },
  {
+  "no_var": 5850,
+  "nama": "CEKLIST: PENANDA TABEL (diganti tabel dokumen saat naskah disusun; ABT langsung: keterangan)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT 'Tabel dokumen disusun otomatis saat dicetak dari panel Blangko.' AS data"
+ },
+ {
+  "no_var": 5848,
+  "nama": "CEKLIST: RINGKASAN (diisi saat naskah disusun; ABT langsung: kosong)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT '' AS data"
+ },
+ {
+  "no_var": 5849,
+  "nama": "CEKLIST: PANITERA PENGGANTI (dari penetapan PPP; kosong = garis titik)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IFNULL(NULLIF(TRIM(REPLACE(REPLACE(panitera_pengganti_text,'Panitera Pengganti:',''),'Panitera Pengganti :','')),''),'.................................') AS data FROM perkara_penetapan WHERE perkara_id=#perkara_id#"
+ },
+ {
+  "no_var": 5838,
+  "nama": "CEKLIST: PETUGAS MEJA I (akun pencetak; diisi saat naskah disusun)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT '.................................' AS data"
+ },
+ {
+  "no_var": 5855,
+  "nama": "CEKLIST: KOTA DAN TANGGAL (diisi saat naskah disusun)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT '.................., ..................' AS data"
+ },
+ {
+  "no_var": 5860,
+  "nama": "CEKLIST: PENANDA JENIS PERKARA (CT/CG menyala sesuai perkara; jenis lain satu kode)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT (CASE p.jenis_perkara_id WHEN 346 THEN '[X] CT   [ ] CG' WHEN 347 THEN '[ ] CT   [X] CG' WHEN 362 THEN '[X] DK' WHEN 360 THEN '[X] IN' WHEN 364 THEN '[X] WR' WHEN 371 THEN '[X] PAW' WHEN 348 THEN '[X] HB' WHEN 370 THEN '[X] ES' WHEN 358 THEN '[X] AU' WHEN 354 THEN '[X] PW' WHEN 363 THEN '[X] WA' WHEN 341 THEN '[X] IP' ELSE '[X] LN' END) AS data FROM perkara p WHERE p.perkara_id=#perkara_id#"
+ },
+ {
   "no_var": 5870,
   "nama": "RIWAYAT SIDANG SAMPUL AWAL baris 1: kotak hadir P/T (terisi bila sidang itu sudah tercatat; permohonan hanya P)",
   "data_type": "data_sql",

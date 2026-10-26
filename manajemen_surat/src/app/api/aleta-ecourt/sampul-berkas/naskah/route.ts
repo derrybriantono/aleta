@@ -9,8 +9,10 @@ import {
   kodeKertasSah,
   nilaiTimpaDaftarIsi,
   rapikanSampulAwal,
+  tanggalIndonesia,
   saringNilaiTimpa,
 } from "@/lib/berkas-perkara";
+import { PENANDA_TABEL_CEKLIST, bersihkanBahanCeklist, kotaDariPengadilan, susunCeklist, tabelCeklistRtf, tempelTabelCeklist, teksRingkasCeklist } from "@/lib/ceklist-berkas";
 import { FITUR_BERKAS_PERKARA } from "@/lib/fitur-satker";
 import { bersihkanPihak, gabungLampiran, jumlahDariDaftar, pihakBanyak } from "@/lib/lampiran-pihak";
 import { barisTurut, bersihkanAlasan, bersihkanAnak, bersihkanObjek, bersihkanSidang, kolomPihakSampul, susunLampiran, type HasilLampiran } from "@/lib/lampiran-sampul";
@@ -18,6 +20,7 @@ import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { callAletaBotSippBridge } from "@/server/modules/aleta-sipp/aleta-sipp-datasource";
 import { pastikanBolehBerkas } from "@/server/modules/berkas-perkara/akses";
+import { bacaSatkerAktif } from "@/server/modules/satker/identitas";
 import { idPerkaraSah } from "@/server/modules/berkas-perkara/layanan";
 import { pastikanFiturMenyala } from "@/server/modules/satker/fitur";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
@@ -103,7 +106,7 @@ export async function POST(request: NextRequest) {
     const badan = (await request.json().catch(() => null)) as Record<string, unknown> | null;
     if (!badan || typeof badan !== "object") throw new ApiError(400, "Badan permintaan harus JSON.");
     const perkaraId = idPerkaraSah(badan.perkaraId);
-    const jenis = badan.jenis === "sampul" ? "sampul" : badan.jenis === "daftar-isi" ? "daftar-isi" : null;
+    const jenis = badan.jenis === "sampul" ? "sampul" : badan.jenis === "daftar-isi" ? "daftar-isi" : badan.jenis === "ceklist" ? "ceklist" : null;
     if (!perkaraId || !jenis) throw new ApiError(400, "Perkara dan jenis (sampul | daftar-isi) harus disebutkan.");
     const kertas = kodeKertasSah(badan.kertas) ? badan.kertas : "a4";
     // Sampul: bentuk "awal" (cetak awal, bawaan) atau "lengkap"; perkara berlawanan memakai tata letak berlawanan, permohonan tata letak permohonan.
@@ -118,7 +121,25 @@ export async function POST(request: NextRequest) {
     let nilai: Record<string, string>;
     let ringkas: Record<string, unknown> = {};
     let lamp: HasilLampiran | null = null;
-    if (jenis === "sampul") {
+    let ceklistTabel = "";
+    let ceklistHasil: ReturnType<typeof susunCeklist> | null = null;
+    if (jenis === "ceklist") {
+      // Ceklist berkas Meja I: kerangka lewat ABT, tabel dokumen disusun di sini (jenis dan keadaan perkara) lalu ditempel menggantikan paragraf penanda.
+      const bahan = bersihkanBahanCeklist(badan.ceklist);
+      if (!bahan) throw new ApiError(400, "Data ceklist (jenis dan fakta perkara) harus disertakan.");
+      const hasilCek = susunCeklist(bahan);
+      ceklistHasil = hasilCek;
+      const lebarKertas = { a4: 11906, f4: 12189, legal: 12246 }[kertas];
+      ceklistTabel = tabelCeklistRtf(hasilCek.baris, lebarKertas - 1400);
+      const satker = await bacaSatkerAktif(db);
+      const kota = kotaDariPengadilan(satker.namaPengadilan);
+      const sekarang = new Date().toISOString().slice(0, 10);
+      const petugas = teks((actor as { name?: string; username?: string } | null)?.name || (actor as { username?: string } | null)?.username, 80);
+      nilai = { "5850": PENANDA_TABEL_CEKLIST, "5848": teksRingkasCeklist(hasilCek.ringkas), "5860": hasilCek.penandaJenis, "5855": `${kota ? `${kota}, ` : ""}${tanggalIndonesia(sekarang)}` };
+      if (bahan.fakta.ppNama) nilai["5849"] = bahan.fakta.ppNama;
+      if (petugas && !/aleta/i.test(petugas)) nilai["5838"] = petugas;
+      ringkas = { ceklist: hasilCek.ringkas, jumlahBaris: hasilCek.baris.length };
+    } else if (jenis === "sampul") {
       nilai = saringNilaiTimpa(badan.nilai);
       if (bentuk === "awal") {
         // Lampiran HANYA bila perlu (pihak melebihi ruang, objek > 2, anak > 3, riwayat sidang melebihi baris sampul): LAMPIRAN n - JUDUL, halaman berikutnya.
@@ -178,7 +199,8 @@ export async function POST(request: NextRequest) {
     }
     let bita = buangGrupTersembunyiRtf(Buffer.from(data.rtfBase64, "base64"));
     // Sampul cetak awal: kotak centang ASCII dari variabel menjadi karakter kotak; tanda "..." variabel kosong dibuang (kolom tulis tangan).
-    if (jenis === "sampul" && bentuk === "awal") bita = new Uint8Array(Buffer.from(rapikanSampulAwal(Buffer.from(bita).toString("latin1")), "latin1"));
+    if ((jenis === "sampul" && bentuk === "awal") || jenis === "ceklist") bita = new Uint8Array(Buffer.from(rapikanSampulAwal(Buffer.from(bita).toString("latin1")), "latin1"));
+    if (jenis === "ceklist") bita = new Uint8Array(Buffer.from(tempelTabelCeklist(Buffer.from(bita).toString("latin1"), ceklistTabel), "latin1"));
     if (lamp && lamp.bagianRtf) bita = new Uint8Array(Buffer.from(gabungLampiran(Buffer.from(bita).toString("latin1"), lamp.bagianRtf), "latin1"));
     const rtf = Buffer.from(bita);
     return ok(
@@ -189,6 +211,7 @@ export async function POST(request: NextRequest) {
         bentuk: jenis === "sampul" ? bentuk : undefined,
         pihakBanyak: jenis === "sampul" ? banyak : undefined,
         lampiran: lamp ? lamp.daftar : [],
+        ceklist: ceklistHasil ? { baris: ceklistHasil.baris, ringkas: ceklistHasil.ringkas } : undefined,
         muatPihak: lamp ? lamp.muatPihak : undefined,
         rtfBase64: rtf.toString("base64"),
         byte: rtf.length,

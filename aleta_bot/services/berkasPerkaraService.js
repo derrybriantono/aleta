@@ -709,6 +709,7 @@ async function fakta(params = {}, deps = {}) {
   set("wna", asing.length > 0, sisiTeks(asing));
   // penanda ALETA (ghaib, pekerjaan) dan kumulasi: layanan yang sama dengan lencana Jadwal Sidang dan Status Perkara
   let pekerjaanTerbaca = false;
+  let izinCeraiKeadaan = "";
   try {
     const penanda = deps.penanda || require("./penandaPerkaraPihakService");
     const bahan = await penanda.bahanPenanda([perkaraId], deps.penandaDeps || {});
@@ -723,6 +724,7 @@ async function fakta(params = {}, deps = {}) {
     }
     for (const [k, daftar] of Object.entries(sisiKunci)) ciri[k] = { nyala: true, sisi: sisiTeks(daftar) };
     pekerjaanTerbaca = Boolean(bahan.terbaca && bahan.terbaca.pekerjaan);
+    izinCeraiKeadaan = ruas.izinCerai && ruas.izinCerai.keadaan ? String(ruas.izinCerai.keadaan) : "";
   } catch {
     pekerjaanTerbaca = false;
   }
@@ -850,6 +852,36 @@ async function fakta(params = {}, deps = {}) {
     alasan: String(x.alasan_ditunda || ""),
   }));
 
+  // ---- ceklist berkas Meja I (pasangan sampul cetak awal): fakta mentah; PORTAL yang menyusun daftar dan menentukan ada / belum ada / diperiksa petugas
+  const judulEcourtBot = await cobaS(
+    "judul e-Court",
+    async () => {
+      const botDb = deps.botDb || require("./botDbService");
+      const baris = await botDb.query("SELECT judul_dokumen FROM aleta_bot_ecourt_documents WHERE perkara_id = ? OR nomor_perkara = ? LIMIT 300", [String(perkaraId), String(p.nomor_perkara || "")]);
+      return (Array.isArray(baris) ? baris : []).map((x) => String(x.judul_dokumen || "")).filter(Boolean);
+    },
+    []
+  );
+  const panjarMasuk = biaya.filter((x) => Number(x.kategori_id) === 1);
+  const [jumlahPanjar] = await aman("SELECT SUM(jumlah) AS total, MIN(tanggal_transaksi) AS tgl FROM perkara_biaya WHERE perkara_id = ? AND kategori_id = 1 AND jenis_transaksi = 1", [perkaraId]);
+  const ceklist = {
+    keadaan: {
+      phs: Boolean(pen && pen.penetapan_hari_sidang),
+      kuasa: pengacara.length > 0,
+      prodeo: Boolean(ciri.prodeo),
+      ghaib: Boolean(ciri.ghaib),
+      ecourt: Boolean(ciri.ecourt),
+      anak: anak.length > 0 || /hak\s+asuh|hadhanah|hadlanah|nafkah\s+anak/i.test(petitumTeks),
+      tanggalDaftar: iso(p.tanggal_pendaftaran),
+    },
+    penetapan: { pmh: iso(pen && pen.penetapan_majelis_hakim), ppp: iso(pen && pen.penetapan_panitera_pengganti), pjs: iso(pen && pen.penetapan_jurusita), phs: iso(pen && pen.penetapan_hari_sidang) },
+    ppNama: pen ? String(pen.panitera_pengganti_text || "").trim() : "",
+    kasir: { jumlah: jumlahPanjar && jumlahPanjar.total ? Number(jumlahPanjar.total) : 0, tanggal: jumlahPanjar ? iso(jumlahPanjar.tgl) : "", baris: panjarMasuk.length },
+    izinCerai: izinCeraiKeadaan,
+    judulDokumen: [...new Set([...(ec.semuaNama || []).map((x) => x.replace(/__[0-9a-f]{6,}(\.[A-Za-z0-9]+)?$/, "")), ...judulEcourtBot])].slice(0, 300),
+    tertulisDokumen: [...(ec.semuaNama || []), ...judulEcourtBot].length > 0,
+  };
+
   const isian = {
     mediator: med ? String(med.mediator_text || "") : "",
     hasilmed: med ? (med.mediasi_berhasil ? "Berhasil" : med.mediasi_gagal ? "Tidak berhasil" : "") : "",
@@ -886,6 +918,7 @@ async function fakta(params = {}, deps = {}) {
     riwayatSemua,
     jumlahSidang: sidang.length,
     ciri,
+    ceklist,
     susulan: { oto: susulanOto, gagal: [...new Set(gagalSusulan)] },
     alasan: { oto: alasanOto, gagal: alasanGagal },
     pekerjaanTerbaca,

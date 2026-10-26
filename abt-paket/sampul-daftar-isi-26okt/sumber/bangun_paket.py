@@ -122,7 +122,7 @@ def bangun():
     # --- RTF + daftar
     baris = []
     for nama, isi in br.semua().items():
-        folder = FOLDER_SAMPUL if nama.startswith('Sampul') else FOLDER_DAFTAR
+        folder = FOLDER_SAMPUL if nama.startswith(('Sampul', 'Ceklist')) else FOLDER_DAFTAR
         sub = os.path.join(TUJ, 'rtf', folder.replace('/', os.sep))
         os.makedirs(sub, exist_ok=True)
         data = isi.encode('ascii')
