@@ -829,6 +829,9 @@ const BERKAS_MODUL_MALAS = new Set([
   "pihak-lengkap.js",
   "penetapan-borang.js",
   "tarik-satu-perkara.js",
+  "abt-panel-bersama.js",
+  "abt-panel-blangko.js",
+  "abt-panel-beranda.js",
 ]);
 
 async function layaniMuatModul(pesan, pengirim) {

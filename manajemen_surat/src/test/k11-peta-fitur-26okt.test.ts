@@ -243,7 +243,7 @@ describe("peta fitur K11: kelompok manifest dan modul malas", () => {
   });
 
   it("berkas lain yang tidak disentuh K11 identik byte demi byte dengan sebelumnya", () => {
-    const diubah = new Set(["konten.js", "manifest.json", "latar.js"]);
+    const diubah = new Set(["konten.js", "abt.js", "manifest.json", "latar.js"]);
     for (const [nama, info] of Object.entries(sebelum.berkas)) {
       if (diubah.has(nama) || !sesudah.berkas[nama]) continue;
       // berkas yang sengaja disentuh didaftarkan di KEMBALI_DISENTUH

@@ -99,7 +99,7 @@ if (process.argv[1] && process.argv[1].endsWith("k11-peta.mjs")) {
     console.error("pakai: node scripts/k11-peta.mjs <folder-ekstensi> <keluar.json>");
     process.exit(2);
   }
-  const peta = bangunPeta(path.resolve(dir), { sidikPernyataan: ["konten.js"] });
+  const peta = bangunPeta(path.resolve(dir), { sidikPernyataan: ["konten.js", "abt.js"] });
   fs.writeFileSync(keluar, JSON.stringify(peta, null, 1));
   console.log(`peta: ${Object.keys(peta.berkas).length} berkas, ${peta.kelompok.length} kelompok -> ${keluar}`);
 }

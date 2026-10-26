@@ -117,7 +117,7 @@ describe("ekstensi: jeda tiruan manusia tidak lagi ada di jalur isi/tekan layar"
       });
     }
     // abt.js: a2JedaTulis adalah no-op sejak 5 Okt (tanpa jeda di ABT) - tiga panggilan lama.
-    const bukanAbt = pakai.filter((x) => !x.startsWith("abt.js:"));
+    const bukanAbt = pakai.filter((x) => !x.startsWith("abt.js:") && !x.startsWith("abt-panel-"));
     // K11 (26 Okt 2026): konten.js dipecah menjadi inti + modul panel; semuanya tetap "konten" (empat pemakaian).
     expect(bukanAbt.map((x) => x.split(":")[0].replace(/^konten-panel-[a-z]+\.js$/, "konten.js"))).toEqual(["konten.js", "konten.js", "konten.js", "konten.js"]);
     const isi = bukanAbt.map((x) => sumber(x.split(":")[0]).split("\n")[Number(x.split(":")[1]) - 1].trim());

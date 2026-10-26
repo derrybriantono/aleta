@@ -77,6 +77,10 @@ const BERKAS = [
   "konten-panel-perkara.js",
   "konten-panel-daftar.js",
   "abt.js",
+  // Potongan abt.js yang dimuat saat dipakai (K11 tahap 3): panel blangko / beranda ABT.
+  "abt-panel-bersama.js",
+  "abt-panel-blangko.js",
+  "abt-panel-beranda.js",
   "aleta.js",
   "panel-alat.js",
   // Widget checklist milestone - skrip konten tersendiri, terpisah dari panel

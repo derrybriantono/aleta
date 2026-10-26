@@ -29,8 +29,13 @@ import { fileURLToPath } from "node:url";
  * konten.js yang lama). Tanpa fixture, jatuh ke penyambungan sederhana.
  */
 export const PECAHAN_KONTEN = ["konten.js", "konten-kontak.js", "konten-panel-bersama.js", "konten-panel-perkara.js", "konten-panel-daftar.js"] as const;
+/** Berkas induk yang dipecah -> pecahannya (inti lebih dulu). abt.js: panel blangko/beranda ABT (K11 tahap 3). */
+export const PECAHAN: Record<string, readonly string[]> = {
+  "konten.js": PECAHAN_KONTEN,
+  "abt.js": ["abt.js", "abt-panel-bersama.js", "abt-panel-blangko.js", "abt-panel-beranda.js"],
+};
 
-const POLA_KONTEN = /(?:^|[\\/])ekstensi-sipp[\\/]konten\.js$/;
+const POLA_KONTEN = /(?:^|[\\/])ekstensi-sipp[\\/](konten|abt)\.js$/;
 const sidik = (teks: string) => createHash("sha1").update(teks).digest("hex").slice(0, 12);
 const tanpaGuard = (teks: string) =>
   teks
@@ -38,7 +43,7 @@ const tanpaGuard = (teks: string) =>
     .filter((b) => !/K11-GUARD|K11-PRA/.test(b))
     .join("\n");
 
-function direktoriKonten(berkas: unknown): string | null {
+function direktoriKonten(berkas: unknown): { dir: string; induk: string } | null {
   let s: string;
   if (typeof berkas === "string") s = berkas;
   else if (berkas instanceof URL) {
@@ -48,7 +53,7 @@ function direktoriKonten(berkas: unknown): string | null {
       return null;
     }
   } else return null;
-  return POLA_KONTEN.test(s) ? path.dirname(s) : null;
+  return POLA_KONTEN.test(s) ? { dir: path.dirname(s), induk: path.basename(s) } : null;
 }
 
 const asli = fs.readFileSync as unknown as (...a: unknown[]) => unknown;
@@ -79,17 +84,17 @@ function potong(teks: string, indeksBerkas: number, parse: (s: string, o: object
 
 const simpanan = new Map<string, { tanda: string; teks: string }>();
 
-function rakit(dir: string): string {
-  const berkas = PECAHAN_KONTEN.map((n) => path.join(dir, n)).filter((p) => fs.existsSync(p));
+function rakit(dir: string, induk: string): string {
+  const berkas = (PECAHAN[induk] || [induk]).map((n) => path.join(dir, n)).filter((p) => fs.existsSync(p));
   const tanda = berkas.map((p) => `${p}:${fs.statSync(p).mtimeMs}`).join("|");
-  const ada = simpanan.get(dir);
+  const ada = simpanan.get(dir + "|" + induk);
   if (ada && ada.tanda === tanda) return ada.teks;
 
   const teksBerkas = berkas.map(bacaTeks);
   let hasil = teksBerkas.join("\n");
   try {
     const fixtur = path.resolve(dir, "../manajemen_surat/src/test/fixtures/k11-peta-fitur-sebelum.json");
-    const asliUrut: string[] | undefined = fs.existsSync(fixtur) ? (JSON.parse(bacaTeks(fixtur)) as { berkas: Record<string, { pernyataan?: string[] }> }).berkas["konten.js"]?.pernyataan : undefined;
+    const asliUrut: string[] | undefined = fs.existsSync(fixtur) ? (JSON.parse(bacaTeks(fixtur)) as { berkas: Record<string, { pernyataan?: string[] }> }).berkas[induk]?.pernyataan : undefined;
     if (asliUrut && berkas.length > 1) {
       const { parse } = createRequire(import.meta.url)("acorn") as { parse: Parameters<typeof potong>[2] };
       const antrean = new Map<string, number[]>();
@@ -116,7 +121,7 @@ function rakit(dir: string): string {
   } catch {
     hasil = teksBerkas.join("\n");
   }
-  simpanan.set(dir, { tanda, teks: hasil });
+  simpanan.set(dir + "|" + induk, { tanda, teks: hasil });
   return hasil;
 }
 
@@ -125,10 +130,10 @@ type Opsi = Parameters<typeof fs.readFileSync>[1];
 if (!(fs as unknown as { __k11Dipasang?: boolean }).__k11Dipasang) {
   (fs as unknown as { __k11Dipasang?: boolean }).__k11Dipasang = true;
   const ganti = function (this: unknown, berkas: unknown, opsi?: Opsi) {
-    const dir = process.env.ALETA_KONTEN_MENTAH === "1" ? null : direktoriKonten(berkas);
-    if (!dir) return asli.call(fs, berkas, opsi);
+    const sasaran = process.env.ALETA_KONTEN_MENTAH === "1" ? null : direktoriKonten(berkas);
+    if (!sasaran) return asli.call(fs, berkas, opsi);
     const sandi = typeof opsi === "string" ? opsi : opsi && typeof opsi === "object" ? (opsi as { encoding?: string }).encoding : undefined;
-    const gabung = rakit(dir);
+    const gabung = rakit(sasaran.dir, sasaran.induk);
     return sandi ? gabung : Buffer.from(gabung, "utf8");
   };
   (fs as unknown as { readFileSync: unknown }).readFileSync = ganti;

@@ -35,6 +35,16 @@
  * modul baru dianggap siap bila SEMUA penanda berkasnya ada. Pekerja latar yang
  * mati/menunda, jawaban lewat batas waktu, atau galat sintaks di berkas = false.
  *
+ * MODUL YANG MEMULAI DIRI SENDIRI (PEMICU)
+ * ----------------------------------------
+ * Beberapa berkas bukan pustaka melainkan fitur mandiri yang hanya bekerja bila halamannya memuat blangko
+ * tertentu (saksiscan.js, pihak-lengkap.js + konten-kontak.js, penetapan-borang.js) atau berada di alamat
+ * tertentu (tarik-satu-perkara.js). PEMICU di bawah memuatnya begitu penunjuk blangko / pola alamat cocok,
+ * memakai penunjuk yang SAMA dengan yang dipakai berkas itu sendiri; setelah dimuat berkas itu memulai
+ * dirinya persis seperti saat dimuat manifest. Pemicu hanya berlaku di SIPP (bukan ABT / portal).
+ *
+ * Panel ABT (abt-panel-*.js) dimuat dengan cara yang sama seperti panel SIPP, oleh penunggu di abt.js.
+ *
  * Tanpa chrome.runtime (uji jsdom) pemuat ini tidak dipasang, dan kode yang
  * menunggunya (konten.js: pastikanModulPanel) menganggap semua kode sudah ada.
  */
@@ -59,6 +69,10 @@
     pihak: modul(["saksiscan"], ["pihak-lengkap.js", "konten-kontak.js"]),
     "penetapan-borang": modul([], ["penetapan-borang.js"]),
     "tarik-satu-perkara": modul([], ["tarik-satu-perkara.js"]),
+    // potongan abt.js (panel blangko / beranda ABT) - dipanggil penunggu di abt.js (pasang, pasangMassalAbt)
+    "abt-bersama": modul([], ["abt-panel-bersama.js"]),
+    "abt-blangko": modul(["abt-bersama"], ["abt-panel-blangko.js"]),
+    "abt-beranda": modul(["abt-bersama"], ["abt-panel-beranda.js"]),
   });
 
   /**
