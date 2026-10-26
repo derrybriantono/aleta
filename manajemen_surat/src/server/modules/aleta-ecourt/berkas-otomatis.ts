@@ -1,25 +1,21 @@
+import { KODE_FITUR_EC_BUKTI, KODE_FITUR_EC_BUKTI_SAKSI, KODE_FITUR_EC_KESIMPULAN } from "@/lib/berkas-ecourt-fitur";
 import type { AletaDatabase } from "@/server/db/client";
-import { bacaKunci, tulisKunci } from "@/server/modules/tunda-otomatis/layanan";
+import { fiturMenyala } from "@/server/modules/satker/fitur";
 
 /**
  * ============================================================================
- * ISI OTOMATIS DARI BERKAS e-COURT (G2, 25 Okt 2026) - SAKLAR SUPER ADMIN
+ * ISI OTOMATIS DARI BERKAS e-COURT (G2, 25 Okt 2026) - SAKLAR FITUR SATKER
  * ============================================================================
  *
- * Tiga saklar, SEMUANYA MATI bawaan (mati = perilaku persis seperti sebelum G2):
+ * Tiga saklar, SEMUANYA MATI bawaan (mati = perilaku persis seperti sebelum G2). Sejak 26 Okt 2026 (keputusan Derry)
+ * saklarnya butir Fitur Satker (hanya Super Admin), bukan lagi kartu di layar Tenggat:
  *
- *   bukti       daftar alat bukti P.x / T.x dari e-Court yang "rapi" ditulis ke isian ABT yang KOSONG
- *               (penyunting bukti blangko Derry; variabel bukti halaman ABT). Tidak rapi = tetap usulan + tombol Salin.
- *   kesimpulan  kesimpulan para pihak yang "rapi" ditulis ke tanya-jawab kesimpulan sidang yang agendanya sesuai bila barisnya KOSONG.
- *   buktiSaksi  usulan pemetaan bukti <-> keterangan saksi (hanya usulan; tidak menulis apa pun ke ABT/SIPP).
+ *   bukti       ecourt-bukti-otomatis      daftar alat bukti P.x / T.x yang "rapi" ditulis ke isian ABT yang KOSONG
+ *   kesimpulan  ecourt-kesimpulan-otomatis kesimpulan para pihak yang "rapi" ditulis ke tanya-jawab kesimpulan bila barisnya KOSONG
+ *   buktiSaksi  ecourt-bukti-saksi-usulan  usulan pemetaan bukti <-> keterangan saksi (hanya usulan; tidak menulis apa pun)
  *
- * Disimpan di aleta_ekstensi_setelan (pengguna '*sistem*', kunci 'sistem:ecourt-berkas-otomatis'), tanpa migrasi - pola yang sama dengan
- * tunda otomatis dan penjaga tenggat. Hanya Super Admin yang mengubah (ditegakkan rute). Membaca TIDAK pernah melempar: galat baca = semua mati.
- *
- * Berkas e-Court HANYA dibaca. Surat gugatan tidak dibaca ulang (sudah ada di SIPP). SIPP hanya dibaca.
+ * Membaca TIDAK pernah melempar: galat baca = semua mati. Berkas e-Court HANYA dibaca. SIPP hanya dibaca.
  */
-
-export const KUNCI_BERKAS_OTOMATIS = "sistem:ecourt-berkas-otomatis";
 
 export type SetelanBerkasOtomatis = {
   bukti: boolean;
@@ -50,29 +46,16 @@ export function bersihkanSetelanBerkas(mentah: unknown): SetelanBerkasOtomatis {
   };
 }
 
-/** Setelan tersimpan; apa pun yang gagal terbaca = semua MATI. */
+/** Setelan menurut Fitur Satker; apa pun yang gagal terbaca = semua MATI. */
 export async function bacaSetelanBerkas(db: AletaDatabase): Promise<SetelanBerkasOtomatis> {
   try {
-    return bersihkanSetelanBerkas(await bacaKunci(db, KUNCI_BERKAS_OTOMATIS));
+    const [bukti, kesimpulan, buktiSaksi] = await Promise.all([
+      fiturMenyala(db, KODE_FITUR_EC_BUKTI),
+      fiturMenyala(db, KODE_FITUR_EC_KESIMPULAN),
+      fiturMenyala(db, KODE_FITUR_EC_BUKTI_SAKSI),
+    ]);
+    return bersihkanSetelanBerkas({ bukti, kesimpulan, buktiSaksi });
   } catch {
     return { ...SETELAN_BERKAS_BAWAAN };
   }
-}
-
-/** Hanya dipanggil rute yang sudah memastikan Super Admin. */
-export async function simpanSetelanBerkas(
-  db: AletaDatabase,
-  aktor: { id: string; name?: string | null },
-  badan: Record<string, unknown>
-): Promise<SetelanBerkasOtomatis> {
-  const lama = await bacaSetelanBerkas(db);
-  const baru = bersihkanSetelanBerkas({
-    bukti: typeof badan.bukti === "boolean" ? badan.bukti : lama.bukti,
-    kesimpulan: typeof badan.kesimpulan === "boolean" ? badan.kesimpulan : lama.kesimpulan,
-    buktiSaksi: typeof badan.buktiSaksi === "boolean" ? badan.buktiSaksi : lama.buktiSaksi,
-    diubahOleh: teks(aktor.name) || aktor.id,
-    diubahPada: new Date().toISOString(),
-  });
-  await tulisKunci(db, KUNCI_BERKAS_OTOMATIS, baru);
-  return baru;
 }

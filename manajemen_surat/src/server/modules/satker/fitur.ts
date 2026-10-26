@@ -1,3 +1,4 @@
+import { KODE_FITUR_BERKAS_ECOURT } from "@/lib/berkas-ecourt-fitur";
 import {
   GalatFiturSatker,
   KATALOG_FITUR_SATKER,
@@ -152,6 +153,15 @@ export async function simpanPengaturanFitur(db: AletaDatabase, aktor: { id: stri
       await dorongGerbangKeBot(db);
     } catch {
       /* bot belum menerima: ia memakai berkas gerbang bawaan */
+    }
+  }
+  // G2 (26 Okt 2026): saklar isi otomatis dari berkas e-Court berubah -> singgahan hasil bacaan dibuang agar langsung berlaku.
+  if (berubah.some((x) => KODE_FITUR_BERKAS_ECOURT.includes(x.kode))) {
+    try {
+      const { buangSinggahanIsiGugatan } = await import("@/server/modules/aleta-ecourt/isi-gugatan-singgah");
+      buangSinggahanIsiGugatan();
+    } catch {
+      /* singgahan kedaluwarsa sendiri */
     }
   }
   return { ok: true, berubah: berubah.length, bot, ...(await bacaLayarFitur(db)) };

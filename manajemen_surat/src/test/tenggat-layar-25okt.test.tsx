@@ -1,7 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { BerkasOtomatisKartu } from "@/components/portal/berkas-otomatis-kartu";
 import { TenggatLayar } from "@/components/portal/tenggat-layar";
 import { ATURAN_BARU, ATURAN_TENGGAT, SEMUA_ATURAN, STATUS_DIKABULKAN, nilaiTenggat, type FaktaTenggat } from "@/lib/penjaga-tenggat";
 import { SETELAN_TENGGAT_BAWAAN } from "@/lib/tenggat-terjadwal";
@@ -154,32 +153,5 @@ describe("TenggatLayar", () => {
     render(<TenggatLayar />);
     await waitFor(() => expect(screen.getByText(/Sebagian aturan tidak terbaca dari SIPP/)).toBeTruthy());
     expect(screen.getByText(/tabel tidak ada/)).toBeTruthy();
-  });
-});
-
-describe("BerkasOtomatisKartu (G2)", () => {
-  const setelan = { bukti: false, kesimpulan: false, buktiSaksi: false, diubahOleh: "" };
-
-  it("Super Admin: tiga saklar MATI bawaan; menyalakan satu mengirim POST hanya untuk saklar itu", async () => {
-    const f = tiruFetch({ setelan, bolehUbah: true });
-    render(<BerkasOtomatisKartu />);
-    await waitFor(() => expect(screen.getByText(/Isi otomatis dari berkas e-Court/)).toBeTruthy());
-    expect(screen.getAllByRole("switch")).toHaveLength(3);
-    for (const sw of screen.getAllByRole("switch")) expect((sw as HTMLElement).getAttribute("aria-checked")).toBe("false");
-    expect(screen.getByText(/Daftar alat bukti dari e-Court ditulis otomatis .mati./)).toBeTruthy();
-    fireEvent.click(screen.getByRole("switch", { name: /Kesimpulan para pihak/ }));
-    await waitFor(() => {
-      const post = f.mock.calls.find(([, init]) => init?.method === "POST");
-      expect(post).toBeTruthy();
-      expect(JSON.parse(String(post?.[1]?.body))).toEqual({ kesimpulan: true });
-    });
-  });
-
-  it("bukan Super Admin: kartu tidak tampil sama sekali", async () => {
-    const f = tiruFetch({ setelan, bolehUbah: false });
-    render(<BerkasOtomatisKartu />);
-    await waitFor(() => expect(f).toHaveBeenCalled());
-    expect(screen.queryByText(/Isi otomatis dari berkas e-Court/)).toBeNull();
-    expect(screen.queryAllByRole("switch")).toHaveLength(0);
   });
 });

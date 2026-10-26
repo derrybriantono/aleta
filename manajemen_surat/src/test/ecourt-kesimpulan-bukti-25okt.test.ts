@@ -669,10 +669,11 @@ describe("G2 - saklar Super Admin: semua MATI bawaan", () => {
     expect(bersihkanSetelanBerkas({ bukti: true, kesimpulan: false, buktiSaksi: true })).toMatchObject({ bukti: true, kesimpulan: false, buktiSaksi: true });
   });
 
-  it("rute: hanya Super Admin mengubah; rute bukti-saksi mati -> tidak membaca berkas apa pun", () => {
+  it("rute berkas-otomatis hanya membaca (saklar diubah di Fitur Satker); rute bukti-saksi mati -> tidak membaca berkas apa pun", () => {
     const rute = readFileSync(path.join(process.cwd(), "src/app/api/aleta-ecourt/berkas-otomatis/route.ts"), "utf8");
-    expect(rute).toContain("bolehMenyuntingAkses(aktor)");
-    expect(rute).toContain("buangSinggahanIsiGugatan()");
+    expect(rute).not.toContain("export async function POST");
+    const fitur = readFileSync(path.join(process.cwd(), "src/server/modules/satker/fitur.ts"), "utf8");
+    expect(fitur).toContain("buangSinggahanIsiGugatan()");
     const peta = readFileSync(path.join(process.cwd(), "src/app/api/aleta-ecourt/bukti-saksi/route.ts"), "utf8");
     const iMati = peta.indexOf("if (!setelan.buktiSaksi)");
     const iBaca = peta.indexOf("bacaGugatanSinggah(");

@@ -1,3 +1,4 @@
+import { KODE_FITUR_EC_BUKTI, KODE_FITUR_EC_BUKTI_SAKSI, KODE_FITUR_EC_KESIMPULAN } from "@/lib/berkas-ecourt-fitur";
 import { BAGIAN_FITUR_EKSTENSI } from "@/lib/daftar-fitur-ekstensi";
 import { KODE_FITUR_HURUF_BELAJAR } from "@/lib/huruf-alasan-belajar";
 import { KODE_FITUR_ISIAN_SEKALI } from "@/lib/isian-sekali";
@@ -207,6 +208,30 @@ export const KATALOG_FITUR_SATKER: readonly FiturKatalog[] = [
     bagian: "portal",
     keterangan:
       "Mati: tunda dan putus otomatis berjalan seperti biasa tetapi tidak ada baris jejak per sidang yang disimpan (riwayat harian lama tetap ada). Nyalakan agar tiap sidang yang diputuskan otomatis tercatat (aturan, hasil, ditolak atau tidak) dan layar Ketepatan Tunda dan Putus Otomatis terisi.",
+    bawaan: "mati",
+  },
+  {
+    kode: KODE_FITUR_EC_BUKTI,
+    nama: "Daftar alat bukti dari e-Court ditulis otomatis",
+    bagian: "portal",
+    keterangan:
+      "Mati: daftar bukti dari e-Court hanya menjadi usulan. Nyalakan agar daftar bukti P.x / T.x yang rapi ditulis ke isian bukti ABT yang masih kosong (hanya blangko Derry, hanya bila berkasnya rapi); yang tidak rapi tetap usulan dengan tombol Salin.",
+    bawaan: "mati",
+  },
+  {
+    kode: KODE_FITUR_EC_KESIMPULAN,
+    nama: "Kesimpulan para pihak ditulis otomatis ke tanya-jawab",
+    bagian: "portal",
+    keterangan:
+      "Mati: kesimpulan dari e-Court tidak ditulis. Nyalakan agar kesimpulan yang rapi ditulis ke tanya-jawab sidang beragenda kesimpulan bila barisnya kosong, seperti jawaban, replik, dan duplik.",
+    bawaan: "mati",
+  },
+  {
+    kode: KODE_FITUR_EC_BUKTI_SAKSI,
+    nama: "Usulan pemetaan bukti dan keterangan saksi",
+    bagian: "portal",
+    keterangan:
+      "Mati: tidak ada pemetaan. Nyalakan agar tiap bukti ditautkan dengan saksi yang menerangkan hal yang sama, sebagai usulan untuk susun saksi dan pertimbangan. Tidak menulis apa pun ke ABT atau SIPP.",
     bawaan: "mati",
   },
   portal("putusan-advance", "Putusan Advance", "Draf putusan lengkap oleh konseptor dan hakim."),
