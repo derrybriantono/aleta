@@ -1,5 +1,5 @@
 import { type AletaDatabase } from "@/server/db/client";
-import { type KonteksVerifikasi, verifikasiLuarKantorTerdaftar } from "@/server/modules/keamanan/kait";
+import { type KonteksVerifikasi } from "@/server/modules/keamanan/kait";
 import { catatPeristiwaAman } from "@/server/modules/perangkat/jejak";
 import { ipKlien } from "@/server/modules/perangkat/jaringan";
 import { alamatIpPeramban } from "@/server/shared/request";
@@ -14,9 +14,10 @@ import { alamatIpPeramban } from "@/server/shared/request";
  *   mana-pun               boleh masuk dan bekerja dari alamat mana pun (BAWAAN
  *                          semua peran; tanpa baris = mana-pun)
  *   kantor-saja            hanya dari jaringan kantor
- *   luar-kantor-verifikasi dari luar kantor harus terverifikasi (OTP/authenticator,
- *                          rantai E5) - dipasang lewat kait; TANPA pendaftar kait
- *                          aturan ini tidak dapat dipilih (ditolak saat simpan)
+ *
+ * Pilihan "dari luar kantor wajib verifikasi" DIBUANG dari layar (keputusan Derry 26 Okt 2026): verifikasi bagi
+ * akun dari luar kantor diatur di pengaturan Verifikasi Dua Langkah (aturan peran "hanya dari luar kantor").
+ * Baris lama yang masih bernilai itu (seharusnya tidak ada) dibaca sebagai "dari mana pun".
  *
  * Bawaan semua peran "mana pun", jadi perilaku sama dengan sebelum fitur ini.
  *
@@ -34,17 +35,15 @@ import { alamatIpPeramban } from "@/server/shared/request";
  * satker). Darurat: ALETA_BATAS_JARINGAN=0 pada server mematikan penegakan.
  */
 
-export const ATURAN_JARINGAN = ["mana-pun", "kantor-saja", "luar-kantor-verifikasi"] as const;
+export const ATURAN_JARINGAN = ["mana-pun", "kantor-saja"] as const;
 export type AturanJaringan = (typeof ATURAN_JARINGAN)[number];
 
 export const LABEL_ATURAN_JARINGAN: Record<AturanJaringan, string> = {
   "mana-pun": "Dari mana pun",
   "kantor-saja": "Hanya dari jaringan kantor",
-  "luar-kantor-verifikasi": "Dari luar kantor wajib verifikasi",
 };
 
 export const KODE_JARINGAN_DITOLAK = "JARINGAN_DITOLAK";
-export const KODE_PERLU_VERIFIKASI = "PERLU_VERIFIKASI_LUAR_KANTOR";
 
 // ─── CIDR ────────────────────────────────────────────────────────────────────
 
@@ -168,6 +167,7 @@ export async function bacaKonfigurasiJaringan(db: AletaDatabase, { singgah = fal
     data = {
       subnet: subnet.map((s) => ({ id: s.id, cidr: s.cidr, label: s.label, aktif: Number(s.aktif) === 1, dibuatOleh: s.dibuat_oleh, dibuatPada: s.dibuat_pada })),
       aturan: aturan
+        // Nilai di luar daftar (termasuk "luar-kantor-verifikasi" yang sudah dibuang) dibaca sebagai "dari mana pun".
         .filter((a) => (ATURAN_JARINGAN as readonly string[]).includes(a.aturan))
         .map((a) => ({ roleId: a.role_id, aturan: a.aturan as AturanJaringan, diubahOleh: a.diubah_oleh, diubahPada: a.diubah_pada })),
     };
@@ -191,20 +191,19 @@ export function dalamJaringanKantor(ip: string, subnet: SubnetKantor[]): boolean
 
 /**
  * Aturan yang berlaku bagi akun dengan beberapa peran: yang PALING LONGGAR menang
- * (mana-pun > luar-kantor-verifikasi > kantor-saja), seperti batas perangkat
+ * (mana-pun > kantor-saja), seperti batas perangkat
  * yang memakai batas terbesar. Peran tanpa baris = mana-pun.
  */
 export function aturanEfektif(peran: string[], aturan: AturanPeran[]): AturanJaringan {
   const peta = new Map(aturan.map((a) => [a.roleId, a.aturan]));
   const nilai = peran.map((r) => peta.get(r) ?? "mana-pun");
   if (nilai.length === 0 || nilai.includes("mana-pun")) return "mana-pun";
-  if (nilai.includes("luar-kantor-verifikasi")) return "luar-kantor-verifikasi";
   return "kantor-saja";
 }
 
 export type PutusanJaringan =
   | { lolos: true; aturan: AturanJaringan; dinilai: boolean }
-  | { lolos: false; aturan: AturanJaringan; kode: typeof KODE_JARINGAN_DITOLAK | typeof KODE_PERLU_VERIFIKASI; alasan: string; pesan: string };
+  | { lolos: false; aturan: AturanJaringan; kode: typeof KODE_JARINGAN_DITOLAK; alasan: string; pesan: string };
 
 const LOLOS_BEBAS: PutusanJaringan = { lolos: true, aturan: "mana-pun", dinilai: false };
 
@@ -239,30 +238,19 @@ export async function peranAkun(db: AletaDatabase, userId: string): Promise<stri
 
 /** Murni: putusan atas aturan, alamat, dan daftar jaringan yang diberikan (diuji tanpa basis data). */
 export async function putuskanJaringan(
-  m: { aturan: AturanJaringan; ip: string; subnet: SubnetKantor[]; verifikasi?: () => Promise<boolean> }
+  m: { aturan: AturanJaringan; ip: string; subnet: SubnetKantor[] }
 ): Promise<PutusanJaringan> {
   if (m.aturan === "mana-pun") return { lolos: true, aturan: m.aturan, dinilai: true };
   const aktif = m.subnet.filter((s) => s.aktif);
   // Daftar kosong dengan aturan membatasi = salah isi: jangan mengunci satker, longgarkan.
   if (aktif.length === 0) return { lolos: true, aturan: m.aturan, dinilai: false };
   if (dalamJaringanKantor(m.ip, aktif)) return { lolos: true, aturan: m.aturan, dinilai: true };
-  if (m.aturan === "kantor-saja") {
-    return {
-      lolos: false,
-      aturan: m.aturan,
-      kode: KODE_JARINGAN_DITOLAK,
-      alasan: "kantor saja, alamat di luar jaringan kantor",
-      pesan: "Akun Anda hanya dapat masuk dari jaringan kantor. Hubungi admin bila Anda memang perlu bekerja dari luar.",
-    };
-  }
-  const sudah = m.verifikasi ? await m.verifikasi() : false;
-  if (sudah) return { lolos: true, aturan: m.aturan, dinilai: true };
   return {
     lolos: false,
     aturan: m.aturan,
-    kode: KODE_PERLU_VERIFIKASI,
-    alasan: m.verifikasi ? "luar kantor, belum terverifikasi" : "luar kantor, verifikasi belum tersedia",
-    pesan: "Dari luar jaringan kantor, akun Anda harus diverifikasi lebih dulu. Selesaikan verifikasi, atau masuk dari jaringan kantor.",
+    kode: KODE_JARINGAN_DITOLAK,
+    alasan: "kantor saja, alamat di luar jaringan kantor",
+    pesan: "Akun Anda hanya dapat masuk dari jaringan kantor. Hubungi admin bila Anda memang perlu bekerja dari luar.",
   };
 }
 
@@ -281,13 +269,7 @@ export async function periksaJaringanAkun(db: AletaDatabase, m: MasukanPutusan):
     const aturan = aturanEfektif(peran, konfig.aturan);
     if (aturan === "mana-pun") return { lolos: true, aturan, dinilai: true };
     const ip = alamatKlienJaringan(m.headers);
-    const pemeriksa = verifikasiLuarKantorTerdaftar();
-    return await putuskanJaringan({
-      aturan,
-      ip,
-      subnet: konfig.subnet,
-      verifikasi: pemeriksa ? () => pemeriksa.sudahTerverifikasi(db, { userId: m.userId, sessionId: m.sessionId ?? null, ip, tahap: m.tahap }) : undefined,
-    });
+    return await putuskanJaringan({ aturan, ip, subnet: konfig.subnet });
   } catch (galat) {
     console.warn("[BATAS JARINGAN] tidak dapat diperiksa; diteruskan:", galat instanceof Error ? galat.message : "tidak diketahui");
     return LOLOS_BEBAS;
@@ -389,7 +371,5 @@ export async function aktorTerkunciOlehKonfigurasi(
   if (aturan === "mana-pun") return { terkunci: false, aturan, ip: m.ip };
   const aktif = m.konfigurasi.subnet.filter((s) => s.aktif);
   if (aktif.length === 0) return { terkunci: false, aturan, ip: m.ip }; // sama dengan penegakan: daftar kosong = longgar
-  // luar-kantor-verifikasi: aktor di luar kantor masih bisa lolos lewat verifikasi, jadi tidak dianggap terkunci.
-  if (aturan === "luar-kantor-verifikasi") return { terkunci: false, aturan, ip: m.ip };
   return { terkunci: !dalamJaringanKantor(m.ip, aktif), aturan, ip: m.ip };
 }

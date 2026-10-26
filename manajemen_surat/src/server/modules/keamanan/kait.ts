@@ -6,15 +6,12 @@ import { type UserPersona } from "@/lib/types";
  * KAIT ANTAR-FITUR KEAMANAN (25 Okt 2026) - tanpa saling bergantung keras
  * ============================================================================
  *
- * Tiga fitur Bagian 6 menyambung ke pekerjaan yang dikerjakan di cabang lain
+ * Dua fitur Bagian 6 menyambung ke pekerjaan yang dikerjakan di cabang lain
  * (OTP/authenticator = rantai E5, Pusat kesehatan = rantai E2). Supaya cabang
  * ini berdiri sendiri DAN tersambung begitu yang lain digabung, penyambungnya
  * lewat daftar pendaftar di sini. Cabang lain cukup memanggil daftarkan...()
  * sekali saat modulnya dimuat; tanpa pendaftar, perilaku jatuh ke yang aman:
  *
- *   verifikasi luar kantor   tanpa pendaftar -> aturan "luar kantor wajib
- *                            verifikasi" TIDAK dapat dipilih di layar (dan
- *                            ditolak rute simpan), jadi tak ada yang terkunci.
  *   langkah kedua (6c)       tanpa pendaftar -> pengaman memakai sandi ulang +
  *                            ketik konfirmasi saja.
  *   penerima laporan         tanpa pendaftar -> hasil uji pulih hanya masuk
@@ -31,12 +28,6 @@ export type KonteksVerifikasi = {
   ip: string;
   /** Alasan penantang: "masuk" saat membuat sesi, "sesi" saat sesi lama dipakai dari luar kantor. */
   tahap: "masuk" | "sesi";
-};
-
-/** Pendaftar verifikasi luar kantor (OTP/authenticator E5). Pulang true bila sesi/masuk ini sudah terverifikasi. */
-export type PemeriksaVerifikasiLuarKantor = {
-  nama: string;
-  sudahTerverifikasi: (db: AletaDatabase, konteks: KonteksVerifikasi) => Promise<boolean>;
 };
 
 /** Langkah kedua untuk aksi berdampak besar (6c): kode WhatsApp/authenticator. */
@@ -59,22 +50,14 @@ export type LaporanKesehatan = {
 export type PenerimaLaporanKesehatan = { nama: string; terima: (db: AletaDatabase, laporan: LaporanKesehatan) => Promise<void> };
 
 type Wadah = {
-  verifikasiLuarKantor: PemeriksaVerifikasiLuarKantor | null;
   langkahKedua: PemeriksaLangkahKedua | null;
   penerimaKesehatan: PenerimaLaporanKesehatan[];
 };
 
 const G = globalThis as unknown as { __aletaKaitKeamanan?: Wadah };
 function wadah(): Wadah {
-  G.__aletaKaitKeamanan ??= { verifikasiLuarKantor: null, langkahKedua: null, penerimaKesehatan: [] };
+  G.__aletaKaitKeamanan ??= { langkahKedua: null, penerimaKesehatan: [] };
   return G.__aletaKaitKeamanan;
-}
-
-export function daftarkanVerifikasiLuarKantor(p: PemeriksaVerifikasiLuarKantor) {
-  wadah().verifikasiLuarKantor = p;
-}
-export function verifikasiLuarKantorTerdaftar() {
-  return wadah().verifikasiLuarKantor;
 }
 
 export function daftarkanLangkahKedua(p: PemeriksaLangkahKedua) {
@@ -104,5 +87,5 @@ export async function laporkanKeKesehatan(db: AletaDatabase, laporan: LaporanKes
 }
 
 export function __setelUlangKaitUntukUji() {
-  G.__aletaKaitKeamanan = { verifikasiLuarKantor: null, langkahKedua: null, penerimaKesehatan: [] };
+  G.__aletaKaitKeamanan = { langkahKedua: null, penerimaKesehatan: [] };
 }

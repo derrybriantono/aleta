@@ -168,7 +168,8 @@ export function PanelJaringan({ bolehUbah }: { bolehUbah: boolean }) {
           <CardTitle className="text-base">Aturan per peran</CardTitle>
           <CardDescription>
             Bawaan semua peran &quot;Dari mana pun&quot;. Akun dengan beberapa peran memakai aturan yang paling longgar. Penolakan masuk tercatat di Riwayat Masuk sebagai
-            &quot;Ditolak: jaringan&quot;. Sesi yang sudah ada tidak dihapus; ia kembali berjalan begitu akun berada di jaringan kantor.
+            &quot;Ditolak: jaringan&quot;. Sesi yang sudah ada tidak dihapus; ia kembali berjalan begitu akun berada di jaringan kantor. Verifikasi bagi akun yang masuk dari luar kantor
+            (kode lewat WhatsApp atau authenticator) diatur di pengaturan Verifikasi Dua Langkah, bukan di sini.
           </CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">

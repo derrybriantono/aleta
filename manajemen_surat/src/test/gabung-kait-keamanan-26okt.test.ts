@@ -4,7 +4,7 @@ import path from "node:path";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createAletaDatabase } from "@/server/db/client";
-import { __setelUlangKaitUntukUji, langkahKeduaTerdaftar, laporkanKeKesehatan, verifikasiLuarKantorTerdaftar } from "@/server/modules/keamanan/kait";
+import { __setelUlangKaitUntukUji, langkahKeduaTerdaftar, laporkanKeKesehatan } from "@/server/modules/keamanan/kait";
 import { aturSubnetAktif, tambahSubnetKantor } from "@/server/modules/keamanan/jaringan";
 import { sambungkanKaitKeamanan } from "@/server/modules/keamanan/sambung-kait";
 import {
@@ -29,7 +29,7 @@ import { kodeTotp } from "@/server/modules/verifikasi/totp";
  *   2. langkah kedua pengaman aksi: authenticator/kode cadangan, tersedia hanya bila saklar authenticator menyala
  *      DAN akun sudah mendaftar; kode tidak bisa dipakai ulang
  *   3. laporan uji pulih: hanya yang GAGAL masuk Catatan error Pusat kesehatan
- *   4. luar kantor wajib verifikasi (6b) SENGAJA tidak tersambung; instrumentation memanggil penyambung
+ *   4. instrumentation memanggil penyambung (pilihan luar kantor wajib verifikasi 6b dibuang 26 Okt 2026)
  */
 
 const ctx = vi.hoisted(() => ({ db: null as unknown }));
@@ -153,11 +153,10 @@ describe("satu sumber jaringan kantor", () => {
 });
 
 describe("langkah kedua pengaman aksi admin dari authenticator", () => {
-  it("tanpa pendaftar kait: tidak ada; sesudah disambung: terdaftar, dan 6b sengaja tidak", () => {
+  it("tanpa pendaftar kait: tidak ada; sesudah disambung: terdaftar", () => {
     expect(langkahKeduaTerdaftar()).toBeNull();
     sambungkanKaitKeamanan();
     expect(langkahKeduaTerdaftar()?.nama).toBe("verifikasi-dua-langkah");
-    expect(verifikasiLuarKantorTerdaftar()).toBeNull();
   });
 
   it("saklar authenticator mati atau akun belum mendaftar: tidak tersedia (tidak ada yang terkunci)", async () => {

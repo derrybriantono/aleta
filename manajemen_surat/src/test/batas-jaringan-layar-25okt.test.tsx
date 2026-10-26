@@ -7,7 +7,7 @@ import { JaringanDitolak } from "@/components/portal/jaringan-ditolak";
 /**
  * Batas jaringan per peran (Bagian 6b) dirender sungguhan (jsdom) dengan fetch tiruan:
  * alamat Anda tampil, daftar jaringan dapat ditambah/dihapus, aturan per peran memanggil
- * rute, "verifikasi luar kantor" dinonaktifkan selama kaitnya belum ada, dan tanpa hak
+ * rute, pilihan "luar kantor wajib verifikasi" tidak ditampilkan (26 Okt 2026) dan tanpa hak
  * ubah semua kendali nonaktif.
  */
 
@@ -31,7 +31,6 @@ const muatan = () => ({
   aturanTersedia: [
     { kode: "mana-pun", label: "Dari mana pun", tersedia: true },
     { kode: "kantor-saja", label: "Hanya dari jaringan kantor", tersedia: true },
-    { kode: "luar-kantor-verifikasi", label: "Dari luar kantor wajib verifikasi", tersedia: false },
   ],
   ipAnda: "192.168.10.30",
   andaDalamKantor: subnet.some((s) => s.cidr === "192.168.10.0/24" && s.aktif),
@@ -64,14 +63,15 @@ afterEach(() => {
 });
 
 describe("panel batas jaringan", () => {
-  it("bawaan: tanpa pembatasan, semua peran 'Dari mana pun'; alamat Anda tampil; verifikasi luar kantor dinonaktifkan", async () => {
+  it("bawaan: tanpa pembatasan, semua peran 'Dari mana pun'; alamat Anda tampil; hanya dua pilihan, tanpa luar kantor wajib verifikasi", async () => {
     render(<PanelJaringan bolehUbah />);
     await screen.findByText("Tidak ada pembatasan");
     expect(screen.getByText("192.168.10.30").tagName).toBe("STRONG");
     const hakim = screen.getByLabelText("Aturan jaringan Hakim") as HTMLSelectElement;
     expect(hakim.value).toBe("mana-pun");
-    const opsi = within(hakim).getByRole("option", { name: /wajib verifikasi \(belum tersedia\)/ }) as HTMLOptionElement;
-    expect(opsi.disabled).toBe(true);
+    expect(within(hakim).getAllByRole("option").map((o) => (o as HTMLOptionElement).value)).toEqual(["mana-pun", "kantor-saja"]);
+    expect(within(hakim).queryByRole("option", { name: /wajib verifikasi/ })).toBeNull();
+    expect(screen.getByText(/diatur di pengaturan Verifikasi Dua Langkah/)).toBeTruthy();
     expect(screen.getByText("Belum ada jaringan kantor yang didaftarkan.")).toBeTruthy();
   });
 
