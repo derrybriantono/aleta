@@ -142,7 +142,7 @@
   const namaTujuan = (tujuan) => {
     const t = String(tujuan || "");
     if (t === "putusan-otomatis") return "Putusan Otomatis";
-    if (/^isi-borang-/.test(t)) return "Pengisian borang";
+    if (/^isi-borang-/.test(t)) return "Pengisian form";
     if (t === "kerjakan-penetapan") return "Penetapan";
     return t || "pekerjaan lain";
   };

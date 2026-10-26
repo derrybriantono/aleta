@@ -448,11 +448,10 @@ router.get("/tunda-mediasi", wajibToken, async (req, res) => {
   }
 });
 
+// Tulisan manual di luar jam kerja ditanyakan dulu (keputusan 104) - sama dengan tunda sidang.
 router.post(
   "/tunda-mediasi",
-  wajibToken,
-  // Tulisan manual di luar jam kerja ditanyakan dulu (keputusan 104) - sama dengan tunda sidang.
-  manualJamKerja("mediasi-tunda", (b) => `${String(b.mediasiId || "")}:${String(b.tanggal || "").slice(0, 10)}`, async (req, res) => {
+  wajibToken, manualJamKerja("mediasi-tunda", (b) => `${String(b.mediasiId || "")}:${String(b.tanggal || "").slice(0, 10)}`, async (req, res) => {
     let jejak = null;
     try {
       jejak = require("../services/jejakAletaService");

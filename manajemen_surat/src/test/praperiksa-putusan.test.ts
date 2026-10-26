@@ -563,7 +563,7 @@ describe("sambungan: rute portal, gerbang bot, dan ekstensi", () => {
     // Disesuaikan perbaikan 30 Sep 2026 (butir 10/19): pemanggilannya kini dua
     // cabang (Baru/UI Baru membawa opsi, Lama tidak). Yang dicari pemanggilan
     // PERTAMA dari keduanya - gerbang harus tetap sebelum keduanya.
-    const letakSimpan = fungsi.indexOf("const hasilSimpan = opsiSimpanA30");
+    const letakSimpan = fungsi.indexOf("hasilSimpan = opsiSimpanA30");
     expect(letakSimpan).toBeGreaterThan(0);
     expect(fungsi.indexOf("await simpanPutusanLaluBuka(nomorPerkara, hasilTerap")).toBeGreaterThan(letakSimpan);
     expect(letakGerbang).toBeGreaterThan(0);
