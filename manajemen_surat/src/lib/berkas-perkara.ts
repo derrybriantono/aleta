@@ -19,12 +19,15 @@
 
 export type KodeKertas = "a4" | "f4" | "legal";
 export type JenisBlangkoBerkas = "sampul" | "daftar-isi";
+/** Bentuk sampul: "awal" = sampul cetak awal (bawaan, keputusan Derry 26 Okt); "lengkap" = sampul lengkap (blangko pilihan kedua). */
+export type BentukSampul = "awal" | "lengkap";
 export type SumberHalaman = "pasti" | "perkiraan" | "manual";
 
-export const KERTAS: Readonly<Record<KodeKertas, { nama: string; akhiran: string; lebarMm: number; tinggiMm: number; barisRiwayat: number }>> = {
-  a4: { nama: "A4 (210 x 297 mm)", akhiran: "", lebarMm: 210, tinggiMm: 297, barisRiwayat: 12 },
-  f4: { nama: "F4 / Folio (215 x 330 mm)", akhiran: " (F4)", lebarMm: 215, tinggiMm: 330, barisRiwayat: 15 },
-  legal: { nama: "Legal (216 x 356 mm)", akhiran: " (Legal)", lebarMm: 216, tinggiMm: 356, barisRiwayat: 18 },
+/** barisRiwayat = sampul lengkap; barisAwal = sampul cetak awal (15 di A4, 18 di F4, 20 di Legal). */
+export const KERTAS: Readonly<Record<KodeKertas, { nama: string; akhiran: string; lebarMm: number; tinggiMm: number; barisRiwayat: number; barisAwal: number }>> = {
+  a4: { nama: "A4 (210 x 297 mm)", akhiran: "", lebarMm: 210, tinggiMm: 297, barisRiwayat: 12, barisAwal: 15 },
+  f4: { nama: "F4 / Folio (215 x 330 mm)", akhiran: " (F4)", lebarMm: 215, tinggiMm: 330, barisRiwayat: 15, barisAwal: 18 },
+  legal: { nama: "Legal (216 x 356 mm)", akhiran: " (Legal)", lebarMm: 216, tinggiMm: 356, barisRiwayat: 18, barisAwal: 20 },
 };
 export const URUTAN_KERTAS: readonly KodeKertas[] = ["a4", "f4", "legal"];
 export const KERTAS_BAWAAN: KodeKertas = "a4";
@@ -38,27 +41,46 @@ export const FOLDER_SAMPUL = `${AKAR_DERRY}/99 PTSP`;
 export const FOLDER_DAFTAR_ISI = `${AKAR_DERRY}/98b Berkas Perkara - BAS`;
 const DASAR_BERKAS: Readonly<Record<JenisBlangkoBerkas, string>> = { sampul: "Sampul Berkas Perkara", "daftar-isi": "Daftar Isi Berkas" };
 
-/** Folder dan nama berkas RTF (dipasang paket ABT abt-sampul-daftar-isi-26okt). Sampul = folder PTSP, daftar isi = folder BAS Panitera Sidang. */
-export function berkasBlangko(jenis: JenisBlangkoBerkas, kertas: KodeKertas): { folder: string; berkas: string; jenisFolder: "ptsp" | "bas" } {
+/**
+ * Folder dan nama berkas RTF (dipasang paket ABT abt-sampul-daftar-isi-26okt). Sampul = folder PTSP, daftar isi = folder BAS Panitera Sidang.
+ * Sampul cetak awal (bawaan): "Sampul Berkas Perkara" untuk perkara BERLAWANAN (gugatan dan cerai talak), "... (Permohonan)" untuk permohonan;
+ * sampul lengkap: "Sampul Berkas Perkara (Lengkap)". Akhiran ukuran " (F4)" / " (Legal)" paling belakang.
+ */
+export function berkasBlangko(
+  jenis: JenisBlangkoBerkas,
+  kertas: KodeKertas,
+  opsi: { bentuk?: BentukSampul; lawan?: boolean; banyak?: boolean } = {}
+): { folder: string; berkas: string; jenisFolder: "ptsp" | "bas" } {
+  const bentuk: BentukSampul = opsi.bentuk === "lengkap" ? "lengkap" : "awal";
+  const lawan = opsi.lawan !== false;
+  const tengah =
+    jenis !== "sampul" ? "" : bentuk === "lengkap" ? " (Lengkap)" : lawan ? (opsi.banyak ? " (Pihak Banyak)" : "") : opsi.banyak ? " (Permohonan Pihak Banyak)" : " (Permohonan)";
   return {
     folder: jenis === "sampul" ? FOLDER_SAMPUL : FOLDER_DAFTAR_ISI,
-    berkas: `${DASAR_BERKAS[jenis]}${KERTAS[kertas].akhiran}.rtf`,
+    berkas: `${DASAR_BERKAS[jenis]}${tengah}${KERTAS[kertas].akhiran}.rtf`,
     jenisFolder: jenis === "sampul" ? "ptsp" : "bas",
   };
 }
 
-/** Berkas varian ukuran ("... (F4).rtf", "... (Legal).rtf") tidak ditampilkan di daftar blangko: pilihan ukuran ada di layar kerja. */
+/** Berkas varian (ukuran F4/Legal, "(Permohonan)", "(Pihak Banyak)") tidak ditampilkan di daftar blangko: ukuran dipilih di layar kerja, varian dipilih menurut perkara. */
 export function berkasVarianUkuran(nama: string): boolean {
-  return /^(Sampul Berkas Perkara|Daftar Isi Berkas) \((F4|Legal)\)\.rtf$/i.test(String(nama || "").trim());
+  const n = String(nama || "").trim();
+  if (/^(Sampul Berkas Perkara( \((Permohonan|Lengkap|Pihak Banyak|Permohonan Pihak Banyak)\))?|Daftar Isi Berkas) \((F4|Legal)\)\.rtf$/i.test(n)) return true;
+  return /^Sampul Berkas Perkara \((Permohonan|Pihak Banyak|Permohonan Pihak Banyak)\)\.rtf$/i.test(n);
 }
 
 /** Jenis layar kerja untuk sebuah berkas blangko Derry (nama dasar saja); "" bila bukan Sampul/Daftar Isi. */
 export function jenisLayarBerkas(folder: string, nama: string): JenisBlangkoBerkas | "" {
   const f = String(folder || "").replace(/^\/+|\/+$/g, "").replace(/^derry_briantono\//, "");
   const n = String(nama || "").trim();
-  if (f === "99 PTSP" && /^Sampul Berkas Perkara\.rtf$/i.test(n)) return "sampul";
+  if (f === "99 PTSP" && /^Sampul Berkas Perkara( \(Lengkap\))?\.rtf$/i.test(n)) return "sampul";
   if (f === "98b Berkas Perkara - BAS" && /^Daftar Isi Berkas\.rtf$/i.test(n)) return "daftar-isi";
   return "";
+}
+
+/** Bentuk sampul menurut nama berkas yang dibuka ("(Lengkap)" = lengkap; selain itu cetak awal). */
+export function bentukDariBerkas(nama: string): BentukSampul {
+  return /\(Lengkap\)/i.test(String(nama || "")) ? "lengkap" : "awal";
 }
 
 // ---------------------------------------------------------------------------
@@ -115,6 +137,85 @@ export function cirKeadaanEfektif(otomatis: Record<string, boolean>, tangan: Rec
   const hasil: Record<string, boolean> = {};
   for (const k of KUNCI_CIRI) hasil[k] = Object.prototype.hasOwnProperty.call(tangan, k) ? Boolean(tangan[k]) : Boolean(otomatis[k]);
   return hasil;
+}
+
+// ---------------------------------------------------------------------------
+// Sampul cetak awal (keputusan Derry 26 Okt, versi 4)
+// ---------------------------------------------------------------------------
+/** Ciri yang TIDAK menjadi lencana di sampul cetak awal: verstek (sifat putusan), rekonvensi dan sita (kotak centang susulan), mediasi (pita mediasi). */
+export const CIRI_BUKAN_LENCANA_AWAL: readonly string[] = ["verstek", "rekonvensi", "sita", "mediasi"];
+/** Ciri berbingkai ganda di sampul cetak awal (mengubah cara pemeriksaan); tercetak di runut sendiri (variabel 5807 dan 5808). */
+export const CIRI_BINGKAI_GANDA_AWAL: readonly string[] = ["ghaib", "mafqud"];
+
+/**
+ * Isian sampul cetak awal dari ciri yang berlaku: 5861 = lencana biasa, 5807 = ghaib, 5808 = mafqud (bingkai ganda). `sisiDari` = sisi/jumlah dari data
+ * perkara (mis. kuasa "P+T", kumulasi "2"); tanpa itu dipakai sisi bawaan daftar ciri.
+ */
+export function ciriSampulAwal(aktif: Record<string, boolean>, sisiDari: Record<string, string> = {}): { "5861": string; "5807": string; "5808": string } {
+  const teks = (c: DefinisiCiri) => teksCiri({ ...c, sisi: sisiDari[c.kunci] || c.sisi });
+  const biasa = DAFTAR_CIRI.filter((c) => aktif[c.kunci] && !CIRI_BUKAN_LENCANA_AWAL.includes(c.kunci) && !CIRI_BINGKAI_GANDA_AWAL.includes(c.kunci)).map(teks);
+  const satu = (k: string) => {
+    const c = DAFTAR_CIRI.find((x) => x.kunci === k);
+    return c && aktif[k] ? teks(c) : "";
+  };
+  return { "5861": biasa.length ? biasa.join("  ") : "- tidak ada ciri khusus -", "5807": satu("ghaib"), "5808": satu("mafqud") };
+}
+
+/** Ciri susulan sampul cetak awal (kotak centang): kunci, nama tercetak. Daftar menurut jenis perkara; yang terdeteksi dari data dicentang otomatis, sisanya dicentang tangan. */
+export type DefinisiSusulan = { kunci: string; nama: string };
+export const KUNCI_SUSULAN: readonly string[] = ["mediasi", "eksepsi", "rekonvensi", "sita", "setempat", "sela", "ubah", "panjar", "cabut", "perbaikan", "anak", "umum"];
+const NAMA_SUSULAN: Readonly<Record<string, string>> = {
+  mediasi: "MEDIASI",
+  eksepsi: "EKSEPSI",
+  rekonvensi: "REKONVENSI",
+  sita: "PERMINTAAN SITA",
+  setempat: "PEMERIKSAAN SETEMPAT",
+  sela: "PUTUSAN SELA",
+  ubah: "PERUBAHAN GUGATAN",
+  panjar: "TAMBAHAN PANJAR",
+  cabut: "PENCABUTAN",
+  perbaikan: "PERBAIKAN PERMOHONAN",
+  anak: "ANAK & CALON DIDENGAR",
+  umum: "PENGUMUMAN 14 HARI",
+};
+const SUSULAN_LAWAN = ["mediasi", "eksepsi", "rekonvensi", "sita", "setempat", "sela", "ubah", "panjar", "cabut"];
+const SUSULAN_MOHON = ["perbaikan", "setempat", "panjar", "cabut"];
+
+/** `jenis` = kunci jenis sampul ("dk" menambah ANAK & CALON DIDENGAR, "in" menambah PENGUMUMAN 14 HARI). Perkara berlawanan: sembilan ciri; permohonan: empat (+ khas). */
+export function daftarSusulan(jenis: string, lawan: boolean): DefinisiSusulan[] {
+  const kunci = lawan ? SUSULAN_LAWAN : [...SUSULAN_MOHON, ...(jenis === "dk" ? ["anak"] : jenis === "in" ? ["umum"] : [])];
+  return kunci.map((k) => ({ kunci: k, nama: NAMA_SUSULAN[k] }));
+}
+
+/** Isian #5862#: "[X] NAMA (oto)" terdeteksi dari data, "[X] NAMA" dicentang tangan, "[ ] NAMA" kosong; dipisah tiga spasi. */
+export function rangkaiSusulan(daftar: DefinisiSusulan[], centang: Record<string, boolean>, oto: Record<string, boolean>): string {
+  return daftar
+    .map((d) => {
+      const on = Boolean(centang[d.kunci]);
+      return `${on ? "[X]" : "[ ]"} ${d.nama}${on && oto[d.kunci] ? " (oto)" : ""}`;
+    })
+    .join("   ");
+}
+
+/** Keadaan efektif ciri susulan: tangan menimpa otomatis; yang tidak terbaca (tidak ada di `oto`) tidak dicentang. */
+export function susulanEfektif(daftar: DefinisiSusulan[], oto: Record<string, boolean>, tangan: Record<string, boolean>): Record<string, boolean> {
+  const hasil: Record<string, boolean> = {};
+  for (const d of daftar) hasil[d.kunci] = Object.prototype.hasOwnProperty.call(tangan, d.kunci) ? Boolean(tangan[d.kunci]) : Boolean(oto[d.kunci]);
+  return hasil;
+}
+
+const KOTAK_KOSONG = "{\\f1\\u9744?}";
+const KOTAK_ISI = "{\\f1\\u9746?}";
+/**
+ * Merapikan naskah sampul cetak awal sesudah ABT mengisinya: kotak centang ASCII "[ ]" / "[X]" dari variabel menjadi karakter kotak (renderer ABT merusak
+ * karakter di atas 255), dan tanda "..." untuk variabel kosong dibuang (kolom itu ditulis tangan). Murni.
+ */
+export function rapikanSampulAwal(rtf: string): string {
+  return rtf
+    .replace(/\[ \]/g, KOTAK_KOSONG)
+    .replace(/\[X\]/g, KOTAK_ISI)
+    .replace(/\{\\highlight\d+ \.\.\.\}/g, "")
+    .replace(/(?<![.\w])\.\.\.(?![.\w])/g, "");
 }
 
 // ---------------------------------------------------------------------------
@@ -360,8 +461,8 @@ const BATAS_NILAI = 6000;
 export function kodeTimpaBoleh(kode: string): boolean {
   if (!/^\d{4}$/.test(kode)) return false;
   const n = Number(kode);
-  // blok paket sampul/daftar isi (5700-5779 riwayat sidang, 5800-5859 ciri/jenis/daftar isi) + isian tangan sampul 5845/5846 sudah termasuk.
-  return (n >= 5700 && n <= 5779) || (n >= 5800 && n <= 5859);
+  // blok paket sampul/daftar isi (5700-5779 riwayat sidang, 5800-5899 ciri/jenis/daftar isi/sampul cetak awal) + isian tangan sampul 5845/5846 sudah termasuk.
+  return (n >= 5700 && n <= 5779) || (n >= 5800 && n <= 5899);
 }
 
 /** Menyaring nilai timpa kiriman klien: hanya kode blok paket, teks, tanpa nama aplikasi, panjang dibatasi. */

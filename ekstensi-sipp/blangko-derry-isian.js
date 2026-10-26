@@ -710,6 +710,8 @@
       const h = await klienAbt().daftarBerkas(k.a);
       if (!h.ok) throw new Error(h.pesan || "Kelompok tidak terbaca.");
       k.berkas = h.berkas.map((b) => ({ berkas: b.berkas, a: b.a, b: b.b }));
+      // 26 Okt 2026: sampul lengkap menjadi pilihan KEDUA (cetak awal bawaan di atas).
+      k.berkas.sort((x, y) => Number(/^Sampul Berkas Perkara \(Lengkap\)/i.test(x.berkas)) - Number(/^Sampul Berkas Perkara \(Lengkap\)/i.test(y.berkas)));
       k.judul = namaMenuTampil(h.kelompok || k.nama);
       void tulisPenyimpanan({ [K_BERKAS]: { asal: asalAbtDerry(), saat: Date.now(), kelompok: S.menu.kelompok.map((x) => ({ nama: x.nama, berkas: x.berkas, judul: x.judul || "" })) } });
     } catch (e) {
@@ -5178,7 +5180,7 @@
         w.innerHTML = `<p class="bd-catat" role="status">Memeriksa hak buka blangko ini…</p>`;
         return;
       }
-      void BK().buka(w, hostBerkas(), { jenis: S.blangko.khusus, perkaraId: perkaraId(), nomor: nomorPerkara() });
+      void BK().buka(w, hostBerkas(), { jenis: S.blangko.khusus, bentuk: BK().bentukDari(S.blangko.berkas), perkaraId: perkaraId(), nomor: nomorPerkara() });
       return;
     }
     if (!S.susunan) {

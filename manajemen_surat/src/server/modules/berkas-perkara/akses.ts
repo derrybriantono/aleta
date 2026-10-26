@@ -1,5 +1,5 @@
 import { jenisDokumenAkun, type JenisDokumenDerry, type PeranTiruan } from "@/app/api/aleta-ecourt/blangko-derry/susun";
-import { type JenisBlangkoBerkas, berkasBlangko, type KodeKertas } from "@/lib/berkas-perkara";
+import { type BentukSampul, type JenisBlangkoBerkas, berkasBlangko, type KodeKertas } from "@/lib/berkas-perkara";
 import { golonganPengguna } from "@/lib/matriks-peran";
 import { isPrivilegedAdmin } from "@/lib/permissions";
 import { bacaHakBlangko } from "@/server/modules/pengaturan-abt/service";
@@ -30,8 +30,8 @@ export async function jenisBolehSesi(actor: unknown, sebagaiMinta = ""): Promise
 }
 
 /** Melempar 403 bila akun tidak boleh membuka blangko berkas ini (sampul = PTSP; daftar isi = BAS). */
-export async function pastikanBolehBerkas(actor: unknown, jenis: JenisBlangkoBerkas, kertas: KodeKertas, sebagaiMinta = "") {
-  const b = berkasBlangko(jenis, kertas);
+export async function pastikanBolehBerkas(actor: unknown, jenis: JenisBlangkoBerkas, kertas: KodeKertas, sebagaiMinta = "", opsi: { bentuk?: BentukSampul; lawan?: boolean; banyak?: boolean } = {}) {
+  const b = berkasBlangko(jenis, kertas, opsi);
   const boleh = await jenisBolehSesi(actor, sebagaiMinta);
   if (!boleh.includes(b.jenisFolder)) throw new ApiError(403, "Blangko ini bukan untuk peran akun Anda.");
   return b;

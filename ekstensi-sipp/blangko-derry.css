@@ -762,3 +762,9 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar .bk-prat > summary { cursor: pointer; font-weight: 600; padding: 6px 0; }
 #aleta-bd-akar .bk-kertas { max-height: 70vh; overflow: auto; }
 @media (prefers-reduced-motion: no-preference) { #aleta-bd-akar .bk-ciri { transition: background .15s, border-color .15s; } }
+#aleta-bd-akar .bk-bentuk { display: inline-flex; align-items: center; gap: 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; width: fit-content; }
+#aleta-bd-akar .bk-bentuk > span { padding: 6px 10px; color: var(--muted); font-size: 12.8px; background: var(--deep); }
+#aleta-bd-akar .bk-bentukt { background: var(--panel); border: 0; border-left: 1px solid var(--line); padding: 6px 14px; font-weight: 600; }
+#aleta-bd-akar .bk-bentukt[aria-pressed="true"] { background: var(--hijau); color: #fff; }
+#aleta-bd-akar .bk-ciri.ganda { border-style: double; border-width: 3px; }
+#aleta-bd-akar .bk-pihak { background: var(--deep); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; }

@@ -4,12 +4,16 @@ import { buangGrupTersembunyiRtf } from "@/lib/buang-grup-tersembunyi-rtf";
 import {
   type BarisDasar,
   type SunganBaris,
+  KERTAS,
   hitungDaftarIsi,
   kodeKertasSah,
   nilaiTimpaDaftarIsi,
+  rapikanSampulAwal,
   saringNilaiTimpa,
 } from "@/lib/berkas-perkara";
 import { FITUR_BERKAS_PERKARA } from "@/lib/fitur-satker";
+import { bersihkanPihak, gabungLampiran, jumlahDariDaftar, pihakBanyak } from "@/lib/lampiran-pihak";
+import { barisTurut, bersihkanAnak, bersihkanObjek, bersihkanSidang, kolomPihakSampul, susunLampiran, type HasilLampiran } from "@/lib/lampiran-sampul";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { callAletaBotSippBridge } from "@/server/modules/aleta-sipp/aleta-sipp-datasource";
@@ -102,12 +106,53 @@ export async function POST(request: NextRequest) {
     const jenis = badan.jenis === "sampul" ? "sampul" : badan.jenis === "daftar-isi" ? "daftar-isi" : null;
     if (!perkaraId || !jenis) throw new ApiError(400, "Perkara dan jenis (sampul | daftar-isi) harus disebutkan.");
     const kertas = kodeKertasSah(badan.kertas) ? badan.kertas : "a4";
-    const berkas = await pastikanBolehBerkas(actor, jenis, kertas, teks(badan.sebagaiPeran, 10).toLowerCase());
+    // Sampul: bentuk "awal" (cetak awal, bawaan) atau "lengkap"; perkara berlawanan memakai tata letak berlawanan, permohonan tata letak permohonan.
+    const bentuk = badan.bentuk === "lengkap" ? "lengkap" : "awal";
+    const lawan = badan.lawan !== false;
+    // Pihak banyak: varian RTF dua kolom nama bernomor romawi; lebih dari muat sampul = Lampiran Daftar Para Pihak (halaman kedua, hanya bila perlu).
+    const pihak = bersihkanPihak(badan.pihak);
+    const jumlah = jumlahDariDaftar(pihak);
+    const banyak = badan.banyak === true || pihakBanyak(jumlah);
+    const berkas = await pastikanBolehBerkas(actor, jenis, kertas, teks(badan.sebagaiPeran, 10).toLowerCase(), { bentuk, lawan, banyak: bentuk === "awal" && banyak });
 
     let nilai: Record<string, string>;
     let ringkas: Record<string, unknown> = {};
+    let lamp: HasilLampiran | null = null;
     if (jenis === "sampul") {
       nilai = saringNilaiTimpa(badan.nilai);
+      if (bentuk === "awal") {
+        // Lampiran HANYA bila perlu (pihak melebihi ruang, objek > 2, anak > 3, riwayat sidang melebihi baris sampul): LAMPIRAN n - JUDUL, halaman berikutnya.
+        const lebarKertas = { a4: 11906, f4: 12189, legal: 12246 }[kertas];
+        lamp = susunLampiran({
+          nomor: teks(badan.nomor, 80),
+          lebar: lebarKertas - 1400,
+          lawan,
+          pihak,
+          anak: bersihkanAnak(badan.anak),
+          objek: bersihkanObjek(badan.objek),
+          riwayat: bersihkanSidang(badan.riwayat),
+          barisRiwayat: KERTAS[kertas].barisAwal,
+          infoKhasBaris: Math.max(0, Math.min(20, Math.trunc(Number(badan.infoKhasBaris)) || 0)),
+          sebutan: { 1: teks(badan.sebutanP, 20) || (lawan ? "Penggugat" : "Pemohon"), 2: teks(badan.sebutanT, 20) || (lawan ? "Tergugat" : "Termohon") },
+          sebutanPihakI: teks(badan.sebutanP, 20) || (lawan ? "Penggugat" : "Pemohon"),
+          sebutanPihakII: teks(badan.sebutanT, 20) || (lawan ? "Tergugat" : "Termohon"),
+        });
+        if (lamp.barisDepan.length) nilai["5832"] = lamp.barisDepan.join("\n");
+        if (lamp.kaki) nilai["5833"] = lamp.kaki;
+        if (banyak) {
+          const nomorPihak = lamp.daftar.find((d) => d.kunci === "pihak")?.nomor ?? 1;
+          const s1 = kolomPihakSampul(pihak.filter((x) => x.sisi === 1), lamp.muatPihak, nomorPihak);
+          nilai["5890"] = s1.kiri;
+          nilai["5891"] = s1.kanan;
+          if (lawan) {
+            const s2 = kolomPihakSampul(pihak.filter((x) => x.sisi === 2), lamp.muatPihak, nomorPihak);
+            nilai["5892"] = s2.kiri;
+            nilai["5893"] = s2.kanan;
+          }
+          const turut = barisTurut(pihak.filter((x) => x.sisi === 4), nomorPihak, teks(badan.sebutanT, 20) ? `TURUT ${teks(badan.sebutanT, 20).toUpperCase()}` : "TURUT TERGUGAT");
+          if (turut) nilai["5897"] = turut;
+        }
+      }
     } else {
       const baris = bersihkanBaris(badan.baris);
       const hitung = hitungDaftarIsi(baris, bersihkanSunting(badan.sunting), { bundelB: badan.bundelB === "lanjut" ? "lanjut" : "1" });
@@ -124,12 +169,20 @@ export async function POST(request: NextRequest) {
     if (!hasil.ok || !data?.ok || !data.rtfBase64) {
       return Response.json({ ok: false, alasan: data?.sebab ?? hasil.error ?? "Blangko tidak dapat diisi." }, { status: 502 });
     }
-    const rtf = Buffer.from(buangGrupTersembunyiRtf(Buffer.from(data.rtfBase64, "base64")));
+    let bita = buangGrupTersembunyiRtf(Buffer.from(data.rtfBase64, "base64"));
+    // Sampul cetak awal: kotak centang ASCII dari variabel menjadi karakter kotak; tanda "..." variabel kosong dibuang (kolom tulis tangan).
+    if (jenis === "sampul" && bentuk === "awal") bita = new Uint8Array(Buffer.from(rapikanSampulAwal(Buffer.from(bita).toString("latin1")), "latin1"));
+    if (lamp && lamp.bagianRtf) bita = new Uint8Array(Buffer.from(gabungLampiran(Buffer.from(bita).toString("latin1"), lamp.bagianRtf), "latin1"));
+    const rtf = Buffer.from(bita);
     return ok(
       {
         berkas: data.berkas ?? berkas.berkas,
         folder: berkas.folder,
         kertas,
+        bentuk: jenis === "sampul" ? bentuk : undefined,
+        pihakBanyak: jenis === "sampul" ? banyak : undefined,
+        lampiran: lamp ? lamp.daftar : [],
+        muatPihak: lamp ? lamp.muatPihak : undefined,
         rtfBase64: rtf.toString("base64"),
         byte: rtf.length,
         jumlahTerisi: data.jumlahTerisi ?? 0,

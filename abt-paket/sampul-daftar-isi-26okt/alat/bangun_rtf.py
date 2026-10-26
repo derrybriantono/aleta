@@ -102,7 +102,7 @@ def p_sel(segs, **kw):
 
 def kepala_rtf():
     return ('{\\rtf1\\ansi\\ansicpg1252\\deff0\\deflang1057\n'
-            '{\\fonttbl{\\f0\\fswiss\\fcharset0 Arial;}}\n'
+            '{\\fonttbl{\\f0\\fswiss\\fcharset0 Arial;}{\\f1\\fnil\\fcharset0 Segoe UI Symbol;}}\n'
             '{\\colortbl;\\red0\\green0\\blue0;\\red230\\green240\\blue243;\\red243\\green244\\blue246;\\red20\\green24\\blue31;\\red255\\green255\\blue255;}\n'
             '\\paperw%d\\paperh%d\\margl700\\margr700\\margt600\\margb600\\widowctrl\n' % HAL)
 
@@ -258,14 +258,41 @@ def daftar_isi(kertas='a4'):
     return s + '}\n'
 
 
+# Sampul cetak awal: lihat alat/sampul_awal.py (dibuat di modul sendiri)
+
+
+# nama berkas menurut bentuk: awal = bawaan; permohonan = varian tata letak (disembunyikan dari daftar); lengkap = blangko pilihan kedua
+def nama_berkas(dasar, bentuk, akhiran, lawan=True, banyak=False):
+    if dasar == 'Daftar Isi Berkas':
+        return dasar + akhiran + '.rtf'
+    if bentuk == 'lengkap':
+        tengah = ' (Lengkap)'
+    elif lawan:
+        tengah = ' (Pihak Banyak)' if banyak else ''
+    else:
+        tengah = ' (Permohonan Pihak Banyak)' if banyak else ' (Permohonan)'
+    return 'Sampul Berkas Perkara' + tengah + akhiran + '.rtf'
+
+
 def semua():
-    """{nama berkas: isi RTF (str ASCII)} untuk keenam berkas."""
+    import sys
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from sampul_awal import sampul_awal
+    """{nama berkas: isi RTF (str ASCII)}: sampul cetak awal (berlawanan, permohonan), sampul lengkap, daftar isi; masing-masing tiga ukuran kertas."""
     hasil = {}
     for kode, (akhiran, w, h, baris) in KERTAS.items():
-        for dasar, fn in (('Sampul Berkas Perkara', sampul), ('Daftar Isi Berkas', daftar_isi)):
-            isi = fn(kode)
+        butir = [
+            (nama_berkas('Sampul Berkas Perkara', 'awal', akhiran, True, False), lambda k=kode: sampul_awal(k, True, False)),
+            (nama_berkas('Sampul Berkas Perkara', 'awal', akhiran, True, True), lambda k=kode: sampul_awal(k, True, True)),
+            (nama_berkas('Sampul Berkas Perkara', 'awal', akhiran, False, False), lambda k=kode: sampul_awal(k, False, False)),
+            (nama_berkas('Sampul Berkas Perkara', 'awal', akhiran, False, True), lambda k=kode: sampul_awal(k, False, True)),
+            (nama_berkas('Sampul Berkas Perkara', 'lengkap', akhiran), lambda k=kode: sampul(k)),
+            (nama_berkas('Daftar Isi Berkas', 'awal', akhiran), lambda k=kode: daftar_isi(k)),
+        ]
+        for nama, fn in butir:
+            isi = fn()
             assert 'aleta' not in isi.lower()   # tidak boleh ada nama aplikasi di isi blangko
-            hasil[dasar + akhiran + '.rtf'] = isi
+            hasil[nama] = isi
     return hasil
 
 

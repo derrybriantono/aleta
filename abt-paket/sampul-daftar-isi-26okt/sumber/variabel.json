@@ -748,5 +748,263 @@
   "nama": "RIWAYAT SIDANG SAMPUL baris 20: alasan penundaan / keterangan",
   "data_type": "data_sql",
   "sql_query": "SELECT alasan_ditunda AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 19,1"
+ },
+ {
+  "no_var": 5861,
+  "nama": "CIRI PERKARA AWAL SAMPUL (OTOMATIS: ciri yang berlaku dan sudah diketahui saat daftar; tanpa ghaib, mafqud, verstek, rekonvensi, mediasi, sita)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IFNULL(NULLIF(TRIM(CONCAT_WS('  ',NULLIF('#5802#',''),NULLIF('#5803#',''),NULLIF('#5805#',''),NULLIF('#5806#',''),NULLIF('#5809#',''),NULLIF('#5810#',''),NULLIF('#5811#',''),NULLIF('#5812#',''),NULLIF('#5813#',''),NULLIF('#5814#',''),NULLIF('#5815#',''),NULLIF('#5816#',''),NULLIF('#5818#',''),NULLIF('#5822#',''),NULLIF('#5823#',''),NULLIF('#5824#',''),NULLIF('#5825#',''),NULLIF('#5826#',''),NULLIF('#5827#',''))),''),'- tidak ada ciri khusus -') AS data"
+ },
+ {
+  "no_var": 5862,
+  "nama": "CIRI SUSULAN SAMPUL (KOTAK CENTANG menurut jenis perkara; dicentang tangan; panel mencentang otomatis yang terdeteksi dari data)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT (CASE WHEN p.nomor_perkara LIKE '%/Pdt.G%' THEN '[ ] MEDIASI   [ ] EKSEPSI   [ ] REKONVENSI   [ ] PERMINTAAN SITA   [ ] PEMERIKSAAN SETEMPAT   [ ] PUTUSAN SELA   [ ] PERUBAHAN GUGATAN   [ ] TAMBAHAN PANJAR   [ ] PENCABUTAN' WHEN p.jenis_perkara_id=362 THEN '[ ] PERBAIKAN PERMOHONAN   [ ] PEMERIKSAAN SETEMPAT   [ ] TAMBAHAN PANJAR   [ ] PENCABUTAN   [ ] ANAK & CALON DIDENGAR' WHEN p.jenis_perkara_id=360 THEN '[ ] PERBAIKAN PERMOHONAN   [ ] PEMERIKSAAN SETEMPAT   [ ] TAMBAHAN PANJAR   [ ] PENCABUTAN   [ ] PENGUMUMAN 14 HARI' ELSE '[ ] PERBAIKAN PERMOHONAN   [ ] PEMERIKSAAN SETEMPAT   [ ] TAMBAHAN PANJAR   [ ] PENCABUTAN' END) AS data FROM perkara p WHERE p.perkara_id=#perkara_id#"
+ },
+ {
+  "no_var": 5863,
+  "nama": "AMAR PUTUSAN SAMPUL (KOTAK CENTANG; terisi dari status putusan SIPP bila sudah ada; perkara berlawanan enam pilihan, permohonan empat)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT CONCAT_WS('   ',CONCAT(IF(x.s IN (62,1,2,30,34,117,133),'[X]','[ ]'),' KABUL'),CONCAT(IF(x.s IN (63,3,32,35,119,134),'[X]','[ ]'),' TOLAK'),CONCAT(IF(x.s IN (64,61,4,33,36,84,120),'[X]','[ ]'),' NO'),IF(x.l=1,CONCAT(IF(x.s IN (65,93,6,29,31,38,118),'[X]','[ ]'),' GUGUR'),NULL),CONCAT(IF(x.s IN (67,7,37),'[X]','[ ]'),' CABUT'),IF(x.l=1,CONCAT(IF(x.s IN (85,5),'[X]','[ ]'),' DAMAI'),NULL)) AS data FROM (SELECT (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#) AS l, (SELECT status_putusan_id FROM perkara_putusan WHERE perkara_id=#perkara_id# LIMIT 1) AS s) x"
+ },
+ {
+  "no_var": 5864,
+  "nama": "SIFAT PUTUSAN SAMPUL (KOTAK CENTANG: hadir/kontradiktoir dan verstek; terisi dari putusan_verstek SIPP bila putusan sudah ada)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT (CASE WHEN x.l=1 THEN CONCAT(IF(x.t IS NOT NULL AND IFNULL(x.v,'T')<>'Y','[X]','[ ]'),' HADIR (KONTRADIKTOIR)   ',IF(x.t IS NOT NULL AND x.v='Y','[X]','[ ]'),' VERSTEK') ELSE CONCAT(IF(x.t IS NOT NULL,'[X]','[ ]'),' HADIR') END) AS data FROM (SELECT (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#) AS l, (SELECT tanggal_putusan FROM perkara_putusan WHERE perkara_id=#perkara_id# LIMIT 1) AS t, (SELECT putusan_verstek FROM perkara_putusan WHERE perkara_id=#perkara_id# LIMIT 1) AS v) x"
+ },
+ {
+  "no_var": 5865,
+  "nama": "KONSEPTOR PUTUSAN SAMPUL (isian tangan 5839 bila ada; kalau tidak, pengguna tahapan putusan di SIPP; kosong = ditulis tangan)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT CONVERT(IFNULL(NULLIF(TRIM(CONVERT((SELECT data FROM aps_badilag.abt_data_teks WHERE no_var=5839 AND perkara_id=#perkara_id# LIMIT 1) USING latin1)),''), CONVERT((SELECT IFNULL(NULLIF(u.fullname,''),pr.diinput_oleh) FROM perkara_proses pr LEFT JOIN sys_users u ON BINARY u.username=BINARY pr.diinput_oleh WHERE pr.perkara_id=#perkara_id# AND pr.proses_id=210 ORDER BY pr.diinput_tanggal DESC LIMIT 1) USING latin1)) USING latin1) AS data"
+ },
+ {
+  "no_var": 5866,
+  "nama": "HASIL MEDIASI SAMPUL (KOTAK CENTANG; terisi dari tanggal berhasil/gagal di SIPP bila sudah dicatat)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT CONCAT(IF(m.b IS NOT NULL,'[X]','[ ]'),' BERHASIL   [ ] BERHASIL SEBAGIAN   ',IF(m.g IS NOT NULL AND m.b IS NULL,'[X]','[ ]'),' TIDAK BERHASIL   [ ] TIDAK DAPAT DILAKSANAKAN') AS data FROM (SELECT 1 AS d) z LEFT JOIN (SELECT mediasi_berhasil AS b, mediasi_gagal AS g FROM perkara_mediasi WHERE perkara_id=#perkara_id# ORDER BY mediasi_id DESC LIMIT 1) m ON 1=1"
+ },
+ {
+  "no_var": 5867,
+  "nama": "JENIS PERKARA SAMPUL AWAL (OTOMATIS: jenis perkara; diberi kata Kumulasi bila berkumulasi)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT CONCAT('#0048#',IF(EXISTS(SELECT 1 FROM perkara_kumulasi k WHERE k.perkara_id=#perkara_id#),' Kumulasi','')) AS data"
+ },
+ {
+  "no_var": 5868,
+  "nama": "BARIS KUMULASI SAMPUL AWAL (OTOMATIS dari perkara_kumulasi; kosong bila tidak berkumulasi)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT CONCAT('Kumulasi: ',REPLACE(GROUP_CONCAT(j.nama SEPARATOR '|'),'|',' dan ')) AS data FROM perkara_kumulasi k JOIN jenis_perkara j ON j.id=k.jenis_perkara_id WHERE k.perkara_id=#perkara_id# HAVING COUNT(*)>0"
+ },
+ {
+  "no_var": 5869,
+  "nama": "MAJELIS SAMPUL AWAL (OTOMATIS: satu hakim per baris; Ketua, Anggota, atau Hakim tunggal)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT GROUP_CONCAT(CONCAT(b.nama_gelar,' (',IF(x.n=1,'Hakim tunggal',IF(a.urutan=1,'Ketua','Anggota')),')') ORDER BY a.urutan SEPARATOR '<br>') AS data FROM perkara_hakim_pn a JOIN hakim_pn b ON a.hakim_id=b.id JOIN (SELECT COUNT(*) AS n FROM perkara_hakim_pn WHERE aktif='Y' AND perkara_id=#perkara_id#) x WHERE a.aktif='Y' AND a.perkara_id=#perkara_id#"
+ },
+ {
+  "no_var": 5890,
+  "nama": "PIHAK BANYAK SAMPUL: pihak I (penggugat/pemohon), kolom kiri nama II dan seterusnya (romawi, satu per baris)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT GROUP_CONCAT(CONCAT(ELT(a.urutan,'I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI','XVII','XVIII','XIX','XX'),'. ',a.nama) ORDER BY a.urutan SEPARATOR '<br>') AS data FROM perkara_pihak1 a WHERE a.perkara_id=#perkara_id# AND a.urutan BETWEEN 2 AND 1+CEIL(IF((SELECT COUNT(*) FROM perkara_pihak1 WHERE perkara_id=#perkara_id#)>IF((SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1,8,12),IF((SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1,8,12)-2,(SELECT COUNT(*) FROM perkara_pihak1 WHERE perkara_id=#perkara_id#)-1)/2)"
+ },
+ {
+  "no_var": 5891,
+  "nama": "PIHAK BANYAK SAMPUL: pihak I, kolom kanan (dan keterangan \"dan N lainnya\" bila melebihi batas tampil)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT CONCAT_WS('<br>',(SELECT GROUP_CONCAT(CONCAT(ELT(a.urutan,'I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI','XVII','XVIII','XIX','XX'),'. ',a.nama) ORDER BY a.urutan SEPARATOR '<br>') FROM perkara_pihak1 a WHERE a.perkara_id=#perkara_id# AND a.urutan BETWEEN 2+CEIL(IF((SELECT COUNT(*) FROM perkara_pihak1 WHERE perkara_id=#perkara_id#)>IF((SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1,8,12),IF((SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1,8,12)-2,(SELECT COUNT(*) FROM perkara_pihak1 WHERE perkara_id=#perkara_id#)-1)/2) AND 1+IF((SELECT COUNT(*) FROM perkara_pihak1 WHERE perkara_id=#perkara_id#)>IF((SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1,8,12),IF((SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1,8,12)-2,(SELECT COUNT(*) FROM perkara_pihak1 WHERE perkara_id=#perkara_id#)-1)),IF((SELECT COUNT(*) FROM perkara_pihak1 WHERE perkara_id=#perkara_id#)>IF((SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1,8,12),CONCAT('dan ',(SELECT COUNT(*) FROM perkara_pihak1 WHERE perkara_id=#perkara_id#)-IF((SELECT COUNT(*) FROM perkara_pihak1 WHERE perkara_id=#perkara_id#)>IF((SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1,8,12),IF((SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1,8,12)-2,(SELECT COUNT(*) FROM perkara_pihak1 WHERE perkara_id=#perkara_id#)-1)-1,' lainnya - lengkap di Lampiran Daftar Para Pihak'),NULL)) AS data"
+ },
+ {
+  "no_var": 5892,
+  "nama": "PIHAK BANYAK SAMPUL: pihak II (tergugat/termohon), kolom kiri",
+  "data_type": "data_sql",
+  "sql_query": "SELECT GROUP_CONCAT(CONCAT(ELT(a.urutan,'I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI','XVII','XVIII','XIX','XX'),'. ',a.nama) ORDER BY a.urutan SEPARATOR '<br>') AS data FROM perkara_pihak2 a WHERE a.perkara_id=#perkara_id# AND a.urutan BETWEEN 2 AND 1+CEIL(IF((SELECT COUNT(*) FROM perkara_pihak2 WHERE perkara_id=#perkara_id#)>IF((SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1,8,12),IF((SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1,8,12)-2,(SELECT COUNT(*) FROM perkara_pihak2 WHERE perkara_id=#perkara_id#)-1)/2)"
+ },
+ {
+  "no_var": 5893,
+  "nama": "PIHAK BANYAK SAMPUL: pihak II, kolom kanan (dan keterangan \"dan N lainnya\" bila melebihi batas tampil)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT CONCAT_WS('<br>',(SELECT GROUP_CONCAT(CONCAT(ELT(a.urutan,'I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI','XVII','XVIII','XIX','XX'),'. ',a.nama) ORDER BY a.urutan SEPARATOR '<br>') FROM perkara_pihak2 a WHERE a.perkara_id=#perkara_id# AND a.urutan BETWEEN 2+CEIL(IF((SELECT COUNT(*) FROM perkara_pihak2 WHERE perkara_id=#perkara_id#)>IF((SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1,8,12),IF((SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1,8,12)-2,(SELECT COUNT(*) FROM perkara_pihak2 WHERE perkara_id=#perkara_id#)-1)/2) AND 1+IF((SELECT COUNT(*) FROM perkara_pihak2 WHERE perkara_id=#perkara_id#)>IF((SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1,8,12),IF((SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1,8,12)-2,(SELECT COUNT(*) FROM perkara_pihak2 WHERE perkara_id=#perkara_id#)-1)),IF((SELECT COUNT(*) FROM perkara_pihak2 WHERE perkara_id=#perkara_id#)>IF((SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1,8,12),CONCAT('dan ',(SELECT COUNT(*) FROM perkara_pihak2 WHERE perkara_id=#perkara_id#)-IF((SELECT COUNT(*) FROM perkara_pihak2 WHERE perkara_id=#perkara_id#)>IF((SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1,8,12),IF((SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1,8,12)-2,(SELECT COUNT(*) FROM perkara_pihak2 WHERE perkara_id=#perkara_id#)-1)-1,' lainnya - lengkap di Lampiran Daftar Para Pihak'),NULL)) AS data"
+ },
+ {
+  "no_var": 5894,
+  "nama": "SEBUTAN PIHAK I SAMPUL AWAL (sebutan + jumlah orang bila lebih dari satu)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT CONCAT('#5841#',IF((SELECT COUNT(*) FROM perkara_pihak1 WHERE perkara_id=#perkara_id#)>1,CONCAT(' (',(SELECT COUNT(*) FROM perkara_pihak1 WHERE perkara_id=#perkara_id#),' ORANG)'),'')) AS data"
+ },
+ {
+  "no_var": 5895,
+  "nama": "SEBUTAN PIHAK II SAMPUL AWAL (sebutan + jumlah orang bila lebih dari satu)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT CONCAT('#8147#',IF((SELECT COUNT(*) FROM perkara_pihak2 WHERE perkara_id=#perkara_id#)>1,CONCAT(' (',(SELECT COUNT(*) FROM perkara_pihak2 WHERE perkara_id=#perkara_id#),' ORANG)'),'')) AS data"
+ },
+ {
+  "no_var": 5896,
+  "nama": "KUASA PIHAK I SAMPUL AWAL: keterangan \"(untuk Penggugat I-IX)\" bila pihak I lebih dari satu dan berkuasa",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IF((SELECT COUNT(*) FROM perkara_pihak1 WHERE perkara_id=#perkara_id#)>1 AND EXISTS(SELECT 1 FROM perkara_pengacara WHERE perkara_id=#perkara_id# AND pihak_ke=1 AND aktif='Y'),CONCAT('(untuk ',IF((SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 AND (SELECT jenis_perkara_id FROM perkara WHERE perkara_id=#perkara_id#)<>346,'Penggugat','Pemohon'),' I-',ELT(LEAST((SELECT COUNT(*) FROM perkara_pihak1 WHERE perkara_id=#perkara_id#),20),'I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI','XVII','XVIII','XIX','XX'),')'),'') AS data"
+ },
+ {
+  "no_var": 5897,
+  "nama": "TURUT TERGUGAT SAMPUL (tiga nama sebaris; lebihnya \"dan N lainnya\" ke lampiran; kosong bila tidak ada)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT CONCAT('TURUT TERGUGAT (',COUNT(*),')  ',GROUP_CONCAT(CASE WHEN a.urutan<=3 THEN CONCAT(ELT(a.urutan,'I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI','XVII','XVIII','XIX','XX'),'. ',a.nama) END ORDER BY a.urutan SEPARATOR '  -  '),IF(COUNT(*)>3,CONCAT('  -  dan ',COUNT(*)-3,' lainnya (lampiran)'),'')) AS data FROM perkara_pihak4 a WHERE a.perkara_id=#perkara_id# HAVING COUNT(*)>0"
+ },
+ {
+  "no_var": 5898,
+  "nama": "NAMA PIHAK I SAMPUL AWAL (langsung dari SIPP; diawali \"I. \" bila pihak I lebih dari satu)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT CONCAT(IF((SELECT COUNT(*) FROM perkara_pihak1 WHERE perkara_id=#perkara_id#)>1,'I. ',''),IFNULL((SELECT a.nama FROM perkara_pihak1 a WHERE a.perkara_id=#perkara_id# ORDER BY a.urutan LIMIT 1),'')) AS data"
+ },
+ {
+  "no_var": 5899,
+  "nama": "NAMA PIHAK II SAMPUL AWAL (langsung dari SIPP; diawali \"I. \" bila pihak II lebih dari satu)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT CONCAT(IF((SELECT COUNT(*) FROM perkara_pihak2 WHERE perkara_id=#perkara_id#)>1,'I. ',''),IFNULL((SELECT a.nama FROM perkara_pihak2 a WHERE a.perkara_id=#perkara_id# ORDER BY a.urutan LIMIT 1),'')) AS data"
+ },
+ {
+  "no_var": 5830,
+  "nama": "PEKERJAAN DAN ALAMAT PIHAK I SAMPUL AWAL (langsung dari SIPP)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT CONCAT('Pekerjaan: ',IFNULL(NULLIF(h.pekerjaan,''),'-'),'  -  Alamat: ',IFNULL(a.alamat,'')) AS data FROM perkara_pihak1 a LEFT JOIN pihak h ON h.id=a.pihak_id WHERE a.perkara_id=#perkara_id# ORDER BY a.urutan LIMIT 1"
+ },
+ {
+  "no_var": 5831,
+  "nama": "PEKERJAAN DAN ALAMAT PIHAK II SAMPUL AWAL (langsung dari SIPP)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT CONCAT('Pekerjaan: ',IFNULL(NULLIF(h.pekerjaan,''),'-'),'  -  Alamat: ',IFNULL(a.alamat,'')) AS data FROM perkara_pihak2 a LEFT JOIN pihak h ON h.id=a.pihak_id WHERE a.perkara_id=#perkara_id# ORDER BY a.urutan LIMIT 1"
+ },
+ {
+  "no_var": 5832,
+  "nama": "ANAK SAMPUL AWAL (OTOMATIS: satu sampai tiga anak sebaris dari tab Anak SIPP; lebih dari tiga masuk lampiran; kosong bila tidak ada)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT CONCAT('Anak: ',GROUP_CONCAT(a.nama_anak ORDER BY a.anak_ke,a.id SEPARATOR '; ')) AS data FROM perkara_anak_pihak a WHERE a.perkara_id=#perkara_id# AND TRIM(IFNULL(a.nama_anak,''))<>'' HAVING COUNT(*) BETWEEN 1 AND 3"
+ },
+ {
+  "no_var": 5833,
+  "nama": "KAKI SAMPUL AWAL: rujukan lampiran (diisi saat naskah disusun; kosong bila tidak ada lampiran)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT '' AS data"
+ },
+ {
+  "no_var": 5870,
+  "nama": "RIWAYAT SIDANG SAMPUL AWAL baris 1: kotak hadir P/T (terisi bila sidang itu sudah tercatat; permohonan hanya P)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IFNULL((SELECT (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P   ',IF(s.d IN (1,3),'[X]','[ ]'),' T') ELSE CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P') END) FROM (SELECT dihadiri_oleh AS d FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 0,1) s), (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN '[ ] P   [ ] T' ELSE '[ ] P' END)) AS data"
+ },
+ {
+  "no_var": 5871,
+  "nama": "RIWAYAT SIDANG SAMPUL AWAL baris 2: kotak hadir P/T (terisi bila sidang itu sudah tercatat; permohonan hanya P)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IFNULL((SELECT (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P   ',IF(s.d IN (1,3),'[X]','[ ]'),' T') ELSE CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P') END) FROM (SELECT dihadiri_oleh AS d FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 1,1) s), (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN '[ ] P   [ ] T' ELSE '[ ] P' END)) AS data"
+ },
+ {
+  "no_var": 5872,
+  "nama": "RIWAYAT SIDANG SAMPUL AWAL baris 3: kotak hadir P/T (terisi bila sidang itu sudah tercatat; permohonan hanya P)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IFNULL((SELECT (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P   ',IF(s.d IN (1,3),'[X]','[ ]'),' T') ELSE CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P') END) FROM (SELECT dihadiri_oleh AS d FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 2,1) s), (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN '[ ] P   [ ] T' ELSE '[ ] P' END)) AS data"
+ },
+ {
+  "no_var": 5873,
+  "nama": "RIWAYAT SIDANG SAMPUL AWAL baris 4: kotak hadir P/T (terisi bila sidang itu sudah tercatat; permohonan hanya P)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IFNULL((SELECT (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P   ',IF(s.d IN (1,3),'[X]','[ ]'),' T') ELSE CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P') END) FROM (SELECT dihadiri_oleh AS d FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 3,1) s), (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN '[ ] P   [ ] T' ELSE '[ ] P' END)) AS data"
+ },
+ {
+  "no_var": 5874,
+  "nama": "RIWAYAT SIDANG SAMPUL AWAL baris 5: kotak hadir P/T (terisi bila sidang itu sudah tercatat; permohonan hanya P)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IFNULL((SELECT (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P   ',IF(s.d IN (1,3),'[X]','[ ]'),' T') ELSE CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P') END) FROM (SELECT dihadiri_oleh AS d FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 4,1) s), (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN '[ ] P   [ ] T' ELSE '[ ] P' END)) AS data"
+ },
+ {
+  "no_var": 5875,
+  "nama": "RIWAYAT SIDANG SAMPUL AWAL baris 6: kotak hadir P/T (terisi bila sidang itu sudah tercatat; permohonan hanya P)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IFNULL((SELECT (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P   ',IF(s.d IN (1,3),'[X]','[ ]'),' T') ELSE CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P') END) FROM (SELECT dihadiri_oleh AS d FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 5,1) s), (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN '[ ] P   [ ] T' ELSE '[ ] P' END)) AS data"
+ },
+ {
+  "no_var": 5876,
+  "nama": "RIWAYAT SIDANG SAMPUL AWAL baris 7: kotak hadir P/T (terisi bila sidang itu sudah tercatat; permohonan hanya P)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IFNULL((SELECT (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P   ',IF(s.d IN (1,3),'[X]','[ ]'),' T') ELSE CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P') END) FROM (SELECT dihadiri_oleh AS d FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 6,1) s), (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN '[ ] P   [ ] T' ELSE '[ ] P' END)) AS data"
+ },
+ {
+  "no_var": 5877,
+  "nama": "RIWAYAT SIDANG SAMPUL AWAL baris 8: kotak hadir P/T (terisi bila sidang itu sudah tercatat; permohonan hanya P)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IFNULL((SELECT (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P   ',IF(s.d IN (1,3),'[X]','[ ]'),' T') ELSE CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P') END) FROM (SELECT dihadiri_oleh AS d FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 7,1) s), (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN '[ ] P   [ ] T' ELSE '[ ] P' END)) AS data"
+ },
+ {
+  "no_var": 5878,
+  "nama": "RIWAYAT SIDANG SAMPUL AWAL baris 9: kotak hadir P/T (terisi bila sidang itu sudah tercatat; permohonan hanya P)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IFNULL((SELECT (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P   ',IF(s.d IN (1,3),'[X]','[ ]'),' T') ELSE CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P') END) FROM (SELECT dihadiri_oleh AS d FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 8,1) s), (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN '[ ] P   [ ] T' ELSE '[ ] P' END)) AS data"
+ },
+ {
+  "no_var": 5879,
+  "nama": "RIWAYAT SIDANG SAMPUL AWAL baris 10: kotak hadir P/T (terisi bila sidang itu sudah tercatat; permohonan hanya P)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IFNULL((SELECT (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P   ',IF(s.d IN (1,3),'[X]','[ ]'),' T') ELSE CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P') END) FROM (SELECT dihadiri_oleh AS d FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 9,1) s), (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN '[ ] P   [ ] T' ELSE '[ ] P' END)) AS data"
+ },
+ {
+  "no_var": 5880,
+  "nama": "RIWAYAT SIDANG SAMPUL AWAL baris 11: kotak hadir P/T (terisi bila sidang itu sudah tercatat; permohonan hanya P)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IFNULL((SELECT (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P   ',IF(s.d IN (1,3),'[X]','[ ]'),' T') ELSE CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P') END) FROM (SELECT dihadiri_oleh AS d FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 10,1) s), (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN '[ ] P   [ ] T' ELSE '[ ] P' END)) AS data"
+ },
+ {
+  "no_var": 5881,
+  "nama": "RIWAYAT SIDANG SAMPUL AWAL baris 12: kotak hadir P/T (terisi bila sidang itu sudah tercatat; permohonan hanya P)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IFNULL((SELECT (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P   ',IF(s.d IN (1,3),'[X]','[ ]'),' T') ELSE CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P') END) FROM (SELECT dihadiri_oleh AS d FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 11,1) s), (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN '[ ] P   [ ] T' ELSE '[ ] P' END)) AS data"
+ },
+ {
+  "no_var": 5882,
+  "nama": "RIWAYAT SIDANG SAMPUL AWAL baris 13: kotak hadir P/T (terisi bila sidang itu sudah tercatat; permohonan hanya P)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IFNULL((SELECT (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P   ',IF(s.d IN (1,3),'[X]','[ ]'),' T') ELSE CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P') END) FROM (SELECT dihadiri_oleh AS d FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 12,1) s), (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN '[ ] P   [ ] T' ELSE '[ ] P' END)) AS data"
+ },
+ {
+  "no_var": 5883,
+  "nama": "RIWAYAT SIDANG SAMPUL AWAL baris 14: kotak hadir P/T (terisi bila sidang itu sudah tercatat; permohonan hanya P)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IFNULL((SELECT (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P   ',IF(s.d IN (1,3),'[X]','[ ]'),' T') ELSE CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P') END) FROM (SELECT dihadiri_oleh AS d FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 13,1) s), (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN '[ ] P   [ ] T' ELSE '[ ] P' END)) AS data"
+ },
+ {
+  "no_var": 5884,
+  "nama": "RIWAYAT SIDANG SAMPUL AWAL baris 15: kotak hadir P/T (terisi bila sidang itu sudah tercatat; permohonan hanya P)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IFNULL((SELECT (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P   ',IF(s.d IN (1,3),'[X]','[ ]'),' T') ELSE CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P') END) FROM (SELECT dihadiri_oleh AS d FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 14,1) s), (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN '[ ] P   [ ] T' ELSE '[ ] P' END)) AS data"
+ },
+ {
+  "no_var": 5885,
+  "nama": "RIWAYAT SIDANG SAMPUL AWAL baris 16: kotak hadir P/T (terisi bila sidang itu sudah tercatat; permohonan hanya P)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IFNULL((SELECT (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P   ',IF(s.d IN (1,3),'[X]','[ ]'),' T') ELSE CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P') END) FROM (SELECT dihadiri_oleh AS d FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 15,1) s), (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN '[ ] P   [ ] T' ELSE '[ ] P' END)) AS data"
+ },
+ {
+  "no_var": 5886,
+  "nama": "RIWAYAT SIDANG SAMPUL AWAL baris 17: kotak hadir P/T (terisi bila sidang itu sudah tercatat; permohonan hanya P)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IFNULL((SELECT (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P   ',IF(s.d IN (1,3),'[X]','[ ]'),' T') ELSE CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P') END) FROM (SELECT dihadiri_oleh AS d FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 16,1) s), (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN '[ ] P   [ ] T' ELSE '[ ] P' END)) AS data"
+ },
+ {
+  "no_var": 5887,
+  "nama": "RIWAYAT SIDANG SAMPUL AWAL baris 18: kotak hadir P/T (terisi bila sidang itu sudah tercatat; permohonan hanya P)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IFNULL((SELECT (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P   ',IF(s.d IN (1,3),'[X]','[ ]'),' T') ELSE CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P') END) FROM (SELECT dihadiri_oleh AS d FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 17,1) s), (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN '[ ] P   [ ] T' ELSE '[ ] P' END)) AS data"
+ },
+ {
+  "no_var": 5888,
+  "nama": "RIWAYAT SIDANG SAMPUL AWAL baris 19: kotak hadir P/T (terisi bila sidang itu sudah tercatat; permohonan hanya P)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IFNULL((SELECT (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P   ',IF(s.d IN (1,3),'[X]','[ ]'),' T') ELSE CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P') END) FROM (SELECT dihadiri_oleh AS d FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 18,1) s), (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN '[ ] P   [ ] T' ELSE '[ ] P' END)) AS data"
+ },
+ {
+  "no_var": 5889,
+  "nama": "RIWAYAT SIDANG SAMPUL AWAL baris 20: kotak hadir P/T (terisi bila sidang itu sudah tercatat; permohonan hanya P)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IFNULL((SELECT (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P   ',IF(s.d IN (1,3),'[X]','[ ]'),' T') ELSE CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P') END) FROM (SELECT dihadiri_oleh AS d FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 19,1) s), (CASE WHEN (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)=1 THEN '[ ] P   [ ] T' ELSE '[ ] P' END)) AS data"
  }
 ]

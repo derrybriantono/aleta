@@ -258,6 +258,7 @@ async function berkasEcourt(nomorPerkara, deps = {}) {
     return [];
   }
   const hasil = [];
+  hasil.semuaNama = daftar.slice(0, 200).map((x) => String(x));
   for (const nama of daftar.slice(0, 200)) {
     const jenis = jenisEcourt(nama);
     if (!jenis) continue;
@@ -285,6 +286,102 @@ async function halamanBaris(jalurRelatif, jenisBawaan, deps) {
   }
   if (semuaTerbaca && jumlah > 0) return { halaman: jumlah, sumber: ragu ? "perkiraan" : "pasti", dasar: ragu ? "halaman berkas: dua cara hitung berbeda" : "halaman dibaca dari berkas" };
   return { halaman: null, sumber: "perkiraan", dasar: ada ? "berkas RTF/DOC: halaman belum terbaca" : "tidak ada berkas", jenisBawaan };
+}
+
+// ---------------------------------------------------------------------------
+// Objek sengketa dan anak untuk sampul cetak awal (versi 7): lampiran hanya bila perlu (objek lebih dari 2, anak lebih dari 3)
+// ---------------------------------------------------------------------------
+/**
+ * Murni. perkara_obyek_sengketa.obyek_gugatan adalah SATU teks bebas. Objek = butir bernomor ("1." "2)" "a." di awal baris) atau, bila tidak
+ * bernomor, tiap baris tidak kosong; isian "-" / kosong = tidak ada objek. Hasil [{nama, letak}]: nama = kalimat pertama (maks 90 huruf),
+ * letak = sisanya. Teks yang hanya satu paragraf tanpa nomor = SATU objek. Tidak menebak jumlah dari isi kalimat.
+ */
+function uraiObjek(teks) {
+  const t = String(teks == null ? "" : teks).replace(/<[^>]*>/g, " ").replace(/\r/g, "").trim();
+  if (!t || /^[-.\s]*$/.test(t) || /^(tidak ada|nihil)$/i.test(t)) return [];
+  const baris = t.split("\n").map((x) => x.trim()).filter(Boolean);
+  const bernomor = baris.filter((x) => /^(\d{1,3}|[a-z])[.)]\s+\S/i.test(x));
+  let butir;
+  if (bernomor.length >= 2) {
+    butir = [];
+    for (const x of baris) {
+      if (/^(\d{1,3}|[a-z])[.)]\s+\S/i.test(x)) butir.push(x.replace(/^(\d{1,3}|[a-z])[.)]\s+/i, ""));
+      else if (butir.length) butir[butir.length - 1] += ` ${x}`;
+      else butir.push(x);
+    }
+  } else if (baris.length >= 2 && baris.every((x) => x.length <= 300)) {
+    butir = baris;
+  } else {
+    butir = [baris.join(" ")];
+  }
+  return butir.map((x) => {
+    const bersih = x.replace(/\s+/g, " ").trim();
+    const m = bersih.match(/^(.{20,90}?[.;:])\s+(.*)$/);
+    if (m) return { nama: m[1].replace(/[.;:]$/, ""), letak: m[2].slice(0, 400) };
+    if (bersih.length <= 90) return { nama: bersih, letak: "" };
+    const potong = bersih.lastIndexOf(" ", 90);
+    const batas = potong > 40 ? potong : 90;
+    return { nama: bersih.slice(0, batas), letak: bersih.slice(batas).trim().slice(0, 400) };
+  });
+}
+
+/** Umur penuh (tahun) pada tanggal acuan; "" bila tanggal lahir tidak sah. Murni. */
+function umurPenuh(lahir, acuan = new Date()) {
+  const m = String(lahir || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return "";
+  let u = acuan.getFullYear() - Number(m[1]);
+  if (acuan.getMonth() + 1 < Number(m[2]) || (acuan.getMonth() + 1 === Number(m[2]) && acuan.getDate() < Number(m[3]))) u -= 1;
+  return u >= 0 && u < 130 ? String(u) : "";
+}
+
+// ---------------------------------------------------------------------------
+// Deteksi ciri susulan sampul cetak awal (keputusan Derry 26 Okt: "deteksi otomatis apabila ada permintaan sita, eksepsi dan lainnya")
+// ---------------------------------------------------------------------------
+/** Kunci ciri susulan (nama tampil dipegang portal: lib/berkas-perkara.ts SUSULAN_*). */
+const KUNCI_SUSULAN = Object.freeze(["mediasi", "eksepsi", "rekonvensi", "sita", "setempat", "sela", "ubah", "panjar", "cabut", "perbaikan", "anak", "umum"]);
+const STATUS_CABUT = new Set([67, 7, 37]);
+const kata = (re, teks) => re.test(String(teks || ""));
+const RE_SITA = /(^|[^a-z])sita([^a-z]|$)|conservatoir|revindicatoir|sita jaminan|sita marital/i;
+const RE_SETEMPAT = /pemeriksaan\s+setempat|descente/i;
+const RE_UBAH = /perubahan\s+(gugatan|surat gugatan)|perbaikan\s+(surat\s+)?gugatan/i;
+const RE_PERBAIKAN = /perbaikan\s+(surat\s+)?permohonan|perubahan\s+(surat\s+)?permohonan/i;
+const RE_CABUT = /cabut|pencabutan/i;
+const RE_ANAK = /(mendengar|didengar|dengar).{0,40}anak|anak.{0,40}(didengar|keterangan)|anak\s+(dan|&)\s+calon/i;
+const RE_UMUM = /pengumuman/i;
+
+/**
+ * Murni. bahan: { petitum (huruf kecil, tanpa tag), agenda[], proses[], statusPutusanId, mediasi, eksepsi, rekonvensi, sela, setempatBiaya, tambahanPanjar, namaEcourt[], gagal[] }
+ * Hasil { kunci: "sumber" } hanya yang TERDETEKSI; yang bagiannya tidak terbaca (ada di bahan.gagal) tidak dicentang (bukan "tidak").
+ */
+function deteksiSusulan(bahan = {}) {
+  const hasil = {};
+  const agenda = (bahan.agenda || []).map((x) => String(x || ""));
+  const proses = (bahan.proses || []).map((x) => String(x || ""));
+  const ec = (bahan.namaEcourt || []).map((x) => String(x || ""));
+  const dari = (re, daftar) => daftar.some((x) => re.test(x));
+  const taruh = (k, sumber) => {
+    if (!hasil[k]) hasil[k] = sumber;
+  };
+  if (bahan.mediasi) taruh("mediasi", "perkara_mediasi");
+  if (bahan.eksepsi) taruh("eksepsi", "jawaban e-Court");
+  if (dari(/eksepsi/i, agenda)) taruh("eksepsi", "agenda sidang");
+  if (bahan.rekonvensi) taruh("rekonvensi", "perkara_rekonvensi / jawaban e-Court");
+  if (dari(/rekonvensi/i, agenda)) taruh("rekonvensi", "agenda sidang");
+  if (kata(RE_SITA, bahan.petitum)) taruh("sita", "petitum/posita");
+  if (dari(RE_SITA, proses)) taruh("sita", "proses SIPP");
+  if (bahan.setempatBiaya) taruh("setempat", "biaya pemeriksaan setempat");
+  if (dari(RE_SETEMPAT, agenda)) taruh("setempat", "agenda sidang");
+  if (bahan.sela) taruh("sela", "putusan sela SIPP");
+  if (dari(/putusan\s+sela/i, agenda.concat(proses))) taruh("sela", "agenda/proses");
+  if (dari(RE_UBAH, agenda.concat(ec))) taruh("ubah", "agenda/e-Court");
+  if (dari(RE_PERBAIKAN, agenda.concat(ec))) taruh("perbaikan", "agenda/e-Court");
+  if (bahan.tambahanPanjar) taruh("panjar", "biaya perkara");
+  if (STATUS_CABUT.has(Number(bahan.statusPutusanId))) taruh("cabut", "status putusan");
+  if (dari(RE_CABUT, agenda)) taruh("cabut", "agenda sidang");
+  if (dari(RE_ANAK, agenda)) taruh("anak", "agenda sidang");
+  if (dari(RE_UMUM, agenda.concat(proses))) taruh("umum", "agenda/proses");
+  // bagian yang tidak terbaca tidak boleh dibaca sebagai "tidak ada": yang bergantung padanya dibuang dari hasil hanya bila tidak terdeteksi (tidak ada yang dihapus)
+  return hasil;
 }
 
 // ---------------------------------------------------------------------------
@@ -563,6 +660,78 @@ async function fakta(params = {}, deps = {}) {
     alasan: String(s.alasan_ditunda || ""),
     keliling: String(s.sidang_keliling) === "Y",
   }));
+  // ---- ciri susulan otomatis (baca saja; satu sumber dengan penanda lain: konseptorKeadaanService, penandaJawabanService lewat e-Court)
+  const gagalSusulan = [];
+  const cobaS = async (nama, kerja, cadangan) => {
+    try {
+      return await kerja();
+    } catch (e) {
+      gagalSusulan.push(nama);
+      return cadangan;
+    }
+  };
+  const kk = await cobaS(
+    "konseptorKeadaan",
+    async () => {
+      const layanan = deps.keadaan || require("./konseptorKeadaanService");
+      const h = await layanan.keadaanBanyak([perkaraId]);
+      for (const g of (h && h.gagal) || []) gagalSusulan.push(String(g.bagian));
+      return (h && h.perkara && h.perkara[String(perkaraId)]) || {};
+    },
+    {}
+  );
+  const prosesNama = (await cobaS("proses", () => q("SELECT proses_nama FROM perkara_proses WHERE perkara_id = ?", [perkaraId]), [])).map((x) => String(x.proses_nama || ""));
+  const biaya = await cobaS("biaya", () => q("SELECT kategori_id, uraian, keterangan FROM perkara_biaya WHERE perkara_id = ? AND jenis_transaksi = 1 AND tahapan_id = 10", [perkaraId]), []);
+  const setempatBiaya = (await cobaS("setempat", () => q("SELECT 1 AS x FROM perkara_biaya WHERE perkara_id = ? AND kategori_id = 7 LIMIT 1", [perkaraId]), [])).length > 0;
+  const tambahanPanjar = biaya.some((x) => Number(x.kategori_id) === 1 && /tambah/i.test(`${x.uraian || ""} ${x.keterangan || ""}`));
+  const susulanOto = deteksiSusulan({
+    petitum: petitumTeks,
+    agenda: jadwal.map((j) => j.agenda),
+    proses: prosesNama,
+    statusPutusanId: put && put.status_putusan_id,
+    mediasi: Boolean(med && med.penetapan_penunjukan_mediator),
+    eksepsi: Boolean(kk.eksepsi),
+    rekonvensi: Boolean(kk.rekonvensi),
+    sela: Boolean(kk.sela),
+    setempatBiaya,
+    tambahanPanjar,
+    namaEcourt: ec.semuaNama || [],
+  });
+
+  // ---- seluruh pihak (sampul memakai pihak I + sampai muat per sisi; sisanya lampiran daftar para pihak, disusun portal)
+  const pihakSemua = (
+    await aman(
+      "SELECT 1 AS sisi, urutan, nama, alamat FROM perkara_pihak1 WHERE perkara_id = ? UNION ALL SELECT 2, urutan, nama, alamat FROM perkara_pihak2 WHERE perkara_id = ? " +
+        "UNION ALL SELECT 3, urutan, nama, alamat FROM perkara_pihak3 WHERE perkara_id = ? UNION ALL SELECT 4, urutan, nama, alamat FROM perkara_pihak4 WHERE perkara_id = ? ORDER BY sisi, urutan",
+      [perkaraId, perkaraId, perkaraId, perkaraId]
+    )
+  )
+    .slice(0, 500)
+    .map((x) => ({ sisi: Number(x.sisi), urutan: Number(x.urutan) || 0, nama: String(x.nama || "").trim(), alamat: String(x.alamat || "").trim() }))
+    .filter((x) => x.nama);
+  const jumlahPihak = { p1: 0, p2: 0, p3: 0, p4: 0 };
+  for (const x of pihakSemua) jumlahPihak[`p${x.sisi}`] += 1;
+  const berlawananNomor = /\/Pdt\.G/i.test(String(p.nomor_perkara || ""));
+  const sebutanP = berlawananNomor && jenisId !== 346 ? "Penggugat" : "Pemohon";
+  const sebutanT = berlawananNomor && jenisId !== 346 ? "Tergugat" : "Termohon";
+
+  // ---- anak (tab Anak SIPP; diasuh_oleh 1 = pihak I, 2 = pihak II, selebihnya tidak ditebak), objek sengketa (teks bebas SIPP), seluruh sidang
+  const anak = (await aman("SELECT nama_anak, tanggal_lahir, diasuh_oleh FROM perkara_anak_pihak WHERE perkara_id = ? AND nama_anak IS NOT NULL AND TRIM(nama_anak) <> '' ORDER BY anak_ke, id", [perkaraId]))
+    .slice(0, 60)
+    .map((x) => ({ nama: String(x.nama_anak).trim(), umur: umurPenuh(iso(x.tanggal_lahir)), diasuh: Number(x.diasuh_oleh) === 1 ? "P" : Number(x.diasuh_oleh) === 2 ? "T" : "" }));
+  const [objekBaris] = await aman("SELECT obyek_gugatan FROM perkara_obyek_sengketa WHERE perkara_id = ?", [perkaraId]);
+  // objek sengketa hanya bermakna untuk perkara harta (kewarisan, harta bersama, ekonomi syariah) atau bila ada kumulasi harta/permintaan sita; untuk selebihnya isiannya
+  // kategori perkara ("Pernikahan/Perceraian"), bukan benda.
+  const objekBermakna = ["waris", "hb", "es", "paw"].includes(kunciJenis) || Boolean(ciri.kumulasi) || Boolean(susulanOto.sita);
+  const objek = objekBermakna ? uraiObjek(objekBaris && objekBaris.obyek_gugatan).slice(0, 80) : [];
+  const riwayatSemua = sidang.slice(0, 200).map((x, i) => ({
+    ke: i + 1,
+    tanggal: iso(x.tanggal_sidang),
+    hadir: HADIR[Number(x.dihadiri_oleh)] || "",
+    agenda: String(x.agenda || ""),
+    alasan: String(x.alasan_ditunda || ""),
+  }));
+
   const isian = {
     mediator: med ? String(med.mediator_text || "") : "",
     hasilmed: med ? (med.mediasi_berhasil ? "Berhasil" : med.mediasi_gagal ? "Tidak berhasil" : "") : "",
@@ -574,7 +743,7 @@ async function fakta(params = {}, deps = {}) {
     tglbht: put ? iso(put.tanggal_bht) : "",
     pekerjaanT: pihak.t ? pihak.t.pekerjaan : "",
     kuasaT: kuasaT ? String(kuasaT.nama || "") : "",
-    konseptor: "",
+    konseptor: await konseptorSipp(aman, perkaraId),
     ...(await isianKhas(kunciJenis, perkaraId, { q: aman, pihak, p })),
   };
 
@@ -587,9 +756,19 @@ async function fakta(params = {}, deps = {}) {
       jenisNama: String(p.jenis_perkara_nama || ""),
       jenis: kunciJenis,
       permohonan,
+      berlawanan: berlawananNomor,
+      sebutanP,
+      sebutanT,
       tanggalDaftar: iso(p.tanggal_pendaftaran),
     },
+    pihakSemua,
+    jumlahPihak,
+    anak,
+    objek,
+    riwayatSemua,
+    jumlahSidang: sidang.length,
     ciri,
+    susulan: { oto: susulanOto, gagal: [...new Set(gagalSusulan)] },
     pekerjaanTerbaca,
     pihak,
     majelis,
@@ -599,6 +778,16 @@ async function fakta(params = {}, deps = {}) {
     ecourtBerkas: ec.length,
     pdfLib: Boolean(pdfLib()),
   };
+}
+
+/** Konseptor putusan yang sudah tercatat di SIPP: pengguna tahapan putusan (perkara_proses proses_id 210) terbaru, nama dari sys_users. "" bila belum ada. */
+async function konseptorSipp(aman, perkaraId) {
+  const [r] = await aman(
+    "SELECT pr.diinput_oleh AS oleh, (SELECT u.fullname FROM sys_users u WHERE BINARY u.username = BINARY pr.diinput_oleh LIMIT 1) AS nama " +
+      "FROM perkara_proses pr WHERE pr.perkara_id = ? AND pr.proses_id = 210 ORDER BY pr.diinput_tanggal DESC LIMIT 1",
+    [perkaraId]
+  );
+  return r ? String(r.nama || r.oleh || "").trim() : "";
 }
 
 /** Isian khas jenis perkara dari SIPP (kunci b1.. sesuai JENIS di ekstensi). Yang tidak terbaca dibiarkan kosong (diisi tangan). */
@@ -688,6 +877,10 @@ module.exports = {
   halamanBerkas,
   jalurSipp,
   jenisEcourt,
+  deteksiSusulan,
+  uraiObjek,
+  umurPenuh,
+  KUNCI_SUSULAN,
   median,
   fakta,
   pelajari,

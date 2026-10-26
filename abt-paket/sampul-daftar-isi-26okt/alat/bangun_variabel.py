@@ -125,6 +125,116 @@ for n in range(1, 21):
     sql(k + 2, 'RIWAYAT SIDANG SAMPUL baris %d: agenda / hasil' % n, "SELECT CONCAT(IFNULL(agenda,''),IF(sidang_keliling='Y',' (sidang keliling)','')) AS data " + pilih)
     sql(k + 3, 'RIWAYAT SIDANG SAMPUL baris %d: alasan penundaan / keterangan' % n, "SELECT alasan_ditunda AS data " + pilih)
 
+# ---- SAMPUL CETAK AWAL (keputusan Derry 26 Okt, versi 3): ciri yang sudah diketahui, ciri susulan, putusan, hadir per baris
+# Kotak centang ditulis ASCII "[ ]" / "[X]" (portal mengubahnya menjadi kotak saat naskah disusun). "Berlawanan" = nomor perkara memuat /Pdt.G (gugatan dan cerai talak).
+LAWAN = "(SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)"
+KODE_CIRI_AWAL = [k for k in KODE_TAG if k not in (5807, 5808, 5817, 5819, 5820, 5821)]   # tanpa ghaib dan mafqud (bingkai ganda, runut sendiri), verstek (sifat putusan), rekonvensi, mediasi, sita (kotak centang, pita mediasi)
+sql(5861, 'CIRI PERKARA AWAL SAMPUL (OTOMATIS: ciri yang berlaku dan sudah diketahui saat daftar; tanpa ghaib, mafqud, verstek, rekonvensi, mediasi, sita)',
+    "SELECT IFNULL(NULLIF(TRIM(CONCAT_WS('  ',%s)),''),'- tidak ada ciri khusus -') AS data" % ','.join("NULLIF('#%d#','')" % k for k in KODE_CIRI_AWAL))
+SUSULAN_LAWAN = '[ ] MEDIASI   [ ] EKSEPSI   [ ] REKONVENSI   [ ] PERMINTAAN SITA   [ ] PEMERIKSAAN SETEMPAT   [ ] PUTUSAN SELA   [ ] PERUBAHAN GUGATAN   [ ] TAMBAHAN PANJAR   [ ] PENCABUTAN'
+SUSULAN_MOHON = '[ ] PERBAIKAN PERMOHONAN   [ ] PEMERIKSAAN SETEMPAT   [ ] TAMBAHAN PANJAR   [ ] PENCABUTAN'
+sql(5862, 'CIRI SUSULAN SAMPUL (KOTAK CENTANG menurut jenis perkara; dicentang tangan; panel mencentang otomatis yang terdeteksi dari data)',
+    "SELECT (CASE WHEN p.nomor_perkara LIKE '%/Pdt.G%' THEN '" + SUSULAN_LAWAN + "' "
+    "WHEN p.jenis_perkara_id=362 THEN '" + SUSULAN_MOHON + "   [ ] ANAK & CALON DIDENGAR' "
+    "WHEN p.jenis_perkara_id=360 THEN '" + SUSULAN_MOHON + "   [ ] PENGUMUMAN 14 HARI' "
+    "ELSE '" + SUSULAN_MOHON + "' END) AS data FROM perkara p WHERE p.perkara_id=" + P)
+STATUS_KABUL = '62,1,2,30,34,117,133'
+STATUS_TOLAK = '63,3,32,35,119,134'
+STATUS_NO = '64,61,4,33,36,84,120'
+STATUS_GUGUR = '65,93,6,29,31,38,118'
+STATUS_CABUT = '67,7,37'
+STATUS_DAMAI = '85,5'
+
+
+def kotak_status(daftar, label):
+    return "CONCAT(IF(x.s IN (%s),'[X]','[ ]'),' %s')" % (daftar, label)
+
+
+sql(5863, 'AMAR PUTUSAN SAMPUL (KOTAK CENTANG; terisi dari status putusan SIPP bila sudah ada; perkara berlawanan enam pilihan, permohonan empat)',
+    "SELECT CONCAT_WS('   ',%s,%s,%s,IF(x.l=1,%s,NULL),%s,IF(x.l=1,%s,NULL)) AS data FROM (SELECT %s AS l, (SELECT status_putusan_id FROM perkara_putusan WHERE perkara_id=%s LIMIT 1) AS s) x"
+    % (kotak_status(STATUS_KABUL, 'KABUL'), kotak_status(STATUS_TOLAK, 'TOLAK'), kotak_status(STATUS_NO, 'NO'), kotak_status(STATUS_GUGUR, 'GUGUR'),
+       kotak_status(STATUS_CABUT, 'CABUT'), kotak_status(STATUS_DAMAI, 'DAMAI'), LAWAN, P))
+sql(5864, 'SIFAT PUTUSAN SAMPUL (KOTAK CENTANG: hadir/kontradiktoir dan verstek; terisi dari putusan_verstek SIPP bila putusan sudah ada)',
+    "SELECT (CASE WHEN x.l=1 THEN CONCAT(IF(x.t IS NOT NULL AND IFNULL(x.v,'T')<>'Y','[X]','[ ]'),' HADIR (KONTRADIKTOIR)   ',IF(x.t IS NOT NULL AND x.v='Y','[X]','[ ]'),' VERSTEK') "
+    "ELSE CONCAT(IF(x.t IS NOT NULL,'[X]','[ ]'),' HADIR') END) AS data FROM (SELECT %s AS l, "
+    "(SELECT tanggal_putusan FROM perkara_putusan WHERE perkara_id=%s LIMIT 1) AS t, (SELECT putusan_verstek FROM perkara_putusan WHERE perkara_id=%s LIMIT 1) AS v) x" % (LAWAN, P, P))
+sql(5865, 'KONSEPTOR PUTUSAN SAMPUL (isian tangan 5839 bila ada; kalau tidak, pengguna tahapan putusan di SIPP; kosong = ditulis tangan)',
+    "SELECT CONVERT(IFNULL(NULLIF(TRIM(CONVERT((SELECT data FROM aps_badilag.abt_data_teks WHERE no_var=5839 AND perkara_id=%s LIMIT 1) USING latin1)),''), "
+    "CONVERT((SELECT IFNULL(NULLIF(u.fullname,''),pr.diinput_oleh) FROM perkara_proses pr LEFT JOIN sys_users u ON BINARY u.username=BINARY pr.diinput_oleh "
+    "WHERE pr.perkara_id=%s AND pr.proses_id=210 ORDER BY pr.diinput_tanggal DESC LIMIT 1) USING latin1)) USING latin1) AS data" % (P, P))
+sql(5866, 'HASIL MEDIASI SAMPUL (KOTAK CENTANG; terisi dari tanggal berhasil/gagal di SIPP bila sudah dicatat)',
+    "SELECT CONCAT(IF(m.b IS NOT NULL,'[X]','[ ]'),' BERHASIL   [ ] BERHASIL SEBAGIAN   ',IF(m.g IS NOT NULL AND m.b IS NULL,'[X]','[ ]'),' TIDAK BERHASIL   [ ] TIDAK DAPAT DILAKSANAKAN') AS data "
+    "FROM (SELECT 1 AS d) z LEFT JOIN (SELECT mediasi_berhasil AS b, mediasi_gagal AS g FROM perkara_mediasi WHERE perkara_id=%s ORDER BY mediasi_id DESC LIMIT 1) m ON 1=1" % P)
+sql(5867, 'JENIS PERKARA SAMPUL AWAL (OTOMATIS: jenis perkara; diberi kata Kumulasi bila berkumulasi)',
+    "SELECT CONCAT('#0048#',IF(EXISTS(SELECT 1 FROM perkara_kumulasi k WHERE k.perkara_id=%s),' Kumulasi','')) AS data" % P)
+sql(5868, 'BARIS KUMULASI SAMPUL AWAL (OTOMATIS dari perkara_kumulasi; kosong bila tidak berkumulasi)',
+    "SELECT CONCAT('Kumulasi: ',REPLACE(GROUP_CONCAT(j.nama SEPARATOR '|'),'|',' dan ')) AS data FROM perkara_kumulasi k JOIN jenis_perkara j ON j.id=k.jenis_perkara_id WHERE k.perkara_id=%s HAVING COUNT(*)>0" % P)
+sql(5869, 'MAJELIS SAMPUL AWAL (OTOMATIS: satu hakim per baris; Ketua, Anggota, atau Hakim tunggal)',
+    "SELECT GROUP_CONCAT(CONCAT(b.nama_gelar,' (',IF(x.n=1,'Hakim tunggal',IF(a.urutan=1,'Ketua','Anggota')),')') ORDER BY a.urutan SEPARATOR '<br>') AS data "
+    "FROM perkara_hakim_pn a JOIN hakim_pn b ON a.hakim_id=b.id JOIN (SELECT COUNT(*) AS n FROM perkara_hakim_pn WHERE aktif='Y' AND perkara_id=%s) x "
+    "WHERE a.aktif='Y' AND a.perkara_id=%s" % (P, P))
+# ---- PIHAK BANYAK (kewarisan, penetapan ahli waris, dan sebagainya): pihak I lengkap, selebihnya nama bernomor romawi dua kolom; batas tampil
+#      8 nama per sisi (perkara berlawanan) atau 12 (permohonan); lebihnya "dan N lainnya" + Lampiran Daftar Para Pihak (disusun portal).
+ROMAWI = ','.join("'%s'" % r for r in ('I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX'))
+MUAT = "IF(%s=1,8,12)" % LAWAN
+
+
+def jumlah_sisi(tabel):
+    return "(SELECT COUNT(*) FROM %s WHERE perkara_id=%s)" % (tabel, P)
+
+
+def kolom_pihak(tabel, kiri):
+    tot = jumlah_sisi(tabel)
+    tampil = "IF(%s>%s,%s-2,%s-1)" % (tot, MUAT, MUAT, tot)           # jumlah nama sesudah pihak I yang ditampilkan
+    separuh = "CEIL(%s/2)" % tampil
+    batas = ("a.urutan BETWEEN 2 AND 1+%s" % separuh) if kiri else ("a.urutan BETWEEN 2+%s AND 1+%s" % (separuh, tampil))
+    daftar = "GROUP_CONCAT(CONCAT(ELT(a.urutan,%s),'. ',a.nama) ORDER BY a.urutan SEPARATOR '<br>')" % ROMAWI
+    if kiri:
+        return "SELECT %s AS data FROM %s a WHERE a.perkara_id=%s AND %s" % (daftar, tabel, P, batas)
+    lainnya = "IF(%s>%s,CONCAT('dan ',%s-%s-1,' lainnya - lengkap di Lampiran Daftar Para Pihak'),NULL)" % (tot, MUAT, tot, tampil)
+    return "SELECT CONCAT_WS('<br>',(SELECT %s FROM %s a WHERE a.perkara_id=%s AND %s),%s) AS data" % (daftar, tabel, P, batas, lainnya)
+
+
+sql(5890, 'PIHAK BANYAK SAMPUL: pihak I (penggugat/pemohon), kolom kiri nama II dan seterusnya (romawi, satu per baris)', kolom_pihak('perkara_pihak1', True))
+sql(5891, 'PIHAK BANYAK SAMPUL: pihak I, kolom kanan (dan keterangan "dan N lainnya" bila melebihi batas tampil)', kolom_pihak('perkara_pihak1', False))
+sql(5892, 'PIHAK BANYAK SAMPUL: pihak II (tergugat/termohon), kolom kiri', kolom_pihak('perkara_pihak2', True))
+sql(5893, 'PIHAK BANYAK SAMPUL: pihak II, kolom kanan (dan keterangan "dan N lainnya" bila melebihi batas tampil)', kolom_pihak('perkara_pihak2', False))
+sql(5894, 'SEBUTAN PIHAK I SAMPUL AWAL (sebutan + jumlah orang bila lebih dari satu)',
+    "SELECT CONCAT('#5841#',IF(%s>1,CONCAT(' (',%s,' ORANG)'),'')) AS data" % (jumlah_sisi('perkara_pihak1'), jumlah_sisi('perkara_pihak1')))
+sql(5895, 'SEBUTAN PIHAK II SAMPUL AWAL (sebutan + jumlah orang bila lebih dari satu)',
+    "SELECT CONCAT('#8147#',IF(%s>1,CONCAT(' (',%s,' ORANG)'),'')) AS data" % (jumlah_sisi('perkara_pihak2'), jumlah_sisi('perkara_pihak2')))
+sql(5896, 'KUASA PIHAK I SAMPUL AWAL: keterangan "(untuk Penggugat I-IX)" bila pihak I lebih dari satu dan berkuasa',
+    "SELECT IF(%s>1 AND EXISTS(SELECT 1 FROM perkara_pengacara WHERE perkara_id=%s AND pihak_ke=1 AND aktif='Y'),"
+    "CONCAT('(untuk ',IF(%s=1 AND (SELECT jenis_perkara_id FROM perkara WHERE perkara_id=%s)<>346,'Penggugat','Pemohon'),' I-',ELT(LEAST(%s,20),%s),')'),'') AS data"
+    % (jumlah_sisi('perkara_pihak1'), P, LAWAN, P, jumlah_sisi('perkara_pihak1'), ROMAWI))
+sql(5897, 'TURUT TERGUGAT SAMPUL (tiga nama sebaris; lebihnya "dan N lainnya" ke lampiran; kosong bila tidak ada)',
+    "SELECT CONCAT('TURUT TERGUGAT (',COUNT(*),')  ',GROUP_CONCAT(CASE WHEN a.urutan<=3 THEN CONCAT(ELT(a.urutan,%s),'. ',a.nama) END ORDER BY a.urutan SEPARATOR '  -  '),"
+    "IF(COUNT(*)>3,CONCAT('  -  dan ',COUNT(*)-3,' lainnya (lampiran)'),'')) AS data FROM perkara_pihak4 a WHERE a.perkara_id=%s HAVING COUNT(*)>0" % (ROMAWI, P))
+def nama_pertama(tabel):
+    n = jumlah_sisi(tabel)
+    return "SELECT CONCAT(IF(%s>1,'I. ',''),IFNULL((SELECT a.nama FROM %s a WHERE a.perkara_id=%s ORDER BY a.urutan LIMIT 1),'')) AS data" % (n, tabel, P)
+
+
+def rincian_pertama(tabel):
+    return ("SELECT CONCAT('Pekerjaan: ',IFNULL(NULLIF(h.pekerjaan,''),'-'),'  -  Alamat: ',IFNULL(a.alamat,'')) AS data FROM %s a LEFT JOIN pihak h ON h.id=a.pihak_id "
+            "WHERE a.perkara_id=%s ORDER BY a.urutan LIMIT 1" % (tabel, P))
+
+
+sql(5898, 'NAMA PIHAK I SAMPUL AWAL (langsung dari SIPP; diawali "I. " bila pihak I lebih dari satu)', nama_pertama('perkara_pihak1'))
+sql(5899, 'NAMA PIHAK II SAMPUL AWAL (langsung dari SIPP; diawali "I. " bila pihak II lebih dari satu)', nama_pertama('perkara_pihak2'))
+sql(5830, 'PEKERJAAN DAN ALAMAT PIHAK I SAMPUL AWAL (langsung dari SIPP)', rincian_pertama('perkara_pihak1'))
+sql(5831, 'PEKERJAAN DAN ALAMAT PIHAK II SAMPUL AWAL (langsung dari SIPP)', rincian_pertama('perkara_pihak2'))
+
+sql(5832, 'ANAK SAMPUL AWAL (OTOMATIS: satu sampai tiga anak sebaris dari tab Anak SIPP; lebih dari tiga masuk lampiran; kosong bila tidak ada)',
+    "SELECT CONCAT('Anak: ',GROUP_CONCAT(a.nama_anak ORDER BY a.anak_ke,a.id SEPARATOR '; ')) AS data FROM perkara_anak_pihak a WHERE a.perkara_id=%s AND TRIM(IFNULL(a.nama_anak,''))<>'' HAVING COUNT(*) BETWEEN 1 AND 3" % P)
+sql(5833, 'KAKI SAMPUL AWAL: rujukan lampiran (diisi saat naskah disusun; kosong bila tidak ada lampiran)', "SELECT '' AS data")
+KODE_HADIR = 5870   # baris n (1..20): kotak hadir P / T
+for n in range(1, 21):
+    sql(KODE_HADIR + n - 1, 'RIWAYAT SIDANG SAMPUL AWAL baris %d: kotak hadir P/T (terisi bila sidang itu sudah tercatat; permohonan hanya P)' % n,
+        "SELECT IFNULL((SELECT (CASE WHEN %s=1 THEN CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P   ',IF(s.d IN (1,3),'[X]','[ ]'),' T') ELSE CONCAT(IF(s.d IN (1,2),'[X]','[ ]'),' P') END) "
+        "FROM (SELECT dihadiri_oleh AS d FROM perkara_jadwal_sidang WHERE perkara_id=%s AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT %d,1) s), "
+        "(CASE WHEN %s=1 THEN '[ ] P   [ ] T' ELSE '[ ] P' END)) AS data" % (LAWAN, P, n - 1, LAWAN))
+
 # variabel lama yang dirujuk RTF/kueri paket (harus ada di server; PRASYARAT memeriksanya)
 RUJUKAN = [1, 12, 13, 14, 15, 18, 38, 48, 55, 98, 100, 101, 102, 104, 105, 106, 168, 170, 180, 191, 1033, 1036, 1060, 1061, 1064, 1069, 1278, 8010, 8012, 8146, 8147]
 

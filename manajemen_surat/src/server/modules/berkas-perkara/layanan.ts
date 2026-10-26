@@ -1,4 +1,4 @@
-import { KUNCI_CIRI, kodeKertasSah, uraiHalaman, type SunganBaris } from "@/lib/berkas-perkara";
+import { KUNCI_CIRI, KUNCI_SUSULAN, kodeKertasSah, uraiHalaman, type SunganBaris } from "@/lib/berkas-perkara";
 import type { AletaDatabase } from "@/server/db/client";
 
 /**
@@ -147,7 +147,7 @@ export async function simpanSunting(
   if (opsi.tag && typeof opsi.tag === "object") {
     await db.run("DELETE FROM aleta_berkas_sampul WHERE perkara_id = ? AND jenis = 'tag'", [perkaraId]);
     for (const [k, v] of Object.entries(opsi.tag)) {
-      if (!KUNCI_CIRI.includes(k)) {
+      if (!KUNCI_CIRI.includes(k) && !(k.startsWith("s_") && KUNCI_SUSULAN.includes(k.slice(2)))) {
         ditolak.push(`ciri ${k}: tidak dikenal`);
         continue;
       }

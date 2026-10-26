@@ -4,7 +4,8 @@ import path from "node:path";
 
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-import { BAWAAN_HALAMAN, DAFTAR_CIRI, hitungDaftarIsi, rangkaiCiri, susunUrutan, tanggalIndonesia, teksRentang, uraiHalaman, type BarisDasar } from "@/lib/berkas-perkara";
+import { BAWAAN_HALAMAN, DAFTAR_CIRI, ciriSampulAwal, daftarSusulan, hitungDaftarIsi, rangkaiCiri, rangkaiSusulan, susunUrutan, tanggalIndonesia, teksRentang, uraiHalaman, type BarisDasar } from "@/lib/berkas-perkara";
+import { pihakBanyak } from "@/lib/lampiran-pihak";
 
 /**
  * Layar kerja Sampul dan Daftar Isi di ekstensi (blangko-derry-berkas.js): bagian murninya kembaran lib/berkas-perkara.ts
@@ -42,6 +43,19 @@ describe("kembaran murni = lib portal", () => {
     for (const t of ["", "3", "5-9", "5–9", "abc", "0", "9-5", " 12 "]) expect(BK._murni.uraiHalaman(t), t).toEqual(uraiHalaman(t));
     expect(BK._murni.tanggalIndonesia("2026-03-12")).toBe(tanggalIndonesia("2026-03-12"));
     expect(BK._murni.teksRentang({ awal: 2, akhir: 4 })).toBe(teksRentang({ awal: 2, akhir: 4 }));
+  });
+
+  it("sampul awal: ciri, susulan, dan pihak banyak identik dengan lib portal", () => {
+    const aktif = { ecourt: true, kuasa: true, ghaib: true, mafqud: true, verstek: true, mediasi: true, sita: true, kumulasi: true, pns: true };
+    expect(BK._murni.ciriSampulAwal(aktif, { kuasa: "P+T" })).toEqual(ciriSampulAwal(aktif, { kuasa: "P+T" }));
+    expect(BK._murni.ciriSampulAwal({}, {})).toEqual(ciriSampulAwal({}, {}));
+    for (const [jenis, lawan] of [["cg", true], ["dk", false], ["in", false], ["waris", true], ["lain", false]] as const) {
+      const a = BK._murni.daftarSusulan(jenis, lawan);
+      expect(a).toEqual(daftarSusulan(jenis, lawan));
+      const ef = Object.fromEntries(a.map((d: Bebas, i: number) => [d.kunci, i % 2 === 0]));
+      expect(BK._murni.rangkaiSusulan(a, ef, { sita: true, setempat: true })).toBe(rangkaiSusulan(daftarSusulan(jenis, lawan), ef, { sita: true, setempat: true }));
+    }
+    for (const j of [{ p1: 1, p2: 1, p3: 0, p4: 0 }, { p1: 2, p2: 1, p3: 0, p4: 0 }, { p1: 9, p2: 8, p3: 0, p4: 3 }, { p1: 12, p2: 0, p3: 0, p4: 0 }, { p1: 1, p2: 1, p3: 1, p4: 0 }]) expect(BK._murni.pihakBanyak(j)).toBe(pihakBanyak(j));
   });
 
   it("hitung daftar isi dan susunan urutan identik pada banyak masukan", () => {
@@ -89,9 +103,15 @@ describe("layar kerja (jsdom, host tiruan)", () => {
   });
 
   const fakta = () => ({
-    perkara: { perkaraId: 5, nomor: "5/Pdt.G/2026/PA.Cth", jenisId: 362, jenisNama: "Dispensasi Kawin", jenis: "dk", permohonan: true },
+    perkara: { perkaraId: 5, nomor: "5/Pdt.G/2026/PA.Cth", jenisId: 362, jenisNama: "Dispensasi Kawin", jenis: "dk", permohonan: true, berlawanan: false, sebutanP: "Pemohon", sebutanT: "Termohon" },
+    jumlahPihak: { p1: 1, p2: 0, p3: 0, p4: 0 },
+    pihakSemua: [{ sisi: 1, urutan: 1, nama: "Pemohon Satu", alamat: "Jl. A" }],
+    anak: [{ nama: "Anak Satu", umur: "17", diasuh: "" }],
+    objek: [],
+    riwayatSemua: [{ ke: 1, tanggal: "2026-02-01", hadir: "P", agenda: "Sidang pertama", alasan: "" }],
+    susulan: { oto: { setempat: "agenda sidang", panjar: "biaya perkara" }, gagal: [] },
     ciri: { prodeo: { nyala: true, sisi: "" }, pns: { nyala: true, sisi: "T" } },
-    isian: { b3: "Menghindari zina", mediator: "", tglpbt: "2026-04-01" },
+    isian: { b3: "Menghindari zina", mediator: "", tglpbt: "2026-04-01", konseptor: "Akbar Ali" },
     dokumen: [
       { bundel: "A", grup: "I. PENDAFTARAN", kunci: "gugatan", nama: "Surat Permohonan Pemohon", tanggal: "2026-01-04", halaman: 6, sumber: "pasti", dasar: "arsip" },
       { bundel: "A", grup: "II. PENETAPAN AWAL", kunci: "phs", nama: "Penetapan Hari Sidang (PHS)", tanggal: "2026-01-08", halaman: null, sumber: "perkiraan", jenisBawaan: "phs" },
@@ -100,7 +120,7 @@ describe("layar kerja (jsdom, host tiruan)", () => {
     ],
   });
 
-  function buatHost() {
+  function buatHost(ubahFakta?: (f: Bebas) => void) {
     const panggilan: Array<{ alamat: string; metode: string; badan: Bebas }> = [];
     const toast: string[] = [];
     const host = {
@@ -108,9 +128,11 @@ describe("layar kerja (jsdom, host tiruan)", () => {
         const metode = String((opsi && opsi.method) || "GET");
         const badan = opsi && opsi.body ? JSON.parse(opsi.body) : null;
         panggilan.push({ alamat, metode, badan });
-        if (alamat.includes("/naskah")) return { rtfBase64: btoa("{\\rtf1\\ansi Halo}"), kosong: [], mesinGalat: "" };
+        if (alamat.includes("/naskah")) return { rtfBase64: btoa("{\\rtf1\\ansi Halo}"), kosong: [], mesinGalat: "", lampiran: (globalThis as Bebas).__lampiranTiruan ?? [] };
         if (metode === "PUT") return { ok: true, ditolak: [] };
-        return { fakta: fakta(), sunting: { susunan: {}, tag: {}, isian: {} }, bawaan: { putusan: 13 } };
+        const f = fakta();
+        if (ubahFakta) ubahFakta(f);
+        return { fakta: f, sunting: { susunan: {}, tag: {}, isian: {} }, bawaan: { putusan: 13 } };
       },
       unduh: vi.fn(async () => ({ ok: true })),
       pdfDari: vi.fn(async () => ({ blob: new Blob(["x"]) })),
@@ -124,12 +146,12 @@ describe("layar kerja (jsdom, host tiruan)", () => {
     return { host, panggilan, toast };
   }
 
-  async function bukaLayar(jenis: "sampul" | "daftar-isi") {
+  async function bukaLayar(jenis: "sampul" | "daftar-isi", bentuk: "awal" | "lengkap" = "lengkap", ubahFakta?: (f: Bebas) => void) {
     vi.useFakeTimers();
     const w = document.createElement("div");
     document.body.appendChild(w);
-    const { host, panggilan, toast } = buatHost();
-    await BK.buka(w, host, { jenis, perkaraId: "5", nomor: "5/Pdt.G/2026/PA.Cth" });
+    const { host, panggilan, toast } = buatHost(ubahFakta);
+    await BK.buka(w, host, { jenis, bentuk, perkaraId: "5", nomor: "5/Pdt.G/2026/PA.Cth" });
     await vi.advanceTimersByTimeAsync(50);
     return { w, host, panggilan, toast };
   }
@@ -150,6 +172,71 @@ describe("layar kerja (jsdom, host tiruan)", () => {
     expect(naskah.badan.nilai["5801"]).toContain("PNS/ASN T");
     expect(naskah.badan.nilai["5801"]).not.toContain("PRODEO");
     expect(naskah.badan.nilai["5842"]).toBeUndefined(); // tidak diubah tangan: ABT yang menghitung
+  });
+
+  it("sampul cetak awal (bawaan): lencana tanpa ciri bagian lain, susulan otomatis OTO, tangan menimpa, nilai timpa 5861/5862", async () => {
+    const { w, panggilan } = await bukaLayar("sampul", "awal");
+    expect(w.querySelectorAll('[data-bk="ciri"]')).toHaveLength(21);   // tanpa verstek, rekonvensi, sita, mediasi
+    expect(w.querySelector('[data-bkv="verstek"]')).toBeNull();
+    const susulan = [...w.querySelectorAll('[data-bk="susulan"]')].map((e) => e.getAttribute("data-bkv"));
+    expect(susulan).toEqual(["perbaikan", "setempat", "panjar", "cabut", "anak"]);
+    expect(w.querySelector('[data-bk="susulan"][data-bkv="setempat"]')!.className).toContain("oto");
+    expect(w.querySelector('[data-bk="susulan"][data-bkv="cabut"]')!.getAttribute("aria-pressed")).toBe("false");
+    expect(w.querySelector("#bk-in-konseptor")).toBeTruthy();
+    expect(w.querySelector("#bk-in-mediator")).toBeNull();   // permohonan: tanpa mediasi
+    (w.querySelector('[data-bk="susulan"][data-bkv="cabut"]') as HTMLElement).click();      // dicentang tangan
+    (w.querySelector('[data-bk="susulan"][data-bkv="panjar"]') as HTMLElement).click();     // otomatis dimatikan tangan
+    await vi.advanceTimersByTimeAsync(1600);
+    const naskah = panggilan.filter((p) => p.alamat.includes("/naskah")).at(-1)!;
+    expect(naskah.badan.bentuk).toBe("awal");
+    expect(naskah.badan.lawan).toBe(false);
+    const n = naskah.badan.nilai;
+    expect(n["5861"]).toContain("PRODEO");
+    expect(n["5862"]).toBe("[ ] PERBAIKAN PERMOHONAN   [X] PEMERIKSAAN SETEMPAT (oto)   [ ] TAMBAHAN PANJAR   [X] PENCABUTAN   [ ] ANAK & CALON DIDENGAR");
+    expect(n["5865"]).toBeUndefined();
+    expect(naskah.badan.banyak).toBeUndefined();
+    // data lampiran dikirim; portal yang memutuskan lampiran mana yang perlu
+    expect(naskah.badan.anak).toHaveLength(1);
+    expect(naskah.badan.riwayat).toHaveLength(1);
+    expect(naskah.badan.pihak).toHaveLength(1);
+    expect(naskah.badan.infoKhasBaris).toBeGreaterThanOrEqual(1);
+    expect(w.querySelector("[data-bk-lamp]")!.textContent).toContain("tanpa lampiran");
+    const put = panggilan.filter((p) => p.metode === "PUT").at(-1)!;
+    expect(put.badan.tag).toMatchObject({ s_cabut: true, s_panjar: false });
+    (w.querySelector('[data-bk="bentuk"][data-bkv="lengkap"]') as HTMLElement).click();
+    await vi.advanceTimersByTimeAsync(300);
+    expect(w.querySelectorAll('[data-bk="ciri"]')).toHaveLength(25);
+    const lengkap = panggilan.filter((p) => p.alamat.includes("/naskah")).at(-1)!;
+    expect(lengkap.badan.bentuk).toBe("lengkap");
+    expect(lengkap.badan.nilai["5801"]).toContain("PRODEO");
+  });
+
+  it("sampul cetak awal: perkara berlawanan menampilkan mediator; pihak banyak mengirim varian, kumulasi, dan keterangan lampiran dari portal", async () => {
+    (globalThis as Bebas).__lampiranTiruan = [{ nomor: 1, kunci: "pihak", judul: "DAFTAR PARA PIHAK", alasan: "pihak I berjumlah 9 orang" }];
+    const lawan = (f: Bebas) => {
+      f.perkara.berlawanan = true;
+      f.perkara.jenis = "waris";
+      f.perkara.jenisNama = "Kewarisan";
+      f.jumlahPihak = { p1: 9, p2: 3, p3: 0, p4: 1 };
+      f.pihakSemua = Array.from({ length: 9 }, (_, i) => ({ sisi: 1, urutan: i + 1, nama: `P${i + 1}`, alamat: "x" }));
+      f.ciri.kumulasi = { nyala: true, sisi: "2", nama: ["Hak Asuh Anak", "Nafkah Anak"] };
+    };
+    const { w, panggilan } = await bukaLayar("sampul", "awal", lawan);
+    expect(w.querySelector("#bk-in-mediator")).toBeTruthy();
+    expect(w.querySelector(".bk-pihak")!.textContent).toContain("Pihak banyak");
+    expect([...w.querySelectorAll('[data-bk="susulan"]')]).toHaveLength(9);
+    (w.querySelector('[data-bk="ciri"][data-bkv="pns"]') as HTMLElement).click();
+    await vi.advanceTimersByTimeAsync(1600);
+    const naskah = panggilan.filter((p) => p.alamat.includes("/naskah")).at(-1)!;
+    expect(naskah.badan.lawan).toBe(true);
+    expect(naskah.badan.banyak).toBe(true);
+    expect(naskah.badan.pihak).toHaveLength(9);
+    expect(naskah.badan.nilai["5867"]).toBe("Kewarisan Kumulasi");
+    expect(naskah.badan.nilai["5868"]).toBe("Kumulasi: Hak Asuh Anak dan Nafkah Anak");
+    expect(naskah.badan.sebutanP).toBe("Pemohon");
+    expect(w.querySelector("[data-bk-lamp]")!.textContent).toContain("1 lampiran ikut tercetak");
+    expect(w.querySelector("[data-bk-lamp]")!.textContent).toContain("DAFTAR PARA PIHAK");
+    delete (globalThis as Bebas).__lampiranTiruan;
   });
 
   it("sampul: isian yang diubah tangan menimpa kode ABT; mengembalikan nilai otomatis menghapus timpaan", async () => {
@@ -230,6 +317,9 @@ describe("layar kerja (jsdom, host tiruan)", () => {
     expect(BK.jenisLayar("Sampul Berkas Perkara.rtf")).toBe("sampul");
     expect(BK.jenisLayar("Daftar Isi Berkas.rtf")).toBe("daftar-isi");
     expect(BK.jenisLayar("Sampul Berkas Perkara (F4).rtf")).toBe("");
+    expect(BK.jenisLayar("Sampul Berkas Perkara (Lengkap).rtf")).toBe("sampul");
+    expect(BK.bentukDari("Sampul Berkas Perkara (Lengkap).rtf")).toBe("lengkap");
+    expect(BK.bentukDari("Sampul Berkas Perkara.rtf")).toBe("awal");
     expect(BK.jenisLayar("BAS Sidang Pertama.rtf")).toBe("");
     expect(BK.KODE_SAKLAR).toBe("berkas-perkara-khusus");
   });

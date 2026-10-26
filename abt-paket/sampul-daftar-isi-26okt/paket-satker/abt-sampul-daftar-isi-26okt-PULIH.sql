@@ -1,4 +1,4 @@
--- Paket ABT "abt-sampul-daftar-isi-26okt" (26 Okt 2026): sampul berkas perkara dan daftar isi berkas (blangko Derry). 125 variabel baru (5700-5779, 5800-5899), fungsi isian_rtf_daftar_isi, satu baris abt_menu (98b Berkas Perkara - BAS), enam blangko RTF.
+-- Paket ABT "abt-sampul-daftar-isi-26okt" (26 Okt 2026): sampul berkas perkara dan daftar isi berkas (blangko Derry). 168 variabel baru (5700-5779, 5800-5899), fungsi isian_rtf_daftar_isi, satu baris abt_menu (98b Berkas Perkara - BAS), enam blangko RTF.
 -- PULIH (deterministik): baris baru dihapus HANYA bila isinya masih persis paket (yang sudah disunting orang dibiarkan dan dilaporkan oleh pulih-satker.sh).
 START TRANSACTION;
 DELETE FROM abt_variabel WHERE no_var = 5802 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '5af466cea78c4f7bb95425e510dba2b4';
@@ -126,6 +126,49 @@ DELETE FROM abt_variabel WHERE no_var = 5776 AND MD5(CONCAT_WS('|', nama, data_t
 DELETE FROM abt_variabel WHERE no_var = 5777 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '0e1d480c9a09dff8a35ae3f48e859e80';
 DELETE FROM abt_variabel WHERE no_var = 5778 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '6d415c5ffb8d238c9da02cf99b5fb51b';
 DELETE FROM abt_variabel WHERE no_var = 5779 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '933972ccac7ad566682e843b43888ee0';
+DELETE FROM abt_variabel WHERE no_var = 5861 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = 'db1ca340e1e4dd57c5b487331d144490';
+DELETE FROM abt_variabel WHERE no_var = 5862 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '76759ed8022a3bf3dae5ba92df38ab36';
+DELETE FROM abt_variabel WHERE no_var = 5863 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '6803b846b96507086b631376de66528a';
+DELETE FROM abt_variabel WHERE no_var = 5864 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '33f822b0971d69f21f57d1f909bf4c75';
+DELETE FROM abt_variabel WHERE no_var = 5865 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '27aa2225c210a6494bd2fe3d8c94f179';
+DELETE FROM abt_variabel WHERE no_var = 5866 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '22b17ff81e3d4ef7c4ed629e3084d2f9';
+DELETE FROM abt_variabel WHERE no_var = 5867 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '572370cb881a95dd64ed4b3df1ed801f';
+DELETE FROM abt_variabel WHERE no_var = 5868 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = 'abf1ea21923530d4584063f3d7a5fd44';
+DELETE FROM abt_variabel WHERE no_var = 5869 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = 'b58b6f7946ade4bf6654660c5c460e73';
+DELETE FROM abt_variabel WHERE no_var = 5890 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '5a61ea1ecacf889b2b610137b38a75f9';
+DELETE FROM abt_variabel WHERE no_var = 5891 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = 'ad252192e4ae18f382868bf4b5fefe2d';
+DELETE FROM abt_variabel WHERE no_var = 5892 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '9e2d7b3ca86a5ece37fb35c9234822bc';
+DELETE FROM abt_variabel WHERE no_var = 5893 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = 'bbbe8740b1772e150ce0baafbcbb9b58';
+DELETE FROM abt_variabel WHERE no_var = 5894 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '58b602040f6ba5310f30e08aad64dde5';
+DELETE FROM abt_variabel WHERE no_var = 5895 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '2eeee09b8a6e2025bf65cd1835d907e9';
+DELETE FROM abt_variabel WHERE no_var = 5896 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '603079ab3ace9cdb1f925637f4a42c56';
+DELETE FROM abt_variabel WHERE no_var = 5897 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '17bee59125a6c35d4c22787d55d908cb';
+DELETE FROM abt_variabel WHERE no_var = 5898 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '2c3659b8662214c9cacb842286534e67';
+DELETE FROM abt_variabel WHERE no_var = 5899 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '1120aa7af716e01e4d4b006695a509f8';
+DELETE FROM abt_variabel WHERE no_var = 5830 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '914e271514adc2d8dc7dbed7246c61f0';
+DELETE FROM abt_variabel WHERE no_var = 5831 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '2c23b172c991d455b70a72ee8d2f908b';
+DELETE FROM abt_variabel WHERE no_var = 5832 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '02d36369a223a82e0416bd845e525b8e';
+DELETE FROM abt_variabel WHERE no_var = 5833 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '739891d591be811b7221c64e524b5627';
+DELETE FROM abt_variabel WHERE no_var = 5870 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '7003464962f09b6c18a9c2bd82b03772';
+DELETE FROM abt_variabel WHERE no_var = 5871 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = 'fe1af41193083bb79d594acb7d849f4c';
+DELETE FROM abt_variabel WHERE no_var = 5872 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = 'a04a3ff8eca1c99354a2d17b693cf1a5';
+DELETE FROM abt_variabel WHERE no_var = 5873 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = 'ee5bbeb3f03ad7be57a0315b2c802760';
+DELETE FROM abt_variabel WHERE no_var = 5874 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '217265fb2983539a401f250a4feabd84';
+DELETE FROM abt_variabel WHERE no_var = 5875 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = 'a4fca47bfd893c900363ac8792963c4c';
+DELETE FROM abt_variabel WHERE no_var = 5876 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = 'e0223f1fb197a7d9d2bbc640db02e129';
+DELETE FROM abt_variabel WHERE no_var = 5877 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '7f3598fa877a689d5b6a007fa40ff3a2';
+DELETE FROM abt_variabel WHERE no_var = 5878 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = 'ecee3e641258edb56ab0925ad1186a53';
+DELETE FROM abt_variabel WHERE no_var = 5879 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '48569fa5eb134660545070cfbf25e312';
+DELETE FROM abt_variabel WHERE no_var = 5880 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '1f7df395b2d5b8ed7f22695418351171';
+DELETE FROM abt_variabel WHERE no_var = 5881 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '9ef9e5a3c1daaf60e811cf058e21a0ac';
+DELETE FROM abt_variabel WHERE no_var = 5882 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '3389b7ab79d96f9a39593cb8c44588bf';
+DELETE FROM abt_variabel WHERE no_var = 5883 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = 'd55dff7c3ee417a2611b627a0cd99e4f';
+DELETE FROM abt_variabel WHERE no_var = 5884 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '81788135b84781eeccaa04e11994bf84';
+DELETE FROM abt_variabel WHERE no_var = 5885 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '612d859086fb14d24c44e3a088dd0e95';
+DELETE FROM abt_variabel WHERE no_var = 5886 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '2a8d2e0743afbc912b81e88f43fb68a0';
+DELETE FROM abt_variabel WHERE no_var = 5887 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '0735b6752f51bd08b65046262d708a85';
+DELETE FROM abt_variabel WHERE no_var = 5888 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = 'b84db8100a68bd364e5259da35384a19';
+DELETE FROM abt_variabel WHERE no_var = 5889 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '927c7ba87ce13bfc825608a26bcf9529';
 DELETE FROM abt_menu WHERE direktori = '98b Berkas Perkara - BAS' AND parent_direktori = 'derry_briantono' AND MD5(CONCAT_WS('|', nama, nama_alias, direktori, parent_direktori, proses_id_min, proses_id_max, perkara_id_min, perkara_id_max, perkara_id_referensi, user_cek, user_grup_id, user_top_id, IFNULL(user_validator,''))) = '96d4efc69b36533ec6ff82db09e45924';
 COMMIT;
 DROP FUNCTION IF EXISTS isian_rtf_daftar_isi;

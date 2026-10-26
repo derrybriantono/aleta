@@ -11,6 +11,13 @@ import {
   DAFTAR_CIRI,
   KERTAS,
   berkasBlangko,
+  bentukDariBerkas,
+  ciriSampulAwal,
+  daftarSusulan,
+  KUNCI_SUSULAN,
+  rangkaiSusulan,
+  rapikanSampulAwal,
+  susulanEfektif,
   berkasVarianUkuran,
   halamanBawaan,
   hitungDaftarIsi,
@@ -55,6 +62,52 @@ describe("A - lib murni", () => {
     expect(kodeKertasSah("f4")).toBe(true);
     expect(kodeKertasSah("a3")).toBe(false);
     expect(Object.keys(KERTAS)).toEqual(["a4", "f4", "legal"]);
+  });
+
+  it("sampul cetak awal bawaan; lengkap pilihan kedua; varian permohonan dan pihak banyak menurut perkara", () => {
+    expect(berkasBlangko("sampul", "a4", {}).berkas).toBe("Sampul Berkas Perkara.rtf");
+    expect(berkasBlangko("sampul", "a4", { bentuk: "lengkap" }).berkas).toBe("Sampul Berkas Perkara (Lengkap).rtf");
+    expect(berkasBlangko("sampul", "f4", { bentuk: "lengkap" }).berkas).toBe("Sampul Berkas Perkara (Lengkap) (F4).rtf");
+    expect(berkasBlangko("sampul", "a4", { lawan: false }).berkas).toBe("Sampul Berkas Perkara (Permohonan).rtf");
+    expect(berkasBlangko("sampul", "legal", { lawan: true, banyak: true }).berkas).toBe("Sampul Berkas Perkara (Pihak Banyak) (Legal).rtf");
+    expect(berkasBlangko("sampul", "a4", { lawan: false, banyak: true }).berkas).toBe("Sampul Berkas Perkara (Permohonan Pihak Banyak).rtf");
+    expect(berkasBlangko("daftar-isi", "a4", { lawan: false, banyak: true }).berkas).toBe("Daftar Isi Berkas.rtf");
+    // yang tampil di daftar blangko: cetak awal dan lengkap saja
+    for (const n of ["Sampul Berkas Perkara (Permohonan).rtf", "Sampul Berkas Perkara (Pihak Banyak).rtf", "Sampul Berkas Perkara (Permohonan Pihak Banyak) (F4).rtf", "Sampul Berkas Perkara (Lengkap) (Legal).rtf"]) expect(berkasVarianUkuran(n), n).toBe(true);
+    for (const n of ["Sampul Berkas Perkara.rtf", "Sampul Berkas Perkara (Lengkap).rtf", "Daftar Isi Berkas.rtf"]) expect(berkasVarianUkuran(n), n).toBe(false);
+    expect(jenisLayarBerkas("derry_briantono/99 PTSP", "Sampul Berkas Perkara (Lengkap).rtf")).toBe("sampul");
+    expect(bentukDariBerkas("Sampul Berkas Perkara (Lengkap).rtf")).toBe("lengkap");
+    expect(bentukDariBerkas("Sampul Berkas Perkara.rtf")).toBe("awal");
+  });
+
+  it("ciri sampul awal: lencana tanpa verstek/mediasi/rekonvensi/sita, ghaib dan mafqud bingkai ganda sendiri", () => {
+    const h = ciriSampulAwal({ ecourt: true, kuasa: true, ghaib: true, verstek: true, mediasi: true, sita: true, kumulasi: true }, { kuasa: "P+T", kumulasi: "2" });
+    expect(h["5861"]).toBe("[■ e-COURT]  [■ KUASA HUKUM P+T]  [▲ KUMULASI 2]");
+    expect(h["5807"]).toBe("[● GHAIB T]");
+    expect(h["5808"]).toBe("");
+    expect(ciriSampulAwal({}, {})["5861"]).toContain("tidak ada ciri khusus");
+  });
+
+  it("ciri susulan: daftar menurut jenis, deteksi otomatis tertanda (oto), tangan menimpa, tak terbaca tidak dicentang", () => {
+    expect(daftarSusulan("cg", true).map((d) => d.kunci)).toEqual(["mediasi", "eksepsi", "rekonvensi", "sita", "setempat", "sela", "ubah", "panjar", "cabut"]);
+    expect(daftarSusulan("dk", false).map((d) => d.nama)).toEqual(["PERBAIKAN PERMOHONAN", "PEMERIKSAAN SETEMPAT", "TAMBAHAN PANJAR", "PENCABUTAN", "ANAK & CALON DIDENGAR"]);
+    expect(daftarSusulan("in", false).at(-1)?.nama).toBe("PENGUMUMAN 14 HARI");
+    const daftar = daftarSusulan("cg", true);
+    const ef = susulanEfektif(daftar, { sita: true, eksepsi: true }, { eksepsi: false, panjar: true });
+    expect(ef).toMatchObject({ sita: true, eksepsi: false, panjar: true, mediasi: false });
+    const teks = rangkaiSusulan(daftar, ef, { sita: true, eksepsi: true });
+    expect(teks).toContain("[X] PERMINTAAN SITA (oto)");
+    expect(teks).toContain("[ ] EKSEPSI");
+    expect(teks).toContain("[X] TAMBAHAN PANJAR   ");
+    expect(KUNCI_SUSULAN).toEqual(bot.KUNCI_SUSULAN);
+  });
+
+  it("rapikan sampul awal: kotak ASCII jadi karakter kotak, tanda titik kosong dibuang tanpa menyentuh titik panjang", () => {
+    const r = rapikanSampulAwal("{\\rtf1 [ ] A [X] B ... {\\highlight3 ...} Kuasa: ... ................ 3.14 x...y}");
+    expect(r).toContain("{\\f1\\u9744?} A {\\f1\\u9746?} B");
+    expect(r).not.toContain("highlight");
+    expect(r).toContain("Kuasa:  ................ 3.14 x...y");
+    expect(rapikanSampulAwal("tanpa kotak")).toBe("tanpa kotak");
   });
 
   it("varian ukuran disembunyikan dari daftar, berkas dasar menjadi layar kerja", () => {
@@ -105,7 +158,8 @@ describe("A - lib murni", () => {
     expect(Object.keys(n).sort()).toEqual(["5851", "5852", "5853", "5854", "5856", "5857", "5858", "5859"]);
     expect(kodeTimpaBoleh("5801")).toBe(true);
     expect(kodeTimpaBoleh("5700")).toBe(true);
-    expect(kodeTimpaBoleh("5860")).toBe(false);
+    expect(kodeTimpaBoleh("5890")).toBe(true);
+    expect(kodeTimpaBoleh("5900")).toBe(false);
     expect(kodeTimpaBoleh("0001")).toBe(false);
     expect(saringNilaiTimpa({ "5801": "ok", "5842": "Aleta", "9999": "x", "5802": 5 })).toEqual({ "5801": "ok" });
   });

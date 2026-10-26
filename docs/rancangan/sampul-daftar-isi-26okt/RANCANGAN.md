@@ -479,3 +479,52 @@ Semuanya di balik saklar Fitur Satker **`berkas-perkara-khusus`** (bagian "ekste
 **Uji.** `berkas-perkara-26okt.test.ts` (18: lib murni, saklar mati bawaan, migrasi sejajar jurnal dan cadangan JSON, penyimpanan atas pg-mem, layanan bot), `berkas-perkara-ekstensi-26okt.test.ts` (10: kembaran murni ekstensi = lib portal, layar di jsdom), `tabel-cadangan-terdaftar`, `banyak-satker-fitur`, K11 (dua pernyataan diperbarui: berkas baru `blangko-derry-berkas.js` dan `blangko-derry-isian.js` hanya bertambah pengait), `abt-usulan` (daftar skrip manifest). `tsc` bersih (heap 6 GB); lint tidak bertambah. Ekstensi ditanam ulang tanpa menaikkan versi (1.205.40).
 
 **Belum.** (1) Halaman putusan RTF dari PDF buatan panel (butir C): sementara perkiraan 13 atau tombol "hitung dari PDF" pada baris putusan (pilih berkas PDF). (2) RTF sampul FINAL menunggu pilihan Derry antara tata letak riwayat dominan dan usulan cetak awal; paket memuat versi riwayat dominan sementara. (3) Paket ABT belum dipasang di server (sesi utama yang memasang) dan uji di MariaDB 5.5 server belum dijalankan. (4) Tampilan RTF di Word/WPS belum diperiksa mata; pratinjau di layar memakai pengubah RTF ke HTML panel. (5) `pdf-lib` belum dipasang di bot (tanpa `npm install`); tanpanya dua cara hitung yang tidak sepakat ditandai perkiraan. (6) `berkas.pelajari` (median halaman dari arsip) sudah ada di bot tetapi belum punya tombol/rute admin untuk menyimpannya ke `aleta_berkas_bawaan`.
+
+## 16. Sampul cetak awal menjadi bawaan (keputusan Derry 26 Okt, versi 3 sampai 7)
+
+Acuan: `artifact-sampul-cetak-awal.html` (milik sesi utama, tidak diubah). **Sampul Berkas Perkara** = sampul cetak awal (bawaan, urutan pertama di panel); **Sampul Berkas Perkara (Lengkap)** = versi lengkap yang lama, tetap tersimpan sebagai blangko pilihan KEDUA. Di layar panel, tab Sampul punya pilihan bentuk "Cetak awal (bawaan) / Lengkap"; membuka blangko "(Lengkap)" langsung memilih bentuk lengkap.
+
+### 16.1 Isi sampul cetak awal
+
+- Dicetak saat pendaftaran atau sesudah PHS; yang belum ada berupa kotak/garis isi tangan, bukan "-". Dicetak ulang sesudah putus: yang datanya sudah ada terisi otomatis (tanggal putus, amar, sifat putusan, konseptor, hadir per sidang).
+- **Riwayat sidang** 15 baris (A4), 18 (F4), 20 (Legal); kolom KE | TANGGAL | AGENDA | HADIR (kotak P/T; permohonan hanya P) | HASIL / DITUNDA KE - ALASAN (tanpa PARAF PP, versi 4); baris 1 = sidang pertama dari PHS.
+- **Ciri perkara** berikon (pendaftaran, pihak, proses), hanya yang berlaku; **ghaib dan mafqud berbingkai ganda** (bingkai ganda karakter di RTF, variabel 5807/5808); satu baris keterangan kecil. Verstek, rekonvensi, mediasi, sita tidak menjadi lencana (kotak centang, pita mediasi, sifat putusan).
+- **Ciri susulan** berkotak centang. Berlawanan: MEDIASI, EKSEPSI, REKONVENSI, PERMINTAAN SITA, PEMERIKSAAN SETEMPAT, PUTUSAN SELA, PERUBAHAN GUGATAN, TAMBAHAN PANJAR, PENCABUTAN. Permohonan: PERBAIKAN PERMOHONAN, PEMERIKSAAN SETEMPAT, TAMBAHAN PANJAR, PENCABUTAN (+ ANAK & CALON DIDENGAR untuk dispensasi, + PENGUMUMAN 14 HARI untuk itsbat).
+- **Kumulasi**: judul "... Kumulasi" + baris "Kumulasi: A dan B" + tag KUMULASI n. **Majelis** satu hakim per baris (Ketua / Anggota / Hakim tunggal). **Mediasi** satu pita, nama mediator lebar, hanya perkara berlawanan. **Putusan** (sampul berhenti di sini): tanggal putus, amar satu baris (enam pilihan berlawanan, empat permohonan), sifat putusan (hadir/kontradiktoir, verstek) dan konseptor putusan cukup nama (isian tangan 5839 atau pengguna tahapan putusan SIPP, proses 210). Tanpa minutasi, PBT, BHT, akta cerai, ikrar.
+
+### 16.2 Deteksi otomatis ciri susulan (satu sumber, baca saja; tidak terbaca = tidak dicentang)
+
+Kotak tercentang dengan tanda "(oto)" bila datanya ada; yang tidak terdeteksi dicentang tangan di kertas atau di layar panel (tanda otomatis/tangan seperti ciri utama). Dihitung di bot (`deteksiSusulan`, murni, diuji dengan data rekaan), dikirim panel sebagai nilai 5862.
+
+| Ciri | Sumber |
+|---|---|
+| Mediasi | `perkara_mediasi` dengan penetapan mediator |
+| Eksepsi | penanda jawaban e-Court (`konseptorKeadaanService`, sumber yang sama dengan checklist konseptor); agenda sidang memuat "eksepsi" |
+| Rekonvensi | `perkara_rekonvensi` atau penanda jawaban e-Court; agenda memuat "rekonvensi" |
+| Permintaan sita | petitum/posita menyebut sita (kata utuh, conservatoir, revindicatoir, sita jaminan/marital); proses SIPP bernama sita. "Jurusita" bukan sita. |
+| Pemeriksaan setempat | biaya perkara kategori 7 (Pemeriksaan Setempat); agenda memuat "pemeriksaan setempat" atau "descente" |
+| Putusan sela | `perkara_putusan_sela`; agenda atau proses "putusan sela" |
+| Perubahan gugatan / perbaikan permohonan | agenda atau nama berkas e-Court ("perubahan/perbaikan gugatan", "perbaikan/perubahan permohonan") |
+| Tambahan panjar | `perkara_biaya` kategori Panjar, pemasukan, tahap pertama, uraian atau keterangan memuat "tambah" |
+| Pencabutan | status putusan Dicabut (67, 7, 37); agenda memuat "cabut" |
+| Anak & calon didengar (dk) | agenda memuat mendengar/didengar + anak, atau "anak dan calon" |
+| Pengumuman 14 hari (itsbat) | agenda atau proses memuat "pengumuman" |
+
+**Cakupan atas SIPP produksi (salinan `sipp_donggala`, baca saja, 1.855 perkara terdaftar 2025 ke atas, tanpa arsip e-Court):** pencabutan 149, mediasi 127, tambahan panjar 23, rekonvensi 15, sita 13, putusan sela 7, perubahan gugatan 4, eksepsi 2 (hanya dari agenda; jawaban e-Court tidak terbaca di laptop), pemeriksaan setempat 2, pengumuman 1, perbaikan permohonan 1. Tidak satu bagian pun gagal dibaca. Angka eksepsi di server akan lebih tinggi karena penanda jawaban e-Court terbaca di sana.
+
+### 16.3 Pihak banyak, objek, anak, dan lampiran (versi 6 dan 7)
+
+Sampul tetap SATU lembar. Pihak I lengkap (nama, pekerjaan, alamat, kuasa "untuk Penggugat I-IX"); pihak berikutnya nama bernomor romawi dua kolom. Batas tampil 8 nama per sisi (berlawanan; **6 bila info khas di halaman depan sudah dua baris atau lebih**), 12 (permohonan), turut tergugat 3 sebaris. Lebihnya "dan N lainnya - lengkap di Lampiran n". Lampiran HANYA bila perlu, bernomor "LAMPIRAN n - JUDUL", halaman n+1, alasan di subjudul, jumlah lampiran di kaki sampul:
+
+1. DAFTAR PARA PIHAK: pihak melebihi ruang, ada intervensi, atau turut tergugat > 3.
+2. DAFTAR OBJEK SENGKETA: objek > 2 (1-2 objek sebaris). Sumber: `perkara_obyek_sengketa.obyek_gugatan` (teks bebas SIPP) diurai menjadi butir bernomor; hanya untuk kewarisan, harta bersama, ekonomi syariah, penetapan ahli waris, kumulasi, atau ada permintaan sita (untuk perkara lain isiannya kategori seperti "Pernikahan/Perceraian", bukan benda). Di salinan SIPP hanya sebagian kecil perkara harta berisi butir benda; kolom keterangan ("diminta sita") dibiarkan kosong karena SIPP tidak mencatat sita per objek.
+3. DAFTAR ANAK: anak > 3 (1-3 sebaris). Sumber `perkara_anak_pihak`; "diasuh oleh" hanya dari kode 1 (pihak I) dan 2 (pihak II); kode lain tidak ditebak.
+4. RIWAYAT SIDANG (LANJUTAN): hanya cetak ulang saat sidang melebihi baris sampul; nomor melanjutkan, 15 baris per halaman.
+
+Di RTF: varian tata letak `(Pihak Banyak)`, `(Permohonan)`, `(Permohonan Pihak Banyak)` dipilih panel menurut perkara (tidak tampil di daftar blangko); baris riwayat varian pihak banyak dirapatkan (A4 290 twip) agar jumlah baris tidak dikurangi. Lampiran disusun portal (`lampiran-sampul.ts`) dan ditempel sebagai halaman berikutnya RTF yang sama; kolom nama pihak (5890-5893), turut tergugat (5897), baris depan anak/objek (5832), dan kaki (5833) dikirim sebagai nilai timpa dengan batas 6/8/12 yang sama. Variabel ABT 5890-5893 memakai batas tetap 8/12 (untuk pembukaan langsung di ABT).
+
+**Belum / tidak dibangun:** baris "Perkara terkait" (perkara cerai asal pada harta bersama, perkara verstek pada verzet): SIPP tidak punya tabel penghubung yang dapat dipercaya (tidak ada sumber, tidak ditebak). Ciri "ANAK BELUM 19 TAHUN" (dispensasi) dan "PEMOHON I & II" pada contoh artifact tidak ada di 25 ciri dan tidak dibangun. Ikut-siapa anak di baris depan hanya untuk kode asuh 1 dan 2.
+
+### 16.4 Pengujian
+
+Word (render php56 ABT asli atas 6 perkara contoh x 12 varian sampul awal, termasuk pihak banyak dengan 14 pihak I, 10 tergugat, 7 turut tergugat): semua 1 lembar di A4, F4, Legal. Lampiran empat jenis diperiksa terbaca di Word (lima halaman). Paket: PRASYARAT `0|0|31|0|1|0|0` / `0|168|31|1|1|1|0`, SEMUA COCOK, UJI kueri 155 variabel, COCOK=18 berkas, pulih = keadaan awal persis. Uji: `berkas-perkara-26okt`, `berkas-perkara-pihak-26okt` (lampiran, kolom pihak, deteksi susulan), `berkas-perkara-ekstensi-26okt` (layar awal/lengkap, susulan, pihak banyak, paritas dengan lib).

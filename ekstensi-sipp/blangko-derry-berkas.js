@@ -75,6 +75,42 @@
     return t.length ? t.join("  ") : "- tidak ada ciri khusus -";
   }
 
+  // ---- sampul cetak awal (keputusan Derry 26 Okt, versi 4-6): kembaran lib/berkas-perkara.ts dan lib/lampiran-pihak.ts
+  const CIRI_BUKAN_LENCANA_AWAL = ["verstek", "rekonvensi", "sita", "mediasi"];
+  const CIRI_BINGKAI_GANDA_AWAL = ["ghaib", "mafqud"];
+  function ciriSampulAwal(aktif, sisiDari) {
+    const teks = (c) => teksCiri(c, sisiDari ? sisiDari[c.k] : undefined);
+    const biasa = CIRI.filter((c) => aktif[c.k] && !CIRI_BUKAN_LENCANA_AWAL.includes(c.k) && !CIRI_BINGKAI_GANDA_AWAL.includes(c.k)).map(teks);
+    const satu = (k) => {
+      const c = CIRI.find((x) => x.k === k);
+      return c && aktif[k] ? teks(c) : "";
+    };
+    return { "5861": biasa.length ? biasa.join("  ") : "- tidak ada ciri khusus -", "5807": satu("ghaib"), "5808": satu("mafqud") };
+  }
+  const NAMA_SUSULAN = {
+    mediasi: "MEDIASI", eksepsi: "EKSEPSI", rekonvensi: "REKONVENSI", sita: "PERMINTAAN SITA", setempat: "PEMERIKSAAN SETEMPAT", sela: "PUTUSAN SELA",
+    ubah: "PERUBAHAN GUGATAN", panjar: "TAMBAHAN PANJAR", cabut: "PENCABUTAN", perbaikan: "PERBAIKAN PERMOHONAN", anak: "ANAK & CALON DIDENGAR", umum: "PENGUMUMAN 14 HARI",
+  };
+  const KUNCI_SUSULAN = ["mediasi", "eksepsi", "rekonvensi", "sita", "setempat", "sela", "ubah", "panjar", "cabut", "perbaikan", "anak", "umum"];
+  function daftarSusulan(jenis, lawan) {
+    const kunci = lawan
+      ? ["mediasi", "eksepsi", "rekonvensi", "sita", "setempat", "sela", "ubah", "panjar", "cabut"]
+      : ["perbaikan", "setempat", "panjar", "cabut"].concat(jenis === "dk" ? ["anak"] : jenis === "in" ? ["umum"] : []);
+    return kunci.map((k) => ({ kunci: k, nama: NAMA_SUSULAN[k] }));
+  }
+  function rangkaiSusulan(daftar, centang, oto) {
+    return daftar.map((d) => `${centang[d.kunci] ? "[X]" : "[ ]"} ${d.nama}${centang[d.kunci] && oto[d.kunci] ? " (oto)" : ""}`).join("   ");
+  }
+  const MUAT_PIHAK = { lawan: 8, permohonan: 12 };
+  const TURUT_SEBARIS = 3;
+  function pihakBanyak(j) {
+    return j.p1 > 1 || j.p2 > 1 || j.p3 > 0 || j.p4 > 0;
+  }
+  function perluLampiran(j, lawan) {
+    const muat = lawan ? MUAT_PIHAK.lawan : MUAT_PIHAK.permohonan;
+    return j.p1 > muat || j.p2 > muat || j.p3 > 0 || j.p4 > TURUT_SEBARIS;
+  }
+
   function uraiHalaman(teks) {
     const t = String(teks == null ? "" : teks).trim();
     if (!t) return { tipe: "oto" };
@@ -304,7 +340,8 @@
       galat: "",
       fakta: null,
       bawaan: {},
-      tangan: {}, // ciri: kunci -> true/false (dipaksa tangan)
+      bentuk: "awal", // "awal" = sampul cetak awal (bawaan); "lengkap" = sampul lengkap
+      tangan: {}, // ciri: kunci -> true/false (dipaksa tangan); ciri susulan memakai awalan "s_"
       isian: {}, // isian tangan
       edit: {}, // daftar isi: kunci -> {tampil, halamanTeks, judulManual, tanggalManual, tambahan}
       urut: { A: [], B: [] }, // urutan akhir (kunci)
@@ -318,9 +355,12 @@
     };
   }
 
+  function bentukDari(berkas) {
+    return /\(Lengkap\)/i.test(String(berkas || "")) ? "lengkap" : "awal";
+  }
   function jenisLayar(berkas) {
     const n = String(berkas || "").trim();
-    if (/^Sampul Berkas Perkara\.rtf$/i.test(n)) return "sampul";
+    if (/^Sampul Berkas Perkara( \(Lengkap\))?\.rtf$/i.test(n)) return "sampul";
     if (/^Daftar Isi Berkas\.rtf$/i.test(n)) return "daftar-isi";
     return "";
   }
@@ -338,6 +378,23 @@
     const hasil = {};
     for (const c of CIRI) hasil[c.k] = Object.prototype.hasOwnProperty.call(ST.tangan, c.k) ? Boolean(ST.tangan[c.k]) : Boolean(oto[c.k]);
     return hasil;
+  }
+  const lawanPerkara = () => Boolean(ST.fakta && ST.fakta.perkara && ST.fakta.perkara.berlawanan);
+  const jumlahPihak = () => (ST.fakta && ST.fakta.jumlahPihak) || { p1: 0, p2: 0, p3: 0, p4: 0 };
+  function susulanDaftar() {
+    return daftarSusulan(ST.fakta && ST.fakta.perkara ? ST.fakta.perkara.jenis : "lain", lawanPerkara());
+  }
+  function susulanOto() {
+    const o = {};
+    const f = (ST.fakta && ST.fakta.susulan && ST.fakta.susulan.oto) || {};
+    for (const k of KUNCI_SUSULAN) o[k] = Object.prototype.hasOwnProperty.call(f, k);
+    return o;
+  }
+  function susulanEfektif() {
+    const oto = susulanOto();
+    const h = {};
+    for (const d of susulanDaftar()) h[d.kunci] = Object.prototype.hasOwnProperty.call(ST.tangan, `s_${d.kunci}`) ? Boolean(ST.tangan[`s_${d.kunci}`]) : Boolean(oto[d.kunci]);
+    return h;
   }
   function sisiDariFakta() {
     const f = (ST.fakta && ST.fakta.ciri) || {};
@@ -359,6 +416,14 @@
   function daftarIsian() {
     const j = jenisKhas();
     const efektif = ciriEfektif();
+    if (ST.bentuk === "awal") {
+      // sampul cetak awal: konseptor putusan (nama), mediator (hanya perkara berlawanan), lalu isian khas jenis perkara
+      const awal = [{ k: "konseptor", l: "Konseptor putusan (nama)", grup: "umum" }];
+      if (lawanPerkara()) awal.push({ k: "mediator", l: "Mediator (nama)", grup: "umum" });
+      if (j.fokus) awal.push({ k: "fokus", l: j.fokus, grup: "khas" });
+      for (const [k, l] of j.blok || []) awal.push({ k, l, grup: "khas" });
+      return awal;
+    }
     const hasil = ISIAN_UMUM.filter((f) => !f.butuh || efektif[f.butuh]).map((f) => ({ k: f.k, l: f.l, grup: "umum" }));
     if (j.fokus) hasil.push({ k: "fokus", l: j.fokus, grup: "khas" });
     for (const [k, l] of j.blok || []) hasil.push({ k, l, grup: "khas" });
@@ -367,6 +432,7 @@
 
   /** Nilai timpa ABT untuk sampul: ciri selalu; isian hanya yang diubah tangan (selebihnya dibiarkan dihitung ABT). */
   function nilaiTimpaSampul() {
+    if (ST.bentuk === "awal") return nilaiTimpaAwal();
     const n = {};
     n["5801"] = rangkaiCiri(ciriEfektif(), sisiDariFakta());
     for (const f of ISIAN_UMUM) if (Object.prototype.hasOwnProperty.call(ST.isian, f.k)) n[f.kode] = f.tanggal && /^\d{4}-/.test(ST.isian[f.k]) ? tanggalIndonesia(ST.isian[f.k]) : ST.isian[f.k];
@@ -375,6 +441,32 @@
     if ((j.blok || []).some(([k]) => Object.prototype.hasOwnProperty.call(ST.isian, k))) {
       const garis = (j.blok || []).map(([k, l]) => (nilaiIsian(k) ? `${l}: ${nilaiIsian(k)}` : "")).filter(Boolean);
       n["5843"] = garis.join("\n");
+    }
+    return n;
+  }
+
+  /** Sampul cetak awal: ciri (5861, bingkai ganda 5807 ghaib dan 5808 mafqud), ciri susulan (5862), kumulasi, dan isian yang diubah tangan. */
+  function nilaiTimpaAwal() {
+    const n = ciriSampulAwal(ciriEfektif(), sisiDariFakta());
+    n["5862"] = rangkaiSusulan(susulanDaftar(), susulanEfektif(), susulanOto());
+    const kum = ST.fakta && ST.fakta.ciri && ST.fakta.ciri.kumulasi;
+    const jenisNama = ST.fakta && ST.fakta.perkara ? ST.fakta.perkara.jenisNama : "";
+    if (jenisNama && Object.prototype.hasOwnProperty.call(ciriEfektif(), "kumulasi")) {
+      const ada = ciriEfektif().kumulasi && kum && Array.isArray(kum.nama) && kum.nama.length;
+      if (ada) {
+        n["5867"] = `${jenisNama} Kumulasi`;
+        n["5868"] = `Kumulasi: ${kum.nama.join(" dan ")}`;
+      } else if (!ciriEfektif().kumulasi) {
+        n["5867"] = jenisNama;
+        n["5868"] = "";
+      }
+    }
+    if (Object.prototype.hasOwnProperty.call(ST.isian, "konseptor")) n["5865"] = ST.isian.konseptor;
+    if (lawanPerkara() && Object.prototype.hasOwnProperty.call(ST.isian, "mediator")) n["5836"] = ST.isian.mediator;
+    if (Object.prototype.hasOwnProperty.call(ST.isian, "fokus")) n["5842"] = ST.isian.fokus;
+    const j = jenisKhas();
+    if ((j.blok || []).some(([k]) => Object.prototype.hasOwnProperty.call(ST.isian, k))) {
+      n["5843"] = (j.blok || []).map(([k, l]) => (nilaiIsian(k) ? `${l}: ${nilaiIsian(k)}` : "")).filter(Boolean).join("\n");
     }
     return n;
   }
@@ -537,7 +629,29 @@
     const dasar = { perkaraId: ST.perkaraId, jenis: tab, kertas: ST.kertas };
     const peran = H.sebagaiPeran ? H.sebagaiPeran() : "";
     if (peran) dasar.sebagaiPeran = peran;
-    if (tab === "sampul") return Object.assign(dasar, { nilai: nilaiTimpaSampul() });
+    if (tab === "sampul") {
+      const j = jumlahPihak();
+      const badan = Object.assign(dasar, { nilai: nilaiTimpaSampul(), bentuk: ST.bentuk, lawan: lawanPerkara() });
+      if (ST.bentuk === "awal") {
+        // Lampiran hanya bila perlu (versi 7): pihak banyak, objek sengketa > 2, anak > 3, riwayat sidang melebihi baris sampul. Portal memutuskan dan
+        // menyusunnya dari data ini (SIPP, baca saja); jawabannya memuat daftar lampiran yang ikut tercetak.
+        const f = ST.fakta || {};
+        const jk = jenisKhas();
+        const barisPokok = (jk.blok || []).filter(([k]) => nilaiIsian(k)).length;
+        Object.assign(badan, {
+          nomor: ST.nomor,
+          sebutanP: (f.perkara || {}).sebutanP,
+          sebutanT: (f.perkara || {}).sebutanT,
+          pihak: f.pihakSemua || [],
+          anak: f.anak || [],
+          objek: f.objek || [],
+          riwayat: f.riwayatSemua || [],
+          infoKhasBaris: (nilaiIsian("fokus") ? 1 : 0) + barisPokok,
+        });
+        if (pihakBanyak(j)) badan.banyak = true;
+      }
+      return badan;
+    }
     const baris = barisUrut().map((r) => ({ bundel: r.bundel, grup: r.grup, kunci: r.kunci, nama: r.nama, ket: r.ket, tanggal: r.tanggal, halaman: r.halaman, sumber: r.sumber, dasar: r.dasar }));
     return Object.assign(dasar, { baris, sunting: suntingUntukHitung(), bundelB: ST.bundelB });
   }
@@ -545,7 +659,7 @@
     const d = await H.ambilPortal(API_NASKAH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(badanNaskah(tab)), batasMs: 120000 }, "Menyusun naskah");
     const rtf = atob(String((d && d.rtfBase64) || ""));
     if (rtf.length < 6 || rtf.slice(0, 5) !== "{\\rtf") throw new Error("Naskah yang diterima bukan RTF.");
-    return { rtf, kosong: d.kosong || [], galatMesin: d.mesinGalat || "" };
+    return { rtf, kosong: d.kosong || [], galatMesin: d.mesinGalat || "", lampiran: Array.isArray(d.lampiran) ? d.lampiran : [], muatPihak: d.muatPihak || 0 };
   }
 
   function jadwalPratinjau(tunggu) {
@@ -564,16 +678,28 @@
       ST.prat.html = H.rtfKeHtml(n.rtf);
       ST.prat.kunci = kunci;
       ST.prat.kosong = n.kosong;
+      ST.lampiran = n.lampiran;
+      ST.muatPihak = n.muatPihak;
     } catch (e) {
       ST.prat.galat = String((e && e.message) || e);
     }
     ST.prat.memuat = false;
     isiPratinjau();
   }
+  /** Keterangan lampiran sesuai keputusan portal pada pratinjau terakhir (hanya sampul cetak awal). */
+  function htmlLampiran() {
+    if (!ST || ST.tab !== "sampul" || ST.bentuk !== "awal") return "";
+    if (!Array.isArray(ST.lampiran)) return `<p class="bk-catat">Lampiran ditentukan saat pratinjau dimuat.</p>`;
+    if (!ST.lampiran.length) return `<p class="bk-catat">Sampul memuat semuanya dalam satu lembar: tanpa lampiran.</p>`;
+    return `<p class="bk-catat bk-pihak"><b>${ST.lampiran.length} lampiran ikut tercetak</b> (halaman ${ST.lampiran.map((d) => d.nomor + 1).join(", ")}): ${ST.lampiran.map((d) => `${d.nomor}. ${esc(d.judul)} <small>(${esc(d.alasan)})</small>`).join("; ")}</p>`;
+  }
+
   function isiPratinjau() {
     const k = W && W.querySelector("[data-bk-prat]");
     if (!k || !ST) return;
     const p = ST.prat;
+    const lamp = W.querySelector("[data-bk-lamp]");
+    if (lamp) lamp.innerHTML = htmlLampiran();
     k.innerHTML =
       (p.memuat ? `<p class="bk-catat" role="status">Menyusun pratinjau dari data perkara…</p>` : "") +
       (p.galat ? `<p class="bk-galat" role="alert">${esc(p.galat)} <button type="button" class="bd-btn kecil" data-bk="prat-ulang">Coba lagi</button></p>` : "") +
@@ -654,7 +780,86 @@
     if (ST.tab === "daftar-isi") isiTabel();
   }
 
+  function htmlBentuk() {
+    const tombol = (v, teks) => `<button type="button" class="bk-bentukt" data-bk="bentuk" data-bkv="${v}" aria-pressed="${ST.bentuk === v}">${teks}</button>`;
+    return `<div class="bk-bentuk" role="group" aria-label="Bentuk sampul"><span>Bentuk sampul</span>${tombol("awal", "Cetak awal (bawaan)")}${tombol("lengkap", "Lengkap")}</div>`;
+  }
+
+  function htmlKolomIsian(grup) {
+    return daftarIsian()
+      .filter((x) => x.grup === grup)
+      .map((x) => {
+        const tangan = Object.prototype.hasOwnProperty.call(ST.isian, x.k);
+        const panjang = x.k === "b3" || (x.k === "b1" && jenisKhas() === JENIS.lain);
+        return (
+          `<div class="bk-f"><label for="bk-in-${x.k}">${esc(x.l)}</label>` +
+          (panjang
+            ? `<textarea id="bk-in-${x.k}" rows="2" data-bk-in="${x.k}">${esc(nilaiIsian(x.k))}</textarea>`
+            : `<input id="bk-in-${x.k}" type="text" autocomplete="off" data-bk-in="${x.k}" value="${esc(nilaiIsian(x.k))}">`) +
+          `<small>${tangan ? "diubah tangan" : nilaiAutoIsian(x.k) ? "dari data perkara" : "kosong: ditulis tangan di kertas"}${tangan ? ` <button type="button" class="bk-reset" data-bk="reset-isian" data-bkv="${x.k}">kembalikan</button>` : ""}</small></div>`
+        );
+      })
+      .join("");
+  }
+
+  /** Sampul cetak awal: ciri berikon (hanya yang berlaku), ciri susulan (kotak centang otomatis/tangan), isian, keterangan pihak banyak. */
+  function htmlSampulAwal() {
+    const oto = ciriOtomatis();
+    const efektif = ciriEfektif();
+    const sisi = sisiDariFakta();
+    const kel = { a: [], b: [], c: [] };
+    for (const c of CIRI) {
+      if (CIRI_BUKAN_LENCANA_AWAL.includes(c.k)) continue;
+      const nyala = efektif[c.k];
+      const tangan = Object.prototype.hasOwnProperty.call(ST.tangan, c.k);
+      const kelas = nyala ? (tangan ? "tgn" : "oto") : tangan ? "mati-tgn" : "";
+      const ket = tangan ? (nyala ? "dinyalakan tangan" : "dimatikan tangan") : oto[c.k] ? "otomatis" : "";
+      const ganda = CIRI_BINGKAI_GANDA_AWAL.includes(c.k) ? " ganda" : "";
+      kel[c.g].push(
+        `<button type="button" class="bk-ciri ${kelas}${ganda}" data-bk="ciri" data-bkv="${c.k}" aria-pressed="${nyala}" title="${esc(c.t)}${ket ? ` · ${ket}` : ""}"><span class="g">${LAMBANG[c.g]}</span> ${esc(c.n)}${sisi[c.k] || c.s ? ` ${esc(sisi[c.k] || c.s)}` : ""}${ket ? `<small>${ket}</small>` : ""}</button>`
+      );
+    }
+    const eSus = susulanEfektif();
+    const oSus = susulanOto();
+    const gagal = (ST.fakta && ST.fakta.susulan && ST.fakta.susulan.gagal) || [];
+    const susulan = susulanDaftar()
+      .map((d) => {
+        const on = eSus[d.kunci];
+        const tangan = Object.prototype.hasOwnProperty.call(ST.tangan, `s_${d.kunci}`);
+        const kelas = on ? (tangan ? "tgn" : "oto") : tangan ? "mati-tgn" : "";
+        const sumber = ST.fakta && ST.fakta.susulan && ST.fakta.susulan.oto ? ST.fakta.susulan.oto[d.kunci] : "";
+        const ket = tangan ? (on ? "dicentang tangan" : "dimatikan tangan") : on ? `OTO${sumber ? ` · ${sumber}` : ""}` : "";
+        return `<button type="button" class="bk-ciri ${kelas}" data-bk="susulan" data-bkv="${d.kunci}" aria-pressed="${on}" title="${esc(ket || "dicentang tangan di kertas")}"><span class="g">${on ? "\u2612" : "\u2610"}</span> ${esc(d.nama)}${on && oSus[d.kunci] && !tangan ? " <small>OTO</small>" : ket ? `<small>${esc(ket.split(" ")[0] === "OTO" ? "OTO" : ket)}</small>` : ""}</button>`;
+      })
+      .join("");
+    const j = jumlahPihak();
+    const total = j.p1 + j.p2 + j.p3 + j.p4;
+    const f = ST.fakta || {};
+    const infoPihak = pihakBanyak(j)
+      ? `<p class="bk-catat bk-pihak">Pihak banyak: ${j.p1} pihak I${j.p2 ? `, ${j.p2} pihak II` : ""}${j.p3 ? `, ${j.p3} intervensi` : ""}${j.p4 ? `, ${j.p4} turut tergugat` : ""} (${total} nama): nama bernomor romawi dua kolom di sampul.</p>`
+      : "";
+    const infoAnakObjek =
+      ((f.anak || []).length ? `<p class="bk-catat">Anak (tab Anak SIPP): ${(f.anak || []).length}${(f.anak || []).length > 3 ? " - lebih dari 3, rincian di lampiran" : " - sebaris di sampul"}.</p>` : "") +
+      ((f.objek || []).length ? `<p class="bk-catat">Objek sengketa (SIPP): ${(f.objek || []).length}${(f.objek || []).length > 2 ? " - lebih dari 2, rincian di lampiran" : " - sebaris di sampul"}.</p>` : "");
+    const banyakTangan = Object.keys(ST.tangan).length + Object.keys(ST.isian).length;
+    return (
+      `<div class="bk-dua"><section class="bk-kartu" aria-label="Ciri perkara"><h3>Ciri perkara <small>hanya yang berlaku dicetak · klik untuk menyalakan atau mematikan</small></h3>` +
+      `<div class="bk-ciriwadah"><div class="bk-kel">${kel.a.join("")}</div><div class="bk-kel">${kel.b.join("")}</div><div class="bk-kel">${kel.c.join("")}</div></div>` +
+      `<p class="bk-catat">${LAMBANG.a} pendaftaran · ${LAMBANG.b} pihak · ${LAMBANG.c} proses. Bingkai ganda = mengubah cara pemeriksaan (ghaib, mafqud). Verstek, mediasi, rekonvensi, dan sita ada di bagian lain sampul.${banyakTangan ? ` <button type="button" class="bd-btn kecil" data-bk="semua-oto">Kembalikan semua ke otomatis</button>` : ""}</p></section>` +
+      `<section class="bk-kartu" aria-label="Ciri susulan"><h3>Ciri susulan <small>kotak tercentang otomatis bila datanya ada (OTO); sisanya dicentang tangan</small></h3><div class="bk-kel">${susulan}</div>` +
+      (gagal.length ? `<p class="bk-catat">Sebagian data tidak terbaca (${esc(gagal.join(", "))}); yang bergantung padanya tidak dicentang.</p>` : "") +
+      `${infoPihak}${infoAnakObjek}<div data-bk-lamp>${htmlLampiran()}</div></section>` +
+      `<section class="bk-kartu" aria-label="Isian sampul"><h3>Isian sampul</h3>${htmlKolomIsian("umum")}</section>` +
+      (daftarIsian().some((x) => x.grup === "khas") ? `<section class="bk-kartu" aria-label="Isian khas ${esc(jenisKhas().nama)}"><h3>Isian khas ${esc(jenisKhas().nama)}</h3>${htmlKolomIsian("khas")}</section>` : "") +
+      `</div>`
+    );
+  }
+
   function htmlSampul() {
+    return htmlBentuk() + (ST.bentuk === "awal" ? htmlSampulAwal() : htmlSampulLengkap());
+  }
+
+  function htmlSampulLengkap() {
     const oto = ciriOtomatis();
     const efektif = ciriEfektif();
     const sisi = sisiDariFakta();
@@ -809,6 +1014,21 @@
       gambar();
       jadwalSimpan();
       jadwalPratinjau();
+    } else if (aksi === "susulan") {
+      const kunci = `s_${v}`;
+      const oto = susulanOto()[v];
+      const baru = !susulanEfektif()[v];
+      if (baru === oto) delete ST.tangan[kunci];
+      else ST.tangan[kunci] = baru;
+      gambar();
+      jadwalSimpan();
+      jadwalPratinjau();
+    } else if (aksi === "bentuk") {
+      ST.bentuk = v === "lengkap" ? "lengkap" : "awal";
+      ST.prat.html = "";
+      ST.prat.kunci = "";
+      gambar();
+      jadwalPratinjau(150);
     } else if (aksi === "semua-oto") {
       ST.tangan = {};
       ST.isian = {};
@@ -977,6 +1197,7 @@
     W = wadah;
     ST = barukan(info.jenis);
     ST.jenisBlangko = info.jenis;
+    ST.bentuk = info.bentuk === "lengkap" ? "lengkap" : "awal";
     ST.perkaraId = String(info.perkaraId);
     ST.nomor = String(info.nomor || "");
     if (!W.__bkPasang) {
@@ -998,9 +1219,10 @@
   globalThis.AletaBerkasKhusus = Object.freeze({
     KODE_SAKLAR,
     jenisLayar,
+    bentukDari,
     buka,
     tutup,
     // dipakai uji
-    _murni: { uraiHalaman, hitungDaftarIsi, susunUrutan, rangkaiCiri, teksRentang, tanggalIndonesia, halamanPdf, BAWAAN_HALAMAN, CIRI },
+    _murni: { ciriSampulAwal, daftarSusulan, rangkaiSusulan, pihakBanyak, perluLampiran, KUNCI_SUSULAN, uraiHalaman, hitungDaftarIsi, susunUrutan, rangkaiCiri, teksRentang, tanggalIndonesia, halamanPdf, BAWAAN_HALAMAN, CIRI },
   });
 })();
