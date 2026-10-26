@@ -1,0 +1,464 @@
+[
+ {
+  "no_var": 5802,
+  "nama": "CIRI SAMPUL: PRODEO (OTOMATIS; kosong = tidak berlaku)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IF(IFNULL((SELECT prodeo FROM perkara WHERE perkara_id=#perkara_id#),0)=1,'[&#9632; PRODEO]','') AS data"
+ },
+ {
+  "no_var": 5803,
+  "nama": "CIRI SAMPUL: e-COURT (OTOMATIS; kosong = tidak berlaku)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IF(EXISTS(SELECT 1 FROM perkara_efiling_id WHERE perkara_id=#perkara_id# AND efiling_id<>''),'[&#9632; e-COURT]','') AS data"
+ },
+ {
+  "no_var": 5804,
+  "nama": "CIRI SAMPUL: NON e-COURT (OTOMATIS; kosong = tidak berlaku)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IF(NOT EXISTS(SELECT 1 FROM perkara_efiling_id WHERE perkara_id=#perkara_id# AND efiling_id<>''),'[&#9632; NON e-COURT]','') AS data"
+ },
+ {
+  "no_var": 5805,
+  "nama": "CIRI SAMPUL: KUASA HUKUM (OTOMATIS; sisi P/T; kosong = tidak berlaku)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT (CASE WHEN x.a AND x.b THEN '[&#9632; KUASA HUKUM P+T]' WHEN x.a THEN '[&#9632; KUASA HUKUM P]' WHEN x.b THEN '[&#9632; KUASA HUKUM T]' ELSE '' END) AS data FROM (SELECT EXISTS(SELECT 1 FROM perkara_pengacara WHERE perkara_id=#perkara_id# AND pihak_ke=1 AND aktif='Y') AS a, EXISTS(SELECT 1 FROM perkara_pengacara WHERE perkara_id=#perkara_id# AND pihak_ke=2 AND aktif='Y') AS b) x"
+ },
+ {
+  "no_var": 5806,
+  "nama": "CIRI SAMPUL: KUASA INSIDENTIL (OTOMATIS; kosong = tidak berlaku)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IF(IFNULL((SELECT TRIM(data) FROM aps_badilag.abt_data_teks WHERE no_var=8537 AND perkara_id=#perkara_id#),'')<>'','[&#9632; KUASA INSIDENTIL]','') AS data"
+ },
+ {
+  "no_var": 5807,
+  "nama": "CIRI SAMPUL: GHAIB (ISIAN OTOMATIS dari panel; kosong = tidak berlaku; contoh isi: [&#9679; GHAIB T])",
+  "data_type": "data_teks",
+  "sql_query": null
+ },
+ {
+  "no_var": 5808,
+  "nama": "CIRI SAMPUL: MAFQUD (ISIAN OTOMATIS dari panel; kosong = tidak berlaku; contoh isi: [&#9679; MAFQUD T])",
+  "data_type": "data_teks",
+  "sql_query": null
+ },
+ {
+  "no_var": 5809,
+  "nama": "CIRI SAMPUL: PNS/ASN (ISIAN OTOMATIS dari panel; kosong = tidak berlaku; contoh isi: [&#9679; PNS/ASN T])",
+  "data_type": "data_teks",
+  "sql_query": null
+ },
+ {
+  "no_var": 5810,
+  "nama": "CIRI SAMPUL: PPPK (ISIAN OTOMATIS dari panel; kosong = tidak berlaku; contoh isi: [&#9679; PPPK T])",
+  "data_type": "data_teks",
+  "sql_query": null
+ },
+ {
+  "no_var": 5811,
+  "nama": "CIRI SAMPUL: TNI (ISIAN OTOMATIS dari panel; kosong = tidak berlaku; contoh isi: [&#9679; TNI T])",
+  "data_type": "data_teks",
+  "sql_query": null
+ },
+ {
+  "no_var": 5812,
+  "nama": "CIRI SAMPUL: POLRI (ISIAN OTOMATIS dari panel; kosong = tidak berlaku; contoh isi: [&#9679; POLRI T])",
+  "data_type": "data_teks",
+  "sql_query": null
+ },
+ {
+  "no_var": 5813,
+  "nama": "CIRI SAMPUL: BUMN/BUMD (ISIAN OTOMATIS dari panel; kosong = tidak berlaku; contoh isi: [&#9679; BUMN/BUMD T])",
+  "data_type": "data_teks",
+  "sql_query": null
+ },
+ {
+  "no_var": 5814,
+  "nama": "CIRI SAMPUL: DISABILITAS (OTOMATIS; sisi P/T; kosong = tidak berlaku)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT (CASE WHEN x.a AND x.b THEN '[&#9679; DISABILITAS P+T]' WHEN x.a THEN '[&#9679; DISABILITAS P]' WHEN x.b THEN '[&#9679; DISABILITAS T]' ELSE '' END) AS data FROM (SELECT EXISTS(SELECT 1 FROM perkara_pihak1 k JOIN pihak h ON h.id=k.pihak_id WHERE k.perkara_id=#perkara_id# AND h.difabel='Y') AS a, EXISTS(SELECT 1 FROM perkara_pihak2 k JOIN pihak h ON h.id=k.pihak_id WHERE k.perkara_id=#perkara_id# AND h.difabel='Y') AS b) x"
+ },
+ {
+  "no_var": 5815,
+  "nama": "CIRI SAMPUL: PENERJEMAH (ISIAN TANGAN; isi [&#9679; PENERJEMAH] bila perlu penerjemah/juru bahasa; kosong = tidak ada)",
+  "data_type": "data_teks",
+  "sql_query": null
+ },
+ {
+  "no_var": 5816,
+  "nama": "CIRI SAMPUL: WNA (OTOMATIS; sisi P/T; kosong = tidak berlaku)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT (CASE WHEN x.a AND x.b THEN '[&#9679; WNA P+T]' WHEN x.a THEN '[&#9679; WNA P]' WHEN x.b THEN '[&#9679; WNA T]' ELSE '' END) AS data FROM (SELECT EXISTS(SELECT 1 FROM perkara_pihak1 k JOIN pihak h ON h.id=k.pihak_id WHERE k.perkara_id=#perkara_id# AND IFNULL(h.warga_negara_id,1)<>1) AS a, EXISTS(SELECT 1 FROM perkara_pihak2 k JOIN pihak h ON h.id=k.pihak_id WHERE k.perkara_id=#perkara_id# AND IFNULL(h.warga_negara_id,1)<>1) AS b) x"
+ },
+ {
+  "no_var": 5817,
+  "nama": "CIRI SAMPUL: VERSTEK (OTOMATIS; kosong = tidak berlaku)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IF(IFNULL((SELECT putusan_verstek FROM perkara_putusan WHERE perkara_id=#perkara_id# LIMIT 1),'') IN ('Y','1'),'[&#9650; VERSTEK]','') AS data"
+ },
+ {
+  "no_var": 5818,
+  "nama": "CIRI SAMPUL: KUMULASI (OTOMATIS dari perkara_kumulasi; kosong = tidak ada)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IF(COUNT(*)>0,CONCAT('[&#9650; KUMULASI ',COUNT(*),']'),'') AS data FROM perkara_kumulasi WHERE perkara_id=#perkara_id#"
+ },
+ {
+  "no_var": 5819,
+  "nama": "CIRI SAMPUL: REKONVENSI (ISIAN OTOMATIS dari panel; kosong = tidak berlaku)",
+  "data_type": "data_teks",
+  "sql_query": null
+ },
+ {
+  "no_var": 5820,
+  "nama": "CIRI SAMPUL: MEDIASI (OTOMATIS; kosong = tidak berlaku)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IF(EXISTS(SELECT 1 FROM perkara_mediasi WHERE perkara_id=#perkara_id# AND penetapan_penunjukan_mediator IS NOT NULL),'[&#9650; MEDIASI]','') AS data"
+ },
+ {
+  "no_var": 5821,
+  "nama": "CIRI SAMPUL: SITA (OTOMATIS; kosong = tidak berlaku)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IF(EXISTS(SELECT 1 FROM perkara_proses WHERE perkara_id=#perkara_id# AND proses_nama LIKE '%sita%'),'[&#9650; SITA]','') AS data"
+ },
+ {
+  "no_var": 5822,
+  "nama": "CIRI SAMPUL: SIDANG KELILING (OTOMATIS; kosong = tidak berlaku)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IF(EXISTS(SELECT 1 FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND sidang_keliling='Y'),'[&#9650; SIDANG KELILING]','') AS data"
+ },
+ {
+  "no_var": 5823,
+  "nama": "CIRI SAMPUL: HAKIM TUNGGAL (OTOMATIS; kosong = tidak berlaku)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IF((SELECT COUNT(*) FROM perkara_hakim_pn WHERE perkara_id=#perkara_id# AND aktif='Y')=1,'[&#9650; HAKIM TUNGGAL]','') AS data"
+ },
+ {
+  "no_var": 5824,
+  "nama": "CIRI SAMPUL: GUGATAN SEDERHANA (OTOMATIS; kosong = tidak berlaku)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IF(IFNULL((SELECT alur_perkara_id FROM perkara WHERE perkara_id=#perkara_id#),0)=17,'[&#9650; GUGATAN SEDERHANA]','') AS data"
+ },
+ {
+  "no_var": 5825,
+  "nama": "CIRI SAMPUL: VERZET (OTOMATIS; kosong = tidak berlaku)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IF(EXISTS(SELECT 1 FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND verzet='Y'),'[&#9650; VERZET]','') AS data"
+ },
+ {
+  "no_var": 5826,
+  "nama": "CIRI SAMPUL: DISPENSASI KAWIN (OTOMATIS; kosong = tidak berlaku)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IF(IFNULL((SELECT jenis_perkara_id FROM perkara WHERE perkara_id=#perkara_id#),0)=362,'[&#9650; DISPENSASI KAWIN]','') AS data"
+ },
+ {
+  "no_var": 5827,
+  "nama": "CIRI SAMPUL: IKRAR TALAK (OTOMATIS; kosong = tidak berlaku)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IF(EXISTS(SELECT 1 FROM perkara_ikrar_talak WHERE perkara_id=#perkara_id#),'[&#9650; IKRAR TALAK]','') AS data"
+ },
+ {
+  "no_var": 5801,
+  "nama": "CIRI PERKARA SAMPUL (OTOMATIS: gabungan 5802 sampai 5827; kosong semua = tidak ada ciri khusus)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IFNULL(NULLIF(TRIM(CONCAT_WS('  ',NULLIF('#5802#',''),NULLIF('#5803#',''),NULLIF('#5804#',''),NULLIF('#5805#',''),NULLIF('#5806#',''),NULLIF('#5807#',''),NULLIF('#5808#',''),NULLIF('#5809#',''),NULLIF('#5810#',''),NULLIF('#5811#',''),NULLIF('#5812#',''),NULLIF('#5813#',''),NULLIF('#5814#',''),NULLIF('#5815#',''),NULLIF('#5816#',''),NULLIF('#5817#',''),NULLIF('#5818#',''),NULLIF('#5819#',''),NULLIF('#5820#',''),NULLIF('#5821#',''),NULLIF('#5822#',''),NULLIF('#5823#',''),NULLIF('#5824#',''),NULLIF('#5825#',''),NULLIF('#5826#',''),NULLIF('#5827#',''))),''),'- tidak ada ciri khusus -') AS data"
+ },
+ {
+  "no_var": 5800,
+  "nama": "JENIS PERKARA SAMPUL (OTOMATIS: jenis perkara + kumulasi)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT CONCAT('#0048#',IFNULL((SELECT CONCAT(' Kumulasi ',REPLACE(GROUP_CONCAT(j.nama SEPARATOR '|'),'|',' dan ')) FROM perkara_kumulasi k JOIN jenis_perkara j ON j.id=k.jenis_perkara_id WHERE k.perkara_id=#perkara_id# HAVING COUNT(*)>0),'')) AS data"
+ },
+ {
+  "no_var": 5829,
+  "nama": "BARIS IKRAR TALAK SAMPUL (OTOMATIS; kosong bila bukan cerai talak)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT IFNULL((SELECT CONCAT('<b>IKRAR TALAK</b>  PMH ',IFNULL(CONCAT(DAY(i.penetapan_majelis_hakim),' ',ELT(MONTH(i.penetapan_majelis_hakim),'Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'),' ',YEAR(i.penetapan_majelis_hakim)),'-'),'  -  PHS ikrar ',IFNULL(CONCAT(DAY(i.tanggal_penetapan_sidang_ikrar),' ',ELT(MONTH(i.tanggal_penetapan_sidang_ikrar),'Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'),' ',YEAR(i.tanggal_penetapan_sidang_ikrar)),'-'),'  -  Sidang ikrar ',IFNULL(CONCAT(DAY(i.tgl_ikrar_talak),' ',ELT(MONTH(i.tgl_ikrar_talak),'Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'),' ',YEAR(i.tgl_ikrar_talak)),'-')) FROM perkara_ikrar_talak i WHERE i.perkara_id=#perkara_id# LIMIT 1),'') AS data"
+ },
+ {
+  "no_var": 5836,
+  "nama": "MEDIATOR SAMPUL (OTOMATIS dari mediasi terakhir)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT m.mediator_text AS data FROM perkara_mediasi m WHERE m.perkara_id=#perkara_id# ORDER BY m.mediasi_id DESC LIMIT 1"
+ },
+ {
+  "no_var": 5837,
+  "nama": "HASIL MEDIASI SAMPUL (OTOMATIS; kosong bila belum ada hasil)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT (CASE WHEN m.mediasi_berhasil IN ('Y','1') THEN 'Berhasil' WHEN m.mediasi_gagal IN ('Y','1') THEN 'Tidak berhasil' ELSE '' END) AS data FROM perkara_mediasi m WHERE m.perkara_id=#perkara_id# ORDER BY m.mediasi_id DESC LIMIT 1"
+ },
+ {
+  "no_var": 5839,
+  "nama": "KONSEPTOR SAMPUL (ISIAN TANGAN)",
+  "data_type": "data_teks",
+  "sql_query": null
+ },
+ {
+  "no_var": 5840,
+  "nama": "TGL PEMBERITAHUAN PUTUSAN / PBT (OTOMATIS: terakhir)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT MAX(tanggal_pemberitahuan_putusan) AS data FROM perkara_putusan_pemberitahuan_putusan WHERE perkara_id=#perkara_id#"
+ },
+ {
+  "no_var": 5851,
+  "nama": "DAFTAR ISI BUNDEL A: NO (OTOMATIS; satu baris per dokumen yang ada)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT aps_badilag.isian_rtf_daftar_isi(#perkara_id#,'A',1) AS data"
+ },
+ {
+  "no_var": 5852,
+  "nama": "DAFTAR ISI BUNDEL A: JENIS DOKUMEN (OTOMATIS; satu baris per dokumen yang ada)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT aps_badilag.isian_rtf_daftar_isi(#perkara_id#,'A',2) AS data"
+ },
+ {
+  "no_var": 5853,
+  "nama": "DAFTAR ISI BUNDEL A: TANGGAL (OTOMATIS; satu baris per dokumen yang ada)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT aps_badilag.isian_rtf_daftar_isi(#perkara_id#,'A',3) AS data"
+ },
+ {
+  "no_var": 5854,
+  "nama": "DAFTAR ISI BUNDEL A: HALAMAN (OTOMATIS; satu baris per dokumen yang ada)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT aps_badilag.isian_rtf_daftar_isi(#perkara_id#,'A',4) AS data"
+ },
+ {
+  "no_var": 5856,
+  "nama": "DAFTAR ISI BUNDEL B: NO (OTOMATIS; satu baris per dokumen yang ada)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT aps_badilag.isian_rtf_daftar_isi(#perkara_id#,'B',1) AS data"
+ },
+ {
+  "no_var": 5857,
+  "nama": "DAFTAR ISI BUNDEL B: JENIS DOKUMEN (OTOMATIS; satu baris per dokumen yang ada)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT aps_badilag.isian_rtf_daftar_isi(#perkara_id#,'B',2) AS data"
+ },
+ {
+  "no_var": 5858,
+  "nama": "DAFTAR ISI BUNDEL B: TANGGAL (OTOMATIS; satu baris per dokumen yang ada)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT aps_badilag.isian_rtf_daftar_isi(#perkara_id#,'B',3) AS data"
+ },
+ {
+  "no_var": 5859,
+  "nama": "DAFTAR ISI BUNDEL B: HALAMAN (OTOMATIS; satu baris per dokumen yang ada)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT aps_badilag.isian_rtf_daftar_isi(#perkara_id#,'B',4) AS data"
+ },
+ {
+  "no_var": 5860,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 1: tanggal sidang",
+  "data_type": "data_sql",
+  "sql_query": "SELECT tanggal_sidang AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 0,1"
+ },
+ {
+  "no_var": 5861,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 1: alasan penundaan",
+  "data_type": "data_sql",
+  "sql_query": "SELECT alasan_ditunda AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 0,1"
+ },
+ {
+  "no_var": 5862,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 1: agenda / keterangan",
+  "data_type": "data_sql",
+  "sql_query": "SELECT CONCAT(IFNULL(agenda,''),IF(sidang_keliling='Y',' (sidang keliling)','')) AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 0,1"
+ },
+ {
+  "no_var": 5863,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 2: tanggal sidang",
+  "data_type": "data_sql",
+  "sql_query": "SELECT tanggal_sidang AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 1,1"
+ },
+ {
+  "no_var": 5864,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 2: alasan penundaan",
+  "data_type": "data_sql",
+  "sql_query": "SELECT alasan_ditunda AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 1,1"
+ },
+ {
+  "no_var": 5865,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 2: agenda / keterangan",
+  "data_type": "data_sql",
+  "sql_query": "SELECT CONCAT(IFNULL(agenda,''),IF(sidang_keliling='Y',' (sidang keliling)','')) AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 1,1"
+ },
+ {
+  "no_var": 5866,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 3: tanggal sidang",
+  "data_type": "data_sql",
+  "sql_query": "SELECT tanggal_sidang AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 2,1"
+ },
+ {
+  "no_var": 5867,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 3: alasan penundaan",
+  "data_type": "data_sql",
+  "sql_query": "SELECT alasan_ditunda AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 2,1"
+ },
+ {
+  "no_var": 5868,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 3: agenda / keterangan",
+  "data_type": "data_sql",
+  "sql_query": "SELECT CONCAT(IFNULL(agenda,''),IF(sidang_keliling='Y',' (sidang keliling)','')) AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 2,1"
+ },
+ {
+  "no_var": 5869,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 4: tanggal sidang",
+  "data_type": "data_sql",
+  "sql_query": "SELECT tanggal_sidang AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 3,1"
+ },
+ {
+  "no_var": 5870,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 4: alasan penundaan",
+  "data_type": "data_sql",
+  "sql_query": "SELECT alasan_ditunda AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 3,1"
+ },
+ {
+  "no_var": 5871,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 4: agenda / keterangan",
+  "data_type": "data_sql",
+  "sql_query": "SELECT CONCAT(IFNULL(agenda,''),IF(sidang_keliling='Y',' (sidang keliling)','')) AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 3,1"
+ },
+ {
+  "no_var": 5872,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 5: tanggal sidang",
+  "data_type": "data_sql",
+  "sql_query": "SELECT tanggal_sidang AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 4,1"
+ },
+ {
+  "no_var": 5873,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 5: alasan penundaan",
+  "data_type": "data_sql",
+  "sql_query": "SELECT alasan_ditunda AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 4,1"
+ },
+ {
+  "no_var": 5874,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 5: agenda / keterangan",
+  "data_type": "data_sql",
+  "sql_query": "SELECT CONCAT(IFNULL(agenda,''),IF(sidang_keliling='Y',' (sidang keliling)','')) AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 4,1"
+ },
+ {
+  "no_var": 5875,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 6: tanggal sidang",
+  "data_type": "data_sql",
+  "sql_query": "SELECT tanggal_sidang AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 5,1"
+ },
+ {
+  "no_var": 5876,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 6: alasan penundaan",
+  "data_type": "data_sql",
+  "sql_query": "SELECT alasan_ditunda AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 5,1"
+ },
+ {
+  "no_var": 5877,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 6: agenda / keterangan",
+  "data_type": "data_sql",
+  "sql_query": "SELECT CONCAT(IFNULL(agenda,''),IF(sidang_keliling='Y',' (sidang keliling)','')) AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 5,1"
+ },
+ {
+  "no_var": 5878,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 7: tanggal sidang",
+  "data_type": "data_sql",
+  "sql_query": "SELECT tanggal_sidang AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 6,1"
+ },
+ {
+  "no_var": 5879,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 7: alasan penundaan",
+  "data_type": "data_sql",
+  "sql_query": "SELECT alasan_ditunda AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 6,1"
+ },
+ {
+  "no_var": 5880,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 7: agenda / keterangan",
+  "data_type": "data_sql",
+  "sql_query": "SELECT CONCAT(IFNULL(agenda,''),IF(sidang_keliling='Y',' (sidang keliling)','')) AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 6,1"
+ },
+ {
+  "no_var": 5881,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 8: tanggal sidang",
+  "data_type": "data_sql",
+  "sql_query": "SELECT tanggal_sidang AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 7,1"
+ },
+ {
+  "no_var": 5882,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 8: alasan penundaan",
+  "data_type": "data_sql",
+  "sql_query": "SELECT alasan_ditunda AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 7,1"
+ },
+ {
+  "no_var": 5883,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 8: agenda / keterangan",
+  "data_type": "data_sql",
+  "sql_query": "SELECT CONCAT(IFNULL(agenda,''),IF(sidang_keliling='Y',' (sidang keliling)','')) AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 7,1"
+ },
+ {
+  "no_var": 5884,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 9: tanggal sidang",
+  "data_type": "data_sql",
+  "sql_query": "SELECT tanggal_sidang AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 8,1"
+ },
+ {
+  "no_var": 5885,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 9: alasan penundaan",
+  "data_type": "data_sql",
+  "sql_query": "SELECT alasan_ditunda AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 8,1"
+ },
+ {
+  "no_var": 5886,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 9: agenda / keterangan",
+  "data_type": "data_sql",
+  "sql_query": "SELECT CONCAT(IFNULL(agenda,''),IF(sidang_keliling='Y',' (sidang keliling)','')) AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 8,1"
+ },
+ {
+  "no_var": 5887,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 10: tanggal sidang",
+  "data_type": "data_sql",
+  "sql_query": "SELECT tanggal_sidang AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 9,1"
+ },
+ {
+  "no_var": 5888,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 10: alasan penundaan",
+  "data_type": "data_sql",
+  "sql_query": "SELECT alasan_ditunda AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 9,1"
+ },
+ {
+  "no_var": 5889,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 10: agenda / keterangan",
+  "data_type": "data_sql",
+  "sql_query": "SELECT CONCAT(IFNULL(agenda,''),IF(sidang_keliling='Y',' (sidang keliling)','')) AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 9,1"
+ },
+ {
+  "no_var": 5890,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 11: tanggal sidang",
+  "data_type": "data_sql",
+  "sql_query": "SELECT tanggal_sidang AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 10,1"
+ },
+ {
+  "no_var": 5891,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 11: alasan penundaan",
+  "data_type": "data_sql",
+  "sql_query": "SELECT alasan_ditunda AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 10,1"
+ },
+ {
+  "no_var": 5892,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 11: agenda / keterangan",
+  "data_type": "data_sql",
+  "sql_query": "SELECT CONCAT(IFNULL(agenda,''),IF(sidang_keliling='Y',' (sidang keliling)','')) AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 10,1"
+ },
+ {
+  "no_var": 5893,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 12: tanggal sidang",
+  "data_type": "data_sql",
+  "sql_query": "SELECT tanggal_sidang AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 11,1"
+ },
+ {
+  "no_var": 5894,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 12: alasan penundaan",
+  "data_type": "data_sql",
+  "sql_query": "SELECT alasan_ditunda AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 11,1"
+ },
+ {
+  "no_var": 5895,
+  "nama": "RIWAYAT SIDANG SAMPUL baris 12: agenda / keterangan",
+  "data_type": "data_sql",
+  "sql_query": "SELECT CONCAT(IFNULL(agenda,''),IF(sidang_keliling='Y',' (sidang keliling)','')) AS data FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 11,1"
+ }
+]
