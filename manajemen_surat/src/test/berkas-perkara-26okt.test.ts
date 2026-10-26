@@ -82,7 +82,7 @@ describe("A - lib murni", () => {
 
   it("ciri sampul awal: lencana tanpa verstek/mediasi/rekonvensi/sita, ghaib dan mafqud bingkai ganda sendiri", () => {
     const h = ciriSampulAwal({ ecourt: true, kuasa: true, ghaib: true, verstek: true, mediasi: true, sita: true, kumulasi: true }, { kuasa: "P+T", kumulasi: "2" });
-    expect(h["5861"]).toBe("[■ e-COURT]  [■ KUASA HUKUM P+T]  [▲ KUMULASI 2]");
+    expect(h["5861"]).toBe("[■ e-COURT]  [■ KUASA HUKUM P+T]");
     expect(h["5807"]).toBe("[● GHAIB T]");
     expect(h["5808"]).toBe("");
     expect(ciriSampulAwal({}, {})["5861"]).toContain("tidak ada ciri khusus");

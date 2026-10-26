@@ -76,7 +76,7 @@
   }
 
   // ---- sampul cetak awal (keputusan Derry 26 Okt, versi 4-6): kembaran lib/berkas-perkara.ts dan lib/lampiran-pihak.ts
-  const CIRI_BUKAN_LENCANA_AWAL = ["verstek", "rekonvensi", "sita", "mediasi"];
+  const CIRI_BUKAN_LENCANA_AWAL = ["verstek", "rekonvensi", "sita", "mediasi", "kumulasi"];
   const CIRI_BINGKAI_GANDA_AWAL = ["ghaib", "mafqud"];
   function ciriSampulAwal(aktif, sisiDari) {
     const teks = (c) => teksCiri(c, sisiDari ? sisiDari[c.k] : undefined);
@@ -100,6 +100,44 @@
   }
   function rangkaiSusulan(daftar, centang, oto) {
     return daftar.map((d) => `${centang[d.kunci] ? "[X]" : "[ ]"} ${d.nama}${centang[d.kunci] && oto[d.kunci] ? " (oto)" : ""}`).join("   ");
+  }
+  // Alasan/tuntutan pokok (kembaran lib/lampiran-sampul.ts): lampiran memuat semua butir; yang terdeteksi atau dicentang ditandai
+  const ALASAN_CERAI = {
+    judul: "ALASAN PERCERAIAN",
+    dasar: "Pasal 19 PP 9/1975 jo. Pasal 116 KHI",
+    butir: [
+      ["a", "salah satu pihak berbuat zina, atau menjadi pemabuk, pemadat, penjudi, dan lain sebagainya yang sukar disembuhkan"],
+      ["b", "salah satu pihak meninggalkan pihak lain selama 2 (dua) tahun berturut-turut tanpa izin dan tanpa alasan yang sah"],
+      ["c", "salah satu pihak mendapat hukuman penjara 5 (lima) tahun atau hukuman yang lebih berat"],
+      ["d", "salah satu pihak melakukan kekejaman atau penganiayaan berat yang membahayakan pihak lain"],
+      ["e", "salah satu pihak mendapat cacat badan atau penyakit sehingga tidak dapat menjalankan kewajibannya"],
+      ["f", "antara suami dan isteri terus-menerus terjadi perselisihan dan pertengkaran dan tidak ada harapan akan hidup rukun lagi"],
+      ["g", "suami melanggar taklik talak"],
+      ["h", "peralihan agama atau murtad yang menyebabkan terjadinya ketidakrukunan dalam rumah tangga"],
+    ],
+  };
+  const ALASAN_JENIS = {
+    cg: ALASAN_CERAI,
+    ct: ALASAN_CERAI,
+    in: {
+      judul: "ALASAN ITSBAT NIKAH",
+      dasar: "Pasal 7 ayat (3) KHI",
+      butir: [
+        ["a", "adanya perkawinan dalam rangka penyelesaian perceraian"],
+        ["b", "hilangnya akta nikah"],
+        ["c", "adanya keraguan tentang sah atau tidaknya salah satu syarat perkawinan"],
+        ["d", "adanya perkawinan yang terjadi sebelum berlakunya Undang-Undang Nomor 1 Tahun 1974"],
+        ["e", "perkawinan yang dilakukan oleh mereka yang tidak mempunyai halangan perkawinan menurut Undang-Undang Nomor 1 Tahun 1974, tetapi tidak tercatat"],
+      ],
+    },
+    dk: { judul: "ALASAN DISPENSASI KAWIN", dasar: "posita permohonan", butir: [["1", "anak telah hamil"], ["2", "khawatir terjadi perbuatan zina / hubungan yang sangat erat"], ["3", "sudah lama bertunangan"], ["4", "lainnya"]] },
+    waris: { judul: "TUNTUTAN POKOK", dasar: "petitum gugatan", butir: [["1", "penetapan ahli waris"], ["2", "pembagian harta waris"], ["3", "sita harta waris"]] },
+    hb: { judul: "TUNTUTAN POKOK", dasar: "petitum gugatan", butir: [["1", "penetapan harta bersama"], ["2", "pembagian 1/2 bagian"], ["3", "sita marital"]] },
+    paw: { judul: "KEPERLUAN PENETAPAN", dasar: "posita permohonan", butir: [["1", "pembagian waris"], ["2", "pengurusan tabungan / aset peninggalan"], ["3", "balik nama"]] },
+  };
+  function definisiAlasan(jenis) {
+    const d = ALASAN_JENIS[jenis];
+    return d ? { judul: d.judul, dasar: d.dasar, butir: d.butir.map(([kunci, nama]) => ({ kunci, nama })) } : null;
   }
   const MUAT_PIHAK = { lawan: 8, permohonan: 12 };
   const TURUT_SEBARIS = 3;
@@ -390,6 +428,20 @@
     for (const k of KUNCI_SUSULAN) o[k] = Object.prototype.hasOwnProperty.call(f, k);
     return o;
   }
+  /** Butir alasan yang berlaku: terdeteksi otomatis (kecuali dimatikan tangan) atau dicentang tangan (kunci "a_<butir>" di ST.tangan). */
+  function alasanEfektif() {
+    const d = definisiAlasan(ST.fakta && ST.fakta.perkara ? ST.fakta.perkara.jenis : "");
+    if (!d) return null;
+    const oto = (ST.fakta && ST.fakta.alasan && ST.fakta.alasan.oto) || {};
+    const hasil = d.butir.map((b) => {
+      const kunci = `a_${b.kunci}`;
+      const ada = Object.prototype.hasOwnProperty.call(oto, b.kunci);
+      const tangan = Object.prototype.hasOwnProperty.call(ST.tangan, kunci);
+      const nyala = tangan ? Boolean(ST.tangan[kunci]) : ada;
+      return { kunci: b.kunci, nama: b.nama, nyala, oto: ada, tangan, sumber: ada ? oto[b.kunci].sumber || "" : "" };
+    });
+    return { definisi: d, butir: hasil };
+  }
   function susulanEfektif() {
     const oto = susulanOto();
     const h = {};
@@ -647,6 +699,9 @@
           objek: f.objek || [],
           riwayat: f.riwayatSemua || [],
           infoKhasBaris: (nilaiIsian("fokus") ? 1 : 0) + barisPokok,
+          jenisPerkara: (f.perkara || {}).jenis || "",
+          alasan: { oto: (f.alasan && f.alasan.oto) || {}, tangan: alasanTangan() },
+          keterangan: keteranganOto(),
         });
         if (pihakBanyak(j)) badan.banyak = true;
       }
@@ -802,6 +857,41 @@
       .join("");
   }
 
+  function alasanTangan() {
+    const h = {};
+    for (const [k, v] of Object.entries(ST.tangan)) if (/^a_[a-h1-4]$/.test(k)) h[k.slice(2)] = Boolean(v);
+    return h;
+  }
+  /** KETERANGAN otomatis di CATATAN: hanya fakta yang pasti dari ciri perkara (ghaib, mafqud); selebihnya garis tulis tangan di blangko. */
+  function keteranganOto() {
+    const ef = ciriEfektif();
+    const f = ST.fakta || {};
+    const t = (f.perkara || {}).sebutanT || "Tergugat";
+    const h = [];
+    if (ef.ghaib) h.push(`${t} ghaib`);
+    if (ef.mafqud) h.push("Mafqud (orang hilang)");
+    return h;
+  }
+
+  /** Alasan / tuntutan pokok: tercentang otomatis dari posita/petitum (OTO); bila tidak ada yang berlaku, baris ALASAN dan lampirannya tidak dicetak. */
+  function htmlKartuAlasan() {
+    const a = alasanEfektif();
+    if (!a) return "";
+    const ada = a.butir.filter((b) => b.nyala).length;
+    const gagal = ST.fakta && ST.fakta.alasan && ST.fakta.alasan.gagal;
+    const tombol = a.butir
+      .map((b) => {
+        const kelas = b.nyala ? (b.tangan ? "tgn" : "oto") : b.tangan ? "mati-tgn" : "";
+        const ket = b.tangan ? (b.nyala ? "dicentang tangan" : "dimatikan tangan") : b.nyala ? `OTO${b.sumber ? ` - ${b.sumber}` : ""}` : "";
+        return `<button type="button" class="bk-ciri bk-alasan ${kelas}" data-bk="alasan" data-bkv="${esc(b.kunci)}" aria-pressed="${b.nyala}" title="${esc(ket || "klik untuk mencentang")}"><span class="g">${b.nyala ? "\u2611" : "\u2610"}</span> <b>${esc(b.kunci)}.</b> ${esc(b.nama.length > 64 ? `${b.nama.slice(0, 62)}...` : b.nama)}${b.nyala && !b.tangan ? " <small>OTO</small>" : ""}</button>`;
+      })
+      .join("");
+    return (
+      `<section class="bk-kartu" aria-label="${esc(a.definisi.judul)}"><h3>${esc(a.definisi.judul)} <small>${esc(a.definisi.dasar)}</small></h3><div class="bk-kel">${tombol}</div>` +
+      `<p class="bk-catat">${ada ? `${ada} butir berlaku: baris ALASAN di CATATAN sampul dan LAMPIRAN ${esc(a.definisi.judul)} akan dicetak (daftar lengkap dengan kutipan sumber).` : "Belum ada yang terdeteksi atau dicentang: baris ALASAN dan lampirannya tidak dicetak."}${gagal ? " Deteksi alasan tidak terbaca; tidak ada yang dicentang otomatis." : ""}</p></section>`
+    );
+  }
+
   /** Sampul cetak awal: ciri berikon (hanya yang berlaku), ciri susulan (kotak centang otomatis/tangan), isian, keterangan pihak banyak. */
   function htmlSampulAwal() {
     const oto = ciriOtomatis();
@@ -849,6 +939,7 @@
       `<section class="bk-kartu" aria-label="Ciri susulan"><h3>Ciri susulan <small>kotak tercentang otomatis bila datanya ada (OTO); sisanya dicentang tangan</small></h3><div class="bk-kel">${susulan}</div>` +
       (gagal.length ? `<p class="bk-catat">Sebagian data tidak terbaca (${esc(gagal.join(", "))}); yang bergantung padanya tidak dicentang.</p>` : "") +
       `${infoPihak}${infoAnakObjek}<div data-bk-lamp>${htmlLampiran()}</div></section>` +
+      htmlKartuAlasan() +
       `<section class="bk-kartu" aria-label="Isian sampul"><h3>Isian sampul</h3>${htmlKolomIsian("umum")}</section>` +
       (daftarIsian().some((x) => x.grup === "khas") ? `<section class="bk-kartu" aria-label="Isian khas ${esc(jenisKhas().nama)}"><h3>Isian khas ${esc(jenisKhas().nama)}</h3>${htmlKolomIsian("khas")}</section>` : "") +
       `</div>`
@@ -1019,6 +1110,17 @@
       const oto = susulanOto()[v];
       const baru = !susulanEfektif()[v];
       if (baru === oto) delete ST.tangan[kunci];
+      else ST.tangan[kunci] = baru;
+      gambar();
+      jadwalSimpan();
+      jadwalPratinjau();
+    } else if (aksi === "alasan") {
+      const a = alasanEfektif();
+      const b = a && a.butir.find((x) => x.kunci === v);
+      if (!b) return;
+      const kunci = `a_${v}`;
+      const baru = !b.nyala;
+      if (baru === b.oto) delete ST.tangan[kunci];
       else ST.tangan[kunci] = baru;
       gambar();
       jadwalSimpan();
@@ -1223,6 +1325,6 @@
     buka,
     tutup,
     // dipakai uji
-    _murni: { ciriSampulAwal, daftarSusulan, rangkaiSusulan, pihakBanyak, perluLampiran, KUNCI_SUSULAN, uraiHalaman, hitungDaftarIsi, susunUrutan, rangkaiCiri, teksRentang, tanggalIndonesia, halamanPdf, BAWAAN_HALAMAN, CIRI },
+    _murni: { definisiAlasan, ciriSampulAwal, daftarSusulan, rangkaiSusulan, pihakBanyak, perluLampiran, KUNCI_SUSULAN, uraiHalaman, hitungDaftarIsi, susunUrutan, rangkaiCiri, teksRentang, tanggalIndonesia, halamanPdf, BAWAAN_HALAMAN, CIRI },
   });
 })();

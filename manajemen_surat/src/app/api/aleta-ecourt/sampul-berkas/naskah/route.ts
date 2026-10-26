@@ -13,7 +13,7 @@ import {
 } from "@/lib/berkas-perkara";
 import { FITUR_BERKAS_PERKARA } from "@/lib/fitur-satker";
 import { bersihkanPihak, gabungLampiran, jumlahDariDaftar, pihakBanyak } from "@/lib/lampiran-pihak";
-import { barisTurut, bersihkanAnak, bersihkanObjek, bersihkanSidang, kolomPihakSampul, susunLampiran, type HasilLampiran } from "@/lib/lampiran-sampul";
+import { barisTurut, bersihkanAlasan, bersihkanAnak, bersihkanObjek, bersihkanSidang, kolomPihakSampul, susunLampiran, type HasilLampiran } from "@/lib/lampiran-sampul";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { callAletaBotSippBridge } from "@/server/modules/aleta-sipp/aleta-sipp-datasource";
@@ -131,6 +131,7 @@ export async function POST(request: NextRequest) {
           anak: bersihkanAnak(badan.anak),
           objek: bersihkanObjek(badan.objek),
           riwayat: bersihkanSidang(badan.riwayat),
+          alasan: bersihkanAlasan(badan.alasan, teks(badan.jenisPerkara, 10)),
           barisRiwayat: KERTAS[kertas].barisAwal,
           infoKhasBaris: Math.max(0, Math.min(20, Math.trunc(Number(badan.infoKhasBaris)) || 0)),
           sebutan: { 1: teks(badan.sebutanP, 20) || (lawan ? "Penggugat" : "Pemohon"), 2: teks(badan.sebutanT, 20) || (lawan ? "Tergugat" : "Termohon") },
@@ -139,6 +140,10 @@ export async function POST(request: NextRequest) {
         });
         if (lamp.barisDepan.length) nilai["5832"] = lamp.barisDepan.join("\n");
         if (lamp.kaki) nilai["5833"] = lamp.kaki;
+        // CATATAN: ALASAN hanya bila ada yang terdeteksi/dicentang (baris tidak tampil bila tidak); KETERANGAN otomatis (mis. ghaib) + garis tangan di blangko.
+        if (lamp.barisAlasan) nilai["5834"] = lamp.barisAlasan;
+        const ket = Array.isArray(badan.keterangan) ? badan.keterangan.map((x) => teks(x, 200)).filter((x) => x && !/aleta/i.test(x)).slice(0, 4) : [];
+        if (ket.length) nilai["5835"] = ket.join("\n");
         if (banyak) {
           const nomorPihak = lamp.daftar.find((d) => d.kunci === "pihak")?.nomor ?? 1;
           const s1 = kolomPihakSampul(pihak.filter((x) => x.sisi === 1), lamp.muatPihak, nomorPihak);
@@ -149,6 +154,8 @@ export async function POST(request: NextRequest) {
             nilai["5892"] = s2.kiri;
             nilai["5893"] = s2.kanan;
           }
+          const intervensi = pihak.filter((x) => x.sisi === 3);
+          if (intervensi.length) nilai["5847"] = barisTurut(intervensi, nomorPihak, "INTERVENSI");
           const turut = barisTurut(pihak.filter((x) => x.sisi === 4), nomorPihak, teks(badan.sebutanT, 20) ? `TURUT ${teks(badan.sebutanT, 20).toUpperCase()}` : "TURUT TERGUGAT");
           if (turut) nilai["5897"] = turut;
         }

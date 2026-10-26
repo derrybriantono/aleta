@@ -648,6 +648,8 @@ function kodePolaSebab(sebab, kalimat) {
 }
 
 module.exports = {
+  HURUF_LANGSUNG,
+  sebabHuruf,
   kodePolaKunci,
   kodePolaSebab,
   penguji,

@@ -142,8 +142,8 @@ export function cirKeadaanEfektif(otomatis: Record<string, boolean>, tangan: Rec
 // ---------------------------------------------------------------------------
 // Sampul cetak awal (keputusan Derry 26 Okt, versi 4)
 // ---------------------------------------------------------------------------
-/** Ciri yang TIDAK menjadi lencana di sampul cetak awal: verstek (sifat putusan), rekonvensi dan sita (kotak centang susulan), mediasi (pita mediasi). */
-export const CIRI_BUKAN_LENCANA_AWAL: readonly string[] = ["verstek", "rekonvensi", "sita", "mediasi"];
+/** Ciri yang TIDAK menjadi lencana di sampul cetak awal: verstek (sifat putusan), rekonvensi dan sita (kotak centang susulan), mediasi (pita mediasi), kumulasi (sudah di judul). */
+export const CIRI_BUKAN_LENCANA_AWAL: readonly string[] = ["verstek", "rekonvensi", "sita", "mediasi", "kumulasi"];
 /** Ciri berbingkai ganda di sampul cetak awal (mengubah cara pemeriksaan); tercetak di runut sendiri (variabel 5807 dan 5808). */
 export const CIRI_BINGKAI_GANDA_AWAL: readonly string[] = ["ghaib", "mafqud"];
 

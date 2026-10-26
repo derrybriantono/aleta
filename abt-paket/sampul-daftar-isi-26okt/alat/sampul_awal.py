@@ -13,11 +13,11 @@ dan membuang tanda "..." variabel kosong (kolom tulis tangan). Kotak statis di R
 """
 import bangun_rtf as b
 
-TINGGI_BANYAK = {'a4': 290, 'f4': 330, 'legal': 350}   # twip; sekitar 5 mm (artifact: minimum 15-16 px)
+TINGGI_BANYAK = {'a4': 250, 'f4': 290, 'legal': 310}   # twip; sekitar 5 mm (artifact: minimum 15-16 px)
 KERTAS_AWAL = {   # kode: (baris riwayat sidang, tinggi minimum baris dalam twip)
-    'a4': (15, 360),
-    'f4': (18, 390),
-    'legal': (20, 410),
+    'a4': (15, 300),
+    'f4': (18, 330),
+    'legal': (20, 350),
 }
 KOTAK = '{\\f1\\u9744?}'
 IKON = '{\\f1\\u9632?}'    # ikon pada keterangan: pendaftaran, pihak, proses
@@ -67,8 +67,7 @@ def sampul_awal(kertas='a4', lawan=True, banyak=False):
         par([run('CIRI PERKARA', b=True, sz=12, sp=60), run('   hanya yang berlaku', sz=12)], intbl='mid', sb=20),
         par(['{' + GANDA + '\\b\\fs16 #5807#}', ' ', '{' + GANDA + '\\b\\fs16 #5808#}', ' ', run('#5861#', b=True, sz=16, sp=10)], intbl='mid', sb=30, sa=20),
         par([run('#5842#', b=True, sz=16)], intbl='mid', sb=0, sa=10),
-        p_sel([IKON + ' ' + run('pendaftaran', sz=11) + '   ' + IKON_B + ' ' + run('pihak', sz=11) + '   ' + IKON_C + ' ' + run('proses', sz=11)
-               + run('   -   bingkai ganda = mengubah cara pemeriksaan', sz=11)], sb=0, sa=20),
+        p_sel([run('#5832#', b=True, sz=15)], sb=0, sa=20),
     ])
     susulan = sel([par([run('CIRI SUSULAN', b=True, sz=12, sp=60), run('   centang bila terjadi', sz=12)], intbl='mid', sb=20),
                    p_sel([run('#5862#', sz=15)], sb=30, sa=20)])
@@ -99,6 +98,7 @@ def sampul_awal(kertas='a4', lawan=True, banyak=False):
             s += tabel([{'lebar': [half, LEBAR - half], 'brd': [(0, 15, 15, 10), (0, 10, 15, 15)],
                          'sel': [sel(p_sel([run('#5890#', sz=fs)], sb=10, sa=10)), sel(p_sel([run('#5891#', sz=fs)], sb=10, sa=10))]}])
         s += par([run('#5897#', b=True, sz=fs)], sb=20, sa=0)
+        s += par([run('#5847#', b=True, sz=fs)], sb=10, sa=0)
     elif lawan:
         kiri = sel([
             par([run('#5841#', b=True, sz=12, sp=60)], intbl='mid', sb=20),
@@ -123,7 +123,6 @@ def sampul_awal(kertas='a4', lawan=True, banyak=False):
         s += tabel([{'lebar': [LEBAR], 'brd': [(15, 15, 15, 15)], 'sel': [satu]}])
     # pokok khas jenis perkara (nama anak dispensasi, nikah yang diitsbatkan, dan seterusnya; kosong bila tidak ada)
     s += par([run('#5843#', sz=15)], sb=40, sa=20)
-    s += par([run('#5832#', sz=15)], sb=0, sa=20)
     # majelis (satu hakim per baris) dan petugas: terisi sesudah PMH/PHS, selebihnya sel kosong untuk ditulis tangan
     w4 = [e(4300), e(2200), e(2200), LEBAR - e(4300) - 2 * e(2200)]
     s += tabel([{'lebar': w4, 'tinggi': 700, 'brd': [K_SEL] * 4,
@@ -163,13 +162,30 @@ def sampul_awal(kertas='a4', lawan=True, banyak=False):
             {'lebar': [LEBAR], 'brd': [(15, 15, 15, 15)],
              'sel': [sel(p_sel([run('Hasil: ', b=True, sz=14), run('#5866#', sz=14)], sb=25, sa=25))]},
         ])
-    # ===== putusan: sampul berhenti di sini =====
+    # ===== putusan (versi 8): tabel label | isi; sampul berhenti di putusan =====
     s += b.judul_bagian('PUTUSAN', sb=80)
-    wa = [e(2400), LEBAR - e(2400)]
-    s += tabel([{'lebar': wa, 'tinggi': 520, 'brd': [K_SEL] * 2,
-                 'sel': [kot('DIPUTUS TANGGAL', '#1069#', 16), kot('AMAR', '#5863#', 15)]}])
-    s += tabel([{'lebar': [LEBAR - e(4200), e(4200)], 'tinggi': 520, 'brd': [K_SEL] * 2,
-                 'sel': [kot('SIFAT PUTUSAN', '#5864#', 15), kot('KONSEPTOR PUTUSAN', '#5865#', 15)]}])
+
+    def lab(t):
+        return sel(p_sel([run(t, b=True, sz=11, sp=30)], sb=20, sa=20))
+
+    def isi(v, sz=15):
+        return sel(p_sel([run(v, b=True, sz=sz)], sb=20, sa=20))
+    wl = e(1500)
+    s += tabel([
+        {'lebar': [wl, e(2600), e(1500), LEBAR - wl - e(2600) - e(1500)], 'tinggi': 330, 'va': ['c'] * 4, 'brd': [K_SEL] * 4,
+         'sel': [lab('TANGGAL PUTUS'), isi('#1069#', 16), lab('SIFAT PUTUSAN'), isi('#5864#', 14)]},
+        {'lebar': [wl, LEBAR - wl], 'tinggi': 330, 'va': ['c'] * 2, 'brd': [K_SEL] * 2, 'sel': [lab('AMAR'), isi('#5863#', 14)]},
+        {'lebar': [wl, LEBAR - wl], 'tinggi': 330, 'va': ['c'] * 2, 'brd': [K_SEL] * 2, 'sel': [lab('KONSEPTOR'), isi('#5865#', 15)]},
+    ])
+    # ===== catatan (versi 8 dan 9): alasan terdeteksi sebaris + rujukan lampiran; keterangan otomatis + garis tangan =====
+    s += b.judul_bagian('CATATAN', sb=60)
+    # ALASAN hanya bila ada yang terdeteksi (keputusan Derry 26 Okt): satu paragraf variabel, bukan baris tabel; kosong = tidak tampil
+    s += par([run('#5834#', b=True, sz=14)], sb=30, sa=10)
+    s += tabel([
+        {'lebar': [wl, LEBAR - wl], 'tinggi': 480, 'va': ['t'] * 2, 'brd': [K_SEL] * 2, 'sel': [lab('KETERANGAN'), isi('#5835#', 14)]},
+    ])
+    if kertas != 'a4':
+        s += tabel([{'lebar': [wl, LEBAR - wl], 'tinggi': 330, 'va': ['c'] * 2, 'brd': [K_SEL] * 2, 'sel': [lab('CADANGAN'), isi('', 14)]}])
     s += par([run('Isian bergaris atau berkotak diisi tangan oleh Panitera Pengganti; bila sampul dicetak ulang, data yang sudah ada terisi otomatis.', sz=12)], sb=40)
     s += par([run('#5833#', b=True, sz=12)], sb=10)
     return s + '}\n'

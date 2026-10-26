@@ -753,7 +753,7 @@
   "no_var": 5861,
   "nama": "CIRI PERKARA AWAL SAMPUL (OTOMATIS: ciri yang berlaku dan sudah diketahui saat daftar; tanpa ghaib, mafqud, verstek, rekonvensi, mediasi, sita)",
   "data_type": "data_sql",
-  "sql_query": "SELECT IFNULL(NULLIF(TRIM(CONCAT_WS('  ',NULLIF('#5802#',''),NULLIF('#5803#',''),NULLIF('#5805#',''),NULLIF('#5806#',''),NULLIF('#5809#',''),NULLIF('#5810#',''),NULLIF('#5811#',''),NULLIF('#5812#',''),NULLIF('#5813#',''),NULLIF('#5814#',''),NULLIF('#5815#',''),NULLIF('#5816#',''),NULLIF('#5818#',''),NULLIF('#5822#',''),NULLIF('#5823#',''),NULLIF('#5824#',''),NULLIF('#5825#',''),NULLIF('#5826#',''),NULLIF('#5827#',''))),''),'- tidak ada ciri khusus -') AS data"
+  "sql_query": "SELECT IFNULL(NULLIF(TRIM(CONCAT_WS('  ',NULLIF('#5802#',''),NULLIF('#5803#',''),NULLIF('#5805#',''),NULLIF('#5806#',''),NULLIF('#5809#',''),NULLIF('#5810#',''),NULLIF('#5811#',''),NULLIF('#5812#',''),NULLIF('#5813#',''),NULLIF('#5814#',''),NULLIF('#5815#',''),NULLIF('#5816#',''),NULLIF('#5822#',''),NULLIF('#5823#',''),NULLIF('#5824#',''),NULLIF('#5825#',''),NULLIF('#5826#',''),NULLIF('#5827#',''))),''),'- tidak ada ciri khusus -') AS data"
  },
  {
   "no_var": 5862,
@@ -765,7 +765,7 @@
   "no_var": 5863,
   "nama": "AMAR PUTUSAN SAMPUL (KOTAK CENTANG; terisi dari status putusan SIPP bila sudah ada; perkara berlawanan enam pilihan, permohonan empat)",
   "data_type": "data_sql",
-  "sql_query": "SELECT CONCAT_WS('   ',CONCAT(IF(x.s IN (62,1,2,30,34,117,133),'[X]','[ ]'),' KABUL'),CONCAT(IF(x.s IN (63,3,32,35,119,134),'[X]','[ ]'),' TOLAK'),CONCAT(IF(x.s IN (64,61,4,33,36,84,120),'[X]','[ ]'),' NO'),IF(x.l=1,CONCAT(IF(x.s IN (65,93,6,29,31,38,118),'[X]','[ ]'),' GUGUR'),NULL),CONCAT(IF(x.s IN (67,7,37),'[X]','[ ]'),' CABUT'),IF(x.l=1,CONCAT(IF(x.s IN (85,5),'[X]','[ ]'),' DAMAI'),NULL)) AS data FROM (SELECT (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#) AS l, (SELECT status_putusan_id FROM perkara_putusan WHERE perkara_id=#perkara_id# LIMIT 1) AS s) x"
+  "sql_query": "SELECT CONCAT_WS('   ',CONCAT(IF(x.s IN (62,1,2,30,34,117,133),'[X]','[ ]'),' KABUL'),CONCAT(IF(x.s IN (63,3,32,35,119,134),'[X]','[ ]'),' TOLAK'),CONCAT(IF(x.s IN (64,61,4,33,36,84,120),'[X]','[ ]'),' TIDAK DITERIMA (NO)'),IF(x.l=1,CONCAT(IF(x.s IN (65,93,6,29,31,38,118),'[X]','[ ]'),' GUGUR'),NULL),CONCAT(IF(x.s IN (67,7,37),'[X]','[ ]'),' DICABUT'),IF(x.l=1,CONCAT(IF(x.s IN (85,5),'[X]','[ ]'),' DAMAI'),NULL)) AS data FROM (SELECT (SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#) AS l, (SELECT status_putusan_id FROM perkara_putusan WHERE perkara_id=#perkara_id# LIMIT 1) AS s) x"
  },
  {
   "no_var": 5864,
@@ -886,6 +886,24 @@
   "nama": "KAKI SAMPUL AWAL: rujukan lampiran (diisi saat naskah disusun; kosong bila tidak ada lampiran)",
   "data_type": "data_sql",
   "sql_query": "SELECT '' AS data"
+ },
+ {
+  "no_var": 5834,
+  "nama": "CATATAN SAMPUL: ALASAN (diisi saat naskah disusun dari deteksi; ABT langsung: kosong)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT '' AS data"
+ },
+ {
+  "no_var": 5835,
+  "nama": "CATATAN SAMPUL: KETERANGAN (diisi saat naskah disusun; ABT langsung: kosong)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT '' AS data"
+ },
+ {
+  "no_var": 5847,
+  "nama": "INTERVENSI SAMPUL AWAL (OTOMATIS: pihak intervensi dari SIPP, tiga nama sebaris; kosong bila tidak ada)",
+  "data_type": "data_sql",
+  "sql_query": "SELECT CONCAT('INTERVENSI (',COUNT(*),')  ',GROUP_CONCAT(CASE WHEN a.urutan<=3 THEN CONCAT(ELT(a.urutan,'I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI','XVII','XVIII','XIX','XX'),'. ',a.nama) END ORDER BY a.urutan SEPARATOR '  -  '),IF(COUNT(*)>3,CONCAT('  -  dan ',COUNT(*)-3,' lainnya (lampiran)'),'')) AS data FROM perkara_pihak3 a WHERE a.perkara_id=#perkara_id# HAVING COUNT(*)>0"
  },
  {
   "no_var": 5870,

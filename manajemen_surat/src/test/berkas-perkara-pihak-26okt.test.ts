@@ -16,7 +16,11 @@ import {
   type PihakLampiran,
 } from "@/lib/lampiran-pihak";
 import {
+  alasanBerlaku,
+  barisAlasan,
   barisDepanSampul,
+  bersihkanAlasan,
+  definisiAlasan,
   barisTurut,
   bersihkanAnak,
   bersihkanObjek,
@@ -220,5 +224,92 @@ describe("deteksi ciri susulan (bot, murni)", () => {
     expect(d({ agenda: ["Pengumuman itsbat nikah"] })).toHaveProperty("umum");
     // sumber pertama yang menang; tidak menghapus yang lain
     expect(Object.keys(bot.deteksiSusulan({ eksepsi: true, agenda: ["eksepsi"] }))).toEqual(["eksepsi"]);
+  });
+});
+
+describe("alasan: lampiran dan baris catatan hanya bila ada yang berlaku", () => {
+  const bahanAlasan = (jenis: string, oto: Record<string, object>, tangan: Record<string, boolean> = {}) => ({ jenis, oto, tangan });
+  const bahanL = (alasan: ReturnType<typeof bahanAlasan>) =>
+    ({ nomor: "64/Pdt.G/2026/PA.Cth", lebar: 10506, lawan: true, pihak: [], anak: [], objek: [], riwayat: [], barisRiwayat: 15, alasan }) as Parameters<typeof susunLampiran>[0];
+
+  it("daftar alasan menurut jenis", () => {
+    expect(definisiAlasan("cg")?.butir.map((b) => b.kunci)).toEqual(["a", "b", "c", "d", "e", "f", "g", "h"]);
+    expect(definisiAlasan("ct")?.dasar).toContain("Pasal 19 PP 9/1975");
+    expect(definisiAlasan("in")?.butir).toHaveLength(5);
+    expect(definisiAlasan("dk")?.butir.map((b) => b.kunci)).toEqual(["1", "2", "3", "4"]);
+    expect(definisiAlasan("waris")?.judul).toBe("TUNTUTAN POKOK");
+    expect(definisiAlasan("paw")?.judul).toBe("KEPERLUAN PENETAPAN");
+    expect(definisiAlasan("es")).toBeNull();
+  });
+
+  it("tidak ada yang terdeteksi atau dicentang: baris kosong dan tanpa lampiran alasan", () => {
+    const h = susunLampiran(bahanL(bahanAlasan("cg", {})));
+    expect(h.barisAlasan).toBe("");
+    expect(h.daftar.some((d) => d.kunci === "alasan")).toBe(false);
+    expect(susunLampiran(bahanL(bahanAlasan("es", { a: {} }))).daftar).toEqual([]);
+  });
+
+  it("terdeteksi: baris sebaris dengan (oto) dan rujukan lampiran; lampiran memuat semua butir, yang berlaku tebal dengan kutipan dan nomor posita", () => {
+    const oto = { f: { sumber: "posita: perselisihan terus-menerus", kutipan: "sejak 2023 sering terjadi perselisihan", butir: 4, bagian: "posita" } };
+    const h = susunLampiran(bahanL(bahanAlasan("cg", oto, { b: true })));
+    expect(h.daftar.map((d) => [d.nomor, d.kunci])).toEqual([[1, "alasan"]]);
+    expect(h.barisAlasan).toContain("b. salah satu pihak meninggalkan pihak lain");
+    expect(h.barisAlasan).toContain("f. antara suami dan isteri");
+    expect(h.barisAlasan).toContain("(oto)");
+    expect(h.barisAlasan.endsWith("-> Lampiran 1")).toBe(true);
+    expect(h.barisAlasan.split("(oto)")).toHaveLength(2);   // hanya f otomatis; b dicentang tangan
+    const r = h.bagianRtf;
+    expect(r).toContain("LAMPIRAN 1 - ALASAN PERCERAIAN");
+    expect(r).toContain("Dasar: Pasal 19 PP 9/1975 jo. Pasal 116 KHI");
+    expect(r).toContain("taklik talak");               // butir yang tidak berlaku tetap tercantum
+    expect(r).toContain("\\u9745?");                   // kotak tercentang
+    expect(r).toContain("\\u9744?");                   // kotak kosong
+    expect(r).toContain("sejak 2023 sering terjadi perselisihan");
+    expect(r).toContain("posita 4");
+    expect(r).toContain("dicentang tangan");
+    expect(r).toContain("\\b ");
+    expect(h.kaki).toContain("1. ALASAN PERCERAIAN");
+  });
+
+  it("dimatikan tangan menghapus yang terdeteksi; saringan klien membuang kunci dan teks tak sah", () => {
+    const oto = { f: { kutipan: "x", butir: 1, bagian: "posita" } };
+    expect(alasanBerlaku(bahanAlasan("cg", oto, { f: false }))).toEqual([]);
+    expect(barisAlasan(bahanAlasan("cg", oto, { f: false }), 1)).toBe("");
+    const b = bersihkanAlasan({ oto: { f: { sumber: "s", kutipan: "ada aleta", butir: 4, bagian: "posita" }, z: { kutipan: "buang" }, "2": { kutipan: "ok", bagian: "?" } }, tangan: { b: 1, q: true } }, "cg");
+    expect(Object.keys(b.oto).sort()).toEqual(["2", "f"]);
+    expect(b.oto.f.kutipan).toBe("");
+    expect(b.oto["2"].bagian).toBe("");
+    expect(b.tangan).toEqual({ b: true });
+    expect(bersihkanAlasan("x", "cg")).toEqual({ jenis: "cg", oto: {}, tangan: {} });
+  });
+});
+
+describe("deteksi alasan (bot, kamus nyata; data rekaan)", () => {
+  const da = (b: Record<string, unknown>) => bot.deteksiAlasan(b);
+
+  it("cerai: huruf langsung dari mesin deteksi alasan yang sama; kutipan dan nomor butir posita", () => {
+    const posita = "1. Bahwa Penggugat dan Tergugat menikah pada 2015.\n2. Bahwa sejak 2023 antara Penggugat dan Tergugat terus-menerus terjadi perselisihan dan pertengkaran.\n3. Bahwa Tergugat sering mabuk-mabukan dan berjudi.";
+    const h = da({ jenis: "cg", posita });
+    expect(h.f.kutipan).toContain("perselisihan");
+    expect(h.f.butir).toBe(2);
+    expect(h.f.bagian).toBe("posita");
+    expect(Object.keys(h).every((k) => "acdefgh".includes(k))).toBe(true);   // b tidak ditebak
+    expect(da({ jenis: "ct", posita: "tidak ada yang relevan di sini" })).toEqual({});
+  });
+
+  it("itsbat: tanggal menikah sebelum UU 1/1974 pasti d; selebihnya aturan kata", () => {
+    expect(da({ jenis: "in", posita: "x", tanggalNikah: "1970-05-01" }).d.sumber).toContain("sebelum UU 1/1974");
+    expect(da({ jenis: "in", posita: "buku nikah Pemohon hilang", tanggalNikah: "2008-08-20" }).b.butir).toBe(1);
+    expect(da({ jenis: "in", posita: "tidak ada", tanggalNikah: "2008-08-20" })).toEqual({});
+  });
+
+  it("dispensasi: alasan SIPP hamil; harta: petitum menyebut penetapan, pembagian, sita", () => {
+    expect(da({ jenis: "dk", posita: "x", alasanSipp: ["Hamil"] })["1"].sumber).toBe("alasan SIPP");
+    const hb = da({ jenis: "hb", petitum: "2. Menetapkan objek I sampai V sebagai harta bersama;\n3. Menyatakan Penggugat berhak atas 1/2 bagian;\n4. Menyatakan sah dan berharga sita marital" });
+    expect(Object.keys(hb).sort()).toEqual(["1", "2", "3"]);
+    expect(hb["1"].bagian).toBe("petitum");
+    expect(da({ jenis: "waris", petitum: "Menetapkan Penggugat sebagai ahli waris yang sah" })["1"].butir).toBe(1);
+    expect(da({ jenis: "paw", posita: "peninggalan berupa tabungan pada bank dan perlu balik nama sertifikat" })).toHaveProperty("2");
+    expect(da({ jenis: "es", posita: "apa saja" })).toEqual({});
   });
 });

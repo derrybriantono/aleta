@@ -335,6 +335,110 @@ function umurPenuh(lahir, acuan = new Date()) {
 }
 
 // ---------------------------------------------------------------------------
+// CATATAN sampul cetak awal (versi 8): baris ALASAN berkotak centang, tercentang otomatis dari posita/petitum (satu sumber dengan deteksi ALETA)
+// ---------------------------------------------------------------------------
+const RE_ITSBAT = {
+  a: /untuk\s+(?:keperluan\s+|kepentingan\s+)?(?:penyelesaian\s+)?perceraian|gugatan\s+(?:cerai|perceraian)/i,
+  b: /(?:buku|akta|kutipan)\s+nikah[^.;]{0,60}hilang|hilang[^.;]{0,60}(?:buku|akta|kutipan)\s+nikah/i,
+  c: /(?:ragu|diragukan|keraguan)[^.;]{0,60}(?:sah|syarat|nikah)|(?:sah|syarat)[^.;]{0,60}(?:ragu|diragukan)/i,
+  d: /sebelum\s+(?:berlakunya\s+)?(?:undang[- ]undang|uu)\s*(?:nomor\s*|no\.?\s*)?(?:1\s*(?:tahun|\/)\s*1974)?/i,
+};
+const RE_DK = {
+  2: /(?:khawatir|kekhawatiran|takut)[^.;]{0,80}(?:zina|perbuatan\s+(?:yang\s+)?dilarang|melanggar)|hubungan\s+(?:yang\s+)?(?:sangat\s+)?(?:erat|dekat)|berpacaran|menjalin\s+hubungan/i,
+};
+const RE_HARTA = {
+  hb1: /menetapkan[^.;]{0,120}harta\s+bersama|(?:sebagai|merupakan)\s+harta\s+bersama/i,
+  hb2: /(?:1\s*\/\s*2|setengah|separuh|masing-masing\s+(?:mendapat|memperoleh|berhak))/i,
+  w1: /menetapkan[^.;]{0,120}ahli\s+waris|(?:sebagai|adalah)\s+ahli\s+waris/i,
+  w2: /(?:membagi|pembagian|membagikan)[^.;]{0,80}(?:harta|tirkah|warisan|waris)/i,
+  p2: /tabungan|deposito|asuransi|taspen|bank|aset|uang\s+pensiun/i,
+  p3: /balik\s+nama|peralihan\s+hak|sertifikat/i,
+};
+
+function kamusCocok(kelompok, kunci, teks, kamusDeteksi) {
+  const k = kamusDeteksi || require("./kamusDeteksi");
+  const butir = k.polaKelompok(kelompok).filter((x) => x.kunci === kunci);
+  return butir.some((x) => new RegExp(x.regex, x.flags || "i").test(teks));
+}
+
+/** Teks SIPP (bisa memuat tag HTML) menjadi butir per baris/paragraf. */
+function butirDariTeks(teks) {
+  const t = String(teks || "").replace(/<\/(p|div|li)>|<br\s*\/?>/gi, "\n").replace(/<[^>]*>/g, " ");
+  return t.split(/\r?\n|;\s*(?=-|Bahwa\b)/i).map((x) => x.replace(/^[\s\-\u2022]+/, "").replace(/\s+/g, " ").trim()).filter((x) => x.length > 3);
+}
+/** Nomor butir bagi petugas: awalan nomor di teks ("4. ...") bila ada, kalau tidak urutan butir. */
+function nomorButir(butir, kalimat) {
+  const i = butir.indexOf(kalimat);
+  if (i < 0) return 0;
+  const m = String(kalimat).match(/^(\d{1,3})[.)]\s/);
+  return m ? Number(m[1]) : i + 1;
+}
+function kutipanDari(butir, cocok) {
+  const k = butir.find((x) => (typeof cocok === "function" ? cocok(x) : cocok.test(x)));
+  return k ? { kutipan: k.length > 240 ? `${k.slice(0, 237)}...` : k, butir: nomorButir(butir, k) } : null;
+}
+
+/**
+ * Murni (kecuali memuat kamus). bahan: { jenis (kunci jenis sampul), posita, petitum, alasanSipp[] (nama alasan nikah SIPP), tanggalNikah (iso), sita }.
+ * Hasil { kunci: {sumber, kutipan, butir, bagian} } hanya yang terdeteksi; kutipan = butir posita/petitum yang menunjuknya. Cerai (cg, ct): sebab dari posita lewat
+ * mesin deteksi alasan yang SAMA dengan panel (huruf langsung A, C, D, E, F, G, H; huruf B butuh lama pisah dan tidak ditebak). Selebihnya aturan kata yang
+ * tertulis di atas; yang tidak terbaca tidak dicentang.
+ */
+function deteksiAlasan(bahan = {}, deps = {}) {
+  const hasil = {};
+  const butirPosita = butirDariTeks(bahan.posita);
+  const butirPetitum = butirDariTeks(bahan.petitum);
+  const posita = butirPosita.join(" ");
+  const petitum = butirPetitum.join(" ");
+  const taruh = (k, sumber, kut, bagian) => {
+    if (!hasil[k]) hasil[k] = { sumber, kutipan: kut ? kut.kutipan : "", butir: kut ? kut.butir : 0, bagian: kut ? bagian : "" };
+  };
+  const jenis = bahan.jenis;
+  if (jenis === "cg" || jenis === "ct") {
+    const da = deps.deteksiAlasan || require("./deteksiAlasanService");
+    const sebab = da.sebabDariButir(butirPosita, {}) || [];
+    for (const huruf of "ACDEFGH") {
+      const pemicu = da.sebabHuruf(sebab, huruf);
+      if (!pemicu.length) continue;
+      const kal = pemicu[0].kalimat;
+      taruh(huruf.toLowerCase(), `posita: ${pemicu.map((x) => x.sebab).filter((x, i, a) => a.indexOf(x) === i).join(", ")}`, { kutipan: kal.length > 240 ? `${kal.slice(0, 237)}...` : kal, butir: nomorButir(butirPosita, kal) }, "posita");
+    }
+  } else if (jenis === "dk") {
+    const alasan = (bahan.alasanSipp || []).join("; ");
+    const hamil = (x) => /hamil/i.test(x) || kamusCocok("dispensasi", "fakta-hamil", x, deps.kamusDeteksi);
+    if (/hamil/i.test(alasan) || butirPosita.some(hamil)) taruh("1", /hamil/i.test(alasan) ? "alasan SIPP" : "posita", kutipanDari(butirPosita, hamil), "posita");
+    if (RE_DK[2].test(`${posita} ${alasan}`)) taruh("2", "posita", kutipanDari(butirPosita, RE_DK[2]), "posita");
+    const lamar = (x) => kamusCocok("dispensasi", "fakta-lamaran", x, deps.kamusDeteksi) || /tunangan|bertunangan/i.test(x);
+    if (butirPosita.some(lamar)) taruh("3", "posita", kutipanDari(butirPosita, lamar), "posita");
+  } else if (jenis === "in") {
+    for (const h of ["a", "b", "c"]) if (RE_ITSBAT[h].test(posita)) taruh(h, "posita", kutipanDari(butirPosita, RE_ITSBAT[h]), "posita");
+    const tgl = String(bahan.tanggalNikah || "");
+    const sebelum = /^\d{4}/.test(tgl) && tgl < "1974-01-02";
+    if (sebelum || RE_ITSBAT.d.test(posita)) taruh("d", sebelum ? "tanggal menikah sebelum UU 1/1974" : "posita", sebelum ? { kutipan: `Tanggal menikah ${tgl}`, butir: 0 } : kutipanDari(butirPosita, RE_ITSBAT.d), sebelum ? "SIPP" : "posita");
+    const e = (x) => kamusCocok("itsbat", "fakta-tanpa-halangan", x, deps.kamusDeteksi);
+    const t = (x) => kamusCocok("itsbat", "fakta-tidak-tercatat", x, deps.kamusDeteksi);
+    if (butirPosita.some(e) && butirPosita.some(t)) taruh("e", "posita", kutipanDari(butirPosita, e), "posita");
+  } else if (jenis === "hb") {
+    if (RE_HARTA.hb1.test(petitum)) taruh("1", "petitum", kutipanDari(butirPetitum, RE_HARTA.hb1), "petitum");
+    if (RE_HARTA.hb2.test(petitum)) taruh("2", "petitum", kutipanDari(butirPetitum, RE_HARTA.hb2), "petitum");
+    if (RE_SITA.test(petitum)) taruh("3", "petitum", kutipanDari(butirPetitum, RE_SITA), "petitum");
+    else if (bahan.sita) taruh("3", "proses SIPP", null, "");
+  } else if (jenis === "waris") {
+    if (RE_HARTA.w1.test(petitum)) taruh("1", "petitum", kutipanDari(butirPetitum, RE_HARTA.w1), "petitum");
+    if (RE_HARTA.w2.test(petitum)) taruh("2", "petitum", kutipanDari(butirPetitum, RE_HARTA.w2), "petitum");
+    if (RE_SITA.test(petitum)) taruh("3", "petitum", kutipanDari(butirPetitum, RE_SITA), "petitum");
+    else if (bahan.sita) taruh("3", "proses SIPP", null, "");
+  } else if (jenis === "paw") {
+    const w2 = (x) => RE_HARTA.w2.test(x);
+    if (butirPetitum.some(w2)) taruh("1", "petitum", kutipanDari(butirPetitum, w2), "petitum");
+    else if (butirPosita.some(w2)) taruh("1", "posita", kutipanDari(butirPosita, w2), "posita");
+    if (RE_HARTA.p2.test(posita)) taruh("2", "posita", kutipanDari(butirPosita, RE_HARTA.p2), "posita");
+    if (RE_HARTA.p3.test(posita)) taruh("3", "posita", kutipanDari(butirPosita, RE_HARTA.p3), "posita");
+  }
+  return hasil;
+}
+
+// ---------------------------------------------------------------------------
 // Deteksi ciri susulan sampul cetak awal (keputusan Derry 26 Okt: "deteksi otomatis apabila ada permintaan sita, eksepsi dan lainnya")
 // ---------------------------------------------------------------------------
 /** Kunci ciri susulan (nama tampil dipegang portal: lib/berkas-perkara.ts SUSULAN_*). */
@@ -698,6 +802,20 @@ async function fakta(params = {}, deps = {}) {
     namaEcourt: ec.semuaNama || [],
   });
 
+  // ---- alasan/tuntutan pokok (catatan sampul)
+  const alasanSipp = (await aman("SELECT nama FROM perkara_alasan_nikah WHERE perkara_id = ?", [perkaraId])).map((x) => String(x.nama || ""));
+  const [itsbatRow] = kunciJenis === "in" ? await aman("SELECT tgl_menikah FROM perkara_data_itsbat WHERE perkara_id = ?", [perkaraId]) : [];
+  let alasanOto = {};
+  let alasanGagal = false;
+  try {
+    alasanOto = deteksiAlasan(
+      { jenis: kunciJenis, posita: p.posita, petitum: p.petitum, alasanSipp, tanggalNikah: iso(itsbatRow && itsbatRow.tgl_menikah), sita: Boolean(susulanOto.sita) },
+      deps
+    );
+  } catch {
+    alasanGagal = true;
+  }
+
   // ---- seluruh pihak (sampul memakai pihak I + sampai muat per sisi; sisanya lampiran daftar para pihak, disusun portal)
   const pihakSemua = (
     await aman(
@@ -769,6 +887,7 @@ async function fakta(params = {}, deps = {}) {
     jumlahSidang: sidang.length,
     ciri,
     susulan: { oto: susulanOto, gagal: [...new Set(gagalSusulan)] },
+    alasan: { oto: alasanOto, gagal: alasanGagal },
     pekerjaanTerbaca,
     pihak,
     majelis,
@@ -878,6 +997,7 @@ module.exports = {
   jalurSipp,
   jenisEcourt,
   deteksiSusulan,
+  deteksiAlasan,
   uraiObjek,
   umurPenuh,
   KUNCI_SUSULAN,

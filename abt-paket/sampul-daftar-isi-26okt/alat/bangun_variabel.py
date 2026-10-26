@@ -128,7 +128,7 @@ for n in range(1, 21):
 # ---- SAMPUL CETAK AWAL (keputusan Derry 26 Okt, versi 3): ciri yang sudah diketahui, ciri susulan, putusan, hadir per baris
 # Kotak centang ditulis ASCII "[ ]" / "[X]" (portal mengubahnya menjadi kotak saat naskah disusun). "Berlawanan" = nomor perkara memuat /Pdt.G (gugatan dan cerai talak).
 LAWAN = "(SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)"
-KODE_CIRI_AWAL = [k for k in KODE_TAG if k not in (5807, 5808, 5817, 5819, 5820, 5821)]   # tanpa ghaib dan mafqud (bingkai ganda, runut sendiri), verstek (sifat putusan), rekonvensi, mediasi, sita (kotak centang, pita mediasi)
+KODE_CIRI_AWAL = [k for k in KODE_TAG if k not in (5807, 5808, 5817, 5818, 5819, 5820, 5821)]   # tanpa ghaib dan mafqud (bingkai ganda, runut sendiri), kumulasi (sudah di judul), verstek (sifat putusan), rekonvensi, mediasi, sita (kotak centang, pita mediasi)
 sql(5861, 'CIRI PERKARA AWAL SAMPUL (OTOMATIS: ciri yang berlaku dan sudah diketahui saat daftar; tanpa ghaib, mafqud, verstek, rekonvensi, mediasi, sita)',
     "SELECT IFNULL(NULLIF(TRIM(CONCAT_WS('  ',%s)),''),'- tidak ada ciri khusus -') AS data" % ','.join("NULLIF('#%d#','')" % k for k in KODE_CIRI_AWAL))
 SUSULAN_LAWAN = '[ ] MEDIASI   [ ] EKSEPSI   [ ] REKONVENSI   [ ] PERMINTAAN SITA   [ ] PEMERIKSAAN SETEMPAT   [ ] PUTUSAN SELA   [ ] PERUBAHAN GUGATAN   [ ] TAMBAHAN PANJAR   [ ] PENCABUTAN'
@@ -152,8 +152,8 @@ def kotak_status(daftar, label):
 
 sql(5863, 'AMAR PUTUSAN SAMPUL (KOTAK CENTANG; terisi dari status putusan SIPP bila sudah ada; perkara berlawanan enam pilihan, permohonan empat)',
     "SELECT CONCAT_WS('   ',%s,%s,%s,IF(x.l=1,%s,NULL),%s,IF(x.l=1,%s,NULL)) AS data FROM (SELECT %s AS l, (SELECT status_putusan_id FROM perkara_putusan WHERE perkara_id=%s LIMIT 1) AS s) x"
-    % (kotak_status(STATUS_KABUL, 'KABUL'), kotak_status(STATUS_TOLAK, 'TOLAK'), kotak_status(STATUS_NO, 'NO'), kotak_status(STATUS_GUGUR, 'GUGUR'),
-       kotak_status(STATUS_CABUT, 'CABUT'), kotak_status(STATUS_DAMAI, 'DAMAI'), LAWAN, P))
+    % (kotak_status(STATUS_KABUL, 'KABUL'), kotak_status(STATUS_TOLAK, 'TOLAK'), kotak_status(STATUS_NO, 'TIDAK DITERIMA (NO)'), kotak_status(STATUS_GUGUR, 'GUGUR'),
+       kotak_status(STATUS_CABUT, 'DICABUT'), kotak_status(STATUS_DAMAI, 'DAMAI'), LAWAN, P))
 sql(5864, 'SIFAT PUTUSAN SAMPUL (KOTAK CENTANG: hadir/kontradiktoir dan verstek; terisi dari putusan_verstek SIPP bila putusan sudah ada)',
     "SELECT (CASE WHEN x.l=1 THEN CONCAT(IF(x.t IS NOT NULL AND IFNULL(x.v,'T')<>'Y','[X]','[ ]'),' HADIR (KONTRADIKTOIR)   ',IF(x.t IS NOT NULL AND x.v='Y','[X]','[ ]'),' VERSTEK') "
     "ELSE CONCAT(IF(x.t IS NOT NULL,'[X]','[ ]'),' HADIR') END) AS data FROM (SELECT %s AS l, "
@@ -228,6 +228,11 @@ sql(5831, 'PEKERJAAN DAN ALAMAT PIHAK II SAMPUL AWAL (langsung dari SIPP)', rinc
 sql(5832, 'ANAK SAMPUL AWAL (OTOMATIS: satu sampai tiga anak sebaris dari tab Anak SIPP; lebih dari tiga masuk lampiran; kosong bila tidak ada)',
     "SELECT CONCAT('Anak: ',GROUP_CONCAT(a.nama_anak ORDER BY a.anak_ke,a.id SEPARATOR '; ')) AS data FROM perkara_anak_pihak a WHERE a.perkara_id=%s AND TRIM(IFNULL(a.nama_anak,''))<>'' HAVING COUNT(*) BETWEEN 1 AND 3" % P)
 sql(5833, 'KAKI SAMPUL AWAL: rujukan lampiran (diisi saat naskah disusun; kosong bila tidak ada lampiran)', "SELECT '' AS data")
+sql(5834, 'CATATAN SAMPUL: ALASAN (diisi saat naskah disusun dari deteksi; ABT langsung: kosong)', "SELECT '' AS data")
+sql(5835, 'CATATAN SAMPUL: KETERANGAN (diisi saat naskah disusun; ABT langsung: kosong)', "SELECT '' AS data")
+sql(5847, 'INTERVENSI SAMPUL AWAL (OTOMATIS: pihak intervensi dari SIPP, tiga nama sebaris; kosong bila tidak ada)',
+    "SELECT CONCAT('INTERVENSI (',COUNT(*),')  ',GROUP_CONCAT(CASE WHEN a.urutan<=3 THEN CONCAT(ELT(a.urutan,%s),'. ',a.nama) END ORDER BY a.urutan SEPARATOR '  -  '),"
+    "IF(COUNT(*)>3,CONCAT('  -  dan ',COUNT(*)-3,' lainnya (lampiran)'),'')) AS data FROM perkara_pihak3 a WHERE a.perkara_id=%s HAVING COUNT(*)>0" % (ROMAWI, P))
 KODE_HADIR = 5870   # baris n (1..20): kotak hadir P / T
 for n in range(1, 21):
     sql(KODE_HADIR + n - 1, 'RIWAYAT SIDANG SAMPUL AWAL baris %d: kotak hadir P/T (terisi bila sidang itu sudah tercatat; permohonan hanya P)' % n,

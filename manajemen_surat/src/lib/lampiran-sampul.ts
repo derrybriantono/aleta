@@ -27,7 +27,102 @@ export type AnakSampul = { nama: string; umur: string; diasuh: "P" | "T" | "" };
 export type ObjekSampul = { nama: string; letak: string; ket?: string };
 export type SidangLanjutan = { ke: number; tanggal: string; hadir: string; agenda: string; alasan: string };
 
-export type KunciLampiran = "pihak" | "objek" | "anak" | "riwayat";
+export type KunciLampiran = "pihak" | "objek" | "anak" | "alasan" | "riwayat";
+
+/** Daftar alasan menurut jenis (keputusan Derry 26 Okt, versi 8-10): lampiran memuat SEMUA butir; yang terdeteksi/dicentang ditandai dan diberi kutipan sumbernya. */
+export type DefinisiAlasan = { judul: string; dasar: string; butir: Array<{ kunci: string; nama: string }> };
+const ALASAN_CERAI: DefinisiAlasan = {
+  judul: "ALASAN PERCERAIAN",
+  dasar: "Pasal 19 PP 9/1975 jo. Pasal 116 KHI",
+  butir: [
+    { kunci: "a", nama: "salah satu pihak berbuat zina, atau menjadi pemabuk, pemadat, penjudi, dan lain sebagainya yang sukar disembuhkan" },
+    { kunci: "b", nama: "salah satu pihak meninggalkan pihak lain selama 2 (dua) tahun berturut-turut tanpa izin dan tanpa alasan yang sah" },
+    { kunci: "c", nama: "salah satu pihak mendapat hukuman penjara 5 (lima) tahun atau hukuman yang lebih berat" },
+    { kunci: "d", nama: "salah satu pihak melakukan kekejaman atau penganiayaan berat yang membahayakan pihak lain" },
+    { kunci: "e", nama: "salah satu pihak mendapat cacat badan atau penyakit sehingga tidak dapat menjalankan kewajibannya" },
+    { kunci: "f", nama: "antara suami dan isteri terus-menerus terjadi perselisihan dan pertengkaran dan tidak ada harapan akan hidup rukun lagi" },
+    { kunci: "g", nama: "suami melanggar taklik talak" },
+    { kunci: "h", nama: "peralihan agama atau murtad yang menyebabkan terjadinya ketidakrukunan dalam rumah tangga" },
+  ],
+};
+const ALASAN_JENIS: Record<string, DefinisiAlasan> = {
+  cg: ALASAN_CERAI,
+  ct: ALASAN_CERAI,
+  in: {
+    judul: "ALASAN ITSBAT NIKAH",
+    dasar: "Pasal 7 ayat (3) KHI",
+    butir: [
+      { kunci: "a", nama: "adanya perkawinan dalam rangka penyelesaian perceraian" },
+      { kunci: "b", nama: "hilangnya akta nikah" },
+      { kunci: "c", nama: "adanya keraguan tentang sah atau tidaknya salah satu syarat perkawinan" },
+      { kunci: "d", nama: "adanya perkawinan yang terjadi sebelum berlakunya Undang-Undang Nomor 1 Tahun 1974" },
+      { kunci: "e", nama: "perkawinan yang dilakukan oleh mereka yang tidak mempunyai halangan perkawinan menurut Undang-Undang Nomor 1 Tahun 1974, tetapi tidak tercatat" },
+    ],
+  },
+  dk: {
+    judul: "ALASAN DISPENSASI KAWIN",
+    dasar: "posita permohonan",
+    butir: [
+      { kunci: "1", nama: "anak telah hamil" },
+      { kunci: "2", nama: "khawatir terjadi perbuatan zina / hubungan yang sangat erat" },
+      { kunci: "3", nama: "sudah lama bertunangan" },
+      { kunci: "4", nama: "lainnya" },
+    ],
+  },
+  waris: { judul: "TUNTUTAN POKOK", dasar: "petitum gugatan", butir: [{ kunci: "1", nama: "penetapan ahli waris" }, { kunci: "2", nama: "pembagian harta waris" }, { kunci: "3", nama: "sita harta waris" }] },
+  hb: { judul: "TUNTUTAN POKOK", dasar: "petitum gugatan", butir: [{ kunci: "1", nama: "penetapan harta bersama" }, { kunci: "2", nama: "pembagian 1/2 bagian" }, { kunci: "3", nama: "sita marital" }] },
+  paw: { judul: "KEPERLUAN PENETAPAN", dasar: "posita permohonan", butir: [{ kunci: "1", nama: "pembagian waris" }, { kunci: "2", nama: "pengurusan tabungan / aset peninggalan" }, { kunci: "3", nama: "balik nama" }] },
+};
+export const KUNCI_ALASAN: readonly string[] = ["a", "b", "c", "d", "e", "f", "g", "h", "1", "2", "3", "4"];
+export function definisiAlasan(jenis: string): DefinisiAlasan | null {
+  return ALASAN_JENIS[jenis] ?? null;
+}
+export type TerdeteksiAlasan = { sumber?: string; kutipan?: string; butir?: number; bagian?: string };
+export type BahanAlasan = { jenis: string; oto: Record<string, TerdeteksiAlasan>; tangan: Record<string, boolean> };
+
+/** Alasan yang berlaku: terdeteksi otomatis (kecuali dimatikan tangan) atau dicentang tangan. Urutan menurut daftar. */
+export function alasanBerlaku(b: BahanAlasan): Array<{ kunci: string; nama: string; oto: boolean; kutipan: string }> {
+  const d = definisiAlasan(b.jenis);
+  if (!d) return [];
+  const hasil: Array<{ kunci: string; nama: string; oto: boolean; kutipan: string }> = [];
+  for (const x of d.butir) {
+    const adaOto = Object.prototype.hasOwnProperty.call(b.oto, x.kunci);
+    const tangan = Object.prototype.hasOwnProperty.call(b.tangan, x.kunci) ? Boolean(b.tangan[x.kunci]) : null;
+    if (!(tangan === null ? adaOto : tangan)) continue;
+    const t = b.oto[x.kunci] ?? {};
+    const rujuk = t.butir && t.bagian ? ` (${t.bagian} ${t.butir})` : t.bagian ? ` (${t.bagian})` : "";
+    hasil.push({ kunci: x.kunci, nama: x.nama, oto: tangan === null && adaOto, kutipan: t.kutipan ? `"${t.kutipan}"${rujuk}` : t.sumber ? String(t.sumber) : "dicentang tangan" });
+  }
+  return hasil;
+}
+
+/** Baris ALASAN di CATATAN sampul: hanya yang berlaku, sebaris; kosong bila tidak ada (baris tidak tampil dan lampiran alasan tidak dicetak). */
+export function barisAlasan(b: BahanAlasan, nomorLampiran: number | undefined): string {
+  const ada = alasanBerlaku(b);
+  if (!ada.length) return "";
+  const pendek = (x: { kunci: string; nama: string; oto: boolean }) => {
+    const nama = x.nama.length > 46 ? `${x.nama.slice(0, 44).replace(/[ ,;]+\S*$/, "")}...` : x.nama;
+    return `${x.kunci}. ${nama}${x.oto ? " (oto)" : ""}`;
+  };
+  return `ALASAN  ${ada.map(pendek).join("  -  ")}${nomorLampiran ? `  -> Lampiran ${nomorLampiran}` : ""}`;
+}
+
+export function bersihkanAlasan(mentah: unknown, jenis: string): BahanAlasan {
+  const hasil: BahanAlasan = { jenis, oto: {}, tangan: {} };
+  if (!mentah || typeof mentah !== "object") return hasil;
+  const r = mentah as Record<string, unknown>;
+  const potong = (x: unknown, n: number) => String(x ?? "").replace(/[\u0000-\u001F]/g, " ").replace(/\s+/g, " ").trim().slice(0, n);
+  if (r.oto && typeof r.oto === "object") {
+    for (const [k, v] of Object.entries(r.oto as Record<string, unknown>)) {
+      if (!KUNCI_ALASAN.includes(k) || !v || typeof v !== "object") continue;
+      const t = v as Record<string, unknown>;
+      const kutipan = potong(t.kutipan, 260);
+      hasil.oto[k] = { sumber: potong(t.sumber, 120), kutipan: /aleta/i.test(kutipan) ? "" : kutipan, butir: Math.max(0, Math.min(999, Math.trunc(Number(t.butir)) || 0)), bagian: t.bagian === "petitum" ? "petitum" : t.bagian === "posita" ? "posita" : "" };
+    }
+  }
+  if (r.tangan && typeof r.tangan === "object") for (const [k, v] of Object.entries(r.tangan as Record<string, unknown>)) if (KUNCI_ALASAN.includes(k)) hasil.tangan[k] = Boolean(v);
+  return hasil;
+}
 export type ButirLampiran = { nomor: number; kunci: KunciLampiran; judul: string; alasan: string };
 
 export type BahanLampiran = {
@@ -39,6 +134,7 @@ export type BahanLampiran = {
   anak: AnakSampul[];
   objek: ObjekSampul[];
   riwayat: SidangLanjutan[];
+  alasan?: BahanAlasan;
   /** jumlah baris riwayat di sampul menurut kertas (15, 18, 20) */
   barisRiwayat: number;
   /** baris info khas di halaman depan di luar anak dan objek (fokus + pokok perkara) */
@@ -59,6 +155,8 @@ export type HasilLampiran = {
   muatPihak: number;
   /** teks kaki sampul untuk variabel 5833; kosong bila tak ada lampiran */
   kaki: string;
+  /** baris ALASAN di CATATAN (variabel 5834); kosong = tidak tampil */
+  barisAlasan: string;
 };
 
 // ---------------------------------------------------------------------------
@@ -142,7 +240,7 @@ function esc(t: string): string {
 
 type Kolom = { judul: string; lebar: number; rata?: "l" | "c" };
 
-function tabelLampiran(kolom: Kolom[], lebarIsi: number, barisData: Array<{ bagian?: string; sel?: string[]; tinggi?: number }>): string {
+function tabelLampiran(kolom: Kolom[], lebarIsi: number, barisData: Array<{ bagian?: string; sel?: string[]; tinggi?: number; tebal?: boolean }>): string {
   const total = kolom.reduce((a, k) => a + k.lebar, 0);
   const lebar = kolom.map((k, i) => (i === kolom.length - 1 ? 0 : Math.trunc((k.lebar * lebarIsi) / total)));
   lebar[lebar.length - 1] = lebarIsi - lebar.slice(0, -1).reduce((a, b) => a + b, 0);
@@ -159,7 +257,7 @@ function tabelLampiran(kolom: Kolom[], lebarIsi: number, barisData: Array<{ bagi
       s += `\\trowd\\trgaph60\\trleft0\\trkeep\n\\clcbpat2${garis(10)}\\cellx${lebarIsi}\n\\pard\\plain\\intbl\\ql\\f0\\fs16\\sb30\\sa30 \\b ${esc(r.bagian)}\\cell\n\\row\n`;
       continue;
     }
-    s += `\\trowd\\trgaph60\\trleft0\\trkeep${r.tinggi ? `\\trrh${r.tinggi}` : ""}\n${batas.map((x) => `${garis(10)}\\clvertalc\\cellx${x}`).join("")}\n${(r.sel ?? []).map((t, i) => para(t, { al: kolom[i].rata ?? "l" })).join("")}\\row\n`;
+    s += `\\trowd\\trgaph60\\trleft0\\trkeep${r.tinggi ? `\\trrh${r.tinggi}` : ""}\n${batas.map((x) => `${garis(10)}\\clvertalc\\cellx${x}`).join("")}\n${(r.sel ?? []).map((t, i) => para(t, { al: kolom[i].rata ?? "l", b: r.tebal })).join("")}\\row\n`;
   }
   return s;
 }
@@ -172,7 +270,7 @@ function judulLampiran(n: number, judul: string, nomorPerkara: string, alasan: s
   );
 }
 
-const KOTAK_RTF = (rtf: string) => rtf.replace(/\\u(9744|9746)\?/g, "{\\f1\\u$1?}");
+const KOTAK_RTF = (rtf: string) => rtf.replace(/\\u(9744|9745|9746)\?/g, "{\\f1\\u$1?}");
 
 const SEBUTAN_BAWAAN = { 1: "Penggugat", 2: "Tergugat", 3: "Intervensi", 4: "Turut Tergugat" } as const;
 
@@ -196,6 +294,21 @@ function bagianObjek(b: BahanLampiran, n: number, alasan: string): string {
   return (
     judulLampiran(n, "DAFTAR OBJEK SENGKETA", b.nomor, alasan) +
     tabelLampiran([{ judul: "NO", lebar: 560, rata: "c" }, { judul: "OBJEK", lebar: 3300 }, { judul: "LETAK / IDENTITAS", lebar: 4400 }, { judul: "KETERANGAN", lebar: 2246 }], b.lebar, rows)
+  );
+}
+
+function bagianAlasan(b: BahanLampiran, n: number, alasanCetak: string): string {
+  const al = b.alasan as BahanAlasan;
+  const d = definisiAlasan(al.jenis) as DefinisiAlasan;
+  const peta = new Map(alasanBerlaku(al).map((x) => [x.kunci, x]));
+  const rows = d.butir.map((x) => {
+    const on = peta.get(x.kunci);
+    return { tebal: Boolean(on), sel: [on ? "☑" : "☐", x.kunci, x.nama, on ? on.kutipan : ""] };
+  });
+  return KOTAK_RTF(
+    judulLampiran(n, d.judul, b.nomor, alasanCetak) +
+      `\\pard\\plain\\qc\\f0\\fs16\\sb0\\sa80 ${esc(`Dasar: ${d.dasar}. Daftar lengkap; yang terdeteksi otomatis (oto) atau dicentang bertanda dan tebal beserta kutipan sumbernya.`)}\\par\n` +
+      tabelLampiran([{ judul: "", lebar: 500, rata: "c" }, { judul: "HURUF", lebar: 800, rata: "c" }, { judul: "ALASAN", lebar: 4300 }, { judul: "SUMBER / KUTIPAN", lebar: 4906 }], b.lebar, rows)
   );
 }
 
@@ -258,6 +371,11 @@ export function susunLampiran(b: BahanLampiran): HasilLampiran {
   }
   if (b.objek.length > BATAS_OBJEK_SEBARIS) perlu.push({ kunci: "objek", judul: "DAFTAR OBJEK SENGKETA", alasan: `objek sengketa ${b.objek.length} (lebih dari ${BATAS_OBJEK_SEBARIS})` });
   if (b.anak.length > BATAS_ANAK_SEBARIS) perlu.push({ kunci: "anak", judul: "DAFTAR ANAK", alasan: `anak ${b.anak.length} orang (lebih dari ${BATAS_ANAK_SEBARIS})` });
+  if (b.alasan) {
+    const d = definisiAlasan(b.alasan.jenis);
+    const ada = alasanBerlaku(b.alasan);
+    if (d && ada.length) perlu.push({ kunci: "alasan", judul: d.judul, alasan: `${ada.length} dari ${d.butir.length} butir terdeteksi atau dicentang (${d.dasar})` });
+  }
   if (b.riwayat.some((r) => r.ke > b.barisRiwayat)) perlu.push({ kunci: "riwayat", judul: "RIWAYAT SIDANG (LANJUTAN)", alasan: `sidang sudah ${Math.max(...b.riwayat.map((r) => r.ke))} kali (sampul memuat ${b.barisRiwayat})` });
   const daftar: ButirLampiran[] = perlu.map((x, i) => ({ nomor: i + 1, ...x }));
   const nomorDari = (k: KunciLampiran) => daftar.find((d) => d.kunci === k)?.nomor;
@@ -266,11 +384,12 @@ export function susunLampiran(b: BahanLampiran): HasilLampiran {
     if (d.kunci === "pihak") bagianRtf += bagianPihak(b, d.nomor, d.alasan);
     else if (d.kunci === "objek") bagianRtf += bagianObjek(b, d.nomor, d.alasan);
     else if (d.kunci === "anak") bagianRtf += bagianAnak(b, d.nomor, d.alasan);
+    else if (d.kunci === "alasan") bagianRtf += bagianAlasan(b, d.nomor, d.alasan);
     else bagianRtf += bagianRiwayat(b, d.nomor, d.alasan);
   }
   const barisDepan = barisDepanSampul(b.anak, b.objek, { anak: nomorDari("anak"), objek: nomorDari("objek") }, { p: b.sebutanPihakI ?? "Penggugat", t: b.sebutanPihakII ?? "Tergugat" });
   const kaki = daftar.length ? `Lampiran (${daftar.length}): ${daftar.map((d) => `${d.nomor}. ${d.judul.replace(/ \(LANJUTAN\)/, " lanjutan")}`).join("; ")}` : "";
-  return { daftar, bagianRtf, barisDepan, muatPihak: muat, kaki };
+  return { daftar, bagianRtf, barisDepan, muatPihak: muat, kaki, barisAlasan: b.alasan ? barisAlasan(b.alasan, nomorDari("alasan")) : "" };
 }
 
 export { bersihkanPihak, pihakBanyak };
