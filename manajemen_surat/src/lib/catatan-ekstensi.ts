@@ -57,6 +57,18 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.41",
+    dirilis: "2026-10-26T15:55:00+08:00",
+    judul: "Sampul dan daftar isi berkas; latar pop-up redup; kotak acuan tidak tercetak",
+    butir: [
+      "Semua pop-up: latar belakang kini redup dengan kabur ringan, tidak lagi putih menyilaukan di mode gelap.",
+      "Cetak blangko ABT: kotak acuan variabel di badan naskah tidak lagi ikut tercetak.",
+      "Tanggal pengumuman kedua diambil dari sidang berikutnya.",
+      "Blangko ABT by Derry Briantono: Sampul Berkas Perkara (cetak awal, bawaan) dan sampul lengkap, A4/F4/Legal, ciri perkara otomatis, lampiran bila perlu.",
+      "Daftar Isi Berkas dengan nomor halaman otomatis yang bisa diubah manual, di layar kerja khusus panel Blangko Derry.",
+    ],
+  },
+  {
     versi: "1.205.40",
     dirilis: "2026-10-26T12:41:00+08:00",
     judul: "Perbaikan kalender, prodeo, alamat ganda; halaman lebih ringan; fitur rantai upgrade (mati bawaan)",
