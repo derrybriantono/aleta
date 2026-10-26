@@ -290,7 +290,7 @@ export function AletaAiChat() {
 
   return (
     <div className="relative flex h-[calc(100dvh-9rem)] min-h-[34rem] overflow-hidden rounded-2xl border border-border/70 bg-card shadow-panel" data-testid="aleta-ai-chat">
-      {laci ? <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" aria-hidden="true" onClick={() => setLaci(false)} /> : null}
+      {laci ? <div className="fixed inset-0 z-30 tirai-latar lg:hidden" aria-hidden="true" onClick={() => setLaci(false)} /> : null}
       <RiwayatPercakapan
         className={cn(
           laci ? "fixed inset-y-0 left-0 z-40 flex w-[min(20rem,88vw)] shadow-panel" : "hidden",

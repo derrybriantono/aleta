@@ -1910,7 +1910,7 @@
     "fc62c2720eb0",
     "bb53d933f55c",
     "baa038100af9",
-    "c66e8fdcf4ba",
+    "48b99684baa9",
     "3e031bda8cab",
     "7a4e6930982d",
     "812629742170",
@@ -1924,7 +1924,7 @@
     "f96b1611c634",
     "c31bc748a312",
     "a8a93ef5c2f7",
-    "103e4016e712",
+    "cabeb09dd547",
     "07be70540386",
     "32bfa14704a6",
     "ec6a1fbe59b5",
@@ -2146,8 +2146,8 @@
    "jumlahPernyataan": 2
   },
   "basmassal.js": {
-   "byte": 144215,
-   "sidik": "680247fc89eb9819f1d0bb1fd9a418c23b0a73e4",
+   "byte": 144751,
+   "sidik": "ee84bd7a7186043e6452ac05d9a8273fb9c6a71c",
    "nama": [
     "BASMASSAL_API_DAFTAR",
     "BASMASSAL_API_NASKAH",
@@ -2322,8 +2322,8 @@
    "jumlahPernyataan": 2
   },
   "deteksi-sisa-blangko.js": {
-   "byte": 46316,
-   "sidik": "3e271ea3153a2f2804ef5ac40040e5f5ff333fc7",
+   "byte": 46443,
+   "sidik": "7b70e2b96a30835bfc5586498c2d34fcf05b823d",
    "nama": [],
    "ekspor": [
     "aletaDeteksiSisa"
@@ -3472,7 +3472,7 @@
     "5d498d7b2286",
     "50904613f7bc",
     "e13078997ea3",
-    "8603d030d7c8",
+    "1d7654996b27",
     "4fec69d9aace",
     "4565f585b9d2",
     "0cbaf3545500",
@@ -4226,8 +4226,8 @@
    ]
   },
   "mediasi-arsip.js": {
-   "byte": 39039,
-   "sidik": "e71b7a4defa6eed82a6a60e2fd7df1c3144e1ac9",
+   "byte": 40287,
+   "sidik": "e9bc00d026adfdd7e1a7b42bf953c9a85ddeff5e",
    "nama": [],
    "ekspor": [
     "aletaMediasiArsip",
@@ -4957,8 +4957,8 @@
    "jumlahPernyataan": 1
   },
   "pratinjau-bas-relaas.js": {
-   "byte": 58645,
-   "sidik": "da09eb61631a09d0c35582c1f9ead658225add6c",
+   "byte": 59769,
+   "sidik": "fa292679dbe3fe969e585a60b816a8dc37d113a3",
    "nama": [],
    "ekspor": [
     "aletaPratinjauBasRelaas"

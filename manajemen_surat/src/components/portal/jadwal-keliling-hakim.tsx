@@ -317,7 +317,7 @@ export function SaklarSidangKeliling({
       {galat ? <span className="text-xs text-red-700 dark:text-red-300">{galat}</span> : null}
 
       {tawar ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-label="Aktifkan Sidang keliling">
+        <div className="fixed inset-0 z-50 flex items-center justify-center tirai-latar p-4" role="dialog" aria-modal="true" aria-label="Aktifkan Sidang keliling">
           <div className="w-full max-w-md rounded-lg border bg-card p-5 text-card-foreground shadow-xl" data-tawaran-keliling="">
             <div className="flex items-start gap-3">
               <span className="rounded-full bg-emerald-100 p-2 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">

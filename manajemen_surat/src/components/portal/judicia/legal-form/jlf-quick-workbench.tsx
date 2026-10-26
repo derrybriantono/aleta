@@ -1604,7 +1604,7 @@ export function JlfQuickBlankoWorkbench({
         ) : null}
 
         {editingVariableKey ? (
-          <div className="fixed inset-0 z-50 flex justify-end bg-background/70 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex justify-end tirai-latar">
             <div className="h-full w-full max-w-xl overflow-y-auto border-l border-border bg-card p-5 shadow-panel">
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -1685,7 +1685,7 @@ export function JlfQuickBlankoWorkbench({
         ) : null}
 
         {showPreviewDocumentModal && previewDocument ? (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/75 p-4 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center tirai-latar p-4">
             <div className="max-h-[calc(100dvh-2rem)] w-full max-w-xl overflow-y-auto rounded-xl border border-border bg-card p-5 shadow-panel">
               <div className="flex items-start justify-between gap-4">
                 <div>

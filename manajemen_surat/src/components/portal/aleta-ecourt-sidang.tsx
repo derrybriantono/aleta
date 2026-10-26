@@ -4321,7 +4321,7 @@ function KalenderSidang({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center tirai-latar p-4"
       role="dialog"
       aria-modal="true"
       aria-label="Kalender sidang"

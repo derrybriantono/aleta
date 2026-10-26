@@ -1380,7 +1380,7 @@ export function PortalShellV2({ children }: { children: React.ReactNode }) {
         <>
           <div
             className={cn(
-              "fixed inset-0 z-40 bg-slate-950/60 transition-opacity lg:hidden",
+              "fixed inset-0 z-40 tirai-latar transition-opacity lg:hidden",
               mobileSidebarOpen ? "opacity-100" : "pointer-events-none opacity-0"
             )}
             onClick={() => setMobileSidebarOpen(false)}

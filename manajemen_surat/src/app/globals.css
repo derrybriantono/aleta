@@ -403,3 +403,29 @@ html[data-aleta-ringan] *::after {
   -webkit-backdrop-filter: none !important;
   scroll-behavior: auto !important;
 }
+
+/*
+ * Latar redup di belakang dialog/pop-up portal (26 Okt 2026). Satu gaya untuk semua dialog: terang = redup sedang
+ * + kabur 2px; gelap = redup kuat + kabur 3px (latar terang di tema gelap menyilaukan). Nilainya SAMA dengan
+ * token ekstensi (--aleta-tirai-* di ekstensi-sipp/panel.css). Mode ringan (aturan di atas) dan
+ * prefers-reduced-transparency membuang kaburnya; redupnya tetap.
+ */
+:root {
+  --tirai-warna: rgba(15, 23, 42, 0.38);
+  --tirai-kabur: blur(2px);
+}
+.dark {
+  --tirai-warna: rgba(5, 8, 12, 0.62);
+  --tirai-kabur: blur(3px);
+}
+.tirai-latar {
+  background-color: var(--tirai-warna);
+  -webkit-backdrop-filter: var(--tirai-kabur);
+  backdrop-filter: var(--tirai-kabur);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .tirai-latar {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}

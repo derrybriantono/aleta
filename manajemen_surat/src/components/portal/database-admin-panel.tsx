@@ -699,7 +699,7 @@ export function DatabaseAdminPanel() {
       </div>
 
       {editState && activeTable ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur">
+        <div className="fixed inset-0 z-50 flex items-center justify-center tirai-latar p-4">
           <Card className="max-h-[calc(100dvh-2rem)] w-full max-w-6xl overflow-y-auto border-border shadow-2xl">
             <CardHeader>
               <div className="flex items-start justify-between gap-4">

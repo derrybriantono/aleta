@@ -7648,7 +7648,9 @@ html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4="ui"] .aleta-portal-
   z-index: 2147483600;
   display: grid;
   place-items: center;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--aleta-tirai-warna, rgba(15, 23, 42, 0.38));
+  -webkit-backdrop-filter: var(--aleta-tirai-filter, none);
+  backdrop-filter: var(--aleta-tirai-filter, none);
 }
 .aleta-t6-dialog {
   width: min(560px, calc(100vw - 32px));
@@ -11599,6 +11601,45 @@ html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-
 .aleta-pl-isian[hidden] { display: none !important; }
 .aleta-pl-isian ul { margin: 2px 0; padding-left: 16px; }
 /* === AKHIR 22 Okt (W50) === */
+
+/* === LATAR REDUP POP-UP (26 Okt 2026) ===
+   Satu sumber untuk lapisan di belakang SETIAP pop-up/dialog ekstensi (SIPP, ABT, portal). Yang lama memakai
+   warna tulisan tema sebagai latar, sehingga di tema gelap latar menjadi terang dan menyilaukan.
+   Pemakai: var(--aleta-tirai-warna, ...) dan var(--aleta-tirai-filter, none). Pemakai di Shadow DOM yang
+   memilih tema sendiri memakai pasangan -terang / -gelap. Mode ringan (data-aleta-ringan) dan
+   prefers-reduced-transparency membuang kaburnya (redup saja). */
+html {
+  --aleta-tirai-warna-terang: rgba(15, 23, 42, 0.38);
+  --aleta-tirai-warna-gelap: rgba(5, 8, 12, 0.62);
+  --aleta-tirai-kabur-terang: blur(2px);
+  --aleta-tirai-kabur-gelap: blur(3px);
+  --aleta-tirai-warna: var(--aleta-tirai-warna-terang);
+  --aleta-tirai-filter: var(--aleta-tirai-kabur-terang);
+}
+html[data-aleta-tema-sipp="gelap"],
+html.dark {
+  --aleta-tirai-warna: var(--aleta-tirai-warna-gelap);
+  --aleta-tirai-filter: var(--aleta-tirai-kabur-gelap);
+}
+html[data-aleta-ringan] {
+  --aleta-tirai-kabur-terang: none;
+  --aleta-tirai-kabur-gelap: none;
+}
+@media (prefers-reduced-transparency: reduce) {
+  html,
+  html[data-aleta-tema-sipp="gelap"],
+  html.dark {
+    --aleta-tirai-kabur-terang: none;
+    --aleta-tirai-kabur-gelap: none;
+    --aleta-tirai-filter: none;
+  }
+}
+.aleta-tirai-latar {
+  background: var(--aleta-tirai-warna, rgba(15, 23, 42, 0.38));
+  -webkit-backdrop-filter: var(--aleta-tirai-filter, none);
+  backdrop-filter: var(--aleta-tirai-filter, none);
+}
+/* === AKHIR LATAR REDUP POP-UP === */
 
 /* ==========================================================================
    V2 LAYAR (18 Okt 2026) - PANEL MENYESUAIKAN LAPTOP KECIL SAMPAI TV

@@ -90,7 +90,7 @@ export function TombolPasangAplikasi({ className, pemisah }: { className?: strin
         Pasang di HP
       </button>
       {buka ? (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center" onClick={() => setBuka(false)}>
+        <div className="fixed inset-0 z-50 flex items-end justify-center tirai-latar p-4 sm:items-center" onClick={() => setBuka(false)}>
           <div
             role="dialog"
             aria-modal="true"

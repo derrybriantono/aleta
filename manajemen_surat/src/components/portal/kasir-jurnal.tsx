@@ -391,7 +391,7 @@ export function DialogKasir({ daftar, onTutup, awal }: { daftar: PerkaraPilihan[
   if (typeof document === "undefined") return null;
   return createPortal(
     <div
-      className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-black/40 p-2 sm:p-4"
+      className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto tirai-latar p-2 sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-label="Kasir - jurnal keuangan perkara"

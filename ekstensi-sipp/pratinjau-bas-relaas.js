@@ -684,9 +684,9 @@
     * { box-sizing: border-box; }
     .latar { --bg:#111827; --fg:#f1f5f9; --muted:#94a3b8; --garis:#334155; --kertas:#0b1220; --aksen:#3b82f6; --aksen-fg:#fff;
       --sekunder:#1e293b; --sekunder-fg:#e2e8f0; --pb:#422006; --pf:#fde68a; --pg:#a16207; --galat:#f87171; --tandai:#7f1d1d;
-      position:fixed; inset:0; display:flex; align-items:center; justify-content:center; padding:20px; background:rgba(2,6,23,.66);
+      position:fixed; inset:0; display:flex; align-items:center; justify-content:center; padding:20px; background:rgba(5,8,12,.62); -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px);
       font:14px/1.5 system-ui,"Segoe UI",Arial,sans-serif; color:var(--fg); animation:masuk .16s ease-out; }
-    .latar[data-tema="terang"] { --bg:#ffffff; --fg:#0f172a; --muted:#475569; --garis:#e2e8f0; --kertas:#cbd5e1; --aksen:#1d4ed8; --aksen-fg:#fff;
+    .latar[data-tema="terang"] { background:rgba(15,23,42,.38); -webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px); --bg:#ffffff; --fg:#0f172a; --muted:#475569; --garis:#e2e8f0; --kertas:#cbd5e1; --aksen:#1d4ed8; --aksen-fg:#fff;
       --sekunder:#f1f5f9; --sekunder-fg:#0f172a; --pb:#fffbeb; --pf:#78350f; --pg:#f59e0b; --galat:#b91c1c; --tandai:#fecaca; }
     @keyframes masuk { from { opacity:0; } to { opacity:1; } }
     @media (prefers-reduced-motion: reduce) { .latar { animation:none; } .putar { animation:none !important; } }
@@ -758,6 +758,27 @@
       </section>
     </div>`;
 
+  /**
+   * Latar redup + agak kabur (26 Okt 2026): nilai dibaca dari token bersama di panel.css (-terang / -gelap;
+   * kabur dibuang mode ringan dan prefers-reduced-transparency) lalu dipasang sebagai gaya baris pada latar.
+   * Tanpa token, nilai harfiah di GAYA berlaku. Lewat gaya baris supaya teks gaya Shadow DOM tidak memuat nama token.
+   */
+  function pasangTirai(latar, tema) {
+    try {
+      const cs = getComputedStyle(document.documentElement);
+      const t = tema === "terang" ? "terang" : "gelap";
+      const warna = cs.getPropertyValue("--aleta-tirai-warna-" + t).trim();
+      const kabur = cs.getPropertyValue("--aleta-tirai-kabur-" + t).trim();
+      if (warna) latar.style.background = warna;
+      if (kabur) {
+        latar.style.setProperty("backdrop-filter", kabur);
+        latar.style.setProperty("-webkit-backdrop-filter", kabur);
+      }
+    } catch {
+      /* gaya harfiah di GAYA berlaku */
+    }
+  }
+
   /** Membuka kotak (tahap memuat). Mengembalikan pengendali; tidak pernah melempar. */
   function susunKotak(jenis, awal) {
     tutupKotak();
@@ -786,6 +807,7 @@
     function tema(nilai) {
       const t = nilai === "terang" ? "terang" : "gelap";
       q("latar").setAttribute("data-tema", t);
+      pasangTirai(q("latar"), t);
       q("tema").innerHTML = t === "gelap" ? "&#9728;" : "&#9790;";
       q("tema").setAttribute("title", t === "gelap" ? "Pakai tema terang" : "Pakai tema gelap");
     }

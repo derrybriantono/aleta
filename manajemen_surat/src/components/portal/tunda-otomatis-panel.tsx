@@ -159,7 +159,7 @@ export function TombolTundaOtomatis({ tanggal }: { tanggal: string }) {
         Tunda otomatis
       </button>
       {buka ? (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4" role="dialog" aria-modal="true" aria-label="Tunda otomatis">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto tirai-latar p-4" role="dialog" aria-modal="true" aria-label="Tunda otomatis">
           <div className="w-full max-w-5xl rounded-xl border bg-card p-4 shadow-xl">
             <div className="flex items-start justify-between gap-3">
               <div>

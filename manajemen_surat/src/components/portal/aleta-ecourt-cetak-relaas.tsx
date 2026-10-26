@@ -946,7 +946,7 @@ export function DialogCetakRelaas({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-2 sm:p-4"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto tirai-latar p-2 sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-label="Cetak relaas"

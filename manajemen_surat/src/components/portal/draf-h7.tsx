@@ -397,7 +397,7 @@ export function PanelDrafH7({
 
       {terbuka && typeof document !== "undefined"
         ? createPortal(
-            <div className="fixed inset-0 z-[70] flex items-stretch justify-center bg-black/50 sm:items-center sm:p-4" onClick={() => setTerbuka(false)}>
+            <div className="fixed inset-0 z-[70] flex items-stretch justify-center tirai-latar sm:items-center sm:p-4" onClick={() => setTerbuka(false)}>
               <div
                 role="dialog"
                 aria-modal="true"

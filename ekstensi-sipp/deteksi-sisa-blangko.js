@@ -776,7 +776,7 @@
       if (typeof document === "undefined" || !document.body) return selesai("lanjut");
       const aksi = o && o.aksi === "unggah" ? "diunggah" : "diunduh";
       const sebelumFokus = document.activeElement;
-      const tabir = buat("div", "position:fixed;inset:0;z-index:2147483600;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;padding:16px;font:14px/1.5 system-ui,Segoe UI,Arial,sans-serif;");
+      const tabir = buat("div", "position:fixed;inset:0;z-index:2147483600;background:var(--aleta-tirai-warna,rgba(15,23,42,.38));-webkit-backdrop-filter:var(--aleta-tirai-filter,none);backdrop-filter:var(--aleta-tirai-filter,none);display:flex;align-items:center;justify-content:center;padding:16px;font:14px/1.5 system-ui,Segoe UI,Arial,sans-serif;");
       tabir.className = "aleta-sisa-tabir";
       tabir.setAttribute("role", "dialog");
       tabir.setAttribute("aria-modal", "true");
