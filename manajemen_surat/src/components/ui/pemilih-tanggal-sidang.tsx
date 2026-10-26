@@ -1,7 +1,8 @@
 "use client";
 
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { apiPath } from "@/lib/base-path";
 import {
@@ -137,15 +138,50 @@ export function PemilihTanggalSidang({
   const [ditolak, setDitolak] = useState("");
   const [bulan, setBulan] = useState(() => (tanggalSah(value) ? value.slice(0, 7) : hariIni().slice(0, 7)));
   const bungkus = useRef<HTMLDivElement | null>(null);
+  const barisIsian = useRef<HTMLDivElement | null>(null);
+  const panel = useRef<HTMLDivElement | null>(null);
+  const [posisi, setPosisi] = useState<{ left: number; top?: number; bottom?: number } | null>(null);
 
   useEffect(() => {
     if (!buka) return;
     const tutup = (e: MouseEvent) => {
-      if (bungkus.current && !bungkus.current.contains(e.target as Node)) setBuka(false);
+      const t = e.target as Node;
+      if (bungkus.current?.contains(t) || panel.current?.contains(t)) return;
+      setBuka(false);
     };
     document.addEventListener("mousedown", tutup);
     return () => document.removeEventListener("mousedown", tutup);
   }, [buka]);
+
+  // 26 Okt 2026: kalender digambar di document.body dengan posisi tetap. Sebelumnya ia
+  // "absolute" di dalam wadah - pada form Tunda/Putus di Jadwal Sidang wadahnya
+  // overflow-x-auto (yang juga memaksa overflow-y) sehingga kalender terpotong.
+  // Terbuka ke atas bila ruang di bawah tidak cukup; ikut bergeser saat digulung.
+  useLayoutEffect(() => {
+    if (!buka) {
+      setPosisi(null);
+      return;
+    }
+    const hitung = () => {
+      const r = barisIsian.current?.getBoundingClientRect();
+      if (!r) return;
+      const tinggi = panel.current?.offsetHeight || 340;
+      const lebar = panel.current?.offsetWidth || 304;
+      const ruangBawah = window.innerHeight - r.bottom;
+      const keAtas = ruangBawah < tinggi + 8 && r.top > ruangBawah;
+      const left = Math.max(8, Math.min(r.left, window.innerWidth - lebar - 8));
+      setPosisi(keAtas ? { left, bottom: window.innerHeight - r.top + 4 } : { left, top: r.bottom + 4 });
+    };
+    hitung();
+    const bingkai = window.requestAnimationFrame(hitung);
+    window.addEventListener("scroll", hitung, true);
+    window.addEventListener("resize", hitung);
+    return () => {
+      window.cancelAnimationFrame(bingkai);
+      window.removeEventListener("scroll", hitung, true);
+      window.removeEventListener("resize", hitung);
+    };
+  }, [buka, bulan]);
 
   const pilih = (iso: string) => {
     if (!iso) {
@@ -167,7 +203,7 @@ export function PemilihTanggalSidang({
 
   return (
     <div ref={bungkus} className={cn("relative flex flex-col gap-0.5", kelasBungkus)}>
-      <div className="flex items-center gap-1">
+      <div ref={barisIsian} className="flex items-center gap-1">
         <input
           id={id}
           type="date"
@@ -217,22 +253,33 @@ export function PemilihTanggalSidang({
           Daftar libur nasional tahun {value.slice(0, 4)} belum ada - periksa SKB-nya.
         </span>
       ) : null}
-      {buka && tampilKalender ? (
-        <KalenderLibur
-          bulan={bulan}
-          gantiBulan={setBulan}
-          terpilih={value}
-          min={min}
-          max={max}
-          usulan={usulan}
-          liburBolehDipilih={liburBolehDipilih}
-          tutup={() => setBuka(false)}
-          pilih={(iso) => {
-            pilih(iso);
-            setBuka(false);
-          }}
-        />
-      ) : null}
+      {buka && tampilKalender && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              ref={panel}
+              data-kalender-mengambang=""
+              className="fixed z-[80]"
+              style={posisi ?? { left: -9999, top: 0, visibility: "hidden" }}
+            >
+              <KalenderLibur
+                mengambang
+                bulan={bulan}
+                gantiBulan={setBulan}
+                terpilih={value}
+                min={min}
+                max={max}
+                usulan={usulan}
+                liburBolehDipilih={liburBolehDipilih}
+                tutup={() => setBuka(false)}
+                pilih={(iso) => {
+                  pilih(iso);
+                  setBuka(false);
+                }}
+              />
+            </div>,
+            document.body
+          )
+        : null}
     </div>
   );
 }
@@ -275,7 +322,10 @@ export function KalenderLibur({
   usulan,
   liburBolehDipilih = false,
   tutup,
+  mengambang = false,
 }: {
+  /** true = posisinya diatur pembungkus (portal posisi tetap), bukan "absolute" di bawah isian. */
+  mengambang?: boolean;
   bulan: string;
   gantiBulan: (b: string) => void;
   terpilih: string;
@@ -352,7 +402,10 @@ export function KalenderLibur({
       onKeyDown={(e) => {
         if (e.key === "Escape") tutup?.();
       }}
-      className="absolute left-0 top-full z-50 mt-1 w-[min(19rem,calc(100vw-2rem))] rounded-lg border bg-card p-2 text-xs text-foreground shadow-lg 2xl:w-[24rem] 2xl:text-sm"
+      className={cn(
+        !mengambang && "absolute left-0 top-full z-50 mt-1",
+        "w-[min(19rem,calc(100vw-2rem))] rounded-lg border bg-card p-2 text-xs text-foreground shadow-lg 2xl:w-[24rem] 2xl:text-sm"
+      )}
     >
       <div className="mb-1 flex items-center justify-between">
         <button type="button" aria-label="Bulan sebelumnya" onClick={() => pindah(-1)} className="rounded p-1.5 hover:bg-muted">
