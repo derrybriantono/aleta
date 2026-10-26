@@ -27,6 +27,7 @@ import {
   judulLencanaPekerjaan,
   lencanaPekerjaanUntukNama,
   lencanaPerkara,
+  lencanaProdeo,
   tulisanLencanaPekerjaan,
   type BahanPenandaBaris,
   type KunciLencanaPerkara,
@@ -72,6 +73,19 @@ export function LencanaPerkaraBaris({
           {l.label}
         </span>
       ))}
+    </span>
+  );
+}
+
+/**
+ * Lencana Prodeo berdiri sendiri (Status Perkara, 26 Okt 2026): rumusan, warna, dan
+ * keterangannya SAMA dengan lencana di samping nomor perkara pada Jadwal Sidang.
+ */
+export function LencanaProdeo({ sumber, className }: { sumber?: ReadonlyArray<string> | null; className?: string }) {
+  const l = lencanaProdeo(sumber);
+  return (
+    <span className={cn(KELAS_DASAR, KELAS_PERKARA.prodeo, className)} title={l.judul} data-lencana="prodeo">
+      {l.label}
     </span>
   );
 }

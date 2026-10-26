@@ -1739,6 +1739,8 @@ export type SidangBaris = {
   /** Pihak berlencana pekerjaan (PNS, PPPK, POLRI, TNI, BUMN, BUMD) menurut penggolongan ABT. */
   penandaPihak?: Array<{ sisi: number; nama: string; kunci: string; label: string; ragu?: boolean; kalimat?: string }> | null;
   penandaProdeoTerbaca?: boolean;
+  /** 26 Okt 2026: sumber prodeo ("flag-sipp" | "ecourt") - prodeoPerkaraService. */
+  penandaProdeoSumber?: string[];
   penandaPekerjaanTerbaca?: boolean;
   /** 14 Okt 2026: izin cerai PNS/ASN (PPPK)/TNI/POLRI - aleta_bot/services/izinCeraiService.js; "ada" tanpa lencana. */
   izinCerai?: {

@@ -566,6 +566,8 @@ type SidangBaris = {
   /** Peta e-Court terbaca - tanpa ini "non e-Court" TIDAK ditandai. */
   ecourtTerbaca?: boolean;
   penandaPerkara?: PenandaPerkaraBaris | null;
+  /** 26 Okt 2026: sumber prodeo ("flag-sipp" | "ecourt") untuk keterangan lencana. */
+  penandaProdeoSumber?: string[] | null;
   penandaPihak?: LencanaPekerjaanPihak[] | null;
   /** 14 Okt 2026: izin cerai pihak PNS/ASN (PPPK)/TNI/POLRI - lihat aleta_bot/services/izinCeraiService.js. */
   izinCerai?: IzinCeraiBaris | null;
