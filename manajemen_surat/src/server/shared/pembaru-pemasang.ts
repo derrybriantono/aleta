@@ -22,6 +22,28 @@ import { EKSTENSI_BERKAS } from "@/server/shared/ekstensi-berkas";
 
 const BERKAS_PEMASANG = "pembaru/pasang-pembaru-aleta.cmd";
 const BERKAS_PEMBANTU = "pembaru/pembaru-aleta.ps1";
+const BERKAS_PEMASANG_MAC = "pembaru/pasang-pembaru-aleta.command";
+const BERKAS_PEMBANTU_MAC = "pembaru/pembaru-aleta.sh";
+
+/** Sistem operasi yang pemasangnya tersedia. Linux belum didukung (jalan pengguna diberi keterangan). */
+export type OsPemasang = "windows" | "mac";
+
+/**
+ * Menormalkan ?os= pada rute pemasang. Kosong = windows (perilaku lama, tidak berubah).
+ * Nilai yang bukan windows/mac dikembalikan null (rute menjawab 400).
+ */
+export function normalisasiOsPemasang(nilai: string | null | undefined): OsPemasang | null {
+  const v = String(nilai ?? "").trim().toLowerCase();
+  if (v === "" || v === "windows" || v === "win" || v === "win32") return "windows";
+  if (v === "mac" || v === "macos" || v === "darwin" || v === "osx") return "mac";
+  return null;
+}
+
+/** Nama berkas unduhan per sistem. */
+export const NAMA_BERKAS_PEMASANG: Record<OsPemasang, string> = {
+  windows: "pasang-pembaru-aleta.cmd",
+  mac: "pasang-pembaru-aleta.command",
+};
 
 /** ID ekstensi Chrome: 32 huruf a-p. */
 export const POLA_ID_EKSTENSI = /^[a-p]{32}$/;
@@ -40,6 +62,48 @@ export type MasukanPemasang = {
   idEkstensi?: string;
 };
 
+/** Hanya bentuk baku yang boleh masuk ke string ber-kutip tunggal pada pemasang (Windows maupun macOS). */
+function masukanAman(masukan: MasukanPemasang): { idAman: string; asalAman: string } {
+  const id = String(masukan.idEkstensi || "").trim();
+  const asal = String(masukan.asalPortal || "").trim().replace(/\/+$/, "");
+  return {
+    idAman: POLA_ID_EKSTENSI.test(id) ? id : "",
+    asalAman: POLA_ASAL_PORTAL.test(asal) ? asal : "",
+  };
+}
+
+/**
+ * Pemasang macOS: satu berkas .command (bash) dengan akhir baris LF.
+ *
+ * Pembantu (pembaru-aleta.sh) tertanam sebagai heredoc ber-kutip tunggal, sehingga tidak ada
+ * yang diperluas oleh shell. Berkas ini TIDAK memuat pemasang Windows maupun sebaliknya.
+ */
+export function susunPemasangMac(masukan: MasukanPemasang): string {
+  const pemasang = EKSTENSI_BERKAS[BERKAS_PEMASANG_MAC];
+  const pembantu = EKSTENSI_BERKAS[BERKAS_PEMBANTU_MAC];
+  if (!pemasang || !pembantu) {
+    throw new Error("Pemasang macOS belum tertanam. Jalankan scripts/susun-ekstensi.mjs lalu bangun ulang.");
+  }
+  const lf = (t: string) => t.replace(/\r\n/g, "\n");
+  const host = lf(pembantu).replace(/\n+$/, "");
+  if (/^ALETA_AKHIR_HOST\s*$/m.test(host)) {
+    throw new Error("Pembantu memuat baris penutup heredoc; tidak dapat ditanam ke pemasang.");
+  }
+  const { idAman, asalAman } = masukanAman(masukan);
+  return lf(pemasang)
+    .replace("@@ID_DIMINTA@@", idAman)
+    .replace("@@ASAL_PORTAL@@", asalAman)
+    .replace("@@HOST_SH@@", () => host);
+}
+
+/** Satu pintu untuk rute: isi, nama berkas, dan jenis isi per sistem. */
+export function susunPemasangUntuk(os: OsPemasang, masukan: MasukanPemasang): { isi: string; namaBerkas: string } {
+  return {
+    isi: os === "mac" ? susunPemasangMac(masukan) : susunPemasang(masukan),
+    namaBerkas: NAMA_BERKAS_PEMASANG[os],
+  };
+}
+
 export function susunPemasang(masukan: MasukanPemasang): string {
   const pemasang = EKSTENSI_BERKAS[BERKAS_PEMASANG];
   const pembantu = EKSTENSI_BERKAS[BERKAS_PEMBANTU];
@@ -47,13 +111,10 @@ export function susunPemasang(masukan: MasukanPemasang): string {
     throw new Error("Pemasang pembaru belum tertanam. Jalankan scripts/susun-ekstensi.mjs lalu bangun ulang.");
   }
 
-  const id = String(masukan.idEkstensi || "").trim();
-  const asal = String(masukan.asalPortal || "").trim().replace(/\/+$/, "");
   // Nilai ini disisipkan ke dalam string PowerShell ber-kutip tunggal: hanya
   // bentuk yang BAKU yang lolos, sisanya dikosongkan (pemasang lalu memakai
   // daftar bawaan / mencari sendiri).
-  const idAman = POLA_ID_EKSTENSI.test(id) ? id : "";
-  const asalAman = POLA_ASAL_PORTAL.test(asal) ? asal : "";
+  const { idAman, asalAman } = masukanAman(masukan);
 
   // Pembantu masuk ke here-string ber-kutip tunggal: tidak boleh ada baris yang
   // diawali '@ (penutupnya).

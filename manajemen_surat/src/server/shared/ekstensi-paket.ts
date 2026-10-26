@@ -53,6 +53,19 @@ function akhirBarisWindows(nama: string, isi: string): string {
 }
 
 /**
+ * Berkas yang tertanam (disajikan rute lain) tetapi TIDAK dimasukkan ke ZIP/.crx.
+ *
+ * Pemasang dan pembantu macOS (26 Okt 2026) disajikan rute pemasang (?os=mac).
+ * Bila ikut ZIP, pembantu Windows yang SUDAH terpasang di komputer petugas
+ * menolak seluruh paket ("jenis berkas tidak diizinkan": ia hanya mengenal
+ * js/css/html/json/png/md/txt/ps1/cmd) dan pembaruan otomatis Windows berhenti.
+ */
+export const BERKAS_TANPA_ZIP: ReadonlySet<string> = new Set([
+  "pembaru/pembaru-aleta.sh",
+  "pembaru/pasang-pembaru-aleta.command",
+]);
+
+/**
  * Menyusun isi ekstensi menjadi satu ZIP.
  *
  * ============================================================================
@@ -72,10 +85,12 @@ function akhirBarisWindows(nama: string, isi: string): string {
 export function berkasEkstensi(awalan: string): BerkasZip[] {
   const namai = (nama: string) => (awalan ? `${awalan}/${nama}` : nama);
   return [
-    ...Object.entries(EKSTENSI_BERKAS).map(([nama, isi]) => ({
-      nama: namai(nama),
-      isi: Buffer.from(nama === "manifest.json" ? isiManifest() : akhirBarisWindows(nama, isi), "utf8"),
-    })),
+    ...Object.entries(EKSTENSI_BERKAS)
+      .filter(([nama]) => !BERKAS_TANPA_ZIP.has(nama))
+      .map(([nama, isi]) => ({
+        nama: namai(nama),
+        isi: Buffer.from(nama === "manifest.json" ? isiManifest() : akhirBarisWindows(nama, isi), "utf8"),
+      })),
     // Ikon disandikan base64 saat ditanam - PNG tidak selamat melewati utf8.
     // Tanpa ikon, Chrome MENOLAK memasang ekstensinya sama sekali, karena
     // manifest menunjuk berkas yang tidak ada.
