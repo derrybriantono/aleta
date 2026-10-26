@@ -1164,7 +1164,8 @@ describe("popup, panel, dan portal menyebut pembaruan otomatis", () => {
     expect(html).toContain('id="pembaruStatus"');
     expect(html).toContain('id="pasangPembaru"');
     expect(js).toContain('mintaKeLatar("status-pembaru")');
-    expect(js).toContain('mintaKeLatar("unduh-pemasang-pembaru")');
+    // 26 Okt 2026: permintaan kini membawa pilihan sistem (Windows/macOS) sebagai argumen tambahan.
+    expect(js).toMatch(/mintaKeLatar\("unduh-pemasang-pembaru"[,)]/);
     for (const teks of ["aktif", "belum dipasang"]) expect(js).toContain(`["${teks}"`);
   });
 

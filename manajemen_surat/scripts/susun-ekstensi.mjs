@@ -246,6 +246,11 @@ const BERKAS = [
   // Disajikan juga sebagai satu berkas .cmd oleh rute /ekstensi/pembaru/pemasang.
   "pembaru/pembaru-aleta.ps1",
   "pembaru/pasang-pembaru-aleta.cmd",
+  // Padanan macOS (26 Okt 2026): pembantu bash dan pemasang .command. Hanya DISAJIKAN lewat rute
+  // pemasang (?os=mac); TIDAK ikut ZIP/.crx (lihat BERKAS_TANPA_ZIP di ekstensi-paket.ts):
+  // pembantu Windows yang sudah terpasang menolak jenis berkas .sh/.command di dalam ZIP.
+  "pembaru/pembaru-aleta.sh",
+  "pembaru/pasang-pembaru-aleta.command",
   "PASANG.md",
 ];
 

@@ -884,7 +884,7 @@ chrome.runtime.onMessage.addListener((pesan, pengirim, jawab) => {
     return true;
   }
   if (pesan.jenis === "unduh-pemasang-pembaru") {
-    unduhPemasangPembaru()
+    unduhPemasangPembaru(pesan.os)
       .then(jawab)
       .catch((e) => jawab({ ok: false, pesan: String((e && e.message) || e).slice(0, 160) }));
     return true;
@@ -4399,8 +4399,49 @@ async function perbaruiLewatPembantuDariTombol(versiSekarang, paksa) {
   };
 }
 
-/** Mengunduh pemasang pembaru otomatis (satu berkas .cmd; bukan ZIP, jadi tidak dicegat IDM). */
-async function unduhPemasangPembaru() {
+/**
+ * Sistem operasi komputer ini untuk memilih pemasang: "windows" | "mac" | "linux" | "lain".
+ * chrome.runtime.getPlatformInfo lebih dulu (paling andal di pekerja latar), lalu
+ * navigator.userAgentData.platform, lalu userAgent. Tanpa petunjuk sama sekali: "windows"
+ * (perilaku lama).
+ */
+async function deteksiOsPemasang() {
+  try {
+    if (chrome.runtime && typeof chrome.runtime.getPlatformInfo === "function") {
+      const p = await chrome.runtime.getPlatformInfo();
+      const os = String((p && p.os) || "").toLowerCase();
+      if (os === "mac") return "mac";
+      if (os === "win") return "windows";
+      if (os === "linux") return "linux";
+      if (os) return "lain";
+    }
+  } catch {
+    /* jatuh ke navigator */
+  }
+  try {
+    const nav = typeof navigator !== "undefined" ? navigator : null;
+    const teks = `${(nav && nav.userAgentData && nav.userAgentData.platform) || ""} ${(nav && nav.platform) || ""} ${(nav && nav.userAgent) || ""}`;
+    if (/iPhone|iPad|iPod|Android|CrOS/i.test(teks)) return "lain";
+    if (/mac/i.test(teks)) return "mac";
+    if (/win/i.test(teks)) return "windows";
+    if (/linux|x11/i.test(teks)) return "linux";
+  } catch {
+    /* tanpa petunjuk */
+  }
+  return "windows";
+}
+
+/**
+ * Mengunduh pemasang pembaru otomatis (satu berkas; bukan ZIP, jadi tidak dicegat IDM).
+ * Windows: .cmd. macOS: .command (26 Okt 2026). `osDiminta` ("mac" | "windows") dari pilihan
+ * petugas di popup; tanpa itu, sistem komputer ini yang dipakai.
+ */
+async function unduhPemasangPembaru(osDiminta) {
+  const os = osDiminta === "mac" || osDiminta === "windows" ? osDiminta : await deteksiOsPemasang();
+  if (os !== "mac" && os !== "windows") {
+    return { ok: false, pesan: "Pembaruan otomatis baru tersedia untuk Windows dan macOS. Sistem ini belum didukung." };
+  }
+  const namaBerkas = os === "mac" ? "pasang-pembaru-aleta.command" : "pasang-pembaru-aleta.cmd";
   let asal = "";
   try {
     const s = await chrome.storage.local.get(["asalPortal"]);
@@ -4412,7 +4453,7 @@ async function unduhPemasangPembaru() {
   const id = String((chrome.runtime && chrome.runtime.id) || "");
   let r;
   try {
-    r = await fetch(`${asal}/api/aleta-ecourt/ekstensi/pembaru/pemasang?id=${encodeURIComponent(id)}`, { credentials: "include", cache: "no-store" });
+    r = await fetch(`${asal}/api/aleta-ecourt/ekstensi/pembaru/pemasang?id=${encodeURIComponent(id)}${os === "mac" ? "&os=mac" : ""}`, { credentials: "include", cache: "no-store" });
   } catch (e) {
     return { ok: false, pesan: `Server tidak terjangkau (${String((e && e.message) || e).slice(0, 80)}).` };
   }
@@ -4420,9 +4461,9 @@ async function unduhPemasangPembaru() {
   if (!r.ok) return { ok: false, pesan: `Server menjawab ${r.status}.` };
   const buf = await r.arrayBuffer();
   if (!buf.byteLength) return { ok: false, pesan: "Server mengirim berkas kosong." };
-  const h = await terbitkanUnduhan(`data:application/octet-stream;base64,${kePembaruanBase64(buf)}`, "ALETA/pasang-pembaru-aleta.cmd", 60000);
-  // Chrome menahan berkas .cmd sampai petugas memilih Simpan: itu bukan kegagalan.
-  if (h.ok || h.state === "waktu") return { ok: true, id: h.id, nama: "ALETA/pasang-pembaru-aleta.cmd" };
+  const h = await terbitkanUnduhan(`data:application/octet-stream;base64,${kePembaruanBase64(buf)}`, `ALETA/${namaBerkas}`, 60000);
+  // Chrome menahan berkas .cmd / .command sampai petugas memilih Simpan: itu bukan kegagalan.
+  if (h.ok || h.state === "waktu") return { ok: true, id: h.id, nama: `ALETA/${namaBerkas}`, os };
   return { ok: false, pesan: h.galat ? `Unduhan diblokir peramban (${h.galat}).` : String(h.pesan || "Unduhan gagal.") };
 }
 
