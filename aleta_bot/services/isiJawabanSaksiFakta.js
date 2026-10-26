@@ -203,6 +203,7 @@ function jumlahAnakDariTeks(t) {
 // ============================================================================
 
 const KB = require("./isiJawabanSaksiKebendaanLain");
+const { rapikanAlamatPihak } = require("./alamatPihakRapi");
 
 const KODE_FAKTA = Object.freeze({
   5197: "tglNikah",
@@ -406,8 +407,9 @@ const potong = (t, n = 60) => {
 // Membangun fakta dari tiga sumber
 // ============================================================================
 
+// 26 Okt 2026: ekor wilayah ganda dari SIPP/e-Court dibuang lebih dulu (alamatPihakRapi), baru surel dipotong.
 const bersihAlamat = (a) =>
-  rapat(String(a || "").replace(/,?\s*Domisili\s+Elektronik\s*:.*$/i, "").replace(/\s*,\s*,/g, ","))
+  rapat(String(rapikanAlamatPihak(a).alamat || "").replace(/,?\s*Domisili\s+Elektronik\s*:.*$/i, "").replace(/\s*,\s*,/g, ","))
     .replace(/[\s,;.]+$/, "")
     .trim();
 

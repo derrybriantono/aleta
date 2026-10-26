@@ -64,6 +64,7 @@
 
 const db = require("../db_config");
 const aturanAlasan = require("./abtAturanAlasan");
+const { rapikanAlamatPihak } = require("./alamatPihakRapi");
 const kalimatBaku = require("./abtKalimatBaku");
 const ragamBawaan = require("./ragamBasBawaan");
 const pemilih = require("./pemilihRagam");
@@ -4472,7 +4473,12 @@ function faktaDariPosita(posita, pelaku, lawan, opsi) {
   // (o.alamatPihak, dibaca rute dengan batas waktu). Posita menang atas SIPP.
   const tempatKiniPosisi = tempatKiniPosita(butir, pelaku, lawan);
   const alamatSipp = o.alamatPihak && typeof o.alamatPihak === "object" ? o.alamatPihak : {};
-  const bersihAlamat = (a) => String(a || "").replace(/\s+/g, " ").replace(/[\s,;.]+$/, "").trim();
+  // 26 Okt 2026: ekor wilayah ganda dari SIPP/e-Court dibuang lebih dulu (alamatPihakRapi, kembaran perapi portal).
+  const bersihAlamat = (a) =>
+    String(rapikanAlamatPihak(a).alamat || "")
+      .replace(/\s+/g, " ")
+      .replace(/[\s,;.]+$/, "")
+      .trim();
   const tempatKini = {
     lawan: tempatKiniPosisi.lawan || bersihAlamat(alamatSipp.lawan),
     pelaku: tempatKiniPosisi.pelaku || bersihAlamat(alamatSipp.pelaku),
