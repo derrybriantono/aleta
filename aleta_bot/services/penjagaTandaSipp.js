@@ -1125,6 +1125,11 @@ const JALUR_TULIS_SIPP = Object.freeze([
     sasaran: "penetapan mediator (No. Penetapan Mediator) + penjalan rencana mediasi",
   },
   {
+    berkas: "services/tundaMediasiService.js",
+    penjaga: ["penjagaTandaSipp.periksaIsian(", "penjagaTandaSipp.periksaRencana("],
+    sasaran: "tunda mediasi dari Jadwal Mediasi (tempat pertemuan berikutnya) + penjalan rencana: perkara_jadwal_mediasi dan sys_audittrail",
+  },
+  {
     berkas: "services/kasirJurnalService.js",
     penjaga: ["penjagaTandaSipp.periksaIsian(", "penjagaTandaSipp.periksaRencana("],
     sasaran: "jurnal kasir (uraian, keterangan) + penjalan rencana kasir",

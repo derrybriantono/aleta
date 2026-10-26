@@ -797,6 +797,15 @@ export const AKSI = {
     rute: ["POST /api/aleta-ecourt/hasil-mediasi"],
     alasan: "Rute menegakkan pastikanMediator (nama akun cocok dengan mediator perkara di SIPP, atau Super Admin) - lebih tepat daripada golongan, jadi rute TIDAK diberi pagar golongan.",
   },
+  // 26 Okt 2026: tunda mediasi ke SIPP (perkara_jadwal_mediasi) dari Jadwal Mediasi.
+  "mediasi.tunda": {
+    label: "Tunda mediasi (tulis ke SIPP)",
+    crud: "CU",
+    golongan: ["mediator", "hakim", "pimpinan", "panitera", "panmud", "pp"],
+    lingkup: "milik",
+    rute: ["POST /api/aleta-ecourt/tunda-mediasi"],
+    alasan: "Ditunda mediator, majelis, atau panitera pengganti perkara itu (SIPP: tautan Tunda pada pertemuan mediasi terakhir); pimpinan/panitera/panmud mengawasi. Rute menegakkan kepemilikan perkara bagi hakim, PP, dan mediator.",
+  },
   // Arsip hasil mediasi per perkara (21 Okt 2026): SIPP tidak punya tempat unggah dokumen hasil mediasi.
   "mediasi.arsip-lihat": {
     label: "Melihat dan mengunduh berkas hasil mediasi (arsip perkara)",
