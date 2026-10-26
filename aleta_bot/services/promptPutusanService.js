@@ -45,6 +45,10 @@
 const db = require("../db_config");
 const { cleanText, normalizeCaseNumber } = require("./ecourtTextService");
 const ecourtStoreService = require("./ecourtStoreService");
+const { rapikanAlamatPihak } = require("./alamatPihakRapi");
+
+// 26 Okt 2026: alamat pihak di SIPP kerap memuat ekor wilayah ganda dari e-Court; dirapikan sebelum masuk ke prompt supaya putusan tidak menyalinnya.
+const alamatRapi = (a) => cleanText(rapikanAlamatPihak(cleanText(a)).alamat);
 
 function runQuery(sql, params = []) {
   return new Promise((resolve, reject) => {
@@ -272,10 +276,10 @@ async function bahanPrompt(nomorPerkaraMentah) {
     pihak: {
       penggugat: pihak
         .filter((x) => Number(x.pihakKe) === 1)
-        .map((x) => ({ nama: cleanText(x.nama), alamat: cleanText(x.alamat) })),
+        .map((x) => ({ nama: cleanText(x.nama), alamat: alamatRapi(x.alamat) })),
       tergugat: pihak
         .filter((x) => Number(x.pihakKe) === 2)
-        .map((x) => ({ nama: cleanText(x.nama), alamat: cleanText(x.alamat) })),
+        .map((x) => ({ nama: cleanText(x.nama), alamat: alamatRapi(x.alamat) })),
     },
     kuasa: kuasa.map((row) => ({
       nama: cleanText(row.kuasa),
