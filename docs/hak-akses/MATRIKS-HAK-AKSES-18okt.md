@@ -151,6 +151,7 @@ Catatan kewenangan:
 | Menyalakan / mematikan penarikan berkala e-Court (widget ekstensi) | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Catat kehadiran & status mediasi | U | U | U | U | U | U | U | - | - | - | U | - | - | - | - | - |
 | Buat hasil mediasi (.rtf) | P | P | - | P | - | - | - | - | - | - | P | - | - | - | - | - |
+| Tunda mediasi (tulis ke SIPP) | U | U | U | U | U | U | U | - | - | - | U | - | - | - | - | - |
 | Melihat dan mengunduh berkas hasil mediasi (arsip perkara) | L | L | L | L | L | L | L | - | - | - | L | - | - | - | - | - |
 | Mengunggah dan mengganti berkas hasil mediasi (arsip perkara) | U | U | U | U | U | U | U | - | - | - | U | - | - | - | - | - |
 | Menghapus berkas hasil mediasi (arsip perkara) | U | U | U | U | U | U | U | - | - | - | U | - | - | - | - | - |
@@ -200,6 +201,7 @@ Catatan kewenangan:
 - **Verifikasi dokumen e-Court (hakim)**: Hanya atas perkara yang ia tangani (majelis, PP, atau juru sitanya); Ketua, Wakil, dan Admin semua perkara.
 - **Catat kehadiran & status mediasi**: Hanya atas perkara yang ia tangani (majelis, PP, atau juru sitanya); Ketua, Wakil, dan Admin semua perkara.
 - **Buat hasil mediasi (.rtf)**: Hanya atas perkara yang ia tangani (majelis, PP, atau juru sitanya); Ketua, Wakil, dan Admin semua perkara.
+- **Tunda mediasi (tulis ke SIPP)**: Hanya atas perkara yang ia tangani (majelis, PP, atau juru sitanya); Ketua, Wakil, dan Admin semua perkara.
 - **Mengunggah dan mengganti berkas hasil mediasi (arsip perkara)**: Hanya atas perkara yang ia tangani (majelis, PP, atau juru sitanya); Ketua, Wakil, dan Admin semua perkara.
 - **Menghapus berkas hasil mediasi (arsip perkara)**: Hanya atas perkara yang ia tangani (majelis, PP, atau juru sitanya); Ketua, Wakil, dan Admin semua perkara.
 - **Analisa perkara & prompt putusan**: Hanya atas perkara yang ia tangani (majelis, PP, atau juru sitanya); Ketua, Wakil, dan Admin semua perkara.

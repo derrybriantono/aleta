@@ -54,8 +54,10 @@ import {
   uraiCariPintar,
   uraianKosong,
 } from "@/lib/cari-pintar-jadwal";
-import { ChevronDown, ChevronUp, FileText, Filter, SlidersHorizontal, X } from "lucide-react";
+import { CalendarClock, ChevronDown, ChevronUp, FileText, Filter, SlidersHorizontal, X } from "lucide-react";
 import { HasilMediasiDialog } from "@/components/portal/hasil-mediasi-dialog";
+import { TundaMediasiDialog, type HasilTundaMediasi } from "@/components/portal/tunda-mediasi-dialog";
+import { barisSetelahTundaMediasi } from "@/lib/tunda-mediasi";
 import { bolehBuatHasilMediasi, type PenggunaHasilMediasi } from "@/lib/hasil-mediasi";
 import { usePenggunaAktifOpsional } from "@/lib/app-state";
 import { bolehAksiLayar } from "@/lib/matriks-peran";
@@ -838,6 +840,9 @@ export function AletaEcourtMediasi({
   // HAK-PERAN 12 Okt: catat kehadiran/status mediasi hanya golongan mediasi.catat.
   const penggunaAktif = usePenggunaAktifOpsional();
   const bolehCatatMediasi = bolehAksiLayar(penggunaAktif, "mediasi.catat");
+  // 26 Okt 2026: Tunda mediasi menulis ke SIPP; hak golongan di sini, kepemilikan perkara dijaga rute.
+  const bolehTundaMediasiLayar = bolehAksiLayar(penggunaAktif, "mediasi.tunda");
+  const [tundaDibuka, setTundaDibuka] = useState<Mediasi | null>(null);
   /* === 12OKT-A: kumulasi perkara === */
   const saklarKumulasi = useSaklarKumulasi();
   /* === AKHIR 12OKT-A === */
@@ -940,6 +945,20 @@ export function AletaEcourtMediasi({
   // Data rentang LAIN tetap dikosongkan (pertemuan hari lain di bawah judul
   // hari ini lebih menyesatkan daripada tabel kosong).
   const permintaanTerakhir = useRef<{ mulai: string; akhir: string; kata: string } | null>(null);
+  // Sesudah Tunda tertulis ke SIPP: baris daftar berubah seketika (ditunda + pertemuan berikutnya),
+  // tanpa menunggu cermin/SIPP dibaca ulang.
+  const sesudahTunda = (hasil: HasilTundaMediasi) => {
+    const rentang = permintaanTerakhir.current;
+    setMediasi((lama) =>
+      barisSetelahTundaMediasi(
+        lama,
+        { mediasiId: hasil.mediasiId, tanggal: hasil.tanggalLama },
+        { tanggal: hasil.tanggalBaru, tempat: hasil.tempatBaru, jam: hasil.jam, sampaiJam: hasil.sampaiJam },
+        hasil.kehadiran,
+        { dari: rentang?.mulai || dari, sampai: rentang?.akhir || sampai }
+      )
+    );
+  };
   const rentangTampil = useRef("");
   const muatRentangRef = useRef<((mulai: string, akhir: string, kata: string) => Promise<void>) | null>(null);
   const cobaLagiMediasi = useCobaLagiOtomatis(() => {
@@ -1589,6 +1608,22 @@ export function AletaEcourtMediasi({
                           </button>
                         </div>
                       ) : null}
+                      {/* Tunda mediasi (26 Okt 2026) - menulis ke SIPP persis Tunda di SIPP; hanya pertemuan
+                          yang belum ditunda dan mediasinya belum selesai (laporan mediator belum masuk). */}
+                      {bolehTundaMediasiLayar && tampilMediasi(tampilan, "tombol-tunda-mediasi") && !baris.ditunda && !baris.selesai ? (
+                        <div className="mb-1">
+                          <button
+                            type="button"
+                            onClick={() => setTundaDibuka(baris)}
+                            title="Tunda pertemuan mediasi ini dan jadwalkan pertemuan berikutnya - tertulis di SIPP seperti Tunda di SIPP"
+                            className="inline-flex items-center gap-1 rounded-md border border-amber-500/50 px-2 py-1 text-xs font-medium text-amber-800 transition hover:bg-amber-500/10 dark:text-amber-300"
+                            data-tombol-tunda-mediasi={baris.nomorPerkara}
+                          >
+                            <CalendarClock className="h-3.5 w-3.5" />
+                            Tunda
+                          </button>
+                        </div>
+                      ) : null}
                       {bolehCatatMediasi && tampilMediasi(tampilan, "tombol-status-mediasi") ? (
                       <div className="mb-1">
                         <TombolStatusMediasi baris={{ mediasiId: String(baris.mediasiId), perkaraId: String(baris.perkaraId), nomorPerkara: baris.nomorPerkara, tanggal: baris.tanggal.slice(0, 10), tempat: baris.tempat }} status={statusMediasi.peta[kunciBaris]} onBerubah={statusMediasi.muatUlang} />
@@ -1636,6 +1671,22 @@ export function AletaEcourtMediasi({
             </table>
           </div>
         )}
+
+        {tundaDibuka ? (
+          <TundaMediasiDialog
+            baris={{
+              mediasiId: String(tundaDibuka.mediasiId),
+              perkaraId: String(tundaDibuka.perkaraId),
+              nomorPerkara: tundaDibuka.nomorPerkara,
+              jenisPerkara: tundaDibuka.jenisPerkara,
+              tanggal: tundaDibuka.tanggal,
+              jam: tundaDibuka.jam,
+              tempat: tundaDibuka.tempat,
+            }}
+            onTutup={() => setTundaDibuka(null)}
+            onBerhasil={sesudahTunda}
+          />
+        ) : null}
 
         {hasilDibuka ? (
           <HasilMediasiDialog
