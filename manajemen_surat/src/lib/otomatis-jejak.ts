@@ -10,6 +10,13 @@
  * aturan, bukan bukti bahwa yang diterima pasti benar.
  */
 
+/**
+ * Saklar Fitur Satker jejak tunda/putus otomatis (keputusan Derry 26 Okt 2026): bawaan MATI. Mati = tidak ada
+ * baris yang ditulis ke aleta_otomatis_jejak (blob harian lama tetap seperti dulu). Env ALETA_OTOMATIS_JEJAK
+ * tetap dihormati sebagai pemaksa: "1" menyalakan, "0" mematikan, apa pun yang lain mengikuti saklar.
+ */
+export const KODE_FITUR_JEJAK_OTOMATIS = "jejak-tunda-putus-otomatis";
+
 export type FiturOtomatis = "tunda" | "putus";
 
 export type BarisJejak = {

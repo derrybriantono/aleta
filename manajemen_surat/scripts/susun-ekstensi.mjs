@@ -116,8 +116,6 @@ const BERKAS = [
   "saksi-katalog-indeks.js",
   "saksi-katalog-muat.js",
   "saksi-susun.js",
-  // Kirim keterangan saksi ke BAS SIPP (C6/U10, 25 Okt 2026): tombol + pratinjau; saklar "saksi-ke-bas-sipp" bawaan mati.
-  "saksi-ke-bas.js",
   // Isi dari SIPP - mesin bersama (19 Okt 2026): pembobotan usulan, keputusan tulis/saran, dan
   // pembacaan sumber untuk "Isi otomatis dari SIPP" di Blangko Derry. Murni (tanpa DOM), dimuat di ABT
   // sebelum abt.js dan blangko-derry-isian.js.

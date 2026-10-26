@@ -158,10 +158,8 @@ export function PemilihTanggalSidang({
   // overflow-x-auto (yang juga memaksa overflow-y) sehingga kalender terpotong.
   // Terbuka ke atas bila ruang di bawah tidak cukup; ikut bergeser saat digulung.
   useLayoutEffect(() => {
-    if (!buka) {
-      setPosisi(null);
-      return;
-    }
+    // Tertutup: panel tidak digambar; posisi lama ditimpa oleh hitung() sebelum cat berikutnya saat dibuka lagi.
+    if (!buka) return;
     const hitung = () => {
       const r = barisIsian.current?.getBoundingClientRect();
       if (!r) return;

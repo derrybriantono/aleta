@@ -1,6 +1,5 @@
 "use client";
 
-import { BerkasOtomatisKartu } from "@/components/portal/berkas-otomatis-kartu";
 import { TenggatLayar } from "@/components/portal/tenggat-layar";
 import { AccessDeniedCard, PageIntro } from "@/components/portal/shared";
 import { usePortal } from "@/lib/app-state";
@@ -22,7 +21,6 @@ export default function HalamanTenggat() {
         description="Tenggat yang sudah lewat, menjelang, dan masih berjalan - lengkap dengan sisa hari dan petugas perkaranya."
       />
       <TenggatLayar />
-      <BerkasOtomatisKartu />
     </div>
   );
 }

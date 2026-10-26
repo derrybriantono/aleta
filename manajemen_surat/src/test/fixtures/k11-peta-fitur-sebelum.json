@@ -116,7 +116,6 @@
     "saksi-katalog-indeks.js",
     "saksi-katalog-muat.js",
     "saksi-susun.js",
-    "saksi-ke-bas.js",
     "isi-sipp-bersama.js",
     "abt.js",
     "checklist.js",
@@ -676,7 +675,6 @@
     "k5Sebutan",
     "kabarPositaLain",
     "kabarkanKonteksUnduh",
-    "kaitKirimBasSipp",
     "kalimatSalinan",
     "kalimatSisaDisamarkan",
     "kapabilitasAletaAbt",
@@ -1112,7 +1110,7 @@
    "ekspor": [
     "aletaUnggahMassal"
    ],
-   "jumlahPernyataan": 845,
+   "jumlahPernyataan": 844,
    "pernyataan": [
     "316da04e6c9b",
     "0683a2e6038d",
@@ -1316,7 +1314,7 @@
     "db28654eb073",
     "65bc88b550cb",
     "31a3d4f4a25b",
-    "00d21220f295",
+    "416f2fd8167a",
     "8186d937232d",
     "51b8417c4c2d",
     "d41d1dd2037d",
@@ -1914,7 +1912,6 @@
     "baa038100af9",
     "c66e8fdcf4ba",
     "3e031bda8cab",
-    "ce51a1872ca2",
     "7a4e6930982d",
     "812629742170",
     "4aabe2a8d542",
@@ -5063,18 +5060,9 @@
    ],
    "jumlahPernyataan": 2
   },
-  "saksi-ke-bas.js": {
-   "byte": 15624,
-   "sidik": "04ddf089bebd809f318bf49057565ab4d0d58544",
-   "nama": [],
-   "ekspor": [
-    "AletaSaksiKeBas"
-   ],
-   "jumlahPernyataan": 2
-  },
   "saksi-susun.js": {
-   "byte": 88030,
-   "sidik": "3f3a69f1f5fae33359dc05019f3b0332b4d8562c",
+   "byte": 87657,
+   "sidik": "b49c0a4ffe6c74e0b0b111e2bdf32e571b0b72e1",
    "nama": [],
    "ekspor": [
     "AletaSaksiSusun"

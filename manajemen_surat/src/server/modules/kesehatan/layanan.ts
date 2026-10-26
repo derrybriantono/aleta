@@ -47,6 +47,7 @@ import {
   type Warna,
 } from "@/server/modules/kesehatan/pemeriksa";
 import { ringkasGalat } from "@/server/modules/kesehatan/galat";
+import { ajukanPeringatan, lepasPeringatanTertunda } from "@/server/modules/kesehatan/peringatan-gabungan";
 import { bacaSetelanJson, simpanSetelanSistem } from "@/server/modules/kesehatan/setelan";
 import { panggilBotInternal, type HasilBotInternal } from "@/server/modules/kesehatan/bot";
 import { ApiError } from "@/server/shared/errors";
@@ -376,10 +377,6 @@ export async function daftarPenerimaAdmin(db: AletaDatabase, penerima: "admin" |
   return baris.filter((b) => String(b.whatsapp_number || "").replace(/\D/g, "").length >= 8).map((b) => ({ id: b.id, nama: b.name, nomor: b.whatsapp_number }));
 }
 
-async function penerimaPeringatan(db: AletaDatabase, pengaturan: PengaturanKesehatan) {
-  return daftarPenerimaAdmin(db, pengaturan.penerima);
-}
-
 export async function kirimPeringatanWhatsapp(
   penerima: Array<{ id: string; nama: string; nomor: string }>,
   pesan: string,
@@ -468,9 +465,10 @@ export async function perbaruiStatus(
   ];
   let dikirim: HasilPerbaruiStatus["dikirim"] = null;
   if (baris.length && opsi.pengaturan.wa) {
-    const penerima = await penerimaPeringatan(db, opsi.pengaturan);
     const pesan = `Pusat kesehatan ALETA (${waktu.slice(11, 16)} UTC)\n${baris.join("\n")}\nBuka Admin > Pusat kesehatan untuk rinciannya.`;
-    dikirim = await (opsi.kirim ?? kirimPeringatanWhatsapp)(penerima, pesan, `${waktu.slice(0, 16)}`);
+    // 26 Okt 2026: satu pesan bersama penjaga integritas bila keduanya punya temuan di jendela yang sama.
+    const h = await ajukanPeringatan(db, { sumber: "kesehatan", teks: pesan, penerima: opsi.pengaturan.penerima, kunci: `${waktu.slice(0, 16)}` }, { kini, kirim: opsi.kirim });
+    dikirim = h.status === "ditunda" ? null : { terkirim: h.terkirim, gagal: h.gagal };
   }
   return { peringatan: peringatan.map((k) => k.kunci), pulih: pulih.map((k) => k.kunci), dikirim };
 }
@@ -506,6 +504,7 @@ export async function riwayatKesehatan(db: AletaDatabase, jam = 24): Promise<Arr
 
 /** Satu detak penjadwal: hanya bila saklar `berkala` menyala. */
 export async function detakKesehatan(db: AletaDatabase, opsi: { deps?: DepsKesehatan; kirim?: KirimPeringatan; kini?: Date } = {}) {
+  await lepasPeringatanTertunda(db, { kirim: opsi.kirim, kini: opsi.kini }).catch(() => null);
   const pengaturan = await bacaPengaturanKesehatan(db);
   if (!pengaturan.berkala) return null;
   const hasil = await jalankanPemeriksaan(db, { ping: true, deps: opsi.deps });

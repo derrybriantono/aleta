@@ -2,9 +2,11 @@
 import { NextRequest } from "next/server";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { FITUR_LIHAT_SEBAGAI } from "@/lib/fitur-satker";
 import { portalApps } from "@/lib/mock-data";
 import { aplikasiTampil, bolehAksi } from "@/lib/matriks-peran";
 import { createAletaDatabase } from "@/server/db/client";
+import { simpanPengaturanFitur } from "@/server/modules/satker/fitur";
 import {
   BATAS_CATATAN,
   RETENSI_CATATAN_HARI,
@@ -192,7 +194,46 @@ describe("hak dan rute", () => {
     expect(bolehAksi({ id: "a", roleId: "hakim", positionId: "pos-uji" }, "lihat-sebagai.pakai")).toBe(false);
   });
 
-  it("rute admin: Admin dan hakim ditolak 403; Super Admin mulai, melihat, lalu mengakhiri", async () => {
+  const nyalakanSaklar = async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ ok: true }), { status: 200 })));
+    try {
+      await simpanPengaturanFitur(db(), { id: "u-sa", name: "Nama u-sa" }, { fitur: { [FITUR_LIHAT_SEBAGAI]: "stabil" } });
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  };
+
+  it("saklar Fitur Satker MATI bawaan: semua metode rute menolak Super Admin pun (403), tidak ada sesi tersimpan; catatan lama tetap terbaca", async () => {
+    const rute = await import("@/app/api/admin/lihat-sebagai/route");
+    const dari = (id: string, metode: string, badan?: unknown) =>
+      req("/api/admin/lihat-sebagai", { method: metode, headers: { "x-aleta-user-id": id, "content-type": "application/json" }, body: badan ? JSON.stringify(badan) : undefined });
+    // sesi lama (dibuat langsung lewat layanan, seperti catatan dari masa saklar menyala)
+    await mulaiLihatSebagai(db(), SA, { userId: "u-hakim", alasan: "memeriksa menu hakim sebelum dimatikan" }, new Date());
+    expect((await rute.GET(dari("u-sa", "GET"))).status).toBe(403);
+    expect((await rute.POST(dari("u-sa", "POST", { userId: "u-staf", alasan: "mencoba saat saklar mati" }))).status).toBe(403);
+    expect((await rute.DELETE(dari("u-sa", "DELETE"))).status).toBe(403);
+    const catatan = await import("@/app/api/portal/lihat-sebagai/catatan/route");
+    const hakim = (await (await catatan.GET(req("/api/portal/lihat-sebagai/catatan", { headers: { "x-aleta-user-id": "u-hakim" } }))).json()) as { data: { catatan: unknown[] } };
+    expect(hakim.data.catatan).toHaveLength(1);
+    // dinyalakan -> rute terbuka; dimatikan lagi -> menolak lagi
+    await nyalakanSaklar();
+    expect((await rute.GET(dari("u-sa", "GET"))).status).toBe(200);
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ ok: true }), { status: 200 })));
+    await simpanPengaturanFitur(db(), { id: "u-sa", name: "Nama u-sa" }, { fitur: { [FITUR_LIHAT_SEBAGAI]: "mati" } });
+    vi.unstubAllGlobals();
+    expect((await rute.GET(dari("u-sa", "GET"))).status).toBe(403);
+  });
+
+  it("hak-akses/saya melaporkan lihatSebagaiAktif: false bawaan, true sesudah dinyalakan", async () => {
+    const rute = await import("@/app/api/hak-akses/saya/route");
+    const baca = async () => ((await (await rute.GET(req("/api/hak-akses/saya", { headers: { "x-aleta-user-id": "u-sa" } }))).json()) as { data: { lihatSebagaiAktif: boolean } }).data.lihatSebagaiAktif;
+    expect(await baca()).toBe(false);
+    await nyalakanSaklar();
+    expect(await baca()).toBe(true);
+  });
+
+  it("rute admin: Admin dan hakim ditolak 403; Super Admin mulai, melihat, lalu mengakhiri (saklar menyala)", async () => {
+    await nyalakanSaklar();
     const rute = await import("@/app/api/admin/lihat-sebagai/route");
     const dari = (id: string, metode: string, badan?: unknown) =>
       req("/api/admin/lihat-sebagai", { method: metode, headers: { "x-aleta-user-id": id, "content-type": "application/json" }, body: badan ? JSON.stringify(badan) : undefined });

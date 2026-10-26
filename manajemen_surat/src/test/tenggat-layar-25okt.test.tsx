@@ -1,7 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { BerkasOtomatisKartu } from "@/components/portal/berkas-otomatis-kartu";
 import { TenggatLayar } from "@/components/portal/tenggat-layar";
 import { ATURAN_BARU, ATURAN_TENGGAT, SEMUA_ATURAN, STATUS_DIKABULKAN, nilaiTenggat, type FaktaTenggat } from "@/lib/penjaga-tenggat";
 import { SETELAN_TENGGAT_BAWAAN } from "@/lib/tenggat-terjadwal";
@@ -68,7 +67,7 @@ afterEach(() => {
 });
 
 describe("TenggatLayar", () => {
-  it("rangkuman, baris, dan hitung mundur tampil; aturan baru bertanda dasar belum diperiksa", async () => {
+  it("rangkuman, baris, dan hitung mundur tampil; aturan baru berdasar sudah diperiksa Derry (tanpa lencana belum diperiksa)", async () => {
     tiruFetch(data());
     render(<TenggatLayar />);
     await waitFor(() => expect(screen.getByText("1/Pdt.G/2026/PA.Dgl")).toBeTruthy());
@@ -78,10 +77,18 @@ describe("TenggatLayar", () => {
     // hitung mundur dan batas
     expect(screen.getByText(/tinggal 2 hari \(batas 28-10-2026\)/)).toBeTruthy();
     expect(screen.getByText(/tinggal 14 hari \(batas 09-11-2026\)/)).toBeTruthy();
-    expect(screen.getAllByText(/dasar belum diperiksa/i).length).toBeGreaterThan(0);
-    // dasar tiap aturan tertulis, dengan tanda
-    expect(screen.getAllByText(/\[PERLU VERIFIKASI Derry\]/).length).toBe(ATURAN_BARU.length);
+    expect(screen.queryAllByText(/dasar belum diperiksa/i).length).toBe(0);
+    // dasar tiap aturan tertulis, dengan catatan sudah diperiksa Derry 26 Okt 2026
+    expect(screen.queryAllByText(/PERLU VERIFIKASI/).length).toBe(0);
+    expect(screen.getAllByText(/diperiksa Derry 26 Okt 2026/).length).toBe(ATURAN_BARU.length);
     for (const a of ATURAN_TENGGAT.slice(0, 1)) expect(screen.getAllByText(new RegExp(a.judul.slice(0, 12))).length).toBeGreaterThan(0);
+  });
+
+  it("aturan yang dasarnya memang belum diperiksa tetap berlencana (lencana tidak dihapus, hanya aturan G1 yang lolos)", async () => {
+    tiruFetch(data({ aturan: [{ kode: "contoh", judul: "Aturan contoh", dasar: "Dasar contoh", perluVerifikasi: true }] }));
+    render(<TenggatLayar />);
+    await waitFor(() => expect(screen.getByText("1/Pdt.G/2026/PA.Dgl")).toBeTruthy());
+    expect(screen.getAllByText(/dasar belum diperiksa/i).length).toBeGreaterThan(0);
   });
 
   it("saringan tingkat dan majelis mengurangi baris", async () => {
@@ -146,32 +153,5 @@ describe("TenggatLayar", () => {
     render(<TenggatLayar />);
     await waitFor(() => expect(screen.getByText(/Sebagian aturan tidak terbaca dari SIPP/)).toBeTruthy());
     expect(screen.getByText(/tabel tidak ada/)).toBeTruthy();
-  });
-});
-
-describe("BerkasOtomatisKartu (G2)", () => {
-  const setelan = { bukti: false, kesimpulan: false, buktiSaksi: false, diubahOleh: "" };
-
-  it("Super Admin: tiga saklar MATI bawaan; menyalakan satu mengirim POST hanya untuk saklar itu", async () => {
-    const f = tiruFetch({ setelan, bolehUbah: true });
-    render(<BerkasOtomatisKartu />);
-    await waitFor(() => expect(screen.getByText(/Isi otomatis dari berkas e-Court/)).toBeTruthy());
-    expect(screen.getAllByRole("switch")).toHaveLength(3);
-    for (const sw of screen.getAllByRole("switch")) expect((sw as HTMLElement).getAttribute("aria-checked")).toBe("false");
-    expect(screen.getByText(/Daftar alat bukti dari e-Court ditulis otomatis .mati./)).toBeTruthy();
-    fireEvent.click(screen.getByRole("switch", { name: /Kesimpulan para pihak/ }));
-    await waitFor(() => {
-      const post = f.mock.calls.find(([, init]) => init?.method === "POST");
-      expect(post).toBeTruthy();
-      expect(JSON.parse(String(post?.[1]?.body))).toEqual({ kesimpulan: true });
-    });
-  });
-
-  it("bukan Super Admin: kartu tidak tampil sama sekali", async () => {
-    const f = tiruFetch({ setelan, bolehUbah: false });
-    render(<BerkasOtomatisKartu />);
-    await waitFor(() => expect(f).toHaveBeenCalled());
-    expect(screen.queryByText(/Isi otomatis dari berkas e-Court/)).toBeNull();
-    expect(screen.queryAllByRole("switch")).toHaveLength(0);
   });
 });

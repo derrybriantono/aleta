@@ -115,7 +115,12 @@ beforeEach(async () => {
   kosongkanSinggahVerifikasi();
 });
 
-const nyalakan = (p: Record<string, unknown> = { otpWhatsapp: true, authenticator: true }) => simpanPengaturanVerifikasi(db(), p, { id: "u-sa", nama: "SA" }, KINI);
+// Bawaan aturan semua peran = "mati" (keputusan Derry 26 Okt 2026); uji matriks memilih aturan per peran
+// secara eksplisit, seperti yang nanti dilakukan Super Admin.
+const ATURAN_PILIHAN: Record<string, string> = { "super-admin": "wajib", admin: "wajib", hakim: "luar-kantor", pelaksana: "opsional" };
+const nyalakanTanpaAturan = (p: Record<string, unknown> = { otpWhatsapp: true, authenticator: true }) => simpanPengaturanVerifikasi(db(), p, { id: "u-sa", nama: "SA" }, KINI);
+const nyalakan = (p: Record<string, unknown> = { otpWhatsapp: true, authenticator: true }) =>
+  nyalakanTanpaAturan({ ...p, aturanPeran: { ...ATURAN_PILIHAN, ...((p.aturanPeran as Record<string, string> | undefined) ?? {}) } });
 
 /** Memasang authenticator aktif untuk akun; mengembalikan rahasianya. */
 async function pasangAuthenticator(userId: string) {
@@ -184,13 +189,9 @@ describe("TOTP (RFC 6238)", () => {
 // ─── 2. Pengaturan ──────────────────────────────────────────────────────────
 
 describe("pengaturan", () => {
-  it("MATI bawaan: kedua saklar mati, aturan bawaan per peran, jaringan kantor terisi", () => {
+  it("MATI bawaan: kedua saklar mati, aturan bawaan SEMUA peran = mati (termasuk Super Admin dan Admin), jaringan kantor terisi", () => {
     expect(PENGATURAN_VERIFIKASI_BAWAAN).toMatchObject({ otpWhatsapp: false, authenticator: false, masaTepercayaHari: 30 });
-    expect(aturanBawaanPeran("super-admin")).toBe("wajib");
-    expect(aturanBawaanPeran("admin")).toBe("wajib");
-    expect(aturanBawaanPeran("hakim")).toBe("luar-kantor");
-    expect(aturanBawaanPeran("ketua")).toBe("luar-kantor");
-    expect(aturanBawaanPeran("pelaksana")).toBe("opsional");
+    for (const peran of ["super-admin", "admin", "hakim", "ketua", "panitera", "pelaksana", "peran-baru"]) expect(aturanBawaanPeran(peran), peran).toBe("mati");
     expect(PENGATURAN_VERIFIKASI_BAWAAN.subnetKantor).toContain("192.168.10.0/24");
   });
 
@@ -276,6 +277,14 @@ describe("keputusan masuk", () => {
       for (const ip of [DI_KANTOR, DI_LUAR, ""]) {
         expect(await putus(u, ip), `${u} / ${ip}`).toEqual({ perlu: false, sebab: "saklar-mati" });
       }
+    }
+  });
+
+  it("saklar menyala TANPA memilih aturan peran: tidak ada peran yang dimintai kode (Super Admin akan memilih sendiri)", async () => {
+    await pasangAuthenticator("u-sa");
+    await nyalakanTanpaAturan({ otpWhatsapp: true, authenticator: true });
+    for (const u of ["u-sa", "u-admin", "u-hakim", "u-staf"]) {
+      for (const ip of [DI_KANTOR, DI_LUAR, ""]) expect(await putus(u, ip), `${u} / ${ip}`).toEqual({ perlu: false, sebab: "aturan-mati" });
     }
   });
 
@@ -621,7 +630,8 @@ describe("rute", () => {
     expect(res.status).toBe(200);
     const j = (await res.json()) as { data: { pengaturan: { otpWhatsapp: boolean; authenticator: boolean }; peran: Array<{ id: string; bawaan: string }> } };
     expect(j.data.pengaturan).toMatchObject({ otpWhatsapp: true, authenticator: false });
-    expect(j.data.peran.find((p) => p.id === "hakim")?.bawaan).toBe("luar-kantor");
+    expect(j.data.peran.find((p) => p.id === "hakim")?.bawaan).toBe("mati");
+    expect(j.data.peran.find((p) => p.id === "super-admin")?.bawaan).toBe("mati");
     expect(await adaLolos(db(), "u-sa", PERANGKAT, "tepercaya", new Date())).toBe(true);
     const audit = await db().queryAll<{ action: string }>("SELECT action FROM audit_logs WHERE action = 'UPDATE_VERIFIKASI_DUA_LANGKAH'");
     expect(audit).toHaveLength(1);

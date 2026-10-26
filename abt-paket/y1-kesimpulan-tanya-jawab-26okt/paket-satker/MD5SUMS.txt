@@ -1,0 +1,5 @@
+6bda47fb25aa39d9701f9862feda9194  abt-y1-kesimpulan-tanya-jawab-26okt-PASANG.sql
+8f689801420a7adaa8e8a5dddf93def5  abt-y1-kesimpulan-tanya-jawab-26okt-PERIKSA.sql
+7a94cdf85b2831aa7bac965dd2db1e24  abt-y1-kesimpulan-tanya-jawab-26okt-PULIH-HAPUS-BARU.sql
+776e96ec9c065778bae508179ce43efb  pasang-satker.sh
+67bbcdbacff9e263408f2b9af9efc108  pulih-satker.sh

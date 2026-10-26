@@ -21,8 +21,8 @@ type Data = {
   pengaturan: PengaturanVerifikasi;
   peran: Peran[];
   masaTepercayaMaks: number;
-  /** Sumber daftar jaringan kantor yang berlaku: "keamanan" = Pengaturan Keamanan (batas jaringan), "verifikasi" = daftar di panel ini. */
-  jaringanKantor?: { sumber: "keamanan" | "verifikasi"; daftar: string[] };
+  /** Daftar jaringan kantor yang berlaku: "gabungan" = daftar di panel ini + jaringan aktif di Pengaturan Keamanan (+ loopback), "verifikasi" = daftar di panel ini (+ loopback). */
+  jaringanKantor?: { sumber: "gabungan" | "verifikasi"; daftar: string[] };
 };
 
 async function panggil<T>(url: string, init?: RequestInit): Promise<T> {
@@ -134,7 +134,7 @@ export function VerifikasiPanel({ bolehAtur }: { bolehAtur: boolean }) {
               </Badge>
             </CardTitle>
             <CardDescription>
-              Kedua saklar mati bawaan: selama mati, tidak ada pengguna yang dimintai kode. Pengguna boleh memasang authenticator lebih dulu di halaman Akun. Kode hanya diminta di perangkat baru atau dari
+              Kedua saklar mati bawaan: selama mati, tidak ada pengguna yang dimintai kode. Aturan tiap peran juga &quot;mati&quot; bawaan; menyalakan saklar belum meminta kode dari siapa pun sampai Anda memilih aturan peran. Pengguna boleh memasang authenticator lebih dulu di halaman Akun. Kode hanya diminta di perangkat baru atau dari
               luar jaringan kantor.
             </CardDescription>
           </CardHeader>
@@ -179,16 +179,15 @@ export function VerifikasiPanel({ bolehAtur }: { bolehAtur: boolean }) {
               <label htmlFor="subnet-verifikasi" className="text-sm font-medium text-foreground">
                 Jaringan kantor (satu per baris, contoh 192.168.10.0/24)
               </label>
-              {data?.jaringanKantor?.sumber === "keamanan" && (
+              {data?.jaringanKantor?.sumber === "gabungan" && (
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Daftar ini dipakai bersama Pengaturan Keamanan (batas jaringan per peran). Untuk mengubahnya, buka Pengaturan Keamanan.
+                  Yang berlaku adalah gabungan daftar ini dengan jaringan aktif di Pengaturan Keamanan (batas jaringan per peran), ditambah alamat komputer server sendiri: {data.jaringanKantor.daftar.join(", ")}.
                 </p>
               )}
               <textarea
                 id="subnet-verifikasi"
                 rows={3}
                 value={subnet}
-                readOnly={data?.jaringanKantor?.sumber === "keamanan"}
                 onChange={(e) => setSubnet(e.target.value)}
                 className="mt-1 w-full rounded-xl border border-input/90 bg-card/70 p-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
               />

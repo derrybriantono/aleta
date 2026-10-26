@@ -1378,38 +1378,6 @@ export const DDL_SAKSI_KATALOG = {
 } as const;
 
 /**
- * Jejak kirim keterangan saksi ke BAS SIPP (0101, 25 Okt 2026, rantai C butir C6 = U10): satu baris per percobaan (pratinjau,
- * kirim, gagal, dobel). Hanya sidik dan hitungan - isi BAS tidak disimpan. Cermin PERSIS dari
- * drizzle/0101_aleta_saksi_kirim_bas.sql; penjaga saksi-ke-bas-sipp-25okt.test.ts membandingkan keduanya.
- */
-export const DDL_SAKSI_KIRIM_BAS = {
-  tabel: [
-    `CREATE TABLE IF NOT EXISTS aleta_saksi_kirim_bas (
-  id TEXT PRIMARY KEY,
-  perkara_id TEXT NOT NULL DEFAULT '',
-  nomor_perkara TEXT NOT NULL DEFAULT '',
-  sidang_id TEXT NOT NULL DEFAULT '',
-  urutan_sidang INTEGER NOT NULL DEFAULT 0,
-  tahap TEXT NOT NULL DEFAULT 'pratinjau',
-  hasil TEXT NOT NULL DEFAULT '',
-  jumlah_saksi INTEGER NOT NULL DEFAULT 0,
-  jumlah_jawaban INTEGER NOT NULL DEFAULT 0,
-  jumlah_hilang INTEGER NOT NULL DEFAULT 0,
-  ukuran INTEGER NOT NULL DEFAULT 0,
-  sidik TEXT NOT NULL DEFAULT '',
-  catatan TEXT NOT NULL DEFAULT '',
-  pengguna_id TEXT NOT NULL DEFAULT '',
-  pengguna_nama TEXT NOT NULL DEFAULT '',
-  pada TEXT NOT NULL
-)`,
-  ],
-  indeks: [
-    `CREATE INDEX IF NOT EXISTS idx_saksi_kirim_bas_perkara ON aleta_saksi_kirim_bas(perkara_id, pada)`,
-    `CREATE INDEX IF NOT EXISTS idx_saksi_kirim_bas_pada ON aleta_saksi_kirim_bas(pada)`,
-  ],
-} as const;
-
-/**
  * Ketepatan isian (0092, 25 Okt 2026, rantai D butir D1 = U3 + U4): angka lapangan per isian x pengisi x
  * jenis perkara x bulan (turunan dari jejak isian 0091, boleh dihitung ulang) dan keputusan Super Admin atas
  * usulan naik/turun gerbang isian. Diisi HANYA bila saklar Fitur Satker "ketepatan-isian" menyala (bawaan
@@ -3233,8 +3201,6 @@ const schemaStatements = [
   ...DDL_ISIAN_SIDANG.tabel,
   // Katalog saksi di basis data dengan versi (0093, rantai C).
   ...DDL_SAKSI_KATALOG.tabel,
-  // Jejak kirim keterangan saksi ke BAS SIPP (0101, rantai C).
-  ...DDL_SAKSI_KIRIM_BAS.tabel,
   ...DDL_ALETA_TENGGAT_KIRIM.tabel,
   // Cermin Perkara: perkara, sidang, pihak, mediasi, penanda, jejak (0090).
   ...DDL_ALETA_CERMIN_PERKARA.tabel,
@@ -5222,7 +5188,6 @@ const indexStatements = [
   ...DDL_BLANGKO_LAPOR.indeks,
   ...DDL_ISIAN_SIDANG.indeks,
   ...DDL_SAKSI_KATALOG.indeks,
-  ...DDL_SAKSI_KIRIM_BAS.indeks,
   ...DDL_ALETA_TENGGAT_KIRIM.indeks,
   ...DDL_ALETA_CERMIN_PERKARA.indeks,
   ...DDL_KESEHATAN_GALAT.indeks,

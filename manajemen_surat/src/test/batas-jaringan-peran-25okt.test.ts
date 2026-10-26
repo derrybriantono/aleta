@@ -202,10 +202,10 @@ describe("aturan efektif dan putusan murni", () => {
     const { aturanEfektif } = await import("@/server/modules/keamanan/jaringan");
     const a = [
       { roleId: "hakim", aturan: "kantor-saja" as const, diubahOleh: "", diubahPada: "" },
-      { roleId: "kasir", aturan: "luar-kantor-verifikasi" as const, diubahOleh: "", diubahPada: "" },
+      { roleId: "kasir", aturan: "mana-pun" as const, diubahOleh: "", diubahPada: "" },
     ];
     expect(aturanEfektif(["hakim"], a)).toBe("kantor-saja");
-    expect(aturanEfektif(["hakim", "kasir"], a)).toBe("luar-kantor-verifikasi");
+    expect(aturanEfektif(["hakim", "kasir"], a)).toBe("mana-pun");
     expect(aturanEfektif(["hakim", "panitera"], a)).toBe("mana-pun");
     expect(aturanEfektif([], a)).toBe("mana-pun");
   });
@@ -221,12 +221,9 @@ describe("aturan efektif dan putusan murni", () => {
     expect((await putuskanJaringan({ aturan: "mana-pun", ip: "8.8.8.8", subnet })).lolos).toBe(true);
   });
 
-  it("luar-kantor-verifikasi: tanpa pemeriksa ditolak, dengan pemeriksa mengikuti jawabannya", async () => {
-    const { putuskanJaringan } = await import("@/server/modules/keamanan/jaringan");
-    expect(await putuskanJaringan({ aturan: "luar-kantor-verifikasi", ip: "8.8.8.8", subnet })).toMatchObject({ lolos: false, kode: "PERLU_VERIFIKASI_LUAR_KANTOR" });
-    expect(await putuskanJaringan({ aturan: "luar-kantor-verifikasi", ip: "8.8.8.8", subnet, verifikasi: async () => false })).toMatchObject({ lolos: false });
-    expect((await putuskanJaringan({ aturan: "luar-kantor-verifikasi", ip: "8.8.8.8", subnet, verifikasi: async () => true })).lolos).toBe(true);
-    expect((await putuskanJaringan({ aturan: "luar-kantor-verifikasi", ip: "192.168.10.9", subnet })).lolos).toBe(true);
+  it("hanya dua aturan yang dikenal: dari mana pun dan hanya kantor (luar kantor wajib verifikasi dibuang 26 Okt 2026)", async () => {
+    const { ATURAN_JARINGAN } = await import("@/server/modules/keamanan/jaringan");
+    expect([...ATURAN_JARINGAN]).toEqual(["mana-pun", "kantor-saja"]);
   });
 });
 
@@ -333,33 +330,18 @@ describe("penegakan saat masuk", () => {
   });
 });
 
-// ─── 5. verifikasi luar kantor lewat kait ───────────────────────────────────
+// ─── 5. data lama "luar kantor wajib verifikasi" ────────────────────────────
 
-describe("verifikasi luar kantor hanya lewat kait", () => {
-  it("dengan pendaftar kait: ditolak sampai terverifikasi, lalu lolos; kait menerima alamat dan tahap", async () => {
-    const kait = await import("@/server/modules/keamanan/kait");
+describe("data lama bernilai luar-kantor-verifikasi dibaca sebagai dari mana pun", () => {
+  it("baris lama tidak membatasi siapa pun: masuk dari luar kantor tetap berhasil, aturan efektif mana-pun", async () => {
     const j = await import("@/server/modules/keamanan/jaringan");
-    const panggilan: Array<{ ip: string; tahap: string }> = [];
-    let sudah = false;
-    kait.daftarkanVerifikasiLuarKantor({
-      nama: "uji",
-      sudahTerverifikasi: async (_db, ctx) => {
-        panggilan.push({ ip: ctx.ip, tahap: ctx.tahap });
-        return sudah;
-      },
-    });
     await j.tambahSubnetKantor(db, { cidr: "192.168.10.0/24" }, "usr-super");
-    await j.simpanAturanPeran(db, "hakim", "luar-kantor-verifikasi", "usr-super");
-    const r = await masukMentah("hakim@pa.go.id", "hakim123", A, LUAR);
-    expect(r.status).toBe(403);
-    expect(((await r.json()) as { code?: string }).code).toBe("PERLU_VERIFIKASI_LUAR_KANTOR");
-    sudah = true;
+    await db.run("INSERT INTO aleta_aturan_jaringan_peran (role_id, aturan, diubah_oleh, diubah_pada) VALUES ('hakim', 'luar-kantor-verifikasi', 'lama', '2026-10-25T00:00:00.000Z')");
+    j.bersihkanSinggahanJaringan();
+    const konfig = await j.bacaKonfigurasiJaringan(db);
+    expect(konfig.aturan).toEqual([]);
+    expect(j.aturanEfektif(["hakim"], konfig.aturan)).toBe("mana-pun");
     await masuk("hakim@pa.go.id", "hakim123", A, LUAR);
-    expect(panggilan.every((p) => p.ip === LUAR && p.tahap === "masuk")).toBe(true);
-    // dari kantor kait tidak ditanya
-    panggilan.length = 0;
-    await masuk("hakim@pa.go.id", "hakim123", B, KANTOR);
-    expect(panggilan).toEqual([]);
   });
 });
 
@@ -381,7 +363,6 @@ describe("rute /api/admin/keamanan/jaringan", () => {
     expect(d.aturanTersedia.map((a: { kode: string; tersedia: boolean }) => [a.kode, a.tersedia])).toEqual([
       ["mana-pun", true],
       ["kantor-saja", true],
-      ["luar-kantor-verifikasi", false],
     ]);
     expect((await POSTKU("usr-admin", { aksi: "tambah-subnet", cidr: "192.168.10.0/24" })).status).toBe(403);
     expect((await POSTKU("usr-hakim", { aksi: "tambah-subnet", cidr: "192.168.10.0/24" })).status).toBe(403);
@@ -423,13 +404,11 @@ describe("rute /api/admin/keamanan/jaringan", () => {
     expect((await db.queryAll<{ role_id: string }>("SELECT role_id FROM aleta_aturan_jaringan_peran", [])).map((b) => b.role_id)).toEqual(["super-admin"]);
   });
 
-  it("luar-kantor-verifikasi ditolak saat simpan bila kait belum terpasang; dapat dipilih sesudahnya", async () => {
+  it("luar-kantor-verifikasi tidak lagi diterima rute: ditolak 400 sebagai aturan tidak dikenal", async () => {
     await POSTKU("usr-super", { aksi: "tambah-subnet", cidr: "192.168.10.0/24" });
     const tolak = await POSTKU("usr-super", { aksi: "atur-peran", roleId: "hakim", aturan: "luar-kantor-verifikasi" });
     expect(tolak.status).toBe(400);
-    expect((await tolak.json()).error.message).toMatch(/Verifikasi luar kantor belum tersedia/);
-    const kait = await import("@/server/modules/keamanan/kait");
-    kait.daftarkanVerifikasiLuarKantor({ nama: "uji", sudahTerverifikasi: async () => true });
-    expect((await POSTKU("usr-super", { aksi: "atur-peran", roleId: "hakim", aturan: "luar-kantor-verifikasi" })).status).toBe(200);
+    expect((await tolak.json()).error.message).toMatch(/tidak dikenal/);
+    expect(await db.queryAll("SELECT role_id FROM aleta_aturan_jaringan_peran", [])).toEqual([]);
   });
 });

@@ -13,13 +13,14 @@ import { ApiError } from "@/server/shared/errors";
  * perilaku masuk persis seperti sebelumnya. Pengguna boleh mendaftarkan
  * authenticator lebih dulu; kodenya baru ditagih setelah Super Admin menyalakan.
  *
- * Aturan per peran (bila salah satu saklar menyala):
- *   wajib       Super Admin/Admin bawaan: kode diminta di perangkat baru atau
- *               dari luar jaringan kantor.
- *   luar-kantor hakim/pejabat bawaan: kode HANYA diminta dari luar jaringan kantor.
- *   opsional    peran lain bawaan: kode diminta hanya bila orangnya sendiri
- *               sudah mendaftarkan authenticator (perangkat baru / luar kantor).
- *   mati        tidak pernah.
+ * Aturan per peran (bila salah satu saklar menyala). BAWAAN SEMUA PERAN = mati (keputusan Derry 26 Okt 2026,
+ * termasuk Super Admin dan Admin): menyalakan saklar saja tidak membuat siapa pun dimintai kode; Super Admin
+ * memilih aturan tiap peran sendiri.
+ *   wajib       kode diminta di perangkat baru atau dari luar jaringan kantor.
+ *   luar-kantor kode HANYA diminta dari luar jaringan kantor.
+ *   opsional    kode diminta hanya bila orangnya sendiri sudah mendaftarkan authenticator
+ *               (perangkat baru / luar kantor).
+ *   mati        tidak pernah (bawaan).
  * "Percayai perangkat ini" menahan kode selama MASA_TEPERCAYA_HARI (30 hari).
  *
  * Passkey (WebAuthn) hanya sah di HTTPS atau localhost; selama ALETA berjalan
@@ -36,7 +37,7 @@ export const MASA_TEPERCAYA_HARI_BAWAAN = 30;
 export const MASA_TEPERCAYA_HARI_MAKS = 90;
 export const SUBNET_KANTOR_BAWAAN: readonly string[] = ["192.168.10.0/24", "192.168.9.0/24", "127.0.0.1/32", "::1/128"];
 
-/** Peran yang bawaannya "luar-kantor": hakim dan pejabat. */
+/** Peran hakim dan pejabat: daftar acuan untuk layar (bukan lagi bawaan aturan; bawaan semua peran = mati). */
 export const PERAN_PEJABAT: readonly string[] = ["hakim", "ketua", "wakil-ketua", "sekretaris", "panitera", "panitera-muda", "kasubag", "pejabat-struktural"];
 
 export type PengaturanVerifikasi = {
@@ -60,10 +61,9 @@ export const PENGATURAN_VERIFIKASI_BAWAAN: PengaturanVerifikasi = {
   diubahPada: "",
 };
 
-export function aturanBawaanPeran(roleId: string): AturanVerifikasi {
-  if (roleId === "super-admin" || roleId === "admin") return "wajib";
-  if (PERAN_PEJABAT.includes(roleId)) return "luar-kantor";
-  return "opsional";
+/** Keputusan Derry 26 Okt 2026: tidak ada peran yang dimintai kode sampai Super Admin memilihnya. */
+export function aturanBawaanPeran(_roleId: string): AturanVerifikasi {
+  return "mati";
 }
 
 export function aturanUntukPeran(p: PengaturanVerifikasi, roleId: string): AturanVerifikasi {
@@ -126,28 +126,38 @@ export function ipDiKantor(ip: string, subnet: readonly string[]): boolean {
   return subnet.some((c) => ipDalamCidr(bersih, c));
 }
 
+/** Loopback selalu dianggap di kantor (uji lokal dan pemeriksaan dari server sendiri). */
+export const SUBNET_LOOPBACK: readonly string[] = ["127.0.0.1/32", "::1/128"];
+
 /**
- * Satu sumber daftar jaringan kantor (gabung rantai E + Bagian 6, 26 Okt 2026): bila Pengaturan Keamanan
- * (batas jaringan per peran, tabel aleta_subnet_kantor) punya jaringan AKTIF, itulah daftar yang berlaku untuk
- * verifikasi dua langkah juga. Tanpa satu pun jaringan aktif di sana (bawaan), daftar milik verifikasi sendiri
- * dipakai persis seperti sebelumnya. Gagal membaca = daftar milik verifikasi.
+ * Daftar jaringan kantor yang berlaku untuk verifikasi dua langkah = GABUNGAN (union, keputusan Derry 26 Okt 2026):
+ * daftar milik verifikasi ini + jaringan AKTIF di Pengaturan Keamanan (batas jaringan per peran, tabel
+ * aleta_subnet_kantor) + loopback. Keduanya tidak saling menggantikan. Gagal membaca Pengaturan Keamanan =
+ * daftar milik verifikasi + loopback. `sumber` = "gabungan" bila ada jaringan aktif dari Pengaturan Keamanan,
+ * selain itu "verifikasi".
  */
 export async function sumberJaringanKantor(db: AletaDatabase, p: Pick<PengaturanVerifikasi, "subnetKantor">) {
+  const milikVerifikasi = Array.from(new Set([...p.subnetKantor, ...SUBNET_LOOPBACK]));
   try {
     const konfig = await bacaKonfigurasiJaringan(db, { singgah: true });
     const aktif = konfig.subnet.filter((s) => s.aktif);
-    if (aktif.length > 0) return { sumber: "keamanan" as const, daftar: aktif.map((s) => s.cidr), subnet: konfig.subnet };
+    if (aktif.length > 0) {
+      const daftar = Array.from(new Set([...milikVerifikasi, ...aktif.map((s) => s.cidr)]));
+      return { sumber: "gabungan" as const, daftar, subnet: konfig.subnet, daftarKeamanan: aktif.map((s) => s.cidr), daftarVerifikasi: milikVerifikasi };
+    }
   } catch {
     /* jatuh ke daftar milik verifikasi */
   }
-  return { sumber: "verifikasi" as const, daftar: [...p.subnetKantor], subnet: null };
+  return { sumber: "verifikasi" as const, daftar: milikVerifikasi, subnet: null, daftarKeamanan: [] as string[], daftarVerifikasi: milikVerifikasi };
 }
 
-/** Apakah alamat ini di jaringan kantor menurut satu sumber di atas? Alamat kosong = di luar (lebih ketat). */
+/** Apakah alamat ini di jaringan kantor menurut gabungan di atas? Alamat kosong = di luar (lebih ketat). */
 export async function ipDiKantorEfektif(db: AletaDatabase, ip: string, p: Pick<PengaturanVerifikasi, "subnetKantor">): Promise<boolean> {
+  const bersih = String(ip ?? "").trim();
+  if (!bersih) return false;
   const sumber = await sumberJaringanKantor(db, p);
-  if (sumber.sumber === "keamanan" && sumber.subnet) return dalamJaringanKantor(String(ip ?? "").trim(), sumber.subnet);
-  return ipDiKantor(ip, sumber.daftar);
+  if (ipDiKantor(bersih, sumber.daftarVerifikasi)) return true;
+  return sumber.subnet ? dalamJaringanKantor(bersih, sumber.subnet) : false;
 }
 
 // ---------------------------------------------------------------------------

@@ -17,7 +17,6 @@ import {
   type AturanJaringan,
   type KonfigurasiJaringan,
 } from "@/server/modules/keamanan/jaringan";
-import { verifikasiLuarKantorTerdaftar } from "@/server/modules/keamanan/kait";
 import { tegakkanPengaman } from "@/server/modules/keamanan/pengaman-aksi";
 import { appendAuditLog } from "@/server/shared/audit";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -39,7 +38,7 @@ async function ringkasan(db: Awaited<ReturnType<typeof getDatabase>>, request: N
     aturanTersedia: ATURAN_JARINGAN.map((kode) => ({
       kode,
       label: LABEL_ATURAN_JARINGAN[kode],
-      tersedia: kode !== "luar-kantor-verifikasi" || Boolean(verifikasiLuarKantorTerdaftar()),
+      tersedia: true,
     })),
     ipAnda: ip,
     andaDalamKantor: dalamJaringanKantor(ip, konfigurasi.subnet),
@@ -88,9 +87,6 @@ export async function POST(request: NextRequest) {
       }
     } else if (body.aksi === "atur-peran") {
       if (!(ATURAN_JARINGAN as readonly string[]).includes(String(body.aturan))) throw new ApiError(400, "Aturan jaringan tidak dikenal.");
-      if (body.aturan === "luar-kantor-verifikasi" && !verifikasiLuarKantorTerdaftar()) {
-        throw new ApiError(400, "Verifikasi luar kantor belum tersedia (butuh OTP/authenticator). Pilih \"Hanya dari jaringan kantor\" atau \"Dari mana pun\".");
-      }
     } else if (body.aksi !== "hapus-subnet" && body.aksi !== "aktif-subnet") {
       throw new ApiError(400, "Aksi jaringan tidak dikenal.");
     }

@@ -6,7 +6,7 @@ import type { FiturOtomatis } from "@/lib/otomatis-jejak";
 import { waktuPengadilan } from "@/lib/waktu-pengadilan";
 import type { AletaDatabase } from "@/server/db/client";
 import { pastikanAdminIstimewa } from "@/server/modules/aleta-ecourt/akses";
-import { hitungJejak, isiUlangJejakOtomatis, laporanKetepatan } from "@/server/modules/otomatis-jejak/jejak";
+import { hitungJejak, isiUlangJejakOtomatis, jejakMenyala, laporanKetepatan } from "@/server/modules/otomatis-jejak/jejak";
 
 export const HARI_PILIHAN = [7, 30, 90, 365] as const;
 const RINCIAN_MAKS = 100;
@@ -37,7 +37,7 @@ export async function bacaLaporanOtomatis(
   let tabelAda = true;
   try {
     // Tabel kosong tetapi blob lama ada: isi sekali (idempoten, hanya menulis ke tabel ALETA).
-    if ((await hitungJejak(db)) === 0) diisiDariRiwayat = await isiUlangJejakOtomatis(db);
+    if ((await hitungJejak(db)) === 0 && (await jejakMenyala(db))) diisiDariRiwayat = await isiUlangJejakOtomatis(db);
   } catch {
     tabelAda = false;
   }
@@ -49,6 +49,7 @@ export async function bacaLaporanOtomatis(
       fitur,
     };
   }
+  const jejakAktif = await jejakMenyala(db);
   const l = await laporanKetepatan(db, { dari, sampai, fitur });
   const rincian = l.baris
     .filter((b) => b.keputusan !== "lewati")
@@ -74,6 +75,7 @@ export async function bacaLaporanOtomatis(
     dilewati: l.dilewati,
     rincian,
     diisiDariRiwayat,
+    jejakAktif,
   };
 }
 

@@ -1,9 +1,11 @@
+import { KODE_FITUR_EC_BUKTI, KODE_FITUR_EC_BUKTI_SAKSI, KODE_FITUR_EC_KESIMPULAN } from "@/lib/berkas-ecourt-fitur";
 import { BAGIAN_FITUR_EKSTENSI } from "@/lib/daftar-fitur-ekstensi";
 import { KODE_FITUR_HURUF_BELAJAR } from "@/lib/huruf-alasan-belajar";
 import { KODE_FITUR_ISIAN_SEKALI } from "@/lib/isian-sekali";
 import { KODE_FITUR_ISIAN_SIDANG } from "@/lib/isian-sidang";
 import { KODE_FITUR_JEJAK_ISIAN } from "@/lib/jejak-isian";
 import { KODE_FITUR_KETEPATAN_ISIAN } from "@/lib/ketepatan-isian";
+import { KODE_FITUR_JEJAK_OTOMATIS } from "@/lib/otomatis-jejak";
 import { KODE_FITUR_WAJIB_CETAK } from "@/lib/wajib-cetak";
 
 /**
@@ -78,8 +80,8 @@ export const FITUR_MESIN_SAKSI_TUNGGAL = "mesin-saksi-tunggal";
 /** Saklar C5/U9 (25 Okt 2026): saran keadaan perkara non-cerai dari posita/petitum dan 2557/2558 dari BAS; bawaan MATI. */
 export const FITUR_FAKTA_NON_CERAI = "fakta-non-cerai";
 
-/** Saklar C6/U10 (25 Okt 2026): tombol kirim keterangan saksi ke BAS SIPP (MENULIS ke SIPP, atas persetujuan petugas); bawaan MATI. */
-export const FITUR_SAKSI_KE_BAS_SIPP = "saksi-ke-bas-sipp";
+/** Saklar E4 (26 Okt 2026): halaman Lihat Sebagai di Pusat Kendali (pratinjau menu dan hak, baca-saja); bawaan MATI. */
+export const FITUR_LIHAT_SEBAGAI = "lihat-sebagai-pratinjau";
 
 /** Saklar tahap awal Blangko Saya (18 Okt 2026): mati = hanya Super Admin; menyala = semua peran yang berhak. */
 export const FITUR_BLANGKO_SAYA_SEMUA_PERAN = "blangko-saya-semua-peran";
@@ -145,14 +147,6 @@ export const KATALOG_FITUR_SATKER: readonly FiturKatalog[] = [
     bawaan: "mati",
   },
   {
-    kode: FITUR_SAKSI_KE_BAS_SIPP,
-    nama: "Kirim keterangan saksi ke BAS SIPP",
-    bagian: "ekstensi",
-    keterangan:
-      "Mati: tidak ada tombol dan tidak ada yang ditulis ke SIPP. Nyalakan agar Susun saksi (ABT) menampilkan Kirim keterangan saksi ke BAS SIPP: BAS sidang dicetak dari ABT, diperiksa (keterangan saksi ada di naskah, tanpa sisa isian, tanpa tanda aplikasi), diperlihatkan sebagai pratinjau, e-Doc di SIPP dibaca ulang, lalu dikirim HANYA setelah petugas menyetujui. E-Doc yang sudah ada tidak diganti. Setiap percobaan tercatat (2 tahun).",
-    bawaan: "mati",
-  },
-  {
     kode: FITUR_KATALOG_SAKSI_DB,
     nama: "Katalog saksi dari basis data",
     bagian: "portal",
@@ -198,6 +192,46 @@ export const KATALOG_FITUR_SATKER: readonly FiturKatalog[] = [
     bagian: "portal",
     keterangan:
       "Mati: isian ketikan BAS satu per perkara seperti biasa (BAS sidang berikutnya menimpa yang sebelumnya di ABT). Nyalakan agar ALETA menyimpan isian BAS per sidang; saat BAS sidang tertentu dicetak, isian sidang itu dipakai sementara lalu ABT dipulihkan seperti semula.",
+    bawaan: "mati",
+  },
+  {
+    kode: KODE_FITUR_JEJAK_OTOMATIS,
+    nama: "Jejak tunda dan putus otomatis",
+    bagian: "portal",
+    keterangan:
+      "Mati: tunda dan putus otomatis berjalan seperti biasa tetapi tidak ada baris jejak per sidang yang disimpan (riwayat harian lama tetap ada). Nyalakan agar tiap sidang yang diputuskan otomatis tercatat (aturan, hasil, ditolak atau tidak) dan layar Ketepatan Tunda dan Putus Otomatis terisi.",
+    bawaan: "mati",
+  },
+  {
+    kode: KODE_FITUR_EC_BUKTI,
+    nama: "Daftar alat bukti dari e-Court ditulis otomatis",
+    bagian: "portal",
+    keterangan:
+      "Mati: daftar bukti dari e-Court hanya menjadi usulan. Nyalakan agar daftar bukti P.x / T.x yang rapi ditulis ke isian bukti ABT yang masih kosong (hanya blangko Derry, hanya bila berkasnya rapi); yang tidak rapi tetap usulan dengan tombol Salin.",
+    bawaan: "mati",
+  },
+  {
+    kode: KODE_FITUR_EC_KESIMPULAN,
+    nama: "Kesimpulan para pihak ditulis otomatis ke tanya-jawab",
+    bagian: "portal",
+    keterangan:
+      "Mati: kesimpulan dari e-Court tidak ditulis. Nyalakan agar kesimpulan yang rapi ditulis ke tanya-jawab sidang beragenda kesimpulan bila barisnya kosong, seperti jawaban, replik, dan duplik.",
+    bawaan: "mati",
+  },
+  {
+    kode: KODE_FITUR_EC_BUKTI_SAKSI,
+    nama: "Usulan pemetaan bukti dan keterangan saksi",
+    bagian: "portal",
+    keterangan:
+      "Mati: tidak ada pemetaan. Nyalakan agar tiap bukti ditautkan dengan saksi yang menerangkan hal yang sama, sebagai usulan untuk susun saksi dan pertimbangan. Tidak menulis apa pun ke ABT atau SIPP.",
+    bawaan: "mati",
+  },
+  {
+    kode: FITUR_LIHAT_SEBAGAI,
+    nama: "Lihat Sebagai di Pusat Kendali",
+    bagian: "portal",
+    keterangan:
+      "Mati: menu dan halaman Lihat Sebagai tidak tampil dan rutenya menolak; catatan pemeriksaan yang sudah ada tetap terbaca di audit dan di halaman Akun pemiliknya. Nyalakan agar Super Admin dapat memeriksa menu apa yang tampil bagi sebuah akun atau peran dan kenapa menu lain tersembunyi (pratinjau baca-saja, alasan wajib, tercatat). Pilihan Lihat sebagai di Panduan dan di ekstensi tidak terpengaruh.",
     bawaan: "mati",
   },
   portal("putusan-advance", "Putusan Advance", "Draf putusan lengkap oleh konseptor dan hakim."),

@@ -3,7 +3,7 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import { getAuth } from "@/lib/auth";
 import { getDatabase } from "@/server/db/client";
-import { KODE_JARINGAN_DITOLAK, KODE_PERLU_VERIFIKASI } from "@/server/modules/keamanan/jaringan";
+import { KODE_JARINGAN_DITOLAK } from "@/server/modules/keamanan/jaringan";
 import { KODE_BATAS_PERANGKAT } from "@/server/modules/perangkat/kait-auth";
 import { KODE_VERIFIKASI_DIPERLUKAN } from "@/server/modules/verifikasi/kait-masuk";
 import { catatPeristiwaAman } from "@/server/modules/perangkat/jejak";
@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
         // bukan percobaan gagal dan tidak menambah hitungan pembatas laju.
         if (isi?.code === KODE_BATAS_PERANGKAT || isi?.code === KODE_VERIFIKASI_DIPERLUKAN) return response;
         // Penolakan jaringan (Bagian 6b): sandi BENAR, sudah dicatat kait sesi - bukan percobaan gagal.
-        if (isi?.code === KODE_JARINGAN_DITOLAK || isi?.code === KODE_PERLU_VERIFIKASI) return response;
+        if (isi?.code === KODE_JARINGAN_DITOLAK) return response;
         await gagalEmail(db, request, {
           alasan: response.status === 429 ? "batas percobaan" : loginUser ? "sandi salah" : "akun tak dikenal",
           userId: loginUser?.id ?? null,

@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 
 import type { AletaDatabase } from "@/server/db/client";
+import { ajukanPeringatan, lepasPeringatanTertunda } from "@/server/modules/kesehatan/peringatan-gabungan";
 import { BERAT, LABEL_JENIS, periksaIsi, type JenisTemuan } from "@/server/modules/integritas/aturan";
 import { BATAS_HALAMAN_BYTE, pindaiFolder, type JenisPindai, type RingkasPindai } from "@/server/modules/integritas/pemindai";
 import { bacaPengaturanIntegritas, type PengaturanIntegritas } from "@/server/modules/integritas/pengaturan";
@@ -234,11 +235,16 @@ export async function kirimPeringatanIntegritas(
     `(${[...perJenis].map(([l, n]) => `${l} ${n}`).join(", ")}).\n${contoh.join("\n")}${temuan.length > 5 ? `\n...dan ${temuan.length - 5} lainnya.` : ""}\n` +
     "Buka Pusat Kendali > Penjaga Integritas untuk rinciannya. Tidak ada berkas yang diubah atau dihapus otomatis.";
 
-  const { daftarPenerimaAdmin, kirimPeringatanWhatsapp } = await import("@/server/modules/kesehatan/layanan");
-  const penerima = await (opsi.penerima ?? ((d) => daftarPenerimaAdmin(d, "admin")))(db);
-  const hasil = await (opsi.kirim ?? kirimPeringatanWhatsapp)(penerima, pesan, `integritas-${kini.toISOString().slice(0, 16)}`);
-  // Ditandai sudah diperingatkan bila terkirim ke seseorang (atau tidak ada penerima sama sekali, agar tidak berulang tanpa ujung).
-  if (hasil.terkirim > 0 || penerima.length === 0) {
+  // 26 Okt 2026: satu pesan bersama Pusat kesehatan bila keduanya punya temuan di jendela yang sama.
+  const penerimaSuntik = opsi.penerima;
+  const hasil = await ajukanPeringatan(
+    db,
+    { sumber: "integritas", teks: pesan, penerima: "admin", kunci: `integritas-${kini.toISOString().slice(0, 16)}` },
+    { kini, kirim: opsi.kirim, penerima: penerimaSuntik ? (d) => penerimaSuntik(d) : undefined }
+  );
+  // Ditandai sudah diperingatkan bila terkirim ke seseorang, tidak ada penerima sama sekali (agar tidak berulang tanpa ujung),
+  // atau bagiannya ditahan untuk digabung (tersimpan, dikirim pada detak berikutnya).
+  if (hasil.status === "terkirim" || hasil.status === "ditunda") {
     await db.run("UPDATE aleta_integritas_temuan SET diperingatkan_at = ? WHERE status = 'baru' AND diperingatkan_at = ''", [kini.toISOString()]);
   }
   return { jumlah: temuan.length, terkirim: hasil.terkirim };
@@ -297,6 +303,8 @@ async function pindaiTerakhir(db: AletaDatabase, folderId: string, jenis?: strin
 
 /** Satu detak (tiap menit): memindai bila saklar menyala dan sudah waktunya. Pindai penuh (hash ulang semua) tiap 7 hari. */
 export async function detakIntegritas(db: AletaDatabase, opsi: { kini?: Date } & Omit<NonNullable<Parameters<typeof pindaiSemua>[1]>, "kini"> = {}): Promise<HasilPindaiSemua | null> {
+  // Bagian peringatan yang ditahan untuk digabung dilepas di sini juga, walau pemindaian tidak jatuh tempo.
+  await lepasPeringatanTertunda(db, { kirim: opsi.kirim, kini: opsi.kini }).catch(() => null);
   const p = await bacaPengaturanIntegritas(db);
   if (!p.aktif || (p.folder.length === 0 && p.halamanPublik.length === 0) || sedangMemindai()) return null;
   const kini = opsi.kini ?? new Date();

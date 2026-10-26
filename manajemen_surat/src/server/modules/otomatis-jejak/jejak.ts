@@ -9,15 +9,19 @@
  * ditelan (dicatat sekali di konsol), dan tabel yang belum ada (migrasi belum jalan)
  * tidak membuat portal galat.
  *
- * Mati hanya dengan ALETA_OTOMATIS_JEJAK=0. Tidak ada yang ditulis ke SIPP/ABT/e-Court.
+ * MATI BAWAAN (keputusan Derry 26 Okt 2026): saklar Fitur Satker "jejak-tunda-putus-otomatis" (hanya Super Admin).
+ * Mati = tidak menulis baris jejak; blob harian lama tetap seperti dulu. Env ALETA_OTOMATIS_JEJAK memaksa:
+ * "1" menyala, "0" mati, selain itu mengikuti saklar. Tidak ada yang ditulis ke SIPP/ABT/e-Court.
  */
 import type { AletaDatabase } from "@/server/db/client";
 import {
+  KODE_FITUR_JEJAK_OTOMATIS,
   ringkasKetepatan,
   type BarisJejak,
   type FiturOtomatis,
   type LaporanKetepatan,
 } from "@/lib/otomatis-jejak";
+import { fiturMenyala } from "@/server/modules/satker/fitur";
 import type { ButirPutusOtomatis, CatatanHariPutus } from "@/server/modules/putus-otomatis/layanan";
 import type { ButirTundaOtomatis, CatatanHari } from "@/server/modules/tunda-otomatis/layanan";
 
@@ -93,8 +97,23 @@ const TINGGI_CADANGAN = 6000;
 const SIMPAN = globalThis as unknown as { __aletaOtomatisJejak?: { hash: Map<string, string>; matiSampai: number; sudahMengeluh: boolean } };
 const keadaan = () => (SIMPAN.__aletaOtomatisJejak ??= { hash: new Map(), matiSampai: 0, sudahMengeluh: false });
 
-export function jejakMenyala(env: Record<string, string | undefined> = process.env): boolean {
-  return env.ALETA_OTOMATIS_JEJAK !== "0";
+/** Pemaksa env: true/false bila ALETA_OTOMATIS_JEJAK "1"/"0", null bila saklar yang menentukan. */
+export function pemaksaJejak(env: Record<string, string | undefined> = process.env): boolean | null {
+  const v = String(env.ALETA_OTOMATIS_JEJAK ?? "").trim();
+  if (v === "1") return true;
+  if (v === "0") return false;
+  return null;
+}
+
+/** Apakah jejak ditulis? Pemaksa env dulu, lalu saklar Fitur Satker (bawaan MATI; gagal baca = mati). */
+export async function jejakMenyala(db: AletaDatabase, env: Record<string, string | undefined> = process.env): Promise<boolean> {
+  const paksa = pemaksaJejak(env);
+  if (paksa !== null) return paksa;
+  try {
+    return await fiturMenyala(db, KODE_FITUR_JEJAK_OTOMATIS);
+  } catch {
+    return false;
+  }
 }
 
 /** Untuk uji: lupakan ingatan hash dan penundaan. */
@@ -121,7 +140,7 @@ const SQL_UPSERT =
  * Mengembalikan jumlah baris yang ditulis. TIDAK PERNAH melempar.
  */
 export async function catatBaris(db: AletaDatabase, baris: readonly BarisJejak[], env: Record<string, string | undefined> = process.env): Promise<number> {
-  if (!jejakMenyala(env) || baris.length === 0) return 0;
+  if (baris.length === 0 || !(await jejakMenyala(db, env))) return 0;
   const k = keadaan();
   if (Date.now() < k.matiSampai) return 0;
   let tertulis = 0;

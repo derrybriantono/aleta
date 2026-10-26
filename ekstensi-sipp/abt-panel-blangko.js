@@ -3406,8 +3406,6 @@ function susunPanelAbt(jatiDiri) {
           // C3/U7: alat sunting baris + tautan "Cara lama" hanya bila saklar mesin-saksi-tunggal menyala.
           mesinTunggal: () => (globalThis.AletaSaklarFitur ? globalThis.AletaSaklarFitur.segera("mesin-saksi-tunggal") === true : false),
           caraLama: () => void jalankanSdgLama(),
-          // C6/U10: kait kirim keterangan saksi ke BAS SIPP (tombol hanya tampil bila saklar saksi-ke-bas-sipp menyala).
-          kirimBas: kaitKirimBasSipp(),
         })
       : { tombol: null, wadah: null };
   if (susunKatalog.tombol) tombolBaris.appendChild(susunKatalog.tombol);
@@ -15613,38 +15611,6 @@ function pkGambarPekerjaan(wadah, data) {
 /* === AKHIR 16OKT-F43 === */
 
 
-/**
- * Kait Kirim keterangan saksi ke BAS SIPP (C6/U10, 25 Okt 2026) untuk saksi-ke-bas.js. Seluruh penulisan ke SIPP lewat mesin Unggah
- * massal (f41Mesin: cek e-Doc, cetak ABT, unggah bas/unggah-sipp); di sini hanya perekat. Tidak ada jalur tulis baru.
- */
-function kaitKirimBasSipp() {
-  let mesin = null;
-  const m = () => (mesin = mesin || f41Mesin());
-  return {
-    nomorPerkara: () => nomorPerkaraAbt(),
-    urutanSidang: () => ruasAlamatAbt().d || "",
-    daftarBas: async () => {
-      const d = await m().daftar({ bas: "semua", basAda: true });
-      return Array.isArray(d && d.bas) ? d.bas : [];
-    },
-    siapkan: (baris, lapor) => m().siapkan(baris, lapor, {}),
-    unggah: (s, lapor) => m().unggah(s, lapor),
-    teksRtf: (rtf) => t6TeksRtf(rtf),
-    bacaSaksi: async (pihak, ke, urutan) => {
-      const kode = variabelSaksiSdg(pihak, ke);
-      if (!kode) return null;
-      try {
-        return await ambilSatuTanyaJawab(kode, String(urutan || ruasAlamatAbt().d || "1"));
-      } catch {
-        return null;
-      }
-    },
-    catatJejak: async (entri) => {
-      const opsi = { method: "POST", credentials: "include", cache: "no-store", headers: { "Content-Type": "application/json" }, body: JSON.stringify(entri) };
-      await (typeof alatAmbil === "function" ? alatAmbil("/aleta/api/aleta-ecourt/saksi-ke-bas", opsi, "Mencatat kirim BAS") : fetch("/aleta/api/aleta-ecourt/saksi-ke-bas", opsi));
-    },
-  };
-}
 /* === AKHIR 17OKT-F41 === */
 /* === F1.5 17 Okt === */
 /**

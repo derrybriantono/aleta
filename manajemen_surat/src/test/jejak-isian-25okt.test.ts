@@ -474,7 +474,7 @@ describe("penyimpanan jejak (pg-mem)", () => {
     const masukkan = async (id: string, kode: string, pada: string) =>
       db!.run(`INSERT INTO aleta_isian_jejak (id, perkara_id, kode, pada, dibuat_at) VALUES (?, '10018', ?, ?, ?)`, [id, kode, pada, pada]);
     await masukkan("a", "1111", "2024-10-24T00:00:00.000Z");
-    await masukkan("b", "2222", "2024-10-26T00:00:00.000Z");
+    await masukkan("b", "2222", "2025-10-26T00:00:00.000Z");
     await db!.run(`INSERT INTO aleta_saksi_butir (id, perkara_id, pada, dibuat_at) VALUES ('x', '10018', '2024-01-01T00:00:00.000Z', 'z')`);
     await db!.run(`INSERT INTO aleta_saksi_butir (id, perkara_id, pada, dibuat_at) VALUES ('y', '10018', '2026-10-01T00:00:00.000Z', 'z')`);
     const r = await bersihkanJejakLawas(db!, sekarang);

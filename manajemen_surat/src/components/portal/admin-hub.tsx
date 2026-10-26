@@ -30,10 +30,12 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePortal } from "@/lib/app-state";
 import { apiPath } from "@/lib/base-path";
+import { useLihatSebagaiAktif } from "@/lib/pakai-lihat-sebagai";
 import { getEffectiveRoleId } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
 export function AdminHub() {
+  const lihatSebagaiAktif = useLihatSebagaiAktif();
   const { aiConfig, currentUser, institutionIdentity, users } = usePortal();
   const effectiveRoleId = getEffectiveRoleId(currentUser);
   const isSuperAdmin = effectiveRoleId === "super-admin";
@@ -451,13 +453,15 @@ export function AdminHub() {
                 icon={<ShieldCheck className="h-5 w-5 text-primary" />}
                 badge="Security"
               />
-              <AdminMenuAction
-                href="/admin/lihat-sebagai"
-                title="Lihat Sebagai"
-                description="Periksa menu yang tampil bagi sebuah akun atau peran dan kenapa menu lain tersembunyi (baca-saja, tercatat)."
-                icon={<Eye className="h-5 w-5 text-primary" />}
-                badge="Super Admin"
-              />
+              {lihatSebagaiAktif === true ? (
+                <AdminMenuAction
+                  href="/admin/lihat-sebagai"
+                  title="Lihat Sebagai"
+                  description="Periksa menu yang tampil bagi sebuah akun atau peran dan kenapa menu lain tersembunyi (baca-saja, tercatat)."
+                  icon={<Eye className="h-5 w-5 text-primary" />}
+                  badge="Super Admin"
+                />
+              ) : null}
               <AdminMenuAction
                 href="/admin/audit-trail"
                 title="Audit Trail"

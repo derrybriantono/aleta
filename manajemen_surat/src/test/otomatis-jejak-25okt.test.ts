@@ -8,7 +8,8 @@
  *      ditolak penjaga), blob harian tetap utuh, kegagalan jejak tidak mengganggu;
  *   D. putus otomatis SUNGGUHAN: aturan 7/8, e-Doc, ditolak penjaga;
  *   E. isi ulang dari blob lama (idempoten), saklar ALETA_OTOMATIS_JEJAK=0;
- *   F. rute laporan: hanya Admin/Super Admin, angka sesuai.
+ *   F. rute laporan: hanya Admin/Super Admin, angka sesuai;
+ *   G. saklar Fitur Satker (26 Okt 2026): bawaan MATI = tidak menulis jejak, menyala = menulis, env memaksa.
  */
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -18,6 +19,8 @@ import { NextRequest } from "next/server";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { SidangRiwayat } from "@/lib/bawaan-tunda";
+import { KODE_FITUR_JEJAK_OTOMATIS } from "@/lib/otomatis-jejak";
+import { simpanPengaturanFitur } from "@/server/modules/satker/fitur";
 import { petaLiburBerlaku } from "@/lib/hari-libur";
 import { labelAturan, labelHasil, ringkasKetepatan, type BarisJejak } from "@/lib/otomatis-jejak";
 import { createAletaDatabase, IN_MEMORY_TABLE_PERSISTENCE_ORDER, type AletaDatabase } from "@/server/db/client";
@@ -29,8 +32,9 @@ import {
   catatTundaHari,
   hitungJejak,
   isiUlangJejakOtomatis,
+  jejakMenyala,
 } from "@/server/modules/otomatis-jejak/jejak";
-import { kurangiHari } from "@/server/modules/otomatis-jejak/laporan";
+import { bacaLaporanOtomatis, kurangiHari } from "@/server/modules/otomatis-jejak/laporan";
 import { detakPutusOtomatis, simpanSetelanPutus, bacaCatatanHariPutus, type SumberPutusOtomatis } from "@/server/modules/putus-otomatis/layanan";
 import { bacaCatatanHari, jalankanTundaOtomatis, simpanSetelan, type BahanSidang, type SumberTundaOtomatis } from "@/server/modules/tunda-otomatis/layanan";
 
@@ -198,7 +202,8 @@ afterAll(async () => {
 });
 beforeEach(async () => {
   aturUlangJejak();
-  delete process.env.ALETA_OTOMATIS_JEJAK;
+  // Pemaksa env "1": uji bagian A-F memeriksa penulisan jejaknya; saklar Fitur Satker (bawaan MATI) diuji di bagian G.
+  process.env.ALETA_OTOMATIS_JEJAK = "1";
   aktor = "usr-super";
   await d().run("DELETE FROM aleta_ekstensi_setelan WHERE pengguna_id = ?", ["*sistem*"]);
   await d().run("DELETE FROM aleta_otomatis_jejak");
@@ -462,5 +467,52 @@ describe("F. rute laporan ketepatan", () => {
       db = asli;
       await kosong.close();
     }
+  });
+});
+
+// ─── G. saklar Fitur Satker (26 Okt 2026): bawaan MATI ──────────────────────
+
+describe("G. saklar jejak tunda/putus otomatis", () => {
+  const jalankan = async () => {
+    await simpanSetelan(d(), SUPER, { nyala: true, kering: true }, "");
+    return jalankanTundaOtomatis(d(), { pemicu: "jadwal", tanggal: HARI, sumber: sumberTunda(async () => ({ ok: true, data: { ok: true, kering: true } })) });
+  };
+
+  it("bawaan MATI: tunda otomatis jalan, blob harian utuh, tetapi TIDAK ada baris jejak", async () => {
+    delete process.env.ALETA_OTOMATIS_JEJAK;
+    await jalankan();
+    expect(await hitungJejak(d())).toBe(0);
+    expect((await bacaCatatanHari(d(), HARI)).butir).toHaveLength(3);
+  });
+
+  it("saklar Fitur Satker dinyalakan Super Admin: baris ditulis; dimatikan lagi: berhenti menulis", async () => {
+    delete process.env.ALETA_OTOMATIS_JEJAK;
+    await simpanPengaturanFitur(d(), { id: "usr-super", name: "Derry Briantono" }, { fitur: { [KODE_FITUR_JEJAK_OTOMATIS]: "stabil" } });
+    await jalankan();
+    expect(await hitungJejak(d())).toBe(3);
+    await d().run("DELETE FROM aleta_otomatis_jejak");
+    aturUlangJejak();
+    await simpanPengaturanFitur(d(), { id: "usr-super", name: "Derry Briantono" }, { fitur: { [KODE_FITUR_JEJAK_OTOMATIS]: "mati" } });
+    await jalankan();
+    expect(await hitungJejak(d())).toBe(0);
+  });
+
+  it("env ALETA_OTOMATIS_JEJAK=1 memaksa menyala walau saklar mati; =0 memaksa mati walau saklar menyala", async () => {
+    delete process.env.ALETA_OTOMATIS_JEJAK;
+    expect(await jejakMenyala(d(), {})).toBe(false);
+    expect(await jejakMenyala(d(), { ALETA_OTOMATIS_JEJAK: "1" })).toBe(true);
+    await simpanPengaturanFitur(d(), { id: "usr-super", name: "Derry Briantono" }, { fitur: { [KODE_FITUR_JEJAK_OTOMATIS]: "stabil" } });
+    expect(await jejakMenyala(d(), {})).toBe(true);
+    expect(await jejakMenyala(d(), { ALETA_OTOMATIS_JEJAK: "0" })).toBe(false);
+  });
+
+  it("laporan menyebut pencatatan mati dan tidak mengisi tabel dari riwayat lama saat saklar mati", async () => {
+    await jalankan(); // env "1" dari beforeEach: jejak tertulis
+    await d().run("DELETE FROM aleta_otomatis_jejak");
+    delete process.env.ALETA_OTOMATIS_JEJAK;
+    const l = (await bacaLaporanOtomatis(d(), "usr-super")) as { tersedia: true; jejakAktif: boolean; diisiDariRiwayat: unknown };
+    expect(l.jejakAktif).toBe(false);
+    expect(l.diisiDariRiwayat).toBeNull();
+    expect(await hitungJejak(d())).toBe(0);
   });
 });
