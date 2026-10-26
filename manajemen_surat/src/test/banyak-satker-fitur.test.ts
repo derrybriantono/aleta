@@ -22,7 +22,7 @@ import {
   type SaluranSatker,
   type StatusFitur,
 } from "@/lib/fitur-satker";
-import { FITUR_BLANGKO_SAYA_SEMUA_PERAN, FITUR_FAKTA_NON_CERAI, FITUR_KATALOG_SAKSI_DB, FITUR_MESIN_SAKSI_TUNGGAL } from "@/lib/fitur-satker";
+import { FITUR_BLANGKO_SAYA_SEMUA_PERAN, FITUR_FAKTA_NON_CERAI, FITUR_KATALOG_SAKSI_DB, FITUR_LIHAT_SEBAGAI, FITUR_MESIN_SAKSI_TUNGGAL } from "@/lib/fitur-satker";
 import { KODE_FITUR_HURUF_BELAJAR } from "@/lib/huruf-alasan-belajar";
 import { KODE_FITUR_ISIAN_SEKALI } from "@/lib/isian-sekali";
 import { KODE_FITUR_ISIAN_SIDANG } from "@/lib/isian-sidang";
@@ -124,7 +124,7 @@ describe("A - matriks saklar (murni)", () => {
  * satker mana pun, jadi bawaannya MATI (hanya Super Admin) sampai dibuka; "fitur lama tidak boleh berkurang" tidak terlanggar.
  */
 // 25 Okt 2026 (rantai C, C1): saklar jejak isian juga fitur baru yang bawaannya MATI. Rantai C: mesin saksi tunggal, katalog saksi DB, fakta non-cerai (kirim saksi ke BAS SIPP dibuang 26 Okt). Rantai D: Ketepatan isian (D1), Isian sekali (D2), Daftar wajib sebelum cetak (D3), Huruf alasan yang belajar (D4), dan Isian BAS per sidang (D6).
-const BAWAAN_MATI = new Set([FITUR_BLANGKO_SAYA_SEMUA_PERAN, KODE_FITUR_JEJAK_ISIAN, FITUR_MESIN_SAKSI_TUNGGAL, FITUR_KATALOG_SAKSI_DB, FITUR_FAKTA_NON_CERAI, KODE_FITUR_KETEPATAN_ISIAN, KODE_FITUR_ISIAN_SEKALI, KODE_FITUR_WAJIB_CETAK, KODE_FITUR_HURUF_BELAJAR, KODE_FITUR_ISIAN_SIDANG, KODE_FITUR_JEJAK_OTOMATIS, ...KODE_FITUR_BERKAS_ECOURT]);
+const BAWAAN_MATI = new Set([FITUR_BLANGKO_SAYA_SEMUA_PERAN, KODE_FITUR_JEJAK_ISIAN, FITUR_MESIN_SAKSI_TUNGGAL, FITUR_KATALOG_SAKSI_DB, FITUR_FAKTA_NON_CERAI, FITUR_LIHAT_SEBAGAI, KODE_FITUR_KETEPATAN_ISIAN, KODE_FITUR_ISIAN_SEKALI, KODE_FITUR_WAJIB_CETAK, KODE_FITUR_HURUF_BELAJAR, KODE_FITUR_ISIAN_SIDANG, KODE_FITUR_JEJAK_OTOMATIS, ...KODE_FITUR_BERKAS_ECOURT]);
 const FITUR_LAMA = KATALOG_FITUR_SATKER.filter((f) => !BAWAAN_MATI.has(f.kode));
 const hanyaLama = (peta: Record<string, unknown>) => Object.entries(peta).filter(([k]) => !BAWAAN_MATI.has(k)).map(([, v]) => v);
 

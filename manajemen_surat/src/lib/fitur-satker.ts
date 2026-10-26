@@ -80,6 +80,9 @@ export const FITUR_MESIN_SAKSI_TUNGGAL = "mesin-saksi-tunggal";
 /** Saklar C5/U9 (25 Okt 2026): saran keadaan perkara non-cerai dari posita/petitum dan 2557/2558 dari BAS; bawaan MATI. */
 export const FITUR_FAKTA_NON_CERAI = "fakta-non-cerai";
 
+/** Saklar E4 (26 Okt 2026): halaman Lihat Sebagai di Pusat Kendali (pratinjau menu dan hak, baca-saja); bawaan MATI. */
+export const FITUR_LIHAT_SEBAGAI = "lihat-sebagai-pratinjau";
+
 /** Saklar tahap awal Blangko Saya (18 Okt 2026): mati = hanya Super Admin; menyala = semua peran yang berhak. */
 export const FITUR_BLANGKO_SAYA_SEMUA_PERAN = "blangko-saya-semua-peran";
 
@@ -221,6 +224,14 @@ export const KATALOG_FITUR_SATKER: readonly FiturKatalog[] = [
     bagian: "portal",
     keterangan:
       "Mati: tidak ada pemetaan. Nyalakan agar tiap bukti ditautkan dengan saksi yang menerangkan hal yang sama, sebagai usulan untuk susun saksi dan pertimbangan. Tidak menulis apa pun ke ABT atau SIPP.",
+    bawaan: "mati",
+  },
+  {
+    kode: FITUR_LIHAT_SEBAGAI,
+    nama: "Lihat Sebagai di Pusat Kendali",
+    bagian: "portal",
+    keterangan:
+      "Mati: menu dan halaman Lihat Sebagai tidak tampil dan rutenya menolak; catatan pemeriksaan yang sudah ada tetap terbaca di audit dan di halaman Akun pemiliknya. Nyalakan agar Super Admin dapat memeriksa menu apa yang tampil bagi sebuah akun atau peran dan kenapa menu lain tersembunyi (pratinjau baca-saja, alasan wajib, tercatat). Pilihan Lihat sebagai di Panduan dan di ekstensi tidak terpengaruh.",
     bawaan: "mati",
   },
   portal("putusan-advance", "Putusan Advance", "Draf putusan lengkap oleh konseptor dan hakim."),

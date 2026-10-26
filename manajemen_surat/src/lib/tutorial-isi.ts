@@ -1521,7 +1521,7 @@ export const TUTORIAL: readonly Tutorial[] = [
     halaman: ["/admin/lihat-sebagai"],
     tautan: { teks: "Buka Lihat Sebagai", href: "/admin/lihat-sebagai" },
     langkah: [
-      "Buka Pusat Kendali, lalu Lihat Sebagai (hanya Super Admin).",
+      "Nyalakan dulu di Fitur Satker (Lihat Sebagai di Pusat Kendali); selama mati, menu dan halaman ini tidak tampil. Lalu buka Pusat Kendali, lalu Lihat Sebagai (hanya Super Admin).",
       "Pilih akun atau peran, tulis alasan (paling sedikit 10 huruf), lalu tekan Mulai melihat.",
       "Baca daftar aplikasi: tiap baris menyebut tampil atau tersembunyi beserta sebabnya (Akses Menu per peran atau matriks hak).",
       "Tekan Akhiri bila selesai; sesi berakhir sendiri setelah 30 menit.",
