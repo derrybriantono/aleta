@@ -809,8 +809,63 @@ async function tampilkanPdfTitipan(pesan) {
   return { ok: true, tab: tab && tab.id };
 }
 
+
+/*
+ * MODUL MALAS (K11, 26 Okt 2026) - lihat modul-malas.js.
+ *
+ * Skrip konten meminta berkas kode (potongan konten.js) disuntikkan ke dunia
+ * terasing halamannya sendiri tepat sebelum dipakai. Hanya berkas dalam daftar
+ * ini yang mau disuntikkan, hanya dari skrip konten ekstensi ini, hanya ke bingkai
+ * pengirimnya sendiri. Pekerja latar tidak menyimpan apa pun: halaman sendiri yang
+ * mencatat berkas mana sudah dimuat, sebab menyuntik dua kali = const ganda.
+ */
+const BERKAS_MODUL_MALAS = new Set([
+  "konten-panel-bersama.js",
+  "konten-panel-perkara.js",
+  "konten-panel-daftar.js",
+  "konten-kontak.js",
+  "jurusita.js",
+  "saksiscan.js",
+  "pihak-lengkap.js",
+  "penetapan-borang.js",
+  "tarik-satu-perkara.js",
+  "abt-panel-bersama.js",
+  "abt-panel-blangko.js",
+  "abt-panel-beranda.js",
+]);
+
+async function layaniMuatModul(pesan, pengirim) {
+  const tab = pengirim && pengirim.tab;
+  if (!tab || typeof tab.id !== "number" || (pengirim.id && pengirim.id !== chrome.runtime.id)) return { ok: false, sebab: "pengirim" };
+  const berkas = Array.isArray(pesan.berkas) ? pesan.berkas.map((b) => String(b)) : [];
+  if (!berkas.length || berkas.length > 12 || berkas.some((b) => !BERKAS_MODUL_MALAS.has(b))) return { ok: false, sebab: "berkas" };
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId: tab.id, frameIds: [typeof pengirim.frameId === "number" ? pengirim.frameId : 0] },
+      files: berkas,
+    });
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, sebab: String((e && e.message) || e).slice(0, 200) };
+  }
+}
+
 chrome.runtime.onMessage.addListener((pesan, pengirim, jawab) => {
   if (!pesan || pesan.sumber !== "aleta-panel") return undefined;
+
+  if (pesan.jenis === "muat-modul") {
+    layaniMuatModul(pesan, pengirim)
+      .then(jawab)
+      .catch(() => jawab({ ok: false, sebab: "gagal" }));
+    return true; // jawaban menyusul
+  }
+
+  if (pesan.jenis === "aleta-pemimpin") {
+    layaniPemimpin(pesan, pengirim)
+      .then(jawab)
+      .catch(() => jawab({ pemimpin: true }));
+    return true;
+  }
 
   // Menu ABT By Derry / ALETA di bilah atas SIPP (22 Okt 2026) - lihat menu-atas.js.
   if (pesan.jenis === "menu-buka-tab" || pesan.jenis === "menu-ecourt-buka" || pesan.jenis === "menu-ecourt-nama") {
@@ -884,7 +939,7 @@ chrome.runtime.onMessage.addListener((pesan, pengirim, jawab) => {
     return true;
   }
   if (pesan.jenis === "unduh-pemasang-pembaru") {
-    unduhPemasangPembaru()
+    unduhPemasangPembaru(pesan.os)
       .then(jawab)
       .catch((e) => jawab({ ok: false, pesan: String((e && e.message) || e).slice(0, 160) }));
     return true;
@@ -2039,6 +2094,65 @@ function gudangAntreanKerja() {
   return (chrome.storage && (chrome.storage.session || chrome.storage.local)) || null;
 }
 
+/*
+ * PEMIMPIN SATU TAB PER PC (K12, 25 Okt 2026) - lihat pengamat-bersama.js.
+ *
+ * Kerja yang cukup dikerjakan SEKALI per PC (memeriksa putusan terjadwal ke portal)
+ * tidak perlu diulang oleh tiap tab SIPP yang terbuka. Tab bertanya di sini; pekerja
+ * latar MV3 tidak mengingat variabel modul, jadi catatan pemimpin disimpan di
+ * chrome.storage.session. Sewa berlaku ttl dan diperpanjang tiap tab pemimpin
+ * bertanya lagi; tab yang ditutup melepaskannya (tabs.onRemoved) atau sewanya habis.
+ * Tab yang terlihat boleh mengambil alih dari tab tersembunyi.
+ */
+const KUNCI_PEMIMPIN = "aletaPemimpinTab";
+
+function putusPemimpin(catatan, minta, sekarang) {
+  const kini = Number(sekarang) || Date.now();
+  const semua = catatan && typeof catatan === "object" ? { ...catatan } : {};
+  const kunci = String(minta.kunci || "");
+  const ttl = Math.min(Math.max(Number(minta.ttlMs) || 60000, 5000), 10 * 60 * 1000);
+  const pemegang = semua[kunci];
+  const hidup = pemegang && Number(pemegang.sampai) > kini;
+  const sama = hidup && pemegang.tab === minta.tab;
+  const rebut = !hidup || sama || (pemegang.terlihat === false && minta.terlihat === true);
+  if (rebut) {
+    semua[kunci] = { tab: minta.tab, idHalaman: minta.idHalaman, terlihat: minta.terlihat === true, sampai: kini + ttl };
+  }
+  for (const [k, v] of Object.entries(semua)) if (!v || Number(v.sampai) <= kini) delete semua[k];
+  return { pemimpin: rebut, catatan: semua };
+}
+
+let rantaiPemimpin = Promise.resolve();
+function layaniPemimpin(pesan, pengirim) {
+  const tab = pengirim && pengirim.tab ? pengirim.tab.id : -1;
+  const kerja = rantaiPemimpin.then(async () => {
+    const g = gudangAntreanKerja();
+    if (!g) return { pemimpin: true };
+    const isi = await g.get(KUNCI_PEMIMPIN);
+    const hasil = putusPemimpin(isi && isi[KUNCI_PEMIMPIN], { kunci: pesan.kunci, ttlMs: pesan.ttlMs, terlihat: pesan.terlihat, tab, idHalaman: String(pesan.idHalaman || "") });
+    await g.set({ [KUNCI_PEMIMPIN]: hasil.catatan });
+    return { pemimpin: hasil.pemimpin };
+  });
+  rantaiPemimpin = kerja.catch(() => undefined);
+  return kerja;
+}
+
+try {
+  chrome.tabs.onRemoved.addListener((tabId) => {
+    rantaiPemimpin = rantaiPemimpin.then(async () => {
+      const g = gudangAntreanKerja();
+      if (!g) return;
+      const isi = await g.get(KUNCI_PEMIMPIN);
+      const c = (isi && isi[KUNCI_PEMIMPIN]) || {};
+      let ubah = false;
+      for (const [k, v] of Object.entries(c)) if (v && v.tab === tabId) { delete c[k]; ubah = true; }
+      if (ubah) await g.set({ [KUNCI_PEMIMPIN]: c });
+    }).catch(() => undefined);
+  });
+} catch {
+  /* tanpa API tab: sewa habis sendiri */
+}
+
 /** Hanya yang bentuknya sah dan belum basi. `sekarang` dapat disuntik uji. */
 function antreanKerjaBersih(catatan, sekarang) {
   const kini = Number(sekarang) || Date.now();
@@ -2182,12 +2296,94 @@ function tahanMuatUlang(cegah, versiSekarang, versiBaru) {
   };
 }
 
+/*
+ * K15 (25 Okt 2026): salinan putaran relaas ke basis data supaya dapat ditawarkan lagi sesudah Chrome ditutup
+ * (gudangRelaas() = chrome.storage.session, hilang bersama Chrome). HANYA bila Super Admin menyalakan saklar
+ * kinerja.antreanDiServer (singgahan tampilanServer); mati = tidak ada satu permintaan pun. Gagal-aman: kegagalan
+ * penyalinan TIDAK PERNAH menghentikan putaran. Isinya hanya keadaan pengerjaan (nomor perkara, nama berkas, status).
+ */
+const RELAAS_CERMIN_JEDA_MS = 15000;
+let relaasCerminTerakhir = 0;
+
+async function relaasCerminNyala() {
+  try {
+    const s = await chrome.storage.local.get("tampilanServer");
+    const k = s && s.tampilanServer && s.tampilanServer.kinerja;
+    return Boolean(k && k.antreanDiServer === true);
+  } catch {
+    return false;
+  }
+}
+
+/** Bentuk muatan + status yang dikirim ke server untuk satu putaran. Murni (diuji). */
+function relaasMuatanCermin(pekerjaan) {
+  const butir = Array.isArray(pekerjaan && pekerjaan.butir) ? pekerjaan.butir : [];
+  const selesai = butir.filter((b) => b && b.keadaan === "selesai").length;
+  // Putaran yang dihentikan petugas dengan sengaja tidak ditawarkan lagi; yang selesai pun ditutup.
+  const status = pekerjaan && pekerjaan.selesai ? (pekerjaan.dihentikan ? "dibuang" : "selesai") : "jalan";
+  return {
+    status,
+    ringkas: `Relaas massal ${(pekerjaan && pekerjaan.tanggal) || ""}: ${selesai} dari ${butir.length}`.trim(),
+    selesai,
+    total: butir.length,
+    muatan: { pekerjaan },
+  };
+}
+
+async function cerminRelaasKeServer(pekerjaan, paksa) {
+  try {
+    if (!pekerjaan || !pekerjaan.id || !(await relaasCerminNyala())) return;
+    const asal = relaasAsalPortal(pekerjaan.asal);
+    if (!asal) return;
+    const m = relaasMuatanCermin(pekerjaan);
+    const kini = Date.now();
+    if (m.status === "jalan" && !paksa && kini - relaasCerminTerakhir < RELAAS_CERMIN_JEDA_MS) return;
+    relaasCerminTerakhir = kini;
+    const alamat = `${asal}/aleta/api/aleta-ecourt/ekstensi/antrean`;
+    const badan =
+      m.status === "jalan"
+        ? { jenis: "relaas-massal", kunci: String(pekerjaan.id), perangkat: "pekerja-latar", ringkas: m.ringkas, selesai: m.selesai, total: m.total, muatan: m.muatan, status: "jalan" }
+        : { jenis: "relaas-massal", kunci: String(pekerjaan.id), status: m.status };
+    await fetch(alamat, {
+      method: m.status === "jalan" ? "PUT" : "POST",
+      credentials: "include",
+      cache: "no-store",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(badan),
+    });
+  } catch {
+    /* penyalinan hanya pelengkap: putaran tidak boleh terganggu */
+  }
+}
+
 /** MELEMPAR bila gagal - putaran yang tidak dapat menyimpan kemajuannya harus berhenti. */
 async function simpanRelaas(pekerjaan) {
   if (Array.isArray(pekerjaan.catatan) && pekerjaan.catatan.length > RELAAS_CATATAN_MAKS) {
     pekerjaan.catatan = pekerjaan.catatan.slice(-RELAAS_CATATAN_MAKS);
   }
   await gudangRelaas().set({ [KUNCI_RELAAS]: pekerjaan });
+  void cerminRelaasKeServer(pekerjaan, Boolean(pekerjaan.selesai || pekerjaan.tertahan));
+}
+
+/**
+ * Memulihkan putaran relaas dari salinan server ke gudang lokal sebagai putaran TERTAHAN (tidak jalan sendiri; petugas
+ * menekan Lanjutkan). Hanya bila tidak ada putaran lokal yang belum selesai. Bentuknya diperiksa ulang: pekerja ini
+ * mengambil halaman ABT dengan kuki petugas, jadi alamat dan butir dari luar tidak dipercaya begitu saja.
+ */
+function relaasPulihkanBentuk(masuk) {
+  const p = masuk && typeof masuk === "object" ? masuk : null;
+  if (!p || typeof p.id !== "string" || !/^relaas-[A-Za-z0-9-]{3,80}$/.test(p.id)) return { sebab: "id putaran tidak sah" };
+  if (!Array.isArray(p.butir) || !p.butir.length || p.butir.length > 400) return { sebab: "daftar butir tidak sah" };
+  const asal = relaasAsalPortal(p.asal);
+  const dasar = relaasDasarAbt(p.asalAbt);
+  if (!asal || !dasar || !dasar.toLowerCase().startsWith(`${asal.toLowerCase()}/`)) return { sebab: "alamat portal atau ABT tidak sah" };
+  const butir = [];
+  for (const b of p.butir) {
+    if (!b || typeof b !== "object" || !/^\d+$/.test(String(b.perkaraId || "")) || typeof b.berkas !== "string" || !b.berkas) return { sebab: "butir tidak sah" };
+    if (!RELAAS_GOLONGAN.includes(String(b.golongan || ""))) return { sebab: "golongan butir tidak dikenal" };
+    butir.push({ ...b, percobaan: Number(b.percobaan) || 0 });
+  }
+  return { pekerjaan: { ...p, butir, asal, asalAbt: dasar, selesai: false, dihentikan: false, waktuBerikut: 0, tertahan: { sebab: "Dipulihkan dari server sesudah Chrome ditutup. Dokumen yang tertinggal 'sedang' diperiksa lewat riwayat unduhan sebelum dilanjutkan. Tekan Lanjutkan bila ingin meneruskan.", perluMasuk: "", pada: Date.now() } } };
 }
 
 async function dimintaBerhenti(id) {
@@ -3034,6 +3230,16 @@ async function layaniRelaasTindakan(pesan) {
     }
     if (!pelariRelaasHidup) void jalankanRelaas();
     return { ok: true, pekerjaan };
+  }
+
+  if (pesan.jenis === "relaas-pulihkan") {
+    const ada = await muatRelaas();
+    if (ada && !ada.selesai) return { ok: false, sebab: "Masih ada putaran relaas di ekstensi ini; selesaikan atau hentikan dahulu.", pekerjaan: ada };
+    const h = relaasPulihkanBentuk(pesan.pekerjaan);
+    if (h.sebab) return { ok: false, sebab: h.sebab, pekerjaan: ada };
+    await gudangRelaas().remove(KUNCI_RELAAS_HENTI);
+    await simpanRelaas(h.pekerjaan);
+    return { ok: true, pekerjaan: h.pekerjaan, ringkas: relaasRingkas(h.pekerjaan) };
   }
 
   if (pesan.jenis === "relaas-bersihkan") {
@@ -4399,8 +4605,49 @@ async function perbaruiLewatPembantuDariTombol(versiSekarang, paksa) {
   };
 }
 
-/** Mengunduh pemasang pembaru otomatis (satu berkas .cmd; bukan ZIP, jadi tidak dicegat IDM). */
-async function unduhPemasangPembaru() {
+/**
+ * Sistem operasi komputer ini untuk memilih pemasang: "windows" | "mac" | "linux" | "lain".
+ * chrome.runtime.getPlatformInfo lebih dulu (paling andal di pekerja latar), lalu
+ * navigator.userAgentData.platform, lalu userAgent. Tanpa petunjuk sama sekali: "windows"
+ * (perilaku lama).
+ */
+async function deteksiOsPemasang() {
+  try {
+    if (chrome.runtime && typeof chrome.runtime.getPlatformInfo === "function") {
+      const p = await chrome.runtime.getPlatformInfo();
+      const os = String((p && p.os) || "").toLowerCase();
+      if (os === "mac") return "mac";
+      if (os === "win") return "windows";
+      if (os === "linux") return "linux";
+      if (os) return "lain";
+    }
+  } catch {
+    /* jatuh ke navigator */
+  }
+  try {
+    const nav = typeof navigator !== "undefined" ? navigator : null;
+    const teks = `${(nav && nav.userAgentData && nav.userAgentData.platform) || ""} ${(nav && nav.platform) || ""} ${(nav && nav.userAgent) || ""}`;
+    if (/iPhone|iPad|iPod|Android|CrOS/i.test(teks)) return "lain";
+    if (/mac/i.test(teks)) return "mac";
+    if (/win/i.test(teks)) return "windows";
+    if (/linux|x11/i.test(teks)) return "linux";
+  } catch {
+    /* tanpa petunjuk */
+  }
+  return "windows";
+}
+
+/**
+ * Mengunduh pemasang pembaru otomatis (satu berkas; bukan ZIP, jadi tidak dicegat IDM).
+ * Windows: .cmd. macOS: .command (26 Okt 2026). `osDiminta` ("mac" | "windows") dari pilihan
+ * petugas di popup; tanpa itu, sistem komputer ini yang dipakai.
+ */
+async function unduhPemasangPembaru(osDiminta) {
+  const os = osDiminta === "mac" || osDiminta === "windows" ? osDiminta : await deteksiOsPemasang();
+  if (os !== "mac" && os !== "windows") {
+    return { ok: false, pesan: "Pembaruan otomatis baru tersedia untuk Windows dan macOS. Sistem ini belum didukung." };
+  }
+  const namaBerkas = os === "mac" ? "pasang-pembaru-aleta.command" : "pasang-pembaru-aleta.cmd";
   let asal = "";
   try {
     const s = await chrome.storage.local.get(["asalPortal"]);
@@ -4412,7 +4659,7 @@ async function unduhPemasangPembaru() {
   const id = String((chrome.runtime && chrome.runtime.id) || "");
   let r;
   try {
-    r = await fetch(`${asal}/api/aleta-ecourt/ekstensi/pembaru/pemasang?id=${encodeURIComponent(id)}`, { credentials: "include", cache: "no-store" });
+    r = await fetch(`${asal}/api/aleta-ecourt/ekstensi/pembaru/pemasang?id=${encodeURIComponent(id)}${os === "mac" ? "&os=mac" : ""}`, { credentials: "include", cache: "no-store" });
   } catch (e) {
     return { ok: false, pesan: `Server tidak terjangkau (${String((e && e.message) || e).slice(0, 80)}).` };
   }
@@ -4420,9 +4667,9 @@ async function unduhPemasangPembaru() {
   if (!r.ok) return { ok: false, pesan: `Server menjawab ${r.status}.` };
   const buf = await r.arrayBuffer();
   if (!buf.byteLength) return { ok: false, pesan: "Server mengirim berkas kosong." };
-  const h = await terbitkanUnduhan(`data:application/octet-stream;base64,${kePembaruanBase64(buf)}`, "ALETA/pasang-pembaru-aleta.cmd", 60000);
-  // Chrome menahan berkas .cmd sampai petugas memilih Simpan: itu bukan kegagalan.
-  if (h.ok || h.state === "waktu") return { ok: true, id: h.id, nama: "ALETA/pasang-pembaru-aleta.cmd" };
+  const h = await terbitkanUnduhan(`data:application/octet-stream;base64,${kePembaruanBase64(buf)}`, `ALETA/${namaBerkas}`, 60000);
+  // Chrome menahan berkas .cmd / .command sampai petugas memilih Simpan: itu bukan kegagalan.
+  if (h.ok || h.state === "waktu") return { ok: true, id: h.id, nama: `ALETA/${namaBerkas}`, os };
   return { ok: false, pesan: h.galat ? `Unduhan diblokir peramban (${h.galat}).` : String(h.pesan || "Unduhan gagal.") };
 }
 
@@ -4493,6 +4740,8 @@ async function kirimDataPerangkat(opsi) {
     osRinci: dariPembantu ? String(dariPembantu.osRinci || "") : "",
     mac: dariPembantu && Array.isArray(dariPembantu.mac) ? dariPembantu.mac.slice(0, 4) : [],
     akunWindows: dariPembantu ? String(dariPembantu.akunWindows || "") : "",
+    // Pusat kesehatan (25 Okt 2026): versi ekstensi di PC ini, dibandingkan dengan versi terbaru.
+    versiEkstensi: (function () { try { return chrome.runtime.getManifest().version; } catch { return ""; } })(),
     petunjuk: await petunjukPeramban(),
   };
   let r;
@@ -4522,3 +4771,46 @@ async function kirimDataPerangkat(opsi) {
   };
 }
 /* === AKHIR JEJAK-MASUK === */
+/* === GALAT-EKSTENSI 25 Okt === galat pekerja latar dilaporkan ke Catatan galat portal (Admin > Pusat kesehatan).
+   Portal membersihkan isinya (sandi, token, alamat berkueri, NIK) sebelum menyimpan; di sini hanya dibatasi satu laporan
+   per 5 detik per sesi pekerja. Tidak pernah melempar dan tidak mengubah perilaku apa pun. */
+let laporGalatTerakhir = 0;
+async function laporGalatEkstensi(jenis, pesan, stack) {
+  try {
+    const kini = Date.now();
+    if (kini - laporGalatTerakhir < 5000) return;
+    laporGalatTerakhir = kini;
+    const s = await chrome.storage.local.get(["asalPortal"]);
+    const asal = await asalPortalHidup(s && s.asalPortal);
+    if (!asal) return;
+    await fetch(`${asal}/api/portal/galat`, {
+      method: "POST",
+      credentials: "include",
+      cache: "no-store",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        sumber: "ekstensi",
+        jenis: String(jenis || "Error").slice(0, 60),
+        pesan: String(pesan || "").slice(0, 500),
+        stack: String(stack || "").slice(0, 1500),
+        lokasi: "ekstensi/latar",
+        halaman: "latar",
+        versi: chrome.runtime.getManifest().version,
+      }),
+    });
+  } catch {
+    /* melapor gagal: dilewati */
+  }
+}
+// Hanya di pekerja latar sungguhan (uji dan konteks lain tidak punya pendengar kejadian global).
+if (typeof self !== "undefined" && self && typeof self.addEventListener === "function") {
+  self.addEventListener("error", (e) => {
+    void laporGalatEkstensi((e && e.error && e.error.name) || "Error", e && e.message, e && e.error && e.error.stack);
+  });
+  self.addEventListener("unhandledrejection", (e) => {
+    const r = e && e.reason;
+    void laporGalatEkstensi((r && r.name) || "UnhandledRejection", (r && r.message) || String(r), r && r.stack);
+  });
+}
+/* === AKHIR GALAT-EKSTENSI === */
+

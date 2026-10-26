@@ -404,8 +404,50 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_ai_rute",
   "aleta_ai_jejak",
   // 25 Oktober 2026 (0088): ALETA Ai tahap 4 - kuota hibah per peran, rekonsiliasi harian.
+  // Cermin Perkara (0090): salinan keadaan perkara SIPP.
+  "aleta_cermin_perkara",
+  "aleta_cermin_sidang",
+  "aleta_cermin_pihak",
+  "aleta_cermin_mediasi",
+  "aleta_cermin_tag",
+  "aleta_cermin_jejak",
   "aleta_ai_kuota_peran",
   "aleta_ai_rekonsiliasi",
+  // 25 Oktober 2026 (0110): catatan kirim pengingat WhatsApp penjaga tenggat terjadwal.
+  "aleta_tenggat_kirim",
+  // 25 Oktober 2026 (0094): Pusat kesehatan, catatan galat, hasil uji beban (rantai E).
+  "aleta_catatan_galat",
+  "aleta_catatan_galat_kejadian",
+  "aleta_uji_beban_hasil",
+  "aleta_kesehatan_status",
+  "aleta_kesehatan_riwayat",
+  // 25 Oktober 2026 (0095): verifikasi dua langkah (rantai E).
+  "aleta_verifikasi_authenticator",
+  "aleta_verifikasi_tantangan",
+  "aleta_verifikasi_lolos",
+  "aleta_verifikasi_kode_cadangan",
+  // 25 Oktober 2026 (0104): penjaga integritas berkas (rantai E).
+  "aleta_integritas_berkas",
+  "aleta_integritas_temuan",
+  "aleta_integritas_aman",
+  "aleta_integritas_pindai",
+  // 25 Oktober 2026 (0091): rantai C butir C1 - jejak isian ABT dan butir tanya-jawab saksi. Tanpa kunci asing.
+  "aleta_saksi_butir",
+  "aleta_isian_jejak",
+  // 25 Oktober 2026 (0093): rantai C butir C4 - katalog saksi di basis data dengan versi. Tanpa kunci asing.
+  "aleta_saksi_katalog",
+  "aleta_saksi_katalog_versi",
+  // 25 Oktober 2026 (0092): rantai D butir D1 - angka ketepatan isian bulanan dan keputusan naik/turun gerbang. Tanpa kunci asing.
+  "aleta_ketepatan_isian",
+  "aleta_ketepatan_keputusan",
+  // 25 Oktober 2026 (0102): rantai D butir D3 - riwayat kelengkapan blangko sebelum cetak. Tanpa kunci asing.
+  "aleta_blangko_lapor",
+  // 25 Oktober 2026 (0103): rantai D butir D6 - isian BAS per sidang. Tanpa kunci asing.
+  "aleta_isian_sidang",
+  // 25 Oktober 2026 (0098): antrean kerja peramban (cetak massal, relaas massal, catatan putusan terjadwal).
+  "aleta_antrean_peramban",
+  // 25 Oktober 2026 (0100): kamus alias nama pihak (pemeriksa ejaan, penyamaran ALETA Ai).
+  "aleta_alias_nama",
   // 21 Oktober 2026 (0080): Unggah Putusan Terjadwal. Tanpa kunci asing - urutannya bebas.
   "aleta_putusan_jadwal",
   "aleta_putusan_jadwal_butir",
@@ -432,6 +474,17 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_ai_berkas",
   "aleta_ai_proyek_berkas",
   "aleta_ai_kiriman",
+  // 25 Oktober 2026 (0105): jejak tunda/putus otomatis terstruktur (U19). Tanpa kunci asing.
+  "aleta_otomatis_jejak",
+  // 25 Oktober 2026 (0107): setelan keamanan, riwayat sandi (sidik), status sandi per akun. Tanpa kunci asing.
+  "aleta_setelan_keamanan",
+  "aleta_riwayat_sandi",
+  "aleta_status_sandi",
+  // 25 Oktober 2026 (0108): jaringan kantor + aturan jaringan per peran. Tanpa kunci asing.
+  "aleta_subnet_kantor",
+  "aleta_aturan_jaringan_peran",
+  // 25 Oktober 2026 (0109): hasil uji pulih cadangan mingguan. Tanpa kunci asing.
+  "aleta_uji_pulih",
   "feedback_requests",
   "user_notification_reads",
   "knowledge_base_regulations",

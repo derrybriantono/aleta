@@ -1,0 +1,16 @@
+003599f989bcef2f3cdba1b96a480fe1  abt-alamat-ganda-26okt-FUNGSI-X9-LAMA.sql
+1657611226c8a308a9fa87fd217a88a7  abt-alamat-ganda-26okt-FUNGSI.sql
+78ba17231a14c1caa600b65ed5aceb10  abt-alamat-ganda-26okt-PASANG.sql
+4628ba0a4cbb7fa62b212e4f7d84d295  abt-alamat-ganda-26okt-PERIKSA.sql
+e14fc6994ced2c95ca115aa0767f7939  abt-alamat-ganda-26okt-PRASYARAT.sql
+9c047cfb5a874e1502ecae134bc5c5a6  abt-alamat-ganda-26okt-PULIH.sql
+7a1789014167372aa98d7f19d985771f  harap.txt
+0d23243afcba3e5cf75bee38599d64ae  nama-fungsi.txt
+f73d3b1cbd507a777c067514fddf0028  nomor-baru.txt
+b553d634e457a030f9e3a484a8f661ad  nomor-ubah.txt
+b9b9dc3c1cf06c5738016625cc99e902  pasang-satker.sh
+89e6338f245b50c868987fea7c0718b3  perkara-uji.txt
+b073bc32e484053bbdfd5285d95dc898  pulih-satker.sh
+d3f8da98c731adf0f0d97ce5688fed5b  rtf-daftar-tambal.tsv
+f9c0ce7a2f40767876ee92b6ec39d137  rtf-tambal.tsv
+b2e864207e5103a09f789f74ccb28f52  tambal-rtf.pl

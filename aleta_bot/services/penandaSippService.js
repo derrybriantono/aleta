@@ -34,6 +34,7 @@
 
 const db = require("../db_config");
 const sippSkemaService = require("./sippSkemaService");
+const prodeoPerkaraService = require("./prodeoPerkaraService");
 const { cleanText } = require("./ecourtTextService");
 
 /** Ambang sisa panjar yang dianggap menipis - satu kali panggilan tidak cukup. */
@@ -341,16 +342,11 @@ async function mediasiTertunda(perkaraId) {
  * 118 dari 10.105 perkara di sini berstatus prodeo.
  */
 async function prodeo(perkaraId) {
-  if (!(await sippSkemaService.kolomAda("perkara", "prodeo"))) return null;
-
-  const baris = await runQuery(`SELECT p.prodeo AS prodeo FROM perkara p WHERE p.perkara_id = ? LIMIT 1`, [
-    perkaraId,
-  ]);
-  const satu = (Array.isArray(baris) && baris[0]) || null;
-  if (!satu) return null;
-
-  const nilai = String(satu.prodeo || "").trim().toUpperCase();
-  return nilai === "1" || nilai === "Y" ? { prodeo: true } : null;
+  // 26 Okt 2026: satu sumber dengan Jadwal Sidang dan Status Perkara
+  // (perkara.prodeo = 1 atau persetujuan prodeo e-Court) - prodeoPerkaraService.
+  // Tidak terbaca = null, sama seperti sebelumnya.
+  const tanda = await prodeoPerkaraService.penandaProdeoPerkara(perkaraId, { kueri: runQuery, skema: sippSkemaService });
+  return tanda.prodeo === true ? { prodeo: true } : null;
 }
 
 /**

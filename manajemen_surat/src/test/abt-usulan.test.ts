@@ -1225,7 +1225,12 @@ describe("nomor 3 - panel ABT lengkap perkakasnya", () => {
     // (abt.js memanggil AletaSaksiSusun.pasang saat bagian tanya-jawab disusun).
     // 22 Okt: menu-atas.js paling belakang - di ABT hanya mengarahkan ke Blangko ABT by Derry sesudah login.
     // 23 Okt (T1, ALETA Ai tahap 2b): aleta-ai-gelembung.js sesudah menu-atas.js - pop-up chat, tidak menyentuh abt.js.
-    expect(entri?.js).toEqual(["deteksi-sisa-blangko.js", "panel-alat.js", "jurusita.js", "basmassal.js", "saksi-katalog.js", "saksi-katalog-data.js", "saksi-susun.js", "isi-sipp-bersama.js", "abt.js", "checklist.js", "abt-klien.js", "blangko-derry.js", "blangko-derry-saksi.js", "blangko-derry-saksi-tampil.js", "blangko-derry-katalog.js", "blangko-derry-jawab-katalog.js", "blangko-derry-isian.js", "blangko-derry-massal.js", "konseptor-langkah.js", "putusan-advance.js", "sipp-ide-l1.js", "abt-gulir.js", "menu-atas.js", "aleta-ai-gelembung.js"]);
+    // 25 Okt (K7): portal-jalur.js paling depan - membungkus fetch bacaan /aleta/api ke port 8008 (cadangan port 80).
+    // 25 Okt (rantai B, K12/K16/K15/K14): pengamat-bersama.js, mode-ringan.js, antrean-server.js, berkas-server.js sesudah portal-jalur.js dan sebelum yang lain.
+    // 25 Okt (rantai C, C2/K10): saksi-katalog-data.js (9,4 MB) tidak lagi disuntik ke halaman ABT; indeks kecil + pemuat per jenis perkara.
+    // 25 Okt (rantai C, C1): jejak-isian.js (pembantu jejak isian/butir saksi, saklar server bawaan mati) sesudah basmassal.js, sebelum katalog saksi.
+    // K11 (26 Okt 2026): modul-malas.js tepat sebelum abt.js (penunggu panel blangko / beranda ABT).
+    expect(entri?.js).toEqual(["portal-jalur.js", "pengamat-bersama.js", "mode-ringan.js", "antrean-server.js", "berkas-server.js", "deteksi-sisa-blangko.js", "panel-alat.js", "jurusita.js", "basmassal.js", "jejak-isian.js", "saklar-fitur.js", "saksi-katalog.js", "saksi-katalog-indeks.js", "saksi-katalog-muat.js", "saksi-susun.js", "isi-sipp-bersama.js", "modul-malas.js", "abt.js", "checklist.js", "abt-klien.js", "blangko-derry.js", "blangko-derry-saksi.js", "blangko-derry-saksi-tampil.js", "blangko-derry-katalog.js", "blangko-derry-jawab-katalog.js", "blangko-derry-isian.js", "blangko-derry-massal.js", "konseptor-langkah.js", "putusan-advance.js", "sipp-ide-l1.js", "abt-gulir.js", "menu-atas.js", "aleta-ai-gelembung.js"]);
   });
 
   it("tujuh perkakas ada semuanya", () => {

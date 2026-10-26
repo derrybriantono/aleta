@@ -46,6 +46,8 @@
   const BASI_MS = 15 * 60 * 1000;
   const MENUJU_MS = 90 * 1000;
   const MENYIMPAN_MS = 2 * 60 * 1000;
+  /** K15: catatan dari server baru dipulihkan bila sudah selama ini tidak berubah (sama dengan BASI_PUTUSAN_TERJADWAL_MS di lib/antrean-peramban.ts). */
+  const BASI_SERVER_MS = 10 * 60 * 1000;
   const DASBOR = /\/(main|beranda|dashboard|home)(\/|$|\?)|\/(sipp|index\.php)\/?$/i;
 
   const sebaris = (t) => String(t == null ? "" : t).replace(/\s+/g, " ").trim();
@@ -296,9 +298,60 @@
   let catatanKini = null;
   let detakJantung = null;
 
+  /**
+   * K15: salinan catatan pengerjaan ke basis data (hanya bila Super Admin menyalakan saklar antreanDiServer; mati = tidak
+   * ada yang dikirim). Isinya hanya keadaan pengerjaan butir (id, nomor perkara, tahap, pilihan form) - tidak ada isi putusan.
+   */
+  function cerminCatatan(segera) {
+    const A = globalThis.ALETA_ANTREAN_SERVER;
+    const c = catatanKini;
+    if (!A || !c || !c.id) return;
+    void A.catat(
+      "putusan-terjadwal-catatan",
+      String(c.id),
+      { ringkas: `Putusan terjadwal ${c.nomorPerkara || ""} - ${c.tahap || "jalan"}`, selesai: 0, total: 1, muatan: { catatan: c } },
+      { segera: segera === true }
+    );
+  }
+
+  /** Menghapus catatan lokal dan menandai salinannya di server selesai. */
+  async function hapusCatatan(id) {
+    await hapusPenyimpanan(KUNCI_AKTIF);
+    const A = globalThis.ALETA_ANTREAN_SERVER;
+    if (A && id) void A.akhiri("putusan-terjadwal-catatan", String(id), "selesai");
+  }
+
+  /**
+   * K15: tidak ada catatan di peramban ini (Chrome dibersihkan, atau PC lain) tetapi server menyimpan catatan milik akun
+   * ini yang sudah tidak berubah >= BASI_SERVER_MS: dipulihkan ke penyimpanan lokal sebagai catatan BASI (tanpa pemegang),
+   * lalu ditangani alur yang sama dengan catatan lokal yang terputus (dikembalikan ke antrean / diperiksa di SIPP).
+   * Tidak pernah mengerjakan apa pun sendiri.
+   */
+  async function pulihkanDariServer() {
+    const A = globalThis.ALETA_ANTREAN_SERVER;
+    if (!A) return null;
+    try {
+      await A.tungguSiap();
+      if (!A.aktif()) return null;
+      const daftar = await A.tertinggal("putusan-terjadwal-catatan");
+      for (const x of daftar) {
+        const c = x && x.muatan && x.muatan.catatan;
+        const umur = Date.now() - Date.parse(String(x.diubahPada || ""));
+        if (!c || !c.id || !Number.isFinite(umur) || umur < BASI_SERVER_MS) continue;
+        const rec = { ...c, pemegang: "", pada: Date.parse(x.diubahPada) };
+        await tulisPenyimpanan({ [KUNCI_AKTIF]: rec });
+        return rec;
+      }
+    } catch {
+      /* tambahan: kegagalannya tidak boleh mengganggu SIPP */
+    }
+    return null;
+  }
+
   async function simpanCatatan(patch) {
     catatanKini = { ...(catatanKini || {}), ...(patch || {}), pemegang: ID_HALAMAN, pada: Date.now() };
     await tulisPenyimpanan({ [KUNCI_AKTIF]: catatanKini });
+    cerminCatatan(true);
   }
 
   /**
@@ -314,8 +367,12 @@
 
   function mulaiDetakJantung() {
     if (detakJantung) return;
+    let denyut = 0;
     detakJantung = setInterval(() => {
       if (catatanKini) void tulisPenyimpanan({ [KUNCI_AKTIF]: { ...catatanKini, pada: Date.now() } });
+      // K15: salinan di server diperbarui tiap 6 detak (30 detik) supaya PC lain tahu catatan ini masih hidup.
+      denyut += 1;
+      if (denyut % 6 === 0) cerminCatatan(false);
     }, 5000);
   }
   function hentikanDetakJantung() {
@@ -332,6 +389,8 @@
     setKeadaan("bekerja", `Mengisi Putusan Akhir ${rec.nomorPerkara}…`, rec);
     spanduk(`Putusan terjadwal: mengisi dan menyimpan Putusan Akhir ${rec.nomorPerkara}… jangan menutup atau memuat ulang halaman ini.`, { nada: "kerja" });
     let hasil = { hasil: "gagal", catatan: "tidak diketahui" };
+    // K12: selama pengerjaan, tab tersembunyi tidak boleh menahan kejadian/pewaktu apa pun.
+    const lepasSibuk = globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.sibuk("putusan-terjadwal") : () => undefined;
     try {
       catatanKini = { ...rec };
       await simpanCatatan({ tahap: "jalan" });
@@ -362,8 +421,9 @@
       hasil = { hasil: "gagal", catatan: sebaris((galat && galat.message) || galat) };
     }
     const ok = await laporAman(rec.id, hasil.hasil, hasil.catatan);
+    lepasSibuk();
     hentikanDetakJantung();
-    await hapusPenyimpanan(KUNCI_AKTIF);
+    await hapusCatatan(rec.id);
     bekerja = false;
     setKeadaan("diam", hasil.catatan, null);
     spanduk(
@@ -379,7 +439,8 @@
   const POLA_BAKU = (n) => sebaris(n).replace(/[\s.]+/g, "").replace(/^0+(?=\d)/, "").toLowerCase();
 
   async function lanjutkanCatatan() {
-    const rec = await catatanAktif();
+    let rec = await catatanAktif();
+    if (!rec || !rec.id) rec = await pulihkanDariServer();
     if (!rec || !rec.id) return false;
     const umurDetak = Date.now() - Number(rec.pada || rec.mulai || 0);
     const milikSaya = rec.pemegang === ID_HALAMAN;
@@ -394,7 +455,7 @@
       }
       if (umurDetak < MENUJU_MS) return true; // halaman masih berpindah
       await lepas(rec.id, "Halaman perkara tidak terbuka pada waktunya.", true, 120);
-      await hapusPenyimpanan(KUNCI_AKTIF);
+      await hapusCatatan(rec.id);
       return false;
     }
     if (rec.tahap === "menyimpan") {
@@ -414,14 +475,14 @@
       else if (terisi) await laporAman(rec.id, "gagal", "Halaman dimuat ulang tetapi Putusan Akhir belum terbukti tersimpan di SIPP. Periksa perkaranya, lalu ulangi bila perlu.");
       else await laporAman(rec.id, "gagal", "Putusan Akhir mungkin tersimpan, tetapi keadaan SIPP belum dapat dibaca untuk memastikannya. Periksa perkaranya.");
       hentikanDetakJantung();
-      await hapusPenyimpanan(KUNCI_AKTIF);
+      await hapusCatatan(rec.id);
       spanduk("");
       return false;
     }
     // "jalan" yang detak jantungnya mati = terputus sebelum Simpan: dikembalikan ke antrean (dihitung), tidak diulang diam-diam.
     if (!milikSaya && umurDetak >= 12000) {
       await lepas(rec.id, "Pengerjaan terputus sebelum Simpan (halaman dimuat ulang atau ditutup).", true, 180);
-      await hapusPenyimpanan(KUNCI_AKTIF);
+      await hapusCatatan(rec.id);
     }
     return false;
   }
@@ -456,6 +517,12 @@
     try {
       // Catatan pengerjaan yang tertinggal (menuju / menyimpan / terputus) diselesaikan lebih dulu.
       if (await lanjutkanCatatan()) return { diam: false, alasan: "melanjutkan" };
+      // K12: dengan saklar "pengamat tunggal" menyala, hanya SATU tab SIPP per PC yang menanyakan giliran ke portal
+      // (tab yang terlihat didahulukan). Tanpa saklar, atau pekerja latar tak menjawab, semua tab bertanya seperti dulu.
+      // Pengerjaan butir tidak terpengaruh: klaim di portal tetap atomik dan catatan yang terputus sudah dilanjutkan di atas.
+      if (o.paksa !== true && globalThis.ALETA_PENGAMAT && globalThis.ALETA_PENGAMAT.nyala() && !(await globalThis.ALETA_PENGAMAT.pemimpin("putusan-terjadwal", JEDA_DETAK_MS * 2 + 15000))) {
+        return { diam: true, alasan: "bukan_pemimpin" };
+      }
       const r = await giliran();
       const d = r.data && typeof r.data === "object" ? r.data : {};
       if (!r.ok || d.ada !== true) {
@@ -534,7 +601,8 @@
       // Pemeriksaan pertama sesudah halaman tenang (konten.js memuat peran dan fungsi yang dipakai).
       setTimeout(() => void periksaSekarang(), 3000);
       setTimeout(() => void periksaSekarang(), 16000);
-      if (!detak) detak = setInterval(() => void periksaSekarang(), JEDA_DETAK_MS);
+      // tetap: poll ini bukan penyegar tampilan - ia harus berdetak walau tab tersembunyi (hanya pemimpin yang menanyakan).
+      if (!detak) detak = (globalThis.ALETA_PENGAMAT ? (f, ms) => globalThis.ALETA_PENGAMAT.interval(f, ms, { tetap: true, ringan: false }) : (f, m) => setInterval(f, m))(() => void periksaSekarang(), JEDA_DETAK_MS);
     } catch {
       /* tambahan: kegagalannya tidak boleh mengganggu SIPP */
     }

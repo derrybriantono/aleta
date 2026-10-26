@@ -64,6 +64,8 @@ export type BahanPenandaBaris = {
   lewatEcourt?: boolean;
   ecourtTerbaca?: boolean;
   penandaPerkara?: PenandaPerkaraBaris | null;
+  /** 26 Okt 2026: dari mana prodeo dikenali ("flag-sipp" | "ecourt"); hanya untuk keterangan lencana. */
+  penandaProdeoSumber?: string[] | null;
   penandaPihak?: LencanaPekerjaanPihak[] | null;
   izinCerai?: IzinCeraiBaris | null;
 };
@@ -89,6 +91,23 @@ export type LencanaPerkara = {
   judul: string;
 };
 
+const SEBUTAN_SUMBER_PRODEO: Record<string, string> = {
+  "flag-sipp": "ditandai prodeo di SIPP",
+  ecourt: "persetujuan prodeo dari e-Court",
+};
+
+/** Lencana Prodeo - satu rumusan untuk Jadwal Sidang dan Status Perkara. */
+export function lencanaProdeo(sumber?: ReadonlyArray<string> | null): LencanaPerkara {
+  const dikenali = (sumber ?? []).map((x) => SEBUTAN_SUMBER_PRODEO[x]).filter(Boolean);
+  return {
+    kunci: "prodeo",
+    label: "Prodeo",
+    judul: `Perkara prodeo: biaya perkara dibebaskan (ditanggung negara).${
+      dikenali.length > 0 ? ` Dikenali dari: ${dikenali.join("; ")}.` : ""
+    }`,
+  };
+}
+
 /**
  * Lencana di samping nomor perkara, dalam urutan tetap: ghaib, prodeo, non e-Court,
  * izin cerai (14 Okt 2026). Daftar kosong bila tidak satu pun berlaku.
@@ -106,13 +125,7 @@ export function lencanaPerkara(baris: BahanPenandaBaris): LencanaPerkara[] {
       }`,
     });
   }
-  if (p?.prodeo) {
-    hasil.push({
-      kunci: "prodeo",
-      label: "Prodeo",
-      judul: "Perkara prodeo: biaya perkara dibebaskan (ditanggung negara).",
-    });
-  }
+  if (p?.prodeo) hasil.push(lencanaProdeo(baris.penandaProdeoSumber));
   if (baris.ecourtTerbaca === true && baris.lewatEcourt !== true) {
     hasil.push({
       kunci: "non-ecourt",

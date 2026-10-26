@@ -8,6 +8,7 @@
  * seperti sinkron/bot-dump.ts.
  */
 
+import { cerminSetelahTulisan } from "@/server/modules/cermin/setelah-tulisan";
 import { tandaiTulisan } from "@/server/shared/singgah-singkat";
 
 export type HasilBot<T> = { ok: true; data: T } | { ok: false; error: string; status?: number };
@@ -86,6 +87,10 @@ export async function panggilBotJadwalSidang<T = Record<string, unknown>>(
     };
   } finally {
     clearTimeout(penunda);
-    if (menulis) tandaiTulisan();
+    if (menulis) {
+      tandaiTulisan();
+      // A3: tulisan masuk cermin seketika (lihat cermin/setelah-tulisan.ts).
+      cerminSetelahTulisan(undefined, pilihan.body);
+    }
   }
 }

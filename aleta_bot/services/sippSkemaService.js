@@ -257,6 +257,13 @@ const TABEL = [
   "sys_user_group",
   "sys_groups",
   /* === AKHIR 17OKT-SKP === */
+  /* === 26OKT-PRODEO === */
+  // Persetujuan prodeo dari e-Court (36 baris di sipp_donggala, 35 tertaut ke
+  // perkara lewat perkara_efiling_id; status 1 = disetujui). Sumber kedua
+  // penanda prodeo di prodeoPerkaraService, di samping perkara.prodeo. Tanpa
+  // didaftarkan di sini tabelnya dijawab "tidak ada" tanpa galat.
+  "ecourt_prodeo",
+  /* === AKHIR 26OKT-PRODEO === */
 ];
 
 /** Peta tabel -> Set nama kolom. Kosong sampai muat() dijalankan. */
@@ -286,10 +293,25 @@ async function muat() {
       hasil[tabel].add(kolom);
     }
 
+    // 26 Okt 2026: bacaan KOSONG (sambungan baru bangun, DATABASE() belum terpilih)
+    // tidak boleh diingat selamanya - seluruh tabel lalu dijawab "tidak ada"
+    // tanpa galat dan penanda seperti prodeo diam-diam padam sampai bot dinyalakan
+    // ulang. Dikembalikan untuk panggilan ini saja; panggilan berikutnya membaca lagi.
+    if (rows.length === 0) {
+      sedangMuat = null;
+      return hasil;
+    }
     peta = hasil;
     sedangMuat = null;
     return peta;
   })();
+
+  // 26 Okt 2026: bacaan yang GAGAL juga tidak boleh diingat. Tanpa ini janji yang
+  // ditolak tertinggal di sedangMuat dan SETIAP panggilan sesudahnya ikut ditolak
+  // sampai bot dinyalakan ulang.
+  sedangMuat.catch(() => {
+    sedangMuat = null;
+  });
 
   return sedangMuat;
 }

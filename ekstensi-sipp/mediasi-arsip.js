@@ -854,7 +854,7 @@
   }
   try {
     if (halamanSipp()) {
-      new MutationObserver((daftar) => {
+      new (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.Pengamat : MutationObserver)((daftar) => {
         for (const m of daftar) {
           if (m.addedNodes && m.addedNodes.length) {
             jadwalkan();

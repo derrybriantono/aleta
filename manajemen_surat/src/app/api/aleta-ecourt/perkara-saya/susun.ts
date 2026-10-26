@@ -33,6 +33,7 @@
  *
  * Tidak ada yang ditulis ke SIPP, ABT, maupun ALETA oleh apa pun di sini.
  */
+import type { KonsepSementaraPanel } from "@/lib/konsep-sementara-panel";
 import { satukanOrang, saringAktif } from "@/lib/orang-unik";
 import { namaAdaDi, pecahNamaPetugas } from "@/lib/perkara-sendiri";
 
@@ -112,6 +113,11 @@ export type PerkaraSaya = {
   sebagai: PeranDerry[];
   pihak: { penggugat: string[]; tergugat: string[] };
   sidang: SidangSaya[];
+  /**
+   * 26 Okt 2026: tunjukan konseptor sementara dari Jadwal Sidang (diisi rute, bukan susunPerkaraSaya). Hanya ada bila perkara itu
+   * ditunjuk; `milikAkun` menentukan apakah ia "konsep sementara" bagi akun yang sedang dilihat.
+   */
+  konsepSementara?: KonsepSementaraPanel;
 };
 
 export type AkunDilihat = { hakim: string[]; pp: string[]; js: string[] };

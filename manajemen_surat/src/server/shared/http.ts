@@ -158,6 +158,8 @@ export function handleRouteError(error: unknown) {
     "Terjadi kendala pada layanan ALETA. Silakan coba lagi."
   );
   console.error("[ALETA API ERROR]", error);
+  // Catatan galat (E2): kelompok dan jumlah kejadian di Admin > Pusat kesehatan. Latar, tidak pernah melempar.
+  void import("@/server/modules/kesehatan/galat").then((m) => m.catatGalatServerLatar(error)).catch(() => {});
 
   return NextResponse.json(
     {

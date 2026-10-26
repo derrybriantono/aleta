@@ -32,6 +32,9 @@
  *                                 bahan aturan ketidakhadiran, 2 Okt 2026 malam
  *   GET  /mediasi?perkaraId       proses mediasi + daftar mediator + akun
  *   POST /mediator                penetapan mediator ke SIPP (kering bawaan)
+ *   GET  /tunda-mediasi?mediasiId&tanggal  keadaan pertemuan mediasi + bahan formulir Tunda
+ *   POST /tunda-mediasi           tunda mediasi ke SIPP persis seperti SIPP (kering bawaan) -
+ *                                 26 Okt 2026, tundaMediasiService
  *   GET  /court-calendar?perkaraId  Court Calendar SIPP + id baris (hanya SELECT)
  *   GET  /court-calendar/jumlah?perkaraId=1,2,3  jumlah baris per perkara
  *   POST /court-calendar          tambah/sunting Court Calendar ke SIPP atas
@@ -63,6 +66,7 @@ const jadwalRinganService = require("../services/jadwalRinganService");
 const sidangHasilService = require("../services/sidangHasilService");
 const sidangKontakService = require("../services/sidangKontakService");
 const mediatorTulisService = require("../services/mediatorTulisService");
+const tundaMediasiService = require("../services/tundaMediasiService");
 const courtCalendarTulisService = require("../services/courtCalendarTulisService");
 
 const router = express.Router();
@@ -429,6 +433,133 @@ router.post("/mediator", wajibToken, async (req, res) => {
     galat500(res, galat);
   }
 });
+
+/**
+ * Tunda mediasi dari Jadwal Mediasi (26 Okt 2026) - tundaMediasiService.
+ *   GET  /tunda-mediasi?mediasiId&tanggal   keadaan pertemuan + bahan formulir (hanya SELECT)
+ *   POST /tunda-mediasi                     rencana (kering bawaan) / tulis ke SIPP
+ */
+router.get("/tunda-mediasi", wajibToken, async (req, res) => {
+  try {
+    const hasil = await tundaMediasiService.keadaanTunda({ mediasiId: req.query.mediasiId, tanggal: req.query.tanggal });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
+
+router.post(
+  "/tunda-mediasi",
+  wajibToken,
+  // Tulisan manual di luar jam kerja ditanyakan dulu (keputusan 104) - sama dengan tunda sidang.
+  manualJamKerja("mediasi-tunda", (b) => `${String(b.mediasiId || "")}:${String(b.tanggal || "").slice(0, 10)}`, async (req, res) => {
+    let jejak = null;
+    try {
+      jejak = require("../services/jejakAletaService");
+    } catch {
+      jejak = null;
+    }
+    try {
+      const badan = req.body || {};
+      const operator = String(badan.operator || "").trim();
+      if (!operator) {
+        res.status(400).json({ ok: false, alasan: "operator_tidak_disebut", pesan: tundaMediasiService.pesanTolak("operator_tidak_disebut") });
+        return;
+      }
+      const kering = badan.kering !== false;
+      const rencana = await tundaMediasiService.susunRencanaTunda({
+        mediasiId: badan.mediasiId,
+        tanggal: badan.tanggal,
+        tanggalBaru: badan.tanggalBaru,
+        tempat: badan.tempat,
+        jam: badan.jam,
+        sampaiJam: badan.sampaiJam,
+        kehadiran: badan.kehadiran,
+        alasan: badan.alasan,
+        keterangan: badan.keterangan,
+        atasNama: badan.atasNama,
+        operator,
+        ip: alamatAudit(req),
+      });
+
+      const catatJejak = (hasil, langkah) => {
+        if (!jejak) return;
+        void jejak.catat({
+          aksi: "tulis",
+          jenis: "mediasi-tunda",
+          perkaraId: rencana.perkara ? rencana.perkara.perkaraId : 0,
+          nomorPerkara: rencana.perkara ? rencana.perkara.nomorPerkara : "",
+          tanggalPenetapan: rencana.baru ? rencana.baru.tanggal : "",
+          akunSipp: rencana.atasNama ? rencana.atasNama.username : "",
+          namaPejabat: rencana.atasNama ? rencana.atasNama.namaLengkap : "",
+          akunSippMasuk: String(badan.operatorAkunSipp || "").slice(0, 60),
+          operator,
+          ip: alamatAudit(req),
+          berhasil: hasil.ok === true,
+          kering,
+          alasan: hasil.ok
+            ? ""
+            : `${String(hasil.alasan || "gagal")}${
+                hasil.dipulihkan === true ? " (dibatalkan utuh)" : hasil.dipulihkan === false ? " (TIDAK dipulihkan)" : ""
+              }${hasil.pada && hasil.pada.tabel ? ` ${hasil.pada.tabel}` : ""}${hasil.pesan ? `: ${hasil.pesan}` : ""}`.slice(0, 160),
+          // Alasan/keterangan penundaan tidak punya kolom di SIPP - hanya tercatat di sini.
+          langkah: [
+            ...langkah,
+            ...(rencana.alasanTunda || rencana.keteranganTunda
+              ? [{ tabel: "(catatan ALETA)", aksi: "CATAT", keterangan: `alasan: ${rencana.alasanTunda || "-"}${rencana.keteranganTunda ? `; keterangan: ${rencana.keteranganTunda}` : ""}` }]
+              : []),
+          ],
+        });
+      };
+
+      if (!rencana.ok) {
+        if (jejak) {
+          void jejak.catat({
+            aksi: "tulis",
+            jenis: "mediasi-tunda",
+            perkaraId: 0,
+            operator,
+            ip: alamatAudit(req),
+            berhasil: false,
+            kering,
+            alasan: String(rencana.alasan || "ditolak"),
+            langkah: [],
+          });
+        }
+        res.status(400).json(rencana);
+        return;
+      }
+
+      const hasil = await tundaMediasiService.jalankanRencanaTunda(rencana, { kering });
+      catatJejak(hasil, rencana.langkah);
+      if (hasil.ok !== true && !hasil.pesan) {
+        hasil.pesan = tundaMediasiService.pesanTolak(String(hasil.alasan || "gagal"), hasil);
+      }
+
+      res.status(hasil.ok ? 200 : 409).json({
+        ...hasil,
+        perkara: rencana.perkara,
+        mediasiId: rencana.mediasiId,
+        lama: rencana.lama,
+        baru: rencana.baru,
+        kehadiran: rencana.kehadiran,
+        peringatan: rencana.peringatan,
+        atasNama: rencana.atasNama,
+        rencana: kering
+          ? rencana.langkah.map((x) => ({
+              tabel: x.tabel,
+              aksi: x.aksi,
+              keterangan: x.keterangan,
+              sql: String(x.sql).replace(/\s+/g, " ").trim(),
+              nilai: x.params,
+            }))
+          : undefined,
+      });
+    } catch (galat) {
+      galat500(res, galat);
+    }
+  })
+);
 
 /** Jumlah baris Court Calendar untuk banyak perkara sekaligus (?perkaraId=1,2,3). Hanya SELECT. */
 router.get("/court-calendar/jumlah", wajibToken, async (req, res) => {

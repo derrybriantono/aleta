@@ -44,6 +44,7 @@ import { KontakPihak } from "@/components/portal/kontak-para-pihak";
 import { TanggalKtpPihak } from "@/components/portal/status-perkara-ktp-pihak";
 /* === AKHIR 12OKT-E === */
 import { Badge } from "@/components/ui/badge";
+import { LencanaProdeo } from "@/components/portal/penanda-perkara-pihak";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -115,6 +116,7 @@ import { cn } from "@/lib/utils";
 import { kelasTulisanPutusan, warnaStatusPutusan } from "@/lib/warna-putusan";
 import { relaasElektronik } from "@/lib/hasil-relaas";
 import { LencanaKepatutanRelaas, LencanaRetur, kepatutanBarisRelaas } from "@/components/portal/lencana-kepatutan-relaas";
+import { KETERANGAN_CERMIN, teksCermin } from "@/lib/cermin-tampil";
 
 /**
  * Status satu perkara.
@@ -749,6 +751,9 @@ export type Status = {
   penanda: {
     ghaib: boolean | null;
     sumberGhaib: string[];
+    /** 26 Okt 2026: bot lama tidak mengirimnya; null = tidak terbaca. */
+    prodeo?: boolean | null;
+    sumberProdeo?: string[];
     instansi: Array<{
       kunci: string;
       label: string;
@@ -1494,6 +1499,7 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
           kelompok: data.kelompok ?? [],
           dasar: data.dasar ?? [],
           batasId: data.batasId ?? null,
+          cermin: data.cermin ?? null,
         });
       } catch (kesalahan) {
         if (dibatalkan) return;
@@ -2661,6 +2667,8 @@ type KatalogTag = {
   kelompok: KelompokTag[];
   dasar: DasarTanggalTag[];
   batasId?: number | null;
+  /** A5: hitungan dibaca dari Cermin Perkara (null/tak ada = dari SIPP). */
+  cermin?: { diperbaruiPada: string | null } | null;
 };
 
 /**
@@ -2856,6 +2864,12 @@ export function PanelTagPerkara({
               : "seluruh register"}{" "}
             — {Number(lingkup.perkara || 0).toLocaleString("id-ID")} perkara.
             {dipilih.length > 1 ? " Beberapa tag digabung dengan DAN." : ""}
+            {katalog?.cermin ? (
+              <span data-testid="tanda-cermin-tag" title={KETERANGAN_CERMIN}>
+                {" · "}
+                {teksCermin(katalog.cermin)}
+              </span>
+            ) : null}
           </>
         ) : (
           "Belum ada angka."
@@ -3150,6 +3164,10 @@ function IsiStatus({
             ghaib
           </Badge>
         ) : null}
+
+        {/* Prodeo (26 Okt 2026): satu sumber dengan Jadwal Sidang - kolom prodeo
+            SIPP atau persetujuan prodeo e-Court. Kasir tidak menagih panjar. */}
+        {status.penanda?.prodeo === true ? <LencanaProdeo sumber={status.penanda.sumberProdeo} /> : null}
 
         {/* Mafqud tidak punya kolomnya sendiri di SIPP - yang dihitung
             pencirinya menurut SK: tundaan sidang 3 x 90 hari. Karena itu

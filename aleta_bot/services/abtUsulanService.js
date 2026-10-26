@@ -64,6 +64,7 @@
 
 const db = require("../db_config");
 const aturanAlasan = require("./abtAturanAlasan");
+const { rapikanAlamatPihak } = require("./alamatPihakRapi");
 const kalimatBaku = require("./abtKalimatBaku");
 const ragamBawaan = require("./ragamBasBawaan");
 const pemilih = require("./pemilihRagam");
@@ -2497,8 +2498,10 @@ function dariPositaItsbat(posita, pihak) {
   const kalimat = kalimatPosita(posita);
   const sumber = (k) => (k ? [{ saksi: 0, asal: "posita", kalimat: k }] : []);
   const cari = (wajib, terlarang) => cariButir(kalimat, wajib, terlarang);
-  const sebut1 = (pihak && pihak.pemohon) || "Pemohon I";
-  const sebut2 = (pihak && pihak.pemohon2) || "Pemohon II";
+  // Bawaan sebutan dua pemohon dari satu sumber (sebutanPihakService, D5): "Pemohon I" / "Pemohon II".
+  const [bawaan1, bawaan2] = require("./sebutanPihakService").daftarSebutanBerurut("Pemohon", 2);
+  const sebut1 = (pihak && pihak.pemohon) || bawaan1;
+  const sebut2 = (pihak && pihak.pemohon2) || bawaan2;
   const lolos = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
   // Tanggal nikah - "pada tanggal 07 Mei 2017 telah terjadi pernikahan".
@@ -4472,7 +4475,12 @@ function faktaDariPosita(posita, pelaku, lawan, opsi) {
   // (o.alamatPihak, dibaca rute dengan batas waktu). Posita menang atas SIPP.
   const tempatKiniPosisi = tempatKiniPosita(butir, pelaku, lawan);
   const alamatSipp = o.alamatPihak && typeof o.alamatPihak === "object" ? o.alamatPihak : {};
-  const bersihAlamat = (a) => String(a || "").replace(/\s+/g, " ").replace(/[\s,;.]+$/, "").trim();
+  // 26 Okt 2026: ekor wilayah ganda dari SIPP/e-Court dibuang lebih dulu (alamatPihakRapi, kembaran perapi portal).
+  const bersihAlamat = (a) =>
+    String(rapikanAlamatPihak(a).alamat || "")
+      .replace(/\s+/g, " ")
+      .replace(/[\s,;.]+$/, "")
+      .trim();
   const tempatKini = {
     lawan: tempatKiniPosisi.lawan || bersihAlamat(alamatSipp.lawan),
     pelaku: tempatKiniPosisi.pelaku || bersihAlamat(alamatSipp.pelaku),

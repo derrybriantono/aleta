@@ -25,6 +25,11 @@ const ALUR_PERMOHONAN = 16;
 const ALUR_JINAYAT = [122, 123];
 const JENIS_PERMOHONAN_DALAM_GUGATAN = [346, 341];
 
+const POLA_PERLAWANAN = /perlawanan|verzet|derden/i;
+const POLA_BANTAHAN = /bantahan/i;
+const NOMOR_PERLAWANAN = /\/Pdt\.Plw\b/i;
+const NOMOR_BANTAHAN = /\/Pdt\.Bth\b/i;
+
 const POLA_PERMOHONAN =
   /permohonan|cerai\s*talak|istbat|itsbat|isbat|pengesahan\s*perkawinan|dispensasi|wali\s*adh[oa]l|poligami|asal.?usul|perwalian|pengangkatan|penetapan\s*ahli\s*waris|p3hp|pencegahan\s*perkawinan|penolakan\s*perkawinan|pengesahan\s*anak|izin\s*kawin|perkawinan\s*campuran/i;
 
@@ -53,6 +58,15 @@ function sebutanPihakPerkara(bahan = {}) {
   if (alur === ALUR_PERMOHONAN) return permohonan("alur");
   if (jenisId !== null && JENIS_PERMOHONAN_DALAM_GUGATAN.includes(jenisId)) {
     return permohonan("jenis");
+  }
+  // Perlawanan dan bantahan (D5): sebutannya sendiri, sebelum aturan alur gugatan sebab SIPP memberi alur gugatan pada keduanya.
+  {
+    const namaLawan = bersih(bahan.jenisPerkaraNama);
+    const nomorLawan = bersih(bahan.nomorPerkara);
+    if (namaLawan && POLA_PERLAWANAN.test(namaLawan)) return { satu: "Pelawan", dua: "Terlawan", surat: "perlawanan", sumber: "kata" };
+    if (NOMOR_PERLAWANAN.test(nomorLawan)) return { satu: "Pelawan", dua: "Terlawan", surat: "perlawanan", sumber: "nomor" };
+    if (namaLawan && POLA_BANTAHAN.test(namaLawan)) return { satu: "Pembantah", dua: "Terbantah", surat: "bantahan", sumber: "kata" };
+    if (NOMOR_BANTAHAN.test(nomorLawan)) return { satu: "Pembantah", dua: "Terbantah", surat: "bantahan", sumber: "nomor" };
   }
   if (alur !== null && alur !== ALUR_PERMOHONAN) {
     return { satu: "Penggugat", dua: "Tergugat", surat: "gugatan", sumber: "alur" };
@@ -88,11 +102,54 @@ function perkaraPermohonan(bahan = {}) {
   return sebutanPihakPerkara(bahan).satu === "Pemohon";
 }
 
+// ──────────────────────────────────────────────────────────────────────────────
+// Pihak jamak dan rekonvensi (D5): kembaran sebutan-pihak.ts
+// ──────────────────────────────────────────────────────────────────────────────
+
+const ROMAWI = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX"];
+
+function urutanRomawi(n) {
+  const i = Math.round(Number(n) || 0);
+  return i >= 1 && i < ROMAWI.length ? ROMAWI[i] : String(i);
+}
+
+/** "Pemohon" -> "para Pemohon" bila lebih dari satu orang. */
+function paraSebutan(sebutan, jumlah) {
+  const s = bersih(sebutan);
+  return (angka(jumlah) === null ? 1 : angka(jumlah)) > 1 ? `para ${s}` : s;
+}
+
+/** "Pemohon" urutan 1 dari 2 -> "Pemohon I"; hanya seorang -> "Pemohon". */
+function sebutanBerurut(sebutan, urutan, jumlah) {
+  const s = bersih(sebutan);
+  return (angka(jumlah) === null ? 1 : angka(jumlah)) > 1 ? `${s} ${urutanRomawi(urutan)}` : s;
+}
+
+function daftarSebutanBerurut(sebutan, jumlah) {
+  const n = Math.max(1, Math.min(angka(jumlah) === null ? 1 : angka(jumlah), 20));
+  return Array.from({ length: n }, (_, i) => sebutanBerurut(sebutan, i + 1, n));
+}
+
+/** Sebutan pasangan beserta kedudukan ganda sesudah rekonvensi (hanya di dalam gugatan). */
+function sebutanLengkap(bahan = {}) {
+  const p = sebutanPihakPerkara(bahan);
+  const mengenal = (p.surat === "gugatan" || (p.surat === "permohonan" && (angka(bahan.jenisPerkaraId) === 346 || angka(bahan.jenisPerkaraId) === 341))) && bahan.rekonvensi === true;
+  if (!mengenal) return { ...p, rekonvensi: false, satuLengkap: p.satu, duaLengkap: p.dua };
+  return { ...p, rekonvensi: true, satuLengkap: `${p.satu} Konvensi/Tergugat Rekonvensi`, duaLengkap: `${p.dua} Konvensi/Penggugat Rekonvensi` };
+}
+
 module.exports = {
   ALUR_PERMOHONAN,
   ALUR_JINAYAT,
   JENIS_PERMOHONAN_DALAM_GUGATAN,
   POLA_PERMOHONAN,
+  POLA_PERLAWANAN,
+  POLA_BANTAHAN,
+  urutanRomawi,
+  paraSebutan,
+  sebutanBerurut,
+  daftarSebutanBerurut,
+  sebutanLengkap,
   sebutanPihakPerkara,
   sebutanSatuPihak,
   perkaraPermohonan,

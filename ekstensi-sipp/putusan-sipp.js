@@ -758,6 +758,7 @@
         if (r.anonim) setStatus("anonim", "gagal", kunci.pesan);
         return;
       }
+      if (kunci.catatan && ctx.laporan) ctx.laporan.textContent = kunci.catatan;
       let hasil;
       try {
         hasil = await mod.jalankan({
@@ -931,7 +932,7 @@
   let detak = null;
   function mulaiDetak() {
     if (detak) return;
-    detak = setInterval(() => {
+    detak = (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.denyut : (f, m) => setInterval(f, m))(() => {
       try {
         pasang(document);
       } catch {

@@ -160,6 +160,11 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar .bd-prio.tinggi { background: var(--warnbg); border-color: var(--warn); color: var(--warn); font-weight: 600; }
 #aleta-bd-akar .bd-prio.sedang { border-color: var(--accentln); color: var(--accent); }
 #aleta-bd-akar .bd-prio.selesai { color: var(--ok); border-color: var(--okln); }
+/* 26 Okt 2026: konsep sementara (perkara yang di Jadwal Sidang ditunjuk konseptornya) - lencana beremas dan baris/kartu bergaris kiri; token tema, terbaca terang & gelap. */
+#aleta-bd-akar .bd-konsep { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; line-height: 1.5; border-radius: 999px; padding: 0 9px; border: 1px solid var(--accentln); background: var(--accentbg); color: var(--accent); white-space: nowrap; max-width: 100%; }
+#aleta-bd-akar .bd-kpk.konsep, #aleta-bd-akar .bd-brs.konsep { border-left: 3px solid var(--accent); }
+#aleta-bd-akar .bd-tabelperkara tr.konsep > td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+#aleta-bd-akar .bd-grupT.konsep > .bd-pitaT { border-left: 3px solid var(--accent); }
 #aleta-bd-akar .bd-alasan { font-size: 11.5px; color: var(--muted); border: 1px dotted var(--line); border-radius: 999px; padding: 0 7px; white-space: nowrap; }
 #aleta-bd-akar .bd-pihak {
   display: inline-flex; align-items: center; gap: 4px; border: 1px dashed var(--accentln); border-radius: 999px; padding: 0 9px; font-size: 12.5px;

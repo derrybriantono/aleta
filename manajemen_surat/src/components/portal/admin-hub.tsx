@@ -5,6 +5,7 @@ import {
   BriefcaseBusiness,
   Database,
   DatabaseBackup,
+  Eye,
   Globe,
   Landmark,
   LayoutDashboard,
@@ -29,10 +30,12 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePortal } from "@/lib/app-state";
 import { apiPath } from "@/lib/base-path";
+import { useLihatSebagaiAktif } from "@/lib/pakai-lihat-sebagai";
 import { getEffectiveRoleId } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
 export function AdminHub() {
+  const lihatSebagaiAktif = useLihatSebagaiAktif();
   const { aiConfig, currentUser, institutionIdentity, users } = usePortal();
   const effectiveRoleId = getEffectiveRoleId(currentUser);
   const isSuperAdmin = effectiveRoleId === "super-admin";
@@ -359,6 +362,13 @@ export function AdminHub() {
               />
             )}
             <AdminMenuAction
+              href="/admin/keamanan"
+              title="Pengaturan Keamanan"
+              description="Kebijakan sandi, batas jaringan per peran, pengaman aksi berdampak besar, dan uji pulih cadangan. Semua saklar mati sampai dinyalakan Super Admin."
+              icon={<ShieldCheck className="h-5 w-5 text-rose-600" />}
+              badge="Keamanan"
+            />
+            <AdminMenuAction
               href="/admin/sinkron-cadangan"
               title="Sinkron & cadangan"
               description="Cadangan otomatis ALETA, SIPP, ABT, dan antrian ke laptop dan Google Drive, serta berkas seluruh perkara ke Google Drive."
@@ -375,11 +385,25 @@ export function AdminHub() {
               />
             )}
             <AdminMenuAction
+              href="/admin/cermin-perkara"
+              title="Pemantau Cermin Perkara"
+              description="Salinan keadaan perkara SIPP di basis data ALETA: kemajuan pemindaian awal, isi cermin, dan saklar per layar (mati bawaan). Hanya untuk dibaca."
+              icon={<Database className="h-5 w-5 text-violet-600" />}
+              badge="Cermin"
+            />
+            <AdminMenuAction
               href="/admin/sumber-daya"
               title="Sumber daya server"
               description="RAM, CPU, disk, dan GPU yang dipakai ALETA dibanding seluruh server, dengan rincian tiap aplikasi (ALETA dipisah dari SIPP, ABT, MariaDB, dan layanan lain)."
               icon={<Server className="h-5 w-5 text-sky-600" />}
               badge="Pemantau"
+            />
+            <AdminMenuAction
+              href="/admin/pusat-kesehatan"
+              title="Pusat kesehatan sistem"
+              description="Satu layar untuk keadaan portal, bot, WhatsApp, SIPP, ABT, e-Court, cadangan, server, dan versi ekstensi tiap PC; catatan error; hasil uji beban."
+              icon={<Server className="h-5 w-5 text-emerald-600" />}
+              badge="Kesehatan"
             />
           </div>
         </div>
@@ -408,6 +432,36 @@ export function AdminHub() {
       description="Atur akses tampilan modul dan hak akses fitur berdasarkan peran jabatan."
                 badge="Security"
               />
+              <AdminMenuAction
+                href="/admin/pemeliharaan"
+                title="Mode Pemeliharaan"
+                description="Beri tahu pengguna sebelum pemasangan, hentikan perubahan data selama pemasangan, dan buka kembali sendiri."
+                icon={<PackageCheck className="h-5 w-5 text-amber-600" />}
+                badge="Super Admin"
+              />
+              <AdminMenuAction
+                href="/admin/penjaga-integritas"
+                title="Penjaga Integritas Berkas"
+                description="Pantau folder website satker, SIPP, dan ABT (baca-saja): PHP baru, webshell, kata judi online."
+                icon={<ShieldCheck className="h-5 w-5 text-rose-600" />}
+                badge="Security"
+              />
+              <AdminMenuAction
+                href="/admin/verifikasi-dua-langkah"
+                title="Verifikasi Dua Langkah"
+                description="OTP WhatsApp dan authenticator untuk perangkat baru atau luar kantor; bantu pengguna yang kehilangan HP."
+                icon={<ShieldCheck className="h-5 w-5 text-primary" />}
+                badge="Security"
+              />
+              {lihatSebagaiAktif === true ? (
+                <AdminMenuAction
+                  href="/admin/lihat-sebagai"
+                  title="Lihat Sebagai"
+                  description="Periksa menu yang tampil bagi sebuah akun atau peran dan kenapa menu lain tersembunyi (baca-saja, tercatat)."
+                  icon={<Eye className="h-5 w-5 text-primary" />}
+                  badge="Super Admin"
+                />
+              ) : null}
               <AdminMenuAction
                 href="/admin/audit-trail"
                 title="Audit Trail"

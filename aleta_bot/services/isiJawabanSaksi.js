@@ -682,10 +682,14 @@ function isiJawaban(baris, fakta, ctx) {
     total = hitungTitik(asal);
     teks = isiPlaceholder(asal, tanya, h, ctx);
   }
+  // C1 (25 Okt, U1): id pola kalimat yang BENAR-BENAR mengubah teks, dibawa ke ekstensi sebagai kodePola supaya statistik koreksi per pola
+  // (kamus-deteksi) menjangkau jawaban saksi. Hanya tambahan pada hasil; teks tidak berubah.
+  const polaTerpakai = [];
   for (const c of CUES) {
     if (c.jenis && c.jenis.length && !c.jenis.includes(ctx.jenis)) continue;
     if (c.tanya && !c.tanya.test(q)) continue;
     const re = new RegExp(c.re.source, c.re.flags.includes("g") ? c.re.flags : `${c.re.flags}g`);
+    const sebelumPola = teks;
     teks = teks.replace(re, (...a) => {
       const m = a[0];
       const g = a.slice(1, a.length - 2);
@@ -697,6 +701,7 @@ function isiJawaban(baris, fakta, ctx) {
       }
       return r == null ? m : r;
     });
+    if (teks !== sebelumPola) polaTerpakai.push(c.id);
   }
   if (adaTitik(teks)) teks = isiPokok(teks, q, h, ctx);
   if (adaTitik(teks)) teks = V.isiTitikKiri(teks, h, ctx);
@@ -719,7 +724,9 @@ function isiJawaban(baris, fakta, ctx) {
   const ragu = yakin === "ragu";
   const { sumber, ket } = susunKet(pakai, ragu);
   // T2: sebab/alasan yang hanya didalilkan posita = saran, bukan keterangan pasti (semua jenis, termasuk cerai).
-  return Saran.tandaiSaran({ teks, terisi, total, yakin, sumber, ket: sisaTitik > 0 ? `${ket} Sisanya belum ada datanya; lengkapi dari keterangan saksi.` : ket }, pakai);
+  const hasilAkhir = { teks, terisi, total, yakin, sumber, ket: sisaTitik > 0 ? `${ket} Sisanya belum ada datanya; lengkapi dari keterangan saksi.` : ket };
+  if (polaTerpakai.length) hasilAkhir.kodePola = [...new Set(polaTerpakai)].join("+");
+  return Saran.tandaiSaran(hasilAkhir, pakai);
 }
 const RE_ALETA_JAWAB = /aleta/i;
 
@@ -800,7 +807,7 @@ function lengkapiSusunan(hasil, opsi) {
       if (!ganti) return;
       if (adaPilihan) delete j.pilihan;
       j.jawab = isi.teks;
-      j.usulan = { teks: isi.teks, yakin: isi.yakin, sumber: isi.sumber, ket: isi.ket, ...(isi.saran ? { saran: isi.saran } : {}) };
+      j.usulan = { teks: isi.teks, yakin: isi.yakin, sumber: isi.sumber, ket: isi.ket, ...(isi.saran ? { saran: isi.saran } : {}), ...(isi.kodePola ? { kodePola: isi.kodePola } : {}) };
       j.perluDiisi = titikBaru > 0;
       if (kosongPenyusun) delete j.belumTerisi;
       ringkas.terisi += 1;

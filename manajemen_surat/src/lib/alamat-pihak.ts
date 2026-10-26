@@ -30,6 +30,24 @@
  *      namanya sudah ada di bagian depan dibuang; yang memuat satu nama baru
  *      saja dibiarkan utuh.
  *
+ *   6. EKOR WILAYAH SISTEM (perbaikan 26 Okt 2026, putusan 620/Pdt.G/2026)
+ *      SIPP/e-Court menempelkan di ujung alamat yang diketik nama desa,
+ *      kecamatan, kabupaten, dan provinsi RESMI (dari kode wilayah) TANPA
+ *      sebutan tingkatan: "..., Kelurahan Ganti, Kecamatan Banawa ,
+ *      Kabupaten Donggala, Provinsi Sulawesi Tengah, Ganti, Banawa,
+ *      Kabupaten Donggala, Sulawesi Tengah". Bentuknya SELALU empat potongan
+ *      di ujung: desa, kecamatan, "Kabupaten/Kota X", nama provinsi. Ejaan di
+ *      bagian depan boleh berbeda dari nama resmi ("Kota Pulu" / "Kotapulu"),
+ *      jadi pembandingnya BUKAN kesamaan huruf, melainkan: tingkatan itu
+ *      SUDAH DISEBUT di depan atau belum. Yang sudah disebut dibuang dari
+ *      ekor, yang belum dipertahankan dan diberi sebutannya ("Kecamatan Dolo
+ *      Selatan", "Provinsi Sulawesi Tengah"). Kabupaten atau provinsi yang
+ *      berbeda dari yang diketik = bentrok: alamat dibiarkan (kedua nama
+ *      terlihat), tidak ditebak. Kembarannya di SQL ABT (fungsi
+ *      isian_rtf_alamat, paket abt-alamat-ganda-26okt) dan di bot
+ *      (aleta_bot/services/alamatPihakRapi.js) memakai aturan yang SAMA; uji
+ *      alamat-ganda-26okt menjaga ketiganya tetap sama.
+ *
  *   5. KETERANGAN RUMAH DI DALAM KURUNG
  *      "Desa Oti (rumah depan kantor Desa Oti)" - petunjuk menemukan rumah,
  *      bukan alamat. Diperlakukan sama dengan petunjuk arah (1).
@@ -53,6 +71,8 @@
  * relaas yang dikirim ke sana sampai ke rumah orang lain.
  */
 
+import { KABUPATEN_SULTENG, KELURAHAN_SULTENG } from "./kelurahan-sulteng";
+
 export type HasilRapiAlamat = {
   /** Alamat sesudah dirapikan. */
   alamat: string;
@@ -62,6 +82,17 @@ export type HasilRapiAlamat = {
   kurang: string[];
   /** Benar bila ada yang berubah sama sekali. */
   berubah: boolean;
+  /** Hanya ada (benar) bila ekor wilayah sistem SIPP/e-Court dikenali dan disusun ulang. */
+  ekorSistem?: boolean;
+};
+
+export type OpsiRapiAlamat = {
+  /**
+   * Desa atau Kelurahan? Dipanggil hanya bila ekor wilayah sistem dipertahankan
+   * (alamat ketikan tidak menyebut desanya). Tanpa pemanggil: Kota = Kelurahan,
+   * Kabupaten = Desa. Di SQL ABT jawabannya dibaca dari kode wilayah resmi.
+   */
+  jenisDesa?: (desa: string, kecamatan: string, kabupaten: string) => "Desa" | "Kelurahan" | "";
 };
 
 /** Urutan tingkatan wilayah, dari yang terkecil. */
@@ -136,14 +167,33 @@ function tingkatanPada(potong: string): string | "" {
  * Tidak ada satu pun nama tempat yang ditambahkan dari luar - lihat catatan
  * kepala berkas ini.
  */
-export function rapikanAlamat(masukan: string): HasilRapiAlamat {
+export function rapikanAlamat(masukan: string, opsi?: OpsiRapiAlamat): HasilRapiAlamat {
   const asli = bersih(masukan);
   // Domisili elektronik dipisah dulu: bagian alamatnya dirapikan sendiri,
   // surelnya dibiarkan apa adanya, dan ekor wilayah yang ditempelkan e-Court
   // SESUDAH surel dibuang bila seluruh namanya sudah ada di alamat pokok.
-  const domisili = /^([\s\S]*?)([.,;]?)\s*Domisili\s+elektronik\s*:?\s*([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})([\s\S]*)$/i.exec(asli);
-  if (!domisili || !bersih(domisili[1])) return rapikanPokok(asli);
-  const pokok = rapikanPokok(domisili[1]);
+  // "dengan domisili elektronik" (tanpa koma) ikut dikenali: kata "dengan"
+  // bukan bagian wilayah dan tidak boleh tertinggal di ujung alamat pokok.
+  const domisili = /^([\s\S]*?)([.,;]?)\s*(?:dengan\s+)?Domisili\s+elektronik\s*:?\s*([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})([\s\S]*)$/i.exec(asli);
+  if (!domisili || !bersih(domisili[1])) return rapikanPokok(asli, opsi);
+  const ekorMentah = bersih(domisili[4]);
+  // Ekor wilayah SISTEM sesudah surel: "...Provinsi X, Domisili Elektronik:
+  // a@b.com, Desa, Kecamatan, Kabupaten Y, Sulawesi Tengah". Pokok dan ekor
+  // dirapikan SEBAGAI SATU alamat, surel diletakkan di ujung.
+  if (ekorMentah) {
+    const gabung = rapikanPokok(`${domisili[1]}, ${ekorMentah}`, opsi);
+    if (gabung.ekorSistem) {
+      const alamatGabung = `${gabung.alamat}${domisili[2] === "." ? "." : ","} Domisili elektronik : ${domisili[3]}`;
+      return {
+        alamat: alamatGabung,
+        perubahan: gabung.perubahan,
+        kurang: gabung.kurang,
+        berubah: alamatGabung !== asli,
+        ekorSistem: true,
+      };
+    }
+  }
+  const pokok = rapikanPokok(domisili[1], opsi);
   const perubahan = [...pokok.perubahan];
   const namaPokok = new Set(pokok.alamat.split(",").map(namaTempat).filter(Boolean));
   const ekor = domisili[4]
@@ -187,7 +237,137 @@ function awalEkorDobel(potongan: string[]): number {
   return -1;
 }
 
-function rapikanPokok(masukan: string): HasilRapiAlamat {
+// ── Ekor wilayah SISTEM (SIPP/e-Court) ───────────────────────────────────────
+
+/** Nama provinsi (huruf kecil, tanpa spasi dan tanda baca). Daftar yang sama ada di SQL ABT. */
+const PROVINSI_KUNCI = new Set([
+  "aceh", "sumaterautara", "sumaterabarat", "riau", "jambi", "sumateraselatan", "bengkulu", "lampung",
+  "kepulauanbangkabelitung", "bangkabelitung", "kepulauanriau", "dkijakarta", "jakarta", "jawabarat",
+  "jawatengah", "diyogyakarta", "daerahistimewayogyakarta", "yogyakarta", "jawatimur", "banten", "bali",
+  "nusatenggarabarat", "nusatenggaratimur", "kalimantanbarat", "kalimantantengah", "kalimantanselatan",
+  "kalimantantimur", "kalimantanutara", "sulawesiutara", "sulawesitengah", "sulawesiselatan",
+  "sulawesitenggara", "gorontalo", "sulawesibarat", "maluku", "malukuutara", "papua", "papuabarat",
+  "papuaselatan", "papuatengah", "papuapegunungan", "papuabaratdaya",
+]);
+
+/**
+ * Nama tempat untuk dibandingkan: huruf kecil, SATU sebutan tingkatan di depan
+ * dibuang, hanya huruf dan angka ("Kota Pulu" = "Kotapulu" = "kotapulu").
+ */
+export function kunciTempat(potong: string): string {
+  return bersih(potong)
+    .toLowerCase()
+    .replace(/^(?:kabupaten\/kota|kabupaten|kecamatan|kelurahan|provinsi|propinsi|desa|kab|kec|kel|prov|kota|ds)\b\.?\s*/, "")
+    .replace(/[^a-z0-9]+/g, "");
+}
+
+/** Sebutan tingkatan di MANA SAJA pada teks bagian depan (bukan hanya di awal potongan). */
+const SEBUTAN_DALAM: Record<string, RegExp> = {
+  desa: /\b(?:desa|kelurahan|kel|ds)\b\.?\s*[a-z]/i,
+  kecamatan: /\b(?:kecamatan|kec)\b\.?\s*[a-z]/i,
+  kabupaten: /\b(?:kabupaten|kab)\b\.?\s*[a-z]|(?:^|,\s*)kota\s+[a-z]/i,
+  provinsi: /\b(?:provinsi|propinsi|prov)\b\.?\s*[a-z]/i,
+};
+
+/** Awalan potongan yang jelas BUKAN nama desa/kecamatan (jalan, RT, RW, dusun, blok ...). */
+const BUKAN_NAMA_WILAYAH =
+  /^(?:rt|rw|dusun|dsn|dukuh|jalan|jl|jln|gang|gg|lorong|lrg|blok|komp|komplek|perum|perumahan|btn|no|nomor|lingkungan|lk|link)\b/i;
+
+function namaWilayahSah(potong: string): boolean {
+  const x = bersih(potong);
+  if (!x || x.length > 60) return false;
+  if (/[\d@():/]/.test(x)) return false;
+  if (/^(?:desa|kelurahan|kel|ds|kecamatan|kec|kabupaten|kab|kota|provinsi|propinsi|prov)\.?$/i.test(x)) return false;
+  if (BUKAN_NAMA_WILAYAH.test(x)) return false;
+  return !/domisili|surel|email/i.test(x);
+}
+
+/** Dua nama tempat (sudah berupa kunci) dianggap sama: persis, saling memuat, atau selisih satu huruf. */
+export function miripTempat(a: string, b: string): boolean {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  if (a.length >= 5 && b.length >= 5 && (a.includes(b) || b.includes(a))) return true;
+  if (a.length < 5 || Math.abs(a.length - b.length) > 1) return false;
+  let awal = 0;
+  const pendek = Math.min(a.length, b.length);
+  while (awal < pendek && a[awal] === b[awal]) awal += 1;
+  let akhir = 0;
+  while (akhir < pendek - awal && a[a.length - 1 - akhir] === b[b.length - 1 - akhir]) akhir += 1;
+  return awal + akhir >= pendek - (a.length === b.length ? 1 : 0);
+}
+
+/**
+ * Desa atau Kelurahan bila alamat ketikan tidak menyebut desanya. Sulawesi Tengah dibaca dari daftar
+ * kelurahan resmi (kelurahan-sulteng.ts); di luar itu Kota = Kelurahan dan Kabupaten = Desa.
+ */
+function jenisDesaBawaan(desa: string, kec: string, kab: string): "Desa" | "Kelurahan" {
+  const kk = kunciTempat(kab);
+  if (KELURAHAN_SULTENG.has(`${kunciTempat(desa)}|${kunciTempat(kec)}|${kk}`)) return "Kelurahan";
+  if (KABUPATEN_SULTENG.has(kk)) return "Desa";
+  return /^kota\b/i.test(kab) ? "Kelurahan" : "Desa";
+}
+
+/**
+ * Mengenali EKOR WILAYAH SISTEM: empat potongan terakhir = desa, kecamatan
+ * (keduanya tanpa sebutan dan berupa nama wilayah), "Kabupaten/Kota X" dan
+ * nama provinsi tanpa sebutan. Tingkatan yang sudah disebut di bagian depan
+ * dibuang dari ekor; yang belum disebut dipertahankan dengan sebutannya.
+ *
+ * Bentrok (kabupaten atau provinsi ekor berbeda dari yang diketik) = null:
+ * alamat dibiarkan, kedua nama tetap terlihat, tidak ada yang ditebak.
+ */
+function ekorSistem(potongan: string[], opsi?: OpsiRapiAlamat): { potongan: string[]; catatan: string } | null {
+  const n = potongan.length;
+  if (n < 4) return null;
+  const [desa, kec, kab, prov] = potongan.slice(n - 4);
+  if (tingkatanPada(desa) || tingkatanPada(kec) || !namaWilayahSah(desa) || !namaWilayahSah(kec)) return null;
+  if (tingkatanPada(kab) !== "kabupaten" || tingkatanPada(prov) || !PROVINSI_KUNCI.has(kunciTempat(prov))) return null;
+
+  const depan = potongan.slice(0, n - 4);
+  const teksDepan = depan.join(", ");
+  const padatDepan = teksDepan.toLowerCase().replace(/[^a-z0-9]+/g, "");
+  const kunciPolos = new Set(depan.filter((x) => !tingkatanPada(x)).map(kunciTempat));
+  const sudah = (tingkat: string, nama: string) => SEBUTAN_DALAM[tingkat].test(teksDepan) || kunciPolos.has(kunciTempat(nama));
+
+  // Bentrok kabupaten / provinsi.
+  if (SEBUTAN_DALAM.kabupaten.test(teksDepan)) {
+    const kk = kunciTempat(kab);
+    const cocok =
+      (kk.length >= 3 && padatDepan.includes(kk)) ||
+      depan.some((x) => tingkatanPada(x) === "kabupaten" && miripTempat(kunciTempat(x), kk));
+    if (!cocok) return null;
+  }
+  if (SEBUTAN_DALAM.provinsi.test(teksDepan)) {
+    const kp = kunciTempat(prov);
+    const cocokProv =
+      padatDepan.includes(kp) ||
+      depan.some((x) => {
+        if (tingkatanPada(x) !== "provinsi") return false;
+        const kx = kunciTempat(x);
+        return (kx.length >= 4 && kp.startsWith(kx)) || miripTempat(kx, kp);
+      });
+    if (!cocokProv) return null;
+  }
+
+  const baru = [...depan];
+  const dibuang: string[] = [];
+  const jenis = (opsi?.jenisDesa ? opsi.jenisDesa(desa, kec, kab) : "") || jenisDesaBawaan(desa, kec, kab);
+  if (sudah("desa", desa)) dibuang.push(desa);
+  else baru.push(`${jenis} ${desa}`);
+  if (sudah("kecamatan", kec)) dibuang.push(kec);
+  else baru.push(`Kecamatan ${kec}`);
+  if (sudah("kabupaten", kab)) dibuang.push(kab);
+  else baru.push(kab);
+  if (sudah("provinsi", prov)) dibuang.push(prov);
+  else baru.push(`Provinsi ${prov}`);
+
+  const catatan = dibuang.length
+    ? `Ekor wilayah dobel dibuang: "${dibuang.join(", ")}"${dibuang.length < 4 ? " (yang belum disebut di depan dipertahankan dengan sebutannya)" : ""}`
+    : "Ekor wilayah sistem diberi sebutan tingkatan";
+  return { potongan: baru, catatan };
+}
+
+function rapikanPokok(masukan: string, opsi?: OpsiRapiAlamat): HasilRapiAlamat {
   const asli = bersih(masukan);
   if (!asli) {
     return { alamat: "", perubahan: [], kurang: TINGKATAN.map((x) => x.baku), berubah: false };
@@ -209,6 +389,27 @@ function rapikanPokok(masukan: string): HasilRapiAlamat {
     .split(",")
     .map((x) => bersih(x))
     .filter(Boolean);
+
+  // ── Potongan kembar berurutan ───────────────────────────────────────────
+  // "..., Provinsi Sulawesi Tengah, Provinsi Sulawesi Tengah" (diketik dua
+  // kali): potongan BERSEBUTAN yang sama persis dengan yang tepat di depannya
+  // dibuang. Yang tanpa sebutan dibiarkan: "Labuan, Labuan" adalah desa dan
+  // kecamatan yang kebetulan senama.
+  for (let i = potongan.length - 1; i > 0; i -= 1) {
+    if (tingkatanPada(potongan[i]) && potongan[i].toLowerCase() === potongan[i - 1].toLowerCase()) {
+      perubahan.push(`Potongan kembar berurutan dibuang: "${potongan[i]}"`);
+      potongan.splice(i, 1);
+    }
+  }
+
+  // ── Ekor wilayah SISTEM (desa, kecamatan, kabupaten, provinsi tanpa sebutan) ──
+  let adaEkorSistem = false;
+  const sis = ekorSistem(potongan, opsi);
+  if (sis) {
+    potongan.splice(0, potongan.length, ...sis.potongan);
+    perubahan.push(sis.catatan);
+    adaEkorSistem = true;
+  }
 
   // ── Ekor wilayah dobel (bentuk e-Court) ────────────────────────────────
   const ekorDi = awalEkorDobel(potongan);
@@ -236,7 +437,7 @@ function rapikanPokok(masukan: string): HasilRapiAlamat {
     }
     const calon = hasilPotong[dari];
     // Yang sudah bersebutan tingkatan LAIN tidak boleh diberi sebutan kedua.
-    if (!calon || tingkatanPada(calon)) continue;
+    if (!calon || tingkatanPada(calon) || !namaWilayahSah(calon)) continue;
     hasilPotong[dari] = `${tingkat.baku} ${calon}`;
     perubahan.push(`"${calon}" dilengkapi menjadi "${tingkat.baku} ${calon}"`);
     sudahAda.add(tingkat.kunci);
@@ -246,7 +447,7 @@ function rapikanPokok(masukan: string): HasilRapiAlamat {
   const alamat = rapikanTandaBaca(hasilPotong.join(", "));
   const kurang = TINGKATAN.filter((x) => !sudahAda.has(x.kunci)).map((x) => x.baku);
 
-  return { alamat, perubahan, kurang, berubah: alamat !== asli };
+  return { alamat, perubahan, kurang, berubah: alamat !== asli, ...(adaEkorSistem ? { ekorSistem: true } : {}) };
 }
 
 /** Pola surel yang berdiri sendiri - dipakai memetiknya dari naskah gugatan. */

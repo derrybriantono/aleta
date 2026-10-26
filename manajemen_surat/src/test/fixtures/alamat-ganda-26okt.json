@@ -1,0 +1,146 @@
+{
+ "catatan": "Korpus bersama alamat-ganda-26okt. \"dasar\" = hasil bot (alamatPihakRapi.js) DAN SQL ABT (isian_rtf_alamat); \"portal\" = hasil rapikanAlamat portal bila berbeda dari dasar (portal juga membuang petunjuk arah dan memberi sebutan pada potongan lain). Alamat rekaan (tanpa data pribadi). SQL diuji dengan abt-paket/alamat-ganda-26okt/alat/uji_korpus_sql.py.",
+ "kasus": [
+  {
+   "nama": "putusan 620: Penggugat, alamat lengkap diketik lalu ekor wilayah sistem (contoh laporan)",
+   "masuk": "Kelurahan Ganti, Kecamatan Banawa , Kabupaten Donggala, Provinsi Sulawesi Tengah, Ganti, Banawa, Kabupaten Donggala, Sulawesi Tengah",
+   "dasar": "Kelurahan Ganti, Kecamatan Banawa, Kabupaten Donggala, Provinsi Sulawesi Tengah"
+  },
+  {
+   "nama": "Tergugat di luar wilayah: tanpa ekor sistem, tidak berubah",
+   "masuk": "Jalan Anggur 4 Lorong Ps. Harimau D'Concept, Kelurahan Boyaoge, Kecamatan Tatanga, Kota Palu, Provinsi Sulawesi Tengah",
+   "dasar": "Jalan Anggur 4 Lorong Ps. Harimau D'Concept, Kelurahan Boyaoge, Kecamatan Tatanga, Kota Palu, Provinsi Sulawesi Tengah"
+  },
+  {
+   "nama": "Tergugat Kota Palu dengan ekor sistem",
+   "masuk": "Jalan Anggur 4, Kelurahan Boyaoge, Kecamatan Tatanga, Kota Palu, Provinsi Sulawesi Tengah, Boyaoge, Tatanga, Kota Palu, Sulawesi Tengah",
+   "dasar": "Jalan Anggur 4, Kelurahan Boyaoge, Kecamatan Tatanga, Kota Palu, Provinsi Sulawesi Tengah"
+  },
+  {
+   "nama": "alamat hanya jalan dan RT: tetap diberi wilayah dari ekor sistem",
+   "masuk": "Jalan Poros, Tosale, Banawa Selatan, Kabupaten Donggala, Sulawesi Tengah",
+   "dasar": "Jalan Poros, Desa Tosale, Kecamatan Banawa Selatan, Kabupaten Donggala, Provinsi Sulawesi Tengah"
+  },
+  {
+   "nama": "hanya jalan dan RT tanpa ekor: tidak diubah",
+   "masuk": "Jalan Mawar No 3 RT 02",
+   "dasar": "Jalan Mawar No 3 RT 02"
+  },
+  {
+   "nama": "kelurahan menurut daftar resmi diberi sebutan Kelurahan",
+   "masuk": "RT003, RW002, Kabonga Kecil, Banawa, Kabupaten Donggala, Sulawesi Tengah",
+   "dasar": "RT003, RW002, Kelurahan Kabonga Kecil, Kecamatan Banawa, Kabupaten Donggala, Provinsi Sulawesi Tengah"
+  },
+  {
+   "nama": "Desa disebut di depan: ekor desa, kecamatan, kabupaten dibuang",
+   "masuk": "Dusun II, Desa Tulo, Kecamatan Dolo, Kabupaten Sigi, Tulo, Dolo, Kabupaten Sigi, Sulawesi Tengah",
+   "dasar": "Dusun II, Desa Tulo, Kecamatan Dolo, Kabupaten Sigi, Provinsi Sulawesi Tengah"
+  },
+  {
+   "nama": "ejaan desa berbeda dari nama resmi tetap dianggap sama",
+   "masuk": "Desa Kota Pulu,RT006, RW002, Kecamatan Dolo, Kabupaten Sigi, Kotapulu, Dolo, Kabupaten Sigi, Sulawesi Tengah",
+   "dasar": "Desa Kota Pulu, RT006, RW002, Kecamatan Dolo, Kabupaten Sigi, Provinsi Sulawesi Tengah"
+  },
+  {
+   "nama": "spasi sebelum koma dan koma rapat dirapikan",
+   "masuk": "Desa Oti , Kecamatan Sindue Tobata ,Kabupaten Donggala",
+   "dasar": "Desa Oti, Kecamatan Sindue Tobata, Kabupaten Donggala"
+  },
+  {
+   "nama": "koma ganda dan titik di ujung dirapikan",
+   "masuk": "Jalan Merpati,, RT 02, Desa Lere, Kecamatan Palu Barat, Kota Palu.",
+   "dasar": "Jalan Merpati, RT 02, Desa Lere, Kecamatan Palu Barat, Kota Palu"
+  },
+  {
+   "nama": "nama jalan sama dengan kecamatan, desa dan kecamatan disebut di depan",
+   "masuk": "Jalan Banawa No 5, Desa Ganti, Kecamatan Banawa, Kabupaten Donggala, Ganti, Banawa, Kabupaten Donggala, Sulawesi Tengah",
+   "dasar": "Jalan Banawa No 5, Desa Ganti, Kecamatan Banawa, Kabupaten Donggala, Provinsi Sulawesi Tengah"
+  },
+  {
+   "nama": "nama jalan sama dengan kecamatan bukan sebutan kecamatan: kecamatan dipertahankan",
+   "masuk": "Jalan Banawa, Ganti, Banawa, Kabupaten Donggala, Sulawesi Tengah",
+   "dasar": "Jalan Banawa, Kelurahan Ganti, Kecamatan Banawa, Kabupaten Donggala, Provinsi Sulawesi Tengah"
+  },
+  {
+   "nama": "kabupaten yang diketik berbeda dari ekor: dibiarkan (bentrok), tidak ditebak",
+   "masuk": "Desa Binangga, RT005, RW001, Kecamatan Marawola, Kabupaten Donggala, Binangga, Marawola, Kabupaten Sigi, Sulawesi Tengah",
+   "dasar": "Desa Binangga, RT005, RW001, Kecamatan Marawola, Kabupaten Donggala, Binangga, Marawola, Kabupaten Sigi, Sulawesi Tengah",
+   "portal": "Desa Binangga, RT005, RW001, Kecamatan Marawola, Kabupaten Donggala, Binangga, Marawola, Kabupaten Sigi, Provinsi Sulawesi Tengah"
+  },
+  {
+   "nama": "kabupaten salah ketik satu huruf tetap dikenali",
+   "masuk": "Desa Wani II, Kecamatan Tanantovea, Kabupaten Dongala , Provinsi Sulawesi Tengah, Wani Dua, Tanantovea, Kabupaten Donggala, Sulawesi Tengah",
+   "dasar": "Desa Wani II, Kecamatan Tanantovea, Kabupaten Dongala, Provinsi Sulawesi Tengah"
+  },
+  {
+   "nama": "kecamatan dan kabupaten dalam satu potongan tanpa koma",
+   "masuk": "Desa Kalora, Dusun III, Kecamatan Kinovaro Kabupaten Sigi, Kalora, Kinovaro, Kabupaten Sigi, Sulawesi Tengah",
+   "dasar": "Desa Kalora, Dusun III, Kecamatan Kinovaro Kabupaten Sigi, Provinsi Sulawesi Tengah"
+  },
+  {
+   "nama": "provinsi diketik dua kali berturut-turut",
+   "masuk": "Desa Lumbutarombo, Kecamatan Banawa Selatan, Kabupaten Donggala, Provinsi Sulawesi Tengah, Provinsi Sulawesi Tengah",
+   "dasar": "Desa Lumbutarombo, Kecamatan Banawa Selatan, Kabupaten Donggala, Provinsi Sulawesi Tengah"
+  },
+  {
+   "nama": "domisili elektronik di tengah, ekor sistem sesudah surel",
+   "masuk": "Desa Baliase RT 007 RW 003, Kecamatan Marawola, Kabupaten Sigi, Provinsi Sulawesi Tengah. Domisili Elektronik: sel964413@gmail.com, Baliase, Marawola, Kabupaten Sigi, Sulawesi Tengah",
+   "dasar": "Desa Baliase RT 007 RW 003, Kecamatan Marawola, Kabupaten Sigi, Provinsi Sulawesi Tengah. Domisili Elektronik: sel964413@gmail.com",
+   "portal": "Desa Baliase RT 007 RW 003, Kecamatan Marawola, Kabupaten Sigi, Provinsi Sulawesi Tengah. Domisili elektronik : sel964413@gmail.com"
+  },
+  {
+   "nama": "kata dengan sebelum domisili elektronik bukan bagian wilayah",
+   "masuk": "Desa Kalora, Kecamatan Kinovaro, Kabupaten Sigi, Kalora, Kinovaro, Kabupaten Sigi, Sulawesi Tengah dengan domisili elektronik : a.b@mail.co.id",
+   "dasar": "Desa Kalora, Kecamatan Kinovaro, Kabupaten Sigi, Provinsi Sulawesi Tengah, domisili elektronik : a.b@mail.co.id",
+   "portal": "Desa Kalora, Kecamatan Kinovaro, Kabupaten Sigi, Provinsi Sulawesi Tengah, Domisili elektronik : a.b@mail.co.id"
+  },
+  {
+   "nama": "domisili elektronik tanpa ekor tidak berubah",
+   "masuk": "Desa Maku, RT005, RW002, Kecamatan Dolo, Kabupaten Sigi, Provinsi Sulawesi Tengah, Domisili Elektronik: maku@gmail.com",
+   "dasar": "Desa Maku, RT005, RW002, Kecamatan Dolo, Kabupaten Sigi, Provinsi Sulawesi Tengah, Domisili Elektronik: maku@gmail.com",
+   "portal": "Desa Maku, RT005, RW002, Kecamatan Dolo, Kabupaten Sigi, Provinsi Sulawesi Tengah, Domisili elektronik : maku@gmail.com"
+  },
+  {
+   "nama": "sudah rapi: tidak berubah",
+   "masuk": "Dusun II, Desa Sabang, Kecamatan Dampelas, Kabupaten Donggala, Provinsi Sulawesi Tengah",
+   "dasar": "Dusun II, Desa Sabang, Kecamatan Dampelas, Kabupaten Donggala, Provinsi Sulawesi Tengah"
+  },
+  {
+   "nama": "surel di depan alamat bukan bagian wilayah",
+   "masuk": "x.y@gmail.com, Jalan Tadulako, RT001, Ngatabaru, Sigi Biromaru, Kabupaten Sigi, Sulawesi Tengah",
+   "dasar": "x.y@gmail.com, Jalan Tadulako, RT001, Desa Ngatabaru, Kecamatan Sigi Biromaru, Kabupaten Sigi, Provinsi Sulawesi Tengah"
+  },
+  {
+   "nama": "desa dan kecamatan senama (Labuan, Labuan) tidak dianggap kembar",
+   "masuk": "Jalan Lantigau, Labuan, Kecamatan Labuan, Kabupaten  Donggala, Labuan, Labuan, Kabupaten Donggala, Sulawesi Tengah",
+   "dasar": "Jalan Lantigau, Labuan, Kecamatan Labuan, Kabupaten Donggala, Provinsi Sulawesi Tengah",
+   "portal": "Jalan Lantigau, Desa Labuan, Kecamatan Labuan, Kabupaten Donggala, Provinsi Sulawesi Tengah"
+  },
+  {
+   "nama": "kecamatan disebut di depan, desa belum: desa dipertahankan",
+   "masuk": "Dusun V, RT018, Kecamatan Sigi Biromaru, Kabupaten Sigi, Lolu, Sigi Biromaru, Kabupaten Sigi, Sulawesi Tengah",
+   "dasar": "Dusun V, RT018, Kecamatan Sigi Biromaru, Kabupaten Sigi, Desa Lolu, Provinsi Sulawesi Tengah"
+  },
+  {
+   "nama": "provinsi belum disebut: diberi sebutan Provinsi",
+   "masuk": "Jalan Poros, Desa Tosale, Kecamatan Banawa Selatan, Kabupaten Donggala, Tosale, Banawa Selatan, Kabupaten Donggala, Sulawesi Tengah",
+   "dasar": "Jalan Poros, Desa Tosale, Kecamatan Banawa Selatan, Kabupaten Donggala, Provinsi Sulawesi Tengah"
+  },
+  {
+   "nama": "provinsi luar Sulawesi Tengah yang diketik berbeda dari ekor: bentrok, dibiarkan",
+   "masuk": "Desa Aa, Kecamatan Bb, Kabupaten Sigi, Provinsi Sulawesi Selatan, Aa, Bb, Kabupaten Sigi, Sulawesi Tengah",
+   "dasar": "Desa Aa, Kecamatan Bb, Kabupaten Sigi, Provinsi Sulawesi Selatan, Aa, Bb, Kabupaten Sigi, Sulawesi Tengah"
+  },
+  {
+   "nama": "ekor bukan bentuk sistem (potongan jalan): tidak diubah",
+   "masuk": "Desa Aa, RT 01, Jalan Merdeka, Kecamatan Bb, Kabupaten Sigi, Sulawesi Tengah",
+   "dasar": "Desa Aa, RT 01, Jalan Merdeka, Kecamatan Bb, Kabupaten Sigi, Sulawesi Tengah",
+   "portal": "Desa Aa, RT 01, Jalan Merdeka, Kecamatan Bb, Kabupaten Sigi, Provinsi Sulawesi Tengah"
+  },
+  {
+   "nama": "kosong",
+   "masuk": "",
+   "dasar": ""
+  }
+ ]
+}

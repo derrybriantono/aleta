@@ -895,6 +895,657 @@ export const DDL_ALETA_AI_DOMPET = {
 } as const;
 
 /**
+ * Cermin Perkara (0090, 25 Okt 2026, C0): salinan keadaan perkara SIPP di basis
+ * data ALETA - perkara, sidang, pihak, mediasi, penanda Status Perkara, dan
+ * jejak pemindai. Cermin PERSIS dari drizzle/0090_aleta_cermin_perkara.sql;
+ * penjaga cermin-dasar-25okt.test.ts membandingkan keduanya. Tanpa kunci asing
+ * dan tanpa CHECK: nilai sah dijaga modul (src/server/modules/cermin/*).
+ */
+export const DDL_ALETA_CERMIN_PERKARA = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_cermin_perkara (
+  perkara_id TEXT PRIMARY KEY,
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  jenis_perkara_id INTEGER,
+  jenis_perkara_nama TEXT NOT NULL DEFAULT '',
+  alur_perkara_id INTEGER,
+  tanggal_pendaftaran TEXT NOT NULL DEFAULT '',
+  prodeo INTEGER NOT NULL DEFAULT 0,
+  tahapan_terakhir_id INTEGER,
+  tahapan_terakhir_text TEXT NOT NULL DEFAULT '',
+  proses_terakhir_id INTEGER,
+  proses_terakhir_text TEXT NOT NULL DEFAULT '',
+  majelis_hakim TEXT NOT NULL DEFAULT '',
+  panitera_pengganti TEXT NOT NULL DEFAULT '',
+  jurusita TEXT NOT NULL DEFAULT '',
+  sidang_pertama TEXT NOT NULL DEFAULT '',
+  sidang_terakhir TEXT NOT NULL DEFAULT '',
+  sidang_berikut TEXT NOT NULL DEFAULT '',
+  jumlah_sidang INTEGER NOT NULL DEFAULT 0,
+  tanggal_putusan TEXT NOT NULL DEFAULT '',
+  status_putusan TEXT NOT NULL DEFAULT '',
+  putusan_verstek INTEGER NOT NULL DEFAULT 0,
+  tanggal_minutasi TEXT NOT NULL DEFAULT '',
+  tanggal_bht TEXT NOT NULL DEFAULT '',
+  status_mediasi TEXT NOT NULL DEFAULT '',
+  sisa_panjar DOUBLE PRECISION,
+  penanda_json TEXT NOT NULL DEFAULT '{}',
+  sipp_diperbarui TEXT NOT NULL DEFAULT '',
+  cermin_diperbarui TEXT NOT NULL,
+  sidik TEXT NOT NULL DEFAULT ''
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_cermin_sidang (
+  sidang_id TEXT PRIMARY KEY,
+  perkara_id TEXT NOT NULL DEFAULT '',
+  tanggal_sidang TEXT NOT NULL DEFAULT '',
+  jam_sidang TEXT NOT NULL DEFAULT '',
+  ruangan TEXT NOT NULL DEFAULT '',
+  agenda TEXT NOT NULL DEFAULT '',
+  ditunda INTEGER NOT NULL DEFAULT 0,
+  baris_json TEXT NOT NULL DEFAULT '{}',
+  sipp_diperbarui TEXT NOT NULL DEFAULT '',
+  cermin_diperbarui TEXT NOT NULL,
+  sidik TEXT NOT NULL DEFAULT ''
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_cermin_pihak (
+  id TEXT PRIMARY KEY,
+  perkara_id TEXT NOT NULL DEFAULT '',
+  sisi INTEGER NOT NULL DEFAULT 0,
+  urutan INTEGER NOT NULL DEFAULT 0,
+  nama TEXT NOT NULL DEFAULT '',
+  sebutan TEXT NOT NULL DEFAULT '',
+  kuasa TEXT NOT NULL DEFAULT '',
+  alamat_ringkas TEXT NOT NULL DEFAULT '',
+  cermin_diperbarui TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_cermin_mediasi (
+  id TEXT PRIMARY KEY,
+  perkara_id TEXT NOT NULL DEFAULT '',
+  tanggal TEXT NOT NULL DEFAULT '',
+  mediator TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT '',
+  baris_json TEXT NOT NULL DEFAULT '{}',
+  sipp_diperbarui TEXT NOT NULL DEFAULT '',
+  cermin_diperbarui TEXT NOT NULL,
+  sidik TEXT NOT NULL DEFAULT ''
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_cermin_tag (
+  perkara_id TEXT NOT NULL,
+  tag_kunci TEXT NOT NULL,
+  cermin_diperbarui TEXT NOT NULL,
+  PRIMARY KEY (perkara_id, tag_kunci)
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_cermin_jejak (
+  kunci TEXT PRIMARY KEY,
+  nilai_json TEXT NOT NULL DEFAULT '{}',
+  diperbarui_at TEXT NOT NULL
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_cermin_perkara_nomor ON aleta_cermin_perkara(nomor_perkara)`,
+    `CREATE INDEX IF NOT EXISTS idx_cermin_perkara_sipp ON aleta_cermin_perkara(sipp_diperbarui)`,
+    `CREATE INDEX IF NOT EXISTS idx_cermin_sidang_tanggal ON aleta_cermin_sidang(tanggal_sidang, jam_sidang)`,
+    `CREATE INDEX IF NOT EXISTS idx_cermin_sidang_perkara ON aleta_cermin_sidang(perkara_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_cermin_pihak_perkara ON aleta_cermin_pihak(perkara_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_cermin_mediasi_tanggal ON aleta_cermin_mediasi(tanggal)`,
+    `CREATE INDEX IF NOT EXISTS idx_cermin_mediasi_perkara ON aleta_cermin_mediasi(perkara_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_cermin_tag_kunci ON aleta_cermin_tag(tag_kunci, perkara_id)`,
+  ],
+} as const;
+
+/**
+ * Jejak tunda/putus otomatis terstruktur (0105, 25 Okt 2026, U19): satu baris per
+ * (fitur, tanggal sidang, jadwal sidang). Cermin PERSIS dari
+ * drizzle/0105_aleta_otomatis_jejak.sql; penjaga otomatis-jejak-25okt.test.ts
+ * membandingkan keduanya. Tanpa kunci asing dan tanpa CHECK.
+ */
+export const DDL_OTOMATIS_JEJAK = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_otomatis_jejak (
+  id TEXT PRIMARY KEY,
+  fitur TEXT NOT NULL,
+  tanggal TEXT NOT NULL,
+  jadwal_id TEXT NOT NULL,
+  perkara_id TEXT NOT NULL DEFAULT '',
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  jenis_perkara TEXT NOT NULL DEFAULT '',
+  keputusan TEXT NOT NULL,
+  aturan TEXT NOT NULL DEFAULT '',
+  nomor_aturan INTEGER NOT NULL DEFAULT 0,
+  tanggal_tunda TEXT NOT NULL DEFAULT '',
+  hasil TEXT NOT NULL DEFAULT '',
+  kering INTEGER NOT NULL DEFAULT 0,
+  ditolak_penjaga INTEGER NOT NULL DEFAULT 0,
+  dibatalkan_petugas INTEGER NOT NULL DEFAULT 0,
+  pesan TEXT NOT NULL DEFAULT '',
+  edoc TEXT NOT NULL DEFAULT '',
+  pemicu TEXT NOT NULL DEFAULT '',
+  jam TEXT NOT NULL DEFAULT '',
+  dibuat_pada TEXT NOT NULL,
+  diubah_pada TEXT NOT NULL
+)`,
+  ],
+  indeks: [
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_otomatis_jejak_kunci ON aleta_otomatis_jejak(fitur, tanggal, jadwal_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_otomatis_jejak_tanggal ON aleta_otomatis_jejak(tanggal)`,
+    `CREATE INDEX IF NOT EXISTS idx_otomatis_jejak_aturan ON aleta_otomatis_jejak(fitur, aturan, tanggal)`,
+  ],
+} as const;
+
+/**
+ * Cermin Perkara (0096, 25 Okt 2026, A5): empat tanggal dasar lingkup Status Perkara. Cermin PERSIS dari
+ * drizzle/0096_aleta_cermin_perkara_tanggal.sql; penjaga cermin-status-25okt.test.ts membandingkan keduanya.
+ */
+export const DDL_ALETA_CERMIN_PERKARA_TANGGAL = {
+  kolom: [
+    `ALTER TABLE aleta_cermin_perkara ADD COLUMN IF NOT EXISTS tanggal_sidang_maks TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_cermin_perkara ADD COLUMN IF NOT EXISTS tanggal_akta TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_cermin_perkara ADD COLUMN IF NOT EXISTS tanggal_relaas TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_cermin_perkara ADD COLUMN IF NOT EXISTS tanggal_ikrar TEXT NOT NULL DEFAULT ''`,
+  ],
+} as const;
+
+/**
+ * Penjaga Tenggat Terjadwal (0110, 25 Okt 2026, G1): catatan kirim pengingat WhatsApp per penerima per tanggal.
+ * Cermin PERSIS dari drizzle/0110_aleta_tenggat_kirim.sql; penjaga tenggat-terjadwal-25okt.test.ts
+ * membandingkan keduanya. Tanpa kunci asing.
+ */
+export const DDL_ALETA_TENGGAT_KIRIM = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_tenggat_kirim (
+  id TEXT PRIMARY KEY,
+  tanggal TEXT NOT NULL,
+  penerima_id TEXT NOT NULL,
+  penerima_nama TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'diklaim',
+  jumlah_butir INTEGER NOT NULL DEFAULT 0,
+  antrean_id TEXT NOT NULL DEFAULT '',
+  keterangan TEXT NOT NULL DEFAULT '',
+  dibuat_at TEXT NOT NULL,
+  diubah_at TEXT NOT NULL
+)`,
+  ],
+  indeks: [`CREATE INDEX IF NOT EXISTS idx_tenggat_kirim_tanggal ON aleta_tenggat_kirim(tanggal)`],
+} as const;
+
+/**
+ * Pusat kesehatan + catatan galat + hasil uji beban (0094, 25 Okt 2026, rantai E):
+ * kelompok galat dan kejadiannya, hasil uji beban yang diimpor, warna terakhir
+ * tiap komponen, riwayat pemeriksaan, dan versi ekstensi per PC. Cermin PERSIS
+ * dari drizzle/0094_aleta_kesehatan_galat.sql; penjaga pusat-kesehatan-25okt.test.ts
+ * membandingkan keduanya. Tanpa kunci asing dan tanpa CHECK: nilai sah dijaga
+ * modul (src/server/modules/kesehatan/*).
+ */
+export const DDL_KESEHATAN_GALAT = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_catatan_galat (
+  id TEXT PRIMARY KEY,
+  sidik TEXT NOT NULL,
+  sumber TEXT NOT NULL,
+  jenis TEXT NOT NULL DEFAULT '',
+  pesan TEXT NOT NULL DEFAULT '',
+  lokasi TEXT NOT NULL DEFAULT '',
+  jumlah INTEGER NOT NULL DEFAULT 1,
+  pertama_at TEXT NOT NULL,
+  terakhir_at TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'baru',
+  ditangani_oleh TEXT NOT NULL DEFAULT '',
+  ditangani_at TEXT NOT NULL DEFAULT '',
+  catatan TEXT NOT NULL DEFAULT ''
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_catatan_galat_kejadian (
+  id TEXT PRIMARY KEY,
+  galat_id TEXT NOT NULL,
+  waktu TEXT NOT NULL,
+  halaman TEXT NOT NULL DEFAULT '',
+  akun_id TEXT NOT NULL DEFAULT '',
+  akun_nama TEXT NOT NULL DEFAULT '',
+  peramban TEXT NOT NULL DEFAULT '',
+  versi TEXT NOT NULL DEFAULT '',
+  potongan_stack TEXT NOT NULL DEFAULT ''
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_uji_beban_hasil (
+  id TEXT PRIMARY KEY,
+  diimpor_at TEXT NOT NULL,
+  diimpor_oleh TEXT NOT NULL DEFAULT '',
+  dibuat_at TEXT NOT NULL,
+  perangkat INTEGER NOT NULL DEFAULT 0,
+  profil TEXT NOT NULL DEFAULT '',
+  sasaran TEXT NOT NULL DEFAULT '',
+  durasi_detik INTEGER NOT NULL DEFAULT 0,
+  p95_ms DOUBLE PRECISION NOT NULL DEFAULT 0,
+  galat_persen DOUBLE PRECISION NOT NULL DEFAULT 0,
+  hasil_json TEXT NOT NULL DEFAULT '{}'
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_kesehatan_status (
+  kunci TEXT PRIMARY KEY,
+  warna TEXT NOT NULL DEFAULT 'kelabu',
+  sejak TEXT NOT NULL,
+  diperiksa_at TEXT NOT NULL,
+  merah_berturut INTEGER NOT NULL DEFAULT 0,
+  diperingatkan_at TEXT NOT NULL DEFAULT '',
+  ringkas TEXT NOT NULL DEFAULT ''
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_kesehatan_riwayat (
+  id TEXT PRIMARY KEY,
+  waktu TEXT NOT NULL,
+  warna TEXT NOT NULL DEFAULT 'kelabu',
+  ringkas_json TEXT NOT NULL DEFAULT '{}'
+)`,
+  ],
+  indeks: [
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_catatan_galat_sidik ON aleta_catatan_galat(sidik)`,
+    `CREATE INDEX IF NOT EXISTS idx_catatan_galat_terakhir ON aleta_catatan_galat(terakhir_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_catatan_galat_kejadian_galat ON aleta_catatan_galat_kejadian(galat_id, waktu)`,
+    `CREATE INDEX IF NOT EXISTS idx_catatan_galat_kejadian_waktu ON aleta_catatan_galat_kejadian(waktu)`,
+    `CREATE INDEX IF NOT EXISTS idx_uji_beban_hasil_dibuat ON aleta_uji_beban_hasil(dibuat_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_kesehatan_riwayat_waktu ON aleta_kesehatan_riwayat(waktu)`,
+  ],
+  kolom: [
+    `ALTER TABLE aleta_perangkat ADD COLUMN IF NOT EXISTS versi_ekstensi TEXT NOT NULL DEFAULT ''`,
+  ],
+} as const;
+
+/**
+ * Verifikasi dua langkah: authenticator, tantangan, perangkat tepercaya, kode cadangan
+ * (0095, 25 Okt 2026, rantai E). Cermin PERSIS dari drizzle/0095_aleta_verifikasi_dua_langkah.sql;
+ * penjaga verifikasi-dua-langkah-25okt.test.ts membandingkan keduanya.
+ */
+export const DDL_VERIFIKASI_DUA_LANGKAH = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_verifikasi_authenticator (
+  user_id TEXT PRIMARY KEY,
+  rahasia_enc TEXT NOT NULL,
+  aktif INTEGER NOT NULL DEFAULT 0,
+  dibuat_pada TEXT NOT NULL,
+  aktif_pada TEXT NOT NULL DEFAULT '',
+  langkah_terakhir INTEGER NOT NULL DEFAULT -1
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_verifikasi_tantangan (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  perangkat_id TEXT NOT NULL DEFAULT '',
+  jalur TEXT NOT NULL DEFAULT '',
+  dibuat_pada TEXT NOT NULL,
+  kedaluwarsa_pada TEXT NOT NULL,
+  percobaan INTEGER NOT NULL DEFAULT 0,
+  kode_wa_hash TEXT NOT NULL DEFAULT '',
+  kode_wa_kedaluwarsa TEXT NOT NULL DEFAULT '',
+  kirim_terakhir TEXT NOT NULL DEFAULT '',
+  jumlah_kirim INTEGER NOT NULL DEFAULT 0,
+  selesai_pada TEXT NOT NULL DEFAULT ''
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_verifikasi_lolos (
+  user_id TEXT NOT NULL,
+  perangkat_id TEXT NOT NULL,
+  jenis TEXT NOT NULL,
+  metode TEXT NOT NULL DEFAULT '',
+  dibuat_pada TEXT NOT NULL,
+  sampai TEXT NOT NULL,
+  PRIMARY KEY (user_id, perangkat_id, jenis)
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_verifikasi_kode_cadangan (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  kode_hash TEXT NOT NULL,
+  dibuat_pada TEXT NOT NULL,
+  dibuat_oleh TEXT NOT NULL DEFAULT '',
+  dipakai_pada TEXT NOT NULL DEFAULT ''
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_verifikasi_tantangan_akun ON aleta_verifikasi_tantangan(user_id, kedaluwarsa_pada)`,
+    `CREATE INDEX IF NOT EXISTS idx_verifikasi_lolos_sampai ON aleta_verifikasi_lolos(sampai)`,
+    `CREATE INDEX IF NOT EXISTS idx_verifikasi_kode_cadangan_akun ON aleta_verifikasi_kode_cadangan(user_id, dipakai_pada)`,
+  ],
+  kolom: [],
+} as const;
+
+/**
+ * Penjaga integritas berkas website/SIPP/ABT (0104, 25 Okt 2026, rantai E): baseline sidik,
+ * temuan, daftar diketahui aman, riwayat pindai. Cermin PERSIS dari
+ * drizzle/0104_aleta_penjaga_integritas.sql; penjaga penjaga-integritas-25okt.test.ts
+ * membandingkan keduanya.
+ */
+export const DDL_PENJAGA_INTEGRITAS = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_integritas_berkas (
+  folder_id TEXT NOT NULL,
+  jalur TEXT NOT NULL,
+  sha256 TEXT NOT NULL DEFAULT '',
+  ukuran INTEGER NOT NULL DEFAULT 0,
+  diubah_at TEXT NOT NULL DEFAULT '',
+  dilihat_at TEXT NOT NULL,
+  PRIMARY KEY (folder_id, jalur)
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_integritas_temuan (
+  id TEXT PRIMARY KEY,
+  folder_id TEXT NOT NULL,
+  jalur TEXT NOT NULL,
+  jenis TEXT NOT NULL,
+  aturan TEXT NOT NULL DEFAULT '',
+  baris INTEGER NOT NULL DEFAULT 0,
+  sha256 TEXT NOT NULL DEFAULT '',
+  ukuran INTEGER NOT NULL DEFAULT 0,
+  pertama_at TEXT NOT NULL,
+  terakhir_at TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'baru',
+  ditangani_oleh TEXT NOT NULL DEFAULT '',
+  ditangani_at TEXT NOT NULL DEFAULT '',
+  diperingatkan_at TEXT NOT NULL DEFAULT ''
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_integritas_aman (
+  folder_id TEXT NOT NULL,
+  jalur TEXT NOT NULL,
+  sha256 TEXT NOT NULL,
+  alasan TEXT NOT NULL DEFAULT '',
+  dibuat_oleh TEXT NOT NULL DEFAULT '',
+  dibuat_at TEXT NOT NULL,
+  PRIMARY KEY (folder_id, jalur, sha256)
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_integritas_pindai (
+  id TEXT PRIMARY KEY,
+  folder_id TEXT NOT NULL,
+  jenis TEXT NOT NULL DEFAULT 'rutin',
+  mulai_at TEXT NOT NULL,
+  selesai_at TEXT NOT NULL DEFAULT '',
+  jumlah_berkas INTEGER NOT NULL DEFAULT 0,
+  temuan_baru INTEGER NOT NULL DEFAULT 0,
+  galat TEXT NOT NULL DEFAULT ''
+)`,
+  ],
+  indeks: [
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_integritas_temuan_kunci ON aleta_integritas_temuan(folder_id, jalur, jenis, aturan)`,
+    `CREATE INDEX IF NOT EXISTS idx_integritas_temuan_status ON aleta_integritas_temuan(status, terakhir_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_integritas_pindai_mulai ON aleta_integritas_pindai(folder_id, mulai_at)`,
+  ],
+  kolom: [],
+} as const;
+
+/**
+ * Jejak isian dan butir saksi (0091, 25 Okt 2026, rantai C butir C1 = U1 + U2 + U6):
+ * satu baris per butir tanya-jawab saksi yang disimpan petugas, dan satu baris per
+ * penyimpanan satu isian ABT (nilai usulan, nilai sebelum yang utuh untuk Urungkan,
+ * nilai final, cara, hasil baca-ulang). Diisi HANYA bila saklar Fitur Satker
+ * "jejak-isian" menyala (bawaan MATI). Retensi 2 tahun. Cermin PERSIS dari
+ * drizzle/0091_aleta_jejak_isian.sql; penjaga jejak-isian-25okt.test.ts
+ * membandingkan keduanya. Tanpa kunci asing dan tanpa CHECK.
+ */
+export const DDL_JEJAK_ISIAN = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_saksi_butir (
+  id TEXT PRIMARY KEY,
+  perkara_id TEXT NOT NULL DEFAULT '',
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  sidang TEXT NOT NULL DEFAULT '',
+  saksi_ke INTEGER NOT NULL DEFAULT 0,
+  pihak TEXT NOT NULL DEFAULT '',
+  jalur TEXT NOT NULL DEFAULT '',
+  variabel TEXT NOT NULL DEFAULT '',
+  katalog TEXT NOT NULL DEFAULT '',
+  versi_katalog TEXT NOT NULL DEFAULT '',
+  jenis_perkara TEXT NOT NULL DEFAULT '',
+  butir TEXT NOT NULL DEFAULT '',
+  varian TEXT NOT NULL DEFAULT '',
+  jenis_keterangan TEXT NOT NULL DEFAULT '',
+  nomor_butir INTEGER NOT NULL DEFAULT 0,
+  pertanyaan TEXT NOT NULL DEFAULT '',
+  usulan TEXT NOT NULL DEFAULT '',
+  teks_final TEXT NOT NULL DEFAULT '',
+  hasil TEXT NOT NULL DEFAULT '',
+  kemiripan DOUBLE PRECISION NOT NULL DEFAULT 0,
+  sumber_fakta TEXT NOT NULL DEFAULT '',
+  keyakinan TEXT NOT NULL DEFAULT '',
+  kode_pola TEXT NOT NULL DEFAULT '',
+  pengguna_id TEXT NOT NULL DEFAULT '',
+  pengguna_nama TEXT NOT NULL DEFAULT '',
+  pada TEXT NOT NULL,
+  dibuat_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_isian_jejak (
+  id TEXT PRIMARY KEY,
+  perkara_id TEXT NOT NULL DEFAULT '',
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  jenis_perkara TEXT NOT NULL DEFAULT '',
+  blangko TEXT NOT NULL DEFAULT '',
+  jenis_blangko TEXT NOT NULL DEFAULT '',
+  kode TEXT NOT NULL DEFAULT '',
+  nama_variabel TEXT NOT NULL DEFAULT '',
+  nilai_usulan TEXT NOT NULL DEFAULT '',
+  asal_usulan TEXT NOT NULL DEFAULT '',
+  keyakinan TEXT NOT NULL DEFAULT '',
+  kode_pola TEXT NOT NULL DEFAULT '',
+  nilai_sebelum TEXT NOT NULL DEFAULT '',
+  sebelum_dipotong SMALLINT NOT NULL DEFAULT 0,
+  nilai_final TEXT NOT NULL DEFAULT '',
+  final_dipotong SMALLINT NOT NULL DEFAULT 0,
+  cara TEXT NOT NULL DEFAULT '',
+  hasil TEXT NOT NULL DEFAULT '',
+  terverifikasi TEXT NOT NULL DEFAULT '',
+  nilai_terbaca TEXT NOT NULL DEFAULT '',
+  jalur TEXT NOT NULL DEFAULT '',
+  urungkan_dari TEXT NOT NULL DEFAULT '',
+  diurungkan_oleh TEXT NOT NULL DEFAULT '',
+  diurungkan_at TEXT NOT NULL DEFAULT '',
+  pengguna_id TEXT NOT NULL DEFAULT '',
+  pengguna_nama TEXT NOT NULL DEFAULT '',
+  pada TEXT NOT NULL,
+  dibuat_at TEXT NOT NULL
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_saksi_butir_perkara ON aleta_saksi_butir(perkara_id, pada)`,
+    `CREATE INDEX IF NOT EXISTS idx_saksi_butir_katalog ON aleta_saksi_butir(katalog, hasil)`,
+    `CREATE INDEX IF NOT EXISTS idx_saksi_butir_pada ON aleta_saksi_butir(pada)`,
+    `CREATE INDEX IF NOT EXISTS idx_isian_jejak_kode ON aleta_isian_jejak(kode, hasil)`,
+    `CREATE INDEX IF NOT EXISTS idx_isian_jejak_perkara ON aleta_isian_jejak(perkara_id, pada)`,
+    `CREATE INDEX IF NOT EXISTS idx_isian_jejak_pada ON aleta_isian_jejak(pada)`,
+  ],
+} as const;
+
+/**
+ * Katalog saksi di basis data dengan versi (0093, 25 Okt 2026, rantai C butir C4 = U8): penimpa berversi atas katalog
+ * Susun saksi yang tertanam di ekstensi. Disajikan portal HANYA bila saklar Fitur Satker "katalog-saksi-basis-data"
+ * menyala (bawaan MATI). Cermin PERSIS dari drizzle/0093_aleta_saksi_katalog.sql; penjaga katalog-saksi-db-25okt.test.ts
+ * membandingkan keduanya. Tanpa kunci asing dan tanpa CHECK.
+ */
+export const DDL_SAKSI_KATALOG = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_saksi_katalog (
+  kunci TEXT PRIMARY KEY,
+  judul TEXT NOT NULL DEFAULT '',
+  versi_aktif INTEGER NOT NULL DEFAULT 0,
+  diubah_oleh TEXT NOT NULL DEFAULT '',
+  diubah_nama TEXT NOT NULL DEFAULT '',
+  diubah_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_saksi_katalog_versi (
+  id TEXT PRIMARY KEY,
+  kunci TEXT NOT NULL,
+  versi INTEGER NOT NULL,
+  isi_json TEXT NOT NULL,
+  sidik TEXT NOT NULL DEFAULT '',
+  catatan TEXT NOT NULL DEFAULT '',
+  dasar_versi INTEGER NOT NULL DEFAULT 0,
+  dibuat_oleh TEXT NOT NULL DEFAULT '',
+  dibuat_nama TEXT NOT NULL DEFAULT '',
+  dibuat_at TEXT NOT NULL
+)`,
+  ],
+  indeks: [
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_saksi_katalog_versi_kunci ON aleta_saksi_katalog_versi(kunci, versi)`,
+  ],
+} as const;
+
+/**
+ * Ketepatan isian (0092, 25 Okt 2026, rantai D butir D1 = U3 + U4): angka lapangan per isian x pengisi x
+ * jenis perkara x bulan (turunan dari jejak isian 0091, boleh dihitung ulang) dan keputusan Super Admin atas
+ * usulan naik/turun gerbang isian. Diisi HANYA bila saklar Fitur Satker "ketepatan-isian" menyala (bawaan
+ * MATI). Kenaikan tidak pernah otomatis. Cermin PERSIS dari drizzle/0092_aleta_ketepatan_isian.sql; penjaga
+ * ketepatan-isian-25okt.test.ts membandingkan keduanya. Tanpa kunci asing dan tanpa CHECK.
+ */
+export const DDL_KETEPATAN_ISIAN = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_ketepatan_isian (
+  id TEXT PRIMARY KEY,
+  kode TEXT NOT NULL DEFAULT '',
+  pengisi TEXT NOT NULL DEFAULT '',
+  jenis_perkara TEXT NOT NULL DEFAULT '',
+  bulan TEXT NOT NULL DEFAULT '',
+  usulan INTEGER NOT NULL DEFAULT 0,
+  diterima INTEGER NOT NULL DEFAULT 0,
+  diubah INTEGER NOT NULL DEFAULT 0,
+  diubah_otomatis INTEGER NOT NULL DEFAULT 0,
+  diketik INTEGER NOT NULL DEFAULT 0,
+  bertahan INTEGER NOT NULL DEFAULT 0,
+  presisi DOUBLE PRECISION,
+  dihitung_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_ketepatan_keputusan (
+  id TEXT PRIMARY KEY,
+  kode TEXT NOT NULL DEFAULT '',
+  pengisi TEXT NOT NULL DEFAULT '',
+  jenis_perkara TEXT NOT NULL DEFAULT '',
+  arah TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'usulan',
+  dari_status TEXT NOT NULL DEFAULT '',
+  ke_status TEXT NOT NULL DEFAULT '',
+  jumlah INTEGER NOT NULL DEFAULT 0,
+  bertahan INTEGER NOT NULL DEFAULT 0,
+  presisi DOUBLE PRECISION NOT NULL DEFAULT 0,
+  bulan_awal TEXT NOT NULL DEFAULT '',
+  bulan_akhir TEXT NOT NULL DEFAULT '',
+  dapat_diterapkan SMALLINT NOT NULL DEFAULT 0,
+  berlaku SMALLINT NOT NULL DEFAULT 0,
+  catatan TEXT NOT NULL DEFAULT '',
+  dibuat_at TEXT NOT NULL,
+  diputuskan_oleh TEXT NOT NULL DEFAULT '',
+  diputuskan_nama TEXT NOT NULL DEFAULT '',
+  diputuskan_at TEXT NOT NULL DEFAULT '',
+  dicabut_oleh TEXT NOT NULL DEFAULT '',
+  dicabut_at TEXT NOT NULL DEFAULT ''
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_ketepatan_isian_kode ON aleta_ketepatan_isian(kode, bulan)`,
+    `CREATE INDEX IF NOT EXISTS idx_ketepatan_keputusan_status ON aleta_ketepatan_keputusan(status, berlaku)`,
+    `CREATE INDEX IF NOT EXISTS idx_ketepatan_keputusan_kunci ON aleta_ketepatan_keputusan(kode, pengisi, jenis_perkara)`,
+  ],
+} as const;
+
+/**
+ * Riwayat kelengkapan blangko sebelum cetak (0102, 25 Okt 2026, rantai D butir D3 = U13): satu baris per keadaan
+ * kelengkapan (isian terisi/kosong tanpa nilainya) dan satu baris saat blangko dicetak, untuk SEMUA jenis blangko.
+ * Dasar "isian yang biasanya sudah terisi saat cetak". Diisi HANYA bila saklar Fitur Satker "wajib-sebelum-cetak"
+ * menyala (bawaan MATI). Retensi 2 tahun. Cermin PERSIS dari drizzle/0102_aleta_blangko_lapor.sql; penjaga
+ * wajib-sebelum-cetak-25okt.test.ts membandingkan keduanya. Tanpa kunci asing dan tanpa CHECK.
+ */
+export const DDL_BLANGKO_LAPOR = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_blangko_lapor (
+  id TEXT PRIMARY KEY,
+  perkara_id TEXT NOT NULL DEFAULT '',
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  berkas TEXT NOT NULL DEFAULT '',
+  jenis_blangko TEXT NOT NULL DEFAULT '',
+  jenis_perkara TEXT NOT NULL DEFAULT '',
+  isian TEXT NOT NULL DEFAULT '',
+  terisi INTEGER NOT NULL DEFAULT 0,
+  jumlah INTEGER NOT NULL DEFAULT 0,
+  dicetak SMALLINT NOT NULL DEFAULT 0,
+  pengguna_id TEXT NOT NULL DEFAULT '',
+  pengguna_nama TEXT NOT NULL DEFAULT '',
+  pada TEXT NOT NULL,
+  dibuat_at TEXT NOT NULL
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_blangko_lapor_berkas ON aleta_blangko_lapor(berkas, dicetak)`,
+    `CREATE INDEX IF NOT EXISTS idx_blangko_lapor_perkara ON aleta_blangko_lapor(perkara_id, berkas, pada)`,
+    `CREATE INDEX IF NOT EXISTS idx_blangko_lapor_pada ON aleta_blangko_lapor(pada)`,
+  ],
+} as const;
+
+/**
+ * Isian BAS per sidang (0103, 25 Okt 2026, rantai D butir D6 = U12): satu baris per (perkara, sidang, nomor variabel) berisi
+ * nilai isian ketikan BAS sidang itu. ABT hanya menyimpan satu nilai per (no_var, perkara); lapisan ini membuat BAS sidang
+ * beruntun tidak saling menimpa. Diisi HANYA bila saklar Fitur Satker "isian-per-sidang" menyala (bawaan MATI). Cermin PERSIS
+ * dari drizzle/0103_aleta_isian_sidang.sql; penjaga isian-per-sidang-25okt.test.ts membandingkan keduanya. Tanpa kunci asing
+ * dan tanpa CHECK.
+ */
+export const DDL_ISIAN_SIDANG = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_isian_sidang (
+  id TEXT PRIMARY KEY,
+  perkara_id TEXT NOT NULL DEFAULT '',
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  sidang INTEGER NOT NULL DEFAULT 0,
+  no_var TEXT NOT NULL DEFAULT '',
+  nilai TEXT NOT NULL DEFAULT '',
+  diisi_oleh TEXT NOT NULL DEFAULT '',
+  diisi_at TEXT NOT NULL,
+  diubah_oleh TEXT NOT NULL DEFAULT '',
+  diubah_at TEXT NOT NULL
+)`,
+  ],
+  indeks: [
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_isian_sidang_kunci ON aleta_isian_sidang(perkara_id, sidang, no_var)`,
+    `CREATE INDEX IF NOT EXISTS idx_isian_sidang_perkara ON aleta_isian_sidang(perkara_id, sidang)`,
+  ],
+} as const;
+
+/**
+ * Kamus alias nama pihak (0100, 25 Okt 2026, rantai B / U18). Cermin PERSIS dari drizzle/0100_aleta_alias_nama.sql;
+ * penjaga alias-nama-25okt.test.ts membandingkan keduanya. Tanpa kunci asing dan tanpa CHECK: nilai sah dijaga
+ * modul alias-nama.ts.
+ */
+export const DDL_ALIAS_NAMA = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_alias_nama (
+  id TEXT PRIMARY KEY,
+  baku TEXT NOT NULL,
+  varian TEXT NOT NULL,
+  baku_kunci TEXT NOT NULL,
+  varian_kunci TEXT NOT NULL,
+  sumber TEXT NOT NULL DEFAULT 'manual',
+  dibuat_oleh TEXT NOT NULL DEFAULT '',
+  dibuat_pada TEXT NOT NULL,
+  diubah_pada TEXT NOT NULL
+)`,
+  ],
+  indeks: [
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_alias_nama_unik ON aleta_alias_nama(baku_kunci, varian_kunci)`,
+    `CREATE INDEX IF NOT EXISTS idx_alias_nama_varian ON aleta_alias_nama(varian_kunci)`,
+  ],
+} as const;
+
+/**
+ * Antrean kerja peramban di basis data (0098, 25 Okt 2026, rantai B / K15): salinan keadaan antrean
+ * cetak massal, relaas massal, dan catatan putusan terjadwal. Cermin PERSIS dari
+ * drizzle/0098_aleta_antrean_peramban.sql; penjaga antrean-peramban-25okt.test.ts membandingkan keduanya.
+ * Tanpa kunci asing dan tanpa CHECK: nilai sah dijaga modul antrean-peramban.ts.
+ */
+export const DDL_ANTREAN_PERAMBAN = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_antrean_peramban (
+  pengguna_id TEXT NOT NULL,
+  jenis TEXT NOT NULL,
+  kunci TEXT NOT NULL,
+  perangkat TEXT NOT NULL DEFAULT '',
+  ringkas TEXT NOT NULL DEFAULT '',
+  selesai INTEGER NOT NULL DEFAULT 0,
+  total INTEGER NOT NULL DEFAULT 0,
+  muatan_json TEXT NOT NULL DEFAULT '{}',
+  status TEXT NOT NULL DEFAULT 'jalan',
+  dibuat_pada TEXT NOT NULL,
+  diubah_pada TEXT NOT NULL,
+  PRIMARY KEY (pengguna_id, jenis, kunci)
+)`,
+  ],
+  indeks: [`CREATE INDEX IF NOT EXISTS idx_antrean_peramban_status ON aleta_antrean_peramban(pengguna_id, status)`],
+} as const;
+
+/**
  * Unggah Putusan Terjadwal (0080, 21 Okt 2026, agen B3): jadwal, butir (satu
  * perkara), berkas yang diunggah, dan jejak jujur. Cermin PERSIS dari
  * drizzle/0080_aleta_putusan_terjadwal.sql; penjaga putusan-terjadwal-layanan-21okt.test.ts
@@ -1238,6 +1889,88 @@ export const DDL_SIDANG_KELILING_HAKIM = {
     `CREATE UNIQUE INDEX IF NOT EXISTS idx_hakim_sidang_perkara_kunci ON aleta_hakim_sidang_perkara(tanggal, perkara_id)`,
     `CREATE INDEX IF NOT EXISTS idx_hakim_sidang_perkara_tanggal ON aleta_hakim_sidang_perkara(tanggal, hakim_nama)`,
   ],
+} as const;
+
+/**
+ * Kebijakan sandi + setelan keamanan (0107, 25 Okt 2026, Bagian 6a). Cermin PERSIS dari
+ * drizzle/0107_aleta_kebijakan_sandi.sql; penjaga kebijakan-sandi-25okt.test.ts membandingkan keduanya.
+ * Tanpa kunci asing. Riwayat sandi hanya sidik berkunci, bukan sandi.
+ */
+export const DDL_KEBIJAKAN_SANDI = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_setelan_keamanan (
+  kunci TEXT PRIMARY KEY,
+  nilai TEXT NOT NULL DEFAULT '',
+  diubah_oleh TEXT NOT NULL DEFAULT '',
+  diubah_pada TEXT NOT NULL DEFAULT ''
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_riwayat_sandi (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  sidik TEXT NOT NULL,
+  dibuat_pada TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_status_sandi (
+  user_id TEXT PRIMARY KEY,
+  diganti_pada TEXT NOT NULL DEFAULT '',
+  versi_kebijakan INTEGER NOT NULL DEFAULT 0,
+  paksa_ganti INTEGER NOT NULL DEFAULT 0,
+  paksa_oleh TEXT NOT NULL DEFAULT '',
+  paksa_pada TEXT NOT NULL DEFAULT ''
+)`,
+  ],
+  indeks: [`CREATE INDEX IF NOT EXISTS idx_riwayat_sandi_akun ON aleta_riwayat_sandi(user_id, dibuat_pada)`],
+} as const;
+
+/**
+ * Batas jaringan per peran (0108, 25 Okt 2026, Bagian 6b). Cermin PERSIS dari
+ * drizzle/0108_aleta_batas_jaringan.sql; penjaga batas-jaringan-peran-25okt.test.ts membandingkan keduanya.
+ * Tanpa kunci asing.
+ */
+export const DDL_BATAS_JARINGAN = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_subnet_kantor (
+  id TEXT PRIMARY KEY,
+  cidr TEXT NOT NULL,
+  label TEXT NOT NULL DEFAULT '',
+  aktif INTEGER NOT NULL DEFAULT 1,
+  dibuat_oleh TEXT NOT NULL DEFAULT '',
+  dibuat_pada TEXT NOT NULL DEFAULT ''
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_aturan_jaringan_peran (
+  role_id TEXT PRIMARY KEY,
+  aturan TEXT NOT NULL DEFAULT 'mana-pun',
+  diubah_oleh TEXT NOT NULL DEFAULT '',
+  diubah_pada TEXT NOT NULL DEFAULT ''
+)`,
+  ],
+  indeks: [`CREATE UNIQUE INDEX IF NOT EXISTS idx_subnet_kantor_cidr ON aleta_subnet_kantor(cidr)`],
+} as const;
+
+/**
+ * Uji pulih cadangan (0109, 25 Okt 2026, Bagian 6d). Cermin PERSIS dari
+ * drizzle/0109_aleta_uji_pulih.sql; penjaga uji-pulih-cadangan-25okt.test.ts membandingkan keduanya.
+ * Tanpa kunci asing.
+ */
+export const DDL_UJI_PULIH = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_uji_pulih (
+  id TEXT PRIMARY KEY,
+  mulai_pada TEXT NOT NULL,
+  selesai_pada TEXT NOT NULL DEFAULT '',
+  pemicu TEXT NOT NULL DEFAULT 'manual',
+  oleh TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'berjalan',
+  tingkat TEXT NOT NULL DEFAULT '',
+  bundel TEXT NOT NULL DEFAULT '',
+  berkas TEXT NOT NULL DEFAULT '',
+  pesan TEXT NOT NULL DEFAULT '',
+  durasi_ms INTEGER NOT NULL DEFAULT 0,
+  dibersihkan INTEGER NOT NULL DEFAULT 0,
+  rincian TEXT NOT NULL DEFAULT '{}'
+)`,
+  ],
+  indeks: [`CREATE INDEX IF NOT EXISTS idx_uji_pulih_waktu ON aleta_uji_pulih(mulai_pada)`],
 } as const;
 
 /**
@@ -2454,6 +3187,29 @@ const schemaStatements = [
   ...DDL_ALETA_AI.tabel,
   // ALETA Ai tahap 4: kuota hibah per peran, rekonsiliasi harian (0088).
   ...DDL_ALETA_AI_DOMPET.tabel,
+  // Antrean kerja peramban di basis data (0098, rantai B / K15).
+  ...DDL_ANTREAN_PERAMBAN.tabel,
+  // Kamus alias nama pihak (0100, rantai B / U18).
+  ...DDL_ALIAS_NAMA.tabel,
+  // Jejak isian dan butir saksi (0091, rantai C): usulan vs final, nilai sebelum untuk Urungkan.
+  ...DDL_JEJAK_ISIAN.tabel,
+  // Ketepatan isian (0092, rantai D): angka lapangan bulanan dan keputusan naik/turun gerbang.
+  ...DDL_KETEPATAN_ISIAN.tabel,
+  // Riwayat kelengkapan blangko sebelum cetak (0102, rantai D): isian biasanya terisi saat cetak.
+  ...DDL_BLANGKO_LAPOR.tabel,
+  // Isian BAS per sidang (0103, rantai D): BAS beruntun tidak saling menimpa.
+  ...DDL_ISIAN_SIDANG.tabel,
+  // Katalog saksi di basis data dengan versi (0093, rantai C).
+  ...DDL_SAKSI_KATALOG.tabel,
+  ...DDL_ALETA_TENGGAT_KIRIM.tabel,
+  // Cermin Perkara: perkara, sidang, pihak, mediasi, penanda, jejak (0090).
+  ...DDL_ALETA_CERMIN_PERKARA.tabel,
+  // Pusat kesehatan, catatan galat, hasil uji beban (0094).
+  ...DDL_KESEHATAN_GALAT.tabel,
+  // Verifikasi dua langkah (0095).
+  ...DDL_VERIFIKASI_DUA_LANGKAH.tabel,
+  // Penjaga integritas berkas (0104).
+  ...DDL_PENJAGA_INTEGRITAS.tabel,
   // Unggah Putusan Terjadwal: jadwal, butir, berkas, jejak (0080).
   ...DDL_PUTUSAN_TERJADWAL.tabel,
   // Arsip hasil mediasi per perkara (0081).
@@ -2467,6 +3223,14 @@ const schemaStatements = [
   // ALETA Ai tahap 3: tugas, langkah, berkas keluaran (0086); templat proyek & kiriman (0087).
   ...DDL_ALETA_AI_TUGAS.tabel,
   ...DDL_ALETA_AI_TEMPLAT_KIRIMAN.tabel,
+  // Jejak tunda/putus otomatis terstruktur (0105).
+  ...DDL_OTOMATIS_JEJAK.tabel,
+  // Kebijakan sandi + setelan keamanan (0107).
+  ...DDL_KEBIJAKAN_SANDI.tabel,
+  // Batas jaringan per peran (0108).
+  ...DDL_BATAS_JARINGAN.tabel,
+  // Uji pulih cadangan (0109).
+  ...DDL_UJI_PULIH.tabel,
   `CREATE TABLE IF NOT EXISTS aleta_uji_mandiri (
     id TEXT PRIMARY KEY,
     dijalankan_at TEXT NOT NULL,
@@ -4417,6 +5181,18 @@ const indexStatements = [
   ...DDL_TAUTAN_JADWAL.indeks,
   ...DDL_ALETA_AI.indeks,
   ...DDL_ALETA_AI_DOMPET.indeks,
+  ...DDL_ANTREAN_PERAMBAN.indeks,
+  ...DDL_ALIAS_NAMA.indeks,
+  ...DDL_JEJAK_ISIAN.indeks,
+  ...DDL_KETEPATAN_ISIAN.indeks,
+  ...DDL_BLANGKO_LAPOR.indeks,
+  ...DDL_ISIAN_SIDANG.indeks,
+  ...DDL_SAKSI_KATALOG.indeks,
+  ...DDL_ALETA_TENGGAT_KIRIM.indeks,
+  ...DDL_ALETA_CERMIN_PERKARA.indeks,
+  ...DDL_KESEHATAN_GALAT.indeks,
+  ...DDL_VERIFIKASI_DUA_LANGKAH.indeks,
+  ...DDL_PENJAGA_INTEGRITAS.indeks,
   ...DDL_PUTUSAN_TERJADWAL.indeks,
   ...DDL_MEDIASI_ARSIP.indeks,
   ...DDL_SIDANG_KELILING_HAKIM.indeks,
@@ -4424,6 +5200,10 @@ const indexStatements = [
   ...DDL_JEJAK_PERANGKAT.indeks,
   ...DDL_ALETA_AI_TUGAS.indeks,
   ...DDL_ALETA_AI_TEMPLAT_KIRIMAN.indeks,
+  ...DDL_OTOMATIS_JEJAK.indeks,
+  ...DDL_KEBIJAKAN_SANDI.indeks,
+  ...DDL_BATAS_JARINGAN.indeks,
+  ...DDL_UJI_PULIH.indeks,
   `CREATE INDEX IF NOT EXISTS idx_uji_mandiri_waktu ON aleta_uji_mandiri(dijalankan_at)`,
   // Satu kedudukan hanya boleh punya SATU catatan per pertemuan - tanpa ini,
   // simpan dua kali menghasilkan dua baris yang saling bertentangan.
@@ -4956,6 +5736,9 @@ const migrationStatements = [
   ...DDL_KAMUS_RUAS_TAMBAHAN.kolom,
   // ALETA Ai tahap 4: MDR dan kurs (tanggal, sumber) per giliran (0088).
   ...DDL_ALETA_AI_DOMPET.kolom,
+  ...DDL_ALETA_CERMIN_PERKARA_TANGGAL.kolom,
+  // Versi ekstensi per PC (0094).
+  ...DDL_KESEHATAN_GALAT.kolom,
 ];
 
 const aletaSippSchemaStatements = [

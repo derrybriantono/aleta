@@ -23,6 +23,15 @@
  *
  * Uji gerbang-isian-u6.test.ts menjalankan pengisi atas perkara nyata terekam dan GAGAL bila ada pengisi yang menandai pasti/cukup
  * tanpa ukuran di berkas ini.
+ *
+ * KEPUTUSAN LAPANGAN (D1, 25 Okt 2026): layar Ketepatan isian di portal mengusulkan isian yang layak terisi sendiri (atau harus
+ * turun) dari jejak isian petugas. Hanya yang DISETUJUI Super Admin yang dikirim portal ke sini (POST /internal/aleta-bot/gerbang-isian/sinkron)
+ * dan disimpan di data/gerbang-isian-disetujui.json. Kuncinya kode + pengisi (penanda asal yang sama dengan yang dicatat ekstensi) +
+ * jenis perkara (id SIPP; kosong = semua jenis):
+ *   - disetujui "otomatis" -> usulan pasti/cukup tetap terisi sendiri, paling tinggi "cukup" (bukan "pasti");
+ *   - disetujui "saran"    -> usulan pasti/cukup menjadi "ragu - periksa".
+ * Tanpa keputusan (saklar portal mati, belum pernah menerima, berkas rusak) fungsi ini berperilaku persis seperti sebelumnya:
+ * berkas JSON tetap menjadi bawaan dan cadangan.
  */
 
 const fs = require("fs");
@@ -50,6 +59,127 @@ function asalDari(u) {
   return p === FP.PRIO.sipp ? "sipp" : p === FP.PRIO.berkas ? "berkas" : p === FP.PRIO.petugas ? "petugas" : "posita";
 }
 
+const BERKAS_DISETUJUI = path.join(__dirname, "..", "data", "gerbang-isian-disetujui.json");
+let disetujui = null; // { aktif, versi, entri: { kunci: {status, pangkatMaks, n, presisi} }, diterimaPada }
+let disetujuiDimuat = false;
+let berkasDisetujui = BERKAS_DISETUJUI;
+
+/** Penanda pendek huruf kecil (sama dengan penandaAsal di jejak-isian.ts dan ekstensi). */
+function penanda(x) {
+  return String(x == null ? "" : x)
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40);
+}
+
+/**
+ * Pengisi sebuah usulan: PENANDA ASAL yang sama dengan yang dicatat ekstensi ke jejak isian (isi-sipp-bersama.js asalUsulan +
+ * penandaAsal). Dijaga uji ketepatan-isian-25okt.test.ts yang menjalankan fungsi ekstensinya dan membandingkan.
+ */
+function pengisiDari(u) {
+  const sumber = Array.isArray(u && u.sumber) ? u.sumber : [];
+  const a = sumber[0] ? String(sumber[0].asal == null ? "" : sumber[0].asal).trim() : "";
+  let label = "SIPP";
+  if (a === "ktp-ecourt") label = "berkas KTP e-Court";
+  else if (a === "gugatan-ecourt") label = "surat gugatan e-Court";
+  else if (a === "elitigasi") label = "data pihak";
+  else if (a === "data-nikah") label = "data pernikahan di SIPP";
+  else if (a === "posita-gugatan") label = "posita gugatan";
+  else if (a === "bukti-akta") label = "bukti akta nikah";
+  else if (sumber.some((x) => x && x.saksi)) label = "keterangan saksi";
+  else if (sumber.length && sumber.every((x) => x && x.asal === "posita")) label = "posita";
+  return penanda(label);
+}
+
+/** Kunci jenis perkara: id tiga angka apa adanya; selainnya nama huruf kecil dengan spasi tunggal; kosong = "". */
+function jenisKunci(x) {
+  const t = String(x == null ? "" : x).replace(/\s+/g, " ").trim();
+  if (!t) return "";
+  if (/^alur:/i.test(t)) return t;
+  return /^\d{3}$/.test(t) ? t : t.toLowerCase().slice(0, 120);
+}
+
+const kunciOverride = (kode, pengisi, jenis) => `${String(kode).padStart(4, "0")}|${pengisi}|${jenis}`;
+
+function bersihkanDisetujui(masuk) {
+  if (!masuk || typeof masuk !== "object" || Array.isArray(masuk)) return null;
+  const entri = {};
+  for (const e of (Array.isArray(masuk.entri) ? masuk.entri : []).slice(0, 2000)) {
+    if (!e || typeof e !== "object") continue;
+    const kode = String(e.kode || "").replace(/[^0-9A-Za-z_-]/g, "").slice(0, 20);
+    const pengisi = penanda(e.pengisi);
+    if (!kode || !pengisi || (e.status !== "otomatis" && e.status !== "saran")) continue;
+    entri[kunciOverride(kode, pengisi, jenisKunci(e.jenis))] = {
+      status: e.status,
+      // Kenaikan dari lapangan paling tinggi "cukup": "pasti" hanya dari ukuran luring di berkas JSON.
+      pangkatMaks: e.status === "otomatis" ? "cukup" : "ragu",
+      n: Math.max(0, Math.round(Number(e.n) || 0)),
+      presisi: Math.max(0, Math.min(1, Number(e.presisi) || 0)),
+    };
+  }
+  return { aktif: masuk.aktif === true, versi: String(masuk.versi || "").slice(0, 40), entri };
+}
+
+function muatDisetujui() {
+  if (disetujuiDimuat) return disetujui;
+  disetujuiDimuat = true;
+  try {
+    const b = bersihkanDisetujui(JSON.parse(fs.readFileSync(berkasDisetujui, "utf8")));
+    disetujui = b ? { ...b, diterimaPada: "" } : null;
+  } catch {
+    disetujui = null;
+  }
+  return disetujui;
+}
+
+/** Terima keputusan dari portal. Muatan aktif:false atau tanpa entri melepas semua keputusan (perilaku lama). */
+function terimaDisetujui(masuk) {
+  const b = bersihkanDisetujui(masuk);
+  if (!b) {
+    const galat = new Error("Keputusan gerbang isian tidak sah.");
+    galat.ditolak = true;
+    throw galat;
+  }
+  disetujuiDimuat = true;
+  disetujui = { ...b, diterimaPada: new Date().toISOString() };
+  try {
+    const entri = Object.entries(b.entri).map(([k, v]) => {
+      const [kode, pengisi, ...j] = k.split("|");
+      return { kode, pengisi, jenis: j.join("|"), status: v.status, n: v.n, presisi: v.presisi };
+    });
+    fs.mkdirSync(path.dirname(berkasDisetujui), { recursive: true });
+    fs.writeFileSync(berkasDisetujui, JSON.stringify({ aktif: b.aktif, versi: b.versi, entri }), "utf8");
+  } catch {
+    /* tidak tersimpan di disk: tetap berlaku di memori */
+  }
+  return bacaDisetujui();
+}
+
+function bacaDisetujui() {
+  const d = muatDisetujui();
+  return d ? { aktif: d.aktif, versi: d.versi, jumlah: Object.keys(d.entri).length, diterimaPada: d.diterimaPada } : { aktif: false, versi: "", jumlah: 0, diterimaPada: "" };
+}
+
+/** Keputusan yang berlaku untuk kode + pengisi + jenis (jenis khusus lebih dulu, lalu semua jenis); null bila tak ada atau tak aktif. */
+function keputusanLapangan(kode, pengisi, jenis) {
+  const d = muatDisetujui();
+  if (!d || !d.aktif) return null;
+  const j = jenisKunci(jenis);
+  return (j && d.entri[kunciOverride(kode, pengisi, j)]) || d.entri[kunciOverride(kode, pengisi, "")] || null;
+}
+
+/** Status bawaan berkas JSON: kode -> asal -> status (untuk layar Ketepatan isian di portal). */
+function statusStatik(gerbangLuar) {
+  const G = muat(gerbangLuar);
+  const hasil = {};
+  for (const [kode, e] of Object.entries(G.kode || {})) {
+    hasil[kode] = {};
+    for (const [asal, a] of Object.entries((e && e.asal) || {})) hasil[kode][asal] = a && a.status;
+  }
+  return hasil;
+}
+
 const dikecualikan = (u) => {
   const asal = String((u && u.sumber && u.sumber[0] && u.sumber[0].asal) || "");
   return asal === "isian-petugas" || /^fakta-setara-petugas/.test(String((u && u.kodePola) || ""));
@@ -59,13 +189,32 @@ const dikecualikan = (u) => {
  * Keputusan gerbang untuk satu usulan (tidak mengubah apa pun).
  * @returns {{ keyakinan: string, status: string, diturunkan: boolean, entri: object|null, asal: string }}
  */
-function putuskan(u, gerbangLuar) {
+function putuskan(u, gerbangLuar, opsi) {
   const G = muat(gerbangLuar);
   const y = String((u && u.keyakinan) || "");
   const asal = asalDari(u);
   if (!u || (y !== "pasti" && y !== "cukup") || dikecualikan(u)) return { keyakinan: y, status: "dikecualikan", diturunkan: false, entri: null, asal };
   const kode = String(u.kode || "").padStart(4, "0");
-  const entri = ((G.kode || {})[kode] || { asal: {} }).asal[asal] || null;
+  const jenis = opsi && opsi.jenis;
+  // Keputusan Super Admin dari lapangan (D1) didahulukan atas berkas JSON; tanpa keputusan jalur lama berjalan persis.
+  const lap = keputusanLapangan(kode, pengisiDari(u), jenis);
+  if (lap) {
+    const entriLap = {
+      n: lap.n,
+      banding: lap.n,
+      cocok: Math.round(lap.n * lap.presisi),
+      persen: Math.round(lap.presisi * 1000) / 10,
+      status: lap.status === "otomatis" ? "lapangan-otomatis" : "lapangan-saran",
+      pangkatMaks: lap.pangkatMaks,
+      dasar: "keputusan Super Admin atas ketepatan di lapangan",
+    };
+    if (lap.status === "saran") return { keyakinan: "ragu", status: "lapangan-saran", diturunkan: true, entri: entriLap, asal };
+    const kiniLap = PANGKAT[y] > PANGKAT[lap.pangkatMaks] ? lap.pangkatMaks : y;
+    return { keyakinan: kiniLap, status: "lapangan-otomatis", diturunkan: kiniLap !== y, entri: entriLap, asal };
+  }
+  let entri = ((G.kode || {})[kode] || { asal: {} }).asal[asal] || null;
+  // C5/U9 (25 Okt 2026): ketepatan per jenis perkara (diisi data U3). Tanpa `perJenis` atau tanpa jenis: entri umum, persis seperti dulu.
+  if (entri && entri.perJenis && jenis && entri.perJenis[String(jenis)]) entri = { ...entri, ...entri.perJenis[String(jenis)] };
   if (!entri) return { keyakinan: "ragu", status: "tanpa-ukuran", diturunkan: true, entri: null, asal };
   if (entri.status === "saran") return { keyakinan: "ragu", status: "saran", diturunkan: true, entri, asal };
   const maks = entri.pangkatMaks || "cukup";
@@ -78,19 +227,21 @@ const KALIMAT = {
   saran: (e) => `Ketepatannya baru ${e.persen == null ? "belum terukur" : `${e.persen}%`} (${e.cocok} dari ${e.banding} perkara cocok dengan isian petugas), jadi hanya saran - periksa.`,
   otomatis: (e) => `Terukur ${e.persen}% cocok dengan isian petugas (${e.cocok} dari ${e.banding} perkara).`,
   terstruktur: (e) => `Dibaca langsung dari data SIPP (diuji pada ${e.n} perkara).`,
+  "lapangan-otomatis": (e) => `Di lapangan ${e.persen}% usulan ini bertahan tanpa diubah petugas (${e.n} kejadian); terisi sendiri atas persetujuan Super Admin.`,
+  "lapangan-saran": (e) => `Di lapangan ketepatannya turun (${e.persen}% dari ${e.n} kejadian), jadi hanya saran - periksa.`,
 };
 
 /**
  * Menerapkan gerbang pada daftar usulan (di tempat; mengembalikan daftar yang sama). Aman dipanggil dua kali.
  * @param {Array} usulan
- * @param {{gerbang?: object}} [opsi]
+ * @param {{gerbang?: object, jenis?: string|number}} [opsi]  jenis = id jenis perkara SIPP (keputusan lapangan per jenis; memilih entri `perJenis` bila ada)
  */
 function terapkan(usulan, opsi) {
   const o = opsi || {};
   if (!Array.isArray(usulan) || process.env.ALETA_GERBANG_ISIAN === "mati") return usulan;
   for (const u of usulan) {
     if (!u || typeof u !== "object" || u.gerbang) continue;
-    const r = putuskan(u, o.gerbang);
+    const r = putuskan(u, o.gerbang, o);
     if (r.status === "dikecualikan") continue;
     const e = r.entri;
     u.gerbang = { status: r.status, asal: r.asal, diturunkan: r.diturunkan, ...(e ? { n: e.n, banding: e.banding, cocok: e.cocok, persen: e.persen } : {}) };
@@ -142,4 +293,28 @@ function ringkas(gerbangLuar) {
   return hasil;
 }
 
-module.exports = { terapkan, putuskan, muat, ringkas, asalDari, pindaiPengisi, kodeTercatat, BERKAS, PANGKAT };
+/** Hanya untuk uji: berkas keputusan lapangan lain dan keadaan bersih. */
+function aturBerkasDisetujuiUji(lokasi) {
+  berkasDisetujui = lokasi || BERKAS_DISETUJUI;
+  disetujui = null;
+  disetujuiDimuat = false;
+}
+
+module.exports = {
+  terapkan,
+  putuskan,
+  muat,
+  ringkas,
+  asalDari,
+  pindaiPengisi,
+  kodeTercatat,
+  BERKAS,
+  PANGKAT,
+  pengisiDari,
+  jenisKunci,
+  terimaDisetujui,
+  bacaDisetujui,
+  keputusanLapangan,
+  statusStatik,
+  aturBerkasDisetujuiUji,
+};

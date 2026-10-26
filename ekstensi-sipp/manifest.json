@@ -1,13 +1,14 @@
 {
   "manifest_version": 3,
   "name": "ALETA E-Court",
-  "version": "1.205.39",
+  "version": "1.205.40",
   "update_url": "http://192.168.10.10/aleta/api/aleta-ecourt/ekstensi/updates.xml",
   "description": "Menempelkan keterangan ALETA ke halaman SIPP - batas waktu e-Court, tahapan perkara, kesiapan sidang, kelengkapan berkas - dan mengisikan usulan penunjukan serta Data Umum ke borangnya. Di halaman ALETA sendiri, panelnya menunjukkan versi, kewenangan, pintasan jabatan, dan jalan kembali ke perkara yang dibuka di SIPP. Tombol Simpan tetap ditekan petugas.",
   "permissions": [
     "storage",
     "downloads",
-    "nativeMessaging"
+    "nativeMessaging",
+    "scripting"
   ],
   "host_permissions": [
     "http://192.168.10.10/*",
@@ -54,22 +55,25 @@
         "http://127.0.0.1/index.php/*"
       ],
       "js": [
+        "portal-jalur.js",
+        "pengamat-bersama.js",
+        "mode-ringan.js",
+        "antrean-server.js",
+        "berkas-server.js",
+        "konteks-server.js",
         "deteksi-sisa-blangko.js",
         "panel-alat.js",
-        "jurusita.js",
         "basmassal.js",
-        "saksiscan.js",
-        "pihak-lengkap.js",
+        "ejaan-nama.js",
         "penunjukan-statistik.js",
+        "modul-malas.js",
         "konten.js",
-        "tarik-satu-perkara.js",
         "checklist.js",
         "sipp-ide-l1.js",
         "sipp-ide-l2.js",
         "sipp-ide-m1.js",
         "sipp-ide-m2.js",
         "panduan-kasir.js",
-        "penetapan-borang.js",
         "penetapan-kerja.js",
         "muat-ulang-sipp.js",
         "popup-aksi.js",
@@ -112,14 +116,23 @@
         "http://127.0.0.1/aps_badilag/*"
       ],
       "js": [
+        "portal-jalur.js",
+        "pengamat-bersama.js",
+        "mode-ringan.js",
+        "antrean-server.js",
+        "berkas-server.js",
         "deteksi-sisa-blangko.js",
         "panel-alat.js",
         "jurusita.js",
         "basmassal.js",
+        "jejak-isian.js",
+        "saklar-fitur.js",
         "saksi-katalog.js",
-        "saksi-katalog-data.js",
+        "saksi-katalog-indeks.js",
+        "saksi-katalog-muat.js",
         "saksi-susun.js",
         "isi-sipp-bersama.js",
+        "modul-malas.js",
         "abt.js",
         "checklist.js",
         "abt-klien.js",
@@ -149,6 +162,9 @@
         "http://127.0.0.1/aleta/*"
       ],
       "js": [
+        "pengamat-bersama.js",
+        "mode-ringan.js",
+        "konteks-server.js",
         "deteksi-sisa-blangko.js",
         "panel-alat.js",
         "aleta.js",
@@ -229,6 +245,15 @@
       "resources": [
         "ikon/aleta-32.png",
         "ikon/aleta-128.png"
+      ],
+      "matches": [
+        "http://192.168.10.10/*",
+        "http://127.0.0.1/*"
+      ]
+    },
+    {
+      "resources": [
+        "saksi-katalog-jenis/*.json"
       ],
       "matches": [
         "http://192.168.10.10/*",

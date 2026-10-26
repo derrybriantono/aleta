@@ -696,6 +696,13 @@ function jurusitaSebutan(nomorPerkara, jenisPerkara, alurPerkaraId, jenisPerkara
   const alur = Number(alurPerkaraId) || 0;
   const jenisId = Number(jenisPerkaraId) || 0;
   if (alur === 122 || alur === 123) return { pertama: "Penuntut Umum", kedua: "Terdakwa", k1: "penggugat", k2: "tergugat" };
+  // Perlawanan dan bantahan (D5, kembaran sebutan-pihak.ts): sebutannya sendiri, sebelum aturan alur gugatan.
+  const namaLawan = String(jenisPerkara || "");
+  const nomorLawan = String(nomorPerkara || "");
+  if (alur !== 16 && jenisId !== 346 && jenisId !== 341) {
+    if (/perlawanan|verzet|derden/i.test(namaLawan) || /\/Pdt\.Plw\b/i.test(nomorLawan)) return { pertama: "Pelawan", kedua: "Terlawan", k1: "pelawan", k2: "terlawan" };
+    if (/bantahan/i.test(namaLawan) || /\/Pdt\.Bth\b/i.test(nomorLawan)) return { pertama: "Pembantah", kedua: "Terbantah", k1: "pembantah", k2: "terbantah" };
+  }
   const permohonan =
     alur === 16 || jenisId === 346 || jenisId === 341
       ? true
@@ -1299,11 +1306,61 @@ function jurusitaKalimatJawaban(jawab, jumlah) {
 
 /* ─── 6a. Putaran (keadaan cetak) ─────────────────────────────────────────── */
 
+/**
+ * K15 (25 Okt 2026): tidak ada putaran di ekstensi ini, tetapi server menyimpan salinan putaran relaas milik akun ini yang
+ * belum selesai (Chrome ditutup di tengah jalan, atau PC lain). Ditawarkan SEKALI per panel: Pulihkan (menjadi putaran
+ * TERTAHAN yang harus dilanjutkan sendiri) atau Buang. Hanya bila Super Admin menyalakan saklar antreanDiServer.
+ */
+async function jurusitaTawarkanPulih(kotak, pantau) {
+  if (kotak.getAttribute("data-pulih-diperiksa")) return;
+  kotak.setAttribute("data-pulih-diperiksa", "1");
+  const A = typeof globalThis !== "undefined" ? globalThis.ALETA_ANTREAN_SERVER : null;
+  if (!A) return;
+  try {
+    await A.tungguSiap();
+    if (!A.aktif()) return;
+    const daftar = await A.tertinggal("relaas-massal");
+    const x = daftar.find((i) => i && i.muatan && i.muatan.pekerjaan && !i.muatan.pekerjaan.selesai);
+    if (!x || !kotak.isConnected || !kotak.hidden) return;
+    kotak.hidden = false;
+    kotak.textContent = "";
+    const kepala = jurusitaEl("div", "aleta-jurusita-putaran-kepala");
+    kepala.appendChild(
+      jurusitaEl("span", "aleta-jurusita-putaran-teks", `Putaran relaas yang terputus ditemukan: ${x.selesai}/${x.total} selesai (${String(x.diubahPada || "").slice(0, 16).replace("T", " ")} UTC).`)
+    );
+    const pulih = jurusitaTombol("Pulihkan", "aleta-jurusita-tombol-kecil");
+    pulih.addEventListener("click", async () => {
+      pulih.disabled = true;
+      const j = await jurusitaKirim("relaas-pulihkan", { pekerjaan: x.muatan.pekerjaan }, JURUSITA_BATAS_PESAN_MS);
+      if (j && j.ok) {
+        jurusitaGambarPutaran(kotak, j, pantau);
+        pantau();
+      } else {
+        pulih.disabled = false;
+        kepala.appendChild(jurusitaEl("div", "aleta-jurusita-kabar aleta-jurusita-kabar-salah", String((j && j.sebab) || "Putaran tidak dapat dipulihkan.")));
+      }
+    });
+    const buang = jurusitaTombol("Buang", "aleta-jurusita-tombol-kecil");
+    buang.addEventListener("click", async () => {
+      buang.disabled = true;
+      await A.akhiri("relaas-massal", x.kunci, "dibuang");
+      kotak.hidden = true;
+      kotak.textContent = "";
+    });
+    kepala.appendChild(pulih);
+    kepala.appendChild(buang);
+    kotak.appendChild(kepala);
+  } catch {
+    /* tambahan: kegagalannya tidak boleh mengganggu panel */
+  }
+}
+
 function jurusitaGambarPutaran(kotak, jawab, pantau) {
   kotak.textContent = "";
   const p = jawab && jawab.pekerjaan;
   if (!p) {
     kotak.hidden = true;
+    void jurusitaTawarkanPulih(kotak, pantau);
     return false;
   }
   kotak.hidden = false;
@@ -2737,3 +2794,4 @@ async function aletaJurusitaPasangMassal(wadah, opsi) {
 globalThis.aletaJurusitaPasang = aletaJurusitaPasang;
 globalThis.aletaJurusitaBoleh = aletaJurusitaBoleh;
 globalThis.aletaJurusitaPasangMassal = aletaJurusitaPasangMassal;
+(globalThis.__aletaModulSelesai || (globalThis.__aletaModulSelesai = new Set())).add("jurusita.js"); // K11-SELESAI

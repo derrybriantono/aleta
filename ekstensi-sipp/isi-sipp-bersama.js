@@ -563,7 +563,14 @@
     if (lain) {
       tugas.push(
         (async () => {
-          const isi = await o.ambil(API.usulan, { method: "POST", headers: kepala, body: JSON.stringify({ nomorPerkara: nomor, sumber: "sipp" }) }, "Membaca usulan");
+          // C5/U9: saklar Fitur Satker "fakta-non-cerai" (bawaan MATI) meminta bot ikut membaca 2557/2558 dari BAS tersimpan.
+          let kaliBas = false;
+          try {
+            kaliBas = Boolean(globalThis.AletaSaklarFitur && (await globalThis.AletaSaklarFitur.aktif("fakta-non-cerai")));
+          } catch {
+            kaliBas = false;
+          }
+          const isi = await o.ambil(API.usulan, { method: "POST", headers: kepala, body: JSON.stringify({ nomorPerkara: nomor, sumber: "sipp", ...(kaliBas ? { kaliPertengkaranBas: true } : {}) }) }, "Membaca usulan");
           if (!isi || isi.available === false) throw new Error((isi && isi.message) || "bot tidak menjawab");
           const s = isi.sipp || {};
           if (s.ok === false) throw new Error(s.alasan || "SIPP tidak menjawab");

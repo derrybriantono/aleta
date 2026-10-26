@@ -41,6 +41,7 @@ function jalankan(opsi: { jenis?: string; bisaTulis?: boolean; isian?: Apa[]; ba
     "sidangUrutan",
     "jadwalkanSimpan",
     "renderIsian",
+    "konteksJejak",
     `${kode}\nreturn simpanBawaanAbtItsbat;`
   )(
     S,
@@ -52,7 +53,8 @@ function jalankan(opsi: { jenis?: string; bisaTulis?: boolean; isian?: Apa[]; ba
     async (k: string, n: string) => {
       tersimpan.push([k, n]);
     },
-    () => {}
+    () => {},
+    new Map() // konteksJejak (rantai C1): peta jejak isian milik lapisan
   );
   return { jalan: () => f(d), tersimpan, dibaca };
 }

@@ -1620,7 +1620,7 @@
   let jamDenyut = null;
   function mulai() {
     if (jamDenyut || typeof document === "undefined") return;
-    jamDenyut = setInterval(denyut, JEDA_DETAK_MS);
+    jamDenyut = (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.interval : (f, m) => setInterval(f, m))(denyut, JEDA_DETAK_MS);
     denyut();
   }
 
@@ -1651,3 +1651,4 @@
 
   if (typeof document !== "undefined" && !globalThis.ALETA_PIHAK_LENGKAP_MANUAL) mulai();
 })();
+(globalThis.__aletaModulSelesai || (globalThis.__aletaModulSelesai = new Set())).add("pihak-lengkap.js"); // K11-SELESAI

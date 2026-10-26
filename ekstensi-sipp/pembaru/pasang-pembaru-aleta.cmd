@@ -80,6 +80,8 @@ function Cari-Terpasang {
                     $pref = $js.DeserializeObject((Baca-Berkas-Bersama $berkas))
                     $ekst = $pref['extensions']['settings']
                 } catch { continue }
+                # 26 Okt 2026: profil tanpa extensions.settings (StrictMode menolak .Keys pada null) dilewati.
+                if (-not ($ekst -is [System.Collections.IDictionary])) { continue }
                 foreach ($id in $ekst.Keys) {
                     $e = $ekst[$id]
                     if (-not ($e -is [System.Collections.IDictionary]) -or -not $e.ContainsKey('path')) { continue }

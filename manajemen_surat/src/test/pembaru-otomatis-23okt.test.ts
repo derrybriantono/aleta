@@ -594,7 +594,8 @@ describe("server: pemasang disusun dari satu sumber, sidik paket konsisten", () 
     expect(manifest.key).toBeUndefined();
     expect(manifest.permissions).toContain("nativeMessaging");
     expect(JSON.stringify(manifest)).not.toContain('"tabs"');
-    expect(manifest.permissions).not.toContain("scripting");
+    // K11 (26 Okt 2026) sengaja menambah "scripting" (modul malas, tanpa peringatan pasang); pembaru sendiri tidak memakainya.
+    expect(manifest.permissions).toContain("scripting");
     const zip = zipEkstensiUnduh();
     const teks = zip.toString("latin1");
     expect(teks).toContain("ekstensi-sipp/pembaru/pembaru-aleta.ps1");
@@ -1164,7 +1165,8 @@ describe("popup, panel, dan portal menyebut pembaruan otomatis", () => {
     expect(html).toContain('id="pembaruStatus"');
     expect(html).toContain('id="pasangPembaru"');
     expect(js).toContain('mintaKeLatar("status-pembaru")');
-    expect(js).toContain('mintaKeLatar("unduh-pemasang-pembaru")');
+    // 26 Okt 2026: permintaan kini membawa pilihan sistem (Windows/macOS) sebagai argumen tambahan.
+    expect(js).toMatch(/mintaKeLatar\("unduh-pemasang-pembaru"[,)]/);
     for (const teks of ["aktif", "belum dipasang"]) expect(js).toContain(`["${teks}"`);
   });
 

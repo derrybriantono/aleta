@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { keputusanCors } from "@/lib/cors-widget";
+
 const securityHeaders = [
   ["X-Content-Type-Options", "nosniff"],
   ["Referrer-Policy", "strict-origin-when-cross-origin"],
@@ -70,8 +72,32 @@ function pasangKukiPerangkat(request: NextRequest, response: NextResponse) {
   });
 }
 
+// CORS untuk widget di halaman SIPP/ABT (K7, 25 Okt 2026): hanya lewat port tambahan (8008) dan
+// hanya bila ALETA_CORS_ASAL_WIDGET diisi. Bawaan: tidak berbuat apa-apa (lihat lib/cors-widget.ts).
+function terapkanCorsWidget(request: NextRequest) {
+  try {
+    return keputusanCors({
+      metode: request.method,
+      asal: request.headers.get("origin"),
+      host: request.headers.get("x-forwarded-host") ?? request.headers.get("host"),
+      jalur: stripBasePath(request.nextUrl.pathname),
+      mintaMetode: request.headers.get("access-control-request-method"),
+      mintaKepala: request.headers.get("access-control-request-headers"),
+    });
+  } catch {
+    return null;
+  }
+}
+
 export function proxy(request: NextRequest) {
+  const cors = terapkanCorsWidget(request);
+  if (cors?.jawabLangsung) {
+    return new NextResponse(null, { status: 204, headers: cors.headers });
+  }
   const response = NextResponse.next();
+  if (cors) {
+    for (const [nama, nilai] of Object.entries(cors.headers)) response.headers.set(nama, nilai);
+  }
   try {
     pasangKukiPerangkat(request, response);
   } catch {

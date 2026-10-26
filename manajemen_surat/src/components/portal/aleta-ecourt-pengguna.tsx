@@ -40,6 +40,13 @@ import { cn } from "@/lib/utils";
 import { getEffectiveRoleId } from "@/lib/permissions";
 import { bolehAksi, tabEcourtTampil, type TabEcourt } from "@/lib/matriks-peran";
 import {
+  bisaDipasang,
+  deteksiOsPengguna,
+  NAMA_BERKAS_PEMASANG_PORTAL,
+  type OsPemasang,
+  type OsPengguna,
+} from "@/lib/deteksi-os-pemasang";
+import {
   KELAS_LEBAR_ECOURT,
   KUNCI_SIMPAN_LEBAR_ECOURT,
   bacaLebarEcourt,
@@ -129,6 +136,11 @@ function langgananLebarEcourt(berubah: () => void) {
   };
 }
 
+/** Sistem komputer tidak berubah selama halaman terbuka: tidak ada yang perlu didengarkan. */
+function langgananTanpaPerubahan() {
+  return () => {};
+}
+
 type Keadaan = {
   aktif: boolean;
   sesiBerlaku: boolean | null;
@@ -194,6 +206,13 @@ export function AletaEcourtPengguna() {
   const [memuat, setMemuat] = useState(true);
   const [mengunduh, setMengunduh] = useState(false);
   const [mengunduhPemasang, setMengunduhPemasang] = useState(false);
+  // Sistem komputer petugas, untuk memilih pemasang pembaru otomatis (26 Okt 2026). Server dan hidrasi
+  // pertama selalu "windows"; peramban membaca sistemnya tanpa lukisan ganda (useSyncExternalStore).
+  const osTerdeteksi: OsPengguna = useSyncExternalStore(
+    langgananTanpaPerubahan,
+    () => deteksiOsPengguna(typeof navigator === "undefined" ? null : navigator),
+    () => "windows" as OsPengguna
+  );
   const [catatan, setCatatan] = useState("");
   // ==========================================================================
   // NOMOR PATCH EKSTENSI YANG SEDANG DISAJIKAN PORTAL
@@ -382,18 +401,19 @@ export function AletaEcourtPengguna() {
   }, []);
 
   /**
-   * Mengunduh pemasang pembaruan otomatis (satu berkas .cmd, bukan ZIP).
+   * Mengunduh pemasang pembaruan otomatis (satu berkas, bukan ZIP): .cmd untuk Windows,
+   * .command untuk macOS (26 Okt 2026).
    *
    * Dipasang SEKALI per komputer; sesudahnya versi baru ekstensi terpasang
    * sendiri tanpa unduhan dan tanpa bertanya, dan setelan petugas tidak
-   * berubah. Berkasnya .cmd - bukan .zip - supaya tidak dicegat Internet
-   * Download Manager yang mengosongkan ZIP.
+   * berubah. Berkasnya bukan .zip supaya tidak dicegat Internet Download
+   * Manager yang mengosongkan ZIP.
    */
-  const unduhPemasang = useCallback(async () => {
+  const unduhPemasang = useCallback(async (os: OsPemasang) => {
     setMengunduhPemasang(true);
     setCatatan("");
     try {
-      const respons = await fetch(apiPath("/api/aleta-ecourt/ekstensi/pembaru/pemasang"), { cache: "no-store" });
+      const respons = await fetch(apiPath(`/api/aleta-ecourt/ekstensi/pembaru/pemasang?os=${os}`), { cache: "no-store" });
       if (!respons.ok) {
         const galat = (await respons.json().catch(() => null)) as { error?: { message?: string } } | null;
         setCatatan(galat?.error?.message || `Gagal mengunduh pemasang (HTTP ${respons.status}).`);
@@ -403,12 +423,16 @@ export function AletaEcourtPengguna() {
       const alamat = URL.createObjectURL(blob);
       const tautan = document.createElement("a");
       tautan.href = alamat;
-      tautan.download = "pasang-pembaru-aleta.cmd";
+      tautan.download = NAMA_BERKAS_PEMASANG_PORTAL[os];
       document.body.appendChild(tautan);
       tautan.click();
       tautan.remove();
       URL.revokeObjectURL(alamat);
-      setCatatan("Pemasang terunduh. Bila Chrome bertanya, pilih Simpan. Lalu klik dua kali berkasnya.");
+      setCatatan(
+        os === "mac"
+          ? "Pemasang macOS terunduh. Bila Chrome bertanya, pilih Simpan. Lalu ikuti langkah 3 untuk macOS di atas (lewat Terminal)."
+          : "Pemasang terunduh. Bila Chrome bertanya, pilih Simpan. Lalu klik dua kali berkasnya."
+      );
     } catch (error) {
       setCatatan(error instanceof Error ? error.message : "Gagal mengunduh pemasang.");
     } finally {
@@ -1172,29 +1196,95 @@ export function AletaEcourtPengguna() {
               berubah</strong>. Pemasangan baru dikerjakan saat tidak ada antrean cetak atau penetapan
               yang sedang berjalan.
             </p>
-            <ol className="mt-2 space-y-1 text-sm text-muted-foreground">
-              <li>1. Muat ekstensi di Chrome lebih dulu (langkah di atas)</li>
-              <li>
-                2. Tekan <strong className="text-foreground">Unduh pemasang</strong>; bila Chrome bertanya,
-                pilih Simpan
-              </li>
-              <li>
-                3. Klik dua kali berkas <code className="rounded bg-background px-1">pasang-pembaru-aleta</code>{" "}
-                sampai tampil tulisan SELESAI
-              </li>
-            </ol>
+            {osTerdeteksi === "mac" ? (
+              <ol className="mt-2 space-y-1 text-sm text-muted-foreground">
+                <li>1. Muat ekstensi di Chrome lebih dulu (langkah di atas)</li>
+                <li>
+                  2. Tekan <strong className="text-foreground">Unduh pemasang</strong>; bila Chrome bertanya,
+                  pilih Simpan
+                </li>
+                <li>
+                  3. Buka <strong className="text-foreground">Terminal</strong> (tekan Cmd+Spasi, ketik Terminal), ketik{" "}
+                  <code className="rounded bg-background px-1">bash</code> lalu spasi, seret berkas{" "}
+                  <code className="rounded bg-background px-1">pasang-pembaru-aleta.command</code> dari folder Unduhan ke
+                  jendela Terminal, tekan Enter, sampai tampil tulisan SELESAI
+                </li>
+              </ol>
+            ) : osTerdeteksi === "windows" ? (
+              <ol className="mt-2 space-y-1 text-sm text-muted-foreground">
+                <li>1. Muat ekstensi di Chrome lebih dulu (langkah di atas)</li>
+                <li>
+                  2. Tekan <strong className="text-foreground">Unduh pemasang</strong>; bila Chrome bertanya,
+                  pilih Simpan
+                </li>
+                <li>
+                  3. Klik dua kali berkas <code className="rounded bg-background px-1">pasang-pembaru-aleta</code>{" "}
+                  sampai tampil tulisan SELESAI
+                </li>
+              </ol>
+            ) : (
+              <p className="mt-2 text-sm text-muted-foreground">
+                Pembaruan otomatis baru tersedia untuk Windows dan macOS. Sistem komputer ini belum didukung; pakai
+                unduhan ZIP di atas. Bila Anda memasangnya untuk komputer lain, pilih sistemnya di bawah.
+              </p>
+            )}
             <div className="mt-2 flex flex-wrap items-center gap-3">
-              <Button size="sm" variant="outline" disabled={mengunduhPemasang} onClick={() => void unduhPemasang()}>
-                {mengunduhPemasang ? "Menyiapkan…" : "Unduh pemasang"}
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={mengunduhPemasang || !bisaDipasang(osTerdeteksi)}
+                onClick={() => {
+                  if (bisaDipasang(osTerdeteksi)) void unduhPemasang(osTerdeteksi);
+                }}
+              >
+                {mengunduhPemasang
+                  ? "Menyiapkan…"
+                  : osTerdeteksi === "mac"
+                    ? "Unduh pemasang untuk macOS"
+                    : osTerdeteksi === "windows"
+                      ? "Unduh pemasang untuk Windows"
+                      : "Unduh pemasang"}
               </Button>
               <p className="text-xs text-muted-foreground">
                 Keadaannya terlihat di ikon ALETA pada Chrome: &quot;Pembaruan otomatis: aktif&quot;.
               </p>
             </div>
             <p className="mt-2 text-xs text-muted-foreground">
-              Bila berkas ZIP yang diunduh berukuran 0 KB, Internet Download Manager (IDM) mencegatnya.
-              Pemasang ini sengaja bukan ZIP; atau tambahkan 192.168.10.10 ke pengecualian situs di IDM.
+              Komputer Anda terdeteksi:{" "}
+              {osTerdeteksi === "mac" ? "macOS" : osTerdeteksi === "windows" ? "Windows" : osTerdeteksi === "linux" ? "Linux" : "perangkat lain"}.
+              Memasang untuk komputer lain? Unduh untuk{" "}
+              <button
+                type="button"
+                className="underline underline-offset-2"
+                disabled={mengunduhPemasang}
+                onClick={() => void unduhPemasang("windows")}
+              >
+                Windows
+              </button>{" "}
+              /{" "}
+              <button
+                type="button"
+                className="underline underline-offset-2"
+                disabled={mengunduhPemasang}
+                onClick={() => void unduhPemasang("mac")}
+              >
+                macOS
+              </button>
+              .
             </p>
+            {osTerdeteksi === "windows" ? (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Bila berkas ZIP yang diunduh berukuran 0 KB, Internet Download Manager (IDM) mencegatnya.
+                Pemasang ini sengaja bukan ZIP; atau tambahkan 192.168.10.10 ke pengecualian situs di IDM.
+              </p>
+            ) : null}
+            {osTerdeteksi === "mac" ? (
+              <p className="mt-2 text-xs text-muted-foreground">
+                macOS menahan berkas unduhan. Lewat Terminal seperti langkah 3 tidak ditahan dan tidak perlu izin
+                eksekusi. Bila memilih membukanya dari Finder: klik kanan berkasnya lalu Buka, kemudian Buka lagi pada
+                peringatannya.
+              </p>
+            ) : null}
           </div>
 
           <p className="text-xs text-muted-foreground">

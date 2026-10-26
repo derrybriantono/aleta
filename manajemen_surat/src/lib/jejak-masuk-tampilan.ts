@@ -4,6 +4,7 @@ export const LABEL_PERISTIWA: Record<string, string> = {
   MASUK: "Masuk",
   MASUK_GAGAL: "Gagal masuk",
   MASUK_DITOLAK_BATAS_PERANGKAT: "Ditolak: batas perangkat",
+  MASUK_DITOLAK_JARINGAN: "Ditolak: jaringan",
   KELUAR: "Keluar",
   SESI_DICABUT: "Dikeluarkan",
   SESI_KEDALUWARSA: "Sesi habis",
@@ -31,7 +32,7 @@ export function labelJalur(j: string) {
 }
 
 export function peristiwaGagal(p: string) {
-  return p === "MASUK_GAGAL" || p === "MASUK_DITOLAK_BATAS_PERANGKAT";
+  return p === "MASUK_GAGAL" || p === "MASUK_DITOLAK_BATAS_PERANGKAT" || p === "MASUK_DITOLAK_JARINGAN";
 }
 
 /** "23 Okt 2026 09.14 WITA" - tampilan selalu WITA, penyimpanan ISO UTC. */

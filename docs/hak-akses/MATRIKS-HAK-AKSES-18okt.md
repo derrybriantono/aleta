@@ -151,6 +151,7 @@ Catatan kewenangan:
 | Menyalakan / mematikan penarikan berkala e-Court (widget ekstensi) | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Catat kehadiran & status mediasi | U | U | U | U | U | U | U | - | - | - | U | - | - | - | - | - |
 | Buat hasil mediasi (.rtf) | P | P | - | P | - | - | - | - | - | - | P | - | - | - | - | - |
+| Tunda mediasi (tulis ke SIPP) | U | U | U | U | U | U | U | - | - | - | U | - | - | - | - | - |
 | Melihat dan mengunduh berkas hasil mediasi (arsip perkara) | L | L | L | L | L | L | L | - | - | - | L | - | - | - | - | - |
 | Mengunggah dan mengganti berkas hasil mediasi (arsip perkara) | U | U | U | U | U | U | U | - | - | - | U | - | - | - | - | - |
 | Menghapus berkas hasil mediasi (arsip perkara) | U | U | U | U | U | U | U | - | - | - | U | - | - | - | - | - |
@@ -170,6 +171,17 @@ Catatan kewenangan:
 | Melihat riwayat masuk, sesi aktif, dan perangkat semua akun; mengeluarkan sesi | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Mengatur pengecualian batas perangkat per akun | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Mengatur batas perangkat per peran dan setelan riwayat masuk | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Melihat Pengaturan Keamanan (kebijakan sandi, batas jaringan, pengaman aksi, uji pulih cadangan) | L | L | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Mengubah Pengaturan Keamanan dan menjalankan uji pulih cadangan | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Melihat Pusat kesehatan sistem, catatan error, dan hasil uji beban | L | L | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Menandai catatan error sudah ditangani | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Menyalakan pemeriksaan berkala dan peringatan WhatsApp Pusat kesehatan; mengimpor hasil uji beban | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Menyalakan Mode pemeliharaan, mengatur pesan dan jadwalnya | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Lihat sebagai akun atau peran (pratinjau menu dan hak, baca-saja, tercatat) | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Menyalakan verifikasi dua langkah (OTP WhatsApp, authenticator), aturan per peran, dan jaringan kantor | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Membantu pengguna yang kehilangan HP: kode cadangan dan reset authenticator | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Melihat temuan penjaga integritas berkas (PHP mencurigakan, webshell, kata judi online) | L | L | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Mengatur penjaga integritas: folder yang dijaga, memindai sekarang, menandai temuan ditangani atau diketahui aman | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Peta perkara & beban konseptor | L | L | L | L | L | L | - | - | - | - | - | - | - | L | - | - |
 | Dompet ALETA Ai milik sendiri (saldo, mutasi, perkiraan biaya, struk) | L | L | L | L | L | L | L | L | L | L | L | L | L | L | L | L |
 | Kelola dompet ALETA Ai (isi & koreksi saldo, kuota peran, laporan laba, ekspor, rekonsiliasi) | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
@@ -189,6 +201,7 @@ Catatan kewenangan:
 - **Verifikasi dokumen e-Court (hakim)**: Hanya atas perkara yang ia tangani (majelis, PP, atau juru sitanya); Ketua, Wakil, dan Admin semua perkara.
 - **Catat kehadiran & status mediasi**: Hanya atas perkara yang ia tangani (majelis, PP, atau juru sitanya); Ketua, Wakil, dan Admin semua perkara.
 - **Buat hasil mediasi (.rtf)**: Hanya atas perkara yang ia tangani (majelis, PP, atau juru sitanya); Ketua, Wakil, dan Admin semua perkara.
+- **Tunda mediasi (tulis ke SIPP)**: Hanya atas perkara yang ia tangani (majelis, PP, atau juru sitanya); Ketua, Wakil, dan Admin semua perkara.
 - **Mengunggah dan mengganti berkas hasil mediasi (arsip perkara)**: Hanya atas perkara yang ia tangani (majelis, PP, atau juru sitanya); Ketua, Wakil, dan Admin semua perkara.
 - **Menghapus berkas hasil mediasi (arsip perkara)**: Hanya atas perkara yang ia tangani (majelis, PP, atau juru sitanya); Ketua, Wakil, dan Admin semua perkara.
 - **Analisa perkara & prompt putusan**: Hanya atas perkara yang ia tangani (majelis, PP, atau juru sitanya); Ketua, Wakil, dan Admin semua perkara.
@@ -372,6 +385,7 @@ Dari salinan lokal ABT (hanya dibaca, paket yang siap; yang berjalan di server d
 | Backup Sistem | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Sumber Daya Server | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Sinkron dan cadangan | U | L | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Pemantau Cermin Perkara | U | L | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Sinkron kembaran (mode laptop saat server mati) | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Fitur Satker (stabil, uji coba, mati per fitur) | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Integrasi e-Court (akun, akses ekstensi, penarikan) | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |

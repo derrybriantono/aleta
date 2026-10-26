@@ -40,6 +40,9 @@
 
   const Mesin = () => globalThis.AletaSaksiKatalog;
   const DataKatalog = () => (Array.isArray(globalThis.ALETA_SAKSI_KATALOG_DATA) ? globalThis.ALETA_SAKSI_KATALOG_DATA : []);
+  // K10 (25 Okt 2026): halaman ABT hanya memuat INDEKS katalog; isi katalog dimuat per jenis perkara oleh saksi-katalog-muat.js
+  // ke larik DataKatalog() yang sama. Tanpa pemuat (uji lama yang memuat seluruh data), semuanya persis seperti dulu.
+  const Muat = () => (globalThis.AletaSaksiKatalogMuat && globalThis.AletaSaksiKatalogMuat.ada() ? globalThis.AletaSaksiKatalogMuat : null);
 
   // ──────────────────────────────────────────────────────────────────────
   // Pengenal jenis dan keadaan (fungsi murni - diuji langsung)
@@ -54,6 +57,8 @@
   /** Katalog yang mungkin untuk alur ini (dipakai bila jenis perkara tidak terbaca: petugas memilih). */
   function kandidatKatalog(alur) {
     const a = String(alur || "").trim();
+    const pemuat = Muat();
+    if (pemuat) return pemuat.kandidat(a);
     return DataKatalog().filter((kat) => {
       if (!kat || kat.contoh === true || !kat.syarat || (kat.tambahanUntuk && kat.tambahanUntuk.length)) return false;
       const alurSah = (kat.syarat.alurPerkaraId || []).map(String);
@@ -255,6 +260,10 @@
       // fakta perkara dari gugatan, data SIPP, dan isian blangko (hanya perceraian): {kunci: {nilai, yakin, sumber, ket}}
       fakta: {},
       faktaStatus: "",
+      // C5/U9: saran keadaan perkara non-cerai dari posita/petitum ([{kunci, nilai, jamak, yakin, sumber, kalimat}]); hanya saran
+      saranKeadaan: [],
+      saklarSaran: false,
+      janjiFakta: null,
       // keterangan anak, calon, dan orang tua (hanya jenis perkara yang punya katalog keterangan, mis. dispensasi kawin)
       ket: null,
       tab: "saksi",
@@ -309,10 +318,14 @@
     }
 
     /** Jenis perkara halaman ini -> katalog (atau null). */
-    function kenali() {
+    function kenaliPerkaraHalaman() {
       const teks = typeof k.jenisPerkaraTeks === "function" ? k.jenisPerkaraTeks() : "";
       const id = typeof k.idJenisPerkara === "function" ? k.idJenisPerkara(teks) : "";
       const alur = typeof k.alurPerkara === "function" ? k.alurPerkara(nomor()) : "";
+      return { teks, id, alur };
+    }
+    function kenali() {
+      const { teks, id, alur } = kenaliPerkaraHalaman();
       const nama = `${teks} ${document.title || ""}`;
       return { kat: katalogUntuk({ jenisPerkaraId: id, alurPerkaraId: alur, nama }), alur, teks, id };
     }
@@ -333,6 +346,8 @@
       S.hasil = null;
       S.fakta = {};
       S.faktaStatus = "";
+      S.saranKeadaan = [];
+      S.janjiFakta = null;
       S.perButir = {};
       const turun = turunkanKeadaan(kat, { teks: teksHalaman(), peta: peta(), alur: kenali().alur });
       S.keadaan = m.keadaanBawaan(kat, turun);
@@ -342,6 +357,7 @@
         { pihak: "P", jenis: "melihat", sumber: "", berbeda: [], keadaan: {}, daftar: [] },
       ];
       aturKeterangan(kat);
+      void muatSaranKeadaan(kat);
     }
 
     /**
@@ -390,6 +406,16 @@
       else tombol.title = "Jenis perkara tidak terbaca di halaman ini; pilih jenis perkaranya di form.";
     }
     hasil.segarkan = segarkanTombol;
+    // C3/U7: membuka borang dari luar (tombol cerai lama saat saklar mesin-saksi-tunggal menyala).
+    hasil.buka = () => {
+      if (wadah.hidden) tombol.click();
+    };
+    // Saklar ditanyakan lebih awal supaya alat sunting baris sudah diketahui saat borang digambar.
+    try {
+      if (globalThis.AletaSaklarFitur) void globalThis.AletaSaklarFitur.aktif("mesin-saksi-tunggal");
+    } catch {
+      /* tanpa saklar: perilaku lama */
+    }
 
     // ── gambar ──────────────────────────────────────────────────────────
     function buat(tag, kelas, teks) {
@@ -457,12 +483,69 @@
       gambarUlang();
     }
 
+    /** Nilai keadaan sebagai himpunan teks (untuk membandingkan isian sekarang dengan saran). */
+    const himpunanNilai = (n) => new Set([].concat(n === undefined || n === null ? [] : n).map(String));
+    const samaNilai = (a, b) => {
+      const x = himpunanNilai(a);
+      const y = himpunanNilai(b);
+      return x.size === y.size && Array.from(x).every((v) => y.has(v));
+    };
+
+    /**
+     * C5/U9: "Saran keadaan dari posita". HANYA saran: tidak ada keadaan yang terisi sendiri; petugas menekan Pakai (satu isian) atau
+     * Pakai semua saran. Saran yang sama dengan isian sekarang tidak ditampilkan. Tanpa saran = tidak ada yang digambar.
+     */
+    function gambarSaranKeadaan(kotak, sumberKat) {
+      if (sumberKat !== S.kat || !saranAktif()) return;
+      const dikenal = new Map(m.keadaanUntukBorang(sumberKat).filter((f) => !f.perSaksi).map((f) => [f.kunci, f]));
+      const daftar = (S.saranKeadaan || []).filter(
+        (sr) => sr && dikenal.has(sr.kunci) && keadaanRelevan(sr.kunci, sumberKat) && !samaNilai(S.keadaan[sr.kunci], sr.nilai)
+      );
+      if (!daftar.length) return;
+      const labelNilai = (kunci, n) =>
+        (sumberKat.keadaan && sumberKat.keadaan[kunci] && sumberKat.keadaan[kunci].labelNilai && sumberKat.keadaan[kunci].labelNilai[n]) ||
+        m.LABEL_NILAI_BAKU[n] ||
+        (n.length === 1 ? n : n.replace(/-/g, " "));
+      const kotakSaran = buat("div", "aleta-sdg-ruas aleta-sdg-saran");
+      kotakSaran.setAttribute("data-saran-keadaan", "1");
+      kotakSaran.appendChild(buat("span", "aleta-abt-label", "Saran keadaan dari posita (periksa dulu; belum dikuatkan saksi)"));
+      const pakai = (sr) => {
+        S.keadaan[sr.kunci] = sr.jamak ? [].concat(sr.nilai).map(String) : String([].concat(sr.nilai)[0]);
+      };
+      for (const sr of daftar) {
+        const baris = buat("div", "aleta-abt-kabar");
+        baris.setAttribute("data-saran-kunci", sr.kunci);
+        const nilaiTampil = [].concat(sr.nilai).map((n) => labelNilai(sr.kunci, String(n))).join(", ");
+        baris.appendChild(buat("span", "", `${dikenal.get(sr.kunci).label}: ${nilaiTampil}`));
+        if (sr.kalimat) baris.title = `Dibaca dari ${sr.sumber === "petitum" ? "petitum" : "posita"}: ${sr.kalimat}`;
+        const tombol = buat("button", "aleta-sdg-tombol", "Pakai");
+        tombol.type = "button";
+        tombol.addEventListener("click", () => {
+          pakai(sr);
+          ubahKeadaan();
+        });
+        baris.appendChild(tombol);
+        kotakSaran.appendChild(baris);
+      }
+      if (daftar.length > 1) {
+        const semua = buat("button", "aleta-sdg-tombol", "Pakai semua saran");
+        semua.type = "button";
+        semua.addEventListener("click", () => {
+          for (const sr of daftar) pakai(sr);
+          ubahKeadaan();
+        });
+        kotakSaran.appendChild(semua);
+      }
+      kotak.appendChild(kotakSaran);
+    }
+
     /** Isian keadaan perkara. `kat` = katalog sumber isian (saksi atau keterangan); `kecuali` = kunci yang digambar tempat lain. */
     function gambarKeadaan(form, kat, kecuali) {
       const sumberKat = kat || S.kat;
       const tanpa = kecuali || [];
       const kotak = buat("div", "aleta-sdg-alasan");
       kotak.appendChild(buat("div", "aleta-abt-label", "Keadaan perkara"));
+      gambarSaranKeadaan(kotak, sumberKat);
       for (const f of m.keadaanUntukBorang(sumberKat)) {
         if (tanpa.includes(f.kunci)) continue;
         if (f.perSaksi) continue; // digambar pada baris tiap saksi
@@ -1114,8 +1197,38 @@
         .slice(0, 60);
     }
 
+    /** C5/U9: saklar Fitur Satker "fakta-non-cerai" (bawaan MATI; gagal bertanya = mati). Hanya katalog non-cerai. */
+    const SAKLAR_SARAN = "fakta-non-cerai";
+    const saranAktif = () => Boolean(S.saklarSaran) && pakaiFakta() && !katalogCerai();
+
+    /**
+     * Membuka borang non-cerai: bila saklar menyala, fakta perkara (dan saran keadaan) dimuat saat borang dibuka, bukan baru saat
+     * Susun, supaya saran tampil di "Keadaan perkara". Borang digambar ulang SEKALI bila belum ada hasil yang sedang dibaca.
+     */
+    async function muatSaranKeadaan(kat) {
+      try {
+        if (!globalThis.AletaSaklarFitur || !pakaiFakta() || katalogCerai()) return;
+        S.saklarSaran = await globalThis.AletaSaklarFitur.aktif(SAKLAR_SARAN);
+        if (!S.saklarSaran || S.kat !== kat) return;
+        await pastikanFakta(false);
+        if (S.kat === kat && !S.hasil && S.saranKeadaan.length && !wadah.hidden) gambarUlang();
+      } catch {
+        /* tanpa saran: perilaku lama */
+      }
+    }
+
     /** Memuat fakta perkara sekali per pembukaan (atau paksa). Gagal = tanpa fakta; isian petugas dan variabel ABT tetap dipakai. */
-    async function pastikanFakta(paksa) {
+    function pastikanFakta(paksa) {
+      if (!pakaiFakta()) return Promise.resolve();
+      if (!paksa && S.janjiFakta) return S.janjiFakta;
+      const janji = muatFakta(paksa).finally(() => {
+        if (S.janjiFakta === janji) S.janjiFakta = null;
+      });
+      S.janjiFakta = janji;
+      return janji;
+    }
+
+    async function muatFakta(paksa) {
       if (!pakaiFakta()) return;
       if (!paksa && (S.faktaStatus === "ada" || S.faktaStatus === "kosong")) return;
       const api = globalThis.AletaBdJawabanKatalog;
@@ -1133,14 +1246,18 @@
         }
         const { alur, id } = kenali();
         const kodeVariabel = kodeVariabelKosong(v);
+        const mintaSaran = saranAktif();
         S.fakta = await api.ambilFakta({
           perkara: { nomorPerkara: nomor(), jenisPerkaraId: id, alurPerkaraId: alur },
           sebutan: { P: sebutan("0046", ""), T: sebutan("0047", "") },
           posita: v("5125"),
           tanggalSidang: v("0033"),
           variabel,
-          ...(kodeVariabel.length ? { kodeVariabel, kunciKatalog: S.kat.kunci } : {}),
+          ...(kodeVariabel.length ? { kodeVariabel } : {}),
+          ...(kodeVariabel.length || mintaSaran ? { kunciKatalog: S.kat.kunci } : {}),
+          ...(mintaSaran ? { keadaanNonCerai: true } : {}),
         });
+        S.saranKeadaan = mintaSaran && S.fakta && Array.isArray(S.fakta.keadaanSaran) ? S.fakta.keadaanSaran : [];
         const adaVariabel = Boolean(S.fakta && S.fakta.variabel && Object.keys(S.fakta.variabel).length);
         S.faktaStatus = Object.keys(S.fakta || {}).length || adaVariabel ? "ada" : "kosong";
       } catch {
@@ -1204,7 +1321,115 @@
       return typeof k.variabelSaksi === "function" ? k.variabelSaksi(s.pihak, keDiPihak + 1) : "";
     }
 
+    // ── C3/U7: alat sunting baris (bawaan MATI; saklar Fitur Satker mesin-saksi-tunggal) ────────────────────────────
+    // Kemampuan penyunting lama yang kini tersedia juga di borang katalog: pertanyaan dapat disunting, baris dapat
+    // dinaikkan/diturunkan, dipindah ke saksi berikutnya (disisipkan, tidak menimpa), disalin, dihapus, dan ditambah.
+    const alatBarisAktif = () => typeof k.mesinTunggal === "function" && k.mesinTunggal() === true;
+
+    function buatTanyaDapatSunting(no, teksTanya) {
+      const el = buat("div", "aleta-ssk-tanya");
+      el.appendChild(buat("span", "aleta-ssk-no", `${no}. `));
+      const isi = buat("span", "aleta-ssk-tt", teksTanya);
+      isi.contentEditable = "true";
+      isi.title = "Pertanyaannya boleh disunting - yang tersimpan ke ABT yang terbaca di sini.";
+      el.appendChild(isi);
+      return el;
+    }
+
+    /** Menomori ulang baris satu kolom (tampilan saja; nomor yang disimpan dihitung ulang saat menyimpan). */
+    function renomori(kolomEl) {
+      let n = 0;
+      for (const baris of Array.from(kolomEl.querySelectorAll(".aleta-ssk-baris"))) {
+        n += 1;
+        const no = baris.querySelector(".aleta-ssk-no");
+        if (no) no.textContent = `${n}. `;
+      }
+    }
+
+    function buatBarisManual(teksTanya, teksJawab, salinan) {
+      const baris = buat("div", "aleta-ssk-baris");
+      baris.setAttribute("data-butir", "");
+      baris.setAttribute("data-saksi", "-1");
+      if (salinan) baris.setAttribute("data-salinan", "1");
+      baris.appendChild(buatTanyaDapatSunting(0, teksTanya));
+      const jawab = document.createElement("textarea");
+      jawab.className = "aleta-ssk-jawab";
+      jawab.rows = 2;
+      jawab.value = teksJawab;
+      jawab.addEventListener("input", () => jawab.setAttribute("data-disunting", "1"));
+      baris.appendChild(jawab);
+      baris.insertBefore(buatAlatBaris(baris), baris.firstChild);
+      return baris;
+    }
+
+    function buatTombolTambah(kolomEl, indeks) {
+      const tambah = buat("button", "aleta-sdg-tambah", "+ Tambah keterangan");
+      tambah.type = "button";
+      tambah.addEventListener("click", () => {
+        kolomEl.insertBefore(buatBarisManual("Pertanyaan baru", "", false), tambah);
+        renomori(kolomEl);
+      });
+      tambah.setAttribute("data-kolom", String(indeks));
+      return tambah;
+    }
+
+    function buatAlatBaris(baris) {
+      const alat = buat("div", "aleta-ssk-alat");
+      const tb = (teks, judul, kerja) => {
+        const t = buat("button", "aleta-sdg-tombol", teks);
+        t.type = "button";
+        t.title = judul;
+        t.addEventListener("click", (e) => {
+          e.preventDefault();
+          kerja();
+        });
+        alat.appendChild(t);
+      };
+      const kolomDari = () => baris.parentNode;
+      const semuaKolom = () => Array.from(baris.closest(".aleta-ssk").querySelectorAll(".aleta-ssk-saksi"));
+      tb("↑", "Naikkan", () => {
+        const induk = kolomDari();
+        const atas = baris.previousElementSibling;
+        if (atas && atas.classList.contains("aleta-ssk-baris")) induk.insertBefore(baris, atas);
+        renomori(induk);
+      });
+      tb("↓", "Turunkan", () => {
+        const induk = kolomDari();
+        const bawah = baris.nextElementSibling;
+        if (bawah && bawah.classList.contains("aleta-ssk-baris")) induk.insertBefore(bawah, baris);
+        renomori(induk);
+      });
+      tb("⇄", "Pindahkan ke saksi berikutnya - disisipkan sebagai baris tambahan di sana", () => {
+        const semua = semuaKolom();
+        if (semua.length < 2) return;
+        const asal = kolomDari();
+        const tujuan = semua[(semua.indexOf(asal) + 1) % semua.length];
+        const tambah = tujuan.querySelector("button.aleta-sdg-tambah");
+        tujuan.insertBefore(baris, tambah);
+        renomori(asal);
+        renomori(tujuan);
+      });
+      tb("⧉", "Salin ke saksi berikutnya - yang ini tetap di tempatnya", () => {
+        const semua = semuaKolom();
+        if (semua.length < 2) return;
+        const asal = kolomDari();
+        const tujuan = semua[(semua.indexOf(asal) + 1) % semua.length];
+        const teksTanya = String((baris.querySelector(".aleta-ssk-tt") || baris.querySelector(".aleta-ssk-tanya") || {}).textContent || "");
+        const teksJawab = String((baris.querySelector("textarea") || {}).value || "");
+        const tambah = tujuan.querySelector("button.aleta-sdg-tambah");
+        tujuan.insertBefore(buatBarisManual(teksTanya, teksJawab, true), tambah);
+        renomori(tujuan);
+      });
+      tb("✕", "Hapus keterangan ini", () => {
+        const induk = kolomDari();
+        baris.remove();
+        renomori(induk);
+      });
+      return alat;
+    }
+
     function gambarHasil(wadahHasil) {
+      const alatBaris = alatBarisAktif();
       wadahHasil.textContent = "";
       const h = S.hasil;
       if (!h) return;
@@ -1222,7 +1447,9 @@
           if (b.tandaKuning) baris.classList.add("aleta-ssk-kuning");
           if (b.kosong.length) baris.classList.add("aleta-ssk-merah");
           for (const x of b.kosong) semuaKosong.add(x);
-          const tanya = buat("div", "aleta-ssk-tanya", `${b.no}. ${b.tanya}`);
+          // C3/U7: dengan saklar mesin-saksi-tunggal menyala, pertanyaan dapat disunting; nomornya terpisah dalam span sendiri
+          // (teks tanya-jawab yang disimpan tetap dibaca dari textContent tanpa awalan nomor).
+          const tanya = alatBaris ? buatTanyaDapatSunting(b.no, b.tanya) : buat("div", "aleta-ssk-tanya", `${b.no}. ${b.tanya}`);
           const jawab = document.createElement("textarea");
           jawab.className = "aleta-ssk-jawab";
           jawab.rows = 2;
@@ -1278,8 +1505,10 @@
             if (nk.kode) kabarKosong.title = `Kode isian: ${nk.kode}`;
             baris.appendChild(kabarKosong);
           }
+          if (alatBaris) baris.insertBefore(buatAlatBaris(baris), baris.firstChild);
           kolom.appendChild(baris);
         }
+        if (alatBaris) kolom.appendChild(buatTombolTambah(kolom, i));
         wadahHasil.appendChild(kolom);
       });
       if (semuaKosong.size) {
@@ -1321,6 +1550,16 @@
       }
       const form = buat("div", "aleta-sdg-form");
       form.appendChild(buat("div", "aleta-abt-label", `Susun saksi - ${S.kat.judul}`));
+      if (alatBarisAktif() && typeof k.caraLama === "function" && /^cerai-/.test(String(S.kat.kunci || ""))) {
+        const lama = buat("button", "aleta-sdg-tombol aleta-ssk-cara-lama", "Cara lama (bank templat ABT)");
+        lama.type = "button";
+        lama.title = "Tombol Susun keterangan saksi 1 & 2 yang lama: memakai blangko tanya jawab ABT dan mesin bot.";
+        lama.addEventListener("click", () => {
+          wadah.hidden = true;
+          k.caraLama();
+        });
+        form.appendChild(lama);
+      }
       for (const c of S.kat.catatanPetugas || []) form.appendChild(buat("div", "aleta-abt-kabar", c));
       // hanya dasar hukum yang sudah terverifikasi yang ditampilkan; yang belum tetap metadata
       const dasar = (S.kat.dasarHukum || []).filter((d) => d.status === "terverifikasi");
@@ -1405,13 +1644,71 @@
       const kandidat = kandidatKatalog(alur);
       const sel = pilihan([["", "- pilih jenis perkara -"], ...kandidat.map((c) => [c.kunci, c.judul])], "", (v) => {
         const kat = kandidat.find((c) => c.kunci === v);
-        if (kat) {
-          atur(kat);
-          gambarUlang();
-        }
+        if (!kat) return;
+        const pakai = () => {
+          // isi katalog (bukan hanya butir indeks) - sudah termuat dengan paketnya
+          const penuh = DataKatalog().find((c) => c && c.kunci === v);
+          if (penuh) {
+            atur(penuh);
+            gambarUlang();
+          }
+        };
+        const pemuat = Muat();
+        if (pemuat && !pemuat.sudahDimuat(v)) {
+          sel.disabled = true;
+          void pemuat.siapkanKunci(v).then(() => {
+            sel.disabled = false;
+            pakai();
+          });
+        } else pakai();
       });
       form.appendChild(label("Jenis perkara", sel));
       wadah.appendChild(form);
+    }
+
+    /** Satu butir untuk jejak: usulan mesin (jawaban hasil susun) vs teks final di kotak (kosong = butir tidak disimpan). */
+    function entriButir(i, el, tanya, final, nomorButir) {
+      const sk = S.hasil.saksi[i] || {};
+      const butirId = el.getAttribute("data-butir") || "";
+      // baris yang dipindah dari saksi lain tetap mencari usulan mesinnya di saksi ASAL (data-saksi); salinan dan baris manual tanpa usulan
+      const asalSaksi = el.hasAttribute("data-saksi") ? Number(el.getAttribute("data-saksi")) : i;
+      const skAsal = el.getAttribute("data-salinan") === "1" ? {} : S.hasil.saksi[asalSaksi] || {};
+      const mesinBaris = butirId ? (skAsal.baris || []).find((x) => x.butir === butirId) || null : null;
+      const dariGugatan = mesinBaris && Array.isArray(mesinBaris.dariGugatan) ? mesinBaris.dariGugatan : [];
+      const sumber = Array.from(new Set(dariGugatan.flatMap((x) => String(x.sumber || "").split(" + ").filter(Boolean)))).join(" + ");
+      const yakin = dariGugatan.some((x) => x.yakin === "ragu") ? "ragu" : dariGugatan.some((x) => x.yakin === "cukup") ? "cukup" : dariGugatan.length ? "yakin" : "";
+      const jati = typeof k.jatiDiri === "function" ? k.jatiDiri() : null;
+      return {
+        perkaraId: jati ? jati.perkaraId : "",
+        nomorPerkara: nomor(),
+        sidang: String(S.urutan || (typeof k.urutanSidang === "function" ? k.urutanSidang() : "1")),
+        saksiKe: sk.ke || i + 1,
+        pihak: sk.pihak || (S.saksi[i] ? S.saksi[i].pihak : ""),
+        jalur: "katalog",
+        katalog: S.kat.kunci,
+        versiKatalog: String(S.kat.versiKatalog || S.kat.versi || ""),
+        jenisPerkara: String((typeof k.jenisPerkaraTeks === "function" ? k.jenisPerkaraTeks() : "") || S.kat.judul || ""),
+        butir: butirId,
+        varian: mesinBaris ? String(mesinBaris.varian || "") : "",
+        jenisKeterangan: mesinBaris ? String(mesinBaris.jenis || "") : "",
+        nomorButir,
+        pertanyaan: tanya,
+        usulan: mesinBaris ? String(mesinBaris.jawab || "") : "",
+        teksFinal: final,
+        sumberFakta: sumber,
+        keyakinan: yakin,
+        kodePola: `${S.kat.kunci}/${butirId}`,
+        pada: new Date().toISOString(),
+      };
+    }
+    /** Mengirim butir ke server bila saklar menyala. Tidak pernah melempar dan tidak ditunggu. */
+    function catatButirSaksi(daftar) {
+      try {
+        const J = globalThis.AletaJejakIsian;
+        if (J && typeof J.catatButir === "function") void J.catatButir(daftar);
+      } catch {
+        /* jejak tertinggal; keterangan saksi sudah tersimpan di ABT */
+      }
     }
 
     async function simpan() {
@@ -1452,11 +1749,14 @@
         }
         const kolom = wadahHasil.querySelectorAll(".aleta-ssk-saksi")[i];
         const baris = [];
+        // C1 (U1): usulan mesin vs teks final per butir - dikirim ke server SESUDAH tersimpan, hanya bila saklar "jejak-isian" menyala.
+        const jejakButir = [];
         if (kolom) {
           for (const el of Array.from(kolom.querySelectorAll(".aleta-ssk-baris"))) {
             const tanya = String((el.querySelector(".aleta-ssk-tanya") || {}).textContent || "").replace(/^\d+\.\s*/, "");
             const jawab = String((el.querySelector("textarea") || {}).value || "").trim();
             if (jawab) baris.push({ no: String(baris.length + 1), tanya, jawab });
+            jejakButir.push(entriButir(i, el, tanya, jawab, jawab ? baris.length : 0));
           }
         }
         kabarBorang.textContent = `Menyimpan keterangan ${nama} (${i + 1} dari ${S.hasil.saksi.length})…`;
@@ -1478,8 +1778,10 @@
               sesudah: `${baris.length} tanya-jawab dari katalog ${S.kat.judul}`,
               cara: `disusun dari katalog ${S.kat.judul} (${labelJenisSaksi(S.saksi[i].jenis)}), diperiksa dan disimpan petugas`,
               pada: new Date().toISOString(),
+              tanpaJejak: true, // butir saksi dicatat di tabel butir sendiri; variabel tanya-jawab tidak dapat diurungkan sebagai teks
             });
           }
+          catatButirSaksi(jejakButir.map((e) => Object.assign(e, { variabel: kode })));
         } catch (galat) {
           gagal.push(`${nama}: ${String((galat && galat.message) || galat)}`);
         }
@@ -1509,13 +1811,30 @@
 
     // singgahan: simpan dari blangko, baca di halaman tanya-jawab
     const n = nomor();
-    const kodeSimpan = kodeDipakaiKatalog(DataKatalog());
+    const kodeSimpan = kodeDipakaiKatalog(Muat() ? Muat().untukKodeVariabel() : DataKatalog());
     const p = peta();
     if (p && p.size >= 5) tulisSinggahan(n, p, kodeSimpan);
     void bacaSinggahan(n).then((c) => {
       S.singgahan = c || {};
     });
     segarkanTombol();
+    // K10: isi katalog jenis perkara halaman ini dimuat sekarang; tombol dinilai ulang begitu paketnya terpasang.
+    if (Muat()) {
+      const { id, alur, teks } = kenaliPerkaraHalaman();
+      void Muat()
+        .siapkan({ jenisPerkaraId: id, alurPerkaraId: alur, nama: `${teks} ${document.title || ""}` })
+        .then(() => {
+          segarkanTombol();
+          // tab keterangan (katalog tambahan) baru tersedia sesudah dimuat: bila borang sudah terbuka, gambar ulang
+          if (!wadah.hidden && S.kat) {
+            const { kat } = kenali();
+            if (kat && S.kat.kunci === kat.kunci && !S.ket) {
+              aturKeterangan(S.kat);
+              gambarUlang();
+            }
+          }
+        });
+    }
     // Mode tampilan (Lama/Baru/UI Baru) baru diketahui sesudah pengaturan terbaca: tombol dinilai ulang.
     try {
       document.addEventListener("aleta-uji-berubah", segarkanTombol);

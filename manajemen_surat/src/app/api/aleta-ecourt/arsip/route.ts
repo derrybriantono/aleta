@@ -7,6 +7,7 @@ import {
   saveGatewayEcourtArsip,
 } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { pastikanAdminIstimewa } from "@/server/modules/aleta-ecourt/akses";
+import { tegakkanPengaman } from "@/server/modules/keamanan/pengaman-aksi";
 import { requireActorUser } from "@/server/modules/organization/service";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -67,6 +68,8 @@ export async function POST(request: NextRequest) {
     };
 
     if (body.aksi === "bersihkan") {
+      // Pengaman aksi admin (Bagian 6c): penghapusan sungguhan (bukan laporan "akan dihapus") = hapus massal.
+      if (body.hapus === true) await tegakkanPengaman(db, request, actor, "hapus.massal", { rincian: { aksi: "bersihkan-arsip-ecourt" } });
       const hasil = await bersihkanGatewayEcourtArsip({
         // hapus:true hanya bila dinyatakan tegas. Tanpa itu, yang dikembalikan
         // adalah laporan tentang apa yang AKAN dihapus.

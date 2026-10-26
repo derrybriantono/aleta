@@ -4305,7 +4305,7 @@ pasangPemberitahuanVersi();
  * Ekstensi yang dimuat sebagai folder tidak dapat memperbarui dirinya; pembantu
  * lokal kecil dipasang SEKALI per komputer dan sesudah itu versi baru terpasang
  * sendiri tanpa bertanya. Popup hanya menampilkan keadaannya (jawaban latar.js
- * "status-pembaru") dan mengunduh pemasangnya (satu berkas .cmd, bukan ZIP).
+ * "status-pembaru") dan mengunduh pemasangnya (satu berkas .cmd untuk Windows atau .command untuk macOS, bukan ZIP).
  */
 const TEKS_PEMBARU = {
   aktif: ["aktif", false],
@@ -4317,46 +4317,90 @@ const TEKS_PEMBARU = {
   "tak-terjangkau": ["tidak menjawab", true],
 };
 
+/**
+ * Sistem komputer ini untuk memilih pemasang: "windows" | "mac" | "linux" | "lain".
+ * navigator.userAgentData.platform lebih dulu, lalu navigator.platform dan userAgent.
+ * Tanpa petunjuk sama sekali: "windows" (perilaku lama).
+ */
+function osPemasang() {
+  try {
+    const nav = typeof navigator !== "undefined" ? navigator : null;
+    if (!nav) return "windows";
+    const teks = `${(nav.userAgentData && nav.userAgentData.platform) || ""} ${nav.platform || ""} ${nav.userAgent || ""}`;
+    if (/iPhone|iPad|iPod|Android|CrOS/i.test(teks)) return "lain";
+    if (/mac/i.test(teks)) return "mac";
+    if (/win/i.test(teks)) return "windows";
+    if (/linux|x11/i.test(teks)) return "linux";
+  } catch {
+    /* tanpa petunjuk */
+  }
+  return "windows";
+}
+
+const NAMA_OS_PEMASANG = { windows: "Windows", mac: "macOS" };
+
+/** Petunjuk memasang, sesuai sistem: Windows klik dua kali, macOS lewat Terminal. */
+function petunjukPasang(os) {
+  if (os === "mac") {
+    return "Pembaruan otomatis belum dipasang di komputer ini. Pasang sekali saja: unduh pemasang macOS, buka Terminal, ketik bash lalu spasi, seret berkas pemasang ke jendela Terminal, tekan Enter, selesai. Setelan Anda tidak berubah.";
+  }
+  if (os === "windows") {
+    return "Pembaruan otomatis belum dipasang di komputer ini. Pasang sekali saja: unduh pemasangnya, buka berkas itu dengan klik dua kali, selesai. Setelan Anda tidak berubah.";
+  }
+  return "Pembaruan otomatis baru tersedia untuk Windows dan macOS. Sistem ini belum didukung; pakai tombol Perbarui sekarang bila ada versi baru.";
+}
+
 function gambarStatusPembaru(st) {
   const kolom = document.getElementById("pembaruStatus");
   const aksi = document.getElementById("pembaruAksi");
   const petunjuk = document.getElementById("pembaruPetunjuk");
+  const utama = document.getElementById("pasangPembaru");
   const kunci = st && st.keadaan ? String(st.keadaan) : "tak-terjangkau";
   const [teks, usang] = TEKS_PEMBARU[kunci] || ["tidak diketahui", true];
   tulisKeadaan(kolom, teks, { kosong: false, usang });
   if (!aksi) return;
+  const os = osPemasang();
   const perluPasang = ["belum-dipasang", "folder-rusak", "id-tak-cocok", "pembantu-lama"].includes(kunci);
   aksi.hidden = !perluPasang;
+  if (utama) {
+    utama.textContent = NAMA_OS_PEMASANG[os] ? `Pasang pembaruan otomatis untuk ${NAMA_OS_PEMASANG[os]} (sekali saja)` : "Pasang pembaruan otomatis (sekali saja)";
+    utama.hidden = !NAMA_OS_PEMASANG[os];
+  }
   if (petunjuk && perluPasang) {
-    petunjuk.textContent =
-      kunci === "belum-dipasang"
-        ? "Pembaruan otomatis belum dipasang di komputer ini. Pasang sekali saja: unduh pemasangnya, buka berkas itu dengan klik dua kali, selesai. Setelan Anda tidak berubah."
-        : (st && st.pesan) || "Jalankan ulang pemasang pembaruan otomatis (sekali saja). Setelan Anda tidak berubah.";
+    petunjuk.textContent = kunci === "belum-dipasang" ? petunjukPasang(os) : (st && st.pesan) || petunjukPasang(os);
   }
 }
 
+/** Keterangan sesudah pemasang terunduh: berbeda untuk Windows dan macOS. */
+function keteranganSudahDiunduh(os) {
+  if (os === "mac") {
+    return "Pemasang macOS sudah diunduh. Bila Chrome bertanya, pilih Simpan/Keep. Lalu buka Terminal, ketik bash lalu spasi, seret berkas pasang-pembaru-aleta.command dari folder Unduhan/ALETA ke jendela Terminal, tekan Enter, dan tunggu tulisan SELESAI. Cara lain: klik kanan berkasnya, pilih Buka.";
+  }
+  return "Pemasang sudah diunduh. Bila Chrome bertanya, pilih Simpan/Keep. Lalu klik dua kali berkas pasang-pembaru-aleta di folder Unduhan/ALETA, dan tunggu tulisan SELESAI.";
+}
+
 function pasangPembaruOtomatis() {
-  const tombol = document.getElementById("pasangPembaru");
   const lihat = document.getElementById("tampilkanPemasang");
   const petunjuk = document.getElementById("pembaruPetunjuk");
-  if (tombol && !tombol.dataset.terpasang) {
+  const pasang = (tombol, os) => {
+    if (!tombol || tombol.dataset.terpasang) return;
     tombol.dataset.terpasang = "ya";
     tombol.addEventListener("click", async () => {
       tombol.disabled = true;
-      const j = await mintaKeLatar("unduh-pemasang-pembaru");
+      const j = await mintaKeLatar("unduh-pemasang-pembaru", false, { os });
       tombol.disabled = false;
-      if (petunjuk) {
-        petunjuk.textContent =
-          j && j.ok
-            ? "Pemasang sudah diunduh. Bila Chrome bertanya, pilih Simpan/Keep. Lalu klik dua kali berkas pasang-pembaru-aleta di folder Unduhan/ALETA, dan tunggu tulisan SELESAI."
-            : (j && j.pesan) || "Pemasang gagal diunduh.";
-      }
+      if (petunjuk) petunjuk.textContent = j && j.ok ? keteranganSudahDiunduh(os) : (j && j.pesan) || "Pemasang gagal diunduh.";
       if (lihat) {
         lihat.hidden = !(j && j.ok && j.id);
         lihat.dataset.id = j && j.id ? String(j.id) : "";
       }
     });
-  }
+  };
+  // Tombol utama mengikuti sistem komputer ini; dua tombol kecil untuk memilih sendiri.
+  const os = osPemasang();
+  pasang(document.getElementById("pasangPembaru"), NAMA_OS_PEMASANG[os] ? os : "windows");
+  pasang(document.getElementById("pasangPembaruWindows"), "windows");
+  pasang(document.getElementById("pasangPembaruMac"), "mac");
   if (lihat && !lihat.dataset.terpasang) {
     lihat.dataset.terpasang = "ya";
     lihat.addEventListener("click", () => {

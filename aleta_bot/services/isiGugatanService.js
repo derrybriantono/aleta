@@ -204,12 +204,18 @@ function susunIsiGugatan(masukan) {
   // ── JJ2 (18 Okt): jawaban/replik/duplik rapi -> baris tanya-jawab ABT (6112/6113/6114) ──
   // Ditulis OLEH EKSTENSI (bukan di sini) bila baris ABT sidang yang sesuai masih kosong; ukuran "rapi" ada di tanyaJawabEcourtService.
   const tanyaJawab = [];
+  // G2: m.otomatis = { bukti, kesimpulan } dari saklar Super Admin (bawaan MATI). Tanpa kunci ini, atau saat MATI, keluaran persis seperti
+  // sebelum G2: kesimpulan TIDAK ikut tanyaJawab dan daftar bukti tetap usulan "ragu".
+  const izin = { bukti: Boolean(m.otomatis && m.otomatis.bukti), kesimpulan: Boolean(m.otomatis && m.otomatis.kesimpulan) };
+  const punyaTujuan = (x) => Boolean(TJ.TUJUAN[x.peran]) || (x.peran === "kesimpulan" && izin.kesimpulan);
+  // Kesimpulan Penggugat dan Tergugat dua kolom berbeda, jadi dihitung per pihak.
+  const kunciPeran = (x) => (x.peran === "kesimpulan" ? `kesimpulan|${x.pihak || ""}` : x.peran);
   const cacahPeran = new Map();
-  for (const x of jm.dokumen) if (x.dipakai && TJ.TUJUAN[x.peran]) cacahPeran.set(x.peran, (cacahPeran.get(x.peran) || 0) + 1);
+  for (const x of jm.dokumen) if (x.dipakai && punyaTujuan(x)) cacahPeran.set(kunciPeran(x), (cacahPeran.get(kunciPeran(x)) || 0) + 1);
   for (const x of jm.dokumen) {
-    if (!x.dipakai || !TJ.TUJUAN[x.peran]) continue;
+    if (!x.dipakai || !punyaTujuan(x)) continue;
     const dk = dokumen[x.indeks];
-    const h = TJ.tanyaJawabDariSurat({ teks: dk.teks, k: J.kenaliJenis(dk), baca: dk.baca, sebutan, banyakSePeran: cacahPeran.get(x.peran) || 1, diunggah: dk.diunggah });
+    const h = TJ.tanyaJawabDariSurat({ teks: dk.teks, k: J.kenaliJenis(dk), baca: dk.baca, sebutan, banyakSePeran: cacahPeran.get(kunciPeran(x)) || 1, diunggah: dk.diunggah, denganKesimpulan: izin.kesimpulan });
     tanyaJawab.push({ indeks: x.indeks, judul: dk.judul, ...h, keterangan: TJ.keteranganFormat(h) });
   }
   const tjDari = new Map(tanyaJawab.map((t) => [dokumen[t.indeks], t]));
@@ -378,7 +384,7 @@ function susunIsiGugatan(masukan) {
     if (u.butir.length >= 2 && (u.adaJudul || u.butir.some((b) => !b.kodeDariUrutan))) daftarBukti.push(d);
     else berkasBuktiLain.push(d);
   }
-  const bk = B.susunBukti({ daftar: daftarBukti, berkasBukti: berkasBuktiLain, posita, sebutan });
+  const bk = B.susunBukti({ daftar: daftarBukti, berkasBukti: berkasBuktiLain, posita, sebutan, otomatis: izin.bukti });
   usulan.push(...bk.usulan);
   catatan.push(...bk.catatan);
 
@@ -485,8 +491,12 @@ function susunIsiGugatan(masukan) {
     kalimat,
     diabaikan,
     // JJ2: baris tanya-jawab yang rapi (ditulis ekstensi bila sidangnya cocok dan barisnya kosong), daftar bukti terbaca, surat keterangan KUA.
-    tanyaJawab: tanyaJawab.map((t) => ({ indeks: t.indeks, judul: t.judul, peran: t.peran, kode: t.kode, rujukan: t.rujukan, kunci: t.kunci, pihak: t.pihak, rapi: t.rapi, alasan: t.alasan, keterangan: t.keterangan, diunggah: t.diunggah, ukuran: t.ukuran, baris: t.baris })),
+    // G2: kesimpulan membawa kode ""; kode penyuntingnya dicari ekstensi dari daftar variabel blangko (kunci "kesimpulan lisan <pihak>"),
+    // dan baris baru ditulis hanya bila izin.kesimpulan menyala. 6112-6114 tetap diatur saklar lokal ekstensi seperti sebelumnya.
+    tanyaJawab: tanyaJawab.map((t) => ({ indeks: t.indeks, judul: t.judul, peran: t.peran, kode: t.kode, rujukan: t.rujukan, kunci: t.kunci, pihak: t.pihak, rapi: t.rapi, alasan: t.alasan, keterangan: t.keterangan, diunggah: t.diunggah, ukuran: t.ukuran, baris: t.baris, izinOtomatis: t.peran === "kesimpulan" ? izin.kesimpulan : true })),
     bukti: bk.butir.map((b) => ({ kode: b.kode, pihak: b.pihak, jenis: b.jenis, nama: b.nama, nomor: b.nomor, tanggal: b.tanggal ? b.tanggal.tampil : "", elektronik: b.elektronik, uraian: b.uraian, sumber: b.sumber })),
+    buktiOtomatis: bk.otomatis,
+    otomatis: izin,
     suratKua: bk.kua ? { nomor: bk.kua.nomor, tanggal: bk.kua.tanggal ? bk.kua.tanggal.tampil : "", asal: bk.kua.asal, jelas: Boolean(bk.kua.jelas) } : null,
     catatan,
   };

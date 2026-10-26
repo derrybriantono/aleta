@@ -536,7 +536,7 @@
 
   function awasi(doc) {
     if (S.pengamat || typeof MutationObserver !== "function") return;
-    S.pengamat = new MutationObserver((daftar) => {
+    S.pengamat = new (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.Pengamat : MutationObserver)((daftar) => {
       if (!daftar.some(relevan)) return;
       if (S.jadwal) clearTimeout(S.jadwal);
       S.jadwal = setTimeout(() => {

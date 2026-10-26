@@ -145,7 +145,10 @@ describe("isi ekstensi yang ditanam", () => {
     for (const [nama, isiTertanam] of Object.entries(EKSTENSI_BERKAS)) {
       const jalur = path.join(sumberEkstensi, nama);
       expect(fs.existsSync(jalur), `${nama} hilang dari folder ekstensi`).toBe(true);
+      // K11: konten.js dibaca MENTAH (inti) - penanamnya menanam berkas apa adanya, bukan gabungan uji.
+      process.env.ALETA_KONTEN_MENTAH = "1";
       const isiAsli = fs.readFileSync(jalur, "utf8");
+      delete process.env.ALETA_KONTEN_MENTAH;
       expect(isiTertanam, `${nama} berbeda — jalankan node scripts/susun-ekstensi.mjs`).toBe(isiAsli);
     }
   });
@@ -169,7 +172,10 @@ describe("isi ekstensi yang ditanam", () => {
     // tetap dua - daftar ini menjaga agar tidak diam-diam bertambah lagi.
     // "nativeMessaging" sejak pembaru otomatis (23 Okt 2026): satu-satunya jalan
     // ekstensi folder memasang versi baru tanpa unduhan peramban (dicegat IDM).
-    expect(manifest.permissions).toEqual(["storage", "downloads", "nativeMessaging"]);
+    // "scripting" sejak K11 (26 Okt 2026): pekerja latar menyuntikkan potongan konten.js (panel perkara/daftar)
+    // ke dunia terasing halaman TEPAT sebelum dipakai (modul-malas.js). Tanpa peringatan pasang di Chrome;
+    // hanya berkas dalam daftar putih latar.js yang mau disuntikkan.
+    expect(manifest.permissions).toEqual(["storage", "downloads", "nativeMessaging", "scripting"]);
   });
 
   it("ikonnya ikut tertanam sebagai PNG yang utuh", async () => {

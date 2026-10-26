@@ -201,6 +201,10 @@ app.use(express.json({ limit: "1mb" }));
 // MODE KEMBARAN: satu permintaan = satu kelompok antrean sinkron. Dipasang SESUDAH pembaca
 // badan supaya konteks bertahan sampai penangan rute. Di mode biasa tidak berbuat apa-apa.
 app.use(require("./services/penjagaKembaran").middlewareExpress());
+// KOLAM SIPP: permintaan dari portal ditandai "layar" (interaktif) atau "latar" supaya, bila
+// kolam terpisah dinyalakan di pengaturan, kerja latar tidak merebut sambungan layar.
+// Dengan setelan bawaan tanda ini tidak mengubah apa pun.
+app.use("/internal/aleta-bot", require("./services/kolamSippService").middlewareExpress());
 app.use(express.static("public"));
 
 app.get("/", (req, res) => {
@@ -4507,6 +4511,9 @@ app.use("/internal/aleta-bot/kamus-deteksi", require("./routes/kamusDeteksiRoute
 app.use("/internal/aleta-bot/abt-pengaturan", require("./routes/abtPengaturanRoutes"));
 // Status fitur per satker (banyak satker, Tahap 0): portal mendorong, bot menerima; gagal ke sisi menyala.
 app.use("/internal/aleta-bot/fitur-satker", require("./routes/fiturSatkerRoutes"));
+// Cermin Perkara (C0, 25 Okt 2026): bahan pemindai portal - HANYA GET dan hanya membaca SIPP.
+app.use("/internal/aleta-bot/cermin", require("./routes/cerminRoutes"));
+app.use("/internal/aleta-bot/gerbang-isian", require("./routes/gerbangIsianRoutes"));
 try {
   const muatKamus = require("./services/kamusDeteksiLapis").mulaiPemuatLapis();
   console.log(

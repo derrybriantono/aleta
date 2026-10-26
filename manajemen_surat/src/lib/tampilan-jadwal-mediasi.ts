@@ -36,6 +36,13 @@ export const SAKLAR_TAMPILAN_MEDIASI: readonly SaklarTampilanMediasi[] = [
     keterangan:
       "Dua tombol di ujung kanan tiap baris untuk menandai pertemuan mediasi sedang berjalan atau sudah selesai (tersinkron dengan Jadwal Sidang). Hanya tampil bagi yang berwenang mencatat mediasi.",
   },
+  // 26 Okt 2026: tombol Tunda (menulis ke SIPP) - menyala bawaan, hak tetap dari peran.
+  {
+    kunci: "tombol-tunda-mediasi",
+    label: "Tombol Tunda mediasi",
+    keterangan:
+      "Tombol di ujung kanan tiap baris untuk menunda pertemuan mediasi: pilih alasan, tanggal dan tempat pertemuan berikutnya, lihat pratinjau, lalu simpan ke SIPP (persis Tunda di SIPP). Hanya tampil bagi mediator, majelis, dan kepaniteraan perkara itu.",
+  },
   {
     kunci: "lencana-status-mediasi",
     label: "Lencana sedang berjalan | selesai",

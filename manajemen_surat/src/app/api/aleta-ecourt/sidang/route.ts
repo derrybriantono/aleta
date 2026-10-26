@@ -299,6 +299,9 @@ export async function GET(request: NextRequest) {
       dari: hasil.data?.dari ?? "",
       sampai: hasil.data?.sampai ?? "",
       diperiksaPada: hasil.data?.diperiksaPada ?? "",
+      // A4: daftar ini dibaca dari Cermin Perkara (saklar Jadwal menyala dan cermin segar) - layar menampilkan
+      // "Cermin - diperbarui hh:mm". null = dibaca dari SIPP seperti biasa.
+      cermin: (hasil.data as { cermin?: { diperbaruiPada: string | null } } | undefined)?.cermin ?? null,
       // Q3 16 Okt: keadaan putusan tiap baris (mediasi sebagian, T tidak hadir setelah mediasi, ...) untuk pemilihan blangko putusan
       // per keadaan di ekstensi (lib/keadaan-putusan.ts). Ruas tambahan; ekstensi lama mengabaikannya.
       // Q3 16 Okt: ?rekomendasi=1 menambahkan rekomendasiBlangko (BAS, putusan, relaas menurut alasan tunda/agenda) per baris untuk tampilan Blangko ABT.

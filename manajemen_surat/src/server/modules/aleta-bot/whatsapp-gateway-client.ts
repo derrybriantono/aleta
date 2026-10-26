@@ -22,6 +22,8 @@ import type { PermintaanRekap, RekapPetugas } from "@/lib/rekap-petugas";
 import type { WaktuAntrian } from "@/lib/tiga-jarak-sidang";
 import type { PembebananIkrar } from "@/lib/pembebanan-ikrar";
 import { sanitizePublicErrorMessage } from "@/server/shared/error-sanitizer";
+import { cerminSetelahTulisan } from "@/server/modules/cermin/setelah-tulisan";
+import { RUANG_SINGGAH, terkenaTulisan } from "@/server/modules/aleta-bot/singgah-tulisan";
 import { singgahSingkat, tandaiTulisan, ttlDariEnv } from "@/server/shared/singgah-singkat";
 
 export type WhatsappRuntimeMode = "aleta_bot" | "legacy_portal" | "disabled";
@@ -188,8 +190,13 @@ async function gatewayFetch<T>(
   // Performa muat 19 Okt: tulisan lewat bot (tunda, putus, kehadiran, ...)
   // membuang singgahan jadwal SEBELUM dikirim dan SESUDAH dijawab - bacaan
   // yang berjalan di antaranya tidak disimpan (lihat singgah-singkat.ts).
+  // K2 (25 Okt 2026): hanya singgahan yang TERKENA tulisan ini yang dibuang;
+  // jalur yang tidak dikenal membuang semuanya (lihat singgah-tulisan.ts).
   const menulis = permintaanMenulis(path, permintaan.method);
-  if (menulis) tandaiTulisan();
+  const terkena = menulis ? terkenaTulisan(path, permintaan.body) : undefined;
+  if (menulis) tandaiTulisan(terkena);
+  // A3: tulisan yang berhasil masuk cermin seketika (lihat cermin/setelah-tulisan.ts).
+  let tulisBerhasil = false;
 
   try {
     const url = `${getGatewayBaseUrl()}${path}`;
@@ -259,6 +266,7 @@ async function gatewayFetch<T>(
       };
     }
 
+    tulisBerhasil = true;
     return { ok: true, data: json as T };
   } catch (err) {
     const errCode =
@@ -292,7 +300,10 @@ async function gatewayFetch<T>(
     };
   } finally {
     clearTimeout(timeout);
-    if (menulis) tandaiTulisan();
+    if (menulis) {
+      tandaiTulisan(terkena);
+      if (tulisBerhasil) cerminSetelahTulisan(terkena, permintaan.body);
+    }
   }
 }
 
@@ -1739,6 +1750,8 @@ export type SidangBaris = {
   /** Pihak berlencana pekerjaan (PNS, PPPK, POLRI, TNI, BUMN, BUMD) menurut penggolongan ABT. */
   penandaPihak?: Array<{ sisi: number; nama: string; kunci: string; label: string; ragu?: boolean; kalimat?: string }> | null;
   penandaProdeoTerbaca?: boolean;
+  /** 26 Okt 2026: sumber prodeo ("flag-sipp" | "ecourt") - prodeoPerkaraService. */
+  penandaProdeoSumber?: string[];
   penandaPekerjaanTerbaca?: boolean;
   /** 14 Okt 2026: izin cerai PNS/ASN (PPPK)/TNI/POLRI - aleta_bot/services/izinCeraiService.js; "ada" tanpa lencana. */
   izinCerai?: {
@@ -2227,23 +2240,37 @@ export async function getGatewayTagPerkara(params: {
   // perlu disinggahkan.
   const jalur = `/internal/aleta-bot/sipp/status-perkara/tag?${kueri.toString()}`;
   const ttl = kueri.get("katalogSaja") === "1" ? 0 : ttlDariEnv("ALETA_SINGGAH_TAG_MS", process.env.NODE_ENV === "test" ? 0 : 30_000);
+  type DataTag = {
+    ok: boolean;
+    katalogSaja?: boolean;
+    jumlah: Record<string, number> | null;
+    lingkup: { dari: string; sampai: string; perkara: number } | null;
+    tag: Array<{ kunci: string; label: string; kelompok: string; nada: string; judul: string }>;
+    kelompok: Array<{ kunci: string; label: string }>;
+    dasar: Array<{ kunci: string; label: string }>;
+    batasId?: number;
+    /** A5: hitungan ini dibaca dari Cermin Perkara (saklar Status Perkara menyala dan cermin segar). */
+    cermin?: { diperbaruiPada: string | null };
+  };
   return singgahSingkat(
-    "tag-perkara",
+    RUANG_SINGGAH.tag,
     kueri.toString(),
     ttl,
-    () =>
-      gatewayFetch<{
-        ok: boolean;
-        katalogSaja?: boolean;
-        jumlah: Record<string, number> | null;
-        lingkup: { dari: string; sampai: string; perkara: number } | null;
-        tag: Array<{ kunci: string; label: string; kelompok: string; nada: string; judul: string }>;
-        kelompok: Array<{ kunci: string; label: string }>;
-        dasar: Array<{ kunci: string; label: string }>;
-        batasId?: number;
-      }>(jalur, {
-        timeoutMs: TIMEOUT_PERAMBAN_MS,
-      }),
+    async (): Promise<GatewayResult<DataTag>> => {
+      // A5 (25 Okt 2026): hitungan dari Cermin Perkara bila saklar `status` menyala dan cermin
+      // segar - SATU kueri Postgres, bukan sembilan belas kueri penyisir SIPP. Selain itu,
+      // dan di lingkungan uji (kecuali ALETA_CERMIN_STATUS_UJI=1), jalur lama persis.
+      if (process.env.NODE_ENV !== "test" || process.env.ALETA_CERMIN_STATUS_UJI === "1") {
+        try {
+          const { bacaTagDariCermin } = await import("@/server/modules/cermin/status-cermin");
+          const dariCermin = await bacaTagDariCermin(params || {});
+          if (dariCermin) return dariCermin as unknown as GatewayResult<DataTag>;
+        } catch {
+          // Cermin tak terbaca: jalur lama.
+        }
+      }
+      return gatewayFetch<DataTag>(jalur, { timeoutMs: TIMEOUT_PERAMBAN_MS });
+    },
     { simpanBila: (hasil) => hasil.ok === true }
   );
 }
@@ -3427,8 +3454,21 @@ export async function getGatewayPromptPutusan(
   return gatewayFetch(`/internal/aleta-bot/sipp/prompt-putusan?${kueri.toString()}`);
 }
 
+/**
+ * Peta antrian hari berjalan. K2 (25 Okt 2026): disinggahkan 2 detik
+ * (ALETA_SINGGAH_ANTRIAN_MS; mati di lingkungan uji) dan dibagi bersama oleh
+ * layar Jadwal, layar publik, dan antrean ruang, sehingga 100 layar membaca
+ * satu kali per 2 detik, bukan masing-masing. Dibuang seketika oleh tulisan
+ * antrian/sidang/penetapan (lihat singgah-tulisan.ts); galat tidak disimpan.
+ */
 export async function getGatewayAntrianSidang(): Promise<GatewayResult<AntrianSidangGateway>> {
-  return gatewayFetch("/internal/aleta-bot/antrian/sidang");
+  return singgahSingkat(
+    RUANG_SINGGAH.antrian,
+    "semua",
+    ttlDariEnv("ALETA_SINGGAH_ANTRIAN_MS", process.env.NODE_ENV === "test" ? 0 : 2000),
+    () => gatewayFetch<AntrianSidangGateway>("/internal/aleta-bot/antrian/sidang"),
+    { simpanBila: (hasil) => hasil.ok === true }
+  );
 }
 
 export type KehadiranBaris = {
@@ -4131,7 +4171,7 @@ export type PegawaiPenunjukan = {
 export async function gatewayPegawaiPenunjukan() {
   const ttl = ttlDariEnv("ALETA_SINGGAH_PEGAWAI_MS", process.env.NODE_ENV === "test" ? 0 : 60_000);
   return singgahSingkat(
-    "pegawai-penunjukan",
+    RUANG_SINGGAH.pegawai,
     "semua",
     ttl,
     () =>
@@ -4191,7 +4231,7 @@ export async function gatewayFaktaBuktiPertimbangan(nomor: string): Promise<
  * src/lib/penjaga-tenggat.ts. Tiap pembaca fakta gagal sendiri-sendiri, jadi
  * `gagal` dapat berisi sebagian kode aturan tanpa membuat seluruhnya gagal.
  */
-export async function getGatewayPenjagaTenggat(acuan = ""): Promise<
+export async function getGatewayPenjagaTenggat(acuan = "", opsi: { baru?: boolean } = {}): Promise<
   GatewayResult<{
     acuan: string;
     fakta: Record<string, unknown[]>;
@@ -4199,6 +4239,8 @@ export async function getGatewayPenjagaTenggat(acuan = ""): Promise<
   }>
 > {
   const params = new URLSearchParams({ acuan });
+  // baru=1 (G1): ikut banding/kasasi/mediasi + petugas perkara; tanpa itu jawaban sama dengan sebelum G1.
+  if (opsi.baru) params.set("baru", "1");
   return gatewayFetch(`/internal/aleta-bot/sipp/penjaga-tenggat?${params.toString()}`);
 }
 
@@ -4556,6 +4598,8 @@ export async function ambilKunciPenetapanGateway(payload: {
   ttlDetik?: number;
   /** Token lama yang masih dipegang - diperpanjang, tidak ditolak oleh dirinya sendiri. */
   token?: string;
+  /** Peramban yang berdetak: kunci basi pemilik yang sama (jenis pekerjaan sama) boleh diambil alih. */
+  ambilAlih?: boolean;
 }) {
   return gatewayFetch<Record<string, unknown>>("/internal/aleta-bot/penetapan/kunci", {
     method: "POST",
@@ -5286,6 +5330,8 @@ export async function postGatewayIsiGugatan(muatan: {
   sebutan: { lawan: string; pelaku: string };
   majelis?: string;
   dokumen: Array<{ judul: string; peran: string; teks: string; baca: "teks" | "ocr"; penuntutKode: string; jenis?: string; pengunggah?: string; diunggah?: string }>;
+  /** G2 (25 Okt 2026): saklar isi otomatis daftar bukti / tanya-jawab kesimpulan. Tanpa kunci = mati (keluaran seperti sebelum G2). */
+  otomatis?: { bukti: boolean; kesimpulan: boolean };
 }) {
   return gatewayFetch<Record<string, unknown>>("/internal/aleta-bot/abt/isi-gugatan", {
     method: "POST",

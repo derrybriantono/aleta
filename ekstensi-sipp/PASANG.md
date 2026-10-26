@@ -71,8 +71,13 @@ terpasang sendiri — tanpa unduhan, tanpa bertanya.
 2. Di portal ALETA, halaman Ekstensi → **Unduh pemasang** (atau tombol
    **Pasang pembaruan otomatis** di ikon ALETA pada Chrome); bila Chrome bertanya,
    pilih **Simpan**
-3. Klik dua kali berkas `pasang-pembaru-aleta` hingga tampil tulisan **SELESAI**
+3. Windows: klik dua kali berkas `pasang-pembaru-aleta` hingga tampil tulisan **SELESAI**.
+   Mac: lihat bagian "Di MacBook / iMac" di bawah
 4. Ikon ALETA di Chrome menampilkan **Pembaruan otomatis: aktif**
+
+Portal dan ikon ALETA mengenali sistem komputer Anda (Windows atau macOS) dan mengunduh
+pemasang yang sesuai; ada juga tombol kecil "Unduh untuk Windows / macOS" bila Anda memasangnya
+untuk komputer lain. Linux belum didukung.
 
 Yang terjadi sesudahnya: bila ada versi baru dan tidak ada antrean cetak/penetapan
 yang sedang berjalan, pembantu mengunduh paket langsung dari server (alamat server
@@ -88,6 +93,32 @@ Dipasang hanya di akun Windows yang menjalankannya: berkas pembantu di
 `%LOCALAPPDATA%\ALETA\pembaru` dan satu kunci milik pengguna (HKCU). Tanpa hak admin.
 Mencabut: jalankan pemasang itu dengan argumen `/cabut`. Versi sebelumnya disimpan di
 samping folder ekstensi (`....aleta-lama`) untuk jalan pulang.
+
+### Di MacBook / iMac (macOS)
+
+Pemasangnya berkas `pasang-pembaru-aleta.command` (bash). Sekali per komputer, tanpa sudo.
+
+1. Muat ekstensi di Chrome lebih dulu (Load unpacked, folder hasil ekstrak)
+2. Unduh pemasang dari portal ALETA (halaman Ekstensi, tombol **Unduh pemasang untuk macOS**,
+   atau tombol **Pasang pembaruan otomatis** di ikon ALETA); bila Chrome bertanya, pilih **Simpan**
+3. Buka aplikasi **Terminal** (tekan Cmd+Spasi, ketik Terminal), ketik `bash` lalu satu spasi,
+   **seret berkas pemasang** dari folder Unduhan ke jendela Terminal, tekan Enter. Tunggu tulisan
+   **SELESAI**
+4. Ikon ALETA di Chrome menampilkan **Pembaruan otomatis: aktif**
+
+Kenapa lewat Terminal: macOS menandai berkas unduhan (karantina) dan menahan berkas tanpa izin
+eksekusi. Berkas yang dijalankan dengan `bash` tidak ditahan dan tidak memerlukan izin apa pun.
+Cara lain: klik kanan berkas pemasang, pilih **Buka**, lalu **Buka** lagi pada peringatan
+"pengembang tidak dikenal" (bila macOS tidak mau membukanya, di Terminal ketik
+`chmod +x` dan `xattr -d com.apple.quarantine` diikuti letak berkasnya).
+
+Pembaru di Mac sama dengan di Windows: mengunduh paket langsung dari server (alamat yang tercatat
+saja), mencocokkan sidik, menukar isi folder ekstensi, lalu ekstensi dimuat ulang. Setelan Anda
+tidak berubah, tab yang terbuka tidak dimuat ulang otomatis. Yang ditulis hanya
+`~/Library/Application Support/ALETA/pembaru` dan satu berkas daftar pembantu di folder
+`NativeMessagingHosts` milik Chrome, Edge, Brave, atau Chromium yang ada di akun Anda. Tidak ada
+yang ditulis di luar akun Anda. Pemasang membuang tanda karantina pada berkas yang ditulisnya sendiri.
+Mencabut: `bash pasang-pembaru-aleta.command --cabut`.
 
 ## Tiga saklar di popup ekstensi
 
