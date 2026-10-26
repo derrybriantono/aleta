@@ -454,6 +454,157 @@ function abtKlienPeriksaRtf(isiLatin1) {
   return { diawaliRtf: t.startsWith("{\\rtf"), penandaSisa: sisa, jumlahTitikTiga: titik, panjang: t.length };
 }
 
+/**
+ * KOTAK ACUAN VARIABEL (26 Okt 2026). Blangko Derry menyimpan di BADAN naskah (bukan header) sebuah tabel kecil MENGAMBANG
+ * (\tphpg \tposx, jangkar paragraf sebelumnya) yang isinya deretan penanda ("#1214# #0222# ... #8549#") berhuruf 1 pt, putih,
+ * superskrip: dipakai menyusun blangko supaya ABT menghitung variabel itu. Sesudah ABT mengisinya, sel itu memuat SELURUH
+ * keluaran variabel (bukti, riwayat sidang, alasan, dst.) berhuruf 1 pt - tampak sebagai kotak abu-abu di atas halaman bila
+ * dibuka di WPS/Word, dan seluruh teksnya (termasuk titik-titik variabel yang kosong di kotak itu) ikut terbaca pemeriksa
+ * "sisa blangko". Header serupa sudah dibuang oleh bersihkanHeaderPenanda (blangko-derry-isian.js); ini versi untuk badan.
+ *
+ * Dibuang hanya BARIS tabel yang seluruh teks tampaknya <= 3 pt (\fs6), atau berteks pertama <= 3 pt dengan penanda
+ * superskrip (keluaran variabel kadang memuat \plain/\fs normal di tengah sel), tanpa gambar, bidang, bentuk, objek, atau
+ * tabel bersarang. Tabel sah (amar, kotak tanda tangan, stempel "SALINAN" putih 12 pt) tidak pernah terkena. Berkas blangko di
+ * ABT tidak disentuh - hanya salinan hasil cetak. Terima teks biner/ArrayBuffer/Uint8Array; pulang jenis yang sama (ArrayBuffer
+ * untuk non-teks) + jumlah baris yang dibuang. Murni: tanpa tulisan ke ABT/SIPP.
+ */
+const ABT_KOTAK_UKURAN_MAKS = 6; // \fs6 = 3 pt
+function abtKlienLatin1(buf) {
+  if (typeof buf === "string") return buf;
+  const u = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+  let s = "";
+  for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000));
+  return s;
+}
+function abtKlienBufDariLatin1(s) {
+  const u = new Uint8Array(s.length);
+  for (let i = 0; i < s.length; i += 1) u[i] = s.charCodeAt(i) & 0xff;
+  return u.buffer;
+}
+/** Apakah token a..b (satu baris tabel) hanyalah kotak penanda berhuruf kecil? */
+function abtKlienBarisKotakKecil(token, a, b) {
+  const kataDari = (t) => {
+    const m = /^\\([a-zA-Z]+)(-?\d+)?/.exec(t);
+    return m ? [m[1], m[2] === undefined ? null : Number(m[2])] : [null, null];
+  };
+  let fs = 24;
+  const tumpuk = [];
+  let lewat = 0; // kedalaman tujuan {\* ...} yang diabaikan
+  let teks = 0;
+  let terbesar = 0;
+  let pertama = 0; // ukuran teks pertama
+  let kecilAda = false;
+  let adaSuper = false;
+  let mengambang = false;
+  for (let i = a; i <= b; i += 1) {
+    const t = token[i];
+    if (t === "{") {
+      tumpuk.push(fs);
+      if (lewat) lewat += 1;
+      else if (token[i + 1] === "\\*" || /^\\\*/.test(token[i + 1] || "")) lewat = 1;
+    } else if (t === "}") {
+      if (tumpuk.length) fs = tumpuk.pop();
+      if (lewat) lewat -= 1;
+    } else if (t.charAt(0) === "\\") {
+      if (lewat) continue;
+      const [kata, angka] = kataDari(t);
+      if (!kata) {
+        if (/^\\'[0-9a-fA-F]{2}/.test(t)) {
+          teks += 1;
+          terbesar = Math.max(terbesar, fs);
+          if (!pertama) pertama = fs;
+        } else if (t === "\\\\" || t === "\\{" || t === "\\}") {
+          teks += 1;
+          terbesar = Math.max(terbesar, fs);
+          if (!pertama) pertama = fs;
+        }
+        continue;
+      }
+      if (kata === "fs") {
+        fs = angka || fs;
+        if (fs <= ABT_KOTAK_UKURAN_MAKS) kecilAda = true;
+      } else if (kata === "plain") fs = 24;
+      else if (kata === "super" && angka !== 0) adaSuper = true;
+      else if (kata === "tposx" || kata === "tphpg" || kata === "tpvpg") mengambang = true;
+      else if (/^(?:pict|shppict|nonshppict|shp|shpinst|field|fldinst|object|nestcell|nestrow|do)$/.test(kata)) return false;
+      else if (kata === "u") {
+        teks += 1;
+        terbesar = Math.max(terbesar, fs);
+        if (!pertama) pertama = fs;
+      }
+    } else if (!lewat && t.trim()) {
+      teks += 1;
+      terbesar = Math.max(terbesar, fs);
+      if (!pertama) pertama = fs;
+    }
+  }
+  if (teks > 0) return terbesar <= ABT_KOTAK_UKURAN_MAKS || (pertama <= ABT_KOTAK_UKURAN_MAKS && adaSuper && kecilAda);
+  return mengambang && kecilAda; // tanpa teks (semua variabel kosong): hanya kotak mengambang berhuruf kecil
+}
+function abtKlienBuangKotakPenanda(rtf) {
+  const asalString = typeof rtf === "string";
+  const sumber = abtKlienLatin1(rtf);
+  if (sumber.indexOf("\\trowd") < 0 || sumber.indexOf("\\row") < 0) return { rtf, jumlah: 0 };
+  const token = sumber.match(/\\[a-zA-Z]+-?\d* ?|\\'[0-9a-fA-F]{2}|\\[^a-zA-Z]|[{}]|[^\\{}]+/g) || [];
+  if (token.join("") !== sumber) return { rtf, jumlah: 0 };
+  const adalah = (t, kata) => t.charAt(0) === "\\" && new RegExp("^\\\\" + kata + "(?![a-zA-Z0-9])").test(t);
+  // Tabel di dalam grup header/footer bukan urusan di sini: header penanda dibersihkan bersihkanHeaderPenanda (blangko-derry-isian.js).
+  const dalamHf = new Array(token.length).fill(false);
+  const tumpukHf = [];
+  let hf = 0;
+  for (let i = 0; i < token.length; i += 1) {
+    if (token[i] === "{") {
+      const hfBaru = /^\\(?:header|footer)[lrf]?(?![a-zA-Z])/.test(token[i + 1] || "");
+      tumpukHf.push(hfBaru);
+      if (hfBaru) hf += 1;
+    } else if (token[i] === "}") {
+      if (tumpukHf.length && tumpukHf.pop()) hf -= 1;
+    }
+    dalamHf[i] = hf > 0;
+  }
+  const hapus = [];
+  let jumlah = 0;
+  let sesudahBaris = 0; // indeks token sesudah \row sebelumnya
+  for (let e = 0; e < token.length; e += 1) {
+    if (!adalah(token[e], "row")) continue;
+    let s = -1;
+    for (let k = sesudahBaris; k < e; k += 1) {
+      if (adalah(token[k], "trowd")) {
+        s = k;
+        break;
+      }
+    }
+    sesudahBaris = e + 1;
+    if (s < 0 || dalamHf[s]) continue;
+    if (s > 0 && token[s - 1] === "{" && s - 1 >= 0) s -= 1; // kurung buka yang membungkus \trowd ikut
+    // keseimbangan kurung: kurung penutup sesudah \row ({\trowd ... \row }) ikut
+    let dalam = 0;
+    for (let k = s; k <= e; k += 1) {
+      if (token[k] === "{") dalam += 1;
+      else if (token[k] === "}") dalam -= 1;
+    }
+    let akhir = e;
+    while (dalam > 0 && token[akhir + 1] === "}") {
+      akhir += 1;
+      dalam -= 1;
+    }
+    if (dalam !== 0) continue; // tidak seimbang: biarkan apa adanya
+    if (!abtKlienBarisKotakKecil(token, s, akhir)) continue;
+    hapus.push([s, akhir]);
+    sesudahBaris = akhir + 1;
+    jumlah += 1;
+  }
+  if (!jumlah) return { rtf, jumlah: 0 };
+  let baru = "";
+  let dari = 0;
+  for (const [s, akhir] of hapus) {
+    baru += token.slice(dari, s).join("");
+    dari = akhir + 1;
+  }
+  baru += token.slice(dari).join("");
+  return { rtf: asalString ? baru : abtKlienBufDariLatin1(baru), jumlah };
+}
+
 /** d/m/Y untuk edit_data data_tanggal (tgl_sql ABT = DateTime::createFromFormat('d/m/Y')). "" bila tak terbaca. */
 function abtKlienTanggalAbt(nilai) {
   const t = String(nilai || "").trim();
@@ -763,19 +914,23 @@ function abtKlienBuat(opsi) {
       const kueri = { a, b, c: perkaraId || "", e: perkTemp || "", d: sidang || "" };
       const r = await ambil(`${asal}/preview?${q(kueri)}`, { credentials: "include", cache: "no-store" });
       if (r.status >= 400) return gagal(`ABT menjawab ${r.status}.`);
-      const buf = await r.arrayBuffer();
-      const awal = new TextDecoder("latin1").decode(new Uint8Array(buf).subarray(0, 6));
+      const mentah = await r.arrayBuffer();
+      const awal = new TextDecoder("latin1").decode(new Uint8Array(mentah).subarray(0, 6));
       if (!awal.startsWith("{\\rtf")) {
-        const teks = new TextDecoder("latin1").decode(new Uint8Array(buf).subarray(0, 8000));
+        const teks = new TextDecoder("latin1").decode(new Uint8Array(mentah).subarray(0, 8000));
         const sebab = abtKlienSebabBukanJawaban(teks);
         return gagal(sebab ? sebab.pesan : "ABT tidak mengembalikan RTF.", { jenis: sebab && sebab.jenis });
       }
+      // Kotak acuan variabel (tabel mengambang berhuruf 1 pt) dibuang dari SEMUA keluaran cetak; berkas di ABT tidak diubah.
+      const bersih = abtKlienBuangKotakPenanda(mentah);
+      const buf = bersih.rtf;
       const isi = new TextDecoder("latin1").decode(new Uint8Array(buf));
       return {
         ok: true,
         rtf: buf,
         nama: abtKlienNamaDariHeader(r.headers.get("content-disposition")),
         ukuran: buf.byteLength,
+        kotakDibuang: bersih.jumlah,
         periksa: abtKlienPeriksaRtf(isi),
       };
     },
@@ -894,6 +1049,7 @@ if (typeof module !== "undefined" && module.exports) {
     abtKlienPesanAnonim,
     abtKlienNamaDariHeader,
     abtKlienPeriksaRtf,
+    abtKlienBuangKotakPenanda,
     abtKlienTanggalAbt,
     abtKlienNetralkanPetik,
     abtKlienSebabBukanJawaban,
