@@ -491,7 +491,19 @@
       persen,
       isiTxt,
       sisaMinutasi,
+      konsep: konsepDari(p),
     };
+  }
+  /**
+   * 26 Okt 2026: "konsep sementara" = perkara yang di Jadwal Sidang ALETA diberi "tunjuk konseptor" (satu-satunya sumber: portal
+   * menyertakannya pada tiap perkara sebagai `konsepSementara`). Hanya yang `milikAkun` (cocok dengan akun yang sedang dilihat;
+   * "Semua akun" = semua tunjukan) yang dihitung. Bentuk lain/hilang = bukan konsep sementara. Murni.
+   */
+  function konsepDari(p) {
+    const k = p && p.konsepSementara;
+    if (!k || typeof k !== "object" || k.milikAkun !== true) return null;
+    const nama = String(k.nama || "").trim();
+    return nama ? { nama, oleh: String(k.ditetapkanOleh || "").trim() } : null;
   }
 
   const TEKS_TINGKAT = { tinggi: "Perlu segera", sedang: "Menyusul", rendah: "Tidak mendesak", selesai: "Selesai" };
@@ -518,6 +530,8 @@
   function urutkan(daftar, urut, arah, depan) {
     const kunci = KUNCI_URUT[urut] || KUNCI_URUT.prioritas;
     return daftar.slice().sort((x, y) => {
+      // 26 Okt 2026: konsep sementara selalu paling atas; urutan pilihan pengguna berlaku di dalam masing-masing kelompok.
+      if (Boolean(x.konsep) !== Boolean(y.konsep)) return x.konsep ? -1 : 1;
       if (depan && x.selesai !== y.selesai) return x.selesai ? 1 : -1;
       const a = kunci(x);
       const b = kunci(y);
@@ -554,6 +568,8 @@
     depan: true,
     /** 22 Okt 2026: sembunyikan perkara berprioritas "Selesai" di daftar. Bawaan tercentang; pilihan diingat per pengguna. */
     sembunyiSelesai: true,
+    /** 26 Okt 2026: tampilkan perkara konsep sementara (di atas daftar). Bawaan NYALA; mati = disembunyikan. Diingat per pengguna. */
+    tampilKonsep: true,
     ket: { jenis: true, sidang: true, pihak: true, isian: false, cetak: true, alasan: false, majelis: false, petugas: false },
     cariNomor: "",
     /** Jenis pencarian di kotak cari (19 Okt 2026): "semua" = saringan kata kunci otomatis. */
@@ -725,6 +741,7 @@
       if (d.arah === 1 || d.arah === -1) S.arah = d.arah;
       if (typeof d.depan === "boolean") S.depan = d.depan;
       if (typeof d.sembunyi === "boolean") S.sembunyiSelesai = d.sembunyi;
+      if (typeof d.konsep === "boolean") S.tampilKonsep = d.konsep;
       // 21 Okt (w25): mode daftar TIDAK dipulihkan - panel selalu dibuka di "Sidang hari ini". "Pilih tanggal" yang terpulihkan tanpa
       // tanggal membuat galat "Tanggal harus berbentuk YYYY-MM-DD", dan "Semua perkara saya" memuat jauh lebih banyak daripada perlu.
       if (d.ket && typeof d.ket === "object") for (const k of Object.keys(S.ket)) if (typeof d.ket[k] === "boolean") S.ket[k] = d.ket[k];
@@ -732,7 +749,7 @@
     return s[K.aktif] !== false;
   }
   function simpanPref() {
-    void tulisPenyimpanan({ [K.daftar]: { lihat: S.lihat, urut: S.urut, arah: S.arah, depan: S.depan, sembunyi: S.sembunyiSelesai, mode: S.mode, ket: { ...S.ket } } });
+    void tulisPenyimpanan({ [K.daftar]: { lihat: S.lihat, urut: S.urut, arah: S.arah, depan: S.depan, sembunyi: S.sembunyiSelesai, konsep: S.tampilKonsep, mode: S.mode, ket: { ...S.ket } } });
   }
   function terapkanTema() {
     for (const e of [akar, tawar]) if (e && e.getAttribute("data-tema") !== S.tema) e.setAttribute("data-tema", S.tema);
@@ -1327,13 +1344,19 @@
   }
   /** "Sembunyikan yang selesai" berlaku bila tercentang; PTSP (mencari nomor satker, baca saja) tidak pernah menyembunyikan. */
   const sembunyiBerlaku = () => S.sembunyiSelesai && !ptspCari();
-  function daftarUrut() {
-    const l = daftarUrutSemua();
-    return sembunyiBerlaku() ? l.filter((r) => !r.selesai) : l;
+  /** Toggle "Tampilkan konsep sementara" mati: perkara konsep sementara tidak ikut daftar. PTSP tidak punya konsep sementara. */
+  const konsepDisembunyikan = (r) => Boolean(r.konsep) && !S.tampilKonsep && !ptspCari();
+  function daftarUrut(semua) {
+    return (semua || daftarUrutSemua()).filter((r) => !(sembunyiBerlaku() && r.selesai) && !konsepDisembunyikan(r));
   }
 
   const tipPihak = (n) => `<span class="bd-pihak" data-tipn="${esc(n)}">Para pihak ⓘ</span>`;
   const chipPrio = (r) => `<span class="bd-prio ${r.tingkat}">${TEKS_TINGKAT[r.tingkat]}</span>`;
+  /** Lencana "Konsep sementara" + nama konseptor yang ditunjuk (nama lengkap di tooltip). */
+  const chipKonsep = (r) =>
+    r.konsep
+      ? `<span class="bd-konsep" data-konsep title="${esc(`Konseptor sementara (ditunjuk di Jadwal Sidang): ${r.konsep.nama}${r.konsep.oleh ? ` - oleh ${r.konsep.oleh}` : ""}`)}">Konsep sementara · ${potong(pertama(r.konsep.nama) || r.konsep.nama, 24)}</span>`
+      : "";
   const chipAlasan = (r, m) => r.alasan.slice(0, m).map((a) => `<span class="bd-alasan">${esc(a)}</span>`).join("");
   const KET_KARTU = [
     ["jenis", "Jenis perkara"],
@@ -1376,7 +1399,8 @@
     // 22 Okt: agenda sidang kini ada di baris "Sidang ke-N · agenda" di bawah nomor; baris ini memuat tanggal + keterangan hasil saja.
     if (k.sidang) baris1.push(r.s.ket ? urusanSidang(r) : tglS(r.s.tanggal));
     return (
-      `<button type="button" class="bd-kpk" role="listitem" data-pk="${esc(r.n)}"><span class="a"><span>${esc(nomorPendek(r.n))}</span>${chipPrio(r)}</span>` +
+      `<button type="button" class="bd-kpk${r.konsep ? " konsep" : ""}" role="listitem" data-pk="${esc(r.n)}"><span class="a"><span>${esc(nomorPendek(r.n))}</span>${chipPrio(r)}</span>` +
+      (r.konsep ? `<span class="c">${chipKonsep(r)}</span>` : "") +
       (k.sidang ? barisKeSidang(r, "b bd-kesidang") : "") +
       (baris1.length ? `<span class="b">${baris1.join(" · ")}</span>` : "") +
       (k.pihak ? `<span class="b">${tipPihak(r.n)}</span>` : "") +
@@ -1391,10 +1415,10 @@
   }
   function baris(r, dalamTanggal) {
     return (
-      `<button type="button" class="bd-brs" role="listitem" data-pk="${esc(r.n)}"><span class="bd-no">${esc(nomorPendek(r.n))}</span><span>${esc(r.p.jenisPerkara)}</span>` +
+      `<button type="button" class="bd-brs${r.konsep ? " konsep" : ""}" role="listitem" data-pk="${esc(r.n)}"><span class="bd-no">${esc(nomorPendek(r.n))}</span><span>${esc(r.p.jenisPerkara)}</span>` +
       (dalamTanggal ? `<span class="bd-catat bd-potong">${esc(r.s.ket || r.s.agenda || "-")}</span>` : `<span class="bd-catat">${tglS(r.s.tanggal)}</span>`) +
       barisKeSidang(r, "bd-catat bd-potong bd-kesidang") +
-      `${tipPihak(r.n)}<span class="gap"></span><span class="bd-chip">${esc(r.isiTxt)}</span><span class="bd-chip ${r.dokKelas}">${esc(r.dokTxt)}</span>${chipPrio(r)}</button>`
+      `${chipKonsep(r)}${tipPihak(r.n)}<span class="gap"></span><span class="bd-chip">${esc(r.isiTxt)}</span><span class="bd-chip ${r.dokKelas}">${esc(r.dokTxt)}</span>${chipPrio(r)}</button>`
     );
   }
   const KOLOM = [
@@ -1419,7 +1443,7 @@
       l
         .map(
           (r) =>
-            `<tr data-pk="${esc(r.n)}" tabindex="0"><td>${chipPrio(r)}</td><td class="nw"><span style="font-family:var(--mono)">${esc(nomorPendek(r.n))}</span> ${tipPihak(r.n)}${barisKeSidang(r, "bd-kesidang blok")}</td>` +
+            `<tr${r.konsep ? ' class="konsep"' : ""} data-pk="${esc(r.n)}" tabindex="0"><td>${chipPrio(r)}</td><td class="nw"><span style="font-family:var(--mono)">${esc(nomorPendek(r.n))}</span> ${tipPihak(r.n)}${r.konsep ? `<span class="blok">${chipKonsep(r)}</span>` : ""}${barisKeSidang(r, "bd-kesidang blok")}</td>` +
             `<td>${potong(r.p.jenisPerkara, 22)}</td><td class="nw">${tglS(r.s.tanggal)}</td><td>${potong(r.s.ket || r.s.agenda, 34)}</td>` +
             `<td><span class="bd-chip">${esc(r.isiTxt)}</span></td><td><span class="bd-chip ${r.dokKelas}">${esc(r.dokTxt)}</span></td>` +
             `<td class="nw">${r.sisaMinutasi === null || r.selesai ? "-" : `${r.sisaMinutasi} hari lagi`}</td></tr>`
@@ -1438,6 +1462,16 @@
       `<span class="bd-hariT"><b>${hariDari(t)}</b><em>${h ? "Hari ini" : lewat ? `${selisih(t, hariIni())} hari lalu` : `${selisih(hariIni(), t)} hari lagi`}</em></span><span class="gap"></span>` +
       `<span class="bd-chip">${ls.length} perkara</span>${sel ? `<span class="bd-chip ok">${sel} selesai</span>` : ""}</header>` +
       `<div class="bd-dpk ringkas">${ls.map((r) => baris(r, true)).join("")}</div></section>`
+    );
+  }
+
+  /** "Per tanggal sidang": kelompok khusus "Konsep sementara" paling atas (semua tanggalnya; tanggal tampil di tiap baris). */
+  function grupKonsep(ls) {
+    const sel = ls.filter((r) => r.selesai).length;
+    return (
+      `<section class="bd-grupT konsep" data-grup-konsep><header class="bd-pitaT"><span class="bd-hariT"><b>Konsep sementara</b><em>Ditunjuk sebagai konseptor di Jadwal Sidang</em></span><span class="gap"></span>` +
+      `<span class="bd-chip">${ls.length} perkara</span>${sel ? `<span class="bd-chip ok">${sel} selesai</span>` : ""}</header>` +
+      `<div class="bd-dpk ringkas">${ls.map((r) => baris(r, false)).join("")}</div></section>`
     );
   }
 
@@ -1487,9 +1521,13 @@
     const fokus = akar.ownerDocument.activeElement;
     const fokusCari = fokus && fokus.id === "bd-cari" ? fokus.selectionStart : null;
 
-    const l = S.memuat || S.galat || !S.data ? [] : daftarUrut();
+    const semuaL = S.memuat || S.galat || !S.data ? [] : daftarUrutSemua();
+    const l = daftarUrut(semuaL);
     // Jumlah yang disembunyikan (sudah selesai) - dilaporkan jujur di catatan daftar, bukan dibuang diam-diam.
-    const sembunyi = S.memuat || S.galat || !S.data ? 0 : daftarUrutSemua().length - l.length;
+    const sembunyi = semuaL.filter((r) => sembunyiBerlaku() && r.selesai).length;
+    // Konsep sementara yang disembunyikan toggle (di luar yang sudah dihitung sebagai selesai), dan jumlah konsep sementara untuk label toggle.
+    const konsepSemb = semuaL.filter((r) => konsepDisembunyikan(r) && !(sembunyiBerlaku() && r.selesai)).length;
+    const konsepJumlah = semuaL.filter((r) => r.konsep && !(sembunyiBerlaku() && r.selesai)).length;
     let isi =
       `<div class="bd-kontrol"><div class="bd-seg" role="tablist" aria-label="Perkara yang ditampilkan">` +
       [
@@ -1532,6 +1570,7 @@
       `</select><button type="button" class="bd-btn kecil" data-bd="arah" aria-label="Balik urutan">${S.arah > 0 ? "Urutan: naik ▲" : "Urutan: turun ▼"}</button>` +
       `<label class="bd-cek"><input type="checkbox" id="bd-depan" ${S.depan ? "checked" : ""}> Yang belum selesai di depan</label>` +
       (ptspCari() ? "" : `<label class="bd-cek"><input type="checkbox" id="bd-sembunyi" ${S.sembunyiSelesai ? "checked" : ""}> Sembunyikan yang selesai</label>`) +
+      (ptspCari() ? "" : `<label class="bd-cek" title="Perkara yang di Jadwal Sidang ditunjuk konseptornya (sementara) tampil paling atas. Dimatikan: disembunyikan dari daftar."><input type="checkbox" id="bd-konsep" ${S.tampilKonsep ? "checked" : ""}> Tampilkan konsep sementara${konsepJumlah ? ` (${konsepJumlah})` : ""}</label>`) +
       `</div>`;
     if (S.lihat === "kartu") {
       isi += `<div class="bd-kontrol" id="bd-ketkartu"><span class="bd-lbl">Tampilkan keterangan</span>${KET_KARTU.map(
@@ -1544,9 +1583,14 @@
     else if (S.memuat || (!S.data && !S.galat)) badan = `<p class="bd-catat" role="status">Membaca daftar perkara dari SIPP…</p>`;
     else if (S.galat) {
       badan = `<div class="bd-peringatan" role="alert">${esc(S.galat)} <button type="button" class="bd-btn kecil" data-bd="coba">Coba lagi</button></div>`;
-    } else if (!l.length && sembunyi) {
+    } else if (!l.length && sembunyi && !konsepSemb) {
       badan =
         `<p class="bd-catat">Semua ${sembunyi} perkara pada daftar ini sudah selesai, jadi disembunyikan. <button type="button" class="bd-btn kecil" data-bd="tampil-selesai">Tampilkan yang selesai</button></p>`;
+    } else if (!l.length && konsepSemb) {
+      badan =
+        `<p class="bd-catat">${sembunyi ? `${sembunyi} perkara yang selesai dan ` : "Semua "}${konsepSemb} perkara konsep sementara pada daftar ini disembunyikan. ` +
+        (sembunyi ? `<button type="button" class="bd-btn kecil" data-bd="tampil-selesai">Tampilkan yang selesai</button> ` : "") +
+        `<button type="button" class="bd-btn kecil" data-bd="tampil-konsep">Tampilkan konsep sementara</button></p>`;
     } else if (!l.length) {
       badan =
         `<p class="bd-catat">${teksKosong()}${S.mode === "hari" ? ` <button type="button" class="bd-btn kecil" data-mode="semua">Lihat semua perkara saya</button>` : ""}</p>`;
@@ -1558,8 +1602,9 @@
       else if (S.lihat === "tabel") dalam = tabel(l);
       else {
         const grup = {};
-        l.forEach((r) => (grup[r.s.tanggal] = grup[r.s.tanggal] || []).push(r));
-        dalam = Object.keys(grup)
+        const konsepL = l.filter((r) => r.konsep);
+        l.filter((r) => !r.konsep).forEach((r) => (grup[r.s.tanggal] = grup[r.s.tanggal] || []).push(r));
+        dalam = (konsepL.length ? grupKonsep(konsepL) : "") + Object.keys(grup)
           .sort((a, b) => Math.abs(selisih(hariIni(), a)) - Math.abs(selisih(hariIni(), b)) || (a < b ? -1 : 1))
           .map((t) => grupTanggal(t, grup[t]))
           .join("");
@@ -1570,6 +1615,8 @@
       badan +=
         `<p class="bd-catat" id="bd-ketdaftar">${l.length} perkara · ${S.data.mode === "semua" ? "sidang sejak 90 hari lalu sampai 45 hari ke depan" : `${tglS(S.data.dari)}${S.data.dari !== S.data.sampai ? ` s.d. ${tglS(S.data.sampai)}` : ""}`} · diurutkan menurut ${NAMA_URUT[S.urut]}${S.depan ? ", yang belum selesai di depan" : ""}.` +
         (sembunyi ? ` <span id="bd-ketsembunyi">${sembunyi} perkara yang selesai disembunyikan.</span> <button type="button" class="bd-tautan" data-bd="tampil-selesai">Tampilkan</button>` : "") +
+        (konsepSemb ? ` <span id="bd-ketkonsep">${konsepSemb} perkara konsep sementara disembunyikan.</span> <button type="button" class="bd-tautan" data-bd="tampil-konsep">Tampilkan</button>` : "") +
+        (!konsepSemb && konsepJumlah ? ` <span id="bd-ketkonsep">${konsepJumlah} perkara konsep sementara di atas.</span>` : "") +
         `${peringatan.length ? ` ${esc(peringatan.join(" "))}` : ""}</p>`;
     }
     pilih.innerHTML = isi + badan;
@@ -2026,6 +2073,11 @@
       simpanPref();
       return renderPerkara();
     }
+    if (kode === "tampil-konsep") {
+      S.tampilKonsep = true;
+      simpanPref();
+      return renderPerkara();
+    }
     const alat = c("[data-alat]");
     if (alat) return jalankanAlat(alat.getAttribute("data-alat"));
     const mode = c("[data-mode]");
@@ -2101,6 +2153,11 @@
     }
     if (t.id === "bd-sembunyi") {
       S.sembunyiSelesai = t.checked;
+      simpanPref();
+      return renderPerkara();
+    }
+    if (t.id === "bd-konsep") {
+      S.tampilKonsep = t.checked;
       simpanPref();
       return renderPerkara();
     }
