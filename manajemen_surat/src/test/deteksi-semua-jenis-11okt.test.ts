@@ -126,7 +126,7 @@ describe("usulan variabel per jenis dari kamus", () => {
     expect(nilai).toMatchObject({
       "1029": "Xxxa bin Yyyb",
       "1030": "27",
-      "6087": "calon suami Pemohon bukan dari suku yang sama",
+      "6087": "karena calon suami Pemohon bukan dari suku yang sama", // 27 Okt: isian petugas 6087 selalu berawalan "karena" (3 dari 3)
       "1046": "ayah kandung",
       "1217": "Zzzc bin Wwwd",
     });
