@@ -710,10 +710,10 @@
       "breakpoints": true
     },
     {
-      "idx": 102,
+      "idx": 101,
       "version": "7",
       "when": 1792301400001,
-      "tag": "0116_aleta_kamus_riwayat",
+      "tag": "0115_aleta_kamus_riwayat",
       "breakpoints": true
     }
   ]

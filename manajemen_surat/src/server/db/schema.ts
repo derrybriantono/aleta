@@ -458,8 +458,8 @@ export const DDL_KAMUS_RUAS_TAMBAHAN = {
 } as const;
 
 /**
- * Riwayat perubahan kamus deteksi (0116, 27 Okt 2026): siapa, kapan, isi lama. Cermin PERSIS dari
- * drizzle/0116_aleta_kamus_riwayat.sql; penjaga kamus-riwayat-27okt.test.ts membandingkan keduanya.
+ * Riwayat perubahan kamus deteksi (0115, 27 Okt 2026): siapa, kapan, isi lama. Cermin PERSIS dari
+ * drizzle/0115_aleta_kamus_riwayat.sql; penjaga kamus-riwayat-27okt.test.ts membandingkan keduanya.
  */
 export const DDL_KAMUS_RIWAYAT = {
   tabel: [
@@ -3332,7 +3332,7 @@ const schemaStatements = [
   ...DDL_MASUK_JEJAK.tabel,
   // Kamus deteksi & kalimat, jejak koreksi, calon dari koreksi (0060).
   ...DDL_KAMUS_DETEKSI.tabel,
-  // Riwayat perubahan kamus deteksi (0116).
+  // Riwayat perubahan kamus deteksi (0115).
   ...DDL_KAMUS_RIWAYAT.tabel,
   // Cadangan & riwayat suntingan ABT dari Pengaturan SIPP & ABT (0066).
   ...DDL_ABT_SUNTINGAN.tabel,

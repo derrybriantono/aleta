@@ -12,7 +12,7 @@
 --
 -- Tanpa kunci asing dan tanpa CHECK: nilai yang sah dijaga modulnya (src/server/modules/aleta-ecourt/kamus-deteksi.ts).
 --
--- NOMOR: 0116 (idx 102) diklaim 27 Okt 2026.
+-- NOMOR: 0115 (idx 101) diklaim 27 Okt 2026.
 --
 -- TIGA TEMPAT PENDAFTARAN, semuanya wajib (yang terlewat gagal diam-diam):
 --   (a) berkas ini dan entrinya di meta/_journal.json;

@@ -452,7 +452,7 @@ export type BarisRiwayatKamus = {
 
 /**
  * Mencatat satu perubahan kamus: siapa, kapan, isi lama dan isi baru. Gagal mencatat TIDAK menggagalkan simpan
- * (tabel riwayat belum termigrasi di server yang terlewat 0116) - hanya dicatat ke log.
+ * (tabel riwayat belum termigrasi di server yang terlewat 0115) - hanya dicatat ke log.
  */
 async function catatRiwayat(
   db: AletaDatabase,

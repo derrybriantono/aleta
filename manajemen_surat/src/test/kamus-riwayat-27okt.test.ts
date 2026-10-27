@@ -10,11 +10,11 @@ import { DDL_KAMUS_RIWAYAT } from "@/server/db/schema";
 import { bacaRiwayatKamus, kembalikanKeBenih, simpanPola, ubahStatusKamus } from "@/server/modules/aleta-ecourt/kamus-deteksi";
 
 /**
- * 27 OKT 2026 - RIWAYAT PERUBAHAN KAMUS DETEKSI (migrasi 0116, idx 102): siapa, kapan, isi lama.
+ * 27 OKT 2026 - RIWAYAT PERUBAHAN KAMUS DETEKSI (migrasi 0115, idx 101): siapa, kapan, isi lama.
  * Pola baru dari layar Admin tercatat; mengubah, mengaktifkan, dan mengembalikan ke bawaan juga.
  */
 
-const SQL = path.join(process.cwd(), "drizzle", "0116_aleta_kamus_riwayat.sql");
+const SQL = path.join(process.cwd(), "drizzle", "0115_aleta_kamus_riwayat.sql");
 const pernyataan = (sql: string) =>
   sql
     .split(/\r?\n/)
@@ -24,11 +24,11 @@ const pernyataan = (sql: string) =>
     .map((s) => s.replace(/\s+/g, " ").trim())
     .filter(Boolean);
 
-describe("migrasi 0116 - tiga tempat pendaftaran", () => {
-  it("jurnal: 0116 di idx 102 tepat sekali, when naik", () => {
+describe("migrasi 0115 - tiga tempat pendaftaran", () => {
+  it("jurnal: 0115 di idx 101 tepat sekali, when naik", () => {
     const j = JSON.parse(readFileSync(path.join(process.cwd(), "drizzle/meta/_journal.json"), "utf8")) as { entries: Array<{ idx: number; tag: string; when: number }> };
-    expect(j.entries.filter((e) => e.tag.startsWith("0116_"))).toEqual([expect.objectContaining({ idx: 102, tag: "0116_aleta_kamus_riwayat" })]);
-    expect(j.entries.filter((e) => e.idx === 102)).toHaveLength(1);
+    expect(j.entries.filter((e) => e.tag.startsWith("0115_"))).toEqual([expect.objectContaining({ idx: 101, tag: "0115_aleta_kamus_riwayat" })]);
+    expect(j.entries.filter((e) => e.idx === 101)).toHaveLength(1);
     for (let i = 1; i < j.entries.length; i += 1) expect(j.entries[i].when).toBeGreaterThan(j.entries[i - 1].when);
   });
 
