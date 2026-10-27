@@ -10,6 +10,16 @@ const sessionMock = vi.hoisted(() => ({
   session: null as { user?: { id: string } } | null,
 }));
 
+// Status pemasangan sengaja ditiru: aslinya dibaca dari berkas .env.local / install-state / DATABASE_URL mesin yang menjalankan uji,
+// sehingga di laptop tanpa konfigurasi itu halaman utama selalu ke /setup dan uji ini merah bukan karena kodenya.
+const installMock = vi.hoisted(() => ({
+  setupRequired: false,
+}));
+
+vi.mock("@/server/modules/install/service", () => ({
+  getInstallStatus: vi.fn(async () => ({ setupRequired: installMock.setupRequired })),
+}));
+
 vi.mock("next/headers", () => ({
   headers: vi.fn(async () => new Headers()),
 }));
@@ -32,6 +42,15 @@ describe("root route redirect", () => {
   afterEach(() => {
     redirectMock.mockClear();
     sessionMock.session = null;
+    installMock.setupRequired = false;
+  });
+
+  it("sends everyone to setup while the install is incomplete", async () => {
+    installMock.setupRequired = true;
+    sessionMock.session = { user: { id: "user-superadmin" } };
+
+    await expect(Home()).rejects.toThrow("REDIRECT:/setup");
+    expect(redirectMock).toHaveBeenCalledWith("/setup");
   });
 
   it("sends anonymous users to login", async () => {
