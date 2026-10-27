@@ -57,6 +57,14 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.46",
+    dirilis: "2026-10-27T12:07:00+08:00",
+    judul: "Keterangan saksi dari sidang sebelumnya terbaca",
+    butir: [
+      "Blangko ABT by Derry Briantono: keterangan saksi yang dicatat di sidang pembuktian sebelumnya kini terbaca di blangko putusan, dengan keterangan asal sidangnya.",
+    ],
+  },
+  {
     versi: "1.205.45",
     dirilis: "2026-10-27T11:53:00+08:00",
     judul: "Sampul dan daftar isi lebih rapi; e-Doc tidak tertahan kunci sendiri",
