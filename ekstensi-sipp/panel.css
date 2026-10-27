@@ -3256,6 +3256,8 @@ body[data-aleta-sunting-langsung="ya"] .aleta-abt-isi-sunting:focus-visible {
 
 /* Dibedakan dari lencana keyakinan: yang ini bukan penilaian mesin melainkan
    keterangan bahwa manusia sudah turun tangan. */
+/* 28 Okt: display di .aleta-tanda mengalahkan [hidden] bawaan peramban - "disunting" tampak sebelum ada yang disunting. */
+.aleta-tanda[hidden] { display: none; }
 .aleta-tanda-sunting {
   flex: none;
   background: var(--aleta-latar-naik);
@@ -3349,7 +3351,7 @@ body[data-aleta-sunting-langsung="ya"] .aleta-abt-isi-sunting:focus-visible {
 .aleta-a5227-pemicu { cursor: pointer; }
 .aleta-a5227-pemicu:hover,
 .aleta-a5227-pemicu:focus-visible { text-decoration: underline dotted; outline: none; }
-.aleta-a5227-dialog { border-color: var(--aleta-garis-kuat); }
+.aleta-t6-dialog.aleta-a5227-dialog { border-color: var(--aleta-garis-kuat); }
 .aleta-a5227-butir { margin: 6px 0; line-height: 1.5; }
 .aleta-a5227-butir > strong { margin-right: 6px; }
 .aleta-a5227-kutip { margin-top: 2px; color: var(--aleta-tulisan-lembut); font-style: italic; }

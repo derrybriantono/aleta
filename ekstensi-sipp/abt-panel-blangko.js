@@ -1822,8 +1822,17 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
             : `menimpa ${daftarTimpa.length} isian lama`,
       }
     : null;
+  // 28 Okt: 5227 dari gugatan (kesepakatan "gugatan") tidak boleh jatuh ke "satu saksi" - lencananya mengikuti aturan kedua saksi.
+  const nada5227 =
+    u.kode === "5227" && u.kesepakatan === "gugatan" && u.nilai
+      ? a5227KeduaSaksiSama(u).sama
+        ? { kelas: "aleta-tanda-hijau", teks: "kedua saksi sama" }
+        : { kelas: "aleta-tanda-kuning", teks: "dari gugatan — periksa" }
+      : null;
   const nada = nadaTimpa
     ? nadaTimpa
+    : nada5227
+    ? nada5227
     : dariElitigasi
     ? { kelas: "aleta-tanda-hijau", teks: "dari data pihak" }
     : nadaS5

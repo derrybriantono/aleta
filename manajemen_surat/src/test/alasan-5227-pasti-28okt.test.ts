@@ -135,6 +135,8 @@ describe("B. panel ABT: Input semua yang pasti, keterangan, pop-up", () => {
     document.body.appendChild(kartu);
     const status = kartu.querySelector(".aleta-a5227-status") as HTMLElement;
     expect(status.textContent).toBe('Kedua saksi sama - ikut "Input semua yang pasti"');
+    // lencana kepala kartu tidak lagi jatuh ke "satu saksi" (kesepakatan "gugatan" belum dikenal NADA_KESEPAKATAN)
+    expect(kartu.querySelector(".aleta-abt-kartu-kepala .aleta-tanda")!.textContent).toBe("kedua saksi sama");
     expect(status.title).toMatch(/Klik untuk melihat posita alasan cerai dan keterangan para saksi/);
     const lencana = kartu.querySelector(".aleta-abt-rincian-lencana") as HTMLElement;
     expect(lencana.title).toMatch(/^.+: dikuatkan kedua saksi \(saksi Penggugat dan saksi Tergugat\)\nGugatan: "/);
@@ -170,6 +172,7 @@ describe("B. panel ABT: Input semua yang pasti, keterangan, pop-up", () => {
     document.body.appendChild(kartu);
     const status = kartu.querySelector(".aleta-a5227-status") as HTMLElement;
     expect(status.textContent).toBe("Dicentang manual - keterangan kedua saksi belum sama untuk semua alasan");
+    expect(kartu.querySelector(".aleta-abt-kartu-kepala .aleta-tanda")!.textContent).toBe("dari gugatan — periksa");
     expect(status.title).toMatch(/^Sebab: belum dikuatkan kedua saksi: /);
     status.click();
     expect(document.querySelector(".aleta-a5227-dialog")!.textContent).toMatch(/Belum ikut "Input semua yang pasti" \(belum dikuatkan kedua saksi/);
