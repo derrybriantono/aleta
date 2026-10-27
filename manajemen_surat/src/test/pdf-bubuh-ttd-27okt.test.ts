@@ -17,6 +17,7 @@ import { createRequire } from "node:module";
 import path from "node:path";
 
 import { PDFDocument, PDFName, PDFRawStream, StandardFonts, rgb } from "pdf-lib";
+// @ts-expect-error pngjs tidak punya berkas tipe (hanya dipakai membuat gambar contoh)
 import { PNG } from "pngjs";
 import { describe, expect, it } from "vitest";
 

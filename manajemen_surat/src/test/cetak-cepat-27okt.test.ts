@@ -672,7 +672,6 @@ describe.skipIf(!process.env.UKUR_CETAK)("6. pengukuran waktu cetak", () => {
     klik(h, '[data-bd2="tetapcetak"]');
     await sampai(() => /PDF anonim diunduh/.test(akar(h).textContent || "") && !q(h, '[data-bd2="cetak"]')!.hasAttribute("disabled"), "selesai", 30000);
     const ms = Date.now() - mulai;
-    // eslint-disable-next-line no-console
     console.log(`UKUR|${nama}|tekan Cetak -> naskah/pengingat ${menungguNaskah} ms|Tetap cetak -> semua keluaran ${ms} ms|jumlah total ${menungguNaskah + ms} ms|preview=${pratinjauPermintaan(h).length}|pdf=${h.pdfRtf.length}`);
   }
   it("A. cetak langsung tanpa persiapan (ABT menyusun naskah saat Cetak)", async () => ukur("A cetak langsung", async () => undefined), 60000);

@@ -116,7 +116,7 @@ describe("Blangko Derry - titik sambung 16OKT-F43", () => {
   });
   it("pratinjau anonim ALETA tampil sebelum unggah e-Doc; 'Unggah putusan saja' mengirim tanpa anonim", () => {
     const iPrat = isi.indexOf("alatPratinjauAnonim(anonimAleta, { nomor })");
-    const iUnggah = isi.indexOf('hasil.push(await unggahEdoc(rtfBuf, pilih === "tanpa" ? null : anonimRtf))');
+    const iUnggah = isi.indexOf('pesan = [await unggahEdoc(rtfBuf, pilih === "tanpa" ? null : anonimRtf)]'); // 27 Okt: keluaran disusun bersamaan, pesan dihimpun per keluaran
     expect(iPrat).toBeGreaterThan(0);
     expect(iUnggah).toBeGreaterThan(iPrat);
   });
