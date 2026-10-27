@@ -550,6 +550,32 @@
         "tanggal": "2026-10-11"
       },
       "catatan": "Templat petugas sering menulis 0222 'sejak awal pernikahan' apa adanya - perkiraan bulan nikah hanya pembanding. Tanpa perkiraan (majuDariNikah memulangkan kosong untuk 'awal')."
+    },
+    {
+      "kode": "waktu-mulai-pada",
+      "label": "mulai tidak rukun: \"pada bulan Maret 2016 sudah tidak rukun\"",
+      "kunci": "mulai-pada",
+      "regex": "\\b(?:pada|di)\\s+(?:awal\\s+|akhir\\s+|pertengahan\\s+)?(?:bulan\\s+[A-Za-z]+\\s+(?:tahun\\s+)?|tahun\\s+)?(?:19|20)\\d{2}\\b[^.;]{0,50}?\\b(?:sudah|mulai|menjadi|berubah)\\b[^.;]{0,30}?\\b(?:tidak|ketidak)\\s*(?:rukun|harmonis)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "namun pada bulan Maret 2016 sudah tidak rukun",
+        "pada awal tahun 2023 rumah tangga mereka sudah tidak harmonis",
+        "pada bulan Juli tahun 2023 sudah tidak rukun dan tidak harmonis"
+      ],
+      "contohSalah": [
+        "pada tahun 2010 Penggugat dan Tergugat menikah",
+        "sejak awal rumah tangga sudah tidak rukun"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "27 Okt: awal konflik (0222) yang ditulis \"pada <waktu> sudah tidak rukun\" tanpa kata sejak/mulai di depan waktunya."
     }
   ],
   "templat": []

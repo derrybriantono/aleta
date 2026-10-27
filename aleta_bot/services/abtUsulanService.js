@@ -667,6 +667,8 @@ function kalimatAwalKonflik(butir) {
     butir.find(
       (b) => w.uji("konflik", b) && w.uji("konflik-terjadi", b) && !w.uji("titik-akhir", b) && w.uji("tahun", b)
     ) ||
+    // 27 Okt: "namun pada bulan Maret 2016 sudah tidak rukun" (waktu tanpa kata sejak/mulai di depannya).
+    butir.find((b) => w.uji("mulai-pada", b) && !w.uji("titik-akhir", b)) ||
     ""
   );
 }

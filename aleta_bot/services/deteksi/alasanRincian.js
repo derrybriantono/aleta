@@ -39,6 +39,9 @@ const RE_SEBAB = /\b(?:karena|dikarenakan|disebabkan|lantaran|akibat\s+dari)\b/i
 const RE_AKHIR_KLAUSA = /[;.]|,\s+(?:dan|serta|sedangkan|namun|bahkan|selain|tetapi|sementara)\b|\s+dan\s+(?:tergugat|termohon|penggugat|pemohon|keluarga)\b|,\s+(?:tergugat|termohon)\b/i;
 // Akibat yang bukan sebab konkret (kesimpulan).
 const RE_BUKAN_SEBAB = /\b(?:bercerai|perceraian|gugatan|permohonan|pengadilan|dipertahankan|tidak\s+(?:dapat|bisa|mungkin)\s+(?:lagi\s+)?(?:rukun|bersatu|hidup)|rumah\s+tangga\s+(?:tidak|sudah|telah)|petitum)\b/i;
+// Kutipan norma (Pasal 19 PP 9/1975 / Pasal 116 KHI) di gugatan bukan dalil perbuatan pihak: "salah satu pihak berbuat zina
+// atau menjadi pemabuk, pemadat, penjudi ..." tidak boleh menyalakan zina/mabuk/narkoba/judi.
+const RE_NORMA = /salah\s+satu\s+pihak\s+(?:berbuat|melakukan|mendapat|meninggalkan|menjadi)|menjadi\s+pemabuk,\s*pemadat/i;
 const RE_BANTAH = /\b(?:tidak\s+benar|tidak\s+(?:sesuai|betul)|membantah|bantah|menyangkal|menolak\s+(?:dalil|dengan\s+tegas)|bohong|fitnah|mengada[\s-]*ada|dalil\s+(?:yang\s+)?(?:tidak|keliru))\b/i;
 const RE_AKUI = /\b(?:membenarkan|mengakui|diakui|benar\s+(?:bahwa|adanya)|memang|betul|tidak\s+membantah)\b/i;
 
@@ -52,7 +55,13 @@ function polaUntuk(jenis) {
   const daftar = kamus
     .polaKelompok(KELOMPOK)
     .filter((p) => (p.status || "aktif") === "aktif" && Array.isArray(p.bunyi) && p.bunyi.length && (!p.untuk || p.untuk === "semua" || p.untuk === jenis))
-    .map((p) => ({ ...p, reG: new RegExp(p.re.source, p.re.flags.includes("g") ? p.re.flags : `${p.re.flags}g`) }))
+    .map((p) => ({
+      ...p,
+      reG: new RegExp(p.re.source, p.re.flags.includes("g") ? p.re.flags : `${p.re.flags}g`),
+      // Penolak konteks (ruas tambahan `tolakSebelum` / `tolakSesudah`): dikompilasi sekali di sini.
+      reTolakSebelum: p.tolakSebelum ? new RegExp(String(p.tolakSebelum), "i") : null,
+      reTolakSesudah: p.tolakSesudah ? new RegExp(String(p.tolakSesudah), "i") : null,
+    }))
     .sort((a, b) => (a.urut || 0) - (b.urut || 0));
   // Saringan gabungan: satu RegExp "gabungan semua pola" - kalimat yang tidak lolos dilewati sekaligus.
   let gabungan = null;
@@ -112,6 +121,7 @@ function simpulKalimat(kalimatAsli, set, opsi) {
   const kalimat = String(kalimatAsli || "").replace(/\s+/g, " ").slice(0, BATAS_KALIMAT);
   if (!kalimat || !set.gabungan) return [];
   if (!(opsi && opsi.kunci) && !set.gabungan.test(kalimat)) return [];
+  if (RE_NORMA.test(kalimat)) return [];
   const longgarNegasi = Boolean(opsi && opsi.longgarNegasi);
   const terbaik = new Map();
   const sumberPola = opsi && opsi.kunci ? [...opsi.kunci].flatMap((k) => set.perKunci.get(k) || []) : set.daftar;
@@ -127,6 +137,8 @@ function simpulKalimat(kalimatAsli, set, opsi) {
       const depan = kalimat.slice(Math.max(0, m.index - 40), m.index);
       const ternegasi = p.negasi !== false && sebab.RE_PENYANGKAL.test(depan);
       if (ternegasi && !longgarNegasi) continue;
+      if (p.reTolakSebelum && p.reTolakSebelum.test(depan)) continue;
+      if (p.reTolakSesudah && p.reTolakSesudah.test(kalimat.slice(m.index + m[0].length, m.index + m[0].length + 40))) continue;
       let sub = sebab.terimaSubjek(p, kalimat, m.index);
       let tersirat = false;
       if (!sub.s) {

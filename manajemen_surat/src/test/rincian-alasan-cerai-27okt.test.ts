@@ -136,6 +136,29 @@ describe("rantai sebab-akibat dari gugatan", () => {
   });
 });
 
+describe("penjaga positif palsu", () => {
+  it("kutipan norma (Pasal 19 PP) bukan dalil perbuatan", () => {
+    const r = rinci(["Bahwa alasan perceraian menurut Pasal 19 huruf (a) salah satu pihak berbuat zina atau menjadi pemabuk, pemadat, penjudi dan lain sebagainya yang sukar disembuhkan."]);
+    expect(r.butir).toHaveLength(0);
+  });
+
+  it("identitas pihak (tempat tinggal di Lembaga Pemasyarakatan) bukan alasan dihukum penjara", () => {
+    expect(rinci(["Bahwa Tergugat, pekerjaan petani, tempat tinggal di Lembaga Pemasyarakatan Kelas II A."]).butir).toHaveLength(0);
+    expect(rinci(["Bahwa Tergugat dijatuhi pidana penjara selama 3 tahun."]).butir[0].sebab).toEqual(["penjara"]);
+  });
+
+  it("cacat hukum bukan cacat badan", () => {
+    expect(rinci(["Bahwa perkawinan itu mengandung cacat dalam pelaksanaannya."]).butir).toHaveLength(0);
+    expect(rinci(["Bahwa Tergugat mengalami cacat badan sejak lahir."]).butir[0].sebab).toEqual(["penyakit"]);
+  });
+
+  it("pelaku tak tersirat dari kalimat tanpa subjek dianggap perbuatan pelaku, bertanda ragu", () => {
+    const r = rinci(["Sering mabuk-mabukan dan memukul Penggugat."]);
+    expect(r.butir.length).toBeGreaterThan(0);
+    expect(r.butir.every((b) => b.yakin === "ragu")).toBe(true);
+  });
+});
+
 describe("saksi menguatkan, jawab-menjawab minor", () => {
   const gugat = ["Bahwa Tergugat sering mabuk-mabukan.", "Bahwa Tergugat berjudi online."];
 
