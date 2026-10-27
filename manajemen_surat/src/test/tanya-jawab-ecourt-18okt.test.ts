@@ -255,6 +255,7 @@ function jalankan(opsi: Opsi = {}) {
     "hurufDiLuarAbt",
     "jamSekarang",
     "toast",
+    "tandaiKotor",
     "muatTj",
     "renderTj",
     "esc",
@@ -280,6 +281,11 @@ function jalankan(opsi: Opsi = {}) {
     (t: string) => (opsi.hurufAneh && /Ł/.test(t) ? ["Ł"] : []),
     () => "12.00",
     (t: string) => toast.push(t),
+    // 27 Okt (91044c6c): penulis memanggil tandaiKotor() (naskah yang sudah disusun tak berlaku lagi) - dulu `S.prat.kotor = true` sebaris.
+    // Tanpa pembantu ini penulis jatuh ke catch diam-diam sesudah menyimpan dan tidak memberi tahu petugas.
+    () => {
+      St.prat.kotor = true;
+    },
     async () => {},
     () => {},
     (t: string) => t
@@ -307,6 +313,7 @@ describe("JJ2 - penulis tanya-jawab di ekstensi (isiJawabMenjawabOtomatis)", () 
     expect(t.S.tjOto["jawaban lisan 0047"].status).toBe("ditulis");
     expect(t.S.nilai["2018"]).toMatchObject({ status: "terisi" });
     expect(t.toast.join(" ")).toMatch(/ditulis otomatis/);
+    expect(t.S.prat.kotor).toBe(true);
   });
 
   it("baris tanya-jawab yang sudah ada TIDAK disentuh (tanya atau jawab terisi)", async () => {
