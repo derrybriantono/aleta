@@ -17,8 +17,9 @@ export const dynamic = "force-dynamic";
  * UNGGAH BAS TERJADWAL & TUNDAAN TERJADWAL (27 Okt 2026)
  * ============================================================================
  *
- *   GET   ?jenis=bas|tunda &aktif=1 &semua=1 &jadwalId=<id>
- *           -> { ok, butir[], pelaksanaNyala }   (milik sendiri; semua=1 hanya Super Admin/Admin)
+ *   GET   ?jenis=bas|tunda &aktif=1 &semua=1 &jadwalId=<id> &ringkas=1
+ *           -> { ok, butir[], pelaksanaNyala, ringkasan? }   (milik sendiri; semua=1 hanya Super Admin/Admin;
+ *              ringkas=1 menambah hitungan menunggu/jalan per jenis untuk lencana tombol)
  *   POST  JSON (tunda)   { jenis:"tunda", mulai, jedaMin?, jedaMaks?, butir:[{ jadwalId, perkaraId, nomorPerkara, tanggalSidang,
  *                          alasanTunda, tanggalBerikut, jamBerikut, agendaBerikut, ... }] }
  *         multipart (bas) jenis=bas, mulai, jedaMin?, jedaMaks?, butir=<JSON [{ perkaraId, sidangId, nomorPerkara, tanggalSidang,
@@ -26,6 +27,10 @@ export const dynamic = "force-dynamic";
  *           -> { ok:true, butir:[{ id, nomorPerkara, waktuWita }], perkiraanSelesai, peringatan[] }
  *           -> { ok:false, sebab, tolak:[{ nomorPerkara, sebab }] }   (SEMUA ditolak bila ada satu yang tidak sah)
  *   PATCH JSON { aksi:"batal"|"jadwal-ulang"|"ulang", id, wita? } -> { ok:true, butir, ringkas }
+ *
+ * HAK-PERAN: jenis tunda = pastikanAksi(db, actorUserId, "sidang.tunda-putus") dan jenis bas = hakUnggahMassal (golongan BAS),
+ * keduanya dikerjakan di deps.hak (modules/sidang-terjadwal) saat dijadwalkan dan saat dijalankan; GET/PATCH hanya menuntut panel.
+ * Pendaftaran: matriks-peran AKSI["sidang.tunda-putus"].rute dan hak-akses-peta fitur.tombol-jadwalkan-bas/-tunda.
  *
  * Menjadwalkan TIDAK menulis ke SIPP: penulisan dikerjakan pelaksana di server pada waktunya (detak 30 detik).
  * Hak sama dengan rute langsungnya - sidang-tunda (panel + sidang.tunda-putus) dan bas/unggah-sipp (panel +
@@ -44,6 +49,7 @@ export async function GET(request: NextRequest) {
       semua: q.get("semua") === "1",
       jadwalId: q.get("jadwalId") ?? undefined,
       batas: Number(q.get("batas")) || undefined,
+      ...(q.get("ringkas") === "1" ? { ringkas: true } : {}),
     });
     return ok({ ok: true, ...hasil, pelaksanaNyala: pelaksanaNyala() });
   } catch (error) {

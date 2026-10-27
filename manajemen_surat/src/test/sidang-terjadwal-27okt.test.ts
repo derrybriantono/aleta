@@ -694,6 +694,28 @@ describe("layanan dan pelaksana atas basis data", () => {
       expect((await daftarTerjadwal(db, PP, { aktif: true }, dunia.deps)).butir).toHaveLength(2);
     });
 
+    it("ringkas: hitungan menunggu/jalan per jenis untuk lencana tombol; milik sendiri, semua hanya pengawas; tanpa ringkas tidak ada", async () => {
+      const t = dunia.sidangTunda(1);
+      await buat("tunda", "2026-10-27 09:00", [t]);
+      const s = dunia.sidangBas(2);
+      await buat("bas", "2026-10-27 09:30", [s.butir], {}, s.berkas, PP);
+      const nol = { menunggu: 0, jalan: 0 };
+
+      const r = await daftarTerjadwal(db, PP, { aktif: true, batas: 1, ringkas: true }, dunia.deps);
+      expect(r.butir).toHaveLength(1);
+      expect(r.ringkasan).toEqual({ bas: { menunggu: 1, jalan: 0 }, tunda: { menunggu: 1, jalan: 0 } });
+      expect((await daftarTerjadwal(db, PP, {}, dunia.deps)).ringkasan).toBeUndefined();
+      // Admin tanpa semua=1: hanya miliknya (kosong); dengan semua=1: seluruhnya.
+      expect((await daftarTerjadwal(db, ADMIN, { ringkas: true }, dunia.deps)).ringkasan).toEqual({ bas: nol, tunda: nol });
+      expect((await daftarTerjadwal(db, ADMIN, { ringkas: true, semua: true }, dunia.deps)).ringkasan).toEqual({ bas: { menunggu: 1, jalan: 0 }, tunda: { menunggu: 1, jalan: 0 } });
+      // PP meminta semua=1 tetap hanya miliknya.
+      expect((await daftarTerjadwal(db, PP2, { ringkas: true, semua: true }, dunia.deps)).ringkasan).toEqual({ bas: nol, tunda: nol });
+      // Yang dibatalkan tidak lagi dihitung.
+      const id = (await daftarTerjadwal(db, PP, { jenis: "tunda" }, dunia.deps)).butir[0].id;
+      await kelolaTerjadwal(db, PP, { aksi: "batal", id }, dunia.deps);
+      expect((await daftarTerjadwal(db, PP, { ringkas: true }, dunia.deps)).ringkasan).toEqual({ bas: { menunggu: 1, jalan: 0 }, tunda: nol });
+    });
+
     it("batal: pembuat dan admin boleh, orang lain 403; yang sudah selesai atau sedang jalan tidak; berkas dijadwalkan dihapus", async () => {
       const s = dunia.sidangBas(1);
       const h = await buat("bas", "2026-10-27 09:00", [s.butir], {}, s.berkas);

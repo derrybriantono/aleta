@@ -51,6 +51,18 @@ describe("rute sidang-terjadwal", () => {
     expect(keadaan.daftar).toHaveBeenCalledWith(expect.anything(), "usr-uji", { jenis: "bas", aktif: true, semua: true, jadwalId: "7001", batas: undefined });
   });
 
+  it("GET ringkas=1: hitungan lencana diteruskan dan dikembalikan; tanpa ringkas=1 pilihan itu tidak dikirim", async () => {
+    const ringkasan = { bas: { menunggu: 2, jalan: 0 }, tunda: { menunggu: 0, jalan: 1 } };
+    keadaan.daftar.mockResolvedValue({ butir: [], ringkasan });
+    const { GET } = await import("@/app/api/aleta-ecourt/sidang-terjadwal/route");
+    const j = await isi(await GET(req(`${URL_DASAR}?aktif=1&batas=1&ringkas=1`)));
+    expect(j).toMatchObject({ ok: true, data: { ok: true, ringkasan } });
+    expect(keadaan.daftar).toHaveBeenCalledWith(expect.anything(), "usr-uji", expect.objectContaining({ aktif: true, batas: 1, ringkas: true }));
+    keadaan.daftar.mockClear();
+    await GET(req(`${URL_DASAR}?aktif=1`));
+    expect((keadaan.daftar.mock.calls[0][2] as Record<string, unknown>).ringkas).toBeUndefined();
+  });
+
   it("GET tanpa sesi: 401", async () => {
     keadaan.aktor = null;
     const { GET } = await import("@/app/api/aleta-ecourt/sidang-terjadwal/route");

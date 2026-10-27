@@ -473,9 +473,9 @@ export function petakanButir(b: BarisSidang, kini: Date): ButirTampil {
 export async function daftarTerjadwal(
   db: AletaDatabase,
   userId: string,
-  opsi: { jenis?: string; aktif?: boolean; semua?: boolean; jadwalId?: string; batas?: number } = {},
+  opsi: { jenis?: string; aktif?: boolean; semua?: boolean; jadwalId?: string; batas?: number; ringkas?: boolean } = {},
   deps: DepsSidang = depsAsli()
-): Promise<{ butir: ButirTampil[] }> {
+): Promise<{ butir: ButirTampil[]; ringkasan?: RingkasanAktif }> {
   const { aktor, pengawas } = await deps.aktorPanel(db, userId);
   const kini = deps.sekarang();
   const syarat: string[] = [];
@@ -499,8 +499,26 @@ export async function daftarTerjadwal(
     `SELECT * FROM aleta_sidang_terjadwal ${syarat.length ? `WHERE ${syarat.join(" AND ")}` : ""} ORDER BY waktu_rencana ${opsi.aktif ? "ASC" : "DESC"} LIMIT ?`,
     [...nilai, batas]
   );
-  return { butir: baris.map((b) => petakanButir(b, kini)) };
+  const butir = baris.map((b) => petakanButir(b, kini));
+  if (!opsi.ringkas) return { butir };
+  // Lencana tombol: hitungan butir menunggu/jalan per jenis (satu kueri hitung, bukan memuat daftarnya).
+  const milikSendiri = !(opsi.semua === true && pengawas);
+  const hitung = await db.queryAll<{ jenis: string; status: string; n: number | string }>(
+    `SELECT jenis, status, COUNT(*) AS n FROM aleta_sidang_terjadwal
+     WHERE status IN (${STATUS_AKTIF.map(() => "?").join(", ")})${milikSendiri ? " AND dibuat_oleh = ?" : ""}
+     GROUP BY jenis, status`,
+    [...STATUS_AKTIF, ...(milikSendiri ? [aktor.id] : [])]
+  );
+  const ringkasan: RingkasanAktif = { bas: { menunggu: 0, jalan: 0 }, tunda: { menunggu: 0, jalan: 0 } };
+  for (const h of hitung) {
+    const jenis = h.jenis === "tunda" ? "tunda" : h.jenis === "bas" ? "bas" : null;
+    if (jenis && (h.status === "menunggu" || h.status === "jalan")) ringkasan[jenis][h.status] += Number(h.n) || 0;
+  }
+  return { butir, ringkasan };
 }
+
+/** Hitungan butir aktif per jenis untuk lencana tombol Jadwalkan BAS / Tunda. */
+export type RingkasanAktif = Record<"bas" | "tunda", { menunggu: number; jalan: number }>;
 
 // ──────────────────────────────────────────────────────────────────────────
 // Kelola: batal | jadwal-ulang | ulang

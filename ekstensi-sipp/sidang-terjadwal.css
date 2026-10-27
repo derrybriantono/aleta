@@ -36,6 +36,21 @@ td.aleta-stj-sel {
   cursor: pointer;
   box-shadow: 0 0 0 3px var(--ps-t-cincin);
 }
+.aleta-stj-lencana {
+  display: inline-block;
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: 99px;
+  background: #e0a800;
+  color: #1b1200;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 20px;
+  text-align: center;
+}
+.aleta-stj-lencana[hidden] {
+  display: none;
+}
 .aleta-stj-tombol:last-child {
   margin-right: 0;
 }

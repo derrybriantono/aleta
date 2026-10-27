@@ -259,6 +259,8 @@ Catatan kewenangan:
 
 | Fitur | SA | Adm | Pim | Hak | Pan | Pmd | PP | JS | Ksr | PTS | Med | Sdg | Anl | Sek | TI | Plk |
 | :-- | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
+| Tombol Jadwalkan BAS di halaman SIPP | P | P | - | - | P | P | P | - | - | - | - | - | P | - | - | - |
+| Tombol Jadwalkan Tunda di halaman SIPP | P | P | P | P | P | P | P | - | - | - | - | - | - | - | - | - |
 | Tombol Putusan Otomatis dan Jadwalkan Putusan di halaman SIPP | P | P | P | P | - | - | - | - | - | - | - | - | - | - | - | - |
 | Tombol Penetapan Otomatis di halaman SIPP | P | P | P | - | - | - | - | - | - | P | - | - | - | - | - | - |
 | Panel SIPP: tab Penetapan | P | P | P | - | - | - | - | - | - | P | - | - | - | - | - | - |
@@ -302,6 +304,8 @@ Catatan kewenangan:
 
 Catatan kewenangan:
 
+- **Tombol Jadwalkan BAS di halaman SIPP**: Hak yang sama dengan unggah massal BAS (golongan BAS massal); dinilai lagi saat dijalankan server. Panitera Pengganti hanya sidang perkaranya sendiri; Admin dan Super Admin semua.
+- **Tombol Jadwalkan Tunda di halaman SIPP**: Mengikuti aksi 'Tunda / Putus sidang' (dinilai lagi saat dijalankan server). Kasir, PTSP, dan juru sita tidak mendapat tombolnya.
 - **Tombol Putusan Otomatis dan Jadwalkan Putusan di halaman SIPP**: Keputusan pengguna 21 Okt 2026: hanya Ketua, Wakil Ketua, Hakim, Admin, dan Super Admin. Unggahnya dijaga hak unggah putusan (keputusan 9 Okt).
 - **Tombol Penetapan Otomatis di halaman SIPP**: Keputusan pengguna 21 Okt 2026: hanya PTSP (termasuk Operator dan Petugas Meja), Ketua, Wakil Ketua, Admin, dan Super Admin. Tombolnya juga menuntut kemampuan Kerjakan (menulis ke SIPP) yang bawaannya hanya Operator; peran lain mendapatkannya dari Super Admin di Akses ekstensi.
 - **Panel SIPP: tab Penetapan**: Keputusan 111: Ketua, Wakil, Admin, PTSP, Operator, dan Petugas Meja (termasuk Meja 2 dan 3 lewat sub-peran) mendapat tab ini; hakim dan Panitera tidak.

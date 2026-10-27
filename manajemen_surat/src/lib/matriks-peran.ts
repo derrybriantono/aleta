@@ -637,7 +637,12 @@ export const AKSI = {
     crud: "CU",
     golongan: PERSIDANGAN,
     lingkup: "milik",
-    rute: ["POST /api/aleta-ecourt/sidang-tunda", "POST /api/aleta-ecourt/sidang-putus"],
+    rute: [
+      "POST /api/aleta-ecourt/sidang-tunda",
+      "POST /api/aleta-ecourt/sidang-putus",
+      // 27 Okt: Tunda terjadwal (jenis tunda) - hak yang sama dinilai saat dijadwalkan dan saat dijalankan server.
+      "POST /api/aleta-ecourt/sidang-terjadwal (jenis tunda)",
+    ],
     alasan: "Hasil sidang dicatat PP atas majelisnya (penginput tunda/putusan = PP); hakim/pimpinan/panitera mengawasi. Kasir, PTSP, juru sita tidak mencatat hasil sidang.",
   },
   "sidang.jalannya": {

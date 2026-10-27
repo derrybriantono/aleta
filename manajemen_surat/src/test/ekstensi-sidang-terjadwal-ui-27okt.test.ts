@@ -72,6 +72,8 @@ type Opsi = {
   usulan?: any;
   tolakBuat?: { sebab: string; tolak?: Array<{ nomorPerkara: string; sebab: string }> };
   deteksiLanjut?: boolean;
+  /** Ringkasan hitungan yang dijawab server pada GET ...?ringkas=1 (lencana tombol). */
+  ringkasan?: { bas: { menunggu: number; jalan: number }; tunda: { menunggu: number; jalan: number } };
 };
 
 function sidangContoh(): Array<Record<string, unknown>> {
@@ -156,7 +158,12 @@ function buka(o: Opsi = {}) {
         return jawab({ ok: true, butir: daftar.map((b: any, i: number) => ({ id: `stj-${i + 1}`, nomorPerkara: b.nomorPerkara, waktuWita: `2099-01-05 08:0${i}` })), perkiraanSelesai: "2099-01-05 08:30" });
       }
       if (metode === "PATCH") return jawab({ ok: true, butir: { id: badan.id } });
-      return jawab({ ok: true, butir: butirServer, pelaksanaNyala: true });
+      return jawab({
+        ok: true,
+        butir: butirServer,
+        pelaksanaNyala: true,
+        ...(alamat.includes("ringkas=1") ? { ringkasan: o.ringkasan ?? { bas: { menunggu: 0, jalan: 0 }, tunda: { menunggu: 0, jalan: 0 } } } : {}),
+      });
     }
     if (alamat.includes("/aleta-ecourt/sidang")) return jawab({ available: true, sidang: o.sidang ?? sidangContoh() });
     return jawab({ ok: false, sebab: `tak dikenal: ${alamat}` }, 404);
@@ -492,6 +499,54 @@ describe("Jadwalkan Tunda", () => {
 });
 
 // ============================================================================
+describe("Lencana tombol (jumlah menunggu / sedang dikerjakan)", () => {
+  const lencana = (h: Halaman, tab: "bas" | "tunda") => h.d.querySelector(`[data-stj-lencana="${tab}"]`) as HTMLElement;
+  const bacaRingkas = (h: Halaman) => h.panggilan.filter((p) => p.metode === "GET" && p.alamat.includes("ringkas=1"));
+
+  it("tersembunyi saat nol; satu GET ringan (aktif, batas 1, ringkas) mengisi hitungan per tombol tanpa menyentuh lencana Jadwalkan Putusan", async () => {
+    const h = buka({ ringkasan: { bas: { menunggu: 2, jalan: 1 }, tunda: { menunggu: 0, jalan: 0 } } });
+    await sampai(() => (api(h).pasang(h.d), tombolBas(h) && tombolTunda(h)), "tombol");
+    expect(lencana(h, "bas").hidden).toBe(true);
+    expect(lencana(h, "tunda").hidden).toBe(true);
+    expect(lencana(h, "bas").className).toBe("aleta-stj-lencana");
+    await api(h).bacaLencana();
+    expect(bacaRingkas(h)).toHaveLength(1);
+    expect(bacaRingkas(h)[0].alamat).toContain("aktif=1");
+    expect(bacaRingkas(h)[0].alamat).toContain("batas=1");
+    expect(bacaRingkas(h)[0].alamat).not.toContain("semua=1");
+    expect(lencana(h, "bas").textContent).toBe("3");
+    expect(lencana(h, "bas").hidden).toBe(false);
+    expect(lencana(h, "bas").title).toContain("3 unggah BAS");
+    expect(lencana(h, "tunda").hidden).toBe(true);
+    expect(api(h).lencana()).toEqual({ bas: 3, tunda: 0 });
+    // lencana Jadwalkan Putusan milik modul lain tidak ikut berubah
+    expect(h.d.querySelectorAll(".aleta-ptj-lencana")).toHaveLength(1);
+    expect((h.d.querySelector(".aleta-ptj-lencana") as HTMLElement).textContent).not.toBe("3");
+  });
+
+  it("tombol yang dipasang belakangan langsung memuat hitungan terakhir; hitungan menurun kembali menyembunyikan", async () => {
+    const h = buka({ ringkasan: { bas: { menunggu: 0, jalan: 0 }, tunda: { menunggu: 1, jalan: 1 } } });
+    await sampai(() => (api(h).pasang(h.d), tombolBas(h)), "tombol");
+    await api(h).bacaLencana();
+    expect(lencana(h, "tunda").textContent).toBe("2");
+    h.d.querySelector(".aleta-stj-sel")!.remove();
+    api(h).pasang(h.d);
+    expect(lencana(h, "tunda").textContent).toBe("2");
+    expect(lencana(h, "tunda").hidden).toBe(false);
+    expect(api(h).murni.hitungLencana({ bas: { menunggu: 0, jalan: 0 } })).toEqual({ bas: 0, tunda: 0 });
+    expect(api(h).murni.hitungLencana(null)).toEqual({ bas: 0, tunda: 0 });
+  });
+
+  it("tanpa tombol di halaman (peran tak berhak) tidak ada GET sama sekali", async () => {
+    const h = buka({ peran: "Kasir" });
+    await siapMode(h);
+    await tunggu(20);
+    api(h).pasang(h.d);
+    await api(h).bacaLencana();
+    expect(bacaRingkas(h)).toHaveLength(0);
+  });
+});
+
 describe("Antrean", () => {
   const antrean = [
     { id: "a1", jenis: "bas", perkaraId: "1", nomorPerkara: NOMOR, jadwalId: "9001", tanggalSidang: "2099-01-05", waktuWita: "2099-01-05 08:00", status: "menunggu", namaStatus: "Menunggu", hasilRingkas: "", berkasNama: "BAS.rtf", ringkasMuatan: "", dibuatNama: "Petugas Satu", bolehBatal: true },

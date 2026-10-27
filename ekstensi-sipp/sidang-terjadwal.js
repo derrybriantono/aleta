@@ -674,6 +674,7 @@
     S.manual = {};
     S.terpilihBas.clear();
     await muatAntrean();
+    void bacaLencana();
   }
 
   async function kirimTunda() {
@@ -705,6 +706,7 @@
     S.terpilihTunda.clear();
     S.tunda.clear();
     await muatAntrean();
+    void bacaLencana();
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -731,6 +733,7 @@
     S.pesan = r.ok ? { jenis: "sukses", teks: aksi === "batal" ? "Jadwal dibatalkan." : aksi === "ulang" ? "Akan dicoba lagi." : "Jadwal diubah." } : { jenis: "galat", teks: r.pesan || "Jadwal belum dapat diubah." };
     gambarPesan();
     await muatAntrean();
+    void bacaLencana();
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -1197,6 +1200,36 @@
     if (bolehTunda()) hasil.push("tunda");
     return hasil;
   }
+  // ──────────────────────────────────────────────────────────────────────────
+  // Lencana: butir yang menunggu atau sedang dikerjakan, per tombol
+  // ──────────────────────────────────────────────────────────────────────────
+  const lencanaTerakhir = { bas: 0, tunda: 0 };
+  function judulLencana(tab) {
+    const n = lencanaTerakhir[tab] || 0;
+    return n ? `${n} ${tab === "bas" ? "unggah BAS" : "penundaan"} menunggu atau sedang dikerjakan server` : "";
+  }
+  /** Murni: ringkasan server -> { bas, tunda } (menunggu + sedang dikerjakan). */
+  function hitungLencana(ringkasan) {
+    const dari = (j) => (ringkasan && ringkasan[j] ? (Number(ringkasan[j].menunggu) || 0) + (Number(ringkasan[j].jalan) || 0) : 0);
+    return { bas: dari("bas"), tunda: dari("tunda") };
+  }
+  function perbaruiLencana(ringkasan) {
+    const n = hitungLencana(ringkasan);
+    lencanaTerakhir.bas = n.bas;
+    lencanaTerakhir.tunda = n.tunda;
+    for (const e of Array.from(document.querySelectorAll(".aleta-stj-lencana"))) {
+      const tab = e.getAttribute("data-stj-lencana") === "tunda" ? "tunda" : "bas";
+      e.textContent = String(lencanaTerakhir[tab]);
+      e.hidden = lencanaTerakhir[tab] === 0;
+      e.title = judulLencana(tab);
+    }
+  }
+  /** Satu GET ringan (hanya hitungan, satu baris daftar); tidak dikerjakan bila tombolnya tidak ada di halaman. */
+  async function bacaLencana() {
+    if (!aktifSekarang() || !document.querySelector(".aleta-stj-tombol")) return;
+    const r = await ambilJson(`${API.dasar}?aktif=1&batas=1&ringkas=1`, { credentials: "include", cache: "no-store" }, "Membaca antrean");
+    if (r.ok && r.data && r.data.ringkasan) perbaruiLencana(r.data.ringkasan);
+  }
   function klikTombol(tab, tempat) {
     if (!S) return;
     if (S.terbuka && S.tab === tab) S.terbuka = false;
@@ -1215,7 +1248,13 @@
     b.id = `aleta-stj-tombol-${tab}`;
     b.setAttribute("data-stj", `tombol-${tab}`);
     b.setAttribute("aria-controls", ID_PANEL);
-    b.append(el("span", "aleta-stj-ikon", "⏱"), tab === "bas" ? " Jadwalkan BAS" : " Jadwalkan Tunda");
+    b.append(el("span", "aleta-stj-ikon", "⏱"), tab === "bas" ? " Jadwalkan BAS " : " Jadwalkan Tunda ");
+    // Lencana jumlah butir menunggu/sedang dikerjakan; kelasnya SENDIRI (bukan aleta-ptj-lencana milik Jadwalkan Putusan).
+    const lencana = el("span", "aleta-stj-lencana", String(lencanaTerakhir[tab] || 0));
+    lencana.setAttribute("data-stj-lencana", tab);
+    lencana.hidden = !lencanaTerakhir[tab];
+    lencana.title = judulLencana(tab);
+    b.appendChild(lencana);
     return b;
   }
   /** Mengisi wadah dengan tombol sesuai hak; pulang daftar tab yang tampil. */
@@ -1368,6 +1407,9 @@
         /* tambahan: kegagalannya tidak boleh mengganggu SIPP */
       }
     }, 1500);
+    // Lencana tombol: satu GET ringan tiap 60 detik (pola yang sama dengan Jadwalkan Putusan) dan sekali di awal.
+    (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.interval : (f, m) => setInterval(f, m))(() => void bacaLencana(), 60000);
+    setTimeout(() => void bacaLencana(), 4000);
     // Antrean yang terbuka disegarkan tiap 30 detik agar status terbaru tampak tanpa menekan apa pun.
     (globalThis.ALETA_PENGAMAT ? globalThis.ALETA_PENGAMAT.interval : (f, m) => setInterval(f, m))(() => {
       if (S && S.akar && !S.akar.hidden && S.tab === "antrean" && !S.sibuk) void muatAntrean();
@@ -1403,10 +1445,12 @@
     keadaan: () => S,
     muatSidang,
     muatAntrean,
+    bacaLencana,
+    lencana: () => ({ ...lencanaTerakhir }),
     muatUsulan,
     tambahBerkas,
     kirimJadwal,
-    murni: { bolehBas, bolehTunda, tempatHalaman, nomorDariNama, tandaBukanBas, witaDari },
+    murni: { hitungLencana, bolehBas, bolehTunda, tempatHalaman, nomorDariNama, tandaBukanBas, witaDari },
   };
   void mulai();
 })();
