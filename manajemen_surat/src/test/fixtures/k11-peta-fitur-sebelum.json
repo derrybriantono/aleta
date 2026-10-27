@@ -397,7 +397,7 @@
     "PENUTUP_WAKTU",
     "PK_KATEGORI_IZIN",
     "PK_KATEGORI_TERGUGAT",
-    "PK_ROMAWI",
+    "pkRomawi",
     "POLA_KERJA_MENJAWAB",
     "POLA_KESANGGUPAN",
     "POLA_PENUTUP",
@@ -1903,10 +1903,8 @@
     "aac80a005d42",
     "6dffff871367",
     "64a78b80db23",
-    "1797dbf33475",
     "acd9593da912",
     "6471843600fe",
-    "051803b8631c",
     "70df0a5901b3",
     "91accde1e005",
     "0d5cb39ed98f",
@@ -1959,7 +1957,9 @@
     "3531b8e7734c",
     "2420293f22c8",
     "5b9918b09b64",
-    "ee3f7167a822"
+    "ee3f7167a822",
+    "ecf602b05e64",
+    "facda882bed2"
    ]
   },
   "aleta-ai-gelembung.js": {

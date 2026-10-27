@@ -5118,6 +5118,19 @@ export async function ensureAletaBotSeeded(db: AletaDatabase) {
         now,
         now
       );
+    // Perbaikan 27 Okt: sumber "Intervensi Aktif" dulu membaca perkara_pihak4 (turut tergugat) dan
+    // "Turut Tergugat Aktif" membaca perkara_pihak3 (intervensi). Seed ON CONFLICT DO NOTHING tidak
+    // memperbaiki server yang sudah terpasang; ganti SQL-nya hanya bila MASIH berbentuk keliru
+    // (SQL yang sudah disunting petugas tidak menyentuh pola ini).
+    const polaKeliru: Record<string, string> = {
+      "sipp-extra-pihak-lanjutan-intervensi-aktif": "%perkara_pihak4 pp4%",
+      "sipp-extra-pihak-lanjutan-turut-tergugat-aktif": "%perkara_pihak3 pp3%",
+    };
+    if (polaKeliru[query.id]) {
+      await db
+        .prepare(`UPDATE aleta_bot_queries SET sql_text = ?, updated_at = ? WHERE id = ? AND sql_text LIKE ?`)
+        .run(query.sqlText, now, query.id, polaKeliru[query.id]);
+    }
     if (
       query.id.startsWith("legacy-") ||
       query.id.startsWith("template-") ||

@@ -1562,6 +1562,7 @@ WHERE COALESCE(pg.aktif, 'Y') = 'Y'
 ORDER BY waktu DESC
 LIMIT 200`,
   }),
+  // SIPP: perkara_pihak3 = pihak intervensi, perkara_pihak4 = turut tergugat.
   source({
     id: "sipp-extra-pihak-lanjutan-turut-tergugat-aktif",
     name: "Pihak Lanjutan - Turut Tergugat Aktif",
@@ -1569,16 +1570,16 @@ LIMIT 200`,
     description: "Daftar pihak turut tergugat aktif untuk kebutuhan pemberitahuan perkara.",
     sqlText: `
 SELECT
-  pp3.nama AS nama_pihak,
+  pp4.nama AS nama_pihak,
   p.nomor_perkara,
   'Turut tergugat aktif' AS judul_notifikasi,
-  CONCAT('Turut tergugat ', pp3.nama, ' tercatat pada perkara aktif ', p.nomor_perkara, '.') AS ringkasan,
+  CONCAT('Turut tergugat ', pp4.nama, ' tercatat pada perkara aktif ', p.nomor_perkara, '.') AS ringkasan,
   ph.telepon,
   ph.telepon AS nomor_hp,
-  COALESCE(pp3.diperbaharui_tanggal, pp3.diinput_tanggal) AS waktu
-FROM perkara_pihak3 pp3
-JOIN perkara p ON p.perkara_id = pp3.perkara_id
-LEFT JOIN pihak ph ON ph.id = pp3.pihak_id
+  COALESCE(pp4.diperbaharui_tanggal, pp4.diinput_tanggal) AS waktu
+FROM perkara_pihak4 pp4
+JOIN perkara p ON p.perkara_id = pp4.perkara_id
+LEFT JOIN pihak ph ON ph.id = pp4.pihak_id
 WHERE ${activeCaseFilter}
 ORDER BY waktu DESC
 LIMIT 200`,
@@ -1590,16 +1591,16 @@ LIMIT 200`,
     description: "Daftar pihak intervensi aktif untuk kebutuhan validasi target notifikasi.",
     sqlText: `
 SELECT
-  pp4.nama AS nama_pihak,
+  pp3.nama AS nama_pihak,
   p.nomor_perkara,
   'Pihak intervensi aktif' AS judul_notifikasi,
-  CONCAT('Pihak intervensi ', pp4.nama, ' tercatat pada perkara aktif ', p.nomor_perkara, '.') AS ringkasan,
+  CONCAT('Pihak intervensi ', pp3.nama, ' tercatat pada perkara aktif ', p.nomor_perkara, '.') AS ringkasan,
   ph.telepon,
   ph.telepon AS nomor_hp,
-  COALESCE(pp4.diperbaharui_tanggal, pp4.diinput_tanggal) AS waktu
-FROM perkara_pihak4 pp4
-JOIN perkara p ON p.perkara_id = pp4.perkara_id
-LEFT JOIN pihak ph ON ph.id = pp4.pihak_id
+  COALESCE(pp3.diperbaharui_tanggal, pp3.diinput_tanggal) AS waktu
+FROM perkara_pihak3 pp3
+JOIN perkara p ON p.perkara_id = pp3.perkara_id
+LEFT JOIN pihak ph ON ph.id = pp3.pihak_id
 WHERE ${activeCaseFilter}
 ORDER BY waktu DESC
 LIMIT 200`,

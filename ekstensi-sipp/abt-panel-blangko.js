@@ -15552,7 +15552,20 @@ function el7Gambar(wadah, data, sudahKartu) {
  * pekerjaan.json) agar petugas tahu MENGAPA kalimat izin atasan muncul atau
  * tidak. Tidak menulis apa pun.
  */
-const PK_ROMAWI = ["", "", " II", " III", " IV", " V"];
+/** Angka romawi umum (2 dst.; urutan 1 = tanpa angka): " II", " III", ... " L" dan seterusnya, tanpa batas V. */
+function pkRomawi(n) {
+  let sisa = Math.floor(Number(n));
+  if (!(sisa >= 2) || sisa > 3999) return "";
+  const peta = [[1000, "M"], [900, "CM"], [500, "D"], [400, "CD"], [100, "C"], [90, "XC"], [50, "L"], [40, "XL"], [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"]];
+  let hasil = "";
+  for (const [nilai, huruf] of peta) {
+    while (sisa >= nilai) {
+      hasil += huruf;
+      sisa -= nilai;
+    }
+  }
+  return ` ${hasil}`;
+}
 const PK_KATEGORI_IZIN = Object.freeze(["PNS", "PPPK", "POLRI", "TNI", "BUMN", "BUMD", "DESA"]);
 const PK_KATEGORI_TERGUGAT = Object.freeze(["PNS", "PPPK", "POLRI", "TNI"]);
 
@@ -15560,7 +15573,7 @@ const PK_KATEGORI_TERGUGAT = Object.freeze(["PNS", "PPPK", "POLRI", "TNI"]);
 function pkBarisPihak(o) {
   if (!o) return "";
   const dasar = Number(o.pihakKe) === 1 ? String(nilaiVariabel("0046") || "").trim() || "Penggugat" : String(nilaiVariabel("0047") || "").trim() || "Tergugat";
-  const sebutan = `${dasar}${PK_ROMAWI[Number(o.urutan) || 1] || ""}`;
+  const sebutan = `${dasar}${pkRomawi(Number(o.urutan) || 1)}`;
   const pilihan = o.asal === "pilihan" ? "pilihan SIPP baku" : o.kunci === "KOSONG" ? "kosong di SIPP" : "pilihan SIPP: Lain-Lain";
   const kategori = o.kunci === "BUKAN" || o.kunci === "LAIN" || o.kunci === "KOSONG" ? "" : o.label || o.kunci;
   const isi =
