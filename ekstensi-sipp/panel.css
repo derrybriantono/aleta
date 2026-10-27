@@ -11642,86 +11642,6 @@ html[data-aleta-ringan] {
 /* === AKHIR LATAR REDUP POP-UP === */
 
 /* ==========================================================================
-   V2 LAYAR (18 Okt 2026) - PANEL MENYESUAIKAN LAPTOP KECIL SAMPAI TV
-   ==========================================================================
-   Yang diatur di sini hanya ukuran: lebar panel dan pengali huruf mengikuti
-   lebar layar (CSS px, jadi zoom Windows 125-150% ikut terhitung), bilah tab
-   yang dapat digulir, dan pengaman agar kepala bagian tidak meluap. Tidak ada
-   tombol, tab, atau aksi yang disembunyikan atau dihapus.
-
-     --aleta-v2-oto        pengali layar: 1 sampai 1499px, lalu naik di 2200,
-                           2800, dan 3400px (sama dengan huruf akar portal).
-                           panel-alat.js mengalikannya ke --aleta-skala-huruf,
-                           sehingga semua huruf panel ikut tanpa diubah satu per satu.
-     --aleta-v2-lebar      lebar panel berlabuh (SIPP); dapat diganti petugas
-                           lewat tuas lebar (disimpan di penyimpanan ekstensi).
-     --aleta-v2-mengambang lebar bawaan panel mengambang.
-*/
-html {
-  --aleta-v2-oto: 1;
-  --aleta-v2-lebar: clamp(340px, 30vw, 440px);
-  --aleta-v2-mengambang: clamp(340px, 34vw, 460px);
-}
-@media (min-width: 1500px) {
-  html { --aleta-v2-lebar: 470px; --aleta-v2-mengambang: 460px; }
-}
-@media (min-width: 2200px) {
-  html { --aleta-v2-oto: 1.19; --aleta-v2-lebar: 560px; --aleta-v2-mengambang: 548px; }
-}
-@media (min-width: 2800px) {
-  html { --aleta-v2-oto: 1.44; --aleta-v2-lebar: 680px; --aleta-v2-mengambang: 662px; }
-}
-@media (min-width: 3400px) {
-  html { --aleta-v2-oto: 1.69; --aleta-v2-lebar: 800px; --aleta-v2-mengambang: 778px; }
-}
-
-/* Panel mengambang: lebar bawaan mengikuti layar. Lebar yang ditarik petugas
-   ditulis sebaris oleh perkakas tarik dan tetap menang. Urutan penting:
-   aturan umum dulu, baru ABT dan massal. */
-.aleta-panel {
-  width: var(--aleta-v2-mengambang);
-  max-width: min(96vw, calc(900px * var(--aleta-v2-oto)));
-}
-.aleta-panel-abt { width: calc(400px * var(--aleta-v2-oto)); }
-.aleta-panel-massal { width: calc(520px * var(--aleta-v2-oto)); }
-/* Panel ABT UI Baru: dulu min-width 560px tetap. Di layar sempit tidak boleh
-   lebih dari 36% lebar layar (tetapi tidak kurang dari 380px). */
-html[data-aleta-kulit="modern"] #aleta-panel-abt[data-t6="ui"]:not(.aleta-panel-lencana) {
-  min-width: min(calc(560px * var(--aleta-v2-oto)), max(380px, 36vw), calc(100vw - 32px));
-}
-
-/* Kepala bagian yang berlebar penuh: padding tidak boleh mendorong tombol di
-   ujung kanannya keluar dari panel ("Susun", "Baca ulang"). */
-.aleta-lipat-kepala { box-sizing: border-box; max-width: 100%; }
-
-/* Kepala panel di layar sempit (HP 390px): deret tombol alat lebih lebar daripada ruang di sebelah kanan judul,
-   sehingga tombol paling kiri menimpa tulisan ALETA. Deretnya boleh menyusut dan membungkus ke baris kedua;
-   tidak ada tombol yang disembunyikan atau dipotong. */
-.aleta-kepala > .aleta-merek { flex: none; }
-.aleta-kepala > .aleta-alat-kepala { flex: 0 1 auto; min-width: 0; flex-wrap: wrap; justify-content: flex-end; row-gap: 2px; }
-#aleta-panel-abt[data-sore] .aleta-sore-kerja-kepala { flex-wrap: wrap; row-gap: 4px; }
-
-/* Bilah tab panel SIPP di layar di bawah 1500px: satu baris, digulir ke
-   samping (tab yang dipilih digulir ke tengah oleh t7GulirTabKeTampak). Di
-   layar lebar panelnya sudah cukup lebar, tab tetap membungkus seperti semula. */
-@media (max-width: 1499px) {
-  html[data-aleta-kulit="modern"] #aleta-panel-sipp .aleta-t7-tabbar {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scrollbar-width: thin;
-  }
-  html[data-aleta-kulit="modern"] #aleta-panel-sipp .aleta-t7-tabbar > .aleta-t7-tab { flex: none; }
-  /* Kepala panel yang sempit: lampu SIPP/ALETA/e-Court turun ke baris kedua,
-     sebab deret tombolnya menyusut sampai menimpa lampu. Semuanya tetap ada. */
-  html[data-aleta-kulit="modern"] #aleta-panel-sipp .aleta-kepala > .aleta-t7-lampu-ringkas {
-    order: 9;
-    flex: 1 1 100%;
-  }
-}
-
-
-/* ==========================================================================
    KOTAK PUTIH SISA DI SIPP - PANEL INFORMASI, KOLOM CARI, PANEL KANAN (26 Okt)
    ==========================================================================
 
@@ -11942,4 +11862,83 @@ html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :where([class
 
 html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :where([class*="col-"] > div, .box-body > div, .panel-body > div) :where(p, span, small, b, strong, em, dt, dd, label, li, font):where(:not([style*="color:" i]):not([class*="label"]):not([class*="badge"]):not([class*="btn"]):not([class*="text-"]):not([class*="aleta"])) {
   color: var(--s-tulisan) !important;
+}
+
+/* ==========================================================================
+   V2 LAYAR (18 Okt 2026) - PANEL MENYESUAIKAN LAPTOP KECIL SAMPAI TV
+   ==========================================================================
+   Yang diatur di sini hanya ukuran: lebar panel dan pengali huruf mengikuti
+   lebar layar (CSS px, jadi zoom Windows 125-150% ikut terhitung), bilah tab
+   yang dapat digulir, dan pengaman agar kepala bagian tidak meluap. Tidak ada
+   tombol, tab, atau aksi yang disembunyikan atau dihapus.
+
+     --aleta-v2-oto        pengali layar: 1 sampai 1499px, lalu naik di 2200,
+                           2800, dan 3400px (sama dengan huruf akar portal).
+                           panel-alat.js mengalikannya ke --aleta-skala-huruf,
+                           sehingga semua huruf panel ikut tanpa diubah satu per satu.
+     --aleta-v2-lebar      lebar panel berlabuh (SIPP); dapat diganti petugas
+                           lewat tuas lebar (disimpan di penyimpanan ekstensi).
+     --aleta-v2-mengambang lebar bawaan panel mengambang.
+*/
+html {
+  --aleta-v2-oto: 1;
+  --aleta-v2-lebar: clamp(340px, 30vw, 440px);
+  --aleta-v2-mengambang: clamp(340px, 34vw, 460px);
+}
+@media (min-width: 1500px) {
+  html { --aleta-v2-lebar: 470px; --aleta-v2-mengambang: 460px; }
+}
+@media (min-width: 2200px) {
+  html { --aleta-v2-oto: 1.19; --aleta-v2-lebar: 560px; --aleta-v2-mengambang: 548px; }
+}
+@media (min-width: 2800px) {
+  html { --aleta-v2-oto: 1.44; --aleta-v2-lebar: 680px; --aleta-v2-mengambang: 662px; }
+}
+@media (min-width: 3400px) {
+  html { --aleta-v2-oto: 1.69; --aleta-v2-lebar: 800px; --aleta-v2-mengambang: 778px; }
+}
+
+/* Panel mengambang: lebar bawaan mengikuti layar. Lebar yang ditarik petugas
+   ditulis sebaris oleh perkakas tarik dan tetap menang. Urutan penting:
+   aturan umum dulu, baru ABT dan massal. */
+.aleta-panel {
+  width: var(--aleta-v2-mengambang);
+  max-width: min(96vw, calc(900px * var(--aleta-v2-oto)));
+}
+.aleta-panel-abt { width: calc(400px * var(--aleta-v2-oto)); }
+.aleta-panel-massal { width: calc(520px * var(--aleta-v2-oto)); }
+/* Panel ABT UI Baru: dulu min-width 560px tetap. Di layar sempit tidak boleh
+   lebih dari 36% lebar layar (tetapi tidak kurang dari 380px). */
+html[data-aleta-kulit="modern"] #aleta-panel-abt[data-t6="ui"]:not(.aleta-panel-lencana) {
+  min-width: min(calc(560px * var(--aleta-v2-oto)), max(380px, 36vw), calc(100vw - 32px));
+}
+
+/* Kepala bagian yang berlebar penuh: padding tidak boleh mendorong tombol di
+   ujung kanannya keluar dari panel ("Susun", "Baca ulang"). */
+.aleta-lipat-kepala { box-sizing: border-box; max-width: 100%; }
+
+/* Kepala panel di layar sempit (HP 390px): deret tombol alat lebih lebar daripada ruang di sebelah kanan judul,
+   sehingga tombol paling kiri menimpa tulisan ALETA. Deretnya boleh menyusut dan membungkus ke baris kedua;
+   tidak ada tombol yang disembunyikan atau dipotong. */
+.aleta-kepala > .aleta-merek { flex: none; }
+.aleta-kepala > .aleta-alat-kepala { flex: 0 1 auto; min-width: 0; flex-wrap: wrap; justify-content: flex-end; row-gap: 2px; }
+#aleta-panel-abt[data-sore] .aleta-sore-kerja-kepala { flex-wrap: wrap; row-gap: 4px; }
+
+/* Bilah tab panel SIPP di layar di bawah 1500px: satu baris, digulir ke
+   samping (tab yang dipilih digulir ke tengah oleh t7GulirTabKeTampak). Di
+   layar lebar panelnya sudah cukup lebar, tab tetap membungkus seperti semula. */
+@media (max-width: 1499px) {
+  html[data-aleta-kulit="modern"] #aleta-panel-sipp .aleta-t7-tabbar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+  }
+  html[data-aleta-kulit="modern"] #aleta-panel-sipp .aleta-t7-tabbar > .aleta-t7-tab { flex: none; }
+  /* Kepala panel yang sempit: lampu SIPP/ALETA/e-Court turun ke baris kedua,
+     sebab deret tombolnya menyusut sampai menimpa lampu. Semuanya tetap ada. */
+  html[data-aleta-kulit="modern"] #aleta-panel-sipp .aleta-kepala > .aleta-t7-lampu-ringkas {
+    order: 9;
+    flex: 1 1 100%;
+  }
 }

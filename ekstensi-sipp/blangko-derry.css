@@ -493,6 +493,7 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 /* ===== 20 Okt 2026: tanya jawab saksi (warna menurut asal jawaban, Isi ulang, Isian tambahan) dan kepala panel menempel ===== */
 #aleta-bd-akar {
   --asal-kosong-bg: #4f400b; --asal-kosong-ln: #f0c63c; --asal-ragu-bg: #552b0e; --asal-ragu-ln: #ff9d4d; --asal-data-ln: #4fae80;
+  --bd-teks-di-hijau: #fff; /* tulisan di atas latar --hijau (sama di kedua tema) */
   --bd-tinggi-atas: 52px; --bd-pad-atas: 12px; /* jarak isi di atas kepala (padding akar); kepala menempel di tepi layar, bukan di bawah padding */
   scroll-padding-top: calc(var(--bd-tinggi-atas) + 10px);
 }
@@ -705,7 +706,7 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar .bk-kepala { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
 #aleta-bd-akar .bk-tab { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
 #aleta-bd-akar .bk-tab button { background: var(--panel); border: 0; padding: 7px 16px; font-weight: 600; }
-#aleta-bd-akar .bk-tab button[aria-selected="true"] { background: var(--hijau); color: #fff; }
+#aleta-bd-akar .bk-tab button[aria-selected="true"] { background: var(--hijau); color: var(--bd-teks-di-hijau); }
 #aleta-bd-akar .bk-kertasp, #aleta-bd-akar .bk-bar label { display: inline-flex; gap: 6px; align-items: center; color: var(--muted); }
 #aleta-bd-akar .bk select, #aleta-bd-akar .bk input[type="text"], #aleta-bd-akar .bk textarea { background: var(--deep); border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; color: var(--fg); max-width: 100%; }
 #aleta-bd-akar .bk textarea { width: 100%; resize: vertical; }
@@ -740,7 +741,7 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar .bk-tabel { width: 100%; border-collapse: collapse; font-size: 13.2px; }
 #aleta-bd-akar .bk-tabel th { text-align: left; color: var(--muted); font-weight: 600; padding: 6px 8px; border-bottom: 1px solid var(--line); background: none; }
 #aleta-bd-akar .bk-tabel td { padding: 5px 8px; border-bottom: 1px solid var(--line); vertical-align: top; background: none; color: var(--fg); }
-#aleta-bd-akar .bk-tabel tr.bundel td { background: var(--hijau); color: #fff; font-weight: 700; letter-spacing: .04em; }
+#aleta-bd-akar .bk-tabel tr.bundel td { background: var(--hijau); color: var(--bd-teks-di-hijau); font-weight: 700; letter-spacing: .04em; }
 #aleta-bd-akar .bk-tabel tr.grup td { background: var(--panel2); color: var(--accent); font-size: 12px; font-weight: 700; }
 #aleta-bd-akar .bk-tabel tr.tersembunyi td { opacity: .5; text-decoration: line-through; }
 #aleta-bd-akar .bk-tabel td.geser, #aleta-bd-akar .bk-tabel td.aksi { white-space: nowrap; }
@@ -766,6 +767,6 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar .bk-bentuk { display: inline-flex; align-items: center; gap: 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; width: fit-content; }
 #aleta-bd-akar .bk-bentuk > span { padding: 6px 10px; color: var(--muted); font-size: 12.8px; background: var(--deep); }
 #aleta-bd-akar .bk-bentukt { background: var(--panel); border: 0; border-left: 1px solid var(--line); padding: 6px 14px; font-weight: 600; }
-#aleta-bd-akar .bk-bentukt[aria-pressed="true"] { background: var(--hijau); color: #fff; }
+#aleta-bd-akar .bk-bentukt[aria-pressed="true"] { background: var(--hijau); color: var(--bd-teks-di-hijau); }
 #aleta-bd-akar .bk-ciri.ganda { border-style: double; border-width: 3px; }
 #aleta-bd-akar .bk-pihak { background: var(--deep); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; }
