@@ -57,6 +57,22 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.51",
+    dirilis: "2026-10-28T00:45:00+08:00",
+    judul: "Rincian alasan cerai, kamus perkara lain, dan alat bukti elektronik",
+    butir: [
+      "Rincian alasan cerai (sesuai gugatan) disusun dari sebab konkret dan akibatnya sebagaimana didalilkan gugatan (mis. Tergugat malas bekerja sehingga kurang memberikan nafkah), dengan tanda dikuatkan saksi Penggugat/Tergugat; jawab-menjawab hanya catatan diakui/dibantah. Kamus 52 pola dan 135 bunyi, dapat ditambah Super Admin.",
+      "Upaya damai terbaca pelakunya (keluarga, aparat, keduanya, atau lainnya); lama pisah rumah dihitung otomatis; ungkapan diusir, pulang ke rumah orang tua, dan sejak Lebaran/Ramadhan dikenali.",
+      "Kamus deteksi mencatat riwayat perubahan (siapa, kapan, isi lama) dan dapat dikembalikan dari layar Admin.",
+      "Isian blangko perkara selain cerai dilengkapi: bunyi keterangan saksi untuk perwalian, wali adhal, harta bersama, poligami, asal usul, ekonomi syariah, dan kewarisan; calon suami dan alasan wali adhal, tempat tinggal sesudah menikah (itsbat), serta pilihan isian lebih dari 90 ruas.",
+      "Alat bukti elektronik di daftar bukti surat tiap pihak (bawaan tersembunyi): tiga varian pemeriksaan, nomor tanda melanjutkan bukti surat, awalan P/T kecuali bukti surat memakai tanda konvensi/rekonvensi.",
+      "Unduh eviden SKP tersedia di rekap Panitera Pengganti, Juru Sita, dan Mediator, juga bila akun SIPP belum dipetakan ke pegawai.",
+      "Kunci API di Pengaturan AI disimpan terenkripsi; layar hanya menampilkan empat huruf terakhir.",
+      "Angka romawi pihak berlaku untuk berapa pun jumlah pihak; label Turut Tergugat dan Intervensi pada daftar SIPP tambahan dibetulkan.",
+      "Tombol Jadwalkan BAS dan Jadwalkan Tunda menampilkan jumlah antrean.",
+    ],
+  },
+  {
     versi: "1.205.50",
     dirilis: "2026-10-27T17:58:00+08:00",
     judul: "Unggah BAS terjadwal dan tundaan terjadwal",
