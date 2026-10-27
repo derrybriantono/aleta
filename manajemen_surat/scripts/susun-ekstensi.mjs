@@ -204,6 +204,10 @@ const BERKAS = [
   "putusan-terjadwal.js",
   "putusan-terjadwal-peramban.js",
   "putusan-terjadwal.css",
+  // Unggah BAS Terjadwal dan Tundaan Terjadwal (27 Okt 2026): tombol "Jadwalkan BAS" / "Jadwalkan Tunda" di sebelah Jadwalkan Putusan;
+  // panel meminjam gaya Jadwalkan Putusan. Server yang menulis ke SIPP pada jam yang dipilih.
+  "sidang-terjadwal.js",
+  "sidang-terjadwal.css",
   // Tombol "Kasir ALETA" di SIPP > Jurnal Perkara > Jurnal Keuangan Perkara (23 Okt 2026, T3): membuka tampilan Kasir
   // ekstensi di pop-up (popup-aksi.js); pengawas (panitera/panmud) hanya membaca.
   "kasir-jurnal-popup.js",

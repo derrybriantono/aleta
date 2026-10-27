@@ -87,6 +87,7 @@
         "putusan-terjadwal-pasangan.js",
         "putusan-terjadwal.js",
         "putusan-terjadwal-peramban.js",
+        "sidang-terjadwal.js",
         "menu-atas.js",
         "aleta-ai-gelembung.js"
       ],
@@ -95,6 +96,7 @@
         "penetapan-sipp.css",
         "putusan-sipp.css",
         "putusan-terjadwal.css",
+        "sidang-terjadwal.css",
         "kasir-jurnal-popup.css"
       ],
       "run_at": "document_idle"
