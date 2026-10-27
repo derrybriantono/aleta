@@ -34,6 +34,7 @@ import { biayaPanggilan, izinkanLaju, PESAN_DITOLAK, PESAN_NONAKTIF_KUNCI, PESAN
 import { bukaIsi, sandiIsi } from "@/server/modules/aleta-ai/percakapan";
 import { bacaPengaturan, bacaRute, bacaTarif, catatJejak, type PengaturanAi } from "@/server/modules/aleta-ai/pengaturan";
 import { parameterHarga } from "@/server/modules/aleta-ai/perkiraan";
+import { adaPakaiPromo, awalanPromoHabis, mulaiPakaiPromo, statusPromo, tutupPakaiPromo, type StatusPromo } from "@/server/modules/aleta-ai/promo";
 import { proyekAktif, type ProyekAktif } from "@/server/modules/aleta-ai/proyek";
 import { aletaAiDihentikan, daftarkanPekerjaanAi, dibatalkanSaklar } from "@/server/modules/aleta-ai/saklar";
 import { saldoPengguna, selesaikanTahanan, tahanDana, tambahTahanan } from "@/server/modules/aleta-ai/saldo";
@@ -353,6 +354,13 @@ async function tutupJalanBasi(db: AletaDatabase, b: BarisTugas) {
   const pengaturan = await bacaPengaturan(db);
   const kurs = await kursBerlaku(db, new Date());
   const usd = Number(b.usd_segmen);
+  // Jalan yang digratiskan promosi tidak punya tahanan dan tidak ditagih: tutup catatan promosinya saja.
+  if (await adaPakaiPromo(db, rujukanJalan(b.id, segmen))) {
+    const harga = hitungHarga(usd, kurs.kurs, parameterHarga(pengaturan));
+    await tutupPakaiPromo(db, { rujukanId: rujukanJalan(b.id, segmen), dihitung: usd > 0, setaraRp: harga.hargaRp, token: 0, biayaApiRp: harga.biayaApiRp, kelompok: b.kelompok, model: b.model });
+    await db.run(`UPDATE aleta_ai_tugas SET biaya_usd = biaya_usd + ?, usd_segmen = 0, tahan_rp = 0 WHERE id = ?`, [usd, b.id]);
+    return;
+  }
   const tagih = usd > 0 ? hitungHarga(usd, kurs.kurs, parameterHarga(pengaturan)).tagihRp : 0;
   const s = await selesaikanTahanan(db, b.pemilik_id, rujukanJalan(b.id, segmen), tagih);
   if (!s.sudahDiproses) {
@@ -415,6 +423,13 @@ type Kerja = {
   usdTagih: number;
   /** Dana yang ditahan jalan ini (satu rujukan mutasi; bertambah bila perlu). */
   ditahan: number;
+  /** Super Admin atau jalan ini digratiskan promosi: tanpa tahanan, tanpa potongan. */
+  bebasTagih: boolean;
+  /** Status promosi saat jalan dimulai (untuk pesan "jatah habis" bila saldo kurang). */
+  promo: StatusPromo;
+  /** Akumulasi jalan ini untuk catatan promosi: token dan biaya API (Rp, kurs dasar). */
+  tokenJalan: number;
+  apiRpJalan: number;
   jedaPantauMs: number;
   sekarang: Date;
   /** Kendali jalan ini, terdaftar di saklar darurat (dibatalkan = saklar dimatikan). */
@@ -474,6 +489,8 @@ async function panggilModel(k: Kerja, langkahId: string, p: PermintaanAi): Promi
 }
 
 async function catatPenggunaan(k: Kerja, langkahId: string, model: string, p: PenggunaanToken, usd: number) {
+  k.tokenJalan += p.masuk + p.keluar + p.cacheTulis + p.cacheBaca;
+  k.apiRpJalan += usd * k.kurs;
   await k.db.run(
     `INSERT INTO aleta_ai_penggunaan (id, pesan_id, percakapan_id, pengguna_id, peran_id, jenis, model, effort, kelompok, token_masuk, token_keluar, token_cache_tulis, token_cache_baca, biaya_usd, kurs_dasar, biaya_api_rp, dibuat_at)
      VALUES (?, ?, ?, ?, ?, 'tugas', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -573,12 +590,12 @@ function perkiraanTahan(k: Kerja, sisa: KodeLangkah[]): number {
  * saldo tidak cukup = berhenti "saldo habis" (hasil sementara tetap).
  */
 async function pastikanTahanan(k: Kerja): Promise<void> {
-  if (k.pelaku.superAdmin) return;
+  if (k.bebasTagih) return;
   const perlu = hitungHarga(k.usdTagih + perkiraanUsd(k, 1), k.kurs, parameterHarga(k.pengaturan)).hargaRp;
   if (perlu <= k.ditahan) return;
   const kurang = perlu - k.ditahan;
   if (!(await tambahTahanan(k.db, k.pelaku.id, kurang, rujukanJalan(k.tugas.id, k.segmen)))) {
-    throw new Berhenti("saldo-habis", pesanSaldoHabis(await saldoPengguna(k.db, k.pelaku.id), kurang));
+    throw new Berhenti("saldo-habis", `${awalanPromoHabis(k.promo)}${pesanSaldoHabis(await saldoPengguna(k.db, k.pelaku.id), kurang)}`);
   }
   k.ditahan += kurang;
   await k.db.run(`UPDATE aleta_ai_tugas SET tahan_rp = ? WHERE id = ?`, [k.ditahan, k.tugas.id]);
@@ -773,6 +790,7 @@ export async function jalankanTugas(db: AletaDatabase, pelaku: PelakuAi, tugas: 
   const rujukan = rujukanJalan(tugas.id, segmen);
   let k: Kerja | null = null;
   let akhir: { status: StatusTugas; pesan: string } = { status: "gagal", pesan: "Terjadi gangguan." };
+  let promoBerlaku = false;
   const kendali = new AbortController();
   const lepasSaklar = daftarkanPekerjaanAi(kendali);
 
@@ -805,6 +823,10 @@ export async function jalankanTugas(db: AletaDatabase, pelaku: PelakuAi, tugas: 
       timpaan,
       usdTagih: 0,
       ditahan: 0,
+      bebasTagih: pelaku.superAdmin,
+      promo: await statusPromo(db, pelaku, { sekarang }),
+      tokenJalan: 0,
+      apiRpJalan: 0,
       jedaPantauMs: opsi.jedaPantauMs ?? JEDA_PANTAU_MS,
       sekarang,
       kendali,
@@ -818,22 +840,28 @@ export async function jalankanTugas(db: AletaDatabase, pelaku: PelakuAi, tugas: 
     const nModel = sisa.filter((s) => LANGKAH_MODEL.includes(s)).length;
     const usdSisa = perkiraanUsd(k, nModel);
     const hargaSisa = hitungHarga(usdSisa, k.kurs, parameterHarga(k.pengaturan), { gratis: pelaku.superAdmin });
+    // Promosi gratis: perkiraan biaya API jalan ini tidak boleh melampaui batas promosi satker.
+    if (k.promo.berlaku) k.promo = await statusPromo(db, pelaku, { sekarang, tambahanApiRp: hargaSisa.biayaApiRp });
+    promoBerlaku = k.promo.berlaku;
+    k.bebasTagih = pelaku.superAdmin || promoBerlaku;
     const batas = await periksaBatas(db, pelaku, k.pengaturan, sekarang, {
-      tambahanRp: hargaSisa.tagihRp,
+      tambahanRp: promoBerlaku ? 0 : hargaSisa.tagihRp,
       tambahanToken: perkiraanToken(k, nModel),
       tambahanApiRp: hargaSisa.biayaApiRp,
+      tanpaTagihan: promoBerlaku,
     });
     if (!batas.ok) throw new Berhenti("gagal", batas.alasan);
+    if (promoBerlaku) await mulaiPakaiPromo(db, { pelaku, jenis: "tugas", rujukanId: rujukan, kelompok: k.rute.kelompok, model: k.rute.model, sekarang });
 
     // Satu jalan = satu tahan saldo.
-    if (!pelaku.superAdmin) {
+    if (!k.bebasTagih) {
       // Ditahan sebanyak yang ada sampai perkiraan seluruh sisa; minimal cukup untuk SATU langkah berikutnya.
       const tahan = perkiraanTahan(k, sisa);
       const saldo = await saldoPengguna(db, pelaku.id);
       const satuLangkah = sisa.some((s) => LANGKAH_MODEL.includes(s)) ? hitungHarga(perkiraanUsd(k, 1), k.kurs, parameterHarga(k.pengaturan)).hargaRp : 0;
-      if (saldo < satuLangkah) throw new Berhenti("saldo-habis", pesanSaldoHabis(saldo, satuLangkah));
+      if (saldo < satuLangkah) throw new Berhenti("saldo-habis", `${awalanPromoHabis(k.promo)}${pesanSaldoHabis(saldo, satuLangkah)}`);
       const awal = Math.min(saldo, tahan);
-      if (awal > 0 && !(await tahanDana(db, pelaku.id, awal, rujukan, { sekali: true }))) throw new Berhenti("saldo-habis", pesanSaldoHabis(saldo, satuLangkah));
+      if (awal > 0 && !(await tahanDana(db, pelaku.id, awal, rujukan, { sekali: true }))) throw new Berhenti("saldo-habis", `${awalanPromoHabis(k.promo)}${pesanSaldoHabis(saldo, satuLangkah)}`);
       k.ditahan = awal;
       await db.run(`UPDATE aleta_ai_tugas SET tahan_rp = ? WHERE id = ?`, [awal, tugas.id]);
     }
@@ -872,7 +900,18 @@ export async function jalankanTugas(db: AletaDatabase, pelaku: PelakuAi, tugas: 
     const usd = k?.usdTagih ?? 0;
     let dipotong = 0;
     let tidakTertagih = 0;
-    if (!pelaku.superAdmin) {
+    if (promoBerlaku && k) {
+      // Digratiskan promosi: tidak ada tahanan dan potongan; catat pemakaian sebenarnya terhadap jatah.
+      await tutupPakaiPromo(db, {
+        rujukanId: rujukan,
+        dihitung: usd > 0,
+        setaraRp: usd > 0 ? hitungHarga(usd, k.kurs, parameterHarga(k.pengaturan)).hargaRp : 0,
+        token: k.tokenJalan,
+        biayaApiRp: k.apiRpJalan,
+        kelompok: k.rute.kelompok,
+        model: k.rute.model,
+      });
+    } else if (!pelaku.superAdmin) {
       const harga = usd > 0 && k ? hitungHarga(usd, k.kurs, parameterHarga(k.pengaturan)).tagihRp : 0;
       const s = await selesaikanTahanan(db, pelaku.id, rujukan, harga);
       dipotong = s.dipotongRp;
@@ -892,7 +931,7 @@ export async function jalankanTugas(db: AletaDatabase, pelaku: PelakuAi, tugas: 
       biayaUsd: usd,
       biayaRp: dipotong,
       hasil: akhir.status,
-      ringkas: `segmen=${segmen}; jenis=${tugas.jenis}${tidakTertagih ? `; tak tertagih Rp${tidakTertagih}` : ""}`,
+      ringkas: `segmen=${segmen}; jenis=${tugas.jenis}${promoBerlaku ? "; promo=1" : ""}${tidakTertagih ? `; tak tertagih Rp${tidakTertagih}` : ""}`,
     });
   }
   return tampilTugas((await ambilBaris(db, tugas.id)) as BarisTugas);

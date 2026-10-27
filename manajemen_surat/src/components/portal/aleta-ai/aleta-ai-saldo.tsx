@@ -5,8 +5,10 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, CircleAlert, Loader2, Receipt } from "lucide-react";
 
 import { ambil } from "@/lib/aleta-ai/klien";
-import { formatRupiah, type MutasiSaldo } from "@/lib/aleta-ai/kontrak";
+import { formatRupiah, type MutasiSaldo, type StatusPromoAi } from "@/lib/aleta-ai/kontrak";
 import { apiPath } from "@/lib/base-path";
+
+import { PitaPromoAi } from "./promo-ai";
 
 /** Rincian biaya satu giliran (GET /api/aleta-ai/dompet). Tanpa isi pesan. */
 type GiliranDompet = {
@@ -20,6 +22,8 @@ type GiliranDompet = {
   perkiraanRp?: number;
   biayaRp: number;
   gratis?: boolean;
+  /** Gratis karena program promosi. */
+  promo?: boolean;
 };
 
 type DataSaldo = {
@@ -29,6 +33,7 @@ type DataSaldo = {
   saldoMenipis?: boolean;
   pemberitahuan?: string;
   gratis?: boolean;
+  promo?: StatusPromoAi | null;
   caraIsi?: string;
   hariIni?: { terpakaiRp: number; batasRp: number; token: number; batasToken: number };
   kuota?: { diberikanRp: number; sisaRp: number; hangus: string; teks: string } | null;
@@ -86,6 +91,7 @@ export function AletaAiSaldo() {
 
       {data ? (
         <>
+          <PitaPromoAi awal={data.promo} />
           <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Saldo Anda</p>
             <p className="mt-1 text-4xl font-semibold tabular-nums text-foreground" data-testid="saldo-besar">
@@ -145,7 +151,7 @@ export function AletaAiSaldo() {
                           {g.kurs ? formatRupiah(g.kurs) : "-"}
                         </td>
                         <td className="px-3 py-2 text-right tabular-nums">{g.perkiraanRp != null ? formatRupiah(g.perkiraanRp) : "-"}</td>
-                        <td className="px-3 py-2 text-right tabular-nums">{g.gratis ? "Gratis" : formatRupiah(g.biayaRp)}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{g.promo ? "Gratis (promosi)" : g.gratis ? "Gratis" : formatRupiah(g.biayaRp)}</td>
                         <td className="px-3 py-2">
                           <a
                             href={apiPath(`/api/aleta-ai/struk/${encodeURIComponent(g.pesanId)}`)}

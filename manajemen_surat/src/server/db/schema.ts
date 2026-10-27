@@ -895,6 +895,36 @@ export const DDL_ALETA_AI_DOMPET = {
 } as const;
 
 /**
+ * ALETA Ai - program promosi "Gratis pakai ALETA Ai" (0113, 27 Okt 2026). Cermin PERSIS dari
+ * drizzle/0113_aleta_ai_promo.sql; penjaga aleta-ai-promo-27okt.test.ts membandingkan keduanya.
+ * Tanpa kunci asing.
+ */
+export const DDL_ALETA_AI_PROMO = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_ai_promo_pakai (
+  id TEXT PRIMARY KEY,
+  pengguna_id TEXT NOT NULL,
+  peran_id TEXT NOT NULL DEFAULT '',
+  jenis TEXT NOT NULL DEFAULT 'giliran',
+  rujukan_id TEXT NOT NULL DEFAULT '',
+  tanggal TEXT NOT NULL,
+  dihitung INTEGER NOT NULL DEFAULT 1,
+  setara_rp INTEGER NOT NULL DEFAULT 0,
+  token INTEGER NOT NULL DEFAULT 0,
+  biaya_api_rp DOUBLE PRECISION NOT NULL DEFAULT 0,
+  kelompok TEXT NOT NULL DEFAULT '',
+  model TEXT NOT NULL DEFAULT '',
+  dibuat_at TEXT NOT NULL
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_ai_promo_pakai_pengguna ON aleta_ai_promo_pakai(pengguna_id, tanggal)`,
+    `CREATE INDEX IF NOT EXISTS idx_ai_promo_pakai_rujukan ON aleta_ai_promo_pakai(rujukan_id)`,
+  ],
+  kolom: [`ALTER TABLE aleta_ai_obrolan_pesan ADD COLUMN IF NOT EXISTS promo INTEGER NOT NULL DEFAULT 0`],
+} as const;
+
+/**
  * Cermin Perkara (0090, 25 Okt 2026, C0): salinan keadaan perkara SIPP di basis
  * data ALETA - perkara, sidang, pihak, mediasi, penanda Status Perkara, dan
  * jejak pemindai. Cermin PERSIS dari drizzle/0090_aleta_cermin_perkara.sql;
@@ -3230,6 +3260,8 @@ const schemaStatements = [
   ...DDL_ALETA_AI.tabel,
   // ALETA Ai tahap 4: kuota hibah per peran, rekonsiliasi harian (0088).
   ...DDL_ALETA_AI_DOMPET.tabel,
+  // ALETA Ai: program promosi gratis (0113).
+  ...DDL_ALETA_AI_PROMO.tabel,
   // Antrean kerja peramban di basis data (0098, rantai B / K15).
   ...DDL_ANTREAN_PERAMBAN.tabel,
   // Kamus alias nama pihak (0100, rantai B / U18).
@@ -5225,6 +5257,7 @@ const indexStatements = [
   ...DDL_TAUTAN_JADWAL.indeks,
   ...DDL_ALETA_AI.indeks,
   ...DDL_ALETA_AI_DOMPET.indeks,
+  ...DDL_ALETA_AI_PROMO.indeks,
   ...DDL_ANTREAN_PERAMBAN.indeks,
   ...DDL_ALIAS_NAMA.indeks,
   ...DDL_JEJAK_ISIAN.indeks,
@@ -5781,6 +5814,7 @@ const migrationStatements = [
   ...DDL_KAMUS_RUAS_TAMBAHAN.kolom,
   // ALETA Ai tahap 4: MDR dan kurs (tanggal, sumber) per giliran (0088).
   ...DDL_ALETA_AI_DOMPET.kolom,
+  ...DDL_ALETA_AI_PROMO.kolom,
   ...DDL_ALETA_CERMIN_PERKARA_TANGGAL.kolom,
   // Versi ekstensi per PC (0094).
   ...DDL_KESEHATAN_GALAT.kolom,

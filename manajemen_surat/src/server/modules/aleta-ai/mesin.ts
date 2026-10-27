@@ -40,6 +40,7 @@ import { bacaTimpaanKemampuan } from "@/server/modules/aleta-ai/kemampuan";
 import { muatPenyamar, simpanPenyamar } from "@/server/modules/aleta-ai/samaran";
 import { kursBerlaku, segarkanKursBilaPerlu, tanggalLokal, type PengambilKurs } from "@/server/modules/aleta-ai/kurs";
 import { pastikanKuotaBulanIni } from "@/server/modules/aleta-ai/kuota";
+import { awalanPromoHabis, mulaiPakaiPromo, statusPromo, tutupPakaiPromo } from "@/server/modules/aleta-ai/promo";
 import { periksaBatas } from "@/server/modules/aleta-ai/batas";
 import { ambilMilik, bukaIsi, JUDUL_BAWAAN, riwayatUntukPermintaan, sandiIsi } from "@/server/modules/aleta-ai/percakapan";
 import { bacaPengaturan, bacaRute, bacaTarif, catatJejak, type PengaturanAi } from "@/server/modules/aleta-ai/pengaturan";
@@ -324,10 +325,12 @@ export async function* kirimPesan(
   }
   // Kuota hibah per peran (bila diatur Super Admin): sekali per bulan, tercatat sebagai mutasi "kuota".
   await pastikanKuotaBulanIni(db, pelaku, sekarang);
-  if (!pelaku.superAdmin) {
+  // Program promosi gratis (bila menyala dan pengguna sasaran, jatah ada): giliran ini ditagih Rp0, tanpa saldo.
+  let promo = await statusPromo(db, pelaku, { sekarang });
+  if (!pelaku.superAdmin && !promo.berlaku) {
     const saldo = await saldoPengguna(db, pelaku.id);
     if (saldo < pengaturan.minimumRp) {
-      yield gagal(`Saldo ALETA Ai Anda (Rp${saldo.toLocaleString("id-ID")}) tidak cukup. Hubungi Super Admin untuk mengisi saldo.`);
+      yield gagal(`${awalanPromoHabis(promo)}Saldo ALETA Ai Anda (Rp${saldo.toLocaleString("id-ID")}) tidak cukup. Hubungi Super Admin untuk mengisi saldo.`);
       return;
     }
   }
@@ -405,11 +408,17 @@ export async function* kirimPesan(
 
   let permintaan = buatPermintaan(rute);
   let perkiraan = await perkirakanGiliran(klien, permintaan, rute, tarif, kurs.kurs, pengaturan, pelaku.superAdmin);
+  // Promosi: perkiraan biaya API tidak boleh melampaui batas promosi satker; bila melampaui, giliran ini ditagih biasa.
+  if (promo.berlaku) promo = await statusPromo(db, pelaku, { sekarang, tambahanApiRp: perkiraan.biayaApiRp });
+  const promoBerlaku = promo.berlaku;
+  const bebasTagih = pelaku.superAdmin || promoBerlaku;
+  if (promoBerlaku) perkiraan = { ...perkiraan, perkiraanRp: 0, tahanRp: 0 };
 
   const batasPerkiraan = await periksaBatas(db, pelaku, pengaturan, sekarang, {
     tambahanRp: perkiraan.perkiraanRp,
     tambahanToken: perkiraan.tokenMasuk + rute.perkiraanKeluaran,
     tambahanApiRp: perkiraan.biayaApiRp,
+    tanpaTagihan: promoBerlaku,
   });
   if (!batasPerkiraan.ok) {
     await catatPemakaianTanpaPesan(db, pelaku, percakapanId, percobaan, kurs.kurs);
@@ -419,11 +428,11 @@ export async function* kirimPesan(
 
   const pesanId = `aip-${randomUUID()}`;
   let ditahan = 0;
-  if (!pelaku.superAdmin) {
+  if (!bebasTagih) {
     const saldo = await saldoPengguna(db, pelaku.id);
     if (saldo < perkiraan.perkiraanRp) {
       await catatPemakaianTanpaPesan(db, pelaku, percakapanId, percobaan, kurs.kurs);
-      yield gagal(`Saldo ALETA Ai Anda (Rp${saldo.toLocaleString("id-ID")}) tidak cukup untuk giliran ini (perkiraan Rp${perkiraan.perkiraanRp.toLocaleString("id-ID")}). Hubungi Super Admin untuk mengisi saldo.`);
+      yield gagal(`${awalanPromoHabis(promo)}Saldo ALETA Ai Anda (Rp${saldo.toLocaleString("id-ID")}) tidak cukup untuk giliran ini (perkiraan Rp${perkiraan.perkiraanRp.toLocaleString("id-ID")}). Hubungi Super Admin untuk mengisi saldo.`);
       return;
     }
     ditahan = Math.min(saldo, Math.max(perkiraan.tahanRp, perkiraan.perkiraanRp));
@@ -444,10 +453,12 @@ export async function* kirimPesan(
     [idPengguna, percakapanId, pelaku.id, sandiIsi(teksKerja), pemicu?.kode ?? "", waktuPengguna]
   );
   await db.run(
-    `INSERT INTO aleta_ai_obrolan_pesan (id, percakapan_id, pemilik_id, peran, isi, kelompok, model, effort, mode_label, status, perkiraan_rp, gratis, dibuat_at)
-     VALUES (?, ?, ?, 'ai', '', ?, ?, ?, ?, 'berjalan', ?, ?, ?)`,
-    [pesanId, percakapanId, pelaku.id, rute.kelompok, rute.model, rute.effort, rute.label, perkiraan.perkiraanRp, pelaku.superAdmin ? 1 : 0, waktuAi]
+    `INSERT INTO aleta_ai_obrolan_pesan (id, percakapan_id, pemilik_id, peran, isi, kelompok, model, effort, mode_label, status, perkiraan_rp, gratis, promo, dibuat_at)
+     VALUES (?, ?, ?, 'ai', '', ?, ?, ?, ?, 'berjalan', ?, ?, ?, ?)`,
+    [pesanId, percakapanId, pelaku.id, rute.kelompok, rute.model, rute.effort, rute.label, perkiraan.perkiraanRp, pelaku.superAdmin ? 1 : 0, promoBerlaku ? 1 : 0, waktuAi]
   );
+  // Jatah promosi dipesan sekarang supaya giliran serentak ikut terhitung; ditutup dengan angka sebenarnya di tutup().
+  if (promoBerlaku) await mulaiPakaiPromo(db, { pelaku, jenis: "giliran", rujukanId: pesanId, kelompok: rute.kelompok, model: rute.model, sekarang });
 
   // Dari sini setiap jalan keluar HARUS melewati penyelesaian (blok finally).
   const kendali = new AbortController();
@@ -476,10 +487,11 @@ export async function* kirimPesan(
     const harga = hitungHarga(totalUsd, kurs.kurs, parameterHarga(pengaturan), { gratis: pelaku.superAdmin });
     // Giliran gagal tidak dipotong; ditolak tanpa satu kata pun keluaran juga tidak (biaya
     // pengklasifikasi yang sangat kecil ditanggung pengelola, tetap tercatat di penggunaan).
-    const tagih = status === "gagal" || (status === "ditolak" && !jawaban) ? 0 : harga.tagihRp;
+    const tidakDitagih = status === "gagal" || (status === "ditolak" && !jawaban);
+    const tagih = tidakDitagih ? 0 : harga.tagihRp;
 
     let potong = { dipotongRp: 0, tidakTertagihRp: 0, saldoSetelah: 0 };
-    if (pelaku.superAdmin) {
+    if (bebasTagih) {
       potong.saldoSetelah = await saldoPengguna(db, pelaku.id);
     } else {
       const s = await selesaikanTahanan(db, pelaku.id, pesanId, tagih);
@@ -514,6 +526,17 @@ export async function* kirimPesan(
         pesanId,
       ]
     );
+    if (promoBerlaku) {
+      await tutupPakaiPromo(db, {
+        rujukanId: pesanId,
+        dihitung: !tidakDitagih,
+        setaraRp: harga.hargaRp,
+        token: totalToken.masuk + totalToken.keluar + totalToken.cacheTulis + totalToken.cacheBaca,
+        biayaApiRp: harga.biayaApiRp,
+        kelompok: rute.kelompok,
+        model: modelAkhir,
+      });
+    }
     for (const p of percobaan) {
       await db.run(
         `INSERT INTO aleta_ai_penggunaan (id, pesan_id, percakapan_id, pengguna_id, peran_id, jenis, model, effort, kelompok, token_masuk, token_keluar, token_cache_tulis, token_cache_baca, biaya_usd, kurs_dasar, biaya_api_rp, dibuat_at)
@@ -539,7 +562,7 @@ export async function* kirimPesan(
       biayaUsd: totalUsd,
       biayaRp: potong.dipotongRp,
       hasil: status,
-      ringkas: `kelompok=${rute.kelompok}; sumber=${klas.sumber}${pemicu ? `; pemicu=${pemicu.kode}` : ""}${potong.tidakTertagihRp ? `; tak tertagih Rp${potong.tidakTertagihRp}` : ""}${pesanGagal ? `; ${pesanGagal}` : ""}`,
+      ringkas: `kelompok=${rute.kelompok}; sumber=${klas.sumber}${promoBerlaku ? "; promo=1" : ""}${pemicu ? `; pemicu=${pemicu.kode}` : ""}${potong.tidakTertagihRp ? `; tak tertagih Rp${potong.tidakTertagihRp}` : ""}${pesanGagal ? `; ${pesanGagal}` : ""}`,
     });
 
     hasilTutup = { biayaRp: potong.dipotongRp, saldoRp: potong.saldoSetelah };
@@ -640,8 +663,9 @@ export async function* kirimPesan(
         const naik = !teksPercobaan && percobaanKe < 2 ? naikSatuTingkat(tabel, rute.kelompok, pelaku.peranId) : null;
         if (naik) {
           const permintaanBaru = buatPermintaan(naik);
-          const perkiraanBaru = await perkirakanGiliran(klien, permintaanBaru, naik, tarif, kurs.kurs, pengaturan, pelaku.superAdmin);
-          if (!pelaku.superAdmin) {
+          let perkiraanBaru = await perkirakanGiliran(klien, permintaanBaru, naik, tarif, kurs.kurs, pengaturan, pelaku.superAdmin);
+          if (promoBerlaku) perkiraanBaru = { ...perkiraanBaru, perkiraanRp: 0, tahanRp: 0 };
+          if (!bebasTagih) {
             const perlu = Math.max(0, perkiraanBaru.tahanRp - ditahan);
             if (perlu > 0) {
               if (!(await tambahTahanan(db, pelaku.id, perlu, pesanId))) {

@@ -14,7 +14,28 @@ export const LABEL_MODE: Record<ModeAi, string> = {
 
 export type Pemicu = { kode: string; label: string; kelompok: string; perkiraanRp?: number };
 
+/** Program promosi "Gratis pakai ALETA Ai" untuk pengguna yang masuk (server: promo.ts StatusPromo). */
+export type StatusPromoAi = {
+  tampil: boolean;
+  berlaku: boolean;
+  alasan: string;
+  pesan: string;
+  judul: string;
+  teks: string;
+  mulai: string;
+  akhir: string;
+  akhirTeks: string;
+  giliranPerHari: number;
+  terpakaiGiliranHariIni: number;
+  sisaGiliranHariIni: number | null;
+  rupiahPeriode: number;
+  terpakaiRupiah: number;
+  sisaRupiah: number | null;
+};
+
 export type RingkasAi = {
+  /** Ada hanya bila program promosi tampil untuk pengguna ini. */
+  promo?: StatusPromoAi;
   aktif: boolean;
   alasanNonaktif?: string;
   saldoRp: number;

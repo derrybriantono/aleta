@@ -36,6 +36,7 @@ import { simpanKurs, tanggalLokal } from "@/server/modules/aleta-ai/kurs";
 import { laporanRentang } from "@/server/modules/aleta-ai/laporan";
 import { bacaPengaturan, bacaTarif, simpanPengaturan } from "@/server/modules/aleta-ai/pengaturan";
 import { parameterHarga } from "@/server/modules/aleta-ai/perkiraan";
+import { simpanPromo, statusPromo } from "@/server/modules/aleta-ai/promo";
 import { proyekAktif, unggahProyek } from "@/server/modules/aleta-ai/proyek";
 import { jalankanRekonsiliasi } from "@/server/modules/aleta-ai/rekonsiliasi";
 import { jumlahPekerjaanAiBerjalan } from "@/server/modules/aleta-ai/saklar";
@@ -661,6 +662,39 @@ describe("tugas (cowork): kebocoran, berkas, berhenti/lanjut/bertahan, saklar, g
     // Rahasia musyawarah: pemilik lain / Super Admin tidak dapat membuka.
     await expect(ambilTugas(db, SUPER, id)).rejects.toMatchObject({ status: 404 });
     await expect(unduhBerkas(db, KETUA, id, t.berkas![0]!.id)).rejects.toMatchObject({ status: 404 });
+  });
+
+  it("PROMOSI gratis (27 Okt): jalan tugas ditagih Rp0 tanpa menyentuh saldo dan tercatat terhadap jatah; jatah habis = kembali ke saldo", async () => {
+    const U = HAKIM; // sumber data rekaan hanya mengenal hakim ini sebagai penangan perkara
+    const saldoAwal = await saldoPengguna(db, U.id);
+    await simpanPromo(db, SUPER.id, { aktif: true, mulai: "2026-10-24", akhir: "2026-10-26", giliranPerHari: 1, rupiahPeriode: 0, batasSatkerRp: 500_000, semuaPeran: true, peran: [] });
+    try {
+      suntikKlienAi(new KlienTiruan());
+      const id = await tugasBaru(U, "draf-putusan", "docx");
+      const hasil = await jalanSampaiAkhir(U, id);
+      expect(`${hasil.status}: ${hasil.pesan}`).toBe("selesai: Berkas siap.");
+      expect(hasil.biayaRp).toBe(0);
+      expect(await mutasiTugas(U, id)).toEqual([]);
+      expect(await saldoPengguna(db, U.id)).toBe(saldoAwal);
+      const b = await db.queryAll<{ jenis: string; dihitung: number; setara_rp: number; token: number; biaya_api_rp: number }>(
+        `SELECT jenis, dihitung, setara_rp, token, biaya_api_rp FROM aleta_ai_promo_pakai WHERE pengguna_id = ?`,
+        [U.id]
+      );
+      expect(b).toHaveLength(1);
+      expect(b[0]).toMatchObject({ jenis: "tugas", dihitung: 1 });
+      expect(Number(b[0]?.setara_rp)).toBeGreaterThan(0);
+      expect(Number(b[0]?.token)).toBeGreaterThan(0);
+      expect(Number(b[0]?.biaya_api_rp)).toBeGreaterThan(0);
+      expect(await statusPromo(db, U, { sekarang: SEKARANG })).toMatchObject({ berlaku: false, alasan: "jatah-harian-habis" });
+      // Jatah habis: jalan berikutnya kembali ke alur biasa (tahan, lepas, potong dari saldo).
+      const id2 = await tugasBaru(U, "draf-putusan", "docx");
+      expect((await jalanSampaiAkhir(U, id2)).status).toBe("selesai");
+      expect((await mutasiTugas(U, id2)).map((m) => m.jenis)).toEqual(["tahan", "lepas", "potong"]);
+      expect(await saldoPengguna(db, U.id)).toBeLessThan(saldoAwal);
+      expect((await verifikasiSaldo(db, U.id)).seimbang).toBe(true);
+    } finally {
+      await simpanPromo(db, SUPER.id, { aktif: false });
+    }
   });
 
   it("PANDUAN SIDANG: templat HTML V4.5 (rekaan) membaca window.SIDANG berdata asli; penanda V4.5 tersorot; tanpa kode samaran", async () => {

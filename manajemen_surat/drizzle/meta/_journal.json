@@ -694,6 +694,13 @@
       "when": 1792294200001,
       "tag": "0112_aleta_berkas_perkara",
       "breakpoints": true
+    },
+    {
+      "idx": 99,
+      "version": "7",
+      "when": 1792296000001,
+      "tag": "0113_aleta_ai_promo",
+      "breakpoints": true
     }
   ]
 }

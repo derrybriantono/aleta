@@ -662,7 +662,7 @@ describe("laporan laba = jumlah mutasi; ekspor; rekonsiliasi menandai selisih", 
     const lap = await laporanBulanan(db);
     const csv = laporanKeCsv(lap);
     const baris = csv.replace(/^﻿/, "").trim().split("\r\n");
-    expect(baris[0]).toBe("Bagian,Nama,Giliran,Giliran gratis,Token,Biaya API (USD),Biaya API (Rp),Biaya MDR (Rp),Pendapatan (Rp),Laba (Rp)");
+    expect(baris[0]).toBe("Bagian,Nama,Giliran,Giliran gratis,Token,Biaya API (USD),Biaya API (Rp),Biaya MDR (Rp),Pendapatan (Rp),Laba (Rp),Giliran promosi,Token promosi,Biaya API promosi (Rp)");
     expect(baris[1]?.split(",")[8]).toBe(String(lap.pendapatanRp));
     expect(baris.some((b) => b.startsWith("Per model,claude-opus-5-5,"))).toBe(true);
     const tiruan = { ...lap, perPengguna: [{ ...lap.perPengguna[0]!, nama: "=HYPERLINK(1)" }] };

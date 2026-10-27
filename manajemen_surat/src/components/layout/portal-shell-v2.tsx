@@ -52,6 +52,7 @@ import { TombolModeRingan } from "@/components/layout/mode-ringan";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { TombolBantuanTutorial } from "@/components/portal/tutorial-bantuan";
 import { UserAvatar } from "@/components/portal/user-avatar";
+import { LencanaGratisAi } from "@/components/portal/aleta-ai/promo-ai";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -332,6 +333,8 @@ type StaticNavItem = {
   href: string;
   external?: boolean;
   icon: React.ElementType;
+  /** Lencana kecil di samping nama menu (mis. "Gratis" selama promosi ALETA Ai). */
+  lencana?: React.ReactNode;
 };
 
 function getSidebarTitle(ctx: AppContext, isAdminArea: boolean): string {
@@ -668,6 +671,7 @@ export function PortalShellV2({ children }: { children: React.ReactNode }) {
           description: app.description,
           href: app.href,
           icon: iconMap[app.icon as keyof typeof iconMap] ?? LayoutDashboard,
+          ...(app.id === "aleta-ai" ? { lencana: <LencanaGratisAi /> } : {}),
         }));
       }
 
@@ -1015,6 +1019,7 @@ export function PortalShellV2({ children }: { children: React.ReactNode }) {
       external,
       badgeCount,
       testId,
+      lencana,
     }: {
       itemKey: string;
       href: string;
@@ -1025,6 +1030,7 @@ export function PortalShellV2({ children }: { children: React.ReactNode }) {
       external?: boolean;
       badgeCount?: number;
       testId?: string;
+      lencana?: React.ReactNode;
     }) => {
       const content = (
         <>
@@ -1045,6 +1051,7 @@ export function PortalShellV2({ children }: { children: React.ReactNode }) {
             <span className="relative z-10 min-w-0 space-y-0.5">
               <span className="flex min-w-0 items-center gap-1.5 text-sm font-semibold">
                 <span className="truncate">{label}</span>
+                {lencana}
                 {external ? <ExternalLink className="h-3 w-3 shrink-0 opacity-70" /> : null}
               </span>
               {!mobile && description ? (
@@ -1315,6 +1322,7 @@ export function PortalShellV2({ children }: { children: React.ReactNode }) {
                     Icon,
                     active,
                     external: item.external,
+                    lencana: item.lencana,
                   });
                 })}
                 {hasSidebarSearch && visibleStaticItems.length === 0 ? (

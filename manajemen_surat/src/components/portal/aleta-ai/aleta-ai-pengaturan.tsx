@@ -14,6 +14,7 @@ import { LABEL_MODE, formatRupiah, type PengaturanAi } from "@/lib/aleta-ai/kont
 import { apiPath } from "@/lib/base-path";
 
 import { MatriksKemampuanAi } from "./matriks-kemampuan";
+import { KartuPromoAi } from "./promo-ai";
 
 /**
  * Pengaturan ALETA Ai - hanya Super Admin. Satu-satunya layar yang menyebut
@@ -25,7 +26,7 @@ export type PenggunaPilihan = { id: string; name: string; jabatan?: string };
 type Kurs = { kurs?: number; kursPakai?: number; tanggal?: string; sumber?: string };
 type ModulProyek = { nama: string; versi?: string };
 type Proyek = { versi?: string; diperbarui?: string; modul?: ModulProyek[]; riwayat?: { versi: string; tanggal?: string; oleh?: string }[] };
-type BarisLaporan = { nama?: string; kunci?: string; giliran?: number; pendapatanRp?: number; biayaApiRp?: number; biayaMdrRp?: number; labaRp?: number };
+type BarisLaporan = { nama?: string; kunci?: string; giliran?: number; promoGiliran?: number; pendapatanRp?: number; biayaApiRp?: number; biayaMdrRp?: number; labaRp?: number };
 type Laporan = {
   bulan?: string;
   pendapatanRp: number;
@@ -37,6 +38,8 @@ type Laporan = {
   perKelompok?: BarisLaporan[];
   perModel?: BarisLaporan[];
   perBulan?: BarisLaporan[];
+  /** Program promosi gratis: giliran/tugas, token, biaya API (pengeluaran pengelola), nilai setara, pengguna. */
+  promo?: { giliran: number; token: number; biayaApiRp: number; setaraRp: number; pengguna: number };
 };
 type KuotaPeran = { peranId: string; kuotaBulananRp: number };
 type Rekonsiliasi = { tanggal: string; status: string; olehId?: string; dijalankanAt?: string; jumlahSelisih: number; tahananMenggantung: number; pendapatanGiliranRp: number; potongMutasiRp: number };
@@ -156,6 +159,7 @@ function TabelLaporan({ judul, baris }: { judul: string; baris?: BarisLaporan[] 
             <tr>
               <th scope="col" className="px-3 py-2 font-semibold">Nama</th>
               <th scope="col" className="px-3 py-2 text-right font-semibold">Giliran</th>
+              <th scope="col" className="px-3 py-2 text-right font-semibold">Promosi</th>
               <th scope="col" className="px-3 py-2 text-right font-semibold">Pendapatan</th>
               <th scope="col" className="px-3 py-2 text-right font-semibold">Biaya API</th>
               <th scope="col" className="px-3 py-2 text-right font-semibold">MDR</th>
@@ -167,6 +171,7 @@ function TabelLaporan({ judul, baris }: { judul: string; baris?: BarisLaporan[] 
               <tr key={`${b.kunci ?? b.nama}-${i}`} className="border-t border-border/50">
                 <td className="px-3 py-2">{b.nama ?? b.kunci ?? "-"}</td>
                 <td className="px-3 py-2 text-right tabular-nums">{b.giliran ?? "-"}</td>
+                <td className="px-3 py-2 text-right tabular-nums">{b.promoGiliran ?? 0}</td>
                 <td className="px-3 py-2 text-right tabular-nums">{formatRupiah(b.pendapatanRp)}</td>
                 <td className="px-3 py-2 text-right tabular-nums">{formatRupiah(b.biayaApiRp)}</td>
                 <td className="px-3 py-2 text-right tabular-nums">{formatRupiah(b.biayaMdrRp ?? 0)}</td>
@@ -189,7 +194,7 @@ function bulanIni() {
   return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}`;
 }
 
-export function AletaAiPengaturan({ pengguna }: { pengguna: PenggunaPilihan[] }) {
+export function AletaAiPengaturan({ pengguna, peran = [] }: { pengguna: PenggunaPilihan[]; peran?: Array<{ id: string; name: string }> }) {
   const [form, setForm] = useState<PengaturanAi | null>(null);
   const [memuat, setMemuat] = useState(true);
   const [galat, setGalat] = useState("");
@@ -372,6 +377,7 @@ export function AletaAiPengaturan({ pengguna }: { pengguna: PenggunaPilihan[] })
 
   return (
     <div className="space-y-6" data-testid="aleta-ai-pengaturan">
+      <KartuPromoAi peranTersedia={peran} />
       <Bagian judul="Layanan" deskripsi="Saklar darurat: bila dimatikan, ALETA Ai tidak dapat dipakai siapa pun.">
         <div className="flex items-center justify-between gap-4 rounded-xl border border-border/70 bg-muted/30 px-4 py-3">
           <div>
@@ -759,6 +765,15 @@ export function AletaAiPengaturan({ pengguna }: { pengguna: PenggunaPilihan[] })
                 </div>
               ))}
             </div>
+            {laporan.promo && (laporan.promo.giliran > 0 || laporan.promo.biayaApiRp > 0) ? (
+              <div className="rounded-xl border border-emerald-300/70 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-800/60 dark:bg-emerald-950/40 dark:text-emerald-200" data-testid="laporan-promo">
+                <p className="font-semibold">Program promosi gratis</p>
+                <p>
+                  {laporan.promo.giliran.toLocaleString("id-ID")} giliran gratis oleh {laporan.promo.pengguna.toLocaleString("id-ID")} pengguna, {laporan.promo.token.toLocaleString("id-ID")} token. Biaya API yang ditanggung pengelola{" "}
+                  {formatRupiah(Math.round(laporan.promo.biayaApiRp))}; nilai setara harga normal {formatRupiah(laporan.promo.setaraRp)}.
+                </p>
+              </div>
+            ) : null}
             <TabelLaporan judul="Per bulan" baris={laporan.perBulan} />
             <TabelLaporan judul="Per pengguna" baris={laporan.perPengguna} />
             <TabelLaporan judul="Per peran" baris={laporan.perPeran} />

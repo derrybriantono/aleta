@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 
 import { DaftarPesan, Sambutan, type AlirAktif } from "./daftar-pesan";
 import { KotakTulis, type PerkiraanTampil } from "./kotak-tulis";
+import { PitaPromoAi } from "./promo-ai";
 import { RiwayatPercakapan } from "./riwayat-percakapan";
 
 let penghitungLokal = 0;
@@ -367,6 +368,7 @@ export function AletaAiChat() {
             </Link>
           ) : null}
         </header>
+        <PitaPromoAi awal={ringkas.promo} picu={pesan.length} />
 
         {kosong ? (
           <div className="min-h-0 flex-1 overflow-y-auto">

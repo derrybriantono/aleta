@@ -8,7 +8,7 @@ import { usePortal } from "@/lib/app-state";
 
 /** Pengaturan ALETA Ai - Super Admin saja (server juga menolak peran lain). */
 export default function HalamanPengaturanAletaAi() {
-  const { currentUser, activeUsers, positions } = usePortal();
+  const { currentUser, activeUsers, positions, roles } = usePortal();
   const boleh = currentUser?.roleId === "super-admin";
   const pengguna = useMemo(
     () =>
@@ -29,7 +29,7 @@ export default function HalamanPengaturanAletaAi() {
         title="Pengaturan ALETA Ai"
         description="Atur harga, kurs, rute model, proyek pengetahuan, saldo pengguna, dan lihat laporan laba. Hanya Super Admin yang melihat halaman ini."
       />
-      <AletaAiPengaturan pengguna={pengguna} />
+      <AletaAiPengaturan pengguna={pengguna} peran={(roles ?? []).map((r) => ({ id: r.id, name: r.name }))} />
     </div>
   );
 }

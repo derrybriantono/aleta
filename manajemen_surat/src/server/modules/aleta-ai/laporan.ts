@@ -1,6 +1,7 @@
 import type { AletaDatabase } from "@/server/db/client";
 import { tanggalLokal } from "@/server/modules/aleta-ai/kurs";
 import { bacaPengaturan } from "@/server/modules/aleta-ai/pengaturan";
+import { ringkasanPromo } from "@/server/modules/aleta-ai/promo";
 import { getUsersFromDb } from "@/server/modules/organization/service";
 import { ApiError } from "@/server/shared/errors";
 import { createXlsxWorkbook } from "@/server/shared/xlsx";
@@ -24,6 +25,11 @@ import { createXlsxWorkbook } from "@/server/shared/xlsx";
  * tetap sama dengan jumlah potongan di buku mutasi.
  *
  * Tahap 4: rentang beberapa bulan (perBulan), ekspor CSV/XLSX.
+ *
+ * Program promosi gratis (0113): giliran/jalan tugas yang digratiskan promosi dihitung TERPISAH
+ * dari "Giliran gratis" (Super Admin): promoGiliran, promoToken, promoBiayaApiRp (pengeluaran
+ * pengelola) per total/pengguna/peran/kelompok/model/bulan, dari aleta_ai_promo_pakai. Angka
+ * lama (biaya API, laba) tetap memuat biaya promosi karena biayanya memang ditanggung pengelola.
  */
 
 type BarisPesan = {
@@ -45,8 +51,28 @@ type BarisPesan = {
   giliran?: number;
 };
 
-export type Kumpulan = { giliran: number; gratis: number; token: number; biayaUsd: number; biayaApiRp: number; biayaMdrRp: number; pendapatanRp: number; labaRp: number };
-const kosong = (): Kumpulan => ({ giliran: 0, gratis: 0, token: 0, biayaUsd: 0, biayaApiRp: 0, biayaMdrRp: 0, pendapatanRp: 0, labaRp: 0 });
+export type Kumpulan = {
+  giliran: number;
+  gratis: number;
+  token: number;
+  biayaUsd: number;
+  biayaApiRp: number;
+  biayaMdrRp: number;
+  pendapatanRp: number;
+  labaRp: number;
+  promoGiliran: number;
+  promoToken: number;
+  promoBiayaApiRp: number;
+};
+const kosong = (): Kumpulan => ({ giliran: 0, gratis: 0, token: 0, biayaUsd: 0, biayaApiRp: 0, biayaMdrRp: 0, pendapatanRp: 0, labaRp: 0, promoGiliran: 0, promoToken: 0, promoBiayaApiRp: 0 });
+
+type BarisPromo = { pengguna_id: string; kelompok: string; model: string; dihitung: number | string; token: number | string; biaya_api_rp: number | string; dibuat_at: string };
+
+function tambahPromo(k: Kumpulan, b: BarisPromo) {
+  k.promoGiliran += Number(b.dihitung) === 1 ? 1 : 0;
+  k.promoToken += Number(b.token);
+  k.promoBiayaApiRp += Number(b.biaya_api_rp);
+}
 
 function tambah(k: Kumpulan, b: BarisPesan) {
   k.giliran += b.giliran ?? 1;
@@ -174,6 +200,21 @@ export async function laporanRentang(db: AletaDatabase, dariMasukan?: string, sa
     tambah(ambil(perBulan, tanggalLokal(new Date(b.dibuat_at)).slice(0, 7)), b);
   }
 
+  // Program promosi gratis: dihitung terpisah dari catatan aleta_ai_promo_pakai.
+  const barisPromo = await db.queryAll<BarisPromo>(
+    `SELECT pengguna_id, kelompok, model, dihitung, token, biaya_api_rp, dibuat_at FROM aleta_ai_promo_pakai WHERE dibuat_at >= ? AND dibuat_at < ? LIMIT 500000`,
+    [dari.awal, sampai.akhir]
+  );
+  for (const b of barisPromo) {
+    tambahPromo(total, b);
+    tambahPromo(ambil(perPengguna, b.pengguna_id), b);
+    tambahPromo(ambil(perPeran, pengguna.get(b.pengguna_id)?.peran || "(tidak dikenal)"), b);
+    tambahPromo(ambil(perKelompok, b.kelompok || "(tanpa kelompok)"), b);
+    tambahPromo(ambil(perModel, b.model || "(tanpa model)"), b);
+    tambahPromo(ambil(perBulan, tanggalLokal(new Date(b.dibuat_at)).slice(0, 7)), b);
+  }
+  const promo = await ringkasanPromo(db, dari.awal, sampai.akhir);
+
   // Mutasi saldo di luar giliran (isi, kuota, kuota hangus, koreksi admin) pada rentang yang sama.
   const mutasi = await db.queryAll<{ jenis: string; jumlah_rp: number | string }>(
     `SELECT jenis, jumlah_rp FROM aleta_ai_mutasi WHERE jenis IN ('isi', 'kuota', 'kuota-hangus', 'koreksi') AND jumlah_rp <> 0 AND dibuat_at >= ? AND dibuat_at < ?`,
@@ -208,6 +249,8 @@ export async function laporanRentang(db: AletaDatabase, dariMasukan?: string, sa
     perKelompok: urutkan(perKelompok).map(([kelompok, k]) => ({ nama: kelompok, kelompok, ...k })),
     perModel: urutkan(perModel).map(([model, k]) => ({ nama: model, model, ...k })),
     mutasiSaldo,
+    /** Program promosi gratis: giliran/tugas yang digratiskan, token, biaya API (pengeluaran pengelola), nilai setara, dan jumlah pengguna. */
+    promo,
     perBulan: [...perBulan.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([bln, k]) => ({ nama: bln, bulan: bln, ...k })),
   };
 }
@@ -223,6 +266,9 @@ const KOLOM_ANGKA: Array<{ key: keyof Kumpulan; header: string }> = [
   { key: "biayaMdrRp", header: "Biaya MDR (Rp)" },
   { key: "pendapatanRp", header: "Pendapatan (Rp)" },
   { key: "labaRp", header: "Laba (Rp)" },
+  { key: "promoGiliran", header: "Giliran promosi" },
+  { key: "promoToken", header: "Token promosi" },
+  { key: "promoBiayaApiRp", header: "Biaya API promosi (Rp)" },
 ];
 
 const BAGIAN: Array<{ kunci: "perBulan" | "perPengguna" | "perPeran" | "perKelompok" | "perModel"; judul: string }> = [
