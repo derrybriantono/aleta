@@ -202,7 +202,9 @@ describe("A. ktpPihakService - tanggal, nama, NIK, pencocokan pihak", () => {
     expect(K.peranPihak(1, 1, 1, permohonan)).toBe("Pemohon");
     expect(K.peranPihak(1, 2, 2, permohonan)).toBe("Pemohon II");
     expect(K.peranPihak(2, 1, 1, permohonan)).toBe("Termohon");
-    expect(K.peranPihak(3, 1, 1, { satu: "Penggugat", dua: "Tergugat" })).toBe("Turut Tergugat");
+    // 27 Okt (keputusan pengguna): perkara_pihak3 = intervensi, perkara_pihak4 = Turut Tergugat (dulu tertukar: cabang 3 dianggap Turut).
+    expect(K.peranPihak(4, 1, 1, { satu: "Penggugat", dua: "Tergugat" })).toBe("Turut Tergugat");
+    expect(K.peranPihak(3, 1, 1, { satu: "Penggugat", dua: "Tergugat" })).toBe("Pihak intervensi");
   });
 
   it("keyakinan: 'cukup' bila NIK/nama+lahir cocok, NIK sah, tanggal masuk akal; 'pasti' TIDAK keluar sebelum dinyalakan", () => {
