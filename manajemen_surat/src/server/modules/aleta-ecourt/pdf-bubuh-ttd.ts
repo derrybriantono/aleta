@@ -215,6 +215,15 @@ export function hitungLetakTtd(p: {
   const tumpang = Math.max(0, Math.min(atur.ttdTurunMm * PT_PER_MM, huruf / 3));
   const bawah = puncakNama - tumpang;
   const pusat = (nama.xMin + nama.xMax) / 2;
+  const margin = MARGIN_TEPI_MM * PT_PER_MM;
+
+  // Gambar HARUS rata tengah terhadap nama. Bila terlalu lebar untuk muat di antara margin dengan tengah di tengah nama, gambar DIKECILKAN
+  // (rasio tetap) - titik tengahnya tidak digeser. Paling kecil separuh ukuran aturan; baru bila masih tak muat, digeser seminimal mungkin.
+  const setengahMuat = Math.max(0, Math.min(pusat - margin, halaman.lebar - margin - pusat));
+  const faktorMuat = Math.min(1, (2 * setengahMuat) / lebar);
+  let skala = Math.max(SKALA_MIN, faktorMuat);
+  lebar *= skala;
+  tinggi *= skala;
 
   // Tulisan lain yang terletak di atas nama dan tumpang tindih mendatar dengan gambar: batas atas yang tersedia.
   let batas = Infinity;
@@ -230,13 +239,15 @@ export function hitungLetakTtd(p: {
   if (Number.isFinite(batas)) {
     const tersedia = batas - bawah;
     if (tinggi > tersedia) {
-      const f = Math.max(SKALA_MIN, tersedia / tinggi);
+      // Batas bawah ukuran berlaku atas ukuran aturan (bukan atas ukuran yang sudah dikecilkan karena margin).
+      const f = Math.max(SKALA_MIN / skala, tersedia / tinggi);
       lebar *= f;
       tinggi *= f;
+      skala *= f;
       if (tinggi > tersedia + 0.5) terhimpit = true;
     }
   }
-  const margin = MARGIN_TEPI_MM * PT_PER_MM;
+  // Tengah tetap di tengah nama; bergeser hanya bila ukuran terkecil pun tak muat di antara margin.
   let kiri = pusat - lebar / 2;
   kiri = Math.max(margin, Math.min(kiri, halaman.lebar - margin - lebar));
   return { kiri, bawah, lebar, tinggi, terhimpit, dikecilkan: Math.round((1 - lebar / lebarAsal) * 100) / 100 };

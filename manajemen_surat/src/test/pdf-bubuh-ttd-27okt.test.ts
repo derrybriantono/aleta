@@ -158,10 +158,30 @@ describe("hitungLetakTtd (murni)", () => {
     expect(l.lebar).toBeCloseTo(64 * PT_PER_MM, 3);
     expect(l.tinggi).toBeCloseTo(l.lebar * 0.5, 3);
   });
-  it("nama di tepi kanan halaman: gambar digeser ke dalam, tidak terpotong", () => {
+  it("nama di dekat margin kanan: gambar DIKECILKAN dengan tengah tetap di tengah nama (tidak digeser), tepi kanan <= lebar halaman - margin", () => {
+    const margin = 8 * PT_PER_MM;
+    const penuh = hitungLetakTtd({ nama: nama(300, 400), halaman, rasio: 0.5, atur: APA, sekitar: [] });
     const l = hitungLetakTtd({ nama: nama(470, 560), halaman, rasio: 0.5, atur: APA, sekitar: [] });
-    expect(l.kiri + l.lebar).toBeLessThanOrEqual(halaman.lebar - 8 * PT_PER_MM + 0.01);
-    expect(l.kiri).toBeGreaterThanOrEqual(8 * PT_PER_MM - 0.01);
+    expect(l.kiri + l.lebar / 2).toBeCloseTo(515, 3); // tengah nama
+    expect(l.kiri + l.lebar).toBeLessThanOrEqual(halaman.lebar - margin + 0.01);
+    expect(l.kiri).toBeGreaterThanOrEqual(margin - 0.01);
+    expect(l.lebar).toBeLessThan(penuh.lebar);
+    expect(l.lebar).toBeGreaterThanOrEqual(penuh.lebar * 0.5 - 0.01); // paling kecil separuh
+    expect(l.tinggi / l.lebar).toBeCloseTo(0.5, 5); // rasio tetap
+    expect(l.dikecilkan).toBeGreaterThan(0);
+  });
+  it("nama di dekat margin kiri: sama, diperkecil dengan tengah di tengah nama", () => {
+    const margin = 8 * PT_PER_MM;
+    const l = hitungLetakTtd({ nama: nama(40, 130), halaman, rasio: 0.5, atur: APA, sekitar: [] });
+    expect(l.kiri + l.lebar / 2).toBeCloseTo(85, 3);
+    expect(l.kiri).toBeGreaterThanOrEqual(margin - 0.01);
+  });
+  it("nama begitu dekat tepi sehingga ukuran separuh pun tak muat: baru digeser seminimal mungkin ke dalam margin", () => {
+    const margin = 8 * PT_PER_MM;
+    const penuh = hitungLetakTtd({ nama: nama(300, 400), halaman, rasio: 0.5, atur: APA, sekitar: [] });
+    const l = hitungLetakTtd({ nama: nama(540, 585), halaman, rasio: 0.5, atur: APA, sekitar: [] });
+    expect(l.lebar).toBeCloseTo(penuh.lebar * 0.5, 3);
+    expect(l.kiri + l.lebar).toBeCloseTo(halaman.lebar - margin, 3);
   });
   it("tinggi dibatasi tinggiTtdMaksMm (gambar tinggi diperkecil lebarnya)", () => {
     const l = hitungLetakTtd({ nama: nama(300, 400), halaman, rasio: 2, atur: APA, sekitar: [] });
@@ -225,6 +245,7 @@ describe("bubuhkanTtdPdf - PDF contoh", () => {
     expect(g.halaman).toBe(2);
     // Nama di tengah x=505 dengan lebar ~100 pt -> tepi kanan nama ~555; gambar 64 mm (181 pt) harus digeser ke dalam margin kanan.
     expect(g.ttd.kiri + g.ttd.lebar).toBeLessThanOrEqual(595.28 - 8 * PT_PER_MM + 0.01);
+    expect(g.ttd.kiri + g.ttd.lebar / 2).toBeCloseTo(505, 0); // rata tengah dengan nama (tidak digeser)
     expect(g.ttd.bawah).toBeGreaterThan(560 + 4);
     expect(g.ttd.bawah).toBeLessThan(560 + 12);
     expect(g.cap).not.toBeNull();
