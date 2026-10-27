@@ -57,6 +57,14 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.43",
+    dirilis: "2026-10-27T11:04:00+08:00",
+    judul: "Sorot baris tabel e-Court terbaca di mode gelap",
+    butir: [
+      "Mode gelap e-Court: baris tabel yang disorot kursor (mis. Biaya Perkara) tidak lagi berubah putih dengan tulisan pucat.",
+    ],
+  },
+  {
     versi: "1.205.42",
     dirilis: "2026-10-27T10:27:00+08:00",
     judul: "Alat saya tidak terpotong; blangko baru langsung tampil di Pilih blangko",
