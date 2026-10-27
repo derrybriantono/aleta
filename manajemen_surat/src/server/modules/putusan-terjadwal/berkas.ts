@@ -38,9 +38,10 @@ export const FOLDER_PENYIMPANAN = "putusan-terjadwal";
 const POLA_JALUR = /^\d{6}\/[a-z0-9-]{8,80}\.(?:rtf|docx|doc|pdf)$/;
 const BATAS_ISI_DOCX = 30 * 1024 * 1024;
 
-export function akarPenyimpanan(env: Record<string, string | undefined> = process.env): string {
+/** `folder` bawaan putusan-terjadwal; fitur lain (sidang-terjadwal, 27 Okt) memakai foldernya sendiri di mount yang sama. */
+export function akarPenyimpanan(env: Record<string, string | undefined> = process.env, folder: string = FOLDER_PENYIMPANAN): string {
   const akar = String(env.ALETA_UPLOAD_DIR ?? "").trim();
-  return akar ? path.join(akar, FOLDER_PENYIMPANAN) : path.join(process.cwd(), "uploads", FOLDER_PENYIMPANAN);
+  return akar ? path.join(akar, folder) : path.join(process.cwd(), "uploads", folder);
 }
 
 export const sha256 = (bita: Uint8Array) => createHash("sha256").update(bita).digest("hex");

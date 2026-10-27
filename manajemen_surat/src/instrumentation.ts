@@ -66,6 +66,15 @@ export async function register() {
     mulaiPelaksanaBerkala();
   }
   /* === AKHIR PUTUSAN TERJADWAL === */
+  /* === SIDANG TERJADWAL 27 Okt === pelaksana server unggah BAS terjadwal & tundaan terjadwal: tiap 30 detik menulis ke SIPP
+     (lewat bot) paling banyak SATU pekerjaan yang jatuh tempo - BAS di dalam jam kerja atas akun SIPP penjadwal, tunda
+     hanya pada hari sidangnya (yang terlambat kedaluwarsa, tidak pernah pindah hari). Hak penjadwal dinilai ulang saat
+     dijalankan. Matikan dengan ALETA_SIDANG_TERJADWAL=0. */
+  if (process.env.ALETA_SIDANG_TERJADWAL !== "0") {
+    const { mulaiPelaksanaBerkala } = await import("@/server/modules/sidang-terjadwal/pelaksana");
+    mulaiPelaksanaBerkala();
+  }
+  /* === AKHIR SIDANG TERJADWAL === */
   /* === TUNDA OTOMATIS 22 Okt === detak 5 menit; jalan SEKALI per tanggal pada jam pemicu (16.30 WITA, 14.00 pada hari
      sidang keliling aktif) HANYA bila saklar Super Admin menyala (bawaan MATI, mode kering). Menulis ke SIPP hanya lewat
      penulis tunda yang ada (bot, akun PP, antrean jam kerja). Matikan seluruhnya dengan ALETA_TUNDA_OTOMATIS=0. */

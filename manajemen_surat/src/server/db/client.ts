@@ -459,6 +459,9 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_putusan_jadwal_butir",
   "aleta_putusan_jadwal_berkas",
   "aleta_putusan_jadwal_jejak",
+  // 27 Oktober 2026 (0114): unggah BAS terjadwal & tundaan terjadwal. Tanpa kunci asing.
+  "aleta_sidang_terjadwal",
+  "aleta_sidang_terjadwal_jejak",
   // 21 Oktober 2026 (0081): arsip hasil mediasi per perkara.
   "aleta_mediasi_berkas",
   "aleta_mediasi_berkas_jejak",

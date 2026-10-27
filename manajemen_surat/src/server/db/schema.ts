@@ -1734,6 +1734,72 @@ export const DDL_PUTUSAN_TERJADWAL = {
 } as const;
 
 /**
+ * Unggah BAS terjadwal & tundaan terjadwal (0114, 27 Okt 2026): satu baris = satu pekerjaan yang ditulis
+ * server ke SIPP lewat bot pada waktunya, beserta jejak jujurnya. Cermin PERSIS dari
+ * drizzle/0114_aleta_sidang_terjadwal.sql; penjaga sidang-terjadwal-27okt.test.ts membandingkan keduanya.
+ * Tanpa kunci asing dan tanpa CHECK: nilai sah dijaga modul (src/server/modules/sidang-terjadwal/*).
+ */
+export const DDL_SIDANG_TERJADWAL = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_sidang_terjadwal (
+  id TEXT PRIMARY KEY,
+  jenis TEXT NOT NULL,
+  dibuat_oleh TEXT NOT NULL,
+  dibuat_nama TEXT NOT NULL DEFAULT '',
+  peran TEXT NOT NULL DEFAULT '',
+  akun_sipp TEXT NOT NULL DEFAULT '',
+  ip TEXT NOT NULL DEFAULT '',
+  perkara_id TEXT NOT NULL,
+  nomor_perkara TEXT NOT NULL,
+  jadwal_id TEXT NOT NULL,
+  tanggal_sidang TEXT NOT NULL,
+  waktu_rencana TEXT NOT NULL,
+  waktu_rencana_wita TEXT NOT NULL DEFAULT '',
+  muatan_json TEXT NOT NULL DEFAULT '{}',
+  berkas_nama TEXT NOT NULL DEFAULT '',
+  berkas_bentuk TEXT NOT NULL DEFAULT '',
+  berkas_ukuran INTEGER NOT NULL DEFAULT 0,
+  berkas_sha256 TEXT NOT NULL DEFAULT '',
+  berkas_jalur TEXT NOT NULL DEFAULT '',
+  berkas_hapus_pada TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'menunggu',
+  percobaan INTEGER NOT NULL DEFAULT 0,
+  klaim_oleh TEXT NOT NULL DEFAULT '',
+  klaim_sampai TEXT NOT NULL DEFAULT '',
+  tunggu_sampai TEXT NOT NULL DEFAULT '',
+  hasil_ringkas TEXT NOT NULL DEFAULT '',
+  hasil_json TEXT NOT NULL DEFAULT '{}',
+  mulai_pada TEXT NOT NULL DEFAULT '',
+  selesai_pada TEXT NOT NULL DEFAULT '',
+  dibuat_pada TEXT NOT NULL,
+  diubah_pada TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_sidang_terjadwal_jejak (
+  id TEXT PRIMARY KEY,
+  butir_id TEXT NOT NULL DEFAULT '',
+  jenis TEXT NOT NULL DEFAULT '',
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  waktu TEXT NOT NULL,
+  peristiwa TEXT NOT NULL,
+  pelaku TEXT NOT NULL DEFAULT '',
+  pelaku_id TEXT NOT NULL DEFAULT '',
+  akun_sipp TEXT NOT NULL DEFAULT '',
+  hasil TEXT NOT NULL DEFAULT '',
+  ringkas TEXT NOT NULL DEFAULT '',
+  rinci_json TEXT NOT NULL DEFAULT '{}'
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_sidang_terjadwal_giliran ON aleta_sidang_terjadwal(status, waktu_rencana)`,
+    `CREATE INDEX IF NOT EXISTS idx_sidang_terjadwal_pembuat ON aleta_sidang_terjadwal(dibuat_oleh, status)`,
+    `CREATE INDEX IF NOT EXISTS idx_sidang_terjadwal_sidang ON aleta_sidang_terjadwal(jenis, jadwal_id, status)`,
+    `CREATE INDEX IF NOT EXISTS idx_sidang_terjadwal_perkara ON aleta_sidang_terjadwal(perkara_id, status)`,
+    `CREATE INDEX IF NOT EXISTS idx_sidang_terjadwal_jejak_butir ON aleta_sidang_terjadwal_jejak(butir_id, waktu)`,
+    `CREATE INDEX IF NOT EXISTS idx_sidang_terjadwal_jejak_waktu ON aleta_sidang_terjadwal_jejak(waktu)`,
+  ],
+} as const;
+
+/**
  * Arsip hasil mediasi per perkara (0081, 21 Okt 2026): berkas yang diunggah petugas dan jejak jujurnya.
  * Cermin PERSIS dari drizzle/0081_aleta_mediasi_arsip.sql; penjaga pratinjau-dokumen-mediasi-21okt.test.ts
  * membandingkan keduanya. Tanpa kunci asing dan tanpa CHECK: nilai sah dijaga modul
@@ -3288,6 +3354,8 @@ const schemaStatements = [
   ...DDL_PENJAGA_INTEGRITAS.tabel,
   // Unggah Putusan Terjadwal: jadwal, butir, berkas, jejak (0080).
   ...DDL_PUTUSAN_TERJADWAL.tabel,
+  // Unggah BAS terjadwal & tundaan terjadwal (0114).
+  ...DDL_SIDANG_TERJADWAL.tabel,
   // Arsip hasil mediasi per perkara (0081).
   ...DDL_MEDIASI_ARSIP.tabel,
   // Sidang keliling per hari & hakim yang menyidangkan per perkara (0083).
@@ -5272,6 +5340,7 @@ const indexStatements = [
   ...DDL_VERIFIKASI_DUA_LANGKAH.indeks,
   ...DDL_PENJAGA_INTEGRITAS.indeks,
   ...DDL_PUTUSAN_TERJADWAL.indeks,
+  ...DDL_SIDANG_TERJADWAL.indeks,
   ...DDL_MEDIASI_ARSIP.indeks,
   ...DDL_SIDANG_KELILING_HAKIM.indeks,
   ...DDL_ALETA_AI_SAMARAN.indeks,

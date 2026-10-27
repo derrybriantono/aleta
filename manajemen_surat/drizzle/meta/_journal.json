@@ -701,6 +701,13 @@
       "when": 1792296000001,
       "tag": "0113_aleta_ai_promo",
       "breakpoints": true
+    },
+    {
+      "idx": 100,
+      "version": "7",
+      "when": 1792297800001,
+      "tag": "0114_aleta_sidang_terjadwal",
+      "breakpoints": true
     }
   ]
 }
