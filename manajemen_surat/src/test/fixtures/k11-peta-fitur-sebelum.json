@@ -1253,7 +1253,10 @@
     "4ad3e53d1ffd",
     "f0588cf3762d",
     "128090946ede",
-    "3473e5d0cf22",
+    "74cc076a0ba3",
+    "515022d6823f",
+    "254df3ad9149",
+    "dd71a1335c78",
     "b828cada9bb1",
     "693c8601946d",
     "41e80575f3af",
@@ -1687,7 +1690,7 @@
     "787c409bf5ee",
     "e05f636fa059",
     "78cd13cbf31a",
-    "ef66cadd3ebe",
+    "ca66e896af33",
     "c65d6be779e6",
     "d606eac65216",
     "288ee55fc135",
@@ -2361,8 +2364,8 @@
    "jumlahPernyataan": 2
   },
   "isi-sipp-bersama.js": {
-   "byte": 39848,
-   "sidik": "3dc1bb234466746c6893618a11b076503125fdb7",
+   "byte": 41287,
+   "sidik": "ca2cc584c60ac5393b5c6abce0027a810859dc39",
    "nama": [],
    "ekspor": [
     "AletaIsiSipp"

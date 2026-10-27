@@ -3338,6 +3338,22 @@ body[data-aleta-sunting-langsung="ya"] .aleta-abt-isi-sunting:focus-visible {
   max-width: 100%;
   margin-top: 3px;
 }
+/* 28 Okt 2026: 5227 ikut "Input semua yang pasti" bila kedua saksi sama; posita & saksi dapat diklik (pop-up). */
+.aleta-a5227-status {
+  margin: 2px 0 4px;
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+  line-height: 1.45;
+}
+.aleta-a5227-sama { color: var(--aleta-aman); }
+.aleta-a5227-beda { color: var(--aleta-mendesak); }
+.aleta-a5227-pemicu { cursor: pointer; }
+.aleta-a5227-pemicu:hover,
+.aleta-a5227-pemicu:focus-visible { text-decoration: underline dotted; outline: none; }
+.aleta-a5227-dialog { border-color: var(--aleta-garis-kuat); }
+.aleta-a5227-butir { margin: 6px 0; line-height: 1.5; }
+.aleta-a5227-butir > strong { margin-right: 6px; }
+.aleta-a5227-kutip { margin-top: 2px; color: var(--aleta-tulisan-lembut); font-style: italic; }
+.aleta-a5227-bunyi { margin-top: 2px; }
 
 .aleta-abt-kutipan {
   display: flex;

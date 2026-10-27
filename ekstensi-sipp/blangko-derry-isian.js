@@ -3400,7 +3400,7 @@
   ];
   const AWALAN_EL = ["P", "T", "PK", "TK", "PR", "TR"];
   const POLA_BUKTI_EL = /bukti elektronik tersebut/i;
-  const butirElBaru = (pihak, awalan) => ({ bentuk: BENTUK_EL[0][0], objek: "", ket: "", pengaju: pihak === "T" ? "T" : "P", awalan: AWALAN_EL.includes(awalan) ? awalan : pihak === "T" ? "T" : "P", no: "", meterai: 0, periksa: 0, rapi: false, manual: null });
+  const butirElBaru = (pihak, awalan) => ({ bentuk: BENTUK_EL[0][0], objek: "", ket: "", pengaju: pihak === "T" ? "T" : "P", awalan: AWALAN_EL.includes(awalan) ? awalan : pihak === "T" ? "T" : "P", no: "", meterai: 0, periksa: 0, rapi: true, manual: null });
   // Keputusan pengguna 27 Okt: awalan bawaan P (Penggugat) / T (Tergugat), BUKAN PK/TK. Hanya bila daftar bukti surat pihak itu
   // sudah memakai tanda konvensi/rekonvensi (PK./TK./PR./TR.), bukti elektronik mengikuti tanda terakhir yang dipakai di sana.
   const POLA_AWALAN_KR = /\b(?:tanda|bertanda|kode)\s*:?\s*(?:bukti\s+)?\(?([PT])([KR])\s?[.-]\s?\d+/gi;
@@ -3427,7 +3427,7 @@
   /**
    * Satu kalimat bukti elektronik. ctx: { urut (nomor butir), tanda (nomor pada tanda bukti), sb: {P,T}, nomori }.
    * Varian pemeriksaan: 0 tidak dapat dicocokkan + tanpa digital forensic (bunyi contoh pengguna APA ADANYA, termasuk "yang yang" dan
-   * "pengambikan", kecuali butir diberi "bunyi dirapikan"), 1 dicocokkan dengan aslinya, 2 disertai hasil digital forensic.
+   * "pengambikan", hanya bila "bunyi dirapikan" dimatikan - 28 Okt: dirapikan = bawaan), 1 dicocokkan dengan aslinya, 2 disertai hasil digital forensic.
    */
   function kalimatBuktiEl(b, ctx) {
     const awalan = String(b.awalan || "P").replace(/[^A-Za-z]/g, "") || "P";
@@ -3450,7 +3450,7 @@
     if (periksa === 1) k += `, bukti elektronik tersebut telah dicocokkan dengan aslinya dengan telekomunikasi atau alat yang digunakan untuk melakukan pengambilan ${hasil} tersebut dan ternyata sesuai`;
     else if (periksa === 2) k += ", bukti elektronik tersebut disertai dengan hasil digital forensic";
     else
-      k += b.rapi === true
+      k += b.rapi !== false
         ? `, bukti elektronik tersebut tidak dapat dicocokkan dengan aslinya dengan telekomunikasi atau alat yang digunakan untuk melakukan pengambilan ${hasil} tersebut karena ${pengaju} tidak dapat menghadirkannya, dan bukti tersebut tidak disertai dengan digital forensic`
         : `, bukti elektronik tersebut tidak dapat dicocokkan dengan aslinya dengan telekomunikasi atau alat yang yang digunakan untuk melakukan pengambikan ${hasil} tersebut karena ${pengaju} tidak dapat menghadirkannya, dan bukti tersebut tidak disertai dengan digital forensic`;
     return `${k}, lalu oleh Ketua Majelis diberi tanda ${tanda};`;
@@ -5051,6 +5051,12 @@
     if (!m || !S.susunan) return { yakin, pasti };
     for (const b of daftarPerlu()) {
       const i = S.info[b.kode];
+      // 28 Okt: alasan cerai 5227 ikut "Input semua yang pasti" bila keterangan kedua saksi sama (keduaSaksiSama5227).
+      if (b.kode === "5227" && i && i.keduaSaksi && i.keduaSaksi.sama && i.nilai && i.golongan === "saran" && !b.khusus && sedangKosong(b)) {
+        pasti.push(b);
+        yakin.push(b);
+        continue;
+      }
       if ((b.jenis !== "teks" && b.jenis !== "tanggal") || b.khusus || !i || (i.golongan !== "saran" && i.golongan !== "tulis") || !i.nilai || m.HANYA_SARAN.includes(b.kode) || !sedangKosong(b)) continue;
       if (i.keyakinan === "pasti") pasti.push(b);
       if (i.keyakinan === "pasti" || i.keyakinan === "cukup") yakin.push(b);
@@ -5211,7 +5217,11 @@
     const pilihBunyi = bunyi.length
       ? `<label class="bd-bunyi"><span>pilih bunyi</span><select data-bunyi="${b.kode}" ${ro} aria-label="Pilih bunyi ${esc(b.nama)}"><option value="">— wajib dipilih petugas —</option>${bunyi
           .map((o, i) => `<option value="${i}" ${v.trim() && v.trim() === o.nilai ? "selected" : ""}>${esc(`${o.keadaan}: ${potong(o.nilai, 150)}`)}</option>`)
-          .join("")}</select></label>`
+          .join("")}</select></label>` +
+        // 28 Okt: alasan cerai yang keterangan kedua saksinya sama ikut "Input semua yang pasti".
+        (b.kode === "5227" && S.info[b.kode] && S.info[b.kode].keduaSaksi
+          ? `<span class="bd-catat" title="${esc(S.info[b.kode].keduaSaksi.sama ? "Setiap alasan dari gugatan dikuatkan kedua saksi." : S.info[b.kode].keduaSaksi.sebab || "")}">${S.info[b.kode].keduaSaksi.sama ? "Kedua saksi sama - ikut \"Input semua yang pasti\"." : "Keterangan kedua saksi belum sama untuk semua alasan - pilih bunyi sendiri."}</span>`
+          : "")
       : "";
     return (
       `<div class="bd-f${v.trim() ? " beres" : ""}${panjang ? " panjang" : ""}${tanda}" data-f="${b.kode}"><div class="bd-fh"><label for="bd-i${b.kode}" title="${esc(namaIsian(b))}">${esc(namaIsian(b))}</label>${ikonSumber(b.kode, namaIsian(b), ketItem(b))}</div>${muncul}${kepingKet(b)}` +
@@ -5330,7 +5340,7 @@
           `<label>Nomor tanda<input data-be="${id}" data-isi="no" value="${esc(r.no)}" placeholder="otomatis ${urutEl(w, i)}"></label></div>` +
           `<div class="bd-bgrid bd-bpilih"><label>Meterai<select data-be="${id}" data-isi="meterai">${PIL_METERAI.map((o, j) => `<option value="${j}" ${Number(r.meterai) === j ? "selected" : ""}>${o}</option>`).join("")}</select></label>` +
           `<label class="dua2">Pemeriksaan<select data-be="${id}" data-isi="periksa">${PIL_PERIKSA_EL.map((o, j) => `<option value="${j}" ${Number(r.periksa) === j ? "selected" : ""}>${o}</option>`).join("")}</select></label></div>` +
-          `<label class="bd-cek"><input type="checkbox" data-be="${id}" data-isi="rapi" ${r.rapi === true ? "checked" : ""}> Bunyi dirapikan (perbaiki salah ketik pada kalimat tidak dapat dicocokkan)</label>${prat}</div>`
+          `<label class="bd-cek"><input type="checkbox" data-be="${id}" data-isi="rapi" ${r.rapi !== false ? "checked" : ""}> Bunyi dirapikan (perbaiki salah ketik pada kalimat tidak dapat dicocokkan)</label>${prat}</div>`
         );
       })
       .join("");

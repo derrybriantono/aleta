@@ -373,6 +373,24 @@
       .filter((s) => s.kalimat);
   }
 
+  /**
+   * 28 Okt 2026 (keputusan pengguna): alasan cerai 5227 yang disusun dari gugatan IKUT "Input semua yang pasti" (panel ABT dan
+   * Blangko Derry) bila keterangan kedua saksi sama - tiap alasan di rincian dikuatkan dua saksi (lencana "cukup", bukan tersirat)
+   * dan tidak ada selisih keterangan saksi (bentrok). Selain itu tetap dicentang/dipilih manual. -> { sama, sebab }
+   */
+  function keduaSaksiSama5227(u) {
+    if (!u || teks(u.kode) !== "5227" || !u.dariGugatan) return { sama: false, sebab: "" };
+    const rincian = (Array.isArray(u.rincian) ? u.rincian : []).filter((r) => r && Array.isArray(r.bunyi) && r.bunyi.length);
+    if (!rincian.length) return { sama: false, sebab: "rincian alasan dari gugatan belum ada" };
+    if (teks(u.bentrok).trim() || teks(u.keyakinan) === "bentrok") return { sama: false, sebab: "keterangan kedua saksi berbeda" };
+    const kurang = rincian.filter((r) => r.yakin !== "cukup" || !Array.isArray(r.dukung) || r.dukung.length < 2);
+    if (kurang.length) {
+      const nama = kurang.map((r) => `"${teks(r.label) || "alasan"}" (${teks(r.lencana) || "belum dikuatkan saksi"})`);
+      return { sama: false, sebab: `belum dikuatkan kedua saksi: ${nama.slice(0, 3).join(", ")}${nama.length > 3 ? ` dan ${nama.length - 3} lainnya` : ""}` };
+    }
+    return { sama: true, sebab: "" };
+  }
+
   // ──────────────────────────────────────────────────────────────────────────
   // Keputusan
   // ──────────────────────────────────────────────────────────────────────────
@@ -485,6 +503,7 @@
           bentrok: htmlKeTeks(teks(u.bentrok)).slice(0, 300),
           pilihan,
           ganti: h.ganti,
+          ...(kode === "5227" ? { keduaSaksi: keduaSaksiSama5227(u) } : {}),
         };
       }
     }
@@ -632,6 +651,7 @@
     YAKIN_OTOMATIS,
     KTP_KODE_PIHAK,
     HANYA_SARAN,
+    keduaSaksiSama5227,
     VAR_ALASAN_CERAI,
     VAR_BUKTI,
     VAR_ECOURT,

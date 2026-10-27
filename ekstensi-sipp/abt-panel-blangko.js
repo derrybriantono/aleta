@@ -1658,6 +1658,120 @@ const NADA_TINGKAT = {
 };
 
 /**
+ * 28 Okt 2026 (keputusan pengguna): alasan cerai 5227 yang disusun dari gugatan IKUT "Input semua yang pasti" bila
+ * keterangan kedua saksi sama - tiap alasan di rincian dikuatkan dua saksi (lencana "cukup"), tidak ada yang tersirat,
+ * dan tidak ada selisih keterangan saksi (bentrok). Selain itu tetap dicentang manual. Aturannya satu sumber dengan Blangko
+ * Derry (AletaIsiSipp.keduaSaksiSama5227); tanpa modul itu tidak ada yang ikut. Pulang { sama, sebab }.
+ */
+function a5227KeduaSaksiSama(u) {
+  const m = typeof globalThis !== "undefined" && globalThis.AletaIsiSipp;
+  if (!u || u.kode !== "5227" || !m || typeof m.keduaSaksiSama5227 !== "function") return { sama: false, sebab: "" };
+  return m.keduaSaksiSama5227(u);
+}
+
+/**
+ * Pop-up "posita alasan cerai dan keterangan para saksi" kartu 5227: tiap alasan beserta kalimat gugatannya (acuan
+ * utama) dan lencana saksinya, lalu keterangan saksi (penguat). Hanya membaca; Esc, "Tutup", atau klik di luar menutup.
+ */
+function a5227BukaKeterangan(u) {
+  for (const lama of Array.from(document.querySelectorAll(".aleta-a5227-tirai"))) lama.remove();
+  const tirai = t6El("div", "aleta-t6-tirai aleta-a5227-tirai");
+  const kotak = t6El("div", "aleta-t6-dialog aleta-a5227-dialog");
+  kotak.setAttribute("role", "dialog");
+  kotak.setAttribute("aria-modal", "true");
+  kotak.setAttribute("aria-label", "Posita alasan cerai dan keterangan para saksi");
+  kotak.setAttribute("data-tema", t6TemaPanel());
+  kotak.appendChild(t6El("div", "aleta-t6-dialog-judul", "Alasan cerai: posita dan keterangan para saksi"));
+  const uji = a5227KeduaSaksiSama(u);
+  kotak.appendChild(
+    t6El(
+      "div",
+      `aleta-a5227-status ${uji.sama ? "aleta-a5227-sama" : "aleta-a5227-beda"}`,
+      uji.sama
+        ? "Keterangan kedua saksi sama untuk setiap alasan - ikut \"Input semua yang pasti\"."
+        : `Belum ikut "Input semua yang pasti" (${uji.sebab || "perlu diperiksa"}). Centang manual bila sudah benar.`
+    )
+  );
+  kotak.appendChild(t6El("div", "aleta-t6-dialog-subjudul", "Posita alasan cerai (gugatan - acuan utama)"));
+  const rincian = (Array.isArray(u.rincian) ? u.rincian : []).filter((r) => r && Array.isArray(r.bunyi) && r.bunyi.length);
+  const posita = (Array.isArray(u.sumber) ? u.sumber : []).filter((s) => s && !s.saksi && s.asal === "posita");
+  if (rincian.length) {
+    for (const r of rincian) {
+      const b = t6El("div", "aleta-a5227-butir");
+      b.appendChild(t6El("strong", "", String(r.label || "alasan")));
+      b.appendChild(t6El("span", `aleta-abt-rincian-lencana aleta-abt-rincian-${r.yakin === "cukup" ? "cukup" : "ragu"}`, String(r.lencana || "")));
+      if (r.kalimatGugatan) b.appendChild(t6El("div", "aleta-a5227-kutip", `"${String(r.kalimatGugatan)}"`));
+      const bunyi = r.bunyi[0] && r.bunyi[0].nilai;
+      if (bunyi) b.appendChild(t6El("div", "aleta-a5227-bunyi", `Bunyi di blangko: ${String(bunyi)}`));
+      kotak.appendChild(b);
+    }
+  } else if (posita.length) {
+    for (const s of posita) kotak.appendChild(t6El("div", "aleta-a5227-kutip", `"${String(s.kalimat || "")}"`));
+  } else {
+    kotak.appendChild(t6El("div", "aleta-t6-dialog-teks", "Kalimat gugatan tidak terbaca."));
+  }
+  kotak.appendChild(t6El("div", "aleta-t6-dialog-subjudul", "Keterangan para saksi (penguat)"));
+  const saksi = (Array.isArray(u.sumber) ? u.sumber : []).filter((s) => s && s.saksi);
+  if (saksi.length) {
+    for (const s of saksi) {
+      const b = t6El("div", "aleta-a5227-butir");
+      b.appendChild(t6El("strong", "", `Saksi ${s.saksi}${s.pihak ? ` (${s.pihak})` : ""}`));
+      b.appendChild(t6El("div", "aleta-a5227-kutip", `"${String(s.kalimat || s.keterangan || "")}"`));
+      kotak.appendChild(b);
+    }
+  } else {
+    kotak.appendChild(t6El("div", "aleta-t6-dialog-teks", "Keterangan saksi belum ada."));
+  }
+  if (u.bentrok) kotak.appendChild(t6El("div", "aleta-abt-bentrok", `Saksi kedua mengatakan "${u.bentrok}".`));
+  kotak.appendChild(t6El("div", "aleta-t6-lembut", "Jawab-menjawab hanya pelengkap, bukan acuan."));
+  const baris = t6El("div", "aleta-t6-dialog-baris");
+  const tutupTombol = t6Tombol("Tutup", "Menutup (Esc)", "aleta-t6-dialog-tidak");
+  baris.appendChild(tutupTombol);
+  kotak.appendChild(baris);
+  tirai.appendChild(kotak);
+  const esc = (e) => {
+    if (e.key !== "Escape") return;
+    e.preventDefault();
+    e.stopPropagation();
+    tutup();
+  };
+  function tutup() {
+    document.removeEventListener("keydown", esc, true);
+    tirai.remove();
+  }
+  tutupTombol.addEventListener("click", tutup);
+  tirai.addEventListener("click", (e) => {
+    if (e.target === tirai) tutup();
+  });
+  document.addEventListener("keydown", esc, true);
+  document.body.appendChild(tirai);
+  try {
+    tutupTombol.focus();
+  } catch {
+    /* fokus hanya kenyamanan */
+  }
+  return tirai;
+}
+
+/** Bagian kartu 5227 yang dapat diarahkan tetikus (keterangan) dan diklik (pop-up). */
+function a5227PasangKeterangan(el, u, judul) {
+  el.classList.add("aleta-a5227-pemicu");
+  el.title = `${judul}\nKlik untuk melihat posita alasan cerai dan keterangan para saksi.`;
+  el.tabIndex = 0;
+  el.setAttribute("role", "button");
+  el.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    a5227BukaKeterangan(u);
+  });
+  el.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    e.preventDefault();
+    a5227BukaKeterangan(u);
+  });
+}
+
+/**
  * Satu usulan, beserta kalimat yang melahirkannya.
  *
  * Kutipan sumbernya bukan hiasan. Tanpa itu, memeriksa satu usulan berarti
@@ -1992,6 +2106,15 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
   if (rincianKartu.length) {
     const wadahRincian = buatElemen("div", "aleta-abt-rincian");
     wadahRincian.appendChild(buatElemen("div", "aleta-abt-rincian-judul", "Alasan sesuai gugatan"));
+    // 28 Okt: ikut "Input semua yang pasti" bila keterangan kedua saksi sama (a5227KeduaSaksiSama).
+    const ujiSaksi = a5227KeduaSaksiSama(u);
+    const tandaPasti = buatElemen(
+      "div",
+      `aleta-a5227-status ${ujiSaksi.sama ? "aleta-a5227-sama" : "aleta-a5227-beda"}`,
+      ujiSaksi.sama ? "Kedua saksi sama - ikut \"Input semua yang pasti\"" : "Dicentang manual - keterangan kedua saksi belum sama untuk semua alasan"
+    );
+    a5227PasangKeterangan(tandaPasti, u, ujiSaksi.sama ? "Setiap alasan dikuatkan kedua saksi." : `Sebab: ${ujiSaksi.sebab || "perlu diperiksa"}.`);
+    wadahRincian.appendChild(tandaPasti);
     const status = rincianKartu.map(() => ({ pakai: true, bunyi: 0 }));
     const susunUlang = () => {
       const bagian = rincianKartu.map((r, i) => (status[i].pakai ? String((r.bunyi[status[i].bunyi] || r.bunyi[0]).nilai || "") : "")).filter(Boolean);
@@ -2015,6 +2138,11 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
       isiBaris.appendChild(buatElemen("span", "aleta-abt-rincian-nama", String(r.label || "alasan")));
       const lencana = buatElemen("span", `aleta-abt-rincian-lencana aleta-abt-rincian-${r.yakin === "cukup" ? "cukup" : "ragu"}`, String(r.lencana || ""));
       isiBaris.appendChild(lencana);
+      a5227PasangKeterangan(
+        lencana,
+        u,
+        `${String(r.label || "alasan")}: ${String(r.lencana || "")}${r.kalimatGugatan ? `\nGugatan: "${String(r.kalimatGugatan)}"` : ""}`
+      );
       if (r.catatan) isiBaris.appendChild(buatElemen("div", "aleta-abt-rincian-catatan", String(r.catatan)));
       if (r.bunyi.length > 1) {
         const pilihRincian = document.createElement("select");
@@ -2067,6 +2195,14 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
       )
     );
     kutip.appendChild(buatElemen("span", "aleta-abt-kalimat", s.kalimat || s.keterangan || ""));
+    // 28 Okt: posita alasan cerai dan keterangan para saksi kartu 5227 - arahkan tetikus = keterangan, klik = pop-up.
+    if (u.kode === "5227" && (s.saksi || s.asal === "posita")) {
+      a5227PasangKeterangan(
+        kutip,
+        u,
+        s.saksi ? `Keterangan saksi ${s.saksi} (penguat): "${String(s.kalimat || s.keterangan || "")}"` : `Posita alasan cerai (acuan utama): "${String(s.kalimat || "")}"`
+      );
+    }
     kartu.appendChild(kutip);
   }
 
@@ -12376,6 +12512,7 @@ function soreBarisInput(k, pilih, hurufPilihan, rapiPilihan) {
  */
 function s5UsulanPasti(u) {
   if (!u || !String(u.nilai || "").trim()) return false;
+  if (a5227KeduaSaksiSama(u).sama) return true;
   if (typeof u.tingkat === "string" && u.tingkat) return u.tingkat === "pasti";
   if (u.keyakinan !== "pasti") return false;
   const sumber = Array.isArray(u.sumber) ? u.sumber : [];

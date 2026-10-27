@@ -974,6 +974,50 @@ describe("I. mutu deteksi = mesin panel ABT: periode baku, HTML dibuang, bawaan 
     expect(h.abt["5227"]).not.toMatch(/aleta/i);
   });
 
+  // 28 Okt 2026 (keputusan pengguna): 5227 dari gugatan ikut "Input semua yang pasti" bila keterangan kedua saksi sama.
+  const NAFKAH = "Tergugat malas bekerja sehingga Tergugat kurang memberikan nafkah kepada Penggugat";
+  const usulan5227 = (dukung: Array<{ no: number; pihak: string }>, lebih: Usulan = {}): Usulan => ({
+    kode: "5227",
+    nama: "Alasan-Alasan Cerai",
+    nilai: NAFKAH,
+    keyakinan: dukung.length >= 2 ? "cukup" : "ragu",
+    tingkat: dukung.length >= 2 ? "cukup" : "ragu",
+    dariGugatan: true,
+    rincian: [{ label: "malas bekerja, kurang nafkah", bunyi: [{ keadaan: "sesuai gugatan (sebab dan akibat)", nilai: NAFKAH }], yakin: dukung.length >= 2 ? "cukup" : "ragu", dukung, lencana: dukung.length >= 2 ? "dikuatkan kedua saksi (saksi Penggugat dan saksi Tergugat)" : "dikuatkan satu saksi (saksi Penggugat)", kalimatGugatan: `Bahwa ${NAFKAH}.` }],
+    pilihan: [{ keadaan: "sesuai gugatan (sebab dan akibat)", nilai: NAFKAH }],
+    sumber: [{ saksi: 0, asal: "posita", kalimat: `Bahwa ${NAFKAH}.` }, { saksi: 1, kalimat: "Bahwa Tergugat malas bekerja" }],
+    ...lebih,
+  });
+  const dengan5227 = (u: Usulan) => ({ ...dasar, usulanSaksi: [...SAKSI_USULAN.filter((x) => x.kode !== "5227"), u] });
+
+  it("5227: kedua saksi sama = ikut 'Input semua yang pasti' dan tersimpan lewat jalur simpan; catatan menyebutnya", async () => {
+    const h = buka(dengan5227(usulan5227([{ no: 1, pihak: "penggugat" }, { no: 2, pihak: "tergugat" }])));
+    await sampaiPerkara(h);
+    await pilih(h, BLANGKO_PUT);
+    await sampai(() => q(h, 'select[data-bunyi="5227"]'), "pilihan bunyi 5227");
+    expect(q(h, '.bd-f[data-f="5227"]')!.textContent).toContain('Kedua saksi sama - ikut "Input semua yang pasti".');
+    await tunggu(100);
+    expect(h.abt["5227"]).toBeUndefined(); // tetap tidak terisi sendiri
+    await sampai(() => h.abt["9944"] === "3 tahun 3 bulan", "isian lain terisi otomatis lebih dulu");
+    await sampai(() => q(h, '[data-bd2="inputpasti"]')?.textContent === "Input semua yang pasti (1)", "tombol Input semua yang pasti (1)");
+    klik(h, '[data-bd2="inputpasti"]');
+    await sampai(() => h.abt["5227"] === NAFKAH, "5227 tersimpan");
+    expect(mintaKe(h, /edit_data\?no_var=5227/, "POST")).toHaveLength(1);
+  });
+
+  it("5227: satu saksi saja, atau keterangan saksi berbeda = tidak ikut 'Input semua yang pasti'", async () => {
+    for (const u of [usulan5227([{ no: 1, pihak: "penggugat" }]), usulan5227([{ no: 1, pihak: "penggugat" }, { no: 2, pihak: "tergugat" }], { bentrok: "Tergugat rajin bekerja" })]) {
+      const h = buka(dengan5227(u));
+      await sampaiPerkara(h);
+      await pilih(h, BLANGKO_PUT);
+      await sampai(() => q(h, 'select[data-bunyi="5227"]'), "pilihan bunyi 5227");
+      expect(q(h, '.bd-f[data-f="5227"]')!.textContent).toContain("Keterangan kedua saksi belum sama untuk semua alasan - pilih bunyi sendiri.");
+      await tunggu(100);
+      expect(q(h, '[data-bd2="inputpasti"]')).toBeNull();
+      expect(h.abt["5227"]).toBeUndefined();
+    }
+  });
+
   it("murni: periode baku tanpa penggandaan, HTML dibuang kecuali variabel ber-HTML (8500), daftar pengecualian = katalog kueri ABT", () => {
     const m = buka().w.AletaIsiSipp;
     const f = (x: string) => m.formatPeriode(x);

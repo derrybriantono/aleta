@@ -404,6 +404,15 @@ describe("1. perangkaian kalimat tiga varian", () => {
     expect(k).toBe(CONTOH_PENGGUNA.replace("yang yang", "yang").replace("pengambikan", "pengambilan"));
   });
 
+  it("28 Okt: bunyi dirapikan = BAWAAN (butir tanpa penanda dan butir baru dirapikan); bunyi apa adanya hanya bila dimatikan", () => {
+    const h = buka();
+    const m = murni(h);
+    const rapi = CONTOH_PENGGUNA.replace("yang yang", "yang").replace("pengambikan", "pengambilan");
+    const { rapi: _abaikan, ...tanpaPenanda } = BUTIR;
+    expect(m.kalimatBuktiEl(tanpaPenanda, { urut: 1, tanda: 4, sb: SB, nomori: false })).toBe(rapi);
+    expect(m.kalimatBuktiEl({ ...BUTIR, rapi: false }, { urut: 1, tanda: 4, sb: SB, nomori: false })).toBe(CONTOH_PENGGUNA);
+  });
+
   it("varian (b) dicocokkan dengan aslinya dan (c) disertai hasil digital forensic; meterai dapat dipilih; sebutan pihak dinamis", () => {
     const h = buka();
     const m = murni(h);
@@ -500,7 +509,9 @@ describe("4. panel: tersembunyi bawaan, dibuka lewat tautan, diingat per perkara
     expect(baris).toHaveLength(3);
     // bukti surat ditulis ulang panel seperti biasa (mis. "05 April" -> "5 April"); butir elektronik tidak mengubahnya
     expect(baris.slice(0, 2).join("\n")).toBe(murni(h).susunKalimatBukti(murni(h).uraiBukti(BAWAAN_1214), "P"));
-    expect(baris[2]).toBe(`3. ${CONTOH_PENGGUNA.replace("TK.4;", "TK.3;")}`);
+    // 28 Okt: butir baru dirapikan bawaan ("yang", "pengambilan"); kotak "Bunyi dirapikan" tercentang
+    expect(baris[2]).toBe(`3. ${CONTOH_PENGGUNA.replace("TK.4;", "TK.3;").replace("yang yang", "yang").replace("pengambikan", "pengambilan")}`);
+    expect(kotakEl(h, "rapi").checked).toBe(true);
     expect(q(h, ".bd-belprat")!.textContent).toBe(baris[2]);
     expect(q(h, "[data-beltanda]")!.textContent).toBe("TK.3");
     ubah(h, kotakEl(h, "periksa"), "2");
