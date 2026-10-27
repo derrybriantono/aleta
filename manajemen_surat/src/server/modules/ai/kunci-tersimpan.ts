@@ -43,8 +43,15 @@ export class KunciTakTerbacaError extends Error {
 
 let sudahPeringatan = false;
 
+let rahasiaUji: string | null | undefined;
+/** Hanya untuk uji: string/null menggantikan pembacaan rahasia server; undefined = pembacaan asli. */
+export function setRahasiaUntukUji(nilai: string | null | undefined) {
+  rahasiaUji = nilai;
+}
+
 /** Rahasia aplikasi, atau null bila tidak tersedia. Tidak membuat apa pun. */
 export function rahasiaAplikasiAi(): string | null {
+  if (rahasiaUji !== undefined) return rahasiaUji;
   const dariEnv = process.env.BETTER_AUTH_SECRET?.trim();
   if (dariEnv) return dariEnv;
   // Berkas lokal hanya di luar produksi: di produksi ia hidup di lapisan

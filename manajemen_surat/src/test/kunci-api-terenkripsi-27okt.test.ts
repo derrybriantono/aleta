@@ -14,6 +14,7 @@ import {
   dekripsiKunciApi,
   enkripsiKunciApi,
   kunciApiTerenkripsi,
+  setRahasiaUntukUji,
   setelUlangPeringatanKunciApi,
 } from "@/server/modules/ai/kunci-tersimpan";
 import { statusKunciAi } from "@/server/modules/aleta-ai/klien";
@@ -29,19 +30,15 @@ const RAHASIA_B = "rahasia-server-uji-B-fedcba9876543210";
 const KUNCI = "sk-ant-uji-ENKRIPSI-1234567890abcd";
 const KUNCI_LAMA = "sk-ant-uji-POLOS-LAMA-0987654321zz";
 
-const envAwal = { auth: process.env.BETTER_AUTH_SECRET, node: process.env.NODE_ENV, anthropic: process.env.ANTHROPIC_API_KEY };
+const envAwal = { anthropic: process.env.ANTHROPIC_API_KEY };
 
+/** null = rahasia server tidak ada (tanpa menyentuh NODE_ENV: itu memicu penulisan salinan basis data ke disk). */
 function setRahasia(nilai: string | null) {
-  // NODE_ENV production: berkas lokal tidak ikut dibaca, jadi "tidak ada" benar-benar tidak ada.
-  vi.stubEnv("NODE_ENV", "production");
-  if (nilai === null) delete process.env.BETTER_AUTH_SECRET;
-  else process.env.BETTER_AUTH_SECRET = nilai;
+  setRahasiaUntukUji(nilai);
 }
 
 afterAll(() => {
-  vi.unstubAllEnvs();
-  if (envAwal.auth === undefined) delete process.env.BETTER_AUTH_SECRET;
-  else process.env.BETTER_AUTH_SECRET = envAwal.auth;
+  setRahasiaUntukUji(undefined);
   if (envAwal.anthropic === undefined) delete process.env.ANTHROPIC_API_KEY;
   else process.env.ANTHROPIC_API_KEY = envAwal.anthropic;
 });
