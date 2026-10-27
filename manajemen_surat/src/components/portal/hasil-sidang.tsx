@@ -7,6 +7,7 @@ import { AlertTriangle, CheckCircle2, FileSearch, Gavel, Info, PauseCircle } fro
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { KabarDiantrekan, TanyaJamKerja, type PilihJamKerja } from "@/components/portal/pilihan-jam-kerja";
+import { JadwalkanTundaSidang } from "@/components/portal/jadwalkan-tunda-sidang";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { NativeSelect } from "@/components/ui/native-select";
 import { apiPath } from "@/lib/base-path";
@@ -978,6 +979,26 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
                 ) : null}
               </CardContent>
             </Card>
+          ) : null}
+
+          {/* 27 Okt 2026: tundaan dapat dijadwalkan (jam hari sidang) - isian form yang SAMA, ditulis server pada waktunya. */}
+          {jalan === "tunda" ? (
+            <JadwalkanTundaSidang
+              lengkap={lengkap}
+              sudahTertulis={sudahTertulis}
+              isian={{
+                jadwalId: keadaan.jadwalId,
+                perkaraId: keadaan.perkaraId,
+                nomorPerkara: keadaan.nomorPerkara,
+                tanggalSidang: String(keadaan.tanggalSidang || ""),
+                alasanTunda,
+                tanggalBerikut,
+                jamBerikut,
+                agendaBerikut,
+                dihadiriOleh: dihadiri,
+                ruangId: keadaan.ruanganId,
+              }}
+            />
           ) : null}
         </>
       )}

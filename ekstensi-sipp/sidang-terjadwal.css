@@ -1,0 +1,96 @@
+/*
+ * Unggah BAS terjadwal dan Tundaan terjadwal - tombol "Jadwalkan BAS" / "Jadwalkan Tunda" dan panelnya (27 Okt 2026).
+ * Panel MEMINJAM seluruh gaya Jadwalkan Putusan (.aleta-ptj-panel dan turunannya: palet --ps-* mengikuti tema terang/gelap
+ * SIPP); berkas ini hanya menambah gaya tombol, sel tombol di halaman perkara, dan atribut hidden.
+ */
+td.aleta-stj-sel {
+  vertical-align: middle;
+  margin: 0;
+  padding: 0 4px 0 0;
+  border-left: 0;
+  border-radius: 0;
+  background: none;
+  white-space: nowrap;
+}
+.aleta-stj-tombol {
+  --ps-t-latar: #0f5f4f;
+  --ps-t-teks: #ffffff;
+  --ps-t-cincin: rgba(15, 95, 79, 0.25);
+  --ps-t-tanda: rgba(255, 255, 255, 0.7);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 6px 0 0;
+  white-space: nowrap;
+  background: var(--ps-t-latar);
+  color: var(--ps-t-teks) !important;
+  border: 2px solid var(--ps-t-latar);
+  border-radius: 4px;
+  padding: 4px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  box-shadow: 0 0 0 3px var(--ps-t-cincin);
+}
+.aleta-stj-tombol:last-child {
+  margin-right: 0;
+}
+.aleta-stj-tombol:hover {
+  filter: brightness(1.12);
+}
+.aleta-stj-tombol[aria-expanded="true"] {
+  box-shadow:
+    0 0 0 3px var(--ps-t-cincin),
+    inset 0 -4px 0 var(--ps-t-tanda);
+}
+.aleta-stj-tombol:focus-visible,
+.aleta-stj-panel button:focus-visible,
+.aleta-stj-panel input:focus-visible,
+.aleta-stj-panel select:focus-visible {
+  outline: 3px solid #e0a800;
+  outline-offset: 2px;
+}
+html[data-aleta-tema-sipp="gelap"] .aleta-stj-tombol {
+  --ps-t-latar: #7fd0a6;
+  --ps-t-teks: #05261a;
+  --ps-t-cincin: rgba(127, 208, 166, 0.3);
+  --ps-t-tanda: rgba(5, 38, 26, 0.65);
+}
+/* Tombol ini juga berkelas .btn SIPP; di tema gelap panel.css mewarnainya dengan !important, jadi aturan ini memakai id. */
+html[data-aleta-tema-sipp="gelap"] #aleta-stj-tombol-bas.aleta-stj-tombol,
+html[data-aleta-tema-sipp="gelap"] #aleta-stj-tombol-tunda.aleta-stj-tombol,
+html[data-aleta-tema-sipp="gelap"] #aleta-stj-tombol-bas.aleta-stj-tombol:hover,
+html[data-aleta-tema-sipp="gelap"] #aleta-stj-tombol-tunda.aleta-stj-tombol:hover {
+  background-color: var(--ps-t-latar) !important;
+  color: var(--ps-t-teks) !important;
+  border-color: var(--ps-t-latar) !important;
+}
+.aleta-stj-ikon {
+  font-size: 1.1em;
+  line-height: 1;
+}
+.aleta-stj-massal .aleta-stj-tombol {
+  font-size: 13px;
+  padding: 3px 12px;
+}
+/* Atribut hidden harus menang atas display:grid/flex yang dipasang kelas Jadwalkan Putusan. */
+.aleta-stj-panel [hidden],
+.aleta-stj-panel[hidden],
+.aleta-stj-massal[hidden] {
+  display: none !important;
+}
+.aleta-stj-panel input[type="text"] {
+  box-sizing: border-box;
+  width: min(320px, 100%);
+  padding: 5px 8px;
+  border: 1px solid var(--ps-garis);
+  border-radius: 6px;
+  background: var(--ps-latar);
+  color: var(--ps-tinta);
+  font: inherit;
+  font-size: 13.5px;
+}

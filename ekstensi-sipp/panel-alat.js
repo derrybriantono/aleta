@@ -3069,7 +3069,7 @@ function alatBawaanTerlipat(kunci, opsi) {
  * ketiga hadir ketiganya saling memindahkan tiap detik. Pengurut ini tidak menyentuh DOM
  * bila susunan sudah benar (tidak ada kedipan dan tidak ada tombol yang melompat).
  */
-const ALAT_URUTAN_TOMBOL_SIPP = ["aleta-pensipp-sel", "aleta-pusipp-sel", "aleta-ptj-sel"];
+const ALAT_URUTAN_TOMBOL_SIPP = ["aleta-pensipp-sel", "aleta-pusipp-sel", "aleta-ptj-sel", "aleta-stj-sel"];
 function alatUrutkanTombolSipp(tr) {
   if (!tr || typeof tr.querySelector !== "function") return false;
   const ada = ALAT_URUTAN_TOMBOL_SIPP.map((k) => tr.querySelector(`:scope > .${k}`)).filter(Boolean);
