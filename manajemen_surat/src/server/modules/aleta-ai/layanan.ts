@@ -1,7 +1,7 @@
 import { KELOMPOK_PUTUSAN, bolehPakaiRute, tabelRuteDari } from "@/lib/aleta-ai/rute";
 import type { AletaDatabase } from "@/server/db/client";
 import type { PelakuAi } from "@/server/modules/aleta-ai/akses";
-import { ambilKlienAi, kunciApiTerpasang } from "@/server/modules/aleta-ai/klien";
+import { ambilKlienAi, statusKunciAi } from "@/server/modules/aleta-ai/klien";
 import { kursBerlaku, kursTersimpanTerakhir, segarkanKursBilaPerlu, type PengambilKurs } from "@/server/modules/aleta-ai/kurs";
 import { bacaKuotaPeran, pastikanKuotaBulanIni } from "@/server/modules/aleta-ai/kuota";
 import { PESAN_NONAKTIF_KUNCI, PESAN_NONAKTIF_PROYEK, PESAN_NONAKTIF_SAKLAR } from "@/server/modules/aleta-ai/mesin";
@@ -33,7 +33,7 @@ export type RingkasAi = {
 export async function ringkasAi(db: AletaDatabase, pelaku: PelakuAi): Promise<RingkasAi> {
   const pengaturan = await bacaPengaturan(db);
   const proyek = await proyekAktif(db);
-  const adaKlien = Boolean(ambilKlienAi());
+  const adaKlien = Boolean(await ambilKlienAi(db));
   const alasan = !pengaturan.aktif ? PESAN_NONAKTIF_SAKLAR : !adaKlien ? PESAN_NONAKTIF_KUNCI : !proyek ? PESAN_NONAKTIF_PROYEK : undefined;
 
   const tabel = tabelRuteDari(await bacaRute(db));
@@ -83,7 +83,7 @@ export async function tampilKurs(db: AletaDatabase, opsi: { segarkan?: boolean; 
 }
 
 export async function tampilPengaturan(db: AletaDatabase) {
-  const [pengaturan, tarif, rute, kurs, kuotaPeran] = await Promise.all([bacaPengaturan(db), bacaTarif(db), bacaRute(db), tampilKurs(db), bacaKuotaPeran(db)]);
+  const [pengaturan, tarif, rute, kurs, kuotaPeran, kunciClaude] = await Promise.all([bacaPengaturan(db), bacaTarif(db), bacaRute(db), tampilKurs(db), bacaKuotaPeran(db), statusKunciAi(db)]);
   // `margin` dan `penyanggaKurs` = nama pendek yang sama dengan marginPersen/penyanggaKursPersen (PERSEN, 30 = 30%).
   return {
     pengaturan: { ...pengaturan, margin: pengaturan.marginPersen, penyanggaKurs: pengaturan.penyanggaKursPersen },
@@ -91,6 +91,8 @@ export async function tampilPengaturan(db: AletaDatabase) {
     rute,
     kurs,
     kuotaPeran,
-    kunciTerpasang: kunciApiTerpasang(),
+    kunciTerpasang: kunciClaude.sumber !== "belum",
+    // Asal kunci Claude (tanpa isinya): "pengaturan-ai" (+ nama koneksi) | "env" | "belum".
+    kunciClaude,
   };
 }

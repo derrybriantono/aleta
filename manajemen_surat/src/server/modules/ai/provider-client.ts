@@ -53,11 +53,17 @@ function normalizeGeminiModel(modelId: string) {
   return normalized.replace(/\s+/g, "-");
 }
 
-function normalizeClaudeModel(modelId: string) {
+/** Model Claude termurah: dipakai uji koneksi (cukup untuk memeriksa kunci). */
+export const CLAUDE_MODEL_UJI = "claude-haiku-5-5";
+
+export function normalizeClaudeModel(modelId: string) {
   const normalized = modelId.trim().toLowerCase();
-  if (normalized.includes("opus") && normalized.includes("4")) return "claude-opus-4-0";
-  if (normalized.includes("sonnet") && normalized.includes("4")) return "claude-sonnet-4-0";
-  if (normalized.includes("haiku") && normalized.includes("3.5")) return "claude-3-5-haiku-latest";
+  // Id API lengkap (tanpa spasi) dipakai apa adanya.
+  if (/^claude-[a-z0-9.-]+$/.test(normalized)) return normalized;
+  // Nama pilihan di katalog ("Claude Sonnet 5.5", dan label lama "Claude Sonnet 4") -> model terkini.
+  if (normalized.includes("opus")) return "claude-opus-5-5";
+  if (normalized.includes("sonnet")) return "claude-sonnet-5-5";
+  if (normalized.includes("haiku")) return "claude-haiku-5-5";
   return normalized.replace(/\s+/g, "-");
 }
 
@@ -213,7 +219,7 @@ async function requestProviderText({
       body: JSON.stringify({
         model: resolvedModel,
         max_tokens: 1200,
-        temperature: 0.2,
+        // Tanpa temperature: tidak dikirim ke model Claude 5.5 (aturan API yang sama dengan klien ALETA Ai).
         system: systemPrompt,
         messages: [{ role: "user", content: userPrompt }],
       }),
@@ -331,6 +337,8 @@ export async function testProviderConnection(input: {
   try {
     const result = await requestProviderText({
       ...input,
+      // Uji koneksi Claude memakai model termurah: yang diperiksa kuncinya, bukan modelnya.
+      modelId: resolveSupportedProviderId(input.providerId) === "claude" ? CLAUDE_MODEL_UJI : input.modelId,
       systemPrompt: "Jawab singkat tanpa markdown.",
       userPrompt: "Balas dengan kata OK saja.",
     });

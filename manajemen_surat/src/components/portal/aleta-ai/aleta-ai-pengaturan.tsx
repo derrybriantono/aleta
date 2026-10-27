@@ -221,6 +221,7 @@ export function AletaAiPengaturan({ pengguna, peran = [] }: { pengguna: Pengguna
   const [rekon, setRekon] = useState<Rekonsiliasi[]>([]);
   const [pesanRekon, setPesanRekon] = useState<{ teks: string; baik: boolean }>({ teks: "", baik: true });
   const [laporan, setLaporan] = useState<Laporan | null>(null);
+  const [kunciClaude, setKunciClaude] = useState<{ sumber?: string; namaKoneksi?: string } | null>(null);
   const [pesanLaporan, setPesanLaporan] = useState("");
 
   const muat = useCallback(async () => {
@@ -232,8 +233,11 @@ export function AletaAiPengaturan({ pengguna, peran = [] }: { pengguna: Pengguna
       ambil<unknown>("/api/aleta-ai/kuota"),
       ambil<unknown>("/api/aleta-ai/rekonsiliasi"),
     ]);
-    if (p.ok) setForm(keLayar(p.data));
-    else setGalat(p.galat);
+    if (p.ok) {
+      setForm(keLayar(p.data));
+      const kc = (p.data as { kunciClaude?: { sumber?: string; namaKoneksi?: string } } | null)?.kunciClaude;
+      setKunciClaude(kc && typeof kc === "object" ? kc : null);
+    } else setGalat(p.galat);
     if (ku.ok && Array.isArray(ku.data)) setKuota(ku.data as KuotaPeran[]);
     if (re.ok && Array.isArray(re.data)) setRekon(re.data as Rekonsiliasi[]);
     if (k.ok) setKurs(k.data);
@@ -386,6 +390,17 @@ export function AletaAiPengaturan({ pengguna, peran = [] }: { pengguna: Pengguna
           </div>
           <Switch checked={form.aktif} onCheckedChange={(v) => ubah("aktif", v)} aria-labelledby="label-aktif" />
         </div>
+        <p className="text-sm text-muted-foreground" data-testid="status-kunci-claude">
+          Kunci Claude:{" "}
+          <strong className="text-foreground">
+            {kunciClaude?.sumber === "pengaturan-ai"
+              ? `dari Pengaturan AI (${kunciClaude.namaKoneksi ?? "koneksi Claude"})`
+              : kunciClaude?.sumber === "env"
+                ? "dari pengaturan server"
+                : "belum ada"}
+          </strong>{" "}
+          - <a className="underline underline-offset-2" href={apiPath("/admin/pengaturan-ai")}>atur di Pengaturan AI</a>
+        </p>
       </Bagian>
 
       <Bagian judul="Harga dan batas" deskripsi="Harga satu giliran = biaya API x kurs x (1 + margin) + MDR QRIS, dibulatkan ke atas, tidak kurang dari minimum.">

@@ -214,8 +214,14 @@ export type AIModuleKey =
   | "jlf"
   | "aleta_bot"
   | "aleta_bot_umum"
-  | "aleta_bot_perkara";
-export type AIModuleConfigStatus = "global" | "custom" | "fallback";
+  | "aleta_bot_perkara"
+  | "aleta_ai";
+/**
+ * "otomatis" dan "belum_ada" hanya dipakai modul ALETA Ai (yang tidak pernah
+ * mewarisi global): otomatis = koneksi Claude tersimpan pertama, belum_ada =
+ * belum ada koneksi Claude sama sekali.
+ */
+export type AIModuleConfigStatus = "global" | "custom" | "fallback" | "otomatis" | "belum_ada";
 export type WhatsAppWebConnectionStatus = "active" | "inactive" | "failed";
 export type InstitutionIdentityEnrichmentStatus =
   | "catalog_only"
@@ -627,6 +633,10 @@ export interface AIModuleConfig {
   status: AIModuleConfigStatus;
   fallbackReason?: string;
   updatedAt?: string | null;
+  /** Bila terisi, hanya koneksi berprovider ini yang boleh dipilih untuk modul (UI menyembunyikan yang lain; server menolak). */
+  onlyProviderId?: string | null;
+  /** Keterangan singkat tambahan di kartu modul. */
+  catatan?: string;
 }
 
 export interface AIProviderConfig {

@@ -602,18 +602,28 @@ export function AIControlPanel() {
                       ? "__global__"
                       : module.configuredConnectionId ?? module.activeConnectionId ?? "__global__";
                     const isModuleSaving = savingModuleKey === module.moduleKey;
+                    const onlyProviderId = module.onlyProviderId ?? null;
+                    const modulConnections = onlyProviderId
+                      ? aiConfig.providers.filter((connection) => (connection.providerId ?? connection.id) === onlyProviderId)
+                      : aiConfig.providers;
                     const statusVariant =
-                      module.status === "custom"
+                      module.status === "custom" || module.status === "otomatis"
                         ? "success"
-                        : module.status === "fallback"
+                        : module.status === "fallback" || module.status === "belum_ada"
                           ? "warning"
                           : "outline";
                     const statusLabel =
                       module.status === "custom"
-                        ? "Model sendiri"
-                        : module.status === "fallback"
-                          ? "Fallback global"
-                          : "Ikut global";
+                        ? onlyProviderId
+                          ? "Koneksi dipilih"
+                          : "Model sendiri"
+                        : module.status === "otomatis"
+                          ? "Otomatis"
+                          : module.status === "belum_ada"
+                            ? "Belum ada kunci"
+                            : module.status === "fallback"
+                              ? "Fallback global"
+                              : "Ikut global";
 
                     return (
                       <div key={module.moduleKey} className="rounded-xl border border-border/80 bg-muted/25 px-4 py-3">
@@ -625,12 +635,22 @@ export function AIControlPanel() {
                               {isModuleSaving ? <LoaderCircle className="h-4 w-4 animate-spin text-primary" /> : null}
                             </div>
                             <p className="text-xs text-muted-foreground">{module.description}</p>
-                            <p className="text-xs text-muted-foreground">
-                              Dipakai:{" "}
-                              <strong className="text-foreground">
-                                {module.activeConnectionLabel ?? module.providerId} - {module.modelId}
-                              </strong>
-                            </p>
+                            {onlyProviderId ? (
+                              <p className="text-xs text-muted-foreground">
+                                Kunci dari:{" "}
+                                <strong className="text-foreground">
+                                  {module.activeConnectionLabel ?? "belum ada koneksi Claude"}
+                                </strong>
+                              </p>
+                            ) : (
+                              <p className="text-xs text-muted-foreground">
+                                Dipakai:{" "}
+                                <strong className="text-foreground">
+                                  {module.activeConnectionLabel ?? module.providerId} - {module.modelId}
+                                </strong>
+                              </p>
+                            )}
+                            {module.catatan ? <p className="text-xs text-muted-foreground">{module.catatan}</p> : null}
                             {module.fallbackReason ? (
                               <p className="text-xs font-medium text-amber-600 dark:text-amber-300">
                                 {module.fallbackReason}
@@ -640,16 +660,18 @@ export function AIControlPanel() {
                           <div className="w-full sm:w-72">
                             <NativeSelect
                               value={configuredValue}
-                              disabled={isSavingGlobal || isModuleSaving || aiConfig.providers.length === 0}
+                              disabled={isSavingGlobal || isModuleSaving || (!onlyProviderId && aiConfig.providers.length === 0)}
                               onChange={(event) => {
                                 void handleSaveModuleConfig(module.moduleKey, event.target.value);
                               }}
                               className="h-11 text-sm"
                             >
                               <option value="__global__">
-                                Ikuti Global ({activeConnection?.name ?? aiConfig.modelId})
+                                {onlyProviderId
+                                  ? "Otomatis (koneksi Claude pertama)"
+                                  : `Ikuti Global (${activeConnection?.name ?? aiConfig.modelId})`}
                               </option>
-                              {aiConfig.providers.map((connection) => (
+                              {modulConnections.map((connection) => (
                                 <option key={connection.id} value={connection.id}>
                                   {connection.name} - {connection.providerName ?? connection.providerId} - {connection.modelId}
                                 </option>
