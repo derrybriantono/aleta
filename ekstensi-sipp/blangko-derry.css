@@ -775,3 +775,10 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar .bk-bentukt[aria-pressed="true"] { background: var(--hijau); color: var(--bd-teks-di-hijau); }
 #aleta-bd-akar .bk-ciri.ganda { border-style: double; border-width: 3px; }
 #aleta-bd-akar .bk-pihak { background: var(--deep); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; }
+/* alat bukti elektronik (27 Okt): bagian tersembunyi bawaan di bawah daftar bukti surat; warna ikut tema terang/gelap lewat variabel */
+#aleta-bd-akar .bd-bel { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+#aleta-bd-akar .bd-bukti-el { border-style: dashed; }
+#aleta-bd-akar .bd-bukti-el .bd-bgrid .dua2 { grid-column: 1 / -1; }
+#aleta-bd-akar .bd-bukti-el label.bd-cek, #aleta-bd-akar .bd-bel label.bd-cek { display: inline-flex; flex-direction: row; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); }
+#aleta-bd-akar .bd-bukti-el input[type="checkbox"] { width: auto; height: auto; flex: none; }
+#aleta-bd-akar .bd-belprat { margin: 0; padding: 8px 10px; border-left: 3px solid var(--accentln); background: var(--panel); border-radius: 6px; line-height: 1.5; overflow-wrap: anywhere; white-space: pre-wrap; }

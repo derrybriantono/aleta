@@ -314,6 +314,8 @@
     el7Saran: null, // 19 Okt (isian 2): saran 1/2 bila belum cukup pasti untuk ditulis
     menuSaran: null,
     bukti: { P: null, T: null },
+    buktiEl: { P: null, T: null }, // 27 Okt: butir alat bukti elektronik per pihak { butir[], nomori }; tersembunyi sampai dipilih
+    buktiElBuka: {}, // pihak -> bagian alat bukti elektronik sedang dibuka
     buktiOto: {}, // G2: pihak ("P"/"T") -> { status: "ditulis"|"salin", pesan, teks }: keadaan penulisan otomatis daftar bukti dari e-Court
     tj: {}, // kunci -> { kode, rows:[{no,tanya,jawab}], templates:[], dimuat, berubah, sidang }
     tjBuka: null,
@@ -1609,6 +1611,8 @@
     S.el7 = null;
     S.el7Saran = null;
     S.bukti = { P: null, T: null };
+    S.buktiEl = { P: null, T: null };
+    S.buktiElBuka = {};
     S.buktiOto = {};
     S.tj = {};
     S.tjBuka = null;
@@ -3332,6 +3336,7 @@
    */
   const buangNomorAwal = (t) => String(t == null ? "" : t).replace(/^\s*\(?\d{1,2}\s*[.)]\s*(?=\S)/, "").replace(/^\s+/, "");
   const POLA_BUKTI_BERNOMOR = /^\s*\(?\d{1,2}\s*[.)]\s+\S/m;
+  const KAL_METERAI = [", bukti surat tersebut telah diberi meterai cukup, di-nazegelen", ", bukti surat tersebut telah diberi meterai cukup, tetapi tidak di-nazegelen", ", bukti surat tersebut tidak bermeterai dan tidak di-nazegelen", ""];
   const buktiBaru = (nm, oleh) => ({ nm: buangNomorAwal(nm), an: "", no: "", tgl: "", oleh: oleh || "", meterai: 0, cocok: 0, manual: null });
   /** Jenis bukti dari namanya: KTP -> kolom NIK, Kartu Keluarga -> Nomor KK, selainnya Nomor surat. */
   function jenisBukti(nm) {
@@ -3369,7 +3374,7 @@
     if (String(r.oleh || "").trim()) k += `, yang dikeluarkan oleh ${String(r.oleh).trim()}`;
     const m = Number(r.meterai) || 0;
     const c = Number(r.cocok) || 0;
-    const METERAI = [", bukti surat tersebut telah diberi meterai cukup, di-nazegelen", ", bukti surat tersebut telah diberi meterai cukup, tetapi tidak di-nazegelen", ", bukti surat tersebut tidak bermeterai dan tidak di-nazegelen", ""];
+    const METERAI = KAL_METERAI;
     const COCOK = ["telah dicocokkan dengan aslinya yang ternyata sesuai", "tidak dapat dicocokkan dengan aslinya", "dicocokkan dari fotokopinya", "telah dicocokkan dengan kopian sebelumnya dan ternyata sesuai", ""];
     const tm = METERAI[m] !== undefined ? METERAI[m] : METERAI[0];
     const tc = COCOK[c] !== undefined ? COCOK[c] : COCOK[0];
@@ -3379,6 +3384,101 @@
     return k.replace(/^, /, "");
   }
   const susunKalimatBukti = (rows, pihak) => rows.map((r, i) => kalimatBukti(r, pihak, i)).join("\n");
+  // ── Alat bukti elektronik (27 Okt): butir tambahan di ruas alat bukti surat yang sama; tersembunyi/kosong = teks lama tidak berubah ──
+  /** Bentuk bukti elektronik yang lazim; elemen kedua = kata untuk hasil pengambilannya di kalimat pencocokan. */
+  const BENTUK_EL = [
+    ["Print Out/Hasil Cetak Foto", "cetak foto"],
+    ["Tangkapan layar (screenshot)", "tangkapan layar"],
+    ["Rekaman suara dalam flashdisk", "rekaman suara"],
+    ["Rekaman video dalam flashdisk", "rekaman video"],
+    ["Surel (e-mail)", "surel"],
+  ];
+  const PIL_PERIKSA_EL = [
+    "Tidak dapat dicocokkan (pihak tidak dapat menghadirkan alatnya), tanpa digital forensic",
+    "Telah dicocokkan dengan aslinya pada alat atau perangkatnya dan ternyata sesuai",
+    "Disertai hasil digital forensic",
+  ];
+  const AWALAN_EL = ["P", "T", "PK", "TK", "PR", "TR"];
+  const POLA_BUKTI_EL = /bukti elektronik tersebut/i;
+  const butirElBaru = (pihak, awalan) => ({ bentuk: BENTUK_EL[0][0], objek: "", ket: "", pengaju: pihak === "T" ? "T" : "P", awalan: AWALAN_EL.includes(awalan) ? awalan : pihak === "T" ? "T" : "P", no: "", meterai: 0, periksa: 0, rapi: false, manual: null });
+  // Keputusan pengguna 27 Okt: awalan bawaan P (Penggugat) / T (Tergugat), BUKAN PK/TK. Hanya bila daftar bukti surat pihak itu
+  // sudah memakai tanda konvensi/rekonvensi (PK./TK./PR./TR.), bukti elektronik mengikuti tanda terakhir yang dipakai di sana.
+  const POLA_AWALAN_KR = /\b(?:tanda|bertanda|kode)\s*:?\s*(?:bukti\s+)?\(?([PT])([KR])\s?[.-]\s?\d+/gi;
+  function awalanBawaanEl(rows, pihak) {
+    let a = "";
+    for (const r of rows || []) {
+      const t = typeof r?.manual === "string" ? r.manual : "";
+      for (const m of t.matchAll(POLA_AWALAN_KR)) a = `${m[1]}${m[2]}`.toUpperCase();
+    }
+    return a || (pihak === "T" ? "T" : "P");
+  }
+  const hasilEl = (bentuk) => {
+    const b = String(bentuk || "");
+    const k = BENTUK_EL.find(([n]) => n.toLowerCase() === b.toLowerCase());
+    if (k) return k[1];
+    if (/video/i.test(b)) return "rekaman video";
+    if (/rekaman|suara|audio/i.test(b)) return "rekaman suara";
+    if (/tangkapan|screenshot|layar/i.test(b)) return "tangkapan layar";
+    if (/surel|e-?mail/i.test(b)) return "surel";
+    return "cetak foto";
+  };
+  /** Butir yang belum diisi apa pun (selain bawaan) tidak ikut ditulis ke ABT. */
+  const butirElKosong = (b) => (typeof b.manual === "string" ? !b.manual.trim() : !String(b.objek || "").trim() && !String(b.ket || "").trim());
+  /**
+   * Satu kalimat bukti elektronik. ctx: { urut (nomor butir), tanda (nomor pada tanda bukti), sb: {P,T}, nomori }.
+   * Varian pemeriksaan: 0 tidak dapat dicocokkan + tanpa digital forensic (bunyi contoh pengguna APA ADANYA, termasuk "yang yang" dan
+   * "pengambikan", kecuali butir diberi "bunyi dirapikan"), 1 dicocokkan dengan aslinya, 2 disertai hasil digital forensic.
+   */
+  function kalimatBuktiEl(b, ctx) {
+    const awalan = String(b.awalan || "P").replace(/[^A-Za-z]/g, "") || "P";
+    const tanda = `${awalan}.${String(b.no || "").trim() || ctx.tanda}`;
+    const awal = ctx.nomori ? `${ctx.urut}. ` : "";
+    if (typeof b.manual === "string" && b.manual.trim()) {
+      const t = buangNomorAwal(b.manual).trim().replace(/\s+/g, " ");
+      return `${awal}${/[;.]$/.test(t) ? t : `${t};`}`;
+    }
+    const sb = ctx.sb || { P: "Penggugat", T: "Tergugat" };
+    const pengaju = b.pengaju === "T" ? sb.T : sb.P;
+    const hasil = hasilEl(b.bentuk);
+    const bentuk = String(b.bentuk || "").trim();
+    const objek = String(b.objek || "").trim();
+    const ket = String(b.ket || "").trim();
+    let k = `${awal}${bentuk}${objek ? `${bentuk ? " " : ""}${objek}` : ""}${ket ? ` dengan keterangan ${ket}` : ""}`;
+    const m = Number(b.meterai) || 0;
+    if (KAL_METERAI[m]) k += KAL_METERAI[m];
+    const periksa = Number(b.periksa) || 0;
+    if (periksa === 1) k += `, bukti elektronik tersebut telah dicocokkan dengan aslinya dengan telekomunikasi atau alat yang digunakan untuk melakukan pengambilan ${hasil} tersebut dan ternyata sesuai`;
+    else if (periksa === 2) k += ", bukti elektronik tersebut disertai dengan hasil digital forensic";
+    else
+      k += b.rapi === true
+        ? `, bukti elektronik tersebut tidak dapat dicocokkan dengan aslinya dengan telekomunikasi atau alat yang digunakan untuk melakukan pengambilan ${hasil} tersebut karena ${pengaju} tidak dapat menghadirkannya, dan bukti tersebut tidak disertai dengan digital forensic`
+        : `, bukti elektronik tersebut tidak dapat dicocokkan dengan aslinya dengan telekomunikasi atau alat yang yang digunakan untuk melakukan pengambikan ${hasil} tersebut karena ${pengaju} tidak dapat menghadirkannya, dan bukti tersebut tidak disertai dengan digital forensic`;
+    return `${k}, lalu oleh Ketua Majelis diberi tanda ${tanda};`;
+  }
+  /**
+   * Teks ruas alat bukti surat yang dikirim ke ABT: kalimat bukti surat, lalu butir elektronik (bila ada yang terisi). Penomoran butir dan
+   * nomor tanda melanjutkan jumlah bukti surat. Tanpa butir terisi hasilnya PERSIS susunKalimatBukti (fitur lama tidak berubah).
+   */
+  function susunTeksBukti(rows, pihak, el, sb) {
+    const surat = susunKalimatBukti(rows || [], pihak);
+    const butir = el && Array.isArray(el.butir) ? el.butir.filter((b) => !butirElKosong(b)) : [];
+    if (!butir.length) return surat;
+    const dasar = (rows || []).length;
+    const baris = butir.map((b, i) => kalimatBuktiEl(b, { urut: dasar + i + 1, tanda: dasar + i + 1, sb, nomori: el.nomori !== false }));
+    return surat ? `${surat}\n${baris.join("\n")}` : baris.join("\n");
+  }
+  /** Teks ruas -> { surat, el[] }: baris yang memuat "bukti elektronik tersebut" dipisahkan dari kalimat bukti surat. */
+  function pisahBuktiElektronik(teks) {
+    const surat = [];
+    const el = [];
+    for (const b of String(teks || "").replace(/\r\n/g, "\n").split("\n")) (POLA_BUKTI_EL.test(b) ? el : surat).push(b);
+    return { surat: surat.join("\n"), el: el.map((x) => x.trim()).filter(Boolean) };
+  }
+  /** Baris elektronik dari teks tersimpan -> { butir (kalimat bebas), nomori }. */
+  function butirElDariTeks(baris, pihak) {
+    const butir = baris.map((x) => ({ ...butirElBaru(pihak), manual: buangNomorAwal(x) }));
+    return { butir, nomori: baris.length ? baris.every((x) => /^\s*\(?\d{1,2}\s*[.)]/.test(x)) : true };
+  }
   /**
    * Kalimat ABT (bawaan maupun tersimpan) -> baris terstruktur. Kalimat yang tidak berpola baku ALETA/ABT
    * ("Bukti tersebut telah diberi meterai ... kemudian diberi tanda pada surat tersebut dengan tanda T.3.")
@@ -3516,12 +3616,20 @@
       const s = await bacaPenyimpanan(`bdBukti:${perkaraId()}:${pihak}`);
       const simpanan = s[`bdBukti:${perkaraId()}:${pihak}`];
       let rows = null;
+      let el = null;
       let teksAsal = "";
       const v = S.nilai[b.kode];
-      if (simpanan && Array.isArray(simpanan.rows) && v && v.status === "terisi" && susunKalimatBukti(simpanan.rows, pihak) === String(v.teks || "").replace(/\r\n/g, "\n")) rows = simpanan.rows;
+      const elSimpan = simpanan && simpanan.el && Array.isArray(simpanan.el.butir) ? simpanan.el : null;
+      if (simpanan && Array.isArray(simpanan.rows) && v && v.status === "terisi" && susunTeksBukti(simpanan.rows, pihak, elSimpan, sebutan()) === String(v.teks || "").replace(/\r\n/g, "\n")) {
+        rows = simpanan.rows;
+        el = elSimpan;
+      }
       else if (v && v.status === "terisi" && String(v.teks || "").trim()) {
-        teksAsal = String(v.teks);
-        rows = uraiBukti(v.teks);
+        // Butir bukti elektronik (kalimat "bukti elektronik tersebut ...") dipisahkan dari bukti surat; tanpa simpanan dibuka sebagai kalimat bebas.
+        const pisah = pisahBuktiElektronik(v.teks);
+        teksAsal = pisah.surat;
+        rows = uraiBukti(pisah.surat);
+        if (pisah.el.length) el = butirElDariTeks(pisah.el, pihak);
       }
       else {
         // Bawaan blangko dihitung ABT (nama pihak, NIK dari SIPP) - dibaca dari jendela sembulnya.
@@ -3561,16 +3669,19 @@
         }
       }
       S.bukti[pihak] = rows;
+      S.buktiEl[pihak] = el || { butir: [], nomori: true };
       if ((berubahNomor || dariEcourt) && bolehTulis()) simpanBukti(pihak, false);
     }
     renderIsian();
     laporKeKerangka();
   }
+  /** Butir bukti elektronik satu pihak (dibuat bila belum ada). */
+  const elPihak = (w) => S.buktiEl[w] || (S.buktiEl[w] = { butir: [], nomori: true });
   function simpanBukti(pihak, segera) {
     const b = S.susunan && S.susunan.isian.find((x) => x.khusus === "bukti" && x.pihak === pihak);
     if (tes() || !b || !S.bukti[pihak]) return;
-    void tulisPenyimpanan({ [`bdBukti:${perkaraId()}:${pihak}`]: { rows: S.bukti[pihak], saat: Date.now() } });
-    jadwalkanSimpan(b.kode, susunKalimatBukti(S.bukti[pihak], pihak), segera);
+    void tulisPenyimpanan({ [`bdBukti:${perkaraId()}:${pihak}`]: { rows: S.bukti[pihak], el: elPihak(pihak), saat: Date.now() } });
+    jadwalkanSimpan(b.kode, susunTeksBukti(S.bukti[pihak], pihak, elPihak(pihak), sebutan()), segera);
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -5167,7 +5278,65 @@
           );
         })
         .join("") +
-      `<div class="bd-baris"><span class="bd-lbl">Tambah bukti</span>${BUKTI_CEPAT.map(([n, o]) => `<button type="button" class="bd-chip bd-tombolchip" data-bktambah="${w}" data-nama="${esc(n)}" data-oleh="${esc(o)}">+ ${esc(n)}</button>`).join("")}<button type="button" class="bd-chip bd-tombolchip" data-bktambah="${w}" data-nama="" data-oleh="">+ Bukti lain</button></div></div>`
+      `<div class="bd-baris"><span class="bd-lbl">Tambah bukti</span>${BUKTI_CEPAT.map(([n, o]) => `<button type="button" class="bd-chip bd-tombolchip" data-bktambah="${w}" data-nama="${esc(n)}" data-oleh="${esc(o)}">+ ${esc(n)}</button>`).join("")}<button type="button" class="bd-chip bd-tombolchip" data-bktambah="${w}" data-nama="" data-oleh="">+ Bukti lain</button></div>${htmlBuktiEl(w)}</div>`
+    );
+  }
+  // ── Alat bukti elektronik (27 Okt): tersembunyi bawaan, dibuka lewat "+ Alat bukti elektronik"; hasilnya ikut ruas alat bukti surat ──
+  /** Nomor urut butir elektronik ke-i: jumlah bukti surat + butir terisi sebelumnya + 1 (butir kosong tidak ditulis, tidak makan nomor). */
+  const urutEl = (w, i) => (S.bukti[w] || []).length + elPihak(w).butir.slice(0, i).filter((b) => !butirElKosong(b)).length + 1;
+  const kalimatPratinjauEl = (w, i) => {
+    const el = elPihak(w);
+    const b = el.butir[i];
+    const n = urutEl(w, i);
+    return kalimatBuktiEl(b, { urut: n, tanda: n, sb: sebutan(), nomori: el.nomori !== false });
+  };
+  /** Pratinjau kalimat dan kode tanda semua butir satu pihak mengikuti isian terbaru (tanpa menggambar ulang kotak isian). */
+  function segarBuktiEl(w) {
+    const el = elPihak(w);
+    el.butir.forEach((b, i) => {
+      const p = cari(`[data-belprat="${w}.${i}"]`, wadah.isian);
+      if (p) p.textContent = butirElKosong(b) ? "Isi jenis atau keterangan bukti agar butir ini ikut ditulis." : kalimatPratinjauEl(w, i);
+      const k = cari(`[data-beltanda="${w}.${i}"]`, wadah.isian);
+      if (k) k.textContent = `${String(b.awalan || "P")}.${String(b.no || "").trim() || urutEl(w, i)}`;
+    });
+  }
+  function htmlBuktiEl(w) {
+    const el = elPihak(w);
+    const buka = Boolean(S.buktiElBuka[w]);
+    if (!el.butir.length && !buka) return `<div class="bd-baris bd-bel"><button type="button" class="bd-chip bd-tombolchip" data-belbuka="${w}" aria-expanded="false" title="Tambahkan bukti elektronik (cetak foto, rekaman, surel, dsb.) ke alat bukti ini">+ Alat bukti elektronik</button></div>`;
+    const terisi = el.butir.filter((b) => !butirElKosong(b)).length;
+    const kepala = `<div class="bd-baris"><button type="button" class="bd-btn kecil" data-belbuka="${w}" aria-expanded="${buka}">${buka ? "▾" : "▸"} Alat bukti elektronik (${terisi} butir)</button>${buka ? "" : `<span class="bd-catat">ikut ditulis di alat bukti ini · buka untuk menyunting</span>`}</div>`;
+    if (!buka) return `<div class="bd-bel">${kepala}</div>`;
+    const sb = sebutan();
+    const tiap = el.butir
+      .map((r, i) => {
+        const id = `${w}.${i}`;
+        const manual = typeof r.manual === "string";
+        const tanda = `${String(r.awalan || "P")}.${String(r.no || "").trim() || urutEl(w, i)}`;
+        const kep =
+          `<div class="bd-bkepala"><span class="bd-kodeP" data-beltanda="${id}">${esc(tanda)}</span><span class="bd-catat">${manual ? "kalimat bebas" : "bukti elektronik"}</span>` +
+          `<button type="button" class="bd-btn kecil" data-belmanual="${id}" aria-pressed="${manual}" title="${manual ? "Kembali menyusun kalimat dari isian" : "Sunting kalimat butir ini bebas"}">${manual ? "Pakai isian" : "Tulis manual"}</button>` +
+          `<button type="button" class="bd-ikon" data-belhapus="${id}" aria-label="Hapus butir bukti elektronik ${esc(tanda)}">✕</button></div>`;
+        const prat = `<p class="bd-catat bd-belprat" data-belprat="${id}">${esc(butirElKosong(r) ? "Isi jenis atau keterangan bukti agar butir ini ikut ditulis." : kalimatPratinjauEl(w, i))}</p>`;
+        if (manual) return `<div class="bd-bukti bd-bukti-el" data-manual="1">${kep}<textarea class="bd-bmanual" data-be="${id}" data-isi="manual" aria-label="Kalimat bukti elektronik ${esc(tanda)}">${esc(r.manual)}</textarea>${prat}</div>`;
+        const pil = (daftar, nilai) => daftar.map(([v, t]) => `<option value="${esc(v)}" ${String(nilai) === String(v) ? "selected" : ""}>${esc(t)}</option>`).join("");
+        return (
+          `<div class="bd-bukti bd-bukti-el">${kep}` +
+          `<div class="bd-bgrid"><label class="dua2">Bentuk bukti<input data-be="${id}" data-isi="bentuk" list="bd-bentukel-${w}" value="${esc(r.bentuk)}" placeholder="mis. Print Out/Hasil Cetak Foto"></label>` +
+          `<label class="dua2">Jenis atau objek<input data-be="${id}" data-isi="objek" value="${esc(r.objek)}" placeholder="mis. Transaksi Mobile Banking Mandiri, percakapan WhatsApp"></label>` +
+          `<label class="dua2">Keterangan<input data-be="${id}" data-isi="ket" value="${esc(r.ket)}" placeholder="mis. angsuran, bayar kos (boleh kosong)"></label>` +
+          `<label>Diajukan oleh<select data-be="${id}" data-isi="pengaju">${pil([["P", sb.P], ["T", sb.T]], r.pengaju === "T" ? "T" : "P")}</select></label>` +
+          `<label>Awalan tanda<select data-be="${id}" data-isi="awalan">${pil(AWALAN_EL.map((a) => [a, a]), r.awalan)}</select></label>` +
+          `<label>Nomor tanda<input data-be="${id}" data-isi="no" value="${esc(r.no)}" placeholder="otomatis ${urutEl(w, i)}"></label></div>` +
+          `<div class="bd-bgrid bd-bpilih"><label>Meterai<select data-be="${id}" data-isi="meterai">${PIL_METERAI.map((o, j) => `<option value="${j}" ${Number(r.meterai) === j ? "selected" : ""}>${o}</option>`).join("")}</select></label>` +
+          `<label class="dua2">Pemeriksaan<select data-be="${id}" data-isi="periksa">${PIL_PERIKSA_EL.map((o, j) => `<option value="${j}" ${Number(r.periksa) === j ? "selected" : ""}>${o}</option>`).join("")}</select></label></div>` +
+          `<label class="bd-cek"><input type="checkbox" data-be="${id}" data-isi="rapi" ${r.rapi === true ? "checked" : ""}> Bunyi dirapikan (perbaiki salah ketik pada kalimat tidak dapat dicocokkan)</label>${prat}</div>`
+        );
+      })
+      .join("");
+    return (
+      `<div class="bd-bel">${kepala}<datalist id="bd-bentukel-${w}">${BENTUK_EL.map(([n]) => `<option value="${esc(n)}"></option>`).join("")}</datalist>${tiap}` +
+      `<div class="bd-baris"><button type="button" class="bd-chip bd-tombolchip" data-beltambah="${w}">+ Butir bukti elektronik</button><label class="bd-cek"><input type="checkbox" data-benomori="${w}" ${el.nomori !== false ? "checked" : ""}> Beri nomor urut di depan butir</label></div></div>`
     );
   }
   /** Bagian tertutup "Isian tambahan (bila ada)" di bawah kartu wajib; terbuka sendiri bila salah satunya sudah berisi. */
@@ -6280,7 +6449,7 @@
     const kepala = [perkaraId(), b.berkas || "", b.a || "", b.b || "", b.jenis || "", sidangUrutan(), tes() ? "tes" : ""].join("\u0001");
     const isi = Object.keys(S.isi || {}).sort().map((k) => `${k}=${String(S.isi[k])}`).join("\u0002");
     const tj = Object.keys(S.tj || {}).sort().map((k) => `${k}=${(S.tj[k] && Array.isArray(S.tj[k].rows) ? S.tj[k].rows : []).map((r) => `${r.no}|${r.tanya}|${r.jawab}`).join("\u0003")}`).join("\u0002");
-    const bukti = JSON.stringify(S.bukti || {});
+    const bukti = JSON.stringify(S.bukti || {}) + JSON.stringify(S.buktiEl || {});
     const ketikan = tes() ? JSON.stringify(S.tesIsian || {}) : "";
     return sidikTeks([kepala, isi, tj, bukti, ketikan].join("\u0004"));
   }
@@ -7733,6 +7902,42 @@
       simpanBukti(w, false);
       return renderIsian();
     }
+    const elBuka = c("[data-belbuka]");
+    if (elBuka) {
+      const w = elBuka.getAttribute("data-belbuka");
+      const el = elPihak(w);
+      S.buktiElBuka[w] = !S.buktiElBuka[w];
+      // Dibuka pertama kali: satu butir kosong siap diisi (butir kosong tidak ditulis ke ABT).
+      if (S.buktiElBuka[w] && !el.butir.length) el.butir.push(butirElBaru(w, awalanBawaanEl(S.bukti[w], w)));
+      return renderIsian();
+    }
+    const elTambah = c("[data-beltambah]");
+    if (elTambah) {
+      const w = elTambah.getAttribute("data-beltambah");
+      elPihak(w).butir.push(butirElBaru(w, awalanBawaanEl(S.bukti[w], w)));
+      return renderIsian();
+    }
+    const elHapus = c("[data-belhapus]");
+    if (elHapus) {
+      const [w, i] = elHapus.getAttribute("data-belhapus").split(".");
+      elPihak(w).butir.splice(Number(i), 1);
+      simpanBukti(w, false);
+      return renderIsian();
+    }
+    const elManual = c("[data-belmanual]");
+    if (elManual) {
+      const [w, i] = elManual.getAttribute("data-belmanual").split(".");
+      const r = elPihak(w).butir[Number(i)];
+      if (!r) return;
+      // Tulis manual: kalimat utuh (tanpa nomor urut) disunting bebas; isian terstruktur tetap tersimpan di butir.
+      if (typeof r.manual === "string") r.manual = null;
+      else {
+        const n = urutEl(w, Number(i));
+        r.manual = kalimatBuktiEl({ ...r, manual: null }, { urut: n, tanda: n, sb: sebutan(), nomori: false });
+      }
+      simpanBukti(w, false);
+      return renderIsian();
+    }
     const manualBukti = c("[data-bkmanual]");
     if (manualBukti) {
       const [w, i] = manualBukti.getAttribute("data-bkmanual").split(".");
@@ -8109,6 +8314,16 @@
       if (f) f.classList.toggle("beres", Boolean(t.value.trim()));
       return;
     }
+    const be = t.getAttribute && t.getAttribute("data-be");
+    if (be && t.tagName !== "SELECT" && t.type !== "checkbox") {
+      const [w, i] = be.split(".");
+      const r = elPihak(w).butir[Number(i)];
+      if (r) {
+        r[t.getAttribute("data-isi")] = t.value;
+        segarBuktiEl(w);
+      }
+      return;
+    }
     const bk = t.getAttribute && t.getAttribute("data-bk");
     if (bk !== null && bk !== undefined && t.tagName !== "SELECT") {
       const [w, i] = bk.split(".");
@@ -8184,6 +8399,25 @@
         if (t.tagName === "SELECT") renderStatusIsian(k);
         // Keputusan tuntutan berubah: kartu lain (tampil/tersembunyi menurut keputusan) dan kotak alasan mengikuti.
         if (t.tagName === "SELECT" && t.getAttribute("data-keputusan")) renderIsian();
+      }
+      return;
+    }
+    const noEl = t.getAttribute && t.getAttribute("data-benomori");
+    if (noEl) {
+      elPihak(noEl).nomori = t.checked;
+      simpanBukti(noEl, true);
+      segarBuktiEl(noEl);
+      return;
+    }
+    const be = t.getAttribute && t.getAttribute("data-be");
+    if (be) {
+      const [w, i] = be.split(".");
+      const r = elPihak(w).butir[Number(i)];
+      if (r) {
+        const isi = t.getAttribute("data-isi");
+        r[isi] = t.type === "checkbox" ? t.checked : t.tagName === "SELECT" && (isi === "meterai" || isi === "periksa") ? Number(t.value) : t.value;
+        simpanBukti(w, true);
+        segarBuktiEl(w);
       }
       return;
     }
@@ -8381,6 +8615,8 @@
     S.el7Saran = null;
     S.saranH7 = {}; // F4.2: saran draf H-7 milik perkara sebelumnya tidak terbawa.
     S.bukti = { P: null, T: null };
+    S.buktiEl = { P: null, T: null };
+    S.buktiElBuka = {};
     S.buktiOto = {};
     S.tj = {};
     S.tjBuka = null;
@@ -8750,6 +8986,8 @@
       saranH7: { ...(S.saranH7 || {}) },
       nilai: { ...S.nilai },
       bukti: { P: S.bukti.P ? S.bukti.P.map((r) => ({ ...r })) : null, T: S.bukti.T ? S.bukti.T.map((r) => ({ ...r })) : null },
+      buktiEl: JSON.parse(JSON.stringify(S.buktiEl || {})),
+      buktiElBuka: { ...(S.buktiElBuka || {}) },
       tj: Object.fromEntries(Object.entries(S.tj).map(([k, v]) => [k, { kode: v.kode, rows: v.rows.map((r) => ({ ...r })), berubah: v.berubah, sidang: v.sidang, galat: v.galat || "" }])),
       tjBuka: S.tjBuka,
       prat: { terbuka: S.prat.terbuka, memuat: S.prat.memuat, adaRtf: Boolean(S.prat.rtf), penanda: S.prat.penanda.slice(), kotor: S.prat.kotor, galat: S.prat.galat, siap: naskahSegar(S.prat), sedangDisiapkan: Boolean(S.prat.janji), versiIsian: S.versiIsian },
@@ -8766,7 +9004,7 @@
       tuntutan: S.susunan ? keadaanTuntutan().map((t) => ({ pemicu: t.pemicu, status: t.status, jabatan: t.jabatan, dipilih: t.dipilih })) : [],
       tandaKosong: Array.from(S.tandaKosong),
     }),
-    murni: { sidikTeks, permintaanAbtAman, pilihanTunggalMurni, kerangkaBawaanMurni, daftarPilihanMurni, keputusanDipilihMurni, keputusanExOfficioMurni, bersihkanHeaderPenanda, bersihkanPenutupSaksiRtf, bersihkanPenutupTabelRtf, perkiraanSidang, keadaanBerlakuMurni, golonganIsianMurni, tuntutanAktifMurni, uraiKutipanTuntutan, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranTtdBerlaku, berhakCap, UKURAN_TTD_CAP_BAWAAN, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, normalAbt, hurufAlasanDari, nilaiSimpan8503, jenisKelompok, namaTampil, adalahBlangkoIkrar, uraikanIkrar, kumpulkanIkrar, saranIkrarCadangan, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel, ramahkanAlasan, pilihVarianSaksi },
+    murni: { sidikTeks, awalanBawaanEl, permintaanAbtAman, pilihanTunggalMurni, kerangkaBawaanMurni, daftarPilihanMurni, keputusanDipilihMurni, keputusanExOfficioMurni, bersihkanHeaderPenanda, bersihkanPenutupSaksiRtf, bersihkanPenutupTabelRtf, perkiraanSidang, keadaanBerlakuMurni, golonganIsianMurni, tuntutanAktifMurni, uraiKutipanTuntutan, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, susunTeksBukti, kalimatBuktiEl, pisahBuktiElektronik, butirElDariTeks, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranTtdBerlaku, berhakCap, UKURAN_TTD_CAP_BAWAAN, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, normalAbt, hurufAlasanDari, nilaiSimpan8503, jenisKelompok, namaTampil, adalahBlangkoIkrar, uraikanIkrar, kumpulkanIkrar, saranIkrarCadangan, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel, ramahkanAlasan, pilihVarianSaksi },
   };
   globalThis.aletaBlangkoDerryIsian = apiIsian;
   if (!mulai()) {
