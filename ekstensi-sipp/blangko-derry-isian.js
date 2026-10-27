@@ -3400,7 +3400,18 @@
   ];
   const AWALAN_EL = ["P", "T", "PK", "TK", "PR", "TR"];
   const POLA_BUKTI_EL = /bukti elektronik tersebut/i;
-  const butirElBaru = (pihak) => ({ bentuk: BENTUK_EL[0][0], objek: "", ket: "", pengaju: pihak === "T" ? "T" : "P", awalan: pihak === "T" ? "T" : "P", no: "", meterai: 0, periksa: 0, rapi: false, manual: null });
+  const butirElBaru = (pihak, awalan) => ({ bentuk: BENTUK_EL[0][0], objek: "", ket: "", pengaju: pihak === "T" ? "T" : "P", awalan: AWALAN_EL.includes(awalan) ? awalan : pihak === "T" ? "T" : "P", no: "", meterai: 0, periksa: 0, rapi: false, manual: null });
+  // Keputusan pengguna 27 Okt: awalan bawaan P (Penggugat) / T (Tergugat), BUKAN PK/TK. Hanya bila daftar bukti surat pihak itu
+  // sudah memakai tanda konvensi/rekonvensi (PK./TK./PR./TR.), bukti elektronik mengikuti tanda terakhir yang dipakai di sana.
+  const POLA_AWALAN_KR = /\b(?:tanda|bertanda|kode)\s*:?\s*(?:bukti\s+)?\(?([PT])([KR])\s?[.-]\s?\d+/gi;
+  function awalanBawaanEl(rows, pihak) {
+    let a = "";
+    for (const r of rows || []) {
+      const t = typeof r?.manual === "string" ? r.manual : "";
+      for (const m of t.matchAll(POLA_AWALAN_KR)) a = `${m[1]}${m[2]}`.toUpperCase();
+    }
+    return a || (pihak === "T" ? "T" : "P");
+  }
   const hasilEl = (bentuk) => {
     const b = String(bentuk || "");
     const k = BENTUK_EL.find(([n]) => n.toLowerCase() === b.toLowerCase());
@@ -7897,13 +7908,13 @@
       const el = elPihak(w);
       S.buktiElBuka[w] = !S.buktiElBuka[w];
       // Dibuka pertama kali: satu butir kosong siap diisi (butir kosong tidak ditulis ke ABT).
-      if (S.buktiElBuka[w] && !el.butir.length) el.butir.push(butirElBaru(w));
+      if (S.buktiElBuka[w] && !el.butir.length) el.butir.push(butirElBaru(w, awalanBawaanEl(S.bukti[w], w)));
       return renderIsian();
     }
     const elTambah = c("[data-beltambah]");
     if (elTambah) {
       const w = elTambah.getAttribute("data-beltambah");
-      elPihak(w).butir.push(butirElBaru(w));
+      elPihak(w).butir.push(butirElBaru(w, awalanBawaanEl(S.bukti[w], w)));
       return renderIsian();
     }
     const elHapus = c("[data-belhapus]");
@@ -8993,7 +9004,7 @@
       tuntutan: S.susunan ? keadaanTuntutan().map((t) => ({ pemicu: t.pemicu, status: t.status, jabatan: t.jabatan, dipilih: t.dipilih })) : [],
       tandaKosong: Array.from(S.tandaKosong),
     }),
-    murni: { sidikTeks, permintaanAbtAman, pilihanTunggalMurni, kerangkaBawaanMurni, daftarPilihanMurni, keputusanDipilihMurni, keputusanExOfficioMurni, bersihkanHeaderPenanda, bersihkanPenutupSaksiRtf, bersihkanPenutupTabelRtf, perkiraanSidang, keadaanBerlakuMurni, golonganIsianMurni, tuntutanAktifMurni, uraiKutipanTuntutan, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, susunTeksBukti, kalimatBuktiEl, pisahBuktiElektronik, butirElDariTeks, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranTtdBerlaku, berhakCap, UKURAN_TTD_CAP_BAWAAN, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, normalAbt, hurufAlasanDari, nilaiSimpan8503, jenisKelompok, namaTampil, adalahBlangkoIkrar, uraikanIkrar, kumpulkanIkrar, saranIkrarCadangan, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel, ramahkanAlasan, pilihVarianSaksi },
+    murni: { sidikTeks, awalanBawaanEl, permintaanAbtAman, pilihanTunggalMurni, kerangkaBawaanMurni, daftarPilihanMurni, keputusanDipilihMurni, keputusanExOfficioMurni, bersihkanHeaderPenanda, bersihkanPenutupSaksiRtf, bersihkanPenutupTabelRtf, perkiraanSidang, keadaanBerlakuMurni, golonganIsianMurni, tuntutanAktifMurni, uraiKutipanTuntutan, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, susunTeksBukti, kalimatBuktiEl, pisahBuktiElektronik, butirElDariTeks, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranTtdBerlaku, berhakCap, UKURAN_TTD_CAP_BAWAAN, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, normalAbt, hurufAlasanDari, nilaiSimpan8503, jenisKelompok, namaTampil, adalahBlangkoIkrar, uraikanIkrar, kumpulkanIkrar, saranIkrarCadangan, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel, ramahkanAlasan, pilihVarianSaksi },
   };
   globalThis.aletaBlangkoDerryIsian = apiIsian;
   if (!mulai()) {

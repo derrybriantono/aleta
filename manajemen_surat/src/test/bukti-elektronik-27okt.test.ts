@@ -563,3 +563,20 @@ describe("5. tampilan: warna ikut tema lewat variabel", () => {
     expect(blok).not.toMatch(/\brgba?\(/);
   });
 });
+
+describe("6. awalan tanda bawaan P/T, mengikuti PK/TK/PR/TR bila daftar bukti surat memakainya (27 Okt)", () => {
+  type MurniAwalan = { awalanBawaanEl: (rows: unknown[], pihak: string) => string };
+  it("tanpa tanda konvensi/rekonvensi: P untuk Penggugat, T untuk Tergugat (bukan PK/TK)", () => {
+    const h = buka();
+    const m = h.w.aletaBlangkoDerryIsian.murni as MurniAwalan;
+    expect(m.awalanBawaanEl(SURAT_P(3), "P")).toBe("P");
+    expect(m.awalanBawaanEl([], "T")).toBe("T");
+    expect(m.awalanBawaanEl([{ manual: "Fotokopi KTP, lalu diberi tanda P.1 serta diberi tanggal dan paraf oleh Ketua Majelis;" }], "P")).toBe("P");
+  });
+  it("daftar bukti surat bertanda rekonvensi/konvensi: bukti elektronik mengikuti tanda terakhir", () => {
+    const h = buka();
+    const m = h.w.aletaBlangkoDerryIsian.murni as MurniAwalan;
+    expect(m.awalanBawaanEl([{ manual: "Fotokopi Buku Nikah, lalu diberi tanda TR.1 serta diberi tanggal dan paraf oleh Ketua Majelis;" }], "T")).toBe("TR");
+    expect(m.awalanBawaanEl([{ manual: "Fotokopi KTP, diberi tanda bukti PK.1;" }, { manual: "Fotokopi KK, bertanda PK-2;" }], "P")).toBe("PK");
+  });
+});
