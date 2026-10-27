@@ -184,13 +184,16 @@ async function bacaPekerjaanPihak(perkaraId, kueri = runQuery) {
     `SELECT 1 AS pihakKe, a.urutan, b.nama, b.pekerjaan FROM perkara_pihak1 a JOIN pihak b ON b.id = a.pihak_id WHERE a.perkara_id = ?
      UNION ALL
      SELECT 2 AS pihakKe, a.urutan, b.nama, b.pekerjaan FROM perkara_pihak2 a JOIN pihak b ON b.id = a.pihak_id WHERE a.perkara_id = ?
-     ORDER BY pihakKe, urutan`,
+     ORDER BY pihakKe, urutan, nama`,
     [id, id]
   );
+  // urutan = PERINGKAT dalam sisinya (1, 2, 3 ...), bukan nilai kolom urutan SIPP (e-Court menomori bersambung; Tergugat tunggal bisa berurutan 25)
+  const peringkat = {};
   return (Array.isArray(baris) ? baris : []).map((r) => {
     const pekerjaan = String(r.pekerjaan || "").trim();
     const k = klasifikasiPekerjaan(r.pekerjaan);
-    return { pihakKe: Number(r.pihakKe), urutan: Number(r.urutan) || 1, nama: String(r.nama || "").trim(), pekerjaan, ...k, kalimat: kalimatTerbaca(pekerjaan, k) };
+    peringkat[r.pihakKe] = (peringkat[r.pihakKe] || 0) + 1;
+    return { pihakKe: Number(r.pihakKe), urutan: peringkat[r.pihakKe], nama: String(r.nama || "").trim(), pekerjaan, ...k, kalimat: kalimatTerbaca(pekerjaan, k) };
   });
 }
 

@@ -1,0 +1,234 @@
+{
+ "ring": {
+  "3507": {
+   "sama": 1787,
+   "beda": 2,
+   "dijelaskan": 2,
+   "tak_dijelaskan": [],
+   "sebab_np1": 2,
+   "sebab_np2": 0,
+   "sebab_lebih10": 0,
+   "sebab_turut": 0
+  },
+  "3509": {
+   "sama": 1784,
+   "beda": 5,
+   "dijelaskan": 5,
+   "tak_dijelaskan": [],
+   "sebab_np1": 0,
+   "sebab_np2": 5,
+   "sebab_lebih10": 3,
+   "sebab_turut": 3
+  },
+  "3511": {
+   "sama": 1788,
+   "beda": 1,
+   "dijelaskan": 1,
+   "tak_dijelaskan": [],
+   "sebab_np1": 1,
+   "sebab_np2": 0,
+   "sebab_lebih10": 0,
+   "sebab_turut": 0
+  },
+  "3512": {
+   "sama": 1784,
+   "beda": 5,
+   "dijelaskan": 5,
+   "tak_dijelaskan": [],
+   "sebab_np1": 0,
+   "sebab_np2": 5,
+   "sebab_lebih10": 3,
+   "sebab_turut": 3
+  },
+  "3513": {
+   "sama": 1780,
+   "beda": 9,
+   "dijelaskan": 9,
+   "tak_dijelaskan": [],
+   "sebab_np1": 9,
+   "sebab_np2": 0,
+   "sebab_lebih10": 0,
+   "sebab_turut": 0
+  },
+  "3514": {
+   "sama": 1777,
+   "beda": 12,
+   "dijelaskan": 12,
+   "tak_dijelaskan": [],
+   "sebab_np1": 0,
+   "sebab_np2": 12,
+   "sebab_lebih10": 3,
+   "sebab_turut": 4
+  },
+  "3515": {
+   "sama": 1780,
+   "beda": 9,
+   "dijelaskan": 9,
+   "tak_dijelaskan": [],
+   "sebab_np1": 9,
+   "sebab_np2": 0,
+   "sebab_lebih10": 0,
+   "sebab_turut": 0
+  },
+  "3516": {
+   "sama": 1777,
+   "beda": 12,
+   "dijelaskan": 12,
+   "tak_dijelaskan": [],
+   "sebab_np1": 0,
+   "sebab_np2": 12,
+   "sebab_lebih10": 3,
+   "sebab_turut": 4
+  },
+  "7036": {
+   "sama": 1786,
+   "beda": 3,
+   "dijelaskan": 3,
+   "tak_dijelaskan": [],
+   "sebab_np1": 3,
+   "sebab_np2": 0,
+   "sebab_lebih10": 0,
+   "sebab_turut": 0
+  },
+  "7037": {
+   "sama": 1782,
+   "beda": 7,
+   "dijelaskan": 7,
+   "tak_dijelaskan": [],
+   "sebab_np1": 0,
+   "sebab_np2": 7,
+   "sebab_lebih10": 1,
+   "sebab_turut": 1
+  },
+  "7047": {
+   "sama": 1780,
+   "beda": 9,
+   "dijelaskan": 9,
+   "tak_dijelaskan": [],
+   "sebab_np1": 9,
+   "sebab_np2": 0,
+   "sebab_lebih10": 0,
+   "sebab_turut": 0
+  },
+  "7048": {
+   "sama": 1777,
+   "beda": 12,
+   "dijelaskan": 12,
+   "tak_dijelaskan": [],
+   "sebab_np1": 0,
+   "sebab_np2": 12,
+   "sebab_lebih10": 3,
+   "sebab_turut": 4
+  },
+  "7054": {
+   "sama": 1789,
+   "beda": 0,
+   "dijelaskan": 0,
+   "tak_dijelaskan": [],
+   "sebab_np1": 0,
+   "sebab_np2": 0,
+   "sebab_lebih10": 0,
+   "sebab_turut": 0
+  },
+  "7055": {
+   "sama": 1789,
+   "beda": 0,
+   "dijelaskan": 0,
+   "tak_dijelaskan": [],
+   "sebab_np1": 0,
+   "sebab_np2": 0,
+   "sebab_lebih10": 0,
+   "sebab_turut": 0
+  },
+  "7097": {
+   "sama": 1780,
+   "beda": 9,
+   "dijelaskan": 9,
+   "tak_dijelaskan": [],
+   "sebab_np1": 9,
+   "sebab_np2": 0,
+   "sebab_lebih10": 0,
+   "sebab_turut": 0
+  },
+  "7098": {
+   "sama": 1777,
+   "beda": 12,
+   "dijelaskan": 12,
+   "tak_dijelaskan": [],
+   "sebab_np1": 0,
+   "sebab_np2": 12,
+   "sebab_lebih10": 3,
+   "sebab_turut": 4
+  },
+  "7148": {
+   "sama": 1776,
+   "beda": 13,
+   "dijelaskan": 13,
+   "tak_dijelaskan": [],
+   "sebab_np1": 6,
+   "sebab_np2": 3,
+   "sebab_lebih10": 7,
+   "sebab_turut": 3
+  },
+  "7149": {
+   "sama": 1784,
+   "beda": 5,
+   "dijelaskan": 5,
+   "tak_dijelaskan": [],
+   "sebab_np1": 0,
+   "sebab_np2": 5,
+   "sebab_lebih10": 2,
+   "sebab_turut": 3
+  },
+  "7151": {
+   "sama": 1776,
+   "beda": 13,
+   "dijelaskan": 13,
+   "tak_dijelaskan": [],
+   "sebab_np1": 6,
+   "sebab_np2": 3,
+   "sebab_lebih10": 7,
+   "sebab_turut": 3
+  },
+  "7152": {
+   "sama": 1777,
+   "beda": 12,
+   "dijelaskan": 12,
+   "tak_dijelaskan": [],
+   "sebab_np1": 0,
+   "sebab_np2": 6,
+   "sebab_lebih10": 3,
+   "sebab_turut": 10
+  },
+  "8516": {
+   "sama": 1769,
+   "beda": 20,
+   "dijelaskan": 20,
+   "tak_dijelaskan": [],
+   "sebab_np1": 6,
+   "sebab_np2": 5,
+   "sebab_lebih10": 7,
+   "sebab_turut": 8
+  },
+  "8710": {
+   "sama": 1789,
+   "beda": 0,
+   "dijelaskan": 0,
+   "tak_dijelaskan": [],
+   "sebab_np1": 0,
+   "sebab_np2": 0,
+   "sebab_lebih10": 0,
+   "sebab_turut": 0
+  }
+ },
+ "total": 1789,
+ "galat": 0,
+ "himpunan": {
+  "nonrapat_P": 9,
+  "nonrapat_T": 12,
+  "lebih10_P": 7,
+  "lebih10_T": 0,
+  "turut": 10,
+  "interv": 0
+ }
+}

@@ -1,0 +1,16 @@
+929a510b6dd0097e588059220cc5d521  abt-pihak-urut-ecourt-27okt-FUNGSI-X9-LAMA.sql
+cb105263ebff13f481f086f33bc6c0b1  abt-pihak-urut-ecourt-27okt-FUNGSI.sql
+d8fe249c7eecd8297e597b6cea4f770e  abt-pihak-urut-ecourt-27okt-PASANG.sql
+7de3490c0e7c682aecb47bd4333ab429  abt-pihak-urut-ecourt-27okt-PERIKSA.sql
+c1fbf368fdd74085efa36cbc16975d2c  abt-pihak-urut-ecourt-27okt-PRASYARAT.sql
+6eb4dd927bcf696aee36bc1c2ec039a1  abt-pihak-urut-ecourt-27okt-PULIH.sql
+ca90375d44905fc919b16e72608b3812  harap.txt
+05441ee7d7f69aa7f6043f204960513b  nama-fungsi.txt
+bce22d1db31ac17a4117977752085162  nomor-baru.txt
+b8fd36dab59ec2d67c1989558b1487dc  nomor-ubah.txt
+e0a914e6ec1296bcd31b55ec89e4528a  pasang-satker.sh
+ecd36372e1c90d276e11ddf468ce7279  perkara-uji.txt
+2171f81f2a2a900f206d067decfdf1bb  pulih-satker.sh
+c44349d0925b442d27bb8d18bc5e34c5  rtf-daftar-tambal.tsv
+0a55d5d68e88495abddf78d85a259906  rtf-tambal.tsv
+b2e864207e5103a09f789f74ccb28f52  tambal-rtf.pl

@@ -155,8 +155,8 @@ describe("keempat salinan menjawab sama atas tabel yang sama", () => {
 });
 
 describe("pihak jamak dan urutan dari satu tempat", () => {
-  it("romawi 1..20 lalu angka biasa", () => {
-    expect([1, 2, 3, 4, 9, 10, 14, 19, 20, 21].map(urutanRomawi)).toEqual(["I", "II", "III", "IV", "IX", "X", "XIV", "XIX", "XX", "21"]);
+  it("romawi 1..3999 untuk semua pihak (27 Okt 2026: dulu angka biasa sesudah XX)", () => {
+    expect([1, 2, 3, 4, 9, 10, 14, 19, 20, 21, 25, 40].map(urutanRomawi)).toEqual(["I", "II", "III", "IV", "IX", "X", "XIV", "XIX", "XX", "XXI", "XXV", "XL"]);
   });
 
   it("para / berurut / daftar: seorang tetap tanpa angka, lebih dari seorang berurut", () => {

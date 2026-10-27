@@ -1,0 +1,236 @@
+{
+ "baru": [
+  {
+   "no": 3520,
+   "nama": "PIHAK: SEBUTAN TURUT #0047# UNTUK KAKI PUTUSAN (OTOMATIS dari SIPP perkara_pihak4: Turut Tergugat I dan Turut Tergugat II; kosong bila tidak ada)",
+   "sql": "SELECT aps_badilag.isian_rtf_pihak_sebut(#perkara_id#, 4) AS data"
+  },
+  {
+   "no": 3521,
+   "nama": "PIHAK: SEBUTAN PIHAK INTERVENSI UNTUK KAKI PUTUSAN (OTOMATIS dari SIPP perkara_pihak3; kosong bila tidak ada)",
+   "sql": "SELECT aps_badilag.isian_rtf_pihak_sebut(#perkara_id#, 3) AS data"
+  },
+  {
+   "no": 3522,
+   "nama": "KAKI PUTUSAN NO PIHAK TIDAK HADIR (OTOMATIS: kehadiran tetap \"di luar hadirnya #0046# dan #0047#\", jamak menurut jumlah pihak, Turut Tergugat ikut, kalimat e-Court)",
+   "sql": "SELECT CONCAT(\"di luar hadirnya \", \"#7036#\", IF(EXISTS (SELECT 1 FROM perkara_pihak2 WHERE perkara_id = '#perkara_id#'), CONCAT(\" dan \", \"#7037#\"), \"\"), IF(\"#3520#\" = \"\", \"\", \" serta #3520#\"), IF(EXISTS (SELECT 1 FROM perkara_efiling_id f WHERE f.perkara_id = '#perkara_id#' AND f.efiling_id <> ''), \", dan #0194# tersebut telah dikirim secara elektronik melalui sistem informasi pengadilan pada hari itu juga.\", \".\")) AS data"
+  },
+  {
+   "no": 3523,
+   "nama": "2. KAKI PUTUSAN MAJELIS ATAU TUNGGAL - NO PIHAK TIDAK HADIR (salinan 8502; kehadiran tetap, bukan yang tercatat)",
+   "sql": "SELECT \r\n  (CASE \r\n    WHEN MIN(p.jabatan_hakim_id) = 1 AND per.jenis_perkara_id IN (360, 362) \r\n      THEN \"oleh <strong>#8550#</strong> sebagai #8555#, <strong>#8551#</strong> dan <strong>#8552#</strong>, masing-masing sebagai Hakim Anggota, #0194# tersebut diucapkan dalam sidang terbuka untuk umum pada hari itu oleh #8555# tersebut didampingi para Hakim Anggota tersebut, dibantu oleh <strong>#8553#</strong> sebagai #8556#, #3522#\"\r\n    WHEN MIN(p.jabatan_hakim_id) = 3 AND per.jenis_perkara_id IN (360, 362) \r\n      THEN \"oleh <strong>#8550#</strong> sebagai #8555#, #0194# tersebut diucapkan dalam sidang terbuka untuk umum pada hari itu oleh #8555# tersebut, dibantu oleh <strong>#8553#</strong> sebagai #8556#, #3522#\" \r\n    ELSE \r\n      CASE \r\n        WHEN MIN(p.jabatan_hakim_id) = 1 \r\n          THEN \"oleh <strong>#8550#</strong> sebagai #8555#, <strong>#8551#</strong> dan <strong>#8552#</strong>, masing-masing sebagai Hakim Anggota, #0194# tersebut diucapkan dalam sidang terbuka untuk umum pada hari itu oleh #8555# tersebut didampingi para Hakim Anggota tersebut, dibantu oleh <strong>#8553#</strong> sebagai #8556#, #3522#\"\r\n        WHEN MIN(p.jabatan_hakim_id) = 3 \r\n          THEN \"oleh <strong>#8550#</strong> sebagai #8555#, #0194# tersebut diucapkan dalam sidang terbuka untuk umum pada hari itu oleh #8555# tersebut, dibantu oleh <strong>#8553#</strong> sebagai #8556#, #3522#\" \r\n        ELSE NULL \r\n      END\r\n  END) AS data \r\nFROM \r\n  perkara_hakim_pn p\r\nJOIN\r\n  perkara per ON p.perkara_id = per.perkara_id\r\nWHERE \r\n  p.perkara_id = '#perkara_id#' AND p.id = (SELECT x.id  FROM perkara_hakim_pn x  JOIN (SELECT CASE WHEN EXISTS (SELECT 1 FROM perkara_hakim_pn y WHERE y.perkara_id = '#perkara_id#' AND y.tahapan_id <> 18 AND (y.tanggal_penetapan > '1000-01-01' AND y.tanggal_penetapan <= (SELECT MAX(pu.tanggal_putusan) FROM perkara_putusan pu WHERE pu.perkara_id = '#perkara_id#' AND pu.tanggal_putusan > '1000-01-01') AND (y.aktif = 'Y' OR IFNULL(y.tanggal_tidak_aktif > '1000-01-01', 0) = 0 OR y.tanggal_tidak_aktif >= (SELECT MAX(pu.tanggal_putusan) FROM perkara_putusan pu WHERE pu.perkara_id = '#perkara_id#' AND pu.tanggal_putusan > '1000-01-01')))) THEN 1 WHEN EXISTS (SELECT 1 FROM perkara_hakim_pn y WHERE y.perkara_id = '#perkara_id#' AND y.tahapan_id <> 18 AND y.aktif = 'Y') THEN 2 ELSE 3 END AS mode, (SELECT MAX(pu.tanggal_putusan) FROM perkara_putusan pu WHERE pu.perkara_id = '#perkara_id#' AND pu.tanggal_putusan > '1000-01-01') AS putus) m\r\nWHERE x.perkara_id = '#perkara_id#' AND x.tahapan_id <> 18 AND x.urutan = 1\r\n  AND CASE m.mode WHEN 1 THEN (x.tanggal_penetapan > '1000-01-01' AND x.tanggal_penetapan <= m.putus AND (x.aktif = 'Y' OR IFNULL(x.tanggal_tidak_aktif > '1000-01-01', 0) = 0 OR x.tanggal_tidak_aktif >= m.putus)) WHEN 2 THEN x.aktif = 'Y' ELSE 1 END\r\nORDER BY IF(m.mode = 3, IFNULL(x.tanggal_tidak_aktif > '1000-01-01', 0), 0), x.tanggal_penetapan DESC, x.id DESC LIMIT 1);"
+  }
+ ],
+ "ubah": [
+  {
+   "no": 7036,
+   "ket": "7036: penyebutan Pemohon/Penggugat atau para ... menurut JUMLAH pihak (bukan nilai urutan terbesar)",
+   "lama_md5": "c0380bf9e8b0a7ccec6f67f668d9382a",
+   "baru_md5": "b8329170fe7fdb6c5874793dd071b438",
+   "lama_panjang": 1046,
+   "baru_panjang": 1039
+  },
+  {
+   "no": 7037,
+   "ket": "7037: penyebutan Termohon/Tergugat atau para ... menurut JUMLAH pihak (bukan nilai urutan terbesar)",
+   "lama_md5": "0b20d4ed57ebf8b2f3552f180ca8e2eb",
+   "baru_md5": "cd7eec3799be23a6240c0ff79a0f9ff6",
+   "lama_panjang": 1048,
+   "baru_panjang": 1041
+  },
+  {
+   "no": 7047,
+   "ket": "7047: identitas Pemohon/Penggugat; urutan tidak rapat -> fungsi menurut peringkat",
+   "lama_md5": "0deae543c1fbd80308bf6a0017904058",
+   "baru_md5": "f548b43be1206974a88aa1cd84b66822",
+   "lama_panjang": 9927,
+   "baru_panjang": 10344
+  },
+  {
+   "no": 7048,
+   "ket": "7048: identitas Termohon/Tergugat; urutan tidak rapat -> fungsi menurut peringkat",
+   "lama_md5": "6882e0f3b8e4d126c64da22ef44dfc26",
+   "baru_md5": "485001ad3b68a7ab053d8e875ca001c4",
+   "lama_panjang": 11778,
+   "baru_panjang": 12214
+  },
+  {
+   "no": 7097,
+   "ket": "7097: nama Pemohon/Penggugat; urutan tidak rapat -> fungsi menurut peringkat",
+   "lama_md5": "34861e8bbe329026885e141001b2eaa5",
+   "baru_md5": "813c45f63d3901ec0e111a805cf9fe1b",
+   "lama_panjang": 5060,
+   "baru_panjang": 5264
+  },
+  {
+   "no": 7098,
+   "ket": "7098: nama Termohon/Tergugat; urutan tidak rapat -> fungsi menurut peringkat",
+   "lama_md5": "063178271c53178f36fdb8dbb7979c67",
+   "baru_md5": "ee3eaf5a192a8f761a117251efda901d",
+   "lama_panjang": 4630,
+   "baru_panjang": 4853
+  },
+  {
+   "no": 7148,
+   "ket": "7148: pihak P di kaki putusan, romawi untuk semua, peringkat",
+   "lama_md5": "c0006c09c1282242e82574f2d3add37b",
+   "baru_md5": "4e6ec49f488b15c16bdee4843746920d",
+   "lama_panjang": 2785,
+   "baru_panjang": 64
+  },
+  {
+   "no": 7149,
+   "ket": "7149: pihak T di kaki putusan, romawi untuk semua, peringkat",
+   "lama_md5": "9680dca47614c3e9f48897699043c039",
+   "baru_md5": "838d56ebef8a83cf18852eae40734a3e",
+   "lama_panjang": 2786,
+   "baru_panjang": 64
+  },
+  {
+   "no": 7152,
+   "ket": "7152: pihak T di kaki + kuasa + Turut Tergugat",
+   "lama_md5": "b45e0cf29db28f2eb99f09e0e767d2a1",
+   "baru_md5": "52fdf197751105d9d8e547f49d00d2ae",
+   "lama_panjang": 197,
+   "baru_panjang": 245
+  },
+  {
+   "no": 8516,
+   "ket": "8516: kehadiran di kaki putusan + pihak intervensi bila hadir",
+   "lama_md5": "fbe3a0c056a7b900e1da87f5cf4cde3b",
+   "baru_md5": "3abaa6f3d51f12b12ed94ea44bb331dd",
+   "lama_panjang": 2898,
+   "baru_panjang": 3335
+  }
+ ],
+ "fungsi_baru": {
+  "isian_rtf_pihak_jumlah": "8984f41d70223c83bc6af72dd8f40a74",
+  "isian_rtf_pihak_identitas": "4ee30bc89c1585852bafc1ddf67ff4c2",
+  "isian_rtf_pihak_nama_semua": "b777c5c59eb9b85066e107b51d897288",
+  "isian_rtf_pihak_kaki": "a467210c95e365d59e920e187510a1e6",
+  "isian_rtf_pihak_sebut": "88aa93cdbe6f4e6afdefd62d50d07d3a"
+ },
+ "fungsi_x9": {
+  "isian_rtf_pihak_utama": {
+   "lama_md5": "e6db71447cbaa3e0c28e64d1b7f7f7d1",
+   "baru_md5": "d2fa4361de6fb016c488aad0fc8a1793"
+  },
+  "isian_rtf_pihak_nama": {
+   "lama_md5": "51169c9cbcb2e814307c4450492ab630",
+   "baru_md5": "72f3dcd1746a45a2b4c0e399dc044ee4"
+  },
+  "isian_rtf_pihak_urutan": {
+   "lama_md5": "395dd431c34308c08395c9a8dcf3ea9b",
+   "baru_md5": "8f201d025843668a5f3daac33fa4bb66"
+  },
+  "isian_rtf_pihak_tambahan": {
+   "lama_md5": "4f5f64c4cc80fcfc1280cd7de21a6718",
+   "baru_md5": "9cf2a80618cfee32d3b096c4b1c83dc8"
+  }
+ },
+ "rtf_berkas": 382,
+ "rtf_kaki_no": 38,
+ "rtf_tambah_8710": 285,
+ "rtf_tambah_7054": 425,
+ "dependensi": [
+  10,
+  11,
+  20,
+  21,
+  24,
+  46,
+  47,
+  98,
+  100,
+  101,
+  102,
+  103,
+  104,
+  105,
+  124,
+  194,
+  335,
+  336,
+  337,
+  341,
+  342,
+  343,
+  345,
+  346,
+  347,
+  1033,
+  1035,
+  1036,
+  1176,
+  3111,
+  3112,
+  3113,
+  3114,
+  3115,
+  3117,
+  3118,
+  3119,
+  3121,
+  3122,
+  3123,
+  3124,
+  3125,
+  3127,
+  3128,
+  3129,
+  3131,
+  3507,
+  3508,
+  3509,
+  3510,
+  3511,
+  3512,
+  5019,
+  5026,
+  5028,
+  5029,
+  5078,
+  5079,
+  5080,
+  5081,
+  5083,
+  5084,
+  5085,
+  5086,
+  5087,
+  5088,
+  5089,
+  5090,
+  5091,
+  5092,
+  5093,
+  5094,
+  5095,
+  5096,
+  5097,
+  5098,
+  5099,
+  5102,
+  5103,
+  5104,
+  5106,
+  5107,
+  5117,
+  5118,
+  7036,
+  7037,
+  7149,
+  7151,
+  7152,
+  8540,
+  8541,
+  8550,
+  8551,
+  8552,
+  8553,
+  8555,
+  8556
+ ],
+ "harap": "0|0|10|0|0|97|0|4|0",
+ "ulang": "0|4|0|10|5|97|0|0|4"
+}

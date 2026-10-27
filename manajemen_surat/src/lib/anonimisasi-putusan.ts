@@ -101,7 +101,21 @@ export type HasilAnonimTeks = {
 };
 
 const ROMAWI = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX"];
-export const romawi = (n: number) => ROMAWI[n - 1] ?? String(n);
+const TABEL_ROMAWI: ReadonlyArray<readonly [number, string]> = [[1000, "M"], [900, "CM"], [500, "D"], [400, "CD"], [100, "C"], [90, "XC"], [50, "L"], [40, "XL"], [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"]];
+/** Angka Romawi 1..3999 untuk semua pihak (27 Okt 2026; dulu berhenti di XX lalu angka Arab). */
+export const romawi = (n: number): string => {
+  if (!Number.isFinite(n) || n < 1 || n > 3999) return String(n);
+  if (n <= ROMAWI.length) return ROMAWI[n - 1];
+  let sisa = Math.floor(n);
+  let hasil = "";
+  for (const [nilai, huruf] of TABEL_ROMAWI) {
+    while (sisa >= nilai) {
+      hasil += huruf;
+      sisa -= nilai;
+    }
+  }
+  return hasil;
+};
 
 const HURUF = "\\p{L}\\p{N}";
 /** Satu kata nama: berawal huruf besar ("Muh.", "La", "MELKI", "A."). */
