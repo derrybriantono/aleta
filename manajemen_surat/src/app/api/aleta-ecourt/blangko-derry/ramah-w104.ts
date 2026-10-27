@@ -155,21 +155,6 @@ export const RAMAH_W104: Record<string, RamahW104> = {
   "9710": { nm: "Alasan anak belum mempunyai akta kelahiran (satu kalimat tanpa titik akhir)" },
 };
 
-/**
- * Isian yang tidak mungkin terisi otomatis (penilaian majelis atau fakta persidangan yang tidak dicatat SIPP):
- * ditandai "diisi manual" beserta alasannya (aturan yang sama dengan isian-metadata.ts).
- */
-export const ISIAN_MANUAL_W104: Record<string, string> = {
-  "9207": "Pokok keterangan wali nasab diucapkan di persidangan; tidak tercatat di SIPP maupun posita.",
-  "9208": "Pertimbangan bahwa keengganan wali beralasan hukum adalah penilaian majelis; diisi hakim.",
-  "8616": "Pengakuan Pemohon atas cacat permohonan disampaikan di persidangan; tidak tercatat di SIPP.",
-  "8617": "Uraian cacat formil permohonan adalah penilaian majelis; diisi hakim.",
-  "9165": "Lokasi pemeriksaan setempat ditentukan majelis; isi dari penetapan atau berita acara.",
-  "9166": "Aparat desa yang mendampingi pemeriksaan setempat dicatat saat di lokasi; tidak ada di SIPP.",
-  "9167": "Hasil pemeriksaan setempat dicatat saat di lokasi; tidak ada di SIPP.",
-  "9168": "Tanggapan para pihak di lokasi dicatat saat pemeriksaan setempat; tidak ada di SIPP.",
-};
-
 type Dasar = Record<string, { nm: string; pil?: string[]; saran?: string; opsi?: Array<{ nilai: string; label: string }> }>;
 
 /**

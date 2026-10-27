@@ -18,12 +18,10 @@
 
 import { ISIAN_MANUAL, ISIAN_OPSIONAL } from "./isian-metadata";
 import { ISIAN_MANUAL_W3B, ISIAN_OPSIONAL_W3B, RAMAH_W3B } from "./ramah-w3b";
-import { gabungRamahW104, ISIAN_MANUAL_W104 } from "./ramah-w104";
+import { gabungRamahW104 } from "./ramah-w104";
 
 // W3b 21 Okt: isian manual / opsional blangko Derry baru gelombang 3 (dibangkitkan ke ramah-w3b.ts) digabung ke tabel metadata bersama.
 Object.assign(ISIAN_MANUAL, ISIAN_MANUAL_W3B);
-// 27 Okt (w104): isian "diisi manual" perkara selain cerai (pemeriksaan setempat, cacat formil, keterangan wali).
-for (const [k, v] of Object.entries(ISIAN_MANUAL_W104)) if (!ISIAN_MANUAL[k]) ISIAN_MANUAL[k] = v;
 Object.assign(ISIAN_OPSIONAL, ISIAN_OPSIONAL_W3B);
 
 export type Definisi = { kode: string; nama: string; jenis: string; sql: string; bawaan: string };

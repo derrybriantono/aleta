@@ -202,6 +202,15 @@ export const ISIAN_MANUAL: Record<string, string> = {
   "3790": "Nama dan jabatan atau hubungan pihak yang dipanggil untuk didengar (pejabat pencatat nikah, orang tua, wali) tidak tercatat di SIPP; ketik dari surat atau berkas perkara.",
   "3791": "Tempat kediaman atau alamat kantor pihak yang dipanggil untuk didengar tidak tercatat di SIPP; ketik dari surat atau berkas perkara.",
   /* === AKHIR W3a === */
+  // 27 Okt (w104): perkara selain cerai - fakta persidangan / penilaian majelis yang tidak ada di SIPP maupun posita.
+  "9207": "Pokok keterangan wali nasab diucapkan di persidangan; tidak tercatat di SIPP maupun posita.",
+  "9208": "Pertimbangan bahwa keengganan wali beralasan hukum adalah penilaian majelis; diisi hakim.",
+  "8616": "Pengakuan Pemohon atas cacat permohonan disampaikan di persidangan; tidak tercatat di SIPP.",
+  "8617": "Uraian cacat formil permohonan adalah penilaian majelis; diisi hakim.",
+  "9165": "Lokasi pemeriksaan setempat ditentukan majelis; isi dari penetapan atau berita acara.",
+  "9166": "Aparat desa yang mendampingi pemeriksaan setempat dicatat saat di lokasi; tidak ada di SIPP.",
+  "9167": "Hasil pemeriksaan setempat dicatat saat di lokasi; tidak ada di SIPP.",
+  "9168": "Tanggapan para pihak di lokasi dicatat saat pemeriksaan setempat; tidak ada di SIPP.",
 };
 
 export const ISIAN_OPSIONAL: Record<string, string> = {
