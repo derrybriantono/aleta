@@ -57,6 +57,16 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.50",
+    dirilis: "2026-10-27T17:58:00+08:00",
+    judul: "Unggah BAS terjadwal dan tundaan terjadwal",
+    butir: [
+      "Unggah BAS terjadwal: Panitera Pengganti, Panitera, Panitera Muda, Analis, Admin, dan Super Admin dapat menyeret banyak berkas BAS (per perkara atau per tanggal sidang), memasangkannya ke sidang menurut nomor perkara, lalu memilih jam. Server mengunggah e-Doc BAS satu per satu pada jam kerja dengan jeda yang wajar; e-Doc yang sudah ada hanya diganti bila dicentang.",
+      "Tundaan terjadwal: penundaan sidang (tanggal, jam, agenda, alasan) dapat disiapkan untuk satu atau banyak sidang lalu dijadwalkan ditulis pada jam tertentu di hari sidang itu. Isian diperiksa saat dijadwalkan; tundaan yang terlewat harinya tidak pernah ditulis di hari lain.",
+      "Tombol Jadwalkan BAS dan Jadwalkan Tunda ada di samping Jadwalkan Putusan di SIPP, dan kartu Jadwalkan ada di form Hasil Sidang. Daftar antrean menampilkan status dan hasil, dengan Batal, Jadwal ulang, dan Ulangi.",
+    ],
+  },
+  {
     versi: "1.205.49",
     dirilis: "2026-10-27T16:06:00+08:00",
     judul: "Pihak banyak e-Court dan promosi gratis ALETA Ai",
