@@ -24,6 +24,7 @@ const AKAR = path.resolve(process.cwd(), "../aleta_bot");
 const mesin = require_(path.join(AKAR, "services/deteksi/alasanRincian.js")) as {
   deteksiRincian: (o: { gugatan: string[]; saksi?: { no: number; pihak?: string; butir: string[] }[]; jawab?: { jenis: string; butir: string[] }[]; pihak?: Pihak }) => Rincian;
   pilihanBunyi: (r: Rincian) => Bunyi[];
+  terapkanSisiSaksi: (hasil: unknown, sisi: { saksi1?: string; saksi2?: string }, pihak: Pihak) => boolean;
   polaUntuk: (jenis: string) => unknown;
 };
 const kamus = require_(path.join(AKAR, "services/kamusDeteksi.js")) as {
@@ -41,6 +42,7 @@ const CT: Pihak = { pelaku: "Termohon", lawan: "Pemohon" };
 const rinci = (gugatan: string[], extra: Partial<{ saksi: { no: number; pihak?: string; butir: string[] }[]; jawab: { jenis: string; butir: string[] }[]; pihak: Pihak }> = {}) =>
   mesin.deteksiRincian({ gugatan, pihak: CG, ...extra });
 const baku = (r: Rincian, n = 0) => r.butir[n].bunyi[0].nilai;
+const bas = (...b: string[]) => b.map((x) => `- Bahwa ${x};`).join("\n");
 
 afterEach(() => kamus.lupakan());
 
@@ -175,6 +177,18 @@ describe("saksi menguatkan, jawab-menjawab minor", () => {
     expect(rinci(gugat).butir[0].lencana).toBe("dari gugatan - saksi belum diperiksa");
   });
 
+  it("kedua saksi sepihak ditulis 'kedua saksi Penggugat'; pihak dilengkapi belakangan dari konteks perkara", () => {
+    const sepihak = rinci(gugat, { saksi: [{ no: 1, pihak: "penggugat", butir: ["Bahwa Tergugat sering mabuk."] }, { no: 2, pihak: "penggugat", butir: ["Bahwa Tergugat mabuk-mabukan."] }] });
+    expect(sepihak.butir[0].lencana).toBe("dikuatkan kedua saksi Penggugat");
+
+    // Tanpa pihak: 'saksi 1 dan saksi 2'; sesudah konteks perkara terbaca (tanpa kueri tambahan) menjadi sebutan pihak.
+    const hasil = layanan.dariKeteranganSaksi(bas("Tergugat sering mabuk"), bas("Tergugat mabuk-mabukan"), "", CG, "Bahwa Tergugat sering mabuk-mabukan.", { rincianAlasan: true });
+    const u = hasil.usulan.find((x) => x.kode === "5227")!;
+    expect((u.rincian as { lencana: string }[])[0].lencana).toBe("dikuatkan kedua saksi (saksi 1 dan saksi 2)");
+    mesin.terapkanSisiSaksi(hasil, { saksi1: "penggugat", saksi2: "penggugat" }, CG);
+    expect((u.rincian as { lencana: string }[])[0].lencana).toBe("dikuatkan kedua saksi Penggugat");
+  });
+
   it("sebab yang hanya disebut saksi TIDAK diusulkan (hanya dicatat)", () => {
     const r = rinci(["Bahwa Tergugat sering mabuk-mabukan."], { saksi: [{ no: 1, pihak: "penggugat", butir: ["Bahwa Tergugat memakai narkoba."]}] });
     expect(r.butir.map((b) => b.sebab[0])).toEqual(["mabuk"]);
@@ -196,7 +210,6 @@ describe("saksi menguatkan, jawab-menjawab minor", () => {
 
 describe("integrasi dengan usulan 5227 dan kamus dua lapis", () => {
   const posita = "Bahwa Tergugat malas bekerja sehingga Tergugat kurang memberikan nafkah kepada Penggugat.\nBahwa Tergugat sering mabuk-mabukan dan memukul Penggugat.";
-  const bas = (...b: string[]) => b.map((x) => `- Bahwa ${x};`).join("\n");
   const saksi1 = bas("Tergugat malas bekerja dan kurang memberi nafkah", "Tergugat sering mabuk");
   const saksi2 = bas("Tergugat sering mabuk-mabukan", "Tergugat malas bekerja");
 

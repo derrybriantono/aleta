@@ -421,17 +421,34 @@ function dukungan(item, saksi, petaSaksi, ph) {
   return { diperiksa: periksa.length, mendukung: mendukung.map((s) => ({ no: s.no, pihak: s.pihak || "", nama: namaSaksi(s, ph) })) };
 }
 
-function lencana(d, jawab) {
+/** Pihak saksi menurut sebutan perkara ("" bila tidak diketahui). */
+function sisiSaksi(x, ph) {
+  return x.pihak === "penggugat" ? ph.lawan : x.pihak === "tergugat" ? ph.pelaku : "";
+}
+
+/**
+ * Lencana dukungan saksi yang jujur:
+ *   kedua saksi sepihak   "dikuatkan kedua saksi Penggugat"
+ *   kedua saksi lain pihak "dikuatkan kedua saksi (saksi Penggugat dan saksi Tergugat)"
+ *   satu saksi            "dikuatkan satu saksi (saksi Penggugat)"
+ *   tidak ada             "dari gugatan - belum dikuatkan saksi" / "... saksi belum diperiksa"
+ * @param d {{diperiksa:number, mendukung:Array<{no:number, pihak?:string}>}}
+ */
+function lencana(d, jawab, ph) {
+  const p = ph || pihakDari(null);
   let teks;
   let yakin;
   if (!d.diperiksa) {
     teks = "dari gugatan - saksi belum diperiksa";
     yakin = "ragu";
   } else if (d.mendukung.length >= 2) {
-    teks = `dikuatkan kedua saksi (${d.mendukung.map((x) => x.nama).join(" dan ")})`;
+    const a = sisiSaksi(d.mendukung[0], p);
+    const b = sisiSaksi(d.mendukung[1], p);
+    teks = a && a === b ? `dikuatkan kedua saksi ${a}` : `dikuatkan kedua saksi (${[a ? `saksi ${a}` : `saksi ${d.mendukung[0].no}`, b ? `saksi ${b}` : `saksi ${d.mendukung[1].no}`].join(" dan ")})`;
     yakin = "cukup";
   } else if (d.mendukung.length === 1) {
-    teks = `dikuatkan satu saksi (${d.mendukung[0].nama})`;
+    const a = sisiSaksi(d.mendukung[0], p);
+    teks = `dikuatkan satu saksi (${a ? `saksi ${a}` : `saksi ${d.mendukung[0].no}`})`;
     yakin = "ragu";
   } else {
     teks = "dari gugatan - belum dikuatkan saksi";
@@ -510,7 +527,7 @@ function deteksiRincian(o) {
   hasil.butir = items.map((it, n) => {
     const d = dukungan(it, saksi, petaSaksi, ph);
     const j = jawabPer.get(it.id) || null;
-    const l = lencana(d, j);
+    const l = lencana(d, j, ph);
     const tersirat = it.simpul.some((s) => s.tersirat);
     const kutip = it.kutipan.some(Boolean) || Boolean(it.akibatBebas);
     return {
@@ -602,6 +619,8 @@ function ringkasButir(b) {
     lencana: b.lencana,
     yakin: b.yakin,
     dukungan: b.dukungan.map((x) => x.nama),
+    dukung: b.dukungan.map((x) => ({ no: x.no, pihak: x.pihak })),
+    saksiDiperiksa: b.saksiDiperiksa,
     jawab: b.jawab ? { status: b.jawab.status, jenis: b.jawab.jenis } : null,
     catatan: b.catatan,
     kalimatGugatan: b.kalimatGugatan,
@@ -645,7 +664,7 @@ function terapkan(hasil, rincian) {
     catatan.push("Gugatan hanya menyebut perselisihan; kalimat yang sudah ada dipertahankan.");
   }
   if (rincian.diLuarGugatan.length) {
-    catatan.push(`Disebut saksi tetapi tidak didalilkan di gugatan (tidak diusulkan): ${rincian.diLuarGugatan.map((x) => x.label).join(", ")}.`);
+    catatan.push(`Disebut saksi tetapi tidak didalilkan di gugatan (tidak diusulkan): ${rincian.diLuarGugatan.slice(0, 5).map((x) => x.label).join(", ")}${rincian.diLuarGugatan.length > 5 ? ` dan ${rincian.diLuarGugatan.length - 5} lainnya` : ""}.`);
   }
   u.pilihan = pil;
   u.catatan = [u.catatan, ...catatan].filter(Boolean).join(" ");
@@ -660,12 +679,13 @@ function terapkan(hasil, rincian) {
  */
 function terapkanSisiSaksi(hasil, sisi, pihak) {
   const ph = pihakDari(pihak);
-  const nama = (k) => (k === "penggugat" ? `saksi ${ph.lawan}` : k === "tergugat" ? `saksi ${ph.pelaku}` : "");
-  const tukar = (t) => String(t || "").replace(/saksi ([12])\b/g, (m, n) => nama(sisi && sisi[`saksi${n}`]) || m);
   const garap = (daftar) => {
     for (const b of daftar || []) {
-      b.lencana = tukar(b.lencana);
-      if (Array.isArray(b.dukungan)) b.dukungan = b.dukungan.map(tukar);
+      if (!Array.isArray(b.dukung)) continue;
+      const mendukung = b.dukung.map((x) => ({ no: x.no, pihak: x.pihak || (sisi && sisi[`saksi${x.no}`]) || "" }));
+      b.dukung = mendukung;
+      b.lencana = lencana({ diperiksa: b.saksiDiperiksa || 0, mendukung }, b.jawab, ph).teks;
+      b.dukungan = mendukung.map((x) => (sisiSaksi(x, ph) ? `saksi ${sisiSaksi(x, ph)}` : `saksi ${x.no}`));
     }
   };
   if (hasil.rincianAlasan) garap(hasil.rincianAlasan.butir);
