@@ -42,7 +42,7 @@
       "contohBenar": [
         "wali nikah Pemohon II adalah kakak kandungnya karena ayah kandung Pemohon II telah meninggal dunia;",
         "wali nikah yaitu Ludin (Paman Pemohon II karena Ayah dari Pemohon II telah meninggal dunia) dan yang menikahkan adalah Makin",
-      "wali nikah yaitu Hasan (Paman kandung Pemohon II karena ayah kandung Pemohon II berada jauh sehingga menyerahkannya kepada Paman Pemohon II) dan yang menikahkan adalah Hasan (Paman kandung Pemohon II)"
+        "wali nikah yaitu Hasan (Paman kandung Pemohon II karena ayah kandung Pemohon II berada jauh sehingga menyerahkannya kepada Paman Pemohon II) dan yang menikahkan adalah Hasan (Paman kandung Pemohon II)"
       ],
       "contohSalah": [
         "yang menjadi wali nikah adalah ayah kandung Pemohon II bernama Ludin;"
@@ -588,6 +588,33 @@
         "tanggal": ""
       },
       "catatan": ""
+    },
+    {
+      "kode": "itsbat-tempat-tinggal-setelah-nikah",
+      "label": "Tempat tinggal setelah menikah (\"setelah menikah ... bertempat tinggal di ...\")",
+      "kunci": "1006",
+      "jenis": "fakta",
+      "bentuk": "teks",
+      "regex": "(?:setelah|sesudah)\\s+(?:menikah|pernikahan|akad|perkawinan)[^;]{0,80}?(?:bertempat\\s+tinggal|tinggal|menetap|berdomisili)\\s+(?:bersama\\s+)?(?:di\\s+)?(?<nilai>[^;]{4,260}?)(?=\\s*(?:;|\\.\\s+[A-Z]|\\.\\s*$|$))",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Bahwa setelah menikah Fulan bin Si dan Pemohon bertempat tinggal di rumah bersama di Desa Anu, Kecamatan Itu, Kabupaten Sigi;",
+        "setelah menikah Pemohon dan Siti binti Ali tinggal di rumah orangtua Pemohon di Jalan Lanta, setelah itu Pemohon dengan Siti tinggal di rumah kontrakan;"
+      ],
+      "contohSalah": [
+        "Bahwa Pemohon bertempat tinggal di Desa Anu, Kecamatan Itu",
+        "setelah menikah Pemohon dan Siti hidup rukun"
+      ],
+      "ukur": {
+        "n": 39,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala salinan 27 Okt 2026 (agen w104): jumlah posita yang cocok; belum ada pembanding isian petugas",
+        "tanggal": "2026-10-27"
+      },
+      "catatan": "Itsbat kontensius (alur 15): 40 dari 41 posita memuat kalimat ini. Bunyi isian petugas: rumah orang tua ..., kemudian rumah bersama ..."
     }
   ],
   "templat": [
