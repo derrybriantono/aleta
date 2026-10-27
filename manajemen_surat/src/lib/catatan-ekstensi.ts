@@ -57,6 +57,17 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.47",
+    dirilis: "2026-10-27T12:28:00+08:00",
+    judul: "Cetak lebih cepat, unduhan aman, tanda tangan PDF SALINAN",
+    butir: [
+      "Cetak Blangko ABT by Derry Briantono lebih cepat: naskah dari Pratinjau dipakai ulang, disiapkan di latar saat isian lengkap, dan RTF/PDF/salinan/anonim disusun bersamaan. Saklar baru \"Siapkan naskah cetak di latar\" di Pengaturan ABT.",
+      "Semua unduhan dari panel Cetak (RTF, PDF, PDF SALINAN, PDF anonim) tidak lagi diblokir sebagai unduhan tidak aman; nama berkas tetap.",
+      "PDF SALINAN: majelis hakim dan panitera sidang bertuliskan \"ttd\"; tanda tangan Panitera tepat di atas namanya. Tambah tanda tangan pada PDF biasa ditempatkan di atas nama pemiliknya.",
+      "Pemasangan pembaruan server berhenti dan melapor gagal bila build gagal, tidak lagi dilaporkan berhasil.",
+    ],
+  },
+  {
     versi: "1.205.46",
     dirilis: "2026-10-27T12:07:00+08:00",
     judul: "Keterangan saksi dari sidang sebelumnya terbaca",
