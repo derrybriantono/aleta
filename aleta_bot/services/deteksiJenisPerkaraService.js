@@ -625,8 +625,20 @@ function kalimatPokok(o = {}) {
   const nilai = { pemohon1: sebutan.pemohon1, pemohon2: sebutan.pemohon2, satu: sebutan.satu, dua: sebutan.dua, para };
   for (const [k, f] of Object.entries(fakta)) nilai[k] = f.nilai;
   if (fakta["fakta-tanggal-wafat"]) nilai.tanggalWafat = fakta["fakta-tanggal-wafat"].nilai;
+  // 27 Okt (w104): fakta berkunci "fakta-xxx-yyy" juga tersedia sebagai slot camelCase {xxxYyy} (kata sambung strip tidak lolos \w+).
+  for (const [k, f] of Object.entries(fakta)) {
+    if (!/^fakta-[a-z0-9-]+$/.test(k) || f.nilai === true) continue;
+    const alias = k.slice(6).replace(/-([a-z0-9])/g, (_, h) => h.toUpperCase());
+    if (nilai[alias] === undefined) nilai[alias] = f.nilai;
+  }
   // {wali}: "Ayah Kandung bernama X", atau "X" saja bila hubungan wali tidak terbaca.
   if (fakta["1217"]) nilai.wali = fakta["1046"] ? `${fakta["1046"].nilai} bernama ${fakta["1217"].nilai}` : String(fakta["1217"].nilai);
+  else if (fakta["1046"]) nilai.wali = String(fakta["1046"].nilai);
+  // {wafat}: "X telah meninggal dunia[ pada tanggal ..][ di ..][ karena ..]" dari fakta yang terbaca (perwalian: orang tua anak); "" bila tak satu pun.
+  if (nilai["1025"] || nilai.tanggalWafat || nilai["1509"] || nilai["1247"] || nilai.sebabWafat) {
+    const sebab = nilai["1247"] || nilai.sebabWafat;
+    nilai.wafat = `${nilai["1025"] ? nilai["1025"] : "orang tua anak tersebut"} telah meninggal dunia${nilai.tanggalWafat ? ` pada tanggal ${nilai.tanggalWafat}` : ""}${nilai["1509"] ? ` di ${nilai["1509"]}` : ""}${sebab ? ` karena ${sebab}` : ""}`;
+  }
   const ringkas = isiKurung(t.teks, nilai);
   if (!ringkas) return null;
   // Gaya lengkap: satu butir "- Bahwa ..." per baris; "|" di templat = ganti baris.

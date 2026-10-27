@@ -342,6 +342,28 @@
       },
       "status": "aktif",
       "catatan": "Tanda | = ganti baris."
+    },
+    {
+      "kode": "kewarisan-ringkas-pokok",
+      "label": "Pokok keterangan saksi kewarisan (ringkas)",
+      "gaya": "ringkas",
+      "teks": "pewaris[ {1025}] telah meninggal dunia[ pada tanggal {tanggalWafat}][ di {1509}][ karena {1247}] dalam keadaan beragama Islam dan meninggalkan harta peninggalan yang belum dibagi kepada para ahli warisnya",
+      "syarat": {
+        "jenis": "kewarisan"
+      },
+      "status": "aktif",
+      "catatan": ""
+    },
+    {
+      "kode": "kewarisan-lengkap-pokok",
+      "label": "Pokok keterangan saksi kewarisan (lengkap, per butir)",
+      "gaya": "lengkap",
+      "teks": "- Bahwa pewaris[ {1025}] telah meninggal dunia[ pada tanggal {tanggalWafat}][ di {1509}];|[- Bahwa pewaris meninggal dunia karena {1247};|]- Bahwa pewaris meninggal dunia dalam keadaan beragama Islam;|- Bahwa pewaris meninggalkan harta peninggalan yang belum dibagi kepada para ahli warisnya;",
+      "syarat": {
+        "jenis": "kewarisan"
+      },
+      "status": "aktif",
+      "catatan": "Tanda | = ganti baris."
     }
   ]
 }

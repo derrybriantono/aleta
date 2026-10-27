@@ -8,12 +8,14 @@
       "kunci": "1029",
       "jenis": "fakta",
       "bentuk": "nama",
-      "regex": "(?:calon\\s+suami(?:nya)?|seorang\\s+laki-laki)\\s+(?:Pemohon\\s+)?(?:yang\\s+)?(?:bernama|yaitu|yakni)\\s*:?\\s+(?<nilai>[A-Z][A-Za-z.'’-]*(?:\\s+(?:[A-Z][A-Za-z.'’-]*|bin|binti|alias))*)",
+      "regex": "(?:calon\\s+suami(?:nya)?|seorang\\s+laki-laki)\\s+(?:Pemohon\\s+)?(?:pilihan\\s+)?(?:yang\\s+)?(?:bernama|yaitu|yakni)\\s*:?\\s*;?\\s*(?<nilai>[A-Z][A-Za-z.'’-]*(?:\\s+(?:[A-Z][A-Za-z.'’-]*|bin|binti|alias))*)",
       "flags": "",
       "status": "aktif",
       "yakin": "ragu",
       "contohBenar": [
-        "Pemohon hendak menikah dengan seorang laki-laki bernama Andi bin Rahman, umur 27 tahun"
+        "Pemohon hendak menikah dengan seorang laki-laki bernama Andi bin Rahman, umur 27 tahun",
+        "Pemohon bermaksud akan melangsungkan pernikahan dengan seorang laki-laki pilihan yang bernama : Andi bin Rahman, umur 46 tahun",
+        "Pemohon bermaksud akan melangsungkan pernikahan dengan seorang laki-laki pilihan yang bernama : Andi bin Rahman, umur 46 tahun"
       ],
       "contohSalah": [
         "calon suami Pemohon sudah bekerja"
@@ -25,7 +27,7 @@
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
         "tanggal": "2026-10-11"
       },
-      "catatan": ""
+      "catatan": "27 Okt 2026: kata pilihan di antara laki-laki dan bernama (posita wali adhal sungguhan). 27 Okt 2026: kata pilihan di antara laki-laki dan bernama, dan nama pada baris sendiri (posita wali adhal sungguhan: nama dicetak tebal pada baris baru)."
     },
     {
       "kode": "wali-adhol-umur-calon",
@@ -75,7 +77,8 @@
         "sumber": "sipp_donggala + aps_badilag salinan 9 Okt 10.37 (agen3/ukur-jenis.js)",
         "tanggal": "2026-10-11"
       },
-      "catatan": ""
+      "catatan": "Awalan karena: isian petugas 6087 selalu berawalan karena (27 Okt 2026).",
+      "awalan": "karena "
     },
     {
       "kode": "wali-adhol-status-wali",
@@ -222,6 +225,58 @@
         "tanggal": "2026-10-11"
       },
       "catatan": ""
+    },
+    {
+      "kode": "wali-adhol-kua-menolak",
+      "label": "KUA yang menolak mencatat karena wali enggan",
+      "kunci": "fakta-kua-penolak",
+      "jenis": "fakta",
+      "bentuk": "teks",
+      "regex": "(?:Kantor\\s+Urusan\\s+Agama|KUA)\\s+(?:Kecamatan\\s+)?(?<nilai>[A-Z][A-Za-z]+(?:\\s+[A-Z][A-Za-z]+){0,2})[^;]{0,160}?(?:menolak|penolakan|tidak\\s+dapat\\s+(?:mencatat|melangsungkan))",
+      "flags": "",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Kantor Urusan Agama Kecamatan Banawa menolak mencatat pernikahan karena wali tidak bersedia",
+        "KUA Sindue mengeluarkan surat penolakan karena wali nasab enggan menikahkan"
+      ],
+      "contohSalah": [
+        "Pemohon datang ke kantor desa untuk mengurus surat"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala salinan 27 Okt 2026 (agen w104): jumlah posita yang cocok; belum ada pembanding isian petugas",
+        "tanggal": "2026-10-27"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "wali-adhol-alasan-tidak-direstui",
+      "label": "Alasan wali tidak merestui (tidak mendapatkan restu ... karena ...)",
+      "kunci": "6087",
+      "jenis": "fakta",
+      "bentuk": "teks",
+      "regex": "tidak\\s+(?:mendapat(?:kan)?|memperoleh)\\s+(?:restu|izin|persetujuan)[^;]{0,80}?(?:karena|disebabkan|sebab|dikarenakan)\\s+(?<nilai>[^;]{6,200}?)(?=\\s*(?:;|\\.\\s+[A-Z0-9]|\\.\\s*$|$))",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Bahwa niat Pemohon tidak mendapatkan restu dari pihak wali karena calon suami Pemohon tidak mampu memenuhi syarat uang mahar;"
+      ],
+      "contohSalah": [
+        "Bahwa Pemohon mendapatkan restu dari kedua orang tua;"
+      ],
+      "ukur": {
+        "n": 4,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala salinan 27 Okt 2026 (agen w104): jumlah posita yang cocok; belum ada pembanding isian petugas",
+        "tanggal": "2026-10-27"
+      },
+      "catatan": "Nilai berawalan karena sesuai bunyi isian petugas (6087 dipakai sesudah nama calon suami).",
+      "awalan": "karena "
     }
   ],
   "templat": [
@@ -235,6 +290,28 @@
       },
       "status": "aktif",
       "catatan": ""
+    },
+    {
+      "kode": "wali-adhol-ringkas-pokok",
+      "label": "Pokok keterangan saksi wali adhal (ringkas)",
+      "gaya": "ringkas",
+      "teks": "{satu} hendak menikah[ dengan {1029}][ yang berumur {1030} tahun], namun wali nikahnya[ ({1046})] enggan menikahkan[, {6087}], padahal di antara keduanya tidak terdapat halangan perkawinan",
+      "syarat": {
+        "jenis": "wali-adhol"
+      },
+      "status": "aktif",
+      "catatan": ""
+    },
+    {
+      "kode": "wali-adhol-lengkap-pokok",
+      "label": "Pokok keterangan saksi wali adhal (lengkap, per butir)",
+      "gaya": "lengkap",
+      "teks": "- Bahwa {satu} hendak menikah[ dengan {1029}];|[- Bahwa calon suami berumur {1030} tahun;|][- Bahwa calon suami berstatus {9204};|][- Bahwa wali nikah {satu} adalah {wali};|]- Bahwa wali nikah tersebut enggan menikahkan[, {6087}];|[- Bahwa Kantor Urusan Agama {kuaPenolak} menolak mencatat pernikahan tanpa wali;|]- Bahwa di antara {satu} dan calon suaminya tidak terdapat halangan perkawinan;",
+      "syarat": {
+        "jenis": "wali-adhol"
+      },
+      "status": "aktif",
+      "catatan": "Tanda | = ganti baris."
     }
   ]
 }

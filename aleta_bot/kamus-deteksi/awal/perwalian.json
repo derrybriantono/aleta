@@ -125,6 +125,84 @@
         "tanggal": "2026-10-11"
       },
       "catatan": ""
+    },
+    {
+      "kode": "perwalian-nomor-akta-kematian",
+      "label": "Nomor akta kematian orang tua anak",
+      "kunci": "fakta-nomor-akta-kematian",
+      "jenis": "fakta",
+      "bentuk": "teks",
+      "regex": "(?:Akta|Akte|Surat\\s+Keterangan)\\s+Kematian\\s*(?:Nomor|No\\.?)\\s*:?\\s*(?<nilai>[0-9A-Za-z][0-9A-Za-z./-]{5,40})",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "berdasarkan Kutipan Akta Kematian Nomor : 7203-KM-14042026-0007 yang dikeluarkan oleh Dinas Kependudukan",
+        "sesuai Surat Keterangan Kematian No. 472.12/10-08/KDS/V/2026 dari Kepala Desa"
+      ],
+      "contohSalah": [
+        "Pemohon telah memiliki akta kelahiran anak"
+      ],
+      "ukur": {
+        "n": 35,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala salinan 27 Okt 2026 (agen w104): jumlah posita yang cocok; belum ada pembanding isian petugas",
+        "tanggal": "2026-10-27"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "perwalian-hubungan-anak",
+      "label": "Hubungan anak dengan Pemohon (anak/keponakan/cucu)",
+      "kunci": "fakta-hubungan-anak",
+      "jenis": "fakta",
+      "bentuk": "teks",
+      "regex": "(?:merupakan|adalah|sebagai)\\s+(?<nilai>(?:anak|keponakan|ponakan|cucu|adik|saudara)(?:\\s+(?:kandung|tiri|angkat))?)\\s+(?:dari\\s+)?(?:Pemohon|para\\s+Pemohon)\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Bahwa anak Fulan bin Si merupakan Keponakan Kandung dari Pemohon dan selama ini Pemohon telah merawatnya",
+        "anak tersebut adalah cucu Pemohon"
+      ],
+      "contohSalah": [
+        "Pemohon merupakan Kakak Kandung dari almarhumah"
+      ],
+      "ukur": {
+        "n": 11,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala salinan 27 Okt 2026 (agen w104): jumlah posita yang cocok; belum ada pembanding isian petugas",
+        "tanggal": "2026-10-27"
+      },
+      "catatan": "Hubungan ANAK terhadap Pemohon (bukan Pemohon terhadap almarhum)."
+    },
+    {
+      "kode": "perwalian-anak-wali-atas",
+      "label": "Nama anak yang dimohonkan perwaliannya (\"wali atas/dari ...\")",
+      "kunci": "5110",
+      "jenis": "fakta",
+      "bentuk": "nama",
+      "regex": "[Ww]ali\\s+(?:sah\\s+|yang\\s+sah\\s+)?(?:atas|dari|terhadap|bagi)\\s+(?:seorang\\s+)?(?:anak\\s+)?(?:Pemohon\\s+)?(?:yang\\s+)?(?:bernama\\s*:?\\s+)?(?<nilai>[A-Z][A-Za-z.'’-]*(?:\\s+(?:[A-Z][A-Za-z.'’-]*|bin|binti|alias))*(?:\\s+(?:bin|binti)\\s+[A-Z][A-Za-z.'’-]*(?:\\s+(?:[A-Z][A-Za-z.'’-]*|bin|binti|alias))*)?)",
+      "flags": "",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Pemohon hendak bertindak sebagai wali atas anak Rizal bin Tajang untuk mengurus pencairan dana",
+        "ditetapkan sebagai wali dari seorang anak yang bernama Sari binti Ali"
+      ],
+      "contohSalah": [
+        "Pemohon sebagai wali nikah tidak hadir"
+      ],
+      "ukur": {
+        "n": 28,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala salinan 27 Okt 2026 (agen w104): jumlah posita yang cocok; belum ada pembanding isian petugas",
+        "tanggal": "2026-10-27"
+      },
+      "catatan": "Dipakai bila kalimat \"anak ... bernama\" tidak ada; nama anak berpola bin/binti."
     }
   ],
   "templat": [
@@ -138,6 +216,28 @@
       },
       "status": "aktif",
       "catatan": ""
+    },
+    {
+      "kode": "perwalian-ringkas-pokok",
+      "label": "Pokok keterangan saksi perwalian (ringkas)",
+      "gaya": "ringkas",
+      "teks": "{para} memohon agar ditetapkan sebagai wali atas anak[ bernama {5110}] yang belum dewasa[, sebab {wafat}][, dengan keperluan {8171}]",
+      "syarat": {
+        "jenis": "perwalian"
+      },
+      "status": "aktif",
+      "catatan": ""
+    },
+    {
+      "kode": "perwalian-lengkap-pokok",
+      "label": "Pokok keterangan saksi perwalian (lengkap, per butir)",
+      "gaya": "lengkap",
+      "teks": "- Bahwa {para} memohon agar ditetapkan sebagai wali atas anak[ bernama {5110}];|[- Bahwa anak tersebut merupakan {hubunganAnak} dari {satu};|][- Bahwa {wafat};|]- Bahwa anak tersebut belum dewasa sehingga memerlukan wali untuk mengurus kepentingannya[ yaitu {8171}];",
+      "syarat": {
+        "jenis": "perwalian"
+      },
+      "status": "aktif",
+      "catatan": "Tanda | = ganti baris."
     }
   ]
 }

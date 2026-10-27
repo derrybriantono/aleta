@@ -101,6 +101,31 @@
         "tanggal": ""
       },
       "catatan": ""
+    },
+    {
+      "kode": "poligami-tanggal-nikah",
+      "label": "Tanggal perkawinan Pemohon dan Termohon",
+      "kunci": "fakta-tanggal-nikah",
+      "jenis": "fakta",
+      "bentuk": "tanggal",
+      "regex": "(?:pada\\s+)?tanggal\\s+(?<nilai>\\d{1,2}\\s+[A-Za-z]+\\s+\\d{4})(?=[^;]{0,70}?(?:melangsungkan|melaksanakan)\\s+(?:pernikahan|perkawinan))",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Bahwa pada tanggal 18 Juli 2022, Pemohon dengan Termohon telah melangsungkan pernikahan, yang dicatat oleh Pegawai Pencatat Nikah"
+      ],
+      "contohSalah": [
+        "Bahwa Pemohon hendak menikah lagi pada tanggal 5 Mei 2026 di KUA"
+      ],
+      "ukur": {
+        "n": 2,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala salinan 27 Okt 2026 (agen w104): jumlah posita yang cocok; belum ada pembanding isian petugas",
+        "tanggal": "2026-10-27"
+      },
+      "catatan": ""
     }
   ],
   "templat": [
@@ -114,6 +139,28 @@
       },
       "status": "aktif",
       "catatan": ""
+    },
+    {
+      "kode": "poligami-ringkas-pokok",
+      "label": "Pokok keterangan saksi izin poligami (ringkas)",
+      "gaya": "ringkas",
+      "teks": "{satu} bermaksud menikah lagi (poligami)[ dengan {calonIstri}][, dengan alasan {alasanPoligami}][, dan berpenghasilan {penghasilan} setiap bulan]",
+      "syarat": {
+        "jenis": "izin-poligami"
+      },
+      "status": "aktif",
+      "catatan": ""
+    },
+    {
+      "kode": "poligami-lengkap-pokok",
+      "label": "Pokok keterangan saksi izin poligami (lengkap, per butir)",
+      "gaya": "lengkap",
+      "teks": "- Bahwa {satu} dan {dua} adalah suami istri[ yang menikah pada tanggal {tanggalNikah}];|- Bahwa {satu} bermaksud menikah lagi (poligami)[ dengan {calonIstri}];|[- Bahwa alasan {satu} menikah lagi adalah {alasanPoligami};|][- Bahwa {satu} berpenghasilan {penghasilan} setiap bulan;|]",
+      "syarat": {
+        "jenis": "izin-poligami"
+      },
+      "status": "aktif",
+      "catatan": "Tanda | = ganti baris. Persetujuan istri dan kesanggupan berlaku adil diterangkan saksi sendiri, tidak diisikan otomatis."
     }
   ]
 }

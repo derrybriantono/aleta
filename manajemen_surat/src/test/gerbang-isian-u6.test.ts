@@ -92,6 +92,9 @@ describe("B. berkas gerbang jujur terhadap data ukur", () => {
     baca("UKURAN-GERBANG-G1-TERSTRUKTUR.json"),
   ];
   const timpaU2 = baca("UKURAN-GERBANG-U2.json");
+  // 27 Okt (w104): isian berkosakata tertutup (status sebelum nikah) diukur dengan pembanding MAKNA; menggantikan pembanding teks bila lulus gerbang.
+  const timpaMakna = baca("UKURAN-GERBANG-MAKNA-27OKT.json");
+  const dariMakna = (kode: string, asal: string) => timpaMakna.kode?.[kode]?.asal?.[asal];
   const dariU2 = (kode: string, asal: string) => timpaU2.kode?.[kode]?.asal?.[asal];
   const gabung: Record<string, { kode: string; asal: string; n: number; banding: number; cocok: number; perYakin: Record<string, { n: number }> }> = {};
   for (const m of mentah) {
@@ -115,7 +118,12 @@ describe("B. berkas gerbang jujur terhadap data ukur", () => {
       const e = gerbang.kode[a.kode]?.asal?.[a.asal];
       expect(e, `${a.kode}@${a.asal} hilang`).toBeTruthy();
       const u2 = dariU2(a.kode, a.asal);
-      if (u2 && u2.banding > a.banding) {
+      const mk = dariMakna(a.kode, a.asal);
+      if (mk) {
+        expect([e.status, e.pangkatMaks, e.n, e.banding, e.cocok], `${a.kode}@${a.asal} (ukuran makna)`).toEqual([mk.status, mk.pangkatMaks, mk.n, mk.banding, mk.cocok]);
+        expect(mk.cocok / mk.banding, `${a.kode}@${a.asal} makna harus lulus gerbang`).toBeGreaterThanOrEqual(0.9);
+        expect(mk.banding).toBeGreaterThanOrEqual(20);
+      } else if (u2 && u2.banding > a.banding) {
         // pembanding lebih banyak menang atas pembacaan terstruktur tanpa pembanding
         expect([e.status, e.pangkatMaks, e.n, e.banding, e.cocok], `${a.kode}@${a.asal} (ukuran U2)`).toEqual([u2.status, u2.pangkatMaks, u2.n, u2.banding, u2.cocok]);
       } else {

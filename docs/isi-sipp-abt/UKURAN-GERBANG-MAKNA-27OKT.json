@@ -1,0 +1,103 @@
+{
+ "dibuat": "2026-10-27",
+ "cara": "scripts/isi-sipp-abt/ukur-semantik-27okt.cjs: rute bot /abt/usulan sungguhan atas perkara ber-isian petugas di ABT lokal (itsbat 360, DK 362, perwalian 354, asal usul 358, wali adhal 363); pembanding = GOLONGAN MAKNA (jejaka = perjaka = bujang = lajang, perawan = gadis, duda/janda), bukan teks biasa. Dipakai HANYA untuk isian berkosakata tertutup yang lulus gerbang (banding >= 20, cocok >= 90%); pangkat paling tinggi cukup (pembanding makna lebih longgar dari teks).",
+ "perkara": 746,
+ "kode": {
+  "1002": {
+   "asal": {
+    "posita": {
+     "n": 682,
+     "banding": 678,
+     "cocok": 664,
+     "persen": 97.9,
+     "status": "otomatis",
+     "pangkatMaks": "cukup"
+    }
+   }
+  },
+  "1003": {
+   "asal": {
+    "posita": {
+     "n": 682,
+     "banding": 678,
+     "cocok": 663,
+     "persen": 97.8,
+     "status": "otomatis",
+     "pangkatMaks": "cukup"
+    }
+   }
+  }
+ },
+ "tidakLulus": {
+  "8171@sipp": {
+   "n": 226,
+   "banding": 0,
+   "cocok": 0,
+   "persen": null,
+   "sebab": "pembanding kurang dari 20"
+  },
+  "8171@posita": {
+   "n": 1338,
+   "banding": 886,
+   "cocok": 751,
+   "persen": 84.8,
+   "sebab": "ketepatan makna di bawah 90%"
+  },
+  "2029@sipp": {
+   "n": 44,
+   "banding": 15,
+   "cocok": 14,
+   "persen": 93.3,
+   "sebab": "pembanding kurang dari 20"
+  },
+  "0609@sipp": {
+   "n": 47,
+   "banding": 36,
+   "cocok": 30,
+   "persen": 83.3,
+   "sebab": "ketepatan makna di bawah 90%"
+  },
+  "0610@sipp": {
+   "n": 40,
+   "banding": 27,
+   "cocok": 18,
+   "persen": 66.7,
+   "sebab": "ketepatan makna di bawah 90%"
+  },
+  "2030@sipp": {
+   "n": 47,
+   "banding": 9,
+   "cocok": 9,
+   "persen": 100,
+   "sebab": "pembanding kurang dari 20"
+  },
+  "1002@sipp": {
+   "n": 3,
+   "banding": 3,
+   "cocok": 3,
+   "persen": 100,
+   "sebab": "pembanding kurang dari 20"
+  },
+  "0609@posita": {
+   "n": 3,
+   "banding": 2,
+   "cocok": 2,
+   "persen": 100,
+   "sebab": "pembanding kurang dari 20"
+  },
+  "0603@posita": {
+   "n": 3,
+   "banding": 2,
+   "cocok": 2,
+   "persen": 100,
+   "sebab": "pembanding kurang dari 20"
+  },
+  "0604@posita": {
+   "n": 2,
+   "banding": 2,
+   "cocok": 2,
+   "persen": 100,
+   "sebab": "pembanding kurang dari 20"
+  }
+ }
+}

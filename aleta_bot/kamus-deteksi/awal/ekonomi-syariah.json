@@ -76,6 +76,31 @@
         "tanggal": ""
       },
       "catatan": ""
+    },
+    {
+      "kode": "ekonomi-syariah-jenis-sengketa",
+      "label": "Jenis pembiayaan atau transaksi yang disengketakan",
+      "kunci": "fakta-jenis-sengketa",
+      "jenis": "fakta",
+      "bentuk": "teks",
+      "regex": "(?<nilai>pembiayaan\\s+(?:murabahah|mudh?arabah|musyarakah|ijarah|qardh?)|kredit\\s+pemilikan\\s+rumah\\s+syariah|gadai\\s+syariah|tabungan\\s+syariah|asuransi\\s+syariah|pembiayaan\\s+multiguna)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Bahwa Penggugat dan Tergugat membuat perjanjian pembiayaan murabahah untuk pembelian kendaraan"
+      ],
+      "contohSalah": [
+        "Bahwa Penggugat dan Tergugat berselisih tentang batas tanah"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala salinan 27 Okt 2026 (agen w104): jumlah posita yang cocok; belum ada pembanding isian petugas",
+        "tanggal": "2026-10-27"
+      },
+      "catatan": ""
     }
   ],
   "templat": [
@@ -89,6 +114,28 @@
       },
       "status": "aktif",
       "catatan": ""
+    },
+    {
+      "kode": "ekonomi-syariah-ringkas-pokok",
+      "label": "Pokok keterangan saksi ekonomi syariah (ringkas)",
+      "gaya": "ringkas",
+      "teks": "{satu} dan {dua} membuat akad[ {akad}][ nomor {nomorAkad}], dan {satu} mendalilkan bahwa {dua} tidak memenuhi kewajibannya berdasarkan akad tersebut",
+      "syarat": {
+        "jenis": "ekonomi-syariah"
+      },
+      "status": "aktif",
+      "catatan": ""
+    },
+    {
+      "kode": "ekonomi-syariah-lengkap-pokok",
+      "label": "Pokok keterangan saksi ekonomi syariah (lengkap, per butir)",
+      "gaya": "lengkap",
+      "teks": "- Bahwa {satu} dan {dua} membuat akad[ {akad}][ nomor {nomorAkad}];|[- Bahwa sengketa ini berkaitan dengan {jenisSengketa};|]- Bahwa {satu} mendalilkan {dua} tidak memenuhi kewajibannya berdasarkan akad tersebut;",
+      "syarat": {
+        "jenis": "ekonomi-syariah"
+      },
+      "status": "aktif",
+      "catatan": "Tanda | = ganti baris."
     }
   ]
 }
