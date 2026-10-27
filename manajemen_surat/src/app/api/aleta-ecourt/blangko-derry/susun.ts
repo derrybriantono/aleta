@@ -18,9 +18,12 @@
 
 import { ISIAN_MANUAL, ISIAN_OPSIONAL } from "./isian-metadata";
 import { ISIAN_MANUAL_W3B, ISIAN_OPSIONAL_W3B, RAMAH_W3B } from "./ramah-w3b";
+import { gabungRamahW104, ISIAN_MANUAL_W104 } from "./ramah-w104";
 
 // W3b 21 Okt: isian manual / opsional blangko Derry baru gelombang 3 (dibangkitkan ke ramah-w3b.ts) digabung ke tabel metadata bersama.
 Object.assign(ISIAN_MANUAL, ISIAN_MANUAL_W3B);
+// 27 Okt (w104): isian "diisi manual" perkara selain cerai (pemeriksaan setempat, cacat formil, keterangan wali).
+for (const [k, v] of Object.entries(ISIAN_MANUAL_W104)) if (!ISIAN_MANUAL[k]) ISIAN_MANUAL[k] = v;
 Object.assign(ISIAN_OPSIONAL, ISIAN_OPSIONAL_W3B);
 
 export type Definisi = { kode: string; nama: string; jenis: string; sql: string; bawaan: string };
@@ -693,6 +696,8 @@ const RAMAH: Record<string, { nm: string; pil?: string[]; saran?: string; opsi?:
   "3791": { nm: "Tempat kediaman atau alamat kantor pihak yang dipanggil untuk didengar" },
   /* === AKHIR W3a === */
 };
+// 27 Okt (w104): label bahasa mudah + pilihan isian perkara selain cerai (itsbat, DK, waris, perwalian, wali adhal, HB, poligami, ...).
+gabungRamahW104(RAMAH);
 
 const PEMICU_TEKS: Record<string, string> = {
   "11111": "Penggugat/Pemohon memakai kuasa hukum (terbaca dari SIPP)",
