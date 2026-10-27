@@ -466,3 +466,53 @@ describe("7. Gulir jendela Pilih blangko dan sorot kategori terpilih", () => {
     }
   });
 });
+
+// ============================================================================
+// 27 Okt: yang disarankan (kuning) naik ke atas; Disarankan menyebut kelompok asalnya
+// ============================================================================
+describe("10. Disarankan naik ke atas dan menyebut asalnya (27 Okt)", () => {
+  const sarankan = (h: Halaman, saran: Array<{ berkas: string; kelompok: string; alasan: string }>) =>
+    h.w.aletaBlangkoDerry.pasangRekomendasi((ctx: { nomorPerkara: string }) => (ctx.nomorPerkara === N_CG ? saran.map((s) => ({ ...s, jenis: "put" })) : []));
+
+  it("kelompok bertanda kuning naik tepat di bawah kategori jenis perkara ini, di atas kelompok tanpa saran", async () => {
+    const h = buka({ orang: "admin" });
+    sarankan(h, [{ berkas: B_IN, kelompok: "Itsbat - Putusan", alasan: "uji saran dari kelompok lain" }]);
+    await pilihPerkara(h, N_CG);
+    await bukaModal(h, `.bd-mkanan [data-bl="${B_IN}"]`);
+    // Urutan menu asli: CG, CT, Itsbat. Itsbat memuat saran -> naik di atas CT.
+    expect(idKiri(h)).toEqual(["saran", "k:CG - Putusan", "k:Itsbat - Putusan", "k:CT - Putusan"]);
+    expect(q(h, '[data-kelmodal="k:Itsbat - Putusan"]')!.classList.contains("adasaran")).toBe(true);
+  });
+
+  it("di dalam kelompok, blangko yang disarankan berada paling atas; urutan sisanya tetap", async () => {
+    const lama = HALAMAN.D2;
+    const B_CT_2 = "[02] [Tolak] CT";
+    const B_CT_3 = "[03] [NO] CT";
+    HALAMAN.D2 = HAL_KELOMPOK("Cerai Talak - Putusan", [[B_CT, "A02", "B02"], [B_CT_2, "A12", "B12"], [B_CT_3, "A13", "B13"]]);
+    try {
+      const h = buka({ orang: "admin" });
+      sarankan(h, [{ berkas: B_CT_3, kelompok: "CT - Putusan", alasan: "uji" }]);
+      await pilihPerkara(h, N_CG);
+      await bukaModal(h, `.bd-mkanan [data-bl="${B_CT_3}"]`);
+      klik(h, '.bd-mkiri [data-kelmodal="k:CT - Putusan"]');
+      await sampai(() => berkasKanan(h).length === 3 && berkasKanan(h), "isi CT - Putusan");
+      expect(berkasKanan(h)).toEqual([B_CT_3, B_CT, B_CT_2]);
+    } finally {
+      HALAMAN.D2 = lama;
+    }
+  });
+
+  it("tab Disarankan menyebut kelompok asal tiap saran, dan menekannya membuka kelompok itu", async () => {
+    const h = buka({ orang: "admin" });
+    sarankan(h, [{ berkas: B_IN, kelompok: "Itsbat - Putusan", alasan: "uji asal" }]);
+    await pilihPerkara(h, N_CG);
+    await bukaModal(h, `.bd-mkanan [data-bl="${B_IN}"]`);
+    const asal = await sampai(() => q(h, ".bd-mkanan .bd-alasanrek .bd-asalsaran"), "asal saran");
+    expect(asal.textContent).toMatch(/^di .*Itsbat/);
+    expect(asal.getAttribute("data-kelmodal")).toBe("k:Itsbat - Putusan");
+    expect(q(h, ".bd-mkanan .bd-alasanrek")!.textContent).toContain("uji asal");
+    asal.click();
+    await sampai(() => q(h, '.bd-mkiri [data-kelmodal="k:Itsbat - Putusan"].aktif'), "kelompok asal terbuka");
+    expect(berkasKanan(h)).toEqual([B_IN]);
+  });
+});

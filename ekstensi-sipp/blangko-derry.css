@@ -345,6 +345,11 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar .bd-bl .tanda { color: var(--accent); font-weight: 700; }
 #aleta-bd-akar .bd-lencana { font-size: 10.9px; padding: 1px 7px; border-radius: 99px; border: 1px solid var(--accent); color: var(--accent); }
 #aleta-bd-akar .bd-alasanrek { margin: 0 0 6px 10px; }
+/* Asal saran di tab Disarankan: nama kelompok blangko, dapat diklik untuk membuka kelompok itu. */
+#aleta-bd-akar .bd-asalsaran { all: unset; box-sizing: border-box; display: inline-block; margin: 0 6px 2px 0; padding: 0 8px; border-radius: 99px; border: 1px solid var(--accent); background: var(--okbg); color: var(--accent); font-size: 11.5px; font-weight: 600; line-height: 1.6; }
+#aleta-bd-akar button.bd-asalsaran { cursor: pointer; }
+#aleta-bd-akar button.bd-asalsaran:hover { background: var(--panel2); }
+#aleta-bd-akar button.bd-asalsaran:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 /* pratinjau */
 #aleta-bd-akar .bd-pratbuka { all: unset; box-sizing: border-box; cursor: pointer; width: 100%; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; color: var(--fg); }
 #aleta-bd-akar .bd-pratbuka:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
