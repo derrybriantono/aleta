@@ -32,7 +32,7 @@ import { tentukanAlurBasKumulasi } from "@/lib/alur-bas-kumulasi";
 import { tentukanBasBaru } from "@/lib/alur-bas-baru";
 import { batasEnamBulanIkrar } from "@/lib/ikrar-talak";
 import { keadaanPutusan, type MasukanKeadaanPutusan } from "@/lib/keadaan-putusan";
-import { kunciJenisPerkara, kunciStatusPutusan } from "@/lib/pemetaan-blangko";
+import { STATUS_PUTUSAN_SIPP, kunciJenisPerkara, kunciStatusPutusan } from "@/lib/pemetaan-blangko";
 import { JENIS_PENCEGAHAN_PERKAWINAN, blangkoAmplopPendamping, blangkoRelaas, pihakDipanggil, type BlangkoRelaas, type KeadaanRelaas, type PihakDipanggil } from "@/lib/pohon-blangko";
 import { CERMIN_EKSTENSI } from "@/lib/tipe-keluaran/bawaan/bawaan-ekstensi";
 
@@ -449,6 +449,30 @@ function rekomendasiPutusanSelaSita(m: MasukanRekomendasi, teks: string): Rekome
   ];
 }
 
+/**
+ * 27 Okt: status putusan menurut keterangan sidang ("putus Tidak Dapat Diterima", "putus DIKABULKAN (verstek)", "Panggil T · putus NO")
+ * sebelum status tercatat di SIPP. Hanya kata SESUDAH "putus" yang dibaca; nama status SIPP (terpanjang lebih dulu) atau singkatan lazim.
+ * Kosong bila keterangan tidak menyebut hasil (mis. hanya "putus" atau "musyawarah").
+ */
+export function statusDariKeteranganPutus(teks: string): string {
+  const m = /\bputus(?:an)?\b([^\r\n·]*)/i.exec(String(teks ?? ""));
+  if (!m) return "";
+  const sisa = ` ${kunciStatusPutusan(m[1]).replace(/[^a-z ]/g, " ").replace(/\s+/g, " ")} `;
+  const nama = [...STATUS_PUTUSAN_SIPP].map((x) => x.nama).sort((a, b) => b.length - a.length);
+  for (const n of nama) if (sisa.includes(` ${n.toLowerCase()} `)) return n;
+  const singkat: Array<[RegExp, string]> = [
+    [/ (?:no|n o|niet ontvankelijk) /, "Tidak Dapat Diterima"],
+    [/ (?:kabul|dikabulkan sebagian) /, "Dikabulkan"],
+    [/ tolak /, "Ditolak"],
+    [/ cabut /, "Dicabut"],
+    [/ (?:gugur|digugurkan) /, "Digugurkan"],
+    [/ coret /, "Dicoret dari Register"],
+    [/ damai /, "Perdamaian"],
+  ];
+  for (const [pola, n] of singkat) if (pola.test(sisa)) return n;
+  return "";
+}
+
 export function rekomendasiPutusan(m: MasukanRekomendasi, teks: string): Rekomendasi[] {
   if (m.sidangIkrarTalak === true && kunciJenisPerkara(m.jenisPerkara) === "cerai talak") return rekomendasiPenetapanIkrar(m, teks);
   // I9 17 Okt: putusan sela sita (bukan putusan akhir) - didahulukan; sela di luar konteks sita tetap diperlakukan seperti dulu.
@@ -456,20 +480,32 @@ export function rekomendasiPutusan(m: MasukanRekomendasi, teks: string): Rekomen
   if (sela.length) return sela;
   let status = String(m.statusPutusan ?? "").trim();
   let perkiraan = false;
+  let menurutKeterangan = false;
   if (!status && m.putusanSela === true && /^(?:absolut|relatif)$/i.test(String(m.eksepsiKewenangan ?? ""))) {
     // I19 18 Okt: putusan sela atas eksepsi kewenangan bukan status akhir SIPP - baris petanya berstatus "Putusan Sela".
     status = "Putusan Sela";
   } else if (!status) {
-    // Belum putus: hanya sidang yang agendanya memutus yang diberi blangko, dengan anggapan dikabulkan.
+    // Belum putus: hanya sidang yang agendanya memutus yang diberi blangko.
     if (!/putus|musyawarah|pembacaan\s+(?:putusan|penetapan)/i.test(teks)) return [];
-    status = "Dikabulkan";
-    perkiraan = true;
+    // 27 Okt: keterangan sidang yang sudah menyebut hasilnya ("putus Tidak Dapat Diterima", perkara 591) dipakai sebelum status
+    // tercatat di SIPP; anggapan dikabulkan hanya bila keterangan tidak menyebut hasil.
+    const dariKeterangan = statusDariKeteranganPutus(teks);
+    if (dariKeterangan) {
+      status = dariKeterangan;
+      menurutKeterangan = true;
+    } else {
+      status = "Dikabulkan";
+      perkiraan = true;
+    }
   }
+  // 27 Okt (keputusan pengguna, perkara 591): putusan NO, Penggugat pernah hadir lalu tidak hadir di sidang sebelumnya = SEMA 1/2022,
+  // diucapkan di luar hadirnya Penggugat dan Tergugat walau kehadiran sidang putus tercatat "Penggugat saja" (2).
+  const noSema = kunciStatusPutusan(status) === "tidak dapat diterima" && Number(m.hadirSebelumnya) === 4 && m.penggugatPernahHadir === true && Number(m.dihadiriOleh) === 2;
   const keadaan = keadaanPutusan({
     jenisPerkara: m.jenisPerkara,
     nomorPerkara: m.nomorPerkara,
     verstekPutusan: m.verstekPutusan,
-    dihadiriOleh: m.dihadiriOleh,
+    dihadiriOleh: noSema ? 4 : m.dihadiriOleh,
     panggilan: { hadirSebelumnya: m.hadirSebelumnya, tergugatPernahHadir: m.tergugatPernahHadir, penggugatPernahHadir: m.penggugatPernahHadir },
     mediasi: m.mediasi ?? null,
     mediasiTerbaca: m.mediasiTerbaca,
@@ -519,7 +555,7 @@ export function rekomendasiPutusan(m: MasukanRekomendasi, teks: string): Rekomen
       label: p.baris.berkas,
       alasan:
         `Putusan ${status.toLowerCase()}${p.tingkat === "keadaan" || p.tingkat === "kumulasi-keadaan" ? ` (${p.kunci.split("|")[2].replace(/-/g, " ")})` : p.tingkat.includes("verstek") ? " (verstek)" : ""}` +
-        `${perkiraan ? " - status belum tercatat, diperkirakan dikabulkan" : ""}.`,
+        `${perkiraan ? " - status belum tercatat, diperkirakan dikabulkan" : menurutKeterangan ? " - menurut keterangan sidang, status belum tercatat di SIPP" : ""}.`,
       utama: true,
       perkiraan,
     },

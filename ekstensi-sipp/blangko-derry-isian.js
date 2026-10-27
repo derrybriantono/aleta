@@ -1375,7 +1375,11 @@
       const f = FREK_ALUR[alurDari(k.nama)];
       // 20 Okt: kelompok yang memuat blangko disarankan ikut ditandai (nama menebal berwarna), walau kelompok lain berisi lebih banyak blangko.
       const adaSaran = rekDiJenis.some((r) => r.kelompok === k.nama || (k.berkas || []).some((b) => samaBerkasSaran(b.berkas, r.berkas)));
-      daftar.push({ id: `k:${k.nama}`, nama: k.judul || namaMenuTampil(k.nama), sub: adaSaran ? "ada yang disarankan untuk sidang ini" : f ? `dipakai ${f.toLocaleString("id-ID")} perkara` : k.jumlah ? `${k.jumlah} blangko` : "", adaSaran, berkas: (k.berkas || []).map((b) => ({ ...b, kelompok: k.nama })), memuat: !k.berkas && !k.galat, galat: k.galat || "" });
+      // 27 Okt: blangko yang disarankan naik ke atas daftar kelompoknya (urutan sisanya tetap).
+      const isi = (k.berkas || []).map((b) => ({ ...b, kelompok: k.nama }));
+      const disaranDiSini = isi.filter((b) => rekDiJenis.some((r) => samaBerkasSaran(r.berkas, b.berkas)));
+      const berkas = disaranDiSini.concat(isi.filter((b) => !disaranDiSini.includes(b)));
+      daftar.push({ id: `k:${k.nama}`, nama: k.judul || namaMenuTampil(k.nama), sub: adaSaran ? "ada yang disarankan untuk sidang ini" : f ? `dipakai ${f.toLocaleString("id-ID")} perkara` : k.jumlah ? `${k.jumlah} blangko` : "", adaSaran, berkas, memuat: !k.berkas && !k.galat, galat: k.galat || "" });
     }
     // 22 Okt: kategori yang cocok dengan jenis perkara terpilih (mis. Putusan Itsbat Nikah untuk perkara Istbat Nikah) dipindah ke ATAS,
     // tepat di bawah Disarankan. Kelompok maya Ikrar Talak di bawah ini mengikuti letak menu cerai talak yang baru.
@@ -1389,6 +1393,10 @@
         daftar.splice(daftar.length && daftar[0].saran ? 1 : 0, 0, cocokPerkara);
       }
     }
+    // 27 Okt: kelompok bertanda kuning (memuat blangko disarankan) naik tepat di bawah Disarankan dan kategori jenis perkara ini;
+    // urutan di antara sesamanya dan kelompok lain tidak berubah (sort stabil).
+    const tingkat = (x) => (x.saran ? 0 : x.cocokPerkara ? 1 : x.adaSaran ? 2 : 3);
+    daftar.sort((a, b) => tingkat(a) - tingkat(b));
     // Kelompok maya "Ikrar Talak": tepat di bawah menu cerai talak (atau di bawah Disarankan bila tidak ada), berisi butir dari tiga folder.
     if (ikrar.berkas.length || ikrar.memuat) {
       const disaran = ikrar.berkas.filter((b) => rek.some((r) => samaBerkasSaran(r.berkas, b.berkas)));
@@ -1417,6 +1425,18 @@
       `<span class="kd">${esc(kodeDari(jenis === "put" ? nama : nama.replace(/^BAS ALUR \d\d /, "")))}</span>${lencanaSidang(nama, jenis, false)}<span class="nm">${esc(namaTampil(nama, jenis))}</span>` +
       `${disaran ? `<span class="bd-lencana">disarankan</span>` : ""}${aktif ? `<span class="tanda" aria-label="dipakai sekarang">&#10003;</span>` : ""}</button>`
     );
+  }
+  /**
+   * 27 Okt: di tab Disarankan, tiap saran menyebut kelompok blangko asalnya (mis. "Cerai Gugat Kumulasi Hak Asuh Anak - Putusan");
+   * kelompok itu dapat diklik untuk membukanya.
+   */
+  function asalSaran(b, daftar) {
+    const k = daftar.find((x) => x.id === `k:${b.kelompok}`) || daftar.find((x) => x.ikrar && x.berkas.some((y) => y.berkas === b.berkas && y.kelompok === b.kelompok));
+    const nama = k ? k.nama : namaMenuTampil(b.kelompok || "");
+    if (!nama) return "";
+    return k
+      ? `<button type="button" class="bd-asalsaran" data-kelmodal="${esc(k.id)}" title="Buka kelompok ${esc(nama)}">di ${esc(nama)}</button> `
+      : `<span class="bd-asalsaran">di ${esc(nama)}</span> `;
   }
   /** Satu butir kelompok maya Ikrar Talak: kalimat biasa, bukan nama berkas. */
   function tombolIkrar(b, rek) {
@@ -1468,7 +1488,7 @@
       if (!k) kanan = `<p class="bd-catat">${S.memuatMenu ? "Membaca menu Blangko Derry dari ABT…" : esc(S.galatMenu || "Tidak ada kelompok untuk jenis ini.")}</p>`;
       else if (k.memuat) kanan = `<p class="bd-catat" role="status">Membaca daftar blangko ${esc(k.nama)} dari ABT…</p>`;
       else if (k.galat) kanan = `<p class="bd-peringatan">${esc(k.galat)} <button type="button" class="bd-btn kecil" data-bd2="ulangkel" data-kel="${esc(k.id.replace(/^k:/, ""))}">Coba lagi</button></p>`;
-      else kanan = (k.sub ? `<p class="bd-ksub">${esc(k.nama)} · ${esc(k.sub)}</p>` : "") + (k.saran ? k.berkas.map((b) => `${tombolBlangko(b, S.modal.jenis, rek)}<p class="bd-catat bd-alasanrek">${esc(b.alasan || "")}</p>`).join("") : k.berkas.map(tombol).join("") || `<p class="bd-catat">Kelompok ini kosong.</p>`);
+      else kanan = (k.sub ? `<p class="bd-ksub">${esc(k.nama)} · ${esc(k.sub)}</p>` : "") + (k.saran ? k.berkas.map((b) => `${tombolBlangko(b, S.modal.jenis, rek)}<p class="bd-catat bd-alasanrek">${asalSaran(b, daftar)}${esc(b.alasan || "")}</p>`).join("") : k.berkas.map(tombol).join("") || `<p class="bd-catat">Kelompok ini kosong.</p>`);
     }
     // 22 Okt: innerHTML diganti utuh, jadi gulir daftar kiri dan kanan ikut hilang (memilih kategori di bagian bawah melompatkan daftar ke atas
     // dan kategori terpilih tak terlihat; daftar blangko yang selesai dimuat di latar juga menarik gulir ke atas). Gulir dicatat lalu dipulihkan;
