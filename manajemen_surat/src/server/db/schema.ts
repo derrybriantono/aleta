@@ -458,6 +458,30 @@ export const DDL_KAMUS_RUAS_TAMBAHAN = {
 } as const;
 
 /**
+ * Riwayat perubahan kamus deteksi (0116, 27 Okt 2026): siapa, kapan, isi lama. Cermin PERSIS dari
+ * drizzle/0116_aleta_kamus_riwayat.sql; penjaga kamus-riwayat-27okt.test.ts membandingkan keduanya.
+ */
+export const DDL_KAMUS_RIWAYAT = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_kamus_deteksi_riwayat (
+  id TEXT PRIMARY KEY,
+  jenis TEXT NOT NULL,
+  kode TEXT NOT NULL,
+  kelompok TEXT NOT NULL DEFAULT '',
+  aksi TEXT NOT NULL,
+  isi_lama TEXT NOT NULL DEFAULT '',
+  isi_baru TEXT NOT NULL DEFAULT '',
+  oleh TEXT NOT NULL DEFAULT '',
+  pada TEXT NOT NULL
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_kamus_deteksi_riwayat_kode ON aleta_kamus_deteksi_riwayat(kode, pada)`,
+    `CREATE INDEX IF NOT EXISTS idx_kamus_deteksi_riwayat_pada ON aleta_kamus_deteksi_riwayat(pada)`,
+  ],
+} as const;
+
+/**
  * Cadangan dan riwayat suntingan atas ABT dari halaman "Pengaturan SIPP & ABT"
  * (0066, 16 Okt 2026, Tahap H). Cermin PERSIS dari
  * drizzle/0066_aleta_abt_suntingan.sql; penjaga
@@ -3308,6 +3332,8 @@ const schemaStatements = [
   ...DDL_MASUK_JEJAK.tabel,
   // Kamus deteksi & kalimat, jejak koreksi, calon dari koreksi (0060).
   ...DDL_KAMUS_DETEKSI.tabel,
+  // Riwayat perubahan kamus deteksi (0116).
+  ...DDL_KAMUS_RIWAYAT.tabel,
   // Cadangan & riwayat suntingan ABT dari Pengaturan SIPP & ABT (0066).
   ...DDL_ABT_SUNTINGAN.tabel,
   // Checklist Konseptor Sementara: tanda langkah & laporan Blangko Derry (0067).
@@ -5320,6 +5346,7 @@ const indexStatements = [
   ...DDL_MASUK_JEJAK.indeks,
   ...DDL_KAMUS_SUMBER.indeks,
   ...DDL_KAMUS_DETEKSI.indeks,
+  ...DDL_KAMUS_RIWAYAT.indeks,
   ...DDL_ABT_SUNTINGAN.indeks,
   ...DDL_BLANGKO_PRIBADI.indeks,
   ...DDL_TAUTAN_JADWAL.indeks,

@@ -8,6 +8,7 @@ import {
   HASIL_KOREKSI,
   SUMBER_SAMPEL,
   bacaJejakKoreksi,
+  bacaRiwayatKamus,
   daftarCalon,
   daftarKamus,
   dorongLapisKeBot,
@@ -72,6 +73,9 @@ export async function GET(request: NextRequest) {
       const kamus = await daftarKamus(db);
       const susun = await susunCalon(db, petaPolaDikenal(kamus.kelompok));
       return ok({ susun, ambang: AMBANG_CALON, calon: await daftarCalon(db, getSearchParam(request, "keadaan") ?? "menunggu") });
+    }
+    if (bagian === "riwayat") {
+      return ok({ riwayat: await bacaRiwayatKamus(db, { kode: getSearchParam(request, "kode") ?? "", batas: Number(getSearchParam(request, "batas") ?? 50) }) });
     }
     if (bagian === "jejak") {
       return ok({
@@ -147,7 +151,7 @@ export async function POST(request: NextRequest) {
         });
         break;
       case "kembalikan":
-        hasil = await kembalikanKeBenih(db, { jenis: String(badan.jenis ?? ""), kode: String(badan.kode ?? "") });
+        hasil = await kembalikanKeBenih(db, { jenis: String(badan.jenis ?? ""), kode: String(badan.kode ?? ""), oleh: aktor });
         break;
       case "terima-calon":
         hasil = await terimaCalon(db, aktor, badan);
