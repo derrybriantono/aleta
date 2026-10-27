@@ -1,5 +1,5 @@
 // Ukur (baca saja) kamus per jenis perkara selain cerai atas posita sungguhan di sipp_donggala lokal:
-// per jenis: jumlah perkara, fakta terbaca per kunci (kamus + pengurai lama), kalimat pokok ringkas/lengkap yang terbentuk, ms/perkara.
+// per jenis: jumlah perkara, fakta terbaca per kunci (kamus + pengurai lama), kalimat pokok ringkas/lengkap yang terbentuk, ms/perkara (tercepat dari --ulang 5 putaran).
 //   node scripts/isi-sipp-abt/ukur-kamus-jenis-27okt.cjs [--akar <repo>] [--keluar <berkas.json>] [--sejak 2022-06-01]
 // Murni: tidak membaca ABT, tidak menulis apa pun. Keluaran TIDAK memuat nama pihak (hanya hitungan).
 const fs = require("fs");
@@ -29,25 +29,34 @@ const q = (sql, p) => new Promise((ok, gagal) => kon.query(sql, p || [], (e, r) 
   // pemanasan (kompilasi pola) di luar pengukuran waktu
   if (baris[0]) dj.faktaDariPosita(baris[0].posita, { jenisPerkara: String(baris[0].j), alur: String(baris[0].a) });
   const hasil = {};
+  const perkaraJenis = [];
   for (const b of baris) {
     const jenis = dj.kenaliJenis(b.j);
-    if (!jenis) continue;
-    const t0 = process.hrtime.bigint();
-    const { fakta } = dj.faktaDariPosita(b.posita, { jenisPerkara: String(b.j), alur: String(b.a) });
-    const pokok = dj.kalimatPokok({ posita: b.posita, jenisPerkara: String(b.j), alur: String(b.a), fakta });
-    const ms = Number(process.hrtime.bigint() - t0) / 1e6;
-    const r = (hasil[jenis.kunci] = hasil[jenis.kunci] || { id: jenis.ids.join("/"), perkara: 0, ms: 0, fakta: {}, ringkas: 0, lengkap: 0, usulan: 0 });
-    r.perkara++;
-    r.ms += ms;
-    for (const [k, f] of Object.entries(fakta)) if (f && (f.nilai === true || String(f.nilai || "").trim())) r.fakta[k] = (r.fakta[k] || 0) + 1;
-    if (pokok && pokok.ringkas) r.ringkas++;
-    if (pokok && pokok.lengkap) r.lengkap++;
-    r.usulan += Object.keys(fakta).filter((k) => /^\d{4,5}$/.test(k)).length;
+    if (jenis) perkaraJenis.push({ b, jenis });
   }
-  for (const r of Object.values(hasil)) {
-    r.msPerPerkara = Math.round((r.ms / r.perkara) * 100) / 100;
-    delete r.ms;
+  // Hitungan fakta/kalimat sekali; waktu = jalankan seluruh perkara beberapa kali dan ambil yang TERCEPAT per jenis
+  // (hrtime murni CPU - tanpa I/O - tahan terhadap beban mesin yang naik-turun).
+  const ULANG = Number(arg("--ulang", "5"));
+  const terbaik = {};
+  for (let ulang = 0; ulang < ULANG; ulang++) {
+    const waktu = {};
+    for (const { b, jenis } of perkaraJenis) {
+      const t0 = process.hrtime.bigint();
+      const { fakta } = dj.faktaDariPosita(b.posita, { jenisPerkara: String(b.j), alur: String(b.a) });
+      const pokok = dj.kalimatPokok({ posita: b.posita, jenisPerkara: String(b.j), alur: String(b.a), fakta });
+      const ms = Number(process.hrtime.bigint() - t0) / 1e6;
+      waktu[jenis.kunci] = (waktu[jenis.kunci] || 0) + ms;
+      if (ulang > 0) continue;
+      const r = (hasil[jenis.kunci] = hasil[jenis.kunci] || { id: jenis.ids.join("/"), perkara: 0, fakta: {}, ringkas: 0, lengkap: 0, usulan: 0 });
+      r.perkara++;
+      for (const [k, f] of Object.entries(fakta)) if (f && (f.nilai === true || String(f.nilai || "").trim())) r.fakta[k] = (r.fakta[k] || 0) + 1;
+      if (pokok && pokok.ringkas) r.ringkas++;
+      if (pokok && pokok.lengkap) r.lengkap++;
+      r.usulan += Object.keys(fakta).filter((k) => /^\d{4,5}$/.test(k)).length;
+    }
+    for (const [k, v] of Object.entries(waktu)) terbaik[k] = Math.min(terbaik[k] === undefined ? Infinity : terbaik[k], v);
   }
+  for (const [k, r] of Object.entries(hasil)) r.msPerPerkara = Math.round((terbaik[k] / r.perkara) * 1000) / 1000;
   const out = { diukur: new Date().toISOString().slice(0, 10), akar, sejak, jenis: hasil };
   if (keluar) fs.writeFileSync(keluar, JSON.stringify(out, null, 1));
   for (const [k, r] of Object.entries(hasil)) {
