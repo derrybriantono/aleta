@@ -5434,7 +5434,7 @@ function alatSenyapAktif() {
 function alatTandaiSenyap() {
   try {
     const akar = document.documentElement;
-    if (alatSenyapAktif()) akar.setAttribute("data-aleta-senyap", "ya");
+    if (alatSenyapAktif() || alatSembunyiBawaan()) akar.setAttribute("data-aleta-senyap", "ya");
     else akar.removeAttribute("data-aleta-senyap");
   } catch {
     /* tanpa penanda, tampilan tidak disembunyikan */
@@ -5448,12 +5448,109 @@ function alatTandaiSenyap() {
 
 async function alatMuatSenyap() {
   try {
-    const simpan = await chrome.storage.local.get([ALAT_KUNCI_SENYAP]);
+    const simpan = await chrome.storage.local.get([ALAT_KUNCI_SENYAP, ALAT_KUNCI_TAMPIL_HALAMAN]);
     alatSenyapSampai = Number(simpan[ALAT_KUNCI_SENYAP]) || 0;
+    alatTampilHalaman = alatTampilHalamanBersih(simpan[ALAT_KUNCI_TAMPIL_HALAMAN]);
   } catch {
     alatSenyapSampai = 0;
+    alatTampilHalaman = {};
   }
   alatTandaiSenyap();
+}
+
+/* ─── 3c'. TERSEMBUNYI BAWAAN DI SIPP DAN PORTAL ALETA (28 Okt 2026) ──────────
+ *
+ * Keputusan pengguna: tampilan ALETA di halaman SIPP dan portal ALETA - panel,
+ * lencana, penanda, sisipan, widget - bawaannya TERSEMBUNYI. Penandanya sama
+ * dengan senyap (data-aleta-senyap), jadi tetap hanya tidak digambar: isi
+ * otomatis, pelaksana terjadwal, antrean, dan pembaruan tetap berjalan.
+ * Ditampilkan lagi bila dibutuhkan:
+ *   - Alt+Shift+A di halaman itu: tampil/sembunyi untuk TAB INI sampai tab
+ *     ditutup (sessionStorage - ikut berpindah halaman SIPP di tab yang sama);
+ *   - popup: "Tampilkan di tab ini", atau saklar tetap per situs
+ *     (tampilAletaHalaman { sipp, aleta }; tidak ada = tersembunyi).
+ * ABT dan e-Court tidak tersentuh. Penanda dipasang SEBELUM penyimpanan terbaca
+ * supaya tidak ada kedipan panel yang muncul lalu hilang.
+ */
+const ALAT_KUNCI_TAMPIL_HALAMAN = "tampilAletaHalaman";
+const ALAT_SESI_TAMPIL_TAB = "aleta-tampil-tab";
+/** null = penyimpanan belum terbaca (tetap tersembunyi). */
+let alatTampilHalaman = null;
+/** Pilihan tab bila sessionStorage tidak dapat dipakai. */
+let alatTampilTabCadangan = "";
+
+function alatTampilHalamanBersih(x) {
+  const o = x && typeof x === "object" ? x : {};
+  return { sipp: o.sipp === true, aleta: o.aleta === true };
+}
+
+/** "sipp" | "aleta" untuk halaman yang tampilan ALETA-nya tersembunyi bawaan, selain itu "". */
+function alatSitusSembunyi() {
+  try {
+    const jalur = String(location.pathname || "");
+    if (/^\/aleta(?:\/|$)/.test(jalur)) return "aleta";
+    if (/\/SIPP(?:\/|$)/i.test(jalur)) return "sipp";
+    if (/^\/index\.php(?:\/|$)/.test(jalur) && /^(?:127\.0\.0\.1|localhost)$/.test(String(location.hostname || ""))) return "sipp";
+  } catch {
+    /* tanpa alamat: tidak disembunyikan */
+  }
+  return "";
+}
+
+/** Pilihan tab ini: "ya" (tampil), "tidak" (sembunyi), "" (ikut saklar situs). */
+function alatTampilTab() {
+  try {
+    return String(sessionStorage.getItem(ALAT_SESI_TAMPIL_TAB) || alatTampilTabCadangan);
+  } catch {
+    return alatTampilTabCadangan;
+  }
+}
+
+function alatSembunyiBawaan() {
+  const situs = alatSitusSembunyi();
+  if (!situs) return false;
+  // Tampilan Lama wajib identik dengan fd9aad7 (seperti senyap, tidak berlaku di sana). Sebelum setelan terbaca
+  // (alatTampilHalaman null) tampilan selalu terbaca "lama", jadi pengecualiannya baru berlaku sesudahnya.
+  if (alatTampilHalaman !== null && typeof alatUjiMode === "function" && alatUjiMode() === "lama") return false;
+  const tab = alatTampilTab();
+  if (tab === "ya") return false;
+  if (tab === "tidak") return true;
+  return !(alatTampilHalaman && alatTampilHalaman[situs] === true);
+}
+
+/** Tampil (true) atau sembunyi (false) di tab ini. Pulang keadaan sesudahnya. */
+function alatSetelTampilTab(tampil) {
+  try {
+    sessionStorage.setItem(ALAT_SESI_TAMPIL_TAB, tampil ? "ya" : "tidak");
+  } catch {
+    /* tanpa sessionStorage: berlaku sampai halaman dimuat ulang */
+  }
+  alatTampilTabCadangan = tampil ? "ya" : "tidak";
+  alatTandaiSenyap();
+  return { ok: true, situs: alatSitusSembunyi(), tersembunyi: alatSembunyiBawaan() || alatSenyapAktif() };
+}
+
+function alatPasangTampilTab() {
+  if (!alatSitusSembunyi() || globalThis.__aletaTampilTabTerpasang) return;
+  globalThis.__aletaTampilTabTerpasang = true;
+  document.addEventListener(
+    "keydown",
+    (e) => {
+      if (!e.altKey || !e.shiftKey || e.ctrlKey || e.metaKey || e.code !== "KeyA") return;
+      e.preventDefault();
+      alatSetelTampilTab(alatSembunyiBawaan());
+    },
+    true
+  );
+  try {
+    chrome.runtime.onMessage.addListener((pesan, _pengirim, balas) => {
+      if (!pesan || pesan.jenis !== "aleta-tampil-tab") return undefined;
+      balas(typeof pesan.tampil === "boolean" ? alatSetelTampilTab(pesan.tampil) : { ok: true, situs: alatSitusSembunyi(), tersembunyi: alatSembunyiBawaan() || alatSenyapAktif() });
+      return undefined;
+    });
+  } catch {
+    /* tanpa pesan popup: pintasan tetap berlaku */
+  }
 }
 
 function alatDengarkanSenyap() {
@@ -5461,8 +5558,9 @@ function alatDengarkanSenyap() {
     chrome.storage.onChanged.addListener((ubah, tempat) => {
       if (tempat !== "local") return;
       if (ALAT_KUNCI_SENYAP in ubah) alatSenyapSampai = Number(ubah[ALAT_KUNCI_SENYAP].newValue) || 0;
+      if (ALAT_KUNCI_TAMPIL_HALAMAN in ubah) alatTampilHalaman = alatTampilHalamanBersih(ubah[ALAT_KUNCI_TAMPIL_HALAMAN].newValue);
       // Saklar fitur atau tampilan yang berganti juga menentukan senyap.
-      if (ALAT_KUNCI_SENYAP in ubah || ALAT_UJI_KUNCI_TAMPILAN in ubah || ALAT_UJI_KUNCI_FITUR in ubah || ALAT_UJI_KUNCI_SERVER in ubah) alatTandaiSenyap();
+      if (ALAT_KUNCI_SENYAP in ubah || ALAT_KUNCI_TAMPIL_HALAMAN in ubah || ALAT_UJI_KUNCI_TAMPILAN in ubah || ALAT_UJI_KUNCI_FITUR in ubah || ALAT_UJI_KUNCI_SERVER in ubah) alatTandaiSenyap();
     });
   } catch {
     /* berlaku saat halaman dimuat ulang */
@@ -7662,6 +7760,9 @@ void alatMuatKering();
 alatDengarkanUji();
 // Senyap dibaca SESUDAH uji tampilan: ia bergantung pada saklar fitur popup-12.
 alatDengarkanSenyap();
+// 28 Okt: SIPP dan portal ALETA tersembunyi bawaan - penanda dipasang sekarang (sebelum penyimpanan terbaca).
+alatTandaiSenyap();
+alatPasangTampilTab();
 // alatUjiSiapJanji: bawaan tampil (butir 4, 2 Okt) menunggu tampilan terbaca.
 alatUjiSiapJanji = alatMuatUji();
 void alatUjiSiapJanji

@@ -3913,6 +3913,7 @@ const KUNCI_SETELAN_AKUN = [
   "warnaSendiri",
   "panelBawaanTampil",
   "senyapSampai",
+  "tampilAletaHalaman",
   "sembunyikanTeknis",
   "ujiTampilan",
   "ujiFitur",

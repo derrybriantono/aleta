@@ -4280,8 +4280,8 @@
    "jumlahPernyataan": 2
   },
   "panel-alat.js": {
-   "byte": 583475,
-   "sidik": "1d6f66484f39c4b7b376e8672b93d34b44f7d2f7",
+   "byte": 587967,
+   "sidik": "d9b09c13267648596ab6198445352b16ab8c957e",
    "nama": [
     "ALAT_AKHIRAN_TIPE",
     "ALAT_ALAMAT_UNGGAH_SIPP",
@@ -4360,6 +4360,7 @@
     "ALAT_KUMULASI_ITSBAT_MENU",
     "ALAT_KUNCI_PEMETAAN_SERVER",
     "ALAT_KUNCI_SENYAP",
+    "ALAT_KUNCI_TAMPIL_HALAMAN",
     "ALAT_LATIHAN_KUNCI",
     "ALAT_LATIHAN_MAKS",
     "ALAT_LATIHAN_SEBUTAN",
@@ -4409,6 +4410,7 @@
     "ALAT_RIWAYAT_MAKS",
     "ALAT_RUTE_UNGGAH_PUTUSAN",
     "ALAT_SEBUTAN_TEMA",
+    "ALAT_SESI_TAMPIL_TAB",
     "ALAT_SETELAN_SINGGAH",
     "ALAT_SETELAN_SINGGAH_BILA_ADA",
     "ALAT_SKALA_BAWAAN",
@@ -4680,6 +4682,7 @@
     "alatPasangPintasan",
     "alatPasangPitaPembaruan",
     "alatPasangSudut",
+    "alatPasangTampilTab",
     "alatPasangTunjukHalus",
     "alatPasangUbahUkuran",
     "alatPembaruanDitahan",
@@ -4757,6 +4760,7 @@
     "alatSekaliAmbil",
     "alatSelaraskanTema",
     "alatSelaraskanWarna",
+    "alatSembunyiBawaan",
     "alatSenyapAktif",
     "alatSenyapPewaktu",
     "alatSenyapSampai",
@@ -4768,6 +4772,7 @@
     "alatSetelKering",
     "alatSetelRingkas",
     "alatSetelSuntingLangsung",
+    "alatSetelTampilTab",
     "alatSetelTeknis",
     "alatSetelVersiTipe",
     "alatSetelWarnaMandiri",
@@ -4780,6 +4785,7 @@
     "alatSimpanPosisi",
     "alatSimpanWarna",
     "alatSitusPanel",
+    "alatSitusSembunyi",
     "alatSkalaTerakhir",
     "alatSubPeranPenetapan",
     "alatSudutBoleh",
@@ -4794,6 +4800,10 @@
     "alatSuntingLangsung",
     "alatSusunPetaPadanan",
     "alatTambahVarianPeta",
+    "alatTampilHalaman",
+    "alatTampilHalamanBersih",
+    "alatTampilTab",
+    "alatTampilTabCadangan",
     "alatTampilkanCatatanPerbarui",
     "alatTampilkanTombolTema",
     "alatTandaiDipulihkan",
@@ -4874,10 +4884,11 @@
    "ekspor": [
     "__aletaDengarDiperbarui",
     "__aletaLipat",
+    "__aletaTampilTabTerpasang",
     "className",
     "fetch"
    ],
-   "jumlahPernyataan": 669
+   "jumlahPernyataan": 681
   },
   "penetapan-borang.js": {
    "byte": 41590,

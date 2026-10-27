@@ -476,6 +476,7 @@ describe("A. popup: tiap saklar menulis kunci dan nilai yang benar (dan membaca 
       "ujiIzinkanNyata", // sendiri di atas
       "sembunyikanTeknis", // bagian C
       "bawaanPanel-aleta", "bawaanPanel-sipp", "bawaanPanel-abt", // bagian C
+      "tampilHalaman-sipp", "tampilHalaman-aleta", // 28 Okt - diaudit di tampil-halaman-28okt.test.ts
     ]);
     // Pilihan untuk tombol "Kembalikan posisi" (popup-13) - bukan saklar tersimpan.
     const bukanSaklar = new Set(["tbPosisi-panel", "tbPosisi-widget"]);

@@ -177,6 +177,7 @@ const KUNCI_SETELAN_AKUN = [
   "warnaSendiri",
   "panelBawaanTampil",
   "senyapSampai",
+  "tampilAletaHalaman",
   "sembunyikanTeknis",
   "ujiTampilan",
   "ujiFitur",
@@ -3724,6 +3725,95 @@ async function simpanBawaanPanel(nilai) {
   }
 }
 
+// 28 Okt 2026: tampilan ALETA di SIPP dan portal ALETA tersembunyi bawaan (panel-alat.js 3c'); fitur tetap berjalan.
+const KUNCI_TAMPIL_HALAMAN = "tampilAletaHalaman";
+const SITUS_TAMPIL_HALAMAN = [
+  ["sipp", "Tampilkan ALETA di SIPP"],
+  ["aleta", "Tampilkan ALETA di portal ALETA"],
+];
+
+/** Kirim ke tab aktif: tampil (true/false) di tab ini, atau tanpa nilai untuk menanyakan keadaannya. */
+async function kirimTampilTab(tampil) {
+  const tabs = typeof chrome !== "undefined" && chrome.tabs && chrome.tabs.query && chrome.tabs.sendMessage ? chrome.tabs : null;
+  if (!tabs) return null;
+  try {
+    const hasil = await tabs.query({ active: true, currentWindow: true });
+    const tab = Array.isArray(hasil) ? hasil[0] : null;
+    if (!tab || tab.id === undefined || tab.id === null) return null;
+    const jawab = await tabs.sendMessage(tab.id, typeof tampil === "boolean" ? { jenis: "aleta-tampil-tab", tampil } : { jenis: "aleta-tampil-tab" });
+    return jawab && jawab.ok ? jawab : null;
+  } catch {
+    return null;
+  }
+}
+
+function komponenTampilHalaman() {
+  const sek = buatBagian("tampil-halaman", "Tampilan ALETA di halaman");
+  sek.classList.add("tb-tampil-halaman");
+  sek.appendChild(
+    buat("p", "saklar-ket", "Bawaan tersembunyi di SIPP dan portal ALETA; semua fitur tetap berjalan. Pintasan di halaman: Alt+Shift+A.")
+  );
+  const kotak = {};
+  for (const [situs, nama] of SITUS_TAMPIL_HALAMAN) {
+    const label = buat("label", "saklar");
+    const masukan = buat("input");
+    masukan.type = "checkbox";
+    masukan.id = `tampilHalaman-${situs}`;
+    const teks = buat("span");
+    teks.appendChild(buat("span", "saklar-nama", nama));
+    label.appendChild(masukan);
+    label.appendChild(teks);
+    sek.appendChild(label);
+    kotak[situs] = masukan;
+  }
+  const baris = buat("div", "tb-tampil-tab");
+  const tombolTab = buat("button", "skala-pulih tb-tampil-tab-tombol", "Tampilkan di tab ini");
+  tombolTab.type = "button";
+  tombolTab.hidden = true;
+  baris.appendChild(tombolTab);
+  sek.appendChild(baris);
+  const kabar = buat("p", "saklar-ket tb-tampil-kabar");
+  kabar.setAttribute("aria-live", "polite");
+  sek.appendChild(kabar);
+  let tersembunyi = null;
+  const gambarTab = (jawab) => {
+    tombolTab.hidden = !jawab;
+    tersembunyi = jawab ? Boolean(jawab.tersembunyi) : null;
+    tombolTab.textContent = tersembunyi ? "Tampilkan di tab ini" : "Sembunyikan di tab ini";
+  };
+  tombolTab.addEventListener("click", async () => {
+    const jawab = await kirimTampilTab(Boolean(tersembunyi));
+    gambarTab(jawab);
+    kabar.textContent = jawab ? (jawab.tersembunyi ? "Disembunyikan di tab ini." : "Tampil di tab ini sampai tab ditutup.") : "Tab ini tidak memuat ALETA.";
+  });
+  void kirimTampilTab().then(gambarTab);
+  const muat = () =>
+    penyimpanan
+      ? penyimpanan
+          .get([KUNCI_TAMPIL_HALAMAN])
+          .then((s) => {
+            const n = s && s[KUNCI_TAMPIL_HALAMAN] && typeof s[KUNCI_TAMPIL_HALAMAN] === "object" ? s[KUNCI_TAMPIL_HALAMAN] : {};
+            for (const [situs] of SITUS_TAMPIL_HALAMAN) kotak[situs].checked = n[situs] === true;
+          })
+          .catch(() => undefined)
+      : Promise.resolve();
+  for (const [situs] of SITUS_TAMPIL_HALAMAN) {
+    kotak[situs].addEventListener("change", async () => {
+      const nilai = {};
+      for (const [s] of SITUS_TAMPIL_HALAMAN) nilai[s] = kotak[s].checked;
+      try {
+        if (penyimpanan) await penyimpanan.set({ [KUNCI_TAMPIL_HALAMAN]: nilai });
+        kabar.textContent = kotak[situs].checked ? "Tampil di semua tab." : "Tersembunyi bawaan; tampilkan lewat Alt+Shift+A bila perlu.";
+      } catch {
+        kabar.textContent = "Belum tersimpan, coba lagi.";
+      }
+      void kirimTampilTab().then(gambarTab);
+    });
+  }
+  void muat();
+  return sek;
+}
+
 function komponenBawaanPanel() {
   const sek = buatBagian("bawaan-panel", "Panel saat halaman dibuka");
   sek.classList.add("tb-bawaan-panel");
@@ -3820,6 +3910,9 @@ function susunUiBaru() {
   if (fiturPopupNyala("popup-4")) pasangGeserSkala();
   // Perbaikan 2 Okt butir 4: panel terbuka/tersembunyi per situs - sesudah Tampilan.
   sisipkan(komponenBawaanPanel(), isi, wadah.tampilan ? wadah.tampilan.nextSibling : isi.querySelector(".tb-kelompok"));
+  // 28 Okt: tampilan ALETA di SIPP/portal tersembunyi bawaan - tepat sebelum "Panel saat halaman dibuka".
+  const bagianBawaan = isi.querySelector(".tb-bawaan-panel");
+  sisipkan(komponenTampilHalaman(), bagianBawaan ? bagianBawaan.parentNode : isi, bagianBawaan);
 
   // Bagian atas isi: profil (popup-11), cari (popup-15), lompat (popup-3).
   const atas = [];
@@ -4482,6 +4575,8 @@ async function bukaWidgetDiTabAktif(bagian) {
       kabarBukaWidget("Tidak ada tab yang terbuka.");
       return;
     }
+    // 28 Okt: tampilan ALETA tersembunyi bawaan - membuka widget berarti menampilkannya di tab ini.
+    await tabs.sendMessage(tab.id, { jenis: "aleta-tampil-tab", tampil: true }).catch(() => undefined);
     const jawab = await tabs.sendMessage(tab.id, { jenis: "aleta-widget-tampilkan", bagian });
     kabarBukaWidget(
       jawab && jawab.ok

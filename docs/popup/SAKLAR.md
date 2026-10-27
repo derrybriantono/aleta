@@ -68,6 +68,7 @@ Super Admin dan Admin melihat semua saklar. Peran lain hanya yang tertulis di ko
 | Tampilan | Tema Otomatis / Gelap / Terang, warna gelap Super Admin | `temaPopup`, `temaPanel`, `warnaGelap` | |
 | Tampilan | Ukuran huruf panel | `skalaHuruf` | angka 80-160 |
 | Tampilan | Sembunyikan penjelasan teknis | `sembunyikanTeknis` | |
+| Tampilan ALETA di halaman | Tampilkan ALETA di SIPP, Tampilkan ALETA di portal ALETA | `tampilAletaHalaman` | bawaan tersembunyi (28 Okt 2026); per tab: Alt+Shift+A / "Tampilkan di tab ini" (sessionStorage) |
 | Panel saat halaman dibuka | Panel ALETA (portal), Panel SIPP, Panel ABT | `panelBawaanTampil` | tersimpan juga di akun (server) |
 | Admin: latihan dan e-Court | Tarik data e-Court | (server) | satu saklar dengan Penjadwal di Integrasi e-Court |
 | Tampilan uji (Super Admin) | Tampilan Lama / Baru / UI Baru, saklar fitur ide, izinkan tindakan nyata | `ujiTampilan`, `ujiFitur`, `ujiIzinkanNyata` | uji; diterapkan admin lewat `tampilanServer` |

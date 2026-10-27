@@ -3351,7 +3351,6 @@ body[data-aleta-sunting-langsung="ya"] .aleta-abt-isi-sunting:focus-visible {
 .aleta-a5227-pemicu { cursor: pointer; }
 .aleta-a5227-pemicu:hover,
 .aleta-a5227-pemicu:focus-visible { text-decoration: underline dotted; outline: none; }
-.aleta-t6-dialog.aleta-a5227-dialog { border-color: var(--aleta-garis-kuat); }
 .aleta-a5227-butir { margin: 6px 0; line-height: 1.5; }
 .aleta-a5227-butir > strong { margin-right: 6px; }
 .aleta-a5227-kutip { margin-top: 2px; color: var(--aleta-tulisan-lembut); font-style: italic; }
@@ -7740,6 +7739,8 @@ html[data-aleta-kulit="modern"] #aleta-panel-portal[data-t4="ui"] .aleta-portal-
 .aleta-t6-dialog-ul { margin: 4px 0 4px 18px; padding: 0; line-height: 1.45; }
 .aleta-t6-dialog-centang { display: flex; align-items: center; gap: 6px; margin: 10px 0 4px; font-weight: 700; }
 .aleta-t6-dialog-baris { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+/* 28 Okt: pop-up posita & saksi 5227 (abt-panel-blangko.js a5227BukaKeterangan) - keterangan, bukan peringatan. */
+.aleta-t6-dialog.aleta-a5227-dialog { border-color: var(--aleta-garis-kuat); }
 .aleta-t6-dialog .aleta-t6-dialog-ya:not(:disabled) { background: var(--aleta-lewat); border-color: var(--aleta-lewat); color: var(--aleta-latar); }
 .aleta-t6-sidang {
   position: fixed;

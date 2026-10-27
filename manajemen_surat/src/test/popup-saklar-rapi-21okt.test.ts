@@ -78,7 +78,7 @@ const TABEL: Baris[] = [
 /** Di luar bagian pada UI Baru, dengan sengaja (kepala jendela dan blok uji Super Admin). */
 const DI_LUAR_BAGIAN = new Set(["aktif", "ujiIzinkanNyata"]);
 /** Dalam bagian tetapi bukan dari tabel saklar fitur (kunci disimpan dengan cara lain, diaudit di berkas uji lain). */
-const SAKLAR_LAIN = new Set(["sembunyikanTeknis", "bawaanPanel-aleta", "bawaanPanel-sipp", "bawaanPanel-abt"]);
+const SAKLAR_LAIN = new Set(["sembunyikanTeknis", "bawaanPanel-aleta", "bawaanPanel-sipp", "bawaanPanel-abt", "tampilHalaman-sipp", "tampilHalaman-aleta"]);
 
 const terbuka: JSDOM[] = [];
 afterEach(() => {
@@ -147,6 +147,32 @@ const tersembunyi = (p: ReturnType<typeof bukaPopup>, id: string) => {
 const bagianTersembunyi = (p: ReturnType<typeof bukaPopup>, kode: string) =>
   p.d.getElementById(`kelompok-${kode}`)!.hasAttribute("data-peran-sembunyi");
 
+describe("28 Okt - Tampilan ALETA di halaman (bawaan tersembunyi)", () => {
+  for (const peran of ["Super Admin", "Panitera Pengganti"]) {
+    it(`${peran}: dua saklar mati bawaan, menulis tampilAletaHalaman; tanpa tab ALETA tombol tab tidak tampil`, async () => {
+      const p = bukaPopup(peran);
+      await tenang(p);
+      const sipp = kotak(p, "tampilHalaman-sipp");
+      const aleta = kotak(p, "tampilHalaman-aleta");
+      expect(sipp.closest(".tb-kelompok")?.getAttribute("data-kelompok")).toBe("tampil-halaman");
+      expect(sipp.checked).toBe(false);
+      expect(aleta.checked).toBe(false);
+      expect(p.d.querySelector("#kelompok-tampil-halaman")!.textContent).toContain("Alt+Shift+A");
+      sipp.click();
+      await sampai(() => (p.simpanan.tampilAletaHalaman as { sipp?: boolean } | undefined)?.sipp === true, "tampilAletaHalaman.sipp tertulis");
+      expect(p.simpanan.tampilAletaHalaman).toEqual({ sipp: true, aleta: false });
+      expect((p.d.querySelector(".tb-tampil-tab-tombol") as HTMLButtonElement).hidden).toBe(true);
+    });
+  }
+
+  it("tersimpan dibaca saat popup dibuka", async () => {
+    const p = bukaPopup("Super Admin", { tampilAletaHalaman: { sipp: false, aleta: true } });
+    await tenang(p);
+    await sampai(() => kotak(p, "tampilHalaman-aleta").checked, "saklar portal terbaca");
+    expect(kotak(p, "tampilHalaman-sipp").checked).toBe(false);
+  });
+});
+
 describe("X1 - saklar popup di bagian yang benar (UI Baru, Super Admin)", () => {
   it("tiap kunci saklar muncul tepat sekali dan berada di bagian menurut fungsinya", async () => {
     const p = bukaPopup("Super Admin");
@@ -175,7 +201,7 @@ describe("X1 - saklar popup di bagian yang benar (UI Baru, Super Admin)", () => 
     const p = bukaPopup("Super Admin");
     await tenang(p);
     const urut = Array.from(p.d.querySelectorAll(".isi > .tb-kelompok")).map((g) => (g as HTMLElement).dataset.kelompok);
-    expect(urut).toEqual(["tampilan", "bawaan-panel", "sipp", "ecourt", "abt", "derry", "aleta", "portal", "admin"]);
+    expect(urut).toEqual(["tampilan", "tampil-halaman", "bawaan-panel", "sipp", "ecourt", "abt", "derry", "aleta", "portal", "admin"]);
   });
 
   it("judul statis tampilan Lama tidak ikut tampil di UI Baru", async () => {
