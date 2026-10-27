@@ -1959,7 +1959,7 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
     pilihBunyi.className = "aleta-sdg-pilih aleta-abt-pilihan-bunyi";
     const kosong = document.createElement("option");
     kosong.value = "";
-    kosong.textContent = "— wajib dipilih petugas —";
+    kosong.textContent = String(u.nilai || "").trim() ? "— ganti bunyi (boleh dilewati) —" : "— wajib dipilih petugas —";
     pilihBunyi.appendChild(kosong);
     daftarBunyi.forEach((p, i) => {
       const o = document.createElement("option");
@@ -1978,6 +1978,71 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
     });
     barisPilih.appendChild(pilihBunyi);
     kartu.appendChild(barisPilih);
+  }
+
+  // ==========================================================================
+  // RINCIAN ALASAN 5227 (27 Okt 2026): tiap alasan DARI GUGATAN beserta lencana saksi dan jawab-menjawab
+  // ==========================================================================
+  //
+  // Bot menyusun alasan cerai dari gugatan (acuan utama): sebab konkret dan rantai sebab-akibatnya. Tiap baris
+  // memuat lencana jujur ("dikuatkan kedua saksi (saksi Penggugat dan saksi Tergugat)", "dari gugatan - belum
+  // dikuatkan saksi", ...), boleh dicoret, dan bunyinya boleh diganti. Kalimat kartu disusun ulang SETIAP ada
+  // perubahan; sebelum ada perubahan kalimat bawaan bot (yang menggabung perselisihan di akhir) tidak disentuh.
+  const rincianKartu = (Array.isArray(u.rincian) ? u.rincian : []).filter((r) => r && Array.isArray(r.bunyi) && r.bunyi.length);
+  if (rincianKartu.length) {
+    const wadahRincian = buatElemen("div", "aleta-abt-rincian");
+    wadahRincian.appendChild(buatElemen("div", "aleta-abt-rincian-judul", "Alasan sesuai gugatan"));
+    const status = rincianKartu.map(() => ({ pakai: true, bunyi: 0 }));
+    const susunUlang = () => {
+      const bagian = rincianKartu.map((r, i) => (status[i].pakai ? String((r.bunyi[status[i].bunyi] || r.bunyi[0]).nilai || "") : "")).filter(Boolean);
+      if (!bagian.length) return;
+      nilaiTerkini = bagian.length > 1 ? `${bagian.slice(0, -1).join("; ")}; serta ${bagian[bagian.length - 1]}` : bagian[0];
+      disunting = false;
+      segarkanTampilan();
+      centang.checked = true;
+    };
+    rincianKartu.forEach((r, i) => {
+      const baris = buatElemen("div", "aleta-abt-rincian-baris");
+      const kotak = document.createElement("input");
+      kotak.type = "checkbox";
+      kotak.checked = true;
+      kotak.title = "Hilangkan centang untuk membuang alasan ini dari kalimat";
+      kotak.addEventListener("change", () => {
+        status[i].pakai = kotak.checked;
+        susunUlang();
+      });
+      const isiBaris = buatElemen("div", "aleta-abt-rincian-isi");
+      isiBaris.appendChild(buatElemen("span", "aleta-abt-rincian-nama", String(r.label || "alasan")));
+      const lencana = buatElemen("span", `aleta-abt-rincian-lencana aleta-abt-rincian-${r.yakin === "cukup" ? "cukup" : "ragu"}`, String(r.lencana || ""));
+      isiBaris.appendChild(lencana);
+      if (r.catatan) isiBaris.appendChild(buatElemen("div", "aleta-abt-rincian-catatan", String(r.catatan)));
+      if (r.bunyi.length > 1) {
+        const pilihRincian = document.createElement("select");
+        pilihRincian.className = "aleta-sdg-pilih aleta-abt-rincian-bunyi";
+        r.bunyi.forEach((b, n) => {
+          const o = document.createElement("option");
+          o.value = String(n);
+          o.textContent = `${b.keadaan}: ${b.nilai}`;
+          pilihRincian.appendChild(o);
+        });
+        pilihRincian.addEventListener("change", () => {
+          status[i].bunyi = Number(pilihRincian.value) || 0;
+          susunUlang();
+        });
+        isiBaris.appendChild(pilihRincian);
+      }
+      baris.appendChild(kotak);
+      baris.appendChild(isiBaris);
+      wadahRincian.appendChild(baris);
+    });
+    kartu.appendChild(wadahRincian);
+  }
+
+  // 1268: siapa yang mendamaikan (keluarga / aparat / keduanya / lainnya) - bot menyebutnya, petugas boleh menggantinya
+  // lewat pilihan bunyi di atas bila tidak terbaca.
+  if (u.perukun && u.perukun.kategori) {
+    const nama = { keluarga: "keluarga", aparat: "aparat/tokoh", keduanya: "keluarga dan aparat/tokoh", lainnya: "pihak lain" }[u.perukun.kategori] || u.perukun.kategori;
+    kartu.appendChild(buatElemen("div", "aleta-abt-catatan", `Yang mendamaikan menurut keterangan: ${nama}${(u.perukun.rincian || []).length ? ` (${u.perukun.rincian.join(", ")})` : ""}.`));
   }
 
   if (u.bentrok) {
@@ -14812,7 +14877,27 @@ function p4GabungPilihan(tampil, data) {
   if (!dariEcourt.size) return tampil;
   return (tampil || []).map((u) => {
     const e = dariEcourt.get(String(u && u.kode));
-    if (!e || e === u || (Array.isArray(u.pilihan) && u.pilihan.length)) return u;
+    if (!e || e === u) return u;
+    if (Array.isArray(u.pilihan) && u.pilihan.length) {
+      // 27 Okt: kartu 5227 dari keterangan saksi sudah membawa pilihan (rincian sebab-akibat) - bunyi templat hakim dari
+      // berkas e-Court TIDAK hilang (gabung tanpa kembar), dan keterangan jawab-menjawab e-Court (diakui/dibantah)
+      // dilekatkan pada alasan yang sama di rincian saksi.
+      const nilaiPil = (p) => (p && typeof p === "object" ? String(p.nilai || "") : String(p || ""));
+      const ada = new Set(u.pilihan.map(nilaiPil));
+      const gabungPil = [...u.pilihan, ...(e.pilihan || []).filter((p) => !ada.has(nilaiPil(p)))];
+      let rincian = u.rincian;
+      if (Array.isArray(u.rincian) && Array.isArray(e.rincian)) {
+        const tanda = (r) => (Array.isArray(r && r.sebab) ? r.sebab.join(">") : "");
+        const dariE = new Map(e.rincian.filter((r) => r && r.jawab).map((r) => [tanda(r), r]));
+        rincian = u.rincian.map((r) => {
+          const ej = dariE.get(tanda(r));
+          if (!r || !ej || r.jawab) return r;
+          const kata = ej.jawab.status === "dibantah" ? "dibantah dalam" : ej.jawab.status === "diakui" ? "diakui dalam" : "disebut dalam";
+          return { ...r, jawab: ej.jawab, lencana: `${r.lencana}; ${kata} ${ej.jawab.jenis}` };
+        });
+      }
+      return { ...u, pilihan: gabungPil, rincian };
+    }
     return { ...u, pilihan: e.pilihan, sumber: [...(Array.isArray(u.sumber) ? u.sumber : []), ...(e.sumber || [])] };
   });
 }

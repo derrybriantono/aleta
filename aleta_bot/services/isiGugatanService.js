@@ -413,7 +413,28 @@ function susunIsiGugatan(masukan) {
     sebabGugatan && sebabGugatan.kodePola
       ? [{ keadaan: "sebab dari dalil gugatan (sesudah 'yang disebabkan')", nilai: sebabGugatan.nilai, kodePola: sebabGugatan.kodePola }]
       : [];
-  if ((v5227.varian.length || pilihanSebab.length) && gugatan) {
+  // 27 Okt: rincian alasan dari gugatan (sebab konkret + rantai sebab-akibat) dengan jawab-menjawab (jawaban/replik/duplik)
+  // sebagai keterangan diakui/dibantah saja - tidak pernah menambah alasan. Saksi tidak ada di jalur ini (lencana saksi
+  // dari jalur keterangan saksi); ekstensi menyatukan keduanya.
+  let rincianGugatan = null;
+  let pilihanRincian = [];
+  try {
+    if (posita) {
+      const R = require("./deteksi/alasanRincian");
+      rincianGugatan = R.deteksiRincian({
+        gugatan: U.kalimatPosita(posita),
+        saksi: [],
+        jawab: jawab.map((d) => ({ jenis: d.peran === "replik" || d.peran === "duplik" ? d.peran : "jawaban", butir: d.butir && d.butir.length ? d.butir : U.kalimatPosita(d.ringkas || "") })),
+        pihak: sebutan,
+      });
+      if (rincianGugatan.butir.some((b) => !b.penutup)) pilihanRincian = R.pilihanBunyi(rincianGugatan).map((x) => ({ keadaan: x.keadaan, nilai: x.nilai, kodePola: "rincian-alasan" }));
+      else rincianGugatan = null;
+    }
+  } catch (_) {
+    rincianGugatan = null;
+    pilihanRincian = [];
+  }
+  if ((v5227.varian.length || pilihanSebab.length || pilihanRincian.length) && gugatan) {
     usulan.push({
       kode: VAR.alasan,
       nama: "Alasan-Alasan Cerai",
@@ -422,9 +443,10 @@ function susunIsiGugatan(masukan) {
       bentrok: "",
       // Bunyi templat hakim lebih dulu (urutan lama); bunyi sebab dari deteksi/sebabCerai di belakang -
       // pada cerai talak sering satu-satunya (ciri lama tanpa frasa / nafkah bukan kewajiban istri).
-      pilihan: [...v5227.varian.map((v) => ({ keadaan: `templat hakim - ${v.label.replace(/^5227 - /, "")}`, nilai: v.nilai, kodePola: v.kode })), ...pilihanSebab],
+      pilihan: [...v5227.varian.map((v) => ({ keadaan: `templat hakim - ${v.label.replace(/^5227 - /, "")}`, nilai: v.nilai, kodePola: v.kode })), ...pilihanSebab, ...pilihanRincian],
+      ...(rincianGugatan ? { rincian: rincianGugatan.butir.map((b) => require("./deteksi/alasanRincian").ringkasButir(b)) } : {}),
       // Tiap bunyi membawa kode templatnya sendiri (pilihan[].kodePola); kartunya semua kode.
-      kodePola: [...v5227.varian.map((v) => v.kode), ...pilihanSebab.map((p) => p.kodePola)].join(","),
+      kodePola: [...v5227.varian.map((v) => v.kode), ...pilihanSebab.map((p) => p.kodePola), ...pilihanRincian.map((p) => p.kodePola)].join(","),
       sumber: [{ asal: "gugatan-ecourt", kalimat: `${labelSumber(gugatan, null)} - dalil: ${[...ciri, ...(sebabGugatan ? sebabGugatan.butir.map((b) => b.sebab) : [])].join(", ")}` }],
       catatan: `Bunyi disusun dari dalil surat gugatan e-Court dengan templat hakim satker - pilih lalu sunting.${
         v5227.tanpaFrasa.filter((c) => !(sebabGugatan && sebabGugatan.tertutup.includes(c))).length

@@ -583,6 +583,7 @@ function ringkasButir(b) {
     id: b.id,
     jenis: b.jenis,
     penutup: b.penutup,
+    sebab: b.sebab,
     label: b.label,
     huruf: b.huruf,
     bunyi: b.bunyi,
@@ -640,4 +641,25 @@ function terapkan(hasil, rincian) {
   return true;
 }
 
-module.exports = { terapkan, ringkasButir, deteksiRincian, pilihanBunyi, susunVarian, gabungKalimat, polaUntuk, simpulKalimat, itemKalimat, KELOMPOK };
+/**
+ * Menyebut saksi menurut pihaknya ("saksi 1" -> "saksi Penggugat") SESUDAH rincian tersusun - dipakai saat pihak
+ * saksi baru diketahui dari konteks perkara yang sudah dibaca layanan (tanpa kueri tambahan).
+ * @param sisi {{saksi1?: string, saksi2?: string}} "penggugat" | "tergugat"
+ */
+function terapkanSisiSaksi(hasil, sisi, pihak) {
+  const ph = pihakDari(pihak);
+  const nama = (k) => (k === "penggugat" ? `saksi ${ph.lawan}` : k === "tergugat" ? `saksi ${ph.pelaku}` : "");
+  const tukar = (t) => String(t || "").replace(/saksi ([12])\b/g, (m, n) => nama(sisi && sisi[`saksi${n}`]) || m);
+  const garap = (daftar) => {
+    for (const b of daftar || []) {
+      b.lencana = tukar(b.lencana);
+      if (Array.isArray(b.dukungan)) b.dukungan = b.dukungan.map(tukar);
+    }
+  };
+  if (hasil.rincianAlasan) garap(hasil.rincianAlasan.butir);
+  const u = (hasil.usulan || []).find((x) => x && x.kode === "5227");
+  if (u && u.rincian && u.rincian !== (hasil.rincianAlasan && hasil.rincianAlasan.butir)) garap(u.rincian);
+  return true;
+}
+
+module.exports = { terapkanSisiSaksi, terapkan, ringkasButir, deteksiRincian, pilihanBunyi, susunVarian, gabungKalimat, polaUntuk, simpulKalimat, itemKalimat, KELOMPOK };

@@ -5737,7 +5737,9 @@ async function konteksPerkaraSaksi(nomorPerkara) {
     `SELECT p.posita AS posita, p.petitum AS petitum, p.jenis_perkara_id AS jenis_perkara_id,
             (SELECT DATE_FORMAT(j.tanggal_sidang, '%Y-%m-%d') FROM perkara_jadwal_sidang j
               WHERE j.perkara_id = p.perkara_id
-              ORDER BY ABS(DATEDIFF(j.tanggal_sidang, CURDATE())) ASC, j.tanggal_sidang DESC LIMIT 1) AS tanggal_sidang
+              ORDER BY ABS(DATEDIFF(j.tanggal_sidang, CURDATE())) ASC, j.tanggal_sidang DESC LIMIT 1) AS tanggal_sidang,
+            (SELECT GROUP_CONCAT(CONCAT(s5.urutan, ':', s5.saksi_pihak_ke) ORDER BY s5.urutan SEPARATOR ',')
+               FROM perkara_pihak5 s5 WHERE s5.perkara_id = p.perkara_id AND s5.urutan IN (1, 2)) AS saksi_sisi
        FROM perkara p WHERE p.nomor_perkara = ? LIMIT 1`,
     [nomor]
   ).catch(() => null);
@@ -5746,7 +5748,13 @@ async function konteksPerkaraSaksi(nomorPerkara) {
   const r = Array.isArray(baris) && baris[0];
   if (!r) return null;
   // 13 Okt: jenis perkara ikut - deteksi/cerai.js hanya ditambahkan untuk cerai gugat/talak (346/347).
-  return { posita: String(r.posita || ""), petitum: String(r.petitum || ""), tanggalSidang: String(r.tanggal_sidang || ""), jenisPerkaraId: Number(r.jenis_perkara_id) || null };
+  // 27 Okt: pihak saksi 1 dan 2 (1 = Penggugat/Pemohon, 2 = Tergugat/Termohon) - dari kueri yang SAMA, bukan kueri baru.
+  const sisi = { saksi1: "", saksi2: "" };
+  for (const bagian of String(r.saksi_sisi || "").split(",")) {
+    const [urutan, ke] = bagian.split(":");
+    if (urutan === "1" || urutan === "2") sisi[`saksi${urutan}`] = ke === "1" ? "penggugat" : ke === "2" ? "tergugat" : "";
+  }
+  return { posita: String(r.posita || ""), petitum: String(r.petitum || ""), tanggalSidang: String(r.tanggal_sidang || ""), jenisPerkaraId: Number(r.jenis_perkara_id) || null, saksiSisi: sisi };
 }
 
 module.exports = {

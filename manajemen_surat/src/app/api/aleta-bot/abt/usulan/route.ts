@@ -69,6 +69,9 @@ type BadanUsulan = {
   pelaku?: unknown;
   lawan?: unknown;
   posita?: unknown;
+  /** 5227 (27 Okt 2026): pihak tiap saksi dan jawab-menjawab; keduanya opsional. */
+  saksiPihak?: unknown;
+  jawab?: unknown;
   pemohon?: unknown;
   pemohon2?: unknown;
   templat?: unknown;
@@ -299,6 +302,18 @@ export async function POST(request: NextRequest) {
       // Diteruskan sebagai teks untuk dicocokkan kata kuncinya saja; tidak
       // disimpan di mana pun pada jalur ini.
       posita: String(body.posita || "").slice(0, BATAS_TEKS),
+      // Rincian alasan 5227: gugatan = acuan, saksi menguatkan (pihaknya bila diketahui), jawab-menjawab minor.
+      saksiPihak: (() => {
+        const r = (body.saksiPihak && typeof body.saksiPihak === "object" ? body.saksiPihak : {}) as Record<string, unknown>;
+        const sisi = (x: unknown) => (x === "penggugat" || x === "tergugat" ? (x as string) : "");
+        return { saksi1: sisi(r.saksi1), saksi2: sisi(r.saksi2) };
+      })(),
+      jawab: Array.isArray(body.jawab)
+        ? (body.jawab as unknown[]).slice(0, 6).map((j) => {
+            const r = (j && typeof j === "object" ? j : {}) as Record<string, unknown>;
+            return { jenis: String(r.jenis || "jawaban").slice(0, 20), teks: String(r.teks || "").slice(0, BATAS_TEKS) };
+          })
+        : undefined,
       // Sebutan pemohon (variabel 0046). Itsbat dahulu memakai `pelaku`
       // (0047 = Termohon) sebagai sebutan pemohon, sehingga labelnya
       // "Status Termohon sebelum nikah".

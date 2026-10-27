@@ -267,7 +267,14 @@ const RAMAH: Record<string, { nm: string; pil?: string[]; saran?: string; opsi?:
   "9944": { nm: "Lama pisah rumah" },
   "1268": {
     nm: "Upaya damai oleh keluarga",
-    pil: ["pihak keluarga telah berusaha mendamaikan Penggugat dan Tergugat, namun tidak berhasil", "belum pernah didamaikan oleh pihak keluarga"],
+    // 27 Okt: empat pilihan pendamai (keluarga / aparat / keduanya / lainnya) - kalimat tetap, hanya pelakunya berganti.
+    pil: [
+      "pihak keluarga telah berusaha mendamaikan Penggugat dan Tergugat, namun tidak berhasil",
+      "aparat pemerintah desa/kelurahan dan tokoh masyarakat setempat telah berusaha mendamaikan Penggugat dan Tergugat, namun tidak berhasil",
+      "pihak keluarga serta aparat pemerintah desa/kelurahan dan tokoh masyarakat setempat telah berusaha mendamaikan Penggugat dan Tergugat, namun tidak berhasil",
+      "pihak lain telah berusaha mendamaikan Penggugat dan Tergugat, namun tidak berhasil",
+      "belum pernah didamaikan oleh pihak keluarga",
+    ],
   },
   "0007": { nm: "Anak dari pernikahan ini", saran: "belum dikaruniai anak" },
   "1006": { nm: "Tempat tinggal setelah menikah", saran: "di rumah orang tua Penggugat" },
