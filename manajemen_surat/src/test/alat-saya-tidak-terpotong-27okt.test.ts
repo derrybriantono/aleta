@@ -52,3 +52,22 @@ describe("menu Alat saya tidak terpotong (27 Okt)", () => {
     expect(zMelayang).toBeGreaterThan(zKepala);
   });
 });
+
+describe("daftar blangko simpanan dibaca ulang bila jumlah di menu ABT berubah (27 Okt)", () => {
+  const ISIAN = readFileSync(path.join(AKAR, "blangko-derry-isian.js"), "utf8");
+  const awal = ISIAN.indexOf("const berkasLama = (k) => {");
+  const sumber = ISIAN.slice(awal, ISIAN.indexOf("};", awal) + 2);
+  const berkasLama = (jumlahBerkas: number | null, simpanan: string[] | null) =>
+    new Function("lamaPeta", "k", `${sumber}; return berkasLama(k);`)(
+      new Map(simpanan ? [["99 PTSP", { berkas: simpanan.map((b) => ({ berkas: b })) }]] : []),
+      { nama: "99 PTSP", jumlahBerkas },
+    );
+
+  it("jumlah sama: simpanan dipakai; jumlah beda (paket menambah blangko): dibaca ulang; jumlah tak terbaca: simpanan dipakai", () => {
+    const sebelas = Array.from({ length: 11 }, (_, i) => `@ ${i}.rtf`);
+    expect(berkasLama(11, sebelas)).toHaveLength(11);
+    expect(berkasLama(29, sebelas)).toBeNull();
+    expect(berkasLama(null, sebelas)).toHaveLength(11);
+    expect(berkasLama(29, null)).toBeNull();
+  });
+});

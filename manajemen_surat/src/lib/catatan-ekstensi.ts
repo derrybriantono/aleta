@@ -57,6 +57,15 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.42",
+    dirilis: "2026-10-27T10:27:00+08:00",
+    judul: "Alat saya tidak terpotong; blangko baru langsung tampil di Pilih blangko",
+    butir: [
+      "Blangko ABT by Derry Briantono: menu Alat saya tidak lagi terpotong di bagian atas; menu panjang digulir di dalam kotaknya.",
+      "Pilih blangko: blangko baru di folder ABT (mis. Sampul Berkas Perkara dan Ceklist di PTSP) langsung tampil, tidak menunggu sehari.",
+    ],
+  },
+  {
     versi: "1.205.41",
     dirilis: "2026-10-26T15:55:00+08:00",
     judul: "Sampul, daftar isi, dan ceklist berkas; mode gelap SIPP & e-Court; latar pop-up redup; kotak acuan tidak tercetak",

@@ -687,13 +687,20 @@
       const derry = h.menu.find((m) => /^\s*blangko\s+derry\b/i.test(m.nama));
       if (!derry) throw new Error("Grup Blangko Derry tidak ada di menu ABT akun ini.");
       const lamaPeta = new Map((S.menu ? S.menu.kelompok : []).map((k) => [k.nama, k]));
+      // 27 Okt: daftar berkas simpanan (24 jam) hanya dipakai bila jumlahnya masih sama dengan "(N Blangko)" di menu ABT;
+      // sesudah paket ABT menambah blangko (mis. Sampul di 99 PTSP), daftar dibaca ulang tanpa menunggu sehari.
+      const berkasLama = (k) => {
+        const lama = lamaPeta.get(k.nama);
+        if (!lama || !Array.isArray(lama.berkas)) return null;
+        return typeof k.jumlahBerkas === "number" && Number.isFinite(k.jumlahBerkas) && k.jumlahBerkas !== lama.berkas.length ? null : lama.berkas;
+      };
       const kelompok = derry.kelompok.map((k, i) => ({
         nama: k.nama,
         a: k.a,
         jenis: jenisKelompok(k.nama),
         jumlah: k.jumlahBerkas,
         urut: i,
-        berkas: (lamaPeta.get(k.nama) && lamaPeta.get(k.nama).berkas) || null,
+        berkas: berkasLama(k),
       }));
       S.menu = { kelompok, saat: Date.now() };
     } catch (e) {
