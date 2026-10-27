@@ -57,6 +57,17 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.49",
+    dirilis: "2026-10-27T16:06:00+08:00",
+    judul: "Pihak banyak e-Court dan promosi gratis ALETA Ai",
+    butir: [
+      "Perkara banyak pihak dari e-Court: sebutan Penggugat/Pemohon, Tergugat/Termohon, Turut Tergugat, dan pihak intervensi dihitung menurut urutan dalam kelompoknya, dengan angka romawi untuk semua (XI, XII, ...). Pembacaan KTP, pekerjaan, berkas perkara, jurnal kasir, dan anonimisasi ikut benar.",
+      "Gratis pakai ALETA Ai (promosi): Super Admin dapat menyalakan program promosi di Pengaturan ALETA Ai dengan periode, sasaran peran, jatah giliran per hari dan nilai per pengguna, serta batas biaya satker. Selama jatah ada, ALETA Ai tidak memotong saldo; pita GRATIS tampil di halaman ALETA Ai dan Dompet.",
+      "Laporan ALETA Ai memisahkan giliran, token, dan biaya API promosi.",
+      "Kunci API Claude untuk ALETA Ai diisi dari Pengaturan AI: tambahkan koneksi Claude lalu pilih di modul ALETA Ai (hanya koneksi Claude yang dapat dipilih). Kunci baru langsung berlaku tanpa memulai ulang. Uji koneksi Claude memakai model terkini.",
+    ],
+  },
+  {
     versi: "1.205.48",
     dirilis: "2026-10-27T15:38:00+08:00",
     judul: "Saran blangko di atas dan mengikuti keterangan sidang",
