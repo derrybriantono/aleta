@@ -741,25 +741,11 @@
   async function simpanTxt(nama, isi) {
     const blob = new Blob([`﻿${isi}`], { type: "text/plain;charset=utf-8" });
     if (typeof alatUnduh === "function") {
-      const h = await alatUnduh(blob, nama, { tanpaPeriksaSisa: true });
+      const h = await alatUnduh(blob, nama, { tanpaPeriksaSisa: true, tanpaCadangan: true });
       if (h && h.ok !== false) return true;
     }
-    try {
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = nama;
-      if (typeof alatTandaiTautanAsli === "function") alatTandaiTautanAsli(a);
-      a.style.display = "none";
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => {
-        URL.revokeObjectURL(a.href);
-        a.remove();
-      }, 4000);
-      return true;
-    } catch {
-      return false;
-    }
+    // Tanpa cadangan <a download> blob dari halaman http (ditahan Chrome sebagai "Insecure download blocked").
+    return false;
   }
 
   function namaTxt(nama) {

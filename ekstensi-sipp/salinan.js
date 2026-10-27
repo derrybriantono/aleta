@@ -60,13 +60,28 @@ async function muat() {
   const alamat = URL.createObjectURL(blob);
   penampil.src = alamat;
   unduh.disabled = false;
+  // Unduhan diterbitkan pekerja latar lewat chrome.downloads (data: URL), SAMA dengan RTF - bukan <a download> blob dari halaman ini,
+  // yang dapat ditahan Chrome sebagai "Insecure download blocked". Nama berkas tidak berubah.
+  const alamatData = String(titipan.alamat);
   unduh.addEventListener("click", () => {
-    const a = document.createElement("a");
-    a.href = alamat;
-    a.download = nama;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    unduh.disabled = true;
+    let selesai = false;
+    const akhir = (h) => {
+      if (selesai) return;
+      selesai = true;
+      unduh.disabled = false;
+      pesan.textContent = h && h.ok ? `Tersimpan: ${nama}` : `Unduhan gagal: ${(h && h.pesan) || "pekerja latar tidak menjawab"}. Coba tekan Unduh lagi.`;
+      pesan.className = h && h.ok ? "" : "awas";
+    };
+    try {
+      chrome.runtime.sendMessage({ sumber: "aleta-panel", jenis: "unduh", nama, alamat: alamatData }, (h) => {
+        void chrome.runtime.lastError;
+        akhir(h);
+      });
+    } catch {
+      akhir(null);
+    }
+    setTimeout(() => akhir(null), 30000);
   });
 }
 

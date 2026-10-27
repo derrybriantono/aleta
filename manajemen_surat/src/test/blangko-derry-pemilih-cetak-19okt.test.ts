@@ -137,14 +137,14 @@ const RTF_DENGAN_HEADER = (isi0007: string) => RTF_PUT(isi0007).replace("\\pard\
 const biner = (s: string) => Uint8Array.from(Buffer.from(s, "latin1")).buffer;
 
 type Minta = { url: string; cara: string; badan: string };
-type Halaman = { dom: JSDOM; w: any; simpanan: Record<string, unknown>; minta: Minta[]; latar: Array<Record<string, unknown>>; abt: Record<string, string>; tj: Record<string, Array<{ no: string; tanya: string; jawab: string }>>; pdfRtf: string[]; opsi: { hakTolak?: boolean } };
+type Halaman = { dom: JSDOM; w: any; simpanan: Record<string, unknown>; minta: Minta[]; latar: Array<Record<string, unknown>>; abt: Record<string, string>; tj: Record<string, Array<{ no: string; tanya: string; jawab: string }>>; pdfRtf: string[]; pdfBadan: Array<{ salinan?: boolean; ttd?: Array<{ nama: string; pngBase64: string }> }>; opsi: { hakTolak?: boolean } };
 const terbuka: JSDOM[] = [];
 afterEach(async () => {
   await tunggu(20);
   while (terbuka.length) terbuka.pop()!.window.close();
 });
 
-function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?: boolean; tjGagal?: boolean; botMati?: boolean; abtAwal?: Record<string, string>; rtfBytes?: Uint8Array; ttd?: { status?: number; baris?: unknown[]; akunId?: string; gambarTolak?: boolean } } = {}): Halaman {
+function buka(p: { portalLama?: boolean; orang?: string; simpanan?: Record<string, unknown>; hakTolak?: boolean; tjGagal?: boolean; botMati?: boolean; abtAwal?: Record<string, string>; rtfBytes?: Uint8Array; ttd?: { status?: number; baris?: unknown[]; akunId?: string; gambarTolak?: boolean } } = {}): Halaman {
   const badan = `<div id="header"><div class="h_right"><b>Pengguna</b> Panitera</div></div><div id="wrapper"><div id="navbar">${MENU}</div><div id="content"></div></div>`;
   const dom = new JSDOM(`<!doctype html><html><head><title>ABT</title></head><body>${badan}</body></html>`, { url: BERANDA, runScripts: "outside-only", pretendToBeVisual: true } as ConstructorParameters<typeof JSDOM>[1]);
   terbuka.push(dom);
@@ -185,6 +185,7 @@ function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?
   const abt: Record<string, string> = { "8503": "F", ...(p.abtAwal ?? {}) }; // isian tersimpan di ABT (data_teks/tanggal)
   const tj: Halaman["tj"] = { "5058": [{ no: "1", tanya: "Apakah saudara kenal Penggugat?", jawab: "Kenal, saya kakaknya;" }, { no: "2", tanya: "Apa yang saudara tahu?", jawab: "Mereka sering bertengkar;\nBahwa cukup sekian;" }], "5059": [] };
   const pdfRtf: string[] = [];
+  const pdfBadan: Halaman["pdfBadan"] = [];
   const orang = ORANG[p.orang ?? "hakim"];
   const json = (isi: unknown, status = 200) => new Response(JSON.stringify(isi), { status, headers: { "content-type": "application/json" } });
   const html = (isi: string) => new Response(isi, { status: 200, headers: { "content-type": "text/html" } });
@@ -253,7 +254,10 @@ function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?
     if (url.includes("/aleta-bot/abt/pdf")) {
       const b = JSON.parse(badan || "{}");
       pdfRtf.push(Buffer.from(String(b.rtfBase64 || ""), "base64").toString("latin1"));
-      return json({ ok: true, data: { available: true, message: "", pdfBase64: Buffer.from("%PDF-1.4 uji").toString("base64"), byte: 12, ...(b.salinan ? { salinan: { namaPanitera: "PP Satu", gambarTtdPanitera: false, ttdTerdaftar: false } } : {}) } });
+      pdfBadan.push({ salinan: b.salinan, ttd: b.ttd });
+      // 27 Okt: portal baru membubuhkan tanda tangan di PDF dan menjawab ttdPdf; portal lama (portalLama) tidak mengenal b.ttd.
+      const ttdPdf = !p.portalLama && Array.isArray(b.ttd) && b.ttd.length ? { ttdPdf: { dipasang: b.ttd.map((x: { nama: string }) => x.nama), tidakDitemukan: [] } } : {};
+      return json({ ok: true, data: { available: true, message: "", pdfBase64: Buffer.from("%PDF-1.4 uji").toString("base64"), byte: 12, ...ttdPdf, ...(b.salinan ? { salinan: { namaPanitera: "PP Satu", gambarTtdPanitera: false, ttdTerdaftar: false } } : {}) } });
     }
     if (/\/aleta-ecourt\/tanda-tangan\/\d+\/gambar/.test(url)) {
       if (p.ttd?.gambarTolak) return json({ ok: false }, 403);
@@ -314,7 +318,7 @@ function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?
   w.Element.prototype.scrollIntoView = function () {};
   w.HTMLElement.prototype.focus = function () {};
   w.eval(SUMBER);
-  return { dom, w, simpanan, minta, latar, abt, tj, pdfRtf, opsi: p };
+  return { dom, w, simpanan, minta, latar, abt, tj, pdfRtf, pdfBadan, opsi: p };
 }
 
 const D_ = (h: Halaman) => h.w.document as Document;
@@ -600,7 +604,7 @@ describe("18. tanda tangan sah dari ALETA tercentang otomatis dan dibubuhkan", (
     expect(pop.textContent).not.toContain("belum ada tanda tangan tersimpan");
   });
 
-  it("PDF dan PDF salinan benar-benar membubuhkan gambar di atas nama penanda tangan (baris tertaut akun: id 11)", async () => {
+  it("PDF biasa mengirim gambar ke portal untuk dibubuhkan di PDF (posisi dari koordinat nama); PDF SALINAN TIDAK memuat gambar tanda tangan hakim/PP sama sekali (id 11)", async () => {
     const h = buka({ ttd: { baris: BARIS, akunId: "u-hs" } });
     await pilihPutusan(h);
     await sampai(() => /\(1\)/.test(q(h, "#bd-btnttd")!.textContent || ""), "tercentang otomatis");
@@ -610,14 +614,34 @@ describe("18. tanda tangan sah dari ALETA tercentang otomatis dan dibubuhkan", (
     await sampai(() => q(h, "#bd-ingat") && !q(h, "#bd-ingat")!.hidden, "pengingat");
     klik(h, '[data-bd2="tetapcetak"]');
     await sampai(() => h.pdfRtf.length === 2, "pdf diminta", 8000);
-    for (const rtf of h.pdfRtf) {
-      const idxPict = rtf.indexOf("{\\pict\\pngblip");
-      expect(idxPict).toBeGreaterThan(0);
-      expect(idxPict).toBeLessThan(rtf.indexOf("Hakim Satu, S.H."));
-      expect(rtf.indexOf("\\pict", idxPict + 5)).toBe(-1);
-    }
-    expect(mintaKe(h, /tanda-tangan\/11\/gambar/).length).toBe(2);
+    // RTF kedua keluaran bersih dari gambar (tidak ada lagi gambar yang posisinya ditebak di RTF).
+    for (const rtf of h.pdfRtf) expect(rtf).not.toContain("\\pict");
+    const biasa = h.pdfBadan.find((x) => !x.salinan)!;
+    const salinan = h.pdfBadan.find((x) => x.salinan)!;
+    expect(biasa.ttd).toHaveLength(1);
+    expect(biasa.ttd![0].nama).toBe("Hakim Satu, S.H.");
+    expect(biasa.ttd![0].pngBase64.length).toBeGreaterThan(20);
+    expect(salinan.ttd).toBeUndefined();
+    // Gambar hanya diambil sekali (untuk PDF biasa), bukan lagi untuk salinan.
+    expect(mintaKe(h, /tanda-tangan\/11\/gambar/).length).toBe(1);
     expect(mintaKe(h, /tanda-tangan\/14\/gambar/)).toEqual([]);
+    await sampai(() => /tanda tangan: Hakim Satu/.test(akar(h).textContent || ""), "log ttd");
+    await sampai(() => /majelis dan panitera sidang: ttd|tanpa tanda tangan Panitera yang disahkan; majelis dan panitera sidang: ttd/.test(akar(h).textContent || ""), "keterangan salinan: ttd");
+  });
+
+  it("portal lama (jawaban tanpa ttdPdf): PDF biasa memakai cara lama - gambar disisipkan di RTF - dan tetap berhasil", async () => {
+    const h = buka({ portalLama: true, ttd: { baris: BARIS, akunId: "u-hs" } });
+    await pilihPutusan(h);
+    await sampai(() => /\(1\)/.test(q(h, "#bd-btnttd")!.textContent || ""), "tercentang otomatis");
+    (q(h, '[data-fmt="pdf"]') as HTMLInputElement).click();
+    klik(h, '[data-bd2="cetak"]');
+    await sampai(() => q(h, "#bd-ingat") && !q(h, "#bd-ingat")!.hidden, "pengingat");
+    klik(h, '[data-bd2="tetapcetak"]');
+    await sampai(() => h.pdfRtf.length === 2, "pdf diminta dua kali (baru lalu cadangan lama)", 8000);
+    expect(h.pdfRtf[0]).not.toContain("\\pict");
+    const idxPict = h.pdfRtf[1].indexOf("{\\pict\\pngblip");
+    expect(idxPict).toBeGreaterThan(0);
+    expect(idxPict).toBeLessThan(h.pdfRtf[1].indexOf("Hakim Satu, S.H."));
     await sampai(() => /tanda tangan: Hakim Satu/.test(akar(h).textContent || ""), "log ttd");
   });
 

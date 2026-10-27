@@ -2305,8 +2305,8 @@
    "jumlahPernyataan": 2
   },
   "blangko-derry.js": {
-   "byte": 123768,
-   "sidik": "18b95f125f1f36d2ef17727bbe4ee5b1c0bee597",
+   "byte": 124300,
+   "sidik": "6b633f17e46d90cbc136e53d8f2714120367de68",
    "nama": [],
    "ekspor": [
     "aletaBlangkoDerry",
@@ -2327,8 +2327,8 @@
    "jumlahPernyataan": 2
   },
   "deteksi-sisa-blangko.js": {
-   "byte": 46443,
-   "sidik": "7b70e2b96a30835bfc5586498c2d34fcf05b823d",
+   "byte": 46151,
+   "sidik": "289754bf569612a36c4ca54ad21ffbf38cc72557",
    "nama": [],
    "ekspor": [
     "aletaDeteksiSisa"
@@ -4971,8 +4971,8 @@
    "jumlahPernyataan": 2
   },
   "putusan-advance.js": {
-   "byte": 23308,
-   "sidik": "3b88d8bc2712d388fe104d49b703d5143569b7cf",
+   "byte": 23505,
+   "sidik": "3018c585773b57b776f5d43ef2fa7d5f4b0d9f3c",
    "nama": [],
    "ekspor": [
     "aletaPutusanAdvance"

@@ -442,7 +442,7 @@ describe("4. dialog peringatan (ekstensi)", () => {
     expect(h.unduhan[0].nama).toBe("Daftar masalah - Relaas Panggilan.txt");
     expect(h.unduhan[0].tipe).toContain("text/plain");
     expect(h.unduhan[0].teks).toContain("«[nama penggugat]»");
-    expect(h.unduhan[0].opsi).toEqual({ tanpaPeriksaSisa: true });
+    expect(h.unduhan[0].opsi).toEqual({ tanpaPeriksaSisa: true, tanpaCadangan: true });
     expect(/aleta/i.test(h.unduhan[0].teks)).toBe(false);
   });
 });

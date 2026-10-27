@@ -77,6 +77,8 @@
     tjJawab: "blangkoDerryTjJawab",
     // 19 Okt: isi otomatis dari SIPP (bawaan NYALA), diingat per pengguna seperti saklar lain.
     isiOto: "blangkoDerryIsiOto",
+    // 27 Okt: naskah cetak disiapkan di latar begitu isian lengkap (bawaan NYALA), diingat per pengguna.
+    siapNaskah: "blangkoDerrySiapNaskah",
     // 22 Okt: "Tes putusan" (hanya Super Admin): blangko apa pun dicoba pada perkara acuan, tanpa menulis apa pun. Bawaan mati, diingat per pengguna.
     tesPutusan: "blangkoDerryTesPutusan",
     // 20 Okt: pratinjau BAS & relaas di SIPP sebelum diunduh (bawaan NYALA), saklarnya di Alat saya.
@@ -544,7 +546,7 @@
   // Keadaan
   // ──────────────────────────────────────────────────────────────────────────
   const S = {
-    cfg: { bawaan: false, tawar: true, saran: true, ingat: true, tjJawab: true, isiOto: true, pratinjau: true, tesPutusan: false },
+    cfg: { bawaan: false, tawar: true, saran: true, ingat: true, tjJawab: true, isiOto: true, siapNaskah: true, pratinjau: true, tesPutusan: false },
     /** 19 Okt: tautan dari Jadwal Sidang portal (ABT dibuka dengan #bd=...): perkara, sidang, jenis, petunjuk. Null bila tidak ada/rusak. */
     tautan: null,
     tema: "gelap",
@@ -723,6 +725,7 @@
       ingat: s[K.ingat] !== false,
       tjJawab: s[K.tjJawab] !== false,
       isiOto: s[K.isiOto] !== false,
+      siapNaskah: s[K.siapNaskah] !== false,
       pratinjau: s[K.pratinjau] !== false,
       gembok: s[K.gembok] === true,
       // 22 Okt malam (pengguna): Tes putusan SELALU mati setiap panel dibuka; hanya bertahan selama halaman ini.
@@ -732,7 +735,7 @@
     S.ukuran = Object.prototype.hasOwnProperty.call(UKURAN, s[K.ukuran]) ? s[K.ukuran] : "biasa";
   }
   async function muatSetelan() {
-    const s = await bacaPenyimpanan([K.bawaan, K.tawar, K.saran, K.ingat, K.tjJawab, K.isiOto, K.pratinjau, K.gembok, K.tesPutusan, K.tema, K.daftar, K.aktif, K.ukuran]);
+    const s = await bacaPenyimpanan([K.bawaan, K.tawar, K.saran, K.ingat, K.tjJawab, K.isiOto, K.siapNaskah, K.pratinjau, K.gembok, K.tesPutusan, K.tema, K.daftar, K.aktif, K.ukuran]);
     terapkanSetelan(s);
     const d = s[K.daftar];
     if (d && typeof d === "object") {
@@ -1919,6 +1922,7 @@
     ["ingat", "Ingatkan isian yang masih kosong sebelum cetak", "juga tombol Cetak panel ALETA di ABT biasa", ["hakim", "pp", "js"]],
     ["isiOto", "Isi otomatis dari SIPP", "begitu perkara dan blangko dipilih, isian kosong yang datanya ada di SIPP, gugatan dan e-Court terisi dan tersimpan ke ABT; yang sudah ada isinya tidak ditimpa", ["hakim", "pp", "js"]],
     ["tjJawab", "Tanya-jawab jawab-menjawab otomatis", "jawaban, replik, duplik tertulis yang rapi ditulis ke sidang yang sesuai bila barisnya kosong", ["hakim", "pp"]],
+    ["siapNaskah", "Siapkan naskah cetak di latar", "begitu isian lengkap, naskah dari ABT disusun lebih dulu supaya tombol Cetak langsung jalan; mati = naskah baru diminta saat Cetak atau Pratinjau", ["hakim", "pp", "js"]],
     ["gembok", "Gembok panel ALETA di ABT biasa: selalu tampil penuh", "mati = Ringkas otomatis (panel tinggal kepalanya saat menutupi tabel)", ["hakim", "pp", "js"]],
   ];
   function saklarUntukPeran() {
@@ -2028,7 +2032,7 @@
 
   // ── Peristiwa ─────────────────────────────────────────────────────────────
   function ubahSaklar(kunciCfg, nilai) {
-    const peta = { bawaan: K.bawaan, tawar: K.tawar, saran: K.saran, ingat: K.ingat, tjJawab: K.tjJawab, isiOto: K.isiOto, pratinjau: K.pratinjau, gembok: K.gembok };
+    const peta = { bawaan: K.bawaan, tawar: K.tawar, saran: K.saran, ingat: K.ingat, tjJawab: K.tjJawab, isiOto: K.isiOto, siapNaskah: K.siapNaskah, pratinjau: K.pratinjau, gembok: K.gembok };
     if (!peta[kunciCfg]) return;
     S.cfg[kunciCfg] = Boolean(nilai);
     void tulisPenyimpanan({ [peta[kunciCfg]]: Boolean(nilai) });
@@ -2259,7 +2263,7 @@
     if (wilayah !== "local" || !ubah) return;
     const s = {};
     let berubah = false;
-    for (const k of [K.bawaan, K.tawar, K.saran, K.ingat, K.tjJawab, K.isiOto, K.pratinjau, K.gembok, K.tema, K.ukuran]) {
+    for (const k of [K.bawaan, K.tawar, K.saran, K.ingat, K.tjJawab, K.isiOto, K.siapNaskah, K.pratinjau, K.gembok, K.tema, K.ukuran]) {
       if (ubah[k]) {
         berubah = true;
         s[k] = ubah[k].newValue;
@@ -2274,6 +2278,7 @@
         [K.ingat]: S.cfg.ingat,
         [K.tjJawab]: S.cfg.tjJawab,
         [K.isiOto]: S.cfg.isiOto,
+        [K.siapNaskah]: S.cfg.siapNaskah,
         [K.pratinjau]: S.cfg.pratinjau,
         [K.gembok]: S.cfg.gembok,
         [K.tesPutusan]: S.cfg.tesPutusan,

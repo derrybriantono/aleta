@@ -181,7 +181,8 @@ describe("jalur PDF salinan: bot -> portal -> ekstensi", () => {
   it("portal meneruskan { salinan } dan memulangkan keterangannya", () => {
     const r = baca("manajemen_surat/src/app/api/aleta-bot/abt/pdf/route.ts");
     expect(r).toContain("getGatewayAbtPdf(rtfBase64, salinanOpsi ?? { salinan })"); // 20 Okt: + ukuran TTD/cap dan cap Panitera
-    expect(r).toContain("salinan: hasil.data?.salinan ?? null");
+    expect(r).toContain("keteranganSalinan = hasil.data?.salinan ?? null");
+    expect(r).toContain("salinan: keteranganSalinan");
   });
 
   it("ekstensi: sesudah PDF putusan (cetak tiga berkas & Kerjakan perkara ini) salinan langsung ditampilkan", () => {

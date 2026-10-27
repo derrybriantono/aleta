@@ -55,7 +55,7 @@ export type IsiPdf = {
  * Sengaja tidak memakai paket canvas: ia menuntut penyusunan asli saat
  * pemasangan, dan wadah ini tidak punya penyusunnya.
  */
-function pasangRintisanPeramban() {
+export function pasangRintisanPeramban() {
   const lingkup = globalThis as Record<string, unknown>;
 
   if (!lingkup.DOMMatrix) {

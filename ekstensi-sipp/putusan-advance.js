@@ -329,21 +329,19 @@
     const bin = atob(d.rtfBase64);
     const bita = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i += 1) bita[i] = bin.charCodeAt(i);
-    let alamat = "";
-    let blobUrl = false;
-    try {
-      alamat = URL.createObjectURL(new Blob([bita], { type: "application/rtf" }));
-      blobUrl = true;
-    } catch {
-      alamat = `data:application/rtf;base64,${d.rtfBase64}`;
-    }
-    const a = document.createElement("a");
-    a.href = alamat;
-    a.download = String(d.namaBerkas || "Draf putusan.rtf");
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    if (blobUrl) setTimeout(() => { try { URL.revokeObjectURL(alamat); } catch { /* sudah dilepas */ } }, 4000);
+    // Diterbitkan pekerja latar (chrome.downloads, data: URL) - TIDAK lewat <a download> blob dari halaman http, yang ditahan Chrome
+    // sebagai "Insecure download blocked". Nama berkas tidak berubah.
+    const nama = String(d.namaBerkas || "Draf putusan.rtf");
+    const blob = new Blob([bita], { type: "application/rtf" });
+    const api = isian();
+    const unduhAman = api && typeof api.unduh === "function" ? api.unduh(blob, nama) : Promise.resolve({ ok: false, pesan: "alat unduh belum siap" });
+    return unduhAman.then((u) => {
+      if (!u || u.ok === false) {
+        S.drafGalat = `Draf putusan gagal diunduh: ${(u && u.pesan) || "pekerja latar tidak menjawab"}. Coba lagi.`;
+        render();
+      }
+      return u;
+    });
   }
 
   async function periksa() {

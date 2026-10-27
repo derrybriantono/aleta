@@ -540,15 +540,21 @@ describe("ekstensi putusan-advance.js: Susun draf utuh", () => {
     const { w, minta } = siapkan();
     await w.aletaPutusanAdvance.periksa();
     await w.aletaPutusanAdvance.susunDraf();
-    const diunduh: Array<{ nama: string; href: string }> = [];
-    w.HTMLAnchorElement.prototype.click = function (this: HTMLAnchorElement) {
-      diunduh.push({ nama: this.download, href: this.href });
+    // 27 Okt: diunduh lewat jalur aman panel Blangko Derry (pekerja latar, chrome.downloads) - BUKAN <a download> blob dari halaman http
+    // (ditahan Chrome sebagai "Insecure download blocked"). Nama berkas tidak berubah.
+    const diunduh: Array<{ nama: string; tipe: string; ukuran: number }> = [];
+    let jangkar = 0;
+    w.HTMLAnchorElement.prototype.click = function () {
+      jangkar += 1;
     };
-    w.URL.createObjectURL = () => "blob:uji";
-    w.URL.revokeObjectURL = () => undefined;
+    w.aletaBlangkoDerryIsian.unduh = async (blob: Blob, nama: string) => {
+      diunduh.push({ nama, tipe: blob.type, ukuran: blob.size });
+      return { ok: true, lewat: "ekstensi" };
+    };
     const sebelum = minta.length;
-    w.aletaPutusanAdvance.unduhDraf();
-    expect(diunduh).toEqual([{ nama: "Draf putusan 123_Pdt.G_2026_PA.Dgl.rtf", href: "blob:uji" }]);
+    await w.aletaPutusanAdvance.unduhDraf();
+    expect(diunduh).toEqual([{ nama: "Draf putusan 123_Pdt.G_2026_PA.Dgl.rtf", tipe: "application/rtf", ukuran: 12 }]);
+    expect(jangkar).toBe(0);
     expect(minta).toHaveLength(sebelum);
   });
 

@@ -3983,14 +3983,23 @@ export type KeteranganSalinanPdf = {
 
 export async function getGatewayAbtPdf(
   rtfBase64: string,
-  opsi: { salinan?: boolean; atur?: Record<string, number>; cap?: { jenis: string; isiBase64: string } | null } = {}
+  opsi: { salinan?: boolean; atur?: Record<string, number>; cap?: { jenis: string; isiBase64: string } | null; ttdDiPdf?: boolean } = {}
 ) {
-  return gatewayFetch<{ pdfBase64: string; byte: number; versiMesin: string; salinan?: KeteranganSalinanPdf }>(
+  return gatewayFetch<{
+    pdfBase64: string;
+    byte: number;
+    versiMesin: string;
+    salinan?: KeteranganSalinanPdf;
+    /** Gambar tanda tangan Panitera pengesah (hanya bila ttdDiPdf diminta dan bot mendukung) - portal yang membubuhkannya di PDF. */
+    ttdPanitera?: { nama: string; jenis: "png" | "jpg"; isiBase64: string };
+  }>(
     "/internal/aleta-bot/abt/pdf",
     {
       method: "POST",
       body: JSON.stringify(
-        opsi.salinan ? { rtfBase64, salinan: true, ...(opsi.atur ? { atur: opsi.atur } : {}), ...(opsi.cap ? { cap: opsi.cap } : {}) } : { rtfBase64 }
+        opsi.salinan
+          ? { rtfBase64, salinan: true, ...(opsi.atur ? { atur: opsi.atur } : {}), ...(opsi.cap ? { cap: opsi.cap } : {}), ...(opsi.ttdDiPdf ? { ttdDiPdf: true } : {}) }
+          : { rtfBase64 }
       ),
       // ======================================================================
       // BATAS 8 DETIK TERLALU PENDEK UNTUK MENJALANKAN LibreOffice

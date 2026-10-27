@@ -3345,6 +3345,7 @@ router.post("/abt/pdf", requireInternalToken, async (req, res) => {
     // tanda tangan Panitera (HANYA yang sudah disahkan, dicocokkan dengan
     // nama di blok itu). Lihat salinanPutusanService.
     let salinan = null;
+    let ttdPanitera = null;
     if (req.body && req.body.salinan === true && isi.subarray(0, 5).toString("latin1").startsWith("{\\rtf")) {
       const teks = isi.toString("latin1");
       const namaPanitera = salinanPutusanService.namaPaniteraSalinan(teks);
@@ -3363,9 +3364,15 @@ router.post("/abt/pdf", requireInternalToken, async (req, res) => {
         const isiCap = Buffer.from(kapBody.isiBase64, "base64");
         if (isiCap.length) cap = { isi: isiCap, jenis: String(kapBody.jenis || "") };
       }
-      const susun = salinanPutusanService.susunSalinan(teks, { ttd, cap, atur: req.body && req.body.atur });
+      // 27 Okt: { ttdDiPdf: true } = portal membubuhkan gambar Panitera di PDF (posisi dari koordinat baris nama); RTF hanya diberi ruang,
+      // gambarnya dikembalikan di jawaban (ttdPanitera). Portal lama tidak mengirim tanda ini -> cara lama (gambar mengambang di RTF).
+      const ttdDiPdf = req.body && req.body.ttdDiPdf === true;
+      const susun = salinanPutusanService.susunSalinan(teks, { ttd, cap, atur: req.body && req.body.atur, ttdDiPdf });
       isi = Buffer.from(susun.rtf, "latin1");
       salinan = { ...susun.laporan, ttdTerdaftar: Boolean(ttd), galatTtd };
+      if (ttdDiPdf && ttd && ttd.isi && Buffer.from(ttd.isi).length) {
+        ttdPanitera = { nama: salinan.namaPanitera || namaPanitera, jenis: String(ttd.jenis || "png").toLowerCase() === "jpg" ? "jpg" : "png", isiBase64: Buffer.from(ttd.isi).toString("base64") };
+      }
     }
     const hasil = await abtCetakService.rtfKePdf(isi);
     if (!hasil.ok) {
@@ -3378,6 +3385,7 @@ router.post("/abt/pdf", requireInternalToken, async (req, res) => {
       byte: hasil.pdf.length,
       versiMesin: hasil.versiMesin || "",
       ...(salinan ? { salinan } : {}),
+      ...(ttdPanitera ? { ttdPanitera } : {}),
     });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });

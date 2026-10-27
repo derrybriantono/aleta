@@ -129,7 +129,7 @@ type Opsi = {
   ttd?: { baris: unknown[]; akunId: string };
   relaas?: unknown;
 };
-type Halaman = { dom: JSDOM; w: any; simpanan: Record<string, unknown>; minta: Minta[]; latar: Array<Record<string, unknown>>; abt: Record<string, string>; pdfRtf: string[]; pratinjau: string[]; gabung: number[] };
+type Halaman = { dom: JSDOM; w: any; simpanan: Record<string, unknown>; minta: Minta[]; latar: Array<Record<string, unknown>>; abt: Record<string, string>; pdfRtf: string[]; pdfTtd: Array<Array<{ nama: string }>>; pratinjau: string[]; gabung: number[] };
 const terbuka: JSDOM[] = [];
 afterEach(async () => {
   await tunggu(20);
@@ -168,6 +168,7 @@ function buka(p: Opsi = {}): Halaman {
   const minta: Minta[] = [];
   const abt: Record<string, string> = { ...(p.abtAwal ?? {}) };
   const pdfRtf: string[] = [];
+  const pdfTtd: Array<Array<{ nama: string }>> = [];
   const pratinjau: string[] = [];
   const gabung: number[] = [];
   const orang = ORANG[p.orang ?? "hakim"];
@@ -248,7 +249,10 @@ function buka(p: Opsi = {}): Halaman {
     if (url.includes("/aleta-bot/abt/pdf")) {
       const b = JSON.parse(badanMinta || "{}");
       pdfRtf.push(Buffer.from(String(b.rtfBase64 || ""), "base64").toString("latin1"));
-      return json({ ok: true, data: { available: true, message: "", pdfBase64: Buffer.from(`%PDF-1.4 uji ${pdfRtf.length}`).toString("base64"), byte: 12 } });
+      pdfTtd.push(Array.isArray(b.ttd) ? b.ttd : []);
+      // 27 Okt: portal membubuhkan tanda tangan di PDF (posisi dari koordinat nama) dan menjawab ttdPdf.
+      const ttdPdf = Array.isArray(b.ttd) && b.ttd.length ? { ttdPdf: { dipasang: b.ttd.map((x: { nama: string }) => x.nama), tidakDitemukan: [] } } : {};
+      return json({ ok: true, data: { available: true, message: "", pdfBase64: Buffer.from(`%PDF-1.4 uji ${pdfRtf.length}`).toString("base64"), byte: 12, ...ttdPdf } });
     }
     if (url.includes("/aleta-ecourt/pdf-gabung")) {
       if (p.gabungAda === false) return json({ ok: false }, 404);
@@ -292,7 +296,7 @@ function buka(p: Opsi = {}): Halaman {
   w.HTMLElement.prototype.focus = function () {};
   w.eval(SUMBER);
   w.aletaBlangkoDerryMassal.atur({ jedaMs: 0 });
-  return { dom, w, simpanan, minta, latar, abt, pdfRtf, pratinjau, gabung };
+  return { dom, w, simpanan, minta, latar, abt, pdfRtf, pdfTtd, pratinjau, gabung };
 }
 
 const D_ = (h: Halaman) => h.w.document as Document;
@@ -614,7 +618,9 @@ describe("E. Cetak: ambilRtf per perkara, ZIP RTF / PDF gabungan", () => {
     klik(h, '[data-ms="cetak"]');
     await sampai(() => unduhan(h).length === 1 && massal(h).keadaan().jalan === "", "PDF diunduh", 15000);
     expect(h.pdfRtf).toHaveLength(1);
-    expect(h.pdfRtf[0]).toContain("{\\pict\\pngblip");
+    // 27 Okt: gambar tidak lagi disisipkan di RTF; dikirim ke portal, yang membubuhkannya di PDF di atas nama pemiliknya.
+    expect(h.pdfRtf[0]).not.toContain("\\pict");
+    expect(h.pdfTtd[0].map((x) => x.nama)).toEqual(["Hakim Satu, S.H."]);
     expect(mintaKe(h, /tanda-tangan\/11\/gambar/).length).toBe(1);
   });
 

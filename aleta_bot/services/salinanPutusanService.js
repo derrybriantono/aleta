@@ -425,19 +425,58 @@ function sisipkanTtdPanitera(rtf, ttd, { tinggiTwip = 1440, lebarMaks = 4480, ca
 }
 
 /**
+ * c'. (27 Okt 2026) Tanda tangan Panitera DIBUBUHKAN DI PDF oleh portal (posisi dihitung dari koordinat baris nama di PDF, bukan dari
+ * tebakan tata letak RTF). Di RTF hanya DISEDIAKAN RUANG: baris kosong tambahan di atas nama secukupnya untuk tinggi gambar, supaya
+ * gambar yang kelak dibubuhkan tidak menutupi label "Panitera,". Tidak ada gambar yang disisipkan di RTF.
+ */
+function sediakanRuangTtdPanitera(rtf, ttd, { atur = null } = {}) {
+  const s = String(rtf || "");
+  if (!ttd || !ttd.isi || !Buffer.from(ttd.isi).length) return { rtf: s, ok: false, alasan: "ttd_tidak_ada" };
+  const blok = blokUntukSalinan(s);
+  if (!blok) return { rtf: s, ok: false, alasan: "blok_untuk_salinan_tidak_ada" };
+  try {
+    const edoc = require("./penetapanEdocService");
+    const baris = edoc.sapuRtf(s).baris;
+    let mulai = -1;
+    for (let k = baris.length - 1; k >= 0; k -= 1) {
+      if (baris[k].teks === blok.namaPanitera) {
+        mulai = baris[k].mulai;
+        break;
+      }
+    }
+    if (!(mulai > 0)) return { rtf: s, ok: true, namaPanitera: blok.namaPanitera, barisKosongTambah: 0 };
+    const a = edoc.aturBerlaku("ppp", atur);
+    const mm = (n) => Number(n);
+    const u = edoc.ukuranGambar(ttd.isi);
+    let tinggi = mm(a.lebarTtdMm) / 2;
+    if (u && u.lebar > 0) tinggi = (mm(a.lebarTtdMm) * u.tinggi) / u.lebar;
+    tinggi = Math.min(tinggi, mm(a.tinggiTtdMaksMm));
+    const tambah = barisKosongTambahan(tinggi, mm(a.ttdTurunMm), blok.kosongan.length);
+    const jeda = tambah ? "\\par ".repeat(tambah) : "";
+    return { rtf: tambah ? `${s.slice(0, mulai)}${jeda}${s.slice(mulai)}` : s, ok: true, namaPanitera: blok.namaPanitera, barisKosongTambah: tambah };
+  } catch {
+    return { rtf: s, ok: true, namaPanitera: blok.namaPanitera, barisKosongTambah: 0 };
+  }
+}
+
+/**
  * Seluruh penyuntingan salinan. `ttd` = { jenis, isi } milik Panitera yang
  * namanya di blok Untuk Salinan (SUDAH disahkan - lihat
  * tandaTanganService.untukPejabat), atau null.
+ *
+ * `ttdDiPdf` (27 Okt 2026): gambar TIDAK disisipkan di RTF; hanya ruang di atas nama disediakan dan laporan menyatakan
+ * ttdDiPdf: true - pemanggil (portal) yang membubuhkan gambar di PDF hasil konversi.
  */
-function susunSalinan(rtf, { ttd = null, cap = null, atur = null } = {}) {
+function susunSalinan(rtf, { ttd = null, cap = null, atur = null, ttdDiPdf = false } = {}) {
   const a = salinanKeKiri(rtf);
   const b = tambahTtdPejabat(a.rtf);
   const u = tampakkanUntukSalinan(b.rtf);
   const namaPanitera = namaPaniteraSalinan(u.rtf);
-  const c = sisipkanTtdPanitera(u.rtf, ttd, { cap, atur });
+  const c = ttdDiPdf ? sediakanRuangTtdPanitera(u.rtf, ttd, { atur }) : sisipkanTtdPanitera(u.rtf, ttd, { cap, atur });
   return {
     rtf: c.rtf,
     laporan: {
+      ttdDiPdf: Boolean(ttdDiPdf),
       salinan: a.cara,
       untukSalinan: u.ok,
       ttdDitambah: b.ditambah,
@@ -460,6 +499,7 @@ module.exports = {
   warnaPutih,
   namaPaniteraSalinan,
   sisipkanTtdPanitera,
+  sediakanRuangTtdPanitera,
   barisKosongTambahan,
   ukuranGambar,
   susunSalinan,

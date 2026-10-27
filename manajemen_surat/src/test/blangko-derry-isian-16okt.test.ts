@@ -120,7 +120,7 @@ const POPUP = (kode: string, tipe: string, nilai: string) =>
   (tipe === "data_tanggal" ? `<input type='text' id='tgl_form' value='${nilai}'>` : `<textarea id="value" ${tipe === "data_sql" ? "readonly" : ""}>${nilai}</textarea>`);
 
 type Minta = { url: string; cara: string; badan: string };
-type Halaman = { dom: JSDOM; w: any; simpanan: Record<string, unknown>; minta: Minta[]; latar: Array<Record<string, unknown>>; abt: Record<string, string>; tj: Record<string, Array<{ no: string; tanya: string; jawab: string }>>; pdfRtf: string[]; opsi: { hakTolak?: boolean } };
+type Halaman = { dom: JSDOM; w: any; simpanan: Record<string, unknown>; minta: Minta[]; latar: Array<Record<string, unknown>>; abt: Record<string, string>; tj: Record<string, Array<{ no: string; tanya: string; jawab: string }>>; pdfRtf: string[]; pdfTtd: Array<Array<{ nama: string; pngBase64: string }>>; opsi: { hakTolak?: boolean } };
 const terbuka: JSDOM[] = [];
 afterEach(async () => {
   await tunggu(20);
@@ -168,6 +168,7 @@ function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?
   const abt: Record<string, string> = { "8503": "F", ...(p.abtAwal ?? {}) }; // isian tersimpan di ABT (data_teks/tanggal)
   const tj: Halaman["tj"] = { "5058": [{ no: "1", tanya: "Apakah saudara kenal Penggugat?", jawab: "Kenal, saya kakaknya;" }, { no: "2", tanya: "Apa yang saudara tahu?", jawab: "Mereka sering bertengkar;\nBahwa cukup sekian;" }], "5059": [] };
   const pdfRtf: string[] = [];
+  const pdfTtd: Array<Array<{ nama: string; pngBase64: string }>> = [];
   const orang = ORANG[p.orang ?? "hakim"];
   const json = (isi: unknown, status = 200) => new Response(JSON.stringify(isi), { status, headers: { "content-type": "application/json" } });
   const html = (isi: string) => new Response(isi, { status: 200, headers: { "content-type": "text/html" } });
@@ -236,7 +237,8 @@ function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?
     if (url.includes("/aleta-bot/abt/pdf")) {
       const b = JSON.parse(badan || "{}");
       pdfRtf.push(Buffer.from(String(b.rtfBase64 || ""), "base64").toString("latin1"));
-      return json({ ok: true, data: { available: true, message: "", pdfBase64: Buffer.from("%PDF-1.4 uji").toString("base64"), byte: 12, ...(b.salinan ? { salinan: { namaPanitera: "PP Satu", gambarTtdPanitera: false, ttdTerdaftar: false } } : {}) } });
+      pdfTtd.push(Array.isArray(b.ttd) ? b.ttd : []);
+      return json({ ok: true, data: { available: true, message: "", pdfBase64: Buffer.from("%PDF-1.4 uji").toString("base64"), byte: 12, ...(Array.isArray(b.ttd) && b.ttd.length ? { ttdPdf: { dipasang: b.ttd.map((x: { nama: string }) => x.nama), tidakDitemukan: [] } } : {}), ...(b.salinan ? { salinan: { namaPanitera: "PP Satu", gambarTtdPanitera: false, ttdTerdaftar: false } } : {}) } });
     }
     if (url.includes("/aleta-ecourt/tanda-tangan")) return json({ ok: false, alasan: "tidak berwenang" }, 403);
     if (url.includes("/aleta-ecourt/putusan/unggah-sipp")) return json({ ok: true, data: { ok: true } });
@@ -290,7 +292,7 @@ function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?
   w.Element.prototype.scrollIntoView = function () {};
   w.HTMLElement.prototype.focus = function () {};
   w.eval(SUMBER);
-  return { dom, w, simpanan, minta, latar, abt, tj, pdfRtf, opsi: p };
+  return { dom, w, simpanan, minta, latar, abt, tj, pdfRtf, pdfTtd, opsi: p };
 }
 
 const D_ = (h: Halaman) => h.w.document as Document;
@@ -814,13 +816,13 @@ describe("G. pratinjau dan cetak", () => {
     klik(h, '[data-bd2="tetapcetak"]');
     await sampai(() => h.pdfRtf.length === 1, "pdf diminta", 8000);
     const rtf = h.pdfRtf[0];
-    // 20 Okt: TTD mengambang (bentuk) - gambar 1x1 dijepit tinggi maks 35 mm (1984 twip), menimpa nama.
-    expect(rtf).toContain("\\shpbypara");
-    const idxPict = rtf.indexOf("{\\pict\\pngblip\\picw1\\pich1\\picwgoal1984\\pichgoal1984 89504e47");
-    const idxNama = rtf.indexOf("Hakim Satu, S.H.");
-    expect(idxPict).toBeGreaterThan(0);
-    expect(idxPict).toBeLessThan(idxNama);
-    expect(rtf.indexOf("\\pict", idxPict + 5)).toBe(-1); // hanya satu tanda tangan
+    // 27 Okt: gambar TIDAK lagi disisipkan di RTF (posisinya dulu ditebak); dikirim ke portal yang membubuhkannya di PDF, di atas nama,
+    // dari koordinat baris nama (pdf-bubuh-ttd-27okt.test.ts). Hanya satu tanda tangan, milik Hakim Satu.
+    expect(rtf).not.toContain("\\pict");
+    expect(rtf).not.toContain("\\shpbypara");
+    expect(h.pdfTtd[0]).toHaveLength(1);
+    expect(h.pdfTtd[0][0].nama).toBe("Hakim Satu, S.H.");
+    expect(h.pdfTtd[0][0].pngBase64).toBe(PNG_1X1);
     await sampai(() => /tanda tangan: Hakim Satu/.test(akar(h).textContent || ""), "log ttd");
   });
 });
