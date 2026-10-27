@@ -57,6 +57,17 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.48",
+    dirilis: "2026-10-27T15:38:00+08:00",
+    judul: "Saran blangko di atas dan mengikuti keterangan sidang",
+    butir: [
+      "Pilih blangko: kelompok yang memuat blangko disarankan (bertanda kuning) naik ke atas daftar, dan di dalam kelompok blangko yang disarankan berada paling atas.",
+      "Tab Disarankan menyebut kelompok asal tiap blangko yang disarankan; menekan nama kelompok itu langsung membukanya.",
+      "Saran blangko putusan mengikuti hasil yang ditulis di keterangan sidang (mis. \"putus Tidak Dapat Diterima\") walau status putusan belum tercatat di SIPP, tidak lagi selalu dianggap dikabulkan.",
+      "Perkara NO karena Penggugat hadir di sidang pertama lalu tidak hadir lagi disarankan blangko NO SEMA 1 Tahun 2022.",
+    ],
+  },
+  {
     versi: "1.205.47",
     dirilis: "2026-10-27T12:28:00+08:00",
     judul: "Cetak lebih cepat, unduhan aman, tanda tangan PDF SALINAN",
