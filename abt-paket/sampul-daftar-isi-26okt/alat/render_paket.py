@@ -24,7 +24,7 @@ if __name__ == '__main__':
     tuj = sys.argv[1]
     os.makedirs(tuj, exist_ok=True)
     for pid in sys.argv[2:]:
-        for akar, _, berkas in os.walk(os.path.join(SINI, 'rtf')):
+        for akar, _, berkas in os.walk(os.environ.get('RAPI_RTF') or os.path.join(SINI, 'rtf')):   # RAPI_RTF = folder rtf lain (mis. paket sebelumnya, untuk pembanding)
             for b in sorted(berkas):
                 data = open(os.path.join(akar, b), 'rb').read()
                 keluar = os.path.join(tuj, '%s [%s].rtf' % (b[:-4], pid))

@@ -23,13 +23,13 @@ def teks(kode, nama):
 
 
 def tag(kode, nama, kondisi, label, lambang):
-    sql(kode, 'CIRI SAMPUL: %s (OTOMATIS; kosong = tidak berlaku)' % nama, "SELECT IF(%s,'[%s %s]','') AS data" % (kondisi, lambang, label))
+    sql(kode, 'CIRI SAMPUL: %s (OTOMATIS; kosong = tidak berlaku)' % nama, "SELECT IF(%s,'%s','') AS data" % (kondisi, label))
 
 
 def tag_sisi(kode, nama, a, b, label, lambang):
     sql(kode, 'CIRI SAMPUL: %s (OTOMATIS; sisi P/T; kosong = tidak berlaku)' % nama,
-        "SELECT (CASE WHEN x.a AND x.b THEN '[%s %s P+T]' WHEN x.a THEN '[%s %s P]' WHEN x.b THEN '[%s %s T]' ELSE '' END) AS data "
-        "FROM (SELECT %s AS a, %s AS b) x" % (lambang, label, lambang, label, lambang, label, a, b))
+        "SELECT (CASE WHEN x.a AND x.b THEN '%s P+T' WHEN x.a THEN '%s P' WHEN x.b THEN '%s T' ELSE '' END) AS data "
+        "FROM (SELECT %s AS a, %s AS b) x" % (label, label, label, a, b))
 
 
 K, B, T3 = '+', '*', '>'   # penanda ASCII: '+' pendaftaran dan biaya, '*' pihak, '>' proses (renderer ABT mengubah entitas > 255 menjadi byte UTF-8 mentah, jadi simbol bentuk tidak dipakai di keluaran ABT)
@@ -43,18 +43,18 @@ tag_sisi(5805, 'KUASA HUKUM',
 tag(5806, 'KUASA INSIDENTIL', "IFNULL((SELECT TRIM(data) FROM aps_badilag.abt_data_teks WHERE no_var=8537 AND perkara_id=%s),'')<>''" % P, 'KUASA INSIDENTIL', K)
 # ---- ciri pihak: hasil analisa pada ALETA ditulis ke isian (data_teks); kosong = tidak berlaku
 for kode, nm in ((5807, 'GHAIB'), (5808, 'MAFQUD'), (5809, 'PNS/ASN'), (5810, 'PPPK'), (5811, 'TNI'), (5812, 'POLRI'), (5813, 'BUMN/BUMD')):
-    teks(kode, 'CIRI SAMPUL: %s (ISIAN OTOMATIS dari panel; kosong = tidak berlaku; contoh isi: [%s %s T])' % (nm, B, nm))
+    teks(kode, 'CIRI SAMPUL: %s (ISIAN OTOMATIS dari panel; kosong = tidak berlaku; contoh isi: %s T)' % (nm, nm))
 tag_sisi(5814, 'DISABILITAS',
          "EXISTS(SELECT 1 FROM perkara_pihak1 k JOIN pihak h ON h.id=k.pihak_id WHERE k.perkara_id=%s AND h.difabel='Y')" % P,
          "EXISTS(SELECT 1 FROM perkara_pihak2 k JOIN pihak h ON h.id=k.pihak_id WHERE k.perkara_id=%s AND h.difabel='Y')" % P, 'DISABILITAS', B)
-teks(5815, 'CIRI SAMPUL: PENERJEMAH (ISIAN TANGAN; isi [* PENERJEMAH] bila perlu penerjemah/juru bahasa; kosong = tidak ada)')
+teks(5815, 'CIRI SAMPUL: PENERJEMAH (ISIAN TANGAN; isi PENERJEMAH bila perlu penerjemah/juru bahasa; kosong = tidak ada)')
 tag_sisi(5816, 'WNA',
          "EXISTS(SELECT 1 FROM perkara_pihak1 k JOIN pihak h ON h.id=k.pihak_id WHERE k.perkara_id=%s AND IFNULL(h.warga_negara_id,98)<>98)" % P,
          "EXISTS(SELECT 1 FROM perkara_pihak2 k JOIN pihak h ON h.id=k.pihak_id WHERE k.perkara_id=%s AND IFNULL(h.warga_negara_id,98)<>98)" % P, 'WNA', B)
 # ---- ciri proses
 tag(5817, 'VERSTEK', "IFNULL((SELECT putusan_verstek FROM perkara_putusan WHERE perkara_id=%s LIMIT 1),'')='Y'" % P, 'VERSTEK', T3)
 sql(5818, 'CIRI SAMPUL: KUMULASI (OTOMATIS dari perkara_kumulasi; kosong = tidak ada)',
-    "SELECT IF(COUNT(*)>0,CONCAT('[%s KUMULASI ',COUNT(*),']'),'') AS data FROM perkara_kumulasi WHERE perkara_id=%s" % (T3, P))
+    "SELECT IF(COUNT(*)>0,CONCAT('KUMULASI ',COUNT(*)),'') AS data FROM perkara_kumulasi WHERE perkara_id=%s" % P)
 teks(5819, 'CIRI SAMPUL: REKONVENSI (ISIAN OTOMATIS dari panel; kosong = tidak berlaku)')
 tag(5820, 'MEDIASI', "EXISTS(SELECT 1 FROM perkara_mediasi WHERE perkara_id=%s AND penetapan_penunjukan_mediator IS NOT NULL)" % P, 'MEDIASI', T3)
 teks(5821, 'CIRI SAMPUL: SITA (ISIAN OTOMATIS dari panel; SIPP tidak mencatat sita di proses; kosong = tidak berlaku)')
@@ -67,12 +67,12 @@ tag(5827, 'IKRAR TALAK', "EXISTS(SELECT 1 FROM perkara_ikrar_talak WHERE perkara
 
 KODE_TAG = [k for k in range(5802, 5828) if k != 5804]
 sql(5801, 'CIRI PERKARA SAMPUL (OTOMATIS: gabungan 5802 sampai 5827 tanpa 5804; kosong semua = tidak ada ciri khusus)',
-    "SELECT IFNULL(NULLIF(TRIM(CONCAT_WS('  ',%s)),''),'- tidak ada ciri khusus -') AS data" % ','.join("NULLIF('#%d#','')" % k for k in KODE_TAG))
+    "SELECT IFNULL(NULLIF(TRIM(CONCAT_WS(CONCAT(' ',CHAR(183),' '),%s)),''),'- tidak ada ciri khusus -') AS data" % ','.join("NULLIF('#%d#','')" % k for k in KODE_TAG))
 sql(5800, 'JENIS PERKARA SAMPUL (OTOMATIS: jenis perkara + kumulasi)',
     "SELECT CONCAT('#0048#',IFNULL((SELECT CONCAT(' Kumulasi ',REPLACE(GROUP_CONCAT(j.nama SEPARATOR '|'),'|',' dan ')) "
     "FROM perkara_kumulasi k JOIN jenis_perkara j ON j.id=k.jenis_perkara_id WHERE k.perkara_id=%s HAVING COUNT(*)>0),'')) AS data" % P)
 sql(5829, 'BARIS IKRAR TALAK SAMPUL (OTOMATIS; kosong bila bukan cerai talak)',
-    "SELECT IFNULL((SELECT CONCAT('<b>IKRAR TALAK</b>  PMH ',IFNULL(%s,'-'),'  -  PHS ikrar ',IFNULL(%s,'-'),'  -  Sidang ikrar ',IFNULL(%s,'-')) "
+    "SELECT IFNULL((SELECT CONCAT('<b>IKRAR TALAK</b> PMH ',IFNULL(%s,'-'),' - PHS ikrar ',IFNULL(%s,'-'),' - Sidang ikrar ',IFNULL(%s,'-')) "
     "FROM perkara_ikrar_talak i WHERE i.perkara_id=%s LIMIT 1),'') AS data" % (
         tgl_id('i.penetapan_majelis_hakim'), tgl_id('i.tanggal_penetapan_sidang_ikrar'), tgl_id('i.tgl_ikrar_talak'), P))
 sql(5836, 'MEDIATOR SAMPUL (OTOMATIS dari mediasi terakhir)',
@@ -116,21 +116,26 @@ for bundel, awal in (('A', 5851), ('B', 5856)):
 
 # ---- riwayat sidang: 20 baris x 4 kolom (tgl, hadir, agenda, alasan); sidang ke-n = urutan tanggal tanpa sidang ikrar
 KODE_RIWAYAT = 5700
+def bersih(kolom):
+    # nilai bermakna kosong dari SIPP ("0", "-", "--", titik, garis bawah) tidak dicetak: sel dikosongkan
+    return "IF(TRIM(IFNULL(%s,'')) REGEXP '^[-0._ ]*$','',%s)" % (kolom, kolom)
+
+
 HADIR = "(CASE dihadiri_oleh WHEN 1 THEN 'P T' WHEN 2 THEN 'P' WHEN 3 THEN 'T' WHEN 4 THEN '-' WHEN 5 THEN 'I' ELSE '' END)"
 for n in range(1, 21):
     pilih = "FROM perkara_jadwal_sidang WHERE perkara_id=%s AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT %d,1" % (P, n - 1)
     k = KODE_RIWAYAT + (n - 1) * 4
     sql(k, 'RIWAYAT SIDANG SAMPUL baris %d: tanggal sidang' % n, "SELECT tanggal_sidang AS data " + pilih)
     sql(k + 1, 'RIWAYAT SIDANG SAMPUL baris %d: kehadiran (P T / P / T / -)' % n, "SELECT %s AS data " % HADIR + pilih)
-    sql(k + 2, 'RIWAYAT SIDANG SAMPUL baris %d: agenda / hasil' % n, "SELECT CONCAT(IFNULL(agenda,''),IF(sidang_keliling='Y',' (sidang keliling)','')) AS data " + pilih)
-    sql(k + 3, 'RIWAYAT SIDANG SAMPUL baris %d: alasan penundaan / keterangan' % n, "SELECT alasan_ditunda AS data " + pilih)
+    sql(k + 2, 'RIWAYAT SIDANG SAMPUL baris %d: agenda / hasil' % n, "SELECT CONCAT(%s,IF(sidang_keliling='Y',' (sidang keliling)','')) AS data " % bersih('agenda') + pilih)
+    sql(k + 3, 'RIWAYAT SIDANG SAMPUL baris %d: alasan penundaan / keterangan' % n, "SELECT %s AS data " % bersih('alasan_ditunda') + pilih)
 
 # ---- SAMPUL CETAK AWAL (keputusan Derry 26 Okt, versi 3): ciri yang sudah diketahui, ciri susulan, putusan, hadir per baris
 # Kotak centang ditulis ASCII "[ ]" / "[X]" (portal mengubahnya menjadi kotak saat naskah disusun). "Berlawanan" = nomor perkara memuat /Pdt.G (gugatan dan cerai talak).
 LAWAN = "(SELECT IF(p0.nomor_perkara LIKE '%/Pdt.G%',1,0) FROM perkara p0 WHERE p0.perkara_id=#perkara_id#)"
 KODE_CIRI_AWAL = [k for k in KODE_TAG if k not in (5807, 5808, 5817, 5818, 5819, 5820, 5821)]   # tanpa ghaib dan mafqud (bingkai ganda, runut sendiri), kumulasi (sudah di judul), verstek (sifat putusan), rekonvensi, mediasi, sita (kotak centang, pita mediasi)
 sql(5861, 'CIRI PERKARA AWAL SAMPUL (OTOMATIS: ciri yang berlaku dan sudah diketahui saat daftar; tanpa ghaib, mafqud, verstek, rekonvensi, mediasi, sita)',
-    "SELECT IFNULL(NULLIF(TRIM(CONCAT_WS('  ',%s)),''),'- tidak ada ciri khusus -') AS data" % ','.join("NULLIF('#%d#','')" % k for k in KODE_CIRI_AWAL))
+    "SELECT IFNULL(NULLIF(TRIM(CONCAT_WS(CONCAT(' ',CHAR(183),' '),%s)),''),'- tidak ada ciri khusus -') AS data" % ','.join("NULLIF('#%d#','')" % k for k in KODE_CIRI_AWAL))
 SUSULAN_LAWAN = '[ ] MEDIASI   [ ] EKSEPSI   [ ] REKONVENSI   [ ] PERMINTAAN SITA   [ ] PEMERIKSAAN SETEMPAT   [ ] PUTUSAN SELA   [ ] PERUBAHAN GUGATAN   [ ] TAMBAHAN PANJAR   [ ] PENCABUTAN'
 SUSULAN_MOHON = '[ ] PERBAIKAN PERMOHONAN   [ ] PEMERIKSAAN SETEMPAT   [ ] TAMBAHAN PANJAR   [ ] PENCABUTAN'
 sql(5862, 'CIRI SUSULAN SAMPUL (KOTAK CENTANG menurut jenis perkara; dicentang tangan; panel mencentang otomatis yang terdeteksi dari data)',
@@ -208,15 +213,15 @@ sql(5896, 'KUASA PIHAK I SAMPUL AWAL: keterangan "(untuk Penggugat I-IX)" bila p
     "CONCAT('(untuk ',IF(%s=1 AND (SELECT jenis_perkara_id FROM perkara WHERE perkara_id=%s)<>346,'Penggugat','Pemohon'),' I-',ELT(LEAST(%s,20),%s),')'),'') AS data"
     % (jumlah_sisi('perkara_pihak1'), P, LAWAN, P, jumlah_sisi('perkara_pihak1'), ROMAWI))
 sql(5897, 'TURUT TERGUGAT SAMPUL (tiga nama sebaris; lebihnya "dan N lainnya" ke lampiran; kosong bila tidak ada)',
-    "SELECT CONCAT('TURUT TERGUGAT (',COUNT(*),')  ',GROUP_CONCAT(CASE WHEN a.urutan<=3 THEN CONCAT(ELT(a.urutan,%s),'. ',a.nama) END ORDER BY a.urutan SEPARATOR '  -  '),"
-    "IF(COUNT(*)>3,CONCAT('  -  dan ',COUNT(*)-3,' lainnya (lampiran)'),'')) AS data FROM perkara_pihak4 a WHERE a.perkara_id=%s HAVING COUNT(*)>0" % (ROMAWI, P))
+    "SELECT CONCAT('TURUT TERGUGAT (',COUNT(*),') ',GROUP_CONCAT(CASE WHEN a.urutan<=3 THEN CONCAT(ELT(a.urutan,%s),'. ',a.nama) END ORDER BY a.urutan SEPARATOR ' - '),"
+    "IF(COUNT(*)>3,CONCAT(' - dan ',COUNT(*)-3,' lainnya (lampiran)'),'')) AS data FROM perkara_pihak4 a WHERE a.perkara_id=%s HAVING COUNT(*)>0" % (ROMAWI, P))
 def nama_pertama(tabel):
     n = jumlah_sisi(tabel)
     return "SELECT CONCAT(IF(%s>1,'I. ',''),IFNULL((SELECT a.nama FROM %s a WHERE a.perkara_id=%s ORDER BY a.urutan LIMIT 1),'')) AS data" % (n, tabel, P)
 
 
 def rincian_pertama(tabel):
-    return ("SELECT CONCAT('Pekerjaan: ',IFNULL(NULLIF(h.pekerjaan,''),'-'),'  -  Alamat: ',IFNULL(a.alamat,'')) AS data FROM %s a LEFT JOIN pihak h ON h.id=a.pihak_id "
+    return ("SELECT CONCAT('Pekerjaan: ',IFNULL(NULLIF(h.pekerjaan,''),'-'),' - Alamat: ',IFNULL(a.alamat,'')) AS data FROM %s a LEFT JOIN pihak h ON h.id=a.pihak_id "
             "WHERE a.perkara_id=%s ORDER BY a.urutan LIMIT 1" % (tabel, P))
 
 
@@ -231,8 +236,8 @@ sql(5833, 'KAKI SAMPUL AWAL: rujukan lampiran (diisi saat naskah disusun; kosong
 sql(5834, 'CATATAN SAMPUL: ALASAN (diisi saat naskah disusun dari deteksi; ABT langsung: kosong)', "SELECT '' AS data")
 sql(5835, 'CATATAN SAMPUL: KETERANGAN (diisi saat naskah disusun; ABT langsung: kosong)', "SELECT '' AS data")
 sql(5847, 'INTERVENSI SAMPUL AWAL (OTOMATIS: pihak intervensi dari SIPP, tiga nama sebaris; kosong bila tidak ada)',
-    "SELECT CONCAT('INTERVENSI (',COUNT(*),')  ',GROUP_CONCAT(CASE WHEN a.urutan<=3 THEN CONCAT(ELT(a.urutan,%s),'. ',a.nama) END ORDER BY a.urutan SEPARATOR '  -  '),"
-    "IF(COUNT(*)>3,CONCAT('  -  dan ',COUNT(*)-3,' lainnya (lampiran)'),'')) AS data FROM perkara_pihak3 a WHERE a.perkara_id=%s HAVING COUNT(*)>0" % (ROMAWI, P))
+    "SELECT CONCAT('INTERVENSI (',COUNT(*),') ',GROUP_CONCAT(CASE WHEN a.urutan<=3 THEN CONCAT(ELT(a.urutan,%s),'. ',a.nama) END ORDER BY a.urutan SEPARATOR ' - '),"
+    "IF(COUNT(*)>3,CONCAT(' - dan ',COUNT(*)-3,' lainnya (lampiran)'),'')) AS data FROM perkara_pihak3 a WHERE a.perkara_id=%s HAVING COUNT(*)>0" % (ROMAWI, P))
 # ---- CEKLIST BERKAS PERKARA (Meja I): kerangka lewat variabel; tabel dokumen disusun portal (paragraf penanda 5850)
 sql(5850, 'CEKLIST: PENANDA TABEL (diganti tabel dokumen saat naskah disusun; ABT langsung: keterangan)', "SELECT 'Tabel dokumen disusun otomatis saat dicetak dari panel Blangko.' AS data")
 sql(5848, 'CEKLIST: RINGKASAN (diisi saat naskah disusun; ABT langsung: kosong)', "SELECT '' AS data")

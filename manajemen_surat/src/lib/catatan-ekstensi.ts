@@ -57,6 +57,24 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.45",
+    dirilis: "2026-10-27T11:53:00+08:00",
+    judul: "Sampul dan daftar isi lebih rapi; e-Doc tidak tertahan kunci sendiri",
+    butir: [
+      "Sampul, Daftar Isi, dan Ceklist Berkas: logo satker hitam-putih di samping nama pengadilan, ciri perkara tanpa tanda + dan >, spasi lebih rapi.",
+      "Daftar Isi Berkas: perkara tingkat pertama hanya Bundel A; Bundel B hanya bila ada banding, kasasi, atau PK; tabel dokumen rapi dengan judul bagian.",
+      "Putusan Otomatis: sesudah Isi & simpan Putusan Akhir, e-Doc di tab yang sama tidak lagi tertahan kunci milik sendiri.",
+    ],
+  },
+  {
+    versi: "1.205.44",
+    dirilis: "2026-10-27T11:20:00+08:00",
+    judul: "Login e-Court tidak lagi ditolak karena captcha",
+    butir: [
+      "Login e-Court dari Integrasi e-Court: captcha yang ditampilkan kini captcha yang sedang ditunggu e-Court, tidak lagi selalu ditolak.",
+    ],
+  },
+  {
     versi: "1.205.43",
     dirilis: "2026-10-27T11:04:00+08:00",
     judul: "Sorot baris tabel e-Court terbaca di mode gelap",

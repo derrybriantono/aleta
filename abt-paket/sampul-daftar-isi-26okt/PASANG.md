@@ -46,3 +46,12 @@ Pulih: `ssh aleta 'bash /root/abt-sampul-20261026/pulih-satker.sh'` (baris terak
 - Mesin 5.5.68 server hanya BELUM diuji (laptop 10.4); fungsi dan kueri ditulis tanpa fitur 10.x. Sebagian kolom SIPP diukur nilainya baca-saja di server (`putusan_verstek` Y/T, `ikrar_talak` Y/T, `sidang_keliling` Y/T, `difabel` Y/T, `mediasi_berhasil`/`mediasi_gagal` bertipe tanggal, `warga_negara_id` 98 = WNI).
 - Render php56 ABT asli atas empat perkara contoh (cerai gugat, dispensasi kawin, itsbat nikah, cerai talak) x enam RTF = 24 hasil: semua 1 lembar di Microsoft Word, ukuran kertas terbaca 210x297, 215x330, 216x356 mm. `alat/render_paket.py` menyimpan keluarannya.
 - Yang BELUM ada di fungsi ABT (dikerjakan panel saat cetak): dokumen khas jenis perkara, jawaban/replik/duplik/kesimpulan, bukti, saksi, sita, upaya hukum, halaman otomatis (kolom Halaman = titik-titik bila dicetak langsung dari ABT).
+
+## PENINGKATAN dari paket 26 Okt yang SUDAH terpasang (27 Okt 2026: perbaikan cetakan nyata)
+Paket ini sama (`177` variabel, `21` RTF) tetapi 70 variabel dan 21 RTF berubah isi (logo di kop, ciri tanpa `+`/`>`, spasi, daftar isi tabel Bundel A). Salin folder `paket-satker` ke folder BARU di server
+(mis. `/root/abt-sampul-rapi-20261027`, jangan menimpa folder lama), lalu `bash pasang-satker.sh`. PRASYARAT sekarang `A|B|C|D|E|F|G|H`:
+- pasang pertama `0|0|31|0|1|0|0|0`; pasang ulang `0|177|31|1|1|1|0|0`; **PENINGKATAN** `0|107|31|1|1|1|0|70` (70 variabel masih berisi paket lama, md5 persis).
+- Variabel lama diganti DI TEMPAT (isian tidak hilang); RTF lama diganti HANYA bila md5-nya persis paket lama (selain itu GAGAL, tidak ada yang diubah); salinan asal ke `cadangan/timpa-asal`.
+- `pulih-satker.sh` membaca `cadangan/mode.txt`: `peningkatan` = kembali PERSIS ke paket lama (baris `PULIH COCOK`); `baru` = hapus semua. Variabel/berkas yang sudah disunting orang dibiarkan dan dilaporkan.
+- Uji lab (`bash sumber/uji_peningkatan.sh`): pasang paket lama -> peningkatan -> pasang ulang -> pulih (= paket lama persis) -> peningkatan lagi -> pulih -> pulih paket lama (= keadaan awal persis). Hasil 27 Okt: semua lulus (MariaDB 10.4 lab; MariaDB 5.5 server belum diuji).
+- Catatan renderer ABT: dua spasi berturut-turut di NILAI variabel berubah menjadi tab; pemisah ciri memakai `CHAR(183)` (titik tengah) dengan spasi tunggal.
