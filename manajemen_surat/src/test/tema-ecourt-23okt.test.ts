@@ -288,7 +288,9 @@ describe("7 - CSS: hanya warna, lewat token, berlaku hanya bila ada penanda", ()
   });
 
   it("hanya properti warna (tanpa ukuran huruf, tampilan, posisi, isi)", () => {
-    const boleh = /^(--ec-[a-z0-9-]+|background-color|color|border-color|border-(top|right|bottom|left)-color|color-scheme|opacity)$/;
+    // 27 Okt: --bs-table-* dan box-shadow ikut boleh - tabel Bootstrap 5 mewarnai sorot/belang lewat
+    // box-shadow inset 9999px dari variabel itu (warna saja, bukan ukuran atau tata letak).
+    const boleh = /^(--ec-[a-z0-9-]+|--bs-table-[a-z-]+|background-color|color|border-color|border-(top|right|bottom|left)-color|color-scheme|opacity|box-shadow)$/;
     for (const b of blok) {
       for (const dekl of b.isi.split(";").map((x) => x.trim()).filter(Boolean)) {
         const nama = dekl.slice(0, dekl.indexOf(":")).trim();
