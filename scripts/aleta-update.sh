@@ -235,59 +235,142 @@ done
 cp -a "$PACKAGE_ROOT"/. "$APP_DIR"/
 rm -rf "$APP_DIR/manajemen_surat/node_modules" "$APP_DIR/manajemen_surat/.next"
 
-echo "Build ulang service aplikasi..."
-if ! (
-  cd "$APP_DIR"
-  # Bangun ulang portal DAN aleta_bot secara bawaan: banyak perbaikan menyentuh
-  # keduanya (mis. jam antrian di bot + tampilannya di portal). Membangun portal
-  # saja membuat perbaikan sisi bot tidak pernah sampai ke server. Sesi WhatsApp
-  # tetap aman karena tersimpan di volume wwebjs_auth.
-  ALETA_UPDATE_SERVICES="${ALETA_UPDATE_SERVICES:-portal aleta_bot}"
+# ============================================================================
+# BUILD GAGAL = PEMASANGAN GAGAL, BUKAN "BERHASIL" BERVERSI BARU
+# ============================================================================
+#
+# Dulu build dan up dibungkus `if ! ( ...build...; ...up... ); then`. Di dalam
+# syarat `if`, bash MEMATIKAN `set -e` - juga di subshell-nya. Build yang gagal
+# karena itu ditelan: baris berikutnya (`up -d`) tetap jalan, menyalakan
+# kontainer LAMA dengan sukses, subshell keluar 0, migrasi dijalankan di
+# kontainer lama, lalu skrip menulis "Update ALETA berhasil" dan versi baru.
+# Terjadi 27 Oktober 2026 pada 1.205.41: npm ci bot gagal (pdf-lib tidak ada
+# di lock file), padahal yang tercatat terpasang versi barunya.
+#
+# Sekarang setiap langkah diperiksa sendiri dengan `|| gagal_pasang`, dan
+# sesudah up kontainernya DIBUKTIKAN berjalan dari image hasil build ini.
+# Bila gagal: berkas sumber dipulihkan lewat aleta-rollback.sh dari cadangan
+# di atas, migrasi tidak dijalankan, versi baru tidak ditulis.
 
-  # -------------------------------------------------------------------------
-  # PENANDA COMMIT HARUS SAMPAI KE DALAM IMAGE
-  # -------------------------------------------------------------------------
-  #
-  # Dockerfile portal menerima ARG ALETA_BUILD_REF dan menuliskannya ke
-  # /app/BUILD-STAMP.txt. Skrip penaikan lalu membaca cap itu untuk MEMBUKTIKAN
-  # bahwa yang berjalan di server benar-benar rujukan yang dikirim.
-  #
-  # Sebelum ini peubahnya diterima di sini lalu berhenti - tidak pernah
-  # diteruskan sebagai --build-arg. Akibatnya cap build selalu berisi tanggal
-  # saja, pembuktiannya selalu gagal, dan penaikan berhenti pada langkah
-  # terakhir walau kodenya sudah naik dengan benar. Bersama kekeliruan pipefail
-  # pada pemeriksaan bungkusan, itulah sebabnya penaikan lewat skrip ini tidak
-  # pernah tuntas sekali pun.
-  #
-  # Larik dipakai supaya nilai bercelah tidak terpecah. Bentuk
-  # ${ARR[@]+"${ARR[@]}"} dipakai karena bash 4.2 di server memperlakukan
-  # larik kosong sebagai peubah tak terikat di bawah `set -u`.
-  BUILD_ARGS=()
-  if [ -n "${ALETA_BUILD_REF:-}" ]; then
-    BUILD_ARGS+=(--build-arg "ALETA_BUILD_REF=$ALETA_BUILD_REF")
-    echo "  penanda build: $ALETA_BUILD_REF"
-  else
-    echo "  penanda build tidak diberikan - cap build hanya akan memuat tanggal"
+# Bangun ulang portal DAN aleta_bot secara bawaan: banyak perbaikan menyentuh
+# keduanya (mis. jam antrian di bot + tampilannya di portal). Membangun portal
+# saja membuat perbaikan sisi bot tidak pernah sampai ke server. Sesi WhatsApp
+# tetap aman karena tersimpan di volume wwebjs_auth.
+ALETA_UPDATE_SERVICES="${ALETA_UPDATE_SERVICES:-portal aleta_bot}"
+
+gagal_pasang() {
+  local tahap="$1"
+  local pulih="${2:-pulihkan}"
+  local message="Update ALETA GAGAL: $tahap. Versi tetap $CURRENT_VERSION (paket $TARGET_VERSION tidak terpasang)."
+  echo ""
+  echo "$message"
+  printf '{"version":"%s","previousVersion":"%s","status":"failed","appliedAt":"%s","backupFile":"%s","bundleFile":"%s","message":"%s"}\n' \
+    "$TARGET_VERSION" "$CURRENT_VERSION" "$(date -Iseconds)" "$BACKUP_FILE" "$BUNDLE" "$message" >> "$HISTORY_FILE"
+
+  if [ "$pulih" != "pulihkan" ]; then
+    echo "Berkas sumber TIDAK dipulihkan otomatis pada tahap ini."
+    echo "Rollback manual bila perlu: bash scripts/aleta-rollback.sh $BACKUP_FILE"
+    exit 1
   fi
 
-  # shellcheck disable=SC2086
-  compose build ${BUILD_ARGS[@]+"${BUILD_ARGS[@]}"} $ALETA_UPDATE_SERVICES
-  # shellcheck disable=SC2086
-  compose up -d $ALETA_UPDATE_SERVICES
-); then
-  MESSAGE="Update gagal saat build/start. Restore manual: bash scripts/aleta-rollback.sh $BACKUP_FILE"
-  printf '{"version":"%s","previousVersion":"%s","status":"failed","appliedAt":"%s","backupFile":"%s","bundleFile":"%s","message":"%s"}\n' \
-    "$TARGET_VERSION" "$CURRENT_VERSION" "$(date -Iseconds)" "$BACKUP_FILE" "$BUNDLE" "$MESSAGE" >> "$HISTORY_FILE"
-  echo "$MESSAGE"
+  # aleta-rollback.sh menimpa scripts/ - termasuk dirinya - dari cadangan, jadi
+  # ia dijalankan dari salinan (alasan yang sama dengan salinan skrip ini).
+  echo "Memulihkan berkas sumber dari cadangan: $BACKUP_FILE"
+  local salinan_rollback
+  salinan_rollback="$(mktemp /tmp/aleta-rollback-XXXXXXXX.sh)"
+  cat "$APP_DIR/scripts/aleta-rollback.sh" > "$salinan_rollback"
+  if ALETA_ROLLBACK_ASSUME_YES=1 \
+    ALETA_APP_DIR="$APP_DIR" \
+    ALETA_REPORT_DIR="$REPORT_DIR" \
+    ALETA_UPDATE_STATE_PATH="$STATE_FILE" \
+    ALETA_UPDATE_HISTORY_PATH="$HISTORY_FILE" \
+    ALETA_BACKUP_ROOT="$BACKUP_ROOT" \
+    bash "$salinan_rollback" "$BACKUP_FILE"; then
+    echo "Berkas sumber dipulihkan ke $CURRENT_VERSION."
+  else
+    echo "ROLLBACK OTOMATIS JUGA GAGAL. Jalankan manual: bash scripts/aleta-rollback.sh $BACKUP_FILE"
+  fi
+  rm -f "$salinan_rollback"
+  echo "Update ALETA GAGAL: $tahap"
   exit 1
+}
+
+# Kontainer tiap service harus berjalan DARI image yang sekarang ditunjuk nama
+# image-nya, yaitu hasil build barusan. `up -d` yang tidak membuat ulang
+# kontainer (atau kontainer yang langsung mati) meninggalkan image lama
+# berjalan - persis keadaan "versi baru tercatat, kode lama jalan".
+# Dibandingkan dengan image terbaru, bukan dengan image sebelum build, supaya
+# service yang sumbernya tidak berubah (build seluruhnya dari cache, ID sama)
+# tidak dianggap gagal.
+periksa_kontainer_baru() {
+  local svc cid berjalan restart image_kontainer nama_image image_terbaru
+  for svc in $ALETA_UPDATE_SERVICES; do
+    cid="$(cd "$APP_DIR" && compose ps -q "$svc" 2>/dev/null | head -n 1 || true)"
+    if [ -z "$cid" ]; then
+      echo "  $svc: kontainer tidak ditemukan sesudah up"
+      return 1
+    fi
+    berjalan="$(docker inspect -f '{{.State.Running}}' "$cid" 2>/dev/null || true)"
+    restart="$(docker inspect -f '{{.State.Restarting}}' "$cid" 2>/dev/null || true)"
+    image_kontainer="$(docker inspect -f '{{.Image}}' "$cid" 2>/dev/null || true)"
+    nama_image="$(docker inspect -f '{{.Config.Image}}' "$cid" 2>/dev/null || true)"
+    image_terbaru="$(docker image inspect -f '{{.Id}}' "$nama_image" 2>/dev/null || true)"
+    if [ "$berjalan" != "true" ] || [ "$restart" = "true" ]; then
+      echo "  $svc: kontainer tidak berjalan (running=$berjalan restarting=$restart)"
+      return 1
+    fi
+    if [ -z "$image_kontainer" ] || [ -z "$image_terbaru" ] || [ "$image_kontainer" != "$image_terbaru" ]; then
+      echo "  $svc: kontainer masih memakai image lama ($image_kontainer; $nama_image sekarang $image_terbaru)"
+      return 1
+    fi
+    echo "  $svc: berjalan dari image baru $image_terbaru"
+  done
+  return 0
+}
+
+echo "Build ulang service aplikasi..."
+
+# -------------------------------------------------------------------------
+# PENANDA COMMIT HARUS SAMPAI KE DALAM IMAGE
+# -------------------------------------------------------------------------
+#
+# Dockerfile portal menerima ARG ALETA_BUILD_REF dan menuliskannya ke
+# /app/BUILD-STAMP.txt. Skrip penaikan lalu membaca cap itu untuk MEMBUKTIKAN
+# bahwa yang berjalan di server benar-benar rujukan yang dikirim.
+#
+# Sebelum ini peubahnya diterima di sini lalu berhenti - tidak pernah
+# diteruskan sebagai --build-arg. Akibatnya cap build selalu berisi tanggal
+# saja, pembuktiannya selalu gagal, dan penaikan berhenti pada langkah
+# terakhir walau kodenya sudah naik dengan benar. Bersama kekeliruan pipefail
+# pada pemeriksaan bungkusan, itulah sebabnya penaikan lewat skrip ini tidak
+# pernah tuntas sekali pun.
+#
+# Larik dipakai supaya nilai bercelah tidak terpecah. Bentuk
+# ${ARR[@]+"${ARR[@]}"} dipakai karena bash 4.2 di server memperlakukan
+# larik kosong sebagai peubah tak terikat di bawah `set -u`.
+BUILD_ARGS=()
+if [ -n "${ALETA_BUILD_REF:-}" ]; then
+  BUILD_ARGS+=(--build-arg "ALETA_BUILD_REF=$ALETA_BUILD_REF")
+  echo "  penanda build: $ALETA_BUILD_REF"
+else
+  echo "  penanda build tidak diberikan - cap build hanya akan memuat tanggal"
 fi
+
+# shellcheck disable=SC2086
+(cd "$APP_DIR" && compose build ${BUILD_ARGS[@]+"${BUILD_ARGS[@]}"} $ALETA_UPDATE_SERVICES) || gagal_pasang "build"
+# shellcheck disable=SC2086
+(cd "$APP_DIR" && compose up -d $ALETA_UPDATE_SERVICES) || gagal_pasang "up"
+
+# Beri kontainer waktu untuk mati bila memang akan langsung mati.
+sleep "${ALETA_UPDATE_TUNGGU_DETIK:-10}"
+echo "Memeriksa kontainer berjalan dari image baru..."
+periksa_kontainer_baru || gagal_pasang "kontainer tidak dibuat ulang dari image baru"
 
 if [ "${ALETA_RUN_DB_MIGRATIONS:-0}" = "1" ]; then
   echo "Menjalankan migrasi database..."
-  (
-    cd "$APP_DIR"
-    compose exec -T portal npm run db:migrate
-  )
+  # Kode baru sudah berjalan; memulihkan sumber di tengah migrasi lebih
+  # berbahaya daripada berhenti dan melapor.
+  (cd "$APP_DIR" && compose exec -T portal npm run db:migrate) || gagal_pasang "migrasi" tanpa-pulih
 fi
 
 cat > "$STATE_FILE" <<JSON

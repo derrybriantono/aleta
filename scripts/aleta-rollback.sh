@@ -86,6 +86,20 @@ if [ "${ALETA_ROLLBACK_ASSUME_YES:-0}" != "1" ]; then
 fi
 
 echo "Memulihkan file aplikasi dari backup..."
+# Pasangan pembersihan di aleta-update.sh: tar hanya menimpa, tidak menghapus.
+# Berkas yang baru dibawa paket (komponen, migrasi) akan tertinggal di atas
+# sumber lama dan ikut ter-build. Folder yang dikelola paket dikosongkan dulu,
+# tetapi hanya bila cadangannya memang memuat folder itu.
+# Daftar dibaca sekali lalu di-grep lewat here-string, bukan pipa (pipefail +
+# grep -q = SIGPIPE, lihat aleta-update.sh).
+set +e
+BACKUP_LIST="$(tar -tzf "$BACKUP_FILE" 2>/dev/null)"
+set -e
+for managed_path in manajemen_surat/src manajemen_surat/drizzle; do
+  if grep -q -- "^${managed_path}/" <<<"$BACKUP_LIST"; then
+    rm -rf "${APP_DIR:?}/$managed_path"
+  fi
+done
 tar -xzf "$BACKUP_FILE" -C "$APP_DIR"
 rm -rf "$APP_DIR/manajemen_surat/node_modules" "$APP_DIR/manajemen_surat/.next"
 
