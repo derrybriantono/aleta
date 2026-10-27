@@ -312,10 +312,10 @@ describe("pihak-urut - sisi ALETA (bot + portal)", () => {
     const baris = [
       { pihakKe: 1, urutan: 3, nama: "A", pekerjaan: "Petani/Pekebun" },
       { pihakKe: 1, urutan: 9, nama: "B", pekerjaan: "Wiraswasta" },
-      { pihakKe: 2, urutan: 25, nama: "Hadifah", pekerjaan: "Mengurus Rumah Tangga" },
+      { pihakKe: 2, urutan: 25, nama: "Tergugat Tunggal", pekerjaan: "Mengurus Rumah Tangga" },
     ];
     const hasil = await pekerjaan.bacaPekerjaanPihak(10225, async () => baris);
-    expect(hasil.map((h) => [h.pihakKe, h.urutan, h.nama])).toEqual([[1, 1, "A"], [1, 2, "B"], [2, 1, "Hadifah"]]);
+    expect(hasil.map((h) => [h.pihakKe, h.urutan, h.nama])).toEqual([[1, 1, "A"], [1, 2, "B"], [2, 1, "Tergugat Tunggal"]]);
   });
 
   it("berkasPerkaraService: pihak ke-2 dan dua nama fokus diambil menurut peringkat (OFFSET / LIMIT), bukan urutan = 2", () => {

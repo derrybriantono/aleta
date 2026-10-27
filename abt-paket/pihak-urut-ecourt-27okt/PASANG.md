@@ -5,15 +5,15 @@ Laporan Derry 27 Okt: putusan/penetapan 656/Pdt.G/2026/PA.Dgl (Kewarisan, e-Cour
 
 ## Sebab
 
-Pendaftaran e-Court (diinput_oleh `eCourt`) menomori kolom `urutan` BERSAMBUNG lintas tabel, bukan mulai 1 per tabel. Perkara 656 (perkara_id 10225): `perkara_pihak1` urutan 1-25 (25 Penggugat), `perkara_pihak2` SATU baris (Hadifah) berurutan **25**, `perkara_pihak4` (Turut Tergugat) berurutan **25 dan 26**. Seluruh kueri ABT yang menurunkan sebutan menyamakan *nilai urutan* dengan *nomor sebutan*:
+Pendaftaran e-Court (diinput_oleh `eCourt`) menomori kolom `urutan` BERSAMBUNG lintas tabel, bukan mulai 1 per tabel. Perkara 656 (perkara_id 10225): `perkara_pihak1` urutan 1-25 (25 Penggugat), `perkara_pihak2` SATU baris (Tergugat Tunggal) berurutan **25**, `perkara_pihak4` (Turut Tergugat) berurutan **25 dan 26**. Seluruh kueri ABT yang menurunkan sebutan menyamakan *nilai urutan* dengan *nomor sebutan*:
 
 | yang tercetak salah di 656 | sebab |
 |---|---|
-| Tergugat I-V berisi kosong (`, NIK , tempat dan tanggal lahir , , agama ...`), lalu Hadifah sebagai "Tergugat XXV" | `7048` memilih cabang menurut `MAX(urutan)` = 25 (cabang >= 6), mencetak lima Tergugat pertama lewat variabel `urutan = 1..5` yang tidak ada, lalu fungsi x9 mencetak urutan >= 6 dengan angka romawi = nilai urutan |
+| Tergugat I-V berisi kosong (`, NIK , tempat dan tanggal lahir , , agama ...`), lalu Tergugat Tunggal sebagai "Tergugat XXV" | `7048` memilih cabang menurut `MAX(urutan)` = 25 (cabang >= 6), mencetak lima Tergugat pertama lewat variabel `urutan = 1..5` yang tidak ada, lalu fungsi x9 mencetak urutan >= 6 dengan angka romawi = nilai urutan |
 | "Telah mendengar keterangan Penggugat dan **para** Tergugat" (padahal satu) | `7037`/`7036` memakai `MAX(urutan)` (25 -> "para") bukan jumlah pihak |
 | Kaki: `Penggugat 11, Penggugat 12 ... Penggugat 25` | `7148`/`7149` menulis romawi hanya sampai X lalu `CONCAT(' ', urutan)` |
 | Kaki: Turut Tergugat tidak disebut | `7152`/`8516` tidak mengenal pihak4 |
-| Identitas: Turut Tergugat (Muhammad Hilal, Drs. Abdullah) tidak tercetak | blangko `[98]` (dan 207 blangko lain di keluarga Turut Tergugat, termasuk BAS) memang tidak memuat `#8710#`; fungsi x9 `isian_rtf_pihak_tambahan` sudah benar (penghitung baris sendiri) |
+| Identitas: Turut Tergugat (Turut Tergugat Pertama, Turut Tergugat Kedua) tidak tercetak | blangko `[98]` (dan 207 blangko lain di keluarga Turut Tergugat, termasuk BAS) memang tidak memuat `#8710#`; fungsi x9 `isian_rtf_pihak_tambahan` sudah benar (penghitung baris sendiri) |
 
 Perkara dengan urutan tidak rapat dari 1 di data SIPP server (27 Okt, MIN(urutan)=1, MAX=jumlah, tanpa kembar): Pemohon/Penggugat 9 dari 10.275 perkara, Termohon/Tergugat 12 dari 5.849, Turut Tergugat 6 dari 10 perkara (656, 273/2026, 26/2022, 142/2026, 602/2026, 687/2025 ...). Perkara lain (urutan mulai 1 dan rapat) tidak terpengaruh.
 
@@ -78,13 +78,13 @@ Pulih: `ssh aleta 'bash /root/abt-pihak-urut-20261027/pulih-satker.sh'` (baris t
 
 | variabel | sebelum | sesudah |
 |---|---|---|
-| `#7048#` | `, NIK , tempat dan tanggal lahir , , agama , ... sebagai Tergugat I;` x5 (kosong) lalu Hadifah ... `Tergugat XXV` | `Hadifah, NIK , ... tempat kediaman di Desa Lembasada, ... Provinsi Sulawesi Tengah, sebagai Tergugat;` |
-| `#7098#` | `, sebagai Tergugat I; ... , sebagai Tergugat V; Hadifah, sebagai Tergugat XXV;` | `Hadifah, sebagai Tergugat;` |
+| `#7048#` | `, NIK , tempat dan tanggal lahir , , agama , ... sebagai Tergugat I;` x5 (kosong) lalu Tergugat Tunggal ... `Tergugat XXV` | `Tergugat Tunggal, NIK , ... tempat kediaman di Desa (disamarkan), ... Provinsi Sulawesi Tengah, sebagai Tergugat;` |
+| `#7098#` | `, sebagai Tergugat I; ... , sebagai Tergugat V; Tergugat Tunggal, sebagai Tergugat XXV;` | `Tergugat Tunggal, sebagai Tergugat;` |
 | `#7037#` | `para Tergugat` | `Tergugat` |
 | `#7149#` / `#7152#` | `Tergugat` / `Tergugat` | `Tergugat` / `Tergugat serta Turut Tergugat I dan Turut Tergugat II` |
 | `#7148#` | `Penggugat I, ... Penggugat X, Penggugat 11, ... Penggugat 25` | `Penggugat I, ... Penggugat X, Penggugat XI, Penggugat XII, ... Penggugat XXV` |
 | `#8516#` (kaki) | `serta dihadiri oleh Penggugat I, ... Penggugat X, Penggugat 11 ... Penggugat 25 beserta Kuasanya dan Tergugat, dan penetapan tersebut telah dikirim secara elektronik ...` | `serta dihadiri oleh Penggugat I, ... Penggugat XXV beserta Kuasanya dan Tergugat serta Turut Tergugat I dan Turut Tergugat II, dan penetapan tersebut telah dikirim secara elektronik ...` |
-| blangko `[98] ... Kewarisan` | identitas Turut Tergugat tidak ada | Muhammad Hilal dan Drs. Abdullah Bin Mallabang tercetak sebagai Turut Tergugat I dan II sesudah Tergugat |
+| blangko `[98] ... Kewarisan` | identitas Turut Tergugat tidak ada | Turut Tergugat Pertama dan Turut Tergugat Kedua tercetak sebagai Turut Tergugat I dan II sesudah Tergugat |
 
 ### Cuplikan kaki NO perkara 591/Pdt.G/2026/PA.Dgl (10143), blangko `[98] [NO] 4a. Cerai P Hadir Sidang Pertama Lalu 2x Tidak Hadir (SEMA 1 2022)`
 
