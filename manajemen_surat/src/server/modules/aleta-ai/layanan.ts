@@ -6,6 +6,7 @@ import { kursBerlaku, kursTersimpanTerakhir, segarkanKursBilaPerlu, type Pengamb
 import { bacaKuotaPeran, pastikanKuotaBulanIni } from "@/server/modules/aleta-ai/kuota";
 import { PESAN_NONAKTIF_KUNCI, PESAN_NONAKTIF_PROYEK, PESAN_NONAKTIF_SAKLAR } from "@/server/modules/aleta-ai/mesin";
 import { bacaPengaturan, bacaRute, bacaTarif } from "@/server/modules/aleta-ai/pengaturan";
+import { statusPromo, type StatusPromo } from "@/server/modules/aleta-ai/promo";
 import { proyekAktif } from "@/server/modules/aleta-ai/proyek";
 import { daftarMutasi, saldoPengguna } from "@/server/modules/aleta-ai/saldo";
 
@@ -25,6 +26,8 @@ export type RingkasAi = {
   superAdmin: boolean;
   pemicu: Array<{ kode: string; label: string; kelompok: string; mode: string; grup: string }>;
   proyekVersi: number;
+  /** Program promosi gratis untuk pengguna ini; tidak ada bila tidak berlaku bagi pengguna ini. */
+  promo?: StatusPromo;
 };
 
 export async function ringkasAi(db: AletaDatabase, pelaku: PelakuAi): Promise<RingkasAi> {
@@ -44,8 +47,10 @@ export async function ringkasAi(db: AletaDatabase, pelaku: PelakuAi): Promise<Ri
 
   await pastikanKuotaBulanIni(db, pelaku);
   const saldoRp = await saldoPengguna(db, pelaku.id);
+  const promo = await statusPromo(db, pelaku);
   return {
     aktif: !alasan,
+    ...(promo.tampil ? { promo } : {}),
     ...(alasan ? { alasanNonaktif: alasan } : {}),
     saldoRp,
     saldoMenipis: !pelaku.superAdmin && pengaturan.ambangSaldoMenipisRp > 0 && saldoRp < pengaturan.ambangSaldoMenipisRp,

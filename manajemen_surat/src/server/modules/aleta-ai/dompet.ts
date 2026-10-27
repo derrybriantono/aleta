@@ -4,6 +4,7 @@ import { pemakaianHariIni } from "@/server/modules/aleta-ai/batas";
 import { tanggalLokal } from "@/server/modules/aleta-ai/kurs";
 import { pastikanKuotaBulanIni, rincianKuota } from "@/server/modules/aleta-ai/kuota";
 import { bacaPengaturan } from "@/server/modules/aleta-ai/pengaturan";
+import { statusPromo } from "@/server/modules/aleta-ai/promo";
 import { daftarMutasi, saldoPengguna, type JenisMutasi } from "@/server/modules/aleta-ai/saldo";
 import { ApiError } from "@/server/shared/errors";
 
@@ -44,6 +45,8 @@ export type GiliranDompet = {
   perkiraanRp: number;
   biayaRp: number;
   gratis: boolean;
+  /** Gratis karena program promosi (terpisah dari gratis Super Admin). */
+  promo: boolean;
   /** Hanya untuk Super Admin. */
   model?: string;
 };
@@ -66,10 +69,11 @@ type BarisGiliran = {
   perkiraan_rp: number | string;
   biaya_rp: number | string;
   gratis: number | string;
+  promo: number | string | null;
 };
 
 const KOLOM_GILIRAN = `id, percakapan_id, dibuat_at, mode_label, status, model, token_masuk, token_keluar, token_cache_tulis, token_cache_baca,
-  kurs, kurs_dasar, kurs_tanggal, kurs_sumber, perkiraan_rp, biaya_rp, gratis`;
+  kurs, kurs_dasar, kurs_tanggal, kurs_sumber, perkiraan_rp, biaya_rp, gratis, promo`;
 
 function keGiliran(b: BarisGiliran, superAdmin: boolean): GiliranDompet {
   return {
@@ -86,6 +90,7 @@ function keGiliran(b: BarisGiliran, superAdmin: boolean): GiliranDompet {
     perkiraanRp: Number(b.perkiraan_rp),
     biayaRp: Number(b.biaya_rp),
     gratis: Number(b.gratis) === 1,
+    promo: Number(b.promo ?? 0) === 1,
     ...(superAdmin ? { model: b.model } : {}),
   };
 }
@@ -111,9 +116,12 @@ export async function tampilDompet(db: AletaDatabase, pelaku: PelakuAi, sekarang
   }));
   const kuota = await rincianKuota(db, pelaku.id, tanggalLokal(sekarang).slice(0, 7));
   const menipis = !pelaku.superAdmin && pengaturan.ambangSaldoMenipisRp > 0 && saldoRp < pengaturan.ambangSaldoMenipisRp;
+  const promo = await statusPromo(db, pelaku, { sekarang });
   return {
     saldoRp,
     gratis: pelaku.superAdmin,
+    // Program promosi gratis: pita/lencana, sisa jatah hari ini, dan tanggal berakhir. null = tidak ada untuk pengguna ini.
+    promo: promo.tampil ? promo : null,
     saldoMenipis: menipis,
     ambangSaldoMenipisRp: pengaturan.ambangSaldoMenipisRp,
     ...(menipis ? { pemberitahuan: `Saldo ALETA Ai Anda tinggal Rp${saldoRp.toLocaleString("id-ID")}. Hubungi Super Admin untuk mengisi saldo.` } : {}),
@@ -176,7 +184,7 @@ export async function strukGiliran(db: AletaDatabase, pelaku: PelakuAi, pesanId:
     ["Kurs dipakai", `${rupiah(g.kurs)} per USD (kurs ${g.kursTanggal || "-"}${g.kursSumber ? `, ${g.kursSumber}` : ""}, termasuk penyangga)`],
     ["Perkiraan sebelum jalan", rupiah(g.perkiraanRp)],
     ["Dana ditahan lalu dilepas", rupiah(ditahan)],
-    ["Biaya dipotong", g.gratis ? "Rp0 (gratis)" : rupiah(g.biayaRp)],
+    ["Biaya dipotong", g.promo ? "Rp0 (gratis promosi)" : g.gratis ? "Rp0 (gratis)" : rupiah(g.biayaRp)],
     ...(saldoAkhir !== null ? ([["Saldo sesudahnya", rupiah(saldoAkhir)]] as Array<[string, string]>) : []),
   ];
   return halamanStruk(g.pesanId, "Struk pemakaian ALETA Ai", "Rincian biaya satu giliran. Isi percakapan tidak dimuat.", baris);

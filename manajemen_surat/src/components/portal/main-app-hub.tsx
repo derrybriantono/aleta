@@ -19,6 +19,7 @@ import {
   Wallet,
 } from "lucide-react";
 
+import { LencanaGratisAi } from "@/components/portal/aleta-ai/promo-ai";
 import { ItemGeser, SusunanGeser } from "@/components/portal/susunan-geser";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -85,7 +86,10 @@ export function MainAppHub({ apps }: { apps: PortalAppConfig[] }) {
                 </div>
 
                 <div className="min-w-0 flex-1 space-y-1 sm:space-y-1.5">
-                  <p className="text-base font-semibold leading-6 text-foreground">{app.label}</p>
+                  <p className="flex items-center gap-2 text-base font-semibold leading-6 text-foreground">
+                    {app.label}
+                    {app.id === "aleta-ai" ? <LencanaGratisAi /> : null}
+                  </p>
                   <p className="hidden text-sm leading-6 text-muted-foreground sm:block">{app.description}</p>
                 </div>
 

@@ -4,6 +4,7 @@ import type { AletaDatabase } from "@/server/db/client";
 import type { PelakuAi } from "@/server/modules/aleta-ai/akses";
 import { periksaBatas } from "@/server/modules/aleta-ai/batas";
 import { kursBerlaku, type KursBerlaku } from "@/server/modules/aleta-ai/kurs";
+import { awalanPromoHabis, statusPromo, type StatusPromo } from "@/server/modules/aleta-ai/promo";
 import { bacaPengaturan, bacaRute, bacaTarif, type PengaturanAi } from "@/server/modules/aleta-ai/pengaturan";
 import { aletaAiDihentikan } from "@/server/modules/aleta-ai/saklar";
 import { saldoPengguna } from "@/server/modules/aleta-ai/saldo";
@@ -53,6 +54,10 @@ export type PerkiraanBiaya = {
   kursDipakai: number;
   saldoRp: number;
   gratis: boolean;
+  /** Gratis karena program promosi (bukan karena Super Admin): perkiraanRp = 0. */
+  promo?: boolean;
+  /** Keadaan jatah promosi pengguna ini (null bila tidak ada program/bukan sasaran). */
+  statusPromo?: StatusPromo | null;
   /** Saldo cukup DAN batas belum tercapai. */
   bolehJalan: boolean;
   /** Bila tidak boleh jalan: sebabnya, dalam bahasa pengguna. */
@@ -68,29 +73,34 @@ export async function nilaiPerkiraan(
   sekarang: Date = new Date()
 ): Promise<PerkiraanBiaya> {
   const saldoRp = await saldoPengguna(db, pelaku.id);
+  const promo = await statusPromo(db, pelaku, { sekarang, tambahanApiRp: dasar.biayaApiRp });
+  const promoBerlaku = promo.berlaku;
   const hasil: PerkiraanBiaya = {
     kelompok: dasar.kelompok,
     label: dasar.label,
     tokenMasuk: dasar.tokenMasuk,
     tokenKeluar: dasar.tokenKeluar,
-    perkiraanRp: dasar.perkiraanRp,
-    tahanRp: dasar.tahanRp,
+    perkiraanRp: promoBerlaku ? 0 : dasar.perkiraanRp,
+    tahanRp: promoBerlaku ? 0 : dasar.tahanRp,
     kurs: dasar.kurs,
     kursDipakai: kursEfektif(dasar.kurs.kurs, pengaturan.penyanggaKursPersen),
     saldoRp,
-    gratis: pelaku.superAdmin,
+    gratis: pelaku.superAdmin || promoBerlaku,
+    ...(promoBerlaku ? { promo: true } : {}),
+    ...(promo.tampil ? { statusPromo: promo } : {}),
     bolehJalan: true,
   };
   const tolak = (alasan: string): PerkiraanBiaya => ({ ...hasil, bolehJalan: false, alasan });
   if (!pengaturan.aktif || (await aletaAiDihentikan(db))) return tolak("ALETA Ai sedang dimatikan oleh admin.");
   const batas = await periksaBatas(db, pelaku, pengaturan, sekarang, {
-    tambahanRp: dasar.perkiraanRp,
+    tambahanRp: promoBerlaku ? 0 : dasar.perkiraanRp,
     tambahanToken: dasar.tokenMasuk + dasar.tokenKeluar,
     tambahanApiRp: dasar.biayaApiRp,
+    tanpaTagihan: promoBerlaku,
   });
   if (!batas.ok) return tolak(batas.alasan);
-  if (!pelaku.superAdmin && saldoRp < dasar.perkiraanRp) {
-    return tolak(`Saldo ALETA Ai Anda (Rp${saldoRp.toLocaleString("id-ID")}) tidak cukup (perkiraan Rp${dasar.perkiraanRp.toLocaleString("id-ID")}). Hubungi Super Admin untuk mengisi saldo.`);
+  if (!pelaku.superAdmin && !promoBerlaku && saldoRp < dasar.perkiraanRp) {
+    return tolak(`${awalanPromoHabis(promo)}Saldo ALETA Ai Anda (Rp${saldoRp.toLocaleString("id-ID")}) tidak cukup (perkiraan Rp${dasar.perkiraanRp.toLocaleString("id-ID")}). Hubungi Super Admin untuk mengisi saldo.`);
   }
   return hasil;
 }

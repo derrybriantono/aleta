@@ -71,7 +71,13 @@ export async function periksaBatas(
   pelaku: PelakuAi,
   pengaturan: PengaturanAi,
   sekarang: Date = new Date(),
-  opsi: { tambahanRp?: number; tambahanToken?: number; tambahanApiRp?: number } = {}
+  opsi: {
+    tambahanRp?: number;
+    tambahanToken?: number;
+    tambahanApiRp?: number;
+    /** Giliran/tugas ini gratis karena promosi (tidak ditagih): batas harian Rp tidak relevan, batas token dan satker TETAP. */
+    tanpaTagihan?: boolean;
+  } = {}
 ): Promise<HasilBatas> {
   const hari = await pemakaianHariIni(db, pelaku.id, sekarang);
   const tambahToken = Math.max(0, opsi.tambahanToken ?? 0);
@@ -79,7 +85,7 @@ export async function periksaBatas(
     return { ok: false, jenis: "harian-token", alasan: PESAN_BATAS_HARIAN };
   }
   const tambahRp = Math.max(0, opsi.tambahanRp ?? 0);
-  if (!pelaku.superAdmin && (hari.rp >= pengaturan.batasHarianRp || (tambahRp > 0 && hari.rp + tambahRp > pengaturan.batasHarianRp))) {
+  if (!pelaku.superAdmin && !opsi.tanpaTagihan && (hari.rp >= pengaturan.batasHarianRp || (tambahRp > 0 && hari.rp + tambahRp > pengaturan.batasHarianRp))) {
     return { ok: false, jenis: "harian-rp", alasan: PESAN_BATAS_HARIAN };
   }
   if (pengaturan.batasSatkerBulananRp > 0) {
