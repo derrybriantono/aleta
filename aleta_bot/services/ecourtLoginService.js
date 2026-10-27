@@ -129,6 +129,35 @@ function bacaFormulirLogin() {
 }
 
 /**
+ * Memotret captcha yang BENAR-BENAR sedang ditunggu e-Court.
+ *
+ * Halaman login e-Court (27 Okt 2026) memicu klik pada #captchaimage saat window.load, yang memanggil
+ * /capcay/regenerate dan MENGGANTI gambar captcha lewat AJAX. goto(networkidle2) dapat selesai sebelum
+ * permintaan itu kembali (dua sambungan terbuka masih dianggap sepi), sehingga yang dipotret adalah captcha
+ * LAMA sementara e-Court menunggu jawaban captcha BARU - login selalu ditolak ke /Login/index/CAPTCHA,
+ * padahal login lewat web biasa berhasil. Karena itu: tunggu jaringan benar-benar sepi, tunggu gambar
+ * selesai terpasang, baru dipotret.
+ */
+async function potretCaptchaSegar(page) {
+  if (typeof page.waitForNetworkIdle === "function") {
+    await page.waitForNetworkIdle({ idleTime: 800, timeout: 12000 }).catch(() => null);
+  }
+  await page
+    .waitForFunction(
+      () => {
+        const img = document.querySelector("img#captchaimage, img[src*='captcha' i], img[id*='captcha' i], img[class*='captcha' i]");
+        return !img || (img.complete && img.naturalWidth > 0);
+      },
+      { timeout: 5000 }
+    )
+    .catch(() => null);
+  const elemen = await page.$("img#captchaimage, img[src*='captcha' i], img[id*='captcha' i], img[class*='captcha' i]");
+  if (!elemen) return "";
+  const potongan = await elemen.screenshot({ encoding: "base64" }).catch(() => "");
+  return potongan ? `data:image/png;base64,${potongan}` : "";
+}
+
+/**
  * Membaca nama pengguna yang sedang masuk dari halaman e-Court.
  *
  * ============================================================================
@@ -233,14 +262,7 @@ async function mulaiLogin({ slot = "" } = {}) {
     // ulang lewat alamatnya. Mengunduh ulang akan meminta captcha BARU dari
     // e-Court, sehingga yang tampil di portal berbeda dengan yang menunggu
     // jawaban di sesi ini - dan loginnya akan selalu gagal.
-    let captcha = "";
-    if (formulir.alamatCaptcha) {
-      const elemen = await page.$("img[src*='captcha' i], img[id*='captcha' i], img[class*='captcha' i]");
-      if (elemen) {
-        const potongan = await elemen.screenshot({ encoding: "base64" }).catch(() => "");
-        if (potongan) captcha = `data:image/png;base64,${potongan}`;
-      }
-    }
+    const captcha = formulir.alamatCaptcha ? await potretCaptchaSegar(page) : "";
 
     const timer = setTimeout(() => {
       bersihkanSesiAktif();
@@ -625,6 +647,7 @@ module.exports = {
   // pengenalan formulir dan gerbang tidak ditulis dua kali. Ketiganya tidak
   // menyentuh simpanan sandi.
   bacaFormulirLogin,
+  potretCaptchaSegar,
   bacaNamaPengguna,
   lewatiGerbang,
   catatNamaPengguna,

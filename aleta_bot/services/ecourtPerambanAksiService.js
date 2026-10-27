@@ -307,12 +307,7 @@ async function mulaiLogin() {
       await tutup(alat);
       return { ok: false, alasan: "formulir_login_tidak_dikenali", token: "", captcha: "" };
     }
-    let captcha = "";
-    const elemen = await page.$("img[src*='captcha' i], img[id*='captcha' i], img[class*='captcha' i]");
-    if (elemen) {
-      const potongan = await elemen.screenshot({ encoding: "base64" }).catch(() => "");
-      if (potongan) captcha = `data:image/png;base64,${potongan}`;
-    }
+    const captcha = await ecourtLoginService.potretCaptchaSegar(page);
     const token = crypto.randomBytes(16).toString("hex");
     const timer = setTimeout(() => buangLogin(token), LOGIN_TTL_MS);
     if (typeof timer.unref === "function") timer.unref();
