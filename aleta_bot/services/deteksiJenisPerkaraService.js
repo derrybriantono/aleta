@@ -633,6 +633,12 @@ function kalimatPokok(o = {}) {
   }
   // {wali}: "Ayah Kandung bernama X", atau "X" saja bila hubungan wali tidak terbaca.
   if (fakta["1217"]) nilai.wali = fakta["1046"] ? `${fakta["1046"].nilai} bernama ${fakta["1217"].nilai}` : String(fakta["1217"].nilai);
+  else if (fakta["1046"]) nilai.wali = String(fakta["1046"].nilai);
+  // {wafat}: "X telah meninggal dunia[ pada tanggal ..][ di ..][ karena ..]" dari fakta yang terbaca (perwalian: orang tua anak); "" bila tak satu pun.
+  if (nilai["1025"] || nilai.tanggalWafat || nilai["1509"] || nilai["1247"] || nilai.sebabWafat) {
+    const sebab = nilai["1247"] || nilai.sebabWafat;
+    nilai.wafat = `${nilai["1025"] ? nilai["1025"] : "orang tua anak tersebut"} telah meninggal dunia${nilai.tanggalWafat ? ` pada tanggal ${nilai.tanggalWafat}` : ""}${nilai["1509"] ? ` di ${nilai["1509"]}` : ""}${sebab ? ` karena ${sebab}` : ""}`;
+  }
   const ringkas = isiKurung(t.teks, nilai);
   if (!ringkas) return null;
   // Gaya lengkap: satu butir "- Bahwa ..." per baris; "|" di templat = ganti baris.
