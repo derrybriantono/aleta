@@ -59,25 +59,25 @@
    "nama": "Status Pemohon I sebelum nikah",
    "asal": {
     "posita": {
-     "n": 722,
-     "banding": 721,
-     "cocok": 368,
-     "persen": 51,
-     "status": "saran",
-     "pangkatMaks": "ragu",
-     "dasar": "pembanding isian petugas: ketepatan di bawah 90%",
+     "n": 682,
+     "banding": 678,
+     "cocok": 664,
+     "persen": 97.9,
+     "status": "otomatis",
+     "pangkatMaks": "cukup",
+     "dasar": "pembanding MAKNA isian petugas (jejaka = perjaka = bujang = lajang; perawan = gadis; duda/janda), ukur-semantik-27okt.cjs; pembanding teks lama 51% menganggap Perjaka beda dari Jejaka",
      "contohSalah": [
       {
-       "usulan": "Perjaka",
-       "petugas": "Jejaka"
+       "usulan": "perawan",
+       "petugas": "jejaka"
       },
       {
-       "usulan": "Perjaka",
-       "petugas": "Jejaka"
+       "usulan": "perawan",
+       "petugas": "perjaka"
       },
       {
-       "usulan": "Perjaka",
-       "petugas": "Jejaka"
+       "usulan": "perawan",
+       "petugas": "jejaka"
       }
      ]
     },
@@ -96,25 +96,25 @@
    "nama": "Status Pemohon II sebelum nikah",
    "asal": {
     "posita": {
-     "n": 723,
-     "banding": 721,
-     "cocok": 605,
-     "persen": 83.9,
-     "status": "saran",
-     "pangkatMaks": "ragu",
-     "dasar": "pembanding isian petugas: ketepatan di bawah 90%",
+     "n": 682,
+     "banding": 678,
+     "cocok": 663,
+     "persen": 97.8,
+     "status": "otomatis",
+     "pangkatMaks": "cukup",
+     "dasar": "pembanding MAKNA isian petugas (jejaka = perjaka = bujang = lajang; perawan = gadis; duda/janda), ukur-semantik-27okt.cjs; pembanding teks lama 83.9% menganggap Perjaka beda dari Jejaka",
      "contohSalah": [
       {
-       "usulan": "Perjaka",
-       "petugas": "bujang dengan umur 23 tahun"
+       "usulan": "perjaka",
+       "petugas": "perawan"
       },
       {
-       "usulan": "Perjaka",
-       "petugas": "bujang"
+       "usulan": "perjaka",
+       "petugas": "perawan"
       },
       {
-       "usulan": "Perawan",
-       "petugas": "gadis dalam usia 18 tahun"
+       "usulan": "perjaka",
+       "petugas": "perawan"
       }
      ]
     }
