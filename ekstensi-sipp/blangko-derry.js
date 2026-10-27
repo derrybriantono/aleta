@@ -1862,18 +1862,20 @@
     const vw = document.documentElement.clientWidth || window.innerWidth;
     const vh = window.innerHeight || 600;
     const r = jangkar.getBoundingClientRect();
-    pop.style.maxHeight = `${(vh - 16) / z}px`;
+    // 27 Okt: menu tinggi dulu didorong ke top 8px, naik ke belakang kepala panel dan menutupi tombolnya
+    // sendiri (bagian atas terpotong). Kini menu tetap di sisi tombol yang lebih lega; isinya digulir di dalam kotak.
+    pop.style.maxHeight = "none";
     const w = Math.min((pop.offsetWidth || 320) * z, vw - 16);
-    const h = Math.min((pop.offsetHeight || 240) * z, vh - 16);
+    const hAsli = (pop.scrollHeight || pop.offsetHeight || 240) * z;
     let left = r.right - w;
     if (left < 8) left = Math.min(r.left, vw - w - 8);
     left = Math.max(8, Math.min(left, vw - w - 8));
-    let top = r.bottom + 6;
-    if (top + h > vh - 8) {
-      const atas = r.top - 6 - h;
-      top = atas >= 8 ? atas : Math.max(8, vh - 8 - h);
-    }
-    top = Math.max(8, Math.min(top, vh - 8 - h));
+    const ruangBawah = Math.max(0, vh - 8 - (r.bottom + 6));
+    const ruangAtas = Math.max(0, r.top - 6 - 8);
+    const keBawah = hAsli <= ruangBawah || ruangBawah >= ruangAtas;
+    const h = Math.min(hAsli, keBawah ? ruangBawah : ruangAtas);
+    const top = keBawah ? r.bottom + 6 : r.top - 6 - h;
+    pop.style.maxHeight = `${h / z}px`;
     pop.style.left = `${left / z}px`;
     pop.style.top = `${top / z}px`;
   }

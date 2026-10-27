@@ -178,7 +178,7 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 
 /* melayang: tidak keluar layar */
 #aleta-bd-akar .bd-float {
-  position: fixed; z-index: 30; background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 12px; padding: 10px;
+  position: fixed; z-index: 40; /* di atas kepala panel yang menempel (35) */ background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 12px; padding: 10px;
   box-shadow: 0 12px 34px rgba(0, 0, 0, .4); max-width: calc(100vw / var(--bd-z, 1) - 16px); overflow: auto; overscroll-behavior: contain; width: min(380px, calc(100vw / var(--bd-z, 1) - 16px));
   display: flex; flex-direction: column; gap: 6px;
 }
