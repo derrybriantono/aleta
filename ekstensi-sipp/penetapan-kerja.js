@@ -81,6 +81,48 @@
   const TTL_PERAMBAN_DETIK = 120;
   const dipegang = new Map(); // token -> { perkaraId, tujuan, pewaktu, sibuk }
 
+  // Ingatan kunci per TAB (sessionStorage bertahan saat halaman dimuat ulang, tidak dibagi ke tab lain). Pelepasan
+  // di pagehide sering tidak sampai karena halaman keburu mati; tanpa ingatan ini jalan berikutnya di tab yang sama
+  // ditolak oleh kunci miliknya sendiri sampai kedaluwarsa. Token yang masih berdetak di halaman INI = pekerjaan yang
+  // benar-benar sedang jalan, tidak dipakai bersama.
+  const KUNCI_TAB = "pk-kunci-tab";
+  function bacaTab() {
+    try {
+      const o = JSON.parse(sessionStorage.getItem(KUNCI_TAB) || "{}");
+      return o && typeof o === "object" ? o : {};
+    } catch {
+      return {};
+    }
+  }
+  function tulisTab(o) {
+    try {
+      if (Object.keys(o).length) sessionStorage.setItem(KUNCI_TAB, JSON.stringify(o));
+      else sessionStorage.removeItem(KUNCI_TAB);
+    } catch {
+      /* tanpa sessionStorage: kunci tetap basi sendiri */
+    }
+  }
+  function ingatTab(perkaraId, token) {
+    const o = bacaTab();
+    o[String(perkaraId)] = { token: String(token), saat: Date.now() };
+    tulisTab(o);
+  }
+  function lupaTab(perkaraId, token) {
+    const o = bacaTab();
+    const r = o[String(perkaraId)];
+    if (r && (!token || String(r.token) === String(token))) {
+      delete o[String(perkaraId)];
+      tulisTab(o);
+    }
+  }
+  function tokenTab(perkaraId) {
+    const r = bacaTab()[String(perkaraId)];
+    if (!r || !r.token) return "";
+    if (Date.now() - Number(r.saat || 0) > (TTL_PERAMBAN_DETIK + 60) * 1000) return "";
+    if (dipegang.has(String(r.token))) return "";
+    return String(r.token);
+  }
+
   async function kunci(aksi, perkaraId, token, tujuan) {
     try {
       const respons = await panggil(
@@ -123,6 +165,7 @@
         // kedaluwarsa) tidak direbut kembali: berhenti berdetak, pekerjaan menyelesaikan langkahnya sendiri.
         const r = await kunci("ambil", perkaraId, token, tujuan);
         if (!(r && r.ok === true && String(r.token) === String(token))) hentikanDetak(token);
+        else ingatTab(perkaraId, token);
       } finally {
         rec.sibuk = false;
       }
@@ -185,8 +228,12 @@
    * jawaban ditolak membawa `kalimat` (pesan siap tampil).
    */
   async function ambilKunci(perkaraId, tujuan, token) {
-    const r = await kunci("ambil", perkaraId, token, tujuan);
+    // 27 Okt: token yang dipegang tab ini sebelum halaman dimuat ulang (mis. sesudah Simpan Putusan Akhir) dipakai
+    // lagi - diperpanjang, tidak menolak pemiliknya sendiri "masih tercatat berjalan" sampai kedaluwarsa.
+    const warisan = token ? "" : tokenTab(perkaraId);
+    const r = await kunci("ambil", perkaraId, token || warisan || undefined, tujuan);
     if (r && r.ok === true && r.token) {
+      ingatTab(perkaraId, String(r.token));
       mulaiDetak(perkaraId, String(r.token), tujuan || "peramban");
       const catatan = kalimatKunci(r);
       return catatan ? { ...r, catatan } : r;
@@ -199,6 +246,7 @@
   async function lepasKunci(perkaraId, token) {
     if (!token) return { ok: true };
     hentikanDetak(String(token));
+    lupaTab(perkaraId, token);
     let r = null;
     for (let ke = 0; ke < 3; ke += 1) {
       r = await kunci("lepas", perkaraId, token);

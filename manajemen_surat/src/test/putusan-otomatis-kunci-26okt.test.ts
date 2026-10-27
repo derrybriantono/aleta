@@ -548,3 +548,48 @@ describe("penyambungan", () => {
     expect(KERJA).toContain("DETAK_MS");
   });
 });
+
+describe("27 Okt: tab yang sama sesudah dimuat ulang tidak ditolak kunci miliknya sendiri", () => {
+  // Laporan 27 Okt (601/Pdt.G/2026): "Isi & simpan Putusan Akhir" saja -> halaman SIPP dimuat ulang sesudah Simpan,
+  // pelepasan di pagehide tidak sampai; e-Doc berikutnya ditolak "Putusan Otomatis Anda sebelumnya masih tercatat
+  // berjalan sejak 11.38 ... tunggu 62 detik".
+  const muatUlang = (d: ReturnType<typeof buatDunia>, lama: Halaman) => {
+    const baru = bukaHalaman(d, DERRY);
+    for (let i = 0; i < lama.w.sessionStorage.length; i += 1) {
+      const k = lama.w.sessionStorage.key(i) as string;
+      baru.w.sessionStorage.setItem(k, lama.w.sessionStorage.getItem(k) as string);
+    }
+    return baru;
+  };
+
+  it("halaman mati tanpa melepas, dimuat ulang di TAB YANG SAMA beberapa detik kemudian: kunci langsung dipakai lagi, tanpa menunggu", async () => {
+    const d = buatDunia();
+    const lama = bukaHalaman(d, DERRY);
+    expect((await lama.modul.ambilKunci(NOMOR, String(PERKARA))).ok).toBe(true);
+    d.t.jam.sekarang += 5; // masih segar - dulu ditolak milik sendiri
+    const baru = muatUlang(d, lama);
+    const k = await baru.modul.ambilKunci(NOMOR, String(PERKARA));
+    expect(k.ok).toBe(true);
+    await k.lepas();
+    expect(d.t.baris.size).toBe(0);
+    expect(baru.w.sessionStorage.getItem("pk-kunci-tab")).toBeNull();
+  });
+
+  it("tab LAIN milik pengguna yang sama tetap ditolak selama kunci masih segar; pengguna lain juga", async () => {
+    const d = buatDunia();
+    const lama = bukaHalaman(d, DERRY);
+    expect((await lama.modul.ambilKunci(NOMOR, String(PERKARA))).ok).toBe(true);
+    d.t.jam.sekarang += 5;
+    expect((await bukaHalaman(d, DERRY).modul.ambilKunci(NOMOR, String(PERKARA))).ok).toBe(false);
+    expect((await bukaHalaman(d, "Panitera Uji").modul.ambilKunci(NOMOR, String(PERKARA))).ok).toBe(false);
+  });
+
+  it("pekerjaan yang MASIH berjalan di halaman yang sama tidak berbagi kunci: permintaan kedua ditolak", async () => {
+    const d = buatDunia();
+    const h = bukaHalaman(d, DERRY);
+    const pertama = await h.modul.ambilKunci(NOMOR, String(PERKARA));
+    expect(pertama.ok).toBe(true);
+    expect((await h.modul.ambilKunci(NOMOR, String(PERKARA))).ok).toBe(false);
+    await pertama.lepas();
+  });
+});
