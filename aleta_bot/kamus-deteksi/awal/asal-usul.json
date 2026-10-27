@@ -113,6 +113,28 @@
       },
       "status": "aktif",
       "catatan": ""
+    },
+    {
+      "kode": "asal-usul-ringkas-pokok",
+      "label": "Pokok keterangan saksi asal usul anak (ringkas)",
+      "gaya": "ringkas",
+      "teks": "{pemohon1} dan {pemohon2} telah menikah[ pada tanggal {5197}][ di {5105}], dan dari pernikahan tersebut lahir seorang anak[ bernama {namaAnak}][ pada tanggal {lahirAnak}] yang dimohonkan penetapan asal usulnya",
+      "syarat": {
+        "jenis": "asal-usul"
+      },
+      "status": "aktif",
+      "catatan": ""
+    },
+    {
+      "kode": "asal-usul-lengkap-pokok",
+      "label": "Pokok keterangan saksi asal usul anak (lengkap, per butir)",
+      "gaya": "lengkap",
+      "teks": "- Bahwa {pemohon1} dan {pemohon2} telah menikah[ pada tanggal {5197}][ di {5105}];|[- Bahwa wali nikahnya adalah {wali};|][- Bahwa yang menikahkan adalah {8087};|]- Bahwa dari pernikahan tersebut lahir seorang anak[ bernama {namaAnak}][ pada tanggal {lahirAnak}];|- Bahwa anak tersebut adalah anak kandung {pemohon1} dan {pemohon2};",
+      "syarat": {
+        "jenis": "asal-usul"
+      },
+      "status": "aktif",
+      "catatan": "Tanda | = ganti baris."
     }
   ]
 }

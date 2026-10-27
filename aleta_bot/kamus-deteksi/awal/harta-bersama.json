@@ -76,6 +76,56 @@
         "tanggal": ""
       },
       "catatan": ""
+    },
+    {
+      "kode": "harta-bersama-jumlah-anak",
+      "label": "Jumlah anak dari perkawinan para pihak",
+      "kunci": "fakta-jumlah-anak",
+      "jenis": "fakta",
+      "bentuk": "angka",
+      "regex": "dikaruniai\\s+(?<nilai>\\d{1,2})\\s*(?:\\([a-z ]+\\)\\s*)?orang\\s+anak",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Bahwa dari pernikahan tersebut, Penggugat dan Tergugat telah dikaruniai 3 (tiga) orang anak perempuan"
+      ],
+      "contohSalah": [
+        "Bahwa Penggugat dan Tergugat belum dikaruniai anak"
+      ],
+      "ukur": {
+        "n": 3,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala salinan 27 Okt 2026 (agen w104): jumlah posita yang cocok; belum ada pembanding isian petugas",
+        "tanggal": "2026-10-27"
+      },
+      "catatan": ""
+    },
+    {
+      "kode": "harta-bersama-tanggal-nikah",
+      "label": "Tanggal perkawinan para pihak",
+      "kunci": "fakta-tanggal-nikah",
+      "jenis": "fakta",
+      "bentuk": "tanggal",
+      "regex": "(?:melangsungkan|melaksanakan)\\s+(?:pernikahan|perkawinan)\\s+(?:pada\\s+)?(?:hari\\s+[A-Za-z]+,?\\s+)?(?:tanggal\\s+)?(?<nilai>\\d{1,2}\\s+[A-Za-z]+\\s+\\d{4})",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Bahwa Penggugat dan Tergugat telah melangsungkan pernikahan pada hari Rabu, tanggal 27 Agustus 2014, yang dicatat oleh Pegawai Pencatat Nikah"
+      ],
+      "contohSalah": [
+        "Bahwa Penggugat dan Tergugat sudah lama tidak tinggal bersama"
+      ],
+      "ukur": {
+        "n": 4,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "sipp_donggala salinan 27 Okt 2026 (agen w104): jumlah posita yang cocok; belum ada pembanding isian petugas",
+        "tanggal": "2026-10-27"
+      },
+      "catatan": ""
     }
   ],
   "templat": [
@@ -89,6 +139,28 @@
       },
       "status": "aktif",
       "catatan": ""
+    },
+    {
+      "kode": "harta-bersama-ringkas-pokok",
+      "label": "Pokok keterangan saksi harta bersama (ringkas)",
+      "gaya": "ringkas",
+      "teks": "{satu} dan {dua} pernah terikat perkawinan yang sah[ dan dikaruniai {jumlahAnak} orang anak], dan selama perkawinan mereka memperoleh harta bersama[ berupa {objekHarta}] yang belum dibagi",
+      "syarat": {
+        "jenis": "harta-bersama"
+      },
+      "status": "aktif",
+      "catatan": ""
+    },
+    {
+      "kode": "harta-bersama-lengkap-pokok",
+      "label": "Pokok keterangan saksi harta bersama (lengkap, per butir)",
+      "gaya": "lengkap",
+      "teks": "- Bahwa {satu} dan {dua} pernah terikat dalam perkawinan yang sah[ pada tanggal {tanggalNikah}];|[- Bahwa dari perkawinan tersebut telah dikaruniai {jumlahAnak} orang anak;|][- Bahwa perkawinan keduanya telah putus berdasarkan akta cerai nomor {aktaCerai};|]- Bahwa selama perkawinan {satu} dan {dua} memperoleh harta bersama[ berupa {objekHarta}];|- Bahwa harta bersama tersebut belum dibagi;",
+      "syarat": {
+        "jenis": "harta-bersama"
+      },
+      "status": "aktif",
+      "catatan": "Tanda | = ganti baris."
     }
   ]
 }
