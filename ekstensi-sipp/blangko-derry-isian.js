@@ -1711,10 +1711,11 @@
       await Promise.all(
         tj.slice(i, i + 3).map(async (b) => {
           try {
-            const h = await k.bacaTanyaJawab({ kode: b.tj.kodeSunting, perkaraId: perkaraId(), sidang: sidangUrutan(), a: S.blangko.a, b: S.blangko.b });
+            // 27 Okt: variabel "keterangan" (putusan) digambar ABT dari SEMUA sidang, jadi keterangan di sidang pembuktian sebelumnya juga dihitung.
+            const { h } = await bacaTjLintas(b.tj.kodeSunting, sidangUrutan(), b.tj.peran === "keterangan");
             if (!h.ok) return;
             const baris = Array.isArray(h.baris) ? h.baris : [];
-            const ada = baris.some((r) => String((r && r.tanya) || "").trim() || String((r && r.jawab) || "").trim());
+            const ada = barisTjBerisi(baris);
             const nilai = { status: ada ? "terisi" : "kosong", teks: "", dariPopup: true };
             S.nilai[b.kode] = nilai;
             S.nilai[b.tj.kodeSunting] = nilai;
@@ -3641,18 +3642,64 @@
     renderTj();
     void isiOtomatis(pas || [kunci], {});
   }
+  /** Baris tanya-jawab yang berisi (pertanyaan atau jawaban tidak kosong). */
+  const barisTjBerisi = (baris) => (Array.isArray(baris) ? baris : []).some((r) => String((r && r.tanya) || "").trim() || String((r && r.jawab) || "").trim());
+  /**
+   * 27 Okt: urutan sidang yang dicoba bila sidang terpilih tidak memuat keterangan saksi - keterangan saksi sering
+   * diperiksa di sidang pembuktian SEBELUM sidang putusan (601/Pdt.G/2026: saksi di sidang ke-2, putusan di sidang ke-3).
+   * Urutan: sidang sebelumnya (terdekat dulu), lalu sesudahnya. Kosong bila sidang terpilih tidak punya urutan (d kosong =
+   * ABT sudah membaca semua sidang).
+   */
+  function urutanSidangTj(d) {
+    const dasar = Number(d) || 0;
+    if (!dasar) return [];
+    const ada = new Set((S.pk && Array.isArray(S.pk.sidang) ? S.pk.sidang : []).map((s) => Number(s && s.urutan)).filter((n) => n > 0));
+    if (!ada.size) for (let n = 1; n < dasar; n += 1) ada.add(n); // daftar sidang SIPP tak terbaca: sidang sebelumnya saja
+    ada.delete(dasar);
+    const sebelum = [...ada].filter((n) => n < dasar).sort((a, b) => b - a);
+    const sesudah = [...ada].filter((n) => n > dasar).sort((a, b) => a - b);
+    return [...sebelum, ...sesudah].slice(0, 8).map(String);
+  }
+  /**
+   * Baca keterangan saksi satu penyunting pada sidang `d`; bila `lintas` dan sidang itu kosong, cari sidang lain perkara ini
+   * yang memuatnya. Hanya MEMBACA. Pulang { h, sidang } - `sidang` = sidang tempat keterangan sebenarnya tersimpan.
+   */
+  async function bacaTjLintas(kode, d, lintas) {
+    const k = klienAbt();
+    const minta = (n) => ({ kode, perkaraId: perkaraId(), sidang: n, a: S.blangko ? S.blangko.a : "", b: S.blangko ? S.blangko.b : "" });
+    const h = await k.bacaTanyaJawab(minta(d));
+    if (!lintas || !h || !h.ok || barisTjBerisi(h.baris)) return { h, sidang: d };
+    for (const n of urutanSidangTj(d)) {
+      try {
+        const x = await k.bacaTanyaJawab(minta(n));
+        if (x && x.ok && barisTjBerisi(x.baris)) return { h: x, sidang: n };
+      } catch {
+        /* sidang itu tidak terbaca: coba berikutnya */
+      }
+    }
+    return { h, sidang: d };
+  }
+  /** " (15 Oktober 2026)" untuk sidang urutan n bila tanggalnya diketahui dari SIPP; kosong bila tidak. */
+  function tanggalSidangUrutan(n) {
+    const s = (S.pk && Array.isArray(S.pk.sidang) ? S.pk.sidang : []).find((x) => String(x && x.urutan) === String(n));
+    return s && s.tanggal ? ` (${tglIndo(String(s.tanggal).slice(0, 10))})` : "";
+  }
   async function muatTj(kunci, paksa) {
     const it = tjItem(kunci);
     if (!it) return;
     const d = sidangUrutan();
     const ada = S.tj[kunci];
     if (ada && ada.dimuat && ada.sidang === d && !paksa) return;
-    S.tj[kunci] = { kode: it.tj.kodeSunting, rows: ada && ada.sidang === d ? ada.rows : [], templates: ada ? ada.templates : [], dimuat: false, memuat: true, berubah: ada && ada.sidang === d ? ada.berubah : false, sidang: d, galat: "" };
+    S.tj[kunci] = { kode: it.tj.kodeSunting, rows: ada && ada.sidang === d ? ada.rows : [], templates: ada ? ada.templates : [], dimuat: false, memuat: true, berubah: ada && ada.sidang === d ? ada.berubah : false, sidang: d, sidangBaca: d, galat: "" };
     renderTj();
     try {
-      const h = await klienAbt().bacaTanyaJawab({ kode: it.tj.kodeSunting, perkaraId: perkaraId(), sidang: d, a: S.blangko.a, b: S.blangko.b });
+      // Hanya baca (putusan / peran hakim): keterangan di sidang pembuktian sebelumnya ikut terbaca. Penyunting BAS tetap
+      // memuat sidang yang dipilih saja - ia menulis ke sidang itu.
+      const lin = await bacaTjLintas(it.tj.kodeSunting, d, deretTj().hanyaBaca);
+      const h = lin.h;
       const t = S.tj[kunci];
       if (!t || t.sidang !== d) return;
+      t.sidangBaca = lin.sidang;
       if (!h.ok) t.galat = h.pesan || "Tanya jawab tidak terbaca.";
       else {
         if (!t.berubah) t.rows = tandaiDasarBaris(h.baris.map((r) => ({ no: r.no, tanya: r.tanya, jawab: r.jawab })), false);
@@ -5479,9 +5526,13 @@
       }
       const t = S.tj[S.tjBuka];
       const rows = (t && t.rows) || [];
+      // 27 Okt: keterangan tersimpan di sidang lain (sidang pembuktian sebelum sidang putusan) - disebut terang.
+      const sidangLain = t && t.sidangBaca && String(t.sidangBaca) !== String(sidangUrutan()) && barisTjBerisi(rows) ? String(t.sidangBaca) : "";
+      const chipSidang = sidangLain ? `keterangan dari sidang ke-${sidangLain}${tanggalSidangUrutan(sidangLain)}` : sidangTeks;
       wad.innerHTML =
-        `<div class="bd-tjwadah bd-tjbaca"><div class="bd-tjalat"><b>${esc(it.tj.sebutan)}</b><span class="bd-chip">${esc(sidangTeks)}</span></div>` +
+        `<div class="bd-tjwadah bd-tjbaca"><div class="bd-tjalat"><b>${esc(it.tj.sebutan)}</b><span class="bd-chip">${esc(chipSidang)}</span></div>` +
         `<p class="bd-catat">Hanya dibaca. Tanya jawab saksi disusun di berita acara sidang.</p>` +
+        (sidangLain ? `<p class="bd-catat" role="status">Keterangan ini tersimpan di ABT pada sidang ke-${esc(sidangLain)}${esc(tanggalSidangUrutan(sidangLain))}, bukan sidang ke-${esc(sidangUrutan())} yang dipilih.${it.tj.peran === "keterangan" ? " Putusan memuat keterangan saksi dari semua sidang." : " Berita acara sidang ini tidak memuatnya."}</p>` : "") +
         (t && t.memuat ? `<p class="bd-catat" role="status">Membaca keterangan ${esc(it.tj.sebutan)} dari ABT…</p>` : "") +
         (t && t.galat ? `<p class="bd-peringatan">${esc(t.galat)}</p>` : "") +
         `<div class="bd-tjtabel"><table><thead><tr><th class="no-u">No</th><th>Pertanyaan</th><th>Jawaban</th></tr></thead><tbody>${
