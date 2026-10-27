@@ -82,8 +82,8 @@ describe("A - lib murni", () => {
 
   it("ciri sampul awal: lencana tanpa verstek/mediasi/rekonvensi/sita, ghaib dan mafqud bingkai ganda sendiri", () => {
     const h = ciriSampulAwal({ ecourt: true, kuasa: true, ghaib: true, verstek: true, mediasi: true, sita: true, kumulasi: true }, { kuasa: "P+T", kumulasi: "2" });
-    expect(h["5861"]).toBe("[■ e-COURT]  [■ KUASA HUKUM P+T]");
-    expect(h["5807"]).toBe("[● GHAIB T]");
+    expect(h["5861"]).toBe("■ e-COURT  ·  ■ KUASA HUKUM P+T");
+    expect(h["5807"]).toBe("● GHAIB T");
     expect(h["5808"]).toBe("");
     expect(ciriSampulAwal({}, {})["5861"]).toContain("tidak ada ciri khusus");
   });
@@ -347,6 +347,34 @@ describe("D - layanan bot (baca saja)", () => {
     expect(f.dokumen.find((d: { kunci: string }) => d.kunci === "phs")).toMatchObject({ bundel: "A", sumber: "perkiraan" });
     expect(f.riwayat[0]).toMatchObject({ ke: 1, hadir: "P T" });
     // baca saja: tidak ada kueri tulis
+    expect(sql.some((q) => /^\s*(INSERT|UPDATE|DELETE|REPLACE|ALTER|DROP)/i.test(q))).toBe(false);
+  });
+
+  it("fakta: tingkat pertama tanpa upaya hukum = tanpa Bundel B; banding tercatat = baris Bundel B per tahapan bertanggal, pasca putusan tetap di Bundel A", async () => {
+    const dasar = (teks: string) => {
+      if (/FROM perkara WHERE perkara_id/.test(teks)) return [{ perkara_id: 5, nomor_perkara: "5/Pdt.G/2026/PA.Cth", jenis_perkara_id: 347, alur_perkara_id: 15, prodeo: 0, tanggal_pendaftaran: "2026-01-05", tanggal_surat: "2026-01-04", petitum: "", posita: "" }];
+      if (/FROM perkara_penetapan/.test(teks)) return [{ penetapan_hari_sidang: "2026-01-08" }];
+      return null;
+    };
+    const opsi = (kueri: (t: string) => Promise<unknown[]>) => ({ kueri, akarEcourt: "/tidak/ada", penanda: { bahanPenanda: async () => ({ terbaca: {} }), ruasBaris: () => ({ penandaPerkara: {}, penandaPihak: [] }) }, kumulasi: { kumulasiBanyakPerkara: async () => ({}) } });
+    const tanpa = await bot.fakta({ perkaraId: 5 }, opsi(async (t: string) => dasar(t) ?? []));
+    expect(tanpa.ok).toBe(true);
+    expect(tanpa.upayaHukum).toBe(false);
+    expect(tanpa.dokumen.filter((d: { bundel: string }) => d.bundel === "B")).toHaveLength(0);
+    const sql: string[] = [];
+    const dengan = await bot.fakta(
+      { perkaraId: 5 },
+      opsi(async (t: string) => {
+        sql.push(t);
+        if (/FROM perkara_banding/.test(t)) return [{ permohonan_banding: "2026-05-20", penerimaan_memori_banding: "2026-05-30", putusan_banding: "2026-07-01" }];
+        return dasar(t) ?? [];
+      })
+    );
+    expect(dengan.upayaHukum).toBe(true);
+    const b = dengan.dokumen.filter((d: { bundel: string }) => d.bundel === "B");
+    expect(b.map((d: { nama: string }) => d.nama)).toEqual(["Akta Permohonan Banding", "Memori Banding", "Putusan Banding"]);
+    expect(b.every((d: { grup: string }) => d.grup === "UPAYA HUKUM - BANDING")).toBe(true);
+    expect(dengan.dokumen.filter((d: { grup: string }) => /PASCA PUTUSAN/.test(d.grup)).every((d: { bundel: string }) => d.bundel === "A")).toBe(true);
     expect(sql.some((q) => /^\s*(INSERT|UPDATE|DELETE|REPLACE|ALTER|DROP)/i.test(q))).toBe(false);
   });
 });

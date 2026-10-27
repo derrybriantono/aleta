@@ -14,12 +14,8 @@ def ceklist(kertas='a4'):
     def e(x):
         return int(x * LEBAR / 10506)
     s = b.kepala_rtf()
-    # kop satker + kotak MEJA I / PENDAFTARAN
-    s += tabel([{
-        'lebar': [e(7300), LEBAR - e(7300)], 'brd': [(0, 0, 20, 0), (20, 20, 20, 20)], 'va': ['c', 'c'],
-        'sel': [sel([par([run('#8010#', b=True, sz=24, sp=20)], intbl='mid'), p_sel([run('Kepaniteraan  -  pemeriksaan kelengkapan berkas pendaftaran', sz=14)])]),
-                sel([par([run('MEJA I', b=True, sz=22, sp=60)], al='c', intbl='mid', sb=20), p_sel([run('PENDAFTARAN', b=True, sz=13, sp=60)], al='c', sa=20)])],
-    }])
+    # kop berlogo + kotak MEJA I / PENDAFTARAN
+    s += b.kop_logo('Kepaniteraan  -  pemeriksaan kelengkapan berkas pendaftaran', 'MEJA I', lebar_total=LEBAR, kanan_ket='PENDAFTARAN')
     # judul, nomor, penanda jenis
     s += tabel([{
         'lebar': [e(6000), LEBAR - e(6000)], 'brd': [(0, 0, 0, 0), (30, 30, 30, 30)], 'va': ['c', 'c'],
@@ -30,7 +26,7 @@ def ceklist(kertas='a4'):
     t3 = LEBAR // 3
 
     def kot(l, v, sz=15):
-        return sel([par([run(l, b=True, sz=11, sp=30)], intbl='mid', sb=15), p_sel([run(v, b=True, sz=sz)], sa=15)])
+        return sel([par([run(l, b=True, sz=11, sp=30)], intbl='mid', sb=25, sa=25), p_sel([run(v, b=True, sz=sz)], sa=25)])
     s += tabel([{'lebar': [t3, t3, LEBAR - 2 * t3], 'brd': [K_SEL] * 3,
                  'sel': [kot('PIHAK I', '#0098#'), kot('PIHAK II', '#0102#'), kot('DIDAFTARKAN', '#1061#  #5803#')]}])
     s += par('', sz=8)

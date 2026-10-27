@@ -3,7 +3,7 @@
 # satu baris abt_menu (folder "98b Berkas Perkara - BAS" untuk Panitera Sidang), enam berkas RTF (sampul: folder 99 PTSP yang sudah ada;
 # daftar isi: folder baru). Hanya pengguna Derry (derry_briantono). Hanya MEMBACA SIPP. Tidak menyentuh blangko, variabel, atau menu lain.
 # Jalankan:  python -I sumber/bangun_paket.py   (dari folder paket)
-import hashlib, io, os, shutil, sys
+import hashlib, io, json, os, shutil, sys
 
 SINI = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(SINI, 'alat'))
@@ -20,6 +20,22 @@ MENU = dict(nama='Daftar Isi Berkas Perkara', nama_alias='Daftar Isi Berkas - BA
 FUNGSI = 'isian_rtf_daftar_isi'
 KOLOM_MENU = ['nama', 'nama_alias', 'direktori', 'parent_direktori', 'proses_id_min', 'proses_id_max', 'perkara_id_min', 'perkara_id_max', 'perkara_id_referensi',
               'user_cek', 'user_grup_id', 'user_top_id', 'user_validator']
+
+
+def muat_lama():
+    """Isi paket SEBELUMNYA yang sudah terpasang di server (26 Okt 16.18, 177 variabel, 21 berkas): dasar jalur PENINGKATAN di atas keadaan terpasang."""
+    v = {}
+    with io.open(os.path.join(SINI, 'sumber', 'lama', 'variabel-lama.json'), encoding='ascii') as f:
+        for d in json.load(f):
+            v[d['no_var']] = (d['nama'], d['data_type'], d['sql_query'])
+    r = {}
+    with io.open(os.path.join(SINI, 'sumber', 'lama', 'daftar-rtf-lama.tsv'), encoding='utf-8') as f:
+        for baris in f:
+            baris = baris.rstrip(chr(10))
+            if baris and not baris.startswith('#'):
+                x = baris.split(chr(9))
+                r[(x[0], x[1])] = x[2]
+    return v, r
 
 
 def md5s(t):
@@ -63,20 +79,33 @@ def bangun():
     daftar_md5 = [(k, md5_var(n, t, c)) for k, n, t, c in bv.V]
     tabel_md5 = ' UNION ALL '.join("SELECT %d AS n, '%s' AS h" % (k, h) for k, h in daftar_md5)
 
-    # --- PRASYARAT: A|B|C|D|E|F|G
+    # --- paket SEBELUMNYA (sudah terpasang di server): jalur PENINGKATAN
+    lama_var, lama_rtf = muat_lama()
+    lama_md5 = dict((k, md5_var(*lama_var[k])) for k in lama_var)
+    kodes_ubah = [k for k, h in daftar_md5 if k in lama_md5 and lama_md5[k] != h]      # isi berubah dibanding paket sebelumnya
+    kodes_sama = [k for k, h in daftar_md5 if k in lama_md5 and lama_md5[k] == h]
+    assert set(lama_var) <= set(kodes), 'paket baru harus memuat semua nomor paket sebelumnya'
+    tabel_md5_lama = ' UNION ALL '.join("SELECT %d AS n, '%s' AS h, '%s' AS l" % (k, h, lama_md5.get(k, '-')) for k, h in daftar_md5)
+    HARAP = '0|0|%d|0|1|0|0|0' % len(bv.RUJUKAN)
+    ULANG = '0|%d|%d|1|1|1|0|0' % (len(bv.V), len(bv.RUJUKAN))
+    TINGKAT = '0|%d|%d|1|1|1|0|%d' % (len(bv.V) - len(kodes_ubah), len(bv.RUJUKAN), len(kodes_ubah))
+
+    # --- PRASYARAT: A|B|C|D|E|F|G|H
     pras = KET + (
-        "-- PRASYARAT (baca saja) \"A|B|C|D|E|F|G\": A = variabel nomor paket yang sudah ada tetapi isinya LAIN (harus 0) | B = yang sudah persis paket (0 pertama, %d pasang ulang) | "
-        "C = variabel lama yang dirujuk RTF/kueri ADA (harus %d) | D = baris abt_menu folder baru (0 pertama, 1 pasang ulang) | E = abt_menu id 991 (folder 99 PTSP) ada (1) | "
-        "F = fungsi %s sudah ada (0 pertama, 1 pasang ulang) | G = nomor lain di blok 5700-5779 dan 5800-5899 yang dipakai bukan oleh paket (harus 0).\n" % (len(bv.V), len(bv.RUJUKAN), FUNGSI) +
-        "-- Benar: \"0|0|%d|0|1|0|0\" (pertama) atau \"0|%d|%d|1|1|1|0\" (pasang ulang).\n" % (len(bv.RUJUKAN), len(bv.V), len(bv.RUJUKAN)) +
+        "-- PRASYARAT (baca saja) \"A|B|C|D|E|F|G|H\": A = variabel nomor paket yang sudah ada tetapi isinya BUKAN isi paket ini maupun paket sebelumnya (harus 0) | B = yang sudah persis paket ini | "
+        "C = variabel lama yang dirujuk RTF/kueri ADA (harus %d) | D = baris abt_menu folder baru (0 pertama, 1 sudah terpasang) | E = abt_menu id 991 (folder 99 PTSP) ada (1) | "
+        "F = fungsi %s sudah ada (0 pertama, 1 sudah terpasang) | G = nomor lain di blok 5700-5779 dan 5800-5899 yang dipakai bukan oleh paket (harus 0) | "
+        "H = variabel yang masih berisi paket SEBELUMNYA dan akan ditingkatkan (0 kecuali PENINGKATAN).\n" % (len(bv.RUJUKAN), FUNGSI) +
+        "-- Benar: \"%s\" (pasang pertama), \"%s\" (pasang ulang), atau \"%s\" (PENINGKATAN: paket sebelumnya terpasang).\n" % (HARAP, ULANG, TINGKAT) +
         "SELECT CONCAT_WS('|',\n"
-        "  (SELECT COUNT(*) FROM abt_variabel v JOIN (%s) p ON p.n = v.no_var WHERE %s <> p.h),\n" % (tabel_md5, SQL_MD5_VAR) +
+        "  (SELECT COUNT(*) FROM abt_variabel v JOIN (%s) p ON p.n = v.no_var WHERE %s <> p.h AND %s <> p.l),\n" % (tabel_md5_lama, SQL_MD5_VAR, SQL_MD5_VAR) +
         "  (SELECT COUNT(*) FROM abt_variabel v JOIN (%s) p ON p.n = v.no_var WHERE %s = p.h),\n" % (tabel_md5, SQL_MD5_VAR) +
         "  (SELECT COUNT(*) FROM abt_variabel WHERE no_var IN (%s)),\n" % ','.join(str(x) for x in bv.RUJUKAN) +
         "  (SELECT COUNT(*) FROM abt_menu WHERE direktori = %s AND parent_direktori = %s),\n" % (q(MENU['direktori']), q(MENU['parent_direktori'])) +
         "  (SELECT COUNT(*) FROM abt_menu WHERE id = 991),\n"
         "  (SELECT COUNT(*) FROM information_schema.routines WHERE routine_schema = DATABASE() AND routine_name = '%s'),\n" % FUNGSI +
-        "  (SELECT COUNT(*) FROM abt_variabel WHERE ((no_var BETWEEN 5700 AND 5779) OR (no_var BETWEEN 5800 AND 5899)) AND no_var NOT IN (%s))\n" % ','.join(str(k) for k in kodes) +
+        "  (SELECT COUNT(*) FROM abt_variabel WHERE ((no_var BETWEEN 5700 AND 5779) OR (no_var BETWEEN 5800 AND 5899)) AND no_var NOT IN (%s)),\n" % ','.join(str(k) for k in kodes) +
+        "  (SELECT COUNT(*) FROM abt_variabel v JOIN (%s) p ON p.n = v.no_var WHERE %s = p.l AND p.l <> p.h)\n" % (tabel_md5_lama, SQL_MD5_VAR) +
         ");\n")
     tulis('%s-PRASYARAT.sql' % N, pras)
 
@@ -86,6 +115,12 @@ def bangun():
         locked = 1 if t == 'data_sql' else 0
         p.append("INSERT INTO abt_variabel (no_var, nama, data_type, sql_query, locked) SELECT %d, %s, %s, %s, %d FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM abt_variabel WHERE no_var = %d);\n"
                  % (k, q(n), q(t), q(c) if c else 'NULL', locked, k))
+    # PENINGKATAN: variabel yang masih berisi paket SEBELUMNYA (md5 persis) diganti isi barunya di tempat (baris dan isian yang sudah ada tidak dihapus)
+    for k, n, t, c in bv.V:
+        if k in kodes_ubah:
+            locked = 1 if t == 'data_sql' else 0
+            p.append("UPDATE abt_variabel SET nama = %s, data_type = %s, sql_query = %s, locked = %d WHERE no_var = %d AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '%s';\n"
+                     % (q(n), q(t), q(c) if c else 'NULL', locked, k, lama_md5[k]))
     m = MENU
     nilai = ', '.join(q(m[c]) if isinstance(m[c], str) else str(m[c]) for c in KOLOM_MENU[:-1])
     p.append("INSERT INTO abt_menu (id, %s) SELECT (SELECT n FROM (SELECT IFNULL(MAX(id), 0) + 1 AS n FROM abt_menu) mm), %s, NULL FROM DUAL "
@@ -116,6 +151,26 @@ def bangun():
     pu.append("SELECT 'PULIH SQL SELESAI';\n")
     tulis('%s-PULIH.sql' % N, ''.join(pu))
 
+    # --- PULIH PENINGKATAN: kembali ke isi paket SEBELUMNYA (HANYA variabel yang masih persis isi paket ini); menu dan fungsi tidak berubah sehingga tidak disentuh
+    pp = [KET, "-- PULIH PENINGKATAN (deterministik): variabel yang masih persis isi paket ini dikembalikan ke isi paket SEBELUMNYA, di tempat (isian tidak terhapus). Dipakai pulih-satker.sh bila pasang dimulai dari PENINGKATAN.\n", "START TRANSACTION;\n"]
+    for k, n, t, c in bv.V:
+        if k in kodes_ubah:
+            on, ot, oc = lama_var[k]
+            locked = 1 if ot == 'data_sql' else 0
+            pp.append("UPDATE abt_variabel SET nama = %s, data_type = %s, sql_query = %s, locked = %d WHERE no_var = %d AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), locked)) = '%s';\n"
+                      % (q(on), q(ot), q(oc) if oc else 'NULL', locked, k, dict(daftar_md5)[k]))
+    pp.append("COMMIT;\nSELECT 'PULIH PENINGKATAN SELESAI';\n")
+    tulis('%s-PULIH-PENINGKATAN.sql' % N, ''.join(pp))
+    ubah_lama = ' UNION ALL '.join("SELECT %d AS n, '%s' AS l" % (k, lama_md5[k]) for k in kodes_ubah) or "SELECT 0 AS n, '-' AS l"
+    tulis('%s-PERIKSA-LAMA.sql' % N, KET + "-- PERIKSA LAMA (baca saja): jumlah variabel yang berisi paket SEBELUMNYA persis (harus %d setelah PULIH PENINGKATAN)\n" % len(kodes_ubah) +
+          "SELECT COUNT(*) FROM abt_variabel v JOIN (%s) p ON p.n = v.no_var WHERE %s = p.l;\n" % (ubah_lama, SQL_MD5_VAR))
+    # daftar berkas paket sebelumnya (md5) yang boleh diganti
+    lama_baris = []
+    for nama_b, isi_b in br.semua().items():
+        folder_b = FOLDER_SAMPUL if nama_b.startswith(('Sampul', 'Ceklist')) else FOLDER_DAFTAR
+        if (folder_b, nama_b) in lama_rtf:
+            lama_baris.append('%s\t%s\t%s' % (folder_b, nama_b, lama_rtf[(folder_b, nama_b)]))
+
     # --- fungsi
     tulis('%s-FUNGSI.sql' % N, io.open(os.path.join(SINI, 'sumber', 'fungsi.sql'), encoding='utf-8').read())
 
@@ -130,6 +185,7 @@ def bangun():
             f.write(data)
         baris.append('%s\t%s\t%s\tdibangun alat/bangun_rtf.py (26 Okt 2026)' % (folder, nama, hashlib.md5(data).hexdigest()))
     tulis('daftar-rtf.tsv', "# folder<TAB>berkas<TAB>md5<TAB>asal - berkas BARU dari <paket>/rtf/ (tidak pernah menimpa berkas lain)\n" + '\n'.join(sorted(baris)) + '\n')
+    tulis('daftar-lama.tsv', "# folder<TAB>berkas<TAB>md5_lama - isi berkas paket SEBELUMNYA (sudah terpasang) yang boleh diganti isi baru (PENINGKATAN); selain itu GAGAL"+chr(10) + chr(10).join(sorted(lama_baris)) + chr(10))
     tulis('folder-ada.txt', "# folder (relatif _blangko_abt) yang harus SUDAH ada\nderry_briantono\n%s\n" % FOLDER_SAMPUL)
     tulis('folder-baru.txt', "# folder BARU (relatif _blangko_abt) yang dibuat paket ini; dihapus pulih-satker.sh bila kosong\n%s\n" % FOLDER_DAFTAR)
     # daftar variabel (untuk cadangan/pulih)
@@ -147,7 +203,7 @@ def bangun():
     shutil.copyfile(os.path.join(SINI, 'sumber', 'berkas_rtf.py'), os.path.join(TUJ, 'berkas_rtf.py'))
     for nm in ('pasang-satker.sh', 'pulih-satker.sh'):
         t = io.open(os.path.join(SINI, 'sumber', nm), encoding='utf-8').read()
-        t = t.replace('@@N@@', N).replace('@@FUNGSI@@', FUNGSI).replace('@@HARAP@@', '0|0|%d|0|1|0|0' % len(bv.RUJUKAN)).replace('@@ULANG@@', '0|%d|%d|1|1|1|0' % (len(bv.V), len(bv.RUJUKAN)))
+        t = t.replace('@@N@@', N).replace('@@FUNGSI@@', FUNGSI).replace('@@HARAP@@', HARAP).replace('@@ULANG@@', ULANG).replace('@@TINGKAT@@', TINGKAT).replace('@@UBAH@@', str(len(kodes_ubah)))
         t = t.replace('@@NOMOR@@', ','.join(str(k) for k in kodes)).replace('@@JUMLAH@@', str(len(bv.V)))
         tulis(nm, t)
     # --- MD5SUMS

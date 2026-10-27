@@ -44,14 +44,10 @@ def sampul_awal(kertas='a4', lawan=True, banyak=False):
     s = b.kepala_rtf()
 
     def kot(l, v, sz=15, al='l'):
-        return sel([par([run(l, b=True, sz=11, sp=30)], al=al, intbl='mid', sb=15), p_sel([run(v, b=True, sz=sz)], al=al, sa=15)])
+        return sel([par([run(l, b=True, sz=11, sp=30)], al=al, intbl='mid', sb=25, sa=25), p_sel([run(v, b=True, sz=sz)], al=al, sa=25)])
 
-    # kop
-    s += tabel([{
-        'lebar': [e(7300), LEBAR - e(7300)], 'brd': [(0, 0, 20, 0), (20, 20, 20, 20)], 'va': ['c', 'c'],
-        'sel': [sel([par([run('#8010#', b=True, sz=24, sp=20)], intbl='mid'), p_sel([run('Sampul berkas perkara tingkat pertama', sz=15)])]),
-                sel([p_sel([run('BUNDEL A', b=True, sz=22, sp=40)], al='c')])],
-    }])
+    # kop berlogo (logo disisipkan portal dari identitas satker)
+    s += b.kop_logo('Sampul berkas perkara tingkat pertama', 'BUNDEL A', lebar_total=LEBAR)
     # jenis perkara (+ kata Kumulasi, baris kumulasi) dan nomor perkara
     s += tabel([{
         'lebar': [e(5400), LEBAR - e(5400)], 'brd': [(0, 0, 0, 0), (30, 30, 30, 30)], 'va': ['c', 'c'],
@@ -65,7 +61,7 @@ def sampul_awal(kertas='a4', lawan=True, banyak=False):
     # ciri perkara berikon (hanya yang berlaku); ghaib dan mafqud berbingkai ganda; satu baris keterangan kecil
     ciri = sel([
         par([run('CIRI PERKARA', b=True, sz=12, sp=60), run('   hanya yang berlaku', sz=12)], intbl='mid', sb=20),
-        par(['{' + GANDA + '\\b\\fs16 #5807#}', ' ', '{' + GANDA + '\\b\\fs16 #5808#}', ' ', run('#5861#', b=True, sz=16, sp=10)], intbl='mid', sb=30, sa=20),
+        par([run('#5861#', b=True, sz=16, sp=10), ' ', '{' + GANDA + '\\b\\fs16 #5807#}', ' ', '{' + GANDA + '\\b\\fs16 #5808#}'], intbl='mid', sb=30, sa=20),
         par([run('#5842#', b=True, sz=16)], intbl='mid', sb=0, sa=10),
         p_sel([run('#5832#', b=True, sz=15)], sb=0, sa=20),
     ])
@@ -97,8 +93,8 @@ def sampul_awal(kertas='a4', lawan=True, banyak=False):
             s += tabel([{'lebar': [LEBAR], 'brd': [(15, 15, 0, 15)], 'sel': [kiri]}])
             s += tabel([{'lebar': [half, LEBAR - half], 'brd': [(0, 15, 15, 10), (0, 10, 15, 15)],
                          'sel': [sel(p_sel([run('#5890#', sz=fs)], sb=10, sa=10)), sel(p_sel([run('#5891#', sz=fs)], sb=10, sa=10))]}])
-        s += par([run('#5897#', b=True, sz=fs)], sb=20, sa=0)
-        s += par([run('#5847#', b=True, sz=fs)], sb=10, sa=0)
+        s += par([run('#5897#', b=True, sz=12)], sb=10, sa=0)
+        s += par([run('#5847#', b=True, sz=12)], sb=0, sa=0)
     elif lawan:
         kiri = sel([
             par([run('#5841#', b=True, sz=12, sp=60)], intbl='mid', sb=20),
@@ -122,7 +118,7 @@ def sampul_awal(kertas='a4', lawan=True, banyak=False):
         ])
         s += tabel([{'lebar': [LEBAR], 'brd': [(15, 15, 15, 15)], 'sel': [satu]}])
     # pokok khas jenis perkara (nama anak dispensasi, nikah yang diitsbatkan, dan seterusnya; kosong bila tidak ada)
-    s += par([run('#5843#', sz=15)], sb=40, sa=20)
+    s += par([run('#5843#', sz=15)], sb=20, sa=10)
     # majelis (satu hakim per baris) dan petugas: terisi sesudah PMH/PHS, selebihnya sel kosong untuk ditulis tangan
     w4 = [e(4300), e(2200), e(2200), LEBAR - e(4300) - 2 * e(2200)]
     s += tabel([{'lebar': w4, 'tinggi': 700, 'brd': [K_SEL] * 4,

@@ -18,6 +18,8 @@ fi
 H="${MYSQL_HOST:-127.0.0.1}"
 MY="${BIN}mysql -h $H -u root --default-character-set=latin1 $ADB"
 mkdir -p "$CAD"
+MODE=baru; [ -f "$CAD/mode.txt" ] && MODE=$(cat "$CAD/mode.txt")
+echo "PULIH mode: $MODE (baru = hapus semua yang dipasang paket ini; peningkatan = kembali ke isi paket sebelumnya)"
 NOMOR="@@NOMOR@@"
 for T in abt_data_teks abt_data_tanggal; do
   "${BIN}mysqldump" -h "$H" -u root --default-character-set=latin1 --skip-tz-utc --no-create-info --replace --skip-extended-insert \
@@ -25,6 +27,12 @@ for T in abt_data_teks abt_data_tanggal; do
     || { echo "GAGAL: isian nomor baru tidak bisa dicadangkan - tidak ada yang dipulihkan"; exit 1; }
 done
 $PY berkas_rtf.py pulih "$B" "$CAD" || echo "PERINGATAN: sebagian berkas tidak dipulihkan (lihat di atas)"
+if [ "$MODE" = peningkatan ]; then
+  # paket sebelumnya sudah punya folder dan menu dan fungsi: tidak ada yang dihapus; variabel dikembalikan di tempat (isian tetap)
+  $MY -N < "$N-PULIH-PENINGKATAN.sql" || { echo "GAGAL: PULIH PENINGKATAN SQL berhenti"; exit 1; }
+  lama=$($MY -N < "$N-PERIKSA-LAMA.sql")
+  if [ "$lama" = "@@UBAH@@" ]; then echo "PULIH COCOK"; exit 0; else echo "PULIH SEBAGIAN: hanya $lama dari @@UBAH@@ variabel kembali ke isi paket sebelumnya (sisanya sudah disunting orang, dibiarkan)"; exit 1; fi
+fi
 while IFS= read -r f; do
   [ -d "$B/$f" ] || continue
   rmdir "$B/$f" 2>/dev/null && echo "FOLDER DIHAPUS $f" || echo "PERINGATAN: folder $f tidak kosong, dibiarkan"

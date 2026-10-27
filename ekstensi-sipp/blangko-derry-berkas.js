@@ -65,14 +65,15 @@
     minutasi: 1, bht: 1, lain: 1,
   };
 
+  const SEPARATOR_CIRI = "  ·  ";
   function teksCiri(c, sisi) {
     const s = sisi != null && sisi !== "" ? sisi : c.s;
-    return `[${LAMBANG[c.g]} ${c.n}${s ? ` ${s}` : ""}]`;
+    return `${LAMBANG[c.g]} ${c.n}${s ? ` ${s}` : ""}`;
   }
   /** Isian #5801#: ciri yang berlaku, dua spasi di antaranya; tak satu pun = kalimat netral. */
   function rangkaiCiri(aktif, sisiDari) {
     const t = CIRI.filter((c) => aktif[c.k]).map((c) => teksCiri(c, sisiDari ? sisiDari[c.k] : undefined));
-    return t.length ? t.join("  ") : "- tidak ada ciri khusus -";
+    return t.length ? t.join(SEPARATOR_CIRI) : "- tidak ada ciri khusus -";
   }
 
   // ---- sampul cetak awal (keputusan Derry 26 Okt, versi 4-6): kembaran lib/berkas-perkara.ts dan lib/lampiran-pihak.ts
@@ -85,7 +86,7 @@
       const c = CIRI.find((x) => x.k === k);
       return c && aktif[k] ? teks(c) : "";
     };
-    return { "5861": biasa.length ? biasa.join("  ") : "- tidak ada ciri khusus -", "5807": satu("ghaib"), "5808": satu("mafqud") };
+    return { "5861": biasa.length ? biasa.join(SEPARATOR_CIRI) : "- tidak ada ciri khusus -", "5807": satu("ghaib"), "5808": satu("mafqud") };
   }
   const NAMA_SUSULAN = {
     mediasi: "MEDIASI", eksepsi: "EKSEPSI", rekonvensi: "REKONVENSI", sita: "PERMINTAAN SITA", setempat: "PEMERIKSAAN SETEMPAT", sela: "PUTUSAN SELA",
@@ -384,6 +385,7 @@
       edit: {}, // daftar isi: kunci -> {tampil, halamanTeks, judulManual, tanggalManual, tambahan}
       urut: { A: [], B: [] }, // urutan akhir (kunci)
       bundelB: "1",
+      bundelCetak: "A",
       kertasTersimpan: false,
       simpan: "", // "", "menyimpan", "tersimpan", "gagal"
       prat: { memuat: false, html: "", galat: "", kunci: "", terbuka: true },
@@ -583,6 +585,8 @@
     for (const [k, e] of Object.entries(ST.edit)) s[k] = { tampil: e.tampil !== false, halamanTeks: e.halamanTeks || "", judulManual: e.judulManual || "", tanggalManual: e.tanggalManual || "", tambahan: Boolean(e.tambahan) };
     return s;
   }
+  /** Bundel B hanya bila ada upaya hukum (banding, kasasi, peninjauan kembali) di SIPP; perkara tingkat pertama = Bundel A saja. */
+  const adaUpayaHukum = () => Boolean(ST.fakta && ST.fakta.upayaHukum);
   const hitung = () => hitungDaftarIsi(barisUrut(), suntingUntukHitung(), { bundelB: ST.bundelB });
 
   // ---------------------------------------------------------------------------
@@ -717,7 +721,7 @@
       return badan;
     }
     const baris = barisUrut().map((r) => ({ bundel: r.bundel, grup: r.grup, kunci: r.kunci, nama: r.nama, ket: r.ket, tanggal: r.tanggal, halaman: r.halaman, sumber: r.sumber, dasar: r.dasar }));
-    return Object.assign(dasar, { baris, sunting: suntingUntukHitung(), bundelB: ST.bundelB });
+    return Object.assign(dasar, { baris, sunting: suntingUntukHitung(), bundelB: ST.bundelB, bundelCetak: ST.bundelCetak === "B" && adaUpayaHukum() ? "B" : "A" });
   }
   async function ambilNaskah(tab) {
     const d = await H.ambilPortal(API_NASKAH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(badanNaskah(tab)), batasMs: 120000 }, "Menyusun naskah");
@@ -1039,9 +1043,12 @@
     const tambahKhas = (j.khas || []).filter(([k]) => !ST.edit[`khas_${k}`]);
     return (
       `<section class="bk-kartu" aria-label="Daftar isi berkas"><div class="bk-bar bd-baris">` +
-      `<label>Halaman Bundel B <select data-bk-bundelb><option value="1" ${ST.bundelB === "1" ? "selected" : ""}>mulai dari 1</option><option value="lanjut" ${ST.bundelB === "lanjut" ? "selected" : ""}>melanjutkan Bundel A</option></select></label>` +
+      (adaUpayaHukum()
+        ? `<label>Cetak <select data-bk-bundelcetak><option value="A" ${ST.bundelCetak !== "B" ? "selected" : ""}>Bundel A (tingkat pertama)</option><option value="B" ${ST.bundelCetak === "B" ? "selected" : ""}>Bundel B (upaya hukum)</option></select></label>` +
+          `<label>Halaman Bundel B <select data-bk-bundelb><option value="1" ${ST.bundelB === "1" ? "selected" : ""}>mulai dari 1</option><option value="lanjut" ${ST.bundelB === "lanjut" ? "selected" : ""}>melanjutkan Bundel A</option></select></label>`
+        : "") +
       `<button type="button" class="bd-btn kecil" data-bk="hitung-ulang">Hitung ulang dari arsip</button>` +
-      `<button type="button" class="bd-btn kecil" data-bk="tambah" data-bkv="A">+ Baris Bundel A</button><button type="button" class="bd-btn kecil" data-bk="tambah" data-bkv="B">+ Baris Bundel B</button>` +
+      `<button type="button" class="bd-btn kecil" data-bk="tambah" data-bkv="A">+ Baris Bundel A</button>${adaUpayaHukum() ? `<button type="button" class="bd-btn kecil" data-bk="tambah" data-bkv="B">+ Baris Bundel B</button>` : ""}` +
       (tambahKhas.length ? `<label>Dokumen khas ${esc(j.nama)} <select data-bk-khas><option value="">Tambah…</option>${tambahKhas.map(([k, n, h]) => `<option value="${k}">${esc(n)} (±${h} hlm)</option>`).join("")}</select></label>` : "") +
       `</div><div class="bk-ringkas" data-bk-ringkas></div>` +
       `<div class="bk-tabel-gulir"><table class="bk-tabel"><thead><tr><th class="geser" scope="col">Urut</th><th scope="col">Dokumen</th><th scope="col">Tanggal</th><th scope="col">Halaman</th><th scope="col">Aksi</th></tr></thead><tbody data-bk-isi></tbody></table></div>` +
@@ -1056,6 +1063,7 @@
     const peta = new Map(h.baris.map((b) => [b.kunci, b]));
     let rows = "";
     for (const bundel of ["A", "B"]) {
+      if (bundel === "B" && !ST.urut.B.length) continue;
       rows += `<tr class="bundel"><td colspan="5">BUNDEL ${bundel}</td></tr>`;
       let grupSebelum = null;
       const urut = ST.urut[bundel];
@@ -1306,6 +1314,10 @@
     if (t.hasAttribute("data-bk-kertas")) {
       ST.kertas = t.value;
       void H.tulisPenyimpanan({ [K_KERTAS]: ST.kertas });
+      ST.prat.kunci = "";
+      jadwalPratinjau(200);
+    } else if (t.hasAttribute("data-bk-bundelcetak")) {
+      ST.bundelCetak = t.value === "B" ? "B" : "A";
       ST.prat.kunci = "";
       jadwalPratinjau(200);
     } else if (t.hasAttribute("data-bk-bundelb")) {

@@ -559,7 +559,7 @@ async function fakta(params = {}, deps = {}) {
   const G2 = "II. PENETAPAN AWAL";
   const G3 = "III. PEMERIKSAAN DI PERSIDANGAN";
   const G4 = "IV. PUTUSAN / PENETAPAN";
-  const GP = "PASCA PUTUSAN";
+  const GP = "V. PASCA PUTUSAN";
   const ecJenis = (j) => ec.filter((x) => x.jenis === j);
   const dariEc = (j, bawaanJenis) => {
     const daftar = ecJenis(j);
@@ -657,26 +657,26 @@ async function fakta(params = {}, deps = {}) {
     const batal = alur === 16 || [7, 37, 67].includes(nomorBaris(put.status_putusan_id));
     const hp = await halamanBaris(put.amar_putusan_dok, "putusan", deps);
     tambah("A", ikrar ? "V. PUTUSAN / PENETAPAN" : G4, "putusan", batal ? "Penetapan" : "Putusan", put.tanggal_putusan, hp.halaman ? hp : bawaan("putusan", hp.dasar === "tidak ada berkas" ? "berkas putusan belum ada" : "putusan RTF: halaman dihitung dari PDF buatan panel saat cetak"));
-    tambah("B", GP, "salinan", `Salinan ${batal ? "Penetapan" : "Putusan"}`, put.tanggal_putusan, hp.halaman ? hp : bawaan("putusan", "mengikuti halaman putusan"));
+    tambah("A", GP, "salinan", `Salinan ${batal ? "Penetapan" : "Putusan"}`, put.tanggal_putusan, hp.halaman ? hp : bawaan("putusan", "mengikuti halaman putusan"));
   }
   // Bundel B: pasca putusan
   let nb = 0;
   for (const w of pbt) {
     nb += 1;
     const h = await halamanBaris(w.edoc_pbt, "pemberitahuan", deps);
-    tambah("B", GP, `pbt:${nb}`, `Relaas Pemberitahuan Isi ${permohonan && !put ? "Penetapan" : "Putusan"}${pbt.length > 1 ? ` ${nb}` : ""}`, w.tanggal_pemberitahuan_putusan, h.halaman ? h : bawaan("pemberitahuan", h.dasar));
+    tambah("A", GP, `pbt:${nb}`, `Relaas Pemberitahuan Isi ${permohonan && !put ? "Penetapan" : "Putusan"}${pbt.length > 1 ? ` ${nb}` : ""}`, w.tanggal_pemberitahuan_putusan, h.halaman ? h : bawaan("pemberitahuan", h.dasar));
     if (String(w.edoc_resi || "").startsWith("resources/") || String(w.no_resi_pos || "").trim()) {
       const hr = String(w.edoc_resi || "").startsWith("resources/") ? await halamanBaris(w.edoc_resi, "resi", deps) : bawaan("resi", "nomor resi tercatat, berkas resi belum ada");
-      tambah("B", GP, `pbt_resi:${nb}`, `Bukti Surat Tercatat Pemberitahuan Putusan${pbt.length > 1 ? ` ${nb}` : ""}`, w.tanggal_pemberitahuan_putusan, hr.halaman ? hr : bawaan("resi", hr.dasar));
+      tambah("A", GP, `pbt_resi:${nb}`, `Bukti Surat Tercatat Pemberitahuan Putusan${pbt.length > 1 ? ` ${nb}` : ""}`, w.tanggal_pemberitahuan_putusan, hr.halaman ? hr : bawaan("resi", hr.dasar));
     }
   }
-  if (put && put.tanggal_minutasi) tambah("B", GP, "minutasi", "Penetapan Minutasi", put.tanggal_minutasi, bawaan("minutasi"));
-  if (put && put.tanggal_bht) tambah("B", GP, "bht", "Akta Pernyataan Berkekuatan Hukum Tetap (BHT)", put.tanggal_bht, bawaan("bht"));
+  if (put && put.tanggal_minutasi) tambah("A", GP, "minutasi", "Penetapan Minutasi", put.tanggal_minutasi, bawaan("minutasi"));
+  if (put && put.tanggal_bht) tambah("A", GP, "bht", "Akta Pernyataan Berkekuatan Hukum Tetap (BHT)", put.tanggal_bht, bawaan("bht"));
   if (akta && akta.tgl_akta_cerai) {
     const ha = await halamanBaris(akta.akta_cerai_dok, "akta-cerai", deps);
-    tambah("B", GP, "akta_cerai", `Akta Cerai Nomor ${akta.nomor_akta_cerai || "-"}`, akta.tgl_akta_cerai, ha.halaman ? ha : bawaan("akta-cerai", ha.dasar));
-    if (akta.tgl_penyerahan_akta_cerai) tambah("B", GP, "tt_p", `Tanda Terima Akta Cerai ${sebP}`, akta.tgl_penyerahan_akta_cerai, bawaan("lain"));
-    if (akta.tgl_penyerahan_akta_cerai_pihak2) tambah("B", GP, "tt_t", `Tanda Terima Akta Cerai ${sebT}`, akta.tgl_penyerahan_akta_cerai_pihak2, bawaan("lain"));
+    tambah("A", GP, "akta_cerai", `Akta Cerai Nomor ${akta.nomor_akta_cerai || "-"}`, akta.tgl_akta_cerai, ha.halaman ? ha : bawaan("akta-cerai", ha.dasar));
+    if (akta.tgl_penyerahan_akta_cerai) tambah("A", GP, "tt_p", `Tanda Terima Akta Cerai ${sebP}`, akta.tgl_penyerahan_akta_cerai, bawaan("lain"));
+    if (akta.tgl_penyerahan_akta_cerai_pihak2) tambah("A", GP, "tt_t", `Tanda Terima Akta Cerai ${sebT}`, akta.tgl_penyerahan_akta_cerai_pihak2, bawaan("lain"));
   }
 
   // ---- ciri otomatis
@@ -766,6 +766,21 @@ async function fakta(params = {}, deps = {}) {
     alasan: String(s.alasan_ditunda || ""),
     keliling: String(s.sidang_keliling) === "Y",
   }));
+  // ---- Bundel B hanya untuk upaya hukum (banding, kasasi, peninjauan kembali): satu baris per tahapan yang TERCATAT tanggalnya di SIPP
+  const UPAYA = [
+    ["perkara_banding", "UPAYA HUKUM - BANDING", [["permohonan_banding", "Akta Permohonan Banding"], ["pemberitahuan_permohonan_banding", "Relaas Pemberitahuan Permohonan Banding"], ["penerimaan_memori_banding", "Memori Banding"], ["penerimaan_kontra_banding", "Kontra Memori Banding"], ["pemberitahuan_inzage", "Relaas Pemberitahuan Inzage"], ["pengiriman_berkas_banding", "Pengiriman Berkas Banding"], ["putusan_banding", "Putusan Banding"], ["pemberitahuan_putusan_banding", "Relaas Pemberitahuan Putusan Banding"], ["tgl_minutasi", "Minutasi Banding"]]],
+    ["perkara_kasasi", "UPAYA HUKUM - KASASI", [["permohonan_kasasi", "Akta Permohonan Kasasi"], ["pemberitahuan_kasasi", "Relaas Pemberitahuan Permohonan Kasasi"], ["penerimaan_memori_kasasi", "Memori Kasasi"], ["penerimaan_kontra_kasasi", "Kontra Memori Kasasi"], ["pemberitahuan_inzage_kasasi", "Relaas Pemberitahuan Inzage"], ["pengiriman_berkas_kasasi", "Pengiriman Berkas Kasasi"], ["putusan_kasasi", "Putusan Kasasi"], ["pemberitahuan_putusan_kasasi", "Relaas Pemberitahuan Putusan Kasasi"], ["minutasi_kasasi", "Minutasi Kasasi"]]],
+    ["perkara_pk", "UPAYA HUKUM - PENINJAUAN KEMBALI", [["permohonan_pk", "Akta Permohonan Peninjauan Kembali"], ["pemberitahuan_pk", "Relaas Pemberitahuan Permohonan PK"], ["penerimaan_memori_pk", "Memori PK"], ["penerimaan_kontra_pk", "Kontra Memori PK"], ["pengiriman_berkas_pk", "Pengiriman Berkas PK"], ["putusan_pk", "Putusan PK"]]],
+  ];
+  let upayaHukum = false;
+  for (const [tabel, judulGrup, kolom] of UPAYA) {
+    const [r] = await aman(`SELECT * FROM ${tabel} WHERE perkara_id = ? LIMIT 1`, [perkaraId]);
+    if (!r) continue;
+    upayaHukum = true;
+    for (const [k, nama] of kolom) if (iso(r[k])) tambah("B", judulGrup, `${tabel}:${k}`, nama, r[k], bawaan("lain", "tahapan tercatat di SIPP; berkas belum dibaca"));
+    if (!kolom.some(([k]) => iso(r[k]))) tambah("B", judulGrup, `${tabel}:daftar`, `Pendaftaran ${judulGrup.replace("UPAYA HUKUM - ", "").toLowerCase()}`, "", bawaan("lain"));
+  }
+
   // ---- ciri susulan otomatis (baca saja; satu sumber dengan penanda lain: konseptorKeadaanService, penandaJawabanService lewat e-Court)
   const gagalSusulan = [];
   const cobaS = async (nama, kerja, cadangan) => {
@@ -911,6 +926,7 @@ async function fakta(params = {}, deps = {}) {
       sebutanT,
       tanggalDaftar: iso(p.tanggal_pendaftaran),
     },
+    upayaHukum,
     pihakSemua,
     jumlahPihak,
     anak,
