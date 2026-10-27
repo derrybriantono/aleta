@@ -1,0 +1,13 @@
+6324109a4c819528b1a07371d59aa1be  abt-pihak-urut-sisa-28okt-FUNGSI.sql
+0b4fbda6d179425e4441ade3f5faa386  abt-pihak-urut-sisa-28okt-PASANG.sql
+90ac2c7720be307ecd0cf601a6cf732e  abt-pihak-urut-sisa-28okt-PERIKSA.sql
+dbe032e83708226492be38965bdb5560  abt-pihak-urut-sisa-28okt-PRASYARAT.sql
+36a76b10e79e7238f46c8d918e2b6dd0  abt-pihak-urut-sisa-28okt-PULIH.sql
+ff39370d7ef1daaa08f019f8a872aad8  abt-pihak-urut-sisa-28okt-UJIVAR-BERAT.sql
+08319dd17d049068067e3bec3661522b  abt-pihak-urut-sisa-28okt-UJIVAR.sql
+fbe8d511a76d28c462ebc96e97a86900  harap.txt
+d16e5ceef737b75b7f7e9f00689b732c  nama-fungsi.txt
+52031168a26992992c9dd62bcd453942  nomor-ubah.txt
+9bdeeba026593c115099e5ecc20781a6  pasang-satker.sh
+ecd36372e1c90d276e11ddf468ce7279  perkara-uji.txt
+bb4be7dd41b0eed9b398490623d7c080  pulih-satker.sh
