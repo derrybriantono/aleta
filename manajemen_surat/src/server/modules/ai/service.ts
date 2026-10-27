@@ -41,6 +41,7 @@ import { nextPrefixedId } from "@/server/shared/ids";
 import { parseJsonArray, stringifyJson, toBooleanInt } from "@/server/shared/json";
 import { isLikelyConnectedApiKey, maskApiKey } from "@/server/shared/security";
 import { searchRegulationsInDb } from "@/server/modules/ai/knowledge-base";
+import { MODUL_ALETA_AI, PROVIDER_ALETA_AI, pilihKoneksiClaudeAletaAi } from "@/server/modules/ai/kunci-claude";
 import {
   getLeadershipRecipientsFromDb,
   getUsersFromDb,
@@ -118,6 +119,9 @@ const AI_MODULE_CATALOG: Array<{
   key: AIModuleKey;
   label: string;
   description: string;
+  /** Modul hanya boleh memakai koneksi berprovider ini (tanpa mewarisi global). */
+  onlyProviderId?: string;
+  catatan?: string;
 }> = [
   {
     key: "manajemen_surat",
@@ -148,6 +152,15 @@ const AI_MODULE_CATALOG: Array<{
       "Posita, keterangan saksi, draf pertimbangan. Selalu lewat penyamaran lebih dahulu, dan muatan tanpa bukti " +
       "penyamaran DITOLAK oleh bot. Dibiarkan kosong berarti isi perkara tidak dikirim ke mana pun.",
   },
+  {
+    key: MODUL_ALETA_AI,
+    label: "ALETA Ai",
+    description: "Asisten chat dan tugas kerja ALETA Ai. Khusus memakai Claude; kunci API diambil dari koneksi Claude di bawah.",
+    onlyProviderId: PROVIDER_ALETA_AI,
+    catatan:
+      "Model (Cepat/Teliti/Mendalam) dipilih otomatis oleh tabel rute ALETA Ai; dari koneksi ini hanya diambil kuncinya. " +
+      "Bila tidak dipilih, dipakai koneksi Claude tersimpan pertama, lalu pengaturan server (ANTHROPIC_API_KEY).",
+  },
 ];
 
 function normalizeAIModuleKey(value: string | null | undefined): AIModuleKey | null {
@@ -158,6 +171,7 @@ function normalizeAIModuleKey(value: string | null | undefined): AIModuleKey | n
   // pemeriksaan yang longgar akan menelan keduanya menjadi satu.
   if (normalized === "aleta_bot_umum" || normalized === "jalur_umum") return "aleta_bot_umum";
   if (normalized === "aleta_bot_perkara" || normalized === "jalur_perkara") return "aleta_bot_perkara";
+  if (normalized === "aleta_ai" || normalized === "aletaai") return "aleta_ai";
   if (normalized === "aleta_bot" || normalized === "bot" || normalized === "whatsapp" || normalized === "public_qa") {
     return "aleta_bot";
   }
@@ -374,6 +388,64 @@ function resolveConnectionByFields(
   );
 }
 
+/**
+ * Modul yang dikunci ke satu provider (ALETA Ai -> Claude). Tidak pernah
+ * mewarisi koneksi global: bila global bukan Claude, tetap tidak dipakai.
+ * Pilihan khusus yang bukan Claude (data lama/rusak) diabaikan -> otomatis.
+ */
+function buildProviderOnlyModuleConfig(
+  module: (typeof AI_MODULE_CATALOG)[number],
+  row: AIModuleSettingsRow | null,
+  providers: AIProviderConfig[],
+  settings: AISettingsRow,
+  global: { globalProviderId: string; globalModelId: string; globalConnectionId: string | null }
+): AIModuleConfig {
+  const hasKey = (provider: AIProviderConfig) => Boolean(provider.apiKey?.trim() || provider.maskedApiKey?.trim());
+  const pilihanId = row && row.inherit_global === 0 ? row.active_connection_id : null;
+  const { koneksi, dipilihKhusus } = pilihKoneksiClaudeAletaAi({
+    pilihanModulId: pilihanId,
+    koneksi: providers
+      .filter((provider) => provider.providerId === module.onlyProviderId)
+      .map((provider) => ({
+        id: provider.id,
+        name: provider.name,
+        providerId: provider.providerId ?? "",
+        punyaKunci: hasKey(provider),
+        isActive: Boolean(provider.isActive),
+        connectionStatus: provider.connectionStatus ?? "idle",
+      })),
+  });
+  const efektif = koneksi ? providers.find((provider) => provider.id === koneksi.id) ?? null : null;
+  const status: AIModuleConfig["status"] = efektif ? (dipilihKhusus ? "custom" : "otomatis") : "belum_ada";
+
+  return {
+    moduleKey: module.key,
+    label: module.label,
+    description: module.description,
+    enabled: Boolean(settings.enabled) && (row ? row.enabled !== 0 : true),
+    inheritGlobal: !dipilihKhusus,
+    providerId: efektif?.providerId ?? module.onlyProviderId ?? global.globalProviderId,
+    modelId: efektif?.modelId ?? "",
+    activeConnectionId: efektif?.id ?? null,
+    activeConnectionLabel: efektif?.name ?? null,
+    activeConnectionStatus: efektif?.connectionStatus ?? "idle",
+    configuredProviderId: dipilihKhusus ? efektif?.providerId ?? null : null,
+    configuredModelId: dipilihKhusus ? efektif?.modelId ?? null : null,
+    configuredConnectionId: dipilihKhusus ? efektif?.id ?? null : null,
+    fallbackProviderId: global.globalProviderId,
+    fallbackModelId: global.globalModelId,
+    fallbackConnectionId: global.globalConnectionId,
+    status,
+    fallbackReason:
+      status === "belum_ada"
+        ? "Belum ada koneksi Claude. Tambahkan koneksi Claude di bawah, atau kunci diambil dari pengaturan server."
+        : undefined,
+    updatedAt: row?.updated_at ?? null,
+    onlyProviderId: module.onlyProviderId ?? null,
+    catatan: module.catatan,
+  };
+}
+
 function buildModuleConfigResponse(
   settings: AISettingsRow,
   providers: AIProviderConfig[],
@@ -394,6 +466,15 @@ function buildModuleConfigResponse(
 
   return AI_MODULE_CATALOG.map((module) => {
     const row = rowsByKey.get(module.key) ?? null;
+
+    if (module.onlyProviderId) {
+      return buildProviderOnlyModuleConfig(module, row, providers, settings, {
+        globalProviderId,
+        globalModelId,
+        globalConnectionId,
+      });
+    }
+
     const inheritGlobal = !row || row.inherit_global !== 0;
     const configuredConnection = row
       ? resolveConnectionByFields(providers, {
@@ -997,6 +1078,11 @@ export async function upsertAISettingsInDb(
 
         if (!inheritGlobal && !selectedConnection) {
           throw new ApiError(400, `Koneksi AI untuk modul ${moduleInput.moduleKey} tidak ditemukan atau sudah dihapus.`);
+        }
+
+        const providerTerkunci = AI_MODULE_CATALOG.find((item) => item.key === moduleInput.moduleKey)?.onlyProviderId;
+        if (providerTerkunci && selectedConnection && selectedConnection.providerId !== providerTerkunci) {
+          throw new ApiError(400, "ALETA Ai hanya memakai Claude. Pilih koneksi berprovider Claude.");
         }
 
         const moduleProviderId = inheritGlobal ? null : selectedConnection?.providerId ?? null;

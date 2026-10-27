@@ -303,7 +303,7 @@ export async function* kirimPesan(
     yield gagal(PESAN_NONAKTIF_SAKLAR);
     return;
   }
-  const klien = ambilKlienAi();
+  const klien = await ambilKlienAi(db);
   if (!klien) {
     yield gagal(PESAN_NONAKTIF_KUNCI);
     return;
@@ -766,7 +766,8 @@ export async function perkirakanPesan(
   const riwayat = percakapanId ? await riwayatUntukPermintaan(db, percakapanId) : [];
   const modul = pilihModul({ modul: proyek.modul, teks: teksKerja, pemicu, kelompok: rute.kelompok, labelMode: rute.label }).terpilih;
   const permintaan = susunPermintaan({ rute, corePrompt: proyek.corePrompt, modul, riwayat, teksPengguna: teksKerja, fallback: tarif.get(rute.model)?.fallback === true });
-  const klien = ambilKlienAi() ?? { alirkan: async () => Promise.reject(new Error("tanpa klien")) };
+  const klienAsli = await ambilKlienAi(db);
+  const klien = klienAsli ?? { alirkan: async () => Promise.reject(new Error("tanpa klien")) };
   const perkiraan = await perkirakanGiliran(klien, permintaan, rute, tarif, kurs.kurs, pengaturan, pelaku.superAdmin);
   const hasil = await nilaiPerkiraan(
     db,
@@ -775,6 +776,6 @@ export async function perkirakanPesan(
     { kelompok: rute.kelompok, label: rute.label, tokenMasuk: perkiraan.tokenMasuk, tokenKeluar: rute.perkiraanKeluaran, perkiraanRp: perkiraan.perkiraanRp, tahanRp: perkiraan.tahanRp, biayaApiRp: perkiraan.biayaApiRp, kurs },
     sekarang
   );
-  if (!ambilKlienAi() && hasil.bolehJalan) return { ...hasil, bolehJalan: false, alasan: PESAN_NONAKTIF_KUNCI };
+  if (!klienAsli && hasil.bolehJalan) return { ...hasil, bolehJalan: false, alasan: PESAN_NONAKTIF_KUNCI };
   return hasil;
 }

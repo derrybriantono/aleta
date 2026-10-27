@@ -1,6 +1,8 @@
 import type { IterasiPenggunaan, PenggunaanToken } from "@/lib/aleta-ai/biaya";
 import { penggunaanDariUsage } from "@/lib/aleta-ai/biaya";
 import type { PermintaanAi } from "@/lib/aleta-ai/penyusun";
+import type { AletaDatabase } from "@/server/db/client";
+import { sidikKunci, tentukanSumberKunciAletaAi, type SumberKunciAi } from "@/server/modules/ai/kunci-claude";
 
 /**
  * ============================================================================
@@ -8,10 +10,14 @@ import type { PermintaanAi } from "@/lib/aleta-ai/penyusun";
  * ============================================================================
  *
  * KUNCI API
- *   Dibaca HANYA dari env server ANTHROPIC_API_KEY. Tidak pernah dikirim ke
- *   peramban, ditulis ke log, atau disimpan di basis data. Bila kosong,
+ *   Sumber (lihat ai/kunci-claude.ts): koneksi Claude yang dipilih untuk modul
+ *   ALETA Ai di Pengaturan AI > koneksi Claude tersimpan pertama > env server
+ *   ANTHROPIC_API_KEY. Kunci tidak pernah dikirim ke peramban, ditulis ke log,
+ *   jejak, pesan galat, atau ekspor. Bila tidak ada sama sekali,
  *   ambilKlienAi() mengembalikan null dan seluruh fitur menjawab "ALETA Ai
- *   belum diaktifkan".
+ *   belum diaktifkan". Klien yang di-cache dibuat ulang saat sidik kunci
+ *   berubah, jadi mengganti kunci di Pengaturan AI tidak perlu memulai ulang
+ *   portal.
  *
  * ANTARMUKA KlienAi
  *   Mesin (mesin.ts) hanya mengenal antarmuka kecil ini, sehingga uji memakai
@@ -220,21 +226,40 @@ export function buatKlienAnthropic(apiKey: string): KlienAi {
 // ----------------------------------------------------------------------------
 
 let klienSuntik: KlienAi | null | undefined;
-let klienEnv: { kunci: string; klien: KlienAi } | null = null;
+let klienKunci: { sidik: string; klien: KlienAi } | null = null;
 
-/** Hanya untuk uji: undefined = pakai env; null = paksa "tanpa kunci"; objek = klien tiruan. */
+/** Hanya untuk uji: undefined = pakai sumber kunci; null = paksa "tanpa kunci"; objek = klien tiruan. */
 export function suntikKlienAi(klien: KlienAi | null | undefined) {
   klienSuntik = klien;
 }
 
-export function kunciApiTerpasang(): boolean {
-  return Boolean(String(process.env.ANTHROPIC_API_KEY ?? "").trim());
+/** Hanya untuk uji: lupakan klien yang di-cache. */
+export function lupakanKlienAi() {
+  klienKunci = null;
 }
 
-export function ambilKlienAi(): KlienAi | null {
+/** Ada tidaknya kunci Claude (dari Pengaturan AI atau env). Tidak pernah mengembalikan isinya. */
+export async function kunciApiTerpasang(db?: AletaDatabase | null): Promise<boolean> {
+  return (await tentukanSumberKunciAletaAi(db)).sumber !== "belum";
+}
+
+/** Asal kunci untuk ditampilkan di layar Pengaturan: tanpa isi kunci. */
+export type StatusKunciAi = { sumber: "pengaturan-ai" | "env" | "belum"; namaKoneksi?: string };
+
+export async function statusKunciAi(db?: AletaDatabase | null): Promise<StatusKunciAi> {
+  const s: SumberKunciAi = await tentukanSumberKunciAletaAi(db);
+  if (s.sumber === "pengaturan-ai") return { sumber: "pengaturan-ai", namaKoneksi: s.namaKoneksi };
+  return { sumber: s.sumber };
+}
+
+export async function ambilKlienAi(db?: AletaDatabase | null): Promise<KlienAi | null> {
   if (klienSuntik !== undefined) return klienSuntik;
-  const kunci = String(process.env.ANTHROPIC_API_KEY ?? "").trim();
-  if (!kunci) return null;
-  if (!klienEnv || klienEnv.kunci !== kunci) klienEnv = { kunci, klien: buatKlienAnthropic(kunci) };
-  return klienEnv.klien;
+  const sumber = await tentukanSumberKunciAletaAi(db);
+  if (sumber.sumber === "belum") {
+    klienKunci = null;
+    return null;
+  }
+  const sidik = sidikKunci(sumber.kunci);
+  if (!klienKunci || klienKunci.sidik !== sidik) klienKunci = { sidik, klien: buatKlienAnthropic(sumber.kunci) };
+  return klienKunci.klien;
 }

@@ -778,7 +778,7 @@ export async function jalankanTugas(db: AletaDatabase, pelaku: PelakuAi, tugas: 
 
   try {
     if (await saklarDaruratMenyala(db)) throw new Berhenti("dihentikan", PESAN_NONAKTIF_SAKLAR);
-    const klien = ambilKlienAi();
+    const klien = await ambilKlienAi(db);
     if (!klien) throw new Berhenti("gagal", PESAN_NONAKTIF_KUNCI);
     const proyek = await proyekAktif(db);
     if (!proyek) throw new Berhenti("gagal", PESAN_NONAKTIF_PROYEK);
