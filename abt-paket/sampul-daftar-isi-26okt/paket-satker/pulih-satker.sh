@@ -31,7 +31,7 @@ if [ "$MODE" = peningkatan ]; then
   # paket sebelumnya sudah punya folder dan menu dan fungsi: tidak ada yang dihapus; variabel dikembalikan di tempat (isian tetap)
   $MY -N < "$N-PULIH-PENINGKATAN.sql" || { echo "GAGAL: PULIH PENINGKATAN SQL berhenti"; exit 1; }
   lama=$($MY -N < "$N-PERIKSA-LAMA.sql")
-  if [ "$lama" = "30" ]; then echo "PULIH COCOK"; exit 0; else echo "PULIH SEBAGIAN: hanya $lama dari 30 variabel kembali ke isi paket sebelumnya (sisanya sudah disunting orang, dibiarkan)"; exit 1; fi
+  if [ "$lama" = "70" ]; then echo "PULIH COCOK"; exit 0; else echo "PULIH SEBAGIAN: hanya $lama dari 70 variabel kembali ke isi paket sebelumnya (sisanya sudah disunting orang, dibiarkan)"; exit 1; fi
 fi
 while IFS= read -r f; do
   [ -d "$B/$f" ] || continue

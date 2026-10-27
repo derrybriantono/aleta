@@ -53,7 +53,8 @@ export function tabelDaftarIsiRtf(baris: BarisHitung[], bundel: BundelCetak, leb
       s += `${awal}\\clcbpat3${garis}\\clvertalc\\cellx${lebar}\n\\pard\\plain\\intbl\\ql\\f0\\fs16\\sb50\\sa50 \\b ${esc(grup)}\\cell\n\\row\n`;
     }
     no += 1;
-    const nama = `${b.nama}${b.ket ? ` - ${b.ket}` : ""}`.replace(/\s+/g, " ").trim();
+    const ket = b.ket && !/^[\s\-–—.0_]*$/.test(b.ket) ? b.ket : "";
+    const nama = `${b.nama}${ket ? ` - ${ket}` : ""}`.replace(/\s+/g, " ").trim();
     s += `${awal}${batas.map((x) => `${garis}\\clvertalc\\cellx${x}`).join("")}\n`;
     s += `${para(String(no), { al: "c" })}${para(esc(nama))}${para(esc(tanggalIndonesia(b.tanggal)))}${para(esc(teksRentang(b).replace("-", "–")), { al: "c" })}\\row\n`;
   }

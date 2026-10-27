@@ -216,6 +216,8 @@ const KOTAK_ISI = "{\\f1\\u9746?}";
  */
 export function rapikanSampulAwal(rtf: string): string {
   return rtf
+    // kotak centang dan label tidak boleh terpisah baris: spasi antara kotak dan kata, dan antar kata dalam satu label, menjadi spasi tak-putus (label dipisah dua spasi atau lebih)
+    .replace(/(\[[ X]\]) ((?:(?! {2})[^\\{}[\]\r\n])+)/g, (_m, kotak: string, label: string) => `${kotak}\\~${label.replace(/ /g, "\\~")}`)
     .replace(/\[ \]/g, KOTAK_KOSONG)
     .replace(/\[X\]/g, KOTAK_ISI)
     .replace(/\{\\highlight\d+ \.\.\.\}/g, "")

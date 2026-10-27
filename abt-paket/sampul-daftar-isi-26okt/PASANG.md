@@ -48,9 +48,9 @@ Pulih: `ssh aleta 'bash /root/abt-sampul-20261026/pulih-satker.sh'` (baris terak
 - Yang BELUM ada di fungsi ABT (dikerjakan panel saat cetak): dokumen khas jenis perkara, jawaban/replik/duplik/kesimpulan, bukti, saksi, sita, upaya hukum, halaman otomatis (kolom Halaman = titik-titik bila dicetak langsung dari ABT).
 
 ## PENINGKATAN dari paket 26 Okt yang SUDAH terpasang (27 Okt 2026: perbaikan cetakan nyata)
-Paket ini sama (`177` variabel, `21` RTF) tetapi 30 variabel dan 21 RTF berubah isi (logo di kop, ciri tanpa `+`/`>`, spasi, daftar isi tabel Bundel A). Salin folder `paket-satker` ke folder BARU di server
+Paket ini sama (`177` variabel, `21` RTF) tetapi 70 variabel dan 21 RTF berubah isi (logo di kop, ciri tanpa `+`/`>`, spasi, daftar isi tabel Bundel A). Salin folder `paket-satker` ke folder BARU di server
 (mis. `/root/abt-sampul-rapi-20261027`, jangan menimpa folder lama), lalu `bash pasang-satker.sh`. PRASYARAT sekarang `A|B|C|D|E|F|G|H`:
-- pasang pertama `0|0|31|0|1|0|0|0`; pasang ulang `0|177|31|1|1|1|0|0`; **PENINGKATAN** `0|147|31|1|1|1|0|30` (30 variabel masih berisi paket lama, md5 persis).
+- pasang pertama `0|0|31|0|1|0|0|0`; pasang ulang `0|177|31|1|1|1|0|0`; **PENINGKATAN** `0|107|31|1|1|1|0|70` (70 variabel masih berisi paket lama, md5 persis).
 - Variabel lama diganti DI TEMPAT (isian tidak hilang); RTF lama diganti HANYA bila md5-nya persis paket lama (selain itu GAGAL, tidak ada yang diubah); salinan asal ke `cadangan/timpa-asal`.
 - `pulih-satker.sh` membaca `cadangan/mode.txt`: `peningkatan` = kembali PERSIS ke paket lama (baris `PULIH COCOK`); `baru` = hapus semua. Variabel/berkas yang sudah disunting orang dibiarkan dan dilaporkan.
 - Uji lab (`bash sumber/uji_peningkatan.sh`): pasang paket lama -> peningkatan -> pasang ulang -> pulih (= paket lama persis) -> peningkatan lagi -> pulih -> pulih paket lama (= keadaan awal persis). Hasil 27 Okt: semua lulus (MariaDB 10.4 lab; MariaDB 5.5 server belum diuji).

@@ -104,7 +104,7 @@ describe("A - lib murni", () => {
 
   it("rapikan sampul awal: kotak ASCII jadi karakter kotak, tanda titik kosong dibuang tanpa menyentuh titik panjang", () => {
     const r = rapikanSampulAwal("{\\rtf1 [ ] A [X] B ... {\\highlight3 ...} Kuasa: ... ................ 3.14 x...y}");
-    expect(r).toContain("{\\f1\\u9744?} A {\\f1\\u9746?} B");
+    expect(r).toContain("{\\f1\\u9744?}\\~A\\~{\\f1\\u9746?}\\~B");
     expect(r).not.toContain("highlight");
     expect(r).toContain("Kuasa:  ................ 3.14 x...y");
     expect(rapikanSampulAwal("tanpa kotak")).toBe("tanpa kotak");

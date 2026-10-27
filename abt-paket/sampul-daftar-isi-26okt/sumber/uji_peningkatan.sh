@@ -32,7 +32,7 @@ mysql -h127.0.0.1 -uroot aps_badilag_s1 -e "INSERT INTO abt_data_teks (no_var,pe
 S1=$(snap | tr '\n' ' '); echo "TERPASANG (paket sebelumnya): $S1"
 echo "== 2. PENINGKATAN: pasang paket ini di atasnya"
 ( cd "$T/baru" && bash pasang-satker.sh 2>&1 | tee "$T/peningkatan.log" | grep -E "PRASYARAT|SEMUA|SELESAI|GAGAL|COCOK|UJI|PENINGKATAN" )
-grep -q "PENINGKATAN: 30 variabel" "$T/peningkatan.log" && echo "  OK  PRASYARAT mengenali keadaan terpasang (PENINGKATAN)" || { echo "  GAGAL  PRASYARAT tidak mengenali keadaan terpasang"; ok=0; }
+grep -q "PENINGKATAN: 70 variabel" "$T/peningkatan.log" && echo "  OK  PRASYARAT mengenali keadaan terpasang (PENINGKATAN)" || { echo "  GAGAL  PRASYARAT tidak mengenali keadaan terpasang"; ok=0; }
 grep -q "^SELESAI" "$T/peningkatan.log" || { echo "  GAGAL  peningkatan tidak selesai"; ok=0; }
 S2=$(snap | tr '\n' ' ')
 ISIAN=$(mysql -h127.0.0.1 -uroot -N aps_badilag_s1 -e "SELECT COUNT(*) FROM abt_data_teks WHERE perkara_id=99001")
