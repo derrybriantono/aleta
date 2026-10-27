@@ -216,7 +216,10 @@ describe("T8. agama Islam menurut pihak", () => {
   it("pihak pertama: agama kosong terisi Islam otomatis", async () => {
     const h = bukaSipp(halaman({ nama: "ANDI BIN ALI", pihakKe: "1" }));
     await sampai(() => nilai(h, "pihak_agama") === "1", "agama Islam terisi");
-    expect(kotak(h)!.textContent).toMatch(/Agama: Islam - terisi otomatis \(pihak pertama/);
+    // Kotak keterangan dilukis sesaat SESUDAH kolom terisi; di mesin yang sibuk pemeriksaan langsung kadang
+    // mendahuluinya (gagal acak 28 Okt pada kode yang sama dengan 1.205.50). Tunggu kotaknya, isinya tetap dituntut persis.
+    const k = await sampai(() => (/Agama: Islam/.test(kotak(h)?.textContent || "") ? kotak(h) : null), "kotak keterangan agama");
+    expect(k.textContent).toMatch(/Agama: Islam - terisi otomatis \(pihak pertama/);
     expect(chip(h, "Usulan Agama")).toBeUndefined();
     expect(h.simpan()).toBe(0);
   });
