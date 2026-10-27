@@ -3875,6 +3875,10 @@ export async function getGatewayAbtUsulan(muatan: {
   tipeKeluaran?: { versi: string; daftar: Record<string, unknown> };
   /** Gugatannya. Dipakai menyaring alasan yang tidak pernah didalilkan. */
   posita?: string;
+  /** 5227: pihak tiap saksi ("penggugat" | "tergugat") bila ekstensi mengetahuinya; bot melengkapi dari konteks perkara. */
+  saksiPihak?: { saksi1?: string; saksi2?: string };
+  /** 5227: jawab-menjawab (jawaban/replik/duplik) - hanya keterangan diakui/dibantah, tidak pernah memunculkan alasan. */
+  jawab?: Array<{ jenis: string; teks: string }>;
   /**
    * Blangko tanya jawab ABT, diambil ekstensi lewat halaman penyunting ABT.
    * jawabMentah = jawaban templat SEBELUM variabelnya diganti ABT

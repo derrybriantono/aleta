@@ -3248,7 +3248,20 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
         // Gugatannya - dipakai menyaring alasan yang tidak pernah
         // didalilkan. Boleh kosong; saringannya lalu tidak berlaku.
         String(req.body?.posita || ""),
-        tipe.tipeKeluaran ? { tipeKeluaran: tipe.tipeKeluaran } : undefined
+        {
+          ...(tipe.tipeKeluaran ? { tipeKeluaran: tipe.tipeKeluaran } : {}),
+          // 27 Okt: 5227 dari gugatan dengan rantai sebab-akibat (deteksi/alasanRincian.js). Pihak tiap saksi dan
+          // jawab-menjawab (jawaban/replik/duplik) boleh dikirim ekstensi; tanpa keduanya rincian tetap tersusun
+          // dari gugatan. Tanpa kueri SIPP tambahan - hanya teks yang sudah dikirim.
+          rincianAlasan: req.body?.rincianAlasan !== false && (!String(req.body?.jenisPerkara || "").trim() || /cerai|34[67]/i.test(String(req.body.jenisPerkara))),
+          saksiPihak: {
+            saksi1: ["penggugat", "tergugat"].includes(String(req.body?.saksiPihak?.saksi1 || "").toLowerCase()) ? String(req.body.saksiPihak.saksi1).toLowerCase() : "",
+            saksi2: ["penggugat", "tergugat"].includes(String(req.body?.saksiPihak?.saksi2 || "").toLowerCase()) ? String(req.body.saksiPihak.saksi2).toLowerCase() : "",
+          },
+          jawab: (Array.isArray(req.body?.jawab) ? req.body.jawab : [])
+            .slice(0, 6)
+            .map((j) => ({ jenis: String(j?.jenis || "jawaban").slice(0, 20), teks: String(j?.teks || "").slice(0, 60000) })),
+        }
       );
       /* === KDL2 11 Okt === */
       // Tempat tinggal bersama semasa rukun -> kartu 1006 (Tempat tinggal setelah nikah) & 8570
@@ -3287,6 +3300,10 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
           if (konteksCr && [346, 347].includes(konteksCr.jenisPerkaraId)) {
             const positaCr = String(req.body?.posita || "").replace(/<[^>]*>/g, " ").trim().length >= 50 ? String(req.body?.posita || "") : konteksCr.posita;
             jawaban.saksi.usulan = require("../services/deteksi/cerai").tambahUsulanCerai(jawaban.saksi.usulan, positaCr);
+            // Lencana rincian 5227 menyebut saksi menurut pihaknya (Penggugat/Tergugat) bila ekstensi tidak mengirimnya.
+            if (jawaban.saksi.rincianAlasan && konteksCr.saksiSisi && !(req.body?.saksiPihak?.saksi1 || req.body?.saksiPihak?.saksi2)) {
+              require("../services/deteksi/alasanRincian").terapkanSisiSaksi(jawaban.saksi, konteksCr.saksiSisi, { pelaku: String(req.body?.pelaku || ""), lawan: String(req.body?.lawan || "") });
+            }
           }
         } catch (galatCr) {
           jawaban.saksi.ceraiGalat = String((galatCr && galatCr.message) || galatCr).slice(0, 200);

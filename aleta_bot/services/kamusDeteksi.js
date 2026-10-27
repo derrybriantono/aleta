@@ -16,6 +16,7 @@ const FOLDER_BENIH = path.join(__dirname, "..", "kamus-deteksi", "awal");
 
 let benih = null; // { [kelompok]: { pola: [], templat: [] } }
 let lapisDb = { pola: [], templat: [] }; // baris database, sudah dalam bentuk benih (+ kelompok)
+let versiLapis = 0; // naik tiap lapis berubah: pemakai yang menyimpan hasil olahan (cache) memuat ulang hanya bila ini berubah
 
 function bacaBenih() {
   if (benih) return benih;
@@ -65,6 +66,7 @@ function templatKelompok(kelompok) {
 /** Dipanggil pemuat tabel aleta_* (lapis database). */
 function aturLapisDatabase({ pola = [], templat = [] } = {}) {
   lapisDb = { pola, templat };
+  versiLapis++;
   cacheRegex.clear();
 }
 
@@ -72,6 +74,7 @@ function aturLapisDatabase({ pola = [], templat = [] } = {}) {
 function lupakan() {
   benih = null;
   lapisDb = { pola: [], templat: [] };
+  versiLapis++;
   cacheRegex.clear();
 }
 
@@ -80,4 +83,9 @@ function daftarKelompok() {
   return Object.keys(bacaBenih());
 }
 
-module.exports = { polaKelompok, templatKelompok, aturLapisDatabase, daftarKelompok, lupakan, FOLDER_BENIH };
+/** Penanda versi lapis (benih + database) untuk cache pemakai. */
+function versi() {
+  return versiLapis;
+}
+
+module.exports = { versi, polaKelompok, templatKelompok, aturLapisDatabase, daftarKelompok, lupakan, FOLDER_BENIH };

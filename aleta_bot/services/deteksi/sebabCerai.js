@@ -480,4 +480,4 @@ function perluas5227(o) {
   };
 }
 
-module.exports = { deteksi, susun, perluas5227, jenisCerai, temuanSumber, subjekKlausa };
+module.exports = { deteksi, susun, perluas5227, jenisCerai, temuanSumber, subjekKlausa, terimaSubjek, RE_PENYANGKAL };

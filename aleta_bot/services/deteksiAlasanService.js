@@ -396,6 +396,10 @@ function petunjukWaktu(butir, variabel, ujWaktu, tanggalSidang, opsi) {
           if (perkiraan) hasil.perkiraan = perkiraan;
         }
         /* === KDL2 11 Okt === */
+        if (kunci === "sejak-hari-raya") {
+          const perkiraan = bulanHariRaya(m[1], m[2], tanggalSidang);
+          if (perkiraan) hasil.perkiraan = perkiraan;
+        }
         if (kunci === "sejak-lalu") {
           const perkiraan = mundurDari(m, tanggalSidang);
           if (perkiraan) hasil.perkiraan = perkiraan;
@@ -411,6 +415,36 @@ function petunjukWaktu(butir, variabel, ujWaktu, tanggalSidang, opsi) {
   }
   return null;
 }
+
+/* === HARI RAYA 27 Okt === */
+// Bulan (1-12, Masehi) jatuhnya 1 Ramadan, 1 Syawal (Idul Fitri), dan 10 Zulhijjah (Idul Adha) menurut kalender hijriah
+// resmi; perkiraan bulan saja (hari dapat bergeser satu hari menurut rukyat) untuk petunjuk waktu 0222/0246.
+const BULAN_RAYA = {
+  2018: { ramadan: 5, fitri: 6, adha: 8 }, 2019: { ramadan: 5, fitri: 6, adha: 8 }, 2020: { ramadan: 4, fitri: 5, adha: 7 },
+  2021: { ramadan: 4, fitri: 5, adha: 7 }, 2022: { ramadan: 4, fitri: 5, adha: 7 }, 2023: { ramadan: 3, fitri: 4, adha: 6 },
+  2024: { ramadan: 3, fitri: 4, adha: 6 }, 2025: { ramadan: 3, fitri: 3, adha: 6 }, 2026: { ramadan: 2, fitri: 3, adha: 5 },
+  2027: { ramadan: 2, fitri: 3, adha: 5 },
+};
+
+/** "Lebaran 2024" -> "bulan April 2024"; null bila tahunnya tak diketahui/di luar tabel. */
+function bulanHariRaya(token, tahunKata, tanggalSidang) {
+  const t = String(token || "").toLowerCase();
+  const k = String(tahunKata || "").toLowerCase();
+  const sidang = uraiBulanTahun(tanggalSidang);
+  let tahun = /^\d{4}$/.test(k) ? Number(k) : k === "ini" && sidang ? sidang.tahun : /^(lalu|kemarin)$/.test(k) && sidang ? sidang.tahun - 1 : 0;
+  if (!tahun) return "";
+  let bulan = 0;
+  if (/tahun\s+baru/.test(t)) bulan = 1;
+  else if (/natal/.test(t)) bulan = 12;
+  else if (BULAN_RAYA[tahun]) {
+    const r = BULAN_RAYA[tahun];
+    bulan = /puasa|ramadh?an/.test(t) ? r.ramadan : /adha/.test(t) ? r.adha : r.fitri;
+  }
+  if (!bulan) return "";
+  const nama = NAMA_BULAN[bulan - 1];
+  return `bulan ${nama.charAt(0).toUpperCase()}${nama.slice(1)} ${tahun}`;
+}
+/* === AKHIR HARI RAYA === */
 
 /* === KDL2 11 Okt === */
 const ANGKA_KATA_LUAS = { ...{ satu: 1, se: 1, dua: 2, tiga: 3, empat: 4, lima: 5, enam: 6, tujuh: 7, delapan: 8, sembilan: 9, sepuluh: 10, sebelas: 11 }, setahun: 1, sebulan: 1 };

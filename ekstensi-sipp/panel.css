@@ -3284,6 +3284,61 @@ body[data-aleta-sunting-langsung="ya"] .aleta-abt-isi-sunting:focus-visible {
   color: var(--aleta-mendesak);
 }
 
+/* Rincian alasan cerai 5227 (27 Okt 2026): satu baris per alasan dari gugatan, lencana saksi jujur. */
+.aleta-abt-rincian {
+  margin-top: 6px;
+  padding: 6px 8px;
+  border: 1px solid var(--aleta-garis);
+  border-radius: 8px;
+}
+.aleta-abt-rincian-judul {
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+  font-weight: 600;
+  color: var(--aleta-tulisan-lembut);
+  margin-bottom: 4px;
+}
+.aleta-abt-rincian-baris {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  margin-top: 4px;
+  font-size: calc(12.5px * var(--aleta-skala-huruf, 1));
+  line-height: 1.5;
+}
+.aleta-abt-rincian-isi {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.aleta-abt-rincian-nama {
+  font-weight: 600;
+  margin-right: 6px;
+  color: var(--aleta-tulisan);
+}
+.aleta-abt-rincian-lencana {
+  display: inline-block;
+  padding: 0 6px;
+  border: 1px solid var(--aleta-garis);
+  border-radius: 999px;
+  color: var(--aleta-tulisan-lembut);
+}
+.aleta-abt-rincian-cukup {
+  border-color: var(--aleta-aman);
+  color: var(--aleta-aman);
+}
+.aleta-abt-rincian-ragu {
+  border-color: var(--aleta-mendesak);
+  color: var(--aleta-mendesak);
+}
+.aleta-abt-rincian-catatan {
+  color: var(--aleta-tulisan-lembut);
+}
+.aleta-abt-rincian-bunyi {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  margin-top: 3px;
+}
+
 .aleta-abt-kutipan {
   display: flex;
   gap: 6px;

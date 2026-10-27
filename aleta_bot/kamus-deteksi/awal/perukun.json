@@ -1,0 +1,267 @@
+{
+ "kelompok": "perukun",
+ "versi": 1,
+ "catatan": "Pendamai upaya damai (variabel 1268). Mesin: services/deteksi/upayaDamai.js.",
+ "pola": [
+  {
+   "kode": "perukun-keluarga",
+   "label": "Pendamai: pihak keluarga",
+   "kunci": "keluarga",
+   "regex": "\\b(?:keluarga|keluraga|kel\\.|orang\\s*tua|orangtua|ortu|mertua|saudara|kakak|adik|paman|bibi|ipar|kerabat|famili|nenek|kakek|(?:ibu|ayah|bapak)(?:nya)?\\s+(?:kandung|mertua|penggugat|tergugat|pemohon|termohon|saksi|kami))\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "dirukunkan oleh keluarga",
+    "didamaikan oleh orang tua Penggugat",
+    "dinasihati oleh mertua",
+    "diupayakan oleh kakak Tergugat"
+   ],
+   "contohSalah": [
+    "dirukunkan oleh tetangga",
+    "didamaikan oleh aparat desa"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Siapa yang mendamaikan (1268): keluarga / aparat (desa, tokoh adat/agama, KUA, RT/RW) / lainnya. Ruas teks = frasa pelaku di kalimat.",
+   "kategori": "keluarga",
+   "teks": "pihak keluarga",
+   "urut": 1
+  },
+  {
+   "kode": "perukun-aparat-desa",
+   "label": "Pendamai: aparat pemerintah desa",
+   "kunci": "aparat-desa",
+   "regex": "\\b(?:aparat|pemerintah|perangkat|pemerintahan)\\s+(?:desa|kelurahan|setempat)|kepala\\s+desa|\\bkades\\b|\\bsekdes\\b|sekretaris\\s+desa|\\bkadus\\b|kepala\\s+dusun|\\blurah\\b|kelurahan|\\bcamat\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "dirukunkan oleh aparat desa",
+    "didamaikan oleh kepala desa",
+    "dinasihati oleh pemerintah kelurahan",
+    "diupayakan oleh perangkat desa setempat"
+   ],
+   "contohSalah": [
+    "dirukunkan oleh keluarga",
+    "didamaikan oleh tetangga"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Siapa yang mendamaikan (1268): keluarga / aparat (desa, tokoh adat/agama, KUA, RT/RW) / lainnya. Ruas teks = frasa pelaku di kalimat.",
+   "kategori": "aparat",
+   "teks": "aparat pemerintah desa",
+   "urut": 2
+  },
+  {
+   "kode": "perukun-rt-rw",
+   "label": "Pendamai: ketua RT/RW",
+   "kunci": "rt-rw",
+   "regex": "\\b(?:ketua\\s+)?(?:rt|rw)\\b|\\brukun\\s+(?:tetangga|warga)\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "dirukunkan oleh ketua RT",
+    "didamaikan oleh RW setempat"
+   ],
+   "contohSalah": [
+    "dirukunkan oleh keluarga",
+    "kami rukun kembali"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Siapa yang mendamaikan (1268): keluarga / aparat (desa, tokoh adat/agama, KUA, RT/RW) / lainnya. Ruas teks = frasa pelaku di kalimat.",
+   "kategori": "aparat",
+   "teks": "ketua RT/RW",
+   "urut": 3
+  },
+  {
+   "kode": "perukun-tokoh-adat",
+   "label": "Pendamai: tokoh adat",
+   "kunci": "tokoh-adat",
+   "regex": "\\b(?:tokoh|tua|ketua|dewan|lembaga|pemangku|pemuka)\\s+adat\\b|\\bsecara\\s+adat\\b|\\bhukum\\s+adat\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "dirukunkan oleh tua adat",
+    "didamaikan oleh dewan adat",
+    "didamaikan secara adat"
+   ],
+   "contohSalah": [
+    "dirukunkan oleh keluarga",
+    "diperiksa oleh hakim"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Siapa yang mendamaikan (1268): keluarga / aparat (desa, tokoh adat/agama, KUA, RT/RW) / lainnya. Ruas teks = frasa pelaku di kalimat.",
+   "kategori": "aparat",
+   "teks": "tokoh adat",
+   "urut": 4
+  },
+  {
+   "kode": "perukun-tokoh-agama",
+   "label": "Pendamai: tokoh agama",
+   "kunci": "tokoh-agama",
+   "regex": "\\b(?:tokoh|pemuka)\\s+agama\\b|\\b(?:ustad|ustaz|ustadz|imam|pendeta|ulama|kyai|kiai|penceramah|tuan\\s+guru|penyuluh\\s+agama)\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "dinasihati oleh tokoh agama",
+    "didamaikan oleh imam masjid",
+    "dinasihati oleh ustad"
+   ],
+   "contohSalah": [
+    "dirukunkan oleh keluarga",
+    "didamaikan oleh tetangga"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Siapa yang mendamaikan (1268): keluarga / aparat (desa, tokoh adat/agama, KUA, RT/RW) / lainnya. Ruas teks = frasa pelaku di kalimat.",
+   "kategori": "aparat",
+   "teks": "tokoh agama",
+   "urut": 5
+  },
+  {
+   "kode": "perukun-tokoh-masyarakat",
+   "label": "Pendamai: tokoh masyarakat",
+   "kunci": "tokoh-masyarakat",
+   "regex": "\\b(?:tokoh|pemuka)\\s+(?:masyarakat|setempat)\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "didamaikan oleh tokoh masyarakat"
+   ],
+   "contohSalah": [
+    "didamaikan oleh keluarga"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Siapa yang mendamaikan (1268): keluarga / aparat (desa, tokoh adat/agama, KUA, RT/RW) / lainnya. Ruas teks = frasa pelaku di kalimat.",
+   "kategori": "aparat",
+   "teks": "tokoh masyarakat",
+   "urut": 6
+  },
+  {
+   "kode": "perukun-kua",
+   "label": "Pendamai: Kantor Urusan Agama",
+   "kunci": "kua",
+   "regex": "\\bkua\\b|\\bkantor\\s+urusan\\s+agama\\b|\\bpenghulu\\b|\\bbp4\\b|\\bbadan\\s+penasihat\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "dinasihati di Kantor Urusan Agama",
+    "didamaikan oleh penghulu",
+    "diupayakan oleh KUA"
+   ],
+   "contohSalah": [
+    "didamaikan oleh keluarga",
+    "diupayakan oleh tetangga"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Siapa yang mendamaikan (1268): keluarga / aparat (desa, tokoh adat/agama, KUA, RT/RW) / lainnya. Ruas teks = frasa pelaku di kalimat.",
+   "kategori": "aparat",
+   "teks": "Kantor Urusan Agama",
+   "urut": 7
+  },
+  {
+   "kode": "perukun-aparat-keamanan",
+   "label": "Pendamai: aparat keamanan",
+   "kunci": "aparat-keamanan",
+   "regex": "\\b(?:polisi|polsek|polres|bhabinkamtibmas|babinsa|aparat\\s+keamanan)\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "didamaikan oleh polisi",
+    "dirukunkan oleh Bhabinkamtibmas"
+   ],
+   "contohSalah": [
+    "didamaikan oleh keluarga",
+    "dirukunkan oleh teman"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Siapa yang mendamaikan (1268): keluarga / aparat (desa, tokoh adat/agama, KUA, RT/RW) / lainnya. Ruas teks = frasa pelaku di kalimat.",
+   "kategori": "aparat",
+   "teks": "aparat keamanan",
+   "urut": 8
+  },
+  {
+   "kode": "perukun-lainnya",
+   "label": "Pendamai: pihak lain",
+   "kunci": "lainnya",
+   "regex": "\\b(?:tetangga|teman|sahabat|kawan|rekan\\s+kerja|atasan|majikan|mediator|oleh\\s+(?:kami|saya|saksi)|saksi\\s+sendiri|dinasihati\\s+saksi)\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "dirukunkan oleh tetangga",
+    "didamaikan oleh teman",
+    "dirukunkan oleh kami",
+    "diupayakan oleh mediator"
+   ],
+   "contohSalah": [
+    "dirukunkan oleh keluarga",
+    "didamaikan oleh aparat desa"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Siapa yang mendamaikan (1268): keluarga / aparat (desa, tokoh adat/agama, KUA, RT/RW) / lainnya. Ruas teks = frasa pelaku di kalimat.",
+   "kategori": "lainnya",
+   "teks": "pihak lain",
+   "urut": 9
+  }
+ ],
+ "templat": []
+}

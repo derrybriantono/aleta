@@ -176,12 +176,14 @@
       "label": "kalimat siapa yang pergi (7035)",
       "kunci": "pergi-pemicu",
       "jenis": "struktur",
-      "regex": "meninggalkan|pergi dari rumah|keluar dari rumah",
+      "regex": "meninggalkan|pergi dari rumah|keluar dari rumah|diusir|mengusir|pulang ke rumah orang\\s*tua|pulang ke rumah ibu|minggat|kabur dari rumah|angkat kaki",
       "flags": "",
       "status": "aktif",
       "yakin": "ragu",
       "contohBenar": [
-        "tergugat pergi meninggalkan penggugat"
+        "tergugat pergi meninggalkan penggugat",
+        "Tergugat pulang ke rumah orang tuanya",
+        "Penggugat diusir oleh Tergugat"
       ],
       "contohSalah": [
         "tergugat tinggal di rumah orang tuanya"
@@ -485,6 +487,79 @@
         "tanggal": "2026-10-10"
       },
       "catatan": "Subjeknya dinilai pelakuSatuKata (sebutan terakhir dalam 70 huruf sebelum kata kerja, objek/milik/tuduhan disaring); bentuk pasif (di-) tidak dinilai."
+    },
+    {
+      "kode": "pelaku-pergi-diusir",
+      "label": "yang diusir (meninggalkan kediaman)",
+      "kunci": "pergi-subjek",
+      "regex": "(penggugat|tergugat|pemohon|termohon)(?:\\s+yang)?\\s+(?:telah\\s+|sudah\\s+|sempat\\s+)?(?:di)?usir\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Penggugat diusir oleh Tergugat",
+        "Pemohon telah diusir Termohon"
+      ],
+      "contohSalah": [
+        "Tergugat mengusir tikus"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "27 Okt: yang pergi/diusir/pulang ke rumah orang tua (7035). Yang diusir = yang meninggalkan kediaman.",
+      "urut": 4
+    },
+    {
+      "kode": "pelaku-pergi-mengusir",
+      "label": "mengusir X (X yang meninggalkan)",
+      "kunci": "pergi-subjek",
+      "regex": "\\bmengusir\\s+(penggugat|tergugat|pemohon|termohon)\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat mengusir Penggugat dari rumah"
+      ],
+      "contohSalah": [
+        "Tergugat mengusir tikus"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "27 Okt: yang pergi/diusir/pulang ke rumah orang tua (7035). Yang diusir = yang meninggalkan kediaman.",
+      "urut": 5
+    },
+    {
+      "kode": "pelaku-pergi-pulang-ortu",
+      "label": "pulang ke rumah orang tua",
+      "kunci": "pergi-subjek",
+      "regex": "(penggugat|tergugat|pemohon|termohon)(?:\\s+yang)?\\s+(?:telah\\s+|sudah\\s+|lalu\\s+|kemudian\\s+)?pulang\\s+ke\\s+rumah\\s+(?:orang\\s*tua|ibu|ayah|bapak|saudara)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat pulang ke rumah orang tuanya"
+      ],
+      "contohSalah": [
+        "Tergugat pulang ke rumah bersama Penggugat"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "",
+        "tanggal": ""
+      },
+      "catatan": "27 Okt: yang pergi/diusir/pulang ke rumah orang tua (7035). Yang diusir = yang meninggalkan kediaman.",
+      "urut": 6
     }
   ],
   "templat": []

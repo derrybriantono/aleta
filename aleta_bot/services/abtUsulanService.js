@@ -74,6 +74,7 @@ const deteksiAlasan = require("./deteksiAlasanService");
 /* === AKHIR P1-P3-S6 === */
 // R2 14 Okt: sebab perselisihan 5227 yang tidak tertangkap ciri lama (cerai talak).
 const sebabCerai = require("./deteksi/sebabCerai");
+const upayaDamaiPerukun = require("./deteksi/upayaDamai");
 
 /** Kueri baca-saja ke SIPP. Satu-satunya cara berkas ini menyentuh SIPP. */
 function runQuery(sql, params) {
@@ -666,6 +667,8 @@ function kalimatAwalKonflik(butir) {
     butir.find(
       (b) => w.uji("konflik", b) && w.uji("konflik-terjadi", b) && !w.uji("titik-akhir", b) && w.uji("tahun", b)
     ) ||
+    // 27 Okt: "namun pada bulan Maret 2016 sudah tidak rukun" (waktu tanpa kata sejak/mulai di depannya).
+    butir.find((b) => w.uji("mulai-pada", b) && !w.uji("titik-akhir", b)) ||
     ""
   );
 }
@@ -842,7 +845,8 @@ function upayaDamaiDari(butir) {
   const kalimat = butir.find((b) => POLA_UPAYA_DAMAI.test(b)) || "";
   if (!kalimat) return { keadaan: "", kalimat: "" };
   const berhasil = POLA_BERHASIL_RUKUN.test(kalimat) && !POLA_TIDAK_BERHASIL.test(kalimat) && !POLA_RETAK_LAGI.test(kalimat);
-  return { keadaan: berhasil ? "berhasil" : "gagal", kalimat };
+  // 27 Okt: siapa yang mendamaikan (keluarga / aparat / keduanya / lainnya), dibaca di sekitar kata upaya damainya.
+  return { keadaan: berhasil ? "berhasil" : "gagal", kalimat, perukun: upayaDamaiPerukun.perukunDari(kalimat, POLA_UPAYA_DAMAI) };
 }
 
 /**
@@ -1168,7 +1172,13 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak, posit
   const ucap1 = lamaDiucapkan(b1);
   const ucap2 = lamaDiucapkan(b2);
   const lama = gabungkan(ucap1.nilai, ucap2.nilai);
-  const dihitung = hitungLamaPisah(pisah.nilai, tanggalSidang);
+  // 27 Okt: 0246 yang hanya tahun / awal-pertengahan-akhir tahun (hitungLamaPisah tidak membacanya) dihitung sebagai
+  // perkiraan - "lebih kurang N tahun M bulan", keyakinan ragu.
+  let dihitung = hitungLamaPisah(pisah.nilai, tanggalSidang);
+  if (!dihitung) {
+    const kira = lamaSejakAcuan(pisah.nilai, tanggalSidang);
+    if (kira && kira.taksiran) dihitung = { teks: `lebih kurang ${kira.teks}`, totalBulan: kira.totalBulan, taksiran: true };
+  }
   if (dihitung) {
     lama.pembanding = { teks: dihitung.teks, totalBulan: dihitung.totalBulan, dari: pisah.nilai, sampai: tanggalSidang };
     if (!lama.nilai) {
@@ -1176,10 +1186,11 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak, posit
       lama.dihitung = true;
       // S5=H1: titik awalnya dari posita (pisah.dariPosita) -> hitungannya
       // pun dalil yang belum dikuatkan saksi.
-      lama.keyakinan = pisah.dariPosita ? "ragu" : "cukup";
+      lama.keyakinan = pisah.dariPosita || dihitung.taksiran ? "ragu" : "cukup";
       if (pisah.dariPosita) lama.dariPosita = true;
       lama.catatan =
-        `Saksi tidak menyebut lamanya; dihitung dari ${pisah.nilai} sampai tanggal sidang ${tanggalSidang}.`;
+        `Saksi tidak menyebut lamanya; dihitung dari ${pisah.nilai} sampai tanggal sidang ${tanggalSidang}` +
+        (dihitung.taksiran ? " (perkiraan: bulan mulai pisah tidak disebut)." : ".");
     } else if (totalBulan(lama.nilai) !== dihitung.totalBulan) {
       lama.catatan =
         `Saksi menyebut "${lama.nilai}"; dihitung dari ${pisah.nilai} sampai sidang ${tanggalSidang} ` +
@@ -1271,6 +1282,7 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak, posit
   const damai1 = upayaDamaiDari(b1);
   const damai2 = upayaDamaiDari(b2);
   let upaya;
+  let perukunSaksi = { kategori: "", kunci: [], teks: [] };
   if (damai1.keadaan === "belum-ada" || damai2.keadaan === "belum-ada") {
     const pilihan = ["gagal", "belum-ada"]
       .map((keadaan) => ({ keadaan, nilai: kalimatBaku.kalimatUpayaDamai(keadaan, pihak, opsi) }))
@@ -1287,7 +1299,10 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak, posit
     };
   } else {
     // Kalimatnya dari pustaka, bukan disusun di sini - lihat abtKalimatBaku.js.
-    const kalimatDari = (d) => (d.keadaan ? kalimatBaku.kalimatUpayaDamai(d.keadaan, pihak, opsi) : "");
+    // 27 Okt: pelaku upaya damai gabungan kedua saksi; hanya yang BUKAN "pihak keluarga" biasa mengubah frasa.
+    perukunSaksi = upayaDamaiPerukun.gabungPerukun([damai1.perukun, damai2.perukun]);
+    const frasaPerukun = perukunSaksi.kategori && perukunSaksi.kategori !== "keluarga" ? upayaDamaiPerukun.teksPerukun(perukunSaksi) : "";
+    const kalimatDari = (d) => (d.keadaan ? kalimatBaku.kalimatUpayaDamai(d.keadaan, pihak, opsi, d.keadaan === "belum-ada" ? "" : frasaPerukun) : "");
     upaya = gabungkan(kalimatDari(damai1), kalimatDari(damai2));
     // Keadaannya terbaca tetapi bunyinya tidak tersedia (dimatikan lewat
     // pengaturan): disebut, bukan menjadi "tidak ditemukan" yang menyesatkan.
@@ -1303,7 +1318,9 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak, posit
   let sumberDamai = [...sumberDari(damai1.kalimat, 1), ...sumberDari(damai2.kalimat, 2)];
   if (!damai1.keadaan && !damai2.keadaan && butirPosita.length) {
     const dp = upayaDamaiPosita(butirPosita);
-    const bunyiPosita = dp.keadaan ? kalimatBaku.kalimatUpayaDamai(dp.keadaan, pihak, opsi) : "";
+    perukunSaksi = dp.perukun || perukunSaksi;
+    const frasaPosita = perukunSaksi.kategori && perukunSaksi.kategori !== "keluarga" ? upayaDamaiPerukun.teksPerukun(perukunSaksi) : "";
+    const bunyiPosita = dp.keadaan ? kalimatBaku.kalimatUpayaDamai(dp.keadaan, pihak, opsi, dp.keadaan === "belum-ada" ? "" : frasaPosita) : "";
     if (bunyiPosita) {
       upaya = {
         nilai: bunyiPosita,
@@ -1746,6 +1763,50 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak, posit
     if (u && u.nilai && sebab5227.kodePola) u.kodePola = sebab5227.kodePola;
   }
   /* === AKHIR R2 === */
+  /* === RINCIAN 5227 27 Okt === */
+  // Gugatan = acuan utama, saksi menguatkan, jawab-menjawab minor (deteksi/alasanRincian.js). Hanya
+  // bila pemanggil meminta (opsi.rincianAlasan === true); galat di sini tidak mematahkan usulan lain.
+  if (opsi && opsi.rincianAlasan === true) {
+    try {
+      const rinci = require("./deteksi/alasanRincian");
+      const sisi = opsi.saksiPihak && typeof opsi.saksiPihak === "object" ? opsi.saksiPihak : {};
+      const rincian = rinci.deteksiRincian({
+        gugatan: butirPosita,
+        saksi: [
+          { no: 1, pihak: sisi.saksi1 || "", butir: b1 },
+          { no: 2, pihak: sisi.saksi2 || "", butir: b2 },
+        ],
+        jawab: (Array.isArray(opsi.jawab) ? opsi.jawab : []).slice(0, 6).map((j) => ({ jenis: String((j && j.jenis) || "jawaban").slice(0, 20), butir: butirKeterangan(String((j && j.teks) || "").slice(0, 60000)) })),
+        pihak,
+      });
+      rinci.terapkan(hasil, rincian);
+    } catch (galat) {
+      hasil.rincianAlasanGalat = String((galat && galat.message) || galat);
+    }
+  }
+  /* === AKHIR RINCIAN 5227 === */
+  /* === PENDAMAI 1268 27 Okt === */
+  // Siapa yang mendamaikan: terbaca -> disebut di kartu; tidak terbaca -> empat pilihan manual (keluarga / aparat /
+  // keduanya / lainnya) di samping kalimat bawaan. Kartu yang tidak berupa upaya (kosong / belum ada) tidak disentuh.
+  try {
+    const u1268 = hasil.usulan.find((x) => x && x.kode === "1268");
+    const keadaanDamai = [damai1.keadaan, damai2.keadaan].find((k) => k === "gagal" || k === "berhasil") || (u1268 && u1268.nilai ? "gagal" : "");
+    if (u1268 && u1268.nilai && keadaanDamai && !(damai1.keadaan === "belum-ada" || damai2.keadaan === "belum-ada")) {
+      if (perukunSaksi.kategori) {
+        u1268.perukun = { kategori: perukunSaksi.kategori, rincian: perukunSaksi.teks };
+      } else {
+        u1268.perukun = { kategori: "", rincian: [] };
+        u1268.pilihan = upayaDamaiPerukun.PILIHAN_BAKU.map((p) => ({
+          keadaan: p.keadaan,
+          nilai: kalimatBaku.kalimatUpayaDamai(keadaanDamai, pihak, opsi, p.kategori === "keluarga" ? "" : p.frasa),
+        })).filter((p) => p.nilai);
+        u1268.catatan = [u1268.catatan, "Pihak yang mendamaikan tidak disebut; bunyi bawaan memakai pihak keluarga - pilih bunyi lain bila yang mendamaikan aparat, keduanya, atau pihak lain."].filter(Boolean).join(" ");
+      }
+    }
+  } catch (galat) {
+    hasil.pendamaiGalat = String((galat && galat.message) || galat);
+  }
+  /* === AKHIR PENDAMAI 1268 === */
   return hasil;
 }
 
@@ -4073,7 +4134,7 @@ function upayaDamaiPosita(butir) {
     ) || "";
   if (!kalimat) return { keadaan: "", kalimat: "" };
   const berhasil = POLA_BERHASIL_RUKUN.test(kalimat) && !POLA_TIDAK_BERHASIL.test(kalimat) && !POLA_RETAK_LAGI.test(kalimat);
-  return { keadaan: berhasil ? "berhasil" : "gagal", kalimat };
+  return { keadaan: berhasil ? "berhasil" : "gagal", kalimat, perukun: upayaDamaiPerukun.perukunDari(kalimat, POLA_UPAYA_DAMAI_POSITA) };
 }
 
 /**
@@ -5678,7 +5739,9 @@ async function konteksPerkaraSaksi(nomorPerkara) {
     `SELECT p.posita AS posita, p.petitum AS petitum, p.jenis_perkara_id AS jenis_perkara_id,
             (SELECT DATE_FORMAT(j.tanggal_sidang, '%Y-%m-%d') FROM perkara_jadwal_sidang j
               WHERE j.perkara_id = p.perkara_id
-              ORDER BY ABS(DATEDIFF(j.tanggal_sidang, CURDATE())) ASC, j.tanggal_sidang DESC LIMIT 1) AS tanggal_sidang
+              ORDER BY ABS(DATEDIFF(j.tanggal_sidang, CURDATE())) ASC, j.tanggal_sidang DESC LIMIT 1) AS tanggal_sidang,
+            (SELECT GROUP_CONCAT(CONCAT(s5.urutan, ':', s5.saksi_pihak_ke) ORDER BY s5.urutan SEPARATOR ',')
+               FROM perkara_pihak5 s5 WHERE s5.perkara_id = p.perkara_id AND s5.urutan IN (1, 2)) AS saksi_sisi
        FROM perkara p WHERE p.nomor_perkara = ? LIMIT 1`,
     [nomor]
   ).catch(() => null);
@@ -5687,7 +5750,13 @@ async function konteksPerkaraSaksi(nomorPerkara) {
   const r = Array.isArray(baris) && baris[0];
   if (!r) return null;
   // 13 Okt: jenis perkara ikut - deteksi/cerai.js hanya ditambahkan untuk cerai gugat/talak (346/347).
-  return { posita: String(r.posita || ""), petitum: String(r.petitum || ""), tanggalSidang: String(r.tanggal_sidang || ""), jenisPerkaraId: Number(r.jenis_perkara_id) || null };
+  // 27 Okt: pihak saksi 1 dan 2 (1 = Penggugat/Pemohon, 2 = Tergugat/Termohon) - dari kueri yang SAMA, bukan kueri baru.
+  const sisi = { saksi1: "", saksi2: "" };
+  for (const bagian of String(r.saksi_sisi || "").split(",")) {
+    const [urutan, ke] = bagian.split(":");
+    if (urutan === "1" || urutan === "2") sisi[`saksi${urutan}`] = ke === "1" ? "penggugat" : ke === "2" ? "tergugat" : "";
+  }
+  return { posita: String(r.posita || ""), petitum: String(r.petitum || ""), tanggalSidang: String(r.tanggal_sidang || ""), jenisPerkaraId: Number(r.jenis_perkara_id) || null, saksiSisi: sisi };
 }
 
 module.exports = {

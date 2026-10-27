@@ -272,6 +272,90 @@ function polaKeSunting(p: Pola | null, kelompok = ""): SuntingPola {
   };
 }
 
+/* === RIWAYAT 27 Okt === */
+type BarisRiwayat = {
+  id: string;
+  aksi: string;
+  oleh: string;
+  pada: string;
+  isiLama: Record<string, unknown> | null;
+  isiBaru: Record<string, unknown> | null;
+};
+
+const NAMA_AKSI: Record<string, string> = { buat: "dibuat", ubah: "diubah", status: "status diubah", "kembali-ke-benih": "dikembalikan ke bawaan" };
+
+/** Ruas yang berbeda antara isi lama dan isi baru, ringkas untuk dibaca. */
+function selisihRiwayat(lama: Record<string, unknown> | null, baru: Record<string, unknown> | null): string[] {
+  const kunci = new Set([...Object.keys(lama ?? {}), ...Object.keys(baru ?? {})]);
+  const hasil: string[] = [];
+  const pendek = (v: unknown) => {
+    const t = typeof v === "string" ? v : JSON.stringify(v ?? "");
+    return t.length > 90 ? `${t.slice(0, 90)}...` : t;
+  };
+  for (const k of kunci) {
+    if (["diubahOleh", "diubahAt", "asal", "adaBenih", "ketepatan", "peringatan", "lapangan"].includes(k)) continue;
+    const a = JSON.stringify(lama?.[k] ?? null);
+    const b = JSON.stringify(baru?.[k] ?? null);
+    if (a !== b) hasil.push(`${k}: ${lama ? pendek(lama[k]) : "-"} -> ${baru ? pendek(baru[k]) : "-"}`);
+  }
+  return hasil;
+}
+
+/** Riwayat perubahan satu pola: siapa, kapan, isi lama; isi lama dapat dipakai kembali di formulir. */
+function RiwayatPola(props: { kode: string; pakai: (isiLama: Record<string, unknown>) => void }) {
+  const [buka, setBuka] = useState(false);
+  const [daftar, setDaftar] = useState<BarisRiwayat[] | null>(null);
+  const [galat, setGalat] = useState("");
+  const muat = async () => {
+    setGalat("");
+    try {
+      const d = await mintaJson(`${ALAMAT}?bagian=riwayat&kode=${encodeURIComponent(props.kode)}&batas=30`);
+      setDaftar(Array.isArray(d?.riwayat) ? d.riwayat : []);
+    } catch (e) {
+      setGalat(e instanceof Error ? e.message : "Riwayat gagal dibaca.");
+    }
+  };
+  return (
+    <div className="space-y-2 rounded-md border border-dashed border-border/80 p-2">
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => {
+          const berikut = !buka;
+          setBuka(berikut);
+          if (berikut) void muat();
+        }}
+      >
+        {buka ? "Sembunyikan riwayat perubahan" : "Riwayat perubahan"}
+      </Button>
+      {buka ? (
+        <div className="space-y-2 text-xs">
+          {galat ? <div className="text-rose-600 dark:text-rose-400">{galat}</div> : null}
+          {daftar && daftar.length === 0 ? <div className="text-muted-foreground">Belum ada perubahan tercatat untuk pola ini.</div> : null}
+          {(daftar ?? []).map((r) => (
+            <div key={r.id} className="space-y-1 rounded border border-border/60 bg-card p-2">
+              <div>
+                <span className="font-medium">{NAMA_AKSI[r.aksi] ?? r.aksi}</span> oleh {r.oleh || "-"}, {new Date(r.pada).toLocaleString("id-ID")}
+              </div>
+              {selisihRiwayat(r.isiLama, r.isiBaru).map((s, i) => (
+                <div key={i} className="break-words font-mono text-[11px] text-muted-foreground">
+                  {s}
+                </div>
+              ))}
+              {r.isiLama ? (
+                <Button size="sm" variant="outline" onClick={() => props.pakai(r.isiLama as Record<string, unknown>)}>
+                  Pakai isi lama di formulir (belum disimpan)
+                </Button>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+/* === AKHIR RIWAYAT === */
+
 // ─── Penyunting pola beserta UJI POLA ────────────────────────────────────────
 
 function PenyuntingPola(props: {
@@ -376,6 +460,17 @@ function PenyuntingPola(props: {
       </div>
       <Textarea value={s.catatan} onChange={ubah("catatan")} rows={2} placeholder="Catatan" aria-label="Catatan" />
       <RuasTambahan nilai={s.tambahan} ubah={(v) => setS({ ...s, tambahan: v })} ruasBaku={RUAS_BAKU_POLA} label="Ruas tambahan" />
+      {s.baru ? null : (
+        <RiwayatPola
+          kode={s.kode}
+          pakai={(isi) => setS({ ...polaKeSunting(isi as unknown as Pola), baru: false, kode: s.kode })}
+        />
+      )}
+      {s.status === "aktif" && !hasilSampel ? (
+        <div className="rounded-md border border-amber-500/50 bg-amber-500/10 p-2 text-xs text-amber-800 dark:text-amber-200">
+          Pola ini akan dipakai mendeteksi. Coba dulu atas data nyata (tombol &quot;Uji atas data nyata&quot; di bawah) agar terlihat cocok di berapa perkara dan contohnya, sebelum disimpan sebagai aktif.
+        </div>
+      ) : null}
 
       <div className="space-y-2 rounded-md border border-dashed border-border/80 p-2">
         <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Uji pola</div>

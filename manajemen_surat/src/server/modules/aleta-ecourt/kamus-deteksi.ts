@@ -437,6 +437,84 @@ async function benihTemplat(kode: string, benih?: BenihKelompok[]): Promise<Temp
 }
 /* === AKHIR RUAS-TAMBAHAN === */
 
+/* === RIWAYAT 27 Okt === */
+export type BarisRiwayatKamus = {
+  id: string;
+  jenis: "pola" | "templat";
+  kode: string;
+  kelompok: string;
+  aksi: string;
+  isiLama: Record<string, unknown> | null;
+  isiBaru: Record<string, unknown> | null;
+  oleh: string;
+  pada: string;
+};
+
+/**
+ * Mencatat satu perubahan kamus: siapa, kapan, isi lama dan isi baru. Gagal mencatat TIDAK menggagalkan simpan
+ * (tabel riwayat belum termigrasi di server yang terlewat 0115) - hanya dicatat ke log.
+ */
+async function catatRiwayat(
+  db: AletaDatabase,
+  o: { jenis: "pola" | "templat"; kode: string; kelompok: string; aksi: string; lama: unknown; baru: unknown; oleh: string }
+) {
+  try {
+    await db.run(
+      `INSERT INTO aleta_kamus_deteksi_riwayat (id, jenis, kode, kelompok, aksi, isi_lama, isi_baru, oleh, pada) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        randomUUID(),
+        o.jenis,
+        o.kode,
+        o.kelompok,
+        o.aksi,
+        o.lama == null ? "" : JSON.stringify(o.lama),
+        o.baru == null ? "" : JSON.stringify(o.baru),
+        o.oleh,
+        new Date().toISOString(),
+      ]
+    );
+  } catch (e) {
+    console.warn("[kamus deteksi] riwayat tidak tercatat:", e instanceof Error ? e.message : String(e));
+  }
+}
+
+/** Riwayat perubahan terbaru lebih dulu; `kode` kosong = semua kode. */
+export async function bacaRiwayatKamus(db: AletaDatabase, o: { kode?: string; batas?: number } = {}): Promise<BarisRiwayatKamus[]> {
+  const batas = Math.max(1, Math.min(Number(o.batas) || 50, 500));
+  const kode = teks(o.kode);
+  let baris: Record<string, unknown>[] = [];
+  try {
+    baris = await db.queryAll<Record<string, unknown>>(
+      `SELECT * FROM aleta_kamus_deteksi_riwayat ${kode ? "WHERE kode = ?" : ""} ORDER BY pada DESC LIMIT ${batas}`,
+      kode ? [kode] : []
+    );
+  } catch {
+    return [];
+  }
+  const urai = (v: unknown) => {
+    const t = teks(v);
+    if (!t) return null;
+    try {
+      const x = JSON.parse(t) as unknown;
+      return x && typeof x === "object" && !Array.isArray(x) ? (x as Record<string, unknown>) : null;
+    } catch {
+      return null;
+    }
+  };
+  return baris.map((b) => ({
+    id: teks(b.id),
+    jenis: teks(b.jenis) === "templat" ? ("templat" as const) : ("pola" as const),
+    kode: teks(b.kode),
+    kelompok: teks(b.kelompok),
+    aksi: teks(b.aksi),
+    isiLama: urai(b.isi_lama),
+    isiBaru: urai(b.isi_baru),
+    oleh: teks(b.oleh),
+    pada: teks(b.pada),
+  }));
+}
+/* === AKHIR RIWAYAT === */
+
 /**
  * Menyimpan (tambah/sunting) satu pola database. Galat aturan = 400.
  * Status bawaan untuk pola BARU adalah draf: yang baru diketik belum diuji
@@ -503,6 +581,8 @@ export async function simpanPola(
     );
   }
   const baru = await db.queryOne<Record<string, unknown>>(`SELECT * FROM aleta_kamus_deteksi_pola WHERE kode = ?`, [p.kode]);
+  const isiLama = lama ? barisKePola(lama) : await benihPola(p.kode, benih);
+  await catatRiwayat(db, { jenis: "pola", kode: p.kode, kelompok: p.kelompok, aksi: isiLama ? "ubah" : "buat", lama: isiLama, baru: baru ? barisKePola(baru) : p, oleh });
   return barisKePola(baru ?? {});
 }
 
@@ -550,6 +630,8 @@ export async function simpanTemplat(
     );
   }
   const baru = await db.queryOne<Record<string, unknown>>(`SELECT * FROM aleta_kamus_deteksi_templat WHERE kode = ?`, [t.kode]);
+  const isiLama = lama ? barisKeTemplat(lama) : await benihTemplat(t.kode, benih);
+  await catatRiwayat(db, { jenis: "templat", kode: t.kode, kelompok: t.kelompok, aksi: isiLama ? "ubah" : "buat", lama: isiLama, baru: baru ? barisKeTemplat(baru) : t, oleh });
   return barisKeTemplat(baru ?? {});
 }
 
@@ -583,6 +665,7 @@ export async function ubahStatusKamus(
       new Date().toISOString(),
       kode,
     ]);
+    await catatRiwayat(db, { jenis, kode, kelompok: teks(ada.kelompok), aksi: "status", lama: { status: teks(ada.status) }, baru: { status }, oleh: teks(actorUserId) });
     return { kode, status, disalinDariBenih: false };
   }
   const daftarBenih = benih ?? (await bacaBenihKamus()).kelompok;
@@ -605,14 +688,26 @@ export async function ubahStatusKamus(
 }
 
 /** Membuang baris database yang menimpa benih - benihnya berlaku lagi. */
-export async function kembalikanKeBenih(db: AletaDatabase, masukan: { jenis: string; kode: string }, benih?: BenihKelompok[]) {
+export async function kembalikanKeBenih(db: AletaDatabase, masukan: { jenis: string; kode: string; oleh?: string }, benih?: BenihKelompok[]) {
   const jenis = masukan.jenis === "templat" ? "templat" : "pola";
   const kode = teks(masukan.kode);
   const daftarBenih = benih ?? (await bacaBenihKamus()).kelompok;
   const adaBenih = daftarBenih.some((b) => (jenis === "pola" ? b.pola : b.templat).some((x) => x.kode === kode));
   if (!adaBenih) throw new ApiError(400, "Kode ini tidak punya benih - nonaktifkan saja bila tidak dipakai.");
   const tabel = jenis === "pola" ? "aleta_kamus_deteksi_pola" : "aleta_kamus_deteksi_templat";
+  const sebelum = await db.queryOne<Record<string, unknown>>(`SELECT * FROM ${tabel} WHERE kode = ?`, [kode]);
   await db.run(`DELETE FROM ${tabel} WHERE kode = ?`, [kode]);
+  if (sebelum) {
+    await catatRiwayat(db, {
+      jenis,
+      kode,
+      kelompok: teks(sebelum.kelompok),
+      aksi: "kembali-ke-benih",
+      lama: jenis === "pola" ? barisKePola(sebelum) : barisKeTemplat(sebelum),
+      baru: null,
+      oleh: teks(masukan.oleh),
+    });
+  }
   return { kode, kembaliKeBenih: true };
 }
 
