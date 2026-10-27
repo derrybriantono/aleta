@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { apiPath } from "@/lib/base-path";
 import { tanganiUnduhan } from "@/lib/unduh-berkas";
+import { alamatEvidenRekap, type PeranRekapEviden } from "@/lib/eviden-skp-rekap";
+import { SEBUTAN_PERAN } from "@/lib/rekap-petugas";
 import type { PeranEvidenSkp } from "@/lib/eviden-skp-tipe";
 import { LABEL_JABATAN_SKP, type JabatanSkp, type JenisSkp, type JenisSkpPilihan, type KunciPeriodeSkpJabatan } from "@/lib/skp-jabatan-tipe";
 import {
@@ -195,6 +197,7 @@ export function EvidenSkpMenu({
   onTutup,
   pilihanJenis = false,
   jabatan,
+  rekap,
 }: {
   peran: PeranEvidenSkp;
   id: number;
@@ -205,6 +208,11 @@ export function EvidenSkpMenu({
   pilihanJenis?: boolean;
   /** Eviden SKP jabatan perkara (PP, Juru Sita, Mediator): jenis SKP dan ID pengguna pegawainya. */
   jabatan?: { jenis: JabatanSkp; pegawai: string };
+  /**
+   * PP, Juru Sita, atau Mediator yang belum tertaut ke pegawai: evidennya disusun
+   * dari rekap petugas (lib/eviden-skp-rekap), lewat rute rekap-petugas/eviden.
+   */
+  rekap?: PeranRekapEviden;
 }) {
   const hariIni = waktuPengadilan().tanggal;
   const tahunIni = Number(hariIni.slice(0, 4));
@@ -246,7 +254,9 @@ export function EvidenSkpMenu({
       setGalat("");
       try {
         // Hakim pada Triwulan/Tahunan tetap lewat rute eviden lama; periode bulanan dan SKP Pimpinan lewat rute SKP.
-        const alamatDaftar = jabatan
+        const alamatDaftar = rekap
+          ? alamatEvidenRekap({ aksi: "daftar", peran: rekap, id, tahun, periode, dokumen: "semua" })
+          : jabatan
           ? alamatUnduhSkp({ jenis: jabatan.jenis, pegawai: jabatan.pegawai, tahun, periode, dokumen: "semua", format: "pdf", dasar: "/api/skp/daftar" })
           : periodeBulananSkpSah(periode)
             ? alamatUnduhSkp({ jenis: jenisAktif, id, tahun, periode, dokumen: "semua", format: "pdf", dasar: "/api/skp/daftar" })
@@ -276,7 +286,7 @@ export function EvidenSkpMenu({
     }, 0);
     return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [peran, id, tahun, periode, jenisAktif, pegawaiAktif, ulang]);
+  }, [peran, id, tahun, periode, jenisAktif, pegawaiAktif, rekap, ulang]);
 
   const unduh = useCallback(async (alamat: string) => {
     setSibuk((s) => ({ ...s, [alamat]: true }));
@@ -328,6 +338,9 @@ export function EvidenSkpMenu({
 
   const alamatUnduh = (dokumen: string, format: FormatEvidenSkp) => {
     if (!tanggalSah) return null;
+    if (rekap) {
+      return apiPath(alamatEvidenRekap({ aksi: "unduh", peran: rekap, id, tahun, periode, dokumen, format, tanggal: tanggalSah }));
+    }
     if (jabatan) {
       return apiPath(alamatUnduhSkp({ jenis: jabatan.jenis, pegawai: jabatan.pegawai, tahun, periode, dokumen, format, tanggal: tanggalSah }));
     }
@@ -366,7 +379,9 @@ export function EvidenSkpMenu({
               Unduh eviden SKP
             </h2>
             <p id={idKeterangan} className="mt-0.5 text-xs text-muted-foreground">
-              {jabatan
+              {rekap
+                ? `Rekap perkara yang ditangani ${SEBUTAN_PERAN[rekap]}${namaTampil ? ` ${namaTampil}` : ""} dari data SIPP sebagai bukti dukung SKP, dalam PDF, Excel, atau Word - berkop, dengan tempat tanda tangan yang bersangkutan (kiri) dan Ketua (kanan).`
+                : jabatan
                 ? `Bukti dukung SKP ${LABEL_JABATAN_SKP[jabatan.jenis]}${namaTampil ? ` ${namaTampil}` : ""} dari kegiatan nyata yang tercatat di SIPP, e-Court, dan aplikasi pengadilan, dalam PDF, Excel, atau Word - berkop, dengan tempat tanda tangan pegawai (kiri) dan pejabat penilai (kanan).`
                 : `Bukti dukung SKP${namaTampil ? ` ${namaTampil}` : ""} dari data SIPP, dalam PDF, Excel, atau Word - berkop,${
                     jenisAktif === "pimpinan"

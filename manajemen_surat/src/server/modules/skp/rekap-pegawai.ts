@@ -54,9 +54,19 @@ export type HasilRekapPegawai =
       pegawai: { userId: string; nama: string; nip: string | null };
       alasanHak: string;
     }
-  | { tersedia: false; alasan: string };
+  | {
+      tersedia: false;
+      alasan: string;
+      /**
+       * true = orang ini belum tertaut/terpetakan sebagai pegawai, jadi tombol tetap
+       * ditawarkan dengan eviden dari rekap petugas (lib/eviden-skp-rekap). Tidak
+       * pernah true bila sebabnya hak atau pegawai nonaktif.
+       */
+      cadangan?: true;
+    };
 
-const tidak = (alasan: string): HasilRekapPegawai => ({ tersedia: false, alasan });
+const tidak = (alasan: string, cadangan = false): HasilRekapPegawai =>
+  cadangan ? { tersedia: false, alasan, cadangan: true } : { tersedia: false, alasan };
 
 /** Akun SIPP milik orang di halaman rekap itu (nama akun dipakai mencocokkan Pemetaan). */
 export function akunDariRekap(akun: readonly AkunSippSkp[], peran: PeranRekapEviden, id: number): string[] {
@@ -86,17 +96,17 @@ export async function pegawaiDariRekap(
     const jawaban = await getGatewaySkpAkun({ semua: true });
     if (!jawaban.ok) {
       // Bot belum terjangkau: tanpa tombol, bukan galat di halaman rekap.
-      return tidak("Akun SIPP orang ini belum dapat dibaca dari ALETA Bot; coba lagi beberapa saat lagi.");
+      return tidak("Akun SIPP orang ini belum dapat dibaca dari ALETA Bot; coba lagi beberapa saat lagi.", true);
     }
     akun = jawaban.data.akun ?? [];
   }
   const namaAkun = akunDariRekap(akun, p.peran, p.id).map((n) => n.toLowerCase());
-  if (namaAkun.length === 0) return tidak("Orang ini belum tertaut ke akun SIPP.");
+  if (namaAkun.length === 0) return tidak("Orang ini belum tertaut ke akun SIPP.", true);
 
   const hariIni = waktuPengadilan().tanggal;
   const pemetaan = (await bacaPemetaan(db)).filter((t) => namaAkun.includes(t.usernameSipp.toLowerCase()));
   if (pemetaan.length === 0) {
-    return tidak("Akun SIPP orang ini belum ditautkan ke pegawai di layar Pemetaan SKP.");
+    return tidak("Akun SIPP orang ini belum ditautkan ke pegawai di layar Pemetaan SKP.", true);
   }
   // Tautan yang berlaku hari ini lebih dahulu; bila tidak ada, yang terbaru.
   const urut = [...pemetaan].sort((a, b) => {
@@ -114,7 +124,8 @@ export async function pegawaiDariRekap(
     const jenis = JABATAN_REKAP[p.peran].find((j) => pegawai.jenisTersedia.includes(j));
     if (!jenis) {
       return tidak(
-        `Pegawai ini belum dipetakan sebagai ${LABEL_JABATAN_SKP[JABATAN_REKAP[p.peran][0]]}; petakan jabatannya di layar Pemetaan SKP.`
+        `Pegawai ini belum dipetakan sebagai ${LABEL_JABATAN_SKP[JABATAN_REKAP[p.peran][0]]}; petakan jabatannya di layar Pemetaan SKP.`,
+        true
       );
     }
     const hak = bolehLihatSkp(aktor, hakPegawai(pegawai));
