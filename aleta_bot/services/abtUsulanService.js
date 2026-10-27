@@ -1746,6 +1746,28 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak, posit
     if (u && u.nilai && sebab5227.kodePola) u.kodePola = sebab5227.kodePola;
   }
   /* === AKHIR R2 === */
+  /* === RINCIAN 5227 27 Okt === */
+  // Gugatan = acuan utama, saksi menguatkan, jawab-menjawab minor (deteksi/alasanRincian.js). Hanya
+  // bila pemanggil meminta (opsi.rincianAlasan === true); galat di sini tidak mematahkan usulan lain.
+  if (opsi && opsi.rincianAlasan === true) {
+    try {
+      const rinci = require("./deteksi/alasanRincian");
+      const sisi = opsi.saksiPihak && typeof opsi.saksiPihak === "object" ? opsi.saksiPihak : {};
+      const rincian = rinci.deteksiRincian({
+        gugatan: butirPosita,
+        saksi: [
+          { no: 1, pihak: sisi.saksi1 || "", butir: b1 },
+          { no: 2, pihak: sisi.saksi2 || "", butir: b2 },
+        ],
+        jawab: (Array.isArray(opsi.jawab) ? opsi.jawab : []).slice(0, 6).map((j) => ({ jenis: String((j && j.jenis) || "jawaban").slice(0, 20), butir: butirKeterangan(String((j && j.teks) || "").slice(0, 60000)) })),
+        pihak,
+      });
+      rinci.terapkan(hasil, rincian);
+    } catch (galat) {
+      hasil.rincianAlasanGalat = String((galat && galat.message) || galat);
+    }
+  }
+  /* === AKHIR RINCIAN 5227 === */
   return hasil;
 }
 

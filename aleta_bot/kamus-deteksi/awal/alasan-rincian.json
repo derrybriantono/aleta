@@ -1,0 +1,1577 @@
+{
+ "kelompok": "alasan-rincian",
+ "versi": 1,
+ "catatan": "Rincian alasan cerai untuk 5227: pasangan sebab -> akibat dari gugatan. Mesin: services/deteksi/alasanRincian.js. Bunyi memakai {lawan}/{pelaku}/{lain}.",
+ "pola": [
+  {
+   "kode": "rincian-nafkah-kurang",
+   "label": "nafkah (kurang)",
+   "kunci": "nafkah",
+   "regex": "\\b(?:kurang|jarang)\\s+(?:dalam\\s+)?(?:memberi(?:kan)?|menafkahi|menyediakan)\\s+(?:\\S+\\s+){0,2}?(?:nafkah|uang\\s+(?:belanja|bulanan)|biaya\\s+hidup)(?!\\s+batin)|\\bnafkah\\s+(?:lahir\\s+)?(?:yang\\s+(?:di)?beri(?:kan)?\\s+)?(?:tidak|kurang)\\s+(?:mencukupi|cukup|memadai)|\\b(?:tidak|kurang)\\s+(?:dapat\\s+|mampu\\s+|bisa\\s+)?mencukupi\\s+(?:\\S+\\s+){0,2}?(?:nafkah|kebutuhan)",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat kurang memberikan nafkah kepada Penggugat",
+    "nafkah yang diberikan Tergugat tidak mencukupi kebutuhan",
+    "Tergugat jarang memberi nafkah"
+   ],
+   "contohSalah": [
+    "Tergugat tidak memberikan nafkah batin",
+    "Penggugat memberi nafkah kepada anak"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 1,
+   "huruf": "F",
+   "bunyi": [
+    "kurang memberikan nafkah kepada {lawan}",
+    "tidak mencukupi nafkah {lawan}",
+    "jarang memberikan nafkah kepada {lawan}"
+   ]
+  },
+  {
+   "kode": "rincian-nafkah-tidak",
+   "label": "nafkah (tidak)",
+   "kunci": "nafkah",
+   "regex": "\\b(?:tidak|tak|belum)\\s+(?:pernah\\s+|lagi\\s+|dapat\\s+|mau\\s+)*(?:memberi(?:kan)?|menafkahi|membayar(?:kan)?)\\s+(?:\\S+\\s+){0,2}?(?:nafkah|uang\\s+(?:belanja|bulanan)|biaya\\s+hidup)(?!\\s+batin)|\\b(?:menelantarkan|melalaikan\\s+kewajiban)\\s+(?:\\S+\\s+){0,3}?(?:nafkah|keluarga|penggugat|pemohon|istri|isteri)|\\b(?:tidak|tak)\\s+(?:pernah\\s+)?menafkahi\\b|\\btanpa\\s+nafkah\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat tidak pernah memberikan nafkah kepada Penggugat",
+    "Tergugat tidak menafkahi Penggugat",
+    "Tergugat menelantarkan Penggugat"
+   ],
+   "contohSalah": [
+    "Tergugat tidak memberi tahu Penggugat",
+    "Tergugat tidak memberikan nafkah batin"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 2,
+   "huruf": "F",
+   "bunyi": [
+    "tidak memberikan nafkah kepada {lawan}",
+    "melalaikan kewajiban memberi nafkah kepada {lawan}",
+    "menelantarkan {lawan} dengan tidak memberikan nafkah"
+   ]
+  },
+  {
+   "kode": "rincian-nafkah-batin-a",
+   "label": "nafkah batin (a)",
+   "kunci": "nafkah-batin",
+   "regex": "\\b(?:tidak|tak|belum|jarang|enggan|menolak|sulit|kurang)\\b[^.;,]{0,40}?\\b(?:nafkah\\s+batin|berhubungan\\s+(?:badan|intim|suami[\\s-]*(?:i|is)?ste?ri)|hubungan\\s+(?:badan|intim|suami[\\s-]*(?:i|is)?ste?ri)|menggauli|melayani\\s+(?:\\S+\\s+){0,2}?(?:suami|istri|isteri|pemohon|penggugat|kebutuhan\\s+biologis))|\\bnafkah\\s+batin\\b[^.;]{0,30}?\\b(?:tidak|jarang|terputus|tidak\\s+terpenuhi)\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat tidak memberikan nafkah batin kepada Penggugat",
+    "Termohon menolak berhubungan suami istri",
+    "Tergugat jarang menggauli Penggugat"
+   ],
+   "contohSalah": [
+    "Tergugat tidak memberikan nafkah lahir",
+    "Penggugat tidak melayani pelanggan"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 1,
+   "huruf": "F",
+   "bunyi": [
+    "tidak memenuhi kewajiban nafkah batin kepada {lawan}",
+    "tidak lagi melayani {lawan} sebagaimana layaknya suami istri",
+    "menolak berhubungan suami istri dengan {lawan}"
+   ]
+  },
+  {
+   "kode": "rincian-malas-kerja-a",
+   "label": "malas bekerja (a)",
+   "kunci": "malas-kerja",
+   "regex": "\\bmalas[\\s-]+(?:dalam\\s+)?(?:bekerja|kerja|mencari\\s+(?:nafkah|kerja|pekerjaan|uang)|berusaha)\\b|\\b(?:tidak|enggan|tak)\\s+(?:mau|ingin|bersedia|pernah\\s+mau)\\s+(?:untuk\\s+)?(?:bekerja(?!\\s+sama)|mencari\\s+(?:nafkah|kerja|pekerjaan))\\b|\\bmenganggur\\b|\\bpengangguran\\b|\\bpemalas\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat malas bekerja",
+    "Tergugat malas dalam bekerja",
+    "Tergugat tidak mau bekerja",
+    "Tergugat menganggur"
+   ],
+   "contohSalah": [
+    "Tergugat bekerja sebagai petani",
+    "Penggugat tidak mau bekerja sama"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 1,
+   "huruf": "F",
+   "bunyi": [
+    "malas bekerja",
+    "tidak mau bekerja untuk menafkahi keluarga",
+    "malas mencari nafkah"
+   ]
+  },
+  {
+   "kode": "rincian-tanpa-kerja-a",
+   "label": "tidak punya pekerjaan tetap (a)",
+   "kunci": "tanpa-kerja",
+   "regex": "\\b(?:tidak|belum|tak)\\s+(?:memiliki|mempunyai|punya|ada)\\s+(?:\\S+\\s+){0,2}?(?:pekerjaan|penghasilan|mata\\s+pencaharian)(?:\\s+(?:tetap|yang\\s+tetap|yang\\s+jelas|yang\\s+layak))?|\\b(?:tidak|tak)\\s+bekerja\\b|\\bpenghasilan\\s+(?:yang\\s+)?(?:tidak\\s+(?:tetap|menentu)|kecil|pas[\\s-]*pasan)",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat tidak memiliki pekerjaan tetap",
+    "Tergugat tidak bekerja",
+    "Tergugat tidak punya penghasilan"
+   ],
+   "contohSalah": [
+    "Tergugat memiliki pekerjaan sebagai sopir",
+    "Tergugat bekerja di kebun"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 1,
+   "huruf": "F",
+   "bunyi": [
+    "tidak memiliki pekerjaan tetap",
+    "tidak memiliki penghasilan yang jelas dan tetap"
+   ]
+  },
+  {
+   "kode": "rincian-judi-online",
+   "label": "judi (online)",
+   "kunci": "judi",
+   "regex": "\\b(?:judi|judol|slot|togel|poker|sabung\\s+ayam|taruhan|betting)\\s*(?:secara\\s+|di\\s+)?(?:online|daring|digital)\\b|\\bjudi\\s+online\\b|\\bjudol\\b|\\bgame\\s+slot\\b|\\bslot\\s+gacor\\b|\\bmain\\s+slot\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat sering bermain judi online",
+    "Tergugat kecanduan judol",
+    "Tergugat main slot online"
+   ],
+   "contohSalah": [
+    "Tergugat bermain game online bersama anak",
+    "Penggugat membenci permainan"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 1,
+   "huruf": "A",
+   "bunyi": [
+    "gemar bermain judi online",
+    "kecanduan judi online hingga menghabiskan uang keluarga",
+    "sering bermain judi online"
+   ]
+  },
+  {
+   "kode": "rincian-judi-umum",
+   "label": "judi (umum)",
+   "kunci": "judi",
+   "regex": "\\b(?:judi|berjudi|penjudi|perjudian|togel|sabung\\s+ayam|domino|taruhan|bermain\\s+slot)\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat sering berjudi",
+    "Tergugat bermain judi",
+    "Tergugat main togel"
+   ],
+   "contohSalah": [
+    "Tergugat bermain bola",
+    "Penggugat melarang permainan"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 2,
+   "huruf": "A",
+   "bunyi": [
+    "gemar bermain judi",
+    "sering bermain judi",
+    "menjadi penjudi"
+   ]
+  },
+  {
+   "kode": "rincian-utang-pinjol",
+   "label": "utang atau pinjaman online (pinjol)",
+   "kunci": "utang",
+   "regex": "\\b(?:pinjol|pinjaman\\s+(?:online|daring)|pinjam(?:an)?\\s+online|aplikasi\\s+pinjaman|rentenir|bank\\s+(?:keliling|emok)|koperasi\\s+(?:keliling|harian))\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat terjerat pinjol",
+    "Tergugat meminjam di pinjaman online",
+    "Tergugat berutang ke rentenir"
+   ],
+   "contohSalah": [
+    "Tergugat bekerja di kantor",
+    "Penggugat tidak mengenal siapa pun"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 1,
+   "huruf": "",
+   "bunyi": [
+    "terjerat pinjaman online",
+    "berutang kepada pinjaman online tanpa sepengetahuan {lawan}",
+    "memiliki utang yang membebani keluarga"
+   ]
+  },
+  {
+   "kode": "rincian-utang-umum",
+   "label": "utang atau pinjaman online (umum)",
+   "kunci": "utang",
+   "regex": "\\b(?:ber(?:h)?utang|utang[\\s-]*piutang|banyak\\s+utang|memiliki\\s+utang|mempunyai\\s+utang|meminjam\\s+uang|pinjam\\s+uang|terlilit\\s+utang|hutang)\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat banyak berutang",
+    "Tergugat berhutang kepada orang lain",
+    "Tergugat terlilit utang"
+   ],
+   "contohSalah": [
+    "Tergugat membayar lunas",
+    "Penggugat bekerja di kebun"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 2,
+   "huruf": "",
+   "bunyi": [
+    "memiliki utang yang membebani keluarga",
+    "berutang tanpa sepengetahuan {lawan}",
+    "terlilit utang"
+   ]
+  },
+  {
+   "kode": "rincian-mabuk-a",
+   "label": "mabuk (a)",
+   "kunci": "mabuk",
+   "regex": "\\b(?:mabuk(?:[\\s-]*mabuk(?:an)?)?|pemabuk|pemabok|minuman\\s+keras|miras|alkohol|ballo|tuak|cap\\s+tikus|konsumsi\\s+minuman|mengonsumsi\\s+minuman|mengkonsumsi\\s+minuman|meminum\\s+minuman|minum[\\s-]*minuman)\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat sering mabuk-mabukan",
+    "Tergugat mengonsumsi minuman keras",
+    "Tergugat suka minum miras"
+   ],
+   "contohSalah": [
+    "Tergugat tidak suka kopi",
+    "Penggugat membeli air mineral"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 1,
+   "huruf": "A",
+   "bunyi": [
+    "sering mabuk-mabukan",
+    "suka mengonsumsi minuman keras",
+    "menjadi pemabuk"
+   ]
+  },
+  {
+   "kode": "rincian-narkoba-a",
+   "label": "narkoba (a)",
+   "kunci": "narkoba",
+   "regex": "\\b(?:sabu(?:[\\s-]*sabu)?|shabu|narkoba|narkotika|narkotik|ganja|putau|inex|ekstasi|obat[\\s-]*obatan\\s+terlarang|obat\\s+terlarang|zat\\s+adiktif|pemadat|madat|candu|pil\\s+koplo|tramadol)\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat mengonsumsi sabu-sabu",
+    "Tergugat memakai narkoba",
+    "Tergugat pemadat"
+   ],
+   "contohSalah": [
+    "Tergugat meminum obat batuk",
+    "Penggugat menjual ikan"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 1,
+   "huruf": "A",
+   "bunyi": [
+    "mengonsumsi obat-obatan terlarang",
+    "menjadi pemakai narkoba",
+    "kecanduan narkotika sehingga mengabaikan keluarga"
+   ]
+  },
+  {
+   "kode": "rincian-kdrt-fisik-aktif",
+   "label": "kekerasan fisik (aktif)",
+   "kunci": "kdrt-fisik",
+   "regex": "\\b(?:memukul(?:i)?|pemukulan|menampar|menendang|menganiaya|penganiayaan|mencekik|menjambak|membanting|menyiksa|menyundut|menusuk|membacok|kdrt|kekerasan\\s+(?:dalam\\s+rumah\\s+tangga|fisik)|main\\s+tangan|ringan\\s+tangan|melakukan\\s+kekerasan|menyakiti\\s+(?:secara\\s+)?fisik)\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat memukul Penggugat",
+    "Tergugat melakukan KDRT",
+    "Tergugat menendang dan menampar Penggugat",
+    "Tergugat main tangan"
+   ],
+   "contohSalah": [
+    "Tergugat bermain bola",
+    "Tergugat berbelanja ke pasar"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 1,
+   "huruf": "D",
+   "bunyi": [
+    "melakukan kekerasan fisik terhadap {lawan}",
+    "melakukan Kekerasan Dalam Rumah Tangga (KDRT) terhadap {lawan}",
+    "memukul {lawan}"
+   ]
+  },
+  {
+   "kode": "rincian-kdrt-fisik-pasif",
+   "label": "kekerasan fisik (pasif)",
+   "kunci": "kdrt-fisik",
+   "regex": "\\b(?:di(?:pukul|tampar|tendang|aniaya|cekik|jambak|bacok|siksa|banting|tusuk)|(?:mengalami|menerima|menjadi\\s+korban)\\s+(?:kdrt|kekerasan|pemukulan|penganiayaan))\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Penggugat dipukul oleh Tergugat",
+    "Penggugat sering ditendang",
+    "Penggugat mengalami KDRT"
+   ],
+   "contohSalah": [
+    "Penggugat dipanggil oleh Tergugat",
+    "Penggugat dibawa ke rumah sakit"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "lawan-pasif",
+   "urut": 2,
+   "huruf": "D",
+   "bunyi": [
+    "melakukan kekerasan fisik terhadap {lawan}",
+    "melakukan Kekerasan Dalam Rumah Tangga (KDRT) terhadap {lawan}"
+   ]
+  },
+  {
+   "kode": "rincian-kasar-verbal-a",
+   "label": "kata-kata kasar (a)",
+   "kunci": "kasar-verbal",
+   "regex": "\\b(?:berkata[\\s-]*(?:kata\\s+)?kasar|kata[\\s-]*kata\\s+kasar|mengeluarkan\\s+kata[\\s-]*kata\\s+(?:kasar|kotor)|memaki(?:[\\s-]*maki)?|membentak|mengumpat|berteriak[\\s-]*teriak|melontarkan\\s+(?:kata|ucapan)\\s+(?:kasar|kotor)|kekerasan\\s+(?:verbal|psikis|psikologis)|menghardik|mencaci)\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat sering berkata kasar",
+    "Tergugat memaki Penggugat",
+    "Tergugat membentak Penggugat"
+   ],
+   "contohSalah": [
+    "Tergugat berkata sopan",
+    "Tergugat berkata jujur"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 1,
+   "huruf": "D",
+   "bunyi": [
+    "berkata kasar kepada {lawan}",
+    "memaki dan membentak {lawan}",
+    "melakukan kekerasan verbal terhadap {lawan}"
+   ]
+  },
+  {
+   "kode": "rincian-ancaman-a",
+   "label": "ancaman (a)",
+   "kunci": "ancaman",
+   "regex": "\\bmengancam\\b|\\bmengacungkan\\s+(?:parang|pisau|golok|senjata|badik)|\\bmenodongkan\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat mengancam akan membunuh Penggugat",
+    "Tergugat mengacungkan parang",
+    "Tergugat mengancam Penggugat"
+   ],
+   "contohSalah": [
+    "Tergugat memberi kabar",
+    "Penggugat membawa parang ke kebun"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 1,
+   "huruf": "D",
+   "bunyi": [
+    "mengancam {lawan}",
+    "mengancam akan menyakiti {lawan}",
+    "mengancam {lawan} dengan senjata tajam"
+   ]
+  },
+  {
+   "kode": "rincian-temperamental-a",
+   "label": "temperamental (a)",
+   "kunci": "temperamental",
+   "regex": "\\b(?:temperamental|tempramental|tempramen|temperamen|emosian|emosional|pemarah|pemberang|mudah\\s+(?:marah|emosi|tersulut|tersinggung)|cepat\\s+(?:marah|emosi)|gampang\\s+(?:marah|emosi)|sering\\s+(?:marah|emosi)|suka\\s+marah)\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat bersikap temperamental",
+    "Tergugat mudah marah",
+    "Tergugat pemarah"
+   ],
+   "contohSalah": [
+    "Tergugat tenang",
+    "Penggugat tidak tahu"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 1,
+   "huruf": "F",
+   "bunyi": [
+    "bersikap temperamental",
+    "mudah marah tanpa alasan yang jelas",
+    "memiliki sifat pemarah"
+   ]
+  },
+  {
+   "kode": "rincian-selingkuh-a",
+   "label": "orang ketiga (a)",
+   "kunci": "selingkuh",
+   "regex": "\\b(?:selingkuh(?:an)?|berselingkuh|perselingkuhan|wanita\\s+idaman\\s+lain|pria\\s+idaman\\s+lain|\\bwil\\b|\\bpil\\b|pihak\\s+ketiga|orang\\s+ketiga|(?:hubungan|berhubungan|menjalin\\s+hubungan|dekat|berpacaran|pacaran|kencan)\\s+(?:asmara\\s+|khusus\\s+|gelap\\s+|spesial\\s+)?(?:dengan|bersama)\\s+(?:seorang\\s+)?(?:wanita|perempuan|laki[\\s-]*laki|lelaki|pria|cewek|cowok|janda|duda)\\s+(?:lain|yang\\s+bukan)|(?:wanita|perempuan|laki[\\s-]*laki|lelaki|pria)\\s+lain)\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat menjalin hubungan dengan perempuan lain",
+    "Tergugat berselingkuh",
+    "Tergugat memiliki wanita idaman lain",
+    "Termohon dekat dengan pria lain"
+   ],
+   "contohSalah": [
+    "Tergugat bertemu seorang teman",
+    "Penggugat menjalin kerja sama"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 1,
+   "huruf": "F",
+   "bunyi": [
+    "menjalin hubungan dengan {lain}",
+    "berselingkuh dengan {lain}",
+    "menjalin hubungan dengan pihak ketiga"
+   ]
+  },
+  {
+   "kode": "rincian-zina-a",
+   "label": "zina (a)",
+   "kunci": "zina",
+   "regex": "\\b(?:berzina|perzinaan|zina|kumpul\\s+kebo|tidur\\s+(?:bersama|dengan)\\s+(?:wanita|perempuan|laki[\\s-]*laki|pria))\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat berzina",
+    "Tergugat melakukan perzinaan"
+   ],
+   "contohSalah": [
+    "Tergugat tidur lelap",
+    "Penggugat berjalan"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 1,
+   "huruf": "A",
+   "bunyi": [
+    "melakukan perzinaan dengan {lain}",
+    "berzina dengan {lain}"
+   ]
+  },
+  {
+   "kode": "rincian-menikah-lagi-tanpa-izin",
+   "label": "menikah lagi (tanpa-izin)",
+   "kunci": "menikah-lagi",
+   "regex": "\\b(?:menikah|kawin|nikah|beristri|berpoligami|poligami)\\b[^.;]{0,60}?\\btanpa\\s+(?:se|sepengetahuan|izin|ijin|persetujuan|sepengetahuan\\s+dan\\s+izin)|\\btanpa\\s+(?:izin|ijin|persetujuan|seizin|sepengetahuan)\\b[^.;]{0,50}?\\b(?:menikah|kawin|nikah|berpoligami)|\\bpoligami\\s+tanpa\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat menikah lagi tanpa izin Penggugat",
+    "Tergugat berpoligami tanpa persetujuan"
+   ],
+   "contohSalah": [
+    "Tergugat menikah dengan Penggugat secara sah",
+    "Tergugat pergi tanpa izin"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 1,
+   "huruf": "F",
+   "bunyi": [
+    "menikah lagi tanpa izin {lawan}",
+    "berpoligami tanpa persetujuan {lawan}",
+    "telah menikah lagi tanpa sepengetahuan {lawan}"
+   ]
+  },
+  {
+   "kode": "rincian-menikah-lagi-umum",
+   "label": "menikah lagi (umum)",
+   "kunci": "menikah-lagi",
+   "regex": "\\b(?:menikah|kawin|nikah|beristri|bersuami)\\s+(?:lagi|siri|sirri|di\\s+bawah\\s+tangan|dengan\\s+(?:wanita|perempuan|laki[\\s-]*laki|pria|lelaki)\\s+lain)|\\bmenikah\\s+dengan\\s+(?:wanita|perempuan|laki[\\s-]*laki|pria|lelaki)\\s+(?:lain|bernama)\\b|\\bberpoligami\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat telah menikah lagi",
+    "Tergugat menikah siri",
+    "Tergugat berpoligami"
+   ],
+   "contohSalah": [
+    "Tergugat dan Penggugat menikah pada tahun 2010",
+    "Penggugat belum menikah"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 2,
+   "huruf": "F",
+   "bunyi": [
+    "telah menikah lagi dengan {lain}",
+    "menikah siri dengan {lain}"
+   ]
+  },
+  {
+   "kode": "rincian-cemburu-a",
+   "label": "cemburu (a)",
+   "kunci": "cemburu",
+   "regex": "\\b(?:cemburu(?:an)?|kecemburuan|mencurigai|curiga(?:an)?|posesif)\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat sangat cemburu",
+    "Tergugat sering mencurigai Penggugat",
+    "Tergugat memiliki kecemburuan yang berlebihan"
+   ],
+   "contohSalah": [
+    "Tergugat bergembira",
+    "Penggugat tidak diketahui"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 1,
+   "huruf": "F",
+   "bunyi": [
+    "bersikap cemburu berlebihan",
+    "memiliki kecemburuan yang berlebihan",
+    "sering mencurigai {lawan} tanpa alasan yang jelas"
+   ]
+  },
+  {
+   "kode": "rincian-campur-keluarga-a",
+   "label": "campur tangan keluarga (a)",
+   "kunci": "campur-keluarga",
+   "regex": "\\b(?:ikut|turut)[\\s-]*campur\\b|\\bmencampuri\\b|\\bcampur\\s+tangan\\b|\\bmengintervensi\\b|\\bintervensi\\b|\\bmengatur\\s+(?:\\S+\\s+){0,2}?(?:rumah\\s+tangga|kehidupan)\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "orang tua Tergugat ikut campur dalam rumah tangga",
+    "mertua mencampuri urusan rumah tangga",
+    "keluarga Tergugat sering campur tangan"
+   ],
+   "contohSalah": [
+    "Tergugat tidak peduli",
+    "Penggugat mengajak keluarga"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "keluarga",
+   "urut": 1,
+   "huruf": "F",
+   "bunyi": [
+    "ikut campur dalam urusan rumah tangga {lawan} dan {pelaku}",
+    "mencampuri urusan rumah tangga {lawan} dan {pelaku}",
+    "turut campur dalam kehidupan rumah tangga {lawan} dan {pelaku}"
+   ]
+  },
+  {
+   "kode": "rincian-merendahkan-a",
+   "label": "merendahkan atau tidak menghargai (a)",
+   "kunci": "merendahkan",
+   "regex": "\\b(?:merendahkan|meremehkan|menghina|mempermalukan|mencemooh|menjelek[\\s-]*jelek(?:k)?an|tidak\\s+(?:pernah\\s+|lagi\\s+)?(?:menghargai|menghormati|memuliakan)|kurang\\s+(?:menghargai|menghormati))\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat tidak menghargai Penggugat",
+    "Tergugat merendahkan Penggugat",
+    "keluarga Tergugat menghina Penggugat"
+   ],
+   "contohSalah": [
+    "Tergugat menghargai Penggugat",
+    "Tergugat membantu keluarga"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku/keluarga",
+   "urut": 1,
+   "huruf": "F",
+   "bunyi": [
+    "tidak menghargai {lawan}",
+    "merendahkan {lawan}",
+    "menghina dan mempermalukan {lawan}"
+   ]
+  },
+  {
+   "kode": "rincian-tidak-taat-a",
+   "label": "tidak taat atau tidak mendengar nasihat (a)",
+   "kunci": "tidak-taat",
+   "regex": "\\b(?:tidak|tak|kurang|enggan)\\s+(?:pernah\\s+|mau\\s+|lagi\\s+)?(?:taat|patuh|menurut|mendengar(?:kan)?\\s+(?:\\S+\\s+){0,2}?(?:nasihat|nasehat|perkataan)|menghiraukan\\s+(?:\\S+\\s+){0,2}?(?:nasihat|nasehat))|\\bmembangkang\\b|\\bmengabaikan\\s+(?:\\S+\\s+){0,2}?(?:nasihat|nasehat)",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Termohon tidak taat kepada Pemohon",
+    "Termohon tidak mau mendengar nasihat Pemohon",
+    "Termohon membangkang"
+   ],
+   "contohSalah": [
+    "Termohon taat beribadah",
+    "Termohon mendengar kabar"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 1,
+   "huruf": "F",
+   "bunyi": [
+    "tidak taat kepada {lawan} sebagai kepala keluarga",
+    "tidak mau mendengar nasihat {lawan}",
+    "membangkang terhadap {lawan}"
+   ],
+   "untuk": "CT"
+  },
+  {
+   "kode": "rincian-kewajiban-istri-a",
+   "label": "tidak menjalankan kewajiban istri (a)",
+   "kunci": "kewajiban-istri",
+   "regex": "\\b(?:tidak|tak|enggan|malas)\\s+(?:mau\\s+|pernah\\s+|lagi\\s+)?(?:melayani|mengurus|memasak|mengurusi|memperhatikan|merawat)\\s+(?:\\S+\\s+){0,2}?(?:suami|pemohon|rumah|anak|kebutuhan)|\\bmeninggalkan\\s+kewajiban\\s+(?:sebagai\\s+)?(?:istri|isteri)|\\bnusyuz\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Termohon tidak mau melayani Pemohon",
+    "Termohon tidak mengurus rumah",
+    "Termohon nusyuz"
+   ],
+   "contohSalah": [
+    "Termohon memasak makan siang",
+    "Termohon sedang mengurus izin"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 1,
+   "huruf": "F",
+   "bunyi": [
+    "tidak menjalankan kewajibannya sebagai istri",
+    "tidak mengurus rumah tangga dan melayani {lawan}"
+   ],
+   "untuk": "CT"
+  },
+  {
+   "kode": "rincian-pergi-tanpa-kabar-kabar",
+   "label": "meninggalkan tanpa kabar (kabar)",
+   "kunci": "pergi-tanpa-kabar",
+   "regex": "\\b(?:tidak|tanpa|tak)\\s+(?:ada\\s+|pernah\\s+)?(?:memberi(?:kan)?\\s+)?(?:kabar|berita|nafkah\\s+dan\\s+kabar)\\b[^.;]{0,50}?\\b(?:pergi|meninggalkan|pulang|hilang|menghilang|keberadaan)|\\b(?:menghilang|hilang\\s+kabar|tidak\\s+diketahui\\s+(?:lagi\\s+)?keberadaannya|minggat|kabur|lari\\s+dari\\s+rumah)\\b|\\bmeninggalkan\\b[^.;]{0,80}?\\btanpa\\s+(?:kabar|berita)",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat pergi meninggalkan Penggugat tanpa kabar",
+    "Tergugat menghilang",
+    "Tergugat tidak diketahui keberadaannya"
+   ],
+   "contohSalah": [
+    "Tergugat memberi kabar baik",
+    "Penggugat kehilangan dompet"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 1,
+   "huruf": "B",
+   "bunyi": [
+    "meninggalkan {lawan} tanpa kabar berita dan tidak diketahui keberadaannya",
+    "pergi meninggalkan tempat kediaman bersama tanpa memberi kabar",
+    "menghilang dan tidak pernah memberi kabar kepada {lawan}"
+   ]
+  },
+  {
+   "kode": "rincian-pergi-a",
+   "label": "meninggalkan tempat kediaman (a)",
+   "kunci": "pergi",
+   "regex": "\\b(?:pergi\\s+)?meninggalkan\\s+(?:\\S+\\s+){0,2}?(?:rumah|kediaman|tempat\\s+tinggal|penggugat|pemohon|istri|isteri|suami|anak)\\b|\\b(?:pergi|keluar)\\s+dari\\s+rumah(?:\\s+bersama)?\\b|\\bpulang\\s+ke\\s+(?:rumah\\s+)?(?:orang\\s*tua(?:nya)?|ibunya|ayahnya|kampung)|\\bpergi\\s+tanpa\\s+(?:izin|pamit|seizin)|\\bmeninggalkan\\s+(?:\\S+\\s+){0,3}?tanpa\\s+(?:izin|pamit)|\\bpisah\\s+rumah\\s+karena\\s+(?:di)?usir|\\bmengusir\\b|\\bmenyuruh\\s+(?:pemohon|penggugat)\\s+(?:pergi|keluar|pulang)",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat pergi meninggalkan rumah",
+    "Tergugat meninggalkan Penggugat",
+    "Tergugat mengusir Penggugat",
+    "Tergugat pergi tanpa pamit"
+   ],
+   "contohSalah": [
+    "Tergugat pulang ke rumah bersama Penggugat",
+    "Penggugat memasuki rumah"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 1,
+   "huruf": "B",
+   "bunyi": [
+    "meninggalkan tempat kediaman bersama tanpa izin {lawan}",
+    "pergi meninggalkan {lawan}",
+    "mengusir {lawan} dari tempat kediaman bersama"
+   ],
+   "hanyaAkibat": true
+  },
+  {
+   "kode": "rincian-keluar-malam-a",
+   "label": "sering keluar malam (a)",
+   "kunci": "keluar-malam",
+   "regex": "\\b(?:keluar\\s+malam|pulang\\s+(?:larut|pagi|subuh|dini\\s+hari)|(?:sering|jarang|tidak)\\s+pulang|keluyuran|kelayapan|nongkrong|begadang|karaoke|tidak\\s+pulang[\\s-]*pulang|jarang\\s+berada\\s+di\\s+rumah|pulang\\s+larut\\s+malam)\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat sering pulang larut malam",
+    "Tergugat jarang pulang",
+    "Tergugat sering keluyuran"
+   ],
+   "contohSalah": [
+    "Tergugat pulang kerja tepat waktu",
+    "Penggugat bertemu tetangga"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 1,
+   "huruf": "",
+   "bunyi": [
+    "sering keluar malam dan pulang larut",
+    "jarang pulang ke rumah",
+    "sering keluyuran tanpa memberi tahu {lawan}"
+   ]
+  },
+  {
+   "kode": "rincian-kerja-luar-a",
+   "label": "bekerja di luar daerah (a)",
+   "kunci": "kerja-luar",
+   "regex": "\\b(?:merantau|bekerja\\s+di\\s+(?:luar\\s+(?:daerah|kota|negeri|pulau)|perantauan|kapal|tambang)|berlayar|ldr|long\\s+distance|tki|pekerja\\s+migran|bekerja\\s+di\\s+(?:malaysia|arab|jawa|kalimantan|papua|morowali|palu))\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat merantau ke Kalimantan",
+    "Tergugat bekerja di luar daerah",
+    "Tergugat bekerja di Malaysia"
+   ],
+   "contohSalah": [
+    "Tergugat bekerja di kebun",
+    "Penggugat tinggal di desa"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 1,
+   "huruf": "",
+   "bunyi": [
+    "bekerja di perantauan dan jarang pulang menemui {lawan}",
+    "merantau sehingga jarang bertemu {lawan}"
+   ]
+  },
+  {
+   "kode": "rincian-beda-prinsip-a",
+   "label": "perbedaan prinsip (a)",
+   "kunci": "beda-prinsip",
+   "regex": "\\b(?:perbedaan|beda|berbeda)\\s+(?:\\S+\\s+){0,1}?(?:pendapat|prinsip|pandangan|visi|paham|keyakinan|karakter|sifat)\\b|\\b(?:tidak|ketidak)\\s*(?:ada\\s+)?(?:cocok|kecocokan|sejalan|sepaham|sepemahaman)\\b|\\bselisih\\s+paham\\b|\\bsalah\\s+paham\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "terdapat perbedaan prinsip antara Penggugat dan Tergugat",
+    "Penggugat dan Tergugat tidak cocok",
+    "terjadi selisih paham"
+   ],
+   "contohSalah": [
+    "Penggugat dan Tergugat sepakat",
+    "Tergugat mengajukan pendapat"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "bersama",
+   "urut": 1,
+   "huruf": "F",
+   "bunyi": [
+    "terdapat perbedaan prinsip antara {lawan} dan {pelaku}",
+    "antara {lawan} dan {pelaku} tidak ada kecocokan",
+    "{lawan} dan {pelaku} sering berselisih paham"
+   ]
+  },
+  {
+   "kode": "rincian-murtad-a",
+   "label": "berpindah agama (a)",
+   "kunci": "murtad",
+   "regex": "\\b(?:murtad|pindah\\s+agama|berpindah\\s+agama|beralih\\s+agama|keluar\\s+dari\\s+(?:agama\\s+)?islam|memeluk\\s+agama\\s+(?:kristen|katolik|hindu|budha|buddha)|menganut\\s+agama\\s+lain)\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat murtad",
+    "Tergugat pindah agama",
+    "Tergugat berpindah agama"
+   ],
+   "contohSalah": [
+    "Tergugat beragama Islam",
+    "Penggugat beribadah"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 1,
+   "huruf": "H",
+   "bunyi": [
+    "berpindah agama (murtad)",
+    "keluar dari agama Islam"
+   ]
+  },
+  {
+   "kode": "rincian-penjara-a",
+   "label": "dihukum penjara (a)",
+   "kunci": "penjara",
+   "regex": "\\b(?:di(?:pen)?jara|di(?:ja)?tahan|ditahan|dihukum|divonis|dijatuhi\\s+(?:pidana|hukuman)|menjalani\\s+(?:pidana|hukuman|masa\\s+tahanan)|masuk\\s+(?:penjara|bui)|mendekam|lapas|lembaga\\s+pemasyarakatan|rutan|pidana\\s+penjara|hukuman\\s+penjara)\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat dipenjara",
+    "Tergugat dihukum penjara",
+    "Tergugat menjalani hukuman di Lapas",
+    "Tergugat divonis 5 tahun"
+   ],
+   "contohSalah": [
+    "Tergugat berjalan ke pasar",
+    "Penggugat menjenguk anak"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 1,
+   "huruf": "C",
+   "bunyi": [
+    "dijatuhi pidana penjara",
+    "menjalani hukuman penjara sehingga tidak dapat menjalankan kewajibannya",
+    "ditahan di lembaga pemasyarakatan"
+   ]
+  },
+  {
+   "kode": "rincian-penyakit-a",
+   "label": "cacat atau penyakit (a)",
+   "kunci": "penyakit",
+   "regex": "\\b(?:cacat|penyakit|sakit\\s+(?:parah|keras|menahun|jiwa|kronis)|gangguan\\s+jiwa|odgj|stroke|lumpuh|impoten|impotensi|mandul|kemandulan|tidak\\s+(?:dapat|bisa|mampu)\\s+(?:melaksanakan|menjalankan)\\s+kewajiban|menopause|gila|stres\\s+berat)\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat menderita penyakit stroke",
+    "Tergugat impoten",
+    "Tergugat mengalami gangguan jiwa",
+    "Termohon sudah menopause"
+   ],
+   "contohSalah": [
+    "Tergugat sehat",
+    "Penggugat tahu hal itu"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 1,
+   "huruf": "E",
+   "bunyi": [
+    "menderita penyakit sehingga tidak dapat menjalankan kewajibannya sebagai suami atau istri",
+    "mengalami cacat badan yang menghalangi kewajibannya",
+    "menderita gangguan jiwa"
+   ]
+  },
+  {
+   "kode": "rincian-boros-a",
+   "label": "boros atau tidak mengelola keuangan (a)",
+   "kunci": "boros",
+   "regex": "\\b(?:boros|pemboros|foya[\\s-]*foya|menghamburkan|menghambur[\\s-]*hamburkan|menghabiskan\\s+(?:uang|gaji|penghasilan|harta)|tidak\\s+(?:bisa|pandai|mampu)\\s+mengelola\\s+(?:uang|keuangan)|keuangan\\s+(?:tidak\\s+)?(?:terbuka|transparan)|tidak\\s+terbuka\\s+(?:soal|mengenai|tentang)\\s+(?:uang|keuangan|penghasilan|gaji)|gaji\\s+(?:tidak\\s+)?(?:diserahkan|diberikan))\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat boros",
+    "Tergugat menghabiskan uang untuk kesenangan",
+    "Tergugat tidak terbuka soal keuangan"
+   ],
+   "contohSalah": [
+    "Tergugat berhemat",
+    "Penggugat membeli baju"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 1,
+   "huruf": "",
+   "bunyi": [
+    "boros dan tidak mengelola keuangan keluarga dengan baik",
+    "menghabiskan penghasilan untuk kepentingan pribadi",
+    "tidak terbuka mengenai keuangan keluarga kepada {lawan}"
+   ]
+  },
+  {
+   "kode": "rincian-harta-a",
+   "label": "menjual harta tanpa sepengetahuan (a)",
+   "kunci": "harta",
+   "regex": "\\b(?:menjual|menggadaikan|menggadai|menyewakan|mengagunkan|menjaminkan)\\b[^.;]{0,60}?\\b(?:harta|barang|tanah|rumah|kendaraan|motor|mobil|perhiasan|emas|sawah|kebun|ternak|sapi)\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat menjual motor",
+    "Tergugat menggadaikan perhiasan Penggugat",
+    "Tergugat menjual tanah"
+   ],
+   "contohSalah": [
+    "Tergugat membeli sapi",
+    "Penggugat melihat rumah"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 1,
+   "huruf": "",
+   "bunyi": [
+    "menjual harta bersama tanpa sepengetahuan {lawan}",
+    "menggadaikan barang milik keluarga tanpa sepengetahuan {lawan}"
+   ]
+  },
+  {
+   "kode": "rincian-tidak-jujur-a",
+   "label": "tidak jujur (a)",
+   "kunci": "tidak-jujur",
+   "regex": "\\b(?:tidak\\s+jujur|berbohong|membohongi|suka\\s+bohong|sering\\s+bohong|menipu|penipuan|tidak\\s+menepati\\s+janji|ingkar\\s+janji|mencuri|pencuri|pencurian)\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat sering berbohong",
+    "Tergugat tidak jujur",
+    "Tergugat ingkar janji"
+   ],
+   "contohSalah": [
+    "Tergugat berkata jujur",
+    "Penggugat melihat bohlam"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 1,
+   "huruf": "",
+   "bunyi": [
+    "sering berbohong kepada {lawan}",
+    "tidak jujur dan tidak menepati janji kepada {lawan}"
+   ]
+  },
+  {
+   "kode": "rincian-membatasi-a",
+   "label": "mengekang atau melarang (a)",
+   "kunci": "membatasi",
+   "regex": "\\b(?:melarang|mengekang|membatasi|mengurung|mengisolasi|mengambil\\s+(?:hp|handphone|ponsel))\\b[^.;]{0,60}?\\b(?:bergaul|bertemu|berhubungan|bekerja|keluar|keluarga|orang\\s*tua|bersosialisasi|menghubungi|pergi)\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat melarang Penggugat bertemu keluarga",
+    "Tergugat melarang Penggugat bekerja"
+   ],
+   "contohSalah": [
+    "Tergugat memperbolehkan Penggugat",
+    "Penggugat melarang anak bermain"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 1,
+   "huruf": "",
+   "bunyi": [
+    "melarang {lawan} bergaul dan bertemu dengan keluarganya",
+    "mengekang kebebasan {lawan}"
+   ]
+  },
+  {
+   "kode": "rincian-orang-tua-utama-a",
+   "label": "mengutamakan orang tua atau keluarga sendiri (a)",
+   "kunci": "orang-tua-utama",
+   "regex": "\\blebih\\s+(?:mementingkan|mengutamakan|memilih|membela|berpihak)\\s+(?:\\S+\\s+){0,2}?(?:orang\\s*tua|ibu|keluarga|saudara|kakak|adik)|\\b(?:tetap|lebih)\\s+(?:ingin|memilih|mau)\\s+tinggal\\s+(?:bersama|dengan)\\s+(?:orang\\s*tua|ibu|keluarga)",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat lebih mengutamakan orang tuanya",
+    "Tergugat lebih memilih tinggal bersama orang tua"
+   ],
+   "contohSalah": [
+    "Tergugat menghormati orang tua",
+    "Penggugat mengunjungi ibu"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 1,
+   "huruf": "",
+   "bunyi": [
+    "lebih mengutamakan orang tua dan keluarganya daripada {lawan}",
+    "lebih memilih tinggal bersama orang tuanya"
+   ]
+  },
+  {
+   "kode": "rincian-anak-a",
+   "label": "tidak memperhatikan atau menganiaya anak (a)",
+   "kunci": "anak",
+   "regex": "\\b(?:tidak\\s+(?:peduli|memperhatikan|mengurus|menyayangi|menerima|akur)|menelantarkan|memukul|menganiaya|kasar\\s+(?:kepada|terhadap))\\s+(?:\\S+\\s+){0,2}?anak(?:\\s+bawaan|\\s+tiri)?\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat tidak peduli anak",
+    "Tergugat memukul anak",
+    "Tergugat tidak menerima anak bawaan"
+   ],
+   "contohSalah": [
+    "Tergugat bermain bersama anak",
+    "Penggugat memperhatikan anak"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 1,
+   "huruf": "",
+   "bunyi": [
+    "tidak peduli terhadap anak",
+    "tidak menerima anak bawaan {lawan}",
+    "bersikap kasar terhadap anak"
+   ]
+  },
+  {
+   "kode": "rincian-ucap-cerai-a",
+   "label": "mengucapkan kata cerai (a)",
+   "kunci": "ucap-cerai",
+   "regex": "\\b(?:mengucap(?:kan)?|mengatakan|melontarkan|menyebut|mengeluarkan)\\w*\\s+(?:\\S+\\s+){0,3}?(?:cerai|talak|pisah)\\b|\\b(?:me)?minta\\s+(?:cerai|pisah)\\b|\\bmenceraikan\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat sering mengucapkan kata cerai",
+    "Tergugat meminta cerai",
+    "Tergugat melontarkan kata talak"
+   ],
+   "contohSalah": [
+    "Tergugat mengucapkan salam",
+    "Tergugat mengatakan hal itu"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 1,
+   "huruf": "",
+   "bunyi": [
+    "sering mengucapkan kata cerai kepada {lawan}",
+    "menyatakan talak atau cerai kepada {lawan}"
+   ]
+  },
+  {
+   "kode": "rincian-merusak-barang-a",
+   "label": "merusak barang (a)",
+   "kunci": "merusak-barang",
+   "regex": "\\b(?:merusak|menghancurkan|memecahkan|membanting|membakar|melempar)\\s+(?:\\S+\\s+){0,2}?(?:barang|perabot|perabotan|piring|gelas|pintu|jendela|kaca|tv|televisi|hp|handphone|pakaian|motor|rumah)\\b|\\bpengrusakan\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat merusak barang",
+    "Tergugat membanting piring",
+    "Tergugat memecahkan kaca"
+   ],
+   "contohSalah": [
+    "Tergugat membeli barang",
+    "Penggugat menjaga rumah"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "urut": 1,
+   "huruf": "",
+   "bunyi": [
+    "merusak barang-barang rumah tangga",
+    "membanting dan menghancurkan barang di rumah"
+   ]
+  },
+  {
+   "kode": "rincian-uang-habis-a",
+   "label": "uang belanja habis (a)",
+   "kunci": "uang-habis",
+   "regex": "\\b(?:uang|gaji|penghasilan|harta|tabungan|biaya)\\s+(?:\\S+\\s+){0,3}?(?:habis|terkuras|ludes|tidak\\s+(?:cukup|tersisa|ada)|tak\\s+(?:cukup|tersisa)|kurang)\\b|\\b(?:kebutuhan|keperluan)\\s+(?:\\S+\\s+){0,2}?(?:tidak\\s+(?:terpenuhi|tercukupi)|terabaikan|terlantar)",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "sehingga uang belanja habis",
+    "gaji habis terpakai",
+    "kebutuhan rumah tangga tidak terpenuhi"
+   ],
+   "contohSalah": [
+    "uang diterima dengan baik",
+    "penghasilan Tergugat cukup"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "akibat",
+   "subjek": "bersama",
+   "urut": 1,
+   "huruf": "",
+   "bunyi": [
+    "uang belanja keluarga habis",
+    "kebutuhan rumah tangga tidak terpenuhi"
+   ],
+   "tanpaSubjek": true,
+   "kutip": true
+  },
+  {
+   "kode": "rincian-kebutuhan-dibantu-a",
+   "label": "kebutuhan dipenuhi pihak lain (a)",
+   "kunci": "kebutuhan-dibantu",
+   "regex": "\\b(?:kebutuhan|keperluan)\\s+(?:\\S+\\s+){0,3}?(?:di(?:bantu|penuhi|tanggung|tutupi|cukupi)|ditopang)\\s+(?:\\S+\\s+){0,3}?(?:oleh\\s+|dari\\s+|dengan\\s+)?(?:orang\\s*tua|penghasilan|keluarga|penggugat|pemohon|istri|isteri|suami)|\\bmengharapkan\\s+penghasilan\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "sehingga kebutuhan sehari-hari dibantu oleh orang tua Penggugat",
+    "kebutuhan rumah tangga dipenuhi dari penghasilan Penggugat"
+   ],
+   "contohSalah": [
+    "kebutuhan rumah tangga tercukupi",
+    "Penggugat membantu tetangga"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "akibat",
+   "subjek": "bersama",
+   "urut": 1,
+   "huruf": "",
+   "bunyi": [
+    "kebutuhan rumah tangga dipenuhi sendiri oleh {lawan}",
+    "kebutuhan rumah tangga dibantu oleh keluarga {lawan}"
+   ],
+   "tanpaSubjek": true,
+   "kutip": true
+  },
+  {
+   "kode": "rincian-pisah-rumah-a",
+   "label": "pisah rumah (a)",
+   "kunci": "pisah-rumah",
+   "regex": "\\b(?:pisah|berpisah)\\s+(?:\\S+\\s+){0,1}?(?:tempat\\s+tinggal|rumah|ranjang|kediaman|tidur)\\b|\\btidak\\s+(?:lagi\\s+)?(?:serumah|tinggal\\s+bersama|hidup\\s+bersama|satu\\s+rumah)\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Penggugat dan Tergugat telah pisah rumah",
+    "mereka tidak lagi serumah",
+    "berpisah tempat tinggal"
+   ],
+   "contohSalah": [
+    "Penggugat dan Tergugat tinggal serumah",
+    "mereka berkumpul"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "akibat",
+   "subjek": "bersama",
+   "urut": 1,
+   "huruf": "",
+   "bunyi": [
+    "{lawan} dan {pelaku} telah berpisah tempat tinggal"
+   ],
+   "tanpaSubjek": true,
+   "hanyaAkibat": true
+  },
+  {
+   "kode": "rincian-bertengkar-a",
+   "label": "perselisihan dan pertengkaran terus-menerus (a)",
+   "kunci": "bertengkar",
+   "regex": "\\b(?:perselisihan|pertengkaran|percekcokan|cekcok|bertengkar|berselisih|tidak\\s+(?:harmonis|rukun)|keharmonisan|ketidakharmonisan|syiqaq|sering\\s+ribut|selalu\\s+ribut|tidak\\s+ada\\s+kecocokan|keributan)\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "antara Penggugat dan Tergugat terus-menerus terjadi perselisihan",
+    "rumah tangga tidak harmonis",
+    "sering bertengkar"
+   ],
+   "contohSalah": [
+    "Penggugat dan Tergugat hidup damai",
+    "mereka bertemu"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "peran": "penutup",
+   "subjek": "bersama",
+   "urut": 1,
+   "huruf": "F",
+   "bunyi": [
+    "antara {lawan} dan {pelaku} terus-menerus terjadi perselisihan dan pertengkaran",
+    "rumah tangga {lawan} dan {pelaku} tidak lagi harmonis",
+    "{lawan} dan {pelaku} sering bertengkar dan sulit untuk rukun kembali"
+   ],
+   "tanpaSubjek": true
+  }
+ ],
+ "templat": []
+}
