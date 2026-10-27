@@ -1,0 +1,90 @@
+{
+ "total_perkara": 52,
+ "galat": 0,
+ "variabel_berbeda": {
+  "8172": 3,
+  "9280": 1,
+  "9290": 1,
+  "9291": 3,
+  "9292": 2,
+  "9293": 4
+ },
+ "perkara_dengan_selisih": 6,
+ "selisih_tanpa_sebab": {},
+ "nonrapat_pihak1": 9,
+ "nonrapat_pihak2": 12,
+ "rincian": {
+  "8172": {
+   "beda": 3,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 3,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": true
+  },
+  "9280": {
+   "beda": 1,
+   "tabel": [
+    1,
+    2
+   ],
+   "dijelaskan": 1,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": true
+  },
+  "9281": {
+   "beda": 0,
+   "tabel": [
+    1,
+    2
+   ],
+   "dijelaskan": 0,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": true
+  },
+  "9290": {
+   "beda": 1,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 1,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": true
+  },
+  "9291": {
+   "beda": 3,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 3,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": true
+  },
+  "9292": {
+   "beda": 2,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 2,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": true
+  },
+  "9293": {
+   "beda": 4,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 4,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": true
+  }
+ }
+}

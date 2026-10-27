@@ -1,0 +1,10 @@
+*.sql -text
+*.tsv -text
+*.txt -text
+*.sh text eol=lf
+*.md text
+*.pl -text
+*.py text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.rtf -text

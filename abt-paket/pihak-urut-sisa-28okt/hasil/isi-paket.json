@@ -1,0 +1,768 @@
+{
+ "ubah": [
+  {
+   "no": 3111,
+   "lama_md5": "c632a6d64c0e68adfef2303e67b43fb0",
+   "baru_md5": "86b0720b1aec14c5ffca5bd944f6deb9",
+   "lama_panjang": 83,
+   "baru_panjang": 136,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 3112,
+   "lama_md5": "49e2a59f3c42fbcdb40051089ef4a7c9",
+   "baru_md5": "732b26e6ffe9c91089a57fcfbd31e4fc",
+   "lama_panjang": 158,
+   "baru_panjang": 196,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 3113,
+   "lama_md5": "56c4145a9ef8f63d4bffe108db39f1f6",
+   "baru_md5": "003bec7916c3b364484aea5f5455f666",
+   "lama_panjang": 136,
+   "baru_panjang": 174,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 3114,
+   "lama_md5": "915e51fc2c6a1bda2d50414b013be826",
+   "baru_md5": "3d64751d981c1c96af349944e12f658f",
+   "lama_panjang": 132,
+   "baru_panjang": 170,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 3115,
+   "lama_md5": "e6338da8d6d04759305691a006a633fe",
+   "baru_md5": "8dc470f076da41818e793862f1052e9c",
+   "lama_panjang": 133,
+   "baru_panjang": 171,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 3116,
+   "lama_md5": "75763adceca85a161abaa82012c91535",
+   "baru_md5": "3ab69fde27b8507332f864bd5a7e1a46",
+   "lama_panjang": 212,
+   "baru_panjang": 250,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 3117,
+   "lama_md5": "fe39b82ffa734cd6c965d9658f12ecbc",
+   "baru_md5": "49d7245c0f86a8425296adc7783af56b",
+   "lama_panjang": 129,
+   "baru_panjang": 167,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 3118,
+   "lama_md5": "a1c1792353e4e695621c199f1a69c988",
+   "baru_md5": "962605d905a82dc7ef41dae0774487de",
+   "lama_panjang": 171,
+   "baru_panjang": 211,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 3121,
+   "lama_md5": "bc04cfddf4010265bab56e574b37cd6d",
+   "baru_md5": "8b7f4cbf988defc3e1dccc55c732c139",
+   "lama_panjang": 82,
+   "baru_panjang": 135,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 3122,
+   "lama_md5": "b005e74d0127fd0d51cbf1eb416bbfcd",
+   "baru_md5": "060ce0b2ba33230eba84d3c96d25ed09",
+   "lama_panjang": 154,
+   "baru_panjang": 192,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 3123,
+   "lama_md5": "d041c16ca44cc5d1871fd4317449ff3d",
+   "baru_md5": "da4b47a5123f27cb2a36500db6cc3c3e",
+   "lama_panjang": 134,
+   "baru_panjang": 172,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 3124,
+   "lama_md5": "834315d3309c5ed52a5204c2e3a9139c",
+   "baru_md5": "4ba00273bbd88ee5fd361aec4e81c2ea",
+   "lama_panjang": 130,
+   "baru_panjang": 168,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 3125,
+   "lama_md5": "865c2b5df443fd59062aa00001e53475",
+   "baru_md5": "8f36914daec4c9dcab574a57ad61fe14",
+   "lama_panjang": 166,
+   "baru_panjang": 204,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 3126,
+   "lama_md5": "351e30aa3a6766ea0e6b4ed0a13e3f21",
+   "baru_md5": "c0150521a1587a12a4d1c817344bc6d2",
+   "lama_panjang": 208,
+   "baru_panjang": 246,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 3127,
+   "lama_md5": "0e50b5893645acf122606fadd95fb1de",
+   "baru_md5": "0f834da3b9f99ce4cef877da7b6604a6",
+   "lama_panjang": 127,
+   "baru_panjang": 165,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 3128,
+   "lama_md5": "14e5c972c29fdc3ceecbdbc180cdcf87",
+   "baru_md5": "f41e7cdce80dd0cfb6c90faf566c960f",
+   "lama_panjang": 172,
+   "baru_panjang": 210,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 3131,
+   "lama_md5": "5c06a583796f0d3f7ec224facd588cf3",
+   "baru_md5": "75cd4830e079c9ba13f788214ea3aec6",
+   "lama_panjang": 82,
+   "baru_panjang": 135,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 3642,
+   "lama_md5": "1b8967fa91468eb156837ef2f69345ba",
+   "baru_md5": "c2d2fb8f62b33453cd7411c1dfba33af",
+   "lama_panjang": 295,
+   "baru_panjang": 333,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 3643,
+   "lama_md5": "88c8e0a4cc3e287db971a11254762994",
+   "baru_md5": "3f84a82e31d6e8ce37d070b34a176bf3",
+   "lama_panjang": 338,
+   "baru_panjang": 376,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 3673,
+   "lama_md5": "b77cdd66f9b307a04b51e523d7671907",
+   "baru_md5": "9bd00393b11bd78831b0afbd6be3938e",
+   "lama_panjang": 363,
+   "baru_panjang": 439,
+   "diganti": 2,
+   "inline": 0
+  },
+  {
+   "no": 4440,
+   "lama_md5": "ab7ee34d2db90b6c1068130ac32f5457",
+   "baru_md5": "c1130955e35db40012cb0b7ebe0a3d0b",
+   "lama_panjang": 313,
+   "baru_panjang": 351,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 5078,
+   "lama_md5": "6d5498c5f4e228e3f92fce1b5fc40bed",
+   "baru_md5": "507e995fcadc5056aacd9964ee3e49fb",
+   "lama_panjang": 134,
+   "baru_panjang": 172,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 5079,
+   "lama_md5": "f3f95da6850e91af88e2bd674d1b31b6",
+   "baru_md5": "e4c392da81dbf4ec1fcea234445675ba",
+   "lama_panjang": 130,
+   "baru_panjang": 168,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 5080,
+   "lama_md5": "ca2d5ac52994442b6cec0bec88a41c33",
+   "baru_md5": "436baa708fd15f23f9cfe020875c030d",
+   "lama_panjang": 166,
+   "baru_panjang": 204,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 5081,
+   "lama_md5": "387eb17b3ac0cbcffc413c2e61065dde",
+   "baru_md5": "6786e770f5b0557c3d36ed7444e529cf",
+   "lama_panjang": 154,
+   "baru_panjang": 192,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 5083,
+   "lama_md5": "4aa957308b7ad0e24b2d7af9f7e815b3",
+   "baru_md5": "fb55b7e50c67378443adf928eceb6d5b",
+   "lama_panjang": 134,
+   "baru_panjang": 172,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 5084,
+   "lama_md5": "3e7b0d7885b4daae5f58a83661dea049",
+   "baru_md5": "a34b83f55a8364843835fa6904b25a7d",
+   "lama_panjang": 130,
+   "baru_panjang": 168,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 5085,
+   "lama_md5": "769a8964a30ef6c2ca791115cb8352c4",
+   "baru_md5": "a011334a149bc6510f2d286cc5cc12fe",
+   "lama_panjang": 166,
+   "baru_panjang": 204,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 5086,
+   "lama_md5": "3e3d5cb4951341b085c9d22d9a504876",
+   "baru_md5": "d23fbdf5525651a2c5247a8a1f23946d",
+   "lama_panjang": 154,
+   "baru_panjang": 192,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 5087,
+   "lama_md5": "e53f2a395f61d169db9b9255bda1ecb4",
+   "baru_md5": "60fa417e8e63f6027f1de290b51ab216",
+   "lama_panjang": 172,
+   "baru_panjang": 210,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 5088,
+   "lama_md5": "a8325e6edda2031175cd5c805d7cb41d",
+   "baru_md5": "0560fe5ff0ba60cb8a3baeedff611b19",
+   "lama_panjang": 127,
+   "baru_panjang": 165,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 5091,
+   "lama_md5": "0b8ed9f4dd6a2eed2a25600fcda7f5e3",
+   "baru_md5": "fb4878bdd9c2e40d4de4d23df036e73f",
+   "lama_panjang": 134,
+   "baru_panjang": 172,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 5092,
+   "lama_md5": "6ec3ee8c80eb4083e128f2a08cbbf9c5",
+   "baru_md5": "ffe0aeb17dfd7673edb6267574f49d5b",
+   "lama_panjang": 130,
+   "baru_panjang": 168,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 5093,
+   "lama_md5": "1ebb545a8ca216476cc63cf83c68c71e",
+   "baru_md5": "61d017d3201ad4f7a1dc4a3508b10c89",
+   "lama_panjang": 166,
+   "baru_panjang": 204,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 5094,
+   "lama_md5": "6e66eab0fa563de40b8531907e71b766",
+   "baru_md5": "cc21feeef2d0adc6d1d2d36724347413",
+   "lama_panjang": 154,
+   "baru_panjang": 192,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 5095,
+   "lama_md5": "9cfb30ea38f229313df7f97018bc3188",
+   "baru_md5": "d009e48ecfadf880a541818fffb90363",
+   "lama_panjang": 127,
+   "baru_panjang": 165,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 5096,
+   "lama_md5": "fbf6f2a86b712a8e243027184f47bc62",
+   "baru_md5": "e06d08d966c628e13976312c521bd383",
+   "lama_panjang": 172,
+   "baru_panjang": 210,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 5099,
+   "lama_md5": "17d2fcfe887b9b83d66a9cb8ab9f04c4",
+   "baru_md5": "5f42acda9e9498cbd62fdf0826104a58",
+   "lama_panjang": 134,
+   "baru_panjang": 172,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 5102,
+   "lama_md5": "b6bdc98c5335f13582dce1c4866cd14d",
+   "baru_md5": "187016b252d8e8496836ab3b8b167728",
+   "lama_panjang": 130,
+   "baru_panjang": 168,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 5103,
+   "lama_md5": "af70229564f72f02c655935e042b95db",
+   "baru_md5": "5fc62f467c4548a66fb6b76aba158ff7",
+   "lama_panjang": 166,
+   "baru_panjang": 204,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 5104,
+   "lama_md5": "90de1025a1829b5c2a8b446590c51e2f",
+   "baru_md5": "77707fa66d442d5eabbd3166fe5b294c",
+   "lama_panjang": 154,
+   "baru_panjang": 192,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 5106,
+   "lama_md5": "d64e2b07bf856e37938ad04727aa51a3",
+   "baru_md5": "f40c7def1047533cad79c0aa395048c5",
+   "lama_panjang": 127,
+   "baru_panjang": 165,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 5107,
+   "lama_md5": "e3851774e48e66082f49ce671ccd5395",
+   "baru_md5": "64177ad802b60f97d444d9592815be3e",
+   "lama_panjang": 172,
+   "baru_panjang": 210,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 5116,
+   "lama_md5": "83229a84df67a5ae3d349bc849a80064",
+   "baru_md5": "54041046fd03b59c036d441a77d1924c",
+   "lama_panjang": 177,
+   "baru_panjang": 217,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 7078,
+   "lama_md5": "f4b6a1966532da6255d64e727c872909",
+   "baru_md5": "8fc720a43fb8faee3640e089a4767cf1",
+   "lama_panjang": 290,
+   "baru_panjang": 343,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 8129,
+   "lama_md5": "512df24f9d78778ef09ed67c40248f2a",
+   "baru_md5": "d58925fb7bf5c96a97da617cecd661a6",
+   "lama_panjang": 260,
+   "baru_panjang": 298,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 8510,
+   "lama_md5": "dccbe8cc618edfedf4bebe0b2e92250b",
+   "baru_md5": "0c329d702c33477d890152968e6d79fe",
+   "lama_panjang": 5494,
+   "baru_panjang": 5532,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 8524,
+   "lama_md5": "f25b3c102635bc79c202ef8845689e71",
+   "baru_md5": "24629250e1994eb739b6e438e6d5edf6",
+   "lama_panjang": 13294,
+   "baru_panjang": 13370,
+   "diganti": 2,
+   "inline": 0
+  },
+  {
+   "no": 8533,
+   "lama_md5": "f7f282df043f6eb8e8ada29f61b23b8f",
+   "baru_md5": "1d38c5fbedd1f9d42b6ea6f45b6e3e0c",
+   "lama_panjang": 10829,
+   "baru_panjang": 10905,
+   "diganti": 2,
+   "inline": 0
+  },
+  {
+   "no": 8800,
+   "lama_md5": "78c7a9995db938af70264d9886595ec4",
+   "baru_md5": "a6f8f3571758f179ab4c833ebd65c1e9",
+   "lama_panjang": 480,
+   "baru_panjang": 518,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 8801,
+   "lama_md5": "ec003c7bc57423f4c4f6937adb6420a9",
+   "baru_md5": "166fdd617fa7f9d2b1a99ac2b4f5d413",
+   "lama_panjang": 480,
+   "baru_panjang": 518,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 8802,
+   "lama_md5": "3a0f349879503a9cd9e3e2cd76933c66",
+   "baru_md5": "10e5fcc36884fe22f369a42200c13705",
+   "lama_panjang": 522,
+   "baru_panjang": 560,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 8803,
+   "lama_md5": "1bf601a228b00a1292fad4e03ead7224",
+   "baru_md5": "63b0a58d6685ef405e715afdaf71ddca",
+   "lama_panjang": 522,
+   "baru_panjang": 560,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 8808,
+   "lama_md5": "afecb6202c6bc9f98a39ee21fb5ef40b",
+   "baru_md5": "e20763eb66cb86dc8855a27b1afa2fac",
+   "lama_panjang": 1162,
+   "baru_panjang": 1200,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 8809,
+   "lama_md5": "705124d11696ef8773656f89c96f7097",
+   "baru_md5": "81492b0685e91c4b3f8649e249893e4b",
+   "lama_panjang": 1162,
+   "baru_panjang": 1200,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 8810,
+   "lama_md5": "2a3ad0566fa92c785208484c4738ced5",
+   "baru_md5": "60863f08deffdd218528c7d20ec42156",
+   "lama_panjang": 1276,
+   "baru_panjang": 1314,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 8811,
+   "lama_md5": "b21454b9d6837ab3aacba2ce8fd29571",
+   "baru_md5": "5742abc19f7fbd9217bac1749cc2f13e",
+   "lama_panjang": 1276,
+   "baru_panjang": 1314,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 8890,
+   "lama_md5": "3c6e019a7eeb5ba8673a70409deac73c",
+   "baru_md5": "cc33da9647af6855dcf50700f4476a3c",
+   "lama_panjang": 2061,
+   "baru_panjang": 2137,
+   "diganti": 2,
+   "inline": 0
+  },
+  {
+   "no": 9104,
+   "lama_md5": "338fdb467a85e48d772d34cc6834e0bc",
+   "baru_md5": "24d6e30360995aeec95a0c9a7464bbc6",
+   "lama_panjang": 801,
+   "baru_panjang": 839,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 9200,
+   "lama_md5": "f461cf6470ba9f1c12986e367610e5f7",
+   "baru_md5": "968c4fa21db2f28aa59bc52a182ff7c3",
+   "lama_panjang": 562,
+   "baru_panjang": 600,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 9205,
+   "lama_md5": "a4d424c2078b11b7b8a8d841f880e909",
+   "baru_md5": "816623e7d36c2fe6fc3afc94927485e3",
+   "lama_panjang": 684,
+   "baru_panjang": 722,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 9277,
+   "lama_md5": "d1cac1006cdaf3aeda0142d01a0fe379",
+   "baru_md5": "3eb4ac5e879b53c3741a2f441c62de77",
+   "lama_panjang": 730,
+   "baru_panjang": 768,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 9278,
+   "lama_md5": "fcd5bdeac1b123406a846eb4aa1ab6ad",
+   "baru_md5": "31c197fc320d5620fb055495a469baf0",
+   "lama_panjang": 486,
+   "baru_panjang": 524,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 9279,
+   "lama_md5": "61d05091e95fd1530303bc9fccea6e96",
+   "baru_md5": "ed41c5ab23cd7776fe9b65456f9ef1d3",
+   "lama_panjang": 730,
+   "baru_panjang": 768,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 9280,
+   "lama_md5": "e19d3c03f6c6ae7aa06b02a0e221c50c",
+   "baru_md5": "47ef8f4e68aa7afea5c57a6392b35666",
+   "lama_panjang": 3209,
+   "baru_panjang": 3965,
+   "diganti": 4,
+   "inline": 4
+  },
+  {
+   "no": 9281,
+   "lama_md5": "1c206dba48fd312ae63abd9cd5ffad5a",
+   "baru_md5": "7f0f73fcf18edc4589f23db88054a86a",
+   "lama_panjang": 3826,
+   "baru_panjang": 4582,
+   "diganti": 4,
+   "inline": 4
+  },
+  {
+   "no": 9290,
+   "lama_md5": "470dd6add4d2054c150f4d79f9a28de8",
+   "baru_md5": "8341ab4a207a3cbe6d74812070039787",
+   "lama_panjang": 2792,
+   "baru_panjang": 2830,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 9291,
+   "lama_md5": "d3b043fa44636f52de26b0896b475c74",
+   "baru_md5": "fbe8df9ecd61ac62a5934ea41aa1d4ee",
+   "lama_panjang": 2808,
+   "baru_panjang": 2846,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 9292,
+   "lama_md5": "97f73dfecc534bb013e78fc6da614124",
+   "baru_md5": "5d2f309c0256832151702b2e4836800e",
+   "lama_panjang": 1347,
+   "baru_panjang": 1385,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 9293,
+   "lama_md5": "e519d436b2db59c36266f8d4ffbced85",
+   "baru_md5": "4fadbebb5db4fd7df167d6005972866e",
+   "lama_panjang": 1347,
+   "baru_panjang": 1385,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 9404,
+   "lama_md5": "55076c94408165de676aa6a9f5ecaa69",
+   "baru_md5": "a8def7aa1d1ec201da18df10cf75a9c3",
+   "lama_panjang": 1249,
+   "baru_panjang": 1325,
+   "diganti": 2,
+   "inline": 0
+  },
+  {
+   "no": 9405,
+   "lama_md5": "374811e64add6fc8ec07b4b7d6390bd3",
+   "baru_md5": "b0a96497b4fe53ffbcbf134543a5c02e",
+   "lama_panjang": 1538,
+   "baru_panjang": 1690,
+   "diganti": 4,
+   "inline": 0
+  },
+  {
+   "no": 9560,
+   "lama_md5": "cc73b7cd53c7ce47b3493f7e05b370d8",
+   "baru_md5": "f319a416bc78d60e87aa666e809e761b",
+   "lama_panjang": 486,
+   "baru_panjang": 524,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 9561,
+   "lama_md5": "ef3b8447a8dfd2dbaf06d6a18c908721",
+   "baru_md5": "79f2a4de09040baebe1f2c6bb4fa36af",
+   "lama_panjang": 799,
+   "baru_panjang": 837,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 9562,
+   "lama_md5": "d50590906b3d919aa74d85a543aa3570",
+   "baru_md5": "aec3f6461a2703d0afc587e2f9690bb7",
+   "lama_panjang": 595,
+   "baru_panjang": 633,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 10106,
+   "lama_md5": "e512a92d56500705934601bef1604cc4",
+   "baru_md5": "42de44e0e372ff836763b3e7e0488306",
+   "lama_panjang": 1589,
+   "baru_panjang": 1627,
+   "diganti": 1,
+   "inline": 0
+  },
+  {
+   "no": 10107,
+   "lama_md5": "76ac270685ccccf511fbce3e00f70cf8",
+   "baru_md5": "f2bf2ea23c41958355b0949ada0cd3af",
+   "lama_panjang": 1691,
+   "baru_panjang": 1729,
+   "diganti": 1,
+   "inline": 0
+  }
+ ],
+ "fungsi": {
+  "nama": "isian_rtf_pihak_peringkat",
+  "md5": "cc803946c757a9921feb3ce6978eac79"
+ },
+ "dependensi": [
+  1,
+  46,
+  47,
+  53,
+  101,
+  105,
+  658,
+  659,
+  660,
+  1002,
+  1003,
+  4004,
+  7017,
+  8008,
+  8554,
+  9290,
+  9291
+ ],
+ "harap": "9|14|77|0|0|17|0",
+ "ulang": "9|14|0|77|1|17|0",
+ "dilewati_27": [
+  3520,
+  3521,
+  3522,
+  3523,
+  7036,
+  7037,
+  7047,
+  7048,
+  7097,
+  7098,
+  7148,
+  7149,
+  7152,
+  8516
+ ],
+ "prasyarat_27": {
+  "variabel": {
+   "7036": "b8329170fe7fdb6c5874793dd071b438",
+   "7037": "cd7eec3799be23a6240c0ff79a0f9ff6",
+   "7047": "f548b43be1206974a88aa1cd84b66822",
+   "7048": "485001ad3b68a7ab053d8e875ca001c4",
+   "7097": "813c45f63d3901ec0e111a805cf9fe1b",
+   "7098": "ee3eaf5a192a8f761a117251efda901d",
+   "7148": "4e6ec49f488b15c16bdee4843746920d",
+   "7149": "838d56ebef8a83cf18852eae40734a3e",
+   "7152": "52fdf197751105d9d8e547f49d00d2ae",
+   "8516": "3abaa6f3d51f12b12ed94ea44bb331dd",
+   "3520": "9d15c4ee2b501bf7240d57a22410f3c1",
+   "3521": "51cb9e67c0699d9605d907b7fc78e5ba",
+   "3522": "1fff83bd72042febdbf19e0fb1ff67e7",
+   "3523": "837d4370335ff33347005180db40cb99"
+  },
+  "fungsi": {
+   "isian_rtf_pihak_jumlah": "8984f41d70223c83bc6af72dd8f40a74",
+   "isian_rtf_pihak_identitas": "4ee30bc89c1585852bafc1ddf67ff4c2",
+   "isian_rtf_pihak_nama_semua": "b777c5c59eb9b85066e107b51d897288",
+   "isian_rtf_pihak_kaki": "a467210c95e365d59e920e187510a1e6",
+   "isian_rtf_pihak_sebut": "88aa93cdbe6f4e6afdefd62d50d07d3a",
+   "isian_rtf_pihak_utama": "d2fa4361de6fb016c488aad0fc8a1793",
+   "isian_rtf_pihak_nama": "72f3dcd1746a45a2b4c0e399dc044ee4",
+   "isian_rtf_pihak_urutan": "8f201d025843668a5f3daac33fa4bb66",
+   "isian_rtf_pihak_tambahan": "9cf2a80618cfee32d3b096c4b1c83dc8"
+  }
+ },
+ "jumlah_penggantian": 91
+}

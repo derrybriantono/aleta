@@ -1,0 +1,1108 @@
+{
+ "total_perkara": 776,
+ "galat": 0,
+ "variabel_berbeda": {
+  "2224": 3,
+  "3111": 6,
+  "3112": 6,
+  "3113": 6,
+  "3114": 6,
+  "3115": 6,
+  "3116": 6,
+  "3117": 6,
+  "3118": 6,
+  "3121": 3,
+  "3122": 2,
+  "3123": 3,
+  "3124": 2,
+  "3125": 3,
+  "3126": 3,
+  "3127": 3,
+  "3128": 2,
+  "3131": 2,
+  "3642": 8,
+  "3643": 8,
+  "3653": 8,
+  "3663": 5,
+  "3673": 5,
+  "4440": 8,
+  "4441": 8,
+  "5078": 4,
+  "5079": 7,
+  "5080": 5,
+  "5081": 7,
+  "5083": 2,
+  "5084": 2,
+  "5085": 3,
+  "5086": 1,
+  "5087": 2,
+  "5088": 3,
+  "5091": 1,
+  "5092": 2,
+  "5093": 2,
+  "5094": 2,
+  "5095": 3,
+  "5096": 2,
+  "5102": 2,
+  "5103": 1,
+  "5104": 1,
+  "5106": 3,
+  "5116": 8,
+  "7078": 3,
+  "7101": 1,
+  "7103": 1,
+  "8129": 11,
+  "8510": 8,
+  "8524": 8,
+  "8533": 8,
+  "8800": 1,
+  "8802": 1,
+  "8808": 1,
+  "8810": 1,
+  "9104": 8,
+  "9200": 8,
+  "9205": 8,
+  "9230": 1,
+  "9232": 1,
+  "9277": 3,
+  "9278": 3,
+  "9279": 11,
+  "9404": 4,
+  "9405": 1,
+  "9560": 11,
+  "9561": 1,
+  "9562": 1,
+  "9570": 1,
+  "10106": 2,
+  "10107": 2
+ },
+ "perkara_dengan_selisih": 21,
+ "selisih_tanpa_sebab": {},
+ "nonrapat_pihak1": 9,
+ "nonrapat_pihak2": 12,
+ "rincian": {
+  "1217": {
+   "beda": 0,
+   "tabel": [
+    1,
+    2
+   ],
+   "dijelaskan": 0,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "2224": {
+   "beda": 3,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 3,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "3111": {
+   "beda": 6,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 6,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "3112": {
+   "beda": 6,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 6,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "3113": {
+   "beda": 6,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 6,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "3114": {
+   "beda": 6,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 6,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "3115": {
+   "beda": 6,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 6,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "3116": {
+   "beda": 6,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 6,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "3117": {
+   "beda": 6,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 6,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "3118": {
+   "beda": 6,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 6,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "3121": {
+   "beda": 3,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 3,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "3122": {
+   "beda": 2,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 2,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "3123": {
+   "beda": 3,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 3,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "3124": {
+   "beda": 2,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 2,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "3125": {
+   "beda": 3,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 3,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "3126": {
+   "beda": 3,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 3,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "3127": {
+   "beda": 3,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 3,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "3128": {
+   "beda": 2,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 2,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "3131": {
+   "beda": 2,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 2,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "3642": {
+   "beda": 8,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 8,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "3643": {
+   "beda": 8,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 8,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "3653": {
+   "beda": 8,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 8,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "3659": {
+   "beda": 0,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 0,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "3663": {
+   "beda": 5,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 5,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "3673": {
+   "beda": 5,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 5,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "3970": {
+   "beda": 0,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 0,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "3971": {
+   "beda": 0,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 0,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "4308": {
+   "beda": 0,
+   "tabel": [
+    1,
+    2
+   ],
+   "dijelaskan": 0,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "4440": {
+   "beda": 8,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 8,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "4441": {
+   "beda": 8,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 8,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "5078": {
+   "beda": 4,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 4,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "5079": {
+   "beda": 7,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 7,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "5080": {
+   "beda": 5,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 5,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "5081": {
+   "beda": 7,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 7,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "5083": {
+   "beda": 2,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 2,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "5084": {
+   "beda": 2,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 2,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "5085": {
+   "beda": 3,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 3,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "5086": {
+   "beda": 1,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 1,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "5087": {
+   "beda": 2,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 2,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "5088": {
+   "beda": 3,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 3,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "5091": {
+   "beda": 1,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 1,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "5092": {
+   "beda": 2,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 2,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "5093": {
+   "beda": 2,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 2,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "5094": {
+   "beda": 2,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 2,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "5095": {
+   "beda": 3,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 3,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "5096": {
+   "beda": 2,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 2,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "5099": {
+   "beda": 0,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 0,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "5102": {
+   "beda": 2,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 2,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "5103": {
+   "beda": 1,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 1,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "5104": {
+   "beda": 1,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 1,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "5106": {
+   "beda": 3,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 3,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "5107": {
+   "beda": 0,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 0,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "5116": {
+   "beda": 8,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 8,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "7006": {
+   "beda": 0,
+   "tabel": [
+    1,
+    2
+   ],
+   "dijelaskan": 0,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "7008": {
+   "beda": 0,
+   "tabel": [
+    1,
+    2
+   ],
+   "dijelaskan": 0,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "7047": {
+   "beda": 0,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 0,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "7048": {
+   "beda": 0,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 0,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "7062": {
+   "beda": 0,
+   "tabel": [
+    1,
+    2
+   ],
+   "dijelaskan": 0,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "7078": {
+   "beda": 3,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 3,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "7097": {
+   "beda": 0,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 0,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "7101": {
+   "beda": 1,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 1,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "7102": {
+   "beda": 0,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 0,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "7103": {
+   "beda": 1,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 1,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "7104": {
+   "beda": 0,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 0,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "7105": {
+   "beda": 0,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 0,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "7106": {
+   "beda": 0,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 0,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "7107": {
+   "beda": 0,
+   "tabel": [
+    1,
+    2
+   ],
+   "dijelaskan": 0,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "8129": {
+   "beda": 11,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 11,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "8510": {
+   "beda": 8,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 8,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "8524": {
+   "beda": 8,
+   "tabel": [
+    1,
+    2
+   ],
+   "dijelaskan": 8,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "8533": {
+   "beda": 8,
+   "tabel": [
+    1,
+    2
+   ],
+   "dijelaskan": 8,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "8800": {
+   "beda": 1,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 1,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "8801": {
+   "beda": 0,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 0,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "8802": {
+   "beda": 1,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 1,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "8803": {
+   "beda": 0,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 0,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "8808": {
+   "beda": 1,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 1,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "8809": {
+   "beda": 0,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 0,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "8810": {
+   "beda": 1,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 1,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "8811": {
+   "beda": 0,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 0,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "8890": {
+   "beda": 0,
+   "tabel": [
+    1,
+    2
+   ],
+   "dijelaskan": 0,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": true
+  },
+  "9104": {
+   "beda": 8,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 8,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "9200": {
+   "beda": 8,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 8,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "9205": {
+   "beda": 8,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 8,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "9230": {
+   "beda": 1,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 1,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "9231": {
+   "beda": 0,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 0,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "9232": {
+   "beda": 1,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 1,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "9233": {
+   "beda": 0,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 0,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "9277": {
+   "beda": 3,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 3,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "9278": {
+   "beda": 3,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 3,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "9279": {
+   "beda": 11,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 11,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "9349": {
+   "beda": 0,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 0,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "9350": {
+   "beda": 0,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 0,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "9404": {
+   "beda": 4,
+   "tabel": [
+    1,
+    2
+   ],
+   "dijelaskan": 4,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "9405": {
+   "beda": 1,
+   "tabel": [
+    1,
+    2
+   ],
+   "dijelaskan": 1,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "9560": {
+   "beda": 11,
+   "tabel": [
+    2
+   ],
+   "dijelaskan": 11,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "9561": {
+   "beda": 1,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 1,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "9562": {
+   "beda": 1,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 1,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "9570": {
+   "beda": 1,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 1,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "10106": {
+   "beda": 2,
+   "tabel": [
+    1
+   ],
+   "dijelaskan": 2,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "10107": {
+   "beda": 2,
+   "tabel": [
+    1,
+    2
+   ],
+   "dijelaskan": 2,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  },
+  "10108": {
+   "beda": 0,
+   "tabel": [
+    1,
+    2
+   ],
+   "dijelaskan": 0,
+   "di_luar": 0,
+   "contoh_di_luar": [],
+   "perkara_lain": false
+  }
+ }
+}
