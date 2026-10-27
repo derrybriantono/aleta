@@ -24,6 +24,8 @@ export const KELOMPOK_BAKU = [
   "kalimat-saksi",
   "kalimat-hakim",
   "gugatan", // anak & jawab-menjawab dari berkas e-Court (agen 3, P4/B2)
+  "alasan-rincian", // 5227: sebab/akibat cerai dari gugatan, ruas tambahan bunyi (27 Okt)
+  "perukun", // 1268: siapa yang mendamaikan (keluarga / aparat / lainnya)
 ] as const;
 
 export const STATUS_KAMUS = ["aktif", "draf", "nonaktif"] as const;

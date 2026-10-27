@@ -543,14 +543,20 @@ function susunAlasan(daftarCiri, pihak, opsi) {
  * bentuk yang benar untuk 82% perkara, dan menolak menyusun kalimat karena
  * sebutannya belum terbaca hanya mengosongkan blangko yang dapat diisi.
  */
-function kalimatUpayaDamai(keadaan, pihak, opsi) {
+function kalimatUpayaDamai(keadaan, pihak, opsi, perukun) {
   const kunci = keadaan === true ? "gagal" : keadaan === false ? "berhasil" : String(keadaan || "");
   const { bunyi } = bunyiUpayaDamaiEfektif(opsi);
   const pola = Object.prototype.hasOwnProperty.call(bunyi, kunci) ? bunyi[kunci] : "";
   if (!pola) return "";
   const lawan = String((pihak && pihak.lawan) || "").trim() || "Penggugat";
   const pelaku = String((pihak && pihak.pelaku) || "").trim() || "Tergugat";
-  return isiPenandaPihak(pola, pelaku, lawan);
+  const kalimat = isiPenandaPihak(pola, pelaku, lawan);
+  // 27 Okt: pelaku upaya damai menurut keterangan (aparat, tokoh, keduanya, ...) menggantikan "pihak keluarga"
+  // - atau mengisi penanda {perukun} bila bunyi di pengaturan memakainya. Bentuk kalimat selebihnya tetap.
+  const frasa = String(perukun || "").trim();
+  if (!frasa) return kalimat.split("{perukun}").join("pihak keluarga");
+  if (kalimat.includes("{perukun}")) return kalimat.split("{perukun}").join(frasa);
+  return kalimat.replace(/\bpihak keluarga\b/i, () => frasa);
 }
 
 module.exports = {
