@@ -983,6 +983,8 @@ describe("atas pg-mem berbenih", () => {
       expect(await pegawaiDariRekap(db, super_, { peran: "panitera", id: 404 }, akunSipp)).toEqual({
         tersedia: false,
         alasan: "Orang ini belum tertaut ke akun SIPP.",
+        // 27 Okt 2026: belum tertaut -> tombol tetap ada, evidennya dari rekap petugas.
+        cadangan: true,
       });
       const belumPemetaan = await pegawaiDariRekap(db, super_, { peran: "panitera", id: 5 }, akunSipp);
       expect(belumPemetaan).toMatchObject({

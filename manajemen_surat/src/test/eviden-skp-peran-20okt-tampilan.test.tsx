@@ -202,6 +202,76 @@ describe("tombol eviden SKP di rekap PP, Juru Sita, dan Mediator", () => {
     expect(screen.queryByRole("button", { name: /Unduh eviden SKP/ })).toBeNull();
   });
 
+  it("belum tertaut (cadangan): tombol tetap ada, menu memakai rute eviden rekap, bukan rute SKP", async () => {
+    for (const peran of ["panitera", "jurusita", "mediator"] as const) {
+      const ambil = vi.fn(async (alamat: string) => {
+        const url = new URL(String(alamat), "http://portal.contoh");
+        if (url.pathname.endsWith("/api/aleta-ecourt/rekap-petugas")) {
+          return json({ ok: true, data: { available: true, rekap: rekap(peran, "Orang Uji"), pesan: "" } });
+        }
+        if (url.pathname.endsWith("/api/skp/rekap-pegawai")) {
+          return json({ ok: true, data: { tersedia: false, cadangan: true, alasan: "Orang ini belum tertaut ke akun SIPP." } });
+        }
+        if (url.pathname.endsWith("/api/aleta-ecourt/rekap-petugas/eviden")) {
+          return json({
+            ok: true,
+            data: {
+              jenis: peran,
+              periode: { labelPanjang: "Triwulan III Tahun 2026" },
+              orang: { nama: "Orang Uji" },
+              ketua: { nama: "Ketua Uji" },
+              dokumen: [
+                {
+                  kunci: "rekap-perkara-ditangani",
+                  judul: "REKAP PERKARA DITANGANI",
+                  judulLengkap: "Rekap Perkara Ditangani Triwulan III Tahun 2026",
+                  tersedia: true,
+                  sebabTidakTersedia: null,
+                  jumlahBaris: 4,
+                },
+              ],
+              galat: [],
+              catatanOperator: [],
+              penetapan: null,
+              dariPenetapan: false,
+            },
+          });
+        }
+        return json({ ok: false, error: { message: "tidak dikenal" } }, 404);
+      });
+      vi.stubGlobal("fetch", ambil);
+      const { unmount } = render(<RekapPetugas peran={peran} id="5" />);
+      await screen.findByRole("heading", { name: "Orang Uji" });
+      fireEvent.click(await screen.findByRole("button", { name: /Unduh eviden SKP/ }));
+      const dialog = await screen.findByRole("dialog");
+      await within(dialog).findByText("Rekap Perkara Ditangani Triwulan III Tahun 2026");
+      expect(within(dialog).getByText(/Rekap perkara yang ditangani/)).toBeTruthy();
+      const daftar = kueri(ambil, "/api/aleta-ecourt/rekap-petugas/eviden")[0];
+      expect(daftar.searchParams.get("aksi")).toBe("daftar");
+      expect(daftar.searchParams.get("peran")).toBe(peran);
+      expect(daftar.searchParams.get("id")).toBe("5");
+      const pdf = within(dialog).getByRole("link", { name: "Unduh Rekap Perkara Ditangani Triwulan III Tahun 2026 sebagai PDF" });
+      const href = new URL(pdf.getAttribute("href") ?? "", "http://portal.contoh");
+      expect(href.pathname).toMatch(/\/rekap-petugas\/eviden$/);
+      expect(href.searchParams.get("aksi")).toBe("unduh");
+      expect(href.searchParams.get("dokumen")).toBe("rekap-perkara-ditangani");
+      expect(href.searchParams.get("format")).toBe("pdf");
+      // Tidak lewat rute SKP maupun eviden hakim.
+      expect(kueri(ambil, "/api/skp/daftar")).toHaveLength(0);
+      expect(kueri(ambil, "/api/aleta-ecourt/eviden-skp")).toHaveLength(0);
+      unmount();
+      cleanup();
+    }
+  });
+
+  it("tidak berhak / nonaktif (tanpa tanda cadangan): tetap tanpa tombol", async () => {
+    pasang("jurusita", "JS Uji", { tersedia: false, alasan: "Pegawai ini sudah tidak aktif (mutasi atau pensiun); eviden SKP tidak ditawarkan." });
+    render(<RekapPetugas peran="jurusita" id="5" />);
+    await screen.findByRole("heading", { name: "JS Uji" });
+    await new Promise((r) => setTimeout(r, 30));
+    expect(screen.queryByRole("button", { name: /Unduh eviden SKP/ })).toBeNull();
+  });
+
   it("rute pegawai gagal (403/500): tanpa tombol dan tanpa galat di halaman", async () => {
     const ambil = vi.fn(async (alamat: string) => {
       const url = new URL(String(alamat), "http://portal.contoh");
