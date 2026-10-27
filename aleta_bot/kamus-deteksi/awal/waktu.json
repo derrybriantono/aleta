@@ -81,13 +81,15 @@
       "label": "bentuk pisah rumah (0246)",
       "kunci": "pisah-rumah",
       "jenis": "struktur",
-      "regex": "(pisah|tidak (lagi )?tinggal bersama|tidak serumah|pergi meninggalkan|meninggalkan (tempat|rumah|kediaman))",
+      "regex": "(pisah|tidak (lagi )?tinggal bersama|tidak serumah|pergi meninggalkan|meninggalkan (tempat|rumah|kediaman)|diusir|mengusir|pulang ke rumah orang\\s*tua|pulang ke rumah ibu|minggat|kabur dari rumah|pergi dari rumah|keluar dari rumah|angkat kaki)",
       "flags": "i",
       "status": "aktif",
       "yakin": "ragu",
       "contohBenar": [
         "Tergugat pergi meninggalkan rumah kediaman bersama",
-        "sudah tidak tinggal bersama lagi"
+        "sudah tidak tinggal bersama lagi",
+        "Tergugat pulang ke rumah orang tuanya sejak Agustus 2025",
+        "Penggugat diusir Tergugat sejak Februari 2025"
       ],
       "contohSalah": [
         "Penggugat dan Tergugat tinggal di rumah orang tua"
@@ -202,13 +204,14 @@
       "label": "kata pisah tempat lama pisah dibaca (9944)",
       "kunci": "pisah-lama",
       "jenis": "struktur",
-      "regex": "pisah|berpisah|tidak (lagi )?tinggal bersama|tidak serumah|meninggalkan",
+      "regex": "pisah|berpisah|tidak (lagi )?tinggal bersama|tidak serumah|meninggalkan|diusir|mengusir|pulang ke rumah orang\\s*tua|minggat|pergi dari rumah|keluar dari rumah",
       "flags": "i",
       "status": "aktif",
       "yakin": "ragu",
       "contohBenar": [
         "sudah berpisah selama 2 tahun",
-        "Tergugat meninggalkan Penggugat"
+        "Tergugat meninggalkan Penggugat",
+        "sudah 8 bulan Penggugat diusir oleh Tergugat"
       ],
       "contohSalah": [
         "tinggal bersama orang tua"

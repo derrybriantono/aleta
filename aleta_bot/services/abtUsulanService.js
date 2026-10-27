@@ -1170,7 +1170,13 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak, posit
   const ucap1 = lamaDiucapkan(b1);
   const ucap2 = lamaDiucapkan(b2);
   const lama = gabungkan(ucap1.nilai, ucap2.nilai);
-  const dihitung = hitungLamaPisah(pisah.nilai, tanggalSidang);
+  // 27 Okt: 0246 yang hanya tahun / awal-pertengahan-akhir tahun (hitungLamaPisah tidak membacanya) dihitung sebagai
+  // perkiraan - "lebih kurang N tahun M bulan", keyakinan ragu.
+  let dihitung = hitungLamaPisah(pisah.nilai, tanggalSidang);
+  if (!dihitung) {
+    const kira = lamaSejakAcuan(pisah.nilai, tanggalSidang);
+    if (kira && kira.taksiran) dihitung = { teks: `lebih kurang ${kira.teks}`, totalBulan: kira.totalBulan, taksiran: true };
+  }
   if (dihitung) {
     lama.pembanding = { teks: dihitung.teks, totalBulan: dihitung.totalBulan, dari: pisah.nilai, sampai: tanggalSidang };
     if (!lama.nilai) {
@@ -1178,10 +1184,11 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak, posit
       lama.dihitung = true;
       // S5=H1: titik awalnya dari posita (pisah.dariPosita) -> hitungannya
       // pun dalil yang belum dikuatkan saksi.
-      lama.keyakinan = pisah.dariPosita ? "ragu" : "cukup";
+      lama.keyakinan = pisah.dariPosita || dihitung.taksiran ? "ragu" : "cukup";
       if (pisah.dariPosita) lama.dariPosita = true;
       lama.catatan =
-        `Saksi tidak menyebut lamanya; dihitung dari ${pisah.nilai} sampai tanggal sidang ${tanggalSidang}.`;
+        `Saksi tidak menyebut lamanya; dihitung dari ${pisah.nilai} sampai tanggal sidang ${tanggalSidang}` +
+        (dihitung.taksiran ? " (perkiraan: bulan mulai pisah tidak disebut)." : ".");
     } else if (totalBulan(lama.nilai) !== dihitung.totalBulan) {
       lama.catatan =
         `Saksi menyebut "${lama.nilai}"; dihitung dari ${pisah.nilai} sampai sidang ${tanggalSidang} ` +
