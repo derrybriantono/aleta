@@ -244,11 +244,12 @@ export async function kunciApiTerpasang(db?: AletaDatabase | null): Promise<bool
 }
 
 /** Asal kunci untuk ditampilkan di layar Pengaturan: tanpa isi kunci. */
-export type StatusKunciAi = { sumber: "pengaturan-ai" | "env" | "belum"; namaKoneksi?: string };
+export type StatusKunciAi = { sumber: "pengaturan-ai" | "env" | "belum"; namaKoneksi?: string; alasan?: string };
 
 export async function statusKunciAi(db?: AletaDatabase | null): Promise<StatusKunciAi> {
   const s: SumberKunciAi = await tentukanSumberKunciAletaAi(db);
   if (s.sumber === "pengaturan-ai") return { sumber: "pengaturan-ai", namaKoneksi: s.namaKoneksi };
+  if (s.sumber === "belum" && s.alasan) return { sumber: "belum", alasan: s.alasan };
   return { sumber: s.sumber };
 }
 

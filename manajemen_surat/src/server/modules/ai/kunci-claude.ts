@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 
 import type { AletaDatabase } from "@/server/db/client";
+import { PESAN_KUNCI_TAK_TERBACA, bacaKunciApiAman, bungkusUlangKunciPolos } from "@/server/modules/ai/kunci-tersimpan";
 
 /**
  * ============================================================================
@@ -67,7 +68,7 @@ export function pilihKoneksiClaudeAletaAi(input: {
 export type SumberKunciAi =
   | { sumber: "pengaturan-ai"; kunci: string; koneksiId: string; namaKoneksi: string; dipilihKhusus: boolean }
   | { sumber: "env"; kunci: string }
-  | { sumber: "belum" };
+  | { sumber: "belum"; alasan?: string };
 
 /** Sidik pendek untuk membandingkan kunci tanpa menyimpannya di tempat lain. */
 export function sidikKunci(kunci: string): string {
@@ -89,6 +90,7 @@ type BarisKoneksi = {
  * Pengaturan AI belum pernah dibuka.
  */
 export async function tentukanSumberKunciAletaAi(db: AletaDatabase | null | undefined): Promise<SumberKunciAi> {
+  let tidakTerbacaSemua = false;
   if (db) {
     try {
       const baris = await db
@@ -109,10 +111,16 @@ export async function tentukanSumberKunciAletaAi(db: AletaDatabase | null | unde
       } catch {
         // Tabel pengaturan modul belum ada: berarti belum ada pilihan.
       }
+      await bungkusUlangKunciPolos(db, baris);
       const kunciPerId = new Map<string, string>();
       const kandidat: KoneksiKandidat[] = [];
+      let adaTakTerbaca = false;
       for (const b of baris) {
-        const kunci = String(b.api_key ?? "").trim();
+        // Kunci tersimpan terenkripsi; yang tak terbuka dihitung "tanpa kunci" tetapi diingat
+        // agar alasannya jelas bila akhirnya tidak ada kunci sama sekali.
+        const terbuka = bacaKunciApiAman(b.api_key);
+        if (terbuka.tidakTerbaca) adaTakTerbaca = true;
+        const kunci = terbuka.kunci.trim();
         if (kunci) kunciPerId.set(b.id, kunci);
         kandidat.push({
           id: b.id,
@@ -128,10 +136,12 @@ export async function tentukanSumberKunciAletaAi(db: AletaDatabase | null | unde
       if (koneksi && kunci) {
         return { sumber: "pengaturan-ai", kunci, koneksiId: koneksi.id, namaKoneksi: koneksi.name, dipilihKhusus };
       }
+      tidakTerbacaSemua = adaTakTerbaca;
     } catch {
       // Jatuh ke env.
     }
   }
   const env = String(process.env.ANTHROPIC_API_KEY ?? "").trim();
-  return env ? { sumber: "env", kunci: env } : { sumber: "belum" };
+  if (env) return { sumber: "env", kunci: env };
+  return tidakTerbacaSemua ? { sumber: "belum", alasan: PESAN_KUNCI_TAK_TERBACA } : { sumber: "belum" };
 }

@@ -43,6 +43,12 @@ import { isLikelyConnectedApiKey, maskApiKey } from "@/server/shared/security";
 import { searchRegulationsInDb } from "@/server/modules/ai/knowledge-base";
 import { MODUL_ALETA_AI, PROVIDER_ALETA_AI, pilihKoneksiClaudeAletaAi } from "@/server/modules/ai/kunci-claude";
 import {
+  PESAN_KUNCI_TAK_TERBACA,
+  bacaKunciApiAman,
+  bungkusUlangKunciPolos,
+  enkripsiKunciApi,
+} from "@/server/modules/ai/kunci-tersimpan";
+import {
   getLeadershipRecipientsFromDb,
   getUsersFromDb,
   requireActorUser,
@@ -227,6 +233,10 @@ function mapProviderRow(
     getAIProviderById(providerId)?.models[0] ||
     "General Model";
   const models = buildProviderModelList(providerId, row, modelId);
+  // Kunci tersimpan terenkripsi: dibuka di sini (satu-satunya pintu baca). Yang
+  // tidak terbaca ditandai jelas, bukan kunci kosong diam-diam.
+  const { kunci: kunciTerbuka, tidakTerbaca } = bacaKunciApiAman(row.api_key);
+  const statusSambungan = tidakTerbaca ? "failed" : row.connection_status;
 
   return {
     id: row.id,
@@ -234,14 +244,17 @@ function mapProviderRow(
     providerId,
     providerName,
     modelId,
-    apiKey: includeSecrets ? row.api_key : "",
-    maskedApiKey: row.masked_api_key?.trim() || maskApiKey(row.api_key),
+    apiKey: includeSecrets ? kunciTerbuka : "",
+    // Sandi tak terbuka: petunjuk tersimpan dipakai; selain itu dihitung ulang dari kunci
+    // terbuka (hanya 4 huruf terakhir, tak pernah kunci utuh ke peramban).
+    maskedApiKey: tidakTerbaca ? row.masked_api_key?.trim() || "••••" : maskApiKey(kunciTerbuka) || row.masked_api_key?.trim() || "",
+    apiKeyTakTerbaca: tidakTerbaca || undefined,
     endpointUrl: (row.endpoint_url ?? getProviderEndpoint(providerId)) || undefined,
     models,
     builtin: Boolean(row.builtin),
-    connectionStatus: normalizeConnectionStatus(row.connection_status),
+    connectionStatus: normalizeConnectionStatus(statusSambungan),
     lastTestedAt: row.last_tested_at ?? undefined,
-    lastConnectionMessage: row.last_connection_message ?? undefined,
+    lastConnectionMessage: tidakTerbaca ? PESAN_KUNCI_TAK_TERBACA : row.last_connection_message ?? undefined,
     isActive: Boolean(row.is_active),
   };
 }
@@ -686,6 +699,7 @@ export async function getAISettingsFromDb(
       throw new ApiError(500, "Konfigurasi global AI belum ditemukan di database.");
     }
 
+    await bungkusUlangKunciPolos(db, providers);
     return buildAISettingsResponse(settings, providers, moduleRows, includeSecrets);
   }
 
@@ -738,6 +752,7 @@ export async function getAISettingsFromDb(
     throw new ApiError(500, "Konfigurasi global AI belum ditemukan di database.");
   }
 
+  await bungkusUlangKunciPolos(db, providers);
   return buildAISettingsResponse(settings as AISettingsRow, providers as AIProviderRow[], moduleRows as AIModuleSettingsRow[], includeSecrets);
 }
 
@@ -843,6 +858,9 @@ export async function upsertAISettingsInDb(
         existingConnection?.modelId ||
         providerMeta?.models[0] ||
         "General Model";
+      if (existingConnection?.apiKeyTakTerbaca && !connection.apiKey?.trim()) {
+        throw new ApiError(409, PESAN_KUNCI_TAK_TERBACA);
+      }
       const apiKey = connection.apiKey?.trim() || existingConnection?.apiKey || "";
 
       if (!apiKey) {
@@ -872,6 +890,7 @@ export async function upsertAISettingsInDb(
         existingConnection?.endpointUrl ||
         getProviderEndpoint(connection.providerId);
       const builtin = toBooleanInt(connection.builtin ?? existingConnection?.builtin ?? Boolean(providerMeta?.builtin));
+      const apiKeyTersimpan = enkripsiKunciApi(apiKey);
 
       if (!tx.supportsFullTextSearch()) {
         await tx.prepare(
@@ -899,7 +918,7 @@ export async function upsertAISettingsInDb(
           label,
           connection.providerId,
           endpointUrl,
-          apiKey,
+          apiKeyTersimpan,
           maskApiKey(apiKey),
           stringifyJson(models),
           modelId,
@@ -918,7 +937,7 @@ export async function upsertAISettingsInDb(
           name: label,
           providerId: connection.providerId,
           endpointUrl,
-          apiKey,
+          apiKey: apiKeyTersimpan,
           maskedApiKey: maskApiKey(apiKey),
           modelsJson: stringifyJson(models),
           modelId,
@@ -936,7 +955,7 @@ export async function upsertAISettingsInDb(
             name: label,
             providerId: connection.providerId,
             endpointUrl,
-            apiKey,
+            apiKey: apiKeyTersimpan,
             maskedApiKey: maskApiKey(apiKey),
             modelsJson: stringifyJson(models),
             modelId,
@@ -1214,6 +1233,10 @@ export async function testAIProviderConnectionInDb(
       throw new ApiError(404, "Koneksi AI tersimpan tidak ditemukan atau sudah dihapus.");
     }
 
+    if (savedConnection?.apiKeyTakTerbaca && !apiKey?.trim()) {
+      throw new ApiError(409, PESAN_KUNCI_TAK_TERBACA);
+    }
+
     const resolvedProviderId = savedConnection?.providerId ?? providerId ?? "";
     const resolvedModelId =
       savedConnection?.modelId ??
@@ -1221,7 +1244,7 @@ export async function testAIProviderConnectionInDb(
       getAIProviderById(resolvedProviderId)?.models[0] ??
       popularAIProviderCatalog[0]?.models[0] ??
       "general-model";
-    const resolvedApiKey = savedConnection?.apiKey ?? apiKey?.trim() ?? "";
+    const resolvedApiKey = savedConnection?.apiKey || apiKey?.trim() || "";
     const provider = getAIProviderById(resolvedProviderId) ?? popularAIProviderCatalog[0];
 
     if (!resolvedProviderId) {

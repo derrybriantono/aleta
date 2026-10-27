@@ -82,7 +82,8 @@ export function maskApiKey(apiKey: string) {
   const trimmed = apiKey.trim();
 
   if (!trimmed) return "";
-  if (trimmed.length <= 8) return `${trimmed.slice(0, 2)}***${trimmed.slice(-1)}`;
+  // Hanya 4 huruf terakhir yang dibiarkan terlihat; awalan kunci tidak diberi tahu.
+  if (trimmed.length <= 8) return "••••";
 
-  return `${trimmed.slice(0, 4)}••••${trimmed.slice(-4)}`;
+  return `••••${trimmed.slice(-4)}`;
 }

@@ -644,6 +644,8 @@ export interface AIProviderConfig {
   name: string;
   apiKey: string;
   maskedApiKey?: string;
+  /** Kunci tersimpan terenkripsi tetapi tidak dapat dibuka (rahasia server berubah): perlu diisi ulang. */
+  apiKeyTakTerbaca?: boolean;
   providerId?: AIProviderId;
   providerName?: string;
   modelId?: AIModelId;
