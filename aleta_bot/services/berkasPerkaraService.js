@@ -747,7 +747,8 @@ async function fakta(params = {}, deps = {}) {
     );
     if (r) pihak[sisi === 1 ? "p" : "t"] = { nama: String(r.nama || ""), pekerjaan: String(r.pekerjaan || ""), alamat: String(r.alamat || "") };
   }
-  const [pihakDua] = await aman("SELECT nama FROM perkara_pihak1 WHERE perkara_id = ? AND urutan = 2 LIMIT 1", [perkaraId]);
+  // pihak ke-2 = PERINGKAT kedua (urut urutan, id), bukan nilai urutan 2: pendaftaran e-Court menomori urutan bersambung lintas tabel
+  const [pihakDua] = await aman("SELECT nama FROM perkara_pihak1 WHERE perkara_id = ? ORDER BY urutan, id LIMIT 1 OFFSET 1", [perkaraId]);
   if (pihakDua) pihak.p2 = { nama: String(pihakDua.nama || "") };
   const [pp] = await aman("SELECT panitera_nama FROM perkara_panitera_pn WHERE perkara_id = ? AND aktif = 'Y' ORDER BY tanggal_penetapan DESC LIMIT 1", [perkaraId]);
   const [js] = await aman("SELECT j.nama_gelar AS nama FROM perkara_jurusita a JOIN jurusita j ON j.id = a.jurusita_id WHERE a.perkara_id = ? AND a.aktif = 'Y' ORDER BY a.id LIMIT 1", [perkaraId]);
@@ -969,7 +970,7 @@ async function isianKhas(jenis, perkaraId, { q, pihak, p }) {
       hasil.b2 = String(i.tempat_menikah || "");
     }
     hasil.b3 = await alasan();
-    const nama = (await q("SELECT nama FROM perkara_pihak1 WHERE perkara_id = ? AND urutan <= 2 ORDER BY urutan", [perkaraId])).map((x) => String(x.nama || ""));
+    const nama = (await q("SELECT nama FROM perkara_pihak1 WHERE perkara_id = ? ORDER BY urutan, id LIMIT 2", [perkaraId])).map((x) => String(x.nama || ""));
     hasil.fokus = nama.join(" dan ");
   } else if (jenis === "dk") {
     hasil.b3 = await alasan();

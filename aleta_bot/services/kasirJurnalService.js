@@ -142,7 +142,6 @@ const JENIS_CERAI_TALAK = 346;
 /** jenis_perkara_id yang dikecualikan SIPP dari larangan Sabtu/Minggu. */
 const JENIS_BEBAS_AKHIR_PEKAN = 746;
 const ALUR_PERMOHONAN = 16;
-const ROMAWI = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
 
 /** Cara panggilan pada relaas (ket_temu). */
 const KET_BERBIAYA = new Set(["S", "P", "M", "Y", "T"]);
@@ -265,7 +264,21 @@ function sebutKe(ke, sebutan) {
 
 /** Akhiran nomor pihak bila sekedudukannya lebih dari satu: " I", " II", ... */
 function akhiranUrut(i, n) {
-  return n > 1 ? ` ${ROMAWI[i] || String(i + 1)}` : "";
+  return n > 1 ? ` ${romawiSemua(i + 1)}` : "";
+}
+
+// 27 Okt 2026: angka Romawi 1..3999 untuk SEMUA pihak (dulu berhenti di X lalu angka Arab: "Penggugat 11").
+function romawiSemua(n) {
+  let sisa = Math.floor(Number(n));
+  if (!Number.isFinite(sisa) || sisa < 1 || sisa > 3999) return String(n);
+  let hasil = "";
+  for (const [nilai, huruf] of [[1000, "M"], [900, "CM"], [500, "D"], [400, "CD"], [100, "C"], [90, "XC"], [50, "L"], [40, "XL"], [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"]]) {
+    while (sisa >= nilai) {
+      hasil += huruf;
+      sisa -= nilai;
+    }
+  }
+  return hasil;
 }
 
 /** Nilai terbanyak dari peta nilai -> hitungan. */

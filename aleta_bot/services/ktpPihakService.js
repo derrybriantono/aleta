@@ -273,17 +273,33 @@ function bedaNik(a, b) {
   return n;
 }
 
-const ROMAWI = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
+/** Angka Romawi 1-3999 untuk SEMUA pihak (dulu berhenti di X: "Penggugat 11" / tanpa angka); selain itu kosong. */
+function romawi(n) {
+  let sisa = Math.floor(Number(n));
+  if (!Number.isFinite(sisa) || sisa < 1 || sisa > 3999) return "";
+  const tabel = [[1000, "M"], [900, "CM"], [500, "D"], [400, "CD"], [100, "C"], [90, "XC"], [50, "L"], [40, "XL"], [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"]];
+  let hasil = "";
+  for (const [nilai, huruf] of tabel) {
+    while (sisa >= nilai) {
+      hasil += huruf;
+      sisa -= nilai;
+    }
+  }
+  return hasil;
+}
 
 /**
- * Sebutan peran satu pihak. cabang 1 = Penggugat/Pemohon, 2 = Tergugat/Termohon,
- * 3 = Turut (Tergugat/Termohon), 4 = pihak intervensi. Beberapa pihak dalam
+ * Sebutan peran satu pihak. cabang 1 = Penggugat/Pemohon (perkara_pihak1), 2 = Tergugat/Termohon (perkara_pihak2),
+ * 3 = pihak intervensi (perkara_pihak3), 4 = Turut Tergugat/Termohon (perkara_pihak4). Beberapa pihak dalam
  * satu cabang diberi angka Romawi ("Pemohon II"); satu pihak tanpa angka.
+ * `urutan` di sini adalah PERINGKAT pihak dalam cabangnya (1, 2, 3 ...), bukan nilai kolom urutan SIPP: pendaftaran e-Court menomori
+ * urutan bersambung lintas tabel (Tergugat tunggal berurutan 25), lihat pihakPerkara.
  */
 function peranPihak(cabang, urutan, jumlahDiCabang, sebutan) {
   const s = sebutan || { satu: "Penggugat", dua: "Tergugat" };
-  const pokok = cabang === 1 ? s.satu : cabang === 2 ? s.dua : cabang === 3 ? `Turut ${s.dua}` : "Pihak intervensi";
-  return jumlahDiCabang > 1 && ROMAWI[urutan] ? `${pokok} ${ROMAWI[urutan]}` : pokok;
+  const pokok = cabang === 1 ? s.satu : cabang === 2 ? s.dua : cabang === 4 ? `Turut ${s.dua}` : "Pihak intervensi";
+  const angka = romawi(urutan);
+  return jumlahDiCabang > 1 && angka ? `${pokok} ${angka}` : pokok;
 }
 
 /**
@@ -441,13 +457,19 @@ async function pihakPerkara(perkaraId) {
     const rows = await sippQuery(
       `SELECT pp.urutan, pp.pihak_id, pp.nama, p.nomor_indentitas AS nik, p.tanggal_lahir
          FROM perkara_pihak${cabang} pp LEFT JOIN pihak p ON p.id = pp.pihak_id
-        WHERE pp.perkara_id = ? ORDER BY pp.urutan`,
+        WHERE pp.perkara_id = ? ORDER BY pp.urutan, pp.id`,
       [perkaraId]
     ).catch(() => []);
+    // 27 Okt 2026: urutan = PERINGKAT dalam cabang (1, 2, 3 ...), bukan nilai kolom urutan SIPP. Pendaftaran e-Court menomori urutan
+    // bersambung lintas tabel (656/Pdt.G/2026/PA.Dgl: Penggugat 1-25, Tergugat tunggal urutan 25, Turut Tergugat 25 dan 26), sehingga
+    // "Tergugat" tak ditemukan sebagai pihak ke-1 dan sebutannya tercetak "Tergugat XXV". Perkara yang urutannya mulai 1 dan rapat: sama.
+    let peringkat = 0;
     for (const r of Array.isArray(rows) ? rows : []) {
+      peringkat += 1;
       hasil.push({
         cabang,
-        urutan: Number(r.urutan) || 1,
+        urutan: peringkat,
+        urutanSipp: r.urutan == null ? null : Number(r.urutan),
         pihakId: r.pihak_id == null ? null : Number(r.pihak_id),
         nama: bersih(r.nama, 500),
         nik: nikBersih(r.nik),
@@ -895,6 +917,7 @@ module.exports = {
   namaSerupa,
   bedaNik,
   peranPihak,
+  romawi,
   cocokkanKtp,
   tanggalMasukAkal,
   yakinTertinggi,

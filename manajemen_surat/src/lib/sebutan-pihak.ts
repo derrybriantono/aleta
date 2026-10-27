@@ -259,12 +259,21 @@ export function perkaraPermohonan(bahan: BahanSebutan = {}): boolean {
 // PIHAK JAMAK DAN REKONVENSI (25 Okt 2026, D5 = U15)
 // ============================================================================
 
-const ROMAWI = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX"];
+const TABEL_ROMAWI: ReadonlyArray<readonly [number, string]> = [[1000, "M"], [900, "CM"], [500, "D"], [400, "CD"], [100, "C"], [90, "XC"], [50, "L"], [40, "XL"], [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"]];
 
-/** Angka urutan -> huruf Romawi (1..20); di luar itu angka biasa. */
+/** Angka urutan -> huruf Romawi 1..3999 untuk SEMUA pihak (27 Okt 2026: dulu berhenti di XX lalu angka Arab: "Penggugat 21"); di luar itu angka biasa. */
 export function urutanRomawi(n: number): string {
   const i = Math.round(Number(n) || 0);
-  return i >= 1 && i < ROMAWI.length ? ROMAWI[i] : String(i);
+  if (i < 1 || i > 3999) return String(i);
+  let sisa = i;
+  let hasil = "";
+  for (const [nilai, huruf] of TABEL_ROMAWI) {
+    while (sisa >= nilai) {
+      hasil += huruf;
+      sisa -= nilai;
+    }
+  }
+  return hasil;
 }
 
 /**
