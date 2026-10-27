@@ -566,3 +566,10 @@ Rancangan: `artifact-ceklist-berkas.html`. Blangko Derry `Ceklist Berkas Perkara
 
 **Ukuran satu lembar.** Render ABT asli ditempeli tabel hasil susunan portal untuk 15 jenis perkara x 2 keadaan (semua dokumen berlaku: prodeo, berkuasa, ghaib, ada anak, izin atasan; dan tanpa satu pun) x A4, F4, Legal = 90 naskah: semua 1 lembar di Word.
 
+
+## 18. Perbaikan atas cetakan nyata (27 Okt 2026, branch `fitur/sampul-daftar-isi-rapi`)
+- Kop sampul (cetak awal, lengkap, semua varian), daftar isi, dan ceklist memuat logo satker aktif monokrom di kiri nama pengadilan: RTF membawa penanda tak terlihat `@@LOGO@@`; portal (`lib/logo-rtf.ts`, `server/modules/berkas-perkara/logo-kop.ts`) menggantinya dengan PNG skala abu-abu dari identitas satker (bukan logo tertanam).
+- Daftar isi: Bundel A saja untuk tingkat pertama (pasca putusan masuk A); Bundel B hanya bila SIPP mencatat banding/kasasi/PK (bot `fakta.upayaHukum`, ekstensi pilihan "Cetak"). Tabel disusun portal (`lib/daftar-isi-rtf.ts`): judul bagian berlatar tipis, nomor berlanjut, kolom tanggal/halaman rata, tanpa baris bundel kosong.
+- Ciri perkara bersih: tanpa `+` dan `>`; pemisah titik tengah; label tanpa kurung. Spasi: tanggal riwayat sampul lengkap tidak terbungkus, pekerjaan/alamat tanpa tab liar, ghaib/mafqud di belakang ciri, jarak kosong pihak banyak dirapatkan, nama pihak daftar isi satu baris dengan jumlah orang.
+- Paket ABT: jalur PENINGKATAN dari 177/21 terpasang (lihat PASANG.md), diuji siklus penuh di lab.
+- Ukur: tiap varian (21 berkas x 4 perkara contoh = 84) tepat satu lembar di Word.

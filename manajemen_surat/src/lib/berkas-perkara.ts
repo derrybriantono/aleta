@@ -121,16 +121,19 @@ export const DAFTAR_CIRI: readonly DefinisiCiri[] = [
 ];
 export const KUNCI_CIRI: readonly string[] = DAFTAR_CIRI.map((c) => c.kunci);
 
-/** Satu ciri untuk dicetak, mis. "[■ KUASA HUKUM P]". */
+/** Pemisah antar ciri (tanpa kurung atau tanda + dan >; permintaan 27 Okt). */
+export const SEPARATOR_CIRI = "  ·  ";
+
+/** Satu ciri untuk dicetak, mis. "■ KUASA HUKUM P". */
 export function teksCiri(c: DefinisiCiri): string {
-  return `[${LAMBANG_CIRI[c.kelompok]} ${c.nama}${c.sisi ? ` ${c.sisi}` : ""}]`;
+  return `${LAMBANG_CIRI[c.kelompok]} ${c.nama}${c.sisi ? ` ${c.sisi}` : ""}`;
 }
 
 /** Isian #5801#: ciri yang berlaku, dipisah dua spasi; tak satu pun = kalimat netral. */
 export function rangkaiCiri(aktif: Iterable<string>): string {
   const set = new Set(aktif);
   const teks = DAFTAR_CIRI.filter((c) => set.has(c.kunci)).map(teksCiri);
-  return teks.length ? teks.join("  ") : "- tidak ada ciri khusus -";
+  return teks.length ? teks.join(SEPARATOR_CIRI) : "- tidak ada ciri khusus -";
 }
 
 /** Keadaan ciri: otomatis (dari data perkara) ditimpa tangan bila ada. */
@@ -159,7 +162,7 @@ export function ciriSampulAwal(aktif: Record<string, boolean>, sisiDari: Record<
     const c = DAFTAR_CIRI.find((x) => x.kunci === k);
     return c && aktif[k] ? teks(c) : "";
   };
-  return { "5861": biasa.length ? biasa.join("  ") : "- tidak ada ciri khusus -", "5807": satu("ghaib"), "5808": satu("mafqud") };
+  return { "5861": biasa.length ? biasa.join(SEPARATOR_CIRI) : "- tidak ada ciri khusus -", "5807": satu("ghaib"), "5808": satu("mafqud") };
 }
 
 /** Ciri susulan sampul cetak awal (kotak centang): kunci, nama tercetak. Daftar menurut jenis perkara; yang terdeteksi dari data dicentang otomatis, sisanya dicentang tangan. */

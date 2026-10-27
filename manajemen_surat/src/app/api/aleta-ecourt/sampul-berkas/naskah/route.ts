@@ -13,13 +13,16 @@ import {
   saringNilaiTimpa,
 } from "@/lib/berkas-perkara";
 import { PENANDA_TABEL_CEKLIST, bersihkanBahanCeklist, kotaDariPengadilan, susunCeklist, tabelCeklistRtf, tempelTabelCeklist, teksRingkasCeklist } from "@/lib/ceklist-berkas";
+import { tabelDaftarIsiRtf, ubahKopBundel } from "@/lib/daftar-isi-rtf";
 import { FITUR_BERKAS_PERKARA } from "@/lib/fitur-satker";
+import { sisipLogoRtf } from "@/lib/logo-rtf";
 import { bersihkanPihak, gabungLampiran, jumlahDariDaftar, pihakBanyak } from "@/lib/lampiran-pihak";
 import { barisTurut, bersihkanAlasan, bersihkanAnak, bersihkanObjek, bersihkanSidang, kolomPihakSampul, susunLampiran, type HasilLampiran } from "@/lib/lampiran-sampul";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { callAletaBotSippBridge } from "@/server/modules/aleta-sipp/aleta-sipp-datasource";
 import { pastikanBolehBerkas } from "@/server/modules/berkas-perkara/akses";
+import { bacaLogoKopRtf } from "@/server/modules/berkas-perkara/logo-kop";
 import { bacaSatkerAktif } from "@/server/modules/satker/identitas";
 import { idPerkaraSah } from "@/server/modules/berkas-perkara/layanan";
 import { pastikanFiturMenyala } from "@/server/modules/satker/fitur";
@@ -122,6 +125,8 @@ export async function POST(request: NextRequest) {
     let ringkas: Record<string, unknown> = {};
     let lamp: HasilLampiran | null = null;
     let ceklistTabel = "";
+    let daftarIsiTabel = "";
+    const bundelCetak: "A" | "B" = badan.bundelCetak === "B" ? "B" : "A";
     let ceklistHasil: ReturnType<typeof susunCeklist> | null = null;
     if (jenis === "ceklist") {
       // Ceklist berkas Meja I: kerangka lewat ABT, tabel dokumen disusun di sini (jenis dan keadaan perkara) lalu ditempel menggantikan paragraf penanda.
@@ -184,7 +189,10 @@ export async function POST(request: NextRequest) {
     } else {
       const baris = bersihkanBaris(badan.baris);
       const hitung = hitungDaftarIsi(baris, bersihkanSunting(badan.sunting), { bundelB: badan.bundelB === "lanjut" ? "lanjut" : "1" });
-      nilai = nilaiTimpaDaftarIsi(hitung.baris);
+      // Tabel daftar isi disusun di sini (baris tabel sungguhan) dan menggantikan paragraf penanda #5850#; satu bundel per cetakan (A tingkat pertama, B upaya hukum).
+      nilai = { "5850": PENANDA_TABEL_CEKLIST };
+      const lebarKertasDi = { a4: 11906, f4: 12189, legal: 12246 }[kertas];
+      daftarIsiTabel = tabelDaftarIsiRtf(hitung.baris, bundelCetak, lebarKertasDi - 1400);
       ringkas = { dokumen: hitung.total.A.dokumen + hitung.total.B.dokumen, halamanA: hitung.total.A.halaman, halamanB: hitung.total.B.halaman, perkiraan: hitung.total.A.perkiraan + hitung.total.B.perkiraan };
     }
 
@@ -199,7 +207,10 @@ export async function POST(request: NextRequest) {
     }
     let bita = buangGrupTersembunyiRtf(Buffer.from(data.rtfBase64, "base64"));
     // Sampul cetak awal: kotak centang ASCII dari variabel menjadi karakter kotak; tanda "..." variabel kosong dibuang (kolom tulis tangan).
-    if ((jenis === "sampul" && bentuk === "awal") || jenis === "ceklist") bita = new Uint8Array(Buffer.from(rapikanSampulAwal(Buffer.from(bita).toString("latin1")), "latin1"));
+    // Kotak centang ASCII jadi karakter kotak, tanda "..." variabel kosong dibuang (semua blangko berkas); logo satker (monokrom) menggantikan penanda di kop.
+    bita = new Uint8Array(Buffer.from(rapikanSampulAwal(Buffer.from(bita).toString("latin1")), "latin1"));
+    bita = new Uint8Array(Buffer.from(sisipLogoRtf(Buffer.from(bita).toString("latin1"), await bacaLogoKopRtf(db)), "latin1"));
+    if (jenis === "daftar-isi") bita = new Uint8Array(Buffer.from(tempelTabelCeklist(ubahKopBundel(Buffer.from(bita).toString("latin1"), bundelCetak), daftarIsiTabel), "latin1"));
     if (jenis === "ceklist") bita = new Uint8Array(Buffer.from(tempelTabelCeklist(Buffer.from(bita).toString("latin1"), ceklistTabel), "latin1"));
     if (lamp && lamp.bagianRtf) bita = new Uint8Array(Buffer.from(gabungLampiran(Buffer.from(bita).toString("latin1"), lamp.bagianRtf), "latin1"));
     const rtf = Buffer.from(bita);
@@ -209,6 +220,7 @@ export async function POST(request: NextRequest) {
         folder: berkas.folder,
         kertas,
         bentuk: jenis === "sampul" ? bentuk : undefined,
+        bundelCetak: jenis === "daftar-isi" ? bundelCetak : undefined,
         pihakBanyak: jenis === "sampul" ? banyak : undefined,
         lampiran: lamp ? lamp.daftar : [],
         ceklist: ceklistHasil ? { baris: ceklistHasil.baris, ringkas: ceklistHasil.ringkas } : undefined,

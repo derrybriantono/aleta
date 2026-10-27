@@ -330,6 +330,23 @@ describe("layar kerja (jsdom, host tiruan)", () => {
     expect(put.badan.isian.bundelB).toBe("1");
   });
 
+  it("daftar isi: tingkat pertama = Bundel A saja; pilihan Bundel B hanya bila ada upaya hukum", async () => {
+    const tanpa = await bukaLayar("daftar-isi");
+    expect(tanpa.w.querySelector("[data-bk-bundelcetak]")).toBeNull();
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(tanpa.panggilan.filter((p) => p.alamat.includes("/naskah")).at(-1)!.badan.bundelCetak).toBe("A");
+    document.body.innerHTML = "";
+    const dengan = await bukaLayar("daftar-isi", "lengkap", (f) => {
+      f.upayaHukum = true;
+    });
+    const pilih = dengan.w.querySelector("[data-bk-bundelcetak]") as HTMLSelectElement;
+    expect(pilih).toBeTruthy();
+    pilih.value = "B";
+    pilih.dispatchEvent(new Event("change", { bubbles: true }));
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(dengan.panggilan.filter((p) => p.alamat.includes("/naskah")).at(-1)!.badan.bundelCetak).toBe("B");
+  });
+
   it("daftar isi: geser menukar urutan, urutan ikut tersimpan", async () => {
     const { w, panggilan } = await bukaLayar("daftar-isi");
     (w.querySelector('[data-bk="turun"][data-bkb="A"][data-bki="0"]') as HTMLElement).click();

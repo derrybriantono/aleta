@@ -40,7 +40,7 @@ def run(t, b=False, i=False, sz=None, sp=None, cf=None):
     if b: pre += '\\b'
     if i: pre += '\\i'
     if sz: pre += '\\fs%d' % sz
-    if sp: pre += '\\expndtw%d' % sp
+    if sp: pre += '\\expndtw%d' % max(1, sp // 3)   # renggang huruf label dirapatkan (permintaan 27 Okt: terlalu renggang)
     if cf: pre += '\\cf%d' % cf
     if not pre:
         return esc(t)
@@ -107,6 +107,22 @@ def kepala_rtf():
             '\\paperw%d\\paperh%d\\margl700\\margr700\\margt600\\margb600\\widowctrl\n' % HAL)
 
 
+def kop_logo(sub, kanan='', lebar_total=None, kanan_sz=22, kanan_ket=None):
+    """Kop satker: logo (monokrom, disisipkan portal dari identitas satker; penanda tak terlihat bila tanpa panel) di kiri nama pengadilan, kotak di kanan.
+    kanan = isi kotak (mis. 'BUNDEL A'); kanan_ket = baris kecil di bawahnya."""
+    L = lebar_total or (HAL[0] - 1400)
+    w_logo = int(1100 * L / 10506)
+    w_kanan = int(3200 * L / 10506)
+    isi_kanan = [par([run(kanan, b=True, sz=kanan_sz, sp=40)], al='c', intbl='mid' if kanan_ket else True, sb=30, sa=30)] if not kanan_ket else [
+        par([run(kanan, b=True, sz=kanan_sz, sp=40)], al='c', intbl='mid', sb=30), p_sel([run(kanan_ket, b=True, sz=13, sp=40)], al='c', sa=30)]
+    return tabel([{
+        'lebar': [w_logo, L - w_logo - w_kanan, w_kanan], 'brd': [(0, 0, 20, 0), (0, 0, 20, 0), (20, 20, 20, 20)], 'va': ['c', 'c', 'c'], 'tinggi': 1000,
+        'sel': [sel(p_sel([run('@@LOGO@@', sz=2, cf=5)], sb=20, sa=20)),
+                sel([par([run('#8010#', b=True, sz=24, sp=20)], intbl='mid', sb=20), p_sel([run(sub, sz=15)], sa=20)]),
+                sel(isi_kanan)],
+    }])
+
+
 def judul_bagian(teks, ket=None, sb=100):
     segs = [run(teks, b=True, sz=14, sp=40)]
     if ket: segs.append(run('   ' + ket, sz=13))
@@ -127,11 +143,7 @@ def sampul(kertas='a4'):
     baris_riwayat = KERTAS[kertas][3]
     s = kepala_rtf()
     # kop
-    s += tabel([{
-        'lebar': [7300, LEBAR - 7300], 'brd': [(0, 0, 20, 0), (20, 20, 20, 20)], 'va': ['c', 'c'],
-        'sel': [sel([par([run('#8010#', b=True, sz=24, sp=20)], intbl='mid'), p_sel([run('Berkas perkara tingkat pertama', sz=15)])]),
-                sel([p_sel([run('BUNDEL A', b=True, sz=22, sp=40)], al='c')])],
-    }])
+    s += kop_logo('Berkas perkara tingkat pertama', 'BUNDEL A')
     # judul (kiri) dan nomor perkara (kanan, ringkas)
     s += tabel([{
         'lebar': [5400, LEBAR - 5400], 'brd': [(0, 0, 0, 0), (30, 30, 30, 30)], 'va': ['c', 'c'],
@@ -147,12 +159,11 @@ def sampul(kertas='a4'):
     s += tabel([{'lebar': [LEBAR], 'brd': [(15, 15, 15, 15)],
                  'sel': [sel([par([run('CIRI PERKARA', b=True, sz=12, sp=60), run('   menyala hanya bila berlaku', sz=12)], intbl='mid', sb=20),
                               p_sel([run('#5801#', b=True, sz=17, sp=10)], sb=20, sa=40)])]}])
-    s += par([run('pendaftaran dan biaya [+ / \u25A0]      pihak [* / \u25CF]      proses [> / \u25B2]', sz=13)], sb=20)
     # ===== RIWAYAT SIDANG: bagian terbesar dan paling menonjol =====
     s += par('', sz=8)
     s += tabel([{'lebar': [LEBAR], 'brd': [(30, 30, 0, 30)], 'shade': [4],
                  'sel': [sel(p_sel([run('RIWAYAT SIDANG', b=True, sz=28, sp=160, cf=5), run('     diisi dari jadwal sidang; baris sisa untuk tulisan tangan', sz=13, cf=5)], sb=50, sa=50))]}])
-    w5 = [560, 1750, 700, 3700, LEBAR - 560 - 1750 - 700 - 3700]
+    w5 = [560, 2150, 700, 3450, LEBAR - 560 - 2150 - 700 - 3450]   # tanggal muat '02 September 2026' sebaris
     br = [(10, 10, 20, 10)] * 5
     kep = {'lebar': w5, 'brd': [(0, 30, 20, 10), (0, 10, 20, 10), (0, 10, 20, 10), (0, 10, 20, 10), (0, 10, 20, 30)], 'shade': [2] * 5,
            'sel': [sel(p_sel([run(t, b=True, sz=14, sp=40)], al=a, sb=30, sa=30)) for t, a in
@@ -165,10 +176,10 @@ def sampul(kertas='a4'):
         baris.append({'lebar': w5, 'tinggi': TINGGI_BARIS[kertas], 'va': ['c'] * 5,
                       'brd': [(0, 30, 30 if akhir else 10, 10), (0, 10, 30 if akhir else 10, 10), (0, 10, 30 if akhir else 10, 10), (0, 10, 30 if akhir else 10, 10), (0, 10, 30 if akhir else 10, 30)],
                       'sel': [sel(p_sel([run(str(n), b=True, sz=22)], al='c')),
-                              sel(p_sel([run('#%d#' % kode, sz=22)])),
+                              sel(p_sel([run('#%d#' % kode, sz=20)])),
                               sel(p_sel([run('#%d#' % (kode + 1), b=True, sz=18)], al='c')),
-                              sel(p_sel([run('#%d#' % (kode + 2), sz=22)])),
-                              sel(p_sel([run('#%d#' % (kode + 3), sz=22)]))]})
+                              sel(p_sel([run('#%d#' % (kode + 2), sz=20)])),
+                              sel(p_sel([run('#%d#' % (kode + 3), sz=20)]))]})
     s += tabel(baris)
     s += par([run('HADIR: P = pihak pertama, T = pihak kedua (sandi kehadiran SIPP); kosong = belum dicatat', sz=12)], sb=20)
     # ===== blok lain dipadatkan =====
@@ -193,7 +204,7 @@ def sampul(kertas='a4'):
     q4 = LEBAR // 4
 
     def kot(l, v, al='l', sz=15):
-        return sel([par([run(l, b=True, sz=11, sp=30)], al=al, intbl='mid', sb=15), p_sel([run(v, b=True, sz=sz)], al=al, sa=15)])
+        return sel([par([run(l, b=True, sz=11, sp=30)], al=al, intbl='mid', sb=30, sa=30), p_sel([run(v, b=True, sz=sz)], al=al, sa=30)])
     s += judul_bagian('MAJELIS DAN PETUGAS')
     s += tabel([
         {'lebar': [q4] * 3 + [LEBAR - 3 * q4], 'brd': [K_SEL] * 4,
@@ -218,42 +229,30 @@ def sampul(kertas='a4'):
 
 # --------------------------------------------------------------------------------------------------------------------
 def daftar_isi(kertas='a4'):
+    """Daftar isi berkas (27 Okt): kop berlogo, BUNDEL A (tingkat pertama; BUNDEL B hanya untuk upaya hukum, diganti portal), identitas, TABEL dokumen disusun portal
+    (penanda #5850#: bagian bernomor, kolom tanggal dan halaman rata, tanpa baris kosong), tanda tangan Panitera Pengganti."""
     pilih_kertas(kertas)
+    L = HAL[0] - 1400
     s = kepala_rtf()
-    s += tabel([{
-        'lebar': [7300, LEBAR - 7300], 'brd': [(0, 0, 20, 0), (20, 20, 20, 20)], 'va': ['c', 'c'],
-        'sel': [sel([par([run('#8010#', b=True, sz=24, sp=20)], intbl='mid'), p_sel([run('Daftar isi berkas perkara tingkat pertama', sz=16)])]),
-                sel([p_sel([run('BUNDEL A  /  B', b=True, sz=20, sp=30)], al='c')])],
-    }])
-    s += par([run('DAFTAR ISI BERKAS', b=True, sz=30, sp=40)], al='c', sb=160)
+    s += kop_logo('Daftar isi berkas perkara tingkat pertama', 'BUNDEL A')
+    s += par([run('DAFTAR ISI BERKAS', b=True, sz=30, sp=40)], al='c', sb=140)
     s += par([run('Nomor #0001#', b=True, sz=22)], al='c', sa=100)
-    half = LEBAR // 2
+    half = L // 2
+
+    def kot(l, v, sz=16):
+        return sel([par([run(l, b=True, sz=12, sp=30)], intbl='mid', sb=40, sa=40), p_sel([run(v, b=True, sz=sz)], sa=40)])
     s += tabel([
-        {'lebar': [half, LEBAR - half], 'brd': [K_SEL] * 2,
-         'sel': [sel([par([run('#5841#', b=True, sz=13, sp=50)], intbl='mid', sb=20), p_sel([run('#0098#   #1033#', sz=17)])]),
-                 sel([par([run('#8147#', b=True, sz=13, sp=50)], intbl='mid', sb=20), p_sel([run('#0102#', sz=17)])])]},
-        {'lebar': [half, LEBAR - half], 'brd': [K_SEL] * 2,
-         'sel': [sel([par([run('MAJELIS', b=True, sz=13, sp=50)], intbl='mid', sb=20), p_sel([run('#0012#;  #0013#;  #0014#', sz=16)])]),
-                 sel([par([run('PANITERA SIDANG', b=True, sz=13, sp=50)], intbl='mid', sb=20), p_sel([run('#0015#', sz=16)])])]},
-        {'lebar': [LEBAR], 'brd': [K_SEL],
-         'sel': [sel([par([run('CIRI PERKARA', b=True, sz=13, sp=50)], intbl='mid', sb=20), p_sel([run('#5801#', b=True, sz=16)])])]},
+        {'lebar': [half, L - half], 'brd': [K_SEL] * 2,
+         'sel': [kot('#5894#', '#5898#', 17), kot('#5895#', '#5899#', 17)]},   # sebutan + jumlah orang, nama pertama saja (I. bila lebih dari satu)
+        {'lebar': [half, L - half], 'brd': [K_SEL] * 2,
+         'sel': [kot('MAJELIS HAKIM', '#5869#', 15), kot('PANITERA SIDANG', '#0015#', 16)]},
+        {'lebar': [L], 'brd': [K_SEL], 'sel': [kot('CIRI PERKARA', '#5801#', 15)]},
     ])
     s += par('', sz=8)
-    wk = [650, 6350, 2000, LEBAR - 650 - 6350 - 2000]
-    kep = {'lebar': wk, 'brd': [K_SEL] * 4, 'shade': [2] * 4,
-           'sel': [sel(p_sel([run(t, b=True, sz=14, sp=40)], al=a)) for t, a in (('NO', 'c'), ('JENIS DOKUMEN', 'l'), ('TANGGAL', 'l'), ('HALAMAN', 'c'))]}
-
-    def judul_bundel(t):
-        return {'lebar': [LEBAR], 'brd': [K_SEL], 'shade': [4], 'sel': [sel(p_sel([run(t, b=True, sz=18, sp=80, cf=5)]))]}
-
-    def isi(k1, k2, k3, k4):
-        return {'lebar': wk, 'brd': [K_SEL] * 4, 'jaga': False,
-                'sel': [sel(p_sel([run('#%d#' % k1, sz=17)], al='c')), sel(p_sel([run('#%d#' % k2, sz=17)])),
-                        sel(p_sel([run('#%d#' % k3, sz=17)])), sel(p_sel([run('#%d#' % k4, sz=17)], al='c'))]}
-    s += tabel([kep, judul_bundel('BUNDEL A'), isi(5851, 5852, 5853, 5854), judul_bundel('BUNDEL B'), isi(5856, 5857, 5858, 5859)])
-    s += par([run('Kolom halaman diisi tangan saat berkas dijilid.', sz=14)], sb=60)
-    s += par([run('Panitera Pengganti,', sz=18)], al='r', sb=240)
-    s += par('', sz=18, al='r', sb=500)
+    s += par([run('#5850#', sz=14)], sb=0, sa=40)
+    s += par([run('Kolom halaman diisi tangan saat berkas dijilid bila belum terisi.', sz=13)], sb=60)
+    s += par([run('Panitera Pengganti,', sz=18)], al='r', sb=200)
+    s += par('', sz=18, al='r', sb=600)
     s += par([run('#0015#', b=True, sz=18)], al='r')
     return s + '}\n'
 
