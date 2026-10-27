@@ -245,7 +245,8 @@ async function bukaJendelaBas(h: Halaman) {
   klik(h, '[data-jenismodal="bas"]');
   await tunggu(10);
 }
-const namaKelompok = (h: Halaman) => qq(h, "[data-kelmodal]").map((b) => b.querySelector(".kn")!.textContent || "").filter((n) => n !== "Disarankan");
+// 27 Okt: hanya sisi kiri (tombol asal saran di sisi kanan juga ber-data-kelmodal).
+const namaKelompok = (h: Halaman) => qq(h, ".bd-mkiri [data-kelmodal]").map((b) => b.querySelector(".kn")!.textContent || "").filter((n) => n !== "Disarankan");
 
 describe("J. jendela Pilih blangko sebelum dan sesudah paket nama lengkap", () => {
   for (const [keadaan, alias] of [["SEBELUM paket (alias lama)", "CG - BAS"], ["SESUDAH paket (alias lengkap)", "Cerai Gugat - BAS"]] as const) {

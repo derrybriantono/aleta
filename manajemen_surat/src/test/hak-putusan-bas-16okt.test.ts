@@ -201,7 +201,8 @@ async function jendela(h: Halaman) {
   for (const j of tab) {
     klik(h, `[data-jenismodal="${j}"]`);
     await tunggu(10);
-    kel[String(j)] = qq(h, "[data-kelmodal]").map((b) => b.querySelector(".kn")!.textContent || "").filter((n) => n !== "Disarankan");
+    // 27 Okt: hanya daftar kelompok di sisi kiri (tombol asal saran di sisi kanan juga ber-data-kelmodal).
+    kel[String(j)] = qq(h, ".bd-mkiri [data-kelmodal]").map((b) => b.querySelector(".kn")!.textContent || "").filter((n) => n !== "Disarankan");
   }
   return { tab, kel };
 }

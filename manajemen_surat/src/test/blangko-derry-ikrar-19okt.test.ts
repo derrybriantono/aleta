@@ -296,7 +296,7 @@ async function bukaIkrar(h: Halaman, jumlah: number) {
   await sampai(() => qq(h, "[data-ikrar]").length === jumlah, `${jumlah} butir ikrar`);
 }
 const butir = (h: Halaman) => qq(h, "[data-ikrar]").map((b) => b.getAttribute("data-bl"));
-const namaKelompok = (h: Halaman) => qq(h, "[data-kelmodal]").map((b) => b.querySelector(".kn")!.textContent);
+const namaKelompok = (h: Halaman) => qq(h, ".bd-mkiri [data-kelmodal]").map((b) => b.querySelector(".kn")!.textContent);
 
 // ============================================================================
 describe("A. kelompok maya Ikrar Talak", () => {
@@ -353,7 +353,8 @@ describe("B. hak per peran mengikuti hak folder asal", () => {
     expect(butir(h).sort()).toEqual([B_1, B_2, B_2A, B_3, B_4].sort());
     // Kelompok aslinya tidak berubah (tidak dipindah, tidak digandakan): tetap memuat berkas BAS biasa dan keempat BAS ikrar.
     klik(h, '[data-kelmodal="k:Cerai Talak - BAS"]');
-    expect(qq(h, "[data-bl]:not([data-ikrar])").map((b) => b.getAttribute("data-bl"))).toEqual([CT_BAS_BIASA, B_1, B_2, B_2A, B_3, B_4]);
+    // 27 Okt: butir yang disarankan (keduanya hadir: [2] dan [2a]) naik ke atas kelompoknya; urutan sisanya tetap seperti di menu.
+    expect(qq(h, "[data-bl]:not([data-ikrar])").map((b) => b.getAttribute("data-bl"))).toEqual([B_2, B_2A, CT_BAS_BIASA, B_1, B_3, B_4]);
   });
 
   it("juru sita: hanya relaas dan amplop ikrar", async () => {

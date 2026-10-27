@@ -347,7 +347,8 @@ describe("F. jendela pilih blangko", () => {
     const modal = await sampai(() => q(h, "#bd-modal:not([hidden])"), "modal");
     expect(Array.from(modal.querySelectorAll("[data-jenismodal]")).map((b) => b.textContent)).toEqual(["Putusan"]);
     await sampai(() => q(h, `[data-bl="${BLANGKO_PUT}"]`), "berkas");
-    const kel = qq(h, "[data-kelmodal]").map((b) => b.querySelector(".kn")!.textContent);
+    // 27 Okt: tab Disarankan kini memuat tombol "di <kelompok asal>" ber-data-kelmodal di sisi kanan; daftar kelompok dibaca dari sisi kiri saja.
+    const kel = qq(h, ".bd-mkiri [data-kelmodal]").map((b) => b.querySelector(".kn")!.textContent);
     expect(kel).toEqual(["Disarankan", "Putusan Cerai Gugat"]);
     expect(q(h, "[data-kelmodal].saran .ks")!.textContent).toContain("sidang ke-2");
     expect(q(h, `[data-bl="${BLANGKO_PUT}"] .bd-lencana`)!.textContent).toBe("disarankan");
