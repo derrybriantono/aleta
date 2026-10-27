@@ -27,7 +27,7 @@ GANDA = '\\chbrdr\\brdrdb\\brdrw15\\brsp20'   # bingkai ganda karakter (ciri yan
 
 
 def kotak_teks(teks, sz=14):
-    return [KOTAK + ' ', b.run(teks, sz=sz)]
+    return [KOTAK + '\\~', b.run(teks.replace(' ', '\u00a0'), sz=sz)]   # kotak dan label tidak terpisah baris
 
 
 def sampul_awal(kertas='a4', lawan=True, banyak=False):

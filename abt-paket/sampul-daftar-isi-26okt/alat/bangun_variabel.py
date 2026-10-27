@@ -116,14 +116,19 @@ for bundel, awal in (('A', 5851), ('B', 5856)):
 
 # ---- riwayat sidang: 20 baris x 4 kolom (tgl, hadir, agenda, alasan); sidang ke-n = urutan tanggal tanpa sidang ikrar
 KODE_RIWAYAT = 5700
+def bersih(kolom):
+    # nilai bermakna kosong dari SIPP ("0", "-", "--", titik, garis bawah) tidak dicetak: sel dikosongkan
+    return "IF(TRIM(IFNULL(%s,'')) REGEXP '^[-0._ ]*$','',%s)" % (kolom, kolom)
+
+
 HADIR = "(CASE dihadiri_oleh WHEN 1 THEN 'P T' WHEN 2 THEN 'P' WHEN 3 THEN 'T' WHEN 4 THEN '-' WHEN 5 THEN 'I' ELSE '' END)"
 for n in range(1, 21):
     pilih = "FROM perkara_jadwal_sidang WHERE perkara_id=%s AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT %d,1" % (P, n - 1)
     k = KODE_RIWAYAT + (n - 1) * 4
     sql(k, 'RIWAYAT SIDANG SAMPUL baris %d: tanggal sidang' % n, "SELECT tanggal_sidang AS data " + pilih)
     sql(k + 1, 'RIWAYAT SIDANG SAMPUL baris %d: kehadiran (P T / P / T / -)' % n, "SELECT %s AS data " % HADIR + pilih)
-    sql(k + 2, 'RIWAYAT SIDANG SAMPUL baris %d: agenda / hasil' % n, "SELECT CONCAT(IFNULL(agenda,''),IF(sidang_keliling='Y',' (sidang keliling)','')) AS data " + pilih)
-    sql(k + 3, 'RIWAYAT SIDANG SAMPUL baris %d: alasan penundaan / keterangan' % n, "SELECT alasan_ditunda AS data " + pilih)
+    sql(k + 2, 'RIWAYAT SIDANG SAMPUL baris %d: agenda / hasil' % n, "SELECT CONCAT(%s,IF(sidang_keliling='Y',' (sidang keliling)','')) AS data " % bersih('agenda') + pilih)
+    sql(k + 3, 'RIWAYAT SIDANG SAMPUL baris %d: alasan penundaan / keterangan' % n, "SELECT %s AS data " % bersih('alasan_ditunda') + pilih)
 
 # ---- SAMPUL CETAK AWAL (keputusan Derry 26 Okt, versi 3): ciri yang sudah diketahui, ciri susulan, putusan, hadir per baris
 # Kotak centang ditulis ASCII "[ ]" / "[X]" (portal mengubahnya menjadi kotak saat naskah disusun). "Berlawanan" = nomor perkara memuat /Pdt.G (gugatan dan cerai talak).

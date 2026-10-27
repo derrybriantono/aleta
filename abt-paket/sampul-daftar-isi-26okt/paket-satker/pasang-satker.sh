@@ -13,7 +13,7 @@ SINI=$(pwd)
 N=abt-sampul-daftar-isi-26okt
 HARAP='0|0|31|0|1|0|0|0'
 ULANG='0|177|31|1|1|1|0|0'
-TINGKAT='0|147|31|1|1|1|0|30'
+TINGKAT='0|107|31|1|1|1|0|70'
 CAD="$SINI/cadangan"
 B="${ABT_BLANGKO:-/var/www/html/aps_badilag/_blangko_abt}"
 SDB="${SIPP_DB:-SIPP}"
@@ -42,7 +42,7 @@ p=$($MY -N < "$N-PRASYARAT.sql") || gagal "prasyarat tak terbaca - TIDAK ada yan
 if [ "$p" != "$HARAP" ] && [ "$p" != "$ULANG" ] && [ "$p" != "$TINGKAT" ]; then
   gagal "prasyarat '$p' (harus '$HARAP' pasang pertama, '$ULANG' pasang ulang, atau '$TINGKAT' PENINGKATAN dari paket sebelumnya) - TIDAK ada yang diubah. Arti angka: lihat $N-PRASYARAT.sql"
 fi
-if [ "$p" = "$TINGKAT" ]; then echo "PRASYARAT COCOK ($p) - PENINGKATAN: 30 variabel dan berkas RTF paket sebelumnya diganti isi barunya"; else echo "PRASYARAT COCOK ($p)"; fi
+if [ "$p" = "$TINGKAT" ]; then echo "PRASYARAT COCOK ($p) - PENINGKATAN: 70 variabel dan berkas RTF paket sebelumnya diganti isi barunya"; else echo "PRASYARAT COCOK ($p)"; fi
 mkdir -p "$CAD" || gagal "tidak bisa membuat $CAD"
 # MODE pulih: "baru" (pasang pertama: pulih = hapus semua) atau "peningkatan" (pulih = kembali ke paket sebelumnya). Pasang ulang tidak mengubahnya.
 if [ "$p" = "$HARAP" ]; then echo baru > "$CAD/mode.txt"; elif [ "$p" = "$TINGKAT" ]; then echo peningkatan > "$CAD/mode.txt"; elif [ ! -f "$CAD/mode.txt" ]; then echo baru > "$CAD/mode.txt"; fi

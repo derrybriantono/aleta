@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { hitungDaftarIsi, type BarisDasar } from "@/lib/berkas-perkara";
+import { hitungDaftarIsi, rapikanSampulAwal, type BarisDasar } from "@/lib/berkas-perkara";
 import { tabelDaftarIsiRtf, ubahKopBundel } from "@/lib/daftar-isi-rtf";
 import { grupGambarPngRtf, PENANDA_LOGO, sisipLogoRtf } from "@/lib/logo-rtf";
 import { logoMonokrom } from "@/server/modules/berkas-perkara/logo-kop";
@@ -94,6 +94,26 @@ describe("logo satker di kop RTF", () => {
   });
 });
 
+describe("kotak centang tak terpisah dari labelnya; nilai bermakna kosong tidak dicetak", () => {
+  it("rapikanSampulAwal: spasi kotak-label dan antar kata dalam label jadi spasi tak-putus, pemisah antar label tetap", () => {
+    const hasil = rapikanSampulAwal("[ ] PERMINTAAN SITA  [X] PEMERIKSAAN SETEMPAT  [ ] P");
+    expect(hasil).toBe("{\\f1\\u9744?}\\~PERMINTAAN\\~SITA  {\\f1\\u9746?}\\~PEMERIKSAAN\\~SETEMPAT  {\\f1\\u9744?}\\~P");
+    expect(rapikanSampulAwal("Hasil: [ ] BERHASIL SEBAGIAN}")).toContain("BERHASIL\\~SEBAGIAN}");
+  });
+  it("daftar isi: keterangan 0 dan -- tidak ikut dicetak", () => {
+    const rows = hitungDaftarIsi([D("A", "I. X", "k1", "Surat A", "2026-01-01", 1, "0"), D("A", "I. X", "k2", "Surat B", "2026-01-02", 1, "--"), D("A", "I. X", "k3", "Surat C", "2026-01-03", 1, "asli")], {}, {}).baris;
+    const t = tabelDaftarIsiRtf(rows, "A", 10000);
+    expect(t).toContain("Surat A\\cell");
+    expect(t).toContain("Surat B\\cell");
+    expect(t).toContain("Surat C - asli");
+  });
+  it("paket ABT: alasan dan agenda riwayat membuang nilai 0, - dan -- (sel dikosongkan)", () => {
+    const sql = readFileSync(path.join(AKAR, "abt-paket/sampul-daftar-isi-26okt/paket-satker/abt-sampul-daftar-isi-26okt-PASANG.sql"), "latin1");
+    const alasan = sql.split("\n").find((x) => /SELECT 5703,/.test(x)) ?? "";
+    expect(alasan).toContain("REGEXP ''^[-0._ ]*$''");
+  });
+});
+
 describe("paket ABT: ciri bersih, spasi, dan jalur peningkatan", () => {
   const paket = (n: string) => readFileSync(path.join(AKAR, "abt-paket/sampul-daftar-isi-26okt/paket-satker", n), "latin1");
   const pasangSql = paket("abt-sampul-daftar-isi-26okt-PASANG.sql");
@@ -123,10 +143,10 @@ describe("paket ABT: ciri bersih, spasi, dan jalur peningkatan", () => {
     const sh = paket("pasang-satker.sh");
     expect(sh).toMatch(/^HARAP='0\|0\|31\|0\|1\|0\|0\|0'$/m);
     expect(sh).toMatch(/^ULANG='0\|177\|31\|1\|1\|1\|0\|0'$/m);
-    expect(sh).toMatch(/^TINGKAT='0\|147\|31\|1\|1\|1\|0\|30'$/m);
+    expect(sh).toMatch(/^TINGKAT='0\|107\|31\|1\|1\|1\|0\|70'$/m);
     expect(sh).toContain("PULIH-PENINGKATAN.sql");
-    expect(paket("abt-sampul-daftar-isi-26okt-PULIH-PENINGKATAN.sql").match(/^UPDATE abt_variabel/gm)).toHaveLength(30);
-    expect(pasangSql.match(/^UPDATE abt_variabel/gm)).toHaveLength(30);
+    expect(paket("abt-sampul-daftar-isi-26okt-PULIH-PENINGKATAN.sql").match(/^UPDATE abt_variabel/gm)).toHaveLength(70);
+    expect(pasangSql.match(/^UPDATE abt_variabel/gm)).toHaveLength(70);
     const lama = paket("daftar-lama.tsv").split("\n").filter((x) => x && !x.startsWith("#"));
     expect(lama).toHaveLength(21);
     expect(lama.every((x) => /\t[0-9a-f]{32}$/.test(x))).toBe(true);
