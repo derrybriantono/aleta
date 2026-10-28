@@ -1,5 +1,6 @@
 "use client";
 
+import { LencanaModePersidanganPihak } from "@/components/portal/kontak-para-pihak";
 import { useOverlayHanyaGagal } from "@/lib/global-loading";
 import { labelTidakPatut } from "@/lib/label-kepatutan";
 import type { CaraRelaas } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
@@ -10138,6 +10139,8 @@ export function RincianSidang({
                           <span className="text-xs text-muted-foreground">
                             {orang.adaNomor ? ` · ${orang.nomorSamar}` : " · tanpa nomor"}
                           </span>
+                          {/* 28 Okt: persidangan elektronik / hybrid dari persetujuan e-Court + email (kontak para pihak, hak lihat dijaga rute). */}
+                          <LencanaModePersidanganPihak nomorPerkara={nomorPerkara} orang={{ nama: orang.nama, jenis: "pihak", pihakKe: kelompok.sisi }} />
                         </li>
                       ))}
                       {kuasa.map((orang, urutan) => (

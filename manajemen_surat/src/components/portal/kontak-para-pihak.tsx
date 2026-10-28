@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { apiPath } from "@/lib/base-path";
 import { usePenggunaAktifOpsional } from "@/lib/app-state";
 import { bolehAksiLayar } from "@/lib/matriks-peran";
+import { modePersidangan } from "@/lib/mode-persidangan";
 import type { KontakParaPihak, KontakParaPihakBaris } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 
 /* === STATUS-ZIP 12 Okt === */
@@ -165,6 +166,38 @@ function RuasKontak({
   );
 }
 
+/** 28 Okt 2026: lencana "persidangan elektronik" / "persidangan hybrid" (aturan di @/lib/mode-persidangan). */
+export function LencanaModePersidangan({ baris }: { baris: KontakParaPihakBaris | null }) {
+  const m = baris ? modePersidangan(baris) : null;
+  if (!m) return null;
+  return (
+    <span
+      className={`ml-1.5 inline-block rounded-full border px-1.5 py-px text-[0.65rem] font-semibold ${
+        m.mode === "elektronik"
+          ? "border-emerald-600/50 text-emerald-700 dark:text-emerald-300"
+          : "border-amber-600/50 text-amber-700 dark:text-amber-300"
+      }`}
+      title={m.sebab}
+      data-mode-persidangan={m.mode}
+    >
+      {m.teks}
+    </span>
+  );
+}
+
+/** Lencana mode persidangan untuk satu nama (Jadwal Sidang): kontak dibaca sekali per perkara, tidak ada = tidak digambar. */
+export function LencanaModePersidanganPihak({
+  nomorPerkara,
+  orang,
+}: {
+  nomorPerkara: string;
+  orang: { nama: string; jenis: string; pihakKe: number | null };
+}) {
+  const keadaan = useKontakParaPihak(nomorPerkara);
+  if (keadaan.tahap !== "siap") return null;
+  return <LencanaModePersidangan baris={cariKontakPihak(keadaan.data, orang)} />;
+}
+
 /**
  * Baris kontak di bawah satu nama pada "Para pihak".
  *
@@ -214,6 +247,7 @@ export function KontakPihak({
               ? "(bersedia bersidang secara e-Litigasi - dari e-Court)"
               : `(${baris.elitigasi.label})`}
           </span>
+          <LencanaModePersidangan baris={baris} />
         </div>
       )}
     </div>

@@ -172,7 +172,7 @@ describe("6. logo di dalam kotak tanda tangan elektronik", () => {
       const rtf = readFileSync(path.join(BLANGKO, berkas), "latin1");
       const h = e.rapikanLogoKotakElektronik(rtf);
       expect(h.dirapikan, berkas).toBeGreaterThanOrEqual(1);
-      for (const r of h.rincian) {
+      for (const r of h.rincian as Array<(typeof h.rincian)[number] & { koreksiJangkar: number }>) {
         expect(r.logoBaru.kiri, berkas).toBeGreaterThanOrEqual(r.kotak.kiri + e.LOGO_KOTAK.padTwip);
         // 28 Okt: letak yang TAMPIL di PDF = koordinat RTF dikurangi jarak baris jangkar (koreksiJangkarTwip; terukur 694/2026).
         expect(r.koreksiJangkar, berkas).toBe(360);
