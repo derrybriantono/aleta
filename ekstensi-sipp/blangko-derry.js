@@ -96,6 +96,22 @@
   const ID_TAWAR = "aleta-bd-tawar";
   const KELAS_AKTIF = "aleta-bd-aktif";
   const NAMA_PERAN = { hakim: "Hakim", pp: "Panitera Pengganti", js: "Juru sita", kasir: "Kasir", ptsp: "PTSP", admin: "Super Admin / Admin" };
+  /**
+   * 28 Okt 2026: pilihan "Lihat sebagai" PTSP yang SELALU ada, juga sebelum satu pun akun PTSP dibuat. Ia membawa nama tetap ini
+   * (bukan nama orang) ke server, yang memperlakukan "peranSebagai=ptsp + nama" sebagai tampilan PTSP: daftar satker, baca saja.
+   * Akun PTSP sungguhan tampil di bawahnya seperti kelompok lain.
+   */
+  const NAMA_PTSP_SEMUA = "Semua petugas PTSP";
+  /**
+   * 28 Okt 2026 - UKUR KELENGKAPAN ISIAN DI LATAR. Perkara di daftar yang sedang tampil diukur satu per satu (serentak 2, ada jeda, hanya
+   * membaca) lewat pengukur yang dipasang langkah Isian; hasilnya diingat per perkara dengan waktu ukurnya (juga di sessionStorage tab ini,
+   * karena ABT berpindah halaman) dan dianggap segar `umurMs`. Yang gagal/belum punya blangko dicoba lagi paling cepat setelah `ulangMs`.
+   * Pengukuran baru mulai `mulaiMs` sesudah daftar tampil dan berhenti selama petugas membuka satu perkara (layar kerja didahulukan).
+   */
+  const UKUR = { serentak: 2, batas: 60, umurMs: 10 * 60 * 1000, ulangMs: 2 * 60 * 1000, jedaMs: 150, mulaiMs: 400, batasWaktuMs: 60 * 1000, puncak: 0 };
+  const KUNCI_SESI_UKUR = "aleta-bd-ukur";
+  const UMUR_SESI_UKUR_MS = 6 * 60 * 60 * 1000;
+  const namaTampilSebagai = (nama) => (nama === NAMA_PTSP_SEMUA ? "PTSP (semua petugas PTSP)" : nama);
   const BULAN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
   const HARI = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
   const TTL_DAFTAR_MS = 45 * 1000;
@@ -475,7 +491,8 @@
               : "Belum diunggah ke SIPP"
             : "Belum terukur";
     const persen = lap && typeof lap.t === "number" ? (lap.t ? Math.min(1, lap.a / lap.t) : 1) : null;
-    const isiTxt = lap && typeof lap.t === "number" ? (lap.t === 0 ? "Tidak perlu diisi" : lap.a >= lap.t ? "Isian lengkap" : `Terisi ${lap.a} dari ${lap.t}`) : "Isian belum diukur";
+    const uk = ctx.ukur && ctx.ukur.get ? ctx.ukur.get(p.nomorPerkara) : null;
+    const isi = teksIsian(lap, uk, tanpaKerja && !ctx.ptsp);
     return {
       n: p.nomorPerkara,
       p,
@@ -491,11 +508,53 @@
       dokTxt,
       dokKelas: selesai || dicetak ? "ok" : "",
       persen,
-      isiTxt,
+      isiTxt: isi.txt,
+      isiKet: isi.ket,
+      isiKelas: isi.kelas,
       sisaMinutasi,
       konsep: konsepDari(p),
     };
   }
+  /** Umur ukuran dalam kalimat biasa ("baru saja", "5 menit lalu", "2 jam lalu"); kosong bila waktunya tidak diketahui. */
+  function umurUkur(saat, sekarang) {
+    const t = Number(saat);
+    if (!t) return "";
+    const mnt = Math.max(0, Math.round(((sekarang === undefined ? Date.now() : sekarang) - t) / 60000));
+    if (mnt < 1) return "baru saja";
+    if (mnt < 60) return `${mnt} menit lalu`;
+    const jam = Math.round(mnt / 60);
+    return jam < 24 ? `${jam} jam lalu` : `${Math.round(jam / 24)} hari lalu`;
+  }
+  const namaBlangkoUkur = (b) => String((b && (b.berkas || b.judul)) || "").replace(/\.rtf$/i, "").trim();
+  /**
+   * Lencana "kelengkapan isian" satu perkara: teks, keterangan (tooltip) dan kelas warna. Murni.
+   *   lap = hasil ukur ({ a, t, saat, blangko, sumber, perkiraan }) dari langkah Isian ("dibuka") atau pengukur latar ("latar");
+   *   uk  = keadaan pengukur latar tanpa angka ({ status: memuat | tanpa-blangko | galat | tanpa-dokumen });
+   *   tanpaKerja = perkara belum punya dokumen untuk peran ini.
+   * Angka yang dihitung: isian WAJIB blangko yang sudah terisi (isian tambahan tidak ikut).
+   */
+  function teksIsian(lap, uk, tanpaKerja, sekarang) {
+    if (lap && typeof lap.t === "number") {
+      const nama = namaBlangkoUkur(lap.blangko);
+      const umur = umurUkur(lap.saat, sekarang);
+      const lengkap = lap.t === 0 || lap.a >= lap.t;
+      const ket =
+        (lap.t === 0 ? "Blangko ini tidak punya isian wajib untuk perkara ini." : `Isian wajib blangko yang sudah terisi: ${lap.a} dari ${lap.t}.`) +
+        (nama ? ` Blangko: ${nama}.` : "") +
+        (umur ? ` Diukur ${umur}.` : "") +
+        (lap.sumber === "latar" ? " Dihitung dari isian yang sudah tersimpan di ABT; isian otomatis dari SIPP menyusul saat perkara dibuka." : "") +
+        (lap.perkiraan ? " Daftar bukti baru dihitung setelah perkara dibuka." : "") +
+        (lengkap ? " Klik untuk membuka perkara ini di langkah Isian." : " Klik untuk membuka isian yang masih kosong.");
+      return { txt: lap.t === 0 ? "Tidak perlu diisi" : lap.a >= lap.t ? "Isian lengkap" : `Terisi ${lap.a} dari ${lap.t}`, ket, kelas: lengkap ? "ok" : lap.a ? "sebagian" : "belum" };
+    }
+    const st = uk && uk.status;
+    if (st === "memuat") return { txt: "Mengukur isian…", ket: "Sedang mengukur isian wajib blangko perkara ini di latar.", kelas: "" };
+    if (st === "tanpa-blangko") return { txt: "Blangko belum dipilih", ket: "Perkara ini belum punya blangko yang dipilih, jadi isian wajibnya belum bisa dihitung. Klik untuk membuka perkara lalu pilih blangko.", kelas: "" };
+    if (st === "galat") return { txt: "Isian belum terbaca", ket: "Isian perkara ini belum bisa dibaca dari ABT sekarang; akan dicoba lagi. Klik untuk membuka perkara.", kelas: "" };
+    if (st === "tanpa-dokumen" || tanpaKerja) return { txt: "Belum ada yang perlu diisi", ket: "Perkara ini belum punya dokumen yang perlu diisi untuk peran Anda saat ini.", kelas: "" };
+    return { txt: "Isian belum diukur", ket: "Isian wajib blangko diukur otomatis di latar begitu daftar tampil. Klik untuk membuka perkara ini.", kelas: "" };
+  }
+
   /**
    * 26 Okt 2026: "konsep sementara" = perkara yang di Jadwal Sidang ALETA diberi "tunjuk konseptor" (satu-satunya sumber: portal
    * menyertakannya pada tiap perkara sebagai `konsepSementara`). Hanya yang `milikAkun` (cocok dengan akun yang sedang dilihat;
@@ -589,6 +648,13 @@
     riwayat: new Map(),
     alatDaftar: new Map(),
     lapor: new Map(),
+    /** Keadaan pengukur latar tanpa angka (nomor -> { status, saat, jenis, kunci }); angkanya ada di `lapor`. */
+    ukur: new Map(),
+    ukurAntre: [],
+    ukurDalam: new Set(),
+    ukurJalan: 0,
+    ukurPewaktu: null,
+    pengukur: null,
     rekomendasi: null,
     floatBuka: null,
     nyala: false,
@@ -744,6 +810,7 @@
     S.ukuran = Object.prototype.hasOwnProperty.call(UKURAN, s[K.ukuran]) ? s[K.ukuran] : "biasa";
   }
   async function muatSetelan() {
+    pulihSesiUkur();
     const s = await bacaPenyimpanan([K.bawaan, K.tawar, K.saran, K.ingat, K.tjJawab, K.isiOto, K.siapNaskah, K.pratinjau, K.gembok, K.tesPutusan, K.tema, K.daftar, K.aktif, K.ukuran]);
     terapkanSetelan(s);
     const d = s[K.daftar];
@@ -1016,7 +1083,7 @@
     if (!S.siapa) return S.siapaGalat ? "· belum terhubung ke ALETA" : "· memuat akun…";
     // Rancangan v12: hanya nama akun; peran tidak ditulis (sudah tercermin dari Alat saya).
     let t = `· ${S.siapa.nama || "?"}`;
-    if (adm() && S.sebagai.nama) t += ` · dilihat sebagai ${S.sebagai.nama}`;
+    if (adm() && S.sebagai.nama) t += ` · dilihat sebagai ${namaTampilSebagai(S.sebagai.nama)}`;
     return t;
   }
 
@@ -1032,10 +1099,12 @@
     const akun = (S.data && S.data.akun) || { hakim: [], pp: [], js: [], ptsp: [] };
     const label = S.peranSet.has("admin") ? "Super Admin / Admin" : "Admin";
     // 28 Okt 2026: kelompok PTSP (akun meja pendaftaran) menyusul Hakim, Panitera Pengganti, dan Juru sita; daftarnya dari server (akun, bukan jadwal).
+    // Pilihan "PTSP (semua petugas PTSP)" selalu paling atas di kelompok itu, jadi tampilan PTSP bisa dipilih walau belum ada akun PTSP.
+    const awalPtsp = (p) => (p === "ptsp" ? `<option value="ptsp|${esc(NAMA_PTSP_SEMUA)}" title="Tampilan PTSP: daftar perkara hari ini / rentang dan cetak massal PTSP, tanpa memilih satu akun">${esc(namaTampilSebagai(NAMA_PTSP_SEMUA))}</option>` : "");
     sel.innerHTML =
       `<option value="" title="Tampilan ${esc(label)}: semua akun">Semua akun</option>` +
       ["hakim", "pp", "js", "ptsp"]
-        .map((p) => `<optgroup label="${esc(NAMA_PERAN[p])}">${satukanOrang(akun[p]).map((n) => `<option value="${p}|${esc(n)}">${esc(n)}</option>`).join("")}</optgroup>`)
+        .map((p) => `<optgroup label="${esc(NAMA_PERAN[p])}">${awalPtsp(p)}${satukanOrang(akun[p]).map((n) => `<option value="${p}|${esc(n)}">${esc(n)}</option>`).join("")}</optgroup>`)
         .join("");
     let nilai = S.sebagai.nama ? `${S.sebagai.peran}|${S.sebagai.nama}` : "";
     sel.value = nilai;
@@ -1052,7 +1121,7 @@
       // Nama yang dipilih tidak muncul di rentang yang sedang dimuat: tetap ditampilkan.
       const o = document.createElement("option");
       o.value = nilai;
-      o.textContent = `${S.sebagai.nama} (${NAMA_PERAN[S.sebagai.peran] || ""})`;
+      o.textContent = S.sebagai.nama === NAMA_PTSP_SEMUA ? namaTampilSebagai(S.sebagai.nama) : `${S.sebagai.nama} (${NAMA_PERAN[S.sebagai.peran] || ""})`;
       sel.appendChild(o);
       sel.value = nilai;
     }
@@ -1356,7 +1425,7 @@
     const data = S.data;
     if (!data) return [];
     const q = S.cariNomor.trim();
-    const ctx = { hariIni: hariIni(), lapor: S.lapor };
+    const ctx = ctxRingkasan();
     // PTSP: kotak ini mencari nomor di server; jenis lain tidak berlaku.
     const jenis = ptspCari() ? "nomor" : S.cariJenis;
     const l = data.perkara.map((p) => ringkasan(p, ctx)).filter((r) => cocokCari(r, jenis, q));
@@ -1377,6 +1446,8 @@
     r.konsep
       ? `<span class="bd-konsep" data-konsep title="${esc(`Konseptor sementara (ditunjuk di Jadwal Sidang): ${r.konsep.nama}${r.konsep.oleh ? ` - oleh ${r.konsep.oleh}` : ""}`)}">Konsep sementara · ${potong(pertama(r.konsep.nama) || r.konsep.nama, 24)}</span>`
       : "";
+  /** Lencana kelengkapan isian: tooltip menerangkan angkanya; klik membuka perkara di langkah Isian, menggulir ke isian kosong pertama. */
+  const chipIsian = (r) => `<span class="bd-chip bd-isian${r.isiKelas ? ` ${r.isiKelas}` : ""}" data-isian="${esc(r.n)}" title="${esc(r.isiKet)}">${esc(r.isiTxt)}</span>`;
   const chipAlasan = (r, m) => r.alasan.slice(0, m).map((a) => `<span class="bd-alasan">${esc(a)}</span>`).join("");
   const KET_KARTU = [
     ["jenis", "Jenis perkara"],
@@ -1427,7 +1498,7 @@
       (k.majelis ? `<span class="b">Ketua: ${esc(namaBersih(pertama(r.p.majelisNama)))}</span>` : "") +
       (k.petugas ? `<span class="b">PP: ${esc(r.p.paniteraNama || "-")} · JS: ${esc(r.p.jurusitaNama || "-")}</span>` : "") +
       (k.isian || k.cetak
-        ? `<span class="c">${k.isian ? `<span class="bd-chip">${esc(r.isiTxt)}</span>` : ""}${k.cetak ? `<span class="bd-chip ${r.dokKelas}">${esc(r.dokTxt)}</span>` : ""}</span>`
+        ? `<span class="c">${k.isian ? chipIsian(r) : ""}${k.cetak ? `<span class="bd-chip ${r.dokKelas}">${esc(r.dokTxt)}</span>` : ""}</span>`
         : "") +
       (k.alasan ? `<span class="c">${chipAlasan(r, 2)}</span>` : "") +
       `</button>`
@@ -1438,7 +1509,7 @@
       `<button type="button" class="bd-brs${r.konsep ? " konsep" : ""}" role="listitem" data-pk="${esc(r.n)}"><span class="bd-no">${esc(nomorPendek(r.n))}</span><span>${esc(r.p.jenisPerkara)}</span>` +
       (dalamTanggal ? `<span class="bd-catat bd-potong">${esc(r.s.ket || r.s.agenda || "-")}</span>` : `<span class="bd-catat">${tglS(r.s.tanggal)}</span>`) +
       barisKeSidang(r, "bd-catat bd-potong bd-kesidang") +
-      `${chipKonsep(r)}${tipPihak(r.n)}<span class="gap"></span><span class="bd-chip">${esc(r.isiTxt)}</span><span class="bd-chip ${r.dokKelas}">${esc(r.dokTxt)}</span>${chipPrio(r)}</button>`
+      `${chipKonsep(r)}${tipPihak(r.n)}<span class="gap"></span>${chipIsian(r)}<span class="bd-chip ${r.dokKelas}">${esc(r.dokTxt)}</span>${chipPrio(r)}</button>`
     );
   }
   const KOLOM = [
@@ -1465,7 +1536,7 @@
           (r) =>
             `<tr${r.konsep ? ' class="konsep"' : ""} data-pk="${esc(r.n)}" tabindex="0"><td>${chipPrio(r)}</td><td class="nw"><span style="font-family:var(--mono)">${esc(nomorPendek(r.n))}</span> ${tipPihak(r.n)}${r.konsep ? `<span class="blok">${chipKonsep(r)}</span>` : ""}${barisKeSidang(r, "bd-kesidang blok")}</td>` +
             `<td>${potong(r.p.jenisPerkara, 22)}</td><td class="nw">${tglS(r.s.tanggal)}</td><td>${potong(r.s.ket || r.s.agenda, 34)}</td>` +
-            `<td><span class="bd-chip">${esc(r.isiTxt)}</span></td><td><span class="bd-chip ${r.dokKelas}">${esc(r.dokTxt)}</span></td>` +
+            `<td>${chipIsian(r)}</td><td><span class="bd-chip ${r.dokKelas}">${esc(r.dokTxt)}</span></td>` +
             `<td class="nw">${r.sisaMinutasi === null || r.selesai ? "-" : `${r.sisaMinutasi} hari lagi`}</td></tr>`
         )
         .join("") +
@@ -1655,6 +1726,7 @@
         `${peringatan.length ? ` ${esc(peringatan.join(" "))}` : ""}</p>`;
     }
     pilih.innerHTML = isi + badan;
+    if (S.data && !S.memuat && !S.galat && l.length) jadwalkanUkur(l);
     if (fokusCari !== null) {
       const c = cari("#bd-cari", akar);
       if (c) {
@@ -1761,14 +1833,14 @@
       return;
     }
     const sid = riwayatPerkara(p);
-    const r = ringkasan(p, { hariIni: hariIni(), lapor: S.lapor });
+    const r = ringkasan(p, ctxRingkasan());
     wad.innerHTML =
       `<span class="bd-no" title="Klik dua kali untuk mengganti perkara">${esc(p.nomorPerkara)}</span><span>${esc(p.jenisPerkara)}${p.lewatEcourt ? " · e-Court" : ""}</span>` +
       `<span class="bd-pihak" tabindex="0" data-tipn="${esc(p.nomorPerkara)}">Para pihak ⓘ</span>` +
       `<label class="bd-lbl" for="bd-sidang">Sidang</label><select id="bd-sidang" style="width:min(100%,340px)" title="Sidang yang dipakai blangko">${sid
         .map((s, i) => `<option value="${i}" ${i === S.sidIdx ? "selected" : ""}>Ke-${i + 1} · ${tglS(s.tanggal)} · ${esc(s.agenda || "-")}${s.ket ? ` · ${esc(s.ket)}` : ""}</option>`)
         .join("")}</select>` +
-      `<span class="bd-chip ${kelasIsian(r)}">${esc(r.isiTxt)}</span>${r.dokKelas === "ok" ? `<span class="bd-chip ok">${esc(r.dokTxt)}</span>` : ""}`;
+      `<span class="bd-chip ${kelasIsian(r)}" title="${esc(r.isiKet)}">${esc(r.isiTxt)}</span>${r.dokKelas === "ok" ? `<span class="bd-chip ok">${esc(r.dokTxt)}</span>` : ""}`;
   }
 
   /** Warna lencana isian seperti rancangan: lengkap hijau, sebagian kuning, belum diisi jingga. */
@@ -1776,6 +1848,156 @@
     const lap = S.lapor.get(r.n);
     if (!lap || typeof lap.t !== "number") return "";
     return lap.t === 0 || lap.a >= lap.t ? "ok" : lap.a ? "sebagian" : "belum";
+  }
+
+  // ── Ukur kelengkapan isian di latar (28 Okt 2026) ────────────────────────
+  function ctxRingkasan() {
+    return { hariIni: hariIni(), lapor: S.lapor, ukur: S.ukur, ptsp: ptspDaftar() || ptspCari() };
+  }
+  /** Jenis dokumen yang isiannya diukur untuk satu perkara di daftar: dokumen perannya; PTSP = form bantu PTSP; selain itu "" (tidak ada). */
+  function jenisUkur(r) {
+    if (r.dj && r.dj.length) return r.dj[0];
+    return ptspDaftar() || ptspCari() ? "ptsp" : "";
+  }
+  function simpanSesiUkur() {
+    try {
+      const semua = Array.from(S.lapor).filter(([, v]) => v && typeof v.t === "number" && v.saat);
+      semua.sort((a, b) => b[1].saat - a[1].saat);
+      const isi = {};
+      for (const [k, v] of semua.slice(0, 300)) isi[k] = { a: v.a, t: v.t, jenis: v.jenis, saat: v.saat, blangko: v.blangko || null, sumber: v.sumber || "latar", perkiraan: Boolean(v.perkiraan), kunci: v.kunci || "" };
+      globalThis.sessionStorage.setItem(KUNCI_SESI_UKUR, JSON.stringify(isi));
+    } catch {
+      /* sessionStorage tertutup (jendela pribadi/pratinjau): hasil hanya di memori halaman ini */
+    }
+  }
+  function pulihSesiUkur() {
+    try {
+      const mentah = globalThis.sessionStorage.getItem(KUNCI_SESI_UKUR);
+      const isi = mentah ? JSON.parse(mentah) : null;
+      if (!isi || typeof isi !== "object") return;
+      for (const [k, v] of Object.entries(isi)) {
+        if (!v || typeof v.t !== "number" || typeof v.a !== "number" || !v.saat || Date.now() - v.saat > UMUR_SESI_UKUR_MS || S.lapor.has(k)) continue;
+        S.lapor.set(k, { a: v.a, t: v.t, jenis: String(v.jenis || ""), dicetak: {}, saat: v.saat, blangko: v.blangko || null, sumber: v.sumber === "dibuka" ? "dibuka" : "latar", perkiraan: Boolean(v.perkiraan), kunci: String(v.kunci || "") });
+      }
+    } catch {
+      /* simpanan rusak: diukur ulang */
+    }
+  }
+  /** Perlu diukur (ulang)? Hasil segar = baru, jenis dokumen dan peran yang sama; gagal/belum ada blangko menunggu `ulangMs`. */
+  function perluUkur(r, jenis) {
+    const n = r.n;
+    if (S.ukurDalam.has(n)) return false;
+    const lap = S.lapor.get(n);
+    const kunci = peranKunci();
+    if (lap && typeof lap.t === "number" && lap.saat && Date.now() - lap.saat < UKUR.umurMs && lap.jenis === jenis && (!lap.kunci || lap.kunci === kunci)) return false;
+    const uk = S.ukur.get(n);
+    if (uk && uk.status === "memuat") return false;
+    if (uk && uk.kunci === kunci && uk.jenis === jenis && Date.now() - uk.saat < UKUR.ulangMs) return false;
+    return true;
+  }
+  /** Mengantre perkara yang tampil (urutan layar, paling banyak `batas`) untuk diukur; aman dipanggil tiap menggambar daftar. */
+  function jadwalkanUkur(rows) {
+    if (!S.pengukur || tesAktif() || !Array.isArray(rows)) return;
+    let baru = 0;
+    for (const r of rows.slice(0, UKUR.batas)) {
+      const jenis = jenisUkur(r);
+      if (!jenis) {
+        if (!S.ukur.has(r.n)) S.ukur.set(r.n, { status: "tanpa-dokumen", saat: Date.now(), jenis: "", kunci: peranKunci() });
+        continue;
+      }
+      if (!perluUkur(r, jenis)) continue;
+      S.ukurDalam.add(r.n);
+      S.ukurAntre.push({ nomor: r.n, jenis, kunci: peranKunci() });
+      baru += 1;
+    }
+    mulaiUkurTertunda();
+  }
+  /** Memulai (atau melanjutkan) pengukuran sesudah jeda singkat; tidak dobel. */
+  function mulaiUkurTertunda() {
+    if (S.ukurPewaktu || !S.ukurAntre.length || S.ukurJalan >= UKUR.serentak) return;
+    S.ukurPewaktu = setTimeout(() => {
+      S.ukurPewaktu = null;
+      jalankanUkur();
+    }, UKUR.mulaiMs);
+  }
+  const jedaUkur = (ms) => new Promise((selesai) => setTimeout(selesai, ms));
+  async function ukurSatu(tugas) {
+    const p = perkaraDiDaftar(tugas.nomor);
+    if (!p || tugas.kunci !== peranKunci()) return;
+    const r = ringkasan(p, ctxRingkasan());
+    const lapAwal = S.lapor.get(tugas.nomor);
+    S.ukur.set(tugas.nomor, { status: "memuat", saat: Date.now(), jenis: tugas.jenis, kunci: tugas.kunci });
+    perbaruiLencanaIsian(tugas.nomor);
+    const mulai = Date.now();
+    let hasil;
+    try {
+      const ingat = lapAwal && lapAwal.jenis === tugas.jenis && lapAwal.blangko ? lapAwal.blangko : null;
+      let jam;
+      hasil = await Promise.race([
+        Promise.resolve(S.pengukur({ p, s: r.s, jenis: tugas.jenis, ingat })),
+        new Promise((_, tolak) => (jam = setTimeout(() => tolak(new Error("batas waktu")), UKUR.batasWaktuMs))),
+      ]).finally(() => clearTimeout(jam));
+    } catch {
+      hasil = { status: "galat" };
+    }
+    if (tugas.kunci !== peranKunci()) {
+      S.ukur.delete(tugas.nomor);
+      return;
+    }
+    const sekarang = S.lapor.get(tugas.nomor);
+    const dibukaSementara = sekarang && sekarang.sumber === "dibuka" && sekarang.saat >= mulai;
+    if (hasil && hasil.status === "ok" && !dibukaSementara) {
+      S.lapor.set(tugas.nomor, { a: Number(hasil.a) || 0, t: Number(hasil.t) || 0, jenis: tugas.jenis, dicetak: (sekarang && sekarang.dicetak) || {}, saat: Date.now(), blangko: hasil.blangko || null, sumber: "latar", perkiraan: Boolean(hasil.perkiraan), kunci: tugas.kunci });
+      S.ukur.delete(tugas.nomor);
+      simpanSesiUkur();
+    } else if (dibukaSementara || (hasil && hasil.status === "lewati")) S.ukur.delete(tugas.nomor);
+    else S.ukur.set(tugas.nomor, { status: hasil && hasil.status === "tanpa-blangko" ? "tanpa-blangko" : "galat", saat: Date.now(), jenis: tugas.jenis, kunci: tugas.kunci });
+    perbaruiLencanaIsian(tugas.nomor);
+  }
+  function jalankanUkur() {
+    while (S.pengukur && !S.pk && S.ukurJalan < UKUR.serentak && S.ukurAntre.length) {
+      const tugas = S.ukurAntre.shift();
+      S.ukurJalan += 1;
+      UKUR.puncak = Math.max(UKUR.puncak, S.ukurJalan);
+      void (async () => {
+        try {
+          await ukurSatu(tugas);
+        } catch {
+          S.ukur.set(tugas.nomor, { status: "galat", saat: Date.now(), jenis: tugas.jenis, kunci: tugas.kunci });
+          perbaruiLencanaIsian(tugas.nomor);
+        } finally {
+          S.ukurDalam.delete(tugas.nomor);
+          if (UKUR.jedaMs) await jedaUkur(UKUR.jedaMs);
+          S.ukurJalan -= 1;
+          jalankanUkur();
+        }
+      })();
+    }
+  }
+  /** Menyegarkan lencana satu perkara di tempat (tanpa menggambar ulang daftar, jadi gulir dan fokus tidak bergeser). */
+  function perbaruiLencanaIsian(nomor) {
+    if (!akar || S.pk) return;
+    const p = perkaraDiDaftar(nomor);
+    if (!p) return;
+    const r = ringkasan(p, ctxRingkasan());
+    for (const el of akar.querySelectorAll("[data-isian]")) {
+      if (el.getAttribute("data-isian") !== nomor) continue;
+      el.textContent = r.isiTxt;
+      el.setAttribute("title", r.isiKet);
+      el.className = `bd-chip bd-isian${r.isiKelas ? ` ${r.isiKelas}` : ""}`;
+    }
+  }
+  /** Lencana diklik: buka perkara di langkah Isian dengan blangko yang diukur, lalu gulir ke isian wajib kosong pertama. */
+  function bukaIsianPerkara(nomor) {
+    const p = perkaraDiDaftar(nomor);
+    if (!p) return;
+    const lap = S.lapor.get(nomor);
+    pilihPerkara(nomor);
+    try {
+      document.dispatchEvent(new CustomEvent("aleta-bd-buka-isian", { detail: { nomorPerkara: nomor, blangko: lap && lap.blangko ? { ...lap.blangko } : null, jenis: lap ? lap.jenis : "" } }));
+    } catch {
+      /* peristiwa kustom tidak tersedia: perkara tetap terbuka */
+    }
   }
 
   // ── Memilih perkara ───────────────────────────────────────────────────────
@@ -2023,7 +2245,7 @@
   function isiAlat() {
     const grup = peranAlat();
     if (!grup.length) return `<p class="bd-catat">Peran Anda belum punya alat di tampilan ini.</p>`;
-    const sebagai = adm() && S.sebagai.nama ? ` · ${esc(S.sebagai.nama)}` : !adm() && S.siapa ? ` · ${esc(S.siapa.nama || "")}` : "";
+    const sebagai = adm() && S.sebagai.nama ? ` · ${esc(namaTampilSebagai(S.sebagai.nama))}` : !adm() && S.siapa ? ` · ${esc(S.siapa.nama || "")}` : "";
     // 19 Okt: saklar "Isi otomatis dari SIPP" ada di Alat saya (bawaan menyala; diingat per pengguna di setelan ekstensi).
     const saklarIsi = grup.some((g) => ["hakim", "pp", "js", "ptsp", "admin"].includes(g))
       ? `<label class="bd-wbaris bd-saklaralat"><span>Isi otomatis dari SIPP<small>isian kosong terisi sendiri dari SIPP, gugatan dan e-Court; yang sudah ada isinya tidak ditimpa</small></span><input type="checkbox" data-cfg="isiOto" aria-label="Isi otomatis dari SIPP" ${S.cfg.isiOto !== false ? "checked" : ""}></label>`
@@ -2137,6 +2359,8 @@
       simpanPref();
       return renderPerkara();
     }
+    const isiLencana = c("[data-isian]");
+    if (isiLencana) return bukaIsianPerkara(isiLencana.getAttribute("data-isian"));
     const pk = c("[data-pk]");
     if (pk) return pilihPerkara(pk.getAttribute("data-pk"));
   }
@@ -2482,9 +2706,28 @@
     /** Tahap F-G melaporkan kelengkapan isian & cetakan satu perkara untuk kartu/daftar. */
     laporIsian(nomor, lapor) {
       if (!nomor) return;
-      S.lapor.set(String(nomor), { a: Number(lapor && lapor.a) || 0, t: Number(lapor && lapor.t) || 0, jenis: (lapor && lapor.jenis) || "", dicetak: (lapor && lapor.dicetak) || {} });
+      const bl = lapor && lapor.blangko && lapor.blangko.berkas ? { berkas: String(lapor.blangko.berkas), kelompok: String(lapor.blangko.kelompok || ""), judul: String(lapor.blangko.judul || "") } : null;
+      // Langkah Isian = ukuran paling baru dan paling lengkap (isian otomatis ikut): menimpa hasil pengukur latar dan menyegarkan waktunya.
+      S.lapor.set(String(nomor), { a: Number(lapor && lapor.a) || 0, t: Number(lapor && lapor.t) || 0, jenis: (lapor && lapor.jenis) || "", dicetak: (lapor && lapor.dicetak) || {}, saat: Date.now(), blangko: bl, sumber: "dibuka", perkiraan: false, kunci: peranKunci() });
+      S.ukur.delete(String(nomor));
+      simpanSesiUkur();
       if (akar && S.aktif) renderPerkara();
     },
+    /** Langkah Isian memasang pengukur satu perkara di latar: fn({ p, s, jenis, ingat }) -> { status: "ok"|"tanpa-blangko"|"galat"|"lewati", a, t, blangko, perkiraan }. */
+    pasangPengukur(fn) {
+      S.pengukur = typeof fn === "function" ? fn : null;
+      if (S.pengukur && akar && S.aktif && !S.pk) renderPerkara();
+    },
+    /** Uji/alat: atur ukur latar ({ jedaMs, serentak, batas, umurMs }) dan baca keadaannya. */
+    aturUkur(o) {
+      const x = o || {};
+      if (Number.isFinite(x.jedaMs)) UKUR.jedaMs = Math.max(0, x.jedaMs);
+      if (Number.isFinite(x.mulaiMs)) UKUR.mulaiMs = Math.max(0, x.mulaiMs);
+      if (Number.isFinite(x.serentak)) UKUR.serentak = Math.max(1, Math.floor(x.serentak));
+      if (Number.isFinite(x.batas)) UKUR.batas = Math.max(1, Math.floor(x.batas));
+      if (Number.isFinite(x.umurMs)) UKUR.umurMs = Math.max(0, x.umurMs);
+    },
+    ukurKeadaan: () => ({ antre: S.ukurAntre.map((x) => x.nomor), jalan: S.ukurJalan, status: Object.fromEntries(S.ukur), lapor: Object.fromEntries(Array.from(S.lapor, ([k, v]) => [k, { ...v }])), puncak: UKUR.puncak }),
     perkaraTerpilih() {
       const p = perkaraTerpilih();
       if (!p) return null;

@@ -495,7 +495,7 @@ describe("C. Alat saya per peran; Lihat sebagai akun", () => {
     const h = buka({ orang: "admin" });
     await bukaTampilan(h);
     const sel = akarDari(h)!.querySelector("#bd-lihat") as HTMLSelectElement;
-    expect(Array.from(sel.options).map((o) => o.value)).toEqual(["", "hakim|Hakim Satu", "hakim|Hakim Dua", "pp|PP Satu", "js|JS Satu"]);
+    expect(Array.from(sel.options).map((o) => o.value)).toEqual(["", "hakim|Hakim Satu", "hakim|Hakim Dua", "pp|PP Satu", "js|JS Satu", "ptsp|Semua petugas PTSP"]);
     sel.value = "pp|PP Satu";
     sel.dispatchEvent(new h.w.Event("change", { bubbles: true }));
     await sampai(() => h.minta.some((m) => m.url.includes("sebagai=PP+Satu") && m.url.includes("peranSebagai=pp")), "permintaan sebagai PP");

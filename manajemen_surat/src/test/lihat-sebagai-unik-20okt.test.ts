@@ -377,6 +377,8 @@ describe("4. ekstensi: pemilih Lihat sebagai", () => {
       "hakim|Sudarmin H.I.M. Tang, S.H.I., M.H",
       "pp|Sri Susilowati, S.H.",
       "js|Mustini",
+      // 28 Okt 2026: pilihan umum PTSP selalu ada (juga tanpa akun PTSP).
+      "ptsp|Semua petugas PTSP",
     ]);
   });
 
