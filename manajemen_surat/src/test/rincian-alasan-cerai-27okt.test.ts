@@ -91,7 +91,8 @@ describe("rantai sebab-akibat dari gugatan", () => {
       "Bahwa sering terjadi pertengkaran.",
     ]);
     expect(r.butir.map((b) => b.penutup)).toEqual([false, true]);
-    expect(mesin.pilihanBunyi(r)[0].nilai).toMatch(/^Tergugat tidak memberikan nafkah kepada Penggugat; serta antara Penggugat dan Tergugat terus-menerus terjadi perselisihan/);
+    expect(mesin.pilihanBunyi(r)[0].nilai).toMatch(/^Tergugat tidak memberikan nafkah kepada Penggugat serta antara Penggugat dan Tergugat terus-menerus terjadi perselisihan/);
+    expect(mesin.pilihanBunyi(r)[0].nilai).not.toContain(";");
   });
 
   it("beberapa rantai yang berujung perselisihan: perselisihan ditulis sekali di akhir", () => {
@@ -250,5 +251,19 @@ describe("integrasi dengan usulan 5227 dan kamus dua lapis", () => {
 
   it("pola dikompilasi sekali: set pola yang sama dikembalikan selama kamus tidak berubah", () => {
     expect(mesin.polaUntuk("CG")).toBe(mesin.polaUntuk("CG"));
+  });
+});
+
+describe("28 Okt: penggabung rincian tanpa titik koma", () => {
+  it("A | A serta B | A, B, serta C; perselisihan bersama disambung dengan koma", () => {
+    expect((mesin as any).gabungKalimat(["A"])).toBe("A");
+    expect((mesin as any).gabungKalimat(["A", "B"])).toBe("A serta B");
+    expect((mesin as any).gabungKalimat(["A", "", "B", "C"])).toBe("A, B, serta C");
+    const r = rinci([
+      "Bahwa Tergugat malas bekerja sehingga sering terjadi perselisihan dan pertengkaran.",
+      "Bahwa Tergugat sering mabuk-mabukan sehingga sering terjadi perselisihan dan pertengkaran.",
+      "Bahwa Tergugat berjudi online.",
+    ]);
+    for (const p of mesin.pilihanBunyi(r)) expect(p.nilai, p.keadaan).not.toContain(";");
   });
 });

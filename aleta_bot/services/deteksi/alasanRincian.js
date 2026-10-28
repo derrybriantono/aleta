@@ -559,11 +559,12 @@ function deteksiRincian(o) {
   return hasil;
 }
 
-/** "A", "A; serta B", "A; B; serta C". */
+/** "A", "A serta B", "A, B, serta C" - 28 Okt 2026 (pengguna): tanpa titik koma di antara rincian alasan. */
 function gabungKalimat(bagian) {
   const b = bagian.filter(Boolean);
   if (b.length <= 1) return b.join("");
-  return `${b.slice(0, -1).join("; ")}; serta ${b[b.length - 1]}`;
+  if (b.length === 2) return `${b[0]} serta ${b[1]}`;
+  return `${b.slice(0, -1).join(", ")}, serta ${b[b.length - 1]}`;
 }
 
 /** Kalimat 5227 pada varian ke-k dari semua butir; "ringkas" = perbuatan sebab saja. */
@@ -574,7 +575,7 @@ function susunVarian(rincian, k, ringkas) {
   if (gabung) {
     const bagian2 = rincian.butir.map((b) => (berujung.includes(b) ? b.penutupAkhir[Math.min(k, 2)].inti : (b.bunyi[Math.min(k, b.bunyi.length - 1)] || {}).nilai || ""));
     const pen = berujung[0].penutupAkhir[Math.min(k, 2)].penutup;
-    return `${gabungKalimat(bagian2)}; dan hal-hal tersebut mengakibatkan ${pen}`;
+    return `${gabungKalimat(bagian2)}, dan hal-hal tersebut mengakibatkan ${pen}`;
   }
   const bagian = rincian.butir.map((b) => {
     if (ringkas) {

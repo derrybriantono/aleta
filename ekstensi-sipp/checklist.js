@@ -1944,6 +1944,17 @@
   // ─── Alamat dasar tiap aplikasi ────────────────────────────────────────────
 
   /**
+   * 28 Okt 2026: SIPP dan ABT satker berada di port bawaan (http://192.168.10.10/SIPP, /aps_badilag), walau portal
+   * ALETA dibuka lewat port lain (mis. :8080). Asal halaman portal tidak boleh terbawa ke tautan SIPP/ABT. Mesin
+   * setempat (127.0.0.1/localhost: ABT php56 di :8056, portal :3000) tetap memakai asal halamannya.
+   */
+  function asalSatker() {
+    const h = String(location.hostname || "");
+    if (h === "127.0.0.1" || h === "localhost") return location.origin;
+    return `${location.protocol}//${h}`;
+  }
+
+  /**
    * Akar SIPP. Di halaman SIPP dibaca dari alamatnya sendiri (/SIPP/ di
    * peladen, /index.php/ di mesin setempat); dari ABT dan portal diturunkan
    * dengan aturan yang sama dengan alamatSippDariAbt di abt.js.
@@ -1954,7 +1965,7 @@
       const cocok = jalur.match(/^(.*?\/SIPP\/)/i) || jalur.match(/^(\/index\.php\/)/i);
       if (cocok) return `${location.origin}${cocok[1]}`;
     }
-    return location.hostname === "127.0.0.1" ? `${location.origin}/index.php/` : `${location.origin}/SIPP/`;
+    return location.hostname === "127.0.0.1" ? `${location.origin}/index.php/` : `${asalSatker()}/SIPP/`;
   }
 
   function berandaSipp() {
@@ -1968,7 +1979,7 @@
       const cocok = String(location.pathname || "").match(/^(.*?\/abt)\//);
       if (cocok) return `${location.origin}${cocok[1]}`;
     }
-    return `${location.origin}/aps_badilag/abt`;
+    return `${asalSatker()}/aps_badilag/abt`;
   }
 
   /** Alamat http(s) di asal halaman ini; selain itu kosong. */
@@ -1982,7 +1993,8 @@
     } catch {
       return "";
     }
-    if (!/^https?:$/.test(url.protocol) || url.origin !== location.origin) return "";
+    // SIPP/ABT di port bawaan juga "dalam" bagi portal yang dibuka lewat port lain (asalSatker).
+    if (!/^https?:$/.test(url.protocol) || (url.origin !== location.origin && url.origin !== asalSatker())) return "";
     return url.href;
   }
 

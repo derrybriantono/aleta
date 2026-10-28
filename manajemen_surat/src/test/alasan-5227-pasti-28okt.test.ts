@@ -193,7 +193,10 @@ describe("B. panel ABT: Input semua yang pasti, keterangan, pop-up", () => {
     kotak[1].checked = false;
     kotak[1].dispatchEvent(new Event("change"));
     expect(pilih[0].nilai()).not.toBe(awal);
-    expect(pilih[0].nilai()).not.toContain("; serta ");
+    expect(pilih[0].nilai()).not.toContain(" serta ");
+    // 28 Okt: tanpa titik koma di antara rincian - "A serta B"
+    expect(awal).toContain(" serta ");
+    expect(awal).not.toContain(";");
     kartu.remove();
   });
 });

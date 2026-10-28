@@ -2128,7 +2128,8 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
     const susunUlang = () => {
       const bagian = rincianKartu.map((r, i) => (status[i].pakai ? String((r.bunyi[status[i].bunyi] || r.bunyi[0]).nilai || "") : "")).filter(Boolean);
       if (!bagian.length) return;
-      nilaiTerkini = bagian.length > 1 ? `${bagian.slice(0, -1).join("; ")}; serta ${bagian[bagian.length - 1]}` : bagian[0];
+      // 28 Okt: tanpa titik koma di antara rincian (sama dengan gabungKalimat bot): "A serta B", "A, B, serta C".
+      nilaiTerkini = bagian.length > 2 ? `${bagian.slice(0, -1).join(", ")}, serta ${bagian[bagian.length - 1]}` : bagian.join(" serta ");
       disunting = false;
       segarkanTampilan();
       centang.checked = true;
