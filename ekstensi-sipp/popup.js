@@ -3785,6 +3785,25 @@ function komponenTampilHalaman() {
   tombolTab.hidden = true;
   baris.appendChild(tombolTab);
   sek.appendChild(baris);
+  // 28 Okt 2026: bagian ALETA mana yang tampil di SIPP diatur per akun di portal (peran -> admin -> pilihan sendiri).
+  const keAtur = tautanKeluar("Atur bagian yang tampil di SIPP ›", "", "Buka halaman Tampilan ALETA di SIPP di portal (tersimpan di akun Anda)");
+  keAtur.classList.add("tb-tampilan-sipp");
+  keAtur.setAttribute("data-tampilan-sipp", "buka");
+  sek.appendChild(keAtur);
+  void (async () => {
+    try {
+      const s = penyimpanan ? await penyimpanan.get(["asalPortal"]) : {};
+      const asal = String((await asalPortalHidup(s && s.asalPortal)) || "").replace(/\/+$/, "");
+      if (!asal) return;
+      keAtur.href = `${asal}/account/tampilan-sipp`;
+      keAtur.target = "_blank";
+      keAtur.rel = "noreferrer noopener";
+      keAtur.removeAttribute("aria-disabled");
+      keAtur.classList.remove("tb-mati");
+    } catch {
+      /* tanpa alamat portal: tautan tetap mati */
+    }
+  })();
   const kabar = buat("p", "saklar-ket tb-tampil-kabar");
   kabar.setAttribute("aria-live", "polite");
   sek.appendChild(kabar);
