@@ -7398,12 +7398,22 @@
         // pengesah di blok "Untuk Salinan". Pilihan "Tambah tanda tangan" tidak berlaku di salinan.
         const { blob, keterangan } = await pdfDari(rtfLatin1, true);
         const nama = namaUnduhan(nomor, `${berkas} - SALINAN`, "pdf");
+        // 28 Okt (630/2026): pesan menyebut yang SUNGGUH terjadi - jumlah "ttd" yang tertulis (laporan bot) dan sebab tanda tangan
+        // Panitera tidak tertempel - bukan kalimat tetap yang terdengar berhasil walau "ttd" tidak tertulis.
+        const nTtd = keterangan ? Number(keterangan.ttdDitambah || 0) + Number(keterangan.ttdSudahAda || 0) : 0;
+        const bagianTtd = keterangan ? (nTtd ? `majelis dan panitera sidang: ttd (${nTtd})` : "tulisan ttd TIDAK tertulis - blok tanda tangan majelis tidak dikenali") : "";
+        const sebabTanpa = {
+          ttd_tidak_ada: "tanda tangannya belum terdaftar/disahkan",
+          nama_panitera_tidak_ditemukan_di_pdf: "namanya tidak ditemukan di PDF",
+        };
         const ket =
           keterangan && keterangan.gambarTtdPanitera
-            ? ` (tanda tangan Panitera ${keterangan.namaPanitera || ""} tertempel; majelis dan panitera sidang: ttd)`
+            ? ` (tanda tangan Panitera ${keterangan.namaPanitera || ""} tertempel; ${bagianTtd})`
             : keterangan && keterangan.namaPanitera
-              ? " (tanpa tanda tangan Panitera yang disahkan; majelis dan panitera sidang: ttd)"
-              : "";
+              ? ` (tanpa tanda tangan Panitera ${keterangan.namaPanitera}${keterangan.alasanTanpaGambar ? `: ${sebabTanpa[keterangan.alasanTanpaGambar] || keterangan.alasanTanpaGambar}` : ""}; ${bagianTtd})`
+              : keterangan
+                ? ` (blok "Untuk Salinan" tidak ditemukan; ${bagianTtd})`
+                : "";
         const jawab = await kirimLatar({ jenis: "tampilkan-pdf", nama, alamat: await blobKeData(blob), pesan: "", awas: !(keterangan && keterangan.gambarTtdPanitera) });
         if (jawab && jawab.ok) pesan.push(`PDF SALINAN dibuka di tab baru${ket}`);
         else {

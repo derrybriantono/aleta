@@ -263,7 +263,7 @@ function buka(p: { tundaAnon?: number; viewerGagal?: boolean; unduhGagal?: boole
       pdfBadan.push({ salinan: b.salinan, ttd: b.ttd });
       // 27 Okt: portal baru membubuhkan tanda tangan di PDF dan menjawab ttdPdf; portal lama (portalLama) tidak mengenal b.ttd.
       const ttdPdf = !p.portalLama && Array.isArray(b.ttd) && b.ttd.length ? { ttdPdf: { dipasang: b.ttd.map((x: { nama: string }) => x.nama), tidakDitemukan: [] } } : {};
-      return json({ ok: true, data: { available: true, message: "", pdfBase64: Buffer.from("%PDF-1.4 uji").toString("base64"), byte: 12, ...ttdPdf, ...(b.salinan ? { salinan: { namaPanitera: "PP Satu", gambarTtdPanitera: false, ttdTerdaftar: false } } : {}) } });
+      return json({ ok: true, data: { available: true, message: "", pdfBase64: Buffer.from("%PDF-1.4 uji").toString("base64"), byte: 12, ...ttdPdf, ...(b.salinan ? { salinan: { namaPanitera: "PP Satu", gambarTtdPanitera: false, ttdTerdaftar: false, ttdDitambah: 4, ttdSudahAda: 0, alasanTanpaGambar: "ttd_tidak_ada" } } : {}) } });
     }
     if (/\/aleta-ecourt\/tanda-tangan\/\d+\/gambar/.test(url)) {
       if (p.ttd?.gambarTolak) return json({ ok: false }, 403);
@@ -533,6 +533,8 @@ describe("3. keluaran disusun BERSAMAAN dari satu naskah; hasil dan urutan pesan
     expect(h.pdfBadan[0].ttd).toBeUndefined();
     expect(h.pdfRtf[0]).not.toContain("\\pict");
     await sampai(() => /majelis dan panitera sidang: ttd/.test(akar(h).textContent || ""), "keterangan ttd");
+    // 28 Okt (630/2026): pesan menyebut jumlah ttd yang sungguh tertulis dan sebab tanda tangan Panitera tidak tertempel.
+    expect(akar(h).textContent).toContain("tanpa tanda tangan Panitera PP Satu: tanda tangannya belum terdaftar/disahkan; majelis dan panitera sidang: ttd (4)");
   });
 
   it("PDF biasa yang sama dicetak lagi: dipakai ulang dari ingatan halaman (tanpa LibreOffice lagi); PDF SALINAN tetap dibuat ulang", async () => {

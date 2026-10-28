@@ -257,7 +257,7 @@ function buka(p: { portalLama?: boolean; orang?: string; simpanan?: Record<strin
       pdfBadan.push({ salinan: b.salinan, ttd: b.ttd });
       // 27 Okt: portal baru membubuhkan tanda tangan di PDF dan menjawab ttdPdf; portal lama (portalLama) tidak mengenal b.ttd.
       const ttdPdf = !p.portalLama && Array.isArray(b.ttd) && b.ttd.length ? { ttdPdf: { dipasang: b.ttd.map((x: { nama: string }) => x.nama), tidakDitemukan: [] } } : {};
-      return json({ ok: true, data: { available: true, message: "", pdfBase64: Buffer.from("%PDF-1.4 uji").toString("base64"), byte: 12, ...ttdPdf, ...(b.salinan ? { salinan: { namaPanitera: "PP Satu", gambarTtdPanitera: false, ttdTerdaftar: false } } : {}) } });
+      return json({ ok: true, data: { available: true, message: "", pdfBase64: Buffer.from("%PDF-1.4 uji").toString("base64"), byte: 12, ...ttdPdf, ...(b.salinan ? { salinan: { namaPanitera: "PP Satu", gambarTtdPanitera: false, ttdTerdaftar: false, ttdDitambah: 4, ttdSudahAda: 0, alasanTanpaGambar: "ttd_tidak_ada" } } : {}) } });
     }
     if (/\/aleta-ecourt\/tanda-tangan\/\d+\/gambar/.test(url)) {
       if (p.ttd?.gambarTolak) return json({ ok: false }, 403);

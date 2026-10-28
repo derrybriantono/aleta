@@ -174,9 +174,11 @@ describe("6. logo di dalam kotak tanda tangan elektronik", () => {
       expect(h.dirapikan, berkas).toBeGreaterThanOrEqual(1);
       for (const r of h.rincian) {
         expect(r.logoBaru.kiri, berkas).toBeGreaterThanOrEqual(r.kotak.kiri + e.LOGO_KOTAK.padTwip);
-        expect(r.logoBaru.atas, berkas).toBeGreaterThanOrEqual(r.kotak.atas + e.LOGO_KOTAK.padTwip);
+        // 28 Okt: letak yang TAMPIL di PDF = koordinat RTF dikurangi jarak baris jangkar (koreksiJangkarTwip; terukur 694/2026).
+        expect(r.koreksiJangkar, berkas).toBe(360);
+        expect(r.logoBaru.atas - r.koreksiJangkar, berkas).toBeGreaterThanOrEqual(r.kotak.atas + e.LOGO_KOTAK.padTwip);
         expect(r.logoBaru.kanan, berkas).toBeLessThanOrEqual(r.kotak.kanan - e.LOGO_KOTAK.padTwip);
-        expect(r.logoBaru.bawah, berkas).toBeLessThanOrEqual(r.kotak.bawah - e.LOGO_KOTAK.padTwip);
+        expect(r.logoBaru.bawah - r.koreksiJangkar, berkas).toBeLessThanOrEqual(r.kotak.bawah - e.LOGO_KOTAK.padTwip);
       }
       expect(e.rapikanLogoKotakElektronik(h.rtf).dirapikan, berkas).toBe(0);
     }
@@ -283,5 +285,17 @@ describe("5. cap kantor pada PMH", () => {
     } finally {
       await db.close();
     }
+  });
+});
+
+describe("28 Okt: koreksi jangkar logo kotak TTD elektronik (PPP/PJS 694/2026 keluar kotak di PDF)", () => {
+  it("jarak baris paragraf jangkar (\\sl) dibaca dari \\pard terakhir sebelum bentuk; tanpa \\sl = 0; nilai tak wajar = 0", () => {
+    const e = modulEdoc() as any;
+    const rtf = (sl: string) => String.raw`{\rtf1 \pard \plain ` + sl + String.raw` \intbl {\fs24 x}{\shp {\*\shpinst \shpleft0\shptop0\shpright10\shpbottom10}}}`;
+    const di = (s: string) => s.indexOf(String.raw`{\shp`);
+    expect(e.koreksiJangkarTwip(rtf(String.raw`\sl360 \slmult1`), di(rtf(String.raw`\sl360 \slmult1`)))).toBe(360);
+    expect(e.koreksiJangkarTwip(rtf(String.raw`\sl-300`), di(rtf(String.raw`\sl-300`)))).toBe(300);
+    expect(e.koreksiJangkarTwip(rtf(""), di(rtf("")))).toBe(0);
+    expect(e.koreksiJangkarTwip(rtf(String.raw`\sl5000`), di(rtf(String.raw`\sl5000`)))).toBe(0);
   });
 });

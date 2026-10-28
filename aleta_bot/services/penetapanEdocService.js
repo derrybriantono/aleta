@@ -736,6 +736,21 @@ function tepiKiriTeksKotak(isiKotak) {
   return inset + (minInden === null ? 0 : Math.max(0, minInden));
 }
 
+/**
+ * 28 Okt 2026 (PPP/PJS 694/Pdt.G/2026): LibreOffice menggambar bentuk GAMBAR yang berjangkar paragraf satu jarak baris
+ * (\slN paragraf jangkarnya) LEBIH TINGGI daripada bentuk kotak teks di paragraf yang sama - terukur di PDF: logo yang di
+ * RTF 196 twip di bawah tepi atas kotak tampil 8 pt DI ATASNYA pada paragraf \sl360 (selisih tepat 18 pt). Logo yang
+ * dipindah-ukur ke dalam kotak diturunkan sebesar itu supaya di PDF benar-benar di dalam kotak. Tanpa \sl = 0 (seperti dulu).
+ */
+function koreksiJangkarTwip(rtf, awalBentuk) {
+  const s = String(rtf || "");
+  const pard = s.lastIndexOf("\\pard", awalBentuk);
+  const sebelum = s.slice(pard >= 0 ? pard : Math.max(0, awalBentuk - 3000), awalBentuk);
+  const sl = [...sebelum.matchAll(/\\sl(-?\d+)(?![\d])/g)].pop();
+  const n = sl ? Math.abs(Number(sl[1])) : 0;
+  return n > 0 && n <= 1440 ? n : 0;
+}
+
 function rapikanLogoKotakElektronik(rtf) {
   let s = String(rtf || "");
   const rincian = [];
@@ -759,7 +774,11 @@ function rapikanLogoKotakElektronik(rtf) {
     for (const logo of calon) {
       const g = logo.geo;
       const pad = LOGO_KOTAK.padTwip;
-      const sudahDalam = g.kiri >= kl.kiri + pad * 0.4 && g.atas >= kl.atas + pad * 0.4 && g.kanan <= kl.kanan - pad * 0.4 && g.bawah <= kl.bawah - pad * 0.4;
+      // Letak logo SEBAGAIMANA TAMPIL di PDF (lihat koreksiJangkarTwip): lebih tinggi sebesar jarak baris jangkarnya.
+      const koreksi = koreksiJangkarTwip(s, logo.awal);
+      const atasTampil = g.atas - koreksi;
+      const bawahTampil = g.bawah - koreksi;
+      const sudahDalam = g.kiri >= kl.kiri + pad * 0.4 && atasTampil >= kl.atas + pad * 0.4 && g.kanan <= kl.kanan - pad * 0.4 && bawahTampil <= kl.bawah - pad * 0.4;
       const tepiTeks = kl.kiri + tepiKiriTeksKotak(k.isi);
       if (sudahDalam && g.kanan <= tepiTeks - LOGO_KOTAK.celahTwip * 0.5) continue;
       const slotKiri = kl.kiri + pad;
@@ -776,12 +795,13 @@ function rapikanLogoKotakElektronik(rtf) {
       if (rasio >= 1) h = Math.round(sisi / rasio);
       else w = Math.round(sisi * rasio);
       const kiriBaru = Math.round(slotKiri + (sisi - w) / 2);
-      const atasBaru = Math.round(kl.atas + (tinggiK - h) / 2);
+      const atasBaru = Math.round(kl.atas + (tinggiK - h) / 2) + koreksi;
       sunting.push({ awal: logo.awal + g.di, akhir: logo.awal + g.di + g.panjang, isi: `\\shpleft${kiriBaru}\\shptop${atasBaru}\\shpright${kiriBaru + w}\\shpbottom${atasBaru + h}`, logo, w, h });
       rincian.push({
         kotak: { kiri: kl.kiri, atas: kl.atas, kanan: kl.kanan, bawah: kl.bawah },
         logoLama: { kiri: g.kiri, atas: g.atas, kanan: g.kanan, bawah: g.bawah },
         logoBaru: { kiri: kiriBaru, atas: atasBaru, kanan: kiriBaru + w, bawah: atasBaru + h },
+        koreksiJangkar: koreksi,
       });
     }
   }
@@ -1569,6 +1589,7 @@ module.exports = {
   buangGambarBlokTtd,
   adaKotakTtdElektronik,
   rapikanLogoKotakElektronik,
+  koreksiJangkarTwip,
   LOGO_KOTAK,
   cariPenandaTangan,
   cocokkanTandaTangan,

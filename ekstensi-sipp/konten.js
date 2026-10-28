@@ -560,8 +560,10 @@ function tombolUnduh(dokumen, format, label) {
 
   tombol.dataset.labelAsli = label;
 
-  tombol.addEventListener("click", async () => {
+  tombol.addEventListener("click", async (e) => {
     const semula = tombol.textContent;
+    // 28 Okt 2026: seperti unduhan dokumen SIPP lain - diperlihatkan dulu; Shift/Ctrl/Alt-klik = unduh langsung.
+    const langsung = Boolean(e && (e.shiftKey || e.ctrlKey || e.metaKey || e.altKey));
     tombol.disabled = true;
     tombol.textContent = "…";
 
@@ -604,9 +606,23 @@ function tombolUnduh(dokumen, format, label) {
         return;
       }
 
+      const namaBerkas = String(namaBerkasDari(respons, dokumen, format));
+      const pratinjau = globalThis.aletaPratinjauBasRelaas;
+      if (!langsung && pratinjau && typeof pratinjau.bukaBerkas === "function" && (typeof pratinjau.nyalaKini !== "function" || pratinjau.nyalaKini())) {
+        try {
+          // Jendela pratinjau yang sama dengan BAS/relaas/penetapan SIPP: Tutup, Cetak, Unduh.
+          await pratinjau.bukaBerkas({ blob, nama: namaBerkas, jenis: "ecourt" });
+          tombol.textContent = semula;
+          tombol.disabled = false;
+          return;
+        } catch {
+          /* pratinjau gagal: tetap diunduh di bawah - tidak ada unduhan yang hilang */
+        }
+      }
+
       // Diterbitkan pekerja latar, bukan tautan blob:http halaman SIPP - yang
       // kedua ditahan Chrome "site isn't using a secure connection" (14 Okt).
-      const u = await alatUnduh(blob, String(namaBerkasDari(respons, dokumen, format)));
+      const u = await alatUnduh(blob, namaBerkas);
       if (!u.ok) {
         tandaiGagal(u.pesan || "Berkas tidak dapat disimpan.");
         return;
@@ -6628,13 +6644,18 @@ async function e6UnggahEdocPenetapan(p) {
   }
   const abt = [];
   const gagal = [];
+  // 28 Okt: PMH dan PHS sering memakai blangko gabungan yang sama ("@ 0 - PMH - PHS", ±4,5 MB) - dicetak SEKALI, bagiannya
+  // dipotong bot lewat ciri isi. Mencetaknya dua kali menggandakan waktu ABT.
+  const sudahCetak = new Map();
   for (const asal of dipakai) {
     // I9 17 Okt: PHS perkara bersita - pilihan tangan "dikabulkan"/"ditolak" memakai varian @ 2a / @ 2b (tanpa jatuh ke @ 2: bawaannya
     // bertuliskan sita ditangguhkan, bertentangan dengan pilihan petugas). Tanpa pilihan = bawaan @ 2 (blok ditangguhkan terisi sendiri).
     const varianSita = String(asal.jenis) === "phs" && p.sita && asal.varianSita ? String(asal.varianSita[p.sita] || "") : "";
     const b = varianSita ? { ...asal, namaBerkas: varianSita } : asal;
     tulis(`Mencetak ${String(b.jenis).toUpperCase()} dari blangko ABT "${b.namaBerkas}"…`);
-    let r = await e6CetakRtfAbt(perkaraId, b);
+    const kunciCetak = `${String(b.kelompok || "")}|${String(b.namaBerkas || "")}`;
+    let r = sudahCetak.get(kunciCetak) || (await e6CetakRtfAbt(perkaraId, b));
+    if (r && r.ok && r.rtfBase64) sudahCetak.set(kunciCetak, r);
     let namaDipakai = b.namaBerkas;
     // I9 17 Okt: berkas tunggal (PPP "@ 0a", PJS "@ 0b") belum ada di ABT satker -> berkas gabungan "@ 0" (bot memotong bagiannya lewat ciri isi).
     const cadangan = String(b.namaBerkasCadangan || "").trim();
