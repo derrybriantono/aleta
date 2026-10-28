@@ -686,7 +686,7 @@ function buatLayanan(deps = {}) {
     }
   }
 
-  return { keadaanTunda, susunRencanaTunda, jalankanRencanaTunda, bacaMediasi };
+  return { keadaanTunda, susunRencanaTunda, jalankanRencanaTunda, bacaMediasi, akunPerkara, namaPetugasPerkara };
 }
 
 let bawaan = null;

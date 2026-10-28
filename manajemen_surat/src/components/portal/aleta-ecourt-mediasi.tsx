@@ -54,9 +54,10 @@ import {
   uraiCariPintar,
   uraianKosong,
 } from "@/lib/cari-pintar-jadwal";
-import { CalendarClock, ChevronDown, ChevronUp, FileText, Filter, SlidersHorizontal, X } from "lucide-react";
+import { CalendarClock, ChevronDown, ChevronUp, ClipboardCheck, FileText, Filter, SlidersHorizontal, X } from "lucide-react";
 import { HasilMediasiDialog } from "@/components/portal/hasil-mediasi-dialog";
 import { TundaMediasiDialog, type HasilTundaMediasi } from "@/components/portal/tunda-mediasi-dialog";
+import { HasilMediasiSippDialog, type HasilIsiMediasiSipp } from "@/components/portal/hasil-mediasi-sipp-dialog";
 import { barisSetelahTundaMediasi } from "@/lib/tunda-mediasi";
 import { bolehBuatHasilMediasi, type PenggunaHasilMediasi } from "@/lib/hasil-mediasi";
 import { usePenggunaAktifOpsional } from "@/lib/app-state";
@@ -843,6 +844,9 @@ export function AletaEcourtMediasi({
   // 26 Okt 2026: Tunda mediasi menulis ke SIPP; hak golongan di sini, kepemilikan perkara dijaga rute.
   const bolehTundaMediasiLayar = bolehAksiLayar(penggunaAktif, "mediasi.tunda");
   const [tundaDibuka, setTundaDibuka] = useState<Mediasi | null>(null);
+  // 28 Okt 2026: hasil mediasi ke SIPP (atas akun PP perkara); kepemilikan perkara dijaga rute.
+  const bolehHasilSippLayar = bolehAksiLayar(penggunaAktif, "mediasi.hasil-sipp");
+  const [hasilSippDibuka, setHasilSippDibuka] = useState<Mediasi | null>(null);
   /* === 12OKT-A: kumulasi perkara === */
   const saklarKumulasi = useSaklarKumulasi();
   /* === AKHIR 12OKT-A === */
@@ -956,6 +960,14 @@ export function AletaEcourtMediasi({
         { tanggal: hasil.tanggalBaru, tempat: hasil.tempatBaru, jam: hasil.jam, sampaiJam: hasil.sampaiJam },
         hasil.kehadiran,
         { dari: rentang?.mulai || dari, sampai: rentang?.akhir || sampai }
+      )
+    );
+  };
+  // Sesudah hasil tertulis ke SIPP: kolom Hasil & laporan seluruh pertemuan mediasi itu berubah seketika.
+  const sesudahHasilSipp = (hasil: HasilIsiMediasiSipp) => {
+    setMediasi((lama) =>
+      lama.map((b) =>
+        String(b.mediasiId) === hasil.mediasiId ? { ...b, hasilTeks: hasil.hasilLabel, laporanMediator: hasil.laporan, selesai: true } : b
       )
     );
   };
@@ -1624,6 +1636,22 @@ export function AletaEcourtMediasi({
                           </button>
                         </div>
                       ) : null}
+                      {/* Hasil mediasi ke SIPP (28 Okt 2026) - persis Edit Hasil Mediasi SIPP, atas akun PP perkara;
+                          pada pertemuan yang tidak ditunda (pertemuan terakhir). Sesudah laporan masuk tetap dapat disunting. */}
+                      {bolehHasilSippLayar && !baris.ditunda ? (
+                        <div className="mb-1">
+                          <button
+                            type="button"
+                            onClick={() => setHasilSippDibuka(baris)}
+                            title="Isi hasil mediasi dan laporan mediator - tertulis di SIPP seperti Edit Hasil Mediasi di SIPP"
+                            className="inline-flex items-center gap-1 rounded-md border border-emerald-600/50 px-2 py-1 text-xs font-medium text-emerald-800 transition hover:bg-emerald-500/10 dark:text-emerald-300"
+                            data-tombol-hasil-mediasi-sipp={baris.nomorPerkara}
+                          >
+                            <ClipboardCheck className="h-3.5 w-3.5" />
+                            {baris.hasilTeks ? "Ubah hasil (SIPP)" : "Isi hasil (SIPP)"}
+                          </button>
+                        </div>
+                      ) : null}
                       {bolehCatatMediasi && tampilMediasi(tampilan, "tombol-status-mediasi") ? (
                       <div className="mb-1">
                         <TombolStatusMediasi baris={{ mediasiId: String(baris.mediasiId), perkaraId: String(baris.perkaraId), nomorPerkara: baris.nomorPerkara, tanggal: baris.tanggal.slice(0, 10), tempat: baris.tempat }} status={statusMediasi.peta[kunciBaris]} onBerubah={statusMediasi.muatUlang} />
@@ -1685,6 +1713,16 @@ export function AletaEcourtMediasi({
             }}
             onTutup={() => setTundaDibuka(null)}
             onBerhasil={sesudahTunda}
+          />
+        ) : null}
+
+        {hasilSippDibuka ? (
+          <HasilMediasiSippDialog
+            mediasiId={String(hasilSippDibuka.mediasiId)}
+            nomorPerkara={hasilSippDibuka.nomorPerkara}
+            jenisPerkara={hasilSippDibuka.jenisPerkara}
+            onTutup={() => setHasilSippDibuka(null)}
+            onBerhasil={sesudahHasilSipp}
           />
         ) : null}
 
