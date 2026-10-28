@@ -252,6 +252,9 @@ export const PILIHAN_ALASAN = [
   "B · meninggalkan 2 tahun berturut-turut dan F",
   "C · dihukum penjara 5 tahun atau lebih",
   "D · kekejaman atau penganiayaan dan F",
+  // 28 Okt: E dan G sempat tidak ada di menu walau kueri [01] di ABT mengenali keduanya (cabang umum A-H) - perkara 627 (stroke).
+  "E · cacat badan atau penyakit sehingga tidak dapat menjalankan kewajiban suami/isteri",
+  "G · suami melanggar taklik talak",
   "H · murtad (beralih agama)",
 ];
 
