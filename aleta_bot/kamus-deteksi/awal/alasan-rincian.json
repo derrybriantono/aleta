@@ -1,13 +1,13 @@
 {
  "kelompok": "alasan-rincian",
  "versi": 1,
- "catatan": "Rincian alasan cerai untuk 5227: pasangan sebab -> akibat dari gugatan. Mesin: services/deteksi/alasanRincian.js. Bunyi memakai {lawan}/{pelaku}/{lain}. Ruas rinci {re, awalan} (28 Okt): nama/jenis perbuatan di gugatan yang ikut bunyi bawaan bila bunyi baku tidak memuatnya.",
+ "catatan": "Rincian alasan cerai untuk 5227: pasangan sebab -> akibat dari gugatan. Mesin: services/deteksi/alasanRincian.js. Bunyi memakai {lawan}/{pelaku}/{lain}. Ruas rinci {re, awalan} (28 Okt): nama/jenis perbuatan di gugatan yang ikut bunyi bawaan bila bunyi baku tidak memuatnya. Bunyi berisi {rinci} (28 Okt): tempat rincian gugatan di tengah bunyi; rinci.sekitar = rincian boleh dicari di depan perbuatan (keadaan pihak lain).",
  "pola": [
   {
    "kode": "rincian-nafkah-kurang",
    "label": "nafkah (kurang)",
    "kunci": "nafkah",
-   "regex": "\\b(?:kurang|jarang)\\s+(?:dalam\\s+)?(?:memberi(?:kan)?|menafkahi|menyediakan)\\s+(?:\\S+\\s+){0,2}?(?:nafkah|uang\\s+(?:belanja|bulanan)|biaya\\s+hidup)(?!\\s+batin)|\\bnafkah\\s+(?:lahir\\s+)?(?:yang\\s+(?:di)?beri(?:kan)?\\s+)?(?:tidak|kurang)\\s+(?:mencukupi|cukup|memadai)|\\b(?:tidak|kurang)\\s+(?:dapat\\s+|mampu\\s+|bisa\\s+)?mencukupi\\s+(?:\\S+\\s+){0,2}?(?:nafkah|kebutuhan)",
+   "regex": "\\b(?:kurang|jarang)\\s+(?:dalam\\s+)?(?:memberi(?:kan)?|menafkahi|menyediakan)\\s+(?:\\S+\\s+){0,2}?(?:nafkah|uang\\s+(?:belanja|bulanan)|biaya\\s+hidup)(?!\\s+batin)|\\bnafkah\\s+(?:lahir\\s+)?(?:yang\\s+(?:di)?beri(?:kan)?\\s+)?(?:tidak|kurang)\\s+(?:mencukupi|cukup|memadai)|\\b(?:tidak|kurang)\\s+(?:dapat\\s+|mampu\\s+|bisa\\s+)?mencukupi\\s+(?:\\S+\\s+){0,2}?(?:nafkah|kebutuhan)|\\b(?:kurang|jarang)\\s+menafkahi\\b",
    "flags": "i",
    "status": "aktif",
    "yakin": "ragu",
@@ -42,7 +42,7 @@
    "kode": "rincian-nafkah-tidak",
    "label": "nafkah (tidak)",
    "kunci": "nafkah",
-   "regex": "\\b(?:tidak|tak|belum)\\s+(?:pernah\\s+|lagi\\s+|dapat\\s+|mau\\s+)*(?:memberi(?:kan)?|menafkahi|membayar(?:kan)?)\\s+(?:\\S+\\s+){0,2}?(?:nafkah|uang\\s+(?:belanja|bulanan)|biaya\\s+hidup)(?!\\s+batin)|\\b(?:menelantarkan|melalaikan\\s+kewajiban)\\s+(?:\\S+\\s+){0,3}?(?:nafkah|keluarga|penggugat|pemohon|istri|isteri)|\\b(?:tidak|tak)\\s+(?:pernah\\s+)?menafkahi\\b|\\btanpa\\s+nafkah\\b",
+   "regex": "\\b(?:tidak|tak|belum)\\s+(?:pernah\\s+|lagi\\s+|dapat\\s+|mau\\s+)*(?:memberi(?:kan)?|menafkahi|membayar(?:kan)?)\\s+(?:\\S+\\s+){0,2}?(?:nafkah|uang\\s+(?:belanja|bulanan)|biaya\\s+hidup)(?!\\s+batin)|\\b(?:menelantarkan|melalaikan\\s+kewajiban)\\s+(?:\\S+\\s+){0,3}?(?:nafkah|keluarga|penggugat|pemohon|istri|isteri)|\\b(?:tidak|tak)\\s+(?:(?:pernah|lagi|mau)\\s+)*menafkahi\\b|\\btanpa\\s+nafkah\\b",
    "flags": "i",
    "status": "aktif",
    "yakin": "ragu",
@@ -928,6 +928,122 @@
    ]
   },
   {
+   "kode": "rincian-pergi-tanpa-kabar-tujuan",
+   "label": "pergi tanpa diketahui tujuannya (tujuan)",
+   "kunci": "pergi-tanpa-kabar",
+   "regex": "\\b(?:pergi|meninggalkan|berangkat|pamit|keluar\\s+dari\\s+rumah)\\b[^.;]{0,120}?\\b(?:tidak|tanpa|tak)\\s+(?:lagi\\s+|pernah\\s+)?(?:mengetahui|diketahui|tahu|memberitahu(?:kan)?|memberi\\s+tahu)\\s+(?:\\S+\\s+){0,2}?(?:tujuan|keberadaan|alamat|ke\\s*mana|di\\s*mana)",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat pergi meninggalkan kediaman bersama dengan alasan bekerja namun Penggugat tidak mengetahui tempat tujuan Tergugat",
+    "Tergugat pergi tanpa memberitahu tujuannya"
+   ],
+   "contohSalah": [
+    "Tergugat pergi bekerja dan memberitahu tujuannya kepada Penggugat",
+    "Penggugat tidak mengetahui tujuan hidupnya"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227), 28 Okt: sebab konkret yang dulu jatuh ke perselisihan umum.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "subjekDekat": true,
+   "urut": 2,
+   "huruf": "B",
+   "bunyi": [
+    "pergi meninggalkan tempat kediaman bersama{rinci} tanpa diketahui tujuannya",
+    "pergi meninggalkan {lawan} dan tidak diketahui keberadaannya"
+   ],
+   "rinci": {
+    "re": "\\b(?:dengan\\s+alasan|beralasan|dengan\\s+dalih|berdalih|dengan\\s+tujuan|untuk)\\s+(?:pergi\\s+)?(?:bekerja|mencari\\s+(?:nafkah|kerja|pekerjaan|uang)|merantau)\\b",
+    "awalan": ""
+   },
+   "serap": [
+    "tak-diketahui"
+   ]
+  },
+  {
+   "kode": "rincian-pergi-tanpa-kabar-kembali",
+   "label": "pergi dan tidak kembali (kembali)",
+   "kunci": "pergi-tanpa-kabar",
+   "regex": "\\b(?:pergi|meninggalkan|berangkat|pamit|keluar\\s+dari\\s+rumah)\\b[^.;]{0,120}?\\b(?:tidak|tak|belum)\\s+(?:(?:pernah|lagi|juga|kunjung)\\s+)*(?:kembali|balik|pulang\\s+(?:lagi|hingga|sampai))\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat pamit pergi bekerja namun tidak kembali lagi",
+    "Tergugat pamit pergi ke Makassar untuk bekerja, namun tidak balik lagi hingga sekarang"
+   ],
+   "contohSalah": [
+    "Tergugat kembali ke rumah setelah bekerja",
+    "Tergugat pergi bekerja dan pulang larut malam"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227), 28 Okt: sebab konkret yang dulu jatuh ke perselisihan umum.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "subjekDekat": true,
+   "urut": 3,
+   "huruf": "B",
+   "bunyi": [
+    "pergi meninggalkan tempat kediaman bersama{rinci} dan tidak kembali lagi",
+    "pergi meninggalkan {lawan} dan tidak pernah kembali"
+   ],
+   "rinci": {
+    "re": "\\b(?:dengan\\s+alasan|beralasan|dengan\\s+dalih|berdalih|dengan\\s+tujuan|untuk)\\s+(?:pergi\\s+)?(?:bekerja|mencari\\s+(?:nafkah|kerja|pekerjaan|uang)|merantau)\\b",
+    "awalan": ""
+   }
+  },
+  {
+   "kode": "rincian-pergi-tanpa-kabar-komunikasi",
+   "label": "pergi dan putus komunikasi (komunikasi)",
+   "kunci": "pergi-tanpa-kabar",
+   "regex": "\\b(?:pergi|meninggalkan|berangkat|pamit|keluar\\s+dari\\s+rumah)\\b[^.;]{0,120}?\\b(?:tidak\\s+(?:ada\\s+)?(?:lagi\\s+)?(?:terjalin\\s+|ada\\s+)?komunikasi|putus\\s+komunikasi|hilang\\s+kontak|tidak\\s+(?:pernah\\s+)?(?:lagi\\s+)?(?:menghubungi|berkomunikasi|bisa\\s+dihubungi|dapat\\s+dihubungi))\\b",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Tergugat pergi meninggalkan rumah dan tidak ada lagi komunikasi dengan Penggugat",
+    "Tergugat berangkat merantau lalu putus komunikasi"
+   ],
+   "contohSalah": [
+    "Tergugat pergi bekerja dan tetap berkomunikasi dengan Penggugat"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227), 28 Okt: sebab konkret yang dulu jatuh ke perselisihan umum.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "subjekDekat": true,
+   "urut": 4,
+   "huruf": "B",
+   "bunyi": [
+    "pergi meninggalkan tempat kediaman bersama{rinci} dan tidak lagi berkomunikasi dengan {lawan}",
+    "pergi meninggalkan {lawan} dan tidak pernah menghubunginya"
+   ],
+   "rinci": {
+    "re": "\\b(?:dengan\\s+alasan|beralasan|dengan\\s+dalih|berdalih|dengan\\s+tujuan|untuk)\\s+(?:pergi\\s+)?(?:bekerja|mencari\\s+(?:nafkah|kerja|pekerjaan|uang)|merantau)\\b",
+    "awalan": ""
+   }
+  },
+  {
    "kode": "rincian-pergi-a",
    "label": "meninggalkan tempat kediaman (a)",
    "kunci": "pergi",
@@ -1701,14 +1817,15 @@
    "kode": "rincian-masalah-sepele-a",
    "label": "masalah kecil dibesarkan (a)",
    "kunci": "masalah-sepele",
-   "regex": "\\b(?:masalah|persoalan|perkara)\\s+(?:kecil|sepele|remeh)\\b|\\bmemperbesar\\s+(?:masalah|persoalan)|\\bmembesar[\\s-]*besarkan\\b",
+   "regex": "\\b(?:masalah|persoalan|perkara|hal(?:-hal)?)\\s+(?:kecil|sepele|remeh)\\b|\\bmemperbesar\\s+(?:masalah|persoalan)|\\bmembesar[\\s-]*besarkan\\b",
    "flags": "i",
    "status": "aktif",
    "yakin": "ragu",
    "contohBenar": [
     "Tergugat hanya karena masalah sepele menjadikan masalah besar",
     "Tergugat memperbesar masalah",
-    "karena masalah kecil Tergugat marah"
+    "karena masalah kecil Tergugat marah",
+    "pertengkaran karena hal sepele"
    ],
    "contohSalah": [
     "masalah itu diselesaikan",
@@ -1832,6 +1949,46 @@
     "kembali memeluk agama semula (murtad)",
     "berpindah agama dengan kembali ke agama semula"
    ]
+  },
+  {
+   "kode": "rincian-tidak-menerima-keadaan-a",
+   "label": "tidak menerima keadaan pasangan (a)",
+   "kunci": "tidak-menerima-keadaan",
+   "regex": "\\b(?:tidak|tak|belum)\\s+(?:(?:bisa|dapat|mau|mampu|sanggup|pernah|lagi|ikhlas|juga)\\s+)*(?:menerima|terima)\\s+(?:dengan\\s+(?:baik|ikhlas|lapang\\s+dada)\\s+)?(?:\\S+\\s+){0,2}?(?:keadaan|kondisi|kekurangan|penyakit|sakit(?:nya)?|cacat|kecacatan|fisik|kemandulan)\\b|\\b(?:tidak|tak)\\s+(?:(?:bisa|dapat|mau|mampu|sanggup|lagi|ikhlas)\\s+)*menerima\\s+(?:penggugat|pemohon|tergugat|termohon|istri|isteri|suami)(?:nya)?\\s+yang\\s+(?:sedang\\s+|telah\\s+|sudah\\s+)?(?:sakit|menderita|mengidap|mengalami|cacat|lumpuh|stroke|strok|mandul|tidak\\s+(?:dapat|bisa|mampu)\\s+(?:memberi(?:kan)?|memiliki|mempunyai)\\s+keturunan)",
+   "flags": "i",
+   "status": "aktif",
+   "yakin": "ragu",
+   "contohBenar": [
+    "Kondisi Penggugat yang mengidap penyakit stroke membuat Tergugat tidak bisa menerima keadaan Penggugat",
+    "Tergugat tidak mau menerima kekurangan Penggugat",
+    "Tergugat tidak dapat menerima Penggugat yang tidak dapat memberikan keturunan"
+   ],
+   "contohSalah": [
+    "Tergugat menerima keadaan Penggugat apa adanya",
+    "Tergugat tidak bisa menerima tamu di rumah"
+   ],
+   "ukur": {
+    "n": 0,
+    "tepat": 0,
+    "salahTangkap": 0,
+    "sumber": "",
+    "tanggal": ""
+   },
+   "catatan": "Rincian alasan cerai (5227), 28 Okt: sebab konkret yang dulu jatuh ke perselisihan umum.",
+   "peran": "sebab",
+   "subjek": "pelaku",
+   "subjekDekat": true,
+   "urut": 1,
+   "huruf": "F",
+   "bunyi": [
+    "tidak dapat menerima keadaan {lawan}",
+    "tidak mau menerima kekurangan {lawan}"
+   ],
+   "rinci": {
+    "re": "\\b(?:mengidap|menderita|mengalami|terkena|terserang|divonis|didiagnosa|didiagnosis)\\s+(?:penyakit\\s+|sakit\\s+)?(?:stroke|strok|lumpuh|kelumpuhan|kanker|tumor|diabetes|gula|jantung|gagal\\s+ginjal|ginjal|hiv|aids|tbc|tuberkulosis|kusta|lepra|epilepsi|ayan|gangguan\\s+jiwa|depresi|skizofrenia|hepatitis|paru-paru|asma|hipertensi|darah\\s+tinggi|kista|miom|kemandulan|mandul|cacat)\\b|\\bsakit[\\s-]+sakitan\\b|\\btidak\\s+(?:dapat|bisa|mampu)\\s+(?:memberi(?:kan)?|memiliki|mempunyai|mendapatkan)\\s+keturunan\\b|\\b(?:cacat|lumpuh|mandul)\\b",
+    "awalan": "yang",
+    "sekitar": true
+   }
   }
  ],
  "templat": []

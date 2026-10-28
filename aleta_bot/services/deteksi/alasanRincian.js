@@ -19,6 +19,9 @@
  *      Akibat UMUM ("sehingga ... terus-menerus terjadi perselisihan dan pertengkaran") TIDAK ditempelkan
  *      ke alasan konkret (hanya pilihan bunyi); rantai sebab-akibat konkret tetap. Rincian perbuatan di
  *      gugatan ("yaitu jenis sabu-sabu", "dengan cara memukul") ikut di bunyi bawaan.
+ *   6. (28 Okt, kasus 627/Pdt.G/2026) Sebab konkret yang belum dikenal kamus tidak boleh jatuh ke "perselisihan" umum:
+ *      klausa sebab eksplisit ("... pertengkaran yang disebabkan karena X") dikutip sebagai butir (keyakinan ragu) -
+ *      lihat kutipSebab. Penyambung sebab-akibat tidak melewati batas kalimat.
  *
  * Pola & bunyi = DATA (kamus-deteksi/awal/alasan-rincian.json + lapis database; ruas tambahan
  * `bunyi`, `peran`, `subjek`, `untuk`, `urut`, `tanpaSubjek`, `kutip`, `hanyaAkibat`). Berkas ini
@@ -55,6 +58,9 @@ const RE_UJUNG_PERBUATAN = /\b(?:sehingga|hingga|akibatnya|karena|dikarenakan|di
 const RE_AKIBAT_UMUM = /\b(?:perselisihan|pertengkaran|percekcokan|cekcok|bertengkar|berselisih|keributan|ribut|tidak\s+(?:harmonis|rukun)|keharmonisan|ketidakharmonisan)\b/i;
 const RE_AKUI = /\b(?:membenarkan|mengakui|diakui|benar\s+(?:bahwa|adanya)|memang|betul|tidak\s+membantah)\b/i;
 
+// Sebutan pihak tepat di depan perbuatan (bukan objek "kepada/oleh/antara ..."), tanpa penghubung di antaranya.
+const RE_SUBJEK_DEKAT = /(?<!\b(?:kepada|terhadap|oleh|dengan|antara|dan|serta|keluarga|tua)\s+)\b(tergugat|termohon|penggugat|pemohon)((?:\s+(?!(?:dan|serta|yang|karena|sehingga|bahwa|kepada|terhadap|oleh)\b)[\w-]+){0,2})\s+$/i;
+
 let cache = { versi: -1, jenis: {} };
 
 /** Pola aktif untuk satu jenis cerai, siap pakai (RegExp global + saringan gabungan). Dibangun sekali per versi lapis. */
@@ -73,6 +79,9 @@ function polaUntuk(jenis) {
       reTolakSesudah: p.tolakSesudah ? new RegExp(String(p.tolakSesudah), "i") : null,
       // Ruas tambahan `rinci` {re, awalan}: nama/jenis perbuatan yang dibuang bunyi baku ("sabu-sabu", "togel").
       reRinci: p.rinci && p.rinci.re ? new RegExp(String(p.rinci.re), "i") : null,
+      // 28 Okt: `rinci.sekitar` = rincian boleh dicari juga DI DEPAN perbuatan (keadaan pihak lain: "Kondisi Penggugat
+      // yang mengidap penyakit stroke membuat Tergugat tidak bisa menerima keadaan Penggugat").
+      rinciSekitar: Boolean(p.rinci && p.rinci.sekitar),
     }))
     .sort((a, b) => (a.urut || 0) - (b.urut || 0));
   // Saringan gabungan: satu RegExp "gabungan semua pola" - kalimat yang tidak lolos dilewati sekaligus.
@@ -151,7 +160,10 @@ function simpulKalimat(kalimatAsli, set, opsi) {
       if (ternegasi && !longgarNegasi) continue;
       if (p.reTolakSebelum && p.reTolakSebelum.test(depan)) continue;
       if (p.reTolakSesudah && p.reTolakSesudah.test(kalimat.slice(m.index + m[0].length, m.index + m[0].length + 40))) continue;
-      let sub = sebab.terimaSubjek(p, kalimat, m.index);
+      // 28 Okt: ruas `subjekDekat` - sebutan pihak TEPAT di depan perbuatan (paling banyak dua kata) menang atas subjek
+      // klausa ("Kondisi Penggugat yang sakit membuat Tergugat tidak bisa menerima ..." -> Tergugat).
+      const dekat = p.subjekDekat ? RE_SUBJEK_DEKAT.exec(depan) : null;
+      let sub = dekat ? { s: /^(?:tergugat|termohon)$/i.test(dekat[1]) ? "P" : "" } : sebab.terimaSubjek(p, kalimat, m.index);
       let tersirat = false;
       if (!sub.s) {
         // Tanpa pelaku yang terbaca sama sekali ("Sering mabuk-mabukan dan memukul Penggugat") dibaca
@@ -207,6 +219,8 @@ function kutipanSesudah(kalimat, dari) {
 function hubungan(kalimat, a, b) {
   const antara = kalimat.slice(a.akhir, b.idx);
   if (antara.length > 160) return null;
+  // 28 Okt: tidak menyambung melewati batas kalimat ("... tujuan Tergugat. Dan ... sehingga ... pisah rumah").
+  if (/\.\s+[A-Z]/.test(antara)) return null;
   let m = RE_AKIBAT.exec(antara);
   if (m) return { jenis: "akibat", sampai: a.akhir + m.index + m[0].length };
   m = RE_SEBAB.exec(antara);
@@ -222,7 +236,7 @@ function hubungan(kalimat, a, b) {
 /** Penghubung akibat sesudah simpul `a` yang tidak diikuti simpul lain (akibat bebas, dikutip). */
 function akibatBebas(kalimat, a, berikut) {
   const batas = berikut ? berikut.idx : kalimat.length;
-  const antara = kalimat.slice(a.akhir, batas);
+  const antara = kalimat.slice(a.akhir, batas).split(/\.\s+(?=[A-Z])/)[0];
   const m = RE_AKIBAT.exec(antara);
   if (!m) return null;
   const mulai = a.akhir + m.index + m[0].length;
@@ -264,8 +278,15 @@ function rinciPerbuatan(kalimat, s, batas) {
     const d = rapikanEkor(sisa.slice(m.index));
     if (d.split(/\s+/).length >= 2 && d.length <= 90 && !baku.includes(d.toLowerCase())) detail = d;
   }
+  let luar = false;
   if (!detail && p.reRinci) {
-    const r = p.reRinci.exec(kalimat.slice(s.idx, ujung));
+    let r = p.reRinci.exec(kalimat.slice(s.idx, ujung));
+    if (!r && p.rinciSekitar) {
+      // Di depan perbuatan, dalam klausa yang sama (tidak melewati ";" atau ".").
+      const depan = kalimat.slice(Math.max(0, s.idx - 160), s.idx).split(/[;.]/).pop();
+      r = p.reRinci.exec(depan);
+      luar = Boolean(r);
+    }
     if (r && !baku.includes(r[0].toLowerCase())) detail = `${String((p.rinci && p.rinci.awalan) || "").trim()} ${r[0].toLowerCase()}`.trim();
   }
   if (!detail) return null;
@@ -284,18 +305,25 @@ function rinciPerbuatan(kalimat, s, batas) {
       if (t.length >= 3 && t.length <= 150 && t.split(/\s+/).length <= 22) predikat = t;
     }
   }
-  return { predikat, detail };
+  return { predikat, detail, luar };
 }
 
 function klausa(simpul, ph, jenis, varian, kutipan, tanpaRinci) {
   const p = simpul.pola;
   if (kutipan) return kutipan;
   const bunyi = p.bunyi[Math.min(varian, p.bunyi.length - 1)];
-  const isi = isiBunyi(bunyi, ph, jenis);
   const sub = subjekTeks(simpul, ph);
+  const pakaiRinci = varian === 0 && !tanpaRinci && simpul.rinci;
+  // 28 Okt: bunyi bertempat "{rinci}" - rincian gugatan disisipkan di tengah bunyi baku (atau dibuang bila tidak ada).
+  if (String(bunyi).includes("{rinci}")) {
+    const isiR = isiBunyi(String(bunyi).split("{rinci}").join(pakaiRinci ? ` ${simpul.rinci.detail}` : ""), ph, jenis).replace(/\s+/g, " ").trim();
+    return sub ? `${sub} ${isiR}` : isiR;
+  }
+  const isi = isiBunyi(bunyi, ph, jenis);
   // 28 Okt: bunyi bawaan memuat rincian perbuatan dari gugatan (kutipan perbuatan, atau bunyi baku + rinciannya).
-  if (varian === 0 && !tanpaRinci && simpul.rinci) {
-    if (simpul.rinci.predikat && sub === ph.pelaku) return `${sub} ${simpul.rinci.predikat}`;
+  if (pakaiRinci) {
+    // Rincian di depan perbuatan (keadaan pihak lain) tidak termuat di kutipan perbuatan - ditempel di belakangnya.
+    if (simpul.rinci.predikat && sub === ph.pelaku) return simpul.rinci.luar ? `${sub} ${simpul.rinci.predikat} ${simpul.rinci.detail}` : `${sub} ${simpul.rinci.predikat}`;
     return sub ? `${sub} ${isi} ${simpul.rinci.detail}` : `${isi} ${simpul.rinci.detail}`;
   }
   return sub ? `${sub} ${isi}` : isi;
@@ -373,6 +401,77 @@ function itemKalimat(kalimatAsli, set) {
     }
   }
   return hasil;
+}
+
+/**
+ * 28 Okt: CADANGAN KUTIP. Kalimat gugatan yang menyebut perselisihan berikut klausa sebab eksplisit ("... sering terjadi
+ * pertengkaran yang disebabkan karena ...") tetapi isinya tidak dikenali kamus: klausa sebab itu dikutip sebagai butir
+ * konkret (keyakinan ragu, petugas memeriksa) - bukan jatuh ke penutup umum. Null bila tidak ada / tidak layak dikutip.
+ */
+const RE_PENANDA_SEBAB_KUTIP = /\b(?:(?:yang\s+)?(?:di)?sebabkan\s+(?:karena|oleh)(?:\s+karena)?|(?:yang\s+)?(?:di)?sebabkan|dikarenakan(?:\s+oleh)?|dipicu\s+(?:oleh|karena)|penyebab(?:nya)?\s+(?:adalah|yaitu|ialah)(?:\s+karena)?|karena|lantaran)\s+/gi;
+const RE_UJUNG_KUTIP = /[;:.]|\s+(?:sehingga|akibatnya|maka|bahkan|hingga\s+(?:akhirnya|puncaknya))\b|\s+(?:namun|tetapi|akan\s+tetapi|padahal)\b(?!\s+(?:\S+\s+)?(?:penggugat|tergugat|pemohon|termohon)\b)|\s+yang\s+(?:me)?(?:nyebabkan|mengakibatkan|berakibat)\b|,?\s+(?:dan|serta)\s+(?:\S+\s+){0,3}?(?:perselisihan|pertengkaran|percekcokan|cekcok|bertengkar|keributan)\b|,\s+(?:dan|serta|oleh\s+karena\s+itu|puncaknya|sejak)\b|\s+(?:dan|serta|lalu|kemudian)\s+(?:akhirnya\s+)?(?:penggugat|pemohon|tergugat|termohon)\s+(?:\S+\s+){0,2}?(?:memutuskan|memilih|pergi|pulang|meninggalkan|keluar|kembali)\b/i;
+// "X namun <pihak> Y": Y sering inti keluhannya ("Pemohon memberi nafkah namun Termohon tidak bersyukur") - hanya dipotong bila kepanjangan.
+const RE_UJUNG_KUTIP_LUNAK = /\s+(?:namun|tetapi|akan\s+tetapi|padahal)\b/i;
+const RE_LAWAN_MENGALAMI = /^\s+(?:(?:sudah|telah|sering|pernah|selalu|juga|tidak|kurang|lagi)\s+)*(?:mengetahui|tahu|mendapati|melihat|menemukan|memergoki|mendapatkan|mendapat|mendengar|curiga|mencurigai|merasa|tahan|menerima|diperlakukan|dipukul|dimarahi|diusir|dituduh|difitnah|diberi|dinafkahi|dihargai|dianggap|diperhatikan|dipedulikan|disakiti|ditinggalkan|diselingkuhi)\b/i;
+const RE_KUTIP_TOLAK = /^(?:itu|hal\s+(?:itu|tersebut|ini)|tersebut|ini|alasan\s+tersebut|masalah\s+tersebut|hal-hal\s+(?:tersebut|di\s*atas)|sebagaimana|hal\s+yang)\b/i;
+// Bukan sebab: pembuka daftar ("antara lain", "sebagai berikut"), cerita waktu ("pada bulan ..."), ucapan orang pertama.
+const RE_KUTIP_BUANG = /\b(?:berikut|antara\s+lain|di\s*antaranya|saya|kami|kita|aku|di?kh?[ae]?wa?tirkan|tidak\s+diinginkan)\b|^(?:pada|sejak|setelah|sesudah|ketika|saat|waktu|selama|sewaktu|terhitung|dengan|disebabkan|dikarenakan)\b|^\S+\s+(?:penggugat|tergugat|pemohon|termohon)$/i;
+// Penanda sebab yang menerangkan perbuatan lain (kepergian/pisah rumah) atau didahului pembalik, bukan perselisihannya.
+const RE_KUTIP_BALIK = /\b(?:namun|tetapi|walau(?:pun)?|meski(?:pun)?|sabar|bersabar|bertahan|mempertahankan|pisah|berpisah|meninggalkan|pergi|pulang|keluar)\b/i;
+const BATAS_KUTIP_SEBAB = 200;
+function kutipSebab(kalimatAsli, items, ph) {
+  const kalimat = String(kalimatAsli || "").replace(/\s+/g, " ").slice(0, BATAS_KALIMAT);
+  if (!RE_AKIBAT_UMUM.test(kalimat) || RE_NORMA.test(kalimat)) return null;
+  RE_PENANDA_SEBAB_KUTIP.lastIndex = 0;
+  let m;
+  while ((m = RE_PENANDA_SEBAB_KUTIP.exec(kalimat)) !== null) {
+    // Penanda sebab harus menerangkan perselisihan di klausa yang sama (paling jauh 220 huruf di depannya).
+    // Di antaranya tidak ada pembalik ("... pertengkaran, namun karena rasa sayang Penggugat bersabar").
+    const depan = kalimat.slice(Math.max(0, m.index - 220), m.index).split(/[;.]\s/).pop();
+    const umum = [...depan.matchAll(new RegExp(RE_AKIBAT_UMUM.source, "gi"))].pop();
+    if (!umum || depan.length - umum.index > 160 || RE_KUTIP_BALIK.test(depan.slice(umum.index))) continue;
+    const mulai = m.index + m[0].length;
+    // Sebab yang sudah dikenali kamus di klausa ini: tidak dikutip lagi.
+    const sisa = kalimat.slice(mulai);
+    const u = RE_UJUNG_KUTIP.exec(sisa);
+    const ujung = mulai + (u ? u.index : sisa.length);
+    const dikenal = (items || []).some((it) => it.simpul.some((s) => (s.pola.peran || "sebab") === "sebab" && s.idx >= mulai - 1 && s.idx < ujung));
+    if (dikenal) return null;
+    // Klausa yang membuka rincian bernomor ("... disebabkan hal-hal sebagai berikut:") bukan sebab - tidak dikutip.
+    if (u && u[0] === ":") return null;
+    let t = rapikanEkor(kalimat.slice(mulai, ujung).replace(/["“”]/g, ""));
+    for (let n = 0; n < 3; n++) t = t.replace(/^[\s,]+/, "").replace(/^[Kk]arena(?=[A-Z])/, "").replace(/^(?:karena|oleh|(?:di)?sebabkan|dikarenakan|adalah|yaitu)(?:\s*,\s*|\s+)/i, "");
+    // Kalimat terpotong batas pindai atau cerita beruntun (banyak koma): ambil klausa pertamanya saja.
+    if (ujung >= kalimat.length && String(kalimatAsli).replace(/\s+/g, " ").length > kalimat.length) return null;
+    if ((t.match(/,\s/g) || []).length >= 2) t = rapikanEkor(t.split(/,\s/)[0]);
+    if (t.length > BATAS_KUTIP_SEBAB) t = rapikanEkor(t.split(RE_UJUNG_KUTIP_LUNAK)[0]);
+    if (t.length > BATAS_KUTIP_SEBAB) t = rapikanEkor(t.split(/,\s/)[0]);
+    const kata = t.split(/\s+/).filter(Boolean);
+    if (t.length < 12 || t.length > BATAS_KUTIP_SEBAB || kata.length < 2 || kata.length > 32) return null;
+    if (RE_KUTIP_TOLAK.test(t) || RE_BUKAN_SEBAB.test(t) || RE_AKIBAT_UMUM.test(t) || RE_KUTIP_BUANG.test(t) || !/^[a-z]/i.test(t)) return null;
+    // Berpelaku pihak yang mengajukan: hanya bila ia mengalami/mengetahui perbuatan pihak lawan ("Penggugat mendapati
+    // Tergugat ...", "Penggugat tidak dinafkahi"); cerita perbuatannya sendiri ("Penggugat meminta izin ...") bukan sebab.
+    const lawan = String((ph && ph.lawan) || "Penggugat");
+    const pelaku = String((ph && ph.pelaku) || "Tergugat");
+    const keluhan = new RegExp(`\\b(?:namun|tetapi|padahal)\\s+(?:\\S+\\s+)?${pelaku}\\b`, "i");
+    if (new RegExp(`^${lawan}\\b`, "i").test(t) && !RE_LAWAN_MENGALAMI.test(t.slice(lawan.length)) && !keluhan.test(t)) return null;
+    t = bakuPihak(t);
+    // Huruf awal kecil kecuali sebutan pihak (bunyi disisipkan di tengah kalimat blangko).
+    if (!/^(?:Penggugat|Tergugat|Pemohon|Termohon)\b/.test(t)) t = t.charAt(0).toLowerCase() + t.slice(1);
+    return { teks: t, idx: mulai };
+  }
+  return null;
+}
+
+/** Kata isi (>= 5 huruf, bukan sebutan pihak/kata umum) - untuk mencocokkan kutipan sebab dengan keterangan saksi. */
+const KATA_UMUM = new Set(["penggugat", "tergugat", "pemohon", "termohon", "karena", "sehingga", "kepada", "terhadap", "dengan", "antara", "keadaan", "kondisi", "rumah", "tangga", "selalu", "sering", "tidak", "bahwa", "sudah", "telah", "pernah", "menjadi", "adalah", "tersebut", "dalam", "untuk", "terjadi", "perselisihan", "pertengkaran"]);
+function kataIsi(teks) {
+  return new Set(
+    String(teks || "")
+      .toLowerCase()
+      .split(/[^a-z-]+/)
+      .filter((k) => k.length >= 5 && !KATA_UMUM.has(k))
+  );
 }
 
 const SAMBUNG = { akibat: "sehingga", kondisi: "dan apabila dalam keadaan demikian", sebab: "sehingga", dan: "dan" };
@@ -575,7 +674,15 @@ function deteksiRincian(o) {
 
   const peta = new Map();
   for (const k of gugatan) {
-    for (const it of itemKalimat(k, set)) {
+    const daftarItem = itemKalimat(k, set);
+    // 28 Okt: cadangan kutip - klausa sebab eksplisit yang tidak dikenali kamus menjadi butir konkret (ragu).
+    const kutip = kutipSebab(k, daftarItem, ph);
+    if (kutip) {
+      const kunciKutip = `kutip:${kutip.teks.toLowerCase()}`;
+      const pola = { kode: "rincian-kutip-gugatan", label: "sebab dikutip dari gugatan", kunci: kunciKutip, huruf: "F", peran: "sebab", tanpaSubjek: true, bunyi: [kutip.teks] };
+      daftarItem.push({ jenis: "tunggal", simpul: [{ kunci: kunciKutip, pola, teks: kutip.teks, idx: kutip.idx, akhir: kutip.idx, subjek: "B", kata: "", tersirat: false, ternegasi: false }], hubungan: [], kutipan: [], kalimat: k, kutipGugatan: true });
+    }
+    for (const it of daftarItem) {
       const id = kunciItem(it);
       const lama = peta.get(id);
       if (!lama) {
@@ -608,6 +715,10 @@ function deteksiRincian(o) {
   const dalamRantai = new Set();
   for (const it of items) if (it.jenis === "rantai") for (const s of it.simpul) dalamRantai.add(`${s.kunci}|${s.subjek}${s.kata ? `:${s.kata}` : ""}`);
   items = items.filter((it) => it.jenis === "rantai" || !dalamRantai.has(kunciItem(it)));
+  // 28 Okt: ruas `serap` - alasan yang maknanya sudah termuat butir lain ("pergi tanpa diketahui tujuannya" menyerap
+  // "tidak diketahui keberadaannya") tidak diulang sebagai butir tersendiri.
+  const terserap = new Set(items.flatMap((it) => it.simpul.flatMap((s) => (Array.isArray(s.pola.serap) ? s.pola.serap : []))));
+  if (terserap.size) items = items.filter((it) => !(it.jenis === "tunggal" && terserap.has(it.simpul[0].kunci)));
   // Penutup (perselisihan) berdiri sendiri HANYA bila gugatan tidak menyebut sebab konkret apa pun; selain itu
   // ia menjadi pilihan bunyi ("... sehingga antara Penggugat dan Tergugat terus-menerus terjadi perselisihan").
   const penutup = items.filter((it) => it.simpul.length === 1 && (it.simpul[0].pola.peran || "sebab") === "penutup");
@@ -619,6 +730,17 @@ function deteksiRincian(o) {
 
   const kunciGugatan = new Set(items.flatMap((it) => it.simpul.map((s) => s.kunci)));
   const petaSaksi = kunciSaksi(saksi, set, kunciGugatan);
+  // Butir kutipan (bukan pola kamus): saksi menguatkan bila keterangannya memuat sedikitnya dua kata isi kutipan itu.
+  for (const it of items.filter((x) => x.kutipGugatan)) {
+    const isi = kataIsi(it.simpul[0].teks);
+    if (isi.size < 2) continue;
+    for (const s of saksi) {
+      const him = petaSaksi.get(s.no);
+      if (!him) continue;
+      const b = (s.butir || []).find((x) => [...kataIsi(x)].filter((w) => isi.has(w)).length >= 2);
+      if (b) him.set(it.simpul[0].kunci, String(b).slice(0, 300));
+    }
+  }
   const jawabPer = keteranganJawab(items, o.jawab, set);
   hasil.butir = items.map((it, n) => {
     const d = dukungan(it, saksi, petaSaksi, ph);
@@ -626,7 +748,7 @@ function deteksiRincian(o) {
     const j = jawabPer.get(it.id) || null;
     const l = lencana(d, j, ph);
     const tersirat = it.simpul.some((s) => s.tersirat);
-    const kutip = it.kutipan.some(Boolean) || Boolean(it.akibatBebas);
+    const kutip = it.kutipan.some(Boolean) || Boolean(it.akibatBebas) || Boolean(it.kutipGugatan);
     return {
       id: n + 1,
       jenis: it.jenis,
@@ -640,7 +762,7 @@ function deteksiRincian(o) {
       saksiDiperiksa: d.diperiksa,
       lencana: l.teks,
       yakin: tersirat || kutip ? "ragu" : l.yakin,
-      catatan: [tersirat ? "pelakunya tidak disebut di kalimat gugatan (dianggap " + ph.pelaku + ")" : "", kutip ? "akibatnya dikutip dari gugatan - periksa" : ""].filter(Boolean).join("; "),
+      catatan: [tersirat ? "pelakunya tidak disebut di kalimat gugatan (dianggap " + ph.pelaku + ")" : "", it.kutipGugatan ? "sebabnya dikutip dari gugatan (belum dikenali kamus) - periksa" : kutip ? "akibatnya dikutip dari gugatan - periksa" : ""].filter(Boolean).join("; "),
       jawab: j,
       kodePola: it.simpul.map((s) => s.pola.kode),
     };
@@ -649,7 +771,7 @@ function deteksiRincian(o) {
   // Yang disebut saksi tetapi tidak didalilkan: dicatat, TIDAK diusulkan.
   for (const [k, nomor] of kunciDisebut(saksi, set)) {
     const pola = set.perKunci.get(k)[0];
-    if (kunciGugatan.has(k) || (pola.peran || "sebab") !== "sebab" || pola.hanyaAkibat) continue;
+    if (kunciGugatan.has(k) || terserap.has(k) || (pola.peran || "sebab") !== "sebab" || pola.hanyaAkibat) continue;
     hasil.diLuarGugatan.push({ kunci: k, label: pola.label.replace(/\s*\([^)]*\)$/, ""), saksi: [...nomor] });
   }
   return hasil;
