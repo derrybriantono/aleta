@@ -231,3 +231,19 @@ export async function simpanDrafHasilMediasi(
     .run(aktor.id, kunciDraf(teks(acuan.perkaraId), nomorPerkara), json, pada);
   return { tersimpan: true, diubahPada: pada };
 }
+
+/**
+ * Draf laporan hasil mediasi (.rtf) TERBARU perkara itu, siapa pun mediator
+ * penyusunnya (28 Okt 2026) - bawaan form "Isi hasil mediasi (SIPP)" yang
+ * diisi PP. Hanya dibaca; gagal baca = tanpa bawaan.
+ */
+export async function bacaDrafTerbaruPerkara(db: AletaDatabase, perkaraId: string, nomorPerkara: string): Promise<unknown | null> {
+  try {
+    const baris = await db
+      .prepare("SELECT nilai FROM aleta_ekstensi_setelan WHERE kunci = ? ORDER BY diubah_pada DESC LIMIT 1")
+      .all<{ nilai: string }>(kunciDraf(teks(perkaraId), teks(nomorPerkara)));
+    return baris[0] ? JSON.parse(baris[0].nilai) : null;
+  } catch {
+    return null;
+  }
+}

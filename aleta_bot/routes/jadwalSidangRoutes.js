@@ -35,6 +35,8 @@
  *   GET  /tunda-mediasi?mediasiId&tanggal  keadaan pertemuan mediasi + bahan formulir Tunda
  *   POST /tunda-mediasi           tunda mediasi ke SIPP persis seperti SIPP (kering bawaan) -
  *                                 26 Okt 2026, tundaMediasiService
+ *   GET  /hasil-mediasi-sipp?mediasiId   isian hasil mediasi SIPP + pilihan + akun (28 Okt 2026)
+ *   POST /hasil-mediasi-sipp      hasil mediasi ke SIPP persis Edit Hasil Mediasi (kering bawaan)
  *   GET  /court-calendar?perkaraId  Court Calendar SIPP + id baris (hanya SELECT)
  *   GET  /court-calendar/jumlah?perkaraId=1,2,3  jumlah baris per perkara
  *   POST /court-calendar          tambah/sunting Court Calendar ke SIPP atas
@@ -67,6 +69,7 @@ const sidangHasilService = require("../services/sidangHasilService");
 const sidangKontakService = require("../services/sidangKontakService");
 const mediatorTulisService = require("../services/mediatorTulisService");
 const tundaMediasiService = require("../services/tundaMediasiService");
+const hasilMediasiTulisService = require("../services/hasilMediasiTulisService");
 const courtCalendarTulisService = require("../services/courtCalendarTulisService");
 
 const router = express.Router();
@@ -552,6 +555,104 @@ router.post(
               sql: String(x.sql).replace(/\s+/g, " ").trim(),
               nilai: x.params,
             }))
+          : undefined,
+      });
+    } catch (galat) {
+      galat500(res, galat);
+    }
+  })
+);
+
+/**
+ * Hasil mediasi dari Jadwal Mediasi (28 Okt 2026) - hasilMediasiTulisService.
+ *   GET  /hasil-mediasi-sipp?mediasiId   isian hasil di SIPP + pilihan + akun (hanya SELECT)
+ *   POST /hasil-mediasi-sipp             rencana (kering bawaan) / tulis ke SIPP persis Edit Hasil Mediasi SIPP
+ */
+router.get("/hasil-mediasi-sipp", wajibToken, async (req, res) => {
+  try {
+    const hasil = await hasilMediasiTulisService.keadaanHasil({ mediasiId: req.query.mediasiId });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
+
+router.post(
+  "/hasil-mediasi-sipp",
+  wajibToken, manualJamKerja("mediasi-hasil", (b) => String(b.mediasiId || ""), async (req, res) => {
+    let jejak = null;
+    try {
+      jejak = require("../services/jejakAletaService");
+    } catch {
+      jejak = null;
+    }
+    try {
+      const badan = req.body || {};
+      const operator = String(badan.operator || "").trim();
+      if (!operator) {
+        res.status(400).json({ ok: false, alasan: "operator_tidak_disebut", pesan: hasilMediasiTulisService.pesanTolak("operator_tidak_disebut") });
+        return;
+      }
+      const kering = badan.kering !== false;
+      const rencana = await hasilMediasiTulisService.susunRencanaHasil({
+        mediasiId: badan.mediasiId,
+        hasil: badan.hasil,
+        tanggalLaporan: badan.tanggalLaporan,
+        tanggalKesepakatan: badan.tanggalKesepakatan,
+        isiKesepakatan: badan.isiKesepakatan,
+        keterangan: badan.keterangan,
+        atasNama: badan.atasNama,
+        operator,
+        ip: alamatAudit(req),
+      });
+      const catatJejak = (hasil) => {
+        if (!jejak) return;
+        void jejak.catat({
+          aksi: "tulis",
+          jenis: "mediasi-hasil",
+          perkaraId: rencana.perkara ? rencana.perkara.perkaraId : 0,
+          nomorPerkara: rencana.perkara ? rencana.perkara.nomorPerkara : "",
+          tanggalPenetapan: rencana.laporan || "",
+          akunSipp: rencana.atasNama ? rencana.atasNama.username : "",
+          namaPejabat: rencana.atasNama ? rencana.atasNama.namaLengkap : "",
+          akunSippMasuk: String(badan.operatorAkunSipp || "").slice(0, 60),
+          operator,
+          ip: alamatAudit(req),
+          berhasil: hasil.ok === true,
+          kering,
+          alasan: hasil.ok
+            ? ""
+            : `${String(hasil.alasan || "gagal")}${
+                hasil.dipulihkan === true ? " (dibatalkan utuh)" : hasil.dipulihkan === false ? " (TIDAK dipulihkan)" : ""
+              }${hasil.pada && hasil.pada.tabel ? ` ${hasil.pada.tabel}` : ""}${hasil.pesan ? `: ${hasil.pesan}` : ""}`.slice(0, 160),
+          langkah: rencana.langkah || [],
+        });
+      };
+      if (!rencana.ok) {
+        catatJejak(rencana);
+        res.status(400).json(rencana);
+        return;
+      }
+      const hasil = await hasilMediasiTulisService.jalankanRencanaHasil(rencana, { kering });
+      catatJejak(hasil);
+      if (hasil.ok !== true && !hasil.pesan) hasil.pesan = hasilMediasiTulisService.pesanTolak(String(hasil.alasan || "gagal"), hasil);
+      res.status(hasil.ok ? 200 : 409).json({
+        ...hasil,
+        perkara: rencana.perkara,
+        mediasiId: rencana.mediasiId,
+        hasil: rencana.hasil,
+        hasilOk: hasil.ok,
+        laporan: rencana.laporan,
+        kesepakatan: rencana.kesepakatan,
+        tanggalHasil: rencana.tanggalHasil,
+        tahapanSesudah: rencana.tahapanSesudah,
+        riwayatDihapus: rencana.riwayatDihapus,
+        riwayatBaru: rencana.riwayatBaru,
+        sebelumnya: rencana.sebelumnya,
+        peringatan: rencana.peringatan,
+        atasNama: rencana.atasNama,
+        rencana: kering
+          ? (rencana.langkah || []).map((x) => ({ tabel: x.tabel, aksi: x.aksi, keterangan: x.keterangan }))
           : undefined,
       });
     } catch (galat) {
