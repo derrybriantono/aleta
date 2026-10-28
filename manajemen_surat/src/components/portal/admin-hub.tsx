@@ -298,6 +298,13 @@ export function AdminHub() {
               badge="Panel"
             />
             <AdminMenuAction
+              href="/admin/tampilan-sipp"
+              title="Tampilan SIPP per Peran"
+              description="Matriks bagian ALETA yang tampil di halaman SIPP untuk tiap peran dan pegawai: nyala, mati, selalu tampil, atau tidak tersedia."
+              icon={<Settings className="h-5 w-5 text-primary" />}
+              badge="Tampilan"
+            />
+            <AdminMenuAction
               href="/admin/akses-publik"
               title="Akses Publik"
               description="Simpan alamat domain publik dan panduan agar ALETA bisa dibuka dari internet atau WiFi lain."

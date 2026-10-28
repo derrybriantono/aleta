@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { Eye, EyeOff, Save, ShieldCheck } from "lucide-react";
 
@@ -281,6 +282,17 @@ function AccountEditor({
           </CardContent>
         </Card>
       </div>
+      <Card data-tautan-tampilan-sipp>
+        <CardHeader>
+          <CardTitle>Tampilan ALETA di SIPP</CardTitle>
+          <CardDescription>Pilih bagian ALETA yang tampil di halaman SIPP. Tersimpan di akun, sama di komputer mana pun.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button asChild variant="outline">
+            <Link href="/account/tampilan-sipp">Atur tampilan SIPP</Link>
+          </Button>
+        </CardContent>
+      </Card>
       <PerangkatSaya />
       <VerifikasiSaya />
       <CatatanDilihatSuperAdmin />

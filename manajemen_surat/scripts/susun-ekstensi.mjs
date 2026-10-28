@@ -234,6 +234,9 @@ const BERKAS = [
   // SIPP/ABT. Dimuat document_start, SEBELUM tema-awal.js, supaya fetch sudah
   // terbungkus saat skrip konten lain berjalan.
   "penjaga-tanda.js",
+  // Tampilan ALETA di halaman SIPP per peran & per pengguna (28 Okt 2026): menerapkan yang disembunyikan menurut
+  // server (lib/tampilan-sipp.ts); dimuat document_start di SIPP, hanya CSS display:none.
+  "tampilan-sipp.js",
   // Deteksi sisa blangko (17 Okt 2026): periksa putusan/BAS/relaas sebelum
   // diunduh atau diunggah (kurung siku, #nnnn#, "perlu di review", titik-titik,
   // garis isian, tulisan merah). Salinan JS dari src/lib/deteksi-sisa-blangko.ts;

@@ -1076,6 +1076,15 @@ export const AKSI = {
     alasan: "Mode pemeliharaan menghentikan perubahan data seluruh pegawai - hanya Super Admin yang menyalakannya (mati bawaan). Admin hanya dikecualikan bila Super Admin mencentangnya.",
     hanyaSuperAdmin: true,
   },
+  // 28 Okt 2026: tampilan ALETA di halaman SIPP per peran dan per pengguna (aturan admin; pilihan sendiri bebas).
+  "tampilan-sipp.atur": {
+    label: "Mengatur tampilan ALETA di halaman SIPP per peran dan per pengguna",
+    crud: "CUD",
+    golongan: [],
+    lingkup: "semua",
+    rute: ["GET|PUT /api/admin/tampilan-sipp"],
+    alasan: "Aturan tampilan mengubah layar SIPP pegawai lain - Admin dan Super Admin. Tampilan tidak memberi hak baru; aturan untuk Super Admin hanya diubah Super Admin.",
+  },
   // 25 Okt 2026 (rantai E, E4): Lihat sebagai pengguna/peran (pratinjau menu dan hak, baca-saja).
   "lihat-sebagai.pakai": {
     label: "Lihat sebagai akun atau peran (pratinjau menu dan hak, baca-saja, tercatat)",

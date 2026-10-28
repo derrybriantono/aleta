@@ -971,6 +971,9 @@
       cursor: pointer;
     }
     .aleta-cmw-menu-butir:hover { background: var(--aleta-latar-naik); }
+    a.aleta-cmw-menu-butir, a.aleta-cmw-tombol, .aleta-cmw-atur-tampilan-sipp { color: var(--aleta-merek); text-decoration: none; }
+    a.aleta-cmw-menu-butir:hover, a.aleta-cmw-tombol:hover, .aleta-cmw-atur-tampilan-sipp:hover { text-decoration: underline; }
+    .aleta-cmw-atur-tampilan-sipp { display: block; margin: 4px 0 6px; font-size: 12px; }
     .aleta-cmw-menu-centang { flex: none; width: 1.2em; color: var(--aleta-aman); font-weight: 800; }
     .aleta-cmw-menu-nama { flex: 1 1 auto; min-width: 0; }
     .aleta-cmw-menu-ket {
@@ -2013,6 +2016,23 @@
     if (s.startsWith("/") && !s.startsWith("//") && !/^\/aleta(?=[/?#]|$)/.test(s)) s = `/aleta${s}`;
     const href = alamatDalam(s, `${location.origin}/aleta/`);
     return href && new URL(href).pathname.startsWith("/aleta/") ? href : "";
+  }
+
+  /**
+   * 28 Okt 2026: pintu ke halaman "Tampilan ALETA di SIPP" milik pengguna (portal, /aleta/account/tampilan-sipp) -
+   * bagian ALETA yang tampil di halaman SIPP menurut peran, aturan admin, dan pilihannya sendiri (tersimpan di akun).
+   */
+  function tautanTampilanSipp(kelas, teks) {
+    const href = alamatPortal("/aleta/account/tampilan-sipp");
+    if (!href) return null;
+    const a = el("a", kelas, teks);
+    a.href = href;
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.title = "Atur bagian ALETA yang tampil di halaman SIPP - tersimpan di akun Anda (tab baru)";
+    a.setAttribute("data-fokus", "tampilan-sipp");
+    a.setAttribute("data-tampilan-sipp", "buka");
+    return a;
   }
 
   /**
@@ -3571,6 +3591,11 @@
       }
       menu.appendChild(baris);
     }
+    const tautanTampil = tautanTampilanSipp("aleta-cmw-menu-butir aleta-cmw-menu-tampilan-sipp", "Atur tampilan SIPP ›");
+    if (tautanTampil) {
+      tautanTampil.setAttribute("role", "menuitem");
+      menu.appendChild(tautanTampil);
+    }
     if (adaBagianTampil()) {
       const semua = tombol("aleta-cmw-menu-butir aleta-cmw-menu-sembunyi", "Sembunyikan semua", "Sembunyikan semua - tinggal gelembung ALETA", sembunyikanSemua, "menu-sembunyi");
       semua.setAttribute("role", "menuitem");
@@ -4606,6 +4631,8 @@
       );
       atur.setAttribute("aria-expanded", keadaan.aturTerbuka ? "true" : "false");
       baris.appendChild(atur);
+      const tampilSipp = tautanTampilanSipp("aleta-cmw-tombol aleta-cmw-tampilan-sipp", "Tampilan SIPP ›");
+      if (tampilSipp) baris.appendChild(tampilSipp);
     }
     dok.appendChild(baris);
     return dok;
@@ -5282,6 +5309,8 @@
           " Disimpan di akun Anda di server - berlaku di PC mana pun Anda masuk - dengan cadangan di peramban ini."
       ))
     );
+    const keTampilan = tautanTampilanSipp("aleta-cmw-atur-tampilan-sipp", "Atur bagian ALETA yang tampil di halaman SIPP ›");
+    if (keTampilan) w.isi.appendChild(keTampilan);
     const daftar = el("ul", "aleta-cmw-atur-daftar");
     const urutan = urutanWidget();
     const mati = new Set(susunanAktif().mati);

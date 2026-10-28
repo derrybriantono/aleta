@@ -195,8 +195,10 @@ describe("peta fitur K11: kelompok manifest dan modul malas", () => {
     const baru = sesudah.kelompok.flatMap((k) => k.js).filter((j) => !lama.has(j));
     // 26 Okt 2026: blangko-derry-berkas.js = layar kerja Sampul/Daftar Isi (berkas baru yang SENGAJA ditambahkan di luar K11).
     // 27 Okt 2026: sidang-terjadwal.js = Jadwalkan BAS / Tunda (berkas baru yang SENGAJA ditambahkan di luar K11).
-    expect([...new Set(baru)]).toEqual(["modul-malas.js", "sidang-terjadwal.js", "blangko-derry-berkas.js"]);
-    expect(sesudah.kelompok.map((k) => k.css.filter((c: string) => c !== "sidang-terjadwal.css"))).toEqual(sebelum.kelompok.map((k) => k.css));
+    // 28 Okt 2026: tampilan-sipp.js = tampilan ALETA di SIPP per peran/pengguna, kelompok document_start SIPP SENDIRI (di luar K11).
+    expect([...new Set(baru)]).toEqual(["tampilan-sipp.js", "modul-malas.js", "sidang-terjadwal.js", "blangko-derry-berkas.js"]);
+    const tanpaTampilan = sesudah.kelompok.filter((k) => !(k.js.length === 1 && k.js[0] === "tampilan-sipp.js"));
+    expect(tanpaTampilan.map((k) => k.css.filter((c: string) => c !== "sidang-terjadwal.css"))).toEqual(sebelum.kelompok.map((k) => k.css));
   });
 
   it("modul malas tidak ganda di manifest dan semua berkasnya ada", () => {

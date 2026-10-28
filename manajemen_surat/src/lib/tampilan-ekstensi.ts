@@ -1,5 +1,6 @@
 import { DAFTAR_FITUR_EKSTENSI, KODE_FITUR_EKSTENSI } from "@/lib/daftar-fitur-ekstensi";
 import { GalatKonteks, normalkanKonteksPerkara, normalkanVersiPerangkat } from "@/lib/konteks-server";
+import { bersihkanPilihan } from "@/lib/tampilan-sipp";
 
 /**
  * ============================================================================
@@ -210,7 +211,7 @@ export const KUNCI_PENGATURAN_SINKRON = [
 
 const PENGATURAN_SINKRON = new Set<string>(KUNCI_PENGATURAN_SINKRON);
 
-export const KUNCI_SETELAN = ["checklist.tanda", "pintasan.portal", "pengaturan.ekstensi", "widget.tata", "panel.bawaan", "konteks.perkara", "perangkat.versi"] as const;
+export const KUNCI_SETELAN = ["checklist.tanda", "pintasan.portal", "pengaturan.ekstensi", "widget.tata", "panel.bawaan", "konteks.perkara", "perangkat.versi", "tampilan.sipp"] as const;
 export type KunciSetelan = (typeof KUNCI_SETELAN)[number];
 
 export function kunciSetelanSah(x: unknown): x is KunciSetelan {
@@ -227,6 +228,8 @@ export const BATAS_BITA_SETELAN: Record<KunciSetelan, number> = {
   // Rantai B (U16, 25 Okt 2026): perkara terakhir lintas PC dan versi ekstensi per PC; aturan di lib/konteks-server.ts.
   "konteks.perkara": 8192,
   "perangkat.versi": 4096,
+  // 28 Okt 2026: pilihan tampilan ALETA di halaman SIPP milik pengguna sendiri (lib/tampilan-sipp.ts).
+  "tampilan.sipp": 8192,
 };
 
 export const BATAS_TANDA_CHECKLIST = 500;
@@ -459,6 +462,24 @@ function normalkanBawaanPanel(nilai: unknown) {
   return { nilai: hasil, dibuang };
 }
 
+// ----------------------------------------------------------------------------
+// tampilan.sipp - pilihan tampil/sembunyi elemen ALETA di halaman SIPP (28 Okt 2026)
+// ----------------------------------------------------------------------------
+//
+// {pilihan: {kunciElemen: boolean}} - hanya kunci katalog lib/tampilan-sipp.ts. Elemen yang terkunci admin
+// tetap boleh tersimpan di sini tetapi tidak berlaku (pemecahnya mengabaikan pilihan untuk elemen terkunci).
+function normalkanTampilanSipp(nilai: unknown) {
+  if (!nilai || typeof nilai !== "object" || Array.isArray(nilai)) {
+    throw new GalatSetelan("tampilan.sipp harus berupa obyek {pilihan}.");
+  }
+  const n = nilai as Record<string, unknown>;
+  const dibuang = Object.keys(n).filter((k) => k !== "pilihan");
+  const mentah = n.pilihan && typeof n.pilihan === "object" && !Array.isArray(n.pilihan) ? (n.pilihan as Record<string, unknown>) : {};
+  const pilihan = bersihkanPilihan(mentah);
+  for (const k of Object.keys(mentah)) if (!(k in pilihan)) dibuang.push(`pilihan.${k}`);
+  return { nilai: { pilihan }, dibuang };
+}
+
 /**
  * Memeriksa dan menormalkan satu setelan sebelum disimpan.
  *
@@ -488,7 +509,9 @@ export function normalkanSetelan(
               ? normalkanKonteksPerkaraSetelan(nilai)
               : kunci === "perangkat.versi"
                 ? normalkanVersiPerangkatSetelan(nilai)
-                : normalkanPengaturan(nilai);
+                : kunci === "tampilan.sipp"
+                  ? normalkanTampilanSipp(nilai)
+                  : normalkanPengaturan(nilai);
 
   let json: string;
   try {

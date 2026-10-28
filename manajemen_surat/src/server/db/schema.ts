@@ -482,6 +482,25 @@ export const DDL_KAMUS_RIWAYAT = {
 } as const;
 
 /**
+ * Tampilan ALETA di halaman SIPP per peran & per pengguna (0116, 28 Okt 2026). Cermin PERSIS dari
+ * drizzle/0116_aleta_tampilan_sipp.sql; penjaga tampilan-sipp-peran-28okt.test.ts membandingkan keduanya.
+ */
+export const DDL_TAMPILAN_SIPP = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_tampilan_sipp_aturan (
+  lingkup TEXT NOT NULL,
+  sasaran TEXT NOT NULL,
+  aturan TEXT NOT NULL DEFAULT '{}',
+  catatan TEXT NOT NULL DEFAULT '',
+  diubah_oleh TEXT NOT NULL DEFAULT '',
+  diubah_pada TEXT NOT NULL,
+  PRIMARY KEY (lingkup, sasaran)
+)`,
+  ],
+  indeks: [`CREATE INDEX IF NOT EXISTS idx_tampilan_sipp_aturan_pada ON aleta_tampilan_sipp_aturan(diubah_pada)`],
+} as const;
+
+/**
  * Cadangan dan riwayat suntingan atas ABT dari halaman "Pengaturan SIPP & ABT"
  * (0066, 16 Okt 2026, Tahap H). Cermin PERSIS dari
  * drizzle/0066_aleta_abt_suntingan.sql; penjaga
@@ -3334,6 +3353,8 @@ const schemaStatements = [
   ...DDL_KAMUS_DETEKSI.tabel,
   // Riwayat perubahan kamus deteksi (0115).
   ...DDL_KAMUS_RIWAYAT.tabel,
+  // Tampilan ALETA di halaman SIPP per peran & per pengguna (0116).
+  ...DDL_TAMPILAN_SIPP.tabel,
   // Cadangan & riwayat suntingan ABT dari Pengaturan SIPP & ABT (0066).
   ...DDL_ABT_SUNTINGAN.tabel,
   // Checklist Konseptor Sementara: tanda langkah & laporan Blangko Derry (0067).
@@ -5347,6 +5368,7 @@ const indexStatements = [
   ...DDL_KAMUS_SUMBER.indeks,
   ...DDL_KAMUS_DETEKSI.indeks,
   ...DDL_KAMUS_RIWAYAT.indeks,
+  ...DDL_TAMPILAN_SIPP.indeks,
   ...DDL_ABT_SUNTINGAN.indeks,
   ...DDL_BLANGKO_PRIBADI.indeks,
   ...DDL_TAUTAN_JADWAL.indeks,

@@ -1014,6 +1014,48 @@ export const TUTORIAL: readonly Tutorial[] = [
 
   // ═══════════════════ EKSTENSI DI SIPP DAN ABT ═════════════════════════════
   {
+    id: "ekstensi-tampilan-sipp-saya",
+    judul: "Mengatur bagian ALETA yang tampil di SIPP",
+    ringkas: "Memilih lencana, tombol, panel, dan widget ALETA yang tampil di halaman SIPP; tersimpan di akun Anda.",
+    kelompok: "ekstensi",
+    mencakup: {},
+    untuk: "semua",
+    halaman: ["/account/tampilan-sipp"],
+    tautan: { teks: "Buka Tampilan ALETA di SIPP", href: "/account/tampilan-sipp" },
+    langkah: [
+      "Di halaman SIPP, buka widget ALETA lalu tekan Atur tampilan SIPP, atau buka popup ekstensi lalu tekan tombol yang sama. Bisa juga dari halaman Akun.",
+      "Bagian ALETA dikelompokkan per halaman SIPP. Tiap bagian memuat contoh tulisan yang tampil dan penjelasan singkat.",
+      "Geser saklar untuk menampilkan atau menyembunyikan. Pilihan langsung tersimpan di akun Anda dan berlaku di komputer mana pun sesudah halaman SIPP dimuat ulang.",
+      "Bagian bertanda gembok diatur admin: selalu tampil atau tidak tersedia untuk akun Anda. Tekan Kembali ke bawaan peran untuk menghapus semua pilihan sendiri.",
+    ],
+    peringatan: [
+      "Menyembunyikan hanya tidak menggambar; pekerjaan ALETA di latar tetap berjalan.",
+      "Menampilkan bagian tidak menambah hak. Tombol yang bukan hak Anda tetap tidak muncul.",
+    ],
+    kataKunci: ["tampilan sipp", "sembunyikan", "lencana", "tombol hilang", "atur tampilan", "widget", "pengaturan tampilan"],
+  },
+  {
+    id: "pengelola-tampilan-sipp-peran",
+    judul: "Tampilan SIPP per peran dan per pegawai",
+    ringkas: "Admin menentukan bagian ALETA mana yang tampil di halaman SIPP untuk tiap peran, dan dapat menimpa per pegawai.",
+    kelompok: "pengelola",
+    mencakup: { aksi: ["tampilan-sipp.atur"] },
+    halaman: ["/admin/tampilan-sipp"],
+    tautan: { teks: "Buka Tampilan SIPP per Peran", href: "/admin/tampilan-sipp" },
+    langkah: [
+      "Buka Pusat Kendali, lalu Tampilan SIPP per Peran (Super Admin dan Admin).",
+      "Baris adalah bagian ALETA di SIPP, kolom adalah peran. Klik sel untuk berganti: Ikut bawaan, Nyala, Mati, Selalu, Tidak ada. Tiap klik langsung tersimpan.",
+      "Nyala dan Mati masih boleh diubah pegawai sendiri; Selalu dan Tidak ada mengunci pilihan pegawai.",
+      "Tombol bintang di kepala kolom memakai usulan: bagian yang lazim untuk peran itu nyala, lainnya mati. Tombol tempat sampah menghapus aturan peran itu.",
+      "Untuk menimpa satu pegawai, pilih namanya. Kolom akun pegawai itu dan kolom Yang berlaku baginya muncul di sebelah kiri.",
+    ],
+    peringatan: [
+      "Pegawai dengan beberapa peran mendapat aturan yang paling longgar di antara perannya.",
+      "Aturan untuk Super Admin hanya dapat diubah Super Admin. Setiap perubahan tercatat di audit.",
+    ],
+    kataKunci: ["tampilan sipp", "matriks tampilan", "per peran", "per pegawai", "sembunyikan untuk peran", "kunci tampilan"],
+  },
+  {
     id: "ekstensi-panel-sipp",
     judul: "Panel ALETA di halaman perkara SIPP",
     ringkas: "Panel bantu yang muncul di samping halaman perkara SIPP, menyesuaikan peran Anda.",

@@ -55,6 +55,16 @@
         "http://127.0.0.1/index.php/*"
       ],
       "js": [
+        "tampilan-sipp.js"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "http://192.168.10.10/SIPP/*",
+        "http://127.0.0.1/index.php/*"
+      ],
+      "js": [
         "portal-jalur.js",
         "pengamat-bersama.js",
         "mode-ringan.js",
