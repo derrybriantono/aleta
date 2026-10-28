@@ -10400,7 +10400,7 @@ function t7KartuKeputusan(k, penunjukan) {
       const nama = (typeof S2_NAMA_PENETAPAN !== "undefined" && S2_NAMA_PENETAPAN[kode]) || kode;
       const sudah = edocPeta ? b7SudahDariPeta(edocPeta, [kode]) : (await b7BacaSudahTerunggah(nomor, [kode])) || [];
       const baris = [
-        `${nomor}: blangko ${nama} diambil dari ABT, ditandatangani dengan gambar tanda tangan pejabat yang disahkan, diberi cap, lalu diunggah ke e-Doc SIPP.`,
+        `${nomor}: blangko ${nama} diambil dari ABT, ditandatangani dengan gambar tanda tangan pejabat yang disahkan${jenis === "pmh" ? ", diberi cap" : ""}, lalu diunggah ke e-Doc SIPP.`,
         "Ini menulis ke SIPP atas nama akun Anda.",
       ];
       if (sudah.length) baris.unshift(`${b7KalimatSudah(sudah)}. Mengunggah lagi akan MENIMPA e-Doc yang lama - yakin menimpa yang lama?`);

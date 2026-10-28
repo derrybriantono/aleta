@@ -101,6 +101,9 @@
     antre: { teks: "diantrekan", nada: "tunggu" },
     "edoc-gagal": { teks: "tercatat · e-Doc gagal", nada: "salah" },
     "edoc-ditahan": { teks: "tercatat · e-Doc tidak dikirim", nada: "salah" },
+    // 28 Okt (penetapan sama): e-Doc lama tidak ditimpa tanpa persetujuan / jenis belum dinyalakan di Peta penetapan.
+    "edoc-ada": { teks: "tercatat · e-Doc sudah ada", nada: "ok" },
+    "edoc-mati": { teks: "tercatat · e-Doc belum dinyalakan", nada: "tunggu" },
   };
   const SIBUK = new Set(["periksa", "tulis", "unggah"]);
 
@@ -209,6 +212,11 @@
       sibuk: false,
       konfirm: null,
       edoc: { pmh: true, ppp: true, pjs: true, phs: true },
+      // 28 Okt (penetapan sama): persetujuan menimpa e-Doc lama (konfirmasi halaman) dan varian sita PHS - sama dengan
+      // tombol e-Doc per baris kartu Penetapan dan bagian "Edoc penetapan dari blangko ABT" panel ALETA.
+      timpaEdoc: false,
+      sita: "",
+      bersita: null,
       edocPeta: null,
       edocPetaDimuat: false,
       hasil: {},
@@ -358,8 +366,7 @@
   /** e-Doc yang sudah terunggah: dibaca sekali begitu ada penetapan tercatat. */
   async function muatPetaEdoc() {
     if (ctx.edocPetaDimuat || !ctx.data) return;
-    const t = tercatatDi(ctx.data);
-    if (!URUTAN.some((j) => t[j])) return;
+    // 28 Okt: dibaca juga sebelum ada yang tercatat - keadaan bersita perkara menentukan pilihan varian sita PHS.
     ctx.edocPetaDimuat = true;
     try {
       const alamat = typeof S2_API_EDOC_PETA !== "undefined" ? S2_API_EDOC_PETA : "";
@@ -367,6 +374,7 @@
       const j = await panggil("t7AmbilJson", `${alamat}?nomor=${encodeURIComponent(ctx.nomor)}`, "Membaca e-Doc penetapan");
       if (j && j.ok) {
         ctx.edocPeta = panggil("s2BacaPetaEdoc", j.data);
+        ctx.bersita = j.data && j.data.perkara ? j.data.perkara.bersita === true : null;
         render();
       }
     } catch {
@@ -601,16 +609,30 @@
       kotak.appendChild(el("b", "", kalimat));
       const rinciKonf = [];
       if (k.tulis > 0) rinciKonf.push(`Ditulis: ${k.sisa.map((j) => j.toUpperCase()).join(", ")}.`);
+      // 28 Okt (penetapan sama): e-Doc lama ditimpa HANYA bila dicentang di sini - pertanyaan yang sama dengan tombol
+      // e-Doc per baris kartu Penetapan ("yakin menimpa yang lama?"), di kedua jalan (satu pintu dan cadangan).
       if (k.menimpa > 0) {
-        const satuPintu = globalThis.aletaPenetapanKerja && typeof globalThis.aletaPenetapanKerja.kerjakan === "function";
         rinciKonf.push(
-          satuPintu
-            ? `${k.menimpa} di antaranya sudah ada di e-Doc SIPP dan dilewati (tidak ditimpa).`
-            : `${k.menimpa} di antaranya menimpa e-Doc yang sudah ada di SIPP.`
+          ctx.timpaEdoc
+            ? `${k.menimpa} di antaranya MENIMPA e-Doc yang sudah ada di SIPP.`
+            : `${k.menimpa} di antaranya sudah ada di e-Doc SIPP dan dilewati (tidak ditimpa).`
         );
       }
       rinciKonf.push("Yang sudah tercatat dilewati. Lanjutkan?");
       kotak.appendChild(el("span", "aleta-pensipp-catatan", rinciKonf.join(" ")));
+      if (k.menimpa > 0) {
+        const labelTimpa = el("label", "aleta-pensipp-timpa");
+        const cTimpa = document.createElement("input");
+        cTimpa.type = "checkbox";
+        cTimpa.checked = Boolean(ctx.timpaEdoc);
+        cTimpa.setAttribute("data-pensipp", "timpa");
+        cTimpa.addEventListener("change", () => {
+          ctx.timpaEdoc = cTimpa.checked;
+          render();
+        });
+        labelTimpa.append(cTimpa, ` Timpa e-Doc lama (${k.menimpa}) - yakin menimpa yang lama?`);
+        kotak.appendChild(labelTimpa);
+      }
       const baris = el("div", "aleta-pensipp-baris-tombol");
       const ya = tombol("Lanjutkan", "aleta-pensipp-utama aleta-pensipp-ya");
       ya.setAttribute("data-pensipp", "ya");
@@ -684,6 +706,30 @@
       });
       label.append(c, ` Unggah e-Doc ${jenis.toUpperCase()}`);
       kotakEdoc.append(label, el("small", "aleta-pensipp-edoc-ket", `PDF bertanda tangan elektronik${jenis === "pmh" ? " + cap kantor" : ""}`));
+      if (jenis === "phs" && ctx.bersita === true) {
+        // Perkara bersita: varian blangko PHS (@ 2 / @ 2a / @ 2b) - pilihan yang sama dengan panel ALETA.
+        const pilihSita = document.createElement("select");
+        pilihSita.className = "aleta-pensipp-sita";
+        pilihSita.setAttribute("data-pensipp-sita", "phs");
+        pilihSita.disabled = sibuk || !ctx.edoc.phs;
+        for (const [nilai, teks] of [
+          ["", "Sita: ditangguhkan (bawaan) - didengar kedua pihak lebih dulu"],
+          ["dikabulkan", "Sita: dikabulkan"],
+          ["ditolak", "Sita: ditolak"],
+        ]) {
+          const o = document.createElement("option");
+          o.value = nilai;
+          o.textContent = teks;
+          pilihSita.appendChild(o);
+        }
+        pilihSita.value = ctx.sita || "";
+        pilihSita.addEventListener("change", () => {
+          ctx.sita = pilihSita.value;
+          ctx.konfirm = null;
+          render();
+        });
+        kotakEdoc.appendChild(pilihSita);
+      }
       const kabarEdoc = ctx.kabarEdoc[jenis];
       if (kabarEdoc) kotakEdoc.appendChild(kabarEdoc);
       k.appendChild(kotakEdoc);
@@ -802,14 +848,18 @@
    * pilihan dan membaca laporannya.
    */
   function pilihanUntukKerja() {
+    // 28 Okt (penetapan sama): dikirim di KEDUA mode, seperti rantaiPenetapan kartu Penetapan (idUntukTulis membaca
+    // pilihanManual apa pun modenya). Server menyaring menurut mode (pilihanModeOtomatis): di mode otomatis hanya
+    // hari/ruang/jam sidang keliling, majelis "Ubah majelis", dan pejabat penetap; orang tetap usulan mesin.
     const d = ctx.data || {};
     const pm = d.pilihanManual || {};
-    if (caraSekarang() !== "manual") return {};
     const hasil = {};
     for (const k of ["majelis", "pmhKursi", "ppp", "pjs", "phs", "ruangan", "jam"]) {
       const v = pm[k];
       if (v !== undefined && v !== null && v !== "" && !(Array.isArray(v) && v.length === 0)) hasil[k] = v;
     }
+    if (pm.sidkel === true) hasil.sidkel = true;
+    if (Array.isArray(d.majelisDipilih) && d.majelisDipilih.length) hasil.majelisDipilih = d.majelisDipilih.slice(0, 5);
     if (d.pejabatDipilih && Object.keys(d.pejabatDipilih).length) hasil.pejabat = { ...d.pejabatDipilih };
     return hasil;
   }
@@ -835,6 +885,8 @@
       pilihan: pilihanUntukKerja(),
       langkah: langkahDicentang,
       unggahEdoc: { ...ctx.edoc },
+      timpaEdoc: Boolean(ctx.timpaEdoc),
+      sita: ctx.bersita === true ? ctx.sita || "" : "",
       kering: false,
       pada: (k) => {
         if (!k || !k.jenis || !URUTAN.includes(k.jenis)) return;
@@ -844,7 +896,7 @@
         jadwalRender();
       },
     });
-    const out = { edocSukses: [], edocGagal: [], edocTidak: [], adaTertulis: false, penulisanGagal: false, diantrekan: false };
+    const out = { edocSukses: [], edocGagal: [], edocTidak: [], edocAda: [], edocMati: [], adaTertulis: false, penulisanGagal: false, diantrekan: false };
     const daftar = (hasil && hasil.laporan) || [];
     if (!hasil || !daftar.length) {
       out.penulisanGagal = true;
@@ -866,9 +918,20 @@
         out.edocGagal.push(j);
         catat(j, "edoc-gagal", awam(e.bunyi || e.sebab));
       } else if (e && e.status === "dilewati") {
-        // Sudah terunggah: tidak ditimpa oleh satu pintu bersama.
-        out.edocSukses.push(j);
-        catat(j, kode === "ok" ? "selesai" : kode, sebab);
+        // 28 Okt: dilewati BUKAN terunggah - disebut apa adanya (dulu terhitung "e-Doc terunggah").
+        if (e.sebab === "sudah_terunggah") {
+          out.edocAda.push(j);
+          catat(j, kode === "ok" || kode === "lewat" ? "edoc-ada" : kode, kode === "ok" || kode === "lewat" ? "e-Doc sudah ada di SIPP - tidak ditimpa." : sebab);
+        } else if (e.sebab === "ditahan") {
+          out.edocTidak.push(j);
+          catat(j, "edoc-ditahan", awam(e.bunyi));
+        } else if (e.sebab === "tidak_aktif_di_peta") {
+          out.edocMati.push(j);
+          catat(j, kode === "ok" || kode === "lewat" ? "edoc-mati" : kode, "Jenis ini belum dinyalakan di Peta penetapan - e-Doc tidak diunggah.");
+        } else {
+          if (e.sebab === "penetapan_belum_tercatat") out.edocTidak.push(j);
+          catat(j, kode, sebab || awam(e.bunyi));
+        }
       } else {
         if (ctx.edoc[j] && kode !== "ok" && kode !== "lewat") out.edocTidak.push(j);
         catat(j, kode, sebab);
@@ -932,6 +995,8 @@
       let edocSukses = [];
       let edocGagal = [];
       let edocTidak = [];
+      let edocAda = [];
+      let edocMati = [];
       const kerja = globalThis.aletaPenetapanKerja;
       if (kerja && typeof kerja.kerjakan === "function") {
         // ── Satu pintu bersama (agen P1): tulis + e-Doc + kunci server ────
@@ -939,6 +1004,8 @@
         edocSukses = h.edocSukses;
         edocGagal = h.edocGagal;
         edocTidak = h.edocTidak;
+        edocAda = h.edocAda || [];
+        edocMati = h.edocMati || [];
         adaTertulis = h.adaTertulis;
         penulisanGagal = h.penulisanGagal;
         diantrekan = h.diantrekan;
@@ -1011,6 +1078,12 @@
             edocTidak.push(j);
             continue;
           }
+          // 28 Okt: sama dengan satu pintu - e-Doc lama hanya ditimpa bila disetujui di konfirmasi.
+          if (!ctx.timpaEdoc && sudahEdoc(j)) {
+            edocAda.push(j);
+            catat(j, "edoc-ada", "e-Doc sudah ada di SIPP - tidak ditimpa.");
+            continue;
+          }
           const kabarEdoc = wadahKabarEdoc(j);
           catat(j, "unggah", ctx.hasil[j] && ctx.hasil[j].sebab);
           render();
@@ -1024,6 +1097,7 @@
               kering: false,
               timpaDisetujui: true,
               tanpaMuatUlang: true,
+              sita: j === "phs" && ctx.bersita === true ? ctx.sita || "" : "",
               kabar: kabarEdoc,
             });
           } catch (galat) {
@@ -1060,9 +1134,15 @@
             ? "e-Doc terunggah."
             : edocGagal.includes(j)
               ? `e-Doc gagal${h.sebab ? ` (${h.sebab})` : ""}.`
-              : edocTidak.includes(j)
-                ? "e-Doc tidak diunggah karena penetapannya belum tercatat."
-                : "";
+              : edocAda.includes(j)
+                ? "e-Doc sudah ada di SIPP, tidak ditimpa."
+                : edocMati.includes(j)
+                  ? "e-Doc tidak diunggah: jenis ini belum dinyalakan di Peta penetapan."
+                  : h.kode === "edoc-ditahan"
+                    ? `e-Doc tidak dikirim${h.sebab ? ` (${h.sebab})` : ""}.`
+                    : edocTidak.includes(j)
+                      ? "e-Doc tidak diunggah karena penetapannya belum tercatat."
+                      : "";
         if (h.kode === "gagal") {
           nada = "salah";
           teks = `gagal ditulis: ${h.sebab || "sebab tidak terbaca"}`;
@@ -1081,12 +1161,12 @@
         }
         laporBaris.push({ jenis: j, teks: sebaris(teks), nada });
       }
-      const nTulis = URUTAN.filter((j) => !sebelum[j] && ctx.hasil[j] && (ctx.hasil[j].kode === "ok" || ctx.hasil[j].kode === "selesai" || ctx.hasil[j].kode === "edoc-gagal" || ctx.hasil[j].kode === "edoc-ditahan")).length;
+      const nTulis = URUTAN.filter((j) => !sebelum[j] && ctx.hasil[j] && (ctx.hasil[j].kode === "ok" || ctx.hasil[j].kode === "selesai" || ctx.hasil[j].kode === "edoc-gagal" || ctx.hasil[j].kode === "edoc-ditahan" || ctx.hasil[j].kode === "edoc-ada" || ctx.hasil[j].kode === "edoc-mati")).length;
       const ringkas = penulisanGagal
         ? "Penetapan belum selesai - lihat sebab di tiap langkah."
         : diantrekan
           ? "Di luar jam kerja: penetapan diantrekan dan dikerjakan pada jam kerja berikutnya."
-          : `Selesai: ${nTulis} penetapan ditulis, ${edocSukses.length} e-Doc terunggah${edocGagal.length ? `, ${edocGagal.length} e-Doc gagal` : ""}.`;
+          : `Selesai: ${nTulis} penetapan ditulis, ${edocSukses.length} e-Doc terunggah${edocAda.length ? `, ${edocAda.length} e-Doc sudah ada (tidak ditimpa)` : ""}${edocGagal.length ? `, ${edocGagal.length} e-Doc gagal` : ""}.`;
       ctx.laporan = {
         ringkas,
         baris: laporBaris,

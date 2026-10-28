@@ -39,6 +39,13 @@ export type PilihanKerja = {
   ruangan?: number | string;
   jam?: string;
   pejabat?: Partial<Record<JenisPenetapan, string>>;
+  /**
+   * 28 Okt (penetapan sama): saklar "Sidang keliling" papan - di mode otomatis HANYA ini yang membuka phs/ruangan/jam
+   * (siapa yang bersidang tetap usulan mesin), persis gambarPenunjukan/idUntukTulis kartu Penetapan.
+   */
+  sidkel?: boolean;
+  /** Majelis yang dipilih lewat "Ubah majelis" (id hakim_pn urut kursi): usulan dihitung ulang untuknya di KEDUA mode. */
+  majelisDipilih?: Array<number | string>;
 };
 
 export type MasukanKerja = {
@@ -147,6 +154,31 @@ function pilihanDari(calon: unknown, pengenal: unknown): Obj | null {
 }
 
 /**
+ * 28 Okt 2026 (penetapan sama): yang tetap berlaku di mode OTOMATIS - sama dengan kartu Penetapan panel ALETA
+ * (rantaiPenetapan mengirim idUntukTulis(pilihanManual) di kedua mode; berpindah ke otomatis mengosongkan
+ * pilihanManual, sehingga yang tersisa hanya hari/ruang/jam sidang keliling). Orang (majelis per susunan/kursi,
+ * PP, JS) tidak pernah dari pilihan di mode ini. Pejabat penetap dan majelis "Ubah majelis" diurus kerjakanPenetapan.
+ */
+export function pilihanModeOtomatis(pilihan: PilihanKerja | undefined): PilihanKerja {
+  const p = pilihan || {};
+  if (p.sidkel !== true) return {};
+  const hasil: PilihanKerja = { sidkel: true };
+  if (p.phs !== undefined && p.phs !== null && p.phs !== "") hasil.phs = p.phs;
+  if (p.ruangan !== undefined && p.ruangan !== null && p.ruangan !== "") hasil.ruangan = p.ruangan;
+  if (p.jam) hasil.jam = p.jam;
+  return hasil;
+}
+
+/** Id hakim majelis yang usulannya dihitung ulang: kunci susunan (manual) lebih dulu, lalu "Ubah majelis" (kedua mode). */
+export function majelisUntukUsulan(pilihan: PilihanKerja | undefined, manual: boolean): number[] {
+  const p = pilihan || {};
+  const dariKunci = manual && p.majelis ? String(p.majelis).split("-").map(idSah).filter(Boolean) : [];
+  if (dariKunci.length) return dariKunci.slice(0, 5);
+  const dipilih = Array.isArray(p.majelisDipilih) ? p.majelisDipilih.map(idSah).filter(Boolean) : [];
+  return dipilih.slice(0, 5);
+}
+
+/**
  * Nilai tulis satu langkah menurut usulan server dan pilihan petugas.
  * Urutan menang PMH: susunan (majelis) > per orang (pmhKursi) > usulan.
  * Pilihan yang tidak ketemu di daftar calon DITOLAK (bukan diganti usulan).
@@ -158,7 +190,7 @@ export function nilaiTulisDariUsulan(
   manual: boolean
 ): { ok: true; nilai: Omit<LangkahTulis, "jenis" | "pejabatUsername"> } | { ok: false; alasan: string } {
   const usulan = obj(usulanMentah);
-  const p = manual ? pilihan : {};
+  const p = manual ? pilihan : pilihanModeOtomatis(pilihan);
 
   if (jenis === "pmh") {
     const pmh = obj(usulan.pmh);
@@ -359,8 +391,7 @@ export async function kerjakanPenetapan(dep: Ketergantungan, masuk: MasukanKerja
     }
 
     // 4. Usulan server (majelis pilihan dihitung ulang: PP, JS, hari sidang mengikuti majelis).
-    const pilihanMajelis =
-      manual && pilihan.majelis ? String(pilihan.majelis).split("-").map(idSah).filter(Boolean).slice(0, 5) : [];
+    const pilihanMajelis = majelisUntukUsulan(pilihan, manual);
     const usulan = await dep.bacaUsulan(nomorPerkara, pilihanMajelis);
     if (!usulan.ok) {
       for (const j of tulis) laporan[j] = { jenis: j, status: "gagal", sebab: "belum_ada_usulan", bunyi: `${bunyiDari("belum_ada_usulan")} (${usulan.error})` };
@@ -382,7 +413,9 @@ export async function kerjakanPenetapan(dep: Ketergantungan, masuk: MasukanKerja
         masalah = { jenis: j, alasan: n.alasan };
         break;
       }
-      const pejabat = manual && pilihan.pejabat ? String(pilihan.pejabat[j] || "").trim().slice(0, 150) : "";
+      // Pejabat penetap pilihan petugas berlaku di KEDUA mode (kartu Penetapan mengirim pejabatDipilih apa pun modenya);
+      // kosong = bawaan pemetaan jabatan (pastikanPejabat), pilihan tidak sah tetap ditolak di sana.
+      const pejabat = pilihan.pejabat ? String(pilihan.pejabat[j] || "").trim().slice(0, 150) : "";
       langkahTulis.push({ jenis: j, ...n.nilai, ...(pejabat ? { pejabatUsername: pejabat } : {}) });
     }
     const tandaiBatal = (kecuali: JenisPenetapan | null, sebab: string, bunyi: string) => {

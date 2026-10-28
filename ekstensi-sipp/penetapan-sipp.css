@@ -593,6 +593,32 @@ html[data-aleta-tema-sipp="gelap"] #aleta-ptj-tombol.aleta-ptj-tombol:hover {
   color: var(--ps-redup);
   font-size: 12.5px;
 }
+/* 28 Okt (penetapan sama): varian sita PHS dan persetujuan menimpa e-Doc lama - ikut tema terang/gelap papan. */
+.aleta-pensipp-sita {
+  font: inherit;
+  font-size: 13px;
+  padding: 3px 6px;
+  border: 1px solid var(--ps-garis);
+  border-radius: 6px;
+  background: var(--ps-latar);
+  color: var(--ps-tinta);
+  max-width: 100%;
+}
+.aleta-pensipp-timpa {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ps-salah);
+  cursor: pointer;
+}
+.aleta-pensipp-timpa input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--ps-salah);
+}
 .aleta-pensipp-edoc-kabar {
   flex-basis: 100%;
   font-size: 13px;

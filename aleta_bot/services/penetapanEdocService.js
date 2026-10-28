@@ -179,8 +179,9 @@ const ATUR_BAWAAN = Object.freeze({
 
 const ATUR_JENIS = Object.freeze({
   pmh: { pakaiCap: true, penandatangan: "ketua" },
-  ppp: { pakaiCap: true, penandatangan: "panitera" },
-  pjs: { pakaiCap: true, penandatangan: "panitera" },
+  // 28 Okt 2026: cap hanya PMH (cap Ketua) - sama dengan BAWAAN_PETA_PENETAPAN portal.
+  ppp: { pakaiCap: false, penandatangan: "panitera" },
+  pjs: { pakaiCap: false, penandatangan: "panitera" },
   phs: { pakaiCap: false, penandatangan: "ketua_majelis" },
 });
 
