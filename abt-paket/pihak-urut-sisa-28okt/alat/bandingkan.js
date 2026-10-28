@@ -133,24 +133,36 @@ async function evalVar(ctx, noStr, pid, stack) {
   let idx = 0;
   let selesai = 0;
   async function pekerja() {
-    const conn = koneksi();
+    let conn = koneksi();
     await qc(conn, 'SET SESSION TRANSACTION READ ONLY');
+    const BATAS = Number(process.env.BATAS_CONTOH || 1500);
     while (idx < pids.length) {
       const pid = pids[idx++];
-      const galat = [];
-      const A = { V: Vs, db: DB_SEB, memo: new Map(), conn, galat };
-      const B = { V: Vp, db: DB_SES, memo: new Map(), conn, galat };
-      for (const n of VARS) {
-        const a = await evalVar(A, String(n), pid, []);
-        const b = await evalVar(B, String(n), pid, []);
-        const sa = a.value == null ? null : String(a.value);
-        const sb = b.value == null ? null : String(b.value);
+      let galat, hsl;
+      // koneksi yang mati (waktu habis, laptop tidur) dibuat ulang dan perkara itu diulang, supaya galat sambungan tidak merusak seluruh hasil
+      for (let coba = 0; coba < 3; coba++) {
+        galat = [];
+        hsl = [];
+        const A = { V: Vs, db: DB_SEB, memo: new Map(), conn, galat };
+        const B = { V: Vp, db: DB_SES, memo: new Map(), conn, galat };
+        for (const n of VARS) {
+          const a = await evalVar(A, String(n), pid, []);
+          const b = await evalVar(B, String(n), pid, []);
+          hsl.push([n, a.value == null ? null : String(a.value), b.value == null ? null : String(b.value)]);
+        }
+        if (!galat.some((g) => /^PROTOCOL_/.test(g.err))) break;
+        console.error(`koneksi mati pada perkara ${pid} (percobaan ${coba + 1}): dibuat ulang`);
+        try { conn.destroy(); } catch (e) { /* abaikan */ }
+        conn = koneksi();
+        await qc(conn, 'SET SESSION TRANSACTION READ ONLY');
+      }
+      for (const [n, sa, sb] of hsl) {
         if (sa === sb) { hasil.sama[n]++; if (!sa || sa === 'DATA_TIDAK_ADA' || sa === '') hasil.kosongSama[n]++; }
-        else { hasil.beda[n].push(pid); if (!hasil.contohBeda[n]) hasil.contohBeda[n] = []; if (hasil.contohBeda[n].length < 40) hasil.contohBeda[n].push({ pid, sebelum: (sa || '').slice(0, Number(process.env.BATAS_CONTOH || 1500)), sesudah: (sb || '').slice(0, Number(process.env.BATAS_CONTOH || 1500)), pjSeb: (sa || '').length, pjSes: (sb || '').length }); }
+        else { hasil.beda[n].push(pid); if (!hasil.contohBeda[n]) hasil.contohBeda[n] = []; if (hasil.contohBeda[n].length < 40) hasil.contohBeda[n].push({ pid, sebelum: (sa || '').slice(0, BATAS), sesudah: (sb || '').slice(0, BATAS), pjSeb: (sa || '').length, pjSes: (sb || '').length }); }
       }
       for (const g of galat) hasil.galat.push(g);
       selesai++;
-      if (selesai % 500 === 0) console.error(`${selesai}/${pids.length}`);
+      if (selesai % Number(process.env.CETAK_TIAP || 25) === 0) console.error(`${selesai}/${pids.length} ${new Date().toISOString().slice(11, 19)}`);
     }
     conn.end();
   }

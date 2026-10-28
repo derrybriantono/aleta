@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """Render SEBELUM/SESUDAH paket pihak-urut-sisa-28okt memakai renderer php56 ABT asli (alat/rend.py + alat/render_siapkan.py).
 pakai: python render_uji.py sebelum|sesudah
-  sebelum = basis aps_badilag_ps0 (keadaan server sesudah paket 27 Okt); sesudah = basis aps_badilag_ps1 (paket 28 Okt terpasang).
-Hasil teks per cetakan: D:/Aplikasi/aleta/tmp/w105/out/<label>/<kode>-<perkara>.txt (memuat data perkara; TIDAK masuk repo) + ringkasan.json."""
+  sebelum = basis DB_SEBELUM (bawaan aps_badilag_ps0 = keadaan server sesudah paket 27 Okt); sesudah = basis DB_SESUDAH (bawaan aps_badilag_ps1 = paket 28 Okt terpasang).
+Hasil teks per cetakan: D:/Aplikasi/aleta/tmp/w108/out/<label>/<kode>-<perkara>.txt (memuat data perkara; TIDAK masuk repo) + ringkasan.json."""
 import json
 import os
 import subprocess
@@ -13,9 +13,9 @@ sys.path.insert(0, AL)
 import rend  # noqa: E402
 
 label = sys.argv[1]
-sumber = {'sebelum': 'aps_badilag_ps0', 'sesudah': 'aps_badilag_ps1'}[label]
+sumber = {'sebelum': os.environ.get('DB_SEBELUM', 'aps_badilag_ps0'), 'sesudah': os.environ.get('DB_SESUDAH', 'aps_badilag_ps1')}[label]
 subprocess.run([sys.executable, os.path.join(AL, 'render_siapkan.py'), sumber], check=True)
-KELUAR = r'D:\Aplikasi\aleta\tmp\w105\out\%s' % label
+KELUAR = r'D:\Aplikasi\aleta\tmp\w108\out\%s' % label
 os.makedirs(KELUAR, exist_ok=True)
 
 # Perkara e-Court berpihak banyak yang urutannya bersambung (Tergugat pertama bukan berurutan 1): 10225 = 656/Pdt.G/2026 (Tergugat tunggal berurutan 25, Turut 25-26),
@@ -39,6 +39,14 @@ UJI = [
     ('v8129', '#8129#|#4440#|#3642#|#3643#|#5116#|#7078#|#3673#', SEMUA),
     ('v9404', '#9404#|#9405#', SEMUA),
     ('v10106', '#10106#|#10107#', SEMUA),
+    # 28 Okt (izin pengguna): variabel bawaan ABT yang ikut diubah
+    ('v10', '#10#|#11#|#20#|#21#|#24#|#27#|#45#', SEMUA),
+    ('v99', '#99#|#100#|#103#|#104#|#118#|#120#', SEMUA),
+    ('v335', '#335#|#336#|#337#|#341#|#342#|#343#|#345#|#346#|#347#', SEMUA),
+    ('v1033', '#1033#|#1034#|#1035#|#1076#|#1077#|#1173#|#1174#|#1176#|#1517#|#1518#|#2173#', SEMUA),
+    ('v5019', '#5019#|#5027#|#5028#|#5842#|#7000#|#7003#|#7004#|#8175#|#8179#|#8180#', SEMUA),
+    # 7078: Pemohon/Penggugat lebih dari satu -> "I,". 604 (3 Pemohon), 1356 (2), 6779 (2 Penggugat), 1191 dan 8248 (1), 7900 (2, e-Court), 9571 (32, e-Court)
+    ('v7078', '#7078#', [604, 1356, 6779, 1191, 8248, 7900, 9571]),
 ]
 ring = {}
 for kode, tpl, pids in UJI:
