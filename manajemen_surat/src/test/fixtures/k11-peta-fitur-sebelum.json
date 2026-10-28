@@ -1976,8 +1976,8 @@
    "jumlahPernyataan": 2
   },
   "aleta.js": {
-   "byte": 139362,
-   "sidik": "1c6250cbc562f68172f04abc1419bc8829c68f1d",
+   "byte": 139849,
+   "sidik": "3a5d5b653ff51b96be0a20247224be0afca6873a",
    "nama": [
     "JALUR_TANPA_PANEL",
     "JEMBATAN_DOKUMEN_MAKS",
@@ -2013,6 +2013,7 @@
     "T4_TAB",
     "W2_PORTAL_TERTUTUP",
     "alamatSiapa",
+    "asalSatkerPortal",
     "bagian",
     "bagianEkstensi",
     "bagianKewenangan",
@@ -2142,7 +2143,7 @@
     "w2SamakanKepalaKaki"
    ],
    "ekspor": [],
-   "jumlahPernyataan": 168
+   "jumlahPernyataan": 169
   },
   "antrean-server.js": {
    "byte": 6229,

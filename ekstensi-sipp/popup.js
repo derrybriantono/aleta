@@ -2227,13 +2227,26 @@ function asalSitus() {
   }
 }
 
+/**
+ * Asal SIPP/ABT satker: port bawaan, walau portal ALETA dipakai lewat port lain (8008, 28 Okt 2026 - "Perbaiki" membuka
+ * 192.168.10.10:8008/SIPP, tempat ekstensi tidak aktif dan sesi SIPP-nya terpisah). Mesin setempat tetap asal aslinya.
+ */
+function asalSatkerDari(asal) {
+  try {
+    const u = new URL(asal);
+    return /^(?:127\.0\.0\.1|localhost)$/.test(u.hostname) ? u.origin : `${u.protocol}//${u.hostname}`;
+  } catch {
+    return asal;
+  }
+}
+
 /** Alamat beranda tiap aplikasi, dengan aturan yang sama dengan checklist.js. */
 function alamatAplikasi(apa) {
   const asal = asalSitus();
   if (!asal) return "";
   if (apa === "portal") return tahap2.asalPortal;
-  if (apa === "sipp") return /\/\/127\.0\.0\.1(?::|\/|$)/.test(asal) ? `${asal}/index.php/` : `${asal}/SIPP/`;
-  if (apa === "abt") return `${asal}/aps_badilag/abt`;
+  if (apa === "sipp") return /\/\/127\.0\.0\.1(?::|\/|$)/.test(asal) ? `${asal}/index.php/` : `${asalSatkerDari(asal)}/SIPP/`;
+  if (apa === "abt") return `${asalSatkerDari(asal)}/aps_badilag/abt`;
   return "";
 }
 

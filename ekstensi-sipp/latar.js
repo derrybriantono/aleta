@@ -3674,7 +3674,9 @@ async function layaniMenuBukaTab(pesan, pengirim) {
   if (!asal || !["192.168.10.10", "127.0.0.1", "localhost"].includes(String(asalUrai.hostname || ""))) return { ok: false, sebab: "asal tidak dikenal" };
   const tujuan = String(pesan.tujuan || "");
   let url = "";
-  if (tujuan === "abt") url = `${asal}/aps_badilag/abt/main/beranda#aleta-derry=1`;
+  // 28 Okt: ABT satker di port bawaan, walau SIPP sempat dibuka lewat port portal (8008).
+  const asalSatker = ["127.0.0.1", "localhost"].includes(String(asalUrai.hostname || "")) ? asal : `${asalUrai.protocol}//${asalUrai.hostname}`;
+  if (tujuan === "abt") url = `${asalSatker}/aps_badilag/abt/main/beranda#aleta-derry=1`;
   else if (tujuan === "aleta") url = `${asal}/aleta`;
   // Menu "E-Court": formulir "Akun e-Court saya" di portal, dengan penanda asal supaya portal menyebut perannya.
   else if (tujuan === "formulir-ecourt") url = `${asal}/aleta/admin/aleta-ecourt?dari=menu#sesi-ecourt-saya`;

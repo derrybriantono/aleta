@@ -360,9 +360,9 @@ async function bagianSipp() {
   }
 
   const aksi = buatElemen("div", "aleta-portal-aksi");
-  const sipp = tautan(`${location.origin}/SIPP/`, "Buka SIPP");
+  const sipp = tautan(`${asalSatkerPortal()}/SIPP/`, "Buka SIPP");
   sipp.target = "_blank";
-  const abt = tautan(`${location.origin}/aps_badilag/`, "Buka ABT");
+  const abt = tautan(`${asalSatkerPortal()}/aps_badilag/`, "Buka ABT");
   abt.target = "_blank";
   aksi.appendChild(sipp);
   aksi.appendChild(abt);
@@ -627,13 +627,22 @@ function t4NomorPendek(nomor) {
   return String(nomor || "").split("/").slice(0, 2).join("/");
 }
 
+/**
+ * 28 Okt 2026: asal SIPP/ABT satker dari halaman portal. Portal dapat dibuka lewat port sendiri (8008), tetapi SIPP dan ABT
+ * berada di port bawaan - tautan ke :8008/SIPP membuka SIPP di asal tempat ekstensi tidak aktif. Mesin setempat tetap asalnya.
+ */
+function asalSatkerPortal() {
+  const h = String(location.hostname || "");
+  return /^(127\.0\.0\.1|localhost)$/.test(h) ? location.origin : `${location.protocol}//${h}`;
+}
+
 function t4AlamatSippDepan() {
   const lokal = /^(127\.0\.0\.1|localhost)$/.test(String(location.hostname || ""));
-  return `${location.origin}${lokal ? "/index.php/" : "/SIPP/"}`;
+  return `${lokal ? location.origin : asalSatkerPortal()}${lokal ? "/index.php/" : "/SIPP/"}`;
 }
 
 function t4AlamatAbtDepan() {
-  return `${location.origin}/aps_badilag/`;
+  return `${asalSatkerPortal()}/aps_badilag/`;
 }
 
 function t4AlamatAletaPerkara(nomor) {
@@ -3088,7 +3097,7 @@ let jembatanRelaasTerpasang = false;
 /** asal dan asalAbt menurut halaman ini sendiri - bukan menurut kiriman halaman. */
 function jembatanAsal() {
   const asal = location.origin;
-  return { asal, asalAbt: `${asal}/aps_badilag` };
+  return { asal, asalAbt: `${asalSatkerPortal()}/aps_badilag` };
 }
 
 /**
