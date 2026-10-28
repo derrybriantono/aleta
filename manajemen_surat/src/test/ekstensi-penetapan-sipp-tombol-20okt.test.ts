@@ -767,7 +767,7 @@ describe("satu klik: konfirmasi di halaman, tulis lalu unggah", () => {
     expect(lap.querySelector('[data-jenis="pmh"]')!.textContent).toContain("sudah tercatat sebelumnya, dilewati");
   });
 
-  it("keempatnya sudah tercatat: tidak ada yang ditulis; konfirmasi hanya soal e-Doc; e-Doc yang sudah ada disebut menimpa", async () => {
+  it("keempatnya sudah tercatat: tidak ada yang ditulis; konfirmasi hanya soal e-Doc; e-Doc lama ditimpa HANYA bila dicentang (28 Okt)", async () => {
     const h = buka({ pmh: HARI, ppp: HARI, pjs: HARI, phs: HARI }, { edocSudah: ["pmh", "phs"] });
     await bukaSebelumTerbaca(h);
     const p = await panelSiap(h);
@@ -776,11 +776,31 @@ describe("satu klik: konfirmasi di halaman, tulis lalu unggah", () => {
     utama(h).click();
     const k = await sampai(() => panel(h)!.querySelector('[data-pensipp="konfirmasi"]') as HTMLElement | null, "konfirmasi");
     expect(k.textContent).toContain("Tidak ada penetapan yang perlu ditulis; 4 e-Doc diunggah.");
-    expect(k.textContent).toContain("2 di antaranya menimpa e-Doc yang sudah ada di SIPP.");
-    (k.querySelector('[data-pensipp="ya"]') as HTMLButtonElement).click();
+    expect(k.textContent).toContain("2 di antaranya sudah ada di e-Doc SIPP dan dilewati (tidak ditimpa).");
+    const timpa = k.querySelector('[data-pensipp="timpa"]') as HTMLInputElement;
+    expect(timpa.checked).toBe(false);
+    timpa.checked = true;
+    timpa.dispatchEvent(new h.w.Event("change", { bubbles: true }));
+    const k2 = panel(h)!.querySelector('[data-pensipp="konfirmasi"]') as HTMLElement;
+    expect(k2.textContent).toContain("2 di antaranya MENIMPA e-Doc yang sudah ada di SIPP.");
+    (k2.querySelector('[data-pensipp="ya"]') as HTMLButtonElement).click();
     await tungguLaporan(h);
     expect(tulisPost(h)).toEqual([]);
     expect(jenisUnggah(h)).toEqual(["pmh", "ppp", "pjs", "phs"]);
+  });
+
+  it("e-Doc lama TIDAK dicentang ditimpa: PMH/PHS dilewati dan disebut, bukan dihitung terunggah (28 Okt)", async () => {
+    const h = buka({ pmh: HARI, ppp: HARI, pjs: HARI, phs: HARI }, { edocSudah: ["pmh", "phs"] });
+    await bukaSebelumTerbaca(h);
+    const p = await panelSiap(h);
+    await sampai(() => p.querySelectorAll(".aleta-pensipp-chip-edoc").length === 2, () => `chip e-Doc; ${p.textContent}`);
+    utama(h).click();
+    const k = await sampai(() => panel(h)!.querySelector('[data-pensipp="konfirmasi"]') as HTMLElement | null, "konfirmasi");
+    (k.querySelector('[data-pensipp="ya"]') as HTMLButtonElement).click();
+    const lap = await tungguLaporan(h);
+    expect(jenisUnggah(h)).toEqual(["ppp", "pjs"]);
+    expect(lap.querySelector('[data-jenis="pmh"]')!.textContent).toContain("e-Doc sudah ada di SIPP, tidak ditimpa.");
+    expect(lap.textContent).toContain("2 e-Doc terunggah, 2 e-Doc sudah ada (tidak ditimpa)");
   });
 
   it("keempatnya tercatat dan tidak ada e-Doc dicentang: tombol utama mati dan jujur", async () => {
@@ -910,7 +930,11 @@ describe("satu pintu bersama (aletaPenetapanKerja dari agen P1)", () => {
     expect(panggilan[0].nomorPerkara).toBe(NOMOR);
     expect(panggilan[0].perkaraId).toBe(10260);
     expect(panggilan[0].mode).toBe("otomatis");
-    expect(panggilan[0].pilihan).toEqual({});
+    // 28 Okt (penetapan sama): pilihan dikirim di kedua mode seperti kartu Penetapan - di mode otomatis hanya pejabat
+    // penetap bawaan papan (tanpa orang/hari pilihan tangan); server menyaringnya menurut mode.
+    expect(Object.keys(panggilan[0].pilihan).filter((x) => x !== "pejabat")).toEqual([]);
+    expect(panggilan[0].timpaEdoc).toBe(false);
+    expect(panggilan[0].sita).toBe("");
     expect(panggilan[0].langkah).toEqual({ pmh: true, ppp: true, pjs: true, phs: true });
     expect(panggilan[0].unggahEdoc).toEqual({ pmh: true, ppp: false, pjs: true, phs: true });
     expect(panggilan[0].kering).toBe(false);

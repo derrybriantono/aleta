@@ -3919,7 +3919,7 @@
     "ff6b3c7255ab",
     "09de0fa1b1b3",
     "73d7de2b089f",
-    "477f0164fec8",
+    "5869d78f4f29",
     "e62bc1213ccf",
     "79df90d4610b",
     "4b1385fe8b80",
@@ -4900,8 +4900,8 @@
    "jumlahPernyataan": 2
   },
   "penetapan-kerja.js": {
-   "byte": 22594,
-   "sidik": "8d7a6eadb06b0625cab08b0042ca8cf37cad9052",
+   "byte": 23957,
+   "sidik": "51f7ca1eed0a5cad809945b8ba03443936b3353d",
    "nama": [],
    "ekspor": [
     "aletaPenetapanKerja"
@@ -4909,8 +4909,8 @@
    "jumlahPernyataan": 2
   },
   "penetapan-sipp.js": {
-   "byte": 58588,
-   "sidik": "1f7a3476008888c8e86d80e9be2dfac5e162381a",
+   "byte": 63237,
+   "sidik": "f62630fdb236e546af0604dce8ce560f161d4c53",
    "nama": [],
    "ekspor": [
     "aletaPenetapanSipp",

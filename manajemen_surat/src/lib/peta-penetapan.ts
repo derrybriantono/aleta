@@ -157,8 +157,10 @@ export const BAWAAN_PETA_PENETAPAN: Record<JenisPetaPenetapan, AturPenetapan> = 
   pmh: { ...UMUM, aktif: true, namaBerkas: "@ 1 - PMH.rtf", otomatisUnggah: true, pakaiCap: true, penandatangan: "ketua" },
   phs: { ...UMUM, aktif: true, namaBerkas: "@ 2 - PHS.rtf", otomatisUnggah: true, pakaiCap: false, penandatangan: "ketua_majelis" },
   // I9 17 Okt: berkas tunggal @ 0a / @ 0b; gabungan @ 0 = cadangan (satu sumber dengan PETA_PTSP bot).
-  ppp: { ...UMUM, aktif: true, namaBerkas: BERKAS_PPP_TUNGGAL, namaBerkasCadangan: BERKAS_PTSP_GABUNGAN, otomatisUnggah: false, pakaiCap: true, penandatangan: "panitera" },
-  pjs: { ...UMUM, aktif: true, namaBerkas: BERKAS_PJS_TUNGGAL, namaBerkasCadangan: BERKAS_PTSP_GABUNGAN, otomatisUnggah: false, pakaiCap: true, penandatangan: "panitera" },
+  // 28 Okt 2026 (penetapan sama, keputusan pengguna): cap HANYA untuk PMH (cap Ketua); PPP/PJS/PHS tanpa cap. Satu sumber
+  // dengan ATUR_JENIS bot. Admin tetap dapat menyalakannya per jenis di Peta penetapan.
+  ppp: { ...UMUM, aktif: true, namaBerkas: BERKAS_PPP_TUNGGAL, namaBerkasCadangan: BERKAS_PTSP_GABUNGAN, otomatisUnggah: false, pakaiCap: false, penandatangan: "panitera" },
+  pjs: { ...UMUM, aktif: true, namaBerkas: BERKAS_PJS_TUNGGAL, namaBerkasCadangan: BERKAS_PTSP_GABUNGAN, otomatisUnggah: false, pakaiCap: false, penandatangan: "panitera" },
 };
 
 export class GalatPetaPenetapan extends Error {}

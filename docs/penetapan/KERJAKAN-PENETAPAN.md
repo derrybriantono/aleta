@@ -18,10 +18,11 @@ const hasil = await aletaPenetapanKerja.kerjakan({
   nomorPerkara: "684/Pdt.G/2026/PA.Dgl", // wajib
   perkaraId: 10260,                       // opsional (dikenali dari nomor bila kosong)
   mode: "otomatis",                       // "otomatis" | "manual"
-  pilihan: {},                            // lihat bagian 3; kosong pada mode otomatis
+  pilihan: {},                            // lihat bagian 3; disaring server menurut mode
   langkah:   { pmh: true, ppp: true, pjs: true, phs: true }, // yang dicentang
   unggahEdoc:{ pmh: true, ppp: true, pjs: true, phs: true }, // yang dicentang
   sita: "",                               // "" | "dikabulkan" | "ditolak" (varian blangko PHS bersita)
+  timpaEdoc: false,                       // true = e-Doc yang sudah ada DITIMPA (disetujui di konfirmasi); false = dilewati
   kering: false,                          // true = hanya rencana, tidak menulis apa pun
   pada: (k) => {},                        // kemajuan opsional: { tahap, jenis, teks }
 });
@@ -100,8 +101,11 @@ separuh dianggap ada dan ditandai di `tidakSelaras`, tidak pernah ditimpa.
 
 ## 3. Pilihan (`pilihan`)
 
-Kosong pada `mode:"otomatis"` (server menyusun sendiri: majelis menurut giliran/SK, PP,
-JS, hari sidang, pejabat penetap). Pada `mode:"manual"` hanya yang ingin diubah:
+Pada `mode:"otomatis"` server menyusun sendiri majelis (giliran/SK), PP, JS, dan hari sidang;
+yang tetap berlaku dari `pilihan` hanya yang juga berlaku di kartu Penetapan pada mode itu
+(28 Okt 2026, penetapan sama): `pejabat`, `majelisDipilih` ("Ubah majelis" - usulan dihitung
+ulang untuknya), dan - bila `sidkel: true` - `phs`/`ruangan`/`jam` sidang keliling. Pada
+`mode:"manual"` hanya yang ingin diubah:
 
 ```js
 pilihan: {
@@ -113,7 +117,9 @@ pilihan: {
   phs: "2026-11-02",       // tanggal sidang pilihan sendiri (hari libur ditolak, tidak diganti)
   ruangan: 2,              // id ruang sidang (sidang keliling = ruang berbendera keliling)
   jam: "09:30",
-  pejabat: { pmh: "fahri", ppp: "Sri Susilowati", pjs: "Sri Susilowati", phs: "Himawan" }
+  pejabat: { pmh: "fahri", ppp: "Sri Susilowati", pjs: "Sri Susilowati", phs: "Himawan" },
+  sidkel: false,           // saklar sidang keliling (membuka phs/ruangan/jam di mode otomatis)
+  majelisDipilih: [26, 28, 31] // "Ubah majelis" (kedua mode)
 }
 ```
 
@@ -153,4 +159,4 @@ Cabang `fitur/p1-penetapan-ganda`, 20 Okt 2026. SELESAI dan diuji:
 - Portal: `POST /penunjukan/kerjakan`, `GET /penunjukan/keadaan`, `POST /penunjukan/kunci`; rute hapus/hapus-semua meneruskan dan menuntut `perintahPengguna`.
 - Ekstensi: `ekstensi-sipp/penetapan-kerja.js` (`aletaPenetapanKerja.kerjakan/keadaan/ambilKunci/lepasKunci`); pengisian borang SIPP (`kerjakanBorang`) memegang kunci dan membaca ulang keadaan tepat sebelum menekan Simpan.
 
-Catatan untuk penggabungan dengan cabang tombol halaman SIPP (P2): e-Doc pada `kerjakan()` diunggah dengan `otomatis:false` (yang dicentang petugas tidak tersaring oleh "unggah otomatis" di Peta penetapan; e-Doc yang sudah ada ditanyakan, tidak ditimpa diam-diam). Kunci sisi ekstensi P2 (`kunciTulisPenetapan`) berlapis di atas kunci server ini - keduanya dipertahankan. Berkas yang kemungkinan bentrok teks: `ekstensi-sipp/manifest.json`, `manajemen_surat/scripts/susun-ekstensi.mjs`, `src/test/sipp-ide-l1-16okt.test.ts` (sama-sama menambah satu berkas skrip), `ekstensi-berkas.ts` (hasil tanam - jalankan ulang `rilis-ekstensi.mjs`).
+Catatan untuk penggabungan dengan cabang tombol halaman SIPP (P2): e-Doc pada `kerjakan()` diunggah dengan `otomatis:false` (yang dicentang petugas tidak tersaring oleh "unggah otomatis" di Peta penetapan). Sejak 28 Okt e-Doc yang sudah ada DILEWATI (`sudah_terunggah`) kecuali `timpaEdoc:true` dari konfirmasi halaman - tidak lagi ditanyakan lewat window.confirm di tengah pekerjaan; muat ulang halaman sekali oleh pemanggil (`tanpaMuatUlang`). Kunci sisi ekstensi P2 (`kunciTulisPenetapan`) berlapis di atas kunci server ini - keduanya dipertahankan. Berkas yang kemungkinan bentrok teks: `ekstensi-sipp/manifest.json`, `manajemen_surat/scripts/susun-ekstensi.mjs`, `src/test/sipp-ide-l1-16okt.test.ts` (sama-sama menambah satu berkas skrip), `ekstensi-berkas.ts` (hasil tanam - jalankan ulang `rilis-ekstensi.mjs`).

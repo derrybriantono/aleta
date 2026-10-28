@@ -431,30 +431,51 @@
           if (unggah[x.jenis] && !layak(x)) x.edoc = { status: "dilewati", sebab: "penetapan_belum_tercatat", bunyi: "Penetapan belum tercatat - e-Doc tidak diunggah." };
           else if (!unggah[x.jenis]) x.edoc = { status: "tidak_dicentang", sebab: "", bunyi: "" };
         }
-        if (untukEdoc.length && typeof e6UnggahEdocPenetapan === "function") {
+        // 28 Okt (penetapan sama): e-Doc yang SUDAH ada di SIPP ditimpa hanya bila petugas menyetujuinya di konfirmasi
+        // halaman (timpaEdoc: true) - sama dengan tombol e-Doc per baris kartu Penetapan ("yakin menimpa yang lama?").
+        // Tanpa persetujuan: dilewati dan disebut, TIDAK lagi ditanyakan lewat window.confirm di tengah pekerjaan
+        // (dulu "Batal" di sana membatalkan SEMUA jenis lalu terlapor seolah terunggah).
+        let dikirim = untukEdoc;
+        if (untukEdoc.length && masuk.timpaEdoc !== true && typeof b7BacaSudahTerunggah === "function") {
+          let sudah = null;
+          try {
+            sudah = await b7BacaSudahTerunggah(nomorPerkara, untukEdoc.map((x) => x.jenis.toUpperCase()));
+          } catch {
+            sudah = null;
+          }
+          const kodeSudah = new Set((sudah || []).map((x) => String((x && x.jenis) || "").toLowerCase()));
+          dikirim = untukEdoc.filter((x) => !kodeSudah.has(x.jenis));
+          for (const x of untukEdoc) {
+            if (kodeSudah.has(x.jenis)) x.edoc = { status: "dilewati", sebab: "sudah_terunggah", bunyi: "e-Doc sudah ada di SIPP - tidak ditimpa." };
+          }
+        }
+        if (dikirim.length && typeof e6UnggahEdocPenetapan === "function") {
           pada({ tahap: "edoc", teks: "Mengunggah e-Doc penetapan…" });
           let edoc = null;
           try {
             edoc = await e6UnggahEdocPenetapan({
               nomorPerkara,
               perkaraId: String(perkaraId || ""),
-              jenis: untukEdoc.map((x) => x.jenis),
+              jenis: dikirim.map((x) => x.jenis),
               // Dicentang petugas = diminta tegas, jadi tidak tersaring oleh
-              // "unggah otomatis" di Peta penetapan. e-Doc yang SUDAH terunggah
-              // tidak ditimpa diam-diam: e6UnggahEdocPenetapan menanyakannya.
+              // "unggah otomatis" di Peta penetapan. Yang sudah ada sudah disaring
+              // (atau disetujui ditimpa) di atas - tidak ditanya dua kali.
               otomatis: false,
               kering: false,
+              timpaDisetujui: true,
+              // Pemanggil (panel Penetapan Otomatis) memuat ulang SEKALI sesudah seluruh urutan.
+              tanpaMuatUlang: true,
               sita: masuk.sita || "",
               kabar: kabarKemajuan(pada, "edoc"),
             });
           } catch (galat) {
             edoc = { ok: false, gagal: [], alasanLempar: String((galat && galat.message) || galat) };
           }
-          for (const x of untukEdoc) {
+          for (const x of dikirim) {
             x.edoc = edoc && edoc.alasanLempar ? { status: "gagal", sebab: "unggah_gagal", bunyi: edoc.alasanLempar } : statusEdoc(edoc, x.jenis);
           }
-        } else {
-          for (const x of untukEdoc) x.edoc = { status: "dilewati", sebab: "edoc_tidak_tersedia", bunyi: "Unggah e-Doc tidak tersedia di halaman ini." };
+        } else if (dikirim.length) {
+          for (const x of dikirim) x.edoc = { status: "dilewati", sebab: "edoc_tidak_tersedia", bunyi: "Unggah e-Doc tidak tersedia di halaman ini." };
         }
         const edocGagal = hasil.laporan.filter((x) => x.edoc && x.edoc.status === "gagal");
         if (edocGagal.length) {
