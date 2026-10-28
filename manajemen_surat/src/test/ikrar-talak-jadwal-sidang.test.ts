@@ -217,7 +217,9 @@ describe("kabel layar, rute, dan bot", () => {
     expect(layananIkrar).toContain("menyebutAleta(amar)");
     const hasil = baca("aleta_bot/services/sidangHasilService.js");
     expect(hasil).toContain("susunRencanaPutusIkrar");
-    expect(hasil).toContain("ikrar.KETERANGAN_IKRAR");
+    // Tiga status (28 Okt 2026): teks hasil sidang & keterangan dari daftar tetap per status.
+    expect(hasil).toContain("ikrar.STATUS_IKRAR[status]");
+    expect(layananIkrar).toContain("keterangan: KETERANGAN_IKRAR");
     const alur = baca("aleta_bot/services/sidangHasilAlur.js");
     expect(alur).toContain("jalankanIsiIkrar");
     expect(alur).toContain('"putus-ikrar"');

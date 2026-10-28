@@ -543,6 +543,9 @@ const JEDA_ANTARLANGKAH = Object.freeze({
   "phs>pjs": [40, 900],
   "pjs>ppp": [5, 45],
   "ppp>pmh": [90, 1800],
+  // Putus sidang ikrar (P10, 28 Okt 2026): keterangan sidang atas akun PP ikrar, lalu
+  // penetapan ikrar atas akun ketua majelis. Petugas satker: median +-12 mnt, p25 4, p75 50.
+  "ikrar-jadwal>ikrar-penetapan": [180, 1800],
 });
 const JEDA_LANGKAH_LAIN = [60, 900];
 /** Jeda sesudah kejadian terakhir di perkara itu sebelum langkah pertama. */
@@ -3236,6 +3239,9 @@ module.exports = {
   akunPetugasMasuk,
   // Diekspor untuk diuji satuan.
   jamRangkaianManusia,
+  JEDA_ANTARLANGKAH,
+  // Lantai jam rangkaian putus ikrar (sidangHasilService, 28 Okt 2026).
+  lantaiKejadianPerkara,
   // Jam SIPP (WIB) - dipakai SELURUH penulis ALETA ke tabel SIPP (13 Okt 2026).
   waktuSipp,
   sqlJamSipp,

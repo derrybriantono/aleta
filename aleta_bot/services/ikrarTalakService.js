@@ -64,6 +64,44 @@ const KEADAAN_ISTRI_TIDAK_DIKETAHUI = 4;
 const HASIL_SIDANG_IKRAR = "telah ikrar talak"; // ejaan SIPP (446 sidang di satker)
 const KETERANGAN_IKRAR = "Ikrar Telah Dilaksanakan";
 
+/**
+ * ============================================================================
+ * TIGA STATUS PENETAPAN IKRAR, PERSIS PILIHAN BORANG SIPP (P1, 28 Okt 2026)
+ * ============================================================================
+ *
+ * form_ikrar_putusan.php: status_penetapan 1 Diikrarkan, 2 Pemohon Tidak Hadir,
+ * 3 Rukun Kembali. Ketiganya menulis tabel dan proses yang SAMA (295); yang
+ * berbeda nilai status, amar, dan teks hasil sidang di jadwal (P3: daftar tetap,
+ * tanpa kata ALETA). Teks status 2/3 SENGAJA memuat kata penunda ("tidak",
+ * "gugur") atau tidak menyebut "ikrar" sama sekali, supaya ikrarTerlaksanaMenurutTeks
+ * - yang memicu isi form status 1 dan isi borang ekstensi - tidak pernah
+ * membacanya sebagai ikrar terlaksana.
+ */
+const STATUS_PEMOHON_TIDAK_HADIR = 2;
+const STATUS_RUKUN_KEMBALI = 3;
+const STATUS_IKRAR = Object.freeze({
+  1: Object.freeze({ nama: "Diikrarkan", hasil: HASIL_SIDANG_IKRAR, keterangan: KETERANGAN_IKRAR }),
+  2: Object.freeze({
+    nama: "Pemohon Tidak Hadir",
+    hasil: "Pemohon tidak hadir, ikrar talak gugur",
+    keterangan: "Ikrar Talak Gugur",
+  }),
+  3: Object.freeze({
+    nama: "Rukun Kembali",
+    hasil: "Pemohon dan Termohon rukun kembali",
+    keterangan: "Rukun Kembali, Ikrar Talak Tidak Dijatuhkan",
+  }),
+});
+/** P2: Pemohon tidak hadir baru boleh dinyatakan gugur pada sidang ikrar yang masih mungkin terakhir. */
+const HARI_SEBELUM_BATAS_GUGUR = 14;
+
+/** Status 1/2/3 dari pilihan; selain itu 0 (ditolak). Tanpa pilihan = 1 (bawaan, P1). */
+function statusIkrarDiminta(nilai) {
+  if (nilai === undefined || nilai === null || nilai === "") return STATUS_DIIKRARKAN;
+  const n = Number(nilai);
+  return n === 1 || n === 2 || n === 3 ? n : 0;
+}
+
 function kueri(sql, params = []) {
   return new Promise((selesai, gagal) => {
     db.query(sql, params, (galat, hasil) => (galat ? gagal(galat) : selesai(hasil)));
@@ -85,6 +123,20 @@ function ikrarTerlaksanaMenurutTeks(teks) {
   if (!/\bikrar\b/i.test(t)) return false;
   if (/\b(belum|tidak|tunda|ditunda|menunggu|panggil|gugur|batal)\b/i.test(t)) return false;
   return true;
+}
+
+/**
+ * Status hasil sidang ikrar menurut teks jadwal: 1 terlaksana, 2 gugur, 3 rukun
+ * kembali, 0 tidak jelas / ditunda. Dipakai menilai "jadwal sudah ditutup
+ * dengan status yang sama" (idempoten, 28 Okt 2026).
+ */
+function statusIkrarMenurutTeks(teks) {
+  const t = bersih(teks);
+  if (!t) return 0;
+  if (ikrarTerlaksanaMenurutTeks(t)) return STATUS_DIIKRARKAN;
+  if (/\brukun\b/i.test(t)) return STATUS_RUKUN_KEMBALI;
+  if (/\bgugur\b/i.test(t)) return STATUS_PEMOHON_TIDAK_HADIR;
+  return 0;
 }
 
 function tambahBulan(iso, bulan) {
@@ -130,6 +182,7 @@ async function keadaanIkrar(jadwalId) {
     `SELECT j.id AS jadwalId, j.perkara_id AS perkaraId, j.tanggal_sidang AS tanggalSidang,
             j.ikrar_talak AS ikrarTalak, j.ditunda AS ditunda,
             j.alasan_ditunda AS alasanDitunda, j.keterangan AS keterangan,
+            j.dihadiri_oleh AS dihadiriOleh,
             p.nomor_perkara AS nomorPerkara, p.pihak1_text AS pihak1, p.pihak2_text AS pihak2,
             pu.tanggal_putusan AS tanggalPutusan, pu.tanggal_bht AS tanggalBht,
             it.perkara_id AS adaBarisIkrar, it.tgl_ikrar_talak AS tglIkrar,
@@ -164,19 +217,41 @@ async function keadaanIkrar(jadwalId) {
   return satu;
 }
 
-/** Ketua majelis IKRAR talak (tahapan 18, jabatan 1 / tunggal 3) beserta akun hidupnya. */
+/**
+ * Ketua majelis IKRAR talak (tahapan 18, jabatan 1 / tunggal 3) beserta akun hidupnya.
+ *
+ * Cadangan P8 (28 Okt 2026): perkara TANPA baris perkara_hakim_pn tahapan 18 (16
+ * perkara 2025+ di satker) memakai id PERTAMA perkara_ikrar_talak.majelis_hakim_id
+ * ("5,1,7" -> 5; urutan SIPP: ketua dahulu - cocok dengan tahapan 18 pada 162/178).
+ * Baris tahapan 18 yang ADA tetapi tanpa ketua tetap ditolak (tidak menebak).
+ * Akun ganda/tidak ada ditolak akunUntukHakim (P6) - `calon` menyebut akunnya.
+ */
 async function ketuaMajelisIkrar(perkaraId) {
+  const id = Number(perkaraId) || 0;
   const baris = await kueri(
     `SELECT hakim_id AS hakimId, jabatan_hakim_id AS jabatanId FROM perkara_hakim_pn
       WHERE perkara_id = ? AND tahapan_id = ? AND aktif = 'Y'`,
-    [Number(perkaraId) || 0, TAHAPAN_IKRAR]
+    [id, TAHAPAN_IKRAR]
   ).catch(() => []);
   const daftar = Array.isArray(baris) ? baris : [];
+  let hakimId = 0;
+  let sumber = "majelis_ikrar";
   const ketua = daftar.find((x) => [1, 3].includes(Number(x.jabatanId)));
-  if (!ketua) return { ok: false, alasan: "ketua_majelis_ikrar_tidak_ada" };
-  const akun = await penetapan.akunUntukHakim(Number(ketua.hakimId));
+  if (ketua) hakimId = Number(ketua.hakimId);
+  else if (daftar.length === 0) {
+    const it = await kueri(`SELECT majelis_hakim_id AS majelis FROM perkara_ikrar_talak WHERE perkara_id = ? LIMIT 1`, [id]).catch(
+      () => []
+    );
+    const pertama = bersih(Array.isArray(it) && it[0] ? it[0].majelis : "").split(",")[0];
+    if (/^\d+$/.test(bersih(pertama)) && Number(pertama) > 0) {
+      hakimId = Number(pertama);
+      sumber = "majelis_hakim_id_ikrar";
+    }
+  }
+  if (!hakimId) return { ok: false, alasan: "ketua_majelis_ikrar_tidak_ada" };
+  const akun = await penetapan.akunUntukHakim(hakimId);
   if (!akun.ok) return { ok: false, alasan: akun.alasan, calon: akun.calon };
-  return { ok: true, username: akun.username, fullname: akun.fullname, hakimId: Number(ketua.hakimId) };
+  return { ok: true, username: akun.username, fullname: akun.fullname, hakimId, sumber };
 }
 
 function escHtml(teks) {
@@ -239,6 +314,100 @@ function susunAmar(pihak1, pihak2, biaya = null) {
   );
 }
 
+const BULAN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+
+/** "2025-07-29" -> "29 Juli 2025"; "" bila tak sah. Murni. */
+function tanggalPanjang(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(bersih(iso));
+  if (!m || Number(m[2]) < 1 || Number(m[2]) > 12) return "";
+  return `${Number(m[3])} ${BULAN[Number(m[2]) - 1]} ${m[1]}`;
+}
+
+function kalimatBiaya(biaya) {
+  return biaya && biaya.angka
+    ? ` sebesar Rp${biaya.angka},-${biaya.terbilang ? ` (${biaya.terbilang} rupiah)` : ""}`
+    : " sesuai ketentuan yang berlaku";
+}
+
+/**
+ * Amar penetapan ikrar per status (P1/P9, 28 Okt 2026) - HTML penyunting SIPP, tanpa
+ * judul "MENETAPKAN:" (P9: mayoritas petugas tanpa judul; blangko e-Doc memuatnya).
+ * Bentuk butir ditiru dari amar petugas satker (sipp_donggala, baca saja):
+ *   2 Pemohon Tidak Hadir (perkara 8770, 2026): putusan tidak mempunyai kekuatan hukum;
+ *     masih terikat perkawinan yang sah; biaya.
+ *   3 Rukun Kembali (perkara 9596, 2026): tidak menjatuhkan ikrar talak; perkara tidak
+ *     dapat dilanjutkan; Panitera mencoret dari register; biaya.
+ * Nomor/tanggal putusan dari SIPP (perkara.nomor_perkara, perkara_putusan.tanggal_putusan);
+ * nama pengadilan dari identitas satker. Bahan yang kosong = "" (pemanggil menolak).
+ * Murni.
+ */
+function susunAmarIkrar(status, b = {}) {
+  const s = Number(status);
+  if (s === STATUS_DIIKRARKAN) return susunAmar(b.pihak1, b.pihak2, b.biaya || null);
+  const nomor = escHtml(bersih(b.nomorPerkara));
+  const biaya = `<li>Membebankan kepada Pemohon untuk membayar biaya penetapan ini${kalimatBiaya(b.biaya)};</li>`;
+  if (s === STATUS_PEMOHON_TIDAK_HADIR) {
+    const tgl = tanggalPanjang(b.tanggalPutusan);
+    if (!nomor || !tgl) return "";
+    return (
+      `<ol>\n <li>Menyatakan Putusan Nomor ${nomor} tanggal ${tgl} tidak mempunyai kekuatan hukum;</li>\n` +
+      ` <li>Menetapkan Pemohon dan Termohon masih terikat dalam perkawinan yang sah;</li>\n ${biaya}\n</ol>`
+    );
+  }
+  if (s === STATUS_RUKUN_KEMBALI) {
+    const pengadilan = escHtml(bersih(b.namaPengadilan));
+    if (!nomor || !pengadilan) return "";
+    return (
+      `<ol>\n <li>Mengabulkan permohonan Pemohon untuk tidak menjatuhkan ikrar talak terhadap Termohon;</li>\n` +
+      ` <li>Menyatakan perkara Cerai Talak Nomor ${nomor} tidak dapat dilanjutkan;</li>\n` +
+      ` <li>Memerintahkan Panitera ${pengadilan} untuk mencoret perkara Nomor ${nomor} dari register perkara;</li>\n` +
+      ` ${biaya}\n</ol>`
+    );
+  }
+  return "";
+}
+
+/** "PENGADILAN AGAMA DONGGALA" -> "Pengadilan Agama Donggala". Murni. */
+function hurufJudul(teks) {
+  return bersih(teks)
+    .toLowerCase()
+    .replace(/(^|[\s(-])([a-z])/g, (_, a, h) => `${a}${h.toUpperCase()}`);
+}
+
+/** Nama pengadilan dari identitas satker SIPP (sys_config NamaPN). "" bila tak terbaca. */
+async function namaPengadilanSatker() {
+  const baris = await kueri(`SELECT value FROM sys_config WHERE name = 'NamaPN' LIMIT 1`).catch(() => []);
+  return hurufJudul(Array.isArray(baris) && baris[0] ? baris[0].value : "");
+}
+
+/**
+ * Syarat pilihan status pada tombol PUTUS (P2, 28 Okt 2026). Murni.
+ *   1 Diikrarkan       Pemohon hadir (1/2); kehadiran tak tercatat dibiarkan (e-Doc menolaknya).
+ *   2 Pemohon T. Hadir kehadiran 3/4 DAN sidang ini >= batas 6 bulan - 14 hari (sidang ikrar
+ *                      terakhir yang masih mungkin); tanpa penetapan hari sidang ikrar ditolak.
+ *   3 Rukun Kembali    Pemohon hadir (1/2) menyatakan tidak menjatuhkan ikrar.
+ */
+function syaratStatusIkrar(status, { dihadiri, tanggalSidang, batas } = {}) {
+  const h = Number(dihadiri);
+  const pemohonHadir = h === 1 || h === 2;
+  const pemohonTidakHadir = h === 3 || h === 4;
+  if (status === STATUS_DIIKRARKAN) {
+    return pemohonTidakHadir ? { ok: false, alasan: "pemohon_tidak_hadir_tidak_dapat_diikrarkan" } : { ok: true };
+  }
+  if (status === STATUS_PEMOHON_TIDAK_HADIR) {
+    if (!pemohonTidakHadir) return { ok: false, alasan: "gugur_hanya_bila_pemohon_tidak_hadir" };
+    if (!batas) return { ok: false, alasan: "gugur_tenggat_belum_berjalan" };
+    const [t, b, d] = batas.split("-").map(Number);
+    const awal = new Date(Date.UTC(t, b - 1, d - HARI_SEBELUM_BATAS_GUGUR)).toISOString().slice(0, 10);
+    if (bersih(tanggalSidang) < awal) return { ok: false, alasan: "gugur_belum_sidang_terakhir", batas, awal };
+    return { ok: true, batas, awal };
+  }
+  if (status === STATUS_RUKUN_KEMBALI) {
+    return pemohonHadir ? { ok: true } : { ok: false, alasan: "rukun_kembali_pemohon_tidak_hadir" };
+  }
+  return { ok: false, alasan: "status_ikrar_tidak_dikenal" };
+}
+
 function akhirPekan(iso) {
   const d = new Date(`${iso}T00:00:00`);
   const h = d.getDay();
@@ -253,18 +422,32 @@ function akhirPekan(iso) {
 async function siapkanIsianIkrar(minta, k) {
   if (!k) return { ok: false, alasan: "jadwal_tidak_ketemu" };
   if (bersih(k.ikrarTalak) !== "Y") return { ok: false, alasan: "bukan_sidang_ikrar" };
+  const status = statusIkrarDiminta(minta.statusIkrar);
+  if (!status) return { ok: false, alasan: "status_ikrar_tidak_dikenal" };
 
   if (minta.sudahPutus !== true) {
-    // Dasarnya keterangan jadwal sidang: hasil sidang ATAU keterangan menyatakan ikrar terlaksana.
+    // Dasarnya keterangan jadwal sidang: hasil sidang ATAU keterangan menyatakan status itu.
     const terlaksana =
       bersih(k.ditunda) !== "Y" &&
-      (ikrarTerlaksanaMenurutTeks(k.alasanDitunda) || ikrarTerlaksanaMenurutTeks(k.keterangan));
+      (status === STATUS_DIIKRARKAN
+        ? ikrarTerlaksanaMenurutTeks(k.alasanDitunda) || ikrarTerlaksanaMenurutTeks(k.keterangan)
+        : statusIkrarMenurutTeks(k.alasanDitunda) === status || statusIkrarMenurutTeks(k.keterangan) === status);
     if (!terlaksana) return { ok: false, alasan: "ikrar_belum_dinyatakan_terlaksana" };
   }
 
   if (!k.adaBarisIkrar) return { ok: false, alasan: "penetapan_ikrar_belum_ada" };
-  if (k.tglIkrar === k.tanggalSidang && bersih(k.amarIkrar).length >= 50 && Number(k.statusIkrar) === STATUS_DIIKRARKAN) {
-    return { ok: false, alasan: "form_ikrar_sudah_terisi" };
+  // ---- Idempoten (28 Okt 2026): status SAMA + tanggal sama = sudah terisi; status LAIN = ditolak, tidak ditimpa.
+  const statusTercatat = Number(k.statusIkrar) || 0;
+  if (statusTercatat === status && k.tglIkrar === k.tanggalSidang && bersih(k.amarIkrar).length >= 50) {
+    return { ok: false, alasan: "form_ikrar_sudah_terisi", status };
+  }
+  if (statusTercatat >= 1 && statusTercatat <= 3 && statusTercatat !== status) {
+    return {
+      ok: false,
+      alasan: "status_ikrar_lain_sudah_tercatat",
+      tercatat: STATUS_IKRAR[statusTercatat].nama,
+      diminta: STATUS_IKRAR[status].nama,
+    };
   }
   if (k.tglIkrar && k.tglIkrar !== k.tanggalSidang) {
     // Tanggal ikrar lain sudah tercatat - tidak ditimpa diam-diam.
@@ -289,27 +472,53 @@ async function siapkanIsianIkrar(minta, k) {
     }
   }
 
+  const batas = batasEnamBulanIkrar({ tanggalPenetapanSidangIkrar: k.tanggalPenetapanSidang });
+  // Syarat status pada tombol PUTUS (P2): kehadiran dipilih petugas saat itu.
+  if (minta.sudahPutus === true) {
+    const dihadiri = Number(minta.dihadiriOleh) || Number(k.dihadiriOleh) || 0;
+    const syarat = syaratStatusIkrar(status, { dihadiri, tanggalSidang: tanggalIkrar, batas });
+    if (!syarat.ok) return { ...syarat, status };
+  }
+
   const ketua = await ketuaMajelisIkrar(k.perkaraId);
   if (!ketua.ok) return { ok: false, alasan: ketua.alasan, nama: ketua.calon || [] };
 
-  const amarSudahAda = bersih(k.amarIkrar).length >= 50;
+  // Amar petugas dipertahankan hanya bila statusnya sama (status 1: juga bila status belum terisi, seperti dahulu).
+  const amarSudahAda =
+    bersih(k.amarIkrar).length >= 50 && (statusTercatat === status || (statusTercatat === 0 && status === STATUS_DIIKRARKAN));
   const biaya = amarSudahAda ? null : await (typeof minta.ambilBiaya === "function" ? minta.ambilBiaya : ambilBiayaIkrar)(k.perkaraId);
-  const amar = amarSudahAda ? k.amarIkrar : susunAmar(k.pihak1, k.pihak2, biaya);
+  const namaPengadilan = !amarSudahAda && status === STATUS_RUKUN_KEMBALI ? await namaPengadilanSatker() : "";
+  const amar = amarSudahAda
+    ? k.amarIkrar
+    : susunAmarIkrar(status, {
+        pihak1: k.pihak1,
+        pihak2: k.pihak2,
+        biaya,
+        nomorPerkara: k.nomorPerkara,
+        tanggalPutusan: k.tanggalPutusan,
+        namaPengadilan,
+      });
+  if (bersih(amar).length < 50) return { ok: false, alasan: "amar_ikrar_tidak_dapat_disusun", status };
   if (menyebutAleta(amar)) return { ok: false, alasan: "teks_menyebut_aleta" };
 
   const andaian = [];
   if (!amarSudahAda) {
+    const isi =
+      status === STATUS_DIIKRARKAN
+        ? "talak satu raj'i"
+        : status === STATUS_PEMOHON_TIDAK_HADIR
+          ? "Pemohon tidak hadir - putusan tidak mempunyai kekuatan hukum"
+          : "rukun kembali - ikrar tidak dijatuhkan, perkara dicoret dari register";
     andaian.push(
       biaya
-        ? `Amar penetapan ikrar disusun otomatis (talak satu raj'i); biaya penetapan Rp${biaya.angka},- diambil dari biaya perkara yang tercatat pada data satker.`
-        : "Amar penetapan ikrar disusun otomatis (talak satu raj'i); jumlah biaya penetapan tidak disebut karena tidak terbaca dari biaya perkara - periksa di SIPP."
+        ? `Amar penetapan ikrar disusun otomatis (${isi}); biaya penetapan Rp${biaya.angka},- diambil dari biaya perkara yang tercatat pada data satker.`
+        : `Amar penetapan ikrar disusun otomatis (${isi}); jumlah biaya penetapan tidak disebut karena tidak terbaca dari biaya perkara - periksa di SIPP.`
     );
   }
-  const batas = batasEnamBulanIkrar({ tanggalPenetapanSidangIkrar: k.tanggalPenetapanSidang });
-  if (batas && tanggalIkrar > batas) {
+  if (batas && tanggalIkrar > batas && status === STATUS_DIIKRARKAN) {
     andaian.push(`Tanggal ikrar ${tanggalIkrar} melewati batas 6 bulan ikrar (${batas}) - Pasal 70 ayat (6) UU 7/1989.`);
   }
-  return { ok: true, k, tanggalIkrar, ketua, amar, amarSudahAda, biaya, andaian, batas };
+  return { ok: true, k, status, tanggalIkrar, ketua, amar, amarSudahAda, biaya, andaian, batas };
 }
 
 /**
@@ -362,17 +571,21 @@ async function susunIsianBorangIkrar(minta = {}) {
 /**
  * Menyusun rencana pengisian form ikrar - TIDAK menulis apa pun.
  *
- * @param {object} minta { jadwalId, ip, operator, sudahPutus, ambilBiaya }  `sudahPutus`: keterangan
- *   jadwal sidang ditulis pada transaksi yang sama (belum terbaca di basis data).
+ * @param {object} minta { jadwalId, ip, operator, sudahPutus, ambilBiaya, statusIkrar, dihadiriOleh, saatSipp }
+ *   `sudahPutus`: keterangan jadwal sidang ditulis pada transaksi yang sama (belum terbaca di basis data).
  *   `ambilBiaya(perkaraId)`: pengganti pembaca biaya ikrar (uji); bawaannya variabel ABT 1101/2050.
+ *   `statusIkrar`: 1 (bawaan) / 2 / 3. `saatSipp`: jam SIPP langkah ini dari jam rangkaian
+ *   (P10: 3-30 menit sesudah keterangan sidang); tanpa itu jam SIPP sekarang.
  */
 async function susunRencanaIsiIkrar(minta = {}) {
   const k = await keadaanIkrar(minta.jadwalId);
   const siap = await siapkanIsianIkrar(minta, k);
   if (!siap.ok) return siap;
-  const { tanggalIkrar, ketua, amar, andaian, batas } = siap;
+  const { status, tanggalIkrar, ketua, amar, andaian, batas } = siap;
 
-  const saat = await penetapan.waktuSipp();
+  const saat = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(bersih(minta.saatSipp))
+    ? bersih(minta.saatSipp)
+    : await penetapan.waktuSipp();
   const ip = bersih(minta.ip);
   const langkah = [];
 
@@ -381,7 +594,7 @@ async function susunRencanaIsiIkrar(minta = {}) {
 
   const nilai = {
     tgl_ikrar_talak: tanggalIkrar,
-    status_penetapan_ikrar_talak_id: STATUS_DIIKRARKAN,
+    status_penetapan_ikrar_talak_id: status,
     amar_ikrar_talak: amar,
     diperbaharui_oleh: ketua.username,
     diperbaharui_tanggal: saat,
@@ -413,7 +626,7 @@ async function susunRencanaIsiIkrar(minta = {}) {
       nilai.diperbaharui_tanggal,
       k.perkaraId,
     ],
-    keterangan: `form ikrar talak: ikrar ${tanggalIkrar} (diikrarkan)`,
+    keterangan: `form ikrar talak: ikrar ${tanggalIkrar} (${STATUS_IKRAR[status].nama.toLowerCase()})`,
   });
 
   langkah.push(
@@ -460,17 +673,53 @@ async function susunRencanaIsiIkrar(minta = {}) {
     jenis: "isi-ikrar",
     perkara: { perkaraId: k.perkaraId, nomorPerkara: k.nomorPerkara },
     atasNama: { username: ketua.username, namaLengkap: ketua.fullname, peran: "ketua majelis ikrar talak" },
+    statusIkrar: status,
+    namaStatus: STATUS_IKRAR[status].nama,
     tanggalIkrar,
     batasEnamBulan: batas,
     saat,
     langkah,
     andaian,
+    // Klik ganda / penulis lain (28 Okt 2026): dijalankan sesudah baris perkara dikunci (FOR UPDATE)
+    // di dalam transaksi - form yang berubah sejak dibaca membatalkan seluruh rencana.
+    kunciPerkara: k.perkaraId,
+    periksaUlang: [periksaUlangFormIkrar(k)],
+  };
+}
+
+/**
+ * Pagar baca-ulang form ikrar: tanggal dan status yang tercatat harus SAMA dengan yang dibaca
+ * saat rencana disusun. Dijalankan jalankanRencanaUtuh di dalam transaksi.
+ */
+function periksaUlangFormIkrar(k) {
+  const tglHarap = bersih(k.tglIkrar);
+  const statusHarap = Number(k.statusIkrar) || 0;
+  return {
+    sql: `SELECT DATE_FORMAT(tgl_ikrar_talak, '%Y-%m-%d') AS tgl, status_penetapan_ikrar_talak_id AS status
+            FROM perkara_ikrar_talak WHERE perkara_id = ?`,
+    params: [k.perkaraId],
+    alasan: "form_ikrar_berubah_sebelum_ditulis",
+    cocok: (baris) => {
+      const r = Array.isArray(baris) && baris[0];
+      if (!r) return false;
+      return bersih(r.tgl) === tglHarap && (Number(r.status) || 0) === statusHarap;
+    },
   };
 }
 
 module.exports = {
   HASIL_SIDANG_IKRAR,
   KETERANGAN_IKRAR,
+  STATUS_IKRAR,
+  HARI_SEBELUM_BATAS_GUGUR,
+  statusIkrarDiminta,
+  statusIkrarMenurutTeks,
+  syaratStatusIkrar,
+  susunAmarIkrar,
+  tanggalPanjang,
+  hurufJudul,
+  namaPengadilanSatker,
+  periksaUlangFormIkrar,
   ikrarTerlaksanaMenurutTeks,
   tambahBulan,
   batasEnamBulanIkrar,

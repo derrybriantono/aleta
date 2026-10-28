@@ -114,7 +114,11 @@ describe("penjaga sumber: tiap penulis ke SIPP memakai jam SIPP, bukan NOW()/jam
     // jumlahnya memang naik dari 2 menjadi 3 - bukan jalur yang lolos dari penjaga.
     expect(s.split("const saat = await penetapan.waktuSipp();").length - 1).toBe(3);
     expect(s).not.toContain("const saat = await penetapan.waktuBasisData();");
-    expect(s.split("jamDariCap(saatSetempat)").length - 1).toBe(3);
+    // Putus ikrar (28 Okt 2026, P10): sampai_jam = jam SETEMPAT langkah keterangan sidang
+    // (jam SIPP rangkaian + selisih zona setempat), bukan jam tombol - tetap setempat.
+    expect(s.split("jamDariCap(saatSetempat)").length - 1).toBe(2);
+    expect(s).toContain("jamDariCap(setempatJadwal)");
+    expect(s).toContain("const saatSetempat = await penetapan.waktuBasisData();");
     // Jalur putus ikrar tidak boleh memakai NOW()/CURRENT_TIMESTAMP/jam container sebagai nilai tulis.
     const awalIkrar = s.indexOf("async function susunRencanaPutusIkrar");
     expect(awalIkrar).toBeGreaterThan(-1);

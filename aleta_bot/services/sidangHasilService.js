@@ -408,6 +408,118 @@ async function paniteraSidang(perkaraId, tanggalSidang) {
 }
 
 /**
+ * ============================================================================
+ * PANITERA SIDANG IKRAR TALAK = PP IKRAR, BUKAN PP PEMERIKSAAN (28 Okt 2026)
+ * ============================================================================
+ *
+ * Keputusan pengguna P3 28 Okt 2026: keterangan sidang ikrar dicatat atas akun
+ * PP IKRAR. Diukur atas sipp_donggala (ikrar 2025+): penutup sidang ikrar = PP
+ * ikrar pada 114/133; PP ikrar berbeda dari PP pemeriksaan pada 9 dari 178
+ * perkara - jalur lama (perkara_panitera_pn aktif) mencatatnya atas PP yang salah.
+ *
+ * Urutan sumber, berhenti pada yang pertama terisi:
+ *   1. perkara_ikrar_talak.panitera_pengganti_id (hasil PPP ikrar, proses 291);
+ *   2. perkara_panitera_pn tahapan 18 aktif;
+ *   3. PP pemeriksaan aktif - HANYA bila tunggal; selain itu ditolak
+ *      `panitera_sidang_ikrar_tidak_pasti` (tidak menebak).
+ * Akun ganda / diblokir / tidak ada ditolak oleh pilihPaniteraSidang yang sama.
+ */
+async function paniteraSidangIkrar(perkaraId, tanggalSidang) {
+  const id = Number(perkaraId);
+  if (!Number.isInteger(id) || id <= 0) return { ok: false, alasan: "panitera_sidang_tidak_ketemu" };
+  const dariIkrar = await kueri(
+    `SELECT it.panitera_pengganti_id AS panitera_id, it.panitera_pengganti_text AS panitera_nama,
+            it.penetapan_panitera_pengganti AS tanggal_penetapan, d.username, d.fullname, d.block
+       FROM perkara_ikrar_talak it
+       LEFT JOIN v_users d ON d.panitera_id = it.panitera_pengganti_id
+      WHERE it.perkara_id = ? AND COALESCE(it.panitera_pengganti_id, '') NOT IN ('', '0')`,
+    [id]
+  ).catch(() => null);
+  if (!Array.isArray(dariIkrar)) return { ok: false, alasan: "panitera_sidang_tidak_terbaca" };
+  if (dariIkrar.length > 0) return { ...pilihPaniteraSidang(dariIkrar, tanggalSidang), sumber: "pp_ikrar" };
+
+  const semua = await kueri(
+    `SELECT c.panitera_id, c.panitera_nama, c.tanggal_penetapan, c.tahapan_id,
+            d.username, d.fullname, d.block
+       FROM perkara_panitera_pn c
+       LEFT JOIN v_users d ON d.panitera_id = c.panitera_id
+      WHERE c.aktif = 'Y' AND c.perkara_id = ?`,
+    [id]
+  ).catch(() => null);
+  if (!Array.isArray(semua)) return { ok: false, alasan: "panitera_sidang_tidak_terbaca" };
+  const tahapIkrar = semua.filter((b) => Number(b.tahapan_id) === 18);
+  if (tahapIkrar.length > 0) return { ...pilihPaniteraSidang(tahapIkrar, tanggalSidang), sumber: "pp_tahapan_ikrar" };
+  const pemeriksaan = [...new Set(semua.map((b) => String(b.panitera_id ?? "")))];
+  if (pemeriksaan.length > 1) {
+    const nama = [...new Set(semua.map((b) => bersih(b.panitera_nama || b.fullname)).filter(Boolean))];
+    return { ok: false, alasan: "panitera_sidang_ikrar_tidak_pasti", nama };
+  }
+  return { ...pilihPaniteraSidang(semua, tanggalSidang), sumber: "pp_pemeriksaan" };
+}
+
+/** PP yang tercatat untuk SATU jadwal: PP ikrar bagi sidang ikrar talak, PP perkara selain itu. */
+async function paniteraUntukJadwal(keadaan) {
+  if (!keadaan) return { ok: false, alasan: "panitera_sidang_tidak_ketemu" };
+  return bersih(keadaan.ikrarTalak).toUpperCase() === "Y"
+    ? paniteraSidangIkrar(keadaan.perkaraId, keadaan.tanggalSidang)
+    : paniteraSidang(keadaan.perkaraId, keadaan.tanggalSidang);
+}
+
+/**
+ * ============================================================================
+ * DESKRIPSI AUDIT BORANG "EDIT JADWAL SIDANG": 13 KOLOM, URUTAN BORANG (28 Okt)
+ * ============================================================================
+ *
+ * jadwal_sidang_c.php::validateEdit menyusun $data2 lalu fetch_description
+ * mencetaknya apa adanya. Terukur 795 baris borang di sipp_donggala: SELALU
+ *   tanggal_sidang, jam_sidang, sampai_jam, agenda, dihadiri_oleh, alasan_ditunda,
+ *   sifat_sidang, keterangan, diperbaharui_oleh, diperbaharui_tanggal,
+ *   ruangan_id, ruangan, sidang_keliling
+ * - tanpa `ditunda`, jam "HH:mm" seperti yang diketik di borang (exact_length[5]).
+ * Dahulu ALETA mencetak 8 kolom termasuk `ditunda`: susunan yang tidak pernah
+ * dibuat SIPP (keputusan P3a, juga untuk tombol Putus biasa).
+ *
+ * Nilainya = keadaan baris SESUDAH ditulis (yang berubah dari `nilaiBaru`, yang
+ * lain dari baris itu sendiri) - persis yang dikirim borang yang dibuka atas
+ * baris itu. Sifat sidang kosong diisi bawaan borang (jadwal_sidang_p_edit.php:
+ * Tertutup bagi alur 118 / jenis 64,98,311,346,347,242, selain itu Terbuka).
+ */
+const JENIS_SIDANG_TERTUTUP = new Set([64, 98, 311, 346, 347, 242]);
+function sifatSidangBorang(keadaan) {
+  const ada = bersih(keadaan && keadaan.sifatSidang).toUpperCase();
+  if (ada === "Y" || ada === "T") return ada;
+  return Number(keadaan && keadaan.alurPerkaraId) === 118 || JENIS_SIDANG_TERTUTUP.has(Number(keadaan && keadaan.jenisPerkaraId))
+    ? "T"
+    : "Y";
+}
+
+function jamKetikBorang(jam) {
+  const m = String(jam || "").match(/(\d{1,2}):(\d{2})/);
+  return m ? `${m[1].padStart(2, "0")}:${m[2]}` : "";
+}
+
+function nilaiAuditEditJadwal(keadaan, nilaiBaru) {
+  const k = keadaan || {};
+  const n = nilaiBaru || {};
+  const pilih = (kolom, cadangan) => (Object.prototype.hasOwnProperty.call(n, kolom) ? n[kolom] : cadangan);
+  return {
+    tanggal_sidang: penetapan.tanggalIso(pilih("tanggal_sidang", k.tanggalSidang)),
+    jam_sidang: jamKetikBorang(pilih("jam_sidang", k.jamSidang)),
+    sampai_jam: jamKetikBorang(pilih("sampai_jam", k.sampaiJam)),
+    agenda: pilih("agenda", k.agenda),
+    dihadiri_oleh: pilih("dihadiri_oleh", k.dihadiriOleh),
+    alasan_ditunda: pilih("alasan_ditunda", k.alasanDitundaAsli !== undefined ? k.alasanDitundaAsli : k.alasanDitunda),
+    sifat_sidang: pilih("sifat_sidang", sifatSidangBorang(k)),
+    keterangan: pilih("keterangan", k.keterangan),
+    diperbaharui_oleh: n.diperbaharui_oleh,
+    diperbaharui_tanggal: n.diperbaharui_tanggal,
+    ruangan_id: pilih("ruangan_id", k.ruanganId),
+    ruangan: pilih("ruangan", k.ruangan),
+    sidang_keliling: pilih("sidang_keliling", bersih(k.sidangKeliling).toUpperCase() === "Y" ? "Y" : "T"),
+  };
+}
+
+/**
  * Sidang yang SUDAH ditunda: utuh (ada sidang sesudahnya) atau setengah jadi
  * (ditunda='Y' tetapi sidang berikutnya tidak pernah lahir - keadaan 273).
  * null = tidak terbaca.
@@ -486,6 +598,20 @@ async function jalankanRencanaUtuh(rencana, opsi = {}) {
 
   try {
     await lewat("START TRANSACTION");
+    // KLIK GANDA / PENULIS LAIN (28 Okt 2026, putus ikrar): baris perkara dikunci lebih
+    // dahulu - permintaan kedua menunggu sampai yang pertama COMMIT - lalu keadaan yang
+    // dipakai menyusun rencana dibaca ULANG lewat sambungan yang sama. Yang berubah
+    // membatalkan seluruh rencana, tidak ada yang tertulis dua kali.
+    if (Number(rencana.kunciPerkara) > 0) {
+      await lewat("SELECT perkara_id FROM perkara WHERE perkara_id = ? FOR UPDATE", [Number(rencana.kunciPerkara)]);
+    }
+    for (const pagar of Array.isArray(rencana.periksaUlang) ? rencana.periksaUlang : []) {
+      const baris = await lewat(pagar.sql, pagar.params || []);
+      if (pagar.cocok(baris) !== true) {
+        const dipulihkan = await batalkan();
+        return { ok: false, kering: false, alasan: pagar.alasan || "keadaan_berubah_sebelum_ditulis", dipulihkan, selesai: [] };
+      }
+    }
     const hasil = await penetapan.jalankanRencana(rencana, { kering: false, kueri: lewat });
     if (!hasil.ok) {
       const dipulihkan = await batalkan();
@@ -554,6 +680,7 @@ async function keadaanJadwal(jadwalId) {
             j.urutan        AS urutan,
             j.ditunda       AS ditunda,
             ${sqlAlasanHasil("j")} AS alasanDitunda,
+            j.alasan_ditunda AS alasanDitundaAsli,
             j.ruangan_id    AS ruanganId,
             j.ruangan       AS ruangan,
             j.sidang_keliling AS sidangKeliling,
@@ -1525,6 +1652,9 @@ async function susunRencanaPutus(minta = {}) {
   const nilaiRuang = ubahRuang
     ? [ruangSidang.nilai.ruangan_id, ruangSidang.nilai.ruangan, ruangSidang.nilai.sidang_keliling]
     : [];
+  // Borang Edit selalu mengirim sifat sidang (bawaannya bila kosong) - lihat nilaiAuditEditJadwal.
+  const sifatKosong = !["Y", "T"].includes(bersih(keadaan.sifatSidang).toUpperCase());
+  if (sifatKosong) nilaiJadwal.sifat_sidang = sifatSidangBorang(keadaan);
   langkah.push({
     tabel: "perkara_jadwal_sidang",
     aksi: "UPDATE",
@@ -1534,7 +1664,7 @@ async function susunRencanaPutus(minta = {}) {
     sql:
       `UPDATE perkara_jadwal_sidang
           SET sampai_jam = ?, alasan_ditunda = ?, jam_sidang = ?, ditunda = ?,
-              ${adaDihadiri ? "dihadiri_oleh = ?, " : ""}${kolomRuang}diperbaharui_oleh = ?, diperbaharui_tanggal = ?
+              ${adaDihadiri ? "dihadiri_oleh = ?, " : ""}${kolomRuang}${sifatKosong ? "sifat_sidang = ?, " : ""}diperbaharui_oleh = ?, diperbaharui_tanggal = ?
         WHERE id = ?`,
     params: [
       nilaiJadwal.sampai_jam,
@@ -1543,6 +1673,7 @@ async function susunRencanaPutus(minta = {}) {
       nilaiJadwal.ditunda,
       ...(adaDihadiri ? [dihadiri] : []),
       ...nilaiRuang,
+      ...(sifatKosong ? [nilaiJadwal.sifat_sidang] : []),
       nilaiJadwal.diperbaharui_oleh,
       nilaiJadwal.diperbaharui_tanggal,
       keadaan.jadwalId,
@@ -1554,7 +1685,8 @@ async function susunRencanaPutus(minta = {}) {
       tabel: "perkara_jadwal_sidang",
       formulir: NAMA_HALAMAN_EDIT,
       aksi: "UPDATE",
-      nilai: nilaiJadwal,
+      // 13 kolom borang Edit, urutan borang, tanpa `ditunda` (P3a 28 Okt 2026).
+      nilai: nilaiAuditEditJadwal(keadaan, { ...nilaiJadwal, ...(adaDihadiri ? { dihadiri_oleh: dihadiri } : {}) }),
       kunciSendiri: `id=${keadaan.jadwalId}`,
       ip,
       saat,
@@ -1683,36 +1815,121 @@ async function susunRencanaPutus(minta = {}) {
 
 /**
  * ============================================================================
- * PUTUS SIDANG IKRAR TALAK: "IKRAR DILAKSANAKAN" (permintaan 18 Okt 2026)
+ * PUTUS SIDANG IKRAR TALAK: TIGA STATUS SEPERTI BORANG SIPP (18 Okt, 28 Okt 2026)
  * ============================================================================
  *
  * Sidang ikrar tidak memutus perkara (putusannya dijatuhkan jauh sebelumnya) -
- * yang dicatat adalah IKRAR TERLAKSANA. Tombol PUTUS pada sidang ikrar karena
- * itu tidak menanyakan jenis putusan; petugas hanya mengonfirmasi "ikrar
- * dilaksanakan". Yang ditulis:
+ * yang dicatat adalah HASIL SIDANG IKRAR menurut pilihan petugas (P1 28 Okt):
+ * 1 Diikrarkan (bawaan), 2 Pemohon Tidak Hadir (gugur), 3 Rukun Kembali. Yang
+ * ditulis:
  *
  *   1. perkara_jadwal_sidang: ditunda = 'T', alasan_ditunda (kolom hasil sidang)
- *      "telah ikrar talak" - EJAAN SIPP SENDIRI (446 sidang ikrar di satker),
- *      dan keterangan "Ikrar Telah Dilaksanakan" (diisi bila kosong; bila sudah
- *      ada isi petugas, ditambahkan di belakang - tidak ditimpa). Atas nama PP
- *      perkara (keputusan 7 Okt 2026), seperti tombol putus biasa.
- *   2. Form "Penetapan Ikrar Talak" (ikrarTalakService), atas nama KETUA MAJELIS
- *      ikrar. Bila form belum dapat diisi (mis. penetapan majelis ikrar belum
- *      ada), hasil sidangnya tetap dicatat dan sebabnya dilaporkan di andaian.
+ *      menurut status (ikrarTalakService.STATUS_IKRAR; status 1 "telah ikrar
+ *      talak" - EJAAN SIPP SENDIRI), dan keterangan baku status itu (diisi bila
+ *      kosong; isi petugas tidak ditimpa, ditambahkan di belakang). Pola borang
+ *      EDIT JADWAL SIDANG + sys_audittrail 13 kolom atas akun PP IKRAR
+ *      (paniteraSidangIkrar, keputusan P3a).
+ *   2. Form "Penetapan Ikrar Talak" (ikrarTalakService), atas akun KETUA MAJELIS
+ *      ikrar, 3-30 menit SESUDAH keterangan sidang (P10, jamRangkaianManusia
+ *      "ikrar-jadwal>ikrar-penetapan"); keduanya <= jam SIPP sekarang, keterangan
+ *      tidak mendahului jam masuk ruang (antrian). Bila form belum dapat diisi
+ *      (mis. penetapan majelis ikrar belum ada), hasil sidangnya tetap dicatat dan
+ *      sebabnya dilaporkan di andaian.
+ *
+ * IDEMPOTEN: jadwal yang sudah ditutup dengan status yang SAMA tidak ditulis ulang
+ * (tanpa baris audit baru); form berstatus sama + tanggal sama dilewati (tinggal
+ * e-Doc); form berstatus LAIN atau bertanggal lain DITOLAK utuh - tidak ditimpa.
+ * KLIK GANDA: baris perkara dikunci FOR UPDATE di dalam transaksi lalu jadwal dan
+ * form dibaca ulang (periksaUlang) - yang berubah sejak rencana disusun membatalkan
+ * seluruhnya.
  *
  * Semuanya dalam SATU transaksi (jalankanRencanaUtuh).
  */
+function detikTeks(teks) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/.exec(String(teks || ""));
+  return m ? Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]) / 1000 : NaN;
+}
+
+function teksDetik(detik) {
+  const d = new Date(detik * 1000);
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())} ${p(d.getUTCHours())}:${p(
+    d.getUTCMinutes()
+  )}:${p(d.getUTCSeconds())}`;
+}
+
+/**
+ * Jam SIPP dua langkah putus ikrar (P10). `saat` jam SIPP sekarang, `saatSetempat`
+ * jam basis data (WITA) - selisihnya dipakai menerjemahkan jam masuk ruang antrian
+ * (setempat) ke jam SIPP. Kejadian perkara yang tercatat DI DEPAN jam SIPP (baris lama
+ * ber-NOW() setempat) tidak dipakai sebagai lantai: ia hanya akan merapatkan kedua
+ * langkah menjadi sedetik - cacat yang justru diperbaiki di sini.
+ */
+async function jamPutusIkrar({ keadaan, antrian, saat, saatSetempat, urutan, acak }) {
+  const kini = detikTeks(saat);
+  const selisih = Math.round((detikTeks(saatSetempat) - kini) / 60) * 60;
+  const calon = [];
+  if (antrian && antrian.jamMasuk && Number.isFinite(selisih)) {
+    const masuk = detikTeks(`${penetapan.tanggalIso(keadaan.tanggalSidang)} ${bersih(antrian.jamMasuk).slice(0, 8)}`);
+    if (Number.isFinite(masuk)) calon.push(masuk - selisih);
+  }
+  const kejadian =
+    typeof penetapan.lantaiKejadianPerkara === "function"
+      ? detikTeks(await penetapan.lantaiKejadianPerkara(keadaan.perkaraId).catch(() => ""))
+      : NaN;
+  if (Number.isFinite(kejadian) && kejadian <= kini) calon.push(kejadian);
+  const lantai = calon.filter((x) => Number.isFinite(x) && x <= kini);
+  const hasil = penetapan.jamRangkaianManusia({
+    urutan,
+    sekarang: saat,
+    lantai: lantai.length ? teksDetik(Math.max(...lantai)) : "",
+    acak,
+  });
+  return { ...hasil, selisihSetempat: Number.isFinite(selisih) ? selisih : 0 };
+}
+
+/** Pagar baca-ulang baris jadwal: hasil sidang yang tercatat harus sama dengan saat rencana disusun. */
+function periksaUlangJadwal(keadaan) {
+  const harap = [bersih(keadaan.ditunda), bersih(keadaan.alasanDitundaAsli), bersih(keadaan.keterangan)];
+  return {
+    sql: `SELECT ditunda, alasan_ditunda, keterangan FROM perkara_jadwal_sidang WHERE id = ?`,
+    params: [keadaan.jadwalId],
+    alasan: "jadwal_berubah_sebelum_ditulis",
+    cocok: (baris) => {
+      const r = Array.isArray(baris) && baris[0];
+      if (!r) return false;
+      return bersih(r.ditunda) === harap[0] && bersih(r.alasan_ditunda) === harap[1] && bersih(r.keterangan) === harap[2];
+    },
+  };
+}
+
+/** Keterangan sidang ikrar: isi petugas tidak ditimpa; keterangan BAKU status lain diganti. */
+function keteranganIkrar(ada, status) {
+  const baku = ikrar.STATUS_IKRAR[status].keterangan;
+  const t = bersih(ada);
+  if (!t) return baku;
+  if (t.toLowerCase().includes(baku.toLowerCase())) return t;
+  const bakuLain = Object.values(ikrar.STATUS_IKRAR).map((x) => x.keterangan.toLowerCase());
+  if (bakuLain.includes(t.toLowerCase())) return baku;
+  return `${t}; ${baku}`.slice(0, 500);
+}
+
 async function susunRencanaPutusIkrar(minta = {}) {
   const keadaan = await keadaanJadwal(minta.jadwalId);
   if (!keadaan) return { ok: false, alasan: "jadwal_tidak_ketemu" };
   if (bersih(keadaan.ikrarTalak) !== "Y") return { ok: false, alasan: "bukan_sidang_ikrar" };
-  if (minta.ikrarDilaksanakan !== true) return { ok: false, alasan: "ikrar_belum_dikonfirmasi" };
+  const status = ikrar.statusIkrarDiminta(minta.statusIkrar);
+  if (!status) return { ok: false, alasan: "status_ikrar_tidak_dikenal" };
+  // Konfirmasi tegas: status 1 "ikrar dilaksanakan" (sejak 18 Okt); status 2/3 pilihannya.
+  const dikonfirmasi = status === 1 ? minta.ikrarDilaksanakan === true : minta.konfirmasiStatus === true;
+  if (!dikonfirmasi) return { ok: false, alasan: "ikrar_belum_dikonfirmasi" };
   if (bersih(keadaan.ditunda) === "Y") {
     const utuh = await adaSidangSesudah(keadaan);
     if (utuh !== false) return { ok: false, alasan: "sidang_ditunda_tidak_dapat_diputus" };
   }
+  const teksStatus = ikrar.STATUS_IKRAR[status];
 
-  const pp = await paniteraSidang(keadaan.perkaraId, keadaan.tanggalSidang);
+  const pp = await paniteraSidangIkrar(keadaan.perkaraId, keadaan.tanggalSidang);
   if (!pp.ok) return { ok: false, alasan: pp.alasan, nama: pp.nama || [] };
   const akun = pp.akun;
   const antrian = await antrianSidangUntuk(keadaan);
@@ -1726,89 +1943,164 @@ async function susunRencanaPutusIkrar(minta = {}) {
   if (antrian && antrian.jamMasuk) {
     andaian.push(`Jam mulai sidang ${antrian.jamMasuk.slice(0, 5)} diambil dari antrian sidang (jam masuk ruang).`);
   }
+  if (pp.sumber && pp.sumber !== "pp_ikrar") {
+    andaian.push(
+      pp.sumber === "pp_tahapan_ikrar"
+        ? "PP ikrar belum tercatat di penetapan ikrar; dipakai PP tahapan ikrar yang aktif."
+        : "PP ikrar belum ditetapkan; dipakai PP pemeriksaan (satu-satunya yang aktif)."
+    );
+  }
 
-  // Keterangan: tidak menimpa tulisan petugas.
-  const ada = bersih(keadaan.keterangan);
-  const keterangan = !ada
-    ? ikrar.KETERANGAN_IKRAR
-    : ada.toLowerCase().includes(ikrar.KETERANGAN_IKRAR.toLowerCase())
-      ? ada
-      : `${ada}; ${ikrar.KETERANGAN_IKRAR}`.slice(0, 500);
+  // Jadwal yang SUDAH ditutup dengan status yang sama tidak ditulis ulang (idempoten).
+  const jadwalSudah =
+    bersih(keadaan.ditunda) !== "Y" &&
+    [keadaan.alasanDitundaAsli, keadaan.keterangan].some((t) => ikrar.statusIkrarMenurutTeks(t) === status);
+  const statusJadwalLain =
+    bersih(keadaan.ditunda) !== "Y"
+      ? [keadaan.alasanDitundaAsli, keadaan.keterangan].map((t) => ikrar.statusIkrarMenurutTeks(t)).find((s) => s && s !== status) || 0
+      : 0;
 
+  // Jam dua akun seperti orang bekerja (P10).
+  const jam = await jamPutusIkrar({
+    keadaan,
+    antrian,
+    saat,
+    saatSetempat,
+    urutan: jadwalSudah ? ["ikrar-penetapan"] : ["ikrar-jadwal", "ikrar-penetapan"],
+    acak: minta.acak,
+  });
+  const saatJadwal = jam.jam["ikrar-jadwal"] || saat;
+  const saatForm = jam.jam["ikrar-penetapan"] || saat;
+  const setempatJadwal = teksDetik(detikTeks(saatJadwal) + (jam.selisihSetempat || 0));
+
+  const langkah = [];
+  const periksaUlang = [periksaUlangJadwal(keadaan)];
+  const jamMulai = (antrian && antrian.jamMasuk) || bersih(minta.jamSekarang) || bersih(keadaan.jamSidang);
   const nilaiJadwal = {
-    sampai_jam: jamSelesaiBorang(
-      (antrian && antrian.jamMasuk) || bersih(minta.jamSekarang) || bersih(keadaan.jamSidang),
-      jamDariCap(saatSetempat)
-    ),
-    alasan_ditunda: ikrar.HASIL_SIDANG_IKRAR,
-    keterangan,
-    jam_sidang: jamBorang((antrian && antrian.jamMasuk) || bersih(minta.jamSekarang) || bersih(keadaan.jamSidang)),
+    sampai_jam: jamSelesaiBorang(jamMulai, jamDariCap(setempatJadwal)),
+    alasan_ditunda: teksStatus.hasil,
+    keterangan: keteranganIkrar(keadaan.keterangan, status),
+    jam_sidang: jamBorang(jamMulai),
     ditunda: "T",
     ...(adaDihadiri ? { dihadiri_oleh: dihadiri } : {}),
     diperbaharui_oleh: akun.username,
-    diperbaharui_tanggal: saat,
+    diperbaharui_tanggal: saatJadwal,
   };
-  const langkah = [];
-  langkah.push({
-    tabel: "perkara_jadwal_sidang",
-    aksi: "UPDATE",
-    keterangan: `sidang ikrar ${penetapan.tanggalIso(keadaan.tanggalSidang)} selesai - ikrar telah dilaksanakan`,
-    sql:
-      `UPDATE perkara_jadwal_sidang
-          SET sampai_jam = ?, alasan_ditunda = ?, keterangan = ?, jam_sidang = ?, ditunda = ?,
-              ${adaDihadiri ? "dihadiri_oleh = ?, " : ""}diperbaharui_oleh = ?, diperbaharui_tanggal = ?
-        WHERE id = ?`,
-    params: [
-      nilaiJadwal.sampai_jam,
-      nilaiJadwal.alasan_ditunda,
-      nilaiJadwal.keterangan,
-      nilaiJadwal.jam_sidang,
-      nilaiJadwal.ditunda,
-      ...(adaDihadiri ? [dihadiri] : []),
-      nilaiJadwal.diperbaharui_oleh,
-      nilaiJadwal.diperbaharui_tanggal,
-      keadaan.jadwalId,
-    ],
-  });
-  langkah.push(
-    penetapan.barisAudit({
-      username: akun.username,
+  const sifatKosong = !["Y", "T"].includes(bersih(keadaan.sifatSidang).toUpperCase());
+  if (sifatKosong) nilaiJadwal.sifat_sidang = sifatSidangBorang(keadaan);
+  if (jadwalSudah) {
+    andaian.push("Hasil sidang ikrar ini sudah tercatat di jadwal sidang dengan status yang sama - tidak ditulis ulang.");
+  } else {
+    if (statusJadwalLain) {
+      andaian.push(
+        `Hasil sidang yang tercatat sebelumnya ("${bersih(keadaan.alasanDitundaAsli) || bersih(keadaan.keterangan)}") diganti menjadi "${teksStatus.hasil}".`
+      );
+    }
+    langkah.push({
       tabel: "perkara_jadwal_sidang",
-      formulir: NAMA_HALAMAN_EDIT,
       aksi: "UPDATE",
-      nilai: nilaiJadwal,
-      kunciSendiri: `id=${keadaan.jadwalId}`,
-      ip,
-      saat,
-    })
-  );
+      keterangan: `sidang ikrar ${penetapan.tanggalIso(keadaan.tanggalSidang)} selesai - ${teksStatus.hasil}`,
+      sql:
+        `UPDATE perkara_jadwal_sidang
+            SET sampai_jam = ?, alasan_ditunda = ?, keterangan = ?, jam_sidang = ?, ditunda = ?,
+                ${adaDihadiri ? "dihadiri_oleh = ?, " : ""}${sifatKosong ? "sifat_sidang = ?, " : ""}diperbaharui_oleh = ?, diperbaharui_tanggal = ?
+          WHERE id = ?`,
+      params: [
+        nilaiJadwal.sampai_jam,
+        nilaiJadwal.alasan_ditunda,
+        nilaiJadwal.keterangan,
+        nilaiJadwal.jam_sidang,
+        nilaiJadwal.ditunda,
+        ...(adaDihadiri ? [dihadiri] : []),
+        ...(sifatKosong ? [nilaiJadwal.sifat_sidang] : []),
+        nilaiJadwal.diperbaharui_oleh,
+        nilaiJadwal.diperbaharui_tanggal,
+        keadaan.jadwalId,
+      ],
+    });
+    langkah.push(
+      penetapan.barisAudit({
+        username: akun.username,
+        tabel: "perkara_jadwal_sidang",
+        formulir: NAMA_HALAMAN_EDIT,
+        aksi: "UPDATE",
+        // 13 kolom borang Edit, urutan borang, tanpa `ditunda` (P3a 28 Okt 2026).
+        nilai: nilaiAuditEditJadwal(keadaan, nilaiJadwal),
+        kunciSendiri: `id=${keadaan.jadwalId}`,
+        ip,
+        saat: saatJadwal,
+      })
+    );
+  }
 
-  // Form ikrar - atas nama ketua majelis ikrar. Gagal menyusun = andaian, bukan penolakan.
-  const form = await ikrar.susunRencanaIsiIkrar({ jadwalId: keadaan.jadwalId, ip, sudahPutus: true });
+  // Form ikrar - atas nama ketua majelis ikrar, jam langkah kedua.
+  const form = await ikrar.susunRencanaIsiIkrar({
+    jadwalId: keadaan.jadwalId,
+    ip,
+    sudahPutus: true,
+    statusIkrar: status,
+    dihadiriOleh: adaDihadiri ? dihadiri : undefined,
+    saatSipp: saatForm,
+    ambilBiaya: minta.ambilBiaya,
+  });
   let formIkrar = { ok: false, alasan: form.alasan };
+  // Tolak UTUH bila keadaan form bertentangan dengan pilihan (status/tanggal lain, syarat status
+  // tidak terpenuhi): jadwal yang ditutup berlawanan dengan form lebih buruk daripada tidak ada tulisan.
+  const TOLAK_UTUH = new Set([
+    "status_ikrar_lain_sudah_tercatat",
+    "tanggal_ikrar_lain_sudah_tercatat",
+    "pemohon_tidak_hadir_tidak_dapat_diikrarkan",
+    "gugur_hanya_bila_pemohon_tidak_hadir",
+    "gugur_tenggat_belum_berjalan",
+    "gugur_belum_sidang_terakhir",
+    "rukun_kembali_pemohon_tidak_hadir",
+    "amar_ikrar_tidak_dapat_disusun",
+    "teks_menyebut_aleta",
+  ]);
+  if (!form.ok && TOLAK_UTUH.has(form.alasan)) return { ...form, ok: false };
   if (form.ok) {
     langkah.push(...form.langkah);
     andaian.push(...(form.andaian || []));
-    formIkrar = { ok: true, atasNama: form.atasNama, tanggalIkrar: form.tanggalIkrar };
+    periksaUlang.push(...(form.periksaUlang || []));
+    formIkrar = {
+      ok: true,
+      atasNama: form.atasNama,
+      tanggalIkrar: form.tanggalIkrar,
+      statusIkrar: status,
+      namaStatus: teksStatus.nama,
+      saat: saatForm,
+    };
+  } else if (form.alasan === "form_ikrar_sudah_terisi") {
+    formIkrar = { ok: true, sudahTerisi: true, statusIkrar: status, namaStatus: teksStatus.nama };
+    andaian.push("Form ikrar talak di SIPP sudah terisi dengan status dan tanggal yang sama - tidak ditulis ulang.");
   } else {
     andaian.push(
       `Hasil sidang dicatat, tetapi form ikrar talak di SIPP BELUM terisi (${form.alasan}). Isi lewat tombol Isi form ikrar setelah sebabnya dibereskan.`
     );
   }
+  if (jam.catatan && jam.catatan.includes("jeda_dirapatkan") && langkah.length) {
+    andaian.push("Jarak jam keterangan sidang dan penetapan ikrar dirapatkan karena sidang baru saja dimulai.");
+  }
 
   return {
     ok: true,
     jenis: "putus-ikrar",
+    statusIkrar: status,
+    namaStatus: teksStatus.nama,
+    hasilSidang: teksStatus.hasil,
     hanyaJadwal: !form.ok,
+    jadwalSudahTercatat: jadwalSudah,
     antrian,
     perkara: { perkaraId: keadaan.perkaraId, nomorPerkara: keadaan.nomorPerkara },
     sidangSekarang: { jadwalId: keadaan.jadwalId, tanggal: penetapan.tanggalIso(keadaan.tanggalSidang) },
-    atasNama: { username: akun.username, namaLengkap: akun.fullname, peran: "panitera sidang" },
+    atasNama: { username: akun.username, namaLengkap: akun.fullname, peran: "panitera sidang ikrar", saat: jadwalSudah ? "" : saatJadwal },
     formIkrar,
     operator: bersih(minta.operator),
     saat,
     langkah,
     andaian,
+    kunciPerkara: keadaan.perkaraId,
+    periksaUlang,
   };
 }
 
@@ -1879,6 +2171,11 @@ module.exports = {
   antrianSidangUntuk,
   pilihPaniteraSidang,
   paniteraSidang,
+  paniteraSidangIkrar,
+  paniteraUntukJadwal,
+  nilaiAuditEditJadwal,
+  sifatSidangBorang,
+  keteranganIkrar,
   adaSidangSesudah,
   // Rencana dijalankan oleh mesin yang sama dengan penetapan - satu penjalan,
   // satu daftar putih tabel, satu cara mengisi kunci utama pada judul audit -

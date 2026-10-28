@@ -1,4 +1,4 @@
-import { isPrivilegedAdmin } from "@/lib/permissions";
+import { getEffectiveRoleId, isPrivilegedAdmin } from "@/lib/permissions";
 import { type RoleId } from "@/lib/types";
 import { type AletaDatabase } from "@/server/db/client";
 import { PERAN_PENGAWAS_PUTUSAN, pastikanMilikPerkara } from "@/server/modules/aleta-ecourt/hak-milik-perkara";
@@ -93,4 +93,40 @@ export async function pastikanMajelisPutusan(
   if (!/^\d{1,12}$/.test(pid)) throw new ApiError(400, "Nomor perkara SIPP (perkara_id) tidak sah.");
   const milik = await pastikanMilikPerkara({ jenis: "putusan", perkaraId: pid, namaAkun: String(actor?.name ?? ""), pengawas: false });
   if (!milik.ok) throw new ApiError(milik.status, milik.pesan);
+}
+
+/**
+ * ============================================================================
+ * HASIL SIDANG IKRAR "PEMOHON TIDAK HADIR" / "RUKUN KEMBALI" (P7, 28 Okt 2026)
+ * ============================================================================
+ *
+ * Keputusan pengguna: status 2 (kekuatan putusan gugur) dan 3 (rukun kembali,
+ * perkara dicoret dari register) akibat hukumnya berat - hanya Super Admin,
+ * Ketua, Wakil Ketua, dan Hakim. Status 1 (Diikrarkan) tetap mengikuti matriks
+ * aksi "sidang.tunda-putus". Admin TIDAK termasuk (beda dengan unggah putusan).
+ * Peran berlaku (Plh dihitung) - getEffectiveRoleId. Siapa pun penekannya, akun
+ * di SIPP tetap PP ikrar dan ketua majelis ikrar (bot).
+ */
+export const PERAN_STATUS_IKRAR_BERAT: ReadonlySet<RoleId> = new Set<RoleId>(["super-admin", "ketua", "wakil-ketua", "hakim"]);
+
+export const PESAN_TOLAK_STATUS_IKRAR =
+  "Hasil sidang ikrar \"Pemohon Tidak Hadir\" dan \"Rukun Kembali\" hanya dapat dicatat Super Admin, Ketua, Wakil Ketua, atau Hakim.";
+
+/** Status ikrar 1/2/3 dari badan permintaan; 0 bila tidak disebut. */
+export function statusIkrarDiminta(nilai: unknown): number {
+  const n = Number(nilai);
+  return n === 1 || n === 2 || n === 3 ? n : 0;
+}
+
+export function bolehStatusIkrarBerat(user: PenggunaBerperan): boolean {
+  if (!user) return false;
+  const peran = String(getEffectiveRoleId(user) || user.roleId || "") as RoleId;
+  return PERAN_STATUS_IKRAR_BERAT.has(peran);
+}
+
+/** Status 2/3 menuntut peran P7 (403); status 1 / tanpa status tidak diperiksa di sini. */
+export async function pastikanBolehStatusIkrar(db: AletaDatabase, actorUserId: string | null | undefined, status: number) {
+  if (status !== 2 && status !== 3) return;
+  const actor = await requireActorUser(db, actorUserId);
+  if (!bolehStatusIkrarBerat(actor)) throw new ApiError(403, PESAN_TOLAK_STATUS_IKRAR);
 }
