@@ -57,6 +57,19 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.52",
+    dirilis: "2026-10-28T09:20:00+08:00",
+    judul: "Tampilan ALETA tersembunyi bawaan di SIPP dan portal, alasan cerai ikut Input semua yang pasti",
+    butir: [
+      "Tampilan ALETA (panel, logo, penanda, tombol sisipan, widget) di SIPP dan portal ALETA kini tersembunyi bawaan; semua fitur tetap berjalan. Tampilkan bila perlu dengan Alt+Shift+A (berlaku untuk tab itu sampai ditutup), tombol Tampilkan di tab ini di popup, atau saklar Tampilkan ALETA di SIPP / di portal ALETA. ABT tidak berubah.",
+      "Alasan cerai yang disusun dari gugatan ikut tombol Input semua yang pasti (panel ABT dan Blangko Derry) bila keterangan kedua saksi sama untuk setiap alasan; bila belum sama, tetap dicentang atau dipilih petugas dan sebabnya disebutkan.",
+      "Posita alasan cerai dan keterangan para saksi di kartu alasan cerai menampilkan keterangan saat diarahkan tetikus dan membuka jendela berisi kalimat gugatan, tanda saksi tiap alasan, dan keterangan saksi saat diklik.",
+      "Kalimat alat bukti elektronik yang tidak dapat dicocokkan kini dirapikan sebagai bawaan (alat yang digunakan untuk melakukan pengambilan); bunyi apa adanya tetap dapat dipilih dengan mematikan Bunyi dirapikan.",
+      "Blangko ABT: kedudukan pihak di relaas tertulis Pemohon I bila Pemohon lebih dari satu; isian bawaan pihak pertama/kedua (nomor HP, email, tanggal relaas, agama, pendidikan, dan lainnya) kini benar juga pada perkara e-Court yang nomor urut pihaknya bersambung.",
+      "Kartu alasan cerai di panel ABT tidak lagi berlabel satu saksi untuk alasan dari gugatan, dan tanda disunting hanya muncul sesudah usulan benar-benar disunting.",
+    ],
+  },
+  {
     versi: "1.205.51",
     dirilis: "2026-10-28T00:45:00+08:00",
     judul: "Rincian alasan cerai, kamus perkara lain, dan alat bukti elektronik",
