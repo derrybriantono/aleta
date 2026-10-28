@@ -560,6 +560,8 @@
     aktif: false,
     sebagai: { peran: "", nama: "" },
     mode: "hari",
+    /** 28 Okt 2026: daftar PTSP hanya perkara baru (sidang pertama) - bila dimatikan, semua perkara yang bersidang pada tanggal itu. */
+    ptspPertama: true,
     dari: "",
     sampai: "",
     /** 22 Okt 2026: satu tanggal tertentu (mode "tanggal") - berbeda dari rentang DARI-SAMPAI. */
@@ -613,7 +615,7 @@
   }
   /** Peran yang menentukan dokumen/daftar saat ini. */
   function peranDokumen() {
-    if (adm()) return S.sebagai.peran ? [S.sebagai.peran] : ["hakim", "pp", "js"];
+    if (adm()) return S.sebagai.peran ? (S.sebagai.peran === "ptsp" ? [] : [S.sebagai.peran]) : ["hakim", "pp", "js"];
     return ["hakim", "pp", "js"].filter((x) => S.peranSet.has(x));
   }
   function peranAlat() {
@@ -621,8 +623,15 @@
     return ["hakim", "pp", "js", "kasir", "ptsp"].filter((x) => S.peranSet.has(x));
   }
   const berhakDaftar = () => adm() || ["hakim", "pp", "js", "ptsp"].some((x) => S.peranSet.has(x));
+  /** 28 Okt 2026: Super Admin/Admin yang memilih "Lihat sebagai" akun PTSP melihat persis yang dilihat PTSP. */
+  const sebagaiPtsp = () => adm() && S.sebagai.peran === "ptsp" && Boolean(S.sebagai.nama);
   /** PTSP (bukan admin): tak punya perkara sendiri; mencari nomor perkara satker, baca saja (folder 99 PTSP). */
-  const ptspCari = () => !adm() && S.peranSet.has("ptsp");
+  const ptspCari = () => sebagaiPtsp() || (!adm() && S.peranSet.has("ptsp"));
+  /**
+   * Daftar PTSP per tanggal (hari ini / tanggal tertentu / rentang): hanya PTSP murni (atau admin yang melihat sebagai PTSP).
+   * Akun yang juga hakim/PP/juru sita tetap memakai daftar perkaranya sendiri; mencari nomor satker berlaku untuk keduanya.
+   */
+  const ptspDaftar = () => sebagaiPtsp() || (!adm() && S.peranSet.has("ptsp") && !["hakim", "pp", "js"].some((x) => S.peranSet.has(x)));
   const nomorCariPtsp = () => (ptspCari() ? S.cariNomor.trim() : "");
   /** Bahan aturan hak dokumen untuk keadaan sekarang (akun + "Lihat sebagai" + saklar). */
   const bahanHak = () => ({ admin: adm(), sebagaiPeran: adm() ? S.sebagai.peran : "", peran: ["hakim", "pp", "js", "ptsp"].filter((x) => S.peranSet.has(x)), hak: S.hak });
@@ -1020,11 +1029,12 @@
     wrap.hidden = !adm();
     if (!adm()) return;
     const sel = cari("#bd-lihat", akar);
-    const akun = (S.data && S.data.akun) || { hakim: [], pp: [], js: [] };
+    const akun = (S.data && S.data.akun) || { hakim: [], pp: [], js: [], ptsp: [] };
     const label = S.peranSet.has("admin") ? "Super Admin / Admin" : "Admin";
+    // 28 Okt 2026: kelompok PTSP (akun meja pendaftaran) menyusul Hakim, Panitera Pengganti, dan Juru sita; daftarnya dari server (akun, bukan jadwal).
     sel.innerHTML =
       `<option value="" title="Tampilan ${esc(label)}: semua akun">Semua akun</option>` +
-      ["hakim", "pp", "js"]
+      ["hakim", "pp", "js", "ptsp"]
         .map((p) => `<optgroup label="${esc(NAMA_PERAN[p])}">${satukanOrang(akun[p]).map((n) => `<option value="${p}|${esc(n)}">${esc(n)}</option>`).join("")}</optgroup>`)
         .join("");
     let nilai = S.sebagai.nama ? `${S.sebagai.peran}|${S.sebagai.nama}` : "";
@@ -1111,7 +1121,7 @@
   function kunciPermintaan() {
     const r = rentangMode();
     // "Tanggal tertentu" dan rentang sehari memuat hal yang sama dari server: ikut satu kunci singgahan.
-    return [S.mode === "tanggal" ? "rentang" : S.mode, r ? r.dari : "", r ? r.sampai : "", S.sebagai.nama, S.sebagai.peran, nomorCariPtsp()].join("|");
+    return [S.mode === "tanggal" ? "rentang" : S.mode, r ? r.dari : "", r ? r.sampai : "", S.sebagai.nama, S.sebagai.peran, nomorCariPtsp(), ptspDaftar() ? (S.ptspPertama ? "sp" : "ss") : ""].join("|");
   }
   function alamatPermintaan() {
     const q = new URLSearchParams();
@@ -1127,10 +1137,17 @@
       q.set("sebagai", S.sebagai.nama);
       q.set("peranSebagai", S.sebagai.peran);
     }
+    // Daftar PTSP per tanggal: sidang pertama di rentang (bawaan), atau semua perkara satker yang bersidang di rentang.
+    if (ptspDaftar() && !nomorCariPtsp()) {
+      if (S.ptspPertama) q.set("sidangPertama", "1");
+      else q.set("massal", "ptsp");
+    }
     return `${API_PERKARA}?${q.toString()}`;
   }
 
   async function muatDaftar(paksa) {
+    // Daftar PTSP tidak punya tab "Semua perkara saya" (satker tidak punya "milik saya"): kembali ke hari ini; pencarian nomor tetap menjangkau 90 hari lalu - 45 hari depan.
+    if (ptspDaftar() && !nomorCariPtsp() && S.mode === "semua") S.mode = "hari";
     // Pilih tanggal tanpa satu tanggal pun: tidak ada yang dimuat dan tidak ada galat - petunjuk lembut saja.
     if ((S.mode === "rentang" || S.mode === "tanggal") && !nomorCariPtsp() && !rentangMode()) {
       S.data = null;
@@ -1485,9 +1502,12 @@
       return `Nama akun Anda (${esc(d.nama || "?")}) tidak ditemukan sebagai majelis, panitera pengganti, atau juru sita pada ${d.mode === "hari" ? "sidang hari ini" : "rentang ini"}. Bila namanya di SIPP ditulis lain, hubungi admin.`;
     }
     if (d.ptspCari) {
-      return S.cariNomor.trim()
-        ? "Tidak ada perkara satker dengan nomor itu pada jadwal sidang 90 hari lalu sampai 45 hari ke depan."
-        : "Ketik sebagian nomor perkara untuk mencari perkara satker (hanya baca; blangko PTSP).";
+      if (S.cariNomor.trim()) return "Tidak ada perkara satker dengan nomor itu pada jadwal sidang 90 hari lalu sampai 45 hari ke depan.";
+      if (ptspDaftar()) {
+        const apa = S.ptspPertama ? "perkara baru (sidang pertama)" : "perkara yang bersidang";
+        return S.mode === "hari" ? `Tidak ada ${apa} hari ini.` : S.mode === "tanggal" ? `Tidak ada ${apa} pada tanggal itu.` : `Tidak ada ${apa} pada rentang ini.`;
+      }
+      return "Ketik sebagian nomor perkara untuk mencari perkara satker (hanya baca; blangko PTSP).";
     }
     if (d.mode === "hari") return "Tidak ada sidang hari ini untuk Anda.";
     if (S.mode === "tanggal") return "Tidak ada sidang Anda pada tanggal itu.";
@@ -1533,15 +1553,27 @@
     const konsepJumlah = semuaL.filter((r) => r.konsep && !(sembunyiBerlaku() && r.selesai)).length;
     let isi =
       `<div class="bd-kontrol"><div class="bd-seg" role="tablist" aria-label="Perkara yang ditampilkan">` +
-      [
-        ["hari", "Sidang hari ini"],
-        ["tanggal", "Tanggal tertentu"],
-        ["rentang", "Rentang tanggal"],
-        ["semua", "Semua perkara saya"],
-      ]
+      (ptspDaftar()
+        ? [
+            ["hari", "Perkara hari ini"],
+            ["tanggal", "Tanggal tertentu"],
+            ["rentang", "Rentang tanggal"],
+          ]
+        : [
+            ["hari", "Sidang hari ini"],
+            ["tanggal", "Tanggal tertentu"],
+            ["rentang", "Rentang tanggal"],
+            ["semua", "Semua perkara saya"],
+          ]
+      )
         .map(([m, t]) => `<button type="button" role="tab" data-mode="${m}" aria-selected="${S.mode === m}">${t}</button>`)
         .join("") +
       `</div>${kotakCari()}</div>`;
+    if (ptspDaftar()) {
+      isi +=
+        `<div class="bd-kontrol" id="bd-ptspket"><label class="bd-cek" title="Perkara baru yang penetapan awalnya (PMH, PPP, PJS, PHS) dikerjakan meja PTSP. Dimatikan: semua perkara yang bersidang pada tanggal itu."><input type="checkbox" id="bd-pertama" ${S.ptspPertama ? "checked" : ""}> Hanya perkara baru (sidang pertama)</label>` +
+        `<span class="bd-catat">Tanggal acuan: ${S.ptspPertama ? "tanggal sidang pertama" : "tanggal sidang"}. Ketik nomor perkara untuk mencari perkara mana pun.</span></div>`;
+    }
     if (tesAktif()) isi += htmlTesCari();
     if (S.mode === "tanggal") {
       isi +=
@@ -1596,7 +1628,7 @@
         `<button type="button" class="bd-btn kecil" data-bd="tampil-konsep">Tampilkan konsep sementara</button></p>`;
     } else if (!l.length) {
       badan =
-        `<p class="bd-catat">${teksKosong()}${S.mode === "hari" ? ` <button type="button" class="bd-btn kecil" data-mode="semua">Lihat semua perkara saya</button>` : ""}</p>`;
+        `<p class="bd-catat">${teksKosong()}${S.mode === "hari" && !ptspDaftar() ? ` <button type="button" class="bd-btn kecil" data-mode="semua">Lihat semua perkara saya</button>` : ""}</p>`;
     } else {
       const wadClass = S.lihat === "kartu" ? "kartu" : S.lihat === "ringkas" ? "ringkas" : "blok";
       let dalam;
@@ -2185,6 +2217,11 @@
       return umumkanPerkara();
     }
     if (t.id === "bd-tes") return aturTes(t.checked);
+    if (t.id === "bd-pertama") {
+      S.ptspPertama = Boolean(t.checked);
+      S.data = null;
+      return void muatDaftar();
+    }
     if (t.id === "bd-lihat") {
       const [peran, ...nama] = String(t.value || "").split("|");
       S.sebagai = t.value ? { peran, nama: nama.join("|") } : { peran: "", nama: "" };
@@ -2467,6 +2504,9 @@
     keadaan: () => ({
       aktif: S.aktif,
       mode: S.mode,
+      /** Rentang tanggal daftar (mode tanggal/rentang) - Cetak massal PTSP memulai dari sini; null bila bukan rentang. */
+      rentang: rentangMode(),
+      ptspDaftar: ptspDaftar(),
       lihat: S.lihat,
       urut: S.urut,
       arah: S.arah,

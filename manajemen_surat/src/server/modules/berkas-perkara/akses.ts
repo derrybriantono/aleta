@@ -5,7 +5,7 @@ import { isPrivilegedAdmin } from "@/lib/permissions";
 import { bacaHakBlangko } from "@/server/modules/pengaturan-abt/service";
 import { ApiError } from "@/server/shared/errors";
 
-const PERAN_TIRUAN = new Set(["hakim", "pp", "js"]);
+const PERAN_TIRUAN = new Set(["hakim", "pp", "js", "ptsp"]);
 
 /**
  * Jenis dokumen Derry yang boleh dibuka sesi ini (cermin jenisBolehSesi di rute blangko-derry): putusan = hakim, BAS = PP/panitera/panmud,

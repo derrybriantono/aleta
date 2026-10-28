@@ -1073,7 +1073,7 @@ export function jenisFolderDerry(nama: string): "put" | "bas" | "rel" | "ptsp" |
 }
 
 export type JenisDokumenDerry = "put" | "bas" | "rel" | "ptsp";
-export type PeranTiruan = "hakim" | "pp" | "js";
+export type PeranTiruan = "hakim" | "pp" | "js" | "ptsp";
 
 /** Jenis dokumen sebuah folder dari jalur ("derry_briantono/98 Relaas" atau "98 Relaas"); "" bila tak dikenal. */
 export function jenisFolderDariJalur(jalur: string): JenisDokumenDerry | "" {
@@ -1096,7 +1096,7 @@ export function jenisDokumenAkun(o: {
   saklar?: { hakimBas?: boolean; ppPutusan?: boolean } | null;
 }): JenisDokumenDerry[] {
   if (o.admin && !o.sebagaiPeran) return ["put", "bas", "rel", "ptsp"];
-  const peran = new Set<PeranTiruan | "ptsp">();
+  const peran = new Set<PeranTiruan>();
   if (o.admin && o.sebagaiPeran) peran.add(o.sebagaiPeran);
   else {
     for (const g of o.golongan) {

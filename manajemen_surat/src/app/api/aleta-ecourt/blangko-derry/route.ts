@@ -185,7 +185,7 @@ async function nilaiPenanda(perkaraId: string, sidangKe: number, kode: string[])
   }
 }
 
-const PERAN_TIRUAN = new Set(["hakim", "pp", "js"]);
+const PERAN_TIRUAN = new Set(["hakim", "pp", "js", "ptsp"]);
 
 /** Jenis dokumen yang boleh dibuka sesi ini; saklar hanya dibaca bila peran hakim/PP yang menentukan. */
 async function jenisBolehSesi(actor: Parameters<typeof golonganPengguna>[0], sebagaiMinta: string): Promise<JenisDokumenDerry[]> {

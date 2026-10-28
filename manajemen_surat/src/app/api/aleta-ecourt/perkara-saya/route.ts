@@ -6,6 +6,7 @@ import { isPrivilegedAdmin } from "@/lib/permissions";
 import { waktuPengadilan } from "@/lib/waktu-pengadilan";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { bacaAkunPtsp } from "@/server/modules/aleta-ecourt/akun-ptsp";
 import { bacaKredensialSipp } from "@/server/modules/aleta-ecourt/checklist-milestone";
 import { bacaKonseptorSementara } from "@/server/modules/aleta-ecourt/konseptor-sementara";
 import { bacaTidakAktif } from "@/server/modules/aleta-ecourt/orang-tidak-aktif";
@@ -46,6 +47,8 @@ const SERENTAK = 4;
  * (bertanda semua peran); Ketua/Wakil Ketua juga semua perkara tetapi hanya
  * sebagai hakim (putusan), tanpa "Lihat sebagai". PTSP:
  *   GET ... &nomor=<bagian nomor perkara>                  (khusus PTSP: perkara satker yang cocok, tanpa peran tulis)
+ *   GET ... &sidangPertama=1                               (khusus PTSP: perkara satker yang SIDANG PERTAMANYA jatuh di rentang;
+ *                                                           admin: peranSebagai=ptsp&sebagai=<nama akun PTSP>)
  *
  * ============================================================================
  * HANYA MEMBACA
@@ -95,15 +98,19 @@ export async function GET(request: NextRequest) {
     const massal = (cari.get("massal") || "").trim();
     const paniteraSemua = massal === "bas" && !admin && !pimpinan && bolehBasMassal(actor as Parameters<typeof bolehBasMassal>[0]);
     const lihatSemua = admin || pimpinan || paniteraSemua;
-    // PTSP: mencari nomor perkara satker (baca saja; tanpa hak tulis putusan/BAS/relaas) agar folder "99 PTSP" terjangkau.
-    const ptsp = !admin && !pimpinan && golongan.includes("ptsp");
-    const nomorCari = ptsp ? (cari.get("nomor") || "").trim() : "";
-    const punyaPeranPerkara = golongan.some((g) => g === "hakim" || g === "pp" || g === "jurusita");
-    const semuaSatkerPtsp = ptsp && massal === "ptsp" && nomorCari === "";
-    const cariNomorSatker = ptsp && (nomorCari !== "" || !punyaPeranPerkara || semuaSatkerPtsp);
     // "Lihat sebagai" hanya berlaku bagi admin; bagi yang lain parameternya diabaikan.
     const sebagaiNama = admin ? (cari.get("sebagai") || "").trim() : "";
     const sebagaiPeran = admin ? peranDerryValid(cari.get("peranSebagai")) : null;
+    // 28 Okt 2026: admin yang "Lihat sebagai" akun PTSP melihat persis yang dilihat PTSP (daftar satker, baca saja).
+    const sebagaiPtsp = admin && sebagaiNama !== "" && (cari.get("peranSebagai") || "").trim().toLowerCase() === "ptsp";
+    // PTSP: mencari nomor perkara satker (baca saja; tanpa hak tulis putusan/BAS/relaas) agar folder "99 PTSP" terjangkau.
+    const ptsp = sebagaiPtsp || (!admin && !pimpinan && golongan.includes("ptsp"));
+    const nomorCari = ptsp ? (cari.get("nomor") || "").trim() : "";
+    const punyaPeranPerkara = !sebagaiPtsp && golongan.some((g) => g === "hakim" || g === "pp" || g === "jurusita");
+    // ?sidangPertama=1: daftar PTSP per tanggal - perkara baru yang sidang pertamanya jatuh di rentang (tanpa kata kunci nomor).
+    const sidangPertama = ptsp && (cari.get("sidangPertama") || "").trim() === "1";
+    const semuaSatkerPtsp = ptsp && (massal === "ptsp" || sidangPertama) && nomorCari === "";
+    const cariNomorSatker = ptsp && (nomorCari !== "" || !punyaPeranPerkara || semuaSatkerPtsp);
 
     const potongan = potongRentang(rentang.dari, rentang.sampai);
     const baris: BarisSidangSaya[] = [];
@@ -138,6 +145,7 @@ export async function GET(request: NextRequest) {
       peranSemua: pimpinan ? ["hakim"] : paniteraSemua ? ["pp"] : undefined,
       cariNomorSatker,
       semuaSatker: semuaSatkerPtsp,
+      hanyaSidangPertama: sidangPertama,
       cariNomor: nomorCari,
       tidakAktif,
     });
@@ -185,7 +193,7 @@ export async function GET(request: NextRequest) {
       terpotong,
       jumlahSemua: hasil.jumlahSemua,
       adaYangCocok: hasil.adaYangCocok,
-      akun: hasil.akun,
+      akun: hasil.akun ? { ...hasil.akun, ptsp: await bacaAkunPtsp(db) } : null,
       perkara: hasil.perkara,
     });
   } catch (error) {

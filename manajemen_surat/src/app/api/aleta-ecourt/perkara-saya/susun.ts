@@ -120,7 +120,7 @@ export type PerkaraSaya = {
   konsepSementara?: KonsepSementaraPanel;
 };
 
-export type AkunDilihat = { hakim: string[]; pp: string[]; js: string[] };
+export type AkunDilihat = { hakim: string[]; pp: string[]; js: string[]; /** Akun PTSP (28 Okt 2026): dari akun ALETA, bukan dari jadwal; diisi rute. */ ptsp?: string[] };
 
 const teks = (v: unknown) => (v === null || v === undefined ? "" : String(v).trim());
 const tanggal10 = (v: unknown) => {
@@ -207,6 +207,12 @@ export type OpsiSusun = {
   /** Cetak massal PTSP (20 Okt 2026): pencarian satker TANPA kata kunci mengembalikan seluruh perkara di rentang (baca saja). */
   semuaSatker?: boolean;
   /**
+   * Daftar PTSP per tanggal (28 Okt 2026): bersama `semuaSatker`, hanya perkara yang SIDANG PERTAMANYA jatuh di rentang itu (perkara baru
+   * yang penetapan awalnya - PMH, PPP, PJS, PHS - dikerjakan meja PTSP). Jadwal sidang tidak membawa tanggal pendaftaran, jadi
+   * tanggal acuan PTSP adalah tanggal sidang pertama.
+   */
+  hanyaSidangPertama?: boolean;
+  /**
    * Orang yang tidak ditampilkan di daftar `akun` ("Lihat sebagai"): kunciOrang yang nonaktif - `semua` (akun ALETA nonaktif/terhapus)
    * berlaku bagi ketiga peran, lainnya menurut daftar induk SIPP (hakim_pn / panitera_pn / jurusita). Hanya mempengaruhi `akun`.
    */
@@ -265,6 +271,7 @@ export function susunPerkaraSaya(baris: BarisSidangSaya[], opsi: OpsiSusun): Has
     if (opsi.cariNomorSatker) {
       // Pencarian PTSP: tanpa kata kunci tidak ada yang dikembalikan; peran tulis hanya bila akun itu memang majelis/PP/juru sita.
       if (!opsi.semuaSatker && (!kataNomor || !teks(akhir.nomorPerkara).toLowerCase().includes(kataNomor))) continue;
+      if (opsi.semuaSatker && opsi.hanyaSidangPertama && !sidang.some((s) => (s.urutan || 1) <= 1)) continue;
       sebagai = sebagaiApa(akhir, nama, batas);
     } else if (semuaTanpaSaring) sebagai = [...peranSemua];
     else {
