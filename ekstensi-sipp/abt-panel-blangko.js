@@ -2110,7 +2110,7 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
   // Bot menyusun alasan cerai dari gugatan (acuan utama): sebab konkret dan rantai sebab-akibatnya. Tiap baris
   // memuat lencana jujur ("dikuatkan kedua saksi (saksi Penggugat dan saksi Tergugat)", "dari gugatan - belum
   // dikuatkan saksi", ...), boleh dicoret, dan bunyinya boleh diganti. Kalimat kartu disusun ulang SETIAP ada
-  // perubahan; sebelum ada perubahan kalimat bawaan bot (yang menggabung perselisihan di akhir) tidak disentuh.
+  // perubahan; sebelum ada perubahan kalimat bawaan bot tidak disentuh.
   const rincianKartu = (Array.isArray(u.rincian) ? u.rincian : []).filter((r) => r && Array.isArray(r.bunyi) && r.bunyi.length);
   if (rincianKartu.length) {
     const wadahRincian = buatElemen("div", "aleta-abt-rincian");
@@ -2128,8 +2128,8 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
     const susunUlang = () => {
       const bagian = rincianKartu.map((r, i) => (status[i].pakai ? String((r.bunyi[status[i].bunyi] || r.bunyi[0]).nilai || "") : "")).filter(Boolean);
       if (!bagian.length) return;
-      // 28 Okt: tanpa titik koma di antara rincian (sama dengan gabungKalimat bot): "A serta B", "A, B, serta C".
-      nilaiTerkini = bagian.length > 2 ? `${bagian.slice(0, -1).join(", ")}, serta ${bagian[bagian.length - 1]}` : bagian.join(" serta ");
+      // 28 Okt: antar-alasan "dan", tanpa ";" dan tanpa "serta" (sama dengan gabungKalimat bot): "A dan B", "A, B, dan C".
+      nilaiTerkini = bagian.length > 2 ? `${bagian.slice(0, -1).join(", ")}, dan ${bagian[bagian.length - 1]}` : bagian.join(" dan ");
       disunting = false;
       segarkanTampilan();
       centang.checked = true;

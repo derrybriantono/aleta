@@ -1771,7 +1771,8 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak, posit
       const rinci = require("./deteksi/alasanRincian");
       const sisi = opsi.saksiPihak && typeof opsi.saksiPihak === "object" ? opsi.saksiPihak : {};
       const rincian = rinci.deteksiRincian({
-        gugatan: butirPosita,
+        // 28 Okt: posita ABT kosong -> posita SIPP (opsi.positaRincian, dibaca rute) agar saksi tetap dicocokkan per alasan.
+        gugatan: butirPosita.length ? butirPosita : butirKeterangan(String(opsi.positaRincian || "")),
         saksi: [
           { no: 1, pihak: sisi.saksi1 || "", butir: b1 },
           { no: 2, pihak: sisi.saksi2 || "", butir: b2 },

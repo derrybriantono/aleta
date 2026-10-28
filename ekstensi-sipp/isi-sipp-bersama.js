@@ -260,6 +260,17 @@
     return dasar.includes("aleta") || /(?<![a-z0-9])a[\s._\-*·•/\\|,:;'"`~+]*l[\s._\-*·•/\\|,:;'"`~+]*e[\s._\-*·•/\\|,:;'"`~+]*t[\s._\-*·•/\\|,:;'"`~+]*a(?![a-z0-9])/i.test(dasar);
   }
 
+  /**
+   * 28 Okt: kartu 5227 yang disusun dari gugatan DAN dicocokkan dengan keterangan saksi (jalur saksi) lebih kuat daripada
+   * bunyi pilihan berkas e-Court (tanpa saksi) yang sama yakinnya. Dulu yang menang ditentukan sumber mana yang lebih dulu
+   * menjawab - kartu jatuh ke "dari berkas e-Court" walau keterangan saksi ada.
+   */
+  function bobotSaksi5227(u) {
+    if (!u || teks(u.kode) !== "5227") return 0;
+    const sumber = Array.isArray(u.sumber) ? u.sumber : [];
+    const rincian = Array.isArray(u.rincian) ? u.rincian : [];
+    return (u.dariGugatan ? 2 : 0) + (rincian.some((r) => r && Number(r.saksiDiperiksa) > 0) || sumber.some((x) => x && Number(x.saksi) > 0) ? 1 : 0) + (teks(u.nilai).trim() ? 1 : 0);
+  }
   /** Usulan terbaik per kode dari beberapa sumber (Map kode -> usulan); hanya kode yang ada di `kodeBoleh` (Set) bila diberikan. */
   function pilihPerKode(sumber, kodeBoleh) {
     const perKode = new Map();
@@ -269,7 +280,7 @@
         const kode = teks(u.kode);
         if (kodeBoleh && !kodeBoleh.has(kode)) continue;
         const lama = perKode.get(kode);
-        if (!lama || bobot(u) > bobot(lama)) perKode.set(kode, u);
+        if (!lama || bobot(u) > bobot(lama) || (bobot(u) === bobot(lama) && bobotSaksi5227(u) > bobotSaksi5227(lama))) perKode.set(kode, u);
       }
     }
     return perKode;
@@ -354,6 +365,7 @@
     else if (a === "data-nikah") asal = { kelas: "hijau", teks: "dari data pernikahan SIPP" };
     else if (a === "posita-gugatan") asal = { kelas: "kuning", teks: "dari posita gugatan" };
     else if (a === "bukti-akta") asal = { kelas: "kuning", teks: "dari bukti akta nikah" };
+    else if (u && u.dariGugatan && sumber.some((s) => s && Number(s.saksi) > 0)) asal = { kelas: "kuning", teks: "dari gugatan, dicocokkan dengan keterangan saksi" };
     else if (hanyaPosita) asal = { kelas: "kuning", teks: "dari posita — belum dikuatkan saksi" };
     else if (sumber.some((s) => s && s.saksi)) asal = { kelas: "abu", teks: "dari keterangan saksi" };
     else asal = { kelas: "abu", teks: "dari SIPP" };
@@ -367,7 +379,7 @@
     return (Array.isArray(u && u.sumber) ? u.sumber : [])
       .filter(Boolean)
       .map((s) => ({
-        label: s.asal === "posita" ? "Posita" : s.asal === "gugatan-ecourt" ? "Gugatan e-Court" : s.asal === "ktp-ecourt" ? "KTP e-Court" : s.asal === "elitigasi" ? "Data pihak" : s.asal === "data-nikah" ? "Data pernikahan SIPP" : s.asal === "posita-gugatan" ? "Posita gugatan" : s.asal === "bukti-akta" ? "Bukti akta nikah" : s.saksi ? `Saksi ${s.saksi}` : "SIPP",
+        label: s.asal === "posita" ? "Posita" : s.asal === "gugatan-ecourt" ? "Gugatan e-Court" : s.asal === "ktp-ecourt" ? "KTP e-Court" : s.asal === "elitigasi" ? "Data pihak" : s.asal === "data-nikah" ? "Data pernikahan SIPP" : s.asal === "posita-gugatan" ? "Posita gugatan" : s.asal === "bukti-akta" ? "Bukti akta nikah" : s.saksi ? `Saksi ${s.saksi}${teks(s.pihak).trim() ? ` (${teks(s.pihak).trim()})` : ""}` : "SIPP",
         kalimat: htmlKeTeks(s.kalimat || s.keterangan || "").slice(0, 400),
       }))
       .filter((s) => s.kalimat);
@@ -488,7 +500,8 @@
       if (h.golongan === "tulis") hasil.tulis.push(butir);
       else if (h.golongan === "saran") hasil.saran.push(butir);
       else if (h.golongan === "lewati") hasil.lewati.push({ kode, sebab: h.sebab });
-      const pilihan = kumpulPilihan(semuaUsulan || [[u]], kode);
+      // 28 Okt: bunyi milik usulan terpilih 5227 di depan (pilihan pertama = bunyi bawaannya), sisanya dari sumber lain.
+      const pilihan = kumpulPilihan(kode === "5227" ? [[u], ...(semuaUsulan || [])] : semuaUsulan || [[u]], kode);
       if (h.golongan !== "lewati" || h.sebab === "sudah ada isinya" || pilihan.length) {
         hasil.info[kode] = {
           kode,
