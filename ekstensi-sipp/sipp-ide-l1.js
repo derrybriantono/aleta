@@ -635,10 +635,16 @@
 html:not([data-aleta-kulit="modern"]) .aleta-l1-lipat-kepala>.aleta-lipat-panah{color:var(--aleta-tulisan-lembut,inherit)}
 html:not([data-aleta-kulit="modern"]) .aleta-l1-lipat-kepala>.aleta-lipat-panah::before{content:"▸"}
 html:not([data-aleta-kulit="modern"]) .aleta-l1-lipat-kepala[aria-expanded="true"]>.aleta-lipat-panah::before{content:"▾"}
+.aleta-l1-ringkas{display:none;align-items:center;gap:8px;width:100%;margin:0;padding:0;border:0;background:transparent;font:inherit;color:inherit;text-align:left;cursor:pointer}
+.aleta-l1-pita.aleta-l1-terlipat>.aleta-l1-ringkas{display:flex}
+.aleta-l1-pita.aleta-l1-terlipat>:not(.aleta-l1-ringkas){display:none!important}
+.aleta-l1-ringkas-buka{margin-left:auto;color:#007640;text-decoration:underline;font-weight:600}
+.aleta-l1-ringkas:focus-visible{outline:2px solid #007640;outline-offset:1px}
 .aleta-l1-toast{position:fixed;right:16px;bottom:16px;z-index:2147483000;max-width:380px;padding:9px 12px;border-radius:6px;background:#007640;color:#fff;font-family:inherit;font-size:14px;box-shadow:0 2px 10px rgba(0,0,0,.3)}
 html[data-aleta-tema-sipp="gelap"] .aleta-l1-pita{background:rgba(47,158,68,.10);color:#dfe8e2}
 html[data-aleta-tema-sipp="gelap"] .aleta-l1-tombol.aleta-l1-utama,html[data-aleta-tema-sipp="gelap"] .aleta-l1-chip,html[data-aleta-tema-sipp="gelap"] .aleta-l1-logo{background:#1c5539;border-color:#1c5539}
 html[data-aleta-tema-sipp="gelap"] .aleta-l1-judul{color:#7fd0a6}
+html[data-aleta-tema-sipp="gelap"] .aleta-l1-ringkas-buka{color:#8fd6ae}
 html[data-aleta-tema-sipp="gelap"] .aleta-l1-tombol,html[data-aleta-tema-sipp="gelap"] .aleta-l1-unggah,html[data-aleta-tema-sipp="gelap"] .aleta-l1-tabel{background:#17211c;color:#dfe8e2;border-color:#27342e}
 html[data-aleta-tema-sipp="gelap"] .aleta-l1-tabel td,html[data-aleta-tema-sipp="gelap"] .aleta-l1-tabel th{border-color:#27342e}
 html[data-aleta-tema-sipp="gelap"] .aleta-l1-tabel th{background:#143c29}
@@ -657,6 +663,73 @@ html[data-aleta-tema-sipp="gelap"] .aleta-l1-awas{color:#f3e2b5}
   // ──────────────────────────────────────────────────────────────────────────
   // I01 - pita di jendela
   // ──────────────────────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────────────────────
+  // Pita Putusan Akhir terlipat bila putusannya SUDAH ada di SIPP (28 Okt 2026)
+  // ──────────────────────────────────────────────────────────────────────────
+  // Putusan akhir "sudah ada" = jendela memuat Tanggal Putusan terisi DAN Status Putusan yang dipilih (bukan "Pilih Status Putusan" = -1),
+  // keduanya TAMPAK (SIPP menyembunyikan medan dengan .hide()). Dinilai dari isi jendela saat dibuka dan dikunci begitu petugas mulai
+  // mengetik atau lewat tiga detik, jadi tanggal/status yang baru diketik atau diisikan ALETA tidak melipat pita di tengah kerja.
+  // Pita yang terlipat: satu baris "ALETA · Putusan Akhir sudah ada di SIPP · buka". Pilihan buka/lipat petugas diingat per perkara selama
+  // sesi tab ini (sessionStorage). Putusan belum ada: pita tampil seperti biasa dan tidak bisa dilipat.
+  const KUNCI_SESI_LIPAT = "aleta-l1-putusan-lipat";
+  const NILAI_PUTUSAN_MS = 3000;
+  /** true/false = putusan tersimpan di jendela ini; null = medannya belum tampak (belum dapat dinilai). Murni terhadap DOM. */
+  function putusanTersimpan(form) {
+    const tgl = form.querySelector('input[name="tgl_putusan"], input[name="tanggal_putusan"], #tgl_putusan');
+    const status = form.querySelector('select[name="status_putusan"]');
+    if (!tgl || !status || !tampak(tgl) || !tampak(status)) return null;
+    return sebaris(tgl.value) !== "" && !pilihanKosong(status);
+  }
+  const kunciPerkaraLipat = () => nomorHalamanDetil(document) || String((globalThis.location && globalThis.location.pathname) || "");
+  function bacaPilihanLipat() {
+    try {
+      const peta = JSON.parse(globalThis.sessionStorage.getItem(KUNCI_SESI_LIPAT) || "{}");
+      const v = peta && peta[kunciPerkaraLipat()];
+      return v === "buka" || v === "lipat" ? v : "";
+    } catch {
+      return "";
+    }
+  }
+  function simpanPilihanLipat(nilai) {
+    try {
+      let peta = {};
+      try {
+        peta = JSON.parse(globalThis.sessionStorage.getItem(KUNCI_SESI_LIPAT) || "{}") || {};
+      } catch {
+        /* simpanan rusak: ditulis ulang dari awal */
+      }
+      peta[kunciPerkaraLipat()] = nilai;
+      globalThis.sessionStorage.setItem(KUNCI_SESI_LIPAT, JSON.stringify(peta));
+    } catch {
+      /* sessionStorage tertutup: pilihan hanya berlaku di halaman ini */
+    }
+  }
+  /** Menilai (sampai terkunci) dan menerapkan rupa lipat pita Putusan Akhir. */
+  function terapkanLipatPutusan(p) {
+    if (!p.ringkas) return;
+    if (!p.putusanKunci) {
+      const nilai = putusanTersimpan(p.form);
+      if (nilai !== null) {
+        if (!p.nilaiPertama) p.nilaiPertama = Date.now();
+        p.putusanAda = nilai;
+      }
+      if (p.putusanAda !== undefined && Date.now() - p.nilaiPertama > NILAI_PUTUSAN_MS) p.putusanKunci = true;
+    }
+    const ada = p.putusanAda === true;
+    const pilihan = p.pilihan || bacaPilihanLipat();
+    const lipat = ada && pilihan !== "buka" && !p.bukaSementara;
+    p.pita.classList.toggle("aleta-l1-terlipat", lipat);
+    p.ringkas.setAttribute("aria-expanded", lipat ? "false" : "true");
+    p.pita.setAttribute("data-putusan-ada", ada ? "ya" : "tidak");
+    p.tLipat.hidden = !ada;
+  }
+  function bukaLipatPutusan(p, nilaiBuka) {
+    p.pilihan = nilaiBuka ? "buka" : "lipat"; // juga di memori halaman: sessionStorage dapat tertutup
+    simpanPilihanLipat(p.pilihan);
+    p.bukaSementara = false;
+    terapkanLipatPutusan(p);
+  }
+
   const pitaHidup = new Set();
   let detak = null;
 
@@ -744,6 +817,11 @@ html[data-aleta-tema-sipp="gelap"] .aleta-l1-awas{color:#f3e2b5}
     if (!p || !p.kabar) return;
     setelTeks(p.kabar, teks || "");
     p.kabar.classList.toggle("aleta-l1-gagal", Boolean(gagal));
+    // Pita Putusan Akhir yang terlipat membuka SENDIRI bila ada kabar gagal, supaya tidak tersembunyi (bukan pilihan petugas: tidak disimpan).
+    if (p.ringkas && gagal && teks && !p.bukaSementara) {
+      p.bukaSementara = true;
+      terapkanLipatPutusan(p);
+    }
     bukaBilaPeringatanBaru(p, "kabar", gagal && teks ? [teks] : []);
   }
 
@@ -805,6 +883,11 @@ html[data-aleta-tema-sipp="gelap"] .aleta-l1-awas{color:#f3e2b5}
     const kabarEl = el("div", "aleta-l1-kabar");
     kabarEl.setAttribute("data-l1", "kabar");
     kabarEl.setAttribute("aria-live", "polite");
+    const tLipat = j.kode === "putusan-akhir" ? tombol("Lipat", "Lipat panel ini jadi satu baris (putusan akhir perkara ini sudah ada di SIPP)") : null;
+    if (tLipat) {
+      tLipat.setAttribute("data-l1", "lipat");
+      tLipat.hidden = true;
+    }
     if (j.lipat) {
       // Kepala lipatan = logo + judul; tombol, hitungan, dan kabar jadi isi.
       const kepala = el("div", "aleta-l1-lipat-kepala");
@@ -813,10 +896,34 @@ html[data-aleta-tema-sipp="gelap"] .aleta-l1-awas{color:#f3e2b5}
       pita.append(kepala, baris, kabarEl);
     } else {
       baris.append(logo, judul, tIsi, hitung, tKosong);
+      if (tLipat) baris.append(tLipat);
       pita.append(baris, kabarEl);
     }
 
-    const p = { form, jendela: j, pita, hitung, kabar: kabarEl, tIsi, chip: null, putusan: null };
+    const p = { form, jendela: j, pita, hitung, kabar: kabarEl, tIsi, chip: null, putusan: null, ringkas: null, tLipat, nilaiPertama: 0, putusanAda: undefined, putusanKunci: false, bukaSementara: false, pilihan: "" };
+    if (tLipat) {
+      // Satu baris ringkas untuk keadaan terlipat; tampil hanya lewat kelas aleta-l1-terlipat (lihat gaya).
+      const ringkas = el("button", "aleta-l1-ringkas");
+      ringkas.type = "button";
+      ringkas.setAttribute("data-l1", "buka");
+      ringkas.setAttribute("aria-expanded", "true");
+      ringkas.title = "Putusan akhir perkara ini sudah ada di SIPP. Klik untuk membuka panel ALETA lagi.";
+      ringkas.append(el("span", "aleta-l1-logo", "ALETA"), el("span", "aleta-l1-judul", "Putusan Akhir sudah ada di SIPP"), el("span", "aleta-l1-ringkas-buka", "buka"));
+      pita.insertBefore(ringkas, pita.firstChild);
+      p.ringkas = ringkas;
+      ringkas.addEventListener("click", () => bukaLipatPutusan(p, true));
+      tLipat.addEventListener("click", () => bukaLipatPutusan(p, false));
+      // Petugas mulai mengetik/memilih: penilaian "putusan sudah ada" dikunci pada keadaan jendela saat dibuka.
+      const kunciKetik = () => {
+        if (!p.putusanKunci) {
+          p.putusanKunci = true;
+          if (p.putusanAda === undefined) p.putusanAda = false;
+          terapkanLipatPutusan(p);
+        }
+      };
+      form.addEventListener("input", kunciKetik);
+      form.addEventListener("change", kunciKetik);
+    }
     tIsi.addEventListener("click", () => isiDenganAleta(p));
     tKosong.addEventListener("click", () => loncatKosong(p));
     hitung.addEventListener("click", () => loncatKosong(p));
@@ -864,6 +971,7 @@ html[data-aleta-tema-sipp="gelap"] .aleta-l1-awas{color:#f3e2b5}
     p.pita.hidden = !sumber;
     if (p.chip && !sumber) p.chip.hidden = true;
     if (!sumber) return;
+    terapkanLipatPutusan(p);
     segarkanHitung(p);
     const kotak = p.jendela.bagian ? kotakPanel(p.jendela.bagian) : null;
     const t = kotak ? tombolPanel(kotak, p.jendela.tombol) : null;
@@ -1464,6 +1572,7 @@ html[data-aleta-tema-sipp="gelap"] .aleta-l1-awas{color:#f3e2b5}
       kolomNomor,
       nomorHalamanDetil,
       tampak,
+      putusanTersimpan,
     },
     KUNCI_SERAH,
   };
