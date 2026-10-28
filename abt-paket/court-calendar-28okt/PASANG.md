@@ -53,9 +53,9 @@ Laptop (diuji): `bash sumber/uji_lokal.sh semua` (basis `aps_badilag_cc`, folder
 - Menu id baru = MAX+1 saat pasang (di ABT lokal 995).
 
 ## Perbandingan render (renderer php56 ABT asli, `alat/render_banding.py`, hasil ringkas di `hasil/render-ringkasan.json`)
-Perkara cerai gugat nyata `sipp_donggala` (baca saja): 10105 (jadwal Jawaban/Replik/Duplik terisi) dan 10080 (Jawaban, Replik, Duplik terisi; pembuktian dan kesimpulan belum dijadwalkan di SIPP, jadi kosong - sama seperti di BAS). Tiap perkara dirender 4 kali: blangko baru 1 dan 2, BAS 2 dan BAS 3 asli ALUR 04.
-- Blangko 1 vs bagian court calendar BAS 2 (dari "PENETAPAN" sampai sebelum "Kemudian ... sidang ditunda", 37 baris isi): SEMUA 37 baris BAS ada, urutan sama, di kedua perkara. Baris tambahan blangko 1 hanya yang disengaja: judul "PENETAPAN" + "TENTANG JADWAL PERSIDANGAN (COURT CALENDAR)", "Dalam perkara <jenis> antara:", tiga baris identitas pihak, dan blok tanda tangan Panitera (nama) - 12 baris termasuk 3 baris sisa gaya RTF.
-- Blangko 2 vs bagian court calendar BAS 3 (dari "Selanjutnya ... gugatan rekonvensi" sampai "Kemudian ... mengunggah perubahan court calendar", 24 baris): SEMUA 24 baris ada (selain catatan petugas "(APABILA ADA REKONVENSI)" dan titik koma akhir yang sengaja dibuang), di kedua perkara.
+Perkara cerai gugat nyata `sipp_donggala` (baca saja): 10105, 10014, dan 10080 (Jawaban, Replik, Duplik terisi; pembuktian dan kesimpulan belum dijadwalkan di SIPP, jadi kosong - sama seperti di BAS). Tiap perkara dirender 4 kali: blangko baru 1 dan 2, BAS 2 dan BAS 3 asli ALUR 04.
+- Blangko 1 vs bagian court calendar BAS 2 (dari "PENETAPAN" sampai sebelum "Kemudian ... sidang ditunda", 37 baris isi): SEMUA 37 baris BAS ada, urutan sama, di ketiga perkara. Baris tambahan blangko 1 hanya yang disengaja: judul "PENETAPAN" + "TENTANG JADWAL PERSIDANGAN (COURT CALENDAR)", "Dalam perkara <jenis> antara:", tiga baris identitas pihak, dan blok tanda tangan Panitera (nama) - 12 baris termasuk 3 baris sisa gaya RTF.
+- Blangko 2 vs bagian court calendar BAS 3 (dari "Selanjutnya ... gugatan rekonvensi" sampai "Kemudian ... mengunggah perubahan court calendar", 24 baris): SEMUA 24 baris ada (selain catatan petugas "(APABILA ADA REKONVENSI)" dan titik koma akhir yang sengaja dibuang), di ketiga perkara.
 - Pengecualian terukur: perkara 9987 (cerai gugat berrekonvensi) melewati batas 300 detik per render dan 10062 gagal tanpa keluaran (variabel majelis/pihak berat di laptop); keduanya tidak dibandingkan.
 
 ## Belum / batas (jujur)

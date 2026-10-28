@@ -24,5 +24,18 @@
   "b2_semua_baris_bas_ada": true,
   "b2_hilang": [],
   "b2_tambahan": 18
+ },
+ {
+  "perkara": "10014",
+  "b1_baris": 49,
+  "bas2_bagian": 37,
+  "b1_semua_baris_bas_ada": true,
+  "b1_hilang": [],
+  "b1_tambahan": 12,
+  "b2_baris": 42,
+  "bas3_bagian": 24,
+  "b2_semua_baris_bas_ada": true,
+  "b2_hilang": [],
+  "b2_tambahan": 18
  }
 ]
