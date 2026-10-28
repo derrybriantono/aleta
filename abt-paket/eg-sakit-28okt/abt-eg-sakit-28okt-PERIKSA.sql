@@ -1,0 +1,5 @@
+SELECT 8521, CASE MD5(sql_query) WHEN 'f3da57319c5ebc4448faedf441ec599b' THEN 'BARU' WHEN 'b90d183b40434c558a07fd7a71f72b9c' THEN 'LAMA' ELSE 'LAIN' END FROM aps_badilag.abt_variabel WHERE no_var = 8521;
+SELECT 8522, CASE MD5(sql_query) WHEN 'ff1b662d33881bfca8671be7c9d21a9f' THEN 'BARU' WHEN '5bf4175983bb30d517f88a0324f89d3f' THEN 'LAMA' ELSE 'LAIN' END FROM aps_badilag.abt_variabel WHERE no_var = 8522;
+SELECT 8528, CASE MD5(sql_query) WHEN '823eb7a25c6fdd3f3f700d0d2c858bfe' THEN 'BARU' WHEN '22577cd08037fe817afd6bb0cd7db51a' THEN 'LAMA' ELSE 'LAIN' END FROM aps_badilag.abt_variabel WHERE no_var = 8528;
+SELECT 8530, CASE MD5(sql_query) WHEN '0ec6ea4d884e2f131623a56c1409ca23' THEN 'BARU' WHEN 'a4a974fe8d261685fabe1eccac8757a3' THEN 'LAMA' ELSE 'LAIN' END FROM aps_badilag.abt_variabel WHERE no_var = 8530;
+SELECT 8531, CASE MD5(sql_query) WHEN '115714c4ec8a59f93d1ac4cc48c9ec4c' THEN 'BARU' WHEN 'fa0fde41d1a15892ac73e56f5ba2997b' THEN 'LAMA' ELSE 'LAIN' END FROM aps_badilag.abt_variabel WHERE no_var = 8531;
