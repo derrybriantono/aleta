@@ -374,6 +374,8 @@ describe("Kasir otomatis di luar jam kerja", () => {
         susunRencana: async () => ((ditulis += 1), { ok: false }),
       },
       rencanaOtomatis: () => ({ putusHariIni: true, kirim: [{ jenisBiayaId: 157, tanggal: "2026-10-20", jumlah: 10000, uraian: "Redaksi" }] }),
+      // 28 Okt 2026: akun tulis = AKUN KASIR SIPP, bukan akun petugas.
+      akunKasir: async () => ({ ok: true, username: "kasir", nama: "Kasir", calon: [] }),
       sekarang: () => "2026-10-20 21:00:00",
       antrean: {
         antrekan: async (m: Record<string, unknown>) => {

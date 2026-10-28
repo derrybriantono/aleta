@@ -46,7 +46,7 @@
  *   GET  /kasir/cari?nomor        cari perkara menurut nomor (hanya SELECT)
  *   POST /kasir                   tambah baris jurnal ke SIPP atas akun SIPP
  *                                 petugas (kering bawaan) - kasirJurnalService
- *   GET  /kasir/harian?tanggal    kasir otomatis massal satu hari (hanya SELECT)
+ *   GET  /kasir/harian?tanggal    Kasir Manual (satu hari) (hanya SELECT)
  *   GET  /kasir/rekap?dari&sampai rekap pengeluaran kasir (hanya SELECT)
  *   GET  /kasir/pengingat         tugas kasir tertinggal (hanya SELECT)
  *   POST /kasir/setor-pnbp        catat setoran PNBP di basis data ALETA bot
@@ -718,7 +718,7 @@ router.post("/court-calendar", wajibToken, async (req, res) => {
           aksi: "tulis",
           jenis: "court-calendar",
           perkaraId: badan.perkaraId,
-          akunSipp: String(rencana.akunSipp || badan.akunSipp || ""),
+          akunSipp: String(rencana.akunSipp || akunSipp || ""),
           operator,
           ip,
           berhasil: false,
@@ -812,10 +812,19 @@ router.post(
     }
     const kering = badan.kering !== false;
     const ip = alamatAudit(req);
+    // 28 Okt 2026: SEMUA tulisan jurnal Kasir ALETA (per perkara, Kasir Manual satu hari, otomatis)
+    // SELALU atas AKUN KASIR SIPP, siapa pun yang menekan tombolnya; pengguna ALETA itu hanya
+    // tercatat di jejak. Tanpa akun kasir (belum ada / belum dipilih): tidak menulis apa pun.
+    const kasirAkun = await require("../services/kasirAkunService").tentukan();
+    if (!kasirAkun.ok) {
+      res.status(400).json({ ok: false, alasan: kasirAkun.alasan, pesan: kasirAkun.pesan, calon: kasirAkun.calon });
+      return;
+    }
+    const akunSipp = kasirAkun.username;
     const rencana = await kasirJurnalService.susunRencana({
       perkaraId: badan.perkaraId,
       baris: badan.baris,
-      akunSipp: badan.akunSipp,
+      akunSipp,
       operator,
       ip,
     });
@@ -825,7 +834,7 @@ router.post(
           aksi: "tulis",
           jenis: "kasir-jurnal",
           perkaraId: badan.perkaraId,
-          akunSipp: String(rencana.akunSipp || badan.akunSipp || ""),
+          akunSipp: String(rencana.akunSipp || akunSipp || ""),
           operator,
           ip,
           berhasil: false,
@@ -842,7 +851,7 @@ router.post(
     if (jejak) {
       void jejak.catat({
         aksi: "tulis",
-        // 1.189.x butir 2: simpanan dari Kasir otomatis massal ditandai di
+        // 1.189.x butir 2: simpanan dari Kasir Manual (satu hari) ditandai di
         // jejak ALETA (bukan di SIPP).
         jenis: badan.massal === true ? "kasir-jurnal-massal" : "kasir-jurnal",
         perkaraId: rencana.perkara.perkaraId,
@@ -854,7 +863,7 @@ router.post(
         berhasil: hasil.ok === true,
         kering,
         alasan: hasil.ok ? "" : String(hasil.alasan || "sebagian tidak tersimpan"),
-        langkah: kasirJurnalService.langkahDatar(rencana),
+        langkah: kasirJurnalService.langkahDatarDenganHasil(rencana, hasil.hasil),
       });
     }
     res.status(hasil.ok || kering ? 200 : 409).json({
@@ -903,6 +912,46 @@ router.get("/kasir/rekap", wajibToken, async (req, res) => {
 router.get("/kasir/pengingat", wajibToken, async (req, res) => {
   try {
     res.json(await require("../services/kasirRekapService").pengingat({ hariIni: req.query.hariIni }));
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
+
+/**
+ * AKUN KASIR + RIWAYAT KASIR (28 Okt 2026)
+ *
+ *   GET  /kasir/akun                  akun kasir SIPP yang berlaku (grup Kasir, aktif) + calon
+ *   POST /kasir/akun { username }     Super Admin/admin memilih bila akun kasirnya lebih dari satu
+ *                                     (hak diperiksa rute portal; basis data ALETA bot saja)
+ *   GET  /kasir/riwayat?dari&sampai&nomor&batas   jurnal yang ditulis Kasir ALETA (jejak ALETA, hanya SELECT)
+ */
+router.get("/kasir/akun", wajibToken, async (req, res) => {
+  try {
+    res.json(await require("../services/kasirAkunService").tentukan());
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
+
+router.post("/kasir/akun", wajibToken, async (req, res) => {
+  try {
+    const badan = req.body || {};
+    const hasil = await require("../services/kasirAkunService").simpanPilihan({ username: badan.username, operator: badan.operator });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
+
+router.get("/kasir/riwayat", wajibToken, async (req, res) => {
+  try {
+    const hasil = await require("../services/jejakAletaService").riwayatKasir({
+      dari: req.query.dari,
+      sampai: req.query.sampai,
+      nomor: req.query.nomor,
+      batas: req.query.batas,
+    });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
   } catch (galat) {
     galat500(res, galat);
   }
@@ -975,7 +1024,6 @@ router.post("/kasir/otomatis", wajibToken, async (req, res) => {
     const ip = alamatAudit(req);
     const hasil = await require("../services/kasirOtomatisService").jalankanPerkara({
       perkaraId: badan.perkaraId,
-      akunSipp: badan.akunSipp,
       operator,
       ip,
       kering,
@@ -986,7 +1034,7 @@ router.post("/kasir/otomatis", wajibToken, async (req, res) => {
         jenis: "kasir-otomatis",
         perkaraId: hasil.perkara ? hasil.perkara.perkaraId : badan.perkaraId,
         nomorPerkara: hasil.perkara ? hasil.perkara.nomorPerkara : "",
-        akunSipp: hasil.akunSipp ? hasil.akunSipp.username : String(badan.akunSipp || ""),
+        akunSipp: hasil.akunSipp ? hasil.akunSipp.username : "",
         namaPejabat: hasil.akunSipp ? hasil.akunSipp.namaLengkap : "",
         operator,
         ip,

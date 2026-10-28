@@ -302,6 +302,8 @@ function buatLayanan(deps = {}) {
         require("../bot_db_config").query(sql, params, (galat, hasil) => (galat ? gagal(galat) : selesai(hasil)));
       }));
   const sedang = new Set();
+  // 28 Okt 2026: SEMUA tulisan Kasir otomatis atas akun KASIR SIPP (kasirAkunService), bukan akun petugas yang menekan.
+  const akunKasir = deps.akunKasir || (() => require("./kasirAkunService").tentukan());
   // Isi lama kolom waktu dipindah ke UTC sebelum tulisan pertama (botDbService).
   // Basis data tiruan (uji) tidak dimigrasi kecuali disebut tegas.
   const migrasiUtc = deps.migrasiUtc || (deps.kueriAleta ? async () => {} : () => require("./botDbService").pastikanUtc());
@@ -435,7 +437,8 @@ function buatLayanan(deps = {}) {
   // ─── Jalankan satu perkara ─────────────────────────────────────────────────
 
   /**
-   * Menulis butir hari putus SATU perkara atas akun SIPP petugas yang masuk.
+   * Menulis butir hari putus SATU perkara atas AKUN KASIR SIPP (28 Okt 2026) -
+   * bukan akun petugas ALETA yang menekan; petugas itu hanya tercatat di jejak.
    * Saklar dibaca DI SINI (bukan dipercaya dari peramban): mati = tidak ada
    * satu pun tulisan. Butir yang ditulis = butir setelan. Hanya hari ini.
    */
@@ -447,6 +450,8 @@ function buatLayanan(deps = {}) {
     const setelan = await bacaSetelan();
     if (!setelan.nyala) return { ok: false, alasan: "saklar_mati", pesan: "Kasir otomatis sedang MATI - tidak ada yang ditulis." };
     if (sedang.has(perkaraId)) return { ok: false, alasan: "sedang_dikerjakan", pesan: "Perkara ini sedang dikerjakan Kasir otomatis lain - dilewati." };
+    const akun = await akunKasir();
+    if (!akun.ok) return { ok: false, alasan: akun.alasan, pesan: akun.pesan, calon: akun.calon };
     sedang.add(perkaraId);
     try {
       const baca = await jurnal.bacaKeadaan(perkaraId);
@@ -455,7 +460,7 @@ function buatLayanan(deps = {}) {
       const r = (deps.rencanaOtomatis || rencanaOtomatis)(k, { hari: k.hariIni, butir: setelan.butir });
       if (!r.putusHariIni) return { ok: true, kosong: true, rencana: r, pesan: r.alasan || "Bukan perkara putus hari ini." };
       if (!r.kirim.length) return { ok: true, kosong: true, rencana: r, pesan: r.alasan };
-      const muatan = { perkaraId, baris: r.kirim.map(barisKirim), akunSipp: minta.akunSipp, operator, ip: minta.ip };
+      const muatan = { perkaraId, baris: r.kirim.map(barisKirim), akunSipp: akun.username, operator, ip: minta.ip };
       // ======================================================================
       // DI LUAR JAM KERJA: DIANTREKAN (keputusan 104, 18 Okt 2026)
       // ======================================================================
@@ -506,7 +511,7 @@ function buatLayanan(deps = {}) {
         akunSipp: rencana.akunSipp,
         ditolak: rencana.ditolak,
         dilewati: rencana.dilewati,
-        langkahDatar: jurnal.langkahDatar(rencana),
+        langkahDatar: jurnal.langkahDatarDenganHasil ? jurnal.langkahDatarDenganHasil(rencana, hasil.hasil) : jurnal.langkahDatar(rencana),
       };
     }
   }

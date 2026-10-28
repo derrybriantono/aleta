@@ -8,7 +8,7 @@
  * Tombol "Kasir harian" di deretan alat Jadwal Sidang (saklar Tampilan
  * "tombol-kasir-harian"), di sebelah tombol Kasir per perkara yang tetap ada.
  *
- *   Massal hari ini  perkara yang bergerak pada tanggal itu, usulan jurnal
+ *   Kasir Manual     perkara yang bergerak pada tanggal itu, usulan jurnal
  *                    tiap perkara menurut KEADAANNYA (mesin yang sama dengan
  *                    Kasir per perkara). Pratinjau, lalu simpan berurutan
  *                    dengan jeda manusia; satu perkara gagal tidak
@@ -20,9 +20,10 @@
  *                    saat dibuka. Pilihan tanggal. Unduh PDF.
  *   Pengingat        sisa panjar, jurnal hari putusan, panjar kurang, setor
  *                    PNBP (dicatat di ALETA, bukan SIPP).
+ *   Riwayat          jurnal yang sudah ditulis Kasir ALETA (28 Okt 2026).
  *
  * Penulisan ke SIPP lewat rute Kasir 1.186 (satu baris jurnal = satu
- * transaksi, atas akun SIPP petugas yang masuk, jejak di aleta_*).
+ * transaksi; Kasir Manual atas AKUN KASIR SIPP sejak 28 Okt 2026, jejak di aleta_*).
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -67,7 +68,7 @@ async function bacaJson(jawaban: Response): Promise<Record<string, unknown>> {
 const kelasMedan =
   "h-8 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60";
 
-type Akun = { ok: boolean; username?: string; milik?: string[]; pesan?: string; alasan?: string };
+type Akun = { ok: boolean; username?: string; nama?: string; milik?: string[]; pesan?: string; alasan?: string };
 
 // ─── Massal ──────────────────────────────────────────────────────────────────
 
@@ -77,7 +78,6 @@ export function BagianMassal({ onSunting }: { onSunting: (perkaraId: string) => 
   const [memuat, setMemuat] = useState(false);
   const [galat, setGalat] = useState("");
   const [centang, setCentang] = useState<Record<number, boolean>>({});
-  const [akunPilihan, setAkunPilihan] = useState("");
   const [laporan, setLaporan] = useState<Record<number, HasilMassal>>({});
   const [sedang, setSedang] = useState(false);
   const [yakin, setYakin] = useState(false);
@@ -100,8 +100,6 @@ export function BagianMassal({ onSunting }: { onSunting: (perkaraId: string) => 
       const d = isi as unknown as DaftarHarian & { akun?: Akun };
       setData(d);
       setCentang(Object.fromEntries(d.perkara.map((p) => [p.perkaraId, centangBawaanMassal(p)])));
-      if (d.akun?.ok && d.akun.username) setAkunPilihan(d.akun.username);
-      else if (d.akun?.milik?.length) setAkunPilihan((x) => x || String(d.akun?.milik?.[0] || ""));
     } catch (e) {
       setGalat(e instanceof Error ? e.message : "Daftar perkara hari itu tidak terbaca.");
     } finally {
@@ -117,7 +115,8 @@ export function BagianMassal({ onSunting }: { onSunting: (perkaraId: string) => 
   }, [muat]);
 
   const akun = data?.akun;
-  const akunSiap = Boolean(akun && (akun.ok || (akun.alasan === "akun_sipp_ganda" && akunPilihan)));
+  // 28 Okt 2026: Kasir Manual selalu atas AKUN KASIR SIPP (ditentukan bot), bukan akun petugas yang masuk.
+  const akunSiap = Boolean(akun?.ok);
   const dipilih = (data?.perkara ?? []).filter((p) => centang[p.perkaraId] && barisMassal(p).length > 0);
 
   async function jalankan(kering: boolean, pilihJam?: PilihJamKerja) {
@@ -138,7 +137,6 @@ export function BagianMassal({ onSunting }: { onSunting: (perkaraId: string) => 
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 perkaraId: String(p.perkaraId),
-                akunSipp: akun?.ok ? akun.username : akunPilihan,
                 baris: barisMassal(p),
                 kering,
                 massal: true,
@@ -217,21 +215,10 @@ export function BagianMassal({ onSunting }: { onSunting: (perkaraId: string) => 
         <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
           {akun.ok ? (
             <span>
-              Ditulis di SIPP atas akun SIPP Anda: <b>{akun.username}</b>.
+              Ditulis di SIPP atas akun kasir: <b>{akun.nama || akun.username}</b>.
             </span>
-          ) : akun.alasan === "akun_sipp_ganda" ? (
-            <label className="flex flex-wrap items-center gap-2">
-              <span>Akun SIPP yang dipakai:</span>
-              <select className={kelasMedan} value={akunPilihan} onChange={(e) => setAkunPilihan(e.target.value)}>
-                {(akun.milik ?? []).map((u) => (
-                  <option key={u} value={u}>
-                    {u}
-                  </option>
-                ))}
-              </select>
-            </label>
           ) : (
-            <span className="text-amber-700 dark:text-amber-300">{akun.pesan || "Akun SIPP Anda belum tertaut - usulan dapat dilihat, tetapi tidak dapat disimpan."}</span>
+            <span className="text-amber-700 dark:text-amber-300">{akun.pesan || "Akun kasir SIPP belum ada - usulan dapat dilihat, tetapi tidak dapat disimpan."}</span>
           )}
         </div>
       ) : null}
@@ -586,7 +573,127 @@ export function BagianPengingatKasir({ onSunting, hanyaBaca = false }: { onSunti
 
 // ─── Dialog & tombol ─────────────────────────────────────────────────────────
 
-export type TabKasir = "massal" | "rekap" | "pengingat";
+// ─── Riwayat (28 Okt 2026) ───────────────────────────────────────────────────
+
+type PekerjaanRiwayat = {
+  id: number;
+  waktu: string;
+  cara: string;
+  perkaraId: number;
+  nomorPerkara: string;
+  akunSipp: string;
+  namaAkun: string;
+  operator: string;
+  berhasil: boolean;
+  alasan: string;
+  baris: Array<{ tanggal: string; uraian: string; jumlah: number; hasil: string }>;
+};
+
+function waktuSetempat(iso: string): string {
+  const t = String(iso || "");
+  const d = new Date(/(?:Z|[+-]\d\d:?\d\d)$/.test(t) ? t : `${t.replace(" ", "T")}Z`);
+  if (Number.isNaN(d.valueOf())) return t || "-";
+  return new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Makassar", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }).format(d).replace(",", "");
+}
+
+/**
+ * Riwayat pekerjaan Kasir ALETA: jurnal yang sudah ditulis Kasir otomatis, Kasir
+ * Manual (satu hari), dan Kasir per perkara - rute dan isi SAMA dengan bab Riwayat
+ * di Kasir ALETA ekstensi (GET /api/aleta-ecourt/sidang/kasir/riwayat).
+ */
+export function BagianRiwayat() {
+  const [dari, setDari] = useState(() => {
+    const d = new Date(`${waktuPengadilan().tanggal}T00:00:00Z`);
+    d.setUTCDate(d.getUTCDate() - 6);
+    return d.toISOString().slice(0, 10);
+  });
+  const [sampai, setSampai] = useState(() => waktuPengadilan().tanggal);
+  const [nomor, setNomor] = useState("");
+  const [data, setData] = useState<PekerjaanRiwayat[] | null>(null);
+  const [galat, setGalat] = useState("");
+  const [memuat, setMemuat] = useState(false);
+
+  const muat = useCallback(async () => {
+    setMemuat(true);
+    setGalat("");
+    try {
+      const kueri = new URLSearchParams();
+      if (dari) kueri.set("dari", dari);
+      if (sampai) kueri.set("sampai", sampai);
+      if (nomor.trim()) kueri.set("nomor", nomor.trim());
+      const isi = await bacaJson(await fetch(apiPath(`${ALAMAT_KASIR}/riwayat?${kueri.toString()}`), { cache: "no-store" }));
+      if (isi.ok === false || isi.available === false) setGalat(String(isi.pesan || isi.alasan || "Riwayat kasir tidak terbaca."));
+      else setData(Array.isArray(isi.pekerjaan) ? (isi.pekerjaan as PekerjaanRiwayat[]) : []);
+    } catch (e) {
+      setGalat(e instanceof Error ? e.message : "Riwayat kasir tidak terbaca.");
+    } finally {
+      setMemuat(false);
+    }
+  }, [dari, sampai, nomor]);
+
+  const awal = useRef(muat);
+  useEffect(() => {
+    const jam = setTimeout(() => void awal.current(), 0);
+    return () => clearTimeout(jam);
+  }, []);
+
+  const baris = (data ?? []).flatMap((k) =>
+    k.baris.length
+      ? k.baris.map((b) => ({ k, uraian: b.uraian, tanggal: b.tanggal, jumlah: b.jumlah as number | null, hasil: b.hasil, alasan: b.hasil === "gagal" ? k.alasan : "" }))
+      : [{ k, uraian: "-", tanggal: "", jumlah: null as number | null, hasil: k.berhasil ? "berhasil" : "gagal", alasan: k.alasan }]
+  );
+  return (
+    <div className="grid gap-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <input type="date" aria-label="Riwayat dari tanggal" className={kelasMedan} value={dari} onChange={(e) => setDari(e.target.value)} />
+        <span className="text-xs text-muted-foreground">sampai</span>
+        <input type="date" aria-label="Riwayat sampai tanggal" className={kelasMedan} value={sampai} onChange={(e) => setSampai(e.target.value)} />
+        <input type="search" aria-label="Cari nomor perkara" placeholder="Cari nomor perkara" className={cn(kelasMedan, "min-w-[10rem]")} value={nomor} onChange={(e) => setNomor(e.target.value)} onKeyDown={(e) => e.key === "Enter" && void muat()} />
+        <Button size="sm" variant="outline" disabled={memuat} onClick={() => void muat()}>
+          Tampilkan
+        </Button>
+        {data ? <span className="text-xs text-muted-foreground">{baris.length} baris</span> : null}
+      </div>
+      {galat ? <p className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-700 dark:text-rose-300">{galat}</p> : null}
+      {data && !baris.length ? <p className="text-sm text-muted-foreground">Belum ada pekerjaan kasir yang tercatat pada rentang ini.</p> : null}
+      {baris.length ? (
+        <div className="aleta-tabel-gulir">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="text-left">
+                {["Waktu", "Perkara", "Cara", "Uraian", "Nominal", "Akun kasir", "Dijalankan", "Hasil"].map((h) => (
+                  <th key={h} className={cn("py-1 pr-2 font-semibold", h === "Nominal" && "text-right")}>
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {baris.map((b, i) => (
+                <tr key={`${b.k.id}-${i}`} className="border-t" data-hasil={b.hasil}>
+                  <td className="whitespace-nowrap py-0.5 pr-2">{waktuSetempat(b.k.waktu)}</td>
+                  <td className="py-0.5 pr-2">{b.k.nomorPerkara}</td>
+                  <td className="py-0.5 pr-2">{b.k.cara}</td>
+                  <td className="py-0.5 pr-2">{b.tanggal ? `${b.uraian} (${tanggalPanjang(b.tanggal)})` : b.uraian}</td>
+                  <td className="whitespace-nowrap py-0.5 pr-2 text-right">{b.jumlah === null ? "-" : rupiah(b.jumlah)}</td>
+                  <td className="py-0.5 pr-2">{b.k.namaAkun || b.k.akunSipp || "-"}</td>
+                  <td className="py-0.5 pr-2">{b.k.operator || "-"}</td>
+                  <td className="py-0.5">
+                    <span className={cn("rounded border px-1.5", b.hasil === "berhasil" ? "border-emerald-500/40 text-emerald-700 dark:text-emerald-300" : b.hasil === "gagal" ? "border-rose-500/40 text-rose-700 dark:text-rose-300" : "border-border text-muted-foreground")} title={b.alasan || undefined}>
+                      {b.hasil}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+export type TabKasir = "massal" | "rekap" | "pengingat" | "riwayat";
 
 export function DialogKasirHarian({ onTutup, tabAwal, hanyaBaca = false }: { onTutup: () => void; tabAwal: TabKasir; hanyaBaca?: boolean }) {
   const [tab, setTab] = useState<TabKasir>(hanyaBaca && tabAwal === "massal" ? "pengingat" : tabAwal);
@@ -615,9 +722,10 @@ export function DialogKasirHarian({ onTutup, tabAwal, hanyaBaca = false }: { onT
         <div className="mb-3 flex gap-1 border-b" role="tablist">
           {(
             [
-              ["massal", "Massal hari ini"],
+              ["massal", "Kasir Manual (satu hari)"],
               ["rekap", "Rekap"],
               ["pengingat", "Pengingat"],
+              ["riwayat", "Riwayat"],
             ] as Array<[TabKasir, string]>
           )
             .filter(([k]) => !(hanyaBaca && k === "massal"))
@@ -636,6 +744,7 @@ export function DialogKasirHarian({ onTutup, tabAwal, hanyaBaca = false }: { onT
         </div>
         {tab === "massal" && !hanyaBaca ? <BagianMassal onSunting={setSunting} /> : null}
         {tab === "rekap" ? <BagianRekap /> : null}
+        {tab === "riwayat" ? <BagianRiwayat /> : null}
         {tab === "pengingat" ? <BagianPengingatKasir onSunting={hanyaBaca ? undefined : setSunting} hanyaBaca={hanyaBaca} /> : null}
       </div>
     </div>
@@ -678,7 +787,7 @@ export function TombolKasirHarian() {
   if (!boleh) return null;
   return (
     <>
-      <Button size="sm" variant="outline" onClick={() => setBuka("massal")} title="Kasir harian: jurnal otomatis massal satu hari, rekap pengeluaran (PDF), dan pengingat tugas kasir">
+      <Button size="sm" variant="outline" onClick={() => setBuka("massal")} title="Kasir harian: Kasir Manual (satu hari), rekap pengeluaran (PDF), dan pengingat tugas kasir">
         <CalendarClock className="mr-1.5 h-4 w-4" />
         Kasir harian
       </Button>

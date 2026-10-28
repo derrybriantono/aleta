@@ -822,15 +822,16 @@ function susunUsulan(k) {
           let jumlah = t.jumlah;
           let asalTarif = t.asal;
           if (ev.ikrar) {
-            uraian = `Biaya Panggilan Ikrar Talak${ev.resi ? `/${ev.resi}` : "/"}`;
+            // 28 Okt 2026: tanpa resi tidak ada garis miring menggantung; resi menyusul diketik kasir (perluResi menahannya).
+            uraian = `Biaya Panggilan Ikrar Talak${ev.resi ? `/${ev.resi}` : ""}`;
           } else if (ev.ket === "R") {
             uraian = `Biaya Panggilan ${sebut}/RRI`;
             jumlah = Number(tarif.rri) > 0 ? Number(tarif.rri) : null;
             asalTarif = jumlah ? "tarif panggilan lewat RRI" : "tarif RRI belum diketahui - isi jumlahnya";
           } else if (ev.ket === "P") {
-            uraian = `Biaya Panggilan ${sebut}/PEMDA/${ev.resi}`;
+            uraian = `Biaya Panggilan ${sebut}/PEMDA${ev.resi ? `/${ev.resi}` : ""}`;
           } else {
-            uraian = `Biaya Panggilan ${sebut}/${ev.resi}`;
+            uraian = `Biaya Panggilan ${sebut}${ev.resi ? `/${ev.resi}` : ""}`;
           }
           tambah({
             jenisBiayaId: JB.PANGGIL_TERGUGAT,
@@ -2055,6 +2056,20 @@ function buatLayanan(deps = {}) {
   }
 
   /**
+   * Daftar datar langkah BERSAMA hasil tiap baris jurnal (keadaan: tersimpan /
+   * sudah-ada / gagal / ...) pada langkah perkara_biaya - untuk jejak ALETA
+   * yang dibaca bab Riwayat Kasir. `hasil` = jalankanRencana(...).hasil.
+   */
+  function langkahDatarDenganHasil(rencana, hasil) {
+    const keluar = [];
+    for (const l of (rencana && rencana.langkah) || []) {
+      const h = (Array.isArray(hasil) ? hasil : []).find((x) => x && x.ke === l.ke);
+      l.kelompok.forEach((x, i) => keluar.push(i === 0 && h ? { ...x, keadaan: String(h.keadaan || "") } : x));
+    }
+    return keluar;
+  }
+
+  /**
    * Menjalankan rencana. Tiap baris jurnal berdiri sendiri: id = MAX(id)+1 dan
    * jam NOW() diambil SESUDAH jeda manusia, sedekat mungkin dengan tulisannya.
    * "tersimpan" hanya bila barisnya terbaca ulang.
@@ -2237,7 +2252,7 @@ function buatLayanan(deps = {}) {
     };
   }
 
-  return { cariPerkara, bacaJurnal, bacaKeadaan, muatTarif, usulanPerkara, daftarHarian, akunPetugas, susunRencana, jalankanRencana, langkahDatar };
+  return { cariPerkara, bacaJurnal, bacaKeadaan, muatTarif, usulanPerkara, daftarHarian, akunPetugas, susunRencana, jalankanRencana, langkahDatar, langkahDatarDenganHasil };
 }
 
 let bawaan = null;
@@ -2279,4 +2294,5 @@ module.exports = {
   susunRencana: (minta) => layananBawaan().susunRencana(minta),
   jalankanRencana: (rencana, opsi) => layananBawaan().jalankanRencana(rencana, opsi),
   langkahDatar: (rencana) => layananBawaan().langkahDatar(rencana),
+  langkahDatarDenganHasil: (rencana, hasil) => layananBawaan().langkahDatarDenganHasil(rencana, hasil),
 };

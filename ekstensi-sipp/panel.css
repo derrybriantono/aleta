@@ -9781,6 +9781,110 @@ html[data-aleta-teknis="sembunyi"] .aleta-teknis {
 .aleta-kasir-bagian > summary { font-weight: 600; color: var(--aleta-tulisan); }
 .aleta-kasir-isi { display: grid; gap: 6px; padding-top: 6px; }
 
+/* === KASIR 28 Okt 2026: tipografi bab/sub-bab, lipatan, ikon (i) ===
+ * Tiga tingkat yang terbaca di terang maupun gelap (hanya token --aleta-*):
+ *   bab      15px tebal   (Kasir otomatis, Pengingat, Kasir Manual, Rekap, Riwayat)
+ *   sub-bab  13.5px tebal (butir, perkara putus, jenis pengingat, kejadian perkara)
+ *   isi      12.5px       (satu ukuran untuk teks lembut, tabel, isian, tombol kecil) */
+.aleta-kasir .aleta-basmassal-judul-teks { font-size: calc(16px * var(--aleta-skala-huruf, 1)); font-weight: 700; }
+.aleta-kasir-harian > details.aleta-kasir-bagian > summary {
+  padding: 4px 0;
+  color: var(--aleta-tulisan);
+  font-size: calc(15px * var(--aleta-skala-huruf, 1));
+  font-weight: 700;
+  line-height: 1.35;
+}
+.aleta-kasir .aleta-kasir-subbagian > summary,
+.aleta-kasir .aleta-kasir-kejadian > summary,
+.aleta-kasir .aleta-kasir-subjudul {
+  color: var(--aleta-tulisan);
+  font-size: calc(13.5px * var(--aleta-skala-huruf, 1));
+  font-weight: 700;
+  line-height: 1.4;
+}
+.aleta-kasir .aleta-kasir-subbagian { margin: 2px 0; padding-left: 8px; border-left: 2px solid var(--aleta-garis); }
+.aleta-kasir .aleta-kasir-subbagian > summary { padding: 2px 0; }
+.aleta-kasir-jumlah { margin-left: 4px; color: var(--aleta-tulisan-lembut); font-weight: 600; }
+.aleta-kasir .aleta-basmassal-lembut,
+.aleta-kasir .aleta-basmassal-kabar,
+.aleta-kasir .aleta-basmassal-daftar-temuan,
+.aleta-kasir .aleta-kasir-tabel,
+.aleta-kasir .aleta-kasir-masukan,
+.aleta-kasir .aleta-basmassal-tombol-kecil,
+.aleta-kasir .aleta-basmassal-tautan,
+.aleta-kasir .aleta-basmassal-akun,
+.aleta-kasir .aleta-kasir-otomatis-pilih { font-size: calc(12.5px * var(--aleta-skala-huruf, 1)); }
+.aleta-kasir .aleta-kasir-tabel th { font-weight: 700; color: var(--aleta-tulisan); white-space: nowrap; }
+.aleta-kasir-gulir { overflow-x: auto; max-width: 100%; }
+.aleta-kasir-tak-patah { white-space: nowrap; }
+.aleta-kasir-tabel-sunting .aleta-kasir-masukan[type="date"] { width: 132px; }
+.aleta-kasir-tabel-sunting td { vertical-align: top; }
+.aleta-kasir-hapus { color: var(--aleta-lewat); }
+.aleta-basmassal-akun { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+.aleta-kasir-saklar-info { display: inline-flex; align-items: center; gap: 4px; }
+.aleta-kasir-cari { min-width: 160px; }
+.aleta-kasir-nomor { font-weight: 600; }
+/* Ikon (i): tooltip saat disorot, pop-up saat diklik dua kali. */
+.aleta-kasir-info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 16px;
+  height: 16px;
+  margin: 0 3px 0 5px;
+  border: 1px solid var(--aleta-tulisan-lembut);
+  border-radius: 50%;
+  color: var(--aleta-tulisan-lembut);
+  font: italic 700 10.5px/1 Georgia, "Times New Roman", serif;
+  vertical-align: middle;
+  cursor: help;
+  user-select: none;
+  flex: none;
+}
+.aleta-kasir-info:hover,
+.aleta-kasir-info:focus-visible { border-color: var(--aleta-merek); color: var(--aleta-merek); outline: none; }
+.aleta-kasir-info:focus-visible { box-shadow: 0 0 0 2px color-mix(in srgb, var(--aleta-merek) 45%, transparent); }
+.aleta-kasir-info-tirai {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.38);
+}
+.aleta-kasir-info-dialog {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 460px;
+  max-height: 80vh;
+  overflow: auto;
+  padding: 14px 16px;
+  border: 1px solid currentColor;
+  border-radius: 10px;
+  background: var(--aleta-info-latar, #fffdf8);
+  color: var(--aleta-info-tulisan, #2b2721);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+  font-family: system-ui, sans-serif;
+  font-size: calc(13px * var(--aleta-skala-huruf, 1));
+  line-height: 1.5;
+}
+.aleta-kasir-info-judul { margin-bottom: 6px; font-size: calc(15px * var(--aleta-skala-huruf, 1)); font-weight: 700; }
+.aleta-kasir-info-teks { margin: 6px 0; overflow-wrap: anywhere; }
+.aleta-kasir-info-baris { display: flex; justify-content: flex-end; margin-top: 10px; }
+.aleta-kasir-info-dialog .aleta-basmassal-tombol {
+  padding: 3px 14px;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+/* === AKHIR KASIR 28 Okt 2026 === */
+
 /* === T - PERBAIKAN 30 SEP SORE === */
 /* Panel ABT sederhana + menu per peran (abt.js, lapisan sore). Seluruh aturan
  * bersyarat pada atribut/kelas yang hanya dipasang dalam tampilan Baru dan UI

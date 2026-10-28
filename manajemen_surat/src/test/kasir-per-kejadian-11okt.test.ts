@@ -444,12 +444,15 @@ describe("4. ekstensi - Kasir per perkara tersusun per kejadian", () => {
     expect(daftar.querySelectorAll("input[type=checkbox]").length).toBe(0);
     expect(daftar.querySelectorAll("tr.aleta-kasir-sudah").length).toBe(3);
     expect(daftar.textContent).toContain("sudah");
-    expect(daftar.textContent).toContain("ditulis SIPP sendiri saat perkara didaftar");
+    // 28 Okt 2026: keterangan kejadian di balik ikon (i), bukan baris teks.
+    expect(Array.from(daftar.querySelectorAll(".aleta-kasir-info")).map((i) => (i as HTMLElement).title).join(" ")).toContain("ditulis SIPP sendiri saat perkara didaftar");
     // Seluruh usulan tercentang tergambar; tidak ada angka hijau mati (warna lewat kelas token panel).
     const tercentang = (e.h.usulan as Usul[]).filter((u) => u.pilih).length;
     expect(e.wadah.querySelectorAll(".aleta-kasir-tabel input[type=checkbox]:checked").length).toBe(tercentang);
     expect(e.wadah.innerHTML).not.toMatch(/style="[^"]*(color|#[0-9a-f]{3,6})/i);
-    expect(e.wadah.textContent).toContain("1 perlu dijurnal");
+    // 28 Okt 2026: baris "N kejadian · M perlu dijurnal" dihapus; status ada di tanda tiap kejadian.
+    expect(e.wadah.textContent).not.toContain("perlu dijurnal");
+    expect(e.wadah.querySelectorAll('details.aleta-kasir-kejadian[data-status="terbuka"]').length).toBe(1);
   });
 
   it("aletaKasirRingkas: {usulan, kejadian, keadaan} dari SATU GET yang juga dipakai tab Kasir; Lama -> null tanpa permintaan", async () => {
