@@ -1,0 +1,35 @@
+{
+ "cetakan": 26,
+ "sama": 10,
+ "beda": 16,
+ "per_grup": {
+  "kontrol_rapat": {
+   "sama": 8,
+   "beda": 2
+  },
+  "tak_rapat": {
+   "sama": 2,
+   "beda": 14
+  }
+ },
+ "beda_rapat": [
+  "pb-9571",
+  "pmb-9571"
+ ],
+ "beda_tak_rapat": [
+  "pb-10225",
+  "pb-6326",
+  "pb-6463",
+  "pb-7900",
+  "pb-9291",
+  "pb-9528",
+  "pb-9593",
+  "pb-9729",
+  "pmb-10225",
+  "pmb-6326",
+  "pmb-9291",
+  "pmb-9528",
+  "pmb-9593",
+  "pmb-9729"
+ ]
+}
