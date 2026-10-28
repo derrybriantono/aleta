@@ -42,12 +42,18 @@
   const NAMA_PERAN_TAMPIL = { put: "Hakim", bas: "Panitera Pengganti", rel: "Juru sita", ptsp: "PTSP" };
   const PERAN_JENIS = { put: "hakim", bas: "pp", rel: "js" };
   const JENIS_PERAN = { hakim: "put", pp: "bas", js: "rel", ptsp: "ptsp" };
+  // 28 Okt 2026: PTSP memilih penetapan mana yang dicetak. Empat penetapan awal tercentang sejak awal (perilaku lama); PMH+PHS gabungan
+  // (@ 0) dan penunjukan mediator (@ 4) tersedia sebagai pilihan tambahan. PHS ikrar talak (@ 3, @ 3a, @ 3b) tidak ikut: tanggal acuannya
+  // sidang ikrar, bukan sidang pertama.
   const POLA_PTSP = [
-    { label: "PMH", pola: /^@\s*1\b.*PMH/i },
-    { label: "PPP", pola: /^@\s*0a\b.*PPP/i },
-    { label: "PJS", pola: /^@\s*0b\b.*PJS/i },
-    { label: "PHS", pola: /^@\s*2\s*-.*PHS/i },
+    { label: "PMH", pola: /^@\s*1\b.*PMH/i, utama: true, judul: "Penetapan majelis hakim (PMH)" },
+    { label: "PPP", pola: /^@\s*0a\b.*PPP/i, utama: true, judul: "Penunjukan panitera pengganti (PPP)" },
+    { label: "PJS", pola: /^@\s*0b\b.*PJS/i, utama: true, judul: "Penunjukan juru sita (PJS)" },
+    { label: "PHS", pola: /^@\s*2\s*-.*PHS/i, utama: true, judul: "Penetapan hari sidang (PHS)" },
+    { label: "PMH + PHS", pola: /^@\s*0\s*-\s*PMH/i, utama: false, judul: "PMH dan PHS satu blangko" },
+    { label: "Mediator", pola: /^@\s*4\b.*Mediator/i, utama: false, judul: "Penunjukan mediator" },
   ];
+  const PENETAPAN_BAWAAN = POLA_PTSP.filter((x) => x.utama).map((x) => x.label);
   const LABEL_STATUS = { tanpa: "Pilih blangko", menunggu: "Siap diperiksa", jalan: "Memproses…", siap: "Siap", cek: "Perlu dicek", gagal: "Gagal", selesai: "Sudah dicetak" };
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -204,8 +210,10 @@
       } else if (jenis === "ptsp") {
         const urut = (Array.isArray(p.sidang) ? p.sidang : []).slice().sort((a, b) => String(a.tanggal).localeCompare(String(b.tanggal)) || (a.urutan || 0) - (b.urutan || 0));
         const pertama = urut.find((s) => (Number(s.urutan) || 1) <= 1) || null;
-        if (!pertama || !pertama.tanggal || pertama.tanggal < tanggal || pertama.tanggal > tambahHari(tanggal, JANGKAUAN_PTSP_HARI)) continue;
-        for (const x of POLA_PTSP) hasil.push(buat(p, pertama, x));
+        const batasAtas = o.sampai && o.sampai >= tanggal ? o.sampai : tambahHari(tanggal, JANGKAUAN_PTSP_HARI);
+        if (!pertama || !pertama.tanggal || pertama.tanggal < tanggal || pertama.tanggal > batasAtas) continue;
+        const dipakai = POLA_PTSP.filter((x) => (Array.isArray(o.penetapan) ? o.penetapan.includes(x.label) : x.utama));
+        for (const x of dipakai) hasil.push(buat(p, pertama, x));
       }
     }
     const urutanLabel = (l) => POLA_PTSP.findIndex((x) => x.label === l);
@@ -230,6 +238,8 @@
     terbuka: false,
     jenis: "",
     tanggal: "",
+    sampai: "", // PTSP: ujung rentang sidang pertama; kosong = tanggal + 28 hari
+    penetapan: PENETAPAN_BAWAAN.slice(), // PTSP: penetapan yang dicetak
     semua: false, // saringan "semua perkara" (BAS) / "semua juru sita" (relaas)
     semuaSidang: false, // putusan: seluruh sidang hari itu, bukan hanya yang beragenda putusan
     format: "rtf", // "rtf" | "pdf"
@@ -275,16 +285,20 @@
     if (!adm()) for (const p of ["hakim", "pp", "js", "ptsp"]) if (peran.includes(p) && ada.includes(JENIS_PERAN[p])) return JENIS_PERAN[p];
     return ada[0] || "";
   }
+  /** Ujung rentang sidang pertama PTSP: pilihan petugas, atau tanggal mulai + 28 hari. */
+  const sampaiPtsp = () => (M.sampai && M.sampai >= M.tanggal ? M.sampai : tambahHari(M.tanggal, JANGKAUAN_PTSP_HARI));
   function alamatPerkara() {
     const q = new URLSearchParams();
     q.set("mode", "rentang");
     q.set("dari", M.tanggal);
-    q.set("sampai", M.jenis === "ptsp" ? tambahHari(M.tanggal, JANGKAUAN_PTSP_HARI) : M.tanggal);
+    q.set("sampai", M.jenis === "ptsp" ? sampaiPtsp() : M.tanggal);
     if (adm()) {
       const kd = api() && typeof api().keadaan === "function" ? api().keadaan() : null;
       if (kd && kd.sebagai && kd.sebagai.nama && kd.sebagai.peran) {
         q.set("sebagai", kd.sebagai.nama);
         q.set("peranSebagai", kd.sebagai.peran);
+        // Admin yang melihat sebagai akun PTSP: perkara satker seperti yang dilihat PTSP (baca saja).
+        if (kd.sebagai.peran === "ptsp" && M.jenis === "ptsp") q.set("massal", "ptsp");
       }
     } else if (M.jenis === "ptsp") q.set("massal", "ptsp");
     else if (M.jenis === "bas" && M.semua) q.set("massal", "bas");
@@ -540,7 +554,7 @@
       if (M.jenis === "rel") baris = await barisRelaas();
       else {
         const data = await d.ambilPortal(alamatPerkara(), {}, "Membaca daftar perkara");
-        baris = barisDariPerkara(M.jenis, data && data.perkara, M.tanggal, { semuaSidang: M.semuaSidang, abaikanPeran: M.jenis === "ptsp" });
+        baris = barisDariPerkara(M.jenis, data && data.perkara, M.tanggal, { semuaSidang: M.semuaSidang, abaikanPeran: M.jenis === "ptsp", sampai: M.jenis === "ptsp" ? sampaiPtsp() : "", penetapan: M.penetapan });
       }
       if (nomor !== M.urut) return;
       M.menu = await d.menu(M.jenis);
@@ -637,7 +651,20 @@
           : M.jenis === "put"
             ? `<label class="bd-cek"><input type="checkbox" id="bd-ms-semuasidang" ${M.semuaSidang ? "checked" : ""} ${sibuk ? "disabled" : ""}> Tampilkan semua sidang hari itu</label>`
             : "";
-    const ketTanggal = M.jenis === "ptsp" ? "Sidang pertama mulai tanggal" : M.jenis === "rel" ? "Relaas yang lahir pada" : "Tanggal sidang";
+    const ketTanggal = M.jenis === "ptsp" ? "Sidang pertama dari" : M.jenis === "rel" ? "Relaas yang lahir pada" : "Tanggal sidang";
+    const rentangPtsp =
+      M.jenis === "ptsp"
+        ? `<label class="bd-lbl" for="bd-ms-sampai">sampai</label><input type="date" id="bd-ms-sampai" value="${esc(sampaiPtsp())}" min="${esc(M.tanggal)}" ${sibuk ? "disabled" : ""}>`
+        : "";
+    const pilihanPtsp =
+      M.jenis === "ptsp"
+        ? `<div class="bd-ms-aksi bd-ms-ptsp" role="group" aria-label="Penetapan yang dicetak"><span class="bd-lbl">Penetapan yang dicetak</span>` +
+          POLA_PTSP.map(
+            (x) =>
+              `<label class="bd-cek" title="${esc(x.judul)}"><input type="checkbox" data-msptsp="${esc(x.label)}" ${M.penetapan.includes(x.label) ? "checked" : ""} ${sibuk ? "disabled" : ""}> ${esc(x.label)}</label>`
+          ).join("") +
+          `</div>`
+        : "";
     const kemajuan = M.kemajuan
       ? `<div class="bd-ms-kemajuan" role="progressbar" aria-valuemin="0" aria-valuemax="${M.kemajuan.total}" aria-valuenow="${M.kemajuan.selesai}"><div style="width:${M.kemajuan.total ? Math.round((M.kemajuan.selesai / M.kemajuan.total) * 100) : 0}%"></div></div>` +
         `<span class="bd-catat">${M.kemajuan.selesai} dari ${M.kemajuan.total}${M.kemajuan.sekarang ? ` · ${esc(M.kemajuan.sekarang)}` : ""}</span>`
@@ -654,8 +681,9 @@
       `<div class="bd-ms-kotak" role="dialog" aria-modal="true" aria-label="Cetak massal">` +
       `<div class="bd-ms-kepala"><div><b>Cetak massal</b> <small>${esc(adm() ? "Super Admin / Admin" : NAMA_PERAN_TAMPIL[M.jenis] || "")}</small></div>` +
       `<button type="button" class="bd-btn kecil" data-ms="tutup" ${sibuk ? "disabled" : ""}>Tutup</button></div>` +
-      `<div class="bd-ms-kontrol"><label class="bd-lbl" for="bd-ms-tgl">${ketTanggal}</label><input type="date" id="bd-ms-tgl" value="${esc(M.tanggal)}" ${sibuk ? "disabled" : ""}>` +
+      `<div class="bd-ms-kontrol"><label class="bd-lbl" for="bd-ms-tgl">${ketTanggal}</label><input type="date" id="bd-ms-tgl" value="${esc(M.tanggal)}" ${sibuk ? "disabled" : ""}>${rentangPtsp}` +
       `<button type="button" class="bd-btn kecil" data-ms="hariini" ${sibuk ? "disabled" : ""}>Hari ini</button>${kontrolJenis}${saringan}</div>` +
+      pilihanPtsp +
       `<div class="bd-ms-aksi"><button type="button" class="bd-btn kecil" data-ms="pilihsiap" ${sibuk || !siapAda ? "disabled" : ""}>Pilih semua yang siap</button>` +
       `<button type="button" class="bd-btn kecil" data-ms="kosongkan" ${sibuk || !pilihJumlah ? "disabled" : ""}>Kosongkan pilihan</button>` +
       `<span class="bd-catat" id="bd-ms-hitung">${pilihJumlah} dipilih dari ${M.baris.length}${pilihJumlah > BATAS_DOKUMEN ? ` · paling banyak ${BATAS_DOKUMEN} sekali jalan` : ""}</span>` +
@@ -1011,6 +1039,7 @@
       }
       if (kode === "hariini") {
         M.tanggal = tanggalLokal();
+        M.sampai = "";
         return void muat();
       }
       if (kode === "muat") return void muat();
@@ -1054,6 +1083,24 @@
           void muat();
         }
         return;
+      }
+      if (t.id === "bd-ms-sampai") {
+        if (/^\d{4}-\d{2}-\d{2}$/.test(t.value)) {
+          M.sampai = t.value;
+          void muat();
+        }
+        return;
+      }
+      if (t.hasAttribute && t.hasAttribute("data-msptsp")) {
+        const label = t.getAttribute("data-msptsp");
+        const sisa = M.penetapan.filter((x) => x !== label);
+        // Paling sedikit satu penetapan harus tercentang; kotak terakhir tidak bisa dimatikan.
+        if (!t.checked && !sisa.length) {
+          toast("Pilih paling sedikit satu penetapan.");
+          return gambar();
+        }
+        M.penetapan = POLA_PTSP.map((x) => x.label).filter((x) => (x === label ? t.checked : sisa.includes(x)));
+        return void muat();
       }
       if (t.id === "bd-ms-jenis") {
         M.jenis = t.value;
@@ -1145,6 +1192,12 @@
     M.terbuka = true;
     if (!M.jenis || !ada.includes(M.jenis)) M.jenis = jenisBawaan(ada);
     M.tanggal = M.tanggal || tanggalLokal();
+    // 28 Okt 2026: daftar perkara PTSP sedang "tanggal tertentu" / "rentang tanggal" -> Cetak massal PTSP memulai dari rentang yang sama.
+    const kd = typeof a.keadaan === "function" ? a.keadaan() : null;
+    if (M.jenis === "ptsp" && kd && kd.ptspDaftar && kd.rentang && kd.rentang.dari) {
+      M.tanggal = kd.rentang.dari;
+      M.sampai = kd.rentang.sampai || kd.rentang.dari;
+    }
     M.picker = null;
     M.ringkasan = null;
     gambar();
@@ -1159,7 +1212,7 @@
     atur(o) {
       if (o && Number.isFinite(Number(o.jedaMs))) jedaMs = Math.min(10000, Math.max(0, Number(o.jedaMs)));
     },
-    keadaan: () => ({ terbuka: M.terbuka, jenis: M.jenis, tanggal: M.tanggal, format: M.format, ttd: M.ttd, pilih: Array.from(M.pilih), jalan: M.jalan, baris: M.baris.map((b) => ({ id: b.id, nomor: b.nomor, status: b.status, berkas: b.berkas, kelompok: b.kelompok, catatan: b.catatan, label: b.label })) }),
+    keadaan: () => ({ terbuka: M.terbuka, jenis: M.jenis, tanggal: M.tanggal, sampai: M.jenis === "ptsp" ? sampaiPtsp() : "", penetapan: M.penetapan.slice(), format: M.format, ttd: M.ttd, pilih: Array.from(M.pilih), jalan: M.jalan, baris: M.baris.map((b) => ({ id: b.id, nomor: b.nomor, status: b.status, berkas: b.berkas, kelompok: b.kelompok, catatan: b.catatan, label: b.label })) }),
     murni: { buatZip, crc32, namaUnik, barisDariPerkara, nilaiKeadaan, pihakRingkas, beragendaPutus, batas: { dokumen: BATAS_DOKUMEN, jedaMs: JEDA_MS } },
   };
   globalThis.aletaBlangkoDerryMassal = apiMassal;
