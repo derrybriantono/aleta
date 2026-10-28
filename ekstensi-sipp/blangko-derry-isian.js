@@ -707,6 +707,8 @@
         jumlah: k.jumlahBerkas,
         urut: i,
         berkas: berkasLama(k),
+        // Judul kelompok (dari halaman kelompok) ikut bersama daftar berkasnya; tanpa ini menu yang dibaca ulang kehilangan judulnya.
+        judul: berkasLama(k) && lamaPeta.get(k.nama) ? lamaPeta.get(k.nama).judul : undefined,
       }));
       S.menu = { kelompok, saat: Date.now() };
     } catch (e) {
@@ -715,6 +717,8 @@
     }
     S.memuatMenu = false;
     renderModal();
+    // Saran di langkah 2 bergantung pada menu: dimuat di latar (mis. oleh pengukur isian) = ringkasan ikut diperbarui.
+    if (S.pk && !S.blangko) renderRingkasBlangko();
   }
   async function muatBerkasKelompok(k, paksa) {
     if (!k || (k.berkas && !paksa) || k.memuat) return k ? k.berkas : null;
@@ -1648,10 +1652,11 @@
   // ──────────────────────────────────────────────────────────────────────────
   // Susunan isian (portal) + nilai (bot / ABT) + pemicu
   // ──────────────────────────────────────────────────────────────────────────
-  function alamatSusunan(semua) {
+  function alamatSusunan(semua, blangko) {
+    const bl = blangko || S.blangko;
     const q = new URLSearchParams();
-    q.set("folder", S.blangko.folder || "");
-    q.set("berkas", S.blangko.berkas);
+    q.set("folder", bl.folder || "");
+    q.set("berkas", bl.berkas);
     q.set("perkaraId", perkaraId());
     q.set("sidangKe", sidangUrutan());
     const sb = sebutan();
@@ -2762,7 +2767,7 @@
     if (tes() || !a || typeof a.laporIsian !== "function" || !S.pk) return;
     jadwalkanSiapNaskah("isian"); // isian lengkap + tenang -> naskah disiapkan di latar (cetak cepat)
     const h = hitung();
-    a.laporIsian(nomorPerkara(), { a: h.a, t: h.t, jenis: S.blangko ? S.blangko.jenis : "", dicetak: S.cetakTercatat });
+    a.laporIsian(nomorPerkara(), { a: h.a, t: h.t, jenis: S.blangko ? S.blangko.jenis : "", dicetak: S.cetakTercatat, blangko: S.blangko ? { berkas: S.blangko.berkas, kelompok: S.blangko.kelompok, judul: S.blangko.judul || "" } : null });
     // F1.6: rincian isian untuk checklist konseptor (konseptor-langkah.js) - hanya diumumkan, tidak ditulis di sini.
     if (S.blangko && S.susunan) {
       const isian = isianKelengkapan();
@@ -8891,6 +8896,9 @@
     S.api = a;
     // Sambungan Tahap E: saran blangko dari portal (jadwal sidang ?rekomendasi=1) lewat titik sambung kerangka.
     if (typeof a.pasangRekomendasi === "function") a.pasangRekomendasi(rekomendasiPortal);
+    // 28 Okt 2026: pengukur kelengkapan isian di latar untuk lencana di daftar perkara (hanya membaca).
+    if (typeof a.pasangPengukur === "function") a.pasangPengukur(ukur.ukurSatu);
+    document.addEventListener("aleta-bd-buka-isian", saatBukaIsian);
     document.addEventListener("aleta-bd-perkara", saatPerkara);
     document.addEventListener("aleta-bd-tautan", saatTautan);
     daftarkanAlat();
@@ -9073,6 +9081,7 @@
     }
     return {
       jenisBoleh: () => jenisBoleh().slice(),
+      pkDariItem,
       adm,
       namaPeran: (j) => NAMA_PERAN[JENIS_PERAN[j]] || "",
       namaJenis: (j) => NAMA_JENIS[j] || "",
@@ -9094,16 +9103,188 @@
     };
   })();
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // UKUR KELENGKAPAN ISIAN DI LATAR (28 Okt 2026)
+  // ──────────────────────────────────────────────────────────────────────────
+  // Lencana "Kelengkapan isian" di daftar perkara (blangko-derry.js) dulu hanya berisi angka sesudah perkara dibuka di langkah Isian. Kini
+  // daftar meminta pengukuran perkara-perkara yang tampil lewat pengukur ini, satu perkara sekali, HANYA MEMBACA:
+  //   1. blangko yang diukur = blangko yang pernah dibuka petugas untuk perkara itu (`ingat`), bila tidak ada saran utama portal untuk
+  //      sidang acuannya menurut jenis dokumen peran; tanpa keduanya: "tanpa-blangko" (daftar menulis "Blangko belum dipilih");
+  //   2. susunan isian + nilai ABT dibaca lewat rute portal yang sama dengan langkah Isian (nilai dibaca bot; bila bot tidak menjawab
+  //      perkara ini dilewati, tidak ada penyapuan jendela ABT satu per satu);
+  //   3. isian wajib yang terisi dihitung dengan aturan yang SAMA dengan hitung() (golongan "utama": keadaan berlaku, tuntutan
+  //      diminta, bawaan/kerangka bukan isian) pada keadaan kosong. Isian otomatis dari SIPP dan daftar bukti baru terhitung sesudah
+  //      perkara dibuka (hasilnya ditandai `perkiraan` bila ada bukti).
+  // Tidak ada yang ditulis ke ABT, SIPP, atau e-Court. Hasil `ok` -> { a, t, blangko, perkiraan }.
+  const ukur = (() => {
+    const janjiTanggal = new Map();
+    const jeda = (ms) => new Promise((r) => setTimeout(r, ms));
+    /** Saran portal untuk sidang acuan perkara itu: satu baca jadwal per tanggal mengisi saran semua perkara hari itu. */
+    async function saranUtama(pk, jenis) {
+      const k = kunciSidangSaran({ nomorPerkara: pk.nomorPerkara, sidangDipilih: pk.sidangDipilih });
+      if (!k) return { saran: null };
+      let c = rekPortal.get(k.kunci);
+      if (!c || c.status === "galat") {
+        if (!janjiTanggal.has(k.tanggal)) janjiTanggal.set(k.tanggal, massal.muatSaranTanggal(k.tanggal).finally(() => janjiTanggal.delete(k.tanggal)));
+        await janjiTanggal.get(k.tanggal);
+        c = rekPortal.get(k.kunci);
+        if (!c || c.status !== "siap") {
+          // Sidang itu tidak ada di jadwal harian (mis. lewat batas baris): baca satu perkara itu saja.
+          await muatSaranPortal(k);
+          c = rekPortal.get(k.kunci);
+        }
+      }
+      for (let i = 0; c && c.status === "memuat" && i < 100; i += 1) {
+        await jeda(150);
+        c = rekPortal.get(k.kunci);
+      }
+      if (!c || c.status !== "siap") return { galat: true };
+      const s = pk.sidangDipilih || {};
+      const urutan = Number(s.urutan) > 0 ? Number(s.urutan) : (Number(pk.sidangKe) || 0) + 1;
+      const saran = saranDariPortal(c.hasil, S.menu.kelompok, { jenis: [jenis], urutan }).filter((r) => r.jenis === jenis && r.kelompok);
+      const utama = saran.find((r) => r.utama);
+      return { saran: utama || null };
+    }
+    /** Menghitung kartu "Perlu diisi" susunan d pada perkara pk dengan keadaan layar kosong (pemanggil langsung, tanpa jeda di antaranya). */
+    function hitungKosongLayar(d, pk) {
+      const simpan = { pk: S.pk, susunan: S.susunan, nilai: S.nilai, isi: S.isi, bukti: S.bukti, tj: S.tj, tersimpan: S.tersimpan, tampil: S.tampilTakBerlaku };
+      try {
+        S.pk = pk;
+        S.susunan = d;
+        S.nilai = d.nilai && typeof d.nilai === "object" ? d.nilai : {};
+        S.isi = {};
+        S.bukti = { P: null, T: null };
+        S.tj = {};
+        S.tersimpan = {};
+        S.tampilTakBerlaku = false;
+        for (const b of d.isian) {
+          const v = S.nilai[b.kode];
+          if (v && v.status === "terisi" && b.jenis !== "tj" && !daftarPilihanMurni(b, v.teks)) S.isi[b.kode] = b.jenis === "tanggal" ? keIso(v.teks) || v.teks : v.teks;
+        }
+        const h = hitung();
+        return { a: h.a, t: h.t, perkiraan: daftarPerlu().some((b) => b.khusus === "bukti") };
+      } finally {
+        S.pk = simpan.pk;
+        S.susunan = simpan.susunan;
+        S.nilai = simpan.nilai;
+        S.isi = simpan.isi;
+        S.bukti = simpan.bukti;
+        S.tj = simpan.tj;
+        S.tersimpan = simpan.tersimpan;
+        S.tampilTakBerlaku = simpan.tampil;
+      }
+    }
+    async function ukurSatu(job) {
+      if (tes()) return { status: "lewati" };
+      const p = job && job.p;
+      const jenis = job && job.jenis;
+      if (!p || !p.perkaraId || !jenis) return { status: "galat" };
+      await muatMenu();
+      await muatIndeks();
+      if (!S.menu || !S.menu.kelompok.length) return { status: "galat" };
+      const pk = massal.pkDariItem({ nomor: p.nomorPerkara, perkaraId: p.perkaraId, perkara: p, sidang: job.s });
+      // 1. Blangko yang diukur.
+      let berkas = "";
+      let kelompok = null;
+      const ingat = job.ingat;
+      if (ingat && ingat.berkas) {
+        const k = S.menu.kelompok.find((x) => x.nama === ingat.kelompok);
+        if (k && k.jenis === jenis && kelompokBoleh(k)) {
+          berkas = ingat.berkas;
+          kelompok = k;
+        }
+      }
+      if (!kelompok) {
+        const { saran, galat } = await saranUtama(pk, jenis);
+        if (galat) return { status: "galat" };
+        const k = saran && S.menu.kelompok.find((x) => x.nama === saran.kelompok);
+        if (!saran || !k || !kelompokBoleh(k)) return { status: "tanpa-blangko" };
+        berkas = saran.berkas;
+        kelompok = k;
+      }
+      if (!kelompok.berkas) await muatBerkasKelompok(kelompok);
+      // Pemuatan kelompok yang sama dari pengukuran lain (atau tahap lain) ditunggu sampai selesai.
+      for (let i = 0; i < 100 && !kelompok.berkas && kelompok.memuat; i += 1) await jeda(100);
+      const asli = kelompok.berkas && kelompok.berkas.find((b) => samaBerkasSaran(b.berkas, berkas));
+      if (!asli) return { status: "tanpa-blangko" };
+      const folder = folderUntuk(kelompok);
+      if (!folder) return { status: "galat" };
+      const blangko = { berkas: asli.berkas, kelompok: kelompok.nama, judul: kelompok.judul || namaMenuTampil(kelompok.nama), folder, jenis: kelompok.jenis };
+      // 2. Susunan isian + nilai ABT (alamat dibuat dengan perkara ini; S.pk dipulihkan sebelum ada jeda).
+      const lama = S.pk;
+      let alamat;
+      try {
+        S.pk = pk;
+        alamat = alamatSusunan(false, blangko);
+      } finally {
+        S.pk = lama;
+      }
+      const d = await ambilPortal(alamat, {}, "Mengukur isian blangko");
+      if (!d || !d.ada || !Array.isArray(d.isian)) return { status: "galat" };
+      if (!d.nilaiAda) return { status: "galat" };
+      // 3. Hitung.
+      const h = hitungKosongLayar(d, pk);
+      return { status: "ok", a: h.a, t: h.t, perkiraan: h.perkiraan, blangko: { berkas: asli.berkas, kelompok: kelompok.nama, judul: blangko.judul } };
+    }
+    return { ukurSatu, hitungKosongLayar };
+  })();
+
+  /** Isian wajib kosong pertama digulir ke tengah layar dan disorot; false bila tidak ada kartu kosong (semua terisi / belum tampil). */
+  function gulirKeKosongPertama() {
+    if (!wadah.isian) return false;
+    const f = cari("#bd-perlu .bd-f:not(.beres):not(.tambahan)", wadah.isian) || cari("#bd-perlu .bd-f:not(.beres)", wadah.isian);
+    if (!f) return false;
+    const kode = f.getAttribute("data-f");
+    if (kode && pasangSorot(kode, true)) return true;
+    if (typeof f.scrollIntoView === "function") f.scrollIntoView({ block: "center" });
+    return true;
+  }
+  /**
+   * Lencana kelengkapan diklik di daftar (peristiwa "aleta-bd-buka-isian" sesudah perkara dibuka): bila belum ada blangko terpilih,
+   * blangko yang diukur dibuka; sesudah isiannya termuat, gulir ke isian wajib kosong pertama.
+   */
+  async function saatBukaIsian(e) {
+    const d = e && e.detail;
+    if (!d || !S.pk || S.pk.nomorPerkara !== d.nomorPerkara) return;
+    const pk = S.pk;
+    try {
+      if (!S.blangko && d.blangko && d.blangko.berkas && !tes()) {
+        await muatMenu();
+        const k = S.menu && S.menu.kelompok.find((x) => x.nama === d.blangko.kelompok);
+        if (k && kelompokBoleh(k)) {
+          if (!k.berkas) await muatBerkasKelompok(k);
+          for (let i = 0; i < 100 && !k.berkas && k.memuat; i += 1) await jedaTautan(100);
+          const asli = k.berkas && k.berkas.find((b) => samaBerkasSaran(b.berkas, d.blangko.berkas));
+          if (S.pk === pk && !S.blangko && asli) await pilihBlangko(asli.berkas, k.nama);
+        }
+      }
+      for (let i = 0; i < 120 && S.pk === pk && S.blangko && (S.memuatSusunan || !S.susunan) && !S.galatSusunan; i += 1) await jedaTautan(100);
+      // Isi otomatis dari SIPP menggambar ulang kartu: ditunggu dulu (paling lama 8 detik) supaya yang disorot benar-benar masih kosong.
+      if (S.pk === pk && S.susunan && kerjaOto.size) await Promise.race([Promise.allSettled(Array.from(kerjaOto)), jedaTautan(8000)]);
+      if (S.pk === pk && S.susunan && !S.memuatSusunan) {
+        await jedaTautan(30);
+        gulirKeKosongPertama();
+      }
+    } catch {
+      /* membuka isian hanya kemudahan: perkara sudah terbuka, petugas memilih blangko sendiri */
+    }
+  }
+
   const apiIsian = {
     versi: "tahap-F-G",
     mulai,
     pasangRekomendasi(fn) {
       rekomendasiLuar = typeof fn === "function" ? fn : null;
+      // Penyedia saran yang datang belakangan: ringkasan di langkah 2 ikut diperbarui.
+      if (S.pk && !S.blangko && wadah.blangko) renderRingkasBlangko();
     },
     rekomendasi,
     /** Fungsi yang dipasang ke aletaBlangkoDerry.pasangRekomendasi (saran portal Tahap E). */
     rekomendasiPortal,
     pilihBlangko,
+    /** Pengukur kelengkapan isian di latar (28 Okt 2026): ukurSatu({ p, s, jenis, ingat }). */
+    ukur,
+    gulirKeKosongPertama,
     /** Cetak massal (20 Okt): pengemudi satu-per-satu yang dipakai blangko-derry-massal.js. */
     massal,
     /** F4.2: buka blangko draf H-7 + pasang saran agen (tanpa menyimpan ke ABT). */

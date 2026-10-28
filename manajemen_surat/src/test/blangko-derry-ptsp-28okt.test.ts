@@ -381,16 +381,17 @@ describe("A. pemilih Lihat sebagai memuat kelompok PTSP", () => {
     const kelompok = Array.from(sel.querySelectorAll("optgroup")).map((g) => g.getAttribute("label"));
     expect(kelompok).toEqual(["Hakim", "Panitera Pengganti", "Juru sita", "PTSP"]);
     const ptsp = Array.from(sel.querySelectorAll('optgroup[label="PTSP"] option')).map((o) => [(o as HTMLOptionElement).value, o.textContent]);
-    expect(ptsp).toEqual([["ptsp|Meja PTSP", "Meja PTSP"]]);
+    // 28 Okt malam: pilihan umum "PTSP (semua petugas PTSP)" selalu paling atas; akun menyusul di bawahnya.
+    expect(ptsp).toEqual([["ptsp|Semua petugas PTSP", "PTSP (semua petugas PTSP)"], ["ptsp|Meja PTSP", "Meja PTSP"]]);
     expect(Array.from(sel.querySelectorAll('optgroup[label="Hakim"] option')).map((o) => o.textContent)).toEqual(["Hakim Satu"]);
   });
 
-  it("portal lama tanpa daftar PTSP: pemilih tetap jalan, kelompok PTSP kosong", async () => {
+  it("portal lama tanpa daftar PTSP: pemilih tetap jalan, kelompok PTSP hanya berisi pilihan umum", async () => {
     const h = buka({ orang: "admin", akunLama: true });
     await siap(h);
     const sel = (await sampai(() => q(h, "#bd-lihat"), "pemilih")) as HTMLSelectElement;
     expect(Array.from(sel.querySelectorAll("optgroup")).map((g) => g.getAttribute("label"))).toEqual(["Hakim", "Panitera Pengganti", "Juru sita", "PTSP"]);
-    expect(sel.querySelectorAll('optgroup[label="PTSP"] option').length).toBe(0);
+    expect(Array.from(sel.querySelectorAll('optgroup[label="PTSP"] option')).map((o) => o.textContent)).toEqual(["PTSP (semua petugas PTSP)"]);
   });
 
   it("memilih akun PTSP: tampilan PTSP - hanya jenis ptsp, bukan peran dokumen, kueri satker baca saja", async () => {

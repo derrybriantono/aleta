@@ -67,6 +67,9 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar .bd-chip.ok { color: var(--ok); border-color: var(--okln); }
 #aleta-bd-akar .bd-chip.sebagian { color: var(--accent); border-color: var(--accentln); }
 #aleta-bd-akar .bd-chip.belum { color: var(--warn); border-color: var(--warn); }
+/* 28 Okt 2026: lencana kelengkapan isian di daftar perkara dapat diklik (buka perkara di langkah Isian) */
+#aleta-bd-akar .bd-chip.bd-isian { cursor: pointer; }
+#aleta-bd-akar .bd-chip.bd-isian:hover { border-color: var(--accent); }
 #aleta-bd-akar .bd-seg { display: flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
 #aleta-bd-akar .bd-seg button { background: transparent; border: 0; border-right: 1px solid var(--line); padding: 5px 12px; font-size: 13.4px; border-radius: 0; }
 #aleta-bd-akar .bd-seg button:last-child { border-right: 0; }
