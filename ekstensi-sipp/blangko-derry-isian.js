@@ -40,6 +40,9 @@
   /** F3.1: riwayat skors satu sidang + usulan kalimat BAS (hanya baca). */
   const API_SKORS_SIDANG = "/aleta/api/aleta-ecourt/sidang/skors";
   const API_PDF = "/aleta/api/aleta-bot/abt/pdf";
+  /** 28 Okt: putusan yang disunting sendiri (DOCX/DOC) diubah ke RTF lewat rute yang sama dengan unggah putusan otomatis; hanya MENGHITUNG. */
+  const API_KONVERSI_NASKAH = "/aleta/api/aleta-ecourt/putusan/konversi-naskah";
+  const BATAS_UNGGAH_PUTUSAN = 20 * 1024 * 1024; // sama dengan batas rute konversi-naskah
   /** 22 Okt malam: Tes putusan - naskah dihitung di ALETA (data perkara acuan + ketikan petugas). Hanya MENGHITUNG, tidak menyimpan apa pun. */
   const API_TES_NASKAH = "/aleta/api/aleta-ecourt/blangko-derry/tes-naskah";
   const API_USULAN = "/aleta/api/aleta-bot/abt/usulan";
@@ -334,6 +337,10 @@
     prat: { terbuka: false, memuat: false, rtf: null, html: "", galat: "", suntingPenuh: false, kotor: true, penanda: [] },
     versiIsian: 0, // naik tiap isian/tanya jawab tersimpan atau berganti sidang: naskah yang disusun pada versi lama tidak dipakai (cetak cepat)
     fmt: { rtf: true, pdf: false, salinan: false, anon: false, edoc: false },
+    // 28 Okt: putusan yang disunting sendiri oleh hakim - { untuk: nomor perkara, nama, bentukAsal, rtf: ArrayBuffer (RTF), catatan: [] }.
+    // Bila ada, Cetak memakainya (bukan naskah ABT); seluruh pilihan cetak berlaku atasnya. Tidak disimpan ke mana pun.
+    unggahan: null,
+    unggahSibuk: false,
     ttdPilih: new Set(),
     ttdManual: false, // pengguna sudah mengubah centang tanda tangan pada blangko ini -> tidak dicentang otomatis lagi
     ttdSumber: null, // { aleta: [{id,nama}]|null, sendiri: {nama,png}|null }
@@ -7064,6 +7071,29 @@
     if (S.fmt.edoc && j === "put" && !tes()) o.push("unggah ke e-Doc SIPP");
     return o;
   }
+  /** Baris "Unggah putusan sendiri" di langkah Cetak (tidak tampil pada Tes putusan). */
+  function htmlUnggahanPutusan() {
+    if (tes()) return "";
+    const u = unggahanBerlaku();
+    const mati = S.sibuk || S.unggahSibuk ? " disabled" : "";
+    const jenisBerkas = ".rtf,.docx,.doc,application/rtf,text/rtf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    if (S.unggahSibuk) return `<div class="bd-utas bd-unggah" role="status"><span class="bd-catat">Membaca berkas unggahan…</span></div>`;
+    if (!u) {
+      return (
+        `<div class="bd-utas bd-unggah" role="group" aria-label="Putusan dari berkas sendiri">` +
+        `<label class="bd-btn kecil${mati ? " mati" : ""}">Unggah putusan sendiri (RTF/DOCX/DOC)<input type="file" id="bd-unggahputusan" accept="${jenisBerkas}" hidden${mati}></label>` +
+        `<span class="bd-catat">Putusan yang sudah Anda sunting sendiri: semua pilihan cetak di atas dibuat dari berkas itu, bukan dari naskah ABT.</span></div>`
+      );
+    }
+    return (
+      `<div class="bd-utas bd-unggah aktif" role="group" aria-label="Putusan dari berkas sendiri">` +
+      `<span class="bd-sumberunggah">Sumber cetak: berkas unggahan <b>${esc(u.nama)}</b></span>` +
+      `<label class="bd-btn kecil${mati ? " mati" : ""}">Ganti berkas<input type="file" id="bd-unggahputusan" accept="${jenisBerkas}" hidden${mati}></label>` +
+      `<button type="button" class="bd-btn kecil" data-bd2="hapusunggah"${mati}>Hapus berkas</button>` +
+      u.catatan.map((c) => `<span class="bd-catat bd-unggahcatat">${esc(c)}</span>`).join("") +
+      `</div>`
+    );
+  }
   function renderCetak() {
     const w = wadah.cetak;
     if (!w) return;
@@ -7085,8 +7115,9 @@
       `<div class="bd-utas" role="group" aria-label="Pilihan cetak">${pil("rtf", "RTF")}${pil("pdf", "PDF")}${pil("salinan", "PDF SALINAN")}` +
       `<button type="button" class="bd-btn kecil" id="bd-btnttd" data-bd2="popttd" aria-expanded="false" aria-controls="bd-popttd">Tambah tanda tangan${S.ttdPilih.size ? ` (${S.ttdPilih.size})` : ""} ▾</button>` +
       `${pil("anon", "PDF anonim", j === "put" ? "" : "hanya putusan")}${pil("edoc", "Unggah ke e-Doc SIPP", tes() ? "mati pada Tes putusan" : j === "put" ? "" : "hanya putusan; BAS dan relaas diunggah lewat SIPP")}</div>` +
+      htmlUnggahanPutusan() +
       `<div class="bd-ingat" id="bd-ingat" hidden role="alert"></div>` +
-      `<div class="bd-utas"><button type="button" class="bd-btn utama besar" data-bd2="cetak" ${S.sibuk ? "disabled" : ""}>${S.sibuk ? "Sedang mencetak…" : "Cetak"}</button><span class="bd-catat" id="bd-statuscetak">${dok.length ? `Akan menerbitkan: ${esc(dok.join(", "))}. ` : "Pilih minimal satu hasil cetak. "}${tes() ? "" : sudah ? `Sudah dicetak ${esc(sudah)}.` : "Belum dicetak."}</span> <span class="bd-catat" id="bd-siapnaskah">${esc(ketSiapNaskah())}</span></div>` +
+      `<div class="bd-utas"><button type="button" class="bd-btn utama besar" data-bd2="cetak" ${S.sibuk || S.unggahSibuk ? "disabled" : ""}>${S.sibuk ? "Sedang mencetak…" : "Cetak"}</button><span class="bd-catat" id="bd-statuscetak">${dok.length ? `Akan menerbitkan: ${esc(dok.join(", "))}. ` : "Pilih minimal satu hasil cetak. "}${tes() ? "" : sudah ? `Sudah dicetak ${esc(sudah)}.` : "Belum dicetak."}</span> <span class="bd-catat" id="bd-siapnaskah">${esc(ketSiapNaskah())}</span></div>` +
       `<ul class="bd-logcetak" id="bd-logcetak" ${S.log.length ? "" : "hidden"}>${S.log.slice(-6).map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` +
       `<div class="bd-float lebar" id="bd-popttd" hidden role="dialog" aria-label="Tambah tanda tangan"></div>`;
   }
@@ -7147,6 +7178,7 @@
   let gagalSiapVersi = -1;
   function ketSiapNaskah() {
     if (tes() || !S.blangko || S.blangko.khusus || !S.prat) return "";
+    if (unggahanBerlaku()) return "Memakai berkas unggahan - naskah ABT tidak diminta.";
     if (S.prat.janji) return "Naskah sedang disiapkan di latar…";
     if (naskahSegar(S.prat)) return "Naskah sudah siap - Cetak langsung jalan.";
     return "";
@@ -7156,7 +7188,7 @@
     if (e) e.textContent = ketSiapNaskah();
   }
   function bolehSiapNaskah(sebab) {
-    if (cfg().siapNaskah === false || tes()) return false;
+    if (cfg().siapNaskah === false || tes() || unggahanBerlaku() || S.unggahSibuk) return false;
     const b = S.blangko;
     if (!b || !S.pk || b.khusus || b.hak !== "ok" || !S.susunan || S.memuatSusunan || S.sibuk) return false;
     const pr = S.prat;
@@ -7207,10 +7239,101 @@
     );
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Putusan yang disunting sendiri (28 Okt 2026): berkas RTF / DOCX / DOC diunggah, lalu SEMUA pilihan cetak (RTF, PDF, PDF SALINAN,
+  // tambah tanda tangan, PDF anonim, e-Doc SIPP) dibuat dari berkas itu lewat jalur yang sama dengan naskah ABT. DOCX/DOC diubah ke RTF
+  // sekali saat diunggah (soffice di server, rute konversi-naskah): penanda SALINAN, "ttd", dan blok "Untuk Salinan" disusun bot pada RTF.
+  // ──────────────────────────────────────────────────────────────────────────
+  /** Bentuk berkas dikenali dari KEPALA-nya (bukan dari nama): rtf | docx | doc | pdf | "". */
+  function kenaliBentukBerkas(u8) {
+    if (!u8 || u8.length < 5) return "";
+    const awal = String.fromCharCode(u8[0], u8[1], u8[2], u8[3], u8[4]);
+    if (awal === "%PDF-") return "pdf";
+    if (awal === "{\\rtf") return "rtf";
+    if (u8[0] === 0x50 && u8[1] === 0x4b && u8[2] === 0x03 && u8[3] === 0x04) return "docx";
+    if (u8[0] === 0xd0 && u8[1] === 0xcf && u8[2] === 0x11 && u8[3] === 0xe0) return "doc";
+    return "";
+  }
+  /** Berkas unggahan yang masih berlaku untuk perkara yang sedang dibuka (berganti perkara = dilepas). */
+  function unggahanBerlaku() {
+    const u = S.unggahan;
+    if (!u) return null;
+    if (u.untuk !== nomorPerkara()) {
+      S.unggahan = null;
+      return null;
+    }
+    return u;
+  }
+  async function terimaUnggahan(berkas) {
+    if (!berkas) return;
+    if (tes()) return toast(PESAN_TES);
+    if (!S.blangko || !S.pk) return toast("Pilih perkara dan blangko dulu.");
+    if (S.sibuk || S.unggahSibuk) return;
+    if (berkas.size > BATAS_UNGGAH_PUTUSAN) return toast(`Berkas "${berkas.name}" lebih dari ${BATAS_UNGGAH_PUTUSAN / 1024 / 1024} MB; tidak dapat dipakai.`);
+    S.unggahSibuk = true;
+    renderCetak();
+    try {
+      const asli = new Uint8Array(await berkas.arrayBuffer());
+      const bentuk = kenaliBentukBerkas(asli);
+      if (bentuk === "pdf") throw new Error("PDF tidak dapat dipakai sebagai sumber; unggah putusan dalam bentuk RTF, DOCX, atau DOC.");
+      if (!bentuk) throw new Error("Isi berkas bukan RTF, DOCX, maupun DOC.");
+      const catatan = [];
+      let rtf = asli.buffer.slice(asli.byteOffset, asli.byteOffset + asli.byteLength);
+      if (bentuk !== "rtf") {
+        catatLog(`mengubah berkas ${bentuk.toUpperCase()} ke RTF…`);
+        const badan = new FormData();
+        badan.append("berkas", new Blob([asli], { type: "application/octet-stream" }), berkas.name);
+        badan.append("ke", "rtf");
+        const d = await ambilPortal(API_KONVERSI_NASKAH, { method: "POST", body: badan, batasMs: BATAS_LAMA_MS }, "Mengubah berkas ke RTF");
+        if (!d || !d.berkasBase64) throw new Error("server tidak mengembalikan hasil ubahan");
+        rtf = Uint8Array.from(atob(d.berkasBase64), (c) => c.charCodeAt(0)).buffer;
+        if (kenaliBentukBerkas(new Uint8Array(rtf)) !== "rtf") throw new Error("hasil ubahan bukan RTF");
+        catatan.push(`Berkas ${bentuk.toUpperCase()} diubah ke RTF di server agar tulisan SALINAN dan ttd dapat dipasang; periksa PDF hasilnya.`);
+        for (const p of Array.isArray(d.peringatan) ? d.peringatan : []) catatan.push(String(p));
+      }
+      S.unggahan = { untuk: nomorPerkara(), nama: berkas.name, bentukAsal: bentuk, rtf, catatan };
+      catatLog(`berkas unggahan "${berkas.name}" dipakai sebagai sumber cetak`);
+      toast(`Sumber cetak: berkas unggahan "${berkas.name}".`);
+    } catch (e) {
+      S.unggahan = null;
+      toast(`Berkas "${berkas.name}" tidak dapat dipakai: ${String((e && e.message) || e)}`);
+    }
+    S.unggahSibuk = false;
+    renderCetak();
+  }
+  function lepasUnggahan() {
+    S.unggahan = null;
+    renderCetak();
+    toast("Berkas unggahan dilepas; Cetak kembali memakai naskah dari ABT.");
+  }
+  /** Cetak dari berkas unggahan: melewati ABT sama sekali (naskah, isian, pengingat isian kosong); deteksi sisa blangko tetap berjalan di lakukanCetak. */
+  async function cetakUnggahan() {
+    const u = unggahanBerlaku();
+    if (!u) return;
+    S.sibuk = true;
+    renderCetak();
+    try {
+      catatLog(`memakai berkas unggahan "${u.nama}" (naskah ABT tidak diminta)`);
+      await lakukanCetak(u.rtf.slice(0));
+    } catch (e) {
+      catatLog(`gagal: ${String((e && e.message) || e)}`);
+      toast(`Cetak gagal: ${String((e && e.message) || e)}`);
+    }
+    S.sibuk = false;
+    S.peringat = false;
+    renderCetak();
+    laporKeKerangka();
+  }
+
   async function cetak(paksa) {
     if (!S.blangko || !S.pk || S.sibuk) return;
     if (!daftarFmt().length) return toast("Pilih minimal satu hasil cetak.");
     if (S.blangko.hak === "ditolak") return toast("ABT tidak mengizinkan blangko ini untuk perkara ini; tidak dapat dicetak.");
+    if (S.unggahSibuk) return toast("Berkas unggahan sedang dibaca; tunggu sebentar.");
+    if (unggahanBerlaku()) {
+      if (S.blangko.hak !== "ok") return toast("Hak buka blangko ini masih diperiksa ke ABT; tunggu sebentar.");
+      return void cetakUnggahan();
+    }
     if (!S.susunan && !S.galatSusunan) return toast("Isian blangko masih dibaca; tunggu sebentar.");
     S.sibuk = true;
     renderCetak();
@@ -7851,6 +7974,7 @@
       });
       return;
     }
+    if (kode === "hapusunggah") return lepasUnggahan();
     if (kode === "cetak") return void cetak(false);
     if (kode === "tetapcetak") return void cetak(true);
     if (kode === "isidulu") {
@@ -8471,6 +8595,11 @@
       if (st) st.textContent = `Akan menerbitkan: ${daftarFmt().join(", ")}.`;
       return;
     }
+    if (t.id === "bd-unggahputusan") {
+      const f = t.files && t.files[0];
+      t.value = ""; // berkas yang sama boleh dipilih lagi
+      return void (f && terimaUnggahan(f));
+    }
     if (t.id === "bd-ttdfile" && t.files && t.files[0]) return void simpanTtdSendiri(t.files[0]).catch((x) => toast(`Gambar tidak terbaca: ${String((x && x.message) || x)}`));
   }
   function saatBlur(e) {
@@ -9013,6 +9142,7 @@
       prat: { terbuka: S.prat.terbuka, memuat: S.prat.memuat, adaRtf: Boolean(S.prat.rtf), penanda: S.prat.penanda.slice(), kotor: S.prat.kotor, galat: S.prat.galat, siap: naskahSegar(S.prat), sedangDisiapkan: Boolean(S.prat.janji), versiIsian: S.versiIsian },
       ukurCetak: S.ukurCetak ? { ...S.ukurCetak } : null,
       fmt: { ...S.fmt },
+      unggahan: unggahanBerlaku() ? { nama: S.unggahan.nama, bentukAsal: S.unggahan.bentukAsal, untuk: S.unggahan.untuk, byte: S.unggahan.rtf.byteLength } : null,
       ttdPilih: Array.from(S.ttdPilih),
       peringat: S.peringat,
       log: S.log.slice(),
