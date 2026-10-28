@@ -1,0 +1,13 @@
+00df3bb6d249137f4f18e7e4719179a4  abt-alamat-putusan-28okt-FUNGSI-CEK.sql
+1516420c39e1256d476b748bfd44c2f7  abt-alamat-putusan-28okt-FUNGSI-LAMA.sql
+94a74e1971a4cfec5602816eab4b117c  abt-alamat-putusan-28okt-FUNGSI.sql
+dfd8657c56a42ac327af18fde3e7aeb2  abt-alamat-putusan-28okt-PASANG.sql
+c22e0d492ba93c18a34de4eaaea7fec6  abt-alamat-putusan-28okt-PERIKSA.sql
+fd0842bf1a89ef260a362bef9bf9608e  abt-alamat-putusan-28okt-PRASYARAT.sql
+a0280247d36932f00fbbcfb9342f001f  abt-alamat-putusan-28okt-PULIH.sql
+ea97001c970699cda466a9139eea2a69  abt-alamat-putusan-28okt-UJIVAR.sql
+7289cd04da766462ed6efe1617c4558e  harap.txt
+cd21418709c0fedbad9648fe6e405947  nomor-ubah.txt
+b10130b1a0e14ceebafcb4705cd8e096  pasang-satker.sh
+2d78196a62b6c9894c1948d36357e225  perkara-uji.txt
+d3327b6c8f42d4119fba1e641ecb265d  pulih-satker.sh

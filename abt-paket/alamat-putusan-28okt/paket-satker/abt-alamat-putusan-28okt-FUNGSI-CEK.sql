@@ -1,0 +1,3 @@
+-- Paket ABT "abt-alamat-putusan-28okt" (28 Okt 2026): keterangan arah di dalam KURUNG pada alamat pihak dibuang di PUTUSAN (relaas tetap utuh). 6 variabel diubah (7047, 7048, 8700, 8890, 9349, 9350), 2 fungsi paket 27 Okt diganti, 3 fungsi baru (AP).
+-- Prasyarat: paket pihak-urut-ecourt-27okt dan pihak-urut-sisa-28okt sudah terpasang.
+SELECT (SELECT COUNT(*) FROM information_schema.routines WHERE routine_schema=DATABASE() AND routine_type='FUNCTION' AND ((routine_name='isian_rtf_pihak_identitas' AND MD5(routine_definition)='4c758ce53cd541a39a32cf3cb0ba9898') OR (routine_name='isian_rtf_pihak_utama' AND MD5(routine_definition)='ecda2f98c76145e78f4b9b76ef1ceb80'))) AS fungsi_baru;
