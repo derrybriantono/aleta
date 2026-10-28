@@ -492,7 +492,7 @@ export const TUTORIAL: readonly Tutorial[] = [
     judul: "Jadwal Mediasi",
     ringkas: "Pertemuan mediasi dan tenggang waktunya, terpisah dari jadwal sidang.",
     kelompok: "persidangan",
-    mencakup: { tab: ["mediasi"], aksi: ["mediasi.catat", "mediasi.hasil", "mediasi.tunda"] },
+    mencakup: { tab: ["mediasi"], aksi: ["mediasi.catat", "mediasi.hasil", "mediasi.tunda", "mediasi.hasil-sipp"] },
     halaman: ["/aleta-ecourt"],
     tautan: { teks: "Buka ALETA e-Court", href: "/aleta-ecourt" },
     langkah: [
@@ -504,10 +504,13 @@ export const TUTORIAL: readonly Tutorial[] = [
       "Setelah mediasi selesai, mediator perkara itu menekan tombol Buat hasil mediasi (.rtf) pada barisnya.",
       "Pilih hasilnya, lalu centang butir kesepakatan yang tercapai, misalnya mut'ah, nafkah iddah, nafkah anak, hak asuh, atau harta bersama.",
       "Unduh laporan mediasi beserta kesepakatan perdamaiannya dalam Word, periksa, lalu serahkan kepada majelis.",
+      "Untuk mencatat hasilnya di SIPP, tekan Isi hasil (SIPP) pada baris pertemuan terakhir: pilih hasil (berhasil, berhasil sebagian, tidak berhasil, atau tidak dapat dilaksanakan), tanggal laporan, kesepakatan bila berhasil, dan keterangan.",
+      "Lihat pratinjau yang menyebut akun SIPP yang akan tercatat - bawaannya Panitera Pengganti perkara, dapat diganti ke mediator atau ketua majelis - lalu Simpan ke SIPP.",
     ],
     peringatan: [
       "Mediasi tertutup untuk umum. Menu ini hanya dibuka untuk mediator, majelis, kepaniteraan, dan meja informasi.",
       "Dokumen hasil mediasi hanya dapat dibuat oleh mediator yang tercatat pada perkara itu.",
+      "Isi hasil (SIPP) hanya untuk mediator, hakim, dan Panitera Pengganti yang tercatat pada perkara itu, serta Super Admin. Riwayat perkara ikut disesuaikan seperti bila hasil diisi langsung di SIPP.",
     ],
     kataKunci: ["mediator", "mediasi", "hasil mediasi", "damai", "kesepakatan perdamaian", "laporan mediasi", "word"],
   },

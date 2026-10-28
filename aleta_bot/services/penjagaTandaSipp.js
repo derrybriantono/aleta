@@ -1104,6 +1104,11 @@ const JALUR_TULIS_SIPP = Object.freeze([
     sasaran: "form Penetapan Ikrar Talak (tanggal ikrar, amar, keadaan istri) sesudah ikrar terlaksana; rencananya lewat penjalan bersama (sidangHasilAlur.jalankanIsiIkrar)",
   },
   {
+    berkas: "services/hasilMediasiTulisService.js",
+    penjaga: ["penjagaTandaSipp.periksaRencana(rencana)", "DAFTAR_TABEL_HASIL_MEDIASI.has("],
+    sasaran: "hasil mediasi dari Jadwal Mediasi (perkara_mediasi, perkara_proses, perkara_jadwal_mediasi, sys_audittrail) atas akun PP perkara, 28 Okt 2026: keterangan & kesepakatan diperiksa sebelum transaksi",
+  },
+  {
     berkas: "services/ikrarEdocService.js",
     penjaga: ["penjagaTandaSipp.siapkanBerkasSipp(", "penjagaTandaSipp.periksaRencana(", "penjagaTandaSipp.namaBerkasBersih("],
     sasaran: "e-Doc penetapan ikrar talak (perkara_ikrar_talak.ikrar_talak_dok) dari blangko Derry [90]/[90a]: grup tersembunyi & metadata dibersihkan, isi naskah diperiksa, nama berkas bersih",

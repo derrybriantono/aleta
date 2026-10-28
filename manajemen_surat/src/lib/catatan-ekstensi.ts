@@ -57,6 +57,18 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.54",
+    dirilis: "2026-10-28T13:09:00+08:00",
+    judul: "Putus ikrar talak tiga status, hasil mediasi ke SIPP, dan Court Calendar",
+    butir: [
+      "Tombol Putus pada sidang ikrar talak memakai menu seperti SIPP: Diikrarkan (bawaan), Pemohon Tidak Hadir (gugur), atau Rukun Kembali; status gugur dan rukun hanya untuk Super Admin, Ketua, Wakil, dan Hakim.",
+      "Keterangan sidang ikrar tercatat atas akun Panitera Pengganti ikrar dan penetapan ikrar atas akun ketua majelis ikrar, beberapa menit sesudahnya, seperti petugas mengisi form SIPP (riwayat dan audit trail); klik ganda tidak menulis dua kali.",
+      "e-Doc penetapan ikrar dibuat PDF dengan tanda tangan yang sudah disahkan dan cap, sesuai status (Diikrarkan, Gugur, atau Rukun Kembali dengan blangko baru); tanggal sidang di e-Doc ikrar kini tanggal sidang ikrar, bukan sidang pertama.",
+      "Jadwal Mediasi: tombol Isi hasil (SIPP) mengisi hasil mediasi ke SIPP atas akun Panitera Pengganti perkara (dapat diganti ke mediator atau ketua majelis), dengan pratinjau sebelum disimpan.",
+      "Blangko ABT by Derry Briantono kini memiliki folder Court Calendar (penetapan dan perubahan jadwal persidangan).",
+    ],
+  },
+  {
     versi: "1.205.53",
     dirilis: "2026-10-28T11:27:00+08:00",
     judul: "Penetapan otomatis tanpa gagal, rincian alasan cerai, persidangan elektronik/hybrid, dan PTSP",
