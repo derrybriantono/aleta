@@ -25,14 +25,21 @@ import { GOLONGAN_PERAN, type GolonganPeran } from "@/lib/matriks-peran";
  * ATURAN YANG BERLAKU (fungsi murni, diuji tampilan-sipp-peran-28okt.test.ts)
  * ============================================================================
  *
- *   1. sistem   : semua elemen "boleh", bawaan NYALA - fitur lama tidak
- *                 berkurang sampai admin mengaturnya;
- *   2. peran    : aturan admin untuk golongan pengguna. Pengguna bergolongan
- *                 banyak: yang paling longgar menang (boleh > selalu > tidak),
- *                 sejalan "peran tambahan hanya menambah";
- *   3. pengguna : aturan admin untuk akun itu sendiri menimpa aturan peran;
+ * Keputusan pengguna 28 Okt 2026 (sesudah usulan pertama):
+ *   1. usulan   : BAWAAN = usulan per peran - elemen yang lazim untuk salah
+ *                 satu golongan pengguna nyala, lainnya mati tetapi "boleh"
+ *                 (pegawai tetap dapat menyalakannya sendiri). Super Admin &
+ *                 Admin: semua nyala. Akun tanpa golongan: semua nyala;
+ *   2. admin    : aturan Admin (atau Super Admin) - per pengguna menimpa per
+ *                 peran; pengguna bergolongan banyak: yang paling longgar
+ *                 menang (boleh > selalu > tidak), sejalan "peran tambahan
+ *                 hanya menambah";
+ *   3. super    : aturan/KUNCI Super Admin - lapisan sendiri di atas aturan
+ *                 Admin (per pengguna menimpa per peran). Elemen yang dikunci
+ *                 Super Admin tidak dapat diubah Admin untuk sasaran itu;
  *   4. pilihan  : pilihan pengguna sendiri, HANYA untuk elemen "boleh".
- *                 "selalu" dan "tidak" terkunci ("diatur admin").
+ *                 "selalu" dan "tidak" terkunci ("diatur admin" / "dikunci
+ *                 Super Admin").
  */
 
 export const HALAMAN_SIPP = {
@@ -117,7 +124,7 @@ export const KATALOG_TAMPILAN_SIPP: readonly ElemenTampilanSipp[] = Object.freez
   e("daftar.lima-bulan", "daftar", "Kotak \"lewat 5 bulan\" (SEMA 2/2014)", "Kotak di atas tabel: perkara belum putus yang sudah lewat 5 bulan.", "ALETA: tidak ada perkara belum putus yang lewat 5 bulan (SEMA 2/2014)", "tampilan", ["pimpinan", "hakim"], ['[data-aleta-l2="lima"]']),
   e("daftar.tautan-abt-aleta", "daftar", "Tombol ABT dan ALETA per baris", "Tautan kecil di tiap baris untuk membuka perkara itu di ABT atau ALETA.", "ABT  ALETA", "aksi", ["pimpinan", "hakim", "panitera", "panmud", "pp"], [".aleta-l1-tautan"]),
   e("daftar.putusan-massal", "daftar", "Tombol \"Jadwalkan Putusan Massal\"", "Tombol untuk menjadwalkan unggah putusan banyak perkara sekaligus.", "Jadwalkan Putusan Massal", "aksi", MAJELIS, ["#aleta-ptj-massal"]),
-  e("daftar.bas-massal", "daftar", "Kotak BAS massal", "Kotak untuk menyusun dan menyimpan BAS banyak perkara sekaligus.", "BAS massal - Muat, Pratinjau, Simpan ke SIPP", "aksi", ["pp", "panitera", "hakim"], [".aleta-basmassal"]),
+  e("daftar.bas-massal", "daftar", "Kotak BAS massal", "Kotak untuk menyusun dan menyimpan BAS banyak perkara sekaligus.", "BAS massal - Muat, Pratinjau, Simpan ke SIPP", "aksi", ["pimpinan", "pp", "panitera", "hakim"], [".aleta-basmassal"]),
 
   // ── halaman perkara ────────────────────────────────────────────────────────
   e("perkara.penanda", "perkara", "Baris \"Penanda ALETA\"", "Baris penanda di bawah tombol-tombol SIPP di halaman perkara.", "Penanda ALETA: sita  potensi verstek", "tampilan", PERKARA, ['[data-aleta-l2="detil"]']),
@@ -128,18 +135,18 @@ export const KATALOG_TAMPILAN_SIPP: readonly ElemenTampilanSipp[] = Object.freez
   e("perkara.ringkasan", "perkara", "Kartu \"Perkara ini di SIPP, ABT, dan ALETA\"", "Kartu ringkasan keadaan perkara di tiga aplikasi beserta selisihnya.", "Perkara ini di SIPP, ABT, dan ALETA - 2 berbeda", "tampilan", PERKARA, [".aleta-m2"]),
   e("perkara.kabar-berubah", "perkara", "Pita \"data SIPP berubah\"", "Pita yang mengajak memuat ulang bila data perkara di SIPP berubah.", "Data SIPP berubah - muat ulang", "tampilan", SEMUA, ["#aleta-kabar"]),
   e("perkara.pita-luring", "perkara", "Pita \"ALETA tidak terjangkau\"", "Pita bila server ALETA tidak terjangkau dan keterangan berasal dari simpanan.", "ALETA tidak terjangkau - keterangan ini dari simpanan", "tampilan", SEMUA, [".aleta-pita-luring:not(#aleta-kabar)"]),
-  e("perkara.beban-penetapan", "perkara", "Ringkasan \"Beban penetapan\"", "Ringkasan beban majelis, hakim, panitera pengganti, dan juru sita saat menetapkan.", "Beban penetapan - Rincian", "tampilan", ["pimpinan", "panitera", "hakim"], [".aleta-bebanstat"]),
+  e("perkara.beban-penetapan", "perkara", "Ringkasan \"Beban penetapan\"", "Ringkasan beban majelis, hakim, panitera pengganti, dan juru sita saat menetapkan.", "Beban penetapan - Rincian", "tampilan", ["pimpinan", "panitera", "panmud", "hakim"], [".aleta-bebanstat"]),
 
   // ── persidangan ────────────────────────────────────────────────────────────
-  e("sidang.jadwal-bas", "sidang", "Tombol \"Jadwalkan BAS\"", "Tombol untuk menjadwalkan unggah BAS sidang pada jam tertentu.", "Jadwalkan BAS", "aksi", ["pp", "hakim", "panitera"], ["#aleta-stj-tombol-bas"]),
-  e("sidang.jadwal-tunda", "sidang", "Tombol \"Jadwalkan Tunda\"", "Tombol untuk menjadwalkan penundaan sidang pada jam tertentu.", "Jadwalkan Tunda", "aksi", ["pp", "hakim", "panitera"], ["#aleta-stj-tombol-tunda"]),
-  e("sidang.dokumen-ecourt", "sidang", "Dokumen e-Court di baris sidang", "Kotak dokumen e-Court (PDF/Word) yang cocok dengan baris sidang.", "Dokumen e-Court: Jawaban - PDF  Word", "aksi", ["hakim", "pp", "panitera"], [".aleta-sisip:has(> .aleta-sisip-judul)"]),
+  e("sidang.jadwal-bas", "sidang", "Tombol \"Jadwalkan BAS\"", "Tombol untuk menjadwalkan unggah BAS sidang pada jam tertentu.", "Jadwalkan BAS", "aksi", ["pimpinan", "pp", "hakim", "panitera"], ["#aleta-stj-tombol-bas"]),
+  e("sidang.jadwal-tunda", "sidang", "Tombol \"Jadwalkan Tunda\"", "Tombol untuk menjadwalkan penundaan sidang pada jam tertentu.", "Jadwalkan Tunda", "aksi", ["pimpinan", "pp", "hakim", "panitera"], ["#aleta-stj-tombol-tunda"]),
+  e("sidang.dokumen-ecourt", "sidang", "Dokumen e-Court di baris sidang", "Kotak dokumen e-Court (PDF/Word) yang cocok dengan baris sidang.", "Dokumen e-Court: Jawaban - PDF  Word", "aksi", ["pimpinan", "hakim", "pp", "panitera"], [".aleta-sisip:has(> .aleta-sisip-judul)"]),
 
   // ── form isian ─────────────────────────────────────────────────────────────
   e("form.usulan", "form", "Pita usulan isian ALETA", "Pita di atas form SIPP berisi usulan isian dengan tombol Terapkan.", "ALETA - 4 usulan isian - Terapkan", "aksi", KEPANITERAAN.concat(["hakim", "ptsp"]), [".aleta-l1-pita:not(.aleta-l1-edoc-cek)"]),
   e("form.periksa", "form", "Pita pemeriksaan isian", "Pita yang memeriksa urutan tanggal, hari libur, dan batas 5 bulan pada form.", "ALETA memeriksa - 1 perlu dilihat", "tampilan", KEPANITERAAN.concat(["hakim", "ptsp"]), [".aleta-m1-pita"]),
   e("form.edoc-cek", "form", "Peringatan e-Doc akan diganti", "Peringatan sebelum e-Doc yang sudah ada di SIPP diganti.", "e-Doc ini sudah ada di SIPP - akan MENGGANTINYA", "tampilan", ["pp", "panitera", "panmud", "hakim"], [".aleta-l1-edoc-cek"]),
-  e("form.saran-sela", "form", "Saran putusan sela", "Saran di samping kolom putusan sela dengan tombol Pakai saran.", "Saran: ... - Pakai saran", "aksi", ["hakim", "pp"], ['[data-m1="saran-sela"]']),
+  e("form.saran-sela", "form", "Saran putusan sela", "Saran di samping kolom putusan sela dengan tombol Pakai saran.", "Saran: ... - Pakai saran", "aksi", ["pimpinan", "hakim", "pp"], ['[data-m1="saran-sela"]']),
 
   // ── penetapan ──────────────────────────────────────────────────────────────
   e("penetapan.otomatis", "penetapan", "Tombol dan panel \"Penetapan Otomatis\"", "Tombol yang membuka panel penetapan PMH/PPP/PJS/PHS otomatis.", "Penetapan Otomatis", "aksi", ["pimpinan", "panitera", "panmud", "hakim"], ["#aleta-pensipp-tombol", "#aleta-pensipp-panel"]),
@@ -149,7 +156,7 @@ export const KATALOG_TAMPILAN_SIPP: readonly ElemenTampilanSipp[] = Object.freez
   e("putusan.otomatis", "putusan", "Tombol dan panel \"Putusan Otomatis\"", "Tombol yang membuka panel unggah putusan, anonimisasi, dan e-Doc sekaligus.", "Putusan Otomatis", "aksi", MAJELIS, ["#aleta-pusipp-tombol", "#aleta-pusipp-panel"]),
 
   // ── mediasi ────────────────────────────────────────────────────────────────
-  e("mediasi.unggah", "mediasi", "Tombol \"Unggah hasil mediasi\"", "Tombol di tab Mediasi untuk mengarsipkan dokumen hasil mediasi.", "Unggah hasil mediasi", "aksi", ["mediator", "hakim", "pp", "panitera"], ["td[data-am-pasang] > .aleta-sisip"]),
+  e("mediasi.unggah", "mediasi", "Tombol \"Unggah hasil mediasi\"", "Tombol di tab Mediasi untuk mengarsipkan dokumen hasil mediasi.", "Unggah hasil mediasi", "aksi", ["mediator", "pimpinan", "hakim", "pp", "panitera"], ["td[data-am-pasang] > .aleta-sisip"]),
 
   // ── kasir ──────────────────────────────────────────────────────────────────
   e("kasir.tombol", "kasir", "Tombol \"Kasir ALETA\"", "Tombol di bawah judul perkara untuk membuka jurnal keuangan perkara.", "Kasir ALETA", "aksi", ["kasir", "panitera", "panmud"], ["#aleta-kj-wadah", "#aleta-kj-tombol"]),
@@ -157,7 +164,7 @@ export const KATALOG_TAMPILAN_SIPP: readonly ElemenTampilanSipp[] = Object.freez
 
   // ── data pihak ─────────────────────────────────────────────────────────────
   e("pihak.ejaan", "pihak", "Usulan ejaan nama", "Usulan ejaan baku di bawah kolom nama dengan tombol salin.", "Ejaan baku: ... - Salin ejaan baku", "aksi", ["ptsp", "panmud", "pp"], ["#aleta-ejaan-usulan"]),
-  e("pihak.chip", "pihak", "Chip pihak dan petunjuk tab", "Chip nama pihak untuk berpindah antar pihak di form.", "Tab: Penggugat  Tergugat", "aksi", ["ptsp", "panmud"], [".aleta-pl-isian"]),
+  e("pihak.chip", "pihak", "Chip pihak dan petunjuk tab", "Chip nama pihak untuk berpindah antar pihak di form.", "Tab: Penggugat  Tergugat", "aksi", ["ptsp", "panmud", "pp"], [".aleta-pl-isian"]),
 
   // ── beranda ────────────────────────────────────────────────────────────────
   e("beranda.muat-ulang", "beranda", "Kartu \"Hasil tadi\"", "Kartu ringkas hasil muat ulang data sesudah pekerjaan ALETA.", "Hasil tadi (09.12) - Segarkan sekarang", "tampilan", SEMUA, [".aleta-mu"]),
@@ -189,7 +196,12 @@ export type AturanTampilanSipp = Record<string, AturanElemen>;
 export const LINGKUP_ATURAN = ["peran", "pengguna"] as const;
 export type LingkupAturan = (typeof LINGKUP_ATURAN)[number];
 
+/** admin = aturan Admin (juga Super Admin yang tidak mengunci); super = aturan/kunci Super Admin (lapis di atasnya). */
+export const TINGKAT_ATURAN = ["admin", "super"] as const;
+export type TingkatAturan = (typeof TINGKAT_ATURAN)[number];
+
 export type BarisAturanTampilanSipp = {
+  tingkat: TingkatAturan;
   lingkup: LingkupAturan;
   /** golongan peran (lingkup peran) atau id pengguna (lingkup pengguna). */
   sasaran: string;
@@ -229,17 +241,21 @@ export function bersihkanPilihan(masukan: unknown): Record<string, boolean> {
   return hasil;
 }
 
+/** Super Admin & Admin selalu "lazim": semua nyala dalam usulan. */
+function lazimBagi(el: ElemenTampilanSipp, golongan: readonly GolonganPeran[]): boolean {
+  if (!golongan.length) return true;
+  if (golongan.includes("super-admin") || golongan.includes("admin")) return true;
+  return golongan.some((g) => el.lazim.includes(g));
+}
+
 /**
  * Usulan aturan untuk satu golongan dari kolom "lazim" katalog: lazim = boleh
  * + nyala, lainnya = boleh + mati (pengguna tetap dapat menyalakannya).
- * Hanya dipakai bila admin menekan "Pakai usulan" - bukan bawaan sistem.
+ * Sejak keputusan 28 Okt 2026 usulan inilah BAWAAN (lapis 1 pemecah).
  */
 export function usulanAturanPeran(golongan: GolonganPeran): AturanTampilanSipp {
   const hasil: AturanTampilanSipp = {};
-  const pengelola = golongan === "super-admin" || golongan === "admin";
-  for (const el of KATALOG_TAMPILAN_SIPP) {
-    hasil[el.kunci] = { mode: "boleh", bawaan: pengelola || el.lazim.includes(golongan) };
-  }
+  for (const el of KATALOG_TAMPILAN_SIPP) hasil[el.kunci] = { mode: "boleh", bawaan: lazimBagi(el, [golongan]) };
   return hasil;
 }
 
@@ -247,7 +263,7 @@ export function usulanAturanPeran(golongan: GolonganPeran): AturanTampilanSipp {
 // PEMECAH
 // ============================================================================
 
-export type SumberTampilanSipp = "sistem" | "peran" | "pengguna" | "pilihan";
+export type SumberTampilanSipp = "usulan" | "peran" | "pengguna" | "pilihan";
 
 export type ElemenBerlaku = {
   kunci: string;
@@ -258,7 +274,9 @@ export type ElemenBerlaku = {
   /** Nyala/mati sebelum pilihan pengguna. */
   bawaan: boolean;
   sumber: SumberTampilanSipp;
-  /** golongan / id pengguna asal aturan; '' untuk sistem/pilihan. */
+  /** Lapis aturan yang menentukan: "" (usulan/pilihan), "admin", atau "super". */
+  oleh: "" | TingkatAturan;
+  /** golongan / id pengguna asal aturan; '' untuk usulan/pilihan. */
   sasaranSumber: string;
 };
 
@@ -273,6 +291,28 @@ function gabungPeran(daftar: { aturan: AturanElemen; sasaran: string }[]): { atu
   return { aturan: { mode: pilih.aturan.mode, bawaan }, sasaran: pilih.sasaran };
 }
 
+/** Aturan satu lapis (admin atau super) untuk satu elemen: per pengguna menimpa per peran. */
+function aturanLapis(
+  aturan: readonly BarisAturanTampilanSipp[],
+  tingkat: TingkatAturan,
+  penggunaId: string,
+  golongan: readonly GolonganPeran[],
+  kunci: string
+): { aturan: AturanElemen; sumber: "peran" | "pengguna"; sasaran: string } | null {
+  const lapis = aturan.filter((b) => (b.tingkat ?? "admin") === tingkat);
+  const orang = penggunaId ? lapis.find((b) => b.lingkup === "pengguna" && b.sasaran === String(penggunaId)) : undefined;
+  const a = orang ? bersihkanAturan(orang.aturan)[kunci] : undefined;
+  if (orang && a) return { aturan: a, sumber: "pengguna", sasaran: orang.sasaran };
+  const g = gabungPeran(
+    golongan
+      .map((gol) => lapis.find((b) => b.lingkup === "peran" && b.sasaran === gol))
+      .filter((b): b is BarisAturanTampilanSipp => Boolean(b))
+      .map((b) => ({ aturan: bersihkanAturan(b.aturan)[kunci], sasaran: b.sasaran }))
+      .filter((x): x is { aturan: AturanElemen; sasaran: string } => Boolean(x.aturan))
+  );
+  return g ? { aturan: g.aturan, sumber: "peran", sasaran: g.sasaran } : null;
+}
+
 export function pecahkanTampilanSipp(masukan: {
   aturan: readonly BarisAturanTampilanSipp[];
   penggunaId: string;
@@ -280,33 +320,18 @@ export function pecahkanTampilanSipp(masukan: {
   pilihan?: Record<string, boolean> | null;
 }): ElemenBerlaku[] {
   const pilihan = bersihkanPilihan(masukan.pilihan ?? {});
-  const milikOrang = masukan.penggunaId
-    ? masukan.aturan.find((b) => b.lingkup === "pengguna" && b.sasaran === String(masukan.penggunaId)) ?? null
-    : null;
-  const milikPeran = masukan.golongan
-    .map((g) => masukan.aturan.find((b) => b.lingkup === "peran" && b.sasaran === g) ?? null)
-    .filter((b): b is BarisAturanTampilanSipp => b !== null);
-
   return KATALOG_TAMPILAN_SIPP.map((el) => {
-    let aturan: AturanElemen = { mode: "boleh", bawaan: true };
-    let sumber: SumberTampilanSipp = "sistem";
+    let aturan: AturanElemen = { mode: "boleh", bawaan: lazimBagi(el, masukan.golongan) };
+    let sumber: SumberTampilanSipp = "usulan";
+    let oleh: "" | TingkatAturan = "";
     let sasaranSumber = "";
-    const orang = milikOrang ? bersihkanAturan(milikOrang.aturan)[el.kunci] : undefined;
-    if (orang) {
-      aturan = orang;
-      sumber = "pengguna";
-      sasaranSumber = milikOrang!.sasaran;
-    } else {
-      const g = gabungPeran(
-        milikPeran
-          .map((b) => ({ aturan: bersihkanAturan(b.aturan)[el.kunci], sasaran: b.sasaran }))
-          .filter((x): x is { aturan: AturanElemen; sasaran: string } => Boolean(x.aturan))
-      );
-      if (g) {
-        aturan = g.aturan;
-        sumber = "peran";
-        sasaranSumber = g.sasaran;
-      }
+    for (const tingkat of TINGKAT_ATURAN) {
+      const l = aturanLapis(masukan.aturan, tingkat, masukan.penggunaId, masukan.golongan, el.kunci);
+      if (!l) continue;
+      aturan = l.aturan;
+      sumber = l.sumber;
+      oleh = tingkat;
+      sasaranSumber = l.sasaran;
     }
     const terkunci = aturan.mode !== "boleh";
     const bawaan = aturan.mode === "selalu" ? true : aturan.mode === "tidak" ? false : aturan.bawaan;
@@ -315,11 +340,21 @@ export function pecahkanTampilanSipp(masukan: {
       tampil = pilihan[el.kunci];
       if (tampil !== bawaan) {
         sumber = "pilihan";
+        oleh = "";
         sasaranSumber = "";
       }
     }
-    return { kunci: el.kunci, tampil, mode: aturan.mode, terkunci, bawaan, sumber, sasaranSumber };
+    return { kunci: el.kunci, tampil, mode: aturan.mode, terkunci, bawaan, sumber, oleh, sasaranSumber };
   });
+}
+
+/**
+ * Kunci yang dikunci Super Admin untuk satu sasaran - Admin tidak dapat mengubahnya untuk sasaran itu.
+ * (Aturan Super Admin di lapis "super"; Admin hanya menulis lapis "admin".)
+ */
+export function kunciSuperAdmin(aturan: readonly BarisAturanTampilanSipp[], lingkup: LingkupAturan, sasaran: string): string[] {
+  const b = aturan.find((x) => x.tingkat === "super" && x.lingkup === lingkup && x.sasaran === sasaran);
+  return b ? Object.keys(bersihkanAturan(b.aturan)) : [];
 }
 
 /**

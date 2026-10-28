@@ -6,7 +6,9 @@
  *   - SIPP dan portal: <html data-aleta-senyap> terpasang SEBELUM penyimpanan terbaca (tanpa kedipan) dan tetap sesudahnya;
  *   - ABT dan halaman lain tidak tersentuh; tampilan Lama tidak tersentuh (syarat mutlak fd9aad7);
  *   - saklar tetap per situs (tampilAletaHalaman) menampilkan; perubahan dari popup berlaku tanpa muat ulang;
- *   - Alt+Shift+A dan pesan popup "aleta-tampil-tab" menampilkan/menyembunyikan untuk TAB INI (sessionStorage);
+ *   - pesan popup "aleta-tampil-tab" menampilkan/menyembunyikan untuk TAB INI (sessionStorage);
+ *   - 28 Okt (keputusan pengguna): saklar situs juga di AKUN (setelan "tampil.halaman" di singgahan tampilanServer) -
+ *     yang lebih baru antara peramban dan akun berlaku; Alt+Shift+A membalik saklar situs (peramban + PUT akun).
  *   - senyap 1 jam tetap menang atas tab yang ditampilkan; yang disembunyikan hanya tampilan (CSS senyap yang sama).
  */
 import { readFileSync } from "node:fs";
@@ -29,6 +31,7 @@ function jalankan(awal: Record<string, unknown>, alamat: { hostname: string; pat
   const tombol: Array<(e: any) => void> = [];
   const pesan: Array<(p: any, s: any, b: (x: any) => void) => unknown> = [];
   const ubahan: Array<(u: Record<string, { newValue: unknown }>, t: string) => void> = [];
+  const permintaan: Array<{ url: string; method: string; body: string }> = [];
   const elemen = () => ({ setAttribute() {}, appendChild: (x: any) => x, classList: { add() {}, remove() {}, contains: () => false }, style: { setProperty() {} }, dataset: {}, addEventListener() {} });
   const k: any = {
     console, Date, JSON, Math, Number, String, Boolean, Array, Object, Promise, Error, Map, Set, RegExp,
@@ -59,7 +62,10 @@ function jalankan(awal: Record<string, unknown>, alamat: { hostname: string; pat
         },
       },
     },
-    fetch: async () => ({ ok: true, status: 200, json: async () => ({}) }),
+    fetch: async (url: string, init?: { method?: string; body?: string }) => {
+      permintaan.push({ url: String(url), method: init?.method ?? "GET", body: init?.body ?? "" });
+      return { ok: true, status: 200, json: async () => ({}) };
+    },
     navigator: {},
     Response: class {},
     AbortController: class {
@@ -84,7 +90,7 @@ function jalankan(awal: Record<string, unknown>, alamat: { hostname: string; pat
     Object.assign(simpanan, isi);
     for (const f of ubahan) f(Object.fromEntries(Object.entries(isi).map(([a, v]) => [a, { newValue: v }])), "local");
   };
-  return { k, sembunyi, tekan, kirim, ubah, sesi };
+  return { k, sembunyi, tekan, kirim, ubah, sesi, simpanan, permintaan };
 }
 
 const SIPP = { hostname: "192.168.10.10", pathname: "/SIPP/perkara" };
@@ -127,17 +133,40 @@ describe("bawaan: SIPP dan portal ALETA tersembunyi, situs lain tidak", () => {
 });
 
 describe("ditampilkan bila dibutuhkan: per tab", () => {
-  it("Alt+Shift+A menampilkan untuk tab ini (sessionStorage), tekan lagi menyembunyikan; tombol lain tidak", async () => {
-    const h = await siap(UI, SIPP);
+  it("Alt+Shift+A membalik saklar situs: disimpan di peramban dan dikirim ke akun, melepas pilihan tab; tombol lain tidak", async () => {
+    const h = await siap(UI, SIPP, { "aleta-tampil-tab": "tidak" });
     h.tekan({ altKey: true, code: "KeyA" });
     h.tekan({ ctrlKey: true, altKey: true, shiftKey: true, code: "KeyA" });
     expect(h.sembunyi()).toBe(true);
+    expect(h.permintaan.filter((p) => p.method === "PUT")).toHaveLength(0);
     h.tekan({ altKey: true, shiftKey: true, code: "KeyA" });
     expect(h.sembunyi()).toBe(false);
-    expect(h.sesi["aleta-tampil-tab"]).toBe("ya");
+    expect(h.sesi["aleta-tampil-tab"]).toBe("");
+    expect(h.simpanan.tampilAletaHalaman).toMatchObject({ sipp: true, aleta: false });
+    expect(typeof (h.simpanan.tampilAletaHalaman as { diubahPada?: unknown }).diubahPada).toBe("string");
+    const put = h.permintaan.filter((p) => p.method === "PUT");
+    expect(put).toHaveLength(1);
+    expect(put[0].url).toBe("/aleta/api/aleta-ecourt/ekstensi/setelan");
+    expect(JSON.parse(put[0].body)).toEqual({ kunci: "tampil.halaman", nilai: { sipp: true, aleta: false } });
     h.tekan({ altKey: true, shiftKey: true, code: "KeyA" });
     expect(h.sembunyi()).toBe(true);
-    expect(h.sesi["aleta-tampil-tab"]).toBe("tidak");
+    expect(h.simpanan.tampilAletaHalaman).toMatchObject({ sipp: false });
+    expect(JSON.parse(h.permintaan.filter((p) => p.method === "PUT")[1].body).nilai).toEqual({ sipp: false, aleta: false });
+  });
+
+  it("akun menang bila lebih baru (masuk di PC lain); salinan peramban yang lebih baru menang (server tak terjangkau)", async () => {
+    const akun = (sipp: boolean, pada: string) => ({ tampilanServer: { mode: "ui", fitur: {}, setelan: { "tampil.halaman": { nilai: { sipp }, diubahPada: pada } } } });
+    // PC baru: tanpa salinan peramban, nilai akun berlaku.
+    expect((await siap({ ...UI, ...akun(true, "2026-10-28T10:00:00.000Z") }, SIPP)).sembunyi()).toBe(false);
+    // Salinan lama tanpa cap waktu (1.205.52) kalah dari akun.
+    expect((await siap({ ...UI, ...akun(true, "2026-10-28T10:00:00.000Z"), tampilAletaHalaman: { sipp: false } }, SIPP)).sembunyi()).toBe(false);
+    // Diubah di PC ini sesudah akun (belum terkirim): peramban menang.
+    expect((await siap({ ...UI, ...akun(true, "2026-10-28T10:00:00.000Z"), tampilAletaHalaman: { sipp: false, diubahPada: "2026-10-28T11:00:00.000Z" } }, SIPP)).sembunyi()).toBe(true);
+    // Akun berubah dari PC lain sesudahnya: berlaku tanpa muat ulang.
+    const h = await siap({ ...UI, tampilAletaHalaman: { sipp: false, diubahPada: "2026-10-28T11:00:00.000Z" } }, SIPP);
+    expect(h.sembunyi()).toBe(true);
+    await h.ubah(akun(true, "2026-10-28T12:00:00.000Z"));
+    expect(h.sembunyi()).toBe(false);
   });
 
   it("pilihan tab terbawa ke halaman SIPP berikutnya di tab yang sama, dan menang atas saklar situs", async () => {

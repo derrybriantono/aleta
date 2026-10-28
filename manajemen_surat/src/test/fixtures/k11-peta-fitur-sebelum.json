@@ -4281,8 +4281,8 @@
    "jumlahPernyataan": 2
   },
   "panel-alat.js": {
-   "byte": 587967,
-   "sidik": "d9b09c13267648596ab6198445352b16ab8c957e",
+   "byte": 591002,
+   "sidik": "4076f11aba4e61b9e405a759dcb31ea615be6d42",
    "nama": [
     "ALAT_AKHIRAN_TIPE",
     "ALAT_ALAMAT_UNGGAH_SIPP",
@@ -4414,6 +4414,7 @@
     "ALAT_SESI_TAMPIL_TAB",
     "ALAT_SETELAN_SINGGAH",
     "ALAT_SETELAN_SINGGAH_BILA_ADA",
+    "ALAT_SETELAN_TAMPIL_HALAMAN",
     "ALAT_SKALA_BAWAAN",
     "ALAT_SKALA_KUNCI",
     "ALAT_SKALA_LANGKAH",
@@ -4773,6 +4774,7 @@
     "alatSetelKering",
     "alatSetelRingkas",
     "alatSetelSuntingLangsung",
+    "alatSetelTampilSitus",
     "alatSetelTampilTab",
     "alatSetelTeknis",
     "alatSetelVersiTipe",
@@ -4802,6 +4804,7 @@
     "alatSusunPetaPadanan",
     "alatTambahVarianPeta",
     "alatTampilHalaman",
+    "alatTampilHalamanBerlaku",
     "alatTampilHalamanBersih",
     "alatTampilTab",
     "alatTampilTabCadangan",
@@ -4889,7 +4892,7 @@
     "className",
     "fetch"
    ],
-   "jumlahPernyataan": 681
+   "jumlahPernyataan": 684
   },
   "penetapan-borang.js": {
    "byte": 41590,

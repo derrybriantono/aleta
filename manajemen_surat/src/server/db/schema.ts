@@ -488,13 +488,14 @@ export const DDL_KAMUS_RIWAYAT = {
 export const DDL_TAMPILAN_SIPP = {
   tabel: [
     `CREATE TABLE IF NOT EXISTS aleta_tampilan_sipp_aturan (
+  tingkat TEXT NOT NULL DEFAULT 'admin',
   lingkup TEXT NOT NULL,
   sasaran TEXT NOT NULL,
   aturan TEXT NOT NULL DEFAULT '{}',
   catatan TEXT NOT NULL DEFAULT '',
   diubah_oleh TEXT NOT NULL DEFAULT '',
   diubah_pada TEXT NOT NULL,
-  PRIMARY KEY (lingkup, sasaran)
+  PRIMARY KEY (tingkat, lingkup, sasaran)
 )`,
   ],
   indeks: [`CREATE INDEX IF NOT EXISTS idx_tampilan_sipp_aturan_pada ON aleta_tampilan_sipp_aturan(diubah_pada)`],

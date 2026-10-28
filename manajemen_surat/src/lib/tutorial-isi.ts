@@ -1044,14 +1044,15 @@ export const TUTORIAL: readonly Tutorial[] = [
     tautan: { teks: "Buka Tampilan SIPP per Peran", href: "/admin/tampilan-sipp" },
     langkah: [
       "Buka Pusat Kendali, lalu Tampilan SIPP per Peran (Super Admin dan Admin).",
-      "Baris adalah bagian ALETA di SIPP, kolom adalah peran. Klik sel untuk berganti: Ikut bawaan, Nyala, Mati, Selalu, Tidak ada. Tiap klik langsung tersimpan.",
+      "Baris adalah bagian ALETA di SIPP, kolom adalah peran. Klik sel untuk berganti: Ikut usulan, Nyala, Mati, Selalu, Tidak ada. Tiap klik langsung tersimpan.",
       "Nyala dan Mati masih boleh diubah pegawai sendiri; Selalu dan Tidak ada mengunci pilihan pegawai.",
-      "Tombol bintang di kepala kolom memakai usulan: bagian yang lazim untuk peran itu nyala, lainnya mati. Tombol tempat sampah menghapus aturan peran itu.",
+      "Bawaannya usulan per peran: bagian yang lazim untuk peran itu tampil, lainnya tersembunyi tetapi boleh dinyalakan pegawai sendiri. Tombol Kembali ke usulan di kepala kolom menghapus aturan peran itu.",
+      "Super Admin dapat mengunci sel di atas aturan Admin. Sel bergembok tidak dapat diubah Admin dan tampil sebagai dikunci Super Admin bagi pegawai.",
       "Untuk menimpa satu pegawai, pilih namanya. Kolom akun pegawai itu dan kolom Yang berlaku baginya muncul di sebelah kiri.",
     ],
     peringatan: [
       "Pegawai dengan beberapa peran mendapat aturan yang paling longgar di antara perannya.",
-      "Aturan untuk Super Admin hanya dapat diubah Super Admin. Setiap perubahan tercatat di audit.",
+      "Aturan untuk Super Admin hanya dapat diubah Super Admin. Setiap perubahan tercatat di audit beserta siapa yang mengubahnya.",
     ],
     kataKunci: ["tampilan sipp", "matriks tampilan", "per peran", "per pegawai", "sembunyikan untuk peran", "kunci tampilan"],
   },

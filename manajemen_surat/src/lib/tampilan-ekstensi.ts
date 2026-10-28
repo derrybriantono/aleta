@@ -211,7 +211,7 @@ export const KUNCI_PENGATURAN_SINKRON = [
 
 const PENGATURAN_SINKRON = new Set<string>(KUNCI_PENGATURAN_SINKRON);
 
-export const KUNCI_SETELAN = ["checklist.tanda", "pintasan.portal", "pengaturan.ekstensi", "widget.tata", "panel.bawaan", "konteks.perkara", "perangkat.versi", "tampilan.sipp"] as const;
+export const KUNCI_SETELAN = ["checklist.tanda", "pintasan.portal", "pengaturan.ekstensi", "widget.tata", "panel.bawaan", "konteks.perkara", "perangkat.versi", "tampilan.sipp", "tampil.halaman"] as const;
 export type KunciSetelan = (typeof KUNCI_SETELAN)[number];
 
 export function kunciSetelanSah(x: unknown): x is KunciSetelan {
@@ -230,6 +230,8 @@ export const BATAS_BITA_SETELAN: Record<KunciSetelan, number> = {
   "perangkat.versi": 4096,
   // 28 Okt 2026: pilihan tampilan ALETA di halaman SIPP milik pengguna sendiri (lib/tampilan-sipp.ts).
   "tampilan.sipp": 8192,
+  // 28 Okt 2026: saklar induk "Tampilkan ALETA di SIPP / portal" (tampilAletaHalaman 1.205.52) ikut akun.
+  "tampil.halaman": 256,
 };
 
 export const BATAS_TANDA_CHECKLIST = 500;
@@ -480,6 +482,28 @@ function normalkanTampilanSipp(nilai: unknown) {
   return { nilai: { pilihan }, dibuang };
 }
 
+// tampil.halaman - {sipp?, aleta?} boolean: tampilan ALETA di halaman SIPP / portal ALETA ditampilkan (true) atau
+// tersembunyi bawaan (false/tidak disebut). Disunting dari popup ekstensi dan Alt+Shift+A; yang lebih baru antara
+// salinan peramban dan akun yang berlaku (panel-alat.js 3c').
+export const SITUS_TAMPIL_HALAMAN = ["sipp", "aleta"] as const;
+
+function normalkanTampilHalaman(nilai: unknown) {
+  if (!nilai || typeof nilai !== "object" || Array.isArray(nilai)) {
+    throw new GalatSetelan("tampil.halaman harus berupa obyek {sipp, aleta}.");
+  }
+  const hasil: Partial<Record<(typeof SITUS_TAMPIL_HALAMAN)[number], boolean>> = {};
+  const dibuang: string[] = [];
+  for (const [k, v] of Object.entries(nilai as Record<string, unknown>)) {
+    if (!(SITUS_TAMPIL_HALAMAN as readonly string[]).includes(k)) {
+      dibuang.push(k);
+      continue;
+    }
+    if (typeof v !== "boolean") throw new GalatSetelan(`tampil.halaman.${k} harus true atau false.`);
+    hasil[k as (typeof SITUS_TAMPIL_HALAMAN)[number]] = v;
+  }
+  return { nilai: hasil, dibuang };
+}
+
 /**
  * Memeriksa dan menormalkan satu setelan sebelum disimpan.
  *
@@ -511,7 +535,9 @@ export function normalkanSetelan(
                 ? normalkanVersiPerangkatSetelan(nilai)
                 : kunci === "tampilan.sipp"
                   ? normalkanTampilanSipp(nilai)
-                  : normalkanPengaturan(nilai);
+                  : kunci === "tampil.halaman"
+                    ? normalkanTampilHalaman(nilai)
+                    : normalkanPengaturan(nilai);
 
   let json: string;
   try {

@@ -38,12 +38,14 @@ async function ambil<T>(url: string, init?: RequestInit): Promise<T> {
 const ALAMAT = "/api/aleta-ecourt/ekstensi/tampilan-sipp";
 
 function keteranganSumber(b: ElemenBerlaku): string {
-  if (b.mode === "selalu") return "Selalu tampil - diatur admin";
-  if (b.mode === "tidak") return "Tidak tersedia untuk akun Anda - diatur admin";
+  const siapa = b.oleh === "super" ? "dikunci Super Admin" : "diatur admin";
+  if (b.mode === "selalu") return `Selalu tampil - ${siapa}`;
+  if (b.mode === "tidak") return `Tidak tersedia untuk akun Anda - ${siapa}`;
   if (b.sumber === "pilihan") return b.tampil ? "Anda menyalakannya" : "Anda mematikannya";
-  if (b.sumber === "pengguna") return `Bawaan dari admin untuk akun Anda: ${b.bawaan ? "tampil" : "tersembunyi"}`;
-  if (b.sumber === "peran") return `Bawaan peran Anda: ${b.bawaan ? "tampil" : "tersembunyi"}`;
-  return "Bawaan: tampil";
+  const penyetel = b.oleh === "super" ? "Super Admin" : "admin";
+  if (b.sumber === "pengguna") return `Bawaan dari ${penyetel} untuk akun Anda: ${b.bawaan ? "tampil" : "tersembunyi"}`;
+  if (b.sumber === "peran") return `Bawaan dari ${penyetel} untuk peran Anda: ${b.bawaan ? "tampil" : "tersembunyi"}`;
+  return `Usulan untuk peran Anda: ${b.bawaan ? "tampil" : "tersembunyi - boleh Anda nyalakan"}`;
 }
 
 export function TampilanSippSaya() {
