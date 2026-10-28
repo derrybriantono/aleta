@@ -57,6 +57,14 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.55",
+    dirilis: "2026-10-28T14:32:00+08:00",
+    judul: "Tautan SIPP dan ABT selalu ke alamat satker",
+    butir: [
+      "Tautan ke SIPP dan ABT dari popup (termasuk Perbaiki pada SIPP belum masuk), panel portal, dan menu SIPP kini selalu ke alamat satker tanpa port portal (bukan 192.168.10.10:8008/SIPP), sehingga ALETA tetap aktif dan sesi SIPP tidak terpisah.",
+    ],
+  },
+  {
     versi: "1.205.54",
     dirilis: "2026-10-28T13:09:00+08:00",
     judul: "Putus ikrar talak tiga status, hasil mediasi ke SIPP, dan Court Calendar",
