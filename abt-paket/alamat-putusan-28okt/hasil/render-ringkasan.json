@@ -1,0 +1,170 @@
+{
+"putusan-10187": {
+"sama": false,
+"kurung_sebelum": 3,
+"kurung_sesudah": 2,
+"galat": false
+},
+"relaas-10187": {
+"sama": true,
+"kurung_sebelum": 3,
+"kurung_sesudah": 3,
+"galat": false
+},
+"putusan-cg-10187": {
+"sama": false,
+"kurung_sebelum": 117,
+"kurung_sesudah": 116,
+"galat": false
+},
+"relaas-js-10187": {
+"sama": true,
+"kurung_sebelum": 2,
+"kurung_sesudah": 2,
+"galat": false
+},
+"putusan-10222": {
+"sama": false,
+"kurung_sebelum": 3,
+"kurung_sesudah": 2,
+"galat": false
+},
+"relaas-10222": {
+"sama": true,
+"kurung_sebelum": 3,
+"kurung_sesudah": 3,
+"galat": false
+},
+"putusan-cg-10222": {
+"sama": false,
+"kurung_sebelum": 115,
+"kurung_sesudah": 114,
+"galat": false
+},
+"relaas-js-10222": {
+"sama": true,
+"kurung_sebelum": 2,
+"kurung_sesudah": 2,
+"galat": false
+},
+"putusan-10209": {
+"sama": false,
+"kurung_sebelum": 7,
+"kurung_sesudah": 4,
+"galat": false
+},
+"relaas-10209": {
+"sama": true,
+"kurung_sebelum": 7,
+"kurung_sesudah": 7,
+"galat": false
+},
+"putusan-cg-10209": {
+"sama": false,
+"kurung_sebelum": 120,
+"kurung_sesudah": 118,
+"galat": false
+},
+"relaas-js-10209": {
+"sama": true,
+"kurung_sebelum": 3,
+"kurung_sesudah": 3,
+"galat": false
+},
+"putusan-10170": {
+"sama": false,
+"kurung_sebelum": 4,
+"kurung_sesudah": 3,
+"galat": false
+},
+"relaas-10170": {
+"sama": true,
+"kurung_sebelum": 5,
+"kurung_sesudah": 5,
+"galat": false
+},
+"putusan-cg-10170": {
+"sama": false,
+"kurung_sebelum": 120,
+"kurung_sesudah": 119,
+"galat": false
+},
+"relaas-js-10170": {
+"sama": true,
+"kurung_sebelum": 3,
+"kurung_sesudah": 3,
+"galat": false
+},
+"putusan-10176": {
+"sama": true,
+"kurung_sebelum": 4,
+"kurung_sesudah": 4,
+"galat": false
+},
+"relaas-10176": {
+"sama": true,
+"kurung_sebelum": 5,
+"kurung_sesudah": 5,
+"galat": false
+},
+"putusan-cg-10176": {
+"sama": true,
+"kurung_sebelum": 118,
+"kurung_sesudah": 118,
+"galat": false
+},
+"relaas-js-10176": {
+"sama": true,
+"kurung_sebelum": 3,
+"kurung_sesudah": 3,
+"galat": false
+},
+"putusan-9233": {
+"sama": true,
+"kurung_sebelum": 4,
+"kurung_sesudah": 4,
+"galat": false
+},
+"relaas-9233": {
+"sama": true,
+"kurung_sebelum": 0,
+"kurung_sesudah": 0,
+"galat": false
+},
+"putusan-cg-9233": {
+"sama": true,
+"kurung_sebelum": 229,
+"kurung_sesudah": 229,
+"galat": false
+},
+"relaas-js-9233": {
+"sama": true,
+"kurung_sebelum": 1,
+"kurung_sesudah": 1,
+"galat": false
+},
+"putusan-6463": {
+"sama": true,
+"kurung_sebelum": 2,
+"kurung_sesudah": 2,
+"galat": false
+},
+"relaas-6463": {
+"sama": true,
+"kurung_sebelum": 0,
+"kurung_sesudah": 0,
+"galat": false
+},
+"putusan-cg-6463": {
+"sama": true,
+"kurung_sebelum": 0,
+"kurung_sesudah": 0,
+"galat": true
+},
+"relaas-js-6463": {
+"sama": true,
+"kurung_sebelum": 1,
+"kurung_sesudah": 1,
+"galat": false
+}
+}

@@ -1,0 +1,72 @@
+{
+ "ubah": [
+  {
+   "no": 7047,
+   "lama_md5": "f548b43be1206974a88aa1cd84b66822",
+   "baru_md5": "c8fdb0dade2c0d8c7549caeabca6c08b",
+   "diganti": 24
+  },
+  {
+   "no": 7048,
+   "lama_md5": "485001ad3b68a7ab053d8e875ca001c4",
+   "baru_md5": "634fce56fc630914fe9446a079c9fa3a",
+   "diganti": 23
+  },
+  {
+   "no": 8700,
+   "lama_md5": "28e503d1c8a2d7ca42f4650857adb3aa",
+   "baru_md5": "35fd01b30d22e558cba808e9b293010e",
+   "diganti": 2
+  },
+  {
+   "no": 8890,
+   "lama_md5": "cc33da9647af6855dcf50700f4476a3c",
+   "baru_md5": "68d55add7505d14216829b56a0082b7d",
+   "diganti": 3
+  },
+  {
+   "no": 9349,
+   "lama_md5": "18ff1d4ac1a30da6295f73aa87dac917",
+   "baru_md5": "2d5114c2a87e34daef54c70d75028661",
+   "diganti": 1
+  },
+  {
+   "no": 9350,
+   "lama_md5": "e6a0c12edde5c6eb6a64511b2fba7047",
+   "baru_md5": "212cd5dd2889ef88b2c67e3aeb01f366",
+   "diganti": 1
+  }
+ ],
+ "fungsi_ap": {
+  "isian_rtf_alamat_arah": "879b99851e6ee214706c4e5b8271a85c",
+  "isian_rtf_alamat_buang_arah": "eb549e67f9ddd4d866514c2e82ff120c",
+  "isian_rtf_alamat_putusan": "c6e37f152a9ea908a747fc59c9209034"
+ },
+ "fungsi_diganti": {
+  "isian_rtf_pihak_identitas": {
+   "lama_md5": "4ee30bc89c1585852bafc1ddf67ff4c2",
+   "baru_md5": "4c758ce53cd541a39a32cf3cb0ba9898"
+  },
+  "isian_rtf_pihak_utama": {
+   "lama_md5": "d2fa4361de6fb016c488aad0fc8a1793",
+   "baru_md5": "ecda2f98c76145e78f4b9b76ef1ceb80"
+  }
+ },
+ "md5_isian_rtf_alamat": "dfb14adb3ed8e29efaea5e2e03c6983b",
+ "harap": "2|0|6|0|0|1|0",
+ "ulang": "0|2|0|6|3|1|0",
+ "tidak_diubah_memanggil_alamat": [
+  3517,
+  3518,
+  3519,
+  3943,
+  3944,
+  7108,
+  7109,
+  9230,
+  9231,
+  9292,
+  9293,
+  10126
+ ]
+}
