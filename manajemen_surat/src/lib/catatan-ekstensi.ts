@@ -57,6 +57,22 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.53",
+    dirilis: "2026-10-28T11:27:00+08:00",
+    judul: "Penetapan otomatis tanpa gagal, rincian alasan cerai, persidangan elektronik/hybrid, dan PTSP",
+    butir: [
+      "Unggah e-Doc penetapan otomatis tidak gagal lagi: kiriman blangko bergambar yang besar tidak terpotong, dan blangko gabungan PMH-PHS dicetak sekali sehingga lebih cepat.",
+      "Penetapan dari kartu Penetapan dan dari tombol Penetapan Otomatis di halaman SIPP kini sama: sidang keliling, ubah majelis, pejabat penetap pilihan, e-Doc yang sudah ada dilewati kecuali dicentang Timpa, pilihan sita PHS, dan cap hanya pada PMH.",
+      "Logo pengadilan di kotak tanda tangan elektronik PPP dan PJS kini berada di dalam kotak.",
+      "Berkas e-Court pada kotak cocok agenda di jadwal sidang SIPP diperlihatkan dulu sebelum diunduh (Shift/Ctrl-klik = unduh langsung).",
+      "Rincian alasan cerai: alasan disambung dengan dan tanpa titik koma, rincian dari gugatan ikut (mis. yaitu jenis sabu-sabu), akibat umum perselisihan tidak ditempelkan, dan keterangan para saksi ikut dicocokkan.",
+      "Jadwal Sidang dan Status Perkara menandai tiap pihak persidangan elektronik (persetujuan e-Court setuju dan ada email) atau persidangan hybrid.",
+      "Blangko Derry: akun PTSP muncul di Lihat sebagai, daftar perkara PTSP hari ini/tanggal tertentu/rentang tanggal, dan cetak massal PTSP dengan pilihan penetapan.",
+      "PDF SALINAN menyebut jumlah tulisan ttd yang tertulis dan sebab bila tanda tangan Panitera tidak tertempel.",
+      "Tautan widget ke SIPP dan ABT memakai alamat tanpa port portal.",
+    ],
+  },
+  {
     versi: "1.205.52",
     dirilis: "2026-10-28T09:20:00+08:00",
     judul: "Tampilan ALETA tersembunyi bawaan di SIPP dan portal, alasan cerai ikut Input semua yang pasti",

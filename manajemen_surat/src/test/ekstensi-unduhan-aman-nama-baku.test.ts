@@ -156,7 +156,9 @@ describe("tidak ada unduhan langsung dari halaman http", () => {
     const bas = baca("ekstensi-sipp/basmassal.js");
     expect(potongFungsi(bas, ["basmassalUnduh"])).toContain("await alatUnduh(blob, nama)");
     expect(bas).toContain("await alatUnduh(berkas, `Rekap kasir");
-    expect(baca("ekstensi-sipp/konten.js")).toContain("await alatUnduh(blob, String(namaBerkasDari(");
+    // 28 Okt: nama dihitung sekali (dipakai juga oleh pratinjau berkas e-Court), lalu tetap lewat alatUnduh.
+    expect(baca("ekstensi-sipp/konten.js")).toContain("const namaBerkas = String(namaBerkasDari(respons, dokumen, format));");
+    expect(baca("ekstensi-sipp/konten.js")).toContain("await alatUnduh(blob, namaBerkas);");
     expect(bas).not.toContain("URL.createObjectURL");
   });
 
