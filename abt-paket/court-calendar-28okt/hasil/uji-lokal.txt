@@ -1,0 +1,59 @@
+SNAP awal   : menu[69 2be2ec48678a3c72c4754d5f4aaabd7f ] variabel[2677] pohon[9f0b8c8ccf73]
+== 1. PASANG
+PRASYARAT COCOK (37|0|1)
+
+BERKAS SIAP
+CADANGAN: /d/Aplikasi/aleta/tmp/cc/paket/cadangan (menu lama folder ini: 0)
+SEMUA COCOK
+FOLDER BARU derry_briantono/98c Court Calendar - BAS
+BUAT=2
+COCOK=2
+BERKAS COCOK
+SELESAI - paket abt-court-calendar-28okt terpasang. Cadangan: /d/Aplikasi/aleta/tmp/cc/paket/cadangan. Pulih: bash /d/Aplikasi/aleta/tmp/cc/paket/pulih-satker.sh
+SNAP pasang : menu[70 f3b2735aa8528e90f32c66aa2ee94c15 ] variabel[2677] pohon[53652bc0b0cc]
+== 2. pasang ulang (idempoten)
+PRASYARAT COCOK (37|1|1)
+SUDAH_BARU=2
+BERKAS SIAP
+CADANGAN: /d/Aplikasi/aleta/tmp/cc/paket/cadangan (menu lama folder ini: 1)
+SEMUA COCOK
+FOLDER SUDAH ADA derry_briantono/98c Court Calendar - BAS
+SUDAH=2
+COCOK=2
+BERKAS COCOK
+SELESAI - paket abt-court-calendar-28okt terpasang. Cadangan: /d/Aplikasi/aleta/tmp/cc/paket/cadangan. Pulih: bash /d/Aplikasi/aleta/tmp/cc/paket/pulih-satker.sh
+SNAP ulang  : menu[70 f3b2735aa8528e90f32c66aa2ee94c15 ] variabel[2677] pohon[53652bc0b0cc]
+PASANG ULANG = TIDAK ADA PERUBAHAN
+== 3. PULIH
+HAPUS=2
+BERKAS PULIH
+FOLDER DIHAPUS derry_briantono/98c Court Calendar - BAS
+PULIH SQL SELESAI
+PULIH COCOK
+SNAP pulih  : menu[69 2be2ec48678a3c72c4754d5f4aaabd7f ] variabel[2677] pohon[9f0b8c8ccf73]
+PULIH = KEADAAN AWAL PERSIS (menu, variabel, pohon blangko)
+== 4. PRASYARAT sesudah pulih (harus 37|0|1)
+37|0|1
+== 5. pasang lagi
+PRASYARAT COCOK (37|0|1)
+
+BERKAS SIAP
+CADANGAN: /d/Aplikasi/aleta/tmp/cc/paket/cadangan (menu lama folder ini: 0)
+SEMUA COCOK
+FOLDER BARU derry_briantono/98c Court Calendar - BAS
+BUAT=2
+COCOK=2
+BERKAS COCOK
+SELESAI - paket abt-court-calendar-28okt terpasang. Cadangan: /d/Aplikasi/aleta/tmp/cc/paket/cadangan. Pulih: bash /d/Aplikasi/aleta/tmp/cc/paket/pulih-satker.sh
+SNAP lagi   : menu[70 f3b2735aa8528e90f32c66aa2ee94c15 ] variabel[2677] pohon[53652bc0b0cc]
+PASANG LAGI = SAMA DENGAN PASANG PERTAMA
+== 6. PULIH lagi
+FOLDER DIHAPUS derry_briantono/98c Court Calendar - BAS
+PULIH SQL SELESAI
+PULIH COCOK
+== 7. PENJAGA: menu 963 berubah hak -> pasang HARUS berhenti tanpa mengubah apa pun
+GAGAL: prasyarat '37|0|0' (harus '37|0|1' pasang pertama atau '37|1|1' pasang ulang) - TIDAK ada yang diubah. Arti angka: lihat abt-court-calendar-28okt-PRASYARAT.sql
+PENJAGA: TIDAK ADA YANG BERUBAH
+== 8. PENJAGA: folder baru sudah ada sebelum paket terpasang -> pasang HARUS berhenti
+PRASYARAT COCOK (37|0|1)
+GAGAL: folder baru /d/Aplikasi/aleta/tmp/cc/blangko/derry_briantono/98c Court Calendar - BAS sudah ada padahal paket belum terpasang - TIDAK ada yang diubah

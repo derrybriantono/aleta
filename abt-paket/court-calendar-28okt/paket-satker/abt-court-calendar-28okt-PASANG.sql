@@ -1,0 +1,5 @@
+-- Paket ABT "abt-court-calendar-28okt" (28 Okt 2026): blangko Court Calendar (penetapan jadwal persidangan dan perubahan jadwal karena gugatan rekonvensi), folder baru "98c Court Calendar - BAS", satu baris abt_menu, dua blangko RTF. Tanpa variabel/fungsi baru.
+-- PASANG: satu transaksi; id = MAX+1 saat pasang; WHERE NOT EXISTS (pasang ulang tidak menggandakan).
+START TRANSACTION;
+INSERT INTO abt_menu (id, nama, nama_alias, direktori, parent_direktori, proses_id_min, proses_id_max, perkara_id_min, perkara_id_max, perkara_id_referensi, user_cek, user_grup_id, user_top_id, user_validator) SELECT (SELECT n FROM (SELECT IFNULL(MAX(id), 0) + 1 AS n FROM abt_menu) mm), 'BAS Court Calendar (Jadwal Persidangan)', 'BAS Court Calendar', '98c Court Calendar - BAS', 'derry_briantono', 80, 297, 15, 15, 'alur_perkara_id', 3, '1|30|500|430|1000|1010|1020', '1|30', '10|20' FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM abt_menu WHERE direktori = '98c Court Calendar - BAS' AND parent_direktori = 'derry_briantono');
+COMMIT;
