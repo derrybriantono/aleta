@@ -5,10 +5,11 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 /**
- * 28 Okt 2026 - sisa variabel Derry yang memilih pihak dengan `urutan = N` tetap (perkara e-Court menomori urutan bersambung lintas tabel, jadi Tergugat
+ * 28 Okt 2026 (diperluas atas dua keputusan pengguna 28 Okt) - sisa variabel Derry DAN 43 variabel bawaan ABT yang memilih pihak dengan `urutan = N` tetap (perkara e-Court menomori urutan bersambung lintas tabel, jadi Tergugat
  * pertama bisa berurutan 25). Paket abt-paket/pihak-urut-sisa-28okt menggantinya dengan PERINGKAT ke-N (urut urutan, id) lewat satu fungsi baru
  * isian_rtf_pihak_peringkat; perkara yang urutannya mulai 1 dan rapat keluarannya SAMA PERSIS. Uji ini menjaga isi paket di repo (tanpa DB);
  * pembandingan lama/baru atas perkara nyata, uji bolak-balik pasang/pulih dan render ada di PASANG.md paket.
+ * Perilaku dijaga dengan "pembalikan": kueri baru dibalik secara mekanis (peringkat -> urutan) harus memberi md5 kueri LAMA persis, jadi hanya token yang dirancang yang berubah.
  */
 const akar = path.resolve(process.cwd(), "..");
 const dir = path.join(akar, "abt-paket/pihak-urut-sisa-28okt");
@@ -19,7 +20,7 @@ const baca = (b: string) => readFileSync(pk(b), "utf8");
 const md5 = (s: string | Buffer) => createHash("md5").update(s).digest("hex");
 
 const ring = JSON.parse(readFileSync(path.join(dir, "hasil/isi-paket.json"), "utf8")) as {
-  ubah: { no: number; lama_md5: string; baru_md5: string; diganti: number; inline: number }[];
+  ubah: { no: number; lama_md5: string; baru_md5: string; diganti: number; inline: number; khusus?: string; tambahan?: boolean }[];
   fungsi: { nama: string; md5: string };
   dependensi: number[];
   harap: string;
@@ -112,7 +113,7 @@ describe("pihak-urut-sisa - berkas paket utuh", () => {
   });
 });
 
-describe("pihak-urut-sisa - hanya variabel Derry, tiap baris punya PRASYARAT, PASANG, PERIKSA, PULIH", () => {
+describe("pihak-urut-sisa - tiap baris punya PRASYARAT, PASANG, PERIKSA, PULIH", () => {
   const pra = baca(`${N}-PRASYARAT.sql`);
   const pasang = baca(`${N}-PASANG.sql`);
   const periksa = baca(`${N}-PERIKSA.sql`);
@@ -147,13 +148,23 @@ describe("pihak-urut-sisa - hanya variabel Derry, tiap baris punya PRASYARAT, PA
     expect(pulih).toContain("JOIN pu_lama l ON l.no_var=a.no_var");
   });
 
-  it("tidak ada variabel non-Derry: semua nomor >= 2000, bukan 14 variabel paket 27 Okt, bukan bawaan ABT yang dikenal (0020/0024/0337/0343/0347 dst.) dan bukan keluarga data_sipp", () => {
+  it("daftar nomor: 77 variabel Derry + 43 bawaan ABT (izin pengguna 28 Okt); bukan 14 variabel paket 27 Okt, bukan angka romawi ELT (5890-5893), bukan keluarga data_sipp", () => {
     const nomor = ring.ubah.map((u) => u.no);
-    for (const n of nomor) expect(n, `nomor ${n}`).toBeGreaterThanOrEqual(2000);
-    const bawaan = [20, 24, 27, 45, 118, 120, 337, 343, 347, 1076, 1077, 5101, 5842, 5847, 5897, 6031, 6032, 8175, 8179, 8180];
-    for (const b of bawaan) expect(nomor.includes(b), `bawaan ${b}`).toBe(false);
+    expect(nomor).toHaveLength(120);
+    // 47 bawaan yang diizinkan pengguna; 43 diubah, 4 (5890-5893) memakai urutan sebagai angka romawi sehingga TIDAK diubah
+    const izin47 = [10, 11, 20, 21, 24, 27, 45, 99, 100, 103, 104, 118, 120, 335, 336, 337, 341, 342, 343, 345, 346, 347, 1033, 1034, 1035, 1076, 1077, 1173, 1174, 1176, 1517, 1518, 2173,
+      5019, 5027, 5028, 5842, 5890, 5891, 5892, 5893, 7000, 7003, 7004, 8175, 8179, 8180];
+    expect(izin47).toHaveLength(47);
+    const tambahan = ring.ubah.filter((u) => u.tambahan).map((u) => u.no);
+    expect(tambahan).toEqual(izin47.filter((n) => ![5890, 5891, 5892, 5893].includes(n)));
+    for (const n of [5890, 5891, 5892, 5893]) expect(nomor.includes(n), `ELT ${n}`).toBe(false);
+    // selain 43 itu, tiap nomor adalah milik Derry (>= 2000)
+    for (const n of nomor.filter((x) => !tambahan.includes(x))) expect(n, `nomor ${n}`).toBeGreaterThanOrEqual(2000);
+    expect(nomor.filter((x) => !tambahan.includes(x))).toHaveLength(77);
     // variabel data_sipp (urutan di kolom urutan_data, tanpa kueri): tidak disentuh
     for (const n of [3119, 3129, 5089, 5090, 5097, 5098, 5117, 5118]) expect(nomor.includes(n), `data_sipp ${n}`).toBe(false);
+    // 0068 (max(urutan) > 1) dan 5847 (romawi) bukan pemilihan pihak ke-N: tidak disentuh
+    for (const n of [68, 5847, 5897]) expect(nomor.includes(n), `bukan pemilihan ${n}`).toBe(false);
     // 14 variabel paket 27 Okt (7036 7037 7047 7048 7097 7098 7148 7149 7152 8516 3520-3523) tidak disentuh lagi
     const p27 = [...ring27.ubah.map((u) => u.no), 3520, 3521, 3522, 3523];
     expect(p27).toHaveLength(14);
@@ -205,12 +216,68 @@ describe("pihak-urut-sisa - isi kueri baru", () => {
       const q = baru.get(u.no)!;
       const jml = (q.match(/aps_badilag\.isian_rtf_pihak_peringkat\(/g) ?? []).length;
       expect(jml, `fungsi di ${u.no}`).toBe(u.diganti - u.inline);
-      expect(u.diganti, `diganti ${u.no}`).toBeGreaterThan(0);
+      if (u.khusus) expect(u.diganti, `khusus ${u.no}`).toBe(0);
+      else expect(u.diganti, `diganti ${u.no}`).toBeGreaterThan(0);
       total += u.diganti;
       if (u.inline) expect(q, `inline ${u.no}`).toContain("NOT EXISTS (SELECT 1 FROM perkara_pihak");
     }
     expect(total).toBe(ring.jumlah_penggantian);
     expect(ring.ubah.filter((u) => u.inline > 0).map((u) => u.no)).toEqual([9280, 9281]);
+    expect(ring.ubah.filter((u) => u.khusus).map((u) => `${u.no}:${u.khusus}`)).toEqual(["7078:kedudukan-relaas"]);
+  });
+
+  /**
+   * PEMBALIKAN (perilaku): kueri baru dibalik secara mekanis ke bentuk lama (peringkat -> urutan, predikat NOT EXISTS -> urutan = 1, tabel pihak 0118/0120 -> v_pihak_perkara)
+   * harus menghasilkan md5 kueri LAMA persis. Artinya satu-satunya perubahan pada 119 variabel adalah token pemilih pihak yang dirancang; selebihnya (kolom, gabungan, urutan, angka) utuh.
+   */
+  function balik(q: string, no: number): string[] {
+    let x = q;
+    // 9280/9281: "peringkat 1" ditulis predikat SQL murni
+    x = x.replace(
+      /NOT EXISTS \(SELECT 1 FROM perkara_pihak(\d) z(\w+) WHERE z\2\.perkara_id = \2\.perkara_id AND \(IFNULL\(z\2\.urutan, 0\) < IFNULL\(\2\.urutan, 0\) OR \(IFNULL\(z\2\.urutan, 0\) = IFNULL\(\2\.urutan, 0\) AND z\2\.id < \2\.id\)\)\)/g,
+      "$2.urutan = 1",
+    );
+    if (no === 118 || no === 120) {
+      // cabang kedua memakai tampilan v_pihak_perkara (pihak_ke = tabelnya); cabang pertama memakai perkara_pihakN alias p
+      const k = no === 118 ? "1" : "2";
+      x = x.replace(new RegExp(`join perkara_pihak${k} b on`), "join v_pihak_perkara b on");
+      x = x.replace(/aps_badilag\.isian_rtf_pihak_peringkat\(\d, b\.id\)=1/, `b.urutan=1 and b.pihak_ke=${k}`);
+    }
+    const pola = /aps_badilag\.isian_rtf_pihak_peringkat\((\d), ([A-Za-z_0-9]+)\.id\)/g;
+    const ada = [...x.matchAll(pola)];
+    const hasil: string[] = [];
+    // tiap penggantian dulu berupa `alias.urutan` ATAU `urutan` polos: coba semua kombinasi (paling banyak 2^n, n kecil)
+    expect(ada.length, `penggantian ${no}`).toBeLessThanOrEqual(12);
+    for (let mask = 0; mask < 1 << ada.length; mask++) {
+      let i = 0;
+      hasil.push(x.replace(pola, (_m, _t, alias) => ((mask >> i++) & 1 ? "urutan" : `${alias}.urutan`)));
+    }
+    return hasil;
+  }
+
+  it("pembalikan: kueri baru dibalik = kueri LAMA persis (md5) untuk 119 variabel; 7078 ditulis ulang dan dicek terpisah", () => {
+    let dibalik = 0;
+    for (const u of ring.ubah) {
+      if (u.khusus) continue;
+      const q = baru.get(u.no)!;
+      const cocok = balik(q, u.no).filter((c) => md5(Buffer.from(c, "latin1")) === u.lama_md5);
+      expect(cocok.length, `pembalikan ${u.no}`).toBeGreaterThanOrEqual(1);
+      dibalik++;
+    }
+    expect(dibalik).toBe(119);
+  });
+
+  it("7078: e-Court tetap kosong; Pemohon/Penggugat (perkara_pihak1) lebih dari satu -> 'I,', satu -> tanpa nomor; SATU baris; tanpa batas alur 16 dan tanpa JOIN berbaris banyak", () => {
+    const q = baru.get(7078)!;
+    expect(q).toContain(`WHEN LOCATE('E-COURT', "#7017#") > 0 THEN ''`);
+    expect(q).toContain(`WHEN (SELECT COUNT(*) FROM perkara_pihak1 WHERE perkara_id = #perkara_id#) > 1 THEN "#0046# I,"`);
+    expect(q).toContain(`ELSE "#0046#,"`);
+    expect(q).not.toMatch(/alur_perkara_id|JOIN|\burutan\b/i);
+    // urutan cabang: e-Court dulu, baru banyak pihak
+    expect(q.indexOf("E-COURT")).toBeLessThan(q.indexOf("COUNT(*)"));
+    // satu baris per perkara (perkara.perkara_id unik); tanpa pihak1 tetap tanpa hasil seperti JOIN lama
+    expect(q).toContain("FROM perkara\r\nWHERE perkara.perkara_id = #perkara_id#\r\n  AND EXISTS (SELECT 1 FROM perkara_pihak1 WHERE perkara_id = #perkara_id#)");
+    expect(q.match(/#perkara_id#/g)).toHaveLength(3);
   });
 
   it("bentuk penggantian: tabel dan alias benar (pihak1 = Penggugat/Pemohon, pihak2 = Tergugat/Termohon)", () => {
@@ -228,7 +295,6 @@ describe("pihak-urut-sisa - isi kueri baru", () => {
     expect(contoh(8890)).toContain("aps_badilag.isian_rtf_pihak_peringkat(2, x.id) = 1 GROUP BY");
     expect(contoh(9561)).toContain("aps_badilag.isian_rtf_pihak_peringkat(1, p.id) IN (1, 2)");
     expect(contoh(9561)).toContain("ORDER BY p.urutan DESC LIMIT 1"); // pengurutan tidak diubah
-    expect(contoh(7078)).toContain("alur_perkara_id = 16 AND aps_badilag.isian_rtf_pihak_peringkat(1, perkara_pihak1.id) = 2");
     expect(contoh(3673)).toContain("MAX(CASE WHEN aps_badilag.isian_rtf_pihak_peringkat(1, pp.id) = 1 THEN p.nama END)");
     expect(contoh(3673)).toContain("MAX(CASE WHEN aps_badilag.isian_rtf_pihak_peringkat(1, pp.id) = 2 THEN p.nama END)");
     // 9404/9405: nomor sebutan Pihak Istri = PERINGKAT terkecil, bukan nilai urutan

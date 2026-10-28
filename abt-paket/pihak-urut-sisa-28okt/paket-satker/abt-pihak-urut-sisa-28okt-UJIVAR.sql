@@ -1,6 +1,134 @@
--- Paket ABT "abt-pihak-urut-sisa-28okt" (28 Okt 2026): sisa variabel Derry yang memilih pihak dengan `urutan = N` tetap menjadi PERINGKAT ke-N (perkara e-Court dengan urutan bersambung).
--- 77 baris variabel diubah (3111, 3112, 3113, 3114, 3115, 3116, 3117, 3118, 3121, 3122, 3123, 3124, 3125, 3126, 3127, 3128, 3131, 3642, 3643, 3673, 4440, 5078, 5079, 5080, 5081, 5083, 5084, 5085, 5086, 5087, 5088, 5091, 5092, 5093, 5094, 5095, 5096, 5099, 5102, 5103, 5104, 5106, 5107, 5116, 7078, 8129, 8510, 8524, 8533, 8800, 8801, 8802, 8803, 8808, 8809, 8810, 8811, 8890, 9104, 9200, 9205, 9277, 9278, 9279, 9280, 9281, 9290, 9291, 9292, 9293, 9404, 9405, 9560, 9561, 9562, 10106, 10107), 1 fungsi tersimpan baru (isian_rtf_pihak_peringkat). Prasyarat: paket abt-pihak-urut-ecourt-27okt sudah terpasang.
+-- Paket ABT "abt-pihak-urut-sisa-28okt" (28 Okt 2026): sisa variabel Derry dan bawaan ABT (izin pengguna) yang memilih pihak dengan `urutan = N` tetap menjadi PERINGKAT ke-N (perkara e-Court dengan urutan bersambung).
+-- 120 baris variabel diubah (10, 11, 20, 21, 24, 27, 45, 99, 100, 103, 104, 118, 120, 335, 336, 337, 341, 342, 343, 345, 346, 347, 1033, 1034, 1035, 1076, 1077, 1173, 1174, 1176, 1517, 1518, 2173, 3111, 3112, 3113, 3114, 3115, 3116, 3117, 3118, 3121, 3122, 3123, 3124, 3125, 3126, 3127, 3128, 3131, 3642, 3643, 3673, 4440, 5019, 5027, 5028, 5078, 5079, 5080, 5081, 5083, 5084, 5085, 5086, 5087, 5088, 5091, 5092, 5093, 5094, 5095, 5096, 5099, 5102, 5103, 5104, 5106, 5107, 5116, 5842, 7000, 7003, 7004, 7078, 8129, 8175, 8179, 8180, 8510, 8524, 8533, 8800, 8801, 8802, 8803, 8808, 8809, 8810, 8811, 8890, 9104, 9200, 9205, 9277, 9278, 9279, 9280, 9281, 9290, 9291, 9292, 9293, 9404, 9405, 9560, 9561, 9562, 10106, 10107), 1 fungsi tersimpan baru (isian_rtf_pihak_peringkat). Prasyarat: paket abt-pihak-urut-ecourt-27okt sudah terpasang.
 -- UJIVAR: kueri baru tiap variabel diubah (kecuali yang berat), dijalankan pasang-satker.sh atas beberapa perkara contoh (@pid diisi skrip; rujukan #NNNN# = 0). Hanya memeriksa kueri berjalan tanpa galat.
+SELECT 10 AS no_var, COUNT(*) AS baris FROM (select c.nama as data
+from perkara_pihak1 a
+join pihak b on a.pihak_id=b.id
+join agama c on b.agama_id=c.id
+where aps_badilag.isian_rtf_pihak_peringkat(1, a.id)=2 and a.perkara_id=@pid) AS uji_10;
+SELECT 11 AS no_var, COUNT(*) AS baris FROM (select c.nama as data
+from perkara_pihak1 a
+join pihak b on a.pihak_id=b.id
+join agama c on b.agama_id=c.id
+where aps_badilag.isian_rtf_pihak_peringkat(1, a.id)=1 and a.perkara_id=@pid) AS uji_11;
+SELECT 20 AS no_var, COUNT(*) AS baris FROM (select c.nama as data from perkara_pihak2 a
+join pihak b on a.pihak_id=b.id
+join agama c on b.agama_id=c.id
+where aps_badilag.isian_rtf_pihak_peringkat(2, a.id)=1 and perkara_id=@pid) AS uji_20;
+SELECT 21 AS no_var, COUNT(*) AS baris FROM (select c.kode as data from perkara_pihak1 a
+join pihak b on a.pihak_id=b.id
+join tingkat_pendidikan c on b.pendidikan_id=c.id
+where aps_badilag.isian_rtf_pihak_peringkat(1, a.id)=1 and perkara_id=@pid) AS uji_21;
+SELECT 24 AS no_var, COUNT(*) AS baris FROM (select c.kode as data from perkara_pihak2 a
+join pihak b on a.pihak_id=b.id
+join tingkat_pendidikan c on b.pendidikan_id=c.id
+where aps_badilag.isian_rtf_pihak_peringkat(2, a.id)=1 and perkara_id=@pid) AS uji_24;
+SELECT 27 AS no_var, COUNT(*) AS baris FROM (select b.telepon as data
+from perkara_pihak1 a
+join pihak b on a.pihak_id=b.id
+where aps_badilag.isian_rtf_pihak_peringkat(1, a.id)=1
+and a.perkara_id=@pid) AS uji_27;
+SELECT 45 AS no_var, COUNT(*) AS baris FROM (select b.telepon as data
+from perkara_pihak2 a
+join pihak b on a.pihak_id=b.id
+where aps_badilag.isian_rtf_pihak_peringkat(2, a.id)=1
+and a.perkara_id=@pid) AS uji_45;
+SELECT 99 AS no_var, COUNT(*) AS baris FROM (select (get_umur(b.tanggal_lahir,c.tanggal_pendaftaran))as data
+from perkara_pihak1 a
+join pihak b on a.pihak_id=b.id
+join perkara c on a.perkara_id=c.perkara_id
+where aps_badilag.isian_rtf_pihak_peringkat(1, a.id)=1 and a.perkara_id=@pid) AS uji_99;
+SELECT 100 AS no_var, COUNT(*) AS baris FROM (select b.pekerjaan as data
+from perkara_pihak1 a
+join pihak b on a.pihak_id=b.id
+where aps_badilag.isian_rtf_pihak_peringkat(1, a.id)=1 and a.perkara_id=@pid) AS uji_100;
+SELECT 103 AS no_var, COUNT(*) AS baris FROM (select (get_umur(b.tanggal_lahir,c.tanggal_pendaftaran))as data
+from perkara_pihak2 a
+join pihak b on a.pihak_id=b.id
+join perkara c on a.perkara_id=c.perkara_id
+where aps_badilag.isian_rtf_pihak_peringkat(2, a.id)=1 and a.perkara_id=@pid) AS uji_103;
+SELECT 104 AS no_var, COUNT(*) AS baris FROM (select b.pekerjaan as data
+from perkara_pihak2 a
+join pihak b on a.pihak_id=b.id
+where aps_badilag.isian_rtf_pihak_peringkat(2, a.id)=1 and a.perkara_id=@pid) AS uji_104;
+SELECT 118 AS no_var, COUNT(*) AS baris FROM (SELECT IF('0' + 0 > 1, IFNULL((SELECT r.tanggal_relaas FROM perkara_pelaksanaan_relaas r JOIN perkara_pihak1 p ON p.perkara_id = r.perkara_id AND p.pihak_id = r.pihak_id AND aps_badilag.isian_rtf_pihak_peringkat(1, p.id) = 1 JOIN perkara_jadwal_sidang j ON j.id = r.sidang_id WHERE r.perkara_id = @pid AND j.urutan <= '0' + 0 ORDER BY j.urutan DESC, r.tanggal_relaas DESC LIMIT 1), '...'), (select max(a.tanggal_relaas) data from perkara_pelaksanaan_relaas a
+join perkara_pihak1 b on a.perkara_id=b.perkara_id and a.pihak_id=b.pihak_id
+join perkara_jadwal_sidang c on a.perkara_id=c.perkara_id
+where c.ikrar_talak="T" and aps_badilag.isian_rtf_pihak_peringkat(1, b.id)=1 and a.perkara_id=@pid)) AS data) AS uji_118;
+SELECT 120 AS no_var, COUNT(*) AS baris FROM (SELECT IF('0' + 0 > 1, IFNULL((SELECT r.tanggal_relaas FROM perkara_pelaksanaan_relaas r JOIN perkara_pihak2 p ON p.perkara_id = r.perkara_id AND p.pihak_id = r.pihak_id AND aps_badilag.isian_rtf_pihak_peringkat(2, p.id) = 1 JOIN perkara_jadwal_sidang j ON j.id = r.sidang_id WHERE r.perkara_id = @pid AND j.urutan <= '0' + 0 ORDER BY j.urutan DESC, r.tanggal_relaas DESC LIMIT 1), '...'), (select max(a.tanggal_relaas) data from perkara_pelaksanaan_relaas a
+join perkara_pihak2 b on a.perkara_id=b.perkara_id and a.pihak_id=b.pihak_id
+join perkara_jadwal_sidang c on a.perkara_id=c.perkara_id
+where c.ikrar_talak="T" and aps_badilag.isian_rtf_pihak_peringkat(2, b.id)=1 and a.perkara_id=@pid)) AS data) AS uji_120;
+SELECT 335 AS no_var, COUNT(*) AS baris FROM (select b.nomor_indentitas as data from perkara_pihak1 a
+join pihak b on a.pihak_id=b.id
+where aps_badilag.isian_rtf_pihak_peringkat(1, a.id)=1 and a.perkara_id=@pid) AS uji_335;
+SELECT 336 AS no_var, COUNT(*) AS baris FROM (select b.nomor_indentitas as data from perkara_pihak1 a
+join pihak b on a.pihak_id=b.id
+where aps_badilag.isian_rtf_pihak_peringkat(1, a.id)=2 and a.perkara_id=@pid) AS uji_336;
+SELECT 337 AS no_var, COUNT(*) AS baris FROM (select b.nomor_indentitas as data from perkara_pihak2 a
+join pihak b on a.pihak_id=b.id
+where aps_badilag.isian_rtf_pihak_peringkat(2, a.id)=1 and a.perkara_id=@pid) AS uji_337;
+SELECT 341 AS no_var, COUNT(*) AS baris FROM (select b.tempat_lahir as data
+from perkara_pihak1 a join pihak b on a.pihak_id=b.id
+where aps_badilag.isian_rtf_pihak_peringkat(1, a.id)=1 and a.perkara_id=@pid) AS uji_341;
+SELECT 342 AS no_var, COUNT(*) AS baris FROM (select b.tempat_lahir as data
+from perkara_pihak1 a join pihak b on a.pihak_id=b.id
+where aps_badilag.isian_rtf_pihak_peringkat(1, a.id)=2 and a.perkara_id=@pid) AS uji_342;
+SELECT 343 AS no_var, COUNT(*) AS baris FROM (select b.tempat_lahir as data
+from perkara_pihak2 a join pihak b on a.pihak_id=b.id
+where aps_badilag.isian_rtf_pihak_peringkat(2, a.id)=1 and a.perkara_id=@pid) AS uji_343;
+SELECT 345 AS no_var, COUNT(*) AS baris FROM (select b.tanggal_lahir as data
+from perkara_pihak1 a join pihak b on a.pihak_id=b.id
+where aps_badilag.isian_rtf_pihak_peringkat(1, a.id)=1 and a.perkara_id=@pid) AS uji_345;
+SELECT 346 AS no_var, COUNT(*) AS baris FROM (select b.tanggal_lahir as data
+from perkara_pihak1 a join pihak b on a.pihak_id=b.id
+where aps_badilag.isian_rtf_pihak_peringkat(1, a.id)=2 and a.perkara_id=@pid) AS uji_346;
+SELECT 347 AS no_var, COUNT(*) AS baris FROM (select b.tanggal_lahir as data
+from perkara_pihak2 a join pihak b on a.pihak_id=b.id
+where aps_badilag.isian_rtf_pihak_peringkat(2, a.id)=1 and a.perkara_id=@pid) AS uji_347;
+SELECT 1033 AS no_var, COUNT(*) AS baris FROM (select nama as data from perkara_pihak1
+where aps_badilag.isian_rtf_pihak_peringkat(1, perkara_pihak1.id)=2 and perkara_id=@pid) AS uji_1033;
+SELECT 1034 AS no_var, COUNT(*) AS baris FROM (select (get_umur(b.tanggal_lahir,c.tanggal_pendaftaran))as data
+from perkara_pihak1 a
+join pihak b on a.pihak_id=b.id
+join perkara c on a.perkara_id=c.perkara_id
+where aps_badilag.isian_rtf_pihak_peringkat(1, a.id)=2 and a.perkara_id=@pid) AS uji_1034;
+SELECT 1035 AS no_var, COUNT(*) AS baris FROM (select b.pekerjaan as data from perkara_pihak1 a
+join pihak b on a.pihak_id=b.id
+where aps_badilag.isian_rtf_pihak_peringkat(1, a.id)=2 and a.perkara_id=@pid) AS uji_1035;
+SELECT 1076 AS no_var, COUNT(*) AS baris FROM (select min(a.tanggal_relaas) data from perkara_pelaksanaan_relaas a
+join perkara_pihak1 b on a.perkara_id=b.perkara_id and a.pihak_id=b.pihak_id
+join perkara_jadwal_sidang c on a.perkara_id=c.perkara_id
+where c.ikrar_talak="T" and aps_badilag.isian_rtf_pihak_peringkat(1, b.id)=1 and a.perkara_id=@pid) AS uji_1076;
+SELECT 1077 AS no_var, COUNT(*) AS baris FROM (select min(a.tanggal_relaas) data from perkara_pelaksanaan_relaas a
+join perkara_pihak2 b on a.perkara_id=b.perkara_id and a.pihak_id=b.pihak_id
+join perkara_jadwal_sidang c on a.perkara_id=c.perkara_id
+where c.ikrar_talak="T" and aps_badilag.isian_rtf_pihak_peringkat(2, b.id)=1 and a.perkara_id=@pid) AS uji_1077;
+SELECT 1173 AS no_var, COUNT(*) AS baris FROM (select c.nama as data
+from perkara_pihak1 a
+join pihak b on a.pihak_id=b.id
+join negara c on b.warga_negara_id=c.id
+where aps_badilag.isian_rtf_pihak_peringkat(1, a.id)=1 and a.perkara_id=@pid) AS uji_1173;
+SELECT 1174 AS no_var, COUNT(*) AS baris FROM (select c.nama as data
+from perkara_pihak1 a
+join pihak b on a.pihak_id=b.id
+join negara c on b.warga_negara_id=c.id
+where aps_badilag.isian_rtf_pihak_peringkat(1, a.id)=2 and a.perkara_id=@pid) AS uji_1174;
+SELECT 1176 AS no_var, COUNT(*) AS baris FROM (select c.kode as data from perkara_pihak1 a
+join pihak b on a.pihak_id=b.id
+join tingkat_pendidikan c on b.pendidikan_id=c.id
+where aps_badilag.isian_rtf_pihak_peringkat(1, a.id)=2 and perkara_id=@pid) AS uji_1176;
+SELECT 1517 AS no_var, COUNT(*) AS baris FROM (select (case when b.jenis_kelamin = "L" then "Laki-laki" else "Perempuan" end) as data from perkara_pihak1 a
+join pihak b on a.pihak_id=b.id
+where aps_badilag.isian_rtf_pihak_peringkat(1, a.id)=1 and perkara_id=@pid) AS uji_1517;
+SELECT 1518 AS no_var, COUNT(*) AS baris FROM (select (case when b.jenis_kelamin = "L" then "Laki-laki" else "Perempuan" end) as data from perkara_pihak2 a
+join pihak b on a.pihak_id=b.id
+where aps_badilag.isian_rtf_pihak_peringkat(2, a.id)=1 and perkara_id=@pid) AS uji_1518;
+SELECT 2173 AS no_var, COUNT(*) AS baris FROM (select c.nama as data
+from perkara_pihak2 a
+join pihak b on a.pihak_id=b.id
+join negara c on b.warga_negara_id=c.id
+where aps_badilag.isian_rtf_pihak_peringkat(2, a.id)=1 and a.perkara_id=@pid) AS uji_2173;
 SELECT 3111 AS no_var, COUNT(*) AS baris FROM (select nama as data from perkara_pihak1
 where aps_badilag.isian_rtf_pihak_peringkat(1, perkara_pihak1.id)=3 and perkara_id=@pid) AS uji_3111;
 SELECT 3112 AS no_var, COUNT(*) AS baris FROM (select c.nama as data
@@ -48,6 +176,19 @@ SELECT 3673 AS no_var, COUNT(*) AS baris FROM (SELECT IFNULL((SELECT CASE WHEN C
 SELECT 4440 AS no_var, COUNT(*) AS baris FROM (SELECT TIMESTAMPDIFF(YEAR, p.tanggal_lahir, pr.tanggal_pendaftaran) AS data
 FROM perkara_pihak1 pp JOIN pihak p ON p.id = pp.pihak_id JOIN perkara pr ON pr.perkara_id = pp.perkara_id
 WHERE pp.perkara_id = @pid AND aps_badilag.isian_rtf_pihak_peringkat(1, pp.id) = 1 AND p.tanggal_lahir IS NOT NULL AND p.tanggal_lahir <> '0000-00-00' LIMIT 1) AS uji_4440;
+SELECT 5019 AS no_var, COUNT(*) AS baris FROM (select c.kode as data from perkara_pihak2 a
+join pihak b on a.pihak_id=b.id
+join tingkat_pendidikan c on b.pendidikan_id=c.id
+where aps_badilag.isian_rtf_pihak_peringkat(2, a.id)=2 and perkara_id=@pid) AS uji_5019;
+SELECT 5027 AS no_var, COUNT(*) AS baris FROM (select (get_umur(b.tanggal_lahir,c.tanggal_pendaftaran))as data
+from perkara_pihak2 a
+join pihak b on a.pihak_id=b.id
+join perkara c on a.perkara_id=c.perkara_id
+where aps_badilag.isian_rtf_pihak_peringkat(2, a.id)=2 and a.perkara_id=@pid) AS uji_5027;
+SELECT 5028 AS no_var, COUNT(*) AS baris FROM (select b.pekerjaan as data
+from perkara_pihak2 a
+join pihak b on a.pihak_id=b.id
+where aps_badilag.isian_rtf_pihak_peringkat(2, a.id)=2 and a.perkara_id=@pid) AS uji_5028;
 SELECT 5078 AS no_var, COUNT(*) AS baris FROM (select b.nomor_indentitas as data from perkara_pihak2 a join pihak b on a.pihak_id=b.id where aps_badilag.isian_rtf_pihak_peringkat(2, a.id)=2 and a.perkara_id=@pid) AS uji_5078;
 SELECT 5079 AS no_var, COUNT(*) AS baris FROM (select b.tempat_lahir as data from perkara_pihak2 a join pihak b on a.pihak_id=b.id where aps_badilag.isian_rtf_pihak_peringkat(2, a.id)=2 and a.perkara_id=@pid) AS uji_5079;
 SELECT 5080 AS no_var, COUNT(*) AS baris FROM (select b.tanggal_lahir as data from perkara_pihak2 a join pihak b on a.pihak_id=b.id where aps_badilag.isian_rtf_pihak_peringkat(2, a.id)=2 and a.perkara_id=@pid and b.tanggal_lahir > '1900-01-01') AS uji_5080;
@@ -73,16 +214,38 @@ SELECT 5107 AS no_var, COUNT(*) AS baris FROM (select c.kode as data from perkar
 SELECT 5116 AS no_var, COUNT(*) AS baris FROM (select (case when b.jenis_kelamin = "L" then "istri" else "suami" end) as data from perkara_pihak1 a
 join pihak b on a.pihak_id=b.id
 where aps_badilag.isian_rtf_pihak_peringkat(1, a.id)=1 and perkara_id=@pid) AS uji_5116;
+SELECT 5842 AS no_var, COUNT(*) AS baris FROM (SELECT (CASE p.jenis_perkara_id WHEN 362 THEN CONCAT('<b>ANAK YANG DIMOHONKAN DISPENSASI</b><br>', IFNULL((SELECT IF(CAST(IFNULL(u.data,'99') AS UNSIGNED)<19 OR IFNULL(w.data,'')='', n.data, w.data) FROM aps_badilag.abt_data_teks n LEFT JOIN aps_badilag.abt_data_teks u ON u.no_var=601 AND u.perkara_id=n.perkara_id LEFT JOIN aps_badilag.abt_data_teks w ON w.no_var=606 AND w.perkara_id=n.perkara_id WHERE n.no_var=600 AND n.perkara_id=p.perkara_id), '')) WHEN 360 THEN CONCAT('<b>PASANGAN YANG DIITSBATKAN</b><br>', IFNULL((SELECT GROUP_CONCAT(k.nama ORDER BY k.urutan SEPARATOR ' dan ') FROM perkara_pihak1 k WHERE k.perkara_id=p.perkara_id AND aps_badilag.isian_rtf_pihak_peringkat(1, k.id)<=2), '')) WHEN 358 THEN CONCAT('<b>ANAK YANG DIMOHONKAN ASAL USULNYA</b><br>', IFNULL((SELECT a.nama_anak FROM perkara_anak_pihak a WHERE a.perkara_id=p.perkara_id ORDER BY a.id LIMIT 1), '')) WHEN 346 THEN '' WHEN 347 THEN '' ELSE IFNULL((SELECT TRIM(data) FROM aps_badilag.abt_data_teks WHERE no_var=5845 AND perkara_id=p.perkara_id), '') END) AS data FROM perkara p WHERE p.perkara_id=@pid) AS uji_5842;
+SELECT 7000 AS no_var, COUNT(*) AS baris FROM (select b.kejaksaan as data from perkara_pihak1 a
+join pihak_jaksa b on a.pihak_id=b.pihak_id
+where aps_badilag.isian_rtf_pihak_peringkat(1, a.id)=1 and a.perkara_id=@pid) AS uji_7000;
+SELECT 7003 AS no_var, COUNT(*) AS baris FROM (select b.NIP as data from perkara_pihak1 a
+join pihak_jaksa b on a.pihak_id=b.pihak_id
+where aps_badilag.isian_rtf_pihak_peringkat(1, a.id)=1 and a.perkara_id=@pid) AS uji_7003;
+SELECT 7004 AS no_var, COUNT(*) AS baris FROM (select b.jabatan as data from perkara_pihak1 a
+join pihak_jaksa b on a.pihak_id=b.pihak_id
+where aps_badilag.isian_rtf_pihak_peringkat(1, a.id)=1 and a.perkara_id=@pid) AS uji_7004;
 SELECT 7078 AS no_var, COUNT(*) AS baris FROM (SELECT 
   CASE 
     WHEN LOCATE('E-COURT', "0") > 0 THEN ''
-    WHEN alur_perkara_id = 16 AND aps_badilag.isian_rtf_pihak_peringkat(1, perkara_pihak1.id) = 2 THEN "0 I,"
+    WHEN (SELECT COUNT(*) FROM perkara_pihak1 WHERE perkara_id = @pid) > 1 THEN "0 I,"
     ELSE "0,"
   END as data
 FROM perkara
-JOIN perkara_pihak1 ON perkara.perkara_id = perkara_pihak1.perkara_id
-WHERE perkara.perkara_id = @pid) AS uji_7078;
+WHERE perkara.perkara_id = @pid
+  AND EXISTS (SELECT 1 FROM perkara_pihak1 WHERE perkara_id = @pid)) AS uji_7078;
 SELECT 8129 AS no_var, COUNT(*) AS baris FROM (SELECT MIN(r.tanggal_relaas) AS data FROM perkara_pelaksanaan_relaas r JOIN perkara_pihak2 p ON p.perkara_id = r.perkara_id AND p.pihak_id = r.pihak_id AND aps_badilag.isian_rtf_pihak_peringkat(2, p.id) = 1 WHERE r.perkara_id = @pid AND r.tanggal_relaas > '1900-01-01' HAVING COUNT(*) > 0) AS uji_8129;
+SELECT 8175 AS no_var, COUNT(*) AS baris FROM (select b.telepon as data
+from perkara_pihak2 a
+join pihak b on a.pihak_id=b.id
+where aps_badilag.isian_rtf_pihak_peringkat(2, a.id)=1 and a.perkara_id=@pid) AS uji_8175;
+SELECT 8179 AS no_var, COUNT(*) AS baris FROM (select b.email as data
+from perkara_pihak1 a
+join pihak b on a.pihak_id=b.id
+where aps_badilag.isian_rtf_pihak_peringkat(1, a.id)=1 and a.perkara_id=@pid) AS uji_8179;
+SELECT 8180 AS no_var, COUNT(*) AS baris FROM (select b.email as data
+from perkara_pihak2 a
+join pihak b on a.pihak_id=b.id
+where aps_badilag.isian_rtf_pihak_peringkat(2, a.id)=1 and a.perkara_id=@pid) AS uji_8180;
 SELECT 8510 AS no_var, COUNT(*) AS baris FROM (SELECT
   CASE
     WHEN y.jp IN (346, 347) AND y.k = 'PNS' THEN

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Pembangun paket ABT pihak-urut-sisa-28okt (python 3, di laptop). Membaca abt_variabel keadaan server SESUDAH paket 27 Okt (VAR_DASAR_HEX; semua baris selain 14 baris paket 27 Okt persis sama dengan bacaan server 27 Okt di VAR_SERVER_HEX, diperiksa di bawah),
-menggubah variabel milik Derry yang memakai `urutan = N` tetap pada perkara_pihak1/2 menjadi PERINGKAT ke-N (fungsi isian_rtf_pihak_peringkat), lalu menulis paket-satker/*.
+mengubah variabel milik Derry DAN (izin tertulis pengguna 28 Okt) 43 dari 47 variabel bawaan ABT yang memakai `urutan = N` tetap pada perkara_pihak1/2 menjadi PERINGKAT ke-N (fungsi isian_rtf_pihak_peringkat);
+7078 ditulis ulang (Pemohon/Penggugat lebih dari satu -> "I,"). Lalu menulis paket-satker/*.
 Isi lama baris yang diubah dijaga md5 dan dicadangkan di server oleh pasang-satker.sh. Prasyarat: paket pihak-urut-ecourt-27okt sudah terpasang (md5 dibaca dari hasil/isi-paket.json-nya).
 pakai: python bangun_paket.py   (jalur bawaan: D:/Aplikasi/aleta/tmp/w105/var_ps0_hex.tsv dan D:/Aplikasi/aleta/tmp/w91/var_server_hex.tsv)"""
 import hashlib
@@ -62,6 +63,12 @@ assert beda27 == sorted(SIAP27_VAR), ('dasar berbeda dari bacaan server di luar 
 # Pemilik: variabel buatan/ubahan Derry = modifier admin, diubah 2025-2026, nomor >= 2000 (bawaan ABT: modifier kosong atau tanggal 2019, nomor rendah).
 # 14 variabel paket 27 Okt (termasuk 7036/7037/7047/7048/7097/7098 yang cabang lamanya hanya berlaku untuk urutan rapat) TIDAK disentuh lagi.
 DILEWATI_27 = set(SIAP27_VAR)
+# Tambahan atas izin tertulis pengguna (28 Okt 2026), pengecualian aturan "hanya variabel milik Derry": 47 variabel data_sql bawaan ABT / bernomor rendah yang memakai
+# `urutan = N` pada pihak1/2 (daftar di PASANG.md) ikut diubah dengan mekanisme yang sama. Yang memakai urutan sebagai angka romawi (ELT: 5890-5893) TIDAK diubah.
+TAMBAHAN = set([10, 11, 20, 21, 24, 27, 45, 99, 100, 103, 104, 118, 120] + list(range(335, 338)) + list(range(341, 344)) + list(range(345, 348)) + list(range(1033, 1036)) +
+               [1076, 1077, 1173, 1174, 1176, 1517, 1518, 2173, 5019, 5027, 5028, 5842] + list(range(5890, 5894)) + [7000, 7003, 7004, 8175, 8179, 8180])
+assert len(TAMBAHAN) == 47, len(TAMBAHAN)
+ROMAWI = {5890, 5891, 5892, 5893}  # ELT(a.urutan, 'I', 'II', ...) + BETWEEN pada urutan: nilai urutan dipakai sebagai angka romawi, bukan pemilihan pihak ke-N: tidak diubah
 TB = re.compile(r'\b(?:FROM|JOIN)\s+(perkara_pihak[1-4])(?:\s+(?:AS\s+)?([A-Za-z_][A-Za-z_0-9]*))?', re.I)
 KATA = {'WHERE', 'ON', 'JOIN', 'LEFT', 'INNER', 'GROUP', 'ORDER', 'LIMIT', 'USING', 'SET', 'AND', 'OR', 'UNION', 'HAVING', 'RIGHT', 'CROSS'}
 # `urutan` (bertitik alias atau polos) yang dibandingkan dengan angka tetap / himpunan / z.u
@@ -132,14 +139,51 @@ def pertama_inline(q):
     return POLA_PERTAMA.subn(ganti, q)
 
 
+def ganti_view_pihak(q):
+    """0118/0120: cabang `join v_pihak_perkara b ... b.urutan=1 and b.pihak_ke=K` -> tabel perkara_pihakK langsung (pihak_ke=K di tampilan itu persis tabel perkara_pihakK; tampilan UNION lima tabel
+    lambat dan tidak stabil). Hanya kolom pihak_id, perkara_id, urutan yang dipakai."""
+    m = re.search(r'b\.urutan\s*=\s*1\s+and\s+b\.pihak_ke\s*=\s*([12])', q, re.I)
+    assert m, 'pola v_pihak_perkara tidak ditemukan'
+    k = m.group(1)
+    q2, n1 = re.subn(r'join\s+v_pihak_perkara\s+b\b', 'join perkara_pihak%s b' % k, q, flags=re.I)
+    q2, n2 = re.subn(r'b\.urutan\s*=\s*1\s+and\s+b\.pihak_ke\s*=\s*%s' % k, 'b.urutan=1', q2, flags=re.I)
+    assert n1 == 1 and n2 == 1 and 'v_pihak_perkara' not in q2
+    return q2
+
+
+def ganti_7078(q):
+    """7078 (keputusan pengguna 28 Okt): e-Court tetap ''; Pemohon/Penggugat (perkara_pihak1) lebih dari satu -> "#0046# I,", hanya satu -> "#0046#,". SATU baris (agregat COUNT, bukan
+    JOIN berbaris banyak); tanpa baris pihak1 tetap tanpa hasil seperti kueri lama (JOIN)."""
+    a = 'WHEN alur_perkara_id = 16 AND urutan = 2 THEN'
+    b = 'JOIN perkara_pihak1 ON perkara.perkara_id = perkara_pihak1.perkara_id'
+    c = 'WHERE perkara.perkara_id = #perkara_id#'
+    assert q.count(a) == 1 and q.count(b) == 1 and q.endswith(c)
+    nl = '\r\n' if '\r\n' in q else '\n'
+    q2 = q.replace(a, 'WHEN (SELECT COUNT(*) FROM perkara_pihak1 WHERE perkara_id = #perkara_id#) > 1 THEN')
+    q2 = q2.replace(b + nl, '')
+    q2 += nl + '  AND EXISTS (SELECT 1 FROM perkara_pihak1 WHERE perkara_id = #perkara_id#)'
+    return q2
+
+
 ubah = {}
 for no in sorted(server):
     v = server[no]
-    if no in DILEWATI_27 or not milik_derry(no, v):
+    if no in DILEWATI_27 or no in ROMAWI or not (milik_derry(no, v) or no in TAMBAHAN):
         continue
+    if no in TAMBAHAN and not (v['tipe'] == 'data_sql' and v['sql'] is not None):
+        raise AssertionError(('tambahan bukan data_sql', no))
     q = v['sql'].decode('latin1')
     if 'urutan' not in q.lower():
         continue
+    if no == 7078:
+        q2 = ganti_7078(q)
+        nb = q2.encode('latin1')
+        ubah[no] = dict(kolom='sql_query', lama_md5=md5(v['sql']), baru_b=nb, baru_md5=md5(nb), nama_md5=md5(v['nama']), tipe=v['tipe'],
+                        lama_len=len(v['sql']), baru_len=len(nb), ganti=0, inline=0, khusus='kedudukan-relaas')  # tanpa fungsi peringkat: kueri ditulis ulang
+        continue
+    if 'v_pihak_perkara' in q:
+        assert no in (118, 120), no
+        q = ganti_view_pihak(q)
     q2, n_min = ganti_min(q)
     q2, n = ganti_perbandingan(q2)
     if n + n_min == 0:
@@ -195,7 +239,7 @@ SIAP_VAR = ' OR '.join("(no_var=%d AND MD5(sql_query)='%s')" % (n, h) for n, h i
 SIAP_FN = ' OR '.join("(routine_name='%s' AND MD5(routine_definition)='%s')" % (f, h) for f, h in sorted(SIAP27_FN.items()))
 FN_PS = "(routine_name='%s' AND MD5(routine_definition)='%s')" % (FUNGSI, FN_MD5)
 
-KEPALA = ("-- Paket ABT \"%s\" (28 Okt 2026): sisa variabel Derry yang memilih pihak dengan `urutan = N` tetap menjadi PERINGKAT ke-N (perkara e-Court dengan urutan bersambung).\n"
+KEPALA = ("-- Paket ABT \"%s\" (28 Okt 2026): sisa variabel Derry dan bawaan ABT (izin pengguna) yang memilih pihak dengan `urutan = N` tetap menjadi PERINGKAT ke-N (perkara e-Court dengan urutan bersambung).\n"
           "-- %d baris variabel diubah (%s), 1 fungsi tersimpan baru (%s). Prasyarat: paket abt-pihak-urut-ecourt-27okt sudah terpasang.\n") % (N, JU, ', '.join(str(n) for n in NO_UBAH), FUNGSI)
 
 HARAP = '9|14|%d|0|0|%d|0' % (JU, len(DEP))
@@ -272,7 +316,7 @@ open(os.path.join(KELUAR, 'harap.txt'), 'w', newline='\n').write(HARAP + '\n' + 
 for sk in ('pasang-satker.sh', 'pulih-satker.sh', 'perkara-uji.txt'):
     open(os.path.join(KELUAR, sk), 'wb').write(open(os.path.join(AKAR, sk), 'rb').read().replace(b'\r\n', b'\n'))
 
-ring = dict(ubah=[dict(no=n, lama_md5=ubah[n]['lama_md5'], baru_md5=ubah[n]['baru_md5'], lama_panjang=ubah[n]['lama_len'], baru_panjang=ubah[n]['baru_len'], diganti=ubah[n]['ganti'], inline=ubah[n]['inline']) for n in NO_UBAH],
+ring = dict(ubah=[dict(no=n, lama_md5=ubah[n]['lama_md5'], baru_md5=ubah[n]['baru_md5'], lama_panjang=ubah[n]['lama_len'], baru_panjang=ubah[n]['baru_len'], diganti=ubah[n]['ganti'], inline=ubah[n]['inline'], khusus=ubah[n].get('khusus', ''), tambahan=n in TAMBAHAN) for n in NO_UBAH],
             fungsi=dict(nama=FUNGSI, md5=FN_MD5), dependensi=DEP, harap=HARAP, ulang=ULANG, dilewati_27=sorted(DILEWATI_27),
             prasyarat_27=dict(variabel=SIAP27_VAR, fungsi=SIAP27_FN), jumlah_penggantian=sum(u['ganti'] for u in ubah.values()))
 json.dump(ring, open(os.path.join(AKAR, '..', 'hasil', 'isi-paket.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)

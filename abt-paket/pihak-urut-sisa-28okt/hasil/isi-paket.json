@@ -1,13 +1,378 @@
 {
  "ubah": [
   {
+   "no": 10,
+   "lama_md5": "329d1bf93077b90061e438c5ca870b89",
+   "baru_md5": "4a1894a1d6b192cfbcc970eda008fd8d",
+   "lama_panjang": 158,
+   "baru_panjang": 196,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 11,
+   "lama_md5": "835a23e9a79e43eb7ead9d10db7645cd",
+   "baru_md5": "b4b2577925d98dc64655415c5f5599bf",
+   "lama_panjang": 158,
+   "baru_panjang": 196,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 20,
+   "lama_md5": "b89d7db45189b3788a21e8d378320097",
+   "baru_md5": "c5b734ddb0010639db09cc0f65586248",
+   "lama_panjang": 153,
+   "baru_panjang": 193,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 21,
+   "lama_md5": "3a79cd235630d9636739764fdc6799ce",
+   "baru_md5": "7d8d0a87c143c19b90fd4833bd1b5d2b",
+   "lama_panjang": 171,
+   "baru_panjang": 211,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 24,
+   "lama_md5": "d186f17923c4156f2729e5e99feab2f6",
+   "baru_md5": "2306a1b3f4e553911869fb7aa2cd1eb4",
+   "lama_panjang": 171,
+   "baru_panjang": 211,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 27,
+   "lama_md5": "20234e447210fbbcb4005848af4ca57c",
+   "baru_md5": "72963bb43f9ff1fb3346e4e14bc0a225",
+   "lama_panjang": 129,
+   "baru_panjang": 167,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 45,
+   "lama_md5": "507850d01677589727b00b0f532ac09a",
+   "baru_md5": "cb0f3ed50fdc07797b699e9b7ea0ab6f",
+   "lama_panjang": 129,
+   "baru_panjang": 167,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 99,
+   "lama_md5": "e46e7c52dbb7f71db711c23fedfd906b",
+   "baru_md5": "f3cf34787801a34c28c75a7bf09bbe6f",
+   "lama_panjang": 212,
+   "baru_panjang": 250,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 100,
+   "lama_md5": "bb9b2a7984b6c4a0612be5960e10b855",
+   "baru_md5": "fb7efb75b48c7695de0e90292b71bf49",
+   "lama_panjang": 130,
+   "baru_panjang": 168,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 103,
+   "lama_md5": "420c30796a9c4400a49dca931ed171e8",
+   "baru_md5": "077c587015d57e8a477df644a6cbcbf6",
+   "lama_panjang": 216,
+   "baru_panjang": 254,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 104,
+   "lama_md5": "5d684fe92bce88705285a49ae378cb4d",
+   "baru_md5": "1881abec835552879749de4c79f0ac70",
+   "lama_panjang": 130,
+   "baru_panjang": 168,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 118,
+   "lama_md5": "a0071c9d125b83abb1a97fe80d7c2c27",
+   "baru_md5": "f50b8420aca7a9b49db9e86cd59501b0",
+   "lama_panjang": 675,
+   "baru_panjang": 733,
+   "diganti": 2,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 120,
+   "lama_md5": "bdfbfc8873ae2b710e3ce9700950fe84",
+   "baru_md5": "1a4c881d24243f70eeeadb5a90d6090e",
+   "lama_panjang": 675,
+   "baru_panjang": 733,
+   "diganti": 2,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 335,
+   "lama_md5": "7d5f231722b8d37419997cbbafdab053",
+   "baru_md5": "cadd062c08be5d6d3dfd614724d771f3",
+   "lama_panjang": 136,
+   "baru_panjang": 174,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 336,
+   "lama_md5": "64b711ddfd113a16a304b4c2225e1947",
+   "baru_md5": "c2b6b1a67af52f876dde70bbe275eba9",
+   "lama_panjang": 136,
+   "baru_panjang": 174,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 337,
+   "lama_md5": "cfed7f84e7006a10ef96478226d951ce",
+   "baru_md5": "c12de18f4488614593e94c6ced7d6e39",
+   "lama_panjang": 136,
+   "baru_panjang": 174,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 341,
+   "lama_md5": "95afa838256985cc6c5ef21346249b62",
+   "baru_md5": "fa1a052f0d9f8bf07f65620ca7c86b25",
+   "lama_panjang": 132,
+   "baru_panjang": 170,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 342,
+   "lama_md5": "484ce6c29361d42615688ba5fa448907",
+   "baru_md5": "266e3fd8108828a6e1c02ecb583644fa",
+   "lama_panjang": 132,
+   "baru_panjang": 170,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 343,
+   "lama_md5": "cdcb5a3013176233fa090b546e557116",
+   "baru_md5": "9b3592dcdf533ea7828fb7fd0dcfd66c",
+   "lama_panjang": 132,
+   "baru_panjang": 170,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 345,
+   "lama_md5": "69bccc4fae157cdecd327d9643594250",
+   "baru_md5": "550d3dd9c6d442b3cbd58d89f97de546",
+   "lama_panjang": 133,
+   "baru_panjang": 171,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 346,
+   "lama_md5": "4e7c50eadf8c972b7628ca64992c2894",
+   "baru_md5": "39d1515780e62726add20120ed659eaf",
+   "lama_panjang": 133,
+   "baru_panjang": 171,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 347,
+   "lama_md5": "851060ba98d530236499cfdbf9b73323",
+   "baru_md5": "509154ff4761f4b077f2fc881de09b5f",
+   "lama_panjang": 133,
+   "baru_panjang": 171,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 1033,
+   "lama_md5": "d5cc099a43b5eaa1f8db9d04748d1f79",
+   "baru_md5": "d693b8947675632df002f37e5c81ef90",
+   "lama_panjang": 83,
+   "baru_panjang": 136,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 1034,
+   "lama_md5": "acf79a180600cf20765a4c25e03707bc",
+   "baru_md5": "a55a08e5a6cec7eb1f5957617b20efa6",
+   "lama_panjang": 212,
+   "baru_panjang": 250,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 1035,
+   "lama_md5": "f9d98a463a275e8fdc3715a821249ea5",
+   "baru_md5": "46a145b685594aba6cf1d5cc9d9ed450",
+   "lama_panjang": 129,
+   "baru_panjang": 167,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 1076,
+   "lama_md5": "50106d47e2ba1ec599e67d8301a64742",
+   "baru_md5": "47edeae3c7b0e9ffb1798fb087a595c2",
+   "lama_panjang": 274,
+   "baru_panjang": 312,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 1077,
+   "lama_md5": "227c18be6240d2ade555d65e84262c1d",
+   "baru_md5": "b319eee059874c18ec4dd86c332da2b2",
+   "lama_panjang": 274,
+   "baru_panjang": 312,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 1173,
+   "lama_md5": "e1861feeb444f1a262f31a950e0ee616",
+   "baru_md5": "f991b2f2bffe6b1c9b75f5aa4f929be1",
+   "lama_panjang": 166,
+   "baru_panjang": 204,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 1174,
+   "lama_md5": "e1d54c6768fd0fe960eb04cfb7cbe703",
+   "baru_md5": "2dd4109afd3ce549d9ac70c74c038402",
+   "lama_panjang": 166,
+   "baru_panjang": 204,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 1176,
+   "lama_md5": "48d5b252dee954bfaaacc4b3bc02699e",
+   "baru_md5": "f3c0066aae41c8a297bf5efc82012fb6",
+   "lama_panjang": 171,
+   "baru_panjang": 211,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 1517,
+   "lama_md5": "fd9ee9bcc992c747cc468610ddeac454",
+   "baru_md5": "fb8e4b214dd7e1c64fba6bc1197660af",
+   "lama_panjang": 185,
+   "baru_panjang": 225,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 1518,
+   "lama_md5": "2b1c2d7075bab053057eab06b357d794",
+   "baru_md5": "86526f028ba7258483086b18bd42dfd4",
+   "lama_panjang": 185,
+   "baru_panjang": 225,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 2173,
+   "lama_md5": "ad12b12591af0c3e793375f8f748960f",
+   "baru_md5": "35ff6fad521d314fff403e2163da551b",
+   "lama_panjang": 166,
+   "baru_panjang": 204,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
    "no": 3111,
    "lama_md5": "c632a6d64c0e68adfef2303e67b43fb0",
    "baru_md5": "86b0720b1aec14c5ffca5bd944f6deb9",
    "lama_panjang": 83,
    "baru_panjang": 136,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 3112,
@@ -16,7 +381,9 @@
    "lama_panjang": 158,
    "baru_panjang": 196,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 3113,
@@ -25,7 +392,9 @@
    "lama_panjang": 136,
    "baru_panjang": 174,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 3114,
@@ -34,7 +403,9 @@
    "lama_panjang": 132,
    "baru_panjang": 170,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 3115,
@@ -43,7 +414,9 @@
    "lama_panjang": 133,
    "baru_panjang": 171,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 3116,
@@ -52,7 +425,9 @@
    "lama_panjang": 212,
    "baru_panjang": 250,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 3117,
@@ -61,7 +436,9 @@
    "lama_panjang": 129,
    "baru_panjang": 167,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 3118,
@@ -70,7 +447,9 @@
    "lama_panjang": 171,
    "baru_panjang": 211,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 3121,
@@ -79,7 +458,9 @@
    "lama_panjang": 82,
    "baru_panjang": 135,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 3122,
@@ -88,7 +469,9 @@
    "lama_panjang": 154,
    "baru_panjang": 192,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 3123,
@@ -97,7 +480,9 @@
    "lama_panjang": 134,
    "baru_panjang": 172,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 3124,
@@ -106,7 +491,9 @@
    "lama_panjang": 130,
    "baru_panjang": 168,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 3125,
@@ -115,7 +502,9 @@
    "lama_panjang": 166,
    "baru_panjang": 204,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 3126,
@@ -124,7 +513,9 @@
    "lama_panjang": 208,
    "baru_panjang": 246,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 3127,
@@ -133,7 +524,9 @@
    "lama_panjang": 127,
    "baru_panjang": 165,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 3128,
@@ -142,7 +535,9 @@
    "lama_panjang": 172,
    "baru_panjang": 210,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 3131,
@@ -151,7 +546,9 @@
    "lama_panjang": 82,
    "baru_panjang": 135,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 3642,
@@ -160,7 +557,9 @@
    "lama_panjang": 295,
    "baru_panjang": 333,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 3643,
@@ -169,7 +568,9 @@
    "lama_panjang": 338,
    "baru_panjang": 376,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 3673,
@@ -178,7 +579,9 @@
    "lama_panjang": 363,
    "baru_panjang": 439,
    "diganti": 2,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 4440,
@@ -187,7 +590,42 @@
    "lama_panjang": 313,
    "baru_panjang": 351,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
+  },
+  {
+   "no": 5019,
+   "lama_md5": "8f8d839cca89e90eaa3c9845a90b9f46",
+   "baru_md5": "9f452e3eb3f4c805b7152338dbede3e5",
+   "lama_panjang": 171,
+   "baru_panjang": 211,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 5027,
+   "lama_md5": "2ebae36a862fa69e226cfea888763227",
+   "baru_md5": "e2cbba1fad00f365a6b9b5ead17ad2d5",
+   "lama_panjang": 212,
+   "baru_panjang": 250,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 5028,
+   "lama_md5": "1a8af19eda03cbe0736707a2d0b4c7de",
+   "baru_md5": "84213cbc8ffa89bd3a2c4fd7572162f3",
+   "lama_panjang": 130,
+   "baru_panjang": 168,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
   },
   {
    "no": 5078,
@@ -196,7 +634,9 @@
    "lama_panjang": 134,
    "baru_panjang": 172,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 5079,
@@ -205,7 +645,9 @@
    "lama_panjang": 130,
    "baru_panjang": 168,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 5080,
@@ -214,7 +656,9 @@
    "lama_panjang": 166,
    "baru_panjang": 204,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 5081,
@@ -223,7 +667,9 @@
    "lama_panjang": 154,
    "baru_panjang": 192,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 5083,
@@ -232,7 +678,9 @@
    "lama_panjang": 134,
    "baru_panjang": 172,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 5084,
@@ -241,7 +689,9 @@
    "lama_panjang": 130,
    "baru_panjang": 168,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 5085,
@@ -250,7 +700,9 @@
    "lama_panjang": 166,
    "baru_panjang": 204,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 5086,
@@ -259,7 +711,9 @@
    "lama_panjang": 154,
    "baru_panjang": 192,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 5087,
@@ -268,7 +722,9 @@
    "lama_panjang": 172,
    "baru_panjang": 210,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 5088,
@@ -277,7 +733,9 @@
    "lama_panjang": 127,
    "baru_panjang": 165,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 5091,
@@ -286,7 +744,9 @@
    "lama_panjang": 134,
    "baru_panjang": 172,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 5092,
@@ -295,7 +755,9 @@
    "lama_panjang": 130,
    "baru_panjang": 168,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 5093,
@@ -304,7 +766,9 @@
    "lama_panjang": 166,
    "baru_panjang": 204,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 5094,
@@ -313,7 +777,9 @@
    "lama_panjang": 154,
    "baru_panjang": 192,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 5095,
@@ -322,7 +788,9 @@
    "lama_panjang": 127,
    "baru_panjang": 165,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 5096,
@@ -331,7 +799,9 @@
    "lama_panjang": 172,
    "baru_panjang": 210,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 5099,
@@ -340,7 +810,9 @@
    "lama_panjang": 134,
    "baru_panjang": 172,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 5102,
@@ -349,7 +821,9 @@
    "lama_panjang": 130,
    "baru_panjang": 168,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 5103,
@@ -358,7 +832,9 @@
    "lama_panjang": 166,
    "baru_panjang": 204,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 5104,
@@ -367,7 +843,9 @@
    "lama_panjang": 154,
    "baru_panjang": 192,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 5106,
@@ -376,7 +854,9 @@
    "lama_panjang": 127,
    "baru_panjang": 165,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 5107,
@@ -385,7 +865,9 @@
    "lama_panjang": 172,
    "baru_panjang": 210,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 5116,
@@ -394,16 +876,64 @@
    "lama_panjang": 177,
    "baru_panjang": 217,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
+  },
+  {
+   "no": 5842,
+   "lama_md5": "30697714f84ad574e71b505348ac1e41",
+   "baru_md5": "72a948dfca524aceb6723d91a66b60fc",
+   "lama_panjang": 1056,
+   "baru_panjang": 1094,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 7000,
+   "lama_md5": "a06f53fb160867b5de7c3cb713d59c5d",
+   "baru_md5": "c371bc30050573cc2bc9df11e83de9fc",
+   "lama_panjang": 141,
+   "baru_panjang": 179,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 7003,
+   "lama_md5": "f3c19a5ac9b4989db049be243c32b34f",
+   "baru_md5": "312f7a62f63dc46cd545616b982bbb05",
+   "lama_panjang": 135,
+   "baru_panjang": 173,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 7004,
+   "lama_md5": "f7f783e11fc61bee67c333a50d1ba950",
+   "baru_md5": "558dac1a0027f3c323b0a4ecb1ba873e",
+   "lama_panjang": 139,
+   "baru_panjang": 177,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
   },
   {
    "no": 7078,
    "lama_md5": "f4b6a1966532da6255d64e727c872909",
-   "baru_md5": "8fc720a43fb8faee3640e089a4767cf1",
+   "baru_md5": "a98f6da6be06cdeb1b960fa1f9547973",
    "lama_panjang": 290,
-   "baru_panjang": 343,
-   "diganti": 1,
-   "inline": 0
+   "baru_panjang": 334,
+   "diganti": 0,
+   "inline": 0,
+   "khusus": "kedudukan-relaas",
+   "tambahan": false
   },
   {
    "no": 8129,
@@ -412,7 +942,42 @@
    "lama_panjang": 260,
    "baru_panjang": 298,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
+  },
+  {
+   "no": 8175,
+   "lama_md5": "3045548b7142abce3010be9935ea7147",
+   "baru_md5": "208e7e21c6d862106829ec8d83986b8d",
+   "lama_panjang": 125,
+   "baru_panjang": 163,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 8179,
+   "lama_md5": "fd04d63c156cf3828be6ed597c49c7a2",
+   "baru_md5": "d8812e5f92b7bc04d678edc2eedd9295",
+   "lama_panjang": 123,
+   "baru_panjang": 161,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
+  },
+  {
+   "no": 8180,
+   "lama_md5": "94162a530b225aa6020f27c200ea897f",
+   "baru_md5": "1828460b90bf7e30c9224d93f22ecf8e",
+   "lama_panjang": 123,
+   "baru_panjang": 161,
+   "diganti": 1,
+   "inline": 0,
+   "khusus": "",
+   "tambahan": true
   },
   {
    "no": 8510,
@@ -421,7 +986,9 @@
    "lama_panjang": 5494,
    "baru_panjang": 5532,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 8524,
@@ -430,7 +997,9 @@
    "lama_panjang": 13294,
    "baru_panjang": 13370,
    "diganti": 2,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 8533,
@@ -439,7 +1008,9 @@
    "lama_panjang": 10829,
    "baru_panjang": 10905,
    "diganti": 2,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 8800,
@@ -448,7 +1019,9 @@
    "lama_panjang": 480,
    "baru_panjang": 518,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 8801,
@@ -457,7 +1030,9 @@
    "lama_panjang": 480,
    "baru_panjang": 518,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 8802,
@@ -466,7 +1041,9 @@
    "lama_panjang": 522,
    "baru_panjang": 560,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 8803,
@@ -475,7 +1052,9 @@
    "lama_panjang": 522,
    "baru_panjang": 560,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 8808,
@@ -484,7 +1063,9 @@
    "lama_panjang": 1162,
    "baru_panjang": 1200,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 8809,
@@ -493,7 +1074,9 @@
    "lama_panjang": 1162,
    "baru_panjang": 1200,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 8810,
@@ -502,7 +1085,9 @@
    "lama_panjang": 1276,
    "baru_panjang": 1314,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 8811,
@@ -511,7 +1096,9 @@
    "lama_panjang": 1276,
    "baru_panjang": 1314,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 8890,
@@ -520,7 +1107,9 @@
    "lama_panjang": 2061,
    "baru_panjang": 2137,
    "diganti": 2,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 9104,
@@ -529,7 +1118,9 @@
    "lama_panjang": 801,
    "baru_panjang": 839,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 9200,
@@ -538,7 +1129,9 @@
    "lama_panjang": 562,
    "baru_panjang": 600,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 9205,
@@ -547,7 +1140,9 @@
    "lama_panjang": 684,
    "baru_panjang": 722,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 9277,
@@ -556,7 +1151,9 @@
    "lama_panjang": 730,
    "baru_panjang": 768,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 9278,
@@ -565,7 +1162,9 @@
    "lama_panjang": 486,
    "baru_panjang": 524,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 9279,
@@ -574,7 +1173,9 @@
    "lama_panjang": 730,
    "baru_panjang": 768,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 9280,
@@ -583,7 +1184,9 @@
    "lama_panjang": 3209,
    "baru_panjang": 3965,
    "diganti": 4,
-   "inline": 4
+   "inline": 4,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 9281,
@@ -592,7 +1195,9 @@
    "lama_panjang": 3826,
    "baru_panjang": 4582,
    "diganti": 4,
-   "inline": 4
+   "inline": 4,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 9290,
@@ -601,7 +1206,9 @@
    "lama_panjang": 2792,
    "baru_panjang": 2830,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 9291,
@@ -610,7 +1217,9 @@
    "lama_panjang": 2808,
    "baru_panjang": 2846,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 9292,
@@ -619,7 +1228,9 @@
    "lama_panjang": 1347,
    "baru_panjang": 1385,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 9293,
@@ -628,7 +1239,9 @@
    "lama_panjang": 1347,
    "baru_panjang": 1385,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 9404,
@@ -637,7 +1250,9 @@
    "lama_panjang": 1249,
    "baru_panjang": 1325,
    "diganti": 2,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 9405,
@@ -646,7 +1261,9 @@
    "lama_panjang": 1538,
    "baru_panjang": 1690,
    "diganti": 4,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 9560,
@@ -655,7 +1272,9 @@
    "lama_panjang": 486,
    "baru_panjang": 524,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 9561,
@@ -664,7 +1283,9 @@
    "lama_panjang": 799,
    "baru_panjang": 837,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 9562,
@@ -673,7 +1294,9 @@
    "lama_panjang": 595,
    "baru_panjang": 633,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 10106,
@@ -682,7 +1305,9 @@
    "lama_panjang": 1589,
    "baru_panjang": 1627,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   },
   {
    "no": 10107,
@@ -691,7 +1316,9 @@
    "lama_panjang": 1691,
    "baru_panjang": 1729,
    "diganti": 1,
-   "inline": 0
+   "inline": 0,
+   "khusus": "",
+   "tambahan": false
   }
  ],
  "fungsi": {
@@ -702,6 +1329,7 @@
   1,
   46,
   47,
+  50,
   53,
   101,
   105,
@@ -717,8 +1345,8 @@
   9290,
   9291
  ],
- "harap": "9|14|77|0|0|17|0",
- "ulang": "9|14|0|77|1|17|0",
+ "harap": "9|14|120|0|0|18|0",
+ "ulang": "9|14|0|120|1|18|0",
  "dilewati_27": [
   3520,
   3521,
@@ -764,5 +1392,5 @@
    "isian_rtf_pihak_tambahan": "9cf2a80618cfee32d3b096c4b1c83dc8"
   }
  },
- "jumlah_penggantian": 91
+ "jumlah_penggantian": 135
 }

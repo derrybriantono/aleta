@@ -7,7 +7,7 @@ nomor=open(os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','paket-s
 pid=sys.argv[1]
 def q(db,sql,timeout=60):
     t=time.time()
-    r=subprocess.run([MYSQL,'-uroot','--default-character-set=latin1','-N','--force',db,'-e',sql],capture_output=True,timeout=timeout)
+    r=subprocess.run([MYSQL,'-uroot','--default-character-set=latin1','-N','--force',db],input=sql.encode('latin1','replace'),capture_output=True,timeout=timeout)  # lewat stdin: kueri turunan bisa lebih panjang dari batas baris perintah Windows
     return r.stdout.decode('latin1'),r.stderr.decode('latin1'),time.time()-t
 def ambil(db,no):
     o,e,_=q(db,"SELECT HEX(sql_query) FROM abt_variabel WHERE no_var=%s"%no)
@@ -22,8 +22,11 @@ hasil={}
 pilih=sys.argv[2].split(',') if len(sys.argv)>2 else nomor
 for no in pilih:
     row=[no]
-    for db in ('aps_badilag_ps0','aps_badilag_ps1'):
-        s=siap(ambil(db,no),db)
+    for db in (os.environ.get('DB_SEBELUM','aps_badilag_ps0'),os.environ.get('DB_SESUDAH','aps_badilag_ps1')):
+        try:
+            s=siap(ambil(db,no),db)
+        except ValueError:
+            row.append('0.00s tanpa kueri (bukan data_sql)'); continue
         sql="SET @pid=%s; SET STATEMENT max_statement_time=40 FOR SELECT COUNT(*), MD5(GROUP_CONCAT(data)) FROM (%s) AS u"%(pid,s)
         o,e,t=q('sipp_donggala',sql)
         row.append('%.2fs %s %s'%(t,o.strip().replace('\t','/'),('ERR '+e.strip()[:80]) if e.strip() else ''))

@@ -26,11 +26,13 @@ def himpunan(tabel):
 
 
 NR = {1: himpunan('perkara_pihak1'), 2: himpunan('perkara_pihak2')}
+# 7078 (kedudukan pihak di relaas): berubah pada perkara dengan Pemohon/Penggugat (perkara_pihak1) LEBIH DARI SATU (keputusan pengguna 28 Okt), bukan karena urutan tak rapat
+BANYAK1 = {int(x[0]) for x in kueri('sipp_donggala', "SELECT perkara_id FROM perkara_pihak1 GROUP BY perkara_id HAVING COUNT(*) > 1")}
 
 # teks kueri semua variabel (basis sesudah), untuk menelusuri tabel pihak yang dipakai variabel dan variabel yang dirujuknya
 teks = {}
-for baris in kueri(DB, "SELECT no_var, HEX(IFNULL(sql_query,'')), HEX(nama) FROM abt_variabel"):
-    teks[int(baris[0])] = bytes.fromhex(baris[1]).decode('latin1') + ' ' + bytes.fromhex(baris[2]).decode('latin1')
+for baris in kueri(DB, "SELECT no_var, HEX(IFNULL(sql_query,'')), HEX(nama), IFNULL(referensi+0, 0) FROM abt_variabel"):
+    teks[int(baris[0])] = bytes.fromhex(baris[1]).decode('latin1') + ' ' + bytes.fromhex(baris[2]).decode('latin1') + (' #%s#' % baris[3] if baris[3] not in ('0', 'NULL') else '')  # referensi: variabel tanggal_hari menunjuk variabel lain
 
 
 def tutup(no, lihat=None):
@@ -61,6 +63,8 @@ for no_s, beda in hasil['beda'].items():
     sebab = set()
     for t in tb:
         sebab |= NR[t]
+    if 7078 in tutup(no):
+        sebab |= BANYAK1
     di_luar = [p for p in beda if p not in sebab]
     ring[no_s] = dict(beda=len(beda), tabel=sorted(tb), dijelaskan=len(beda) - len(di_luar), di_luar=len(di_luar), contoh_di_luar=di_luar[:8], perkara_lain=no in ORANG_LAIN)
     if di_luar and no not in ORANG_LAIN:
