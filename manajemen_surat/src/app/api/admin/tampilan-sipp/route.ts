@@ -13,7 +13,8 @@ export const dynamic = "force-dynamic";
  * Aturan tampilan ALETA di halaman SIPP per peran dan per pengguna (28 Okt 2026) - aksi "tampilan-sipp.atur"
  * (Super Admin & Admin; aturan untuk Super Admin hanya oleh Super Admin).
  *   GET ?pratinjau=<idPengguna> -> katalog, golongan, aturan tersimpan, pegawai, usulan per peran, pratinjau
- *   PUT {lingkup: peran|pengguna, sasaran, aturan, catatan?} -> menimpa aturan sasaran itu (aturan kosong = hapus)
+ *   PUT {lingkup: peran|pengguna, sasaran, aturan, catatan?, tingkat?} -> menimpa aturan sasaran itu pada satu lapis
+ *       (aturan kosong = hapus). Super Admin menulis lapis "super" (mengunci di atas Admin); Admin hanya lapis "admin".
  */
 export async function GET(request: NextRequest) {
   try {
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const db = await getDatabase();
-    let badan: { lingkup?: unknown; sasaran?: unknown; aturan?: unknown; catatan?: unknown };
+    let badan: { lingkup?: unknown; sasaran?: unknown; aturan?: unknown; catatan?: unknown; tingkat?: unknown };
     try {
       badan = (await request.json()) as typeof badan;
     } catch {

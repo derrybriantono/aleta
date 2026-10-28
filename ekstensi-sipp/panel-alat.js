@@ -3981,7 +3981,7 @@ const ALAT_SETELAN_SINGGAH = ["widget.tata"];
  * mengirimnya (akun sudah pernah menyimpan) - tanpa itu bentuk singgahan
  * tetap persis seperti 1 Okt ({"widget.tata": ...} saja).
  */
-const ALAT_SETELAN_SINGGAH_BILA_ADA = ["panel.bawaan", "konteks.perkara", "perangkat.versi"];
+const ALAT_SETELAN_SINGGAH_BILA_ADA = ["panel.bawaan", "konteks.perkara", "perangkat.versi", "tampil.halaman"];
 
 function alatBersihSetelanSinggah(x) {
   if (!x || typeof x !== "object" || Array.isArray(x)) return undefined;
@@ -5465,14 +5465,24 @@ async function alatMuatSenyap() {
  * dengan senyap (data-aleta-senyap), jadi tetap hanya tidak digambar: isi
  * otomatis, pelaksana terjadwal, antrean, dan pembaruan tetap berjalan.
  * Ditampilkan lagi bila dibutuhkan:
- *   - Alt+Shift+A di halaman itu: tampil/sembunyi untuk TAB INI sampai tab
- *     ditutup (sessionStorage - ikut berpindah halaman SIPP di tab yang sama);
- *   - popup: "Tampilkan di tab ini", atau saklar tetap per situs
+ *   - Alt+Shift+A di halaman itu: membalik saklar situs (sejak 28 Okt 2026
+ *     disimpan di peramban DAN akun - lihat di bawah);
+ *   - popup: "Tampilkan di tab ini" (TAB INI sampai tab ditutup,
+ *     sessionStorage - ikut berpindah halaman SIPP di tab yang sama), atau saklar tetap per situs
  *     (tampilAletaHalaman { sipp, aleta }; tidak ada = tersembunyi).
  * ABT dan e-Court tidak tersentuh. Penanda dipasang SEBELUM penyimpanan terbaca
  * supaya tidak ada kedipan panel yang muncul lalu hilang.
+ *
+ * 28 Okt 2026 (keputusan pengguna): saklar per situs JUGA tersimpan di akun
+ * (setelan "tampil.halaman", ikut singgahan tampilanServer). Yang lebih baru
+ * antara salinan peramban {sipp, aleta, diubahPada} dan akun yang berlaku -
+ * jadi nilai akun menang saat masuk di PC lain, dan salinan peramban tetap
+ * berlaku saat server tidak terjangkau. Alt+Shift+A kini mengubah saklar
+ * situs (peramban + akun) dan melepas pilihan tab; "Tampilkan di tab ini"
+ * di popup tetap untuk tab itu saja.
  */
 const ALAT_KUNCI_TAMPIL_HALAMAN = "tampilAletaHalaman";
+const ALAT_SETELAN_TAMPIL_HALAMAN = "tampil.halaman";
 const ALAT_SESI_TAMPIL_TAB = "aleta-tampil-tab";
 /** null = penyimpanan belum terbaca (tetap tersembunyi). */
 let alatTampilHalaman = null;
@@ -5481,7 +5491,57 @@ let alatTampilTabCadangan = "";
 
 function alatTampilHalamanBersih(x) {
   const o = x && typeof x === "object" ? x : {};
-  return { sipp: o.sipp === true, aleta: o.aleta === true };
+  return { sipp: o.sipp === true, aleta: o.aleta === true, diubahPada: typeof o.diubahPada === "string" ? o.diubahPada : "" };
+}
+
+/** Saklar situs yang berlaku: salinan peramban atau setelan akun, yang lebih baru (akun menang bila sama). */
+function alatTampilHalamanBerlaku() {
+  const lokal = alatTampilHalaman || { sipp: false, aleta: false, diubahPada: "" };
+  const sv = alatUji && alatUji.server && alatUji.server.setelan ? alatUji.server.setelan[ALAT_SETELAN_TAMPIL_HALAMAN] : null;
+  if (!sv || !sv.nilai || typeof sv.nilai !== "object") return lokal;
+  const waktu = (x) => {
+    const t = Date.parse(String(x || ""));
+    return Number.isFinite(t) ? t : 0;
+  };
+  if (waktu(sv.diubahPada) >= waktu(lokal.diubahPada)) return { sipp: sv.nilai.sipp === true, aleta: sv.nilai.aleta === true, diubahPada: sv.diubahPada };
+  return lokal;
+}
+
+/**
+ * Alt+Shift+A (28 Okt 2026): saklar situs ini dibalik, disimpan di peramban (seketika) lalu di akun. Pilihan tab
+ * dilepas supaya saklar yang baru langsung terlihat. Gagal menulis ke akun = salinan peramban tetap berlaku.
+ */
+function alatSetelTampilSitus(tampil) {
+  const situs = alatSitusSembunyi();
+  if (!situs) return null;
+  try {
+    sessionStorage.setItem(ALAT_SESI_TAMPIL_TAB, "");
+  } catch {
+    /* tanpa sessionStorage */
+  }
+  alatTampilTabCadangan = "";
+  const kini = alatTampilHalamanBerlaku();
+  const pada = new Date().toISOString();
+  const nilai = { sipp: kini.sipp === true, aleta: kini.aleta === true, [situs]: tampil === true };
+  alatTampilHalaman = { ...nilai, diubahPada: pada };
+  try {
+    void chrome.storage.local.set({ [ALAT_KUNCI_TAMPIL_HALAMAN]: { ...nilai, diubahPada: pada } });
+  } catch {
+    /* berlaku di halaman ini */
+  }
+  try {
+    void fetch("/aleta/api/aleta-ecourt/ekstensi/setelan", {
+      method: "PUT",
+      credentials: "include",
+      cache: "no-store",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ kunci: ALAT_SETELAN_TAMPIL_HALAMAN, nilai }),
+    }).catch(() => undefined);
+  } catch {
+    /* server tidak terjangkau: salinan peramban tetap */
+  }
+  alatTandaiSenyap();
+  return { ok: true, situs, tersembunyi: alatSembunyiBawaan() || alatSenyapAktif() };
 }
 
 /** "sipp" | "aleta" untuk halaman yang tampilan ALETA-nya tersembunyi bawaan, selain itu "". */
@@ -5515,7 +5575,7 @@ function alatSembunyiBawaan() {
   const tab = alatTampilTab();
   if (tab === "ya") return false;
   if (tab === "tidak") return true;
-  return !(alatTampilHalaman && alatTampilHalaman[situs] === true);
+  return !(alatTampilHalaman && alatTampilHalamanBerlaku()[situs] === true);
 }
 
 /** Tampil (true) atau sembunyi (false) di tab ini. Pulang keadaan sesudahnya. */
@@ -5538,7 +5598,7 @@ function alatPasangTampilTab() {
     (e) => {
       if (!e.altKey || !e.shiftKey || e.ctrlKey || e.metaKey || e.code !== "KeyA") return;
       e.preventDefault();
-      alatSetelTampilTab(alatSembunyiBawaan());
+      alatSetelTampilSitus(alatSembunyiBawaan());
     },
     true
   );
@@ -5560,6 +5620,8 @@ function alatDengarkanSenyap() {
       if (ALAT_KUNCI_SENYAP in ubah) alatSenyapSampai = Number(ubah[ALAT_KUNCI_SENYAP].newValue) || 0;
       if (ALAT_KUNCI_TAMPIL_HALAMAN in ubah) alatTampilHalaman = alatTampilHalamanBersih(ubah[ALAT_KUNCI_TAMPIL_HALAMAN].newValue);
       // Saklar fitur atau tampilan yang berganti juga menentukan senyap.
+      // Setelan akun (tampil.halaman) ikut singgahan tampilanServer - dibaca dulu sebelum senyap dihitung ulang.
+      if (ALAT_UJI_KUNCI_SERVER in ubah) alatUji.server = alatBersihTampilanServer(ubah[ALAT_UJI_KUNCI_SERVER].newValue);
       if (ALAT_KUNCI_SENYAP in ubah || ALAT_KUNCI_TAMPIL_HALAMAN in ubah || ALAT_UJI_KUNCI_TAMPILAN in ubah || ALAT_UJI_KUNCI_FITUR in ubah || ALAT_UJI_KUNCI_SERVER in ubah) alatTandaiSenyap();
     });
   } catch {

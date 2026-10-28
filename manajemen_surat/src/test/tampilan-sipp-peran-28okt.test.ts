@@ -12,6 +12,7 @@ import { normalkanSetelan } from "@/lib/tampilan-ekstensi";
 import {
   KATALOG_TAMPILAN_SIPP,
   HALAMAN_SIPP,
+  kunciSuperAdmin,
   pecahkanTampilanSipp,
   penyaringAman,
   saringPilihanBaru,
@@ -35,7 +36,8 @@ import {
  * ============================================================================
  * TAMPILAN ALETA DI HALAMAN SIPP PER PERAN DAN PER PENGGUNA (28 Okt 2026, migrasi 0116)
  * ============================================================================
- *   - aturan berlaku: sistem (tampil) -> peran (paling longgar menang) -> pengguna -> pilihan sendiri;
+ *   - aturan berlaku: usulan per peran (bawaan) -> aturan Admin (pengguna > peran, paling longgar menang) ->
+ *     aturan/kunci Super Admin -> pilihan sendiri (keputusan pengguna 28 Okt 2026);
  *   - terkunci (selalu/tidak) tidak dapat diubah pengguna; pilihan tersimpan di akun dan terbaca ulang;
  *   - ekstensi dijalankan SUNGGUHAN di jsdom: elemen tersembunyi tidak digambar, widget (akar bayangan) juga;
  *   - pintu masuk dari widget dan popup, hak di matriks, tutorial, migrasi di tiga tempat.
@@ -113,8 +115,9 @@ describe("katalog: satu sumber, penyaring menunjuk elemen ekstensi yang sungguh 
   });
 });
 
-describe("pemecah: sistem -> peran -> pengguna -> pilihan", () => {
-  const atur = (lingkup: "peran" | "pengguna", sasaran: string, aturan: BarisAturanTampilanSipp["aturan"]): BarisAturanTampilanSipp => ({
+describe("pemecah: usulan -> Admin -> Super Admin -> pilihan", () => {
+  const atur = (lingkup: "peran" | "pengguna", sasaran: string, aturan: BarisAturanTampilanSipp["aturan"], tingkat: "admin" | "super" = "admin"): BarisAturanTampilanSipp => ({
+    tingkat,
     lingkup,
     sasaran,
     aturan,
@@ -124,11 +127,43 @@ describe("pemecah: sistem -> peran -> pengguna -> pilihan", () => {
   });
   const satu = (hasil: ReturnType<typeof pecahkanTampilanSipp>, kunci: string) => hasil.find((x) => x.kunci === kunci)!;
 
-  it("tanpa aturan: semua tampil, boleh diatur, sumber sistem (fitur lama tidak berkurang)", () => {
-    const h = pecahkanTampilanSipp({ aturan: [], penggunaId: "u1", golongan: ["pp"] });
-    expect(h).toHaveLength(KATALOG_TAMPILAN_SIPP.length);
-    expect(h.every((x) => x.tampil && !x.terkunci && x.sumber === "sistem")).toBe(true);
-    expect(sembunyiUntukEkstensi(h)).toEqual([]);
+  it("tanpa aturan: bawaan = usulan peran; Super Admin, Admin, dan akun tanpa golongan semua tampil; tidak ada yang terkunci", () => {
+    for (const golongan of [["super-admin"], ["admin"], []] as const) {
+      const h = pecahkanTampilanSipp({ aturan: [], penggunaId: "u1", golongan });
+      expect(h).toHaveLength(KATALOG_TAMPILAN_SIPP.length);
+      expect(h.every((x) => x.tampil && !x.terkunci && x.sumber === "usulan" && x.oleh === "")).toBe(true);
+      expect(sembunyiUntukEkstensi(h)).toEqual([]);
+    }
+    const pp = pecahkanTampilanSipp({ aturan: [], penggunaId: "u1", golongan: ["pp"] });
+    for (const el of KATALOG_TAMPILAN_SIPP) expect(pp.find((x) => x.kunci === el.kunci)!.tampil, el.kunci).toBe(el.lazim.includes("pp"));
+    expect(pp.every((x) => !x.terkunci)).toBe(true);
+  });
+
+  it("usulan memuat pintu fitur penting tiap peran (nyala), dan bagian umum nyala untuk semua peran", () => {
+    const nyala = (g: Parameters<typeof usulanAturanPeran>[0], k: string) => usulanAturanPeran(g)[k].bawaan;
+    for (const g of ["pimpinan", "hakim", "panitera", "panmud", "pp", "jurusita", "kasir", "ptsp", "mediator", "petugas-sidang", "analis-perkara", "sekretariat", "ti", "pelaksana"] as const) {
+      for (const k of ["semua.panel", "semua.lencana", "semua.widget", "semua.menu-aleta", "semua.pita-pembaruan", "perkara.kabar-berubah", "perkara.pita-luring"]) expect(nyala(g, k), `${g} ${k}`).toBe(true);
+    }
+    for (const k of ["semua.menu-abt", "putusan.otomatis", "perkara.jadwal-putusan", "daftar.putusan-massal", "daftar.lima-bulan"]) expect(nyala("hakim", k), k).toBe(true);
+    for (const k of ["sidang.jadwal-bas", "sidang.jadwal-tunda", "daftar.bas-massal", "form.usulan", "semua.menu-ecourt", "perkara.tarik-data"]) expect(nyala("pp", k), k).toBe(true);
+    for (const k of ["penetapan.otomatis", "penetapan.bantu-form", "perkara.beban-penetapan", "sidang.jadwal-bas"]) expect(nyala("pimpinan", k), k).toBe(true);
+    expect(nyala("kasir", "kasir.tombol") && nyala("kasir", "kasir.panduan")).toBe(true);
+    expect(nyala("mediator", "mediasi.unggah")).toBe(true);
+    expect(nyala("ptsp", "pihak.ejaan") && nyala("ptsp", "pihak.chip") && nyala("ptsp", "perkara.tarik-data")).toBe(true);
+    expect(nyala("panitera", "penetapan.otomatis") && nyala("panmud", "penetapan.otomatis") && nyala("panitera", "kasir.tombol")).toBe(true);
+    expect(nyala("ti", "semua.sumber-daya")).toBe(true);
+  });
+
+  it("kunci Super Admin di atas aturan Admin: menang atas aturan Admin (peran maupun pegawai) dan mengunci pilihan", () => {
+    const aturan = [
+      atur("pengguna", "u1", { "semua.ai": { mode: "selalu", bawaan: true }, "semua.widget": { mode: "boleh", bawaan: false } }),
+      atur("peran", "pp", { "semua.ai": { mode: "tidak", bawaan: false } }, "super"),
+    ];
+    const h = pecahkanTampilanSipp({ aturan, penggunaId: "u1", golongan: ["pp"], pilihan: { "semua.ai": true } });
+    expect(satu(h, "semua.ai")).toMatchObject({ tampil: false, terkunci: true, sumber: "peran", oleh: "super" });
+    expect(satu(h, "semua.widget")).toMatchObject({ tampil: false, terkunci: false, sumber: "pengguna", oleh: "admin" });
+    expect(kunciSuperAdmin(aturan, "peran", "pp")).toEqual(["semua.ai"]);
+    expect(kunciSuperAdmin(aturan, "pengguna", "u1")).toEqual([]);
   });
 
   it("aturan peran berlaku; pilihan sendiri hanya untuk 'boleh'; terkunci menang atas pilihan", () => {
@@ -166,7 +201,7 @@ describe("pemecah: sistem -> peran -> pengguna -> pilihan", () => {
   });
 
   it("yang dikirim ke ekstensi hanya yang tersembunyi beserta penyaringnya (dan gaya pengembali Lama Proses)", () => {
-    const h = pecahkanTampilanSipp({ aturan: [], penggunaId: "u1", golongan: ["pp"], pilihan: { "daftar.lama-proses": false, "semua.sumber-daya": false } });
+    const h = pecahkanTampilanSipp({ aturan: [], penggunaId: "u1", golongan: ["super-admin"], pilihan: { "daftar.lama-proses": false, "semua.sumber-daya": false } });
     const s = sembunyiUntukEkstensi(h);
     expect(s.map((x) => x.kunci).sort()).toEqual(["daftar.lama-proses", "semua.sumber-daya"]);
     expect(s.find((x) => x.kunci === "daftar.lama-proses")!.gaya).toContain("td[data-aleta-l2-lama]");
@@ -177,6 +212,11 @@ describe("pemecah: sistem -> peran -> pengguna -> pilihan", () => {
     const n = normalkanSetelan("tampilan.sipp", { pilihan: { "semua.ai": false, "x.y": true, "semua.widget": "ya" }, lain: 1 });
     expect(n.nilai).toEqual({ pilihan: { "semua.ai": false } });
     expect(n.dibuang).toEqual(expect.arrayContaining(["lain", "pilihan.x.y", "pilihan.semua.widget"]));
+  });
+
+  it("setelan akun 'tampil.halaman' (saklar induk Tampilkan ALETA di SIPP/portal): hanya sipp & aleta bernilai boolean", () => {
+    expect(normalkanSetelan("tampil.halaman", { sipp: true, aleta: false, abt: true })).toMatchObject({ nilai: { sipp: true, aleta: false }, dibuang: ["abt"] });
+    expect(() => normalkanSetelan("tampil.halaman", { sipp: "ya" })).toThrow();
   });
 });
 
@@ -207,7 +247,10 @@ describe("server: tersimpan di akun, terbaca ulang, hak admin", () => {
     expect(ulang.berlaku.find((b) => b.kunci === "semua.menu-abt")).toMatchObject({ tampil: false, terkunci: true });
 
     const eks = await tampilanSippEkstensi(db, pp);
-    expect(eks.sembunyi.map((s) => s.kunci).sort()).toEqual(["semua.menu-abt", "semua.widget"]);
+    const kunciSembunyi = eks.sembunyi.map((s) => s.kunci);
+    expect(kunciSembunyi).toEqual(expect.arrayContaining(["semua.menu-abt", "semua.widget", "semua.sumber-daya"]));
+    expect(kunciSembunyi).not.toContain("semua.ai");
+    expect(kunciSembunyi).not.toContain("sidang.jadwal-bas");
     expect(eks.sembunyi.find((s) => s.kunci === "semua.menu-abt")!.pilih).toEqual(['li[data-aleta-menu="abt"]']);
     expect(eks.versi).toMatch(/^ts1-[0-9a-f]{8}$/);
 
@@ -221,7 +264,8 @@ describe("server: tersimpan di akun, terbaca ulang, hak admin", () => {
   it("penimpaan per pengguna dan pratinjau admin", async () => {
     await simpanAturanTampilanSipp(db, "usr-super", { lingkup: "pengguna", sasaran: "usr-ppg", aturan: { "semua.ai": { mode: "selalu", bawaan: true } } });
     const h = await halamanAdminTampilanSipp(db, "usr-super", { pratinjau: "usr-ppg" });
-    expect(h.aturan).toEqual([expect.objectContaining({ lingkup: "pengguna", sasaran: "usr-ppg" })]);
+    expect(h.aturan).toEqual([expect.objectContaining({ tingkat: "super", lingkup: "pengguna", sasaran: "usr-ppg", diubahOleh: "usr-super" })]);
+    expect(h.tingkatAktor).toBe("super");
     expect(h.pratinjau!.berlaku.find((b) => b.kunci === "semua.ai")).toMatchObject({ tampil: true, terkunci: true, sumber: "pengguna" });
   });
 
@@ -234,6 +278,29 @@ describe("server: tersimpan di akun, terbaca ulang, hak admin", () => {
     expect((await halamanAdminTampilanSipp(db, "usr-admin")).bolehUbahSuperAdmin).toBe(false);
     const audit = await db.prepare("SELECT action FROM audit_logs WHERE entity_type = ?").all<{ action: string }>("aleta_tampilan_sipp_aturan");
     expect(audit.map((a) => a.action)).toContain("UPDATE_SIPP_DISPLAY_RULE");
+  });
+
+  it("Super Admin mengintervensi: kuncinya menimpa aturan Admin, Admin tidak dapat mengubah elemen yang dikunci; audit mencatat siapa", async () => {
+    await simpanAturanTampilanSipp(db, "usr-admin", { lingkup: "peran", sasaran: "pp", aturan: { "semua.ai": { mode: "boleh", bawaan: true }, "semua.widget": { mode: "boleh", bawaan: true } } });
+    await simpanAturanTampilanSipp(db, "usr-super", { lingkup: "peran", sasaran: "pp", aturan: { "semua.ai": { mode: "tidak", bawaan: false } } });
+    const pp = await akun("usr-ppg");
+    expect((await halamanTampilanSippSaya(db, pp)).berlaku.find((b) => b.kunci === "semua.ai")).toMatchObject({ tampil: false, terkunci: true, oleh: "super" });
+    // Admin mengubah elemen yang dikunci: ditolak. Elemen lain tetap boleh diubahnya.
+    await expect(
+      simpanAturanTampilanSipp(db, "usr-admin", { lingkup: "peran", sasaran: "pp", aturan: { "semua.ai": { mode: "selalu", bawaan: true }, "semua.widget": { mode: "boleh", bawaan: true } } })
+    ).rejects.toMatchObject({ status: 403 });
+    await expect(
+      simpanAturanTampilanSipp(db, "usr-admin", { lingkup: "peran", sasaran: "pp", aturan: { "semua.ai": { mode: "boleh", bawaan: true }, "semua.widget": { mode: "boleh", bawaan: false } } })
+    ).resolves.toBeTruthy();
+    await expect(simpanAturanTampilanSipp(db, "usr-admin", { lingkup: "peran", sasaran: "pp", aturan: {}, tingkat: "super" })).rejects.toMatchObject({ status: 403 });
+    const h = await halamanAdminTampilanSipp(db, "usr-admin");
+    expect(h.tingkatAktor).toBe("admin");
+    expect(h.aturan.map((b) => `${b.tingkat}:${b.sasaran}:${b.diubahOleh}`).sort()).toEqual(["admin:pp:usr-admin", "super:pp:usr-super"]);
+    const audit = await db.prepare("SELECT actor_user_id, entity_id FROM audit_logs WHERE entity_type = ?").all<{ actor_user_id: string; entity_id: string }>("aleta_tampilan_sipp_aturan");
+    expect(audit.map((a) => `${a.actor_user_id}>${a.entity_id}`)).toEqual(expect.arrayContaining(["usr-admin>admin:peran:pp", "usr-super>super:peran:pp"]));
+    // Super Admin melepas kuncinya: aturan Admin berlaku lagi.
+    await simpanAturanTampilanSipp(db, "usr-super", { lingkup: "peran", sasaran: "pp", aturan: {} });
+    expect((await halamanTampilanSippSaya(db, pp)).berlaku.find((b) => b.kunci === "semua.ai")).toMatchObject({ tampil: true, terkunci: false, oleh: "admin" });
   });
 
   it("hak di matriks peran: hanya pengelola", async () => {

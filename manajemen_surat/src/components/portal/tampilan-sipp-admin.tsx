@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { LoaderCircle, Search, Sparkles, Trash2 } from "lucide-react";
+import { Lock, LoaderCircle, RotateCcw, Search } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { apiPath } from "@/lib/base-path";
-import type { AturanElemen, AturanTampilanSipp, ElemenBerlaku, HalamanSipp, JenisElemen, LingkupAturan } from "@/lib/tampilan-sipp";
+import type { AturanElemen, AturanTampilanSipp, ElemenBerlaku, HalamanSipp, JenisElemen, LingkupAturan, TingkatAturan } from "@/lib/tampilan-sipp";
 
 /**
  * Layar Admin "Tampilan SIPP per peran" (28 Okt 2026): matriks elemen x peran. Tiap sel diklik berganti
@@ -19,7 +19,7 @@ import type { AturanElemen, AturanTampilanSipp, ElemenBerlaku, HalamanSipp, Jeni
  */
 
 type ElemenKatalog = { kunci: string; halaman: HalamanSipp; nama: string; jelas: string; contoh: string; jenis: JenisElemen; lazim: string[] };
-type Baris = { lingkup: LingkupAturan; sasaran: string; aturan: AturanTampilanSipp; catatan: string; diubahOleh: string; diubahPada: string; labelSasaran: string };
+type Baris = { tingkat: TingkatAturan; lingkup: LingkupAturan; sasaran: string; aturan: AturanTampilanSipp; catatan: string; diubahOleh: string; diubahPada: string; labelSasaran: string };
 type Data = {
   halaman: Record<HalamanSipp, string>;
   katalog: ElemenKatalog[];
@@ -28,6 +28,7 @@ type Data = {
   pegawai: Array<{ id: string; nama: string; golongan: string[] }>;
   usulan: Record<string, AturanTampilanSipp>;
   bolehUbahSuperAdmin: boolean;
+  tingkatAktor: TingkatAturan;
   pratinjau: { penggunaId: string; nama: string; golongan: string[]; berlaku: ElemenBerlaku[] } | null;
 };
 
@@ -42,9 +43,9 @@ const ALAMAT = "/api/admin/tampilan-sipp";
 
 type Keadaan = "ikut" | "nyala" | "mati" | "selalu" | "tidak";
 const URUTAN: Keadaan[] = ["ikut", "nyala", "mati", "selalu", "tidak"];
-const LABEL: Record<Keadaan, string> = { ikut: "Ikut bawaan", nyala: "Nyala", mati: "Mati", selalu: "Selalu", tidak: "Tidak ada" };
+const LABEL: Record<Keadaan, string> = { ikut: "Ikut usulan", nyala: "Nyala", mati: "Mati", selalu: "Selalu", tidak: "Tidak ada" };
 const PENJELASAN: Record<Keadaan, string> = {
-  ikut: "Belum diatur - memakai bawaan di atasnya (peran, lalu bawaan sistem: tampil).",
+  ikut: "Belum diatur - memakai usulan peran: bagian yang lazim untuk peran itu tampil, lainnya tersembunyi tetapi boleh dinyalakan pegawai.",
   nyala: "Tampil sebagai bawaan; pengguna boleh menyembunyikannya.",
   mati: "Tersembunyi sebagai bawaan; pengguna boleh menyalakannya.",
   selalu: "Selalu tampil; pengguna tidak dapat menyembunyikannya.",
@@ -66,10 +67,16 @@ function aturanDari(k: Keadaan): AturanElemen | null {
   return { mode: "boleh", bawaan: k === "nyala" };
 }
 
-function Sel({ k, onKlik, mati, label }: { k: Keadaan; onKlik: () => void; mati?: boolean; label: string }) {
+function Sel({ k, onKlik, mati, label, ket, kunci, oleh }: { k: Keadaan; onKlik: () => void; mati?: boolean; label: string; ket?: string; kunci?: boolean; oleh?: string }) {
+  const judul = `${label}: ${LABEL[k]}${ket ? ` (${ket})` : ""}. ${PENJELASAN[k]}${kunci ? " Dikunci Super Admin." : mati ? "" : " Klik untuk mengganti."}`;
   return (
-    <button type="button" onClick={onKlik} disabled={mati} title={`${label}: ${LABEL[k]}. ${PENJELASAN[k]} Klik untuk mengganti.`} className="disabled:cursor-not-allowed disabled:opacity-50" data-keadaan={k}>
-      <Badge variant={WARNA[k]} className="whitespace-nowrap">{LABEL[k]}</Badge>
+    <button type="button" onClick={onKlik} disabled={mati} title={judul} className="flex flex-col items-start gap-0.5 disabled:cursor-not-allowed disabled:opacity-70" data-keadaan={k} data-kunci-super={kunci ? "ya" : "tidak"}>
+      <Badge variant={WARNA[k]} className="whitespace-nowrap">
+        {kunci ? <Lock className="mr-1 h-3 w-3" /> : null}
+        {LABEL[k]}
+      </Badge>
+      {ket ? <span className="text-[10px] text-muted-foreground">{ket}</span> : null}
+      {oleh ? <span className="text-[10px] text-muted-foreground">{oleh}</span> : null}
     </button>
   );
 }
@@ -97,15 +104,17 @@ export function TampilanSippAdmin() {
   }, [muat, pegawai]);
 
   const aturanOf = useCallback(
-    (lingkup: LingkupAturan, sasaran: string): AturanTampilanSipp => data?.aturan.find((b) => b.lingkup === lingkup && b.sasaran === sasaran)?.aturan ?? {},
+    (lingkup: LingkupAturan, sasaran: string, tingkat: TingkatAturan): AturanTampilanSipp =>
+      data?.aturan.find((b) => (b.tingkat ?? "admin") === tingkat && b.lingkup === lingkup && b.sasaran === sasaran)?.aturan ?? {},
     [data]
   );
+  const tingkatSaya: TingkatAturan = data?.tingkatAktor ?? "admin";
 
   const simpan = useCallback(
-    async (lingkup: LingkupAturan, sasaran: string, aturan: AturanTampilanSipp, pesan: string) => {
+    async (lingkup: LingkupAturan, sasaran: string, aturan: AturanTampilanSipp, pesan: string, tingkat?: TingkatAturan) => {
       setSibuk(true);
       try {
-        await ambil(ALAMAT, { method: "PUT", body: JSON.stringify({ lingkup, sasaran, aturan }) });
+        await ambil(ALAMAT, { method: "PUT", body: JSON.stringify({ lingkup, sasaran, aturan, ...(tingkat ? { tingkat } : {}) }) });
         await muat(pegawai || undefined);
         setKabar(pesan);
         setGalat("");
@@ -120,7 +129,7 @@ export function TampilanSippAdmin() {
 
   const putar = useCallback(
     (lingkup: LingkupAturan, sasaran: string, labelSasaran: string, kunci: string, nama: string) => {
-      const lama = aturanOf(lingkup, sasaran);
+      const lama = aturanOf(lingkup, sasaran, tingkatSaya);
       const k = keadaanDari(lama[kunci]);
       const berikut = URUTAN[(URUTAN.indexOf(k) + 1) % URUTAN.length];
       const baru: AturanTampilanSipp = { ...lama };
@@ -129,10 +138,43 @@ export function TampilanSippAdmin() {
       else delete baru[kunci];
       void simpan(lingkup, sasaran, baru, `${nama} untuk ${labelSasaran}: ${LABEL[berikut]}. Tersimpan.`);
     },
-    [aturanOf, simpan]
+    [aturanOf, simpan, tingkatSaya]
   );
 
-  const kata = cari.trim().toLowerCase();
+  /** Kembali ke usulan: hapus aturan sasaran itu (Super Admin: lapis kuncinya dan lapis Admin). */
+  const kembaliUsulan = useCallback(
+    async (lingkup: LingkupAturan, sasaran: string, labelSasaran: string) => {
+      if (tingkatSaya === "super") {
+        await simpan(lingkup, sasaran, {}, `${labelSasaran}: kunci Super Admin dihapus.`, "super");
+        await simpan(lingkup, sasaran, {}, `${labelSasaran} kembali ke usulan.`, "admin");
+      } else {
+        await simpan(lingkup, sasaran, {}, `${labelSasaran} kembali ke usulan (bagian yang dikunci Super Admin tetap).`);
+      }
+    },
+    [simpan, tingkatSaya]
+  );
+
+  /** Satu sel: yang tampil = lapis Super Admin bila ada, lalu Admin, lalu usulan. */
+  const sel = (lingkup: LingkupAturan, sasaran: string, labelSasaran: string, kunci: string, nama: string, usulanNyala?: boolean) => {
+    const sup = aturanOf(lingkup, sasaran, "super")[kunci];
+    const adm = aturanOf(lingkup, sasaran, "admin")[kunci];
+    const k = keadaanDari(sup ?? adm);
+    const ket = k === "ikut" ? (lingkup === "peran" ? (usulanNyala ? "usulan: tampil" : "usulan: tersembunyi") : "ikut peran") : undefined;
+    const oleh = sup ? "Super Admin" : adm && tingkatSaya === "super" ? "oleh Admin" : undefined;
+    return (
+      <Sel
+        k={k}
+        kunci={Boolean(sup)}
+        ket={ket}
+        oleh={oleh}
+        mati={sibuk || (Boolean(sup) && tingkatSaya !== "super")}
+        label={`${nama} - ${labelSasaran}`}
+        onKlik={() => putar(lingkup, sasaran, labelSasaran, kunci, nama)}
+      />
+    );
+  };
+
+  const kata =cari.trim().toLowerCase();
   const daftar = useMemo(
     () => (data?.katalog ?? []).filter((el) => (!halaman || el.halaman === halaman) && (!kata || `${el.nama} ${el.jelas}`.toLowerCase().includes(kata))),
     [data, halaman, kata]
@@ -163,7 +205,9 @@ export function TampilanSippAdmin() {
           <CardTitle>Matriks tampilan ALETA di halaman SIPP</CardTitle>
           <CardDescription>
             Tentukan bagian ALETA mana yang tampil di SIPP untuk tiap peran, lalu timpa per pegawai bila perlu. Tiap sel diklik untuk berganti dan langsung tersimpan.
-            Urutan yang berlaku: aturan pegawai, lalu aturan perannya, lalu bawaan sistem (tampil). Pegawai dengan beberapa peran mendapat yang paling longgar.
+            Bawaan = usulan per peran (bagian yang lazim untuk peran itu tampil, lainnya tersembunyi tetapi boleh dinyalakan pegawai). Di atasnya aturan Admin, lalu kunci Super Admin, lalu pilihan pegawai bila tidak terkunci.
+            Aturan pegawai menimpa aturan perannya; pegawai dengan beberapa peran mendapat yang paling longgar.
+            {data.tingkatAktor === "super" ? " Anda Super Admin: klik sel menulis kunci di atas aturan Admin." : " Sel bergembok dikunci Super Admin."}
             Tampilan tidak memberi hak: tombol yang tidak berhak tetap tidak digambar.
           </CardDescription>
         </CardHeader>
@@ -216,28 +260,16 @@ export function TampilanSippAdmin() {
                   <th key={g.id} className="p-2 text-xs font-medium">
                     <div className="flex flex-col items-start gap-1">
                       <span>{g.label}</span>
-                      <span className="flex gap-1">
-                        <button
-                          type="button"
-                          disabled={sibuk || !bolehKolom(g.id)}
-                          title="Pakai usulan: bagian yang lazim untuk peran ini nyala, lainnya mati (pengguna tetap boleh menyalakan)"
-                          onClick={() => void simpan("peran", g.id, data.usulan[g.id] ?? {}, `Usulan dipakai untuk ${g.label}.`)}
-                          className="rounded p-0.5 text-primary hover:bg-muted disabled:opacity-40"
-                          aria-label={`Pakai usulan untuk ${g.label}`}
-                        >
-                          <Sparkles className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          disabled={sibuk || !bolehKolom(g.id) || !Object.keys(aturanOf("peran", g.id)).length}
-                          title="Hapus aturan peran ini (kembali ke bawaan sistem)"
-                          onClick={() => void simpan("peran", g.id, {}, `Aturan ${g.label} dihapus.`)}
-                          className="rounded p-0.5 text-rose-600 hover:bg-muted disabled:opacity-40"
-                          aria-label={`Hapus aturan ${g.label}`}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </span>
+                      <button
+                        type="button"
+                        disabled={sibuk || !bolehKolom(g.id) || (!Object.keys(aturanOf("peran", g.id, "admin")).length && !Object.keys(aturanOf("peran", g.id, tingkatSaya)).length)}
+                        title="Kembali ke usulan: hapus aturan peran ini (bagian yang lazim tampil, lainnya tersembunyi tetapi boleh dinyalakan pegawai)"
+                        onClick={() => void kembaliUsulan("peran", g.id, g.label)}
+                        className="flex items-center gap-0.5 rounded px-0.5 text-[10px] text-primary hover:bg-muted disabled:opacity-40"
+                        aria-label={`Kembali ke usulan untuk ${g.label}`}
+                      >
+                        <RotateCcw className="h-3 w-3" /> Kembali ke usulan
+                      </button>
                     </div>
                   </th>
                 ))}
@@ -254,7 +286,7 @@ export function TampilanSippAdmin() {
                   {pegawaiTerpilih ? (
                     <>
                       <td className="p-2">
-                        <Sel k={keadaanDari(aturanOf("pengguna", pegawaiTerpilih.id)[el.kunci])} mati={sibuk} label={`${el.nama} - akun ${pegawaiTerpilih.nama}`} onKlik={() => putar("pengguna", pegawaiTerpilih.id, pegawaiTerpilih.nama, el.kunci, el.nama)} />
+                        {sel("pengguna", pegawaiTerpilih.id, pegawaiTerpilih.nama, el.kunci, el.nama)}
                       </td>
                       <td className="p-2 text-xs">
                         {(() => {
@@ -267,7 +299,11 @@ export function TampilanSippAdmin() {
                   ) : null}
                   {data.golongan.map((g) => (
                     <td key={g.id} className={`p-2 ${el.lazim.includes(g.id) ? "bg-primary/5" : ""}`}>
-                      <Sel k={keadaanDari(aturanOf("peran", g.id)[el.kunci])} mati={sibuk || !bolehKolom(g.id)} label={`${el.nama} - ${g.label}`} onKlik={() => putar("peran", g.id, g.label, el.kunci, el.nama)} />
+                      {bolehKolom(g.id) ? (
+                        sel("peran", g.id, g.label, el.kunci, el.nama, data.usulan[g.id]?.[el.kunci]?.bawaan)
+                      ) : (
+                        <Sel k="ikut" mati ket="hanya Super Admin" label={`${el.nama} - ${g.label}`} onKlik={() => undefined} />
+                      )}
                     </td>
                   ))}
                 </tr>
@@ -276,7 +312,7 @@ export function TampilanSippAdmin() {
           </table>
         </CardContent>
       </Card>
-      <p className="text-xs text-muted-foreground">Sel berlatar biru muda = peran yang lazim membutuhkan bagian itu (dipakai tombol Pakai usulan).</p>
+      <p className="text-xs text-muted-foreground">Sel berlatar biru muda = peran yang lazim membutuhkan bagian itu (usulan: tampil). "Kembali ke usulan" di kepala kolom menghapus aturan peran itu; Super Admin juga menghapus kuncinya.</p>
     </div>
   );
 }

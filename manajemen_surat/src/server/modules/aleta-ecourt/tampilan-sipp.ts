@@ -7,6 +7,7 @@ import {
   bersihkanAturan,
   bersihkanPilihan,
   golonganSah,
+  kunciSuperAdmin,
   pecahkanTampilanSipp,
   saringPilihanBaru,
   sembunyiUntukEkstensi,
@@ -16,6 +17,7 @@ import {
   type BarisAturanTampilanSipp,
   type ElemenBerlaku,
   type LingkupAturan,
+  type TingkatAturan,
 } from "@/lib/tampilan-sipp";
 import type { UserPersona } from "@/lib/types";
 import { type AletaDatabase, withTransaction } from "@/server/db/client";
@@ -37,13 +39,15 @@ import { nextPrefixedId } from "@/server/shared/ids";
  *
  * Kewenangan: aturan per peran/pengguna dibaca dan diubah Super Admin dan
  * Admin (aksi "tampilan-sipp.atur"); Admin tidak dapat mengubah aturan untuk
- * golongan Super Admin atau akun Super Admin. Tampilan & pilihan milik
+ * golongan Super Admin atau akun Super Admin. Keputusan 28 Okt 2026: Super
+ * Admin menulis lapis "super" di atas aturan Admin (intervensi/kunci); elemen
+ * yang dikunci Super Admin untuk satu sasaran tidak dapat diubah Admin. Tampilan & pilihan milik
  * pemanggil sendiri dibaca/diubah siapa saja yang masuk.
  */
 
 const SETELAN = "tampilan.sipp" as const;
 
-type Baris = { lingkup: string; sasaran: string; aturan: string; catatan: string | null; diubah_oleh: string; diubah_pada: string };
+type Baris = { tingkat: string; lingkup: string; sasaran: string; aturan: string; catatan: string | null; diubah_oleh: string; diubah_pada: string };
 
 function uraiJson(teks: string | null | undefined): unknown {
   try {
@@ -55,12 +59,14 @@ function uraiJson(teks: string | null | undefined): unknown {
 
 export async function bacaAturanTampilanSipp(db: AletaDatabase): Promise<BarisAturanTampilanSipp[]> {
   const baris = await db
-    .prepare("SELECT lingkup, sasaran, aturan, catatan, diubah_oleh, diubah_pada FROM aleta_tampilan_sipp_aturan ORDER BY lingkup ASC, sasaran ASC")
+    .prepare("SELECT tingkat, lingkup, sasaran, aturan, catatan, diubah_oleh, diubah_pada FROM aleta_tampilan_sipp_aturan ORDER BY tingkat ASC, lingkup ASC, sasaran ASC")
     .all<Baris>();
   const hasil: BarisAturanTampilanSipp[] = [];
   for (const b of baris) {
     if (b.lingkup !== "peran" && b.lingkup !== "pengguna") continue;
+    if (b.tingkat !== "admin" && b.tingkat !== "super") continue;
     hasil.push({
+      tingkat: b.tingkat,
       lingkup: b.lingkup,
       sasaran: String(b.sasaran ?? ""),
       aturan: bersihkanAturan(uraiJson(b.aturan)),
@@ -159,6 +165,8 @@ export async function halamanAdminTampilanSipp(db: AletaDatabase, actorUserId: s
     pegawai: aktif.map((p) => ({ id: p.id, nama: p.name || p.username, golongan: golonganPengguna(p).map((g) => LABEL_GOLONGAN[g]) })),
     usulan: Object.fromEntries(GOLONGAN_PERAN.map((g) => [g, usulanAturanPeran(g)])),
     bolehUbahSuperAdmin: adalahSuperAdmin(actor),
+    /** Lapis yang ditulis pemanggil: Super Admin = "super" (menimpa & mengunci aturan Admin), Admin = "admin". */
+    tingkatAktor: adalahSuperAdmin(actor) ? ("super" as const) : ("admin" as const),
     pratinjau,
   };
 }
@@ -179,11 +187,15 @@ async function periksaSasaran(db: AletaDatabase, actor: UserPersona, lingkup: Li
   return p.name || p.username;
 }
 
-/** PUT {lingkup, sasaran, aturan, catatan?} - menimpa seluruh aturan sasaran itu. Aturan kosong = hapus. */
+/**
+ * PUT {lingkup, sasaran, aturan, catatan?, tingkat?} - menimpa aturan sasaran itu pada satu lapis (aturan kosong = hapus).
+ * Super Admin menulis lapis "super" (bawaan) atau "admin" (tingkat: "admin", mis. membersihkan aturan Admin);
+ * Admin hanya lapis "admin" dan tidak dapat mengubah elemen yang dikunci Super Admin untuk sasaran itu (403).
+ */
 export async function simpanAturanTampilanSipp(
   db: AletaDatabase,
   actorUserId: string | null | undefined,
-  masukan: { lingkup?: unknown; sasaran?: unknown; aturan?: unknown; catatan?: unknown }
+  masukan: { lingkup?: unknown; sasaran?: unknown; aturan?: unknown; catatan?: unknown; tingkat?: unknown }
 ) {
   const actor = await pastikanPengatur(db, actorUserId);
   if (!lingkupSah(masukan.lingkup)) throw new ApiError(400, "Pilih peran atau pegawai yang diatur.");
@@ -191,29 +203,38 @@ export async function simpanAturanTampilanSipp(
   const sasaran = String(masukan.sasaran ?? "").trim();
   if (!sasaran) throw new ApiError(400, "Pilih peran atau pegawai yang diatur.");
   await periksaSasaran(db, actor, lingkup, sasaran);
+  const superAdmin = adalahSuperAdmin(actor);
+  if (masukan.tingkat !== undefined && masukan.tingkat !== "admin" && masukan.tingkat !== "super") throw new ApiError(400, "Lapis aturan tidak dikenal.");
+  if (masukan.tingkat === "super" && !superAdmin) throw new ApiError(403, "Hanya Super Admin yang dapat mengunci aturan di atas aturan Admin.");
+  const tingkat: TingkatAturan = superAdmin ? ((masukan.tingkat as TingkatAturan | undefined) ?? "super") : "admin";
   const aturan: AturanTampilanSipp = bersihkanAturan(masukan.aturan);
   const catatan = String(masukan.catatan ?? "").trim().slice(0, 400);
 
   await withTransaction(db, async (tx) => {
-    const lama = (await bacaAturanTampilanSipp(tx)).find((b) => b.lingkup === lingkup && b.sasaran === sasaran) ?? null;
+    const semua = await bacaAturanTampilanSipp(tx);
+    const lama = semua.find((b) => b.tingkat === tingkat && b.lingkup === lingkup && b.sasaran === sasaran) ?? null;
+    if (tingkat === "admin" && !superAdmin) {
+      const dikunci = kunciSuperAdmin(semua, lingkup, sasaran).filter((k) => JSON.stringify(aturan[k] ?? null) !== JSON.stringify(lama?.aturan[k] ?? null));
+      if (dikunci.length) throw new ApiError(403, "Bagian ini dikunci Super Admin dan tidak dapat diubah Admin.", { dikunci });
+    }
     if (!Object.keys(aturan).length) {
-      await tx.prepare("DELETE FROM aleta_tampilan_sipp_aturan WHERE lingkup = ? AND sasaran = ?").run(lingkup, sasaran);
+      await tx.prepare("DELETE FROM aleta_tampilan_sipp_aturan WHERE tingkat = ? AND lingkup = ? AND sasaran = ?").run(tingkat, lingkup, sasaran);
     } else {
       await tx
         .prepare(
-          "INSERT INTO aleta_tampilan_sipp_aturan (lingkup, sasaran, aturan, catatan, diubah_oleh, diubah_pada) VALUES (?, ?, ?, ?, ?, ?) " +
-            "ON CONFLICT (lingkup, sasaran) DO UPDATE SET aturan = excluded.aturan, catatan = excluded.catatan, " +
+          "INSERT INTO aleta_tampilan_sipp_aturan (tingkat, lingkup, sasaran, aturan, catatan, diubah_oleh, diubah_pada) VALUES (?, ?, ?, ?, ?, ?, ?) " +
+            "ON CONFLICT (tingkat, lingkup, sasaran) DO UPDATE SET aturan = excluded.aturan, catatan = excluded.catatan, " +
             "diubah_oleh = excluded.diubah_oleh, diubah_pada = excluded.diubah_pada"
         )
-        .run(lingkup, sasaran, JSON.stringify(aturan), catatan, actor.id, new Date().toISOString());
+        .run(tingkat, lingkup, sasaran, JSON.stringify(aturan), catatan, actor.id, new Date().toISOString());
     }
     await appendAuditLog(tx, {
       id: await nextPrefixedId(tx, "audit_logs", "adt"),
       actorUserId: actor.id,
       action: Object.keys(aturan).length ? "UPDATE_SIPP_DISPLAY_RULE" : "DELETE_SIPP_DISPLAY_RULE",
       entityType: "aleta_tampilan_sipp_aturan",
-      entityId: `${lingkup}:${sasaran}`,
-      payload: { lingkup, sasaran, aturan, catatan, sebelum: lama ? lama.aturan : null },
+      entityId: `${tingkat}:${lingkup}:${sasaran}`,
+      payload: { tingkat, lingkup, sasaran, aturan, catatan, oleh: actor.id, sebelum: lama ? lama.aturan : null },
     });
   });
   return halamanAdminTampilanSipp(db, actorUserId);

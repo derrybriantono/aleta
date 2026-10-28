@@ -160,7 +160,8 @@ describe("28 Okt - Tampilan ALETA di halaman (bawaan tersembunyi)", () => {
       expect(p.d.querySelector("#kelompok-tampil-halaman")!.textContent).toContain("Alt+Shift+A");
       sipp.click();
       await sampai(() => (p.simpanan.tampilAletaHalaman as { sipp?: boolean } | undefined)?.sipp === true, "tampilAletaHalaman.sipp tertulis");
-      expect(p.simpanan.tampilAletaHalaman).toEqual({ sipp: true, aleta: false });
+      // 28 Okt 2026: bercap waktu - yang lebih baru antara peramban dan akun ("tampil.halaman") yang berlaku.
+      expect(p.simpanan.tampilAletaHalaman).toMatchObject({ sipp: true, aleta: false });
       expect((p.d.querySelector(".tb-tampil-tab-tombol") as HTMLButtonElement).hidden).toBe(true);
     });
   }

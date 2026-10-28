@@ -3745,6 +3745,54 @@ const SITUS_TAMPIL_HALAMAN = [
   ["aleta", "Tampilkan ALETA di portal ALETA"],
 ];
 
+const SETELAN_TAMPIL_HALAMAN = "tampil.halaman";
+
+/** Salinan peramban {sipp, aleta, diubahPada} atau setelan akun di singgahan tampilanServer - yang lebih baru. */
+function tampilHalamanBerlaku(lokal, tampilanServer) {
+  const l = lokal && typeof lokal === "object" ? lokal : {};
+  const sv = tampilanServer && tampilanServer.setelan && typeof tampilanServer.setelan === "object" ? tampilanServer.setelan[SETELAN_TAMPIL_HALAMAN] : null;
+  const waktu = (x) => {
+    const t = Date.parse(String(x || ""));
+    return Number.isFinite(t) ? t : 0;
+  };
+  if (sv && sv.nilai && typeof sv.nilai === "object" && waktu(sv.diubahPada) >= waktu(l.diubahPada)) return { sipp: sv.nilai.sipp === true, aleta: sv.nilai.aleta === true };
+  return { sipp: l.sipp === true, aleta: l.aleta === true };
+}
+
+/** Saklar situs ke akun (PUT /ekstensi/setelan "tampil.halaman"); singgahan tampilanServer diperbarui di tempat. */
+async function simpanTampilHalamanAkun(nilai) {
+  if (!penyimpanan) return "";
+  let s = {};
+  try {
+    s = await penyimpanan.get(["modeLatihan", "modeKering", "asalPortal", "tampilanServer"]);
+  } catch {
+    return "";
+  }
+  if (s.modeLatihan === true || s.modeKering === true) return "Mode latihan/kering: tersimpan di peramban ini saja.";
+  const asal = await asalPortalHidup(s.asalPortal);
+  if (!asal) return "Akun menyusul sesudah portal ALETA dibuka.";
+  try {
+    const r = await fetch(`${asal}/api/aleta-ecourt/ekstensi/setelan`, {
+      method: "PUT",
+      credentials: "include",
+      cache: "no-store",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ kunci: SETELAN_TAMPIL_HALAMAN, nilai }),
+    });
+    if (!r.ok) return `Akun belum (server menjawab ${r.status}).`;
+    const isi = await r.json().catch(() => ({}));
+    const data = (isi && isi.data) || isi || {};
+    const sv = s.tampilanServer && typeof s.tampilanServer === "object" ? s.tampilanServer : null;
+    if (sv) {
+      const baru = { ...sv, setelan: { ...(sv.setelan || {}), [SETELAN_TAMPIL_HALAMAN]: { nilai: data.nilai || nilai, diubahPada: String(data.diubahPada || new Date().toISOString()) } } };
+      await penyimpanan.set({ tampilanServer: baru });
+    }
+    return "Tersimpan juga di akun Anda.";
+  } catch {
+    return "Akun belum (server tidak terjangkau).";
+  }
+}
+
 /** Kirim ke tab aktif: tampil (true/false) di tab ini, atau tanpa nilai untuk menanyakan keadaannya. */
 async function kirimTampilTab(tampil) {
   const tabs = typeof chrome !== "undefined" && chrome.tabs && chrome.tabs.query && chrome.tabs.sendMessage ? chrome.tabs : null;
@@ -3764,7 +3812,7 @@ function komponenTampilHalaman() {
   const sek = buatBagian("tampil-halaman", "Tampilan ALETA di halaman");
   sek.classList.add("tb-tampil-halaman");
   sek.appendChild(
-    buat("p", "saklar-ket", "Bawaan tersembunyi di SIPP dan portal ALETA; semua fitur tetap berjalan. Pintasan di halaman: Alt+Shift+A.")
+    buat("p", "saklar-ket", "Bawaan tersembunyi di SIPP dan portal ALETA; semua fitur tetap berjalan. Pintasan di halaman: Alt+Shift+A. Tersimpan juga di akun Anda.")
   );
   const kotak = {};
   for (const [situs, nama] of SITUS_TAMPIL_HALAMAN) {
@@ -3819,12 +3867,14 @@ function komponenTampilHalaman() {
     kabar.textContent = jawab ? (jawab.tersembunyi ? "Disembunyikan di tab ini." : "Tampil di tab ini sampai tab ditutup.") : "Tab ini tidak memuat ALETA.";
   });
   void kirimTampilTab().then(gambarTab);
+  // 28 Okt 2026: saklar ini juga tersimpan di akun (setelan "tampil.halaman"); yang lebih baru antara salinan
+  // peramban dan akun yang berlaku (sama dengan alatTampilHalamanBerlaku di panel-alat.js).
   const muat = () =>
     penyimpanan
       ? penyimpanan
-          .get([KUNCI_TAMPIL_HALAMAN])
+          .get([KUNCI_TAMPIL_HALAMAN, "tampilanServer"])
           .then((s) => {
-            const n = s && s[KUNCI_TAMPIL_HALAMAN] && typeof s[KUNCI_TAMPIL_HALAMAN] === "object" ? s[KUNCI_TAMPIL_HALAMAN] : {};
+            const n = tampilHalamanBerlaku(s && s[KUNCI_TAMPIL_HALAMAN], s && s.tampilanServer);
             for (const [situs] of SITUS_TAMPIL_HALAMAN) kotak[situs].checked = n[situs] === true;
           })
           .catch(() => undefined)
@@ -3834,8 +3884,10 @@ function komponenTampilHalaman() {
       const nilai = {};
       for (const [s] of SITUS_TAMPIL_HALAMAN) nilai[s] = kotak[s].checked;
       try {
-        if (penyimpanan) await penyimpanan.set({ [KUNCI_TAMPIL_HALAMAN]: nilai });
+        if (penyimpanan) await penyimpanan.set({ [KUNCI_TAMPIL_HALAMAN]: { ...nilai, diubahPada: new Date().toISOString() } });
         kabar.textContent = kotak[situs].checked ? "Tampil di semua tab." : "Tersembunyi bawaan; tampilkan lewat Alt+Shift+A bila perlu.";
+        const akun = await simpanTampilHalamanAkun(nilai);
+        if (akun) kabar.textContent += ` ${akun}`;
       } catch {
         kabar.textContent = "Belum tersimpan, coba lagi.";
       }
