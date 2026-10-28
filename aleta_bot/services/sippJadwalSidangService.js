@@ -1130,16 +1130,29 @@ async function ikrarBanyakPerkara(daftarPerkaraId = []) {
   const dipakai = id.slice(0, 500);
   const isian = dipakai.map(() => "?").join(", ");
 
+  // 28 Okt 2026 (tiga status penetapan ikrar): status 2 Pemohon Tidak Hadir / 3 Rukun Kembali juga
+  // menulis tgl_ikrar_talak = tanggal sidang, padahal ikrar TIDAK diucapkan - tidak dihitung "ikrar
+  // tercatat". Kolom status dibaca bila ada; basis tanpa kolom itu jatuh ke bentuk lama.
   const baris = await runQuery(
     `SELECT it.perkara_id AS perkaraId,
-            it.${kolom.ikrarTanggal} AS tanggalIkrar
+            it.${kolom.ikrarTanggal} AS tanggalIkrar,
+            it.status_penetapan_ikrar_talak_id AS statusIkrar
        FROM perkara_ikrar_talak it
       WHERE it.perkara_id IN (${isian})`,
     dipakai
+  ).catch(() =>
+    runQuery(
+      `SELECT it.perkara_id AS perkaraId,
+              it.${kolom.ikrarTanggal} AS tanggalIkrar
+         FROM perkara_ikrar_talak it
+        WHERE it.perkara_id IN (${isian})`,
+      dipakai
+    )
   );
 
   const hasil = {};
   for (const b of Array.isArray(baris) ? baris : []) {
+    if (["2", "3"].includes(String(b.statusIkrar ?? "").trim())) continue;
     const tanggal = isoTanggal(b.tanggalIkrar);
     // perkara_id kunci utama tabel itu - satu baris per perkara. Bila suatu
     // pemasangan berbeda, yang pertama bertanggal dipakai.

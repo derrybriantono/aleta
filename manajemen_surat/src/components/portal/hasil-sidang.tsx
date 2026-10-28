@@ -43,7 +43,10 @@ import { sebutanPihakPerkara } from "@/lib/sebutan-pihak";
 import {
   bawaanTundaIkrar,
   peringatanBatasIkrar,
+  pilihanStatusIkrar,
+  STATUS_IKRAR,
   type JenisTundaIkrar,
+  type StatusIkrar,
 } from "@/lib/ikrar-talak";
 import {
   antrianDariRingkas,
@@ -163,10 +166,29 @@ type Hasil = {
   selesai?: LangkahRencana[];
   /** true: putus hanya menulis perkara_jadwal_sidang (butir 12). */
   hanyaJadwal?: boolean;
-  /** Pengisian form ikrar talak SIPP yang menyertai putus ikrar (18 Okt 2026). */
-  formIkrar?: { ok: boolean; alasan?: string; atasNama?: { username: string; namaLengkap: string }; tanggalIkrar?: string };
-  /** e-Doc penetapan ikrar dari blangko Derry sesudah form ikrar terisi (18 Okt 2026). */
-  edocIkrar?: { ok: boolean; kering?: boolean; nama?: string; pesan?: string; alasan?: string };
+  /** Pengisian form ikrar talak SIPP yang menyertai putus ikrar (18 Okt 2026; status 28 Okt). */
+  formIkrar?: {
+    ok: boolean;
+    alasan?: string;
+    atasNama?: { username: string; namaLengkap: string };
+    tanggalIkrar?: string;
+    sudahTerisi?: boolean;
+    namaStatus?: string;
+  };
+  /** e-Doc penetapan ikrar dari blangko Derry sesudah form ikrar terisi (18 Okt 2026; PDF ber-TTD 28 Okt). */
+  edocIkrar?: {
+    ok: boolean;
+    kering?: boolean;
+    nama?: string;
+    pesan?: string;
+    alasan?: string;
+    bentuk?: string;
+    sudahAda?: boolean;
+    tandaTangan?: { namaPejabat: string; cap: boolean } | null;
+  };
+  /** Putus ikrar tiga status (28 Okt 2026). */
+  statusIkrar?: number;
+  jadwalSudahTercatat?: boolean;
 };
 
 type StatusPutusan = { id: number; nama: string; dipakai: number };
@@ -1231,6 +1253,11 @@ function PilihAtauKetik({
   );
 }
 
+/** Nama tampil akun SIPP pada pratinjau/laporan putus ikrar: nama lengkap, cadangannya nama akun. */
+function namaTampilAkun(a: { namaLengkap?: string; username?: string } | null | undefined): string {
+  return String((a && (a.namaLengkap || a.username)) || "");
+}
+
 export function CatatHasilRingkas({
   jadwalId,
   nomorPerkara,
@@ -1315,6 +1342,11 @@ export function CatatHasilRingkas({
   // hadir) dan konfirmasi "ikrar dilaksanakan" menggantikan blangko putus biasa.
   const [ikrarTunda, setIkrarTunda] = useState<JenisTundaIkrar | null>(null);
   const [ikrarDilaksanakan, setIkrarDilaksanakan] = useState(false);
+  // 28 Okt 2026 (P1/P7): tiga status seperti borang SIPP; status 2/3 hanya bagi peran yang boleh
+  // (dari server), penetapan ikrar tercatat atas nama ketua majelis ikrar (pratinjau).
+  const [statusIkrar, setStatusIkrar] = useState<StatusIkrar>(1);
+  const [bolehStatusBerat, setBolehStatusBerat] = useState(false);
+  const [atasNamaPenetapan, setAtasNamaPenetapan] = useState<AtasNamaSipp>(null);
 
   useEffect(() => {
     void (async () => {
@@ -1331,6 +1363,8 @@ export function CatatHasilRingkas({
           ruangan?: Ruangan[];
           antrian?: AntrianSidangRingkas;
           atasNama?: AtasNamaSipp;
+          atasNamaPenetapan?: AtasNamaSipp;
+          bolehStatusIkrarBerat?: boolean;
           kehadiranRinci?: KehadiranOrang[] | null;
         }>(balasan);
         if (!isi.ok || !isi.keadaan) {
@@ -1341,6 +1375,8 @@ export function CatatHasilRingkas({
         setAntrian(isi.antrian ?? null);
         setKehadiranRinci(isi.kehadiranRinci ?? null);
         setAtasNama(isi.atasNama ?? null);
+        setAtasNamaPenetapan(isi.atasNamaPenetapan ?? null);
+        setBolehStatusBerat(isi.bolehStatusIkrarBerat === true);
         const daftar = Array.isArray(isi.ruangan) ? isi.ruangan : [];
         setDaftarRuangan(daftar);
         // Ruang bawaan mengikuti antrian sidang (ruang tempat perkaranya disidangkan).
@@ -1462,6 +1498,16 @@ export function CatatHasilRingkas({
 
   const peringatanIkrar = modeIkrarTunda && keadaan ? peringatanBatasIkrar(tanggalBerikut, keadaan) : "";
 
+  // Putus sidang ikrar: pilihan status menurut peran (P7) dan syarat P2; pilihan yang tidak lagi
+  // tersedia (kehadiran diganti) jatuh ke bawaan Diikrarkan.
+  const pilihanIkrar = pilihanStatusIkrar({
+    bolehStatusBerat,
+    dihadiriOleh: dihadiri,
+    tanggalSidang: keadaan?.tanggalSidang,
+    tanggalPenetapanSidangIkrar: keadaan?.tanggalPenetapanSidangIkrar,
+  });
+  const statusDipakai: StatusIkrar = pilihanIkrar.status.includes(statusIkrar) ? statusIkrar : 1;
+
   useEffect(() => {
     if (!keadaan || modeIkrarTunda) return;
     const dasar = usulan?.dasar ?? dasarTanggalKosong(String(keadaan.tanggalSidang || "").slice(0, 10));
@@ -1501,7 +1547,13 @@ export function CatatHasilRingkas({
               jadwalId: keadaan.jadwalId,
               perkaraId: keadaan.perkaraId,
               ...(modeIkrarPutus
-                ? { ikrarDilaksanakan: true, tanggalPutus: String(keadaan.tanggalSidang || "").slice(0, 10) }
+                ? {
+                    // 28 Okt 2026: status 1 tetap "ikrarDilaksanakan"; 2/3 dikonfirmasi lewat konfirmasiStatus.
+                    ikrarDilaksanakan: statusDipakai === 1,
+                    statusIkrar: statusDipakai,
+                    konfirmasiStatus: statusDipakai !== 1,
+                    tanggalPutus: String(keadaan.tanggalSidang || "").slice(0, 10),
+                  }
                 : { statusPutusanId: Number(statusId), tanggalPutus, verstek: verstek ? "Y" : "T" }),
               jamSekarang: keadaan.jamSidang,
               dihadiriOleh: dihadiri,
@@ -1534,7 +1586,8 @@ export function CatatHasilRingkas({
             putusan: isi.putusan
               ? { tanggalPutus: isi.putusan.tanggalPutus, status: isi.putusan.status, verstek: isi.putusan.verstek }
               : null,
-            ikrarDilaksanakan: modeIkrarPutus,
+            ikrarDilaksanakan: modeIkrarPutus && statusDipakai === 1,
+            hasilSidangIkrar: modeIkrarPutus && statusDipakai !== 1 ? STATUS_IKRAR[statusDipakai].hasil : undefined,
             tanggalPutus: modeIkrarPutus ? String(keadaan.tanggalSidang || "").slice(0, 10) : tanggalPutus,
           });
         }
@@ -1561,6 +1614,7 @@ export function CatatHasilRingkas({
     ruangPilih,
     onSelesai,
     modeIkrarPutus,
+    statusDipakai,
   ]);
 
   const lengkap =
@@ -1612,6 +1666,35 @@ export function CatatHasilRingkas({
     }
     if (hasil?.antrian && !hasil.antrian.ok) catatanSelesai.push("Antrian sidang belum ikut ditandai selesai.");
   }
+  // Laporan tiga baris putus ikrar (28 Okt 2026): keterangan sidang, penetapan ikrar, e-Doc.
+  const laporanIkrar: Array<{ ok: boolean; teks: string }> = [];
+  if (sudahTertulis && modeIkrarPutus && hasil && !hasil.diantrekan) {
+    const pp = namaTampilAkun(hasil.atasNama);
+    laporanIkrar.push(
+      hasil.jadwalSudahTercatat
+        ? { ok: true, teks: "Keterangan sidang sudah tercatat sebelumnya - tidak ditulis ulang." }
+        : { ok: true, teks: `Keterangan sidang tercatat${pp ? ` atas nama ${pp}` : ""}.` }
+    );
+    const f = hasil.formIkrar;
+    if (f) {
+      const ketua = namaTampilAkun(f.atasNama);
+      laporanIkrar.push(
+        f.ok
+          ? { ok: true, teks: f.sudahTerisi ? "Penetapan ikrar sudah terisi di SIPP - tidak ditulis ulang." : `Penetapan ikrar (${f.namaStatus || STATUS_IKRAR[statusDipakai].nama}) tercatat${ketua ? ` atas nama ${ketua}` : ""}.` }
+          : { ok: false, teks: "Penetapan ikrar belum terisi." }
+      );
+    }
+    const e = hasil.edocIkrar;
+    if (e && !e.kering) {
+      laporanIkrar.push(
+        e.ok
+          ? { ok: true, teks: `e-Doc penetapan ikrar terunggah${e.nama ? `: ${e.nama}` : ""}${e.bentuk === "pdf" ? " (PDF bertanda tangan" + (e.tandaTangan?.cap ? " + cap)" : ")") : " (RTF)"}.` }
+          : e.sudahAda
+            ? { ok: true, teks: "e-Doc penetapan ikrar sudah ada di SIPP - tidak diganti." }
+            : { ok: false, teks: "e-Doc penetapan ikrar belum terunggah." }
+      );
+    }
+  }
   const catatanLain = sudahTertulis ? (hasil?.andaian ?? []) : [];
   const perluDibaca = catatanSelesai.length > 0 || catatanLain.length > 0 || Boolean(hasil?.diantrekan);
 
@@ -1651,7 +1734,9 @@ export function CatatHasilRingkas({
       : jalan === "tunda"
         ? `Sidang ${nomorPerkara} ditunda ke ${sebutTanggalPanjang(tglBerikut)} pukul ${jamBerikutTulis}.`
         : modeIkrarPutus
-          ? `Ikrar talak ${nomorPerkara} tercatat dilaksanakan.`
+          ? statusDipakai === 1
+            ? `Ikrar talak ${nomorPerkara} tercatat dilaksanakan.`
+            : `Sidang ikrar ${nomorPerkara} tercatat: ${STATUS_IKRAR[statusDipakai].nama}.`
           : `Putusan ${nomorPerkara} tercatat${namaStatus ? `: ${namaStatus}${hasil?.putusan?.verstek || verstek ? " (verstek)" : ""}` : ""}.`;
     return (
       <div
@@ -1665,6 +1750,23 @@ export function CatatHasilRingkas({
           <p className="font-semibold" data-konfirmasi-simpan="">
             {kalimat}
           </p>
+          {laporanIkrar.length ? (
+            <ul className="mt-1 space-y-0.5 text-xs" data-laporan-ikrar="">
+              {laporanIkrar.map((l) => (
+                <li
+                  key={l.teks}
+                  className={cn("flex items-start gap-1", l.ok ? "text-emerald-800 dark:text-emerald-200" : "text-red-700 dark:text-red-300")}
+                >
+                  {l.ok ? (
+                    <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+                  ) : (
+                    <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+                  )}
+                  <span>{l.teks}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
           {catatanSelesai.map((c) => (
             <p key={c} className="mt-1 flex items-start gap-1 text-xs text-amber-800 dark:text-amber-200">
               <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
@@ -1811,6 +1913,32 @@ export function CatatHasilRingkas({
         </div>
       ) : modeIkrarPutus ? (
         <div className="space-y-1.5" data-putus-ikrar="">
+          {/* 28 Okt 2026 (P1): pilihan hasil sidang seperti borang SIPP; status 2/3 hanya bagi peran yang boleh (P7). */}
+          {pilihanIkrar.status.length > 1 ? (
+            <div className="space-y-1" role="radiogroup" aria-label="Hasil sidang ikrar" data-status-ikrar="">
+              <span className="block text-xs font-medium text-muted-foreground">Hasil sidang ikrar</span>
+              <div className="flex flex-wrap gap-2">
+                {pilihanIkrar.status.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    role="radio"
+                    aria-checked={statusDipakai === s}
+                    onClick={() => {
+                      setStatusIkrar(s);
+                      setIkrarDilaksanakan(false);
+                    }}
+                    className={cn(
+                      "rounded-md border px-2.5 py-1 text-xs",
+                      statusDipakai === s ? "border-primary bg-primary/10 font-semibold text-primary" : "bg-card hover:bg-muted"
+                    )}
+                  >
+                    {STATUS_IKRAR[s].label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
           <label className="flex items-start gap-2 text-sm">
             <input
               type="checkbox"
@@ -1819,10 +1947,41 @@ export function CatatHasilRingkas({
               className="mt-0.5 h-4 w-4"
             />
             <span>
-              Ikrar talak sudah dilaksanakan pada sidang{" "}
+              {statusDipakai === 1
+                ? "Ikrar talak sudah dilaksanakan pada sidang "
+                : statusDipakai === 2
+                  ? "Pemohon tidak hadir pada sidang ikrar terakhir dalam batas 6 bulan, kekuatan putusan gugur - sidang "
+                  : "Pemohon dan Termohon rukun kembali, Pemohon tidak mengucapkan ikrar talak - sidang "}
               <strong>{String(keadaan.tanggalSidang || "").slice(0, 10)}</strong>
             </span>
           </label>
+          {/* Pratinjau "atas nama" (keputusan 18 Okt 21.20: tanpa istilah teknis). */}
+          <ul className="space-y-0.5 text-xs text-muted-foreground" data-pratinjau-ikrar="">
+            {atasNama?.ok ? <li>Keterangan sidang tercatat atas nama {namaTampilAkun(atasNama)} (panitera sidang ikrar).</li> : null}
+            {atasNamaPenetapan ? (
+              atasNamaPenetapan.ok ? (
+                <li>Penetapan ikrar ({STATUS_IKRAR[statusDipakai].nama}) tercatat atas nama {namaTampilAkun(atasNamaPenetapan)} (ketua majelis ikrar).</li>
+              ) : (
+                <li className="text-amber-700 dark:text-amber-300">{atasNamaPenetapan.pesan || "Ketua majelis ikrar belum pasti - penetapan ikrar belum dapat diisi."}</li>
+              )
+            ) : null}
+            <li>
+              Tanggal penetapan = tanggal sidang ini{pilihanIkrar.batas ? `; batas 6 bulan ikrar ${pilihanIkrar.batas}` : "; hari sidang ikrar belum ditetapkan"}.
+            </li>
+            <li>
+              e-Doc:{" "}
+              {statusDipakai === 1
+                ? dihadiri === 1
+                  ? "[90a] penetapan ikrar talak (keduanya hadir)"
+                  : "[90] penetapan ikrar talak (Termohon tidak hadir)"
+                : statusDipakai === 2
+                  ? "[91] penetapan kekuatan putusan gugur"
+                  : dihadiri === 1
+                    ? "[92a] penetapan rukun kembali (keduanya hadir)"
+                    : "[92] penetapan rukun kembali (Termohon tidak hadir)"}
+              , PDF bertanda tangan + cap bila tanda tangan sudah disahkan (selain itu RTF).
+            </li>
+          </ul>
         </div>
       ) : (
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -2031,7 +2190,9 @@ export function CatatHasilRingkas({
                 ? "Tanggal melewati batas 6 bulan ikrar - ubah tanggal berikutnya."
                 : "Alasan, agenda, tanggal, dan jam harus terisi."
               : modeIkrarPutus
-                ? "Centang bahwa ikrar sudah dilaksanakan."
+                ? statusDipakai === 1
+                  ? "Centang bahwa ikrar sudah dilaksanakan."
+                  : "Centang konfirmasi hasil sidang ikrar."
                 : "Pilih status putusan dan tanggalnya."}
           </span>
         ) : null}

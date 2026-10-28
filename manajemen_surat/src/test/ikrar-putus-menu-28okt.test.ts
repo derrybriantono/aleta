@@ -755,3 +755,64 @@ describe("paket ABT blangko-ikrar-92-28okt", () => {
     expect(sumber).not.toContain("perkaraId: pid, sidangKe: 0 }");
   });
 });
+
+// ============================================================================
+// T4: menu status di layar, pratinjau atas nama, laporan, hak
+// ============================================================================
+describe("layar Putus sidang ikrar (T4)", () => {
+  it("pilihan status: 1 selalu; 3 bila peran boleh + Pemohon hadir; 2 bila peran boleh + Pemohon tidak hadir + sidang >= batas-14", async () => {
+    const { pilihanStatusIkrar } = await import("@/lib/ikrar-talak");
+    const dasar = { tanggalSidang: "2026-10-28", tanggalPenetapanSidangIkrar: "2026-04-30" }; // batas 2026-10-30
+    expect(pilihanStatusIkrar({ ...dasar, bolehStatusBerat: false, dihadiriOleh: 4 }).status).toEqual([1]);
+    expect(pilihanStatusIkrar({ ...dasar, bolehStatusBerat: true, dihadiriOleh: 2 }).status).toEqual([1, 3]);
+    const gugur = pilihanStatusIkrar({ ...dasar, bolehStatusBerat: true, dihadiriOleh: 4 });
+    expect(gugur).toEqual({ status: [1, 2], batas: "2026-10-30", awalGugur: "2026-10-16" });
+    expect(pilihanStatusIkrar({ ...dasar, tanggalSidang: "2026-10-15", bolehStatusBerat: true, dihadiriOleh: 3 }).status).toEqual([1]);
+    expect(pilihanStatusIkrar({ tanggalSidang: "2026-10-28", bolehStatusBerat: true, dihadiriOleh: 4 }).status).toEqual([1]);
+  });
+
+  it("teks hasil sidang per status sama persis di portal dan bot (cermin)", async () => {
+    const { STATUS_IKRAR, ikrarTerlaksanaMenurutTeks } = await import("@/lib/ikrar-talak");
+    dbTiruan(() => []);
+    const bot = muatSegar<{ STATUS_IKRAR: Record<number, { nama: string; hasil: string }> }>("services/ikrarTalakService.js");
+    for (const s of [1, 2, 3] as const) {
+      expect(STATUS_IKRAR[s].hasil).toBe(bot.STATUS_IKRAR[s].hasil);
+      expect(STATUS_IKRAR[s].nama).toBe(bot.STATUS_IKRAR[s].nama);
+    }
+    expect(ikrarTerlaksanaMenurutTeks(STATUS_IKRAR[2].hasil)).toBe(false);
+    expect(ikrarTerlaksanaMenurutTeks(STATUS_IKRAR[3].hasil)).toBe(false);
+  });
+
+  it("baris jadwal sesudah tulis: status 1 = ikrar tercatat; status 2/3 = hasil sidangnya, BUKAN ikrar tercatat", async () => {
+    const { terapkanHasilTulis } = await import("@/lib/jadwal-ringan");
+    const awal = [{ sidangId: "500", alasanDitunda: "" }];
+    const satu = terapkanHasilTulis(awal, "500", { jalan: "putus", tertulis: true, ikrarDilaksanakan: true, tanggalPutus: "2026-10-28" });
+    expect(satu[0]).toMatchObject({ ikrarTercatat: true, sudahPutus: true });
+    const tiga = terapkanHasilTulis(awal, "500", {
+      jalan: "putus",
+      tertulis: true,
+      ikrarDilaksanakan: false,
+      hasilSidangIkrar: "Pemohon dan Termohon rukun kembali",
+      tanggalPutus: "2026-10-28",
+    });
+    expect(tiga[0]).toMatchObject({ alasanDitunda: "Pemohon dan Termohon rukun kembali", sudahPutus: true });
+    expect((tiga[0] as Record<string, unknown>).ikrarTercatat).toBeUndefined();
+  });
+
+  it("layar: menu status, pratinjau atas nama PP ikrar + ketua majelis, laporan tiga baris; GET menyebut hak P7", async () => {
+    const { readFileSync } = await import("node:fs");
+    const layar = readFileSync(path.resolve(process.cwd(), "src/components/portal/hasil-sidang.tsx"), "utf8");
+    expect(layar).toContain('data-status-ikrar=""');
+    expect(layar).toContain("pilihanStatusIkrar({");
+    expect(layar).toContain('data-pratinjau-ikrar=""');
+    expect(layar).toContain("(ketua majelis ikrar)");
+    expect(layar).toContain('data-laporan-ikrar=""');
+    expect(layar).toContain("konfirmasiStatus: statusDipakai !== 1");
+    expect(layar).not.toMatch(/bg-popover/);
+    const get = readFileSync(path.resolve(process.cwd(), "src/app/api/aleta-ecourt/sidang-tunda/route.ts"), "utf8");
+    expect(get).toContain("bolehStatusIkrarBerat: bolehStatusIkrarBeratAktor");
+    // Jadwal: status 2/3 tidak dihitung "ikrar tercatat" (bot).
+    const jadwal = readFileSync(path.join(akarBot, "services/sippJadwalSidangService.js"), "utf8");
+    expect(jadwal).toContain('if (["2", "3"].includes(String(b.statusIkrar ?? "").trim())) continue;');
+  });
+});
