@@ -123,9 +123,6 @@ def daftar(ns):
 
 KUL = [kond_ubah(n, 'lama') for n in NO_UBAH]
 KUB = [kond_ubah(n, 'baru') for n in NO_UBAH]
-SIAP_VAR27 = ' OR '.join("(no_var=%d AND MD5(sql_query)='%s')" % (n, h) for n, h in sorted(SIAP27_VAR.items()))
-SIAP_FN27 = ' OR '.join("(routine_name='%s' AND MD5(routine_definition)='%s')" % (f, h) for f, h in sorted(SIAP27_FN.items()))
-SIAP_VARSISA = ' OR '.join("(no_var=%d AND MD5(sql_query)='%s')" % (n, h) for n, h in sorted(SIAP_SISA_VAR.items()))
 SIAP_FNSISA = ' OR '.join("(routine_name='%s' AND MD5(routine_definition)='%s')" % (f, h) for f, h in sorted(SIAP_SISA_FN.items()))
 # perilaku fungsi yang dipakai: romawi 1-3999 (ada di server sejak paket x9) dan peringkat (tabel 1-4 tak mengenal id 0 -> NULL)
 CEK_ROMAWI = ("isian_rtf_romawi(1)='I' AND isian_rtf_romawi(4)='IV' AND isian_rtf_romawi(9)='IX' AND isian_rtf_romawi(14)='XIV' AND isian_rtf_romawi(21)='XXI' AND isian_rtf_romawi(25)='XXV' "
@@ -140,24 +137,21 @@ KEPALA = ("-- Paket ABT \"%s\" (28 Okt 2026): angka romawi pihak pada sampul pih
           "-- %d baris variabel diubah; TIDAK ada fungsi baru (memakai isian_rtf_pihak_peringkat dari paket abt-pihak-urut-sisa-28okt dan isian_rtf_romawi yang sudah ada). "
           "Prasyarat: paket abt-pihak-urut-ecourt-27okt dan abt-pihak-urut-sisa-28okt sudah terpasang.\n") % (N, ', '.join(str(n) for n in NO_UBAH), JU)
 
-HARAP = '9|14|1|120|1|%d|0|0' % JU
-ULANG = '9|14|1|120|1|0|%d|0' % JU
+HARAP = '1|1|%d|0|0' % JU
+ULANG = '1|1|0|%d|0' % JU
 
-pra = KEPALA + ("-- PRASYARAT (baca saja) \"P|Q|S|T|R|C|D|G\": P = fungsi paket 27 Okt (9) yang isinya persis paket itu (harus 9) | Q = variabel paket 27 Okt (14) yang isinya persis (harus 14) | "
-                "S = fungsi isian_rtf_pihak_peringkat paket sisa 28 Okt yang isinya persis (harus 1) | T = variabel paket sisa 28 Okt (120) yang isinya persis (harus 120) | "
+pra = KEPALA + ("-- PRASYARAT (baca saja) \"S|R|C|D|G\": S = fungsi isian_rtf_pihak_peringkat (paket sisa 28 Okt) yang isinya persis (harus 1) | "
                 "R = isian_rtf_romawi dan isian_rtf_pihak_peringkat berperilaku benar (harus 1) | "
                 "C = baris yang akan diubah (%d) yang masih isi LAMA (%d pertama, 0 ulang) | D = yang sudah isi BARU (0 pertama, %d ulang) | "
                 "G = baris diubah yang bukan lama bukan baru (harus 0).\n"
+                "-- Sengaja TIDAK mensyaratkan isi persis fungsi/variabel paket lain (mis. isian_rtf_pihak_identitas dan isian_rtf_pihak_utama atau variabel 7047 7048 yang paket lain boleh ubah): hanya yang dipakai paket ini.\n"
                 "-- Benar: \"%s\" (pertama) atau \"%s\" (pasang ulang).\n") % (JU, JU, JU, HARAP, ULANG)
 pra += ("SELECT CONCAT((SELECT COUNT(*) FROM information_schema.routines WHERE routine_schema=DATABASE() AND routine_type='FUNCTION' AND (%s)), '|', "
-        "(SELECT COUNT(*) FROM abt_variabel WHERE %s), '|', "
-        "(SELECT COUNT(*) FROM information_schema.routines WHERE routine_schema=DATABASE() AND routine_type='FUNCTION' AND (%s)), '|', "
-        "(SELECT COUNT(*) FROM abt_variabel WHERE %s), '|', "
         "IF(%s, 1, 0), '|', "
         "(SELECT COUNT(*) FROM abt_variabel WHERE %s), '|', "
         "(SELECT COUNT(*) FROM abt_variabel WHERE %s), '|', "
         "(SELECT COUNT(*) FROM abt_variabel WHERE no_var IN (%s) AND NOT (%s OR %s))) AS prasyarat;\n") % (
-    SIAP_FN27, atau([SIAP_VAR27]), SIAP_FNSISA, atau([SIAP_VARSISA]), CEK_FUNGSI, atau(KUL), atau(KUB), daftar(NO_UBAH), atau(KUL), atau(KUB))
+    SIAP_FNSISA, CEK_FUNGSI, atau(KUL), atau(KUB), daftar(NO_UBAH), atau(KUL), atau(KUB))
 
 ps = KEPALA + ("-- PASANG: satu transaksi; baris diubah hanya bila isinya masih persis isi LAMA (pasang ulang aman). Tidak ada fungsi yang dibuat.\nSET NAMES latin1;\nSTART TRANSACTION;\n")
 for n in NO_UBAH:
@@ -165,16 +159,13 @@ for n in NO_UBAH:
     ps += "UPDATE abt_variabel SET %s=%s, modified='%s' WHERE %s;\n" % (u['kolom'], hx(u['baru_b']), MODIFIED, kond_ubah(n, 'lama'))
 ps += "COMMIT;\n"
 
-pk = KEPALA + "-- PERIKSA: tiap baris diubah persis isi paket; paket 27 Okt dan paket sisa 28 Okt masih utuh; fungsi yang dipakai berperilaku benar; baris terakhir \"SEMUA COCOK\".\n"
+pk = KEPALA + "-- PERIKSA: tiap baris diubah persis isi paket; fungsi peringkat ada dan benar; fungsi yang dipakai berperilaku benar; baris terakhir \"SEMUA COCOK\".\n"
 for n in NO_UBAH:
     pk += "SELECT 'var %d diubah' AS butir, (SELECT COUNT(*) FROM abt_variabel WHERE %s) AS cocok;\n" % (n, kond_ubah(n, 'baru'))
 pk += "SELECT 'fungsi dipakai benar' AS butir, IF(%s, 1, 0) AS cocok;\n" % CEK_FUNGSI
-pk += ("SELECT 'paket 27 Okt utuh' AS butir, IF((SELECT COUNT(*) FROM abt_variabel WHERE %s) = 14 AND (SELECT COUNT(*) FROM information_schema.routines WHERE routine_schema=DATABASE() AND routine_type='FUNCTION' AND (%s)) = 9, 1, 0) AS cocok;\n") % (
-    SIAP_VAR27, SIAP_FN27)
-pk += ("SELECT 'paket sisa 28 Okt utuh' AS butir, IF((SELECT COUNT(*) FROM abt_variabel WHERE %s) = 120 AND (SELECT COUNT(*) FROM information_schema.routines WHERE routine_schema=DATABASE() AND routine_type='FUNCTION' AND (%s)) = 1, 1, 0) AS cocok;\n") % (
-    SIAP_VARSISA, SIAP_FNSISA)
-pk += ("SELECT IF((SELECT COUNT(*) FROM abt_variabel WHERE %s) = %d AND %s AND (SELECT COUNT(*) FROM abt_variabel WHERE %s) = 14 AND (SELECT COUNT(*) FROM abt_variabel WHERE %s) = 120, 'SEMUA COCOK', 'TIDAK COCOK') AS hasil;\n") % (
-    atau(KUB), JU, CEK_FUNGSI, SIAP_VAR27, SIAP_VARSISA)
+pk += ("SELECT 'fungsi peringkat utuh' AS butir, IF((SELECT COUNT(*) FROM information_schema.routines WHERE routine_schema=DATABASE() AND routine_type='FUNCTION' AND (%s)) = 1, 1, 0) AS cocok;\n") % SIAP_FNSISA
+pk += ("SELECT IF((SELECT COUNT(*) FROM abt_variabel WHERE %s) = %d AND %s AND (SELECT COUNT(*) FROM information_schema.routines WHERE routine_schema=DATABASE() AND routine_type='FUNCTION' AND (%s)) = 1, 'SEMUA COCOK', 'TIDAK COCOK') AS hasil;\n") % (
+    atau(KUB), JU, CEK_FUNGSI, SIAP_FNSISA)
 
 pl = KEPALA + ("-- PULIH (deterministik): baris yang diubah dikembalikan dari tabel sementara pu_lama (dibuat pulih-satker.sh dari cadangan/abt_variabel-sebelum.sql) "
                "HANYA bila isinya masih isi BARU paket dan baris cadangan masih isi LAMA yang diharapkan. Tidak ada fungsi yang dihapus (paket ini tidak membuat fungsi). "
@@ -220,7 +211,7 @@ for sk, sumber in (('pasang-satker.sh', 'pasang-satker.sh'), ('pulih-satker.sh',
     open(os.path.join(KELUAR, sk), 'wb').write(open(os.path.join(AKAR, sumber), 'rb').read().replace(b'\r\n', b'\n'))
 
 ring = dict(ubah=[dict(no=n, lama_md5=ubah[n]['lama_md5'], baru_md5=ubah[n]['baru_md5'], lama_panjang=ubah[n]['lama_len'], baru_panjang=ubah[n]['baru_len'], diganti=ubah[n]['ganti']) for n in NO_UBAH],
-            harap=HARAP, ulang=ULANG, prasyarat_27=dict(variabel=SIAP27_VAR, fungsi=SIAP27_FN), prasyarat_sisa=dict(variabel=SIAP_SISA_VAR, fungsi=SIAP_SISA_FN),
+            harap=HARAP, ulang=ULANG, prasyarat_fungsi=SIAP_SISA_FN,
             jumlah_penggantian=sum(u['ganti'] for u in ubah.values()))
 json.dump(ring, open(os.path.join(AKAR, '..', 'hasil', 'isi-paket.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
 

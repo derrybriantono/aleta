@@ -12,7 +12,6 @@ import { describe, expect, it } from "vitest";
  */
 const akar = path.resolve(process.cwd(), "..");
 const dir = path.join(akar, "abt-paket/romawi-pihak-28okt");
-const dir27 = path.join(akar, "abt-paket/pihak-urut-ecourt-27okt");
 const dirSisa = path.join(akar, "abt-paket/pihak-urut-sisa-28okt");
 const pk = (b: string) => path.join(dir, "paket-satker", b);
 const N = "abt-romawi-pihak-28okt";
@@ -24,14 +23,8 @@ const ring = JSON.parse(readFileSync(path.join(dir, "hasil/isi-paket.json"), "ut
   ubah: Ubah[];
   harap: string;
   ulang: string;
-  prasyarat_27: { variabel: Record<string, string>; fungsi: Record<string, string> };
-  prasyarat_sisa: { variabel: Record<string, string>; fungsi: Record<string, string> };
+  prasyarat_fungsi: Record<string, string>;
   jumlah_penggantian: number;
-};
-const ring27 = JSON.parse(readFileSync(path.join(dir27, "hasil/isi-paket.json"), "utf8")) as {
-  ubah: { no: number; baru_md5: string }[];
-  fungsi_baru: Record<string, string>;
-  fungsi_x9: Record<string, { baru_md5: string }>;
 };
 const ringSisa = JSON.parse(readFileSync(path.join(dirSisa, "hasil/isi-paket.json"), "utf8")) as {
   ubah: { no: number; baru_md5: string }[];
@@ -108,8 +101,8 @@ describe("romawi-pihak - berkas paket utuh", () => {
     expect(pra).toContain(`"${harap}" (pertama) atau "${ulang}" (pasang ulang)`);
     expect(harap).toBe(ring.harap);
     expect(ulang).toBe(ring.ulang);
-    expect(harap).toBe(`9|14|1|120|1|${NOMOR.length}|0|0`);
-    expect(ulang).toBe(`9|14|1|120|1|0|${NOMOR.length}|0`);
+    expect(harap).toBe(`1|1|${NOMOR.length}|0|0`);
+    expect(ulang).toBe(`1|1|0|${NOMOR.length}|0`);
     expect(baca("nomor-ubah.txt").trim()).toBe(NOMOR.join(","));
     expect(ring.ubah.map((u) => u.no)).toEqual(NOMOR);
   });
@@ -148,32 +141,24 @@ describe("romawi-pihak - tiap baris punya PRASYARAT, PASANG, PERIKSA, PULIH", ()
     expect(pulih).toContain("JOIN pu_lama l ON l.no_var=a.no_var");
   });
 
-  it("prasyarat: 9 fungsi + 14 variabel paket 27 Okt dan 1 fungsi + 120 variabel paket sisa 28 Okt, md5 persis isi-paket.json paket-paket itu", () => {
-    expect(Object.keys(ring.prasyarat_27.variabel)).toHaveLength(14);
-    for (const u of ring27.ubah) {
-      expect(ring.prasyarat_27.variabel[String(u.no)], `md5 27 ${u.no}`).toBe(u.baru_md5);
-      expect(pra).toContain(`(no_var=${u.no} AND MD5(sql_query)='${u.baru_md5}')`);
-    }
-    const fn27 = { ...ring27.fungsi_baru, ...Object.fromEntries(Object.entries(ring27.fungsi_x9).map(([k, v]) => [k, v.baru_md5])) };
-    expect(Object.keys(fn27)).toHaveLength(9);
-    for (const [f, h] of Object.entries(fn27)) {
-      expect(ring.prasyarat_27.fungsi[f], f).toBe(h);
-      expect(pra).toContain(`(routine_name='${f}' AND MD5(routine_definition)='${h}')`);
-    }
-    expect(Object.keys(ring.prasyarat_sisa.variabel)).toHaveLength(120);
-    for (const u of ringSisa.ubah) {
-      expect(ring.prasyarat_sisa.variabel[String(u.no)], `md5 sisa ${u.no}`).toBe(u.baru_md5);
-      expect(pra).toContain(`(no_var=${u.no} AND MD5(sql_query)='${u.baru_md5}')`);
-    }
-    expect(ring.prasyarat_sisa.fungsi).toEqual({ [ringSisa.fungsi.nama]: ringSisa.fungsi.md5 });
+  it("prasyarat: hanya fungsi peringkat (md5 persis paket sisa) dan perilaku peringkat+romawi; TIDAK mensyaratkan isi fungsi/variabel paket lain (paket alamat boleh mengubahnya)", () => {
+    expect(ring.prasyarat_fungsi).toEqual({ [ringSisa.fungsi.nama]: ringSisa.fungsi.md5 });
     expect(pra).toContain(`(routine_name='isian_rtf_pihak_peringkat' AND MD5(routine_definition)='${ringSisa.fungsi.md5}')`);
     // perilaku fungsi yang dipakai diperiksa di server: romawi sampai > 20 dan peringkat untuk keempat tabel
     for (const sepasang of ["isian_rtf_romawi(25)='XXV'", "isian_rtf_romawi(32)='XXXII'", "isian_rtf_romawi(3999)='MMMCMXCIX'", "isian_rtf_pihak_peringkat(4, 0) IS NULL", "isian_rtf_pihak_peringkat(3, 0) IS NULL"]) {
       expect(pra, sepasang).toContain(sepasang);
       expect(periksa, sepasang).toContain(sepasang);
     }
-    expect(periksa).toContain("'paket 27 Okt utuh'");
-    expect(periksa).toContain("'paket sisa 28 Okt utuh'");
+    // tidak menyebut fungsi/variabel yang diubah paket lain (paket alamat-putusan: identitas, utama, 7047 7048 8700 8890 9349 9350) dan tidak mensyaratkan paket 27 Okt/sisa lainnya
+    for (const berkas of [pra, periksa, pasang, pulih]) {
+      const sql = berkas.replace(/^--.*$/gm, ""); // komentar boleh menjelaskan
+      expect(sql).not.toMatch(/isian_rtf_pihak_identitas|isian_rtf_pihak_utama|isian_rtf_pihak_nama|isian_rtf_pihak_kaki|isian_rtf_pihak_jumlah|isian_rtf_pihak_sebut/);
+      expect(sql).not.toMatch(/no_var=(7047|7048|8700|8890|9349|9350|7036|7037|7097|7098)/);
+    }
+    expect(pra.match(/routine_name='/g)).toHaveLength(1);
+    expect(periksa).not.toContain("paket 27 Okt utuh");
+    expect(periksa).not.toContain("paket sisa 28 Okt utuh");
+    expect(ring.ubah.map((u) => u.no).filter((n) => [7047, 7048, 8700, 8890, 9349, 9350].includes(n))).toEqual([]);
   });
 
   it("fungsi romawi yang dipakai memang ada di repo (paket x9) sebagai romawi 1-3999 dan peringkat tersedia untuk tabel 3 dan 4", () => {
