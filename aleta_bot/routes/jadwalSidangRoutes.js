@@ -812,17 +812,15 @@ router.post(
     }
     const kering = badan.kering !== false;
     const ip = alamatAudit(req);
-    // 28 Okt 2026: Kasir Manual (satu hari) SELALU atas AKUN KASIR SIPP, siapa pun yang menekan
-    // tombolnya; pengguna ALETA itu hanya tercatat di jejak. Per perkara tetap akun petugas.
-    let akunSipp = badan.akunSipp;
-    if (badan.massal === true) {
-      const kasirAkun = await require("../services/kasirAkunService").tentukan();
-      if (!kasirAkun.ok) {
-        res.status(400).json({ ok: false, alasan: kasirAkun.alasan, pesan: kasirAkun.pesan, calon: kasirAkun.calon });
-        return;
-      }
-      akunSipp = kasirAkun.username;
+    // 28 Okt 2026: SEMUA tulisan jurnal Kasir ALETA (per perkara, Kasir Manual satu hari, otomatis)
+    // SELALU atas AKUN KASIR SIPP, siapa pun yang menekan tombolnya; pengguna ALETA itu hanya
+    // tercatat di jejak. Tanpa akun kasir (belum ada / belum dipilih): tidak menulis apa pun.
+    const kasirAkun = await require("../services/kasirAkunService").tentukan();
+    if (!kasirAkun.ok) {
+      res.status(400).json({ ok: false, alasan: kasirAkun.alasan, pesan: kasirAkun.pesan, calon: kasirAkun.calon });
+      return;
     }
+    const akunSipp = kasirAkun.username;
     const rencana = await kasirJurnalService.susunRencana({
       perkaraId: badan.perkaraId,
       baris: badan.baris,

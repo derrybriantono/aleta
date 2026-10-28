@@ -549,7 +549,7 @@ describe("6. ekstensi - tab Kasir (basmassal.js IIFE)", () => {
     expect(h.minta.filter((m) => m.url.includes("/kasir"))).toEqual([]);
   });
 
-  it("Baru: usulan menurut keadaan (verstek) tersusun sendiri; Simpan dua tekanan -> satu POST kering:false atas akun SIPP petugas", async () => {
+  it("Baru: usulan menurut keadaan (verstek) tersusun sendiri; Simpan dua tekanan -> satu POST kering:false (akun kasir ditentukan server)", async () => {
     const h = bukaEkstensi();
     await sampai(() => h.w.__mode() === "baru", "mode baru");
     expect(await h.w.aletaKasirPasang(h.wadah, { perkaraId: String(h.k.perkara.perkaraId) })).toBe(true);
@@ -570,7 +570,9 @@ describe("6. ekstensi - tab Kasir (basmassal.js IIFE)", () => {
     await sampai(() => h.minta.some((m) => m.cara === "POST"), "POST");
     const post = h.minta.filter((m) => m.cara === "POST");
     expect(post.length).toBe(1);
-    expect(post[0].badan).toMatchObject({ perkaraId: String(h.k.perkara.perkaraId), akunSipp: "kasir", kering: false });
+    expect(post[0].badan).toMatchObject({ perkaraId: String(h.k.perkara.perkaraId), kering: false });
+    // 28 Okt 2026: per perkara pun atas AKUN KASIR - akun petugas tidak dikirim.
+    expect(post[0].badan).not.toHaveProperty("akunSipp");
     expect(post[0].badan.baris.length).toBe(tercentang);
     await sampai(() => /tersimpan dan terbaca ulang/.test(h.wadah.textContent || ""), "kabar tersimpan");
     expect(JSON.stringify(post[0].badan)).not.toMatch(/aleta/i);

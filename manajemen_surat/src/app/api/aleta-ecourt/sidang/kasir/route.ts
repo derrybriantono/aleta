@@ -4,7 +4,7 @@ import { bolehKasir, bolehMengerjakanKasir, pengawasKasir } from "@/lib/kasir-ju
 import { bolehAksi } from "@/lib/matriks-peran";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
-import { akunSippPengguna, type PilihanAkunSipp } from "@/server/modules/aleta-ecourt/court-calendar-akun";
+import { bacaAkunKasir } from "@/server/modules/aleta-ecourt/kasir-akun";
 import { panggilBotJadwalSidang } from "@/server/modules/aleta-ecourt/jadwal-sidang-gateway";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -40,18 +40,6 @@ async function pastikanHak(db: Awaited<ReturnType<typeof getDatabase>>, actorUse
   return aktor;
 }
 
-/** Pesan akun dibunyikan untuk Kasir (pemetaan akunnya sama dengan Court Calendar). */
-function akunKasir(akun: PilihanAkunSipp): PilihanAkunSipp {
-  if (akun.ok) return akun;
-  const pesan =
-    akun.alasan === "akun_sipp_belum_tertaut"
-      ? "Akun ALETA Anda belum tertaut ke akun SIPP. Simpan username & password SIPP Anda di Manajemen Akun (aktif) - jurnal tidak ditulis atas nama orang lain."
-      : akun.alasan === "akun_sipp_bukan_milik_anda"
-        ? "Akun SIPP itu tidak tersimpan sebagai milik Anda di ALETA - jurnal hanya ditulis atas akun SIPP Anda sendiri."
-        : akun.pesan;
-  return { ...akun, pesan };
-}
-
 export async function GET(request: NextRequest) {
   let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
   let actorUserId: string | null = null;
@@ -75,10 +63,10 @@ export async function GET(request: NextRequest) {
     }
     const [hasil, akun] = await Promise.all([
       panggilBotJadwalSidang(`/kasir?${new URLSearchParams({ perkaraId }).toString()}`, { timeoutMs: 20_000 }),
-      akunSippPengguna(db, aktor.id),
+      bacaAkunKasir(aktor),
     ]);
     if (!hasil.ok) return ok({ available: false, ok: false, alasan: hasil.error });
-    return ok({ available: true, ...hasil.data, akun: akunKasir(akun), bolehUbah: bolehMengerjakanKasir(aktor) && bolehAksi(aktor, "sidang.kasir") });
+    return ok({ available: true, ...hasil.data, akun, bolehUbah: bolehMengerjakanKasir(aktor) && bolehAksi(aktor, "sidang.kasir") });
   } catch (error) {
     return handleAdminRouteError(error, request, {
       db,
@@ -101,13 +89,9 @@ export async function POST(request: NextRequest) {
     }
     const badan = (await request.json()) as Record<string, unknown>;
 
-    // 28 Okt 2026: Kasir Manual (satu hari, massal: true) ditulis atas AKUN KASIR SIPP yang ditentukan
-    // bot - akun petugas yang masuk tidak dipakai (dan tidak perlu tertaut). Kasir per perkara tetap akun petugas.
+    // 28 Okt 2026: SEMUA tulisan jurnal Kasir (per perkara dan Kasir Manual) atas AKUN KASIR SIPP yang
+    // ditentukan bot - akun petugas yang masuk tidak dipakai dan tidak perlu tertaut.
     const massal = badan.massal === true;
-    const akun = massal ? ({ ok: true, username: "", milik: [] } as PilihanAkunSipp) : akunKasir(await akunSippPengguna(db, aktor.id, badan.akunSipp));
-    if (!akun.ok) {
-      return ok({ available: true, ok: false, alasan: akun.alasan, pesan: akun.pesan, milik: akun.milik });
-    }
 
     const baris = Array.isArray(badan.baris) ? badan.baris.slice(0, 30) : [];
     const kering = badan.kering !== false;
@@ -116,7 +100,6 @@ export async function POST(request: NextRequest) {
       body: {
         perkaraId: String(badan.perkaraId ?? ""),
         baris,
-        akunSipp: massal ? "" : akun.username,
         operator: String(aktor.name || aktor.email || aktor.id),
         ip: alamatIpPeramban(request),
         kering,

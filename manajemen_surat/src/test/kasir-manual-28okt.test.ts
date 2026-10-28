@@ -221,9 +221,13 @@ describe("2b. Kasir otomatis menulis atas AKUN KASIR walau pemanggil admin", () 
 
 describe("2c. rute bot: Kasir Manual dan Kasir otomatis memakai akun kasir (penjaga teks)", () => {
   const rute = readFileSync(path.join(AKAR, "aleta_bot/routes/jadwalSidangRoutes.js"), "utf8");
-  it("POST /kasir massal menimpa akun dengan kasirAkunService.tentukan(); POST /kasir/otomatis tidak meneruskan akun petugas", () => {
-    expect(rute).toMatch(/if \(badan\.massal === true\) \{\s*const kasirAkun = await require\("\.\.\/services\/kasirAkunService"\)\.tentukan\(\);/);
-    expect(rute).toMatch(/akunSipp = kasirAkun\.username;/);
+  it("POST /kasir (per perkara DAN massal) selalu memakai kasirAkunService.tentukan(); POST /kasir/otomatis tidak meneruskan akun petugas", () => {
+    expect(rute).toMatch(/const kasirAkun = await require\("\.\.\/services\/kasirAkunService"\)\.tentukan\(\);\s*if \(!kasirAkun\.ok\) \{/);
+    expect(rute).toMatch(/const akunSipp = kasirAkun\.username;/);
+    expect(rute).not.toMatch(/if \(badan\.massal === true\) \{\s*const kasirAkun/);
+    const blokKasir = rute.slice(rute.indexOf('"/kasir",') , rute.indexOf("KASIR OTOMATIS 1.189.x"));
+    expect(blokKasir.length).toBeGreaterThan(500);
+    expect(blokKasir).not.toMatch(/akunSipp: badan\.akunSipp/);
     const otomatisBlok = rute.slice(rute.indexOf('router.post("/kasir/otomatis"'), rute.indexOf('router.post("/kasir/otomatis"') + 1200);
     expect(otomatisBlok).not.toMatch(/akunSipp: badan\.akunSipp/);
     expect(rute).toContain('router.get("/kasir/riwayat"');
@@ -413,17 +417,27 @@ describe("4. rute portal - akun kasir, Kasir Manual, Riwayat", () => {
     expect(bot).toHaveBeenCalledWith("/kasir/akun", expect.objectContaining({ method: "POST", body: expect.objectContaining({ username: "kasir_dua" }) }));
   });
 
-  it("POST /kasir massal: tanpa akun petugas (tidak perlu tertaut); per perkara tetap meminta akun petugas", async () => {
+  it("POST /kasir: per perkara DAN massal tanpa akun petugas (tidak perlu tertaut, akun kiriman diabaikan)", async () => {
     const { POST } = await import("@/app/api/aleta-ecourt/sidang/kasir/route");
-    aktor = "usr-analiskeu";
-    const r = await POST(new NextRequest("http://localhost/api/aleta-ecourt/sidang/kasir", { method: "POST", body: JSON.stringify({ perkaraId: "5", baris: [], massal: true, kering: true, akunSipp: "admin" }) }));
-    expect(r.status).toBe(200);
-    const massal = bot.mock.calls.find((c) => c[0] === "/kasir");
-    expect((massal![1] as { body: Baris }).body).toMatchObject({ massal: true, akunSipp: "" });
-    bot.mockClear();
-    const perPerkara = (await (await POST(new NextRequest("http://localhost/api/aleta-ecourt/sidang/kasir", { method: "POST", body: JSON.stringify({ perkaraId: "5", baris: [], kering: true }) }))).json()) as { data: Baris };
-    expect(perPerkara.data.alasan).toBe("akun_sipp_belum_tertaut");
-    expect(bot).not.toHaveBeenCalled();
+    for (const aktorUji of ["usr-analiskeu", "usr-admin"]) {
+      aktor = aktorUji;
+      for (const massal of [true, false]) {
+        bot.mockClear();
+        const r = await POST(new NextRequest("http://localhost/api/aleta-ecourt/sidang/kasir", { method: "POST", body: JSON.stringify({ perkaraId: "5", baris: [], massal, kering: true, akunSipp: "admin" }) }));
+        expect(r.status).toBe(200);
+        const panggilan = bot.mock.calls.find((c) => c[0] === "/kasir");
+        expect(panggilan, `${aktorUji} massal=${massal}`).toBeTruthy();
+        expect((panggilan![1] as { body: Baris }).body).toMatchObject({ massal });
+        expect((panggilan![1] as { body: Baris }).body).not.toHaveProperty("akunSipp");
+      }
+    }
+  });
+
+  it("GET /kasir?perkaraId: akun di jawaban = AKUN KASIR dari bot (bukan akun petugas)", async () => {
+    const { GET } = await import("@/app/api/aleta-ecourt/sidang/kasir/route");
+    aktor = "usr-admin";
+    const j = (await (await GET(new NextRequest("http://localhost/api/aleta-ecourt/sidang/kasir?perkaraId=5"))).json()) as { data: Baris };
+    expect(j.data.akun).toMatchObject({ akunKasir: true, ok: true, username: "kasir_sipp", nama: "Kasir SIPP" });
   });
 
   it("GET riwayat: kasir boleh dan saringan diteruskan; hakim 403", async () => {
@@ -782,6 +796,56 @@ describe("5d. Kasir Manual (satu hari) dapat disunting sebelum disimpan", () => 
     const manual = await bukaManual(h);
     for (const b of Array.from(manual.querySelectorAll(".aleta-basmassal-aksi button")) as HTMLButtonElement[]) expect(b.disabled).toBe(true);
     expect(manual.textContent).toContain("Belum ada akun kasir di SIPP.");
+  });
+});
+
+describe("5g. Kasir per perkara (jendela satu perkara) atas akun kasir juga", () => {
+  const DATA_PERKARA = (akun: Baris) => ({
+    available: true, ok: true, hariIni: HARI, saldo: 100000, akun,
+    perkara: { perkaraId: 501, nomorPerkara: "501/Pdt.G/2026/PA.Dgl" },
+    keadaan: { nama: "Putus verstek", lazim: ["Redaksi", "Meterai"] },
+    usulan: usulanContoh().slice(0, 1), catatan: ["Saldo panjar habis - tidak ada sisa yang dikembalikan."],
+  });
+  const AKUN_OK = { akunKasir: true, ok: true, username: "kasir_sipp", nama: "Kasir SIPP", calon: [], milik: [], dipilih: "", bolehPilih: false };
+  async function bukaPerkara(akun: Baris) {
+    const h = bukaKasir();
+    const asli = h.w.fetch;
+    h.w.fetch = async (alamat: string, opsi?: { method?: string; body?: string }) => {
+      if (/\/sidang\/kasir\?perkaraId=/.test(String(alamat))) {
+        h.minta.push({ url: String(alamat), cara: "GET", badan: null });
+        return Response.json({ ok: true, data: DATA_PERKARA(akun) });
+      }
+      return asli(alamat, opsi);
+    };
+    await sampai(() => h.w.__mode() === "baru", "mode baru");
+    await h.w.aletaKasirPasang(h.wadah, { perkaraId: "501" });
+    await sampai(() => h.wadah.querySelector(".aleta-kasir-keadaan"), "keadaan");
+    return h;
+  }
+
+  it("menampilkan 'Akun kasir: <nama>' + ikon (i); lazim dan catatan biasa di balik ikon; simpan tidak mengirim akun petugas", async () => {
+    const h = await bukaPerkara(AKUN_OK);
+    const akun = h.wadah.querySelector("[data-akun-kasir]") as HTMLElement;
+    expect(akun.textContent).toContain("Akun kasir: Kasir SIPP");
+    expect((akun.querySelector(".aleta-kasir-info") as HTMLElement).title).toContain("Ditulis di SIPP atas akun kasir: Kasir SIPP.");
+    expect(h.wadah.textContent).not.toContain("Lazim");
+    expect(h.wadah.textContent).not.toContain("Saldo panjar habis");
+    const titel = Array.from(h.wadah.querySelectorAll(".aleta-kasir-info")).map((i) => (i as HTMLElement).title).join(" ");
+    expect(titel).toContain("Lazim pada keadaan ini");
+    expect(titel).toContain("1 catatan tentang perkara ini");
+    (Array.from(h.wadah.querySelectorAll("button")).find((b) => b.textContent === "Pratinjau") as HTMLButtonElement).click();
+    await sampai(() => h.minta.some((m) => m.cara === "POST"), "POST pratinjau");
+    const badan = h.minta.find((m) => m.cara === "POST")!.badan;
+    expect(badan).toMatchObject({ perkaraId: "501", kering: true });
+    expect(badan).not.toHaveProperty("akunSipp");
+  });
+
+  it("akun kasir belum ada / belum dipilih: tidak menulis, pesan jelas", async () => {
+    const h = await bukaPerkara({ akunKasir: true, ok: false, alasan: "akun_kasir_belum_dipilih", pesan: "Ada lebih dari satu akun kasir di SIPP - Super Admin atau admin memilih dulu.", calon: [], milik: [], dipilih: "", bolehPilih: false });
+    expect(h.wadah.querySelector("[data-akun-kasir]")!.textContent).toContain("Ada lebih dari satu akun kasir di SIPP");
+    (Array.from(h.wadah.querySelectorAll("button")).find((b) => /^Simpan/.test(b.textContent || "")) as HTMLButtonElement).click();
+    await sampai(() => /Ada lebih dari satu akun kasir/.test(h.wadah.querySelector("[data-aleta-kasir]")!.textContent || ""), "pesan");
+    expect(h.minta.filter((m) => m.cara === "POST")).toEqual([]);
   });
 });
 

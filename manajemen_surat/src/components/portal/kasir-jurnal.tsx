@@ -18,7 +18,7 @@
  *                   kebiasaan kasir satker yang diukur; tiap baris dapat
  *                   disunting, dihapus, dan ditambah manual
  *   simpan          Pratinjau (kering, bawaan) lalu "Simpan ke SIPP" dua
- *                   tekanan; atas akun SIPP milik pengguna yang login
+ *                   tekanan; atas AKUN KASIR SIPP (28 Okt 2026), siapa pun yang masuk
  *
  * Tampil hanya bagi kasir/bendahara/panitera/admin (bolehKasir); rute
  * memeriksa ulang.
@@ -73,7 +73,8 @@ type DataKasir = {
   sebutan: { satu: string; dua: string };
   /** 1.189.x butir 1: keadaan perkara + biaya yang lazim padanya (bot keadaanPerkara). */
   keadaan?: KeadaanKasir;
-  akun: { ok: boolean; username?: string; milik: string[]; pesan?: string; alasan?: string };
+  // 28 Okt 2026: AKUN KASIR SIPP (bukan akun petugas yang masuk).
+  akun: { ok: boolean; username?: string; nama?: string; milik: string[]; pesan?: string; alasan?: string };
 };
 
 type Keadaan = "" | "tersimpan" | "belum-terbaca" | "sudah-ada" | "ditolak" | "gagal" | "sebagian" | "akan-dikirim";
@@ -126,7 +127,6 @@ export function DialogKasir({ daftar, onTutup, awal }: { daftar: PerkaraPilihan[
   const [baris, setBaris] = useState<BarisSunting[]>([]);
   const [memuat, setMemuat] = useState(false);
   const [galat, setGalat] = useState("");
-  const [akunPilihan, setAkunPilihan] = useState("");
   const [sedang, setSedang] = useState(false);
   const [kabar, setKabar] = useState<{ teks: string; gagal: boolean } | null>(null);
   const [pratinjau, setPratinjau] = useState<Array<{ ke: number; pernyataan: Array<{ keterangan: string; sql: string; nilai: unknown[] }> }> | null>(null);
@@ -172,8 +172,6 @@ export function DialogKasir({ daftar, onTutup, awal }: { daftar: PerkaraPilihan[
       const d = isi as unknown as DataKasir;
       setData(d);
       setBaris((d.usulan || []).map((u) => ({ ...u, keadaan: "", pesan: "" })));
-      if (d.akun?.ok && d.akun.username) setAkunPilihan(d.akun.username);
-      else if (d.akun?.milik?.length) setAkunPilihan((x) => x || d.akun.milik[0]);
     } catch (e) {
       setGalat(e instanceof Error ? e.message : "Jurnal keuangan perkara tidak terbaca.");
     } finally {
@@ -292,7 +290,7 @@ export function DialogKasir({ daftar, onTutup, awal }: { daftar: PerkaraPilihan[
   const terpilih = barisHitung.filter((b) => b.pilih && b.keadaan !== "tersimpan" && !(b.sisaOtomatis && !(Number(b.jumlah) > 0)));
   const salahIsian = terpilih.map((b) => periksaBarisKasir(b, bahanPeriksa)).filter(Boolean).length;
   const tanpaResi = terpilih.filter((b) => uraianTanpaResi(b.uraian)).length;
-  const akunSiap = Boolean(data?.akun && (data.akun.ok || (data.akun.alasan === "akun_sipp_ganda" && akunPilihan)));
+  const akunSiap = Boolean(data?.akun?.ok);
 
   async function kirim(kering: boolean) {
     if (!data || sedang || !terpilih.length) return;
@@ -306,7 +304,6 @@ export function DialogKasir({ daftar, onTutup, awal }: { daftar: PerkaraPilihan[
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             perkaraId: String(data.perkara.perkaraId),
-            akunSipp: data.akun.ok ? data.akun.username : akunPilihan,
             baris: terpilih.map((b) => ({
               tanggal: b.tanggal,
               jenisBiayaId: b.jenisBiayaId,
@@ -480,22 +477,11 @@ export function DialogKasir({ daftar, onTutup, awal }: { daftar: PerkaraPilihan[
             <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
               {data.akun.ok ? (
                 <span>
-                  Ditulis di SIPP atas akun SIPP Anda: <b>{data.akun.username}</b>.
+                  Ditulis di SIPP atas akun kasir: <b>{data.akun.nama || data.akun.username}</b>.
                 </span>
-              ) : data.akun.alasan === "akun_sipp_ganda" ? (
-                <label className="flex flex-wrap items-center gap-2">
-                  <span>Akun SIPP yang dipakai:</span>
-                  <select className={kelasMedan} value={akunPilihan} onChange={(e) => setAkunPilihan(e.target.value)}>
-                    {data.akun.milik.map((u) => (
-                      <option key={u} value={u}>
-                        {u}
-                      </option>
-                    ))}
-                  </select>
-                </label>
               ) : (
                 <span className="text-amber-700 dark:text-amber-300">
-                  {data.akun.pesan || "Akun SIPP Anda belum tertaut - jurnal dapat dilihat, tetapi tidak dapat disimpan."}
+                  {data.akun.pesan || "Akun kasir SIPP belum ada - jurnal dapat dilihat, tetapi tidak dapat disimpan."}
                 </span>
               )}
             </div>

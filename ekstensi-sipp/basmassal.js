@@ -1805,7 +1805,7 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
  *          perkara langsung tersusun saat tabnya dibuka (atau saat tab Biaya
  *          Perkara SIPP ditekan - konten.js), petugas memeriksa, menyunting,
  *          lalu menyimpan. Tiap baris jurnal = satu transaksi (rute Kasir
- *          1.186), atas akun SIPP petugas yang masuk.
+ *          1.186), atas AKUN KASIR SIPP (28 Okt 2026) - siapa pun yang masuk.
  *   aletaKasirPasangHarian(wadah, { situs })
  *       -> Promise<boolean>  Kasir otomatis, Kasir Manual (satu hari), Rekap
  *          pengeluaran (harian terbuka; mingguan-tahunan diciutkan) + PDF,
@@ -2172,28 +2172,6 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
       }));
   }
 
-  /** Baris akun SIPP: siapa yang tercatat di SIPP, atau pemilih bila akunnya lebih dari satu. */
-  function barisAkun(akun) {
-    const kotak = el("div", "aleta-basmassal-lembut");
-    const keadaan = { username: akun && akun.ok ? akun.username : "" };
-    if (akun && akun.ok) {
-      kotak.appendChild(el("span", "", "Akun SIPP: "));
-      kotak.appendChild(el("b", "", akun.username));
-      kotak.appendChild(ikonInfo(`Ditulis di SIPP atas akun SIPP Anda: ${akun.username}.`, [`Jurnal per perkara ditulis di SIPP atas akun SIPP Anda (${akun.username}).`], "Akun SIPP"));
-    } else if (akun && akun.alasan === "akun_sipp_ganda" && Array.isArray(akun.milik) && akun.milik.length) {
-      kotak.appendChild(el("span", "", "Akun SIPP yang dipakai: "));
-      const pilih = el("select", "aleta-basmassal-pilih");
-      for (const u of akun.milik) pilih.appendChild(Object.assign(el("option", "", u), { value: u }));
-      keadaan.username = akun.milik[0];
-      pilih.addEventListener("change", () => (keadaan.username = pilih.value));
-      kotak.appendChild(pilih);
-    } else {
-      kotak.classList.add("aleta-basmassal-salah");
-      kotak.textContent = (akun && akun.pesan) || "Akun SIPP Anda belum tertaut - usulan dapat dilihat, tetapi tidak dapat disimpan.";
-    }
-    return { kotak, keadaan };
-  }
-
   /**
    * Akun KASIR SIPP (28 Okt 2026): Kasir otomatis dan Kasir Manual (satu hari) SELALU menulis atas akun kasir,
    * bukan akun petugas yang masuk. Super Admin/admin boleh memilih bila akun kasirnya lebih dari satu.
@@ -2213,7 +2191,7 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
         ikonInfo(
           `Ditulis di SIPP atas akun kasir: ${nama}.`,
           [
-            `Jurnal yang ditulis Kasir otomatis dan Kasir Manual (satu hari) di SIPP selalu tercatat atas akun kasir (${a.username}), siapa pun yang menekan tombolnya.`,
+            `Semua jurnal yang ditulis Kasir ALETA di SIPP (per perkara, Kasir Manual, dan Kasir otomatis) selalu tercatat atas akun kasir (${a.username}), siapa pun yang menekan tombolnya.`,
             "Pengguna yang menekan tombol hanya tercatat di Riwayat Kasir.",
           ],
           "Akun kasir SIPP"
@@ -2431,7 +2409,8 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
     }
     kepala.appendChild(el("span", "aleta-basmassal-lembut", `saldo jurnal ${rupiah(saldo)}`));
     akar.appendChild(kepala);
-    const akun = barisAkun(data.akun);
+    // 28 Okt 2026: per perkara pun atas AKUN KASIR SIPP (bukan akun petugas yang masuk).
+    const akun = barisAkunKasir(data.akun, () => muatUlang());
     akar.appendChild(akun.kotak);
     // Catatan yang menuntut tindakan (resi Pos, tarif, saldo kurang) tetap terlihat; sisanya di balik ikon (i).
     const MENUNTUT_TINDAKAN = /resi Pos|tarif belum|KURANG|Saldo panjar kurang/;
@@ -2543,7 +2522,7 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
     const kirim = async (keringKah) => {
       const baris = barisKirim(usulan.filter((u) => u.hasil !== "tersimpan"));
       if (!baris.length) return kabar(kotakKabar, "Tidak ada baris tercentang yang berjumlah.", "peringatan");
-      if (!akun.keadaan.username) return kabar(kotakKabar, "Akun SIPP Anda belum tertaut - tidak ada yang dapat disimpan.", "salah");
+      if (!akun.siap) return kabar(kotakKabar, (data.akun && data.akun.pesan) || "Akun kasir SIPP belum ada - tidak ada yang dapat disimpan.", "salah");
       if (kering()) {
         // Mode kering menahan tiap kiriman ke ALETA (alatKeringMenahan) -
         // yang akan disimpan disebut di sini saja, tanpa satu permintaan pun.
@@ -2559,7 +2538,8 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
         const isi = await ambil(API, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ perkaraId: String(data.perkara.perkaraId), akunSipp: akun.keadaan.username, baris, kering: !sungguh }),
+          // Akun SIPP tidak dikirim: server memakai AKUN KASIR.
+          body: JSON.stringify({ perkaraId: String(data.perkara.perkaraId), baris, kering: !sungguh }),
         });
         const dikirim = usulan.filter((u) => u.hasil !== "tersimpan" && u.pilih && Number(u.jumlah) > 0);
         const tandai = (ke, hasil, pesan) => {
@@ -2577,7 +2557,7 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
           return kabar(
             kotakKabar,
             n
-              ? `Pratinjau: ${n} baris akan ditulis di jurnal SIPP atas akun ${akun.keadaan.username}. Belum ada yang disimpan.`
+              ? `Pratinjau: ${n} baris akan ditulis di jurnal SIPP atas akun kasir ${(data.akun && (data.akun.nama || data.akun.username)) || ""}. Belum ada yang disimpan.`
               : String(isi.pesan || isi.alasan || "Pratinjau: tidak ada baris yang perlu ditulis."),
             n ? "" : "peringatan"
           );
