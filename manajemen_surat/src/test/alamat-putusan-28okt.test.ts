@@ -150,7 +150,7 @@ describe("alamat-putusan - hanya putusan berubah, relaas tetap", () => {
       const no = Number(m[2]);
       const u = ring.ubah.find((x) => x.no === no)!;
       expect(md5(Buffer.from(baruQ, "latin1")), `baru ${no}`).toBe(u.baru_md5);
-      expect(baruQ.match(/aps_badilag\.isian_rtf_alamat_putusan\(/g)?.length, no).toBe(u.diganti);
+      expect(baruQ.match(/aps_badilag\.isian_rtf_alamat_putusan\(/g)?.length, String(no)).toBe(u.diganti);
       expect(baruQ).not.toMatch(/aps_badilag\.isian_rtf_alamat\(/);
       const balik = baruQ.replace(/aps_badilag\.isian_rtf_alamat_putusan\(/g, "aps_badilag.isian_rtf_alamat(");
       expect(md5(Buffer.from(balik, "latin1")), `lama ${no}`).toBe(u.lama_md5);
