@@ -1,0 +1,92 @@
+{
+ "total": 10217,
+ "galat": 0,
+ "per_variabel": {
+  "5847": {
+   "beda": 0,
+   "beda_rapat": 0,
+   "beda_tanpa_sebab": 0,
+   "perkara_id_beda": [],
+   "sama": 10217
+  },
+  "5890": {
+   "beda": 6,
+   "beda_rapat": 0,
+   "beda_tanpa_sebab": 0,
+   "perkara_id_beda": [
+    1356,
+    2543,
+    2700,
+    2795,
+    9158,
+    9593
+   ],
+   "sama": 10211
+  },
+  "5891": {
+   "beda": 2,
+   "beda_rapat": 0,
+   "beda_tanpa_sebab": 0,
+   "perkara_id_beda": [
+    9158,
+    9593
+   ],
+   "sama": 10215
+  },
+  "5892": {
+   "beda": 5,
+   "beda_rapat": 0,
+   "beda_tanpa_sebab": 0,
+   "perkara_id_beda": [
+    6326,
+    6463,
+    7900,
+    9729,
+    10155
+   ],
+   "sama": 10212
+  },
+  "5893": {
+   "beda": 5,
+   "beda_rapat": 0,
+   "beda_tanpa_sebab": 0,
+   "perkara_id_beda": [
+    6326,
+    6463,
+    7900,
+    9729,
+    10155
+   ],
+   "sama": 10212
+  },
+  "5896": {
+   "beda": 2,
+   "beda_rapat": 2,
+   "beda_tanpa_sebab": 0,
+   "perkara_id_beda": [
+    9571,
+    10225
+   ],
+   "sama": 10215
+  },
+  "5897": {
+   "beda": 6,
+   "beda_rapat": 0,
+   "beda_tanpa_sebab": 0,
+   "perkara_id_beda": [
+    6326,
+    9291,
+    9528,
+    9729,
+    10155,
+    10225
+   ],
+   "sama": 10211
+  }
+ },
+ "tak_rapat": {
+  "pihak1": 9,
+  "pihak2": 12,
+  "pihak4": 6
+ }
+}

@@ -1,0 +1,66 @@
+{
+ "ubah": [
+  {
+   "no": 5847,
+   "lama_md5": "750b5eedb7b2906367e3634b00d8ba86",
+   "baru_md5": "7978d970d92d74417caa8cb6c6d1942f",
+   "lama_panjang": 417,
+   "baru_panjang": 444,
+   "diganti": 3
+  },
+  {
+   "no": 5890,
+   "lama_md5": "caf06f5d202221f43cad2aac20d5ba32",
+   "baru_md5": "45d99e984c60cc496751284501e4014e",
+   "lama_panjang": 664,
+   "baru_panjang": 691,
+   "diganti": 3
+  },
+  {
+   "no": 5891,
+   "lama_md5": "807ea57a34d25d01a31eba98558385ee",
+   "baru_md5": "3e65b1909433af8a9b0b3f0164775ee4",
+   "lama_panjang": 1742,
+   "baru_panjang": 1769,
+   "diganti": 3
+  },
+  {
+   "no": 5892,
+   "lama_md5": "23d51b287d0a741f043acf10f1d01ff6",
+   "baru_md5": "6f1e2991004788ec828d697dfee43503",
+   "lama_panjang": 664,
+   "baru_panjang": 691,
+   "diganti": 3
+  },
+  {
+   "no": 5893,
+   "lama_md5": "8c43fda4b968d9633818635c45069930",
+   "baru_md5": "25d59f0ff0e2e2dae049b2c365f01eb6",
+   "lama_panjang": 1742,
+   "baru_panjang": 1769,
+   "diganti": 3
+  },
+  {
+   "no": 5896,
+   "lama_md5": "9526ade0506817a783e4d3b007c91a72",
+   "baru_md5": "8a1d84d63df12f604a607b9f03e332d6",
+   "lama_panjang": 622,
+   "baru_panjang": 525,
+   "diganti": 1
+  },
+  {
+   "no": 5897,
+   "lama_md5": "5a99ef118bbd814f55719b724967c8d4",
+   "baru_md5": "de79844c3a06c75d4bd1c56a09fec4c5",
+   "lama_panjang": 421,
+   "baru_panjang": 448,
+   "diganti": 3
+  }
+ ],
+ "harap": "1|1|7|0|0",
+ "ulang": "1|1|0|7|0",
+ "prasyarat_fungsi": {
+  "isian_rtf_pihak_peringkat": "cc803946c757a9921feb3ce6978eac79"
+ },
+ "jumlah_penggantian": 19
+}

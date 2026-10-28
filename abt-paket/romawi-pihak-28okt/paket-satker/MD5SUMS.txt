@@ -1,0 +1,13 @@
+cd7702e5baf59077667d83d3996f4a8d  abt-romawi-pihak-28okt-PASANG.sql
+7a21773b43f57049655fa838c0e118f6  abt-romawi-pihak-28okt-PERIKSA.sql
+5ba635fa974acb15fbb74afbcd7c6637  abt-romawi-pihak-28okt-PRASYARAT.sql
+b85654e4a36a24452494937a5379e1ce  abt-romawi-pihak-28okt-PULIH.sql
+4641214a5dd4a37818e6fb12f0b27bbd  abt-romawi-pihak-28okt-UJIVAR-BARU.sql
+e4e565eba83c90c41a9c09b8a2e4b798  abt-romawi-pihak-28okt-UJIVAR-LAMA.sql
+de5c1858201449be990de9141bddf05e  harap.txt
+65bab383fb3482147222c481b606961f  nomor-ubah.txt
+6a28767b117e09cfa579050e46f8deb5  pasang-satker.sh
+e05f302014606a725cc8755e292cd27f  perkara-banyak.txt
+4c34a348b66be6e26e45a1f96ded7013  perkara-rapat.txt
+1d489ee59d6bce803c70ce7fac9e228f  perkara-takrapat.txt
+b38314cde3d8755ea267b956a3b0c540  pulih-satker.sh
