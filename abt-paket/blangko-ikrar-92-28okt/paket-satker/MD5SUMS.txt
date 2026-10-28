@@ -1,0 +1,9 @@
+f69987ff150933d27638b79cf1ad561c  abt-blangko-ikrar-92-28okt-PRASYARAT.sql
+3366af00c0156ace9264847fb14f2390  berkas_rtf.py
+f1bbeb2d48a35f2e0300aa6847c19401  daftar-rtf.tsv
+92ea02e72e3629284d0a5ca924fa5e2c  folder-ada.txt
+530c97bf251bb1f5325fe28cf81d82f0  nomor-dirujuk.txt
+140603aa1777038d8cd5c07f5cf0ba50  pasang-satker.sh
+ab9239970f92726f721535b787da0ca4  pulih-satker.sh
+f8d884128b25777e2e3d952cbdae2265  rtf/derry_briantono/1a Perceraian CT/[92] [Ikrar Rukun] Penetapan Rukun Kembali - P Hadir & T Tidak Hadir.rtf
+05fcb2bc684be5125da4df20e9c4ed48  rtf/derry_briantono/1a Perceraian CT/[92a] [Ikrar Rukun] Penetapan Rukun Kembali - P & T Hadir.rtf

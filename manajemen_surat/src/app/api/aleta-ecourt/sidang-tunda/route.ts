@@ -14,6 +14,7 @@ import { ok } from "@/server/shared/http";
 import { pastikanAksi } from "@/server/modules/akses/hak-peran";
 import { alamatIpPeramban } from "@/server/shared/request";
 import { bacaKehadiranSidang } from "@/server/modules/aleta-ecourt/kehadiran-rinci";
+import { bolehStatusIkrarBerat } from "@/server/modules/aleta-ecourt/hak-putusan";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -51,7 +52,7 @@ export async function GET(request: NextRequest) {
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
-    await pastikanKapabilitas(db, actorUserId, "panel");
+    const aktor = await pastikanKapabilitas(db, actorUserId, "panel");
 
     const jadwalId = String(request.nextUrl.searchParams.get("jadwalId") || "").trim();
     if (!jadwalId) {
@@ -74,7 +75,15 @@ export async function GET(request: NextRequest) {
     const kehadiranRinci = data?.keadaan
       ? await bacaKehadiranSidang(data.keadaan.perkaraId, data.keadaan.tanggalSidang)
       : null;
-    return ok({ available: true, ...data, kehadiranRinci });
+    // P7 (28 Okt 2026): pilihan hasil sidang ikrar "Pemohon Tidak Hadir"/"Rukun Kembali" hanya tampak bagi
+    // Super Admin, Ketua/Wakil, Hakim (rute sidang-putus tetap menolak 403 peran lain).
+    let bolehStatusIkrarBeratAktor = false;
+    try {
+      bolehStatusIkrarBeratAktor = bolehStatusIkrarBerat(aktor as Parameters<typeof bolehStatusIkrarBerat>[0]);
+    } catch {
+      bolehStatusIkrarBeratAktor = false;
+    }
+    return ok({ available: true, ...data, kehadiranRinci, bolehStatusIkrarBerat: bolehStatusIkrarBeratAktor });
   } catch (error) {
     return handleAdminRouteError(error, request, {
       db,

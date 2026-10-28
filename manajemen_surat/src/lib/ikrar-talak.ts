@@ -199,3 +199,42 @@ export function ikrarTerlaksanaMenurutTeks(teks: string | null | undefined): boo
   if (!t || !/\bikrar\b/i.test(t)) return false;
   return !/\b(belum|tidak|tunda|ditunda|menunggu|panggil|gugur|batal)\b/i.test(t);
 }
+
+/**
+ * ============================================================================
+ * TIGA STATUS PENETAPAN IKRAR (P1/P2/P7, 28 Okt 2026) - CERMIN BOT
+ * ============================================================================
+ *
+ * Teks hasil sidang per status SAMA dengan aleta_bot/services/ikrarTalakService.js
+ * STATUS_IKRAR (dijaga uji ikrar-putus-menu-28okt). Status 2/3 tidak pernah
+ * terbaca ikrar terlaksana (memuat "tidak"/"gugur" atau tanpa kata "ikrar").
+ */
+export type StatusIkrar = 1 | 2 | 3;
+export const STATUS_IKRAR: Record<StatusIkrar, { nama: string; hasil: string; label: string }> = {
+  1: { nama: "Diikrarkan", hasil: "telah ikrar talak", label: "Ikrar telah dilaksanakan" },
+  2: { nama: "Pemohon Tidak Hadir", hasil: "Pemohon tidak hadir, ikrar talak gugur", label: "Pemohon tidak hadir - kekuatan putusan gugur" },
+  3: { nama: "Rukun Kembali", hasil: "Pemohon dan Termohon rukun kembali", label: "Rukun kembali - Pemohon tidak mengucapkan ikrar" },
+};
+/** P2: "Pemohon Tidak Hadir" baru boleh pada sidang ikrar terakhir yang masih mungkin (batas - 14 hari). */
+export const HARI_SEBELUM_BATAS_GUGUR = 14;
+
+/**
+ * Pilihan status yang tersedia di tombol PUTUS sidang ikrar. Murni.
+ *   1 selalu (bawaan); 2 bila peran boleh (P7) + Pemohon tidak hadir (3/4) + sidang >= batas - 14 hari;
+ *   3 bila peran boleh (P7) + Pemohon hadir (1/2).
+ */
+export function pilihanStatusIkrar(bahan: {
+  bolehStatusBerat: boolean;
+  dihadiriOleh?: number | null;
+  tanggalSidang?: string | null;
+  tanggalPenetapanSidangIkrar?: string | null;
+}): { status: StatusIkrar[]; batas: string; awalGugur: string } {
+  const batas = batasEnamBulanIkrar({ tanggalPenetapanSidangIkrar: bahan.tanggalPenetapanSidangIkrar });
+  const awalGugur = batas ? tambahHariIso(batas, -HARI_SEBELUM_BATAS_GUGUR) : "";
+  const h = Number(bahan.dihadiriOleh);
+  const tgl = String(bahan.tanggalSidang ?? "").slice(0, 10);
+  const status: StatusIkrar[] = [1];
+  if (bahan.bolehStatusBerat && (h === 3 || h === 4) && awalGugur && tgl >= awalGugur) status.push(2);
+  if (bahan.bolehStatusBerat && (h === 1 || h === 2)) status.push(3);
+  return { status, batas, awalGugur };
+}

@@ -4,6 +4,7 @@ import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { akunSippPengguna } from "@/server/modules/aleta-ecourt/court-calendar-akun";
 import { postGatewayIsiIkrar } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
+import { bahanTtdIkrar } from "@/server/modules/aleta-ecourt/ttd-ikrar";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
@@ -33,7 +34,10 @@ export async function POST(request: NextRequest) {
 
     const badan = (await request.json()) as Record<string, unknown>;
     const akunPenekan = await akunSippPengguna(db, aktor.id).catch(() => null);
+    // P5b (28 Okt 2026): cap + ukuran untuk e-Doc ikrar ber-TTD (bot membaca tanda tangan sah sendiri).
+    const ttdIkrar = badan.kering === false ? await bahanTtdIkrar(db, 1) : {};
     const hasil = await postGatewayIsiIkrar({
+      ...ttdIkrar,
       jadwalId: badan.jadwalId,
       perkaraId: badan.perkaraId,
       operator: actorUserId || "portal",

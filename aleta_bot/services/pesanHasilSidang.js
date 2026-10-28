@@ -170,6 +170,30 @@ function pesanHasilSidang(hasil, jalan = "tunda") {
     case "akun_ketua_majelis_tidak_ada":
     case "akun_ketua_majelis_ganda":
       return `Akun SIPP ketua majelis ikrar${daftarNama(h.nama)} tidak ada atau ganda - ALETA tidak memilih salah satunya. ${tidakAdaPerubahan}`;
+    // Tombol PUTUS ikrar tiga status (28 Okt 2026).
+    case "panitera_sidang_ikrar_tidak_pasti":
+      return `PP ikrar talak perkara ini belum ditetapkan di SIPP, dan PP pemeriksaannya lebih dari satu${daftarNama(h.nama)} - ALETA tidak memilih salah satunya. Isi penetapan PP ikrar di SIPP lalu coba lagi. ${tidakAdaPerubahan}`;
+    case "ikrar_belum_dikonfirmasi":
+      return "Pilih hasil sidang ikrar dan centang konfirmasinya dulu.";
+    case "status_ikrar_tidak_dikenal":
+      return `Pilihan hasil sidang ikrar tidak dikenal (hanya Diikrarkan, Pemohon Tidak Hadir, atau Rukun Kembali). ${tidakAdaPerubahan}`;
+    case "status_ikrar_lain_sudah_tercatat":
+      return `Form ikrar talak perkara ini sudah berstatus "${bersih(h.tercatat)}" di SIPP - tidak ditimpa menjadi "${bersih(h.diminta)}". Ubah lewat SIPP bila memang keliru. ${tidakAdaPerubahan}`;
+    case "pemohon_tidak_hadir_tidak_dapat_diikrarkan":
+      return `Kehadiran sidang ini tercatat Pemohon tidak hadir, jadi ikrar tidak mungkin diucapkan. Pilih "Pemohon Tidak Hadir" atau tunda sidangnya. ${tidakAdaPerubahan}`;
+    case "gugur_hanya_bila_pemohon_tidak_hadir":
+      return `"Pemohon Tidak Hadir" hanya dapat dipilih bila kehadiran sidang ini Termohon saja atau para pihak tidak hadir. ${tidakAdaPerubahan}`;
+    case "gugur_tenggat_belum_berjalan":
+      return `Hari sidang ikrar belum ditetapkan di SIPP, jadi tenggat 6 bulan belum berjalan dan ikrar belum dapat dinyatakan gugur. ${tidakAdaPerubahan}`;
+    case "gugur_belum_sidang_terakhir":
+      return `Batas 6 bulan ikrar baru ${bersih(h.batas)}. "Pemohon Tidak Hadir" (kekuatan putusan gugur) baru dapat dipilih pada sidang ikrar mulai ${bersih(h.awal)}; sebelum itu tunda sidangnya (Pasal 70 ayat (6) UU 7/1989). ${tidakAdaPerubahan}`;
+    case "rukun_kembali_pemohon_tidak_hadir":
+      return `"Rukun Kembali" hanya dapat dipilih bila Pemohon hadir dan menyatakan tidak menjatuhkan ikrar talak. Periksa kehadirannya. ${tidakAdaPerubahan}`;
+    case "amar_ikrar_tidak_dapat_disusun":
+      return `Amar penetapan ikrar tidak dapat disusun karena nomor/tanggal putusan atau nama pengadilan belum terbaca dari SIPP. ${tidakAdaPerubahan}`;
+    case "jadwal_berubah_sebelum_ditulis":
+    case "form_ikrar_berubah_sebelum_ditulis":
+      return `Data sidang ikrar ini berubah tepat sebelum disimpan (tombol ditekan dua kali, atau petugas lain sedang mengisinya di SIPP). ${tidakAdaPerubahan} Muat ulang Jadwal Sidang lalu periksa hasilnya.`;
     default:
       if (/^tanggal_ikrar_mendahului_/.test(kode)) {
         return `Tanggal ikrar mendahului ${kode.replace("tanggal_ikrar_mendahului_", "").replace(/_/g, " ")}${bersih(h.batas) ? ` (${bersih(h.batas)})` : ""} - SIPP menolaknya. ${tidakAdaPerubahan}`;

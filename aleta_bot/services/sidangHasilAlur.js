@@ -97,7 +97,18 @@ async function jalankanHasilSidang(jalan, badan = {}, konteks = {}, deps = layan
   const ip = bersih(konteks.ip);
   const operatorId = bersih(badan.operator);
   const kering = badan.kering !== false;
-  const jenis = jalan === "tunda" ? "penundaan" : badan.ikrarDilaksanakan === true ? "putus-ikrar" : "putus-sidang";
+  // Putus sidang ikrar (18 Okt; tiga status 28 Okt 2026): konfirmasi "ikrar dilaksanakan" (status 1)
+  // ATAU pilihan status 2/3 - jenis jejak "putus-ikrar" (status 1, nama lama) / "putus-ikrar-2|3".
+  const statusIkrar = Number(badan.statusIkrar) || 0;
+  const putusIkrar = jalan === "putus" && (badan.ikrarDilaksanakan === true || badan.putusIkrar === true || statusIkrar > 0);
+  const jenis =
+    jalan === "tunda"
+      ? "penundaan"
+      : putusIkrar
+        ? statusIkrar === 2 || statusIkrar === 3
+          ? `putus-ikrar-${statusIkrar}`
+          : "putus-ikrar"
+        : "putus-sidang";
   const aksi = jalan === "tunda" ? "tunda" : "putus";
 
   if (!operatorId) {
@@ -130,10 +141,12 @@ async function jalankanHasilSidang(jalan, badan = {}, konteks = {}, deps = layan
           operator,
           ip,
         })
-      : badan.ikrarDilaksanakan === true
+      : putusIkrar
         ? await layanan.susunRencanaPutusIkrar({
             jadwalId: badan.jadwalId,
-            ikrarDilaksanakan: true,
+            ikrarDilaksanakan: badan.ikrarDilaksanakan === true,
+            statusIkrar: statusIkrar || undefined,
+            konfirmasiStatus: badan.konfirmasiStatus === true,
             jamSekarang: String(badan.jamSekarang || ""),
             dihadiriOleh: badan.dihadiriOleh,
             operator,
@@ -222,6 +235,10 @@ async function jalankanHasilSidang(jalan, badan = {}, konteks = {}, deps = layan
         ? await unggahEdocIkrar(deps, {
             jadwalId: badan.jadwalId,
             perkaraId: rencana.perkara && rencana.perkara.perkaraId,
+            statusIkrar: rencana.statusIkrar,
+            // P5b: cap kantor + ukuran dari portal; tanda tangan sah dibaca bot sendiri.
+            cap: badan.capIkrar,
+            atur: badan.aturTtdIkrar,
             operator,
             ip,
             kering: false,
@@ -235,6 +252,9 @@ async function jalankanHasilSidang(jalan, badan = {}, konteks = {}, deps = layan
     hanyaJadwal: jalan === "putus" ? rencana.hanyaJadwal === true : undefined,
     formIkrar: rencana.formIkrar,
     edocIkrar,
+    statusIkrar: rencana.statusIkrar,
+    namaStatus: rencana.namaStatus,
+    jadwalSudahTercatat: rencana.jadwalSudahTercatat,
     perkara: rencana.perkara,
     atasNama: rencana.atasNama,
     operator,
@@ -278,6 +298,8 @@ async function jalankanIsiIkrar(badan = {}, konteks = {}, deps = layananBawaan()
     const edocIkrar = await unggahEdocIkrar(deps, {
       jadwalId: badan.jadwalId,
       perkaraId: badan.perkaraId,
+      cap: badan.capIkrar,
+      atur: badan.aturTtdIkrar,
       operator,
       ip,
       kering,
@@ -334,6 +356,8 @@ async function jalankanIsiIkrar(badan = {}, konteks = {}, deps = layananBawaan()
       : await unggahEdocIkrar(deps, {
           jadwalId: badan.jadwalId,
           perkaraId: rencana.perkara && rencana.perkara.perkaraId,
+          cap: badan.capIkrar,
+          atur: badan.aturTtdIkrar,
           operator,
           ip,
           kering: false,
@@ -370,7 +394,11 @@ async function keadaanHasilSidang(jadwalId, deps = layananBawaan()) {
     layanan.riwayatSidangPerkara(keadaan.perkaraId, keadaan.tanggalSidang).catch(() => null),
     penetapan.daftarRuangan().catch(() => []),
     layanan.antrianSidangUntuk(keadaan).catch(() => null),
-    layanan.paniteraSidang(keadaan.perkaraId, keadaan.tanggalSidang).catch(() => ({
+    // Sidang ikrar talak: PP IKRAR (28 Okt 2026) - sama dengan yang dipakai tombolnya.
+    (typeof layanan.paniteraUntukJadwal === "function"
+      ? layanan.paniteraUntukJadwal(keadaan)
+      : layanan.paniteraSidang(keadaan.perkaraId, keadaan.tanggalSidang)
+    ).catch(() => ({
       ok: false,
       alasan: "panitera_sidang_tidak_terbaca",
     })),
@@ -378,7 +406,20 @@ async function keadaanHasilSidang(jadwalId, deps = layananBawaan()) {
   const atasNama = pp.ok
     ? { ok: true, username: pp.akun.username, namaLengkap: pp.akun.fullname, peran: "panitera sidang" }
     : { ok: false, kode: pp.alasan, pesan: pesanHasilSidang(pp, "tunda"), nama: pp.nama || [] };
-  return { status: 200, body: { ok: true, keadaan, riwayat, ruangan, antrian, atasNama } };
+  // Sidang ikrar talak (28 Okt 2026): penetapan ikrar tercatat atas nama ketua majelis ikrar -
+  // pratinjau "atas nama" kedua di blangko Putus.
+  let atasNamaPenetapan;
+  if (String(keadaan.ikrarTalak || "").toUpperCase() === "Y") {
+    const ikrarLayanan = deps.ikrar || require("./ikrarTalakService");
+    const ketua = await Promise.resolve(ikrarLayanan.ketuaMajelisIkrar(keadaan.perkaraId)).catch(() => ({
+      ok: false,
+      alasan: "ketua_majelis_ikrar_tidak_ada",
+    }));
+    atasNamaPenetapan = ketua && ketua.ok
+      ? { ok: true, username: ketua.username, namaLengkap: ketua.fullname, peran: "ketua majelis ikrar talak" }
+      : { ok: false, kode: ketua && ketua.alasan, pesan: pesanHasilSidang(ketua || {}, "putus"), nama: (ketua && ketua.calon) || [] };
+  }
+  return { status: 200, body: { ok: true, keadaan, riwayat, ruangan, antrian, atasNama, atasNamaPenetapan } };
 }
 
 module.exports = { jalankanHasilSidang, jalankanIsiIkrar, keadaanHasilSidang, operatorJejak, alasanJejak };

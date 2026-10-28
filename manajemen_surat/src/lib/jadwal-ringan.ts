@@ -181,6 +181,8 @@ export type HasilTulisRingkas = {
   putusan?: { tanggalPutus?: string; status?: string; verstek?: boolean } | null;
   /** Putus ikrar talak (tanpa status putusan). */
   ikrarDilaksanakan?: boolean;
+  /** 28 Okt 2026: hasil sidang ikrar status 2/3 (gugur / rukun kembali) - ikrar TIDAK tercatat diucapkan. */
+  hasilSidangIkrar?: string;
   tanggalPutus?: string;
 };
 
@@ -212,6 +214,7 @@ export function terapkanHasilTulis<T extends { sidangId: string }>(
       if (hasil.putusan?.status) tambah.statusPutusan = hasil.putusan.status;
       if (hasil.putusan?.verstek !== undefined) tambah.verstekPutusan = hasil.putusan.verstek;
       if (hasil.ikrarDilaksanakan) tambah.ikrarTercatat = true;
+      else if (hasil.hasilSidangIkrar) tambah.alasanDitunda = hasil.hasilSidangIkrar;
     }
     return { ...(lama as Record<string, unknown>), ...tambah } as T;
   });

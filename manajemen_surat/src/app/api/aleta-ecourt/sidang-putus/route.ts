@@ -3,8 +3,14 @@ import { type NextRequest } from "next/server";
 import { getDatabase } from "@/server/db/client";
 import { tolakBilaHariLibur } from "@/server/modules/hari-libur/sumber";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
-import { pastikanBolehUnggahPutusan, pastikanMajelisPutusan } from "@/server/modules/aleta-ecourt/hak-putusan";
+import {
+  pastikanBolehStatusIkrar,
+  pastikanBolehUnggahPutusan,
+  pastikanMajelisPutusan,
+  statusIkrarDiminta,
+} from "@/server/modules/aleta-ecourt/hak-putusan";
 import { akunSippPengguna } from "@/server/modules/aleta-ecourt/court-calendar-akun";
+import { bahanTtdIkrar } from "@/server/modules/aleta-ecourt/ttd-ikrar";
 import {
   getGatewayStatusPutusan,
   postGatewayPutusSidang,
@@ -88,11 +94,18 @@ export async function POST(request: NextRequest) {
       // HAK-PERAN 12 Okt: jalur fakta diputus = pencatat sidang (matriks peran);
       // jalur hakim di bawah dijaga pastikanBolehUnggahPutusan (keputusan 9 Okt).
       await pastikanAksi(db, actorUserId, "sidang.tunda-putus");
+      // P7 (28 Okt 2026): hasil sidang ikrar status 2/3 hanya Super Admin, Ketua/Wakil, Hakim.
+      const statusIkrar = statusIkrarDiminta(badan.statusIkrar);
+      await pastikanBolehStatusIkrar(db, actorUserId, statusIkrar);
       // Penginput di SIPP = PP perkara (keputusan 7 Okt 2026, ditentukan bot);
       // penekan sebenarnya hanya untuk jejak ALETA.
       const akunPenekan = await akunSippPengguna(db, aktor.id).catch(() => null);
       await tolakBilaHariLibur(db, badan.tanggalPutus, "Tanggal putusan");
+      // P5b (28 Okt 2026): cap + ukuran untuk e-Doc ikrar ber-TTD - hanya bila sidang ikrar dikirim KERING=false.
+      const putusIkrar = badan.ikrarDilaksanakan === true || statusIkrar > 0;
+      const ttdIkrar = putusIkrar && badan.kering === false ? await bahanTtdIkrar(db, statusIkrar || 1) : {};
       const respons = await postGatewayPutusSidang({
+        ...ttdIkrar,
         jadwalId: badan.jadwalId,
         perkaraId: badan.perkaraId,
         statusPutusanId: badan.statusPutusanId,
@@ -103,6 +116,9 @@ export async function POST(request: NextRequest) {
         ruangId: badan.ruangId,
         // 18 Okt 2026: sidang ikrar talak - petugas mengonfirmasi "ikrar dilaksanakan".
         ikrarDilaksanakan: badan.ikrarDilaksanakan === true,
+        // 28 Okt 2026: tiga status borang SIPP (1 Diikrarkan, 2 Pemohon Tidak Hadir, 3 Rukun Kembali).
+        statusIkrar: statusIkrar || undefined,
+        konfirmasiStatus: badan.konfirmasiStatus === true,
         // Butir 25 (5 Okt 2026): ruang sidang + sidang keliling sidang ini.
         ruanganIdSidang: badan.ruanganIdSidang,
         sidangKelilingSidang: typeof badan.sidangKelilingSidang === "boolean" ? badan.sidangKelilingSidang : undefined,

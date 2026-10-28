@@ -178,7 +178,9 @@ describe("kabel layar, rute, dan bot", () => {
     expect(ringkas).toContain("Pemohon hadir, belum siap membayar akibat perceraian");
     expect(ringkas).toContain('"tidak-hadir"');
     expect(ringkas).toContain("data-putus-ikrar");
-    expect(ringkas).toContain("ikrarDilaksanakan: true");
+    // 28 Okt 2026: status 1 tetap mengirim ikrarDilaksanakan; status 2/3 lewat statusIkrar + konfirmasiStatus.
+    expect(ringkas).toContain("ikrarDilaksanakan: statusDipakai === 1");
+    expect(ringkas).toContain("statusIkrar: statusDipakai");
     expect(ringkas).toContain("peringatanBatasIkrar(");
     // Penetapan hari sidang ikrar ikut ke bawaan dan peringatan batas mencegah simpan.
     expect(ringkas).toContain("tanggalPenetapanSidangIkrar: keadaan.tanggalPenetapanSidangIkrar");
@@ -217,7 +219,9 @@ describe("kabel layar, rute, dan bot", () => {
     expect(layananIkrar).toContain("menyebutAleta(amar)");
     const hasil = baca("aleta_bot/services/sidangHasilService.js");
     expect(hasil).toContain("susunRencanaPutusIkrar");
-    expect(hasil).toContain("ikrar.KETERANGAN_IKRAR");
+    // Tiga status (28 Okt 2026): teks hasil sidang & keterangan dari daftar tetap per status.
+    expect(hasil).toContain("ikrar.STATUS_IKRAR[status]");
+    expect(layananIkrar).toContain("keterangan: KETERANGAN_IKRAR");
     const alur = baca("aleta_bot/services/sidangHasilAlur.js");
     expect(alur).toContain("jalankanIsiIkrar");
     expect(alur).toContain('"putus-ikrar"');
