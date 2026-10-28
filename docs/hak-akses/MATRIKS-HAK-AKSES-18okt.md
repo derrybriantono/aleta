@@ -178,6 +178,7 @@ Catatan kewenangan:
 | Menandai catatan error sudah ditangani | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Menyalakan pemeriksaan berkala dan peringatan WhatsApp Pusat kesehatan; mengimpor hasil uji beban | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Menyalakan Mode pemeliharaan, mengatur pesan dan jadwalnya | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Mengatur tampilan ALETA di halaman SIPP per peran dan per pengguna | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Lihat sebagai akun atau peran (pratinjau menu dan hak, baca-saja, tercatat) | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Menyalakan verifikasi dua langkah (OTP WhatsApp, authenticator), aturan per peran, dan jaringan kantor | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Membantu pengguna yang kehilangan HP: kode cadangan dan reset authenticator | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |

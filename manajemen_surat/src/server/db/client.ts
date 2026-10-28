@@ -364,6 +364,8 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_kamus_deteksi_calon",
   // 27 Oktober 2026 (0115): riwayat perubahan kamus deteksi (siapa, kapan, isi lama).
   "aleta_kamus_deteksi_riwayat",
+  // 28 Oktober 2026 (0116): aturan tampilan ALETA di halaman SIPP per peran & per pengguna. Tanpa kunci asing.
+  "aleta_tampilan_sipp_aturan",
   // 16 Oktober 2026 (0066): cadangan & riwayat suntingan ABT dari halaman
   // Pengaturan SIPP & ABT. Tanpa kunci asing - urutannya bebas.
   "aleta_abt_suntingan",
