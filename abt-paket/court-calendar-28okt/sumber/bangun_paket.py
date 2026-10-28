@@ -80,7 +80,8 @@ def main():
           "SELECT CONCAT_WS('|',\n"
           "  (SELECT COUNT(*) FROM abt_variabel WHERE no_var IN (%s)),\n" % nomor +
           "  (SELECT COUNT(*) FROM abt_menu WHERE direktori = %s AND parent_direktori = %s),\n" % (q(FOLDER), q(INDUK)) +
-          "  (SELECT COUNT(*) FROM abt_menu m WHERE m.id = 963 AND m.direktori = %s AND m.parent_direktori = %s AND %s)\n" % (q(ALUR04), q(INDUK), hak_963) +
+          # 28 Okt: di server folder ALUR 04 sudah dipindah ke _arsip_derry_briantono - haknya tetap acuan yang sama.
+          "  (SELECT COUNT(*) FROM abt_menu m WHERE m.id = 963 AND m.direktori = %s AND m.parent_direktori IN (%s, %s) AND %s)\n" % (q(ALUR04), q(INDUK), q("_arsip_" + INDUK), hak_963) +
           ") AS prasyarat;\n")
     # PASANG
     kol = ', '.join(KOLOM)

@@ -1,6 +1,6 @@
 245f4d8b62d71e415661ec4e1d260571  abt-court-calendar-28okt-PASANG.sql
 9e67bcd2b695f7dc648c805899d6eee7  abt-court-calendar-28okt-PERIKSA.sql
-302fb28f72a08a513663b2bf302ec9ca  abt-court-calendar-28okt-PRASYARAT.sql
+76fea8b107eb7356185e9d7644ffeb33  abt-court-calendar-28okt-PRASYARAT.sql
 a977929c22134822a735ba4dc3fe6965  abt-court-calendar-28okt-PULIH.sql
 2e84244d741b20af16fc8f441760ffde  berkas_rtf.py
 c813e9bd616222ed768a7712553ee3b5  daftar-rtf.tsv
