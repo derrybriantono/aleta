@@ -200,9 +200,10 @@ function jaringan(opsi: OpsiJaringan = {}) {
     if (a.endsWith("/aleta/api/aleta-bot/abt/usulan")) {
       const muatan = JSON.parse(String(o.body || "{}"));
       if (muatan.sumber === "siapa" || muatan.sumber === "sipp") return r(401, "{}");
-      c.usulan.push(muatan);
+      // Jawaban dicatat pada indeks PERMINTAANNYA: permintaan yang berjalan bersamaan dapat selesai tidak berurutan.
+      const ke = c.usulan.push(muatan) - 1;
       const bot = opsi.usulanTiruan ? { status: 200, json: opsi.usulanTiruan(muatan) } : await penanganBot(muatan);
-      c.jawabanBot.push(bot.json);
+      c.jawabanBot[ke] = bot.json;
       return r(200, JSON.stringify({ data: { available: true, ...bot.json } }));
     }
     return r(401, "{}");
