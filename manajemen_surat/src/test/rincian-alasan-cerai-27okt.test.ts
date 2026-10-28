@@ -71,7 +71,11 @@ describe("rantai sebab-akibat dari gugatan", () => {
   it("mabuk lalu memukul (syarat), dan orang tua ikut campur sehingga ... (subjek keluarga)", () => {
     const r = rinci(["Bahwa Tergugat sering mabuk-mabukan dan bila mabuk memukul Penggugat.", "Bahwa orang tua Tergugat ikut campur urusan rumah tangga sehingga terjadi pertengkaran terus menerus."]);
     expect(baku(r, 0)).toBe("Tergugat sering mabuk-mabukan dan apabila dalam keadaan demikian Tergugat melakukan kekerasan fisik terhadap Penggugat");
-    expect(baku(r, 1)).toMatch(/^orang tua Tergugat ikut campur dalam urusan rumah tangga Penggugat dan Tergugat sehingga antara Penggugat dan Tergugat terus-menerus terjadi perselisihan/);
+    // 28 Okt: akibat umum (perselisihan) tidak ditempelkan ke alasan konkret - hanya pilihan bunyi.
+    expect(baku(r, 1)).toBe("orang tua Tergugat ikut campur dalam urusan rumah tangga Penggugat dan Tergugat");
+    const pil = mesin.pilihanBunyi(r);
+    expect(pil[0].nilai).not.toMatch(/perselisihan/);
+    expect(pil.find((p) => p.keadaan === "sesuai gugatan, dengan perselisihan di akhir")!.nilai).toMatch(/sehingga antara Penggugat dan Tergugat terus-menerus terjadi perselisihan dan pertengkaran$/);
   });
 
   it("akibat sebelum sebab ('karena') dinormalkan menjadi sebab -> akibat", () => {
@@ -84,25 +88,30 @@ describe("rantai sebab-akibat dari gugatan", () => {
     expect(baku(r)).toBe("Tergugat tidak memberikan nafkah kepada Penggugat");
   });
 
-  it("perselisihan hanya penutup: tidak menggantikan sebab konkret, dan hanya sekali", () => {
+  it("perselisihan hanya penutup: tidak menggantikan sebab konkret; 28 Okt: tidak ikut bunyi bawaan bila ada sebab konkret", () => {
     const r = rinci([
       "Bahwa Tergugat tidak memberikan nafkah kepada Penggugat.",
       "Bahwa antara Penggugat dan Tergugat terus menerus terjadi perselisihan dan pertengkaran.",
       "Bahwa sering terjadi pertengkaran.",
     ]);
-    expect(r.butir.map((b) => b.penutup)).toEqual([false, true]);
-    expect(mesin.pilihanBunyi(r)[0].nilai).toMatch(/^Tergugat tidak memberikan nafkah kepada Penggugat serta antara Penggugat dan Tergugat terus-menerus terjadi perselisihan/);
-    expect(mesin.pilihanBunyi(r)[0].nilai).not.toContain(";");
+    expect(r.butir.map((b) => b.penutup)).toEqual([false]);
+    const pil = mesin.pilihanBunyi(r);
+    expect(pil[0].nilai).toBe("Tergugat tidak memberikan nafkah kepada Penggugat");
+    // Perselisihan di akhir tetap tersedia sebagai PILIHAN (bukan bawaan), sekali saja.
+    const akhir = pil.find((p) => p.keadaan === "sesuai gugatan, dengan perselisihan di akhir")!;
+    expect(akhir.nilai).toBe("Tergugat tidak memberikan nafkah kepada Penggugat sehingga antara Penggugat dan Tergugat terus-menerus terjadi perselisihan dan pertengkaran");
+    for (const p of pil) expect(p.nilai, p.keadaan).not.toMatch(/;| serta /);
   });
 
-  it("beberapa rantai yang berujung perselisihan: perselisihan ditulis sekali di akhir", () => {
+  it("beberapa rantai yang berujung perselisihan: bawaan tanpa perselisihan, pilihan menulisnya sekali di akhir", () => {
     const r = rinci([
       "Bahwa Tergugat mabuk sehingga terjadi pertengkaran.",
       "Bahwa Tergugat berjudi sehingga terjadi perselisihan.",
     ]);
-    const kalimat = mesin.pilihanBunyi(r)[0].nilai;
-    expect(kalimat.match(/perselisihan dan pertengkaran/g)).toHaveLength(1);
-    expect(kalimat).toContain("hal-hal tersebut mengakibatkan");
+    const pil = mesin.pilihanBunyi(r);
+    expect(pil[0].nilai).toBe("Tergugat sering mabuk-mabukan dan Tergugat gemar bermain judi");
+    const akhir = pil.find((p) => p.keadaan === "sesuai gugatan, dengan perselisihan di akhir")!.nilai;
+    expect(akhir.match(/perselisihan dan pertengkaran/g)).toHaveLength(1);
   });
 
   it("gugatan yang hanya menyebut perselisihan: item penutup saja, bukan sebab konkret", () => {
@@ -254,16 +263,16 @@ describe("integrasi dengan usulan 5227 dan kamus dua lapis", () => {
   });
 });
 
-describe("28 Okt: penggabung rincian tanpa titik koma", () => {
-  it("A | A serta B | A, B, serta C; perselisihan bersama disambung dengan koma", () => {
+describe("28 Okt: penggabung rincian tanpa titik koma dan tanpa 'serta'", () => {
+  it("A | A dan B | A, B, dan C", () => {
     expect((mesin as any).gabungKalimat(["A"])).toBe("A");
-    expect((mesin as any).gabungKalimat(["A", "B"])).toBe("A serta B");
-    expect((mesin as any).gabungKalimat(["A", "", "B", "C"])).toBe("A, B, serta C");
+    expect((mesin as any).gabungKalimat(["A", "B"])).toBe("A dan B");
+    expect((mesin as any).gabungKalimat(["A", "", "B", "C"])).toBe("A, B, dan C");
     const r = rinci([
       "Bahwa Tergugat malas bekerja sehingga sering terjadi perselisihan dan pertengkaran.",
       "Bahwa Tergugat sering mabuk-mabukan sehingga sering terjadi perselisihan dan pertengkaran.",
       "Bahwa Tergugat berjudi online.",
     ]);
-    for (const p of mesin.pilihanBunyi(r)) expect(p.nilai, p.keadaan).not.toContain(";");
+    for (const p of mesin.pilihanBunyi(r)) expect(p.nilai, p.keadaan).not.toMatch(/;| serta /);
   });
 });

@@ -424,6 +424,8 @@ function susunIsiGugatan(masukan) {
       rincianGugatan = R.deteksiRincian({
         gugatan: U.kalimatPosita(posita),
         saksi: [],
+        // 28 Okt: jalur ini tidak membawa keterangan saksi - lencana tidak boleh berkata "saksi belum diperiksa".
+        saksiTidakDibaca: true,
         jawab: jawab.map((d) => ({ jenis: d.peran === "replik" || d.peran === "duplik" ? d.peran : "jawaban", butir: d.butir && d.butir.length ? d.butir : U.kalimatPosita(d.ringkas || "") })),
         pihak: sebutan,
       });

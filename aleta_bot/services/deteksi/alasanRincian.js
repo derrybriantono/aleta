@@ -15,6 +15,10 @@
  *      ("Tergugat malas bekerja sehingga Tergugat kurang memberikan nafkah kepada Penggugat").
  *      "Perselisihan terus-menerus" hanya penutup bila memang didalilkan - tidak pernah
  *      menggantikan sebab konkret.
+ *   5. (28 Okt) Antar-alasan disambung "dan" ("A dan B", "A, B, dan C") - tanpa ";" dan tanpa "serta".
+ *      Akibat UMUM ("sehingga ... terus-menerus terjadi perselisihan dan pertengkaran") TIDAK ditempelkan
+ *      ke alasan konkret (hanya pilihan bunyi); rantai sebab-akibat konkret tetap. Rincian perbuatan di
+ *      gugatan ("yaitu jenis sabu-sabu", "dengan cara memukul") ikut di bunyi bawaan.
  *
  * Pola & bunyi = DATA (kamus-deteksi/awal/alasan-rincian.json + lapis database; ruas tambahan
  * `bunyi`, `peran`, `subjek`, `untuk`, `urut`, `tanpaSubjek`, `kutip`, `hanyaAkibat`). Berkas ini
@@ -43,6 +47,12 @@ const RE_BUKAN_SEBAB = /\b(?:bercerai|perceraian|gugatan|permohonan|pengadilan|d
 // atau menjadi pemabuk, pemadat, penjudi ..." tidak boleh menyalakan zina/mabuk/narkoba/judi.
 const RE_NORMA = /salah\s+satu\s+pihak\s+(?:berbuat|melakukan|mendapat|meninggalkan|menjadi)|menjadi\s+pemabuk,\s*pemadat/i;
 const RE_BANTAH = /\b(?:tidak\s+benar|tidak\s+(?:sesuai|betul)|membantah|bantah|menyangkal|menolak\s+(?:dalil|dengan\s+tegas)|bohong|fitnah|mengada[\s-]*ada|dalil\s+(?:yang\s+)?(?:tidak|keliru))\b/i;
+// 28 Okt: penanda rincian perbuatan di gugatan ("... obat-obatan terlarang yaitu jenis sabu-sabu").
+const RE_PENANDA_RINCI = /\b(?:yaitu|yakni|berupa|seperti|jenis|bernama|dengan\s+cara|antara\s+lain|misalnya|di\s*antaranya|khususnya|terutama)\b/i;
+// Ujung klausa perbuatan: penghubung sebab-akibat/syarat, keterangan waktu, tanda baca.
+const RE_UJUNG_PERBUATAN = /\b(?:sehingga|hingga|akibatnya|karena|dikarenakan|disebabkan|lantaran|bila|jika|apabila|kalau|ketika|saat|sejak|semenjak|selama|pada\s+(?:tahun|bulan|tanggal|hari|saat|waktu)|tahun\s+\d|kurang\s+lebih|sekitar|setiap|tiap|bahkan|namun|tetapi|padahal|sedangkan|yang\s+(?:me)?nyebabkan|yang\s+mengakibatkan|yang\s+berakibat|menyebabkan|mengakibatkan|maka|sampai)\b|[;.:,]/i;
+// Akibat UMUM yang tidak dikutip sebagai akibat konkret (perselisihan/pertengkaran = penutup, bukan sebab).
+const RE_AKIBAT_UMUM = /\b(?:perselisihan|pertengkaran|percekcokan|cekcok|bertengkar|berselisih|keributan|ribut|tidak\s+(?:harmonis|rukun)|keharmonisan|ketidakharmonisan)\b/i;
 const RE_AKUI = /\b(?:membenarkan|mengakui|diakui|benar\s+(?:bahwa|adanya)|memang|betul|tidak\s+membantah)\b/i;
 
 let cache = { versi: -1, jenis: {} };
@@ -61,6 +71,8 @@ function polaUntuk(jenis) {
       // Penolak konteks (ruas tambahan `tolakSebelum` / `tolakSesudah`): dikompilasi sekali di sini.
       reTolakSebelum: p.tolakSebelum ? new RegExp(String(p.tolakSebelum), "i") : null,
       reTolakSesudah: p.tolakSesudah ? new RegExp(String(p.tolakSesudah), "i") : null,
+      // Ruas tambahan `rinci` {re, awalan}: nama/jenis perbuatan yang dibuang bunyi baku ("sabu-sabu", "togel").
+      reRinci: p.rinci && p.rinci.re ? new RegExp(String(p.rinci.re), "i") : null,
     }))
     .sort((a, b) => (a.urut || 0) - (b.urut || 0));
   // Saringan gabungan: satu RegExp "gabungan semua pola" - kalimat yang tidak lolos dilewati sekaligus.
@@ -185,7 +197,7 @@ function kutipanSesudah(kalimat, dari) {
   let t = bersihkanKutipan(kalimat.slice(dari, dari + BATAS_KUTIPAN + 60));
   t = t.split(RE_KUTIPAN_PUTUS)[0].replace(/[\s,;:.]+$/, "").trim();
   if (t.length < 12 || t.length > BATAS_KUTIPAN) return "";
-  if (RE_BUKAN_SEBAB.test(t) || RE_KUTIPAN_WAKTU.test(t)) return "";
+  if (RE_BUKAN_SEBAB.test(t) || RE_KUTIPAN_WAKTU.test(t) || RE_AKIBAT_UMUM.test(t)) return "";
   if (!/^[a-z]/i.test(t) || t.split(/\s+/).length < 3) return "";
   // Sebutan pihak ditulis baku (Penggugat/Tergugat/Pemohon/Termohon).
   return t.replace(RE_PIHAK, (x) => x.charAt(0).toUpperCase() + x.slice(1).toLowerCase());
@@ -218,12 +230,74 @@ function akibatBebas(kalimat, a, berikut) {
   return teks ? { teks } : null;
 }
 
-function klausa(simpul, ph, jenis, varian, kutipan) {
+const RE_EKOR_SAMBUNG = /(?:[\s,;:.]+|\s+(?:dan|serta|yang|juga|pun|pula|lagi))+$/i;
+const rapikanEkor = (t) => {
+  let x = String(t || "").trim();
+  for (let n = 0; n < 4; n++) {
+    const y = x.replace(RE_EKOR_SAMBUNG, "").trim();
+    if (y === x) break;
+    x = y;
+  }
+  return x;
+};
+const bakuPihak = (t) => String(t || "").replace(RE_PIHAK, (x) => x.charAt(0).toUpperCase() + x.slice(1).toLowerCase());
+
+/**
+ * 28 Okt: rincian perbuatan satu simpul dari kalimat gugatan - {predikat, detail} atau null.
+ *   detail   = "yaitu jenis sabu-sabu" (sesudah penanda rincian) atau "<awalan> <nama>" dari ruas `rinci` pola
+ *              (nama yang tidak ada di bunyi baku, mis. "sabu-sabu" untuk "mengonsumsi obat-obatan terlarang").
+ *   predikat = kutipan perbuatan dari gugatan sesudah sebutan pelaku sampai ujung klausa (hanya bila sebutan
+ *              pelaku tepat di depan perbuatannya); bunyi bawaan = "{pelaku} <predikat>".
+ * Null bila gugatan tidak memuat rincian apa pun - bunyi baku dipakai seperti biasa.
+ */
+function rinciPerbuatan(kalimat, s, batas) {
+  const p = s.pola;
+  if ((p.peran || "sebab") !== "sebab") return null;
+  const ekor = kalimat.slice(s.akhir, Math.min(batas, s.akhir + 160));
+  const u = RE_UJUNG_PERBUATAN.exec(ekor);
+  const ujung = s.akhir + (u ? u.index : ekor.length);
+  const sisa = kalimat.slice(s.akhir, ujung);
+  const baku = String(p.bunyi[0] || "").toLowerCase();
+  let detail = "";
+  const m = RE_PENANDA_RINCI.exec(sisa);
+  if (m && m.index <= 50) {
+    const d = rapikanEkor(sisa.slice(m.index));
+    if (d.split(/\s+/).length >= 2 && d.length <= 90 && !baku.includes(d.toLowerCase())) detail = d;
+  }
+  if (!detail && p.reRinci) {
+    const r = p.reRinci.exec(kalimat.slice(s.idx, ujung));
+    if (r && !baku.includes(r[0].toLowerCase())) detail = `${String((p.rinci && p.rinci.awalan) || "").trim()} ${r[0].toLowerCase()}`.trim();
+  }
+  if (!detail) return null;
+  // Kutipan perbuatan: sebutan pelaku + paling banyak lima kata sebelum perbuatannya, tanpa penghubung di antaranya.
+  let predikat = "";
+  if (s.subjek === "P" && !s.tersirat && !p.tanpaSubjek) {
+    const depan = kalimat.slice(Math.max(0, s.idx - 60), s.idx);
+    const k = /\b(tergugat|termohon)\b((?:\s+[\w-]+){0,5})\s*$/i.exec(depan);
+    const sebelum = k ? depan.slice(0, k.index) : "";
+    if (
+      k &&
+      !/\b(?:dan|serta|bila|jika|apabila|karena|sehingga|yang|kepada|terhadap|oleh|dengan|bahwa)\b/i.test(k[2]) &&
+      !/\b(?:kepada|terhadap|oleh|dengan|dan|antara|keluarga|orang\s*tua)\s*$/i.test(sebelum)
+    ) {
+      const t = bakuPihak(rapikanEkor(`${k[2]} ${kalimat.slice(s.idx, ujung)}`.replace(/\s+/g, " ").replace(/^\s*(?:juga|pun|pula)\b/i, "")));
+      if (t.length >= 3 && t.length <= 150 && t.split(/\s+/).length <= 22) predikat = t;
+    }
+  }
+  return { predikat, detail };
+}
+
+function klausa(simpul, ph, jenis, varian, kutipan, tanpaRinci) {
   const p = simpul.pola;
   if (kutipan) return kutipan;
   const bunyi = p.bunyi[Math.min(varian, p.bunyi.length - 1)];
   const isi = isiBunyi(bunyi, ph, jenis);
   const sub = subjekTeks(simpul, ph);
+  // 28 Okt: bunyi bawaan memuat rincian perbuatan dari gugatan (kutipan perbuatan, atau bunyi baku + rinciannya).
+  if (varian === 0 && !tanpaRinci && simpul.rinci) {
+    if (simpul.rinci.predikat && sub === ph.pelaku) return `${sub} ${simpul.rinci.predikat}`;
+    return sub ? `${sub} ${isi} ${simpul.rinci.detail}` : `${isi} ${simpul.rinci.detail}`;
+  }
   return sub ? `${sub} ${isi}` : isi;
 }
 
@@ -235,6 +309,9 @@ function itemKalimat(kalimatAsli, set) {
   const kalimat = String(kalimatAsli || "").replace(/\s+/g, " ").slice(0, BATAS_KALIMAT);
   const simpul = simpulKalimat(kalimat, set);
   if (!simpul.length) return [];
+  simpul.forEach((s, i) => {
+    s.rinci = rinciPerbuatan(kalimat, s, simpul[i + 1] ? simpul[i + 1].idx : kalimat.length);
+  });
   // Sambungan sebab -> akibat antar simpul berurutan; orientasi dinormalkan (cause -> effect).
   const berikut = new Map(); // idx simpul sebab -> {ke, jenis}
   const punyaMasuk = new Set();
@@ -301,16 +378,16 @@ function itemKalimat(kalimatAsli, set) {
 const SAMBUNG = { akibat: "sehingga", kondisi: "dan apabila dalam keadaan demikian", sebab: "sehingga", dan: "dan" };
 
 /** Satu klausa item pada varian bunyi tertentu. */
-function bunyiItem(item, ph, jenis, varian) {
+function bunyiItem(item, ph, jenis, varian, tanpaRinci) {
   const bagian = [];
   item.simpul.forEach((s, i) => {
     if (i === 0) {
-      bagian.push(klausa(s, ph, jenis, varian, ""));
+      bagian.push(klausa(s, ph, jenis, varian, "", tanpaRinci));
       return;
     }
     bagian.push(SAMBUNG[item.hubungan[i - 1]] || "sehingga");
     const kutipan = item.kutipan[i - 1] || "";
-    bagian.push(klausa(s, ph, jenis, varian, kutipan));
+    bagian.push(klausa(s, ph, jenis, varian, kutipan, tanpaRinci));
   });
   // Akibat bebas (bukan simpul kamus): klausa kutipan ditempel di ujung.
   if (item.akibatBebas) {
@@ -324,15 +401,7 @@ function bunyiItem(item, ph, jenis, varian) {
 function bunyiRingkas(item, ph, jenis) {
   const sebabSaja = item.simpul.filter((s) => (s.pola.peran || "sebab") === "sebab");
   const pakai = sebabSaja.length ? sebabSaja : item.simpul;
-  return pakai.map((s) => klausa(s, ph, jenis, 0, "")).join(" serta ");
-}
-
-/** Klausa penutup (perselisihan) di ujung rantai pada varian k, bila simpul terakhirnya penutup. */
-function penutupAkhir(item, ph, jenis, k) {
-  const akhir = item.simpul[item.simpul.length - 1];
-  if (item.simpul.length < 2 || (akhir.pola.peran || "sebab") !== "penutup" || item.hubungan[item.hubungan.length - 1] === "dan") return null;
-  const inti = { ...item, simpul: item.simpul.slice(0, -1), hubungan: item.hubungan.slice(0, -1), kutipan: item.kutipan.slice(0, -1) };
-  return { inti: bunyiItem(inti, ph, jenis, k), penutup: klausa(akhir, ph, jenis, k, "") };
+  return pakai.map((s) => klausa(s, ph, jenis, 0, "")).join(" dan ");
 }
 
 function daftarBunyi(item, ph, jenis) {
@@ -344,6 +413,14 @@ function daftarBunyi(item, ph, jenis) {
     if (!nilai || lihat.has(nilai)) continue;
     lihat.add(nilai);
     hasil.push({ keadaan: k === 0 ? "baku" : `alternatif ${k}`, nilai });
+    // 28 Okt: bunyi baku tanpa rincian gugatan tetap tersedia sebagai pilihan.
+    if (k === 0 && item.simpul.some((s) => s.rinci)) {
+      const polos = bunyiItem(item, ph, jenis, 0, true);
+      if (polos && !lihat.has(polos)) {
+        lihat.add(polos);
+        hasil.push({ keadaan: "bunyi baku (tanpa rincian gugatan)", nilai: polos });
+      }
+    }
   }
   if (item.jenis === "rantai") {
     const ringkas = bunyiRingkas(item, ph, jenis);
@@ -352,26 +429,20 @@ function daftarBunyi(item, ph, jenis) {
   return hasil;
 }
 
-/** Per varian: [{inti, penutup}] bila rantai berakhir pada penutup (untuk menggabung beberapa rantai). */
-function daftarPenutup(item, ph, jenis) {
-  const hasil = [];
-  for (let k = 0; k < 3; k++) hasil.push(penutupAkhir(item, ph, jenis, k));
-  return hasil.some(Boolean) ? hasil : null;
-}
-
 function kunciItem(item) {
   return item.simpul.map((s) => `${s.kunci}|${s.subjek}${s.kata ? `:${s.kata}` : ""}`).join(">");
 }
 
 /**
  * Kunci saksi: kunci sebab yang disebut tiap saksi (dengan subjek yang diterima).
- * @returns {Map<number, Set<string>>}
+ * @returns {Map<number, Map<string, string>>} nomor saksi -> (kunci -> kalimat keterangannya)
  */
 function kunciSaksi(saksi, set, kunciGugatan) {
   const peta = new Map();
   for (const s of saksi || []) {
-    const him = new Set();
-    for (const b of s.butir || []) for (const sm of simpulKalimat(b, set, { kunci: kunciGugatan })) him.add(sm.kunci);
+    // kunci -> kalimat keterangan pertama yang menyebutnya (kutipan sumber kartu).
+    const him = new Map();
+    for (const b of s.butir || []) for (const sm of simpulKalimat(b, set, { kunci: kunciGugatan })) if (!him.has(sm.kunci)) him.set(sm.kunci, String(b).slice(0, 300));
     peta.set(s.no, him);
   }
   return peta;
@@ -418,7 +489,10 @@ function dukungan(item, saksi, petaSaksi, ph) {
   const periksa = saksi.filter((s) => (s.butir || []).length);
   const mendukung = periksa.filter((s) => nilai.every((n) => petaSaksi.get(s.no) && petaSaksi.get(s.no).has(n.kunci)));
   // Rantai: simpul inti saja yang diperiksa; satu saksi yang menyebut sebabnya tanpa akibat tetap menguatkan sebabnya.
-  return { diperiksa: periksa.length, mendukung: mendukung.map((s) => ({ no: s.no, pihak: s.pihak || "", nama: namaSaksi(s, ph) })) };
+  return {
+    diperiksa: periksa.length,
+    mendukung: mendukung.map((s) => ({ no: s.no, pihak: s.pihak || "", nama: namaSaksi(s, ph), sebutan: sisiSaksi(s, ph), kalimat: petaSaksi.get(s.no).get(nilai[0].kunci) || "" })),
+  };
 }
 
 /** Pihak saksi menurut sebutan perkara ("" bila tidak diketahui). */
@@ -438,7 +512,11 @@ function lencana(d, jawab, ph) {
   const p = ph || pihakDari(null);
   let teks;
   let yakin;
-  if (!d.diperiksa) {
+  if (d.tidakDibaca) {
+    // Jalur yang memang tidak membawa keterangan saksi (berkas e-Court): tidak boleh berkata "belum diperiksa".
+    teks = "dari gugatan - keterangan saksi belum dicocokkan";
+    yakin = "ragu";
+  } else if (!d.diperiksa) {
     teks = "dari gugatan - saksi belum diperiksa";
     yakin = "ragu";
   } else if (d.mendukung.length >= 2) {
@@ -509,16 +587,34 @@ function deteksiRincian(o) {
       }
     }
   }
-  let items = [...peta.values()];
+  // 28 Okt: akibat UMUM (perselisihan/pertengkaran) di ujung rantai dilepas - tidak ditempelkan ke alasan konkret.
+  // Rantai sebab-akibat konkret ("malas bekerja sehingga kurang memberi nafkah") tidak tersentuh.
+  const penutupLepas = [];
+  const peta2 = new Map();
+  for (const asli of peta.values()) {
+    let it = asli;
+    const akhir = it.simpul[it.simpul.length - 1];
+    if (it.jenis === "rantai" && it.simpul.length >= 2 && (akhir.pola.peran || "sebab") === "penutup") {
+      penutupLepas.push(akhir);
+      it = { ...it, simpul: it.simpul.slice(0, -1), hubungan: it.hubungan.slice(0, -1), kutipan: it.kutipan.slice(0, -1) };
+      if (it.simpul.length === 1 && !it.akibatBebas) it.jenis = "tunggal";
+      it.id = kunciItem(it);
+    }
+    const lama = peta2.get(it.id);
+    if (!lama || (it.kutipan.some(Boolean) && !lama.kutipan.some(Boolean))) peta2.set(it.id, it);
+  }
+  let items = [...peta2.values()];
   // Tunggal yang sudah menjadi bagian rantai tidak ditampilkan lagi.
   const dalamRantai = new Set();
   for (const it of items) if (it.jenis === "rantai") for (const s of it.simpul) dalamRantai.add(`${s.kunci}|${s.subjek}${s.kata ? `:${s.kata}` : ""}`);
   items = items.filter((it) => it.jenis === "rantai" || !dalamRantai.has(kunciItem(it)));
-  // Penutup (perselisihan) hanya satu dan paling akhir.
+  // Penutup (perselisihan) berdiri sendiri HANYA bila gugatan tidak menyebut sebab konkret apa pun; selain itu
+  // ia menjadi pilihan bunyi ("... sehingga antara Penggugat dan Tergugat terus-menerus terjadi perselisihan").
   const penutup = items.filter((it) => it.simpul.length === 1 && (it.simpul[0].pola.peran || "sebab") === "penutup");
   const badan = items.filter((it) => !penutup.includes(it));
-  const rantaiBerakhirPenutup = badan.some((it) => it.jenis === "rantai" && (it.simpul[it.simpul.length - 1].pola.peran || "sebab") === "penutup");
-  const penutupSatu = penutup.length && !rantaiBerakhirPenutup ? [penutup[0]] : [];
+  const penutupSatu = penutup.length && !badan.length ? [penutup[0]] : [];
+  const simpulPenutup = (penutup[0] && penutup[0].simpul[0]) || penutupLepas[0] || null;
+  if (badan.length && simpulPenutup) hasil.penutup = [0, 1, 2].map((k) => klausa(simpulPenutup, ph, jenis, k, ""));
   items = [...badan, ...penutupSatu];
 
   const kunciGugatan = new Set(items.flatMap((it) => it.simpul.map((s) => s.kunci)));
@@ -526,6 +622,7 @@ function deteksiRincian(o) {
   const jawabPer = keteranganJawab(items, o.jawab, set);
   hasil.butir = items.map((it, n) => {
     const d = dukungan(it, saksi, petaSaksi, ph);
+    if (o && o.saksiTidakDibaca === true) d.tidakDibaca = true;
     const j = jawabPer.get(it.id) || null;
     const l = lencana(d, j, ph);
     const tersirat = it.simpul.some((s) => s.tersirat);
@@ -538,7 +635,6 @@ function deteksiRincian(o) {
       label: it.simpul.map((s) => s.pola.label.replace(/\s*\([^)]*\)$/, "")).join(" -> "),
       huruf: [...new Set(it.simpul.map((s) => s.pola.huruf).filter(Boolean))],
       bunyi: daftarBunyi(it, ph, jenis),
-      penutupAkhir: daftarPenutup(it, ph, jenis),
       kalimatGugatan: String(it.kalimat).slice(0, 400),
       dukungan: d.mendukung,
       saksiDiperiksa: d.diperiksa,
@@ -559,24 +655,16 @@ function deteksiRincian(o) {
   return hasil;
 }
 
-/** "A", "A serta B", "A, B, serta C" - 28 Okt 2026 (pengguna): tanpa titik koma di antara rincian alasan. */
+/** "A", "A dan B", "A, B, dan C" - 28 Okt 2026 (pengguna): antar-alasan "dan", tanpa ";" dan tanpa "serta". */
 function gabungKalimat(bagian) {
   const b = bagian.filter(Boolean);
   if (b.length <= 1) return b.join("");
-  if (b.length === 2) return `${b[0]} serta ${b[1]}`;
-  return `${b.slice(0, -1).join(", ")}, serta ${b[b.length - 1]}`;
+  if (b.length === 2) return `${b[0]} dan ${b[1]}`;
+  return `${b.slice(0, -1).join(", ")}, dan ${b[b.length - 1]}`;
 }
 
 /** Kalimat 5227 pada varian ke-k dari semua butir; "ringkas" = perbuatan sebab saja. */
 function susunVarian(rincian, k, ringkas) {
-  // Beberapa rantai yang sama-sama berujung perselisihan: perselisihan ditulis SEKALI di akhir.
-  const berujung = ringkas ? [] : rincian.butir.filter((b) => b.penutupAkhir && b.penutupAkhir[Math.min(k, 2)]);
-  const gabung = berujung.length >= 2;
-  if (gabung) {
-    const bagian2 = rincian.butir.map((b) => (berujung.includes(b) ? b.penutupAkhir[Math.min(k, 2)].inti : (b.bunyi[Math.min(k, b.bunyi.length - 1)] || {}).nilai || ""));
-    const pen = berujung[0].penutupAkhir[Math.min(k, 2)].penutup;
-    return `${gabungKalimat(bagian2)}, dan hal-hal tersebut mengakibatkan ${pen}`;
-  }
   const bagian = rincian.butir.map((b) => {
     if (ringkas) {
       const r = b.bunyi.find((x) => x.keadaan === "tanpa hubungan sebab-akibat");
@@ -603,6 +691,10 @@ function pilihanBunyi(rincian) {
   tambah("sesuai gugatan, redaksi lain", susunVarian(rincian, 1, false));
   tambah("sesuai gugatan, redaksi lain 2", susunVarian(rincian, 2, false));
   tambah("perbuatannya saja (tanpa hubungan sebab-akibat)", susunVarian(rincian, 0, true));
+  // 28 Okt: perselisihan di akhir hanya PILIHAN (bukan bawaan) bila gugatan juga menyebut sebab konkret.
+  if (Array.isArray(rincian.penutup) && rincian.penutup[0] && rincian.butir.some((b) => !b.penutup)) {
+    tambah("sesuai gugatan, dengan perselisihan di akhir", `${susunVarian(rincian, 0, false)} sehingga ${rincian.penutup[0]}`);
+  }
   return hasil;
 }
 
@@ -656,7 +748,15 @@ function terapkan(hasil, rincian) {
     u.dariGugatan = true;
     const sumberGugatan = [];
     for (const b of rincian.butir) if (b.kalimatGugatan && !sumberGugatan.some((x) => x.kalimat === b.kalimatGugatan)) sumberGugatan.push({ saksi: 0, asal: "posita", kalimat: b.kalimatGugatan });
-    u.sumber = [...sumberGugatan.slice(0, 6), ...(Array.isArray(u.sumber) ? u.sumber.filter((x) => x && x.saksi > 0).slice(0, 4) : [])];
+    // 28 Okt: keterangan saksi yang menguatkan tiap alasan ikut menjadi sumber kartu (bukan hanya kalimat gugatan).
+    const sumberSaksi = [];
+    for (const b of rincian.butir) {
+      for (const d of b.dukungan || []) {
+        if (d.kalimat && !sumberSaksi.some((x) => x.saksi === d.no && x.kalimat === d.kalimat)) sumberSaksi.push({ saksi: d.no, kalimat: d.kalimat, ...(d.sebutan ? { pihak: d.sebutan } : {}) });
+      }
+    }
+    const saksiLama = Array.isArray(u.sumber) ? u.sumber.filter((x) => x && x.saksi > 0 && !sumberSaksi.some((y) => y.kalimat === x.kalimat)) : [];
+    u.sumber = [...sumberGugatan.slice(0, 6), ...[...sumberSaksi, ...saksiLama].slice(0, 6)];
     u.kesepakatan = "gugatan";
     u.tingkat = u.keyakinan === "cukup" ? "cukup" : "ragu";
     u.dasarTingkat = "gugatan";
@@ -692,6 +792,11 @@ function terapkanSisiSaksi(hasil, sisi, pihak) {
   if (hasil.rincianAlasan) garap(hasil.rincianAlasan.butir);
   const u = (hasil.usulan || []).find((x) => x && x.kode === "5227");
   if (u && u.rincian && u.rincian !== (hasil.rincianAlasan && hasil.rincianAlasan.butir)) garap(u.rincian);
+  // Sumber kartu menyebut pihak saksinya juga.
+  for (const s of u && Array.isArray(u.sumber) ? u.sumber : []) {
+    const sisiNo = s && s.saksi > 0 && !s.pihak && sisi ? sisi[`saksi${s.saksi}`] : "";
+    if (sisiNo) s.pihak = sisiNo === "penggugat" ? ph.lawan : sisiNo === "tergugat" ? ph.pelaku : "";
+  }
   return true;
 }
 

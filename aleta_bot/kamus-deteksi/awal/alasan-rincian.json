@@ -1,7 +1,7 @@
 {
  "kelompok": "alasan-rincian",
  "versi": 1,
- "catatan": "Rincian alasan cerai untuk 5227: pasangan sebab -> akibat dari gugatan. Mesin: services/deteksi/alasanRincian.js. Bunyi memakai {lawan}/{pelaku}/{lain}.",
+ "catatan": "Rincian alasan cerai untuk 5227: pasangan sebab -> akibat dari gugatan. Mesin: services/deteksi/alasanRincian.js. Bunyi memakai {lawan}/{pelaku}/{lain}. Ruas rinci {re, awalan} (28 Okt): nama/jenis perbuatan di gugatan yang ikut bunyi bawaan bila bunyi baku tidak memuatnya.",
  "pola": [
   {
    "kode": "rincian-nafkah-kurang",
@@ -211,7 +211,11 @@
     "gemar bermain judi online",
     "kecanduan judi online hingga menghabiskan uang keluarga",
     "sering bermain judi online"
-   ]
+   ],
+   "rinci": {
+    "re": "\\b(?:togel|slot|poker|domino|judi\\s+bola)\\b",
+    "awalan": "jenis"
+   }
   },
   {
    "kode": "rincian-judi-umum",
@@ -246,7 +250,11 @@
     "gemar bermain judi",
     "sering bermain judi",
     "menjadi penjudi"
-   ]
+   ],
+   "rinci": {
+    "re": "\\b(?:togel|sabung\\s+ayam|domino|slot|poker|capjiki|judi\\s+bola|kartu\\s+remi|dadu)\\b",
+    "awalan": "jenis"
+   }
   },
   {
    "kode": "rincian-utang-pinjol",
@@ -351,7 +359,11 @@
     "sering mabuk-mabukan",
     "suka mengonsumsi minuman keras",
     "menjadi pemabuk"
-   ]
+   ],
+   "rinci": {
+    "re": "\\b(?:ballo|tuak|cap\\s+tikus|arak|saguer|sopi|oplosan)\\b",
+    "awalan": "dengan minuman keras jenis"
+   }
   },
   {
    "kode": "rincian-narkoba-a",
@@ -386,7 +398,11 @@
     "mengonsumsi obat-obatan terlarang",
     "menjadi pemakai narkoba",
     "kecanduan narkotika sehingga mengabaikan keluarga"
-   ]
+   ],
+   "rinci": {
+    "re": "\\b(?:sabu(?:[\\s-]*sabu)?|shabu(?:[\\s-]*shabu)?|ganja|putau|inex|ekstasi|pil\\s+koplo|tramadol|lem\\s+(?:aibon|fox))\\b",
+    "awalan": "jenis"
+   }
   },
   {
    "kode": "rincian-kdrt-fisik-aktif",

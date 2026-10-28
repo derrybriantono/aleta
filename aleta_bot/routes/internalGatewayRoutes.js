@@ -3237,6 +3237,17 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
       /* === AKHIR JENIS3 === */
     }
     if (sumber === "semua" || sumber === "saksi") {
+      // 28 Okt: konteks perkara SIPP (posita, pihak saksi) dibaca SEKALI untuk rincian 5227, KDL2, dan CERAI di bawah.
+      let janjiKonteksSaksi = null;
+      const konteksSaksi = () => janjiKonteksSaksi || (janjiKonteksSaksi = nomorPerkara ? abtUsulanService.konteksPerkaraSaksi(nomorPerkara).catch(() => null) : Promise.resolve(null));
+      const mintaRincian = req.body?.rincianAlasan !== false && (!String(req.body?.jenisPerkara || "").trim() || /cerai|34[67]/i.test(String(req.body.jenisPerkara)));
+      // Rincian 5227 butuh gugatan: tanpa posita ABT (5125) keterangan saksi tidak pernah dicocokkan dengan dalil gugatan,
+      // dan kartu jatuh ke bunyi berkas e-Court yang tidak membawa saksi. Posita SIPP dipakai HANYA untuk rincian itu.
+      let positaRincian = "";
+      if (mintaRincian && String(req.body?.posita || "").replace(/<[^>]*>/g, " ").trim().length < 50 && nomorPerkara) {
+        const k = await konteksSaksi();
+        positaRincian = k && k.posita ? String(k.posita) : "";
+      }
       jawaban.saksi = abtUsulanService.dariKeteranganSaksi(
         String(req.body?.saksi1 || ""),
         String(req.body?.saksi2 || ""),
@@ -3253,7 +3264,8 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
           // 27 Okt: 5227 dari gugatan dengan rantai sebab-akibat (deteksi/alasanRincian.js). Pihak tiap saksi dan
           // jawab-menjawab (jawaban/replik/duplik) boleh dikirim ekstensi; tanpa keduanya rincian tetap tersusun
           // dari gugatan. Tanpa kueri SIPP tambahan - hanya teks yang sudah dikirim.
-          rincianAlasan: req.body?.rincianAlasan !== false && (!String(req.body?.jenisPerkara || "").trim() || /cerai|34[67]/i.test(String(req.body.jenisPerkara))),
+          rincianAlasan: mintaRincian,
+          ...(positaRincian ? { positaRincian } : {}),
           saksiPihak: {
             saksi1: ["penggugat", "tergugat"].includes(String(req.body?.saksiPihak?.saksi1 || "").toLowerCase()) ? String(req.body.saksiPihak.saksi1).toLowerCase() : "",
             saksi2: ["penggugat", "tergugat"].includes(String(req.body?.saksiPihak?.saksi2 || "").toLowerCase()) ? String(req.body.saksiPihak.saksi2).toLowerCase() : "",
@@ -3273,7 +3285,7 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
           const positaMasukTt = String(req.body?.posita || "");
           let positaTt = positaMasukTt;
           if (positaMasukTt.replace(/<[^>]*>/g, " ").trim().length < 50 && nomorPerkara) {
-            const konteksTt = await abtUsulanService.konteksPerkaraSaksi(nomorPerkara).catch(() => null);
+            const konteksTt = await konteksSaksi();
             if (konteksTt && konteksTt.posita) positaTt = konteksTt.posita;
           }
           const tt = require("../services/deteksiTempatTinggalService").usulanTempatTinggal({
@@ -3296,7 +3308,7 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
       // modul jenis lain disambung agen W/X/Y di bagian posita-lain). Hanya menambah kartu yang belum ada.
       if (jawaban.saksi && Array.isArray(jawaban.saksi.usulan) && nomorPerkara) {
         try {
-          const konteksCr = await abtUsulanService.konteksPerkaraSaksi(nomorPerkara).catch(() => null);
+          const konteksCr = await konteksSaksi();
           if (konteksCr && [346, 347].includes(konteksCr.jenisPerkaraId)) {
             const positaCr = String(req.body?.posita || "").replace(/<[^>]*>/g, " ").trim().length >= 50 ? String(req.body?.posita || "") : konteksCr.posita;
             jawaban.saksi.usulan = require("../services/deteksi/cerai").tambahUsulanCerai(jawaban.saksi.usulan, positaCr);
