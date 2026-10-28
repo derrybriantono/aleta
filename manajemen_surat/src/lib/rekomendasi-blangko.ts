@@ -322,6 +322,9 @@ export const PENETAPAN_IKRAR = {
   pTidakHadirT: "[90] [Ikrar] Penetapan Ikrar Talak - P Hadir & T Tidak Hadir.rtf",
   keduanyaHadir: "[90a] [Ikrar] Penetapan Ikrar Talak - P & T Hadir.rtf",
   gugur: "[91] [Ikrar Gugur] Penetapan Kekuatan Putusan Gugur - P Tidak Ikrar 6 Bulan.rtf",
+  // 28 Okt 2026 (keputusan P4a, paket ABT blangko-ikrar-92-28okt): Pemohon rukun kembali, tidak menjatuhkan ikrar.
+  rukunPTidakHadirT: "[92] [Ikrar Rukun] Penetapan Rukun Kembali - P Hadir & T Tidak Hadir.rtf",
+  rukunKeduanyaHadir: "[92a] [Ikrar Rukun] Penetapan Rukun Kembali - P & T Hadir.rtf",
 } as const;
 
 /** Baris jenis lama tanpa menu (itsbat, dispensasi): menu menurut jenisnya. */
@@ -417,6 +420,13 @@ function rekomendasiPenetapanIkrar(m: MasukanRekomendasi, teks: string): Rekomen
   }
   if (h === 3 || h === 4) return hasil; // Pemohon tidak hadir: ikrar belum diucapkan (BAS tunda ALUR 10 [3]/[4])
   const keduanya = h === 1;
+  // 28 Okt 2026: hasil sidang "rukun kembali" -> penetapan rukun kembali [92]/[92a] didahulukan.
+  if (/\brukun\b/i.test(teks)) {
+    hasil.push(
+      r(keduanya ? i.rukunKeduanyaHadir : i.rukunPTidakHadirT, keduanya ? "Penetapan rukun kembali (P & T hadir)" : "Penetapan rukun kembali (T tidak hadir)",
+        "Sidang ikrar talak: Pemohon dan Termohon rukun kembali, ikrar talak tidak dijatuhkan.", !hasil.length, h !== 1 && h !== 2)
+    );
+  }
   hasil.push(
     r(keduanya ? i.keduanyaHadir : i.pTidakHadirT, keduanya ? "Penetapan ikrar talak (P & T hadir)" : "Penetapan ikrar talak (T tidak hadir)",
       `Sidang ikrar talak: ${keduanya ? "Pemohon dan Termohon hadir" : h === 2 ? "Pemohon hadir, Termohon tidak hadir" : "kehadiran belum tercatat"}.`, !hasil.length, h !== 1 && h !== 2),

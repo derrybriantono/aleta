@@ -236,6 +236,9 @@ async function jalankanHasilSidang(jalan, badan = {}, konteks = {}, deps = layan
             jadwalId: badan.jadwalId,
             perkaraId: rencana.perkara && rencana.perkara.perkaraId,
             statusIkrar: rencana.statusIkrar,
+            // P5b: cap kantor + ukuran dari portal; tanda tangan sah dibaca bot sendiri.
+            cap: badan.capIkrar,
+            atur: badan.aturTtdIkrar,
             operator,
             ip,
             kering: false,
@@ -295,6 +298,8 @@ async function jalankanIsiIkrar(badan = {}, konteks = {}, deps = layananBawaan()
     const edocIkrar = await unggahEdocIkrar(deps, {
       jadwalId: badan.jadwalId,
       perkaraId: badan.perkaraId,
+      cap: badan.capIkrar,
+      atur: badan.aturTtdIkrar,
       operator,
       ip,
       kering,
@@ -351,6 +356,8 @@ async function jalankanIsiIkrar(badan = {}, konteks = {}, deps = layananBawaan()
       : await unggahEdocIkrar(deps, {
           jadwalId: badan.jadwalId,
           perkaraId: rencana.perkara && rencana.perkara.perkaraId,
+          cap: badan.capIkrar,
+          atur: badan.aturTtdIkrar,
           operator,
           ip,
           kering: false,

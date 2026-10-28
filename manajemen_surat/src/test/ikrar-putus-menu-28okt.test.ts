@@ -576,3 +576,182 @@ describe("hak status ikrar 2/3 (P7)", () => {
     expect(rute).toContain("konfirmasiStatus: badan.konfirmasiStatus === true");
   });
 });
+
+// ============================================================================
+// T3: e-Doc per status + PDF bertanda tangan (P4a/P5b)
+// ============================================================================
+describe("e-Doc penetapan ikrar per status, PDF ber-TTD + cap", () => {
+  type Edoc = {
+    pilihBlangkoIkrar: (h: unknown, s?: unknown) => Baris;
+    isiTanggalTitik: (rtf: string, t: string) => { rtf: string; diisi: boolean };
+    buatLayanan: (deps: Baris) => { unggahPenetapanIkrar: (p: Baris) => Promise<Baris> };
+  };
+  const muatEdoc = () => {
+    dbTiruan(() => []);
+    return muatSegar<Edoc>("services/ikrarEdocService.js");
+  };
+  const RTF = "{\\rtf1\\ansi Penetapan Nomor 474/Pdt.G/2026/PA.Dgl Pada tanggal ............................\\par Ketua Majelis,\\par Fahri\\par}";
+  function bangun(o: { baris?: Baris; pdf?: boolean; ttdSah?: boolean } = {}) {
+    const catat: { tulis: Array<{ penuh: string; isi: Buffer }>; kueri: Kueri[]; bubuh: Baris[] } = { tulis: [], kueri: [], bubuh: [] };
+    const baris = {
+      jadwal_id: 500,
+      perkara_id: 9988,
+      tanggal: "2026-10-28",
+      ikrar_talak: "Y",
+      dihadiri_oleh: 2,
+      ditunda: "T",
+      alasan_ditunda: "Pemohon dan Termohon rukun kembali",
+      keterangan: "Rukun Kembali, Ikrar Talak Tidak Dijatuhkan",
+      nomor_perkara: "474/Pdt.G/2026/PA.Dgl",
+      tanggal_daftar: "2026-07-14",
+      ada_baris: 9988,
+      status_ikrar: "3",
+      amar: "x".repeat(80),
+      tgl_ikrar: "2026-10-28",
+      dok: null,
+      ...(o.baris || {}),
+    };
+    const deps = {
+      kueri: async (sql: string, params: unknown[]) => {
+        catat.kueri.push({ sql, params });
+        if (/^\s*SELECT j\.id/i.test(sql)) return [baris];
+        if (/^\s*UPDATE perkara_ikrar_talak/i.test(sql)) return { affectedRows: 1 };
+        return [];
+      },
+      kolomAda: async () => true,
+      kenaliDokumen: (b: Buffer) => (b.subarray(0, 5).toString("latin1").startsWith("{\\rtf") ? "rtf" : "lain"),
+      isiBlangko: async (p: Baris) => ({ ok: true, kosong: [], rtfBase64: Buffer.from(RTF, "latin1").toString("base64"), dipakai: p }),
+      ketuaMajelis: async () => ({ ok: true, username: "fahri", fullname: "Fahri" }),
+      periksaAkar: () => ({ dapatDitulis: true, akar: "D:/Aplikasi/aleta/tmp/w114-akar-uji" }),
+      tulisBerkas: async (penuh: string, isi: Buffer) => void catat.tulis.push({ penuh, isi }),
+      pindahBerkas: async () => true,
+      hapusBerkas: () => undefined,
+      samakanPemilik: () => undefined,
+      catatJejak: async () => true,
+      sekarang: () => new Date("2026-10-28T03:00:00Z"),
+      capWaktu: () => 1793000000,
+      bubuhkan: async (p: Baris) => {
+        catat.bubuh.push(p);
+        return o.ttdSah === false
+          ? { ok: true, rtf: p.rtf, tandaTangan: null, peringatan: [{ kode: "tanda_tangan_tidak_ditemukan" }] }
+          : { ok: true, rtf: p.rtf, tandaTangan: { id: 3, namaPejabat: "Fahri" }, cap: { id: "c1" }, penandaTangan: { nama: "Fahri" }, peringatan: [] };
+      },
+      ttd: () => ({
+        daftar: async () => ({ baris: [{ id: 3, namaPejabat: "Fahri" }] }),
+        gambar: async () => ({ isi: Buffer.from([1]) }),
+        bakuNama: (n: string) => n,
+      }),
+      rtfKePdf: async () => (o.pdf === false ? { ok: false, alasan: "soffice_mati" } : { ok: true, pdf: Buffer.from("%PDF-1.4 uji") }),
+    };
+    return { deps, catat };
+  }
+
+  it("blangko per status: 1 [90]/[90a], 2 [91] (Ketua), 3 [92]/[92a] (Ketua Majelis); rukun tanpa Pemohon ditolak", () => {
+    const e = muatEdoc();
+    expect(e.pilihBlangkoIkrar(1, 1).berkas).toContain("[90a]");
+    expect(e.pilihBlangkoIkrar(2).berkas).toContain("[90]");
+    expect(e.pilihBlangkoIkrar(4, 2)).toMatchObject({ berkas: expect.stringContaining("[91]"), penandatangan: "ketua" });
+    expect(e.pilihBlangkoIkrar(2, 3)).toMatchObject({ berkas: expect.stringContaining("[92] [Ikrar Rukun]"), penandatangan: "ketua_majelis" });
+    expect(e.pilihBlangkoIkrar(1, 3).berkas).toContain("[92a] [Ikrar Rukun]");
+    expect(e.pilihBlangkoIkrar(3, 3).alasan).toBe("rukun_kembali_pemohon_tidak_hadir");
+    expect(e.isiTanggalTitik("Pada tanggal .......... x", "28 Oktober 2026")).toEqual({ rtf: "Pada tanggal 28 Oktober 2026 x", diisi: true });
+  });
+
+  it("status 3 + TTD sah: PDF bertanda tangan + cap dari portal, nama berkas .pdf, blangko [92]", async () => {
+    const e = muatEdoc();
+    const { deps, catat } = bangun();
+    const h = await e.buatLayanan(deps).unggahPenetapanIkrar({
+      jadwalId: 500,
+      statusIkrar: 3,
+      kering: false,
+      cap: { id: "c1", nama: "Cap", jenis: "png", isiBase64: Buffer.from("cap").toString("base64") },
+    });
+    expect(h.ok).toBe(true);
+    expect(h.bentuk).toBe("pdf");
+    expect(String(h.nama)).toMatch(/^PADgl_2026_PdtG_474_penetapan_ikrar_1793000000\.pdf$/);
+    expect((h.blangko as Baris).berkas).toContain("[92]");
+    expect(catat.tulis[0].isi.toString("latin1")).toContain("%PDF");
+    expect(catat.bubuh[0]).toMatchObject({ jenis: "ikrar", atur: expect.objectContaining({ penandatangan: "ketua_majelis", pakaiCap: true }) });
+    expect(((catat.bubuh[0].cap as Baris).isi as Buffer).toString()).toBe("cap");
+    const ubah = catat.kueri.find((k) => /^UPDATE perkara_ikrar_talak/.test(k.sql))!;
+    expect(String(ubah.params[0])).toMatch(/\.pdf$/);
+  });
+
+  it("TTD belum disahkan atau PDF gagal: RTF CADANGAN, sebabnya dilaporkan", async () => {
+    const e = muatEdoc();
+    for (const o of [{ ttdSah: false }, { pdf: false }]) {
+      const { deps, catat } = bangun(o);
+      const h = await e.buatLayanan(deps).unggahPenetapanIkrar({ jadwalId: 500, statusIkrar: 3, kering: false });
+      expect(h.ok).toBe(true);
+      expect(h.bentuk).toBe("rtf");
+      expect(String(h.nama)).toMatch(/\.rtf$/);
+      expect((h.peringatan as string[]).some((x) => x.startsWith("rtf_cadangan:"))).toBe(true);
+      expect(catat.tulis[0].isi.toString("latin1").startsWith("{\\rtf")).toBe(true);
+    }
+  });
+
+  it("status 2: [91] dengan 'Pada tanggal ......' diisi tanggal penetapan; form harus berstatus 2", async () => {
+    const e = muatEdoc();
+    const gugur = {
+      dihadiri_oleh: 4,
+      alasan_ditunda: "Pemohon tidak hadir, ikrar talak gugur",
+      keterangan: "Ikrar Talak Gugur",
+      status_ikrar: "2",
+    };
+    const { deps, catat } = bangun({ baris: gugur, ttdSah: false });
+    const h = await e.buatLayanan(deps).unggahPenetapanIkrar({ jadwalId: 500, statusIkrar: 2, kering: false });
+    expect(h.ok).toBe(true);
+    expect((h.blangko as Baris).berkas).toContain("[91]");
+    expect(catat.tulis[0].isi.toString("latin1")).toContain("Pada tanggal 28 Oktober 2026");
+    expect(catat.bubuh[0].atur).toMatchObject({ penandatangan: "ketua" });
+
+    // Form masih status 1 padahal diminta 2: ditolak, tidak ada berkas.
+    const salah = bangun({ baris: { ...gugur, status_ikrar: "1" } });
+    const t = await e.buatLayanan(salah.deps).unggahPenetapanIkrar({ jadwalId: 500, statusIkrar: 2, kering: false });
+    expect(t.alasan).toBe("form_ikrar_belum_terisi");
+    expect(salah.catat.tulis).toHaveLength(0);
+  });
+
+  it("tanpa status diminta (tombol Isi form ikrar): status form yang tercatat dipakai", async () => {
+    const e = muatEdoc();
+    const { deps } = bangun();
+    const h = await e.buatLayanan(deps).unggahPenetapanIkrar({ jadwalId: 500, kering: true });
+    expect(h).toMatchObject({ ok: true, kering: true, statusIkrar: 3 });
+  });
+});
+
+// ============================================================================
+// T3: paket ABT [92] Rukun Kembali + sidangKe e-Doc ikrar
+// ============================================================================
+describe("paket ABT blangko-ikrar-92-28okt", () => {
+  it("dua blangko baru sesuai daftar-rtf (md5), amar = amar SIPP status 3, tanpa sisa teks ikrar diucapkan / kata aplikasi", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { createHash } = await import("node:crypto");
+    const akar = path.resolve(process.cwd(), "../abt-paket/blangko-ikrar-92-28okt/paket-satker");
+    const daftar = readFileSync(path.join(akar, "daftar-rtf.tsv"), "utf8").split("\n").filter((b) => b && !b.startsWith("#")).map((b) => b.split("\t"));
+    expect(daftar.map((d) => d[1])).toEqual([
+      "[92] [Ikrar Rukun] Penetapan Rukun Kembali - P Hadir & T Tidak Hadir.rtf",
+      "[92a] [Ikrar Rukun] Penetapan Rukun Kembali - P & T Hadir.rtf",
+    ]);
+    for (const [folder, berkas, md5] of daftar) {
+      const isi = readFileSync(path.join(akar, "rtf", folder, berkas));
+      expect(createHash("md5").update(isi).digest("hex"), berkas).toBe(md5);
+      const teks = isi.toString("latin1");
+      expect(teks).toContain("Mengabulkan permohonan #0046# untuk tidak menjatuhkan ikrar talak terhadap #0047#;");
+      expect(teks).toContain("Menyatakan perkara Nomor #0001# tidak dapat dilanjutkan;");
+      expect(teks).toContain("Memerintahkan Panitera #8008# untuk mencoret perkara Nomor #0001# dari register perkara;");
+      for (const sisa of ["#9215#", "#9219#", "#9220#", "Bismillah", "putus karena perceraian"]) expect(teks, `${berkas} ${sisa}`).not.toContain(sisa);
+      expect(teks).not.toMatch(/aleta/i);
+    }
+    expect(readFileSync(path.join(akar, "abt-blangko-ikrar-92-28okt-PRASYARAT.sql"), "utf8")).toMatch(/SELECT COUNT\(DISTINCT no_var\) FROM abt_variabel WHERE no_var IN \(([0-9]+,){26}[0-9]+\);/);
+    expect(readFileSync(path.join(akar, "pasang-satker.sh"), "utf8")).toContain("HARAP='27'");
+  });
+
+  it("e-Doc ikrar mengisi blangko pada SIDANG IKRAR itu (sidangKe = urutan), bukan sidang pertama", async () => {
+    const { readFileSync } = await import("node:fs");
+    const sumber = readFileSync(path.join(akarBot, "services/ikrarEdocService.js"), "utf8");
+    expect(sumber).toContain("j.keterangan, j.urutan,");
+    expect(sumber).toContain("sidangKe: Number(r.urutan) || 0");
+    expect(sumber).not.toContain("perkaraId: pid, sidangKe: 0 }");
+  });
+});

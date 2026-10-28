@@ -10,6 +10,7 @@ import {
   statusIkrarDiminta,
 } from "@/server/modules/aleta-ecourt/hak-putusan";
 import { akunSippPengguna } from "@/server/modules/aleta-ecourt/court-calendar-akun";
+import { bahanTtdIkrar } from "@/server/modules/aleta-ecourt/ttd-ikrar";
 import {
   getGatewayStatusPutusan,
   postGatewayPutusSidang,
@@ -100,7 +101,11 @@ export async function POST(request: NextRequest) {
       // penekan sebenarnya hanya untuk jejak ALETA.
       const akunPenekan = await akunSippPengguna(db, aktor.id).catch(() => null);
       await tolakBilaHariLibur(db, badan.tanggalPutus, "Tanggal putusan");
+      // P5b (28 Okt 2026): cap + ukuran untuk e-Doc ikrar ber-TTD - hanya bila sidang ikrar dikirim KERING=false.
+      const putusIkrar = badan.ikrarDilaksanakan === true || statusIkrar > 0;
+      const ttdIkrar = putusIkrar && badan.kering === false ? await bahanTtdIkrar(db, statusIkrar || 1) : {};
       const respons = await postGatewayPutusSidang({
+        ...ttdIkrar,
         jadwalId: badan.jadwalId,
         perkaraId: badan.perkaraId,
         statusPutusanId: badan.statusPutusanId,
