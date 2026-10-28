@@ -243,7 +243,7 @@ describe("2. kasir otomatis massal satu hari", () => {
     const rute = readFileSync(path.join(AKAR, "aleta_bot/routes/jadwalSidangRoutes.js"), "utf8");
     expect(rute).toMatch(/jenis: badan\.massal === true \? "kasir-jurnal-massal" : "kasir-jurnal"/);
     const portal = readFileSync(path.join(process.cwd(), "src/app/api/aleta-ecourt/sidang/kasir/route.ts"), "utf8");
-    expect(portal).toMatch(/massal: badan\.massal === true/);
+    expect(portal).toMatch(/const massal = badan\.massal === true/);
     expect("kasir-jurnal-massal".length).toBeLessThanOrEqual(20);
   });
 });
@@ -555,7 +555,10 @@ describe("6. ekstensi - tab Kasir (basmassal.js IIFE)", () => {
     expect(await h.w.aletaKasirPasang(h.wadah, { perkaraId: String(h.k.perkara.perkaraId) })).toBe(true);
     await sampai(() => h.wadah.querySelector(".aleta-kasir-keadaan"), "keadaan");
     expect(h.wadah.textContent).toContain("Keadaan: Putus verstek");
-    expect(h.wadah.textContent).toContain("Lazim pada keadaan ini: Redaksi, Meterai, Biaya Pemberitahuan");
+    // 28 Okt 2026: yang lazim di balik ikon (i), bukan baris teks.
+    const ikonLazim = h.wadah.querySelector('.aleta-kasir-info[title*="Lazim pada keadaan ini"]') as HTMLElement;
+    expect(ikonLazim.title).toContain("Redaksi, Meterai, Biaya Pemberitahuan");
+    expect(h.wadah.textContent).not.toContain("Lazim pada keadaan ini");
     const tercentang = (h.usulan.usulan as Usul[]).filter((u) => u.pilih && (!u.sisaOtomatis || Number(u.jumlah) > 0)).length;
     expect(h.wadah.querySelectorAll(".aleta-kasir-tabel input[type=checkbox]:checked").length).toBe(tercentang);
     const simpan = Array.from(h.wadah.querySelectorAll("button")).find((b) => /Simpan ke SIPP/.test(b.textContent || "")) as HTMLButtonElement;
@@ -596,7 +599,7 @@ describe("6. ekstensi - tab Kasir (basmassal.js IIFE)", () => {
     const h = bukaEkstensi({ muatUlang: true });
     await sampai(() => h.w.__mode() === "baru", "mode baru");
     await h.w.aletaKasirPasangHarian(h.wadah, { situs: "sipp" });
-    const massal = Array.from(h.wadah.querySelectorAll("details")).find((d) => /massal/.test(d.querySelector("summary")?.textContent || "")) as HTMLDetailsElement;
+    const massal = Array.from(h.wadah.querySelectorAll("details")).find((d) => /Kasir Manual/.test(d.querySelector("summary")?.textContent || "")) as HTMLDetailsElement;
     massal.open = true;
     massal.dispatchEvent(new h.w.Event("toggle"));
     await sampai(() => massal.querySelector(".aleta-basmassal-baris input[type=checkbox]:checked"), "perkara tercentang");
@@ -606,7 +609,7 @@ describe("6. ekstensi - tab Kasir (basmassal.js IIFE)", () => {
     (Array.from(massal.querySelectorAll("button")).find((b) => /Tekan sekali lagi/.test(b.textContent || "")) as HTMLButtonElement).click();
     await sampai(() => /Selesai: 1 perkara berhasil/.test(massal.textContent || ""), "laporan");
     const notis = await sampai(() => massal.querySelector('[data-mu="muat-ulang"]') as HTMLElement | null, "kotak muat ulang di akhir");
-    expect(notis.textContent).toContain("Kasir massal selesai.");
+    expect(notis.textContent).toContain("Kasir Manual selesai.");
     expect(h.minta.filter((m) => m.cara === "POST").length).toBe(1);
     await sampai(() => h.navigasi.length === 1, "memuat ulang sekali");
     await tunggu(500);
@@ -633,7 +636,7 @@ describe("6. ekstensi - tab Kasir (basmassal.js IIFE)", () => {
     await sampai(() => /Kembalikan sisa panjar \(1\)/.test(h.wadah.textContent || ""), "pengingat");
     expect(h.wadah.textContent).toContain("Setor PNBP ke kas negara (1)");
     expect(h.minta.some((m) => m.url.includes("/kasir/harian"))).toBe(false);
-    const massal = Array.from(h.wadah.querySelectorAll("details")).find((d) => /massal/.test(d.querySelector("summary")?.textContent || "")) as HTMLDetailsElement;
+    const massal = Array.from(h.wadah.querySelectorAll("details")).find((d) => /Kasir Manual/.test(d.querySelector("summary")?.textContent || "")) as HTMLDetailsElement;
     massal.open = true;
     massal.dispatchEvent(new h.w.Event("toggle"));
     await sampai(() => massal.querySelector(".aleta-basmassal-baris input[type=checkbox]:checked"), "perkara tercentang");
@@ -644,7 +647,9 @@ describe("6. ekstensi - tab Kasir (basmassal.js IIFE)", () => {
     expect(h.minta.filter((m) => m.cara === "POST")).toEqual([]);
     (Array.from(massal.querySelectorAll("button")).find((b) => /Tekan sekali lagi/.test(b.textContent || "")) as HTMLButtonElement).click();
     await sampai(() => h.minta.some((m) => m.cara === "POST"), "POST massal");
-    expect(h.minta.filter((m) => m.cara === "POST")[0].badan).toMatchObject({ massal: true, kering: false, akunSipp: "kasir" });
+    expect(h.minta.filter((m) => m.cara === "POST")[0].badan).toMatchObject({ massal: true, kering: false });
+    // 28 Okt 2026: akun SIPP tidak dikirim - server menentukan AKUN KASIR.
+    expect(h.minta.filter((m) => m.cara === "POST")[0].badan).not.toHaveProperty("akunSipp");
     await sampai(() => /Selesai: 1 perkara berhasil/.test(massal.textContent || ""), "laporan");
     // Rekap: mingguan s.d. tahunan diciutkan.
     const periode = Array.from(h.wadah.querySelectorAll("details[data-periode]")) as HTMLDetailsElement[];

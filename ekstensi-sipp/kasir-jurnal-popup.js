@@ -10,7 +10,7 @@
  * Isinya tampilan kerja Kasir yang SAMA dengan tab Kasir ekstensi (basmassal.js):
  *   - halaman jurnal satu perkara (.../detil_biaya, "BUKU JURNAL KEUANGAN PERKARA"): Kasir per perkara;
  *   - halaman daftar jurnal (jurnal_perkara_list / all_jurnal_perkara): Kasir harian (otomatis, pengingat,
- *     massal satu hari, rekap).
+ *     Kasir Manual satu hari, rekap, riwayat).
  *
  * Hak (di sini hanya kenyamanan; rute kasir menolak sendiri dengan 403):
  *   - kasir / keuangan perkara / bendahara / Admin / Super Admin: penuh;

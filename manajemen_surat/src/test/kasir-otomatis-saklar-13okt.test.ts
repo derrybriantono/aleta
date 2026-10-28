@@ -179,14 +179,15 @@ function sippTiruan(kunci: string) {
     }
     throw new Error(`kueri ALETA tak terduga: ${sql.slice(0, 60)}`);
   };
-  const layanan = otomatis.buatLayanan({ jurnal: { ...jurnal, bacaKeadaan }, kueri, kueriAleta });
+  // 28 Okt 2026: akun tulis = AKUN KASIR SIPP (kasirAkunService), bukan akun petugas yang menekan.
+  const layanan = otomatis.buatLayanan({ jurnal: { ...jurnal, bacaKeadaan }, kueri, kueriAleta, akunKasir: async () => ({ ok: true, username: "kasir", nama: "Kasir Satu", calon: [] }) });
   return {
     layanan,
     biaya,
     tulisan,
     dasar,
     jalan: (tambahan: Baris = {}) =>
-      layanan.jalankanPerkara({ perkaraId: dasar.perkara.perkaraId, akunSipp: "kasir", operator: "Kasir Satu", ip: "10.0.0.9", kering: false, ...tambahan }),
+      layanan.jalankanPerkara({ perkaraId: dasar.perkara.perkaraId, akunSipp: "admin", operator: "Kasir Satu", ip: "10.0.0.9", kering: false, ...tambahan }),
     basikan: () => (basi = salin(biaya)),
     segarkan: () => (basi = null),
   };
@@ -413,7 +414,7 @@ function bukaHarian(p: { nyala: boolean; bolehUbah: boolean }) {
           perkara: [r],
           gagal: [],
           ringkas: { perkara: 1, akanDiisi: 1, baris: r.kirim.length },
-          akun: p.bolehUbah ? { ok: true, username: "kasir" } : null,
+          akun: { akunKasir: true, ok: true, username: "kasir", nama: "Kasir Satu", calon: [], milik: [], dipilih: "", bolehPilih: false },
         },
       });
     }
@@ -473,7 +474,9 @@ describe("4. ekstensi - bagian Kasir otomatis (basmassal.js)", () => {
     await sampai(() => h.minta.some((m) => m.cara === "POST"), "POST jalankan sendiri");
     const post = h.minta.filter((m) => m.cara === "POST");
     expect(post.length).toBe(1);
-    expect(post[0].badan).toMatchObject({ aksi: "jalankan", perkaraId: String(keadaan("cabut").perkara.perkaraId), akunSipp: "kasir", kering: false });
+    expect(post[0].badan).toMatchObject({ aksi: "jalankan", perkaraId: String(keadaan("cabut").perkara.perkaraId), kering: false });
+    // 28 Okt 2026: akun SIPP tidak dikirim petugas; server memakai AKUN KASIR.
+    expect(post[0].badan).not.toHaveProperty("akunSipp");
     expect(JSON.stringify(post[0].badan)).not.toMatch(/aleta/i);
   });
 

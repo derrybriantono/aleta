@@ -101,7 +101,10 @@ export async function POST(request: NextRequest) {
     }
     const badan = (await request.json()) as Record<string, unknown>;
 
-    const akun = akunKasir(await akunSippPengguna(db, aktor.id, badan.akunSipp));
+    // 28 Okt 2026: Kasir Manual (satu hari, massal: true) ditulis atas AKUN KASIR SIPP yang ditentukan
+    // bot - akun petugas yang masuk tidak dipakai (dan tidak perlu tertaut). Kasir per perkara tetap akun petugas.
+    const massal = badan.massal === true;
+    const akun = massal ? ({ ok: true, username: "", milik: [] } as PilihanAkunSipp) : akunKasir(await akunSippPengguna(db, aktor.id, badan.akunSipp));
     if (!akun.ok) {
       return ok({ available: true, ok: false, alasan: akun.alasan, pesan: akun.pesan, milik: akun.milik });
     }
@@ -113,12 +116,12 @@ export async function POST(request: NextRequest) {
       body: {
         perkaraId: String(badan.perkaraId ?? ""),
         baris,
-        akunSipp: akun.username,
+        akunSipp: massal ? "" : akun.username,
         operator: String(aktor.name || aktor.email || aktor.id),
         ip: alamatIpPeramban(request),
         kering,
         // 1.189.x butir 2: simpanan Kasir otomatis massal - jejak ALETA saja.
-        massal: badan.massal === true,
+        massal,
         // Keputusan 104 (18 Okt 2026): di luar jam kerja bot bertanya dulu
         // (tanyaJamKerja) atau mengikuti pilihan petugas (antrekan | sekarang).
         tanyaJamKerja: badan.tanyaJamKerja === true,

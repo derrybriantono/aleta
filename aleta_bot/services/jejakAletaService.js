@@ -197,6 +197,8 @@ async function catat(jejak) {
       tabel: String((x && x.tabel) || ""),
       aksi: String((x && x.aksi) || ""),
       keterangan: potong((x && x.keterangan) || "", 300),
+      // 28 Okt 2026: hasil tiap baris jurnal Kasir (tersimpan / sudah-ada / gagal ...), dibaca bab Riwayat Kasir.
+      ...(x && x.keadaan ? { keadaan: potong(x.keadaan, 20) } : {}),
     }));
 
     await kueri(
@@ -334,4 +336,98 @@ async function rincian(id) {
   }
 }
 
-module.exports = { TABEL, catat, riwayat, rincian, pastikanTabel };
+/** Jenis jejak milik Kasir ALETA (kolom jenis VARCHAR(20)). */
+const JENIS_KASIR = Object.freeze({
+  "kasir-otomatis": "Kasir otomatis",
+  "kasir-jurnal-massal": "Kasir Manual (satu hari)",
+  "kasir-jurnal": "Kasir per perkara",
+});
+
+/** "jurnal 2026-10-28 Redaksi Rp10.000 (pengeluaran)" -> { tanggal, uraian, jumlah, arus }; selain itu null. */
+function uraikanKeteranganJurnal(teks) {
+  const m = /^jurnal (\d{4}-\d{2}-\d{2}) (.*) Rp([\d.]+) \((pemasukan|pengeluaran)\)$/.exec(String(teks || "").trim());
+  if (!m) return null;
+  return { tanggal: m[1], uraian: m[2], jumlah: Number(m[3].replace(/\./g, "")) || 0, arus: m[4] };
+}
+
+function hasilBaris(keadaan, berhasil) {
+  if (keadaan === "tersimpan") return "berhasil";
+  if (keadaan === "sudah-ada") return "sudah ada";
+  if (keadaan === "dilewati") return "dilewati";
+  if (keadaan) return "gagal";
+  return berhasil ? "berhasil" : "gagal";
+}
+
+/**
+ * Riwayat pekerjaan Kasir ALETA (28 Okt 2026): jurnal yang SUNGGUH ditulis
+ * (uji kering tidak ikut) oleh Kasir otomatis, Kasir Manual (satu hari), dan
+ * Kasir per perkara - satu baris per baris jurnal, terbaru dahulu.
+ *
+ * saringan: dari / sampai (YYYY-MM-DD, tanggal setempat), nomor (potongan
+ * nomor perkara), batas (bawaan 100, paling banyak 300 pekerjaan).
+ */
+async function riwayatKasir(saringan) {
+  const s = saringan || {};
+  try {
+    await pastikanTabel();
+    const { sqlSetempat } = require("../utils/waktuUtc");
+    const syarat = ["aksi = 'tulis'", "kering = 0", `jenis IN (${Object.keys(JENIS_KASIR).map(() => "?").join(",")})`];
+    const nilai = Object.keys(JENIS_KASIR);
+    const dari = tanggalSaja(s.dari);
+    const sampai = tanggalSaja(s.sampai);
+    if (dari) {
+      syarat.push(`DATE(${sqlSetempat("waktu")}) >= ?`);
+      nilai.push(dari);
+    }
+    if (sampai) {
+      syarat.push(`DATE(${sqlSetempat("waktu")}) <= ?`);
+      nilai.push(sampai);
+    }
+    const nomor = String(s.nomor || "").trim().slice(0, 60);
+    if (nomor) {
+      syarat.push("nomor_perkara LIKE ?");
+      nilai.push(`%${nomor.replace(/[\\%_]/g, (c) => "\\" + c)}%`);
+    }
+    const batas = Math.max(1, Math.min(300, Number(s.batas) || 100));
+    const baris = await kueri(
+      `SELECT id, waktu, jenis, perkara_id, nomor_perkara, akun_sipp, nama_pejabat, operator, berhasil, alasan, rincian
+         FROM ${TABEL} WHERE ${syarat.join(" AND ")} ORDER BY waktu DESC, id DESC LIMIT ${batas}`,
+      nilai
+    );
+    const pekerjaan = (Array.isArray(baris) ? baris : []).map((b) => {
+      let langkah = [];
+      try {
+        langkah = JSON.parse(String(b.rincian || "[]"));
+      } catch {
+        langkah = [];
+      }
+      const berhasil = Number(b.berhasil) === 1;
+      const isi = (Array.isArray(langkah) ? langkah : [])
+        .filter((x) => x && x.tabel === "perkara_biaya")
+        .map((x) => {
+          const u = uraikanKeteranganJurnal(x.keterangan);
+          return u ? { ...u, hasil: hasilBaris(String(x.keadaan || ""), berhasil) } : null;
+        })
+        .filter(Boolean);
+      return {
+        id: Number(b.id),
+        waktu: b.waktu instanceof Date ? b.waktu.toISOString() : String(b.waktu || ""),
+        cara: JENIS_KASIR[String(b.jenis)] || String(b.jenis),
+        jenis: String(b.jenis),
+        perkaraId: Number(b.perkara_id) || 0,
+        nomorPerkara: String(b.nomor_perkara || ""),
+        akunSipp: String(b.akun_sipp || ""),
+        namaAkun: String(b.nama_pejabat || ""),
+        operator: String(b.operator || ""),
+        berhasil,
+        alasan: String(b.alasan || ""),
+        baris: isi,
+      };
+    });
+    return { ok: true, jumlah: pekerjaan.length, pekerjaan };
+  } catch (galat) {
+    return { ok: false, alasan: "riwayat_kasir_tidak_terbaca", pesan: String((galat && galat.message) || galat).slice(0, 200) };
+  }
+}
+
+module.exports = { TABEL, JENIS_KASIR, catat, riwayat, riwayatKasir, rincian, pastikanTabel, uraikanKeteranganJurnal };
