@@ -253,7 +253,8 @@ function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?
         const nilaiTulis = String(f.get("value") || "");
         if (p.gagalNilai && p.gagalNilai.includes(nilaiTulis)) return html(`<font color='red' size='2'>GAGAL</font>`);
         abt[kode] = nilaiTulis;
-        if (p.tulis) p.tulis.push([kode, nilaiTulis]);
+        // 29 Okt: alat bukti 1214 yang tersusun otomatis ditulis sekali saat BAS dibuka; itu bukan isian sidang yang dijaga uji ini.
+        if (p.tulis && kode !== "1214") p.tulis.push([kode, nilaiTulis]);
         return html(`<font color='green' size='2'>DATA DISIMPAN</font>`);
       }
       const def = KATALOG.get(kode);

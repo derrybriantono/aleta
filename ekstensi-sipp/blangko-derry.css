@@ -792,3 +792,14 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar .bd-bukti-el label.bd-cek, #aleta-bd-akar .bd-bel label.bd-cek { display: inline-flex; flex-direction: row; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); }
 #aleta-bd-akar .bd-bukti-el input[type="checkbox"] { width: auto; height: auto; flex: none; }
 #aleta-bd-akar .bd-belprat { margin: 0; padding: 8px 10px; border-left: 3px solid var(--accentln); background: var(--panel); border-radius: 6px; line-height: 1.5; overflow-wrap: anywhere; white-space: pre-wrap; }
+/* alat bukti -> ABT (29 Okt): baris "Input ke ABT" di bawah alat bukti surat dan elektronik; warna lewat variabel tema */
+#aleta-bd-akar .bd-bukabt { align-items: center; gap: 6px 12px; margin-top: 4px; }
+#aleta-bd-akar .bd-bukabt-st { flex: 1 1 220px; min-width: 0; font-size: 12.8px; color: var(--muted); overflow-wrap: anywhere; }
+#aleta-bd-akar .bd-bukabt-st.ok { color: var(--ok); }
+#aleta-bd-akar .bd-bukabt-st.belum { color: var(--accent); font-weight: 600; }
+#aleta-bd-akar .bd-bukabt-st.gagal { color: var(--warn); font-weight: 600; }
+/* tombol Muat tanya jawab saksi (29 Okt): di bawah panel Pengetahuan saksi, menonjol; hasilnya langsung di bawahnya */
+#aleta-bd-akar .bd-muatbawah { align-items: center; gap: 8px 14px; padding: 10px 12px; border: 2px solid var(--accentln); background: var(--accentbg); border-radius: 12px; }
+#aleta-bd-akar .bd-muatbawah .bd-btn.utama { font-size: 15px; padding: 8px 26px; }
+#aleta-bd-akar .bd-muatbawah .bd-catat { flex: 1 1 200px; min-width: 0; overflow-wrap: anywhere; }
+#aleta-bd-akar #bd-tjhasil { scroll-margin-top: calc(var(--bd-tinggi-atas) + 12px); outline: none; }

@@ -449,8 +449,8 @@ describe("2. naskah disiapkan di latar (prefetch) dan dibatalkan bila isian beru
     await cetakSekarang(h);
     await sampai(() => h.pdfRtf.length === 1, "pdf diminta", 8000);
     expect(pratinjauPermintaan(h)).toHaveLength(1);
-    // prefetch tidak menulis apa pun ke ABT
-    expect(mintaKe(h, /edit_data\?/, "POST")).toEqual([]);
+    // prefetch tidak menulis apa pun ke ABT (29 Okt: kecuali alat bukti 1214 yang tersusun otomatis, ditulis sekali saat blangko dibuka)
+    expect(mintaKe(h, /edit_data\?/, "POST").filter((m) => !/no_var=1214/.test(m.url))).toEqual([]);
   });
 
   it("isian berubah selama naskah disusun di latar: hasil lama tidak dianggap siap", async () => {

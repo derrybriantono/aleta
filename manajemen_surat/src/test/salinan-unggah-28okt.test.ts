@@ -447,7 +447,8 @@ describe("1. RTF unggahan masuk ke jalur cetak yang SAMA dengan naskah ABT", () 
     expect(tampilLatar(h)).toEqual([`${NAMA_DASAR} - SALINAN.pdf`]);
     // naskah ABT sama sekali tidak diminta, tidak ada tulisan ke ABT, pengingat isian kosong tidak muncul
     expect(pratinjauPermintaan(h)).toHaveLength(0);
-    expect(mintaKe(h, /edit_data\?/, "POST")).toEqual([]);
+    // (29 Okt: alat bukti 1214 yang tersusun otomatis ditulis sekali saat blangko dibuka, bukan oleh cetak unggahan)
+    expect(mintaKe(h, /edit_data\?/, "POST").filter((m) => !/no_var=1214/.test(m.url))).toEqual([]);
     expect(q(h, "#bd-ingat")!.hidden).toBe(true);
     const log = isian(h).keadaan().log.join("\n");
     expect(log).toContain('memakai berkas unggahan "Putusan saya.rtf"');
