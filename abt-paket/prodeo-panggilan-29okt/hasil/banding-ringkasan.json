@@ -1,0 +1,219 @@
+{
+ "perkara_diperiksa": 1889,
+ "galat_lama": 3,
+ "galat_baru": 0,
+ "potongan": {
+  "amar": {
+   "prodeo": {
+    "n": 124,
+    "beda": 124
+   },
+   "bukan": {
+    "n": 1765,
+    "beda": 1
+   }
+  },
+  "amarA2": {
+   "prodeo": {
+    "n": 124,
+    "beda": 124
+   },
+   "bukan": {
+    "n": 1765,
+    "beda": 399
+   }
+  },
+  "rincian": {
+   "prodeo": {
+    "n": 124,
+    "beda": 124
+   },
+   "bukan": {
+    "n": 1765,
+    "beda": 1
+   }
+  },
+  "rincianRupiah": {
+   "prodeo": {
+    "n": 124,
+    "beda": 124
+   },
+   "bukan": {
+    "n": 1765,
+    "beda": 1
+   }
+  },
+  "rincianIkrar": {
+   "prodeo": {
+    "n": 124,
+    "beda": 124
+   },
+   "bukan": {
+    "n": 1765,
+    "beda": 467
+   }
+  },
+  "tglT": {
+   "prodeo": {
+    "n": 124,
+    "beda": 124
+   },
+   "bukan": {
+    "n": 1765,
+    "beda": 1765
+   }
+  },
+  "tglP": {
+   "prodeo": {
+    "n": 124,
+    "beda": 124
+   },
+   "bukan": {
+    "n": 1765,
+    "beda": 1765
+   }
+  },
+  "tglT1": {
+   "prodeo": {
+    "n": 124,
+    "beda": 107
+   },
+   "bukan": {
+    "n": 1765,
+    "beda": 1549
+   }
+  },
+  "v8508": {
+   "prodeo": {
+    "n": 42,
+    "beda": 29
+   },
+   "bukan": {
+    "n": 220,
+    "beda": 156
+   }
+  },
+  "v8547": {
+   "prodeo": {
+    "n": 42,
+    "beda": 29
+   },
+   "bukan": {
+    "n": 220,
+    "beda": 159
+   }
+  },
+  "v8600": {
+   "prodeo": {
+    "n": 42,
+    "beda": 1
+   },
+   "bukan": {
+    "n": 220,
+    "beda": 1
+   }
+  },
+  "varian11150": {
+   "prodeo": {
+    "n": 124,
+    "beda": 124
+   },
+   "bukan": {
+    "n": 1765,
+    "beda": 1
+   }
+  },
+  "varian11151": {
+   "prodeo": {
+    "n": 124,
+    "beda": 124
+   },
+   "bukan": {
+    "n": 1765,
+    "beda": 1
+   }
+  },
+  "varian11152": {
+   "prodeo": {
+    "n": 124,
+    "beda": 124
+   },
+   "bukan": {
+    "n": 1765,
+    "beda": 1
+   }
+  },
+  "varian11153": {
+   "prodeo": {
+    "n": 124,
+    "beda": 124
+   },
+   "bukan": {
+    "n": 1765,
+    "beda": 399
+   }
+  },
+  "varian11154": {
+   "prodeo": {
+    "n": 124,
+    "beda": 124
+   },
+   "bukan": {
+    "n": 1765,
+    "beda": 1
+   }
+  },
+  "varian11155": {
+   "prodeo": {
+    "n": 124,
+    "beda": 124
+   },
+   "bukan": {
+    "n": 1765,
+    "beda": 1
+   }
+  },
+  "varian11156": {
+   "prodeo": {
+    "n": 124,
+    "beda": 124
+   },
+   "bukan": {
+    "n": 1765,
+    "beda": 1
+   }
+  },
+  "varian11157": {
+   "prodeo": {
+    "n": 124,
+    "beda": 124
+   },
+   "bukan": {
+    "n": 1765,
+    "beda": 1
+   }
+  },
+  "varian11158": {
+   "prodeo": {
+    "n": 124,
+    "beda": 124
+   },
+   "bukan": {
+    "n": 1765,
+    "beda": 1
+   }
+  }
+ },
+ "panggilan_T_putus_2025_2026": {
+  "jumlah_tanggal": {
+   "0": 480,
+   "1": 218,
+   "2": 879,
+   "3": 172,
+   "4": 35,
+   "5": 10
+  },
+  "lama_tanggal_ganda_sama": 195
+ },
+ "catatan": "non-prodeo beda: amar/rincian/varian 1 = perkara 9321 (galat lama 5223 subkueri >1 baris); amarA2/varian11153 399 = #8504# kini tercetak utuh (dulu ABT memformat ulang 350.000 -> 350); rincianIkrar 467 = jumlah ikrar 0 \"( rupiah)\" -> \"(rupiah)\""
+}

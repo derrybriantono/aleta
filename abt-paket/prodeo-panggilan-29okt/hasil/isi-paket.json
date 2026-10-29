@@ -1,0 +1,78 @@
+{
+ "basis": "aps_badilag_2810",
+ "rtf_dasar": "D:\\Aplikasi\\aleta\\tmp\\w82\\rtf\\derry_briantono",
+ "tindih": [
+  "blangko-ikrar-92-28okt",
+  "court-calendar-28okt",
+  "sampul-daftar-isi-26okt"
+ ],
+ "variabel_baru": [
+  11120,
+  11121,
+  11122,
+  11123,
+  11124,
+  11130,
+  11131,
+  11132,
+  11133,
+  11134,
+  11135,
+  11136,
+  11137,
+  11138,
+  11139,
+  11140,
+  11141,
+  11142,
+  11143,
+  11150,
+  11151,
+  11152,
+  11153,
+  11154,
+  11155,
+  11156,
+  11157,
+  11158,
+  11159
+ ],
+ "variabel_ubah": {
+  "8508": {
+   "md5_lama": "0edc755e42fca50aebddddad2bb5c4df",
+   "md5_baru": "992457b4808306e64c7579c8b33b8980"
+  },
+  "8547": {
+   "md5_lama": "2f2045c75c267016272bdff0589772c8",
+   "md5_baru": "36ec8016393bd4730d7a97f80ac3d362"
+  },
+  "8600": {
+   "md5_lama": "b7e1c2b80ef5d8e62ad611e4231a7127",
+   "md5_baru": "ea1127b4272cbe0a8fc27dbf79e11bdf"
+  }
+ },
+ "berkas_ditimpa": 840,
+ "aturan": {
+  "AV": 149,
+  "A": 625,
+  "R": 3712,
+  "RJ": 532,
+  "P2": 1,
+  "P3": 2,
+  "P4": 1,
+  "P1": 10,
+  "A2": 4
+ },
+ "varian_amar": {
+  "11150": "Membebankan #0046# I dan #0046# II untuk membayar biaya perkara yang hingga kini diperhitungkan sejumlah Rp#0143#,00 (#0155# rupiah)",
+  "11151": "Membebankan kepada #0046# Konvensi/Tergugat Rekonvensi untuk membayar biaya perkara ini sejumlah Rp#0143#,00 (#0155# #7095#)",
+  "11152": "Membebankan kepada #0046# untuk membayar biaya penetapan ini sejumlah Rp#1101#,00 (#2050# rupiah)",
+  "11153": "Membebankan kepada #0046# untuk membayar biaya perkara ini sejumlah Rp#0143#,00 (#0155# rupiah)",
+  "11154": "Membebankan kepada #0046# untuk membayar biaya perkara ini sejumlah Rp#8504#,00 (#0155# #7095#)",
+  "11155": "Membebankan kepada #0046# untuk membayar biaya perkara sejumlah Rp#0143#,00 (#0155# #7095#)",
+  "11156": "Membebankan kepada Pemohon untuk membayar biaya perkara ini sejumlah Rp#0143#,00 (#0155# rupiah)",
+  "11157": "Membebankan kepada Penggugat untuk membayar biaya perkara ini sejumlah Rp#0143#,00 (#0155# rupiah)",
+  "11158": "Membebankan kepada para #0046# untuk membayar biaya perkara sejumlah Rp#0143#,00 (#0155# #7095#)",
+  "11159": "Membebankan para #0046# untuk membayar biaya perkara yang hingga kini diperhitungkan sejumlah Rp. #0143#,00 (#0155# rupiah)"
+ }
+}
