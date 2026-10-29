@@ -66,7 +66,7 @@ describe("A. susunIsian", () => {
     expect(kode).toEqual(expect.arrayContaining(["8503", "0007", "2021"]));
     const k8503 = h.isian.find((b) => b.kode === "8503")!;
     expect(k8503).toMatchObject({ jenis: "teks", nama: "Alasan perceraian", langsung: false, wajib: true, dipakaiOleh: ["4001"] });
-    expect(k8503.pilihan.length).toBe(6);
+    expect(k8503.pilihan.length).toBe(8); // A-H (E dan G ditambah 28 Okt)
     expect(k8503.saran).toMatch(/^F /);
     // Bawaan #8492# bukan saran literal; label ramah dari peta.
     expect(h.isian.find((b) => b.kode === "0007")).toMatchObject({ nama: "Anak dari pernikahan ini", saran: "belum dikaruniai anak", langsung: true, bawaan: "#8492#" });

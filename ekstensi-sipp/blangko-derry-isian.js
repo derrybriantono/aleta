@@ -43,6 +43,7 @@
   /** 28 Okt: putusan yang disunting sendiri (DOCX/DOC) diubah ke RTF lewat rute yang sama dengan unggah putusan otomatis; hanya MENGHITUNG. */
   const API_KONVERSI_NASKAH = "/aleta/api/aleta-ecourt/putusan/konversi-naskah";
   const BATAS_UNGGAH_PUTUSAN = 20 * 1024 * 1024; // sama dengan batas rute konversi-naskah
+  const BATAS_UNGGAH_PUTUSAN_MB = 20;
   /** 22 Okt malam: Tes putusan - naskah dihitung di ALETA (data perkara acuan + ketikan petugas). Hanya MENGHITUNG, tidak menyimpan apa pun. */
   const API_TES_NASKAH = "/aleta/api/aleta-ecourt/blangko-derry/tes-naskah";
   const API_USULAN = "/aleta/api/aleta-bot/abt/usulan";
@@ -7274,7 +7275,7 @@
     if (tes()) return toast(PESAN_TES);
     if (!S.blangko || !S.pk) return toast("Pilih perkara dan blangko dulu.");
     if (S.sibuk || S.unggahSibuk) return;
-    if (berkas.size > BATAS_UNGGAH_PUTUSAN) return toast(`Berkas "${berkas.name}" lebih dari ${BATAS_UNGGAH_PUTUSAN / 1024 / 1024} MB; tidak dapat dipakai.`);
+    if (berkas.size > BATAS_UNGGAH_PUTUSAN) return toast(`Berkas "${berkas.name}" lebih dari ${BATAS_UNGGAH_PUTUSAN_MB} MB; tidak dapat dipakai.`);
     S.unggahSibuk = true;
     renderCetak();
     try {
