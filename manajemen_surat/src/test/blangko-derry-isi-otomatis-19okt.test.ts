@@ -561,7 +561,8 @@ describe("E. saran blangko mengikuti jenis blangko dan peran", () => {
     await sampaiPerkara(admin);
     isian(admin).pasangRekomendasi(SARAN_CAMPUR);
     await pilih(admin, BLANGKO_PUT);
-    expect(teksSaran(admin)).toBe("Pilih blangko lewat tombol Pilih blangko.");
+    // 29 Okt (audit runut): blangko SUDAH dipilih -> petunjuk menyebut tombol yang sebenarnya tampil (Ganti blangko), bukan "Pilih blangko".
+    expect(teksSaran(admin)).toBe("Untuk mengganti, tekan Ganti blangko; saran per jenis ada di bagian Disarankan jendela itu.");
     expect(q(admin, '[data-bd2="pakairek"]')).toBeNull();
     // Hakim: blangko putusan terpilih -> saran putusan.
     const h = buka({ orang: "hakim", usulan: [] });
