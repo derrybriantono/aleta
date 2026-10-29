@@ -1,0 +1,13 @@
+cbee09a1bcd45198102b60e6b956bfcc  abt-prodeo-panggilan-29okt-FUNGSI-PULIH.sql
+146a3207f64a685d303ee1f1874f0e9d  abt-prodeo-panggilan-29okt-FUNGSI.sql
+c288ebc0f09b9e81a9b0204c7ad4caf1  abt-prodeo-panggilan-29okt-PASANG.sql
+9f6c811a1a5936aaf330c3de9cda1a09  abt-prodeo-panggilan-29okt-PERIKSA.sql
+be93f8a16c6ec6a90bdd89565fe73449  abt-prodeo-panggilan-29okt-PRASYARAT.sql
+fb58248bbddf12e632544d50517f76fe  abt-prodeo-panggilan-29okt-PULIH.sql
+9fefc8435e4da97b0727eb8c0c2baffa  berkas_rtf.py
+e0329b3edc32beb69a717a0794003114  daftar-timpa.tsv
+629ff4705612f78fcc714bf339d928bf  nomor-baru.txt
+3d412f37985dc5a584d786263b40dee4  pasang-satker.sh
+9ba45c23051e9f0d1146aa78c2e2ecea  pulih-satker.sh
+03f48c1a496e811fa85ac15ada2a22e6  timpa.tgz
+92b82ca425d5b7ef5af8389f261b8d52  uji-kueri.tsv
