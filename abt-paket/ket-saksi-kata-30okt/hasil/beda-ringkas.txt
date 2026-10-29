@@ -1,0 +1,5 @@
+519 kembalikan "ya, " di ujung kata | contoh lama: 'emasa hidupnalmarhum [nama]' -> baru: 'emasa hidupnya, almarhum [nama]'
+83 kembalikan "saya" di dalam kata | contoh lama: 't, dan jgasaksi pernah  dip' -> baru: 't, dan jgasaya pernah  dip'
+18 LAIN | contoh lama: '>-   Bahwa ssaksi tidak p' -> baru: '>-   Bahwa sSaya tidak pe'
+17 buang "Iya, " di awal / saksi | contoh lama: 'r>-   Bahwa iPenggugat da' -> baru: 'r>-   Bahwa Penggugat da'
+LAIN: 18

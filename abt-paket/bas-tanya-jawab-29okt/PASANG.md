@@ -43,6 +43,10 @@ Dasar paket prodeo (`w82`) belum memuat tambalan **alamat-ganda-26okt** dan **pi
 
 **Ketergantungan pada RTF prodeo:** 86 dari 94 berkas paket ini juga ditimpa prodeo; `md5_lama` paket ini = md5 HASIL prodeo bangun-ulang di atas. Bila RTF prodeo berubah lagi (agen prodeo diminta mengubah variabel saja; bila ternyata RTF juga berubah), paket ini harus dibangun ulang atas pohon sesudah prodeo: `python sumber/bangun_paket.py <pohon sesudah prodeo>/derry_briantono` (deterministik; blok saksi tidak bersinggungan dengan amar/biaya/rincian/tanggal panggilan, terbukti `alat/verifikasi.py` 94/94 di atas pohon sesudah prodeo), lalu perbarui MD5SUMS.txt. 8 berkas sisanya (BAS ALUR 05 [3]/[3a] CG & CT, BAS ALUR 12 DK [1at]/[1t]/[2at]/[2t]) tidak disentuh prodeo.
 
+## Paket pasangan `ket-saksi-kata-30okt` (disarankan dipasang bersama)
+
+Simulasi render menemukan fungsi keterangan saksi putusan (`isian_rtf_ket_saksi`, dipakai #9259#-#9265#) memotong kata ("mengetahuinya, yang" -> "mengetahuinyang", "Iya, saya" -> "isaksi"; 1.468 jawaban / 631 perkara di dump server). Diperbaiki di `../ket-saksi-kata-30okt` (hanya fungsi, PRASYARAT md5, pulih persis). Tanpa paket itu BAS dan putusan tetap bersumber sama, tetapi sebagian kalimat putusan rusak seperti sekarang pada blangko patokan.
+
 ## Pasang (Git Bash, server hidup) - SESUDAH prodeo
 
 ```bash
