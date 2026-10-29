@@ -803,3 +803,16 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar .bd-muatbawah .bd-btn.utama { font-size: 15px; padding: 8px 26px; }
 #aleta-bd-akar .bd-muatbawah .bd-catat { flex: 1 1 200px; min-width: 0; overflow-wrap: anywhere; }
 #aleta-bd-akar #bd-tjhasil { scroll-margin-top: calc(var(--bd-tinggi-atas) + 12px); outline: none; }
+
+/* 29 Okt 2026: ikon (i) keterangan fitur - arahkan tetikus = keterangan singkat, klik dua kali = pop-up penjelasan. */
+#aleta-bd-akar .bd-ikon.bd-infoket { border-radius: 999px; color: var(--accent); border-color: var(--accentln); cursor: help; flex: none; padding: 0 6px; line-height: 1.5; margin-inline: 2px; }
+#aleta-bd-akar .bd-ikon.bd-infoket:hover { background: var(--accentbg); }
+#aleta-bd-akar .bd-atas .bd-ikon.bd-infoket { color: inherit; border-color: currentColor; opacity: .9; }
+#aleta-bd-akar .bd-atas .bd-ikon.bd-infoket:hover { opacity: 1; background: transparent; }
+#aleta-bd-akar .bd-ketpop { z-index: 70; align-items: center; }
+#aleta-bd-akar .bd-ketkotak { width: min(560px, 100%); max-height: calc(100dvh / var(--bd-z, 1) - 48px); overflow: auto; background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+#aleta-bd-akar .bd-ketjudul { font-size: 15.5px; color: var(--accent); }
+#aleta-bd-akar .bd-ketsingkat { color: var(--fg); font-weight: 600; }
+#aleta-bd-akar .bd-ketbutir { margin: 0; padding-left: 18px; color: var(--fg); display: flex; flex-direction: column; gap: 4px; }
+#aleta-bd-akar .bd-ketbutir li { line-height: 1.45; }
+#aleta-bd-akar .bd-ketbaris { display: flex; justify-content: flex-end; }

@@ -5005,8 +5005,10 @@
                 ? `Blangko ini sesuai saran untuk sidang ke-${esc(urutanSaran)}${saranPertama.alasan ? ` (${esc(saranPertama.alasan)})` : ""}.`
                 : `Saran untuk sidang ke-${esc(urutanSaran)}: <b>${esc(namaTampil(saranPertama.berkas, saranPertama.jenis))}</b>${saranPertama.alasan ? ` - ${esc(saranPertama.alasan)}` : ""} <button type="button" class="bd-btn kecil" data-bd2="pakairek">Pakai saran ini</button>`
               : jenisSaran
-                ? `Belum ada saran blangko ${esc(NAMA_SARAN_JENIS[jenisSaran] || "")} untuk sidang ke-${esc(urutanSaran)}; pilih sendiri lewat Pilih blangko.`
-                : "Pilih blangko lewat tombol Pilih blangko."
+                ? `Belum ada saran blangko ${esc(NAMA_SARAN_JENIS[jenisSaran] || "")} untuk sidang ke-${esc(urutanSaran)}; ${b ? "ganti sendiri lewat Ganti blangko bila perlu" : "pilih sendiri lewat Pilih blangko"}.`
+                : b
+                  ? "Untuk mengganti, tekan Ganti blangko; saran per jenis ada di bagian Disarankan jendela itu."
+                  : "Pilih blangko lewat tombol Pilih blangko."
           }</p>`
         : "");
   }
@@ -5028,7 +5030,7 @@
    */
   function ikonSumber(id, nm, ket) {
     const k = (Array.isArray(ket) ? ket : []).filter(Boolean);
-    return `<button type="button" class="bd-ikon bd-sumber${k.length ? " ada-ket" : ""}" data-sumber="${esc(id)}" aria-label="Dari mana isian ${esc(nm)} ini?" aria-haspopup="dialog" aria-expanded="false"${k.length ? ` title="${esc(k.join(" "))}"` : ""}>ⓘ</button>`;
+    return `<button type="button" class="bd-ikon bd-sumber${k.length ? " ada-ket" : ""}" data-sumber="${esc(id)}" aria-label="Dari mana isian ${esc(String(nm || "").replace(/\s+ini$/i, ""))} ini?" aria-haspopup="dialog" aria-expanded="false"${k.length ? ` title="${esc(k.join(" "))}"` : ""}>ⓘ</button>`;
   }
   /** Keterangan umum yang bukan milik satu isian (ⓘ memakai gelembung yang sama dengan sumber isian). */
   const INFO_UMUM = {
@@ -5604,7 +5606,7 @@
     if (!l.length) return "";
     const terisiN = l.filter((b) => terisi(b)).length;
     return (
-      `<details class="bd-tambahan" id="bd-lanjutan"${S.lanjutanBuka ? " open" : ""}><summary data-bd2="lanjutan" aria-expanded="${S.lanjutanBuka}">Isian di dalam bagian otomatis (${l.length})<span class="bd-catat"> · tidak ada di tabel ABT blangko ini${terisiN ? `, ${terisiN} sudah berisi` : ""}</span></summary>` +
+      `<details class="bd-tambahan" id="bd-lanjutan"${S.lanjutanBuka ? " open" : ""}><summary data-bd2="lanjutan" aria-expanded="${S.lanjutanBuka}">Isian di dalam bagian otomatis (${l.length})<span class="bd-catat"> · tidak tertulis langsung di blangko, dibaca kalimat otomatis (mis. amar)${terisiN ? `; ${terisiN} sudah berisi` : ""}</span></summary>` +
       `<div class="bd-pgrid">${l.map((b) => (b.khusus === "bukti" ? kotakBukti(b) : kotakIsian(b))).join("")}</div></details>`
     );
   }
@@ -7307,18 +7309,32 @@
     if (S.fmt.edoc && j === "put" && !tes()) o.push("unggah ke e-Doc SIPP");
     return o;
   }
+  /** 29 Okt: ikon (i) keterangan fitur dari blangko-derry.js (arahkan = singkat, klik dua kali = pop-up); kosong bila belum ada. */
+  function ikonKet(id) {
+    const a = api();
+    return a && typeof a.ikonKeterangan === "function" ? a.ikonKeterangan(id) : "";
+  }
+  /** Kalimat "Akan menerbitkan ..." + catatan bila tanda tangan dipilih tetapi PDF tidak dicentang (tanda tangan hanya pada PDF). */
+  function teksAkanTerbit() {
+    const dok = daftarFmt();
+    const ttdTanpaPdf = S.ttdPilih.size && !S.fmt.pdf ? " Tanda tangan hanya dibubuhkan pada PDF: centang PDF." : "";
+    return (dok.length ? `Akan menerbitkan: ${dok.join(", ")}.` : "Pilih minimal satu hasil cetak.") + ttdTanpaPdf;
+  }
+  /** Nama dokumen untuk label unggahan sendiri menurut jenis blangko yang terbuka. */
+  const NAMA_DOK_UNGGAH = { put: "putusan", bas: "BAS", rel: "relaas" };
   /** Baris "Unggah putusan sendiri" di langkah Cetak (tidak tampil pada Tes putusan). */
   function htmlUnggahanPutusan() {
     if (tes()) return "";
     const u = unggahanBerlaku();
     const mati = S.sibuk || S.unggahSibuk ? " disabled" : "";
+    const namaDok = NAMA_DOK_UNGGAH[S.blangko && S.blangko.jenis] || "putusan";
     const jenisBerkas = ".rtf,.docx,.doc,application/rtf,text/rtf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
     if (S.unggahSibuk) return `<div class="bd-utas bd-unggah" role="status"><span class="bd-catat">Membaca berkas unggahan…</span></div>`;
     if (!u) {
       return (
         `<div class="bd-utas bd-unggah" role="group" aria-label="Putusan dari berkas sendiri">` +
-        `<label class="bd-btn kecil${mati ? " mati" : ""}">Unggah putusan sendiri (RTF/DOCX/DOC)<input type="file" id="bd-unggahputusan" accept="${jenisBerkas}" hidden${mati}></label>` +
-        `<span class="bd-catat">Putusan yang sudah Anda sunting sendiri: semua pilihan cetak di atas dibuat dari berkas itu, bukan dari naskah ABT.</span></div>`
+        `<label class="bd-btn kecil${mati ? " mati" : ""}">Unggah ${namaDok} sendiri (RTF/DOCX/DOC)<input type="file" id="bd-unggahputusan" accept="${jenisBerkas}" hidden${mati}></label>` +
+        `<span class="bd-catat">${namaDok.charAt(0).toUpperCase()}${namaDok.slice(1)} yang sudah Anda sunting sendiri: semua pilihan cetak di atas dibuat dari berkas itu, bukan dari naskah ABT.</span></div>`
       );
     }
     return (
@@ -7342,18 +7358,19 @@
       return;
     }
     const j = S.blangko.jenis;
-    const dok = daftarFmt();
     const sudah = S.cetakTercatat[`${nomorPerkara()}|${j}`];
     const matiTes = (k) => tes() && k === "edoc";
     const pil = (k, label, ket) => `<label class="bd-pilc${k === "edoc" || k === "anon" ? (j === "put" && !matiTes(k) ? "" : " mati") : ""}"><input type="checkbox" data-fmt="${k}" ${S.fmt[k] && !matiTes(k) ? "checked" : ""} ${((k === "edoc" || k === "anon") && j !== "put") || matiTes(k) ? "disabled" : ""}> ${label}${ket ? `<small>${esc(ket)}</small>` : ""}</label>`;
     w.innerHTML =
       pitaTes() +
-      `<div class="bd-utas" role="group" aria-label="Pilihan cetak">${pil("rtf", "RTF")}${pil("pdf", "PDF")}${pil("salinan", "PDF SALINAN")}` +
-      `<button type="button" class="bd-btn kecil" id="bd-btnttd" data-bd2="popttd" aria-expanded="false" aria-controls="bd-popttd">Tambah tanda tangan${S.ttdPilih.size ? ` (${S.ttdPilih.size})` : ""} ▾</button>` +
-      `${pil("anon", "PDF anonim", j === "put" ? "" : "hanya putusan")}${pil("edoc", "Unggah ke e-Doc SIPP", tes() ? "mati pada Tes putusan" : j === "put" ? "" : "hanya putusan; BAS dan relaas diunggah lewat SIPP")}</div>` +
+      // 29 Okt (audit runut): "Tambah tanda tangan" tepat sesudah PDF - ia hanya berlaku pada PDF, bukan PDF SALINAN; tiap pilihan berikon (i).
+      `<div class="bd-utas" role="group" aria-label="Pilihan cetak">${pil("rtf", "RTF")}${pil("pdf", "PDF")}${ikonKet("fmt-pdf")}` +
+      `<button type="button" class="bd-btn kecil" id="bd-btnttd" data-bd2="popttd" aria-expanded="false" aria-controls="bd-popttd" title="Tanda tangan hanya dibubuhkan pada PDF">Tambah tanda tangan${S.ttdPilih.size ? ` (${S.ttdPilih.size})` : ""} ▾</button>${ikonKet("fmt-ttd")}` +
+      `${pil("salinan", "PDF SALINAN")}${ikonKet("fmt-salinan")}` +
+      `${pil("anon", "PDF anonim", j === "put" ? "" : "hanya putusan")}${ikonKet("fmt-anon")}${pil("edoc", "Unggah ke e-Doc SIPP", tes() ? "mati pada Tes putusan" : j === "put" ? "" : "hanya putusan; BAS dan relaas diunggah lewat SIPP")}${ikonKet("fmt-edoc")}</div>` +
       htmlUnggahanPutusan() +
       `<div class="bd-ingat" id="bd-ingat" hidden role="alert"></div>` +
-      `<div class="bd-utas"><button type="button" class="bd-btn utama besar" data-bd2="cetak" ${S.sibuk || S.unggahSibuk ? "disabled" : ""}>${S.sibuk ? "Sedang mencetak…" : "Cetak"}</button><span class="bd-catat" id="bd-statuscetak">${dok.length ? `Akan menerbitkan: ${esc(dok.join(", "))}. ` : "Pilih minimal satu hasil cetak. "}${tes() ? "" : sudah ? `Sudah dicetak ${esc(sudah)}.` : "Belum dicetak."}</span> <span class="bd-catat" id="bd-siapnaskah">${esc(ketSiapNaskah())}</span></div>` +
+      `<div class="bd-utas"><button type="button" class="bd-btn utama besar" data-bd2="cetak" ${S.sibuk || S.unggahSibuk ? "disabled" : ""}>${S.sibuk ? "Sedang mencetak…" : "Cetak"}</button><span class="bd-catat" id="bd-statuscetak">${esc(teksAkanTerbit())} ${tes() ? "" : sudah ? `Sudah dicetak ${esc(sudah)}.` : "Belum dicetak."}</span> <span class="bd-catat" id="bd-siapnaskah">${esc(ketSiapNaskah())}</span></div>` +
       `<ul class="bd-logcetak" id="bd-logcetak" ${S.log.length ? "" : "hidden"}>${S.log.slice(-6).map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` +
       `<div class="bd-float lebar" id="bd-popttd" hidden role="dialog" aria-label="Tambah tanda tangan"></div>`;
   }
@@ -8833,7 +8850,7 @@
       S.fmt[t.getAttribute("data-fmt")] = t.checked;
       const dok = daftarFmt();
       const st = cari("#bd-statuscetak", wadah.cetak);
-      if (st) st.textContent = dok.length ? `Akan menerbitkan: ${dok.join(", ")}.` : "Pilih minimal satu hasil cetak.";
+      if (st) st.textContent = teksAkanTerbit();
       if (dok.length) jadwalkanSiapNaskah("niat");
       return;
     }
@@ -8844,7 +8861,7 @@
       const b = cari("#bd-btnttd", wadah.cetak);
       if (b) b.textContent = `Tambah tanda tangan${S.ttdPilih.size ? ` (${S.ttdPilih.size})` : ""} ▾`;
       const st = cari("#bd-statuscetak", wadah.cetak);
-      if (st) st.textContent = `Akan menerbitkan: ${daftarFmt().join(", ")}.`;
+      if (st) st.textContent = teksAkanTerbit();
       return;
     }
     if (t.id === "bd-unggahputusan") {

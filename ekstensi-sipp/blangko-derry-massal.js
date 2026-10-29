@@ -1169,7 +1169,8 @@
       akar.innerHTML = "";
     }
   }
-  async function buka() {
+  /** jenis (opsional, 29 Okt): "put" | "bas" | "rel" | "ptsp" - dipakai alat "BAS massal" / "Relaas massal" di Alat saya. Jenis yang tidak boleh diabaikan. */
+  async function buka(jenis) {
     const a = api();
     const d = driver();
     if (!a || !d) return toast("Cetak massal belum siap. Muat ulang halaman ABT.");
@@ -1190,6 +1191,7 @@
     akar.hidden = false;
     sambungkan();
     M.terbuka = true;
+    if (typeof jenis === "string" && ada.includes(jenis)) M.jenis = jenis;
     if (!M.jenis || !ada.includes(M.jenis)) M.jenis = jenisBawaan(ada);
     M.tanggal = M.tanggal || tanggalLokal();
     // 28 Okt 2026: daftar perkara PTSP sedang "tanggal tertentu" / "rentang tanggal" -> Cetak massal PTSP memulai dari rentang yang sama.

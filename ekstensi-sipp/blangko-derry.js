@@ -939,25 +939,25 @@
     akar.innerHTML =
       `<div class="bd-layar">` +
       `<div class="bd-atas"><div class="bd-atasnama"><b>Blangko ABT by Derry Briantono</b> <small id="bd-siapa"></small>` +
-      `<span class="bd-lihatwrap" id="bd-lihatwrap" hidden><label for="bd-lihat">Lihat sebagai</label><select id="bd-lihat" aria-label="Lihat sebagai akun"></select></span>` +
-      `<label class="bd-lihatwrap bd-teswrap" id="bd-teswrap" hidden title="Coba blangko apa pun pada perkara acuan yang dipilih. Tidak ada yang ditulis ke ABT, SIPP, atau e-Court."><input type="checkbox" id="bd-tes" aria-label="Tes putusan"> Tes putusan</label></div>` +
-      `<div class="bd-baris"><button type="button" class="bd-btn kecil" id="bd-alat-btn" data-bd="alat" aria-expanded="false" aria-controls="bd-alat">Alat saya ▾</button>` +
+      `<span class="bd-lihatwrap" id="bd-lihatwrap" hidden><label for="bd-lihat">Lihat sebagai</label><select id="bd-lihat" aria-label="Lihat sebagai akun"></select>${ikonKeterangan("lihat-sebagai")}</span>` +
+      `<label class="bd-lihatwrap bd-teswrap" id="bd-teswrap" hidden title="Coba blangko apa pun pada perkara acuan yang dipilih. Tidak ada yang ditulis ke ABT, SIPP, atau e-Court."><input type="checkbox" id="bd-tes" aria-label="Tes putusan"> Tes putusan</label><span class="bd-lihatwrap" id="bd-tesket" hidden>${ikonKeterangan("tes-putusan")}</span></div>` +
+      `<div class="bd-baris"><button type="button" class="bd-btn kecil" id="bd-alat-btn" data-bd="alat" aria-expanded="false" aria-controls="bd-alat">Alat saya ▾</button>${ikonKeterangan("alat-saya")}` +
       `<button type="button" class="bd-btn kecil" id="bd-widget-btn" data-bd="widget" aria-expanded="false" aria-controls="bd-widget" title="Pengaturan ALETA untuk tampilan ini">Widget ALETA ▾</button>` +
-      `<button type="button" class="bd-btn kecil" data-bd="keabt">Tampilan ABT lama</button></div></div>` +
+      `<button type="button" class="bd-btn kecil" data-bd="keabt" title="Kembali ke ABT biasa. Buka lagi lewat grup Blangko Derry di bilah kiri ABT.">Tampilan ABT lama</button>${ikonKeterangan("abt-lama")}</div></div>` +
       `<div class="bd-pitates" id="bd-pitates" role="status" hidden></div>` +
       `<div class="bd-isi">` +
-      `<section class="bd-tahap" id="bd-t1"><div class="bd-tk"><span class="bd-tno">1</span><span class="bd-tj">Perkara</span>` +
+      `<section class="bd-tahap" id="bd-t1"><div class="bd-tk"><span class="bd-tno">1</span><span class="bd-tj">Perkara</span>${ikonKeterangan("langkah-1")}` +
       `<div class="bd-ringkas" id="bd-pkringkas" hidden></div><button type="button" class="bd-btn kecil" id="bd-ganti" data-bd="ganti" hidden>Ganti perkara</button>` +
       `<button type="button" class="bd-btn kecil bd-massalbtn" id="bd-massal" data-bd="massal" title="Mencetak banyak perkara sekaligus menurut peran Anda" hidden>Cetak massal</button></div>` +
       `<div id="bd-pkpilih"></div></section>` +
       `<div id="bd-setelah" class="bd-kolom" hidden>` +
-      `<section class="bd-tahap bd-sebaris menyusul" id="bd-w-pilih-blangko" data-tahap="E"><div class="bd-tk"><span class="bd-tno">2</span><span class="bd-tj">Blangko</span><span class="bd-chip">menyusul · tahap E</span></div>` +
+      `<section class="bd-tahap bd-sebaris menyusul" id="bd-w-pilih-blangko" data-tahap="E"><div class="bd-tk"><span class="bd-tno">2</span><span class="bd-tj">Blangko</span>${ikonKeterangan("langkah-2")}<span class="bd-chip">menyusul · tahap E</span></div>` +
       `<div class="bd-wadahkosong" data-wadah="pilih-blangko"><b>Pilih blangko</b> akan tampil di sini: jendela dua kolom dengan saran dari keterangan sidang dan peta perkara.<div class="bd-menuderry" id="bd-menuderry"></div></div></section>` +
-      `<section class="bd-tahap bd-utama3 menyusul" id="bd-w-perlu-diisi" data-tahap="F"><div class="bd-tk"><span class="bd-tno">3</span><span class="bd-tj">Perlu diisi</span><span class="bd-chip">menyusul · tahap F</span></div>` +
+      `<section class="bd-tahap bd-utama3 menyusul" id="bd-w-perlu-diisi" data-tahap="F"><div class="bd-tk"><span class="bd-tno">3</span><span class="bd-tj">Perlu diisi</span>${ikonKeterangan("langkah-3")}<span class="bd-chip">menyusul · tahap F</span></div>` +
       `<div class="bd-wadahkosong" data-wadah="perlu-diisi"><b>Isian yang perlu diisi tangan</b>, saran samar (Tab), dan tanya jawab saksi akan tampil di sini.</div></section>` +
-      `<section class="bd-tahap menyusul" id="bd-w-pratinjau" data-tahap="G"><div class="bd-tk"><span class="bd-tno">4</span><span class="bd-tj">Pratinjau</span><span class="bd-chip">menyusul · tahap G</span></div>` +
+      `<section class="bd-tahap menyusul" id="bd-w-pratinjau" data-tahap="G"><div class="bd-tk"><span class="bd-tno">4</span><span class="bd-tj">Pratinjau</span>${ikonKeterangan("langkah-4")}<span class="bd-chip">menyusul · tahap G</span></div>` +
       `<div class="bd-wadahkosong" data-wadah="pratinjau"><b>Pratinjau</b> naskah yang dapat disunting langsung akan tampil di sini.</div></section>` +
-      `<section class="bd-tahap menyusul" id="bd-w-cetak" data-tahap="G"><div class="bd-tk"><span class="bd-tno">5</span><span class="bd-tj">Cetak</span><span class="bd-chip">menyusul · tahap G</span></div>` +
+      `<section class="bd-tahap menyusul" id="bd-w-cetak" data-tahap="G"><div class="bd-tk"><span class="bd-tno">5</span><span class="bd-tj">Cetak</span>${ikonKeterangan("langkah-5")}<span class="bd-chip">menyusul · tahap G</span></div>` +
       `<div class="bd-wadahkosong" data-wadah="cetak"><b>Cetak</b> (RTF, PDF, PDF salinan, unggah e-Doc) akan tampil di sini.</div></section>` +
       `</div></div></div>` +
       `<div class="bd-float" id="bd-widget" hidden role="dialog" aria-label="Pengaturan ALETA"></div>` +
@@ -989,6 +989,7 @@
         return;
       }
       if (e.key === "Escape") {
+        if (tutupKeterangan()) return;
         tutupFloat();
         sembunyiTip();
       }
@@ -1079,6 +1080,201 @@
     }, 5200);
   }
 
+  // ── Keterangan fitur (29 Okt 2026, audit "runut cara kerja") ─────────────
+  // Ikon (i) kecil di samping fitur yang tidak jelas dari labelnya. Arahkan tetikus = keterangan singkat (title); klik dua kali =
+  // pop-up penjelasan lengkap (pola a5227BukaKeterangan di abt-panel-blangko.js); klik sekali = keterangan singkat di kabar bawah;
+  // Enter/Spasi (papan ketik) = pop-up. Isi semua keterangan di SATU daftar ini; blangko-derry-isian.js memakainya lewat
+  // api.ikonKeterangan(id). Hanya tampilan: tidak ada yang dibaca atau ditulis ke ABT/SIPP.
+  const KETERANGAN = {
+    "lihat-sebagai": {
+      judul: "Lihat sebagai akun",
+      singkat: "Menampilkan panel seperti yang dilihat akun yang dipilih: daftar perkara, blangko, dan hak menulisnya.",
+      isi: [
+        "Hanya untuk Super Admin dan Admin.",
+        "Semua akun: semua perkara dan semua jenis dokumen (putusan, BAS, relaas). Saran blangko langkah 2 ada di jendela Pilih blangko per tab.",
+        "Satu akun hakim, panitera pengganti, juru sita, atau PTSP: daftar perkara, folder blangko yang boleh dibuka, saran, dan hak menulis mengikuti akun itu.",
+        "Perkara yang sedang dibuka dilepas setiap kali pilihan diganti, supaya blangko peran lama tidak terbawa.",
+      ],
+    },
+    "tes-putusan": {
+      judul: "Tes putusan",
+      singkat: "Mencoba blangko apa pun pada perkara acuan. Tidak ada yang ditulis ke ABT, SIPP, atau e-Court.",
+      isi: [
+        "Hanya untuk Super Admin, dan hanya selama halaman ini terbuka (tidak diingat).",
+        "Saringan jenis perkara dan peran dilepas: blangko dari folder mana pun dapat dicoba. Perkara acuan boleh dicari menurut nomor, juga yang tidak ada di jadwal.",
+        "Isian tidak disimpan, tidak diunggah, dan tidak dicatat. Alat yang menulis (unggah, cetak massal, konseptor, kasir) dimatikan. Nama unduhan berakhiran -TES.",
+      ],
+    },
+    "alat-saya": {
+      judul: "Alat saya",
+      singkat: "Alat tambahan menurut peran Anda. Super Admin dan Admin melihat semua peran.",
+      isi: [
+        "Dua saklar di atas (Isi otomatis dari SIPP, Pratinjau dokumen sebelum unduh) sama dengan saklar di Widget ALETA dan popup ekstensi.",
+        "Alat bekerja pada perkara dan blangko yang sedang dibuka; bila belum ada, alat meminta Anda memilihnya dulu.",
+        "BAS massal dan Relaas massal membuka Cetak massal (tombol di langkah 1) untuk jenis itu.",
+        "Alat bertanda \"di SIPP\" belum ada di tampilan ini; pakai panel ALETA di halaman SIPP.",
+      ],
+    },
+    "abt-lama": {
+      judul: "Tampilan ABT lama",
+      singkat: "Kembali ke tampilan ABT biasa. Buka lagi lewat grup Blangko Derry di bilah kiri ABT.",
+      isi: [
+        "Tampilan ini ditutup dan ABT tampil seperti biasa, lengkap dengan panel ALETA lama.",
+        "Untuk kembali, klik grup \"Blangko Derry (Daftar s.d. Produk)\" di bilah kiri ABT. Perkara, blangko, dan isian yang sudah tersimpan tidak hilang.",
+        "Bila saklar \"Blangko ABT by Derry Briantono sebagai tampilan bawaan\" di Widget ALETA menyala, tampilan ini langsung terbuka saat ABT dibuka.",
+      ],
+    },
+    "langkah-1": {
+      judul: "Langkah 1 - Perkara",
+      singkat: "Pilih perkara yang akan dikerjakan. Langkah 2 sampai 5 muncul sesudah perkara dipilih.",
+      isi: [
+        "Urutan kerja: 1 Perkara -> 2 Blangko -> 3 Perlu diisi -> 4 Pratinjau -> 5 Cetak. Kerjakan dari atas ke bawah.",
+        "Daftar: Sidang hari ini, Tanggal tertentu (satu hari), Rentang tanggal (dari-sampai; cukup satu tanggal untuk satu hari), atau Semua perkara saya (sidang sejak 90 hari lalu sampai 45 hari ke depan).",
+        "Kotak cari menyaring daftar yang sudah tampil. Beberapa kata dipisah spasi: semuanya harus cocok. \"Cari berdasarkan\" mempersempit ke satu bidang.",
+        "Lencana prioritas: Perlu segera, Menyusul, Tidak mendesak, Selesai. Arahkan tetikus ke lencana untuk melihat alasannya.",
+        "Lencana isian (Terisi a dari t, Isian lengkap): diukur otomatis; klik lencana untuk langsung membuka isian yang masih kosong.",
+        "Lencana dokumen: Belum diunggah ke SIPP, Sudah dicetak, Sudah ada di SIPP, Belum waktunya (sidang belum tiba), Sudah minutasi.",
+        "Klik perkara untuk memilihnya. Klik dua kali nomor perkara (atau tombol Ganti perkara) untuk kembali ke daftar. Pilihan Sidang menentukan sidang yang dipakai blangko.",
+        "Cetak massal: banyak perkara sekaligus menurut peran - Hakim putusan, Panitera Pengganti BAS, Juru sita relaas, PTSP penetapan awal.",
+      ],
+    },
+    "tampilan-daftar": {
+      judul: "Tampilan dan urutan daftar",
+      singkat: "Kartu, Daftar ringkas, Tabel detail, atau Per tanggal sidang. Pilihan diingat per pengguna.",
+      isi: [
+        "Kartu: satu kotak per perkara; isinya diatur saklar \"Tampilkan keterangan\" (hanya pada tampilan Kartu).",
+        "Daftar ringkas: satu baris per perkara. Tabel detail: kolom dapat diklik untuk mengurutkan. Per tanggal sidang: dikelompokkan per hari, yang terdekat di atas.",
+        "Urutkan + Urutan naik/turun menentukan susunan. \"Yang belum selesai di depan\" menaruh perkara selesai di belakang apa pun urutannya.",
+        "\"Sembunyikan yang selesai\" dan \"Tampilkan konsep sementara\": jumlah yang disembunyikan selalu disebut di bawah daftar.",
+      ],
+    },
+    "langkah-2": {
+      judul: "Langkah 2 - Blangko",
+      singkat: "Pilih blangko untuk perkara dan sidang ini. Saran dihitung dari keterangan dan agenda sidang.",
+      isi: [
+        "Pilih blangko (atau Ganti blangko) membuka jendela dua kolom: kiri kelompok (Disarankan, lalu kelompok yang cocok dengan jenis perkara), kanan berkas blangko.",
+        "Tab di jendela itu mengikuti peran: hakim Putusan, panitera pengganti Berita acara sidang, juru sita Relaas. Super Admin dan Admin melihat semuanya.",
+        "Saran berasal dari keterangan sidang (mis. \"putus DIKABULKAN (verstek)\"), agenda sidang, dan keadaan perkara. Pakai saran ini memilih saran pertama.",
+        "Klik dua kali kotak nama blangko juga membuka jendela pilih blangko.",
+      ],
+    },
+    "langkah-3": {
+      judul: "Langkah 3 - Perlu diisi",
+      singkat: "Isian yang masih harus diisi. Tiap isian langsung tersimpan ke ABT untuk perkara ini.",
+      isi: [
+        "Isian tersimpan di ABT per perkara: putusan dan BAS perkara yang sama memakai isian yang sama (mis. alat bukti, alasan perceraian). Keterangan saksi diketik di tanya jawab BAS dan dibaca oleh putusan.",
+        "Tulisan samar di kotak adalah saran: tekan Tab untuk memakainya, atau tanda ↓ untuk pilihan lain.",
+        "Ikon (i) di samping isian: dari mana datanya. Lencana \"ragu\" berarti usulan perlu diperiksa.",
+        "Isi otomatis mengisi isian kosong dari SIPP, gugatan, e-Court, bukti, dan saran. Isian yang sudah ada isinya tidak ditimpa.",
+        "Isian di dalam bagian otomatis: isian yang tidak tertulis langsung di blangko tetapi dibaca kalimat otomatis (mis. amar).",
+        "Lihat semua isi data menampilkan seluruh nilai blangko ini; nama pihak disamarkan.",
+      ],
+    },
+    "langkah-4": {
+      judul: "Langkah 4 - Pratinjau",
+      singkat: "Naskah hasil isian. Dimuat saat dibuka; blangko besar bisa 1-5 menit.",
+      isi: [
+        "Klik baris Pratinjau naskah untuk membuka. ABT menyusun naskahnya dari isian yang sudah tersimpan.",
+        "Bagian berwarna adalah isian Anda: klik dua kali untuk mengubahnya langsung di pratinjau (tersimpan ke ABT). Bagian lain berasal dari SIPP.",
+        "Sunting pratinjau untuk menyunting lebih bebas; Muat ulang dari ABT sesudah mengubah isian di tempat lain.",
+        "Penanda yang belum terbaca (#kode#) disebut di atas naskah: periksa sebelum mencetak.",
+      ],
+    },
+    "langkah-5": {
+      judul: "Langkah 5 - Cetak",
+      singkat: "Centang hasil yang diinginkan, lalu tekan Cetak. Berkas bernama nomor perkara diikuti nama blangko.",
+      isi: [
+        "RTF: naskah yang dapat disunting di Word. PDF: siap cetak, dapat diberi tanda tangan. PDF SALINAN: bertulisan SALINAN di kiri atas halaman pertama, majelis dan panitera bertulis \"ttd\", ditandatangani Panitera pengesah.",
+        "Tambah tanda tangan: gambar tanda tangan yang sudah disahkan dibubuhkan di atas nama penandatangan, hanya pada PDF (bukan RTF atau PDF SALINAN).",
+        "PDF anonim dan Unggah ke e-Doc SIPP hanya untuk putusan. e-Doc mengunggah putusan beserta versi anonimnya ke SIPP.",
+        "Unggah putusan (atau BAS/relaas) sendiri: bila Anda menyunting naskah di Word, unggah berkasnya (RTF/DOCX/DOC); semua pilihan cetak dibuat dari berkas itu, bukan dari naskah ABT.",
+        "Sebelum mencetak, isian yang masih kosong dan penanda yang tersisa diingatkan: Isi dulu, atau Tetap cetak.",
+      ],
+    },
+    "fmt-pdf": {
+      judul: "PDF",
+      singkat: "PDF siap cetak dari naskah yang sama dengan RTF; tanda tangan pilihan Anda dibubuhkan di sini.",
+      isi: ["PDF disusun dari naskah ABT (atau berkas unggahan sendiri). Tanda tangan dari \"Tambah tanda tangan\" hanya dibubuhkan pada PDF ini."],
+    },
+    "fmt-salinan": {
+      judul: "PDF SALINAN",
+      singkat: "Salinan resmi: tulisan SALINAN di kiri atas, majelis dan panitera bertulis \"ttd\", tanda tangan Panitera pengesah.",
+      isi: [
+        "Tulisan SALINAN di kiri atas halaman pertama putusan; penetapan tanpa salinan.",
+        "Majelis dan panitera sidang hanya bertulis \"ttd\". Satu-satunya gambar tanda tangan adalah milik Panitera pengesah di blok \"Untuk Salinan\" (bila sudah terdaftar).",
+        "Pilihan \"Tambah tanda tangan\" tidak berlaku di salinan.",
+      ],
+    },
+    "fmt-ttd": {
+      judul: "Tambah tanda tangan",
+      singkat: "Gambar tanda tangan yang disahkan dibubuhkan di atas nama penandatangan - hanya pada PDF.",
+      isi: [
+        "Centang PDF lebih dulu; tanpa PDF, tanda tangan tidak dibubuhkan.",
+        "Anda hanya dapat memasang tanda tangan milik akun Anda sendiri (Super Admin/Admin: semua yang sudah tersimpan).",
+        "RTF dan PDF SALINAN tidak diberi gambar tanda tangan dari pilihan ini.",
+      ],
+    },
+    "fmt-anon": {
+      judul: "PDF anonim",
+      singkat: "PDF putusan dengan nama pihak dan data pribadi disamarkan. Hanya untuk putusan.",
+      isi: [
+        "Nama pihak disamarkan lebih dulu oleh penyamar ekstensi; bila tidak dapat dipakai, anonimisasi ABT menjadi cadangan (bisa 1-2 menit).",
+        "Saat Unggah ke e-Doc SIPP dicentang, versi anonim juga disusun dan diperlihatkan untuk diperiksa sebelum ikut terunggah, walau PDF anonim tidak dicentang.",
+      ],
+    },
+    "fmt-edoc": {
+      judul: "Unggah ke e-Doc SIPP",
+      singkat: "Mengunggah putusan (dan versi anonimnya) ke e-Doc SIPP. Hanya untuk putusan.",
+      isi: [
+        "Putusan diunggah atas akun SIPP Anda; versi anonim diperlihatkan dulu untuk diperiksa sebelum ikut terunggah.",
+        "BAS dan relaas diunggah lewat SIPP. Pada Tes putusan pilihan ini mati.",
+      ],
+    },
+  };
+  /** Ikon (i) keterangan fitur; kosong bila id tidak dikenal. */
+  function ikonKeterangan(id) {
+    const k = KETERANGAN[id];
+    if (!k) return "";
+    return `<button type="button" class="bd-ikon bd-infoket" data-infoket="${esc(id)}" aria-haspopup="dialog" aria-label="Keterangan: ${esc(k.judul)}" title="${esc(`${k.singkat} (Klik dua kali: penjelasan lengkap.)`)}">ⓘ</button>`;
+  }
+  function tutupKeterangan() {
+    const lama = akar ? cari("#bd-ketpop", akar) : null;
+    if (!lama) return false;
+    const asal = lama.__asal;
+    lama.remove();
+    try {
+      if (asal && asal.isConnected) asal.focus();
+    } catch {
+      /* fokus hanya kenyamanan */
+    }
+    return true;
+  }
+  /** Pop-up penjelasan lengkap satu fitur: judul, kalimat singkat, butir penjelasan, tombol Tutup (juga Esc / klik di luar). */
+  function bukaKeterangan(id, asal) {
+    const k = KETERANGAN[id];
+    if (!k || !akar) return null;
+    tutupKeterangan();
+    const tirai = document.createElement("div");
+    tirai.id = "bd-ketpop";
+    tirai.className = "bd-modal bd-ketpop";
+    tirai.setAttribute("role", "dialog");
+    tirai.setAttribute("aria-modal", "true");
+    tirai.setAttribute("aria-label", k.judul);
+    tirai.setAttribute("data-infoket-buka", id);
+    tirai.innerHTML =
+      `<div class="bd-ketkotak"><b class="bd-ketjudul">${esc(k.judul)}</b><p class="bd-ketsingkat">${esc(k.singkat)}</p>` +
+      `<ul class="bd-ketbutir">${(k.isi || []).map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` +
+      `<div class="bd-ketbaris"><button type="button" class="bd-btn kecil utama" data-bd="tutupket">Tutup</button></div></div>`;
+    tirai.__asal = asal || null;
+    akar.appendChild(tirai);
+    try {
+      cari('[data-bd="tutupket"]', tirai).focus();
+    } catch {
+      /* fokus hanya kenyamanan */
+    }
+    return tirai;
+  }
+
   function sebutAkun() {
     if (!S.siapa) return S.siapaGalat ? "· belum terhubung ke ALETA" : "· memuat akun…";
     // Rancangan v12: hanya nama akun; peran tidak ditulis (sudah tercermin dari Alat saya).
@@ -1134,6 +1330,8 @@
     const pita = cari("#bd-pitates", akar);
     const boleh = superAdmin();
     if (bungkus) bungkus.hidden = !boleh;
+    const ketTes = cari("#bd-tesket", akar);
+    if (ketTes) ketTes.hidden = !boleh;
     if (kotak) kotak.checked = tesAktif();
     if (!pita) return;
     const nyala = tesAktif();
@@ -1440,7 +1638,20 @@
   }
 
   const tipPihak = (n) => `<span class="bd-pihak" data-tipn="${esc(n)}">Para pihak ⓘ</span>`;
-  const chipPrio = (r) => `<span class="bd-prio ${r.tingkat}">${TEKS_TINGKAT[r.tingkat]}</span>`;
+  /** 29 Okt: lencana prioritas menyebut alasannya saat kursor (dulu hanya bila saklar "Alasan prioritas" menyala). */
+  const ketPrio = (r) => `Prioritas: ${TEKS_TINGKAT[r.tingkat]}${r.alasan && r.alasan.length ? ` - ${r.alasan.join("; ")}` : ""}.`;
+  const chipPrio = (r) => `<span class="bd-prio ${r.tingkat}" title="${esc(ketPrio(r))}">${TEKS_TINGKAT[r.tingkat]}</span>`;
+  /** 29 Okt: lencana dokumen di SIPP dengan keterangan saat kursor. */
+  const KET_DOK = {
+    "Belum ada yang perlu dibuat": "Perkara ini belum punya dokumen untuk peran Anda saat ini.",
+    "Sudah minutasi": "Perkara sudah diminutasi.",
+    "Sudah ada di SIPP": "Dokumen peran Anda untuk sidang ini sudah ada di SIPP.",
+    "Sudah dicetak": "Sudah dicetak dari tampilan ini, tetapi belum terlihat di SIPP.",
+    "Belum waktunya": "Sidangnya belum tiba.",
+    "Belum diunggah ke SIPP": "Dokumen peran Anda (putusan/BAS/relaas) belum ada di SIPP.",
+    "Belum terukur": "Status dokumen belum terbaca dari SIPP.",
+  };
+  const chipDok = (r) => `<span class="bd-chip ${r.dokKelas}" title="${esc(KET_DOK[r.dokTxt] || "Status dokumen di SIPP.")}">${esc(r.dokTxt)}</span>`;
   /** Lencana "Konsep sementara" + nama konseptor yang ditunjuk (nama lengkap di tooltip). */
   const chipKonsep = (r) =>
     r.konsep
@@ -1498,7 +1709,7 @@
       (k.majelis ? `<span class="b">Ketua: ${esc(namaBersih(pertama(r.p.majelisNama)))}</span>` : "") +
       (k.petugas ? `<span class="b">PP: ${esc(r.p.paniteraNama || "-")} · JS: ${esc(r.p.jurusitaNama || "-")}</span>` : "") +
       (k.isian || k.cetak
-        ? `<span class="c">${k.isian ? chipIsian(r) : ""}${k.cetak ? `<span class="bd-chip ${r.dokKelas}">${esc(r.dokTxt)}</span>` : ""}</span>`
+        ? `<span class="c">${k.isian ? chipIsian(r) : ""}${k.cetak ? chipDok(r) : ""}</span>`
         : "") +
       (k.alasan ? `<span class="c">${chipAlasan(r, 2)}</span>` : "") +
       `</button>`
@@ -1509,7 +1720,7 @@
       `<button type="button" class="bd-brs${r.konsep ? " konsep" : ""}" role="listitem" data-pk="${esc(r.n)}"><span class="bd-no">${esc(nomorPendek(r.n))}</span><span>${esc(r.p.jenisPerkara)}</span>` +
       (dalamTanggal ? `<span class="bd-catat bd-potong">${esc(r.s.ket || r.s.agenda || "-")}</span>` : `<span class="bd-catat">${tglS(r.s.tanggal)}</span>`) +
       barisKeSidang(r, "bd-catat bd-potong bd-kesidang") +
-      `${chipKonsep(r)}${tipPihak(r.n)}<span class="gap"></span>${chipIsian(r)}<span class="bd-chip ${r.dokKelas}">${esc(r.dokTxt)}</span>${chipPrio(r)}</button>`
+      `${chipKonsep(r)}${tipPihak(r.n)}<span class="gap"></span>${chipIsian(r)}${chipDok(r)}${chipPrio(r)}</button>`
     );
   }
   const KOLOM = [
@@ -1536,7 +1747,7 @@
           (r) =>
             `<tr${r.konsep ? ' class="konsep"' : ""} data-pk="${esc(r.n)}" tabindex="0"><td>${chipPrio(r)}</td><td class="nw"><span style="font-family:var(--mono)">${esc(nomorPendek(r.n))}</span> ${tipPihak(r.n)}${r.konsep ? `<span class="blok">${chipKonsep(r)}</span>` : ""}${barisKeSidang(r, "bd-kesidang blok")}</td>` +
             `<td>${potong(r.p.jenisPerkara, 22)}</td><td class="nw">${tglS(r.s.tanggal)}</td><td>${potong(r.s.ket || r.s.agenda, 34)}</td>` +
-            `<td>${chipIsian(r)}</td><td><span class="bd-chip ${r.dokKelas}">${esc(r.dokTxt)}</span></td>` +
+            `<td>${chipIsian(r)}</td><td>${chipDok(r)}</td>` +
             `<td class="nw">${r.sisaMinutasi === null || r.selesai ? "-" : `${r.sisaMinutasi} hari lagi`}</td></tr>`
         )
         .join("") +
@@ -1667,19 +1878,19 @@
       ]
         .map(([m, t]) => `<button type="button" role="tab" data-lihat="${m}" aria-selected="${S.lihat === m}">${t}</button>`)
         .join("") +
-      `</div></div>` +
+      `</div>${ikonKeterangan("tampilan-daftar")}</div>` +
       `<div class="bd-kontrol"><label class="bd-lbl" for="bd-urut">Urutkan</label><select id="bd-urut">` +
       Object.keys(NAMA_URUT)
         .filter((k) => k !== "minutasi" || S.urut === "minutasi")
         .map((k) => `<option value="${k}" ${S.urut === k ? "selected" : ""}>${k === "prioritas" ? "Paling perlu dikerjakan" : NAMA_URUT[k].charAt(0).toUpperCase() + NAMA_URUT[k].slice(1)}</option>`)
         .join("") +
       `</select><button type="button" class="bd-btn kecil" data-bd="arah" aria-label="Balik urutan">${S.arah > 0 ? "Urutan: naik ▲" : "Urutan: turun ▼"}</button>` +
-      `<label class="bd-cek"><input type="checkbox" id="bd-depan" ${S.depan ? "checked" : ""}> Yang belum selesai di depan</label>` +
+      `<label class="bd-cek" title="Perkara yang sudah selesai ditaruh di belakang, apa pun urutan yang dipilih."><input type="checkbox" id="bd-depan" ${S.depan ? "checked" : ""}> Yang belum selesai di depan</label>` +
       (ptspCari() ? "" : `<label class="bd-cek"><input type="checkbox" id="bd-sembunyi" ${S.sembunyiSelesai ? "checked" : ""}> Sembunyikan yang selesai</label>`) +
       (ptspCari() ? "" : `<label class="bd-cek" title="Perkara yang di Jadwal Sidang ditunjuk konseptornya (sementara) tampil paling atas. Dimatikan: disembunyikan dari daftar."><input type="checkbox" id="bd-konsep" ${S.tampilKonsep ? "checked" : ""}> Tampilkan konsep sementara${konsepJumlah ? ` (${konsepJumlah})` : ""}</label>`) +
       `</div>`;
     if (S.lihat === "kartu") {
-      isi += `<div class="bd-kontrol" id="bd-ketkartu"><span class="bd-lbl">Tampilkan keterangan</span>${KET_KARTU.map(
+      isi += `<div class="bd-kontrol" id="bd-ketkartu"><span class="bd-lbl" title="Mengatur isi tiap kartu perkara (hanya pada tampilan Kartu). Diingat per pengguna.">Tampilkan keterangan</span>${KET_KARTU.map(
         ([k, t]) => `<label class="bd-sak"><input type="checkbox" data-ketk="${k}" ${S.ket[k] ? "checked" : ""}><span class="bd-sakbar" aria-hidden="true"></span>${t}</label>`
       ).join("")}</div>`;
     }
@@ -1717,7 +1928,7 @@
       }
       badan = `<div class="bd-dpk ${wadClass}" id="bd-dpk" ${S.lihat === "kartu" || S.lihat === "ringkas" ? 'role="list"' : ""}>${dalam}</div>`;
       const peringatan = [];
-      if (S.data && S.data.terpotong) peringatan.push("Sebagian sidang di rentang ini mungkin belum tampil (bot membatasi 500 baris per minggu). Persempit tanggalnya.");
+      if (S.data && S.data.terpotong) peringatan.push("Sebagian sidang di rentang ini mungkin belum tampil (server membatasi 500 baris per minggu). Persempit tanggalnya.");
       badan +=
         `<p class="bd-catat" id="bd-ketdaftar">${l.length} perkara · ${S.data.mode === "semua" ? "sidang sejak 90 hari lalu sampai 45 hari ke depan" : `${tglS(S.data.dari)}${S.data.dari !== S.data.sampai ? ` s.d. ${tglS(S.data.sampai)}` : ""}`} · diurutkan menurut ${NAMA_URUT[S.urut]}${S.depan ? ", yang belum selesai di depan" : ""}.` +
         (sembunyi ? ` <span id="bd-ketsembunyi">${sembunyi} perkara yang selesai disembunyikan.</span> <button type="button" class="bd-tautan" data-bd="tampil-selesai">Tampilkan</button>` : "") +
@@ -2012,9 +2223,9 @@
     void muatRiwayatSidang(p);
   }
   /** Cetak massal (blangko-derry-massal.js memasang fungsinya lewat api.pasangMassal); belum terpasang = kabar singkat. */
-  function bukaMassal() {
+  function bukaMassal(jenis) {
     if (tesAktif()) return toast("Cetak massal dimatikan pada mode Tes putusan: ia mengisi dan mencatat ke banyak perkara.");
-    if (typeof S.massal === "function") return S.massal();
+    if (typeof S.massal === "function") return S.massal(typeof jenis === "string" ? jenis : undefined);
     return toast("Cetak massal belum siap. Muat ulang halaman ABT.");
   }
   function gantiPerkara() {
@@ -2171,7 +2382,7 @@
   /** Saklar yang berlaku untuk peran akun ini; Super Admin dan Admin melihat semuanya. */
   const WIDGET = [
     ["bawaan", "Blangko ABT by Derry Briantono sebagai tampilan bawaan", "Blangko Derry langsung terbuka saat ABT dibuka", ["hakim", "pp", "js"]],
-    ["tawar", "Tawarkan Blangko ABT by Derry Briantono di ABT biasa", "", ["hakim", "pp", "js"]],
+    ["tawar", "Tawarkan Blangko ABT by Derry Briantono di ABT biasa", "kartu kecil di pojok kanan bawah ABT biasa: Aktifkan, Nanti saja, atau Jangan tawarkan lagi", ["hakim", "pp", "js"]],
     ["saran", "Saran isian (bayangan, tekan Tab)", "Usulan dari SIPP, gugatan dan riwayat", ["hakim", "pp"]],
     ["ingat", "Ingatkan isian yang masih kosong sebelum cetak", "juga tombol Cetak panel ALETA di ABT biasa", ["hakim", "pp", "js"]],
     ["isiOto", "Isi otomatis dari SIPP", "begitu perkara dan blangko dipilih, isian kosong yang datanya ada di SIPP, gugatan dan e-Court terisi dan tersimpan ke ABT; yang sudah ada isinya tidak ditimpa", ["hakim", "pp", "js"]],
@@ -2261,11 +2472,24 @@
         .map(
           (g) =>
             `<div class="grup">${esc(NAMA_PERAN[g])}${adm() ? "" : sebagai}</div>` +
-            ALAT[g].filter(([id]) => id !== "advance" || alatAdvanceTampil()).map(([id, t]) => `<button type="button" role="menuitem" data-alat="${id}"><span>${esc(t)}</span>${S.alatDaftar.has(id) ? "" : `<span class="bd-chip">menyusul</span>`}</button>`).join("")
+            ALAT[g].filter(([id]) => id !== "advance" || alatAdvanceTampil()).map(([id, t]) => `<button type="button" role="menuitem" data-alat="${id}"${ALAT_DI_SIPP[id] && !alatTersedia(id) ? ` title="${esc(ALAT_DI_SIPP[id])}"` : ""}><span>${esc(t)}</span>${alatTersedia(id) ? "" : ALAT_DI_SIPP[id] ? `<span class="bd-chip">di SIPP</span>` : `<span class="bd-chip">menyusul</span>`}</button>`).join("")
         )
         .join("") + (adm() ? `<p class="bd-catat" style="padding:4px 8px">Admin melihat semua peran. Pilih "Lihat sebagai akun" untuk menyempitkan.</p>` : "")
     );
   }
+  /**
+   * 29 Okt (audit runut): "BAS massal hari ini" dan "Relaas massal hari ini" dulu bertanda "menyusul" padahal Cetak massal langkah 1
+   * sudah mengerjakannya (PP = BAS, juru sita = relaas) - kini membuka Cetak massal jenis itu. Alat yang ada di panel ALETA halaman
+   * SIPP (kasir, PTSP) menyebut tempatnya, bukan "tahap berikutnya".
+   */
+  const ALAT_MASSAL = { "massal:bas": "bas", "massal:rel": "rel" };
+  const ALAT_DI_SIPP = {
+    "kasir:rekap": "Rekap kasir ada di panel ALETA halaman daftar perkara SIPP (bagian Kasir).",
+    "kasir:otomatis": "Kasir otomatis ada di panel ALETA halaman daftar perkara SIPP (bagian Kasir).",
+    "ptsp:dataumum": "Data Umum dari gugatan ada di tab PTSP panel ALETA halaman perkara SIPP.",
+    "ptsp:ktp": "Isi data saksi dari foto KTP ada di tab PTSP panel ALETA halaman perkara SIPP.",
+  };
+  const alatTersedia = (id) => S.alatDaftar.has(id) || (Object.prototype.hasOwnProperty.call(ALAT_MASSAL, id) && typeof S.massal === "function");
   /** Alat yang menulis ke ABT/SIPP/e-Court atau mencatat kemajuan perkara: mati pada mode Tes putusan. */
   const ALAT_MENULIS = new Set(["unggah", "massal:unggah", "massal:bas", "massal:rel", "konseptor", "kasir:otomatis", "ptsp:dataumum", "ptsp:ktp"]);
   function jalankanAlat(id) {
@@ -2280,8 +2504,10 @@
       }
       return;
     }
+    if (Object.prototype.hasOwnProperty.call(ALAT_MASSAL, id) && typeof S.massal === "function") return void bukaMassal(ALAT_MASSAL[id]);
     const nama = (Object.values(ALAT).flat().find((x) => x[0] === id) || [id, id])[1];
-    toast(`${nama}: menyusul pada tahap berikutnya (pilih blangko, isian, cetak).`);
+    if (ALAT_DI_SIPP[id]) return toast(`${nama} belum ada di tampilan ini. ${ALAT_DI_SIPP[id]}`);
+    toast(`${nama} belum tersedia di tampilan ini (menyusul).`);
   }
 
   // ── Peristiwa ─────────────────────────────────────────────────────────────
@@ -2298,13 +2524,25 @@
     const c = (s) => t.closest && t.closest(s);
     if (!c("#bd-widget,#bd-widget-btn") && S.floatBuka === "widget") tutupFloat();
     if (!c("#bd-alat,#bd-alat-btn") && S.floatBuka === "alat") tutupFloat();
+    // Keterangan fitur: klik sekali = keterangan singkat; papan ketik (Enter/Spasi, detail 0) = pop-up penjelasan.
+    const ket = c("[data-infoket]");
+    if (ket) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      const id = ket.getAttribute("data-infoket");
+      if (!e.detail) return void bukaKeterangan(id, ket);
+      const k = KETERANGAN[id];
+      return k ? toast(`${k.singkat} Klik dua kali ikon ⓘ untuk penjelasan lengkap.`) : undefined;
+    }
+    if (t.id === "bd-ketpop") return void tutupKeterangan();
     const aksi = c("[data-bd]");
     const kode = aksi ? aksi.getAttribute("data-bd") : "";
+    if (kode === "tutupket") return void tutupKeterangan();
     if (kode === "keabt") return tutup();
     if (kode === "widget") return alihkanFloat("widget");
     if (kode === "alat") return alihkanFloat("alat");
     if (kode === "ganti") return gantiPerkara();
-    if (kode === "massal") return bukaMassal();
+    if (kode === "massal") return void bukaMassal();
     if (kode === "coba") return void muatDaftar(true);
     if (kode === "tescari") return void cariTes();
     const tesPk = c("[data-tespk]");
@@ -2393,6 +2631,12 @@
 
   function saatKlikDua(e) {
     const t = e.target;
+    const ket = t.closest && t.closest("[data-infoket]");
+    if (ket) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      return void bukaKeterangan(ket.getAttribute("data-infoket"), ket);
+    }
     if (t.closest && t.closest("#bd-pkringkas .bd-no")) gantiPerkara();
   }
 
@@ -2686,6 +2930,11 @@
       S.massal = typeof fn === "function" ? fn : null;
     },
     bukaMassal,
+    /** 29 Okt: ikon (i) keterangan fitur (arahkan = singkat, klik dua kali = pop-up) dan pembuka pop-up-nya; id dari daftar KETERANGAN. */
+    ikonKeterangan,
+    bukaKeterangan,
+    tutupKeterangan,
+    keterangan: (id) => (KETERANGAN[id] ? { ...KETERANGAN[id], isi: (KETERANGAN[id].isi || []).slice() } : null),
     /** Akar tampilan (untuk jendela besar Cetak massal); null bila belum dibangun. */
     akar: () => akar,
     /** Peran akun (himpunan peran tampilan: hakim, pp, js, kasir, ptsp, admin). */
