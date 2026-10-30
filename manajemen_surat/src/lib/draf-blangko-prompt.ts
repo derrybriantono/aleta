@@ -43,6 +43,7 @@ const SINGKAT: Record<JenisTemuan, string> = {
   titik: "titik-titik",
   garis: "garis isian",
   kalimat: "kalimat blangko",
+  sesuai: "tidak sesuai dengan perkara", // hanya dari pemeriksa seret-lepas e-Doc; tidak muncul pada perintah AI
 };
 
 export type Kekosongan = {

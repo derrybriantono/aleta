@@ -469,6 +469,6 @@
   doc.addEventListener("click", saatKlik, true);
   doc.addEventListener("submit", saatKirim, true);
 
-  akar.aletaBasWordPdf = Object.freeze({ kenaliBerkasWord, namaPdf, jenisBorang, ukuranTeks, mintaPdf });
+  akar.aletaBasWordPdf = Object.freeze({ kenaliBerkasWord, namaPdf, jenisBorang, ukuranTeks, mintaPdf, barisPenandatangan, ttdDipilih: () => denganTtd });
   if (typeof module !== "undefined" && module.exports) module.exports = akar.aletaBasWordPdf;
 })(typeof globalThis !== "undefined" ? globalThis : this);
