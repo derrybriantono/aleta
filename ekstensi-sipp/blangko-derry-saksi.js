@@ -278,16 +278,103 @@
    * disentuh; spasi sebelum koma/titik koma dibuang dan koma tanpa spasi dilengkapi. Idempoten. Cermin
    * rapikanKalimatSaksi di abtUsulanService (bot) dan satuParagrafSaksi di abt.js.
    */
+  // ──────────────────────────────────────────────────────────────────────────
+  // 30 Okt 2026 (keputusan pengguna): isian rapi - tanpa ganti baris, titik koma ";" hanya di AKHIR butir (di tengah jadi ","),
+  // tanpa tanda baca ganda (";;", ",;", ";.", "polisi.,") dan tanpa spasi sebelum tanda baca. rapiButir adalah KEMBARAN PERSIS
+  // fungsi ABT isian_rtf_butir_rapi (paket abt-paket/titik-koma-30okt) yang merangkai keterangan saksi putusan dan daftar bukti:
+  // panel menyimpan bunyi yang sama dengan yang dicetak ABT. Vektor uji keduanya satu berkas (sumber/vektor-rapi.json).
+  // ──────────────────────────────────────────────────────────────────────────
+  const ENTITAS_AKHIR = /&[A-Za-z#0-9]{2,8}$/;
+  const ENTITAS_SELESAI = /&[A-Za-z#0-9]{2,8};$/;
+  const hurufAngka = (c) => /[0-9A-Za-z]/.test(c) || (c !== "" && c.charCodeAt(0) >= 192);
+  const AKHIR_KATA = /^[a-z]{4}\.$/;
+  function rapiButir(t, ujung) {
+    if (t === null || t === undefined) return "";
+    const s = String(t)
+      .replace(/<br \/>|<br\/>|<br>|<BR \/>|<BR>/g, " ")
+      .replace(/[\r\n\t ]/g, " ")
+      .replace(/&nbsp;/g, " ");
+    const n = s.length;
+    let ta = n - 1; // letak huruf/angka terakhir: titik koma sebelum letak itu ada di tengah butir
+    while (ta >= 0 && !hurufAngka(s[ta])) ta -= 1;
+    let o = "";
+    for (let i = 0; i < n; i += 1) {
+      let c = s[i];
+      const nx = i + 1 < n ? s[i + 1] : "";
+      let ak = o.slice(-1);
+      const rt = o.replace(/ +$/, "");
+      if (c === " ") {
+        if (o !== "" && ak !== " ") o += " ";
+      } else if (c === ";" && ENTITAS_AKHIR.test(o)) {
+        o += ";";
+      } else if (c === ";" || c === "," || c === ":") {
+        if (c === ";" && i < ta) c = ",";
+        if (ak === " ") {
+          o = o.slice(0, -1);
+          ak = o.slice(-1);
+        }
+        if (o === "") {
+          /* tanda baca di awal butir dibuang */
+        } else if ((ak === ";" || ak === ",") && (c === ";" || c === ",")) o = o.slice(0, -1) + (ak === ";" || c === ";" ? ";" : ",");
+        else if ((ak === ";" || ak === ",") && c === ":") o = o.slice(0, -1) + ":";
+        else if (ak === ":") {
+          /* titik dua tetap */
+        } else if (ak === "." && c !== ":" && AKHIR_KATA.test(o.slice(-5))) o = o.slice(0, -1) + c;
+        else o += c;
+      } else if (c === ".") {
+        if ((ak === ";" || ak === ",") && nx !== ".") {
+          /* ";." dan ",." -> tanda baca pertama */
+        } else if (ak === " " && (nx === "" || nx === " " || nx === ";" || nx === ",") && rt.slice(-1) !== ".") o = o.slice(0, -1) + ".";
+        else o += ".";
+      } else if (c === "-" && (nx === " " || nx === "" || /^[A-Za-z]$/.test(nx)) && (rt === "" || (/[:;,]$/.test(rt) && !/[0-9]\.?,$/.test(rt.slice(-3))))) {
+        // tanda butir "- " sesudah titik dua/titik koma/koma (atau di awal/ujung butir) dibuang; "Rp 100.000,-" tetap
+        if (o !== "" && ak !== " ") o += " ";
+      } else if ((ak === ";" || ak === "," || ak === ":") && (hurufAngka(c) || c === "(") && !((ak === "," || ak === ":") && /[0-9]/.test(c) && /^[0-9][,:]$/.test(o.slice(-2))) && !ENTITAS_SELESAI.test(o)) {
+        o += ` ${c}`;
+      } else o += c;
+    }
+    o = o.replace(/^ +| +$/g, "");
+    if (ujung === ";") {
+      while (o !== "" && /[;,: ]$/.test(o) && !ENTITAS_SELESAI.test(o)) o = o.slice(0, -1);
+      if (AKHIR_KATA.test(o.slice(-5))) o = o.slice(0, -1);
+      if (o !== "" && !/[?!;]$/.test(o)) o += ";";
+    }
+    return o;
+  }
+  // Rincian berbaris ("a. X", "1. Y", "- Z") dirangkai dalam satu kalimat: "X, Y dan Z" (gaya blangko Derry: "dan" sebelum yang
+  // terakhir, lihat isian Alasan-Alasan Cerai). Baris tanpa tanda rincian digabung dengan spasi.
+  const TANDA_RINCIAN = /^(?:\(?(?:[a-z]|\d{1,2}|[ivx]{1,4})[.)]|[-•*])\s+/i;
+  function rapiDaftar(t) {
+    const baris = String(t == null ? "" : t)
+      .split(/\r\n|\r|\n|<br\s*\/?>/i)
+      .map((x) => x.replace(/[\t ]/g, " ").trim())
+      .filter(Boolean);
+    if (baris.length < 2) return baris.join(" ");
+    const kepala = [];
+    const butir = [];
+    for (const b of baris) {
+      const m = b.match(TANDA_RINCIAN);
+      if (m) butir.push(b.slice(m[0].length).trim());
+      else if (butir.length) butir[butir.length - 1] += ` ${b}`;
+      else kepala.push(b);
+    }
+    if (!butir.length || (butir.length < 2 && !kepala.length)) return baris.join(" ");
+    const akhir = (butir[butir.length - 1].match(/[;.]\s*$/) || [""])[0].trim();
+    const bersih = butir
+      .map((x) => x.replace(/[\s;,]+$/, ""))
+      .map((x) => (AKHIR_KATA.test(x.slice(-5)) ? x.slice(0, -1) : x))
+      .filter(Boolean);
+    const rangkai = bersih.length < 2 ? bersih.join("") : `${bersih.slice(0, -1).join(", ")} dan ${bersih[bersih.length - 1]}`;
+    const k = kepala.join(" ");
+    const awal = k ? `${k.replace(/[\s:;,]+$/, "")}${/[:;]\s*$/.test(k) ? ":" : ""} ` : "";
+    return `${awal}${rangkai}${akhir}`;
+  }
+  /** Satu isian teks rapi: rincian berbaris dirangkai, lalu rapiButir. */
+  const rapiIsian = (t, ujung) => rapiButir(rapiDaftar(t), ujung || "");
+
+  /** Merapikan jawaban saksi menjadi satu paragraf (19 Okt) - 30 Okt: aturan rapiIsian (titik koma di tengah jadi koma dst.). */
   function rapikanJawaban(teks) {
-    return String(teks == null ? "" : teks)
-      .replace(/<br\s*\/?>/gi, " ")
-      .replace(/\s+/g, " ")
-      .trim()
-      .replace(/\s+([,;:])/g, "$1")
-      .replace(/([A-Za-z)])(,)(?=[A-Za-z(])/g, "$1$2 ")
-      .replace(/,(\s*,)+/g, ",")
-      .replace(/,\s*;/g, ";")
-      .replace(/;(\s*;)+/g, ";");
+    return rapiIsian(teks, "");
   }
 
   /** Baris dengan jawaban yang memuat baris baru (jumlah), untuk laporan "N jawaban digabung". */
@@ -417,6 +504,9 @@
 
   const api = {
     rapikanJawaban,
+    rapiButir,
+    rapiDaftar,
+    rapiIsian,
     adaBarisBaru,
     geserJawaban,
     tukarJawaban,

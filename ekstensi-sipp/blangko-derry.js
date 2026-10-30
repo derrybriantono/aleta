@@ -646,6 +646,7 @@
     pk: null,
     sidIdx: 0,
     riwayat: new Map(),
+    putusanSipp: new Map(), // 30 Okt: nomor perkara -> { amarVerstek, tanggalPutusan, alurPerkaraId } dari rincian SIPP (catatan temuan cetak)
     alatDaftar: new Map(),
     lapor: new Map(),
     /** Keadaan pengukur latar tanpa angka (nomor -> { status, saat, jenis, kunci }); angkanya ada di `lapor`. */
@@ -2029,7 +2030,7 @@
     try {
       document.dispatchEvent(
         new CustomEvent("aleta-bd-perkara", {
-          detail: p ? { nomorPerkara: p.nomorPerkara, perkaraId: p.perkaraId, jenisPerkara: p.jenisPerkara, sidang: sid.slice(), sidangKe: S.sidIdx, sidangDipilih: sid[S.sidIdx] || null, perkara: p, peranKunci: peranKunci() } : null,
+          detail: p ? { nomorPerkara: p.nomorPerkara, perkaraId: p.perkaraId, jenisPerkara: p.jenisPerkara, sidang: sid.slice(), sidangKe: S.sidIdx, sidangDipilih: sid[S.sidIdx] || null, perkara: p, putusanSipp: S.putusanSipp.get(p.nomorPerkara) || null, peranKunci: peranKunci() } : null,
         })
       );
     } catch {
@@ -2043,6 +2044,9 @@
     try {
       const d = await ambil(`${API_SIDANG}?nomor=${encodeURIComponent(p.nomorPerkara)}`, "Membaca riwayat sidang");
       const j = d && d.sipp && Array.isArray(d.sipp.jadwalPerkara) ? d.sipp.jadwalPerkara : [];
+      // 30 Okt: keadaan putusan SIPP (amar memuat verstek, tanggal putusan) untuk catatan temuan kehadiran di panel cetak.
+      const pu = d && d.sipp && d.sipp.putusan && typeof d.sipp.putusan === "object" ? d.sipp.putusan : null;
+      if (d && d.sipp) S.putusanSipp.set(p.nomorPerkara, { amarVerstek: Boolean(pu && (pu.amarVerstek === true || (pu.amarVerstek === undefined && /verstek/i.test(String(pu.amarRingkas || ""))))), tanggalPutusan: String((pu && pu.tanggalPutusan) || "").slice(0, 10), alurPerkaraId: Number(d.sipp.alurPerkaraId) || 0 });
       const l = j
         .map((x) => ({
           sidangId: String(x.sidangId || ""),
@@ -2058,7 +2062,10 @@
         }))
         .filter((x) => x.tanggal)
         .sort((a, b) => a.tanggal.localeCompare(b.tanggal) || a.jam.localeCompare(b.jam) || a.urutan - b.urutan);
-      if (!l.length) return;
+      if (!l.length) {
+        if (S.pk === p.nomorPerkara && d && d.sipp) umumkanPerkara();
+        return;
+      }
       // Sidang yang sedang dipilih dicari lebih dulu, sebelum daftarnya diganti.
       const lama = riwayatPerkara(p)[S.sidIdx];
       S.riwayat.set(p.nomorPerkara, l);

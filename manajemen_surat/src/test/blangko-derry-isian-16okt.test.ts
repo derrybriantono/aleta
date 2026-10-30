@@ -600,9 +600,10 @@ describe("F. perlu diisi", () => {
     await tunggu(300);
     expect(mintaKe(h, /edit_data\?no_var=(0007|8503)/, "POST")).toEqual([]);
     expect(h.abt["0007"]).toBe("dikaruniai 2 orang anak:\n1. Anak Satu;\n2. Anak Dua;");
-    // Yang benar-benar diketik tetap tersimpan, garis barunya utuh.
+    // Yang benar-benar diketik tetap tersimpan. 30 Okt (keputusan pengguna "jangan ada enter"): disimpan RAPI - rincian berbaris
+    // dirangkai dalam satu kalimat tanpa ganti baris (lihat blangko-derry-isian-rapi-30okt).
     ketik(h, el as unknown as HTMLInputElement, "dikaruniai 1 orang anak:\n1. Anak Satu;");
-    await sampai(() => h.abt["0007"] === "dikaruniai 1 orang anak:\n1. Anak Satu;", "tersimpan utuh");
+    await sampai(() => h.abt["0007"] === "dikaruniai 1 orang anak: Anak Satu;", "tersimpan rapi");
   });
 
   it("audit 17 Okt: bacaan ABT gagal -> Muat/Tambah baris/Simpan mati dan simpan ditolak, keterangan lama di ABT tidak terhapus", async () => {
