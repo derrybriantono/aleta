@@ -140,6 +140,7 @@ const POTONGAN = {
   rincianIkrar: ['Panggilan P Rp #1090#,00 | Panggilan T Rp #1164#,00 | Jumlah Rp #1101#,00 (#2050# rupiah)', 'Panggilan P Rp #11141#,00 | Panggilan T Rp #11142#,00 | Jumlah Rp #11143#,00 (#11124#)'],
   rincianVerzet: ['Jumlah Rp #3993#,00 (#3994# rupiah)', 'Jumlah Rp #11144#,00 (#11145#)'],
   amarDasar: ['#8505#', '#8505#'],
+  meterai: ['#5223#|#0143#|#0155#', '#5223#|#0143#|#0155#'],
   tglT: ['tanggal #1077# dan tanggal #0120#', 'tanggal #11121#'],
   tglP: ['tanggal #1076# dan tanggal #0118#', 'tanggal #11120#'],
   tglT1: ['tanggal #1077#', 'tanggal #11121#'],

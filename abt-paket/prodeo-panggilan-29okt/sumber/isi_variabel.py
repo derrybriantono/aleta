@@ -121,6 +121,11 @@ UBAH = {
     # 30 Okt (pengguna): amar prodeo "Membebankan biaya perkara kepada DIPA <satker> Tahun <tahun pendaftaran>"
     8505: [('THEN "Membebankan biaya perkara kepada negara, melalui DIPA #8008# Tahun #0191#"',
             'THEN "Membebankan biaya perkara kepada DIPA #8008# Tahun #0191#"', 1)],
+    # 30 Okt (pengguna): meterai rincian PUTUSAN = satu meterai, yaitu baris meterai PERTAMA (putusan asal). Perkara verzet punya dua
+    # baris meterai (putusan asal + putusan perlawanan, 9321) dan subkueri satu baris GALAT -> seluruh cetakan ABT berhenti; meterai
+    # putusan perlawanan sudah ikut di biaya verzet #3992# (biaya keluar sejak pendaftaran perlawanan). Perkara satu baris: sama.
+    5223: [("THEN (SELECT jumlah FROM perkara_biaya WHERE jenis_biaya_id = 152 AND perkara_id = #perkara_id#)",
+            "THEN (SELECT jumlah FROM perkara_biaya WHERE jenis_biaya_id = 152 AND perkara_id = #perkara_id# ORDER BY tanggal_transaksi, id LIMIT 1)", 1)],
     # 30 Okt (pengguna): biaya verzet otomatis - isian #3991# tetap didahulukan; kosong = pengeluaran SIPP sejak pendaftaran perlawanan
     # (perkara_verzet.tanggal_pendaftaran_verzet; semua jenis biaya keluar kecuali pengembalian sisa panjar)
     3992: [(") AS data", ") AS d) i", 1),

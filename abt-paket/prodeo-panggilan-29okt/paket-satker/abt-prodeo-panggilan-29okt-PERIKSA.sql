@@ -40,13 +40,14 @@ UNION ALL SELECT 'variabel 11164' AS label, (SELECT COUNT(*) FROM aps_badilag.ab
 UNION ALL SELECT 'variabel 11165' AS label, (SELECT COUNT(*) FROM aps_badilag.abt_variabel v WHERE v.no_var = 11165 AND MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)) = '747818305b399d990182b8fe8529d904') AS ok
 UNION ALL SELECT 'variabel 11166' AS label, (SELECT COUNT(*) FROM aps_badilag.abt_variabel v WHERE v.no_var = 11166 AND MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)) = 'a45a4c5b9c2f5cf219889200727b3d8e') AS ok
 UNION ALL SELECT 'variabel 3992' AS label, (SELECT COUNT(*) FROM aps_badilag.abt_variabel v WHERE v.no_var = 3992 AND MD5(v.sql_query) = '0030fc3f40a6532c2f54a29423a5adc7') AS ok
+UNION ALL SELECT 'variabel 5223' AS label, (SELECT COUNT(*) FROM aps_badilag.abt_variabel v WHERE v.no_var = 5223 AND MD5(v.sql_query) = 'a6c8ec05d4606922e0937119cdec37bb') AS ok
 UNION ALL SELECT 'variabel 8505' AS label, (SELECT COUNT(*) FROM aps_badilag.abt_variabel v WHERE v.no_var = 8505 AND MD5(v.sql_query) = 'd361280bf4abb3eb3078e5419673a569') AS ok
 UNION ALL SELECT 'variabel 8508' AS label, (SELECT COUNT(*) FROM aps_badilag.abt_variabel v WHERE v.no_var = 8508 AND MD5(v.sql_query) = '992457b4808306e64c7579c8b33b8980') AS ok
 UNION ALL SELECT 'variabel 8547' AS label, (SELECT COUNT(*) FROM aps_badilag.abt_variabel v WHERE v.no_var = 8547 AND MD5(v.sql_query) = '36ec8016393bd4730d7a97f80ac3d362') AS ok
 UNION ALL SELECT 'variabel 8600' AS label, (SELECT COUNT(*) FROM aps_badilag.abt_variabel v WHERE v.no_var = 8600 AND MD5(v.sql_query) = 'ea1127b4272cbe0a8fc27dbf79e11bdf') AS ok
 UNION ALL SELECT 'fungsi isian_rtf_terbilang' AS label, (SELECT COUNT(*) FROM information_schema.routines WHERE routine_schema = DATABASE() AND routine_name = 'isian_rtf_terbilang') AS ok
 ) t
-UNION ALL SELECT IF(MIN(t2.ok) = 1 AND MAX(t2.ok) = 1 AND COUNT(*) = 44, 'SEMUA COCOK', 'TIDAK COCOK'), '' FROM (
+UNION ALL SELECT IF(MIN(t2.ok) = 1 AND MAX(t2.ok) = 1 AND COUNT(*) = 45, 'SEMUA COCOK', 'TIDAK COCOK'), '' FROM (
 SELECT 'variabel 11120' AS label, (SELECT COUNT(*) FROM aps_badilag.abt_variabel v WHERE v.no_var = 11120 AND MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)) = '2479fefd72fd69fdcd5ec10f596a9049') AS ok
 UNION ALL SELECT 'variabel 11121' AS label, (SELECT COUNT(*) FROM aps_badilag.abt_variabel v WHERE v.no_var = 11121 AND MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)) = 'b4abbec87269eadec502028eb86aaab4') AS ok
 UNION ALL SELECT 'variabel 11122' AS label, (SELECT COUNT(*) FROM aps_badilag.abt_variabel v WHERE v.no_var = 11122 AND MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)) = '276cc96fcdc02b22dc731c5b530ff04e') AS ok
@@ -86,6 +87,7 @@ UNION ALL SELECT 'variabel 11164' AS label, (SELECT COUNT(*) FROM aps_badilag.ab
 UNION ALL SELECT 'variabel 11165' AS label, (SELECT COUNT(*) FROM aps_badilag.abt_variabel v WHERE v.no_var = 11165 AND MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)) = '747818305b399d990182b8fe8529d904') AS ok
 UNION ALL SELECT 'variabel 11166' AS label, (SELECT COUNT(*) FROM aps_badilag.abt_variabel v WHERE v.no_var = 11166 AND MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)) = 'a45a4c5b9c2f5cf219889200727b3d8e') AS ok
 UNION ALL SELECT 'variabel 3992' AS label, (SELECT COUNT(*) FROM aps_badilag.abt_variabel v WHERE v.no_var = 3992 AND MD5(v.sql_query) = '0030fc3f40a6532c2f54a29423a5adc7') AS ok
+UNION ALL SELECT 'variabel 5223' AS label, (SELECT COUNT(*) FROM aps_badilag.abt_variabel v WHERE v.no_var = 5223 AND MD5(v.sql_query) = 'a6c8ec05d4606922e0937119cdec37bb') AS ok
 UNION ALL SELECT 'variabel 8505' AS label, (SELECT COUNT(*) FROM aps_badilag.abt_variabel v WHERE v.no_var = 8505 AND MD5(v.sql_query) = 'd361280bf4abb3eb3078e5419673a569') AS ok
 UNION ALL SELECT 'variabel 8508' AS label, (SELECT COUNT(*) FROM aps_badilag.abt_variabel v WHERE v.no_var = 8508 AND MD5(v.sql_query) = '992457b4808306e64c7579c8b33b8980') AS ok
 UNION ALL SELECT 'variabel 8547' AS label, (SELECT COUNT(*) FROM aps_badilag.abt_variabel v WHERE v.no_var = 8547 AND MD5(v.sql_query) = '36ec8016393bd4730d7a97f80ac3d362') AS ok
