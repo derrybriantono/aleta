@@ -57,6 +57,20 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.56",
+    dirilis: "2026-10-30T05:00:00+08:00",
+    judul: "Tampilan SIPP per peran, Kasir ALETA atas akun kasir, dan salinan dari putusan sendiri",
+    butir: [
+      "Tampilan ALETA di SIPP per peran dan pengguna: admin mengatur elemen yang tampil per peran (usulan per peran langsung menjadi bawaan), Super Admin dapat mengunci di atas aturan admin, dan tiap pegawai mengatur tampilannya sendiri lewat halaman Tampilan SIPP (dari widget atau popup); pilihan tersimpan di akun, termasuk saklar Tampilkan ALETA di SIPP.",
+      "Kasir ALETA: bab dan sub-bab bisa dilipat (yang tanpa pekerjaan terlipat), judul tebal, keterangan dipindah ke ikon (i), nomor perkara di pengingat tertaut ke jurnal SIPP, Kasir Manual (satu hari) dapat disunting per baris, dan bab baru Riwayat.",
+      "Semua jurnal yang ditulis Kasir ALETA (otomatis, Kasir Manual, dan per perkara) tercatat atas akun kasir SIPP, siapa pun yang menjalankannya; uraian biaya panggilan tidak lagi berakhir garis miring bila resi Pos belum ada.",
+      "Langkah Cetak: unggah putusan yang disunting sendiri (RTF, DOCX, atau DOC) lalu cetak PDF SALINAN, PDF, anonim, atau unggah e-Doc dari berkas itu dengan format yang sama.",
+      "Lihat sebagai: pilihan PTSP selalu tersedia walau belum ada akun PTSP; lencana kelengkapan isian di daftar perkara diukur otomatis dan membuka isian kosong pertama bila diklik.",
+      "Form Putusan Akhir SIPP: panel ALETA terlipat satu baris bila putusan sudah ada.",
+      "Rincian alasan cerai mengenali pasangan yang tidak menerima keadaan pihak yang sakit dan pihak yang pergi tanpa kabar, serta mengutip sebab yang disebut gugatan bila belum dikenal; menu alasan perceraian memuat huruf E dan G.",
+    ],
+  },
+  {
     versi: "1.205.55",
     dirilis: "2026-10-28T14:32:00+08:00",
     judul: "Tautan SIPP dan ABT selalu ke alamat satker",

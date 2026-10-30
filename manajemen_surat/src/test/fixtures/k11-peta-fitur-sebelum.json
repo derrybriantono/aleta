@@ -2155,8 +2155,8 @@
    "jumlahPernyataan": 2
   },
   "basmassal.js": {
-   "byte": 144751,
-   "sidik": "ee84bd7a7186043e6452ac05d9a8273fb9c6a71c",
+   "byte": 174041,
+   "sidik": "4c43c2ae44dd87d777feda478a9ebeceda859fef",
    "nama": [
     "BASMASSAL_API_DAFTAR",
     "BASMASSAL_API_NASKAH",
@@ -2278,8 +2278,8 @@
    "jumlahPernyataan": 2
   },
   "blangko-derry-massal.js": {
-   "byte": 63874,
-   "sidik": "f393f74cc9e5f410f68211f86ed03b26b067d379",
+   "byte": 64114,
+   "sidik": "7bb48388ac6a37680caa2ae980abd953c3073f40",
    "nama": [],
    "ekspor": [
     "aletaBlangkoDerryMassal",
@@ -2309,8 +2309,8 @@
    "jumlahPernyataan": 2
   },
   "blangko-derry.js": {
-   "byte": 127256,
-   "sidik": "dbe25f08e710c6fbf07f3292cc01da542a692a4b",
+   "byte": 158814,
+   "sidik": "9c420070541319eddce48c447664aba19e89b095",
    "nama": [],
    "ekspor": [
     "aletaBlangkoDerry",
@@ -2535,8 +2535,8 @@
    "jumlahPernyataan": 134
   },
   "kasir-jurnal-popup.js": {
-   "byte": 11259,
-   "sidik": "5f57d1d919f9809148adab17a886cacc93850faa",
+   "byte": 11274,
+   "sidik": "0c5c9b9fa60ed068442adcddb4f8641679858bce",
    "nama": [],
    "ekspor": [
     "aletaKasirJurnalPopup"
@@ -5261,8 +5261,8 @@
    "jumlahPernyataan": 160
   },
   "sipp-ide-l1.js": {
-   "byte": 70009,
-   "sidik": "e3b3f961a24b8c912254ed1ce634e2724c91ef2c",
+   "byte": 76306,
+   "sidik": "3dc0026ab5377a90e688d78ebd01e9d538c18863",
    "nama": [],
    "ekspor": [
     "aletaSippIdeL1"
