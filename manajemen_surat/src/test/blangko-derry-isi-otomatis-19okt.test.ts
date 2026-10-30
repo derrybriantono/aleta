@@ -1282,3 +1282,89 @@ describe("L. tautan Draf H-7: draf, varian dan isian yang ditunjuk", () => {
     await sampai(() => q(h, '#bd-perlu .bd-f[data-f="0007"].bd-sorot'), "kartu tersorot");
   });
 });
+
+// ============================================================================
+// G4 4.2 (30 Okt 2026): data SIPP berubah -> isian ABT yang terakhir ditulis MESIN dan belum disunting petugas ikut
+// diperbarui sendiri (tanpa tombol), panel memberi keterangan kecil. Suntingan manusia tidak pernah ditimpa.
+// ============================================================================
+describe("G4 4.2: isian dari SIPP ikut diperbarui saat data SIPP berubah", () => {
+  const SINKRON = readFileSync(path.join(EKSTENSI, "sinkron-isian-sipp.js"), "utf8");
+  const USUL = [{ kode: "1006", nama: "Tempat", nilai: "di rumah bersama", keyakinan: "pasti", sumber: [] }];
+  const mesin = (sesudah: string, pada = "2026-10-14T01:00:00Z") => ({ perkaraId: "10154", kode: "1006", cara: "diisi otomatis di Blangko Derry dari SIPP (pasti)", sebelum: "", sesudah, pada });
+  const bukaSinkron = (o: Opsi) => {
+    const h = buka(o);
+    h.w.eval(SINKRON);
+    return h;
+  };
+
+  it("ditulis mesin, belum disunting: diperbarui ke data SIPP terkini, tercatat di riwayat, keterangan kecil tampil", async () => {
+    const h = bukaSinkron({ abtAwal: { "1006": "di rumah sendiri" }, usulan: USUL, riwayat: [mesin("di rumah sendiri")] });
+    await sampaiPerkara(h);
+    await pilih(h, BLANGKO_PUT);
+    await sampai(() => h.abt["1006"] === "di rumah bersama", "1006 diperbarui dari SIPP");
+    const c = await sampai(() => h.riwayatCatat.find((x) => x.kode === "1006"), "riwayat 1006");
+    expect(c).toMatchObject({ sebelum: "di rumah sendiri", sesudah: "di rumah bersama" });
+    expect(String(c.cara)).toBe("diisi otomatis di Blangko Derry dari SIPP (pasti) - data SIPP berubah");
+    const k = await sampai(() => q(h, "#bd-sinkronsipp"), "keterangan kecil");
+    expect(k.textContent).toContain("Diperbarui dari SIPP");
+    expect(k.textContent).toContain("Tempat");
+    expect(k.querySelector("span")!.getAttribute("title")).toContain("di rumah sendiri -> di rumah bersama");
+    expect(k.textContent).not.toMatch(/\b\d{4}\b/);
+  });
+
+  it("disunting petugas (riwayat ketikan sesudahnya, atau isi ABT tidak sama dengan tulisan mesin) = tidak ditimpa", async () => {
+    const diketik = bukaSinkron({
+      abtAwal: { "1006": "di rumah sendiri" },
+      usulan: USUL,
+      riwayat: [mesin("di rumah sendiri"), { perkaraId: "10154", kode: "1006", cara: "diketik petugas di panel ALETA", sesudah: "di rumah sendiri", pada: "2026-10-15T01:00:00Z" }],
+    });
+    await sampaiPerkara(diketik);
+    await pilih(diketik, BLANGKO_PUT);
+    await sampai(() => diketik.abt["0007"] === "telah dikaruniai 2 orang anak" || mintaKe(diketik, /aleta-bot\/abt\/usulan/).length > 0, "bacaan SIPP berjalan");
+    await tunggu(150);
+    expect(diketik.abt["1006"]).toBe("di rumah sendiri");
+    expect(mintaKe(diketik, /edit_data\?no_var=1006/, "POST")).toEqual([]);
+    expect(q(diketik, "#bd-sinkronsipp")).toBeNull();
+
+    // Disunting langsung di halaman ABT (tanpa ALETA): isi sekarang berbeda dengan tulisan mesin terakhir.
+    const luar = bukaSinkron({ abtAwal: { "1006": "di rumah orang tua" }, usulan: USUL, riwayat: [mesin("di rumah sendiri")] });
+    await sampaiPerkara(luar);
+    await pilih(luar, BLANGKO_PUT);
+    await sampai(() => mintaKe(luar, /aleta-bot\/abt\/usulan/).length > 0, "bacaan SIPP berjalan");
+    await tunggu(150);
+    expect(luar.abt["1006"]).toBe("di rumah orang tua");
+    expect(mintaKe(luar, /edit_data\?no_var=1006/, "POST")).toEqual([]);
+  });
+
+  it("tanpa riwayat isian (pengisian lama) = perilaku lama: tidak ditimpa", async () => {
+    const h = bukaSinkron({ abtAwal: { "1006": "di rumah sendiri" }, usulan: USUL, riwayat: [] });
+    await sampaiPerkara(h);
+    await pilih(h, BLANGKO_PUT);
+    await sampai(() => mintaKe(h, /aleta-bot\/abt\/usulan/).length > 0, "bacaan SIPP berjalan");
+    await tunggu(150);
+    expect(h.abt["1006"]).toBe("di rumah sendiri");
+  });
+
+  it("aturan murni: hanya sumber SIPP; cara manusia menang; terakhir per kode", () => {
+    const w = new JSDOM("", { runScripts: "outside-only" }).window as any;
+    w.eval(SINKRON);
+    const Z = w.AletaSinkronIsian;
+    const cat = mesin("A");
+    expect(Z.bolehPerbarui({ catatan: cat, nilaiKini: "A", nilaiBaru: "B", asal: "SIPP" }).boleh).toBe(true);
+    expect(Z.bolehPerbarui({ catatan: cat, nilaiKini: "A", nilaiBaru: "B", asal: "keterangan saksi" }).boleh).toBe(false);
+    expect(Z.bolehPerbarui({ catatan: cat, nilaiKini: "A", nilaiBaru: " a ", asal: "SIPP" }).sebab).toBe("sudah sama");
+    expect(Z.bolehPerbarui({ catatan: { ...cat, cara: "usulan dari SIPP (pasti), disunting petugas sebelum disimpan" }, nilaiKini: "A", nilaiBaru: "B", asal: "SIPP" }).boleh).toBe(false);
+    expect(Z.bolehPerbarui({ catatan: { ...cat, cara: "usulan dari SIPP (pasti)" }, nilaiKini: "A", nilaiBaru: "B", asal: "data pernikahan di SIPP" }).boleh).toBe(true);
+    const t = Z.terakhirPerKode([mesin("A", "2026-10-14T01:00:00Z"), { ...mesin("X", "2026-10-16T01:00:00Z"), cara: "diketik petugas di panel ALETA" }]);
+    expect(t.get("1006").cara).toBe("diketik petugas di panel ALETA");
+  });
+
+  it("panel ABT memakai aturan yang sama (centang tetap menyala + tanda) dan berkas terdaftar", () => {
+    const panel = readFileSync(path.join(EKSTENSI, "abt-panel-blangko.js"), "utf8");
+    expect(panel).toMatch(/AletaSinkronIsian[\s\S]{0,400}bolehPerbarui/);
+    expect(panel).toContain('"data SIPP berubah"');
+    const manifest = readFileSync(path.join(EKSTENSI, "manifest.json"), "utf8");
+    expect(manifest.indexOf('"sinkron-isian-sipp.js"')).toBeLessThan(manifest.indexOf('"abt.js"'));
+    expect(readFileSync(path.join(AKAR, "manajemen_surat/scripts/susun-ekstensi.mjs"), "utf8")).toContain('"sinkron-isian-sipp.js",');
+  });
+});

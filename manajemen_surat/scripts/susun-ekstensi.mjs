@@ -120,6 +120,9 @@ const BERKAS = [
   // pembacaan sumber untuk "Isi otomatis dari SIPP" di Blangko Derry. Murni (tanpa DOM), dimuat di ABT
   // sebelum abt.js dan blangko-derry-isian.js.
   "isi-sipp-bersama.js",
+  // Isian ABT dari SIPP yang ikut diperbarui saat data SIPP berubah (G4 4.2, 30 Okt 2026): aturan murni "belum disunting
+  // petugas" dari riwayat isian, dipakai blangko-derry-isian.js dan abt-panel-blangko.js.
+  "sinkron-isian-sipp.js",
   // Blangko ABT by Derry Briantono (tahap C-D, 16 Okt 2026) - skrip konten ABT
   // dan gayanya, dimuat sesudah checklist.js. abt-klien.js (klien rute ABT,
   // tahap A) dimuat sebelumnya; blangko-derry-isian.js (tahap F-G: perlu
