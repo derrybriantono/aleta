@@ -253,3 +253,16 @@ PERIKSA: SEMUA COCOK
 PRASYARAT SESUDAH: 0|11|1 (harus 0|11|1)
 SELESAI - paket abt-identitas-kosong-31okt terpasang. Pulih: bash identitas-kosong-31okt/paket-satker/pulih-satker.sh
 ```
+
+### 19. `tanggal-agenda-31okt` (ditambahkan 31 Okt pagi, cabang tinjau-deteksi)
+```
+cd tanggal-agenda-31okt/paket-satker && bash pasang-satker.sh
+```
+Keluaran benar (uji laptop 31 Okt atas abt_variabel aps_badilag_rantai SESUDAH rantai 1-18, lihat tanggal-agenda-31okt/PASANG.md):
+```
+PRASYARAT COCOK (14|0)
+PERIKSA: SEMUA COCOK
+PRASYARAT SESUDAH: 0|14 (harus 0|14)
+SELESAI - paket abt-tanggal-agenda-31okt terpasang. Pulih: bash tanggal-agenda-31okt/paket-satker/pulih-satker.sh
+```
+Pulih paket ini PERTAMA bila rantai dipulihkan terbalik.
