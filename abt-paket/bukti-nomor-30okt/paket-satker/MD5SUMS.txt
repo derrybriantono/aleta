@@ -1,0 +1,13 @@
+ef5d0c6eda0a8b27cb9ae0c02d762641  abt-bukti-nomor-30okt-FUNGSI.sql
+4db04a51ee8d11026d75e959097a9615  abt-bukti-nomor-30okt-PASANG.sql
+6c57d75ce73e41e491af756479f565a2  abt-bukti-nomor-30okt-PERIKSA.sql
+7bb022daef07446ccade4969fc18f558  abt-bukti-nomor-30okt-PRASYARAT.sql
+b60ba59c720c4e076d784eacf5dfa73c  abt-bukti-nomor-30okt-PULIH.sql
+051c8d342a04a9f96085c1e062a126c3  harap.txt
+8f0cc93b421122baef479368d48f66d0  nomor-baru.txt
+289632f650cc5cb07c558aeff6ceedb4  rtf-daftar-tambal.tsv
+87ad9a59a7e7494e071a8eecac518c98  rtf-tambal.tsv
+83b3514f943084842e949ed514be5baa  daftar-berkas.tsv
+89a96b02e5cee40a7b1e25fb51779d2c  tambal-rtf.pl
+cccb685b361da640f1c7b2afddfa84a7  pasang-satker.sh
+d75a2d9f8b97df5a0196b3c8ace48878  pulih-satker.sh
