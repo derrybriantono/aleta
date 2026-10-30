@@ -4978,7 +4978,9 @@
       const pada = new Date().toISOString();
       const daftar = rows
         .map((r, i) => {
-          const usulan = r.otomatis !== undefined ? String(r.otomatis) : r.dasar !== undefined ? String(r.dasar) : "";
+          // 30 Okt: jawaban disimpan rapi (rapikanJawabSaksi), jadi usulan dirapikan dengan aturan yang sama - perapian bukan suntingan.
+          const usulanMentah = r.otomatis !== undefined ? String(r.otomatis) : r.dasar !== undefined ? String(r.dasar) : "";
+          const usulan = usulanMentah.trim() ? rapikanJawabSaksi(usulanMentah) : usulanMentah;
           const kunciJawaban = String(r.kunciJawaban || "");
           const katalog = kunciJawaban ? kunciJawaban.split("/")[0] : "";
           const meta = r.usulan && typeof r.usulan === "object" ? r.usulan : {};

@@ -580,7 +580,8 @@ describe("D. penjaga: ekstensi hanya membaca dari cermin dan tidak menulis tanda
 
   it("jawaban sipp-konteks hanya MENAMBAH ruas (tidak ada yang dihapus): konteks, pengguna, kapabilitas tetap", () => {
     const rute = baca("manajemen_surat/src/app/api/aleta-bot/sipp-konteks/route.ts");
-    for (const ruas of ["konteks: hasil.data ?? null", "pengguna: {", "bolehUnggahPutusan: bolehUnggahPutusan(actor)", "golonganMenu: golonganMenuEkstensi(actor)", "kapabilitas,"]) {
+    // 30 Okt 2026: konteks menyalin seluruh hasil.data lalu MENAMBAH statusEcourt (status akun e-Court satu sumber).
+    for (const ruas of ["konteks: hasil.data", "...hasil.data,", "statusEcourt:", "pengguna: {", "bolehUnggahPutusan: bolehUnggahPutusan(actor)", "golonganMenu: golonganMenuEkstensi(actor)", "kapabilitas,"]) {
       expect(rute, ruas).toContain(ruas);
     }
     expect(rute).toContain("keadaanCermin");
