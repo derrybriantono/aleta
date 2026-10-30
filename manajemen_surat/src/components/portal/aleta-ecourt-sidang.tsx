@@ -9647,6 +9647,8 @@ export function AletaEcourtSidang({
                               .join("|")
                           : "",
                         sidik(berjalanIni),
+                        // Lencana BAS disiapkan (drafH1) per perkara - tanpa ini lencananya tertinggal (warna-tertinggal-di-usecallback).
+                        sidik(drafH1[pid]),
                         sidik(skorsIni),
                         ruangIni,
                         bisaDipanggilIni,

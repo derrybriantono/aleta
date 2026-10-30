@@ -320,7 +320,7 @@ function jadwal(cron, env = process.env, catat = console) {
   const ekspresi = String(env.ALETA_PINDAI_VARIABEL_CRON || "15 02 * * 0").trim();
   return cron.schedule(ekspresi, () => {
     jalankan(depsAsli())
-      .then((r) => catat.log(`[pindai-variabel] selesai: ${r ? `${r.jumlahVariabel} variabel x ${r.jumlahContoh} perkara, galat ${r.jumlah.galat}, penanda ${r.jumlah.penanda}, kosong baru ${r.jumlah.kosongBaru}` : "-"}`))
+      .then((r) => catat.log(`[pindai-variabel] selesai: ${r ? `${r.jumlahVariabel} variabel x ${r.jumlahContoh} perkara, kesalahan ${r.jumlah.galat}, penanda ${r.jumlah.penanda}, kosong baru ${r.jumlah.kosongBaru}` : "-"}`))
       .catch((g) => catat.error("[pindai-variabel] gagal:", (g && g.message) || g));
   });
 }

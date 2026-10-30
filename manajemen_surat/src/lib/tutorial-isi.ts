@@ -912,6 +912,27 @@ export const TUTORIAL: readonly Tutorial[] = [
     baruDi: { sumber: "ekstensi", versi: "1.205.1" },
   },
   {
+    id: "betulkan-kehadiran-sidang-sipp",
+    judul: "Membetulkan kehadiran sidang di SIPP dari catatan temuan",
+    ringkas: "Bila berita acara sidang atau putusan verstek tidak sejalan dengan kehadiran yang tercatat di SIPP, panel cetak Blangko Derry menyebutnya dan panitera pengganti perkara dapat membetulkannya dengan satu tombol.",
+    kelompok: "persidangan",
+    mencakup: { aksi: ["sidang.kehadiran-sipp"] },
+    halaman: ["/portal"],
+    tautan: { teks: "Buka Portal ALETA", href: "/portal" },
+    langkah: [
+      "Buka perkara di Blangko Derry (ABT), pilih blangko, lalu lihat bagian cetak.",
+      "Catatan temuan menyebut sidang yang kehadirannya berbeda, misalnya berita acara mencatat Penggugat dan Tergugat hadir tetapi SIPP mencatat Penggugat saja, atau putusan verstek padahal SIPP mencatat Tergugat hadir.",
+      "Baca usulannya: sidang ke berapa, tanggalnya, dan kehadiran lama menjadi yang baru.",
+      "Panitera pengganti perkara itu (atau Super Admin) menekan Betulkan di SIPP. Pilihan kehadiran di SIPP langsung dibetulkan.",
+      "Muat ulang halaman untuk melihat kehadiran terbaru.",
+    ],
+    peringatan: [
+      "Yang tercatat di SIPP selalu akun panitera pengganti perkara itu. Bila akun SIPP-nya tidak aktif, pembetulan ditolak dan tidak ada yang diubah.",
+      "Bila berita acara dan putusan verstek menyebut kehadiran yang berbeda untuk sidang yang sama, tidak ada usulan - periksa sendiri.",
+    ],
+    kataKunci: ["kehadiran sidang", "betulkan kehadiran", "verstek hadir", "catatan temuan", "kehadiran sipp"],
+  },
+  {
     id: "blangko-derry-jendela-pilih-isian",
     judul: "Blangko Derry: memilih blangko, mengisi yang perlu diisi, bukti, dan pratinjau",
     ringkas: "Urutan kerja di jendela blangko ABT, dari memilih blangko sampai pratinjau dan cetak.",

@@ -49,6 +49,8 @@
  * batal); tidak satu kata "Aleta" ke SIPP (penjagaTandaSipp di jalankanRencana).
  */
 
+const penjagaTandaSipp = require("./penjagaTandaSipp");
+
 const KEHADIRAN_TERGUGAT = new Set([1, 3, 8, 9, 11, 15]);
 
 /** Tergugat/Termohon dibetulkan menjadi TIDAK hadir (amar verstek). 11 (sebagian Tergugat) tidak diusulkan. */
@@ -366,7 +368,7 @@ function buatLayanan(d = {}) {
     const andaian = [];
     if (!sepertiBorang) {
       andaian.push(
-        `Borang Edit Jadwal Sidang SIPP sendiri hanya terbuka untuk sidang terakhir perkara yang belum putus${
+        `Form Edit Jadwal Sidang SIPP sendiri hanya terbuka untuk sidang terakhir perkara yang belum putus${
           sudahPutus ? " (perkara ini sudah putus)" : " (sidang ini bukan sidang terakhir)"
         }; pembetulan tetap dicatat sebagai Edit Jadwal Sidang atas akun PP perkara.`
       );
@@ -400,6 +402,9 @@ function buatLayanan(d = {}) {
 
   async function jalankanRencanaKehadiran(rencana, opsi = {}) {
     if (!rencana || rencana.ok !== true) return { ok: false, alasan: (rencana && rencana.alasan) || "rencana_tidak_sah", pesan: rencana && rencana.pesan };
+    // Penjaga "tanpa tanda ALETA di SIPP" di berkas ini sendiri (juga diperiksa lagi penjalan bersama), sebelum transaksi.
+    const tahanTanda = penjagaTandaSipp.periksaRencana(rencana);
+    if (!tahanTanda.ok) return { ...tahanTanda, kering: opsi.kering !== false, selesai: [] };
     const hasil = await jalankanUtuh(rencana, { kering: opsi.kering !== false });
     if (hasil && hasil.ok !== true && !hasil.pesan) hasil.pesan = pesanTolak(String(hasil.alasan || ""));
     return hasil;

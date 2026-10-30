@@ -202,8 +202,12 @@ describe("A. saran portal Tahap E di jendela pilih blangko F-G", () => {
     const tombol = await sampai(() => q(h, `[data-bl="${PUT_SARAN}"]:not([disabled])`), "blangko saran dapat dipilih");
     expect(tombol.getAttribute("data-kel")).toBe("CG - Putusan");
     expect(tombol.querySelector(".bd-lencana")!.textContent).toBe("disarankan");
-    // Ringkasan tahap 2 menyebut saran yang sama.
-    expect(q(h, "#bd-saranblangko")!.textContent).toContain("Saran untuk sidang ke-2");
+    // Ringkasan tahap 2 menyebut saran yang sama. Sejak 30 Okt (G2b, dcb0263d) saran pertama LANGSUNG terpilih,
+    // jadi kalimatnya menyatakan blangko terpilih sesuai saran sidang ke-2 (bukan tawaran "Pakai saran ini").
+    const ringkas = q(h, "#bd-saranblangko")!.textContent || "";
+    expect(ringkas).toContain("Blangko ini sesuai saran untuk sidang ke-2");
+    expect(ringkas).toContain(HASIL_PORTAL.putusan[0].alasan.replace(/\.$/, ""));
+    expect(h.w.aletaBlangkoDerryIsian.keadaan().blangko).toMatchObject({ berkas: PUT_SARAN });
     // Satu permintaan jadwal sidang tanggal itu, berparameter rekomendasi=1 dan nomor perkara.
     const permintaan = h.minta.filter((u) => u.includes("/aleta-ecourt/sidang?dari="));
     expect(permintaan).toHaveLength(1);

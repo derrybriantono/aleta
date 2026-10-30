@@ -807,7 +807,9 @@ describe("rute portal sidang/selesai dan sidang/mediator", () => {
     // 22 Okt 2026 (jadwal cepat): GET /ringan - ke-30 (jadwal-cepat-22okt.test.ts).
     const jumlahRute = rute.match(/router\.(get|post)\(/g)?.length ?? 0;
     // 28 Okt 2026: GET/POST /hasil-mediasi-sipp - ke-33 dan ke-34 (hasil-mediasi-sipp-28okt.test.ts).
-    expect(jumlahRute).toBe(37); // +2: GET/POST /tunda-mediasi (26 Okt), +2 /hasil-mediasi-sipp (28 Okt), +3 /kasir/akun (GET/POST) dan /kasir/riwayat (28 Okt)
+    // 30 Okt 2026 (G4): GET/POST /kehadiran-sidang (pembetulan kehadiran atas klik PP, kehadiran-sidang-30okt.test.ts) dan
+    // GET /putusan-dokumen (cocok putusan SIPP vs dokumen, hanya SELECT; cocok-putusan-30okt.test.ts) - ke-38 s.d. ke-40, bertoken.
+    expect(jumlahRute).toBe(40); // +2: GET/POST /tunda-mediasi (26 Okt), +2 /hasil-mediasi-sipp (28 Okt), +3 /kasir/akun (GET/POST) dan /kasir/riwayat (28 Okt), +3 G4 (30 Okt)
     // Sejak keputusan 104 (18 Okt 2026) rute tulis manual dibungkus manualJamKerja(...) - tetap bertoken.
     expect(rute.match(/wajibToken,\s*(?:async|manualJamKerja\()/g)?.length).toBe(jumlahRute);
     expect(rute).toContain("kering: badan.kering !== false");

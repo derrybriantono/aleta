@@ -7,7 +7,7 @@ import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { akunSippMilik } from "@/server/modules/aleta-ecourt/court-calendar-akun";
 import { bacaKredensialSipp } from "@/server/modules/aleta-ecourt/checklist-milestone";
 import { panggilBotJadwalSidang } from "@/server/modules/aleta-ecourt/jadwal-sidang-gateway";
-import { pastikanAksiAktor } from "@/server/modules/akses/hak-peran";
+import { pastikanAksi } from "@/server/modules/akses/hak-peran";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ApiError } from "@/server/shared/errors";
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
     const aktor = await pastikanKapabilitas(db, actorUserId, "panel");
-    pastikanAksiAktor(aktor, "sidang.kehadiran-sipp");
+    await pastikanAksi(db, actorUserId, "sidang.kehadiran-sipp");
     const badan = (await request.json().catch(() => ({}))) as Record<string, unknown>;
     const jadwalId = String(badan.jadwalId ?? "").trim();
     if (!/^\d{1,12}$/.test(jadwalId)) throw new ApiError(400, "Sidang tidak dikenali.");

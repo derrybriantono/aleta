@@ -1109,6 +1109,11 @@ const JALUR_TULIS_SIPP = Object.freeze([
     sasaran: "hasil mediasi dari Jadwal Mediasi (perkara_mediasi, perkara_proses, perkara_jadwal_mediasi, sys_audittrail) atas akun PP perkara, 28 Okt 2026: keterangan & kesepakatan diperiksa sebelum transaksi",
   },
   {
+    berkas: "services/kehadiranSidangTulisService.js",
+    penjaga: ["penjagaTandaSipp.periksaRencana(rencana)", "jalankanRencanaUtuh(rencana"],
+    sasaran: "pembetulan pilihan kehadiran sidang (perkara_jadwal_sidang.dihadiri_oleh + sys_audittrail bentuk EDIT JADWAL SIDANG) atas akun PP perkara, atas klik PP/Super Admin dari catatan temuan, 30 Okt 2026: rencana diperiksa sebelum transaksi",
+  },
+  {
     berkas: "services/ikrarEdocService.js",
     penjaga: ["penjagaTandaSipp.siapkanBerkasSipp(", "penjagaTandaSipp.periksaRencana(", "penjagaTandaSipp.namaBerkasBersih("],
     sasaran: "e-Doc penetapan ikrar talak (perkara_ikrar_talak.ikrar_talak_dok) dari blangko Derry [90]/[90a]: grup tersembunyi & metadata dibersihkan, isi naskah diperiksa, nama berkas bersih",
