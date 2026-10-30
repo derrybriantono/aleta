@@ -253,3 +253,16 @@ PERIKSA: SEMUA COCOK
 PRASYARAT SESUDAH: 0|11|1 (harus 0|11|1)
 SELESAI - paket abt-identitas-kosong-31okt terpasang. Pulih: bash identitas-kosong-31okt/paket-satker/pulih-satker.sh
 ```
+
+### 19. `bukti-8529-31okt` (31 Okt 06.xx, keputusan pengguna 9 - SESUDAH semua paket di atas)
+```
+cd bukti-8529-31okt/paket-satker && bash pasang-satker.sh
+```
+Keluaran benar (salinan rantai `aps_badilag_g1r` = salinan `aps_badilag_rantai` sesudah 18 paket):
+```
+PRASYARAT COCOK (1|0)
+PERIKSA: SEMUA COCOK
+PRASYARAT SESUDAH: 0|1 (harus 0|1)
+SELESAI
+```
+Pulih: paket ini dipulihkan PERTAMA (sebelum identitas-kosong-31okt).

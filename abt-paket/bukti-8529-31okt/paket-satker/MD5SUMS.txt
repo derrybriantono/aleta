@@ -1,0 +1,7 @@
+7784ab7468ee10628551a0c8d0fb3f34 *abt-bukti-8529-31okt-PASANG.sql
+f884761dc853ee597b7a6b632c9d3bc9 *abt-bukti-8529-31okt-PERIKSA.sql
+8aa062df6538241dcfb692296b760368 *abt-bukti-8529-31okt-PRASYARAT.sql
+7a4575aec402cbdf13a68b7ee2b6076e *abt-bukti-8529-31okt-PULIH.sql
+daeb681c8178c4bb5fd4aba0fe8d0106 *harap.txt
+b67fcf7b28734b0b34c4f2039dd3476e *pasang-satker.sh
+f7ca1d0353c2427b850e729e1540deab *pulih-satker.sh
