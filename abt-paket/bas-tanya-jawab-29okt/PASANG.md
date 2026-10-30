@@ -68,10 +68,10 @@ PRASYARAT SQL `17|5|4|1|1` = 17 variabel yang dirujuk ada | 5058/5059/5060/6120/
 
 Lihat `hasil/ringkasan-uji.md` (siklus pasang/pulih laptop, verifikasi teks, pemeriksaan menyeluruh, render php56 ABT asli sebelum/sesudah atas perkara nyata).
 
-## Yang perlu diputuskan pengguna
+## Keputusan pengguna 30 Okt dan tindak lanjut
 
-0. **Perubahan cara kerja (penting):** BAS/putusan yang dulu tertulis mati mengisi sendiri "keterangan" dari isian; sesudah paket, keterangan saksi HARUS diisi di tanya-jawab ABT (atau lewat Blangko Derry "Set pertanyaan saksi"/Susun saksi ekstensi). Diukur di SIPP+ABT salinan 28 Okt (putus Mei-Okt 2026, dikabulkan/ditolak/NO): Itsbat nikah **15 dari 109** perkara punya tanya-jawab tersimpan (selebihnya memakai BAS tertulis mati); cerai gugat 313/319, cerai talak 58/61, DK 8/9, P3HP 7/8, perwalian 6/6. Untuk itsbat lama yang dicetak ulang dengan blangko baru, keterangan saksi akan tampil `...` sampai tanya-jawabnya diisi. Pada BAS, tanya-jawab ABT per SIDANG: isi pada sidang pemeriksaan saksi.
+- **1 = (c)** tanya jawab tetap wajib (format seragam) + PERINGATAN di panel Blangko Derry: dibuat di ekstensi (`blangko-derry-isian.js`, commit `fff4c7b3`): sebelum cetak/pratinjau BAS/putusan, saksi yang belum punya tanya jawab disebut (sebutan saksi, tanpa kode), tombol ke tanya jawab saksi (penyunting BAS memuat "Set pertanyaan"), cetak TIDAK ditahan dan dicatat sesudah cetak. Ukuran (SIPP+ABT salinan 28 Okt, `hasil/ukur-keputusan1-tanya-jawab-kosong.tsv`): perkara 2026 belum putus yang saksinya sudah tercatat di SIPP tetapi tanya jawab kosong: cerai gugat 9, cerai talak 4, itsbat 1; putus 30 hari terakhir tanpa tanya jawab padahal saksi tercatat: cerai gugat 1, itsbat 1, DK 1, P3HP 1; putus Mei-Okt: itsbat 91 dari 106 perkara bersaksi tanpa tanya jawab (dulu memakai BAS tertulis mati).
+- **2 = YA**: varian `[1b]`/`[1c]` dipindah ke folder `terhapus` lewat paket `../bas-itsbat-varian-30okt` (tanpa ubahan menu).
+- **3**: pertimbangan hukum dibiarkan.
+- Temuan simulasi lain yang diperbaiki: kata terpotong di keterangan saksi putusan (`../ket-saksi-kata-30okt`), jawaban bergaris-baru tergabung di tabel BAS (`../ket-saksi-baris-30okt`, MENGUBAH data tersimpan - lihat peringatannya), nomor daftar bukti surat ganda/hilang (`../bukti-nomor-30okt`).
 
-1. `2 Itsbat Nikah - BAS/BAS ALUR 11 [1]` sesudah paket ISINYA SAMA dengan `[1b] ... Tanya Jawab dari Katalog Saksi` (paket u3); begitu juga `[1a]` = `[1c]`. Usul: varian `[1b]`/`[1c]` disingkirkan ke `terhapus` (tidak dilakukan paket ini).
-2. Pertimbangan hukum putusan (mis. "saksi-saksi #0046# telah memberikan keterangan ... a) sejak #0222# ...") tetap dari isian/variabel pertimbangan, bukan kutipan tanya-jawab - itu penilaian hakim; bila ingin dikaitkan ke tanya-jawab, perlu variabel ringkasan baru (`4610`-`4618` "kutipan ringkas" sudah ada tetapi belum dipakai).
-3. Isian lama "berapa kali melihat" (`2557`/`2558`), "pernah melihat" (`2555`/`2556`), `8511`/`8512` tidak dipakai lagi oleh blangko Derry aktif (variabelnya dibiarkan; bawaan pekerjaan Derry `modifier=admin`).
