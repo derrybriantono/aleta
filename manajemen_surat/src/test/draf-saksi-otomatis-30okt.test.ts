@@ -192,13 +192,14 @@ type Minta = { url: string; cara: string; badan: string };
 type Halaman = { dom: JSDOM; w: any; simpanan: Record<string, unknown>; minta: Minta[]; latar: Array<Record<string, unknown>>; abt: Record<string, string>; tj: Record<string, Array<{ no: string; tanya: string; jawab: string }>>; pdfRtf: string[]; opsi: { hakTolak?: boolean } };
 const terbuka: JSDOM[] = [];
 const usulanMinta: any[] = [];
+const simpanSerentak = { sekarang: 0, puncak: 0 };
 const usulanAlasan: any[] = [];
 afterEach(async () => {
   await tunggu(20);
   while (terbuka.length) terbuka.pop()!.window.close();
 });
 
-function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?: boolean; tjGagal?: boolean; botMati?: boolean; jenis?: string; abtAwal?: Record<string, string>; rtfBytes?: Uint8Array; daftar?: unknown[]; h1?: Record<string, unknown>; h1Saya?: Record<string, unknown> } = {}): Halaman {
+function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?: boolean; tjGagal?: boolean; botMati?: boolean; jenis?: string; abtAwal?: Record<string, string>; rtfBytes?: Uint8Array; daftar?: unknown[]; h1?: Record<string, unknown>; h1Saya?: Record<string, unknown>; tjJeda?: number; tjAwal?: Record<string, Array<{ no: string; tanya: string; jawab: string }>> } = {}): Halaman {
   const badan = `<div id="header"><div class="h_right"><b>Pengguna</b> Panitera</div></div><div id="wrapper"><div id="navbar">${MENU}</div><div id="content"></div></div>`;
   const dom = new JSDOM(`<!doctype html><html><head><title>ABT</title></head><body>${badan}</body></html>`, { url: BERANDA, runScripts: "outside-only", pretendToBeVisual: true } as ConstructorParameters<typeof JSDOM>[1]);
   terbuka.push(dom);
@@ -241,6 +242,7 @@ function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?
   const abt: Record<string, string> = { "8503": "F", ...(p.abtAwal ?? {}) }; // isian tersimpan di ABT (data_teks/tanggal)
   const tj: Halaman["tj"] = {}; // kunci "kode@sidang" - keterangan saksi tersimpan PER SIDANG seperti abt_keterangan_saksi
   const pdfRtf: string[] = [];
+  for (const [k, v] of Object.entries(p.tjAwal ?? {})) tj[k] = polos(v);
   const orang = ORANG[p.orang ?? "hakim"];
   const json = (isi: unknown, status = 200) => new Response(JSON.stringify(isi), { status, headers: { "content-type": "application/json" } });
   const html = (isi: string) => new Response(isi, { status: 200, headers: { "content-type": "text/html" } });
@@ -357,6 +359,13 @@ function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?
       const dd = q.get("d") || "";
       const f = new URLSearchParams(badan);
       if (q.get("aksi") === "simpan") {
+        // 30 Okt malam (42): ABT yang lambat menulis (uji balapan simpan otomatis).
+        if (p.tjJeda) {
+          simpanSerentak.sekarang += 1;
+          simpanSerentak.puncak = Math.max(simpanSerentak.puncak, simpanSerentak.sekarang);
+          await tunggu(p.tjJeda);
+          simpanSerentak.sekarang -= 1;
+        }
         tj[`${kode}@${dd}`] = JSON.parse(String(f.get("data") || "[]"));
         return html("Tanya Jawab Disimpan");
       }
@@ -743,3 +752,113 @@ describe("Pengisi jawaban itsbat: pertanyaan wali yang lebih berhak diisi aturan
     expect(pokok("Siapa yang menikahkan Pemohon I dan Pemohon II?")).toBe("ijab");
   });
 });
+
+describe("Simpan otomatis tanya jawab saksi (keputusan pengguna 42)", () => {
+  const tulisSimpan = (h: Halaman) => h.minta.filter((m) => m.cara === "POST" && /tanyajawab_perkara_edit\?aksi=simpan/.test(m.url));
+  const dikirim = (m: Minta) => JSON.parse(String(new URLSearchParams(m.badan).get("data") || "[]")) as Array<{ no: string; tanya: string; jawab: string }>;
+  const kotakA = (h: Halaman) => qq(h, 'textarea[data-sba][data-sk="0"]') as HTMLTextAreaElement[];
+  async function siapDraf(p: Parameters<typeof buka>[0] = {}) {
+    const h = bukaPP(p);
+    await bukaSaksiPertama(h);
+    await sampai(() => asalTampil(h).includes("data"), "draf terisi", 8000);
+    await tunggu(150);
+    return h;
+  }
+
+  it("mengganti satu jawaban: 1,5 detik kemudian SATU simpan berisi baris dari data + yang disunting; kalimat contoh/titik-titik yang belum disentuh tidak ikut", async () => {
+    const h = await siapDraf();
+    const kotak = kotakA(h);
+    const contoh = kotak.findIndex((el) => el.getAttribute("data-asal") === "contoh");
+    expect(contoh).toBeGreaterThanOrEqual(0);
+    const jumlahData = kotak.filter((el) => ["data", "ragu"].includes(el.getAttribute("data-asal") || "")).length;
+    const jumlahSemua = kotak.filter((el) => el.value.trim()).length;
+    ketik(h, kotak[contoh] as unknown as HTMLInputElement, "Saksi melihat sendiri Tergugat pergi membawa pakaiannya", false);
+    await tunggu(500);
+    expect(tulisSimpan(h)).toEqual([]); // belum - menunggu petugas berhenti mengetik
+    await sampai(() => tulisSimpan(h).length, "simpan otomatis", 4000);
+    await tunggu(300);
+    expect(tulisSimpan(h)).toHaveLength(1);
+    const baris = dikirim(tulisSimpan(h)[0]);
+    expect(baris.length).toBe(jumlahData + 1);
+    expect(baris.length).toBeLessThan(jumlahSemua);
+    expect(baris.some((r) => /membawa pakaiannya/.test(r.jawab))).toBe(true);
+    expect(baris.every((r) => !/\.\.\./.test(r.jawab))).toBe(true);
+    expect(baris.map((r) => r.no)).toEqual(baris.map((_, i) => String(i + 1)));
+    // draf sisanya tetap di penyunting, dan disimpan di peramban untuk dipulihkan
+    expect(kotakA(h).filter((el) => el.value.trim()).length).toBe(jumlahSemua);
+    expect(Object.keys(h.simpanan).some((k) => k.startsWith("bdTjDraf:"))).toBe(true);
+    expect(q(h, '[data-tjotokabar="saksi 1 p"]')?.textContent || "").toMatch(/tersimpan otomatis pukul \d{2}\.\d{2}; \d+ baris draf .*belum disimpan/);
+  });
+
+  it("tanpa perubahan tidak menulis; keluar dari kotak tanpa mengetik tidak menulis", async () => {
+    const h = await siapDraf();
+    const k = kotakA(h)[0];
+    k.dispatchEvent(new h.w.FocusEvent("focusout", { bubbles: true }));
+    await tunggu(1900);
+    expect(tulisSimpan(h)).toEqual([]);
+    ketik(h, k as unknown as HTMLInputElement, k.value + " sekali", true);
+    await sampai(() => tulisSimpan(h).length, "simpan sesudah keluar kotak", 3000);
+    ketik(h, k as unknown as HTMLInputElement, k.value, true); // bunyi sama dengan yang tersimpan
+    await tunggu(1900);
+    expect(tulisSimpan(h)).toHaveLength(1);
+  });
+
+  it("aman terhadap balapan: ketikan selama simpan berjalan menunggu, satu simpan pada satu waktu, isi akhir = ketikan terakhir", async () => {
+    simpanSerentak.puncak = 0;
+    const h = await siapDraf({ tjJeda: 700 });
+    const k = kotakA(h)[1];
+    ketik(h, k as unknown as HTMLInputElement, "Jawaban pertama", true);
+    await sampai(() => simpanSerentak.sekarang === 1, "simpan berjalan", 3000);
+    ketik(h, k as unknown as HTMLInputElement, "Jawaban kedua", true);
+    ketik(h, k as unknown as HTMLInputElement, "Jawaban ketiga", true);
+    await sampai(() => tulisSimpan(h).length >= 2 && simpanSerentak.sekarang === 0, "simpan susulan selesai", 6000);
+    await tunggu(900);
+    expect(simpanSerentak.puncak).toBe(1);
+    expect(tulisSimpan(h).length).toBe(2);
+    expect(h.tj["5058@3"].some((r) => r.jawab.startsWith("Jawaban ketiga"))).toBe(true);
+  });
+
+  it("dibuka lagi sesudah simpan otomatis: draf (kalimat contoh) dipulihkan, baris tersimpan tidak ganda; Simpan ke ABT tetap menyimpan semua", async () => {
+    const h = await siapDraf();
+    const kotak = kotakA(h);
+    const semua = kotak.filter((el) => el.value.trim()).length;
+    ketik(h, kotak[0] as unknown as HTMLInputElement, `${kotak[0].value} (diubah)`, true);
+    await sampai(() => h.tj["5058@3"] && h.tj["5058@3"].length, "tersimpan otomatis", 4000);
+    const tersimpan = h.tj["5058@3"].length;
+    expect(tersimpan).toBeLessThan(semua);
+    const h2 = bukaPP({ simpanan: h.simpanan, tjAwal: { "5058@3": h.tj["5058@3"], "5059@3": h.tj["5059@3"] ?? [] } });
+    await bukaSaksiPertama(h2);
+    await sampai(() => kotakA(h2).filter((el) => el.value.trim()).length === semua, "draf dipulihkan", 6000);
+    expect(kotakA(h2).filter((el) => el.getAttribute("data-asal") === "contoh").length).toBeGreaterThan(0);
+    expect(new Set(kotakA(h2).map((el) => el.value)).size).toBe(kotakA(h2).length);
+    klik(h2, '[data-bd2="simpantj"]');
+    await sampai(() => h2.tj["5058@3"].length === semua, "Simpan ke ABT menyimpan semua", 6000);
+  });
+
+  it("baris yang sudah di ABT (juga yang masih titik-titik) selalu ikut terkirim - tidak pernah terhapus oleh simpan otomatis", async () => {
+    const ADA = [
+      { no: "1", tanya: "Apakah saksi kenal dengan Penggugat dan Tergugat?", jawab: "Ya, saya kenal Penggugat;" },
+      { no: "2", tanya: "Sejak kapan pisah rumah?", jawab: "Sejak ... ;" },
+    ];
+    const h = bukaPP({ tjAwal: { "5058@3": ADA } });
+    await bukaSaksiPertama(h);
+    await sampai(() => kotakA(h).filter((el) => el.value.trim()).length >= 2, "daftar terbaca", 6000);
+    await tunggu(200);
+    ketik(h, kotakA(h)[0] as unknown as HTMLInputElement, "Ya, saya kenal Penggugat sebagai tetangganya;", true);
+    await sampai(() => tulisSimpan(h).length, "simpan otomatis", 4000);
+    const baris = dikirim(tulisSimpan(h)[0]);
+    expect(baris.map((r) => r.tanya)).toEqual(ADA.map((r) => r.tanya));
+    expect(baris[1].jawab.trim()).not.toBe(""); // terisi dari data perkara atau tetap titik-titik - yang penting tidak terhapus
+  });
+
+  it("putusan / hakim (hanya baca): tidak pernah menyimpan otomatis", async () => {
+    const h = buka();
+    await pilihPutusan(h);
+    await sampai(() => q(h, '#bd-saksikosong [data-bd2="isisaksi"]'), "peringatan");
+    klik(h, '#bd-saksikosong [data-bd2="isisaksi"]');
+    await sampai(() => q(h, ".bd-tjbaca"), "hanya baca");
+    await tunggu(1700);
+    expect(tulisSimpan(h)).toEqual([]);
+  });
+});
+

@@ -4204,6 +4204,17 @@
       if (!h.ok) t.galat = h.pesan || "Tanya jawab tidak terbaca.";
       else {
         if (!t.berubah) t.rows = tandaiDasarBaris(h.baris.map((r) => ({ no: r.no, tanya: r.tanya, jawab: r.jawab })), false);
+        // 30 Okt malam (42): yang sudah di ABT = patokan simpan otomatis; draf yang belum tersimpan (kalimat contoh, "...") dipulihkan.
+        t.tandaTersimpan = DSO() ? DSO().tandaSimpan(h.baris) : "";
+        t.diAbt = DSO() ? new Set(h.baris.map((r) => DSO().kunciBaris(r))) : new Set();
+        if (!t.berubah && !deretTj().hanyaBaca && DSO()) {
+          const kd = kunciDrafTj(t);
+          const pul = DSO().pulihkanDraf(h.baris, (await bacaPenyimpanan(kd))[kd]);
+          if (pul && S.tj[kunci] === t) {
+            t.rows = pul;
+            t.berubah = pul.length > h.baris.length;
+          }
+        }
         t.templates = h.templates;
         t.keterangan = h.keterangan;
         t.galat = ""; // peringatan "belum terbaca" dari percobaan simpan sebelum bacaan selesai tidak boleh tertinggal
@@ -5046,6 +5057,11 @@
     for (const kunci of kunciDaftar) {
       const t = S.tj[kunci];
       if (!t) continue;
+      // 30 Okt malam (42): simpan otomatis yang menunggu dibatalkan, yang sedang berjalan ditunggu - Simpan ke ABT menulis sesudahnya.
+      clearTimeout(jamTjOto.get(kunci));
+      jamTjOto.delete(kunci);
+      if (t.otoJalan && t.otoJanji) await t.otoJanji;
+      t.otoLagi = false;
       if (!t.dimuat || t.memuat) {
         t.galat = PESAN_TJ_BELUM_TERBACA;
         renderTj();
@@ -5092,6 +5108,12 @@
           t.berubah = false;
           t.rows = rows.map((r, i) => ({ ...r, no: String(i + 1) }));
           t.tersimpanJam = jamSekarang();
+          t.otoKabar = "";
+          if (DSO()) {
+            t.tandaTersimpan = DSO().tandaSimpan(rows);
+            t.diAbt = new Set(rows.map((r) => DSO().kunciBaris(r)));
+            void tulisPenyimpanan({ [kunciDrafTj(t)]: null }); // semua baris tersimpan: tidak ada draf yang perlu dipulihkan
+          }
           catatButirTj(kunci, t, t.rows);
           tandaiKotor();
           S.peringat = false;
@@ -5105,6 +5127,87 @@
       renderTj();
     }
     laporKeKerangka();
+  }
+  // -- 30 Okt malam (keputusan 42): tanya jawab tersimpan otomatis ke ABT saat jawaban diganti --------------------------------
+  // 1,5 detik sesudah berhenti mengetik atau saat keluar dari kotak. Yang dikirim: seluruh baris layak simpan saksi itu (terisi
+  // dari data atau sudah diketik), BUKAN kalimat contoh / "..." yang belum disentuh - itu tetap draf di penyunting dan disimpan di
+  // peramban (dipulihkan saat dibuka lagi). Satu simpan per saksi pada satu waktu; tanpa perubahan = tanpa tulis; tidak pernah
+  // mengirim daftar kosong. Tombol Simpan ke ABT tetap (menyimpan semua baris seperti dulu).
+  const DSO = () => (typeof globalThis !== "undefined" && globalThis.AletaBdDrafSaksi && typeof globalThis.AletaBdDrafSaksi.barisSimpanOtomatis === "function" ? globalThis.AletaBdDrafSaksi : null);
+  const kunciDrafTj = (t) => `bdTjDraf:${perkaraId()}:${t.kode}:${t.sidang}`;
+  const JEDA_TJ_OTO_MS = 1500;
+  const jamTjOto = new Map();
+  function jadwalTjOtomatis(kunciDaftar, jeda) {
+    if (!DSO() || !TP() || tes() || !bolehTulis() || deretTj().hanyaBaca || !S.blangko || S.blangko.jenis !== "bas") return;
+    for (const k of kunciDaftar || []) {
+      if (!S.tj[k]) continue;
+      clearTimeout(jamTjOto.get(k));
+      jamTjOto.set(k, setTimeout(() => {
+        jamTjOto.delete(k);
+        void simpanTjOtomatis(k);
+      }, Math.max(0, Number(jeda) || 0)));
+    }
+  }
+  async function simpanTjOtomatis(kunci) {
+    const t = S.tj[kunci];
+    const m = DSO();
+    if (!t || !m || !TP() || !t.dimuat || t.memuat || t.menyimpan || tes() || !bolehTulis()) return;
+    if (t.otoJalan) {
+      t.otoLagi = true;
+      return;
+    }
+    let rows = m.barisSimpanOtomatis(t.rows, (r) => TP().asalBaris(r), t.diAbt).map((r) => ({ ...r, jawab: rapikanJawabSaksi(r.jawab) }));
+    rows = rows.map((r) => ({ ...r, tanya: normalAbt(r.tanya).teks, jawab: normalAbt(r.jawab).teks }));
+    if (!rows.length) return; // daftar kosong tidak pernah dikirim (ABT menghapus keterangan saksi itu)
+    if (hurufDiLuarAbt(rows.map((r) => `${r.tanya} ${r.jawab}`).join(" ")).length) return; // Simpan ke ABT yang memberi tahu
+    const tanda = m.tandaSimpan(rows);
+    if (tanda === t.tandaTersimpan) return;
+    t.otoJalan = true;
+    t.otoLagi = false;
+    const sidang = t.sidang;
+    let lepas = () => {};
+    t.otoJanji = new Promise((r) => (lepas = r));
+    try {
+      const h = await klienAbt().simpanTanyaJawab({ kode: t.kode, perkaraId: perkaraId(), sidang, baris: rows.map((r, i) => ({ no: String(i + 1), tanya: r.tanya, jawab: r.jawab })), a: S.blangko.a, b: S.blangko.b });
+      if (S.tj[kunci] !== t || t.sidang !== sidang) return;
+      if (!h || !h.ok) {
+        t.galat = `Simpan otomatis belum berhasil: ${(h && h.pesan) || "ABT tidak mengatakan tersimpan"}. Tekan Simpan ke ABT.`;
+      } else {
+        t.tandaTersimpan = tanda;
+        t.diAbt = new Set(rows.map((r) => m.kunciBaris(r)));
+        t.tersimpanJam = jamSekarang();
+        t.galat = "";
+        const sisa = t.rows.filter((r) => String(r.tanya || "").trim() || String(r.jawab || "").trim()).length - rows.length;
+        t.berubah = sisa > 0;
+        t.otoKabar = sisa > 0 ? `${rows.length} jawaban tersimpan otomatis pukul ${t.tersimpanJam}; ${sisa} baris draf (kalimat contoh / belum lengkap) belum disimpan.` : `Semua jawaban tersimpan otomatis pukul ${t.tersimpanJam}.`;
+        void tulisPenyimpanan({ [kunciDrafTj(t)]: { saat: Date.now(), rows: t.rows.map((r) => ({ ...r })), tersimpan: rows.map((r) => ({ tanya: r.tanya, jawab: r.jawab })) } });
+        catatButirTj(kunci, t, rows);
+        tandaiKotor();
+        const it = tjItem(kunci);
+        if (it) S.nilai[it.kode] = { status: "terisi", teks: "" };
+      }
+    } catch (e) {
+      if (S.tj[kunci] === t) t.galat = `Simpan otomatis belum berhasil: ${String((e && e.message) || e)}. Tekan Simpan ke ABT.`;
+    } finally {
+      t.otoJalan = false;
+      lepas();
+      if (S.tj[kunci] === t) renderTjDiam();
+      if (t.otoLagi) {
+        t.otoLagi = false;
+        void simpanTjOtomatis(kunci);
+      }
+    }
+  }
+  /** Status simpan otomatis diperbarui tanpa menggambar ulang tabel bila petugas sedang mengetik (fokus & kursor tetap). */
+  function renderTjDiam() {
+    const aktif = typeof document !== "undefined" ? document.activeElement : null;
+    const sedangKetik = aktif && aktif.closest && aktif.closest("#bd-tjwadah") && aktif.tagName === "TEXTAREA";
+    if (!sedangKetik) return renderTj();
+    for (const k of kunciTampilTj()) {
+      const el = cari(`[data-tjotokabar="${k}"]`, wadah.isian);
+      const t = S.tj[k];
+      if (el && t) el.textContent = t.galat || t.otoKabar || "";
+    }
   }
   // 19 Okt (tahap 2): riwayat menyimpan kunci saksinya juga, supaya satu langkah yang menyentuh saksi mana pun (tukar jawaban
   // dengan saksi lain) dapat diurungkan dari tampilan berdampingan maupun satu per satu.
@@ -6192,6 +6295,7 @@
       if (x.kosongSimpan && x.rows.some((r) => String(r.tanya || "").trim() || String(r.jawab || "").trim())) x.kosongSimpan = false;
       const kosong = TP() ? TP().peringatanDaftarKosong(tjItem(k) ? tjItem(k).tj.sebutan : "", x.rows, x.kosongSimpan) : "";
       if (kosong) return `<p class="bd-peringatan" data-kosongsimpan="${esc(k)}" role="alert">${esc(kosong)}</p>`;
+      if (x.otoKabar) return `<p class="bd-catat" data-tjotokabar="${esc(k)}" role="status">${esc(x.otoKabar)}</p>`;
       if (x.tersimpanJam && !x.berubah) return `<p class="bd-catat">✓ tersimpan di ABT ${esc(x.tersimpanJam)}${x.ganti ? ` (huruf ${esc(x.ganti)} diganti ke bentuk aman ABT)` : ""}</p>`;
       return "";
     };
@@ -9059,6 +9163,7 @@
         r[t.getAttribute("data-sisi")] = t.value;
         S.tj[S.tjBuka].berubah = true;
         segarAsalTampil();
+        jadwalTjOtomatis([S.tjBuka], JEDA_TJ_OTO_MS); // 30 Okt malam (42)
       }
     }
   }
@@ -9072,6 +9177,7 @@
       if (norm(A[i].tanya) === norm(B[i].tanya)) B[i].tanya = t.value;
       A[i].tanya = t.value;
       tjUbah(ps);
+      jadwalTjOtomatis(ps, JEDA_TJ_OTO_MS); // 30 Okt malam (42)
       return true;
     }
     const a = t.getAttribute && t.getAttribute("data-sba");
@@ -9081,6 +9187,7 @@
       (Number(t.getAttribute("data-sk")) ? B : A)[i].jawab = t.value;
       tjUbah(ps);
       segarAsalTampil();
+      jadwalTjOtomatis([ps[Number(t.getAttribute("data-sk")) ? 1 : 0]], JEDA_TJ_OTO_MS); // 30 Okt malam (42)
       return true;
     }
     return false;
@@ -9177,6 +9284,12 @@
   }
   function saatBlur(e) {
     const t = e.target;
+    // 30 Okt malam (42): keluar dari kotak tanya jawab = simpan otomatis segera (hanya bila ada ketikan yang menunggu).
+    if (t && t.hasAttribute && (t.hasAttribute("data-sba") || t.hasAttribute("data-tjb") || t.hasAttribute("data-sbq"))) {
+      const kunci = kunciTampilTj().filter((k) => S.tj[k] && jamTjOto.has(k));
+      if (kunci.length) jadwalTjOtomatis(kunci, 0);
+      return;
+    }
     const k = t.getAttribute && t.getAttribute("data-k");
     if (!k || t.type === "date" || t.tagName === "SELECT") return;
     // Fokus yang sekadar lewat (Tab, klik) tidak menulis apa pun ke ABT - hanya yang diketik.

@@ -105,7 +105,46 @@
     return { rows: keluar, dibuang: daftar.length - keluar.length };
   }
 
-  const api = { pilihSetDraf, perluDraf, kalimatStatus, adaIsi, waliAyahKandung, saringTanyaWali };
+  // ──────────────────────────────────────────────────────────────────────────
+  // 30 Okt malam (keputusan pengguna 42): tanya jawab TERSIMPAN OTOMATIS ke ABT saat jawaban diganti (tombol Simpan tetap).
+  // ABT menyimpan satu saksi sekaligus (hapus semua baris saksi itu, tulis ulang), jadi yang dikirim selalu SELURUH baris yang
+  // layak simpan: terisi dari data (data/ragu) atau sudah diketik petugas (manual). Kalimat contoh dan isian "..." yang belum
+  // disentuh TIDAK ikut - mereka tetap draf di penyunting dan disimpan di peramban (pulihkanDraf) supaya muncul lagi saat
+  // penyunting dibuka, walau daftar di ABT sudah berisi.
+  // ──────────────────────────────────────────────────────────────────────────
+  const ASAL_SIMPAN = ["data", "ragu", "manual"];
+
+  /** Kunci satu baris (pertanyaan + jawaban) untuk himpunan baris yang SUDAH ada di ABT. */
+  const kunciBaris = (r) => JSON.stringify([teks(r && r.tanya).replace(/\s+/g, " ").trim(), teks(r && r.jawab).replace(/\s+/g, " ").trim()]);
+
+  /**
+   * Baris yang ikut simpan otomatis (urutan tetap). `asal(r)` = AletaBdSaksiTampil.asalBaris. `sudahDiAbt` = himpunan kunciBaris
+   * baris yang sekarang tersimpan di ABT: baris itu SELALU ikut (apa pun asalnya), karena ABT menghapus seluruh baris saksi
+   * sebelum menulis - baris tersimpan yang tidak dikirim akan hilang.
+   */
+  function barisSimpanOtomatis(rows, asal, sudahDiAbt) {
+    const ada = sudahDiAbt instanceof Set ? sudahDiAbt : new Set();
+    return (Array.isArray(rows) ? rows : []).filter((r) => r && teks(r.jawab).trim() && (ada.has(kunciBaris(r)) || ASAL_SIMPAN.includes(asal(r))));
+  }
+
+  /** Tanda isi (pertanyaan + jawaban) untuk membandingkan dengan yang sudah ada di ABT - tanpa perubahan = tanpa tulis. */
+  function tandaSimpan(rows) {
+    return JSON.stringify((Array.isArray(rows) ? rows : []).map((r) => [teks(r && r.tanya).replace(/\s+/g, " ").trim(), teks(r && r.jawab).replace(/\s+/g, " ").trim()]));
+  }
+
+  /**
+   * Draf yang disimpan di peramban dipulihkan bila baris di ABT masih PERSIS baris yang dulu disimpan otomatis dari draf itu
+   * (urutan dan bunyi sama). Bila ABT sudah diubah dari tempat lain, ABT yang menang: null.
+   * @param {Array} barisAbt  baris terbaca dari ABT
+   * @param {{rows?: Array, tersimpan?: Array}|null} simpanan
+   */
+  function pulihkanDraf(barisAbt, simpanan) {
+    if (!simpanan || !Array.isArray(simpanan.rows) || !Array.isArray(simpanan.tersimpan) || !simpanan.tersimpan.length) return null;
+    if (tandaSimpan(barisAbt) !== tandaSimpan(simpanan.tersimpan)) return null;
+    return simpanan.rows.map((r) => Object.assign({}, r));
+  }
+
+  const api = { pilihSetDraf, perluDraf, kalimatStatus, adaIsi, waliAyahKandung, saringTanyaWali, barisSimpanOtomatis, tandaSimpan, pulihkanDraf, kunciBaris };
   globalThis.AletaBdDrafSaksi = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();
