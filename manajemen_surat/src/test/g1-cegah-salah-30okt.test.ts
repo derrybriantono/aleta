@@ -426,11 +426,15 @@ describe("1.2 aturan pemeriksa (murni)", () => {
   });
   it("sisa blangko dari deteksi-sisa-blangko dikelompokkan per jenis; #kode# yang ada di blangko -> Perbaiki ke isiannya", () => {
     const t = sisa.periksaRtf(rtf("Menimbang, bahwa [nama saksi] menerangkan;", "Tergugat bekerja sebagai #2004#;", "tanggal ........ "));
-    const d = m.kumpulkan({ naskah: { teks: "", temuanSisa: t.temuan }, kodeAda: new Set(["2004"]) });
+    const d = m.kumpulkan({ naskah: { teks: "", temuanSisa: t.temuan }, kodeAda: new Set(["2004"]), namaIsian: new Map([["2004", "Pekerjaan terakhir Tergugat"]]) });
     const jenis = d.map((x) => x.jenis);
     expect(jenis).toContain("sisa-kurung");
     expect(jenis).toContain("sisa-tanda");
-    expect(d.find((x) => x.jenis === "sisa-tanda")!.perbaiki).toEqual({ aksi: "isian", kode: "2004" });
+    const tanda = d.find((x) => x.jenis === "sisa-tanda")!;
+    expect(tanda.perbaiki).toEqual({ aksi: "isian", kode: "2004" });
+    // nomor variabel tidak tampil; yang disebut nama isiannya
+    expect(tanda.teks).toContain("Pekerjaan terakhir Tergugat");
+    expect(tanda.teks).not.toMatch(/\b\d{4}\b/);
     expect(d.find((x) => x.jenis === "sisa-kurung")!.perbaiki).toEqual({ aksi: "pratinjau" });
   });
   it("kurung bunyi huruf alasan di sisa blangko tidak disebut dua kali", () => {

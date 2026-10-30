@@ -41,7 +41,10 @@
    * terukur pada naskah render 9558 dan 10083).
    */
   const POLA_BIAYA_NOMINAL = /biaya\s+perkara[^.;]{0,160}?sejumlah\s+Rp\.?\s*0*[1-9][\d.]*|DIPA[^.;\n]{0,140}?\((?!\s*nihil\s*\))[^)]{0,120}?\b(?:ribu|ratus|juta)\b[^)]{0,60}\)/i;
-  /** "tanggal 26 Oktober 2026 dan (tanggal) 26 Oktober 2026" - tanggal panggilan yang sama tertulis dua kali. */
+  /**
+   * "tanggal 26 Oktober 2026 dan (tanggal) 26 Oktober 2026" - tanggal panggilan yang sama tertulis dua kali. Diukur atas banding
+   * paket prodeo-panggilan-29okt (1.889 perkara, 3.778 kalimat tanggal P/T): bunyi lama 1.652 kena, bunyi baru 0.
+   */
   const POLA_TANGGAL_GANDA = /tanggal\s+(\d{1,2}\s+[A-Za-z]+\s+\d{4})\s*,?\s+dan\s+(?:tanggal\s+)?\1(?!\d)/i;
 
   const potong = (t, n) => {
@@ -57,6 +60,7 @@
    *   naskah    { teks, temuanSisa: [{ jenis, label, cocok }] } | null - hanya bila naskah sudah disiapkan dan masih segar
    *   prodeo    boolean
    *   kodeAda   Set kode isian blangko (memetakan #kode# di naskah ke isiannya)
+   *   namaIsian Map kode -> nama isian tampil (opsional; untuk menyebut isian, bukan nomornya)
    * -> [{ jenis, teks, perbaiki: { aksi: "isian"|"rapikan"|"pratinjau", kode? } | null, judulTombol }]
    */
   function kumpulkan(bahan) {
@@ -122,9 +126,15 @@
       if (POLA_HURUF.test(cocok) || POLA_AGAMA.test(cocok)) continue;
       const k = kelompok.get(t.jenis) || { label: teks(t.label) || "Sisa blangko", contoh: [], jumlah: 0, kode: "" };
       k.jumlah += 1;
-      if (k.contoh.length < 3 && cocok.trim()) k.contoh.push(potong(cocok, 40));
+      // Tanda isian "#nnnn#" tidak dikutip (teks tampil tanpa nomor variabel): yang disebut nama isiannya bila ada di blangko.
+      const tanpaNomor = cocok.replace(/#\d{3,5}#/g, "").trim();
+      if (k.contoh.length < 3 && tanpaNomor && !/^[#\s]*$/.test(tanpaNomor)) k.contoh.push(potong(cocok.replace(/#\d{3,5}#/g, "…"), 40));
       const p = cocok.match(/#(\d{4,5})#/);
-      if (p && !k.kode && kodeAda.has(p[1]) && !sudah.has(p[1])) k.kode = p[1];
+      if (p && !k.kode && kodeAda.has(p[1]) && !sudah.has(p[1])) {
+        k.kode = p[1];
+        const nm = b.namaIsian instanceof Map ? teks(b.namaIsian.get(p[1])) : "";
+        if (nm && k.contoh.length < 3) k.contoh.push(nm);
+      }
       kelompok.set(t.jenis, k);
     }
     for (const [jenis, k] of kelompok) {

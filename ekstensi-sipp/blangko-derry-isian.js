@@ -7732,6 +7732,7 @@
           naskah: bahanNaskahPeriksa(),
           prodeo: pk.prodeo === true || pk.prodeo === 1 || pk.prodeo === "1",
           kodeAda: new Set(perlu.map((x) => x.kode)),
+          namaIsian: new Map(perlu.map((x) => [x.kode, namaIsian(x)])),
         });
       }
     } catch (e) {
