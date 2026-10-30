@@ -816,3 +816,13 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar .bd-ketbutir { margin: 0; padding-left: 18px; color: var(--fg); display: flex; flex-direction: column; gap: 4px; }
 #aleta-bd-akar .bd-ketbutir li { line-height: 1.45; }
 #aleta-bd-akar .bd-ketbaris { display: flex; justify-content: flex-end; }
+/* G1 30 Okt 2026: "Periksa sebelum cetak" - satu daftar temuan di langkah Cetak, tombol Perbaiki per butir; token tema (terang & gelap). */
+#aleta-bd-akar .bd-periksacetak { border: 2px solid var(--warn); background: var(--warnbg); border-radius: 12px; padding: 8px 12px; margin: 8px 0; display: flex; flex-direction: column; gap: 6px; }
+#aleta-bd-akar .bd-periksakepala { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--fg); }
+#aleta-bd-akar .bd-periksacetak .bd-peringatan { border-width: 1px; }
+#aleta-bd-akar .bd-periksa { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
+#aleta-bd-akar .bd-periksa:empty { display: none; }
+#aleta-bd-akar .bd-periksabutir { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--fg); font-size: 14px; }
+#aleta-bd-akar .bd-periksabutir > span { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+#aleta-bd-akar .bd-periksabutir > button { flex: 0 0 auto; }
+#aleta-bd-akar .bd-sorot { outline: 3px solid var(--accent); outline-offset: 2px; box-shadow: 0 0 0 6px var(--accentbg); transition: outline-color .3s; }
