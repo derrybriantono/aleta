@@ -2251,8 +2251,8 @@
    "jumlahPernyataan": 2
   },
   "blangko-derry-isian.js": {
-   "byte": 565717,
-   "sidik": "cae1b7711a0e6ecdb4c29c74cbbe838114487d9c",
+   "byte": 621215,
+   "sidik": "ae53989032fee873a211f91bb9cf0a27b6ea68a8",
    "nama": [],
    "ekspor": [
     "AletaBdIsianSaksi",
@@ -2292,8 +2292,8 @@
    "jumlahPernyataan": 2
   },
   "blangko-derry-saksi-tampil.js": {
-   "byte": 7795,
-   "sidik": "bd1694eab76d044e79ef4abaaad1ee8059a166a7",
+   "byte": 8765,
+   "sidik": "aa4f1518fe4648ee6639ef85828114a7f4242c19",
    "nama": [],
    "ekspor": [
     "AletaBdSaksiTampil"
@@ -2301,8 +2301,8 @@
    "jumlahPernyataan": 2
   },
   "blangko-derry-saksi.js": {
-   "byte": 25549,
-   "sidik": "87f92b13faf849c516e0191262147bd3fb40c8af",
+   "byte": 26269,
+   "sidik": "9354a671e4eeeb66b4f70f7af59c598a1b03ed16",
    "nama": [],
    "ekspor": [
     "AletaBdSaksi"
@@ -2310,8 +2310,8 @@
    "jumlahPernyataan": 2
   },
   "blangko-derry.js": {
-   "byte": 168317,
-   "sidik": "d7007a18c391b9ec3e2463a6c161bfcd6c0bb6c3",
+   "byte": 169838,
+   "sidik": "79c7968cbd97032fb2a515bedf80d1bfb6757781",
    "nama": [],
    "ekspor": [
     "aletaBlangkoDerry",
@@ -2333,8 +2333,8 @@
    "jumlahPernyataan": 2
   },
   "deteksi-sisa-blangko.js": {
-   "byte": 46151,
-   "sidik": "289754bf569612a36c4ca54ad21ffbf38cc72557",
+   "byte": 50215,
+   "sidik": "75d88b87f7857af44b3a194cf503c70f643ff039",
    "nama": [],
    "ekspor": [
     "aletaDeteksiSisa"
@@ -4284,8 +4284,8 @@
    "jumlahPernyataan": 2
   },
   "panel-alat.js": {
-   "byte": 591670,
-   "sidik": "f24d0f9f1d3d98af958435153b1d2d1e1cdc22e3",
+   "byte": 592266,
+   "sidik": "68bacbb866a822cb1679dc811c3f98b5851cc4b4",
    "nama": [
     "ALAT_AKHIRAN_TIPE",
     "ALAT_ALAMAT_UNGGAH_SIPP",
@@ -5010,8 +5010,8 @@
    "jumlahPernyataan": 2
   },
   "putusan-sipp.js": {
-   "byte": 43527,
-   "sidik": "dad04a54aabdc2e2e284d967462a339f902de98b",
+   "byte": 43364,
+   "sidik": "72f52341c39cca7cc25c84000c25bb5cc7ba0d4b",
    "nama": [],
    "ekspor": [
     "aletaPutusanSipp",
@@ -5039,8 +5039,8 @@
    "jumlahPernyataan": 2
   },
   "putusan-terjadwal.js": {
-   "byte": 96753,
-   "sidik": "51bd3c51e5a99dfd0f6263bbccaf37bcbbd8ef1f",
+   "byte": 97493,
+   "sidik": "0b18b4f0093e10ca51d01093f59506df4bb86bd5",
    "nama": [],
    "ekspor": [
     "aletaPutusanTerjadwal",
@@ -5087,8 +5087,8 @@
    "jumlahPernyataan": 2
   },
   "saksi-susun.js": {
-   "byte": 87657,
-   "sidik": "b49c0a4ffe6c74e0b0b111e2bdf32e571b0b72e1",
+   "byte": 88374,
+   "sidik": "c8fe93992ce41db30c583317779ef3647d63a3f0",
    "nama": [],
    "ekspor": [
     "AletaSaksiSusun"

@@ -559,6 +559,9 @@ export const DDL_KALIMAT_PRIBADI = {
     `CREATE INDEX IF NOT EXISTS idx_kalimat_pribadi_pemilik ON aleta_kalimat_pribadi(pemilik_id)`,
     `CREATE INDEX IF NOT EXISTS idx_kalimat_pribadi_jenis ON aleta_kalimat_pribadi(jenis_perkara, kode)`,
   ],
+} as const;
+
+/**
  * Putusan SIPP vs dokumen putusan yang diunggah - hasil pencocokan per perkara (0117, 30 Okt 2026, G4 4.3).
  * Cermin PERSIS dari drizzle/0117_aleta_cocok_putusan.sql; penjaga cocok-putusan-30okt.test.ts membandingkan keduanya.
  */
