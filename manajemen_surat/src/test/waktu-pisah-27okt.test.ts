@@ -66,7 +66,8 @@ describe("0246 dan 7035: pulang ke rumah orang tua, diusir", () => {
   it("diusir: yang diusir yang meninggalkan kediaman (Penggugat), bukan yang mengusir", () => {
     const r = jalan("Penggugat diusir Tergugat sejak 14 Februari 2025");
     expect(r.pergi.nilai).toBe("Penggugat");
-    expect(r.pisah.nilai).toBe("bulan Februari 2025");
+    // 31 Okt (keputusan pengguna butir 16): tanggal yang disebut saksi disimpan lengkap.
+    expect(r.pisah.nilai).toBe("tanggal 14 Februari 2025");
     expect(jalan("Tergugat mengusir Penggugat dari rumah sejak Februari 2025").pergi.nilai).toBe("Penggugat");
   });
 

@@ -599,7 +599,9 @@ function sebutanSisi(sisi, pihak) {
 function kesesuaianFakta(kode, nama, nilai1, nilai2) {
   const a = String(nilai1 || "").trim();
   const b = String(nilai2 || "").trim();
-  const status = a && b ? (a.toLowerCase() === b.toLowerCase() ? "sama" : "berbeda") : a || b ? "satu saksi" : "tidak ada";
+  // 31 Okt (butir 16): 0222/0246 - "bulan Juli 2024" dan "tanggal 23 Juli 2024" = sama (yang satu lebih rinci).
+  const setaraWaktu = (kode === "0222" || kode === "0246") && a && b && Boolean(layananUsulan().waktuSetara(a, b));
+  const status = a && b ? (a.toLowerCase() === b.toLowerCase() || setaraWaktu ? "sama" : "berbeda") : a || b ? "satu saksi" : "tidak ada";
   const tunggal = status === "satu saksi" ? (a ? 1 : 2) : 0;
   return { kode, nama, status, label: labelStatus(status, tunggal), saksi1: a, saksi2: b };
 }
