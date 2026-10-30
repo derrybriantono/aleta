@@ -1,0 +1,210 @@
+0005 | Panitera Sidang
+0006 | Nama #0600# tanpa bin/binti (Pria)
+0074 | Hbgn. Saksi1 P dg. Pihak (BAS PA Donggala; sama dengan #1241#)
+0075 | DETEKSI KUASA #8147# (Bawaan ABT Salah mendeteksinya dan tidak bisa digunakan)
+0207 | Tgl. Surat Kuasa Khusus #0046# (sama dengan isian #0184#; dirujuk BAS Pertama P Kuasa Tida
+0237 | MEDIATOR: NAMA UNTUK AKTA PERDAMAIAN (OTOMATIS dari SIPP, sama dengan #8013#)
+0320 | Ada atau Tiada Bukti Surat IN
+0321 | Bukti tersebut sebagai berikut:
+0379 | Bukti Surat IN 2P (otomatis BAS) No.KK
+0380 | Pertimbngn Bukti Surat IN 2P No.KK
+0381 | Bukti Surat IN 2P (otomatis Penetapan) No.KK
+0382 | Bahwa ada bukti surat IN 2 P - No KK
+0383 | Bahwa selain bukti surat IN 2 P - No KK
+0384 | Keterangan Saksi Status Pihak Otomatis
+0500 | No. BRIVA (Panjar)
+0501 | Nama Pihak (Panjar BRIVA)
+0502 | Jumlah Pembayaran (Panjar BRIVA)
+0503 | Jam Pembayaran (Panjar BRIVA)
+0700 | Nama #0046# II tanpa bin/binti
+1177 | Identitas ayah Pemohon II
+2223 | Tanggal KTP P2 / Pemohon II (OTOMATIS: isian 0366, lalu KTP e-Court) - sama dengan 8872, u
+2555 | (saksi I) Pernah/tidak melihat pertengkaran P dan T
+2556 | (Saksi II) Pernah/tidak melihat pertengkaran P dan T
+3116 | Umur #0046# III
+3126 | Umur #0046# IV
+3400 | TUNTUTAN AKIBAT PERCERAIAN: KEADAAN DAN KUTIPAN PETITUM (OTOMATIS dari petitum/rekonvensi/
+3401 | PEMICU HAK BEKAS ISTRI: PETITUM MENUNTUT NAFKAH IDDAH (OTOMATIS dari petitum SIPP; "ya" bi
+3402 | PEMICU HAK BEKAS ISTRI: PETITUM MENUNTUT MASKAN (TEMPAT TINGGAL) SELAMA IDDAH (OTOMATIS da
+3403 | PEMICU HAK BEKAS ISTRI: PETITUM MENUNTUT KISWAH (PAKAIAN) SELAMA IDDAH (OTOMATIS dari peti
+3404 | PEMICU HAK BEKAS ISTRI: PETITUM MENUNTUT MUT'AH (OTOMATIS dari petitum SIPP; "ya" bila men
+3405 | PEMICU HAK BEKAS ISTRI: PETITUM MENUNTUT NAFKAH LAMPAU (MADLIYAH) (OTOMATIS dari petitum S
+3406 | PEMICU HAK BEKAS ISTRI: PETITUM MENUNTUT MAHAR YANG MASIH TERHUTANG (OTOMATIS dari petitum
+3407 | PEMICU HAK BEKAS ISTRI: PETITUM MENUNTUT BIAYA HADHANAH ATAU NAFKAH ANAK (OTOMATIS dari pe
+3408 | PEMICU HAK BEKAS ISTRI: PETITUM MENUNTUT SITA JAMINAN (OTOMATIS dari petitum SIPP; "ya" bi
+3430 | PEMICU ANAK: PETITUM MENUNTUT PENYERAHAN ANAK KEPADA PEMEGANG HADHANAH (OTOMATIS dari peti
+3431 | PEMICU ANAK: PETITUM MENUNTUT KENAIKAN NAFKAH ANAK SETIAP TAHUN (OTOMATIS dari petitum dan
+3432 | PEMICU ANAK: PETITUM MENUNTUT BIAYA PENDIDIKAN DAN KESEHATAN ANAK (OTOMATIS dari petitum d
+3433 | PEMICU ANAK: PETITUM MENUNTUT PEMOTONGAN LANGSUNG PENGHASILAN (OTOMATIS dari petitum dan r
+3434 | PEMICU ANAK: PETITUM MENUNTUT NAFKAH LAMPAU ANAK (OTOMATIS dari petitum dan rekonvensi SIP
+3435 | PEMICU ANAK: PETITUM MENUNTUT SITA JAMINAN NAFKAH ANAK (OTOMATIS dari petitum dan rekonven
+3440 | PEMICU KEBENDAAN: PETITUM MENYEBUT UTANG BERSAMA (OTOMATIS dari petitum dan rekonvensi SIP
+3441 | PEMICU KELALAIAN KEWAJIBAN: PETITUM MENUNTUT NAFKAH (OTOMATIS dari petitum dan rekonvensi 
+3442 | PEMICU KELALAIAN KEWAJIBAN: PETITUM MENUNTUT NAFKAH LAMPAU (MADLIYAH) (OTOMATIS dari petit
+3443 | PEMICU KELALAIAN KEWAJIBAN: PETITUM MENUNTUT KISWAH (PAKAIAN) (OTOMATIS dari petitum dan r
+3444 | PEMICU KELALAIAN KEWAJIBAN: PETITUM MENUNTUT TEMPAT KEDIAMAN (OTOMATIS dari petitum dan re
+3445 | PEMICU KELALAIAN KEWAJIBAN: PETITUM MENUNTUT BIAYA RUMAH TANGGA, PERAWATAN ATAU PENGOBATAN
+3446 | PEMICU KELALAIAN KEWAJIBAN: PETITUM MENUNTUT PEMOTONGAN LANGSUNG PENGHASILAN (OTOMATIS dar
+3447 | PEMICU KELALAIAN KEWAJIBAN: PETITUM MENUNTUT SITA JAMINAN (OTOMATIS dari petitum dan rekon
+3448 | PEMICU KELALAIAN KEWAJIBAN: PETITUM MENUNTUT UANG PAKSA (DWANGSOM) (OTOMATIS dari petitum 
+3450 | TUNTUTAN LAIN (HAK BEKAS ISTRI, KEBENDAAN, ANAK, KELALAIAN): KEADAAN DAN KUTIPAN PETITUM (
+3513 | PIHAK: IDENTITAS SEMUA #0046# (OTOMATIS dari SIPP perkara_pihak1, urutan 1 sampai terakhir
+3514 | PIHAK: IDENTITAS SEMUA #0047# (OTOMATIS dari SIPP perkara_pihak2, urutan 1 sampai terakhir
+3515 | PIHAK: NAMA SEMUA #0046# (OTOMATIS dari SIPP perkara_pihak1, urutan 1 sampai terakhir, tan
+3516 | PIHAK: NAMA SEMUA #0047# (OTOMATIS dari SIPP perkara_pihak2, urutan 1 sampai terakhir, tan
+3760 | HAK BEKAS ISTRI: JUMLAH UANG SELURUH HAK (OTOMATIS: angka sesudah Rp pertama pada isian 97
+3916 | GANTI RUGI WALI: JUMLAH KERUGIAN YANG DITUNTUT BERTITIK (OTOMATIS dari isian 3915, mis. 15
+3925 | NAFKAH ANAK OLEH IBU: KEBUTUHAN BIAYA ANAK SETIAP BULAN - ANGKA MURNI (OTOMATIS dari isian
+3926 | NAFKAH ANAK OLEH IBU: BAGIAN AYAH SETIAP BULAN - ANGKA MURNI (OTOMATIS dari isian 3924, ta
+3927 | NAFKAH ANAK OLEH IBU: BAGIAN IBU SETIAP BULAN - ANGKA MURNI (OTOMATIS: isian 3923 dikurang
+4052 | Nama #0600# tanpa bin/binti (Pria)
+4110 | PERTIMBANGAN HAK ASUH ANAK (OTOMATIS dari petitum dan keputusan pada isian 4100; kosong bi
+4111 | PERTIMBANGAN NAFKAH ANAK (OTOMATIS dari petitum dan keputusan pada isian 4101)
+4112 | PERTIMBANGAN NAFKAH IDDAH (OTOMATIS dari petitum dan keputusan pada isian 4102)
+4113 | PERTIMBANGAN MUT'AH (OTOMATIS dari petitum dan keputusan pada isian 4103)
+4114 | PERTIMBANGAN NAFKAH MADLIYAH (OTOMATIS dari petitum dan keputusan pada isian 4104)
+4115 | PERTIMBANGAN HARTA BERSAMA (OTOMATIS dari petitum dan keputusan pada isian 4105)
+4116 | PERTIMBANGAN WAKTU PEMBAYARAN AKIBAT CERAI (OTOMATIS: cerai talak sebelum ikrar talak, cer
+4130 | AMAR HAK ASUH ANAK (OTOMATIS dari keputusan isian 4100; mulai dengan baris baru)
+4131 | AMAR NAFKAH ANAK (OTOMATIS dari keputusan isian 4101)
+4132 | AMAR NAFKAH ISTRI: MADLIYAH, IDDAH, MUT'AH DAN WAKTU PEMBAYARAN (OTOMATIS dari keputusan i
+4133 | AMAR HARTA BERSAMA (OTOMATIS dari keputusan isian 4105)
+4134 | AMAR MENOLAK SELAIN DAN SELEBIHNYA (OTOMATIS: bila ada tuntutan akibat perceraian yang dit
+4140 | PEMICU: PETITUM MENUNTUT HAK ASUH ANAK (OTOMATIS dari petitum/kumulasi SIPP; "ya" bila men
+4141 | PEMICU: PETITUM MENUNTUT NAFKAH ANAK (OTOMATIS dari petitum/kumulasi SIPP; "ya" bila menun
+4142 | PEMICU: PETITUM MENUNTUT NAFKAH IDDAH (OTOMATIS dari petitum/kumulasi SIPP; "ya" bila menu
+4143 | PEMICU: PETITUM MENUNTUT MUT'AH (OTOMATIS dari petitum/kumulasi SIPP; "ya" bila menuntut)
+4144 | PEMICU: PETITUM MENUNTUT NAFKAH MADLIYAH (OTOMATIS dari petitum/kumulasi SIPP; "ya" bila m
+4145 | PEMICU: PETITUM MENUNTUT HARTA BERSAMA (OTOMATIS dari petitum/kumulasi SIPP; "ya" bila men
+4146 | TUNTUTAN AKIBAT PERCERAIAN DALAM PETITUM (OTOMATIS dari petitum SIPP: daftar tuntutan yang
+4150 | RINCIAN KEWAJIBAN AKIBAT CERAI YANG DIBAYAR SAAT SIDANG IKRAR (OTOMATIS dari isian putusan
+4312 | AUA: NAMA ANAK DAN TANGGAL LAHIRNYA (OTOMATIS dari SIPP perkara_anak_pihak; "A (lahir pada
+4600 | BAS: jumlah saksi Penggugat/Pemohon yang diperiksa
+4601 | BAS: jumlah saksi Tergugat/Termohon yang diperiksa
+4602 | BAS: jumlah saksi Penggugat/Pemohon (angka dan terbilang)
+4603 | BAS: jumlah saksi Tergugat/Termohon (angka dan terbilang)
+4604 | BAS: nama saksi Penggugat/Pemohon yang diperiksa
+4605 | BAS: nama saksi Tergugat/Termohon yang diperiksa
+4606 | BAS: hubungan saksi dengan Penggugat/Pemohon
+4607 | BAS: hubungan saksi dengan Tergugat/Termohon
+4608 | BAS: ada keterangan saksi tersimpan (ya/tidak)
+4609 | BAS: jumlah sidang pemeriksaan saksi
+4610 | BAS: keterangan saksi tentang pernikahan (kutipan ringkas)
+4611 | BAS: keterangan saksi tentang tempat tinggal bersama (kutipan ringkas)
+4612 | BAS: keterangan saksi tentang anak (kutipan ringkas)
+4613 | BAS: keterangan saksi tentang penyebab perselisihan dan pertengkaran (kutipan ringkas)
+4614 | BAS: keterangan saksi tentang pisah rumah (kutipan ringkas)
+4615 | BAS: keterangan saksi tentang nafkah (kutipan ringkas)
+4616 | BAS: keterangan saksi tentang upaya damai (kutipan ringkas)
+4617 | BAS: keterangan saksi tentang harta dan benda (kutipan ringkas)
+4618 | BAS: keterangan saksi tentang kematian dan ahli waris (kutipan ringkas)
+4620 | BAS: jumlah bukti surat Penggugat/Pemohon
+4621 | BAS: jumlah bukti surat Tergugat/Termohon
+4622 | BAS: tanda bukti surat Penggugat/Pemohon (P.1 s.d. P.n)
+4623 | BAS: tanda bukti surat Tergugat/Termohon (T.1 s.d. T.n)
+4624 | BAS: bukti Penggugat/Pemohon memuat akta nikah (ya/tidak)
+4625 | BAS: bukti Penggugat/Pemohon memuat KTP (ya/tidak)
+4626 | BAS: bukti Penggugat/Pemohon memuat Kartu Keluarga (ya/tidak)
+4627 | BAS: bukti Penggugat/Pemohon memuat akta kelahiran (ya/tidak)
+4628 | BAS: bukti Penggugat/Pemohon memuat akta cerai atau kematian (ya/tidak)
+4629 | BAS: bukti Tergugat/Termohon memuat akta nikah (ya/tidak)
+4788 | PEMICU: PETITUM MENUNTUT SITA JAMINAN (OTOMATIS dari petitum SIPP dan putusan sela sita; "
+4789 | PEMICU: PETITUM MENUNTUT BAGIAN SELAIN SEPERDUA (OTOMATIS dari petitum SIPP; "ya" bila men
+4790 | PEMICU: PETITUM MENUNTUT UANG PAKSA (OTOMATIS dari petitum SIPP; "ya" bila menuntut)
+4791 | PEMICU: PETITUM MENUNTUT PUTUSAN SERTA MERTA (OTOMATIS dari petitum SIPP; "ya" bila menunt
+4792 | HARTA BERSAMA: PERTIMBANGAN OBJEK YANG TIDAK TERBUKTI (OTOMATIS dari isian 4781; kosong bi
+4793 | HARTA BERSAMA: PERTIMBANGAN SITA JAMINAN (OTOMATIS dari petitum dan keputusan isian 4783; 
+4795 | HARTA BERSAMA: PERTIMBANGAN UTANG BERSAMA (OTOMATIS dari isian 4786; Pasal 93 ayat (2) KHI
+4796 | HARTA BERSAMA: PERTIMBANGAN TURUT TERGUGAT (OTOMATIS: hanya bila petitum atau SIPP mencata
+4797 | HARTA BERSAMA: PERTIMBANGAN UANG PAKSA (OTOMATIS dari petitum dan keputusan isian 4784)
+4798 | HARTA BERSAMA: PERTIMBANGAN PUTUSAN SERTA MERTA (OTOMATIS dari petitum dan keputusan isian
+4845 | PEMICU: PETITUM EKONOMI SYARIAH MENUNTUT DENDA ATAU GANTI RUGI (OTOMATIS dari petitum SIPP
+4846 | PEMICU: PETITUM EKONOMI SYARIAH MENUNTUT PENYELESAIAN JAMINAN (OTOMATIS dari petitum SIPP;
+4847 | PEMICU: PETITUM EKONOMI SYARIAH MENUNTUT PEMBATALAN AKAD (OTOMATIS dari petitum SIPP; "ya"
+5510 | DK: NAMA ANAK YANG DIMOHONKAN DISPENSASI (OTOMATIS dari SIPP perkara_mempelai_dk: yang di 
+6150 | Hbgn. Saksi 4 P dg. Pihak
+7024 | PENYEBUTAN PENGGUGAT/PEMOHON/PARA
+7025 | PENYEBUTAN TERGUGAT/TERMOHON/PARA
+7052 | PANITERA/PLH YANG PENUNJUKKAN PP JS (TTD) - OTOMATIS SIPP: var 7053 + var 9531 (17 Okt: du
+7057 | FORMAT PERTIMBANGAN PENUNJUKKAN PP (E-COURT ATAU BIASA)
+7058 | FORMAT PERTIMBANGAN PENUNJUKKAN JS/JSP (E-COURT ATAU BIASA)
+7059 | JAM SIDANG YANG DICETAK (OTOMATIS SIPP: jam sidang yang dipilih, format 09:00; jam SIPP be
+7095 | PENANDA RUPIAH/NIHIL (OTOMATIS)
+7100 | PENDETEKSI E-COURT DI KEPALA RELAAS PANGGILAN
+7108 | IDENTITAS PIHAK RELAAS #0046#
+7109 | IDENTITAS PIHAK RELAAS #0047#
+7123 | Hari Perbaikan #0053#
+7124 | Hari Perbaikan #0053#
+7129 | HASIL MEDIASI DI KESEPAKATAN PERDAMAIAN (ABAIKAN APABILA MEDIASI TIDAK BERHASIL)
+7131 | HASIL MEDIASI OTOMATIS (TANPA INPUT SIPP) (ACUHKAN APABILA HASIL MEDIASI TIDAK ADA MUTAH/I
+7133 | HASIL MEDIASI OTOMATIS (SYSTEM)
+7141 | PENANDA MUSYAWARAH ATAU PEMBACAAN PUTUSAN (E-COURT)
+7713 | Tanggal Duplik ( tgl )
+8013 | MEDIATOR: NAMA (OTOMATIS dari SIPP perkara_mediasi.mediator_text, mediasi terakhir; titik-
+8129 | TANGGAL RELAAS PANGGILAN PERTAMA #0047# (OTOMATIS dari SIPP perkara_pelaksanaan_relaas; ti
+8486 | HURUF BERAPA KALI MELIHAT SAKSI I  #8146#
+8487 | HURUF BERAPA KALI MELIHAT SAKSI II #8146#
+8491 | Tempat tinggal setelah nikah (OTOMATIS)
+8492 | JUMLAH ANAK DAN NAMA ANAK (OTOMATIS)
+8493 | Awal Konflik (OTOMATIS)
+8494 | Pisah Rumah (OTOMATIS)
+8495 | Meninggalkan Kediaman Bersama ( Cerai ) (OTOMATIS)
+8496 | lama pisah (OTOMATIS)
+8497 | Masih/tidak komunikasi P dan T (OTOMATIS)
+8498 | Pernah/tidak di damaikan keluarga P dan T (OTOMATIS)
+8499 | Alasan-Alasan Cerai (#0053# #0046#) (OTOMATIS) (COPY PASTE UNTUK YANG SESUAI KETERANGAN SA
+8511 | KETERANGAN SAKSI I P (OTOMATIS )
+8512 | KETERANGAN SAKSI II P (OTOMATIS)
+8513 | JUMLAH ANAK, NAMA ANAK DAN UMUR ANAK
+8514 | JUMLAH ANAK, NAMA ANAK DAN TANGGAL LAHIR
+8515 | JUMLAH ANAK
+8535 | JUMLAH ANAK (ADA KALIMAT TELAH DIKARUNIAI)
+8800 | Email #0046# (SIPP; kosong = dari arsip e-Court)
+8801 | Email #0047# (SIPP; kosong = dari arsip e-Court)
+8802 | Nomor HP/WA #0046# (SIPP; kosong = dari arsip e-Court)
+8803 | Nomor HP/WA #0047# (SIPP; kosong = dari arsip e-Court)
+8804 | Email Kuasa #0046# (kuasa pertama; SIPP, kosong = dari arsip e-Court)
+8805 | Email Kuasa #0047# (kuasa pertama; SIPP, kosong = dari arsip e-Court)
+8806 | Nomor HP/WA Kuasa #0046# (kuasa pertama; SIPP, kosong = dari arsip e-Court)
+8807 | Nomor HP/WA Kuasa #0047# (kuasa pertama; SIPP, kosong = dari arsip e-Court)
+8813 | JAWAB-MENJAWAB SECARA ELEKTRONIK (OTOMATIS dari arsip e-Court: jawaban, replik, duplik, ke
+8870 | Tgl. KTP #0046# I - isian petugas (0364/2222), lalu KTP e-Court
+8871 | Tgl. KTP #0047# - isian petugas (0365), lalu KTP e-Court
+8872 | Tgl. KTP #0046# II - isian petugas (0366), lalu KTP e-Court
+8922 | Hbgn. Saksi 3 T dg. Pihak
+8940 | Hbgn. Saksi 4 T dg. Pihak
+9404 | SEBUTAN PIHAK ISTRI (OTOMATIS: pihak perempuan di SIPP; cerai gugat = #0046#, cerai talak 
+9405 | NAMA AYAH KANDUNG PIHAK ISTRI #9404# (OTOMATIS dari nama SIPP sesudah bin/binti; bawaan #1
+9431 | PEMBATALAN NIKAH: PEGAWAI PENCATAT NIKAH TEMPAT PERKAWINAN DICATAT (OTOMATIS: isian 9430; 
+9536 | SITA: PENANDA PETITUM MEMOHON SITA (Ya/Tidak)
+9560 | PROVINSI TEMPAT TINGGAL #0047# (OTOMATIS SIPP pihak kedua urutan 1; kosong = titik-titik)
+9561 | KABUPATEN/KOTA TEMPAT TINGGAL #0046# II (OTOMATIS SIPP pihak urutan 2, bila tak ada urutan
+9562 | PROVINSI TEMPAT TINGGAL #0046# II (OTOMATIS SIPP pihak urutan 2, bila tak ada urutan 1; ko
+9564 | RELAAS: HARI DAN TANGGAL PELAKSANAAN PANGGILAN #0046# (OTOMATIS SIPP perkara_pelaksanaan_r
+9565 | RELAAS: HARI DAN TANGGAL PELAKSANAAN PANGGILAN #0047# (OTOMATIS SIPP perkara_pelaksanaan_r
+9730 | Nama #0606# tanpa bin/binti (Wanita)
+10101 | Otomatis Tgl Nikah
+10102 | Otomatis Tempat Nikah
+10103 | Otomatis Kantor Urusan Agama Itsbat
+10104 | Otomatis Umur Isbat P1 (Laki-Laki)
+10105 | Otomatis Umur Isbat P2 (Perempuan)
+10106 | Otomatis Status #0046# sblm nikah (IN)
+10107 | Otomatis Status #2027# sblm nikah (IN)
+10108 | Otomatis Status Wali Nikah
+10109 | Otomatis Yang Menikahkan
+10110 | Otomatis Saksi Nikah 1
+10111 | Otomatis Saksi Nikah 2
+10112 | Otomatis Mas kawin
+10113 | Otomatis Nama Yang Menikahkan
+10121 | Otomatis Nama Pihak Ketiga (SIPP perkara_pihak3 urutan pertama)
+10122 | Otomatis Umur Pihak Ketiga (SIPP perkara_pihak3 urutan pertama)
+10123 | Otomatis Agama Pihak Ketiga (SIPP perkara_pihak3 urutan pertama)
+10124 | Otomatis Pendidikan Pihak Ketiga (SIPP perkara_pihak3 urutan pertama)
+10125 | Otomatis Pekerjaan Pihak Ketiga (SIPP perkara_pihak3 urutan pertama)
+10126 | Otomatis Alamat Pihak Ketiga (SIPP perkara_pihak3 urutan pertama)
+11111 | PENANDA ADA KUASA #0046#
+11112 | PENANDA ADA PRODEO
+11113 | PENANDA ADA KUASA #0047#
+11114 | Penanda KTP Elektronik #0046# / #0046# I
+11116 | PENANDA ALASAN C (8503)
+11117 | PENANDA ALASAN H (8503)
