@@ -1,7 +1,7 @@
-e9450409dbf5c5e098694e0bbfbb86e2  abt-hir-rbg-30okt-PASANG.sql
-53d1440fbda1571b3ff6f7aadbba2046  abt-hir-rbg-30okt-PERIKSA.sql
-8e521270a6b4ad9b63a660f921243d10  abt-hir-rbg-30okt-PRASYARAT.sql
-32737a23dbf03f5db5a3c892942352a0  abt-hir-rbg-30okt-PULIH.sql
+ca978b0569bffd64a630325d67a6aa8a  abt-hir-rbg-30okt-PASANG.sql
+fa96e942388eb0536bcbae9ae7cc42e3  abt-hir-rbg-30okt-PERIKSA.sql
+6dac75650823d44852b9608a13f5ab86  abt-hir-rbg-30okt-PRASYARAT.sql
+c6d9cda27f2ce54432de695df66af3ff  abt-hir-rbg-30okt-PULIH.sql
 d41dfbd2925178c03677053447ec8c98  daftar-tambal.tsv
 674855b5fe74cc247fa3b04f95d50b27  harap.txt
 1002e8cb816467ddfd7b0be902feee2a  nomor-diubah.txt

@@ -1,5 +1,7 @@
 # Paket ABT `abt-bukti-nomor-30okt` - daftar bukti surat di blangko Derry selalu bernomor 1., 2., ... (30 Okt 2026)
 
+**31 Okt: DIBANGUN ULANG** di atas pohon sesudah prodeo-panggilan-29okt -> bas-tanya-jawab-29okt -> bas-itsbat-varian-30okt (uji rantai pasang penuh): **397 berkas** (varian itsbat [1b]/[1c] sudah dipindah ke terhapus); angka 399 di bawah adalah bangunan 30 Okt. Urutan lengkap: `../URUTAN-PASANG-31okt.md`.
+
 **Status: diuji di laptop (basis salinan `aps_badilag_bas29` = dump server 28 Okt 15.44; salinan 399 blangko). Server: BELUM dipasang - dipasang sesi utama. URUTAN: `prodeo-panggilan-29okt` (versi bangun-ulang) -> `bas-tanya-jawab-29okt` -> paket ini.**
 
 Hanya pekerjaan Derry: 2 fungsi baru, 8 variabel `data_sql` BARU (`11170`-`11177`, `modifier=admin`), 399 blangko RTF `derry_briantono` (folder menu aktif). Isian bukti lama (`9955`, `9911`, `1214`, `9958`, `9956`, `8131`, `8132`, `0378`) dan bawaannya TIDAK diubah; data tersimpan tidak diubah. Tanpa kata nama aplikasi.
