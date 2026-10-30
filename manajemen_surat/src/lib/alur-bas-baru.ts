@@ -358,6 +358,8 @@ function gugatanKeluarga(jenis: "hak-asuh" | "penguasaan-anak" | "nafkah-anak" |
     return asuh ? (buat(id, "AP", [kd("CB")], false, `${nama}: mediasi berhasil - akta perdamaian (atau gugatan dicabut).`) ?? buat(id, kd("CB"), [], false, `${nama}: mediasi berhasil - gugatan dicabut.`)) : null;
   }
   if (h === 3 || h === 4) return buat(id, kd("TP"), [kd("NO")], true, `${nama}: Penggugat tidak hadir - tunda panggil P; bila sudah dua kali tidak hadir: putusan NO.`);
+  // 30 Okt (paket ABT sela-ps-30okt): wasiat, hibah, wakaf, ES acara biasa punya BAS pemeriksaan setempat (langkah PS) seperti HB/waris ALUR 30/32.
+  if (RX_SETEMPAT.test(agenda) && alurMenurutId(id).langkah.some((l) => l.kode === "PS")) return buat(id, "PS", [], false, `${nama}: sidang pemeriksaan setempat di lokasi objek.`);
   // T tidak hadir dan tidak pernah hadir: verstek (sidang 1 tunda panggil T, sidang 2 pembuktian dan putusan verstek).
   if (h === 2 && m.tergugatPernahHadir !== true) {
     return n <= 1

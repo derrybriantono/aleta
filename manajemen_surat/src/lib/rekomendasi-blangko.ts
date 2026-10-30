@@ -268,6 +268,8 @@ export const FOLDER_MENU_PUTUSAN: Record<string, string> = {
   "Putusan Ekonomi Syariah": "10 Ekonomi Syariah",
   // I9 17 Okt: paket ABT abt-penetap-phs-sita-derry - menu 150 "Putusan Sela & Penetapan Sita" (alias "Sita - Putusan Sela"), folder baru "97 Sita".
   "Putusan Sela & Penetapan Sita": "97 Sita",
+  // 30 Okt: paket ABT sela-ps-30okt - menu 151 putusan sela semua jenis (folder baru "97a Putusan Sela").
+  "Putusan Sela (Eksepsi, Provisi, Intervensi, Sumpah, Pemeriksaan Setempat, Mediasi, Rekonvensi, Penggabungan)": "97a Putusan Sela",
   // F22 17 Okt: paket ABT abt-pencegahan-nikah-derry (menu 139), abt-wasiat-derry (141), abt-es-biasa-derry (143).
   // I15 18 Okt: paket ABT abt-penguasaan-anak-derry (menu 153).
   "Putusan Penguasaan Anak": "6b Penguasaan Anak",
@@ -309,6 +311,208 @@ export const PUTUSAN_SELA_SITA = {
 /** Sidang yang agendanya membacakan putusan sela ATAS PERMOHONAN SITA (sela atas eksepsi bukan sela sita). */
 const RX_SELA_SITA = /putusan\s+sela/i;
 const RX_KONTEKS_SITA = /\bsita\b|insidentil/i;
+
+/**
+ * 30 Okt 2026 (paket ABT sela-ps-30okt): putusan sela SEMUA jenis perkara di bab baru "97a Putusan Sela" (menu 151, hakim) dan BAS-nya di
+ * "97a Putusan Sela - BAS" (menu 152, panitera pengganti): eksepsi kewenangan absolut/relatif (ditolak = putusan sela, dikabulkan = putusan akhir),
+ * tuntutan provisi, intervensi (voeging, tussenkomst, vrijwaring), sumpah pelengkap (gugatan / permohonan), dan perintah pemeriksaan setempat.
+ * Sita tetap di "97 Sita" (PUTUSAN_SELA_SITA). Dikabulkan/ditolak ditentukan majelis: keduanya ditawarkan, yang lazim lebih dulu.
+ */
+export const PUTUSAN_SELA_UMUM = {
+  folder: `${AKAR}/97a Putusan Sela`,
+  menu: "Putusan Sela (Eksepsi, Provisi, Intervensi, Sumpah, Pemeriksaan Setempat, Mediasi, Rekonvensi, Penggabungan)",
+  alias: ["Putusan Sela - Putusan", "Putusan Sela (Eksepsi, Provisi, Intervensi, Sumpah, Pemeriksaan Setempat)"],
+  berkas: {
+    absolutTolak: "[01] [Sela Tolak] Eksepsi Kewenangan Absolut Ditolak - Pemeriksaan Dilanjutkan.rtf",
+    absolutKabul: "[02] [NO] Eksepsi Kewenangan Absolut Dikabulkan - Pengadilan Agama Tidak Berwenang (Putusan Akhir).rtf",
+    relatifTolak: "[03] [Sela Tolak] Eksepsi Kewenangan Relatif Ditolak - Pemeriksaan Dilanjutkan.rtf",
+    relatifKabul: "[04] [NO] Eksepsi Kewenangan Relatif Dikabulkan - Pengadilan Agama Tidak Berwenang (Putusan Akhir).rtf",
+    provisiKabul: "[05] [Sela Kabul] Tuntutan Provisi Dikabulkan.rtf",
+    provisiTolak: "[06] [Sela Tolak] Tuntutan Provisi Ditolak.rtf",
+    voegingKabul: "[07] [Sela Kabul] Intervensi Voeging (Menggabungkan Diri) Dikabulkan.rtf",
+    voegingTolak: "[08] [Sela Tolak] Intervensi Voeging (Menggabungkan Diri) Ditolak.rtf",
+    tussenkomstKabul: "[09] [Sela Kabul] Intervensi Tussenkomst (Menengahi) Dikabulkan.rtf",
+    tussenkomstTolak: "[10] [Sela Tolak] Intervensi Tussenkomst (Menengahi) Ditolak.rtf",
+    vrijwaringKabul: "[11] [Sela Kabul] Intervensi Vrijwaring (Penanggungan) Dikabulkan.rtf",
+    vrijwaringTolak: "[12] [Sela Tolak] Intervensi Vrijwaring (Penanggungan) Ditolak.rtf",
+    sumpahGugatan: "[13] [Sela] Sumpah Pelengkap (Suppletoir) - Gugatan.rtf",
+    sumpahPermohonan: "[14] [Sela] Sumpah Pelengkap (Suppletoir) - Permohonan (Penetapan Sela).rtf",
+    setempat: "[15] [Sela] Pemeriksaan Setempat - Perintah Pemeriksaan di Lokasi Objek.rtf",
+    // 30 Okt (jawaban pengguna butir 9): eksepsi lain - dikabulkan = putusan akhir NO; ditolak = sisipan "Dalam Eksepsi" untuk putusan akhir
+    kaburKabul: "[16] [NO] Eksepsi Gugatan Kabur (Obscuur Libel) Dikabulkan - Gugatan Tidak Dapat Diterima (Putusan Akhir).rtf",
+    kaburTolak: "[17] [Sisipan] Eksepsi Gugatan Kabur (Obscuur Libel) Ditolak - Bagian Dalam Eksepsi untuk Putusan Akhir.rtf",
+    personaKabul: "[18] [NO] Eksepsi Keliru Pihak (Error in Persona) Dikabulkan - Gugatan Tidak Dapat Diterima (Putusan Akhir).rtf",
+    personaTolak: "[19] [Sisipan] Eksepsi Keliru Pihak (Error in Persona) Ditolak - Bagian Dalam Eksepsi untuk Putusan Akhir.rtf",
+    kurangKabul: "[20] [NO] Eksepsi Kurang Pihak (Plurium Litis Consortium) Dikabulkan - Gugatan Tidak Dapat Diterima (Putusan Akhir).rtf",
+    kurangTolak: "[21] [Sisipan] Eksepsi Kurang Pihak (Plurium Litis Consortium) Ditolak - Bagian Dalam Eksepsi untuk Putusan Akhir.rtf",
+    nebisKabul: "[22] [NO] Eksepsi Ne Bis In Idem Dikabulkan - Gugatan Tidak Dapat Diterima (Putusan Akhir).rtf",
+    nebisTolak: "[23] [Sisipan] Eksepsi Ne Bis In Idem Ditolak - Bagian Dalam Eksepsi untuk Putusan Akhir.rtf",
+    prematurKabul: "[24] [NO] Eksepsi Gugatan Prematur Dikabulkan - Gugatan Tidak Dapat Diterima (Putusan Akhir).rtf",
+    prematurTolak: "[25] [Sisipan] Eksepsi Gugatan Prematur Ditolak - Bagian Dalam Eksepsi untuk Putusan Akhir.rtf",
+    rekonvensi: "[26] [Sela] Gugatan Rekonvensi Tidak Dapat Diterima - Pemeriksaan Konvensi Dilanjutkan.rtf",
+    gabungKabul: "[27] [Sela Kabul] Penggabungan Perkara Dikabulkan.rtf",
+    gabungTolak: "[28] [Sela Tolak] Penggabungan Perkara Ditolak.rtf",
+    pemutus: "[29] [Sela] Sumpah Pemutus (Decisoir) - Gugatan.rtf",
+    penaksir: "[30] [Sela] Sumpah Penaksir (Aestimatoir) - Gugatan.rtf",
+    lian: "[31] [Sela] Sumpah Lian - Cerai dengan Alasan Zina.rtf",
+    mediasiTergugat: "[32] [Penetapan] Tergugat Tidak Beriktikad Baik dalam Mediasi - Biaya Mediasi (PERMA 1 2016 Pasal 23).rtf",
+    mediasiPenggugat: "[33] [NO] Penggugat Tidak Beriktikad Baik dalam Mediasi - Gugatan Tidak Dapat Diterima (PERMA 1 2016 Pasal 22).rtf",
+  },
+  bas: {
+    folder: `${AKAR}/97a Putusan Sela - BAS`,
+    menu: "Putusan Sela - BAS",
+    alias: ["Putusan Sela - BAS"],
+    insidentil: "BAS SELA [1] Sidang Insidentil - Pemeriksaan Eksepsi, Provisi atau Intervensi, Tunda Putusan Sela.rtf",
+    pembacaan: "BAS SELA [2] Pembacaan Putusan Sela - Pemeriksaan Dilanjutkan.rtf",
+    sumpah: "BAS SELA [3] Sumpah Pelengkap (Suppletoir) - Tunda Putusan.rtf",
+    sumpahPutus: "BAS SELA [3a] Sumpah Pelengkap (Suppletoir) - Lalu Putusan Dibacakan.rtf",
+    pemutus: "BAS SELA [4] Sumpah Pemutus (Decisoir) - Tunda Putusan.rtf",
+    pemutusPutus: "BAS SELA [4a] Sumpah Pemutus (Decisoir) - Lalu Putusan Dibacakan.rtf",
+    penaksir: "BAS SELA [5] Sumpah Penaksir (Aestimatoir) - Tunda Putusan.rtf",
+    penaksirPutus: "BAS SELA [5a] Sumpah Penaksir (Aestimatoir) - Lalu Putusan Dibacakan.rtf",
+    lian: "BAS SELA [6] Sumpah Lian - Tunda Putusan.rtf",
+  },
+  /** 30 Okt (butir 8): BAS mediasi elektronik PERMA 3/2022 di setiap folder BAS yang punya BAS mediasi biasa [1] (nama sama di semua folder). */
+  mediasiBiasa: "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf",
+  mediasiElektronik: "BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+} as const;
+const RX_SUMPAH_PELENGKAP = /sumpah\s+(?:pelengkap|tambahan)|supp?l[ei]?t[oi]i?r/i;
+const RX_SUMPAH_PEMUTUS = /sumpah\s+pemutus|decis[oi]i?r/i;
+const RX_SUMPAH_PENAKSIR = /sumpah\s+penaksir|a?estimat[oi]i?r/i;
+const RX_LIAN = /(?:^|[^a-z])li['’]?an(?![a-z])/i;
+const RX_IKTIKAD = /(?:tidak|tak)\s+beri[kt]{1,2}ikad\s+baik|i[kt]{1,2}ikad\s+tidak\s+baik/i;
+const RX_REKONVENSI = /rekonvensi|gugatan\s+balik/i;
+const RX_GABUNG = /penggabungan\s+perkara|digabung(?:kan)?\s+dengan\s+perkara/i;
+const RX_MEDIASI_EL = /mediasi[^.;]{0,40}(?:elektronik|daring|online|virtual|jarak\s+jauh)|(?:elektronik|daring|online|virtual)[^.;]{0,20}mediasi/i;
+/** Eksepsi selain kewenangan: [kata kunci, kunci berkas kabul, kunci berkas tolak, nama]. */
+const EKSEPSI_LAIN: Array<[RegExp, keyof typeof PUTUSAN_SELA_UMUM.berkas, keyof typeof PUTUSAN_SELA_UMUM.berkas, string]> = [
+  [/obs?cuur|kabur|tidak\s+jelas/i, "kaburKabul", "kaburTolak", "gugatan kabur"],
+  [/error\s+in\s+persona|keliru\s+pihak|salah\s+pihak|diskualifikasi/i, "personaKabul", "personaTolak", "keliru pihak"],
+  [/plurium|kurang\s+pihak/i, "kurangKabul", "kurangTolak", "kurang pihak"],
+  [/ne\s*bis\s*in\s*idem|nebis/i, "nebisKabul", "nebisTolak", "ne bis in idem"],
+  [/prematur/i, "prematurKabul", "prematurTolak", "gugatan prematur"],
+];
+const RX_PROVISI = /provisi/i;
+const RX_INTERVENSI = /intervensi|voeging|tussenkomst|vrijwaring/i;
+const RX_EKSEPSI_KEWENANGAN = /eksepsi|kompetensi|kewenangan\s+(?:absolut|relatif|mengadili)/i;
+const RX_SETEMPAT_SELA = /setempat|descente/i;
+
+/** Perkara permohonan (voluntair): alur 16 atau nomor Pdt.P. */
+function permohonan(m: MasukanRekomendasi): boolean {
+  return Number(m.alurPerkaraId) === 16 || /\/Pdt\.P\//i.test(String(m.nomorPerkara ?? ""));
+}
+
+/**
+ * Saran putusan sela bab 97a menurut agenda/keterangan sidang (dan penanda eksepsi bot bila jenisnya tidak punya blangko sela sendiri).
+ * Hanya sidang yang belum memutus perkara. Urutan pengenalan: sumpah, provisi, intervensi, eksepsi kewenangan, pemeriksaan setempat.
+ */
+export function rekomendasiPutusanSela(m: MasukanRekomendasi, teks: string, darurat = false): Rekomendasi[] {
+  if (m.sudahPutus) return [];
+  const u = PUTUSAN_SELA_UMUM;
+  const b = u.berkas;
+  const r = (berkas: string, label: string, alasan: string, utama: boolean): Rekomendasi => ({
+    jenis: "putusan", folder: u.folder, berkas, menu: u.menu, alias: perluasAliasMenu([...u.alias]), label, alasan, utama, perkiraan: true,
+  });
+  const sela = RX_SELA_SITA.test(teks);
+  // 30 Okt (butir 7): sumpah pemutus/penaksir hanya gugatan; li'an hanya perkara cerai.
+  if (RX_LIAN.test(teks) && /^cerai/.test(kunciJenisPerkara(m.jenisPerkara))) {
+    return [r(b.lian, "Putusan sela - sumpah li'an", "Sidang memerintahkan sumpah li'an atas tuduhan zina yang dibantah dan tidak dapat dibuktikan dengan alat bukti lain.", true)];
+  }
+  if (RX_SUMPAH_PEMUTUS.test(teks) && !permohonan(m)) {
+    return [r(b.pemutus, "Putusan sela - sumpah pemutus", "Sidang memerintahkan sumpah pemutus (decisoir) atas permohonan pihak yang tidak mempunyai alat bukti lain.", true)];
+  }
+  if (RX_SUMPAH_PENAKSIR.test(teks) && !permohonan(m)) {
+    return [r(b.penaksir, "Putusan sela - sumpah penaksir", "Sidang memerintahkan sumpah penaksir (aestimatoir) untuk menetapkan jumlah uang atau nilai barang yang dituntut.", true)];
+  }
+  if (RX_SUMPAH_PELENGKAP.test(teks)) {
+    return permohonan(m)
+      ? [r(b.sumpahPermohonan, "Penetapan sela - sumpah pelengkap", "Sidang memerintahkan sumpah pelengkap (suppletoir) dalam perkara permohonan.", true)]
+      : [r(b.sumpahGugatan, "Putusan sela - sumpah pelengkap", "Sidang memerintahkan sumpah pelengkap (suppletoir) karena bukti belum sempurna.", true)];
+  }
+  if (permohonan(m)) return [];
+  // 30 Okt (butir 8): tidak beriktikad baik dalam mediasi - tergugat = penetapan biaya mediasi (Pasal 23), penggugat = gugatan NO (Pasal 22).
+  if (RX_IKTIKAD.test(teks)) {
+    const penggugat = /penggugat\s+(?:dinyatakan\s+)?(?:tidak|tak)\s+beri/i.test(teks);
+    const t = r(b.mediasiTergugat, "Penetapan - tergugat tidak beriktikad baik dalam mediasi", "Laporan mediator menyatakan tergugat tidak beriktikad baik: penetapan biaya mediasi sebelum pemeriksaan dilanjutkan.", !penggugat);
+    const g = r(b.mediasiPenggugat, "Putusan - penggugat tidak beriktikad baik dalam mediasi", "Laporan mediator menyatakan penggugat tidak beriktikad baik: gugatan tidak dapat diterima dan biaya mediasi dibebankan.", penggugat);
+    return penggugat ? [g, t] : [t, g];
+  }
+  if (RX_REKONVENSI.test(teks) && sela) {
+    return [r(b.rekonvensi, "Putusan sela - gugatan rekonvensi tidak dapat diterima", "Sidang memutus gugatan rekonvensi lebih dahulu; pemeriksaan gugatan konvensi dilanjutkan.", true)];
+  }
+  if (RX_GABUNG.test(teks)) {
+    return [r(b.gabungKabul, "Putusan sela - penggabungan perkara dikabulkan", "Sidang memutus permohonan penggabungan perkara; dikabulkan diperkirakan, ditolak sebagai alternatif.", true),
+      r(b.gabungTolak, "Putusan sela - penggabungan perkara ditolak", "Alternatif pada sidang putusan sela atas permohonan penggabungan perkara.", false)];
+  }
+  // 30 Okt (butir 9): eksepsi selain kewenangan diputus bersama pokok perkara (Pasal 162 RBg).
+  if (/eksepsi/i.test(teks) && !/kewenangan|kompetensi/i.test(teks)) {
+    for (const [pola, kabul, tolak, nama] of EKSEPSI_LAIN) {
+      if (!pola.test(teks)) continue;
+      return [r(b[tolak], `Bagian putusan akhir - eksepsi ${nama} ditolak`, "Eksepsi selain kewenangan diputus bersama pokok perkara: bagian Dalam Eksepsi untuk disalin ke putusan akhir.", true),
+        r(b[kabul], `Putusan - eksepsi ${nama} dikabulkan`, "Alternatif: eksepsi dikabulkan - gugatan tidak dapat diterima (putusan akhir).", false)];
+    }
+  }
+  if (RX_PROVISI.test(teks) && (sela || /putus/i.test(teks))) {
+    return [r(b.provisiKabul, "Putusan sela - provisi dikabulkan", "Sidang memutus tuntutan provisi; dikabulkan diperkirakan, ditolak sebagai alternatif.", true),
+      r(b.provisiTolak, "Putusan sela - provisi ditolak", "Alternatif pada sidang putusan sela atas tuntutan provisi.", false)];
+  }
+  if (RX_INTERVENSI.test(teks)) {
+    const pilih: Array<[string, string, string]> = /tussenkomst|menengahi/i.test(teks)
+      ? [[b.tussenkomstKabul, b.tussenkomstTolak, "tussenkomst"]]
+      : /vrijwaring|penanggung/i.test(teks)
+        ? [[b.vrijwaringKabul, b.vrijwaringTolak, "vrijwaring"]]
+        : /voeging|menggabung/i.test(teks)
+          ? [[b.voegingKabul, b.voegingTolak, "voeging"]]
+          : [[b.voegingKabul, b.voegingTolak, "voeging"], [b.tussenkomstKabul, b.tussenkomstTolak, "tussenkomst"], [b.vrijwaringKabul, b.vrijwaringTolak, "vrijwaring"]];
+    return pilih.flatMap(([k, t, nama], i) => [
+      r(k, `Putusan sela - intervensi ${nama} dikabulkan`, `Sidang memutus permohonan intervensi (${nama}); dikabulkan diperkirakan, ditolak sebagai alternatif.`, i === 0),
+      r(t, `Putusan sela - intervensi ${nama} ditolak`, `Alternatif pada sidang putusan sela atas permohonan intervensi (${nama}).`, false),
+    ]);
+  }
+  const eksepsiPenanda = /^(?:absolut|relatif)$/i.test(String(m.eksepsiKewenangan ?? "")) && m.putusanSela === true;
+  if ((RX_EKSEPSI_KEWENANGAN.test(teks) && sela) || (darurat && eksepsiPenanda)) {
+    const relatif = /relatif/i.test(teks) || /^relatif$/i.test(String(m.eksepsiKewenangan ?? ""));
+    const [tolak, kabul, lain] = relatif ? [b.relatifTolak, b.relatifKabul, b.absolutTolak] : [b.absolutTolak, b.absolutKabul, b.relatifTolak];
+    const jenis = relatif ? "relatif" : "absolut";
+    const lama = PETA_PUTUSAN_BAWAAN[`${kunciJenisPerkara(m.jenisPerkara)}|putusan sela|eksepsi-${jenis}-ditolak-putusan-sela`];
+    const folderLama = lama?.blangko ? FOLDER_MENU_PUTUSAN[lama.blangko] : undefined;
+    const alternatifLama: Rekomendasi[] = lama && folderLama
+      ? [{ jenis: "putusan", folder: `${AKAR}/${folderLama}`, berkas: `${lama.berkas.replace(/\.rtf$/i, "")}.rtf`, menu: lama.blangko ?? "", alias: perluasAliasMenu(lama.blangkoLain ?? []),
+          label: lama.berkas, alasan: "Alternatif: blangko putusan sela eksepsi di folder jenis perkara ini.", utama: false, perkiraan: true }]
+      : [];
+    return [r(tolak, `Putusan sela - eksepsi kewenangan ${jenis} ditolak`, `Sidang memutus eksepsi kewenangan ${jenis}; ditolak (pemeriksaan dilanjutkan) diperkirakan.`, true),
+      r(kabul, `Putusan - eksepsi kewenangan ${jenis} dikabulkan`, "Alternatif: eksepsi dikabulkan - perkara selesai dengan putusan akhir (biaya menurut putusan akhir).", false),
+      r(lain, `Putusan sela - eksepsi kewenangan ${relatif ? "absolut" : "relatif"} ditolak`, "Alternatif bila eksepsinya mengenai kewenangan yang lain.", false), ...alternatifLama];
+  }
+  if (sela && RX_SETEMPAT_SELA.test(teks)) {
+    return [r(b.setempat, "Putusan sela - pemeriksaan setempat", "Sidang membacakan putusan sela yang memerintahkan pemeriksaan setempat atas objek sengketa.", true)];
+  }
+  return [];
+}
+
+/** BAS sidang putusan sela (bab 97a - BAS): sumpah pelengkap, pembacaan putusan sela, sidang insidentil selain sita. Kosong bila agenda lain. */
+export function rekomendasiBasSela(m: MasukanRekomendasi, teks: string): Rekomendasi[] {
+  if (m.sudahPutus) return [];
+  const x = PUTUSAN_SELA_UMUM.bas;
+  const r = (berkas: string, label: string, alasan: string, utama = true): Rekomendasi => ({
+    jenis: "bas", folder: x.folder, berkas, menu: x.menu, alias: perluasAliasMenu([...x.alias]), label, alasan, utama, perkiraan: true,
+  });
+  // 30 Okt (butir 7): tiap jenis sumpah punya BAS "tunda putusan" dan "lalu putusan dibacakan" pada hari yang sama.
+  const lalu = /(?:dan|lalu|kemudian|serta|dilanjutkan)\s+(?:musyawarah|putusan(?!\s+sela)|pembacaan\s+putusan(?!\s+sela)|pengucapan\s+putusan(?!\s+sela))/i.test(teks);
+  const sumpah = (tunda: string, putus: string, nama: string) =>
+    lalu
+      ? [r(putus, `BAS sumpah ${nama} lalu putusan dibacakan`, `Sidang pengucapan sumpah ${nama}, lalu putusan dibacakan pada hari itu juga.`), r(tunda, `BAS sumpah ${nama}`, "Alternatif bila putusan ditunda ke sidang berikutnya.", false)]
+      : [r(tunda, `BAS sumpah ${nama}`, `Sidang pengucapan sumpah ${nama} sesudah putusan sela; putusan ditunda.`), r(putus, `BAS sumpah ${nama} lalu putusan dibacakan`, "Alternatif bila putusan dibacakan pada hari yang sama.", false)];
+  if (RX_LIAN.test(teks) && /^cerai/.test(kunciJenisPerkara(m.jenisPerkara))) return [r(x.lian, "BAS sumpah li'an", "Sidang pengucapan sumpah li'an sesudah putusan sela.")];
+  if (RX_SUMPAH_PEMUTUS.test(teks)) return sumpah(x.pemutus, x.pemutusPutus, "pemutus");
+  if (RX_SUMPAH_PENAKSIR.test(teks)) return sumpah(x.penaksir, x.penaksirPutus, "penaksir");
+  if (RX_SUMPAH_PELENGKAP.test(teks)) return sumpah(x.sumpah, x.sumpahPutus, "pelengkap");
+  // Harta bersama / kewarisan punya BAS pembacaan putusan sela sendiri (ALUR 30/32 "Sidang Insidentil 2"): tidak didahului.
+  const kebendaan = ["harta bersama", "kewarisan"].includes(kunciJenisPerkara(m.jenisPerkara));
+  if (RX_SELA_SITA.test(teks) && !RX_KONTEKS_SITA.test(teks) && !(m.bersita === true) && !kebendaan) return [r(x.pembacaan, "BAS pembacaan putusan sela", "Sidang pembacaan putusan sela; amar diambil dari putusan sela yang tercatat di SIPP.")];
+  if (/insidentil/i.test(teks) && !/\bsita\b/i.test(teks) && !(m.bersita === true)) return [r(x.insidentil, "BAS sidang insidentil", "Sidang insidentil memeriksa eksepsi, provisi, atau intervensi sebelum putusan sela.")];
+  return [];
+}
 
 
 /**
@@ -488,6 +692,9 @@ export function rekomendasiPutusan(m: MasukanRekomendasi, teks: string): Rekomen
   // I9 17 Okt: putusan sela sita (bukan putusan akhir) - didahulukan; sela di luar konteks sita tetap diperlakukan seperti dulu.
   const sela = rekomendasiPutusanSelaSita(m, teks);
   if (sela.length) return sela;
+  // 30 Okt (paket ABT sela-ps-30okt): putusan sela bab 97a menurut agenda/keterangan (sumpah, provisi, intervensi, eksepsi, pemeriksaan setempat).
+  const selaUmum = rekomendasiPutusanSela(m, teks);
+  if (selaUmum.length) return selaUmum;
   let status = String(m.statusPutusan ?? "").trim();
   let perkiraan = false;
   let menurutKeterangan = false;
@@ -550,6 +757,8 @@ export function rekomendasiPutusan(m: MasukanRekomendasi, teks: string): Rekomen
     alasanItsbat: m.alasanItsbat,
   } as MasukanKeadaanPutusan);
   const p = pilihPutusanBawaan(PETA_PUTUSAN_BAWAAN, m.jenisPerkara, status, m.verstekPutusan === true, m.kumulasi, keadaan);
+  // 30 Okt: jenis tanpa blangko sela eksepsi sendiri -> bab 97a Putusan Sela.
+  if (status === "Putusan Sela" && (!p || p.tingkat === "jenis")) return rekomendasiPutusanSela(m, teks, true);
   if (!p) return [];
   const menu = p.baris.blangko || MENU_JENIS_TANPA_MENU[kunciJenisPerkara(m.jenisPerkara)] || "";
   const folderMenu = FOLDER_MENU_PUTUSAN[menu];
@@ -733,6 +942,18 @@ export function rekomendasiBlangko(m: MasukanRekomendasi): HasilRekomendasi {
   if (typeof m.jumlahSaksi === "number" && Number.isFinite(m.jumlahSaksi) && m.jumlahSaksi > 0) hasil.jumlahSaksi = m.jumlahSaksi;
   if (!String(m.jenisPerkara ?? "").trim()) return hasil;
   hasil.bas = rekomendasiBas(m, teks);
+  // 30 Okt: BAS sidang putusan sela bab 97a didahulukan (sumpah, pembacaan putusan sela di luar sita, sidang insidentil di luar sita).
+  const basSela = rekomendasiBasSela(m, teks);
+  if (basSela.length) hasil.bas = [...basSela, ...hasil.bas.map((x) => ({ ...x, utama: false }))];
+  // 30 Okt (butir 8): mediasi elektronik (PERMA 3/2022) - BAS [1e] di folder yang sama didahulukan, BAS mediasi biasa jadi alternatif.
+  if (RX_MEDIASI_EL.test(teks)) {
+    const u = PUTUSAN_SELA_UMUM;
+    hasil.bas = hasil.bas.flatMap((x) =>
+      x.berkas === u.mediasiBiasa
+        ? [{ ...x, berkas: u.mediasiElektronik, label: `${x.label} (mediasi elektronik)`, alasan: "Para pihak sepakat mediasi dilaksanakan secara elektronik (PERMA 3 Tahun 2022)." }, { ...x, utama: false }]
+        : [x],
+    );
+  }
   hasil.putusan = rekomendasiPutusan(m, teks);
   hasil.relaas = rekomendasiRelaas(m, teks);
   return hasil;

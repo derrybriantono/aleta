@@ -69,7 +69,7 @@ const LANGKAH_I16: Record<string, string[]> = {
 describe("A. data", () => {
   it("26 alur, 232 langkah (93 D3/E3 + 19 F21 sesudah I7 + 22 F22 + 6 I15 + 38 I16 + 43 I20 + 9 I23 + 2 I25), kode unik, nama berkas BAS ALUR nn ... .rtf, menu bernama", () => {
     expect(ALUR_BAS_BARU).toHaveLength(29 + 6 + 7); // W3a 21 Okt: + ALUR 60-65; W3b 21 Okt: + ALUR 70-76 (pencabutan kekuasaan orang tua, wali, penunjukan wali, ganti rugi wali, nafkah anak oleh ibu, eksekusi, verzet); // + ALUR 47, 48, 49 (hibah, wakaf, mafqud; I28 18 Okt); + ALUR 46 nafkah anak (I23 18 Okt); // + ALUR 41, 42, 43 (F22 17 Okt), ALUR 44 (I15 18 Okt), "alur-08g" / "alur-08t" cerai biasa cabut sesudah jawaban (I20 18 Okt)
-    expect(ALUR_BAS_BARU.reduce((n, a) => n + a.langkah.length, 0)).toBe(178 + 43 + 9 + 2 + 16 + 16 + 10 + 66 + 83); // W3b 21 Okt: + 83 langkah ALUR 70-76 (17+17+10+8+8+8+15); + CS / CM alur-43 (I25 18 Okt); + 16 hibah + 16 wakaf + 10 mafqud (I28 18 Okt)
+    expect(ALUR_BAS_BARU.reduce((n, a) => n + a.langkah.length, 0)).toBe(178 + 43 + 9 + 2 + 16 + 16 + 10 + 66 + 83 + 4); // 30 Okt: + PS (pemeriksaan setempat) ALUR 42/43/47/48 paket sela-ps-30okt; W3b 21 Okt: + 83 langkah ALUR 70-76 (17+17+10+8+8+8+15); + CS / CM alur-43 (I25 18 Okt); + 16 hibah + 16 wakaf + 10 mafqud (I28 18 Okt)
     const semua = new Set<string>();
     for (const a of ALUR_BAS_BARU) {
       expect(a.folder.startsWith(A)).toBe(true);
@@ -83,7 +83,7 @@ describe("A. data", () => {
         semua.add(`${a.folder}/${l.berkas}`);
       }
     }
-    expect(semua.size).toBe(112 + 10 + 6 + 6 + 6 + 38 + 43 + 9 + 2 + 42 + 66 + 83); // W3b 21 Okt: + 83 langkah ALUR 70-76; W3a 21 Okt: ALUR 60-65 (4 x 12 + 2 x 9); // I28 18 Okt: ALUR 47 (16), 48 (16), 49 (10); I25 18 Okt: ALUR 43 + CS / CM (2); F22 17 Okt: ALUR 41 (10), 42 (6), 43 (6); I15 18 Okt: ALUR 44 (6); I16 18 Okt: 38 langkah celah BAS
+    expect(semua.size).toBe(112 + 10 + 6 + 6 + 6 + 38 + 43 + 9 + 2 + 42 + 66 + 83 + 4); // 30 Okt: + 4 BAS PS (ALUR 42/43/47/48, paket sela-ps-30okt); W3b 21 Okt: + 83 langkah ALUR 70-76; W3a 21 Okt: ALUR 60-65 (4 x 12 + 2 x 9); // I28 18 Okt: ALUR 47 (16), 48 (16), 49 (10); I25 18 Okt: ALUR 43 + CS / CM (2); F22 17 Okt: ALUR 41 (10), 42 (6), 43 (6); I15 18 Okt: ALUR 44 (6); I16 18 Okt: 38 langkah celah BAS
     expect(jenisDokumenBlangko(`${A}7 Wali Adhal - BAS/${ALUR_BAS_BARU.find((a) => a.id === "alur-19")!.langkah[0].berkas}`)).toBe("bas");
     expect(ALUR_BAS_BARU.find((a) => a.id === "alur-19")!.menu).toMatchObject({ id: 114, nama: "Wali Adhal - BAS" });
   });
@@ -211,6 +211,14 @@ describe("C. pemilihan menurut jenis + keadaan sidang", () => {
     expect(t("Kewarisan", { agenda: "Pemeriksaan Setempat" })).toMatchObject({ id: "alur-32", kode: "PS" });
     expect(t("Kewarisan", { urutanSidang: 2, dihadiriOleh: 3 })).toMatchObject({ id: "alur-33", kode: "TP" });
     expect(t("Kewarisan", { agenda: "Pemeriksaan Setempat" }).h!.alur.folder).toBe(`${A}4b Kewarisan - BAS`);
+    // 30 Okt (paket sela-ps-30okt): wasiat 42, ES acara biasa 43, hibah 47, wakaf 48 punya langkah PS sendiri di folder BAS jenisnya
+    for (const [jenis, id, folder] of [["Wasiat", "alur-42", "4c Wasiat - BAS"], ["Ekonomi Syariah", "alur-43", "10a Ekonomi Syariah Biasa - BAS"], ["Hibah", "alur-47", "4d Hibah - BAS"], ["Wakaf", "alur-48", "4e Wakaf - BAS"]] as const) {
+      const ps = t(jenis, { urutanSidang: 8, agenda: "Pemeriksaan Setempat", nomorPerkara: "12/Pdt.G/2026/PA.Xx" });
+      expect(ps, jenis).toMatchObject({ id, kode: "PS" });
+      expect(ps.h!.alur.folder).toBe(`${A}${folder}`);
+      expect(ps.h!.langkah.berkas).toMatch(/ - Sidang PS - Pemeriksaan Setempat di Lokasi Objek \(antara ALUR 04 \[7\] dan \[8\]\)\.rtf$/);
+    }
+    expect(t("Wasiat", { urutanSidang: 8, agenda: "Pembuktian Penggugat", nomorPerkara: "12/Pdt.G/2026/PA.Xx" }).h!.langkah.kode).not.toBe("PS");
     // sidang biasa: BAS kontradiktoir ALUR 04 yang disalin ke folder jenis
     const biasa = t(hb, { urutanSidang: 3, agenda: "Jawaban" });
     expect(biasa).toMatchObject({ id: "alur-04", kode: "3" });

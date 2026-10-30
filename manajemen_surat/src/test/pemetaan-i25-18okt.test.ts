@@ -21,6 +21,10 @@ import { rujukan, susunIsian } from "@/app/api/aleta-ecourt/blangko-derry/susun"
 
 const FIX = JSON.parse(readFileSync(path.join(__dirname, "fixtures", "blangko-derry-server-17okt.json"), "utf8")) as { berkas: string[] };
 const A = "derry_briantono/";
+// 30 Okt 2026: langkah PS (pemeriksaan setempat) menunjuk berkas BARU paket ABT abt-paket/sela-ps-30okt (belum ada di pohon server 17 Okt).
+const PAKET_SELA_PS = readFileSync(path.resolve(__dirname, "../../../abt-paket/sela-ps-30okt/paket-satker/daftar-rtf.tsv"), "utf8")
+  .split("\n").filter((l) => l && !l.startsWith("#")).map((l) => l.split("\t")).map(([f, b]) => `${f}/${b}`);
+const SERVER_DAN_PAKET = [...FIX.berkas, ...PAKET_SELA_PS];
 const F10A_BAS = "10a Ekonomi Syariah Biasa - BAS";
 const CS = "BAS ALUR 43 ES Acara Biasa - Cabut sesudah Jawaban - Tergugat Setuju.rtf";
 const CM = "BAS ALUR 43 ES Acara Biasa - Cabut sesudah Jawaban - Tergugat Menolak.rtf";
@@ -32,9 +36,9 @@ const ES_SEDERHANA = "3/Pdt.G.S/2026/PA.Dgl";
 describe("A. ALUR 43: langkah CS dan CM", () => {
   const alur = ALUR_BAS_BARU.find((a) => a.id === "alur-43")!;
 
-  it("ALUR 43 kini 8 langkah (V1, AP, CB, V2, TP, NO, CS, CM) di folder 10a - BAS, menu 144, jenis 370", () => {
+  it("ALUR 43 kini 9 langkah (V1, AP, CB, V2, TP, NO, CS, CM, PS) di folder 10a - BAS, menu 144, jenis 370", () => {
     expect(alur).toMatchObject({ nomor: 43, folder: `${A}${F10A_BAS}`, jenisMin: 370, jenisMaks: 370, menu: { id: 144 } });
-    expect(alur.langkah.map((l) => l.kode)).toEqual(["V1", "AP", "CB", "V2", "TP", "NO", "CS", "CM"]);
+    expect(alur.langkah.map((l) => l.kode)).toEqual(["V1", "AP", "CB", "V2", "TP", "NO", "CS", "CM", "PS"]); // + PS (sela-ps 30 Okt)
     expect(alur.langkah.find((l) => l.kode === "CS")!.berkas).toBe(CS);
     expect(alur.langkah.find((l) => l.kode === "CM")!.berkas).toBe(CM);
   });
@@ -42,8 +46,9 @@ describe("A. ALUR 43: langkah CS dan CM", () => {
   it("dua berkas baru ada di pohon server (fixture), dan setiap langkah ALUR 43 ada di folder 10a - BAS", () => {
     expect(FIX.berkas).toContain(`${A}${F10A_BAS}/${CS}`);
     expect(FIX.berkas).toContain(`${A}${F10A_BAS}/${CM}`);
-    for (const l of alur.langkah) expect(FIX.berkas, l.berkas).toContain(`${alur.folder}/${l.berkas}`);
+    for (const l of alur.langkah) expect(SERVER_DAN_PAKET, l.berkas).toContain(`${alur.folder}/${l.berkas}`);
     expect(FIX.berkas.filter((b) => b.startsWith(`${A}${F10A_BAS}/BAS ALUR 43 `))).toHaveLength(8);
+    expect(SERVER_DAN_PAKET.filter((b) => b.startsWith(`${A}${F10A_BAS}/BAS ALUR 43 `))).toHaveLength(9);
   });
 
   it("md5 berkas paket (bila paket ada di laptop ini) sama dengan yang dipetakan", () => {

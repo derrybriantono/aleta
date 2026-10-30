@@ -27,6 +27,10 @@ import { susunPanduan } from "@/server/shared/pandu-saksi";
 import { muatPanelAlat, pilihDariPanel } from "./panel-alat-vm";
 
 const FIX = JSON.parse(readFileSync(path.join(__dirname, "fixtures", "blangko-derry-server-17okt.json"), "utf8")) as { berkas: string[] };
+// 30 Okt 2026: langkah PS (pemeriksaan setempat) menunjuk berkas BARU paket ABT abt-paket/sela-ps-30okt (belum ada di pohon server 17 Okt).
+const PAKET_SELA_PS = readFileSync(path.resolve(__dirname, "../../../abt-paket/sela-ps-30okt/paket-satker/daftar-rtf.tsv"), "utf8")
+  .split("\n").filter((l) => l && !l.startsWith("#")).map((l) => l.split("\t")).map(([f, b]) => `${f}/${b}`);
+const SERVER_DAN_PAKET = [...FIX.berkas, ...PAKET_SELA_PS];
 const A = "derry_briantono/";
 const MD5: Record<string, string> = {
   "4d Hibah/[01] [Kabul] Hibah - Kontradiktoir.rtf": "173b0a59e173a339a2cd3898f093fa86",
@@ -227,10 +231,10 @@ describe("B. ALUR BAS 47-49", () => {
     expect(alur("alur-47")).toMatchObject({ nomor: 47, folder: `${A}4d Hibah - BAS`, jenisMin: 366, jenisMaks: 366, menu: { id: 181, nama: "Hibah - BAS" } });
     expect(alur("alur-48")).toMatchObject({ nomor: 48, folder: `${A}4e Wakaf - BAS`, jenisMin: 367, jenisMaks: 367, menu: { id: 183, nama: "Wakaf - BAS" } });
     expect(alur("alur-49")).toMatchObject({ nomor: 49, folder: `${A}9c Penetapan Mafqud - BAS`, jenisMin: 369, jenisMaks: 369, menu: { id: 185, nama: "Penetapan Mafqud - BAS" } });
-    expect(alur("alur-47").langkah.map((l) => l.kode)).toEqual([...KODE_G, ...KODE_M]);
-    expect(alur("alur-48").langkah.map((l) => l.kode)).toEqual([...KODE_G, ...KODE_M]);
+    expect(alur("alur-47").langkah.map((l) => l.kode)).toEqual([...KODE_G, ...KODE_M, "PS"]); // + PS (sela-ps 30 Okt)
+    expect(alur("alur-48").langkah.map((l) => l.kode)).toEqual([...KODE_G, ...KODE_M, "PS"]);
     expect(alur("alur-49").langkah.map((l) => l.kode)).toEqual(KODE_M);
-    for (const id of ["alur-47", "alur-48", "alur-49"]) for (const l of alur(id).langkah) expect(FIX.berkas, l.berkas).toContain(`${alur(id).folder}/${l.berkas}`);
+    for (const id of ["alur-47", "alur-48", "alur-49"]) for (const l of alur(id).langkah) expect(SERVER_DAN_PAKET, l.berkas).toContain(`${alur(id).folder}/${l.berkas}`);
   });
 
   it("29 salinan BAS ALUR 04-09 di folder hibah dan wakaf sama persis dengan paket; mafqud tanpa salinan", () => {

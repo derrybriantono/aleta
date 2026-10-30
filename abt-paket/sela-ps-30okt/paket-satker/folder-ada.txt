@@ -1,0 +1,22 @@
+# folder (relatif _blangko_abt) yang harus SUDAH ada
+derry_briantono
+derry_briantono/1 Perceraian CG - BAS
+derry_briantono/10a Ekonomi Syariah Biasa - BAS
+derry_briantono/1a Perceraian CT - BAS
+derry_briantono/1e Kelalaian Kewajiban Suami Istri - BAS
+derry_briantono/1f Hak Bekas Istri - BAS
+derry_briantono/2a Itsbat Nikah Kontensius - BAS
+derry_briantono/4a Harta Bersama - BAS
+derry_briantono/4b Kewarisan - BAS
+derry_briantono/4c Wasiat - BAS
+derry_briantono/4d Hibah - BAS
+derry_briantono/4e Wakaf - BAS
+derry_briantono/5 Izin Poligami - BAS
+derry_briantono/6a Hak Asuh Anak (Hadhanah) - BAS
+derry_briantono/6b Penguasaan Anak - BAS
+derry_briantono/6c Nafkah Anak - BAS
+derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS
+derry_briantono/6e Pencabutan Kekuasaan Wali - BAS
+derry_briantono/6g Ganti Rugi terhadap Wali - BAS
+derry_briantono/6h Nafkah Anak oleh Ibu - BAS
+derry_briantono/99 PTSP
