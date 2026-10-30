@@ -1,7 +1,7 @@
-b33952a234b36443b78ffe728dbfb4dd  abt-relaas-penetapan-30okt-PASANG.sql
-a3cd8164416dd68e8d6f49221dd88f7f  abt-relaas-penetapan-30okt-PERIKSA.sql
-bf891ffe9eba7ee5a37b161b1ccff4c0  abt-relaas-penetapan-30okt-PRASYARAT.sql
-530907cb19e2bf15cb339789bae3dcad  abt-relaas-penetapan-30okt-PULIH.sql
+c0e5720ca56ddab053b1713e63b15a47  abt-relaas-penetapan-30okt-PASANG.sql
+329ae748c30069f40bea1ad1f8602022  abt-relaas-penetapan-30okt-PERIKSA.sql
+b181876ac476a5e4f2316676357dd36c  abt-relaas-penetapan-30okt-PRASYARAT.sql
+cae0c3978ea01805fbf4dca9541bbe37  abt-relaas-penetapan-30okt-PULIH.sql
 9fefc8435e4da97b0727eb8c0c2baffa  berkas_rtf.py
 92a85e50a4377880b9d4f2952bc8d97c  daftar-timpa.tsv
 1e5971ebaf40e6c4d047f3c1674fd206  nomor-baru.txt
@@ -9,4 +9,4 @@ bf891ffe9eba7ee5a37b161b1ccff4c0  abt-relaas-penetapan-30okt-PRASYARAT.sql
 96c841a4fff57e87e60b8298811e966c  pasang-satker.sh
 0b423fb6f0fed5569cc414ac5a25cef6  pulih-satker.sh
 41826d89f3af9c2140d07d02f552c6ff  timpa.tgz
-6219d680d2b19045439c1d26d62f5a80  uji-kueri.tsv
+e003054b0590faf2038034caa35edb1b  uji-kueri.tsv

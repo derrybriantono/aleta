@@ -75,9 +75,9 @@ HADIR_T = ("EXISTS (SELECT 1 FROM perkara_jadwal_sidang j WHERE j.perkara_id = '
            "AND j.tanggal_sidang <= IFNULL((SELECT MAX(u.tanggal_putusan) FROM perkara_putusan u WHERE u.perkara_id = '#perkara_id#'), '9999-12-31'))")
 
 
-# Status putusan cabut/coret (SIPP status_putusan.nama lewat perkara_putusan.status_putusan_id): kalimat upaya hukum DIBUANG.
+# Status putusan cabut/coret/gugur (SIPP status_putusan.nama lewat perkara_putusan.status_putusan_id): kalimat upaya hukum DIBUANG.
 CABUT_CORET = ("EXISTS (SELECT 1 FROM perkara_putusan u JOIN status_putusan s ON s.id = u.status_putusan_id WHERE u.perkara_id = '#perkara_id#' "
-               "AND (s.nama LIKE 'Dicabut%' OR s.nama LIKE 'Dicoret%'))")
+               "AND (s.nama LIKE 'Dicabut%' OR s.nama LIKE 'Dicoret%' OR s.nama LIKE 'Gugur%' OR s.nama LIKE 'Digugurkan%'))")
 # Amar/jenis putusan verstek (sama dengan #7007# lama: kata 'verstek' di amar SIPP perkara_putusan.amar_putusan): #0047# SELALU verzet.
 VERSTEK = "EXISTS (SELECT 1 FROM perkara_putusan u WHERE u.perkara_id = '#perkara_id#' AND LOCATE('verstek', u.amar_putusan) > 0)"
 
@@ -168,9 +168,9 @@ def buat(asal):
         v[baru] = ("RELAAS: HARI DAN TANGGAL PELAKSANAAN PANGGILAN #%s# (OTOMATIS SIPP perkara_pelaksanaan_relaas untuk #%s# ATAU KUASANYA "
                    "pada sidang dicetak; belum tercatat = titik-titik; ganti #%04d#)"
                    % ('0046' if sisi == 1 else '0047', '0046' if sisi == 1 else '0047', lama), s)
-    v[11211] = ("RELAAS PEMBERITAHUAN PUTUSAN #0047#: BUTIR UPAYA HUKUM (OTOMATIS: cabut/coret = tanpa; permohonan = kasasi; amar verstek = "
+    v[11211] = ("RELAAS PEMBERITAHUAN PUTUSAN #0047#: BUTIR UPAYA HUKUM (OTOMATIS: cabut/coret/gugur = tanpa; permohonan = kasasi; amar verstek = "
                 "verzet; selain itu #0047# pernah hadir = banding, tidak = verzet)", upaya(2, True))
-    v[11215] = ("RELAAS PEMBERITAHUAN PUTUSAN #0046#: BUTIR UPAYA HUKUM (OTOMATIS: cabut/coret = tanpa; permohonan = kasasi; gugatan = banding)",
+    v[11215] = ("RELAAS PEMBERITAHUAN PUTUSAN #0046#: BUTIR UPAYA HUKUM (OTOMATIS: cabut/coret/gugur = tanpa; permohonan = kasasi; gugatan = banding)",
                 upaya(1, True))
     v[11220] = ("RELAAS PEMBERITAHUAN PUTUSAN #0047#: KALIMAT UPAYA HUKUM POLOS untuk 6.2 (aturan sama dengan #11211#)", upaya(2, False))
     v[11217] = ("DASAR HUKUM BANDING (satu tempat; RBg)", 'SELECT "Pasal 199 ayat (1) RBg" AS data')

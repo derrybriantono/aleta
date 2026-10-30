@@ -70,7 +70,8 @@ dibuang, kotak teks ikut) lalu dipindai (`alat/periksa_keluaran.py`) dan dibaca.
 ## Upaya hukum pemberitahuan putusan (keputusan pengguna 30 Okt, final)
 Satu aturan (`#11211#` butir kepada Tergugat/Termohon di 2.T, `#11220#` kalimat yang sama di 6.2, `#11215#` butir kepada Penggugat/Pemohon di 2.P),
 diperiksa berurutan:
-1. **Putusan dicabut / dicoret** (SIPP `perkara_putusan.status_putusan_id` -> `status_putusan.nama` LIKE 'Dicabut%' / 'Dicoret%'):
+1. **Putusan dicabut / dicoret / gugur / digugurkan** (SIPP `perkara_putusan.status_putusan_id` -> `status_putusan.nama` LIKE 'Dicabut%' /
+   'Dicoret%' / 'Gugur%' / 'Digugurkan%'):
    kalimat upaya hukum **dibuang seluruhnya** (butir `<li>` ikut hilang; tidak ada sisa "Bahwa ...;").
 2. **Permohonan** (`perkara.alur_perkara_id = 16`): **kasasi** (`#11219#` Pasal 46 ayat (1) UU 14/1985 sebagaimana diubah UU 5/2004 dan
    UU 3/2009), sebutan "Pemohon" / "Para Pemohon" menurut jumlah `perkara_pihak1`.
@@ -102,12 +103,14 @@ temuan sebaiknya menyebut sidang (urutan, tanggal, sandi) yang dicatat hadir aga
 - **Render php56 contoh**: 134 berkas lama/baru; contoh keputusan pengguna: cabut 10225 656/Pdt.G/2026 dan 10096 224/Pdt.P/2026 (tanpa
   kalimat upaya hukum, butir berikut langsung "Pemberitahuan isi putusan ..."), coret 6268 (tanpa kalimat), verstek dengan sandi hadir 9813
   315/Pdt.G/2026 (Tergugat verzet, Penggugat banding), NO bukan verstek 10143 (Tergugat tidak pernah hadir = verzet), cerai talak Termohon
-  hadir sekali 10139 (banding), Pdt.P tunggal 10172 (Pemohon kasasi), Pdt.P dua pemohon 10191 (Para Pemohon kasasi), ikrar 10083/10077.
+  hadir sekali 10139 (banding), Pdt.P tunggal 10172 (Pemohon kasasi), Pdt.P dua pemohon 10191 (Para Pemohon kasasi), ikrar 10083/10077,
+  gugur e-Court 10166 (Gugur) dan 10124 (Digugurkan) - kalimat upaya hukum hilang tanpa sisa, gugur bukan e-Court 8156 dan 7997 (sejak dulu
+  tanpa kalimat, tetap).
 - **Banding 161 perkara** (sampel acak 150 + 11 wakil) x 13 pasangan variabel (`alat/banding.py`, `alat/ringkas_banding.py`,
   `hasil/banding-ringkasan.json`): 0 galat render, 0 galat/sisa penanda baru, 0 beda di luar jenis yang dimaksud. Kepada Tergugat (2.T):
-  verzet->verzet 85 (termasuk 2 verstek bersandi hadir), banding->banding 20, banding->kasasi 29, banding->verzet 2 (bukan verstek, tidak
-  pernah hadir), banding->dibuang 14 (semua Dicabut), belum putus 11. Kepada Penggugat (2.P): verzet->banding 85, banding->banding 22,
-  banding->kasasi 29, banding->dibuang 14, belum putus 11.
+  verzet->verzet 85 (termasuk 2 verstek bersandi hadir), banding->banding 20, banding->kasasi 27, banding->verzet 1 (bukan verstek, tidak
+  pernah hadir), banding->dibuang 17 (14 dicabut + 3 gugur e-Court), belum putus 11. Kepada Penggugat (2.P): verzet->banding 85,
+  banding->banding 21, banding->kasasi 27, banding->dibuang 17, belum putus 11.
 - Pindai pembaca (`hasil/pindai-render.txt`): koma sendiri 59 -> 3 (sisa = amar SIPP berbutir "."), "2026yang" 50 -> 0; tambahan "tempat
   kediaman di ," hanya pada 6.2 (PBT verstek) yang dicoba pada perkara Pdt.P / urutan pihak rusak (alamat Tergugat kosong).
 - **SEMUA perkara (10.278)**: kueri tiap variabel baru dijalankan untuk tiap perkara (penanda bersarang = 0): versi 15 variabel 154.170 kueri,
@@ -115,10 +118,10 @@ temuan sebaiknya menyebut sidang (urutan, tanggal, sandi) yang dicatat hadir aga
   Jumlah perkara yang berubah per aturan dari datanya (`alat/hitung_beda_sql.py`, `hasil/hitung-beda-semua-perkara.json`): 2.695 e-Court
   ber-PHS (spasi), 5.836 gugatan (koma), 12 + 429 (nomor I), 19 + 49 (agama/nomor I Tergugat; 111 agama kosong tetap "Islam"), 26 (cabang
   Bupati), 313 + 15 sidang (relaas kuasa), 904 (PHS ikrar), 9.889 (tanggal perintah pemberitahuan = putusan), 406 (PA tujuan delegasi).
-  Upaya hukum (perkara putus): cabut/coret 584 (428 gugatan + 156 permohonan) -> kalimat dibuang; gugatan verstek 4.364 -> verzet (termasuk
-  83 KONFLIK sandi hadir, kembali verzet); bukan verstek + pernah hadir 730 -> banding (dasar 153 -> 199); bukan verstek + tidak pernah hadir
-  221 -> verzet (92 dikabulkan, 37 NO, 8 ditolak, 84 gugur/digugurkan - lihat catatan terbuka); permohonan 394 tunggal + 3.859 para pemohon
-  -> kasasi; Penggugat semua gugatan -> banding.
+  Upaya hukum (perkara putus): cabut/coret/gugur 968 (532 gugatan + 436 permohonan) -> tanpa kalimat (yang berubah: 584 cabut/coret + 90 gugur
+  e-Court [44 gugatan + 46 permohonan]; 294 gugur bukan e-Court sejak dulu tanpa kalimat); gugatan verstek 4.363 -> verzet (termasuk 83 KONFLIK
+  sandi hadir, tetap verzet); bukan verstek + pernah hadir 711 -> banding (dasar 153 -> 199); bukan verstek + tidak pernah hadir 137 -> verzet
+  (92 dikabulkan, 37 NO, 8 ditolak); permohonan 385 tunggal + 3.588 para pemohon -> kasasi; Penggugat gugatan -> banding.
 
 ## Siklus di laptop (`ABT_LOKAL=1`, basis `aps_badilag_rp30b`, blangko salinan)
 pasang `PRASYARAT COCOK (0|0|38|7)`, `SIAP_TIMPA=25`, `SEMUA COCOK`, uji kueri 9 perkara x 21 variabel 0 galat, `TIMPA=25 COCOK=25 BERKAS COCOK`
@@ -162,10 +165,7 @@ variabel asal berubah - PRASYARAT D), salin ulang. Bangun deterministik (timpa.t
 4. Panggilan ikrar = "untuk menghadiri sidang penyaksian ikrar talak".
 5. Agama Tergugat kosong di SIPP = bawaan "Islam".
 6. Penetapan cabut dan coret = kalimat upaya hukum dibuang; NO / ditolak / dikabulkan tetap aturan kehadiran.
+9. Putusan gugur / digugurkan (juga perkara e-Court) = kalimat upaya hukum dibuang, sama dengan cabut/coret.
 7. Dasar kasasi permohonan = Pasal 46 ayat (1) UU 14/1985 sebagaimana diubah UU 5/2004 dan UU 3/2009.
 8. Amar verstek = selalu verzet bagi Tergugat/Termohon walau sandi kehadiran SIPP mencatat hadir (biasanya salah pilih kehadiran).
 
-## Catatan terbuka (tidak diubah, tidak ditanyakan sebelumnya)
-- Putusan GUGUR / DIGUGURKAN bukan verstek pada perkara e-Court (84 perkara: 57 digugurkan, 27 gugur) masih memuat kalimat upaya hukum
-  (Tergugat tidak pernah hadir -> verzet). Cabang "gugur" tanpa kalimat upaya hukum di variabel lama hanya berlaku untuk perkara bukan
-  e-Court. Bila gugur juga harus tanpa kalimat, cukup tambah 'Gugur%' / 'Digugurkan%' ke aturan 1.

@@ -178,6 +178,18 @@
 -
 -Randy Aditya bin Maudin alias Udin	Jurusita,
 +	Jurusita,
+=== 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan P/10124_s1.txt
+-Pada hari ini ............................. tanggal .........................................................., Saya, Mustini sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 572/Pdt.G/2026/PA.Dgl Tanggal 15 September 2026;
++Pada hari ini ............................. tanggal .........................................................., Saya, Mustini sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 572/Pdt.G/2026/PA.Dgl Tanggal 14 Oktober 2026;
+-Imelda binti Hasan NIK 7210015305940002, tempat dan tanggal lahir Petobo, 13 Mei 1997, agama Islam, pekerjaan Pedagang, pendidikan SLTA, tempat kediaman di Desa Sidera, Kecamatan Sigi Biromaru, Kabupaten Sigi, Provinsi Sulawesi Tengah, ellafahyad68@gmail.com, sebagai Penggugat;
++Imelda binti Hasan, NIK 7210015305940002, tempat dan tanggal lahir Petobo, 13 Mei 1997, agama Islam, pekerjaan Pedagang, pendidikan SLTA, tempat kediaman di Desa Sidera, Kecamatan Sigi Biromaru, Kabupaten Sigi, Provinsi Sulawesi Tengah, ellafahyad68@gmail.com, sebagai Penggugat;
+-	Bahwa terhadap putusan tersebut Penggugat dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
+- 	Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Penggugat;
++	Pemberitahuan isi putusan ini saya kirimkan secara elektronik melalui domisili elektronik Penggugat yang telah terdaftar, yaitu ellafahyad68@gmail.com;
+-,
+-
+-Imelda binti Hasan	Jurusita,
++	Jurusita,
 === 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan P/10139_s1.txt
 -Pada hari ini ............................. tanggal .........................................................., Saya, Mustini sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 587/Pdt.G/2026/PA.Dgl Tanggal 15 September 2026;
 +Pada hari ini ............................. tanggal .........................................................., Saya, Mustini sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 587/Pdt.G/2026/PA.Dgl Tanggal 15 Oktober 2026;
@@ -229,6 +241,16 @@
 -,
 -
 -Dela Safitri binti Rustam.J	Jurusita,
++	Jurusita,
+=== 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan P/10166_s1.txt
+-Pada hari ini ............................. tanggal .........................................................., Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 227/Pdt.P/2026/PA.Dgl Tanggal 23 September 2026;
++Pada hari ini ............................. tanggal .........................................................., Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 227/Pdt.P/2026/PA.Dgl Tanggal 21 Oktober 2026;
+-	Bahwa terhadap putusan tersebut Pemohon dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
+- 	Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Pemohon;
++	Pemberitahuan isi putusan ini saya kirimkan secara elektronik melalui domisili elektronik Pemohon yang telah terdaftar, yaitu mohismail5000@gmail.com;
+-,
+-
+-Agus bin Tjelleng	Jurusita,
 +	Jurusita,
 === 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan P/10172_s1.txt
 -Pada hari ini ............................. tanggal .........................................................., Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 229/Pdt.P/2026/PA.Dgl Tanggal 28 September 2026;
@@ -289,6 +311,20 @@
 +	Pemberitahuan isi putusan ini saya laksanakan di tempat yang bersangkutan dan disana saya .......................................................................................................................
 -Penggugat,,
 +Penggugat,
+=== 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan P/7997_s1.txt
+-Pada hari ini ............................. tanggal .........................................................., Saya, Mustini sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 353/Pdt.G/2024/PA.Dgl Tanggal 24 Juli 2024;
++Pada hari ini ............................. tanggal .........................................................., Saya, Mustini sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 353/Pdt.G/2024/PA.Dgl Tanggal 07 Agustus 2024;
+-Asnawati binti Asman NIK 7210124303750001, tempat dan tanggal lahir Dolo, 03 Maret 1975, agama Islam, pekerjaan Ibu Rumah Tangga, pendidikan SD, tempat kediaman di Jalan Poros Dolo-Sidera, Dusun III, RT008, RW003, Desa Potoya, Kecamatan Dolo, Kabupaten Sigi, sebagai Penggugat;
++Asnawati binti Asman, NIK 7210124303750001, tempat dan tanggal lahir Dolo, 03 Maret 1975, agama Islam, pekerjaan Ibu Rumah Tangga, pendidikan SD, tempat kediaman di Jalan Poros Dolo-Sidera, Dusun III, RT008, RW003, Desa Potoya, Kecamatan Dolo, Kabupaten Sigi, sebagai Penggugat;
+-Penggugat,,
++Penggugat,
+=== 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan P/8156_s1.txt
+-Pada hari ini Senin tanggal 07 Oktober 2024, Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 431/Pdt.G/2024/PA.Dgl Tanggal 17 September 2024;
++Pada hari ini Senin tanggal 07 Oktober 2024, Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 431/Pdt.G/2024/PA.Dgl Tanggal 01 Oktober 2024;
+-Rini binti Salawa NIK 7210014506850002, tempat dan tanggal lahir Ngatabaru, 05 Juni 1985, agama Islam, pekerjaan Ibu Rumah Tangga, pendidikan SD, tempat kediaman di Desa Ngatabaru, RT003, RW002, Kecamatan Sigi Biromaru, Kabupaten Sigi, sebagai Penggugat;
++Rini binti Salawa, NIK 7210014506850002, tempat dan tanggal lahir Ngatabaru, 05 Juni 1985, agama Islam, pekerjaan Ibu Rumah Tangga, pendidikan SD, tempat kediaman di Desa Ngatabaru, RT003, RW002, Kecamatan Sigi Biromaru, Kabupaten Sigi, sebagai Penggugat;
+-Penggugat,,
++Penggugat,
 === 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan P/9813_s1.txt
 -Pada hari ini ............................. tanggal .........................................................., Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 315/Pdt.G/2026/PA.Dgl Tanggal 20 Mei 2026;
 +Pada hari ini ............................. tanggal .........................................................., Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 315/Pdt.G/2026/PA.Dgl Tanggal 07 Juli 2026;
@@ -333,6 +369,14 @@
 +	Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Termohon;
 -
 -,
+=== 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan T/10124_s1.txt
+-Pada hari ini ............................. tanggal .........................................................., Saya, Mustini sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 572/Pdt.G/2026/PA.Dgl Tanggal 15 September 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini ............................. tanggal .........................................................., Saya, Mustini sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 572/Pdt.G/2026/PA.Dgl Tanggal 14 Oktober 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-	Bahwa terhadap putusan tersebut Tergugat dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
+-     	Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Tergugat;
++	Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Tergugat;
+-
+-,
 === 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan T/10139_s1.txt
 -Pada hari ini ............................. tanggal .........................................................., Saya, Mustini sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 587/Pdt.G/2026/PA.Dgl Tanggal 15 September 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
 +Pada hari ini ............................. tanggal .........................................................., Saya, Mustini sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 587/Pdt.G/2026/PA.Dgl Tanggal 15 Oktober 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
@@ -363,6 +407,14 @@
 +Pada hari ini Minggu tanggal 25 Oktober 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 15 Oktober 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
 -	Bahwa terhadap putusan tersebut Tergugat dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
 +	Bahwa terhadap putusan tersebut Tergugat dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 153 ayat (1) RBg;
+-
+-,
+=== 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan T/10166_s1.txt
+-Pada hari ini ............................. tanggal .........................................................., Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 227/Pdt.P/2026/PA.Dgl Tanggal 23 September 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini ............................. tanggal .........................................................., Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 227/Pdt.P/2026/PA.Dgl Tanggal 21 Oktober 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-	Bahwa terhadap putusan tersebut Termohon dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
+-     	Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Termohon;
++	Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Termohon;
 -
 -,
 === 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan T/10172_s1.txt
@@ -400,6 +452,18 @@
 -	Bahwa terhadap putusan tersebut Tergugat dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
 -       	Pemberitahuan isi putusan ini saya laksanakan di tempat yang bersangkutan dan disana saya .......................................................................................................................
 +	Pemberitahuan isi putusan ini saya laksanakan di tempat yang bersangkutan dan disana saya .......................................................................................................................
+-Tergugat,,
++Tergugat,
+=== 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan T/7997_s1.txt
+-Pada hari ini ............................. tanggal .........................................................., Saya, Mustini sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 353/Pdt.G/2024/PA.Dgl Tanggal 24 Juli 2024;
++Pada hari ini ............................. tanggal .........................................................., Saya, Mustini sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 353/Pdt.G/2024/PA.Dgl Tanggal 07 Agustus 2024;
+-Amir bin Samsudin, umur 26 tahun, agama Islam, pendidikan SD, pekerjaan Buruh Harian Lepas, tempat kediaman di Dusun III, RT008, RW003, Desa Potoya, Kecamatan Dolo, Kabupaten Sigi, sebagai Tergugat;
++Amir bin Samsudin, umur 26 tahun, agama Islam, pendidikan SD, pekerjaan Buruh Harian Lepas, tempat kediaman di Dusun III, RT008, RW003, Desa Potoya, Kecamatan Dolo, Kabupaten Sigi, sebagai Tergugat I;
+-Tergugat,,
++Tergugat,
+=== 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan T/8156_s1.txt
+-Pada hari ini Senin tanggal 07 Oktober 2024, Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 431/Pdt.G/2024/PA.Dgl Tanggal 17 September 2024;
++Pada hari ini Senin tanggal 07 Oktober 2024, Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 431/Pdt.G/2024/PA.Dgl Tanggal 01 Oktober 2024;
 -Tergugat,,
 +Tergugat,
 === 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan T/9813_s1.txt
@@ -858,4 +922,4 @@
 +Memperhatikan, Pasal 11 ayat (3) Undang-Undang Nomor 48 Tahun 2009 tentang Kekuasaan Kehakiman jo. Pasal 96 dan 97 Undang-Undang Nomor 7 Tahun 1989 tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Seca
 -Memperhatikan, Pasal 103 Undang-Undang Nomor 7 Tahun 1989 Tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009. Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Secara Elektronik, sebagaimana telah diubah dengan Peraturan Mahkamah Agung Nomor 7 tahun 2022
 +Memperhatikan, Pasal 103 Undang-Undang Nomor 7 Tahun 1989 tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Secara Elektronik, sebagaimana telah diubah dengan Peraturan Mahkamah Agung Nomor 7 Tahun 2022
-BERKAS 134, IDENTIK 0, BERUBAH 134
+BERKAS 142, IDENTIK 0, BERUBAH 142

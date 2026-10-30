@@ -130,7 +130,7 @@ describe("paket ABT relaas-penetapan-30okt", () => {
     expect(semua.match(/Pasal 153 ayat \(1\) RBg/g)?.length).toBe(1);
     expect(semua).toContain("#11217#");
     // keputusan pengguna 30 Okt (lanjutan): cabut/coret = tanpa kalimat upaya hukum; amar verstek = selalu verzet bagi Tergugat
-    expect(semua).toContain("s.nama LIKE 'Dicabut%' OR s.nama LIKE 'Dicoret%'");
+    expect(semua).toContain("s.nama LIKE 'Dicabut%' OR s.nama LIKE 'Dicoret%' OR s.nama LIKE 'Gugur%' OR s.nama LIKE 'Digugurkan%'");
     expect(semua).toContain("LOCATE('verstek', u.amar_putusan) > 0) THEN \"#0047# dapat mengajukan perlawanan (<I>verzet</I>)");
     expect(semua).toContain("SELECT IF(x.t = '', '', CONCAT('<li>Bahwa terhadap putusan tersebut ', x.t, ';', CHAR(10)))");
     expect(semua).toContain("k.pengacara_id FROM perkara_pengacara k");
