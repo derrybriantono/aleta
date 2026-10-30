@@ -120,25 +120,24 @@ Sumber: `sumber/isi.py` (putaran 1), `sumber/isi_31.py` (putaran 2), `sumber/med
   keterangan status (dikabulkan, ditolak, perkara tidak dapat diterima, bagian putusan akhir, penetapan), lalu butir `[Sela]` per jenis perkara (jenis perkara
   terpilih naik ke atas); butir dibuka lewat kelompok ASLINYA (hak folder asal). **Perlu rilis ekstensi** (skill `rilis-ekstensi`, sesi utama).
 
-## Catatan pasal PERMA 3/2022 (butir 6 putaran 3)
+## Pasal PERMA 3/2022 - dicocokkan dengan naskah resmi
 
-Naskah resmi PERMA 3/2022 (JDIH Mahkamah Agung) TIDAK dapat dibuka dari laptop (cermin datahukum.com menolak, pasal.id kosong). Nomor pasal yang dikutip
-berasal dari beberapa sumber sekunder yang isinya sama: **Pasal 5** = mediasi elektronik dilaksanakan setelah para pihak dan/atau kuasanya memberikan
-persetujuan; **Pasal 6** = hakim pemeriksa perkara menyerahkan formulir persetujuan mediasi secara elektronik (hukumonline, skripsi PA Sarolangun, kutipan
-datahukum). "Kehadiran melalui audio visual dianggap kehadiran langsung" BUKAN dari PERMA 3/2022 melainkan **Pasal 5 ayat (3) dan Pasal 6 ayat (2) PERMA 1/2016**
-(laman PN Gunungsitoli dan kepaniteraan MA) - blangko mengutipnya begitu. Pasal pemilihan aplikasi (disebut Pasal 10 oleh satu sumber saja) TIDAK dikutip.
-**Mohon dicocokkan dengan salinan resmi sebelum dipasang**; bila berbeda cukup ubah teks di `sumber/mediasi_el.py` lalu bangun ulang.
+Semua kutipan dicocokkan dengan salinan resmi PERMA 3/2022 tentang Mediasi di Pengadilan secara Elektronik (ditetapkan 17 Mei 2022, BN 2022 Nomor 535)
+yang diberikan pengguna 30 Okt. Dikutip: Pasal 3 (alternatif bila para pihak menghendaki), Pasal 5 ayat (1) dan (2) (persetujuan; tidak setuju = manual),
+Pasal 6 (formulir persetujuan), Pasal 7 ayat (2) (KTP/identitas, pas foto, keterangan Domisili Elektronik - di kalimat BAS), Pasal 8 ayat (2) (penetapan
+penunjukan Mediator dan perintah melakukan Mediasi Elektronik), Pasal 11 dan 12 (ruang virtual, pembiayaan Aplikasi, tempat mediasi yang sah), Pasal 23
+(pernyataan mediasi berhasil/tidak berhasil secara elektronik melalui SIP - amar penetapan), Pasal 24 ayat (2) (kesepakatan perdamaian dengan Tanda Tangan
+Elektronik), Pasal 25 (PERMA 1/2016 tetap berlaku). "Kehadiran audio visual dianggap kehadiran langsung" tetap dikutip dari Pasal 5 ayat (3) dan Pasal 6
+ayat (2) PERMA 1/2016 (tidak diatur ulang di PERMA 3/2022). Sumber sekunder tidak dipakai lagi.
 
-## Pertanyaan hukum baru (putaran 3) - dengan usulan
+## Pertanyaan hukum putaran 3 - SUDAH DIJAWAB 30 Okt ±14.30 dan diterapkan
 
-1. **Putusan akhir li'an**: amar "tidak dapat rujuk dan tidak dapat menikah kembali untuk selama-lamanya" berdasar KHI Pasal 125. KHI Pasal 70 (batal bila
-   menikahi bekas istri yang telah dili'an) sengaja TIDAK dikutip karena hurufnya belum dapat dipastikan dari naskah. Usulan: tetap tanpa Pasal 70. Untuk cerai
-   talak amar tidak memuat izin ikrar talak (putus karena li'an, bukan talak) - benar?
-2. **Li'an**: iddah/nafkah istri sesudah li'an tidak diamarkan (KHI 162 hanya membebaskan suami dari nafkah anak yang diingkari). Perlu butir lain?
-3. **Pemisahan perkara dikabulkan**: amar "memisahkan pemeriksaan ... untuk diperiksa dan diputus sebagai perkara tersendiri"; di praktik bagian itu perlu
-   didaftarkan sebagai perkara baru (panjar baru). Perlu butir "memerintahkan ... mendaftarkannya sebagai perkara tersendiri"?
-4. **Sisipan rekonvensi**: sebutan "Penggugat Rekonvensi/Tergugat Rekonvensi" untuk semua jenis (cerai talak lazim "Termohon Konvensi/Penggugat
-   Rekonvensi" pada kali pertama). Usulan: cukup seperti sekarang.
+1. Li'an cerai talak tanpa izin ikrar, KHI Pasal 70 tidak dikutip: BENAR (tetap).
+2. Iddah dan nafkah istri sesudah li'an: amar TIDAK ditambah karena tidak ada dasar KHI/UU yang jelas untuk amar nafkah iddah bekas istri yang dili'an
+   (kewajiban Pasal 149 KHI berlaku bagi perkawinan yang putus karena talak; Pasal 162 KHI hanya membebaskan suami dari nafkah anak yang diingkari).
+   Yang ditambahkan hanya pertimbangan iddah berdasar Pasal 153 ayat (1) dan ayat (4) KHI (waktu tunggu dihitung sejak putusan berkekuatan hukum tetap).
+3. Pemisahan perkara dikabulkan: butir "Memerintahkan #0046# untuk mendaftarkan ... sebagai perkara baru ... dengan membayar panjar biaya perkara yang baru".
+4. Sebutan Penggugat/Tergugat Rekonvensi untuk semua jenis: CUKUP (tetap).
 
 ## Pertanyaan hukum putaran 2 (SUDAH DIJAWAB 30 Okt dan diterapkan di putaran 3: 1 tetap penetapan akhir, 2 sisipan cukup, 3 sisipan rekonvensi, 4 putusan akhir li'an, 5 benar, 6 pasal + ALUR 05/34/36/37, 7 cara bayar Pasal 23 ayat (4), 8 splitsing, 9 benar)
 
