@@ -37,7 +37,9 @@
   const JEDA_MS = 1200;
   const BATAS_GABUNG_BASE64 = 20 * 1024 * 1024;
   const JANGKAUAN_PTSP_HARI = 28;
-  const URUT_JENIS = ["put", "bas", "rel", "ptsp", "sampul", "salinan"];
+  const URUT_JENIS = ["put", "bas", "rel", "ptsp"];
+  /** Jenis tambahan (30 Okt 2026) yang hanya dibuka lewat Alat saya (sampul PTSP, salinan putusan BHT); pemilih jenis bawaan tidak berubah. */
+  const JENIS_EKSTRA = ["sampul", "salinan"];
   const JUDUL_JENIS = { put: "Putusan", bas: "Berita acara sidang (BAS)", rel: "Relaas panggilan dan pemberitahuan putusan", ptsp: "Penetapan awal (PMH, PPP, PJS, PHS)", sampul: "Sampul berkas perkara baru", salinan: "Salinan putusan perkara yang baru BHT" };
   const NAMA_BERKAS_JENIS = { put: "Putusan", bas: "BAS", rel: "Relaas", ptsp: "Penetapan", sampul: "Sampul", salinan: "Salinan BHT" };
   const NAMA_PERAN_TAMPIL = { put: "Hakim", bas: "Panitera Pengganti", rel: "Juru sita", ptsp: "PTSP", sampul: "PTSP", salinan: "Hakim" };
@@ -285,12 +287,18 @@
     const d = driver();
     if (!d) return [];
     const ada = d.jenisBoleh();
-    // Sampul massal mengikuti hak PTSP (folder 99 PTSP) dan hanya bila mesin sampul terpasang.
-    const bk = globalThis.AletaBerkasKhusus;
-    if (ada.includes("ptsp") && bk && typeof bk.cetakSampulTanpaLayar === "function" && !ada.includes("sampul")) ada.push("sampul");
-    // Salinan putusan BHT dicetak dari blangko putusan: mengikuti hak putusan (hakim; Super Admin/Admin).
-    if (ada.includes("put") && !ada.includes("salinan")) ada.push("salinan");
     return URUT_JENIS.filter((j) => ada.includes(j));
+  }
+  /** Jenis tambahan yang boleh dibuka akun ini lewat Alat saya: sampul (hak PTSP + mesin sampul terpasang), salinan BHT (hak putusan). */
+  function jenisEkstra() {
+    const d = driver();
+    if (!d) return [];
+    const ada = d.jenisBoleh();
+    const bk = globalThis.AletaBerkasKhusus;
+    const hasil = [];
+    if (ada.includes("ptsp") && bk && typeof bk.cetakSampulTanpaLayar === "function") hasil.push("sampul");
+    if (ada.includes("put")) hasil.push("salinan");
+    return hasil;
   }
   /** Jenis bawaan menurut peran akun; Super Admin/Admin mulai dari putusan. */
   function jenisBawaan(ada) {
@@ -695,7 +703,7 @@
     const akar = el("bd-massal-modal");
     if (!akar || !M.terbuka) return;
     const d = driver();
-    const ada = jenisBoleh();
+    const ada = jenisBoleh().concat(JENIS_EKSTRA.includes(M.jenis) ? [M.jenis] : []);
     const sibuk = M.jalan !== "";
     const pilihJumlah = M.pilih.size;
     const siapAda = M.baris.filter(bolehDipilihSiap).length;
@@ -1272,8 +1280,10 @@
     akar.hidden = false;
     sambungkan();
     M.terbuka = true;
-    if (typeof jenis === "string" && ada.includes(jenis)) M.jenis = jenis;
-    if (!M.jenis || !ada.includes(M.jenis)) M.jenis = jenisBawaan(ada);
+    const ekstra = jenisEkstra();
+    if (typeof jenis === "string" && (ada.includes(jenis) || ekstra.includes(jenis))) M.jenis = jenis;
+    else if (JENIS_EKSTRA.includes(M.jenis)) M.jenis = jenisBawaan(ada); // tombol Cetak massal biasa: tidak mewarisi jenis tambahan terakhir
+    if (!M.jenis || !(ada.includes(M.jenis) || (JENIS_EKSTRA.includes(M.jenis) && ekstra.includes(M.jenis)))) M.jenis = jenisBawaan(ada);
     M.tanggal = M.tanggal || tanggalLokal();
     // 28 Okt 2026: daftar perkara PTSP sedang "tanggal tertentu" / "rentang tanggal" -> Cetak massal PTSP memulai dari rentang yang sama.
     const kd = typeof a.keadaan === "function" ? a.keadaan() : null;

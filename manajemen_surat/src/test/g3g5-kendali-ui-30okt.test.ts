@@ -286,7 +286,7 @@ function buka(p: Opsi = {}, awal?: { sesi?: Record<string, string>; simpanan?: R
         if (b.aksi === "simpan") {
           const h = bersihkanKalimat(b);
           if (!h.ok) return json({ ok: false, error: { message: h.sebab } }, 400);
-          const baru = { id: `kal-${gudang.kalimat.length + 1}-xxxxxxxx`, pemilikId: saya, pemilikNama: "Hakim Satu", ...h.nilai, dipakai: 0, dipakaiTerakhir: "", diubahPada: new Date().toISOString() };
+          const baru = { pemilikId: saya, pemilikNama: "Hakim Satu", ...h.nilai, id: `kal-${gudang.kalimat.length + 1}-xxxxxxxx`, dipakai: 0, dipakaiTerakhir: "", diubahPada: new Date().toISOString() };
           gudang.kalimat.push(baru);
           gudang.panggilan.push({ aksi: "simpan", isi: baru });
           return json({ ok: true, data: { kalimat: baru } });
