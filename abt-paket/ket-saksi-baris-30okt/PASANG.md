@@ -2,7 +2,9 @@
 
 **Status: diuji di basis salinan laptop (`aps_badilag_bas29` = dump server 28 Okt 15.44). Server: BELUM dipasang - dipasang sesi utama. Urutan bebas terhadap paket lain.**
 
-**PERHATIAN - paket ini MENGUBAH DATA TERSIMPAN** `abt_keterangan_saksi` (hanya ganti baris -> satu spasi; huruf lain tidak berubah, diperiksa; bisa dipulihkan persis). Dahulu (paket x6, 21 Okt) pengguna memutuskan isian tersimpan tidak diubah untuk kalimat penutup; paket ini dibuat atas arahan koordinator 30 Okt pagi (temuan simulasi). Bila pengguna tidak setuju data diubah, JANGAN pasang.
+**PERHATIAN - paket ini MENGUBAH DATA TERSIMPAN** `abt_keterangan_saksi` (hanya ganti baris -> satu spasi; huruf lain tidak berubah, diperiksa; bisa dipulihkan persis).
+
+**Keputusan pengguna 30 Okt 2026: DISETUJUI** - pengguna memilih "enter itu dihapus ganti jadi spasi": data tersimpan diubah (PASANG.sql) dan pemicu dipasang. Keputusan ini MENGGANTIKAN keputusan 21 Okt (paket x6: isian tersimpan tidak diubah) KHUSUS untuk ganti baris -> spasi; untuk hal lain (mis. kalimat penutup) keputusan 21 Okt tetap berlaku.
 
 ## Masalah
 Tabel tanya-jawab BAS dicetak PHP ABT (`kolom_kode_A4`) dengan teks pertanyaan/jawaban APA ADANYA. RTF mengabaikan karakter ganti baris, sehingga jawaban yang diketik/ditempel dengan Enter tercetak bergabung: "tidak ada\nhubungan" -> "tidak **adahubungan**", "untuk\nmemperoleh" -> "**untukmemperoleh**" (render php56 ABT asli 208/Pdt.P/2026 BAS ALUR 11 [1]: 2 kata; 190/Pdt.P/2026 BAS ALUR 12 [1]: 1 kata). Putusan (`isian_rtf_ket_saksi`) sudah mengganti ganti baris dengan spasi, jadi BAS dan putusan berbeda bunyi. Diukur di dump server: **9.131 baris** tanya-jawab (8.594 jawaban, 4.060 pertanyaan; 1.281 perkara) memuat ganti baris. Semua diinput lewat penyunting ABT.
