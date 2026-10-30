@@ -394,6 +394,21 @@ export function periksaIntegritas(r: IntegritasRingkas | null, kini: Date) {
   return { warna: "hijau" as Warna, ringkas: "Tidak ada temuan baru pada berkas yang dijaga.", rincian };
 }
 
+/**
+ * Putusan SIPP vs dokumen putusan (G4 4.3, 30 Okt 2026): perkara yang amar/tanggal putusan SIPP-nya berbeda dengan
+ * dokumen yang diunggah, menurut pemeriksaan terakhir (panel cetak Blangko Derry). Informasi, bukan alarm:
+ * kuning bila ada beda, kelabu bila belum ada yang diperiksa atau semua cocok.
+ */
+export function periksaPutusanDokumen(beda: Array<{ nomor_perkara: string; ringkas: string; diperiksa_pada: string }> | null, kini: Date) {
+  if (!beda) return { warna: "kelabu" as Warna, ringkas: "Pencocokan putusan belum terbaca.", rincian: [] };
+  if (!beda.length) return { warna: "kelabu" as Warna, ringkas: "Tidak ada putusan SIPP yang berbeda dengan dokumennya (90 hari terakhir).", rincian: [] };
+  return {
+    warna: "kuning" as Warna,
+    ringkas: `${beda.length} perkara: putusan di SIPP berbeda dengan dokumen putusan yang diunggah.`,
+    rincian: beda.slice(0, 20).map((b) => ({ label: b.nomor_perkara || "-", nilai: `${b.ringkas || "berbeda"} (${umurTeks(b.diperiksa_pada, kini)})` })),
+  };
+}
+
 export function periksaUjiBeban(uji: UjiBebanRingkas | null, kini: Date) {
   if (!uji) return { warna: "kelabu" as Warna, ringkas: "Belum ada hasil uji beban yang diimpor.", rincian: [] };
   const rincian = [

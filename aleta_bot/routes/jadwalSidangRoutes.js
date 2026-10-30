@@ -37,6 +37,7 @@
  *                                 26 Okt 2026, tundaMediasiService
  *   GET  /hasil-mediasi-sipp?mediasiId   isian hasil mediasi SIPP + pilihan + akun (28 Okt 2026)
  *   POST /hasil-mediasi-sipp      hasil mediasi ke SIPP persis Edit Hasil Mediasi (kering bawaan)
+ *   GET  /putusan-dokumen?perkaraId  tanggal + amar putusan SIPP utuh + nama berkas (G4 4.3, hanya SELECT)
  *   GET  /court-calendar?perkaraId  Court Calendar SIPP + id baris (hanya SELECT)
  *   GET  /court-calendar/jumlah?perkaraId=1,2,3  jumlah baris per perkara
  *   POST /court-calendar          tambah/sunting Court Calendar ke SIPP atas
@@ -660,6 +661,16 @@ router.post(
     }
   })
 );
+
+/** Bahan pencocokan putusan SIPP vs dokumen (G4 4.3): tanggal + amar UTUH + nama berkas. Hanya SELECT. */
+router.get("/putusan-dokumen", wajibToken, async (req, res) => {
+  try {
+    const hasil = await require("../services/putusanDokumenService").layanan().bahanPutusan(req.query.perkaraId);
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
 
 /** Jumlah baris Court Calendar untuk banyak perkara sekaligus (?perkaraId=1,2,3). Hanya SELECT. */
 router.get("/court-calendar/jumlah", wajibToken, async (req, res) => {

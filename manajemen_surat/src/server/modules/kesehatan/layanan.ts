@@ -33,6 +33,7 @@ import {
   periksaGalat,
   periksaIntegritas,
   periksaPortal,
+  periksaPutusanDokumen,
   periksaKapasitas,
   periksaServer,
   periksaSambungan,
@@ -314,7 +315,14 @@ const KOMPONEN: Array<{ kunci: string; nama: string; kelompok: Komponen["kelompo
   { kunci: "galat", nama: "Error 24 jam", kelompok: "layanan" },
   { kunci: "uji-beban", nama: "Uji beban terakhir", kelompok: "server" },
   { kunci: "integritas", nama: "Integritas berkas website/server", kelompok: "server" },
+  // G4 4.3 (30 Okt 2026): informasi saja - tidak ikut warna keseluruhan (tidak di KOMPONEN_PENENTU).
+  { kunci: "putusan-dokumen", nama: "Putusan SIPP vs dokumen", kelompok: "data" },
 ];
+
+async function bedaPutusanAman(db: AletaDatabase, kini: Date) {
+  const { daftarBedaPutusan } = await import("@/server/modules/aleta-ecourt/cocok-putusan");
+  return daftarBedaPutusan(db, kini);
+}
 
 /** Komponen yang ikut menentukan warna keseluruhan dan boleh memicu peringatan. Ekstensi dan uji beban hanya informasi. */
 export const KOMPONEN_PENENTU = new Set(["portal", "basis-data", "bot", "whatsapp", "sipp", "abt", "antrian", "ecourt", "cadangan", "server", "kapasitas", "galat", "integritas"]);
@@ -331,7 +339,7 @@ export async function jalankanPemeriksaan(db: AletaDatabase, opsi: { ping?: bool
   const mulai = Date.now();
   const kosong = { ok: false as const, error: "tidak menjawab dalam batas waktu" };
 
-  const [status, kesehatanBot, sumber, ecourt, cadangan, ukuran, perangkat, galat, uji, integritas, kapasitas] = await Promise.all([
+  const [status, kesehatanBot, sumber, ecourt, cadangan, ukuran, perangkat, galat, uji, integritas, kapasitas, bedaPutusan] = await Promise.all([
     dengan(deps.botStatus(), 7000, kosong),
     dengan(deps.botKesehatan(opsi.ping ?? false), 10_000, kosong),
     dengan(deps.sumberDaya(), 8000, kosong),
@@ -343,6 +351,7 @@ export async function jalankanPemeriksaan(db: AletaDatabase, opsi: { ping?: bool
     dengan(ujiBebanTerakhir(db), 3000, null),
     dengan(ringkasIntegritasAman(db), 3000, null),
     deps.kapasitas ? dengan(deps.kapasitas(db), 6000, kosong) : Promise.resolve(undefined),
+    dengan(bedaPutusanAman(db, kini), 3000, null),
   ]);
 
   // Basis data ALETA: diukur sendiri (dua pembacaan terkecil).
@@ -373,6 +382,7 @@ export async function jalankanPemeriksaan(db: AletaDatabase, opsi: { ping?: bool
     galat: periksaGalat(galat),
     "uji-beban": periksaUjiBeban(uji, kini),
     integritas: periksaIntegritas(integritas, kini),
+    "putusan-dokumen": periksaPutusanDokumen(bedaPutusan, kini),
   };
   const durasi = Date.now() - mulai;
   const komponen = KOMPONEN.map((k) => bentukKomponen(k, isi[k.kunci], diukurPada, durasi));
