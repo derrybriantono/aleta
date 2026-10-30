@@ -165,7 +165,7 @@ const KELOMPOK_TANYA = [
   ["rumusan", "nafkah", /nafkah/],
   ["rumusan", "komunikasi", /komunikasi|berkomunikasi/],
   ["rumusan", "keberatan", /keberatan/],
-  ["pokok", "cara tahu", /^(?=.*(?:selisih|tengkar|cekcok|ribut|masalah|penyebab|pisah))(?=.*(?:bagaimana .*(?:mengetahui|tahu)|dari mana .*(?:tahu|mengetahui)))/],
+  ["pokok", "cara tahu", /^(?=.*(?:selisih|tengkar|cekcok|ribut|masalah|penyebab|pisah))(?=.*(?:bagaimana .*\b(?:mengetahui|tahu)\b|dari mana .*\b(?:tahu|mengetahui)\b))/],
   ["pokok", "penyebab", /^(?=.*(?:penyebab|sebab|alasan))(?=.*(?:selisih|tengkar|cekcok|ribut|cerai|pisah|masalah))/],
   ["pokok", "menyaksikan", /^(?=.*(?:melihat|mendengar|menyaksikan|berapa kali))(?=.*(?:selisih|tengkar|cekcok|ribut))/],
   ["pokok", "kenal", /kenal|mengenal/],

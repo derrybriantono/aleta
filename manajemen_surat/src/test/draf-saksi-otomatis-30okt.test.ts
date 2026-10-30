@@ -560,3 +560,23 @@ describe("Pemilih set draf (fungsi murni)", () => {
     expect(TP.ringkasAsal(TP.hitungAsal([[{ tanya: "b", jawab: "y" }]]))).toBe("1 terisi · 0 ragu · 0 perlu dilengkapi");
   });
 });
+
+describe("Pengisi jawaban: 'menurut yang Saudara ketahui' bukan pertanyaan cara saksi tahu (temuan ukur G2a)", () => {
+  it("pertanyaan sikap pihak lawan tidak dijawab 'saya melihat sendiri'; pertanyaan cara tahu tetap", () => {
+    const u = require_("../services/abtUsulanService");
+    const p = require_("../services/pemilihRagam");
+    const SIKAP = "Bagaimana sikap Tergugat terhadap rumah tangganya dengan Penggugat menurut yang Saudara ketahui, apakah masih ingin mempertahankannya?";
+    const CARA = "Bagaimana Saudara mengetahui penyebab pertengkaran itu?";
+    const templat = [
+      { no: "1", tanya: SIKAP, jawab: "Tergugat ... (membantah adanya pertengkaran / tidak keberatan bercerai / masih ingin mempertahankan rumah tangga);" },
+      { no: "2", tanya: CARA, jawab: "Saya ..." },
+    ];
+    const h = u.susunKeteranganSaksiSdg({ templat, posita: "", alasan: [], pelaku: "Tergugat", lawan: "Penggugat", nomorPerkara: "1/Pdt.G/2026/PA.Dgl", kodeKumpulan: "", jenisPerkara: "347", alur: "15", tanggalSidang: "", modus: { saksi1: "sama", saksi2: "sebagian" } });
+    expect(h.ok).toBe(true);
+    expect(h.saksi1[0].jawab).not.toMatch(/mata kepala|melihat sendiri|menyaksikan/i);
+    expect(h.saksi1[0].jawab).toMatch(/\.\.\./);
+    expect(h.saksi1[1].jawab).toMatch(/menyaksikan|melihat/i);
+    expect(p.kelompokTanya(SIKAP).kelompok).not.toBe("cara tahu");
+    expect(p.kelompokTanya("Dari mana Saudara tahu mereka sering bertengkar?").kelompok).toBe("cara tahu");
+  });
+});
