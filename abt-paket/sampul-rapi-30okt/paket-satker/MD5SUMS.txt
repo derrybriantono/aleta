@@ -1,0 +1,16 @@
+dd90a109c886e43ddb25f0c9b1505a81  abt-sampul-rapi-30okt-FUNGSI-PULIH.sql
+f5bab413f4d55ae3b3e81017127e20ab  abt-sampul-rapi-30okt-FUNGSI.sql
+c4dcd6671dd155289664f3c5515c43b3  abt-sampul-rapi-30okt-PASANG.sql
+0bfd249d45783ff65d2d3c09aae9ad32  abt-sampul-rapi-30okt-PERIKSA.sql
+553cd54caa0a5a9452edcce3363b9db1  abt-sampul-rapi-30okt-PRASYARAT.sql
+22fd64a3ebecf3da30d19fcb8a6d7a64  abt-sampul-rapi-30okt-PULIH.sql
+9fefc8435e4da97b0727eb8c0c2baffa  berkas_rtf.py
+fb373094f1474477c970e70727a55a63  daftar-timpa.tsv
+cc459b6621c9be3e1b9a9cc478547ac7  harap.txt
+b8f9da36d3f581e6e5ecf7afe4f8e5fa  nomor-baru.txt
+dae3a49813a6223790fe7784fc2a50f1  nomor-dirujuk.txt
+d2cd25320c3d4909472e8dc7fa8f3d17  nomor-ubah.txt
+005468f32c594b375239db1d15825459  pasang-satker.sh
+270c24b2b1f43c9aef406a858fe9f763  pulih-satker.sh
+4d1be0b828596eb91213ebb2ced0569c  timpa.tgz
+bc2e58697601ab0ee83c6eab94a4c7ac  uji-kueri.tsv

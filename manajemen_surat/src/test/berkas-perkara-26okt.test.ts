@@ -172,11 +172,11 @@ describe("A - lib murni", () => {
 });
 
 describe("B - saklar dan migrasi", () => {
-  it("saklar berkas-perkara-khusus ada di katalog dan bawaannya MATI", () => {
+  it("saklar berkas-perkara-khusus ada di katalog dan bawaannya MENYALA (keputusan pengguna 30 Okt)", () => {
     const f = KATALOG_FITUR_SATKER.find((x) => x.kode === FITUR_BERKAS_PERKARA);
     expect(f).toBeTruthy();
-    expect(f?.bawaan).toBe("mati");
-    expect(keadaanFitur(FITUR_BERKAS_PERKARA, {}).menyala).toBe(false);
+    expect(f?.bawaan).toBe("stabil");
+    expect(keadaanFitur(FITUR_BERKAS_PERKARA, {}).menyala).toBe(true);
   });
 
   it("migrasi 0112 memuat tiga tabel, jurnal idx 98, tanpa kata aplikasi dalam DDL", () => {

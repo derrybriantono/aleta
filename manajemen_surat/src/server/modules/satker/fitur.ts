@@ -1,11 +1,13 @@
 import { KODE_FITUR_BERKAS_ECOURT } from "@/lib/berkas-ecourt-fitur";
 import {
+  BAWAAN_DULU_MATI,
   GalatFiturSatker,
   KATALOG_FITUR_SATKER,
   PESAN_FITUR_MATI,
   bersihkanPengaturanFitur,
   keadaanFitur,
   petaKeadaanFitur,
+  pilihanDariJejak,
   ringkasUntukKlien,
   susunPengaturanFitur,
   type KeadaanFitur,
@@ -42,7 +44,41 @@ import { nextPrefixedId } from "@/server/shared/ids";
 export const KUNCI_FITUR_SATKER = "sistem:fitur-satker";
 
 export async function bacaPengaturanFitur(db: AletaDatabase): Promise<PengaturanFiturSatker | null> {
-  return bersihkanPengaturanFitur(await bacaSetelanSistem(db, KUNCI_FITUR_SATKER));
+  const p = bersihkanPengaturanFitur(await bacaSetelanSistem(db, KUNCI_FITUR_SATKER));
+  return terapkanMatiSengajaLama(db, p);
+}
+
+/**
+ * Bawaan yang berubah dari mati ke menyala (BAWAAN_DULU_MATI): pilihan "mati" pada masa bawaan lama tidak tersimpan di setelan, jadi dibaca
+ * dari jejak audit UPDATE_FITUR_SATKER terakhir yang menyebut kode itu. Berakhir "mati" = sengaja dimatikan -> tetap mati; tidak ada jejak =
+ * belum pernah diatur -> bawaan baru (menyala). Begitu disimpan lagi lewat Fitur Satker, pilihan "mati" tersimpan terang (berbeda dari bawaan baru).
+ * Jejak dibaca sekali lalu diingat sampai pengaturan disimpan lagi; gagal membaca jejak = tidak ada jejak.
+ */
+const jejakLama = new WeakMap<AletaDatabase, Map<string, string | null>>();
+async function terapkanMatiSengajaLama(db: AletaDatabase, p: PengaturanFiturSatker | null): Promise<PengaturanFiturSatker | null> {
+  let hasil = p;
+  let ingat = jejakLama.get(db);
+  if (!ingat) {
+    ingat = new Map();
+    jejakLama.set(db, ingat);
+  }
+  for (const kode of BAWAAN_DULU_MATI) {
+    if (hasil?.fitur[kode]) continue;
+    if (!ingat.has(kode)) {
+      let terakhir: string | null = null;
+      try {
+        const baris = await db
+          .prepare("SELECT payload_json FROM audit_logs WHERE action = ? AND payload_json LIKE ? ORDER BY created_at DESC, id DESC LIMIT 1")
+          .get<{ payload_json: string }>("UPDATE_FITUR_SATKER", `%${kode}%`);
+        terakhir = baris ? pilihanDariJejak(baris.payload_json, kode) : null;
+      } catch {
+        terakhir = null;
+      }
+      ingat.set(kode, terakhir);
+    }
+    if (ingat.get(kode) === "mati") hasil = { fitur: { ...(hasil?.fitur ?? {}), [kode]: "mati" }, diubahOleh: hasil?.diubahOleh ?? "", diubahPada: hasil?.diubahPada ?? "" };
+  }
+  return hasil;
 }
 
 /** Konteks lengkap (pengaturan + saluran efektif + plafon Pusat). Tiap bagian gagal ke bawaan. */
@@ -145,6 +181,7 @@ export async function simpanPengaturanFitur(db: AletaDatabase, aktor: { id: stri
       createdAt: sekarang,
     });
   });
+  jejakLama.delete(db);
   const bot = await dorongFiturKeBot(db);
   // D1 (25 Okt 2026): saklar Ketepatan isian berubah -> bot menerima keputusan gerbang yang berlaku (atau melepasnya bila mati).
   if (berubah.some((x) => x.kode === "ketepatan-isian")) {

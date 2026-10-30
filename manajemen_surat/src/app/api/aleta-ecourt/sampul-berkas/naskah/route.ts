@@ -1,31 +1,17 @@
 import { type NextRequest } from "next/server";
 
-import { buangGrupTersembunyiRtf } from "@/lib/buang-grup-tersembunyi-rtf";
-import {
-  type BarisDasar,
-  type SunganBaris,
-  KERTAS,
-  hitungDaftarIsi,
-  kodeKertasSah,
-  nilaiTimpaDaftarIsi,
-  rapikanSampulAwal,
-  tanggalIndonesia,
-  saringNilaiTimpa,
-} from "@/lib/berkas-perkara";
-import { PENANDA_TABEL_CEKLIST, bersihkanBahanCeklist, kotaDariPengadilan, susunCeklist, tabelCeklistRtf, tempelTabelCeklist, teksRingkasCeklist } from "@/lib/ceklist-berkas";
-import { tabelDaftarIsiRtf, ubahKopBundel } from "@/lib/daftar-isi-rtf";
+import { kodeKertasSah } from "@/lib/berkas-perkara";
 import { FITUR_BERKAS_PERKARA } from "@/lib/fitur-satker";
-import { sisipLogoRtf } from "@/lib/logo-rtf";
-import { bersihkanPihak, gabungLampiran, jumlahDariDaftar, pihakBanyak } from "@/lib/lampiran-pihak";
-import { barisTurut, bersihkanAlasan, bersihkanAnak, bersihkanObjek, bersihkanSidang, kolomPihakSampul, susunLampiran, type HasilLampiran } from "@/lib/lampiran-sampul";
+import { bersihkanPihak, jumlahDariDaftar, pihakBanyak } from "@/lib/lampiran-pihak";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { callAletaBotSippBridge } from "@/server/modules/aleta-sipp/aleta-sipp-datasource";
 import { pastikanBolehBerkas } from "@/server/modules/berkas-perkara/akses";
-import { bacaLogoKopRtf } from "@/server/modules/berkas-perkara/logo-kop";
-import { bacaSatkerAktif } from "@/server/modules/satker/identitas";
 import { idPerkaraSah } from "@/server/modules/berkas-perkara/layanan";
+import { bacaLogoKopRtf } from "@/server/modules/berkas-perkara/logo-kop";
+import { type HasilIsiBlangko, susunNaskahBerkas } from "@/server/modules/berkas-perkara/naskah";
 import { pastikanFiturMenyala } from "@/server/modules/satker/fitur";
+import { bacaSatkerAktif } from "@/server/modules/satker/identitas";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ApiError } from "@/server/shared/errors";
@@ -35,56 +21,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const BATAS_ISI_MS = 90_000;
-const BATAS_BARIS = 400;
-
-type HasilIsi = { ok?: boolean; sebab?: string; berkas?: string; jumlahTerisi?: number; kosong?: Array<{ noVar: string }>; mesinGalat?: string; rtfBase64?: string };
-
 const teks = (x: unknown, maks = 200) => String(x ?? "").slice(0, maks);
-
-/** Saring baris kiriman klien menjadi BarisDasar yang aman. */
-function bersihkanBaris(mentah: unknown): BarisDasar[] {
-  if (!Array.isArray(mentah)) return [];
-  const hasil: BarisDasar[] = [];
-  for (const m of mentah.slice(0, BATAS_BARIS)) {
-    if (!m || typeof m !== "object") continue;
-    const r = m as Record<string, unknown>;
-    const bundel = r.bundel === "B" ? "B" : r.bundel === "A" ? "A" : null;
-    const kunci = teks(r.kunci, 60);
-    if (!bundel || !/^[a-z0-9_:.\-]{1,60}$/i.test(kunci)) continue;
-    const halaman = Math.max(1, Math.min(999, Math.round(Number(r.halaman) || 1)));
-    hasil.push({
-      bundel,
-      grup: teks(r.grup, 80),
-      kunci,
-      nama: teks(r.nama, 200),
-      ket: teks(r.ket, 100),
-      tanggal: teks(r.tanggal, 40),
-      halaman,
-      sumber: r.sumber === "perkiraan" ? "perkiraan" : "pasti",
-      dasar: teks(r.dasar, 120),
-    });
-  }
-  return hasil;
-}
-
-function bersihkanSunting(mentah: unknown): Record<string, Partial<SunganBaris>> {
-  const hasil: Record<string, Partial<SunganBaris>> = {};
-  if (!mentah || typeof mentah !== "object" || Array.isArray(mentah)) return hasil;
-  for (const [kunci, v] of Object.entries(mentah as Record<string, unknown>).slice(0, BATAS_BARIS)) {
-    if (!v || typeof v !== "object") continue;
-    const r = v as Record<string, unknown>;
-    hasil[kunci] = {
-      tampil: r.tampil === false,
-      urutan: 0,
-      halamanTeks: teks(r.halamanTeks, 12),
-      judulManual: teks(r.judulManual, 200),
-      tanggalManual: teks(r.tanggalManual, 40),
-      tambahan: r.tambahan === true,
-    };
-    hasil[kunci].tampil = r.tampil !== false;
-  }
-  return hasil;
-}
 
 /**
  * ============================================================================
@@ -121,117 +58,40 @@ export async function POST(request: NextRequest) {
     const banyak = badan.banyak === true || pihakBanyak(jumlah);
     const berkas = await pastikanBolehBerkas(actor, jenis, kertas, teks(badan.sebagaiPeran, 10).toLowerCase(), { bentuk, lawan, banyak: bentuk === "awal" && banyak });
 
-    let nilai: Record<string, string>;
-    let ringkas: Record<string, unknown> = {};
-    let lamp: HasilLampiran | null = null;
-    let ceklistTabel = "";
-    let daftarIsiTabel = "";
-    const bundelCetak: "A" | "B" = badan.bundelCetak === "B" ? "B" : "A";
-    let ceklistHasil: ReturnType<typeof susunCeklist> | null = null;
-    if (jenis === "ceklist") {
-      // Ceklist berkas Meja I: kerangka lewat ABT, tabel dokumen disusun di sini (jenis dan keadaan perkara) lalu ditempel menggantikan paragraf penanda.
-      const bahan = bersihkanBahanCeklist(badan.ceklist);
-      if (!bahan) throw new ApiError(400, "Data ceklist (jenis dan fakta perkara) harus disertakan.");
-      const hasilCek = susunCeklist(bahan);
-      ceklistHasil = hasilCek;
-      const lebarKertas = { a4: 11906, f4: 12189, legal: 12246 }[kertas];
-      ceklistTabel = tabelCeklistRtf(hasilCek.baris, lebarKertas - 1400);
-      const satker = await bacaSatkerAktif(db);
-      const kota = kotaDariPengadilan(satker.namaPengadilan);
-      const sekarang = new Date().toISOString().slice(0, 10);
-      const petugas = teks((actor as { name?: string; username?: string } | null)?.name || (actor as { username?: string } | null)?.username, 80);
-      nilai = { "5850": PENANDA_TABEL_CEKLIST, "5848": teksRingkasCeklist(hasilCek.ringkas), "5860": hasilCek.penandaJenis, "5855": `${kota ? `${kota}, ` : ""}${tanggalIndonesia(sekarang)}` };
-      if (bahan.fakta.ppNama) nilai["5849"] = bahan.fakta.ppNama;
-      if (petugas && !/aleta/i.test(petugas)) nilai["5838"] = petugas;
-      ringkas = { ceklist: hasilCek.ringkas, jumlahBaris: hasilCek.baris.length };
-    } else if (jenis === "sampul") {
-      nilai = saringNilaiTimpa(badan.nilai);
-      if (bentuk === "awal") {
-        // Lampiran HANYA bila perlu (pihak melebihi ruang, objek > 2, anak > 3, riwayat sidang melebihi baris sampul): LAMPIRAN n - JUDUL, halaman berikutnya.
-        const lebarKertas = { a4: 11906, f4: 12189, legal: 12246 }[kertas];
-        lamp = susunLampiran({
-          nomor: teks(badan.nomor, 80),
-          lebar: lebarKertas - 1400,
-          lawan,
-          pihak,
-          anak: bersihkanAnak(badan.anak),
-          objek: bersihkanObjek(badan.objek),
-          riwayat: bersihkanSidang(badan.riwayat),
-          alasan: bersihkanAlasan(badan.alasan, teks(badan.jenisPerkara, 10)),
-          barisRiwayat: KERTAS[kertas].barisAwal,
-          infoKhasBaris: Math.max(0, Math.min(20, Math.trunc(Number(badan.infoKhasBaris)) || 0)),
-          sebutan: { 1: teks(badan.sebutanP, 20) || (lawan ? "Penggugat" : "Pemohon"), 2: teks(badan.sebutanT, 20) || (lawan ? "Tergugat" : "Termohon") },
-          sebutanPihakI: teks(badan.sebutanP, 20) || (lawan ? "Penggugat" : "Pemohon"),
-          sebutanPihakII: teks(badan.sebutanT, 20) || (lawan ? "Tergugat" : "Termohon"),
-        });
-        if (lamp.barisDepan.length) nilai["5832"] = lamp.barisDepan.join("\n");
-        if (lamp.kaki) nilai["5833"] = lamp.kaki;
-        // CATATAN: ALASAN hanya bila ada yang terdeteksi/dicentang (baris tidak tampil bila tidak); KETERANGAN otomatis (mis. ghaib) + garis tangan di blangko.
-        if (lamp.barisAlasan) nilai["5834"] = lamp.barisAlasan;
-        const ket = Array.isArray(badan.keterangan) ? badan.keterangan.map((x) => teks(x, 200)).filter((x) => x && !/aleta/i.test(x)).slice(0, 4) : [];
-        if (ket.length) nilai["5835"] = ket.join("\n");
-        if (banyak) {
-          const nomorPihak = lamp.daftar.find((d) => d.kunci === "pihak")?.nomor ?? 1;
-          const s1 = kolomPihakSampul(pihak.filter((x) => x.sisi === 1), lamp.muatPihak, nomorPihak);
-          nilai["5890"] = s1.kiri;
-          nilai["5891"] = s1.kanan;
-          if (lawan) {
-            const s2 = kolomPihakSampul(pihak.filter((x) => x.sisi === 2), lamp.muatPihak, nomorPihak);
-            nilai["5892"] = s2.kiri;
-            nilai["5893"] = s2.kanan;
-          }
-          const intervensi = pihak.filter((x) => x.sisi === 3);
-          if (intervensi.length) nilai["5847"] = barisTurut(intervensi, nomorPihak, "INTERVENSI");
-          const turut = barisTurut(pihak.filter((x) => x.sisi === 4), nomorPihak, teks(badan.sebutanT, 20) ? `TURUT ${teks(badan.sebutanT, 20).toUpperCase()}` : "TURUT TERGUGAT");
-          if (turut) nilai["5897"] = turut;
-        }
+    const hasil = await susunNaskahBerkas(
+      badan,
+      { jenis, kertas, bentuk, lawan, banyak: bentuk === "awal" && banyak },
+      {
+        isi: (nilai) => callAletaBotSippBridge<HasilIsiBlangko>("blangko.isi", { folder: berkas.folder, berkas: berkas.berkas, perkaraId, sidangKe: 0, nilai, cadangan: {}, tanyaJawabSaksi: {} }, { timeoutMs: BATAS_ISI_MS }),
+        logoKop: () => bacaLogoKopRtf(db!),
+        namaPengadilan: async () => (await bacaSatkerAktif(db!)).namaPengadilan,
+        petugas: teks((actor as { name?: string; username?: string } | null)?.name || (actor as { username?: string } | null)?.username, 80),
+        hariIni: () => new Date().toISOString().slice(0, 10),
       }
-    } else {
-      const baris = bersihkanBaris(badan.baris);
-      const hitung = hitungDaftarIsi(baris, bersihkanSunting(badan.sunting), { bundelB: badan.bundelB === "lanjut" ? "lanjut" : "1" });
-      // Tabel daftar isi disusun di sini (baris tabel sungguhan) dan menggantikan paragraf penanda #5850#; satu bundel per cetakan (A tingkat pertama, B upaya hukum).
-      nilai = { "5850": PENANDA_TABEL_CEKLIST };
-      const lebarKertasDi = { a4: 11906, f4: 12189, legal: 12246 }[kertas];
-      daftarIsiTabel = tabelDaftarIsiRtf(hitung.baris, bundelCetak, lebarKertasDi - 1400);
-      ringkas = { dokumen: hitung.total.A.dokumen + hitung.total.B.dokumen, halamanA: hitung.total.A.halaman, halamanB: hitung.total.B.halaman, perkiraan: hitung.total.A.perkiraan + hitung.total.B.perkiraan };
-    }
-
-    const hasil = await callAletaBotSippBridge<HasilIsi>(
-      "blangko.isi",
-      { folder: berkas.folder, berkas: berkas.berkas, perkaraId, sidangKe: 0, nilai, cadangan: {}, tanyaJawabSaksi: {} },
-      { timeoutMs: BATAS_ISI_MS }
     );
-    const data = hasil.data;
-    if (!hasil.ok || !data?.ok || !data.rtfBase64) {
-      return Response.json({ ok: false, alasan: data?.sebab ?? hasil.error ?? "Blangko tidak dapat diisi." }, { status: 502 });
+    if (!hasil.ok) {
+      if (/harus disertakan/.test(hasil.alasan)) throw new ApiError(400, hasil.alasan);
+      return Response.json({ ok: false, alasan: hasil.alasan }, { status: 502 });
     }
-    let bita = buangGrupTersembunyiRtf(Buffer.from(data.rtfBase64, "base64"));
-    // Sampul cetak awal: kotak centang ASCII dari variabel menjadi karakter kotak; tanda "..." variabel kosong dibuang (kolom tulis tangan).
-    // Kotak centang ASCII jadi karakter kotak, tanda "..." variabel kosong dibuang (semua blangko berkas); logo satker (monokrom) menggantikan penanda di kop.
-    bita = new Uint8Array(Buffer.from(rapikanSampulAwal(Buffer.from(bita).toString("latin1")), "latin1"));
-    bita = new Uint8Array(Buffer.from(sisipLogoRtf(Buffer.from(bita).toString("latin1"), await bacaLogoKopRtf(db)), "latin1"));
-    if (jenis === "daftar-isi") bita = new Uint8Array(Buffer.from(tempelTabelCeklist(ubahKopBundel(Buffer.from(bita).toString("latin1"), bundelCetak), daftarIsiTabel), "latin1"));
-    if (jenis === "ceklist") bita = new Uint8Array(Buffer.from(tempelTabelCeklist(Buffer.from(bita).toString("latin1"), ceklistTabel), "latin1"));
-    if (lamp && lamp.bagianRtf) bita = new Uint8Array(Buffer.from(gabungLampiran(Buffer.from(bita).toString("latin1"), lamp.bagianRtf), "latin1"));
-    const rtf = Buffer.from(bita);
+    const data = hasil.data;
     return ok(
       {
         berkas: data.berkas ?? berkas.berkas,
         folder: berkas.folder,
         kertas,
         bentuk: jenis === "sampul" ? bentuk : undefined,
-        bundelCetak: jenis === "daftar-isi" ? bundelCetak : undefined,
+        bundelCetak: jenis === "daftar-isi" ? (badan.bundelCetak === "B" ? "B" : "A") : undefined,
         pihakBanyak: jenis === "sampul" ? banyak : undefined,
-        lampiran: lamp ? lamp.daftar : [],
-        ceklist: ceklistHasil ? { baris: ceklistHasil.baris, ringkas: ceklistHasil.ringkas } : undefined,
-        muatPihak: lamp ? lamp.muatPihak : undefined,
-        rtfBase64: rtf.toString("base64"),
-        byte: rtf.length,
+        lampiran: hasil.lampiran,
+        ceklist: hasil.ceklist,
+        muatPihak: hasil.muatPihak,
+        rtfBase64: hasil.rtf.toString("base64"),
+        byte: hasil.rtf.length,
         jumlahTerisi: data.jumlahTerisi ?? 0,
         kosong: (data.kosong ?? []).map((k) => k.noVar),
         mesinGalat: data.mesinGalat ?? "",
-        nilaiDikirim: Object.keys(nilai).length,
-        ...ringkas,
+        nilaiDikirim: hasil.nilaiDikirim,
+        ...hasil.ringkas,
       },
       { headers: { "Cache-Control": "no-store" } }
     );

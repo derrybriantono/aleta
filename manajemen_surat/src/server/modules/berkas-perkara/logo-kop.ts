@@ -1,24 +1,31 @@
+import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
-import path from "node:path";
 
-import { grupGambarPngRtf } from "@/lib/logo-rtf";
+import { DEFAULT_INSTITUTION_LOGO_PATH } from "@/lib/institution-logo";
+import { LOGO_KOP_TINGGI_TWIP, grupGambarPngRtf } from "@/lib/logo-rtf";
+import { monokromTajam } from "@/lib/logo-monokrom";
 import type { AletaDatabase } from "@/server/db/client";
+import { bacaLogoAleta } from "@/server/modules/pengaturan-abt/identitas-satker";
 import { getInstitutionIdentityFromDb } from "@/server/modules/settings/service";
 import { cleanInstitutionLogoWhiteCanvas } from "@/server/shared/institution-logo-background";
 import { findStoredInstitutionLogoFile } from "@/server/shared/institution-logo-storage";
 
 /**
- * Logo kop satker aktif untuk RTF Derry (sampul, daftar isi, ceklist): logo dari identitas instansi (unggahan satker, data URL, atau logo bawaan portal),
- * diubah menjadi PNG skala abu-abu (monokrom) berlatar putih, tinggi tetap. Gagal membaca = tanpa logo (kop tetap benar), tidak pernah menggagalkan cetak.
+ * Logo kop satker aktif untuk RTF Derry (sampul, lampiran, daftar isi, ceklist) - MONOKROM TAJAM (30 Okt 2026).
+ *
+ * Sumber, berurutan: (1) logo kop di Identitas satker ABT (aleta_identitas_satker), (2) logo instansi yang DIUNGGAH di pengaturan portal
+ * (bukan logo bawaan portal). Tanpa keduanya: "" = logo yang sudah tertanam di blangko ABT dipakai apa adanya (paket sampul-rapi-30okt
+ * menanam logo monokrom satker yang sama, agar cetak langsung dari ABT pun berlogo).
+ * Logo diubah satu bit (hitam pekat / putih) dengan cara cap (lib/logo-monokrom.ts) dari sumber resolusi penuh, diperkecil Lanczos ke
+ * LEBAR_PX (lebih dari 600 dpi pada ukuran tampil ±1,7 cm) sebelum diambang - tidak kabur. Gagal membaca = "" (tidak pernah menggagalkan cetak).
  */
 
-const TINGGI_PX = 220;
-const TINGGI_TWIP = 960;
-const JALUR_LOGO_BAWAAN = path.join(process.cwd(), "public", "mahkamah-agung-logo.png");
+const LEBAR_PX = 640;
 const singgahan = new Map<string, string>();
 
-async function bacaBita(logoUrl: string): Promise<Buffer | null> {
+async function bacaBitaInstansi(logoUrl: string): Promise<Buffer | null> {
   const url = String(logoUrl || "").trim();
+  if (!url || url === DEFAULT_INSTITUTION_LOGO_PATH || /mahkamah-agung-logo\.png/i.test(url)) return null;
   const data = url.match(/^data:image\/(?:png|jpe?g|webp|gif);base64,([a-z0-9+/=]+)$/i);
   if (data) return Buffer.from(data[1], "base64");
   const dalam = url.match(/\/api\/public\/institution\/logo\/([^?#/]+)/);
@@ -27,40 +34,57 @@ async function bacaBita(logoUrl: string): Promise<Buffer | null> {
     const mentah = await readFile(berkas.absolutePath);
     return (await cleanInstitutionLogoWhiteCanvas(mentah, berkas.contentType)).buffer;
   }
-  return readFile(JALUR_LOGO_BAWAAN);
+  return null;
 }
 
-/** PNG skala abu-abu dari bita logo; { png, lebar, tinggi } atau null. */
-export async function logoMonokrom(bita: Buffer): Promise<{ png: Buffer; lebar: number; tinggi: number } | null> {
+/** PNG satu bit (palet dua warna) dari bita logo; { png, lebar, tinggi, cara } atau null. */
+export async function logoMonokrom(bita: Buffer): Promise<{ png: Buffer; lebar: number; tinggi: number; cara: "garis" | "otsu" } | null> {
   try {
     const sharp = (await import("sharp")).default;
-    const gambar = sharp(bita).flatten({ background: "#ffffff" }).resize({ height: TINGGI_PX, withoutEnlargement: false }).greyscale().png({ palette: false, compressionLevel: 9 });
-    const { data, info } = await gambar.toBuffer({ resolveWithObject: true });
-    return { png: data, lebar: info.width, tinggi: info.height };
+    let dasar = sharp(bita).ensureAlpha();
+    try {
+      // potong tepi transparan/polos agar logo memenuhi kotaknya
+      const potong = await dasar.clone().trim({ threshold: 10 }).png().toBuffer();
+      dasar = sharp(potong).ensureAlpha();
+    } catch {
+      /* gambar polos: tanpa potong */
+    }
+    const { data, info } = await dasar.resize({ width: LEBAR_PX, kernel: "lanczos3", withoutEnlargement: false }).raw().toBuffer({ resolveWithObject: true });
+    const mono = monokromTajam({ data: new Uint8Array(data.buffer, data.byteOffset, data.length), lebar: info.width, tinggi: info.height });
+    const png = await sharp(Buffer.from(mono.data), { raw: { width: info.width, height: info.height, channels: 1 } }).png({ palette: true, colors: 2, compressionLevel: 9 }).toBuffer();
+    return { png, lebar: info.width, tinggi: info.height, cara: mono.cara };
   } catch {
     return null;
   }
 }
 
-/** Grup gambar RTF logo satker aktif ("" bila tidak ada). */
+/** Grup gambar RTF logo satker aktif; "" = pakai logo yang tertanam di blangko. */
 export async function bacaLogoKopRtf(db: AletaDatabase): Promise<string> {
-  let logoUrl = "";
+  let bita: Buffer | null = null;
+  let kunci = "";
   try {
-    logoUrl = String((await getInstitutionIdentityFromDb(db)).logoUrl ?? "");
+    const aleta = await bacaLogoAleta(db);
+    if (aleta && aleta.isi.length) {
+      bita = aleta.isi;
+      kunci = `satker:${createHash("md5").update(aleta.isi).digest("hex")}`;
+    }
   } catch {
-    logoUrl = "";
+    bita = null;
   }
-  const kunci = logoUrl || "(bawaan)";
+  if (!bita) {
+    try {
+      const url = String((await getInstitutionIdentityFromDb(db)).logoUrl ?? "");
+      bita = await bacaBitaInstansi(url);
+      kunci = bita ? `instansi:${createHash("md5").update(bita).digest("hex")}` : "";
+    } catch {
+      bita = null;
+    }
+  }
+  if (!bita) return "";
   const ada = singgahan.get(kunci);
   if (ada !== undefined) return ada;
-  let hasil = "";
-  try {
-    const bita = await bacaBita(logoUrl);
-    const mono = bita ? await logoMonokrom(bita) : null;
-    if (mono) hasil = grupGambarPngRtf(mono.png, mono.lebar, mono.tinggi, TINGGI_TWIP);
-  } catch {
-    hasil = "";
-  }
+  const mono = await logoMonokrom(bita);
+  const hasil = mono ? grupGambarPngRtf(mono.png, mono.lebar, mono.tinggi, LOGO_KOP_TINGGI_TWIP) : "";
   if (hasil) {
     if (singgahan.size > 8) singgahan.clear();
     singgahan.set(kunci, hasil);

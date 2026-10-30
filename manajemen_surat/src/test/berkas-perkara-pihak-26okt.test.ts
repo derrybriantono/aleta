@@ -138,7 +138,7 @@ describe("pihak banyak dan lampiran", () => {
     expect(h.barisDepan).toEqual(["Anak: 4 anak - rincian di Lampiran 3", "Objek sengketa: 3 objek - rincian di Lampiran 2"]);
     expect(h.kaki).toBe("Lampiran (4): 1. DAFTAR PARA PIHAK; 2. DAFTAR OBJEK SENGKETA; 3. DAFTAR ANAK; 4. RIWAYAT SIDANG lanjutan");
     const r = h.bagianRtf;
-    expect(r.startsWith("\\page")).toBe(true);
+    expect(r.startsWith("\\pard\\plain\\pagebb")).toBe(true); // 30 Okt: halaman baru lewat paragraf (tanpa paragraf kosong di halaman sampul)
     for (const t of ["LAMPIRAN 1 - DAFTAR PARA PIHAK", "LAMPIRAN 2 - DAFTAR OBJEK SENGKETA", "LAMPIRAN 3 - DAFTAR ANAK", "LAMPIRAN 4 - RIWAYAT SIDANG (LANJUTAN)"]) expect(r).toContain(t);
     expect(r).toContain("Halaman 2 sampul berkas - dicetak karena pihak I berjumlah 10 orang");
     expect(r).toContain("PENGGUGAT (10)");
