@@ -1098,6 +1098,94 @@
       /* tautan hanya kemudahan: petugas memilih blangko sendiri */
     }
   }
+  // ---------------------------------------------------------------------------
+  // Tetap di tempat saat halaman dimuat ulang (30 Okt 2026): kerangka (blangko-derry.js) memulihkan perkara dan sidang, lalu mengirim
+  // peristiwa "aleta-bd-pulih"; di sini blangko yang sama dibuka lagi dan ketikan yang belum sempat tersimpan dikembalikan sebagai DRAF
+  // di kotaknya (tanpa menulis ke ABT; petugas yang menyimpannya). Pencatatan blangko dan draf lewat api().pulih.
+  // ---------------------------------------------------------------------------
+  const PUL = () => {
+    const a = api();
+    return a && a.pulih ? a.pulih : null;
+  };
+  function konteksPulih() {
+    const p = PUL();
+    const k = p && p.konteks();
+    return k && S.blangko ? { nomor: k.nomor, berkas: S.blangko.berkas } : null;
+  }
+  function pulihCatat(tambahan) {
+    try {
+      const p = PUL();
+      if (p && !tes()) p.catat(tambahan);
+    } catch {
+      /* pencatatan keadaan hanya kemudahan */
+    }
+  }
+  function pulihCatatDraf(kode, nilai) {
+    try {
+      const p = PUL();
+      const k = konteksPulih();
+      if (p && k && !tes()) p.catatDraf(k, kode, nilai);
+    } catch {
+      /* draf hanya kemudahan */
+    }
+  }
+  function pulihHapusDraf(kode) {
+    try {
+      const p = PUL();
+      const k = konteksPulih();
+      if (p && k && !tes()) p.hapusDraf(k, kode);
+    } catch {
+      /* draf hanya kemudahan */
+    }
+  }
+  async function saatPulih(e) {
+    const d = e && e.detail;
+    const p = PUL();
+    const akhir = () => {
+      try {
+        if (p) p.selesai();
+      } catch {
+        /* diabaikan */
+      }
+    };
+    try {
+      if (!d || !S.pk || tes()) return akhir();
+      const b = d.blangko;
+      if (b && b.berkas && b.kelompok && !S.blangko) {
+        const pk = S.pk;
+        const a = api();
+        if (a && typeof a.muatHak === "function") await Promise.resolve(a.muatHak()).catch(() => undefined);
+        await muatMenu();
+        if (S.pk !== pk) return akhir();
+        const k = S.menu && S.menu.kelompok.find((x) => x.nama === b.kelompok);
+        if (k && !k.berkas) {
+          await muatBerkasKelompok(k);
+          for (let i = 0; k.memuat && i < 40; i += 1) await jedaTautan(100);
+        }
+        if (S.pk !== pk) return akhir();
+        if (k && k.berkas && kelompokBoleh(k) && k.berkas.some((x) => x.berkas === b.berkas)) await pilihBlangko(b.berkas, k.nama);
+      }
+      const modul = globalThis.aletaBdPulih;
+      if (S.blangko && S.susunan && d.draf && modul && typeof modul.drafUntuk === "function") {
+        const draf = modul.drafUntuk({ draf: d.draf }, nomorPerkara(), S.blangko.berkas);
+        let n = 0;
+        for (const [kode, nilai] of Object.entries(draf)) {
+          const bb = S.susunan.isian.find((x) => x.kode === kode);
+          if (!bb || bb.jenis === "tj" || bb.khusus || String(S.isi[kode] || "") === nilai) continue;
+          S.isi[kode] = nilai;
+          S.tersimpan[kode] = "draf";
+          n += 1;
+        }
+        if (n) {
+          renderIsian();
+          toast(`${n} isian yang belum sempat tersimpan sebelum halaman dimuat ulang dikembalikan sebagai draf di kotaknya. Belum tersimpan ke ABT.`);
+        }
+      }
+    } catch {
+      /* pemulihan hanya kemudahan: petugas memilih sendiri */
+    }
+    akhir();
+  }
   function saatTautan(e) {
     const d = e && e.detail;
     if (!d || typeof d !== "object") return;
@@ -1737,6 +1825,7 @@
     if (BK()) BK().tutup();
     blangko.khusus = await berkasKhususSiap(b.berkas);
     S.blangko = blangko;
+    pulihCatat({ blangko: { berkas: b.berkas, kelompok: k.nama }, draf: null });
     S.susunan = null;
     S.galatSusunan = "";
     S.nilai = {};
@@ -3004,6 +3093,7 @@
     S.isi[kode] = nilai;
     clearTimeout(antreSimpan.get(kode));
     if (segera) return simpanIsian(kode, nilai);
+    pulihCatatDraf(kode, nilai);
     antreSimpan.set(kode, setTimeout(() => void simpanIsian(kode, nilai), 500));
     return undefined;
   }
@@ -3080,6 +3170,7 @@
         catatBuktiTertulis(kode, nilai);
       }
       if (S.isi[kode] !== nilai) return true; // sudah diketik lagi: hasil ini tidak dipakai
+      if (h.ok) pulihHapusDraf(kode);
       S.tersimpan[kode] = h.ok ? "tersimpan" : jejakAktif && h.tersimpan && h.terverifikasi === false ? BEDA_BACA_ULANG : `gagal: ${h.pesan || "ABT menolak"}`;
       if (h.ok) {
         S.nilai[kode] = { status: String(nilai).trim() ? "terisi" : "kosong", teks: String(nilai) };
@@ -5459,6 +5550,11 @@
     }
     const b = S.susunan && S.susunan.isian.find((x) => x.kode === kode);
     if (!b || !bolehTulis()) return undefined;
+    if (aksi === "ketsimpandraf") {
+      S.diketik.add(kode);
+      await jadwalkanSimpan(kode, String(S.isi[kode] || ""), true);
+      return segarKartu(kode);
+    }
     if (aksi === "ketpakai") {
       const i = S.info[kode];
       if (!i || !i.nilai) return undefined;
@@ -5584,13 +5680,14 @@
       (b.kode === "7139" && S.el7 && v === S.el7.nilai ? `<span class="bd-catat bd-el7">${esc(S.el7.keterangan)}</span>` : "") +
       (b.kode === "7139" && S.el7Saran && !v.trim() ? `<span class="bd-catat bd-el7">Saran: ${esc(S.el7Saran.keterangan)}</span>` : "") +
       `<span class="bd-status" data-status="${b.kode}">${esc(teksStatus(st, b.kode))}</span>` +
+      (st === "draf" && bolehTulis() ? `<button type="button" class="bd-tautankecil" data-bd2="ketsimpandraf" data-ket="${esc(b.kode)}">simpan draf ke ABT</button>` : "") +
       (b.kode === "8503" ? (() => { const w = peringatan8503(); return `<span class="bd-peringatan" data-peringatan="8503" role="alert" ${w ? "" : "hidden"}>${esc(w)}</span>`; })() : "") +
       (b.kode === "8503" ? belajarHtml8503() : "") +
       catatSidangHtml(b) +
       `</div>`
     );
   }
-  const teksStatus = (st, kode) => (st === "tersimpan" ? `✓ ${kode && S.dariSipp.has(kode) ? "terisi dari SIPP, tersimpan di ABT" : "tersimpan di ABT"}${kode && S.ganti[kode] ? ` (huruf ${S.ganti[kode]} diganti ke bentuk aman ABT)` : ""}` : st === "menyimpan" ? "menyimpan…" : st === "dicoba" ? "dipakai di pratinjau, tidak disimpan" : st.startsWith("gagal") ? st : "");
+  const teksStatus = (st, kode) => (st === "tersimpan" ? `✓ ${kode && S.dariSipp.has(kode) ? "terisi dari SIPP, tersimpan di ABT" : "tersimpan di ABT"}${kode && S.ganti[kode] ? ` (huruf ${S.ganti[kode]} diganti ke bentuk aman ABT)` : ""}` : st === "menyimpan" ? "menyimpan…" : st === "dicoba" ? "dipakai di pratinjau, tidak disimpan" : st === "draf" ? "draf dari sebelum dimuat ulang - belum tersimpan ke ABT" : st.startsWith("gagal") ? st : "");
   function renderStatusIsian(kode) {
     const bb = S.susunan && S.susunan.isian.find((x) => x.khusus === "bukti" && x.kode === kode);
     if (bb) segarStatusBuktiAbt(bb.pihak);
@@ -8962,6 +9059,7 @@
       const sebelum = k === "8503" ? daftarPerlu().map((x) => x.kode).join() : "";
       S.isi[k] = t.value;
       S.diketik.add(k);
+      pulihCatatDraf(k, t.value); // 30 Okt: ketikan belum tersimpan sampai kotak dilepas; dicatat sebagai draf bila halaman dimuat ulang
       S.peringat = false;
       if (k === "8503") {
         const pos = t.selectionStart;
@@ -9270,6 +9368,7 @@
       if (m) m.hidden = true;
     }
     S.blangko = null;
+    pulihCatat({ blangko: null, draf: null, gulir: 0, langkah: "" });
     S.susunan = null;
     S.galatSusunan = "";
     S.isi = {};
@@ -9430,6 +9529,7 @@
     document.addEventListener("aleta-bd-buka-isian", saatBukaIsian);
     document.addEventListener("aleta-bd-perkara", saatPerkara);
     document.addEventListener("aleta-bd-tautan", saatTautan);
+    document.addEventListener("aleta-bd-pulih", saatPulih);
     daftarkanAlat();
     const ada = typeof a.perkaraTerpilih === "function" ? a.perkaraTerpilih() : null;
     if (ada && ada.perkara) saatPerkara({ detail: { nomorPerkara: ada.perkara.nomorPerkara, perkaraId: ada.perkara.perkaraId, jenisPerkara: ada.perkara.jenisPerkara, sidang: ada.sidang, sidangKe: ada.sidangKe, sidangDipilih: ada.sidangDipilih, perkara: ada.perkara } });

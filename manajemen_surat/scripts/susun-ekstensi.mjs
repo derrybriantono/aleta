@@ -125,6 +125,8 @@ const BERKAS = [
   // tahap A) dimuat sebelumnya; blangko-derry-isian.js (tahap F-G: perlu
   // diisi, bukti, tanya jawab, pratinjau, cetak) sesudahnya.
   "abt-klien.js",
+  // Tetap di tempat saat halaman dimuat ulang (30 Okt 2026): keadaan tampilan Derry di sessionStorage tab; dimuat sebelum blangko-derry.js.
+  "blangko-derry-pulih.js",
   "blangko-derry.js",
   // Jawaban saksi otomatis + pilihan pengetahuan saksi di Blangko Derry (19 Okt 2026): pembantu murni,
   // dimuat sebelum blangko-derry-isian.js yang memakainya.
