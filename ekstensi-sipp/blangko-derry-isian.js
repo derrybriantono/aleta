@@ -9405,7 +9405,56 @@
         }
         if (S.pk === d && !S.blangko) renderRingkasBlangko();
       });
+      void terapkanDrafH1(d); // 30 Okt (G2a 2.4): BAS sidang yang disiapkan agen H-1 langsung terbuka untuk PP
     }
+  }
+  // ── BAS sidang berikutnya yang disiapkan agen H-1 (30 Okt 2026, G2a 2.4) ─────────────────────────────────────────
+  // Portal menyiapkan blangko BAS tiap sore hari kerja (rute agen-h1-bas, baca saja). Saat PP membuka perkara pada sidangnya
+  // blangko itu dibuka sendiri - seperti dipilih petugas; tidak ada yang tersimpan ke ABT selain isi otomatis yang berlaku.
+  // Keputusan buka / pilih sidang berikutnya / tidak: blangko-derry-draf-bas.js. Tautan yang diminta petugas didahulukan.
+  const API_AGEN_H1 = "/aleta/api/aleta-ecourt/agen-h1-bas";
+  const drafH1Dipakai = new Set();
+  async function terapkanDrafH1(d) {
+    const m = typeof globalThis !== "undefined" ? globalThis.AletaBdDrafBas : null;
+    if (!m || !d || S.pk !== d || S.blangko || tes()) return;
+    if (S.tautan && !S.tautan.dipakai) return;
+    const a = api();
+    // Peran akun dibaca kerangka sesudah perkara pertama dapat terpilih: ditunggu dulu, baru diputuskan.
+    if (a && typeof a.muatHak === "function") await Promise.resolve(a.muatHak()).catch(() => undefined);
+    if (S.pk !== d || S.blangko) return;
+    if (!peranAkun().includes("pp") || hakimSaja()) return;
+    const pid = String(d.perkaraId || "");
+    if (!/^\d+$/.test(pid)) return;
+    let h = null;
+    try {
+      h = await ambilPortal(`${API_AGEN_H1}?perkaraId=${encodeURIComponent(pid)}`, {}, "Membaca BAS yang disiapkan");
+    } catch {
+      return; // portal lama / agen mati: panel seperti biasa
+    }
+    if (S.pk !== d || S.blangko) return;
+    const draf = h && h.peta ? h.peta[pid] : null;
+    const kunci = `${pid}|${draf ? draf.tanggalSidang : ""}`;
+    const k = m.putuskan({ draf, hariIni: h && h.hariIni, sidang: d.sidang, sidangDipilih: d.sidangDipilih, sudah: drafH1Dipakai.has(kunci) });
+    if (k.aksi === "ganti-sidang") {
+      const sel = document.querySelector("#aleta-bd-akar #bd-sidang");
+      if (!sel || !Array.from(sel.options || []).some((o) => o.value === String(k.indeks))) return;
+      sel.value = String(k.indeks);
+      sel.dispatchEvent(new Event("change", { bubbles: true })); // peristiwa perkara berikutnya membuka blangkonya
+      return;
+    }
+    if (k.aksi !== "buka") return;
+    if (S.pk !== d || S.blangko || !jenisBoleh().includes("bas")) return;
+    await muatMenu();
+    const nama = kelompokUntukSaran(S.menu ? S.menu.kelompok : [], draf.blangko);
+    const kel = nama && S.menu ? S.menu.kelompok.find((x) => x.nama === nama) : null;
+    if (!kel || !kelompokBoleh(kel)) return;
+    if (!kel.berkas) await muatBerkasKelompok(kel);
+    if (S.pk !== d || S.blangko || !kel.berkas) return;
+    const asli = kel.berkas.find((b) => samaBerkasSaran(b.berkas, draf.blangko.berkas));
+    if (!asli) return;
+    drafH1Dipakai.add(kunci);
+    await pilihBlangko(asli.berkas, kel.nama);
+    toast(m.kalimatBuka(draf));
   }
   function daftarkanAlat() {
     const a = api();

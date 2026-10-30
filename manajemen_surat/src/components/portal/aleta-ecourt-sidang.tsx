@@ -127,6 +127,8 @@ import type { BahanPenandaBaris, IzinCeraiBaris, LencanaPekerjaanPihak, PenandaP
 import { bandingkanKonseptor, type KonseptorSementara } from "@/lib/konseptor-sementara";
 import { ChecklistKonseptor, LencanaKesiapanPutusan } from "@/components/portal/checklist-konseptor"; /* F1.6 */
 import { LencanaDrafH7, PanelDrafH7 } from "@/components/portal/draf-h7"; /* F4.2 */
+import { LencanaBasH1 } from "@/components/portal/lencana-bas-h1"; /* G2a 2.4 */
+import type { RingkasDrafH1 } from "@/lib/agen-h1-bas";
 import type { RingkasDrafH7 } from "@/lib/agen-h7-putusan";
 import { saringPerkaraSendiri } from "@/lib/perkara-sendiri";
 import { pitaJarak, sebutanJarak } from "@/lib/jarak-antar-sidang";
@@ -4492,6 +4494,7 @@ export function AletaEcourtSidang({
   >({});
   /** F4.2: ringkas draf H-7 agen ALETA per perkara (hanya yang punya draf). */
   const [drafH7, setDrafH7] = useState<Record<string, RingkasDrafH7>>({});
+  const [drafH1, setDrafH1] = useState<Record<string, RingkasDrafH1 & { keterangan?: string }>>({});
   const [keterangan, setKeterangan] = useState<Record<string, KeteranganPerkara>>({});
   const [keteranganKunci, setKeteranganKunci] = useState<string | null>(null);
   const [tunjukKunci, setTunjukKunci] = useState<string | null>(null);
@@ -5881,6 +5884,25 @@ export function AletaEcourtSidang({
     }, 0);
     return () => window.clearTimeout(timer);
   }, [muatDrafH7]);
+
+  /** G2a 2.4: BAS sidang hari ini / hari kerja berikutnya yang disiapkan agen H-1. Gagal dimuat = tanpa lencana. */
+  const muatDrafH1 = useCallback(async () => {
+    if (!perkaraTampil) return;
+    try {
+      const balasan = await fetch(apiPath(`/api/aleta-ecourt/agen-h1-bas?ringkas=1&perkaraId=${encodeURIComponent(perkaraTampil)}`), { cache: "no-store" });
+      const isi = (await balasan.json()) as { data?: { peta?: Record<string, RingkasDrafH1 & { keterangan?: string }> } };
+      setDrafH1(isi?.data?.peta ?? {});
+    } catch {
+      setDrafH1({});
+    }
+  }, [perkaraTampil]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void muatDrafH1();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [muatDrafH1]);
 
   /**
    * Keadaan keterangan tiap perkara - hanya yang TERKINI beserta jumlah
@@ -8576,6 +8598,10 @@ export function AletaEcourtSidang({
                             !sudahPutusHariIni(baris) &&
                             drafH7[String(baris.perkaraId)]?.tanggalSidang === String(baris.tanggalSidang).slice(0, 10) ? (
                               <LencanaDrafH7 ringkas={drafH7[String(baris.perkaraId)]} />
+                            ) : null}
+                            {/* G2a 2.4: BAS sidang ini disiapkan agen H-1 (blangko dibuka sendiri saat PP membuka perkaranya). */}
+                            {!sudahPutusHariIni(baris) && drafH1[String(baris.perkaraId)]?.tanggalSidang === String(baris.tanggalSidang).slice(0, 10) ? (
+                              <LencanaBasH1 ringkas={drafH1[String(baris.perkaraId)]} />
                             ) : null}
 
                             {/* ==============================================

@@ -14,6 +14,8 @@
  *   4. Urungkan mengembalikan daftar kosong dan draf tidak muncul lagi;
  *   5. putusan (hakim, hanya baca): tanpa draf;
  *   6. fungsi murni pemilih set: set utama + tambahan yang disarankan; daftar berisi/berubah/galat tidak diberi draf.
+ *   7. (2.4) BAS yang disiapkan agen H-1 terbuka sendiri untuk PP pada sidangnya; sore H-1 sidang berikutnya dipilih bila BAS
+ *      sidang lalu sudah terunggah; hakim dan portal tanpa agen tidak berubah.
  */
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -98,7 +100,7 @@ afterAll(() => {
 
 const EKSTENSI = path.resolve(process.cwd(), "../ekstensi-sipp");
 const baca = (berkas: string) => readFileSync(path.join(EKSTENSI, berkas), "utf8").replace(/\r\n/g, "\n");
-const SUMBER = ["panel-alat.js", "abt-klien.js", "blangko-derry.js", "blangko-derry-saksi.js", "blangko-derry-saksi-tampil.js", "blangko-derry-draf-saksi.js", "blangko-derry-isian.js"].map(baca).join("\n;\n");
+const SUMBER = ["panel-alat.js", "abt-klien.js", "blangko-derry.js", "blangko-derry-saksi.js", "blangko-derry-saksi-tampil.js", "blangko-derry-draf-saksi.js", "blangko-derry-draf-bas.js", "blangko-derry-isian.js"].map(baca).join("\n;\n");
 
 const ASAL = "http://192.168.10.10";
 const ABT = `${ASAL}/aps_badilag/index.php/abt`;
@@ -196,7 +198,7 @@ afterEach(async () => {
   while (terbuka.length) terbuka.pop()!.window.close();
 });
 
-function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?: boolean; tjGagal?: boolean; botMati?: boolean; jenis?: string; abtAwal?: Record<string, string>; rtfBytes?: Uint8Array } = {}): Halaman {
+function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?: boolean; tjGagal?: boolean; botMati?: boolean; jenis?: string; abtAwal?: Record<string, string>; rtfBytes?: Uint8Array; daftar?: unknown[]; h1?: Record<string, unknown> } = {}): Halaman {
   const badan = `<div id="header"><div class="h_right"><b>Pengguna</b> Panitera</div></div><div id="wrapper"><div id="navbar">${MENU}</div><div id="content"></div></div>`;
   const dom = new JSDOM(`<!doctype html><html><head><title>ABT</title></head><body>${badan}</body></html>`, { url: BERANDA, runScripts: "outside-only", pretendToBeVisual: true } as ConstructorParameters<typeof JSDOM>[1]);
   terbuka.push(dom);
@@ -271,7 +273,12 @@ function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?
     if (url.includes("/ekstensi/siapa")) return json({ ok: true, data: { ...orang, kapabilitas: {}, peranTambahan: [], bolehKasir: false } });
     if (url.includes("/aleta-ecourt/perkara-saya")) {
       const admin = p.orang === "admin";
-      return json({ ok: true, data: { hariIni: HARI_INI, mode: "hari", dari: HARI_INI, sampai: HARI_INI, lihatSemua: admin, nama: orang.nama, sebagaiNama: "", sebagaiPeran: null, terpotong: false, jumlahSemua: 1, adaYangCocok: true, akun: admin ? AKUN : null, perkara: polos(p.jenis ? DAFTAR.map((d) => ({ ...d, jenisPerkara: p.jenis })) : DAFTAR) } });
+      return json({ ok: true, data: { hariIni: HARI_INI, mode: "hari", dari: HARI_INI, sampai: HARI_INI, lihatSemua: admin, nama: orang.nama, sebagaiNama: "", sebagaiPeran: null, terpotong: false, jumlahSemua: 1, adaYangCocok: true, akun: admin ? AKUN : null, perkara: polos(p.daftar ?? (p.jenis ? DAFTAR.map((d) => ({ ...d, jenisPerkara: p.jenis })) : DAFTAR)) } });
+    }
+    // G2a 2.4: daftar perkara uji sendiri -> riwayat sidang perkara mengikutinya.
+    if (url.includes("/aleta-ecourt/sidang?nomor=") && p.daftar) {
+      const sd = ((p.daftar[0] as { sidang?: Array<{ sidangId: string; tanggal: string; agenda: string; ket: string; urutan: number; adaBas?: unknown }> }).sidang || []);
+      return json({ ok: true, data: { sipp: { jadwalPerkara: sd.map((x) => ({ sidangId: x.sidangId, tanggalSidang: x.tanggal, jamSidang: "09:00:00", agenda: x.agenda, alasanDitunda: x.ket, urutanSidang: x.urutan, adaBas: x.adaBas })) } } });
     }
     if (url.includes("/aleta-ecourt/sidang?nomor=")) return json({ ok: true, data: { sipp: { jadwalPerkara: [{ sidangId: "s2026-10-01", tanggalSidang: "2026-10-01", jamSidang: "09:00:00", agenda: "Sidang Pertama", alasanDitunda: "Tergugat tidak hadir", urutanSidang: 1 }, { sidangId: "s2026-10-15", tanggalSidang: "2026-10-15", jamSidang: "09:00:00", agenda: "Panggil Tergugat", alasanDitunda: "Tergugat tidak hadir", urutanSidang: 2 }, { sidangId: "s2026-10-27", tanggalSidang: "2026-10-27", jamSidang: "09:00:00", agenda: "Panggil Tergugat", alasanDitunda: "putus DIKABULKAN (verstek)", urutanSidang: 3 }] } } });
     if (url.includes("/aleta-ecourt/sidang/skors?")) {
@@ -362,6 +369,8 @@ function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?
       return new Response(RTF_PUT(abt["0007"] || "..."), { status: 200, headers: { "content-type": "application/vnd.ms-word", "content-disposition": `attachment; filename="581/Pdt.G/2026/PA.Dgl - ${BLANGKO_PUT}.rtf"` } });
     }
     if (url === `${ABT}/main/anonim`) return new Response(RTF_PUT("ANONIM"), { status: 200, headers: { "content-disposition": 'attachment; filename="anonim_581.rtf"' } });
+    // G2a 2.4: BAS H-1 yang disiapkan agen (rute sungguhan: lib/agen-h1-bas); tanpa p.h1 = portal tanpa agen (404).
+    if (url.includes("/aleta-ecourt/agen-h1-bas") && p.h1) return json({ ok: true, data: polos(p.h1) });
     return json({ ok: false }, 404);
   };
   w.Response = Response;
@@ -578,5 +587,77 @@ describe("Pengisi jawaban: 'menurut yang Saudara ketahui' bukan pertanyaan cara 
     expect(h.saksi1[1].jawab).toMatch(/menyaksikan|melihat/i);
     expect(p.kelompokTanya(SIKAP).kelompok).not.toBe("cara tahu");
     expect(p.kelompokTanya("Dari mana Saudara tahu mereka sering bertengkar?").kelompok).toBe("cara tahu");
+  });
+});
+
+// ============================================================================
+// G2a 2.4 - BAS sidang yang disiapkan agen H-1 terbuka sendiri untuk PP
+// ============================================================================
+const DRAF_H1 = (tanggal: string) => ({
+  perkaraId: "10154",
+  nomorPerkara: "581/Pdt.G/2026/PA.Dgl",
+  tanggalSidang: tanggal,
+  jenisAgenda: "pembuktian",
+  blangko: { folder: "derry_briantono/ALUR 02 Cerai Verstek 2 Sidang", berkas: `${BLANGKO_BAS}.rtf`, menu: "BAS CG", alias: [], label: "BAS 2 - saksi dan putusan verstek" },
+  alasan: "Sidang pembuktian dengan dua saksi.",
+  catatan: [],
+});
+const PK_H1 = (sidang: unknown[]) => [PK("581/Pdt.G/2026", "Cerai Gugat", sidang, { sudahPutus: false, tanggalPutusan: "" })];
+const blangkoTerbuka = (h: Halaman) => {
+  const k = h.w.aletaBlangkoDerryIsian && typeof h.w.aletaBlangkoDerryIsian.keadaan === "function" ? h.w.aletaBlangkoDerryIsian.keadaan() : null;
+  return k && k.blangko ? String(k.blangko.berkas || k.blangko.nama || "") : "";
+};
+async function bukaPerkaraSaja(h: Halaman) {
+  await sampai(() => D_(h).getElementById("aleta-bd-tawar") || h.w.aletaBlangkoDerry.keadaan().peran.length, "siap");
+  (Array.from(D_(h).querySelectorAll("#navbar .accordion")).find((b) => /Blangko Derry/.test(b.textContent || "")) as HTMLElement).click();
+  await sampai(() => q(h, "[data-pk]"), "daftar");
+  klik(h, '[data-pk="581/Pdt.G/2026/PA.Dgl"]');
+}
+const tandaBas = (h: Halaman) => qq(h, "*").some((el) => el.children.length === 0 && (el.textContent || "").includes(BLANGKO_BAS));
+
+describe("BAS sidang berikutnya disiapkan otomatis (G2a 2.4)", () => {
+  it("PP membuka perkara pada hari sidangnya: blangko BAS draf terbuka sendiri, tanpa menulis ke ABT", async () => {
+    const h = bukaPP({ daftar: PK_H1([SI("2026-10-15", "Sidang Pertama", "Tergugat tidak hadir", { urutan: 1, adaBas: true }), SI(HARI_INI, "Pembuktian", "", { urutan: 2 })]), h1: { ada: true, hariIni: HARI_INI, peta: { "10154": DRAF_H1(HARI_INI) } } });
+    await bukaPerkaraSaja(h);
+    await sampai(() => mintaKe(h, /agen-h1-bas\?perkaraId=10154/).length, "draf dibaca");
+    await sampai(() => mintaKe(h, /\/main\/cari/, "POST").length && (q(h, "#bd-perlu .bd-f") || q(h, "[data-tj]")), "blangko draf terbuka", 8000);
+    const cari = mintaKe(h, /\/main\/cari/, "POST");
+    expect(cari.length).toBe(1);
+    expect(mintaKe(h, /tanyajawab_perkara_edit\?aksi=simpan/)).toEqual([]);
+    expect(mintaKe(h, /edit_data\?/, "POST").every((m) => !/5058|5059/.test(m.url))).toBe(true);
+  });
+
+  it("sore sebelum sidang (H-1): sidang berikutnya dipilih sendiri bila BAS sidang lalu sudah terunggah, lalu blangkonya dibuka", async () => {
+    const besok = "2026-10-28";
+    const h = bukaPP({ daftar: PK_H1([SI("2026-10-15", "Sidang Pertama", "Tergugat tidak hadir", { urutan: 1, adaBas: true }), SI(besok, "Pembuktian", "", { urutan: 2 })]), h1: { ada: true, hariIni: HARI_INI, peta: { "10154": DRAF_H1(besok) } } });
+    await bukaPerkaraSaja(h);
+    await sampai(() => (q(h, "#bd-sidang") as HTMLSelectElement | null)?.value === "1", "sidang besok terpilih", 8000);
+    await sampai(() => mintaKe(h, /\/main\/cari/, "POST").length, "blangko draf terbuka", 8000);
+  });
+
+  it("BAS sidang lalu belum terunggah: sidang tidak dipindah dan blangko tidak dibuka", async () => {
+    const besok = "2026-10-28";
+    const h = bukaPP({ daftar: PK_H1([SI("2026-10-15", "Sidang Pertama", "Tergugat tidak hadir", { urutan: 1, adaBas: false }), SI(besok, "Pembuktian", "", { urutan: 2 })]), h1: { ada: true, hariIni: HARI_INI, peta: { "10154": DRAF_H1(besok) } } });
+    await bukaPerkaraSaja(h);
+    await sampai(() => mintaKe(h, /agen-h1-bas\?perkaraId=10154/).length, "draf dibaca");
+    await tunggu(400);
+    expect((q(h, "#bd-sidang") as HTMLSelectElement | null)?.value).toBe("0");
+    expect(mintaKe(h, /\/main\/cari/, "POST")).toEqual([]);
+  });
+
+  it("hakim tidak dibukakan BAS; portal tanpa agen = panel seperti biasa", async () => {
+    const h = buka({ orang: "hakim", daftar: PK_H1([SI(HARI_INI, "Pembuktian", "", { urutan: 1 })]), h1: { ada: true, hariIni: HARI_INI, peta: { "10154": DRAF_H1(HARI_INI) } } });
+    await bukaPerkaraSaja(h);
+    await sampai(() => q(h, '[data-bd2="bukamodal"]'), "tombol pilih blangko");
+    await tunggu(400);
+    expect(mintaKe(h, /agen-h1-bas/)).toEqual([]);
+    expect(mintaKe(h, /\/main\/cari/, "POST")).toEqual([]);
+    const h2 = bukaPP({ daftar: PK_H1([SI(HARI_INI, "Pembuktian", "", { urutan: 1 })]) });
+    await bukaPerkaraSaja(h2);
+    await sampai(() => q(h2, '[data-bd2="bukamodal"]'), "tombol pilih blangko");
+    await tunggu(400);
+    expect(mintaKe(h2, /\/main\/cari/, "POST")).toEqual([]);
+    void blangkoTerbuka;
+    void tandaBas;
   });
 });

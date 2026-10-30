@@ -952,6 +952,7 @@ export const AKSI = {
       "GET /api/aleta-ecourt/bas/blangko",
       "GET /api/aleta-ecourt/bas/tanya-jawab",
       "GET /api/aleta-ecourt/bas/periksa",
+      "GET /api/aleta-ecourt/agen-h1-bas",
     ],
     alasan:
       "Isi BAS memuat keterangan saksi dan para pihak: hanya majelis (hakim dan pimpinan) serta kepaniteraan penyusunnya. Kasir, PTSP, juru sita, mediator non-hakim, kesekretariatan, TI, dan petugas sidang tidak.",

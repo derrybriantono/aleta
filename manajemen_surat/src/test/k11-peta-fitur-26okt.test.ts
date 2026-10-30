@@ -197,8 +197,8 @@ describe("peta fitur K11: kelompok manifest dan modul malas", () => {
     // 27 Okt 2026: sidang-terjadwal.js = Jadwalkan BAS / Tunda (berkas baru yang SENGAJA ditambahkan di luar K11).
     // 28 Okt 2026: tampilan-sipp.js = tampilan ALETA di SIPP per peran/pengguna, kelompok document_start SIPP SENDIRI (di luar K11).
     // 30 Okt 2026: bas-word-pdf.js = BAS Word ke PDF bertanda tangan di jendela e-Doc BAS SIPP (berkas baru di luar K11).
-    // 30 Okt 2026 (G2a): blangko-derry-draf-saksi.js = draf tanya jawab saksi otomatis (pembantu murni Blangko Derry, di luar K11).
-    expect([...new Set(baru)].sort()).toEqual(["tampilan-sipp.js", "modul-malas.js", "bas-word-pdf.js", "sidang-terjadwal.js", "blangko-derry-berkas.js", "blangko-derry-draf-saksi.js"].sort());
+    // 30 Okt 2026 (G2a): blangko-derry-draf-saksi.js = draf tanya jawab saksi otomatis, blangko-derry-draf-bas.js = BAS H-1 (pembantu murni Blangko Derry, di luar K11).
+    expect([...new Set(baru)].sort()).toEqual(["tampilan-sipp.js", "modul-malas.js", "bas-word-pdf.js", "sidang-terjadwal.js", "blangko-derry-berkas.js", "blangko-derry-draf-saksi.js", "blangko-derry-draf-bas.js"].sort());
     const tanpaTampilan = sesudah.kelompok.filter((k) => !(k.js.length === 1 && k.js[0] === "tampilan-sipp.js"));
     expect(tanpaTampilan.map((k) => k.css.filter((c: string) => c !== "sidang-terjadwal.css"))).toEqual(sebelum.kelompok.map((k) => k.css));
   });
