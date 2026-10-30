@@ -1,0 +1,232 @@
+[
+ {
+  "no": 11850,
+  "nama": "SATKER: HUKUM ACARA PERDATA (OTOMATIS dari provinsi satker #9276#: Jawa, DKI Jakarta, DI Yogyakarta, Banten = HIR; selain itu RBg; Super Admin dapat menetapkan di Identitas satker)",
+  "sql": "SELECT CASE (SELECT TRIM(value) FROM sys_config WHERE name = 'KodePN' LIMIT 1) WHEN '' THEN 'RBg' ELSE IF(LOWER('#9276#') LIKE '%jawa%' OR LOWER('#9276#') LIKE '%jakarta%' OR LOWER('#9276#') LIKE '%yogyakarta%' OR LOWER('#9276#') LIKE '%banten%' OR LOWER('#9276#') LIKE '%madura%', 'HIR', 'RBg') END AS data"
+ },
+ {
+  "no": 11851,
+  "nama": "ACARA: SINGKATAN HUKUM ACARA DI RUJUKAN PASAL (OTOMATIS #11850#: RBg / HIR)",
+  "sql": "SELECT IF('#11850#' = 'HIR', 'HIR', 'RBg') AS data"
+ },
+ {
+  "no": 11852,
+  "nama": "ACARA: WILAYAH BERLAKUNYA HUKUM ACARA (\"di luar Jawa dan Madura\" = RBg / \"di Jawa dan Madura\" = HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', 'di Jawa dan Madura', 'di luar Jawa dan Madura') AS data"
+ },
+ {
+  "no": 11853,
+  "nama": "ACARA: NOMOR PASAL KEWENANGAN RELATIF / TEMPAT MENGAJUKAN GUGATAN (Pasal 142 RBg = Pasal 118 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '118', '142') AS data"
+ },
+ {
+  "no": 11854,
+  "nama": "ACARA: NOMOR PASAL GUGATAN LISAN (BUTA HURUF) (Pasal 144 RBg = Pasal 120 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '120', '144') AS data"
+ },
+ {
+  "no": 11855,
+  "nama": "ACARA: NOMOR PASAL PENETAPAN HARI SIDANG, PANGGILAN, PANJAR (Pasal 145 RBg = Pasal 121 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '121', '145') AS data"
+ },
+ {
+  "no": 11856,
+  "nama": "ACARA: NOMOR PASAL TENGGANG PANGGILAN DAN HARI SIDANG (Pasal 146 RBg = Pasal 122 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '122', '146') AS data"
+ },
+ {
+  "no": 11857,
+  "nama": "ACARA: NOMOR PASAL KUASA / WAKIL PARA PIHAK (Pasal 147 RBg = Pasal 123 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '123', '147') AS data"
+ },
+ {
+  "no": 11858,
+  "nama": "ACARA: NOMOR PASAL PENGGUGAT TIDAK HADIR - GUGUR (Pasal 148 RBg = Pasal 124 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '124', '148') AS data"
+ },
+ {
+  "no": 11859,
+  "nama": "ACARA: NOMOR PASAL VERSTEK (Pasal 149 RBg = Pasal 125 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '125', '149') AS data"
+ },
+ {
+  "no": 11860,
+  "nama": "ACARA: NOMOR PASAL PANGGILAN SEKALI LAGI (Pasal 150 RBg = Pasal 126 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '126', '150') AS data"
+ },
+ {
+  "no": 11861,
+  "nama": "ACARA: NOMOR PASAL PERLAWANAN (VERZET) (Pasal 153 RBg = Pasal 129 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '129', '153') AS data"
+ },
+ {
+  "no": 11862,
+  "nama": "ACARA: NOMOR PASAL UPAYA DAMAI OLEH HAKIM (Pasal 154 RBg = Pasal 130 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '130', '154') AS data"
+ },
+ {
+  "no": 11863,
+  "nama": "ACARA: NOMOR PASAL GUGATAN REKONVENSI (HAK TERGUGAT) (Pasal 157 RBg = Pasal 132a HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '132a', '157') AS data"
+ },
+ {
+  "no": 11864,
+  "nama": "ACARA: NOMOR PASAL REKONVENSI DIAJUKAN BERSAMA JAWABAN (Pasal 158 RBg = Pasal 132b HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '132b', '158') AS data"
+ },
+ {
+  "no": 11865,
+  "nama": "ACARA: NOMOR PASAL EKSEPSI KEWENANGAN RELATIF (Pasal 159 RBg = Pasal 133 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '133', '159') AS data"
+ },
+ {
+  "no": 11866,
+  "nama": "ACARA: NOMOR PASAL EKSEPSI KEWENANGAN ABSOLUT (Pasal 160 RBg = Pasal 134 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '134', '160') AS data"
+ },
+ {
+  "no": 11867,
+  "nama": "ACARA: NOMOR PASAL EKSEPSI LAIN DIPUTUS BERSAMA POKOK PERKARA (Pasal 162 RBg = Pasal 136 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '136', '162') AS data"
+ },
+ {
+  "no": 11868,
+  "nama": "ACARA: NOMOR PASAL PEMERIKSAAN SAKSI SATU PER SATU, IDENTITAS SAKSI (Pasal 171 RBg = Pasal 144 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '144', '171') AS data"
+ },
+ {
+  "no": 11869,
+  "nama": "ACARA: NOMOR PASAL SAKSI YANG TIDAK BOLEH DIDENGAR (Pasal 172 RBg = Pasal 145 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '145', '172') AS data"
+ },
+ {
+  "no": 11870,
+  "nama": "ACARA: NOMOR PASAL SUMPAH SAKSI (Pasal 175 RBg = Pasal 147 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '147', '175') AS data"
+ },
+ {
+  "no": 11871,
+  "nama": "ACARA: NOMOR PASAL PEMERIKSAAN SETEMPAT (Pasal 180 RBg = Pasal 153 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '153', '180') AS data"
+ },
+ {
+  "no": 11872,
+  "nama": "ACARA: NOMOR PASAL SUMPAH PELENGKAP / PENAKSIR (Pasal 182 RBg = Pasal 155 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '155', '182') AS data"
+ },
+ {
+  "no": 11873,
+  "nama": "ACARA: NOMOR PASAL SUMPAH PEMUTUS (DECISOIR) (Pasal 183 RBg = Pasal 156 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '156', '183') AS data"
+ },
+ {
+  "no": 11874,
+  "nama": "ACARA: NOMOR PASAL HAKIM MELENGKAPI ALASAN HUKUM; ULTRA PETITA (Pasal 189 RBg = Pasal 178 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '178', '189') AS data"
+ },
+ {
+  "no": 11875,
+  "nama": "ACARA: NOMOR PASAL PUTUSAN SERTA MERTA / PROVISI (Pasal 191 RBg = Pasal 180 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '180', '191') AS data"
+ },
+ {
+  "no": 11876,
+  "nama": "ACARA: NOMOR PASAL BIAYA PERKARA (Pasal 192 RBg = Pasal 181 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '181', '192') AS data"
+ },
+ {
+  "no": 11877,
+  "nama": "ACARA: NOMOR PASAL PUTUSAN YANG BUKAN PUTUSAN AKHIR (Pasal 196 RBg = Pasal 185 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '185', '196') AS data"
+ },
+ {
+  "no": 11878,
+  "nama": "ACARA: NOMOR PASAL EKSEKUSI DI BAWAH PIMPINAN KETUA (Pasal 206 RBg = Pasal 195 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '195', '206') AS data"
+ },
+ {
+  "no": 11879,
+  "nama": "ACARA: NOMOR PASAL AANMANING (TEGURAN) (Pasal 207 RBg = Pasal 196 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '196', '207') AS data"
+ },
+ {
+  "no": 11880,
+  "nama": "ACARA: NOMOR PASAL PENGUMUMAN SITA BARANG TETAP (Pasal 213 RBg = Pasal 198 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '198', '213') AS data"
+ },
+ {
+  "no": 11881,
+  "nama": "ACARA: NOMOR PASAL LARANGAN MEMINDAHTANGANKAN BARANG SITAAN (Pasal 214 RBg = Pasal 199 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '199', '214') AS data"
+ },
+ {
+  "no": 11882,
+  "nama": "ACARA: NOMOR PASAL SITA REVINDIKASI (Pasal 260 RBg = Pasal 226 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '226', '260') AS data"
+ },
+ {
+  "no": 11883,
+  "nama": "ACARA: NOMOR PASAL SITA JAMINAN (CONSERVATOIR) (Pasal 261 RBg = Pasal 227 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '227', '261') AS data"
+ },
+ {
+  "no": 11884,
+  "nama": "ACARA: NOMOR PASAL BEBAN PEMBUKTIAN (Pasal 283 RBg = Pasal 163 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '163', '283') AS data"
+ },
+ {
+  "no": 11885,
+  "nama": "ACARA: NOMOR PASAL ALAT BUKTI (Pasal 284 RBg = Pasal 164 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '164', '284') AS data"
+ },
+ {
+  "no": 11886,
+  "nama": "ACARA: NOMOR PASAL AKTA OTENTIK (Pasal 285 RBg = Pasal 165 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '165', '285') AS data"
+ },
+ {
+  "no": 11887,
+  "nama": "ACARA: NOMOR PASAL UNUS TESTIS NULLUS TESTIS (Pasal 306 RBg = Pasal 169 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '169', '306') AS data"
+ },
+ {
+  "no": 11888,
+  "nama": "ACARA: NOMOR PASAL KESAKSIAN BERANTAI (Pasal 307 RBg = Pasal 170 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '170', '307') AS data"
+ },
+ {
+  "no": 11889,
+  "nama": "ACARA: NOMOR PASAL ALASAN PENGETAHUAN SAKSI (Pasal 308 RBg = Pasal 171 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '171', '308') AS data"
+ },
+ {
+  "no": 11890,
+  "nama": "ACARA: NOMOR PASAL MENILAI KESAKSIAN (Pasal 309 RBg = Pasal 172 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '172', '309') AS data"
+ },
+ {
+  "no": 11891,
+  "nama": "ACARA: NOMOR PASAL PENGAKUAN DI DEPAN HAKIM (Pasal 311 RBg = Pasal 174 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '174', '311') AS data"
+ },
+ {
+  "no": 11892,
+  "nama": "ACARA: NOMOR PASAL PENGAKUAN TIDAK BOLEH DIPISAH (Pasal 313 RBg = Pasal 176 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '176', '313') AS data"
+ },
+ {
+  "no": 11893,
+  "nama": "ACARA: NOMOR AYAT KEWENANGAN RELATIF / TEMPAT MENGAJUKAN GUGATAN (Pasal 142 ayat (5) RBg = Pasal 118 ayat (3) HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '3', '5') AS data"
+ },
+ {
+  "no": 11894,
+  "nama": "ACARA: NOMOR AYAT BIAYA PERKARA (Pasal 192 ayat (3) RBg = Pasal 181 ayat (2) HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '2', '3') AS data"
+ },
+ {
+  "no": 11895,
+  "nama": "ACARA: NOMOR AYAT BIAYA PERKARA (Pasal 192 ayat (4) RBg = Pasal 181 ayat (3) HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '3', '4') AS data"
+ }
+]

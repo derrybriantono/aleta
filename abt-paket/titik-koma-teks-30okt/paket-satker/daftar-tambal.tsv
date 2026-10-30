@@ -1,0 +1,293 @@
+# kode	berkas	md5_lama	md5_baru	jumlah potongan - berkas diubah HANYA bila md5 persis md5_lama
+T0001	derry_briantono/1 Perceraian CG - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	968b8e18f49eda0405dacf0e7f5f178c	5f01d5ef29da98220902bf6e3c034b6b	1
+T0002	derry_briantono/1 Perceraian CG - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	968b8e18f49eda0405dacf0e7f5f178c	5f01d5ef29da98220902bf6e3c034b6b	1
+T0003	derry_briantono/1 Perceraian CG/[02c] [Kabul] CG - F - Pencabutan Ditolak T Sesudah Jawaban.rtf	055f93758c72f37c38244b97c8a76368	5a15a068704eb9d53249ebe631d9f7d3	2
+T0004	derry_briantono/1 Perceraian CG/[03a] [Tolak] Cerai - Kontradiktoir (T Hadir Jawab-Menjawab) - F Tidak Terbukti.rtf	08e505cd5ddc7a94619e2be276953bf9	9ed83702964b768ecd4ee423fd599077	2
+T0005	derry_briantono/1 Perceraian CG/[97] [Lian] CG - Perkawinan Putus karena Lian (Putusan Akhir).rtf	1b3492c04dc8b95103a67ea2d1e34970	44ef08f5a935c792931f03517bee061f	1
+T0006	derry_briantono/1 Perceraian CG/[98] [NO] 8. Cerai P & T Hadir - Kontradiktoir - Cacat Formil Gugatan.rtf	62bb9316f87257aaf8d9b8882445fdd2	d4f2dc9e618ceb2b57e057a11b49875f	1
+T0007	derry_briantono/1 Perceraian CG/[98e] [Sela] CG - Eksepsi Kewenangan Absolut Ditolak.rtf	d66aa267eeb9ffd43cbdecb9202e3dcb	a8bb20fbfcbc977f5c180ed2d7957848	2
+T0008	derry_briantono/1 Perceraian CG/[98f] [Sela] CG - Eksepsi Kewenangan Relatif Ditolak.rtf	62f4293a718301ba5b45da5e35a86a40	6e30c61ab020f49e4d2083f821ad9689	2
+T0009	derry_briantono/1 Perceraian CG/[99c] [NO] CG - Eksepsi Kewenangan Absolut Dikabulkan.rtf	b5f32f9b8990185c10c088659d59f2c2	7d5b566fde405fbc9441d97282e1dbc3	2
+T0010	derry_briantono/1 Perceraian CG/[99d] [NO] CG - Eksepsi Kewenangan Relatif Dikabulkan.rtf	3b7cb37c2e416b23e60a26ed3180888b	fe97eca1a94a40a1f5545a41c16d717d	2
+T0011	derry_briantono/10 Ekonomi Syariah/[01] [Kabul] ES Gugatan Sederhana - Wanprestasi - P & T Hadir.rtf	99056f51b252fa29f2c606acae33790a	bb937efad5c4a36158814275e296b646	1
+T0012	derry_briantono/10 Ekonomi Syariah/[01b] [Kabul Verstek] ES Gugatan Sederhana - Wanprestasi - T Tidak Hadir Sidang Kedua.rtf	52cf59357cc8c6866d648288b22043c4	8fdbb17ea33f8830c5fc825452a14324	1
+T0013	derry_briantono/10 Ekonomi Syariah/[03] [Tolak] ES Gugatan Sederhana - Wanprestasi Tidak Terbukti.rtf	1ec529a7fe2f0b037aa6651e03576e3c	dfc7db1dff2eb20638e159d81e8ce000	1
+T0014	derry_briantono/10a Ekonomi Syariah Biasa - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	44a90f655d688cc760d2f61c68b7343f	b730b284606e4c482c9373d87675fbcc	1
+T0015	derry_briantono/10a Ekonomi Syariah Biasa - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	44a90f655d688cc760d2f61c68b7343f	b730b284606e4c482c9373d87675fbcc	1
+T0016	derry_briantono/10a Ekonomi Syariah Biasa/[01] [Kabul] ES Acara Biasa - Wanprestasi - Kontradiktoir.rtf	173b7478e4c7679b3d7f36cde557338d	ce6f3163a2efd0cafd342cc099d5e8b4	1
+T0017	derry_briantono/10a Ekonomi Syariah Biasa/[01a] [Kabul] ES Acara Biasa - Wanprestasi - T Tidak Hadir Setelah Mediasi.rtf	5a0cf997daf3070bcd2854f27b61db4f	107e12fbd3577728c6edf41d9aead72e	1
+T0018	derry_briantono/10a Ekonomi Syariah Biasa/[01b] [Kabul Verstek] ES Acara Biasa - Wanprestasi.rtf	4763a7efdc94159f5c368d4d15789697	b91a9cf41b20c331f38b751f82db81b7	4
+T0019	derry_briantono/10a Ekonomi Syariah Biasa/[03] [Tolak] ES Acara Biasa - Wanprestasi Tidak Terbukti - Kontradiktoir.rtf	9b81a33e50e6306f36da0e9a7cb051d8	61ce0fbd74336b097275bf7a32c5371e	1
+T0020	derry_briantono/10a Ekonomi Syariah Biasa/[03b] [Tolak Verstek] ES Acara Biasa - Wanprestasi Tidak Terbukti.rtf	f27638f732635e2b8403967d456f85f5	9b074f31bae2e4a35eb3ae8ec23686f2	4
+T0021	derry_briantono/1a Perceraian CT - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	968b8e18f49eda0405dacf0e7f5f178c	5f01d5ef29da98220902bf6e3c034b6b	1
+T0022	derry_briantono/1a Perceraian CT - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	968b8e18f49eda0405dacf0e7f5f178c	5f01d5ef29da98220902bf6e3c034b6b	1
+T0023	derry_briantono/1a Perceraian CT/[01a] [Kabul Verstek] CT - F (Ex Offiicio mutah iddah dan nafkah anak).rtf	056354ca0157aaad3c5e1a6194913244	73051dff84b1120f0cfacada10c81376	1
+T0024	derry_briantono/1a Perceraian CT/[02] [Kabul] [Rekonvensi] CT - F (Mutah iddah nafkah anak).rtf	e2c21a05a424529650e0b8a493fbdace	02fc88decdc51c18adba8fc466d00262	1
+T0025	derry_briantono/1a Perceraian CT/[02c] [Kabul] CT - F - Pencabutan Ditolak T Sesudah Jawaban.rtf	cc4e0989e296a78d98ebf0e53161b76d	5d0ff808ecfc36d6ff45038046e9db5b	2
+T0026	derry_briantono/1a Perceraian CT/[03a] [Tolak] Cerai - Kontradiktoir (T Hadir Jawab-Menjawab) - F Tidak Terbukti.rtf	08e505cd5ddc7a94619e2be276953bf9	9ed83702964b768ecd4ee423fd599077	2
+T0027	derry_briantono/1a Perceraian CT/[97] [Lian] CT - Perkawinan Putus karena Lian (Putusan Akhir).rtf	1b3492c04dc8b95103a67ea2d1e34970	44ef08f5a935c792931f03517bee061f	1
+T0028	derry_briantono/1a Perceraian CT/[98] [NO] 8. Cerai P & T Hadir - Kontradiktoir - Cacat Formil Permohonan.rtf	34395a0e7a33c8a23f698568b64b6c13	914ec9dfaf19175154299f7047e144b8	1
+T0029	derry_briantono/1a Perceraian CT/[98e] [Sela] CT - Eksepsi Kewenangan Absolut Ditolak.rtf	322bd806a53a47713bad29411c5d63cb	efa35c5f3d5d5d619ad6216b953936e2	2
+T0030	derry_briantono/1a Perceraian CT/[98f] [Sela] CT - Eksepsi Kewenangan Relatif Ditolak.rtf	9f23ed2a0d5dc144e0f21c03bac4137a	01be6b8b7f6743f4477b16075650db4c	2
+T0031	derry_briantono/1a Perceraian CT/[99c] [NO] CT - Eksepsi Kewenangan Absolut Dikabulkan.rtf	a84fdd64e334051105600ef4e1728fc1	b2d611b864ad1942019c882d13eac57b	2
+T0032	derry_briantono/1a Perceraian CT/[99d] [NO] CT - Eksepsi Kewenangan Relatif Dikabulkan.rtf	cb76d39534f572f2a7fc3307dd33b8c2	15ae2dd6864cc1a686e8b0a49633e52e	2
+T0033	derry_briantono/1c Perceraian Kumulasi Itsbat Nikah - BAS/BAS ALUR 36 Cerai Kumulasi IN - T Hadir - Sidang 1 - Mediasi Elektronik (PERMA 3 2022).rtf	968b8e18f49eda0405dacf0e7f5f178c	5f01d5ef29da98220902bf6e3c034b6b	1
+T0034	derry_briantono/1c Perceraian Kumulasi Itsbat Nikah/[01aa] [Kabul Verstek] Putusan CG Kumulasi Itsbat Nikah - Format Lengkap.rtf	601cb1ba045f846c6cd3825332806e22	a646de4904a4bafd5d56cbd50f426e2b	4
+T0035	derry_briantono/1c Perceraian Kumulasi Itsbat Nikah/[01aa] [Kabul Verstek] Putusan CT Kumulasi Itsbat Nikah - Format Lengkap.rtf	157b18d628c60e3f3292df93591381d1	400b8d51d9ef2af2bd6fbc6c56bee434	4
+T0036	derry_briantono/1c Perceraian Kumulasi Itsbat Nikah/[01c] [Kabul] Putusan CG Kumulasi Itsbat Nikah - T Tidak Hadir Setelah Mediasi.rtf	bd87f733a1e7e3a731ac1b7e75220a87	97c900fc04f24476def0436c8a7f316d	4
+T0037	derry_briantono/1c Perceraian Kumulasi Itsbat Nikah/[01c] [Kabul] Putusan CT Kumulasi Itsbat Nikah - T Tidak Hadir Setelah Mediasi.rtf	936115ba8dc4d636fe6acb126e5e1fef	196c638a0a2dda04c0d4d17b5d5897a5	4
+T0038	derry_briantono/1c Perceraian Kumulasi Itsbat Nikah/[02] [Kabul] Putusan CG Kumulasi Itsbat Nikah - Kontradiktoir.rtf	9d458e2f354bc2fb57296e21da426627	68bf3909aa9e39713e9d350c18e7078c	4
+T0039	derry_briantono/1c Perceraian Kumulasi Itsbat Nikah/[02] [Kabul] Putusan CT Kumulasi Itsbat Nikah - Kontradiktoir.rtf	2d955a9c28f665bc74bf8fa14693723d	2e33b56c4301f9807414e8e2c98ac0cb	4
+T0040	derry_briantono/1c Perceraian Kumulasi Itsbat Nikah/[03] [Tolak] Putusan CG Kumulasi Itsbat Nikah - Itsbat Kabul, Cerai Ditolak (Kontradiktoir).rtf	d140a398cc55b184aa15f4bf6f4dabc5	c76cb9779fc664c5db0ee98b02157d73	6
+T0041	derry_briantono/1c Perceraian Kumulasi Itsbat Nikah/[03] [Tolak] Putusan CT Kumulasi Itsbat Nikah - Itsbat Kabul, Cerai Ditolak (Kontradiktoir).rtf	c942f8762257e9d25adfb4d69c727367	56c90a805be6a7bbcec474359a199e37	6
+T0042	derry_briantono/1c Perceraian Kumulasi Itsbat Nikah/[03b] [Tolak] Putusan CG Kumulasi Itsbat Nikah - Itsbat Ditolak (Rukun Syarat Tidak Terbukti), Cerai NO.rtf	fcdac8f030e1663a659765e9897472ed	3e725a07856257eda5411cff9c0ceae7	3
+T0043	derry_briantono/1c Perceraian Kumulasi Itsbat Nikah/[03b] [Tolak] Putusan CT Kumulasi Itsbat Nikah - Itsbat Ditolak (Rukun Syarat Tidak Terbukti), Cerai NO.rtf	f8e489a4e58f46b4916fa1cae9f5aaa3	721e3119ecfea8db40841f29e091e0b9	3
+T0044	derry_briantono/1c Perceraian Kumulasi Itsbat Nikah/[99b] [NO] Putusan CG Kumulasi Itsbat Nikah - Kontradiktoir - Cacat Formil Gugatan.rtf	e43e3326a9c5c57523e53b10be849207	b6ad9ba0eaab2488667bebbecc4efe15	1
+T0045	derry_briantono/1c Perceraian Kumulasi Itsbat Nikah/[99b] [NO] Putusan CT Kumulasi Itsbat Nikah - Kontradiktoir - Cacat Formil Gugatan.rtf	846183bc00390b03fd62cb398f8d202f	f8fedd707dc9ba8988c5bb277b3ddbe7	1
+T0046	derry_briantono/1c Perceraian Kumulasi Itsbat Nikah/[99d] [NO] Putusan CG Kumulasi Itsbat Nikah - Itsbat NO (Poligami Sirri), Cerai NO.rtf	7d48c1afa4f796b20c5bb7fbc4998fb7	6a8eed347e6ae6bd84bcdcbdc9cd7fc1	4
+T0047	derry_briantono/1c Perceraian Kumulasi Itsbat Nikah/[99d] [NO] Putusan CT Kumulasi Itsbat Nikah - Itsbat NO (Poligami Sirri), Cerai NO.rtf	3840ae74e40c8f09f9d574de0869d243	7c3b0a7aa76f1138a3eaf92a25ac7365	4
+T0048	derry_briantono/1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS/BAS ALUR 37 CG Kumulasi Hak Asuh - Sidang 1 - P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	968b8e18f49eda0405dacf0e7f5f178c	5f01d5ef29da98220902bf6e3c034b6b	1
+T0049	derry_briantono/1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak/[99b] [NO] Putusan CG Kumulasi Hak Asuh Anak - Kontradiktoir - Cacat Formil Gugatan.rtf	b1a31bd30473cf51ed7b19c97fbdad19	8fb08474fa4bd19a1b0af6991ec8aba5	1
+T0050	derry_briantono/1e Kelalaian Kewajiban Suami Istri - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	1ea14b8190bc5f3d7fc3fdde064b7a59	fb3d4e38a75559c116bfff70d37f95de	1
+T0051	derry_briantono/1e Kelalaian Kewajiban Suami Istri - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	1ea14b8190bc5f3d7fc3fdde064b7a59	fb3d4e38a75559c116bfff70d37f95de	1
+T0052	derry_briantono/1e Kelalaian Kewajiban Suami Istri/[01] [Kabul] Kelalaian Kewajiban Suami Istri - Kontradiktoir.rtf	fcbede4cc79fd68e1f3389bdbf3ea896	3fd49a1db7cc0d8297e21f503a36d598	1
+T0053	derry_briantono/1e Kelalaian Kewajiban Suami Istri/[01a] [Kabul] Kelalaian Kewajiban Suami Istri - T Tidak Hadir Setelah Mediasi.rtf	7afdb1c4fc570bd6d875cfae76984906	f898cb9737522e0d76b6a244a26d03d5	1
+T0054	derry_briantono/1e Kelalaian Kewajiban Suami Istri/[01b] [Kabul Verstek] Kelalaian Kewajiban Suami Istri.rtf	7a3416f24c0ed963f498f2766af03496	a0f6e558722351a2011c0472eb22d602	4
+T0055	derry_briantono/1e Kelalaian Kewajiban Suami Istri/[02] [Kabul Sebagian] Kelalaian Kewajiban Suami Istri - Kontradiktoir - Petitum Selebihnya Ditolak.rtf	5d1cd985a64ede308342f7fe3b6655e8	c0cca927d1058d9fbbd8fb62a44c631e	1
+T0056	derry_briantono/1e Kelalaian Kewajiban Suami Istri/[02b] [Kabul Sebagian Verstek] Kelalaian Kewajiban Suami Istri - T Tidak Hadir - Petitum Selebihnya Ditolak.rtf	ec248bd7cc04d191fd95a06f03007ef4	e1b756e5d6be0c0f3983e06d6d544025	4
+T0057	derry_briantono/1e Kelalaian Kewajiban Suami Istri/[03] [Tolak] Kelalaian Kewajiban Suami Istri - Kontradiktoir - Dalil Tidak Terbukti.rtf	775495105eda3623d7ec4bba70669b8e	09450706d88a60899c08b6e9798bca17	1
+T0058	derry_briantono/1e Kelalaian Kewajiban Suami Istri/[03b] [Tolak Verstek] Kelalaian Kewajiban Suami Istri - T Tidak Hadir - Dalil Tidak Terbukti.rtf	75dd0d66add45a258ee0578640fc1230	40505e798d077843c66c1390feb1c9b4	4
+T0059	derry_briantono/1e Kelalaian Kewajiban Suami Istri/[97] [Perdamaian] Kelalaian Kewajiban Suami Istri - Akta Perdamaian.rtf	038e8f91a3c68b456ffc6a167615e2aa	fec145c736ece63f0f19f2f5c4af8ca7	1
+T0060	derry_briantono/1e Kelalaian Kewajiban Suami Istri/[99a] [NO] Kelalaian Kewajiban Suami Istri - Kurang Pihak (Plurium Litis Consortium).rtf	42ff1be947b2946d1c1a407d7f82c132	7a04a2a2973f169b6d9ca7fa1cb0c8d6	1
+T0061	derry_briantono/1e Kelalaian Kewajiban Suami Istri/[99b] [NO] Kelalaian Kewajiban Suami Istri - Gugatan Kabur (Obscuur Libel).rtf	77a7da1ee476b67d5bad2c055c790abf	a109c50d7cc1d908da8c4c135b3205f4	2
+T0062	derry_briantono/1f Hak Bekas Istri - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	6f4fdda0c1cdac1767e777a62ec61ce7	eab6b5a8acb828cd6abbc60c5c3bb9f0	1
+T0063	derry_briantono/1f Hak Bekas Istri - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	6f4fdda0c1cdac1767e777a62ec61ce7	eab6b5a8acb828cd6abbc60c5c3bb9f0	1
+T0064	derry_briantono/1f Hak Bekas Istri/[01] [Kabul] Hak Bekas Istri - Kontradiktoir.rtf	8c7871d8dfeafa752a6717fadde01c88	630619b4e1022156009de8b9ac1aa248	1
+T0065	derry_briantono/1f Hak Bekas Istri/[01a] [Kabul] Hak Bekas Istri - T Tidak Hadir Setelah Mediasi.rtf	bb4e7264072697f028cb207df1a73b9d	5f1e90ac89e2194f84932718cefb24cb	1
+T0066	derry_briantono/1f Hak Bekas Istri/[01b] [Kabul Verstek] Hak Bekas Istri.rtf	49055baa11a3acad3f9ec6cdbe0b7d23	031cd633bee5bd8fcf6325ff1a4e1088	4
+T0067	derry_briantono/1f Hak Bekas Istri/[02] [Kabul Sebagian] Hak Bekas Istri - Kontradiktoir - Petitum Selebihnya Ditolak.rtf	af132b1741a97a3b9c15f0b4a91f82b8	db92e16ba4b20d67796b3a785db4fdf1	1
+T0068	derry_briantono/1f Hak Bekas Istri/[02b] [Kabul Sebagian Verstek] Hak Bekas Istri - T Tidak Hadir - Petitum Selebihnya Ditolak.rtf	8926e9a9c6a0f12da804cc208b9f7310	20ec56beef15b71b8a2d7e7c8312c6b1	4
+T0069	derry_briantono/1f Hak Bekas Istri/[03] [Tolak] Hak Bekas Istri - Kontradiktoir - Dalil Tidak Terbukti.rtf	075c314757e4f4ffc5b3e4b95af4c538	5d54fdfb589fdc8e136b0095b3ce5dce	1
+T0070	derry_briantono/1f Hak Bekas Istri/[03b] [Tolak Verstek] Hak Bekas Istri - T Tidak Hadir - Dalil Tidak Terbukti.rtf	38db97ed8267c3cbe0521a8ac384a558	262cb4bb68339c51caa43615a8a22125	4
+T0071	derry_briantono/1f Hak Bekas Istri/[99a] [NO] Hak Bekas Istri - Kurang Pihak (Plurium Litis Consortium).rtf	fb52c5a8d7aec776c54c1865b5a5e790	2179ac8a33a6a05c2c26f1b920ae2d6f	1
+T0072	derry_briantono/1f Hak Bekas Istri/[99b] [NO] Hak Bekas Istri - Gugatan Kabur (Obscuur Libel).rtf	ac870d6baeb21b8079b6bfad3af6e53d	cd47721481dd43b1f69c951cd8c45a55	2
+T0073	derry_briantono/2 Itsbat Nikah/[01] [Kabul] IN.rtf	13dfe19ccfbd9e79b407a89c7d2bb4b4	b198b7ccb0433639d5649c648b9c63f5	1
+T0074	derry_briantono/2 Itsbat Nikah/[01a] [Kabul] IN - Syahadah Al Istifadhah.rtf	899276a09f5dd5b393b08da0a9923a0f	31af764d21906d1e5de0fe377e42e62c	1
+T0075	derry_briantono/2 Itsbat Nikah/[01b] [Kabul] IN Itsbat Terpadu.rtf	2ecf60e59602715bb8ed1b505d2555b6	eb81ecdda6802c18b473d761da32cbb5	1
+T0076	derry_briantono/2 Itsbat Nikah/[01d] [Kabul] IN - Format Lengkap Rukun dan Syarat per Unsur.rtf	c5d69d2eac1b8b3ec8a76f95beb9038b	491514803a87acf1dfe6c40766789d85	1
+T0077	derry_briantono/2 Itsbat Nikah/[01e] [Kabul] IN - Satu Pemohon (Pasangan Meninggal, Voluntair).rtf	5e4a78e9055fe76e34ddc986071cd278	b84b5a19c7db14698c0526df82070f2c	1
+T0078	derry_briantono/2 Itsbat Nikah/[03b] [Tolak] IN - Terdapat Halangan Perkawinan.rtf	237b9bb22c7d69cf0870018e477e07b5	e78474e7f5f56740507147523972cb45	1
+T0079	derry_briantono/2 Itsbat Nikah/[03c] [Tolak] IN - Alternatif Tolak - Salah Satu Pihak Masih Terikat Perkawinan Lain.rtf	49e68c3ec19b6ae080baea01b98431f4	da3e1023bfbcade0b8df7f302a4ed823	1
+T0080	derry_briantono/2 Itsbat Nikah/[99c] [NO] IN - Poligami Sirri atau Masih Terikat Perkawinan Lain (SEMA 3 2018, Buku II 2026).rtf	1a0e9e88ffa4ded957b2ef3188168a1a	1f39371e5d11a24dc10e8508a26dc948	2
+T0081	derry_briantono/2a Itsbat Nikah Kontensius - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	b8cc38720e7819e6bff7c9a7c62cf3e2	70b4b40f6fd5ddfc98f7f0fe87d6cdde	1
+T0082	derry_briantono/2a Itsbat Nikah Kontensius - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	b8cc38720e7819e6bff7c9a7c62cf3e2	70b4b40f6fd5ddfc98f7f0fe87d6cdde	1
+T0083	derry_briantono/2a Itsbat Nikah Kontensius/[01] [Kabul] IN Kontensius - Pasangan Meninggal, Ahli Waris Mengakui.rtf	21e30e50a12d91398f8a1daf54919b76	5948f7d50544d2c91066e5496bde1bad	2
+T0084	derry_briantono/2a Itsbat Nikah Kontensius/[01b] [Kabul Verstek] IN Kontensius - Pasangan Meninggal, Ahli Waris Tidak Hadir.rtf	bf7d0fb611ea1d2befc42cf2b160629f	e512ff629b3b9ff4e40e1019d5a2a3f7	3
+T0085	derry_briantono/2a Itsbat Nikah Kontensius/[01c] [Kabul] IN Kontensius - Pasangan Meninggal, Pencairan Dana (Taspen, BPJS, Bank).rtf	2cd5282f501e624b2be0e95f8077151e	4449f5147aec5956c8a6d4d191043084	2
+T0086	derry_briantono/2a Itsbat Nikah Kontensius/[03] [Tolak] IN Kontensius - Kontradiktoir - Rukun dan Syarat Tidak Terbukti.rtf	2e9e2b22cc1540809cb6ca7d798c1545	db838016acdfbad2528300a256ec3e0b	1
+T0087	derry_briantono/2a Itsbat Nikah Kontensius/[03b] [Tolak Verstek] IN Kontensius - Rukun dan Syarat Tidak Terbukti.rtf	f71ef3301f7df9cf34eef20a7e47e78d	e3a60df9470bdbac1131b6493f3cfbcc	4
+T0088	derry_briantono/2a Itsbat Nikah Kontensius/[99] [NO] IN Kontensius - P Hadir Sidang Pertama Lalu 2x Tidak Hadir (SEMA 1 2022).rtf	fe234e844e5a5020ba6cf77c9f6e4e77	9e078a4c801a44aca44e2acb09b844cb	4
+T0089	derry_briantono/2a Itsbat Nikah Kontensius/[99a] [NO] IN Kontensius - Kurang Pihak (Ahli Waris Lain Tidak Ditarik).rtf	6cee5b57de0d0191abe0822076edcd4f	45a64733ee20ec742e5879069d30c423	1
+T0090	derry_briantono/2a Itsbat Nikah Kontensius/[99b] [NO] IN Kontensius - Gugatan Kabur (Obscuur Libel).rtf	06119fc157d51cb53dbfa59d2eed0aab	91aa64647249a6bb60137aa04d67275d	2
+T0091	derry_briantono/3a Izin Kawin/[01] [Kabul] Izin Kawin - Orang Tua atau Wali Hadir dan Berbeda Pendapat.rtf	3594d003fbd30a97301add846c9e6a2d	964004b7b2e71b793a2a84bf5e2bf242	11
+T0092	derry_briantono/3a Izin Kawin/[01a] [Kabul] Izin Kawin - Orang Tua atau Wali Dipanggil Patut Tidak Hadir atau Tidak Menyatakan Pendapat.rtf	e6e12d1ea94f364fbff9dfbdcc2ac946	776c959cedfea084835127d169409367	11
+T0093	derry_briantono/3a Izin Kawin/[01b] [Kabul] Izin Kawin - Salah Seorang Orang Tua Meninggal atau Tidak Mampu Menyatakan Kehendak.rtf	df36dadc6a7f7f7a7b79a220ebbdc503	dd827265254cc35ef8d1b254c634e856	12
+T0094	derry_briantono/3a Izin Kawin/[01c] [Kabul] Izin Kawin - Kedua Orang Tua Meninggal atau Tidak Mampu, Wali atau Keluarga Garis Lurus Berbeda Pendapat.rtf	338bf8556dab197c0247e0ac5dec6d94	bb84bad158528e0d7af88accd5b7905d	12
+T0095	derry_briantono/3a Izin Kawin/[03] [Tolak] Izin Kawin - Keberatan Orang Tua atau Wali Beralasan Hukum.rtf	03b80f1b0b0221c258f9f520109db75f	1f38e745b6a1cfe3a9e87a62c06d3b65	9
+T0096	derry_briantono/3a Izin Kawin/[03a] [Tolak] Izin Kawin - Syarat Perkawinan Tidak Terpenuhi.rtf	72d0a77fbc6f40b6b5c25a3efc71edf6	4cd3b27c5b8e4f392592cac8f5baa435	8
+T0097	derry_briantono/3a Izin Kawin/[99a] [NO] Izin Kawin - Pemohon Belum Berumur 19 Tahun (Bukan Izin Kawin tetapi Dispensasi Kawin).rtf	36803b2678857d789d863828e3b58147	249295baed2f1f9aa32ea910070a1449	4
+T0098	derry_briantono/3a Izin Kawin/[99b] [NO] Izin Kawin - Pemohon Sudah Berumur 21 Tahun (Tidak Perlu Izin).rtf	1a30726c767491180df4862c375e06e2	ed600fccfbbdb8bb4568df378c296c23	4
+T0099	derry_briantono/3a Izin Kawin/[99c] [NO] Izin Kawin - Orang Tua atau Wali Telah Memberi Izin (Tidak Ada Perbedaan Pendapat).rtf	d868f4bc22b8a8c5942906ff97a2f85b	31bfeb6337cc0aaf28b9195d509bf9c5	3
+T0100	derry_briantono/4a Harta Bersama - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	b8cc38720e7819e6bff7c9a7c62cf3e2	70b4b40f6fd5ddfc98f7f0fe87d6cdde	1
+T0101	derry_briantono/4a Harta Bersama - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	b8cc38720e7819e6bff7c9a7c62cf3e2	70b4b40f6fd5ddfc98f7f0fe87d6cdde	1
+T0102	derry_briantono/4a Harta Bersama/[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf	b1dd54afe81c05c65a9fc73ba5484dd5	adca31c7ec10cce6620a251962f3b50f	1
+T0103	derry_briantono/4a Harta Bersama/[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf	0c43ec3389ae87ed7697e12c6aa3e2ee	f0d027606e55099cbbc28d22f4b9aca3	1
+T0104	derry_briantono/4a Harta Bersama/[01b] [Kabul Verstek] HB.rtf	9452b8fb2656c1a2be1555403bb9d04f	404d0ee5af246ecea87c579777e3dd22	3
+T0105	derry_briantono/4a Harta Bersama/[03b] [Tolak Verstek] HB - Objek Bukan Harta Bersama.rtf	eb6e56f2845d26117b687e478ffff4cc	57569e2e3d1372c510ff4ae918a037f9	3
+T0106	derry_briantono/4a Harta Bersama/[98e] [Sela] HB - Eksepsi Kewenangan Absolut Ditolak.rtf	b460f269c17ed5a076c814f3a6572568	db0085d70ad0a781f6594aa585c5bbfb	2
+T0107	derry_briantono/4a Harta Bersama/[98f] [Sela] HB - Eksepsi Kewenangan Relatif Ditolak.rtf	6faf92f66b378172ffb0d76b87f762c2	3cb6a30fa18e1dbbd2fe464b3380a58f	2
+T0108	derry_briantono/4a Harta Bersama/[99b] [NO] HB - Gugatan Kabur (Obscuur Libel).rtf	14a18a1da4cd65c4d7e39070d9b36d2a	51b9542b37e712916527867454c12509	1
+T0109	derry_briantono/4a Harta Bersama/[99c] [NO] HB - Eksepsi Kewenangan Absolut Dikabulkan.rtf	909e3ab3f776d15b5f48d8aeb5bbd225	da6ed7dbc5ef4dc13f15eeecaa2d16c5	2
+T0110	derry_briantono/4a Harta Bersama/[99d] [NO] HB - Eksepsi Kewenangan Relatif Dikabulkan.rtf	2515f38be032ea6c722f5166dc67a3ca	a65c82fe0395b8d1ce6c81de4579ef1c	2
+T0111	derry_briantono/4b Kewarisan - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	b8cc38720e7819e6bff7c9a7c62cf3e2	70b4b40f6fd5ddfc98f7f0fe87d6cdde	1
+T0112	derry_briantono/4b Kewarisan - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	b8cc38720e7819e6bff7c9a7c62cf3e2	70b4b40f6fd5ddfc98f7f0fe87d6cdde	1
+T0113	derry_briantono/4b Kewarisan/[01a] [Kabul] Kewarisan - T Tidak Hadir Setelah Mediasi.rtf	adbb7726352d98abd7604dc412f72b8a	a1418fe7561976f78a0e9a26c6c8a616	1
+T0114	derry_briantono/4b Kewarisan/[01b] [Kabul Verstek] Kewarisan.rtf	ad5483d0e27bc3a6aad4d3a8307ec824	2e232295cee859ed3a5fd792be6a104e	4
+T0115	derry_briantono/4b Kewarisan/[01c] [Kabul] Kewarisan - Kontradiktoir - Pencabutan Ditolak T Sesudah Jawaban.rtf	6891450c58eed49af9b689e1cd27684f	c29caa49e34920461f22acebca7d3bdb	2
+T0116	derry_briantono/4b Kewarisan/[03] [Tolak] Kewarisan - Kontradiktoir - Dalil Tidak Terbukti.rtf	fcc382d07acd50cb0c704e0b5550523f	ab5397274194fd9a37a89ec00500e645	1
+T0117	derry_briantono/4b Kewarisan/[03b] [Tolak Verstek] Kewarisan - Dalil Tidak Terbukti.rtf	af0493823eb997e647ef72a3393338a8	ee6bd595af47822cd7e8cc2848281dc3	4
+T0118	derry_briantono/4b Kewarisan/[98e] [Sela] Kewarisan - Eksepsi Kewenangan Absolut Ditolak.rtf	076df9cbe98df5baa2aca976339869c9	2456edaac0bfb8f2e745c37318c909fc	2
+T0119	derry_briantono/4b Kewarisan/[98f] [Sela] Kewarisan - Eksepsi Kewenangan Relatif Ditolak.rtf	a4b5ca36d1bdff7328a4d1afec73d064	95b4c2bd4b13f8701761cdcaf62b3bc7	2
+T0120	derry_briantono/4b Kewarisan/[99a] [NO] Kewarisan - Kurang Pihak (Plurium Litis Consortium).rtf	8622de478db72c23e5c5d06840ce9d9a	e64fab81dd886a555d5e94f8d6bd0ae3	1
+T0121	derry_briantono/4b Kewarisan/[99b] [NO] Kewarisan - Gugatan Kabur (Obscuur Libel).rtf	3bb6aab8ace4b22055cfa08604b23453	1787586979a7b54869bcd00efaaab9c3	2
+T0122	derry_briantono/4b Kewarisan/[99c] [NO] Kewarisan - Eksepsi Kewenangan Absolut Dikabulkan.rtf	6866a5deabf6436329a598c6abd0a0f9	7e7fc22f7bf960d812548a5e6df73d0d	2
+T0123	derry_briantono/4b Kewarisan/[99d] [NO] Kewarisan - Eksepsi Kewenangan Relatif Dikabulkan.rtf	a5fedcbbec1d5b969f806950587dd03b	08b6f61e7004bab3debf322f5c5b3ab2	2
+T0124	derry_briantono/4c Wasiat - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	b8cc38720e7819e6bff7c9a7c62cf3e2	70b4b40f6fd5ddfc98f7f0fe87d6cdde	1
+T0125	derry_briantono/4c Wasiat - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	b8cc38720e7819e6bff7c9a7c62cf3e2	70b4b40f6fd5ddfc98f7f0fe87d6cdde	1
+T0126	derry_briantono/4c Wasiat/[01b] [Kabul Verstek] Wasiat.rtf	d717408f7813e6722a6a4911cec91f0d	5196975cbe6da22a7d085dcda90bc044	3
+T0127	derry_briantono/4c Wasiat/[03b] [Tolak Verstek] Wasiat - Dalil Tidak Terbukti.rtf	05ae1b48bc318fbc13e3faa373f0ff9a	6fa42315e760d54272b6e50749f53976	3
+T0128	derry_briantono/4d Hibah - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	b8cc38720e7819e6bff7c9a7c62cf3e2	70b4b40f6fd5ddfc98f7f0fe87d6cdde	1
+T0129	derry_briantono/4d Hibah - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	b8cc38720e7819e6bff7c9a7c62cf3e2	70b4b40f6fd5ddfc98f7f0fe87d6cdde	1
+T0130	derry_briantono/4d Hibah/[01b] [Kabul Verstek] Hibah.rtf	56cf3af53bcdf32fed3ed47d56fa17d3	2949b51cd9d8997681fc284791291965	3
+T0131	derry_briantono/4d Hibah/[03b] [Tolak Verstek] Hibah - Dalil Tidak Terbukti.rtf	7d2af0177ef72e6835b646e8b35d6d25	3c650b8b888211c643e7e6eb5426f9b4	3
+T0132	derry_briantono/4e Wakaf - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	b8cc38720e7819e6bff7c9a7c62cf3e2	70b4b40f6fd5ddfc98f7f0fe87d6cdde	1
+T0133	derry_briantono/4e Wakaf - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	b8cc38720e7819e6bff7c9a7c62cf3e2	70b4b40f6fd5ddfc98f7f0fe87d6cdde	1
+T0134	derry_briantono/4e Wakaf/[01b] [Kabul Verstek] Wakaf.rtf	c43f31d6370fc496fb0082d0801f9ba8	79fc7de3420daf75d612d4e69851c962	3
+T0135	derry_briantono/4e Wakaf/[03b] [Tolak Verstek] Wakaf - Dalil Tidak Terbukti.rtf	831f23df060e230164bee83631d94b50	9c5d48e1eee7a539578dfeec291d22a9	3
+T0136	derry_briantono/5 Izin Poligami - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	968b8e18f49eda0405dacf0e7f5f178c	5f01d5ef29da98220902bf6e3c034b6b	1
+T0137	derry_briantono/5 Izin Poligami - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	968b8e18f49eda0405dacf0e7f5f178c	5f01d5ef29da98220902bf6e3c034b6b	1
+T0138	derry_briantono/5 Izin Poligami - BAS/BAS ALUR 34 Poligami - Sidang 1 - P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	5a064ec22d5bc4e9bd3f671c0470f684	39a58e06782e97d3467473131e064d25	1
+T0139	derry_briantono/5 Izin Poligami/[01a] [Kabul Verstek] Izin Poligami - Termohon Tidak Hadir.rtf	33a7e9398f0128aae8518b2e0a3b8add	e68d484f838b5f884e3cca693b639ebb	1
+T0140	derry_briantono/5 Izin Poligami/[03a] [Tolak Verstek] Izin Poligami - Termohon Tidak Hadir.rtf	e60567c75b76ed37fcf569aae2e63620	754323dc138cfe67d2b0e4aca7dde7b7	1
+T0141	derry_briantono/5a Pembatalan Perkawinan/[01b] [Kabul Verstek] Pembatalan Perkawinan.rtf	864600dd3bd3deadaf5358cf28477965	42c1dfeca68013a308ec89ab00b51590	3
+T0142	derry_briantono/5a Pembatalan Perkawinan/[03b] [Tolak Verstek] Pembatalan Perkawinan - Alasan Pembatalan Tidak Terbukti.rtf	bc93bbb13be7288f30b40b230f3cdf2c	229bc6a9504a50a27d2a54e34a9c91f6	3
+T0143	derry_briantono/5a Pembatalan Perkawinan/[99b] [NO] Pembatalan Perkawinan - Gugatan Kabur (Obscuur Libel).rtf	5b3eaf163c91471fbf249936df1fb5d4	acdfe63551196107aacbaaebe65eb8b8	1
+T0144	derry_briantono/5b Pencegahan Perkawinan/[01] [Kabul] Pencegahan Perkawinan - Calon Mempelai Hadir.rtf	f5726f94a1a053c5d2c82b216c6d33b5	1dbe3032f6a7aaf69fec15d75dae0388	1
+T0145	derry_briantono/5b Pencegahan Perkawinan/[01a] [Kabul] Pencegahan Perkawinan - Calon Mempelai Tidak Hadir.rtf	a8d8019431f5669af1a8fb03d3466192	68d58c75587da6373f2c24b8f717f652	1
+T0146	derry_briantono/5b Pencegahan Perkawinan/[03] [Tolak] Pencegahan Perkawinan - Alasan Pencegahan Tidak Terbukti.rtf	6db59243e47204ab7eb3414a485d9d6c	5668ab24050d1346700a4b9e96109293	1
+T0147	derry_briantono/5b Pencegahan Perkawinan/[99a] [NO] Pencegahan Perkawinan - Pemohon Tidak Berhak Mencegah.rtf	e549dcc1dbfe1e7fa9b3513cf24dce7f	e4a59d4db30a0aaefede1af4e0a3ef1d	1
+T0148	derry_briantono/5b Pencegahan Perkawinan/[99b] [NO] Pencegahan Perkawinan - Perkawinan Telah Dilangsungkan.rtf	ec834b9a101432c8f8758016eee4a415	9e667f5639b94f7f8ce7ec785e19c1ea	1
+T0149	derry_briantono/5c Penolakan Perkawinan/[01] [Kabul] Penolakan Perkawinan - PPN Didengar atau Menyerahkan Surat Penolakan.rtf	b4a6ba22135f3e54ec6705174b457f15	dcb47912fc2c5d348cc00a8347489fd6	2
+T0150	derry_briantono/5c Penolakan Perkawinan/[01a] [Kabul] Penolakan Perkawinan - PPN Tidak Hadir.rtf	cdb55e7de3e7c7402243210566672c7e	d091bd45d6942057319736d495bfa25d	2
+T0151	derry_briantono/5c Penolakan Perkawinan/[03] [Tolak] Penolakan Perkawinan - Larangan Perkawinan Terbukti.rtf	d565e8a4b491c7ff0f20527c9dfe026f	05ff95102d0bf6ca6a2bc453f6bd5100	1
+T0152	derry_briantono/5d Perkawinan Campuran/[01] [Kabul] Perkawinan Campuran - Pejabat Didengar atau Menyerahkan Surat Penolakan.rtf	01b6dbc62b6c0459fe8d3ae78f70ff61	0778b2fb17c5e599d5e86eef7fac6867	3
+T0153	derry_briantono/5d Perkawinan Campuran/[01a] [Kabul] Perkawinan Campuran - Pejabat Tidak Hadir.rtf	4bd091b8c3c3f104500ef13872004932	ce950731154955594f2bde55e5a62c52	3
+T0154	derry_briantono/5d Perkawinan Campuran/[03] [Tolak] Perkawinan Campuran - Syarat Perkawinan Belum Terpenuhi.rtf	a8f6557144aa7cba754052a53b882b2d	2a5c655e3b8942922aeab7959bdbecae	2
+T0155	derry_briantono/5d Perkawinan Campuran/[99b] [NO] Perkawinan Campuran - Belum Ada Penolakan Pejabat.rtf	8fe9c249c62916733cd4014cbf80902d	33c9428a099f5d088c410e362570acff	1
+T0156	derry_briantono/6 Perwalian/Perwalian Anak oleh ortu kandung Tolak Primer Kabul Subsider.rtf	4e8ff70fb1c999709eacae415e010bf7	643a822f50ebc4035d53b4d6296bad6e	4
+T0157	derry_briantono/6 Perwalian/[01b] [Kabul] Perwalian - Anak Yatim Piatu oleh Kerabat (Bukan Orang Tua).rtf	10e3cecd472fa0604ff8939c96cf2888	a686dc798ba37096c7ac527e1b80e35d	6
+T0158	derry_briantono/6a Hak Asuh Anak (Hadhanah) - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	92a5ad6e4d1f4835fe1cfd4acce9214a	81a92c174c268472a57caaa1056e0708	1
+T0159	derry_briantono/6a Hak Asuh Anak (Hadhanah) - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	92a5ad6e4d1f4835fe1cfd4acce9214a	81a92c174c268472a57caaa1056e0708	1
+T0160	derry_briantono/6a Hak Asuh Anak (Hadhanah)/[01] [Kabul] Hak Asuh - Kontradiktoir - Anak Belum Mumayyiz.rtf	e0301d48393302a71192bb2965fe32d2	275a078ddd506b8d527eeb23d0e9b96e	2
+T0161	derry_briantono/6a Hak Asuh Anak (Hadhanah)/[01a] [Kabul] Hak Asuh - T Tidak Hadir Setelah Mediasi - Anak Belum Mumayyiz.rtf	2c3f0046da210b2467f9356079a539c1	8d905701369a3ebc33fa5f28959d1ce3	2
+T0162	derry_briantono/6a Hak Asuh Anak (Hadhanah)/[01b] [Kabul Verstek] Hak Asuh - Anak Belum Mumayyiz.rtf	ccfb1b35d7a2c485ecadd9ea8243738c	02b9a4d7be1cbc56ae639b89fbfd78ad	5
+T0163	derry_briantono/6a Hak Asuh Anak (Hadhanah)/[01c] [Kabul] Hak Asuh - Kontradiktoir - Anak Mumayyiz Memilih.rtf	0876bfda48089fd394b81ba8b5ab734d	a7cfe6b0effdf95c3477f83d5739f819	1
+T0164	derry_briantono/6a Hak Asuh Anak (Hadhanah)/[01d] [Kabul] Hak Asuh - Kontradiktoir - Pemegang Hadhanah Tidak Menjamin Keselamatan Anak.rtf	cfabba8067963b4efe0d23952b61bee9	ceabf0eec643cc2042cb0a849a97b5b0	1
+T0165	derry_briantono/6a Hak Asuh Anak (Hadhanah)/[01e] [Kabul Sebagian] Hak Asuh - Kontradiktoir - Petitum Selebihnya Ditolak.rtf	f751d22eaf4f230a11054aa85b8c4eb7	10acb34fa1c4a8aec0ab5a4e2bf28bc3	2
+T0166	derry_briantono/6a Hak Asuh Anak (Hadhanah)/[01f] [Kabul Sebagian Verstek] Hak Asuh - T Tidak Hadir - Petitum Selebihnya Ditolak.rtf	16f475a7d9ebb571681a48cc1602fba0	aab8fe1be5231852af2f4ed2aa77e75a	5
+T0167	derry_briantono/6a Hak Asuh Anak (Hadhanah)/[01g] [Kabul] Hak Asuh - Kontradiktoir - Anak Sebagian Mumayyiz (Penetapan per Anak).rtf	ad83f647c62eccd87c1bc19b3e10cbd7	516f69240c29b3dc19b7ab0427744090	1
+T0168	derry_briantono/6a Hak Asuh Anak (Hadhanah)/[02] [Kabul] Hak Asuh dan Nafkah Anak - Kontradiktoir - Anak Belum Mumayyiz.rtf	3895e9cbb1808bccad6a69a70484334e	aaf39728b3518da34b7391648ada3591	3
+T0169	derry_briantono/6a Hak Asuh Anak (Hadhanah)/[02a] [Kabul] Hak Asuh dan Nafkah Anak - T Tidak Hadir Setelah Mediasi - Anak Belum Mumayyiz.rtf	7d3353c9fd85e70aeb2d49ab5767f60f	6f0ee402d53e1493c2f9a00cfb4bca14	3
+T0170	derry_briantono/6a Hak Asuh Anak (Hadhanah)/[02b] [Kabul Verstek] Hak Asuh dan Nafkah Anak - Anak Belum Mumayyiz.rtf	2d07023045168372cbff15a83fc28eb8	212691663000c86616556acf9a8ca361	6
+T0171	derry_briantono/6a Hak Asuh Anak (Hadhanah)/[03] [Tolak] Hak Asuh - Kontradiktoir - Kepentingan Terbaik Anak Tidak Terbukti.rtf	bcdadb73f7e1430587ed9dfe2151c380	2038df2085f67351392c08d4f76cb6f1	2
+T0172	derry_briantono/6a Hak Asuh Anak (Hadhanah)/[03a] [Tolak] Hak Asuh - Kontradiktoir - Hadhanah Ditetapkan kepada T (Ibu, Anak Belum Mumayyiz).rtf	cd8fa50bc6a9c66ec04a496c5630fdef	df32ea90fd3bd6ef093c1d0178620dfe	2
+T0173	derry_briantono/6a Hak Asuh Anak (Hadhanah)/[03b] [Tolak Verstek] Hak Asuh - Kepentingan Terbaik Anak Tidak Terbukti.rtf	a370fa338ed36a007347a04bf520bbf7	067279a09e5bc9a87e4cc39f2bd8c4bf	5
+T0174	derry_briantono/6a Hak Asuh Anak (Hadhanah)/[03c] [Tolak] Hak Asuh - Kontradiktoir - Anak Mumayyiz Memilih Tergugat.rtf	7744fc0f80d05f523703fbb62e4ae477	6fdddb19a6c4a3febd021213fc97f21c	2
+T0175	derry_briantono/6a Hak Asuh Anak (Hadhanah)/[99b] [NO] Gugatan - Gugatan Kabur (Obscuur Libel).rtf	3f089293ebdce5bbfac0055d2ca41fe9	cdb26c9176496f0b23b3c9781fd49ab3	1
+T0176	derry_briantono/6b Penguasaan Anak - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	5e9b6f2a87e63ea35cd32c29a4276ff6	5cd44e75abfffb52cc40e2a50c77a91b	1
+T0177	derry_briantono/6b Penguasaan Anak - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	5e9b6f2a87e63ea35cd32c29a4276ff6	5cd44e75abfffb52cc40e2a50c77a91b	1
+T0178	derry_briantono/6b Penguasaan Anak/[01] [Kabul] Penguasaan Anak - Kontradiktoir - Anak Belum Mumayyiz.rtf	2346e6ace6b7a8acf77c98a658ec0b13	2b3ea3b994b42ad188e1195f62ea9d0a	5
+T0179	derry_briantono/6b Penguasaan Anak/[01a] [Kabul] Penguasaan Anak - T Tidak Hadir Setelah Mediasi - Anak Belum Mumayyiz.rtf	2e8586bd894fb2be2898559ee2c53f12	2186fa9c4b5ff815ccce520241c34b00	5
+T0180	derry_briantono/6b Penguasaan Anak/[01b] [Kabul Verstek] Penguasaan Anak - Anak Belum Mumayyiz.rtf	58b5ebaecd1d14928f1ee2772c485d36	5b8cfc8c840a43da3ffb4fb499f58ea8	8
+T0181	derry_briantono/6b Penguasaan Anak/[01c] [Kabul] Penguasaan Anak - Kontradiktoir - Anak Mumayyiz Memilih.rtf	a3684a650349a61e611898f1e88d0d1a	2a9db91a1d5aa1579ca9d1135a4d5971	4
+T0182	derry_briantono/6b Penguasaan Anak/[01d] [Kabul] Penguasaan Anak - Kontradiktoir - Penguasaan Dialihkan.rtf	6a52bdc793a81c23ddd9d5c316b24147	1a574c912cba3a872e46f023eb9d4cf8	4
+T0183	derry_briantono/6b Penguasaan Anak/[02] [Kabul Sebagian] Penguasaan Anak - Kontradiktoir - Petitum Selebihnya Ditolak.rtf	76c90992904b61adeefcb84681f29398	cc2c71d1ae47b096bef5ede69b3dd096	5
+T0184	derry_briantono/6b Penguasaan Anak/[02b] [Kabul Sebagian Verstek] Penguasaan Anak - T Tidak Hadir - Petitum Selebihnya Ditolak.rtf	ec6b4c0455b6e591e2cbb6e1a93b343e	055ed163a8276ec49afb63b2f6a1f673	8
+T0185	derry_briantono/6b Penguasaan Anak/[03] [Tolak] Penguasaan Anak - Kontradiktoir - Kepentingan Terbaik Anak Tidak Terbukti.rtf	6c60994731f82f7ee4c308e00c884914	a0d3b2d76d4cd435c7c2536483b75642	5
+T0186	derry_briantono/6b Penguasaan Anak/[03a] [Tolak Verstek] Penguasaan Anak - T Tidak Hadir - Gugatan Tidak Beralasan Hukum.rtf	be4092656ccb0a9a728b3ddd3772d421	2a122764df2c7e61cf9f2666614e3973	8
+T0187	derry_briantono/6b Penguasaan Anak/[99b] [NO] Gugatan - Gugatan Kabur (Obscuur Libel).rtf	738f81711d1535c725421c4cdc2688fd	25c1eabc26e9c0453451b53383292719	1
+T0188	derry_briantono/6c Nafkah Anak - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	1fdf76ff97e0e17dec8bb232168dee54	b489108122dd070d8013a40d3f570694	1
+T0189	derry_briantono/6c Nafkah Anak - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	1fdf76ff97e0e17dec8bb232168dee54	b489108122dd070d8013a40d3f570694	1
+T0190	derry_briantono/6c Nafkah Anak/[01] [Kabul] Nafkah Anak - Kontradiktoir.rtf	f6951594ef364a6ce20f3af328b22728	00fc2d157a9b7e015895a68daa404698	2
+T0191	derry_briantono/6c Nafkah Anak/[01a] [Kabul] Nafkah Anak - T Tidak Hadir Setelah Mediasi.rtf	6d978c421e734c52fecf0ea604534348	57b12787f7be380935705582bedb2e64	2
+T0192	derry_briantono/6c Nafkah Anak/[01b] [Kabul Verstek] Nafkah Anak.rtf	4b144e58cc625bec482b79939bf6df62	8b6b057fb34abe8e1954031187bb819d	5
+T0193	derry_briantono/6c Nafkah Anak/[02] [Kabul Sebagian] Nafkah Anak - Kontradiktoir - Petitum Selebihnya Ditolak.rtf	1ad6a69385a53a64242dd9709c8d82c0	d8ad64a3bf27461ac58d44b6c0ca575c	2
+T0194	derry_briantono/6c Nafkah Anak/[02b] [Kabul Sebagian Verstek] Nafkah Anak - T Tidak Hadir - Petitum Selebihnya Ditolak.rtf	93238df4308b9e2f635640fc610f04db	3f5f89939a7ad067a2ce88f196a39594	5
+T0195	derry_briantono/6c Nafkah Anak/[03] [Tolak] Nafkah Anak - Kontradiktoir - Dalil Tidak Terbukti.rtf	a71c5b3385ed822559c6387892a1260a	b6d12fa30709ac8484f016bff79e6a9a	2
+T0196	derry_briantono/6c Nafkah Anak/[03b] [Tolak Verstek] Nafkah Anak - T Tidak Hadir - Dalil Tidak Terbukti.rtf	00d507f2dfbe80421c7a61c6a51dbc27	953b73c9d9651371749e531fb59908b2	5
+T0197	derry_briantono/6c Nafkah Anak/[99b] [NO] Nafkah Anak - Gugatan Kabur (Obscuur Libel).rtf	6ab50256b5477cbc01ee1092bb50ae4d	25e09cabc7e661c849748b8de771fe86	1
+T0198	derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	a8ea541c80bd69824eddbc106071c02c	3c0317b57b6f52a2950c59413806ad54	1
+T0199	derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	a8ea541c80bd69824eddbc106071c02c	3c0317b57b6f52a2950c59413806ad54	1
+T0200	derry_briantono/6d Pencabutan Kekuasaan Orang Tua/[01] [Kabul] Pencabutan Kekuasaan Orang Tua - Kontradiktoir.rtf	2e2f4311125348ba34034347049a4286	cdded68f758a58eafd7f11b5a4294511	3
+T0201	derry_briantono/6d Pencabutan Kekuasaan Orang Tua/[01a] [Kabul] Pencabutan Kekuasaan Orang Tua - T Tidak Hadir Setelah Mediasi.rtf	62e12fa902fdcb25ce79f912665e08f5	5b44d88469bc89c2b29609832074ca7d	3
+T0202	derry_briantono/6d Pencabutan Kekuasaan Orang Tua/[01b] [Kabul Verstek] Pencabutan Kekuasaan Orang Tua.rtf	397784f25910814bc05f35a3201a9c1e	1cd48dcad93836e4412bc902b6a0bf99	6
+T0203	derry_briantono/6d Pencabutan Kekuasaan Orang Tua/[01p] [Kabul] Pencabutan Kekuasaan Orang Tua - Permohonan (Pemohon Hadir).rtf	e41750515a8ab848c7718e85339fc557	f8aa6ac59a07f8c1296417e24d4b8f70	2
+T0204	derry_briantono/6d Pencabutan Kekuasaan Orang Tua/[03] [Tolak] Pencabutan Kekuasaan Orang Tua - Kontradiktoir - Dalil Tidak Terbukti.rtf	8ec253223c18b6af9b9e69d014e20402	7a23ec8efb4eddac5654f9836eb089b8	3
+T0205	derry_briantono/6d Pencabutan Kekuasaan Orang Tua/[03b] [Tolak Verstek] Pencabutan Kekuasaan Orang Tua - Dalil Tidak Terbukti.rtf	db5cb75ac9818933adb15cb8bf57b20e	9e88c317f8a52dd083cf6b651c0066ef	6
+T0206	derry_briantono/6d Pencabutan Kekuasaan Orang Tua/[03p] [Tolak] Pencabutan Kekuasaan Orang Tua - Dalil Permohonan Tidak Terbukti.rtf	17fb0a70fdafc11ea94e14799a0282b5	c0230df9ec026ed01465ff31496c8b73	2
+T0207	derry_briantono/6d Pencabutan Kekuasaan Orang Tua/[99b] [NO] Pencabutan Kekuasaan Orang Tua - Gugatan Kabur (Obscuur Libel).rtf	09b68093c1937799f3f3fe029f2aa78b	9eee183d5df73cf8f295027e1bd29eb6	1
+T0208	derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	f58cf9bd052060aa41e297bc7f6639f1	6a815a641a3b01315a5b1f60e891e13f	1
+T0209	derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	f58cf9bd052060aa41e297bc7f6639f1	6a815a641a3b01315a5b1f60e891e13f	1
+T0210	derry_briantono/6e Pencabutan Kekuasaan Wali/[01] [Kabul] Pencabutan Kekuasaan Wali - Kontradiktoir.rtf	aac57d8c02634c5ae79d728019163f4f	4c7f62d9e045e29f4cd88e2e1999a7e3	3
+T0211	derry_briantono/6e Pencabutan Kekuasaan Wali/[01a] [Kabul] Pencabutan Kekuasaan Wali - T Tidak Hadir Setelah Mediasi.rtf	20766ce200a2ec959a6dd563b76a77b5	1b3d7107c8d01f8cb346bd885918c79a	3
+T0212	derry_briantono/6e Pencabutan Kekuasaan Wali/[01b] [Kabul Verstek] Pencabutan Kekuasaan Wali.rtf	0b9f4d8dccda02260e029524e4aa6783	4d66ffc0c4fee411c34f4fad4bca3a37	6
+T0213	derry_briantono/6e Pencabutan Kekuasaan Wali/[01p] [Kabul] Pencabutan Kekuasaan Wali - Permohonan (Pemohon Hadir).rtf	e1b2c4fe375f6ccb5b3c2d64a881ea74	1a2728a7b3b9175c293f516c95782dab	2
+T0214	derry_briantono/6e Pencabutan Kekuasaan Wali/[03] [Tolak] Pencabutan Kekuasaan Wali - Kontradiktoir - Dalil Tidak Terbukti.rtf	5cdb9edbb49dabb1ed0aab44b7ebd6e3	faef0f7ac40ef74a2e27996330ba35d4	3
+T0215	derry_briantono/6e Pencabutan Kekuasaan Wali/[03b] [Tolak Verstek] Pencabutan Kekuasaan Wali - Dalil Tidak Terbukti.rtf	1ec5cb3fc9b6bb109403637923528c37	ea529baf33815caaffb30a51ffda32b4	6
+T0216	derry_briantono/6e Pencabutan Kekuasaan Wali/[03p] [Tolak] Pencabutan Kekuasaan Wali - Dalil Permohonan Tidak Terbukti.rtf	14a79c06f86512382199d5e49327ff1a	926f03a09c8d8de49826b5e7ca8eaf1c	2
+T0217	derry_briantono/6e Pencabutan Kekuasaan Wali/[99b] [NO] Pencabutan Kekuasaan Wali - Gugatan Kabur (Obscuur Libel).rtf	f45df5ada22e68fc0754d10b5d671e19	768f2bfc893687a1b9c80847ee81ca08	1
+T0218	derry_briantono/6f Penunjukan Wali oleh Pengadilan/[01p] [Kabul] Penunjukan Wali oleh Pengadilan - Permohonan (Pemohon Hadir).rtf	546c74e9a188b66ff17dc748f8374930	1146db12bdefe5a0d0f197fd7edc161a	5
+T0219	derry_briantono/6f Penunjukan Wali oleh Pengadilan/[03p] [Tolak] Penunjukan Wali oleh Pengadilan - Dalil Permohonan Tidak Terbukti.rtf	0fb284146cd06347f1c69c5a4f9dee76	1f09c1a179de6af58b465f9ca29dbabc	4
+T0220	derry_briantono/6f Penunjukan Wali oleh Pengadilan/[99p] [NO] Penunjukan Wali oleh Pengadilan - Permohonan Tidak Dapat Diterima (Formil).rtf	56299c1aa1d0706b703d5025b2be4b9f	ee7c89148158cccfde5ffa1fca81947a	1
+T0221	derry_briantono/6g Ganti Rugi terhadap Wali - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	045befb03a62348d7ac1210d424c77b7	b3b40a3d53813f76996e6232885b4475	1
+T0222	derry_briantono/6g Ganti Rugi terhadap Wali - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	045befb03a62348d7ac1210d424c77b7	b3b40a3d53813f76996e6232885b4475	1
+T0223	derry_briantono/6g Ganti Rugi terhadap Wali/[01] [Kabul] Ganti Rugi terhadap Wali - Kontradiktoir.rtf	8dd4f77ebb170656deb61dd8a53eebe8	d7bc6866ed0ab3c8c8e2b4f7bdf6f823	4
+T0224	derry_briantono/6g Ganti Rugi terhadap Wali/[01a] [Kabul] Ganti Rugi terhadap Wali - T Tidak Hadir Setelah Mediasi.rtf	bb0fa29701f4b05c27d33112c2173b2e	9364f3916456ae011ca7dc6810222636	4
+T0225	derry_briantono/6g Ganti Rugi terhadap Wali/[01b] [Kabul Verstek] Ganti Rugi terhadap Wali.rtf	424bcb8e2df3cde0c60c431caecb130c	501420bcea307cc0e558525dbfaf2eaf	7
+T0226	derry_briantono/6g Ganti Rugi terhadap Wali/[03] [Tolak] Ganti Rugi terhadap Wali - Kontradiktoir - Dalil Tidak Terbukti.rtf	1f0a0b62c7e4965660ac64732fda8fe6	e572478d0b7777147dabb23ba634cfc8	4
+T0227	derry_briantono/6g Ganti Rugi terhadap Wali/[03b] [Tolak Verstek] Ganti Rugi terhadap Wali - Dalil Tidak Terbukti.rtf	f22146508fa98bf5e5c2f176de8ce3d1	f9418f2369ed0a1b8b791444cd9e2242	7
+T0228	derry_briantono/6g Ganti Rugi terhadap Wali/[99b] [NO] Ganti Rugi terhadap Wali - Gugatan Kabur (Obscuur Libel).rtf	8b1f5b785c9aed4daf39c3cdd136b7f8	4a09ffb1a40ee886ca50049e8ae1b7f7	1
+T0229	derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	0741b446ace3e7e74dec676a707a1c39	e0a0e6407d107d41e8cf2b6a90d2baa8	1
+T0230	derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf	0741b446ace3e7e74dec676a707a1c39	e0a0e6407d107d41e8cf2b6a90d2baa8	1
+T0231	derry_briantono/6h Nafkah Anak oleh Ibu/[01] [Kabul] Nafkah Anak oleh Ibu - Kontradiktoir.rtf	0ef246c89b92259d86b7b112325ee80e	86951224a1538339b37c47e51c6b2180	5
+T0232	derry_briantono/6h Nafkah Anak oleh Ibu/[01a] [Kabul] Nafkah Anak oleh Ibu - T Tidak Hadir Setelah Mediasi.rtf	891269ae8028e72feff92830adf7e1b1	872f6d9924071cba2d9ca44d03197114	5
+T0233	derry_briantono/6h Nafkah Anak oleh Ibu/[01b] [Kabul Verstek] Nafkah Anak oleh Ibu.rtf	a99bb203b8dd0ddd1aed98a4a8a25d56	cb24119712fbca168242b5a0a9c84aa8	8
+T0234	derry_briantono/6h Nafkah Anak oleh Ibu/[03] [Tolak] Nafkah Anak oleh Ibu - Kontradiktoir - Dalil Tidak Terbukti.rtf	62eada9501deb0ce3c0dddb10e7c0de5	3cdd785c6daf140b082624390c34977e	5
+T0235	derry_briantono/6h Nafkah Anak oleh Ibu/[03b] [Tolak Verstek] Nafkah Anak oleh Ibu - Dalil Tidak Terbukti.rtf	4cf10bd98cce68e5cac325b6e04275cf	c42f0d88a2d058e67889d883ada2a9ec	8
+T0236	derry_briantono/6h Nafkah Anak oleh Ibu/[99b] [NO] Nafkah Anak oleh Ibu - Gugatan Kabur (Obscuur Libel).rtf	c3287c94e68933e17b269d56af78c78f	4fb4718fd3e5104c5705de571fb71565	1
+T0237	derry_briantono/7 Wali Adhal/[01] [Kabul] Wali Adhal - Wali Tidak Hadir.rtf	077f412a19277be5caaacc9b7bd03219	38004ff714fcdfca84176d847d375fc7	3
+T0238	derry_briantono/7 Wali Adhal/[01a] [Kabul] Wali Adhal - Wali Hadir Tetap Enggan.rtf	5ea9ff9043cdbde64a008ec40e36b1bd	9956542b9e8080718d20cdb0ab2d8d60	3
+T0239	derry_briantono/7 Wali Adhal/[03] [Tolak] Wali Adhal - Keengganan Wali Beralasan Hukum.rtf	8a501620d48619dbbbb71a853ac48f8b	b0d1fc4f867d75a84e83c7573f75f1be	2
+T0240	derry_briantono/8 Asal Usul Anak/[01] [Kabul] AUA - Anak Sah dari Perkawinan Tercatat, Belum Punya Akta Kelahiran.rtf	67b8447b0a0fd83d333675c18ee6a467	42a3eeb570abfaded0c5b602a5787e0c	2
+T0241	derry_briantono/8 Asal Usul Anak/[01a] [Kabul] AUA - Perkawinan Siri Dicatat Kemudian, Anak Lahir Sebelum Pencatatan.rtf	e98aa1598ef9d5d64c3470cf26823127	eb9b807dc55583cde7dbfda3bd918749	2
+T0242	derry_briantono/8 Asal Usul Anak/[01b] [Kabul] AUA - Anak Luar Perkawinan Sah, Hubungan Perdata (Ibu Saja atau Perkawinan Siri).rtf	1785cf0822bf2ab62b5d6176d8eb04d0	30240e4da6e5768e8700507c554845e5	1
+T0243	derry_briantono/8 Asal Usul Anak/[01c] [Kabul] AUA - Anak Lahir Kurang dari Enam Bulan setelah Akad Nikah.rtf	7f7fc930b69777ab55fdc09ed3502581	42037e38a659ac544862f34864825c17	1
+T0244	derry_briantono/8a Pengesahan Anak/[01] [Kabul] Pengesahan Anak - Anak Lahir dalam Perkawinan Sah yang Belum atau Baru Dicatat.rtf	84354ac20c9843d4f7b3c2fb0a77be52	8e554af1c3afe5de16bda1478b74e27d	9
+T0245	derry_briantono/8a Pengesahan Anak/[01a] [Kabul] Pengesahan Anak - Anak Lahir Sebelum Pernikahan Para Pemohon (Pengakuan atau Hubungan Darah).rtf	b6c21dfcf7266e526837d6a1be332341	f59a160159df871fa8478f5bf99c9290	8
+T0246	derry_briantono/8a Pengesahan Anak/[03] [Tolak] Pengesahan Anak - Dalil Pengesahan Tidak Terbukti.rtf	eb725cfb91200f00790a376b363718eb	248b7829d5b8f05b57e641efd138be09	7
+T0247	derry_briantono/8a Pengesahan Anak/[03a] [Tolak] Pengesahan Anak - Hubungan Darah atau Pengakuan Tidak Terbukti.rtf	535a4aa2b3e14de1610aad9d0241dde9	3872f3a07ac7460adce347c1b97881f5	7
+T0248	derry_briantono/8a Pengesahan Anak/[99a] [NO] Pengesahan Anak - Pernikahan Orang Tua Belum Terbukti Sah (Itsbat Nikah Lebih Dahulu).rtf	c460d8d6d2917ba22c02eddd0f91ef61	50de880bba1de205322934961cb1b30e	3
+T0249	derry_briantono/8a Pengesahan Anak/[99b] [NO] Pengesahan Anak - Pemohon Bukan Orang Tua atau Tidak Berkepentingan.rtf	571dff1b3115003a22db2605c083f7f5	f3ed8c0e0deab6fdc1418636a1c5b151	2
+T0250	derry_briantono/8a Pengesahan Anak/[99c] [NO] Pengesahan Anak - Anak Sudah Mempunyai Akta Kelahiran.rtf	1296a5bbd78a8838eb465a1fad1b2c9e	d32dc200947fe533fcf4363f6a58620b	1
+T0251	derry_briantono/9 Penetapan Ahli Waris/[01b] [Kabul] PAW - Susunan Ahli Waris Dinamis (Pasangan, Anak, Ayah, Ibu - Pertimbangan Bagian Otomatis).rtf	348bbb7aca8947e592c31ad3014d7dad	516bbd7384625a70bc16e9de2bb0de7c	1
+T0252	derry_briantono/9 Penetapan Ahli Waris/[01c] [Kabul] PAW - Susunan Ahli Waris Lengkap (Cucu Pengganti, Kakek, Nenek, Saudara Seibu - Aul dan Radd Otomatis).rtf	547f64dc09ec3f70d25bcb6e4db301b2	98cdf8d6ca14628f98f3164cd5e6236b	1
+T0253	derry_briantono/96 Eksekusi - BAS/BAS ALUR 75 Eksekusi - [2] Pelaksanaan Sita Eksekusi - Dibantu Dua Saksi (Pasal 210 RBg).rtf	9f160cc5be773f1bbbb949ea804e6fce	e4dee9ed80fde2dfcc731f7339adb6ea	1
+T0254	derry_briantono/96 Eksekusi/[02] [Sita] Eksekusi - Penetapan Sita Eksekusi.rtf	b52c7ad8381fb67b850949ddf724818d	f3d15b81b7269e8c80ad398398d9b7fd	1
+T0255	derry_briantono/96 Eksekusi/[03] [Riil] Eksekusi - Penetapan Perintah Eksekusi Riil (Pengosongan atau Penyerahan).rtf	ce04c498acd738f0ce47409eb5c28c4e	54a9335663a4d890eeadf45b5912ddbe	1
+T0256	derry_briantono/96 Eksekusi/[05] [Non-Eksekutabel] Eksekusi - Putusan Tidak Dapat Dilaksanakan.rtf	99df1508aa28e23eedd2f4709278a333	d8e5cc9663d031a4ae46389cde4c609b	1
+T0257	derry_briantono/96 Eksekusi/[97] [Sukarela] Eksekusi - Putusan Dilaksanakan Secara Sukarela.rtf	3e697e040356660648aa185acb8546fe	916b359d6beb7d2caa63b9efb0393dba	1
+T0258	derry_briantono/96 Eksekusi/[98] [Cabut] Eksekusi - Pencabutan Permohonan Eksekusi.rtf	82cc171bafeb0881a07fd6065f98eea0	a700b26508dd7c9e2e9ebeb17e94e23d	1
+T0259	derry_briantono/96a Verzet/[01] [Kabul] Verzet - Perlawanan Dikabulkan - Putusan Verstek Dibatalkan.rtf	d058432307015c0a9ea942409dc35bcf	31185c9331922c9bccf0f9566c7a1706	2
+T0260	derry_briantono/96a Verzet/[02] [Tolak] Verzet - Perlawanan Ditolak - Putusan Verstek Dikuatkan.rtf	5dff9c1bf8c7c7a84cd1400987646af5	27947f9bc2a416e3ef19b6e69bcbf418	3
+T0261	derry_briantono/96a Verzet/[99] [NO] Verzet - Perlawanan Lewat Tenggang Waktu.rtf	c412a9d5cb85bde6b1f010f21fc218e0	bbe40cd81d8b101aed2bf418815d2f11	2
+T0262	derry_briantono/96a Verzet/[99a] [NO] Verzet - Cacat Formil atau Bukan Pihak yang Berhak.rtf	101970a3c1b1ee603e6590f64027a7e5	53b7ffa58472b135d0ae32f4381a6783	1
+T0263	derry_briantono/96a Verzet/[99b] [NO] Verzet - Pelawan Diputus Verstek Lagi (Pasal 153 Ayat 6 RBg).rtf	f239056d1addd6683f895ca0a245eeae	a4c0cc6093dc342cba9ef38630c145f3	1
+T0264	derry_briantono/97a Putusan Sela/[01] [Sela Tolak] Eksepsi Kewenangan Absolut Ditolak - Pemeriksaan Dilanjutkan.rtf	cd69b19444da2ec26dba373c99b35490	d352f8bc2adcd0f6f827f3a2f56b6067	2
+T0265	derry_briantono/97a Putusan Sela/[02] [NO] Eksepsi Kewenangan Absolut Dikabulkan - Pengadilan Agama Tidak Berwenang (Putusan Akhir).rtf	f754934ff57250afe460319023f19f41	a113756118c82481ef03abed0a619b61	2
+T0266	derry_briantono/97a Putusan Sela/[03] [Sela Tolak] Eksepsi Kewenangan Relatif Ditolak - Pemeriksaan Dilanjutkan.rtf	b3ec6d1516868d053720e1f3d680798e	e55cf1b27c5b4a09311ec85d55e7e398	3
+T0267	derry_briantono/97a Putusan Sela/[04] [NO] Eksepsi Kewenangan Relatif Dikabulkan - Pengadilan Agama Tidak Berwenang (Putusan Akhir).rtf	3519d20ea875dc6e53c47a3e0f9b9f5b	c02e5384e5a536ce7f4510bddd310398	3
+T0268	derry_briantono/97a Putusan Sela/[29] [Sela] Sumpah Pemutus (Decisoir) - Gugatan.rtf	14c3518fae9d422d9cfc3d4ccb141fd4	d0051dcbb623c39f6adebd37d8a8119d	1
+T0269	derry_briantono/98b Berkas Perkara - BAS/Daftar Isi Berkas (F4).rtf	f3fd30af1f03dc529f0760a9c22e41c9	1a282d147e975ec74b115571258d7592	1
+T0270	derry_briantono/98b Berkas Perkara - BAS/Daftar Isi Berkas (Legal).rtf	49b0bc8d89632229e685fa12373f5eb1	f277fa175fd8d1ec645254cff6c2ccd0	1
+T0271	derry_briantono/98b Berkas Perkara - BAS/Daftar Isi Berkas.rtf	702ebbcdeb3bbbc3352bbf6869d7dab2	854622a39f1efea65664f167e3c7210a	1
+T0272	derry_briantono/99 PTSP/@ 4a - Penetapan Penunjukan Mediator - Mediasi Elektronik (PERMA 3 2022).rtf	5fd4dea6fbc416fbf00f6ed54fef89ee	add18b3dfe3a1291c2001926a247e32a	1
+T0273	derry_briantono/99 PTSP/Ceklist Berkas Perkara (F4).rtf	f779d15b82e8bdf85bc839e10a93d090	c5ce99082c9fce7e1e2a16bdb823e346	1
+T0274	derry_briantono/99 PTSP/Ceklist Berkas Perkara (Legal).rtf	96dd26cb2daf72fe5c09f1cb3ace64c0	19e9008291696acfb9495702c6aeadb9	1
+T0275	derry_briantono/99 PTSP/Ceklist Berkas Perkara.rtf	a7bca5e0195175f8eeb0af7736ccac49	2ded260bda3126051a9b5c491a9ed12d	1
+T0276	derry_briantono/99 PTSP/Sampul Berkas Perkara (F4).rtf	cd33d8ef1ba0129286b703bf36f0accc	8ed5ebf5a6150040bcf299d67f9161b5	1
+T0277	derry_briantono/99 PTSP/Sampul Berkas Perkara (Legal).rtf	329fe75229fba67c1f18d7b4ff8022ce	19bba6a4b8b4af5c0804e8bbee605c38	1
+T0278	derry_briantono/99 PTSP/Sampul Berkas Perkara (Lengkap) (F4).rtf	8a1a53dbd5a929f4987da9140b695e62	4c4496dbe6d19551caa5b3c67b63a2c8	2
+T0279	derry_briantono/99 PTSP/Sampul Berkas Perkara (Lengkap) (Legal).rtf	1c69a2f407ae252b198d5c923afa4b40	13120fe4b9a5153c377601acd31baa35	2
+T0280	derry_briantono/99 PTSP/Sampul Berkas Perkara (Lengkap).rtf	31734804a6dc396e061a65c88f0bdf5d	b3c665aa5ffb26b1a586c4692e265ff6	2
+T0281	derry_briantono/99 PTSP/Sampul Berkas Perkara (Permohonan Pihak Banyak) (F4).rtf	be2d9c5ca7692fadf3cf1d86eb5e40b7	e69d387605b4458ad1bdf263ea44b98f	1
+T0282	derry_briantono/99 PTSP/Sampul Berkas Perkara (Permohonan Pihak Banyak) (Legal).rtf	acc6e0324c9af667a8d6ceef7581ffb5	b9d8635698c6a03c441b0e8ee7abae22	1
+T0283	derry_briantono/99 PTSP/Sampul Berkas Perkara (Permohonan Pihak Banyak).rtf	67205160ec7d429a510f56dffe363397	451cc831dc41dc6b3eb3e65f49cf2209	1
+T0284	derry_briantono/99 PTSP/Sampul Berkas Perkara (Permohonan) (F4).rtf	9134ade0729c688a4f60db0671d536bc	fd0196a72daffcac6b3f8a3b2c48b6c4	1
+T0285	derry_briantono/99 PTSP/Sampul Berkas Perkara (Permohonan) (Legal).rtf	0d44d19ceac2b28b25dfb307b0f50154	fac42724561fc87ddcb91ce80688a27a	1
+T0286	derry_briantono/99 PTSP/Sampul Berkas Perkara (Permohonan).rtf	06c6a826a4ede087dcd9ba4425d61aef	ab2aa78fb9323e545cd1e7a16796f618	1
+T0287	derry_briantono/99 PTSP/Sampul Berkas Perkara (Pihak Banyak) (F4).rtf	8068742054168123102b7eb6b34ce51f	b1cb8719541edc48a0eda1af4e4ab8a1	1
+T0288	derry_briantono/99 PTSP/Sampul Berkas Perkara (Pihak Banyak) (Legal).rtf	b75966697a1bbe677f3d030294f066cd	de0e54b6d4a9f4b22f9d0742fa6968af	1
+T0289	derry_briantono/99 PTSP/Sampul Berkas Perkara (Pihak Banyak).rtf	2c43999f71957ee775786eaca8cbdbb7	a2a12c303ada2d109c00881a8ef4bf5c	1
+T0290	derry_briantono/99 PTSP/Sampul Berkas Perkara.rtf	124d5e0677f5ccd720bd60df181db86f	6b44d7c652eb9ec39e9d7d0a054a6929	1
+T0291	derry_briantono/9b Permohonan Umum/[01] [Kabul] Permohonan Umum - Permohonan Dikabulkan.rtf	3637b55810791709c8125c01857e33e8	7e132bb5e2726a40e28b268ddd8184d6	1
+T0292	derry_briantono/9b Permohonan Umum/[03] [Tolak] Permohonan Umum - Dalil Permohonan Tidak Terbukti.rtf	6593ba500bc6a7a338dd82c82b4f48c0	051d022cdfb51177b98ade105313d026	1

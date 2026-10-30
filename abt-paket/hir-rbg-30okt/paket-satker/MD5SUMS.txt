@@ -1,0 +1,12 @@
+e9450409dbf5c5e098694e0bbfbb86e2  abt-hir-rbg-30okt-PASANG.sql
+53d1440fbda1571b3ff6f7aadbba2046  abt-hir-rbg-30okt-PERIKSA.sql
+8e521270a6b4ad9b63a660f921243d10  abt-hir-rbg-30okt-PRASYARAT.sql
+32737a23dbf03f5db5a3c892942352a0  abt-hir-rbg-30okt-PULIH.sql
+d41dfbd2925178c03677053447ec8c98  daftar-tambal.tsv
+674855b5fe74cc247fa3b04f95d50b27  harap.txt
+1002e8cb816467ddfd7b0be902feee2a  nomor-diubah.txt
+9fab0979c9242d6dccbf45e74ddc5179  nomor-variabel.txt
+89f97ab8d76df45e11b01db47d6b885c  pasang-satker.sh
+feaf35175dc64c5444f6c6673ab52b35  pulih-satker.sh
+b94cf7ccab318e0ed1c34591d4ccf491  tambal.tsv
+d949a1c1e10c9b60e8cc4fd18adc9b54  tambal_rtf.py

@@ -72,8 +72,11 @@ const KOLOM_VARIABEL_BOLEH = ["sql_query", "default_data"];
  * #9275# (baris kontak kop) adalah gabungan 9272-9274 dan tidak disunting.
  */
 const VARIABEL_SATKER = Object.freeze({ alamat: "9271", telepon: "9272", laman: "9273", surel: "9274" });
-const NO_VAR_SATKER = new Set(Object.values(VARIABEL_SATKER));
-const NO_VAR_IDENTITAS = ["9270", "9271", "9272", "9273", "9274", "9275", "9276"];
+// 11850 = hukum acara perdata satker RBg/HIR (G6 6.1, 30 Okt 2026; paket hir-rbg-30okt): bentuk isian satker yang sama,
+// isi cabangnya hanya 'RBg' atau 'HIR' (dijaga simpanKueriSatker). Tanpa cabang satker = otomatis dari provinsi #9276#.
+const NO_VAR_HUKUM_ACARA = "11850";
+const NO_VAR_SATKER = new Set([...Object.values(VARIABEL_SATKER), NO_VAR_HUKUM_ACARA]);
+const NO_VAR_IDENTITAS = ["9270", "9271", "9272", "9273", "9274", "9275", "9276", NO_VAR_HUKUM_ACARA];
 const NO_VAR_KODE_SURAT = "1154";
 
 /**
@@ -767,6 +770,10 @@ function buatLayanan(d) {
     if (!KEPALA_CASE_SATKER.test(kueriBaru)) throw galatTolak("Kueri ini bukan bentuk isian satker (CASE KodePN) - ubah lewat Edit variabel.", "bukan_satker");
     if (kerangkaSatker(lama.sql_query) !== kerangkaSatker(kueriBaru)) {
       throw galatTolak("Kueri baru mengubah lebih dari isian satker - ditolak.", "bukan_satker");
+    }
+    if (no === NO_VAR_HUKUM_ACARA) {
+      const isi = [...kueriBaru.matchAll(new RegExp(RE_CABANG_SATKER.source, "gi"))].map((m) => m[2]);
+      if (!isi.length || isi.some((x) => x !== "RBg" && x !== "HIR")) throw galatTolak("Hukum acara satker hanya boleh RBg atau HIR.", "bukan_satker");
     }
     const sebab = periksaKueriVariabel(kueriBaru, mesinVar.pagarBaca);
     if (sebab) throw galatTolak(sebab, "kueri_ditolak");

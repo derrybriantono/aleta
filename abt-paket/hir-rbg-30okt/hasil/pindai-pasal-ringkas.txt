@@ -1,0 +1,96 @@
+Rujukan pasal hukum acara di blangko AKTIF + variabel (arsip dilewati). kode|pasal|kemunculan|berkas RTF|variabel|bentuk tersering
+HIR	118	1	0	1	Pasal 118 ayat (1) dan ayat (3) HIR (1)
+HIR	130	1	0	1	Pasal 130 HIR (1)
+HIR	132b	1	0	1	Pasal 132b HIR (1)
+HIR	133	1	0	1	Pasal 133 HIR (1)
+HIR	134	1	0	1	Pasal 134 HIR (1)
+HIR	136	1	0	1	Pasal 136 HIR (1)
+HIR	153	1	0	1	Pasal 153 HIR (1)
+HIR	155	1	0	1	Pasal 155 HIR (1)
+HIR	156	1	0	1	Pasal 156 HIR (1)
+HIR	163	1	0	1	Pasal 163 HIR (1)
+HIR	180	1	0	1	Pasal 180 ayat (1) HIR (1)
+HIR	181	1	0	1	Pasal 181 ayat (1) HIR (1)
+HIR	185	1	0	1	Pasal 185 ayat (1) HIR (1)
+RBg	7	1	0	1	Pasal 73/66 UU 7/1989 + 142/147 RBg (1)
+RBg	66	1	0	1	Pasal 73/66 UU 7/1989 + 142/147 RBg (1)
+RBg	73	1	0	1	Pasal 73/66 UU 7/1989 + 142/147 RBg (1)
+RBg	142	176	152	2	Pasal 142 ayat (1) RBg (97) || Pasal 142 RBg (31) || Pasal 142 ayat (1) dan ayat (5) RBg (19) || Pasal 142 ayat (5) RBg (12)
+RBg	144	86	86	0	Pasal 144 RBg (84) || Pasal 144 ayat (1) RBg (2)
+RBg	145	32	31	1	Pasal 145 RBg (25) || Pasal 145 ayat (4) RBg (7)
+RBg	146	195	174	3	Pasal 146 RBg (195)
+RBg	147	9	6	3	Pasal 147 ayat (1) RBg (6) || Pasal 147 RBg (2) || Pasal 73/66 UU 7/1989 + 142/147 RBg (1)
+RBg	148	91	64	0	Pasal 148 RBg (90) || Pasal 148 R.Bg. (1)
+RBg	149	138	87	0	Pasal 149 ayat (1) RBg (94) || Pasal 149 RBg (38) || Pasal 149 ayat (3) RBg (5) || Pasal 149 R.Bg. (1)
+RBg	150	4	0	3	Pasal 150 RBg (4)
+RBg	153	32	6	6	Pasal 153 ayat (4) RBg (11) || Pasal 153 ayat (1) RBg (11) || Pasal 153 ayat (2) RBg (4) || Pasal 153 ayat (3) RBg (3)
+RBg	154	468	362	1	Pasal 154 RBg (442) || Pasal 154 ayat (2) dan ayat (3) RBg (13) || Pasal 154 ayat (1) RBg (13)
+RBg	158	4	3	1	Pasal 158 RBg (4)
+RBg	159	9	8	1	Pasal 159 RBg (9)
+RBg	160	9	8	1	Pasal 160 RBg (9)
+RBg	162	17	16	1	Pasal 162 RBg (17)
+RBg	171	168	156	0	Pasal 171, 172 dan 175 RBg (113) || Pasal 171, 172 ayat (2) dan 175 RBg (51) || Pasal 171, 172 Ayat (2) dan 175 RBg (4)
+RBg	172	212	200	0	Pasal 171, 172 dan 175 RBg (113) || Pasal 171, 172 ayat (2) dan 175 RBg (51) || Pasal 172 ayat (1) RBg (44) || Pasal 171, 172 Ayat (2) dan 175 RBg (4)
+RBg	175	169	157	0	Pasal 171, 172 dan 175 RBg (113) || Pasal 171, 172 ayat (2) dan 175 RBg (51) || Pasal 171, 172 Ayat (2) dan 175 RBg (4) || Pasal 175 RBg (1)
+RBg	180	1	0	1	Pasal 180 RBg (1)
+RBg	182	1	0	1	Pasal 182 RBg (1)
+RBg	183	1	0	1	Pasal 183 RBg (1)
+RBg	189	1	1	0	Pasal 189 ayat (3) RBg (1)
+RBg	191	1	0	1	Pasal 191 ayat (1) RBg (1)
+RBg	192	58	55	1	Pasal 192 ayat (1) RBg (54) || Pasal 192 ayat (3) RBg (2) || Pasal 192 ayat (4) RBg (2)
+RBg	196	1	0	1	Pasal 196 ayat (1) RBg (1)
+RBg	199	1	0	1	Pasal 199 ayat (1) RBg (1)
+RBg	206	6	4	0	Pasal 206 ayat (1) Reglemen Acara Hukum untuk Daerah Luar Jawa dan Madura (RBg (4) || Pasal 206 ayat (1) RBg (2)
+RBg	207	8	3	2	Pasal 207 RBg (2) || Pasal 207 ayat (1) Reglemen Acara Hukum untuk Daerah Luar Jawa dan Madura (RBg (2) || Pasal 207 ayat (1) RBg (2) || Pasal 207 ayat (1) dan ayat (2) RBg (1)
+RBg	208	7	4	2	Pasal 208 Reglemen Acara Hukum untuk Daerah Luar Jawa dan Madura (RBg (4) || Pasal 208 RBg (3)
+RBg	209	3	2	0	Pasal 209 RBg (1) || Pasal 209 ayat (2) dan ayat (3) Reglemen Acara Hukum untuk Daerah Luar Jawa dan Madura (RBg (1) || Pasal 209 ayat (4) RBg (1)
+RBg	210	4	3	1	Pasal 210 ayat (1) RBg (3) || Pasal 210 RBg (1)
+RBg	213	2	2	0	Pasal 213 ayat (1) RBg (1) || Pasal 213 RBg (1)
+RBg	214	3	2	0	Pasal 214 ayat (1) RBg (3)
+RBg	215	2	2	0	Pasal 215 ayat (1) Reglemen Acara Hukum untuk Daerah Luar Jawa dan Madura (RBg (2)
+RBg	216	1	1	0	Pasal 216 RBg (1)
+RBg	217	3	1	0	Pasal 217 ayat (1) RBg (2) || Pasal 217 RBg (1)
+RBg	218	2	1	0	Pasal 218 ayat (2) RBg (2)
+RBg	260	12	0	4	Pasal 260 ayat (1) RBg (12)
+RBg	261	27	4	8	Pasal 261 ayat (1) RBg (27)
+RBg	283	221	196	5	Pasal 283 RBg (220) || pasal 283 RBg (1)
+RBg	284	12	12	0	Pasal 284 RBg (12)
+RBg	285	260	164	8	Pasal 285 RBg (260)
+RBg	288	14	2	6	Pasal 288 RBg (14)
+RBg	306	4	4	0	Pasal 306 RBg (4)
+RBg	307	1	1	0	Pasal 307 dan 309 RBg (1)
+RBg	308	144	144	0	Pasal 308 RBg (83) || Pasal 308 dan 309 RBg (61)
+RBg	309	192	165	1	Pasal 309 RBg (120) || Pasal 308 dan 309 RBg (61) || Pasal 309 Rbg (10) || Pasal 307 dan 309 RBg (1)
+RBg	311	22	21	1	Pasal 311 dan 313 RBg (13) || Pasal 311 RBg (5) || Pasal 311 R.Bg. (2) || Pasal 311-313 RBg (2)
+RBg	313	16	15	1	Pasal 311 dan 313 RBg (13) || Pasal 311-313 RBg (2) || Pasal 313 RBg (1)
+RBg	718	11	7	4	Pasal 718 RBg (7) || Pasal 718 ayat (3) RBg (3) || Pasal 718 ayat (3) R.Bg. (1)
+Rv	76	6	6	0	Pasal 76 Rv (6)
+Rv	245	3	3	0	Pasal 245 RV (3)
+Rv	271	100	100	0	Pasal 271 Rv (89) || Pasal 271-272 Rv (9) || pasal 271 Rv (1) || Pasal 271 Rv. (1)
+Rv	272	27	19	0	Pasal 272 Reglement op de Rechtsvordering (Rv (10) || Pasal 271-272 Rv (9) || Pasal 272 Rv (8)
+Rv	282	12	6	0	Pasal 282 Reglement op de Burgerlijke Rechtsvordering (6) || Pasal 282 Reglement op de Burgerlijke Rechtsvordering (Rv (6)
+
+TANPA NOMOR PASAL TERBACA (kode berdiri sendiri, mis. "menurut RBg"):
+RBg	7	 Jawa dan Madura, hukum acara yang berlaku adalah RBg. Pasal 148 RBg pada pokoknya menentukan bahwa apabila pengg
+RBg	6	si Menimbang, bahwa intervensi tidak diatur dalam RBg, akan tetapi dalam praktik peradilan berpedoman pada Pasal 
+RBg	5	 menyetujui pencabutan tersebut; Menimbang, bahwa RBg tidak mengatur secara tegas mengenai pencabutan gugatan ata
+RBg	3	n tersebut dengan alasan #9680#; Menimbang, bahwa RBg tidak mengatur secara tegas mengenai pencabutan gugatan ata
+RBg	2	 #0053#nya dengan alasan #8433#; Menimbang, bahwa RBg tidak mengatur secara tegas mengenai pencabutan gugatan ata
+RBg	2	abungan perkara (samenvoeging) tidak diatur dalam RBg, akan tetapi dalam praktik peradilan dapat dilakukan apabil
+RBg	2	 pemisahan perkara (splitsing) tidak diatur dalam RBg, akan tetapi dalam praktik peradilan dapat dilakukan apabil
+RBg	2	
+RBg	1	udah cerai; Ps 260 RBg revindikasi; marital
+RBg	1	udah cerai; Ps 260 RBg revindikasi; marital: UU 7/1989 Ps 78 c + PP 9/1975 Ps 24 s
+RBg	1	dura = RBg; padanan untuk satker Jawa-Madura: Pasal 133 HIR - belum di
+RBg	1	dura = RBg; padanan untuk satker Jawa-Madura: Pasal 134 HIR - belum di
+RBg	1	ker luar Jawa-Madura = RBg; padanan untuk satker Jawa-Madura: Pasal 136 HIR - belum di
+RBg	1	LETAK BENDA TETAP (satker luar Jawa-Madura = RBg; padanan untuk satker Jawa-Madura: Pasal 118 ayat (1) dan a
+RBg	1	 RBg; padanan untuk satker Jawa-Madura: Pasal 153 HIR - belum di
+RBg	1	-Madura = RBg; padanan untuk satker Jawa-Madura: Pasal 155 HIR - belum di
+RBg	1	 = RBg; padanan untuk satker Jawa-Madura: Pasal 130 HIR - belum di
+RBg	1	H (satker luar Jawa-Madura = RBg; padanan untuk satker Jawa-Madura: Pasal 181 ayat (1) HIR -
+RBg	1	 (USULAN - periksa) (satker luar Jawa-Madura = RBg; padanan untuk satker Jawa-Madura: Pasal 180 ayat (1) HIR -
+RBg	1	; padanan untuk satker Jawa-Madura: Pasal 163 HIR - belum di
+RBg	1	 (RBg; padanan untuk satker Jawa-Madura: Pasal 185 ayat (1) HIR -
+RBg	1	atker Jawa-Madura: Pasal 156 HIR - belum di
+RBg	1	awa-Madura: Pasal 132a dan Pasal 132

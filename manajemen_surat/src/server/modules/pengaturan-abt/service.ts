@@ -460,7 +460,12 @@ export async function simpanKueriSatker(
 ) {
   if (!hakPengaturanAbt(aktor.roleId).ubahBawaan) throw new ApiError(403, "Hanya Super Admin dan Admin yang dapat mengubah identitas satker di ABT.");
   const noVar = String(badan.noVar ?? "").padStart(4, "0");
-  if (!/^927[1-4]$/.test(noVar)) throw new ApiError(400, "Variabel ini bukan isian identitas satker.");
+  // 11850 = hukum acara satker (G6 6.1, 30 Okt): Super Admin saja; isi cabang hanya RBg/HIR.
+  if (!/^927[1-4]$/.test(noVar) && noVar !== "11850") throw new ApiError(400, "Variabel ini bukan isian identitas satker.");
+  if (noVar === "11850") {
+    if (!hakPengaturanAbt(aktor.roleId).ubahKueri) throw new ApiError(403, "Hanya Super Admin yang dapat mengubah hukum acara satker.");
+    if (!cabangHukumAcaraSah(badan.baru)) throw new ApiError(400, "Hukum acara satker hanya boleh RBg atau HIR.");
+  }
   if (kerangkaSatker(badan.lama) !== kerangkaSatker(badan.baru)) throw new ApiError(400, "Kueri baru mengubah lebih dari isian satker - ditolak.");
   return denganCatatan(
     db,
@@ -474,6 +479,18 @@ export async function simpanKueriSatker(
       return { hasil: { sebelum: h.sebelum, sesudah: h.sesudah, uji: h.uji }, baru: h.sesudah };
     }
   );
+}
+
+/** Semua cabang `WHEN '<kode>' THEN '<isi>'` pada kueri #11850# berisi RBg atau HIR. */
+export function cabangHukumAcaraSah(sql: string): boolean {
+  const re = /\s*WHEN\s+'((?:[^'\\]|''|\\.)*)'\s+THEN\s+'((?:[^'\\]|''|\\.)*)'/gi;
+  let m: RegExpExecArray | null;
+  let ada = false;
+  while ((m = re.exec(String(sql || "")))) {
+    ada = true;
+    if (m[2] !== "RBg" && m[2] !== "HIR") return false;
+  }
+  return ada;
 }
 
 /**
