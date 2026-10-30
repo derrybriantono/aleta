@@ -166,6 +166,9 @@ function simpan({ penggunaId, peran, namaPengguna = "", email = "", sandi = "", 
     };
     tulisSemua(semua);
   } catch (galat) {
+    // Kunci tidak sah (variabel lingkungan terlalu pendek, berkas kunci rusak)
+    // = MENOLAK menyimpan, tidak pernah menyimpan polos (30 Okt 2026).
+    if (/kunci/i.test(String((galat && galat.message) || ""))) return { ok: false, alasan: "kunci_tidak_tersedia" };
     // Pesan galat sistem berkas tidak memuat sandi, tetapi tetap dipotong.
     return { ok: false, alasan: `gagal_menyimpan: ${String((galat && galat.code) || "galat")}` };
   }

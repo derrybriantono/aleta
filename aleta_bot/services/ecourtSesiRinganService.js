@@ -143,7 +143,9 @@ function kepalaCookie(kuki) {
 /** Permintaan HTTPS tanpa mengikuti pengalihan - hanya status, Location dan Set-Cookie. */
 function mintaHttps(alamat, kepala, batasMs) {
   return new Promise((selesai, gagal) => {
-    const req = https.request(alamat, { method: "GET", headers: kepala, timeout: batasMs }, (res) => {
+    // http hanya untuk tiruan e-Court lokal (scraper.BASE_URL loopback, simulasi).
+    const modul = String(alamat).startsWith("http://") ? require("http") : https;
+    const req = modul.request(alamat, { method: "GET", headers: kepala, timeout: batasMs }, (res) => {
       // Badan halaman tidak dibaca: yang ditanya hanya ke mana kita dialihkan.
       res.resume();
       selesai({

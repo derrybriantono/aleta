@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { KeteranganStatusEcourt, LencanaStatusEcourt, useStatusEcourt } from "@/components/portal/ecourt-status-lencana";
 import { apiPath } from "@/lib/base-path";
 import { formatDateTime } from "@/lib/format";
 
@@ -156,7 +157,11 @@ export function AletaEcourtJadwal() {
     [muat]
   );
 
-  const sesiHabis = jadwal?.terakhirKode === 2;
+  // Keadaan sesi dari status akun satu sumber (30 Okt 2026). Dulu dari kode
+  // putaran terakhir (2) yang tinggal di memori sampai putaran berikutnya -
+  // tetap "Sesi habis" walau petugas sudah masuk lagi.
+  const { data: statusEcourt } = useStatusEcourt();
+  const statusUtama = statusEcourt?.ringkas ?? null;
 
   // Penarikan berjalan di dalam bot, bukan di dalam permintaan ini. Selama ia
   // berjalan, keadaannya disegarkan sendiri - tanpa ini layar tetap menulis
@@ -183,7 +188,7 @@ export function AletaEcourtJadwal() {
                       : "Dimatikan"}
                 </Badge>
                 {jadwal.sedangJalan ? <Badge variant="warning">Sedang menarik</Badge> : null}
-                {sesiHabis ? <Badge variant="danger">Sesi habis</Badge> : null}
+                <LencanaStatusEcourt t={statusUtama} awalan="e-Court" />
               </>
             ) : null}
           </CardTitle>
@@ -218,11 +223,11 @@ export function AletaEcourtJadwal() {
         {pesan ? <p className="rounded border border-border bg-muted/40 p-3 text-sm">{pesan}</p> : null}
         {catatan ? <p className="rounded border border-border bg-muted/40 p-3 text-sm">{catatan}</p> : null}
 
-        {sesiHabis ? (
-          <p className="rounded border border-rose-300 bg-rose-50 p-3 text-sm text-rose-900 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-100">
-            Penjadwal berhenti karena sesi e-Court sudah habis. Ini bukan kerusakan — login sekali lewat kartu Login
-            e-Court di atas, lalu penarikan berjalan lagi dengan sendirinya.
-          </p>
+        {statusUtama && statusUtama.keadaan !== "aktif" && statusUtama.keadaan !== "memeriksa" ? (
+          <KeteranganStatusEcourt
+            t={statusUtama}
+            onTindakan={() => document.getElementById("masuk-ecourt")?.scrollIntoView({ behavior: "smooth" })}
+          />
         ) : null}
 
         {jadwal ? (

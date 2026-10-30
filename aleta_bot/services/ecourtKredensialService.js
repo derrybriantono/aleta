@@ -118,20 +118,54 @@ function ambilKunci() {
   return kunci;
 }
 
+/**
+ * ============================================================================
+ * KUNCI DARI VARIABEL LINGKUNGAN SERVER (30 Okt 2026)
+ * ============================================================================
+ *
+ * Bila ALETA_ECOURT_KUNCI diisi (rahasia >= 16 huruf di .env server), kunci
+ * sandi diturunkan darinya (HKDF-SHA256) dan berkas kunci di folder sesi
+ * tidak dipakai untuk simpanan BARU - berkas cadangan yang terbawa keluar
+ * tanpa .env tidak dapat dibuka. Nilai lama (bentuk tiga bagian, kunci berkas)
+ * tetap terbuka sehingga sandi yang sudah tersimpan tidak hilang.
+ *
+ * Tanpa variabel itu, mekanisme lama berlaku: kunci acak 32 bait di folder
+ * sesi (di luar folder aplikasi, izin 0600). Kunci yang TIDAK dapat dipakai
+ * (variabel terlalu pendek, berkas kunci rusak, folder tidak dapat ditulisi)
+ * membuat simpan() MENOLAK dengan alasan "kunci_tidak_tersedia" - sandi tidak
+ * pernah disimpan polos.
+ */
+const AWALAN_KUNCI_LINGKUNGAN = "env1";
+
+function kunciLingkungan() {
+  const mentah = String(process.env.ALETA_ECOURT_KUNCI || "").trim();
+  if (!mentah) return null;
+  if (mentah.length < 16) throw new Error("kunci_lingkungan_terlalu_pendek");
+  return Buffer.from(crypto.hkdfSync("sha256", mentah, "aleta-ecourt-kredensial", "ecourt-sandi-v1", 32));
+}
+
 function sandikan(teks) {
-  const kunci = ambilKunci();
+  const lingkungan = kunciLingkungan();
+  const kunci = lingkungan || ambilKunci();
   const iv = crypto.randomBytes(12);
   const alat = crypto.createCipheriv("aes-256-gcm", kunci, iv);
   const isi = Buffer.concat([alat.update(String(teks), "utf8"), alat.final()]);
   const tanda = alat.getAuthTag();
-  return `${iv.toString("base64")}.${tanda.toString("base64")}.${isi.toString("base64")}`;
+  const inti = `${iv.toString("base64")}.${tanda.toString("base64")}.${isi.toString("base64")}`;
+  return lingkungan ? `${AWALAN_KUNCI_LINGKUNGAN}.${inti}` : inti;
 }
 
 function bukaSandi(tersandi) {
-  const bagian = String(tersandi || "").split(".");
+  let bagian = String(tersandi || "").split(".");
+  let pakaiLingkungan = false;
+  if (bagian.length === 4 && bagian[0] === AWALAN_KUNCI_LINGKUNGAN) {
+    pakaiLingkungan = true;
+    bagian = bagian.slice(1);
+  }
   if (bagian.length !== 3) return "";
   try {
-    const kunci = ambilKunci();
+    const kunci = pakaiLingkungan ? kunciLingkungan() : ambilKunci();
+    if (!kunci) return "";
     const alat = crypto.createDecipheriv(
       "aes-256-gcm",
       kunci,
@@ -210,7 +244,11 @@ function simpan({ slot = "", email = "", sandi = "", olehSiapa = "" } = {}) {
     try {
       tersandi = sandikan(sandiBaru);
     } catch (error) {
-      return { ok: false, alasan: `gagal_menyandi: ${error.message}` };
+      // Tanpa kunci yang sah sandi TIDAK disimpan - tidak pernah polos.
+      return { ok: false, alasan: `kunci_tidak_tersedia: ${String(error.message || "").slice(0, 80)}` };
+    }
+    if (!tersandi || bukaSandi(tersandi) !== sandiBaru) {
+      return { ok: false, alasan: "kunci_tidak_tersedia: uji_buka_gagal" };
     }
   }
 
@@ -224,6 +262,14 @@ function simpan({ slot = "", email = "", sandi = "", olehSiapa = "" } = {}) {
     tulisSimpanan(simpanan);
   } catch (error) {
     return { ok: false, alasan: `gagal_menulis: ${error.message}` };
+  }
+
+  if (sandiBaru) {
+    try {
+      require("./ecourtStatusAkunService").lepasSandiDitolak(kunciSlot);
+    } catch {
+      /* status akun tidak termuat */
+    }
   }
 
   // Yang dicatat perbuatannya, bukan isinya. Log keamanan dibaca banyak orang.
@@ -318,9 +364,16 @@ function keadaan() {
     izinKunci = "";
   }
 
+  let sumberKunci = fs.existsSync(jalurKunci()) ? "berkas" : "belum_ada";
+  try {
+    if (kunciLingkungan()) sumberKunci = "lingkungan";
+  } catch {
+    sumberKunci = "lingkungan_tidak_sah";
+  }
   return {
     folder,
-    adaKunci: fs.existsSync(jalurKunci()),
+    sumberKunci,
+    adaKunci: fs.existsSync(jalurKunci()) || sumberKunci === "lingkungan",
     izinKunci,
     // Izin POSIX tidak berlaku di Windows. Disebutkan supaya tidak disangka
     // terlindungi padahal tidak.

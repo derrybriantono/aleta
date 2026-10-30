@@ -15,7 +15,19 @@
 
 const { cleanText, normalizeCaseNumber } = require("../../services/ecourtTextService");
 
-const BASE_URL = "https://ecourt.mahkamahagung.go.id";
+/**
+ * Alamat e-Court. Hanya untuk SIMULASI di mesin pengembang, ALETA_ECOURT_ALAMAT_UJI
+ * boleh menunjuk ke peladen tiruan di mesin itu sendiri (127.0.0.1 / localhost).
+ * Alamat lain diabaikan: surel dan sandi e-Court tidak boleh pernah diketikkan ke
+ * situs selain e-Court asli atau tiruan lokal.
+ */
+function alamatEcourt() {
+  const uji = String(process.env.ALETA_ECOURT_ALAMAT_UJI || "").trim().replace(/\/+$/, "");
+  if (uji && /^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/i.test(uji)) return uji;
+  return "https://ecourt.mahkamahagung.go.id";
+}
+
+const BASE_URL = alamatEcourt();
 
 /** Halaman yang menandakan pengguna BELUM masuk. */
 const LOGIN_PATH_PATTERN = /\/Login\b/i;

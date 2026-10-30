@@ -5,6 +5,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  LencanaStatusEcourt,
+  kabarkanStatusEcourtBerubah,
+  useStatusEcourt,
+} from "@/components/portal/ecourt-status-lencana";
 import { apiPath } from "@/lib/base-path";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 
@@ -146,6 +151,8 @@ function waktuTerbaca(iso: string) {
 }
 
 export function AletaEcourtPenarikan() {
+  const { data: statusEcourt } = useStatusEcourt();
+  const statusPantau = statusEcourt?.akun.find((a) => a.slot === "utama") ?? null;
   const [log, setLog] = useState<RingkasanLog[]>([]);
   const [keadaan, setKeadaan] = useState<Keadaan | null>(null);
   const [pesanKeadaan, setPesanKeadaan] = useState("");
@@ -325,6 +332,7 @@ export function AletaEcourtPenarikan() {
                 (data.dibuang > 0 ? `, ${data.dibuang} dibuang untuk ditarik ulang.` : ".")
             );
           } else if (tindakan === "pantau-detak") {
+            kabarkanStatusEcourtBerubah();
             setPesan(
               data.dilewati
                 ? `Detak dilewati: ${String(data.alasan || "").replace(/_/g, " ")}.`
@@ -682,12 +690,17 @@ export function AletaEcourtPenarikan() {
           <div className="space-y-2 rounded-md border p-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h4 className="text-sm font-semibold">Pemantau sesi e-Court</h4>
-              {pantau.berlaku === true ? (
-                <Badge variant="success">sesi hidup</Badge>
+              {/* Pemantau memeriksa akun bawaan "utama"; keadaannya dibaca dari
+                  status akun satu sumber (30 Okt 2026) - dulu dari ingatan
+                  pemantau sendiri yang tetap "sesi habis" sesudah masuk lagi. */}
+              {statusPantau ? (
+                <LencanaStatusEcourt t={statusPantau} />
+              ) : pantau.berlaku === true ? (
+                <Badge variant="success">Tersambung</Badge>
               ) : pantau.berlaku === false ? (
-                <Badge variant="danger">sesi habis</Badge>
+                <Badge variant="warning">Perlu masuk ulang</Badge>
               ) : (
-                <Badge variant="muted">belum dipastikan</Badge>
+                <Badge variant="muted">Sedang memeriksa</Badge>
               )}
             </div>
 

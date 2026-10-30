@@ -20,6 +20,7 @@ import type { DataEvidenSkp, PeranEvidenSkp } from "@/lib/eviden-skp-tipe";
 import type { DataSkpJabatan, JabatanSkp, KunciPeriodeSkpJabatan } from "@/lib/skp-jabatan-tipe";
 import type { PermintaanRekap, RekapPetugas } from "@/lib/rekap-petugas";
 import type { WaktuAntrian } from "@/lib/tiga-jarak-sidang";
+import type { StatusAkunEcourt, StatusSemuaEcourt } from "@/lib/ecourt-status-akun";
 import type { PembebananIkrar } from "@/lib/pembebanan-ikrar";
 import { sanitizePublicErrorMessage } from "@/server/shared/error-sanitizer";
 import { cerminSetelahTulisan } from "@/server/modules/cermin/setelah-tulisan";
@@ -821,12 +822,18 @@ export async function deleteGatewayAgendaRule(payload: {
 export type GatewayEcourtSesi = {
   sesi: { tersimpan: boolean; berlaku: boolean | null; alasan: string };
   menunggu: boolean;
+  /** Status akun satu sumber (30 Okt 2026). */
+  statusAkun?: StatusAkunEcourt;
 };
 
 export type GatewayEcourtMulaiLogin = {
   ok: boolean;
   alasan: string;
   captcha: string;
+  /** Surel & sandi tersimpan sudah diketikkan bot - layar cukup meminta captcha. */
+  terisiOtomatis?: boolean;
+  emailTerisi?: string;
+  statusAkun?: StatusAkunEcourt;
   formulir: {
     adaEmail: boolean;
     adaSandi: boolean;
@@ -852,9 +859,27 @@ export async function getGatewayEcourtSesi(
 
 /** Membuka halaman login e-Court dan mengambil gambar captchanya. */
 export async function mulaiGatewayEcourtLogin(
-  slot = ""
+  slot = "",
+  isiOtomatis = true
 ): Promise<GatewayResult<GatewayEcourtMulaiLogin>> {
   return gatewayFetch("/internal/aleta-bot/ecourt/login/mulai", {
+    method: "POST",
+    body: JSON.stringify({ slot, isiOtomatis }),
+    timeoutMs: TIMEOUT_PERAMBAN_MS,
+  });
+}
+
+/**
+ * Status akun e-Court satu sumber (30 Okt 2026). segarkan = akun yang buktinya
+ * basi diperiksa ulang di latar oleh bot (tidak ditunggu).
+ */
+export async function getGatewayStatusAkunEcourt(segarkan = false): Promise<GatewayResult<StatusSemuaEcourt>> {
+  return gatewayFetch(`/internal/aleta-bot/ecourt/status-akun${segarkan ? "?segarkan=1" : ""}`);
+}
+
+/** "Periksa sekarang" satu akun - ditunggu (ringan dulu, Chrome bila ragu). */
+export async function periksaGatewayStatusAkunEcourt(slot = ""): Promise<GatewayResult<StatusSemuaEcourt>> {
+  return gatewayFetch("/internal/aleta-bot/ecourt/status-akun/periksa", {
     method: "POST",
     body: JSON.stringify({ slot }),
     timeoutMs: TIMEOUT_PERAMBAN_MS,
@@ -870,7 +895,20 @@ export async function kirimGatewayEcourtLogin(payload: {
   email: string;
   sandi: string;
   captcha: string;
-}): Promise<GatewayResult<{ ok: boolean; alasan?: string }>> {
+  /** Simpan surel+sandi tersandi di bot SESUDAH e-Court menerimanya. */
+  simpan?: boolean;
+  olehSiapa?: string;
+}): Promise<
+  GatewayResult<{
+    ok: boolean;
+    alasan?: string;
+    jenisTolak?: "captcha" | "sandi" | "";
+    pakaiSandiTersimpan?: boolean;
+    kredensialTersimpan?: boolean;
+    alasanSimpan?: string;
+    statusAkun?: StatusAkunEcourt;
+  }>
+> {
   return gatewayFetch("/internal/aleta-bot/ecourt/login/kirim", {
     method: "POST",
     body: JSON.stringify(payload),
@@ -1188,6 +1226,8 @@ export type GatewayEcourtJadwal = {
   terakhirKode: number | null;
   terakhirCatatan: string;
   jumlahPutaran: number;
+  /** Status akun utama dari model satu sumber (30 Okt 2026). */
+  statusUtama?: StatusAkunEcourt | null;
 };
 
 export type GatewayEcourtArsip = {

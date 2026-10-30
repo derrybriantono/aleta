@@ -50,6 +50,7 @@ const putusanEcourtService = require("../services/putusanEcourtService");
 const sippSkemaService = require("../services/sippSkemaService");
 const ecourtSesiStatusService = require("../services/ecourtSesiStatusService");
 const ecourtKredensialService = require("../services/ecourtKredensialService");
+const ecourtStatusAkunService = require("../services/ecourtStatusAkunService");
 const penilaianPerkaraService = require("../services/penilaianPerkaraService");
 const ecourtPanggilanService = require("../services/ecourtPanggilanService");
 const ecourtSesiPantauService = require("../services/ecourtSesiPantauService");
@@ -2178,6 +2179,8 @@ router.get("/ecourt/login/status", requireInternalToken, async (req, res) => {
       },
       keadaan,
       menunggu: ecourtLoginService.sedangMenunggu(),
+      // Status akun satu sumber (30 Okt 2026) - inilah yang dibaca penanda.
+      statusAkun: ecourtStatusAkunService.statusSlot(slot || ecourtAkunService.slotAkunUtama() || "utama"),
     });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
@@ -2194,7 +2197,11 @@ router.get("/ecourt/login/status", requireInternalToken, async (req, res) => {
 router.get("/ecourt/akun/keadaan", requireInternalToken, async (req, res) => {
   try {
     const penuh = req.query.periksa === "penuh";
-    const akun = await ecourtSesiStatusService.keadaanSemua({ paksa: penuh });
+    const akun = (await ecourtSesiStatusService.keadaanSemua({ paksa: penuh })).map((satu) => ({
+      ...satu,
+      // Dibaca SESUDAH pemeriksaan di atas, sehingga buktinya sudah masuk.
+      status: ecourtStatusAkunService.statusSlot(satu.slot),
+    }));
     res.json({ ok: true, akun, segarDetik: Math.round(ecourtSesiStatusService.SEGAR_MS / 1000) });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
@@ -2255,9 +2262,11 @@ router.delete("/ecourt/kredensial", requireInternalToken, (req, res) => {
 /** Membuka halaman login e-Court dan mengambil gambar captchanya. */
 router.post("/ecourt/login/mulai", requireInternalToken, async (req, res) => {
   try {
-    const hasil = await ecourtLoginService.mulaiLogin({ slot: String(req.body?.slot || "") });
-    ecourtSesiStatusService.lupakan(String(req.body?.slot || ""));
-    res.status(hasil.ok ? 200 : 400).json(hasil);
+    const slot = String(req.body?.slot || "");
+    const hasil = await ecourtLoginService.mulaiLogin({ slot, isiOtomatis: req.body?.isiOtomatis !== false });
+    ecourtSesiStatusService.lupakan(slot);
+    const statusAkun = ecourtStatusAkunService.statusSlot(slot || "utama");
+    res.status(hasil.ok ? 200 : 400).json({ ...hasil, statusAkun });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }
@@ -2276,12 +2285,46 @@ router.post("/ecourt/login/kirim", requireInternalToken, async (req, res) => {
       email: String(req.body?.email || ""),
       sandi: String(req.body?.sandi || ""),
       captcha: String(req.body?.captcha || ""),
+      // Simpan surel+sandi sesudah e-Court menerimanya (30 Okt 2026).
+      simpan: req.body?.simpan === true,
+      olehSiapa: String(req.body?.olehSiapa || ""),
     });
-    res.status(hasil.ok ? 200 : 400).json(hasil);
+    const statusAkun = ecourtStatusAkunService.statusSlot(hasil.slot || ecourtAkunService.slotAkunUtama() || "utama");
+    res.status(hasil.ok ? 200 : 400).json({ ...hasil, statusAkun });
   } catch (error) {
     // Pesan galat sengaja tidak diteruskan: dapat memuat potongan badan
     // permintaan, dan badan permintaan ini memuat sandi.
     res.status(500).json({ ok: false, alasan: "gagal_memproses_login" });
+  }
+});
+
+/**
+ * ============================================================================
+ * STATUS AKUN e-COURT - SATU SUMBER (30 Okt 2026)
+ * ============================================================================
+ *
+ * Dibaca SEMUA penanda: kartu-kartu Integrasi e-Court, lampu panel
+ * ekstensi, baris Tarik data e-Court di popup, kesehatan server. Tanpa sandi,
+ * tanpa cookie. segarkan=1 meminta akun yang buktinya basi diperiksa ulang
+ * di latar (ringan dulu; tidak menunggu).
+ */
+router.get("/ecourt/status-akun", requireInternalToken, (req, res) => {
+  try {
+    res.json(ecourtStatusAkunService.statusSemua({ segarkan: req.query.segarkan === "1" }));
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** "Periksa sekarang" satu akun - ringan dulu, Chrome bila ragu (ditunggu). */
+router.post("/ecourt/status-akun/periksa", requireInternalToken, async (req, res) => {
+  try {
+    const slot = String(req.body?.slot || "") || ecourtAkunService.slotAkunUtama() || "utama";
+    ecourtSesiStatusService.lupakan(slot);
+    await ecourtStatusAkunService.segarkan(slot, { paksa: true, bolehPeramban: true });
+    res.json(ecourtStatusAkunService.statusSemua());
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }
 });
 
@@ -2307,7 +2350,29 @@ router.get("/sipp/konteks", requireInternalToken, async (req, res) => {
       // Dipakai HANYA untuk menentukan tombol verifikasi tampil atau tidak.
       namaPembuka: String(req.query.nama || ""),
     });
-    res.status(hasil.ok ? 200 : 400).json(hasil);
+    // Status akun utama e-Court (30 Okt 2026) untuk lampu "e-Court" panel
+    // perkara - tanpa surel, tanpa slot lain. Gagal membaca = tidak disertakan.
+    let statusEcourt = null;
+    try {
+      const r = ecourtStatusAkunService.statusSemua().ringkas;
+      statusEcourt = r
+        ? {
+            slot: r.slot,
+            label: r.label,
+            keadaan: r.keadaan,
+            nada: r.nada,
+            kodeSebab: r.kodeSebab,
+            diperiksaPada: r.diperiksaPada,
+            umurDetik: r.umurDetik,
+            sumber: r.sumber,
+            tindakan: r.tindakan,
+            adaSandi: r.adaSandi,
+          }
+        : null;
+    } catch {
+      statusEcourt = null;
+    }
+    res.status(hasil.ok ? 200 : 400).json(hasil && typeof hasil === "object" ? { ...hasil, statusEcourt } : hasil);
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }
@@ -6294,7 +6359,13 @@ router.get("/kesehatan", requireInternalToken, async (req, res) => {
 /** Keadaan penjadwal penarikan e-Court. */
 router.get("/ecourt/jadwal", requireInternalToken, (req, res) => {
   try {
-    res.json({ ok: true, jadwal: ecourtSchedulerService.getStatus() });
+    let statusUtama = null;
+    try {
+      statusUtama = ecourtStatusAkunService.statusSemua().ringkas;
+    } catch {
+      statusUtama = null;
+    }
+    res.json({ ok: true, jadwal: { ...ecourtSchedulerService.getStatus(), statusUtama } });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }

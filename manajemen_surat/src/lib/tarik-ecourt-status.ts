@@ -26,7 +26,27 @@
  * gagal dijalankan, null belum pernah berjalan sejak bot menyala.
  */
 
-export type KeadaanTarikEcourt = "aktif" | "perhatian" | "mati" | "tidak-terjangkau";
+import { tampilanStatus, type StatusAkunEcourt, type TampilanStatusEcourt } from "@/lib/ecourt-status-akun";
+
+/**
+ * 30 Okt 2026 (status akun satu sumber): bila bot mengirim status akun utama,
+ * WARNA dan JUDUL baris adalah keadaan SAMBUNGAN, persis lencana portal:
+ *   aktif -> "aktif" (hijau), perlu_masuk -> "perhatian" (kuning),
+ *   tidak_tersambung -> "terputus" (merah), memeriksa -> "memeriksa" (kelabu),
+ *   belum_diatur -> "belum-diatur" (kelabu).
+ * Saklar penarikan berkala menjadi kalimat kedua dan ruas `aktif`.
+ * "mati" hanya dipakai bila bot belum mengirim status akun (bentuk lama).
+ */
+export type KeadaanTarikEcourt = "aktif" | "perhatian" | "terputus" | "memeriksa" | "belum-diatur" | "mati" | "tidak-terjangkau";
+
+/** Keadaan sambungan -> data-keadaan baris popup (warna). */
+export const KEADAAN_POPUP_DARI_SAMBUNGAN = {
+  aktif: "aktif",
+  perlu_masuk: "perhatian",
+  tidak_tersambung: "terputus",
+  memeriksa: "memeriksa",
+  belum_diatur: "belum-diatur",
+} as const;
 
 /** Bagian keadaan penjadwal bot yang dibutuhkan (GatewayEcourtJadwal). */
 export type JadwalTarikEcourt = {
@@ -45,6 +65,8 @@ export type JadwalTarikEcourt = {
   terakhirSelesai?: string | null;
   terakhirKode?: number | null;
   terakhirCatatan?: string;
+  /** Status akun utama dari model satu sumber (30 Okt 2026). */
+  statusUtama?: StatusAkunEcourt | null;
 };
 
 export type RingkasTarikEcourt = {
@@ -56,6 +78,8 @@ export type RingkasTarikEcourt = {
   sedangJalan: boolean;
   /** ISO waktu putaran terakhir selesai; null bila belum pernah sejak bot menyala. */
   terakhirSelesai: string | null;
+  /** Keadaan sesi akun utama - judul/kalimat/warna yang sama dengan semua penanda. */
+  sesi?: TampilanStatusEcourt | null;
 };
 
 const TIDAK_TERJANGKAU: RingkasTarikEcourt = {
@@ -101,6 +125,9 @@ export function ringkasTarikEcourt(jadwal: JadwalTarikEcourt | null | undefined)
       ? jadwal.terakhirSelesai
       : null;
 
+  const sesiAwal = jadwal.statusUtama && jadwal.statusUtama.keadaan ? tampilanStatus(jadwal.statusUtama) : null;
+  if (sesiAwal) return ringkasBersesi(jadwal, sesiAwal, sedangJalan, terakhirSelesai);
+
   if (p.aktif !== true) {
     return {
       keadaan: "mati",
@@ -129,6 +156,50 @@ export function ringkasTarikEcourt(jadwal: JadwalTarikEcourt | null | undefined)
       ? `Menunggu jam kerja (${rentang}); ${selang}.`
       : `Menarik ${selang}, ${rentang}.`;
   return { keadaan: "aktif", aktif: true, label: "Aktif", keterangan, sedangJalan, terakhirSelesai };
+}
+
+/**
+ * Baris popup bila status akun utama tersedia: judul & warna = keadaan
+ * sambungan (sama persis dengan lencana portal); penarikan berkala = kalimat
+ * kedua. Klik tetap menyalakan/mematikan saklar penarikan (`aktif`).
+ */
+function ringkasBersesi(
+  jadwal: JadwalTarikEcourt,
+  sesi: TampilanStatusEcourt,
+  sedangJalan: boolean,
+  terakhirSelesai: string | null
+): RingkasTarikEcourt {
+  const p = jadwal.pengaturan;
+  const menyala = p.aktif === true;
+  const rentang = `jam ${dua(p.jamMulai)}.00-${dua(p.jamSelesai)}.00, Senin-Jumat`;
+  const selang =
+    typeof p.selangMinMenit === "number" && typeof p.selangMaksMenit === "number"
+      ? `tiap ${p.selangMinMenit}-${p.selangMaksMenit} menit (acak)`
+      : `tiap ${p.jarakJam} jam`;
+  const TERTUNDA: Partial<Record<string, string>> = {
+    perlu_masuk: "tertunda sampai masuk ulang",
+    tidak_tersambung: "tertunda sampai e-Court terjangkau lagi",
+    belum_diatur: "tertunda sampai akun utama masuk e-Court",
+  };
+  let penarikan: string;
+  if (!menyala) penarikan = "Penarikan berkala mati - klik status untuk menyalakan.";
+  else if (sedangJalan) penarikan = "Penarikan berkala sedang menarik berkas sekarang.";
+  else if (TERTUNDA[sesi.keadaan]) penarikan = `Penarikan berkala menyala, ${TERTUNDA[sesi.keadaan]}.`;
+  else if (jadwal.dalamJamKerja === false) penarikan = `Penarikan berkala menyala - menunggu jam kerja (${rentang}); ${selang}.`;
+  else penarikan = `Penarikan berkala menyala - ${selang}, ${rentang}.`;
+  // Kode 2 (sesi habis) di memori bot sudah diwakili status sambungan; sebab
+  // lain (ruang disk, putaran gagal) tetap disebut.
+  const sebabLain = menyala && !sedangJalan && jadwal.terakhirKode !== 2 ? sebabPerhatianTarik(jadwal.terakhirKode) : "";
+  const kalimat = [penarikan, sebabLain, sesi.keadaan === "aktif" ? "" : sesi.teks].filter(Boolean).join(" ");
+  return {
+    keadaan: KEADAAN_POPUP_DARI_SAMBUNGAN[sesi.keadaan],
+    aktif: menyala,
+    label: sesi.judul,
+    keterangan: kalimat,
+    sedangJalan,
+    terakhirSelesai,
+    sesi,
+  };
 }
 
 /**

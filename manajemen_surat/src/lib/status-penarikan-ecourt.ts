@@ -7,6 +7,8 @@
  * tanpa merender.
  */
 
+import type { StatusAkunEcourt } from "@/lib/ecourt-status-akun";
+
 export type HasilPenarikan = "berhasil" | "gagal" | "sesi-habis" | "berjalan" | "terputus";
 
 export type RingkasPenarikan = {
@@ -90,6 +92,8 @@ export type StatusPenarikan = {
   terakhirPagi?: RingkasPenarikan | null;
   riwayat: RingkasPenarikan[];
   sesi: { berlaku: boolean | null; pada: string; sumber: string };
+  /** Status akun utama dari model satu sumber (30 Okt 2026) - didahulukan atas `sesi`. */
+  statusUtama?: StatusAkunEcourt | null;
 };
 
 export type Nada = "success" | "warning" | "danger" | "muted";
@@ -213,7 +217,18 @@ export function peringatanPenarikan(s: StatusPenarikan): string[] {
   const hasil: string[] = [];
   if (!s.akunUtama.sah) hasil.push(s.akunUtama.pesan || "Akun utama penarikan belum sah.");
   if (!s.penjadwal.aktif) hasil.push("Penarikan otomatis tidak berjalan - dokumen baru di e-Court tidak ditarik sendiri.");
-  if (s.sesi.berlaku === false) hasil.push("Sesi e-Court akun utama habis - login ulang di Integrasi e-Court.");
+  if (s.statusUtama && s.statusUtama.keadaan) {
+    // Model satu sumber: sama dengan lencana di semua kartu.
+    if (s.statusUtama.keadaan === "perlu_masuk") {
+      hasil.push(
+        `Sesi e-Court akun utama habis - masuk lagi di kartu Masuk e-Court${s.statusUtama.adaSandi ? " (cukup ketik captcha)" : ""}.`
+      );
+    } else if (s.statusUtama.keadaan === "tidak_tersambung") {
+      hasil.push("e-Court tidak tersambung dari server ALETA - penarikan menunggu sampai e-Court terjangkau lagi.");
+    }
+  } else if (s.sesi.berlaku === false) {
+    hasil.push("Sesi e-Court akun utama habis - login ulang di Integrasi e-Court.");
+  }
   const terakhir = [s.terakhirBerkala, s.terakhirPerkara]
     .filter((r): r is RingkasPenarikan => Boolean(r))
     .sort((a, b) => (a.mulai < b.mulai ? 1 : -1))[0];

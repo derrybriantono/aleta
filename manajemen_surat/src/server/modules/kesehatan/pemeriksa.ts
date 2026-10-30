@@ -17,6 +17,7 @@
  *           tidak pernah memicu peringatan WhatsApp
  */
 import type { RingkasGalat } from "@/server/modules/kesehatan/galat";
+import { tampilanStatus, type StatusAkunEcourt } from "@/lib/ecourt-status-akun";
 
 export type Warna = "hijau" | "kuning" | "merah" | "kelabu";
 export type KelompokKomponen = "layanan" | "data" | "server" | "klien";
@@ -223,6 +224,16 @@ type JadwalEcourtMentah = {
   sedangJalan?: boolean;
   terakhirSelesai?: string | null;
   terakhirGalat?: string | null;
+  /** Status akun utama dari model satu sumber (30 Okt 2026). */
+  statusUtama?: StatusAkunEcourt | null;
+};
+
+/** Nada status e-Court -> warna lampu kesehatan (sama persis). */
+const WARNA_NADA: Record<"hijau" | "kuning" | "merah" | "kelabu", Warna> = {
+  hijau: "hijau",
+  kuning: "kuning",
+  merah: "merah",
+  kelabu: "kelabu",
 };
 
 export function periksaEcourt(jadwal: Hasil<{ jadwal?: JadwalEcourtMentah | null }>, kini: Date) {
@@ -234,6 +245,32 @@ export function periksaEcourt(jadwal: Hasil<{ jadwal?: JadwalEcourtMentah | null
     { label: "Selesai terakhir", nilai: umurTeks(j.terakhirSelesai ?? null, kini) },
   ];
   if (j.terakhirGalat) rincian.push({ label: "Error terakhir", nilai: String(j.terakhirGalat).slice(0, 160) });
+  // Sesi akun utama - SAMA dengan lencana di Integrasi e-Court dan ekstensi.
+  // Dulu kesehatan tidak membaca sesi sama sekali: hijau "sesuai jadwal"
+  // walau sesinya sudah habis sejak semalam.
+  const sesi = j.statusUtama && j.statusUtama.keadaan ? tampilanStatus(j.statusUtama) : null;
+  if (sesi) rincian.push({ label: "Sesi e-Court", nilai: `${sesi.judul} - ${sesi.teks}` });
+  if (sesi) {
+    // Warna & judul = keadaan sambungan, PERSIS lencana portal dan lampu
+    // ekstensi (hijau/kuning/merah/kelabu). Penarikan berkala kalimat kedua.
+    const awal = `e-Court: ${sesi.judul}.`;
+    if (sesi.keadaan !== "aktif") {
+      const lanjut: Record<string, string> = {
+        perlu_masuk: "Penarikan tertunda sampai masuk ulang.",
+        tidak_tersambung: "Penarikan tertunda sampai e-Court terjangkau lagi.",
+        memeriksa: "Sambungan sedang dipastikan.",
+        belum_diatur: "Akun utama belum pernah masuk dari server ini.",
+      };
+      return { warna: WARNA_NADA[sesi.nada], ringkas: `${awal} ${lanjut[sesi.keadaan] || ""}`.trim(), rincian };
+    }
+    if (!j.pengaturan?.aktif) return { warna: "hijau" as Warna, ringkas: `${awal} Penarikan berkala dimatikan.`, rincian };
+    if (j.sedangJalan) return { warna: "hijau" as Warna, ringkas: `${awal} Penarikan sedang berjalan.`, rincian };
+    if (j.terakhirGalat) return { warna: "kuning" as Warna, ringkas: `${awal} Putaran terakhir mencatat error.`, rincian };
+    const jarak = Math.max(1, Number(j.pengaturan?.jarakJam ?? 6));
+    const umur = j.terakhirSelesai ? (kini.getTime() - new Date(j.terakhirSelesai).getTime()) / 3_600_000 : Infinity;
+    if (umur > Math.max(24, jarak * 3)) return { warna: "kuning" as Warna, ringkas: `${awal} Penarikan belum selesai dalam ${Math.round(umur)} jam.`, rincian };
+    return { warna: "hijau" as Warna, ringkas: `${awal} Penarikan berjalan sesuai jadwal.`, rincian };
+  }
   if (!j.pengaturan?.aktif) return { warna: "kelabu" as Warna, ringkas: "Penarikan berkala e-Court dimatikan.", rincian };
   if (j.sedangJalan) return { warna: "hijau" as Warna, ringkas: "Penarikan e-Court sedang berjalan.", rincian };
   if (j.terakhirGalat) return { warna: "kuning" as Warna, ringkas: "Putaran e-Court terakhir mencatat error.", rincian };

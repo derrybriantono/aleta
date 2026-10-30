@@ -1095,6 +1095,11 @@ ecourtSesiPantauService.mulai();
 // Hanya bekerja bila penjadwal penarikan dinyalakan admin; dimatikan dengan
 // ALETA_ECOURT_PULIH_AKTIF=0. Lihat ecourtPulihService.
 ecourtPulihService.mulai();
+
+// Status akun e-Court satu sumber (30 Okt 2026): akun yang buktinya basi
+// dipastikan ulang di latar (ringan dulu) - hanya selama penarikan berkala
+// menyala; ALETA_ECOURT_STATUS_LATAR=0 mematikannya.
+require("./services/ecourtStatusAkunService").mulai();
 dynamicNotificationSchedulerService.startDynamicNotificationScheduler();
 
 // Pemantau kelengkapan data: mengirim pemberitahuan begitu perkara baru

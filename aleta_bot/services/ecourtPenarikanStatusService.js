@@ -126,7 +126,9 @@ function ringkasLog({ nama, kepala = "", ekor = "", diubahMs = 0, sekarangMs = D
   }
 
   // Bukti sesi dari penarikan itu sendiri.
-  const sesiBerlaku = /Sesi tersimpan masih berlaku/.test(kepala) ? true : hasil === "sesi-habis" ? false : null;
+  // Sesi yang habis DI TENGAH penarikan mengalahkan "masih berlaku" di
+  // kepala log: yang terakhir diketahui adalah habis (30 Okt 2026).
+  const sesiBerlaku = hasil === "sesi-habis" ? false : /Sesi tersimpan masih berlaku/.test(kepala) ? true : null;
 
   return {
     nama,
@@ -192,17 +194,29 @@ function bacaRiwayat({ folder, batas = 15, sekarangMs = Date.now() } = {}) {
  * Keadaan sesi e-Court akun utama dari bukti TERBARU: pemeriksaan sesi
  * (ringan/Chrome), pemantau sesi berkala, atau penarikan terakhir.
  */
-function sesiTerbaru({ pemeriksaan, pantau, riwayat }) {
+function sesiTerbaru({ pemeriksaan, pantau, riwayat, slot = "" }) {
   const bukti = [];
+  const kunci = String(slot || "").trim().toLowerCase();
   if (pemeriksaan && pemeriksaan.diperiksaPada && (pemeriksaan.keadaan === "berlaku" || pemeriksaan.keadaan === "kedaluwarsa")) {
     bukti.push({ berlaku: pemeriksaan.keadaan === "berlaku", pada: pemeriksaan.diperiksaPada, sumber: pemeriksaan.cara === "ringan" ? "pemeriksaan ringan" : "pemeriksaan sesi" });
   }
-  if (pantau && pantau.terakhirDetak && typeof pantau.berlaku === "boolean") {
+  // Pemantau sesi hanya memeriksa slot bawaan "utama".
+  if (pantau && pantau.terakhirDetak && typeof pantau.berlaku === "boolean" && (!kunci || kunci === "utama")) {
     bukti.push({ berlaku: pantau.berlaku, pada: pantau.terakhirDetak, sumber: "pemantau sesi" });
   }
-  const tarik = (riwayat || []).find((r) => typeof r.sesiBerlaku === "boolean");
+  // Hanya log AKUN YANG SAMA (30 Okt 2026): dulu log akun cadangan ikut
+  // menentukan keadaan akun utama.
+  const tarik = (riwayat || []).find(
+    (r) => typeof r.sesiBerlaku === "boolean" && (!kunci || String(r.akun || "utama").toLowerCase() === kunci)
+  );
   if (tarik) bukti.push({ berlaku: tarik.sesiBerlaku, pada: tarik.selesai || tarik.mulai, sumber: "penarikan" });
-  bukti.sort((a, b) => (a.pada < b.pada ? 1 : a.pada > b.pada ? -1 : 0));
+  // Dibandingkan sebagai WAKTU, bukan teks - "2026-10-12T08:36:54.385Z"
+  // dan "2026-10-12T08:36:54Z" tidak dapat diurutkan sebagai teks.
+  const ms = (t) => {
+    const n = Date.parse(String(t || ""));
+    return Number.isFinite(n) ? n : 0;
+  };
+  bukti.sort((a, b) => ms(b.pada) - ms(a.pada));
   return bukti[0] || { berlaku: null, pada: "", sumber: "" };
 }
 
@@ -243,6 +257,15 @@ function statusPenarikan(deps = {}) {
   }
   const pemeriksaan = sesiStatus.terakhirDiketahui ? sesiStatus.terakhirDiketahui(akunUtama.slot || "") : null;
 
+  // Status akun satu sumber (30 Okt 2026) - yang dibaca penanda portal.
+  let statusUtama = null;
+  try {
+    const statusAkun = deps.statusAkun || require("./ecourtStatusAkunService");
+    statusUtama = statusAkun.statusSlot(akunUtama.slot || "utama");
+  } catch {
+    statusUtama = null;
+  }
+
   return {
     ok: true,
     dibaca: new Date(sekarangMs).toISOString(),
@@ -280,7 +303,8 @@ function statusPenarikan(deps = {}) {
     terakhirPerkara: riwayat.find((r) => r.jenis === "perkara") || null,
     terakhirPagi: riwayat.find((r) => r.jenis === "pagi") || null,
     riwayat,
-    sesi: sesiTerbaru({ pemeriksaan, pantau: pantauStatus, riwayat }),
+    sesi: sesiTerbaru({ pemeriksaan, pantau: pantauStatus, riwayat, slot: akunUtama.slot || "utama" }),
+    statusUtama,
   };
 }
 

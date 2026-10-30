@@ -1501,8 +1501,11 @@ function gambarTarikEcourt() {
   const r = tarikEcourt.ringkas;
   const keadaan = tarikEcourt.memuat ? "memuat" : r ? r.keadaan : "tidak-terjangkau";
   bagian.setAttribute("data-keadaan", keadaan);
+  // 30 Okt: judul & warna = keadaan sambungan (server); saklar penarikan
+  // berkala ditandai terpisah (titik berongga bila mati).
+  bagian.setAttribute("data-saklar", r && r.aktif === false ? "mati" : "menyala");
   tombol.textContent = tarikEcourt.memuat ? "memuat…" : r ? String(r.label || "") : "Tidak terjangkau";
-  const bisaDiklik = !tarikEcourt.memuat && !tarikEcourt.sibuk && r && (r.keadaan === "mati" || r.aktif === true);
+  const bisaDiklik = !tarikEcourt.memuat && !tarikEcourt.sibuk && r && (r.keadaan === "mati" || r.aktif === true || r.aktif === false);
   tombol.disabled = !bisaDiklik;
   tombol.title = bisaDiklik ? (r.aktif === true ? "Klik untuk mematikan penarikan e-Court" : "Klik untuk mengaktifkan penarikan e-Court") : "";
   let teks = tarikEcourt.kabar || (r ? String(r.keterangan || "") : "");

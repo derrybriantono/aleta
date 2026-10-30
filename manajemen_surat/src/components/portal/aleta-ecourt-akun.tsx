@@ -6,7 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import {
+  LencanaStatusEcourt,
+  kabarkanStatusEcourtBerubah,
+  useStatusEcourt,
+} from "@/components/portal/ecourt-status-lencana";
 import { apiPath } from "@/lib/base-path";
+import { PERISTIWA_MASUK_ECOURT } from "@/lib/ecourt-status-akun";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 
 /**
@@ -71,14 +77,6 @@ type KeadaanAkun = {
   lamaMs?: number;
 };
 
-const NADA_KEADAAN: Record<string, "default" | "warning" | "muted"> = {
-  berlaku: "default",
-  kedaluwarsa: "warning",
-  gerbang: "warning",
-  belum_pasti: "warning",
-  belum_pernah: "muted",
-};
-
 export function AletaEcourtAkun() {
   const [akun, setAkun] = useState<Akun[]>([]);
   const [akunUtama, setAkunUtama] = useState<AkunUtama | null>(null);
@@ -91,6 +89,10 @@ export function AletaEcourtAkun() {
 
   const [keadaan, setKeadaan] = useState<Record<string, KeadaanAkun>>({});
   const [memeriksa, setMemeriksa] = useState(false);
+  // Status akun satu sumber (30 Okt 2026) - lencana tabel ini sama persis
+  // dengan kartu Masuk e-Court, Penarikan Berkala, dan lampu ekstensi.
+  const { data: statusEcourt } = useStatusEcourt();
+  const statusPer = (slot: string) => statusEcourt?.akun.find((a) => a.slot === slot) ?? null;
 
   // Slot yang formulir sandinya sedang dibuka. Hanya satu pada satu waktu -
   // membuka beberapa sekaligus memperbesar peluang sandi tertulis ke akun yang
@@ -153,6 +155,7 @@ export function AletaEcourtAkun() {
       const peta: Record<string, KeadaanAkun> = {};
       for (const satu of (data.akun ?? []) as KeadaanAkun[]) peta[satu.slot] = satu;
       setKeadaan(peta);
+      if (penuh) kabarkanStatusEcourtBerubah();
     } catch {
       // Gagal membaca keadaan bukan alasan mengosongkan daftar akun.
     } finally {
@@ -191,12 +194,16 @@ export function AletaEcourtAkun() {
           const sebab: Record<string, string> = {
             slot_tidak_sah: "Slot tidak sah.",
             email_kosong: "Surel belum diisi.",
+            kunci_tidak_tersedia:
+              "Kunci penyandian di server tidak tersedia, jadi sandi TIDAK disimpan (tidak pernah disimpan polos). Minta admin server mengisi ALETA_ECOURT_KUNCI atau memeriksa folder sesi e-Court.",
           };
-          setGalat(sebab[String(data?.alasan)] || String(data?.alasan || "Tidak berhasil."));
+          const kode = String(data?.alasan || "").split(":")[0];
+          setGalat(sebab[kode] || String(data?.alasan || "Tidak berhasil."));
           return;
         }
 
         setKabar("Surel dan sandi tersimpan. Login berikutnya cukup mengisi captcha.");
+        kabarkanStatusEcourtBerubah();
         setSuntingSlot("");
         // Isian dikosongkan SEGERA setelah terkirim - sandi tidak perlu
         // tinggal di memori peramban lebih lama dari yang diperlukan.
@@ -226,6 +233,7 @@ export function AletaEcourtAkun() {
         const isi = await jawaban.json();
         if (!jawaban.ok) throw new Error(pesanGalatPortal(isi, "Gagal menghapus simpanan."));
         setKabar("Simpanan sandi dihapus. Login berikutnya diketik manual.");
+        kabarkanStatusEcourtBerubah();
         await muatKeadaan(false);
       } catch (kesalahan) {
         setGalat(kesalahan instanceof Error ? kesalahan.message : "Gagal menghapus.");
@@ -376,28 +384,14 @@ export function AletaEcourtAkun() {
                       <div className="flex flex-wrap gap-1">
                         {!baris.aktif ? <Badge variant="muted">dimatikan</Badge> : null}
 
-                        {/* Keadaan yang sudah DIPERIKSA dipakai lebih dulu.
+                        {/* Keadaan dari status akun satu sumber (30 Okt 2026).
                             "ada sesi" hanya berarti foldernya ada - dan folder
-                            itu tetap ada lama setelah sesinya mati. */}
-                        {keadaan[baris.slot] ? (
-                          <Badge
-                            variant={NADA_KEADAAN[keadaan[baris.slot].keadaan] || "muted"}
-                            title={keadaan[baris.slot].label}
-                          >
-                            {keadaan[baris.slot].keadaan === "berlaku"
-                              ? "sesi berlaku"
-                              : keadaan[baris.slot].keadaan === "kedaluwarsa"
-                                ? "sesi kedaluwarsa"
-                                : keadaan[baris.slot].keadaan === "gerbang"
-                                  ? "menunggu penegasan"
-                                  : keadaan[baris.slot].keadaan === "belum_pernah"
-                                    ? "belum login"
-                                    : "belum diperiksa"}
-                          </Badge>
-                        ) : baris.adaSesi ? (
-                          <Badge variant="warning">belum diperiksa</Badge>
+                            itu tetap ada lama setelah sesinya mati; model ini
+                            hanya menyebut tersambung bila TERBUKTI baru-baru ini. */}
+                        {statusPer(baris.slot) ? (
+                          <LencanaStatusEcourt t={statusPer(baris.slot)} />
                         ) : (
-                          <Badge variant="warning">belum login</Badge>
+                          <Badge variant="muted">{statusEcourt ? "Belum diatur" : "Memuat…"}</Badge>
                         )}
 
                         {keadaan[baris.slot]?.isiOtomatis ? (
@@ -405,13 +399,18 @@ export function AletaEcourtAkun() {
                             isi otomatis
                           </Badge>
                         ) : null}
-                        {baris.istirahat ? (
-                          <Badge variant="danger" title={baris.alasanGagal}>
-                            diistirahatkan
+                        {/* Istirahat hanya relevan selama akun BELUM terbukti tersambung
+                            lagi - masuk berhasil melepasnya di bot seketika. */}
+                        {baris.istirahat && statusPer(baris.slot)?.keadaan !== "aktif" ? (
+                          <Badge variant="warning" title={baris.alasanGagal}>
+                            dilewati sementara
                           </Badge>
                         ) : null}
                       </div>
-                      {baris.istirahat && baris.alasanGagal ? (
+                      {statusPer(baris.slot) ? (
+                        <p className="mt-1 text-xs text-muted-foreground">{statusPer(baris.slot)?.teks}</p>
+                      ) : null}
+                      {baris.istirahat && baris.alasanGagal && statusPer(baris.slot)?.keadaan !== "aktif" ? (
                         <p className="mt-1 text-xs text-muted-foreground">{baris.alasanGagal}</p>
                       ) : null}
                       {keadaan[baris.slot]?.cara ? (
@@ -425,6 +424,19 @@ export function AletaEcourtAkun() {
                     </td>
                     <td className="px-3 py-2">
                       <div className="flex flex-wrap gap-1">
+                        {statusPer(baris.slot)?.tindakan === "masuk" || statusPer(baris.slot)?.tindakan === "masuk_lagi" ? (
+                          <Button
+                            size="sm"
+                            disabled={sibuk !== ""}
+                            title="Membuka kotak captcha di kartu Masuk e-Court untuk akun ini."
+                            onClick={() => {
+                              window.dispatchEvent(new CustomEvent(PERISTIWA_MASUK_ECOURT, { detail: { slot: baris.slot } }));
+                              document.getElementById("masuk-ecourt")?.scrollIntoView({ behavior: "smooth" });
+                            }}
+                          >
+                            {statusPer(baris.slot)?.labelTindakan}
+                          </Button>
+                        ) : null}
                         {baris.utama ? (
                           <Button
                             size="sm"
@@ -645,7 +657,8 @@ export function AletaEcourtAkun() {
 
         <p className="text-xs text-muted-foreground">
           Nama slot hanya huruf kecil, angka, dan tanda hubung. Setelah ditambahkan, hidupkan
-          akunnya dengan login sekali dari panel Sesi e-Court di atas — pilih slotnya lebih dulu.
+          akunnya dengan masuk sekali - tombol Masuk e-Court di baris akunnya, atau kartu Masuk
+          e-Court di atas (pilih akunnya lebih dulu).
         </p>
       </CardContent>
     </Card>

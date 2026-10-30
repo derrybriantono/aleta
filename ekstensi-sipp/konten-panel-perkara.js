@@ -9220,6 +9220,19 @@ function t7DaftarIsi(k) {
  * ALETA (konteks segar atau simpanan luring), e-Court (umur penarikan
  * terakhir - lebih dari sehari berarti kuning).
  */
+/**
+ * Lampu "e-Court" (30 Okt 2026): warna & judul dari status akun e-Court satu
+ * sumber (server, src/lib/ecourt-status-akun.ts) - PERSIS lencana portal dan
+ * lampu Sambungan. Umur data perkara tetap disebut di keterangannya. Tanpa
+ * status (server lama): seperti dulu, menurut umur data perkara.
+ */
+function t7LampuEcourt(k, usia) {
+  const st = k && k.konteks && k.konteks.statusEcourt && k.konteks.statusEcourt.lampu ? k.konteks.statusEcourt : null;
+  if (st && st.keadaan !== "aktif") return ["e-Court", st.lampu, `${st.judul} - ${st.teks}`];
+  if (st) return ["e-Court", st.lampu, `${st.judul} · data perkara diperiksa ${usia.teks}${usia.basi ? " (perlu ditarik ulang)" : ""}`];
+  return ["e-Court", usia.basi ? "awas" : "baik", `diperiksa ${usia.teks}`];
+}
+
 function t7Lampu(k, ringkas) {
   const wadah = buatElemen(ringkas ? "span" : "div", `aleta-t7-lampu${ringkas ? " aleta-t7-lampu-ringkas" : ""}`);
   if (!ringkas) wadah.setAttribute("data-t7-fitur", "sipp-23");
@@ -9227,7 +9240,7 @@ function t7Lampu(k, ringkas) {
   const daftar = [
     ["SIPP", "baik", "halaman SIPP terbaca"],
     ["ALETA", typeof sedangLuring !== "undefined" && sedangLuring ? "awas" : "baik", typeof sedangLuring !== "undefined" && sedangLuring ? "server tidak menjawab - data simpanan" : "tersambung"],
-    ["e-Court", usia.basi ? "awas" : "baik", `diperiksa ${usia.teks}`],
+    t7LampuEcourt(k, usia),
   ];
   for (const [nama, keadaan, ket] of daftar) {
     const l = buatElemen("span", `aleta-t7-lampu-satu aleta-t7-lampu-${keadaan}`);

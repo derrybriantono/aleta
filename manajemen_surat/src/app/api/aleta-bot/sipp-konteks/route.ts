@@ -1,5 +1,6 @@
 import { type NextRequest } from "next/server";
 
+import { tampilanStatus, type StatusAkunEcourt } from "@/lib/ecourt-status-akun";
 import { getDatabase } from "@/server/db/client";
 import {
   getGatewaySippKonteks,
@@ -105,7 +106,16 @@ export async function GET(request: NextRequest) {
     return ok({
       available: true,
       message: "",
-      konteks: hasil.data ?? null,
+      // statusEcourt (30 Okt 2026): status akun utama e-Court dalam kamus
+      // tampilan yang sama dengan semua penanda - lampu "e-Court" panel perkara.
+      konteks: hasil.data
+        ? {
+            ...hasil.data,
+            statusEcourt: (hasil.data as { statusEcourt?: StatusAkunEcourt | null }).statusEcourt
+              ? tampilanStatus((hasil.data as { statusEcourt?: StatusAkunEcourt | null }).statusEcourt)
+              : null,
+          }
+        : null,
       keadaanCermin,
       pengguna: {
         nama: actor.name,

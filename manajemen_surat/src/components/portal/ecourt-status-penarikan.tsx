@@ -12,6 +12,8 @@ import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { LencanaStatusEcourt, useStatusEcourt } from "@/components/portal/ecourt-status-lencana";
+import type { StatusAkunEcourt } from "@/lib/ecourt-status-akun";
 import { apiPath } from "@/lib/base-path";
 import {
   LABEL_HASIL,
@@ -70,9 +72,19 @@ export function EcourtStatusPenarikan() {
     return () => window.clearTimeout(t);
   }, [muat]);
 
+  const { data: statusEcourt } = useStatusEcourt();
+  const statusUtama = statusEcourt?.ringkas ?? null;
   const zona = status?.penjadwal.zonaWaktu || undefined;
   const sesi = status ? keadaanSesi(status.sesi, zona) : null;
-  const peringatan = status ? peringatanPenarikan(status) : [];
+  // Peringatan sesi mengikuti simpanan status bersama (berubah serentak
+  // sesudah masuk), bukan salinan saat kartu ini dimuat.
+  const peringatan = status
+    ? peringatanPenarikan(
+        statusUtama
+          ? { ...status, statusUtama: { ...(status.statusUtama ?? {}), keadaan: statusUtama.keadaan, adaSandi: statusUtama.adaSandi } as StatusAkunEcourt }
+          : status
+      )
+    : [];
 
   return (
     <Card>
@@ -90,7 +102,8 @@ export function EcourtStatusPenarikan() {
               </Badge>
             ) : null}
             {status?.penjadwal.sedangJalan ? <Badge variant="warning">sedang menarik</Badge> : null}
-            {sesi ? <Badge variant={sesi.nada}>{status?.sesi.berlaku === true ? "sesi aktif" : status?.sesi.berlaku === false ? "sesi habis" : "sesi belum diperiksa"}</Badge> : null}
+            {/* Keadaan sesi dari status akun satu sumber - sama dengan semua kartu. */}
+            {statusUtama ? <LencanaStatusEcourt t={statusUtama} awalan="e-Court" /> : sesi ? <Badge variant={sesi.nada}>{status?.sesi.berlaku === true ? "sesi aktif" : status?.sesi.berlaku === false ? "sesi habis" : "sesi belum diperiksa"}</Badge> : null}
           </CardTitle>
           <CardDescription>Dibaca dari log penarikan dan keadaan ALETA Bot - tidak menyentuh e-Court.</CardDescription>
         </div>
@@ -138,7 +151,11 @@ export function EcourtStatusPenarikan() {
                   ? ` Jam kerja ${status.penjadwal.jamMulai}.00-${status.penjadwal.jamSelesai}.00, Senin-Jumat.`
                   : ""}
               </p>
-              {sesi ? (
+              {statusUtama ? (
+                <p>
+                  <span className="font-medium text-foreground">Sesi e-Court:</span> {statusUtama.judul} - {statusUtama.teks}
+                </p>
+              ) : sesi ? (
                 <p>
                   <span className="font-medium text-foreground">Sesi:</span> {sesi.teks}
                 </p>
