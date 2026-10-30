@@ -718,3 +718,15 @@ describe("Status wali berselisih antar sumber (ukur 222/Pdt.P/2026)", () => {
     expect(DS.saringTanyaWali(rows, { statusWali: "Ayah Kandung Pemohon II" }).dibuang).toBe(0);
   });
 });
+
+describe("Pengisi jawaban itsbat: pertanyaan wali yang lebih berhak diisi aturan WALI, bukan aturan ijab (220/Pdt.P/2026)", () => {
+  it("pokok pertama yang cocok: wali untuk 'wali yang menikahkan / lebih berhak', ijab untuk 'siapa yang mengucapkan ijab'", () => {
+    const S = require_("../services/isiJawabanSaksi");
+    const pokok = (tanya: string) => (S.POKOK as Array<{ id: string; jenis?: string[]; tanya: RegExp }>).find((p) => (!p.jenis || p.jenis.includes("itsbat")) && p.tanya.test(tanya.toLowerCase()))?.id;
+    expect(pokok("Apakah masih ada wali yang lebih berhak daripada wali yang menikahkan Pemohon II? Mengapa yang menikahkan bukan ayah kandungnya?")).toBe("wali");
+    expect(pokok("Mengapa yang menikahkan Pemohon II bukan ayah kandungnya, dan apakah ada kerabat laki-laki lain yang lebih dekat dan berhak menjadi wali?")).toBe("wali");
+    expect(pokok("Siapa yang menjadi wali nikah Pemohon II pada pernikahan tersebut?")).toBe("wali");
+    expect(pokok("Siapa yang mengucapkan ijab untuk menikahkan Pemohon I dan Pemohon II?")).toBe("ijab");
+    expect(pokok("Siapa yang menikahkan Pemohon I dan Pemohon II?")).toBe("ijab");
+  });
+});
