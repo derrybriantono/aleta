@@ -437,6 +437,12 @@ describe("1.2 aturan pemeriksa (murni)", () => {
     expect(tanda.teks).not.toMatch(/\b\d{4}\b/);
     expect(d.find((x) => x.jenis === "sisa-kurung")!.perbaiki).toEqual({ aksi: "pratinjau" });
   });
+  it("huruf sudah dipilih tetapi naskah tetap berbunyi 'belum dipilih' (render nyata: H saja pada pertimbangan bukti surat) -> butir cabang ke pratinjau", () => {
+    const d = m.kumpulkan({ huruf: { ada: true, nilai: "H", dikenal: true }, naskah: { teks: "Menimbang, bahwa [HURUF ALASAN PERCERAIAN BELUM DIPILIH];", temuanSisa: [] } });
+    expect(d).toEqual([expect.objectContaining({ jenis: "huruf-cabang", perbaiki: { aksi: "pratinjau" } })]);
+    expect(d[0].teks).toContain('"H" sudah dipilih');
+  });
+
   it("kurung bunyi huruf alasan di sisa blangko tidak disebut dua kali", () => {
     const t = sisa.periksaRtf(rtf("Menimbang, bahwa [HURUF ALASAN PERCERAIAN BELUM DIPILIH];"));
     const d = m.kumpulkan({ huruf: { ada: true, nilai: "", dikenal: false }, naskah: { teks: "Menimbang, bahwa [HURUF ALASAN PERCERAIAN BELUM DIPILIH];", temuanSisa: t.temuan }, kodeAda: new Set(["8503"]) });

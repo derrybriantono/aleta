@@ -37,7 +37,20 @@ Laptop: `ABT_LOKAL=1 ABT_DB=<basis salinan> bash pasang-satker.sh`.
 ## Hasil (`hasil/`)
 - `uji-lokal.txt`: pasang -> PERIKSA -> variabel lain (2.681) tak berubah -> pulih (md5 4 variabel = sebelum) -> pasang lagi -> pasang ulang
   (0|4) -> jalur gagal (basis tanpa paket alasan: `0|0`).
-- `render-ringkasan.json`: render php56 ABT asli (lihat di bawah).
+- `render-ringkasan.json`: render php56 ABT ASLI (`alat/render_agama.py`, renderer salinan -> `aps_badilag_g1`/`sipp_g1`; isian huruf alasan
+  DIPAKSA "H" di basis salinan lalu dikembalikan; agama kedua pihak di SIPP Islam) atas 553/Pdt.G/2026 (CG, RTF uji 5 penanda dan
+  blangko `1 Perceraian CG/[01] [Kabul Verstek] Cerai (Format Lengkap).rtf`) dan 274/Pdt.G/2026 (CT, blangko CT [01]):
+  SEBELUM paket "TIDAK BENAR QUERY NYA" 4 kali + petunjuk "lalu muat ulang ABT" ikut tercetak 4 kali; SESUDAH
+  "[AGAMA PIHAK YANG MURTAD BELUM DIUBAH DI SIPP]" 4 kali, bunyi lama 0, penanda tersisa 0 - ketiga render.
+
+## Temuan render (BELUM diubah - pertanyaan untuk pengguna)
+- Dengan huruf alasan "H" saja, **8529 (pertimbangan bukti surat perceraian verstek) tetap berbunyi "[HURUF ALASAN PERCERAIAN BELUM
+  DIPILIH]"** pada blangko CG [01] (553/Pdt.G/2026): variabel itu belum punya cabang untuk H. Periksa sebelum cetak kini menyebutnya
+  sebagai "huruf sudah dipilih, tetapi sebagian pertimbangan belum punya bunyi untuk huruf itu". Bunyi pertimbangan bukti surat
+  untuk murtad adalah pilihan hukum - tidak ditebak.
+- Blangko CG [01] pohon server (`dasar2`, sebelum paket prodeo-panggilan-29okt) atas 553/Pdt.G/2026 mencetak
+  "relaas ... tanggal 16 September 2026 dan tanggal 16 September 2026" (tanggal ganda) - sudah diperbaiki paket prodeo-panggilan-29okt;
+  Periksa sebelum cetak menandainya selama paket itu belum terpasang.
 
 ## Bangun ulang
 `python sumber/bangun_paket.py <basis salinan sesudah alasan-belum-dipilih-30okt>`; deterministik.

@@ -77,7 +77,17 @@
     const hurufTakDikenal = Boolean(h && h.ada && teks(h.nilai).trim() && h.dikenal === false);
     // Bunyi lama "TIDAK BENAR QUERY NYA" tanpa keterangan agama = huruf alasan kosong (cabang terakhir 10 variabel alasan).
     const hurufDiNaskah = POLA_HURUF.test(isiNaskah) || POLA_QUERY_LAMA.test(isiNaskah.replace(/(?:TIDAK BENAR QUERY NYA\s*\/\s*)?ALASAN H: AGAMA PIHAK YANG MURTAD BELUM DIUBAH DI SIPP/gi, ""));
-    if (hurufKosong || hurufTakDikenal || hurufDiNaskah) {
+    // Huruf sudah dipilih dan dikenali, tetapi naskah tetap memuat bunyi "belum dipilih": ada pertimbangan yang belum punya bunyi
+    // untuk huruf itu (terukur 30 Okt: huruf H saja -> pertimbangan bukti surat verstek). Bukan kotak hurufnya yang salah.
+    if (hurufDiNaskah && !hurufKosong && !hurufTakDikenal && h && h.ada) {
+      hasil.push({
+        jenis: "huruf-cabang",
+        teks: `Huruf alasan perceraian "${potong(h.nilai, 30)}" sudah dipilih, tetapi sebagian pertimbangan belum punya bunyi untuk huruf itu - naskah memuat "[HURUF ALASAN PERCERAIAN BELUM DIPILIH]". Periksa bagian itu di pratinjau.`,
+        perbaiki: { aksi: "pratinjau" },
+        judulTombol: "Membuka pratinjau naskah",
+      });
+      sudah.add("8503");
+    } else if (hurufKosong || hurufTakDikenal || hurufDiNaskah) {
       const keIsian = Boolean(h && h.ada);
       hasil.push({
         jenis: "huruf",
