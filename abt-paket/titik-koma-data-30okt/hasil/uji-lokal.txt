@@ -1,0 +1,23 @@
+SIDIK AWAL: 70045	992a311debf86da15cc49ab37f89d3ba
+PRASYARAT awal: 1|2|0|0|615
+perkara terdampak: 301
+PRASYARAT COCOK (1|2|0|0|615): 615 jawaban akan dirapikan, pemicu diperluas
+CADANGAN: paket-satker/cadangan/jawaban-sebelum.sql (615 baris)
+PERIKSA DATA (baris cadangan | hilang | bukan hasil rapi | beda huruf/angka | pertanyaan berubah): 615|0|0|0|0
+PERIKSA: SEMUA COCOK
+PRASYARAT SESUDAH: 1|0|2|0|0 (harus 1|0|2|0|0)
+SELESAI
+UJI PEMICU (baris uji di salinan, langsung dihapus):
+sisip -> tidak berhasil, karena jauh;
+ubah -> kenal, rukun
+PULIH:
+PEMICU DIKEMBALIKAN (1|2|0|0|0)
+BARIS CADANGAN 615 | MASIH HASIL PAKET 615
+DIKEMBALIKAN 615
+SAMA DENGAN CADANGAN 615
+PULIH COCOK
+SIDIK SESUDAH PULIH: 70045	992a311debf86da15cc49ab37f89d3ba (SAMA PERSIS)
+PASANG LAGI:
+PERIKSA: SEMUA COCOK
+PRASYARAT SESUDAH: 1|0|2|0|0 (harus 1|0|2|0|0)
+SELESAI
