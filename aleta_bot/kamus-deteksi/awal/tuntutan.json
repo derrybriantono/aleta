@@ -117,14 +117,16 @@
       "label": "Hak asuh anak (hadhanah)",
       "kunci": "hadhanah",
       "peran": "jenis",
-      "regex": "\\bhak\\s+(?:asuh|hadh?[ao]nah|hadlon?ah|pemeliharaan|pengasuhan|alimentasi)|\\b(?:berada\\s+)?(?:di\\s*bawah|dalam)\\s+(?:asuhan|pengasuhan|pemeliharaan|hadh?anah)\\b|\\bdi\\s*asuh\\s+(?:dan\\s+dirawat\\s+)?oleh\\b|\\bhadh?[ao]nah\\b|\\bhadlon?ah\\b|\\bpemegang\\s+hak\\s+asuh|\\bhak\\s+mengasuh|\\bberhak\\s+(?:dalam+\\s+hal\\s+)?(?:pengasuhan|mengasuh|pemeliharaan\\s+anak)",
+      "regex": "\\bhak\\s+(?:asuh|hadh?[ao]nah|hadlon?ah|pemeliharaan|pengasuhan|alimentasi)|\\b(?:berada\\s+)?(?:di\\s*bawah|dalam)\\s+(?:asuhan|pengasuhan|pemeliharaan|hadh?anah)\\b|\\bdi\\s*asuh\\s+(?:dan\\s+dirawat\\s+)?oleh\\b|\\bhadh?[ao]nah\\b|\\bhadlon?ah\\b|\\bpemegang\\s+hak\\s+asuh|\\bhak\\s+mengasuh|\\bberhak\\s+(?:dalam+\\s+hal\\s+)?(?:pengasuhan|mengasuh|pemeliharaan\\s+anak)|\\bhadl[ae]n?ah\\b|\\bhadh[ae]nah\\b|\\b(?:perwalian\\s+dan\\s+)?pengasuhan\\s+(?:\\S+\\s+){0,1}?anak\\b",
       "flags": "i",
       "status": "aktif",
       "yakin": "ragu",
       "contohBenar": [
         "Menetapkan hak asuh anak kepada Penggugat",
         "anak tersebut dibawah asuhan Penggugat",
-        "memohon hak hadhanah (hak asuh)"
+        "memohon hak hadhanah (hak asuh)",
+        "Menetapkan bahwa Penggugat berhak atas hadlanah(Penguasaan dan pemeliharaan) atas 2 (dua) orang anak",
+        "Menyatakan Perwalian dan Pengasuhan anak atas nama A diberikan kepada Penggugat"
       ],
       "contohSalah": [
         "nafkah anak sebesar Rp1.000.000",
@@ -137,7 +139,7 @@
         "sumber": "posita+petitum SIPP perkara diputus vs amar (sipp_donggala salinan 9 Okt), salah tangkap diperiksa tangan; aleta_bot/tools/ukur-deteksi-tuntutan.js",
         "tanggal": "2026-10-10"
       },
-      "catatan": "\"biaya hadhanah\" adalah nafkah anak, bukan hak asuh - didahulukan pola nafkah-anak/madliyah. UKUR 10 Okt: Salah tangkap: 793/Pdt.P/2018, 407/Pdt.G/2024 (kalimat fakta 'dalam pengasuhan'). 97,8% - tetap ragu: hak asuh adalah amar yang diputus hakim."
+      "catatan": "\"biaya hadhanah\" adalah nafkah anak, bukan hak asuh - didahulukan pola nafkah-anak/madliyah. UKUR 10 Okt: Salah tangkap: 793/Pdt.P/2018, 407/Pdt.G/2024 (kalimat fakta 'dalam pengasuhan'). 97,8% - tetap ragu: hak asuh adalah amar yang diputus hakim. 30 Okt (deteksi-luas): ejaan hadlanah/hadhenah & 'pengasuhan anak' dari petitum sipp_2810."
     },
     {
       "kode": "tuntutan-harta-bersama",

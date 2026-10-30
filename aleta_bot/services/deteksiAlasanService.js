@@ -283,7 +283,10 @@ const HURUF_LANGSUNG = {
 
 /** Sebab yang menunjuk huruf itu, dan bukan perbuatan pihak yang mengajukan / tuduhan terhadapnya. */
 function sebabHuruf(daftarSebab, huruf) {
-  return (daftarSebab || []).filter((s) => HURUF_LANGSUNG[s.sebab] === huruf && s.pelaku !== "lawan" && s.pelaku !== "tuduhan");
+  // 30 Okt (keputusan sementara sesi utama): huruf H berlaku bagi SALAH SATU pihak - murtad oleh pihak yang mengajukan
+  // sendiri tetap diusulkan (selaras paket ABT murtad-8529 yang membaca pihak murtad dua arah). Huruf lain tetap
+  // menolak perbuatan pihak yang mengajukan. Tuduhan tidak pernah memicu.
+  return (daftarSebab || []).filter((s) => HURUF_LANGSUNG[s.sebab] === huruf && s.pelaku !== "tuduhan" && (s.pelaku !== "lawan" || huruf === "H"));
 }
 
 const LABEL_STATUS = {

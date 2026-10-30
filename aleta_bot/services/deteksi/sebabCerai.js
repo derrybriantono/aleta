@@ -55,7 +55,7 @@ const RE_PEMISAH =
 const RE_PEMISAH_KUAT =
   /^(?:namun|tetapi|akan\s+tetapi|sedangkan|sehingga|karena|dikarenakan|disebabkan|adalah|yaitu|yakni|bahwa|dimana|di\s+mana|padahal|apabila|jika|ketika|saat|setelah|sejak|\.|:|\(|\))$/i;
 const RE_PENGISI =
-  /^(?:dan|serta|juga|ya|lalu|pun|karena|bahwa|seringkali|sering\s+kali|sering|selalu|kerap(?:\s+kali)?|terkadang|kadang(?:-kadang)?|yang\s+saya\s+(?:tahu|ketahui)|sepengetahuan\s+saya|setahu\s+saya|menurut\s+saya)\b[\s,]*/i;
+  /^(?:dan|serta|juga|ya|lalu|pun|karena|bahwa|mengakibatkan|menyebabkan|akhirnya|seringkali|sering\s+kali|sering|selalu|kerap(?:\s+kali)?|terkadang|kadang(?:-kadang)?|yang\s+saya\s+(?:tahu|ketahui)|sepengetahuan\s+saya|setahu\s+saya|menurut\s+saya)\b[\s,]*/i;
 const RE_PENYANGKAL = /\b(?:tidak|tak|bukan|belum|tanpa|jangan)\s+(?:pernah\s+)?(?:sampai\s+)?(?:\S+\s+)?$/i;
 
 /** Jenis cerai dari sebutan pihak: CT bila pelaku Termohon dan lawan Pemohon. */
@@ -107,10 +107,23 @@ function subjekAwal(teks) {
   if (pk) return { s: "PK" };
   const kel = new RegExp(`^(${KELUARGA})(?:nya)?(?:\\s+kandung)?(?:\\s+(?:dari\\s+)?(pemohon|termohon|penggugat|tergugat))?\\b`).exec(kecil);
   if (kel) return pemilikKeluarga(kel[1], kel[2]);
+  // 30 Okt: "Pemohon mengetahui Termohon telah kembali memeluk agama ...", "Penggugat menegur Tergugat agar berhenti
+  // minum-minum alkohol" - pihak sesudah kata kerja mengetahui/melihat/menegur adalah PELAKU perbuatan berikutnya.
+  // Diukur atas posita sipp_2810 (deteksi-luas-30okt.test.ts). melarang/meminta/menyuruh/mengajak SENGAJA tidak ikut
+  // (perbuatannya belum tentu terjadi).
+  // Kemunculan TERAKHIR di segmen ("pada bulan Juli 2022 Pemohon mengetahui Termohon ..."), dan tidak ada sebutan pihak
+  // lain sesudahnya.
+  let tahu = null;
+  for (const m of kecil.matchAll(RE_TAHU_PIHAK)) tahu = m;
+  if (tahu && tahu[1] !== tahu[2] && !/\b(?:pemohon|termohon|penggugat|tergugat)\b/.test(kecil.slice(tahu.index + tahu[0].length))) {
+    return { s: SEBUTAN_PELAKU.has(tahu[2]) ? "P" : "L" };
+  }
   const s = /^(pemohon|termohon|penggugat|tergugat)\b/.exec(kecil);
   if (s) return { s: SEBUTAN_PELAKU.has(s[1]) ? "P" : "L" };
   return { s: "" };
 }
+const RE_TAHU_PIHAK =
+  /\b(pemohon|termohon|penggugat|tergugat)\s+(?:(?:telah|sudah|baru|pun|kembali|pernah|sering|selalu|akhirnya)\s+)*(?:mengetahui|melihat|mendapati|memergoki|mendengar|menemukan|tahu|menasehati|menasihati|menegur|mengingatkan)\s+(?:(?:bahwa|kalau|ternyata|sendiri|langsung)\s+)*(pemohon|termohon|penggugat|tergugat)\b(?!\s+(?:dan|dengan|&)\s)/g;
 
 /** Keluarga milik siapa. "mertua Pemohon" = orang tua Termohon. */
 function pemilikKeluarga(kata, pemilik) {
@@ -212,6 +225,9 @@ function terimaSubjek(pola, kalimat, i) {
   }
   const s = subjekKlausa(kalimat, i);
   if (jenis === "lawan-pasif") return s.s === "L" ? { s: "P" } : { s: "" };
+  // 30 Okt: perbuatan PIHAK YANG MENGAJUKAN sendiri (murtad oleh Penggugat - huruf H berlaku bagi salah satu pihak).
+  // Bunyinya memuat {lawan} sendiri (tanpaSubjek), jadi subjeknya "B" (tanpa sebutan di depan bunyi).
+  if (jenis === "lawan") return s.s === "L" ? { s: "B" } : { s: "" };
   if (jenis === "pelaku/keluarga") return ["P", "K", "PK"].includes(s.s) ? s : { s: "" };
   return s.s === "P" || s.s === "PK" ? { s: "P" } : { s: "" };
 }

@@ -4090,6 +4090,33 @@
       "catatan": "Bunyi saksi PA Donggala untuk murtad: 'kembali ke agamanya (semula) yaitu Kristen'. Ciri lama hanya 'murtad'/'pindah agama'/'keluar dari agama islam' - faktor SIPP Murtad 9 perkara, ciri lama 3."
     },
     {
+      "kode": "tambah-h-kembali-memeluk",
+      "label": "murtad: kembali memeluk agama semula / sekarang beragama lain",
+      "kunci": "H",
+      "sebab": "murtad/pindah agama",
+      "jenis": "tambahan",
+      "regex": "(?<!(?:ingin|mau|hendak|akan)\\s+)kembali\\s+memeluk\\s+(?:agama|kepercayaan)|memeluk\\s+kembali\\s+agama|\\b(?:sekarang|kini|telah|sudah)\\s+(?:telah\\s+|sudah\\s+)?(?:ber)?agama\\s+(?:kristen|katolik|katholik|protestan|hindu|budha|buddha|konghucu)\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Termohon telah kembali memeluk agama dan kepercayaan Termohon sebelumnya yaitu Kristen",
+        "Penggugat sekarang beragama Kristen Protestan"
+      ],
+      "contohSalah": [
+        "Tergugat ingin kembali memeluk agama semula",
+        "Tergugat beragama Islam"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "sipp_2810 (dump 28 Okt) posita cerai + faktor akta cerai",
+        "tanggal": "2026-10-30"
+      },
+      "catatan": "30 Okt (deteksi-luas): ditambah atas posita nyata sipp_2810 yang terlewat - lihat deteksi-luas-30okt.test.ts."
+    },
+    {
       "kode": "tambah-h-keluar-dari-islam",
       "label": "murtad: keluar dari / tidak lagi beragama Islam (tanpa penyangkalan)",
       "kunci": "H",
@@ -4552,6 +4579,35 @@
       "catatan": "Penahanan belum tentu pidana yang dijalani - ragu."
     },
     {
+      "kode": "tambah-c-ditahan-di",
+      "label": "penjara: ditahan di rutan/lapas/polres, menjalani masa tahanan",
+      "kunci": "C",
+      "sebab": "salah satu pihak menjalani pidana penjara",
+      "jenis": "tambahan",
+      "regex": "\\bdi\\s?tahan\\s+di\\s*(?:rutan|lapas|lp|polres|polsek|polda|kantor\\s+polisi|penjara|sel)\\b|\\bdi\\s?tahan\\s+(?:oleh\\s+)?(?:pihak\\s+)?kepolis\\w*|\\bmenjalani\\s+masa\\s+tahanan\\b|\\bdipidana\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "tergugat sekarang ada ditahan dirutan maesa",
+        "setelah Tergugat ditahan di Polres Sigi",
+        "tergugat sekarang menjalani masa tahanan di LP Maesa",
+        "Tergugat ditahan oleh pihak kepolisisan"
+      ],
+      "contohSalah": [
+        "Tergugat menahan diri",
+        "Penggugat ditahan oleh orang tuanya untuk tidak pergi"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "sipp_2810 (dump 28 Okt) posita cerai + faktor akta cerai",
+        "tanggal": "2026-10-30"
+      },
+      "catatan": "30 Okt (deteksi-luas): diperluas atas posita nyata sipp_2810 - lihat deteksi-luas-30okt.test.ts."
+    },
+    {
       "kode": "tambah-c-di-penjara",
       "label": "penjara: di penjara / masuk penjara / narapidana",
       "kunci": "C",
@@ -4607,6 +4663,33 @@
         "tanggal": "2026-10-10"
       },
       "catatan": "'stroke'/'lumpuh' dicoba dan DIBUANG: muncul untuk kerabat pada perkara itsbat. Syarat akibat huruf e diperiksa manusia."
+    },
+    {
+      "kode": "tambah-e-penyakit-akibat",
+      "label": "cacat/penyakit: penyakit yang membuat tidak dapat melayani/menjalankan kewajiban",
+      "kunci": "E",
+      "sebab": "cacat badan atau penyakit",
+      "jenis": "tambahan",
+      "regex": "penyakit[^.;]{0,80}\\btidak\\s+(?:dapat|bisa|mampu)\\s+(?:lagi\\s+)?(?:melayani|menjalankan|melaksanakan|memenuhi|memberikan\\s+keturunan)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Termohon tidak memenuhi nafkah batin Pemohon dikarenakan penyakit Termohon sehingga Termohon tidak bisa melayani Pemohon",
+        "Termohon mengidap penyakit sehingga tidak bisa memberikan keturunan"
+      ],
+      "contohSalah": [
+        "Termohon sakit sehingga tidak bisa hadir di persidangan",
+        "Penggugat tidak dapat memberikan keterangan"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "sipp_2810 (dump 28 Okt) posita cerai + faktor akta cerai",
+        "tanggal": "2026-10-30"
+      },
+      "catatan": "30 Okt (deteksi-luas): ditambah atas posita nyata sipp_2810 yang terlewat - lihat deteksi-luas-30okt.test.ts."
     },
     {
       "kode": "tambah-a-zina-hamil-lain",
@@ -4692,6 +4775,34 @@
         "tanggal": "2026-10-10"
       },
       "catatan": "Minuman keras setempat Sulawesi: ballo, saguer, cap tikus."
+    },
+    {
+      "kode": "tambah-a-mabuk-salah-ketik",
+      "label": "mabuk: salah ketik minuman keras",
+      "kunci": "A",
+      "sebab": "mabuk",
+      "jenis": "tambahan",
+      "regex": "\\b(?:minum|mnum|meminum|mengkonsumsi|mengonsumsi)[\\s-]*(?:mnuman|minumah|minuma)?[\\s-]*keras\\b|\\bsopi\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat sering minum mnuman keras",
+        "Tergugat sering meminum-minumah keras",
+        "Tergugat sering mengkonsumsi minum keras"
+      ],
+      "contohSalah": [
+        "Tergugat bekerja keras",
+        "Tergugat minum obat"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "sipp_2810 (dump 28 Okt) posita cerai + faktor akta cerai",
+        "tanggal": "2026-10-30"
+      },
+      "catatan": "30 Okt (deteksi-luas): ditambah atas posita nyata sipp_2810 yang terlewat - lihat deteksi-luas-30okt.test.ts."
     },
     {
       "kode": "tambah-a-obat-varian",
