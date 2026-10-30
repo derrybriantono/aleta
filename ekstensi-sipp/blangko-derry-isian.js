@@ -2639,6 +2639,24 @@
     if (!v) return "Alasan perceraian belum dipilih. Selama belum disimpan, bagian pertimbangan alasan perceraian di ABT berbunyi \"[HURUF ALASAN PERCERAIAN BELUM DIPILIH]\" (di ABT yang belum diperbarui: \"TIDAK BENAR QUERY NYA\") dan ikut tercetak.";
     return !alasanHuruf() ? `ABT tidak mengenali "${v}" sebagai huruf alasan - tulis hurufnya saja, rapat, mis. F, BF, ABF (atau Murtad untuk H).` : "";
   };
+  /**
+   * 31 Okt (keputusan sesi utama): isian Tgl Nikah dipakai blangko itsbat SESUDAH kata "pada tanggal", jadi kata selain tanggal
+   * ("pada", "hari Sabtu", tanda baca di ujung) ikut tercetak ganda ("pada tanggal pada Rabu ..."). Peringatan pasif, tanpa klik.
+   */
+  const KODE_TGL_NIKAH = "5197";
+  function peringatanTglNikah(teks) {
+    const v = String(teks == null ? "" : teks).trim();
+    if (!v) return "";
+    const tanggalSaja = /^\d{1,2}[\s./-]+([A-Za-z]{3,9}|\d{1,2})[\s./-]+\d{4}$/.test(v);
+    return tanggalSaja ? "" : "Tulis tanggalnya saja (tanggal, bulan, tahun). Blangko sudah menulis \"pada tanggal\" sebelum isian ini, jadi kata lain (pada, hari, nama hari) dan tanda baca di ujung ikut tercetak.";
+  }
+  function perbaruiPeringatanTglNikah() {
+    const e = cari(`[data-peringatan="${KODE_TGL_NIKAH}"]`, wadah.isian);
+    if (!e) return;
+    const t = peringatanTglNikah(S.isi[KODE_TGL_NIKAH]);
+    e.textContent = t;
+    e.hidden = !t;
+  }
   function perbaruiPeringatan8503() {
     const e = cari('[data-peringatan="8503"]', wadah.isian);
     if (!e) return;
@@ -5586,6 +5604,7 @@
       `<span class="bd-status" data-status="${b.kode}">${esc(teksStatus(st, b.kode))}</span>` +
       (b.kode === "8503" ? (() => { const w = peringatan8503(); return `<span class="bd-peringatan" data-peringatan="8503" role="alert" ${w ? "" : "hidden"}>${esc(w)}</span>`; })() : "") +
       (b.kode === "8503" ? belajarHtml8503() : "") +
+      (b.kode === KODE_TGL_NIKAH ? (() => { const w = peringatanTglNikah(v); return `<span class="bd-peringatan" data-peringatan="${KODE_TGL_NIKAH}" role="alert" ${w ? "" : "hidden"}>${esc(w)}</span>`; })() : "") +
       catatSidangHtml(b) +
       `</div>`
     );
@@ -8963,6 +8982,7 @@
       S.isi[k] = t.value;
       S.diketik.add(k);
       S.peringat = false;
+      if (k === KODE_TGL_NIKAH) perbaruiPeringatanTglNikah();
       if (k === "8503") {
         const pos = t.selectionStart;
         if (daftarPerlu().map((x) => x.kode).join() !== sebelum) renderIsian();

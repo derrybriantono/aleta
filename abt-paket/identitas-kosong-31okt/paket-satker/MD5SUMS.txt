@@ -1,0 +1,10 @@
+d31833fbb1b3cab6376d1b8cb944b403 *abt-identitas-kosong-31okt-FUNGSI-PULIH.sql
+511d225dd454d77e5036c60c26c0c63d *abt-identitas-kosong-31okt-FUNGSI.sql
+106fd4d10f940eb8a881d7ff7b1edbf5 *abt-identitas-kosong-31okt-PASANG.sql
+f76f55e92bad8f06184d7980179594c8 *abt-identitas-kosong-31okt-PERIKSA.sql
+3352aabd0f7bf916b9141c32c7cb073c *abt-identitas-kosong-31okt-PRASYARAT.sql
+757cfb6c701db41980a7841f7a94d8bd *abt-identitas-kosong-31okt-PULIH.sql
+95b1b01fdfdbac42a0cdda8e778bff29 *harap.txt
+bf9e33b5db5c721df7f6a23bc12c1535 *nomor-variabel.txt
+4a4f3eabfa40a10610340b13f344bf6f *pasang-satker.sh
+546d0f516572c5f3bb0e01c3eda754b9 *pulih-satker.sh

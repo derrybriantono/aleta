@@ -1,0 +1,46 @@
+[
+ {
+  "perkara": "10006",
+  "blangko": "WARIS",
+  "berkas": "[01] [Kabul] Kewarisan - Kontradiktoir.rtf",
+  "baris_beda": 6,
+  "sama_selain": true,
+  "sebelum": "NIK , tempat dan tanggal lahir , 00 0000, agama , pekerjaan , pendidikan , ",
+  "sesudah": "NIK ..., tempat dan tanggal lahir ..., agama Islam, pekerjaan ..., pendidikan ..., ",
+  "cacat_sebelum": 6,
+  "cacat_sesudah": 0
+ },
+ {
+  "perkara": "10078",
+  "blangko": "CT",
+  "berkas": "[01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf",
+  "baris_beda": 1,
+  "sama_selain": true,
+  "sebelum": "NIK , tempat dan tanggal lahir , , agama Islam, pekerjaan Mengurus Rumah Tangga, pendidikan , ",
+  "sesudah": "NIK ..., tempat dan tanggal lahir ..., agama Islam, pekerjaan Mengurus Rumah Tangga, pendidikan ..., ",
+  "cacat_sebelum": 1,
+  "cacat_sesudah": 0
+ },
+ {
+  "perkara": "10078",
+  "blangko": "RELT",
+  "berkas": "[JS] 0. Relaas Panggilan Sidang Pertama T.rtf",
+  "baris_beda": 1,
+  "sama_selain": true,
+  "sebelum": "umur tahun, agama Islam, pendidikan , pekerjaan Mengurus Rumah Tangga, ",
+  "sesudah": "umur ... tahun, agama Islam, pendidikan ..., pekerjaan Mengurus Rumah Tangga, ",
+  "cacat_sebelum": 1,
+  "cacat_sesudah": 0
+ },
+ {
+  "perkara": "10135",
+  "blangko": "BAS",
+  "berkas": "BAS ALUR 02 [1] BAS 1 P Hadir & T Tidak Hadir - Tunda Panggil T.rtf",
+  "baris_beda": 0,
+  "sama_selain": true,
+  "sebelum": "",
+  "sesudah": "",
+  "cacat_sebelum": 0,
+  "cacat_sesudah": 0
+ }
+]

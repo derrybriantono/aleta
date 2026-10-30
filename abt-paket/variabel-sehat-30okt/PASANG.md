@@ -59,7 +59,8 @@ Bangun ulang (deterministik): `python sumber/bangun_paket.py <basis salinan sesu
 1. **Identitas pihak yang datanya kosong di SIPP** (7047, 7048, 3507, 3509, 3970, 3971, 7062, 9230, 9231, 11205, 11206; dipakai ±980 blangko):
    render ABT asli "Zaitun binti ..., NIK , tempat dan tanggal lahir , 00 0000, agama , pekerjaan , pendidikan , tempat kediaman di ...".
    BERMASALAH, tetapi pembentuknya fungsi bersama (`isian_rtf_pihak_identitas`) + 11 variabel, dua di antaranya baru dari paket
-   relaas-penetapan-30okt -> butuh paket tersendiri dan keputusan bentuk (pertanyaan 1).
+   relaas-penetapan-30okt -> DIKERJAKAN di paket tersendiri `../identitas-kosong-31okt` (keputusan sesi utama 31 Okt: bagian kosong
+   ditulis "...", agama kosong = Islam), dipasang SESUDAH paket ini.
 2. **Data ketikan, bukan rumus**: "para Para Pemohon" (tanya-jawab saksi tersimpan begitu), posita/petitum/amar dengan kata berulang, alamat SIPP
    "Kabupaten Donggala., Provinsi" (titik sesudah singkatan "Kec. Palu Tim., Kota" juga sah, jadi ".," tidak bisa dibuang otomatis), isian 5227
    berakhir koma di 8528 (variabel itu juga diubah paket alasan-belum-dipilih/agama-belum-diubah - tidak disentuh), blangko itsbat yang menulis

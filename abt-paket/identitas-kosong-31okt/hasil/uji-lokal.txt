@@ -1,0 +1,29 @@
+SNAP awal   : 2881 4069f0afa56d0a26351419aa339a30dd 64 
+== 1. PASANG
+PRASYARAT COCOK (11|0|0)
+CADANGAN: /d/Aplikasi/aleta/tmp/vs30/pk2/cadangan/variabel-sebelum.*.sql (3507,3509,3970,3971,7047,7048,7062,9230,9231,11205,11206)
+PERIKSA: SEMUA COCOK
+PRASYARAT SESUDAH: 0|11|1 (harus 0|11|1)
+SELESAI - paket abt-identitas-kosong-31okt terpasang. Pulih: bash /d/Aplikasi/aleta/tmp/vs30/pk2/pulih-satker.sh
+SNAP pasang : 2881 f068dd333522d5e066bf3ebb345ddb21 65 
+== 2. pasang ulang
+PRASYARAT COCOK (0|11|1)
+PERIKSA: SEMUA COCOK
+PRASYARAT SESUDAH: 0|11|1 (harus 0|11|1)
+SELESAI - paket abt-identitas-kosong-31okt terpasang. Pulih: bash /d/Aplikasi/aleta/tmp/vs30/pk2/pulih-satker.sh
+PASANG ULANG = TIDAK ADA PERUBAHAN
+== 3. PULIH
+PRASYARAT SESUDAH PULIH: 11|0|0
+PULIH COCOK
+PULIH = KEADAAN AWAL PERSIS (seluruh tabel variabel + fungsi)
+== 4. pasang lagi
+PRASYARAT SESUDAH: 0|11|1 (harus 0|11|1)
+SELESAI - paket abt-identitas-kosong-31okt terpasang. Pulih: bash /d/Aplikasi/aleta/tmp/vs30/pk2/pulih-satker.sh
+PASANG LAGI = SAMA DENGAN PASANG PERTAMA
+PULIH COCOK
+== 5. PENJAGA: 7047 disunting orang -> pasang HARUS berhenti tanpa mengubah apa pun
+GAGAL: prasyarat '10|0|0' (harus '11|0|0', atau '0|11|1' bila pasang ulang) - TIDAK ada yang diubah. Arti angka: lihat abt-identitas-kosong-31okt-PRASYARAT.sql
+PENJAGA: TIDAK ADA YANG BERUBAH
+SESUDAH PENJAGA = KEADAAN AWAL
+== 6. pasang akhir (untuk render ABT asli sesudah paket)
+SELESAI - paket abt-identitas-kosong-31okt terpasang. Pulih: bash /d/Aplikasi/aleta/tmp/vs30/pk2/pulih-satker.sh

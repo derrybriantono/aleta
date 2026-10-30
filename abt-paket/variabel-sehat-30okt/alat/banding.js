@@ -11,6 +11,7 @@ const { buatMesin } = require(path.join(__dirname, "..", "..", "..", "aleta_bot"
 const [pasangF, sampelF, keluar] = process.argv.slice(2);
 const SIPP = process.env.SIPP_DB || "sipp_vs";
 const ABT = process.env.ABT_DB || "aps_badilag_vs";
+const PANJANG = Number(process.env.PANJANG || 600);
 const isi = fs.readFileSync(pasangF, "utf8");
 const timpa = {};
 for (const m of isi.matchAll(/UNHEX\('([0-9A-F]+)'\) USING latin1\)\s+WHERE no_var = (\d+)/g)) timpa[m[2]] = { sql_query: Buffer.from(m[1], "hex").toString("latin1") };
@@ -38,7 +39,7 @@ function kueri(sql, params, opsi) {
       if (y.status === "galat") hasil.galatBaru.push([pid, k, y.sebab]);
       if (x.status === "galat") hasil.galatLama.push([pid, k, x.sebab]);
       if (String(x.polos) === String(y.polos) && x.status === y.status) hasil.sama[k] += 1;
-      else hasil.berubah[k].push({ perkara: pid, jenis, gol, sebelum: String(x.polos).slice(0, 600), sesudah: String(y.polos).slice(0, 600) });
+      else hasil.berubah[k].push({ perkara: pid, jenis, gol, sebelum: String(x.polos).slice(0, PANJANG), sesudah: String(y.polos).slice(0, PANJANG) });
     }
   }
   fs.writeFileSync(keluar, JSON.stringify(hasil, null, 1));
