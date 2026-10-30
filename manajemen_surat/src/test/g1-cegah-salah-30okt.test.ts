@@ -416,6 +416,9 @@ describe("1.2 aturan pemeriksa (murni)", () => {
     expect(m.kumpulkan({ prodeo: false, naskah: { teks: t, temuanSisa: [] } })).toEqual([]);
     expect(m.kumpulkan({ prodeo: true, naskah: { teks: "Membebankan biaya perkara kepada DIPA Pengadilan Agama Donggala Tahun 2026;", temuanSisa: [] } })).toEqual([]);
     expect(m.kumpulkan({ prodeo: true, naskah: { teks: "Membebankan biaya perkara kepada Pemohon sejumlah Rp0,00;", temuanSisa: [] } })).toEqual([]);
+    // bunyi blangko sebelum paket prodeo-panggilan (render 9558): terbilang di belakang DIPA; "(nihil)" bukan nominal
+    expect(m.kumpulkan({ prodeo: true, naskah: { teks: "Membebankan biaya perkara kepada DIPA Pengadilan Agama Donggala Tahun 2026 (dua puluh ribu Nihil).", temuanSisa: [] } }).map((x) => x.jenis)).toEqual(["prodeo"]);
+    expect(m.kumpulkan({ prodeo: true, naskah: { teks: "Jumlah Rp 0,00 (nihil). Membebankan biaya perkara kepada DIPA Pengadilan Agama Donggala Tahun 2026 (nihil).", temuanSisa: [] } })).toEqual([]);
   });
   it("tanggal panggilan ganda -> butir; dua tanggal berbeda -> tidak", () => {
     expect(m.kumpulkan({ naskah: { teks: "telah dipanggil secara resmi dan patut pada tanggal 26 Oktober 2026 dan tanggal 26 Oktober 2026, tidak hadir", temuanSisa: [] } }).map((x) => x.jenis)).toEqual(["tanggal"]);

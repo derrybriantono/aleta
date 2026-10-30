@@ -35,8 +35,12 @@
   const POLA_HURUF = /\[HURUF ALASAN PERCERAIAN BELUM DIPILIH\]|TIDAK BENAR QUERY NYA \/ BELUM ISI ALASAN|BELUM ISI ALASAN DI KOLOM ABT/i;
   const POLA_AGAMA = /\[AGAMA PIHAK YANG MURTAD BELUM DIUBAH DI SIPP\]|ALASAN H: AGAMA PIHAK YANG MURTAD BELUM DIUBAH DI SIPP/i;
   const POLA_QUERY_LAMA = /TIDAK BENAR QUERY NYA/i;
-  /** Nominal biaya pada perkara prodeo: "biaya perkara ... sejumlah Rp290.000,00" (bukan Rp0). */
-  const POLA_BIAYA_NOMINAL = /biaya\s+perkara[^.;]{0,160}?sejumlah\s+Rp\.?\s*0*[1-9][\d.]*/i;
+  /**
+   * Nominal biaya pada perkara prodeo: "biaya perkara ... sejumlah Rp290.000,00" (bukan Rp0), atau terbilang di belakang DIPA
+   * ("... DIPA Pengadilan Agama Donggala Tahun 2026 (dua puluh ribu Nihil)" - bunyi blangko sebelum paket prodeo-panggilan-29okt,
+   * terukur pada naskah render 9558 dan 10083).
+   */
+  const POLA_BIAYA_NOMINAL = /biaya\s+perkara[^.;]{0,160}?sejumlah\s+Rp\.?\s*0*[1-9][\d.]*|DIPA[^.;\n]{0,140}?\((?!\s*nihil\s*\))[^)]{0,120}?\b(?:ribu|ratus|juta)\b[^)]{0,60}\)/i;
   /** "tanggal 26 Oktober 2026 dan (tanggal) 26 Oktober 2026" - tanggal panggilan yang sama tertulis dua kali. */
   const POLA_TANGGAL_GANDA = /tanggal\s+(\d{1,2}\s+[A-Za-z]+\s+\d{4})\s*,?\s+dan\s+(?:tanggal\s+)?\1(?!\d)/i;
 
