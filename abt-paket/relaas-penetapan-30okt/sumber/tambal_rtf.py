@@ -97,7 +97,12 @@ for f, n78, n10 in ((r"\[JS\] 0\. Relaas Panggilan Sidang Pertama P", 1, 0), (r"
     if n10:
         aturan("K1b", R + f, r"(?<=#7110#),", "", n10)
 # K2 alih ke variabel pengganti (isi_variabel.py)
-aturan("K2-7100", R + r"(?!\[JS\] 4\. )", r"#1064##7100#", "#11204#", None)
+aturan("K2-7100", R + r"(?!\[JS\] (4\. |2\. Relaas Pemberitahuan Putusan T))", r"#1064##7100#", "#11204#", None)
+# K9 pemberitahuan putusan: "atas perintah ... Tanggal" = tanggal PUTUSAN (keputusan pengguna 30 Okt)
+aturan("K9a", R + r"\[JS\] 2\. Relaas Pemberitahuan Putusan P", r"(?<=Tanggal )#1064#(?=;)", "#1069#", 1)
+aturan("K9b", R + r"\[JS\] 2\. Relaas Pemberitahuan Putusan T", r"#1064##7100#", "#11216#", 1)
+# K8 panggilan ikrar: bukan "untuk pemeriksaan perkara" (#7099#) tetapi menghadiri sidang penyaksian ikrar (keputusan pengguna 30 Okt)
+aturan("K8", R + r"\[JS\] 4\. Relaas Panggilan Ikrar Talak P dan T", r"#7099#", "untuk menghadiri sidang penyaksian ikrar talak dalam perkara #0053# #0048# antara :", 2)
 for lama, baru in (("7108", "11205"), ("7109", "11206"), ("7008", "11207"), ("7006", "11208"),
                    ("9564", "11209"), ("9565", "11210")):
     aturan("K2-" + lama, R, "#%s#" % lama, "#%s#" % baru, None)
@@ -116,6 +121,9 @@ aturan("K6b", F62, r" dengan domisili elektronik pada alamat email #8180# sebaga
 aturan("K6c", F62, r"tanggal #1278#  dalam", "tanggal #1069# dalam", 1)
 aturan("K6d", F62, r"(?m)^Melawan$", "Lawan", 1)
 aturan("K6e", F62, r"kediaman Termohon;", "kediaman #0047#;", 1)
+# K6f upaya hukum ditentukan kehadiran (keputusan pengguna 30 Okt), kalimat dan pasal dari satu tempat (#11211#)
+aturan("K6f", F62, r"#0047# dapat mengajukan perlawanan \(verzet\) dalam tenggang waktu 14 \(empat belas\) hari terhitung sejak hari "
+       r"berikutnya setelah pemberitahuan ini", "#11211#", 1)
 # K7 surat permohonan bantuan panggilan delegasi: PA tujuan dari SIPP delegasi_keluar (bukan potongan alamat #0105#)
 F3A = R + r"\[JS\] 3\.a\. "
 aturan("K7a", F3A, r"(?<=Ketua )#1066#", "#11202#", 1)

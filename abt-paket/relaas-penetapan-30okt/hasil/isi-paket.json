@@ -28,16 +28,16 @@
    "md5": "8ad7b769e3c00be2873bfe93e7057647"
   },
   "11206": {
-   "nama": "IDENTITAS PIHAK RELAAS #0047# (OTOMATIS: agama dari SIPP #0020#; I bila #0047# lebih dari satu; pengganti #7109# di blangko Derry)",
-   "md5": "439a69c4c58cb3647ec81774199d018d"
+   "nama": "IDENTITAS PIHAK RELAAS #0047# (OTOMATIS: agama SIPP #0020#, kosong = Islam; I bila #0047# lebih dari satu; pengganti #7109# di blangko Derry)",
+   "md5": "1b38bc4bf6defae716a3469b424bd636"
   },
   "11207": {
-   "nama": "RELAAS PEMBERITAHUAN PUTUSAN #0046#: UPAYA HUKUM DAN CARA PENYAMPAIAN (OTOMATIS: banding Pasal 199 ayat (1) RBg; e-Court = #11213#; pengganti #7008# di blangko Derry)",
-   "md5": "e19377daca46f8d06aa3fc653fa46471"
+   "nama": "RELAAS PEMBERITAHUAN PUTUSAN #0046#: UPAYA HUKUM DAN CARA PENYAMPAIAN (OTOMATIS: upaya #11215#; e-Court = #11213#; pengganti #7008# di blangko Derry)",
+   "md5": "d0ad64e1256bd1b69bab4e33f7031d21"
   },
   "11208": {
-   "nama": "RELAAS PEMBERITAHUAN PUTUSAN #0047#: UPAYA HUKUM DAN CARA PENYAMPAIAN (OTOMATIS: dasar #11211#, e-Court = #11212#; pengganti #7006# di blangko Derry)",
-   "md5": "828d478920e26ed32b80c466b89fc439"
+   "nama": "RELAAS PEMBERITAHUAN PUTUSAN #0047#: UPAYA HUKUM DAN CARA PENYAMPAIAN (OTOMATIS: upaya #11211#, e-Court = #11212#; pengganti #7006# di blangko Derry)",
+   "md5": "86dee5dc178d9336dfe2f37a28d92a4e"
   },
   "11209": {
    "nama": "RELAAS: HARI DAN TANGGAL PELAKSANAAN PANGGILAN #0046# (OTOMATIS SIPP perkara_pelaksanaan_relaas untuk #0046# ATAU KUASANYA pada sidang dicetak; belum tercatat = titik-titik; ganti #9564#)",
@@ -48,8 +48,8 @@
    "md5": "c16e7b9e46b121d5f4b28c8c2bef96f9"
   },
   "11211": {
-   "nama": "RELAAS PEMBERITAHUAN PUTUSAN #0047#: DASAR UPAYA HUKUM (OTOMATIS menurut #7007#: verzet = Pasal 153 ayat (1) RBg, banding = Pasal 199 ayat (1) RBg)",
-   "md5": "c08e4af2f0dffb04b6bb5e2d4929f383"
+   "nama": "RELAAS PEMBERITAHUAN PUTUSAN #0047#: KALIMAT UPAYA HUKUM (OTOMATIS: permohonan = kasasi; gugatan: #0047# pernah hadir = banding, tidak pernah hadir = verzet)",
+   "md5": "e360e8dadea28b18c78e7807495f4104"
   },
   "11212": {
    "nama": "RELAAS PEMBERITAHUAN PUTUSAN #0047# E-COURT: CARA PENYAMPAIAN (OTOMATIS: domisili elektronik #8809# bila ada, selain itu surat tercatat)",
@@ -62,6 +62,26 @@
   "11214": {
    "nama": "TANGGAL PHS IKRAR + PENDETEKSI E-COURT DI KEPALA RELAAS IKRAR (OTOMATIS: #1099# lalu yang didaftarkan secara elektronik ... / titik koma; pengganti #1064##7100# di relaas ikrar Derry)",
    "md5": "9a70427a3c38e6f9e65c6b11ef635710"
+  },
+  "11215": {
+   "nama": "RELAAS PEMBERITAHUAN PUTUSAN #0046#: KALIMAT UPAYA HUKUM (OTOMATIS: permohonan = kasasi; gugatan = banding)",
+   "md5": "3f1d612e1df2496756a0fa8b77c1d78e"
+  },
+  "11216": {
+   "nama": "TANGGAL PUTUSAN + PENDETEKSI E-COURT DI KEPALA RELAAS PEMBERITAHUAN (OTOMATIS: #1069# lalu yang didaftarkan ... / titik koma; pengganti #1064##7100# di 2. pemberitahuan T Derry)",
+   "md5": "99ed64cc6eafa5eef39774362c18fa88"
+  },
+  "11217": {
+   "nama": "DASAR HUKUM BANDING (satu tempat; RBg)",
+   "md5": "c3c081326c754ef74e6b9529d59ca380"
+  },
+  "11218": {
+   "nama": "DASAR HUKUM PERLAWANAN/VERZET (satu tempat; RBg)",
+   "md5": "8965d2ef586bbec4ffc4441e8f95a615"
+  },
+  "11219": {
+   "nama": "DASAR HUKUM KASASI (satu tempat)",
+   "md5": "3d919013a22d837400a5a8709a7e0890"
   }
  },
  "variabel_asal_md5": {
@@ -81,7 +101,9 @@
   24,
   46,
   47,
+  48,
   50,
+  53,
   98,
   100,
   101,
@@ -104,7 +126,6 @@
   1176,
   2224,
   5369,
-  7007,
   7017,
   7051,
   7153,
@@ -180,15 +201,15 @@
    "folder": "98 Relaas",
    "berkas": "[JS] 2. Relaas Pemberitahuan Putusan P.rtf",
    "md5_lama": "8540c91373ae1a2c5cff005b86d3a6b9",
-   "md5_baru": "326ef16f3cd379663380fa6e34758767",
-   "aturan": "K1a=1 K2-7008=1 K2-7108=1 K3=1"
+   "md5_baru": "48d5b92901ba37b43cafe2facaf15c0a",
+   "aturan": "K1a=1 K2-7008=1 K2-7108=1 K3=1 K9a=1"
   },
   {
    "folder": "98 Relaas",
    "berkas": "[JS] 2. Relaas Pemberitahuan Putusan T.rtf",
    "md5_lama": "df16c80252e1d971bd9b50fc4c447985",
-   "md5_baru": "0b17e36ff656dd401b8ededc9b3e0291",
-   "aturan": "K1b=1 K2-7006=1 K2-7100=1 K2-7109=1"
+   "md5_baru": "f8e024051d09921a5d3c0bd0b0d7ea3f",
+   "aturan": "K1b=1 K2-7006=1 K2-7109=1 K9b=1"
   },
   {
    "folder": "98 Relaas",
@@ -208,8 +229,8 @@
    "folder": "98 Relaas",
    "berkas": "[JS] 4. Relaas Panggilan Ikrar Talak P dan T.rtf",
    "md5_lama": "590a6876d77419fc7f8e5e0b42174f50",
-   "md5_baru": "a0da94e5944d0204bb0c30caaf90fd87",
-   "aturan": "K1a=1 K1b=1 K2-7108=1 K2-7109=1 K2-9564=1 K2-9565=1 K4a=1 K4b=1"
+   "md5_baru": "715373f3bb8028d380739daf992546ec",
+   "aturan": "K1a=1 K1b=1 K2-7108=1 K2-7109=1 K2-9564=1 K2-9565=1 K4a=1 K4b=1 K8=2"
   },
   {
    "folder": "98 Relaas",
@@ -229,8 +250,8 @@
    "folder": "98 Relaas",
    "berkas": "[JS] 6.2. Relaas Pemberitahuan Putusan Verstek T (e-Court).rtf",
    "md5_lama": "87641a1dbdc9c1e40e946e70ed14904e",
-   "md5_baru": "6cac799d87e9fda1243dd11d096f1966",
-   "aturan": "K6a=1 K6b=1 K6c=1 K6d=1 K6e=1"
+   "md5_baru": "2dd1ef9924e3bd5e246dbf808416541e",
+   "aturan": "K6a=1 K6b=1 K6c=1 K6d=1 K6e=1 K6f=1"
   },
   {
    "folder": "98 Relaas",

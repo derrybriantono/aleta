@@ -91,11 +91,11 @@ describe("paket ABT relaas-penetapan-30okt", () => {
   });
 
   it("SQL hanya INSERT/DELETE bersyarat atas blok 11200-11219; tidak ada UPDATE variabel lama", () => {
-    expect(nomorBaru.length).toBe(15);
+    expect(nomorBaru.length).toBe(20);
     expect(nomorBaru.every((n) => n >= 11200 && n <= 11219)).toBe(true);
     const pasang = baca(`${N}-PASANG.sql`);
     expect(pasang).not.toMatch(/\bUPDATE\b|\bDELETE\b|\bDROP\b|\bALTER\b/i);
-    expect(pasang.match(/^INSERT INTO aps_badilag\.abt_variabel/gm)?.length).toBe(15);
+    expect(pasang.match(/^INSERT INTO aps_badilag\.abt_variabel/gm)?.length).toBe(20);
     for (const n of nomorBaru) expect(pasang).toContain(`WHERE NOT EXISTS (SELECT 1 FROM aps_badilag.abt_variabel WHERE no_var = ${n})`);
     const pulih = baca(`${N}-PULIH.sql`);
     expect(pulih).not.toMatch(/\bUPDATE\b|\bINSERT\b|\bDROP\b/i);
@@ -107,7 +107,7 @@ describe("paket ABT relaas-penetapan-30okt", () => {
   it("isi variabel baru (heksadesimal) tanpa kata aplikasi, tanpa satker tertulis mati, MariaDB 5.5", () => {
     const pasang = baca(`${N}-PASANG.sql`);
     const hex = [...pasang.matchAll(/0x([0-9a-f]+)/g)].map((m) => Buffer.from(m[1], "hex").toString("latin1"));
-    expect(hex.length).toBe(30);
+    expect(hex.length).toBe(40);
     const semua = hex.join("\n");
     expect(semua).not.toMatch(/aleta/i);
     expect(semua).not.toMatch(/donggala|bungku|morowali/i);
@@ -117,11 +117,18 @@ describe("paket ABT relaas-penetapan-30okt", () => {
     expect(semua).toContain('CONCAT(IF("#1064#" = "", "...", "#1064#"), " yang didaftarkan secara elektronik');
     expect(semua).toContain('CONCAT(IF("#1099#" = "", "...", "#1099#"), " yang didaftarkan secara elektronik');
     expect(semua).toContain('"<strong>#0098#</strong>, NIK #0335#');
-    expect(semua).toContain('umur #0103# tahun, agama ", IF("#0020#" = "", "...", "#0020#"), ",');
+    expect(semua).toContain('umur #0103# tahun, agama ", IF("#0020#" = "", "Islam", "#0020#"), ",');
     expect(semua).not.toContain("agama Islam,");
+    // upaya hukum menurut kehadiran (keputusan pengguna 30 Okt): permohonan = kasasi, gugatan: Tergugat pernah hadir = banding, tidak = verzet
+    expect(semua).toContain("j.dihadiri_oleh IN (1, 3, 8, 9, 11, 15)");
+    expect(semua).toContain('"Para Pemohon", "Pemohon"), " dapat mengajukan kasasi');
     expect(semua).toContain("#0046# dapat mengajukan banding");
-    expect(semua).not.toMatch(/#0046# dapat mengajukan #7007#/);
-    expect(semua).toContain('IF(LOCATE(\'verzet\', "#7007#") > 0, "Pasal 153 ayat (1) RBg", "Pasal 199 ayat (1) RBg")');
+    expect(semua).toContain("#0047# dapat mengajukan perlawanan (<I>verzet</I>)");
+    expect(semua).not.toMatch(/#0046# dapat mengajukan perlawanan|#0046# dapat mengajukan #7007#/);
+    // pasal di satu tempat
+    expect(semua.match(/Pasal 199 ayat \(1\) RBg/g)?.length).toBe(1);
+    expect(semua.match(/Pasal 153 ayat \(1\) RBg/g)?.length).toBe(1);
+    expect(semua).toContain("#11217#");
     expect(semua).toContain("k.pengacara_id FROM perkara_pengacara k");
     expect(semua).toContain("FROM delegasi_keluar d");
   });
@@ -136,18 +143,22 @@ describe("paket ABT relaas-penetapan-30okt", () => {
     expect(p0).not.toMatch(/#7078#,/);
     const t2 = berkas("2. Relaas Pemberitahuan Putusan T.rtf");
     expect(t2).toContain("#11208#");
-    expect(t2).toContain("Tanggal #11204#");
-    expect(t2).not.toMatch(/#7110#,|#7006#|#7100#/);
+    expect(t2).toContain("Tanggal #11216#");
+    expect(berkas("2. Relaas Pemberitahuan Putusan P.rtf")).toContain("Tanggal #1069#;");
+    expect(t2).not.toMatch(/#7110#,|#7006#|#7100#|#1064#/);
     const ikrar = berkas("4. Relaas Panggilan Ikrar Talak P dan T.rtf");
     expect(ikrar.match(/Tanggal #1099#/g)?.length).toBe(1);
     expect(ikrar).toContain("Tanggal #11214#");
+    expect(ikrar.match(/untuk menghadiri sidang penyaksian ikrar talak dalam perkara #0053# #0048# antara :/g)?.length).toBe(2);
+    expect(ikrar).not.toContain("#7099#");
     expect(ikrar).not.toContain("Tanggal #1064#");
     expect(berkas("5.1. Relaas Panggilan Sidang P (e-Court).rtf")).toContain("#8011#, #11200#");
     expect(berkas("7. Relaas Panggilan Ikrar Talak (e-Court).rtf")).toContain("#8011#, #11201#");
     const v62 = berkas("6.2. Relaas Pemberitahuan Putusan Verstek T (e-Court).rtf");
     expect(v62).toContain("umur #0103# tahun,");
     expect(v62).toContain("tanggal #1069# dalam");
-    expect(v62).not.toMatch(/Melawan|kediaman Termohon;|#1278#/);
+    expect(v62).not.toMatch(/Melawan|kediaman Termohon;|#1278#|perlawanan \(verzet\)/);
+    expect(v62).toContain("#11211#");
     const del = berkas("3.a. Permohonan Bantuan Panggilan Delegasi.rtf");
     expect(del).toContain("Ketua #11202#");
     expect(del).not.toContain("#1066#");

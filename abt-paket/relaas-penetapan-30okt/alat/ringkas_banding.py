@@ -19,12 +19,15 @@ def galat(v):
 def jenis(lama, baru, a, b):
     if lama == baru:
         return "identik"
-    if b in ("11204", "11214"):
+    if b in ("11204", "11214", "11216"):
         if lama == baru:
             return "identik"
         x = lama.replace("yang didaftarkan", " yang didaftarkan").replace("  yang", " yang")
         if x == baru:
             return "spasi sebelum 'yang didaftarkan'"
+        if b == "11216":
+            ekor = lambda t: re.sub(r"^(\d{2} \w+ \d{4}|\.\.\.)", "", t)  # noqa: E731
+            return "tanggal putusan (bukan PHS)" + ("" if ekor(x) == ekor(baru) else " LAIN")
         if b == "11214":
             return "tanggal PHS ikrar (bukan PHS pokok)" + ("" if x.split(" yang", 1)[-1] == baru.split(" yang", 1)[-1] and x.endswith(";") == baru.endswith(";") else " LAIN")
         return "LAIN"
@@ -47,23 +50,28 @@ def jenis(lama, baru, a, b):
         return "LAIN"
     if (a, b) in (("7008", "11207"), ("7006", "11208")):
         n = lambda s: re.sub(r"\s+", " ", s)  # noqa: E731
+        UP = r"(?:Para )?(\w+) dapat mengajukan (banding|perlawanan \(verzet\)|kasasi)? ?dalam"
+
+        def upaya_dari(s):
+            m = re.search(UP, s)
+            return (m.group(2) or "(kosong)").replace("perlawanan (verzet)", "verzet") if m else "-"
+
         def norm_upaya(s):
-            s = re.sub(r"dapat mengajukan (banding|perlawanan \(verzet\))? ?dalam", "dapat mengajukan X dalam", s)
-            return re.sub(r"sebagaimana (telah ditetapkan|ditentukan) dalam Pasal (153|199) ayat \(1\) RBg", "sebagaimana DASAR", s)
+            s = re.sub(UP, "X dapat mengajukan X dalam", s)
+            s = re.sub(r"sebagaimana (telah ditetapkan|ditentukan) dalam (Pasal (153|199) ayat \(1\) RBg|Pasal 46 ayat \(1\) Undang-Undang "
+                       r"Nomor 14 Tahun 1985 tentang Mahkamah Agung sebagaimana telah diubah dengan Undang-Undang Nomor 5 Tahun 2004 dan "
+                       r"perubahan kedua dengan Undang-Undang Nomor 3 Tahun 2009)", "sebagaimana DASAR", s)
+            s = re.sub(r"Pemberitahuan isi putusan ini saya kirimkan secara elektronik melalui domisili elektronik (Kuasa Hukum )?\w+ yang telah "
+                       r"terdaftar, yaitu \S+;", "CARA;", s)
+            s = re.sub(r"Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat "
+                       r"tinggal/kediaman \w+;", "CARA;", s)
+            return s
         lb, bb = norm_upaya(n(lama)), norm_upaya(n(baru))
-        bb2 = bb
-        bb3 = re.sub(r"Pemberitahuan isi putusan ini saya kirimkan secara elektronik melalui domisili elektronik (Kuasa Hukum )?\w+ yang telah "
-                     r"terdaftar, yaitu \S+;", "Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya "
-                     r"disampaikan ke tempat tinggal/kediaman X;", bb2)
-        lb3 = re.sub(r"kediaman (Penggugat|Pemohon|Tergugat|Termohon);", "kediaman X;", lb)
-        bb3 = re.sub(r"kediaman (Penggugat|Pemohon|Tergugat|Termohon);", "kediaman X;", bb3)
-        if bb2 == lb:
-            return "upaya hukum/dasar pasal"
-        if bb3 == lb3:
-            return "upaya hukum + domisili elektronik"
-        bb4 = bb2.replace(" (verzet)", "").replace("perlawanan", "")
-        if a == "7008" and "melalui Bupati" in lb and "melalui Bupati" not in bb:
-            return "cabang Bupati (ghaib Tergugat) dibuang"
+        ul, ub = upaya_dari(n(lama)), upaya_dari(n(baru))
+        if a == "7008" and "melalui Bupati" in lama and "melalui Bupati" not in baru:
+            return "cabang Bupati (ghaib Tergugat) dibuang; upaya %s -> %s" % (ul, ub)
+        if lb == bb:
+            return "upaya %s -> %s" % (ul, ub)
         return "LAIN"
     if (a, b) in (("9564", "11209"), ("9565", "11210")):
         return "relaas kepada kuasa terbaca" if lama.startswith("....") and not baru.startswith("....") else "LAIN"

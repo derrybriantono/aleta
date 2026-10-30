@@ -143,6 +143,8 @@
 -Pada hari ini ............................. tanggal .........................................................., Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Hakim dalam perkara Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
 +Pada hari ini ............................. tanggal .........................................................., Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Hakim dalam perkara Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
 === 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan P/10077_s1.txt
+-Pada hari ini Selasa tanggal 22 September 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 531/Pdt.G/2026/PA.Dgl Tanggal 21 Agustus 2026;
++Pada hari ini Selasa tanggal 22 September 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 531/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026;
 -Randi Bin Pusri NIK 7203122011940002, tempat dan tanggal lahir Sibualong, 20 November 1994, agama Islam, pekerjaan Wiraswasta, pendidikan SLTA, tempat kediaman di Desa Sibualong, RT. 000/RW. 000, Kecamatan Balaesang, Kabupaten Donggala, Provinsi Sulawesi Tengah, sebagai Pemohon;
 +Randi Bin Pusri, NIK 7203122011940002, tempat dan tanggal lahir Sibualong, 20 November 1994, agama Islam, pekerjaan Wiraswasta, pendidikan SLTA, tempat kediaman di Desa Sibualong, RT. 000/RW. 000, Kecamatan Balaesang, Kabupaten Donggala, Provinsi Sulawesi Tengah, sebagai Pemohon;
 -	Bahwa terhadap putusan tersebut Pemohon dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
@@ -154,6 +156,8 @@
 -Randi Bin Pusri	Jurusita,
 +	Jurusita,
 === 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan P/10083_s1.txt
+-Pada hari ini Selasa tanggal 22 September 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026;
++Pada hari ini Selasa tanggal 22 September 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026;
 -Lupe bin Rodio NIK 7271021502900001, tempat dan tanggal lahir Watusampu, 15 Februari 1990, agama Islam, pekerjaan Petani, pendidikan SD, tempat kediaman di Jalan Malonda, Lorong Taipa Java, RT 001, RW 004, Kelurahan Watusampu, Kecamatan Ulujadi, Kota Palu, Provinsi Sulawesi Tengah, sebagai Pemohon;
 +Lupe bin Rodio, NIK 7271021502900001, tempat dan tanggal lahir Watusampu, 15 Februari 1990, agama Islam, pekerjaan Petani, pendidikan SD, tempat kediaman di Jalan Malonda, Lorong Taipa Java, RT 001, RW 004, Kelurahan Watusampu, Kecamatan Ulujadi, Kota Palu, Provinsi Sulawesi Tengah, sebagai Pemohon;
 -	Bahwa terhadap putusan tersebut Pemohon dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
@@ -162,7 +166,22 @@
 -
 -Lupe bin Rodio	Jurusita,
 +	Jurusita,
+=== 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan P/10139_s1.txt
+-Pada hari ini ............................. tanggal .........................................................., Saya, Mustini sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 587/Pdt.G/2026/PA.Dgl Tanggal 15 September 2026;
++Pada hari ini ............................. tanggal .........................................................., Saya, Mustini sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 587/Pdt.G/2026/PA.Dgl Tanggal 15 Oktober 2026;
+-Moh. Khair bin Amir K. Limpa NIK 7210010310970002, tempat dan tanggal lahir Luwuk, 03 Oktober 1997, agama Islam, pekerjaan Karyawan Swasta (Karyawan Telkom Akses), pendidikan SLTA, tempat kediaman di BTN Bumi Kelapa, RT005, RW006, Desa Kalukubula, Kecamatan Sigi Biromaru, Kabupaten Sigi, Provinsi Sulawesi Tengah. Domisili elektronik: fusionlouder@gmail.com, sebagai Pemohon;
++Moh. Khair bin Amir K. Limpa, NIK 7210010310970002, tempat dan tanggal lahir Luwuk, 03 Oktober 1997, agama Islam, pekerjaan Karyawan Swasta (Karyawan Telkom Akses), pendidikan SLTA, tempat kediaman di BTN Bumi Kelapa, RT005, RW006, Desa Kalukubula, Kecamatan Sigi Biromaru, Kabupaten Sigi, Provinsi Sulawesi Tengah. Domisili elektronik: fusionlouder@gmail.com, sebagai Pemohon;
+-	Bahwa terhadap putusan tersebut Pemohon dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
+- 	Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Pemohon;
++	Bahwa terhadap putusan tersebut Pemohon dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 199 ayat (1) RBg;
++ 	Pemberitahuan isi putusan ini saya kirimkan secara elektronik melalui domisili elektronik Pemohon yang telah terdaftar, yaitu fusionlouder@gmail.com;
+-,
+-
+-Moh. Khair bin Amir K. Limpa	Jurusita,
++	Jurusita,
 === 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan P/10155_s1.txt
+-Pada hari ini ............................. tanggal .........................................................., Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026;
++Pada hari ini ............................. tanggal .........................................................., Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 602/Pdt.G/2026/PA.Dgl Tanggal ...;
 -MULTAZAM NIK 7203190803990001, tempat dan tanggal lahir PALU, 08 Maret 1999, agama Islam, pekerjaan pelajar/mahasiswa, pendidikan S1, tempat kediaman di Desa Wanl II, RT/RW 00/00, KEL/DESA.WANI DUA, KEC.TANANTOVEA, Kabupaten Donggala, Provinsi Sulawesi Tengah, sebagai Penggugat;
 +MULTAZAM, NIK 7203190803990001, tempat dan tanggal lahir PALU, 08 Maret 1999, agama Islam, pekerjaan pelajar/mahasiswa, pendidikan S1, tempat kediaman di Desa Wanl II, RT/RW 00/00, KEL/DESA.WANI DUA, KEC.TANANTOVEA, Kabupaten Donggala, Provinsi Sulawesi Tengah, sebagai Penggugat I;
 -	Bahwa terhadap putusan tersebut Penggugat dapat mengajukan dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
@@ -174,6 +193,8 @@
 -MULTAZAM	Jurusita,
 +	Jurusita,
 === 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan P/10163_s1.txt
+-Pada hari ini Kamis tanggal 15 Oktober 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026;
++Pada hari ini Kamis tanggal 15 Oktober 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 15 Oktober 2026;
 -Dela Safitri binti Rustam.J NIK 7210106208040001, tempat dan tanggal lahir Sibowi, 22 Agustus 2004, agama Islam, pekerjaan Asisten Rumah Tangga, pendidikan SLTA, tempat kediaman di Desa Sibowi, Kecamatan Tanambulava, Kabupaten Sigi, Provinsi Sulawesi Tengah, Domisili Elektronik:laasafitri22@gmail.com, sebagai Penggugat;
 +Dela Safitri binti Rustam.J, NIK 7210106208040001, tempat dan tanggal lahir Sibowi, 22 Agustus 2004, agama Islam, pekerjaan Asisten Rumah Tangga, pendidikan SLTA, tempat kediaman di Desa Sibowi, Kecamatan Tanambulava, Kabupaten Sigi, Provinsi Sulawesi Tengah, Domisili Elektronik:laasafitri22@gmail.com, sebagai Penggugat;
 -	Bahwa terhadap putusan tersebut Penggugat dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
@@ -184,7 +205,33 @@
 -
 -Dela Safitri binti Rustam.J	Jurusita,
 +	Jurusita,
+=== 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan P/10172_s1.txt
+-Pada hari ini ............................. tanggal .........................................................., Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 229/Pdt.P/2026/PA.Dgl Tanggal 28 September 2026;
++Pada hari ini ............................. tanggal .........................................................., Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 229/Pdt.P/2026/PA.Dgl Tanggal 21 Oktober 2026;
+-Darmawati binti Tibe, NIK 7371096210730008, tempat dan tanggal lahir Balikpapan, 22 Oktober 1973, agama Islam, pekerjaan Ibu Rumah Tangga, pendidikan SLTA, tempat kediaman di Jalan Tondei No. 37, RT002, RW001 Desa Mpanau, Kecamatan Sigi Biromaru, Kabupaten Sigi, Provinsi Sulawesi Tengah, Domisili Elektronik:darmawatid2210@gmail.com, sebagai Pemohon I;
++Darmawati binti Tibe, NIK 7371096210730008, tempat dan tanggal lahir Balikpapan, 22 Oktober 1973, agama Islam, pekerjaan Ibu Rumah Tangga, pendidikan SLTA, tempat kediaman di Jalan Tondei No. 37, RT002, RW001 Desa Mpanau, Kecamatan Sigi Biromaru, Kabupaten Sigi, Provinsi Sulawesi Tengah, Domisili Elektronik:darmawatid2210@gmail.com, sebagai Pemohon;
+-	Bahwa terhadap putusan tersebut Pemohon dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
+- 	Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Pemohon;
++	Bahwa terhadap putusan tersebut Pemohon dapat mengajukan kasasi dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 46 ayat (1) Undang-Undang Nomor 14 Tahun 1985 tentang Mahkamah Agung sebagaimana telah diubah dengan Undang-Undang Nomor 5 Tahun 2004 dan perubahan kedua dengan Undang-Undang Nomor 3 Tahun 2009;
++ 	Pemberitahuan isi putusan ini saya kirimkan secara elektronik melalui domisili elektronik Pemohon yang telah terdaftar, yaitu darmawatid2210@gmail.com;
+-,
+-
+-Darmawati binti Tibe	Jurusita,
++	Jurusita,
+=== 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan P/10191_s1.txt
+-Pada hari ini ............................. tanggal .........................................................., Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Hakim dalam perkara Nomor 231/Pdt.P/2026/PA.Dgl Tanggal 06 Oktober 2026;
++Pada hari ini ............................. tanggal .........................................................., Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Hakim dalam perkara Nomor 231/Pdt.P/2026/PA.Dgl Tanggal 20 Oktober 2026;
+-	Bahwa terhadap putusan tersebut Pemohon dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
+- 	Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Pemohon;
++	Bahwa terhadap putusan tersebut Para Pemohon dapat mengajukan kasasi dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 46 ayat (1) Undang-Undang Nomor 14 Tahun 1985 tentang Mahkamah Agung sebagaimana telah diubah dengan Undang-Undang Nomor 5 Tahun 2004 dan perubahan kedua dengan Undang-Undang Nomor 3 Tahun 200
++ 	Pemberitahuan isi putusan ini saya kirimkan secara elektronik melalui domisili elektronik Pemohon yang telah terdaftar, yaitu sartikamohtar280@gmail.com;
+-,
+-
+-Mohtar Syawal bin Syawal	Jurusita,
++	Jurusita,
 === 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan P/10246_s1.txt
+-Pada hari ini ............................. tanggal .........................................................., Saya, Mustini sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026;
++Pada hari ini ............................. tanggal .........................................................., Saya, Mustini sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 675/Pdt.G/2026/PA.Dgl Tanggal ...;
 -Wisda binti Thun NIK 7313117006940001, tempat dan tanggal lahir Tompoh, 30 Juni 1994, agama Islam, pekerjaan Mengurus Rumah Tangga, pendidikan SD, tempat kediaman di Desa Olu, Kecamatan Lindu, Kabupaten Sigi, Provinsi Sulawesi Tengah. Domisili elektronik : wisdajih47@gmail.com, sebagai Penggugat;
 +Wisda binti Thun, NIK 7313117006940001, tempat dan tanggal lahir Tompoh, 30 Juni 1994, agama Islam, pekerjaan Mengurus Rumah Tangga, pendidikan SD, tempat kediaman di Desa Olu, Kecamatan Lindu, Kabupaten Sigi, Provinsi Sulawesi Tengah. Domisili elektronik : wisdajih47@gmail.com, sebagai Penggugat;
 -	Bahwa terhadap putusan tersebut Penggugat dapat mengajukan dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
@@ -195,7 +242,20 @@
 -
 -Wisda binti Thun	Jurusita,
 +	Jurusita,
+=== 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan P/9813_s1.txt
+-Pada hari ini ............................. tanggal .........................................................., Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 315/Pdt.G/2026/PA.Dgl Tanggal 20 Mei 2026;
++Pada hari ini ............................. tanggal .........................................................., Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 315/Pdt.G/2026/PA.Dgl Tanggal 07 Juli 2026;
+-Hj. Amira alias Amira binti Hi. Ibrahim NIK 7203116112760001, tempat dan tanggal lahir Jono Oge, 21 Desember 1976, agama Islam, pekerjaan Ibu Rumah Tangga, pendidikan SLTA, tempat kediaman di Desa Tanjung Padang, Kecamatan Sirenja, Kabupaten Donggala, Provinsi Sulawesi Tengah, sebagai Penggugat;
++Hj. Amira alias Amira binti Hi. Ibrahim, NIK 7203116112760001, tempat dan tanggal lahir Jono Oge, 21 Desember 1976, agama Islam, pekerjaan Ibu Rumah Tangga, pendidikan SLTA, tempat kediaman di Desa Tanjung Padang, Kecamatan Sirenja, Kabupaten Donggala, Provinsi Sulawesi Tengah, sebagai Penggugat;
+-	Bahwa terhadap putusan tersebut Penggugat dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
++	Bahwa terhadap putusan tersebut Penggugat dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 199 ayat (1) RBg;
+-,
+-
+-Hj. Amira alias Amira binti Hi. Ibrahim	Jurusita,
++	Jurusita,
 === 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan P/9870_s1.txt
+-Pada hari ini Senin tanggal 19 Oktober 2026, Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 367/Pdt.G/2026/PA.Dgl Tanggal 17 Juni 2026;
++Pada hari ini Senin tanggal 19 Oktober 2026, Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 367/Pdt.G/2026/PA.Dgl Tanggal 19 Oktober 2026;
 -Nur Afni binti Amir Duding alias Amir NIK 7203116505801004, tempat dan tanggal lahir Ombo, 25 Mei 1980, agama Islam, pekerjaan Ibu Rumah Tangga, pendidikan SLTA, tempat kediaman di Desa Ombo, Kecamatan Sirenja, Kabupaten Donggala, Provinsi Sulawesi Tengah, ibunurafni80@gmail.com, sebagai Penggugat;
 +Nur Afni binti Amir Duding alias Amir, NIK 7203116505801004, tempat dan tanggal lahir Ombo, 25 Mei 1980, agama Islam, pekerjaan Ibu Rumah Tangga, pendidikan SLTA, tempat kediaman di Desa Ombo, Kecamatan Sirenja, Kabupaten Donggala, Provinsi Sulawesi Tengah, ibunurafni80@gmail.com, sebagai Penggugat;
 -	Bahwa terhadap putusan tersebut Penggugat dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
@@ -206,44 +266,74 @@
 +	Jurusita,
 === 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan T/10077_s1.txt
 -Pada hari ini Senin tanggal 28 September 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 531/Pdt.G/2026/PA.Dgl Tanggal 21 Agustus 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
-+Pada hari ini Senin tanggal 28 September 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 531/Pdt.G/2026/PA.Dgl Tanggal 21 Agustus 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini Senin tanggal 28 September 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 531/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
 -	Bahwa terhadap putusan tersebut Termohon dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
 +	Bahwa terhadap putusan tersebut Termohon dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 153 ayat (1) RBg;
 -
 -,
 === 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan T/10083_s1.txt
 -Pada hari ini Minggu tanggal 27 September 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
-+Pada hari ini Minggu tanggal 27 September 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini Minggu tanggal 27 September 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
 -	Bahwa terhadap putusan tersebut Termohon dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
 +	Bahwa terhadap putusan tersebut Termohon dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 153 ayat (1) RBg;
 -
 -,
+=== 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan T/10139_s1.txt
+-Pada hari ini ............................. tanggal .........................................................., Saya, Mustini sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 587/Pdt.G/2026/PA.Dgl Tanggal 15 September 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini ............................. tanggal .........................................................., Saya, Mustini sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 587/Pdt.G/2026/PA.Dgl Tanggal 15 Oktober 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-Siska binti Guntur, umur 30 tahun, agama Islam, pendidikan SLTA, pekerjaan Karyawan Swasta (PT Akar Daya), tempat kediaman di Desa Pombewe (Hunian Tetap Pombewe), Kecamatan Sigi Biromaru, Kabupaten Sigi, Provinsi Sulawesi Tengah, sebagai Termohon;
++Siska binti Guntur, umur 30 tahun, agama Protestan, pendidikan SLTA, pekerjaan Karyawan Swasta (PT Akar Daya), tempat kediaman di Desa Pombewe (Hunian Tetap Pombewe), Kecamatan Sigi Biromaru, Kabupaten Sigi, Provinsi Sulawesi Tengah, sebagai Termohon;
+-	Bahwa terhadap putusan tersebut Termohon dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
++	Bahwa terhadap putusan tersebut Termohon dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 199 ayat (1) RBg;
+-
+-,
 === 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan T/10155_s1.txt
 -Pada hari ini ............................. tanggal .........................................................., Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
-+Pada hari ini ............................. tanggal .........................................................., Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini ............................. tanggal .........................................................., Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 602/Pdt.G/2026/PA.Dgl Tanggal ... yang didaftarkan secara elektronik melalui Aplikasi E-Court;
 -, umur 51 tahun, agama Islam, pendidikan SLTA, pekerjaan MENGURUS RUMAH TANGGA, tempat kediaman di , sebagai Tergugat;
 +, umur 51 tahun, agama Islam, pendidikan SLTA, pekerjaan MENGURUS RUMAH TANGGA, tempat kediaman di , sebagai Tergugat I;
 -	Bahwa terhadap putusan tersebut Tergugat dapat mengajukan dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
-+	Bahwa terhadap putusan tersebut Tergugat dapat mengajukan dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 199 ayat (1) RBg;
++	Bahwa terhadap putusan tersebut Tergugat dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 199 ayat (1) RBg;
 -
 -,
 === 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan T/10163_s1.txt
 -Pada hari ini Minggu tanggal 25 Oktober 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
-+Pada hari ini Minggu tanggal 25 Oktober 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini Minggu tanggal 25 Oktober 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 15 Oktober 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
 -	Bahwa terhadap putusan tersebut Tergugat dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
 +	Bahwa terhadap putusan tersebut Tergugat dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 153 ayat (1) RBg;
 -
 -,
+=== 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan T/10172_s1.txt
+-Pada hari ini ............................. tanggal .........................................................., Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 229/Pdt.P/2026/PA.Dgl Tanggal 28 September 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini ............................. tanggal .........................................................., Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 229/Pdt.P/2026/PA.Dgl Tanggal 21 Oktober 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-	Bahwa terhadap putusan tersebut Termohon dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
++	Bahwa terhadap putusan tersebut Pemohon dapat mengajukan kasasi dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 46 ayat (1) Undang-Undang Nomor 14 Tahun 1985 tentang Mahkamah Agung sebagaimana telah diubah dengan Undang-Undang Nomor 5 Tahun 2004 dan perubahan kedua dengan Undang-Undang Nomor 3 Tahun 2009;
+-
+-,
+=== 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan T/10191_s1.txt
+-Pada hari ini ............................. tanggal .........................................................., Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Hakim dalam perkara Nomor 231/Pdt.P/2026/PA.Dgl Tanggal 06 Oktober 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini ............................. tanggal .........................................................., Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Hakim dalam perkara Nomor 231/Pdt.P/2026/PA.Dgl Tanggal 20 Oktober 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-	Bahwa terhadap putusan tersebut Termohon dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
++	Bahwa terhadap putusan tersebut Para Pemohon dapat mengajukan kasasi dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 46 ayat (1) Undang-Undang Nomor 14 Tahun 1985 tentang Mahkamah Agung sebagaimana telah diubah dengan Undang-Undang Nomor 5 Tahun 2004 dan perubahan kedua dengan Undang-Undang Nomor 3 Tahun 200
+-
+-,
 === 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan T/10246_s1.txt
 -Pada hari ini ............................. tanggal .........................................................., Saya, Mustini sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
-+Pada hari ini ............................. tanggal .........................................................., Saya, Mustini sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini ............................. tanggal .........................................................., Saya, Mustini sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 675/Pdt.G/2026/PA.Dgl Tanggal ... yang didaftarkan secara elektronik melalui Aplikasi E-Court;
 -	Bahwa terhadap putusan tersebut Tergugat dapat mengajukan dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
-+	Bahwa terhadap putusan tersebut Tergugat dapat mengajukan dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 199 ayat (1) RBg;
++	Bahwa terhadap putusan tersebut Tergugat dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 153 ayat (1) RBg;
+-
+-,
+=== 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan T/9813_s1.txt
+-Pada hari ini Senin tanggal 13 Juli 2026, Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 315/Pdt.G/2026/PA.Dgl Tanggal 20 Mei 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini Senin tanggal 13 Juli 2026, Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 315/Pdt.G/2026/PA.Dgl Tanggal 07 Juli 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-	Bahwa terhadap putusan tersebut Tergugat dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
++	Bahwa terhadap putusan tersebut Tergugat dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 199 ayat (1) RBg;
 -
 -,
 === 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan T/9870_s1.txt
 -Pada hari ini Jumat tanggal 23 Oktober 2026, Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 367/Pdt.G/2026/PA.Dgl Tanggal 17 Juni 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
-+Pada hari ini Jumat tanggal 23 Oktober 2026, Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 367/Pdt.G/2026/PA.Dgl Tanggal 17 Juni 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini Jumat tanggal 23 Oktober 2026, Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 367/Pdt.G/2026/PA.Dgl Tanggal 19 Oktober 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
 -	Bahwa terhadap putusan tersebut Tergugat dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
 +	Bahwa terhadap putusan tersebut Tergugat dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 153 ayat (1) RBg;
 -
@@ -330,10 +420,14 @@
 +Pada hari ini Selasa tanggal 13 Oktober 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 531/Pdt.G/2026/PA.Dgl Tanggal 13 Oktober 2026;
 -Randi Bin Pusri NIK 7203122011940002, tempat dan tanggal lahir Sibualong, 20 November 1994, agama Islam, pekerjaan Wiraswasta, pendidikan SLTA, tempat kediaman di Desa Sibualong, RT. 000/RW. 000, Kecamatan Balaesang, Kabupaten Donggala, Provinsi Sulawesi Tengah, sebagai Pemohon;
 +Randi Bin Pusri, NIK 7203122011940002, tempat dan tanggal lahir Sibualong, 20 November 1994, agama Islam, pekerjaan Wiraswasta, pendidikan SLTA, tempat kediaman di Desa Sibualong, RT. 000/RW. 000, Kecamatan Balaesang, Kabupaten Donggala, Provinsi Sulawesi Tengah, sebagai Pemohon;
+-untuk pemeriksaan perkara permohonan Cerai Talak antara :
++untuk menghadiri sidang penyaksian ikrar talak dalam perkara permohonan Cerai Talak antara :
 -,
 -
 -Pada hari ini Senin tanggal 19 Oktober 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 531/Pdt.G/2026/PA.Dgl Tanggal 21 Agustus 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
 +Pada hari ini Senin tanggal 19 Oktober 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 531/Pdt.G/2026/PA.Dgl Tanggal 13 Oktober 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-untuk pemeriksaan perkara permohonan Cerai Talak antara :
++untuk menghadiri sidang penyaksian ikrar talak dalam perkara permohonan Cerai Talak antara :
 -,
 -
 === 98 Relaas/[JS] 4. Relaas Panggilan Ikrar Talak P dan T/10083_s3.txt
@@ -341,10 +435,14 @@
 +Pada hari ini Selasa tanggal 13 Oktober 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 13 Oktober 2026;
 -Lupe bin Rodio NIK 7271021502900001, tempat dan tanggal lahir Watusampu, 15 Februari 1990, agama Islam, pekerjaan Petani, pendidikan SD, tempat kediaman di Jalan Malonda, Lorong Taipa Java, RT 001, RW 004, Kelurahan Watusampu, Kecamatan Ulujadi, Kota Palu, Provinsi Sulawesi Tengah, sebagai Pemohon;
 +Lupe bin Rodio, NIK 7271021502900001, tempat dan tanggal lahir Watusampu, 15 Februari 1990, agama Islam, pekerjaan Petani, pendidikan SD, tempat kediaman di Jalan Malonda, Lorong Taipa Java, RT 001, RW 004, Kelurahan Watusampu, Kecamatan Ulujadi, Kota Palu, Provinsi Sulawesi Tengah, sebagai Pemohon;
+-untuk pemeriksaan perkara permohonan Cerai Talak antara :
++untuk menghadiri sidang penyaksian ikrar talak dalam perkara permohonan Cerai Talak antara :
 -,
 -
 -Pada hari ini Selasa tanggal 20 Oktober 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
 +Pada hari ini Selasa tanggal 20 Oktober 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 13 Oktober 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-untuk pemeriksaan perkara permohonan Cerai Talak antara :
++untuk menghadiri sidang penyaksian ikrar talak dalam perkara permohonan Cerai Talak antara :
 -,
 -
 === 98 Relaas/[JS] 4. Relaas Panggilan Ikrar Talak P dan T/10163_s2.txt
@@ -352,10 +450,14 @@
 +Pada hari ini ............................. tanggal .........................................................., Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 610/Pdt.G/2026/PA.Dgl Tanggal ...;
 -Dela Safitri binti Rustam.J NIK 7210106208040001, tempat dan tanggal lahir Sibowi, 22 Agustus 2004, agama Islam, pekerjaan Asisten Rumah Tangga, pendidikan SLTA, tempat kediaman di Desa Sibowi, Kecamatan Tanambulava, Kabupaten Sigi, Provinsi Sulawesi Tengah, Domisili Elektronik:laasafitri22@gmail.com, sebagai Penggugat;
 +Dela Safitri binti Rustam.J, NIK 7210106208040001, tempat dan tanggal lahir Sibowi, 22 Agustus 2004, agama Islam, pekerjaan Asisten Rumah Tangga, pendidikan SLTA, tempat kediaman di Desa Sibowi, Kecamatan Tanambulava, Kabupaten Sigi, Provinsi Sulawesi Tengah, Domisili Elektronik:laasafitri22@gmail.com, sebagai Penggugat;
+-untuk pemeriksaan perkara gugatan Cerai Gugat antara :
++untuk menghadiri sidang penyaksian ikrar talak dalam perkara gugatan Cerai Gugat antara :
 -,
 -
 -Pada hari ini Rabu tanggal 07 Oktober 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
 +Pada hari ini Rabu tanggal 07 Oktober 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 610/Pdt.G/2026/PA.Dgl Tanggal ... yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-untuk pemeriksaan perkara gugatan Cerai Gugat antara :
++untuk menghadiri sidang penyaksian ikrar talak dalam perkara gugatan Cerai Gugat antara :
 -,
 -
 === 98 Relaas/[JS] 5.1. Relaas Panggilan Sidang P (e-Court)/10077_s1.txt
@@ -401,6 +503,8 @@
 +tentang isi putusan Pengadilan Agama Donggala Nomor 531/Pdt.G/2026/PA.Dgl tanggal 22 September 2026 dalam perkara Cerai Talak antara:
 -Melawan
 +Lawan
+-Bahwa terhadap putusan tersebut Termohon dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini;
++Bahwa terhadap putusan tersebut Termohon dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 153 ayat (1) RBg;
 === 98 Relaas/[JS] 6.2. Relaas Pemberitahuan Putusan Verstek T (e-Court)/10083_s1.txt
 -Safarni binti Lanani, NIK , tempat dan tanggal lahir Powelua, 23 Maret 1994, umur 32, agama Islam, pekerjaan Ibu Rumah Tangga, pendidikan SD, tempat kediaman di Dusun III Powelua, RT 001, RW 003, Desa Powelua, Kecamatan Banawa Tengah, Kabupaten Donggala, Provinsi Sulawesi Tengah dengan domisili elektronik pada alamat email  sebagai Termohon;
 -tentang isi putusan Pengadilan Agama Donggala Nomor 537/Pdt.G/2026/PA.Dgl tanggal 22 September 2026  dalam perkara Cerai Talak antara:
@@ -408,6 +512,17 @@
 +tentang isi putusan Pengadilan Agama Donggala Nomor 537/Pdt.G/2026/PA.Dgl tanggal 22 September 2026 dalam perkara Cerai Talak antara:
 -Melawan
 +Lawan
+-Bahwa terhadap putusan tersebut Termohon dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini;
++Bahwa terhadap putusan tersebut Termohon dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 153 ayat (1) RBg;
+=== 98 Relaas/[JS] 6.2. Relaas Pemberitahuan Putusan Verstek T (e-Court)/10139_s1.txt
+-Siska binti Guntur, NIK 7210125111950001, tempat dan tanggal lahir Karawana, 11 November 1995, umur 30, agama Protestan, pekerjaan Karyawan Swasta (PT Akar Daya), pendidikan SLTA, tempat kediaman di Desa Pombewe (Hunian Tetap Pombewe), Kecamatan Sigi Biromaru, Kabupaten Sigi, Provinsi Sulawesi Tengah dengan domisili elektronik pada alamat email  sebagai Termohon;
+-tentang isi putusan Pengadilan Agama Donggala Nomor 587/Pdt.G/2026/PA.Dgl tanggal 15 Oktober 2026  dalam perkara Cerai Talak antara:
++Siska binti Guntur, NIK 7210125111950001, tempat dan tanggal lahir Karawana, 11 November 1995, umur 30 tahun, agama Protestan, pekerjaan Karyawan Swasta (PT Akar Daya), pendidikan SLTA, tempat kediaman di Desa Pombewe (Hunian Tetap Pombewe), Kecamatan Sigi Biromaru, Kabupaten Sigi, Provinsi Sulawesi Tengah, sebagai Termohon;
++tentang isi putusan Pengadilan Agama Donggala Nomor 587/Pdt.G/2026/PA.Dgl tanggal 15 Oktober 2026 dalam perkara Cerai Talak antara:
+-Melawan
++Lawan
+-Bahwa terhadap putusan tersebut Termohon dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini;
++Bahwa terhadap putusan tersebut Termohon dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 199 ayat (1) RBg;
 === 98 Relaas/[JS] 6.2. Relaas Pemberitahuan Putusan Verstek T (e-Court)/10155_s1.txt
 -..., NIK 7203194612740003, tempat dan tanggal lahir WANI, 06 Desember 1974, umur 51, agama Islam, pekerjaan MENGURUS RUMAH TANGGA, pendidikan SLTA, tempat kediaman di  dengan domisili elektronik pada alamat email  sebagai Tergugat;
 -tentang isi putusan Pengadilan Agama Donggala Nomor 602/Pdt.G/2026/PA.Dgl tanggal ...  dalam perkara Kewarisan antara:
@@ -415,7 +530,9 @@
 +tentang isi putusan Pengadilan Agama Donggala Nomor 602/Pdt.G/2026/PA.Dgl tanggal ... dalam perkara Kewarisan antara:
 -Melawan
 +Lawan
+-Bahwa terhadap putusan tersebut Tergugat dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini;
 -Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Termohon;
++Bahwa terhadap putusan tersebut Tergugat dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 199 ayat (1) RBg;
 +Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Tergugat;
 === 98 Relaas/[JS] 6.2. Relaas Pemberitahuan Putusan Verstek T (e-Court)/10163_s1.txt
 -Mirdat bin Sahibul, NIK 7203310503020001, tempat dan tanggal lahir Manimbaya, 05 Maret 2002, umur 24, agama Islam, pekerjaan Wiraswasta (Karyawaan PLN), pendidikan SLTA, tempat kediaman di Dusun Sivia (rumah sebelah kanan sebelum SDN 13 Balaesang Tanjung), Desa Manimbaya, Kecamatan, Balaesang Tanjung, Kabupaten Donggala, Provinsi Sulawesi Tengah dengan domisili elektronik pada alamat email  sebag
@@ -424,8 +541,28 @@
 +tentang isi putusan Pengadilan Agama Donggala Nomor 610/Pdt.G/2026/PA.Dgl tanggal 15 Oktober 2026 dalam perkara Cerai Gugat antara:
 -Melawan
 +Lawan
+-Bahwa terhadap putusan tersebut Tergugat dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini;
 -Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Termohon;
++Bahwa terhadap putusan tersebut Tergugat dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 153 ayat (1) RBg;
 +Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Tergugat;
+=== 98 Relaas/[JS] 6.2. Relaas Pemberitahuan Putusan Verstek T (e-Court)/10172_s1.txt
+-..., NIK ..., tempat dan tanggal lahir ..., ..., umur ..., agama ..., pekerjaan ..., pendidikan ..., tempat kediaman di  dengan domisili elektronik pada alamat email ... sebagai Termohon;
+-tentang isi putusan Pengadilan Agama Donggala Nomor 229/Pdt.P/2026/PA.Dgl tanggal 21 Oktober 2026  dalam perkara P3HP/Penetapan Ahli Waris antara:
++..., NIK ..., tempat dan tanggal lahir ..., ..., umur ... tahun, agama ..., pekerjaan ..., pendidikan ..., tempat kediaman di , sebagai Termohon;
++tentang isi putusan Pengadilan Agama Donggala Nomor 229/Pdt.P/2026/PA.Dgl tanggal 21 Oktober 2026 dalam perkara P3HP/Penetapan Ahli Waris antara:
+-Melawan
++Lawan
+-Bahwa terhadap putusan tersebut Termohon dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini;
++Bahwa terhadap putusan tersebut Pemohon dapat mengajukan kasasi dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 46 ayat (1) Undang-Undang Nomor 14 Tahun 1985 tentang Mahkamah Agung sebagaimana telah diubah dengan Undang-Undang Nomor 5 Tahun 2004 dan perubahan kedua dengan Undang-Undang Nomor 3 Tahun 2009;
+=== 98 Relaas/[JS] 6.2. Relaas Pemberitahuan Putusan Verstek T (e-Court)/10191_s1.txt
+-..., NIK ..., tempat dan tanggal lahir ..., ..., umur ..., agama ..., pekerjaan ..., pendidikan ..., tempat kediaman di  dengan domisili elektronik pada alamat email ... sebagai Termohon;
+-tentang isi putusan Pengadilan Agama Donggala Nomor 231/Pdt.P/2026/PA.Dgl tanggal 20 Oktober 2026  dalam perkara Dispensasi Kawin antara:
++..., NIK ..., tempat dan tanggal lahir ..., ..., umur ... tahun, agama ..., pekerjaan ..., pendidikan ..., tempat kediaman di , sebagai Termohon;
++tentang isi putusan Pengadilan Agama Donggala Nomor 231/Pdt.P/2026/PA.Dgl tanggal 20 Oktober 2026 dalam perkara Dispensasi Kawin antara:
+-Melawan
++Lawan
+-Bahwa terhadap putusan tersebut Termohon dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini;
++Bahwa terhadap putusan tersebut Para Pemohon dapat mengajukan kasasi dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 46 ayat (1) Undang-Undang Nomor 14 Tahun 1985 tentang Mahkamah Agung sebagaimana telah diubah dengan Undang-Undang Nomor 5 Tahun 2004 dan perubahan kedua dengan Undang-Undang Nomor 3 Tahun 2009
 === 98 Relaas/[JS] 6.2. Relaas Pemberitahuan Putusan Verstek T (e-Court)/10246_s1.txt
 -Sudirman bin Kadere, NIK 7313110107810006, tempat dan tanggal lahir Cennae, 31 Desember 1984, umur 41, agama Islam, pekerjaan Petani/Pekebun, pendidikan SD, tempat kediaman di Dusun II, Desa Olu (dua rumah samping Mesjid al-musafir), Kecamatan Lindu, Kabupaten Sigi, Provinsi Sulawesi Tengah dengan domisili elektronik pada alamat email  sebagai Tergugat;
 -tentang isi putusan Pengadilan Agama Donggala Nomor 675/Pdt.G/2026/PA.Dgl tanggal ...  dalam perkara Cerai Gugat antara:
@@ -433,7 +570,20 @@
 +tentang isi putusan Pengadilan Agama Donggala Nomor 675/Pdt.G/2026/PA.Dgl tanggal ... dalam perkara Cerai Gugat antara:
 -Melawan
 +Lawan
+-Bahwa terhadap putusan tersebut Tergugat dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini;
 -Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Termohon;
++Bahwa terhadap putusan tersebut Tergugat dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 153 ayat (1) RBg;
++Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Tergugat;
+=== 98 Relaas/[JS] 6.2. Relaas Pemberitahuan Putusan Verstek T (e-Court)/9813_s1.txt
+-Arfan bin Suherman, NIK 7203082209790003, tempat dan tanggal lahir Donggala, 22 September 1979, umur 46, agama Islam, pekerjaan Nelayan, pendidikan SD, tempat kediaman di Desa Tanjung Batu, Kecamatan Banawa, Kabupaten Donggala, Provinsi Sulawesi Tengah dengan domisili elektronik pada alamat email  sebagai Tergugat;
+-tentang isi putusan Pengadilan Agama Donggala Nomor 315/Pdt.G/2026/PA.Dgl tanggal 07 Juli 2026  dalam perkara Cerai Gugat antara:
++Arfan bin Suherman, NIK 7203082209790003, tempat dan tanggal lahir Donggala, 22 September 1979, umur 46 tahun, agama Islam, pekerjaan Nelayan, pendidikan SD, tempat kediaman di Desa Tanjung Batu, Kecamatan Banawa, Kabupaten Donggala, Provinsi Sulawesi Tengah, sebagai Tergugat;
++tentang isi putusan Pengadilan Agama Donggala Nomor 315/Pdt.G/2026/PA.Dgl tanggal 07 Juli 2026 dalam perkara Cerai Gugat antara:
+-Melawan
++Lawan
+-Bahwa terhadap putusan tersebut Tergugat dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini;
+-Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Termohon;
++Bahwa terhadap putusan tersebut Tergugat dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 199 ayat (1) RBg;
 +Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Tergugat;
 === 98 Relaas/[JS] 6.2. Relaas Pemberitahuan Putusan Verstek T (e-Court)/9870_s1.txt
 -Sabir bin Ardin, NIK 7203111111771006, tempat dan tanggal lahir Alindau, 11 November 1977, umur 48, agama Islam, pekerjaan Karyawan Swasta ( Operator alat berat), pendidikan SLTP, tempat kediaman di Dahulu beralamat di Desa Ombo, Kecamatan Sirenja, Kabupaten Donggala sekarang tidak diketahui keberadaannya di dalam maupun di luar wilayah NKRI dengan domisili elektronik pada alamat email  sebagai T
@@ -442,7 +592,9 @@
 +tentang isi putusan Pengadilan Agama Donggala Nomor 367/Pdt.G/2026/PA.Dgl tanggal 19 Oktober 2026 dalam perkara Cerai Gugat antara:
 -Melawan
 +Lawan
+-Bahwa terhadap putusan tersebut Tergugat dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini;
 -Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Termohon;
++Bahwa terhadap putusan tersebut Tergugat dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 153 ayat (1) RBg;
 +Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Tergugat;
 === 98 Relaas/[JS] 7. Relaas Panggilan Ikrar Talak (e-Court)/10077_s3.txt
 -Donggala, 21 Agustus 2026
@@ -628,4 +780,4 @@
 +Memperhatikan, Pasal 11 ayat (3) Undang-Undang Nomor 48 Tahun 2009 tentang Kekuasaan Kehakiman jo. Pasal 96 dan 97 Undang-Undang Nomor 7 Tahun 1989 tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Seca
 -Memperhatikan, Pasal 103 Undang-Undang Nomor 7 Tahun 1989 Tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009. Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Secara Elektronik, sebagaimana telah diubah dengan Peraturan Mahkamah Agung Nomor 7 tahun 2022
 +Memperhatikan, Pasal 103 Undang-Undang Nomor 7 Tahun 1989 tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Secara Elektronik, sebagaimana telah diubah dengan Peraturan Mahkamah Agung Nomor 7 Tahun 2022
-BERKAS 114, IDENTIK 0, BERUBAH 114
+BERKAS 126, IDENTIK 0, BERUBAH 126

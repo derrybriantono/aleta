@@ -68,6 +68,25 @@ def cara_pbt(sisi, pihak, domisili):
             ).format(d=domisili, k=KUASA.format(s=sisi), p=pihak)
 
 
+KALIMAT_UPAYA = ("{p} dapat mengajukan #7007# dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah "
+                 "pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;")
+TENGGANG = "dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam"
+HADIR_T = ("EXISTS (SELECT 1 FROM perkara_jadwal_sidang j WHERE j.perkara_id = '#perkara_id#' AND j.dihadiri_oleh IN (1, 3, 8, 9, 11, 15) "
+           "AND j.tanggal_sidang <= IFNULL((SELECT MAX(u.tanggal_putusan) FROM perkara_putusan u WHERE u.perkara_id = '#perkara_id#'), '9999-12-31'))")
+
+
+def upaya(sisi):
+    """Kalimat upaya hukum (tanpa 'Bahwa terhadap putusan tersebut' dan tanpa titik koma)."""
+    kasasi = ('CONCAT(IF(' + BANYAK.format(s=1) + ', "Para Pemohon", "Pemohon"), " dapat mengajukan kasasi ' + TENGGANG + ' #11219#")')
+    banding = '"#%s# dapat mengajukan banding %s #11217#"' % ('0046' if sisi == 1 else '0047', TENGGANG)
+    if sisi == 1:
+        gugatan = banding
+    else:
+        gugatan = 'IF(' + HADIR_T + ', ' + banding + ', "#0047# dapat mengajukan perlawanan (<I>verzet</I>) ' + TENGGANG + ' #11218#")'
+    return ("SELECT CASE WHEN p.alur_perkara_id = 16 THEN " + kasasi + " ELSE " + gugatan + " END AS data "
+            "FROM perkara p WHERE p.perkara_id = '#perkara_id#'")
+
+
 SURAT_TERCATAT = "<li>Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman {p};"
 PASAL153 = "sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;"
 
@@ -93,32 +112,36 @@ def buat(asal):
     # 11214 = sama dengan 11204 untuk panggilan IKRAR: perintah = penetapan hari sidang ikrar (#1099#), bukan PHS pokok (#1064#)
     v[11214] = ("TANGGAL PHS IKRAR + PENDETEKSI E-COURT DI KEPALA RELAAS IKRAR (OTOMATIS: #1099# lalu yang didaftarkan secara elektronik ... / "
                 "titik koma; pengganti #1064##7100# di relaas ikrar Derry)", v[11204][1].replace("#1064#", "#1099#"))
+    # 11216 = sama untuk pemberitahuan putusan: "atas perintah ... tanggal" = tanggal PUTUSAN #1069# (keputusan pengguna 30 Okt)
+    v[11216] = ("TANGGAL PUTUSAN + PENDETEKSI E-COURT DI KEPALA RELAAS PEMBERITAHUAN (OTOMATIS: #1069# lalu yang didaftarkan ... / titik koma; "
+                "pengganti #1064##7100# di 2. pemberitahuan T Derry)", v[11204][1].replace("#1064#", "#1069#"))
     # 11205 = 7108: koma sesudah nama (gugatan), "I" hanya bila #0046# lebih dari satu (gugatan & permohonan)
     s = ganti(asal[7108], '"<strong>#0098#</strong> NIK #0335#', '"<strong>#0098#</strong>, NIK #0335#')
     s = ganti(s, '", sebagai <strong>#0046# I</strong>;")', '", sebagai <strong>#0046#", IF(' + BANYAK.format(s=1) + ', " I", ""), "</strong>;")')
     s = ganti(s, '", sebagai <strong>#0046#</strong>;")', '", sebagai <strong>#0046#", IF(' + BANYAK.format(s=1) + ', " I", ""), "</strong>;")')
     v[11205] = ("IDENTITAS PIHAK RELAAS #0046# (OTOMATIS: koma sesudah nama; I hanya bila #0046# lebih dari satu; pengganti #7108# di blangko Derry)", s)
-    # 11206 = 7109: agama #0047# dari SIPP (#0020#), bukan "Islam" tertulis mati; "I" bila #0047# lebih dari satu (gugatan)
-    # agama kosong di SIPP (111 perkara) = titik-titik untuk diisi jurusita, bukan tebakan "Islam"
-    s = ganti(asal[7109], 'umur #0103# tahun, agama Islam,', 'umur #0103# tahun, agama ", IF("#0020#" = "", "...", "#0020#"), ",')
+    # 11206 = 7109: agama #0047# dari SIPP (#0020#), bukan "Islam" tertulis mati; kosong di SIPP = bawaan "Islam" (keputusan pengguna 30 Okt);
+    # "I" bila #0047# lebih dari satu (gugatan)
+    s = ganti(asal[7109], 'umur #0103# tahun, agama Islam,', 'umur #0103# tahun, agama ", IF("#0020#" = "", "Islam", "#0020#"), ",')
     s = ganti(s, '", sebagai <strong>#0047#</strong>;")', '", sebagai <strong>#0047#", IF(' + BANYAK.format(s=2) + ', " I", ""), "</strong>;")')
-    v[11206] = ("IDENTITAS PIHAK RELAAS #0047# (OTOMATIS: agama dari SIPP #0020#; I bila #0047# lebih dari satu; pengganti #7109# di blangko Derry)", s)
-    # 11207 = 7008 (pemberitahuan putusan kepada #0046#): upaya hukum #0046# = banding (verzet hanya hak #0047# yang diputus verstek),
-    # dasar Pasal 199 ayat (1) RBg; perkara e-Court: cara #11213#; cabang "#0047# ghaib -> melalui Bupati" dibuang (salah salin dari #0047#).
+    v[11206] = ("IDENTITAS PIHAK RELAAS #0047# (OTOMATIS: agama SIPP #0020#, kosong = Islam; I bila #0047# lebih dari satu; pengganti #7109# di blangko Derry)", s)
+    # Upaya hukum pemberitahuan putusan (keputusan pengguna 30 Okt): ditentukan KEHADIRAN, bukan jenis putusan.
+    #   gugatan + #0047# pernah hadir (sidang mana pun s.d. putusan; sandi dihadiri_oleh 1/3/8/9/11/15) = banding;
+    #   gugatan + #0047# tidak pernah hadir = verzet (hanya bagi #0047#; #0046# = banding);
+    #   permohonan (alur 16) = kasasi oleh Pemohon / Para Pemohon. Pasal di SATU tempat: 11217 banding, 11218 verzet, 11219 kasasi.
+    #   Kehadiran SIPP dicatat per sidang (bukan per orang): pihak banyak = salah satu #0047# pernah hadir.
     s = asal[7008]
-    s = ganti(s, '#0046# dapat mengajukan #7007#', '#0046# dapat mengajukan banding', 3)
-    s = ganti(s, PASAL153, 'sebagaimana ditentukan dalam Pasal 199 ayat (1) RBg;', 3)
+    s = ganti(s, KALIMAT_UPAYA.format(p='#0046#'), '#11215#;', 3)
     s = ganti(s, SURAT_TERCATAT.format(p='#0046#'), '<li>#11213#')
-    a = s.index("WHEN (SELECT ghaib FROM perkara_pihak2")
-    b = s.index('WHEN LOCATE("Gugur"')
-    s = s[:a] + s[b:]
-    v[11207] = ("RELAAS PEMBERITAHUAN PUTUSAN #0046#: UPAYA HUKUM DAN CARA PENYAMPAIAN (OTOMATIS: banding Pasal 199 ayat (1) RBg; e-Court = "
-                "#11213#; pengganti #7008# di blangko Derry)", s)
-    # 11208 = 7006 (pemberitahuan putusan kepada #0047#): dasar upaya hukum menurut #7007# (#11211#); perkara e-Court: cara #11212#
+    a_ = s.index("WHEN (SELECT ghaib FROM perkara_pihak2")
+    b_ = s.index('WHEN LOCATE("Gugur"')
+    s = s[:a_] + s[b_:]
+    v[11207] = ("RELAAS PEMBERITAHUAN PUTUSAN #0046#: UPAYA HUKUM DAN CARA PENYAMPAIAN (OTOMATIS: upaya #11215#; e-Court = #11213#; "
+                "pengganti #7008# di blangko Derry)", s)
     s = asal[7006]
-    s = ganti(s, PASAL153, 'sebagaimana ditentukan dalam #11211#;', 3)
+    s = ganti(s, KALIMAT_UPAYA.format(p='#0047#'), '#11211#;', 3)
     s = ganti(s, SURAT_TERCATAT.format(p='#0047#'), '<li>#11212#')
-    v[11208] = ("RELAAS PEMBERITAHUAN PUTUSAN #0047#: UPAYA HUKUM DAN CARA PENYAMPAIAN (OTOMATIS: dasar #11211#, e-Court = #11212#; "
+    v[11208] = ("RELAAS PEMBERITAHUAN PUTUSAN #0047#: UPAYA HUKUM DAN CARA PENYAMPAIAN (OTOMATIS: upaya #11211#, e-Court = #11212#; "
                 "pengganti #7006# di blangko Derry)", s)
     # 11209/11210 = 9564/9565 + relaas yang disampaikan kepada KUASA pihak itu
     for baru, lama, sisi in ((11209, 9564, 1), (11210, 9565, 2)):
@@ -126,9 +149,13 @@ def buat(asal):
         v[baru] = ("RELAAS: HARI DAN TANGGAL PELAKSANAAN PANGGILAN #%s# (OTOMATIS SIPP perkara_pelaksanaan_relaas untuk #%s# ATAU KUASANYA "
                    "pada sidang dicetak; belum tercatat = titik-titik; ganti #%04d#)"
                    % ('0046' if sisi == 1 else '0047', '0046' if sisi == 1 else '0047', lama), s)
-    v[11211] = ("RELAAS PEMBERITAHUAN PUTUSAN #0047#: DASAR UPAYA HUKUM (OTOMATIS menurut #7007#: verzet = Pasal 153 ayat (1) RBg, "
-                "banding = Pasal 199 ayat (1) RBg)",
-                'SELECT IF(LOCATE(\'verzet\', "#7007#") > 0, "Pasal 153 ayat (1) RBg", "Pasal 199 ayat (1) RBg") AS data')
+    v[11211] = ("RELAAS PEMBERITAHUAN PUTUSAN #0047#: KALIMAT UPAYA HUKUM (OTOMATIS: permohonan = kasasi; gugatan: #0047# pernah hadir = banding, "
+                "tidak pernah hadir = verzet)", upaya(2))
+    v[11215] = ("RELAAS PEMBERITAHUAN PUTUSAN #0046#: KALIMAT UPAYA HUKUM (OTOMATIS: permohonan = kasasi; gugatan = banding)", upaya(1))
+    v[11217] = ("DASAR HUKUM BANDING (satu tempat; RBg)", 'SELECT "Pasal 199 ayat (1) RBg" AS data')
+    v[11218] = ("DASAR HUKUM PERLAWANAN/VERZET (satu tempat; RBg)", 'SELECT "Pasal 153 ayat (1) RBg" AS data')
+    v[11219] = ("DASAR HUKUM KASASI (satu tempat)", 'SELECT "Pasal 46 ayat (1) Undang-Undang Nomor 14 Tahun 1985 tentang Mahkamah Agung sebagaimana '
+                'telah diubah dengan Undang-Undang Nomor 5 Tahun 2004 dan perubahan kedua dengan Undang-Undang Nomor 3 Tahun 2009" AS data')
     v[11212] = ("RELAAS PEMBERITAHUAN PUTUSAN #0047# E-COURT: CARA PENYAMPAIAN (OTOMATIS: domisili elektronik #8809# bila ada, "
                 "selain itu surat tercatat)", cara_pbt(2, '#0047#', '#8809#'))
     v[11213] = ("RELAAS PEMBERITAHUAN PUTUSAN #0046# E-COURT: CARA PENYAMPAIAN (OTOMATIS: domisili elektronik #8808# bila ada, "

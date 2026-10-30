@@ -1,18 +1,2 @@
-Kueri 15 variabel baru (uji-kueri.tsv, penanda bersarang = 0) x 10.278 perkara sipp_2810 (salinan sipp_rp30): 154.170 kueri, galat MariaDB 0.
-nomor  jumlah-baris-hasil  perkara
-11200 baris=1 10278
-11201 baris=1 10278
-11202 baris=1 10278
-11203 baris=1 10278
-11204 baris=1 10278
-11205 baris=1 10278
-11206 baris=1 10278
-11207 baris=1 10278
-11208 baris=1 10278
-11209 baris=1 10278
-11210 baris=1 10278
-11211 baris=1 10278
-11212 baris=1 10278
-11213 baris=1 10278
-11214 baris=1 10278
-Ulang 11206 versi akhir (agama kosong = ...): 10.278 kueri, galat 0, semua 1 baris.
+Versi 15 variabel (sebelum keputusan pengguna 30 Okt): 154.170 kueri x 10.278 perkara, galat MariaDB 0, semua 1 baris.
+Versi akhir 20 variabel: 6 variabel yang berubah (11206 11207 11208 11211 11215 11216) x 10.278 perkara = 61.668 kueri, galat 0, semua 1 baris; 20 variabel x 2.467 perkara pertama = 49.343 kueri, galat 0 (dihentikan karena lambat, diganti uji 6 variabel itu). Uji kueri pasang-satker: 9 perkara x 20 variabel 0 galat.
