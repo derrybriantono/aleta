@@ -131,6 +131,8 @@ const BERKAS = [
   "blangko-derry-saksi.js",
   // Tampilan tanya jawab saksi (20 Okt 2026): asal jawaban, ringkasan, isian opsional; pembantu murni sebelum blangko-derry-isian.js.
   "blangko-derry-saksi-tampil.js",
+  // Draf tanya jawab saksi otomatis (30 Okt 2026): set yang disarankan langsung terpasang di daftar kosong; murni, sebelum blangko-derry-isian.js.
+  "blangko-derry-draf-saksi.js",
   // Tanya jawab saksi Blangko Derry menurut KATALOG jenis perkara (20 Okt 2026): murni, dimuat sebelum blangko-derry-isian.js.
   "blangko-derry-katalog.js",
   "blangko-derry-jawab-katalog.js",

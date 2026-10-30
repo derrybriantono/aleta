@@ -13,6 +13,8 @@
  *        "ragu"    terisi dari usulan server yang keyakinannya "ragu" (perlu diperiksa)
  *        "data"    terisi dari usulan server (data perkara) dan belum diubah petugas
  *        "manual"  diketik/diubah petugas, atau jawaban yang sudah tersimpan di ABT
+ *        "contoh"  (30 Okt) masih kalimat contoh set pertanyaan/katalog (r.dasar, belum diubah dan belum
+ *                  diisi dari data perkara): hal yang hanya diketahui saksi - sesuaikan dengan keterangannya
  *      Penentu "data"/"ragu": baris masih sama dengan hasil susunan otomatis (r.otomatis) dan
  *      r.usulan = { yakin: "yakin"|"cukup"|"ragu", sumber: "kalimat singkat" } dari server.
  *   2. hitungan untuk ringkasan di atas tabel ("N terisi · N ragu · N perlu dilengkapi");
@@ -32,6 +34,7 @@
     ragu: "ragu - periksa dulu",
     data: "terisi dari data perkara",
     manual: "ketikan petugas",
+    contoh: "kalimat contoh - sesuaikan dengan keterangan saksi",
   };
 
   const teks = (x) => String(x == null ? "" : x);
@@ -52,18 +55,23 @@
 
   /**
    * Asal satu baris. Baris tanpa pertanyaan dan tanpa jawaban (baris kosong yang baru ditambah) tetap "kosong".
-   * @returns {"kosong"|"ragu"|"data"|"manual"}
+   * @returns {"kosong"|"ragu"|"data"|"manual"|"contoh"}
    */
   function asalBaris(r) {
     const b = r && typeof r === "object" ? r : {};
     if (jawabanBelumLengkap(b.jawab)) return "kosong";
     const masihOtomatis = b.otomatis !== undefined && teks(b.otomatis) === teks(b.jawab);
+    // 30 Okt (draf tanya jawab otomatis): jawaban yang masih persis kalimat contoh set/katalog - tidak berasal dari data perkara
+    // dan belum diketik petugas - bukan "ketikan petugas"; ia ditandai supaya disesuaikan dengan keterangan saksi di persidangan.
+    if (!masihOtomatis && b.otomatis === undefined && b.dasar !== undefined && teks(b.dasar) === teks(b.jawab)) return "contoh";
     if (!masihOtomatis) return "manual";
     return b.usulan && b.usulan.yakin === "ragu" ? "ragu" : "data";
   }
 
+  const ALASAN_CONTOH = "Kalimat contoh dari set pertanyaan; tidak ada datanya di SIPP maupun gugatan. Sesuaikan dengan keterangan saksi di persidangan.";
   /** Alasan "ragu" untuk ikon ⓘ: sumber usulan bila ada, selain itu kalimat umum. */
   function alasanRagu(r) {
+    if (asalBaris(r) === "contoh") return ALASAN_CONTOH;
     const u = r && r.usulan ? r.usulan : null;
     // keterangan (mis. "gugatan menyebut X, sedangkan data SIPP menyebut Y") lebih berguna daripada nama sumbernya saja
     const s = u && u.ket ? teks(u.ket).trim() : u && u.sumber ? teks(u.sumber).trim() : "";
@@ -76,10 +84,10 @@
   /**
    * Hitungan untuk ringkasan di atas tabel.
    * @param {Array<Array>} daftar  satu atau beberapa daftar baris (dua saksi berdampingan = dua daftar)
-   * @returns {{data:number, manual:number, ragu:number, kosong:number, terisi:number, total:number}}
+   * @returns {{data:number, manual:number, ragu:number, kosong:number, contoh:number, terisi:number, total:number}}
    */
   function hitungAsal(daftar) {
-    const h = { data: 0, manual: 0, ragu: 0, kosong: 0, terisi: 0, total: 0 };
+    const h = { data: 0, manual: 0, ragu: 0, kosong: 0, contoh: 0, terisi: 0, total: 0 };
     for (const rows of daftar || []) {
       for (const r of rows || []) {
         if (!dihitung(r)) continue;
@@ -92,7 +100,7 @@
   }
 
   /** Kalimat ringkasan polos (dipakai pembaca layar dan uji). */
-  const ringkasAsal = (h) => `${h.terisi} terisi · ${h.ragu} ragu · ${h.kosong} perlu dilengkapi`;
+  const ringkasAsal = (h) => `${h.terisi} terisi · ${h.ragu} ragu · ${h.kosong} perlu dilengkapi${h.contoh ? ` · ${h.contoh} kalimat contoh` : ""}`;
 
   /**
    * Menempelkan keyakinan/sumber usulan ke baris yang BARU diisi susunan otomatis. `sebelum` = baris sebelum dipasang,

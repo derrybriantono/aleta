@@ -430,12 +430,13 @@ const SIPP_ITSBAT = { nikah: null, itsbat: null, anak: [], pihak1: [{ urutan: 1,
 
 const kotak = (h: Halaman, sisi: number) => qd(h, `textarea[data-sba][data-sk="${sisi}"]`) as HTMLTextAreaElement[];
 const asalDom = (h: Halaman) => {
-  const n: Record<string, number> = { data: 0, ragu: 0, kosong: 0, manual: 0 };
+  const n: Record<string, number> = { data: 0, ragu: 0, kosong: 0, manual: 0, contoh: 0 };
   for (const el of qd(h, "textarea[data-asal]")) n[el.getAttribute("data-asal") || ""] += 1;
   return n;
 };
 const ringkas = (h: Halaman) => {
-  const m = (q(h, "#bd-asalringkas")?.textContent || "").replace(/\s+/g, " ").trim().match(/^(\d+) terisi · (\d+) ragu · (\d+) perlu dilengkapi$/);
+  const m = (q(h, "#bd-asalringkas")?.textContent || "").replace(/\s+/g, " ").trim().match(/^(\d+) terisi · (\d+) ragu · (\d+) perlu dilengkapi(?: · (\d+) kalimat contoh)?$/);
+  // 30 Okt (G2a): kalimat contoh katalog/set yang belum diisi dari data tidak dihitung "terisi" dan disebut tersendiri bila ada.
   return m ? { terisi: Number(m[1]), ragu: Number(m[2]), kosong: Number(m[3]) } : null;
 };
 const css = readFileSync(path.join(EKSTENSI, "blangko-derry.css"), "utf8");
@@ -510,7 +511,8 @@ describe("uji gabungan jsdom: itsbat 228/Pdt.P/2026 (2 pemohon, alur 16)", () =>
       const asal = el.getAttribute("data-asal") || "";
       expect(el.classList.contains(`bd-asal-${asal}`), el.value).toBe(true);
       if (/\.{3,}|…/.test(el.value) || !el.value.trim()) expect(asal).toBe("kosong");
-      else expect(["data", "ragu", "manual"]).toContain(asal); // "manual" = kalimat dasar katalog tanpa variabel (tidak perlu data)
+      // 30 Okt (G2a): kalimat dasar katalog yang belum diisi dari data = "contoh" (ditandai untuk disesuaikan petugas), bukan "manual"
+      else expect(["data", "ragu", "contoh"]).toContain(asal);
     }
     // ringkasan sama dengan hitungan kotak
     const n = asalDom(h);

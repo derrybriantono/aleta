@@ -4119,8 +4119,28 @@
     renderTj();
     void muatAlasanPosita(); // berjalan sendiri: daftar alasan menyesuaikan diri begitu posita terbaca
     await Promise.all([...(pas || [kunci]).map((k) => muatTj(k)), muatSetSaksi(), muatPilSaksi(), muatAlasanSaksi()]);
+    if (S.tjBuka === kunci) drafSaksiOtomatis(pas || [kunci]); // 30 Okt: daftar kosong langsung berisi draf (tanpa Muat)
     renderTj();
     void isiOtomatis(pas || [kunci], {});
+  }
+  // 30 Okt 2026 (G2a): draf tanya jawab saksi langsung terisi saat penyunting dibuka. Hanya daftar yang terbaca KOSONG dari
+  // ABT; set yang disarankan dipasang seperti Muat, lalu isiOtomatis mengisi jawabannya dari data perkara. Tidak tersimpan ke
+  // ABT sebelum petugas menekan Simpan ke ABT. Aturannya di blangko-derry-draf-saksi.js; perkara katalog sudah otomatis sendiri.
+  function drafSaksiOtomatis(kunciDaftar) {
+    const m = typeof globalThis !== "undefined" ? globalThis.AletaBdDrafSaksi : null;
+    if (!m || !S.blangko || !S.pk) return [];
+    const pilih = m.pilihSetDraf(S.setSaksi && S.setSaksi.daftar);
+    if (!pilih) return [];
+    const opsi = { hanyaBaca: deretTj().hanyaBaca, katalog: ktAktif() };
+    const sasaran = kunciDaftar.filter((k) => tjItem(k) && m.perluDraf(S.tj[k], opsi));
+    if (!sasaran.length) return [];
+    tjCatat(sasaran); // Urungkan mengembalikan daftar kosong
+    for (const k of sasaran) {
+      pakaiSetSaksi(k, pilih.utama.id);
+      for (const t of pilih.tambahan) pakaiSetSaksi(k, t.id);
+    }
+    catatMuatTj(kunciDaftar, m.kalimatStatus(pilih, jumlahBarisMuat(kunciDaftar), jamSekarang()));
+    return sasaran;
   }
   /** Baris tanya-jawab yang berisi (pertanyaan atau jawaban tidak kosong). */
   const barisTjBerisi = (baris) => (Array.isArray(baris) ? baris : []).some((r) => String((r && r.tanya) || "").trim() || String((r && r.jawab) || "").trim());
@@ -5994,6 +6014,11 @@
       return `<span class="bd-asallencana ragu">ragu <button type="button" class="bd-ikon bd-asalinfo" data-bd2="infoasal" title="${esc(alasan)}" aria-label="Mengapa ragu: ${esc(alasan)}">ⓘ</button></span>`;
     }
     if (a === "kosong") return `<span class="bd-asallencana kosong">perlu dilengkapi</span>`;
+    // 30 Okt: kalimat contoh set pertanyaan (draf otomatis) - hal yang hanya diketahui saksi; alasannya di ikon (i).
+    if (a === "contoh") {
+      const alasan = m.alasanRagu(r);
+      return `<span class="bd-asallencana contoh">kalimat contoh <button type="button" class="bd-ikon bd-asalinfo" data-bd2="infoasal" title="${esc(alasan)}" aria-label="Kalimat contoh: ${esc(alasan)}">ⓘ</button></span>`;
+    }
     return "";
   }
   const htmlCapAsal = (r) => (TP() ? `<span class="bd-asalcap" data-asalcap>${isiCapAsal(r)}</span>` : "");
@@ -6004,7 +6029,7 @@
     if (!h.total) return "";
     const tombolAtauTeks = (n, label, jenis) =>
       n ? `<button type="button" class="bd-asalbtn ${jenis}" data-bd2="lompat" data-jenis="${jenis}" title="Lompat ke kotak ${label} berikutnya">${n} ${label}</button>` : `<span class="bd-asalbag ${jenis}">${n} ${label}</span>`;
-    return `<div class="bd-asalringkas" id="bd-asalringkas" role="status" aria-live="polite"><span class="bd-asalbag data">${h.terisi} terisi</span> · ${tombolAtauTeks(h.ragu, "ragu", "ragu")} · ${tombolAtauTeks(h.kosong, "perlu dilengkapi", "kosong")}</div>`;
+    return `<div class="bd-asalringkas" id="bd-asalringkas" role="status" aria-live="polite"><span class="bd-asalbag data">${h.terisi} terisi</span> · ${tombolAtauTeks(h.ragu, "ragu", "ragu")} · ${tombolAtauTeks(h.kosong, "perlu dilengkapi", "kosong")}${h.contoh ? ` · ${tombolAtauTeks(h.contoh, "kalimat contoh", "contoh")}` : ""}</div>`;
   }
   /** Daftar baris yang sedang tampil (dua saksi berdampingan, atau satu saksi). */
   function daftarJawabTampil() {
@@ -6026,7 +6051,7 @@
       } else if (el.hasAttribute("data-tjb") && S.tj[S.tjBuka]) r = S.tj[S.tjBuka].rows[Number(el.getAttribute("data-tjb"))];
       if (!r) continue;
       const a = m.asalBaris(r);
-      for (const j of ["kosong", "ragu", "data", "manual"]) el.classList.toggle(`bd-asal-${j}`, j === a);
+      for (const j of ["kosong", "ragu", "data", "manual", "contoh"]) el.classList.toggle(`bd-asal-${j}`, j === a);
       el.setAttribute("data-asal", a);
       const cap = el.nextElementSibling;
       if (cap && cap.hasAttribute("data-asalcap")) cap.innerHTML = isiCapAsal(r);
@@ -6039,10 +6064,10 @@
   /** Lompat ke kotak jawaban "ragu"/"kosong" BERIKUTNYA (urutan di halaman), lalu beri fokus. */
   function lompatAsal(jenis) {
     const wad = cari("#bd-tjwadah", wadah.isian);
-    if (!wad || (jenis !== "ragu" && jenis !== "kosong")) return;
+    if (!wad || (jenis !== "ragu" && jenis !== "kosong" && jenis !== "contoh")) return;
     const semuaKotak = cariSemua("textarea[data-asal]", wad);
     const sasaranAda = semuaKotak.filter((el) => el.getAttribute("data-asal") === jenis);
-    if (!sasaranAda.length) return toast(jenis === "ragu" ? "Tidak ada jawaban yang ragu." : "Semua jawaban sudah terisi.");
+    if (!sasaranAda.length) return toast(jenis === "ragu" ? "Tidak ada jawaban yang ragu." : jenis === "contoh" ? "Tidak ada lagi kalimat contoh." : "Semua jawaban sudah terisi.");
     const akhir = S.sk.lompat && S.sk.lompat.jenis === jenis ? S.sk.lompat.urut : -1;
     const sasaran = sasaranAda.find((el) => semuaKotak.indexOf(el) > akhir) || sasaranAda[0];
     S.sk.lompat = { jenis, urut: semuaKotak.indexOf(sasaran) };
