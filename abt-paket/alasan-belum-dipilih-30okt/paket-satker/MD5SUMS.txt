@@ -1,0 +1,7 @@
+522508c20dc627613ae003f0a9d2712f *abt-alasan-belum-dipilih-30okt-PASANG.sql
+a5c336d39ef876fb86d7328ee9eb20d3 *abt-alasan-belum-dipilih-30okt-PERIKSA.sql
+59caaf8287f60b9e6be03dc152b30379 *abt-alasan-belum-dipilih-30okt-PRASYARAT.sql
+2d50c46959b54fcd7b25d141fd45043d *abt-alasan-belum-dipilih-30okt-PULIH.sql
+a95f4944e9088e59348686b7f2c6ae38 *harap.txt
+7d799625ad451b6fc740886e2ca9335c *pasang-satker.sh
+f780c995408fde855f95b4d9562f236f *pulih-satker.sh
