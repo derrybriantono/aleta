@@ -871,8 +871,11 @@ describe("audit 17 Okt: E4 tanya jawab yang sudah ada di ABT", () => {
       return e && !e.hidden ? e : null;
     }, "pengingat");
     // Saksi 1 P punya 2 baris di ABT (tanpa dibuka di layar); saksi 2 P kosong.
-    expect(ingat.textContent).not.toMatch(/tanya jawab saksi 1/i);
-    expect(ingat.textContent).toMatch(/tanya jawab saksi 2/i);
+    // 30 Okt (keputusan 1c): saksi tanpa tanya jawab tidak lagi menahan cetak - disebut di peringatan atas tombol Cetak.
+    expect(ingat.textContent).not.toMatch(/tanya jawab saksi/i);
+    const saksiKosong = q(h, "#bd-saksikosong")?.textContent || "";
+    expect(saksiKosong).not.toMatch(/Saksi 1 Penggugat/);
+    expect(saksiKosong).toMatch(/Saksi 2 Penggugat belum punya tanya jawab saksi/);
   });
 });
 
@@ -888,8 +891,11 @@ describe("audit 17 Okt: jalur cadangan tanpa bot membaca tanya jawab", () => {
       return e && !e.hidden ? e : null;
     }, "pengingat");
     // Saksi 1 P punya 2 baris di ABT (tanpa dibuka di layar); saksi 2 P kosong - sama dengan jalur utama (E4).
-    expect(ingat.textContent).not.toMatch(/tanya jawab saksi 1/i);
-    expect(ingat.textContent).toMatch(/tanya jawab saksi 2/i);
+    // 30 Okt (keputusan 1c): disebut di peringatan atas tombol Cetak, tidak di pengingat yang menahan cetak.
+    expect(ingat.textContent).not.toMatch(/tanya jawab saksi/i);
+    const saksiKosong = q(h, "#bd-saksikosong")?.textContent || "";
+    expect(saksiKosong).not.toMatch(/Saksi 1 Penggugat/);
+    expect(saksiKosong).toMatch(/Saksi 2 Penggugat belum punya tanya jawab saksi/);
     expect(mintaKe(h, /tanyajawab_perkara_edit\?no_var=505[89]/, "GET").length).toBeGreaterThan(0);
   });
 });

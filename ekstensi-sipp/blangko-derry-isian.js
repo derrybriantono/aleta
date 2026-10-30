@@ -5708,6 +5708,7 @@
   }
 
   function renderTj() {
+    perbaruiSaksiKosong();
     const tombol = cari("#bd-tjtombol", wadah.isian);
     const wad = cari("#bd-tjwadah", wadah.isian);
     if (!tombol || !wad) return;
@@ -7121,10 +7122,52 @@
       `<button type="button" class="bd-btn kecil" id="bd-btnttd" data-bd2="popttd" aria-expanded="false" aria-controls="bd-popttd">Tambah tanda tangan${S.ttdPilih.size ? ` (${S.ttdPilih.size})` : ""} ▾</button>` +
       `${pil("anon", "PDF anonim", j === "put" ? "" : "hanya putusan")}${pil("edoc", "Unggah ke e-Doc SIPP", tes() ? "mati pada Tes putusan" : j === "put" ? "" : "hanya putusan; BAS dan relaas diunggah lewat SIPP")}</div>` +
       htmlUnggahanPutusan() +
+      `<div id="bd-saksikosong"></div>` +
       `<div class="bd-ingat" id="bd-ingat" hidden role="alert"></div>` +
       `<div class="bd-utas"><button type="button" class="bd-btn utama besar" data-bd2="cetak" ${S.sibuk || S.unggahSibuk ? "disabled" : ""}>${S.sibuk ? "Sedang mencetak…" : "Cetak"}</button><span class="bd-catat" id="bd-statuscetak">${dok.length ? `Akan menerbitkan: ${esc(dok.join(", "))}. ` : "Pilih minimal satu hasil cetak. "}${tes() ? "" : sudah ? `Sudah dicetak ${esc(sudah)}.` : "Belum dicetak."}</span> <span class="bd-catat" id="bd-siapnaskah">${esc(ketSiapNaskah())}</span></div>` +
       `<ul class="bd-logcetak" id="bd-logcetak" ${S.log.length ? "" : "hidden"}>${S.log.slice(-6).map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` +
       `<div class="bd-float lebar" id="bd-popttd" hidden role="dialog" aria-label="Tambah tanda tangan"></div>`;
+    perbaruiSaksiKosong();
+  }
+  // ──────────────────────────────────────────────────────────────────────────
+  // 30 Okt 2026 (keputusan pengguna 1c): berita acara dan putusan Blangko Derry membaca keterangan saksi HANYA dari tanya
+  // jawab saksi (bentuk seragam). Saksi yang tanya jawabnya belum ada tercetak kosong - panel memperingatkan sebelum
+  // cetak/pratinjau (menyebut saksinya, dengan tombol ke penyunting tanya jawab yang memuat "Set pertanyaan"), TANPA
+  // menahan cetak.
+  // ──────────────────────────────────────────────────────────────────────────
+  /** Saksi (bukan jawaban/replik lisan) yang tanya jawabnya diketahui KOSONG untuk blangko dan sidang yang terbuka. */
+  function saksiTanpaTanyaJawab() {
+    if (!S.blangko || !S.susunan || S.blangko.khusus) return [];
+    const hasil = [];
+    for (const it of daftarPerlu()) {
+      if (it.jenis !== "tj" || !it.tj || !/^saksi\b/i.test(String(it.tj.sebutan || ""))) continue;
+      const t = S.tj[it.tj.kunci];
+      const kodeNilai = [it.kode, it.tj.kodeSunting].filter(Boolean);
+      // Sama dengan hitungan "terisi" layar (nilaiTerisi): baris di layar ATAU nilai ABT/bot untuk penanda/penyuntingnya.
+      const terisi = Boolean(t && t.dimuat && barisTjBerisi(t.rows)) || kodeNilai.some((k) => S.nilai[k] && S.nilai[k].status === "terisi");
+      const diketahui = Boolean(t && t.dimuat && !t.memuat) || kodeNilai.some((k) => S.nilai[k] && S.nilai[k].status === "kosong");
+      const kosong = !terisi && diketahui;
+      if (kosong && !hasil.some((x) => x.kunci === it.tj.kunci)) hasil.push({ kunci: it.tj.kunci, sebutan: String(it.tj.sebutan) });
+    }
+    return hasil;
+  }
+  const daftarSebutan = (l) => (l.length < 2 ? l.join("") : `${l.slice(0, -1).join(", ")} dan ${l[l.length - 1]}`);
+  function perbaruiSaksiKosong() {
+    const e = wadah.cetak ? cari("#bd-saksikosong", wadah.cetak) : null;
+    if (!e) return;
+    const l = saksiTanpaTanyaJawab();
+    if (!l.length) {
+      e.innerHTML = "";
+      return;
+    }
+    const baca = deretTj().hanyaBaca;
+    const dok = S.blangko && S.blangko.jenis === "put" ? "Putusan" : "Berita acara";
+    e.innerHTML =
+      `<div class="bd-peringatan bd-saksikosong" role="status">` +
+      `<b>Keterangan saksi belum diisi:</b> ${daftarSebutan(l.map((x) => `<b>${esc(x.sebutan)}</b>`))} belum punya tanya jawab saksi${baca ? "" : ` pada sidang ke-${esc(sidangUrutan())}`}. ` +
+      `${dok} tetap dapat dicetak, tetapi keterangan saksi tersebut tercetak kosong.` +
+      (baca ? " Tanya jawab saksi diisi panitera pengganti pada berita acara sidang pemeriksaan saksi. " : " ") +
+      `<button type="button" class="bd-btn kecil" data-bd2="isisaksi" data-kunci="${esc(l[0].kunci)}">${baca ? "Lihat tanya jawab saksi" : "Isi tanya jawab saksi"}</button></div>`;
   }
   function catatLog(teks) {
     S.log.push(`${jamSekarang()}: ${teks}`);
@@ -7363,6 +7406,11 @@
         if (pulih) await pulih();
       }
       const hs = S.prat.penanda.map(namaPenanda);
+      // 30 Okt (keputusan 1c): tanya jawab SAKSI yang kosong tidak menahan cetak - sudah diperingatkan di atas tombol Cetak
+      // (bd-saksikosong) dan dicatat sesudah cetak.
+      const saksiKosong = saksiTanpaTanyaJawab();
+      const kunciSaksiKosong = new Set(saksiKosong.map((x) => x.kunci));
+      kos = kos.filter((x) => !(x.b && x.b.jenis === "tj" && x.b.tj && kunciSaksiKosong.has(x.b.tj.kunci)));
       // Keputusan 17 Okt (F1.5): hanya isian Penting dan penanda # tersisa yang menahan cetak; isian Tidak wajib
       // yang kosong tidak - cetak langsung jalan dengan catatan kecil. Bila ada yang menahan, daftar Tidak wajib tetap ikut tampil.
       const penting = kos.filter((x) => x.tingkat !== "tambahan");
@@ -7376,6 +7424,7 @@
       const tidakWajib = !S.peringat && !paksa ? kos.length - penting.length : 0;
       await lakukanCetak(rtf);
       if (tidakWajib) catatLog(`catatan: ${tidakWajib} isian tidak wajib masih kosong (tercetak titik-titik)`);
+      if (saksiKosong.length) catatLog(`catatan: keterangan ${daftarSebutan(saksiKosong.map((x) => x.sebutan))} belum diisi pada tanya jawab saksi (tercetak kosong)`);
     } catch (e) {
       catatLog(`gagal: ${String((e && e.message) || e)}`);
       toast(`Cetak gagal: ${String((e && e.message) || e)}`);
@@ -7824,6 +7873,18 @@
     if (kode === "bukatj") {
       const it = daftarPerlu().find((x) => x.jenis === "tj");
       return it ? void bukaTj(it.tj.kunci) : undefined;
+    }
+    if (kode === "isisaksi") {
+      // Peringatan "keterangan saksi belum diisi": buka tanya jawab saksi pertama yang kosong (penyunting BAS memuat
+      // pilihan "Set pertanyaan"; putusan hanya menampilkannya).
+      const k = String(aksi.getAttribute("data-kunci") || "");
+      if (!tjItem(k)) return;
+      if (deretTj().hanyaBaca) S.tjLipat = true;
+      if (S.tjBuka !== k) void bukaTj(k);
+      else renderTj();
+      const w2 = cari("#bd-tjwadah", wadah.isian) || cari("#bd-tjtombol", wadah.isian);
+      if (w2 && w2.scrollIntoView) w2.scrollIntoView({ block: "center" });
+      return;
     }
     if (kode === "semua") {
       S.semuaBuka = !S.semuaBuka;
