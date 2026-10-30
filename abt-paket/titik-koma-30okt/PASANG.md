@@ -40,9 +40,9 @@ dipakai PERIKSA paket dan uji ekstensi (`blangko-derry-isian-rapi-30okt.test.ts`
 - `hasil/render-*.json`: render php56 ABT asli sebelum/sesudah untuk perkara contoh.
 
 ## Yang TIDAK diubah paket ini (perlu keputusan terpisah)
-- **Tabel tanya jawab BAS** dicetak PHP ABT apa adanya dari `abt_keterangan_saksi` - ";" di tengah jawaban tersimpan (513 jawaban,
-  237 perkara di dump 28 Okt) tetap tercetak di BAS sampai DATA-nya dirapikan. Panel kini menyimpan jawaban baru sudah rapi; merapikan
-  data lama = ubahan data (seperti ket-saksi-baris) dan belum disetujui.
+- **Tabel tanya jawab BAS** dicetak PHP ABT apa adanya dari `abt_keterangan_saksi`: ditangani paket `../titik-koma-data-30okt`
+  (DISETUJUI pengguna 30 Okt, urutan pasang WAJIB sesudah paket ini dan ket-saksi-baris): 615 jawaban (301 perkara) dirapikan
+  di data tersimpan dengan fungsi yang sama, pemicu ket-saksi-baris diperluas agar jawaban baru ikut rapi.
 - **Isian teks (data_teks) ABT** dicetak apa adanya (nl2br). Panel kini menyimpannya rapi; data lama tidak diubah.
 - **Teks blangko RTF sendiri**: `hasil/pindai-templat-ringkas.txt` - 1.823 ";" diikuti teks dalam satu paragraf di 703 berkas aktif
   (mis. "telah hadir in person; #8509#", kutipan Pasal 7 ayat (3) KHI "(b) ...; (c) ..."), 234 sesudah penanda. Sebagian besar disusul

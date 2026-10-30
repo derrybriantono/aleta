@@ -1,0 +1,41 @@
+{
+ "keterangan": "render php56 ABT asli BAS (sidang sesuai tanya jawab), basis salinan; [sebelum, sesudah] paket; sisa sesudah = teks blangko BAS sendiri (susunan majelis \"...sebagai Hakim; dan dibantu\", kalimat pilihan \"(PILIH SALAH SATUNYA ...)\")",
+ "hasil": [
+  {
+   "perkara_id": "9780",
+   "blangko": "1 Perceraian CG - BAS/BAS ALUR 02 [2] BAS 2 P Hadir & T Tidak Hadir - Saksi dan Putusan Verstek (2 Saksi).rtf",
+   "titik_koma_tengah": [
+    8,
+    2
+   ],
+   "penanda_sisa": [
+    [],
+    []
+   ]
+  },
+  {
+   "perkara_id": "9536",
+   "blangko": "2 Itsbat Nikah - BAS/BAS ALUR 11 [1] BAS 1 IN - Kabul (1x Sidang).rtf",
+   "titik_koma_tengah": [
+    1,
+    1
+   ],
+   "penanda_sisa": [
+    [],
+    []
+   ]
+  },
+  {
+   "perkara_id": "9864",
+   "blangko": "1 Perceraian CG - BAS/BAS ALUR 05 [3a] BAS 3 P & T Hadir - Pembuktian P dan T.rtf",
+   "titik_koma_tengah": [
+    6,
+    2
+   ],
+   "penanda_sisa": [
+    [],
+    []
+   ]
+  }
+ ]
+}

@@ -1,0 +1,7 @@
+329a64332ce0b7160313f22349f298fe *abt-titik-koma-data-30okt-PASANG.sql
+d95bc19a54812d7fdce38b74427df56d *abt-titik-koma-data-30okt-PEMICU-LAMA.sql
+1b835bd5f9566f33c25230fe24a071f2 *abt-titik-koma-data-30okt-PEMICU.sql
+5644be14994e40aa581a549dff7216dd *abt-titik-koma-data-30okt-PERIKSA.sql
+fd17ddc89661adf3497d1778b699f5d8 *abt-titik-koma-data-30okt-PRASYARAT.sql
+1f88b6fd4333bc94143083f960c599fe *pasang-satker.sh
+5468d1af77b77dd388278b9f954214e4 *pulih-satker.sh
