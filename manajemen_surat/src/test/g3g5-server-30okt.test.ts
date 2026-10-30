@@ -31,10 +31,10 @@ const pernyataan = (sql: string) =>
     .filter(Boolean);
 
 describe("migrasi 0120 dan 0121 - tiga tempat pendaftaran", () => {
-  it("jurnal: idx 106 dan 107 tepat sekali, when naik", () => {
+  it("jurnal: idx 104 dan 105 tepat sekali (sesudah 0117 G4 di idx 103), when naik", () => {
     const j = JSON.parse(readFileSync(path.join(AKAR, "drizzle/meta/_journal.json"), "utf8")) as { entries: Array<{ idx: number; tag: string; when: number }> };
-    expect(j.entries.filter((e) => e.tag.startsWith("0120_"))).toEqual([expect.objectContaining({ idx: 106, tag: "0120_aleta_cetak_terakhir_salinan_bht" })]);
-    expect(j.entries.filter((e) => e.tag.startsWith("0121_"))).toEqual([expect.objectContaining({ idx: 107, tag: "0121_aleta_kalimat_pribadi" })]);
+    expect(j.entries.filter((e) => e.tag.startsWith("0120_"))).toEqual([expect.objectContaining({ idx: 104, tag: "0120_aleta_cetak_terakhir_salinan_bht" })]);
+    expect(j.entries.filter((e) => e.tag.startsWith("0121_"))).toEqual([expect.objectContaining({ idx: 105, tag: "0121_aleta_kalimat_pribadi" })]);
     expect(new Set(j.entries.map((e) => e.idx)).size).toBe(j.entries.length);
     for (let i = 1; i < j.entries.length; i += 1) expect(j.entries[i].when).toBeGreaterThan(j.entries[i - 1].when);
   });

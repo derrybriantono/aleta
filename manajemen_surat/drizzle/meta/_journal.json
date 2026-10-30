@@ -731,14 +731,14 @@
       "breakpoints": true
     },
     {
-      "idx": 106,
+      "idx": 104,
       "version": "7",
       "when": 1792319400001,
       "tag": "0120_aleta_cetak_terakhir_salinan_bht",
       "breakpoints": true
     },
     {
-      "idx": 107,
+      "idx": 105,
       "version": "7",
       "when": 1792323000001,
       "tag": "0121_aleta_kalimat_pribadi",
