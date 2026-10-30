@@ -530,7 +530,7 @@ async function main() {
       await page.locator("button", { hasText: "Tetap unggah" }).first().click();
       await tunggKartu(page, /Tersimpan di SIPP: relaas/);
       const t = diterima[diterima.length - 1];
-      periksa("D5 Tetap unggah: RTF diubah ke PDF TANPA tanda tangan (bukan BAS) dan tersimpan; petugas diberi tahu", diterima.length === sebelum + 1 && /\.pdf$/.test(t.nama) && (await jumlahGambar(new Uint8Array(fs.readFileSync(t.berkas)))) === 0 && /tidak dibubuhkan untuk relaas/.test(await kartu(page)));
+      periksa("D5 Tetap unggah: relaas RTF diunggah APA ADANYA sebagai RTF (SIPP menerima Word di tombol relaas; nama dan tipe asli, tanpa konversi) dan petugas diberi tahu", diterima.length === sebelum + 1 && t.nama === nama && /rtf/.test(t.tipe) && fs.readFileSync(t.berkas).equals(Buffer.from(b64rusak, "base64")) && /diunggah sebagai berkas Word apa adanya/.test(await kartu(page)));
       await page.close();
     }
 
@@ -580,7 +580,19 @@ async function main() {
       await tunggKartu(page, /Tersimpan di SIPP: gugatan\/permohonan|Tidak tersimpan|Gagal menyimpan/);
       await page.screenshot({ path: path.join(HASIL, "D7-datum-docx.png") });
       const t = diterima[diterima.length - 1];
-      periksa("D7 permohonan DOCX: diubah ke PDF TANPA tanda tangan scan dan petugas diberi tahu", diterima.length === sebelum + 1 && t.kode === "datum" && /\.pdf$/.test(t.nama) && (await jumlahGambar(new Uint8Array(fs.readFileSync(t.berkas)))) === 0 && /tidak dibubuhkan untuk gugatan\/permohonan/.test(await kartu(page)));
+      periksa("D7 permohonan DOCX: tombol yang SIPP-nya menerima Word -> diunggah apa adanya sebagai DOCX (nama dan tipe asli)", diterima.length === sebelum + 1 && t.kode === "datum" && t.nama === "permohonan.docx" && /wordprocessingml/.test(t.tipe) && fs.readFileSync(t.berkas).equals(bytes(path.join(BAHAN, "bas-contoh.docx"))));
+      await page.close();
+    }
+
+    // ===== D7b: penetapan PMH (jendela SIPP hanya PDF) + DOCX -> diubah ke PDF TANPA tanda tangan scan, petugas diberi tahu =====
+    {
+      const page = await bukaPerkara();
+      const sebelum = diterima.length;
+      tersimpan.delete(`dokpmh:${ENC}7:`);
+      await seretLepas(page, "#t-pmh", "pmh.docx", b64(path.join(BAHAN, "bas-contoh.docx")), "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+      await tunggKartu(page, /Tersimpan di SIPP: penetapan PMH|Tidak tersimpan|Gagal menyimpan/);
+      const t = diterima[diterima.length - 1];
+      periksa("D7b PMH (hanya PDF) + DOCX: diubah ke PDF tanpa tanda tangan scan, tersimpan, petugas diberi tahu", diterima.length === sebelum + 1 && t.kode === "dokpmh" && t.nama === "pmh.pdf" && t.tipe === "application/pdf" && (await jumlahGambar(new Uint8Array(fs.readFileSync(t.berkas)))) === 0 && /tidak dibubuhkan untuk penetapan PMH/.test(await kartu(page)));
       await page.close();
     }
 

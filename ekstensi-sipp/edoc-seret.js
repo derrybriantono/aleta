@@ -18,8 +18,10 @@
  *   2. halaman unggah SIPP dibuka di LATAR (GET alamat yang sama dengan popup_form) dan dibaca: kolom tersembunyinya, nama berkas yang
  *      sudah tersimpan, batas "hanya PDF", alamat simpan - dari kode halaman itu sendiri, bukan ditebak;
  *   3. sudah ada e-Doc jenis itu -> tanya "Ganti dokumen yang sudah ada?" (sama dengan perilaku SIPP: berkas lama diganti);
- *   4. PDF langsung; Word (RTF/DOC/DOCX/ODT) diubah ke PDF di server - BAS dengan tanda tangan scan Panitera Pengganti dan Ketua Majelis,
- *      jenis lain TANPA tanda tangan (aturannya belum pasti per jenis) dan petugas diberi tahu;
+ *   4. PDF langsung. Word: bila jendela unggah SIPP membatasi "hanya PDF" (BAS, penetapan PMH/PPP/PJS/PHS, dst.) diubah ke PDF di server - BAS
+ *      dengan tanda tangan scan Panitera Pengganti dan Ketua Majelis, jenis lain TANPA tanda tangan (aturannya belum pasti per jenis) dan
+ *      petugas diberi tahu; bila SIPP MENERIMA Word (putusan, anonimisasi, relaas, dst.) Word diunggah APA ADANYA seperti bila dipilih lewat popup
+ *      (nama dan tipe asli) - keputusan sementara 31 Okt 2026: pertahankan perilaku SIPP asli;
  *   5. isi diperiksa (sisa blangko: kurung siku, kode, "...", garis, tulisan merah; relaas: titik isian tangan jurusita dikecualikan) dan
  *      kesesuaian ringan (nomor perkara di berkas = perkara halaman ini; tanggal sidang BAS = baris sidang tempat dilepas). Ada temuan ->
  *      satu kotak konfirmasi "Tetap unggah / Batal" (Batal = tidak ada yang terkirim). Tanpa temuan -> langsung simpan;
@@ -573,14 +575,25 @@
         if (!ganti) return kartu.tulis("awas", `Dibatalkan: ${jenisSah.nama} yang sudah ada tidak diganti.`, []);
       }
 
-      // 4. PDF langsung; Word diubah ke PDF
-      let pdf = null;
-      let namaPdf = "";
+      // 4. PDF langsung. Word: jendela unggah SIPP yang membatasi "hanya PDF" (BAS dsb.) -> diubah ke PDF di server (BAS bertanda tangan scan);
+      //    jendela yang MENERIMA Word (putusan, anonimisasi, dst.) -> Word diunggah APA ADANYA seperti bila dipilih lewat popup SIPP
+      //    (nama dan tipe asli, tanpa konversi) - keputusan sementara 31 Okt 2026: pertahankan perilaku SIPP asli.
+      const adaWord = bentuk === "rtf" || bentuk === "docx" || bentuk === "doc";
+      const kirimWordAsli = adaWord && !hal.hanyaPdf;
+      let isi = null; // yang dikirim ke SIPP (Uint8Array)
+      let namaKirim = "";
+      let tipeKirim = "";
       const catatan = [];
       if (bentuk === "pdf") {
-        pdf = bita;
-        namaPdf = W && W.namaPdf ? W.namaPdf(berkas.name) : `${namaAman(berkas.name).replace(/\.pdf$/i, "")}.pdf`;
-      } else if (bentuk === "rtf" || bentuk === "docx" || bentuk === "doc") {
+        isi = bita;
+        namaKirim = W && W.namaPdf ? W.namaPdf(berkas.name) : `${namaAman(berkas.name).replace(/\.pdf$/i, "")}.pdf`;
+        tipeKirim = "application/pdf";
+      } else if (kirimWordAsli) {
+        isi = bita;
+        namaKirim = namaAman(berkas.name);
+        tipeKirim = berkas.type || (bentuk === "rtf" ? "application/rtf" : bentuk === "docx" ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document" : "application/msword");
+        catatan.push(`${jenisSah.nama} diunggah sebagai berkas Word apa adanya (SIPP menerimanya), tanpa diubah ke PDF.`);
+      } else if (adaWord) {
         if (!W || typeof W.mintaPdf !== "function") return gagal("pengubah Word ke PDF belum siap; muat ulang halaman.");
         const denganTtd = jenisSah.kelompok === "bas" && (typeof W.ttdDipilih === "function" ? W.ttdDipilih() : true);
         kartu.tulis("", `Mengubah ${berkas.name} ke PDF${denganTtd ? " dan membubuhkan tanda tangan scan" : ""}... mohon tunggu.`, []);
@@ -590,39 +603,53 @@
         } catch (galat) {
           return gagal(`tidak dapat diubah ke PDF: ${sebaris((galat && galat.message) || galat).slice(0, 160)}`);
         }
-        pdf = h.pdf;
-        namaPdf = h.nama;
+        isi = h.pdf;
+        namaKirim = h.nama;
+        tipeKirim = "application/pdf";
         if (denganTtd) for (const b of W.barisPenandatangan(h)) catatan.push(b);
         else if (jenisSah.kelompok !== "bas") catatan.push(`Tanda tangan scan tidak dibubuhkan untuk ${jenisSah.nama} (hanya untuk BAS); PDF dibuat apa adanya dari berkas Anda.`);
         for (const p of h.peringatan) catatan.push(p);
       } else {
         // bukan PDF dan bukan Word: sampai di sini hanya bila halaman unggah SIPP tidak membatasi ke PDF (diperiksa di atas)
-        pdf = bita;
-        namaPdf = namaAman(berkas.name);
+        isi = bita;
+        namaKirim = namaAman(berkas.name);
+        tipeKirim = berkas.type || "application/octet-stream";
       }
+      const namaPdf = namaKirim; // nama yang tampil di kartu dan dialog
 
       // 5. periksa isi
       const D = akar.aletaDeteksiSisa;
       let temuan = [];
       let tidakDiperiksa = false;
-      const periksaSisa = Boolean(jenisSah.kelompok) && D && typeof D.periksaBita === "function";
-      if (jenisSah.kelompok) {
+      if (jenisSah.kelompok && D) {
         kartu.tulis("", `Memeriksa isi ${jenisSah.nama}...`, []);
+        const opsiPeriksa = { jenis: jenisSah.kelompok };
         let paragraf = null;
-        if (bentuk === "pdf" || bentuk === "rtf" || bentuk === "docx" || bentuk === "doc") {
-          const baca = await bacaPdfServer(pdf);
+        if (bentuk === "pdf" || (adaWord && !kirimWordAsli)) {
+          // yang dikirim PDF (asli atau hasil ubahan): teksnya dibaca server; RTF/DOCX asli tetap diperiksa dari ASLINYA (tulisan merah hanya di sana)
+          const baca = await bacaPdfServer(isi);
           paragraf = baca ? baca.paragraf : null;
           if (!baca) tidakDiperiksa = true;
-        }
-        // sisa blangko: RTF/DOCX diperiksa dari ASLINYA (tulisan merah hanya terbaca di sana); PDF dan DOC dari teks PDF
-        if (periksaSisa) {
-          if (bentuk === "rtf" || bentuk === "docx") {
-            const h = await D.periksaBita(bita, berkas.name, { jenis: jenisSah.kelompok });
+          if (adaWord && (bentuk === "rtf" || bentuk === "docx") && typeof D.periksaBita === "function") {
+            const h = await D.periksaBita(bita, berkas.name, opsiPeriksa);
             if (h && h.dibaca && h.hasil) temuan = temuan.concat(h.hasil.temuan);
-            else if (paragraf) temuan = temuan.concat(D.periksaParagraf(paragraf, { jenis: jenisSah.kelompok }).temuan);
+            else if (paragraf) temuan = temuan.concat(D.periksaParagraf(paragraf, opsiPeriksa).temuan);
           } else if (paragraf) {
-            temuan = temuan.concat(D.periksaParagraf(paragraf, { jenis: jenisSah.kelompok }).temuan);
+            temuan = temuan.concat(D.periksaParagraf(paragraf, opsiPeriksa).temuan);
           }
+        } else if (kirimWordAsli) {
+          // Word dikirim apa adanya: dibaca langsung di peramban (RTF dan DOCX); DOC biner tidak terbaca -> disimpan dengan catatan
+          try {
+            if (bentuk === "rtf") paragraf = D.bacaRtfParagraf(new akar.TextDecoder("windows-1252").decode(bita));
+            else if (bentuk === "docx") {
+              const xml = await D.ambilDariZip(bita, "word/document.xml");
+              paragraf = xml ? D.bacaDocxXml(new akar.TextDecoder("utf-8").decode(xml)) : null;
+            }
+          } catch {
+            paragraf = null;
+          }
+          if (paragraf) temuan = temuan.concat(D.periksaParagraf(paragraf, opsiPeriksa).temuan);
+          else tidakDiperiksa = true;
         }
         if (paragraf) {
           temuan = temuan.concat(
@@ -635,7 +662,7 @@
             })
           );
         }
-        if (tidakDiperiksa) catatan.push("Isi berkas tidak dapat diperiksa (pembaca PDF tidak terjangkau); berkas tetap disimpan.");
+        if (tidakDiperiksa) catatan.push(kirimWordAsli ? "Isi: berkas Word ini tidak dapat dibaca untuk diperiksa; berkas tetap disimpan." : "Isi berkas tidak dapat diperiksa (pembaca PDF tidak terjangkau); berkas tetap disimpan.");
       }
       if (temuan.length) {
         kartu.tulis("awas", `Menunggu jawaban Anda: ada ${temuan.length} temuan pada ${jenisSah.nama}.`, ringkasTemuan(temuan));
@@ -656,10 +683,10 @@
 
       // 6. simpan lewat halaman unggah SIPP
       kartu.tulis("", `Menyimpan ${jenisSah.nama} ke SIPP...`, []);
-      const berkasPdf = new akar.File([pdf], namaPdf, { type: bentuk === "pdf" || bentuk === "rtf" || bentuk === "docx" || bentuk === "doc" ? "application/pdf" : berkas.type || "application/octet-stream" });
+      const berkasPdf = new akar.File([isi], namaKirim, { type: tipeKirim });
       const hasil = await simpanKeSipp(hal, berkasPdf, mutlak);
       if (!hasil.ok) return kartu.tulis("gagal", `Gagal menyimpan ${jenisSah.nama} ke SIPP: ${hasil.pesan || "SIPP menolak berkas"}`, catatan);
-      kartu.tulis("ok", `Tersimpan di SIPP: ${jenisSah.nama} (${namaPdf}, ${ukuranTeks(pdf.length)})`, catatan);
+      kartu.tulis("ok", `Tersimpan di SIPP: ${jenisSah.nama} (${namaKirim}, ${ukuranTeks(isi.length)})`, catatan);
       segarkanHalaman(hal.divRef);
     } catch (galat) {
       gagal(sebaris((galat && galat.message) || galat).slice(0, 160));

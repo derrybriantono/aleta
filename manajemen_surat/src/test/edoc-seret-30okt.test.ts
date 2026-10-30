@@ -673,6 +673,63 @@ describe("6d. periksa isi: temuan -> Tetap unggah / Batal; tanpa temuan -> langs
   });
 });
 
+describe("6e0. Word di tombol yang SIPP-nya MENERIMA Word: diunggah apa adanya (keputusan sementara 31 Okt)", () => {
+  const RTF_PUTUSAN = enc("{\\rtf1\\ansi PUTUSAN\\par Nomor 556/Pdt.G/2026/PA.Dgl\\par MENGADILI\\par}");
+  it("putusan RTF: terkirim sebagai RTF dengan nama dan tipe ASLI, byte sama, tanpa panggilan pengubah/pembaca PDF; kartu menyebut apa adanya", async () => {
+    const e = await buka();
+    acara(e, "drop", e.doc.getElementById("t-putusan")!, [berkas(e, RTF_PUTUSAN, "putusan 556.rtf", "application/rtf")]);
+    await sampai(() => /Tersimpan di SIPP: putusan/.test(kartuTeks(e)), "tersimpan");
+    const up = unggahan(e)[0];
+    expect(up.berkas).toEqual({ nama: "putusan 556.rtf", tipe: "application/rtf", byte: RTF_PUTUSAN.length });
+    expect(up.url).toBe("http://192.168.10.10/SIPP/fileupload_putusan_c/validatePost");
+    expect(up.badan).toEqual({ enc: ENC, form: "putusan", status_publish: "1" });
+    expect(e.portal.filter((p) => /word-ke-pdf|baca-pdf|ubah:/.test(p))).toEqual([]);
+    expect(kartuTeks(e)).toMatch(/diunggah sebagai berkas Word apa adanya/);
+  });
+  it("isi RTF tetap diperiksa langsung di peramban (tanpa server): sisa #nnnn# -> dialog; relaas dengan isian tangan jurusita -> tanpa dialog, tetap sebagai RTF", async () => {
+    const e = await buka();
+    acara(e, "drop", e.doc.getElementById("t-putusan")!, [berkas(e, enc("{\\rtf1\\ansi Nomor 556/Pdt.G/2026/PA.Dgl\\par Menimbang #0046# dan [ ]\\par}"), "putusan.rtf")]);
+    await sampai(() => tombolDialog(e, "Tetap unggah"), "dialog");
+    expect(e.doc.querySelector(".aleta-sisa-tabir")!.textContent).toMatch(/Ditemukan 2 hal pada putusan/);
+    tombolDialog(e, "Batal")!.click();
+    await sampai(() => /Dibatalkan/.test(kartuTeks(e)), "batal");
+    expect(e.catatan.filter((c) => c.metode === "POST")).toEqual([]);
+    expect(e.portal.some((p) => /baca-pdf/.test(p))).toBe(false);
+    const rel = await buka({ nomorHalaman: "531/Pdt.G/2026/PA.Dgl" });
+    const relaasRtf = enc("{\\rtf1\\ansi RELAAS PANGGILAN\\par Nomor 531/Pdt.G/2026/PA.Dgl\\par Pada hari ini ........ tanggal ........., Saya, Tanty sebagai Jurusita\\par bertemu serta berbicara dengan ..........................;\\par}");
+    acara(rel, "drop", rel.doc.getElementById("t-relaas")!, [berkas(rel, relaasRtf, "relaas.rtf", "application/rtf")]);
+    await sampai(() => /Tersimpan di SIPP: relaas/.test(kartuTeks(rel)), "tersimpan");
+    expect(rel.doc.querySelector(".aleta-sisa-tabir")).toBeNull();
+    expect(unggahan(rel)[0].berkas).toMatchObject({ nama: "relaas.rtf", tipe: "application/rtf" });
+  });
+  it("kesesuaian untuk Word asli: nomor perkara di RTF berbeda dengan halaman -> temuan", async () => {
+    const e = await buka({ nomorHalaman: "600/Pdt.G/2026/PA.Dgl" });
+    acara(e, "drop", e.doc.getElementById("t-putusan")!, [berkas(e, RTF_PUTUSAN, "putusan.rtf")]);
+    await sampai(() => tombolDialog(e, "Tetap unggah"), "dialog");
+    expect(e.doc.querySelector(".aleta-sisa-tabir")!.textContent).toMatch(/Nomor perkara di berkas 556\/Pdt\.G\/2026 berbeda/);
+  });
+  it("DOC biner (tak terbaca): tersimpan sebagai DOC asli dengan catatan 'isi tidak dapat dibaca'; DOCX diunggah apa adanya", async () => {
+    const e = await buka();
+    const doc = new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1, ...Array.from("W\0o\0r\0d\0D\0o\0c\0u\0m\0e\0n\0t\0", (c) => c.charCodeAt(0))]);
+    acara(e, "drop", e.doc.getElementById("t-putusan")!, [berkas(e, doc, "putusan lama.doc", "application/msword")]);
+    await sampai(() => /Tersimpan di SIPP: putusan/.test(kartuTeks(e)), "tersimpan");
+    expect(unggahan(e)[0].berkas).toMatchObject({ nama: "putusan lama.doc", tipe: "application/msword" });
+    expect(kartuTeks(e)).toMatch(/tidak dapat dibaca untuk diperiksa/);
+    const e2 = await buka();
+    const docx = new Uint8Array([0x50, 0x4b, 3, 4, ...Array.from("....word/document.xml....", (c) => c.charCodeAt(0))]);
+    acara(e2, "drop", e2.doc.getElementById("t-datum")!, [berkas(e2, docx, "permohonan.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")]);
+    await sampai(() => /Tersimpan di SIPP: gugatan\/permohonan/.test(kartuTeks(e2)), "tersimpan");
+    expect(unggahan(e2)[0].berkas).toMatchObject({ nama: "permohonan.docx", tipe: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+    expect(e2.portal).toEqual([]);
+  });
+  it("tombol PDF-saja (BAS, PMH) tetap mengubah Word ke PDF; hanya yang SIPP-nya menerima Word yang diunggah apa adanya", async () => {
+    const e = await buka();
+    acara(e, "drop", e.doc.getElementById("t-pmh")!, [berkas(e, enc("{\\rtf1 PENETAPAN Nomor 556/Pdt.G/2026/PA.Dgl\\par}"), "pmh.rtf")]);
+    await sampai(() => /Tersimpan di SIPP: penetapan PMH/.test(kartuTeks(e)), "tersimpan");
+    expect(unggahan(e)[0].berkas).toMatchObject({ nama: "pmh.pdf", tipe: "application/pdf" });
+  });
+});
+
 describe("6e. Word -> PDF lewat pengubah yang sama dengan jendela e-Doc BAS", () => {
   const RTF = enc("{\\rtf1\\ansi BERITA ACARA SIDANG\\par Nomor 556/Pdt.G/2026/PA.Dgl\\par}");
   it("BAS RTF: diubah dengan tanda tangan scan (ttd=1), diunggah sebagai PDF, penanda tangan disebut", async () => {
