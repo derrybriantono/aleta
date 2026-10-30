@@ -109,6 +109,8 @@ const bungkus = (fn) => async (req, res) => {
 };
 
 router.get("/menu", bungkus(() => layanan().bacaMenu()));
+// G4 (30 Okt 2026): kelompok blangko ABT untuk kartu tautan akun (hanya SELECT).
+router.get("/grup-blangko", bungkus(() => layanan().bacaGrupBlangko()));
 router.post("/menu/simpan", bungkus((req) => layanan().simpanMenu(req.body || {})));
 router.get("/variabel", bungkus(() => layanan().daftarVariabel()));
 router.get("/variabel/:noVar", bungkus(async (req) => ({ variabel: await layanan().bacaVariabel(req.params.noVar) })));

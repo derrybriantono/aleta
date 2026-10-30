@@ -1382,14 +1382,18 @@
     const utama = tombol(r.perkara ? `Jadwalkan ${r.perkara} perkara` : "Jadwalkan", "aleta-ptj-utama");
     utama.setAttribute("data-ptj", "utama");
     utama.disabled = !siapMenjadwalkan();
-    utama.addEventListener("click", () => {
-      S.konfirm = true;
-      gambarKonfirm();
-      const ya = S.r.konfirm.querySelector("[data-ptj='ya']");
-      if (ya && ya.focus) ya.focus();
-    });
+    // 30 Okt 2026 (permintaan pengguna): satu klik langsung menjadwalkan - tanpa kotak "Ya, jadwalkan". Kotak hanya muncul
+    // bila ada temuan nyata (akun SIPP ganda: pilih akun dulu). Klik ganda ditolak kirimJadwal (S.sibuk).
+    utama.addEventListener("click", () => void kirimJadwal());
     aksi.appendChild(utama);
     kaki.append(ring, aksi);
+    if (!S.sibuk && r.perkara) {
+      const ket = [];
+      if (r.isi) ket.push(`Putusan Akhir diisi dan disimpan lewat SIPP yang terbuka di peramban ini (akun ${namaSippMasuk() || "yang sedang masuk"}) - buka SIPP di peramban ini pada jamnya`);
+      if (r.putusan || r.anonim) ket.push("e-Doc diunggah oleh server (tidak perlu laptop menyala)");
+      ket.push("yang sudah ada di SIPP tidak diganti; yang ditahan pemeriksaan dilaporkan di Antrean terjadwal");
+      kaki.appendChild(el("p", "aleta-ptj-ket", `${ket.join("; ")}.`));
+    }
     gambarKonfirm();
   }
 
@@ -1402,7 +1406,8 @@
     const p = S.pratinjau;
     const kotak = el("div", "aleta-ptj-konfirm");
     kotak.setAttribute("role", "alertdialog");
-    kotak.setAttribute("aria-label", "Konfirmasi jadwal");
+    // Hanya untuk TEMUAN (akun SIPP ganda) - tanpa temuan, tombol Jadwalkan langsung bekerja.
+    kotak.setAttribute("aria-label", "Pilih akun SIPP");
     const mulai = p.butir[0].wita;
     const akhir = p.butir[p.butir.length - 1].wita;
     kotak.appendChild(el("p", "", `Jadwalkan ${r.perkara} perkara: mulai ${sebutTanggal(mulai.slice(0, 10))} ${mulai.slice(11, 16)} WITA, selesai ${akhir.slice(11, 16)} WITA.`));
@@ -1429,7 +1434,7 @@
       kotak.appendChild(berlabel("Akun SIPP yang dipakai:", sel));
     }
     const aksi = el("div", "aleta-ptj-konfirm-aksi");
-    const ya = tombol("Ya, jadwalkan", "aleta-ptj-ya");
+    const ya = tombol("Jadwalkan dengan akun ini", "aleta-ptj-ya");
     ya.setAttribute("data-ptj", "ya");
     ya.addEventListener("click", () => void kirimJadwal());
     const batal = tombol("Batal", "aleta-ptj-batal");

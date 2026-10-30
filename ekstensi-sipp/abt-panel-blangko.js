@@ -11901,6 +11901,14 @@ async function soreBacaIsi(k) {
   const galat = { sipp: "", saksi: "", itsbat: "", lain: "" };
   const tugas = [];
   tugas.push(muatTipeHalaman().catch(() => false));
+  // G4 4.2 (30 Okt 2026): riwayat isian perkara - isian yang terakhir diinput dari usulan SIPP dan belum disunting
+  // petugas ikut dicentang bila data SIPP berubah (sinkron-isian-sipp.js). Gagal membaca = perilaku lama.
+  tugas.push(
+    (async () => {
+      const j = typeof jatiDiriPerkara === "function" ? jatiDiriPerkara() : null;
+      if (j && j.perkaraId && typeof bacaRiwayat === "function") data.riwayat = await bacaRiwayat(j.perkaraId);
+    })().catch(() => {})
+  );
   if (t6TombolTampak(k.tombol.sipp)) {
     tugas.push(
       (async () => {
@@ -12308,7 +12316,22 @@ function soreGambarIsi(k, data) {
     // Blangko yang sudah berisi lain: diganti hanya bila petugas mencentangnya.
     // 12 Okt (12OKT-D): usulan yang membawa `awal` (tanggal KTP) menentukan centangnya sendiri - variabel teks
     // alat bukti memang SELALU berisi, yang diisi hanyalah bagian tanggalnya.
-    if (typeof u.awal !== "boolean" && keadaanNilai(item.nilai) === "terisi") pilih[pilih.length - 1].centang.checked = false;
+    if (typeof u.awal !== "boolean" && keadaanNilai(item.nilai) === "terisi") {
+      // G4 4.2: isian dari usulan SIPP yang belum disunting petugas dan data SIPP-nya berubah tetap dicentang (seperti isian kosong).
+      const Z = globalThis.AletaSinkronIsian;
+      const I = globalThis.AletaIsiSipp;
+      const sinkron =
+        Z && I && typeof I.asalUsulan === "function" && Array.isArray(data.riwayat)
+          ? Z.bolehPerbarui({ catatan: Z.terakhirPerKode(data.riwayat).get(String(u.kode)), nilaiKini: item.nilai, nilaiBaru: u.nilai, asal: I.asalUsulan(u) })
+          : { boleh: false };
+      const p = pilih[pilih.length - 1];
+      if (!sinkron.boleh || !p.centang.checked) p.centang.checked = false;
+      else {
+        const kartu = w.usulan.lastElementChild;
+        const kepala = kartu && kartu.querySelector(".aleta-abt-kartu-kepala");
+        if (kepala) kepala.appendChild(buatElemen("span", "aleta-tanda aleta-tanda-kuning", "data SIPP berubah"));
+      }
+    }
   }
   if (tidakAda.length || sama.length || dihitung.length) {
     const bagian = [];

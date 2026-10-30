@@ -2208,7 +2208,7 @@
   /** Bukti KTP yang masih dapat diisi tanggalnya (baris terstruktur, jenis KTP, tanggal kosong). */
   const adaBuktiKtpKosong = () => ["P", "T"].some((w) => (S.bukti[w] || []).some((r) => typeof r.manual !== "string" && jenisBukti(r.nm) === "ktp" && !r.tgl));
   /** Tulis satu isian dari SIPP lewat jalur simpan yang sama dengan ketikan; gagal = isian dikembalikan seperti semula. */
-  async function tulisIsianSipp(b, nilai, asal, yakin, ganti) {
+  async function tulisIsianSipp(b, nilai, asal, yakin, ganti, perbarui) {
     const sebelum = String(S.isi[b.kode] || "");
     // C1: tombol "Input ke ABT" / "Input semua yang pasti" menandai S.diketik lebih dulu = keputusan petugas (saran diterima);
     // selainnya ALETA menulis sendiri.
@@ -2231,7 +2231,7 @@
     S.dariSipp.add(b.kode);
     try {
       if (typeof catatRiwayat === "function") {
-        void catatRiwayat({ perkaraId: perkaraId(), kode: b.kode, nama: b.nama, sebelum, sesudah: String(S.isi[b.kode] || nilai), cara: ganti ? `bawaan kueri ABT yang mentah diganti otomatis di Blangko Derry dari ${asal} (${yakin})` : `diisi otomatis di Blangko Derry dari ${asal} (${yakin})`, pada: new Date().toISOString(), tanpaJejak: true });
+        void catatRiwayat({ perkaraId: perkaraId(), kode: b.kode, nama: b.nama, sebelum, sesudah: String(S.isi[b.kode] || nilai), cara: ganti ? `bawaan kueri ABT yang mentah diganti otomatis di Blangko Derry dari ${asal} (${yakin})` : perbarui ? `diisi otomatis di Blangko Derry dari ${asal} (${yakin}) - data SIPP berubah` : `diisi otomatis di Blangko Derry dari ${asal} (${yakin})`, pada: new Date().toISOString(), tanpaJejak: true });
       }
     } catch {
       /* jejak tidak tersedia: isiannya tetap tersimpan di ABT */
@@ -2243,7 +2243,10 @@
     const hasil = new Set();
     try {
       if (typeof bacaRiwayat === "function") {
-        for (const x of await bacaRiwayat(perkaraId())) {
+        const daftarRiwayat = await bacaRiwayat(perkaraId());
+        // G4 4.2: riwayat yang sama dipakai menilai isian mesin yang belum disunting (bolehSinkronSipp) - tanpa baca ulang.
+        S.riwayatIsian = { perkaraId: perkaraId(), daftar: Array.isArray(daftarRiwayat) ? daftarRiwayat : [] };
+        for (const x of S.riwayatIsian.daftar) {
           if (x && /diketik|disunting|dipulihkan|dikembalikan/i.test(String(x.cara || ""))) hasil.add(String(x.kode));
         }
       }
@@ -2258,6 +2261,22 @@
     const v = String(S.isi[b.kode] || "");
     return Boolean(m && v.trim() && !S.diketik.has(b.kode) && !jejak.has(b.kode) && m.jelasMentah(b.kode, v));
   };
+  /**
+   * G4 4.2 (30 Okt 2026): isian yang TERAKHIR ditulis mesin (riwayat isian) dan nilainya masih sama = belum disunting
+   * petugas, sehingga boleh ikut diperbarui bila data SIPP berubah. Aturan murni: sinkron-isian-sipp.js.
+   */
+  const bolehSinkronSipp = (b, jejak) => {
+    const Z = globalThis.AletaSinkronIsian;
+    const r = S.riwayatIsian;
+    if (!Z || !r || r.perkaraId !== perkaraId() || S.diketik.has(b.kode) || jejak.has(b.kode)) return false;
+    return Z.ditulisMesin(Z.terakhirPerKode(r.daftar).get(String(b.kode)), String(S.isi[b.kode] || ""));
+  };
+  /** Keterangan kecil "Diperbarui dari SIPP ..." di bagian isian (ⓘ = lama -> baru). */
+  function htmlSinkronSipp() {
+    const Z = globalThis.AletaSinkronIsian;
+    const k = Z && S.isiSipp && Array.isArray(S.isiSipp.diperbarui) ? Z.keterangan(S.isiSipp.diperbarui) : null;
+    return k ? `<p class="bd-catat" id="bd-sinkronsipp" role="status">${esc(k.teks)} <span title="${esc(k.judul)}" aria-label="${esc(k.judul)}">ⓘ</span></p>` : "";
+  }
   /**
    * Bahan untuk sumber saksi/posita (rute bot yang sama dengan panel ABT): posita (5125) dan keterangan dua saksi (2021/2022, dari
    * penyunting tanya-jawab ABT). Dibaca dari ABT, disinggahkan dua menit per perkara dan sidang.
@@ -2357,7 +2376,7 @@
         const daftar = perlu();
         const rencana = mesin.rencanakan(
           usulan,
-          daftar.map((b) => ({ kode: b.kode, nama: b.nama, jenis: b.jenis, opsi: b.opsi, kosong: sedangKosong(b), bolehGanti: bolehGantiMentah(b, jejak), manual: b.manual === true, alasanManual: b.alasanManual || "" })),
+          daftar.map((b) => ({ kode: b.kode, nama: b.nama, jenis: b.jenis, opsi: b.opsi, kosong: sedangKosong(b), bolehGanti: bolehGantiMentah(b, jejak) || bolehSinkronSipp(b, jejak), manual: b.manual === true, alasanManual: b.alasanManual || "" })),
           keIso,
           usulanSumber
         );
@@ -2379,6 +2398,21 @@
             }
             continue;
           }
+          // G4 4.2: isian mesin yang belum disunting ikut diperbarui bila data SIPP berubah (bukan nilai mentah ABT); sumber SIPP saja.
+          if (b && r.ganti && !sedangKosong(b) && !bolehGantiMentah(b, jejak)) {
+            const Z = globalThis.AletaSinkronIsian;
+            const dari = String(S.isi[b.kode] || "");
+            const nilai = Z && bolehSinkronSipp(b, jejak) ? Z.bolehPerbarui({ catatan: Z.terakhirPerKode(S.riwayatIsian.daftar).get(String(b.kode)), nilaiKini: dari, nilaiBaru: r.nilai, asal: r.asal }) : { boleh: false };
+            if (!nilai.boleh) {
+              ringkas.sudahAda += 1;
+              continue;
+            }
+            if (await tulisIsianSipp(b, r.nilai, r.asal, r.keyakinan, false, true)) {
+              ringkas.ditulis += 1;
+              S.isiSipp.diperbarui = [...(Array.isArray(S.isiSipp.diperbarui) ? S.isiSipp.diperbarui : []).filter((x) => x.kode !== b.kode), { kode: b.kode, nama: b.nama, dari, ke: String(S.isi[b.kode] || r.nilai) }];
+            }
+            continue;
+          }
           // Diisi/disunting petugas selagi menunggu: ketikan menang. Nilai mentah yang diganti harus masih nilai mentah yang sama.
           if (!b || (!sedangKosong(b) && !(r.ganti && bolehGantiMentah(b, jejak)))) {
             ringkas.sudahAda += 1;
@@ -2389,6 +2423,8 @@
         for (const r of rencana.saran) {
           const b = daftar.find((x) => x.kode === r.kode);
           if (!b || (S.saranH7 && S.saranH7[r.kode])) continue;
+          // G4 4.2: isian terisi yang hanya boleh diperbarui (bukan mentah) tidak diberi saran samar di atas isinya.
+          if (r.ganti && !sedangKosong(b) && !bolehGantiMentah(b, jejak)) continue;
           if (!S.saranSipp[r.kode]) ringkas.saran += 1;
           S.saranSipp[r.kode] = { nilai: r.nilai, keyakinan: r.keyakinan, asal: r.asal };
         }
@@ -6315,6 +6351,7 @@
     w.innerHTML =
       `<p class="bd-petunjuk">Tulisan samar di kotak adalah saran. Tekan <kbd>Tab</kbd> untuk memakainya, atau <kbd>↓</kbd> untuk pilihan lain. Data lain sudah terisi sendiri.${bolehTulis() ? "" : tes() ? ` <b>Mode Tes putusan: ketikan Anda hanya dipakai di pratinjau dan unduhan -TES, tidak disimpan ke ABT, SIPP, atau e-Court. Bagian yang tidak punya data di perkara acuan tampil kosong.</b>` : ` <b>Akun Anda hanya dapat melihat; ${esc(NAMA_JENIS[S.blangko.jenis].toLowerCase())} ditulis ${esc(NAMA_PERAN[JENIS_PERAN[S.blangko.jenis]] || "pejabat perkara")}.</b>`}</p>` +
       `<div class="bd-bar"><span id="bd-barisi"></span></div><div class="bd-alatkecil" id="bd-alatisi"></div>` +
+      htmlSinkronSipp() +
       `<div class="bd-pgrid" id="bd-perlu">${grid.length ? grid.map((b) => (b.khusus === "bukti" ? kotakBukti(b) : kotakIsian(b))).join("") : tj.length ? "" : `<p class="bd-ok">Blangko ini tidak perlu diisi tangan; semua terisi sendiri dari SIPP dan aturan ABT.</p>`}</div>` +
       htmlIsianTambahan() +
       htmlTuntutanTakDiminta() +
@@ -8148,6 +8185,17 @@
     if (!e) return;
     const t = [temuanHadirVerstek(), temuanTandaVerstek()].filter(Boolean);
     e.innerHTML = t.map((x) => `<div class="bd-peringatan bd-temuanhadir" role="status"><b>Catatan temuan:</b> ${esc(x.teks)}. Cetak tidak ditahan.</div>`).join("");
+    // G4 30 Okt: usul pembetulan kehadiran SIPP (BAS / verstek; satu tombol untuk PP perkara) dan cocok putusan SIPP vs dokumen
+    // - modul temuan-perkara.js menambah isinya di wadah yang sama. Tanpa modul = perilaku lama persis.
+    try {
+      const U = globalThis.AletaTemuanPerkara;
+      const pk = S.pk || {};
+      if (U && typeof U.gambar === "function") {
+        U.gambar(e, { perkaraId: perkaraId(), nomorPerkara: nomorPerkara(), jenisPerkara: String(pk.jenisPerkara || (pk.perkara && pk.perkara.jenisPerkara) || ""), berkas: S.blangko ? String(S.blangko.berkas || "") : "", jenis: S.blangko ? String(S.blangko.jenis || "") : "", sidang: pk.sidangDipilih || null, putusanSipp: pk.putusanSipp || null, temuanVerstek: Boolean(t) });
+      }
+    } catch {
+      /* temuan tambahan tidak menahan panel cetak */
+    }
     perbaruiPeriksa();
   }
   // ──────────────────────────────────────────────────────────────────────────

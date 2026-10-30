@@ -957,7 +957,17 @@ function buatLayanan(d) {
     });
   }
 
+  // G4 (30 Okt 2026): kelompok blangko ABT (abt_menu_grup) untuk kartu tautan akun pegawai - folder
+  // blangko pribadi seperti "Blangko Derry" (derry_briantono). Hanya SELECT; ABT sendiri masuk dengan akun SIPP (v_users).
+  async function bacaGrupBlangko() {
+    const baris = await kueri(`SELECT id, nama, direktori FROM ${t("abt_menu_grup")} ORDER BY id`).catch(() => []);
+    return {
+      grup: (Array.isArray(baris) ? baris : []).map((b) => ({ id: Number(b.id) || 0, nama: teksDb(b.nama), direktori: teksDb(b.direktori) })),
+    };
+  }
+
   return {
+    bacaGrupBlangko,
     bacaMenu,
     simpanMenu,
     daftarVariabel,

@@ -44,6 +44,8 @@ type AkunBaris = {
   diperbaruiPada: string;
   diujiPada: string;
   hasilUji: string;
+  /** G4 (30 Okt 2026): nama Super Admin/Admin yang mengisi akun ini untuk pemiliknya; kosong = diisi sendiri. */
+  diisiOleh?: string;
 };
 
 /**
@@ -105,6 +107,7 @@ export async function GET(request: NextRequest) {
         diperbaruiPada: String(a.diperbaruiPada ?? ""),
         diujiPada: String(a.diujiPada ?? ""),
         hasilUji: String(a.hasilUji ?? ""),
+        diisiOleh: String(a.diisiOleh ?? ""),
       })),
       akunDidukung: Array.isArray(hasil.data.akun),
       peranTersedia: hasil.data.peranTersedia ?? [],

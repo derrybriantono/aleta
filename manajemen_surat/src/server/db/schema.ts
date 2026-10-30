@@ -559,6 +559,23 @@ export const DDL_KALIMAT_PRIBADI = {
     `CREATE INDEX IF NOT EXISTS idx_kalimat_pribadi_pemilik ON aleta_kalimat_pribadi(pemilik_id)`,
     `CREATE INDEX IF NOT EXISTS idx_kalimat_pribadi_jenis ON aleta_kalimat_pribadi(jenis_perkara, kode)`,
   ],
+ * Putusan SIPP vs dokumen putusan yang diunggah - hasil pencocokan per perkara (0117, 30 Okt 2026, G4 4.3).
+ * Cermin PERSIS dari drizzle/0117_aleta_cocok_putusan.sql; penjaga cocok-putusan-30okt.test.ts membandingkan keduanya.
+ */
+export const DDL_COCOK_PUTUSAN = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_cocok_putusan (
+  perkara_id TEXT PRIMARY KEY,
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  keadaan TEXT NOT NULL,
+  ringkas TEXT NOT NULL DEFAULT '',
+  rincian TEXT NOT NULL DEFAULT '[]',
+  sidik TEXT NOT NULL DEFAULT '',
+  tanggal_putusan TEXT NOT NULL DEFAULT '',
+  diperiksa_pada TEXT NOT NULL
+)`,
+  ],
+  indeks: [`CREATE INDEX IF NOT EXISTS idx_cocok_putusan_keadaan ON aleta_cocok_putusan(keadaan, diperiksa_pada)`],
 } as const;
 
 /**
@@ -3419,6 +3436,7 @@ const schemaStatements = [
   // Cetakan terakhir per perkara + salinan putusan sesudah BHT (0120) dan pustaka kalimat pribadi (0121).
   ...DDL_CETAK_TERAKHIR.tabel,
   ...DDL_KALIMAT_PRIBADI.tabel,
+  ...DDL_COCOK_PUTUSAN.tabel,
   // Cadangan & riwayat suntingan ABT dari Pengaturan SIPP & ABT (0066).
   ...DDL_ABT_SUNTINGAN.tabel,
   // Checklist Konseptor Sementara: tanda langkah & laporan Blangko Derry (0067).
@@ -5435,6 +5453,7 @@ const indexStatements = [
   ...DDL_TAMPILAN_SIPP.indeks,
   ...DDL_CETAK_TERAKHIR.indeks,
   ...DDL_KALIMAT_PRIBADI.indeks,
+  ...DDL_COCOK_PUTUSAN.indeks,
   ...DDL_ABT_SUNTINGAN.indeks,
   ...DDL_BLANGKO_PRIBADI.indeks,
   ...DDL_TAUTAN_JADWAL.indeks,

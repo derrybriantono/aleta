@@ -11,6 +11,7 @@ import {
   Landmark,
   LayoutDashboard,
   Library,
+  Link2,
   MessageCircleMore,
   PackageCheck,
   Scale,
@@ -304,6 +305,13 @@ export function AdminHub() {
               description="Matriks bagian ALETA yang tampil di halaman SIPP untuk tiap peran dan pegawai: nyala, mati, selalu tampil, atau tidak tersedia."
               icon={<Settings className="h-5 w-5 text-primary" />}
               badge="Tampilan"
+            />
+            <AdminMenuAction
+              href="/admin/tautan-akun"
+              title="Tautan Akun Pegawai"
+              description="Akun ALETA, SIPP, ABT, dan e-Court tiap pegawai: cocok, kosong, atau tidak cocok; tautkan yang ragu dan isi akun e-Court pegawai."
+              icon={<Link2 className="h-5 w-5 text-primary" />}
+              badge="Akun"
             />
             <AdminMenuAction
               href="/admin/akses-publik"

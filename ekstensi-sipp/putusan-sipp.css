@@ -280,6 +280,13 @@
   font-weight: 700;
   cursor: pointer;
 }
+/* 30 Okt 2026: kemajuan "Sedang ..." (pengganti kotak konfirmasi) - warna ikut tema. */
+.aleta-pusipp-kerja {
+  border: 1px solid var(--pu-emas);
+  border-radius: 9px;
+  background: var(--pu-emas-lembut);
+  padding: 10px 14px;
+}
 .aleta-pusipp-konfirm {
   border: 2px solid var(--pu-emas);
   border-radius: 9px;

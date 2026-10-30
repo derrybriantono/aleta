@@ -406,7 +406,7 @@ describe("layanan Pusat kesehatan", () => {
   it("satu pemeriksaan penuh: 16 komponen, warna masuk akal, PC dengan ekstensi lama terdaftar kuning", async () => {
     const hasil = await jalankanPemeriksaan(db, { ping: true, deps: depsTiruan() });
     // 30 Okt 2026 (G1): + "variabel-blangko" (pindai mingguan variabel Blangko Derry; tanpa dep = kelabu, bukan penentu).
-    expect(hasil.komponen.map((k) => k.kunci)).toEqual(["portal", "basis-data", "bot", "whatsapp", "sipp", "abt", "antrian", "ecourt", "cadangan", "server", "kapasitas", "ekstensi", "galat", "uji-beban", "integritas", "variabel-blangko"]);
+    expect(hasil.komponen.map((k) => k.kunci)).toEqual(["portal", "basis-data", "bot", "whatsapp", "sipp", "abt", "antrian", "ecourt", "cadangan", "server", "kapasitas", "ekstensi", "galat", "uji-beban", "integritas", "variabel-blangko", "putusan-dokumen"]);
     expect(hasil.komponen.find((k) => k.kunci === "variabel-blangko")!.warna).toBe("kelabu");
     expect(KOMPONEN_PENENTU.has("variabel-blangko")).toBe(false);
     const w = Object.fromEntries(hasil.komponen.map((k) => [k.kunci, k.warna]));

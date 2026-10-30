@@ -120,6 +120,9 @@ const BERKAS = [
   // pembacaan sumber untuk "Isi otomatis dari SIPP" di Blangko Derry. Murni (tanpa DOM), dimuat di ABT
   // sebelum abt.js dan blangko-derry-isian.js.
   "isi-sipp-bersama.js",
+  // Isian ABT dari SIPP yang ikut diperbarui saat data SIPP berubah (G4 4.2, 30 Okt 2026): aturan murni "belum disunting
+  // petugas" dari riwayat isian, dipakai blangko-derry-isian.js dan abt-panel-blangko.js.
+  "sinkron-isian-sipp.js",
   // Blangko ABT by Derry Briantono (tahap C-D, 16 Okt 2026) - skrip konten ABT
   // dan gayanya, dimuat sesudah checklist.js. abt-klien.js (klien rute ABT,
   // tahap A) dimuat sebelumnya; blangko-derry-isian.js (tahap F-G: perlu
@@ -147,6 +150,9 @@ const BERKAS = [
   "blangko-derry-beda-cetak.js",
   "blangko-derry-pustaka.js",
   "blangko-derry-isian.js",
+  // Temuan perkara di panel cetak Blangko Derry (G4, 30 Okt 2026): usul pembetulan kehadiran SIPP (satu tombol bagi PP perkara)
+  // dan putusan SIPP vs dokumen - mengisi wadah catatan temuan yang sudah ada, dipanggil blangko-derry-isian.js.
+  "temuan-perkara.js",
   // Cetak massal Blangko Derry (20 Okt 2026): jendela besar per peran, memakai pengemudi satu-perkara di blangko-derry-isian.js.
   "blangko-derry-massal.js",
   // Checklist konseptor sementara (F1.6, 17 Okt 2026) - skrip konten ABT

@@ -662,10 +662,10 @@ async function pilihBerkas(h: Panel, nama: string) {
   await api(h).terimaBerkas([new h.w.File([new Uint8Array(2048)], nama, { type: "application/rtf" })]);
   await sampai(() => api(h).berkasSiap(), "berkas siap");
 }
+/** 30 Okt 2026: satu klik langsung menjalankan (tanpa kotak konfirmasi). */
 async function yaJalankan(h: Panel) {
   utamaPu(h).click();
-  await sampai(() => panelPu(h)!.querySelector(".aleta-pusipp-konfirm"), "konfirmasi");
-  (panelPu(h)!.querySelector('[data-pusipp="ya"]') as HTMLButtonElement).click();
+  expect(panelPu(h)!.querySelector('[data-pusipp="ya"]')).toBeNull();
 }
 function tangkap(h: Panel, nama: string) {
   const awalan = process.env.ALETA_TANGKAP_W31;

@@ -24,9 +24,11 @@ export const dynamic = "force-dynamic";
  *
  * Siapa saja hakim, panitera, panitera pengganti, dan juru sita yang sudah
  * menyimpan akun e-Court miliknya, hasil uji masuk terakhirnya, dan keadaan
- * sesinya. Sandi tidak ada di sini - bot tidak pernah mengirimnya - dan admin
- * TIDAK dapat mengubah atau menghapus akun orang lain dari rute mana pun:
- * akun e-Court seseorang hanya diurus pemiliknya sendiri (rute ecourt-sesi).
+ * sesinya. Sandi tidak ada di sini - bot tidak pernah mengirimnya. Rute ini
+ * tetap HANYA MEMBACA. Sejak 30 Okt 2026 (G4, permintaan pengguna) Super Admin
+ * dan Admin dapat MENGISI akun e-Court pegawai lewat kartu tautan akun
+ * (/api/admin/tautan-akun, aksi "tautan-akun.atur") - sandi hanya-tulis,
+ * tercatat "diisi oleh <admin> untuk <pegawai>".
  */
 export async function GET(request: NextRequest) {
   let db: Awaited<ReturnType<typeof getDatabase>> | null = null;

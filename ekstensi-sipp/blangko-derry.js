@@ -651,6 +651,7 @@
     sidIdx: 0,
     riwayat: new Map(),
     putusanSipp: new Map(), // 30 Okt: nomor perkara -> { amarVerstek, tanggalPutusan, alurPerkaraId } dari rincian SIPP (catatan temuan cetak)
+    riwayatPada: new Map(), // G4 30 Okt: nomor perkara -> saat riwayat sidang dibaca dari SIPP (dibaca ulang saat perkara dibuka lagi)
     alatDaftar: new Map(),
     lapor: new Map(),
     /** Keadaan pengukur latar tanpa angka (nomor -> { status, saat, jenis, kunci }); angkanya ada di `lapor`. */
@@ -2265,7 +2266,10 @@
 
   /** Seluruh sidang perkara (kalender perkaranya sendiri) untuk dropdown. Gagal = tetap memakai sidang yang sudah termuat. */
   async function muatRiwayatSidang(p) {
-    if (S.riwayat.has(p.nomorPerkara)) return;
+    // G4 30 Okt (4.2): perkara yang dibuka lagi membaca ulang sidang SIPP (kehadiran, agenda, putusan) bila bacaan terakhir
+    // lebih dari satu menit; tidak berubah = tidak digambar ulang (panel isian tidak direset).
+    if (S.riwayat.has(p.nomorPerkara) && Date.now() - (S.riwayatPada.get(p.nomorPerkara) || 0) < 60000) return;
+    const putusanLama = JSON.stringify(S.putusanSipp.get(p.nomorPerkara) || null);
     try {
       const d = await ambil(`${API_SIDANG}?nomor=${encodeURIComponent(p.nomorPerkara)}`, "Membaca riwayat sidang");
       const j = d && d.sipp && Array.isArray(d.sipp.jadwalPerkara) ? d.sipp.jadwalPerkara : [];
@@ -2291,6 +2295,8 @@
         // 30 Okt: tanpa sidang tidak mengumumkan ulang perkara - umumkan ulang mereset panel isian (tautan #bd=, draf H-7, sorotan isian kosong terputus); temuan verstek tetap dibaca saat sidang ada.
         return;
       }
+      S.riwayatPada.set(p.nomorPerkara, Date.now());
+      if (S.riwayat.has(p.nomorPerkara) && JSON.stringify(S.riwayat.get(p.nomorPerkara)) === JSON.stringify(l) && JSON.stringify(S.putusanSipp.get(p.nomorPerkara) || null) === putusanLama) return;
       // Sidang yang sedang dipilih dicari lebih dulu, sebelum daftarnya diganti.
       const lama = riwayatPerkara(p)[S.sidIdx];
       S.riwayat.set(p.nomorPerkara, l);

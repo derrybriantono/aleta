@@ -37,6 +37,9 @@
  *                                 26 Okt 2026, tundaMediasiService
  *   GET  /hasil-mediasi-sipp?mediasiId   isian hasil mediasi SIPP + pilihan + akun (28 Okt 2026)
  *   POST /hasil-mediasi-sipp      hasil mediasi ke SIPP persis Edit Hasil Mediasi (kering bawaan)
+ *   GET  /kehadiran-sidang?perkaraId  sidang + usulan pembetulan kehadiran (30 Okt 2026, G4 4.4)
+ *   POST /kehadiran-sidang        pembetulan kehadiran sidang ke SIPP atas akun PP (kering bawaan)
+ *   GET  /putusan-dokumen?perkaraId  tanggal + amar putusan SIPP utuh + nama berkas (G4 4.3, hanya SELECT)
  *   GET  /court-calendar?perkaraId  Court Calendar SIPP + id baris (hanya SELECT)
  *   GET  /court-calendar/jumlah?perkaraId=1,2,3  jumlah baris per perkara
  *   POST /court-calendar          tambah/sunting Court Calendar ke SIPP atas
@@ -660,6 +663,104 @@ router.post(
     }
   })
 );
+
+/**
+ * Pembetulan pilihan kehadiran sidang (G4 4.4, 30 Okt 2026) - kehadiranSidangTulisService.
+ *   GET  /kehadiran-sidang?perkaraId[&basJadwalId&basNama]  sidang + usulan (verstek / BAS) - hanya SELECT
+ *   POST /kehadiran-sidang  { jadwalId, dihadiriOleh, sebelum, sebab, operator, kering }  bentuk Edit Jadwal Sidang
+ *        SIPP atas akun PP perkara (kering bawaan). Penekan = PP perkara ditegakkan di portal.
+ */
+const kehadiranSidangTulisService = require("../services/kehadiranSidangTulisService");
+
+router.get("/kehadiran-sidang", wajibToken, async (req, res) => {
+  try {
+    const hasil = await kehadiranSidangTulisService.layanan().keadaanKehadiran({
+      perkaraId: req.query.perkaraId,
+      basJadwalId: req.query.basJadwalId,
+      basNama: String(req.query.basNama || "").slice(0, 300),
+    });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
+
+router.post(
+  "/kehadiran-sidang",
+  wajibToken, manualJamKerja("kehadiran-sidang", (b) => String(b.jadwalId || ""), async (req, res) => {
+    let jejak = null;
+    try {
+      jejak = require("../services/jejakAletaService");
+    } catch {
+      jejak = null;
+    }
+    try {
+      const badan = req.body || {};
+      const kering = badan.kering !== false;
+      const layanan = kehadiranSidangTulisService.layanan();
+      const rencana = await layanan.susunRencanaKehadiran({
+        jadwalId: badan.jadwalId,
+        dihadiriOleh: badan.dihadiriOleh,
+        sebelum: badan.sebelum === undefined ? undefined : badan.sebelum,
+        sebab: badan.sebab,
+        operator: String(badan.operator || "").trim(),
+        ip: alamatAudit(req),
+      });
+      const catatJejak = (hasil) => {
+        if (!jejak) return;
+        void jejak.catat({
+          aksi: "tulis",
+          jenis: "kehadiran-sidang",
+          perkaraId: rencana.perkara ? rencana.perkara.perkaraId : 0,
+          nomorPerkara: rencana.perkara ? rencana.perkara.nomorPerkara : "",
+          tanggalPenetapan: rencana.sidang ? rencana.sidang.tanggal : "",
+          akunSipp: rencana.atasNama ? rencana.atasNama.username : "",
+          namaPejabat: rencana.atasNama ? rencana.atasNama.namaLengkap : "",
+          akunSippMasuk: String(badan.operatorAkunSipp || "").slice(0, 60),
+          operator: String(badan.operator || ""),
+          ip: alamatAudit(req),
+          berhasil: hasil.ok === true,
+          kering,
+          alasan: hasil.ok
+            ? `${rencana.kalimat || ""} (${rencana.sebab || "usulan"})`.slice(0, 160)
+            : `${String(hasil.alasan || "gagal")}${hasil.dipulihkan === true ? " (dibatalkan utuh)" : hasil.dipulihkan === false ? " (TIDAK dipulihkan)" : ""}`.slice(0, 160),
+          langkah: rencana.langkah || [],
+        });
+      };
+      if (!rencana.ok) {
+        catatJejak(rencana);
+        res.status(400).json(rencana);
+        return;
+      }
+      const hasil = await layanan.jalankanRencanaKehadiran(rencana, { kering });
+      catatJejak(hasil);
+      res.status(hasil.ok ? 200 : 409).json({
+        ...hasil,
+        perkara: rencana.perkara,
+        sidang: rencana.sidang,
+        dari: rencana.dari,
+        ke: rencana.ke,
+        kalimat: rencana.kalimat,
+        sepertiBorang: rencana.sepertiBorang,
+        andaian: rencana.andaian,
+        atasNama: rencana.atasNama,
+        rencana: kering ? (rencana.langkah || []).map((x) => ({ tabel: x.tabel, aksi: x.aksi, keterangan: x.keterangan })) : undefined,
+      });
+    } catch (galat) {
+      galat500(res, galat);
+    }
+  })
+);
+
+/** Bahan pencocokan putusan SIPP vs dokumen (G4 4.3): tanggal + amar UTUH + nama berkas. Hanya SELECT. */
+router.get("/putusan-dokumen", wajibToken, async (req, res) => {
+  try {
+    const hasil = await require("../services/putusanDokumenService").layanan().bahanPutusan(req.query.perkaraId);
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
 
 /** Jumlah baris Court Calendar untuk banyak perkara sekaligus (?perkaraId=1,2,3). Hanya SELECT. */
 router.get("/court-calendar/jumlah", wajibToken, async (req, res) => {

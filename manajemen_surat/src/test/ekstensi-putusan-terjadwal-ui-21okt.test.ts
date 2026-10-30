@@ -633,20 +633,21 @@ describe("jam, konfirmasi, dan satu kiriman jadwal", () => {
     expect((h.simpanan.putusanTerjadwalSetelan as any).jedaMaks).toBe(9);
   });
 
-  it("konfirmasi di halaman (bukan window.confirm) menyebut angka dan batasnya; Batal tidak mengirim apa pun", async () => {
+  it("30 Okt 2026: keterangan apa yang dikerjakan tampil di kaki (bukan pertanyaan); SATU klik langsung mengirim jadwal sekali, tanpa kotak konfirmasi", async () => {
     const h = buka();
     await panelSiap(h);
     await siapKirim(h);
-    (q(h, '[data-ptj="utama"]') as HTMLButtonElement).click();
-    const konfirm = await sampai(() => panel(h)!.querySelector(".aleta-ptj-konfirm"), "konfirmasi");
-    expect(konfirm.textContent).toMatch(/Jadwalkan 1 perkara/);
-    expect(konfirm.textContent).toMatch(/1 Putusan Akhir akan diisi dan DISIMPAN lewat SIPP yang terbuka di peramban ini/);
-    expect(konfirm.textContent).toMatch(/1 e-Doc putusan dan 1 e-Doc anonimisasi diunggah oleh server/);
-    expect(konfirm.textContent).toMatch(/Dapat dibatalkan atau ditunda sebelum dikerjakan/);
-    (q(h, '[data-ptj="batal"]') as HTMLButtonElement).click();
+    expect(q(h, '[data-ptj="kaki"]').textContent).toMatch(/Putusan Akhir diisi dan disimpan lewat SIPP yang terbuka di peramban ini/);
+    expect(q(h, '[data-ptj="kaki"]').textContent).toMatch(/e-Doc diunggah oleh server/);
+    const utama = q(h, '[data-ptj="utama"]') as HTMLButtonElement;
+    utama.click();
+    utama.click();
     expect(panel(h)!.querySelector(".aleta-ptj-konfirm")).toBeNull();
-    expect(h.panggilan.some((p) => p.metode === "POST" && /putusan-terjadwal$/.test(p.alamat))).toBe(false);
-    simpanTangkapan(h, "perkara-konfirmasi");
+    expect(q(h, '[data-ptj="ya"]')).toBeNull();
+    await sampai(() => h.panggilan.some((p) => p.metode === "POST" && /putusan-terjadwal$/.test(p.alamat)), "jadwal terkirim");
+    await tunggu(30);
+    expect(h.panggilan.filter((p) => p.metode === "POST" && /putusan-terjadwal$/.test(p.alamat))).toHaveLength(1);
+    simpanTangkapan(h, "perkara-satu-klik");
   });
 
   it("satu kiriman jadwal: benih pratinjau, jam, akun SIPP yang masuk, pilihan form, langkah, berkas terpasang; lalu pindah ke antrean", async () => {
@@ -663,7 +664,6 @@ describe("jam, konfirmasi, dan satu kiriman jadwal", () => {
     vs.value = "T";
     vs.dispatchEvent(new h.w.Event("change", { bubbles: true }));
     (q(h, '[data-ptj="utama"]') as HTMLButtonElement).click();
-    (await sampai(() => q(h, '[data-ptj="ya"]'), "tombol Ya")).click();
     await sampai(() => h.panggilan.some((p) => p.metode === "POST" && /putusan-terjadwal$/.test(p.alamat)), "jadwal terkirim");
     const kirim = h.panggilan.find((p) => p.metode === "POST" && /putusan-terjadwal$/.test(p.alamat))!.badan;
     expect(kirim).toMatchObject({
@@ -716,7 +716,6 @@ describe("jam, konfirmasi, dan satu kiriman jadwal", () => {
     await panelSiap(h);
     await siapKirim(h);
     (q(h, '[data-ptj="utama"]') as HTMLButtonElement).click();
-    (await sampai(() => q(h, '[data-ptj="ya"]'), "Ya")).click();
     await sampai(() => panel(h)!.querySelector(".aleta-ptj-galat"), "galat tampil");
     expect(panel(h)!.textContent).toMatch(/sudah dijadwalkan/);
     expect(api(h).keadaan().berkas).toHaveLength(1);
@@ -726,9 +725,11 @@ describe("jam, konfirmasi, dan satu kiriman jadwal", () => {
     await panelSiap(g);
     await siapKirim(g);
     (q(g, '[data-ptj="utama"]') as HTMLButtonElement).click();
-    (await sampai(() => q(g, '[data-ptj="ya"]'), "Ya")).click();
+    // Temuan nyata (akun SIPP ganda): baru satu kotak muncul - pilih akun lalu jadwalkan, atau batal.
     const pilihAkun = (await sampai(() => panel(g)!.querySelector('[data-ptj="pilih-akun"]'), "pilihan akun")) as HTMLSelectElement;
     expect(Array.from(pilihAkun.options).map((o) => o.value)).toEqual(["a", "b"]);
+    expect(q(g, '[data-ptj="ya"]')).toBeTruthy();
+    expect(q(g, '[data-ptj="batal"]')).toBeTruthy();
   });
 });
 
