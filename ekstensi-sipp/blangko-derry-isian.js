@@ -7699,6 +7699,29 @@
     }
     return { teks: singgahSisa.teks, temuanSisa: singgahSisa.temuan };
   }
+  /**
+   * Tanggal relaas SIPP per pihak untuk perbandingan tanggal panggilan (rute portal blangko-derry/relaas -> bot, baca saja). Diminta
+   * sekali per perkara, hanya bila naskah putusan/BAS sudah siap; selama belum datang (atau gagal) butir relaas tidak tampil.
+   */
+  let relaasPeriksa = { perkaraId: "", data: null, janji: null };
+  function relaasUntukPeriksa() {
+    if (!S.pk || !S.blangko || !/^(put|bas)$/.test(String(S.blangko.jenis || "")) || !naskahSegar(S.prat) || tes()) return null;
+    const id = String(perkaraId() || "");
+    if (!/^\d+$/.test(id)) return null;
+    if (relaasPeriksa.perkaraId === id) return relaasPeriksa.data;
+    relaasPeriksa = { perkaraId: id, data: null, janji: null };
+    const jaga = relaasPeriksa;
+    jaga.janji = ambilPortal(`${API_BLANGKO}/relaas?perkaraId=${encodeURIComponent(id)}`, {}, "Membaca relaas panggilan")
+      .then((d) => {
+        if (relaasPeriksa !== jaga) return;
+        jaga.data = d && d.ada === true ? { ada: true, P: Array.isArray(d.P) ? d.P : [], T: Array.isArray(d.T) ? d.T : [] } : null;
+        if (jaga.data) perbaruiPeriksa();
+      })
+      .catch(() => {
+        /* relaas tidak terbaca: butir relaas tidak tampil */
+      });
+    return null;
+  }
   /** Isian teks yang memuat titik koma di tengah dan akan dirapikan aturan rapi isian 30 Okt (rapiSimpan). */
   function isianTitikKoma() {
     const m = PC();
@@ -7730,6 +7753,11 @@
             .map((x) => ({ kode: x.b.kode, nama: x.nama })),
           titikKoma: isianTitikKoma(),
           naskah: bahanNaskahPeriksa(),
+          // Butir 50 (30 Okt malam): relaas SIPP per pihak, dibaca sekali per perkara sesudah naskah siap (hanya baca).
+          relaas: relaasUntukPeriksa(),
+          sebutanP: sebutan().P,
+          sebutanT: sebutan().T,
+          jenisNaskah: S.blangko.jenis,
           prodeo: pk.prodeo === true || pk.prodeo === 1 || pk.prodeo === "1",
           kodeAda: new Set(perlu.map((x) => x.kode)),
           namaIsian: new Map(perlu.map((x) => [x.kode, namaIsian(x)])),
