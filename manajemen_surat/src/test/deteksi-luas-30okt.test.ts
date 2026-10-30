@@ -238,3 +238,22 @@ describe("P1 huruf C: ditahan di rutan/polres", () => {
     expect(sebab("Tergugat menahan diri untuk tidak marah")).not.toContain(C);
   });
 });
+
+describe("keputusan sementara 30 Okt: huruf H diusulkan juga bila pihak yang mengajukan sendiri yang murtad", () => {
+  const da = require_(path.join(AKAR, "services/deteksiAlasanService.js")) as {
+    sebabDariButir: (b: string[]) => { sebab: string; pelaku: string }[];
+    usulHuruf: (o: { s1: unknown[]; s2: unknown[]; posita?: unknown[] | null; lamaPisahBulan?: number }) => { huruf: string; usul: boolean }[];
+  };
+  const usul = (huruf: string, kalimat: string) => {
+    const s = da.sebabDariButir([kalimat]);
+    return da.usulHuruf({ s1: s, s2: s, posita: s }).find((x) => x.huruf === huruf)?.usul;
+  };
+  it("162/Pdt.G/2026 (CG): Penggugat keluar dari Islam -> H diusulkan (dua arah: Tergugat juga)", () => {
+    expect(usul("H", "sejak tanggal 14 November 2024 Penggugat telah keluar dari Agama islam dan kembali memeluk Agama hindu")).toBe(true);
+    expect(usul("H", "Tergugat telah keluar dari agama Islam dan kembali memeluk agama Kristen")).toBe(true);
+  });
+  it("huruf lain tetap menolak perbuatan pihak yang mengajukan; tuduhan tidak memicu", () => {
+    expect(usul("A", "Penggugat sering mabuk-mabukan")).toBe(false);
+    expect(usul("A", "Tergugat sering mabuk-mabukan")).toBe(true);
+  });
+});
