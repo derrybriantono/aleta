@@ -1757,7 +1757,10 @@
         if (kolom) {
           for (const el of Array.from(kolom.querySelectorAll(".aleta-ssk-baris"))) {
             const tanya = String((el.querySelector(".aleta-ssk-tanya") || {}).textContent || "").replace(/^\d+\.\s*/, "");
-            const jawab = String((el.querySelector("textarea") || {}).value || "").trim();
+            const jawabMentah = String((el.querySelector("textarea") || {}).value || "").trim();
+            // 30 Okt (G2a): jawaban tersimpan diawali huruf besar (aturan sama dengan Blangko Derry, AletaBdSaksi.hurufBesarAwal).
+            const besar = globalThis.AletaBdSaksi && typeof globalThis.AletaBdSaksi.hurufBesarAwal === "function" ? globalThis.AletaBdSaksi.hurufBesarAwal : (x) => x;
+            const jawab = besar(jawabMentah);
             if (jawab) baris.push({ no: String(baris.length + 1), tanya, jawab });
             jejakButir.push(entriButir(i, el, tanya, jawab, jawab ? baris.length : 0));
           }

@@ -14,8 +14,8 @@
  *   4. Urungkan mengembalikan daftar kosong dan draf tidak muncul lagi;
  *   5. putusan (hakim, hanya baca): tanpa draf;
  *   6. fungsi murni pemilih set: set utama + tambahan yang disarankan; daftar berisi/berubah/galat tidak diberi draf.
- *   7. (2.4) BAS yang disiapkan agen H-1 terbuka sendiri untuk PP pada sidangnya; sore H-1 sidang berikutnya dipilih bila BAS
- *      sidang lalu sudah terunggah; hakim dan portal tanpa agen tidak berubah.
+ *   7. (2.4) BAS yang disiapkan agen H-1 terbuka sendiri untuk PP pada sidangnya; sore H-1 TIDAK pindah sendiri (keputusan 43):
+ *      saran "Sidang besok" dengan tombol per perkara; hakim dan portal tanpa agen tidak berubah.
  */
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -198,7 +198,7 @@ afterEach(async () => {
   while (terbuka.length) terbuka.pop()!.window.close();
 });
 
-function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?: boolean; tjGagal?: boolean; botMati?: boolean; jenis?: string; abtAwal?: Record<string, string>; rtfBytes?: Uint8Array; daftar?: unknown[]; h1?: Record<string, unknown> } = {}): Halaman {
+function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?: boolean; tjGagal?: boolean; botMati?: boolean; jenis?: string; abtAwal?: Record<string, string>; rtfBytes?: Uint8Array; daftar?: unknown[]; h1?: Record<string, unknown>; h1Saya?: Record<string, unknown> } = {}): Halaman {
   const badan = `<div id="header"><div class="h_right"><b>Pengguna</b> Panitera</div></div><div id="wrapper"><div id="navbar">${MENU}</div><div id="content"></div></div>`;
   const dom = new JSDOM(`<!doctype html><html><head><title>ABT</title></head><body>${badan}</body></html>`, { url: BERANDA, runScripts: "outside-only", pretendToBeVisual: true } as ConstructorParameters<typeof JSDOM>[1]);
   terbuka.push(dom);
@@ -370,7 +370,7 @@ function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?
     }
     if (url === `${ABT}/main/anonim`) return new Response(RTF_PUT("ANONIM"), { status: 200, headers: { "content-disposition": 'attachment; filename="anonim_581.rtf"' } });
     // G2a 2.4: BAS H-1 yang disiapkan agen (rute sungguhan: lib/agen-h1-bas); tanpa p.h1 = portal tanpa agen (404).
-    if (url.includes("/aleta-ecourt/agen-h1-bas") && p.h1) return json({ ok: true, data: polos(p.h1) });
+    if (url.includes("/aleta-ecourt/agen-h1-bas") && p.h1) return json({ ok: true, data: polos(url.includes("saya=1") ? (p.h1Saya ?? { hariIni: HARI_INI, draf: [] }) : p.h1) });
     return json({ ok: false }, 404);
   };
   w.Response = Response;
@@ -627,12 +627,25 @@ describe("BAS sidang berikutnya disiapkan otomatis (G2a 2.4)", () => {
     expect(mintaKe(h, /edit_data\?/, "POST").every((m) => !/5058|5059/.test(m.url))).toBe(true);
   });
 
-  it("sore sebelum sidang (H-1): sidang berikutnya dipilih sendiri bila BAS sidang lalu sudah terunggah, lalu blangkonya dibuka", async () => {
+  it("sore sebelum sidang (H-1): sidang TIDAK dipindah sendiri; saran 'Sidang besok' dengan satu tombol per perkara membuka BAS-nya (keputusan 43)", async () => {
     const besok = "2026-10-28";
-    const h = bukaPP({ daftar: PK_H1([SI("2026-10-15", "Sidang Pertama", "Tergugat tidak hadir", { urutan: 1, adaBas: true }), SI(besok, "Pembuktian", "", { urutan: 2 })]), h1: { ada: true, hariIni: HARI_INI, peta: { "10154": DRAF_H1(besok) } } });
+    const h = bukaPP({
+      daftar: PK_H1([SI("2026-10-15", "Sidang Pertama", "Tergugat tidak hadir", { urutan: 1, adaBas: true }), SI(besok, "Pembuktian", "", { urutan: 2 })]),
+      h1: { ada: true, hariIni: HARI_INI, peta: { "10154": DRAF_H1(besok) } },
+      h1Saya: { ada: true, hariIni: HARI_INI, draf: [DRAF_H1(besok)] },
+    });
     await bukaPerkaraSaja(h);
-    await sampai(() => (q(h, "#bd-sidang") as HTMLSelectElement | null)?.value === "1", "sidang besok terpilih", 8000);
-    await sampai(() => mintaKe(h, /\/main\/cari/, "POST").length, "blangko draf terbuka", 8000);
+    await sampai(() => mintaKe(h, /agen-h1-bas\?perkaraId=10154/).length, "draf dibaca");
+    await tunggu(300);
+    expect((q(h, "#bd-sidang") as HTMLSelectElement | null)?.value).toBe("0");
+    expect(mintaKe(h, /\/main\/cari/, "POST")).toEqual([]);
+    const saran = await sampai(() => q(h, "#bd-saranh1"), "saran sidang besok", 8000);
+    expect(saran.textContent || "").toMatch(/Sidang besok \(.*2026\): 1 perkara - BAS sudah disiapkan\./);
+    expect(saran.textContent || "").not.toMatch(/variabel|penanda|#/i);
+    (saran.querySelector('[data-bd2="bukah1"]') as HTMLElement).click();
+    await sampai(() => (q(h, "#bd-sidang") as HTMLSelectElement | null)?.value === "1", "sidang besok terpilih lewat tautan", 8000);
+    await sampai(() => mintaKe(h, /\/main\/cari/, "POST").length, "BAS draf terbuka", 8000);
+    expect(mintaKe(h, /tanyajawab_perkara_edit\?aksi=simpan/)).toEqual([]);
   });
 
   it("BAS sidang lalu belum terunggah: sidang tidak dipindah dan blangko tidak dibuka", async () => {

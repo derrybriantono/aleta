@@ -222,3 +222,11 @@ export function drafH1Saya(daftar: DrafH1[], o: { nama: string; lihatSemua: bool
     .filter((d) => o.lihatSemua || (nama && (o.cocokNama(nama, d.paniteraNama) || o.cocokNama(nama, d.majelisNama))))
     .sort((a, b) => a.tanggalSidang.localeCompare(b.tanggalSidang) || a.nomorPerkara.localeCompare(b.nomorPerkara));
 }
+
+/** Saran "Sidang besok": draf berblangko pada tanggal sidang terdekat SESUDAH hari ini (cermin ringkasBesok ekstensi). */
+export function ringkasBesokH1(daftar: DrafH1[], hariIni: string): { tanggal: string; draf: DrafH1[] } | null {
+  const sah = daftar.filter((d) => d.blangko && d.tanggalSidang > hariIni && d.perkaraId);
+  if (!sah.length) return null;
+  const tanggal = sah.map((d) => d.tanggalSidang).sort()[0];
+  return { tanggal, draf: sah.filter((d) => d.tanggalSidang === tanggal).sort((a, b) => a.nomorPerkara.localeCompare(b.nomorPerkara, "id", { numeric: true })) };
+}

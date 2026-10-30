@@ -250,8 +250,8 @@ describe("peta fitur K11: kelompok manifest dan modul malas", () => {
 
   it("berkas lain yang tidak disentuh K11 identik byte demi byte dengan sebelumnya", () => {
     // blangko-derry-isian.js: 26 Okt 2026 hanya MENAMBAH pengait layar kerja Sampul/Daftar Isi (blangko-derry-berkas.js); nama tingkat atas lama dijaga uji di bawah.
-    // blangko-derry-saksi-tampil.js: 30 Okt 2026 (G2a) MENAMBAH asal jawaban "contoh"; blangko-derry-saksi.js MENAMBAH hurufBesarAwal; saksi-susun.js menyaring pertanyaan wali; ekspor lama tetap.
-    const diubah = new Set(["konten.js", "abt.js", "manifest.json", "latar.js", "blangko-derry-isian.js", "blangko-derry-saksi-tampil.js", "blangko-derry-saksi.js", "saksi-susun.js"]);
+    // blangko-derry-saksi-tampil.js: 30 Okt 2026 (G2a) MENAMBAH asal jawaban "contoh"; blangko-derry-saksi.js MENAMBAH hurufBesarAwal; saksi-susun.js menyaring pertanyaan wali; blangko-derry.js MENAMBAH api.bukaTautan + draf "h1"; ekspor lama tetap.
+    const diubah = new Set(["konten.js", "abt.js", "manifest.json", "latar.js", "blangko-derry-isian.js", "blangko-derry-saksi-tampil.js", "blangko-derry-saksi.js", "saksi-susun.js", "blangko-derry.js"]);
     for (const [nama, info] of Object.entries(sebelum.berkas)) {
       if (diubah.has(nama) || !sesudah.berkas[nama]) continue;
       // berkas yang sengaja disentuh didaftarkan di KEMBALI_DISENTUH

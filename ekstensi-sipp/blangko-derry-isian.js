@@ -1109,6 +1109,7 @@
   async function jalankanTautan(t) {
     try {
       if (t.draf === "h7") await terapkanTautanDraf(t);
+      else if (t.draf === "h1") await terapkanTautanDrafH1(t);
       else await terapkanTautanBlangko();
       if (t.isian && S.tautan === t) await sorotIsian(t.isian);
     } catch {
@@ -5197,7 +5198,9 @@
                   ? "Untuk mengganti, tekan Ganti blangko; saran per jenis ada di bagian Disarankan jendela itu."
                   : "Pilih blangko lewat tombol Pilih blangko."
           }</p>`
-        : "");
+        : "") +
+      htmlSaranH1();
+    muatSaranH1();
   }
 
   /**
@@ -8311,6 +8314,13 @@
     const aksi = c("[data-bd2]");
     const kode = aksi ? aksi.getAttribute("data-bd2") : "";
     if (kode === "bukamodal") return bukaModal();
+    if (kode === "bukah1") {
+      const a = api();
+      const m = globalThis.AletaBdDrafBas;
+      if (!a || typeof a.bukaTautan !== "function" || !m) return toast("Muat ulang halaman ABT untuk membuka BAS yang disiapkan.");
+      a.bukaTautan(m.muatanTautan({ perkaraId: aksi.getAttribute("data-pid"), nomor: aksi.getAttribute("data-nomor") }, aksi.getAttribute("data-tgl")));
+      return;
+    }
     if (kode === "tutupmodal") return tutupModal();
     if (kode === "pakairek") {
       const r = rekomendasiJenis(jenisSaranAktif())[0];
@@ -9420,7 +9430,8 @@
   // ── BAS sidang berikutnya yang disiapkan agen H-1 (30 Okt 2026, G2a 2.4) ─────────────────────────────────────────
   // Portal menyiapkan blangko BAS tiap sore hari kerja (rute agen-h1-bas, baca saja). Saat PP membuka perkara pada sidangnya
   // blangko itu dibuka sendiri - seperti dipilih petugas; tidak ada yang tersimpan ke ABT selain isi otomatis yang berlaku.
-  // Keputusan buka / pilih sidang berikutnya / tidak: blangko-derry-draf-bas.js. Tautan yang diminta petugas didahulukan.
+  // Keputusan buka / tidak: blangko-derry-draf-bas.js (30 Okt malam: tidak lagi pindah sendiri ke sidang besok - saran
+  // "Sidang besok" di bawah memberi tautan per perkara). Tautan yang diminta petugas didahulukan.
   const API_AGEN_H1 = "/aleta/api/aleta-ecourt/agen-h1-bas";
   const drafH1Dipakai = new Set();
   async function terapkanDrafH1(d) {
@@ -9444,26 +9455,71 @@
     const draf = h && h.peta ? h.peta[pid] : null;
     const kunci = `${pid}|${draf ? draf.tanggalSidang : ""}`;
     const k = m.putuskan({ draf, hariIni: h && h.hariIni, sidang: d.sidang, sidangDipilih: d.sidangDipilih, sudah: drafH1Dipakai.has(kunci) });
-    if (k.aksi === "ganti-sidang") {
-      const sel = document.querySelector("#aleta-bd-akar #bd-sidang");
-      if (!sel || !Array.from(sel.options || []).some((o) => o.value === String(k.indeks))) return;
-      sel.value = String(k.indeks);
-      sel.dispatchEvent(new Event("change", { bubbles: true })); // peristiwa perkara berikutnya membuka blangkonya
-      return;
-    }
-    if (k.aksi !== "buka") return;
-    if (S.pk !== d || S.blangko || !jenisBoleh().includes("bas")) return;
+    if (k.aksi !== "buka") return; // 30 Okt malam (keputusan 43): tidak pindah sendiri ke sidang lain - saran "Sidang besok"
+    await bukaBlangkoDrafH1(d, draf, kunci);
+  }
+  /** Membuka blangko BAS draf H-1 seperti dipilih petugas (hak menu & jenis diperiksa); true bila terbuka. */
+  async function bukaBlangkoDrafH1(d, draf, kunci) {
+    const m = typeof globalThis !== "undefined" ? globalThis.AletaBdDrafBas : null;
+    if (!m || !draf || !draf.blangko || S.pk !== d || S.blangko || !jenisBoleh().includes("bas")) return false;
     await muatMenu();
     const nama = kelompokUntukSaran(S.menu ? S.menu.kelompok : [], draf.blangko);
     const kel = nama && S.menu ? S.menu.kelompok.find((x) => x.nama === nama) : null;
-    if (!kel || !kelompokBoleh(kel)) return;
+    if (!kel || !kelompokBoleh(kel)) return false;
     if (!kel.berkas) await muatBerkasKelompok(kel);
-    if (S.pk !== d || S.blangko || !kel.berkas) return;
-    const asli = kel.berkas.find((b) => samaBerkasSaran(b.berkas, draf.blangko.berkas));
-    if (!asli) return;
+    if (S.pk !== d || S.blangko || !kel.berkas) return false;
+    const asli = kel.berkas.find((x) => samaBerkasSaran(x.berkas, draf.blangko.berkas));
+    if (!asli) return false;
     drafH1Dipakai.add(kunci);
     await pilihBlangko(asli.berkas, kel.nama);
     toast(m.kalimatBuka(draf));
+    return true;
+  }
+  /** Tautan draf "h1" (saran Sidang besok / Jadwal Sidang): perkara & sidang sudah dipilih kerangka; buka BAS draf, cadangan jalur biasa. */
+  async function terapkanTautanDrafH1(t) {
+    if (!t || t.dipakai || !S.pk) return;
+    t.dipakai = true;
+    const d = S.pk;
+    const pid = String(d.perkaraId || "");
+    let draf = null;
+    try {
+      const h = await ambilPortal(`${API_AGEN_H1}?perkaraId=${encodeURIComponent(pid)}`, {}, "Membaca BAS yang disiapkan");
+      draf = h && h.peta ? h.peta[pid] : null;
+    } catch {
+      draf = null;
+    }
+    const cocok = draf && d.sidangDipilih && String(d.sidangDipilih.tanggal || "").slice(0, 10) === String(draf.tanggalSidang || "").slice(0, 10);
+    if (cocok && (await bukaBlangkoDrafH1(d, draf, `${pid}|${draf.tanggalSidang}`))) return;
+    t.dipakai = false;
+    return terapkanTautanBlangko();
+  }
+  // ── Saran "Sidang besok: N perkara - BAS sudah disiapkan" (30 Okt malam, keputusan 43) ───────────────────────────────
+  // Satu bacaan GET agen-h1-bas?saya=1 (diingat 10 menit); hanya PP. Tiap perkara satu tombol: sekali klik membuka BAS-nya.
+  const SARAN_H1_MS = 10 * 60 * 1000;
+  let saranH1 = { saat: 0, data: null, memuat: false };
+  function muatSaranH1() {
+    if (saranH1.memuat || Date.now() - saranH1.saat < SARAN_H1_MS || tes()) return;
+    if (!peranAkun().includes("pp") || hakimSaja()) return;
+    saranH1.memuat = true;
+    void ambilPortal(`${API_AGEN_H1}?saya=1`, {}, "Membaca BAS sidang besok")
+      .then((h) => {
+        saranH1 = { saat: Date.now(), data: h || null, memuat: false };
+        renderRingkasBlangko();
+      })
+      .catch(() => {
+        saranH1 = { saat: Date.now(), data: null, memuat: false };
+      });
+  }
+  function htmlSaranH1() {
+    const m = typeof globalThis !== "undefined" ? globalThis.AletaBdDrafBas : null;
+    const h = saranH1.data;
+    if (!m || !h || !peranAkun().includes("pp") || hakimSaja()) return "";
+    const r = m.ringkasBesok(h.draf, h.hariIni);
+    if (!r || !r.perkara.length) return "";
+    const tombol = r.perkara
+      .map((p) => `<button type="button" class="bd-chip bd-tombolchip" data-bd2="bukah1" data-pid="${esc(p.perkaraId)}" data-nomor="${esc(p.nomor)}" data-tgl="${esc(r.tanggal)}" title="${esc(p.label)}">${esc(p.nomor.replace(/\/PA\.[A-Za-z]+$/, ""))}</button>`)
+      .join(" ");
+    return `<div class="bd-petunjuk" id="bd-saranh1" role="note"><b>Sidang besok (${esc(tglIndo(r.tanggal))}): ${r.perkara.length} perkara - BAS sudah disiapkan.</b> ${tombol}</div>`;
   }
   function daftarkanAlat() {
     const a = api();

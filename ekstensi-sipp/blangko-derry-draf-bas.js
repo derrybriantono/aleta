@@ -10,9 +10,8 @@
  * membuka perkara itu - tanpa tombol tambahan (arahan pengguna 30 Okt malam):
  *
  *   "buka"         sidang yang terpilih = sidang draf  -> blangko draf langsung dibuka (isi otomatis yang berlaku menyusul);
- *   "ganti-sidang" perkara dibuka SEBELUM hari sidangnya (sore H-1): panel memilih sidang draf, lalu "buka". Hanya bila
- *                  sidang yang terpilih sudah lewat (bukan hari ini), BAS-nya sudah terunggah, dan tidak ada sidang lain di
- *                  antaranya - supaya petugas yang masih mengerjakan BAS sidang lalu tidak dipindahkan;
+ *   (30 Okt malam, keputusan 43: TIDAK lagi pindah sendiri ke sidang besok. Sore H-1 panel dan Jadwal Sidang hanya memberi SARAN
+ *   kecil "Sidang besok: N perkara - BAS sudah disiapkan" dengan tautan per perkara - lihat ringkasBesok/muatanTautan.)
  *   "tidak"        selain itu (sudah dipakai sekali di halaman ini, sidang lain, data tidak lengkap).
  *
  * Tidak ada yang ditulis ke ABT di sini; blangko dibuka seperti pilihan petugas.
@@ -25,7 +24,7 @@
    * @param {{draf?: {tanggalSidang?: string, blangko?: {berkas?: string}|null}|null, hariIni?: string,
    *          sidang?: Array<{tanggal?: string, adaBas?: boolean|null}>, sidangDipilih?: {tanggal?: string, adaBas?: boolean|null}|null,
    *          sudah?: boolean}} m
-   * @returns {{aksi: "buka"|"ganti-sidang"|"tidak", indeks?: number, sebab: string}}
+   * @returns {{aksi: "buka"|"tidak", indeks?: number, sebab: string}}
    */
   function putuskan(m) {
     const o = m || {};
@@ -39,12 +38,7 @@
     const dipilih = o.sidangDipilih || null;
     const tDipilih = dipilih ? tgl(dipilih.tanggal) : "";
     if (tDipilih === t) return { aksi: "buka", indeks, sebab: "sidang draf terpilih" };
-    const hari = tgl(o.hariIni);
-    if (!hari || !tDipilih || !(tDipilih < hari) || !(t > hari)) return { aksi: "tidak", sebab: "sidang terpilih bukan sidang lalu" };
-    if (dipilih.adaBas !== true) return { aksi: "tidak", sebab: "BAS sidang lalu belum terunggah" };
-    const diantara = sidang.some((s) => s && tgl(s.tanggal) > tDipilih && tgl(s.tanggal) < t);
-    if (diantara) return { aksi: "tidak", sebab: "ada sidang lain di antaranya" };
-    return { aksi: "ganti-sidang", indeks, sebab: "sidang berikutnya" };
+    return { aksi: "tidak", sebab: "sidang terpilih bukan sidang draf" };
   }
 
   /** Kabar singkat sesudah blangko draf dibuka (tanpa istilah teknis, tanpa kode). */
@@ -54,7 +48,30 @@
     return `BAS sidang ini sudah disiapkan: ${label}. Periksa isiannya sebelum dicetak; bila keadaan sidang berbeda, pilih blangko lain.`;
   }
 
-  const api = { putuskan, kalimatBuka };
+  /**
+   * Saran "Sidang besok": draf BAS sesudah hari ini yang berblangko, untuk tanggal sidang terdekat. Murni.
+   * @param {Array<{perkaraId?: string, nomorPerkara?: string, tanggalSidang?: string, blangko?: object|null}>} daftar
+   * @returns {{tanggal: string, perkara: Array<{perkaraId: string, nomor: string, label: string}>}|null}
+   */
+  function ringkasBesok(daftar, hariIni) {
+    const hari = tgl(hariIni);
+    const sah = (Array.isArray(daftar) ? daftar : []).filter((d) => d && d.blangko && teks(d.blangko.berkas) && tgl(d.tanggalSidang) > hari && teks(d.perkaraId));
+    if (!sah.length) return null;
+    const tanggal = sah.map((d) => tgl(d.tanggalSidang)).sort()[0];
+    const perkara = sah
+      .filter((d) => tgl(d.tanggalSidang) === tanggal)
+      .map((d) => ({ perkaraId: teks(d.perkaraId), nomor: teks(d.nomorPerkara), label: teks(d.blangko.label) || teks(d.blangko.berkas).replace(/\.rtf$/i, "") }))
+      .sort((a, b) => a.nomor.localeCompare(b.nomor, "id", { numeric: true }));
+    return { tanggal, perkara };
+  }
+
+  /** Muatan tautan #bd= (kontrak blangko-derry.js) yang membuka BAS H-1 perkara itu pada sidangnya. */
+  function muatanTautan(p, tanggal) {
+    const id = teks(p && p.perkaraId);
+    return { v: 1, nomor: teks(p && p.nomor), perkaraId: /^\d+$/.test(id) ? Number(id) : id, tanggalSidang: tgl(tanggal), jenis: "bas", draf: "h1" };
+  }
+
+  const api = { putuskan, kalimatBuka, ringkasBesok, muatanTautan };
   globalThis.AletaBdDrafBas = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();

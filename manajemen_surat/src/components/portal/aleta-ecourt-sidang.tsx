@@ -127,7 +127,7 @@ import type { BahanPenandaBaris, IzinCeraiBaris, LencanaPekerjaanPihak, PenandaP
 import { bandingkanKonseptor, type KonseptorSementara } from "@/lib/konseptor-sementara";
 import { ChecklistKonseptor, LencanaKesiapanPutusan } from "@/components/portal/checklist-konseptor"; /* F1.6 */
 import { LencanaDrafH7, PanelDrafH7 } from "@/components/portal/draf-h7"; /* F4.2 */
-import { LencanaBasH1 } from "@/components/portal/lencana-bas-h1"; /* G2a 2.4 */
+import { LencanaBasH1, SaranBasBesok } from "@/components/portal/lencana-bas-h1"; /* G2a 2.4 */
 import type { RingkasDrafH1 } from "@/lib/agen-h1-bas";
 import type { RingkasDrafH7 } from "@/lib/agen-h7-putusan";
 import { saringPerkaraSendiri } from "@/lib/perkara-sendiri";
@@ -6591,6 +6591,8 @@ export function AletaEcourtSidang({
 
       <CardContent className="space-y-3 p-4 pt-0 sm:p-5 sm:pt-0">
         <BannerGangguan keadaan={cobaLagiJadwal.keadaan} onCobaSekarang={cobaLagiJadwal.cobaSekarang} />
+        {/* G2a (keputusan 43): saran kecil BAS sidang besok yang sudah disiapkan, tautan per perkara. */}
+        <SaranBasBesok boleh={jenisBlangkoPeran.includes("bas")} setelanAps={setelanAps} />
         {galat ? (
           <p className="flex items-start gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
             <span className="min-w-0 flex-1">{galat}</span>

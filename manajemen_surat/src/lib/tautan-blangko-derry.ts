@@ -42,8 +42,8 @@ export type DataTautanBlangko = {
   verstek?: boolean | null;
   jumlahSaksiP?: number | null;
   jumlahSaksiT?: number | null;
-  /** Opsional: "h7" = buka draf putusan agen; varian dan isian yang ditunjuk. */
-  draf?: "h7" | null;
+  /** Opsional: "h7" = buka draf putusan agen; varian dan isian yang ditunjuk. "h1" (30 Okt) = buka BAS yang disiapkan agen H-1. */
+  draf?: "h7" | "h1" | null;
   varian?: "dikabulkan" | "ditolak" | null;
   isian?: string | null;
 };
@@ -69,8 +69,8 @@ function angkaAtauNull(n: unknown): number | null {
 /** Badan JSON tautan - urutan ruasnya mengikuti kontrak. */
 export function muatanBlangkoDerry(data: DataTautanBlangko, jenis: JenisBlangkoDerry) {
   const id = String(data.perkaraId ?? "").trim();
-  const tambahan: { draf?: "h7"; varian?: "dikabulkan" | "ditolak"; isian?: string } = {};
-  if (data.draf === "h7") tambahan.draf = "h7";
+  const tambahan: { draf?: "h7" | "h1"; varian?: "dikabulkan" | "ditolak"; isian?: string } = {};
+  if (data.draf === "h7" || data.draf === "h1") tambahan.draf = data.draf;
   if (data.varian === "dikabulkan" || data.varian === "ditolak") tambahan.varian = data.varian;
   if (String(data.isian ?? "").trim()) tambahan.isian = String(data.isian).trim().slice(0, 120);
   return {

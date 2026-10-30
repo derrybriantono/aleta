@@ -182,10 +182,14 @@ describe("agen (sumber suntikan, baca saja)", () => {
 describe("keputusan panel ekstensi (blangko-derry-draf-bas.js)", () => {
   const draf = (t: string) => ({ tanggalSidang: t, blangko: { berkas: "BAS ALUR 02 [2].rtf", label: "BAS 2" } });
   const S = (tanggal: string, adaBas: boolean | null = null) => ({ tanggal, adaBas });
-  it("buka bila sidang draf terpilih; pilih sidang berikutnya sore H-1 hanya bila BAS sidang lalu sudah terunggah", () => {
+  it("buka hanya bila sidang draf terpilih; saran Sidang besok + muatan tautan", () => {
     const sid = [S("2026-10-15", true), S("2026-11-02")];
     expect(DB.putuskan({ draf: draf("2026-11-02"), sidang: sid, sidangDipilih: sid[1], hariIni: "2026-10-30" })).toMatchObject({ aksi: "buka", indeks: 1 });
-    expect(DB.putuskan({ draf: draf("2026-11-02"), sidang: sid, sidangDipilih: sid[0], hariIni: "2026-10-30" })).toMatchObject({ aksi: "ganti-sidang", indeks: 1 });
+    // keputusan 43: tidak pernah pindah sendiri ke sidang lain
+    expect(DB.putuskan({ draf: draf("2026-11-02"), sidang: sid, sidangDipilih: sid[0], hariIni: "2026-10-30" }).aksi).toBe("tidak");
+    const r = DB.ringkasBesok([{ perkaraId: "2", nomorPerkara: "640/Pdt.G/2026/PA.Dgl", tanggalSidang: "2026-11-02", blangko: { berkas: "B.rtf", label: "BAS 2" } }, { perkaraId: "1", nomorPerkara: "635/Pdt.G/2026/PA.Dgl", tanggalSidang: "2026-11-02", blangko: { berkas: "A.rtf", label: "" } }, { perkaraId: "3", nomorPerkara: "9/Pdt.G/2026/PA.Dgl", tanggalSidang: "2026-10-30", blangko: { berkas: "C.rtf" } }, { perkaraId: "4", nomorPerkara: "7/Pdt.G/2026/PA.Dgl", tanggalSidang: "2026-11-02", blangko: null }], "2026-10-30");
+    expect(r).toEqual({ tanggal: "2026-11-02", perkara: [{ perkaraId: "1", nomor: "635/Pdt.G/2026/PA.Dgl", label: "A" }, { perkaraId: "2", nomor: "640/Pdt.G/2026/PA.Dgl", label: "BAS 2" }] });
+    expect(DB.muatanTautan({ perkaraId: "1", nomor: "635/Pdt.G/2026/PA.Dgl" }, "2026-11-02")).toEqual({ v: 1, nomor: "635/Pdt.G/2026/PA.Dgl", perkaraId: 1, tanggalSidang: "2026-11-02", jenis: "bas", draf: "h1" });
     expect(DB.putuskan({ draf: draf("2026-11-02"), sidang: [S("2026-10-15", false), S("2026-11-02")], sidangDipilih: S("2026-10-15", false), hariIni: "2026-10-30" }).aksi).toBe("tidak");
     expect(DB.putuskan({ draf: draf("2026-11-02"), sidang: [S("2026-10-30", true), S("2026-11-02")], sidangDipilih: S("2026-10-30", true), hariIni: "2026-10-30" }).aksi).toBe("tidak");
     expect(DB.putuskan({ draf: draf("2026-11-09"), sidang: [S("2026-10-15", true), S("2026-11-02"), S("2026-11-09")], sidangDipilih: S("2026-10-15", true), hariIni: "2026-10-30" }).aksi).toBe("tidak");
