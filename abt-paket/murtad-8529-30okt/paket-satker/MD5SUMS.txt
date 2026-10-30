@@ -1,0 +1,7 @@
+d75e9a43476a78470930b0388ed51fe7 *abt-murtad-8529-30okt-PASANG.sql
+4963970e538804a35bdd8a5f12d1a334 *abt-murtad-8529-30okt-PERIKSA.sql
+40e493a50b579e73b689322f5a401dda *abt-murtad-8529-30okt-PRASYARAT.sql
+269f7af14cf7aa5ae1cbc7dd66670464 *abt-murtad-8529-30okt-PULIH.sql
+daeb681c8178c4bb5fd4aba0fe8d0106 *harap.txt
+0e9a3cc84eecfa2c72e897f77963f785 *pasang-satker.sh
+4bb943a27c20d998ff1a14e6430ff160 *pulih-satker.sh

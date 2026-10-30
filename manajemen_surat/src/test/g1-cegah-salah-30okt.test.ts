@@ -719,3 +719,77 @@ describe("48 set saksi murtad - pihak murtad dari SIPP lalu posita", () => {
     expect(ct.set.some((s) => s.id === "cerai-H-pihak-pertama-murtad" && s.judul.includes("Pemohon yang murtad"))).toBe(true);
   });
 });
+
+// ============================================================================
+// Butir 50 (30 Okt malam): tanggal panggilan di naskah vs relaas SIPP
+// ============================================================================
+describe("50 tanggal panggilan vs relaas SIPP", () => {
+  const m = (() => {
+    const g: Record<string, unknown> = {};
+    new Function("globalThis", "window", baca("blangko-derry-periksa.js"))(g, g);
+    return g.AletaPeriksaCetak as { bandingRelaas: (t: string, r: unknown, o: unknown) => Array<{ jenis: string; teks: string }>; kumpulkan: (b: unknown) => Array<{ jenis: string; teks: string }> };
+  })();
+  // bunyi blangko nyata (render 9558 sebelum paket prodeo-panggilan, disingkat; tanggal sidang ikut dalam kalimat yang sama)
+  const LAMA = "Bahwa pada sidang pertama tanggal 9 Maret 2026, Penggugat hadir sendiri, sedangkan Tergugat tidak hadir meskipun telah dipanggil secara resmi dan patut, kemudian sidang ditunda sampai dengan hari Senin tanggal 30 Maret 2026 untuk memanggil Tergugat; Bahwa Tergugat tidak datang menghadap, meskipun berdasarkan Surat Panggilan (relaas) Nomor 152/Pdt.G/2026/PA.Dgl tanggal 26 Februari 2026 dan tanggal 4 April 2026 yang dibacakan di persidangan, Tergugat telah dipanggil secara resmi dan patut;";
+  const R = { ada: true, P: ["2026-02-20"], T: ["2026-02-26", "2026-03-12", "2026-04-04"] };
+  it("putusan: relaas yang tidak disebut ditandai; tanggal sidang ('ditunda ... tanggal 30 Maret') tidak dihitung", () => {
+    const t = m.bandingRelaas(LAMA, R, { sebutanP: "Penggugat", sebutanT: "Tergugat", jenisNaskah: "put" });
+    expect(t).toHaveLength(1);
+    expect(t[0].teks).toContain("Tanggal panggilan Tergugat di naskah (26 Februari 2026 dan 4 April 2026) tidak sama dengan relaas di SIPP (26 Februari 2026, 12 Maret 2026 dan 4 April 2026)");
+    expect(t[0].teks).toContain("belum disebut: 12 Maret 2026");
+    expect(t[0].teks).not.toContain("30 Maret");
+  });
+  it("bunyi baru (semua relaas) sama dengan SIPP -> tanpa temuan; BAS hanya menandai tanggal yang tidak ada di relaas", () => {
+    const BARU = LAMA.replace("tanggal 26 Februari 2026 dan tanggal 4 April 2026", "tanggal 26 Februari 2026, 12 Maret 2026, dan 4 April 2026");
+    expect(m.bandingRelaas(BARU, R, { sebutanP: "Penggugat", sebutanT: "Tergugat", jenisNaskah: "put" })).toEqual([]);
+    expect(m.bandingRelaas(LAMA, R, { sebutanP: "Penggugat", sebutanT: "Tergugat", jenisNaskah: "bas" })).toEqual([]);
+    const asing = m.bandingRelaas(LAMA.replace("4 April 2026", "5 April 2026"), R, { sebutanP: "Penggugat", sebutanT: "Tergugat", jenisNaskah: "bas" });
+    expect(asing[0].teks).toContain("tidak ada di relaas: 5 April 2026");
+  });
+  it("cerai talak: sebutan Termohon; kumpulkan menyalurkan relaas, tanggal ganda tetap butir tersendiri", () => {
+    const ct = "meskipun berdasarkan Surat Panggilan (relaas) Nomor 1/Pdt.G/2026/PA.Dgl tanggal 29 Agustus 2026 dan tanggal 20 Oktober 2026 yang dibacakan di persidangan, Termohon telah dipanggil secara resmi dan patut;";
+    const d = m.kumpulkan({ naskah: { teks: ct, temuanSisa: [] }, relaas: { ada: true, P: [], T: ["2026-08-29", "2026-09-19"] }, sebutanP: "Pemohon", sebutanT: "Termohon", jenisNaskah: "put" });
+    expect(d.map((x) => x.jenis)).toEqual(["relaas"]);
+    expect(d[0].teks).toMatch(/Termohon di naskah .*tidak ada di relaas: 20 Oktober 2026; belum disebut: 19 September 2026/);
+    expect(m.kumpulkan({ naskah: { teks: "tanggal 16 September 2026 dan tanggal 16 September 2026 yang dibacakan", temuanSisa: [] }, relaas: { ada: true, P: [], T: [] } }).map((x) => x.jenis)).toEqual(["tanggal"]);
+  });
+  it("bot: kueri relaas satu SELECT baca saja (lolos penjaga bridge), aturan sama dengan 11120/11121", async () => {
+    const R2 = req("./services/relaasPanggilanService.js") as { tanggalRelaasPerPihak: (k: unknown, id: unknown) => Promise<{ ada: boolean; P: string[]; T: string[] }>; SQL: string };
+    expect(R2.SQL.trim()).toMatch(/^SELECT/);
+    expect(R2.SQL).not.toMatch(/\b(INSERT|UPDATE|DELETE|CALL|CREATE|DROP)\b/i);
+    expect(R2.SQL).toContain("IFNULL(j.ikrar_talak, 'T') <> 'Y'");
+    expect(R2.SQL).toContain("perkara_pelaksanaan_relaas");
+    const h = await R2.tanggalRelaasPerPihak(async (_s: string, p: unknown[]) => (expect(p).toEqual(["9558", "9558", "9558", "9558"]), [{ pihak: "T", t: "2026-02-26" }, { pihak: "T", t: "2026-03-12" }, { pihak: "P", t: "2026-02-20" }]), "9558");
+    expect(h).toEqual({ ada: true, P: ["2026-02-20"], T: ["2026-02-26", "2026-03-12"] });
+    expect((await R2.tanggalRelaasPerPihak(async () => [], "x")).ada).toBe(false);
+    expect(readFileSync(path.join(AKAR, "aleta_bot/services/sippReadOnlyBridgeService.js"), "utf8")).toContain('"case.relaasPanggilan"');
+  });
+});
+
+describe("48 paket ABT murtad-8529-30okt", () => {
+  const dir = path.join(AKAR, "abt-paket/murtad-8529-30okt");
+  it("hanya 8529, bersyarat md5, isi hex; kalimat lama utuh di dalamnya; tanpa kata aplikasi; sebutan dari variabel", () => {
+    const pasang = readFileSync(path.join(dir, "paket-satker/abt-murtad-8529-30okt-PASANG.sql"), "utf8");
+    expect(pasang).toMatch(/WHERE no_var = 8529 AND MD5\(/);
+    expect(pasang.match(/UPDATE/g)).toHaveLength(1);
+    const baru = readFileSync(path.join(dir, "sumber/8529-baru.sql"), "latin1");
+    expect(baru).toContain("bukti P.1 dan P.2 merupakan fotokopi akta autentik"); // kalimat lama tetap
+    expect(baru).toContain("CONCAT_WS(CHAR(10 USING utf8), b.data, m.murtad)");
+    expect(baru).toContain('WHEN x.ag1 <> 1 THEN "#0046#" WHEN x.ag2 <> 1 THEN "#0047#"');
+    expect(baru).toContain("[AGAMA PIHAK YANG MURTAD BELUM DIUBAH DI SIPP]");
+    expect(baru).not.toMatch(/Penggugat|Tergugat|Pemohon|Termohon|Donggala/); // sebutan & satker dari variabel
+    for (const b of ["PASANG", "PULIH", "PRASYARAT", "PERIKSA"]) expect(readFileSync(path.join(dir, `paket-satker/abt-murtad-8529-30okt-${b}.sql`), "utf8")).not.toMatch(/aleta/i);
+    expect(baru).not.toMatch(/aleta/i);
+    expect(readFileSync(path.join(dir, "paket-satker/harap.txt"), "utf8")).toBe("1|0\n0|1\n");
+  });
+  it("banding semua perkara: hanya perkara berhuruf H berubah, tanpa galat", () => {
+    const b = JSON.parse(readFileSync(path.join(dir, "hasil/banding-ringkasan.json"), "utf8"));
+    expect(b.perkara).toBeGreaterThan(10000);
+    expect(b.berubah_tanpa_H).toBe(0);
+    expect(b.galat_baru).toBe(0);
+    expect(b.sama + b.berubah_berhuruf_H.length).toBe(b.perkara);
+    const r = JSON.parse(readFileSync(path.join(dir, "hasil/render-ringkasan.json"), "utf8")).hasil as Array<{ sebelum: { paragraf_murtad_8529: number }; sesudah: { pihak_murtad_8529: string[]; penanda_sisa: string[] } }>;
+    expect(r.map((x) => x.sesudah.pihak_murtad_8529.join(""))).toEqual(["Penggugat", "Penggugat", "Tergugat", "Pemohon", "Termohon", ""]);
+    expect(r.every((x) => x.sebelum.paragraf_murtad_8529 === 0 && x.sesudah.penanda_sisa.length === 0)).toBe(true);
+  });
+});

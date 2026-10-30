@@ -61,6 +61,7 @@
    *   prodeo    boolean
    *   kodeAda   Set kode isian blangko (memetakan #kode# di naskah ke isiannya)
    *   namaIsian Map kode -> nama isian tampil (opsional; untuk menyebut isian, bukan nomornya)
+   *   relaas    { ada, P: [iso], T: [iso] } tanggal relaas SIPP per pihak (opsional; butir 50), sebutanP/sebutanT, jenisNaskah put|bas
    * -> [{ jenis, teks, perbaiki: { aksi: "isian"|"rapikan"|"pratinjau", kode? } | null, judulTombol }]
    */
   function kumpulkan(bahan) {
@@ -78,11 +79,12 @@
     // Bunyi lama "TIDAK BENAR QUERY NYA" tanpa keterangan agama = huruf alasan kosong (cabang terakhir 10 variabel alasan).
     const hurufDiNaskah = POLA_HURUF.test(isiNaskah) || POLA_QUERY_LAMA.test(isiNaskah.replace(/(?:TIDAK BENAR QUERY NYA\s*\/\s*)?ALASAN H: AGAMA PIHAK YANG MURTAD BELUM DIUBAH DI SIPP/gi, ""));
     // Huruf sudah dipilih dan dikenali, tetapi naskah tetap memuat bunyi "belum dipilih": ada pertimbangan yang belum punya bunyi
-    // untuk huruf itu (terukur 30 Okt: huruf H saja -> pertimbangan bukti surat verstek). Bukan kotak hurufnya yang salah.
+    // untuk huruf itu, atau bunyi itu sebenarnya cabang lain (terukur 30 Okt malam: 8529 pertimbangan bukti surat berbunyi demikian bila
+    // daftar bukti surat tidak memuat KTP/surat domisili - bukan soal huruf). Bukan kotak hurufnya yang salah.
     if (hurufDiNaskah && !hurufKosong && !hurufTakDikenal && h && h.ada) {
       hasil.push({
         jenis: "huruf-cabang",
-        teks: `Huruf alasan perceraian "${potong(h.nilai, 30)}" sudah dipilih, tetapi sebagian pertimbangan belum punya bunyi untuk huruf itu - naskah memuat "[HURUF ALASAN PERCERAIAN BELUM DIPILIH]". Periksa bagian itu di pratinjau.`,
+        teks: `Huruf alasan perceraian "${potong(h.nilai, 30)}" sudah dipilih, tetapi naskah masih memuat "[HURUF ALASAN PERCERAIAN BELUM DIPILIH]" - biasanya pada pertimbangan bukti surat karena daftar bukti surat belum memuat KTP atau surat domisili. Periksa bagian itu di pratinjau.`,
         perbaiki: { aksi: "pratinjau" },
         judulTombol: "Membuka pratinjau naskah",
       });
@@ -127,6 +129,10 @@
         perbaiki: { aksi: "pratinjau" },
         judulTombol: "Membuka pratinjau naskah",
       });
+    }
+    // 4b. Tanggal panggilan di naskah dibandingkan dengan tanggal relaas di SIPP (butir 50, 30 Okt malam).
+    if (!g && b.relaas && b.relaas.ada) {
+      for (const t of bandingRelaas(isiNaskah, b.relaas, { sebutanP: b.sebutanP, sebutanT: b.sebutanT, jenisNaskah: b.jenisNaskah })) hasil.push(t);
     }
     // 5. Sisa blangko di naskah (deteksi-sisa-blangko), dikelompokkan per jenis. Kurung huruf/agama sudah disebut di atas.
     const kelompok = new Map();
@@ -178,6 +184,93 @@
     return hasil;
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Tanggal panggilan vs relaas SIPP (butir 50, jawaban pengguna 30 Okt malam)
+  // ──────────────────────────────────────────────────────────────────────────
+  const BULAN = ["januari", "februari", "maret", "april", "mei", "juni", "juli", "agustus", "september", "oktober", "november", "desember"];
+  const POLA_TGL = /(\d{1,2})\s+(Januari|Februari|Pebruari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|Nopember|November|Desember)\s+(\d{4})/gi;
+  const keIso = (d, b, y) => {
+    const i = BULAN.indexOf(String(b).toLowerCase().replace("pebruari", "februari").replace("nopember", "november"));
+    return i < 0 ? "" : `${y}-${String(i + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+  };
+  const tampil = (iso) => {
+    const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    return m ? `${Number(m[3])} ${BULAN[Number(m[2]) - 1].replace(/^./, (c) => c.toUpperCase())} ${m[1]}` : iso;
+  };
+  const daftarTgl = (l) => (l.length < 2 ? l.map(tampil).join("") : `${l.slice(0, -1).map(tampil).join(", ")} dan ${tampil(l[l.length - 1])}`);
+  /**
+   * Kalimat panggilan di naskah: kalimat yang memuat "relaas"/"surat panggilan"/"dipanggil" beserta tanggal. Tanggal yang dihitung
+   * hanya yang berada SESUDAH kata relaas/panggilan pertama di kalimat itu. Pihak = subjek "<pihak> (telah) dipanggil" / "memanggil
+   * <pihak>" / "kepada <pihak>"; bila tidak ada, satu-satunya sebutan pihak yang disebut; selain itu kalimat dilewati (ragu).
+   * -> [{ pihak: "P"|"T", tanggal: [iso...], kalimat }]
+   */
+  function kalimatPanggilan(isi, sebutanP, sebutanT) {
+    const P = sebutanP || "Penggugat";
+    const T = sebutanT || (P === "Pemohon" ? "Termohon" : "Tergugat");
+    const hasil = [];
+    for (const k of teks(isi).replace(/\s+/g, " ").split(/;\s|\.\s(?=[A-Z])|\n/)) {
+      const kata = k.search(/relaas|surat panggilan|dipanggil|panggilan/i);
+      if (kata < 0) continue;
+      // Hanya tanggal RELAAS: didahului "relaas"/"surat panggilan"/"dipanggil ... pada tanggal" tanpa kata sidang/tunda/hari di
+      // antaranya, atau sambungan "dan tanggal"/", tanggal" dari tanggal relaas sebelumnya. Tanggal sidang ("ditunda sampai dengan
+      // hari Senin tanggal ... untuk memanggil Tergugat") tidak dihitung - salah tangkap yang terukur pada render 9558 dan 10187.
+      const tgl = [];
+      let ujungSebelum = -1;
+      let relSebelum = false;
+      for (const m of k.matchAll(POLA_TGL)) {
+        const awal = m.index;
+        const depan = k.slice(Math.max(0, awal - 90), awal);
+        const kunci = depan.search(/relaas|surat panggilan|dipanggil[^;]{0,60}pada\s+(?:hari\s+\w+\s*,?\s*)?tanggal\s*$/i);
+        let rel = kunci >= 0 && !/sidang|ditunda|tunda|dibacakan|putus/i.test(depan.slice(kunci).replace(/^(relaas|surat panggilan)/i, ""));
+        if (!rel && relSebelum && ujungSebelum >= 0 && /^\s*(?:,|dan|,\s*dan)\s*(?:tanggal\s*)?$/i.test(k.slice(ujungSebelum, awal))) rel = true;
+        ujungSebelum = awal + m[0].length;
+        relSebelum = rel;
+        const iso = rel ? keIso(m[1], m[2], m[3]) : "";
+        if (iso && !tgl.includes(iso)) tgl.push(iso);
+      }
+      if (!tgl.length) continue;
+      const subjek = new RegExp(`(${P}|${T})\\s+(?:telah\\s+|sudah\\s+)?(?:dipanggil|dipanggilkan)|(?:memanggil|kepada)\\s+(${P}|${T})\\b`, "g");
+      const pihak = new Set([...k.matchAll(subjek)].map((m) => ((m[1] || m[2]) === P ? "P" : "T")));
+      let p = pihak.size === 1 ? [...pihak][0] : "";
+      if (!p && !pihak.size) {
+        const adaP = new RegExp(`\\b${P}\\b`).test(k);
+        const adaT = new RegExp(`\\b${T}\\b`).test(k);
+        p = adaP && !adaT ? "P" : adaT && !adaP ? "T" : "";
+      }
+      if (p) hasil.push({ pihak: p, tanggal: tgl, kalimat: k.slice(0, 200) });
+    }
+    return hasil;
+  }
+  /**
+   * relaas: { P: [iso], T: [iso] } dari SIPP (aleta_bot/services/relaasPanggilanService.js = aturan 11120/11121).
+   * Putusan: tanggal di naskah harus SAMA dengan semua relaas pihak itu (beda tanggal atau jumlah = temuan). BAS: hanya tanggal di naskah
+   * yang tidak ada di relaas (BAS sidang tertentu hanya menyebut relaas sidang itu).
+   */
+  function bandingRelaas(isi, relaas, o) {
+    const opsi = o || {};
+    const keluar = [];
+    const per = { P: new Set(), T: new Set() };
+    for (const k of kalimatPanggilan(isi, opsi.sebutanP, opsi.sebutanT)) for (const t of k.tanggal) per[k.pihak].add(t);
+    const nama = { P: opsi.sebutanP || "Penggugat", T: opsi.sebutanT || "Tergugat" };
+    for (const pihak of ["P", "T"]) {
+      const n = [...per[pihak]].sort();
+      if (!n.length) continue;
+      const r = (Array.isArray(relaas[pihak]) ? relaas[pihak] : []).slice().sort();
+      const asing = n.filter((t) => !r.includes(t));
+      const kurang = opsi.jenisNaskah === "bas" ? [] : r.filter((t) => !n.includes(t));
+      if (!asing.length && !kurang.length) continue;
+      keluar.push({
+        jenis: "relaas",
+        teks: `Tanggal panggilan ${nama[pihak]} di naskah (${daftarTgl(n)}) tidak sama dengan relaas di SIPP (${r.length ? daftarTgl(r) : "belum ada relaas"})${
+          asing.length ? `; tidak ada di relaas: ${daftarTgl(asing)}` : ""
+        }${kurang.length ? `; belum disebut: ${daftarTgl(kurang)}` : ""}.`,
+        perbaiki: { aksi: "pratinjau" },
+        judulTombol: "Membuka pratinjau naskah",
+      });
+    }
+    return keluar;
+  }
+
   /** Titik koma di TENGAH teks (ada huruf/angka sesudahnya); titik koma di akhir boleh. */
   function adaTitikKomaTengah(nilai) {
     return /;(?=[^;]*[\p{L}\p{N}])/u.test(teks(nilai));
@@ -197,5 +290,5 @@
       .join("");
   }
 
-  akar.AletaPeriksaCetak = Object.freeze({ kumpulkan, html, adaTitikKomaTengah, POLA_HURUF, POLA_AGAMA, POLA_BIAYA_NOMINAL, POLA_TANGGAL_GANDA, BATAS_ISIAN });
+  akar.AletaPeriksaCetak = Object.freeze({ kumpulkan, html, adaTitikKomaTengah, bandingRelaas, kalimatPanggilan, POLA_HURUF, POLA_AGAMA, POLA_BIAYA_NOMINAL, POLA_TANGGAL_GANDA, BATAS_ISIAN });
 })(typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : null);

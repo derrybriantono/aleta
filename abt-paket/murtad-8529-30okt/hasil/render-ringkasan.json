@@ -1,0 +1,205 @@
+{
+ "keterangan": "render php56 ABT asli sebelum (pulih) dan sesudah (pasang) paket abt-murtad-8529-30okt; huruf alasan H dan agama pihak diubah SEMENTARA di basis salinan, dikembalikan sesudahnya",
+ "hasil": [
+  {
+   "perkara_id": "9654",
+   "blangko": "1 Perceraian CG/[01] [Kabul Verstek] Cerai (Format Lengkap).rtf",
+   "label": "CG 235/Pdt.G/2026 nyata: Penggugat Protestan di SIPP",
+   "isian_huruf_semula": "h",
+   "agama_sipp": "Protestan / Islam",
+   "paket_sebelum": "PULIH COCOK",
+   "sebelum": {
+    "paragraf_murtad_8529": 0,
+    "pihak_murtad_8529": [],
+    "pakai_bukti_surat": 0,
+    "pakai_saksi": 0,
+    "pihak_murtad_8521": [
+     "Penggugat"
+    ],
+    "agama_belum_diubah": 0,
+    "huruf_belum_dipilih": 0,
+    "penanda_sisa": []
+   },
+   "paket_sesudah": "SELESAI",
+   "sesudah": {
+    "paragraf_murtad_8529": 1,
+    "pihak_murtad_8529": [
+     "Penggugat"
+    ],
+    "pakai_bukti_surat": 0,
+    "pakai_saksi": 1,
+    "pihak_murtad_8521": [
+     "Penggugat"
+    ],
+    "agama_belum_diubah": 0,
+    "huruf_belum_dipilih": 0,
+    "penanda_sisa": []
+   }
+  },
+  {
+   "perkara_id": "9654",
+   "blangko": "1 Perceraian CG/[01] [Kabul Verstek] Cerai (Format Lengkap).rtf",
+   "label": "CG 235/Pdt.G/2026, agama SIPP dikembalikan Islam: pihak murtad dari posita",
+   "isian_huruf_semula": "h",
+   "agama_sipp": "Islam / Islam",
+   "paket_sebelum": "PULIH COCOK",
+   "sebelum": {
+    "paragraf_murtad_8529": 0,
+    "pihak_murtad_8529": [],
+    "pakai_bukti_surat": 0,
+    "pakai_saksi": 0,
+    "pihak_murtad_8521": [],
+    "agama_belum_diubah": 4,
+    "huruf_belum_dipilih": 0,
+    "penanda_sisa": []
+   },
+   "paket_sesudah": "SELESAI",
+   "sesudah": {
+    "paragraf_murtad_8529": 1,
+    "pihak_murtad_8529": [
+     "Penggugat"
+    ],
+    "pakai_bukti_surat": 0,
+    "pakai_saksi": 1,
+    "pihak_murtad_8521": [],
+    "agama_belum_diubah": 4,
+    "huruf_belum_dipilih": 0,
+    "penanda_sisa": []
+   }
+  },
+  {
+   "perkara_id": "10105",
+   "blangko": "1 Perceraian CG/[01] [Kabul Verstek] Cerai (Format Lengkap).rtf",
+   "label": "CG 553/Pdt.G/2026, Tergugat dibuat Protestan",
+   "isian_huruf_semula": "(kosong)",
+   "agama_sipp": "Islam / Protestan",
+   "paket_sebelum": "PULIH COCOK",
+   "sebelum": {
+    "paragraf_murtad_8529": 0,
+    "pihak_murtad_8529": [],
+    "pakai_bukti_surat": 0,
+    "pakai_saksi": 0,
+    "pihak_murtad_8521": [
+     "Tergugat"
+    ],
+    "agama_belum_diubah": 0,
+    "huruf_belum_dipilih": 1,
+    "penanda_sisa": []
+   },
+   "paket_sesudah": "SELESAI",
+   "sesudah": {
+    "paragraf_murtad_8529": 1,
+    "pihak_murtad_8529": [
+     "Tergugat"
+    ],
+    "pakai_bukti_surat": 0,
+    "pakai_saksi": 1,
+    "pihak_murtad_8521": [
+     "Tergugat"
+    ],
+    "agama_belum_diubah": 0,
+    "huruf_belum_dipilih": 1,
+    "penanda_sisa": []
+   }
+  },
+  {
+   "perkara_id": "9730",
+   "blangko": "1a Perceraian CT/[01] [Kabul Verstek] Cerai (Format Lengkap).rtf",
+   "label": "CT 274/Pdt.G/2026, Pemohon dibuat Hindu",
+   "isian_huruf_semula": "(kosong)",
+   "agama_sipp": "Hindu / Islam",
+   "paket_sebelum": "PULIH COCOK",
+   "sebelum": {
+    "paragraf_murtad_8529": 0,
+    "pihak_murtad_8529": [],
+    "pakai_bukti_surat": 0,
+    "pakai_saksi": 0,
+    "pihak_murtad_8521": [
+     "Pemohon"
+    ],
+    "agama_belum_diubah": 0,
+    "huruf_belum_dipilih": 0,
+    "penanda_sisa": []
+   },
+   "paket_sesudah": "SELESAI",
+   "sesudah": {
+    "paragraf_murtad_8529": 1,
+    "pihak_murtad_8529": [
+     "Pemohon"
+    ],
+    "pakai_bukti_surat": 0,
+    "pakai_saksi": 1,
+    "pihak_murtad_8521": [
+     "Pemohon"
+    ],
+    "agama_belum_diubah": 0,
+    "huruf_belum_dipilih": 0,
+    "penanda_sisa": []
+   }
+  },
+  {
+   "perkara_id": "9730",
+   "blangko": "1a Perceraian CT/[01] [Kabul Verstek] Cerai (Format Lengkap).rtf",
+   "label": "CT 274/Pdt.G/2026, Termohon dibuat Katolik",
+   "isian_huruf_semula": "(kosong)",
+   "agama_sipp": "Islam / Katolik",
+   "paket_sebelum": "PULIH COCOK",
+   "sebelum": {
+    "paragraf_murtad_8529": 0,
+    "pihak_murtad_8529": [],
+    "pakai_bukti_surat": 0,
+    "pakai_saksi": 0,
+    "pihak_murtad_8521": [
+     "Termohon"
+    ],
+    "agama_belum_diubah": 0,
+    "huruf_belum_dipilih": 0,
+    "penanda_sisa": []
+   },
+   "paket_sesudah": "SELESAI",
+   "sesudah": {
+    "paragraf_murtad_8529": 1,
+    "pihak_murtad_8529": [
+     "Termohon"
+    ],
+    "pakai_bukti_surat": 0,
+    "pakai_saksi": 1,
+    "pihak_murtad_8521": [
+     "Termohon"
+    ],
+    "agama_belum_diubah": 0,
+    "huruf_belum_dipilih": 0,
+    "penanda_sisa": []
+   }
+  },
+  {
+   "perkara_id": "10105",
+   "blangko": "-",
+   "label": "CG 553/Pdt.G/2026, kedua pihak Islam, posita tanpa murtad (RTF uji)",
+   "isian_huruf_semula": "(kosong)",
+   "agama_sipp": "Islam / Islam",
+   "paket_sebelum": "PULIH COCOK",
+   "sebelum": {
+    "paragraf_murtad_8529": 0,
+    "pihak_murtad_8529": [],
+    "pakai_bukti_surat": 0,
+    "pakai_saksi": 0,
+    "pihak_murtad_8521": [],
+    "agama_belum_diubah": 2,
+    "huruf_belum_dipilih": 1,
+    "penanda_sisa": []
+   },
+   "paket_sesudah": "SELESAI",
+   "sesudah": {
+    "paragraf_murtad_8529": 0,
+    "pihak_murtad_8529": [],
+    "pakai_bukti_surat": 0,
+    "pakai_saksi": 0,
+    "pihak_murtad_8521": [],
+    "agama_belum_diubah": 3,
+    "huruf_belum_dipilih": 1,
+    "penanda_sisa": []
+   }
+  }
+ ]
+}

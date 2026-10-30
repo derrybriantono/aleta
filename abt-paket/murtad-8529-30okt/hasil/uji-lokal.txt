@@ -1,0 +1,26 @@
+=== sidik variabel lain sebelum
+2684	a9580df8392e923b0dd1d8f5632382fd
+=== pasang
+PRASYARAT COCOK (1|0)
+CADANGAN: <paket>/paket-satker/cadangan/variabel-sebelum.*.sql
+PERIKSA: SEMUA COCOK
+PRASYARAT SESUDAH: 0|1 (harus 0|1)
+SELESAI
+=== variabel lain tak berubah
+2684	a9580df8392e923b0dd1d8f5632382fd
+=== pulih
+PRASYARAT SESUDAH PULIH: 1|0
+PULIH COCOK
+=== pasang lagi
+PRASYARAT COCOK (1|0)
+CADANGAN: <paket>/paket-satker/cadangan/variabel-sebelum.*.sql
+PERIKSA: SEMUA COCOK
+PRASYARAT SESUDAH: 0|1 (harus 0|1)
+SELESAI
+=== pasang ulang
+PRASYARAT COCOK (0|1)
+PERIKSA: SEMUA COCOK
+PRASYARAT SESUDAH: 0|1 (harus 0|1)
+SELESAI
+=== jalur gagal: basis tanpa paket alasan-belum-dipilih (aps_badilag_2810, PRASYARAT baca saja)
+0|0

@@ -44,10 +44,9 @@ Laptop: `ABT_LOKAL=1 ABT_DB=<basis salinan> bash pasang-satker.sh`.
   "[AGAMA PIHAK YANG MURTAD BELUM DIUBAH DI SIPP]" 4 kali, bunyi lama 0, penanda tersisa 0 - ketiga render.
 
 ## Temuan render (BELUM diubah - pertanyaan untuk pengguna)
-- Dengan huruf alasan "H" saja, **8529 (pertimbangan bukti surat perceraian verstek) tetap berbunyi "[HURUF ALASAN PERCERAIAN BELUM
-  DIPILIH]"** pada blangko CG [01] (553/Pdt.G/2026): variabel itu belum punya cabang untuk H. Periksa sebelum cetak kini menyebutnya
-  sebagai "huruf sudah dipilih, tetapi sebagian pertimbangan belum punya bunyi untuk huruf itu". Bunyi pertimbangan bukti surat
-  untuk murtad adalah pilihan hukum - tidak ditebak.
+- (DIKOREKSI 31 Okt) Render 553/Pdt.G/2026 dengan huruf "H" memuat "[HURUF ALASAN PERCERAIAN BELUM DIPILIH]" dari 8529 - ternyata 8529
+  memilih kalimat menurut DAFTAR BUKTI SURAT (KTP/surat domisili), bukan menurut huruf; daftar bukti perkara itu kosong. Paragraf untuk
+  huruf H kini ditambahkan paket `murtad-8529-30okt` (jawaban pengguna butir 48).
 - Blangko CG [01] pohon server (`dasar2`, sebelum paket prodeo-panggilan-29okt) atas 553/Pdt.G/2026 mencetak
   "relaas ... tanggal 16 September 2026 dan tanggal 16 September 2026" (tanggal ganda) - sudah diperbaiki paket prodeo-panggilan-29okt;
   Periksa sebelum cetak menandainya selama paket itu belum terpasang.

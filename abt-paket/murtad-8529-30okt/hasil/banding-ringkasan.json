@@ -1,0 +1,28 @@
+{
+ "keterangan": "banding 8529 lama vs baru atas semua perkara basis salinan (mesin variabel ALETA, baca saja); tanpa nama",
+ "perkara": 10278,
+ "sama": 10275,
+ "berubah_berhuruf_H": [
+  {
+   "perkara_id": "9569",
+   "nomor": "162/Pdt.G/2026/PA.Dgl",
+   "huruf": "H",
+   "tambahan": "Menimbang, bahwa meskipun tidak diajukan bukti surat tentang ..."
+  },
+  {
+   "perkara_id": "9654",
+   "nomor": "235/Pdt.G/2026/PA.Dgl",
+   "huruf": "h",
+   "tambahan": "Menimbang, bahwa meskipun tidak diajukan bukti surat tentang ..."
+  },
+  {
+   "perkara_id": "10165",
+   "nomor": "612/Pdt.G/2026/PA.Dgl",
+   "huruf": "h",
+   "tambahan": "Menimbang, bahwa meskipun tidak diajukan bukti surat tentang ..."
+  }
+ ],
+ "berubah_tanpa_H": 0,
+ "galat_lama": 0,
+ "galat_baru": 0
+}
