@@ -1,0 +1,21 @@
+SEBELUM PULIH: variabel 4201fbbee706e398bd13fe0a72d17327 pohon 19dc1a417f37f3d2041c65f55bd0eb2e
+### PULIH identitas-kosong-31okt
+    PRASYARAT SESUDAH PULIH: 11|0|0
+    PULIH COCOK
+### PULIH variabel-sehat-30okt
+    PRASYARAT SESUDAH PULIH: 3|0
+    PULIH COCOK
+### PULIH titik-koma-teks-30okt
+    BERKAS PULIH
+    PULIH COCOK
+SESUDAH PULIH 3: variabel 34739af19de5cddda8fcdfcc8c42148e pohon fff7c6b3dbea4e086ec5a3cd56e034a4
+### PASANG LAGI titik-koma-teks-30okt
+    BERKAS COCOK
+    SELESAI - paket abt-titik-koma-teks-30okt terpasang. Cadangan: titik-koma-teks-30okt/paket-satker/cadangan. Pulih: bash titik-koma-teks-30okt/paket-satker/pulih-satker.sh
+### PASANG LAGI variabel-sehat-30okt
+    PRASYARAT SESUDAH: 0|3 (harus 0|3)
+    SELESAI - paket abt-variabel-sehat-30okt terpasang. Pulih: bash variabel-sehat-30okt/paket-satker/pulih-satker.sh
+### PASANG LAGI identitas-kosong-31okt
+    PRASYARAT SESUDAH: 0|11|1 (harus 0|11|1)
+    SELESAI - paket abt-identitas-kosong-31okt terpasang. Pulih: bash identitas-kosong-31okt/paket-satker/pulih-satker.sh
+SESUDAH PASANG LAGI: variabel 4201fbbee706e398bd13fe0a72d17327 pohon 19dc1a417f37f3d2041c65f55bd0eb2e
