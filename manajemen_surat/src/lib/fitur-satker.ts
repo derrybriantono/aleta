@@ -218,8 +218,8 @@ export const KATALOG_FITUR_SATKER: readonly FiturKatalog[] = [
     nama: "Daftar alat bukti dari e-Court ditulis otomatis",
     bagian: "portal",
     keterangan:
-      "Mati: daftar bukti dari e-Court hanya menjadi usulan. Nyalakan agar daftar bukti P.x / T.x yang rapi ditulis ke isian bukti ABT yang masih kosong (hanya blangko Derry, hanya bila berkasnya rapi); yang tidak rapi tetap usulan dengan tombol Salin.",
-    bawaan: "mati",
+      "Menyala (bawaan, keputusan 30 Okt): daftar bukti P.x / T.x yang rapi dari e-Court ditulis ke isian bukti ABT yang masih kosong (hanya blangko Derry, hanya bila berkasnya rapi); bukti yang sama dengan bukti baku perkara cerai (KTP, kutipan akta nikah) tetap memakai kalimat baku blangko, e-Court hanya menambah bukti lain. Yang tidak rapi tetap usulan dengan tombol Salin. Matikan agar daftar e-Court hanya menjadi usulan.",
+    bawaan: "stabil",
   },
   {
     kode: KODE_FITUR_EC_KESIMPULAN,
@@ -281,7 +281,8 @@ export function saluranSah(x: unknown): x is SaluranSatker {
  * UPDATE_FITUR_SATKER: satker yang SENGAJA mematikan (dulu menyalakan lalu mematikan) punya jejak terakhir untuk kode itu berakhir "mati";
  * yang belum pernah menyentuh tidak punya jejak sama sekali (dianggap belum diatur -> bawaan baru, menyala). Tanpa migrasi basis data.
  */
-export const BAWAAN_DULU_MATI: readonly string[] = [FITUR_BERKAS_PERKARA];
+// 30 Okt malam (keputusan pengguna no. 34): bukti e-Court otomatis juga menyala bawaan; yang sengaja dimatikan (jejak audit) tetap mati.
+export const BAWAAN_DULU_MATI: readonly string[] = [FITUR_BERKAS_PERKARA, KODE_FITUR_EC_BUKTI];
 
 /** Status terakhir satu kode menurut payload jejak UPDATE_FITUR_SATKER ({berubah: [{kode, dari, ke}]}); null bila kode tidak disebut. */
 export function pilihanDariJejak(payload: unknown, kode: string): StatusFitur | null {

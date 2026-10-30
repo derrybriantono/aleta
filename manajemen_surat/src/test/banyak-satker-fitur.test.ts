@@ -125,7 +125,7 @@ describe("A - matriks saklar (murni)", () => {
  */
 // 25 Okt 2026 (rantai C, C1): saklar jejak isian juga fitur baru yang bawaannya MATI. Rantai C: mesin saksi tunggal, katalog saksi DB, fakta non-cerai (kirim saksi ke BAS SIPP dibuang 26 Okt). Rantai D: Ketepatan isian (D1), Isian sekali (D2), Daftar wajib sebelum cetak (D3), Huruf alasan yang belajar (D4), dan Isian BAS per sidang (D6).
 // 30 Okt 2026: layar kerja Sampul/Daftar Isi (FITUR_BERKAS_PERKARA) kini bawaan MENYALA (keputusan pengguna) - tidak lagi di daftar ini.
-const BAWAAN_MATI = new Set([FITUR_BLANGKO_SAYA_SEMUA_PERAN, KODE_FITUR_JEJAK_ISIAN, FITUR_MESIN_SAKSI_TUNGGAL, FITUR_KATALOG_SAKSI_DB, FITUR_FAKTA_NON_CERAI, FITUR_LIHAT_SEBAGAI, KODE_FITUR_KETEPATAN_ISIAN, KODE_FITUR_ISIAN_SEKALI, KODE_FITUR_WAJIB_CETAK, KODE_FITUR_HURUF_BELAJAR, KODE_FITUR_ISIAN_SIDANG, KODE_FITUR_JEJAK_OTOMATIS, ...KODE_FITUR_BERKAS_ECOURT]);
+const BAWAAN_MATI = new Set([FITUR_BLANGKO_SAYA_SEMUA_PERAN, KODE_FITUR_JEJAK_ISIAN, FITUR_MESIN_SAKSI_TUNGGAL, FITUR_KATALOG_SAKSI_DB, FITUR_FAKTA_NON_CERAI, FITUR_LIHAT_SEBAGAI, KODE_FITUR_KETEPATAN_ISIAN, KODE_FITUR_ISIAN_SEKALI, KODE_FITUR_WAJIB_CETAK, KODE_FITUR_HURUF_BELAJAR, KODE_FITUR_ISIAN_SIDANG, KODE_FITUR_JEJAK_OTOMATIS, ...KODE_FITUR_BERKAS_ECOURT.filter((k) => k !== "ecourt-bukti-otomatis")]); // 30 Okt malam: bukti e-Court menyala bawaan
 const FITUR_LAMA = KATALOG_FITUR_SATKER.filter((f) => !BAWAAN_MATI.has(f.kode));
 const hanyaLama = (peta: Record<string, unknown>) => Object.entries(peta).filter(([k]) => !BAWAAN_MATI.has(k)).map(([, v]) => v);
 

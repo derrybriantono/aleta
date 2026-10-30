@@ -1,3 +1,4 @@
+import { SANDI_TERGUGAT_HADIR } from "./sandi-kehadiran";
 import type { SidangRiwayat } from "./bawaan-tunda";
 
 /**
@@ -10,7 +11,8 @@ import type { SidangRiwayat } from "./bawaan-tunda";
  * Sandi dihadiri_oleh SIPP: 1 semua pihak, 2 pihak pertama saja, 3 pihak kedua
  * saja, 4 tidak hadir.
  */
-const TERGUGAT_HADIR = new Set([1, 3]);
+// 30 Okt (G2B): + sandi 8, 9, 11, 15 (Tergugat hadir bersama intervensi/turut tergugat) - satu sumber lib/sandi-kehadiran.ts.
+const TERGUGAT_HADIR = new Set(SANDI_TERGUGAT_HADIR);
 
 const STATUS_TANPA_VERSTEK = /cabut|tidak\s+dapat\s+diterima|niet|coret|gugur/i;
 

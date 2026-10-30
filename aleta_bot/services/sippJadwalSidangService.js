@@ -1,5 +1,6 @@
 "use strict";
 
+const sandiKehadiran = require("./sandiKehadiranService");
 const { relaasRetur, sqlRetur } = require("./returRelaas");
 // Kepatutan satu relaas: SEMA 1/2023 (surat tercatat) & Pasal 718 RBg (jurusita).
 const { nilaiRelaas } = require("./kepatutanRelaas");
@@ -559,6 +560,8 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
       tanggalMinutasi: (petaPutusan[String(row.perkaraId)] || {}).tanggalMinutasi || "",
       tanggalBht: (petaPutusan[String(row.perkaraId)] || {}).tanggalBht || "",
       verstekPutusan: Boolean((petaPutusan[String(row.perkaraId)] || {}).verstek),
+      // 30 Okt (G2B): amar SIPP menyebut verstek walau kolom putusan_verstek bukan 'Y' - saran blangko memperlakukannya verstek.
+      amarVerstek: Boolean((petaPutusan[String(row.perkaraId)] || {}).amarVerstek),
       // I7 17 Okt: true/false = jenis kelamin Tergugat pertama pada gugatan hak asuh (P = perempuan); null = bukan hak asuh / tidak terbaca.
       tergugatPerempuan: petaTergugatPerempuan[String(row.perkaraId)] === undefined ? null : petaTergugatPerempuan[String(row.perkaraId)],
       // I7 17 Okt: potongan amar putusan HB mulai "Dalam Rekonvensi" ("" = tidak ada / tidak terbaca) - dasar blangko [01a] rekonvensi dikabulkan.
@@ -1813,6 +1816,8 @@ async function putusanBanyakPerkara(daftarPerkaraId = []) {
             MAX(pu.tanggal_minutasi) AS tanggalMinutasi,
             MAX(pu.tanggal_bht) AS tanggalBht,
             MAX(pu.putusan_verstek) AS verstek,
+            -- 30 Okt (G2B): amar memuat "verstek" (LOCATE tanpa beda huruf besar, aturan upaya hukum paket relaas-penetapan-30okt).
+            MAX(CASE WHEN LOCATE('verstek', LOWER(IFNULL(pu.amar_putusan, ''))) > 0 THEN 1 ELSE 0 END) AS amarVerstek,
             MAX(CASE WHEN pu.amar_putusan_dok IS NOT NULL AND TRIM(pu.amar_putusan_dok) <> '' THEN 1 ELSE 0 END) AS adaBerkasPutusan,
             -- ==================================================================
             -- CONVERT WAJIB - DUA KOLOM INI BEDA COLLATION
@@ -1848,6 +1853,7 @@ async function putusanBanyakPerkara(daftarPerkaraId = []) {
       tanggalMinutasi: isoTanggal(baris.tanggalMinutasi),
       tanggalBht: isoTanggal(baris.tanggalBht),
       verstek: cleanText(baris.verstek).toUpperCase() === "Y",
+      amarVerstek: Number(baris.amarVerstek) === 1,
       // Dipakai menandai perkara yang naskah putusannya sudah diunggah tetapi
       // belum diminutasi - keadaan yang menagih panitera pengganti, dan yang
       // sebelumnya hanya terlihat sesudah membuka rincian satu per satu.
@@ -2511,8 +2517,10 @@ function kehadiranSebelumnya(semuaSidang = []) {
       baris.dihadiriOleh === null || baris.dihadiriOleh === undefined
         ? null
         : Number(baris.dihadiriOleh);
-    if (hadirTerakhir === 1 || hadirTerakhir === 3) tergugatHadir = true;
-    if (hadirTerakhir === 1 || hadirTerakhir === 2) penggugatHadir = true;
+    // 30 Okt (G2B): sandi hadir satu sumber (sandiKehadiranService) - Tergugat 1, 3, 8, 9, 11, 15 (identik paket ABT
+    // relaas-penetapan-30okt); Penggugat 1, 2, 7, 9, 10, 14. Dulu hanya 1/3 dan 1/2.
+    if (sandiKehadiran.tergugatHadirSandi(hadirTerakhir)) tergugatHadir = true;
+    if (sandiKehadiran.penggugatHadirSandi(hadirTerakhir)) penggugatHadir = true;
     // Sandi 1-4 saja yang terbaca pasti; kosong dan sandi intervensi (5-15)
     // tidak menyatakan pihak pertama tidak hadir.
     if (!(hadirTerakhir >= 1 && hadirTerakhir <= 4)) adaKosong = true;

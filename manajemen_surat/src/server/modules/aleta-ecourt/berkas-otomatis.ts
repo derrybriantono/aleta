@@ -11,6 +11,7 @@ import { fiturMenyala } from "@/server/modules/satker/fitur";
  * saklarnya butir Fitur Satker (hanya Super Admin), bukan lagi kartu di layar Tenggat:
  *
  *   bukti       ecourt-bukti-otomatis      daftar alat bukti P.x / T.x yang "rapi" ditulis ke isian ABT yang KOSONG
+ *               (30 Okt malam: MENYALA bawaan - BAWAAN_DULU_MATI; yang sengaja dimatikan tetap mati. Galat baca tetap = mati.)
  *   kesimpulan  ecourt-kesimpulan-otomatis kesimpulan para pihak yang "rapi" ditulis ke tanya-jawab kesimpulan bila barisnya KOSONG
  *   buktiSaksi  ecourt-bukti-saksi-usulan  usulan pemetaan bukti <-> keterangan saksi (hanya usulan; tidak menulis apa pun)
  *
