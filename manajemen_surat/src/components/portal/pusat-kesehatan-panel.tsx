@@ -122,7 +122,7 @@ export function PusatKesehatanPanel() {
         </TabsList>
         <TabsContent value="keadaan">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {hasil?.komponen.map((k) => <KartuKomponen key={k.kunci} k={k} />)}
+            {hasil?.komponen.map((k) => <KartuKomponen key={k.kunci} k={k} bolehAtur={Boolean(data?.bolehAtur)} onGalat={setGalat} />)}
           </div>
         </TabsContent>
         <TabsContent value="galat">
@@ -141,7 +141,21 @@ export function PusatKesehatanPanel() {
   );
 }
 
-function KartuKomponen({ k }: { k: Komponen }) {
+function KartuKomponen({ k, bolehAtur, onGalat }: { k: Komponen; bolehAtur?: boolean; onGalat?: (pesan: string) => void }) {
+  const [pesan, setPesan] = useState("");
+  const [sibuk, setSibuk] = useState(false);
+  // G1 30 Okt: pindai variabel Blangko Derry di luar jadwal mingguan (Super Admin); bot hanya membaca ABT/SIPP.
+  const pindaiSekarang = async () => {
+    setSibuk(true);
+    try {
+      const d = await ambil<{ dimulai: boolean; pesan: string }>("/api/admin/kesehatan/pindai-variabel", { method: "POST", body: "{}" });
+      setPesan(d.pesan);
+    } catch (e) {
+      onGalat?.(e instanceof Error ? e.message : "Pindai belum dapat dimulai.");
+    } finally {
+      setSibuk(false);
+    }
+  };
   return (
     <Card className="bg-card" data-komponen={k.kunci} data-warna={k.warna}>
       <CardHeader className="pb-2">
@@ -154,6 +168,15 @@ function KartuKomponen({ k }: { k: Komponen }) {
         </CardTitle>
         <CardDescription className="text-sm">{k.ringkas}</CardDescription>
       </CardHeader>
+      {k.kunci === "variabel-blangko" && bolehAtur && (
+        <CardContent className="flex flex-wrap items-center gap-2 pb-2">
+          <Button size="sm" variant="outline" onClick={() => void pindaiSekarang()} disabled={sibuk} data-pindai-sekarang>
+            {sibuk ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCcw className="mr-2 h-4 w-4" />}
+            Pindai sekarang
+          </Button>
+          {pesan && <span className="text-xs text-muted-foreground">{pesan}</span>}
+        </CardContent>
+      )}
       {k.rincian.length > 0 && (
         <CardContent>
           <dl className="space-y-1 text-xs">

@@ -135,6 +135,8 @@ const BERKAS = [
   "blangko-derry-katalog.js",
   "blangko-derry-jawab-katalog.js",
   "blangko-derry-berkas.js",
+  // Periksa sebelum cetak (G1, 30 Okt 2026): satu daftar temuan di langkah Cetak; murni, sebelum blangko-derry-isian.js.
+  "blangko-derry-periksa.js",
   "blangko-derry-isian.js",
   // Cetak massal Blangko Derry (20 Okt 2026): jendela besar per peran, memakai pengemudi satu-perkara di blangko-derry-isian.js.
   "blangko-derry-massal.js",

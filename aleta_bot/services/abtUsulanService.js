@@ -1724,6 +1724,12 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak, posit
       const kodePola = /^lama pisah/.test(p) ? (u9944 && u9944.kodePola) || "" : s && s.pola.length ? s.pola[0] : "";
       if (kodePola) h.kodePola = kodePola;
     }
+    // G1 30 Okt: golongan huruf alasan (pasti F saja / usulan / kosong) untuk isi otomatis panel Blangko Derry. Ruas tambahan.
+    try {
+      hasil.hurufAlasan = require("./hurufAlasanOtomatis").golonganHurufAlasan({ deteksi: det.huruf, lama9944: u9944, pisah0246: hasil.usulan.find((x) => x.kode === "0246"), butirPosita, tanggalAcuan: tanggalSidang });
+    } catch {
+      /* golongan huruf tidak tersedia: usulan lain tetap */
+    }
     // P2: kartu 0222/0246 yang kosong - saksi menyebut waktunya tetapi tanpa tahun.
     const wkt = deteksiAlasan.penguji("waktu");
     /* === KDL2 11 Okt === */

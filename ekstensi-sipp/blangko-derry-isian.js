@@ -2052,7 +2052,8 @@
   //     lewat jalur simpan isian yang sama dengan ketikan petugas (jadwalkanSimpan -> simpanIsian -> klien ABT, penjaga kata ALETA ikut);
   //   - isian yang sudah ada isinya (diketik, tersimpan di ABT, atau dihitung ABT) TIDAK PERNAH ditimpa, sebelum maupun sesudah menunggu;
   //   - bacaan yang ragu atau hanya berupa pilihan menjadi saran samar (Tab), tidak ditulis sendiri;
-  //   - huruf alasan perceraian (8503) dan uraian turunan keterangan saksi tidak ditulis sendiri (keputusan hakim);
+  //   - huruf alasan perceraian (8503) dan uraian turunan keterangan saksi tidak ditulis sendiri (keputusan hakim), KECUALI huruf
+  //     alasan yang PASTI dari keterangan kedua saksi (G1 30 Okt, terapkanHurufAlasan: huruf F saja, terukur 52/53 putusan);
   //   - saklar "Isi otomatis dari SIPP" (Alat saya, bawaan menyala) mengatur jalan otomatis; tombol "Isi dari SIPP" selalu bekerja.
   const mesinIsi = () => (typeof globalThis !== "undefined" && globalThis.AletaIsiSipp) || null;
   const KODE_KTP_TANGGAL = ["2222", "0364", "0365", "0366"];
@@ -2256,6 +2257,9 @@
       };
       await terapkan(bacaan.usulan);
       if (S.susunan !== d || S.pk !== pk) return null;
+      // G1 30 Okt: huruf alasan yang PASTI dari keterangan kedua saksi terisi sendiri; yang mungkin menjadi saran (Tab).
+      await terapkanHurufAlasan(bacaan.bagian && bacaan.bagian.saksi, perlu(), jejak, bacaSaja, ringkas);
+      if (S.susunan !== d || S.pk !== pk) return null;
       renderIsian();
       laporKeKerangka();
       // Tanggal KTP dibaca dari berkas KTP e-Court (menunggu pemindaian): sesudah isian lain, tidak menahannya.
@@ -2304,6 +2308,53 @@
         S.isiSipp.ulang = false;
         if (S.susunan === d && cfg().isiOto !== false && !manual) void isiDariSipp({ otomatis: true });
       }
+    }
+  }
+  /**
+   * G1 30 Okt: huruf alasan perceraian dari golongan bot (bagian saksi). Pasti (huruf F saja, terukur 52 dari 53 putusan) + isian
+   * kosong + tanpa jejak ketikan -> ditulis lewat jalur simpan yang sama (riwayat, dapat diurungkan); selainnya saran atau dilewati.
+   */
+  /** Asal tampil huruf alasan dari golongan bot (keterangan kedua saksi + posita). */
+  const ASAL_HURUF_ALASAN = "keterangan kedua saksi dan posita";
+  /**
+   * Keputusan isian huruf alasan dari golongan bot (`bagian.saksi.hurufAlasan` = aleta_bot/services/hurufAlasanOtomatis.js). Murni.
+   *   - golongan "pasti" (hanya huruf F saja yang terukur 52 dari 53 = 98% sama dengan pilihan hakim), isian KOSONG, belum pernah
+   *     diketik/disunting petugas, dan tidak sedang baca-saja -> TULIS;
+   *   - "pasti" pada baca-saja, atau "usulan" -> SARAN (Tab) - kecuali sudah ada saran lain (posita), yang dibiarkan;
+   *   - isian yang sudah berisi atau berjejak ketikan -> lewati (tidak pernah ditimpa).
+   * keadaan: { kosong, jejakKetikan, bacaSaja, adaSaran } -> { golongan: "tulis"|"saran"|"lewati", nilai, keyakinan, asal, sebab }
+   */
+  function putuskanHurufAlasan(ha, keadaan) {
+    const k = keadaan || {};
+    const huruf = String((ha && ha.huruf) || "").toUpperCase();
+    const gol = String((ha && ha.golongan) || "");
+    const sebab = String((ha && ha.sebab) || "");
+    if (!/^[A-H]+$/.test(huruf) || (gol !== "pasti" && gol !== "usulan")) return { golongan: "lewati", nilai: "", keyakinan: "", asal: "", sebab: "tidak terbaca" };
+    if (k.kosong !== true || k.jejakKetikan === true) return { golongan: "lewati", nilai: huruf, keyakinan: "", asal: "", sebab: "sudah ada isinya" };
+    const pasti = gol === "pasti" && huruf === "F";
+    if (pasti && k.bacaSaja !== true) return { golongan: "tulis", nilai: huruf, keyakinan: "pasti", asal: ASAL_HURUF_ALASAN, sebab };
+    if (k.adaSaran === true) return { golongan: "lewati", nilai: huruf, keyakinan: "", asal: "", sebab: "sudah ada saran" };
+    return { golongan: "saran", nilai: huruf, keyakinan: pasti ? "pasti" : "ragu", asal: ASAL_HURUF_ALASAN, sebab };
+  }
+  async function terapkanHurufAlasan(bagianSaksi, daftar, jejak, bacaSaja, ringkas) {
+    const m = mesinIsi();
+    const ha = bagianSaksi && bagianSaksi.hurufAlasan;
+    const b = (daftar || []).find((x) => x.kode === "8503");
+    if (!m || !ha || !b) return;
+    const ada = S.saranSipp["8503"];
+    const h = putuskanHurufAlasan(ha, { kosong: sedangKosong(b), jejakKetikan: jejak.has("8503"), bacaSaja, adaSaran: Boolean(ada && ada.nilai) });
+    const lencana = h.keyakinan === "pasti" ? m.NADA_TINGKAT.pasti : m.NADA_TINGKAT.ragu;
+    const info = { kode: "8503", nilai: h.nilai, golongan: h.golongan, sebab: h.sebab, keyakinan: h.keyakinan, asal: h.asal, lencana: { yakin: lencana, asal: null, sepakat: h.keyakinan === "pasti" ? m.NADA_KESEPAKATAN.sama : null }, sumber: [], catatan: String(ha.sebab || "").slice(0, 500), bentrok: "", pilihan: [], ganti: false };
+    if (h.golongan === "tulis") {
+      if (await tulisIsianSipp(b, h.nilai, h.asal, h.keyakinan, false)) {
+        ringkas.ditulis += 1;
+        S.info["8503"] = info;
+        delete S.saranSipp["8503"];
+      }
+    } else if (h.golongan === "saran") {
+      ringkas.saran += 1;
+      S.saranSipp["8503"] = { nilai: h.nilai, keyakinan: h.keyakinan, asal: h.asal };
+      S.info["8503"] = info;
     }
   }
   const tglNikahTampil = (iso) => {
@@ -2905,6 +2956,7 @@
   }
   const kosongDaftar = () => kosongRinci().map((x) => x.nama);
   function laporKeKerangka() {
+    perbaruiPeriksa();
     const a = api();
     if (tes() || !a || typeof a.laporIsian !== "function" || !S.pk) return;
     jadwalkanSiapNaskah("isian"); // isian lengkap + tenang -> naskah disiapkan di latar (cetak cepat)
@@ -7530,8 +7582,11 @@
       `${pil("salinan", "PDF SALINAN")}${ikonKet("fmt-salinan")}` +
       `${pil("anon", "PDF anonim", j === "put" ? "" : "hanya putusan")}${ikonKet("fmt-anon")}${pil("edoc", "Unggah ke e-Doc SIPP", tes() ? "mati pada Tes putusan" : j === "put" ? "" : "hanya putusan; BAS dan relaas diunggah lewat SIPP")}${ikonKet("fmt-edoc")}</div>` +
       htmlUnggahanPutusan() +
+      // G1 30 Okt: SATU daftar "Periksa sebelum cetak" (blangko-derry-periksa.js); dua blok lama ada di dalamnya. Kosong = tersembunyi.
+      `<div class="bd-periksacetak" id="bd-periksacetak" role="region" aria-label="Periksa sebelum cetak" hidden><div class="bd-periksakepala" id="bd-periksakepala"></div>` +
       `<div id="bd-saksikosong"></div>` +
       `<div id="bd-temuanhadir"></div>` +
+      `<ul class="bd-periksa" id="bd-periksa"></ul></div>` +
       `<div class="bd-ingat" id="bd-ingat" hidden role="alert"></div>` +
       `<div class="bd-utas"><button type="button" class="bd-btn utama besar" data-bd2="cetak" ${S.sibuk || S.unggahSibuk ? "disabled" : ""}>${S.sibuk ? "Sedang mencetak…" : "Cetak"}</button><span class="bd-catat" id="bd-statuscetak">${esc(teksAkanTerbit())} ${tes() ? "" : sudah ? `Sudah dicetak ${esc(sudah)}.` : "Belum dicetak."}</span> <span class="bd-catat" id="bd-siapnaskah">${esc(ketSiapNaskah())}</span></div>` +
       `<ul class="bd-logcetak" id="bd-logcetak" ${S.log.length ? "" : "hidden"}>${S.log.slice(-6).map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` +
@@ -7568,6 +7623,7 @@
     const l = saksiTanpaTanyaJawab();
     if (!l.length) {
       e.innerHTML = "";
+      perbaruiPeriksa();
       return;
     }
     const baca = deretTj().hanyaBaca;
@@ -7578,6 +7634,7 @@
       `${dok} tetap dapat dicetak, tetapi keterangan saksi tersebut tercetak kosong.` +
       (baca ? " Tanya jawab saksi diisi panitera pengganti pada berita acara sidang pemeriksaan saksi. " : " ") +
       `<button type="button" class="bd-btn kecil" data-bd2="isisaksi" data-kunci="${esc(l[0].kunci)}">${baca ? "Lihat tanya jawab saksi" : "Isi tanya jawab saksi"}</button></div>`;
+    perbaruiPeriksa();
   }
   // ──────────────────────────────────────────────────────────────────────────
   // 30 Okt 2026: catatan temuan cetak - putusan VERSTEK padahal pilihan kehadiran SIPP mencatat Tergugat/Termohon hadir.
@@ -7611,6 +7668,148 @@
     if (!e) return;
     const t = temuanHadirVerstek();
     e.innerHTML = t ? `<div class="bd-peringatan bd-temuanhadir" role="status"><b>Catatan temuan:</b> ${esc(t.teks)}. Cetak tidak ditahan.</div>` : "";
+    perbaruiPeriksa();
+  }
+  // ──────────────────────────────────────────────────────────────────────────
+  // G1 30 Okt: PERIKSA SEBELUM CETAK - satu daftar. Aturan di blangko-derry-periksa.js (murni); di sini hanya bahan & tombol.
+  // ──────────────────────────────────────────────────────────────────────────
+  const PC = () => (typeof globalThis !== "undefined" && globalThis.AletaPeriksaCetak) || null;
+  const KET_PERIKSA =
+    "Satu daftar hal yang perlu dibetulkan sebelum naskah dicetak; hanya muncul bila ada temuan dan tidak menahan cetak. Diperiksa: keterangan saksi yang belum diisi, putusan verstek padahal SIPP mencatat pihak hadir, huruf alasan perceraian, isian penting yang kosong, titik koma di tengah isian, perkara prodeo yang naskahnya memuat nominal biaya, tanggal panggilan yang tertulis dua kali, dan sisa blangko di naskah (kurung siku, titik-titik, tanda isian, tulisan merah) sesudah naskah selesai disiapkan. Perbaiki membuka isian atau bagian naskahnya; pada titik koma di tengah isian, Perbaiki merapikan isian itu lalu menyimpannya.";
+  let singgahSisa = { kunci: "", temuan: [], teks: "" };
+  /** Nilai isian yang tampil: ketikan/isian sesi ini, atau nilai tersimpan di ABT. */
+  const nilaiTampil = (kode) => String(S.isi[kode] != null && String(S.isi[kode]) !== "" ? S.isi[kode] : (S.nilai[kode] && S.nilai[kode].teks) || "");
+  /** Naskah yang sudah disiapkan (segar) -> teks + temuan sisa blangko; tidak meminta naskah baru ke ABT. */
+  function bahanNaskahPeriksa() {
+    const pr = S.prat;
+    if (!pr || !naskahSegar(pr)) return null;
+    const kunci = `${pr.sidik}|${pr.saat}`;
+    if (singgahSisa.kunci !== kunci) {
+      let temuan = [];
+      let isi = "";
+      try {
+        const r = rtfTeks(pr.rtf);
+        isi = rtfKeTeks(r);
+        const d = typeof aletaDeteksiSisa === "object" && aletaDeteksiSisa && typeof aletaDeteksiSisa.periksaRtf === "function" ? aletaDeteksiSisa.periksaRtf(r) : null;
+        temuan = d && Array.isArray(d.temuan) ? d.temuan : [];
+      } catch {
+        temuan = [];
+      }
+      singgahSisa = { kunci, temuan, teks: isi };
+    }
+    return { teks: singgahSisa.teks, temuanSisa: singgahSisa.temuan };
+  }
+  /**
+   * Tanggal relaas SIPP per pihak untuk perbandingan tanggal panggilan (rute portal blangko-derry/relaas -> bot, baca saja). Diminta
+   * sekali per perkara, hanya bila naskah putusan/BAS sudah siap; selama belum datang (atau gagal) butir relaas tidak tampil.
+   */
+  let relaasPeriksa = { perkaraId: "", data: null, janji: null };
+  function relaasUntukPeriksa() {
+    if (!S.pk || !S.blangko || !/^(put|bas)$/.test(String(S.blangko.jenis || "")) || !naskahSegar(S.prat) || tes()) return null;
+    const id = String(perkaraId() || "");
+    if (!/^\d+$/.test(id)) return null;
+    if (relaasPeriksa.perkaraId === id) return relaasPeriksa.data;
+    relaasPeriksa = { perkaraId: id, data: null, janji: null };
+    const jaga = relaasPeriksa;
+    jaga.janji = ambilPortal(`${API_BLANGKO}/relaas?perkaraId=${encodeURIComponent(id)}`, {}, "Membaca relaas panggilan")
+      .then((d) => {
+        if (relaasPeriksa !== jaga) return;
+        jaga.data = d && d.ada === true ? { ada: true, P: Array.isArray(d.P) ? d.P : [], T: Array.isArray(d.T) ? d.T : [] } : null;
+        if (jaga.data) perbaruiPeriksa();
+      })
+      .catch(() => {
+        /* relaas tidak terbaca: butir relaas tidak tampil */
+      });
+    return null;
+  }
+  /** Isian teks yang memuat titik koma di tengah dan akan dirapikan aturan rapi isian 30 Okt (rapiSimpan). */
+  function isianTitikKoma() {
+    const m = PC();
+    if (!m) return [];
+    const hasil = [];
+    for (const b of daftarPerlu()) {
+      if (b.jenis !== "teks" || b.khusus) continue;
+      const v = nilaiTampil(b.kode);
+      if (!v.trim() || !m.adaTitikKomaTengah(v) || rapiSimpan(b.kode, v) === v) continue;
+      hasil.push({ kode: b.kode, nama: b.nama });
+    }
+    return hasil;
+  }
+  function perbaruiPeriksa() {
+    const w = wadah.cetak ? cari("#bd-periksacetak", wadah.cetak) : null;
+    if (!w) return;
+    const m = PC();
+    let daftar = [];
+    try {
+      if (m && S.blangko && S.susunan && !S.blangko.khusus) {
+        const perlu = daftarPerlu();
+        const ada8503 = perlu.some((x) => x.kode === "8503");
+        const pk = { ...(S.pk || {}), ...((S.pk && S.pk.perkara) || {}) };
+        const v8503 = nilaiTampil("8503");
+        daftar = m.kumpulkan({
+          huruf: ada8503 ? { ada: true, nilai: v8503, dikenal: Boolean(hurufAlasanDari(v8503)) } : null,
+          kosong: kosongRinci()
+            .filter((x) => x.tingkat !== "tambahan" && x.b.jenis !== "tj")
+            .map((x) => ({ kode: x.b.kode, nama: x.nama })),
+          titikKoma: isianTitikKoma(),
+          naskah: bahanNaskahPeriksa(),
+          // Butir 50 (30 Okt malam): relaas SIPP per pihak, dibaca sekali per perkara sesudah naskah siap (hanya baca).
+          relaas: relaasUntukPeriksa(),
+          sebutanP: sebutan().P,
+          sebutanT: sebutan().T,
+          jenisNaskah: S.blangko.jenis,
+          prodeo: pk.prodeo === true || pk.prodeo === 1 || pk.prodeo === "1",
+          kodeAda: new Set(perlu.map((x) => x.kode)),
+          namaIsian: new Map(perlu.map((x) => [x.kode, namaIsian(x)])),
+        });
+      }
+    } catch (e) {
+      catatTeknis("periksa sebelum cetak gagal:", String((e && e.message) || e));
+      daftar = [];
+    }
+    const ul = cari("#bd-periksa", w);
+    if (ul) ul.innerHTML = m ? m.html(daftar, esc) : "";
+    const lama = ["#bd-saksikosong", "#bd-temuanhadir"].filter((s) => {
+      const x = cari(s, w);
+      return x && x.innerHTML.trim();
+    }).length;
+    const n = daftar.length + lama;
+    const kepala = cari("#bd-periksakepala", w);
+    if (kepala) kepala.innerHTML = n ? `<b>Periksa sebelum cetak (${n})</b> <span class="bd-catat">Tidak menahan cetak.</span><span class="bd-ikon bd-infoket" role="img" aria-label="Keterangan: Periksa sebelum cetak" title="${esc(KET_PERIKSA)}">ⓘ</span>` : "";
+    w.hidden = !n;
+  }
+  /** Tombol "Perbaiki": membuka/menggulir dan menyorot isian terkait, merapikan titik koma, atau membuka pratinjau naskah. */
+  function perbaikiTemuan(aksi, kode) {
+    if (aksi === "pratinjau") {
+      S.prat.terbuka = true;
+      renderPratinjau();
+      if (!S.prat.html) void muatPratinjau(false);
+      const p = wadah.pratinjau;
+      const r = p ? cari("#bd-kertas .bd-v.rusak", p) || p : null;
+      if (r && r.scrollIntoView) r.scrollIntoView({ block: "center" });
+      return;
+    }
+    if (!kode) return;
+    // Titik koma di tengah: disimpan ulang lewat jalur ketikan (rapiSimpan merapikannya) - aksi petugas, tercatat seperti ketikan.
+    if (aksi === "rapikan") {
+      const v = nilaiTampil(kode);
+      if (v.trim()) void jadwalkanSimpan(kode, v, true);
+    }
+    let f = cari(`.bd-f[data-f="${kode}"]`, wadah.isian);
+    if (!f && !S.semuaBuka) {
+      S.semuaBuka = true;
+      renderSemua();
+      f = cari(`.bd-f[data-f="${kode}"]`, wadah.isian);
+    }
+    const el = cari(`#bd-i${kode}`, wadah.isian) || (f && cari("input, textarea, select", f));
+    const sasaran = f || el;
+    if (!sasaran) return toast("Isian itu tidak tampil di blangko ini; periksa pratinjau naskah.");
+    sasaran.classList.remove("bd-sorot");
+    void sasaran.offsetWidth;
+    sasaran.classList.add("bd-sorot");
+    setTimeout(() => sasaran.classList.remove("bd-sorot"), 2600);
+    if (sasaran.scrollIntoView) sasaran.scrollIntoView({ block: "center" });
+    if (el && el.focus) el.focus();
   }
   function catatLog(teks) {
     S.log.push(`${jamSekarang()}: ${teks}`);
@@ -7717,6 +7916,7 @@
       gagalSiapVersi = versi; // diam: Cetak/Pratinjau akan mencoba sendiri dan menampilkan sebabnya
     }
     perbaruiKetSiap();
+    perbaruiPeriksa(); // G1: temuan naskah (sisa blangko, prodeo, tanggal ganda) begitu naskah siap
     if (versi >= 0 && S.versiIsian !== versi) jadwalkanSiapNaskah("isian"); // isian berubah selama disusun
   }
   function jadwalkanSiapNaskah(sebab) {
@@ -8499,6 +8699,7 @@
     if (kode === "hapusunggah") return lepasUnggahan();
     if (kode === "cetak") return void cetak(false);
     if (kode === "tetapcetak") return void cetak(true);
+    if (kode === "perbaiki") return perbaikiTemuan(String(aksi.getAttribute("data-aksi") || ""), String(aksi.getAttribute("data-kode") || ""));
     if (kode === "isidulu") {
       const e2 = cari("#bd-ingat", wadah.cetak);
       if (e2) e2.hidden = true;
@@ -9864,7 +10065,7 @@
       tuntutan: S.susunan ? keadaanTuntutan().map((t) => ({ pemicu: t.pemicu, status: t.status, jabatan: t.jabatan, dipilih: t.dipilih })) : [],
       tandaKosong: Array.from(S.tandaKosong),
     }),
-    murni: { sidikTeks, awalanBawaanEl, permintaanAbtAman, pilihanTunggalMurni, kerangkaBawaanMurni, daftarPilihanMurni, keputusanDipilihMurni, keputusanExOfficioMurni, bersihkanHeaderPenanda, bersihkanPenutupSaksiRtf, bersihkanPenutupTabelRtf, perkiraanSidang, keadaanBerlakuMurni, golonganIsianMurni, tuntutanAktifMurni, uraiKutipanTuntutan, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, susunTeksBukti, kalimatBuktiEl, pisahBuktiElektronik, butirElDariTeks, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranTtdBerlaku, berhakCap, UKURAN_TTD_CAP_BAWAAN, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, normalAbt, hurufAlasanDari, nilaiSimpan8503, jenisKelompok, namaTampil, adalahBlangkoIkrar, uraikanIkrar, kumpulkanIkrar, kumpulkanSela, adalahBlangkoSela, statusSela, saranIkrarCadangan, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel, ramahkanAlasan, pilihVarianSaksi },
+    murni: { sidikTeks, awalanBawaanEl, permintaanAbtAman, pilihanTunggalMurni, kerangkaBawaanMurni, daftarPilihanMurni, keputusanDipilihMurni, keputusanExOfficioMurni, bersihkanHeaderPenanda, bersihkanPenutupSaksiRtf, bersihkanPenutupTabelRtf, perkiraanSidang, keadaanBerlakuMurni, golonganIsianMurni, tuntutanAktifMurni, uraiKutipanTuntutan, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, susunTeksBukti, kalimatBuktiEl, pisahBuktiElektronik, butirElDariTeks, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranTtdBerlaku, berhakCap, UKURAN_TTD_CAP_BAWAAN, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, normalAbt, hurufAlasanDari, nilaiSimpan8503, jenisKelompok, namaTampil, adalahBlangkoIkrar, uraikanIkrar, kumpulkanIkrar, kumpulkanSela, adalahBlangkoSela, statusSela, saranIkrarCadangan, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel, ramahkanAlasan, pilihVarianSaksi, putuskanHurufAlasan },
   };
   globalThis.aletaBlangkoDerryIsian = apiIsian;
   if (!mulai()) {

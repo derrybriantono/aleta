@@ -35,7 +35,8 @@ import { paraSebutan, sebutanBerurut } from "@/lib/sebutan-pihak";
  * suami = {P}), {Pp} "para Pemohon"/"Pemohon", {P1} {P2} pihak pertama/kedua
  * perkawinan (itsbat, asal usul anak), {ajuan} isi permohonan cerai.
  * Jawaban adalah KERANGKA: "..." diisi petugas menurut keterangan saksi.
- * Pelaku perbuatan pada alasan A-E dan H = {T} (Tergugat/Termohon).
+ * Pelaku perbuatan pada alasan A-E = {T} (Tergugat/Termohon). Huruf H (murtad): {M} = pihak yang murtad, {N} = pasangannya;
+ * pihak murtad dibaca dari agama pihak di SIPP lalu posita (pihakMurtad), bawaan {T} - G1 30 Okt (jawaban pengguna butir 48).
  *
  * Jawaban hukum pengguna 17 Okt 2026 (butir 23-30) sudah diterapkan: pisah
  * rumah 6 bulan kecuali KDRT (SEMA 1/2022 jo. SEMA 3/2023); perwalian 18
@@ -196,11 +197,18 @@ const INTI_HURUF: Record<string, ButirSaksi[]> = {
     B("Apakah {suami} membiarkan atau tidak memedulikan {isteri} enam bulan lamanya?", "{suami} tidak memedulikan {isteri} sejak ..., sudah ... bulan;", "isi taklik (PMA 2/1990): membiarkan enam bulan"),
     B("Apakah {isteri} rela atas perlakuan {suami} tersebut?", "{isteri} tidak rela atas perlakuan {suami} tersebut;", "isteri tidak rela"),
   ],
+  // G1 30 Okt (jawaban pengguna butir 48): set "murtad" - {M} pihak yang murtad, {N} pasangannya (lihat setCerai/pihakMurtad).
   H: [
-    B("Apakah {T} berpindah agama? Ke agama apa?", "Ya, {T} berpindah ke agama ...;", "peralihan agama (murtad)"),
-    B("Sejak kapan {T} berpindah agama, dan bagaimana Saudara mengetahuinya?", "Sejak ..., saya mengetahuinya karena ...;", "pengetahuan langsung saksi"),
-    B("Apakah {T} masih menjalankan ibadah agama Islam?", "{T} tidak lagi menjalankan ibadah agama Islam, melainkan ...;", "peralihan agama"),
-    B("Apa akibat perpindahan agama {T} terhadap kerukunan rumah tangga {P} dan {T}?", "Akibatnya rumah tangga {P} dan {T} tidak rukun karena ...;", "menyebabkan ketidakrukunan"),
+    B("Apa agama {M} ketika menikah dengan {N}?", "Ketika menikah dengan {N}, {M} beragama Islam;", "beragama Islam ketika perkawinan dilangsungkan"),
+    B("Apakah sekarang {M} sudah berpindah agama? Ke agama apa, dan sejak kapan?", "Ya, sejak ... {M} berpindah ke agama ...;", "peralihan agama (murtad), KHI Pasal 116 huruf h"),
+    B("Bagaimana Saudara mengetahui perpindahan agama {M} tersebut?", "Saya mengetahuinya karena ... (melihat sendiri {M} beribadah di ... / mendengar langsung dari {M});", "pengetahuan langsung saksi"),
+    B(
+      "Apakah {M} masih menjalankan ibadah agama Islam, atau sudah menjalankan ibadah agama barunya?",
+      "{M} tidak lagi menjalankan ibadah agama Islam, dan kini menjalankan ibadah agama ... di ...;",
+      "peralihan agama yang nyata"
+    ),
+    B("Apa akibat perpindahan agama {M} terhadap rumah tangga {N} dan {M}?", "Akibatnya rumah tangga {P} dan {T} tidak rukun lagi karena ...;", "menyebabkan ketidakrukunan dalam rumah tangga"),
+    B("Apakah {M} pernah diajak kembali memeluk agama Islam? Bagaimana tanggapannya?", "{M} pernah diajak kembali memeluk agama Islam oleh ..., namun {M} tidak mau;", "tidak kembali memeluk agama Islam"),
   ],
 };
 
@@ -278,7 +286,43 @@ export type OpsiCerai = {
   jenis?: "cg" | "ct";
   /** Tahun akad nikah (huruf G): sebelum 1990 memakai butir sighat lama. */
   tahunNikah?: number;
+  /** Huruf H: pihak yang murtad ("P" = Penggugat/Pemohon, "T" = Tergugat/Termohon; bawaan T). */
+  pihakMurtad?: "P" | "T";
+  /** Huruf H: agama baru pihak yang murtad bila diketahui (SIPP), dipakai pada kerangka jawaban. */
+  agamaBaru?: string;
 };
+
+/** Tanda {M}/{N} butir huruf H menurut pihak yang murtad; agama baru (bila diketahui) masuk ke kerangka jawaban. */
+function butirMurtad(b: ButirSaksi, pihak: "P" | "T", agama: string): ButirSaksi {
+  const ganti = (t: string) => t.replace(/\{M\}/g, pihak === "P" ? "{P}" : "{T}").replace(/\{N\}/g, pihak === "P" ? "{T}" : "{P}");
+  const jawab = agama ? b.jawab.replace("berpindah ke agama ...", `berpindah ke agama ${agama}`).replace("ibadah agama ... di", `ibadah agama ${agama} di`) : b.jawab;
+  return { tanya: ganti(b.tanya), jawab: ganti(jawab), unsur: b.unsur };
+}
+
+const KATA_MURTAD =
+  "(?:\\s+(?:yang|telah|sudah|kini|kemudian|pun|saat\\s+ini|sekarang|sejak\\s+[^,.;]{1,40}|hingga\\s+[^,.;]{1,30}))*\\s+(?:keluar\\s+dari\\s+agama\\s+islam|murtad|berpindah\\s+agama|pindah\\s+(?:ke\\s+)?agama|kembali\\s+(?:memeluk|ke)\\s+agama|masuk\\s+agama|memeluk\\s+agama\\s+(?:kristen|katolik|katholik|protestan|hindu|buddha|budha|konghucu|khonghucu)|beragama\\s+(?:kristen|katolik|katholik|protestan|hindu|buddha|budha|konghucu|khonghucu))";
+const NAMA_AGAMA: Record<string, string> = { Protestan: "Kristen Protestan", Katolik: "Kristen Katolik", "Kong Hu Cu": "Khonghucu", Budha: "Buddha", Lainnya: "" };
+
+/**
+ * Pihak yang murtad (huruf H). Urutan sumber SAMA dengan variabel 8529 (paket abt-murtad-8529-30okt): agama pihak di SIPP
+ * (pihak pertama bukan Islam -> P, pihak kedua -> T), lalu posita ("{P}/{T} ... keluar dari agama Islam / murtad / pindah agama /
+ * beragama Kristen ..."; pola sebutan seperti pihak sakit paket eg-sakit-28okt). Tidak terbaca -> pihak "" (bawaan set: T).
+ */
+export function pihakMurtad(p: { agamaP?: string; agamaT?: string; posita?: string; sebutanP?: string; sebutanT?: string }): { pihak: "P" | "T" | ""; agama: string; sebab: string } {
+  const islam = (a?: string) => !String(a ?? "").trim() || /^islam$/i.test(String(a).trim());
+  const agama = (a?: string) => (String(a ?? "").trim() in NAMA_AGAMA ? NAMA_AGAMA[String(a).trim()] : String(a ?? "").trim());
+  if (!islam(p.agamaP)) return { pihak: "P", agama: agama(p.agamaP), sebab: "agama pihak pertama di SIPP bukan Islam" };
+  if (!islam(p.agamaT)) return { pihak: "T", agama: agama(p.agamaT), sebab: "agama pihak kedua di SIPP bukan Islam" };
+  const posita = String(p.posita ?? "").replace(/<[^>]*>/g, " ").replace(/&nbsp;/gi, " ");
+  const P = p.sebutanP || "Penggugat";
+  const T = p.sebutanT || (P === "Pemohon" ? "Termohon" : "Tergugat");
+  const ada = (s: string) => new RegExp(`${s}${KATA_MURTAD}`, "i").test(posita);
+  const dp = ada(P);
+  const dt = ada(T);
+  if (dp && !dt) return { pihak: "P", agama: "", sebab: `posita menyebut ${P} keluar dari agama Islam` };
+  if (dt && !dp) return { pihak: "T", agama: "", sebab: `posita menyebut ${T} keluar dari agama Islam` };
+  return { pihak: "", agama: "", sebab: "pihak yang murtad belum terbaca dari SIPP maupun posita" };
+}
 
 export function setCerai(huruf: string, opsi: OpsiCerai = {}): SetSaksi {
   const daftar = [...new Set(huruf.split(""))].filter((h) => INTI_HURUF[h] || h === "F");
@@ -288,6 +332,10 @@ export function setCerai(huruf: string, opsi: OpsiCerai = {}): SetSaksi {
   for (const h of daftar) {
     if (h === "F") continue;
     if (h === "A") inti.push(A_PERBUATAN[ct ? "ct" : "cg"]);
+    if (h === "H") {
+      inti.push(...INTI_HURUF.H.map((b) => butirMurtad(b, opsi.pihakMurtad === "P" ? "P" : "T", String(opsi.agamaBaru || ""))));
+      continue;
+    }
     inti.push(...(h === "G" && sighatLama ? INTI_G_LAMA : INTI_HURUF[h]));
   }
   // Pola harian satker selalu memuat unsur F (perselisihan, pisah rumah): tetap disertakan.
@@ -299,10 +347,10 @@ export function setCerai(huruf: string, opsi: OpsiCerai = {}): SetSaksi {
   });
   return {
     // Cerai talak huruf A berbeda butir (zina) - id sendiri supaya Pengaturan menampilkan keduanya.
-    id: `cerai-${daftar.join("")}${ct && daftar.includes("A") ? "-ct" : ""}${daftar.includes("G") && sighatLama ? "-sighat-lama" : ""}`,
+    id: `cerai-${daftar.join("")}${ct && daftar.includes("A") ? "-ct" : ""}${daftar.includes("G") && sighatLama ? "-sighat-lama" : ""}${daftar.includes("H") && opsi.pihakMurtad === "P" ? "-pihak-pertama-murtad" : ""}`,
     judul: `${satu ? `Cerai - ${NAMA_HURUF[daftar[0]]}` : `Cerai - alasan ${daftar.join(", ")}`}${daftar.includes("A") ? (ct ? " - cerai talak" : " - cerai gugat") : ""}${
       daftar.includes("G") && sighatLama ? " - nikah sebelum 1990" : ""
-    }`,
+    }${daftar.includes("H") ? (opsi.pihakMurtad === "P" ? (ct ? " - Pemohon yang murtad" : " - Penggugat yang murtad") : ct ? " - Termohon yang murtad" : " - Tergugat yang murtad") : ""}`,
     untuk: satu
       ? daftar[0] === "F"
         ? "Cerai gugat/cerai talak dengan alasan perselisihan terus-menerus (paling sering di PA Donggala)."
@@ -949,7 +997,15 @@ export type TawaranSet = {
  * folder blangko menyebut kumulasinya.
  */
 export function tawarkanSetSaksi(
-  p: { namaJenis?: string; nomor?: string; folder?: string; huruf?: string; /** Tahun akad nikah - huruf G sebelum 1990 memakai sighat lama. */ tahunNikah?: number } & KonteksSaksi
+  p: {
+    namaJenis?: string;
+    nomor?: string;
+    folder?: string;
+    huruf?: string;
+    /** Tahun akad nikah - huruf G sebelum 1990 memakai sighat lama. */ tahunNikah?: number;
+    /** Huruf H: hasil pihakMurtad() (SIPP lalu posita); "" = belum terbaca (set Tergugat/Termohon disarankan, set lain tetap ada). */
+    murtad?: { pihak: "P" | "T" | ""; agama: string; sebab: string };
+  } & KonteksSaksi
 ): { jenis: KodeJenisSaksi; huruf: string; set: TawaranSet[] } {
   const jenis = kodeJenisSaksi(p.namaJenis || "", p.nomor || "", p.folder || "", p.sebutanP || "");
   const huruf = hurufAlasan(p.huruf || "");
@@ -963,13 +1019,23 @@ export function tawarkanSetSaksi(
   if (jenis === "cg" || jenis === "ct") {
     const sah = huruf.split("").filter((h) => h !== "G" || jenis === "cg").join("");
     const tahun = Number(p.tahunNikah) || undefined;
-    const opsi: OpsiCerai = { jenis, tahunNikah: tahun };
-    if (sah) tawar(setCerai(sah, opsi), true, `alasan perkara ini huruf ${sah.split("").join(", ")}${sah.includes("G") && tahun && tahun < TAHUN_SIGHAT_SEKARANG ? `; nikah tahun ${tahun} (sighat sebelum PMA 2/1990)` : ""}`);
+    const m = p.murtad;
+    const opsi: OpsiCerai = { jenis, tahunNikah: tahun, pihakMurtad: m && m.pihak === "P" ? "P" : "T", agamaBaru: m ? m.agama : "" };
+    if (sah)
+      tawar(
+        setCerai(sah, opsi),
+        true,
+        `alasan perkara ini huruf ${sah.split("").join(", ")}${sah.includes("G") && tahun && tahun < TAHUN_SIGHAT_SEKARANG ? `; nikah tahun ${tahun} (sighat sebelum PMA 2/1990)` : ""}${
+          sah.includes("H") && m ? `; ${m.sebab}` : ""
+        }`
+      );
     else tawar(setCerai("F", opsi), true, "alasan perkara belum diisi; huruf F paling sering di PA Donggala");
     if (/hak asuh|hadh?anah/.test(folder)) tawar(SET_HADHANAH, true, "blangko kumulasi hak asuh anak");
     if (/itsbat|istbat/.test(folder)) tawar({ ...SET_ITSBAT, id: "tambah-itsbat", judul: "Tambahan - itsbat nikah", tambahan: true }, true, "blangko kumulasi itsbat nikah", "itsbat");
     tawar(setCerai("F", opsi), false, "alasan perselisihan terus-menerus");
     for (const h of ["A", "B", "C", "D", "E", "G", "H"]) if (h !== "G" || jenis === "cg") tawar(setCerai(h, opsi), false, `alasan huruf ${h}`);
+    // Huruf H: set untuk pihak yang lain juga ditawarkan (pihak murtad dapat Tergugat ATAU Penggugat).
+    tawar(setCerai("H", { ...opsi, pihakMurtad: opsi.pihakMurtad === "P" ? "T" : "P", agamaBaru: "" }), false, "alasan huruf H, bila yang murtad pihak yang lain");
     // Huruf G untuk nikah sebelum 1990 (bunyi sighat lama) - ditawarkan bila tahun nikah belum diketahui.
     if (jenis === "cg" && !tahun) tawar(setCerai("G", { jenis, tahunNikah: TAHUN_SIGHAT_SEKARANG - 1 }), false, "alasan huruf G, perkawinan sebelum 1990 (bunyi sighat lama)");
     // kehadiran Tergugat/Termohon dibaca dari nama folder blangko BAS ("Verstek", "T Tidak Hadir" / "P & T Hadir", "Kontra")

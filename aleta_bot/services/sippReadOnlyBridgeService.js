@@ -3204,6 +3204,8 @@ async function handleBridgeOperation(operation, params = {}) {
     "case.decision": getDecision,
     "case.pertimbangan": getPertimbanganHukum,
     "case.pemeriksaanSaksi": getPemeriksaanSaksi,
+    // G1 30 Okt: tanggal relaas panggilan per pihak (aturan 11120/11121) untuk Periksa sebelum cetak Blangko Derry. Baca saja.
+    "case.relaasPanggilan": (input) => require("./relaasPanggilanService").tanggalRelaasPerPihak((sql, p) => runReadOnly(normalizeConnectionKey(input && input.connectionKey), sql, p), input && input.perkaraId),
     "abt.katalogTanyaJawab": getKatalogTanyaJawab,
     "abt.tanyaJawab": getTanyaJawab,
     "blangko.katalog": getKatalogBlangko,
