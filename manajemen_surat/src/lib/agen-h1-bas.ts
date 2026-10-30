@@ -103,7 +103,10 @@ export type PilihanBasH1 = { utama: Rekomendasi | null; alternatif: Rekomendasi[
 export function pilihBasH1(baris: BarisSidangH1): PilihanBasH1 {
   const m = masukanRekomendasiDariBaris(baris as Record<string, unknown>);
   const perkiraanKehadiran = m.dihadiriOleh === null || m.dihadiriOleh === undefined;
-  const hasil = rekomendasiBlangko({ ...m, alasanDitunda: "", keterangan: "", ditunda: false, dihadiriOleh: m.dihadiriOleh ?? m.hadirSebelumnya ?? null });
+  // Keputusan 44: sidang mediasi selalu kedua pihak hadir - kehadiran sidang lalu tidak dipakai sebagai perkiraan (mesin saran
+  // memperlakukan kehadiran yang belum tercatat pada agenda mediasi sebagai kontradiktoir).
+  const mediasi = jenisAgendaH1(baris) === "mediasi";
+  const hasil = rekomendasiBlangko({ ...m, alasanDitunda: "", keterangan: "", ditunda: false, dihadiriOleh: mediasi ? (m.dihadiriOleh ?? null) : (m.dihadiriOleh ?? m.hadirSebelumnya ?? null) });
   const daftar = hasil.bas;
   const utama = daftar.find((r) => r.utama) ?? daftar[0] ?? null;
   return {

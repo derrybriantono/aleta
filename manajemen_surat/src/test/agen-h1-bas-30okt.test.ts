@@ -195,3 +195,22 @@ describe("keputusan panel ekstensi (blangko-derry-draf-bas.js)", () => {
     expect(DB.kalimatBuka({ blangko: { label: "BAS 2 - saksi" } })).toMatch(/^BAS sidang ini sudah disiapkan: BAS 2 - saksi\./);
   });
 });
+
+describe("keputusan 44: agenda mediasi kontradiktoir, kesimpulan tanpa 'Tunda Panggil'", () => {
+  it("sidang mediasi yang belum berlangsung: BAS kedua pihak hadir walau Tergugat belum pernah hadir", () => {
+    for (const agenda of ["Mendengarkan Laporan Hasil Mediasi", "Pembacaan Laporan Hasil Mediasi", "Proses Mediasi"]) {
+      const p = pilihBasH1(B({ urutanSidang: 2, agenda, panggilan: { hadirSebelumnya: 2, tergugatPernahHadir: false, penggugatPernahHadir: true } }));
+      expect(p.utama?.berkas, agenda).not.toMatch(/T Tidak Hadir|Verstek|Tunda Panggil/i);
+    }
+  });
+  it("kehadiran yang sudah tercatat SIPP tetap dihormati (BAS laporan mediasi T tidak hadir)", () => {
+    const p = pilihBasH1(B({ urutanSidang: 2, agenda: "Laporan Hasil Mediasi", dihadiriOleh: 2, panggilan: { hadirSebelumnya: 2, tergugatPernahHadir: false } }));
+    expect(p.utama?.berkas ?? "").toMatch(/T Tidak Hadir|Verstek/);
+  });
+  it("kesimpulan: tidak pernah Tunda Panggil T Lagi; tanpa calon lain = tanpa saran", () => {
+    const biasa = pilihBasH1(B({ urutanSidang: 4, agenda: "Kesimpulan" }));
+    expect(biasa.utama?.berkas ?? "").not.toMatch(/Tunda Panggil/i);
+    const kumulasi = pilihBasH1(B({ urutanSidang: 4, agenda: "Kesimpulan", kumulasi: { hakAsuh: true }, nomorPerkara: "534/Pdt.G/2026/PA.Dgl" }));
+    expect(kumulasi.utama?.berkas ?? "").not.toMatch(/Tunda Panggil/i);
+  });
+});

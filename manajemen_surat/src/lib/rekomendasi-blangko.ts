@@ -180,14 +180,27 @@ function akhirDariStatus(status: string | undefined): "gugur" | "cabut" | "no" |
 // ---------------------------------------------------------------------------
 // BAS
 // ---------------------------------------------------------------------------
+/** 30 Okt 2026 (keputusan pengguna 44): sidang beragenda mediasi selalu dihadiri kedua pihak (mediasi hanya bila keduanya hadir). */
+const RX_AGENDA_MEDIASI = /mediasi/i;
+const RX_KETIDAKHADIRAN = /tidak\s+(?:hadir|datang|menghadap)|\bghaib\b|\bgaib\b/i;
+const RX_AGENDA_KESIMPULAN = /kesimpulan/i;
+const RX_TUNDA_PANGGIL = /tunda\s+panggil/i;
+
 function rekomendasiBas(m: MasukanRekomendasi, teks: string): Rekomendasi[] {
   const akhir = m.sudahPutus ? akhirDariStatus(m.statusPutusan) : null;
+  // Keputusan 44: agenda MEDIASI = kontradiktoir; agenda KESIMPULAN mengikuti kehadiran sidang sebelumnya bila sidang ini belum
+  // tercatat, dan tidak pernah "Tunda Panggil T Lagi" (kesimpulan baru diminta sesudah para pihak menjalani pemeriksaan).
+  // Hanya bila kehadiran sidang ini BELUM tercatat (sidang yang akan datang / draf H-1): kehadiran yang sudah dicatat SIPP adalah
+  // fakta, dan Derry punya BAS laporan mediasi "T Tidak Hadir" (ALUR 06 [2]) untuk sidang laporan yang tidak dihadiri Tergugat.
+  const kehadiranBelumTercatat = m.dihadiriOleh === null || m.dihadiriOleh === undefined;
+  const agendaMediasi = RX_AGENDA_MEDIASI.test(teks) && !RX_KETIDAKHADIRAN.test(teks) && !m.sudahPutus && kehadiranBelumTercatat;
+  const agendaKesimpulan = RX_AGENDA_KESIMPULAN.test(teks) && !agendaMediasi;
   const masukan = {
     jenisPerkara: m.jenisPerkara,
     urutanSidang: Number(m.urutanSidang) || 0,
-    dihadiriOleh: m.dihadiriOleh ?? null,
+    dihadiriOleh: agendaMediasi ? 1 : agendaKesimpulan ? (m.dihadiriOleh ?? m.hadirSebelumnya ?? null) : (m.dihadiriOleh ?? null),
     agenda: teks,
-    tergugatPernahHadir: m.tergugatPernahHadir,
+    tergugatPernahHadir: agendaMediasi ? true : m.tergugatPernahHadir,
     sidangIkrarTalak: m.sidangIkrarTalak === true,
     kumulasi: m.kumulasi,
     nomorPerkara: m.nomorPerkara,
@@ -222,6 +235,14 @@ function rekomendasiBas(m: MasukanRekomendasi, teks: string): Rekomendasi[] {
       utama,
       perkiraan: p.perkiraan === true || p.kehadiran !== "cocok",
     });
+  }
+  if (agendaKesimpulan) {
+    const tanpaTunda = hasil.filter((r) => !RX_TUNDA_PANGGIL.test(`${r.berkas} ${r.label}`));
+    // Tanpa calon lain (mis. alur kumulasi hak asuh yang belum punya BAS kesimpulan): lebih baik tanpa saran daripada "tunda panggil".
+    if (tanpaTunda.length < hasil.length) {
+      if (tanpaTunda.length && !tanpaTunda.some((r) => r.utama)) tanpaTunda[0] = { ...tanpaTunda[0], utama: true, alasan: "Sidang kesimpulan: langkah sesudah pemeriksaan menurut kehadiran sidang sebelumnya." };
+      return tanpaTunda;
+    }
   }
   return hasil;
 }
