@@ -6356,6 +6356,28 @@ router.get("/kesehatan", requireInternalToken, async (req, res) => {
   }
 });
 
+/**
+ * G1 30 Okt 2026: hasil pindai mingguan variabel Blangko Derry (Pusat kesehatan portal). GET = baca berkas hasil terakhir;
+ * POST /jalankan = mulai satu putaran sekarang di latar (hanya membaca ABT/SIPP), jawab segera.
+ */
+router.get("/abt/pindai-variabel", requireInternalToken, (req, res) => {
+  try {
+    res.json({ ok: true, ...require("../services/pindaiVariabelDerryService").bacaHasil() });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+router.post("/abt/pindai-variabel/jalankan", requireInternalToken, (req, res) => {
+  try {
+    const p = require("../services/pindaiVariabelDerryService");
+    if (p.bacaHasil().sedangJalan) return res.json({ ok: true, dimulai: false, sedangJalan: true });
+    p.jalankan(p.depsAsli()).catch((g) => console.error("[pindai-variabel] gagal:", (g && g.message) || g));
+    res.json({ ok: true, dimulai: true, sedangJalan: true });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
 /** Keadaan penjadwal penarikan e-Court. */
 router.get("/ecourt/jadwal", requireInternalToken, (req, res) => {
   try {

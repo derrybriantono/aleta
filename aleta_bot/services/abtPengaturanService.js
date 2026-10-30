@@ -975,6 +975,8 @@ function buatLayanan(d) {
     pindaiLogo,
     gambarLogo,
     paketLogo,
+    // G1 30 Okt: pindai mingguan variabel Blangko Derry (pindaiVariabelDerryService) - baca saja.
+    indeksDerry,
     _lupakanIndeks: () => {
       indeksJanji = null;
     },

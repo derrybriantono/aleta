@@ -2117,6 +2117,15 @@ cron.schedule("40 05 * * *", () => {
     .catch((error) => console.error("[bersih-penutup-saksi] gagal:", error && error.message ? error.message : error));
 });
 
+// G1 30 Okt 2026: pindai MINGGUAN semua variabel Blangko Derry atas contoh perkara tiap jenis (HANYA MEMBACA - mesin variabel ALETA,
+// kolam latar) untuk Pusat Kesehatan portal: galat SQL, penanda tersisa, variabel yang tiba-tiba kosong. Minggu 02.15 (di luar jam
+// kerja); ALETA_PINDAI_VARIABEL=0 mematikan, ALETA_PINDAI_VARIABEL_CRON mengganti jadwal.
+try {
+  require("./services/pindaiVariabelDerryService").jadwal(cron);
+} catch (error) {
+  console.error("[pindai-variabel] jadwal gagal dipasang:", error && error.message ? error.message : error);
+}
+
 cron.schedule("00 20 * * *", () => {
   runLegacyNotificationIfAllowed("sendPenjagaSidangBesok", [{ id: "penjaga-sidang-besok", queryId: "legacy-jadwal-sidang-internal" }], () => sendPenjagaSidangBesok().then((message) => {
     if (!message) return;

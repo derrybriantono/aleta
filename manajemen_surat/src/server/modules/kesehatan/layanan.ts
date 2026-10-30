@@ -34,6 +34,7 @@ import {
   periksaIntegritas,
   periksaPortal,
   periksaKapasitas,
+  periksaPindaiVariabel,
   periksaServer,
   periksaSambungan,
   periksaUjiBeban,
@@ -44,6 +45,7 @@ import {
   type HasilKesehatan,
   type Komponen,
   type PerangkatEkstensi,
+  type PindaiVariabelRingkas,
   type UjiBebanRingkas,
   type Warna,
 } from "@/server/modules/kesehatan/pemeriksa";
@@ -205,6 +207,8 @@ export type DepsKesehatan = {
   ukuranDatabase: (db: AletaDatabase) => Promise<number | null>;
   /** Kapasitas penyimpanan (30 Okt 2026). Opsional: tanpa dep ini komponennya kelabu. */
   kapasitas?: (db: AletaDatabase) => Promise<{ ok: true; data: { warna: Warna; ringkas: string; rincian: Array<{ label: string; nilai: string }> } } | { ok: false; error: string }>;
+  /** Pindai mingguan variabel Blangko Derry (G1 30 Okt 2026). Opsional: tanpa dep ini komponennya kelabu. */
+  pindaiVariabel?: () => Promise<{ ok: true; data: PindaiVariabelRingkas } | { ok: false; error: string }>;
 };
 
 export async function depsAsli(): Promise<DepsKesehatan> {
@@ -244,6 +248,10 @@ export async function depsAsli(): Promise<DepsKesehatan> {
       } catch {
         return null;
       }
+    },
+    pindaiVariabel: async () => {
+      const h = await panggilBotInternal<PindaiVariabelRingkas & { ok?: boolean }>("/abt/pindai-variabel", { timeoutMs: 5000 });
+      return h.ok ? { ok: true, data: h.data } : { ok: false, error: h.error };
     },
     kapasitas: async (db) => {
       try {
@@ -314,6 +322,7 @@ const KOMPONEN: Array<{ kunci: string; nama: string; kelompok: Komponen["kelompo
   { kunci: "galat", nama: "Error 24 jam", kelompok: "layanan" },
   { kunci: "uji-beban", nama: "Uji beban terakhir", kelompok: "server" },
   { kunci: "integritas", nama: "Integritas berkas website/server", kelompok: "server" },
+  { kunci: "variabel-blangko", nama: "Variabel Blangko Derry (pindai mingguan)", kelompok: "data" },
 ];
 
 /** Komponen yang ikut menentukan warna keseluruhan dan boleh memicu peringatan. Ekstensi dan uji beban hanya informasi. */
@@ -331,7 +340,7 @@ export async function jalankanPemeriksaan(db: AletaDatabase, opsi: { ping?: bool
   const mulai = Date.now();
   const kosong = { ok: false as const, error: "tidak menjawab dalam batas waktu" };
 
-  const [status, kesehatanBot, sumber, ecourt, cadangan, ukuran, perangkat, galat, uji, integritas, kapasitas] = await Promise.all([
+  const [status, kesehatanBot, sumber, ecourt, cadangan, ukuran, perangkat, galat, uji, integritas, kapasitas, pindai] = await Promise.all([
     dengan(deps.botStatus(), 7000, kosong),
     dengan(deps.botKesehatan(opsi.ping ?? false), 10_000, kosong),
     dengan(deps.sumberDaya(), 8000, kosong),
@@ -343,6 +352,7 @@ export async function jalankanPemeriksaan(db: AletaDatabase, opsi: { ping?: bool
     dengan(ujiBebanTerakhir(db), 3000, null),
     dengan(ringkasIntegritasAman(db), 3000, null),
     deps.kapasitas ? dengan(deps.kapasitas(db), 6000, kosong) : Promise.resolve(undefined),
+    deps.pindaiVariabel ? dengan(deps.pindaiVariabel(), 6000, kosong) : Promise.resolve(undefined),
   ]);
 
   // Basis data ALETA: diukur sendiri (dua pembacaan terkecil).
@@ -373,6 +383,7 @@ export async function jalankanPemeriksaan(db: AletaDatabase, opsi: { ping?: bool
     galat: periksaGalat(galat),
     "uji-beban": periksaUjiBeban(uji, kini),
     integritas: periksaIntegritas(integritas, kini),
+    "variabel-blangko": periksaPindaiVariabel(pindai as Parameters<typeof periksaPindaiVariabel>[0], kini),
   };
   const durasi = Date.now() - mulai;
   const komponen = KOMPONEN.map((k) => bentukKomponen(k, isi[k.kunci], diukurPada, durasi));

@@ -412,3 +412,60 @@ export function periksaUjiBeban(uji: UjiBebanRingkas | null, kini: Date) {
     rincian,
   };
 }
+
+// ---------------------------------------------------------------------------
+// G1 30 Okt 2026: pindai mingguan variabel Blangko Derry (bot, aleta_bot/services/pindaiVariabelDerryService.js - hanya membaca)
+// ---------------------------------------------------------------------------
+
+type ButirPindai = { no: string; nama: string; jumlah: number; perkara: Array<{ perkara: string; jenis: string; contoh: string }> };
+export type PindaiVariabelRingkas = {
+  ada: boolean;
+  sedangJalan?: boolean;
+  terakhir?: {
+    selesai: string;
+    jumlahVariabel: number;
+    jumlahContoh: number;
+    jumlah: { galat: number; penanda: number; bunyi: number; kosongBaru: number };
+    temuan: { galat: ButirPindai[]; penanda: ButirPindai[]; bunyi: ButirPindai[]; kosongBaru: ButirPindai[] };
+    adaPembanding?: boolean;
+  };
+};
+
+/**
+ * Galat kueri atau penanda tersisa = merah; variabel yang tiba-tiba kosong = kuning; bunyi penanda (isian wajib belum diisi di
+ * perkara contoh) hanya dicatat; lebih dari 9 hari tanpa pindai = kuning; belum pernah = kelabu. Teks tanpa nomor variabel di
+ * ringkasan; rincian menyebut nama variabelnya.
+ */
+export function periksaPindaiVariabel(masukan: Hasil<PindaiVariabelRingkas> | undefined, kini: Date) {
+  if (!masukan) return { warna: "kelabu" as Warna, ringkas: "Pindai mingguan variabel blangko belum terbaca.", rincian: [] };
+  if (!masukan.ok) return { warna: "kelabu" as Warna, ringkas: `Pindai mingguan variabel blangko tidak terbaca: ${masukan.error}`, rincian: [] };
+  const t = masukan.data.terakhir;
+  if (!masukan.data.ada || !t) {
+    return { warna: "kelabu" as Warna, ringkas: masukan.data.sedangJalan ? "Pindai pertama sedang berjalan." : "Belum pernah dipindai (jadwal: Minggu dini hari).", rincian: [] };
+  }
+  const j = t.jumlah;
+  const rincian: Array<{ label: string; nilai: string }> = [
+    { label: "Pindai terakhir", nilai: umurTeks(t.selesai, kini) },
+    { label: "Variabel x perkara contoh", nilai: `${t.jumlahVariabel} x ${t.jumlahContoh}` },
+    { label: "Error saat dihitung", nilai: String(j.galat) },
+    { label: "Tanda isian tersisa", nilai: String(j.penanda) },
+    { label: "Tiba-tiba kosong", nilai: t.adaPembanding ? String(j.kosongBaru) : "belum ada pembanding pekan lalu" },
+    { label: "Isian wajib kosong di perkara contoh", nilai: String(j.bunyi) },
+  ];
+  const sebut = (judul: string, d: ButirPindai[]) => {
+    for (const b of d.slice(0, 6)) {
+      const p = b.perkara[0];
+      rincian.push({ label: `${judul}: ${b.nama || "variabel"}`, nilai: p ? `${p.perkara}${p.contoh ? ` - ${p.contoh.slice(0, 90)}` : ""}` : String(b.jumlah) });
+    }
+  };
+  sebut("Error saat dihitung", t.temuan.galat);
+  sebut("Tanda isian tersisa", t.temuan.penanda);
+  sebut("Tiba-tiba kosong", t.temuan.kosongBaru);
+  const lama = kini.getTime() - new Date(t.selesai).getTime() > 9 * 86_400_000;
+  if (j.galat || j.penanda) {
+    return { warna: "merah" as Warna, ringkas: `${j.galat} variabel error saat dihitung dan ${j.penanda} variabel menyisakan tanda isian pada pindai terakhir.`, rincian };
+  }
+  if (j.kosongBaru) return { warna: "kuning" as Warna, ringkas: `${j.kosongBaru} variabel yang pekan lalu terisi kini kosong pada perkara contoh yang sama.`, rincian };
+  if (lama) return { warna: "kuning" as Warna, ringkas: "Pindai mingguan sudah lebih dari 9 hari tidak berjalan.", rincian };
+  return { warna: "hijau" as Warna, ringkas: `Tidak ada error atau tanda isian tersisa (${t.jumlahVariabel} variabel, ${t.jumlahContoh} perkara contoh).`, rincian };
+}
