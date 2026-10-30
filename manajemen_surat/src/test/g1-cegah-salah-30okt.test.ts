@@ -622,6 +622,31 @@ describe("1.4 pindai mingguan variabel Blangko Derry", () => {
     expect(k.ringkas).toMatch(/terlalu lama dihitung/);
   });
 
+  it("pindai yang gagal dicatat: hasil lama tetap, kartu kuning menyebut kegagalannya", async () => {
+    const dir = mkdtempSync(path.join(process.env.TMP || os.tmpdir(), "g1-pindai-gagal-"));
+    try {
+      const berkas = path.join(dir, "pindai.json");
+      await P.jalankan({ ...deps(), berkas, kini: new Date("2026-11-01T18:15:00Z") });
+      const rusak = { ...deps(), berkas, kini: new Date("2026-11-08T18:15:00Z"), indeksDerry: async () => Promise.reject(new Error("SIPP tidak menjawab")) };
+      await expect(P.jalankan(rusak)).rejects.toThrow("SIPP tidak menjawab");
+      const s = P.bacaHasil(berkas);
+      expect(s.ada).toBe(true);
+      expect(s.gagal).toMatchObject({ pesan: "SIPP tidak menjawab" });
+      const k = periksaPindaiVariabel({ ok: true, data: s }, new Date("2026-11-09T00:00:00Z"));
+      // hasil lama memuat error sungguhan -> tetap merah, kegagalan pindai disebut
+      expect(k.warna).toBe("merah");
+      expect(k.ringkas).toMatch(/Pindai sesudahnya gagal/);
+      expect(k.rincian[0]).toMatchObject({ label: "Pindai terakhir gagal" });
+      const bersih = { ...s, terakhir: { ...s.terakhir, jumlah: { galat: 0, lambat: 0, penanda: 0, bunyi: 1, kosongBaru: 0 } } };
+      expect(periksaPindaiVariabel({ ok: true, data: bersih }, new Date("2026-11-09T00:00:00Z"))).toMatchObject({ warna: "kuning", ringkas: expect.stringMatching(/Pindai terakhir gagal/) });
+      // pindai berhasil sesudahnya menghapus laporan gagal
+      await P.jalankan({ ...deps(), berkas, kini: new Date("2026-11-15T18:15:00Z") });
+      expect(P.bacaHasil(berkas).gagal).toBeUndefined();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("hanya membaca: tiap kueri SELECT, tanpa kata penulis", async () => {
     const terlihat: string[] = [];
     const k = kueriTiruan(KELOMPOK, PERKARA);

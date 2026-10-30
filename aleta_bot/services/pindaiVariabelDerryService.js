@@ -105,10 +105,14 @@ function golongkan(v) {
  * Perkara contoh pekan lalu yang masih ada DIPAKAI LAGI (perbandingan "tiba-tiba kosong" butuh perkara yang sama).
  */
 async function pilihContoh(kueri, sebelum) {
+  // Kueri pemilih contoh boleh lebih lama (server sibuk); satu kelompok yang gagal dilewati, tidak menggagalkan pindai.
+  const opsi = { timeoutMs: BATAS_ULANG_MS };
   const kelompok = await kueri(
     `SELECT p.jenis_perkara_id, p.alur_perkara_id, MAX(p.jenis_perkara_nama) AS nama, COUNT(*) AS n
        FROM perkara p WHERE p.tanggal_pendaftaran >= DATE_SUB(CURDATE(), INTERVAL 365 DAY)
-      GROUP BY p.jenis_perkara_id, p.alur_perkara_id HAVING n >= 3 ORDER BY n DESC LIMIT ${KELOMPOK_MAKS}`
+      GROUP BY p.jenis_perkara_id, p.alur_perkara_id HAVING n >= 3 ORDER BY n DESC LIMIT ${KELOMPOK_MAKS}`,
+    [],
+    opsi
   );
   const lama = new Map((Array.isArray(sebelum && sebelum.contoh) ? sebelum.contoh : []).map((c) => [`${c.jenisId}|${c.alurId}|${c.putus ? 1 : 0}`, c]));
   const contoh = [];
@@ -117,8 +121,8 @@ async function pilihContoh(kueri, sebelum) {
       const kunci = `${k.jenis_perkara_id}|${k.alur_perkara_id}|${putus ? 1 : 0}`;
       const ulang = lama.get(kunci);
       if (ulang) {
-        const ada = await kueri("SELECT perkara_id FROM perkara WHERE perkara_id = ? LIMIT 1", [ulang.perkaraId]);
-        if (ada.length) {
+        const ada = await kueri("SELECT perkara_id FROM perkara WHERE perkara_id = ? LIMIT 1", [ulang.perkaraId], opsi).catch(() => null);
+        if (ada && ada.length) {
           contoh.push(ulang);
           continue;
         }
@@ -127,8 +131,9 @@ async function pilihContoh(kueri, sebelum) {
         `SELECT p.perkara_id, p.nomor_perkara FROM perkara p LEFT JOIN perkara_putusan pp ON pp.perkara_id = p.perkara_id
           WHERE p.jenis_perkara_id = ? AND p.alur_perkara_id = ? AND ${putus ? "pp.tanggal_putusan IS NOT NULL" : "pp.tanggal_putusan IS NULL"}
           ORDER BY p.perkara_id DESC LIMIT 1`,
-        [k.jenis_perkara_id, k.alur_perkara_id]
-      );
+        [k.jenis_perkara_id, k.alur_perkara_id],
+        opsi
+      ).catch(() => []);
       if (b[0]) contoh.push({ perkaraId: Number(b[0].perkara_id), nomor: teks(b[0].nomor_perkara), jenisId: Number(k.jenis_perkara_id), alurId: Number(k.alur_perkara_id), jenis: teks(k.nama), putus });
     }
   }
@@ -258,7 +263,18 @@ async function jalankan(deps) {
     const berkas = deps.berkas || berkasHasil();
     const simpanan = bacaSimpanan(berkas) || {};
     const sebelum = simpanan.terakhir || null;
-    const h = await pindaiSekali({ ...deps, sebelum });
+    let h;
+    try {
+      h = await pindaiSekali({ ...deps, sebelum });
+    } catch (g) {
+      // Pindai gagal (mis. SIPP tidak menjawab): hasil lama tetap, kegagalan dicatat supaya Pusat Kesehatan menyebutnya.
+      try {
+        tulisSimpanan(berkas, { ...simpanan, gagal: { pada: (deps.kini instanceof Date ? deps.kini : new Date()).toISOString(), pesan: teks((g && g.message) || g).slice(0, 200) } });
+      } catch {
+        /* catatan gagal tertinggal */
+      }
+      throw g;
+    }
     h.adaPembanding = Boolean(sebelum && Array.isArray(sebelum.terisi) && sebelum.terisi.length);
     const riwayat = [ringkasRiwayat(h), ...(Array.isArray(simpanan.riwayat) ? simpanan.riwayat : [])].slice(0, RIWAYAT_MAKS);
     tulisSimpanan(berkas, { terakhir: h, riwayat });
@@ -279,8 +295,10 @@ function ringkasRiwayat(h) {
 /** Hasil terakhir + riwayat ringkas (baca berkas; tidak menjalankan pindai). */
 function bacaHasil(berkas = berkasHasil()) {
   const s = bacaSimpanan(berkas);
-  if (!s || !s.terakhir) return { ada: false, sedangJalan: Boolean(sedangJalan), riwayat: [] };
-  return { ada: true, sedangJalan: Boolean(sedangJalan), terakhir: ringkas(s.terakhir), riwayat: Array.isArray(s.riwayat) ? s.riwayat : [] };
+  // Kegagalan dilaporkan hanya bila lebih baru daripada hasil terakhir.
+  const gagal = s && s.gagal && (!s.terakhir || String(s.gagal.pada) > String(s.terakhir.selesai)) ? s.gagal : null;
+  if (!s || !s.terakhir) return { ada: false, sedangJalan: Boolean(sedangJalan), riwayat: [], ...(gagal ? { gagal } : {}) };
+  return { ada: true, sedangJalan: Boolean(sedangJalan), terakhir: ringkas(s.terakhir), riwayat: Array.isArray(s.riwayat) ? s.riwayat : [], ...(gagal ? { gagal } : {}) };
 }
 
 /** Dependensi sungguhan: kolam SIPP baca-saja (sebagai pekerjaan LATAR), indeks & mesin variabel yang sama dengan Pengaturan ABT. */

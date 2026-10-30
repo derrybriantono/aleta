@@ -421,6 +421,8 @@ type ButirPindai = { no: string; nama: string; jumlah: number; perkara: Array<{ 
 export type PindaiVariabelRingkas = {
   ada: boolean;
   sedangJalan?: boolean;
+  /** Pindai terakhir gagal (lebih baru daripada hasil terakhir). */
+  gagal?: { pada: string; pesan: string };
   terakhir?: {
     selesai: string;
     jumlahVariabel: number;
@@ -440,7 +442,9 @@ export function periksaPindaiVariabel(masukan: Hasil<PindaiVariabelRingkas> | un
   if (!masukan) return { warna: "kelabu" as Warna, ringkas: "Pindai mingguan variabel blangko belum terbaca.", rincian: [] };
   if (!masukan.ok) return { warna: "kelabu" as Warna, ringkas: `Pindai mingguan variabel blangko tidak terbaca: ${masukan.error}`, rincian: [] };
   const t = masukan.data.terakhir;
+  const gagal = masukan.data.gagal;
   if (!masukan.data.ada || !t) {
+    if (gagal) return { warna: "kuning" as Warna, ringkas: `Pindai pertama gagal: ${gagal.pesan.slice(0, 120)}`, rincian: [{ label: "Gagal", nilai: umurTeks(gagal.pada, kini) }] };
     return { warna: "kelabu" as Warna, ringkas: masukan.data.sedangJalan ? "Pindai pertama sedang berjalan." : "Belum pernah dipindai (jadwal: Minggu dini hari).", rincian: [] };
   }
   const j = t.jumlah;
@@ -463,11 +467,13 @@ export function periksaPindaiVariabel(masukan: Hasil<PindaiVariabelRingkas> | un
   sebut("Tanda isian tersisa", t.temuan.penanda);
   sebut("Tiba-tiba kosong", t.temuan.kosongBaru);
   sebut("Terlalu lama dihitung", t.temuan.lambat ?? []);
+  if (gagal) rincian.unshift({ label: "Pindai terakhir gagal", nilai: `${umurTeks(gagal.pada, kini)} - ${gagal.pesan.slice(0, 90)}` });
   const lama = kini.getTime() - new Date(t.selesai).getTime() > 9 * 86_400_000;
   if (j.galat || j.penanda) {
-    return { warna: "merah" as Warna, ringkas: `${j.galat} variabel error saat dihitung dan ${j.penanda} variabel menyisakan tanda isian pada pindai terakhir.`, rincian };
+    return { warna: "merah" as Warna, ringkas: `${j.galat} variabel error saat dihitung dan ${j.penanda} variabel menyisakan tanda isian pada pindai terakhir.${gagal ? " Pindai sesudahnya gagal." : ""}`, rincian };
   }
   if (j.kosongBaru) return { warna: "kuning" as Warna, ringkas: `${j.kosongBaru} variabel yang pekan lalu terisi kini kosong pada perkara contoh yang sama.`, rincian };
+  if (gagal) return { warna: "kuning" as Warna, ringkas: `Pindai terakhir gagal (${umurTeks(gagal.pada, kini)}): ${gagal.pesan.slice(0, 100)}. Hasil di bawah dari pindai sebelumnya.`, rincian };
   if (j.lambat) return { warna: "kuning" as Warna, ringkas: `${j.lambat} variabel terlalu lama dihitung (server sibuk atau kueri berat); periksa lagi pada pindai berikutnya.`, rincian };
   if (lama) return { warna: "kuning" as Warna, ringkas: "Pindai mingguan sudah lebih dari 9 hari tidak berjalan.", rincian };
   return { warna: "hijau" as Warna, ringkas: `Tidak ada error atau tanda isian tersisa (${t.jumlahVariabel} variabel, ${t.jumlahContoh} perkara contoh).`, rincian };
