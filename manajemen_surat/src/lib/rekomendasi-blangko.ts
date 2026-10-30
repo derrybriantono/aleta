@@ -357,6 +357,11 @@ export const PUTUSAN_SELA_UMUM = {
     lian: "[31] [Sela] Sumpah Lian - Cerai dengan Alasan Zina.rtf",
     mediasiTergugat: "[32] [Penetapan] Tergugat Tidak Beriktikad Baik dalam Mediasi - Biaya Mediasi (PERMA 1 2016 Pasal 23).rtf",
     mediasiPenggugat: "[33] [NO] Penggugat Tidak Beriktikad Baik dalam Mediasi - Gugatan Tidak Dapat Diterima (PERMA 1 2016 Pasal 22).rtf",
+    // 30 Okt putaran 3: sisipan Dalam Rekonvensi, pemisahan perkara (splitsing)
+    rekonvensiKabul: "[34] [Sisipan] Gugatan Rekonvensi Dikabulkan - Bagian Dalam Rekonvensi untuk Putusan Akhir.rtf",
+    rekonvensiTolak: "[35] [Sisipan] Gugatan Rekonvensi Ditolak - Bagian Dalam Rekonvensi untuk Putusan Akhir.rtf",
+    pisahKabul: "[36] [Sela Kabul] Pemisahan Perkara (Splitsing) Dikabulkan.rtf",
+    pisahTolak: "[37] [Sela Tolak] Pemisahan Perkara (Splitsing) Ditolak.rtf",
   },
   bas: {
     folder: `${AKAR}/97a Putusan Sela - BAS`,
@@ -375,6 +380,11 @@ export const PUTUSAN_SELA_UMUM = {
   /** 30 Okt (butir 8): BAS mediasi elektronik PERMA 3/2022 di setiap folder BAS yang punya BAS mediasi biasa [1] (nama sama di semua folder). */
   mediasiBiasa: "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf",
   mediasiElektronik: "BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+  /** 30 Okt putaran 3: putusan akhir perceraian karena li'an (folder cerai gugat / cerai talak). */
+  lianAkhir: {
+    "cerai gugat": { folder: `${AKAR}/1 Perceraian CG`, menu: "Putusan Cerai Gugat", berkas: "[97] [Lian] CG - Perkawinan Putus karena Lian (Putusan Akhir).rtf" },
+    "cerai talak": { folder: `${AKAR}/1a Perceraian CT`, menu: "Putusan Cerai Talak", berkas: "[97] [Lian] CT - Perkawinan Putus karena Lian (Putusan Akhir).rtf" },
+  },
 } as const;
 const RX_SUMPAH_PELENGKAP = /sumpah\s+(?:pelengkap|tambahan)|supp?l[ei]?t[oi]i?r/i;
 const RX_SUMPAH_PEMUTUS = /sumpah\s+pemutus|decis[oi]i?r/i;
@@ -383,6 +393,12 @@ const RX_LIAN = /(?:^|[^a-z])li['’]?an(?![a-z])/i;
 const RX_IKTIKAD = /(?:tidak|tak)\s+beri[kt]{1,2}ikad\s+baik|i[kt]{1,2}ikad\s+tidak\s+baik/i;
 const RX_REKONVENSI = /rekonvensi|gugatan\s+balik/i;
 const RX_GABUNG = /penggabungan\s+perkara|digabung(?:kan)?\s+dengan\s+perkara/i;
+const RX_PISAH = /pemisahan\s+perkara|splitsing|dipisah(?:kan)?\s+(?:dari|pemeriksaan)/i;
+/** 30 Okt putaran 3: BAS mediasi sidang pertama -> nama BAS mediasi elektronik di folder yang sama (sama dengan paket: sumber/mediasi_el.py). */
+export function namaMediasiElektronik(berkas: string): string | null {
+  if (!/^(?:BAS ALUR 0[45] \[1\] BAS 1 P & T Hadir - Mediasi|BAS ALUR 34 Poligami - Sidang 1 - P & T Hadir - Mediasi|BAS ALUR 36 Cerai Kumulasi IN - T Hadir - Sidang 1 - Mediasi|BAS ALUR 37 CG Kumulasi Hak Asuh - Sidang 1 - P & T Hadir - Mediasi)\.rtf$/.test(berkas)) return null;
+  return berkas.replace(" [1] BAS 1 ", " [1e] BAS 1 ").replace(/ - Mediasi\.rtf$/, " - Mediasi Elektronik (PERMA 3 2022).rtf");
+}
 const RX_MEDIASI_EL = /mediasi[^.;]{0,40}(?:elektronik|daring|online|virtual|jarak\s+jauh)|(?:elektronik|daring|online|virtual)[^.;]{0,20}mediasi/i;
 /** Eksepsi selain kewenangan: [kata kunci, kunci berkas kabul, kunci berkas tolak, nama]. */
 const EKSEPSI_LAIN: Array<[RegExp, keyof typeof PUTUSAN_SELA_UMUM.berkas, keyof typeof PUTUSAN_SELA_UMUM.berkas, string]> = [
@@ -439,6 +455,16 @@ export function rekomendasiPutusanSela(m: MasukanRekomendasi, teks: string, daru
   }
   if (RX_REKONVENSI.test(teks) && sela) {
     return [r(b.rekonvensi, "Putusan sela - gugatan rekonvensi tidak dapat diterima", "Sidang memutus gugatan rekonvensi lebih dahulu; pemeriksaan gugatan konvensi dilanjutkan.", true)];
+  }
+  // 30 Okt putaran 3: rekonvensi diputus bersama konvensi -> sisipan "Dalam Rekonvensi" untuk putusan akhir.
+  if (RX_REKONVENSI.test(teks) && /putus|musyawarah/i.test(teks)) {
+    return [r(b.rekonvensiKabul, "Bagian putusan akhir - rekonvensi dikabulkan", "Gugatan rekonvensi diputus bersama konvensi: bagian Dalam Rekonvensi untuk disalin ke putusan akhir.", true),
+      r(b.rekonvensiTolak, "Bagian putusan akhir - rekonvensi ditolak", "Alternatif bila gugatan rekonvensi ditolak.", false),
+      r(b.rekonvensi, "Putusan sela - gugatan rekonvensi tidak dapat diterima", "Alternatif bila rekonvensi tidak memenuhi syarat formil.", false)];
+  }
+  if (RX_PISAH.test(teks)) {
+    return [r(b.pisahKabul, "Putusan sela - pemisahan perkara dikabulkan", "Sidang memutus permohonan pemisahan perkara; dikabulkan diperkirakan, ditolak sebagai alternatif.", true),
+      r(b.pisahTolak, "Putusan sela - pemisahan perkara ditolak", "Alternatif pada sidang putusan sela atas permohonan pemisahan perkara.", false)];
   }
   if (RX_GABUNG.test(teks)) {
     return [r(b.gabungKabul, "Putusan sela - penggabungan perkara dikabulkan", "Sidang memutus permohonan penggabungan perkara; dikabulkan diperkirakan, ditolak sebagai alternatif.", true),
@@ -693,6 +719,13 @@ export function rekomendasiPutusan(m: MasukanRekomendasi, teks: string): Rekomen
   const sela = rekomendasiPutusanSelaSita(m, teks);
   if (sela.length) return sela;
   // 30 Okt (paket ABT sela-ps-30okt): putusan sela bab 97a menurut agenda/keterangan (sumpah, provisi, intervensi, eksepsi, pemeriksaan setempat).
+  // 30 Okt putaran 3: putusan akhir li'an (perkara cerai yang diputus sesudah sumpah li'an).
+  const kunciCerai = kunciJenisPerkara(m.jenisPerkara);
+  const lian = PUTUSAN_SELA_UMUM.lianAkhir[kunciCerai as keyof typeof PUTUSAN_SELA_UMUM.lianAkhir];
+  if (lian && RX_LIAN.test(teks) && (m.sudahPutus === true || (/putus|musyawarah|telah\s+(?:diucapkan|dilakukan|dilaksanakan)/i.test(teks) && !RX_SELA_SITA.test(teks)))) {
+    return [{ jenis: "putusan", folder: lian.folder, berkas: lian.berkas, menu: lian.menu, alias: perluasAliasMenu([lian.menu]), label: "Putusan - perkawinan putus karena li'an",
+      alasan: "Sumpah li'an telah diucapkan kedua belah pihak: perkawinan putus untuk selama-lamanya (KHI Pasal 125 dan 162).", utama: true, perkiraan: true }];
+  }
   const selaUmum = rekomendasiPutusanSela(m, teks);
   if (selaUmum.length) return selaUmum;
   let status = String(m.statusPutusan ?? "").trim();
@@ -947,12 +980,12 @@ export function rekomendasiBlangko(m: MasukanRekomendasi): HasilRekomendasi {
   if (basSela.length) hasil.bas = [...basSela, ...hasil.bas.map((x) => ({ ...x, utama: false }))];
   // 30 Okt (butir 8): mediasi elektronik (PERMA 3/2022) - BAS [1e] di folder yang sama didahulukan, BAS mediasi biasa jadi alternatif.
   if (RX_MEDIASI_EL.test(teks)) {
-    const u = PUTUSAN_SELA_UMUM;
-    hasil.bas = hasil.bas.flatMap((x) =>
-      x.berkas === u.mediasiBiasa
-        ? [{ ...x, berkas: u.mediasiElektronik, label: `${x.label} (mediasi elektronik)`, alasan: "Para pihak sepakat mediasi dilaksanakan secara elektronik (PERMA 3 Tahun 2022)." }, { ...x, utama: false }]
-        : [x],
-    );
+    hasil.bas = hasil.bas.flatMap((x) => {
+      const el = namaMediasiElektronik(x.berkas);
+      return el
+        ? [{ ...x, berkas: el, label: `${x.label} (mediasi elektronik)`, alasan: "Para pihak sepakat mediasi dilaksanakan secara elektronik (PERMA 3 Tahun 2022 Pasal 5 dan Pasal 6)." }, { ...x, utama: false }]
+        : [x];
+    });
   }
   hasil.putusan = rekomendasiPutusan(m, teks);
   hasil.relaas = rekomendasiRelaas(m, teks);

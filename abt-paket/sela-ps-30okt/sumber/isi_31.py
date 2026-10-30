@@ -230,9 +230,11 @@ def mediasi_tergugat():
                       'untuk membayar biaya mediasi;'),
           ('timbang', 'Menimbang, bahwa berdasarkan laporan Mediator tersebut, #7037# terbukti #11395#, sehingga #7037# harus dinyatakan tidak beriktikad baik dan '
                       'dihukum membayar biaya mediasi;'),
+          ('timbang', 'Menimbang, bahwa berdasarkan Pasal 23 ayat (4) Peraturan Mahkamah Agung tersebut, biaya mediasi sebagai penghukuman kepada Tergugat '
+                      'dapat dimasukkan dalam panjar biaya perkara atau dibayar tersendiri oleh Tergugat;'),
           ('bagian', 'Mengenai Biaya Perkara')]
     p += biaya_sela('penetapan')
-    p += amar(['Menyatakan #7037# tidak beriktikad baik dalam proses mediasi', 'Menghukum #7037# untuk membayar biaya mediasi sejumlah #11398#',
+    p += amar(['Menyatakan #7037# tidak beriktikad baik dalam proses mediasi', 'Menghukum #7037# untuk membayar biaya mediasi sejumlah #11398# #11415#',
                'Memerintahkan pemeriksaan pokok perkara dilanjutkan', TANGGUH], judul='MENETAPKAN')
     p += [('kaki', 'Demikian ditetapkan pada hari #0032# tanggal #0033# Masehi bertepatan dengan tanggal #8184# Hijriah, #11402#'), ('ttd', ''), ('akhir', '')]
     return p
@@ -330,7 +332,7 @@ TAMBAHAN += [
     (F_SELA, '[29] [Sela] Sumpah Pemutus (Decisoir) - Gugatan.rtf', 'sela', sumpah_pemutus, [11382, 11386], ('sumpah pemutus', 'diperintahkan')),
     (F_SELA, '[30] [Sela] Sumpah Penaksir (Aestimatoir) - Gugatan.rtf', 'sela', sumpah_penaksir, [11338, 11388, 11389], ('sumpah penaksir', 'diperintahkan')),
     (F_SELA, '[31] [Sela] Sumpah Lian - Cerai dengan Alasan Zina.rtf', 'sela', sumpah_lian, [11391], ("sumpah li'an", 'diperintahkan')),
-    (F_SELA, '[32] [Penetapan] Tergugat Tidak Beriktikad Baik dalam Mediasi - Biaya Mediasi (PERMA 1 2016 Pasal 23).rtf', 'sela', mediasi_tergugat, [11394, 11398],
+    (F_SELA, '[32] [Penetapan] Tergugat Tidak Beriktikad Baik dalam Mediasi - Biaya Mediasi (PERMA 1 2016 Pasal 23).rtf', 'sela', mediasi_tergugat, [11394, 11398, 11416],
      ('mediasi tidak beriktikad baik', 'tergugat (penetapan)')),
     (F_SELA, '[33] [NO] Penggugat Tidak Beriktikad Baik dalam Mediasi - Gugatan Tidak Dapat Diterima (PERMA 1 2016 Pasal 22).rtf', 'akhir', mediasi_penggugat,
      [11394, 11398, 661], ('mediasi tidak beriktikad baik', 'penggugat (putusan akhir)')),

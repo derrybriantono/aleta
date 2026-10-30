@@ -64,6 +64,7 @@ const S16 = "[16] [NO] Eksepsi Gugatan Kabur (Obscuur Libel) Dikabulkan - Gugata
 const S17 = "[17] [Sisipan] Eksepsi Gugatan Kabur (Obscuur Libel) Ditolak - Bagian Dalam Eksepsi untuk Putusan Akhir";
 const S26 = "[26] [Sela] Gugatan Rekonvensi Tidak Dapat Diterima - Pemeriksaan Konvensi Dilanjutkan";
 const S27 = "[27] [Sela Kabul] Penggabungan Perkara Dikabulkan";
+const S36 = "[36] [Sela Kabul] Pemisahan Perkara (Splitsing) Dikabulkan";
 const S32 = "[32] [Penetapan] Tergugat Tidak Beriktikad Baik dalam Mediasi - Biaya Mediasi (PERMA 1 2016 Pasal 23)";
 const HB_1 = "[01] [Kabul] HB - Kontradiktoir";
 const HB_98E = "[98e] [Sela] HB - Eksepsi Kewenangan Absolut Ditolak";
@@ -77,7 +78,7 @@ const KELOMPOK_PENUH: Kel = {
   "Harta Bersama - Putusan": { id: "D1", a: "A1", berkas: [HB_1, HB_98E] },
   "Hak Asuh Anak - Putusan": { id: "D2", a: "A2", berkas: [HA_SELAMAT] },
   "Putusan Sela & Penetapan Sita": { id: "D3", a: "A3", berkas: [SITA_1, SITA_2] },
-  [MENU_SELA]: { id: "D4", a: "A4", berkas: [S01, S02, S05, S06, S13, S15, S16, S17, S26, S27, S32] },
+  [MENU_SELA]: { id: "D4", a: "A4", berkas: [S01, S02, S05, S06, S13, S15, S16, S17, S26, S27, S32, S36] },
   "Putusan Sela - BAS": { id: "D5", a: "A5", berkas: [BAS_SELA] },
   "Harta Bersama - BAS": { id: "D6", a: "A6", berkas: [BAS_HB] },
 };
@@ -273,7 +274,7 @@ describe("B. isi tab: per pokok sela lalu per jenis perkara", () => {
       "Sita",
       "Tidak beriktikad baik dalam mediasi",
       "Gugatan rekonvensi",
-      "Penggabungan perkara",
+      "Penggabungan dan pemisahan perkara",
     ]);
     expect(kel).not.toContain("Hak Asuh Anak - Putusan");
     // Kelompok jenis perkara hanya memuat butir sela-nya.

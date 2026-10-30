@@ -5,7 +5,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { ALUR_BAS_BARU } from "@/lib/alur-bas-baru-data";
 import { tentukanBasBaru } from "@/lib/alur-bas-baru";
-import { FOLDER_MENU_PUTUSAN, PUTUSAN_SELA_UMUM, rekomendasiBasSela, rekomendasiBlangko, rekomendasiPutusanSela } from "@/lib/rekomendasi-blangko";
+import { FOLDER_MENU_PUTUSAN, PUTUSAN_SELA_UMUM, namaMediasiElektronik, rekomendasiBasSela, rekomendasiBlangko, rekomendasiPutusanSela } from "@/lib/rekomendasi-blangko";
 import { folderTugas } from "@/lib/tugas-blangko";
 
 /**
@@ -69,9 +69,10 @@ describe("paket putusan sela & pemeriksaan setempat 30 Okt - isi paket", () => {
     expect(existsSync(path.join(ps, "cadangan"))).toBe(false);
   });
 
-  it("68 blangko baru + 2 ditimpa; md5 daftar cocok; yang ditimpa hanya BAS pemeriksaan setempat HB dan waris dengan md5 dasar pohon server", () => {
-    // 33 putusan sela + 9 BAS sela + 6 BAS PS jenis (4c/4d/4e/10a + cerai 1/1a) + 19 BAS mediasi elektronik [1e] + 1 PTSP @ 4a
-    expect(RTF).toHaveLength(68);
+  it("96 blangko baru + 2 ditimpa; md5 daftar cocok; yang ditimpa hanya BAS pemeriksaan setempat HB dan waris dengan md5 dasar pohon server", () => {
+    // 37 putusan sela + 2 putusan akhir li'an (1/1a) + 9 BAS sela + 6 BAS PS jenis (4c/4d/4e/10a + cerai 1/1a)
+    // + 41 BAS mediasi elektronik (ALUR 04 [1e] x19, ALUR 05 [1e] x19, ALUR 34/36/37) + 1 PTSP @ 4a
+    expect(RTF).toHaveLength(96);
     for (const [folder, berkas, h] of RTF) expect(md5(readFileSync(path.join(ps, "rtf", folder, berkas))), berkas).toBe(h);
     expect(TIMPA.map((x) => `${x[0]}/${x[1]}`).sort()).toEqual([
       "derry_briantono/4a Harta Bersama - BAS/BAS ALUR 30 HB - Sidang PS - Pemeriksaan Setempat di Lokasi Objek (antara ALUR 04 [7] dan [8]).rtf",
@@ -105,8 +106,8 @@ describe("paket putusan sela & pemeriksaan setempat 30 Okt - isi paket", () => {
   it("rujukan pasal hukum acara hanya lewat variabel ACARA 11300-11309 (padanan HIR satu tempat); tanpa HIR di blangko", () => {
     for (const [folder, berkas] of RTF) {
       const t = polos(rtfMentah(folder, berkas));
-      if (folder === F && /\[NO\]/.test(berkas)) continue; // putusan akhir: kaki/rincian blangko [99c] dipakai apa adanya
-      if (/\[1e\]|@ 4a/.test(berkas)) continue; // mediasi elektronik: blangko mediasi Derry yang ada (Pasal 154 RBg di aslinya) + sisipan
+      if (/\[NO\]|\[Lian\]/.test(berkas)) continue; // putusan akhir: kaki/rincian blangko [99c] dipakai apa adanya
+      if (/Mediasi Elektronik|@ 4a/.test(berkas)) continue; // mediasi elektronik: blangko mediasi Derry yang ada (Pasal 154 RBg di aslinya) + sisipan
       expect(t, berkas).not.toMatch(/Pasal\s+\d+[^.;#]{0,40}\bRBg\b/);
       expect(t, berkas).not.toMatch(/\bHIR\b/);
     }
@@ -116,7 +117,7 @@ describe("paket putusan sela & pemeriksaan setempat 30 Okt - isi paket", () => {
   });
 
   it("SQL: variabel baru 11300-11499 saja, menu 151/152, PRASYARAT/PERIKSA/PULIH bersidik md5; tanpa nama aplikasi", () => {
-    expect(NOMOR.length).toBe(102);
+    expect(NOMOR.length).toBe(117);
     // blok 11600-11619 milik paket sampul: tidak boleh dipakai
     expect(NOMOR.some((n) => n >= 11600 && n <= 11619)).toBe(false);
     expect(NOMOR.every((n) => n >= 11300 && n <= 11499)).toBe(true);
@@ -186,12 +187,17 @@ describe("matriks putusan sela jenis x status", () => {
     [/^\[31\] \[Sela\] Sumpah Lian/, "Memerintahkan #11392# untuk mengucapkan sumpah li'an", "sela"],
     [/^\[32\] \[Penetapan\] Tergugat Tidak Beriktikad Baik/, "Menghukum #7037# untuk membayar biaya mediasi sejumlah #11398#", "penetapan-periksa"],
     [/^\[33\] \[NO\] Penggugat Tidak Beriktikad Baik/, "Menghukum #7036# untuk membayar biaya mediasi sejumlah #11398#", "akhir"],
+    // 30 Okt putaran 3
+    [/^\[34\] \[Sisipan\] Gugatan Rekonvensi Dikabulkan/, "Mengabulkan gugatan Penggugat Rekonvensi #11409#", "sisipan"],
+    [/^\[35\] \[Sisipan\] Gugatan Rekonvensi Ditolak/, "Menolak gugatan Penggugat Rekonvensi seluruhnya", "sisipan"],
+    [/^\[36\] \[Sela Kabul\] Pemisahan Perkara/, "Memisahkan pemeriksaan #11417# dari perkara Nomor #0001#", "sela"],
+    [/^\[37\] \[Sela Tolak\] Pemisahan Perkara/, "Menolak permohonan pemisahan perkara", "sela"],
   ];
   const TANGGUH = "Menangguhkan pembebanan biaya perkara hingga putusan akhir.";
 
-  it("33 blangko putusan sela (sita tetap di 97 Sita [01]/[02]); tiap sel jenis x status punya tepat satu blangko", () => {
-    expect(sela).toHaveLength(33);
-    expect(MATRIKS).toHaveLength(33);
+  it("37 blangko putusan sela (sita tetap di 97 Sita [01]/[02]); tiap sel jenis x status punya tepat satu blangko", () => {
+    expect(sela).toHaveLength(37);
+    expect(MATRIKS).toHaveLength(37);
     for (const [pola] of MATRIKS) expect(sela.filter((x) => pola.test(x[1])), String(pola)).toHaveLength(1);
   });
 
@@ -210,7 +216,7 @@ describe("matriks putusan sela jenis x status", () => {
         expect(mengadili, String(pola)).toContain("Menyatakan #0053# #7036# tidak dapat diterima");
       } else if (jenis === "sisipan") {
         expect(t).toMatch(/^SISIPAN PUTUSAN AKHIR/);
-        expect(t).toContain("Dalam Eksepsi");
+        expect(t).toMatch(/Dalam Eksepsi|Dalam Rekonvensi/);
         expect(t).not.toContain("Menangguhkan");
         expect(t).not.toContain("#8500#");
         continue;
@@ -236,6 +242,15 @@ describe("matriks putusan sela jenis x status", () => {
     expect(t).toContain("#11372#");
     expect(t).toContain("#11373#");
     expect(TANGGUH).toBe("Menangguhkan pembebanan biaya perkara hingga putusan akhir.");
+    // [32] cara bayar biaya mediasi (PERMA 1/2016 Pasal 23 ayat (4)); rekonvensi dikabulkan sebagian; pemisahan perkara sejalan penggabungan
+    const m32 = cari(/^\[32\]/);
+    expect(m32).toContain("Pasal 23 ayat (4)");
+    expect(m32).toContain("Menghukum #7037# untuk membayar biaya mediasi sejumlah #11398# #11415#;");
+    const r34 = cari(/^\[34\]/);
+    expect(r34).toContain("2.\t#11407##11410#;");
+    expect(r34).toContain("#11379#");
+    expect(r34).toContain("Dalam Konvensi dan Rekonvensi");
+    expect(cari(/^\[36\]/)).toContain("Pasal 2 ayat (4) Undang-Undang Nomor 48 Tahun 2009");
     // pemeriksaan setempat: tambah panjar (butir 12)
     expect(cari(/^\[15\]/)).toContain("Memerintahkan #11397# untuk membayar tambahan panjar biaya pemeriksaan setempat sejumlah #11396#");
   });
@@ -289,15 +304,24 @@ describe("BAS pemeriksaan setempat per jenis dan BAS sela", () => {
   });
 
   it("mediasi elektronik PERMA 3/2022: BAS [1e] di setiap folder yang punya BAS mediasi [1] dan penetapan PTSP @ 4a; berkas mediasi lama tidak disentuh", () => {
-    const el = RTF.filter((x) => /\[1e\]/.test(x[1]));
-    expect(el).toHaveLength(19);
+    const el = RTF.filter((x) => /Mediasi Elektronik/.test(x[1]) && x[0] !== "derry_briantono/99 PTSP");
+    expect(el).toHaveLength(41);
+    expect(el.filter((x) => /^BAS ALUR 04 \[1e\]/.test(x[1]))).toHaveLength(19);
+    expect(el.filter((x) => /^BAS ALUR 05 \[1e\]/.test(x[1]))).toHaveLength(19);
+    for (const a of ["BAS ALUR 34 Poligami - Sidang 1 - P & T Hadir - Mediasi.rtf", "BAS ALUR 36 Cerai Kumulasi IN - T Hadir - Sidang 1 - Mediasi.rtf", "BAS ALUR 37 CG Kumulasi Hak Asuh - Sidang 1 - P & T Hadir - Mediasi.rtf"]) {
+      expect(el.map((x) => x[1])).toContain(namaMediasiElektronik(a));
+    }
+    // ALUR 34 memakai sebutan #0046#/#0047# seperti blangko asalnya
+    const p34 = el.find((x) => /^BAS ALUR 34/.test(x[1]))!;
+    expect(polos(rtfMentah(p34[0], p34[1]))).toContain("Selanjutnya #0046# dan #0047# menyatakan sepakat");
     for (const [folder, berkas] of el) {
-      expect(berkas).toBe(PUTUSAN_SELA_UMUM.mediasiElektronik);
       const r = rtfMentah(folder, berkas);
       const t = polos(r);
-      expect(t).toContain("Peraturan Mahkamah Agung Nomor 3 Tahun 2022 tentang Mediasi di Pengadilan secara Elektronik");
+      // pasal: persetujuan dan formulir = Pasal 5 dan 6 PERMA 3/2022; audio visual = kehadiran langsung: Pasal 5 ayat (3), Pasal 6 ayat (2) PERMA 1/2016
+      expect(t).toContain("Pasal 5 dan Pasal 6 Peraturan Mahkamah Agung Nomor 3 Tahun 2022 tentang Mediasi di Pengadilan secara Elektronik");
+      expect(t).toContain("Pasal 5 ayat (3) dan Pasal 6 ayat (2) Peraturan Mahkamah Agung Nomor 1 Tahun 2016");
       expect(t).toContain("untuk menempuh mediasi secara elektronik #11400#;");
-      expect(t).toMatch(/7\.\t\s*Berdasarkan Peraturan Mahkamah Agung Nomor 3 Tahun 2022/);
+      expect(t).toMatch(/7\.\t\s*Berdasarkan Pasal 5 dan Pasal 6 Peraturan Mahkamah Agung Nomor 3 Tahun 2022/);
       expect(t).toMatch(/8\.\t\s*Apabila para pihak sudah memahami/);
       expect(r).toMatch(/\{\\\*\\isianasal #11399#\}/);
     }
@@ -397,5 +421,33 @@ describe("saran blangko portal (rekomendasi) untuk putusan sela", () => {
     expect(m.bas[i + 1]).toMatchObject({ berkas: PUTUSAN_SELA_UMUM.mediasiBiasa, folder: m.bas[i].folder, utama: false });
     const biasa = rekomendasiBlangko({ jenisPerkara: "Cerai Gugat", nomorPerkara: "9/Pdt.G/2026/PA.Xx", urutanSidang: 1, dihadiriOleh: 1, agenda: "Mediasi" });
     expect(biasa.bas.some((r) => r.berkas === PUTUSAN_SELA_UMUM.mediasiElektronik)).toBe(false);
+  });
+});
+
+describe("30 Okt putaran 3: putusan akhir li'an dan saran", () => {
+  const dasar = { jenisPerkara: "Harta Bersama", nomorPerkara: "5/Pdt.G/2026/PA.Xx", urutanSidang: 8, dihadiriOleh: 1, alurPerkaraId: 15 };
+  it("putusan akhir li'an di folder cerai gugat dan cerai talak: KHI 125/162, amar putus selamanya, nasab anak, biaya bidang perkawinan", () => {
+    for (const [folder, kunci] of [["derry_briantono/1 Perceraian CG", "cerai gugat"], ["derry_briantono/1a Perceraian CT", "cerai talak"]] as const) {
+      const x = RTF.find((r) => r[0] === folder && /^\[97\] \[Lian\]/.test(r[1]))!;
+      expect(x[1]).toBe(PUTUSAN_SELA_UMUM.lianAkhir[kunci].berkas);
+      const t = polos(rtfMentah(x[0], x[1]));
+      expect(t.split("\n")[0]).toMatch(/^PUTUSAN\s*$/m);
+      for (const v of ["Pasal 125 Kompilasi Hukum Islam", "Pasal 162 Kompilasi Hukum Islam", "Pasal 126 Kompilasi Hukum Islam", "#11414#", "Rincian Biaya Perkara"]) expect(t).toContain(v);
+      expect(t).toContain("2.\tMenyatakan perkawinan #11392# dengan #11393# putus karena li'an;");
+      expect(t).toContain("tidak dapat rujuk dan tidak dapat menikah kembali untuk selama-lamanya#11412#;");
+      expect(t).toContain("#11419#\t#11122#.");
+    }
+  });
+  it("saran: li'an sesudah putus -> putusan akhir li'an; rekonvensi diputus -> sisipan; pemisahan perkara; mediasi elektronik ALUR 05", () => {
+    const b = PUTUSAN_SELA_UMUM.berkas;
+    const ct = rekomendasiBlangko({ ...dasar, jenisPerkara: "Cerai Talak", agenda: "musyawarah dan pembacaan putusan", keterangan: "sumpah li'an telah diucapkan" }).putusan;
+    expect(ct.map((x) => x.berkas), JSON.stringify(ct[0])).toContain(PUTUSAN_SELA_UMUM.lianAkhir["cerai talak"].berkas);
+    expect(ct[0]).toMatchObject({ folder: "derry_briantono/1a Perceraian CT", berkas: PUTUSAN_SELA_UMUM.lianAkhir["cerai talak"].berkas });
+    expect(rekomendasiPutusanSela({ ...dasar, jenisPerkara: "Cerai Talak" }, "putusan sela sumpah li'an")[0].berkas).toBe(b.lian);
+    expect(rekomendasiPutusanSela(dasar, "musyawarah rekonvensi").map((x) => x.berkas)).toEqual([b.rekonvensiKabul, b.rekonvensiTolak, b.rekonvensi]);
+    expect(rekomendasiPutusanSela(dasar, "permohonan pemisahan perkara").map((x) => x.berkas)).toEqual([b.pisahKabul, b.pisahTolak]);
+    expect(namaMediasiElektronik("BAS ALUR 05 [1] BAS 1 P & T Hadir - Mediasi.rtf")).toBe("BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf");
+    expect(namaMediasiElektronik("BAS ALUR 04 [3] BAS 3 P & T Hadir - Jawaban.rtf")).toBeNull();
+    for (const r of RTF.filter((x) => /Mediasi Elektronik/.test(x[1]) && /^BAS/.test(x[1]))) expect(namaMediasiElektronik(r[1])).toBeNull();
   });
 });

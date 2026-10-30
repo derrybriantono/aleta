@@ -18,7 +18,8 @@ for nm in ('daftar-rtf.tsv', 'daftar-timpa.tsv'):
             berkas.add(f[0] + '/' + f[1])
 temuan = []
 for d in sorted(glob.glob(os.path.join(AKAR, '*', 'abt-paket', '*', 'paket-satker'))):
-    if os.path.abspath(d) == os.path.abspath(PS):
+    # salinan paket ini sendiri di worktree gabungan (nama folder paket sama) bukan bentrok
+    if os.path.abspath(d) == os.path.abspath(PS) or os.path.basename(os.path.dirname(d)) == os.path.basename(SINI):
         continue
     for sql in glob.glob(os.path.join(d, '*PASANG*.sql')):
         t = open(sql, encoding='latin1').read()
