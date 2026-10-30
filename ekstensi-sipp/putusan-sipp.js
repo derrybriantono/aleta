@@ -13,8 +13,10 @@
  *     Putusan Akhir dari draf, e-Doc putusan, e-Doc anonimisasi;
  *   - keadaan tiap langkah dibaca dari SIPP (putusan sudah terisi / e-Doc sudah
  *     ada = dilewati, tidak ditimpa);
- *   - SATU tombol dengan konfirmasi di halaman (bukan window.confirm) yang
- *     menyebut berapa Putusan Akhir diisi dan berapa e-Doc diunggah;
+ *   - SATU tombol yang LANGSUNG menjalankan semua langkah yang dicentang (30 Okt
+ *     2026, permintaan pengguna: tanpa tombol kedua/konfirmasi); apa yang sedang
+ *     dikerjakan tampil sebagai kemajuan. Yang benar-benar menahan (praperiksa,
+ *     data pribadi tersisa di anonimisasi) tetap bertanya/menahan di langkahnya;
  *   - laporan per langkah (tercatat / dilewati karena sudah ada / gagal+sebab)
  *     dan muat ulang tetap di perkara ini (muat-ulang-sipp.js).
  *
@@ -489,7 +491,8 @@
     semuaLabel.append(semua, " Centang semua langkah");
     const utama = tombol("Putusan & unggah e-Doc", "aleta-pusipp-utama");
     utama.setAttribute("data-pusipp", "utama");
-    utama.addEventListener("click", () => mintaKonfirmasi());
+    // 30 Okt 2026: satu klik langsung bekerja (tanpa kotak "Akan ... Lanjutkan/Batal"); klik ganda ditolak jalankan() (ctx.sibuk).
+    utama.addEventListener("click", () => void jalankan());
     aksi.append(semuaLabel, utama);
     kaki.append(ringkas, aksi);
 
@@ -588,46 +591,30 @@
     const berkasBelum = Boolean(ctx.berkas && (ctx.berkas.status === "periksa" || ctx.berkas.status === "ubah"));
     utama.disabled = ctx.sibuk || r.total === 0 || !ctx.dibaca || berkasBelum || tanpaSumber;
 
+    // 30 Okt 2026: bukan pertanyaan lagi - selama bekerja, apa yang sedang dikerjakan tampil sebagai kemajuan.
     const wadahKonfirm = akar.querySelector(".aleta-pusipp-konfirm-wadah");
     wadahKonfirm.textContent = "";
-    if (ctx.konfirm && !ctx.sibuk && r.total > 0) {
-      const kotak = el("div", "aleta-pusipp-konfirm");
-      kotak.setAttribute("role", "alertdialog");
-      kotak.setAttribute("aria-label", "Konfirmasi");
-      const bagian = [];
-      if (r.isi) bagian.push(`mengisi dan menyimpan 1 Putusan Akhir dari ${berkasSiap() ? `berkas ${berkasSiap().nama}` : "draf putusan ALETA"}`);
-      if (r.edoc) bagian.push(`mengunggah ${r.edoc} e-Doc (${[r.putusan ? "putusan" : "", r.anonim ? "anonimisasi" : ""].filter(Boolean).join(" dan ")})`);
-      kotak.appendChild(el("p", "aleta-pusipp-konfirm-teks", `Akan ${bagian.join(", lalu ")} untuk perkara ${ctx.nomor}.`));
-      kotak.appendChild(
-        el(
-          "p",
-          "aleta-pusipp-konfirm-ket",
-          "Dicatat atas akun SIPP yang sedang masuk. Yang sudah ada di SIPP tidak diganti; bila praperiksa menahan, pengisian berhenti dan tidak disimpan."
-        )
-      );
-      const aksi = el("div", "aleta-pusipp-konfirm-aksi");
-      const ya = tombol("Ya, jalankan", "aleta-pusipp-ya");
-      ya.setAttribute("data-pusipp", "ya");
-      ya.addEventListener("click", () => void jalankan());
-      const batal = tombol("Batal", "aleta-pusipp-batal");
-      batal.setAttribute("data-pusipp", "batal");
-      batal.addEventListener("click", () => {
-        ctx.konfirm = false;
-        render();
-      });
-      aksi.append(ya, batal);
-      kotak.appendChild(aksi);
+    if (ctx.sibuk && ctx.kerjaTeks) {
+      const kotak = el("div", "aleta-pusipp-kerja");
+      kotak.setAttribute("role", "status");
+      kotak.appendChild(el("p", "aleta-pusipp-konfirm-teks", ctx.kerjaTeks));
+      kotak.appendChild(el("p", "aleta-pusipp-konfirm-ket", "Dicatat atas akun SIPP yang sedang masuk. Yang sudah ada di SIPP tidak diganti; bila praperiksa menahan, pengisian berhenti dan tidak disimpan."));
       wadahKonfirm.appendChild(kotak);
     }
   }
 
+  /** Nama lama (sebelum 30 Okt 2026) - kini satu klik langsung menjalankan, tanpa kotak konfirmasi. */
   function mintaKonfirmasi() {
-    if (!ctx || ctx.sibuk || !ctx.dibaca) return;
-    if (rencana().total === 0 || tanpaSumberIsi()) return;
-    ctx.konfirm = true;
-    render();
-    const ya = ctx.akar && ctx.akar.querySelector("[data-pusipp='ya']");
-    if (ya && typeof ya.focus === "function") ya.focus();
+    return jalankan();
+  }
+
+  /** Kalimat kemajuan: apa yang dikerjakan sekarang (dulu bunyi kotak konfirmasi). */
+  function teksKerja(r) {
+    const bagian = [];
+    if (r.isi) bagian.push(`mengisi dan menyimpan 1 Putusan Akhir dari ${berkasSiap() ? `berkas ${berkasSiap().nama}` : "draf putusan ALETA"}`);
+    if (r.edoc) bagian.push(`mengunggah ${r.edoc} e-Doc (${[r.putusan ? "putusan" : "", r.anonim ? "anonimisasi" : ""].filter(Boolean).join(" dan ")})`);
+    const t = bagian.join(", lalu ");
+    return `Sedang ${t} untuk perkara ${ctx.nomor}.`;
   }
 
   function setStatus(j, status, catatan) {
@@ -658,6 +645,7 @@
     const nomor = ctx.nomor;
     ctx.sibuk = true;
     ctx.konfirm = false;
+    ctx.kerjaTeks = teksKerja(r);
     if (ctx.laporan) ctx.laporan.textContent = "";
     for (const j of LANGKAH) if (ctx.status[j] === "tunggu") ctx.status[j] = "jalan";
     render();

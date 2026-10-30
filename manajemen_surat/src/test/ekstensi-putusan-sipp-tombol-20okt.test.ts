@@ -244,11 +244,10 @@ async function panelSiap(h: Halaman) {
   return panel(h)!;
 }
 
+/** 30 Okt 2026: SATU klik langsung bekerja - tanpa kotak konfirmasi; yang tampil adalah kemajuan. */
 async function klikSatuKali(h: Halaman) {
   utama(h).click();
-  const konfirm = await sampai(() => panel(h)!.querySelector(".aleta-pusipp-konfirm"), "konfirmasi tampil");
-  (panel(h)!.querySelector('[data-pusipp="ya"]') as HTMLButtonElement).click();
-  return konfirm;
+  return sampai(() => panel(h)!.querySelector(".aleta-pusipp-kerja") || (api(h).keadaan().sibuk === false && h.urut.length ? panel(h) : null), "kemajuan tampil");
 }
 
 function simpanTangkapan(h: Halaman, nama: string) {
@@ -342,6 +341,25 @@ describe("tempat unggah berkas putusan di panel Putusan Otomatis (21 Okt 2026)",
     zona.dispatchEvent(evt);
     await sampai(() => api(h).keadaan().berkas && api(h).keadaan().berkas.status !== "periksa" && api(h).keadaan().berkas.status !== "ubah", "berkas diproses");
   }
+
+  it("30 Okt 2026 alur pengguna: berkas dipilih -> centang pekerjaan -> SATU klik -> semua yang dicentang berjalan sekali, tanpa tombol kedua", async () => {
+    const h = buka();
+    await panelSiap(h);
+    await pilihBerkas(h, "684_Pdt.G_2026_PA.Dgl putusan.rtf");
+    const anonim = panel(h)!.querySelector('[data-pusipp-cek="anonim"]') as HTMLInputElement;
+    anonim.checked = false;
+    anonim.dispatchEvent(new h.w.Event("change", { bubbles: true }));
+    const tombolUtama = utama(h);
+    tombolUtama.click();
+    tombolUtama.click(); // klik ganda tidak menjalankan dua kali
+    expect(panel(h)!.querySelector('[data-pusipp="ya"]')).toBeNull();
+    expect(panel(h)!.querySelector(".aleta-pusipp-konfirm")).toBeNull();
+    await sampai(() => status(h, "putusan") === "ok", "selesai");
+    expect(h.urut.filter((x) => x === "otomatis")).toHaveLength(1);
+    expect(h.opsiOto).toHaveLength(1);
+    expect(h.opsiOto[0]).toMatchObject({ edoc: true, denganPutusan: true, denganAnonim: false });
+    expect((h.opsiOto[0].putusan as { name: string }).name).toBe("684_Pdt.G_2026_PA.Dgl putusan.rtf");
+  });
 
   it("ada zona seret/pilih (RTF, DOCX, DOC, PDF) di panel, bukan hanya di bagian ALETA", async () => {
     const h = buka();
@@ -577,20 +595,22 @@ describe("panel: terbentang, semua tercentang, keadaan SIPP dibaca", () => {
   });
 });
 
-describe("konfirmasi di halaman dan satu klik", () => {
-  it("konfirmasi menyebut angka: 1 Putusan Akhir dan 2 e-Doc; Batal tidak menjalankan apa pun", async () => {
+describe("satu klik langsung bekerja (30 Okt 2026, tanpa konfirmasi)", () => {
+  it("satu klik: tanpa kotak konfirmasi/tombol kedua, langsung berjalan; kemajuan menyebut angka 1 Putusan Akhir dan 2 e-Doc", async () => {
     const h = buka();
     await panelSiap(h);
     utama(h).click();
-    const k = await sampai(() => panel(h)!.querySelector(".aleta-pusipp-konfirm"), "konfirmasi");
-    expect(k.textContent).toContain("mengisi dan menyimpan 1 Putusan Akhir dari draf");
+    expect(panel(h)!.querySelector(".aleta-pusipp-konfirm")).toBeNull();
+    expect(panel(h)!.querySelector('[data-pusipp="ya"]')).toBeNull();
+    const k = await sampai(() => panel(h)!.querySelector(".aleta-pusipp-kerja"), "kemajuan");
+    expect(k.getAttribute("role")).toBe("status");
+    expect(k.textContent).toContain("Sedang mengisi dan menyimpan 1 Putusan Akhir dari draf");
     expect(k.textContent).toContain("mengunggah 2 e-Doc (putusan dan anonimisasi)");
     expect(k.textContent).toContain(NOMOR);
-    simpanTangkapan(h, "konfirmasi");
-    (panel(h)!.querySelector('[data-pusipp="batal"]') as HTMLButtonElement).click();
-    await tunggu(10);
-    expect(panel(h)!.querySelector(".aleta-pusipp-konfirm")).toBeNull();
-    expect(h.urut).toEqual([]);
+    simpanTangkapan(h, "kemajuan");
+    await sampai(() => status(h, "anonim") !== "jalan" && status(h, "anonim") !== "tunggu", "selesai");
+    expect(h.urut.filter((x) => x === "otomatis")).toHaveLength(1);
+    expect(panel(h)!.querySelector(".aleta-pusipp-kerja")).toBeNull();
   });
 
   it("Ya: membuka blangko, menjalankan alur ekstensi (kotak.otomatis) dengan centang yang dipilih, melaporkan per langkah", async () => {
@@ -676,11 +696,10 @@ describe("konfirmasi di halaman dan satu klik", () => {
   it("dua klik bersamaan: alur ekstensi hanya sekali", async () => {
     const h = buka();
     await panelSiap(h);
-    utama(h).click();
-    await sampai(() => panel(h)!.querySelector('[data-pusipp="ya"]'), "konfirmasi");
-    const ya = panel(h)!.querySelector('[data-pusipp="ya"]') as HTMLButtonElement;
-    ya.click();
-    ya.click();
+    const tombolUtama = utama(h);
+    tombolUtama.click();
+    tombolUtama.click();
+    void api(h).jalankan();
     await sampai(() => status(h, "anonim") === "ok", "selesai");
     expect(h.urut.filter((x) => x === "otomatis")).toHaveLength(1);
   });

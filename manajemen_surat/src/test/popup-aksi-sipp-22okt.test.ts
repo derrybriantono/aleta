@@ -547,8 +547,8 @@ describe("berhasil -> pesan + segarkan di halaman yang sama", () => {
     }
     await sampai(() => ptj(h).keadaan().pratinjau && ptj(h).keadaan().pratinjau.ok, "pratinjau jam");
     await sampai(() => !(h.d.querySelector('#aleta-ptj-panel [data-ptj="utama"]') as HTMLButtonElement).disabled, "tombol jadwalkan siap");
+    // 30 Okt 2026: satu klik langsung menjadwalkan (tanpa tombol Ya).
     (h.d.querySelector('#aleta-ptj-panel [data-ptj="utama"]') as HTMLButtonElement).click();
-    (await sampai(() => h.d.querySelector('#aleta-ptj-panel [data-ptj="ya"]'), "Ya")).dispatchEvent(new h.w.MouseEvent("click", { bubbles: true }));
   }
 
   // 22 Okt malam (pengguna): Jadwalkan Putusan TIDAK menyegarkan sendiri - tab Antrean terjadwal tetap terbuka;
