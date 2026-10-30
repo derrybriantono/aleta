@@ -1,0 +1,382 @@
+{
+ "2111": {
+  "n": 1917,
+  "samaTerisi": 49,
+  "samaKosong": 1587,
+  "baruTerisi": 281,
+  "berubahTerisi": 0,
+  "galat": 0,
+  "contoh": [
+   [
+    8375,
+    "2025-02-04"
+   ],
+   [
+    8381,
+    "2025-02-27"
+   ],
+   [
+    8383,
+    "2025-02-11"
+   ],
+   [
+    8385,
+    "2025-02-13"
+   ],
+   [
+    8395,
+    "2025-02-04"
+   ],
+   [
+    8400,
+    "2025-03-11"
+   ]
+  ]
+ },
+ "2112": {
+  "n": 1917,
+  "samaTerisi": 18,
+  "samaKosong": 1884,
+  "baruTerisi": 15,
+  "berubahTerisi": 0,
+  "galat": 0,
+  "contoh": [
+   [
+    8399,
+    "2025-03-04"
+   ],
+   [
+    8457,
+    "2025-03-04"
+   ],
+   [
+    8467,
+    "2025-03-11"
+   ],
+   [
+    8477,
+    "2025-03-12"
+   ],
+   [
+    8531,
+    "2025-03-25"
+   ],
+   [
+    8749,
+    "2025-07-29"
+   ]
+  ]
+ },
+ "7111": {
+  "n": 1917,
+  "samaTerisi": 92,
+  "samaKosong": 1821,
+  "baruTerisi": 4,
+  "berubahTerisi": 0,
+  "galat": 0,
+  "contoh": [
+   [
+    8631,
+    "2025-05-26"
+   ],
+   [
+    8780,
+    "2025-07-14"
+   ],
+   [
+    9611,
+    "2026-05-08"
+   ],
+   [
+    9868,
+    "2026-07-15"
+   ]
+  ]
+ },
+ "7112": {
+  "n": 1917,
+  "samaTerisi": 90,
+  "samaKosong": 1824,
+  "baruTerisi": 3,
+  "berubahTerisi": 0,
+  "galat": 0,
+  "contoh": [
+   [
+    8631,
+    "2025-05-28"
+   ],
+   [
+    9611,
+    "2026-05-12"
+   ],
+   [
+    9868,
+    "2026-07-20"
+   ]
+  ]
+ },
+ "7113": {
+  "n": 1917,
+  "samaTerisi": 90,
+  "samaKosong": 1824,
+  "baruTerisi": 3,
+  "berubahTerisi": 0,
+  "galat": 0,
+  "contoh": [
+   [
+    8631,
+    "2025-06-02"
+   ],
+   [
+    9611,
+    "2026-05-18"
+   ],
+   [
+    9868,
+    "2026-07-22"
+   ]
+  ]
+ },
+ "7114": {
+  "n": 1917,
+  "samaTerisi": 11,
+  "samaKosong": 1904,
+  "baruTerisi": 2,
+  "berubahTerisi": 0,
+  "galat": 0,
+  "contoh": [
+   [
+    9143,
+    "2025-11-21"
+   ],
+   [
+    9153,
+    "2025-11-13"
+   ]
+  ]
+ },
+ "7115": {
+  "n": 1917,
+  "samaTerisi": 92,
+  "samaKosong": 1821,
+  "baruTerisi": 4,
+  "berubahTerisi": 0,
+  "galat": 0,
+  "contoh": [
+   [
+    8631,
+    "Senin"
+   ],
+   [
+    8780,
+    "Senin"
+   ],
+   [
+    9611,
+    "Jumat"
+   ],
+   [
+    9868,
+    "Rabu"
+   ]
+  ]
+ },
+ "7116": {
+  "n": 1917,
+  "samaTerisi": 90,
+  "samaKosong": 1824,
+  "baruTerisi": 3,
+  "berubahTerisi": 0,
+  "galat": 0,
+  "contoh": [
+   [
+    8631,
+    "Rabu"
+   ],
+   [
+    9611,
+    "Selasa"
+   ],
+   [
+    9868,
+    "Senin"
+   ]
+  ]
+ },
+ "7117": {
+  "n": 1917,
+  "samaTerisi": 90,
+  "samaKosong": 1824,
+  "baruTerisi": 3,
+  "berubahTerisi": 0,
+  "galat": 0,
+  "contoh": [
+   [
+    8631,
+    "Senin"
+   ],
+   [
+    9611,
+    "Senin"
+   ],
+   [
+    9868,
+    "Rabu"
+   ]
+  ]
+ },
+ "7118": {
+  "n": 1917,
+  "samaTerisi": 11,
+  "samaKosong": 1904,
+  "baruTerisi": 2,
+  "berubahTerisi": 0,
+  "galat": 0,
+  "contoh": [
+   [
+    9143,
+    "Jumat"
+   ],
+   [
+    9153,
+    "Kamis"
+   ]
+  ]
+ },
+ "7119": {
+  "n": 1917,
+  "samaTerisi": 49,
+  "samaKosong": 1587,
+  "baruTerisi": 281,
+  "berubahTerisi": 0,
+  "galat": 0,
+  "contoh": [
+   [
+    8375,
+    "Selasa"
+   ],
+   [
+    8381,
+    "Kamis"
+   ],
+   [
+    8383,
+    "Selasa"
+   ],
+   [
+    8385,
+    "Kamis"
+   ],
+   [
+    8395,
+    "Selasa"
+   ],
+   [
+    8400,
+    "Selasa"
+   ]
+  ]
+ },
+ "7121": {
+  "n": 1917,
+  "samaTerisi": 18,
+  "samaKosong": 1884,
+  "baruTerisi": 15,
+  "berubahTerisi": 0,
+  "galat": 0,
+  "contoh": [
+   [
+    8399,
+    "Selasa"
+   ],
+   [
+    8457,
+    "Selasa"
+   ],
+   [
+    8467,
+    "Selasa"
+   ],
+   [
+    8477,
+    "Rabu"
+   ],
+   [
+    8531,
+    "Selasa"
+   ],
+   [
+    8749,
+    "Selasa"
+   ]
+  ]
+ },
+ "7122": {
+  "n": 1917,
+  "samaTerisi": 100,
+  "samaKosong": 1705,
+  "baruTerisi": 112,
+  "berubahTerisi": 0,
+  "galat": 0,
+  "contoh": [
+   [
+    8392,
+    "Rabu"
+   ],
+   [
+    8422,
+    "Kamis"
+   ],
+   [
+    8445,
+    "Rabu"
+   ],
+   [
+    8450,
+    "Rabu"
+   ],
+   [
+    8472,
+    "Rabu"
+   ],
+   [
+    8512,
+    "Rabu"
+   ]
+  ]
+ },
+ "8438": {
+  "n": 1917,
+  "samaTerisi": 100,
+  "samaKosong": 1705,
+  "baruTerisi": 112,
+  "berubahTerisi": 0,
+  "galat": 0,
+  "contoh": [
+   [
+    8392,
+    "2025-02-12"
+   ],
+   [
+    8422,
+    "2025-02-13"
+   ],
+   [
+    8445,
+    "2025-02-19"
+   ],
+   [
+    8450,
+    "2025-05-14"
+   ],
+   [
+    8472,
+    "2025-02-12"
+   ],
+   [
+    8512,
+    "2025-03-05"
+   ]
+  ]
+ }
+}

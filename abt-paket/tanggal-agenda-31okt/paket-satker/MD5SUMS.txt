@@ -1,0 +1,8 @@
+034562a2fbc05d9e61fe03d1f9a5f87b *abt-tanggal-agenda-31okt-PASANG.sql
+e76477b5be5b02e65bb5d5b89e593f07 *abt-tanggal-agenda-31okt-PERIKSA.sql
+2f4e9f2455a25b4019025593f28c3b21 *abt-tanggal-agenda-31okt-PRASYARAT.sql
+a879ac9c82c713c6c52eeecd82982917 *abt-tanggal-agenda-31okt-PULIH.sql
+ac7ca5bdc63894cd90b77aa3a66c852e *harap.txt
+a126b00e7d009a705537f53c1bafef46 *nomor-variabel.txt
+fec12895e6aa705a7203c11ca44f97ee *pasang-satker.sh
+442a1fa22535f39fd7b3a61765c21188 *pulih-satker.sh

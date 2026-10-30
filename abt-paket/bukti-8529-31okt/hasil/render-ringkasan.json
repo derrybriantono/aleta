@@ -1,0 +1,41 @@
+{
+ "keterangan": "render php56 ABT asli di salinan rantai aps_badilag_g1r, sebelum (pulih) dan sesudah (pasang) paket abt-bukti-8529-31okt",
+ "hasil": [
+  {
+   "perkara_id": "10105",
+   "blangko": "1 Perceraian CG/[01] [Kabul Verstek] Cerai (Format Lengkap).rtf",
+   "label": "CG 553/Pdt.G/2026 belum putus, daftar bukti surat kosong",
+   "bukti_surat_terisi": "0",
+   "paket_sebelum": "PULIH COCOK",
+   "sebelum": {
+    "bukti_baru": 0,
+    "huruf_belum_dipilih": 8,
+    "penanda_sisa": []
+   },
+   "paket_sesudah": "SELESAI",
+   "sesudah": {
+    "bukti_baru": 1,
+    "huruf_belum_dipilih": 7,
+    "penanda_sisa": []
+   }
+  },
+  {
+   "perkara_id": "9654",
+   "blangko": "1 Perceraian CG/[01] [Kabul Verstek] Cerai (Format Lengkap).rtf",
+   "label": "CG 235/Pdt.G/2026 putus, daftar bukti memuat KTP (tidak berubah)",
+   "bukti_surat_terisi": "1",
+   "paket_sebelum": "PULIH COCOK",
+   "sebelum": {
+    "bukti_baru": 0,
+    "huruf_belum_dipilih": 0,
+    "penanda_sisa": []
+   },
+   "paket_sesudah": "SELESAI",
+   "sesudah": {
+    "bukti_baru": 0,
+    "huruf_belum_dipilih": 0,
+    "penanda_sisa": []
+   }
+  }
+ ]
+}

@@ -1,0 +1,22 @@
+[
+ {
+  "no": 11896,
+  "nama": "ACARA: DASAR HUKUM BANDING (Pasal 199 ayat (1) RBg / Jawa-Madura: Pasal 7 ayat (1) UU Nomor 20 Tahun 1947 tentang Peradilan Ulangan; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', 'Pasal 7 ayat (1) Undang-Undang Nomor 20 Tahun 1947 tentang Peradilan Ulangan', 'Pasal 199 ayat (1) RBg') AS data"
+ },
+ {
+  "no": 11897,
+  "nama": "ACARA: AKTA DI BAWAH TANGAN YANG DIAKUI (Pasal 288 RBg / Jawa-Madura: Pasal 1875 Kitab Undang-Undang Hukum Perdata; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', 'Pasal 1875 Kitab Undang-Undang Hukum Perdata', 'Pasal 288 RBg') AS data"
+ },
+ {
+  "no": 11898,
+  "nama": "ACARA: NOMOR PASAL PENYAMPAIAN PANGGILAN/SURAT JURU SITA (Pasal 718 RBg = Pasal 390 HIR; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '390', '718') AS data"
+ },
+ {
+  "no": 11899,
+  "nama": "ACARA: \" ayat (1)\" PASAL GUGATAN LISAN (Pasal 144 ayat (1) RBg = Pasal 120 HIR tanpa ayat; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '', ' ayat (1)') AS data"
+ }
+]
