@@ -136,6 +136,9 @@ const BERKAS = [
   "blangko-derry-jawab-katalog.js",
   "blangko-derry-berkas.js",
   "blangko-derry-isian.js",
+  // Temuan perkara di panel cetak Blangko Derry (G4, 30 Okt 2026): usul pembetulan kehadiran SIPP (satu tombol bagi PP perkara)
+  // dan putusan SIPP vs dokumen - mengisi wadah catatan temuan yang sudah ada, dipanggil blangko-derry-isian.js.
+  "temuan-perkara.js",
   // Cetak massal Blangko Derry (20 Okt 2026): jendela besar per peran, memakai pengemudi satu-perkara di blangko-derry-isian.js.
   "blangko-derry-massal.js",
   // Checklist konseptor sementara (F1.6, 17 Okt 2026) - skrip konten ABT

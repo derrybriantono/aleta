@@ -7611,6 +7611,17 @@
     if (!e) return;
     const t = temuanHadirVerstek();
     e.innerHTML = t ? `<div class="bd-peringatan bd-temuanhadir" role="status"><b>Catatan temuan:</b> ${esc(t.teks)}. Cetak tidak ditahan.</div>` : "";
+    // G4 30 Okt: usul pembetulan kehadiran SIPP (BAS / verstek; satu tombol untuk PP perkara) dan cocok putusan SIPP vs dokumen
+    // - modul temuan-perkara.js menambah isinya di wadah yang sama. Tanpa modul = perilaku lama persis.
+    try {
+      const U = globalThis.AletaTemuanPerkara;
+      const pk = S.pk || {};
+      if (U && typeof U.gambar === "function") {
+        U.gambar(e, { perkaraId: perkaraId(), nomorPerkara: nomorPerkara(), jenisPerkara: String(pk.jenisPerkara || (pk.perkara && pk.perkara.jenisPerkara) || ""), berkas: S.blangko ? String(S.blangko.berkas || "") : "", jenis: S.blangko ? String(S.blangko.jenis || "") : "", sidang: pk.sidangDipilih || null, putusanSipp: pk.putusanSipp || null, temuanVerstek: Boolean(t) });
+      }
+    } catch {
+      /* temuan tambahan tidak menahan panel cetak */
+    }
   }
   function catatLog(teks) {
     S.log.push(`${jamSekarang()}: ${teks}`);

@@ -1095,6 +1095,15 @@ export const AKSI = {
     rute: ["GET|PUT /api/admin/tampilan-sipp"],
     alasan: "Aturan tampilan mengubah layar SIPP pegawai lain - Admin dan Super Admin. Tampilan tidak memberi hak baru; aturan untuk Super Admin hanya diubah Super Admin.",
   },
+  // 30 Okt 2026 (G4 4.4): usul pembetulan kehadiran sidang dari BAS / amar verstek - ditulis ke SIPP HANYA atas klik PP perkara.
+  "sidang.kehadiran-sipp": {
+    label: "Betulkan pilihan kehadiran sidang di SIPP (dari BAS atau amar verstek)",
+    crud: "U",
+    golongan: ["pp"],
+    lingkup: "milik",
+    rute: ["POST /api/aleta-ecourt/kehadiran-sidang"],
+    alasan: "Kehadiran sidang dicatat panitera pengganti; tercatat di SIPP atas akun PP perkara. Rute menegakkan penekan = PP perkara itu (akun SIPP tertaut atau nama) - Admin/Super Admin yang bukan PP perkara tidak.",
+  },
   // 30 Okt 2026 (G4): kartu tautan akun pegawai ALETA - SIPP - ABT - e-Court; Admin mengisi akun e-Court pegawai.
   "tautan-akun.atur": {
     label: "Kartu tautan akun pegawai (ALETA, SIPP, ABT, e-Court): menautkan akun SIPP dan mengisi akun e-Court pegawai",

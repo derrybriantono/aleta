@@ -180,6 +180,7 @@ Catatan kewenangan:
 | Menyalakan Mode pemeliharaan, mengatur pesan dan jadwalnya | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Mengatur ambang peringatan kapasitas penyimpanan dan pembersihan otomatis sisa pembuatan pembaruan; meminta pemeriksaan ruang | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Mengatur tampilan ALETA di halaman SIPP per peran dan per pengguna | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Betulkan pilihan kehadiran sidang di SIPP (dari BAS atau amar verstek) | U | U | - | - | - | - | U | - | - | - | - | - | - | - | - | - |
 | Kartu tautan akun pegawai (ALETA, SIPP, ABT, e-Court): menautkan akun SIPP dan mengisi akun e-Court pegawai | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Lihat sebagai akun atau peran (pratinjau menu dan hak, baca-saja, tercatat) | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Menyalakan verifikasi dua langkah (OTP WhatsApp, authenticator), aturan per peran, dan jaringan kantor | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
@@ -215,6 +216,7 @@ Catatan kewenangan:
 - **Membaca lembar BAS dan naskahnya**: Hanya atas perkara yang ia tangani (majelis, PP, atau juru sitanya); Ketua, Wakil, dan Admin semua perkara.
 - **Menyusun dan menyimpan lembar BAS**: Hanya atas perkara yang ia tangani (majelis, PP, atau juru sitanya); Ketua, Wakil, dan Admin semua perkara.
 - **Menyimpan isian perkara untuk naskah (Kelas B)**: Hanya atas perkara yang ia tangani (majelis, PP, atau juru sitanya); Ketua, Wakil, dan Admin semua perkara.
+- **Betulkan pilihan kehadiran sidang di SIPP (dari BAS atau amar verstek)**: Hanya atas perkara yang ia tangani (majelis, PP, atau juru sitanya); Ketua, Wakil, dan Admin semua perkara.
 - **Dompet ALETA Ai milik sendiri (saldo, mutasi, perkiraan biaya, struk)**: Hanya atas perkara yang ia tangani (majelis, PP, atau juru sitanya); Ketua, Wakil, dan Admin semua perkara.
 - **Tunda otomatis 16.30 dan putus otomatis gugur / tidak dapat diterima**: Saklar dan Jalankan sekarang HANYA Super Admin (keputusan 22 Okt 2026). Mengecualikan satu perkara (Jangan tunda/putus otomatis, Ikutkan lagi) mengikuti aksi Tunda / Putus sidang. Tidak tampil pada tautan rahasia Jadwal Sidang.
 - **Tautan rahasia Jadwal Sidang (tanpa masuk akun)**: Mengelola tautan hanya Super Admin dan Admin. Pemakai tautan tidak mendapat unduhan berkas, Kasir, antrean, tunda/putus otomatis, pilih hakim, maupun penetapan; tulisannya terbatas daftar izin rute dan 60 tindakan per jam.
