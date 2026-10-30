@@ -320,6 +320,17 @@ export function periksaServer(sumber: Hasil<SumberDayaMentah>) {
   return { warna, ringkas, rincian };
 }
 
+/**
+ * Kapasitas penyimpanan (30 Okt 2026): warna dan pesan sudah dihitung modul
+ * kapasitas dengan ambang yang diatur Super Admin; di sini hanya dibentuk
+ * menjadi komponen. Tanpa data (modul tidak tersedia) = kelabu, bukan hijau.
+ */
+export function periksaKapasitas(masukan: Hasil<{ warna: Warna; ringkas: string; rincian: Array<{ label: string; nilai: string }> }> | undefined) {
+  if (!masukan) return { warna: "kelabu" as Warna, ringkas: "Kapasitas penyimpanan belum diperiksa.", rincian: [] };
+  if (!masukan.ok) return { warna: "kelabu" as Warna, ringkas: `Kapasitas penyimpanan tidak terbaca: ${masukan.error}`, rincian: [] };
+  return { warna: masukan.data.warna, ringkas: masukan.data.ringkas, rincian: masukan.data.rincian };
+}
+
 export type PerangkatEkstensi = { nama: string; akun: string; versi: string; terakhirDilihat: string };
 
 /** Versi ekstensi per PC: yang berbeda dari versi terbaru = kuning (bukan merah; PC lama tetap berfungsi). */

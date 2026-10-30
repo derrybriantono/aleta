@@ -1689,13 +1689,14 @@ export const TUTORIAL: readonly Tutorial[] = [
     judul: "Pembaruan, Backup, Sumber Daya, dan Database server",
     ringkas: "Merawat server ALETA: memperbarui, mencadangkan, memantau, dan melihat data.",
     kelompok: "pengelola",
-    mencakup: { modul: ["system-updates", "backup-system", "server-resources", "database-viewer"] },
-    halaman: ["/admin/pembaruan-sistem", "/admin/backup", "/admin/sumber-daya", "/admin/database"],
+    mencakup: { modul: ["system-updates", "backup-system", "server-resources", "database-viewer"], aksi: ["kapasitas.atur"] },
+    halaman: ["/admin/pembaruan-sistem", "/admin/backup", "/admin/sumber-daya", "/admin/kapasitas-penyimpanan", "/admin/database"],
     tautan: { teks: "Buka Pembaruan Sistem", href: "/admin/pembaruan-sistem" },
     langkah: [
       "Pembaruan Sistem: lihat versi yang terpasang dan apakah ada paket baru. Halaman ini menampilkan status dan petunjuk; pemasangan dilakukan dari server.",
       "Backup Sistem: buat cadangan sebelum perubahan besar dan simpan di tempat terpisah.",
       "Sumber Daya Server: pantau pemakaian memori, cakram, dan prosesor tiap aplikasi.",
+      "Kapasitas Penyimpanan: lihat seberapa penuh ruang server, atur batas peringatan, dan (Super Admin) nyalakan pembersihan otomatis sisa pembuatan pembaruan yang mati bawaan.",
       "Database: lihat tabel untuk pemeriksaan. Jangan mengubah data langsung tanpa cadangan.",
     ],
     peringatan: [

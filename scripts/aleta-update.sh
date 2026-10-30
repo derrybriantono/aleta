@@ -79,6 +79,70 @@ if [ -f "$BUNDLE.sha256" ]; then
   )
 fi
 
+# ============================================================================
+# RUANG DISK DIPERIKSA SEBELUM APA PUN DISENTUH (30 Okt 2026)
+# ============================================================================
+#
+# /home (200 GB) penuh berulang kali oleh cache build Docker (100% pada 28 Agu
+# dan 20 Okt): build mati "no space left" SETELAH kode baru tersalin. Sekarang
+# ruang di data root Docker diperiksa lebih dulu, dan TMPDIR (tempat paket
+# dibongkar) dipilih dari partisi yang cukup - tidak lagi berasumsi /home.
+#
+# Data root dibaca dari `docker info` (bisa sudah dipindah ke partisi besar
+# oleh scripts/kapasitas/pindah-data-docker.sh), bukan ditebak /home/docker-data.
+gb_bebas() {
+  local j="$1"
+  while [ ! -e "$j" ] && [ "$j" != "/" ]; do j="$(dirname "$j")"; done
+  df -P -k "$j" 2>/dev/null | awk 'NR==2 { printf "%d", $4/1024/1024 }'
+}
+
+MIN_GB_DOCKER="${ALETA_MIN_GB_DOCKER:-8}"
+MIN_GB_APP="${ALETA_MIN_GB_APP:-2}"
+MIN_GB_TMP="${ALETA_MIN_GB_TMP:-2}"
+
+pilih_tmpdir() {
+  # TMPDIR yang sudah diberikan pemasang dihormati bila cukup. Selain itu urutan
+  # pilihan: ALETA_TMP_DIR, /home/aleta-tmp (kebiasaan lama), lalu folder di
+  # partisi aplikasi (biasanya / yang besar), lalu /var/tmp.
+  local kandidat gb
+  if [ -n "${TMPDIR:-}" ] && [ -d "$TMPDIR" ] && [ -w "$TMPDIR" ] && [ "$(gb_bebas "$TMPDIR")" -ge "$MIN_GB_TMP" ]; then
+    return 0
+  fi
+  for kandidat in "${ALETA_TMP_DIR:-}" /home/aleta-tmp "$(dirname "$APP_DIR")/aleta-tmp" /var/tmp/aleta-tmp; do
+    [ -n "$kandidat" ] || continue
+    mkdir -p "$kandidat" 2>/dev/null || continue
+    [ -w "$kandidat" ] || continue
+    gb="$(gb_bebas "$kandidat")"
+    if [ "${gb:-0}" -ge "$MIN_GB_TMP" ]; then
+      export TMPDIR="$kandidat"
+      echo "TMPDIR pemasangan: $TMPDIR (${gb} GB bebas)"
+      return 0
+    fi
+  done
+  echo "Tidak ada folder sementara dengan ruang bebas >= ${MIN_GB_TMP} GB. Pemasangan dihentikan sebelum ada yang diubah."
+  echo "Set ALETA_TMP_DIR=/folder/di/partisi/besar atau lapangkan ruang."
+  exit 75
+}
+
+periksa_ruang_awal() {
+  local root gb_root gb_app
+  root="$(docker info --format '{{.DockerRootDir}}' 2>/dev/null || true)"
+  [ -n "$root" ] && [ -d "$root" ] || root="/"
+  gb_root="$(gb_bebas "$root")"
+  gb_app="$(gb_bebas "$APP_DIR")"
+  echo "Ruang bebas: data root Docker $root = ${gb_root:-0} GB (minimal $MIN_GB_DOCKER), folder aplikasi = ${gb_app:-0} GB (minimal $MIN_GB_APP)"
+  if [ "${gb_root:-0}" -lt "$MIN_GB_DOCKER" ] || [ "${gb_app:-0}" -lt "$MIN_GB_APP" ]; then
+    echo "Ruang disk tidak cukup. Pemasangan dihentikan SEBELUM ada yang diubah; ALETA yang berjalan tidak tersentuh."
+    echo "Bersihkan cache build (butuh izin pemilik server):  docker builder prune --filter until=72h -f"
+    echo "Jalan keluar permanen: pindahkan data Docker ke partisi besar -> scripts/kapasitas/pindah-data-docker.sh --periksa"
+    echo "Batas dapat diturunkan dengan ALETA_MIN_GB_DOCKER=4 bila sudah yakin."
+    exit 75
+  fi
+}
+
+pilih_tmpdir
+periksa_ruang_awal
+
 TMP_DIR="$(mktemp -d)"
 cleanup() {
   rm -rf "$TMP_DIR"

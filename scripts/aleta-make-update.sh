@@ -170,6 +170,23 @@ cat > "$PACKAGE_ROOT/aleta-update.json" <<JSON
 }
 JSON
 
+# Skrip kapasitas penyimpanan (30 Okt 2026) dijalankan sebagai root di server
+# untuk memindahkan data Docker; paket yang membawa skrip rusak atau berakhir
+# baris CRLF (interpreter "bash^M" tidak ditemukan) lebih baik gagal DI SINI
+# daripada di server saat ALETA sedang dimatikan.
+for skrip in "$PACKAGE_ROOT"/scripts/kapasitas/*.sh "$PACKAGE_ROOT"/scripts/aleta-update.sh; do
+  [ -e "$skrip" ] || continue
+  if ! bash -n "$skrip"; then
+    echo "Sintaks skrip rusak: ${skrip#"$PACKAGE_ROOT"/}. Paket tidak dibuat."
+    exit 65
+  fi
+  if grep -q "$(printf '\015')" "$skrip"; then
+    echo "Skrip berakhir baris CRLF: ${skrip#"$PACKAGE_ROOT"/}. Paket tidak dibuat."
+    exit 65
+  fi
+  chmod +x "$skrip"
+done
+
 tar -czf "$PACKAGE_FILE" -C "$BUILD_DIR" "$PACKAGE_NAME"
 SHA256="$(sha256sum "$PACKAGE_FILE" | awk '{print $1}')"
 printf '%s  %s\n' "$SHA256" "$(basename "$PACKAGE_FILE")" > "$PACKAGE_FILE.sha256"

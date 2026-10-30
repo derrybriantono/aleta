@@ -944,6 +944,7 @@ const PENGATURAN: readonly Pengaturan[] = [
   { id: "pembaruan", modul: ["system-updates"], judul: "Pembaruan Sistem", keterangan: "Admin melihat status; unggah dan arsip paket hanya Super Admin.", admin: "L" },
   { id: "backup", modul: ["backup-system"], judul: "Backup Sistem", keterangan: "Cadangan basis data." },
   { id: "sumber-daya", modul: ["server-resources"], judul: "Sumber Daya Server", keterangan: "Pemakaian disk, memori, dan layanan." },
+  { id: "kapasitas", judul: "Kapasitas penyimpanan", keterangan: "Seberapa penuh ruang server, batas peringatan, dan pembersihan otomatis sisa pembuatan. Admin melihat; hanya Super Admin yang mengubah pengaturan dan meminta pemeriksaan.", admin: "L" },
   { id: "sinkron-cadangan", judul: "Sinkron dan cadangan", keterangan: "Admin melihat; hanya Super Admin yang mengubah, menjalankan, menyambungkan Drive, dan membuat token laptop.", admin: "L" },
   { id: "cermin-perkara", judul: "Pemantau Cermin Perkara", keterangan: "Salinan keadaan perkara SIPP di basis data ALETA: kemajuan pemindaian, isi cermin, dan saklar per layar (mati bawaan). Admin melihat; hanya Super Admin yang mengubah saklar dan menjalankan pemindaian.", admin: "L" },
   { id: "sinkron-kembaran", judul: "Sinkron kembaran (mode laptop saat server mati)", keterangan: "Mengirim tulisan yang tertahan ke server setelah pemeriksaan bentrok dan persetujuan.", superAdmin: true, catatan: "Persetujuan pengiriman ke server hanya Super Admin." },

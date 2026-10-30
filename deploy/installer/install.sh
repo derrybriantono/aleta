@@ -19,7 +19,19 @@ SRC_DIR="$PKG_DIR/app"
 APP_DIR="${ALETA_APP_DIR:-/var/www/html/aleta}"
 DATA_DIR="${ALETA_DATA_DIR:-/var/www/html/aleta-data}"
 PDF_DIR="${ALETA_PDF_DIR:-/var/www/html/aleta-pdf}"
-PG_DIR="${ALETA_PG_DIR:-/home/aleta-data/postgres}"
+# Folder Postgres: yang sudah dipakai compose server ini (bisa sudah dipindah ke
+# partisi besar oleh scripts/kapasitas/pindah-data-docker.sh), bukan tebakan /home.
+pg_dari_compose() {
+  local f hasil
+  for f in "$APP_DIR/docker-compose.override.yml" "$APP_DIR/docker-compose.yml"; do
+    [ -f "$f" ] || continue
+    hasil="$(sed -n 's/^[[:space:]]*-[[:space:]]*["'"'"']\{0,1\}\([^:"'"'"' ]*\):\/var\/lib\/postgresql\/data.*/\1/p' "$f" | head -n 1)"
+    if [ -n "$hasil" ]; then echo "$hasil"; return 0; fi
+  done
+  return 0
+}
+PG_DIR="${ALETA_PG_DIR:-$(pg_dari_compose)}"
+[ -n "$PG_DIR" ] || PG_DIR="/home/aleta-data/postgres"
 BACKUP_ROOT="${ALETA_BACKUP_ROOT:-/var/www/html/aleta-backup}"
 ASSUME_YES="${ALETA_ASSUME_YES:-0}"
 STAMP="$(date +%Y%m%d-%H%M%S)"

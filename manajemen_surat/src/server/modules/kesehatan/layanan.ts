@@ -33,6 +33,7 @@ import {
   periksaGalat,
   periksaIntegritas,
   periksaPortal,
+  periksaKapasitas,
   periksaServer,
   periksaSambungan,
   periksaUjiBeban,
@@ -202,6 +203,8 @@ export type DepsKesehatan = {
   jadwalEcourt: () => Promise<{ ok: true; data: { jadwal?: unknown } } | { ok: false; error: string }>;
   keadaanCadangan: () => Promise<{ ok: true; data: unknown } | { ok: false; error: string }>;
   ukuranDatabase: (db: AletaDatabase) => Promise<number | null>;
+  /** Kapasitas penyimpanan (30 Okt 2026). Opsional: tanpa dep ini komponennya kelabu. */
+  kapasitas?: (db: AletaDatabase) => Promise<{ ok: true; data: { warna: Warna; ringkas: string; rincian: Array<{ label: string; nilai: string }> } } | { ok: false; error: string }>;
 };
 
 export async function depsAsli(): Promise<DepsKesehatan> {
@@ -240,6 +243,24 @@ export async function depsAsli(): Promise<DepsKesehatan> {
         return b ? Number(b.n) : null;
       } catch {
         return null;
+      }
+    },
+    kapasitas: async (db) => {
+      try {
+        const [{ bacaKapasitas, ringkasUntukKesehatan }, { mintaSumberDayaBot: mintaBot }, { bacaSumberDaya: bacaSd }] = await Promise.all([
+          import("@/server/modules/kapasitas/layanan"),
+          import("@/server/modules/sumber-daya/gateway"),
+          import("@/server/modules/sumber-daya/layanan"),
+        ]);
+        const d = await bacaKapasitas(db, {
+          partisiBot: async () => {
+            const h = await bacaSd(null, () => mintaBot(4000));
+            return h.ok ? h.data.rincian.partisi.map((p) => ({ titik: p.titik, totalByte: p.totalByte, terpakaiByte: p.terpakaiByte, sisaByte: p.sisaByte })) : null;
+          },
+        });
+        return { ok: true, data: ringkasUntukKesehatan(d) };
+      } catch (galat) {
+        return { ok: false, error: galat instanceof Error ? galat.message : "tidak terbaca" };
       }
     },
   };
@@ -288,6 +309,7 @@ const KOMPONEN: Array<{ kunci: string; nama: string; kelompok: Komponen["kelompo
   { kunci: "ecourt", nama: "e-Court", kelompok: "layanan" },
   { kunci: "cadangan", nama: "Cadangan", kelompok: "data" },
   { kunci: "server", nama: "Prosesor, memori, disk server", kelompok: "server" },
+  { kunci: "kapasitas", nama: "Kapasitas penyimpanan", kelompok: "server" },
   { kunci: "ekstensi", nama: "Ekstensi di PC pengguna", kelompok: "klien" },
   { kunci: "galat", nama: "Error 24 jam", kelompok: "layanan" },
   { kunci: "uji-beban", nama: "Uji beban terakhir", kelompok: "server" },
@@ -295,7 +317,7 @@ const KOMPONEN: Array<{ kunci: string; nama: string; kelompok: Komponen["kelompo
 ];
 
 /** Komponen yang ikut menentukan warna keseluruhan dan boleh memicu peringatan. Ekstensi dan uji beban hanya informasi. */
-export const KOMPONEN_PENENTU = new Set(["portal", "basis-data", "bot", "whatsapp", "sipp", "abt", "antrian", "ecourt", "cadangan", "server", "galat", "integritas"]);
+export const KOMPONEN_PENENTU = new Set(["portal", "basis-data", "bot", "whatsapp", "sipp", "abt", "antrian", "ecourt", "cadangan", "server", "kapasitas", "galat", "integritas"]);
 
 async function ringkasIntegritasAman(db: AletaDatabase) {
   const { ringkasIntegritas } = await import("@/server/modules/integritas/layanan");
@@ -309,7 +331,7 @@ export async function jalankanPemeriksaan(db: AletaDatabase, opsi: { ping?: bool
   const mulai = Date.now();
   const kosong = { ok: false as const, error: "tidak menjawab dalam batas waktu" };
 
-  const [status, kesehatanBot, sumber, ecourt, cadangan, ukuran, perangkat, galat, uji, integritas] = await Promise.all([
+  const [status, kesehatanBot, sumber, ecourt, cadangan, ukuran, perangkat, galat, uji, integritas, kapasitas] = await Promise.all([
     dengan(deps.botStatus(), 7000, kosong),
     dengan(deps.botKesehatan(opsi.ping ?? false), 10_000, kosong),
     dengan(deps.sumberDaya(), 8000, kosong),
@@ -320,6 +342,7 @@ export async function jalankanPemeriksaan(db: AletaDatabase, opsi: { ping?: bool
     dengan(ringkasGalat(db, kini), 3000, null),
     dengan(ujiBebanTerakhir(db), 3000, null),
     dengan(ringkasIntegritasAman(db), 3000, null),
+    deps.kapasitas ? dengan(deps.kapasitas(db), 6000, kosong) : Promise.resolve(undefined),
   ]);
 
   // Basis data ALETA: diukur sendiri (dua pembacaan terkecil).
@@ -345,6 +368,7 @@ export async function jalankanPemeriksaan(db: AletaDatabase, opsi: { ping?: bool
     ecourt: periksaEcourt(ecourt as Parameters<typeof periksaEcourt>[0], kini),
     cadangan: periksaCadangan(cadangan as Parameters<typeof periksaCadangan>[0], kini),
     server: periksaServer(sumber as Parameters<typeof periksaServer>[0]),
+    kapasitas: periksaKapasitas(kapasitas as Parameters<typeof periksaKapasitas>[0]),
     ekstensi: periksaEkstensi(perangkat, deps.versiEkstensiTerbaru, kini),
     galat: periksaGalat(galat),
     "uji-beban": periksaUjiBeban(uji, kini),

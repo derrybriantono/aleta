@@ -1076,6 +1076,16 @@ export const AKSI = {
     alasan: "Mode pemeliharaan menghentikan perubahan data seluruh pegawai - hanya Super Admin yang menyalakannya (mati bawaan). Admin hanya dikecualikan bila Super Admin mencentangnya.",
     hanyaSuperAdmin: true,
   },
+  // 30 Okt 2026: kapasitas penyimpanan server (ambang peringatan dan pembersihan otomatis).
+  "kapasitas.atur": {
+    label: "Mengatur ambang peringatan kapasitas penyimpanan dan pembersihan otomatis sisa pembuatan pembaruan; meminta pemeriksaan ruang",
+    crud: "CUD",
+    golongan: [],
+    lingkup: "semua",
+    rute: ["POST /api/admin/kapasitas"],
+    alasan: "Saklar pembersihan otomatis memberi server izin tetap menghapus sisa pembuatan pembaruan - hanya Super Admin yang menyalakannya (mati bawaan). Admin hanya membaca.",
+    hanyaSuperAdmin: true,
+  },
   // 28 Okt 2026: tampilan ALETA di halaman SIPP per peran dan per pengguna (aturan admin; pilihan sendiri bebas).
   "tampilan-sipp.atur": {
     label: "Mengatur tampilan ALETA di halaman SIPP per peran dan per pengguna",
