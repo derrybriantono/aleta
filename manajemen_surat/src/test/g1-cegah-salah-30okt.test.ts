@@ -575,11 +575,38 @@ describe("1.4 pindai mingguan variabel Blangko Derry", () => {
       const s = P.bacaHasil(berkas);
       expect(s.ada).toBe(true);
       expect(s.riwayat).toHaveLength(2);
-      expect(s.terakhir.jumlah).toEqual({ galat: 1, penanda: 1, bunyi: 1, kosongBaru: 1 });
+      expect(s.terakhir.jumlah).toEqual({ galat: 1, lambat: 0, penanda: 1, bunyi: 1, kosongBaru: 1 });
       expect(JSON.stringify(s)).not.toMatch(/"terisi"/);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+
+  it("waktu habis bukan galat: diulang sekali dengan batas lebih longgar; yang tetap habis = 'terlalu lama', bukan merah", async () => {
+    let mesinKe = 0;
+    const buatMesin = (o: { batasKueriMs: number }) => {
+      mesinKe += 1;
+      const ulang = o.batasKueriMs >= 30000;
+      return {
+        nilaiPenanda: async (_opsi: unknown, daftar: string[]) =>
+          new Map(
+            daftar.map((no) => {
+              if (no === "9001") return [no, { status: "galat", sebab: "Query inactivity timeout", polos: "" }]; // selalu habis
+              if (no === "9003" && !ulang) return [no, { status: "galat", sebab: "bergantung pada #3507# yang gagal diisi (Query inactivity timeout)", polos: "" }];
+              return [no, { status: "terisi", polos: "Penggugat Satu" }];
+            })
+          ),
+      };
+    };
+    const h = await P.pindaiSekali({ ...deps(), buatMesin, sebelum: null });
+    expect(mesinKe).toBeGreaterThan(1);
+    expect(h.temuan.galat).toEqual([]);
+    expect(h.temuan.lambat.map((x: { no: string; jumlah: number }) => [x.no, x.jumlah])).toEqual([["9001", 3]]);
+    expect(h.terisi.every((t: { kode: string[] }) => t.kode.includes("9003"))).toBe(true);
+    const kini = new Date("2026-11-02T00:00:00Z");
+    const k = periksaPindaiVariabel({ ok: true, data: { ada: true, terakhir: { selesai: h.selesai, jumlahVariabel: 4, jumlahContoh: 3, jumlah: { galat: 0, lambat: 1, penanda: 0, bunyi: 0, kosongBaru: 0 }, temuan: { galat: [], lambat: h.temuan.lambat, penanda: [], bunyi: [], kosongBaru: [] }, adaPembanding: false } } }, kini);
+    expect(k.warna).toBe("kuning");
+    expect(k.ringkas).toMatch(/terlalu lama dihitung/);
   });
 
   it("hanya membaca: tiap kueri SELECT, tanpa kata penulis", async () => {

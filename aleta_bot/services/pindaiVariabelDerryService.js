@@ -9,6 +9,7 @@
  * jenis lewat mesin variabel ALETA (abtMesinVariabel - tiruan setia ABT, HANYA MEMBACA: tiap kueri lewat pagarBaca, urutan
  * sidang DIHITUNG bukan ditulis). Hasilnya untuk Pusat Kesehatan portal:
  *   - galat SQL         : kueri variabel gagal dijalankan (Unknown column, syntax, ...), atas perkara jenis APA PUN;
+ *   - lambat            : waktu habis walau sudah diulang sekali dengan batas 30 detik (server sibuk / kueri berat) - bukan galat;
  *   - penanda tersisa   : keluaran masih memuat #nnnn#, atas perkara sejenis dengan folder blangko pemakainya;
  *   - bunyi penanda     : "TIDAK BENAR QUERY NYA", "[... BELUM ...]" (isian wajib kosong / data SIPP belum diubah), atas perkara
  *                         sejenis - dicatat terpisah, bukan galat;
@@ -48,6 +49,9 @@ const FOLDER_JENIS = Object.freeze([
 /** Bunyi penanda di keluaran variabel: bukan galat kueri, tetapi isian wajib/data yang belum ada. */
 const POLA_BUNYI = /TIDAK BENAR QUERY NYA|\[[A-Z][A-Z ,/-]{6,}BELUM [A-Z ,/-]{3,}\]|BELUM ISI ALASAN/;
 const POLA_PENANDA = /#\d{3,5}#/g;
+/** Galat yang sebabnya waktu habis/sambungan (bukan kueri yang salah): diulang sekali dengan batas lebih longgar, sisanya "lambat". */
+const POLA_LAMBAT = /timeout|inactivity|ETIMEDOUT|ECONNRESET|PROTOCOL_CONNECTION_LOST|habis waktu|batas waktu/i;
+const BATAS_ULANG_MS = 30000;
 
 const teks = (v) => (v === null || v === undefined ? "" : String(v));
 
@@ -87,7 +91,7 @@ function folderCocok(folder, jenisNama) {
 function golongkan(v) {
   if (!v) return { golongan: "kosong", contoh: "" };
   const polos = teks(v.polos).replace(/\s+/g, " ").trim();
-  if (v.status === "galat") return { golongan: "galat", contoh: teks(v.sebab).slice(0, NILAI_CONTOH) };
+  if (v.status === "galat") return { golongan: POLA_LAMBAT.test(teks(v.sebab)) ? "lambat" : "galat", contoh: teks(v.sebab).slice(0, NILAI_CONTOH) };
   if (v.status === "takada") return { golongan: "takada", contoh: "" };
   if (POLA_BUNYI.test(polos)) return { golongan: "bunyi", contoh: polos.slice(0, NILAI_CONTOH) };
   const sisa = polos.match(POLA_PENANDA);
@@ -168,19 +172,34 @@ async function pindaiSekali(d) {
       }
       for (const no of potong) nilai[no] = golongkan(p.get(no));
     }
+    // Waktu habis (server sibuk) bukan kueri yang salah: diulang SEKALI, bergiliran, dengan batas lebih longgar.
+    const lambat = Object.keys(nilai).filter((no) => nilai[no].golongan === "lambat");
+    if (lambat.length) {
+      const ulang = d.buatMesin({ kueri: d.kueri, skemaAbt: skema, umurKatalogMs: 10 * 60 * 1000, batasKueriMs: Number(d.batasUlangMs) || BATAS_ULANG_MS });
+      for (let i = 0; i < lambat.length; i += 20) {
+        const potong = lambat.slice(i, i + 20);
+        try {
+          const p = await ulang.nilaiPenanda({ perkaraId: c.perkaraId, sidangKe: 0 }, potong);
+          for (const no of potong) nilai[no] = golongkan(p.get(no));
+        } catch {
+          /* tetap "lambat" */
+        }
+      }
+    }
     hasilPerkara.push({ ...c, detik: Math.round((Date.now() - t0) / 1000), nilai });
   }
   // Golongan per variabel
   const lamaTerisi = new Map();
   for (const hp of Array.isArray(d.sebelum && d.sebelum.terisi) ? d.sebelum.terisi : []) lamaTerisi.set(String(hp.perkaraId), new Set(hp.kode || []));
-  const temuan = { galat: [], penanda: [], bunyi: [], kosongBaru: [] };
+  const temuan = { galat: [], lambat: [], penanda: [], bunyi: [], kosongBaru: [] };
   for (const v of variabel) {
-    const per = { galat: [], penanda: [], bunyi: [], kosongBaru: [] };
+    const per = { galat: [], lambat: [], penanda: [], bunyi: [], kosongBaru: [] };
     for (const hp of hasilPerkara) {
       const g = hp.nilai[v.no];
       if (!g) continue;
       const sejenis = folderCocok(v.folder, hp.jenis);
       if (g.golongan === "galat") per.galat.push({ perkara: hp.nomor, jenis: hp.jenis, contoh: g.contoh });
+      else if (g.golongan === "lambat") per.lambat.push({ perkara: hp.nomor, jenis: hp.jenis, contoh: g.contoh });
       else if (g.golongan === "penanda" && sejenis) per.penanda.push({ perkara: hp.nomor, jenis: hp.jenis, contoh: g.contoh });
       else if (g.golongan === "bunyi" && sejenis) per.bunyi.push({ perkara: hp.nomor, jenis: hp.jenis, contoh: g.contoh });
       const dulu = lamaTerisi.get(String(hp.perkaraId));
@@ -215,9 +234,10 @@ function ringkas(h) {
     jumlahVariabel: h.jumlahVariabel,
     jumlahContoh: Array.isArray(h.contoh) ? h.contoh.length : 0,
     contoh: h.contoh,
-    jumlah: { galat: n("galat"), penanda: n("penanda"), bunyi: n("bunyi"), kosongBaru: n("kosongBaru") },
+    jumlah: { galat: n("galat"), lambat: n("lambat"), penanda: n("penanda"), bunyi: n("bunyi"), kosongBaru: n("kosongBaru") },
     temuan: {
       galat: (h.temuan.galat || []).slice(0, 30),
+      lambat: (h.temuan.lambat || []).slice(0, 30),
       penanda: (h.temuan.penanda || []).slice(0, 30),
       bunyi: (h.temuan.bunyi || []).slice(0, 30),
       kosongBaru: (h.temuan.kosongBaru || []).slice(0, 30),

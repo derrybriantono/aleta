@@ -425,8 +425,8 @@ export type PindaiVariabelRingkas = {
     selesai: string;
     jumlahVariabel: number;
     jumlahContoh: number;
-    jumlah: { galat: number; penanda: number; bunyi: number; kosongBaru: number };
-    temuan: { galat: ButirPindai[]; penanda: ButirPindai[]; bunyi: ButirPindai[]; kosongBaru: ButirPindai[] };
+    jumlah: { galat: number; lambat?: number; penanda: number; bunyi: number; kosongBaru: number };
+    temuan: { galat: ButirPindai[]; lambat?: ButirPindai[]; penanda: ButirPindai[]; bunyi: ButirPindai[]; kosongBaru: ButirPindai[] };
     adaPembanding?: boolean;
   };
 };
@@ -448,6 +448,7 @@ export function periksaPindaiVariabel(masukan: Hasil<PindaiVariabelRingkas> | un
     { label: "Pindai terakhir", nilai: umurTeks(t.selesai, kini) },
     { label: "Variabel x perkara contoh", nilai: `${t.jumlahVariabel} x ${t.jumlahContoh}` },
     { label: "Error saat dihitung", nilai: String(j.galat) },
+    { label: "Terlalu lama dihitung", nilai: String(j.lambat ?? 0) },
     { label: "Tanda isian tersisa", nilai: String(j.penanda) },
     { label: "Tiba-tiba kosong", nilai: t.adaPembanding ? String(j.kosongBaru) : "belum ada pembanding pekan lalu" },
     { label: "Isian wajib kosong di perkara contoh", nilai: String(j.bunyi) },
@@ -461,11 +462,13 @@ export function periksaPindaiVariabel(masukan: Hasil<PindaiVariabelRingkas> | un
   sebut("Error saat dihitung", t.temuan.galat);
   sebut("Tanda isian tersisa", t.temuan.penanda);
   sebut("Tiba-tiba kosong", t.temuan.kosongBaru);
+  sebut("Terlalu lama dihitung", t.temuan.lambat ?? []);
   const lama = kini.getTime() - new Date(t.selesai).getTime() > 9 * 86_400_000;
   if (j.galat || j.penanda) {
     return { warna: "merah" as Warna, ringkas: `${j.galat} variabel error saat dihitung dan ${j.penanda} variabel menyisakan tanda isian pada pindai terakhir.`, rincian };
   }
   if (j.kosongBaru) return { warna: "kuning" as Warna, ringkas: `${j.kosongBaru} variabel yang pekan lalu terisi kini kosong pada perkara contoh yang sama.`, rincian };
+  if (j.lambat) return { warna: "kuning" as Warna, ringkas: `${j.lambat} variabel terlalu lama dihitung (server sibuk atau kueri berat); periksa lagi pada pindai berikutnya.`, rincian };
   if (lama) return { warna: "kuning" as Warna, ringkas: "Pindai mingguan sudah lebih dari 9 hari tidak berjalan.", rincian };
   return { warna: "hijau" as Warna, ringkas: `Tidak ada error atau tanda isian tersisa (${t.jumlahVariabel} variabel, ${t.jumlahContoh} perkara contoh).`, rincian };
 }
