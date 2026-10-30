@@ -2274,7 +2274,7 @@
         .filter((x) => x.tanggal)
         .sort((a, b) => a.tanggal.localeCompare(b.tanggal) || a.jam.localeCompare(b.jam) || a.urutan - b.urutan);
       if (!l.length) {
-        if (S.pk === p.nomorPerkara && d && d.sipp) umumkanPerkara();
+        // 30 Okt: tanpa sidang tidak mengumumkan ulang perkara - umumkan ulang mereset panel isian (tautan #bd=, draf H-7, sorotan isian kosong terputus); temuan verstek tetap dibaca saat sidang ada.
         return;
       }
       // Sidang yang sedang dipilih dicari lebih dulu, sebelum daftarnya diganti.
