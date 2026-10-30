@@ -18,6 +18,8 @@ sys.path.insert(0, SINI)
 import rtfbuat as R  # noqa: E402
 import isi  # noqa: E402
 import variabel as VB  # noqa: E402
+import isi_31  # noqa: E402
+import mediasi_el  # noqa: E402
 
 AKAR = sys.argv[1] if len(sys.argv) > 1 else 'D:/Aplikasi/aleta/tmp/bas29/dasar3/derry_briantono'
 PAKET = os.path.abspath(os.path.join(SINI, '..', 'paket-satker'))
@@ -27,7 +29,7 @@ T_SELA = '97 Sita/[01] [Kabul] Putusan Sela - Sita Dikabulkan.rtf'
 T_AKHIR = '4a Harta Bersama/[99c] [NO] HB - Eksepsi Kewenangan Absolut Dikabulkan.rtf'
 T_BAS = '4a Harta Bersama - BAS/BAS ALUR 30 HB - Sidang PS - Pemeriksaan Setempat di Lokasi Objek (antara ALUR 04 [7] dan [8]).rtf'
 MENU = [
-    dict(id=151, nama='Putusan Sela (Eksepsi, Provisi, Intervensi, Sumpah, Pemeriksaan Setempat)', alias='Putusan Sela - Putusan', dir='97a Putusan Sela',
+    dict(id=151, nama='Putusan Sela (Eksepsi, Provisi, Intervensi, Sumpah, Pemeriksaan Setempat, Mediasi, Rekonvensi, Penggabungan)', alias='Putusan Sela - Putusan', dir='97a Putusan Sela',
          pmin=80, pmax=297, kmin=15, kmax=17, ref='alur_perkara_id', cek=3, grup='1|10|20', top='1', val=None),
     dict(id=152, nama='Putusan Sela - BAS', alias='Putusan Sela - BAS', dir='97a Putusan Sela - BAS',
          pmin=80, pmax=297, kmin=15, kmax=17, ref='alur_perkara_id', cek=3, grup='1|30|500|430|1000|1010|1020', top='1|30', val='10|20'),
@@ -95,8 +97,12 @@ def main():
     berkas = {}   # (folder, berkas) -> bytes
     timpa = []
     dirujuk = set()
-    for folder, nama, jenis, fn, asal, mat in isi.SEMUA:
+    for folder, nama, jenis, fn, asal, mat in isi.SEMUA + isi_31.TAMBAHAN:
         kep, par, ekor = susun(fn(), jenis, T[jenis])
+        for tanda, kaki_baru in (('[Penetapan]', 'Penetapan Nomor'), ('[Sisipan]', 'Putusan Nomor')):
+            if tanda in nama:
+                assert kep.count('Putusan Sela Nomor') == 1, nama
+                kep = kep.replace('Putusan Sela Nomor', kaki_baru)
         if 'Penetapan Sela' in nama:
             # kaki halaman contoh berbunyi "Putusan Sela Nomor ..." - produk permohonan adalah penetapan sela
             assert kep.count('Putusan Sela Nomor') == 1, nama
@@ -104,7 +110,7 @@ def main():
         raw = R.rakit(kep, par, ekor, asal)
         berkas[(folder, nama)] = raw
         hasil.append(dict(folder=folder, berkas=nama, jenis=jenis, matriks=mat, isian_tidak_langsung=asal))
-    for folder, nama, ditimpa, obj in isi.PS_JENIS:
+    for folder, nama, ditimpa, obj in isi.PS_JENIS + isi_31.PS_CERAI:
         kep, par, ekor = susun(isi.bas_ps(), 'bas', T['bas'])
         asal = [obj] + [x for x in isi.PS_ISIAN if x != obj]
         raw = R.rakit(kep, par, ekor, asal)
@@ -113,6 +119,25 @@ def main():
             lama = R.baca(os.path.join(AKAR, folder.split('/', 1)[1], nama))
             timpa.append((folder, nama, md5s(lama), md5s(raw)))
         hasil.append(dict(folder=folder, berkas=nama, jenis='bas-ps', timpa=ditimpa, isian_tidak_langsung=asal))
+    # mediasi elektronik (PERMA 3/2022) dari blangko mediasi biasa yang ada; berkas lama tidak diubah
+    mediasi_lewat = []
+    for d in sorted(os.listdir(AKAR)):
+        asal_bas = os.path.join(AKAR, d, mediasi_el.ASAL_BAS)
+        if not os.path.isfile(asal_bas):
+            continue
+        raw = mediasi_el.bas(R.baca(asal_bas))
+        if raw is None:
+            mediasi_lewat.append(d)
+            continue
+        folder = 'derry_briantono/' + d
+        assert not os.path.exists(os.path.join(AKAR, d, isi_31.MEDIASI_EL_BAS))
+        berkas[(folder, isi_31.MEDIASI_EL_BAS)] = raw
+        hasil.append(dict(folder=folder, berkas=isi_31.MEDIASI_EL_BAS, jenis='bas-mediasi-elektronik', asal=mediasi_el.ASAL_BAS))
+    assert not mediasi_lewat, mediasi_lewat
+    f_ptsp, n_ptsp = mediasi_el.ASAL_PTSP
+    assert not os.path.exists(os.path.join(AKAR, f_ptsp.split('/', 1)[1], isi_31.MEDIASI_EL_PTSP))
+    berkas[(f_ptsp, isi_31.MEDIASI_EL_PTSP)] = mediasi_el.ptsp(R.baca(os.path.join(AKAR, f_ptsp.split('/', 1)[1], n_ptsp)))
+    hasil.append(dict(folder=f_ptsp, berkas=isi_31.MEDIASI_EL_PTSP, jenis='penetapan-mediasi-elektronik', asal=n_ptsp))
     # pemeriksaan isi
     for (folder, nama), raw in berkas.items():
         assert R.seimbang(raw), nama
@@ -157,7 +182,8 @@ def main():
     tulis('daftar-rtf.tsv', ['# folder\tberkas\tmd5\tasal - berkas BARU (tidak pernah menimpa berkas lain)'] + drtf)
     tulis('daftar-timpa.tsv', ['# folder\tberkas\tmd5_lama\tmd5_baru\tket - berkas LAMA diganti HANYA bila md5 persis md5_lama'] + dtim)
     tulis('folder-baru.txt', ['# folder BARU (relatif _blangko_abt) yang dibuat paket ini; dipindah ke arsip pulih bila kosong', isi.F_SELA, isi.F_SELA_BAS])
-    tulis('folder-ada.txt', ['# folder (relatif _blangko_abt) yang harus SUDAH ada', 'derry_briantono'] + sorted(set(f for f, _n, _t, _o in isi.PS_JENIS)))
+    tulis('folder-ada.txt', ['# folder (relatif _blangko_abt) yang harus SUDAH ada', 'derry_briantono'] +
+          sorted(set(f for f, _n in berkas if f not in (isi.F_SELA, isi.F_SELA_BAS))))
     tulis('nomor-variabel.txt', ['# nomor variabel BARU paket (satu per baris; blok 11300-11499 diklaim paket ini)'] + [str(x) for x in VB.NOMOR])
     tulis('nomor-dirujuk.txt', ['# variabel LAMA yang dirujuk blangko/variabel paket (harus ADA di server; termasuk 11122-11140 paket prodeo)', ','.join('%04d' % x for x in lama_dirujuk)])
     tulis_sql(lama_dirujuk)

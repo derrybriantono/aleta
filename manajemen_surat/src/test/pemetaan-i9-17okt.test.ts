@@ -221,7 +221,11 @@ describe("D. putusan sela sita: rekomendasi dan set pohon", () => {
   it("sela di luar konteks sita tidak diubah (eksepsi): perilaku lama; perkara yang sudah putus tidak mendapat putusan sela", () => {
     const eks = rek({ ...HB, agenda: "Putusan sela eksepsi" });
     expect(eks.some((x) => x.folder.endsWith(SITA))).toBe(false);
-    expect(eks[0]?.berkas ?? "").toMatch(/^\[01\] \[Kabul\]/); // dulu: perkiraan putusan akhir dikabulkan
+    // 30 Okt (paket sela-ps-30okt): "putusan sela eksepsi" = putusan sela bab 97a (eksepsi ditolak, pemeriksaan dilanjutkan), bukan lagi
+    // perkiraan putusan akhir dikabulkan; blangko sela lama jenisnya ([98e]) tetap ditawarkan sebagai alternatif.
+    expect(eks[0]?.berkas ?? "").toMatch(/^\[01\] \[Sela Tolak\] Eksepsi Kewenangan Absolut Ditolak/);
+    expect(eks[0]?.folder).toBe("derry_briantono/97a Putusan Sela");
+    expect(eks.some((x) => /^\[98e\] \[Sela\] HB/.test(x.berkas))).toBe(true);
     const putus = rek({ ...HB, agenda: "Pembacaan putusan sela", bersita: true, sudahPutus: true, statusPutusan: "Dikabulkan" });
     expect(putus.some((x) => x.folder.endsWith(SITA))).toBe(false);
     // sidang biasa perkara bersita tidak mendapat putusan sela

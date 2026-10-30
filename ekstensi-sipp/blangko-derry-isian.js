@@ -644,6 +644,92 @@
     berkas.sort((x, y) => x.urut - y.urut || String(x.berkas).localeCompare(String(y.berkas)));
     return { berkas, memuat };
   }
+  // ──────────────────────────────────────────────────────────────────────────
+  // Tab "Putusan sela" (30 Okt 2026)
+  // ──────────────────────────────────────────────────────────────────────────
+  // Putusan sela tersebar: menu umum "Putusan Sela (Eksepsi, Provisi, ...)" dan "Putusan Sela & Penetapan Sita" (tetap di folder Sita),
+  // serta butir "[Sela]" di menu putusan per jenis perkara (mis. eksepsi kewenangan ditolak di Harta Bersama). Tab ini hanya MENYAJIKAN
+  // ulang butir-butir itu, dikelompokkan per pokok sela (eksepsi, provisi, intervensi, sumpah, pemeriksaan setempat, sita, ...) lalu per
+  // jenis perkara; berkas tidak dipindah atau digandakan, dan tiap butir tetap dibuka lewat kelompok ASLINYA (hak folder asal berlaku).
+  const NAMA_TAB_SELA = "Putusan sela";
+  const POLA_SELA_KEL = /\bputusan\s+sela\b/i;
+  // "[Sela]", "[Sela Kabul]", "[Sela Tolak]", "[Sisipan]", atau nama yang menyebut putusan/penetapan sela; BUKAN kata seperti "keselamatan".
+  const POLA_SELA_BERKAS = /\[(?:sela|sisipan)\b[^\]]*\]|\b(?:putusan|penetapan)\s+sela\b/i;
+  const TOPIK_SELA = Object.freeze([
+    ["kewenangan", "Eksepsi kewenangan mengadili", /eksepsi\s+kewenangan/i],
+    ["eksepsi", "Eksepsi lain", /eksepsi/i],
+    ["provisi", "Tuntutan provisi", /provisi/i],
+    ["intervensi", "Intervensi pihak ketiga", /intervensi/i],
+    ["sumpah", "Sumpah", /sumpah/i],
+    ["setempat", "Pemeriksaan setempat", /pemeriksaan\s+setempat/i],
+    ["sita", "Sita", /\bsita\b/i],
+    ["mediasi", "Tidak beriktikad baik dalam mediasi", /mediasi/i],
+    ["rekonvensi", "Gugatan rekonvensi", /rekonvensi/i],
+    ["gabung", "Penggabungan perkara", /penggabungan/i],
+  ]);
+  const STATUS_SELA = Object.freeze([
+    ["dikabulkan", /\[(?:sela\s+)?kabul\b|dikabulkan/i],
+    ["ditolak", /\[(?:sela\s+)?tolak\b|ditolak/i],
+    ["perkara tidak dapat diterima", /\[NO\]/i],
+    ["bagian putusan akhir", /\[sisipan\]/i],
+    ["penetapan", /\[penetapan\]/i],
+  ]);
+  const adalahBlangkoSela = (berkas) => POLA_SELA_BERKAS.test(String(berkas || ""));
+  const kelompokSelaUmum = (k) => Boolean(k) && k.jenis === "put" && (POLA_SELA_KEL.test(String(k.nama || "")) || POLA_SELA_KEL.test(String(k.judul || "")));
+  /** Urutan status di dalam satu kelompok: [NO]/[Sisipan]/[Penetapan] lebih dulu dikenali daripada kata "dikabulkan/ditolak" di nama. */
+  function statusSela(berkas) {
+    const n = String(berkas || "");
+    for (const i of [2, 3, 4, 0, 1]) if (STATUS_SELA[i][1].test(n)) return { i, nama: STATUS_SELA[i][0] };
+    return { i: 5, nama: "perintah atau pemeriksaan" };
+  }
+  /**
+   * Kelompok tab Putusan sela dari kelompok menu yang SUDAH termuat dan boleh dibuka akun ini. Murni terhadap masukannya (diuji):
+   *   kelompok: [{ nama, jenis, judul?, berkas: [{berkas,a,b}]|null, galat? }], boleh: (k) => boolean, judulDari: (k) => string.
+   * Hasil: { kelompok: [{ id, nama, sub, asal?, berkas: [{berkas,a,b,kelompok}] }], memuat }.
+   * Urutan: kelompok per pokok sela (TOPIK_SELA), "Putusan sela lain", lalu butir sela per jenis perkara (urutan menu).
+   */
+  function kumpulkanSela(kelompok, boleh, judulDari) {
+    const judul = typeof judulDari === "function" ? judulDari : (k) => String(k.judul || k.nama || "");
+    const topik = new Map(TOPIK_SELA.map(([id, nama]) => [id, { id: `sela:${id}`, nama, sub: "", berkas: [] }]));
+    const lain = { id: "sela:lain", nama: "Putusan sela lain", sub: "", berkas: [] };
+    const perJenis = [];
+    const lihat = new Set();
+    let memuat = false;
+    for (const k of Array.isArray(kelompok) ? kelompok : []) {
+      if (!k || k.jenis !== "put" || !boleh(k)) continue;
+      const umum = kelompokSelaUmum(k);
+      if (!k.berkas) {
+        if (!k.galat) memuat = true;
+        continue;
+      }
+      const isi = [];
+      for (const b of k.berkas) {
+        if (!umum && !adalahBlangkoSela(b.berkas)) continue;
+        const kunci = `${k.nama}|${String(b.berkas).replace(/\.rtf$/i, "").trim().toLowerCase()}`;
+        if (lihat.has(kunci)) continue;
+        lihat.add(kunci);
+        isi.push({ ...b, kelompok: k.nama });
+      }
+      if (!isi.length) continue;
+      if (umum) {
+        for (const b of isi) {
+          const t = TOPIK_SELA.find(([, , pola]) => pola.test(b.berkas));
+          (t ? topik.get(t[0]) : lain).berkas.push(b);
+        }
+      } else perJenis.push({ id: `sela:k:${k.nama}`, asal: k.nama, nama: judul(k), sub: "", berkas: isi });
+    }
+    const hasil = [...topik.values(), lain, ...perJenis].filter((x) => x.berkas.length);
+    for (const x of hasil) {
+      x.berkas.sort((p, q) => statusSela(p.berkas).i - statusSela(q.berkas).i || String(p.berkas).localeCompare(String(q.berkas), "id"));
+      const status = [];
+      for (const b of x.berkas) {
+        const s = statusSela(b.berkas).nama;
+        if (!status.includes(s)) status.push(s);
+      }
+      x.sub = status.join(", ");
+    }
+    return { kelompok: hasil, memuat };
+  }
   /** Memuat daftar berkas kelompok-kelompok yang mungkin memuat butir ikrar (tiga sekaligus). */
   async function muatKelompokIkrar() {
     if (!S.menu) return;
@@ -1308,7 +1394,9 @@
     const jenisAda = jenisBoleh();
     if (!jenisAda.length) return toast("Peran akun Anda tidak punya blangko di tampilan ini.");
     const jenis = S.blangko && jenisAda.includes(S.blangko.jenis) ? S.blangko.jenis : jenisAda[0];
-    S.modal = { jenis, kelompok: "", cari: "" };
+    // 30 Okt: blangko putusan sela yang sedang dipakai membuka tab Putusan sela.
+    const sela = Boolean(jenis === "put" && S.blangko && (adalahBlangkoSela(S.blangko.berkas) || POLA_SELA_KEL.test(String(S.blangko.kelompok || ""))));
+    S.modal = { jenis, kelompok: "", cari: "", sela };
     renderModal();
     const a = api();
     // Saklar Pengaturan SIPP & ABT dapat menambah jenis (hakim -> BAS, PP -> putusan): gambar ulang sesudah terbaca.
@@ -1372,8 +1460,46 @@
       return kosong;
     }
   }
+  /** Tab Putusan sela hanya tampil bila menu Derry memuat kelompok putusan sela yang boleh dibuka akun ini. */
+  function adaTabSela() {
+    return Boolean(S.menu) && S.menu.kelompok.some((k) => kelompokSelaUmum(k) && kelompokBoleh(k));
+  }
+  function kelompokModalSela() {
+    const rek = rekomendasi().filter((r) => r.jenis === "put");
+    const g = kumpulkanSela(S.menu.kelompok, kelompokBoleh, (k) => k.judul || namaMenuTampil(k.nama));
+    const daftar = [];
+    const saran = [];
+    for (const r of rek) {
+      for (const x of g.kelompok) {
+        const b = x.berkas.find((y) => samaBerkasSaran(y.berkas, r.berkas));
+        if (b && !saran.some((s) => s.berkas === b.berkas && s.kelompok === b.kelompok)) saran.push({ ...b, alasan: r.alasan });
+      }
+    }
+    if (saran.length) daftar.push({ id: "sela:saran", nama: "Disarankan", sub: `untuk sidang ke-${(Number(S.pk.sidangKe) || 0) + 1}`, saran: true, berkas: saran });
+    const kunci = kunciKategoriPerkara("put");
+    const kunciDari = (n) => (typeof alatKunciKelompok === "function" ? alatKunciKelompok(n) : String(n || ""));
+    for (const x of g.kelompok) {
+      const adaSaran = x.berkas.some((b) => saran.some((s) => s.berkas === b.berkas && s.kelompok === b.kelompok));
+      const cocokPerkara = Boolean(x.asal) && kunci.has(kunciDari(x.asal));
+      const disaran = x.berkas.filter((b) => saran.some((s) => s.berkas === b.berkas && s.kelompok === b.kelompok));
+      daftar.push({
+        ...x,
+        berkas: disaran.concat(x.berkas.filter((b) => !disaran.includes(b))),
+        adaSaran,
+        cocokPerkara,
+        sub: [cocokPerkara ? "sesuai jenis perkara ini" : "", adaSaran ? "ada yang disarankan untuk sidang ini" : x.sub].filter(Boolean).join(" · "),
+        memuat: false,
+        galat: "",
+      });
+    }
+    const tingkat = (x) => (x.saran ? 0 : x.cocokPerkara ? 1 : x.adaSaran ? 2 : 3);
+    daftar.sort((a, b) => tingkat(a) - tingkat(b));
+    if (!daftar.length) daftar.push({ id: "sela:muat", nama: NAMA_TAB_SELA, sub: "", berkas: [], memuat: g.memuat, galat: "" });
+    return daftar;
+  }
   function kelompokModal() {
     if (!S.menu || !S.modal) return [];
+    if (S.modal.sela) return kelompokModalSela();
     const rek = rekomendasi();
     const semua = S.menu.kelompok.filter((k) => k.jenis === S.modal.jenis && kelompokBoleh(k)).sort(urutKelompok);
     const daftar = [];
@@ -1477,6 +1603,11 @@
     m.hidden = false;
     const jenisAda = jenisBoleh();
     if (!jenisAda.includes(S.modal.jenis) && jenisAda.length) S.modal.jenis = jenisAda[0];
+    // 30 Okt: tab "Putusan sela" tepat sesudah tab Putusan (jenis dokumennya tetap putusan; hanya cara mengelompokkannya yang lain).
+    const tabSela = jenisAda.includes("put") && adaTabSela();
+    if (S.modal.sela && (!tabSela || S.modal.jenis !== "put")) S.modal.sela = false;
+    const tabAda = jenisAda.flatMap((j) => (j === "put" && tabSela ? ["put", "sela"] : [j]));
+    const tabAktif = S.modal.sela ? "sela" : S.modal.jenis;
     const q = S.modal.cari.trim().toLowerCase();
     const rek = rekomendasi();
     const daftar = kelompokModal();
@@ -1524,17 +1655,17 @@
     }
     if (kananLama) gulirLama.kananY = kananLama.scrollTop;
     gulirLama.sidik = S.modal.sidikGulir || "";
-    const sidikBaru = [S.modal.jenis, q ? `cari:${q}` : S.modal.kelompok].join("|");
+    const sidikBaru = [tabAktif, q ? `cari:${q}` : S.modal.kelompok].join("|");
     S.modal.sidikGulir = sidikBaru;
     // Daftar kiri berganti isi hanya saat tab jenis dokumen berganti: baru itu kembali ke atas.
-    if ((S.modal.jenisGulir || S.modal.jenis) !== S.modal.jenis) {
+    if ((S.modal.jenisGulir || tabAktif) !== tabAktif) {
       gulirLama.kiriY = 0;
       gulirLama.kiriX = 0;
     }
-    S.modal.jenisGulir = S.modal.jenis;
+    S.modal.jenisGulir = tabAktif;
     m.innerHTML =
       `<div class="bd-mkotak" role="document"><div class="bd-mkepala"><b>Pilih blangko</b>${tes() ? `<span class="bd-chip belum" title="Semua blangko dari semua jenis perkara terbuka; perkara acuan hanya dibaca">Tes putusan</span>` : ""}` +
-      `<div class="bd-seg" role="tablist" aria-label="Jenis dokumen">${jenisAda.map((j) => `<button type="button" role="tab" data-jenismodal="${j}" aria-selected="${S.modal.jenis === j}">${esc(NAMA_JENIS[j])}${adm() ? "" : ""}</button>`).join("")}</div>` +
+      `<div class="bd-seg" role="tablist" aria-label="Jenis dokumen">${tabAda.map((j) => `<button type="button" role="tab" data-jenismodal="${j}" aria-selected="${tabAktif === j}">${esc(j === "sela" ? NAMA_TAB_SELA : NAMA_JENIS[j])}</button>`).join("")}</div>` +
       `<input class="bd-cari" id="bd-caribl" placeholder="cari, mis. 3 saksi" aria-label="Cari blangko" value="${esc(S.modal.cari)}">` +
       `<button type="button" class="bd-btn kecil" data-bd2="tutupmodal">Tutup</button></div>` +
       `<div class="bd-mbadan"><nav class="bd-mkiri" aria-label="Kelompok blangko">${kiri}</nav><div class="bd-mkanan">${kanan}</div></div></div>`;
@@ -8268,7 +8399,9 @@
     }
     const jenisModal = c("[data-jenismodal]");
     if (jenisModal && S.modal) {
-      S.modal.jenis = jenisModal.getAttribute("data-jenismodal");
+      const tab = jenisModal.getAttribute("data-jenismodal");
+      S.modal.sela = tab === "sela";
+      S.modal.jenis = tab === "sela" ? "put" : tab;
       S.modal.kelompok = "";
       renderModal();
       void muatSemuaKelompok(S.modal.jenis);
@@ -9605,7 +9738,7 @@
       tuntutan: S.susunan ? keadaanTuntutan().map((t) => ({ pemicu: t.pemicu, status: t.status, jabatan: t.jabatan, dipilih: t.dipilih })) : [],
       tandaKosong: Array.from(S.tandaKosong),
     }),
-    murni: { sidikTeks, awalanBawaanEl, permintaanAbtAman, pilihanTunggalMurni, kerangkaBawaanMurni, daftarPilihanMurni, keputusanDipilihMurni, keputusanExOfficioMurni, bersihkanHeaderPenanda, bersihkanPenutupSaksiRtf, bersihkanPenutupTabelRtf, perkiraanSidang, keadaanBerlakuMurni, golonganIsianMurni, tuntutanAktifMurni, uraiKutipanTuntutan, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, susunTeksBukti, kalimatBuktiEl, pisahBuktiElektronik, butirElDariTeks, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranTtdBerlaku, berhakCap, UKURAN_TTD_CAP_BAWAAN, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, normalAbt, hurufAlasanDari, nilaiSimpan8503, jenisKelompok, namaTampil, adalahBlangkoIkrar, uraikanIkrar, kumpulkanIkrar, saranIkrarCadangan, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel, ramahkanAlasan, pilihVarianSaksi },
+    murni: { sidikTeks, awalanBawaanEl, permintaanAbtAman, pilihanTunggalMurni, kerangkaBawaanMurni, daftarPilihanMurni, keputusanDipilihMurni, keputusanExOfficioMurni, bersihkanHeaderPenanda, bersihkanPenutupSaksiRtf, bersihkanPenutupTabelRtf, perkiraanSidang, keadaanBerlakuMurni, golonganIsianMurni, tuntutanAktifMurni, uraiKutipanTuntutan, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, susunTeksBukti, kalimatBuktiEl, pisahBuktiElektronik, butirElDariTeks, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranTtdBerlaku, berhakCap, UKURAN_TTD_CAP_BAWAAN, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, normalAbt, hurufAlasanDari, nilaiSimpan8503, jenisKelompok, namaTampil, adalahBlangkoIkrar, uraikanIkrar, kumpulkanIkrar, kumpulkanSela, adalahBlangkoSela, statusSela, saranIkrarCadangan, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel, ramahkanAlasan, pilihVarianSaksi },
   };
   globalThis.aletaBlangkoDerryIsian = apiIsian;
   if (!mulai()) {

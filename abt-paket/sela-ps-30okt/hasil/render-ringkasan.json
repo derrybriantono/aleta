@@ -294,5 +294,293 @@
   "baris": 25,
   "sisa_penanda": 0,
   "isian_kosong": 0
+ },
+ {
+  "putaran": "render6-putaran2",
+  "blangko": "[16] [NO] Eksepsi Gugatan Kabur (Obscuur Libel) Dikabulkan - Gugatan Tidak Dapat Diterima (Putusan Akhir).rtf",
+  "perkara": "308/Pdt.G/2026",
+  "sidang": 5,
+  "baris": 101,
+  "sisa_penanda": 0,
+  "isian_kosong": 0
+ },
+ {
+  "putaran": "render6-putaran2",
+  "blangko": "[17] [Sisipan] Eksepsi Gugatan Kabur (Obscuur Libel) Ditolak - Bagian Dalam Eksepsi untuk Putusan Akhir.rtf",
+  "perkara": "308/Pdt.G/2026",
+  "sidang": 5,
+  "baris": 17,
+  "sisa_penanda": 0,
+  "isian_kosong": 0
+ },
+ {
+  "putaran": "render6-putaran2",
+  "blangko": "[18] [NO] Eksepsi Keliru Pihak (Error in Persona) Dikabulkan - Gugatan Tidak Dapat Diterima (Putusan Akhir).rtf",
+  "perkara": "620/Pdt.G/2025",
+  "sidang": 5,
+  "baris": 91,
+  "sisa_penanda": 0,
+  "isian_kosong": 3
+ },
+ {
+  "putaran": "render6-putaran2",
+  "blangko": "[20] [NO] Eksepsi Kurang Pihak (Plurium Litis Consortium) Dikabulkan - Gugatan Tidak Dapat Diterima (Putusan Akhir).rtf",
+  "perkara": "546/Pdt.G/2024",
+  "sidang": 4,
+  "baris": 270,
+  "sisa_penanda": 0,
+  "isian_kosong": 0
+ },
+ {
+  "putaran": "render6-putaran2",
+  "blangko": "[21] [Sisipan] Eksepsi Kurang Pihak (Plurium Litis Consortium) Ditolak - Bagian Dalam Eksepsi untuk Putusan Akhir.rtf",
+  "perkara": "546/Pdt.G/2024",
+  "sidang": 4,
+  "baris": 18,
+  "sisa_penanda": 0,
+  "isian_kosong": 0
+ },
+ {
+  "putaran": "render6-putaran2",
+  "blangko": "[22] [NO] Eksepsi Ne Bis In Idem Dikabulkan - Gugatan Tidak Dapat Diterima (Putusan Akhir).rtf",
+  "perkara": "546/Pdt.G/2024",
+  "sidang": 4,
+  "baris": 270,
+  "sisa_penanda": 0,
+  "isian_kosong": 0
+ },
+ {
+  "putaran": "render6-putaran2",
+  "blangko": "[24] [NO] Eksepsi Gugatan Prematur Dikabulkan - Gugatan Tidak Dapat Diterima (Putusan Akhir).rtf",
+  "perkara": "419/Pdt.G/2026",
+  "sidang": 4,
+  "baris": 71,
+  "sisa_penanda": 0,
+  "isian_kosong": 1
+ },
+ {
+  "putaran": "render6-putaran2",
+  "blangko": "[25] [Sisipan] Eksepsi Gugatan Prematur Ditolak - Bagian Dalam Eksepsi untuk Putusan Akhir.rtf",
+  "perkara": "419/Pdt.G/2026",
+  "sidang": 4,
+  "baris": 17,
+  "sisa_penanda": 0,
+  "isian_kosong": 1
+ },
+ {
+  "putaran": "render6-putaran2",
+  "blangko": "[26] [Sela] Gugatan Rekonvensi Tidak Dapat Diterima - Pemeriksaan Konvensi Dilanjutkan.rtf",
+  "perkara": "637/Pdt.G/2025",
+  "sidang": 5,
+  "baris": 55,
+  "sisa_penanda": 0,
+  "isian_kosong": 0
+ },
+ {
+  "putaran": "render6-putaran2",
+  "blangko": "[27] [Sela Kabul] Penggabungan Perkara Dikabulkan.rtf",
+  "perkara": "620/Pdt.G/2025",
+  "sidang": 5,
+  "baris": 75,
+  "sisa_penanda": 0,
+  "isian_kosong": 0
+ },
+ {
+  "putaran": "render6-putaran2",
+  "blangko": "[28] [Sela Tolak] Penggabungan Perkara Ditolak.rtf",
+  "perkara": "620/Pdt.G/2025",
+  "sidang": 5,
+  "baris": 74,
+  "sisa_penanda": 0,
+  "isian_kosong": 0
+ },
+ {
+  "putaran": "render6-putaran2",
+  "blangko": "[29] [Sela] Sumpah Pemutus (Decisoir) - Gugatan.rtf",
+  "perkara": "637/Pdt.G/2025",
+  "sidang": 6,
+  "baris": 56,
+  "sisa_penanda": 0,
+  "isian_kosong": 0
+ },
+ {
+  "putaran": "render6-putaran2",
+  "blangko": "[30] [Sela] Sumpah Penaksir (Aestimatoir) - Gugatan.rtf",
+  "perkara": "620/Pdt.G/2025",
+  "sidang": 9,
+  "baris": 73,
+  "sisa_penanda": 0,
+  "isian_kosong": 0
+ },
+ {
+  "putaran": "render6-putaran2",
+  "blangko": "[31] [Sela] Sumpah Lian - Cerai dengan Alasan Zina.rtf",
+  "perkara": "517/Pdt.G/2026",
+  "sidang": 4,
+  "baris": 55,
+  "sisa_penanda": 0,
+  "isian_kosong": 0
+ },
+ {
+  "putaran": "render6-putaran2",
+  "blangko": "[32] [Penetapan] Tergugat Tidak Beriktikad Baik dalam Mediasi - Biaya Mediasi (PERMA 1 2016 Pasal 23).rtf",
+  "perkara": "687/Pdt.G/2025",
+  "sidang": 3,
+  "baris": 74,
+  "sisa_penanda": 0,
+  "isian_kosong": 0
+ },
+ {
+  "putaran": "render6-putaran2",
+  "blangko": "[33] [NO] Penggugat Tidak Beriktikad Baik dalam Mediasi - Gugatan Tidak Dapat Diterima (PERMA 1 2016 Pasal 22).rtf",
+  "perkara": "419/Pdt.G/2026",
+  "sidang": 3,
+  "baris": 64,
+  "sisa_penanda": 0,
+  "isian_kosong": 0
+ },
+ {
+  "putaran": "render6-putaran2",
+  "blangko": "[02] [NO] Eksepsi Kewenangan Absolut Dikabulkan - Pengadilan Agama Tidak Berwenang (Putusan Akhir).rtf",
+  "perkara": "419/Pdt.G/2026",
+  "sidang": 3,
+  "baris": 67,
+  "sisa_penanda": 0,
+  "isian_kosong": 1
+ },
+ {
+  "putaran": "render6-putaran2",
+  "blangko": "[13] [Sela] Sumpah Pelengkap (Suppletoir) - Gugatan.rtf",
+  "perkara": "167/Pdt.G/2026",
+  "sidang": 2,
+  "baris": 55,
+  "sisa_penanda": 0,
+  "isian_kosong": 0
+ },
+ {
+  "putaran": "render6-putaran2",
+  "blangko": "[15] [Sela] Pemeriksaan Setempat - Perintah Pemeriksaan di Lokasi Objek.rtf",
+  "perkara": "419/Pdt.G/2026",
+  "sidang": 3,
+  "baris": 59,
+  "sisa_penanda": 0,
+  "isian_kosong": 0
+ },
+ {
+  "putaran": "render6-putaran2",
+  "blangko": "BAS SELA [3] Sumpah Pelengkap (Suppletoir) - Tunda Putusan.rtf",
+  "perkara": "167/Pdt.G/2026",
+  "sidang": 3,
+  "baris": 26,
+  "sisa_penanda": 0,
+  "isian_kosong": 1
+ },
+ {
+  "putaran": "render6-putaran2",
+  "blangko": "BAS SELA [3a] Sumpah Pelengkap (Suppletoir) - Lalu Putusan Dibacakan.rtf",
+  "perkara": "167/Pdt.G/2026",
+  "sidang": 3,
+  "baris": 35,
+  "sisa_penanda": 0,
+  "isian_kosong": 0
+ },
+ {
+  "putaran": "render6-putaran2",
+  "blangko": "BAS SELA [3a] Sumpah Pelengkap (Suppletoir) - Lalu Putusan Dibacakan.rtf",
+  "perkara": "42/Pdt.P/2026",
+  "sidang": 1,
+  "baris": 32,
+  "sisa_penanda": 0,
+  "isian_kosong": 0
+ },
+ {
+  "putaran": "render6-putaran2",
+  "blangko": "BAS SELA [4] Sumpah Pemutus (Decisoir) - Tunda Putusan.rtf",
+  "perkara": "637/Pdt.G/2025",
+  "sidang": 7,
+  "baris": 25,
+  "sisa_penanda": 0,
+  "isian_kosong": 0
+ },
+ {
+  "putaran": "render6-putaran2",
+  "blangko": "BAS SELA [4a] Sumpah Pemutus (Decisoir) - Lalu Putusan Dibacakan.rtf",
+  "perkara": "637/Pdt.G/2025",
+  "sidang": 7,
+  "baris": 45,
+  "sisa_penanda": 0,
+  "isian_kosong": 0
+ },
+ {
+  "putaran": "render6-putaran2",
+  "blangko": "BAS SELA [5] Sumpah Penaksir (Aestimatoir) - Tunda Putusan.rtf",
+  "perkara": "620/Pdt.G/2025",
+  "sidang": 10,
+  "baris": 25,
+  "sisa_penanda": 0,
+  "isian_kosong": 0
+ },
+ {
+  "putaran": "render6-putaran2",
+  "blangko": "BAS SELA [5a] Sumpah Penaksir (Aestimatoir) - Lalu Putusan Dibacakan.rtf",
+  "perkara": "620/Pdt.G/2025",
+  "sidang": 10,
+  "baris": 60,
+  "sisa_penanda": 0,
+  "isian_kosong": 0
+ },
+ {
+  "putaran": "render6-putaran2",
+  "blangko": "BAS SELA [6] Sumpah Lian - Tunda Putusan.rtf",
+  "perkara": "517/Pdt.G/2026",
+  "sidang": 5,
+  "baris": 32,
+  "sisa_penanda": 0,
+  "isian_kosong": 0
+ },
+ {
+  "putaran": "render6-putaran2",
+  "blangko": "BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+  "perkara": "419/Pdt.G/2026",
+  "sidang": 1,
+  "baris": 81,
+  "sisa_penanda": 0,
+  "isian_kosong": 0
+ },
+ {
+  "putaran": "render6-putaran2",
+  "blangko": "BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+  "perkara": "546/Pdt.G/2024",
+  "sidang": 1,
+  "baris": 86,
+  "sisa_penanda": 0,
+  "isian_kosong": 0
+ },
+ {
+  "putaran": "render6-putaran2",
+  "blangko": "@ 4a - Penetapan Penunjukan Mediator - Mediasi Elektronik (PERMA 3 2022).rtf",
+  "perkara": "419/Pdt.G/2026",
+  "sidang": 1,
+  "baris": 24,
+  "sisa_penanda": 0,
+  "isian_kosong": 0
+ },
+ {
+  "putaran": "render6-putaran2",
+  "blangko": "BAS ALUR 04 [PS] BAS P & T Hadir - Pemeriksaan Setempat Objek Harta Bersama (Kumulasi).rtf",
+  "perkara": "419/Pdt.G/2026",
+  "sidang": 4,
+  "baris": 34,
+  "sisa_penanda": 0,
+  "isian_kosong": 6
+ },
+ {
+  "putaran": "render6-putaran2",
+  "blangko": "BAS ALUR 30 HB - Sidang PS - Pemeriksaan Setempat di Lokasi Objek (antara ALUR 04 [7] dan [8]).rtf",
+  "perkara": "637/Pdt.G/2025",
+  "sidang": 8,
+  "baris": 34,
+  "sisa_penanda": 0,
+  "isian_kosong": 6
  }
 ]

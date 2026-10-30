@@ -1,9 +1,10 @@
 #!/bin/bash
 # =============================================================================
 # PASANG paket ABT "abt-sela-ps-30okt" (30 Okt 2026). Dijalankan DI SERVER sebagai root, dari folder paket. HANYA pengguna derry_briantono.
-# Isi: 70 variabel baru (11300-11369), 2 menu baru (151 "Putusan Sela ...", 152 "Putusan Sela - BAS"), 22 blangko RTF baru (folder baru
-# "97a Putusan Sela" dan "97a Putusan Sela - BAS", BAS pemeriksaan setempat di 4c/4d/4e/10a - BAS) dan 2 blangko DITIMPA (BAS pemeriksaan
-# setempat 4a Harta Bersama - BAS dan 4b Kewarisan - BAS; hanya bila md5 persis dasar). Variabel dan menu lama tidak diubah.
+# Isi: 102 variabel baru (11300-11403), 2 menu baru (151 "Putusan Sela ...", 152 "Putusan Sela - BAS"), 68 blangko RTF baru (folder baru
+# "97a Putusan Sela" 33 + "97a Putusan Sela - BAS" 9; BAS pemeriksaan setempat di 4c/4d/4e/10a/1/1a - BAS; BAS mediasi elektronik [1e] di 19
+# folder BAS; 99 PTSP "@ 4a" penetapan mediator mediasi elektronik) dan 2 blangko DITIMPA (BAS pemeriksaan setempat 4a Harta Bersama - BAS
+# dan 4b Kewarisan - BAS; hanya bila md5 persis dasar). Variabel, menu, dan berkas lama lain tidak diubah.
 # URUTAN PASANG: PALING AKHIR - sesudah prodeo-panggilan-29okt (variabel 11122-11140 dirujuk; PRASYARAT C memeriksanya), bas-tanya-jawab-29okt,
 # ket-saksi-kata-30okt, relaas-penetapan-30okt, sampul-rapi-30okt.
 # Urutan: md5 -> PRASYARAT SQL + BERKAS (baca saja) -> CADANGAN (sesudah prasyarat lolos; tidak pernah menimpa cadangan lama)

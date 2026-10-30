@@ -41,7 +41,9 @@ def kepala(pokok, gugatan=True, judul='PUTUSAN SELA', produk='putusan sela', int
 def penutup_duduk(produk='putusan sela'):
     return [('duduk', 'Bahwa untuk mempersingkat uraian %s ini, segala sesuatu yang termuat dalam berita acara sidang perkara ini ditunjuk sebagai bagian yang tidak terpisahkan dari %s ini;' % (produk, produk)),
             ('sub2', 'PERTIMBANGAN HUKUM'),
-            ('timbang', 'Menimbang, bahwa maksud dan tujuan #0053# #7036# adalah sebagaimana tersebut di atas;')]
+            ('timbang', 'Menimbang, bahwa maksud dan tujuan #0053# #7036# adalah sebagaimana tersebut di atas;')] + (
+        [('timbang', 'Menimbang, bahwa %s ini adalah putusan yang bukan putusan akhir, yang dijatuhkan sebelum putusan akhir untuk memungkinkan atau '
+                     'mempermudah kelanjutan pemeriksaan perkara, sebagaimana dimaksud dalam #11370#;' % produk)] if 'sela' in produk else [])
 
 
 def biaya_sela(produk='putusan sela', akhir='putusan akhir'):
@@ -64,7 +66,8 @@ def amar(butir, judul='MENGADILI'):
 TIMBANG_PA49 = ('Menimbang, bahwa berdasarkan Pasal 49 ' + UU_PA + ', Pengadilan Agama bertugas dan berwenang memeriksa, memutus, dan menyelesaikan '
                 "perkara di tingkat pertama antara orang-orang yang beragama Islam di bidang perkawinan, waris, wasiat, hibah, wakaf, zakat, infaq, shadaqah, dan ekonomi syari'ah;")
 LANJUT = 'Memerintahkan #7036# dan #7037# untuk melanjutkan pemeriksaan pokok perkara'
-TANGGUH = 'Menangguhkan biaya perkara sampai dengan putusan akhir'
+TANGGUH = 'Menangguhkan pembebanan biaya perkara hingga putusan akhir'
+TANGGUH_P = 'Menangguhkan pembebanan biaya perkara hingga penetapan akhir'
 
 # ---------------------------------------------------------------------------------------------------------------------------
 # A. EKSEPSI KEWENANGAN
@@ -84,9 +87,9 @@ def eksepsi_ditolak(jenis):
                              'dan hakim karena jabatannya wajib menyatakan dirinya tidak berwenang apabila perkara yang diajukan tidak termasuk kewenangannya; sebagai eksepsi mengenai '
                              'kewenangan mengadili, eksepsi tersebut dikecualikan dari ketentuan #11302# yang mengharuskan eksepsi lain diperiksa dan diputus bersama-sama dengan pokok perkara, '
                              'sehingga #8554# terlebih dahulu mempertimbangkan dan memutusnya dengan putusan sela;'))
-        p.append(('timbang', TIMBANG_PA49))
+        p.append(('timbang', TIMBANG_PA49 + '#11373#'))
         p.append(('timbang', 'Menimbang, bahwa berdasarkan dalil-dalil #0053# #7036#, jawaban #7037#, serta fakta yang terungkap di persidangan, #9684#, sehingga perkara <i>a quo</i> '
-                             'termasuk kewenangan absolut Pengadilan Agama; dengan demikian eksepsi #7037# tentang kewenangan absolut tidak beralasan hukum dan harus ditolak;'))
+                             'termasuk #11372# dan menjadi kewenangan absolut Pengadilan Agama; dengan demikian eksepsi #7037# tentang kewenangan absolut tidak beralasan hukum dan harus ditolak;'))
     else:
         p.append(('timbang', 'Menimbang, bahwa berdasarkan #11300#, eksepsi mengenai kewenangan relatif harus diajukan pada permulaan persidangan sebelum #7037# mengajukan '
                              'jawaban mengenai pokok perkara; sebagai eksepsi mengenai kewenangan mengadili, eksepsi tersebut dikecualikan dari ketentuan #11302# yang mengharuskan eksepsi '
@@ -136,6 +139,7 @@ def eksepsi_dikabulkan(jenis):
     p.append(('timbang', 'Mengingat segala ketentuan peraturan perundang-undangan yang berlaku dan hukum Islam yang berkaitan dengan perkara ini;'))
     p += amar(['Mengabulkan eksepsi #7037# tentang kewenangan %s' % jenis,
                'Menyatakan #8008# tidak berwenang %smengadili perkara Nomor #0001#' % ('' if absolut else 'secara relatif '),
+               'Menyatakan #0053# #7036# tidak dapat diterima (<i>niet ontvankelijke verklaard</i>)',
                '#11122#'])
     p.append(('ekor_akhir', ''))   # kaki putusan akhir + tanda tangan + Untuk Salinan + rincian biaya (dari blangko [99c], dipakai apa adanya)
     return p
@@ -251,7 +255,7 @@ def sumpah(gugatan):
           ('bagian', 'Mengenai Biaya Perkara')]
     p += biaya_sela(produk, akhir)
     p += amar(['Memerintahkan #11339# untuk mengangkat sumpah pelengkap (<i>suppletoir</i>) di hadapan persidangan dengan lafal sebagaimana tersebut dalam pertimbangan %s ini' % produk,
-               'Menangguhkan biaya perkara sampai dengan %s' % akhir], judul='MENGADILI' if gugatan else 'MENETAPKAN')
+               TANGGUH if gugatan else TANGGUH_P], judul='MENGADILI' if gugatan else 'MENETAPKAN')
     p += kaki()
     return p
 
@@ -275,10 +279,13 @@ def sela_ps():
                       'Pertanahan setempat;'),
           ('timbang', 'Menimbang, bahwa untuk memperoleh kejelasan dan kepastian mengenai letak, luas, batas-batas, dan keadaan objek sengketa, serta agar putusan yang akan '
                       'dijatuhkan kelak dapat dilaksanakan, #8554# memandang perlu melakukan pemeriksaan setempat atas objek sengketa tersebut;'),
+          ('timbang', 'Menimbang, bahwa biaya pemeriksaan setempat dibayar lebih dahulu sebagai tambahan panjar biaya perkara oleh #11397#, dan pembebanannya akan '
+                      'diperhitungkan dalam putusan akhir;'),
           ('bagian', 'Mengenai Biaya Perkara')]
     p += biaya_sela()
     p += amar(['Memerintahkan dilaksanakan pemeriksaan setempat terhadap objek sengketa yang terletak di #9165#, pada hari #0133# tanggal #0134#, pukul #9400#',
                'Memerintahkan #7036# dan #7037# untuk hadir di lokasi objek sengketa pada waktu tersebut',
+               'Memerintahkan #11397# untuk membayar tambahan panjar biaya pemeriksaan setempat sejumlah #11396# melalui Kasir #8008# sebelum pemeriksaan setempat dilaksanakan',
                'Memerintahkan Jurusita/Jurusita Pengganti #8008# untuk memberitahukan pelaksanaan pemeriksaan setempat tersebut kepada Kepala Desa/Lurah setempat agar hadir '
                'mendampingi pemeriksaan setempat',
                TANGGUH])
@@ -314,6 +321,8 @@ def bas_ps():
           ('b_badan', '#11346#'),
           ('b_badan', 'Selanjutnya #0690# bersama #6034#, para pihak, dan #9166# meninjau objek sengketa tersebut satu per satu, dengan hasil sebagai berikut:'),
           ('b_badan', '#9167#'),
+          ('b_badan', 'Gambar situasi atau denah objek sengketa yang dibuat pada pemeriksaan setempat ini terlampir dan merupakan bagian yang tidak terpisahkan dari '
+                      'berita acara sidang ini;'),
           ('b_badan', 'Kemudian atas pertanyaan #4004# di lokasi objek sengketa, #7036# memberikan keterangan sebagai berikut:'),
           ('b_tj', '#11353#'),
           ('b_badan', 'Selanjutnya atas pertanyaan #4004#, #7037# memberikan keterangan sebagai berikut:'),
@@ -405,7 +414,7 @@ SEMUA = [
      [11344, 11347, 8730, 8718, 9479, 9795, 9826, 9162], ('pemeriksaan setempat', 'diperintahkan')),
     (F_SELA_BAS, 'BAS SELA [1] Sidang Insidentil - Pemeriksaan Eksepsi, Provisi atau Intervensi, Tunda Putusan Sela.rtf', 'bas', bas_insidentil, [], None),
     (F_SELA_BAS, 'BAS SELA [2] Pembacaan Putusan Sela - Pemeriksaan Dilanjutkan.rtf', 'bas', bas_pembacaan, [], None),
-    (F_SELA_BAS, 'BAS SELA [3] Pengucapan Sumpah Pelengkap (Suppletoir).rtf', 'bas', bas_sumpah, [11338, 11341], None),
+    (F_SELA_BAS, 'BAS SELA [3] Sumpah Pelengkap (Suppletoir) - Tunda Putusan.rtf', 'bas', bas_sumpah, [11338, 11341], None),
 ]
 
 # BAS pemeriksaan setempat per jenis perkara kebendaan: (folder, berkas, timpa?, isian objek jenis)

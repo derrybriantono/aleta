@@ -37,7 +37,7 @@ const polos = (r: string) =>
     .replace(/\\(?:par|cell|row)\b ?/g, "\n")
     .replace(/\\[a-zA-Z]+-?\d* ?/g, "")
     .replace(/[{}]/g, "")
-    .replace(/^[\s\S]*?(?=^(?:PUTUSAN|PENETAPAN|BERITA ACARA SIDANG))/m, ""); // kepala/kaki halaman (nomor halaman) sebelum judul dibuang
+    .replace(/^[\s\S]*?(?=^(?:PUTUSAN|PENETAPAN|BERITA ACARA SIDANG|SISIPAN PUTUSAN))/m, ""); // kepala/kaki halaman (nomor halaman) sebelum judul dibuang
 const F = "derry_briantono/97a Putusan Sela";
 const FB = "derry_briantono/97a Putusan Sela - BAS";
 const sela = RTF.filter((x) => x[0] === F);
@@ -69,8 +69,9 @@ describe("paket putusan sela & pemeriksaan setempat 30 Okt - isi paket", () => {
     expect(existsSync(path.join(ps, "cadangan"))).toBe(false);
   });
 
-  it("22 blangko baru + 2 ditimpa; md5 daftar cocok; yang ditimpa hanya BAS pemeriksaan setempat HB dan waris dengan md5 dasar pohon server", () => {
-    expect(RTF).toHaveLength(22);
+  it("68 blangko baru + 2 ditimpa; md5 daftar cocok; yang ditimpa hanya BAS pemeriksaan setempat HB dan waris dengan md5 dasar pohon server", () => {
+    // 33 putusan sela + 9 BAS sela + 6 BAS PS jenis (4c/4d/4e/10a + cerai 1/1a) + 19 BAS mediasi elektronik [1e] + 1 PTSP @ 4a
+    expect(RTF).toHaveLength(68);
     for (const [folder, berkas, h] of RTF) expect(md5(readFileSync(path.join(ps, "rtf", folder, berkas))), berkas).toBe(h);
     expect(TIMPA.map((x) => `${x[0]}/${x[1]}`).sort()).toEqual([
       "derry_briantono/4a Harta Bersama - BAS/BAS ALUR 30 HB - Sidang PS - Pemeriksaan Setempat di Lokasi Objek (antara ALUR 04 [7] dan [8]).rtf",
@@ -104,7 +105,8 @@ describe("paket putusan sela & pemeriksaan setempat 30 Okt - isi paket", () => {
   it("rujukan pasal hukum acara hanya lewat variabel ACARA 11300-11309 (padanan HIR satu tempat); tanpa HIR di blangko", () => {
     for (const [folder, berkas] of RTF) {
       const t = polos(rtfMentah(folder, berkas));
-      if (folder === F && /\[0[24]\]/.test(berkas)) continue; // putusan akhir: kaki/rincian blangko [99c] dipakai apa adanya
+      if (folder === F && /\[NO\]/.test(berkas)) continue; // putusan akhir: kaki/rincian blangko [99c] dipakai apa adanya
+      if (/\[1e\]|@ 4a/.test(berkas)) continue; // mediasi elektronik: blangko mediasi Derry yang ada (Pasal 154 RBg di aslinya) + sisipan
       expect(t, berkas).not.toMatch(/Pasal\s+\d+[^.;#]{0,40}\bRBg\b/);
       expect(t, berkas).not.toMatch(/\bHIR\b/);
     }
@@ -114,7 +116,9 @@ describe("paket putusan sela & pemeriksaan setempat 30 Okt - isi paket", () => {
   });
 
   it("SQL: variabel baru 11300-11499 saja, menu 151/152, PRASYARAT/PERIKSA/PULIH bersidik md5; tanpa nama aplikasi", () => {
-    expect(NOMOR.length).toBe(70);
+    expect(NOMOR.length).toBe(102);
+    // blok 11600-11619 milik paket sampul: tidak boleh dipakai
+    expect(NOMOR.some((n) => n >= 11600 && n <= 11619)).toBe(false);
     expect(NOMOR.every((n) => n >= 11300 && n <= 11499)).toBe(true);
     const pasang = baca(`${N}-PASANG.sql`);
     expect((pasang.match(/INSERT INTO abt_variabel /g) ?? []).length).toBe(NOMOR.length);
@@ -147,7 +151,7 @@ describe("paket putusan sela & pemeriksaan setempat 30 Okt - isi paket", () => {
 });
 
 describe("matriks putusan sela jenis x status", () => {
-  const MATRIKS: Array<[RegExp, string, "sela" | "akhir" | "penetapan"]> = [
+  const MATRIKS: Array<[RegExp, string, "sela" | "akhir" | "penetapan" | "penetapan-periksa" | "sisipan"]> = [
     [/^\[01\] \[Sela Tolak\] Eksepsi Kewenangan Absolut Ditolak/, "Menolak eksepsi", "sela"],
     [/^\[02\] \[NO\] Eksepsi Kewenangan Absolut Dikabulkan/, "Mengabulkan eksepsi", "akhir"],
     [/^\[03\] \[Sela Tolak\] Eksepsi Kewenangan Relatif Ditolak/, "Menolak eksepsi", "sela"],
@@ -163,35 +167,77 @@ describe("matriks putusan sela jenis x status", () => {
     [/^\[13\] \[Sela\] Sumpah Pelengkap \(Suppletoir\) - Gugatan/, "Memerintahkan #11339# untuk mengangkat sumpah pelengkap", "sela"],
     [/^\[14\] \[Sela\] Sumpah Pelengkap \(Suppletoir\) - Permohonan/, "Memerintahkan #11339# untuk mengangkat sumpah pelengkap", "penetapan"],
     [/^\[15\] \[Sela\] Pemeriksaan Setempat/, "Memerintahkan dilaksanakan pemeriksaan setempat", "sela"],
+    // 30 Okt putaran 2 (jawaban pengguna butir 7-9)
+    [/^\[16\] \[NO\] Eksepsi Gugatan Kabur/, "Mengabulkan eksepsi #7037#", "akhir"],
+    [/^\[17\] \[Sisipan\] Eksepsi Gugatan Kabur/, "Menolak eksepsi #7037#", "sisipan"],
+    [/^\[18\] \[NO\] Eksepsi Keliru Pihak/, "Mengabulkan eksepsi #7037#", "akhir"],
+    [/^\[19\] \[Sisipan\] Eksepsi Keliru Pihak/, "Menolak eksepsi #7037#", "sisipan"],
+    [/^\[20\] \[NO\] Eksepsi Kurang Pihak/, "Mengabulkan eksepsi #7037#", "akhir"],
+    [/^\[21\] \[Sisipan\] Eksepsi Kurang Pihak/, "Menolak eksepsi #7037#", "sisipan"],
+    [/^\[22\] \[NO\] Eksepsi Ne Bis In Idem/, "Mengabulkan eksepsi #7037#", "akhir"],
+    [/^\[23\] \[Sisipan\] Eksepsi Ne Bis In Idem/, "Menolak eksepsi #7037#", "sisipan"],
+    [/^\[24\] \[NO\] Eksepsi Gugatan Prematur/, "Mengabulkan eksepsi #7037#", "akhir"],
+    [/^\[25\] \[Sisipan\] Eksepsi Gugatan Prematur/, "Menolak eksepsi #7037#", "sisipan"],
+    [/^\[26\] \[Sela\] Gugatan Rekonvensi Tidak Dapat Diterima/, "Menyatakan gugatan rekonvensi #7037# tidak dapat diterima", "sela"],
+    [/^\[27\] \[Sela Kabul\] Penggabungan Perkara/, "Mengabulkan permohonan penggabungan perkara", "sela"],
+    [/^\[28\] \[Sela Tolak\] Penggabungan Perkara/, "Menolak permohonan penggabungan perkara", "sela"],
+    [/^\[29\] \[Sela\] Sumpah Pemutus/, "Memerintahkan #11383# untuk mengangkat sumpah pemutus", "sela"],
+    [/^\[30\] \[Sela\] Sumpah Penaksir/, "Memerintahkan #11339# untuk mengangkat sumpah penaksir", "sela"],
+    [/^\[31\] \[Sela\] Sumpah Lian/, "Memerintahkan #11392# untuk mengucapkan sumpah li'an", "sela"],
+    [/^\[32\] \[Penetapan\] Tergugat Tidak Beriktikad Baik/, "Menghukum #7037# untuk membayar biaya mediasi sejumlah #11398#", "penetapan-periksa"],
+    [/^\[33\] \[NO\] Penggugat Tidak Beriktikad Baik/, "Menghukum #7036# untuk membayar biaya mediasi sejumlah #11398#", "akhir"],
   ];
+  const TANGGUH = "Menangguhkan pembebanan biaya perkara hingga putusan akhir.";
 
-  it("15 blangko putusan sela (sita tetap di 97 Sita [01]/[02]); tiap sel jenis x status punya tepat satu blangko", () => {
-    expect(sela).toHaveLength(15);
+  it("33 blangko putusan sela (sita tetap di 97 Sita [01]/[02]); tiap sel jenis x status punya tepat satu blangko", () => {
+    expect(sela).toHaveLength(33);
+    expect(MATRIKS).toHaveLength(33);
     for (const [pola] of MATRIKS) expect(sela.filter((x) => pola.test(x[1])), String(pola)).toHaveLength(1);
   });
 
-  it("amar sesuai status: sela = biaya ditangguhkan tanpa rincian; putusan akhir = amar biaya putusan akhir (prodeo DIPA #11122#) dan rincian", () => {
+  it("amar sesuai status: sela = biaya ditangguhkan (kalimat baku) tanpa rincian; putusan akhir = amar biaya putusan akhir (prodeo DIPA #11122#) dan rincian", () => {
     for (const [pola, amar, jenis] of MATRIKS) {
       const t = cari(pola);
-      const mengadili = t.slice(t.lastIndexOf(jenis === "penetapan" ? "MENETAPKAN" : "MENGADILI"));
+      const mengadili = t.slice(t.lastIndexOf(/penetapan/.test(jenis) ? "MENETAPKAN" : "MENGADILI"));
       expect(mengadili, String(pola)).toContain(amar);
       if (jenis === "akhir") {
         expect(t.split("\n")[0]).toMatch(/^PUTUSAN\s*$/m);
         expect(mengadili).toContain("#11122#.");
-        expect(t).toContain("#11319#");
+        expect(t).toMatch(/#11319#|#11403#/);
         expect(t).toContain("Rincian Biaya Perkara");
-        expect(t).not.toContain("Menangguhkan biaya");
+        expect(t).not.toContain("Menangguhkan");
+        // butir 3: eksepsi/iktikad dikabulkan = gugatan tidak dapat diterima
+        expect(mengadili, String(pola)).toContain("Menyatakan #0053# #7036# tidak dapat diterima");
+      } else if (jenis === "sisipan") {
+        expect(t).toMatch(/^SISIPAN PUTUSAN AKHIR/);
+        expect(t).toContain("Dalam Eksepsi");
+        expect(t).not.toContain("Menangguhkan");
+        expect(t).not.toContain("#8500#");
+        continue;
       } else {
-        expect(t).toMatch(jenis === "penetapan" ? /^PENETAPAN SELA/ : /^PUTUSAN SELA/);
-        expect(mengadili).toMatch(/Menangguhkan biaya perkara sampai dengan (putusan|penetapan) akhir\.\s*$/m);
+        expect(t).toMatch(jenis === "penetapan" ? /^PENETAPAN SELA/ : jenis === "penetapan-periksa" ? /^PENETAPAN\s*$/m : /^PUTUSAN SELA/);
+        // butir 2: kalimat baku persis, tanpa rincian biaya
+        expect(mengadili).toMatch(jenis === "penetapan" ? /Menangguhkan pembebanan biaya perkara hingga penetapan akhir\.\s*$/m : /Menangguhkan pembebanan biaya perkara hingga putusan akhir\.\s*$/m);
         expect(t).toContain("Pasal 89 ayat (2)");
         expect(t).not.toContain("Rincian Biaya");
         expect(t).not.toContain("#11122#");
-        expect(t).toContain("#11311#"); // kaki sela: kehadiran pada sidang yang dicetak
+        expect(t).toContain(jenis === "penetapan-periksa" ? "#11402#" : "#11311#"); // kaki: kehadiran pada sidang yang dicetak
+        // butir 4: pasal putusan sela dikutip lewat variabel ACARA (Pasal 196 ayat (1) RBg = Pasal 185 ayat (1) HIR)
+        if (jenis !== "penetapan-periksa") expect(t, String(pola)).toContain("#11370#");
       }
       expect(t).toContain("#8500#"); // tanda tangan majelis/hakim tunggal & PP
       expect(t).toMatch(/#7047#/); // identitas pihak (pihak banyak)
     }
+  });
+
+  it("eksepsi kewenangan dikabulkan: gugatan tidak dapat diterima; absolut ditolak: bidang Pasal 49 dan Pasal 50 menurut jenis perkara", () => {
+    for (const p of [/^\[02\]/, /^\[04\]/]) expect(cari(p)).toContain("Menyatakan #0053# #7036# tidak dapat diterima (niet ontvankelijke verklaard);");
+    const t = cari(/^\[01\]/);
+    expect(t).toContain("#11372#");
+    expect(t).toContain("#11373#");
+    expect(TANGGUH).toBe("Menangguhkan pembebanan biaya perkara hingga putusan akhir.");
+    // pemeriksaan setempat: tambah panjar (butir 12)
+    expect(cari(/^\[15\]/)).toContain("Memerintahkan #11397# untuk membayar tambahan panjar biaya pemeriksaan setempat sejumlah #11396#");
   });
 
   it("pihak: gugatan memuat Tergugat, Turut Tergugat; intervensi memuat pemohon intervensi; permohonan tanpa melawan", () => {
@@ -204,28 +250,62 @@ describe("matriks putusan sela jenis x status", () => {
 });
 
 describe("BAS pemeriksaan setempat per jenis dan BAS sela", () => {
-  const PS = [...RTF.filter((x) => / - Sidang PS - /.test(x[1])), ...TIMPA.map((x) => [x[0], x[1], "timpa"])];
-  it("6 folder BAS jenis kebendaan (HB, waris, wasiat, hibah, wakaf, ES acara biasa); isi sama, objek per jenis, tanya-jawab para pihak", () => {
+  const PS = [...RTF.filter((x) => / - Sidang PS - |\[PS\]/.test(x[1])), ...TIMPA.map((x) => [x[0], x[1], "timpa"])];
+  it("8 folder BAS (HB, waris, wasiat, hibah, wakaf, ES acara biasa, cerai gugat/talak kumulasi HB); isi sama, objek per jenis, tanya-jawab, gambar situasi", () => {
     expect(PS.map((x) => x[0]).sort()).toEqual(
-      ["10a Ekonomi Syariah Biasa", "4a Harta Bersama", "4b Kewarisan", "4c Wasiat", "4d Hibah", "4e Wakaf"].map((f) => `derry_briantono/${f} - BAS`).sort()
+      ["10a Ekonomi Syariah Biasa", "4a Harta Bersama", "4b Kewarisan", "4c Wasiat", "4d Hibah", "4e Wakaf", "1 Perceraian CG", "1a Perceraian CT"].map((f) => `derry_briantono/${f} - BAS`).sort()
     );
     for (const [folder, berkas, sub] of PS) {
       const r = rtfMentah(folder, berkas, sub === "timpa" ? "timpa" : "rtf");
       const t = polos(r);
       expect(t).toMatch(/^\s*BERITA ACARA SIDANG/);
       for (const v of ["#9165#", "#11346#", "#9167#", "#11353#", "#11354#", "#11352#", "#11348#", "#11304#", "#6034#", "#4004#"]) expect(t, `${berkas} ${v}`).toContain(v);
+      expect(t).toContain("Gambar situasi atau denah objek sengketa"); // butir 11
       expect(r).toMatch(/\{\\\*\\isianasal #\d{4,5}#/); // isian objek & kesimpulan tampil di borang ABT
     }
+    // cerai kumulasi harta bersama: objek dari isian harta bersama
+    expect(rtfMentah("derry_briantono/1 Perceraian CG - BAS", PS.find((x) => x[0] === "derry_briantono/1 Perceraian CG - BAS")![1])).toMatch(/\{\\\*\\isianasal #8730#/);
   });
 
-  it("BAS sela: insidentil, pembacaan (amar SIPP #9160#), sumpah (lafal #11342#)", () => {
+  it("BAS sela: insidentil, pembacaan (amar SIPP #9160#), tiap jenis sumpah tunda putusan / lalu putusan dibacakan, li'an", () => {
     const bas = RTF.filter((x) => x[0] === FB);
-    expect(bas).toHaveLength(3);
+    expect(bas).toHaveLength(9);
     const t = (p: RegExp) => polos(rtfMentah(FB, bas.find((x) => p.test(x[1]))![1]));
     expect(t(/\[1\]/)).toContain("#11357#");
     expect(t(/\[2\]/)).toContain("#9160#");
     expect(t(/\[2\]/)).toContain("#11361#");
-    expect(t(/\[3\]/)).toContain('"#11342#";');
+    for (const [kode, lafal] of [["3", "#11342#"], ["4", "#11387#"], ["5", "#11390#"]]) {
+      expect(t(new RegExp(`\\[${kode}\\] `))).toContain(`"${lafal}";`);
+      expect(t(new RegExp(`\\[${kode}\\] `))).toContain("#11365#"); // ditunda untuk musyawarah dan pembacaan
+      const putus = t(new RegExp(`\\[${kode}a\\]`));
+      expect(putus).toContain(`"${lafal}";`);
+      for (const v of ["#0067#", "#9403#", "#0065#"]) expect(putus).toContain(v); // skors musyawarah lalu amar SIPP dibacakan
+      expect(putus).not.toContain("#0133#");
+    }
+    const lian = t(/\[6\]/);
+    expect(lian).toContain('"Demi Allah, saya bersaksi bahwa #11391#";');
+    expect(lian).toContain("Laknat Allah atas diri saya");
+    expect(lian).toContain("Murka Allah atas diri saya");
+  });
+
+  it("mediasi elektronik PERMA 3/2022: BAS [1e] di setiap folder yang punya BAS mediasi [1] dan penetapan PTSP @ 4a; berkas mediasi lama tidak disentuh", () => {
+    const el = RTF.filter((x) => /\[1e\]/.test(x[1]));
+    expect(el).toHaveLength(19);
+    for (const [folder, berkas] of el) {
+      expect(berkas).toBe(PUTUSAN_SELA_UMUM.mediasiElektronik);
+      const r = rtfMentah(folder, berkas);
+      const t = polos(r);
+      expect(t).toContain("Peraturan Mahkamah Agung Nomor 3 Tahun 2022 tentang Mediasi di Pengadilan secara Elektronik");
+      expect(t).toContain("untuk menempuh mediasi secara elektronik #11400#;");
+      expect(t).toMatch(/7\.\t\s*Berdasarkan Peraturan Mahkamah Agung Nomor 3 Tahun 2022/);
+      expect(t).toMatch(/8\.\t\s*Apabila para pihak sudah memahami/);
+      expect(r).toMatch(/\{\\\*\\isianasal #11399#\}/);
+    }
+    const ptsp = RTF.find((x) => x[0] === "derry_briantono/99 PTSP")!;
+    expect(ptsp[1]).toBe("@ 4a - Penetapan Penunjukan Mediator - Mediasi Elektronik (PERMA 3 2022).rtf");
+    expect(polos(rtfMentah(ptsp[0], ptsp[1]))).toContain("untuk menempuh proses mediasi secara elektronik #11400#;");
+    // berkas mediasi biasa tetap: tidak ada di daftar baru maupun timpa
+    expect([...RTF, ...TIMPA].some((x) => x[1] === PUTUSAN_SELA_UMUM.mediasiBiasa || x[1] === "@ 4 - Penetapan Penunjukan Mediator.rtf")).toBe(false);
   });
 
   it("folder baru terbaca sebagai putusan (hakim) dan BAS (panitera); menu portal sama dengan paket", () => {
@@ -236,7 +316,11 @@ describe("BAS pemeriksaan setempat per jenis dan BAS sela", () => {
     expect(pasang).toContain("0x" + Buffer.from(PUTUSAN_SELA_UMUM.menu).toString("hex"));
     expect(pasang).toContain("0x" + Buffer.from(PUTUSAN_SELA_UMUM.bas.menu).toString("hex"));
     for (const b of Object.values(PUTUSAN_SELA_UMUM.berkas)) expect(sela.map((x) => x[1]), b).toContain(b);
-    for (const b of [PUTUSAN_SELA_UMUM.bas.insidentil, PUTUSAN_SELA_UMUM.bas.pembacaan, PUTUSAN_SELA_UMUM.bas.sumpah]) expect(RTF.map((x) => x[1])).toContain(b);
+    const { folder: _f, menu: _m, alias: _a, ...basBerkas } = PUTUSAN_SELA_UMUM.bas;
+    expect(Object.keys(basBerkas)).toHaveLength(9);
+    for (const b of Object.values(basBerkas)) expect(RTF.filter((x) => x[0] === FB).map((x) => x[1]), b).toContain(b);
+    // menu 151 di paket dan di portal sama (nama baru); nama lama tetap dikenali lewat alias
+    expect(PUTUSAN_SELA_UMUM.menu).toBe("Putusan Sela (Eksepsi, Provisi, Intervensi, Sumpah, Pemeriksaan Setempat, Mediasi, Rekonvensi, Penggabungan)");
   });
 
   it("langkah PS ALUR 42/43/47/48 di data portal menunjuk berkas paket", () => {
@@ -284,5 +368,34 @@ describe("saran blangko portal (rekomendasi) untuk putusan sela", () => {
     expect(rekomendasiBasSela(dasar, "pembacaan putusan sela")).toEqual([]); // HB punya ALUR 30 I2 sendiri
     expect(rekomendasiBasSela({ ...dasar, jenisPerkara: "Wasiat" }, "sidang insidentil eksepsi")[0].berkas).toBe(PUTUSAN_SELA_UMUM.bas.insidentil);
     expect(rekomendasiBasSela(dasar, "sidang insidentil sita marital")).toEqual([]);
+  });
+  it("30 Okt putaran 2: sumpah pemutus/penaksir (gugatan), li'an (cerai), iktikad mediasi, rekonvensi, penggabungan, eksepsi lain", () => {
+    const b = PUTUSAN_SELA_UMUM.berkas;
+    expect(berkasPutusan("putusan sela sumpah pemutus")[0]).toBe(b.pemutus);
+    expect(berkasPutusan("sumpah penaksir (aestimatoir)")[0]).toBe(b.penaksir);
+    expect(rekomendasiPutusanSela({ ...dasar, jenisPerkara: "Cerai Talak" }, "putusan sela sumpah li'an")[0].berkas).toBe(b.lian);
+    expect(rekomendasiPutusanSela(dasar, "putusan sela sumpah li'an")).toEqual([]); // bukan perkara cerai
+    const t = rekomendasiPutusanSela(dasar, "laporan mediator: tergugat tidak beriktikad baik");
+    expect(t.map((x) => [x.berkas, x.utama])).toEqual([[b.mediasiTergugat, true], [b.mediasiPenggugat, false]]);
+    expect(rekomendasiPutusanSela(dasar, "penggugat dinyatakan tidak beriktikad baik")[0].berkas).toBe(b.mediasiPenggugat);
+    expect(berkasPutusan("pembacaan putusan sela rekonvensi")[0]).toBe(b.rekonvensi);
+    expect(berkasPutusan("putusan sela penggabungan perkara").slice(0, 2)).toEqual([b.gabungKabul, b.gabungTolak]);
+    expect(berkasPutusan("musyawarah atas eksepsi obscuur libel").slice(0, 2)).toEqual([b.kaburTolak, b.kaburKabul]);
+    expect(berkasPutusan("eksepsi ne bis in idem")[0]).toBe(b.nebisTolak);
+    // eksepsi kewenangan tetap ke blangko kewenangan walau ada kata "tidak jelas"
+    expect(berkasPutusan("pembacaan putusan sela eksepsi kewenangan absolut tidak jelas")[0]).toBe(b.absolutTolak);
+  });
+  it("BAS sumpah: tunda putusan atau lalu putusan dibacakan; mediasi elektronik mendahulukan BAS [1e] di folder yang sama", () => {
+    const x = PUTUSAN_SELA_UMUM.bas;
+    expect(rekomendasiBasSela(dasar, "sumpah pemutus").map((r) => [r.berkas, r.utama])).toEqual([[x.pemutus, true], [x.pemutusPutus, false]]);
+    expect(rekomendasiBasSela(dasar, "sumpah penaksir dan putusan").map((r) => [r.berkas, r.utama])).toEqual([[x.penaksirPutus, true], [x.penaksir, false]]);
+    expect(rekomendasiBasSela(dasar, "sumpah pelengkap lalu musyawarah")[0].berkas).toBe(x.sumpahPutus);
+    expect(rekomendasiBasSela({ ...dasar, jenisPerkara: "Cerai Gugat" }, "sumpah li'an")[0].berkas).toBe(x.lian);
+    const m = rekomendasiBlangko({ jenisPerkara: "Cerai Gugat", nomorPerkara: "9/Pdt.G/2026/PA.Xx", urutanSidang: 1, dihadiriOleh: 1, agenda: "Mediasi", keterangan: "para pihak sepakat mediasi secara elektronik" });
+    const i = m.bas.findIndex((r) => r.berkas === PUTUSAN_SELA_UMUM.mediasiElektronik);
+    expect(i).toBeGreaterThanOrEqual(0);
+    expect(m.bas[i + 1]).toMatchObject({ berkas: PUTUSAN_SELA_UMUM.mediasiBiasa, folder: m.bas[i].folder, utama: false });
+    const biasa = rekomendasiBlangko({ jenisPerkara: "Cerai Gugat", nomorPerkara: "9/Pdt.G/2026/PA.Xx", urutanSidang: 1, dihadiriOleh: 1, agenda: "Mediasi" });
+    expect(biasa.bas.some((r) => r.berkas === PUTUSAN_SELA_UMUM.mediasiElektronik)).toBe(false);
   });
 });

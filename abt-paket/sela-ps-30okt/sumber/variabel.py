@@ -169,10 +169,14 @@ var(11339, 'SUMPAH PELENGKAP: SEBUTAN PIHAK YANG BERSUMPAH (OTOMATIS dari isian 
 var(11340, 'SUMPAH PELENGKAP: AGAMA PIHAK YANG BERSUMPAH (OTOMATIS SIPP #0011# / #0020#; kosong = Islam)',
     sql='SELECT IF(%s = "T", IFNULL(NULLIF(TRIM("#0020#"), ""), "Islam"), IFNULL(NULLIF(TRIM("#0011#"), ""), "Islam")) AS data' % huruf1(11338))
 var(11341, 'SUMPAH PELENGKAP: LAFAL SUMPAH - ISIAN (tanpa tanda kutip; kosong = lafal bawaan menurut agama dan pihak)', tipe='data_teks')
-var(11342, 'SUMPAH PELENGKAP: LAFAL SUMPAH (OTOMATIS: isian 11341; kosong = "Demi Allah, saya bersumpah ..." untuk agama Islam, "Saya bersumpah ..." untuk agama lain)',
-    sql=('SELECT COALESCE(%s, CONCAT(IF("#11340#" = "Islam", "Demi Allah, saya bersumpah", "Saya bersumpah"), ' % nil(isian(11341)) +
-         'IF(%s = "T", " bahwa apa yang saya terangkan dalam jawaban saya di persidangan adalah benar, tidak lain dari yang sebenarnya", ' % huruf1(11338) +
-         '" bahwa apa yang saya dalilkan dalam surat #0053# saya adalah benar, tidak lain dari yang sebenarnya"))) AS data'))
+var(11342, 'SUMPAH PELENGKAP / PENAKSIR: LAFAL SUMPAH PELENGKAP (OTOMATIS: isian 11341; kosong = pembuka menurut agama + "apa yang saya dalilkan ..." / "apa yang saya terangkan dalam jawaban ...")',
+    sql=('SELECT COALESCE(%s, CASE WHEN "#11340#" = "Islam" THEN CONCAT("Demi Allah, saya bersumpah bahwa ", x.i) '
+         'WHEN "#11340#" IN ("Protestan", "Katolik") THEN CONCAT("Saya berjanji bahwa ", x.i, ", semoga Tuhan menolong saya") '
+         'WHEN "#11340#" = "Hindu" THEN CONCAT("Om Atah Parama Wisesa, saya bersumpah bahwa ", x.i) '
+         'WHEN "#11340#" = "Budha" THEN CONCAT("Demi Sang Hyang Adi Budha, saya bersumpah bahwa ", x.i) '
+         'ELSE CONCAT("Saya berjanji bahwa ", x.i) END) AS data FROM (SELECT IF(%s = "T", '
+         '"apa yang saya terangkan dalam jawaban saya di persidangan adalah benar, tidak lain dari yang sebenarnya", '
+         '"apa yang saya dalilkan dalam surat #0053# saya adalah benar, tidak lain dari yang sebenarnya") AS i) x') % (nil(isian(11341)), huruf1(11338)))
 var(11343, 'SUMPAH PELENGKAP: ALAT BUKTI YANG TELAH DIAJUKAN DAN KEKURANGANNYA - ISIAN (mis. bukti surat P.1 sampai P.3 dan seorang saksi bernama ... yang menerangkan ...; tanpa titik akhir)', tipe='data_teks')
 
 # --- pemeriksaan setempat ----------------------------------------------------------------------------------------------------
@@ -181,9 +185,9 @@ var(11345, 'PEMERIKSAAN SETEMPAT: KALIMAT ASAL PERMINTAAN (OTOMATIS dari isian 1
     sql=('SELECT CASE %s WHEN "P" THEN "#7036# mengajukan permohonan agar dilakukan pemeriksaan setempat atas objek sengketa" ' % huruf1(11344) +
          'WHEN "T" THEN "#7037# mengajukan permohonan agar dilakukan pemeriksaan setempat atas objek sengketa" '
          'ELSE "#8554# karena jabatannya memandang perlu dilakukan pemeriksaan setempat atas objek sengketa" END AS data'))
-var(11346, 'PEMERIKSAAN SETEMPAT: OBJEK SENGKETA (OTOMATIS: isian 11347; kosong = isian objek jenis: HB 8730, waris 8718, wasiat 9479, hibah 9795, wakaf 9826; lalu objek sita 9162)',
-    sql=('SELECT COALESCE(%s, CASE p.jenis_perkara_id WHEN 348 THEN %s WHEN 364 THEN %s WHEN 365 THEN %s WHEN 366 THEN %s WHEN 367 THEN %s ELSE NULL END, %s, "...") AS data '
-         % (nil(isian(11347)), nil(isian(8730)), nil(isian(8718)), nil(isian(9479)), nil(isian(9795)), nil(isian(9826)), nil(isian(9162))) + PERKARA))
+var(11346, 'PEMERIKSAAN SETEMPAT: OBJEK SENGKETA (OTOMATIS: isian 11347; kosong = isian objek jenis: HB/cerai kumulasi 8730, waris 8718, wasiat 9479, hibah 9795, wakaf 9826; lalu objek sita 9162)',
+    sql=('SELECT COALESCE(%s, CASE p.jenis_perkara_id WHEN 346 THEN %s WHEN 347 THEN %s WHEN 348 THEN %s WHEN 364 THEN %s WHEN 365 THEN %s WHEN 366 THEN %s WHEN 367 THEN %s ELSE NULL END, %s, "...") AS data '
+         % (nil(isian(11347)), nil(isian(8730)), nil(isian(8730)), nil(isian(8730)), nil(isian(8718)), nil(isian(9479)), nil(isian(9795)), nil(isian(9826)), nil(isian(9162))) + PERKARA))
 var(11347, 'PEMERIKSAAN SETEMPAT: OBJEK YANG DIPERIKSA - ISIAN (salin dari surat gugatan; satu objek per baris dengan letak, luas dan batas-batas; kosong = isian objek jenis perkara)', tipe='data_teks')
 
 
@@ -257,6 +261,20 @@ var(11368, 'BAS: IDENTITAS SINGKAT PARA PIHAK (OTOMATIS SIPP: semua #0046#, lalu
 
 var(11369, 'BAS SELA: PRODUK AKHIR (OTOMATIS: permohonan = penetapan akhir; gugatan = putusan akhir)',
     sql="SELECT IF(p.alur_perkara_id = 16, 'penetapan akhir', 'putusan akhir') AS data " + PERKARA)
+
+import variabel_31  # noqa: E402
+variabel_31.tambah(var, isian, nil, ada, huruf1, PERKARA, UU_PA)
+
+# turunan: kaki penetapan dalam pemeriksaan (sebutan "penetapan") dan pertimbangan biaya putusan akhir "tidak dapat diterima" umum
+_kaki = next(x for x in V if x['no'] == 11311)
+_ganti = "IF(p.alur_perkara_id = 16, 'penetapan sela', 'putusan sela')"
+assert _kaki['sql'].count(_ganti) == 1
+var(11402, 'PENETAPAN DALAM PEMERIKSAAN (mis. tidak beriktikad baik dalam mediasi): KAKI MAJELIS/TUNGGAL DENGAN KEHADIRAN (OTOMATIS seperti 11311, sebutan penetapan)',
+    sql=_kaki['sql'].replace(_ganti, "'penetapan'"))
+_biaya = next(x for x in V if x['no'] == 11319)
+assert _biaya['sql'].count('oleh karena eksepsi #7037# dikabulkan, ') == 2
+var(11403, 'GUGATAN TIDAK DAPAT DITERIMA (PUTUSAN AKHIR, mis. tidak beriktikad baik dalam mediasi): PERTIMBANGAN BIAYA PERKARA (OTOMATIS seperti 11319)',
+    sql=_biaya['sql'].replace('oleh karena eksepsi #7037# dikabulkan, ', 'oleh karena #0053# #7036# dinyatakan tidak dapat diterima, '))
 
 NOMOR = [x['no'] for x in V]
 ISIAN = [x['no'] for x in V if x['tipe'] == 'data_teks']

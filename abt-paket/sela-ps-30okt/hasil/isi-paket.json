@@ -226,12 +226,336 @@
   },
   {
    "folder": "derry_briantono/97a Putusan Sela - BAS",
-   "berkas": "BAS SELA [3] Pengucapan Sumpah Pelengkap (Suppletoir).rtf",
+   "berkas": "BAS SELA [3] Sumpah Pelengkap (Suppletoir) - Tunda Putusan.rtf",
    "jenis": "bas",
    "matriks": null,
    "isian_tidak_langsung": [
     11338,
     11341
+   ]
+  },
+  {
+   "folder": "derry_briantono/97a Putusan Sela",
+   "berkas": "[16] [NO] Eksepsi Gugatan Kabur (Obscuur Libel) Dikabulkan - Gugatan Tidak Dapat Diterima (Putusan Akhir).rtf",
+   "jenis": "akhir",
+   "matriks": [
+    "eksepsi kabur",
+    "dikabulkan"
+   ],
+   "isian_tidak_langsung": [
+    9685,
+    9681,
+    11314,
+    661,
+    11374
+   ]
+  },
+  {
+   "folder": "derry_briantono/97a Putusan Sela",
+   "berkas": "[17] [Sisipan] Eksepsi Gugatan Kabur (Obscuur Libel) Ditolak - Bagian Dalam Eksepsi untuk Putusan Akhir.rtf",
+   "jenis": "sela",
+   "matriks": [
+    "eksepsi kabur",
+    "ditolak (sisipan)"
+   ],
+   "isian_tidak_langsung": [
+    9685,
+    9681,
+    11314,
+    11374
+   ]
+  },
+  {
+   "folder": "derry_briantono/97a Putusan Sela",
+   "berkas": "[18] [NO] Eksepsi Keliru Pihak (Error in Persona) Dikabulkan - Gugatan Tidak Dapat Diterima (Putusan Akhir).rtf",
+   "jenis": "akhir",
+   "matriks": [
+    "eksepsi persona",
+    "dikabulkan"
+   ],
+   "isian_tidak_langsung": [
+    9685,
+    9681,
+    11314,
+    661,
+    11374
+   ]
+  },
+  {
+   "folder": "derry_briantono/97a Putusan Sela",
+   "berkas": "[19] [Sisipan] Eksepsi Keliru Pihak (Error in Persona) Ditolak - Bagian Dalam Eksepsi untuk Putusan Akhir.rtf",
+   "jenis": "sela",
+   "matriks": [
+    "eksepsi persona",
+    "ditolak (sisipan)"
+   ],
+   "isian_tidak_langsung": [
+    9685,
+    9681,
+    11314,
+    11374
+   ]
+  },
+  {
+   "folder": "derry_briantono/97a Putusan Sela",
+   "berkas": "[20] [NO] Eksepsi Kurang Pihak (Plurium Litis Consortium) Dikabulkan - Gugatan Tidak Dapat Diterima (Putusan Akhir).rtf",
+   "jenis": "akhir",
+   "matriks": [
+    "eksepsi kurang",
+    "dikabulkan"
+   ],
+   "isian_tidak_langsung": [
+    9685,
+    9681,
+    11314,
+    661,
+    11374,
+    11376
+   ]
+  },
+  {
+   "folder": "derry_briantono/97a Putusan Sela",
+   "berkas": "[21] [Sisipan] Eksepsi Kurang Pihak (Plurium Litis Consortium) Ditolak - Bagian Dalam Eksepsi untuk Putusan Akhir.rtf",
+   "jenis": "sela",
+   "matriks": [
+    "eksepsi kurang",
+    "ditolak (sisipan)"
+   ],
+   "isian_tidak_langsung": [
+    9685,
+    9681,
+    11314,
+    11374,
+    11376
+   ]
+  },
+  {
+   "folder": "derry_briantono/97a Putusan Sela",
+   "berkas": "[22] [NO] Eksepsi Ne Bis In Idem Dikabulkan - Gugatan Tidak Dapat Diterima (Putusan Akhir).rtf",
+   "jenis": "akhir",
+   "matriks": [
+    "eksepsi nebis",
+    "dikabulkan"
+   ],
+   "isian_tidak_langsung": [
+    9685,
+    9681,
+    11314,
+    661,
+    11374,
+    11375
+   ]
+  },
+  {
+   "folder": "derry_briantono/97a Putusan Sela",
+   "berkas": "[23] [Sisipan] Eksepsi Ne Bis In Idem Ditolak - Bagian Dalam Eksepsi untuk Putusan Akhir.rtf",
+   "jenis": "sela",
+   "matriks": [
+    "eksepsi nebis",
+    "ditolak (sisipan)"
+   ],
+   "isian_tidak_langsung": [
+    9685,
+    9681,
+    11314,
+    11374,
+    11375
+   ]
+  },
+  {
+   "folder": "derry_briantono/97a Putusan Sela",
+   "berkas": "[24] [NO] Eksepsi Gugatan Prematur Dikabulkan - Gugatan Tidak Dapat Diterima (Putusan Akhir).rtf",
+   "jenis": "akhir",
+   "matriks": [
+    "eksepsi prematur",
+    "dikabulkan"
+   ],
+   "isian_tidak_langsung": [
+    9685,
+    9681,
+    11314,
+    661,
+    11374
+   ]
+  },
+  {
+   "folder": "derry_briantono/97a Putusan Sela",
+   "berkas": "[25] [Sisipan] Eksepsi Gugatan Prematur Ditolak - Bagian Dalam Eksepsi untuk Putusan Akhir.rtf",
+   "jenis": "sela",
+   "matriks": [
+    "eksepsi prematur",
+    "ditolak (sisipan)"
+   ],
+   "isian_tidak_langsung": [
+    9685,
+    9681,
+    11314,
+    11374
+   ]
+  },
+  {
+   "folder": "derry_briantono/97a Putusan Sela",
+   "berkas": "[26] [Sela] Gugatan Rekonvensi Tidak Dapat Diterima - Pemeriksaan Konvensi Dilanjutkan.rtf",
+   "jenis": "sela",
+   "matriks": [
+    "rekonvensi",
+    "tidak dapat diterima"
+   ],
+   "isian_tidak_langsung": [
+    11378
+   ]
+  },
+  {
+   "folder": "derry_briantono/97a Putusan Sela",
+   "berkas": "[27] [Sela Kabul] Penggabungan Perkara Dikabulkan.rtf",
+   "jenis": "sela",
+   "matriks": [
+    "penggabungan perkara",
+    "dikabulkan"
+   ],
+   "isian_tidak_langsung": [
+    11380,
+    11381
+   ]
+  },
+  {
+   "folder": "derry_briantono/97a Putusan Sela",
+   "berkas": "[28] [Sela Tolak] Penggabungan Perkara Ditolak.rtf",
+   "jenis": "sela",
+   "matriks": [
+    "penggabungan perkara",
+    "ditolak"
+   ],
+   "isian_tidak_langsung": [
+    11380,
+    11381
+   ]
+  },
+  {
+   "folder": "derry_briantono/97a Putusan Sela",
+   "berkas": "[29] [Sela] Sumpah Pemutus (Decisoir) - Gugatan.rtf",
+   "jenis": "sela",
+   "matriks": [
+    "sumpah pemutus",
+    "diperintahkan"
+   ],
+   "isian_tidak_langsung": [
+    11382,
+    11386
+   ]
+  },
+  {
+   "folder": "derry_briantono/97a Putusan Sela",
+   "berkas": "[30] [Sela] Sumpah Penaksir (Aestimatoir) - Gugatan.rtf",
+   "jenis": "sela",
+   "matriks": [
+    "sumpah penaksir",
+    "diperintahkan"
+   ],
+   "isian_tidak_langsung": [
+    11338,
+    11388,
+    11389
+   ]
+  },
+  {
+   "folder": "derry_briantono/97a Putusan Sela",
+   "berkas": "[31] [Sela] Sumpah Lian - Cerai dengan Alasan Zina.rtf",
+   "jenis": "sela",
+   "matriks": [
+    "sumpah li'an",
+    "diperintahkan"
+   ],
+   "isian_tidak_langsung": [
+    11391
+   ]
+  },
+  {
+   "folder": "derry_briantono/97a Putusan Sela",
+   "berkas": "[32] [Penetapan] Tergugat Tidak Beriktikad Baik dalam Mediasi - Biaya Mediasi (PERMA 1 2016 Pasal 23).rtf",
+   "jenis": "sela",
+   "matriks": [
+    "mediasi tidak beriktikad baik",
+    "tergugat (penetapan)"
+   ],
+   "isian_tidak_langsung": [
+    11394,
+    11398
+   ]
+  },
+  {
+   "folder": "derry_briantono/97a Putusan Sela",
+   "berkas": "[33] [NO] Penggugat Tidak Beriktikad Baik dalam Mediasi - Gugatan Tidak Dapat Diterima (PERMA 1 2016 Pasal 22).rtf",
+   "jenis": "akhir",
+   "matriks": [
+    "mediasi tidak beriktikad baik",
+    "penggugat (putusan akhir)"
+   ],
+   "isian_tidak_langsung": [
+    11394,
+    11398,
+    661
+   ]
+  },
+  {
+   "folder": "derry_briantono/97a Putusan Sela - BAS",
+   "berkas": "BAS SELA [3a] Sumpah Pelengkap (Suppletoir) - Lalu Putusan Dibacakan.rtf",
+   "jenis": "bas",
+   "matriks": null,
+   "isian_tidak_langsung": [
+    11338,
+    11341
+   ]
+  },
+  {
+   "folder": "derry_briantono/97a Putusan Sela - BAS",
+   "berkas": "BAS SELA [4] Sumpah Pemutus (Decisoir) - Tunda Putusan.rtf",
+   "jenis": "bas",
+   "matriks": null,
+   "isian_tidak_langsung": [
+    11382,
+    11386
+   ]
+  },
+  {
+   "folder": "derry_briantono/97a Putusan Sela - BAS",
+   "berkas": "BAS SELA [4a] Sumpah Pemutus (Decisoir) - Lalu Putusan Dibacakan.rtf",
+   "jenis": "bas",
+   "matriks": null,
+   "isian_tidak_langsung": [
+    11382,
+    11386
+   ]
+  },
+  {
+   "folder": "derry_briantono/97a Putusan Sela - BAS",
+   "berkas": "BAS SELA [5] Sumpah Penaksir (Aestimatoir) - Tunda Putusan.rtf",
+   "jenis": "bas",
+   "matriks": null,
+   "isian_tidak_langsung": [
+    11338,
+    11388,
+    11389
+   ]
+  },
+  {
+   "folder": "derry_briantono/97a Putusan Sela - BAS",
+   "berkas": "BAS SELA [5a] Sumpah Penaksir (Aestimatoir) - Lalu Putusan Dibacakan.rtf",
+   "jenis": "bas",
+   "matriks": null,
+   "isian_tidak_langsung": [
+    11338,
+    11388,
+    11389
+   ]
+  },
+  {
+   "folder": "derry_briantono/97a Putusan Sela - BAS",
+   "berkas": "BAS SELA [6] Sumpah Lian - Tunda Putusan.rtf",
+   "jenis": "bas",
+   "matriks": null,
+   "isian_tidak_langsung": [
+    11391
    ]
   },
   {
@@ -316,6 +640,154 @@
     11355,
     11351
    ]
+  },
+  {
+   "folder": "derry_briantono/1 Perceraian CG - BAS",
+   "berkas": "BAS ALUR 04 [PS] BAS P & T Hadir - Pemeriksaan Setempat Objek Harta Bersama (Kumulasi).rtf",
+   "jenis": "bas-ps",
+   "timpa": false,
+   "isian_tidak_langsung": [
+    8730,
+    11347,
+    11349,
+    11355,
+    11351,
+    9162
+   ]
+  },
+  {
+   "folder": "derry_briantono/1a Perceraian CT - BAS",
+   "berkas": "BAS ALUR 04 [PS] BAS P & T Hadir - Pemeriksaan Setempat Objek Harta Bersama (Kumulasi).rtf",
+   "jenis": "bas-ps",
+   "timpa": false,
+   "isian_tidak_langsung": [
+    8730,
+    11347,
+    11349,
+    11355,
+    11351,
+    9162
+   ]
+  },
+  {
+   "folder": "derry_briantono/1 Perceraian CG - BAS",
+   "berkas": "BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
+   "folder": "derry_briantono/10a Ekonomi Syariah Biasa - BAS",
+   "berkas": "BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
+   "folder": "derry_briantono/1a Perceraian CT - BAS",
+   "berkas": "BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
+   "folder": "derry_briantono/1e Kelalaian Kewajiban Suami Istri - BAS",
+   "berkas": "BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
+   "folder": "derry_briantono/1f Hak Bekas Istri - BAS",
+   "berkas": "BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
+   "folder": "derry_briantono/2a Itsbat Nikah Kontensius - BAS",
+   "berkas": "BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
+   "folder": "derry_briantono/4a Harta Bersama - BAS",
+   "berkas": "BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
+   "folder": "derry_briantono/4b Kewarisan - BAS",
+   "berkas": "BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
+   "folder": "derry_briantono/4c Wasiat - BAS",
+   "berkas": "BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
+   "folder": "derry_briantono/4d Hibah - BAS",
+   "berkas": "BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
+   "folder": "derry_briantono/4e Wakaf - BAS",
+   "berkas": "BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
+   "folder": "derry_briantono/5 Izin Poligami - BAS",
+   "berkas": "BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
+   "folder": "derry_briantono/6a Hak Asuh Anak (Hadhanah) - BAS",
+   "berkas": "BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
+   "folder": "derry_briantono/6b Penguasaan Anak - BAS",
+   "berkas": "BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
+   "folder": "derry_briantono/6c Nafkah Anak - BAS",
+   "berkas": "BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
+   "folder": "derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS",
+   "berkas": "BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
+   "folder": "derry_briantono/6e Pencabutan Kekuasaan Wali - BAS",
+   "berkas": "BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
+   "folder": "derry_briantono/6g Ganti Rugi terhadap Wali - BAS",
+   "berkas": "BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
+   "folder": "derry_briantono/6h Nafkah Anak oleh Ibu - BAS",
+   "berkas": "BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
+   "folder": "derry_briantono/99 PTSP",
+   "berkas": "@ 4a - Penetapan Penunjukan Mediator - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "penetapan-mediasi-elektronik",
+   "asal": "@ 4 - Penetapan Penunjukan Mediator.rtf"
   }
  ],
  "variabel": [
@@ -531,7 +1003,7 @@
   },
   {
    "no": 11342,
-   "nama": "SUMPAH PELENGKAP: LAFAL SUMPAH (OTOMATIS: isian 11341; kosong = \"Demi Allah, saya bersumpah ...\" untuk agama Islam, \"Saya bersumpah ...\" untuk agama lain)",
+   "nama": "SUMPAH PELENGKAP / PENAKSIR: LAFAL SUMPAH PELENGKAP (OTOMATIS: isian 11341; kosong = pembuka menurut agama + \"apa yang saya dalilkan ...\" / \"apa yang saya terangkan dalam jawaban ...\")",
    "tipe": "data_sql"
   },
   {
@@ -551,7 +1023,7 @@
   },
   {
    "no": 11346,
-   "nama": "PEMERIKSAAN SETEMPAT: OBJEK SENGKETA (OTOMATIS: isian 11347; kosong = isian objek jenis: HB 8730, waris 8718, wasiat 9479, hibah 9795, wakaf 9826; lalu objek sita 9162)",
+   "nama": "PEMERIKSAAN SETEMPAT: OBJEK SENGKETA (OTOMATIS: isian 11347; kosong = isian objek jenis: HB/cerai kumulasi 8730, waris 8718, wasiat 9479, hibah 9795, wakaf 9826; lalu objek sita 9162)",
    "tipe": "data_sql"
   },
   {
@@ -668,12 +1140,173 @@
    "no": 11369,
    "nama": "BAS SELA: PRODUK AKHIR (OTOMATIS: permohonan = penetapan akhir; gugatan = putusan akhir)",
    "tipe": "data_sql"
+  },
+  {
+   "no": 11370,
+   "nama": "ACARA: PASAL PUTUSAN SELA (putusan yang bukan putusan akhir) (RBg; padanan untuk satker Jawa-Madura: Pasal 185 ayat (1) HIR - belum dipakai)",
+   "tipe": "data_sql"
+  },
+  {
+   "no": 11371,
+   "nama": "ACARA: PASAL SUMPAH PEMUTUS (DECISOIR) (RBg; padanan untuk satker Jawa-Madura: Pasal 156 HIR - belum dipakai)",
+   "tipe": "data_sql"
+  },
+  {
+   "no": 11379,
+   "nama": "ACARA: PASAL GUGATAN REKONVENSI (RBg; padanan untuk satker Jawa-Madura: Pasal 132a dan Pasal 132b HIR - belum dipakai)",
+   "tipe": "data_sql"
+  },
+  {
+   "no": 11372,
+   "nama": "KEWENANGAN: BIDANG PERKARA MENURUT PASAL 49 UU PERADILAN AGAMA DAN PENJELASANNYA (OTOMATIS dari jenis perkara SIPP; Lain-Lain menurut petitum; tidak tercakup = lain-lain)",
+   "tipe": "data_sql"
+  },
+  {
+   "no": 11373,
+   "nama": "KEWENANGAN: KALIMAT PASAL 50 AYAT (2) UU PERADILAN AGAMA (sengketa hak milik antara orang-orang Islam; OTOMATIS hanya perkara kebendaan HB/waris/wasiat/hibah/wakaf/ES)",
+   "tipe": "data_sql"
+  },
+  {
+   "no": 11374,
+   "nama": "EKSEPSI LAIN: FAKTA DAN ALASAN MAJELIS ATAS EKSEPSI - ISIAN (kalimat sesudah \"bahwa\", tanpa titik akhir; dipakai saat dikabulkan maupun ditolak)",
+   "tipe": "data_teks"
+  },
+  {
+   "no": 11375,
+   "nama": "EKSEPSI NE BIS IN IDEM: PUTUSAN TERDAHULU YANG BERKEKUATAN HUKUM TETAP - ISIAN (nomor, tanggal, para pihak, objek, amar pokok; tanpa titik akhir)",
+   "tipe": "data_teks"
+  },
+  {
+   "no": 11376,
+   "nama": "EKSEPSI KURANG PIHAK: PIHAK YANG TIDAK DITARIK - ISIAN (nama dan hubungan hukumnya dengan objek/perkara; tanpa titik akhir)",
+   "tipe": "data_teks"
+  },
+  {
+   "no": 11378,
+   "nama": "REKONVENSI: ALASAN GUGATAN REKONVENSI TIDAK DAPAT DITERIMA - ISIAN (mis. diajukan sesudah jawaban pertama / kualitas berbeda / bukan kewenangan; tanpa titik akhir)",
+   "tipe": "data_teks"
+  },
+  {
+   "no": 11380,
+   "nama": "PENGGABUNGAN PERKARA: NOMOR PERKARA YANG DIMOHONKAN DIGABUNGKAN - ISIAN (mis. 123/Pdt.G/2026/PA.Xxx)",
+   "tipe": "data_teks"
+  },
+  {
+   "no": 11381,
+   "nama": "PENGGABUNGAN PERKARA: HUBUNGAN ERAT KEDUA PERKARA ATAU ALASAN MAJELIS - ISIAN (pihak, objek, dasar hukum yang sama; tanpa titik akhir)",
+   "tipe": "data_teks"
+  },
+  {
+   "no": 11382,
+   "nama": "SUMPAH PEMUTUS: PIHAK YANG DIBEBANI SUMPAH - ISIAN (ketik P bila #0046#; kosong = #0047#)",
+   "tipe": "data_teks"
+  },
+  {
+   "no": 11383,
+   "nama": "SUMPAH PEMUTUS: SEBUTAN PIHAK YANG DIBEBANI SUMPAH (OTOMATIS dari isian 11382; bawaan #0047#)",
+   "tipe": "data_sql"
+  },
+  {
+   "no": 11384,
+   "nama": "SUMPAH PEMUTUS: SEBUTAN PIHAK YANG MEMINTA SUMPAH (OTOMATIS: lawan dari pihak yang dibebani)",
+   "tipe": "data_sql"
+  },
+  {
+   "no": 11385,
+   "nama": "SUMPAH PEMUTUS: AGAMA PIHAK YANG DIBEBANI SUMPAH (OTOMATIS SIPP #0011# / #0020#; kosong = Islam)",
+   "tipe": "data_sql"
+  },
+  {
+   "no": 11386,
+   "nama": "SUMPAH PEMUTUS: RUMUSAN PERISTIWA YANG DISUMPAHKAN - ISIAN (perbuatan pihak yang dibebani, mis. saya tidak pernah menerima uang sejumlah ... dari Penggugat; tanpa titik akhir)",
+   "tipe": "data_teks"
+  },
+  {
+   "no": 11387,
+   "nama": "SUMPAH PEMUTUS: LAFAL SUMPAH MENURUT AGAMA (OTOMATIS: pembuka per agama + rumusan isian 11386)",
+   "tipe": "data_sql"
+  },
+  {
+   "no": 11388,
+   "nama": "SUMPAH PENAKSIR: OBJEK DAN JUMLAH YANG DITAKSIR - ISIAN (mis. nilai kerugian atas ... adalah sejumlah Rp...; tanpa titik akhir)",
+   "tipe": "data_teks"
+  },
+  {
+   "no": 11389,
+   "nama": "SUMPAH PENAKSIR: BATAS JUMLAH YANG DITETAPKAN MAJELIS - ISIAN (mis. setinggi-tingginya Rp... (... rupiah); tanpa titik akhir)",
+   "tipe": "data_teks"
+  },
+  {
+   "no": 11390,
+   "nama": "SUMPAH PENAKSIR: LAFAL SUMPAH MENURUT AGAMA (OTOMATIS: pembuka per agama + isian 11388)",
+   "tipe": "data_sql"
+  },
+  {
+   "no": 11391,
+   "nama": "SUMPAH LI'AN: TUDUHAN ZINA DAN/ATAU PENGINGKARAN ANAK OLEH SUAMI - ISIAN (rumusan tuduhan, mis. istri saya telah berbuat zina dengan ... / anak bernama ... bukan anak saya; tanpa titik akhir)",
+   "tipe": "data_teks"
+  },
+  {
+   "no": 11392,
+   "nama": "SUMPAH LI'AN: SEBUTAN SUAMI DAN ISTRI (OTOMATIS: cerai talak = #0046# suami; cerai gugat = #0047# suami)",
+   "tipe": "data_sql"
+  },
+  {
+   "no": 11393,
+   "nama": "SUMPAH LI'AN: SEBUTAN ISTRI (OTOMATIS: cerai talak = #0047#; cerai gugat = #0046#)",
+   "tipe": "data_sql"
+  },
+  {
+   "no": 11394,
+   "nama": "MEDIASI TIDAK BERIKTIKAD BAIK: HURUF PASAL 7 AYAT (2) PERMA 1/2016 - ISIAN (a / b / c / d / e, boleh lebih dari satu dipisah koma; arti huruf di isian 11395)",
+   "tipe": "data_teks"
+  },
+  {
+   "no": 11395,
+   "nama": "MEDIASI TIDAK BERIKTIKAD BAIK: KALIMAT PERBUATAN MENURUT PASAL 7 AYAT (2) PERMA 1/2016 (OTOMATIS dari isian 11394; kosong = titik-titik)",
+   "tipe": "data_sql"
+  },
+  {
+   "no": 11396,
+   "nama": "PEMERIKSAAN SETEMPAT: TAMBAHAN PANJAR BIAYA PEMERIKSAAN SETEMPAT - ISIAN (angka dan terbilang, mis. Rp1.500.000,00 (satu juta lima ratus ribu rupiah))",
+   "tipe": "data_teks"
+  },
+  {
+   "no": 11397,
+   "nama": "PEMERIKSAAN SETEMPAT: PIHAK YANG MEMBAYAR PANJAR (OTOMATIS dari isian 11344: T = #0047#; selain itu #0046#)",
+   "tipe": "data_sql"
+  },
+  {
+   "no": 11398,
+   "nama": "MEDIASI TIDAK BERIKTIKAD BAIK: BIAYA MEDIASI - ISIAN (angka dan terbilang, mis. Rp150.000,00 (seratus lima puluh ribu rupiah))",
+   "tipe": "data_teks"
+  },
+  {
+   "no": 11399,
+   "nama": "MEDIASI ELEKTRONIK: SARANA YANG DISEPAKATI - ISIAN (mis. aplikasi konferensi video ...; kosong = media komunikasi audio visual jarak jauh)",
+   "tipe": "data_teks"
+  },
+  {
+   "no": 11400,
+   "nama": "MEDIASI ELEKTRONIK: KALIMAT SARANA (OTOMATIS dari isian 11399; kosong = melalui media komunikasi audio visual jarak jauh; tanpa spasi awal)",
+   "tipe": "data_sql"
+  },
+  {
+   "no": 11402,
+   "nama": "PENETAPAN DALAM PEMERIKSAAN (mis. tidak beriktikad baik dalam mediasi): KAKI MAJELIS/TUNGGAL DENGAN KEHADIRAN (OTOMATIS seperti 11311, sebutan penetapan)",
+   "tipe": "data_sql"
+  },
+  {
+   "no": 11403,
+   "nama": "GUGATAN TIDAK DAPAT DITERIMA (PUTUSAN AKHIR, mis. tidak beriktikad baik dalam mediasi): PERTIMBANGAN BIAYA PERKARA (OTOMATIS seperti 11319)",
+   "tipe": "data_sql"
   }
  ],
  "dirujuk": [
   1,
   11,
   12,
+  15,
   17,
   20,
   32,
@@ -683,32 +1316,58 @@
   48,
   50,
   53,
+  55,
+  56,
+  57,
+  65,
+  67,
   98,
   102,
   133,
   134,
   141,
   142,
+  156,
+  157,
+  184,
+  185,
   191,
   194,
   306,
   661,
   663,
   690,
+  1060,
+  1064,
+  1072,
+  1073,
   1261,
   3521,
   4004,
+  4046,
+  4047,
+  5368,
   5404,
   6033,
   6034,
   7036,
   7037,
+  7046,
   7047,
   7048,
   7054,
+  7062,
+  7080,
+  7089,
+  7139,
+  7173,
   8004,
   8008,
   8010,
+  8011,
+  8012,
+  8017,
+  8021,
   8184,
   8185,
   8500,
@@ -731,9 +1390,13 @@
   9166,
   9167,
   9168,
+  9244,
   9251,
+  9349,
+  9350,
   9400,
   9402,
+  9403,
   9479,
   9681,
   9682,
@@ -754,7 +1417,7 @@
  "menu": [
   {
    "id": 151,
-   "nama": "Putusan Sela (Eksepsi, Provisi, Intervensi, Sumpah, Pemeriksaan Setempat)",
+   "nama": "Putusan Sela (Eksepsi, Provisi, Intervensi, Sumpah, Pemeriksaan Setempat, Mediasi, Rekonvensi, Penggabungan)",
    "alias": "Putusan Sela - Putusan",
    "dir": "97a Putusan Sela",
    "pmin": 80,

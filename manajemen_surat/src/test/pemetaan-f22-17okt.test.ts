@@ -32,6 +32,10 @@ import { jenisPerkaraDariFolder } from "@/lib/tugas-blangko";
 type BarisMenu = { id: number; nama: string; nama_alias: string; direktori: string; parent_direktori: string; user_cek: number; user_grup_id: string; user_top_id: string; perkara_id_min?: string; perkara_id_max?: string; perkara_id_referensi?: string };
 const FIX = JSON.parse(readFileSync(path.join(__dirname, "fixtures", "blangko-derry-server-17okt.json"), "utf8")) as { berkas: string[]; menu: BarisMenu[] };
 const A = "derry_briantono/";
+// 30 Okt 2026: langkah PS (pemeriksaan setempat) menunjuk berkas BARU paket ABT abt-paket/sela-ps-30okt (belum ada di pohon server 17 Okt).
+const PAKET_SELA_PS = readFileSync(path.resolve(__dirname, "../../../abt-paket/sela-ps-30okt/paket-satker/daftar-rtf.tsv"), "utf8")
+  .split("\n").filter((l) => l && !l.startsWith("#")).map((l) => l.split("\t")).map(([f, b]) => `${f}/${b}`);
+const SERVER_DAN_PAKET = [...FIX.berkas, ...PAKET_SELA_PS];
 const menuId = (id: number) => FIX.menu.find((m) => m.id === id)!;
 
 const PC = { putusan: "5b Pencegahan Perkawinan", bas: "5b Pencegahan Perkawinan - BAS", idPutusan: 139, idBas: 140, jenis: 342, menuPutusan: "Putusan Pencegahan Perkawinan" };
@@ -77,13 +81,13 @@ describe("A. pohon server: menu, folder, berkas", () => {
       expect(alur.folder).toBe(`${A}${j.bas}`);
       expect(alur.menu).toMatchObject({ id: j.idBas, nama: menuId(j.idBas).nama, alias: menuId(j.idBas).nama_alias });
       expect([alur.jenisMin, alur.jenisMaks]).toEqual([j.jenis, j.jenis]);
-      const diServer = FIX.berkas.filter((x) => x.startsWith(`${A}${j.bas}/BAS ALUR ${nomor} `));
+      const diServer = SERVER_DAN_PAKET.filter((x) => x.startsWith(`${A}${j.bas}/BAS ALUR ${nomor} `));
       expect(diServer.length, id).toBe(alur.langkah.length);
       expect(alur.langkah.map((l) => `${alur.folder}/${l.berkas}`).sort(), id).toEqual([...diServer].sort());
     }
     expect(ALUR_BAS_BARU.find((a) => a.id === "alur-41")!.langkah.map((l) => l.kode)).toEqual(["1", "1a", "1b", "2", "2b", "3", "C", "G", "N", "T"]);
-    expect(ALUR_BAS_BARU.find((a) => a.id === "alur-42")!.langkah.map((l) => l.kode)).toEqual(["V1", "AP", "CB", "V2", "TP", "NO"]);
-    expect(ALUR_BAS_BARU.find((a) => a.id === "alur-43")!.langkah.map((l) => l.kode)).toEqual(["V1", "AP", "CB", "V2", "TP", "NO", "CS", "CM"]); // + CS / CM (I25 18 Okt)
+    expect(ALUR_BAS_BARU.find((a) => a.id === "alur-42")!.langkah.map((l) => l.kode)).toEqual(["V1", "AP", "CB", "V2", "TP", "NO", "PS"]); // + PS (sela-ps 30 Okt)
+    expect(ALUR_BAS_BARU.find((a) => a.id === "alur-43")!.langkah.map((l) => l.kode)).toEqual(["V1", "AP", "CB", "V2", "TP", "NO", "CS", "CM", "PS"]); // + CS / CM (I25 18 Okt), PS (sela-ps 30 Okt)
   });
 
   it("29 BAS ALUR 04-09 disalin ke 4c Wasiat - BAS dan 10a Ekonomi Syariah Biasa - BAS: tabel salinan = berkas server, menu bernama; pencegahan tanpa salinan", () => {
@@ -223,7 +227,7 @@ describe("C. BAS massal per sidang", () => {
       expect(kontra.h!.langkah.berkas).toMatch(/^BAS ALUR 04 \[3\] BAS 3 P & T Hadir/);
       // sidang 1 kontradiktoir: ada mediasi di folder ini (tidak seperti pembatalan perkawinan)
       expect(t(jenis, G, { urutanSidang: 1, dihadiriOleh: 1 }).h!.langkah.berkas).toMatch(/^BAS ALUR 04 \[1\] BAS 1 P & T Hadir - Mediasi/);
-      for (const x of [kontra.h!.langkah.berkas, ...ALUR_BAS_BARU.find((a) => a.id === id)!.langkah.map((l) => l.berkas)]) expect(FIX.berkas, x).toContain(`${A}${B.bas}/${x}`);
+      for (const x of [kontra.h!.langkah.berkas, ...ALUR_BAS_BARU.find((a) => a.id === id)!.langkah.map((l) => l.berkas)]) expect(SERVER_DAN_PAKET, x).toContain(`${A}${B.bas}/${x}`);
     });
   }
 
