@@ -1,0 +1,813 @@
+{
+ "paket": "abt-sampul-rapi-30okt",
+ "basis": "aps_badilag_2810",
+ "dasar_rtf": "D:\\Aplikasi\\aleta\\tmp\\bas29\\dasar2\\derry_briantono",
+ "variabel_baru": {
+  "11600": {
+   "nama": "DAFTAR ISI BERKAS: TABEL DOKUMEN A4 (OTOMATIS dari SIPP; baris kosong memenuhi halaman; lewat panel diganti tabel berhalaman)",
+   "md5": "38539d8915ea4b6c45c43fb1ac18a61f"
+  },
+  "11601": {
+   "nama": "DAFTAR ISI BERKAS: TABEL DOKUMEN F4 (OTOMATIS dari SIPP; baris kosong memenuhi halaman; lewat panel diganti tabel berhalaman)",
+   "md5": "661cd324c911bec66fcec42decdc4c33"
+  },
+  "11602": {
+   "nama": "DAFTAR ISI BERKAS: TABEL DOKUMEN LEGAL (OTOMATIS dari SIPP; baris kosong memenuhi halaman; lewat panel diganti tabel berhalaman)",
+   "md5": "96ccc7dc97e50a82bf66b310329a2224"
+  },
+  "11603": {
+   "nama": "CEKLIST BERKAS: TABEL DOKUMEN A4 (OTOMATIS menurut jenis perkara; ada/tidak ada dari penetapan dan kasir)",
+   "md5": "0a81fcac0c2340297e62cac968d329c7"
+  },
+  "11604": {
+   "nama": "CEKLIST BERKAS: TABEL DOKUMEN F4 (OTOMATIS menurut jenis perkara; ada/tidak ada dari penetapan dan kasir)",
+   "md5": "1b531d1b49659ef9b13fcd9ff0634a07"
+  },
+  "11605": {
+   "nama": "CEKLIST BERKAS: TABEL DOKUMEN LEGAL (OTOMATIS menurut jenis perkara; ada/tidak ada dari penetapan dan kasir)",
+   "md5": "1f9b58f768e38988b9cff88f156824d1"
+  },
+  "11606": {
+   "nama": "LAMPIRAN SAMPUL BIASA A4 (hanya bila perlu: pihak, objek sengketa, anak, riwayat sidang lanjutan; kosong = tanpa lampiran)",
+   "md5": "a633d80cdc59133810e0970b644a45ff"
+  },
+  "11607": {
+   "nama": "LAMPIRAN SAMPUL BIASA F4 (hanya bila perlu: pihak, objek sengketa, anak, riwayat sidang lanjutan; kosong = tanpa lampiran)",
+   "md5": "87db2152b73324343c0c0fc7727eeda7"
+  },
+  "11608": {
+   "nama": "LAMPIRAN SAMPUL BIASA LEGAL (hanya bila perlu: pihak, objek sengketa, anak, riwayat sidang lanjutan; kosong = tanpa lampiran)",
+   "md5": "444da68b669a694d234e20ae55693d63"
+  },
+  "11609": {
+   "nama": "LAMPIRAN SAMPUL PERMOHONAN A4 (hanya bila perlu: pihak, objek sengketa, anak, riwayat sidang lanjutan; kosong = tanpa lampiran)",
+   "md5": "9d29d914654e8cb24f559dfbaa864a0c"
+  },
+  "11610": {
+   "nama": "LAMPIRAN SAMPUL PERMOHONAN F4 (hanya bila perlu: pihak, objek sengketa, anak, riwayat sidang lanjutan; kosong = tanpa lampiran)",
+   "md5": "b1ffd0d305d3138fcbbaf901d26dacd6"
+  },
+  "11611": {
+   "nama": "LAMPIRAN SAMPUL PERMOHONAN LEGAL (hanya bila perlu: pihak, objek sengketa, anak, riwayat sidang lanjutan; kosong = tanpa lampiran)",
+   "md5": "324c471c2f1d21c10f93dda92c21cb28"
+  },
+  "11612": {
+   "nama": "LAMPIRAN SAMPUL PIHAK BANYAK A4 (hanya bila perlu: pihak, objek sengketa, anak, riwayat sidang lanjutan; kosong = tanpa lampiran)",
+   "md5": "9a9815a81bcc30420526695c5c4ebc58"
+  },
+  "11613": {
+   "nama": "LAMPIRAN SAMPUL PIHAK BANYAK F4 (hanya bila perlu: pihak, objek sengketa, anak, riwayat sidang lanjutan; kosong = tanpa lampiran)",
+   "md5": "91e9817744219808210c5619629c1cd6"
+  },
+  "11614": {
+   "nama": "LAMPIRAN SAMPUL PIHAK BANYAK LEGAL (hanya bila perlu: pihak, objek sengketa, anak, riwayat sidang lanjutan; kosong = tanpa lampiran)",
+   "md5": "a239027e61f9222c44dade9d1fd4a73e"
+  },
+  "11615": {
+   "nama": "LAMPIRAN SAMPUL PERMOHONAN PIHAK BANYAK A4 (hanya bila perlu: pihak, objek sengketa, anak, riwayat sidang lanjutan; kosong = tanpa lampiran)",
+   "md5": "dd09f52c07f04e8a4e3402e3c945774e"
+  },
+  "11616": {
+   "nama": "LAMPIRAN SAMPUL PERMOHONAN PIHAK BANYAK F4 (hanya bila perlu: pihak, objek sengketa, anak, riwayat sidang lanjutan; kosong = tanpa lampiran)",
+   "md5": "123aaa1589463377042fd2df1cc324dd"
+  },
+  "11617": {
+   "nama": "LAMPIRAN SAMPUL PERMOHONAN PIHAK BANYAK LEGAL (hanya bila perlu: pihak, objek sengketa, anak, riwayat sidang lanjutan; kosong = tanpa lampiran)",
+   "md5": "515086d92662eced96d04d0e914d2c6d"
+  },
+  "11618": {
+   "nama": "CIRI SAMPUL: GHAIB TAMPIL (isian 5807; kosong = tanpa tampilan, bukan titik-titik)",
+   "md5": "f0cfb7cb44eee31235676d49a3549dd1"
+  },
+  "11619": {
+   "nama": "CIRI SAMPUL: MAFQUD TAMPIL (isian 5808; kosong = tanpa tampilan, bukan titik-titik)",
+   "md5": "b98c57c82aba23467662eb9fa1f3b646"
+  }
+ },
+ "variabel_ubah": {
+  "5700": {
+   "md5_lama": "08f90577d968c98169974959f18acb2d",
+   "md5_baru": "dbb3f9079e18a0acdb7f2e1fc5488a5a"
+  },
+  "5701": {
+   "md5_lama": "61c5778093773f7373aafa815e9596d9",
+   "md5_baru": "e36013b351d8893fa6ff48de7af17e72"
+  },
+  "5702": {
+   "md5_lama": "d1303a69323aa05890569744d73fe5e5",
+   "md5_baru": "50854503d63de9003dc6e14e9a5f7249"
+  },
+  "5703": {
+   "md5_lama": "fadb40e818b3ab1a797566c362f0cfc6",
+   "md5_baru": "38eedc43644ac12d573c23bfc1f1e433"
+  },
+  "5704": {
+   "md5_lama": "43519e2e91aa9fefafc8e053522c3bc3",
+   "md5_baru": "95bb334d2b62a74764f2166795dc6b1c"
+  },
+  "5705": {
+   "md5_lama": "52b3ddff848f2e9c81b08c2801963e93",
+   "md5_baru": "2a53cd49a26c5e5a94380a012d9ed49b"
+  },
+  "5706": {
+   "md5_lama": "0fe470276ec8da175a4a05c68c0f1885",
+   "md5_baru": "4a1f0ae7c0b1fec35a1c6a924ea7077e"
+  },
+  "5707": {
+   "md5_lama": "00c1af205d61930c4dcba7eb130fe87d",
+   "md5_baru": "931f5ceabfbd033d60d01960476b8a18"
+  },
+  "5708": {
+   "md5_lama": "7c8bb6d6284a986a89d229fb54b37388",
+   "md5_baru": "b9358ab5e4a20ab0d2953da2abecb45c"
+  },
+  "5709": {
+   "md5_lama": "77255a9c403c31599233466bee5cf721",
+   "md5_baru": "64dd25b2fc6dc956e5673516dc883029"
+  },
+  "5710": {
+   "md5_lama": "cef46103c3a4c3614a721ce30d8aa251",
+   "md5_baru": "c39562832cf59423508b3e5b500d504b"
+  },
+  "5711": {
+   "md5_lama": "7e7458719053ae65cb227ee1b77ebf50",
+   "md5_baru": "5614c9b56ee692c1b08f4674ec6266d7"
+  },
+  "5712": {
+   "md5_lama": "fc634e4e047be688939e83a0857fe4a7",
+   "md5_baru": "91f89c62657f40fa28507cec65d15bc8"
+  },
+  "5713": {
+   "md5_lama": "e034c779916c5860dd07abe88dfb6458",
+   "md5_baru": "9a182dd61199adbeddea46fa9df1163e"
+  },
+  "5714": {
+   "md5_lama": "3969bab5bcad970376bc777aa53f7775",
+   "md5_baru": "252987c2ff40346732f30564c07d12fc"
+  },
+  "5715": {
+   "md5_lama": "642adbf285443cd8168d60f3d10cf2da",
+   "md5_baru": "05c975ad5b463af72b65504674858958"
+  },
+  "5716": {
+   "md5_lama": "d5faf21d7fceb5ddc5b98c57dd334122",
+   "md5_baru": "135ac09663b973c1d6f3a02484908bf7"
+  },
+  "5717": {
+   "md5_lama": "69a53323447924e21fea2cafd254e11a",
+   "md5_baru": "135943ba6fae66889aab23fbcde6c74b"
+  },
+  "5718": {
+   "md5_lama": "12a5f2f46c40457a34ae0ef2f2fc3206",
+   "md5_baru": "cf49f28762c2f253cb45a56a395d6abf"
+  },
+  "5719": {
+   "md5_lama": "c2b3dd8e952e4c0ad946c0a3a473ee0c",
+   "md5_baru": "7852db8355e3c9f325d71aeeae1ddf26"
+  },
+  "5720": {
+   "md5_lama": "5fb97948c31c70a1e4d02f743940753a",
+   "md5_baru": "496ed34d7962626de33e0536bdc48372"
+  },
+  "5721": {
+   "md5_lama": "bc766d1a922bf0992dc68593c5745049",
+   "md5_baru": "86425b6ee819a295234aa2a2415fb31a"
+  },
+  "5722": {
+   "md5_lama": "0261b99b9e03f64b89144177e2b4fc0c",
+   "md5_baru": "7a1ec204c0a2d859338f9ebebf744ec3"
+  },
+  "5723": {
+   "md5_lama": "21ffe5182de13b9d23b3f6ab9c6788fb",
+   "md5_baru": "86ece42341b6d548f4967ed2a8db5ab3"
+  },
+  "5724": {
+   "md5_lama": "f797d4ce733cf059c14204087de4f177",
+   "md5_baru": "095d80c8bbb8b8c2ae099d38a01a953f"
+  },
+  "5725": {
+   "md5_lama": "3ebd91d1b8c7f8081a8965da87768914",
+   "md5_baru": "7126f34550f92ac601d917eab5cf72d7"
+  },
+  "5726": {
+   "md5_lama": "5d97f6aac38aba23a9c93b38d9e810be",
+   "md5_baru": "f587f6bb18570adc62af5acc65c39f72"
+  },
+  "5727": {
+   "md5_lama": "a5ecaed0af2ddaee302f76f3f48030b0",
+   "md5_baru": "d0267bcf7ca601c4f42cd3f204a87bc0"
+  },
+  "5728": {
+   "md5_lama": "937b8cadbbc6840cfdd78344bda3ae2e",
+   "md5_baru": "4302c299d7774324e4b5d360041d5d1d"
+  },
+  "5729": {
+   "md5_lama": "1ee75ce3b6e15231fbafa2921ee2eaef",
+   "md5_baru": "a065a7599048a008bd53f8e0ebbaccf5"
+  },
+  "5730": {
+   "md5_lama": "bf0554294f425bc6ee7828396fca83a6",
+   "md5_baru": "92dfc2d3e1a6703ce7a679aa928ffa30"
+  },
+  "5731": {
+   "md5_lama": "f40d2e790f41ff894aafbe4d890f8fe1",
+   "md5_baru": "ae8dd12c17cd5f0ef50bf3d4fc724a6a"
+  },
+  "5732": {
+   "md5_lama": "646cf01ffdfdb475f8fe9b4beb41c631",
+   "md5_baru": "8304d2fed7b584cf36819b1404e6b04d"
+  },
+  "5733": {
+   "md5_lama": "bc7231867b8f66dda93ffa9dff67a62c",
+   "md5_baru": "785efd6f02254b5e520646c83326171f"
+  },
+  "5734": {
+   "md5_lama": "2087ac1c1c6e9ffccdf050b056c11f02",
+   "md5_baru": "067c2ecc41e486bb683e255c5efc75a3"
+  },
+  "5735": {
+   "md5_lama": "677524c0731e969ba34e6cdb7285770f",
+   "md5_baru": "9f5e6035112e65f4962738989f3b8cf2"
+  },
+  "5736": {
+   "md5_lama": "5120101168df6026d800778616d54e46",
+   "md5_baru": "69f4853ecd438b932d7bc8497cd21c42"
+  },
+  "5737": {
+   "md5_lama": "a4ebc69d5107e18830fb6f8017354474",
+   "md5_baru": "f28e243cd47a04f91312b94c1baff82a"
+  },
+  "5738": {
+   "md5_lama": "2a644de263e9432aa682c514fe11e3d7",
+   "md5_baru": "6ae093a814a52830bacb00443ff4e5f5"
+  },
+  "5739": {
+   "md5_lama": "26697d1f18b1e6abd01cb1d8aff7ce54",
+   "md5_baru": "ac3e37a9c83b41a25e76c56099f273cb"
+  },
+  "5740": {
+   "md5_lama": "85f8d5f644729aaea8913c125c399753",
+   "md5_baru": "e0b72fe5a9c34acc2b95f76a60c61878"
+  },
+  "5741": {
+   "md5_lama": "ead80926fb099804c00b5d912d0935b3",
+   "md5_baru": "5af98503397518c2aad22d762c14b19f"
+  },
+  "5742": {
+   "md5_lama": "14b7cf34f3cadfe2b1df9ef21d3691e0",
+   "md5_baru": "a7b850ee762eac3b1847490231933b6b"
+  },
+  "5743": {
+   "md5_lama": "60acd8a4e9e70cf463d17f9f0eb3d6a3",
+   "md5_baru": "0d0cacd987b8d8f4727cf6994d1000ba"
+  },
+  "5744": {
+   "md5_lama": "2a24aa4ad4ce4a3b0792b9f12e855efd",
+   "md5_baru": "9b56b6259f5c95e895420dab253f3f4e"
+  },
+  "5745": {
+   "md5_lama": "ed62e2961d18d24079946a07bd8481c9",
+   "md5_baru": "25f1cf411eadbb86da23a7b3327a765a"
+  },
+  "5746": {
+   "md5_lama": "36ca008264889d977376da8a94ddb0c6",
+   "md5_baru": "21e13013a6c6b98b6cd6e017c2e79074"
+  },
+  "5747": {
+   "md5_lama": "0b66eb9e789ef62a7319dc1b38036d66",
+   "md5_baru": "27570dc6297ea431b4c1776e5906994a"
+  },
+  "5748": {
+   "md5_lama": "ca3d38dc22cb6c09819c3ffae14b5ce4",
+   "md5_baru": "6d3e4de7ed0e1b6c1a782de1443686af"
+  },
+  "5749": {
+   "md5_lama": "d553233a92174860d88656e414c72d50",
+   "md5_baru": "fe3bc30267503ad03618f8dbd56084e0"
+  },
+  "5750": {
+   "md5_lama": "e45566f479b38f61769be495ff687c1c",
+   "md5_baru": "d9a3eaf1690045cf7b513cdc13bcb8de"
+  },
+  "5751": {
+   "md5_lama": "5d14a604bdc3a28c0964b25a596fbae6",
+   "md5_baru": "14d4d972516b5e5d9d6e461861f52027"
+  },
+  "5752": {
+   "md5_lama": "945cfc22da3d99f9c169d803b08330c0",
+   "md5_baru": "1636a46767f1e4d0b7f651d55468d2a4"
+  },
+  "5753": {
+   "md5_lama": "e153f17bb9c5aae4e7a51d771b3105a2",
+   "md5_baru": "8ac928f159ee37cfe7119aef2051c3af"
+  },
+  "5754": {
+   "md5_lama": "174889af147f0bd9588401b396034246",
+   "md5_baru": "7b8c3e77e0da3ad4504b65d75f5b4ec1"
+  },
+  "5755": {
+   "md5_lama": "09fd1694cab7a7d4f7f6d450eeb0337c",
+   "md5_baru": "dc462aba3b55aa686c4e70c83e339b8c"
+  },
+  "5756": {
+   "md5_lama": "d0aaa1e7eee80353157d5dcb4db09f75",
+   "md5_baru": "4553a1bff8d5365d297035816f1ac812"
+  },
+  "5757": {
+   "md5_lama": "0ea47165d6f77bde15cf2204f051b236",
+   "md5_baru": "d5911f27d83a786b0271d805c7d1c0bd"
+  },
+  "5758": {
+   "md5_lama": "9c008b4ac96b5c2200dd436cc953a365",
+   "md5_baru": "b8e8c029883798798c86fb86acc67586"
+  },
+  "5759": {
+   "md5_lama": "4a4e6d4574d5c85e342b8a8f8634e424",
+   "md5_baru": "f837b9f236d443dcd561eef6e0479507"
+  },
+  "5760": {
+   "md5_lama": "6637e068570ab73401d66d8c2dfc6772",
+   "md5_baru": "cb1e950b2fba035ba5570db14feadf85"
+  },
+  "5761": {
+   "md5_lama": "d6b58cc03d572ef21ac5148c9cb93741",
+   "md5_baru": "63f0d01eb9d31cd14f717f5db0eda7ce"
+  },
+  "5762": {
+   "md5_lama": "27e0860714d21123ee3522dea9218148",
+   "md5_baru": "3805466dbfab0005613e7759c98edf34"
+  },
+  "5763": {
+   "md5_lama": "6602f19974a74e9342908731176aff47",
+   "md5_baru": "20a322877d23c0a74b4de7c8bcf52904"
+  },
+  "5764": {
+   "md5_lama": "c59ece1044fdf7264f0db8743ac67fd2",
+   "md5_baru": "d002e89b8577a07525e6b503916f867d"
+  },
+  "5765": {
+   "md5_lama": "f6e1794b153eaf69a1891bcd156c6a27",
+   "md5_baru": "924961f039e56cf1db7d89fe5919ab41"
+  },
+  "5766": {
+   "md5_lama": "b53be1bf3bb09e8ccbaed534a4574dfc",
+   "md5_baru": "986a48293389663822c38577d035825c"
+  },
+  "5767": {
+   "md5_lama": "756c79094d2a99d09abe565a28a26fdc",
+   "md5_baru": "c829e04eb367a501ab5088adad06cedb"
+  },
+  "5768": {
+   "md5_lama": "ef1805ce3b9d1ecbe9100f9e598f984c",
+   "md5_baru": "5314e8152e1a1a32a2b51930759ea5d9"
+  },
+  "5769": {
+   "md5_lama": "41d28d4fabe22888b0ba8dd2ba076121",
+   "md5_baru": "e0e3d81251d44852cc66aee3c56c6c47"
+  },
+  "5770": {
+   "md5_lama": "bb54d8bc33e4f8c4ff2dd94f58445cb6",
+   "md5_baru": "db9d1d15102a177e4db553d662c606fb"
+  },
+  "5771": {
+   "md5_lama": "6a8af6d5e3b12afc78ab4863b27a3ea5",
+   "md5_baru": "ea8a75c8a2c32998e7a9f0f9915cfed5"
+  },
+  "5772": {
+   "md5_lama": "fa7f2c04f7466d9583d50a08cae1a169",
+   "md5_baru": "9d86ace62797a628c97bff7b1b378f95"
+  },
+  "5773": {
+   "md5_lama": "e21c384b0f88ee37c4e09f1c43d159c5",
+   "md5_baru": "56b961deee58eb482d9f44cb02af6998"
+  },
+  "5774": {
+   "md5_lama": "929e8be65d2d52bf72641b61ec9ec738",
+   "md5_baru": "c3daecc2280f4fe6d75590d6b5d035b5"
+  },
+  "5775": {
+   "md5_lama": "fc4b954ef928e856d6ea52e73f0fe018",
+   "md5_baru": "4337bb54924ec6326d092b5ee883fb49"
+  },
+  "5776": {
+   "md5_lama": "448174d448455960138967c4acb0acfb",
+   "md5_baru": "6d76c4157545a79eceeb1a4f62da6533"
+  },
+  "5777": {
+   "md5_lama": "fb726cc37cc2c104bccb0e872b6c7f5d",
+   "md5_baru": "1e7872b33b54e67d5338aee58f6987fa"
+  },
+  "5778": {
+   "md5_lama": "5de35252eacd2fbdd1d31df0fee671f2",
+   "md5_baru": "88e518bba4a6cfba6be7fa3eee0e9380"
+  },
+  "5779": {
+   "md5_lama": "a60f57a40cb754cb84d9c9538fdeeeee",
+   "md5_baru": "bb7619c6c76f0d87b8cfd41858af0a0a"
+  },
+  "5870": {
+   "md5_lama": "d778780e959d98648ca9090aee8e23b8",
+   "md5_baru": "2b86a3ef7028994bdc365595d0608a2d"
+  },
+  "5871": {
+   "md5_lama": "11ef798e1be63b9e920c7250b49eed90",
+   "md5_baru": "e7242f741e945502e3ed7f81d38d87cf"
+  },
+  "5872": {
+   "md5_lama": "0defaab5f8687982550fbb0c970b940a",
+   "md5_baru": "2f1ff86a311eb470c4fd929555e58bab"
+  },
+  "5873": {
+   "md5_lama": "c6527316227d367974038fe5cffe3488",
+   "md5_baru": "af1b4a7862c4518e77f737dae7eb9d25"
+  },
+  "5874": {
+   "md5_lama": "c5441ab7de4085b1b551c653aa24ec73",
+   "md5_baru": "3bd6ff196157d9677ee9788e90105ab5"
+  },
+  "5875": {
+   "md5_lama": "0192115eac471219c7edc8feb5ffe7cc",
+   "md5_baru": "12354d2179d6b6772fa2f4a9974ef0d2"
+  },
+  "5876": {
+   "md5_lama": "c0d40d4f5bdf72dcc90cb5eafba466b7",
+   "md5_baru": "945dfb449eff307623a12b83b8b18156"
+  },
+  "5877": {
+   "md5_lama": "976b1840ce4dc1d508bb2957d30f622b",
+   "md5_baru": "1c8d787b8fecaf6dfafe3392a317caa9"
+  },
+  "5878": {
+   "md5_lama": "810484c3764003ccda2a4cdf96bd9c05",
+   "md5_baru": "79dc139de2da1bd585a6e94d14a2cf83"
+  },
+  "5879": {
+   "md5_lama": "071d170043160425d7f6bfa8078d79fb",
+   "md5_baru": "0a1fbbd8f138d575475533705dd96147"
+  },
+  "5880": {
+   "md5_lama": "1ed45993abded58b200bfa34d2d9eab1",
+   "md5_baru": "948884f891ff808f6771852bb6474f46"
+  },
+  "5881": {
+   "md5_lama": "fe70be33a3def1171cd4baa2083acd23",
+   "md5_baru": "689568c9e52c50e4ab45793ea74a27c0"
+  },
+  "5882": {
+   "md5_lama": "309df61f32fb0c53b569ef716c6558db",
+   "md5_baru": "cc008c3ea8c47834b313a00126cd3076"
+  },
+  "5883": {
+   "md5_lama": "f6daab295b97809e6568e10c564761f6",
+   "md5_baru": "1f20295b4a7649fea0788f2ff975cc76"
+  },
+  "5884": {
+   "md5_lama": "0cca5a70ce79a693893be7611c31fb73",
+   "md5_baru": "54c504d2bd88810044b84c0c080a3290"
+  },
+  "5885": {
+   "md5_lama": "f0f1696530d794a1fb6ba7010c985b0d",
+   "md5_baru": "0d41577c3e29c0756b8a450c6f87a2c6"
+  },
+  "5886": {
+   "md5_lama": "9c2f53e288002eb7a20e9f8acba68d55",
+   "md5_baru": "b5f844ae2481a3427403922bebbce146"
+  },
+  "5887": {
+   "md5_lama": "5e11f75e4c544c3c6b989fc661480595",
+   "md5_baru": "5a1fe7443ae10355ad4d8a84ea7db9d0"
+  },
+  "5888": {
+   "md5_lama": "131af5d1549543e1d1bf13121673ff78",
+   "md5_baru": "edad7c0f31f316b6d2cffffd51e378ac"
+  },
+  "5889": {
+   "md5_lama": "b1ebe8323dbc1192511b8c8be17066f8",
+   "md5_baru": "130bef7694c78b4f50936e20fda635c7"
+  },
+  "5832": {
+   "md5_lama": "9114555eb5cab7b7fae1863d1bd11179",
+   "md5_baru": "a23e18c4d676e2c6e7273438dca79890"
+  },
+  "5847": {
+   "md5_lama": "7978d970d92d74417caa8cb6c6d1942f",
+   "md5_baru": "18bf9e8e7f87220eedecdd9edf312be7"
+  },
+  "5868": {
+   "md5_lama": "a634fe6940c20769036d26fb17e7b0e1",
+   "md5_baru": "0d18ac9cf4ce86c3180178d75ba475de"
+  },
+  "5897": {
+   "md5_lama": "de79844c3a06c75d4bd1c56a09fec4c5",
+   "md5_baru": "28aa8d8ca13488d75ddf30f7204e0fb4"
+  },
+  "5830": {
+   "md5_lama": "4903f741d314159c2ec656d99da7ccac",
+   "md5_baru": "e26d19879c73682e23f609c833c84688"
+  },
+  "5831": {
+   "md5_lama": "4d81d00ad7eb278dca6b8880e31f674f",
+   "md5_baru": "1674e2187dacf0eee1c1416670d14ac2"
+  }
+ },
+ "fungsi": [
+  "isian_rtf_teks_sel",
+  "isian_rtf_baris_tabel",
+  "isian_rtf_tabel_daftar_isi",
+  "isian_rtf_tabel_ceklist",
+  "isian_rtf_lampiran_sampul"
+ ],
+ "dirujuk": [
+  1,
+  12,
+  13,
+  14,
+  15,
+  18,
+  38,
+  55,
+  98,
+  102,
+  168,
+  180,
+  191,
+  1033,
+  1036,
+  1060,
+  1061,
+  1064,
+  1069,
+  1278,
+  5700,
+  5701,
+  5702,
+  5703,
+  5704,
+  5705,
+  5706,
+  5707,
+  5708,
+  5709,
+  5710,
+  5711,
+  5712,
+  5713,
+  5714,
+  5715,
+  5716,
+  5717,
+  5718,
+  5719,
+  5720,
+  5721,
+  5722,
+  5723,
+  5724,
+  5725,
+  5726,
+  5727,
+  5728,
+  5729,
+  5730,
+  5731,
+  5732,
+  5733,
+  5734,
+  5735,
+  5736,
+  5737,
+  5738,
+  5739,
+  5740,
+  5741,
+  5742,
+  5743,
+  5744,
+  5745,
+  5746,
+  5747,
+  5748,
+  5749,
+  5750,
+  5751,
+  5752,
+  5753,
+  5754,
+  5755,
+  5756,
+  5757,
+  5758,
+  5759,
+  5760,
+  5761,
+  5762,
+  5763,
+  5764,
+  5765,
+  5766,
+  5767,
+  5768,
+  5769,
+  5770,
+  5771,
+  5772,
+  5774,
+  5775,
+  5776,
+  5778,
+  5779,
+  5800,
+  5801,
+  5803,
+  5829,
+  5830,
+  5831,
+  5832,
+  5833,
+  5834,
+  5835,
+  5836,
+  5837,
+  5838,
+  5839,
+  5840,
+  5841,
+  5842,
+  5843,
+  5847,
+  5848,
+  5849,
+  5855,
+  5860,
+  5861,
+  5862,
+  5863,
+  5864,
+  5865,
+  5866,
+  5867,
+  5868,
+  5869,
+  5870,
+  5871,
+  5872,
+  5873,
+  5874,
+  5875,
+  5876,
+  5877,
+  5878,
+  5879,
+  5880,
+  5881,
+  5882,
+  5883,
+  5884,
+  5885,
+  5886,
+  5887,
+  5888,
+  5889,
+  5890,
+  5891,
+  5892,
+  5893,
+  5894,
+  5895,
+  5896,
+  5897,
+  5898,
+  5899,
+  8010,
+  8012,
+  8147
+ ],
+ "timpa": [
+  {
+   "folder": "99 PTSP",
+   "berkas": "Ceklist Berkas Perkara (F4).rtf",
+   "md5_lama": "6cb39cfc2be48aa8ddfb3c0c3bba3ff7",
+   "md5_baru": "f779d15b82e8bdf85bc839e10a93d090"
+  },
+  {
+   "folder": "99 PTSP",
+   "berkas": "Ceklist Berkas Perkara (Legal).rtf",
+   "md5_lama": "f525270d4a4a3e2964e48971da098a76",
+   "md5_baru": "96dd26cb2daf72fe5c09f1cb3ace64c0"
+  },
+  {
+   "folder": "99 PTSP",
+   "berkas": "Ceklist Berkas Perkara.rtf",
+   "md5_lama": "35e66684f71069bf4cf0b56763bf8d85",
+   "md5_baru": "a7bca5e0195175f8eeb0af7736ccac49"
+  },
+  {
+   "folder": "99 PTSP",
+   "berkas": "Sampul Berkas Perkara (F4).rtf",
+   "md5_lama": "f97d287085c876a118f6686d2b0494d0",
+   "md5_baru": "cd33d8ef1ba0129286b703bf36f0accc"
+  },
+  {
+   "folder": "99 PTSP",
+   "berkas": "Sampul Berkas Perkara (Legal).rtf",
+   "md5_lama": "bdb87e18d5abc5766de04df78af9a6ec",
+   "md5_baru": "329fe75229fba67c1f18d7b4ff8022ce"
+  },
+  {
+   "folder": "99 PTSP",
+   "berkas": "Sampul Berkas Perkara (Lengkap) (F4).rtf",
+   "md5_lama": "0dc7520e46058c7fa1e8487b9ad87d53",
+   "md5_baru": "8a1a53dbd5a929f4987da9140b695e62"
+  },
+  {
+   "folder": "99 PTSP",
+   "berkas": "Sampul Berkas Perkara (Lengkap) (Legal).rtf",
+   "md5_lama": "19d2128b27922b04b1f0b6711be81248",
+   "md5_baru": "1c69a2f407ae252b198d5c923afa4b40"
+  },
+  {
+   "folder": "99 PTSP",
+   "berkas": "Sampul Berkas Perkara (Lengkap).rtf",
+   "md5_lama": "2230a70274c2896c84f641afd03ca0ae",
+   "md5_baru": "31734804a6dc396e061a65c88f0bdf5d"
+  },
+  {
+   "folder": "99 PTSP",
+   "berkas": "Sampul Berkas Perkara (Permohonan Pihak Banyak) (F4).rtf",
+   "md5_lama": "4a952788d20655c3f8eff60ec4b99d02",
+   "md5_baru": "be2d9c5ca7692fadf3cf1d86eb5e40b7"
+  },
+  {
+   "folder": "99 PTSP",
+   "berkas": "Sampul Berkas Perkara (Permohonan Pihak Banyak) (Legal).rtf",
+   "md5_lama": "b7ca72e9dbc1162db794dfe9e3cc57c9",
+   "md5_baru": "acc6e0324c9af667a8d6ceef7581ffb5"
+  },
+  {
+   "folder": "99 PTSP",
+   "berkas": "Sampul Berkas Perkara (Permohonan Pihak Banyak).rtf",
+   "md5_lama": "43d0f7a93264a6761196237843390dca",
+   "md5_baru": "67205160ec7d429a510f56dffe363397"
+  },
+  {
+   "folder": "99 PTSP",
+   "berkas": "Sampul Berkas Perkara (Permohonan) (F4).rtf",
+   "md5_lama": "c203b819782f7f28326e7f3e1fec754e",
+   "md5_baru": "9134ade0729c688a4f60db0671d536bc"
+  },
+  {
+   "folder": "99 PTSP",
+   "berkas": "Sampul Berkas Perkara (Permohonan) (Legal).rtf",
+   "md5_lama": "0e23a2e375cfb4c96294554dfe78a527",
+   "md5_baru": "0d44d19ceac2b28b25dfb307b0f50154"
+  },
+  {
+   "folder": "99 PTSP",
+   "berkas": "Sampul Berkas Perkara (Permohonan).rtf",
+   "md5_lama": "331036b6b6ed5ca704adf012682babc8",
+   "md5_baru": "06c6a826a4ede087dcd9ba4425d61aef"
+  },
+  {
+   "folder": "99 PTSP",
+   "berkas": "Sampul Berkas Perkara (Pihak Banyak) (F4).rtf",
+   "md5_lama": "41a2b6761ea3c77ab970edffa1e6e2c3",
+   "md5_baru": "8068742054168123102b7eb6b34ce51f"
+  },
+  {
+   "folder": "99 PTSP",
+   "berkas": "Sampul Berkas Perkara (Pihak Banyak) (Legal).rtf",
+   "md5_lama": "1104849435b696d2c1ba8bf49e49f876",
+   "md5_baru": "b75966697a1bbe677f3d030294f066cd"
+  },
+  {
+   "folder": "99 PTSP",
+   "berkas": "Sampul Berkas Perkara (Pihak Banyak).rtf",
+   "md5_lama": "e0cd4a870409581755cb24e49ba062b9",
+   "md5_baru": "2c43999f71957ee775786eaca8cbdbb7"
+  },
+  {
+   "folder": "99 PTSP",
+   "berkas": "Sampul Berkas Perkara.rtf",
+   "md5_lama": "8174f43adfbc1fed4b50e6bac091d0f7",
+   "md5_baru": "124d5e0677f5ccd720bd60df181db86f"
+  },
+  {
+   "folder": "98b Berkas Perkara - BAS",
+   "berkas": "Daftar Isi Berkas (F4).rtf",
+   "md5_lama": "9c51ae83e61aea961be0d6c8faab4a14",
+   "md5_baru": "f3fd30af1f03dc529f0760a9c22e41c9"
+  },
+  {
+   "folder": "98b Berkas Perkara - BAS",
+   "berkas": "Daftar Isi Berkas (Legal).rtf",
+   "md5_lama": "17342671bf038b305b9aea80c021d25a",
+   "md5_baru": "49b0bc8d89632229e685fa12373f5eb1"
+  },
+  {
+   "folder": "98b Berkas Perkara - BAS",
+   "berkas": "Daftar Isi Berkas.rtf",
+   "md5_lama": "676f3cf290902c506d7072abbb6b3d5b",
+   "md5_baru": "702ebbcdeb3bbbc3352bbf6869d7dab2"
+  }
+ ]
+}

@@ -41,3 +41,7 @@ Dockerfile    text eol=lf
 *.woff binary
 *.woff2 binary
 *.tar.gz binary
+
+# 31 Okt 2026: berkas paket ABT yang di-md5 (MD5SUMS.txt) disimpan git BYTE DEMI BYTE - tanpa ubahan akhir baris, agar
+# md5sum -c di server cocok dengan isi yang diuji. Aturan ini mengalahkan aturan *.sql/*.sh di atas untuk folder paket-satker.
+abt-paket/**/paket-satker/** -text

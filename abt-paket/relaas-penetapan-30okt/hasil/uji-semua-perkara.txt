@@ -1,0 +1,4 @@
+Versi 15 variabel (sebelum keputusan pengguna 30 Okt): 154.170 kueri x 10.278 perkara, galat MariaDB 0, semua 1 baris.
+Versi akhir 20 variabel: 6 variabel yang berubah (11206 11207 11208 11211 11215 11216) x 10.278 perkara = 61.668 kueri, galat 0, semua 1 baris; 20 variabel x 2.467 perkara pertama = 49.343 kueri, galat 0 (dihentikan karena lambat, diganti uji 6 variabel itu). Uji kueri pasang-satker: 9 perkara x 20 variabel 0 galat.
+Versi akhir 21 variabel: 11207 11208 11211 11215 11220 (berubah sesudah keputusan lanjutan) x 10.278 perkara = 51.390 kueri, galat 0, semua 1 baris.
+Versi akhir + aturan gugur: 11207 11208 11211 11215 11220 x 10.278 perkara = 51.390 kueri, galat 0, semua 1 baris.

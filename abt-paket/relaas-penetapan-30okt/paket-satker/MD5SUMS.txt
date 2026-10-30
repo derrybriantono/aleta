@@ -1,0 +1,12 @@
+c0e5720ca56ddab053b1713e63b15a47  abt-relaas-penetapan-30okt-PASANG.sql
+329ae748c30069f40bea1ad1f8602022  abt-relaas-penetapan-30okt-PERIKSA.sql
+b181876ac476a5e4f2316676357dd36c  abt-relaas-penetapan-30okt-PRASYARAT.sql
+cae0c3978ea01805fbf4dca9541bbe37  abt-relaas-penetapan-30okt-PULIH.sql
+9fefc8435e4da97b0727eb8c0c2baffa  berkas_rtf.py
+92a85e50a4377880b9d4f2952bc8d97c  daftar-timpa.tsv
+1e5971ebaf40e6c4d047f3c1674fd206  nomor-baru.txt
+4b934991dedd573035e81477229829cc  nomor-dirujuk.txt
+96c841a4fff57e87e60b8298811e966c  pasang-satker.sh
+0b423fb6f0fed5569cc414ac5a25cef6  pulih-satker.sh
+41826d89f3af9c2140d07d02f552c6ff  timpa.tgz
+e003054b0590faf2038034caa35edb1b  uji-kueri.tsv

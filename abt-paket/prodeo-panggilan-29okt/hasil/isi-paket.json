@@ -1,0 +1,110 @@
+{
+ "basis": "aps_badilag_2810",
+ "rtf_dasar": "D:\\Aplikasi\\aleta\\tmp\\bas29\\dasar2\\derry_briantono",
+ "tindih": [
+  "blangko-ikrar-92-28okt",
+  "court-calendar-28okt",
+  "sampul-daftar-isi-26okt"
+ ],
+ "variabel_baru": [
+  11120,
+  11121,
+  11122,
+  11123,
+  11124,
+  11130,
+  11131,
+  11132,
+  11133,
+  11134,
+  11135,
+  11136,
+  11137,
+  11138,
+  11139,
+  11140,
+  11141,
+  11142,
+  11143,
+  11144,
+  11145,
+  11150,
+  11151,
+  11152,
+  11153,
+  11154,
+  11155,
+  11156,
+  11157,
+  11158,
+  11159,
+  11160,
+  11161,
+  11162,
+  11163,
+  11164,
+  11165,
+  11166
+ ],
+ "variabel_ubah": {
+  "3992": {
+   "md5_lama": "ec83d58f271648798e948915b66e36e0",
+   "md5_baru": "0030fc3f40a6532c2f54a29423a5adc7"
+  },
+  "5223": {
+   "md5_lama": "bea2805512a24ab127d7666d565a4d66",
+   "md5_baru": "a6c8ec05d4606922e0937119cdec37bb"
+  },
+  "8505": {
+   "md5_lama": "9666187632c97b632cfb935742e21630",
+   "md5_baru": "d361280bf4abb3eb3078e5419673a569"
+  },
+  "8508": {
+   "md5_lama": "0edc755e42fca50aebddddad2bb5c4df",
+   "md5_baru": "992457b4808306e64c7579c8b33b8980"
+  },
+  "8527": {
+   "md5_lama": "a2327591a52bd0e45209b5c04731c2e0",
+   "md5_baru": "28c36ce3505693161e832088cf6819d8"
+  },
+  "8547": {
+   "md5_lama": "2f2045c75c267016272bdff0589772c8",
+   "md5_baru": "36ec8016393bd4730d7a97f80ac3d362"
+  },
+  "8600": {
+   "md5_lama": "b7e1c2b80ef5d8e62ad611e4231a7127",
+   "md5_baru": "ea1127b4272cbe0a8fc27dbf79e11bdf"
+  }
+ },
+ "berkas_ditimpa": 856,
+ "aturan": {
+  "AV": 217,
+  "A": 625,
+  "R": 3720,
+  "RJ": 540,
+  "P2": 1,
+  "P3": 2,
+  "P4": 1,
+  "P1": 10,
+  "A2": 4
+ },
+ "varian_amar": {
+  "11150": "Membebankan #0046# I dan #0046# II untuk membayar biaya perkara yang hingga kini diperhitungkan sejumlah Rp#0143#,00 (#0155# rupiah)",
+  "11151": "Membebankan kepada #0046# Konvensi/Tergugat Rekonvensi untuk membayar biaya perkara ini sejumlah Rp#0143#,00 (#0155# #7095#)",
+  "11152": "Membebankan kepada #0046# untuk membayar biaya penetapan ini sejumlah Rp#1101#,00 (#2050# rupiah)",
+  "11153": "Membebankan kepada #0046# untuk membayar biaya perkara ini sejumlah Rp#0143#,00 (#0155# rupiah)",
+  "11154": "Membebankan kepada #0046# untuk membayar biaya perkara ini sejumlah Rp#8504#,00 (#0155# #7095#)",
+  "11155": "Membebankan kepada #0046# untuk membayar biaya perkara sejumlah Rp#0143#,00 (#0155# #7095#)",
+  "11156": "Membebankan kepada Pemohon untuk membayar biaya perkara ini sejumlah Rp#0143#,00 (#0155# rupiah)",
+  "11157": "Membebankan kepada Penggugat untuk membayar biaya perkara ini sejumlah Rp#0143#,00 (#0155# rupiah)",
+  "11158": "Membebankan kepada para #0046# untuk membayar biaya perkara sejumlah Rp#0143#,00 (#0155# #7095#)",
+  "11159": "Membebankan para #0046# untuk membayar biaya perkara yang hingga kini diperhitungkan sejumlah Rp. #0143#,00 (#0155# rupiah)",
+  "11160": "Membebankan kepada #9354# untuk membayar biaya perkara ini sejumlah Rp#8504#,00 (#0155# #7095#)",
+  "11161": "Membebankan kepada Pelawan untuk membayar biaya perkara perlawanan ini sejumlah Rp#3993#,00 (#3994# rupiah)",
+  "11162": "Membebankan kepada Terlawan untuk membayar biaya perkara perlawanan ini sejumlah Rp#3993#,00 (#3994# rupiah)",
+  "11163": "Menghukum #0046# untuk membayar biaya perkara ini sejumlah Rp#8504#,00 (#0155# #7095#)",
+  "11164": "Menghukum #0047# untuk membayar biaya perkara ini sejumlah Rp#8504#,00 (#0155# #7095#)",
+  "11165": "Menghukum #7036# untuk membayar biaya perkara ini sejumlah Rp#8504#,00 (#0155# #7095#)",
+  "11166": "Menghukum #7037# untuk membayar biaya perkara ini sejumlah Rp#8504#,00 (#0155# #7095#)"
+ }
+}
