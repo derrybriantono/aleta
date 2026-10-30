@@ -29,9 +29,10 @@ export const dynamic = "force-dynamic";
  * tercatat, atau nama bila belum tertaut) dibaca ULANG dari rencana bot sebelum menulis. Tercatat
  * di SIPP atas akun PP perkara (Edit Jadwal Sidang), penekan sebenarnya di jejak ALETA.
  */
-async function penekan(db: Awaited<ReturnType<typeof getDatabase>>, aktor: { id: string; name: string }) {
+async function penekan(db: Awaited<ReturnType<typeof getDatabase>>, aktor: { id: string; name: string } & NonNullable<Parameters<typeof golonganPengguna>[0]>) {
   const milik = akunSippMilik(await bacaKredensialSipp(db).catch(() => []), aktor.id);
-  return { nama: aktor.name, akunSippMilik: milik, superAdmin: false };
+  // Super Admin boleh menekan (30 Okt malam); baris SIPP tetap atas akun PP perkara (bot), penekan di jejak ALETA.
+  return { nama: aktor.name, akunSippMilik: milik, superAdmin: golonganPengguna(aktor).includes("super-admin") };
 }
 
 export async function GET(request: NextRequest) {
@@ -53,7 +54,7 @@ export async function GET(request: NextRequest) {
     }
     const h = await panggilBotJadwalSidang<Record<string, unknown> & { pp?: AtasNamaPp | null; usul?: unknown[] }>(`/kehadiran-sidang?${p.toString()}`);
     if (!h.ok) return ok({ available: false, ok: false, alasan: h.error, usul: [] });
-    const nilai = penekanAdalahPp(await penekan(db, { id: aktor.id, name: aktor.name }), h.data.pp ?? null);
+    const nilai = penekanAdalahPp(await penekan(db, aktor), h.data.pp ?? null);
     const golonganBoleh = golonganPengguna(aktor).includes("pp") || golonganPengguna(aktor).includes("admin") || golonganPengguna(aktor).includes("super-admin");
     return ok({
       available: true,
@@ -94,9 +95,9 @@ export async function POST(request: NextRequest) {
     if (!kering.ok) return ok({ available: Boolean(kering.status), ok: false, alasan: kering.error || "ALETA Bot belum dapat dihubungi." });
     if (kering.data.ok === false) return ok({ available: true, ...kering.data, alasan: String(kering.data.pesan ?? kering.data.alasan ?? "") });
     // 2) Penekan harus PP perkara itu - dibaca ULANG dari rencana bot, bukan dari kiriman layar.
-    const nilai = penekanAdalahPp(await penekan(db, { id: aktor.id, name: aktor.name }), kering.data.atasNama ?? null);
+    const nilai = penekanAdalahPp(await penekan(db, aktor), kering.data.atasNama ?? null);
     if (!nilai.boleh) throw new ApiError(403, nilai.sebab || SEBAB_BUKAN_PP);
-    const p = await penekan(db, { id: aktor.id, name: aktor.name });
+    const p = await penekan(db, aktor);
     // 3) Tulis.
     const tulis = await panggilBotJadwalSidang<Record<string, unknown> & { ok?: boolean; pesan?: string; alasan?: string }>("/kehadiran-sidang", {
       method: "POST",

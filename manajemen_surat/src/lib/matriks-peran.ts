@@ -1102,7 +1102,7 @@ export const AKSI = {
     golongan: ["pp"],
     lingkup: "milik",
     rute: ["POST /api/aleta-ecourt/kehadiran-sidang"],
-    alasan: "Kehadiran sidang dicatat panitera pengganti; tercatat di SIPP atas akun PP perkara. Rute menegakkan penekan = PP perkara itu (akun SIPP tertaut atau nama) - Admin/Super Admin yang bukan PP perkara tidak.",
+    alasan: "Kehadiran sidang dicatat panitera pengganti; tercatat di SIPP atas akun PP perkara. Rute menegakkan penekan = PP perkara itu (akun SIPP tertaut atau nama) atau Super Admin (keputusan 30 Okt malam); baris SIPP tetap atas akun PP perkara, penekan di jejak ALETA. Admin yang bukan PP perkara tidak.",
   },
   // 30 Okt 2026 (G4): kartu tautan akun pegawai ALETA - SIPP - ABT - e-Court; Admin mengisi akun e-Court pegawai.
   "tautan-akun.atur": {

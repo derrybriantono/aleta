@@ -233,7 +233,11 @@ describe("penekan harus PP perkara", () => {
     expect(penekanAdalahPp({ nama: "Siapa Saja", akunSippMilik: ["Qadariyah"] }, pp)).toMatchObject({ boleh: true, dasar: "akun-sipp" });
     expect(penekanAdalahPp({ nama: "Qadariyah", akunSippMilik: ["andini"] }, pp).boleh).toBe(false);
     expect(penekanAdalahPp({ nama: "QADARIYAH, S.H.", akunSippMilik: [] }, pp)).toMatchObject({ boleh: true, dasar: "nama" });
-    expect(penekanAdalahPp({ nama: "Dian Saputra", akunSippMilik: [], superAdmin: true }, pp).boleh).toBe(false);
+    // Keputusan pengguna 30 Okt malam: Super Admin boleh menekan (baris SIPP tetap atas akun PP perkara).
+    expect(penekanAdalahPp({ nama: "Dian Saputra", akunSippMilik: [], superAdmin: true }, pp)).toMatchObject({ boleh: true, dasar: "super-admin" });
+    expect(penekanAdalahPp({ nama: "Dian Saputra", akunSippMilik: [], superAdmin: false }, pp).boleh).toBe(false);
+    // Tanpa PP berakun SIPP aktif: Super Admin pun tidak.
+    expect(penekanAdalahPp({ nama: "Derry", akunSippMilik: [], superAdmin: true }, null).boleh).toBe(false);
     expect(penekanAdalahPp({ nama: "Qadariyah", akunSippMilik: [] }, null).boleh).toBe(false);
   });
 
@@ -279,7 +283,7 @@ describe("rute portal kehadiran-sidang", () => {
       .run(`eac-k-${userId}`, userId, username, kini, kini);
   }
 
-  it("Admin yang bukan PP perkara: 403 sesudah rencana kering, TIDAK ada permintaan tulis", async () => {
+  it("Admin (bukan Super Admin) yang bukan PP perkara: 403 sesudah rencana kering, TIDAK ada permintaan tulis", async () => {
     aktor = "usr-admin";
     const r = (await import("@/app/api/aleta-ecourt/kehadiran-sidang/route")) as unknown as Record<string, (q: NextRequest) => Promise<Response>>;
     const j = await r.POST(minta({ jadwalId: "17850", dihadiriOleh: 2, sebelum: 1, sebab: "verstek" }));
@@ -296,6 +300,33 @@ describe("rute portal kehadiran-sidang", () => {
     expect(kiriman.map((k) => k.badan.kering)).toEqual([true, false]);
     expect(kiriman[1].url).toContain("/jadwal-sidang/kehadiran-sidang");
     expect(kiriman[1].badan).toMatchObject({ jadwalId: "17850", dihadiriOleh: 2, sebelum: 1, sebab: "verstek", operator: "usr-ppg", operatorAkunSipp: "taufik.pp" });
+  });
+
+  it("Super Admin: boleh menekan; tulisan tetap atas akun PP perkara dari rencana bot, penekan = Super Admin di jejak", async () => {
+    aktor = "usr-super";
+    const r = (await import("@/app/api/aleta-ecourt/kehadiran-sidang/route")) as unknown as Record<string, (q: NextRequest) => Promise<Response>>;
+    const j = await r.POST(minta({ jadwalId: "17850", dihadiriOleh: 2, sebelum: 1, sebab: "verstek" }));
+    expect(j.status).toBe(200);
+    expect(kiriman.map((k) => k.badan.kering)).toEqual([true, false]);
+    // Portal tidak pernah mengirim akun SIPP untuk ditulis: akun PP diturunkan bot dari perkaranya; operator = penekan sebenarnya.
+    expect(kiriman[1].badan).toMatchObject({ operator: "usr-super", jadwalId: "17850" });
+    expect(kiriman[1].badan).not.toHaveProperty("atasNama");
+    expect(kiriman[1].badan).not.toHaveProperty("username");
+  });
+
+  it("PP perkara tanpa akun SIPP aktif: ditolak dengan pesan jelas, juga bagi Super Admin, tanpa tulisan", async () => {
+    aktor = "usr-super";
+    vi.stubGlobal("fetch", async (url: string, init?: RequestInit) => {
+      const badan = init?.body ? JSON.parse(String(init.body)) : null;
+      kiriman.push({ url: String(url), badan });
+      return new Response(JSON.stringify({ ok: false, alasan: "akun_sipp_pp_diblokir", pesan: "Akun SIPP panitera pengganti perkara ini diblokir. Tidak ada yang diubah di SIPP." }), { status: 400, headers: { "content-type": "application/json" } });
+    });
+    const r = (await import("@/app/api/aleta-ecourt/kehadiran-sidang/route")) as unknown as Record<string, (q: NextRequest) => Promise<Response>>;
+    const j = await r.POST(minta({ jadwalId: "17850", dihadiriOleh: 2 }));
+    const isi = (await j.json()) as any;
+    expect(isi.data).toMatchObject({ ok: false });
+    expect(String(isi.data.alasan || isi.error?.message || "")).toContain("diblokir");
+    expect(kiriman.map((k) => k.badan.kering)).toEqual([true]);
   });
 
   it("PP lain (akun SIPP tertaut ke akun lain): 403", async () => {

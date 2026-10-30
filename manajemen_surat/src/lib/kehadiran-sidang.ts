@@ -7,20 +7,20 @@
  * tertaut - namanya tercatat sebagai PP perkara itu (aturan nama yang sama
  * dengan hak hasil mediasi, namaAdaDi).
  *
- * Super Admin/Admin yang bukan PP perkara TIDAK (PENEKAN_SUPER_ADMIN_BOLEH = false);
- * ubah konstanta itu bila pengguna memutuskan lain.
+ * Super Admin BOLEH menekan (keputusan pengguna 30 Okt malam, PENEKAN_SUPER_ADMIN_BOLEH = true) - baris SIPP
+ * tetap atas akun SIPP PP perkara, penekan sebenarnya dicatat di jejak ALETA. Admin yang bukan PP perkara tidak.
  */
 
 import { namaAdaDi } from "@/lib/perkara-sendiri";
 
-export const PENEKAN_SUPER_ADMIN_BOLEH = false;
+export const PENEKAN_SUPER_ADMIN_BOLEH = true;
 
 export type AtasNamaPp = { username: string; namaLengkap: string };
 
 export type HasilPenekan = { boleh: true; dasar: "akun-sipp" | "nama" | "super-admin" } | { boleh: false; sebab: string };
 
 export const SEBAB_BUKAN_PP =
-  "Pembetulan kehadiran ke SIPP hanya ditekan panitera pengganti perkara ini (akun SIPP tertaut atau nama Anda tidak cocok dengan PP perkara).";
+  "Pembetulan kehadiran ke SIPP hanya ditekan panitera pengganti perkara ini atau Super Admin (akun SIPP tertaut atau nama Anda tidak cocok dengan PP perkara).";
 
 export function penekanAdalahPp(
   penekan: { nama: string; akunSippMilik: string[]; superAdmin?: boolean },

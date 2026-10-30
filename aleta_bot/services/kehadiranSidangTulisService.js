@@ -18,7 +18,7 @@
  *      Dua sumber yang berselisih pada sidang yang sama = TIDAK diusulkan
  *      (manusia yang memutuskan).
  *   2. PENULISAN ke perkara_jadwal_sidang.dihadiri_oleh HANYA atas klik PP
- *      (rute portal menegakkan penekan = PP perkara), atas akun SIPP PP
+ *      (atau Super Admin - keputusan 30 Okt malam; rute portal menegakkannya), atas akun SIPP PP
  *      perkara itu (pilihPaniteraSidang - keputusan 7 Okt "penginput tunda &
  *      putusan = PP"), dalam bentuk borang "EDIT JADWAL SIDANG" SIPP:
  *        perkara_jadwal_sidang UPDATE dihadiri_oleh (+ sifat_sidang bawaan bila
