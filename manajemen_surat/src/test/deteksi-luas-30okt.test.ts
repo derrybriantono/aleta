@@ -202,3 +202,12 @@ describe("P4 tuntutan: ejaan hak asuh dari petitum SIPP", () => {
     expect(jenis("Bahwa selama ini pengasuhan anak dilakukan bersama oleh orang tua Penggugat.")).not.toContain("hadhanah");
   });
 });
+
+describe("P1 huruf E: penyakit yang membuat tidak dapat menjalankan kewajiban", () => {
+  const sebab = (k: string) => p1.sebabDariButir([k]).filter((s) => s.pelaku !== "lawan").map((s) => s.sebab);
+  it("428/Pdt.G/2024 & 569/Pdt.G/2026", () => {
+    expect(sebab("Termohon tidak memenuhi nafkah batin Pemohon dikarenakan penyakit Termohon sehingga Termohon tidak bisa melayani Pemohon")).toContain("cacat badan atau penyakit");
+    expect(sebab("c. Termohon mengidap penyakit sehingga tidak bisa memberikan keturunan")).toContain("cacat badan atau penyakit");
+    expect(sebab("Termohon sakit sehingga tidak bisa hadir di persidangan")).not.toContain("cacat badan atau penyakit");
+  });
+});
