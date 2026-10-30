@@ -3786,6 +3786,9 @@ const ALETA_COBA_BOLEH = [
   // BAS dari Word ke PDF bertanda tangan scan (30 Okt 2026): berkas Word dikirim ke portal kita sendiri, diubah ke PDF di memori server, dan
   // DIPULANGKAN. Tidak ada yang disimpan dan tidak ada tulisan ke SIPP/ABT (SIPP sendiri yang mengunggah lewat tombol Simpan-nya).
   /\/aleta\/api\/aleta-ecourt\/bas\/word-ke-pdf(?:[?#]|$)/,
+  // Teks sebuah PDF per paragraf untuk pemeriksa isi e-Doc sebelum seret-lepas menyimpan (30 Okt 2026): PDF dikirim ke portal kita sendiri,
+  // dibaca di memori, dan dipulangkan. Tidak ada yang disimpan dan tidak ada tulisan ke SIPP/ABT.
+  /\/aleta\/api\/aleta-ecourt\/edoc\/baca-pdf(?:[?#]|$)/,
   // Baca foto/teks KTP (perbaikan 2 Okt butir 16): hanya menghitung usulan medan
   // dan memulangkannya - foto tidak disimpan, tidak ada yang ditulis ke mana pun.
   // Pengisian ke blangko SIPP tetap oleh petugas, dan Simpan SIPP tetap ditahan.
@@ -5695,6 +5698,9 @@ const ALETA_LATIHAN_BOLEH = [
   // BAS dari Word ke PDF bertanda tangan scan (30 Okt 2026): berkas Word dikirim ke portal kita sendiri, diubah ke PDF di memori server, dan
   // DIPULANGKAN. Tidak ada yang disimpan dan tidak ada tulisan ke SIPP/ABT (SIPP sendiri yang mengunggah lewat tombol Simpan-nya).
   /\/aleta\/api\/aleta-ecourt\/bas\/word-ke-pdf(?:[?#]|$)/,
+  // Teks sebuah PDF per paragraf untuk pemeriksa isi e-Doc sebelum seret-lepas menyimpan (30 Okt 2026): PDF dikirim ke portal kita sendiri,
+  // dibaca di memori, dan dipulangkan. Tidak ada yang disimpan dan tidak ada tulisan ke SIPP/ABT.
+  /\/aleta\/api\/aleta-ecourt\/edoc\/baca-pdf(?:[?#]|$)/,
 ];
 
 /** Sebutan manusiawi untuk rute yang paling sering ditahan. */

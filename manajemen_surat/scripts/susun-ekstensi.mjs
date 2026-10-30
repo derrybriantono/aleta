@@ -197,6 +197,9 @@ const BERKAS = [
   // BAS dari Word ke PDF bertanda tangan scan di jendela e-Doc BAS SIPP (30 Okt 2026): mencegat pilihan berkas RTF/DOCX/DOC, PDF hasil
   // server dipasang di kotak berkas SIPP (SIPP sendiri yang mengunggah). Skrip konten SIPP sesudah panel-alat.js dan deteksi-sisa-blangko.js.
   "bas-word-pdf.js",
+  // Unggah e-Doc dengan seret-lepas di halaman SIPP (30 Okt 2026): semua tombol Unggah/Edit E-Doc menerima berkas yang dilepas; klik biasa
+  // tetap membuka popup SIPP. Memakai bas-word-pdf.js (Word ke PDF), deteksi-sisa-blangko.js, dan halaman unggah SIPP sendiri.
+  "edoc-seret.js",
   // Tombol "Tarik data" di kepala halaman perkara SIPP (21 Okt 2026): menarik e-Court satu perkara saja,
   // di sela penarikan utama (antrean & batas laju di server); sebelah kiri "Selamat Datang <pengguna>".
   "tarik-satu-perkara.js",

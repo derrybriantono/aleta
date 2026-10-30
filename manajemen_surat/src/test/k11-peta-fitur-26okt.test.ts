@@ -196,8 +196,9 @@ describe("peta fitur K11: kelompok manifest dan modul malas", () => {
     // 26 Okt 2026: blangko-derry-berkas.js = layar kerja Sampul/Daftar Isi (berkas baru yang SENGAJA ditambahkan di luar K11).
     // 27 Okt 2026: sidang-terjadwal.js = Jadwalkan BAS / Tunda (berkas baru yang SENGAJA ditambahkan di luar K11).
     // 28 Okt 2026: tampilan-sipp.js = tampilan ALETA di SIPP per peran/pengguna, kelompok document_start SIPP SENDIRI (di luar K11).
+    // 30 Okt 2026 (malam): edoc-seret.js = unggah e-Doc dengan seret-lepas di semua tombol e-Doc SIPP (berkas baru di luar K11).
     // 30 Okt 2026: bas-word-pdf.js = BAS Word ke PDF bertanda tangan di jendela e-Doc BAS SIPP (berkas baru di luar K11).
-    expect([...new Set(baru)]).toEqual(["tampilan-sipp.js", "modul-malas.js", "bas-word-pdf.js", "sidang-terjadwal.js", "blangko-derry-berkas.js"]);
+    expect([...new Set(baru)]).toEqual(["tampilan-sipp.js", "modul-malas.js", "bas-word-pdf.js", "edoc-seret.js", "sidang-terjadwal.js", "blangko-derry-berkas.js"]);
     const tanpaTampilan = sesudah.kelompok.filter((k) => !(k.js.length === 1 && k.js[0] === "tampilan-sipp.js"));
     expect(tanpaTampilan.map((k) => k.css.filter((c: string) => c !== "sidang-terjadwal.css"))).toEqual(sebelum.kelompok.map((k) => k.css));
   });
@@ -249,7 +250,9 @@ describe("peta fitur K11: kelompok manifest dan modul malas", () => {
 
   it("berkas lain yang tidak disentuh K11 identik byte demi byte dengan sebelumnya", () => {
     // blangko-derry-isian.js: 26 Okt 2026 hanya MENAMBAH pengait layar kerja Sampul/Daftar Isi (blangko-derry-berkas.js); nama tingkat atas lama dijaga uji di bawah.
-    const diubah = new Set(["konten.js", "abt.js", "manifest.json", "latar.js", "blangko-derry-isian.js"]);
+    // panel-alat.js: 30 Okt 2026 menambah rute bas/word-ke-pdf dan edoc/baca-pdf ke daftar "hanya menghitung" mode coba/latihan.
+    // deteksi-sisa-blangko.js: 30 Okt 2026 (malam) menambah jenis pemeriksaan relaas/umum dan jenis temuan "sesuai" untuk seret-lepas e-Doc (salinan TS = salinan JS, diadu uji deteksi-sisa-blangko-17okt dan edoc-seret-30okt).
+    const diubah = new Set(["konten.js", "abt.js", "manifest.json", "latar.js", "blangko-derry-isian.js", "deteksi-sisa-blangko.js", "panel-alat.js"]);
     for (const [nama, info] of Object.entries(sebelum.berkas)) {
       if (diubah.has(nama) || !sesudah.berkas[nama]) continue;
       // berkas yang sengaja disentuh didaftarkan di KEMBALI_DISENTUH

@@ -114,6 +114,16 @@ export const KATALOG_TAMPILAN_SIPP: readonly ElemenTampilanSipp[] = Object.freez
   e("semua.pita-pembaruan", "semua", "Pita pembaruan ekstensi", "Pita pemberitahuan bila versi ekstensi baru tersedia.", "Versi baru ekstensi tersedia - perbarui", "tampilan", SEMUA, [".aleta-pita-pembaruan"]),
   e("semua.spanduk-putusan", "semua", "Spanduk putusan terjadwal", "Spanduk di atas halaman bila ada putusan terjadwal yang menunggu peramban ini.", "Putusan terjadwal menunggu dikerjakan di peramban ini", "tampilan", MAJELIS, ["#aleta-ptj-spanduk"]),
   e("semua.lanjut-edoc", "semua", "Kartu lanjutkan e-Doc tertunda", "Kartu kecil di kanan bawah untuk melanjutkan unggah e-Doc yang tertunda.", "2 e-Doc tertunda - Lanjutkan", "aksi", ["pp", "panitera", "panmud"], ['.aleta-abt-kabar[data-b2-lanjut="1"]']),
+  e(
+    "semua.seret-edoc",
+    "semua",
+    "Unggah e-Doc dengan seret-lepas",
+    "Berkas diseret langsung ke tombol Unggah atau Edit E-Doc di halaman SIPP dan tersimpan tanpa membuka jendela SIPP; klik biasa tetap membuka jendela SIPP seperti dulu.",
+    "Lepas berkas di sini untuk Unggah BAS",
+    "aksi",
+    SEMUA,
+    [".aleta-seret-petunjuk"]
+  ),
 
   // ── daftar perkara ─────────────────────────────────────────────────────────
   e("daftar.tanda-baris", "daftar", "Lencana per baris perkara", "Lencana di sel nomor perkara: ghaib, izin atasan, verzet, prodeo, kuasa, selisih dan tenggat e-Court.", "( e-Court )  izin atasan  prodeo", "tampilan", SEMUA, [".aleta-tanda-baris"]),

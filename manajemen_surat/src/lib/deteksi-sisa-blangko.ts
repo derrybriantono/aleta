@@ -30,7 +30,7 @@
  * (DecompressionStream untuk DOCX).
  */
 
-export type JenisTemuan = "merah" | "kurung" | "tanda" | "perbaikan" | "titik" | "garis" | "kalimat";
+export type JenisTemuan = "merah" | "kurung" | "tanda" | "perbaikan" | "titik" | "garis" | "kalimat" | "sesuai";
 export type JenisNaskah = "putusan" | "bas" | "relaas";
 
 export type Temuan = {
@@ -68,8 +68,9 @@ export const LABEL: Record<JenisTemuan, string> = {
   titik: "Titik-titik isian yang belum diisi",
   garis: "Garis isian yang belum diisi",
   kalimat: "Kalimat yang masih berbentuk blangko",
+  sesuai: "Tidak sesuai dengan perkara atau sidang ini",
 };
-export const URUTAN_JENIS: JenisTemuan[] = ["merah", "kurung", "tanda", "perbaikan", "titik", "garis", "kalimat"];
+export const URUTAN_JENIS: JenisTemuan[] = ["sesuai", "merah", "kurung", "tanda", "perbaikan", "titik", "garis", "kalimat"];
 export const NAMA_NASKAH: Record<JenisNaskah, string> = { putusan: "putusan", bas: "berita acara sidang (BAS)", relaas: "relaas" };
 
 const BATAS_TEMUAN = 500;
@@ -440,10 +441,49 @@ function dalamKutipan(p: string, dari: number, sampai: number): boolean {
   return diapitKutip(p, dari) || didahuluiPemicu(p, dari);
 }
 
+// ============================================================================
+// ISIAN TANGAN JURUSITA PADA RELAAS (30 Okt 2026, seret-lepas e-Doc)
+// ============================================================================
+// Relaas dicetak SEBELUM dilaksanakan: hari/tanggal pelaksanaan, siapa yang ditemui/menerima, keterangan tidak bertemu, dan garis
+// tanda tangan/nama penerima memang diisi TANGAN oleh jurusita. Titik-titik di tempat itu bukan sisa blangko. Aturannya dirumuskan dari
+// 214 render relaas Derry (folder 98 Relaas) - yang di luar daftar ini tetap temuan (nama pihak, NIK, tanggal penetapan, biaya, dst.).
+//   a. didahului hari ini / hari / tanggal / pukul / jam / Nomor (tetapi BUKAN "Hari/Tanggal :" jadwal sidang, dan bukan sesudah
+//      "Nomor <angka>/..." - itu nomor/tanggal penetapan yang seharusnya sudah terisi);
+//   b. didahului kata penunjuk isian jurusita: berbicara dengan, diterima oleh, yang menerima, ditandatangani oleh saya serta, di sana
+//      saya, keterangan, kelurahan/desa, karena, Lain-lain, saksi, penerima;
+//   c. paragraf yang hanya titik (garis tanda tangan/nama), atau titik + sebutan jabatan penanda tangan (Jurusita, Penerima, Saksi, ...);
+//   c'. titik di kolom tanda tangan penerima di samping nama jurusita ("..... Tanty Restianty");
+//   d. tempat dan titik di ujung baris pendek ("Donggala, ......") atau di kepala surat ("Donggala, ...... Sifat : ...") = tanggal surat.
+const RELAAS_AWAL_A = /(?:\bhari(?:\s+ini)?|\btanggal|\bpukul|\bjam|\bnomor)\s*[:\-]?\s*$/i;
+const RELAAS_BUKAN_A = /hari\s*\/\s*tanggal\s*[:\-]?\s*$/i;
+const RELAAS_NOMOR_TERISI = /Nomor\s+\S*\d+\s*\//i;
+const RELAAS_AWAL_B =
+  /(?:berbicara\s+dengan|bertemu\s+dengan|diterima\s+oleh|yang\s+menerima|menerima|ditandatangani\s+oleh\s+saya\s+serta|di\s?sana\s+saya|disana\s+saya|keterangan|kelurahan\s*\/\s*desa|karena|lain-lain|saksi|penerima)\s*[:,]?\s*$/i;
+const RELAAS_SISA_C = /^[\s\t.…_\-,]*(?:jurusita|penerima|yang\s+menerima|saksi|lurah|kepala\s+desa|perangkat\s+desa)?[\s,.:]*$/i;
+const RELAAS_TITIK_LALU_NAMA = /^[\s\t]*(?:\u2026|\.{3,})[\s\t.\u2026]*(?:\p{Lu}[\p{L}.,']*\s*){1,6}$/u;
+const RELAAS_SESUDAH_SURAT = /^\s*(?:Sifat|Lampiran|Perihal|Hal)\s*:/i;
+const RELAAS_TEMPAT_D = /(?:^|[\s\t])\p{Lu}[\p{L}]+\s*,\s*$/u;
+
+/** true = titik-titik ini isian tangan jurusita pada relaas (bukan sisa blangko). Murni. */
+export function titikIsianTanganRelaas(p: string, dari: number, sampai: number): boolean {
+  const titik = /(?:…|\.{3}|(?:\.[  ]){2}\.)(?:[  ]?(?:…|\.))*/g;
+  if (RELAAS_SISA_C.test(p.replace(titik, "")) || RELAAS_TITIK_LALU_NAMA.test(p)) return true;
+  const sebelum = p.slice(0, dari).replace(/[  ]+$/g, "");
+  if (RELAAS_AWAL_A.test(sebelum) && !RELAAS_BUKAN_A.test(sebelum) && !RELAAS_NOMOR_TERISI.test(sebelum)) return true;
+  if (RELAAS_AWAL_B.test(sebelum)) return true;
+  const sisa = p.slice(sampai).replace(titik, "").trim();
+  if (((sisa === "" && p.length <= 90) || RELAAS_SESUDAH_SURAT.test(sisa)) && RELAAS_TEMPAT_D.test(sebelum)) return true;
+  return false;
+}
+
+/** Opsi pemeriksaan: jenis "relaas" = isian tangan jurusita dikecualikan; "umum" = hanya sinyal kuat (kurung, tanda, perbaikan, merah). */
+export type OpsiPeriksa = { jenis?: JenisNaskah | "umum" | "" };
+const JENIS_LEMAH: ReadonlySet<JenisTemuan> = new Set<JenisTemuan>(["titik", "garis", "kalimat"]);
+
 type Aturan = {
   jenis: JenisTemuan;
   re: RegExp;
-  lewat?: (isi: string, p: string, dari: number, sampai: number) => boolean;
+  lewat?: (isi: string, p: string, dari: number, sampai: number, opsi?: OpsiPeriksa) => boolean;
 };
 
 const ATURAN: Aturan[] = [
@@ -473,9 +513,11 @@ const ATURAN: Aturan[] = [
     jenis: "titik",
     // Satu "gugus" titik: tiga titik atau lebih (boleh berspasi satu) atau "…", dengan sambungan titik di sebelahnya.
     re: /(?:…|\.{3}|(?:\.[  ]){2}\.)(?:[  ]?(?:…|\.))*/g,
-    lewat(_isi, p, dari, sampai) {
+    lewat(_isi, p, dari, sampai, opsi) {
       // Titik pengantar antara uraian dan nominal biaya ("Biaya panggilan ........ Rp. 60.000,-") bukan isian.
       if (/^[  ]*Rp\b/i.test(p.slice(sampai, sampai + 12))) return true;
+      // Relaas: titik yang memang diisi tangan jurusita bukan sisa blangko.
+      if (opsi && opsi.jenis === "relaas" && titikIsianTanganRelaas(p, dari, sampai)) return true;
       return dalamKutipan(p, dari, sampai);
     },
   },
@@ -517,7 +559,7 @@ export type RentangTemuan = { jenis: JenisTemuan; dari: number; sampai: number }
  * lebih besar disisihkan), terurut menurut letaknya. Dipakai periksaParagraf dan
  * penanda kekosongan pada perintah AI - satu aturan, satu hasil.
  */
-export function rentangParagraf(par: Paragraf): { p: string; pemenang: RentangTemuan[] } {
+export function rentangParagraf(par: Paragraf, opsi?: OpsiPeriksa): { p: string; pemenang: RentangTemuan[] } {
     const p = par.teks.replace(/ /g, " ");
     const rentang: Array<{ jenis: JenisTemuan; dari: number; sampai: number }> = [];
     // Rentang merah yang hanya dipisah spasi digabung: "Saksi kenal dengan" satu temuan, bukan tiga.
@@ -533,10 +575,11 @@ export function rentangParagraf(par: Paragraf): { p: string; pemenang: RentangTe
       rentang.push({ jenis: "merah", dari, sampai });
     }
     for (const a of ATURAN) {
+      if (opsi && opsi.jenis === "umum" && JENIS_LEMAH.has(a.jenis)) continue;
       for (const m of p.matchAll(a.re)) {
         const dari = m.index ?? 0;
         const sampai = dari + m[0].length;
-        if (a.lewat && a.lewat(m[0], p, dari, sampai)) continue;
+        if (a.lewat && a.lewat(m[0], p, dari, sampai, opsi)) continue;
         rentang.push({ jenis: a.jenis, dari, sampai });
       }
     }
@@ -556,11 +599,11 @@ export function rentangParagraf(par: Paragraf): { p: string; pemenang: RentangTe
 }
 
 /** Periksa daftar paragraf -> { temuan, jumlahParagraf, jumlahHalaman, terpotong }. */
-export function periksaParagraf(daftar: Paragraf[]): HasilPeriksa {
+export function periksaParagraf(daftar: Paragraf[], opsi?: OpsiPeriksa): HasilPeriksa {
   const temuan: Temuan[] = [];
   let terpotong = 0;
   for (const par of daftar) {
-    const { p, pemenang } = rentangParagraf(par);
+    const { p, pemenang } = rentangParagraf(par, opsi);
     for (const r of pemenang) {
       if (temuan.length >= BATAS_TEMUAN) {
         terpotong += 1;
@@ -582,14 +625,14 @@ export function periksaParagraf(daftar: Paragraf[]): HasilPeriksa {
   return { temuan, jumlahParagraf: daftar.length, jumlahHalaman, terpotong };
 }
 
-export function periksaTeks(teks: string): HasilPeriksa {
-  return periksaParagraf(paragrafDariTeks(teks));
+export function periksaTeks(teks: string, opsi?: OpsiPeriksa): HasilPeriksa {
+  return periksaParagraf(paragrafDariTeks(teks), opsi);
 }
-export function periksaRtf(rtf: string): HasilPeriksa {
-  return periksaParagraf(bacaRtfParagraf(rtf));
+export function periksaRtf(rtf: string, opsi?: OpsiPeriksa): HasilPeriksa {
+  return periksaParagraf(bacaRtfParagraf(rtf), opsi);
 }
-export function periksaDocxXml(xml: string): HasilPeriksa {
-  return periksaParagraf(bacaDocxXml(xml));
+export function periksaDocxXml(xml: string, opsi?: OpsiPeriksa): HasilPeriksa {
+  return periksaParagraf(bacaDocxXml(xml), opsi);
 }
 
 // ============================================================================
@@ -641,10 +684,10 @@ export async function ambilDariZip(bita: Uint8Array, nama: string): Promise<Uint
   return null;
 }
 
-export async function periksaDocxBita(bita: Uint8Array): Promise<HasilPeriksa | null> {
+export async function periksaDocxBita(bita: Uint8Array, opsi?: OpsiPeriksa): Promise<HasilPeriksa | null> {
   const isi = await ambilDariZip(bita, "word/document.xml");
   if (!isi) return null;
-  return periksaDocxXml(new TextDecoder("utf-8").decode(isi));
+  return periksaDocxXml(new TextDecoder("utf-8").decode(isi), opsi);
 }
 
 // ============================================================================
@@ -673,21 +716,21 @@ export type HasilBerkas = { dibaca: boolean; bentuk: BentukBerkas; hasil: HasilP
 export async function periksaBita(
   bitaMasuk: Uint8Array | ArrayBuffer,
   nama?: string,
-  opsi?: { bacaPdf?: (bita: Uint8Array) => Promise<Paragraf[]> }
+  opsi?: { bacaPdf?: (bita: Uint8Array) => Promise<Paragraf[]>; jenis?: JenisNaskah | "umum" | "" }
 ): Promise<HasilBerkas> {
   try {
     const bita = bitaMasuk instanceof Uint8Array ? bitaMasuk : new Uint8Array(bitaMasuk);
     if (!bita.length || bita.length > 40 * 1024 * 1024) return { dibaca: false, bentuk: "lain", hasil: null };
     const bentuk = kenaliBentuk(bita, nama);
-    if (bentuk === "rtf") return { dibaca: true, bentuk, hasil: periksaRtf(new TextDecoder("windows-1252").decode(bita)) };
+    if (bentuk === "rtf") return { dibaca: true, bentuk, hasil: periksaRtf(new TextDecoder("windows-1252").decode(bita), opsi) };
     if (bentuk === "docx") {
-      const h = await periksaDocxBita(bita);
+      const h = await periksaDocxBita(bita, opsi);
       return { dibaca: Boolean(h), bentuk, hasil: h };
     }
-    if (bentuk === "teks") return { dibaca: true, bentuk, hasil: periksaTeks(new TextDecoder("utf-8").decode(bita)) };
+    if (bentuk === "teks") return { dibaca: true, bentuk, hasil: periksaTeks(new TextDecoder("utf-8").decode(bita), opsi) };
     if (bentuk === "pdf" && opsi && typeof opsi.bacaPdf === "function") {
       const paragraf = await opsi.bacaPdf(bita);
-      return { dibaca: true, bentuk, hasil: periksaParagraf(paragraf) };
+      return { dibaca: true, bentuk, hasil: periksaParagraf(paragraf, opsi) };
     }
     return { dibaca: false, bentuk, hasil: null };
   } catch {
