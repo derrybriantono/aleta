@@ -178,6 +178,7 @@ Catatan kewenangan:
 | Menandai catatan error sudah ditangani | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Menyalakan pemeriksaan berkala dan peringatan WhatsApp Pusat kesehatan; mengimpor hasil uji beban | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Menyalakan Mode pemeliharaan, mengatur pesan dan jadwalnya | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Mengatur ambang peringatan kapasitas penyimpanan dan pembersihan otomatis sisa pembuatan pembaruan; meminta pemeriksaan ruang | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Mengatur tampilan ALETA di halaman SIPP per peran dan per pengguna | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Lihat sebagai akun atau peran (pratinjau menu dan hak, baca-saja, tercatat) | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Menyalakan verifikasi dua langkah (OTP WhatsApp, authenticator), aturan per peran, dan jaringan kantor | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
@@ -391,6 +392,7 @@ Dari salinan lokal ABT (hanya dibaca, paket yang siap; yang berjalan di server d
 | Pembaruan Sistem | U | L | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Backup Sistem | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Sumber Daya Server | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Kapasitas penyimpanan | U | L | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Sinkron dan cadangan | U | L | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Pemantau Cermin Perkara | U | L | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Sinkron kembaran (mode laptop saat server mati) | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |

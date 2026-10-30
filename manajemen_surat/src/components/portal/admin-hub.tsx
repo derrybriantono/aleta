@@ -7,6 +7,7 @@ import {
   DatabaseBackup,
   Eye,
   Globe,
+  HardDrive,
   Landmark,
   LayoutDashboard,
   Library,
@@ -404,6 +405,13 @@ export function AdminHub() {
               description="RAM, CPU, disk, dan GPU yang dipakai ALETA dibanding seluruh server, dengan rincian tiap aplikasi (ALETA dipisah dari SIPP, ABT, MariaDB, dan layanan lain)."
               icon={<Server className="h-5 w-5 text-sky-600" />}
               badge="Pemantau"
+            />
+            <AdminMenuAction
+              href="/admin/kapasitas-penyimpanan"
+              title="Kapasitas penyimpanan"
+              description="Seberapa penuh ruang server (data aplikasi, database, arsip, cadangan), batas peringatan, pembersihan otomatis sisa pembuatan pembaruan, dan cara pindah ke partisi yang besar."
+              icon={<HardDrive className="h-5 w-5 text-sky-600" />}
+              badge="Ruang"
             />
             <AdminMenuAction
               href="/admin/pusat-kesehatan"
