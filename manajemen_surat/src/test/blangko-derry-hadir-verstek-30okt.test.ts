@@ -175,7 +175,9 @@ const putusanUji = (o: Uji) => {
   const v = o.verstek !== false;
   const tgl = o.tanggalPutusan ?? HARI_INI;
   const amarRingkas = v ? "MENGADILI: 1. Menyatakan Tergugat telah dipanggil secara resmi dan patut ... ; 2. Mengabulkan gugatan Penggugat secara Verstek;" : "MENGADILI: 1. Mengabulkan gugatan Penggugat;";
-  return o.botLama ? { sudahPutus: Boolean(tgl), tanggalPutusan: tgl, verstek: !v, amarRingkas } : { sudahPutus: Boolean(tgl), tanggalPutusan: tgl, verstek: !v, amarRingkas, amarVerstek: v };
+  // G2B 30 Okt malam: tanda Verstek SIPP sejalan dengan amar (dulu `!v`); tanda yang bertentangan kini catatan temuan tersendiri
+  // (temuanTandaVerstek, diuji di saran-keadaan-g2b-30okt) dan tidak boleh ikut mengotori uji kehadiran ini.
+  return o.botLama ? { sudahPutus: Boolean(tgl), tanggalPutusan: tgl, verstek: v, amarRingkas } : { sudahPutus: Boolean(tgl), tanggalPutusan: tgl, verstek: v, amarRingkas, amarVerstek: v };
 };
 const ketAkhir = (o: Uji) => (o.verstek === false ? "putus DIKABULKAN" : "putus DIKABULKAN (verstek)");
 const AKUN = { hakim: ["Hakim Satu", "Hakim Dua"], pp: ["PP Satu"], js: ["JS Satu"] };
@@ -491,10 +493,13 @@ describe("Catatan temuan: putusan verstek padahal SIPP mencatat Tergugat hadir (
     await tanpaTemuan(h);
   });
 
-  it("permohonan (bukan gugatan) tidak diperiksa", async () => {
+  it("permohonan (bukan gugatan): kehadiran tidak diperiksa; tanda verstek 'Ya' pada permohonan menjadi temuan tersendiri (G2B no. 38)", async () => {
     const h = buka({ uji: { hadir: { 1: 1 }, alur: 16 } });
     await pilihPutusan(h);
-    await tanpaTemuan(h);
+    await sampaiCetak(h);
+    await sampai(() => temuan(h), "temuan tanda verstek");
+    expect(teksTemuan(h)).toMatch(/Perkara permohonan tidak diputus verstek.*periksa tanda verstek di SIPP/);
+    expect(teksTemuan(h)).not.toMatch(/tercatat hadir/);
   });
 
   it("bukan verstek (BAS, SIPP tidak mencatat verstek): Tergugat hadir tidak menjadi temuan", async () => {

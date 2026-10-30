@@ -1231,7 +1231,7 @@
   function sesuaikanSaran(r) {
     let berkas = r.berkas;
     // G2B 30 Okt: BAS memakai saksi sisinya (pembuktian Tergugat = saksi Tergugat; selain itu saksi Penggugat), putusan seperti dulu.
-    const saksi = r.jenis === "bas" ? (/Pembuktian T/.test(r.berkas) ? Number(r.saksiT) : Number(r.saksiP)) || Number(r.saksi) || 0 : Number(r.saksi) || saksiTautan();
+    const saksi = r.jenis === "bas" ? (/Pembuktian T\b/.test(r.berkas) ? Number(r.saksiT) : Number(r.saksiP)) || Number(r.saksi) || 0 : Number(r.saksi) || saksiTautan();
     if ((r.jenis === "put" || r.jenis === "bas") && saksi > 0 && S.menu) {
       const k = S.menu.kelompok.find((x) => x.nama === r.kelompok);
       if (k && k.berkas) berkas = pilihVarianSaksi(r.berkas, k.berkas.map((b) => b.berkas), saksi);
@@ -3571,6 +3571,27 @@
     if (/kartu keluarga|\bkk\b/i.test(n)) return "kk";
     return "";
   }
+  /**
+   * G2B 30 Okt malam (keputusan pengguna no. 34): daftar bukti e-Court digabung dengan daftar BAKU (bawaan hitungan ABT): bukti yang
+   * isinya sama dengan bukti baku (KTP, KK, kutipan/buku/akta nikah, akta kelahiran, akta cerai) memakai kalimat baku blangko, e-Court hanya
+   * MENAMBAH bukti yang tidak ada di daftar baku (urutan e-Court dipertahankan sesudah daftar baku). Murni (diuji).
+   */
+  function jenisBuktiBaku(nm) {
+    const n = String(nm || "");
+    if (/kartu tanda penduduk|\bktp\b|ktp-el/i.test(n)) return "ktp";
+    if (/kartu keluarga|\bkk\b/i.test(n)) return "kk";
+    if (/akta\s+cerai/i.test(n)) return "cerai";
+    if (/(?:akta|kutipan\s+akta|surat)\s+kelahiran|akte\s+kelahiran/i.test(n)) return "lahir";
+    if (/(?:kutipan\s+)?akta\s+nikah|buku\s+nikah|kutipan\s+akta\s+perkawinan|duplikat\s+(?:kutipan\s+)?akta\s+nikah/i.test(n)) return "nikah";
+    return "";
+  }
+  function gabungBuktiBaku(baku, ecourt) {
+    const b = Array.isArray(baku) ? baku.filter((r) => r && String(r.nm || r.manual || "").trim()) : [];
+    const e = Array.isArray(ecourt) ? ecourt : [];
+    if (!b.length) return e;
+    const ada = new Set(b.map((r) => jenisBuktiBaku(r.nm || r.manual)).filter(Boolean));
+    return [...b, ...e.filter((r) => { const j = jenisBuktiBaku(r.nm || r.manual); return !j || !ada.has(j); })];
+  }
   // Kode tanda bukti di kalimat: "tanda P.3", "diberi tanda bukti P.3", "bertanda P-3", "kode (P.3)".
   const POLA_KODE_BUKTI = /(\b(?:tanda|bertanda|kode)\s*:?\s*(?:bukti\s+)?\(?)[PT][.-]\s?\d+/gi;
   /**
@@ -3870,6 +3891,13 @@
         if (baruEcourt && baruEcourt.length) {
           rows = baruEcourt;
           dariEcourt = true;
+          // Keputusan 30 Okt malam: bukti yang sama dengan bukti baku tetap berkalimat baku (bawaan ABT); e-Court hanya menambah.
+          try {
+            const h = await klienAbt().bacaIsian(b.kode, perkaraId(), "", sidangUrutan());
+            if (h.ok && String(h.nilai || "").trim()) rows = gabungBuktiBaku(uraiBukti(h.nilai), baruEcourt);
+          } catch {
+            /* tanpa bawaan: daftar e-Court apa adanya */
+          }
         }
         // Bawaan blangko dihitung ABT (nama pihak, NIK dari SIPP) - dibaca dari jendela sembulnya.
         if (!rows || !rows.length) {
@@ -7657,11 +7685,27 @@
     const sidang = hadir.map((x) => (Number(x.urutan) > 0 ? `ke-${Number(x.urutan)} (${tglIndo(x.tanggal)})` : tglIndo(x.tanggal)));
     return { sebutan, sidang, teks: `Kehadiran ${sebutan} di SIPP tercatat hadir padahal putusan verstek - periksa pilihan kehadiran di SIPP (sidang ${daftarSebutan(sidang)})` };
   }
+  /**
+   * G2B 30 Okt malam (keputusan pengguna no. 38): tanda Verstek Putusan Akhir SIPP yang bertentangan - perkara PERMOHONAN bertanda verstek
+   * 'Ya' (permohonan tidak pernah verstek), atau gugatan yang amarnya menyebut verstek tetapi tandanya 'Tidak'. Hanya catatan; petugas yang
+   * membetulkan di SIPP. Tanda yang tidak terbaca = tidak diperiksa.
+   */
+  function temuanTandaVerstek() {
+    const pk = S.pk;
+    const ps = pk && pk.putusanSipp && typeof pk.putusanSipp === "object" ? pk.putusanSipp : null;
+    if (!ps || typeof ps.tandaVerstek !== "boolean" || !/^\d{4}-\d{2}-\d{2}$/.test(String(ps.tanggalPutusan || ""))) return null;
+    const p = pk.perkara || {};
+    const alur = Number(ps.alurPerkaraId || p.alurPerkaraId) || 0;
+    const permohonan = alur ? alur === 16 : /\/Pdt\.P\//i.test(String(pk.nomorPerkara || ""));
+    if (permohonan && ps.tandaVerstek) return { teks: "Perkara permohonan tidak diputus verstek, tetapi tanda Verstek di Putusan Akhir SIPP tercatat 'Ya' - periksa tanda verstek di SIPP" };
+    if (!permohonan && ps.amarVerstek === true && !ps.tandaVerstek) return { teks: "Amar putusan menyebut verstek, tetapi tanda Verstek di Putusan Akhir SIPP tercatat 'Tidak' - periksa tanda verstek di SIPP" };
+    return null;
+  }
   function perbaruiTemuanHadir() {
     const e = wadah.cetak ? cari("#bd-temuanhadir", wadah.cetak) : null;
     if (!e) return;
-    const t = temuanHadirVerstek();
-    e.innerHTML = t ? `<div class="bd-peringatan bd-temuanhadir" role="status"><b>Catatan temuan:</b> ${esc(t.teks)}. Cetak tidak ditahan.</div>` : "";
+    const t = [temuanHadirVerstek(), temuanTandaVerstek()].filter(Boolean);
+    e.innerHTML = t.map((x) => `<div class="bd-peringatan bd-temuanhadir" role="status"><b>Catatan temuan:</b> ${esc(x.teks)}. Cetak tidak ditahan.</div>`).join("");
   }
   function catatLog(teks) {
     S.log.push(`${jamSekarang()}: ${teks}`);
@@ -7923,6 +7967,8 @@
       if (saksiKosong.length) catatLog(`catatan: keterangan ${daftarSebutan(saksiKosong.map((x) => x.sebutan))} belum diisi pada tanya jawab saksi (tercetak kosong)`);
       const hadirVerstek = temuanHadirVerstek();
       if (hadirVerstek) catatLog(`catatan temuan: ${hadirVerstek.teks}`);
+      const tandaVerstek = temuanTandaVerstek();
+      if (tandaVerstek) catatLog(`catatan temuan: ${tandaVerstek.teks}`);
     } catch (e) {
       catatLog(`gagal: ${String((e && e.message) || e)}`);
       toast(`Cetak gagal: ${String((e && e.message) || e)}`);
@@ -9919,7 +9965,7 @@
       tuntutan: S.susunan ? keadaanTuntutan().map((t) => ({ pemicu: t.pemicu, status: t.status, jabatan: t.jabatan, dipilih: t.dipilih })) : [],
       tandaKosong: Array.from(S.tandaKosong),
     }),
-    murni: { sidikTeks, awalanBawaanEl, permintaanAbtAman, pilihanTunggalMurni, kerangkaBawaanMurni, daftarPilihanMurni, keputusanDipilihMurni, keputusanExOfficioMurni, bersihkanHeaderPenanda, bersihkanPenutupSaksiRtf, bersihkanPenutupTabelRtf, perkiraanSidang, keadaanBerlakuMurni, golonganIsianMurni, tuntutanAktifMurni, uraiKutipanTuntutan, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, susunTeksBukti, kalimatBuktiEl, pisahBuktiElektronik, butirElDariTeks, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranTtdBerlaku, berhakCap, UKURAN_TTD_CAP_BAWAAN, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, normalAbt, hurufAlasanDari, nilaiSimpan8503, jenisKelompok, namaTampil, adalahBlangkoIkrar, uraikanIkrar, kumpulkanIkrar, kumpulkanSela, adalahBlangkoSela, statusSela, saranIkrarCadangan, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel, ramahkanAlasan, pilihVarianSaksi },
+    murni: { sidikTeks, awalanBawaanEl, permintaanAbtAman, pilihanTunggalMurni, kerangkaBawaanMurni, daftarPilihanMurni, keputusanDipilihMurni, keputusanExOfficioMurni, bersihkanHeaderPenanda, bersihkanPenutupSaksiRtf, bersihkanPenutupTabelRtf, perkiraanSidang, keadaanBerlakuMurni, golonganIsianMurni, tuntutanAktifMurni, uraiKutipanTuntutan, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, susunTeksBukti, kalimatBuktiEl, pisahBuktiElektronik, butirElDariTeks, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranTtdBerlaku, berhakCap, UKURAN_TTD_CAP_BAWAAN, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, normalAbt, hurufAlasanDari, nilaiSimpan8503, jenisKelompok, namaTampil, adalahBlangkoIkrar, uraikanIkrar, kumpulkanIkrar, kumpulkanSela, adalahBlangkoSela, statusSela, saranIkrarCadangan, saranDariPortal, gabungBuktiBaku, jenisBuktiBaku, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel, ramahkanAlasan, pilihVarianSaksi },
   };
   globalThis.aletaBlangkoDerryIsian = apiIsian;
   if (!mulai()) {

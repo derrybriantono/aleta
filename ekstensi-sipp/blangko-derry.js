@@ -2257,7 +2257,7 @@
       const j = d && d.sipp && Array.isArray(d.sipp.jadwalPerkara) ? d.sipp.jadwalPerkara : [];
       // 30 Okt: keadaan putusan SIPP (amar memuat verstek, tanggal putusan) untuk catatan temuan kehadiran di panel cetak.
       const pu = d && d.sipp && d.sipp.putusan && typeof d.sipp.putusan === "object" ? d.sipp.putusan : null;
-      if (d && d.sipp) S.putusanSipp.set(p.nomorPerkara, { amarVerstek: Boolean(pu && (pu.amarVerstek === true || (pu.amarVerstek === undefined && /verstek/i.test(String(pu.amarRingkas || ""))))), tanggalPutusan: String((pu && pu.tanggalPutusan) || "").slice(0, 10), alurPerkaraId: Number(d.sipp.alurPerkaraId) || 0 });
+      if (d && d.sipp) S.putusanSipp.set(p.nomorPerkara, { amarVerstek: Boolean(pu && (pu.amarVerstek === true || (pu.amarVerstek === undefined && /verstek/i.test(String(pu.amarRingkas || ""))))), tanggalPutusan: String((pu && pu.tanggalPutusan) || "").slice(0, 10), alurPerkaraId: Number(d.sipp.alurPerkaraId) || 0, ...(pu && typeof pu.verstek === "boolean" ? { tandaVerstek: pu.verstek } : {}) });
       const l = j
         .map((x) => ({
           sidangId: String(x.sidangId || ""),

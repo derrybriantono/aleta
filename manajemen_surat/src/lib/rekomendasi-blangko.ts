@@ -32,7 +32,7 @@ import { tentukanAlurBasKumulasi } from "@/lib/alur-bas-kumulasi";
 import { tentukanBasBaru } from "@/lib/alur-bas-baru";
 import { batasEnamBulanIkrar } from "@/lib/ikrar-talak";
 import { keadaanPutusan, type MasukanKeadaanPutusan } from "@/lib/keadaan-putusan";
-import { sebabVerstek, terapkanKeadaanPerkara } from "@/lib/saran-keadaan-perkara";
+import { perkaraGugatan, sebabVerstek, terapkanKeadaanPerkara } from "@/lib/saran-keadaan-perkara";
 import { STATUS_PUTUSAN_SIPP, kunciJenisPerkara, kunciStatusPutusan } from "@/lib/pemetaan-blangko";
 import { JENIS_PENCEGAHAN_PERKAWINAN, blangkoAmplopPendamping, blangkoRelaas, pihakDipanggil, type BlangkoRelaas, type KeadaanRelaas, type PihakDipanggil } from "@/lib/pohon-blangko";
 import { CERMIN_EKSTENSI } from "@/lib/tipe-keluaran/bawaan/bawaan-ekstensi";
@@ -988,7 +988,11 @@ export function masukanRekomendasiDariBaris(b: Record<string, unknown>): Masukan
     ...(typeof b.saksiPihak2 === "number" ? { saksiT: b.saksiPihak2 } : {}),
   };
 }
-export function rekomendasiBlangko(m: MasukanRekomendasi): HasilRekomendasi {
+export function rekomendasiBlangko(masukan: MasukanRekomendasi): HasilRekomendasi {
+  // Keputusan pengguna 30 Okt malam (no. 38a): perkara PERMOHONAN tidak pernah verstek - tanda verstek SIPP / amar verstek pada Pdt.P
+  // diabaikan (catatan temuannya di panel cetak Blangko Derry). Cerai talak / izin poligami (Pdt.G "Pemohon") tetap gugatan.
+  const pastiPermohonan = Number(masukan.alurPerkaraId) === 16 || (!masukan.alurPerkaraId && /\/pdt\.p\//i.test(String(masukan.nomorPerkara ?? "")) && !perkaraGugatan(masukan));
+  const m: MasukanRekomendasi = pastiPermohonan && (masukan.verstekPutusan || masukan.amarVerstek) ? { ...masukan, verstekPutusan: false, amarVerstek: false } : masukan;
   const { sumber, teks } = teksDasarSidang(m);
   const hasil: HasilRekomendasi = { sumberTeks: sumber, teksDasar: teks, bas: [], putusan: [], relaas: [] };
   if (typeof m.jumlahSaksi === "number" && Number.isFinite(m.jumlahSaksi) && m.jumlahSaksi > 0) hasil.jumlahSaksi = m.jumlahSaksi;

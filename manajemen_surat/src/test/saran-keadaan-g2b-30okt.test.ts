@@ -200,6 +200,9 @@ describe("2.3 bukti e-Court: urutan sumber daftar bukti saat blangko dibuka", ()
   const awal = sumber.indexOf("  async function siapkanBukti() {");
   const akhir = sumber.indexOf("  /** Butir bukti elektronik satu pihak (dibuat bila belum ada). */");
   const kode = sumber.slice(awal, akhir);
+  const jenisSrc = sumber.slice(sumber.indexOf("  function jenisBuktiBaku(nm) {"), sumber.indexOf("  // Kode tanda bukti di kalimat:"));
+  const { gabungBuktiBaku: gabung, jenisBuktiBaku } = new Function(`${jenisSrc}
+return { gabungBuktiBaku, jenisBuktiBaku };`)();
   type Opsi = { abtTersimpan?: string; bawaanAbt?: string; ecourt?: string[] | null };
   async function jalan(o: Opsi) {
     const tulis: string[] = [];
@@ -208,10 +211,10 @@ describe("2.3 bukti e-Court: urutan sumber daftar bukti saat blangko dibuka", ()
     const S: Record<string, any> = { susunan: { isian: [{ khusus: "bukti", pihak: "P", kode: "1214" }] }, nilai: o.abtTersimpan ? { "1214": { status: "terisi", teks: o.abtTersimpan } } : {}, bukti: {}, buktiEl: {}, buktiBawaan: {}, buktiAbt: {}, buktiAbtJam: {} };
     const uraiBukti = (t: string) => String(t).split("\n").filter(Boolean).map((nm) => ({ nm, manual: null }));
     const f = new Function(
-      "S", "bacaPenyimpanan", "perkaraId", "susunTeksBukti", "sebutan", "pisahBuktiElektronik", "uraiBukti", "butirElDariTeks", "klienAbt", "sidangUrutan", "barisBuktiEcourt", "buktiBaru", "POLA_BUKTI_BERNOMOR", "buangNomorAwal", "bolehTulis", "tes", "teksBuktiAbt", "rapiBukti", "normalAbt", "renderIsian", "laporKeKerangka", "tulisBuktiKeAbt",
+      "S", "gabungBuktiBaku", "bacaPenyimpanan", "perkaraId", "susunTeksBukti", "sebutan", "pisahBuktiElektronik", "uraiBukti", "butirElDariTeks", "klienAbt", "sidangUrutan", "barisBuktiEcourt", "buktiBaru", "POLA_BUKTI_BERNOMOR", "buangNomorAwal", "bolehTulis", "tes", "teksBuktiAbt", "rapiBukti", "normalAbt", "renderIsian", "laporKeKerangka", "tulisBuktiKeAbt",
       `${kode}\nreturn siapkanBukti;`
     )(
-      S, async () => ({}), () => "77", () => "", () => ({ P: "Penggugat", T: "Tergugat" }), (t: string) => ({ surat: t, el: [] }), uraiBukti, () => null,
+      S, gabung, async () => ({}), () => "77", () => "", () => ({ P: "Penggugat", T: "Tergugat" }), (t: string) => ({ surat: t, el: [] }), uraiBukti, () => null,
       () => ({ bacaIsian: async () => { tanyaBawaan += 1; return { ok: true, nilai: o.bawaanAbt ?? "" }; } }),
       () => 1,
       async () => { tanyaEcourt += 1; return o.ecourt ? o.ecourt.map((nm) => ({ nm, manual: null })) : null; },
@@ -223,11 +226,16 @@ describe("2.3 bukti e-Court: urutan sumber daftar bukti saat blangko dibuka", ()
     return { S, tulis, tanyaEcourt, tanyaBawaan };
   }
 
-  it("ABT belum menyimpan bukti, bawaan ABT berisi, daftar e-Court rapi: daftar e-Court dipakai dan langsung ditulis ke ABT", async () => {
-    const h = await jalan({ bawaanAbt: "Fotokopi KTP-el atas nama Penggugat", ecourt: ["Fotokopi KTP atas nama Rahmi", "Fotokopi Kutipan Akta Nikah Nomor 123"] });
-    expect(h.S.bukti.P.map((r: { nm: string }) => r.nm)).toEqual(["Fotokopi KTP atas nama Rahmi", "Fotokopi Kutipan Akta Nikah Nomor 123"]);
-    expect(h.tanyaBawaan).toBe(0);
+  it("ABT belum menyimpan bukti: bukti e-Court yang sama dengan bukti baku memakai kalimat baku; e-Court hanya menambah; langsung ditulis ke ABT", async () => {
+    const h = await jalan({ bawaanAbt: "Fotokopi Kartu Tanda Penduduk Elektronik (KTP-el) atas nama Penggugat NIK 7203", ecourt: ["Fotokopi KTP atas nama Rahmi", "Fotokopi Kutipan Akta Nikah Nomor 123", "Fotokopi Surat Keterangan Kepala Desa"] });
+    expect(h.S.bukti.P.map((r: { nm: string }) => r.nm)).toEqual(["Fotokopi Kartu Tanda Penduduk Elektronik (KTP-el) atas nama Penggugat NIK 7203", "Fotokopi Kutipan Akta Nikah Nomor 123", "Fotokopi Surat Keterangan Kepala Desa"]);
     expect(h.tulis).toEqual(["P"]);
+    const tanpaBawaan = await jalan({ bawaanAbt: "", ecourt: ["Fotokopi KTP atas nama Rahmi"] });
+    expect(tanpaBawaan.S.bukti.P.map((r: { nm: string }) => r.nm)).toEqual(["Fotokopi KTP atas nama Rahmi"]);
+  });
+
+  it("jenisBuktiBaku: KTP, KK, kutipan/buku nikah, akta kelahiran, akta cerai; lainnya kosong", () => {
+    expect(["Fotokopi KTP-el", "Fotokopi Kartu Keluarga", "Fotokopi Buku Nikah", "Fotokopi Kutipan Akta Nikah", "Fotokopi Akta Kelahiran anak", "Fotokopi Akta Cerai", "Fotokopi Surat Keterangan Ghaib"].map(jenisBuktiBaku)).toEqual(["ktp", "kk", "nikah", "nikah", "lahir", "cerai", ""]);
   });
 
   it("tanpa daftar e-Court: bawaan ABT seperti dulu; bukti yang sudah tersimpan di ABT tidak pernah diganti e-Court", async () => {
@@ -237,5 +245,29 @@ describe("2.3 bukti e-Court: urutan sumber daftar bukti saat blangko dibuka", ()
     expect(tersimpan.tanyaEcourt).toBe(0);
     expect(tersimpan.S.bukti.P.map((r: { nm: string }) => r.nm)).toEqual(["Fotokopi surat yang diketik petugas"]);
     // (isi ABT yang persis sama dengan daftar boleh ditulis ulang sekali untuk memastikan - bunyinya tetap ketikan petugas)
+  });
+});
+
+describe("38: permohonan tidak pernah verstek; catatan temuan tanda verstek", () => {
+  it("Pdt.P bertanda verstek 'Y' / amar verstek: saran mengabaikannya (itsbat [01] biasa); cerai talak Pdt.G tetap verstek", () => {
+    const IN = { jenisPerkara: "Pengesahan Perkawinan/Istbat Nikah", nomorPerkara: "133/Pdt.P/2025/PA.Dgl", alurPerkaraId: 16, sudahPutus: true, statusPutusan: "Dikabulkan", verstekPutusan: true, amarVerstek: true, urutanSidang: 1, dihadiriOleh: 2, jumlahPemohon: 2 };
+    const h = rekomendasiBlangko(IN);
+    expect(h.putusan[0].berkas).toBe("[01] [Kabul] IN.rtf");
+    expect(JSON.stringify(h)).not.toMatch(/Verstek/);
+    const ct = rekomendasiBlangko({ jenisPerkara: "Cerai Talak", nomorPerkara: "569/Pdt.G/2026/PA.Dgl", alurPerkaraId: 15, jenisPerkaraId: 346, sudahPutus: true, statusPutusan: "Dikabulkan", verstekPutusan: true, urutanSidang: 2, dihadiriOleh: 2 });
+    expect(ct.putusan[0].berkas).toMatch(/Kabul Verstek/);
+  });
+
+  const sumber = readFileSync(path.resolve(process.cwd(), "../ekstensi-sipp/blangko-derry-isian.js"), "utf8");
+  const src = sumber.slice(sumber.indexOf("  function temuanTandaVerstek() {"), sumber.indexOf("  function perbaruiTemuanHadir() {"));
+  const temuan = (pk: unknown) => new Function("S", `${src}
+return temuanTandaVerstek();`)({ pk });
+  it("panel: Pdt.P bertanda 'Ya' dan gugatan beramar verstek bertanda 'Tidak' dicatat; yang konsisten / tak terbaca tidak", () => {
+    const ps = (x: Record<string, unknown>) => ({ amarVerstek: false, tanggalPutusan: "2026-05-02", alurPerkaraId: 16, ...x });
+    expect(temuan({ nomorPerkara: "133/Pdt.P/2025/PA.Dgl", putusanSipp: ps({ tandaVerstek: true }) })?.teks).toMatch(/permohonan.*'Ya' - periksa tanda verstek di SIPP/);
+    expect(temuan({ nomorPerkara: "315/Pdt.G/2026/PA.Dgl", putusanSipp: ps({ alurPerkaraId: 15, amarVerstek: true, tandaVerstek: false }) })?.teks).toMatch(/Amar putusan menyebut verstek.*'Tidak'/);
+    expect(temuan({ nomorPerkara: "315/Pdt.G/2026/PA.Dgl", putusanSipp: ps({ alurPerkaraId: 15, amarVerstek: true, tandaVerstek: true }) })).toBeNull();
+    expect(temuan({ nomorPerkara: "133/Pdt.P/2025/PA.Dgl", putusanSipp: ps({ tandaVerstek: false }) })).toBeNull();
+    expect(temuan({ nomorPerkara: "133/Pdt.P/2025/PA.Dgl", putusanSipp: ps({}) })).toBeNull();
   });
 });
