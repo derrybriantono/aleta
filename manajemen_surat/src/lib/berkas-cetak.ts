@@ -12,6 +12,13 @@ import type { KodeKertas } from "@/lib/berkas-perkara";
  */
 
 export const LEBAR_ISI: Readonly<Record<KodeKertas, number>> = { a4: 10466, f4: 10749, legal: 10806 };
+/** Tinggi bidang cetak (twip) = tinggi kertas - margin atas 680 - margin bawah 600 (alat/rtf_dasar.py paket). */
+export const TINGGI_ISI: Readonly<Record<KodeKertas, number>> = { a4: 15558, f4: 17429, legal: 18903 };
+/**
+ * Cadangan aman perkiraan tinggi sampul lewat panel (twip): menyerap beda tata letak Word / LibreOffice / WPS terhadap perkiraan lib/tinggi-rtf.ts.
+ * Diukur 30 Okt atas render Word perkara terpadat, cerai gugat biasa, dan dispensasi 2 sidang di tiga kertas.
+ */
+export const CADANGAN_TINGGI = 300;
 
 /** Variabel tabel ABT paket sampul-rapi-30okt, per kertas. */
 export const VAR_TABEL_DAFTAR_ISI: Readonly<Record<KodeKertas, string>> = { a4: "11600", f4: "11601", legal: "11602" };

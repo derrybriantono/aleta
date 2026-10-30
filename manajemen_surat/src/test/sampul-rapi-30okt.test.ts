@@ -10,6 +10,8 @@ import { tabelCeklistRtf } from "@/lib/ceklist-berkas";
 import { tabelDaftarIsiRtf } from "@/lib/daftar-isi-rtf";
 import { monokromTajam } from "@/lib/logo-monokrom";
 import { LOGO_KOP_TINGGI_TWIP, PENANDA_LOGO, grupGambarPngRtf, sisipLogoRtf } from "@/lib/logo-rtf";
+import { CADANGAN_TINGGI, TINGGI_ISI } from "@/lib/berkas-cetak";
+import { buangPenandaRiwayat, cariTinggiRiwayat, setelTinggiRiwayatRtf, tinggiHalamanPertama, uraiRtf } from "@/lib/tinggi-rtf";
 import { logoMonokrom } from "@/server/modules/berkas-perkara/logo-kop";
 import { FITUR_BERKAS_PERKARA, pilihanDariJejak } from "@/lib/fitur-satker";
 import { createAletaDatabase, type AletaDatabase } from "@/server/db/client";
@@ -345,5 +347,45 @@ describe("7. saklar layar Sampul/Daftar Isi: bawaan MENYALA, pilihan mati yang s
     expect(pilihanDariJejak(JSON.stringify({ berubah: [{ kode: "lain", ke: "mati" }, { kode: FITUR_BERKAS_PERKARA, ke: "mati" }] }), FITUR_BERKAS_PERKARA)).toBe("mati");
     expect(pilihanDariJejak({ berubah: [{ kode: "lain", ke: "mati" }] }, FITUR_BERKAS_PERKARA)).toBeNull();
     expect(pilihanDariJejak("{rusak", FITUR_BERKAS_PERKARA)).toBeNull();
+  });
+});
+
+describe("8. tinggi baris riwayat dinamis lewat panel (satu lembar, sisa bawah sekecil mungkin)", () => {
+  const sampul = () => blangko("99 PTSP/Sampul Berkas Perkara.rtf").replace(/#\d{3,5}#/g, "");
+  it("baris riwayat bertanda di blangko; perkiraan halaman pertama dengan tinggi terpilih <= bidang cetak - cadangan, dan tinggi +5 melewatinya", () => {
+    const rtf = sampul();
+    expect(rtf.split("{\\*\\bkrw}").length - 1).toBe(15);
+    const blok = uraiRtf(rtf);
+    const h = cariTinggiRiwayat(blok, LEBAR_ISI.a4, TINGGI_ISI.a4, CADANGAN_TINGGI);
+    expect(h).not.toBeNull();
+    expect(tinggiHalamanPertama(blok, LEBAR_ISI.a4, h!)).toBeLessThanOrEqual(TINGGI_ISI.a4 - CADANGAN_TINGGI);
+    expect(tinggiHalamanPertama(blok, LEBAR_ISI.a4, h! + 10)).toBeGreaterThan(TINGGI_ISI.a4 - CADANGAN_TINGGI);
+  });
+  it("isi lebih padat (alamat panjang) -> baris riwayat lebih rendah; F4 dan Legal lebih tinggi dari A4", () => {
+    const biasa = uraiRtf(sampul());
+    const padat = uraiRtf(blangko("99 PTSP/Sampul Berkas Perkara.rtf").replace(/#5830#/g, "Alamat: " + "Desa Contoh Kecamatan Contoh ".repeat(12)).replace(/#\d{3,5}#/g, ""));
+    const a = cariTinggiRiwayat(biasa, LEBAR_ISI.a4, TINGGI_ISI.a4, CADANGAN_TINGGI)!;
+    const b = cariTinggiRiwayat(padat, LEBAR_ISI.a4, TINGGI_ISI.a4, CADANGAN_TINGGI)!;
+    expect(b).toBeLessThan(a);
+    const f4 = cariTinggiRiwayat(uraiRtf(blangko("99 PTSP/Sampul Berkas Perkara (F4).rtf").replace(/#\d{3,5}#/g, "")), LEBAR_ISI.f4, TINGGI_ISI.f4, CADANGAN_TINGGI)!;
+    expect(f4).toBeGreaterThan(0);
+  });
+  it("setel: hanya baris bertanda yang berubah, penanda dibuang; blangko tanpa penanda tidak berubah", () => {
+    const rtf = sampul();
+    const hasil = buangPenandaRiwayat(setelTinggiRiwayatRtf(rtf, 555));
+    expect(hasil).not.toContain("bkrw");
+    expect(hasil.split("\\trrh555").length - 1).toBe(15);
+    expect(setelTinggiRiwayatRtf("{\rtf1 \trowd\trrh300 x\row}", 555)).toBe("{\rtf1 \trowd\trrh300 x\row}");
+  });
+  it("naskah sampul lewat panel memakai tinggi dinamis dan melaporkannya", async () => {
+    const dep = depTiruan(blangko("99 PTSP/Sampul Berkas Perkara (Legal).rtf"), {});
+    const h = await susunNaskahBerkas({ nomor: "1/Pdt.G/2026/PA.Dgl", pihak: [], riwayat: [] }, { jenis: "sampul", kertas: "legal", bentuk: "awal", lawan: true, banyak: false }, dep);
+    expect(h.ok).toBe(true);
+    if (!h.ok) return;
+    const t = h.rtf.toString("latin1");
+    const tr = (h.ringkas as { tinggiRiwayat?: number }).tinggiRiwayat;
+    expect(tr).toBeGreaterThan(300);
+    expect(t.split(`\\trrh${tr}`).length - 1).toBe(20);
+    expect(t).not.toContain("bkrw");
   });
 });

@@ -1,11 +1,12 @@
 import { buangGrupTersembunyiRtf } from "@/lib/buang-grup-tersembunyi-rtf";
-import { BARIS_CEKLIST, BARIS_DAFTAR_ISI, LEBAR_ISI, PENANDA_LAMPIRAN_ABT, VAR_CIRI_GANDA, VAR_LAMPIRAN_ABT, VAR_TABEL_CEKLIST, VAR_TABEL_DAFTAR_ISI } from "@/lib/berkas-cetak";
+import { BARIS_CEKLIST, BARIS_DAFTAR_ISI, CADANGAN_TINGGI, LEBAR_ISI, TINGGI_ISI, PENANDA_LAMPIRAN_ABT, VAR_CIRI_GANDA, VAR_LAMPIRAN_ABT, VAR_TABEL_CEKLIST, VAR_TABEL_DAFTAR_ISI } from "@/lib/berkas-cetak";
 import { type BarisDasar, type KodeKertas, type SunganBaris, KERTAS, hitungDaftarIsi, rapikanSampulAwal, saringNilaiTimpa, tanggalIndonesia } from "@/lib/berkas-perkara";
 import { PENANDA_TABEL_CEKLIST, bersihkanBahanCeklist, kotaDariPengadilan, susunCeklist, tabelCeklistRtf, tempelTabelCeklist, teksRingkasCeklist } from "@/lib/ceklist-berkas";
 import { tabelDaftarIsiRtf, ubahKopBundel } from "@/lib/daftar-isi-rtf";
 import { bersihkanPihak, gabungLampiran, jumlahDariDaftar, pihakBanyak } from "@/lib/lampiran-pihak";
 import { barisTurut, bersihkanAlasan, bersihkanAnak, bersihkanObjek, bersihkanSidang, kolomPihakSampul, susunLampiran, type HasilLampiran } from "@/lib/lampiran-sampul";
 import { sisipLogoRtf } from "@/lib/logo-rtf";
+import { buangPenandaRiwayat, cariTinggiRiwayat, setelTinggiRiwayatRtf, uraiRtf } from "@/lib/tinggi-rtf";
 
 /**
  * ============================================================================
@@ -194,6 +195,17 @@ export async function susunNaskahBerkas(
   if (jenis === "ceklist") t = tempelTabelCeklist(t, ceklistTabel);
   // lampiran ABT (variabel di paragraf catatan kaki, sesudah #5833#) diganti lampiran susunan portal: penandanya saja yang dibuang
   if (jenis === "sampul") t = t.split(PENANDA_LAMPIRAN_ABT).join("");
+  // 30 Okt: tinggi baris riwayat disetel PER PERKARA (setinggi mungkin, tetap satu lembar) dari perkiraan tinggi isi; blangko tanpa penanda dibiarkan
+  let tinggiRiwayat: number | null = null;
+  if (jenis === "sampul") {
+    try {
+      tinggiRiwayat = cariTinggiRiwayat(uraiRtf(t), lebar, TINGGI_ISI[kertas], CADANGAN_TINGGI);
+    } catch {
+      tinggiRiwayat = null;
+    }
+    if (tinggiRiwayat) t = setelTinggiRiwayatRtf(t, tinggiRiwayat);
+  }
+  t = buangPenandaRiwayat(t);
   if (lamp && lamp.bagianRtf) t = gabungLampiran(t, lamp.bagianRtf);
   return {
     ok: true,
@@ -202,7 +214,7 @@ export async function susunNaskahBerkas(
     lampiran: lamp ? lamp.daftar : [],
     muatPihak: lamp ? lamp.muatPihak : undefined,
     ceklist: ceklistHasil ? { baris: ceklistHasil.baris, ringkas: ceklistHasil.ringkas } : undefined,
-    ringkas,
+    ringkas: jenis === "sampul" ? { ...ringkas, tinggiRiwayat } : ringkas,
     nilaiDikirim: Object.keys(nilai).length,
   };
 }
