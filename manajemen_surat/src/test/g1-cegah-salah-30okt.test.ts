@@ -684,3 +684,38 @@ describe("1.4 pindai mingguan variabel Blangko Derry", () => {
     expect(readFileSync(path.join(AKAR, "aleta_bot/app.js"), "utf8")).toContain('require("./services/pindaiVariabelDerryService").jadwal(cron)');
   });
 });
+
+// ============================================================================
+// Jawaban pengguna 30 Okt malam butir 48: set tanya jawab saksi "murtad" (huruf H), pihak murtad Tergugat ATAU Penggugat
+// ============================================================================
+describe("48 set saksi murtad - pihak murtad dari SIPP lalu posita", () => {
+  it("pihakMurtad: agama SIPP lebih dulu, lalu posita; tidak terbaca = kosong", async () => {
+    const { pihakMurtad } = await import("@/lib/set-pertanyaan-saksi");
+    expect(pihakMurtad({ agamaP: "Hindu", agamaT: "Islam" })).toMatchObject({ pihak: "P", agama: "Hindu" });
+    expect(pihakMurtad({ agamaP: "Islam", agamaT: "Protestan" })).toMatchObject({ pihak: "T", agama: "Kristen Protestan" });
+    // posita nyata (235/Pdt.G/2026, 612/Pdt.G/2026 - disingkat): agama SIPP belum diubah
+    expect(pihakMurtad({ agamaP: "Islam", agamaT: "Islam", posita: "6. Bahwa sejak 2013 Penggugat telah keluar dari agama Islam dan sekarang beragama Kristen Protestan" })).toMatchObject({ pihak: "P" });
+    expect(pihakMurtad({ agamaP: "Islam", agamaT: "Islam", posita: "6. Bahwa sejak 2004 hingga saat ini Penggugat beragama Kristen;" })).toMatchObject({ pihak: "P" });
+    expect(pihakMurtad({ agamaP: "Islam", agamaT: "Islam", posita: "Bahwa Termohon telah murtad dan memeluk agama Hindu", sebutanP: "Pemohon", sebutanT: "Termohon" })).toMatchObject({ pihak: "T" });
+    expect(pihakMurtad({ agamaP: "Islam", agamaT: "Islam", posita: "Bahwa Tergugat tidak pernah membimbing Penggugat dalam hal keagamaan" }).pihak).toBe("");
+  });
+
+  it("tawaran set: huruf H -> set murtad pihak yang terbaca disarankan, set pihak lain tetap ditawarkan; butir baku lengkap", async () => {
+    const { tawarkanSetSaksi } = await import("@/lib/set-pertanyaan-saksi");
+    const t = tawarkanSetSaksi({ namaJenis: "Cerai Gugat", nomor: "235/Pdt.G/2026/PA.Dgl", huruf: "H", sebutanP: "Penggugat", sebutanT: "Tergugat", murtad: { pihak: "P", agama: "Kristen Protestan", sebab: "agama pihak pertama di SIPP bukan Islam" } });
+    const utama = t.set[0];
+    expect(utama).toMatchObject({ id: "cerai-H-pihak-pertama-murtad", utama: true });
+    expect(utama.judul).toContain("Penggugat yang murtad");
+    expect(utama.sebab).toContain("agama pihak pertama di SIPP bukan Islam");
+    const tanya = utama.baris.map((b) => b.tanya).join("\n");
+    for (const pola of [/kenal dengan Penggugat dan Tergugat/, /agama Penggugat ketika menikah/, /Penggugat sudah berpindah agama\? Ke agama apa, dan sejak kapan/, /mengetahui perpindahan agama Penggugat/, /menjalankan ibadah agama barunya/, /akibat perpindahan agama Penggugat terhadap rumah tangga Tergugat dan Penggugat/, /upaya dari keluarga untuk merukunkan/]) expect(tanya).toMatch(pola);
+    expect(utama.baris.some((b) => b.jawab.includes("berpindah ke agama Kristen Protestan"))).toBe(true);
+    expect(t.set.some((s) => s.id === "cerai-H" && !s.utama && s.judul.includes("Tergugat yang murtad"))).toBe(true);
+    // cerai talak, pihak belum terbaca: bawaan Termohon yang murtad
+    const ct = tawarkanSetSaksi({ namaJenis: "Cerai Talak", nomor: "1/Pdt.G/2026/PA.Dgl", huruf: "H", sebutanP: "Pemohon", sebutanT: "Termohon", murtad: { pihak: "", agama: "", sebab: "pihak yang murtad belum terbaca dari SIPP maupun posita" } });
+    expect(ct.set[0]).toMatchObject({ id: "cerai-H", utama: true });
+    expect(ct.set[0].judul).toContain("Termohon yang murtad");
+    expect(ct.set[0].baris.map((b) => b.tanya).join("\n")).toMatch(/agama Termohon ketika menikah dengan Pemohon/);
+    expect(ct.set.some((s) => s.id === "cerai-H-pihak-pertama-murtad" && s.judul.includes("Pemohon yang murtad"))).toBe(true);
+  });
+});
