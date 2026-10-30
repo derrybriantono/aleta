@@ -480,7 +480,8 @@
    ],
    "isian_tidak_langsung": [
     11394,
-    11398
+    11398,
+    11416
    ]
   },
   {
@@ -556,6 +557,90 @@
    "matriks": null,
    "isian_tidak_langsung": [
     11391
+   ]
+  },
+  {
+   "folder": "derry_briantono/97a Putusan Sela",
+   "berkas": "[34] [Sisipan] Gugatan Rekonvensi Dikabulkan - Bagian Dalam Rekonvensi untuk Putusan Akhir.rtf",
+   "jenis": "sela",
+   "matriks": [
+    "rekonvensi",
+    "dikabulkan (sisipan)"
+   ],
+   "isian_tidak_langsung": [
+    11404,
+    11405,
+    11406,
+    11407,
+    11408
+   ]
+  },
+  {
+   "folder": "derry_briantono/97a Putusan Sela",
+   "berkas": "[35] [Sisipan] Gugatan Rekonvensi Ditolak - Bagian Dalam Rekonvensi untuk Putusan Akhir.rtf",
+   "jenis": "sela",
+   "matriks": [
+    "rekonvensi",
+    "ditolak (sisipan)"
+   ],
+   "isian_tidak_langsung": [
+    11404,
+    11405,
+    11406
+   ]
+  },
+  {
+   "folder": "derry_briantono/97a Putusan Sela",
+   "berkas": "[36] [Sela Kabul] Pemisahan Perkara (Splitsing) Dikabulkan.rtf",
+   "jenis": "sela",
+   "matriks": [
+    "pemisahan perkara",
+    "dikabulkan"
+   ],
+   "isian_tidak_langsung": [
+    11417,
+    11418
+   ]
+  },
+  {
+   "folder": "derry_briantono/97a Putusan Sela",
+   "berkas": "[37] [Sela Tolak] Pemisahan Perkara (Splitsing) Ditolak.rtf",
+   "jenis": "sela",
+   "matriks": [
+    "pemisahan perkara",
+    "ditolak"
+   ],
+   "isian_tidak_langsung": [
+    11417,
+    11418
+   ]
+  },
+  {
+   "folder": "derry_briantono/1 Perceraian CG",
+   "berkas": "[97] [Lian] CG - Perkawinan Putus karena Lian (Putusan Akhir).rtf",
+   "jenis": "akhir",
+   "matriks": [
+    "li'an",
+    "putusan akhir (cerai gugat)"
+   ],
+   "isian_tidak_langsung": [
+    11391,
+    11411,
+    661
+   ]
+  },
+  {
+   "folder": "derry_briantono/1a Perceraian CT",
+   "berkas": "[97] [Lian] CT - Perkawinan Putus karena Lian (Putusan Akhir).rtf",
+   "jenis": "akhir",
+   "matriks": [
+    "li'an",
+    "putusan akhir (cerai talak)"
+   ],
+   "isian_tidak_langsung": [
+    11391,
+    11411,
+    661
    ]
   },
   {
@@ -676,10 +761,22 @@
    "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
   },
   {
+   "folder": "derry_briantono/1 Perceraian CG - BAS",
+   "berkas": "BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 05 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
    "folder": "derry_briantono/10a Ekonomi Syariah Biasa - BAS",
    "berkas": "BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
    "jenis": "bas-mediasi-elektronik",
    "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
+   "folder": "derry_briantono/10a Ekonomi Syariah Biasa - BAS",
+   "berkas": "BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 05 [1] BAS 1 P & T Hadir - Mediasi.rtf"
   },
   {
    "folder": "derry_briantono/1a Perceraian CT - BAS",
@@ -688,10 +785,34 @@
    "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
   },
   {
+   "folder": "derry_briantono/1a Perceraian CT - BAS",
+   "berkas": "BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 05 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
+   "folder": "derry_briantono/1c Perceraian Kumulasi Itsbat Nikah - BAS",
+   "berkas": "BAS ALUR 36 Cerai Kumulasi IN - T Hadir - Sidang 1 - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 36 Cerai Kumulasi IN - T Hadir - Sidang 1 - Mediasi.rtf"
+  },
+  {
+   "folder": "derry_briantono/1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS",
+   "berkas": "BAS ALUR 37 CG Kumulasi Hak Asuh - Sidang 1 - P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 37 CG Kumulasi Hak Asuh - Sidang 1 - P & T Hadir - Mediasi.rtf"
+  },
+  {
    "folder": "derry_briantono/1e Kelalaian Kewajiban Suami Istri - BAS",
    "berkas": "BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
    "jenis": "bas-mediasi-elektronik",
    "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
+   "folder": "derry_briantono/1e Kelalaian Kewajiban Suami Istri - BAS",
+   "berkas": "BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 05 [1] BAS 1 P & T Hadir - Mediasi.rtf"
   },
   {
    "folder": "derry_briantono/1f Hak Bekas Istri - BAS",
@@ -700,10 +821,22 @@
    "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
   },
   {
+   "folder": "derry_briantono/1f Hak Bekas Istri - BAS",
+   "berkas": "BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 05 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
    "folder": "derry_briantono/2a Itsbat Nikah Kontensius - BAS",
    "berkas": "BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
    "jenis": "bas-mediasi-elektronik",
    "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
+   "folder": "derry_briantono/2a Itsbat Nikah Kontensius - BAS",
+   "berkas": "BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 05 [1] BAS 1 P & T Hadir - Mediasi.rtf"
   },
   {
    "folder": "derry_briantono/4a Harta Bersama - BAS",
@@ -712,10 +845,22 @@
    "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
   },
   {
+   "folder": "derry_briantono/4a Harta Bersama - BAS",
+   "berkas": "BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 05 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
    "folder": "derry_briantono/4b Kewarisan - BAS",
    "berkas": "BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
    "jenis": "bas-mediasi-elektronik",
    "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
+   "folder": "derry_briantono/4b Kewarisan - BAS",
+   "berkas": "BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 05 [1] BAS 1 P & T Hadir - Mediasi.rtf"
   },
   {
    "folder": "derry_briantono/4c Wasiat - BAS",
@@ -724,10 +869,22 @@
    "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
   },
   {
+   "folder": "derry_briantono/4c Wasiat - BAS",
+   "berkas": "BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 05 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
    "folder": "derry_briantono/4d Hibah - BAS",
    "berkas": "BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
    "jenis": "bas-mediasi-elektronik",
    "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
+   "folder": "derry_briantono/4d Hibah - BAS",
+   "berkas": "BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 05 [1] BAS 1 P & T Hadir - Mediasi.rtf"
   },
   {
    "folder": "derry_briantono/4e Wakaf - BAS",
@@ -736,10 +893,28 @@
    "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
   },
   {
+   "folder": "derry_briantono/4e Wakaf - BAS",
+   "berkas": "BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 05 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
    "folder": "derry_briantono/5 Izin Poligami - BAS",
    "berkas": "BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
    "jenis": "bas-mediasi-elektronik",
    "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
+   "folder": "derry_briantono/5 Izin Poligami - BAS",
+   "berkas": "BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 05 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
+   "folder": "derry_briantono/5 Izin Poligami - BAS",
+   "berkas": "BAS ALUR 34 Poligami - Sidang 1 - P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 34 Poligami - Sidang 1 - P & T Hadir - Mediasi.rtf"
   },
   {
    "folder": "derry_briantono/6a Hak Asuh Anak (Hadhanah) - BAS",
@@ -748,10 +923,22 @@
    "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
   },
   {
+   "folder": "derry_briantono/6a Hak Asuh Anak (Hadhanah) - BAS",
+   "berkas": "BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 05 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
    "folder": "derry_briantono/6b Penguasaan Anak - BAS",
    "berkas": "BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
    "jenis": "bas-mediasi-elektronik",
    "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
+   "folder": "derry_briantono/6b Penguasaan Anak - BAS",
+   "berkas": "BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 05 [1] BAS 1 P & T Hadir - Mediasi.rtf"
   },
   {
    "folder": "derry_briantono/6c Nafkah Anak - BAS",
@@ -760,10 +947,22 @@
    "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
   },
   {
+   "folder": "derry_briantono/6c Nafkah Anak - BAS",
+   "berkas": "BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 05 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
    "folder": "derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS",
    "berkas": "BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
    "jenis": "bas-mediasi-elektronik",
    "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
+   "folder": "derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS",
+   "berkas": "BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 05 [1] BAS 1 P & T Hadir - Mediasi.rtf"
   },
   {
    "folder": "derry_briantono/6e Pencabutan Kekuasaan Wali - BAS",
@@ -772,16 +971,34 @@
    "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
   },
   {
+   "folder": "derry_briantono/6e Pencabutan Kekuasaan Wali - BAS",
+   "berkas": "BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 05 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
    "folder": "derry_briantono/6g Ganti Rugi terhadap Wali - BAS",
    "berkas": "BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
    "jenis": "bas-mediasi-elektronik",
    "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
   },
   {
+   "folder": "derry_briantono/6g Ganti Rugi terhadap Wali - BAS",
+   "berkas": "BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 05 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
    "folder": "derry_briantono/6h Nafkah Anak oleh Ibu - BAS",
    "berkas": "BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
    "jenis": "bas-mediasi-elektronik",
    "asal": "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+  },
+  {
+   "folder": "derry_briantono/6h Nafkah Anak oleh Ibu - BAS",
+   "berkas": "BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf",
+   "jenis": "bas-mediasi-elektronik",
+   "asal": "BAS ALUR 05 [1] BAS 1 P & T Hadir - Mediasi.rtf"
   },
   {
    "folder": "derry_briantono/99 PTSP",
@@ -1300,6 +1517,81 @@
    "no": 11403,
    "nama": "GUGATAN TIDAK DAPAT DITERIMA (PUTUSAN AKHIR, mis. tidak beriktikad baik dalam mediasi): PERTIMBANGAN BIAYA PERKARA (OTOMATIS seperti 11319)",
    "tipe": "data_sql"
+  },
+  {
+   "no": 11404,
+   "nama": "REKONVENSI: POKOK TUNTUTAN PENGGUGAT REKONVENSI - ISIAN (kalimat sesudah \"menuntut\", mis. nafkah iddah sejumlah ...; tanpa titik akhir)",
+   "tipe": "data_teks"
+  },
+  {
+   "no": 11405,
+   "nama": "REKONVENSI: TANGGAPAN TERGUGAT REKONVENSI - ISIAN (kalimat sesudah \"yang pada pokoknya\", tanpa titik akhir)",
+   "tipe": "data_teks"
+  },
+  {
+   "no": 11406,
+   "nama": "REKONVENSI: FAKTA DAN PERTIMBANGAN MAJELIS - ISIAN (kalimat sesudah \"bahwa\", tanpa titik akhir)",
+   "tipe": "data_teks"
+  },
+  {
+   "no": 11407,
+   "nama": "REKONVENSI DIKABULKAN: AMAR HUKUMAN/PENETAPAN - ISIAN (mis. Menghukum Tergugat Rekonvensi untuk membayar ...; tanpa nomor dan titik akhir)",
+   "tipe": "data_teks"
+  },
+  {
+   "no": 11408,
+   "nama": "REKONVENSI DIKABULKAN: SEBAGIAN ATAU SELURUHNYA - ISIAN (ketik S bila dikabulkan sebagian; kosong = seluruhnya)",
+   "tipe": "data_teks"
+  },
+  {
+   "no": 11409,
+   "nama": "REKONVENSI DIKABULKAN: KATA SEBAGIAN/SELURUHNYA (OTOMATIS dari isian 11408)",
+   "tipe": "data_sql"
+  },
+  {
+   "no": 11410,
+   "nama": "REKONVENSI DIKABULKAN SEBAGIAN: AMAR MENOLAK SELEBIHNYA (OTOMATIS dari isian 11408; kosong bila seluruhnya)",
+   "tipe": "data_sql"
+  },
+  {
+   "no": 11411,
+   "nama": "LI'AN: ANAK YANG DIINGKARI SUAMI - ISIAN (nama, tempat dan tanggal lahir; kosong = tidak ada pengingkaran anak)",
+   "tipe": "data_teks"
+  },
+  {
+   "no": 11412,
+   "nama": "LI'AN: AMAR NASAB ANAK KEPADA IBU (OTOMATIS dari isian 11411; kosong bila tidak ada pengingkaran anak)",
+   "tipe": "data_sql"
+  },
+  {
+   "no": 11419,
+   "nama": "LI'AN: NOMOR BUTIR AMAR BIAYA (OTOMATIS: 5. bila ada amar nasab anak, selain itu 4.)",
+   "tipe": "data_sql"
+  },
+  {
+   "no": 11414,
+   "nama": "PUTUSAN AKHIR BIDANG PERKAWINAN (mis. li'an): PERTIMBANGAN BIAYA PERKARA (OTOMATIS: prodeo = DIPA tahun pendaftaran; selain itu Pasal 89 ayat (1) UU 7/1989)",
+   "tipe": "data_sql"
+  },
+  {
+   "no": 11416,
+   "nama": "MEDIASI TIDAK BERIKTIKAD BAIK (TERGUGAT): CARA BAYAR BIAYA MEDIASI - ISIAN (ketik P bila dimasukkan dalam panjar biaya perkara; kosong = dibayar tersendiri)",
+   "tipe": "data_teks"
+  },
+  {
+   "no": 11415,
+   "nama": "MEDIASI TIDAK BERIKTIKAD BAIK (TERGUGAT): KALIMAT CARA BAYAR BIAYA MEDIASI (OTOMATIS dari isian 11416, PERMA 1/2016 Pasal 23 ayat (4))",
+   "tipe": "data_sql"
+  },
+  {
+   "no": 11417,
+   "nama": "PEMISAHAN PERKARA: TUNTUTAN/BAGIAN YANG DIMOHONKAN DIPISAHKAN - ISIAN (mis. tuntutan pembagian harta bersama; tanpa titik akhir)",
+   "tipe": "data_teks"
+  },
+  {
+   "no": 11418,
+   "nama": "PEMISAHAN PERKARA: ALASAN MAJELIS - ISIAN (mis. tidak ada hubungan erat / pemeriksaan bersama mempersulit; tanpa titik akhir)",
+   "tipe": "data_teks"
   }
  ],
  "dirujuk": [
@@ -1383,6 +1675,7 @@
   8562,
   8710,
   8718,
+  8728,
   8730,
   9160,
   9162,

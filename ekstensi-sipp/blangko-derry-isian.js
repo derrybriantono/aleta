@@ -665,7 +665,7 @@
     ["sita", "Sita", /\bsita\b/i],
     ["mediasi", "Tidak beriktikad baik dalam mediasi", /mediasi/i],
     ["rekonvensi", "Gugatan rekonvensi", /rekonvensi/i],
-    ["gabung", "Penggabungan perkara", /penggabungan/i],
+    ["gabung", "Penggabungan dan pemisahan perkara", /penggabungan|pemisahan/i],
   ]);
   const STATUS_SELA = Object.freeze([
     ["dikabulkan", /\[(?:sela\s+)?kabul\b|dikabulkan/i],

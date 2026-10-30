@@ -1,42 +1,66 @@
-1b82a4e28452a004ed8c86178417abfb  abt-sela-ps-30okt-PASANG.sql
-644d641bdef9f40dbbe90db586374263  abt-sela-ps-30okt-PERIKSA.sql
-ff3428aeadc3c31bf8dd92583d159bf2  abt-sela-ps-30okt-PRASYARAT.sql
-7b6b6f9b443db7931b75afce12995535  abt-sela-ps-30okt-PULIH.sql
+7b9f7191e6875e2bdf6dc6718c8126f7  abt-sela-ps-30okt-PASANG.sql
+cfc65bb21f07444ab690f5f7f42766fd  abt-sela-ps-30okt-PERIKSA.sql
+525056f1eeb3bf6a4ce52cc4682cb64a  abt-sela-ps-30okt-PRASYARAT.sql
+0da44be0557af8a05bd4171af7862a67  abt-sela-ps-30okt-PULIH.sql
 3066e3870707d1bc598cb03387c9b403  berkas_rtf.py
-d337a604e3d4d7eb0a655bd7e6cb0800  daftar-rtf.tsv
+f4a9ae7a2f1ad87951cfacbafe706ac2  daftar-rtf.tsv
 6f352d0171ffe350b1df614681462782  daftar-timpa.tsv
-11a3ecb5db7ea77f8f5e459178a04521  folder-ada.txt
+070832f9f50806e0b4400770e1e40a68  folder-ada.txt
 7128548b5308c01c22dde101df7ea686  folder-baru.txt
-107e46b6e11625c83f3600c6fbbd4d5b  harap.txt
-9a4486a6d805e27f8715460001d3f8d2  nomor-dirujuk.txt
-b827ff3484209fe3a129febf7c013039  nomor-variabel.txt
+1135cbbf6a0443801e8f3f830dc2fabe  harap.txt
+4498b25a539ada8903a4aad2e5a7bb7f  nomor-dirujuk.txt
+f2765fbfb04f91d7f5107cc030bec1fd  nomor-variabel.txt
 6761a1780151f15bafe9421e71e9bd3e  pasang-satker.sh
 6a7e2b831a1b44c22c17d4c98a95ddf8  pulih-satker.sh
-d8c3832dbd5a54910aecf312d2402f2d  rtf/derry_briantono/1 Perceraian CG - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+80c3f46265d09c4f9599bbba181092ff  rtf/derry_briantono/1 Perceraian CG - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
 5bd174fdf4b7aae9fdb708bb8122f4d9  rtf/derry_briantono/1 Perceraian CG - BAS/BAS ALUR 04 [PS] BAS P & T Hadir - Pemeriksaan Setempat Objek Harta Bersama (Kumulasi).rtf
-084002ffc5b11d00801aaf21a9f97317  rtf/derry_briantono/10a Ekonomi Syariah Biasa - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+80c3f46265d09c4f9599bbba181092ff  rtf/derry_briantono/1 Perceraian CG - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+012d7b45ba764de93f6ea4983557b33a  rtf/derry_briantono/1 Perceraian CG/[97] [Lian] CG - Perkawinan Putus karena Lian (Putusan Akhir).rtf
+3ce64b326360e36534c6f1b11ba2adf9  rtf/derry_briantono/10a Ekonomi Syariah Biasa - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+3ce64b326360e36534c6f1b11ba2adf9  rtf/derry_briantono/10a Ekonomi Syariah Biasa - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
 08f03427fa0cff94e5faa4ef5fe8f5df  rtf/derry_briantono/10a Ekonomi Syariah Biasa - BAS/BAS ALUR 43 ES Acara Biasa - Sidang PS - Pemeriksaan Setempat di Lokasi Objek (antara ALUR 04 [7] dan [8]).rtf
-d8c3832dbd5a54910aecf312d2402f2d  rtf/derry_briantono/1a Perceraian CT - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+80c3f46265d09c4f9599bbba181092ff  rtf/derry_briantono/1a Perceraian CT - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
 5bd174fdf4b7aae9fdb708bb8122f4d9  rtf/derry_briantono/1a Perceraian CT - BAS/BAS ALUR 04 [PS] BAS P & T Hadir - Pemeriksaan Setempat Objek Harta Bersama (Kumulasi).rtf
-9c27db96c25ebf7f0e9ed87e9b8412fa  rtf/derry_briantono/1e Kelalaian Kewajiban Suami Istri - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
-c30ca14602aa7f530508c286927aaf14  rtf/derry_briantono/1f Hak Bekas Istri - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
-8264cee9bb9ed83550d5d2f36e5c630e  rtf/derry_briantono/2a Itsbat Nikah Kontensius - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
-8264cee9bb9ed83550d5d2f36e5c630e  rtf/derry_briantono/4a Harta Bersama - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
-8264cee9bb9ed83550d5d2f36e5c630e  rtf/derry_briantono/4b Kewarisan - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
-8264cee9bb9ed83550d5d2f36e5c630e  rtf/derry_briantono/4c Wasiat - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+80c3f46265d09c4f9599bbba181092ff  rtf/derry_briantono/1a Perceraian CT - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+012d7b45ba764de93f6ea4983557b33a  rtf/derry_briantono/1a Perceraian CT/[97] [Lian] CT - Perkawinan Putus karena Lian (Putusan Akhir).rtf
+80c3f46265d09c4f9599bbba181092ff  rtf/derry_briantono/1c Perceraian Kumulasi Itsbat Nikah - BAS/BAS ALUR 36 Cerai Kumulasi IN - T Hadir - Sidang 1 - Mediasi Elektronik (PERMA 3 2022).rtf
+80c3f46265d09c4f9599bbba181092ff  rtf/derry_briantono/1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS/BAS ALUR 37 CG Kumulasi Hak Asuh - Sidang 1 - P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+b46ecad25db41078d359fe0057f00067  rtf/derry_briantono/1e Kelalaian Kewajiban Suami Istri - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+b46ecad25db41078d359fe0057f00067  rtf/derry_briantono/1e Kelalaian Kewajiban Suami Istri - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+32018cb6049152bf1409162d222404b9  rtf/derry_briantono/1f Hak Bekas Istri - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+32018cb6049152bf1409162d222404b9  rtf/derry_briantono/1f Hak Bekas Istri - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+60adb220e271c87432a758709f9691b9  rtf/derry_briantono/2a Itsbat Nikah Kontensius - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+60adb220e271c87432a758709f9691b9  rtf/derry_briantono/2a Itsbat Nikah Kontensius - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+60adb220e271c87432a758709f9691b9  rtf/derry_briantono/4a Harta Bersama - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+60adb220e271c87432a758709f9691b9  rtf/derry_briantono/4a Harta Bersama - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+60adb220e271c87432a758709f9691b9  rtf/derry_briantono/4b Kewarisan - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+60adb220e271c87432a758709f9691b9  rtf/derry_briantono/4b Kewarisan - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+60adb220e271c87432a758709f9691b9  rtf/derry_briantono/4c Wasiat - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+60adb220e271c87432a758709f9691b9  rtf/derry_briantono/4c Wasiat - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
 99c123c099610db13ee24aa56f28220e  rtf/derry_briantono/4c Wasiat - BAS/BAS ALUR 42 Wasiat - Sidang PS - Pemeriksaan Setempat di Lokasi Objek (antara ALUR 04 [7] dan [8]).rtf
-8264cee9bb9ed83550d5d2f36e5c630e  rtf/derry_briantono/4d Hibah - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+60adb220e271c87432a758709f9691b9  rtf/derry_briantono/4d Hibah - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+60adb220e271c87432a758709f9691b9  rtf/derry_briantono/4d Hibah - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
 9fe4c5b6fbf2cb22c4f54bee034a429d  rtf/derry_briantono/4d Hibah - BAS/BAS ALUR 47 Hibah - Sidang PS - Pemeriksaan Setempat di Lokasi Objek (antara ALUR 04 [7] dan [8]).rtf
-8264cee9bb9ed83550d5d2f36e5c630e  rtf/derry_briantono/4e Wakaf - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+60adb220e271c87432a758709f9691b9  rtf/derry_briantono/4e Wakaf - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+60adb220e271c87432a758709f9691b9  rtf/derry_briantono/4e Wakaf - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
 fdbab873d70121918cb48a4884d01b11  rtf/derry_briantono/4e Wakaf - BAS/BAS ALUR 48 Wakaf - Sidang PS - Pemeriksaan Setempat di Lokasi Objek (antara ALUR 04 [7] dan [8]).rtf
-d8c3832dbd5a54910aecf312d2402f2d  rtf/derry_briantono/5 Izin Poligami - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
-bb5f090f3b7ec94250f0980b4ae8cc89  rtf/derry_briantono/6a Hak Asuh Anak (Hadhanah) - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
-6f4284a211cd2b505b61fed6c5f3cd0a  rtf/derry_briantono/6b Penguasaan Anak - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
-a00bee48ace2e0ab1f9faa52ea344dfb  rtf/derry_briantono/6c Nafkah Anak - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
-d8fec839e5157d67b191ac8fb87b1a81  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
-46c268bc9c93a2bc046edb47af669d46  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
-77afe6c8987cdb81167b72aa403e813d  rtf/derry_briantono/6g Ganti Rugi terhadap Wali - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
-ef9aa11bdd0e2c6667b743426d17df49  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+80c3f46265d09c4f9599bbba181092ff  rtf/derry_briantono/5 Izin Poligami - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+80c3f46265d09c4f9599bbba181092ff  rtf/derry_briantono/5 Izin Poligami - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+6d1c73f0a1834f6a9ca1b566f58fa6d8  rtf/derry_briantono/5 Izin Poligami - BAS/BAS ALUR 34 Poligami - Sidang 1 - P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+059b75f42e306e414c0657b83bc2b6ef  rtf/derry_briantono/6a Hak Asuh Anak (Hadhanah) - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+059b75f42e306e414c0657b83bc2b6ef  rtf/derry_briantono/6a Hak Asuh Anak (Hadhanah) - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+f0d7f0cf4d46cddd0990aed4bff95655  rtf/derry_briantono/6b Penguasaan Anak - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+f0d7f0cf4d46cddd0990aed4bff95655  rtf/derry_briantono/6b Penguasaan Anak - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+b378575e869379e30588972768d510a8  rtf/derry_briantono/6c Nafkah Anak - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+b378575e869379e30588972768d510a8  rtf/derry_briantono/6c Nafkah Anak - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+8b9f506f534c9f40a6a4666933d8c003  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+8b9f506f534c9f40a6a4666933d8c003  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+b725e9b8c6165d8c0c3249b9de40f5fa  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+b725e9b8c6165d8c0c3249b9de40f5fa  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+ef0b60d847d9513e4cb58c0a573890fb  rtf/derry_briantono/6g Ganti Rugi terhadap Wali - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+ef0b60d847d9513e4cb58c0a573890fb  rtf/derry_briantono/6g Ganti Rugi terhadap Wali - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+e879e80bd5d97be8841b354f96b467df  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 04 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
+e879e80bd5d97be8841b354f96b467df  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 05 [1e] BAS 1 P & T Hadir - Mediasi Elektronik (PERMA 3 2022).rtf
 cb9721647d727d1d71295eb550cb1952  rtf/derry_briantono/97a Putusan Sela - BAS/BAS SELA [1] Sidang Insidentil - Pemeriksaan Eksepsi, Provisi atau Intervensi, Tunda Putusan Sela.rtf
 261722a6462ba95190a50cc4bae06832  rtf/derry_briantono/97a Putusan Sela - BAS/BAS SELA [2] Pembacaan Putusan Sela - Pemeriksaan Dilanjutkan.rtf
 e96790742e0f59996990c02c3621f0b8  rtf/derry_briantono/97a Putusan Sela - BAS/BAS SELA [3] Sumpah Pelengkap (Suppletoir) - Tunda Putusan.rtf
@@ -77,9 +101,13 @@ a63e046a0e074ef297330ce091e2f3f3  rtf/derry_briantono/97a Putusan Sela/[24] [NO]
 14c3518fae9d422d9cfc3d4ccb141fd4  rtf/derry_briantono/97a Putusan Sela/[29] [Sela] Sumpah Pemutus (Decisoir) - Gugatan.rtf
 9bb94051e7665ffb4fbbb7b802e0eb25  rtf/derry_briantono/97a Putusan Sela/[30] [Sela] Sumpah Penaksir (Aestimatoir) - Gugatan.rtf
 49784c691d25313abffeb8a972da5680  rtf/derry_briantono/97a Putusan Sela/[31] [Sela] Sumpah Lian - Cerai dengan Alasan Zina.rtf
-3ca68424d5d8f36bc00744f663ecc9ea  rtf/derry_briantono/97a Putusan Sela/[32] [Penetapan] Tergugat Tidak Beriktikad Baik dalam Mediasi - Biaya Mediasi (PERMA 1 2016 Pasal 23).rtf
+a5d5b6e48c89c1b8b9d4e38262077fb7  rtf/derry_briantono/97a Putusan Sela/[32] [Penetapan] Tergugat Tidak Beriktikad Baik dalam Mediasi - Biaya Mediasi (PERMA 1 2016 Pasal 23).rtf
 5a1061f2682a5486fd6a804988bb3ba7  rtf/derry_briantono/97a Putusan Sela/[33] [NO] Penggugat Tidak Beriktikad Baik dalam Mediasi - Gugatan Tidak Dapat Diterima (PERMA 1 2016 Pasal 22).rtf
-6238cac96e1c2cceb68e239a7d220ebc  rtf/derry_briantono/99 PTSP/@ 4a - Penetapan Penunjukan Mediator - Mediasi Elektronik (PERMA 3 2022).rtf
+d3682013c87fc4ae9dbf6df6b8d4a17e  rtf/derry_briantono/97a Putusan Sela/[34] [Sisipan] Gugatan Rekonvensi Dikabulkan - Bagian Dalam Rekonvensi untuk Putusan Akhir.rtf
+f91d3843509af65bf61f72a5bdae63e1  rtf/derry_briantono/97a Putusan Sela/[35] [Sisipan] Gugatan Rekonvensi Ditolak - Bagian Dalam Rekonvensi untuk Putusan Akhir.rtf
+fc8959e68d9f7f31736376adfaa05b75  rtf/derry_briantono/97a Putusan Sela/[36] [Sela Kabul] Pemisahan Perkara (Splitsing) Dikabulkan.rtf
+00af9344a4d794d78d26de4af5b516aa  rtf/derry_briantono/97a Putusan Sela/[37] [Sela Tolak] Pemisahan Perkara (Splitsing) Ditolak.rtf
+9a9a077070f859a4c135edbcfd951cc8  rtf/derry_briantono/99 PTSP/@ 4a - Penetapan Penunjukan Mediator - Mediasi Elektronik (PERMA 3 2022).rtf
 5bd174fdf4b7aae9fdb708bb8122f4d9  timpa/derry_briantono/4a Harta Bersama - BAS/BAS ALUR 30 HB - Sidang PS - Pemeriksaan Setempat di Lokasi Objek (antara ALUR 04 [7] dan [8]).rtf
 09324f68ffa82fb6fdab399946ebd366  timpa/derry_briantono/4b Kewarisan - BAS/BAS ALUR 32 Waris - Sidang PS - Pemeriksaan Setempat di Lokasi Objek (antara ALUR 04 [7] dan [8]).rtf
-87e98700e52da00f3fddd3b84fdc5c9d  uji-kueri.tsv
+cb2519d2064d1a033faadd840943dfd4  uji-kueri.tsv

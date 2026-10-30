@@ -276,5 +276,8 @@ assert _biaya['sql'].count('oleh karena eksepsi #7037# dikabulkan, ') == 2
 var(11403, 'GUGATAN TIDAK DAPAT DITERIMA (PUTUSAN AKHIR, mis. tidak beriktikad baik dalam mediasi): PERTIMBANGAN BIAYA PERKARA (OTOMATIS seperti 11319)',
     sql=_biaya['sql'].replace('oleh karena eksepsi #7037# dikabulkan, ', 'oleh karena #0053# #7036# dinyatakan tidak dapat diterima, '))
 
+import variabel_32  # noqa: E402
+variabel_32.tambah(var, isian, nil, ada, huruf1, PERKARA, UU_PA, V)
+
 NOMOR = [x['no'] for x in V]
 ISIAN = [x['no'] for x in V if x['tipe'] == 'data_teks']

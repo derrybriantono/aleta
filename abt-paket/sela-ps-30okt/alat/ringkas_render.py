@@ -9,7 +9,7 @@ import sys
 SINI = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'hasil', 'render-ringkasan.json')
 folder, putaran, tugas = sys.argv[1], sys.argv[2], sys.argv[3]
 NOMOR = {'8329': '546/Pdt.G/2024', '9215': '620/Pdt.G/2025', '9235': '637/Pdt.G/2025', '9291': '687/Pdt.G/2025', '9496': '42/Pdt.P/2026',
-         '9575': '167/Pdt.G/2026', '9806': '308/Pdt.G/2026', '9929': '419/Pdt.G/2026', '10059': '517/Pdt.G/2026'}
+         '9575': '167/Pdt.G/2026', '9806': '308/Pdt.G/2026', '9929': '419/Pdt.G/2026', '10059': '517/Pdt.G/2026', '8785': '376/Pdt.G/2025'}
 data = json.load(io.open(SINI, encoding='utf-8'))
 data = [x for x in data if x.get('putaran') != putaran]
 for baris in io.open(tugas, encoding='utf-8'):

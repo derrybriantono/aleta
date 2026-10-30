@@ -20,6 +20,7 @@ import isi  # noqa: E402
 import variabel as VB  # noqa: E402
 import isi_31  # noqa: E402
 import mediasi_el  # noqa: E402
+import isi_32  # noqa: E402
 
 AKAR = sys.argv[1] if len(sys.argv) > 1 else 'D:/Aplikasi/aleta/tmp/bas29/dasar3/derry_briantono'
 PAKET = os.path.abspath(os.path.join(SINI, '..', 'paket-satker'))
@@ -97,7 +98,7 @@ def main():
     berkas = {}   # (folder, berkas) -> bytes
     timpa = []
     dirujuk = set()
-    for folder, nama, jenis, fn, asal, mat in isi.SEMUA + isi_31.TAMBAHAN:
+    for folder, nama, jenis, fn, asal, mat in isi.SEMUA + isi_31.TAMBAHAN + isi_32.TAMBAHAN:
         kep, par, ekor = susun(fn(), jenis, T[jenis])
         for tanda, kaki_baru in (('[Penetapan]', 'Penetapan Nomor'), ('[Sisipan]', 'Putusan Nomor')):
             if tanda in nama:
@@ -122,17 +123,20 @@ def main():
     # mediasi elektronik (PERMA 3/2022) dari blangko mediasi biasa yang ada; berkas lama tidak diubah
     mediasi_lewat = []
     for d in sorted(os.listdir(AKAR)):
-        asal_bas = os.path.join(AKAR, d, mediasi_el.ASAL_BAS)
-        if not os.path.isfile(asal_bas):
+        if not os.path.isdir(os.path.join(AKAR, d)):
             continue
-        raw = mediasi_el.bas(R.baca(asal_bas))
-        if raw is None:
-            mediasi_lewat.append(d)
-            continue
-        folder = 'derry_briantono/' + d
-        assert not os.path.exists(os.path.join(AKAR, d, isi_31.MEDIASI_EL_BAS))
-        berkas[(folder, isi_31.MEDIASI_EL_BAS)] = raw
-        hasil.append(dict(folder=folder, berkas=isi_31.MEDIASI_EL_BAS, jenis='bas-mediasi-elektronik', asal=mediasi_el.ASAL_BAS))
+        for n_asal in sorted(os.listdir(os.path.join(AKAR, d))):
+            n_baru = mediasi_el.nama_elektronik(n_asal)
+            if not n_baru:
+                continue
+            raw = mediasi_el.bas(R.baca(os.path.join(AKAR, d, n_asal)))
+            if raw is None:
+                mediasi_lewat.append(d + '/' + n_asal)
+                continue
+            folder = 'derry_briantono/' + d
+            assert not os.path.exists(os.path.join(AKAR, d, n_baru)), n_baru
+            berkas[(folder, n_baru)] = raw
+            hasil.append(dict(folder=folder, berkas=n_baru, jenis='bas-mediasi-elektronik', asal=n_asal))
     assert not mediasi_lewat, mediasi_lewat
     f_ptsp, n_ptsp = mediasi_el.ASAL_PTSP
     assert not os.path.exists(os.path.join(AKAR, f_ptsp.split('/', 1)[1], isi_31.MEDIASI_EL_PTSP))
