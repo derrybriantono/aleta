@@ -1,0 +1,6 @@
+# nomor variabel Derry yang diubah bersyarat md5 (satu per baris)
+3992
+8505
+8508
+8547
+8600

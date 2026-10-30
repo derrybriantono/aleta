@@ -420,7 +420,7 @@ describe("putus ikrar status 2 dan 3", () => {
     const amar = String(form.params[2]);
     expect(amar).toContain("Menyatakan Putusan Nomor 474/Pdt.G/2026/PA.Dgl tanggal 1 September 2026 tidak mempunyai kekuatan hukum");
     expect(amar).toContain("masih terikat dalam perkawinan yang sah");
-    expect(amar).toContain("Rp14.500,-");
+    expect(amar).toContain("<li>Membebankan biaya perkara kepada Pemohon sejumlah Rp14.500,00 (empat belas ribu lima ratus rupiah);</li>");
     expect(amar).not.toMatch(/MENETAPKAN/); // P9: tanpa judul
     // Proses 295 sama dengan status 1.
     expect(r.langkah.find((l) => l.tabel === "perkara_proses")!.params[3]).toBe("295");

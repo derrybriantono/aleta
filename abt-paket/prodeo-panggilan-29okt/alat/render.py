@@ -23,8 +23,15 @@ def siapkan(src):
     tabel = [t for t in r.stdout.decode().split() if t != 'abt_variabel']
     s = ['DROP DATABASE IF EXISTS %s;' % RDB, 'CREATE DATABASE %s DEFAULT CHARSET latin1;' % RDB]
     s += ['CREATE VIEW %s.`%s` AS SELECT * FROM %s.`%s`;' % (RDB, t, src, t) for t in tabel]
-    kol = ("no_var, nama, data_type, data_tabel, data_kolom, urutan_data, referensi, REPLACE(sql_query, 'aps_badilag.', '%s.') AS sql_query, "
-           "default_data, multi_sidang, locked, modifier, modified" % src)
+    # fungsi ABT -> basis fungsi simulasi (salinan fungsi server yang membaca SIPP simulasi), tabel ABT -> <src>
+    fn = os.environ.get('RENDER_FN', 'pp29_fnv')
+    r = subprocess.run([MYSQL, '-h127.0.0.1', '-uroot', '-N', '-e',
+                        "SELECT routine_name FROM information_schema.routines WHERE routine_schema = '%s'" % fn], capture_output=True, check=True)
+    ganti = 'sql_query'
+    for f in r.stdout.decode().split():
+        ganti = "REPLACE(%s, 'aps_badilag.%s(', '%s.%s(')" % (ganti, f, fn, f)
+    kol = ("no_var, nama, data_type, data_tabel, data_kolom, urutan_data, referensi, REPLACE(%s, 'aps_badilag.', '%s.') AS sql_query, "
+           "default_data, multi_sidang, locked, modifier, modified" % (ganti, src))
     s.append('CREATE VIEW %s.abt_variabel AS SELECT %s FROM %s.abt_variabel;' % (RDB, kol, src))
     subprocess.run([MYSQL, '-h127.0.0.1', '-uroot'], input='\n'.join(s).encode(), check=True)
 

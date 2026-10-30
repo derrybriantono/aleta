@@ -1,6 +1,6 @@
 {
  "basis": "aps_badilag_2810",
- "rtf_dasar": "D:\\Aplikasi\\aleta\\tmp\\w82\\rtf\\derry_briantono",
+ "rtf_dasar": "D:\\Aplikasi\\aleta\\tmp\\bas29\\dasar2\\derry_briantono",
  "tindih": [
   "blangko-ikrar-92-28okt",
   "court-calendar-28okt",
@@ -26,6 +26,8 @@
   11141,
   11142,
   11143,
+  11144,
+  11145,
   11150,
   11151,
   11152,
@@ -35,9 +37,24 @@
   11156,
   11157,
   11158,
-  11159
+  11159,
+  11160,
+  11161,
+  11162,
+  11163,
+  11164,
+  11165,
+  11166
  ],
  "variabel_ubah": {
+  "3992": {
+   "md5_lama": "ec83d58f271648798e948915b66e36e0",
+   "md5_baru": "0030fc3f40a6532c2f54a29423a5adc7"
+  },
+  "8505": {
+   "md5_lama": "9666187632c97b632cfb935742e21630",
+   "md5_baru": "d361280bf4abb3eb3078e5419673a569"
+  },
   "8508": {
    "md5_lama": "0edc755e42fca50aebddddad2bb5c4df",
    "md5_baru": "992457b4808306e64c7579c8b33b8980"
@@ -51,12 +68,12 @@
    "md5_baru": "ea1127b4272cbe0a8fc27dbf79e11bdf"
   }
  },
- "berkas_ditimpa": 840,
+ "berkas_ditimpa": 856,
  "aturan": {
-  "AV": 149,
+  "AV": 217,
   "A": 625,
-  "R": 3712,
-  "RJ": 532,
+  "R": 3720,
+  "RJ": 540,
   "P2": 1,
   "P3": 2,
   "P4": 1,
@@ -73,6 +90,13 @@
   "11156": "Membebankan kepada Pemohon untuk membayar biaya perkara ini sejumlah Rp#0143#,00 (#0155# rupiah)",
   "11157": "Membebankan kepada Penggugat untuk membayar biaya perkara ini sejumlah Rp#0143#,00 (#0155# rupiah)",
   "11158": "Membebankan kepada para #0046# untuk membayar biaya perkara sejumlah Rp#0143#,00 (#0155# #7095#)",
-  "11159": "Membebankan para #0046# untuk membayar biaya perkara yang hingga kini diperhitungkan sejumlah Rp. #0143#,00 (#0155# rupiah)"
+  "11159": "Membebankan para #0046# untuk membayar biaya perkara yang hingga kini diperhitungkan sejumlah Rp. #0143#,00 (#0155# rupiah)",
+  "11160": "Membebankan kepada #9354# untuk membayar biaya perkara ini sejumlah Rp#8504#,00 (#0155# #7095#)",
+  "11161": "Membebankan kepada Pelawan untuk membayar biaya perkara perlawanan ini sejumlah Rp#3993#,00 (#3994# rupiah)",
+  "11162": "Membebankan kepada Terlawan untuk membayar biaya perkara perlawanan ini sejumlah Rp#3993#,00 (#3994# rupiah)",
+  "11163": "Menghukum #0046# untuk membayar biaya perkara ini sejumlah Rp#8504#,00 (#0155# #7095#)",
+  "11164": "Menghukum #0047# untuk membayar biaya perkara ini sejumlah Rp#8504#,00 (#0155# #7095#)",
+  "11165": "Menghukum #7036# untuk membayar biaya perkara ini sejumlah Rp#8504#,00 (#0155# #7095#)",
+  "11166": "Menghukum #7037# untuk membayar biaya perkara ini sejumlah Rp#8504#,00 (#0155# #7095#)"
  }
 }

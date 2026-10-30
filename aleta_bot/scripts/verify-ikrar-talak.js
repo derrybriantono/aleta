@@ -35,6 +35,7 @@ const dasar = () => ({
   keadaanIstri: null,
 });
 const tulis = [];
+let namaPN = "";
 const akunKetua = { userid: 1, username: "fahri", fullname: "Fahri", block: 0, kedaluwarsa: null };
 const palsu = {
   query(sql, params, cb) {
@@ -45,6 +46,7 @@ const palsu = {
     const s = String(sql);
     if (/^\s*(INSERT|UPDATE|DELETE|CALL)/i.test(s)) tulis.push(s);
     if (/FROM perkara_jadwal_sidang j/.test(s) && /perkara_ikrar_talak it/.test(s)) return cb(null, [keadaan]);
+    if (/FROM sys_config WHERE name = 'NamaPN'/.test(s)) return cb(null, namaPN ? [{ value: namaPN }] : []);
     if (/FROM perkara WHERE nomor_perkara/.test(s)) return cb(null, [{ id: 9988 }]);
     if (/FROM perkara_jadwal_sidang WHERE perkara_id = \? AND ikrar_talak = 'Y'/.test(s)) return cb(null, [{ id: 500 }]);
     if (/FROM perkara_hakim_pn/.test(s)) return cb(null, [{ hakimId: 32, jabatanId: 1 }, { hakimId: 26, jabatanId: 2 }]);
@@ -124,17 +126,56 @@ function periksa(nama, kondisi, rinci = "") {
   periksa("tanpa kata aleta di isian", !/aleta/i.test(JSON.stringify((r.langkah || []).map((l) => l.params))));
 
   console.log("== Biaya amar dari variabel ABT biaya ikrar (#1101# / #2050#) ==");
-  periksa("amar memuat biaya + terbilang dari ABT", /sebesar Rp14\.500,- \(empat belas ribu lima ratus rupiah\);/.test(String(ikrar.params[2])), String(ikrar.params[2]));
-  periksa("andaian menyebut biaya diambil dari biaya perkara", (r.andaian || []).some((x) => /Rp14\.500,- diambil dari biaya perkara/.test(x)));
+  periksa(
+    "amar memuat biaya + terbilang dari ABT (30 Okt: 'Membebankan biaya perkara kepada Pemohon sejumlah Rp..,00 (..)')",
+    /<li>Membebankan biaya perkara kepada Pemohon sejumlah Rp14\.500,00 \(empat belas ribu lima ratus rupiah\);<\/li>/.test(String(ikrar.params[2])),
+    String(ikrar.params[2])
+  );
+  periksa("andaian menyebut biaya diambil dari biaya perkara", (r.andaian || []).some((x) => /Rp14\.500,00 diambil dari biaya perkara/.test(x)));
   periksa("bacaBiayaIkrar: angka berbentuk ribuan diterima", ik.bacaBiayaIkrar({ 1101: { status: "terisi", teks: "29.500" }, 2050: { status: "terisi", teks: "dua puluh sembilan ribu lima ratus" } }).jumlah === 29500);
   periksa("bacaBiayaIkrar: #1101# kosong -> null (tidak dikarang)", ik.bacaBiayaIkrar({ 1101: { status: "kosong", teks: "..." } }) === null);
-  periksa("bacaBiayaIkrar: bukan angka / nol -> null", ik.bacaBiayaIkrar({ 1101: { status: "terisi", teks: "abc" } }) === null && ik.bacaBiayaIkrar({ 1101: { status: "terisi", teks: "0" } }) === null);
+  periksa("bacaBiayaIkrar: bukan angka -> null", ik.bacaBiayaIkrar({ 1101: { status: "terisi", teks: "abc" } }) === null);
+  periksa("bacaBiayaIkrar: nol -> jumlah 0 (bukan null: biaya tetap dibebankan tanpa angka)", JSON.stringify(ik.bacaBiayaIkrar({ 1101: { status: "terisi", teks: "0" } })) === JSON.stringify({ angka: "0", terbilang: "", jumlah: 0 }));
+  periksa("butir biaya Rp0: 'Membebankan biaya perkara kepada Pemohon' tanpa sejumlah", ik.butirBiayaIkrar({ biaya: { angka: "0", terbilang: "", jumlah: 0 } }) === "Membebankan biaya perkara kepada Pemohon");
+  periksa(
+    "butir biaya prodeo: DIPA <pengadilan> Tahun <tahun pendaftaran>, tanpa nominal",
+    ik.butirBiayaIkrar({ prodeo: true, namaPengadilan: "Pengadilan Agama Donggala", tahunDaftar: 2026, biaya: { angka: "14.500", terbilang: "x", jumlah: 14500 } }) ===
+      "Membebankan biaya perkara kepada DIPA Pengadilan Agama Donggala Tahun 2026"
+  );
+  periksa("butir biaya prodeo tanpa nama pengadilan / tahun: kosong (ditolak, tidak dikarang)", ik.butirBiayaIkrar({ prodeo: true, namaPengadilan: "", tahunDaftar: 2026 }) === "" && ik.butirBiayaIkrar({ prodeo: true, namaPengadilan: "Pengadilan Agama Donggala", tahunDaftar: null }) === "");
   periksa("bacaBiayaIkrar: tanpa terbilang tetap memuat angka", ik.bacaBiayaIkrar({ 1101: { status: "terisi", teks: "14.500" } }).terbilang === "");
   nilaiBiaya = { 1101: { status: "kosong", teks: "..." } };
   const tanpa = await ik.susunRencanaIsiIkrar({ jadwalId: 500, ip: "192.168.1.5" });
   const ikrarTanpa = (tanpa.langkah || []).find((l) => l.tabel === "perkara_ikrar_talak");
   periksa("biaya tak terbaca: amar tanpa angka + andaian periksa di SIPP", ikrarTanpa && !/Rp\d/.test(String(ikrarTanpa.params[2])) && (tanpa.andaian || []).some((x) => /tidak disebut/.test(x)));
   periksa("biaya tak terbaca: amar tetap >= 50 huruf", ikrarTanpa && String(ikrarTanpa.params[2]).length >= 50);
+  nilaiBiaya = { 1101: { status: "terisi", teks: "0" }, 2050: { status: "kosong", teks: "..." } };
+  const nol = await ik.susunRencanaIsiIkrar({ jadwalId: 500, ip: "192.168.1.5" });
+  const ikrarNol = (nol.langkah || []).find((l) => l.tabel === "perkara_ikrar_talak");
+  periksa(
+    "biaya ikrar Rp0 (bukan prodeo): 'Membebankan biaya perkara kepada Pemohon;' tanpa sejumlah",
+    ikrarNol && /<li>Membebankan biaya perkara kepada Pemohon;<\/li>/.test(String(ikrarNol.params[2])) && !/Rp|sejumlah|nihil/i.test(String(ikrarNol.params[2])),
+    ikrarNol && String(ikrarNol.params[2])
+  );
+  periksa("biaya ikrar Rp0: andaian menjelaskan tanpa angka", (nol.andaian || []).some((x) => /Rp0 - biaya tetap dibebankan/.test(x)));
+  keadaan = { ...dasar(), prodeo: 1, tahunDaftar: 2026 };
+  nilaiBiaya = { 1101: { status: "terisi", teks: "14.500" }, 2050: { status: "terisi", teks: "empat belas ribu lima ratus" } };
+  namaPN = "PENGADILAN AGAMA DONGGALA";
+  const prodeo = await ik.susunRencanaIsiIkrar({ jadwalId: 500, ip: "192.168.1.5" });
+  const ikrarProdeo = (prodeo.langkah || []).find((l) => l.tabel === "perkara_ikrar_talak");
+  periksa(
+    "prodeo: 'Membebankan biaya perkara kepada DIPA Pengadilan Agama Donggala Tahun 2026;' tanpa nominal/nihil",
+    ikrarProdeo &&
+      /<li>Membebankan biaya perkara kepada DIPA Pengadilan Agama Donggala Tahun 2026;<\/li>/.test(String(ikrarProdeo.params[2])) &&
+      !/Rp|sejumlah|nihil/i.test(String(ikrarProdeo.params[2])),
+    ikrarProdeo ? String(ikrarProdeo.params[2]) : prodeo.alasan
+  );
+  periksa("prodeo: andaian menyebut DIPA", (prodeo.andaian || []).some((x) => /perkara prodeo - biaya perkara dibebankan kepada DIPA Pengadilan Agama Donggala Tahun 2026/.test(x)));
+  periksa("prodeo: tanpa kata aleta di isian", !/aleta/i.test(JSON.stringify((prodeo.langkah || []).map((l) => l.params))));
+  namaPN = "";
+  const prodeoTanpaPN = await ik.susunRencanaIsiIkrar({ jadwalId: 500, ip: "192.168.1.5" });
+  periksa("prodeo tanpa identitas satker: ditolak (amar tidak dikarang)", prodeoTanpaPN.ok === false && prodeoTanpaPN.alasan === "amar_ikrar_tidak_dapat_disusun", prodeoTanpaPN.alasan);
+  keadaan = dasar();
   nilaiBiaya = { 1101: { status: "terisi", teks: "14.500" }, 2050: { status: "terisi", teks: "empat belas ribu lima ratus" } };
   keadaan = { ...dasar(), amarIkrar: "<ol><li>Menyatakan perkawinan putus karena perceraian dengan talak satu raj'i;</li><li>Biaya Rp 29.500,-</li></ol>" };
   const adaAmar = await ik.susunRencanaIsiIkrar({ jadwalId: 500 });
@@ -149,7 +190,7 @@ function periksa(nama, kondisi, rinci = "") {
     periksa("borang: ok untuk sidang ikrar terlaksana, form kosong", b.ok === true, b.alasan);
     periksa("borang: tgl_ikrar dd/mm/yyyy = tanggal sidang", b.nilai && b.nilai.tgl_ikrar === "07/10/2026");
     periksa("borang: status 1 (Diikrarkan), keadaan istri 4 (tidak diketahui) karena belum tercatat", b.nilai && b.nilai.status_penetapan === "1" && b.nilai.keadaan_istri === "4");
-    periksa("borang: amar memuat biaya dari ABT dan >= 50 huruf", b.nilai && /Rp14\.500,-/.test(b.nilai.amar) && b.nilai.amar.length >= 50);
+    periksa("borang: amar memuat biaya dari ABT dan >= 50 huruf", b.nilai && /sejumlah Rp14\.500,00 \(/.test(b.nilai.amar) && b.nilai.amar.length >= 50);
     periksa("borang: atas nama ketua majelis ikrar (informasi, bukan penulis)", b.atasNama && b.atasNama.username === "fahri");
     periksa("borang: MEMBACA saja - tidak satu pun tulisan ke basis data", tulis.length === tulisSebelum);
     periksa("borang: medan sesuai nama medan form SIPP", Object.keys(b.nilai).sort().join(",") === "amar,keadaan_istri,status_penetapan,tgl_ikrar");

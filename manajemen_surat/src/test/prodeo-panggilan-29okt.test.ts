@@ -100,7 +100,7 @@ describe("paket ABT prodeo-panggilan-29okt", () => {
       expect(pasang).toMatch(new RegExp(`WHERE no_var = ${no} AND MD5\\(sql_query\\) = '${md5_lama}';`));
       expect(pulih).toMatch(new RegExp(`WHERE no_var = ${no} AND MD5\\(sql_query\\) = '${md5_baru}';`));
     }
-    expect(Object.keys(isi.variabel_ubah).sort()).toEqual(["8508", "8547", "8600"]);
+    expect(Object.keys(isi.variabel_ubah).sort()).toEqual(["3992", "8505", "8508", "8547", "8600"]);
     expect(pasang.trim().startsWith("--")).toBe(true);
     expect(pasang).toContain("START TRANSACTION;");
     expect(pasang.trim().endsWith("COMMIT;")).toBe(true);
@@ -123,14 +123,54 @@ describe("paket ABT prodeo-panggilan-29okt", () => {
     for (const [n, v] of [[11130, "0279"], [11131, "6060"], [11137, "5223"], [11140, "0143"], [11143, "1101"]] as const) {
       expect(uji.get(n), String(n)).toContain(`IF(${prodeo}, '0', '#${v}#')`);
     }
-    // amar tertulis langsung: prodeo = teks #8505# (DIPA), selain itu kalimat blangko yang sama
-    expect(Object.keys(isi.varian_amar).length).toBeGreaterThan(0);
-    for (const [no, kalimat] of Object.entries(isi.varian_amar)) {
+    // amar tertulis langsung (Membebankan/Menghukum, perdamaian #9354#, ikrar #1101#, verzet #3993#):
+    // prodeo = teks #8505# (DIPA), selain itu kalimat blangko yang sama dengan nominal benar
+    const varian = Object.entries(isi.varian_amar);
+    expect(varian.length).toBeGreaterThanOrEqual(17);
+    expect(varian.some(([, k]) => k.startsWith("Menghukum"))).toBe(true);
+    expect(varian.some(([, k]) => k.includes("#9354#"))).toBe(true);
+    expect(varian.some(([, k]) => k.includes("#3993#"))).toBe(true);
+    for (const [no, kalimat] of varian) {
       const q = uji.get(Number(no))!;
-      expect(q.startsWith(`SELECT IF(${prodeo}, "#8505#", CONCAT("`), no).toBe(true);
-      expect(q).toContain(kalimat.slice(0, kalimat.search(/#(0143|8504|1101)#,00/)));
-      expect(kalimat).not.toMatch(/^Menghukum|#9354#/);
+      // prodeo = teks #8505# (verzet: teks yang sama ditulis langsung - #8505# menghitung #5223# yang GALAT pada perkara verzet)
+      const dipa = /#3993#,00/.test(kalimat) ? '"Membebankan biaya perkara kepada DIPA #8008# Tahun #0191#"' : '"#8505#"';
+      expect(q.startsWith(`SELECT IF(${prodeo}, ${dipa}, `), no).toBe(true);
+      const awal = kalimat.slice(0, kalimat.search(/#(0143|8504|1101|3993)#,00/));
+      if (/#1101#,00/.test(kalimat)) {
+        // penetapan ikrar: bunyi keputusan 30 Okt butir 4 (sama dengan amar ikrar ALETA di SIPP dan kutipan BAS ikrar)
+        expect(q).toContain(`"Membebankan biaya perkara kepada ", IF('#0046#' = '', 'DATA_TIDAK_ADA', '#0046#'), " sejumlah Rp"`);
+        expect(q).toContain("IF('#1101#' + 0 = 0, CONCAT(\"Membebankan biaya perkara kepada \"");
+        expect(q).not.toContain("biaya penetapan");
+      } else {
+        // potongan teks harfiah kalimat blangko (sebutan #NNNN# disulih "..." bila kosong, seperti ABT dulu)
+        for (const bagian of awal.split(/#\d{4}#/)) expect(q, no).toContain(bagian);
+      }
+      // isian perdamaian dibaca dari kolomnya, tidak disisipkan sebagai teks ke dalam kueri
+      expect(q).not.toContain("#9354#");
+      // #8504# dan #3993# dipakai apa adanya ('290.000'), bukan dicetak ulang ABT ("Rp290,00")
+      if (/#8504#,00/.test(kalimat)) expect(q).toContain(`", '#8504#', ",00 (`);
     }
+    // nomor varian TETAP (paket BAS lain dibangun di atas RTF paket ini)
+    const tetap = readFileSync(path.join(dir, "sumber/varian-nomor.tsv"), "utf8").split("\n").filter((l) => l && !l.startsWith("#"));
+    for (const l of tetap) {
+      const [no, k] = l.split("\t");
+      expect(isi.varian_amar[no], no).toBe(k);
+    }
+    // biaya nol (ikrar, verzet): tetap dibebankan, tanpa "sejumlah Rp0,00 ( rupiah)"; rincian nol = (nihil)
+    expect(uji.get(11124)).toContain("OR '#1101#' + 0 = 0, 'nihil'");
+    expect(uji.get(11145)).toContain("OR '#3992#' = '0', 'nihil'");
+  });
+
+  it("8505 prodeo: 'Membebankan biaya perkara kepada DIPA <satker> Tahun <tahun pendaftaran>'; verzet 3992 otomatis dari SIPP", () => {
+    expect(Object.keys(isi.variabel_ubah).sort()).toEqual(["3992", "8505", "8508", "8547", "8600"]);
+    const v8505 = uji.get(8505)!;
+    expect(v8505).toContain('THEN "Membebankan biaya perkara kepada DIPA #8008# Tahun #0191#"');
+    expect(v8505).not.toContain("negara");
+    const v3992 = uji.get(3992)!;
+    expect(v3992).toContain("JOIN perkara_verzet v ON v.perkara_id = b.perkara_id");
+    expect(v3992).toContain("jb.jenis_transaksi = -1 AND b.jenis_biaya_id <> 151");
+    expect(v3992).toContain("b.tanggal_transaksi >= v.tanggal_pendaftaran_verzet");
+    expect(v3992).toContain("no_var = 3991"); // isian tetap didahulukan
   });
 
   it("tanggal panggilan: semua tanggal relaas berbeda, urut, A / A dan B / A, B, dan C", () => {
