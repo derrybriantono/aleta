@@ -7,7 +7,7 @@ pakai: python bangun_paket.py <akar _blangko_abt sesudah SEMUA paket rantai> <ba
 Isi (nomor variabel BARU hanya 11896-11899, sisa blok G6 11850-11899):
   18  #11896# dasar banding: Pasal 199 ayat (1) RBg / Pasal 7 ayat (1) Undang-Undang Nomor 20 Tahun 1947 tentang Peradilan Ulangan (#11217#)
   19  #11897# akta bawah tangan yang diakui: Pasal 288 RBg / Pasal 1875 Kitab Undang-Undang Hukum Perdata (isi dicocokkan; catatan RBg "KUHperd. 1875")
-  20  #11898# nomor Pasal 718 RBg = 390 HIR; #11899# " ayat (1)" Pasal 144 RBg (HIR: Pasal 120 tanpa ayat).
+  20  #11898# nomor Pasal 718 RBg = 390 HIR; #11899# "144 ayat (1)" / "120" (HIR Pasal 120 tanpa ayat).
       Eksekusi 208-210/216-218 dengan ayat HIR 197/200: TIDAK cukup nomor variabel di blok yang diberikan (perlu +-12) - tetap RBg, dilaporkan.
   21  tenggang verzet 14 hari: Pasal 153 ayat (1) RBg -> ayat (2) (padanan 129 ayat (2) HIR) di kueri dan blangko yang menyebut tenggang itu.
   22  "R.Bg.", "Rbg", "RBG", nama panjang "Reglemen Acara Hukum untuk Daerah Luar Jawa dan Madura (RBg)" -> "RBg" (lalu ikut padanan).
@@ -49,10 +49,10 @@ VAR_BARU = [
          sql="SELECT IF('#11850#' = 'HIR', '%s', 'Pasal 288 RBg') AS data" % KUH1875),
     dict(no=11898, nama='ACARA: NOMOR PASAL PENYAMPAIAN PANGGILAN/SURAT JURU SITA (Pasal 718 RBg = Pasal 390 HIR; OTOMATIS #11850#)',
          sql="SELECT IF('#11850#' = 'HIR', '390', '718') AS data"),
-    dict(no=11899, nama='ACARA: " ayat (1)" PASAL GUGATAN LISAN (Pasal 144 ayat (1) RBg = Pasal 120 HIR tanpa ayat; OTOMATIS #11850#)',
-         sql="SELECT IF('#11850#' = 'HIR', '', ' ayat (1)') AS data"),
+    dict(no=11899, nama='ACARA: NOMOR PASAL GUGATAN LISAN BERAYAT ("144 ayat (1)" RBg = "120" HIR tanpa ayat; OTOMATIS #11850#)',
+         sql="SELECT IF('#11850#' = 'HIR', '120', '144 ayat (1)') AS data"),
 ]
-NILAI_RBG = {11896: 'Pasal 199 ayat (1) RBg', 11897: 'Pasal 288 RBg', 11898: '718', 11899: ' ayat (1)'}
+NILAI_RBG = {11896: 'Pasal 199 ayat (1) RBg', 11897: 'Pasal 288 RBg', 11898: '718', 11899: '144 ayat (1)'}
 
 
 def panjang(p):
@@ -134,7 +134,7 @@ def terapkan(raw, ubah):
 KALIMAT_BARU = [
     ('Pasal 199 ayat (1) RBg', '#11896#'),
     ('Pasal 288 RBg', '#11897#'),
-    ('Pasal 144 ayat (1) RBg', 'Pasal #%d##11899# #11851#'),  # %d = nomor pasal 144
+    ('Pasal 144 ayat (1) RBg', 'Pasal #11899# #11851#'),  # hasil variabel tanpa spasi tepi (ABT memangkas spasi tepi)
 ]
 
 

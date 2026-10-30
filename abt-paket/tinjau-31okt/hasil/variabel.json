@@ -16,7 +16,7 @@
  },
  {
   "no": 11899,
-  "nama": "ACARA: \" ayat (1)\" PASAL GUGATAN LISAN (Pasal 144 ayat (1) RBg = Pasal 120 HIR tanpa ayat; OTOMATIS #11850#)",
-  "sql": "SELECT IF('#11850#' = 'HIR', '', ' ayat (1)') AS data"
+  "nama": "ACARA: NOMOR PASAL GUGATAN LISAN BERAYAT (\"144 ayat (1)\" RBg = \"120\" HIR tanpa ayat; OTOMATIS #11850#)",
+  "sql": "SELECT IF('#11850#' = 'HIR', '120', '144 ayat (1)') AS data"
  }
 ]
