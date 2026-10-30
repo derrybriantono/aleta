@@ -14,12 +14,12 @@ import type { KodeKertas } from "@/lib/berkas-perkara";
 export const LEBAR_ISI: Readonly<Record<KodeKertas, number>> = { a4: 10466, f4: 10749, legal: 10806 };
 
 /** Variabel tabel ABT paket sampul-rapi-30okt, per kertas. */
-export const VAR_TABEL_DAFTAR_ISI: Readonly<Record<KodeKertas, string>> = { a4: "11300", f4: "11301", legal: "11302" };
-export const VAR_TABEL_CEKLIST: Readonly<Record<KodeKertas, string>> = { a4: "11303", f4: "11304", legal: "11305" };
+export const VAR_TABEL_DAFTAR_ISI: Readonly<Record<KodeKertas, string>> = { a4: "11600", f4: "11601", legal: "11602" };
+export const VAR_TABEL_CEKLIST: Readonly<Record<KodeKertas, string>> = { a4: "11603", f4: "11604", legal: "11605" };
 /** Lampiran sampul cetak awal dari ABT (empat varian x tiga kertas): lewat panel diganti lampiran susunan portal. */
 /** Ciri berbingkai ganda sampul cetak awal: ghaib (isian 5807) dan mafqud (5808) tampil lewat variabel ini (kosong = tanpa titik-titik). */
-export const VAR_CIRI_GANDA: Readonly<Record<"5807" | "5808", string>> = { "5807": "11318", "5808": "11319" };
-export const VAR_LAMPIRAN_ABT: readonly string[] = Array.from({ length: 12 }, (_x, i) => String(11306 + i));
+export const VAR_CIRI_GANDA: Readonly<Record<"5807" | "5808", string>> = { "5807": "11618", "5808": "11619" };
+export const VAR_LAMPIRAN_ABT: readonly string[] = Array.from({ length: 12 }, (_x, i) => String(11606 + i));
 
 /** Baris tabel yang memenuhi halaman (data + judul bagian + baris kosong). */
 export const BARIS_DAFTAR_ISI: Readonly<Record<KodeKertas, number>> = { a4: 21, f4: 27, legal: 29 };

@@ -139,6 +139,16 @@ describe("3. blangko paket sampul-rapi-30okt", () => {
       expect(i, nama).toBeLessThan(isi.indexOf("#8010#"));
     }
   });
+  it("pihak di sampul: pekerjaan/alamat/kuasa dari satu isian (tanpa 'Pekerjaan: - -' dan tanpa baris 'Kuasa:' kosong)", () => {
+    for (const [nama, isi] of semuaRtf().filter(([b]) => b.includes("Sampul"))) {
+      expect(isi, nama).not.toContain("Kuasa: #");
+      expect(isi, nama).not.toContain("Pekerjaan: #");
+      expect(isi, nama).toContain("#5830#");
+    }
+    const v = readFileSync(path.join(PAKET, "sumber/variabel.py"), "utf8");
+    expect(v).toContain("REGEXP '^[-. ]*$','',CONCAT('Pekerjaan: '"); // pekerjaan kosong/"-" dilewati
+    expect(v).toContain("CONCAT('<br>Kuasa: ',TRIM(k.nama))"); // baris kuasa hanya bila ada
+  });
   it("penanda tabel/lampiran ABT berdiri di paragraf sendiri tanpa grup (tabel dari fungsi tidak terkurung)", () => {
     const r = Object.fromEntries(semuaRtf());
     for (const [k, n] of Object.entries(VAR_TABEL_DAFTAR_ISI)) {
@@ -146,10 +156,10 @@ describe("3. blangko paket sampul-rapi-30okt", () => {
       expect(r[b]).toMatch(new RegExp(`\\\\pard\\\\plain\\\\ql\\\\f0\\\\fs\\d+\\\\sb0\\\\sa0 #${n}#\\\\par`));
     }
     for (const [k, n] of Object.entries(VAR_TABEL_CEKLIST)) expect(r[`99 PTSP/Ceklist Berkas Perkara${k === "a4" ? "" : k === "f4" ? " (F4)" : " (Legal)"}.rtf`]).toContain(` #${n}#\\par`);
-    const lampiran = Object.entries(r).filter(([b]) => /Sampul Berkas Perkara(?! \(Lengkap\))/.test(b)).map(([, isi]) => (isi.match(/#(113\d\d)#\\par/) || [])[1]);
+    const lampiran = Object.entries(r).filter(([b]) => /Sampul Berkas Perkara(?! \(Lengkap\))/.test(b)).map(([, isi]) => (isi.match(/#(116\d\d)#\\par/) || [])[1]);
     expect(lampiran.sort()).toEqual([...VAR_LAMPIRAN_ABT].sort());
     // kaki susunan panel (#5833#) dan lampiran ABT satu paragraf catatan kaki
-    for (const [b, isi] of Object.entries(r).filter(([x]) => /Sampul Berkas Perkara(?! \(Lengkap\))/.test(x))) expect(isi, b).toMatch(/#5833#\}#113\d\d#\\par/);
+    for (const [b, isi] of Object.entries(r).filter(([x]) => /Sampul Berkas Perkara(?! \(Lengkap\))/.test(x))) expect(isi, b).toMatch(/#5833#\}#116\d\d#\\par/);
   });
 });
 
@@ -157,11 +167,11 @@ describe("4. tabel RTF dari fungsi ABT lolos mesin variabel portal", () => {
   it("baris tabel (\\trowd ... \\row) dari kueri data_sql dicetak sebagai tabel, bukan teks; kosong lampiran = tanpa tampilan", async () => {
     const tabel = "\\trowd\\trgaph70\\trleft0\\trkeep\\trrh400\\clbrdrt\\brdrs\\brdrw10\\clvertalc\\cellx5000\\clvertalc\\cellx10466\\pard\\plain\\intbl\\qc\\f0\\fs19\\sb20\\sa20 1\\cell\\pard\\plain\\intbl\\ql\\f0\\fs19\\sb20\\sa20 Surat Gugatan\\cell\\row \\pard\\plain\\f0\\fs4 ";
     const katalog = [
-      { no_var: "11300", nama: "tabel", data_type: "data_sql", sql_query: "SELECT x AS data" },
-      { no_var: "11306", nama: "lampiran", data_type: "data_sql", sql_query: "SELECT y AS data" },
+      { no_var: "11600", nama: "tabel", data_type: "data_sql", sql_query: "SELECT x AS data" },
+      { no_var: "11606", nama: "lampiran", data_type: "data_sql", sql_query: "SELECT y AS data" },
     ];
     const mesin = mesinAbt.buatMesin({ kueri: async (sql: string) => (/abt_variabel/.test(sql) ? katalog : /x AS/.test(sql) ? [{ data: tabel }] : [{ data: "\\b0" }]) });
-    const h = await mesin.isiRtf("{\\rtf1 \\pard\\plain\\ql\\f0\\fs18\\sb0\\sa0 #11300#\\par \\pard #11306#\\par}", { perkaraId: "1" });
+    const h = await mesin.isiRtf("{\\rtf1 \\pard\\plain\\ql\\f0\\fs18\\sb0\\sa0 #11600#\\par \\pard #11606#\\par}", { perkaraId: "1" });
     expect(h.kosong).toEqual([]);
     expect(h.rtf).toContain("\\trowd\\trgaph70");
     expect(h.rtf).toContain("Surat Gugatan\\cell\\row");
@@ -228,7 +238,7 @@ describe("5. naskah portal atas blangko paket", () => {
     expect(nomorAkhir).toBe(BARIS_CEKLIST.f4);
   });
   it("sampul: lampiran ABT dibuang (penandanya saja; kaki portal tetap di paragraf catatan), lampiran portal ditempel bila perlu, logo Identitas satker menggantikan logo tertanam", async () => {
-    const n = "11306";
+    const n = "11606";
     const dep = depTiruan(blangko("99 PTSP/Sampul Berkas Perkara.rtf"), { [n]: "\\b Lampiran (1): LAMPIRAN-ABT" }, "{\\pict\\pngblip LOGO-SATKER}");
     const anak = Array.from({ length: 5 }, (_x, i) => ({ nama: `Anak ${i + 1}`, umur: "5", diasuh: "P" }));
     const h = await susunNaskahBerkas({ nomor: "1/Pdt.G/2026/PA.Dgl", anak, pihak: [{ sisi: 1, urutan: 1, nama: "A" }, { sisi: 2, urutan: 1, nama: "B" }], riwayat: [] },
@@ -277,14 +287,14 @@ describe("6. kembaran fungsi ABT <-> portal, aturan pembersih ABT, MariaDB 5.5",
     }
     expect(fungsi).toContain("RETURN '\\\\b0';");
   });
-  it("paket: 20 variabel baru 11300-11319, 104 diubah, prasyarat dan pulih tersyarat md5, timpa 21 blangko", () => {
+  it("paket: 20 variabel baru 11600-11619, 106 diubah, prasyarat dan pulih tersyarat md5, timpa 21 blangko", () => {
     const ps = path.join(PAKET, "paket-satker");
     if (!existsSync(ps)) return;
     const baca = (n: string) => readFileSync(path.join(ps, n), "latin1");
-    expect(baca("nomor-baru.txt").split("\n").filter((x) => /^\d+$/.test(x))).toEqual(Array.from({ length: 20 }, (_x, i) => String(11300 + i)));
-    expect(baca("nomor-ubah.txt").split("\n").filter((x) => /^\d+$/.test(x))).toHaveLength(104);
-    expect(baca("harap.txt")).toMatch(/^HARAP='0\|0\|104\|0\|\d+\|0'$/m);
-    expect(baca("abt-sampul-rapi-30okt-PULIH.sql").match(/^UPDATE .* AND MD5\(sql_query\) = '[0-9a-f]{32}';$/gm)).toHaveLength(104);
+    expect(baca("nomor-baru.txt").split("\n").filter((x) => /^\d+$/.test(x))).toEqual(Array.from({ length: 20 }, (_x, i) => String(11600 + i)));
+    expect(baca("nomor-ubah.txt").split("\n").filter((x) => /^\d+$/.test(x))).toHaveLength(106);
+    expect(baca("harap.txt")).toMatch(/^HARAP='0\|0\|106\|0\|\d+\|0'$/m);
+    expect(baca("abt-sampul-rapi-30okt-PULIH.sql").match(/^UPDATE .* AND MD5\(sql_query\) = '[0-9a-f]{32}';$/gm)).toHaveLength(106);
     expect(baca("daftar-timpa.tsv").split("\n").filter((x) => x.startsWith("derry_briantono/"))).toHaveLength(21);
     for (const n of ["abt-sampul-rapi-30okt-PASANG.sql", "abt-sampul-rapi-30okt-FUNGSI.sql", "daftar-timpa.tsv", "nomor-baru.txt"]) expect(baca(n).toLowerCase()).not.toContain("aleta");
   });

@@ -6,7 +6,7 @@ import { type BarisHitung, teksRentang, tanggalIndonesia } from "@/lib/berkas-pe
  * ============================================================================
  *
  * Sebelumnya kolom daftar isi berupa teks bergaris banyak di sel ABT: nama panjang membungkus dan kolom tanggal/halaman tak sejajar. Sekarang portal
- * menyusun baris tabel sungguhan dan menempelkannya menggantikan paragraf penanda (#5850# blangko lama, #11300#-#11302# paket sampul-rapi-30okt)
+ * menyusun baris tabel sungguhan dan menempelkannya menggantikan paragraf penanda (#5850# blangko lama, #11600#-#11602# paket sampul-rapi-30okt)
  * di RTF hasil isian ABT.
  *
  *   - perkara tingkat pertama = BUNDEL A saja; BUNDEL B hanya bila ada upaya hukum (banding, kasasi, peninjauan kembali) dan dicetak sebagai daftar isi sendiri

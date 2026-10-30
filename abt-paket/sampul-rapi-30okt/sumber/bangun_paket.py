@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Bangun paket ABT abt-sampul-rapi-30okt (Python 3, laptop). Deterministik dari:
   - basis ABT keadaan server (bawaan aps_badilag_2810 = dump server 28 Okt 15.44): 60 variabel lama yang diubah (md5 dasar) dan bukti blok
-    11300-11317 kosong serta kelima fungsi paket belum ada;
+    11600-11619 kosong serta kelima fungsi paket belum ada;
   - pohon RTF derry_briantono keadaan server PERKIRAAN (bawaan D:/Aplikasi/aleta/tmp/bas29/dasar2/derry_briantono = salinan server w82 + paket
     alamat-ganda, sampul-daftar-isi (+ peningkatan 27 Okt), pihak-urut, court-calendar, ikrar-92): md5 lama 21 blangko berkas perkara;
   - RTF baru dari alat/bangun_rtf.py (folder ../rtf/derry_briantono).
@@ -30,7 +30,7 @@ MYSQL = r'D:\Satker Asal\Website PA Bungku\xampp\mysql\bin\mysql.exe'
 BASIS = sys.argv[1] if len(sys.argv) > 1 else 'aps_badilag_2810'
 DASAR = sys.argv[2] if len(sys.argv) > 2 else r'D:\Aplikasi\aleta\tmp\bas29\dasar2\derry_briantono'
 BARU = os.path.join(AKAR, 'rtf', 'derry_briantono')
-BLOK = (11300, 11319)
+BLOK = (11600, 11619)
 KEPALA = ('-- Paket ABT "%s" (30 Okt 2026): sampul, lampiran, daftar isi, ceklist berkas perkara Derry penuh satu halaman dan rapi; tabel dokumen '
           'dan lampiran langsung dari ABT; logo kop monokrom.\n' % N)
 MD5_VAR = "MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked))"

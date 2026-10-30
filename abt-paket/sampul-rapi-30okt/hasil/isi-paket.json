@@ -3,83 +3,83 @@
  "basis": "aps_badilag_2810",
  "dasar_rtf": "D:\\Aplikasi\\aleta\\tmp\\bas29\\dasar2\\derry_briantono",
  "variabel_baru": {
-  "11300": {
+  "11600": {
    "nama": "DAFTAR ISI BERKAS: TABEL DOKUMEN A4 (OTOMATIS dari SIPP; baris kosong memenuhi halaman; lewat panel diganti tabel berhalaman)",
    "md5": "38539d8915ea4b6c45c43fb1ac18a61f"
   },
-  "11301": {
+  "11601": {
    "nama": "DAFTAR ISI BERKAS: TABEL DOKUMEN F4 (OTOMATIS dari SIPP; baris kosong memenuhi halaman; lewat panel diganti tabel berhalaman)",
    "md5": "661cd324c911bec66fcec42decdc4c33"
   },
-  "11302": {
+  "11602": {
    "nama": "DAFTAR ISI BERKAS: TABEL DOKUMEN LEGAL (OTOMATIS dari SIPP; baris kosong memenuhi halaman; lewat panel diganti tabel berhalaman)",
    "md5": "96ccc7dc97e50a82bf66b310329a2224"
   },
-  "11303": {
+  "11603": {
    "nama": "CEKLIST BERKAS: TABEL DOKUMEN A4 (OTOMATIS menurut jenis perkara; ada/tidak ada dari penetapan dan kasir)",
    "md5": "0a81fcac0c2340297e62cac968d329c7"
   },
-  "11304": {
+  "11604": {
    "nama": "CEKLIST BERKAS: TABEL DOKUMEN F4 (OTOMATIS menurut jenis perkara; ada/tidak ada dari penetapan dan kasir)",
    "md5": "1b531d1b49659ef9b13fcd9ff0634a07"
   },
-  "11305": {
+  "11605": {
    "nama": "CEKLIST BERKAS: TABEL DOKUMEN LEGAL (OTOMATIS menurut jenis perkara; ada/tidak ada dari penetapan dan kasir)",
    "md5": "1f9b58f768e38988b9cff88f156824d1"
   },
-  "11306": {
+  "11606": {
    "nama": "LAMPIRAN SAMPUL BIASA A4 (hanya bila perlu: pihak, objek sengketa, anak, riwayat sidang lanjutan; kosong = tanpa lampiran)",
    "md5": "a633d80cdc59133810e0970b644a45ff"
   },
-  "11307": {
+  "11607": {
    "nama": "LAMPIRAN SAMPUL BIASA F4 (hanya bila perlu: pihak, objek sengketa, anak, riwayat sidang lanjutan; kosong = tanpa lampiran)",
    "md5": "87db2152b73324343c0c0fc7727eeda7"
   },
-  "11308": {
+  "11608": {
    "nama": "LAMPIRAN SAMPUL BIASA LEGAL (hanya bila perlu: pihak, objek sengketa, anak, riwayat sidang lanjutan; kosong = tanpa lampiran)",
    "md5": "444da68b669a694d234e20ae55693d63"
   },
-  "11309": {
+  "11609": {
    "nama": "LAMPIRAN SAMPUL PERMOHONAN A4 (hanya bila perlu: pihak, objek sengketa, anak, riwayat sidang lanjutan; kosong = tanpa lampiran)",
    "md5": "9d29d914654e8cb24f559dfbaa864a0c"
   },
-  "11310": {
+  "11610": {
    "nama": "LAMPIRAN SAMPUL PERMOHONAN F4 (hanya bila perlu: pihak, objek sengketa, anak, riwayat sidang lanjutan; kosong = tanpa lampiran)",
    "md5": "b1ffd0d305d3138fcbbaf901d26dacd6"
   },
-  "11311": {
+  "11611": {
    "nama": "LAMPIRAN SAMPUL PERMOHONAN LEGAL (hanya bila perlu: pihak, objek sengketa, anak, riwayat sidang lanjutan; kosong = tanpa lampiran)",
    "md5": "324c471c2f1d21c10f93dda92c21cb28"
   },
-  "11312": {
+  "11612": {
    "nama": "LAMPIRAN SAMPUL PIHAK BANYAK A4 (hanya bila perlu: pihak, objek sengketa, anak, riwayat sidang lanjutan; kosong = tanpa lampiran)",
    "md5": "9a9815a81bcc30420526695c5c4ebc58"
   },
-  "11313": {
+  "11613": {
    "nama": "LAMPIRAN SAMPUL PIHAK BANYAK F4 (hanya bila perlu: pihak, objek sengketa, anak, riwayat sidang lanjutan; kosong = tanpa lampiran)",
    "md5": "91e9817744219808210c5619629c1cd6"
   },
-  "11314": {
+  "11614": {
    "nama": "LAMPIRAN SAMPUL PIHAK BANYAK LEGAL (hanya bila perlu: pihak, objek sengketa, anak, riwayat sidang lanjutan; kosong = tanpa lampiran)",
    "md5": "a239027e61f9222c44dade9d1fd4a73e"
   },
-  "11315": {
+  "11615": {
    "nama": "LAMPIRAN SAMPUL PERMOHONAN PIHAK BANYAK A4 (hanya bila perlu: pihak, objek sengketa, anak, riwayat sidang lanjutan; kosong = tanpa lampiran)",
    "md5": "dd09f52c07f04e8a4e3402e3c945774e"
   },
-  "11316": {
+  "11616": {
    "nama": "LAMPIRAN SAMPUL PERMOHONAN PIHAK BANYAK F4 (hanya bila perlu: pihak, objek sengketa, anak, riwayat sidang lanjutan; kosong = tanpa lampiran)",
    "md5": "123aaa1589463377042fd2df1cc324dd"
   },
-  "11317": {
+  "11617": {
    "nama": "LAMPIRAN SAMPUL PERMOHONAN PIHAK BANYAK LEGAL (hanya bila perlu: pihak, objek sengketa, anak, riwayat sidang lanjutan; kosong = tanpa lampiran)",
    "md5": "515086d92662eced96d04d0e914d2c6d"
   },
-  "11318": {
+  "11618": {
    "nama": "CIRI SAMPUL: GHAIB TAMPIL (isian 5807; kosong = tanpa tampilan, bukan titik-titik)",
    "md5": "f0cfb7cb44eee31235676d49a3549dd1"
   },
-  "11319": {
+  "11619": {
    "nama": "CIRI SAMPUL: MAFQUD TAMPIL (isian 5808; kosong = tanpa tampilan, bukan titik-titik)",
    "md5": "b98c57c82aba23467662eb9fa1f3b646"
   }
@@ -500,6 +500,14 @@
   "5897": {
    "md5_lama": "de79844c3a06c75d4bd1c56a09fec4c5",
    "md5_baru": "28aa8d8ca13488d75ddf30f7204e0fb4"
+  },
+  "5830": {
+   "md5_lama": "4903f741d314159c2ec656d99da7ccac",
+   "md5_baru": "e26d19879c73682e23f609c833c84688"
+  },
+  "5831": {
+   "md5_lama": "4d81d00ad7eb278dca6b8880e31f674f",
+   "md5_baru": "1674e2187dacf0eee1c1416670d14ac2"
   }
  },
  "fungsi": [
@@ -519,14 +527,8 @@
   38,
   55,
   98,
-  100,
-  101,
   102,
-  104,
-  105,
-  106,
   168,
-  170,
   180,
   191,
   1033,
@@ -685,127 +687,127 @@
    "folder": "99 PTSP",
    "berkas": "Ceklist Berkas Perkara (F4).rtf",
    "md5_lama": "6cb39cfc2be48aa8ddfb3c0c3bba3ff7",
-   "md5_baru": "85f60a474c5723952547e86df4a6775c"
+   "md5_baru": "f779d15b82e8bdf85bc839e10a93d090"
   },
   {
    "folder": "99 PTSP",
    "berkas": "Ceklist Berkas Perkara (Legal).rtf",
    "md5_lama": "f525270d4a4a3e2964e48971da098a76",
-   "md5_baru": "470df18f1665e77162b35d5a0fd60e69"
+   "md5_baru": "96dd26cb2daf72fe5c09f1cb3ace64c0"
   },
   {
    "folder": "99 PTSP",
    "berkas": "Ceklist Berkas Perkara.rtf",
    "md5_lama": "35e66684f71069bf4cf0b56763bf8d85",
-   "md5_baru": "6dbb33e499b37c2fd25564e9254b6eb4"
+   "md5_baru": "a7bca5e0195175f8eeb0af7736ccac49"
   },
   {
    "folder": "99 PTSP",
    "berkas": "Sampul Berkas Perkara (F4).rtf",
    "md5_lama": "f97d287085c876a118f6686d2b0494d0",
-   "md5_baru": "faa848220a8f10c078ece73f147ca36d"
+   "md5_baru": "80b541d92f9ec83e53742c2a867ee2d4"
   },
   {
    "folder": "99 PTSP",
    "berkas": "Sampul Berkas Perkara (Legal).rtf",
    "md5_lama": "bdb87e18d5abc5766de04df78af9a6ec",
-   "md5_baru": "0101a40487aaa14c3434efc88f297c57"
+   "md5_baru": "aba30780e71309d3e5904b15fcc6c756"
   },
   {
    "folder": "99 PTSP",
    "berkas": "Sampul Berkas Perkara (Lengkap) (F4).rtf",
    "md5_lama": "0dc7520e46058c7fa1e8487b9ad87d53",
-   "md5_baru": "2b140d4de6481e335b8dac45e64361d5"
+   "md5_baru": "0c321d639e50f7577954932aec954c29"
   },
   {
    "folder": "99 PTSP",
    "berkas": "Sampul Berkas Perkara (Lengkap) (Legal).rtf",
    "md5_lama": "19d2128b27922b04b1f0b6711be81248",
-   "md5_baru": "45a01fb0f9efda6b4c853f8ab201e08e"
+   "md5_baru": "80b85f17f73990c9e400503f48bd2d4b"
   },
   {
    "folder": "99 PTSP",
    "berkas": "Sampul Berkas Perkara (Lengkap).rtf",
    "md5_lama": "2230a70274c2896c84f641afd03ca0ae",
-   "md5_baru": "d32f1b2ca6e22caeae4e8b3de5b87ccd"
+   "md5_baru": "aafc1b8988ddff8f07a04759fa4542ee"
   },
   {
    "folder": "99 PTSP",
    "berkas": "Sampul Berkas Perkara (Permohonan Pihak Banyak) (F4).rtf",
    "md5_lama": "4a952788d20655c3f8eff60ec4b99d02",
-   "md5_baru": "aa19c4ccbd7f630cc1a3f0d4e4096aca"
+   "md5_baru": "b9d2507ce6f743cb4f0e9ec7f84e2ec3"
   },
   {
    "folder": "99 PTSP",
    "berkas": "Sampul Berkas Perkara (Permohonan Pihak Banyak) (Legal).rtf",
    "md5_lama": "b7ca72e9dbc1162db794dfe9e3cc57c9",
-   "md5_baru": "000061225bb2fcaab9eacc9a64bd83ea"
+   "md5_baru": "a713be02f8efb64cc6af89e3164c15d3"
   },
   {
    "folder": "99 PTSP",
    "berkas": "Sampul Berkas Perkara (Permohonan Pihak Banyak).rtf",
    "md5_lama": "43d0f7a93264a6761196237843390dca",
-   "md5_baru": "5dfde889ecb5e3dfc1d80221fe8ab820"
+   "md5_baru": "cab3735f222935977db89487cc1e2fdd"
   },
   {
    "folder": "99 PTSP",
    "berkas": "Sampul Berkas Perkara (Permohonan) (F4).rtf",
    "md5_lama": "c203b819782f7f28326e7f3e1fec754e",
-   "md5_baru": "d30f4ac6904d51bbf10f5bc4c368c356"
+   "md5_baru": "9b0ff994e9ea3eacfd9bdf9f336f5524"
   },
   {
    "folder": "99 PTSP",
    "berkas": "Sampul Berkas Perkara (Permohonan) (Legal).rtf",
    "md5_lama": "0e23a2e375cfb4c96294554dfe78a527",
-   "md5_baru": "992e38276bcb5cd69209485f6c7bc50d"
+   "md5_baru": "60e3ec0da0319fef06f29c7adf5bde1e"
   },
   {
    "folder": "99 PTSP",
    "berkas": "Sampul Berkas Perkara (Permohonan).rtf",
    "md5_lama": "331036b6b6ed5ca704adf012682babc8",
-   "md5_baru": "e7167206651020795d90912b3f3ec98a"
+   "md5_baru": "3efdb3c86a9040d5a8c63fac530e9ed6"
   },
   {
    "folder": "99 PTSP",
    "berkas": "Sampul Berkas Perkara (Pihak Banyak) (F4).rtf",
    "md5_lama": "41a2b6761ea3c77ab970edffa1e6e2c3",
-   "md5_baru": "4258f4970ce4bfc0edb8536a4cebe461"
+   "md5_baru": "6ff270138a9efb5d9f7cf26f3546e35a"
   },
   {
    "folder": "99 PTSP",
    "berkas": "Sampul Berkas Perkara (Pihak Banyak) (Legal).rtf",
    "md5_lama": "1104849435b696d2c1ba8bf49e49f876",
-   "md5_baru": "58d4e2405e6d09697ec2a5d0e8010bdf"
+   "md5_baru": "4b08bc1264b91a14a5143adab1878ef1"
   },
   {
    "folder": "99 PTSP",
    "berkas": "Sampul Berkas Perkara (Pihak Banyak).rtf",
    "md5_lama": "e0cd4a870409581755cb24e49ba062b9",
-   "md5_baru": "f965c75b23af43c4634e15565c1a862d"
+   "md5_baru": "458442825abd422cead6effd29fa30c6"
   },
   {
    "folder": "99 PTSP",
    "berkas": "Sampul Berkas Perkara.rtf",
    "md5_lama": "8174f43adfbc1fed4b50e6bac091d0f7",
-   "md5_baru": "f4dbb767095a62a7d2664161854c6298"
+   "md5_baru": "d4020c6d90029bf2ed7025e32f4754e1"
   },
   {
    "folder": "98b Berkas Perkara - BAS",
    "berkas": "Daftar Isi Berkas (F4).rtf",
    "md5_lama": "9c51ae83e61aea961be0d6c8faab4a14",
-   "md5_baru": "0f7eba4cb75864d7b54c1d15989d6c09"
+   "md5_baru": "f3fd30af1f03dc529f0760a9c22e41c9"
   },
   {
    "folder": "98b Berkas Perkara - BAS",
    "berkas": "Daftar Isi Berkas (Legal).rtf",
    "md5_lama": "17342671bf038b305b9aea80c021d25a",
-   "md5_baru": "0794c54c591a642416f3844aa6961029"
+   "md5_baru": "49b0bc8d89632229e685fa12373f5eb1"
   },
   {
    "folder": "98b Berkas Perkara - BAS",
    "berkas": "Daftar Isi Berkas.rtf",
    "md5_lama": "676f3cf290902c506d7072abbb6b3d5b",
-   "md5_baru": "a4705898936225ee75908f12fe6fa239"
+   "md5_baru": "702ebbcdeb3bbbc3352bbf6869d7dab2"
   }
  ]
 }

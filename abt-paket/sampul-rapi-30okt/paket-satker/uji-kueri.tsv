@@ -1,24 +1,24 @@
 # nomor<TAB>kueri satu baris (#perkara_id# diganti; penanda #NNNN# lain diganti 0): diuji bahwa kueri JALAN di MariaDB server
-11300	SELECT aps_badilag.isian_rtf_tabel_daftar_isi(#perkara_id#,'A',10466,21) AS data
-11301	SELECT aps_badilag.isian_rtf_tabel_daftar_isi(#perkara_id#,'A',10749,27) AS data
-11302	SELECT aps_badilag.isian_rtf_tabel_daftar_isi(#perkara_id#,'A',10806,29) AS data
-11303	SELECT aps_badilag.isian_rtf_tabel_ceklist(#perkara_id#,10466,20) AS data
-11304	SELECT aps_badilag.isian_rtf_tabel_ceklist(#perkara_id#,10749,25) AS data
-11305	SELECT aps_badilag.isian_rtf_tabel_ceklist(#perkara_id#,10806,29) AS data
-11306	SELECT aps_badilag.isian_rtf_lampiran_sampul(#perkara_id#,10466,15,1) AS data
-11307	SELECT aps_badilag.isian_rtf_lampiran_sampul(#perkara_id#,10749,18,1) AS data
-11308	SELECT aps_badilag.isian_rtf_lampiran_sampul(#perkara_id#,10806,20,1) AS data
-11309	SELECT aps_badilag.isian_rtf_lampiran_sampul(#perkara_id#,10466,15,2) AS data
-11310	SELECT aps_badilag.isian_rtf_lampiran_sampul(#perkara_id#,10749,18,2) AS data
-11311	SELECT aps_badilag.isian_rtf_lampiran_sampul(#perkara_id#,10806,20,2) AS data
-11312	SELECT aps_badilag.isian_rtf_lampiran_sampul(#perkara_id#,10466,15,8) AS data
-11313	SELECT aps_badilag.isian_rtf_lampiran_sampul(#perkara_id#,10749,18,8) AS data
-11314	SELECT aps_badilag.isian_rtf_lampiran_sampul(#perkara_id#,10806,20,8) AS data
-11315	SELECT aps_badilag.isian_rtf_lampiran_sampul(#perkara_id#,10466,15,12) AS data
-11316	SELECT aps_badilag.isian_rtf_lampiran_sampul(#perkara_id#,10749,18,12) AS data
-11317	SELECT aps_badilag.isian_rtf_lampiran_sampul(#perkara_id#,10806,20,12) AS data
-11318	SELECT IFNULL(NULLIF((SELECT d.data FROM aps_badilag.abt_data_teks d WHERE d.no_var=5807 AND d.perkara_id=#perkara_id# LIMIT 1),''),'\\b0') AS data
-11319	SELECT IFNULL(NULLIF((SELECT d.data FROM aps_badilag.abt_data_teks d WHERE d.no_var=5808 AND d.perkara_id=#perkara_id# LIMIT 1),''),'\\b0') AS data
+11600	SELECT aps_badilag.isian_rtf_tabel_daftar_isi(#perkara_id#,'A',10466,21) AS data
+11601	SELECT aps_badilag.isian_rtf_tabel_daftar_isi(#perkara_id#,'A',10749,27) AS data
+11602	SELECT aps_badilag.isian_rtf_tabel_daftar_isi(#perkara_id#,'A',10806,29) AS data
+11603	SELECT aps_badilag.isian_rtf_tabel_ceklist(#perkara_id#,10466,20) AS data
+11604	SELECT aps_badilag.isian_rtf_tabel_ceklist(#perkara_id#,10749,25) AS data
+11605	SELECT aps_badilag.isian_rtf_tabel_ceklist(#perkara_id#,10806,29) AS data
+11606	SELECT aps_badilag.isian_rtf_lampiran_sampul(#perkara_id#,10466,15,1) AS data
+11607	SELECT aps_badilag.isian_rtf_lampiran_sampul(#perkara_id#,10749,18,1) AS data
+11608	SELECT aps_badilag.isian_rtf_lampiran_sampul(#perkara_id#,10806,20,1) AS data
+11609	SELECT aps_badilag.isian_rtf_lampiran_sampul(#perkara_id#,10466,15,2) AS data
+11610	SELECT aps_badilag.isian_rtf_lampiran_sampul(#perkara_id#,10749,18,2) AS data
+11611	SELECT aps_badilag.isian_rtf_lampiran_sampul(#perkara_id#,10806,20,2) AS data
+11612	SELECT aps_badilag.isian_rtf_lampiran_sampul(#perkara_id#,10466,15,8) AS data
+11613	SELECT aps_badilag.isian_rtf_lampiran_sampul(#perkara_id#,10749,18,8) AS data
+11614	SELECT aps_badilag.isian_rtf_lampiran_sampul(#perkara_id#,10806,20,8) AS data
+11615	SELECT aps_badilag.isian_rtf_lampiran_sampul(#perkara_id#,10466,15,12) AS data
+11616	SELECT aps_badilag.isian_rtf_lampiran_sampul(#perkara_id#,10749,18,12) AS data
+11617	SELECT aps_badilag.isian_rtf_lampiran_sampul(#perkara_id#,10806,20,12) AS data
+11618	SELECT IFNULL(NULLIF((SELECT d.data FROM aps_badilag.abt_data_teks d WHERE d.no_var=5807 AND d.perkara_id=#perkara_id# LIMIT 1),''),'\\b0') AS data
+11619	SELECT IFNULL(NULLIF((SELECT d.data FROM aps_badilag.abt_data_teks d WHERE d.no_var=5808 AND d.perkara_id=#perkara_id# LIMIT 1),''),'\\b0') AS data
 5700	SELECT IFNULL(NULLIF((SELECT tanggal_sidang FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 0,1),''),'\\b0') AS data
 5701	SELECT IFNULL(NULLIF((SELECT (CASE dihadiri_oleh WHEN 1 THEN 'P T' WHEN 2 THEN 'P' WHEN 3 THEN 'T' WHEN 4 THEN '-' WHEN 5 THEN 'I' ELSE '' END) FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 0,1),''),'\\b0') AS data
 5702	SELECT IFNULL(NULLIF((SELECT aps_badilag.isian_rtf_teks_sel(CONCAT(IF(TRIM(IFNULL(agenda,'')) REGEXP '^[-0._ ]*$','',agenda),IF(sidang_keliling='Y',' (sidang keliling)',''))) FROM perkara_jadwal_sidang WHERE perkara_id=#perkara_id# AND IFNULL(ikrar_talak,'T')<>'Y' ORDER BY tanggal_sidang, id LIMIT 0,1),''),'\\b0') AS data
@@ -123,3 +123,5 @@
 5847	SELECT IFNULL(NULLIF((SELECT t.data FROM (SELECT CONCAT('INTERVENSI (',COUNT(*),') ',GROUP_CONCAT(CASE WHEN aps_badilag.isian_rtf_pihak_peringkat(3, a.id)<=3 THEN CONCAT(aps_badilag.isian_rtf_romawi(aps_badilag.isian_rtf_pihak_peringkat(3, a.id)),'. ',a.nama) END ORDER BY aps_badilag.isian_rtf_pihak_peringkat(3, a.id) SEPARATOR ' - '),IF(COUNT(*)>3,CONCAT(' - dan ',COUNT(*)-3,' lainnya (lampiran)'),'')) AS data FROM perkara_pihak3 a WHERE a.perkara_id=#perkara_id# HAVING COUNT(*)>0) t LIMIT 1),''),'\\b0') AS data
 5868	SELECT IFNULL(NULLIF((SELECT t.data FROM (SELECT CONCAT('Kumulasi: ',REPLACE(GROUP_CONCAT(j.nama SEPARATOR '|'),'|',' dan ')) AS data FROM perkara_kumulasi k JOIN jenis_perkara j ON j.id=k.jenis_perkara_id WHERE k.perkara_id=#perkara_id# HAVING COUNT(*)>0) t LIMIT 1),''),'\\b0') AS data
 5897	SELECT IFNULL(NULLIF((SELECT t.data FROM (SELECT CONCAT('TURUT TERGUGAT (',COUNT(*),') ',GROUP_CONCAT(CASE WHEN aps_badilag.isian_rtf_pihak_peringkat(4, a.id)<=3 THEN CONCAT(aps_badilag.isian_rtf_romawi(aps_badilag.isian_rtf_pihak_peringkat(4, a.id)),'. ',a.nama) END ORDER BY aps_badilag.isian_rtf_pihak_peringkat(4, a.id) SEPARATOR ' - '),IF(COUNT(*)>3,CONCAT(' - dan ',COUNT(*)-3,' lainnya (lampiran)'),'')) AS data FROM perkara_pihak4 a WHERE a.perkara_id=#perkara_id# HAVING COUNT(*)>0) t LIMIT 1),''),'\\b0') AS data
+5830	SELECT CONCAT(IF(TRIM(IFNULL(h.pekerjaan,'')) REGEXP '^[-. ]*$','',CONCAT('Pekerjaan: ',TRIM(h.pekerjaan),' - ')),'Alamat: ',IFNULL(NULLIF(TRIM(a.alamat),''),'-'),IF((SELECT p.alur_perkara_id FROM perkara p WHERE p.perkara_id=#perkara_id#)=16,IFNULL((SELECT CONCAT('<br>Alamat Pemohon II: ',TRIM(b.alamat)) FROM perkara_pihak1 b WHERE b.perkara_id=a.perkara_id AND aps_badilag.isian_rtf_pihak_peringkat(1,b.id)=2 AND TRIM(IFNULL(b.alamat,''))<>'' AND TRIM(b.alamat)<>TRIM(IFNULL(a.alamat,'')) LIMIT 1),''),''),IFNULL((SELECT CONCAT('<br>Kuasa: ',TRIM(k.nama)) FROM perkara_pengacara k WHERE k.perkara_id=a.perkara_id AND k.pihak_ke=1 AND k.urutan=1 AND TRIM(IFNULL(k.nama,''))<>'' LIMIT 1),'')) AS data FROM perkara_pihak1 a LEFT JOIN pihak h ON h.id=a.pihak_id WHERE a.perkara_id=#perkara_id# ORDER BY a.urutan, a.id LIMIT 1
+5831	SELECT CONCAT(IF(TRIM(IFNULL(h.pekerjaan,'')) REGEXP '^[-. ]*$','',CONCAT('Pekerjaan: ',TRIM(h.pekerjaan),' - ')),'Alamat: ',IFNULL(NULLIF(TRIM(a.alamat),''),'-'),'',IFNULL((SELECT CONCAT('<br>Kuasa: ',TRIM(k.nama)) FROM perkara_pengacara k WHERE k.perkara_id=a.perkara_id AND k.pihak_ke=2 AND k.urutan=1 AND TRIM(IFNULL(k.nama,''))<>'' LIMIT 1),'')) AS data FROM perkara_pihak2 a LEFT JOIN pihak h ON h.id=a.pihak_id WHERE a.perkara_id=#perkara_id# ORDER BY a.urutan, a.id LIMIT 1

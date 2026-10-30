@@ -15,8 +15,8 @@ import { sisipLogoRtf } from "@/lib/logo-rtf";
  * Murni terhadap dunia luar: pengisian blangko oleh mesin variabel ABT di bot, logo kop, dan identitas satker disuntikkan (`Dep`), sehingga
  * rute portal dan simulasi/uji memakai jalur yang SAMA. Tidak ada yang ditulis ke SIPP/ABT.
  *
- * Blangko paket sampul-rapi-30okt menerbitkan tabel daftar isi (#11300#-#11302#), tabel ceklist (#11303#-#11305#) dan lampiran sampul
- * (#11306#-#11317#) langsung dari ABT; di sini ketiganya ditimpa penanda lalu diganti susunan portal (halaman otomatis, OTO e-Court, alasan
+ * Blangko paket sampul-rapi-30okt menerbitkan tabel daftar isi (#11600#-#11602#), tabel ceklist (#11603#-#11605#) dan lampiran sampul
+ * (#11606#-#11617#) langsung dari ABT; di sini ketiganya ditimpa penanda lalu diganti susunan portal (halaman otomatis, OTO e-Court, alasan
  * terdeteksi). Blangko lama (#5850#) tetap dilayani.
  */
 
@@ -130,12 +130,12 @@ export async function susunNaskahBerkas(
     ringkas = { ceklist: hasilCek.ringkas, jumlahBaris: hasilCek.baris.length };
   } else if (jenis === "sampul") {
     nilai = saringNilaiTimpa(badan.nilai);
-    // Blangko paket sampul-rapi-30okt menampilkan ghaib/mafqud lewat 11318/11319 (isian 5807/5808; kosong tanpa titik-titik di ABT)
+    // Blangko paket sampul-rapi-30okt menampilkan ghaib/mafqud lewat 11618/11619 (isian 5807/5808; kosong tanpa titik-titik di ABT)
     if (nilai["5807"]) nilai[VAR_CIRI_GANDA["5807"]] = nilai["5807"];
     if (nilai["5808"]) nilai[VAR_CIRI_GANDA["5808"]] = nilai["5808"];
     if (bentuk === "awal") {
       // Lampiran HANYA bila perlu (pihak melebihi ruang, objek > 2, anak > 3, alasan terdeteksi, riwayat sidang melebihi baris sampul).
-      // Lampiran ABT dari blangko (#11306#-#11317#) diganti penanda lalu dibuang: susunan portal yang dipakai (memuat alasan terdeteksi).
+      // Lampiran ABT dari blangko (#11606#-#11617#) diganti penanda lalu dibuang: susunan portal yang dipakai (memuat alasan terdeteksi).
       for (const k of VAR_LAMPIRAN_ABT) nilai[k] = PENANDA_LAMPIRAN_ABT;
       lamp = susunLampiran({
         nomor: teks(badan.nomor, 80),

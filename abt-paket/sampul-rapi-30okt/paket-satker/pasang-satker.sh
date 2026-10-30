@@ -1,7 +1,7 @@
 #!/bin/bash
 # =============================================================================
 # PASANG paket ABT "abt-sampul-rapi-30okt" (30 Okt 2026). Dijalankan DI SERVER sebagai root, dari folder paket. HANYA blangko derry_briantono.
-# Isi: 18 variabel BARU (nomor-baru.txt, blok 11300-11317), 60 variabel lama paket sampul diubah (nomor-ubah.txt; HANYA bila isinya persis dasar),
+# Isi: 20 variabel BARU (nomor-baru.txt, blok 11600-11619), 106 variabel lama paket sampul diubah (nomor-ubah.txt; HANYA bila isinya persis dasar),
 #      5 fungsi baru (isian_rtf_*), dan 21 blangko RTF berkas perkara (99 PTSP: sampul + ceklist, 98b Berkas Perkara - BAS: daftar isi)
 #      ditimpa (daftar-timpa.tsv: HANYA bila md5 server persis md5 lama).
 # URUTAN: paket ini tidak bersinggungan dengan prodeo-panggilan-29okt, bas-tanya-jawab-29okt, ket-saksi-kata-30okt, relaas-penetapan-30okt

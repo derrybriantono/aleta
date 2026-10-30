@@ -25,8 +25,8 @@ Sebab yang ditemukan (render ABT asli + Word):
 | Jenis | Isi |
 |---|---|
 | RTF (21, ditimpa) | `99 PTSP`: Sampul Berkas Perkara (+ Permohonan, Pihak Banyak, Permohonan Pihak Banyak, Lengkap), Ceklist Berkas Perkara; `98b Berkas Perkara - BAS`: Daftar Isi Berkas - masing-masing A4/F4/Legal. Ditimpa HANYA bila md5 server persis dasar (`daftar-timpa.tsv`). |
-| Variabel baru (20) | 11300-11302 tabel daftar isi (A4/F4/Legal), 11303-11305 tabel ceklist, 11306-11317 lampiran sampul (4 varian x 3 kertas), 11318/11319 ciri ghaib/mafqud tampil (isian 5807/5808; kosong tanpa titik-titik) |
-| Variabel diubah (104) | 5700-5779 riwayat sidang sampul (tanggal, sandi hadir, agenda, hasil/alasan): agenda dan alasan satu baris spasi tunggal (`isian_rtf_teks_sel`), baris yang belum ada tercetak kosong (bukan "..."); 5870-5889 kotak hadir: pemisah satu spasi (tiga spasi menjadi tab di ABT); 5832 anak, 5847 intervensi, 5868 kumulasi, 5897 turut tergugat: tanpa data tercetak kosong. Diubah HANYA bila md5 isi lama persis dasar. |
+| Variabel baru (20) | 11600-11602 tabel daftar isi (A4/F4/Legal), 11603-11605 tabel ceklist, 11606-11617 lampiran sampul (4 varian x 3 kertas), 11618/11619 ciri ghaib/mafqud tampil (isian 5807/5808; kosong tanpa titik-titik) |
+| Variabel diubah (106) | 5700-5779 riwayat sidang sampul (tanggal, sandi hadir, agenda, hasil/alasan): agenda dan alasan satu baris spasi tunggal (`isian_rtf_teks_sel`), baris yang belum ada tercetak kosong (bukan "..."); 5870-5889 kotak hadir: pemisah satu spasi (tiga spasi menjadi tab di ABT); 5832 anak, 5847 intervensi, 5868 kumulasi, 5897 turut tergugat: tanpa data tercetak kosong; 5830/5831 pihak I/II: "Pekerjaan: X - Alamat: Y" tanpa "- -" bila pekerjaan kosong, alamat Pemohon II (permohonan) bila berbeda, dan baris "Kuasa: NAMA" hanya bila ada kuasa (dipakai semua varian sampul; baris "Kuasa:" kosong hilang). Diubah HANYA bila md5 isi lama persis dasar. |
 | Fungsi baru (5) | `isian_rtf_teks_sel`, `isian_rtf_baris_tabel`, `isian_rtf_tabel_daftar_isi` (memakai `isian_rtf_daftar_isi` yang sudah ada), `isian_rtf_tabel_ceklist`, `isian_rtf_lampiran_sampul` |
 
 Tata letak (alat/bangun_rtf.py, alat/rtf_dasar.py): margin 1,27 cm kiri-kanan, 1,2 cm atas, 1,06 cm bawah, ditulis di dokumen DAN seksi (Word,
@@ -39,7 +39,7 @@ logo berwarna 3375 px), cara cap (unsur emas/merah/gelap hitam, bidang hijau put
 jalankan alat itu atas logonya lalu bangun ulang paket. Lewat panel, portal mengganti logo tertanam dengan logo **Identitas satker** (bila diunggah)
 dengan cara yang sama (`manajemen_surat/src/lib/logo-monokrom.ts`).
 
-**Lewat panel** (layar khusus): portal menimpa 11300-11317 dengan penanda lalu menempelkan tabel/lampiran susunannya (halaman otomatis, OTO e-Court,
+**Lewat panel** (layar khusus): portal menimpa 11600-11619 dengan penanda lalu menempelkan tabel/lampiran susunannya (halaman otomatis, OTO e-Court,
 lampiran alasan terdeteksi) dengan huruf dan lebar kolom yang SAMA dengan versi ABT.
 
 ## Dasar (md5) - WAJIB dibaca sebelum pasang
@@ -67,17 +67,17 @@ scp -r paket-satker/* aleta:/root/abt-sampul-rapi-20261030/
 ssh aleta 'cd /root/abt-sampul-rapi-20261030 && md5sum -c MD5SUMS.txt | grep -v OK'     # harus kosong
 ssh aleta 'bash /root/abt-sampul-rapi-20261030/pasang-satker.sh'
 ```
-Keluaran benar: `PRASYARAT COCOK (<HARAP di harap.txt>)`, `BERKAS SIAP`, `CADANGAN: ...`, `SEMUA COCOK`, `uji kueri perkara ...: 120 variabel jalan, 0 galat`
+Keluaran benar: `PRASYARAT COCOK (<HARAP di harap.txt>)`, `BERKAS SIAP`, `CADANGAN: ...`, `SEMUA COCOK`, `uji kueri perkara ...: 126 variabel jalan, 0 galat`
 (beberapa perkara), `BERKAS COCOK`, `SELESAI`. Pasang ulang aman (PRASYARAT = `ULANG`).
 Pulih: `ssh aleta 'bash /root/abt-sampul-rapi-20261030/pulih-satker.sh'` (akhir `PULIH COCOK`; blangko/variabel yang disunting sesudah dipasang dibiarkan
-dan dilaporkan). Portal: rilis yang memuat commit paket ini (susunan panel memakai nomor 11300-11317 dan logo monokrom tajam); urutan portal-paket
+dan dilaporkan). Portal: rilis yang memuat commit paket ini (susunan panel memakai nomor 11600-11619 dan logo monokrom tajam); urutan portal-paket
 bebas (portal tetap melayani blangko lama #5850#).
 
 ## Hasil uji (laptop, 30 Okt 2026)
 
 - Lab `aps_badilag_sr30` (= aps_badilag_2810) + `sipp_sr30` (= sipp_2810) + pohon tiruan `99 PTSP`/`98b` (= dasar2), skrip `pasang-satker.sh`/`pulih-satker.sh`
-  mode laptop: PRASYARAT `0|0|104|0|169|0` -> `SEMUA COCOK`, uji kueri 120 variabel x 6 perkara 0 galat, `COCOK=21`, `SELESAI`; pasang ulang
-  `0|20|0|104|169|0` -> `SELESAI`; pulih -> `PULIH COCOK`, abt_variabel sama persis dasar (md5 seluruh baris), 21 blangko sama persis dasar, fungsi
+  mode laptop: PRASYARAT `HARAP` -> `SEMUA COCOK`, uji kueri 126 variabel x 6 perkara 0 galat, `COCOK=21`, `SELESAI`; pasang ulang
+  `ULANG` (harap.txt) -> `SELESAI`; pulih -> `PULIH COCOK`, abt_variabel sama persis dasar (md5 seluruh baris), 21 blangko sama persis dasar, fungsi
   isian_rtf_* kembali 48.
 - Render php56 ABT ASLI (cetak langsung dari ABT) lalu Microsoft Word -> PDF -> PNG: 24 naskah (cerai gugat e-Court 459/Pdt.G/2026, cerai talak
   274/Pdt.G/2026 dan 12/Pdt.G/2019 (20 sidang), itsbat 166/Pdt.P/2026, dispensasi 85/Pdt.P/2026 (4 pemohon), kewarisan 656/Pdt.G/2026 (28 pihak),

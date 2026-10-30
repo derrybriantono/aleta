@@ -1,6 +1,6 @@
 #!/bin/bash
 # PULIH paket ABT "abt-sampul-rapi-30okt" (30 Okt 2026) - deterministik: blangko dikembalikan dari cadangan HANYA bila isinya masih persis isi paket,
-# variabel baru (11300-11317) dihapus dan 60 variabel lama dikembalikan HANYA bila isinya masih persis isi paket, lalu kelima fungsi paket dibuang.
+# variabel baru (11600-11619) dihapus dan 106 variabel lama dikembalikan HANYA bila isinya masih persis isi paket, lalu kelima fungsi paket dibuang.
 # Baris terakhir harus "PULIH COCOK" (keadaan = sebelum paket).
 # Laptop: ABT_LOKAL=1 ABT_DB=<basis uji> SIPP_DB=<salinan SIPP> ABT_BLANGKO=<_blangko_abt uji> MYSQL_BIN=<folder mysql.exe> PY=python bash pulih-satker.sh
 set -u

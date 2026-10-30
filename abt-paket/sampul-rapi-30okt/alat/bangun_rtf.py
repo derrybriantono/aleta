@@ -5,9 +5,9 @@
 
 Perubahan (permintaan Derry 30 Okt): penuh satu halaman (margin aman, tinggi baris mengisi bidang cetak), huruf seragam Arial terbaca, tabel bergaris
 rapi, logo monokrom satker di kiri kop (tertanam: cetak langsung dari ABT pun berlogo), dan isi yang dulu hanya muncul lewat panel kini juga dari ABT:
-   - Daftar Isi : tabel dokumen sungguhan dari variabel #11300#-#11302# (fungsi isian_rtf_tabel_daftar_isi), baris kosong mengisi halaman
-   - Ceklist    : tabel dokumen per jenis perkara dari #11303#-#11305# (fungsi isian_rtf_tabel_ceklist)
-   - Sampul     : lampiran hanya bila perlu (pihak, anak, objek, riwayat lanjutan) dari #11306#-#11317# (fungsi isian_rtf_lampiran_sampul)
+   - Daftar Isi : tabel dokumen sungguhan dari variabel #11600#-#11602# (fungsi isian_rtf_tabel_daftar_isi), baris kosong mengisi halaman
+   - Ceklist    : tabel dokumen per jenis perkara dari #11603#-#11605# (fungsi isian_rtf_tabel_ceklist)
+   - Sampul     : lampiran hanya bila perlu (pihak, anak, objek, riwayat lanjutan) dari #11606#-#11617# (fungsi isian_rtf_lampiran_sampul)
 Lewat panel portal tetap menimpa ketiganya dengan susunannya sendiri (halaman otomatis, OTO e-Court, alasan terdeteksi).
 
 Jalankan: python -I alat/bangun_rtf.py   (menulis rtf/ di folder paket; logo dari sumber/logo-kop-mono.png)."""
@@ -20,14 +20,14 @@ import rtf_dasar as d   # noqa: E402
 from rtf_dasar import K, judul_bagian, kop, p_sel, par, run, sel, tabel   # noqa: E402
 
 KODE_RIWAYAT = 5700
-# Variabel baru paket (blok 11300-11317), per kertas
-VAR_DAFTAR = {'a4': 11300, 'f4': 11301, 'legal': 11302}
-VAR_CEKLIST = {'a4': 11303, 'f4': 11304, 'legal': 11305}
+# Variabel baru paket (blok 11600-11619), per kertas
+VAR_DAFTAR = {'a4': 11600, 'f4': 11601, 'legal': 11602}
+VAR_CEKLIST = {'a4': 11603, 'f4': 11604, 'legal': 11605}
 VAR_LAMPIRAN = {   # (berlawanan, banyak) -> per kertas
-    (True, False): {'a4': 11306, 'f4': 11307, 'legal': 11308},
-    (False, False): {'a4': 11309, 'f4': 11310, 'legal': 11311},
-    (True, True): {'a4': 11312, 'f4': 11313, 'legal': 11314},
-    (False, True): {'a4': 11315, 'f4': 11316, 'legal': 11317},
+    (True, False): {'a4': 11606, 'f4': 11607, 'legal': 11608},
+    (False, False): {'a4': 11609, 'f4': 11610, 'legal': 11611},
+    (True, True): {'a4': 11612, 'f4': 11613, 'legal': 11614},
+    (False, True): {'a4': 11615, 'f4': 11616, 'legal': 11617},
 }
 # Sampul cetak awal: (baris riwayat, tinggi baris twip) per kertas; pihak banyak: baris lebih rapat
 RIWAYAT_AWAL = {'a4': (15, 315), 'f4': (18, 350), 'legal': (20, 380)}
@@ -77,7 +77,7 @@ def sampul_awal(kertas='a4', lawan=True, banyak=False):
     # ciri perkara dan ciri susulan
     ciri = sel([
         par([run('CIRI PERKARA', b=True, sz=15, sp=12), run('   hanya yang berlaku', sz=14)], intbl='mid', sb=30),
-        par([run('#5861#', b=True, sz=18), ' ', '{' + GANDA + '\\b\\fs18 #11318#}', ' ', '{' + GANDA + '\\b\\fs18 #11319#}'], intbl='mid', sb=30, sa=10),
+        par([run('#5861#', b=True, sz=18), ' ', '{' + GANDA + '\\b\\fs18 #11618#}', ' ', '{' + GANDA + '\\b\\fs18 #11619#}'], intbl='mid', sb=30, sa=10),
         par([run('#5842#', b=True, sz=18)], intbl='mid', sb=0, sa=0),
         p_sel([run('#5832#', b=True, sz=17)], sb=0, sa=30),
     ])
@@ -88,9 +88,9 @@ def sampul_awal(kertas='a4', lawan=True, banyak=False):
     if banyak:
         fs = 16
         kiri = sel([par([run('#5894#', b=True, sz=15, sp=12)], intbl='mid', sb=40), par([run('#5898#', b=True, sz=22)], intbl='mid'),
-                    par([run('#5830#', sz=17)], intbl='mid'), p_sel([run('Kuasa: #0106#  #5896#', sz=17)], sb=20, sa=30)])
+                    p_sel([run('#5830#', sz=17), ' ', run('#5896#', sz=17)], sb=0, sa=30)])
         kanan = sel([par([run('#5895#', b=True, sz=15, sp=12)], intbl='mid', sb=40), par([run('#5899#', b=True, sz=22)], intbl='mid'),
-                     par([run('#5831#', sz=17)], intbl='mid'), p_sel([run('Kuasa: #0170#', sz=17)], sb=20, sa=30)])
+                     p_sel([run('#5831#', sz=17)], sb=0, sa=30)])
         if lawan:
             s += tabel([{'lebar': [half, L - half], 'brd': [(15, 15, 0, 15)] * 2, 'sel': [kiri, kanan]}])
             q = half // 2
@@ -104,13 +104,13 @@ def sampul_awal(kertas='a4', lawan=True, banyak=False):
         s += par([run('#5897#', b=True, sz=15), '   ', run('#5847#', b=True, sz=15)], sb=30, sa=0)   # turut tergugat dan intervensi satu paragraf
     elif lawan:
         kiri = sel([par([run('#5841#', b=True, sz=15, sp=12)], intbl='mid', sb=40), par([run('#0098#', b=True, sz=22)], intbl='mid'),
-                    par([run('Pekerjaan: #0100#  -  Alamat: #0101#', sz=16)], intbl='mid'), p_sel([run('Kuasa: #0106#', sz=16)], sb=10, sa=30)])
+                    p_sel([run('#5830#', sz=16)], sb=0, sa=30)])
         kanan = sel([par([run('#8147#', b=True, sz=15, sp=12)], intbl='mid', sb=40), par([run('#0102#', b=True, sz=22)], intbl='mid'),
-                     par([run('Pekerjaan: #0104#  -  Alamat: #0105#', sz=16)], intbl='mid'), p_sel([run('Kuasa: #0170#', sz=16)], sb=10, sa=30)])
+                     p_sel([run('#5831#', sz=16)], sb=0, sa=30)])
         s += tabel([{'lebar': [half, L - half], 'brd': [(15, 15, 15, 15)] * 2, 'sel': [kiri, kanan]}])
     else:
         satu = sel([par([run('#5841#', b=True, sz=15, sp=12)], intbl='mid', sb=40), par([run('#0098#   #1033#', b=True, sz=22)], intbl='mid'),
-                    par([run('Pekerjaan: #0100#  -  Alamat: #0101#  #1036#', sz=17)], intbl='mid'), p_sel([run('Kuasa: #0106#', sz=17)], sb=20, sa=40)])
+                    p_sel([run('#5830#', sz=16)], sb=0, sa=40)])
         s += tabel([{'lebar': [L], 'brd': [(15, 15, 15, 15)], 'sel': [satu]}])
     # pokok khas jenis perkara
     s += par([run('#5843#', sz=17)], sb=20, sa=10)
@@ -217,10 +217,10 @@ def sampul_lengkap(kertas='a4'):
     half = L // 2
     s += judul_bagian('PARA PIHAK')
     kiri = sel([par([run('#5841#', b=True, sz=15, sp=12)], intbl='mid', sb=40), par([run('#0098#', b=True, sz=22)], intbl='mid'),
-                par([run('Pekerjaan: #0100#  -  Alamat: #0101#', sz=17)], intbl='mid'), par([run('Kuasa: #0106#', sz=17)], intbl='mid', sb=20),
+                par([run('#5830#', sz=17)], intbl='mid'),
                 par([run('#1033#', b=True, sz=19)], intbl='mid', sb=40), p_sel([run('#1036#', sz=17)], sa=40)])
     kanan = sel([par([run('#8147#', b=True, sz=15, sp=12)], intbl='mid', sb=40), par([run('#0102#', b=True, sz=22)], intbl='mid'),
-                 par([run('Pekerjaan: #0104#  -  Alamat: #0105#', sz=17)], intbl='mid'), p_sel([run('Kuasa: #0170#', sz=17)], sb=20, sa=40)])
+                 p_sel([run('#5831#', sz=17)], sb=0, sa=40)])
     s += tabel([{'lebar': [half, L - half], 'brd': [(15, 15, 15, 15)] * 2, 'sel': [kiri, kanan]}])
     q4 = L // 4
     s += judul_bagian('MAJELIS DAN PETUGAS')
@@ -247,7 +247,7 @@ def sampul_lengkap(kertas='a4'):
 
 # --------------------------------------------------------------------------------------------------------------------
 def daftar_isi(kertas='a4'):
-    """Daftar isi berkas: kop berlogo, judul, identitas, TABEL dokumen (#11300#-#11302#: fungsi ABT; lewat panel diganti tabel portal), tanda tangan."""
+    """Daftar isi berkas: kop berlogo, judul, identitas, TABEL dokumen (#11600#-#11602#: fungsi ABT; lewat panel diganti tabel portal), tanda tangan."""
     d.pilih_kertas(kertas)
     L = d.lebar_isi()
     half = L // 2
@@ -271,7 +271,7 @@ def daftar_isi(kertas='a4'):
 
 # --------------------------------------------------------------------------------------------------------------------
 def ceklist(kertas='a4'):
-    """Ceklist berkas perkara (Meja I): kop berlogo + kotak MEJA I, judul, identitas, TABEL dokumen (#11303#-#11305#: fungsi ABT; lewat panel diganti
+    """Ceklist berkas perkara (Meja I): kop berlogo + kotak MEJA I, judul, identitas, TABEL dokumen (#11603#-#11605#: fungsi ABT; lewat panel diganti
     tabel portal dengan OTO e-Court), ringkasan, tanda tangan."""
     d.pilih_kertas(kertas)
     L = d.lebar_isi()
