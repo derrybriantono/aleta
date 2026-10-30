@@ -1109,6 +1109,7 @@
   async function jalankanTautan(t) {
     try {
       if (t.draf === "h7") await terapkanTautanDraf(t);
+      else if (t.draf === "h1") await terapkanTautanDrafH1(t);
       else await terapkanTautanBlangko();
       if (t.isian && S.tautan === t) await sorotIsian(t.isian);
     } catch {
@@ -4171,8 +4172,28 @@
     renderTj();
     void muatAlasanPosita(); // berjalan sendiri: daftar alasan menyesuaikan diri begitu posita terbaca
     await Promise.all([...(pas || [kunci]).map((k) => muatTj(k)), muatSetSaksi(), muatPilSaksi(), muatAlasanSaksi()]);
+    if (S.tjBuka === kunci) drafSaksiOtomatis(pas || [kunci]); // 30 Okt: daftar kosong langsung berisi draf (tanpa Muat)
     renderTj();
     void isiOtomatis(pas || [kunci], {});
+  }
+  // 30 Okt 2026 (G2a): draf tanya jawab saksi langsung terisi saat penyunting dibuka. Hanya daftar yang terbaca KOSONG dari
+  // ABT; set yang disarankan dipasang seperti Muat, lalu isiOtomatis mengisi jawabannya dari data perkara. Tidak tersimpan ke
+  // ABT sebelum petugas menekan Simpan ke ABT. Aturannya di blangko-derry-draf-saksi.js; perkara katalog sudah otomatis sendiri.
+  function drafSaksiOtomatis(kunciDaftar) {
+    const m = typeof globalThis !== "undefined" ? globalThis.AletaBdDrafSaksi : null;
+    if (!m || !S.blangko || !S.pk) return [];
+    const pilih = m.pilihSetDraf(S.setSaksi && S.setSaksi.daftar);
+    if (!pilih) return [];
+    const opsi = { hanyaBaca: deretTj().hanyaBaca, katalog: ktAktif() };
+    const sasaran = kunciDaftar.filter((k) => tjItem(k) && m.perluDraf(S.tj[k], opsi));
+    if (!sasaran.length) return [];
+    tjCatat(sasaran); // Urungkan mengembalikan daftar kosong
+    for (const k of sasaran) {
+      pakaiSetSaksi(k, pilih.utama.id);
+      for (const t of pilih.tambahan) pakaiSetSaksi(k, t.id);
+    }
+    catatMuatTj(kunciDaftar, m.kalimatStatus(pilih, jumlahBarisMuat(kunciDaftar), jamSekarang()));
+    return sasaran;
   }
   /** Baris tanya-jawab yang berisi (pertanyaan atau jawaban tidak kosong). */
   const barisTjBerisi = (baris) => (Array.isArray(baris) ? baris : []).some((r) => String((r && r.tanya) || "").trim() || String((r && r.jawab) || "").trim());
@@ -4235,6 +4256,17 @@
       if (!h.ok) t.galat = h.pesan || "Tanya jawab tidak terbaca.";
       else {
         if (!t.berubah) t.rows = tandaiDasarBaris(h.baris.map((r) => ({ no: r.no, tanya: r.tanya, jawab: r.jawab })), false);
+        // 30 Okt malam (42): yang sudah di ABT = patokan simpan otomatis; draf yang belum tersimpan (kalimat contoh, "...") dipulihkan.
+        t.tandaTersimpan = DSO() ? DSO().tandaSimpan(h.baris) : "";
+        t.diAbt = DSO() ? new Set(h.baris.map((r) => DSO().kunciBaris(r))) : new Set();
+        if (!t.berubah && !deretTj().hanyaBaca && DSO()) {
+          const kd = kunciDrafTj(t);
+          const pul = DSO().pulihkanDraf(h.baris, (await bacaPenyimpanan(kd))[kd]);
+          if (pul && S.tj[kunci] === t) {
+            t.rows = pul;
+            t.berubah = pul.length > h.baris.length;
+          }
+        }
         t.templates = h.templates;
         t.keterangan = h.keterangan;
         t.galat = ""; // peringatan "belum terbaca" dari percobaan simpan sebelum bacaan selesai tidak boleh tertinggal
@@ -4878,9 +4910,14 @@
       renderTj();
       let hasil;
       let usulan = null;
+      let statusWali = "";
+      const DSW = typeof globalThis !== "undefined" ? globalThis.AletaBdDrafSaksi : null;
+      const saringWali = (rows) => (DSW && typeof DSW.saringTanyaWali === "function" ? DSW.saringTanyaWali(rows, { statusWali }).rows : rows);
       try {
         hasil = susun(undefined);
         const nilaiVar = await ktBacaVariabel(hasil.variabelTanya);
+        // 30 Okt (G2a): status wali nikah (isian ABT) menentukan ada/tidaknya pertanyaan "mengapa bukan ayah kandung".
+        statusWali = String((await ktBacaVariabel(["1046"]))["1046"] || "");
         if (Object.keys(nilaiVar).length) hasil = susun((kode) => nilaiVar[kode]);
         const pengisi = typeof globalThis !== "undefined" ? globalThis.AletaBdJawabanKatalog : null;
         if (pengisi && typeof pengisi.usulkan === "function") {
@@ -4917,6 +4954,8 @@
         if (tinjau) {
           const biasa = usulan ? K.terapkanUsulan(g.rows, usulan, k) : { rows: g.rows, tertahan: 0 };
           const timpaSemua = usulan ? K.terapkanUsulan(g.rows, usulan, k, { timpa: true }) : { rows: g.rows };
+          biasa.rows = saringWali(biasa.rows);
+          timpaSemua.rows = saringWali(timpaSemua.rows);
           const lama = new Set(t.rows.map((r) => `${r.tanya}${r.jawab}`));
           const ubah = biasa.rows.filter((r) => !lama.has(`${r.tanya}${r.jawab}`)).length;
           S.sk.status[k] = null;
@@ -4927,7 +4966,7 @@
           S.sk.status[k] = { teks: "Daftar pertanyaan ini bukan susunan katalog. Pilih set pertanyaan katalog di atas lalu tekan Muat bila ingin menyusunnya; jawaban yang sudah Anda ketik tetap dipertahankan." };
           continue;
         }
-        const rows = usulan ? K.terapkanUsulan(g.rows, usulan, k).rows : g.rows;
+        const rows = saringWali(usulan ? K.terapkanUsulan(g.rows, usulan, k).rows : g.rows);
         const sama = JSON.stringify(rows.map((r) => [r.tanya, r.jawab])) === JSON.stringify(t.rows.map((r) => [r.tanya, r.jawab]));
         if (!sama) {
           if (!dicatat.size) tjCatat(grupSaksi(k));
@@ -5070,6 +5109,11 @@
     for (const kunci of kunciDaftar) {
       const t = S.tj[kunci];
       if (!t) continue;
+      // 30 Okt malam (42): simpan otomatis yang menunggu dibatalkan, yang sedang berjalan ditunggu - Simpan ke ABT menulis sesudahnya.
+      clearTimeout(jamTjOto.get(kunci));
+      jamTjOto.delete(kunci);
+      if (t.otoJalan && t.otoJanji) await t.otoJanji;
+      t.otoLagi = false;
       if (!t.dimuat || t.memuat) {
         t.galat = PESAN_TJ_BELUM_TERBACA;
         renderTj();
@@ -5116,6 +5160,12 @@
           t.berubah = false;
           t.rows = rows.map((r, i) => ({ ...r, no: String(i + 1) }));
           t.tersimpanJam = jamSekarang();
+          t.otoKabar = "";
+          if (DSO()) {
+            t.tandaTersimpan = DSO().tandaSimpan(rows);
+            t.diAbt = new Set(rows.map((r) => DSO().kunciBaris(r)));
+            void tulisPenyimpanan({ [kunciDrafTj(t)]: null }); // semua baris tersimpan: tidak ada draf yang perlu dipulihkan
+          }
           catatButirTj(kunci, t, t.rows);
           tandaiKotor();
           S.peringat = false;
@@ -5129,6 +5179,87 @@
       renderTj();
     }
     laporKeKerangka();
+  }
+  // -- 30 Okt malam (keputusan 42): tanya jawab tersimpan otomatis ke ABT saat jawaban diganti --------------------------------
+  // 1,5 detik sesudah berhenti mengetik atau saat keluar dari kotak. Yang dikirim: seluruh baris layak simpan saksi itu (terisi
+  // dari data atau sudah diketik), BUKAN kalimat contoh / "..." yang belum disentuh - itu tetap draf di penyunting dan disimpan di
+  // peramban (dipulihkan saat dibuka lagi). Satu simpan per saksi pada satu waktu; tanpa perubahan = tanpa tulis; tidak pernah
+  // mengirim daftar kosong. Tombol Simpan ke ABT tetap (menyimpan semua baris seperti dulu).
+  const DSO = () => (typeof globalThis !== "undefined" && globalThis.AletaBdDrafSaksi && typeof globalThis.AletaBdDrafSaksi.barisSimpanOtomatis === "function" ? globalThis.AletaBdDrafSaksi : null);
+  const kunciDrafTj = (t) => `bdTjDraf:${perkaraId()}:${t.kode}:${t.sidang}`;
+  const JEDA_TJ_OTO_MS = 1500;
+  const jamTjOto = new Map();
+  function jadwalTjOtomatis(kunciDaftar, jeda) {
+    if (!DSO() || !TP() || tes() || !bolehTulis() || deretTj().hanyaBaca || !S.blangko || S.blangko.jenis !== "bas") return;
+    for (const k of kunciDaftar || []) {
+      if (!S.tj[k]) continue;
+      clearTimeout(jamTjOto.get(k));
+      jamTjOto.set(k, setTimeout(() => {
+        jamTjOto.delete(k);
+        void simpanTjOtomatis(k);
+      }, Math.max(0, Number(jeda) || 0)));
+    }
+  }
+  async function simpanTjOtomatis(kunci) {
+    const t = S.tj[kunci];
+    const m = DSO();
+    if (!t || !m || !TP() || !t.dimuat || t.memuat || t.menyimpan || tes() || !bolehTulis()) return;
+    if (t.otoJalan) {
+      t.otoLagi = true;
+      return;
+    }
+    let rows = m.barisSimpanOtomatis(t.rows, (r) => TP().asalBaris(r), t.diAbt).map((r) => ({ ...r, jawab: rapikanJawabSaksi(r.jawab) }));
+    rows = rows.map((r) => ({ ...r, tanya: normalAbt(r.tanya).teks, jawab: normalAbt(r.jawab).teks }));
+    if (!rows.length) return; // daftar kosong tidak pernah dikirim (ABT menghapus keterangan saksi itu)
+    if (hurufDiLuarAbt(rows.map((r) => `${r.tanya} ${r.jawab}`).join(" ")).length) return; // Simpan ke ABT yang memberi tahu
+    const tanda = m.tandaSimpan(rows);
+    if (tanda === t.tandaTersimpan) return;
+    t.otoJalan = true;
+    t.otoLagi = false;
+    const sidang = t.sidang;
+    let lepas = () => {};
+    t.otoJanji = new Promise((r) => (lepas = r));
+    try {
+      const h = await klienAbt().simpanTanyaJawab({ kode: t.kode, perkaraId: perkaraId(), sidang, baris: rows.map((r, i) => ({ no: String(i + 1), tanya: r.tanya, jawab: r.jawab })), a: S.blangko.a, b: S.blangko.b });
+      if (S.tj[kunci] !== t || t.sidang !== sidang) return;
+      if (!h || !h.ok) {
+        t.galat = `Simpan otomatis belum berhasil: ${(h && h.pesan) || "ABT tidak mengatakan tersimpan"}. Tekan Simpan ke ABT.`;
+      } else {
+        t.tandaTersimpan = tanda;
+        t.diAbt = new Set(rows.map((r) => m.kunciBaris(r)));
+        t.tersimpanJam = jamSekarang();
+        t.galat = "";
+        const sisa = t.rows.filter((r) => String(r.tanya || "").trim() || String(r.jawab || "").trim()).length - rows.length;
+        t.berubah = sisa > 0;
+        t.otoKabar = sisa > 0 ? `${rows.length} jawaban tersimpan otomatis pukul ${t.tersimpanJam}; ${sisa} baris draf (kalimat contoh / belum lengkap) belum disimpan.` : `Semua jawaban tersimpan otomatis pukul ${t.tersimpanJam}.`;
+        void tulisPenyimpanan({ [kunciDrafTj(t)]: { saat: Date.now(), rows: t.rows.map((r) => ({ ...r })), tersimpan: rows.map((r) => ({ tanya: r.tanya, jawab: r.jawab })) } });
+        catatButirTj(kunci, t, rows);
+        tandaiKotor();
+        const it = tjItem(kunci);
+        if (it) S.nilai[it.kode] = { status: "terisi", teks: "" };
+      }
+    } catch (e) {
+      if (S.tj[kunci] === t) t.galat = `Simpan otomatis belum berhasil: ${String((e && e.message) || e)}. Tekan Simpan ke ABT.`;
+    } finally {
+      t.otoJalan = false;
+      lepas();
+      if (S.tj[kunci] === t) renderTjDiam();
+      if (t.otoLagi) {
+        t.otoLagi = false;
+        void simpanTjOtomatis(kunci);
+      }
+    }
+  }
+  /** Status simpan otomatis diperbarui tanpa menggambar ulang tabel bila petugas sedang mengetik (fokus & kursor tetap). */
+  function renderTjDiam() {
+    const aktif = typeof document !== "undefined" ? document.activeElement : null;
+    const sedangKetik = aktif && aktif.closest && aktif.closest("#bd-tjwadah") && aktif.tagName === "TEXTAREA";
+    if (!sedangKetik) return renderTj();
+    for (const k of kunciTampilTj()) {
+      const el = cari(`[data-tjotokabar="${k}"]`, wadah.isian);
+      const t = S.tj[k];
+      if (el && t) el.textContent = t.galat || t.otoKabar || "";
+    }
   }
   // 19 Okt (tahap 2): riwayat menyimpan kunci saksinya juga, supaya satu langkah yang menyentuh saksi mana pun (tukar jawaban
   // dengan saksi lain) dapat diurungkan dari tampilan berdampingan maupun satu per satu.
@@ -5222,7 +5353,9 @@
                   ? "Untuk mengganti, tekan Ganti blangko; saran per jenis ada di bagian Disarankan jendela itu."
                   : "Pilih blangko lewat tombol Pilih blangko."
           }</p>`
-        : "");
+        : "") +
+      htmlSaranH1();
+    muatSaranH1();
   }
 
   /**
@@ -6046,6 +6179,11 @@
       return `<span class="bd-asallencana ragu">ragu <button type="button" class="bd-ikon bd-asalinfo" data-bd2="infoasal" title="${esc(alasan)}" aria-label="Mengapa ragu: ${esc(alasan)}">ⓘ</button></span>`;
     }
     if (a === "kosong") return `<span class="bd-asallencana kosong">perlu dilengkapi</span>`;
+    // 30 Okt: kalimat contoh set pertanyaan (draf otomatis) - hal yang hanya diketahui saksi; alasannya di ikon (i).
+    if (a === "contoh") {
+      const alasan = m.alasanRagu(r);
+      return `<span class="bd-asallencana contoh">kalimat contoh <button type="button" class="bd-ikon bd-asalinfo" data-bd2="infoasal" title="${esc(alasan)}" aria-label="Kalimat contoh: ${esc(alasan)}">ⓘ</button></span>`;
+    }
     return "";
   }
   const htmlCapAsal = (r) => (TP() ? `<span class="bd-asalcap" data-asalcap>${isiCapAsal(r)}</span>` : "");
@@ -6056,7 +6194,7 @@
     if (!h.total) return "";
     const tombolAtauTeks = (n, label, jenis) =>
       n ? `<button type="button" class="bd-asalbtn ${jenis}" data-bd2="lompat" data-jenis="${jenis}" title="Lompat ke kotak ${label} berikutnya">${n} ${label}</button>` : `<span class="bd-asalbag ${jenis}">${n} ${label}</span>`;
-    return `<div class="bd-asalringkas" id="bd-asalringkas" role="status" aria-live="polite"><span class="bd-asalbag data">${h.terisi} terisi</span> · ${tombolAtauTeks(h.ragu, "ragu", "ragu")} · ${tombolAtauTeks(h.kosong, "perlu dilengkapi", "kosong")}</div>`;
+    return `<div class="bd-asalringkas" id="bd-asalringkas" role="status" aria-live="polite"><span class="bd-asalbag data">${h.terisi} terisi</span> · ${tombolAtauTeks(h.ragu, "ragu", "ragu")} · ${tombolAtauTeks(h.kosong, "perlu dilengkapi", "kosong")}${h.contoh ? ` · ${tombolAtauTeks(h.contoh, "kalimat contoh", "contoh")}` : ""}</div>`;
   }
   /** Daftar baris yang sedang tampil (dua saksi berdampingan, atau satu saksi). */
   function daftarJawabTampil() {
@@ -6078,7 +6216,7 @@
       } else if (el.hasAttribute("data-tjb") && S.tj[S.tjBuka]) r = S.tj[S.tjBuka].rows[Number(el.getAttribute("data-tjb"))];
       if (!r) continue;
       const a = m.asalBaris(r);
-      for (const j of ["kosong", "ragu", "data", "manual"]) el.classList.toggle(`bd-asal-${j}`, j === a);
+      for (const j of ["kosong", "ragu", "data", "manual", "contoh"]) el.classList.toggle(`bd-asal-${j}`, j === a);
       el.setAttribute("data-asal", a);
       const cap = el.nextElementSibling;
       if (cap && cap.hasAttribute("data-asalcap")) cap.innerHTML = isiCapAsal(r);
@@ -6091,10 +6229,10 @@
   /** Lompat ke kotak jawaban "ragu"/"kosong" BERIKUTNYA (urutan di halaman), lalu beri fokus. */
   function lompatAsal(jenis) {
     const wad = cari("#bd-tjwadah", wadah.isian);
-    if (!wad || (jenis !== "ragu" && jenis !== "kosong")) return;
+    if (!wad || (jenis !== "ragu" && jenis !== "kosong" && jenis !== "contoh")) return;
     const semuaKotak = cariSemua("textarea[data-asal]", wad);
     const sasaranAda = semuaKotak.filter((el) => el.getAttribute("data-asal") === jenis);
-    if (!sasaranAda.length) return toast(jenis === "ragu" ? "Tidak ada jawaban yang ragu." : "Semua jawaban sudah terisi.");
+    if (!sasaranAda.length) return toast(jenis === "ragu" ? "Tidak ada jawaban yang ragu." : jenis === "contoh" ? "Tidak ada lagi kalimat contoh." : "Semua jawaban sudah terisi.");
     const akhir = S.sk.lompat && S.sk.lompat.jenis === jenis ? S.sk.lompat.urut : -1;
     const sasaran = sasaranAda.find((el) => semuaKotak.indexOf(el) > akhir) || sasaranAda[0];
     S.sk.lompat = { jenis, urut: semuaKotak.indexOf(sasaran) };
@@ -6209,6 +6347,7 @@
       if (x.kosongSimpan && x.rows.some((r) => String(r.tanya || "").trim() || String(r.jawab || "").trim())) x.kosongSimpan = false;
       const kosong = TP() ? TP().peringatanDaftarKosong(tjItem(k) ? tjItem(k).tj.sebutan : "", x.rows, x.kosongSimpan) : "";
       if (kosong) return `<p class="bd-peringatan" data-kosongsimpan="${esc(k)}" role="alert">${esc(kosong)}</p>`;
+      if (x.otoKabar) return `<p class="bd-catat" data-tjotokabar="${esc(k)}" role="status">${esc(x.otoKabar)}</p>`;
       if (x.tersimpanJam && !x.berubah) return `<p class="bd-catat">✓ tersimpan di ABT ${esc(x.tersimpanJam)}${x.ganti ? ` (huruf ${esc(x.ganti)} diganti ke bentuk aman ABT)` : ""}</p>`;
       return "";
     };
@@ -8479,6 +8618,13 @@
     const aksi = c("[data-bd2]");
     const kode = aksi ? aksi.getAttribute("data-bd2") : "";
     if (kode === "bukamodal") return bukaModal();
+    if (kode === "bukah1") {
+      const a = api();
+      const m = globalThis.AletaBdDrafBas;
+      if (!a || typeof a.bukaTautan !== "function" || !m) return toast("Muat ulang halaman ABT untuk membuka BAS yang disiapkan.");
+      a.bukaTautan(m.muatanTautan({ perkaraId: aksi.getAttribute("data-pid"), nomor: aksi.getAttribute("data-nomor") }, aksi.getAttribute("data-tgl")));
+      return;
+    }
     if (kode === "tutupmodal") return tutupModal();
     if (kode === "pakairek") {
       const r = rekomendasiJenis(jenisSaranAktif())[0];
@@ -8874,7 +9020,9 @@
   /** Merapikan jawaban saksi menjadi satu paragraf (baris baru di tengah kalimat dilebur); dipakai tombol dan Simpan ke ABT. */
   const rapikanJawabSaksi = (x) => {
     const m = SK();
-    return m && typeof m.rapikanJawaban === "function" ? m.rapikanJawaban(x) : String(x == null ? "" : x).replace(/\s*[\r\n]+\s*/g, " ").trim();
+    const rapi = m && typeof m.rapikanJawaban === "function" ? m.rapikanJawaban(x) : String(x == null ? "" : x).replace(/\s*[\r\n]+\s*/g, " ").trim();
+    // 30 Okt (G2a): jawaban tersimpan diawali huruf besar (kalimat katalog berawal huruf kecil); putusan tetap lcfirst di ABT.
+    return m && typeof m.hurufBesarAwal === "function" ? m.hurufBesarAwal(rapi) : rapi;
   };
   /** Kunci saksi yang sedang tampil (berdampingan: kedua saksi; satu per satu: satu saksi). */
   function kunciTampilTj() {
@@ -9216,6 +9364,7 @@
         r[t.getAttribute("data-sisi")] = t.value;
         S.tj[S.tjBuka].berubah = true;
         segarAsalTampil();
+        jadwalTjOtomatis([S.tjBuka], JEDA_TJ_OTO_MS); // 30 Okt malam (42)
       }
     }
   }
@@ -9229,6 +9378,7 @@
       if (norm(A[i].tanya) === norm(B[i].tanya)) B[i].tanya = t.value;
       A[i].tanya = t.value;
       tjUbah(ps);
+      jadwalTjOtomatis(ps, JEDA_TJ_OTO_MS); // 30 Okt malam (42)
       return true;
     }
     const a = t.getAttribute && t.getAttribute("data-sba");
@@ -9238,6 +9388,7 @@
       (Number(t.getAttribute("data-sk")) ? B : A)[i].jawab = t.value;
       tjUbah(ps);
       segarAsalTampil();
+      jadwalTjOtomatis([ps[Number(t.getAttribute("data-sk")) ? 1 : 0]], JEDA_TJ_OTO_MS); // 30 Okt malam (42)
       return true;
     }
     return false;
@@ -9334,6 +9485,12 @@
   }
   function saatBlur(e) {
     const t = e.target;
+    // 30 Okt malam (42): keluar dari kotak tanya jawab = simpan otomatis segera (hanya bila ada ketikan yang menunggu).
+    if (t && t.hasAttribute && (t.hasAttribute("data-sba") || t.hasAttribute("data-tjb") || t.hasAttribute("data-sbq"))) {
+      const kunci = kunciTampilTj().filter((k) => S.tj[k] && jamTjOto.has(k));
+      if (kunci.length) jadwalTjOtomatis(kunci, 0);
+      return;
+    }
     const k = t.getAttribute && t.getAttribute("data-k");
     if (!k || t.type === "date" || t.tagName === "SELECT") return;
     // Fokus yang sekadar lewat (Tab, klik) tidak menulis apa pun ke ABT - hanya yang diketik.
@@ -9581,7 +9738,102 @@
         }
         if (S.pk === d && !S.blangko) renderRingkasBlangko();
       });
+      void terapkanDrafH1(d); // 30 Okt (G2a 2.4): BAS sidang yang disiapkan agen H-1 langsung terbuka untuk PP
     }
+  }
+  // ── BAS sidang berikutnya yang disiapkan agen H-1 (30 Okt 2026, G2a 2.4) ─────────────────────────────────────────
+  // Portal menyiapkan blangko BAS tiap sore hari kerja (rute agen-h1-bas, baca saja). Saat PP membuka perkara pada sidangnya
+  // blangko itu dibuka sendiri - seperti dipilih petugas; tidak ada yang tersimpan ke ABT selain isi otomatis yang berlaku.
+  // Keputusan buka / tidak: blangko-derry-draf-bas.js (30 Okt malam: tidak lagi pindah sendiri ke sidang besok - saran
+  // "Sidang besok" di bawah memberi tautan per perkara). Tautan yang diminta petugas didahulukan.
+  const API_AGEN_H1 = "/aleta/api/aleta-ecourt/agen-h1-bas";
+  const drafH1Dipakai = new Set();
+  async function terapkanDrafH1(d) {
+    const m = typeof globalThis !== "undefined" ? globalThis.AletaBdDrafBas : null;
+    if (!m || !d || S.pk !== d || S.blangko || tes()) return;
+    if (S.tautan && !S.tautan.dipakai) return;
+    const a = api();
+    // Peran akun dibaca kerangka sesudah perkara pertama dapat terpilih: ditunggu dulu, baru diputuskan.
+    if (a && typeof a.muatHak === "function") await Promise.resolve(a.muatHak()).catch(() => undefined);
+    if (S.pk !== d || S.blangko) return;
+    if (!peranAkun().includes("pp") || hakimSaja()) return;
+    const pid = String(d.perkaraId || "");
+    if (!/^\d+$/.test(pid)) return;
+    let h = null;
+    try {
+      h = await ambilPortal(`${API_AGEN_H1}?perkaraId=${encodeURIComponent(pid)}`, {}, "Membaca BAS yang disiapkan");
+    } catch {
+      return; // portal lama / agen mati: panel seperti biasa
+    }
+    if (S.pk !== d || S.blangko) return;
+    const draf = h && h.peta ? h.peta[pid] : null;
+    const kunci = `${pid}|${draf ? draf.tanggalSidang : ""}`;
+    const k = m.putuskan({ draf, hariIni: h && h.hariIni, sidang: d.sidang, sidangDipilih: d.sidangDipilih, sudah: drafH1Dipakai.has(kunci) });
+    if (k.aksi !== "buka") return; // 30 Okt malam (keputusan 43): tidak pindah sendiri ke sidang lain - saran "Sidang besok"
+    await bukaBlangkoDrafH1(d, draf, kunci);
+  }
+  /** Membuka blangko BAS draf H-1 seperti dipilih petugas (hak menu & jenis diperiksa); true bila terbuka. */
+  async function bukaBlangkoDrafH1(d, draf, kunci) {
+    const m = typeof globalThis !== "undefined" ? globalThis.AletaBdDrafBas : null;
+    if (!m || !draf || !draf.blangko || S.pk !== d || S.blangko || !jenisBoleh().includes("bas")) return false;
+    await muatMenu();
+    const nama = kelompokUntukSaran(S.menu ? S.menu.kelompok : [], draf.blangko);
+    const kel = nama && S.menu ? S.menu.kelompok.find((x) => x.nama === nama) : null;
+    if (!kel || !kelompokBoleh(kel)) return false;
+    if (!kel.berkas) await muatBerkasKelompok(kel);
+    if (S.pk !== d || S.blangko || !kel.berkas) return false;
+    const asli = kel.berkas.find((x) => samaBerkasSaran(x.berkas, draf.blangko.berkas));
+    if (!asli) return false;
+    drafH1Dipakai.add(kunci);
+    await pilihBlangko(asli.berkas, kel.nama);
+    toast(m.kalimatBuka(draf));
+    return true;
+  }
+  /** Tautan draf "h1" (saran Sidang besok / Jadwal Sidang): perkara & sidang sudah dipilih kerangka; buka BAS draf, cadangan jalur biasa. */
+  async function terapkanTautanDrafH1(t) {
+    if (!t || t.dipakai || !S.pk) return;
+    t.dipakai = true;
+    const d = S.pk;
+    const pid = String(d.perkaraId || "");
+    let draf = null;
+    try {
+      const h = await ambilPortal(`${API_AGEN_H1}?perkaraId=${encodeURIComponent(pid)}`, {}, "Membaca BAS yang disiapkan");
+      draf = h && h.peta ? h.peta[pid] : null;
+    } catch {
+      draf = null;
+    }
+    const cocok = draf && d.sidangDipilih && String(d.sidangDipilih.tanggal || "").slice(0, 10) === String(draf.tanggalSidang || "").slice(0, 10);
+    if (cocok && (await bukaBlangkoDrafH1(d, draf, `${pid}|${draf.tanggalSidang}`))) return;
+    t.dipakai = false;
+    return terapkanTautanBlangko();
+  }
+  // ── Saran "Sidang besok: N perkara - BAS sudah disiapkan" (30 Okt malam, keputusan 43) ───────────────────────────────
+  // Satu bacaan GET agen-h1-bas?saya=1 (diingat 10 menit); hanya PP. Tiap perkara satu tombol: sekali klik membuka BAS-nya.
+  const SARAN_H1_MS = 10 * 60 * 1000;
+  let saranH1 = { saat: 0, data: null, memuat: false };
+  function muatSaranH1() {
+    if (saranH1.memuat || Date.now() - saranH1.saat < SARAN_H1_MS || tes()) return;
+    if (!peranAkun().includes("pp") || hakimSaja()) return;
+    saranH1.memuat = true;
+    void ambilPortal(`${API_AGEN_H1}?saya=1`, {}, "Membaca BAS sidang besok")
+      .then((h) => {
+        saranH1 = { saat: Date.now(), data: h || null, memuat: false };
+        renderRingkasBlangko();
+      })
+      .catch(() => {
+        saranH1 = { saat: Date.now(), data: null, memuat: false };
+      });
+  }
+  function htmlSaranH1() {
+    const m = typeof globalThis !== "undefined" ? globalThis.AletaBdDrafBas : null;
+    const h = saranH1.data;
+    if (!m || !h || !peranAkun().includes("pp") || hakimSaja()) return "";
+    const r = m.ringkasBesok(h.draf, h.hariIni);
+    if (!r || !r.perkara.length) return "";
+    const tombol = r.perkara
+      .map((p) => `<button type="button" class="bd-chip bd-tombolchip" data-bd2="bukah1" data-pid="${esc(p.perkaraId)}" data-nomor="${esc(p.nomor)}" data-tgl="${esc(r.tanggal)}" title="${esc(p.label)}">${esc(p.nomor.replace(/\/PA\.[A-Za-z]+$/, ""))}</button>`)
+      .join(" ");
+    return `<div class="bd-petunjuk" id="bd-saranh1" role="note"><b>Sidang besok (${esc(tglIndo(r.tanggal))}): ${r.perkara.length} perkara - BAS sudah disiapkan.</b> ${tombol}</div>`;
   }
   function daftarkanAlat() {
     const a = api();

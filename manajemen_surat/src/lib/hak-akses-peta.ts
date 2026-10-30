@@ -401,6 +401,16 @@ const BUTIR_FITUR: readonly ButirPeta[] = [
     rute: ["GET /api/aleta-ecourt/agen-h7"],
   }),
   buat({
+    id: "fitur.draf-bas-h1",
+    kelompok: "fitur",
+    judul: "BAS sidang berikutnya disiapkan otomatis (H-1)",
+    keterangan: "Tiap sore hari kerja BAS sidang hari kerja berikutnya disiapkan; saat PP membuka perkara pada sidangnya, blangko BAS terbuka sendiri. Lencana di Jadwal Sidang.",
+    hak: dari(["pimpinan", "hakim", "panitera", "panmud", "pp", "analis-perkara"], "L"),
+    catatan: "Hanya membaca SIPP/ABT; isi lengkap ikut aksi 'Membaca lembar BAS'. Menjalankan sekarang hanya Admin/Super Admin.",
+    sumber: "AKSI.bas.baca",
+    rute: ["GET|POST /api/aleta-ecourt/agen-h1-bas"],
+  }),
+  buat({
     id: "fitur.susun-saksi",
     kelompok: "fitur",
     judul: "Susun keterangan saksi menurut keadaan perkara (panel ABT)",

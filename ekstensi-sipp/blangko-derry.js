@@ -1492,7 +1492,8 @@
         jumlahSaksiP: angkaTautan(j.jumlahSaksiP, 20),
         jumlahSaksiT: angkaTautan(j.jumlahSaksiT, 20),
         // 19 Okt: ruas opsional dari pop-up Draf H-7 portal; hanya dibawa bila sah (tautan lama tetap sama bentuknya).
-        ...(j.draf === "h7" ? { draf: "h7" } : {}),
+        // 30 Okt (G2a): draf: "h1" = buka BAS sidang yang disiapkan agen H-1 (saran "Sidang besok").
+        ...(j.draf === "h7" || j.draf === "h1" ? { draf: j.draf } : {}),
         ...(j.varian === "dikabulkan" || j.varian === "ditolak" ? { varian: j.varian } : {}),
         ...(teksTautan(j.isian, 120) ? { isian: teksTautan(j.isian, 120) } : {}),
       };
@@ -2937,6 +2938,23 @@
       S.massal = typeof fn === "function" ? fn : null;
     },
     bukaMassal,
+    /**
+     * 30 Okt (G2a): membuka tautan berbentuk #bd= dari dalam panel (saran "Sidang besok: BAS sudah disiapkan") tanpa memuat
+     * ulang halaman - perkara dan sidangnya dipilih seperti tautan Jadwal Sidang. false bila muatannya tidak sah.
+     */
+    bukaTautan(muatan) {
+      let t = null;
+      try {
+        t = bacaTautanBd(`#bd=${encodeURIComponent(JSON.stringify(muatan || {}))}`);
+      } catch {
+        t = null;
+      }
+      if (!t) return false;
+      S.tautan = t;
+      S.mode = "semua";
+      void muatDaftar();
+      return true;
+    },
     /** 29 Okt: ikon (i) keterangan fitur (arahkan = singkat, klik dua kali = pop-up) dan pembuka pop-up-nya; id dari daftar KETERANGAN. */
     ikonKeterangan,
     bukaKeterangan,

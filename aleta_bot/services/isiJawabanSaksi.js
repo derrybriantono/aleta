@@ -355,16 +355,19 @@ const POKOK = [
   {
     id: "wali",
     jenis: ["itsbat", "aua"],
-    tanya: /wali nikah/,
+    // 30 Okt (G2a): "wali yang menikahkan ... / wali yang lebih berhak" juga pertanyaan wali. Dulu jatuh ke pokok "ijab" (kata
+    // "menikahkan") sehingga #1046# (status wali) terisi nama yang menikahkan: "adalah Imam Desa bernama Mahmud bernama Yaho".
+    tanya: /wali nikah|wali yang (?:menikahkan|lebih berhak|berhak)|lebih berhak.{0,40}\bwali\b|berhak menjadi wali|menikahkan.{0,40}bukan ayah/,
     slot: [
       { kiri: kiri("\\bbernama"), isi: ({ h }) => h.nilai("waliNama") },
-      { kiri: kiri("\\b(?:adalah|yaitu|ialah|sebagai)"), isi: ({ h }) => h.hubunganWali(true) },
+      { kiri: kiri("\\b(?:adalah|yaitu|ialah|sebagai|selaku)"), isi: ({ h }) => h.hubunganWali(true) },
     ],
   },
   {
     id: "ijab",
     jenis: ["itsbat", "aua"],
-    tanya: /ijab|menikahkan/,
+    // Pertanyaan tentang WALI (yang menikahkan / lebih berhak) bukan pertanyaan siapa yang mengucapkan ijab.
+    tanya: /^(?!.*\bwali\b).*(?:ijab|menikahkan)|ijab/,
     slot: [{ kiri: kiri("\\b(?:adalah|dari|oleh|yaitu|ialah)"), isi: ({ h }) => h.nilai("penikah") }],
   },
   {

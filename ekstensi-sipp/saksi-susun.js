@@ -1301,8 +1301,11 @@
       // T2 (25 Okt, keputusan pengguna): butir penutup ("Apakah masih ada yang ingin saksi sampaikan?" - "saya sudah cukup")
       // tidak ditampilkan dan tidak disimpan untuk SEMUA jenis perkara; nomor diurutkan ulang.
       const idPenutup = new Set((S.kat.pertanyaan || []).filter((q) => q && q.kelompok === "penutup").map((q) => q.id));
+      // 30 Okt (G2a): wali nikah ayah kandung (isian Status Wali Nikah) = pertanyaan "mengapa bukan ayah kandung" tidak disusun.
+      const DSW = globalThis.AletaBdDrafSaksi;
+      const waliAyah = Boolean(DSW && typeof DSW.waliAyahKandung === "function" && DSW.waliAyahKandung(kodeVar("1046")));
       for (const sk of hasilSusun.saksi || []) {
-        sk.baris = (sk.baris || []).filter((b) => !idPenutup.has(b.butir));
+        sk.baris = (sk.baris || []).filter((b) => !idPenutup.has(b.butir) && !(waliAyah && /^q-in-wali-urutan-/.test(String(b.butir || ""))));
         sk.baris.forEach((b, i) => {
           b.no = i + 1;
         });
@@ -1754,7 +1757,10 @@
         if (kolom) {
           for (const el of Array.from(kolom.querySelectorAll(".aleta-ssk-baris"))) {
             const tanya = String((el.querySelector(".aleta-ssk-tanya") || {}).textContent || "").replace(/^\d+\.\s*/, "");
-            const jawab = String((el.querySelector("textarea") || {}).value || "").trim();
+            const jawabMentah = String((el.querySelector("textarea") || {}).value || "").trim();
+            // 30 Okt (G2a): jawaban tersimpan diawali huruf besar (aturan sama dengan Blangko Derry, AletaBdSaksi.hurufBesarAwal).
+            const besar = globalThis.AletaBdSaksi && typeof globalThis.AletaBdSaksi.hurufBesarAwal === "function" ? globalThis.AletaBdSaksi.hurufBesarAwal : (x) => x;
+            const jawab = besar(jawabMentah);
             if (jawab) baris.push({ no: String(baris.length + 1), tanya, jawab });
             jejakButir.push(entriButir(i, el, tanya, jawab, jawab ? baris.length : 0));
           }

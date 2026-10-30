@@ -478,7 +478,8 @@ describe("Isian rapi di panel (jsdom)", () => {
     klik(h, '[data-bd2="simpantj"]');
     await sampai(() => mintaKe(h, /tanyajawab_perkara_edit\?aksi=simpan/).length, "tanya jawab tersimpan");
     await sampai(() => h.tj["5058@3"][0].jawab !== "rukun;", "baris tersimpan");
-    expect(h.tj["5058@3"][0].jawab).toBe("sering bertengkar, karena Tergugat berjudi;");
+    // 30 Okt (G2a): jawaban tersimpan juga diawali huruf besar (perapian, sama kelasnya dengan titik koma -> koma).
+    expect(h.tj["5058@3"][0].jawab).toBe("Sering bertengkar, karena Tergugat berjudi;");
     expect(h.tj["5058@3"][0].tanya).toBe("Bagaimana keadaan rumah tangga mereka?");
   });
 });

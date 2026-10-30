@@ -3509,7 +3509,10 @@ function jawabMenurutModus({ tanya, modus, alasan, sumber, nomorSaksi, urutan, d
   // BAGAIMANA saksi tahu, bukan APA sebabnya. Diperiksa belakangan, ia akan
   // dijawab sebagai pertanyaan penyebab, dan saksi yang "tidak pernah
   // menyaksikan" mendadak mengaku "melihat sendiri".
-  if (/bagaimana .*(mengetahui|tahu)|dari mana .*(tahu|mengetahui)/i.test(tanya)) {
+  // 30 Okt (G2a): kata utuh. "Bagaimana sikap Tergugat ... menurut yang Saudara ketahui?" memuat "ketahui" (berisi
+  // "tahu") tetapi bertanya SIKAP pihak, bukan cara saksi tahu; dulu dijawab "saya melihat langsung dengan mata kepala
+  // saya sendiri" dan ditandai terisi dari data.
+  if (/bagaimana .*\b(mengetahui|tahu)\b|dari mana .*\b(tahu|mengetahui)\b/i.test(tanya)) {
     if (modus === "dari-cerita") return pilih("cara-tahu|dari-cerita");
     if (modus === "tidak-melihat") return pilih("cara-tahu|tidak-melihat");
     // Butir 27: dahulu tidak-tahu jatuh ke templat ("saya mengetahui karena

@@ -49,6 +49,14 @@ export async function register() {
     mulaiAgenH7Berkala(getDatabase);
   }
   /* === AKHIR AGEN H-7 === */
+  /* === AGEN H-1 BAS 30 Okt (G2a 2.4) === BAS sidang hari kerja berikutnya disiapkan tiap sore hari kerja (bawaan 15.30 WITA,
+     ALETA_AGEN_H1_JAM): blangko BAS Derry menurut agenda + keadaan tanya jawab saksi; draf di memori portal, hanya membaca
+     SIPP/ABT. Matikan dengan ALETA_AGEN_H1=0. */
+  if (process.env.ALETA_AGEN_H1 !== "0") {
+    const { mulaiAgenH1Berkala } = await import("@/server/modules/aleta-ecourt/agen-h1-bas");
+    mulaiAgenH1Berkala();
+  }
+  /* === AKHIR AGEN H-1 BAS === */
   /* === CERMIN PERKARA 25 Okt (C0) === pemindai awal keadaan perkara SIPP ke basis data ALETA: berkelompok, hanya di jendela
      malam (bawaan 18.00-06.30 WITA), bisa dilanjutkan, hanya MEMBACA SIPP lewat bot. Saklar pemindai MATI bawaan (layar Pemantau
      Cermin Perkara, dibaca tiap detak); saat mati detak tidak menembak bot sama sekali. Matikan detaknya dengan ALETA_CERMIN_PEMINDAI=0. */

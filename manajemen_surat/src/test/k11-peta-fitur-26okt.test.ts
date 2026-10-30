@@ -198,7 +198,8 @@ describe("peta fitur K11: kelompok manifest dan modul malas", () => {
     // 28 Okt 2026: tampilan-sipp.js = tampilan ALETA di SIPP per peran/pengguna, kelompok document_start SIPP SENDIRI (di luar K11).
     // 30 Okt 2026: bas-word-pdf.js = BAS Word ke PDF bertanda tangan di jendela e-Doc BAS SIPP (berkas baru di luar K11).
     // 30 Okt 2026 (G1): blangko-derry-periksa.js = Periksa sebelum cetak di Blangko Derry (berkas baru di luar K11).
-    expect([...new Set(baru)]).toEqual(["tampilan-sipp.js", "modul-malas.js", "bas-word-pdf.js", "sidang-terjadwal.js", "blangko-derry-berkas.js", "blangko-derry-periksa.js"]);
+    // 30 Okt 2026 (G2a): blangko-derry-draf-saksi.js = draf tanya jawab saksi otomatis, blangko-derry-draf-bas.js = BAS H-1 (pembantu murni Blangko Derry, di luar K11).
+    expect([...new Set(baru)].sort()).toEqual(["tampilan-sipp.js", "modul-malas.js", "bas-word-pdf.js", "sidang-terjadwal.js", "blangko-derry-berkas.js", "blangko-derry-draf-saksi.js", "blangko-derry-draf-bas.js", "blangko-derry-periksa.js"].sort());
     const tanpaTampilan = sesudah.kelompok.filter((k) => !(k.js.length === 1 && k.js[0] === "tampilan-sipp.js"));
     expect(tanpaTampilan.map((k) => k.css.filter((c: string) => c !== "sidang-terjadwal.css"))).toEqual(sebelum.kelompok.map((k) => k.css));
   });
@@ -250,7 +251,8 @@ describe("peta fitur K11: kelompok manifest dan modul malas", () => {
 
   it("berkas lain yang tidak disentuh K11 identik byte demi byte dengan sebelumnya", () => {
     // blangko-derry-isian.js: 26 Okt 2026 hanya MENAMBAH pengait layar kerja Sampul/Daftar Isi (blangko-derry-berkas.js); nama tingkat atas lama dijaga uji di bawah.
-    const diubah = new Set(["konten.js", "abt.js", "manifest.json", "latar.js", "blangko-derry-isian.js"]);
+    // blangko-derry-saksi-tampil.js: 30 Okt 2026 (G2a) MENAMBAH asal jawaban "contoh"; blangko-derry-saksi.js MENAMBAH hurufBesarAwal; saksi-susun.js menyaring pertanyaan wali; blangko-derry.js MENAMBAH api.bukaTautan + draf "h1"; ekspor lama tetap.
+    const diubah = new Set(["konten.js", "abt.js", "manifest.json", "latar.js", "blangko-derry-isian.js", "blangko-derry-saksi-tampil.js", "blangko-derry-saksi.js", "saksi-susun.js", "blangko-derry.js"]);
     for (const [nama, info] of Object.entries(sebelum.berkas)) {
       if (diubah.has(nama) || !sesudah.berkas[nama]) continue;
       // berkas yang sengaja disentuh didaftarkan di KEMBALI_DISENTUH
