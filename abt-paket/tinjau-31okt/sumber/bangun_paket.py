@@ -168,7 +168,7 @@ def tenggang(teks):
 
 
 # --- 23: butir "-" ----------------------------------------------------------------------------------------------------------
-KATA_PAR = re.compile(r'\\(s|qj|ql|qc|qr|ri|rin|sl|slmult|sb|sa|lisb|lisa|widctlpar|nowidctlpar|itap|aspalpha|aspnum|faauto|adjustright|hyphpar|keep|keepn)(-?\d+)? ?')
+KATA_PAR = re.compile(r'\\(s|qj|ql|qc|qr|ri|rin|sl|slmult|sb|sa|lisb|lisa|widctlpar|nowidctlpar|itap|aspalpha|aspnum|faauto|adjustright|hyphpar|keep|keepn)(-?\d+)?(?![a-zA-Z]) ?')
 
 
 def props_par(raw, pos):
@@ -201,7 +201,10 @@ def butir(raw, rel, catat):
             catat.append((rel, sb[-50:] + '[;]' + sd[:30], 'DILEWATI: "bahwa" tidak langsung sesudah ;'))
             continue
         li = li0 + 1004
-        ganti = ';%spar%spard%s%sfi-284%sli%d%slin%d%stx%d -%stab ' % (BS, BS, props, BS, BS, li, BS, li, BS, li, BS)
+        pb = '%spard%s%sfi-284%sli%d%slin%d%stx%d' % (BS, props, BS, BS, li, BS, li, BS, li)
+        # butir sebelumnya di paragraf yang sama: propertinya dipasang lagi tepat sebelum \par yang menutupnya (bisa di kelompok {...} lain)
+        lanjut = bool(ubah) and not re.search(r'\\par(?![a-z])', raw[ubah[-1][1]:pos])
+        ganti = ';%s%spar%s -%stab ' % (pb + ' ' if lanjut else '', BS, pb, BS)
         ubah.append((pos, e, ganti))
         catat.append((rel, sb[-50:] + '[;]' + sd[:30], 'butir'))
     return ubah
