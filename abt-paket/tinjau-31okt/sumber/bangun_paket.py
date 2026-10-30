@@ -313,6 +313,11 @@ def main():
         cb = []
         u5 = butir(r4, rel, cb)
         u5 += pastikan_pard_sesudah(r4, u5)
+        # penanda kueri berbutir (4303/4308/4864): \par penutup dipindah ke kelompok yang sama dengan penanda, supaya properti butir
+        # yang dipasang hasil kueri masih berlaku saat paragraf ditutup (kelompok berikutnya hanya berisi format huruf yang sama)
+        for m in re.finditer(r'#(?:4303|4308|4864)#(\}\{(?:\\[a-z]+-?\d* ?)+)\\par \}', r4):
+            u5.append((m.start(1), m.end(1), ''))
+            cb.append((rel, m.group(0)[:6], 'penanda butir: \\par sekelompok'))
         r5 = terapkan(r4, u5)
         catat['23'] += cb
         if r5 != raw0:

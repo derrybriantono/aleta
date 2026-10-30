@@ -2,11 +2,11 @@
 50e00bde73bcea9867a144a6c9885f42  abt-tinjau-31okt-PERIKSA.sql
 0125feca43aea91fb24d4423a6b9ecdc  abt-tinjau-31okt-PRASYARAT.sql
 685ba8568e8f2d7838316e553a2f1959  abt-tinjau-31okt-PULIH.sql
-7a33134d604d237e6803f09cc4049013  daftar-tambal.tsv
+55dcea737e39288a8adab8e76d39bf4c  daftar-tambal.tsv
 7a26353d2467a8705784e1a75db2508e  harap.txt
 19cc2cd56daa0235ed857f847e1a5fb1  nomor-diubah.txt
 c0e47e84f335afd3dc4b50abbe38e92a  nomor-variabel.txt
 c64ee90344c528c47b8e3c9ac2e5c4f6  pasang-satker.sh
 cf44d01e589d1426bc6441fb634ecec7  pulih-satker.sh
-1b8e80e86c9d695e92c448f9ebb8aca8  tambal.tsv
+36fad0216adb135eb98ea7a7973d5654  tambal.tsv
 d949a1c1e10c9b60e8cc4fd18adc9b54  tambal_rtf.py
