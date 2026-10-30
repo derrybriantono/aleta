@@ -26,6 +26,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { LencanaStatusEcourt } from "@/components/portal/ecourt-status-lencana";
+import { tampilanStatus, type StatusAkunEcourt } from "@/lib/ecourt-status-akun";
 import { apiPath } from "@/lib/base-path";
 
 type Sesi = {
@@ -37,6 +39,8 @@ type Sesi = {
   diperiksaPada: string;
   keadaan: "tersambung" | "kedaluwarsa" | "terputus";
   kedaluwarsaPada: string;
+  /** Status dalam model satu sumber (30 Okt 2026) - dihitung bot. */
+  status?: StatusAkunEcourt | null;
 };
 
 type Jejak = {
@@ -316,7 +320,14 @@ export function EcourtSesiPribadi() {
               return (
                 <li key={p.kode} className="flex flex-wrap items-center gap-2 rounded-md border border-border/70 px-3 py-2">
                   <span className="min-w-36 font-medium">{p.sebutan}</span>
-                  {s?.keadaan === "tersambung" ? (
+                  {s?.status ? (
+                    <>
+                      {/* Model satu sumber: "Tersambung" hanya bila TERBUKTI baru-baru
+                          ini; cookie lama tanpa bukti = "Sedang memeriksa". */}
+                      <LencanaStatusEcourt t={tampilanStatus(s.status)} />
+                      {s.namaAkunEcourt ? <span className="text-muted-foreground">{s.namaAkunEcourt}</span> : null}
+                    </>
+                  ) : s?.keadaan === "tersambung" ? (
                     <Badge variant="success">Tersambung{s.namaAkunEcourt ? ` - ${s.namaAkunEcourt}` : ""}</Badge>
                   ) : s?.keadaan === "kedaluwarsa" ? (
                     <Badge variant="warning">Sesi habis {waktu(s.kedaluwarsaPada)}</Badge>
@@ -333,7 +344,8 @@ export function EcourtSesiPribadi() {
                   <span className="ml-auto flex flex-wrap gap-2">
                     {a ? (
                       <Button type="button" size="sm" disabled={sibuk} onClick={() => void mulai(p.kode, true)}>
-                        Uji masuk
+                        {/* Sesi habis + akun tersimpan: cukup captcha. */}
+                        {s?.status?.keadaan === "perlu_masuk" || s?.keadaan === "kedaluwarsa" ? "Masuk lagi" : "Uji masuk"}
                       </Button>
                     ) : null}
                     <Button type="button" size="sm" variant="outline" disabled={sibuk} onClick={() => void mulai(p.kode)}>

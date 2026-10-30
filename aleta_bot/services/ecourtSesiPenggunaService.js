@@ -122,9 +122,45 @@ function akunPengguna() {
   return require("./ecourtAkunPenggunaService");
 }
 
+/**
+ * Status satu sesi pribadi dalam model yang SAMA dengan akun penarik
+ * (ecourtStatusAkunService.susunStatus, 30 Okt 2026). Dulu "tersambung"
+ * cukup karena cookie-nya ada - walau sudah berhari-hari tidak terbukti.
+ * Kini cookie yang tidak terbukti dalam masa percaya berstatus "belum
+ * dipastikan" sampai diperiksa atau dipakai lagi.
+ */
+function statusBaris(baris) {
+  const waktu = (t) => {
+    const n = Date.parse(String(t || ""));
+    return Number.isFinite(n) ? n : 0;
+  };
+  let bukti = null;
+  if (baris.kedaluwarsaPada) {
+    bukti = { jenis: "perlu_masuk", padaMs: waktu(baris.kedaluwarsaPada), sumber: "pemakaian", alasan: "sesi_habis" };
+  } else if (baris.cookies) {
+    const pada = Math.max(waktu(baris.diperiksaPada), waktu(baris.tersambungPada), waktu(baris.terakhirDipakai));
+    if (pada) bukti = { jenis: "aktif", padaMs: pada, sumber: "pemeriksaan", alasan: "" };
+  }
+  try {
+    const { susunStatus } = require("./ecourtStatusAkunService");
+    return susunStatus({
+      slot: baris.peran,
+      label: SEBUTAN_PERAN[baris.peran] || baris.peran,
+      terdaftar: true,
+      adaSesi: Boolean(baris.cookies || baris.kedaluwarsaPada),
+      bukti,
+      adaSandi: false,
+      sekarangMs: Date.now(),
+    });
+  } catch {
+    return null;
+  }
+}
+
 /** Baris untuk layar - TANPA cookie, tersandi pun tidak. */
 function barisLayar(baris) {
   return {
+    status: statusBaris(baris),
     peran: baris.peran,
     sebutanPeran: SEBUTAN_PERAN[baris.peran] || baris.peran,
     namaAkunEcourt: String(baris.namaAkunEcourt || ""),

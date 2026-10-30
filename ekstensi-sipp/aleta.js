@@ -1229,6 +1229,20 @@ function t4MenuKepala(k) {
 
 // ─── Beranda: sambungan (portal-14), tugas (11), sidang (23), lonceng (12) ──
 
+/**
+ * Lampu "e-Court" di bagian Sambungan (30 Okt 2026): status akun e-Court satu
+ * sumber - judul, kalimat, dan warna diputuskan server (src/lib/
+ * ecourt-status-akun.ts), sama dengan semua penanda lain. Bentuk lama
+ * (keadaan hidup/habis/...) hanya bila server belum diperbarui.
+ * @returns {[string, string]} [kelas lampu baik|awas|buruk|netral, keterangan]
+ */
+function t4LampuEcourt(e) {
+  const st = e && e.status && e.status.lampu ? e.status : null;
+  if (st) return [st.lampu, st.keadaan === "aktif" ? st.judul : `${st.judul} - ${st.teks}`];
+  const k = e ? e.keadaan : "";
+  return [k === "hidup" ? "baik" : k === "tidak-diketahui" ? "awas" : "buruk", k === "hidup" ? "sesi hidup" : (e && e.sebab) || k];
+}
+
 function t4BagianSambungan(k) {
   const { kotak, isi } = t4Bagian("Sambungan", "portal-14", "beranda");
   const muat = async () => {
@@ -1253,14 +1267,15 @@ function t4BagianSambungan(k) {
     tambah("SIPP", sipp.hidup ? (sipp.ms > T4_LAMBAT_MS ? "awas" : "baik") : "buruk", sipp.hidup ? `${sipp.ms} ms` : "tidak menjawab");
     tambah("ABT", abt.hidup ? (abt.ms > T4_LAMBAT_MS ? "awas" : "baik") : "buruk", abt.hidup ? `${abt.ms} ms` : "tidak menjawab");
     if (d && d.ecourt) {
-      const e = d.ecourt;
-      tambah("e-Court", e.keadaan === "hidup" ? "baik" : e.keadaan === "tidak-diketahui" ? "awas" : "buruk", e.keadaan === "hidup" ? "sesi hidup" : e.sebab || e.keadaan);
+      const [lampuEcourt, ketEcourt] = t4LampuEcourt(d.ecourt);
+      tambah("e-Court", lampuEcourt, ketEcourt);
     }
     if (d && d.whatsapp && d.whatsapp.keadaan !== "nonaktif") {
       const w = d.whatsapp;
       tambah("WhatsApp", w.keadaan === "tersambung" ? "baik" : w.keadaan === "tidak-diketahui" ? "awas" : "buruk", w.keadaan === "tersambung" ? "tersambung" : w.sebab || w.keadaan);
     }
-    const terganggu = lampu.filter((x) => x.keadaan !== "baik");
+    // "netral" (kelabu: sedang memeriksa / belum diatur) bukan gangguan.
+    const terganggu = lampu.filter((x) => x.keadaan !== "baik" && x.keadaan !== "netral");
     const pita = buatElemen(
       "div",
       `aleta-t4-pita ${terganggu.length === 0 ? "aleta-t4-pita-baik" : "aleta-t4-pita-awas"}`,

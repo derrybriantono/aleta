@@ -790,9 +790,10 @@ describe("rute GET /api/aleta-ecourt/ekstensi-panel/*", () => {
     jawabBot = async (url) => {
       if (url.includes("/whatsapp/status"))
         return JSON_BOT({ ok: true, status: "connected", phoneNumber: "6281234567890", sessionName: "aleta", qrAvailable: false });
-      if (url.includes("/ecourt/login/status")) {
-        expect(url).toContain("periksa=cepat");
-        return JSON_BOT({ ok: true, sesi: { tersimpan: true, berlaku: true, alasan: "" }, menunggu: false });
+      // 30 Okt 2026: lampu e-Court membaca status akun satu sumber (bukan lagi
+      // "folder sesi ada = hidup"), tanpa menyalakan peramban.
+      if (url.includes("/ecourt/status-akun")) {
+        return JSON_BOT({ ok: true, utama: "utama", akun: [], ringkas: { slot: "utama", label: "Akun utama", keadaan: "aktif", nada: "hijau", kodeSebab: "terbukti", tindakan: "", diperiksaPada: new Date().toISOString(), umurDetik: 5, sumber: "pemeriksaan" } });
       }
       return JSON_BOT({}, 404);
     };
@@ -800,6 +801,7 @@ describe("rute GET /api/aleta-ecourt/ekstensi-panel/*", () => {
     expect(r.status).toBe(200);
     expect(r.isi.data.whatsapp.keadaan).toBe("tersambung");
     expect(r.isi.data.ecourt.keadaan).toBe("hidup");
+    expect(r.isi.data.ecourt.status).toMatchObject({ keadaan: "aktif", judul: "Tersambung", lampu: "baik" });
     expect(r.isi.data.bot.hidup).toBe(true);
     expect(r.isi.data.versiPortal).toBe(APP_VERSION);
     expect(JSON.stringify(r.isi)).not.toContain("6281234567890");
@@ -814,15 +816,17 @@ describe("rute GET /api/aleta-ecourt/ekstensi-panel/*", () => {
     expect(r.isi.data.bot.hidup).toBe(false);
     expect(r.isi.data.whatsapp.keadaan).toBe("tidak-diketahui");
     expect(r.isi.data.ecourt.keadaan).toBe("tidak-diketahui");
+    expect(r.isi.data.ecourt.status).toMatchObject({ keadaan: "tidak_tersambung", lampu: "buruk" });
   });
 
   it("sambungan: sesi e-Court habis disebut habis", async () => {
     jawabBot = async (url) =>
-      url.includes("/ecourt/login/status")
-        ? JSON_BOT({ ok: true, sesi: { tersimpan: true, berlaku: false, alasan: "kedaluwarsa" }, menunggu: false })
+      url.includes("/ecourt/status-akun")
+        ? JSON_BOT({ ok: true, utama: "utama", akun: [], ringkas: { slot: "utama", label: "Akun utama", keadaan: "perlu_masuk", nada: "kuning", kodeSebab: "sesi_habis", tindakan: "masuk_lagi", diperiksaPada: new Date().toISOString(), umurDetik: 5, sumber: "penarikan" } })
         : JSON_BOT({ ok: true, status: "disconnected" });
     const r = await sambungan();
     expect(r.isi.data.ecourt.keadaan).toBe("habis");
+    expect(r.isi.data.ecourt.status).toMatchObject({ keadaan: "perlu_masuk", judul: "Perlu masuk ulang", lampu: "awas" });
     expect(r.isi.data.whatsapp.keadaan).toBe("terputus");
   });
 });

@@ -17,6 +17,7 @@
  *           tidak pernah memicu peringatan WhatsApp
  */
 import type { RingkasGalat } from "@/server/modules/kesehatan/galat";
+import { tampilanStatus, type StatusAkunEcourt } from "@/lib/ecourt-status-akun";
 
 export type Warna = "hijau" | "kuning" | "merah" | "kelabu";
 export type KelompokKomponen = "layanan" | "data" | "server" | "klien";
@@ -223,6 +224,8 @@ type JadwalEcourtMentah = {
   sedangJalan?: boolean;
   terakhirSelesai?: string | null;
   terakhirGalat?: string | null;
+  /** Status akun utama dari model satu sumber (30 Okt 2026). */
+  statusUtama?: StatusAkunEcourt | null;
 };
 
 export function periksaEcourt(jadwal: Hasil<{ jadwal?: JadwalEcourtMentah | null }>, kini: Date) {
@@ -234,7 +237,21 @@ export function periksaEcourt(jadwal: Hasil<{ jadwal?: JadwalEcourtMentah | null
     { label: "Selesai terakhir", nilai: umurTeks(j.terakhirSelesai ?? null, kini) },
   ];
   if (j.terakhirGalat) rincian.push({ label: "Error terakhir", nilai: String(j.terakhirGalat).slice(0, 160) });
+  // Sesi akun utama - SAMA dengan lencana di Integrasi e-Court dan ekstensi.
+  // Dulu kesehatan tidak membaca sesi sama sekali: hijau "sesuai jadwal"
+  // walau sesinya sudah habis sejak semalam.
+  const sesi = j.statusUtama && j.statusUtama.keadaan ? tampilanStatus(j.statusUtama) : null;
+  if (sesi) rincian.push({ label: "Sesi e-Court", nilai: `${sesi.judul} - ${sesi.teks}` });
   if (!j.pengaturan?.aktif) return { warna: "kelabu" as Warna, ringkas: "Penarikan berkala e-Court dimatikan.", rincian };
+  if (sesi && sesi.keadaan === "perlu_masuk") {
+    return { warna: "kuning" as Warna, ringkas: "Sesi e-Court akun utama perlu masuk ulang - penarikan berhenti.", rincian };
+  }
+  if (sesi && sesi.keadaan === "tidak_tersambung") {
+    return { warna: "merah" as Warna, ringkas: "e-Court tidak tersambung dari server - penarikan tertunda.", rincian };
+  }
+  if (sesi && sesi.keadaan === "belum_diatur") {
+    return { warna: "kelabu" as Warna, ringkas: "Akun utama e-Court belum diatur (belum pernah masuk dari server ini).", rincian };
+  }
   if (j.sedangJalan) return { warna: "hijau" as Warna, ringkas: "Penarikan e-Court sedang berjalan.", rincian };
   if (j.terakhirGalat) return { warna: "kuning" as Warna, ringkas: "Putaran e-Court terakhir mencatat error.", rincian };
   const jarakJam = Math.max(1, Number(j.pengaturan?.jarakJam ?? 6));

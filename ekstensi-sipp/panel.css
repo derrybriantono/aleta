@@ -6827,6 +6827,7 @@ html[data-aleta-senyap="ya"] aleta-cm-kabar {
 #aleta-panel-portal[data-t4] .aleta-t4-lampu-baik .aleta-t4-titik { color: var(--aleta-aman); }
 #aleta-panel-portal[data-t4] .aleta-t4-lampu-awas .aleta-t4-titik { color: var(--aleta-mendesak); }
 #aleta-panel-portal[data-t4] .aleta-t4-lampu-buruk .aleta-t4-titik { color: var(--aleta-lewat); }
+#aleta-panel-portal[data-t4] .aleta-t4-lampu-netral .aleta-t4-titik { color: var(--aleta-tulisan-lembut); }
 #aleta-panel-portal[data-t4] .aleta-t4-lampu-nama { font-weight: 600; }
 #aleta-panel-portal[data-t4] .aleta-t4-lampu-ket { color: var(--aleta-tulisan-lembut); }
 #aleta-panel-portal[data-t4] .aleta-t4-diagnosa .aleta-t4-lampu { flex-direction: column; }
@@ -8349,6 +8350,8 @@ html[data-aleta-latihan="ya"] .aleta-latihan-tekan .aleta-latihan-sebutan { colo
 #aleta-panel-sipp[data-t7] .aleta-t7-lampu-satu { display: inline-flex; align-items: baseline; gap: 3px; }
 #aleta-panel-sipp[data-t7] .aleta-t7-lampu-baik .aleta-t7-titik { color: var(--aleta-aman); }
 #aleta-panel-sipp[data-t7] .aleta-t7-lampu-awas .aleta-t7-titik { color: var(--aleta-mendesak); }
+#aleta-panel-sipp[data-t7] .aleta-t7-lampu-buruk .aleta-t7-titik { color: var(--aleta-lewat); }
+#aleta-panel-sipp[data-t7] .aleta-t7-lampu-netral .aleta-t7-titik { color: var(--aleta-tulisan-lembut); }
 #aleta-panel-sipp[data-t7] .aleta-t7-lampu-nama { font-weight: 600; }
 #aleta-panel-sipp[data-t7] .aleta-t7-lampu-ket { color: var(--aleta-tulisan-lembut); }
 #aleta-panel-sipp[data-t7] .aleta-t7-lampu-ringkas .aleta-t7-lampu-nama {

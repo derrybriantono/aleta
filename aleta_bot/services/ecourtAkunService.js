@@ -304,6 +304,17 @@ function tandaiBerhasil(slot) {
   keadaan.terakhirDipakai = nama;
 }
 
+/**
+ * Sesi akun TERBUKTI hidup lagi (masuk berhasil, pemeriksaan berlaku): tanda
+ * istirahat dilepas seketika. Sebelumnya istirahat 30 menit tetap tertulis
+ * "diistirahatkan" walau petugas baru saja masuk - penanda merah padahal
+ * sudah tersambung, dan penarikan berikutnya melompati akun utama.
+ */
+function lepasIstirahat(slot) {
+  const nama = sesiEcourt.bersihkanSlot(slot);
+  keadaan.gagal.delete(nama);
+}
+
 /** Menandai sesi akun mati, supaya penarikan berikutnya beralih. */
 function tandaiGagal(slot, alasan = "") {
   const nama = sesiEcourt.bersihkanSlot(slot);
@@ -378,6 +389,11 @@ function hapusAkun(slot, { olehSiapa = "" } = {}) {
   const hasilHapus = sesiEcourt.clearSession(nama);
   require("./ecourtSesiRinganService").hapusKuki(nama);
   keadaan.gagal.delete(nama);
+  try {
+    require("./ecourtStatusAkunService").lupakan(nama);
+  } catch {
+    /* status akun tidak termuat */
+  }
 
   void logService.logSecurityEvent({
     eventType: "ecourt_akun_dihapus",
@@ -397,6 +413,7 @@ module.exports = {
   hapusAkun,
   keadaanAkunUtama,
   lepasAkunUtama,
+  lepasIstirahat,
   pilihAkunSiap,
   pilihAkunUtama,
   slotAkunUtama,

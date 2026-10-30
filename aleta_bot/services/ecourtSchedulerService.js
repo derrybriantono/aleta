@@ -624,6 +624,15 @@ function jalankanSatuPutaran({
         });
       }
 
+      // Status akun satu sumber (30 Okt 2026): akhir putaran adalah bukti
+      // keadaan sesi akun yang dipakai - berhasil = tersambung, kode 2 = perlu
+      // masuk ulang. Dibaca semua penanda (portal, ekstensi, popup).
+      try {
+        require("./ecourtStatusAkunService").catatPenarikan(slotAkun || "utama", { kode, catatan: keadaan.terakhirCatatan });
+      } catch {
+        // Mencatat status bukan syarat penarikan.
+      }
+
       bereskan(keadaan.terakhirCatatan);
       // Sesi habis: minta login lewat WhatsApp (bila dinyalakan). Dipicu SETELAH
       // kunci dilepas supaya pembukaan peramban login tidak bentrok dengan

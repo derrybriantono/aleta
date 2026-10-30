@@ -3,10 +3,11 @@ import { type NextRequest } from "next/server";
 import { getDatabase } from "@/server/db/client";
 import { APP_VERSION } from "@/lib/patch-notes";
 import {
-  getGatewayEcourtSesi,
+  getGatewayStatusAkunEcourt,
   getGatewayWhatsappStatus,
   getWhatsappRuntimeMode,
 } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
+import { keadaanSambunganLama, statusBotMati, tampilanStatus, type TampilanStatusEcourt } from "@/lib/ecourt-status-akun";
 import { requireActorUser } from "@/server/modules/organization/service";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { handleRouteError, ok } from "@/server/shared/http";
@@ -15,6 +16,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type Keadaan = { keadaan: string; sebab: string };
+type KeadaanEcourt = Keadaan & { status: TampilanStatusEcourt };
 
 /**
  * Lampu sambungan untuk panel ekstensi di portal (Tahap 4 rencana "ekstensi
@@ -55,7 +57,10 @@ export async function GET(request: NextRequest) {
     const modeWa = getWhatsappRuntimeMode();
     const [wa, ecourt] = await Promise.all([
       modeWa === "aleta_bot" ? getGatewayWhatsappStatus() : Promise.resolve(null),
-      getGatewayEcourtSesi(false),
+      // Status akun satu sumber (30 Okt 2026) - bukan lagi "folder sesi ada
+      // = hidup". Tidak menyalakan peramban; bot hanya memeriksa ulang akun
+      // yang buktinya basi, di latar, jalan ringan lebih dulu.
+      getGatewayStatusAkunEcourt(true),
     ]);
     const lamaMs = Date.now() - mulai;
 
@@ -77,19 +82,17 @@ export async function GET(request: NextRequest) {
       whatsapp = { keadaan: "tidak-diketahui", sebab: "ALETA Bot tidak menjawab." };
     }
 
-    let ecourtKeadaan: Keadaan;
-    if (ecourt.ok) {
-      const sesi = ecourt.data?.sesi;
-      if (!sesi || !sesi.tersimpan) {
-        ecourtKeadaan = { keadaan: "belum-ada", sebab: "Belum ada sesi e-Court yang tersimpan di server." };
-      } else if (sesi.berlaku === false) {
-        ecourtKeadaan = { keadaan: "habis", sebab: "Sesi e-Court sudah habis - perlu login ulang oleh admin." };
-      } else {
-        ecourtKeadaan = { keadaan: "hidup", sebab: "" };
-      }
-    } else {
-      ecourtKeadaan = { keadaan: "tidak-diketahui", sebab: "ALETA Bot tidak menjawab." };
-    }
+    // `keadaan` lama (hidup/habis/belum-ada/terputus/tidak-diketahui) tetap
+    // dikirim untuk ekstensi yang belum diperbarui; ekstensi baru membaca
+    // `status` (judul, kalimat, warna) yang sama dengan semua penanda.
+    // Dulu sesi yang BELUM DIPASTIKAN ditulis "hidup" (hijau palsu).
+    const status = tampilanStatus(ecourt.ok && ecourt.data ? ecourt.data.ringkas : statusBotMati());
+    const ecourtKeadaan: KeadaanEcourt = {
+      // Bot tidak menjawab: kata lama tetap "tidak-diketahui" seperti dulu.
+      keadaan: ecourt.ok ? keadaanSambunganLama(status.keadaan) : "tidak-diketahui",
+      sebab: status.keadaan === "aktif" ? "" : status.teks,
+      status,
+    };
 
     return ok({
       versiPortal: APP_VERSION,

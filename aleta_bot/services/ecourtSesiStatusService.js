@@ -93,6 +93,13 @@ function hasilRingan(kunci, ringan) {
 async function cobaRingan(kunci) {
   try {
     const r = await alat.ringan(kunci);
+    // Status akun satu sumber: jawaban pasti (berlaku / e-Court tak
+    // terjangkau) dicatat sebagai bukti untuk semua penanda.
+    try {
+      require("./ecourtStatusAkunService").catatRingan(kunci, r);
+    } catch {
+      /* mencatat bukan syarat pemeriksaan */
+    }
     return r && r.pasti && r.berlaku === true ? r : null;
   } catch {
     return null;

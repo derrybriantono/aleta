@@ -178,6 +178,10 @@
   .tarik-ecourt[data-keadaan="aktif"] { --tarik-warna: #2e9d62; }
   .tarik-ecourt[data-keadaan="perhatian"] { --tarik-warna: #d99a1e; }
   .tarik-ecourt[data-keadaan="tidak-terjangkau"] { --tarik-warna: #d4483b; }
+  /* 30 Okt: menyala tetapi e-Court tidak tersambung dari server (status akun satu sumber). */
+  .tarik-ecourt[data-keadaan="terputus"] { --tarik-warna: #d4483b; }
+  /* 30 Okt: menyala tetapi akun utama e-Court belum pernah masuk dari server (kelabu, titik penuh). */
+  .tarik-ecourt[data-keadaan="belum-diatur"] { --tarik-warna: #8a8f98; }
   .hubungan-saksi-isi { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; max-height: 220px; overflow: auto; }
   .hubungan-saksi-baris { display: flex; align-items: center; gap: 6px; font-size: 11.5px; }
   .hubungan-saksi-baris[data-sembunyi="ya"] > span { opacity: .6; text-decoration: line-through; }

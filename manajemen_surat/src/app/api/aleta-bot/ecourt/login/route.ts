@@ -13,8 +13,15 @@ import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ApiError } from "@/server/shared/errors";
 import { ok } from "@/server/shared/http";
+import { tampilanStatus } from "@/lib/ecourt-status-akun";
 
 export const runtime = "nodejs";
+
+/** Penanda pelaku untuk jejak keamanan bot - tanpa isi badan permintaan. */
+function actorLabel(actor: unknown): string {
+  const a = (actor ?? {}) as { email?: string; id?: string; name?: string };
+  return String(a.email || a.id || a.name || "");
+}
 export const dynamic = "force-dynamic";
 
 /** Keadaan sesi e-Court. */
@@ -27,7 +34,8 @@ export async function GET(request: NextRequest) {
     await requireActorUser(db, actorUserId);
 
     const penuh = request.nextUrl.searchParams.get("periksa") === "penuh";
-    const hasil = await getGatewayEcourtSesi(penuh);
+    const slot = String(request.nextUrl.searchParams.get("slot") || "").trim();
+    const hasil = await getGatewayEcourtSesi(penuh, slot);
 
     if (!hasil.ok) {
       return ok({ available: false, message: hasil.error || "ALETA Bot belum dapat dihubungi.", sesi: null });
@@ -40,6 +48,9 @@ export async function GET(request: NextRequest) {
       // dipastikan - beserta nama pengguna dan kapan terakhir diperiksa.
       keadaan: (hasil.data as { keadaan?: unknown })?.keadaan ?? null,
       menunggu: hasil.data?.menunggu === true,
+      // Status akun satu sumber (30 Okt 2026) - judul/kalimat/warna yang sama
+      // dengan semua penanda lain.
+      status: tampilanStatus(hasil.data?.statusAkun ?? null),
     });
   } catch (error) {
     return handleAdminRouteError(error, request, {
@@ -73,17 +84,23 @@ export async function POST(request: NextRequest) {
     actorUserId = await resolveActorUserId(request);
     // Masuk/keluar akun e-Court PENGADILAN: Super Admin dan Admin saja (U5, 9 Okt
     // 2026). Sesi e-Court pribadi tiap pegawai memakai rute ecourt-sesi.
-    await pastikanAdminIstimewa(db, actorUserId, "masuk atau keluar akun e-Court pengadilan");
+    const actor = await pastikanAdminIstimewa(db, actorUserId, "masuk atau keluar akun e-Court pengadilan");
 
     const body = (await request.json()) as {
       aksi?: string;
+      slot?: string;
       email?: string;
       sandi?: string;
       captcha?: string;
+      simpan?: boolean;
+      isiOtomatis?: boolean;
     };
+    // Slot akun penarik yang dimasuki (30 Okt 2026). Kosong = akun bawaan.
+    const slot = String(body.slot || "").trim().toLowerCase();
+    if (slot && !/^[a-z0-9-]{1,32}$/.test(slot)) return ok({ ok: false, alasan: "slot_tidak_sah" });
 
     if (body.aksi === "mulai") {
-      const hasil = await mulaiGatewayEcourtLogin();
+      const hasil = await mulaiGatewayEcourtLogin(slot, body.isiOtomatis !== false);
       if (!hasil.ok) return ok({ ok: false, alasan: hasil.error || "bot_tidak_terjangkau" });
       return ok(hasil.data ?? { ok: false, alasan: "tanpa_jawaban" });
     }
@@ -93,13 +110,16 @@ export async function POST(request: NextRequest) {
         email: String(body.email || ""),
         sandi: String(body.sandi || ""),
         captcha: String(body.captcha || ""),
+        // Disimpan tersandi di bot HANYA bila e-Court menerima login ini.
+        simpan: body.simpan === true,
+        olehSiapa: `portal:${actorLabel(actor)}`,
       });
       if (!hasil.ok) return ok({ ok: false, alasan: hasil.error || "bot_tidak_terjangkau" });
       return ok(hasil.data ?? { ok: false, alasan: "tanpa_jawaban" });
     }
 
     if (body.aksi === "keluar") {
-      const hasil = await keluarGatewayEcourt();
+      const hasil = await keluarGatewayEcourt(slot);
       if (!hasil.ok) return ok({ ok: false, alasan: hasil.error || "bot_tidak_terjangkau" });
       return ok(hasil.data ?? { ok: false, alasan: "tanpa_jawaban" });
     }

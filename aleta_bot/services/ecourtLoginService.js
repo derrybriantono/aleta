@@ -66,6 +66,22 @@ const LOGIN_TTL_MS = Number(process.env.ALETA_ECOURT_LOGIN_TTL_MS || 5 * 60 * 10
  */
 let sesiAktif = null;
 
+/**
+ * Status akun satu sumber (ecourtStatusAkunService). Dimuat malas - berkas
+ * itu memanggil balik layanan ini (slotMenunggu, periksaSesi).
+ */
+function statusAkun() {
+  return require("./ecourtStatusAkunService");
+}
+
+function catatStatus(fn) {
+  try {
+    fn(statusAkun());
+  } catch {
+    // Mencatat status bukan syarat login atau pemeriksaan.
+  }
+}
+
 function bersihkanSesiAktif() {
   if (!sesiAktif) return;
   const { browser, timer } = sesiAktif;
@@ -220,7 +236,7 @@ function bacaNamaPengguna() {
  *
  * @returns {Promise<{ ok: boolean, alasan: string, captcha: string, formulir: object }>}
  */
-async function mulaiLogin({ slot = "" } = {}) {
+async function mulaiLogin({ slot = "", isiOtomatis = true } = {}) {
   if (require("./kembaranMode").aktif()) {
     return { ok: false, alasan: "kembaran_dimatikan", captcha: "", formulir: null };
   }
@@ -243,7 +259,9 @@ async function mulaiLogin({ slot = "" } = {}) {
     // Sesi lama mungkin masih berlaku: bila e-Court langsung mengalihkan ke
     // halaman setelah masuk, tidak perlu login sama sekali.
     if (scraper.isLoggedInUrl(page.url())) {
+      await require("./ecourtSesiRinganService").simpanDariHalaman(slot, page).catch(() => false);
       await browser.close().catch(() => {});
+      catatStatus((s) => s.catat(slot, { jenis: "aktif", sumber: "masuk" }));
       return { ok: true, alasan: "sudah_masuk", captcha: "", formulir: null };
     }
 
@@ -257,6 +275,11 @@ async function mulaiLogin({ slot = "" } = {}) {
         formulir,
       };
     }
+
+    // Halaman masuk yang dilayani = TIDAK ada sesi yang berlaku untuk slot ini
+    // (bila ada, e-Court sudah mengalihkan ke halaman sesudah masuk di atas).
+    // Bukti itu dicatat supaya penanda tidak tetap "tersambung" (30 Okt 2026).
+    catatStatus((s) => s.catat(slot, { jenis: "perlu_masuk", sumber: "masuk", alasan: "halaman_masuk" }));
 
     // Gambar captcha diambil sebagai potongan layar elemennya, bukan diunduh
     // ulang lewat alamatnya. Mengunduh ulang akan meminta captcha BARU dari
@@ -280,7 +303,9 @@ async function mulaiLogin({ slot = "" } = {}) {
     // Yang tersisa untuk manusia hanyalah captcha - dan memang hanya itu yang
     // seharusnya tersisa.
     let terisiOtomatis = false;
-    const tersimpan = ecourtKredensialService.ambil(slot);
+    // isiOtomatis:false = petugas hendak mengetik sandi BARU (sandi tersimpan
+    // ditolak e-Court atau sudah diganti) - simpanan tidak diketikkan.
+    const tersimpan = isiOtomatis === false ? null : ecourtKredensialService.ambil(slot);
     if (tersimpan) {
       try {
         await isiBorang.isiSelektor(page, '[data-pk="email"]', tersimpan.email);
@@ -310,7 +335,12 @@ async function mulaiLogin({ slot = "" } = {}) {
     };
   } catch (error) {
     if (browser) await browser.close().catch(() => {});
-    return { ok: false, alasan: `gagal_membuka: ${error.message}`, captcha: "", formulir: null };
+    const alasan = `gagal_membuka: ${error.message}`;
+    // e-Court tidak terjangkau = bukti "tidak tersambung" bagi slot ini.
+    catatStatus((s) => {
+      if (s.golongkanAlasan(alasan) === "jaringan") s.catat(slot, { jenis: "tidak_tersambung", sumber: "masuk", alasan: "jaringan" });
+    });
+    return { ok: false, alasan, captcha: "", formulir: null };
   }
 }
 
@@ -363,6 +393,46 @@ async function lewatiGerbang(page) {
 }
 
 /**
+ * Membaca pesan penolakan yang tampak di halaman login (dijalankan di dalam
+ * halaman). Hanya dipakai untuk MENGGOLONGKAN penolakan - teksnya tidak pernah
+ * dikembalikan ke portal maupun dicatat.
+ */
+function bacaPesanTolak() {
+  const pemilih = [".alert", ".alert-danger", ".text-danger", ".invalid-feedback", ".help-block", ".error", ".swal2-html-container", ".toast-message"];
+  const teks = [];
+  for (const p of pemilih) {
+    for (const el of Array.from(document.querySelectorAll(p))) {
+      const t = String(el.innerText || el.textContent || "").replace(/\s+/g, " ").trim();
+      if (t) teks.push(t);
+    }
+  }
+  return teks.join(" | ").slice(0, 400);
+}
+
+/**
+ * Menggolongkan login yang ditolak: "captcha" (kode captcha salah/hangus),
+ * "sandi" (surel atau sandi ditolak), atau "" (tidak dapat dipastikan).
+ *
+ * Bentuk alamat penolakan captcha terukur 27 Okt 2026: /Login/index/CAPTCHA.
+ * Bentuk penolakan sandi BELUM pernah terukur di e-Court asli - karena itu
+ * hanya disimpulkan dari kata yang jelas (password/sandi/email + salah/tidak
+ * valid) atau segmen alamat yang menyebut PASSWORD/EMAIL/USER.
+ */
+function golongkanTolak(jalur, pesan) {
+  const alamat = String(jalur || "");
+  const teks = String(pesan || "");
+  if (/captcha/i.test(alamat) || /captcha|kode keamanan|kode verifikasi/i.test(teks)) return "captcha";
+  if (/\/(password|pass|email|user|username|akun|kredensial)/i.test(alamat)) return "sandi";
+  if (
+    /(password|kata sandi|sandi|e-?mail|username)[^.|]{0,40}(salah|tidak (valid|sesuai|cocok|terdaftar|dikenal|ditemukan))/i.test(teks) ||
+    /(salah|tidak (valid|sesuai|cocok|terdaftar))[^.|]{0,40}(password|kata sandi|sandi|e-?mail|username)/i.test(teks)
+  ) {
+    return "sandi";
+  }
+  return "";
+}
+
+/**
  * Mengirimkan email, sandi, dan jawaban captcha ke e-Court.
  *
  * Sandi TIDAK pernah keluar dari fungsi ini: tidak dikembalikan, tidak dicatat,
@@ -375,11 +445,13 @@ async function lewatiGerbang(page) {
  *
  * @returns {Promise<{ ok: boolean, alasan: string }>}
  */
-async function kirimLogin({ email, sandi, captcha, jalur = "portal" } = {}) {
+async function kirimLogin({ email, sandi, captcha, jalur = "portal", simpan = false, olehSiapa = "" } = {}) {
   if (!sesiAktif) {
     return { ok: false, alasan: "sesi_login_kedaluwarsa" };
   }
   const { page } = sesiAktif;
+  // Slot dicatat SEBELUM peramban ditutup - bersihkanSesiAktif membuangnya.
+  const slotDipakai = sesiEcourt.bersihkanSlot(sesiAktif.slotDipakai || "");
 
   // Formulir yang sudah terisi sendiri saat dibuka tidak perlu - dan tidak
   // boleh - diisi ulang: mengetik di atas isian yang ada menghasilkan sandi
@@ -451,7 +523,17 @@ async function kirimLogin({ email, sandi, captcha, jalur = "portal" } = {}) {
       message: berhasil
         ? `Sesi e-Court dibuka lewat ${jalur === "whatsapp" ? "WhatsApp (jawaban captcha)" : "portal"}.`
         : `Percobaan login e-Court lewat ${jalur === "whatsapp" ? "WhatsApp" : "portal"} gagal.`,
-      metadata: { jalur: jalur === "whatsapp" ? "whatsapp" : "portal", berhasil, jalurMendarat, lewatGerbang },
+      // pakaiSandiTersimpan: jejak "sandi tersimpan DIPAKAI" (30 Okt 2026) -
+      // perbuatannya saja, tidak pernah isinya.
+      metadata: {
+        jalur: jalur === "whatsapp" ? "whatsapp" : "portal",
+        berhasil,
+        jalurMendarat,
+        lewatGerbang,
+        slot: slotDipakai,
+        pakaiSandiTersimpan: sudahTerisi,
+        olehSiapa: String(olehSiapa || ""),
+      },
     });
 
     if (berhasil) {
@@ -468,8 +550,29 @@ async function kirimLogin({ email, sandi, captcha, jalur = "portal" } = {}) {
       // Peramban ditutup agar cookie tersimpan ke folder profil. Sesi yang
       // tersimpan itulah yang dipakai jembatan pada penjalanan berikutnya.
       bersihkanSesiAktif();
-      return { ok: true, alasan: "", namaPengguna };
+      // Bukti tersambung SEKETIKA untuk semua penanda (30 Okt 2026) - dulu
+      // penanda lain tetap "sesi habis" sampai putaran penarikan berikutnya.
+      catatStatus((s) => s.catat(slotDipakai, { jenis: "aktif", sumber: "masuk" }));
+
+      // Simpan surel+sandi (diminta pengguna 30 Okt 2026) HANYA sesudah
+      // e-Court menerimanya - sandi yang belum terbukti benar tidak pernah
+      // masuk simpanan. Tersandi di dalam bot; tidak pernah dikembalikan.
+      let kredensialTersimpan = false;
+      let alasanSimpan = "";
+      if (simpan === true && !sudahTerisi && email && sandi) {
+        const h = ecourtKredensialService.simpan({ slot: slotDipakai, email, sandi, olehSiapa });
+        kredensialTersimpan = Boolean(h && h.ok);
+        alasanSimpan = kredensialTersimpan ? "" : String((h && h.alasan) || "gagal_menyimpan");
+        if (kredensialTersimpan) catatStatus((s) => s.lepasSandiDitolak(slotDipakai));
+      }
+      return { ok: true, alasan: "", namaPengguna, slot: slotDipakai, kredensialTersimpan, alasanSimpan };
     }
+
+    // Penolakan digolongkan dari halaman SEBELUM ditutup. Teksnya hanya
+    // dipakai di sini - tidak dikembalikan, tidak dicatat.
+    const pesanHalaman = await page.evaluate(bacaPesanTolak).catch(() => "");
+    const jenisTolak = scraper.isGateUrl(alamat) ? "" : golongkanTolak(jalurMendarat, pesanHalaman);
+    if (jenisTolak === "sandi" && sudahTerisi) catatStatus((s) => s.catatSandiDitolak(slotDipakai));
 
     // Gagal: captcha biasanya sudah hangus, jadi sesinya ditutup dan petugas
     // memulai dari awal dengan captcha baru. Membiarkannya terbuka hanya
@@ -485,6 +588,11 @@ async function kirimLogin({ email, sandi, captcha, jalur = "portal" } = {}) {
         : jalurMendarat
           ? `login_ditolak_ecourt: ${jalurMendarat}`
           : "login_ditolak_ecourt",
+      // "captcha" | "sandi" | "" - portal memakainya untuk meminta captcha
+      // baru saja, atau meminta sandi baru bila sandi tersimpan ditolak.
+      jenisTolak,
+      pakaiSandiTersimpan: sudahTerisi,
+      slot: slotDipakai,
     };
   } catch (error) {
     bersihkanSesiAktif();
@@ -532,6 +640,21 @@ function namaTersimpan(slot) {
 }
 /** Apakah ada sesi e-Court tersimpan, dan apakah masih berlaku? */
 async function periksaSesi({ cepat = true, slot = "" } = {}) {
+  if (cepat) return periksaSesiInti({ cepat, slot });
+  // Pemeriksaan sungguhan: tanda "sedang memeriksa" dan buktinya dicatat ke
+  // status akun satu sumber, apa pun pemanggilnya (layar, pemantau,
+  // pemulihan, detak latar).
+  catatStatus((s) => s.mulaiPeriksa(slot));
+  try {
+    const hasil = await periksaSesiInti({ cepat, slot });
+    catatStatus((s) => s.catatPemeriksaan(slot, hasil));
+    return hasil;
+  } finally {
+    catatStatus((s) => s.selesaiPeriksa(slot));
+  }
+}
+
+async function periksaSesiInti({ cepat = true, slot = "" } = {}) {
   const ada = sesiEcourt.sessionExists(slot);
   if (!ada) {
     return { tersimpan: false, berlaku: false, alasan: "belum_pernah_login", namaPengguna: "", diperiksaPada: "" };
@@ -566,12 +689,53 @@ async function periksaSesi({ cepat = true, slot = "" } = {}) {
     // ramai itu kerap 15-30 detik, dan selama itu layar pengaturan tampak
     // membeku. domcontentloaded menjawab pertanyaan yang sama dalam hitungan
     // detik.
-    await page.goto(`${scraper.BASE_URL}/Login`, {
+    const jawaban = await page.goto(`${scraper.BASE_URL}/Login`, {
       waitUntil: "domcontentloaded",
       timeout: 20000,
     });
     const alamatSesi = page.url();
     const berlaku = scraper.isLoggedInUrl(alamatSesi);
+
+    // ======================================================================
+    // "BUKAN HALAMAN SESUDAH MASUK" BELUM TENTU "SESI HABIS" (30 Okt 2026)
+    // ======================================================================
+    //
+    // Dulu tiap alamat yang bukan halaman sesudah masuk disebut kedaluwarsa -
+    // termasuk halaman galat 502/503 dan halaman pemeliharaan e-Court. Petugas
+    // lalu disuruh masuk ulang padahal yang putus adalah e-Court-nya. Kini:
+    // server e-Court menjawab galat (>= 500) = tidak tersambung; halaman yang
+    // bukan login dan bukan sesudah masuk = belum pasti.
+    const kodeHttp = jawaban && typeof jawaban.status === "function" ? Number(jawaban.status()) || 0 : 0;
+    if (!berlaku && kodeHttp >= 500) {
+      await browser.close().catch(() => {});
+      return {
+        tersimpan: true,
+        berlaku: null,
+        alasan: `ecourt_gangguan: status ${kodeHttp}`,
+        namaPengguna: namaTersimpan(slot),
+        diperiksaPada: new Date().toISOString(),
+      };
+    }
+    const diHalamanLogin =
+      !berlaku &&
+      !scraper.isGateUrl(alamatSesi) &&
+      (scraper.LOGIN_PATH_PATTERN.test(alamatSesi) || Boolean(await page.$('input[type="password"]').catch(() => null)));
+    if (!berlaku && !scraper.isGateUrl(alamatSesi) && !diHalamanLogin) {
+      let jalurAsing = "";
+      try {
+        jalurAsing = new URL(alamatSesi).pathname;
+      } catch {
+        jalurAsing = "";
+      }
+      await browser.close().catch(() => {});
+      return {
+        tersimpan: true,
+        berlaku: null,
+        alasan: `halaman_tak_dikenal: ${jalurAsing}`,
+        namaPengguna: namaTersimpan(slot),
+        diperiksaPada: new Date().toISOString(),
+      };
+    }
 
     // Nama pengguna hanya dibaca bila memang sudah masuk. Membacanya di
     // halaman login hanya akan memungut tulisan lain di halaman itu.
@@ -625,6 +789,8 @@ function keluar({ slot = "" } = {}) {
   const hasil = sesiEcourt.clearSession(slot);
   // Salinan cookie pemeriksaan ringan ikut dibuang bersama sesinya.
   require("./ecourtSesiRinganService").hapusKuki(slot);
+  // Bukti lama tidak boleh tetap terbaca "tersambung" sesudah keluar.
+  catatStatus((s) => s.lupakan(slot));
 
   void logService.logSecurityEvent({
     eventType: "ecourt_sesi_dihapus",
@@ -639,6 +805,11 @@ function keluar({ slot = "" } = {}) {
 /** Apakah sedang ada formulir login yang menunggu jawaban? */
 function sedangMenunggu() {
   return Boolean(sesiAktif);
+}
+
+/** Slot yang formulir loginnya sedang menunggu captcha, atau "". */
+function slotMenunggu() {
+  return sesiAktif ? sesiEcourt.bersihkanSlot(sesiAktif.slotDipakai || "") : "";
 }
 
 module.exports = {
@@ -658,4 +829,6 @@ module.exports = {
   mulaiLogin,
   periksaSesi,
   sedangMenunggu,
+  slotMenunggu,
+  golongkanTolak,
 };

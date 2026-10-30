@@ -26,7 +26,14 @@
  * gagal dijalankan, null belum pernah berjalan sejak bot menyala.
  */
 
-export type KeadaanTarikEcourt = "aktif" | "perhatian" | "mati" | "tidak-terjangkau";
+import { tampilanStatus, type StatusAkunEcourt, type TampilanStatusEcourt } from "@/lib/ecourt-status-akun";
+
+/**
+ * 30 Okt 2026 (status akun satu sumber): "terputus" = saklar menyala tetapi
+ * e-Court tidak tersambung dari server (merah); "belum-diatur" = saklar
+ * menyala tetapi akun utama belum pernah masuk dari server (kelabu).
+ */
+export type KeadaanTarikEcourt = "aktif" | "perhatian" | "terputus" | "belum-diatur" | "mati" | "tidak-terjangkau";
 
 /** Bagian keadaan penjadwal bot yang dibutuhkan (GatewayEcourtJadwal). */
 export type JadwalTarikEcourt = {
@@ -45,6 +52,8 @@ export type JadwalTarikEcourt = {
   terakhirSelesai?: string | null;
   terakhirKode?: number | null;
   terakhirCatatan?: string;
+  /** Status akun utama dari model satu sumber (30 Okt 2026). */
+  statusUtama?: StatusAkunEcourt | null;
 };
 
 export type RingkasTarikEcourt = {
@@ -56,6 +65,8 @@ export type RingkasTarikEcourt = {
   sedangJalan: boolean;
   /** ISO waktu putaran terakhir selesai; null bila belum pernah sejak bot menyala. */
   terakhirSelesai: string | null;
+  /** Keadaan sesi akun utama - judul/kalimat/warna yang sama dengan semua penanda. */
+  sesi?: TampilanStatusEcourt | null;
 };
 
 const TIDAK_TERJANGKAU: RingkasTarikEcourt = {
@@ -112,9 +123,25 @@ export function ringkasTarikEcourt(jadwal: JadwalTarikEcourt | null | undefined)
     };
   }
 
-  const sebab = sedangJalan ? "" : sebabPerhatianTarik(jadwal.terakhirKode);
+  // Sesi akun utama dari model satu sumber didahulukan atas kode putaran
+  // terakhir: kode 2 tinggal di memori bot sampai putaran berikutnya, sehingga
+  // dulu baris ini tetap "perlu perhatian - sesi habis" walau sudah masuk lagi;
+  // dan sesudah bot menyala ulang kodenya kosong, sehingga tertulis "Aktif"
+  // walau sesinya mati.
+  const sesi = jadwal.statusUtama && jadwal.statusUtama.keadaan ? tampilanStatus(jadwal.statusUtama) : null;
+  if (sesi && !sedangJalan && sesi.keadaan === "perlu_masuk") {
+    return { keadaan: "perhatian", aktif: true, label: "Aktif, perlu masuk ulang", keterangan: sesi.teks, sedangJalan, terakhirSelesai, sesi };
+  }
+  if (sesi && !sedangJalan && sesi.keadaan === "tidak_tersambung") {
+    return { keadaan: "terputus", aktif: true, label: "Aktif, e-Court tidak tersambung", keterangan: sesi.teks, sedangJalan, terakhirSelesai, sesi };
+  }
+  if (sesi && !sedangJalan && sesi.keadaan === "belum_diatur") {
+    return { keadaan: "belum-diatur", aktif: true, label: "Aktif, akun belum diatur", keterangan: sesi.teks, sedangJalan, terakhirSelesai, sesi };
+  }
+  const kodeDipakai = sesi && jadwal.terakhirKode === 2 ? null : jadwal.terakhirKode;
+  const sebab = sedangJalan ? "" : sebabPerhatianTarik(kodeDipakai);
   if (sebab) {
-    return { keadaan: "perhatian", aktif: true, label: "Aktif, perlu perhatian", keterangan: sebab, sedangJalan, terakhirSelesai };
+    return { keadaan: "perhatian", aktif: true, label: "Aktif, perlu perhatian", keterangan: sebab, sedangJalan, terakhirSelesai, sesi };
   }
 
   const rentang = `jam ${dua(p.jamMulai)}.00-${dua(p.jamSelesai)}.00, Senin-Jumat`;
@@ -128,7 +155,15 @@ export function ringkasTarikEcourt(jadwal: JadwalTarikEcourt | null | undefined)
     : jadwal.dalamJamKerja === false
       ? `Menunggu jam kerja (${rentang}); ${selang}.`
       : `Menarik ${selang}, ${rentang}.`;
-  return { keadaan: "aktif", aktif: true, label: "Aktif", keterangan, sedangJalan, terakhirSelesai };
+  return {
+    keadaan: "aktif",
+    aktif: true,
+    label: "Aktif",
+    keterangan: sesi && sesi.keadaan !== "aktif" ? `${keterangan} e-Court: ${sesi.judul.toLowerCase()} - ${sesi.teks}` : keterangan,
+    sedangJalan,
+    terakhirSelesai,
+    sesi,
+  };
 }
 
 /**
