@@ -1,0 +1,31 @@
+Penelusuran "TIDAK BENAR QUERY NYA" (render 9730, 30 Okt 2026) - basis salinan aps_badilag_bas29 / sipp_2810 (dump 28 Okt 15.44)
+
+SUMBER
+- Bukan galat kueri. Teks itu adalah cabang ELSE yang SENGAJA ditulis di 10 variabel data_sql modifier=admin (paket alasan
+  perceraian A-H blangko Derry): 4020, 8511, 8512, 8521, 8522, 8528, 8529, 8530, 8531, 8532. Contoh 8531 "POKOK ALASAN
+  PERCERAIAN (OTOMATIS DARI 8503)": huruf alasan diambil dari isian 8503 (A-H, "Murtad/Fasakh" = H); bila isian kosong atau
+  bukan huruf A-H -> "<mark>TIDAK BENAR QUERY NYA / BELUM ISI ALASAN DI KOLOM ABT</mark>" (stabilo kuning). Satu cabang lain:
+  alasan H tetapi agama pihak di SIPP belum diubah -> "TIDAK BENAR QUERY NYA / ALASAN H: AGAMA ... BELUM DIUBAH DI SIPP".
+- 9730 = 274/Pdt.G/2026 CERAI TALAK, putus 12 Agustus 2026, isian 8503 TIDAK PERNAH diisi (render contoh memakai blangko
+  CG verstek - pasangan render saya; blangko CT yang benar mencetak teks yang sama karena 8503 kosong).
+- Pemilik: modifier=admin (paket Derry). Dipakai 33-36 blangko Derry aktif per variabel (folder perceraian CG/CT/kumulasi).
+
+TERDAMPAK (perkara 2026 jenis cerai, menurut keadaan isian 8503)
+  Cerai Gugat  belum putus: kosong 70, sah 2
+  Cerai Gugat  putus      : kosong 304, sah 193
+  Cerai Talak  belum putus: kosong 17
+  Cerai Talak  putus      : kosong 68, sah 23
+  isian 8503 berisi tetapi tidak sah (bukan A-H): 0
+  Putusan Agustus-Oktober dengan 8503 kosong: CG 38/26/47, CT 11/9/9 per bulan (ABT tidak mencatat blangko apa yang dipakai
+  mencetak, jadi tidak dapat dipastikan berapa yang benar-benar tercetak dengan teks ini; putusan majelis lain / blangko lain
+  tidak memakai 8503).
+
+PENANGANAN YANG SUDAH ADA
+- Panel Blangko Derry: peringatan di bawah kotak 8503 ("Alasan perceraian belum dipilih ... berbunyi TIDAK BENAR QUERY NYA dan
+  ikut tercetak"), deteksi alasan dari posita mengusulkan huruf; panel ABT (abt-panel-blangko.js FRASA_GALAT) mengenali frasa
+  persis ini sebagai isian kosong; teks berstabilo ikut ditandai pemeriksa cetak (deteksi-sisa-blangko).
+
+KEPUTUSAN
+- TIDAK diubah: ini bukan kesalahan kueri melainkan penanda "isian wajib belum diisi" milik Derry. Mengganti bunyinya akan
+  memutus pengenal di ekstensi (FRASA_GALAT dan peringatan 8503 bergantung pada frasa yang persis sama). Perbaikan yang benar =
+  mengisi 8503 (hakim memilih huruf alasan), bukan mengubah variabel.
