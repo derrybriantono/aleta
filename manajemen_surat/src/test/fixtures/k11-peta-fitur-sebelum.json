@@ -2301,8 +2301,8 @@
    "jumlahPernyataan": 2
   },
   "blangko-derry-saksi.js": {
-   "byte": 20309,
-   "sidik": "b316611d323d1a1eac904d756aef4addfd1ab7f6",
+   "byte": 25549,
+   "sidik": "87f92b13faf849c516e0191262147bd3fb40c8af",
    "nama": [],
    "ekspor": [
     "AletaBdSaksi"
@@ -2310,8 +2310,8 @@
    "jumlahPernyataan": 2
   },
   "blangko-derry.js": {
-   "byte": 158814,
-   "sidik": "9c420070541319eddce48c447664aba19e89b095",
+   "byte": 159656,
+   "sidik": "f2c26c98540d6054afdc8f0f037d12e0e790f2ae",
    "nama": [],
    "ekspor": [
     "aletaBlangkoDerry",
@@ -4283,8 +4283,8 @@
    "jumlahPernyataan": 2
   },
   "panel-alat.js": {
-   "byte": 591002,
-   "sidik": "4076f11aba4e61b9e405a759dcb31ea615be6d42",
+   "byte": 591670,
+   "sidik": "f24d0f9f1d3d98af958435153b1d2d1e1cdc22e3",
    "nama": [
     "ALAT_AKHIRAN_TIPE",
     "ALAT_ALAMAT_UNGGAH_SIPP",

@@ -59,7 +59,7 @@ export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
     versi: "1.205.56",
     dirilis: "2026-10-30T05:00:00+08:00",
-    judul: "Tampilan SIPP per peran, Kasir ALETA atas akun kasir, dan salinan dari putusan sendiri",
+    judul: "Unggah BAS Word jadi PDF bertanda tangan, status e-Court satu sumber, putusan sela, dan tampilan SIPP per peran",
     butir: [
       "Tampilan ALETA di SIPP per peran dan pengguna: admin mengatur elemen yang tampil per peran (usulan per peran langsung menjadi bawaan), Super Admin dapat mengunci di atas aturan admin, dan tiap pegawai mengatur tampilannya sendiri lewat halaman Tampilan SIPP (dari widget atau popup); pilihan tersimpan di akun, termasuk saklar Tampilkan ALETA di SIPP.",
       "Kasir ALETA: bab dan sub-bab bisa dilipat (yang tanpa pekerjaan terlipat), judul tebal, keterangan dipindah ke ikon (i), nomor perkara di pengingat tertaut ke jurnal SIPP, Kasir Manual (satu hari) dapat disunting per baris, dan bab baru Riwayat.",
@@ -68,6 +68,13 @@ export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
       "Lihat sebagai: pilihan PTSP selalu tersedia walau belum ada akun PTSP; lencana kelengkapan isian di daftar perkara diukur otomatis dan membuka isian kosong pertama bila diklik.",
       "Form Putusan Akhir SIPP: panel ALETA terlipat satu baris bila putusan sudah ada.",
       "Rincian alasan cerai mengenali pasangan yang tidak menerima keadaan pihak yang sakit dan pihak yang pergi tanpa kabar, serta mengutip sebab yang disebut gugatan bila belum dikenal; menu alasan perceraian memuat huruf E dan G.",
+      "Unggah BAS di SIPP dari berkas Word (RTF, DOC, DOCX, ODT): ALETA mengubahnya menjadi PDF, membubuhkan tanda tangan scan Panitera Pengganti dan Ketua Majelis di atas namanya, lalu SIPP mengunggahnya seperti biasa; siapa yang belum punya tanda tangan disebutkan.",
+      "Status e-Court satu sumber: Tersambung, Perlu masuk ulang, Tidak tersambung, Sedang memeriksa, dan Belum diatur tampil dengan kata dan warna yang sama di portal, panel, popup, panel perkara, dan kesehatan server; akun dan sandi e-Court disimpan terenkripsi sehingga masuk ulang cukup mengetik captcha.",
+      "Blangko ABT by Derry Briantono: alat bukti surat dan elektronik langsung masuk ABT dengan tombol Input ke ABT, tombol Muat data saksi pindah ke bawah pilihan pengetahuan saksi, keterangan teknis menjadi ikon (i), dan peringatan bila saksi belum punya tanya jawab.",
+      "Isian panel, jawaban saksi, dan daftar bukti disimpan rapi: Enter menjadi spasi, rincian berbaris dirangkai dengan koma, dan titik koma hanya di akhir butir; catatan temuan saat cetak bila putusan verstek padahal SIPP mencatat Tergugat hadir.",
+      "Tab baru Putusan sela di Pilih blangko: putusan sela per jenis perkara dan per jenis/status (eksepsi, provisi, intervensi, sumpah, pemeriksaan setempat, rekonvensi, penggabungan dan pemisahan, mediasi), termasuk sita; saran blangko mengenali agenda sela dan mediasi elektronik.",
+      "Sampul, daftar isi, dan ceklist berkas perkara: layar kerja menyala bawaan, lampiran terisi, penuh satu halaman dengan tinggi baris menyesuaikan isi perkara, dan logo pengadilan monokrom yang tajam.",
+      "Pusat Kendali Kapasitas penyimpanan: pemakaian ruang server, ambang peringatan, pembersihan sisa pembuatan pembaruan otomatis (mati bawaan), dan petunjuk memindahkan data ke partisi besar.",
     ],
   },
   {
