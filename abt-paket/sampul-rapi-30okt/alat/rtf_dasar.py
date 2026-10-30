@@ -95,7 +95,8 @@ def tabel(baris, jaga=True):
     jaga: \\trkeep (baris tidak dipecah antar halaman) dan \\keepn pada baris yang bukan terakhir tidak dipakai - tabel panjang boleh lanjut."""
     out = ''
     for r in baris:
-        out += '\\trowd\\trgaph70\\trleft0\\trpaddl70\\trpaddr70\\trpaddfl3\\trpaddfr3'
+        # {\*\bkrw}: penanda tak terlihat baris riwayat sidang - portal menyetel tinggi baris ini per perkara (lib/tinggi-rtf.ts)
+        out += '\\trowd' + ('{\\*\\bkrw}' if r.get('riwayat') else '') + '\\trgaph70\\trleft0\\trpaddl70\\trpaddr70\\trpaddfl3\\trpaddfr3'
         if r.get('tinggi'): out += '\\trrh%d' % r['tinggi']
         if jaga: out += '\\trkeep'
         if r.get('kepala'): out += '\\trhdr'

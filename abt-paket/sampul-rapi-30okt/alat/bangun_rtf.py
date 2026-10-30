@@ -136,7 +136,7 @@ def sampul_awal(kertas='a4', lawan=True, banyak=False):
     for n in range(1, n_baris + 1):
         kode = KODE_RIWAYAT + (n - 1) * 4
         bb = 20 if n == n_baris else 10
-        baris.append({'lebar': w5, 'tinggi': tinggi, 'va': ['c'] * 5,
+        baris.append({'lebar': w5, 'tinggi': tinggi, 'va': ['c'] * 5, 'riwayat': True,
                       'brd': [(0, 20, bb, 10)] + [(0, 10, bb, 10)] * 3 + [(0, 10, bb, 20)],
                       'sel': [p_sel([run(str(n), b=True, sz=18 if banyak else 20)], al='c'),
                               p_sel([run('#%d#' % kode, sz=15 if banyak else 17)]),
@@ -212,7 +212,7 @@ def sampul_lengkap(kertas='a4'):
     for n in range(1, n_baris + 1):
         kode = KODE_RIWAYAT + (n - 1) * 4
         bb = 20 if n == n_baris else 10
-        baris.append({'lebar': w5, 'tinggi': tinggi, 'va': ['c'] * 5, 'brd': [(0, 20, bb, 10)] + [(0, 10, bb, 10)] * 3 + [(0, 10, bb, 20)],
+        baris.append({'lebar': w5, 'tinggi': tinggi, 'va': ['c'] * 5, 'riwayat': True, 'brd': [(0, 20, bb, 10)] + [(0, 10, bb, 10)] * 3 + [(0, 10, bb, 20)],
                       'sel': [p_sel([run(str(n), b=True, sz=20)], al='c'), p_sel([run('#%d#' % kode, sz=18)]),
                               p_sel([run('#%d#' % (kode + 1), b=True, sz=17)], al='c'), p_sel([run('#%d#' % (kode + 2), sz=17)]),
                               p_sel([run('#%d#' % (kode + 3), sz=17)])]})
