@@ -77,7 +77,7 @@ export const FITUR_KATALOG_SAKSI_DB = "katalog-saksi-basis-data";
 /** Saklar C3/U7 (25 Okt 2026): tombol cerai lama di ABT memanggil mesin katalog; bawaan MATI. */
 export const FITUR_MESIN_SAKSI_TUNGGAL = "mesin-saksi-tunggal";
 
-/** Saklar layar kerja khusus Sampul dan Daftar Isi di panel Blangko ABT by Derry (26 Okt 2026); bawaan MATI. */
+/** Saklar layar kerja khusus Sampul dan Daftar Isi di panel Blangko ABT by Derry (26 Okt 2026); bawaan MENYALA sejak 30 Okt 2026 (keputusan pengguna). */
 export const FITUR_BERKAS_PERKARA = "berkas-perkara-khusus";
 
 /** Saklar C5/U9 (25 Okt 2026): saran keadaan perkara non-cerai dari posita/petitum dan 2557/2558 dari BAS; bawaan MATI. */
@@ -154,8 +154,8 @@ export const KATALOG_FITUR_SATKER: readonly FiturKatalog[] = [
     nama: "Layar kerja Sampul dan Daftar Isi berkas",
     bagian: "ekstensi",
     keterangan:
-      "Mati: blangko Sampul Berkas Perkara dan Daftar Isi Berkas di panel Blangko ABT by Derry dibuka seperti blangko biasa. Nyalakan agar keduanya memakai layar kerja khusus: ciri otomatis atau tangan, isian khas jenis perkara, pilihan kertas A4/F4/Legal, daftar isi yang dapat disunting dengan nomor halaman otomatis (pasti, perkiraan, manual). Sunting disimpan di ALETA, tidak ditulis ke SIPP maupun ABT.",
-    bawaan: "mati",
+      "Menyala (bawaan): blangko Sampul Berkas Perkara, Daftar Isi Berkas, dan Ceklist di panel Blangko ABT by Derry memakai layar kerja khusus: ciri otomatis atau tangan, isian khas jenis perkara, pilihan kertas A4/F4/Legal, lampiran bila perlu, daftar isi yang dapat disunting dengan nomor halaman otomatis (pasti, perkiraan, manual). Sunting disimpan di ALETA, tidak ditulis ke SIPP maupun ABT. Matikan agar ketiganya dibuka seperti blangko biasa.",
+    bawaan: "stabil",
   },
   {
     kode: FITUR_KATALOG_SAKSI_DB,
@@ -273,6 +273,30 @@ export function statusFiturSah(x: unknown): x is StatusFitur {
 }
 export function saluranSah(x: unknown): x is SaluranSatker {
   return typeof x === "string" && (SALURAN_SATKER as readonly string[]).includes(x);
+}
+
+/**
+ * Fitur yang bawaannya DULU mati lalu diubah menjadi menyala (30 Okt 2026: layar kerja Sampul/Daftar Isi). Penyimpanan Fitur Satker hanya
+ * mencatat pilihan yang BERBEDA dari bawaan, jadi "mati" pada masa bawaan lama tidak tersimpan sebagai pilihan. Pembedanya jejak audit
+ * UPDATE_FITUR_SATKER: satker yang SENGAJA mematikan (dulu menyalakan lalu mematikan) punya jejak terakhir untuk kode itu berakhir "mati";
+ * yang belum pernah menyentuh tidak punya jejak sama sekali (dianggap belum diatur -> bawaan baru, menyala). Tanpa migrasi basis data.
+ */
+export const BAWAAN_DULU_MATI: readonly string[] = [FITUR_BERKAS_PERKARA];
+
+/** Status terakhir satu kode menurut payload jejak UPDATE_FITUR_SATKER ({berubah: [{kode, dari, ke}]}); null bila kode tidak disebut. */
+export function pilihanDariJejak(payload: unknown, kode: string): StatusFitur | null {
+  let o: unknown = payload;
+  if (typeof o === "string") {
+    try {
+      o = JSON.parse(o);
+    } catch {
+      return null;
+    }
+  }
+  const berubah = o && typeof o === "object" ? (o as { berubah?: unknown }).berubah : null;
+  if (!Array.isArray(berubah)) return null;
+  const butir = berubah.find((b) => b && typeof b === "object" && (b as { kode?: unknown }).kode === kode) as { ke?: unknown } | undefined;
+  return butir && statusFiturSah(butir.ke) ? butir.ke : null;
 }
 
 export type PengaturanFiturSatker = {

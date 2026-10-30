@@ -3,7 +3,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { BARIS_CEKLIST, BARIS_DAFTAR_ISI, LEBAR_ISI, PENANDA_LAMPIRAN_ABT, VAR_LAMPIRAN_ABT, VAR_TABEL_CEKLIST, VAR_TABEL_DAFTAR_ISI, buangParagrafPenanda } from "@/lib/berkas-cetak";
 import { tabelCeklistRtf } from "@/lib/ceklist-berkas";
@@ -11,7 +11,11 @@ import { tabelDaftarIsiRtf } from "@/lib/daftar-isi-rtf";
 import { monokromTajam } from "@/lib/logo-monokrom";
 import { LOGO_KOP_TINGGI_TWIP, PENANDA_LOGO, grupGambarPngRtf, sisipLogoRtf } from "@/lib/logo-rtf";
 import { logoMonokrom } from "@/server/modules/berkas-perkara/logo-kop";
+import { FITUR_BERKAS_PERKARA, pilihanDariJejak } from "@/lib/fitur-satker";
+import { createAletaDatabase, type AletaDatabase } from "@/server/db/client";
 import { susunNaskahBerkas, type DepNaskah } from "@/server/modules/berkas-perkara/naskah";
+import { bacaPengaturanFitur, fiturMenyala, simpanPengaturanFitur } from "@/server/modules/satker/fitur";
+import { appendAuditLog } from "@/server/shared/audit";
 
 /**
  * ============================================================================
@@ -297,5 +301,49 @@ describe("6. kembaran fungsi ABT <-> portal, aturan pembersih ABT, MariaDB 5.5",
     expect(baca("abt-sampul-rapi-30okt-PULIH.sql").match(/^UPDATE .* AND MD5\(sql_query\) = '[0-9a-f]{32}';$/gm)).toHaveLength(106);
     expect(baca("daftar-timpa.tsv").split("\n").filter((x) => x.startsWith("derry_briantono/"))).toHaveLength(21);
     for (const n of ["abt-sampul-rapi-30okt-PASANG.sql", "abt-sampul-rapi-30okt-FUNGSI.sql", "daftar-timpa.tsv", "nomor-baru.txt"]) expect(baca(n).toLowerCase()).not.toContain("aleta");
+  });
+});
+
+describe("7. saklar layar Sampul/Daftar Isi: bawaan MENYALA, pilihan mati yang sengaja tetap mati (keputusan pengguna 30 Okt)", () => {
+  let db: AletaDatabase;
+  const aktor = { id: "usr-super", name: "Super Admin" };
+  beforeEach(async () => {
+    db = await createAletaDatabase({ useInMemory: true, seed: true });
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ ok: true }), { status: 200 })));
+  });
+  afterEach(async () => {
+    vi.unstubAllGlobals();
+    await db.close();
+  });
+  const jejakLama = (ke: string, dari: string) =>
+    appendAuditLog(db, { id: `adt-lama-${ke}-${Math.random().toString(36).slice(2, 8)}`, actorUserId: "usr-super", action: "UPDATE_FITUR_SATKER", entityType: "aleta_ekstensi_setelan", entityId: "*sistem*:sistem:fitur-satker", payload: { berubah: [{ kode: FITUR_BERKAS_PERKARA, dari, ke }] }, createdAt: ke === "mati" ? "2026-10-27T03:00:00.000Z" : "2026-10-27T02:00:00.000Z" });
+
+  it("belum pernah diatur (tanpa setelan, tanpa jejak): menyala", async () => {
+    expect(await fiturMenyala(db, FITUR_BERKAS_PERKARA)).toBe(true);
+  });
+  it("setelan lama tanpa kode ini (hanya fitur lain diubah): tetap dianggap belum diatur -> menyala", async () => {
+    await simpanPengaturanFitur(db, aktor, { fitur: { "lihat-sebagai-pratinjau": "stabil", [FITUR_BERKAS_PERKARA]: "stabil" } });
+    expect(await fiturMenyala(db, FITUR_BERKAS_PERKARA)).toBe(true);
+  });
+  it("pernah DINYALAKAN lalu SENGAJA DIMATIKAN pada masa bawaan lama (jejak terakhir 'mati', setelan tidak menyimpannya): tetap mati", async () => {
+    await jejakLama("stabil", "mati");
+    await jejakLama("mati", "stabil");
+    expect((await bacaPengaturanFitur(db))?.fitur[FITUR_BERKAS_PERKARA]).toBe("mati");
+    expect(await fiturMenyala(db, FITUR_BERKAS_PERKARA)).toBe(false);
+  });
+  it("pernah dinyalakan saja (jejak terakhir 'stabil'): menyala", async () => {
+    await jejakLama("stabil", "mati");
+    expect(await fiturMenyala(db, FITUR_BERKAS_PERKARA)).toBe(true);
+  });
+  it("dimatikan lewat Fitur Satker sesudah bawaan baru: tersimpan terang sebagai mati; dinyalakan lagi: menyala", async () => {
+    await simpanPengaturanFitur(db, aktor, { fitur: { [FITUR_BERKAS_PERKARA]: "mati" } });
+    expect(await fiturMenyala(db, FITUR_BERKAS_PERKARA)).toBe(false);
+    await simpanPengaturanFitur(db, aktor, { fitur: { [FITUR_BERKAS_PERKARA]: "stabil" } });
+    expect(await fiturMenyala(db, FITUR_BERKAS_PERKARA)).toBe(true);
+  });
+  it("pilihanDariJejak: membaca kode yang disebut saja; payload rusak = tidak ada jejak", () => {
+    expect(pilihanDariJejak(JSON.stringify({ berubah: [{ kode: "lain", ke: "mati" }, { kode: FITUR_BERKAS_PERKARA, ke: "mati" }] }), FITUR_BERKAS_PERKARA)).toBe("mati");
+    expect(pilihanDariJejak({ berubah: [{ kode: "lain", ke: "mati" }] }, FITUR_BERKAS_PERKARA)).toBeNull();
+    expect(pilihanDariJejak("{rusak", FITUR_BERKAS_PERKARA)).toBeNull();
   });
 });

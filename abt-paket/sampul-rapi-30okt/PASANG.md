@@ -87,3 +87,11 @@ bebas (portal tetap melayani blangko lama #5850#).
   lampiran alasan/pihak/anak/riwayat dari portal, logo Identitas satker menggantikan logo tertanam.
 - PNG bukti: `D:/Aplikasi/aleta/tmp/sampul-rapi/hasil/` (`cetak-langsung-abt/`, `lewat-panel/`, banding logo monokrom) - memuat data perkara, TIDAK
   masuk repo.
+
+## Tinggi baris = sebesar mungkin untuk perkara TERPADAT (30 Okt, keputusan pengguna)
+
+Tinggi baris riwayat per varian x kertas (alat/bangun_rtf.py RIWAYAT_*) disetel ke nilai TERBESAR yang masih menjaga sampul SATU lembar untuk perkara
+tiruan terpadat (`alat/terpadat-lab.sql`, hanya di salinan laptop: alamat 190 huruf, pekerjaan panjang, kuasa kedua pihak, 3 anak, 15 sidang dengan 7
+agenda/alasan dua baris; pihak banyak + 4 turut tergugat + intervensi; itsbat dua pemohon beralamat beda), lewat panel (lebih padat: kotak simbol,
+baris ALASAN, kaki dua baris) maupun ABT langsung, A4/F4/Legal: 12 + 15 render, semua halaman 1 utuh, halaman berikutnya hanya lampiran.
+Akibatnya perkara yang isinya sedikit menyisakan ruang bawah lebih besar (A4: cerai gugat biasa ±3 cm, dispensasi 2 sidang ±4,7 cm).

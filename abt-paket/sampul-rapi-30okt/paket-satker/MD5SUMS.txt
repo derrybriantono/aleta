@@ -5,12 +5,12 @@ c4dcd6671dd155289664f3c5515c43b3  abt-sampul-rapi-30okt-PASANG.sql
 553cd54caa0a5a9452edcce3363b9db1  abt-sampul-rapi-30okt-PRASYARAT.sql
 22fd64a3ebecf3da30d19fcb8a6d7a64  abt-sampul-rapi-30okt-PULIH.sql
 9fefc8435e4da97b0727eb8c0c2baffa  berkas_rtf.py
-8eb3fb0a24057e7eb1e4b673865286b1  daftar-timpa.tsv
+fb373094f1474477c970e70727a55a63  daftar-timpa.tsv
 cc459b6621c9be3e1b9a9cc478547ac7  harap.txt
 b8f9da36d3f581e6e5ecf7afe4f8e5fa  nomor-baru.txt
 dae3a49813a6223790fe7784fc2a50f1  nomor-dirujuk.txt
 d2cd25320c3d4909472e8dc7fa8f3d17  nomor-ubah.txt
 005468f32c594b375239db1d15825459  pasang-satker.sh
 270c24b2b1f43c9aef406a858fe9f763  pulih-satker.sh
-085027ba5f306f72f5b4a225b106cfb3  timpa.tgz
+4d1be0b828596eb91213ebb2ced0569c  timpa.tgz
 bc2e58697601ab0ee83c6eab94a4c7ac  uji-kueri.tsv

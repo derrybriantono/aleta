@@ -30,7 +30,7 @@ const BATAS_FAKTA_MS = 60_000;
  *   PUT { perkaraId, nomor?, susunan?: [...], tag?: {kunci: bool}, isian?: {kunci: teks} }
  *       menyimpan sunting di ALETA (aleta_berkas_susunan, aleta_berkas_sampul). TIDAK ada yang ditulis ke SIPP maupun ABT.
  *
- * Hanya bila saklar Fitur Satker "berkas-perkara-khusus" menyala (bawaan MATI).
+ * Hanya bila saklar Fitur Satker "berkas-perkara-khusus" menyala (bawaan MENYALA sejak 30 Okt 2026).
  */
 export async function GET(request: NextRequest) {
   let db: Awaited<ReturnType<typeof getDatabase>> | null = null;

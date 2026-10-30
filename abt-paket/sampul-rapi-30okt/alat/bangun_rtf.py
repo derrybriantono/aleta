@@ -29,11 +29,15 @@ VAR_LAMPIRAN = {   # (berlawanan, banyak) -> per kertas
     (True, True): {'a4': 11612, 'f4': 11613, 'legal': 11614},
     (False, True): {'a4': 11615, 'f4': 11616, 'legal': 11617},
 }
-# Sampul cetak awal: (baris riwayat, tinggi baris twip) per kertas; pihak banyak: baris lebih rapat
-RIWAYAT_AWAL = {'a4': (15, 315), 'f4': (18, 350), 'legal': (20, 380)}
-RIWAYAT_BANYAK = {'a4': 265, 'f4': 300, 'legal': 315}
+# Tinggi baris riwayat (twip) = nilai TERBESAR yang masih menjaga satu lembar untuk perkara TERPADAT lewat panel maupun ABT langsung
+# (diukur 30 Okt atas perkara tiruan terpadat: alamat dan pekerjaan panjang, kuasa kedua pihak, 3 anak, 15 sidang dengan 7 agenda/alasan dua
+# baris; pihak banyak + 4 turut tergugat + intervensi). Baris yang isinya dua baris tumbuh sendiri; yang diatur di sini baris satu baris/kosong.
+# Sampul cetak awal: (baris riwayat, tinggi) per kertas; berlawanan pihak banyak dan permohonan pihak banyak punya tingginya sendiri.
+RIWAYAT_AWAL = {'a4': (15, 270), 'f4': (18, 335), 'legal': (20, 375)}
+RIWAYAT_BANYAK = {'a4': 215, 'f4': 265, 'legal': 320}
+RIWAYAT_MOHON_BANYAK = {'a4': 280, 'f4': 305, 'legal': 360}
 # Sampul lengkap: (baris riwayat, tinggi)
-RIWAYAT_LENGKAP = {'a4': (12, 340), 'f4': (15, 390), 'legal': (18, 410)}
+RIWAYAT_LENGKAP = {'a4': (12, 325), 'f4': (15, 405), 'legal': (18, 420)}
 KOTAK = '{\\f1\\u9744?}'
 GANDA = '\\chbrdr\\brdrdb\\brdrw15\\brsp20'
 
@@ -60,7 +64,7 @@ def sampul_awal(kertas='a4', lawan=True, banyak=False):
         return int(x * L / 10466)
     n_baris, tinggi = RIWAYAT_AWAL[kertas]
     if banyak:
-        tinggi = RIWAYAT_BANYAK[kertas]
+        tinggi = RIWAYAT_BANYAK[kertas] if lawan else RIWAYAT_MOHON_BANYAK[kertas]
     half = L // 2
     s = d.kepala_rtf()
     s += kop('Sampul berkas perkara tingkat pertama', 'BUNDEL A')
@@ -135,10 +139,10 @@ def sampul_awal(kertas='a4', lawan=True, banyak=False):
         baris.append({'lebar': w5, 'tinggi': tinggi, 'va': ['c'] * 5,
                       'brd': [(0, 20, bb, 10)] + [(0, 10, bb, 10)] * 3 + [(0, 10, bb, 20)],
                       'sel': [p_sel([run(str(n), b=True, sz=18 if banyak else 20)], al='c'),
-                              p_sel([run('#%d#' % kode, sz=16 if banyak else 18)]),
-                              p_sel([run('#%d#' % (kode + 2), sz=16 if banyak else 17)]),
-                              p_sel([run('#%d#' % (5870 + n - 1), sz=14 if banyak else 17)], al='c'),
-                              p_sel([run('#%d#' % (kode + 3), sz=16 if banyak else 17)])]})
+                              p_sel([run('#%d#' % kode, sz=15 if banyak else 17)]),
+                              p_sel([run('#%d#' % (kode + 2), sz=15 if banyak else 16)]),
+                              p_sel([run('#%d#' % (5870 + n - 1), sz=14 if banyak else 16)], al='c'),
+                              p_sel([run('#%d#' % (kode + 3), sz=15 if banyak else 16)])]})
     s += tabel(baris)
     # ===== mediasi (perkara berlawanan) =====
     if lawan:
