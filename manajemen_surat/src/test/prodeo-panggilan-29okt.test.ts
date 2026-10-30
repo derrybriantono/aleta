@@ -100,7 +100,7 @@ describe("paket ABT prodeo-panggilan-29okt", () => {
       expect(pasang).toMatch(new RegExp(`WHERE no_var = ${no} AND MD5\\(sql_query\\) = '${md5_lama}';`));
       expect(pulih).toMatch(new RegExp(`WHERE no_var = ${no} AND MD5\\(sql_query\\) = '${md5_baru}';`));
     }
-    expect(Object.keys(isi.variabel_ubah).sort()).toEqual(["3992", "5223", "8505", "8508", "8547", "8600"]);
+    expect(Object.keys(isi.variabel_ubah).sort()).toEqual(["3992", "5223", "8505", "8508", "8527", "8547", "8600"]);
     expect(pasang.trim().startsWith("--")).toBe(true);
     expect(pasang).toContain("START TRANSACTION;");
     expect(pasang.trim().endsWith("COMMIT;")).toBe(true);
@@ -162,10 +162,13 @@ describe("paket ABT prodeo-panggilan-29okt", () => {
   });
 
   it("8505 prodeo: 'Membebankan biaya perkara kepada DIPA <satker> Tahun <tahun pendaftaran>'; verzet 3992 otomatis dari SIPP", () => {
-    expect(Object.keys(isi.variabel_ubah).sort()).toEqual(["3992", "5223", "8505", "8508", "8547", "8600"]);
+    expect(Object.keys(isi.variabel_ubah).sort()).toEqual(["3992", "5223", "8505", "8508", "8527", "8547", "8600"]);
     const v8505 = uji.get(8505)!;
     expect(v8505).toContain('THEN "Membebankan biaya perkara kepada DIPA #8008# Tahun #0191#"');
     expect(v8505).not.toContain("negara");
+    // pertimbangan prodeo 8527 disamakan dengan amar (disetujui pengguna 30 Okt)
+    expect(uji.get(8527)).toContain("maka biaya perkara dibebankan kepada DIPA #8008# Tahun #0191##8185#");
+    expect(uji.get(8527)).not.toContain("negara melalui DIPA");
     const v3992 = uji.get(3992)!;
     expect(v3992).toContain("JOIN perkara_verzet v ON v.perkara_id = b.perkara_id");
     expect(v3992).toContain("jb.jenis_transaksi = -1 AND b.jenis_biaya_id <> 151");

@@ -121,6 +121,8 @@ UBAH = {
     # 30 Okt (pengguna): amar prodeo "Membebankan biaya perkara kepada DIPA <satker> Tahun <tahun pendaftaran>"
     8505: [('THEN "Membebankan biaya perkara kepada negara, melalui DIPA #8008# Tahun #0191#"',
             'THEN "Membebankan biaya perkara kepada DIPA #8008# Tahun #0191#"', 1)],
+    # 30 Okt (pengguna, disetujui): pertimbangan prodeo disamakan dengan amar #8505#
+    8527: [("kepada negara melalui DIPA #8008# Tahun Anggaran #0191#", "kepada DIPA #8008# Tahun #0191#", 1)],
     # 30 Okt (pengguna): meterai rincian PUTUSAN = satu meterai, yaitu baris meterai PERTAMA (putusan asal). Perkara verzet punya dua
     # baris meterai (putusan asal + putusan perlawanan, 9321) dan subkueri satu baris GALAT -> seluruh cetakan ABT berhenti; meterai
     # putusan perlawanan sudah ikut di biaya verzet #3992# (biaya keluar sejak pendaftaran perlawanan). Perkara satu baris: sama.
