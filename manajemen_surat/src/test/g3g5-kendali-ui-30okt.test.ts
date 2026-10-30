@@ -652,7 +652,7 @@ describe("3.2 riwayat ubah isian: pasif, terlipat, kembalikan bila perlu", () =>
     // catatan dari server (akun/PC lain): konfirmasi dua langkah sebelum menimpa
     klik(h, '.bd-f[data-f="8729"] [data-bd2="ketriwayat"]');
     await sampai(() => qq(h, '.bd-f[data-f="8729"] .bd-ketriw-baris').length === 1, "catatan server");
-    expect(qq(h, '.bd-f[data-f="8729"] .bd-ketriw-baris')[0].textContent).toMatch(/PP Satu · usulan diubah petugas: "Uraian lama" → "Uraian baru" · dicatat di server/);
+    expect(qq(h, '.bd-f[data-f="8729"] .bd-ketriw-baris')[0].textContent).toMatch(/usulan diubah petugas: "Uraian lama" → "Uraian baru" · dicatat di server oleh PP Satu/);
     qq(h, '.bd-f[data-f="8729"] [data-bd2="ketpulih"]')[0].click();
     await tunggu(100);
     expect(h.abt["8729"]).toBe("Uraian baru"); // belum: perlu menekan sekali lagi

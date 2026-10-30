@@ -5443,10 +5443,10 @@
           const sudahDiurungkan = x.dariServerLengkap === true && x.bisaDiurungkan === false;
           const bisa = bolehTulis() && !samaKet(x.sebelum, skrg) && !dipotong && !sudahDiurungkan;
           const yakinTekan = S.konfirmPulih && S.konfirmPulih.kode === kode && S.konfirmPulih.idx === idx && Date.now() < S.konfirmPulih.sampai;
-          const dariServer = x.dariServerLengkap === true ? " · dicatat di server" : "";
+          const dariServer = x.dariServerLengkap === true ? ` · dicatat di server${x.oleh ? ` oleh ${esc(x.oleh)}` : ""}` : "";
           // 30 Okt: siapa, kapan, sumber (diisi otomatis / diketik / saran diterima / dikembalikan), nilai lama -> baru. Catatan tanpa nama = akun ini.
-          const siapa = x.oleh ? esc(x.oleh) : "Anda";
-          return `<div class="bd-ketriw-baris"><span class="bd-catat">${esc(waktu)} · ${siapa} · ${esc(potong(x.cara || "", 70))}: "${esc(potong(x.sebelum || "(kosong)", 80))}" → "${esc(potong(x.sesudah || "(kosong)", 80))}"${dariServer}</span>${bisa ? ` <button type="button" class="bd-tautankecil" data-bd2="ketpulih" data-ket="${esc(kode)}" data-idx="${idx}">${yakinTekan ? "yakin? kembalikan ↺" : "kembalikan ↺"}</button>` : ""}</div>`;
+          const siapa = x.dariServerLengkap === true ? "" : ` · ${x.oleh ? esc(x.oleh) : "Anda"}`;
+          return `<div class="bd-ketriw-baris"><span class="bd-catat">${esc(waktu)}${siapa} · ${esc(potong(x.cara || "", 70))}: "${esc(potong(x.sebelum || "(kosong)", 80))}" → "${esc(potong(x.sesudah || "(kosong)", 80))}"${dariServer}</span>${bisa ? ` <button type="button" class="bd-tautankecil" data-bd2="ketpulih" data-ket="${esc(kode)}" data-idx="${idx}">${yakinTekan ? "yakin? kembalikan ↺" : "kembalikan ↺"}</button>` : ""}</div>`;
         })
         .join("") +
       `</div>`
