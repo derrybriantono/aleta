@@ -251,6 +251,7 @@ describe("matriks putusan sela jenis x status", () => {
     expect(r34).toContain("#11379#");
     expect(r34).toContain("Dalam Konvensi dan Rekonvensi");
     expect(cari(/^\[36\]/)).toContain("Pasal 2 ayat (4) Undang-Undang Nomor 48 Tahun 2009");
+    expect(cari(/^\[36\]/)).toContain("Memerintahkan #7036# untuk mendaftarkan #11417# sebagai perkara baru di Kepaniteraan #8008# dengan membayar panjar biaya perkara yang baru");
     // pemeriksaan setempat: tambah panjar (butir 12)
     expect(cari(/^\[15\]/)).toContain("Memerintahkan #11397# untuk membayar tambahan panjar biaya pemeriksaan setempat sejumlah #11396#");
   });
@@ -318,10 +319,14 @@ describe("BAS pemeriksaan setempat per jenis dan BAS sela", () => {
       const r = rtfMentah(folder, berkas);
       const t = polos(r);
       // pasal: persetujuan dan formulir = Pasal 5 dan 6 PERMA 3/2022; audio visual = kehadiran langsung: Pasal 5 ayat (3), Pasal 6 ayat (2) PERMA 1/2016
-      expect(t).toContain("Pasal 5 dan Pasal 6 Peraturan Mahkamah Agung Nomor 3 Tahun 2022 tentang Mediasi di Pengadilan secara Elektronik");
+      // bunyi naskah resmi PERMA 3/2022 (BN 2022/535): Pasal 3, 5, 6, 8 ayat (2), 11, 12, 23, 24 ayat (2), 25
+      expect(t).toContain("Pasal 5 ayat (1), Pasal 6, dan Pasal 8 ayat (2) Peraturan Mahkamah Agung Nomor 3 Tahun 2022 tentang Mediasi di Pengadilan secara Elektronik");
+      expect(t).toContain("penetapan penunjukan Mediator dan perintah melakukan Mediasi Elektronik");
+      expect(t).toContain("menyampaikan pernyataan mediasi berhasil atau tidak berhasil secara elektronik melalui Sistem Informasi Pengadilan");
+      expect(t).toContain("Tanda Tangan Elektronik (Pasal 24 ayat (2))");
       expect(t).toContain("Pasal 5 ayat (3) dan Pasal 6 ayat (2) Peraturan Mahkamah Agung Nomor 1 Tahun 2016");
       expect(t).toContain("untuk menempuh mediasi secara elektronik #11400#;");
-      expect(t).toMatch(/7\.\t\s*Berdasarkan Pasal 5 dan Pasal 6 Peraturan Mahkamah Agung Nomor 3 Tahun 2022/);
+      expect(t).toMatch(/7\.\t\s*Berdasarkan Peraturan Mahkamah Agung Nomor 3 Tahun 2022 tentang Mediasi di Pengadilan secara Elektronik, Mediasi Elektronik merupakan alternatif/);
       expect(t).toMatch(/8\.\t\s*Apabila para pihak sudah memahami/);
       expect(r).toMatch(/\{\\\*\\isianasal #11399#\}/);
     }
@@ -432,7 +437,7 @@ describe("30 Okt putaran 3: putusan akhir li'an dan saran", () => {
       expect(x[1]).toBe(PUTUSAN_SELA_UMUM.lianAkhir[kunci].berkas);
       const t = polos(rtfMentah(x[0], x[1]));
       expect(t.split("\n")[0]).toMatch(/^PUTUSAN\s*$/m);
-      for (const v of ["Pasal 125 Kompilasi Hukum Islam", "Pasal 162 Kompilasi Hukum Islam", "Pasal 126 Kompilasi Hukum Islam", "#11414#", "Rincian Biaya Perkara"]) expect(t).toContain(v);
+      for (const v of ["Pasal 153 ayat (1) Kompilasi Hukum Islam", "Pasal 125 Kompilasi Hukum Islam", "Pasal 162 Kompilasi Hukum Islam", "Pasal 126 Kompilasi Hukum Islam", "#11414#", "Rincian Biaya Perkara"]) expect(t).toContain(v);
       expect(t).toContain("2.\tMenyatakan perkawinan #11392# dengan #11393# putus karena li'an;");
       expect(t).toContain("tidak dapat rujuk dan tidak dapat menikah kembali untuk selama-lamanya#11412#;");
       expect(t).toContain("#11419#\t#11122#.");

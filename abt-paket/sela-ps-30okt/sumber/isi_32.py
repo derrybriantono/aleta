@@ -54,6 +54,7 @@ def pemisahan(kabul):
         p.append(('timbang', 'Menimbang, bahwa oleh karena itu permohonan pemisahan perkara beralasan hukum dan patut dikabulkan;'))
         butir = ['Mengabulkan permohonan pemisahan perkara',
                  'Memisahkan pemeriksaan #11417# dari perkara Nomor #0001# untuk diperiksa dan diputus sebagai perkara tersendiri',
+                 'Memerintahkan #7036# untuk mendaftarkan #11417# sebagai perkara baru di Kepaniteraan #8008# dengan membayar panjar biaya perkara yang baru',
                  'Memerintahkan #7036# dan #7037# untuk melanjutkan pemeriksaan selebihnya dalam perkara Nomor #0001#', TANGGUH]
     else:
         p.append(('timbang', 'Menimbang, bahwa oleh karena itu permohonan pemisahan perkara tidak beralasan hukum dan harus ditolak;'))
@@ -92,6 +93,10 @@ def lian_akhir():
           ('timbang', "Menimbang, bahwa berdasarkan Pasal 125 Kompilasi Hukum Islam, li'an menyebabkan putusnya perkawinan antara suami istri untuk "
                       "selama-lamanya, dan berdasarkan Pasal 162 Kompilasi Hukum Islam, bilamana li'an terjadi maka perkawinan itu putus untuk "
                       "selamanya dan anak yang dikandung dinasabkan kepada ibunya, sedangkan suaminya terbebas dari kewajiban memberi nafkah;"),
+          ('timbang', "Menimbang, bahwa berdasarkan Pasal 153 ayat (1) Kompilasi Hukum Islam, bagi seorang istri yang putus perkawinannya berlaku waktu "
+                      "tunggu atau iddah, kecuali qobla al dukhul dan perkawinannya putus bukan karena kematian suami, dan berdasarkan ayat (4) pasal tersebut, "
+                      "bagi perkawinan yang putus karena perceraian tenggang waktu tunggu dihitung sejak jatuhnya putusan Pengadilan Agama yang "
+                      "mempunyai kekuatan hukum tetap;"),
           ('timbang', "Menimbang, bahwa oleh karena itu #0053# #7036# patut dikabulkan dengan menyatakan perkawinan #11392# dengan #11393# putus "
                       "karena li'an untuk selama-lamanya;"),
           ('bagian', 'Mengenai Biaya Perkara'), ('timbang', '#11414#'),

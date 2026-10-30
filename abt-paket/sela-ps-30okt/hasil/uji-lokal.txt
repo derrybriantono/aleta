@@ -12,7 +12,7 @@ COCOK=98
 BERKAS COCOK
 TANPA KATA NAMA APLIKASI
 SELESAI - paket abt-sela-ps-30okt terpasang. Cadangan: <uji>/paket/cadangan. Pulih: bash <uji>/paket/pulih-satker.sh
-SNAP pasang : menu[139 4ecd8255f6e6e2fdae88ab7b54a478e7 ] variabel[2832 5012909cd456bc88a90e9b568790c37f ] pohon[4baf4814ac95]
+SNAP pasang : menu[139 4ecd8255f6e6e2fdae88ab7b54a478e7 ] variabel[2832 5012909cd456bc88a90e9b568790c37f ] pohon[10f13a6ae102]
 == 2. pasang ulang (idempoten)
 PRASYARAT COCOK (0|117|111|0|2|2)
 SUDAH_BARU=96 SUDAH_TIMPA=2
@@ -26,14 +26,14 @@ COCOK=98
 BERKAS COCOK
 TANPA KATA NAMA APLIKASI
 SELESAI - paket abt-sela-ps-30okt terpasang. Cadangan: <uji>/paket/cadangan. Pulih: bash <uji>/paket/pulih-satker.sh
-SNAP ulang  : menu[139 4ecd8255f6e6e2fdae88ab7b54a478e7 ] variabel[2832 5012909cd456bc88a90e9b568790c37f ] pohon[4baf4814ac95]
+SNAP ulang  : menu[139 4ecd8255f6e6e2fdae88ab7b54a478e7 ] variabel[2832 5012909cd456bc88a90e9b568790c37f ] pohon[10f13a6ae102]
 PASANG ULANG = TIDAK ADA PERUBAHAN
 == 3. PULIH
 ARSIP=96 KEMBALI=2
 BERKAS PULIH
 FOLDER DILEPAS (kosong, isinya di <uji>/paket/cadangan/pulih-arsip) derry_briantono/97a Putusan Sela
 FOLDER DILEPAS (kosong, isinya di <uji>/paket/cadangan/pulih-arsip) derry_briantono/97a Putusan Sela - BAS
-CADANGAN ISIAN: <uji>/paket/cadangan/abt_data_teks-pulih-20261030133957.sql (0 baris)
+CADANGAN ISIAN: <uji>/paket/cadangan/abt_data_teks-pulih-20261030142740.sql (0 baris)
 PULIH SQL SELESAI; sisa variabel paket: 0, sisa menu paket: 0
 PULIH COCOK
 SNAP pulih  : menu[137 78638617145a65c81916178b6fe7b09c ] variabel[2715 6dc323bf9f0d1d59d2fd8d7c76c4cdd0 ] pohon[583a9479b91d]
@@ -44,7 +44,7 @@ PULIH = KEADAAN AWAL PERSIS (menu, variabel, pohon blangko)
 == 5. pasang lagi
 TANPA KATA NAMA APLIKASI
 SELESAI - paket abt-sela-ps-30okt terpasang. Cadangan: <uji>/paket/cadangan. Pulih: bash <uji>/paket/pulih-satker.sh
-SNAP lagi   : menu[139 4ecd8255f6e6e2fdae88ab7b54a478e7 ] variabel[2832 5012909cd456bc88a90e9b568790c37f ] pohon[4baf4814ac95]
+SNAP lagi   : menu[139 4ecd8255f6e6e2fdae88ab7b54a478e7 ] variabel[2832 5012909cd456bc88a90e9b568790c37f ] pohon[10f13a6ae102]
 PASANG LAGI = SAMA DENGAN PASANG PERTAMA
 == 6. PULIH lagi
 PULIH SQL SELESAI; sisa variabel paket: 0, sisa menu paket: 0
