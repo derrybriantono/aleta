@@ -1,0 +1,6 @@
+f077b71e7758d43c74127f1ca7b237db  abt-ket-saksi-baris-30okt-FUNGSI.sql
+28c67a1e6e2238f468772dc784c5bfa3  abt-ket-saksi-baris-30okt-PASANG.sql
+e30aa394533f0f0424c67dd794bb38f1  abt-ket-saksi-baris-30okt-PERIKSA.sql
+83a856d37230c7faeea0c72184b128cb  abt-ket-saksi-baris-30okt-PRASYARAT.sql
+03960e508cb85bad529af754b9b2479e  pasang-satker.sh
+d63629a65224d585573f3902ef3414a8  pulih-satker.sh
