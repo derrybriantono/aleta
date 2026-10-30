@@ -427,7 +427,7 @@ describe("C. Alat saya per peran; Lihat sebagai akun", () => {
     const h = buka({ orang: "hakim" });
     await bukaTampilan(h);
     tekan(h, "#bd-alat-btn");
-    expect(alat(h)).toEqual(["massal:put", "putusanOto", "gugatan", "saksi", "ktp", "cek", "konseptor", "advance", "unggah", "massal:unggah"]); // F1.6: checklist konseptor; F4.4: Putusan Advance; 30 Okt (5.3): draf putusan sidang hari ini
+    expect(alat(h)).toEqual(["massal:put", "massal:salinan", "putusanOto", "gugatan", "saksi", "ktp", "cek", "konseptor", "advance", "unggah", "massal:unggah"]); // F1.6: checklist konseptor; F4.4: Putusan Advance; 30 Okt (5.3): draf putusan sidang hari ini
     expect(grup(h)[0]).toContain("Hakim");
 
     const p = buka({ orang: "pp" });

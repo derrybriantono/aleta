@@ -3216,6 +3216,7 @@ async function handleBridgeOperation(operation, params = {}) {
     "berkas.fakta": (params) => require("./berkasPerkaraService").fakta(params),
     "berkas.pelajari": (params) => require("./berkasPerkaraService").pelajari(params),
     "berkas.bundel": (params) => require("./berkasPerkaraService").bundelBahan(params),
+    "salinan.bht": (params) => require("./salinanBhtService").daftarBht(params),
     "tes.cariPerkara": cariPerkaraTes,
     "abt.nilaiPenanda": nilaiPenandaAbt,
     "blangko.pohon": getPohonBlangko,

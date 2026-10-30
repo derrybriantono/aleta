@@ -113,6 +113,9 @@ type Usulan = Record<string, unknown>;
 type Minta = { url: string; cara: string; badan: string };
 const sampulNaskah: Array<Record<string, any>> = [];
 const sampulFakta: string[] = [];
+const salinanPdf: boolean[] = [];
+const salinanTutup: string[][] = [];
+let daftarBht: Array<Record<string, unknown>> = [];
 type Opsi = {
   /** perkaraId yang bahan sampulnya gagal dibaca bot. */
   sampulGagal?: string[];
@@ -256,6 +259,13 @@ function buka(p: Opsi = {}): Halaman {
     if (url.includes("/aleta-ecourt/kuasa-gugatan")) return json({ ok: true, data: { usulan: [], ada: false } });
     if (url.includes("/aleta-ecourt/ktp-pihak")) return json({ ok: true, data: { pihak: [] } });
     if (url.includes("/aleta-ecourt/relaas-massal/cetak")) return json({ ok: true, data: polos(p.relaas ?? { ok: true, tanggal: TGL, dokumen: [], tidakPerlu: [], tertunda: [], ringkas: {}, catatan: [] }) });
+    if (url.includes("/aleta-ecourt/salinan-bht")) {
+      if (cara === "POST") {
+        salinanTutup.push(JSON.parse(badanMinta || "{}").perkaraIds ?? []);
+        return json({ ok: true, data: { ditutup: 1 } });
+      }
+      return json({ ok: true, data: { perkara: daftarBht, disegarkan: true } });
+    }
     if (url.includes("/aleta-ecourt/sampul-berkas/naskah")) {
       const b = JSON.parse(badanMinta || "{}");
       sampulNaskah.push(b);
@@ -271,6 +281,7 @@ function buka(p: Opsi = {}): Halaman {
     if (url.includes("/aleta-bot/abt/pdf")) {
       const b = JSON.parse(badanMinta || "{}");
       pdfRtf.push(Buffer.from(String(b.rtfBase64 || ""), "base64").toString("latin1"));
+      salinanPdf.push(b.salinan === true);
       pdfTtd.push(Array.isArray(b.ttd) ? b.ttd : []);
       // 27 Okt: portal membubuhkan tanda tangan di PDF (posisi dari koordinat nama) dan menjawab ttdPdf.
       const ttdPdf = Array.isArray(b.ttd) && b.ttd.length ? { ttdPdf: { dipasang: b.ttd.map((x: { nama: string }) => x.nama), tidakDitemukan: [] } } : {};
@@ -415,6 +426,7 @@ const alatTampil = (h: Halaman) => qq(h, "#bd-alat [data-alat]").map((x) => x.ge
 describe("A. Alat saya: pintasan massal per peran memakai tanggal hari ini", () => {
   it.each([
     ["hakim", "massal:put", "put", "Draf putusan sidang hari ini"],
+    ["hakim", "massal:salinan", "salinan", "Salinan putusan perkara yang baru BHT"],
     ["pp", "massal:bas", "bas", "BAS massal hari ini"],
     ["js", "massal:rel", "rel", "Relaas massal hari ini"],
     ["ptsp", "massal:sampul", "sampul", "Sampul berkas perkara baru"],
@@ -515,5 +527,55 @@ describe("B-C. Sampul massal PTSP", () => {
     expect(akar(h).textContent).toContain("1 dari 2 berhasil dicetak.");
     expect(statusBaris(h, "583/Pdt.G/2026")).toMatch(/Gagal/);
     expect(massal(h).keadaan().pilih).toHaveLength(1);
+  });
+});
+
+describe("5.2 Salinan putusan perkara yang baru BHT", () => {
+  const BHT = [
+    { perkaraId: "10154", nomorPerkara: "581/Pdt.G/2026/PA.Dgl", tanggalPutusan: TGL, tanggalBht: "2026-10-29", status: "menunggu" },
+    { perkaraId: "99999", nomorPerkara: "999/Pdt.G/2026/PA.Dgl", tanggalPutusan: "2026-10-10", tanggalBht: "2026-10-28", status: "menunggu" },
+  ];
+  async function bukaSalinan(h: Halaman) {
+    await bukaTampilan(h);
+    klik(h, "#bd-alat-btn");
+    q(h, '[data-alat="massal:salinan"]')!.click();
+    await sampai(() => massal(h).keadaan().jenis === "salinan" && massal(h).keadaan().terbuka, "jenis salinan");
+    await sampai(() => !/Membaca daftar/.test(akar(h).textContent || ""), "daftar salinan");
+  }
+  it("daftar dari portal digabung dengan perkara akun; PDF SALINAN per perkara; perkara yang selesai ditutup di server; tidak menulis ke ABT", async () => {
+    daftarBht = BHT;
+    salinanPdf.length = 0;
+    salinanTutup.length = 0;
+    const h = buka({ orang: "hakim" });
+    await bukaSalinan(h);
+    expect(qq(h, "#bd-ms-tgl")).toHaveLength(0); // tanpa pemilih tanggal
+    expect((q(h, 'input[name="bd-ms-format"][value="rtf"]') as HTMLInputElement).disabled).toBe(true);
+    expect((q(h, 'input[name="bd-ms-format"][value="pdf"]') as HTMLInputElement).checked).toBe(true);
+    const nomor = qq(h, ".bd-ms-baris .bd-ms-no").map((x) => x.textContent);
+    expect(nomor).toEqual(["581/Pdt.G/2026", "999/Pdt.G/2026"]);
+    expect(qq(h, ".bd-ms-baris")[1].textContent).toContain("tidak ada di daftar perkara akun ini");
+    expect(qq(h, ".bd-ms-baris")[0].textContent).toContain("BHT");
+    klik(h, '[data-ms="pilihsiap"]');
+    expect(massal(h).keadaan().pilih).toHaveLength(1);
+    klik(h, '[data-ms="cetak"]');
+    await sampai(() => unduhan(h).length === 1 && massal(h).keadaan().jalan === "", "PDF diunduh", 15000);
+    expect(salinanPdf).toEqual([true]); // jalur PDF SALINAN, bukan PDF biasa
+    expect(unduhan(h)[0].nama).toMatch(/^Cetak massal - Salinan BHT - \d{4}-\d{2}-\d{2}\.pdf$/);
+    expect(dariDataUrl(unduhan(h)[0].alamat).toString("latin1")).toMatch(/^%PDF/);
+    await sampai(() => salinanTutup.length === 1, "ditutup di server");
+    expect(salinanTutup[0]).toEqual(["10154"]);
+    expect(mintaKe(h, /edit_data/, "POST")).toEqual([]);
+    expect(mintaKe(h, /sampul-berkas/, "PUT")).toEqual([]);
+  });
+
+  it("tidak ada perkara BHT: pesan jujur; PP tidak ditawari alat ini", async () => {
+    daftarBht = [];
+    const h = buka({ orang: "hakim" });
+    await bukaSalinan(h);
+    expect(akar(h).textContent).toContain("Tidak ada perkara BHT yang salinannya belum diurus.");
+    const pp = buka({ orang: "pp" });
+    await bukaTampilan(pp);
+    klik(pp, "#bd-alat-btn");
+    expect(alatTampil(pp)).not.toContain("massal:salinan");
   });
 });

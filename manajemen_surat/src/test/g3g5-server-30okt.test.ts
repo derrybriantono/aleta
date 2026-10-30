@@ -9,6 +9,8 @@ import { berlakuUntuk, bersihkanKalimat, kunciJenisPerkara, urutkanKalimat, type
 import { IN_MEMORY_TABLE_PERSISTENCE_ORDER, createAletaDatabase, type AletaDatabase } from "@/server/db/client";
 import { DDL_CETAK_TERAKHIR, DDL_KALIMAT_PRIBADI } from "@/server/db/schema";
 import { bacaCetakTerakhir, kunciBerkasCetak, simpanCetakTerakhir } from "@/server/modules/aleta-ecourt/cetak-terakhir";
+import { createRequire } from "node:module";
+import { daftarSalinanBht, lupakanSinkronSalinanBht, sinkronSalinanBht, tutupSalinanBht, type PerkaraBht } from "@/server/modules/aleta-ecourt/salinan-bht";
 import { hapusKalimat, kalimatMilik, kalimatUntuk, pakaiKalimat, simpanKalimat } from "@/server/modules/aleta-ecourt/kalimat-pribadi";
 
 /**
@@ -184,5 +186,78 @@ describe("pustaka: aturan murni", () => {
   it("urutan stabil: kecocokan, pemakaian, lalu yang terbaru", () => {
     const hasil = urutkanKalimat([k({ id: "1", dipakai: 5 }), k({ id: "2", kode: "8503" }), k({ id: "3", dipakai: 9, dipakaiTerakhir: "2026-10-30" }), k({ id: "4", dipakai: 5, dipakaiTerakhir: "2026-10-29" })], "a");
     expect(hasil.map((x) => x.id)).toEqual(["2", "3", "4", "1"]);
+  });
+});
+
+describe("5.2 salinan putusan perkara yang baru BHT - penunjuk", () => {
+  let db: AletaDatabase;
+  beforeEach(async () => {
+    db = await createAletaDatabase({ useInMemory: true, seed: true });
+    lupakanSinkronSalinanBht();
+  });
+  afterEach(async () => {
+    await db.close();
+  });
+  const P = (id: string, bht: string, adaPutusan = true): PerkaraBht => ({ perkaraId: id, nomorPerkara: `${id}/Pdt.G/2026/PA.Dgl`, tanggalPutusan: "2026-10-10", tanggalBht: bht, adaPutusan });
+
+  it("mencatat yang baru BHT (berkas putusan ada), tidak ganda pada sinkron berikutnya; yang gagal dibaca tidak mengubah apa pun", async () => {
+    expect(await sinkronSalinanBht(db, async () => [P("1", "2026-10-29"), P("2", "2026-10-28"), P("3", "2026-10-27", false), P("x", "2026-10-27")])).toBe(2);
+    expect(await sinkronSalinanBht(db, async () => [P("1", "2026-10-29"), P("2", "2026-10-28"), P("4", "2026-10-30")])).toBe(1);
+    expect(await sinkronSalinanBht(db, async () => null)).toBeNull();
+    const d = await daftarSalinanBht(db, { sinkron: false });
+    expect(d.perkara.map((x) => x.perkaraId)).toEqual(["4", "1", "2"]); // terbaru BHT dulu
+    expect(d.perkara.every((x) => x.status === "menunggu")).toBe(true);
+  });
+
+  it("menutup yang sudah dicetak (satu kali), mengabaikan nomor rusak; yang ditutup tidak tampil dan tidak muncul lagi walau SIPP masih memuatnya", async () => {
+    await sinkronSalinanBht(db, async () => [P("1", "2026-10-29"), P("2", "2026-10-28")]);
+    expect(await tutupSalinanBht(db, { id: "u1", name: "Hakim Satu" }, ["1", "bukan", "999"])).toBe(1);
+    expect(await tutupSalinanBht(db, { id: "u1" }, ["1"])).toBe(0);
+    await sinkronSalinanBht(db, async () => [P("1", "2026-10-29"), P("2", "2026-10-28")]);
+    expect((await daftarSalinanBht(db, { sinkron: false })).perkara.map((x) => x.perkaraId)).toEqual(["2"]);
+    const baris = await db.queryOne<{ selesai_oleh: string }>(`SELECT selesai_oleh FROM aleta_salinan_bht WHERE perkara_id = '1'`);
+    expect(baris!.selesai_oleh).toBe("Hakim Satu");
+  });
+
+  it("daftar menyegarkan dari SIPP sendiri (malas-sinkron) sekali dalam 10 menit", async () => {
+    let panggilan = 0;
+    const ambil = async () => {
+      panggilan += 1;
+      return [P("7", "2026-10-30")];
+    };
+    const a = await daftarSalinanBht(db, { ambil });
+    const b = await daftarSalinanBht(db, { ambil });
+    expect(panggilan).toBe(1);
+    expect(a.disegarkan).toBe(true);
+    expect(b.disegarkan).toBe(false);
+    expect(b.perkara.map((x) => x.perkaraId)).toEqual(["7"]);
+  });
+
+  it("bot: hanya SELECT, batas hari dijepit, hasil dipetakan; galat dijawab jujur", async () => {
+    const bot = createRequire(import.meta.url)(path.join(AKAR, "..", "aleta_bot/services/salinanBhtService.js")) as { daftarBht: (p: unknown, d: unknown) => Promise<any> };
+    const sql: string[] = [];
+    const param: unknown[] = [];
+    const r = await bot.daftarBht(
+      { sejakHari: 999 },
+      {
+        kueri: async (t: string, p: unknown[]) => {
+          sql.push(t);
+          param.push(...p);
+          return [
+            { perkara_id: 5, nomor_perkara: "5/Pdt.G/2026/PA.Dgl", tanggal_putusan: new Date(2026, 9, 10), tanggal_bht: "2026-10-29", amar_putusan_dok: "resources/file/doc/x.pdf" },
+            { perkara_id: 6, nomor_perkara: "6/Pdt.G/2026/PA.Dgl", tanggal_putusan: "2026-10-11", tanggal_bht: "2026-10-28", amar_putusan_dok: "" },
+            { perkara_id: 7, nomor_perkara: "", tanggal_putusan: "", tanggal_bht: "2026-10-28", amar_putusan_dok: "x" },
+          ];
+        },
+      }
+    );
+    expect(sql.every((t) => /^\s*SELECT/i.test(t))).toBe(true);
+    expect(param).toEqual([60]);
+    expect(r).toMatchObject({ ok: true, sejakHari: 60 });
+    expect(r.perkara).toEqual([
+      { perkaraId: "5", nomorPerkara: "5/Pdt.G/2026/PA.Dgl", tanggalPutusan: "2026-10-10", tanggalBht: "2026-10-29", adaPutusan: true },
+      { perkaraId: "6", nomorPerkara: "6/Pdt.G/2026/PA.Dgl", tanggalPutusan: "2026-10-11", tanggalBht: "2026-10-28", adaPutusan: false },
+    ]);
+    expect(await bot.daftarBht({}, { kueri: async () => { throw new Error("x"); } })).toMatchObject({ ok: false });
   });
 });

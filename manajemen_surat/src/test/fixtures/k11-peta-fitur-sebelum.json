@@ -2279,8 +2279,8 @@
    "jumlahPernyataan": 2
   },
   "blangko-derry-massal.js": {
-   "byte": 65713,
-   "sidik": "cdf323a93cba98b7722097fef62c0522cee3b6dc",
+   "byte": 69955,
+   "sidik": "d57ee7416d63f2ff3c4ba6a055ab23b9b837e975",
    "nama": [],
    "ekspor": [
     "aletaBlangkoDerryMassal",
@@ -2310,8 +2310,8 @@
    "jumlahPernyataan": 2
   },
   "blangko-derry.js": {
-   "byte": 168203,
-   "sidik": "769c5705bd817feb09c025c4dc85b8db69f71055",
+   "byte": 168317,
+   "sidik": "d7007a18c391b9ec3e2463a6c161bfcd6c0bb6c3",
    "nama": [],
    "ekspor": [
     "aletaBlangkoDerry",

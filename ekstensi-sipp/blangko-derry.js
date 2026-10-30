@@ -2435,6 +2435,7 @@
   const ALAT = {
     hakim: [
       ["massal:put", "Draf putusan sidang hari ini"],
+      ["massal:salinan", "Salinan putusan perkara yang baru BHT"],
       ["putusanOto", "Putusan otomatis"],
       ["gugatan", "Isi dari gugatan (posita)"],
       ["saksi", "Set pertanyaan saksi"],
@@ -2505,7 +2506,7 @@
    * sudah mengerjakannya (PP = BAS, juru sita = relaas) - kini membuka Cetak massal jenis itu. Alat yang ada di panel ALETA halaman
    * SIPP (kasir, PTSP) menyebut tempatnya, bukan "tahap berikutnya".
    */
-  const ALAT_MASSAL = { "massal:put": "put", "massal:bas": "bas", "massal:rel": "rel", "massal:ptsp": "ptsp", "massal:sampul": "sampul" };
+  const ALAT_MASSAL = { "massal:put": "put", "massal:bas": "bas", "massal:rel": "rel", "massal:ptsp": "ptsp", "massal:sampul": "sampul", "massal:salinan": "salinan" };
   const ALAT_DI_SIPP = {
     "kasir:rekap": "Rekap kasir ada di panel ALETA halaman daftar perkara SIPP (bagian Kasir).",
     "kasir:otomatis": "Kasir otomatis ada di panel ALETA halaman daftar perkara SIPP (bagian Kasir).",
@@ -2514,7 +2515,7 @@
   };
   const alatTersedia = (id) => S.alatDaftar.has(id) || (Object.prototype.hasOwnProperty.call(ALAT_MASSAL, id) && typeof S.massal === "function");
   /** Alat yang menulis ke ABT/SIPP/e-Court atau mencatat kemajuan perkara: mati pada mode Tes putusan. */
-  const ALAT_MENULIS = new Set(["unggah", "massal:unggah", "massal:put", "massal:bas", "massal:rel", "massal:ptsp", "massal:sampul", "konseptor", "kasir:otomatis", "ptsp:dataumum", "ptsp:ktp"]);
+  const ALAT_MENULIS = new Set(["unggah", "massal:unggah", "massal:put", "massal:bas", "massal:rel", "massal:ptsp", "massal:sampul", "massal:salinan", "konseptor", "kasir:otomatis", "ptsp:dataumum", "ptsp:ktp"]);
   function jalankanAlat(id) {
     tutupFloat();
     if (tesAktif() && ALAT_MENULIS.has(id)) return toast("Alat ini menulis atau mencatat; dimatikan pada mode Tes putusan.");

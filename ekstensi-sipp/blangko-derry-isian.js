@@ -9900,7 +9900,13 @@
       const nomor = nomorPerkara();
       const berkas = S.blangko.berkas;
       const hasil = { rtf: biner(rtf), pdf: null, namaRtf: namaUnduhan(nomor, berkas, "rtf"), namaPdf: namaUnduhan(nomor, berkas, "pdf"), keadaan: keadaanAkhir, ttd: { dipasang: [], tidakDitemukan: [], gagal: [] } };
-      if (o.pdf) {
+      if (o.pdf && o.salinan) {
+        // 30 Okt (salinan BHT): PDF SALINAN seperti pilihan "PDF SALINAN" di langkah Cetak - "ttd" di tempat majelis, tanda tangan Panitera pengesah.
+        const hs = await pdfDari(latin1(rtf), true);
+        hasil.pdf = hs.bita;
+        hasil.namaPdf = namaUnduhan(nomor, `${berkas} - SALINAN`, "pdf");
+        hasil.salinan = hs.keterangan || null;
+      } else if (o.pdf) {
         if (o.ttd) {
           S.ttdManual = false;
           await autoCentangTtd();
