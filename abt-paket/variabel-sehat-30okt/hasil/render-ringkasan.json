@@ -1,0 +1,105 @@
+[
+ {
+  "perkara": "10089",
+  "blangko": "IN01d",
+  "berkas": "[01d] [Kabul] IN - Format Lengkap Rukun dan Syarat per Unsur.rtf",
+  "beda": 1,
+  "sama_selain": true,
+  "sebelum": "terjadi pada 13 Januari 1975; . Jika berpegang pada ketentuan di atas, ",
+  "sesudah": "terjadi pada 13 Januari 1975. Jika",
+  "beda_contoh": [
+   [
+    "; ",
+    ""
+   ]
+  ]
+ },
+ {
+  "perkara": "10092",
+  "blangko": "IN01d",
+  "berkas": "[01d] [Kabul] IN - Format Lengkap Rukun dan Syarat per Unsur.rtf",
+  "beda": 1,
+  "sama_selain": true,
+  "sebelum": "terjadi pada pada hari Sabtu, 18 Oktober 2025",
+  "sesudah": "terjadi pada hari Sabtu, 18 Oktober 2025. Jika",
+  "beda_contoh": [
+   [
+    " pada",
+    ""
+   ]
+  ]
+ },
+ {
+  "perkara": "10166",
+  "blangko": "IN01e",
+  "berkas": "[01e] [Kabul] IN - Satu Pemohon (Pasangan Meninggal, Voluntair).rtf",
+  "beda": 1,
+  "sama_selain": true,
+  "sebelum": "terjadi pada pada Rabu 20 April 1994",
+  "sesudah": "terjadi pada Rabu 20 April 1994. Jika",
+  "beda_contoh": [
+   [
+    " pada",
+    ""
+   ]
+  ]
+ },
+ {
+  "perkara": "9880",
+  "blangko": "AMP811",
+  "berkas": "[JS] 8.1.1. Amplop Relaas Panggilan Sidang P.rtf",
+  "beda": 2,
+  "sama_selain": true,
+  "sebelum": "Provinsi Sulawesi Tengah. Domisili Eletronik:, Kode Pos 94356. <email>",
+  "sesudah": "Provinsi Sulawesi Tengah, Kode Pos 94356. Domisili Eletronik: <email>",
+  "beda_contoh": [
+   [
+    "",
+    ", Kode Pos 94356"
+   ],
+   [
+    ", Kode Pos 94356.",
+    ""
+   ]
+  ]
+ },
+ {
+  "perkara": "10224",
+  "blangko": "AMP821",
+  "berkas": "[JS] 8.2.1. Amplop Relaas Pemberitahuan Putusan P.rtf",
+  "beda": 2,
+  "sama_selain": true,
+  "sebelum": "Provinsi Sulawesi Tengah, Domisili, Kode Pos 94355. Eleketronik:<email>",
+  "sesudah": "Provinsi Sulawesi Tengah, Kode Pos 94355. Domisili Eleketronik:<email>",
+  "beda_contoh": [
+   [
+    "Domisili, ",
+    ""
+   ],
+   [
+    "",
+    " Domisili"
+   ]
+  ]
+ },
+ {
+  "perkara": "10008",
+  "blangko": "AMP811",
+  "berkas": "[JS] 8.1.1. Amplop Relaas Panggilan Sidang P.rtf",
+  "beda": 0,
+  "sama_selain": true,
+  "sebelum": "Provinsi Sulawesi Tengah, Kode Pos 94362",
+  "sesudah": "Provinsi Sulawesi Tengah, Kode Pos 94362",
+  "beda_contoh": []
+ },
+ {
+  "perkara": "10008",
+  "blangko": "AMP812",
+  "berkas": "[JS] 8.1.2. Amplop Relaas Panggilan Sidang T.rtf",
+  "beda": 0,
+  "sama_selain": true,
+  "sebelum": "",
+  "sesudah": "",
+  "beda_contoh": []
+ }
+]

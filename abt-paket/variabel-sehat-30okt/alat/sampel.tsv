@@ -1,0 +1,169 @@
+1485	banding	Harta Bersama	15
+3290	banding	Cerai Talak	15
+5340	cabut	Cerai Talak	15
+6062	cabut	Cerai Gugat	15
+6076	cabut	Kewarisan	15
+6179	cabut	Cerai Gugat	15
+6255	banding	Kewarisan	15
+6287	banding	Lain-Lain	15
+6326	eksekusi	Kewarisan	15
+6532	cabut	Cerai Gugat	15
+6952	eksekusi	Kewarisan	15
+7062	jenis-putus	Wali Adhol	16
+7067	jenis-putus	Wali Adhol	16
+7353	banding	Harta Bersama	15
+7357	jenis-putus	Lain-Lain	15
+7451	jenis-putus	Lain-Lain	16
+7741	jenis-putus	Lain-Lain	16
+7746	jenis-putus	Lain-Lain	16
+7777	jenis-putus	Lain-Lain	16
+7883	jenis-putus	Izin Poligami	15
+7900	eksekusi	Kewarisan	15
+8136	delegasi	Cerai Gugat	15
+8183	delegasi	Cerai Gugat	15
+8198	delegasi	Cerai Gugat	15
+8199	delegasi	Cerai Gugat	15
+8223	delegasi	Cerai Gugat	15
+8224	delegasi	Cerai Gugat	15
+8227	delegasi	Cerai Talak	15
+8235	delegasi	Cerai Gugat	15
+8264	cabut	Cerai Talak	15
+8329	banding,jenis-putus,sela	Kewarisan	15
+8691	sela	Cerai Gugat	15
+8709	sela	Cerai Gugat	15
+8712	jenis-putus	Harta Bersama	15
+8780	jenis-putus	Ekonomi Syariah	17
+8781	jenis-putus	Ekonomi Syariah	17
+8785	jenis-putus	Izin Poligami	15
+8864	cabut	P3HP/Penetapan Ahli Waris	16
+9024	jenis-putus	Lain-Lain	16
+9215	banding,jenis-putus,sela	Kewarisan	15
+9233	jenis-putus	Kewarisan	15
+9235	jenis-putus	Harta Bersama	15
+9237	jenis-putus	Asal Usul Anak	16
+9240	jenis-putus	Asal Usul Anak	16
+9291	jenis-putus,sela	Wasiat	15
+9321	verzet	Cerai Gugat	15
+9496	sela	Pengesahan Perkawinan/Istbat Nikah	16
+9528	jenis-putus	Kewarisan	15
+9575	sela	Cerai Gugat	15
+9584	jenis-putus	Harta Bersama	15
+9663	prodeo	Cerai Gugat	15
+9664	prodeo	Cerai Gugat	15
+9712	jenis-putus	Asal Usul Anak	16
+9729	jenis-berjalan,pihak2-banyak	Kewarisan	15
+9760	jenis-putus	Asal Usul Anak	16
+9789	jenis-putus	Harta Bersama	15
+9806	jenis-berjalan,sela	Harta Bersama	15
+9817	jenis-putus	Wali Adhol	16
+9828	banding	Cerai Talak	15
+9831	jenis-putus,pihak2-banyak	Pengesahan Perkawinan/Istbat Nikah	15
+9880	jenis-putus,pihak2-banyak	Pengesahan Perkawinan/Istbat Nikah	15
+9881	jenis-putus,pihak2-banyak	Pengesahan Perkawinan/Istbat Nikah	15
+9884	jenis-putus,pihak2-banyak	Pengesahan Perkawinan/Istbat Nikah	15
+9895	jenis-putus	Dispensasi Kawin	16
+9901	ghaib	Cerai Gugat	15
+9905	ghaib	Cerai Gugat	15
+9931	ghaib	Cerai Gugat	15
+9935	ghaib	Cerai Gugat	15
+9942	ghaib	Cerai Gugat	15
+9953	ikrar	Cerai Talak	15
+9972	ghaib	Cerai Gugat	15
+9979	ikrar	Cerai Talak	15
+9986	jenis-putus	Perwalian	16
+9987	mediasi-berhasil	Cerai Gugat	15
+9988	ikrar	Cerai Talak	15
+9994	ikrar,mediasi-berhasil	Cerai Talak	15
+9995	jenis-putus	Perwalian	16
+10004	ikrar	Cerai Talak	15
+10005	jenis-putus	P3HP/Penetapan Ahli Waris	16
+10006	jenis-berjalan,pihak2-banyak	Kewarisan	15
+10007	mediasi-berhasil	Cerai Talak	15
+10008	jenis-putus	Dispensasi Kawin	16
+10014	mediasi-gagal	Cerai Gugat	15
+10015	mediasi-berhasil	Cerai Gugat	15
+10017	mediasi-berhasil	Cerai Gugat	15
+10025	jenis-putus	Harta Bersama	15
+10055	ghaib	Cerai Gugat	15
+10057	jenis-putus	Perwalian	16
+10058	jenis-putus	P3HP/Penetapan Ahli Waris	16
+10059	mediasi-gagal	Cerai Talak	15
+10061	ghaib	Cerai Talak	15
+10062	mediasi-gagal	Cerai Gugat	15
+10066	ikrar	Cerai Talak	15
+10070	jenis-putus	Dispensasi Kawin	16
+10072	jenis-putus	Perwalian	16
+10077	ikrar	Cerai Talak	15
+10078	kuasa	Cerai Talak	15
+10079	kuasa	Cerai Talak	15
+10080	kuasa,mediasi-berhasil	Cerai Gugat	15
+10081	kuasa,mediasi-gagal	Cerai Gugat	15
+10083	ikrar	Cerai Talak	15
+10086	mediasi-gagal	Cerai Gugat	15
+10088	jenis-putus	Pengesahan Perkawinan/Istbat Nikah	16
+10089	jenis-putus,pihak2-banyak	Pengesahan Perkawinan/Istbat Nikah	15
+10090	jenis-putus	Asal Usul Anak	16
+10092	jenis-putus	Pengesahan Perkawinan/Istbat Nikah	16
+10095	jenis-putus	Dispensasi Kawin	16
+10096	jenis-putus	Perwalian	16
+10103	jenis-putus	Pengesahan Perkawinan/Istbat Nikah	16
+10105	mediasi-berhasil	Cerai Gugat	15
+10126	hadir-kontradiktor	Cerai Gugat	15
+10127	hadir-kontradiktor	Cerai Gugat	15
+10132	hadir-kontradiktor	Cerai Gugat	15
+10134	mediasi-gagal	Cerai Gugat	15
+10135	hadir-kontradiktor	Cerai Gugat	15
+10137	jenis-putus	Cerai Talak	15
+10139	jenis-putus	Cerai Talak	15
+10142	mediasi-berhasil	Cerai Gugat	15
+10143	hadir-kontradiktor	Cerai Gugat	15
+10146	jenis-putus	Cerai Talak	15
+10149	jenis-putus	Cerai Talak	15
+10152	mediasi-gagal	Cerai Gugat	15
+10153	jenis-putus	P3HP/Penetapan Ahli Waris	16
+10155	jenis-berjalan,kuasa,pihak2-banyak	Kewarisan	15
+10160	hadir-kontradiktor	Cerai Gugat	15
+10161	jenis-putus	Cerai Talak	15
+10165	mediasi-gagal	Cerai Gugat	15
+10166	jenis-putus	Pengesahan Perkawinan/Istbat Nikah	16
+10167	jenis-putus	Pengesahan Perkawinan/Istbat Nikah	16
+10172	jenis-putus	P3HP/Penetapan Ahli Waris	16
+10177	verstek	Cerai Gugat	15
+10178	jenis-putus	P3HP/Penetapan Ahli Waris	16
+10180	verstek	Cerai Gugat	15
+10181	verstek	Cerai Gugat	15
+10182	hadir-kontradiktor	Cerai Gugat	15
+10183	jenis-putus,verstek	Cerai Gugat	15
+10184	jenis-putus,verstek	Cerai Gugat	15
+10185	jenis-putus,verstek	Cerai Gugat	15
+10186	jenis-putus,verstek	Cerai Gugat	15
+10187	jenis-putus,verstek	Cerai Gugat	15
+10188	kuasa	Cerai Talak	15
+10191	jenis-putus	Dispensasi Kawin	16
+10225	cabut,hadir-kontradiktor,jenis-putus,kuasa	Kewarisan	15
+10229	kuasa	Cerai Talak	15
+10233	prodeo	Cerai Gugat	15
+10234	prodeo	Cerai Gugat	15
+10243	prodeo	Cerai Gugat	15
+10244	prodeo	Cerai Gugat	15
+10245	prodeo	Cerai Gugat	15
+10246	prodeo	Cerai Gugat	15
+10249	jenis-berjalan	Cerai Talak	15
+10259	jenis-berjalan	Cerai Talak	15
+10261	jenis-berjalan	Dispensasi Kawin	16
+10269	pihak1-banyak	Pengesahan Perkawinan/Istbat Nikah	16
+10270	pihak1-banyak	Pengesahan Perkawinan/Istbat Nikah	16
+10271	pihak1-banyak	Pengesahan Perkawinan/Istbat Nikah	16
+10272	pihak1-banyak	Pengesahan Perkawinan/Istbat Nikah	16
+10273	pihak1-banyak	Pengesahan Perkawinan/Istbat Nikah	16
+10274	jenis-berjalan,pihak1-banyak	Pengesahan Perkawinan/Istbat Nikah	16
+10275	jenis-berjalan,pihak1-banyak	Pengesahan Perkawinan/Istbat Nikah	16
+10276	jenis-berjalan,pihak1-banyak	Pengesahan Perkawinan/Istbat Nikah	16
+10277	ecourt	Cerai Gugat	15
+10278	ecourt	Cerai Gugat	15
+10279	ecourt	Cerai Gugat	15
+10280	ecourt	Cerai Gugat	15
+10281	ecourt,jenis-berjalan	Cerai Talak	15
+10282	ecourt,jenis-berjalan	Cerai Gugat	15
+10283	ecourt,jenis-berjalan	Cerai Gugat	15
+10284	ecourt,jenis-berjalan	Cerai Gugat	15

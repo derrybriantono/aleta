@@ -1,0 +1,29 @@
+SNAP awal   : 2881 840a98017983ab0c96bcbef1fb14ae37 
+== 1. PASANG
+PRASYARAT COCOK (3|0)
+CADANGAN: /d/Aplikasi/aleta/tmp/vs30/pk/cadangan/variabel-sebelum.*.sql (4303,9292,9293)
+PERIKSA: SEMUA COCOK
+PRASYARAT SESUDAH: 0|3 (harus 0|3)
+SELESAI - paket abt-variabel-sehat-30okt terpasang. Pulih: bash /d/Aplikasi/aleta/tmp/vs30/pk/pulih-satker.sh
+SNAP pasang : 2881 4069f0afa56d0a26351419aa339a30dd 
+== 2. pasang ulang
+PRASYARAT COCOK (0|3)
+PERIKSA: SEMUA COCOK
+PRASYARAT SESUDAH: 0|3 (harus 0|3)
+SELESAI - paket abt-variabel-sehat-30okt terpasang. Pulih: bash /d/Aplikasi/aleta/tmp/vs30/pk/pulih-satker.sh
+PASANG ULANG = TIDAK ADA PERUBAHAN
+== 3. PULIH
+PRASYARAT SESUDAH PULIH: 3|0
+PULIH COCOK
+PULIH = KEADAAN AWAL PERSIS (seluruh tabel variabel)
+== 4. pasang lagi
+PRASYARAT SESUDAH: 0|3 (harus 0|3)
+SELESAI - paket abt-variabel-sehat-30okt terpasang. Pulih: bash /d/Aplikasi/aleta/tmp/vs30/pk/pulih-satker.sh
+PASANG LAGI = SAMA DENGAN PASANG PERTAMA
+PULIH COCOK
+== 5. PENJAGA: 9292 disunting orang -> pasang HARUS berhenti tanpa mengubah apa pun
+GAGAL: prasyarat '2|0' (harus '3|0', atau '0|3' bila pasang ulang) - TIDAK ada yang diubah. Arti angka: lihat abt-variabel-sehat-30okt-PRASYARAT.sql
+PENJAGA: TIDAK ADA YANG BERUBAH
+SESUDAH PENJAGA = KEADAAN AWAL
+== 6. pasang akhir (untuk render ABT asli sesudah paket)
+SELESAI - paket abt-variabel-sehat-30okt terpasang. Pulih: bash /d/Aplikasi/aleta/tmp/vs30/pk/pulih-satker.sh
