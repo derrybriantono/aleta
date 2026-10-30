@@ -1,0 +1,292 @@
+{
+ "paket": "abt-relaas-penetapan-30okt",
+ "basis": "aps_badilag_2810",
+ "rtf": "D:\\Aplikasi\\aleta\\tmp\\bas29\\dasar3\\derry_briantono",
+ "variabel_baru": {
+  "11200": {
+   "nama": "RELAAS E-COURT: TANGGAL RELAAS #0046# DI BAWAH (OTOMATIS SIPP perkara_pelaksanaan_relaas untuk #0046# atau kuasanya pada sidang dicetak; belum tercatat = titik-titik; pengganti #0180#)",
+   "md5": "715bcc621768faf3aa733e2ddf6bdb94"
+  },
+  "11201": {
+   "nama": "RELAAS E-COURT: TANGGAL RELAAS #0047# DI BAWAH (OTOMATIS SIPP perkara_pelaksanaan_relaas untuk #0047# atau kuasanya pada sidang dicetak; belum tercatat = titik-titik; pengganti #0180#)",
+   "md5": "e9e4bc4014c3eee53849241b91a4591b"
+  },
+  "11202": {
+   "nama": "DELEGASI: PENGADILAN AGAMA YANG DIMOHONI BANTUAN (OTOMATIS SIPP delegasi_keluar terakhir perkara ini; belum dicatat = titik-titik; pengganti #1066#)",
+   "md5": "ebd52d5b729c534a64063d6728f741ce"
+  },
+  "11203": {
+   "nama": "DELEGASI: TEMPAT PENGADILAN AGAMA YANG DIMOHONI BANTUAN, BARIS di (OTOMATIS SIPP delegasi_keluar terakhir; belum dicatat = titik-titik; pengganti #1167#)",
+   "md5": "45623fb156d860dab075323e2211a6c7"
+  },
+  "11204": {
+   "nama": "TANGGAL PHS + PENDETEKSI E-COURT DI KEPALA RELAAS (OTOMATIS: #1064# lalu yang didaftarkan secara elektronik ... / titik koma; pengganti #1064##7100# di blangko Derry)",
+   "md5": "c3a21c1d68433ff59ae561c5b2412e99"
+  },
+  "11205": {
+   "nama": "IDENTITAS PIHAK RELAAS #0046# (OTOMATIS: koma sesudah nama; I hanya bila #0046# lebih dari satu; pengganti #7108# di blangko Derry)",
+   "md5": "8ad7b769e3c00be2873bfe93e7057647"
+  },
+  "11206": {
+   "nama": "IDENTITAS PIHAK RELAAS #0047# (OTOMATIS: agama dari SIPP #0020#; I bila #0047# lebih dari satu; pengganti #7109# di blangko Derry)",
+   "md5": "439a69c4c58cb3647ec81774199d018d"
+  },
+  "11207": {
+   "nama": "RELAAS PEMBERITAHUAN PUTUSAN #0046#: UPAYA HUKUM DAN CARA PENYAMPAIAN (OTOMATIS: banding Pasal 199 ayat (1) RBg; e-Court = #11213#; pengganti #7008# di blangko Derry)",
+   "md5": "e19377daca46f8d06aa3fc653fa46471"
+  },
+  "11208": {
+   "nama": "RELAAS PEMBERITAHUAN PUTUSAN #0047#: UPAYA HUKUM DAN CARA PENYAMPAIAN (OTOMATIS: dasar #11211#, e-Court = #11212#; pengganti #7006# di blangko Derry)",
+   "md5": "828d478920e26ed32b80c466b89fc439"
+  },
+  "11209": {
+   "nama": "RELAAS: HARI DAN TANGGAL PELAKSANAAN PANGGILAN #0046# (OTOMATIS SIPP perkara_pelaksanaan_relaas untuk #0046# ATAU KUASANYA pada sidang dicetak; belum tercatat = titik-titik; ganti #9564#)",
+   "md5": "ae798ab94decb1fd6c8d820ba51de337"
+  },
+  "11210": {
+   "nama": "RELAAS: HARI DAN TANGGAL PELAKSANAAN PANGGILAN #0047# (OTOMATIS SIPP perkara_pelaksanaan_relaas untuk #0047# ATAU KUASANYA pada sidang dicetak; belum tercatat = titik-titik; ganti #9565#)",
+   "md5": "c16e7b9e46b121d5f4b28c8c2bef96f9"
+  },
+  "11211": {
+   "nama": "RELAAS PEMBERITAHUAN PUTUSAN #0047#: DASAR UPAYA HUKUM (OTOMATIS menurut #7007#: verzet = Pasal 153 ayat (1) RBg, banding = Pasal 199 ayat (1) RBg)",
+   "md5": "c08e4af2f0dffb04b6bb5e2d4929f383"
+  },
+  "11212": {
+   "nama": "RELAAS PEMBERITAHUAN PUTUSAN #0047# E-COURT: CARA PENYAMPAIAN (OTOMATIS: domisili elektronik #8809# bila ada, selain itu surat tercatat)",
+   "md5": "680f5dbc927ebfb38f8b3aee639b7767"
+  },
+  "11213": {
+   "nama": "RELAAS PEMBERITAHUAN PUTUSAN #0046# E-COURT: CARA PENYAMPAIAN (OTOMATIS: domisili elektronik #8808# bila ada, selain itu surat tercatat)",
+   "md5": "440ba4719bdd65b90a804ed942fbba39"
+  },
+  "11214": {
+   "nama": "TANGGAL PHS IKRAR + PENDETEKSI E-COURT DI KEPALA RELAAS IKRAR (OTOMATIS: #1099# lalu yang didaftarkan secara elektronik ... / titik koma; pengganti #1064##7100# di relaas ikrar Derry)",
+   "md5": "9a70427a3c38e6f9e65c6b11ef635710"
+  }
+ },
+ "variabel_asal_md5": {
+  "7100": "20dbf3a46dc3f20e1d8fab72304ab4d6",
+  "7108": "a7bbafa8207de4bd2f6dc601f79b4200",
+  "7109": "e8f1a502be11aa73f712fb9655a253f6",
+  "7006": "6117789726bea7a0a062afad9440131f",
+  "7008": "c129114cee330c7f4d2d4df129a10489",
+  "9564": "1d99fdc16b1c9ea1f84271fce348c166",
+  "9565": "91c674b01057880a97ce216e4b96c5d4"
+ },
+ "dirujuk": [
+  10,
+  11,
+  20,
+  21,
+  24,
+  46,
+  47,
+  50,
+  98,
+  100,
+  101,
+  102,
+  103,
+  104,
+  105,
+  335,
+  336,
+  341,
+  342,
+  345,
+  346,
+  1033,
+  1035,
+  1036,
+  1064,
+  1069,
+  1099,
+  1176,
+  2224,
+  5369,
+  7007,
+  7017,
+  7051,
+  7153,
+  8808,
+  8809,
+  8811
+ ],
+ "timpa": [
+  {
+   "folder": "98 Relaas",
+   "berkas": "[JS] 0. Relaas Panggilan Sidang Pertama P.rtf",
+   "md5_lama": "7ba5f5ff30a8a263ed707c27641e7d38",
+   "md5_baru": "a06ef88c749319ca031311ef5bd9384e",
+   "aturan": "K1a=1 K2-7108=1 K2-9564=1"
+  },
+  {
+   "folder": "98 Relaas",
+   "berkas": "[JS] 0. Relaas Panggilan Sidang Pertama T.rtf",
+   "md5_lama": "72affec842b02dc1aea388facefaa2a5",
+   "md5_baru": "9b932277f034fe4b844a45bd4c75b5fe",
+   "aturan": "K1b=1 K2-7100=1 K2-7109=1 K2-9565=1"
+  },
+  {
+   "folder": "98 Relaas",
+   "berkas": "[JS] 1. Relaas Panggilan Sidang P (Sidang Lanjutan).rtf",
+   "md5_lama": "027f903f27dc949389726d0de5aa65a5",
+   "md5_baru": "f1fafc7966c08edd3381b442c0e50170",
+   "aturan": "K2-7100=1 K2-7108=1 K2-9564=1"
+  },
+  {
+   "folder": "98 Relaas",
+   "berkas": "[JS] 1. Relaas Panggilan Sidang T (Sidang Lanjutan).rtf",
+   "md5_lama": "aef07550b4a19a91010f508f1dabacba",
+   "md5_baru": "5cb8232e5e7062467957255c5896c106",
+   "aturan": "K2-7100=1 K2-7109=1 K2-9565=1"
+  },
+  {
+   "folder": "98 Relaas",
+   "berkas": "[JS] 11.1. Relaas Panggilan Sidang Pencegahan Perkawinan - Pemohon.rtf",
+   "md5_lama": "4e2ae193cfbbc5d7c06b627a692f8b3c",
+   "md5_baru": "9f073aa1771f762acc5dba4fd9567a5a",
+   "aturan": "K2-7100=1 K2-9564=1"
+  },
+  {
+   "folder": "98 Relaas",
+   "berkas": "[JS] 11.2. Relaas Panggilan Sidang Pencegahan Perkawinan - Calon Suami.rtf",
+   "md5_lama": "986c46d8a5fea9df801488b4bf64cff0",
+   "md5_baru": "3c832df6e5a4755dd69d050ef7f1f56c",
+   "aturan": "K2-7100=1"
+  },
+  {
+   "folder": "98 Relaas",
+   "berkas": "[JS] 11.3. Relaas Panggilan Sidang Pencegahan Perkawinan - Calon Istri.rtf",
+   "md5_lama": "c48be161b70c187f6693183f758c45eb",
+   "md5_baru": "4241db666ba7e430ecedd7e8d3e37ef8",
+   "aturan": "K2-7100=1"
+  },
+  {
+   "folder": "98 Relaas",
+   "berkas": "[JS] 12.1. Relaas Panggilan Sidang Penolakan Perkawinan - Pegawai Pencatat Nikah.rtf",
+   "md5_lama": "cf3d887f22036c26dbea930fc893ebc0",
+   "md5_baru": "f8cd05a58e6de1db778265cb47ea915b",
+   "aturan": "K2-7100=1"
+  },
+  {
+   "folder": "98 Relaas",
+   "berkas": "[JS] 13.1. Relaas Panggilan Sidang Izin Kawin - Orang Tua atau Wali.rtf",
+   "md5_lama": "ce11198d240418961e77499bfb00c2b7",
+   "md5_baru": "90e7cf61f5512642eabe232a028323cc",
+   "aturan": "K2-7100=1"
+  },
+  {
+   "folder": "98 Relaas",
+   "berkas": "[JS] 2. Relaas Pemberitahuan Putusan P.rtf",
+   "md5_lama": "8540c91373ae1a2c5cff005b86d3a6b9",
+   "md5_baru": "326ef16f3cd379663380fa6e34758767",
+   "aturan": "K1a=1 K2-7008=1 K2-7108=1 K3=1"
+  },
+  {
+   "folder": "98 Relaas",
+   "berkas": "[JS] 2. Relaas Pemberitahuan Putusan T.rtf",
+   "md5_lama": "df16c80252e1d971bd9b50fc4c447985",
+   "md5_baru": "0b17e36ff656dd401b8ededc9b3e0291",
+   "aturan": "K1b=1 K2-7006=1 K2-7100=1 K2-7109=1"
+  },
+  {
+   "folder": "98 Relaas",
+   "berkas": "[JS] 3.a. Permohonan Bantuan Panggilan Delegasi.rtf",
+   "md5_lama": "df3cbc23ae9022462d49169995998164",
+   "md5_baru": "48e0be1fa43201e61d9cc373c74de08f",
+   "aturan": "K7a=1 K7b=1 K7c=1"
+  },
+  {
+   "folder": "98 Relaas",
+   "berkas": "[JS] 3.b. Relaas Panggilan Sidang P dan T.rtf",
+   "md5_lama": "de1caf131846515775e604ce8bc478dd",
+   "md5_baru": "d13e823a8f4f93da05ee9cd0651a255b",
+   "aturan": "K1a=1 K1b=1 K2-7100=1 K2-7108=1 K2-7109=1 K2-9564=1 K2-9565=1"
+  },
+  {
+   "folder": "98 Relaas",
+   "berkas": "[JS] 4. Relaas Panggilan Ikrar Talak P dan T.rtf",
+   "md5_lama": "590a6876d77419fc7f8e5e0b42174f50",
+   "md5_baru": "a0da94e5944d0204bb0c30caaf90fd87",
+   "aturan": "K1a=1 K1b=1 K2-7108=1 K2-7109=1 K2-9564=1 K2-9565=1 K4a=1 K4b=1"
+  },
+  {
+   "folder": "98 Relaas",
+   "berkas": "[JS] 5.1. Relaas Panggilan Sidang P (e-Court).rtf",
+   "md5_lama": "b4f69d21ee5db61b68de1fc169a81a03",
+   "md5_baru": "655c7480a63d4434eeada8f3785554f6",
+   "aturan": "K5a=1"
+  },
+  {
+   "folder": "98 Relaas",
+   "berkas": "[JS] 5.2. Relaas Panggilan Sidang T (e-Court).rtf",
+   "md5_lama": "a5cd9185b7e657820d517234fd12d36c",
+   "md5_baru": "c54c9fa34a53d39e3e2bfb5b8579a04d",
+   "aturan": "K5b=1"
+  },
+  {
+   "folder": "98 Relaas",
+   "berkas": "[JS] 6.2. Relaas Pemberitahuan Putusan Verstek T (e-Court).rtf",
+   "md5_lama": "87641a1dbdc9c1e40e946e70ed14904e",
+   "md5_baru": "6cac799d87e9fda1243dd11d096f1966",
+   "aturan": "K6a=1 K6b=1 K6c=1 K6d=1 K6e=1"
+  },
+  {
+   "folder": "98 Relaas",
+   "berkas": "[JS] 7. Relaas Panggilan Ikrar Talak (e-Court).rtf",
+   "md5_lama": "c760969c7406c2cbcfc513f1552ac47a",
+   "md5_baru": "e1e65e96e2a353d13dd4cc4177385ec6",
+   "aturan": "K5b=1"
+  },
+  {
+   "folder": "99 PTSP",
+   "berkas": "@ 0 - PMH - PHS.rtf",
+   "md5_lama": "6c898eeb933fc06f0249f4bf87b512bf",
+   "md5_baru": "732598df73662f02ea4dacedd91ccb7c",
+   "aturan": "P1=1 P2a=3 P2b=2 P2c=1 P2d=2"
+  },
+  {
+   "folder": "99 PTSP",
+   "berkas": "@ 0a - PPP.rtf",
+   "md5_lama": "7db36c75b0ea73fed0ccc1cfd3fe6376",
+   "md5_baru": "44379c309469dd68ac6e4da068ab4370",
+   "aturan": "P2a=2 P2b=1 P2d=1"
+  },
+  {
+   "folder": "99 PTSP",
+   "berkas": "@ 0b - PJS.rtf",
+   "md5_lama": "f3572972a050d6e739354d5764b94dcc",
+   "md5_baru": "12b18ecb76977b3eace7f8a517171b60",
+   "aturan": "P2a=1 P2b=1 P2c=1 P2d=1"
+  },
+  {
+   "folder": "99 PTSP",
+   "berkas": "@ 2 - PHS.rtf",
+   "md5_lama": "3c5115ce5bd09b7cc0ae3f20d1818aaa",
+   "md5_baru": "2afe2c3e4103f56548c213f4fa33b0cc",
+   "aturan": "P1=1"
+  },
+  {
+   "folder": "99 PTSP",
+   "berkas": "@ 2a - PHS - Sita Dikabulkan.rtf",
+   "md5_lama": "4ef7d8cd3ddace3d1c9cede6f45a90ee",
+   "md5_baru": "e3d7909824952846c1844b3994485639",
+   "aturan": "P1=1"
+  },
+  {
+   "folder": "99 PTSP",
+   "berkas": "@ 2b - PHS - Sita Ditolak.rtf",
+   "md5_lama": "d7d7a393beaf6277b0d7b0a72821fa96",
+   "md5_baru": "803f797e4cb0c9fd31487ba607f25378",
+   "aturan": "P1=1"
+  },
+  {
+   "folder": "99 PTSP",
+   "berkas": "@ 3 - PMH - PHS Ikrar Talak.rtf",
+   "md5_lama": "6e95ae434897e1aad57590ab3b9f437d",
+   "md5_baru": "8aac6b8926aeaf954e4843e52ccf95d7",
+   "aturan": "P2a=3 P2b=2 P2c=1"
+  }
+ ]
+}

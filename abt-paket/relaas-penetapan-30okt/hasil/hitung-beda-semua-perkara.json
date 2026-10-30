@@ -1,0 +1,30 @@
+{
+ "perkara": 10278,
+ "alur15": 5836,
+ "alur16": 4440,
+ "11204_ecourt_ber_PHS": 2695,
+ "11204_bukan_ecourt (identik)": 7583,
+ "11214_ikrar_ber_PHS_ikrar": 904,
+ "11214_PHS_ikrar_beda_PHS_pokok": 904,
+ "11205_alur15_koma": 5836,
+ "11205_alur15_P_banyak (+ I)": 12,
+ "11205_alur16_P_tunggal (- I)": 429,
+ "11206_agama_T_bukan_Islam": 130,
+ "11206_agama_T_bukan_Islam_rinci": [
+  "(kosong)\t111\r",
+  "Hindu\t1\r",
+  "Katolik\t6\r",
+  "Kong Hu Cu\t1\r",
+  "Lainnya\t1\r",
+  "Protestan\t10"
+ ],
+ "11206_T_banyak (+ I)": 49,
+ "PBT_putus_verstek (P: verzet->banding)": 4365,
+ "PBT_putus_bukan_verstek (T: dasar 153->199)": 5789,
+ "PBT_P_bukan_ecourt_T_ghaib (cabang Bupati dibuang)": 26,
+ "relaas_kepada_kuasa_P (baris)": 380,
+ "relaas_kepada_kuasa_T (baris)": 26,
+ "11209_sidang_berubah_P": 313,
+ "11210_sidang_berubah_T": 15,
+ "delegasi_keluar_perkara (PA tujuan dari SIPP)": 406
+}

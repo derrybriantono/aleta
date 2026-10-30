@@ -1,0 +1,3 @@
+SAMA 114 render (25 blangko yang diubah x perkara wakil)
+LAMA: {'koma_sendiri': 45, 'isian_kosong': 48, 'spasi_sebelum_tanda': 58, 'huruf_menempel': 43, 'nama_kosong': 5, 'di_kosong': 11, 'rupiah_kosong': 3, 'tanggal_kosong': 27, 'koma_ganda': 10}
+BARU: {'isian_kosong': 48, 'spasi_sebelum_tanda': 59, 'nama_kosong': 5, 'di_kosong': 12, 'koma_sendiri': 3, 'rupiah_kosong': 3, 'tanggal_kosong': 27, 'koma_ganda': 10}

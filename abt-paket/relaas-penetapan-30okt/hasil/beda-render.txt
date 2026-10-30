@@ -1,0 +1,631 @@
+=== 98 Relaas/[JS] 0. Relaas Panggilan Sidang Pertama P/10077_s1.txt
+-Pada hari ini ............................. tanggal .........................................................., Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 531/Pdt.G/2026/PA.Dgl Tanggal 21 Agustus 2026;
++Pada hari ini Senin tanggal 24 Agustus 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 531/Pdt.G/2026/PA.Dgl Tanggal 21 Agustus 2026;
+-Randi Bin Pusri NIK 7203122011940002, tempat dan tanggal lahir Sibualong, 20 November 1994, agama Islam, pekerjaan Wiraswasta, pendidikan SLTA, tempat kediaman di Desa Sibualong, RT. 000/RW. 000, Kecamatan Balaesang, Kabupaten Donggala, Provinsi Sulawesi Tengah, sebagai Pemohon;
++Randi Bin Pusri, NIK 7203122011940002, tempat dan tanggal lahir Sibualong, 20 November 1994, agama Islam, pekerjaan Wiraswasta, pendidikan SLTA, tempat kediaman di Desa Sibualong, RT. 000/RW. 000, Kecamatan Balaesang, Kabupaten Donggala, Provinsi Sulawesi Tengah, sebagai Pemohon;
+-,
+-
+=== 98 Relaas/[JS] 0. Relaas Panggilan Sidang Pertama P/10083_s1.txt
+-Lupe bin Rodio NIK 7271021502900001, tempat dan tanggal lahir Watusampu, 15 Februari 1990, agama Islam, pekerjaan Petani, pendidikan SD, tempat kediaman di Jalan Malonda, Lorong Taipa Java, RT 001, RW 004, Kelurahan Watusampu, Kecamatan Ulujadi, Kota Palu, Provinsi Sulawesi Tengah, sebagai Pemohon;
++Lupe bin Rodio, NIK 7271021502900001, tempat dan tanggal lahir Watusampu, 15 Februari 1990, agama Islam, pekerjaan Petani, pendidikan SD, tempat kediaman di Jalan Malonda, Lorong Taipa Java, RT 001, RW 004, Kelurahan Watusampu, Kecamatan Ulujadi, Kota Palu, Provinsi Sulawesi Tengah, sebagai Pemohon;
+-,
+-
+=== 98 Relaas/[JS] 0. Relaas Panggilan Sidang Pertama P/10155_s1.txt
+-MULTAZAM NIK 7203190803990001, tempat dan tanggal lahir PALU, 08 Maret 1999, agama Islam, pekerjaan pelajar/mahasiswa, pendidikan S1, tempat kediaman di Desa Wanl II, RT/RW 00/00, KEL/DESA.WANI DUA, KEC.TANANTOVEA, Kabupaten Donggala, Provinsi Sulawesi Tengah, sebagai Penggugat;
++MULTAZAM, NIK 7203190803990001, tempat dan tanggal lahir PALU, 08 Maret 1999, agama Islam, pekerjaan pelajar/mahasiswa, pendidikan S1, tempat kediaman di Desa Wanl II, RT/RW 00/00, KEL/DESA.WANI DUA, KEC.TANANTOVEA, Kabupaten Donggala, Provinsi Sulawesi Tengah, sebagai Penggugat I;
+-,
+-
+=== 98 Relaas/[JS] 0. Relaas Panggilan Sidang Pertama P/10163_s1.txt
+-Dela Safitri binti Rustam.J NIK 7210106208040001, tempat dan tanggal lahir Sibowi, 22 Agustus 2004, agama Islam, pekerjaan Asisten Rumah Tangga, pendidikan SLTA, tempat kediaman di Desa Sibowi, Kecamatan Tanambulava, Kabupaten Sigi, Provinsi Sulawesi Tengah, Domisili Elektronik:laasafitri22@gmail.com, sebagai Penggugat;
++Dela Safitri binti Rustam.J, NIK 7210106208040001, tempat dan tanggal lahir Sibowi, 22 Agustus 2004, agama Islam, pekerjaan Asisten Rumah Tangga, pendidikan SLTA, tempat kediaman di Desa Sibowi, Kecamatan Tanambulava, Kabupaten Sigi, Provinsi Sulawesi Tengah, Domisili Elektronik:laasafitri22@gmail.com, sebagai Penggugat;
+-,
+-
+=== 98 Relaas/[JS] 0. Relaas Panggilan Sidang Pertama P/10246_s1.txt
+-Wisda binti Thun NIK 7313117006940001, tempat dan tanggal lahir Tompoh, 30 Juni 1994, agama Islam, pekerjaan Mengurus Rumah Tangga, pendidikan SD, tempat kediaman di Desa Olu, Kecamatan Lindu, Kabupaten Sigi, Provinsi Sulawesi Tengah. Domisili elektronik : wisdajih47@gmail.com, sebagai Penggugat;
++Wisda binti Thun, NIK 7313117006940001, tempat dan tanggal lahir Tompoh, 30 Juni 1994, agama Islam, pekerjaan Mengurus Rumah Tangga, pendidikan SD, tempat kediaman di Desa Olu, Kecamatan Lindu, Kabupaten Sigi, Provinsi Sulawesi Tengah. Domisili elektronik : wisdajih47@gmail.com, sebagai Penggugat;
+-,
+-
+=== 98 Relaas/[JS] 0. Relaas Panggilan Sidang Pertama P/9870_s1.txt
+-Nur Afni binti Amir Duding alias Amir NIK 7203116505801004, tempat dan tanggal lahir Ombo, 25 Mei 1980, agama Islam, pekerjaan Ibu Rumah Tangga, pendidikan SLTA, tempat kediaman di Desa Ombo, Kecamatan Sirenja, Kabupaten Donggala, Provinsi Sulawesi Tengah, ibunurafni80@gmail.com, sebagai Penggugat;
++Nur Afni binti Amir Duding alias Amir, NIK 7203116505801004, tempat dan tanggal lahir Ombo, 25 Mei 1980, agama Islam, pekerjaan Ibu Rumah Tangga, pendidikan SLTA, tempat kediaman di Desa Ombo, Kecamatan Sirenja, Kabupaten Donggala, Provinsi Sulawesi Tengah, ibunurafni80@gmail.com, sebagai Penggugat;
+-,
+-
+=== 98 Relaas/[JS] 0. Relaas Panggilan Sidang Pertama T/10077_s1.txt
+-Pada hari ini Jumat tanggal 28 Agustus 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 531/Pdt.G/2026/PA.Dgl Tanggal 21 Agustus 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini Jumat tanggal 28 Agustus 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 531/Pdt.G/2026/PA.Dgl Tanggal 21 Agustus 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-,
+-
+=== 98 Relaas/[JS] 0. Relaas Panggilan Sidang Pertama T/10083_s1.txt
+-Pada hari ini Sabtu tanggal 29 Agustus 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini Sabtu tanggal 29 Agustus 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-,
+-
+=== 98 Relaas/[JS] 0. Relaas Panggilan Sidang Pertama T/10155_s1.txt
+-Pada hari ini Kamis tanggal 24 September 2026, Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini Kamis tanggal 24 September 2026, Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-, umur 51 tahun, agama Islam, pendidikan SLTA, pekerjaan MENGURUS RUMAH TANGGA, tempat kediaman di , sebagai Tergugat;
++, umur 51 tahun, agama Islam, pendidikan SLTA, pekerjaan MENGURUS RUMAH TANGGA, tempat kediaman di , sebagai Tergugat I;
+-,
+-
+=== 98 Relaas/[JS] 0. Relaas Panggilan Sidang Pertama T/10163_s1.txt
+-Pada hari ini Minggu tanggal 27 September 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini Minggu tanggal 27 September 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-,
+-
+=== 98 Relaas/[JS] 0. Relaas Panggilan Sidang Pertama T/10246_s1.txt
+-Pada hari ini Senin tanggal 26 Oktober 2026, Saya, Mustini sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini Senin tanggal 26 Oktober 2026, Saya, Mustini sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-,
+-
+=== 98 Relaas/[JS] 0. Relaas Panggilan Sidang Pertama T/9870_s1.txt
+-Pada hari ini Selasa tanggal 23 Juni 2026, Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 367/Pdt.G/2026/PA.Dgl Tanggal 17 Juni 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini Selasa tanggal 23 Juni 2026, Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 367/Pdt.G/2026/PA.Dgl Tanggal 17 Juni 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-,
+-
+=== 98 Relaas/[JS] 1. Relaas Panggilan Sidang P (Sidang Lanjutan)/10077_s2.txt
+-Pada hari ini ............................. tanggal .........................................................., Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 531/Pdt.G/2026/PA.Dgl Tanggal 21 Agustus 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini ............................. tanggal .........................................................., Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 531/Pdt.G/2026/PA.Dgl Tanggal 21 Agustus 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-Randi Bin Pusri NIK 7203122011940002, tempat dan tanggal lahir Sibualong, 20 November 1994, agama Islam, pekerjaan Wiraswasta, pendidikan SLTA, tempat kediaman di Desa Sibualong, RT. 000/RW. 000, Kecamatan Balaesang, Kabupaten Donggala, Provinsi Sulawesi Tengah, sebagai Pemohon;
++Randi Bin Pusri, NIK 7203122011940002, tempat dan tanggal lahir Sibualong, 20 November 1994, agama Islam, pekerjaan Wiraswasta, pendidikan SLTA, tempat kediaman di Desa Sibualong, RT. 000/RW. 000, Kecamatan Balaesang, Kabupaten Donggala, Provinsi Sulawesi Tengah, sebagai Pemohon;
+=== 98 Relaas/[JS] 1. Relaas Panggilan Sidang P (Sidang Lanjutan)/10083_s2.txt
+-Pada hari ini ............................. tanggal .........................................................., Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini ............................. tanggal .........................................................., Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-Lupe bin Rodio NIK 7271021502900001, tempat dan tanggal lahir Watusampu, 15 Februari 1990, agama Islam, pekerjaan Petani, pendidikan SD, tempat kediaman di Jalan Malonda, Lorong Taipa Java, RT 001, RW 004, Kelurahan Watusampu, Kecamatan Ulujadi, Kota Palu, Provinsi Sulawesi Tengah, sebagai Pemohon;
++Lupe bin Rodio, NIK 7271021502900001, tempat dan tanggal lahir Watusampu, 15 Februari 1990, agama Islam, pekerjaan Petani, pendidikan SD, tempat kediaman di Jalan Malonda, Lorong Taipa Java, RT 001, RW 004, Kelurahan Watusampu, Kecamatan Ulujadi, Kota Palu, Provinsi Sulawesi Tengah, sebagai Pemohon;
+=== 98 Relaas/[JS] 1. Relaas Panggilan Sidang P (Sidang Lanjutan)/10155_s2.txt
+-Pada hari ini ............................. tanggal .........................................................., Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini ............................. tanggal .........................................................., Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-MULTAZAM NIK 7203190803990001, tempat dan tanggal lahir PALU, 08 Maret 1999, agama Islam, pekerjaan pelajar/mahasiswa, pendidikan S1, tempat kediaman di Desa Wanl II, RT/RW 00/00, KEL/DESA.WANI DUA, KEC.TANANTOVEA, Kabupaten Donggala, Provinsi Sulawesi Tengah, sebagai Penggugat;
++MULTAZAM, NIK 7203190803990001, tempat dan tanggal lahir PALU, 08 Maret 1999, agama Islam, pekerjaan pelajar/mahasiswa, pendidikan S1, tempat kediaman di Desa Wanl II, RT/RW 00/00, KEL/DESA.WANI DUA, KEC.TANANTOVEA, Kabupaten Donggala, Provinsi Sulawesi Tengah, sebagai Penggugat I;
+=== 98 Relaas/[JS] 1. Relaas Panggilan Sidang P (Sidang Lanjutan)/10163_s2.txt
+-Pada hari ini ............................. tanggal .........................................................., Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini ............................. tanggal .........................................................., Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-Dela Safitri binti Rustam.J NIK 7210106208040001, tempat dan tanggal lahir Sibowi, 22 Agustus 2004, agama Islam, pekerjaan Asisten Rumah Tangga, pendidikan SLTA, tempat kediaman di Desa Sibowi, Kecamatan Tanambulava, Kabupaten Sigi, Provinsi Sulawesi Tengah, Domisili Elektronik:laasafitri22@gmail.com, sebagai Penggugat;
++Dela Safitri binti Rustam.J, NIK 7210106208040001, tempat dan tanggal lahir Sibowi, 22 Agustus 2004, agama Islam, pekerjaan Asisten Rumah Tangga, pendidikan SLTA, tempat kediaman di Desa Sibowi, Kecamatan Tanambulava, Kabupaten Sigi, Provinsi Sulawesi Tengah, Domisili Elektronik:laasafitri22@gmail.com, sebagai Penggugat;
+=== 98 Relaas/[JS] 1. Relaas Panggilan Sidang P (Sidang Lanjutan)/10246_s1.txt
+-Pada hari ini Senin tanggal 19 Oktober 2026, Saya, Mustini sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini Senin tanggal 19 Oktober 2026, Saya, Mustini sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-Wisda binti Thun NIK 7313117006940001, tempat dan tanggal lahir Tompoh, 30 Juni 1994, agama Islam, pekerjaan Mengurus Rumah Tangga, pendidikan SD, tempat kediaman di Desa Olu, Kecamatan Lindu, Kabupaten Sigi, Provinsi Sulawesi Tengah. Domisili elektronik : wisdajih47@gmail.com, sebagai Penggugat;
++Wisda binti Thun, NIK 7313117006940001, tempat dan tanggal lahir Tompoh, 30 Juni 1994, agama Islam, pekerjaan Mengurus Rumah Tangga, pendidikan SD, tempat kediaman di Desa Olu, Kecamatan Lindu, Kabupaten Sigi, Provinsi Sulawesi Tengah. Domisili elektronik : wisdajih47@gmail.com, sebagai Penggugat;
+=== 98 Relaas/[JS] 1. Relaas Panggilan Sidang P (Sidang Lanjutan)/9870_s1.txt
+-Pada hari ini Senin tanggal 22 Juni 2026, Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 367/Pdt.G/2026/PA.Dgl Tanggal 17 Juni 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini Senin tanggal 22 Juni 2026, Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 367/Pdt.G/2026/PA.Dgl Tanggal 17 Juni 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-Nur Afni binti Amir Duding alias Amir NIK 7203116505801004, tempat dan tanggal lahir Ombo, 25 Mei 1980, agama Islam, pekerjaan Ibu Rumah Tangga, pendidikan SLTA, tempat kediaman di Desa Ombo, Kecamatan Sirenja, Kabupaten Donggala, Provinsi Sulawesi Tengah, ibunurafni80@gmail.com, sebagai Penggugat;
++Nur Afni binti Amir Duding alias Amir, NIK 7203116505801004, tempat dan tanggal lahir Ombo, 25 Mei 1980, agama Islam, pekerjaan Ibu Rumah Tangga, pendidikan SLTA, tempat kediaman di Desa Ombo, Kecamatan Sirenja, Kabupaten Donggala, Provinsi Sulawesi Tengah, ibunurafni80@gmail.com, sebagai Penggugat;
+=== 98 Relaas/[JS] 1. Relaas Panggilan Sidang T (Sidang Lanjutan)/10077_s2.txt
+-Pada hari ini Sabtu tanggal 19 September 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 531/Pdt.G/2026/PA.Dgl Tanggal 21 Agustus 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini Sabtu tanggal 19 September 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 531/Pdt.G/2026/PA.Dgl Tanggal 21 Agustus 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+=== 98 Relaas/[JS] 1. Relaas Panggilan Sidang T (Sidang Lanjutan)/10083_s2.txt
+-Pada hari ini Sabtu tanggal 19 September 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini Sabtu tanggal 19 September 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+=== 98 Relaas/[JS] 1. Relaas Panggilan Sidang T (Sidang Lanjutan)/10155_s2.txt
+-Pada hari ini Senin tanggal 12 Oktober 2026, Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini Senin tanggal 12 Oktober 2026, Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-, umur 51 tahun, agama Islam, pendidikan SLTA, pekerjaan MENGURUS RUMAH TANGGA, tempat kediaman di , sebagai Tergugat;
++, umur 51 tahun, agama Islam, pendidikan SLTA, pekerjaan MENGURUS RUMAH TANGGA, tempat kediaman di , sebagai Tergugat I;
+=== 98 Relaas/[JS] 1. Relaas Panggilan Sidang T (Sidang Lanjutan)/10163_s2.txt
+-Pada hari ini Rabu tanggal 07 Oktober 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini Rabu tanggal 07 Oktober 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+=== 98 Relaas/[JS] 1. Relaas Panggilan Sidang T (Sidang Lanjutan)/10246_s1.txt
+-Pada hari ini Senin tanggal 26 Oktober 2026, Saya, Mustini sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini Senin tanggal 26 Oktober 2026, Saya, Mustini sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+=== 98 Relaas/[JS] 1. Relaas Panggilan Sidang T (Sidang Lanjutan)/9870_s1.txt
+-Pada hari ini Selasa tanggal 23 Juni 2026, Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 367/Pdt.G/2026/PA.Dgl Tanggal 17 Juni 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini Selasa tanggal 23 Juni 2026, Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 367/Pdt.G/2026/PA.Dgl Tanggal 17 Juni 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+=== 98 Relaas/[JS] 11.1. Relaas Panggilan Sidang Pencegahan Perkawinan - Pemohon/10191_s1.txt
+-Pada hari ini Rabu tanggal 07 Oktober 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Hakim dalam perkara Nomor 231/Pdt.P/2026/PA.Dgl Tanggal 06 Oktober 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini Rabu tanggal 07 Oktober 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Hakim dalam perkara Nomor 231/Pdt.P/2026/PA.Dgl Tanggal 06 Oktober 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+=== 98 Relaas/[JS] 11.1. Relaas Panggilan Sidang Pencegahan Perkawinan - Pemohon/10275_s1.txt
+-Pada hari ini Rabu tanggal 28 Oktober 2026, Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Hakim dalam perkara Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini Rabu tanggal 28 Oktober 2026, Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Hakim dalam perkara Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+=== 98 Relaas/[JS] 11.2. Relaas Panggilan Sidang Pencegahan Perkawinan - Calon Suami/10191_s1.txt
+-Pada hari ini ............................. tanggal .........................................................., Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Hakim dalam perkara Nomor 231/Pdt.P/2026/PA.Dgl Tanggal 06 Oktober 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini ............................. tanggal .........................................................., Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Hakim dalam perkara Nomor 231/Pdt.P/2026/PA.Dgl Tanggal 06 Oktober 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+=== 98 Relaas/[JS] 11.2. Relaas Panggilan Sidang Pencegahan Perkawinan - Calon Suami/10275_s1.txt
+-Pada hari ini ............................. tanggal .........................................................., Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Hakim dalam perkara Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini ............................. tanggal .........................................................., Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Hakim dalam perkara Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+=== 98 Relaas/[JS] 11.3. Relaas Panggilan Sidang Pencegahan Perkawinan - Calon Istri/10191_s1.txt
+-Pada hari ini ............................. tanggal .........................................................., Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Hakim dalam perkara Nomor 231/Pdt.P/2026/PA.Dgl Tanggal 06 Oktober 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini ............................. tanggal .........................................................., Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Hakim dalam perkara Nomor 231/Pdt.P/2026/PA.Dgl Tanggal 06 Oktober 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+=== 98 Relaas/[JS] 11.3. Relaas Panggilan Sidang Pencegahan Perkawinan - Calon Istri/10275_s1.txt
+-Pada hari ini ............................. tanggal .........................................................., Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Hakim dalam perkara Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini ............................. tanggal .........................................................., Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Hakim dalam perkara Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+=== 98 Relaas/[JS] 12.1. Relaas Panggilan Sidang Penolakan Perkawinan - Pegawai Pencatat Nikah/10191_s1.txt
+-Pada hari ini ............................. tanggal .........................................................., Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Hakim dalam perkara Nomor 231/Pdt.P/2026/PA.Dgl Tanggal 06 Oktober 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini ............................. tanggal .........................................................., Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Hakim dalam perkara Nomor 231/Pdt.P/2026/PA.Dgl Tanggal 06 Oktober 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+=== 98 Relaas/[JS] 12.1. Relaas Panggilan Sidang Penolakan Perkawinan - Pegawai Pencatat Nikah/10275_s1.txt
+-Pada hari ini ............................. tanggal .........................................................., Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Hakim dalam perkara Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini ............................. tanggal .........................................................., Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Hakim dalam perkara Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+=== 98 Relaas/[JS] 13.1. Relaas Panggilan Sidang Izin Kawin - Orang Tua atau Wali/10191_s1.txt
+-Pada hari ini ............................. tanggal .........................................................., Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Hakim dalam perkara Nomor 231/Pdt.P/2026/PA.Dgl Tanggal 06 Oktober 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini ............................. tanggal .........................................................., Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Hakim dalam perkara Nomor 231/Pdt.P/2026/PA.Dgl Tanggal 06 Oktober 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+=== 98 Relaas/[JS] 13.1. Relaas Panggilan Sidang Izin Kawin - Orang Tua atau Wali/10275_s1.txt
+-Pada hari ini ............................. tanggal .........................................................., Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Hakim dalam perkara Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini ............................. tanggal .........................................................., Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Hakim dalam perkara Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+=== 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan P/10077_s1.txt
+-Randi Bin Pusri NIK 7203122011940002, tempat dan tanggal lahir Sibualong, 20 November 1994, agama Islam, pekerjaan Wiraswasta, pendidikan SLTA, tempat kediaman di Desa Sibualong, RT. 000/RW. 000, Kecamatan Balaesang, Kabupaten Donggala, Provinsi Sulawesi Tengah, sebagai Pemohon;
++Randi Bin Pusri, NIK 7203122011940002, tempat dan tanggal lahir Sibualong, 20 November 1994, agama Islam, pekerjaan Wiraswasta, pendidikan SLTA, tempat kediaman di Desa Sibualong, RT. 000/RW. 000, Kecamatan Balaesang, Kabupaten Donggala, Provinsi Sulawesi Tengah, sebagai Pemohon;
+-	Bahwa terhadap putusan tersebut Pemohon dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
+- 	Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Pemohon;
++	Bahwa terhadap putusan tersebut Pemohon dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 199 ayat (1) RBg;
++ 	Pemberitahuan isi putusan ini saya kirimkan secara elektronik melalui domisili elektronik Kuasa Hukum Pemohon yang telah terdaftar, yaitu MisbahudinSH@gmail.com;
+-,
+-
+-Randi Bin Pusri	Jurusita,
++	Jurusita,
+=== 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan P/10083_s1.txt
+-Lupe bin Rodio NIK 7271021502900001, tempat dan tanggal lahir Watusampu, 15 Februari 1990, agama Islam, pekerjaan Petani, pendidikan SD, tempat kediaman di Jalan Malonda, Lorong Taipa Java, RT 001, RW 004, Kelurahan Watusampu, Kecamatan Ulujadi, Kota Palu, Provinsi Sulawesi Tengah, sebagai Pemohon;
++Lupe bin Rodio, NIK 7271021502900001, tempat dan tanggal lahir Watusampu, 15 Februari 1990, agama Islam, pekerjaan Petani, pendidikan SD, tempat kediaman di Jalan Malonda, Lorong Taipa Java, RT 001, RW 004, Kelurahan Watusampu, Kecamatan Ulujadi, Kota Palu, Provinsi Sulawesi Tengah, sebagai Pemohon;
+-	Bahwa terhadap putusan tersebut Pemohon dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
++	Bahwa terhadap putusan tersebut Pemohon dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 199 ayat (1) RBg;
+-,
+-
+-Lupe bin Rodio	Jurusita,
++	Jurusita,
+=== 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan P/10155_s1.txt
+-MULTAZAM NIK 7203190803990001, tempat dan tanggal lahir PALU, 08 Maret 1999, agama Islam, pekerjaan pelajar/mahasiswa, pendidikan S1, tempat kediaman di Desa Wanl II, RT/RW 00/00, KEL/DESA.WANI DUA, KEC.TANANTOVEA, Kabupaten Donggala, Provinsi Sulawesi Tengah, sebagai Penggugat;
++MULTAZAM, NIK 7203190803990001, tempat dan tanggal lahir PALU, 08 Maret 1999, agama Islam, pekerjaan pelajar/mahasiswa, pendidikan S1, tempat kediaman di Desa Wanl II, RT/RW 00/00, KEL/DESA.WANI DUA, KEC.TANANTOVEA, Kabupaten Donggala, Provinsi Sulawesi Tengah, sebagai Penggugat I;
+-	Bahwa terhadap putusan tersebut Penggugat dapat mengajukan dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
+- 	Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Penggugat;
++	Bahwa terhadap putusan tersebut Penggugat dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 199 ayat (1) RBg;
++ 	Pemberitahuan isi putusan ini saya kirimkan secara elektronik melalui domisili elektronik Kuasa Hukum Penggugat yang telah terdaftar, yaitu Advmuhammadfadlyperadi@gmail.com;
+-,
+-
+-MULTAZAM	Jurusita,
++	Jurusita,
+=== 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan P/10163_s1.txt
+-Dela Safitri binti Rustam.J NIK 7210106208040001, tempat dan tanggal lahir Sibowi, 22 Agustus 2004, agama Islam, pekerjaan Asisten Rumah Tangga, pendidikan SLTA, tempat kediaman di Desa Sibowi, Kecamatan Tanambulava, Kabupaten Sigi, Provinsi Sulawesi Tengah, Domisili Elektronik:laasafitri22@gmail.com, sebagai Penggugat;
++Dela Safitri binti Rustam.J, NIK 7210106208040001, tempat dan tanggal lahir Sibowi, 22 Agustus 2004, agama Islam, pekerjaan Asisten Rumah Tangga, pendidikan SLTA, tempat kediaman di Desa Sibowi, Kecamatan Tanambulava, Kabupaten Sigi, Provinsi Sulawesi Tengah, Domisili Elektronik:laasafitri22@gmail.com, sebagai Penggugat;
+-	Bahwa terhadap putusan tersebut Penggugat dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
+- 	Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Penggugat;
++	Bahwa terhadap putusan tersebut Penggugat dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 199 ayat (1) RBg;
++ 	Pemberitahuan isi putusan ini saya kirimkan secara elektronik melalui domisili elektronik Penggugat yang telah terdaftar, yaitu laasafitri22@gmail.com;
+-,
+-
+-Dela Safitri binti Rustam.J	Jurusita,
++	Jurusita,
+=== 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan P/10246_s1.txt
+-Wisda binti Thun NIK 7313117006940001, tempat dan tanggal lahir Tompoh, 30 Juni 1994, agama Islam, pekerjaan Mengurus Rumah Tangga, pendidikan SD, tempat kediaman di Desa Olu, Kecamatan Lindu, Kabupaten Sigi, Provinsi Sulawesi Tengah. Domisili elektronik : wisdajih47@gmail.com, sebagai Penggugat;
++Wisda binti Thun, NIK 7313117006940001, tempat dan tanggal lahir Tompoh, 30 Juni 1994, agama Islam, pekerjaan Mengurus Rumah Tangga, pendidikan SD, tempat kediaman di Desa Olu, Kecamatan Lindu, Kabupaten Sigi, Provinsi Sulawesi Tengah. Domisili elektronik : wisdajih47@gmail.com, sebagai Penggugat;
+-	Bahwa terhadap putusan tersebut Penggugat dapat mengajukan dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
+- 	Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Penggugat;
++	Bahwa terhadap putusan tersebut Penggugat dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 199 ayat (1) RBg;
++ 	Pemberitahuan isi putusan ini saya kirimkan secara elektronik melalui domisili elektronik Penggugat yang telah terdaftar, yaitu wisdajih47@gmail.com;
+-,
+-
+-Wisda binti Thun	Jurusita,
++	Jurusita,
+=== 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan P/9870_s1.txt
+-Nur Afni binti Amir Duding alias Amir NIK 7203116505801004, tempat dan tanggal lahir Ombo, 25 Mei 1980, agama Islam, pekerjaan Ibu Rumah Tangga, pendidikan SLTA, tempat kediaman di Desa Ombo, Kecamatan Sirenja, Kabupaten Donggala, Provinsi Sulawesi Tengah, ibunurafni80@gmail.com, sebagai Penggugat;
++Nur Afni binti Amir Duding alias Amir, NIK 7203116505801004, tempat dan tanggal lahir Ombo, 25 Mei 1980, agama Islam, pekerjaan Ibu Rumah Tangga, pendidikan SLTA, tempat kediaman di Desa Ombo, Kecamatan Sirenja, Kabupaten Donggala, Provinsi Sulawesi Tengah, ibunurafni80@gmail.com, sebagai Penggugat;
+-	Bahwa terhadap putusan tersebut Penggugat dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
++	Bahwa terhadap putusan tersebut Penggugat dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 199 ayat (1) RBg;
+-,
+-
+-Nur Afni binti Amir Duding alias Amir	Jurusita,
++	Jurusita,
+=== 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan T/10077_s1.txt
+-Pada hari ini Senin tanggal 28 September 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 531/Pdt.G/2026/PA.Dgl Tanggal 21 Agustus 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini Senin tanggal 28 September 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 531/Pdt.G/2026/PA.Dgl Tanggal 21 Agustus 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-	Bahwa terhadap putusan tersebut Termohon dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
++	Bahwa terhadap putusan tersebut Termohon dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 153 ayat (1) RBg;
+-
+-,
+=== 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan T/10083_s1.txt
+-Pada hari ini Minggu tanggal 27 September 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini Minggu tanggal 27 September 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-	Bahwa terhadap putusan tersebut Termohon dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
++	Bahwa terhadap putusan tersebut Termohon dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 153 ayat (1) RBg;
+-
+-,
+=== 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan T/10155_s1.txt
+-Pada hari ini ............................. tanggal .........................................................., Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini ............................. tanggal .........................................................., Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-, umur 51 tahun, agama Islam, pendidikan SLTA, pekerjaan MENGURUS RUMAH TANGGA, tempat kediaman di , sebagai Tergugat;
++, umur 51 tahun, agama Islam, pendidikan SLTA, pekerjaan MENGURUS RUMAH TANGGA, tempat kediaman di , sebagai Tergugat I;
+-	Bahwa terhadap putusan tersebut Tergugat dapat mengajukan dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
++	Bahwa terhadap putusan tersebut Tergugat dapat mengajukan dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 199 ayat (1) RBg;
+-
+-,
+=== 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan T/10163_s1.txt
+-Pada hari ini Minggu tanggal 25 Oktober 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini Minggu tanggal 25 Oktober 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-	Bahwa terhadap putusan tersebut Tergugat dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
++	Bahwa terhadap putusan tersebut Tergugat dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 153 ayat (1) RBg;
+-
+-,
+=== 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan T/10246_s1.txt
+-Pada hari ini ............................. tanggal .........................................................., Saya, Mustini sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini ............................. tanggal .........................................................., Saya, Mustini sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-	Bahwa terhadap putusan tersebut Tergugat dapat mengajukan dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
++	Bahwa terhadap putusan tersebut Tergugat dapat mengajukan dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 199 ayat (1) RBg;
+-
+-,
+=== 98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan T/9870_s1.txt
+-Pada hari ini Jumat tanggal 23 Oktober 2026, Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 367/Pdt.G/2026/PA.Dgl Tanggal 17 Juni 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini Jumat tanggal 23 Oktober 2026, Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 367/Pdt.G/2026/PA.Dgl Tanggal 17 Juni 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-	Bahwa terhadap putusan tersebut Tergugat dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;
++	Bahwa terhadap putusan tersebut Tergugat dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 153 ayat (1) RBg;
+-
+-,
+=== 98 Relaas/[JS] 3.a. Permohonan Bantuan Panggilan Delegasi/10155_s1.txt
+-Ketua Pengadilan Agama
++Ketua Pengadilan Agama ........................
++........................
+-Berhubung Tergugat berkediaman di wilayah hukum Pengadilan Agama kami mohon bantuan memanggil yang bersangkutan untuk datang menghadap di muka sidang Pengadilan Agama Donggala pada waktu yang telah ditetapkan di atas;
++Berhubung Tergugat berkediaman di wilayah hukum Pengadilan Agama ........................, kami mohon bantuan memanggil yang bersangkutan untuk datang menghadap di muka sidang Pengadilan Agama Donggala pada waktu yang telah ditetapkan di atas;
+=== 98 Relaas/[JS] 3.a. Permohonan Bantuan Panggilan Delegasi/10163_s1.txt
+-Ketua Pengadilan Agama Donggala, Provinsi Sulawesi Tengah
++Ketua Pengadilan Agama ........................
+-Provinsi Sulawesi Tengah
++........................
+-Berhubung Tergugat berkediaman di wilayah hukum Pengadilan Agama Donggala, Provinsi Sulawesi Tengah kami mohon bantuan memanggil yang bersangkutan untuk datang menghadap di muka sidang Pengadilan Agama Donggala pada waktu yang telah ditetapkan di atas;
++Berhubung Tergugat berkediaman di wilayah hukum Pengadilan Agama ........................, kami mohon bantuan memanggil yang bersangkutan untuk datang menghadap di muka sidang Pengadilan Agama Donggala pada waktu yang telah ditetapkan di atas;
+=== 98 Relaas/[JS] 3.a. Permohonan Bantuan Panggilan Delegasi/7900_s1.txt
+-Ketua Pengadilan Agama
++Ketua Pengadilan Agama Palu
++Palu
+-Berhubung Tergugat berkediaman di wilayah hukum Pengadilan Agama kami mohon bantuan memanggil yang bersangkutan untuk datang menghadap di muka sidang Pengadilan Agama Donggala pada waktu yang telah ditetapkan di atas;
++Berhubung Tergugat berkediaman di wilayah hukum Pengadilan Agama Palu, kami mohon bantuan memanggil yang bersangkutan untuk datang menghadap di muka sidang Pengadilan Agama Donggala pada waktu yang telah ditetapkan di atas;
+=== 98 Relaas/[JS] 3.b. Relaas Panggilan Sidang P dan T/10077_s1.txt
+-Pada hari ini ............................. tanggal .........................................................., Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 531/Pdt.G/2026/PA.Dgl Tanggal 21 Agustus 2026;
++Pada hari ini Senin tanggal 24 Agustus 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 531/Pdt.G/2026/PA.Dgl Tanggal 21 Agustus 2026;
+-Randi Bin Pusri NIK 7203122011940002, tempat dan tanggal lahir Sibualong, 20 November 1994, agama Islam, pekerjaan Wiraswasta, pendidikan SLTA, tempat kediaman di Desa Sibualong, RT. 000/RW. 000, Kecamatan Balaesang, Kabupaten Donggala, Provinsi Sulawesi Tengah, sebagai Pemohon;
++Randi Bin Pusri, NIK 7203122011940002, tempat dan tanggal lahir Sibualong, 20 November 1994, agama Islam, pekerjaan Wiraswasta, pendidikan SLTA, tempat kediaman di Desa Sibualong, RT. 000/RW. 000, Kecamatan Balaesang, Kabupaten Donggala, Provinsi Sulawesi Tengah, sebagai Pemohon;
+-,
+-
+-Pada hari ini Jumat tanggal 28 Agustus 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 531/Pdt.G/2026/PA.Dgl Tanggal 21 Agustus 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini Jumat tanggal 28 Agustus 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 531/Pdt.G/2026/PA.Dgl Tanggal 21 Agustus 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-,
+-
+=== 98 Relaas/[JS] 3.b. Relaas Panggilan Sidang P dan T/10083_s1.txt
+-Lupe bin Rodio NIK 7271021502900001, tempat dan tanggal lahir Watusampu, 15 Februari 1990, agama Islam, pekerjaan Petani, pendidikan SD, tempat kediaman di Jalan Malonda, Lorong Taipa Java, RT 001, RW 004, Kelurahan Watusampu, Kecamatan Ulujadi, Kota Palu, Provinsi Sulawesi Tengah, sebagai Pemohon;
++Lupe bin Rodio, NIK 7271021502900001, tempat dan tanggal lahir Watusampu, 15 Februari 1990, agama Islam, pekerjaan Petani, pendidikan SD, tempat kediaman di Jalan Malonda, Lorong Taipa Java, RT 001, RW 004, Kelurahan Watusampu, Kecamatan Ulujadi, Kota Palu, Provinsi Sulawesi Tengah, sebagai Pemohon;
+-,
+-
+-Pada hari ini Sabtu tanggal 29 Agustus 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini Sabtu tanggal 29 Agustus 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-,
+-
+=== 98 Relaas/[JS] 3.b. Relaas Panggilan Sidang P dan T/10155_s1.txt
+-MULTAZAM NIK 7203190803990001, tempat dan tanggal lahir PALU, 08 Maret 1999, agama Islam, pekerjaan pelajar/mahasiswa, pendidikan S1, tempat kediaman di Desa Wanl II, RT/RW 00/00, KEL/DESA.WANI DUA, KEC.TANANTOVEA, Kabupaten Donggala, Provinsi Sulawesi Tengah, sebagai Penggugat;
++MULTAZAM, NIK 7203190803990001, tempat dan tanggal lahir PALU, 08 Maret 1999, agama Islam, pekerjaan pelajar/mahasiswa, pendidikan S1, tempat kediaman di Desa Wanl II, RT/RW 00/00, KEL/DESA.WANI DUA, KEC.TANANTOVEA, Kabupaten Donggala, Provinsi Sulawesi Tengah, sebagai Penggugat I;
+-,
+-
+-Pada hari ini Kamis tanggal 24 September 2026, Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini Kamis tanggal 24 September 2026, Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-, umur 51 tahun, agama Islam, pendidikan SLTA, pekerjaan MENGURUS RUMAH TANGGA, tempat kediaman di , sebagai Tergugat;
++, umur 51 tahun, agama Islam, pendidikan SLTA, pekerjaan MENGURUS RUMAH TANGGA, tempat kediaman di , sebagai Tergugat I;
+-,
+-
+=== 98 Relaas/[JS] 3.b. Relaas Panggilan Sidang P dan T/10163_s1.txt
+-Dela Safitri binti Rustam.J NIK 7210106208040001, tempat dan tanggal lahir Sibowi, 22 Agustus 2004, agama Islam, pekerjaan Asisten Rumah Tangga, pendidikan SLTA, tempat kediaman di Desa Sibowi, Kecamatan Tanambulava, Kabupaten Sigi, Provinsi Sulawesi Tengah, Domisili Elektronik:laasafitri22@gmail.com, sebagai Penggugat;
++Dela Safitri binti Rustam.J, NIK 7210106208040001, tempat dan tanggal lahir Sibowi, 22 Agustus 2004, agama Islam, pekerjaan Asisten Rumah Tangga, pendidikan SLTA, tempat kediaman di Desa Sibowi, Kecamatan Tanambulava, Kabupaten Sigi, Provinsi Sulawesi Tengah, Domisili Elektronik:laasafitri22@gmail.com, sebagai Penggugat;
+-,
+-
+-Pada hari ini Minggu tanggal 27 September 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini Minggu tanggal 27 September 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-,
+-
+=== 98 Relaas/[JS] 3.b. Relaas Panggilan Sidang P dan T/10246_s1.txt
+-Wisda binti Thun NIK 7313117006940001, tempat dan tanggal lahir Tompoh, 30 Juni 1994, agama Islam, pekerjaan Mengurus Rumah Tangga, pendidikan SD, tempat kediaman di Desa Olu, Kecamatan Lindu, Kabupaten Sigi, Provinsi Sulawesi Tengah. Domisili elektronik : wisdajih47@gmail.com, sebagai Penggugat;
++Wisda binti Thun, NIK 7313117006940001, tempat dan tanggal lahir Tompoh, 30 Juni 1994, agama Islam, pekerjaan Mengurus Rumah Tangga, pendidikan SD, tempat kediaman di Desa Olu, Kecamatan Lindu, Kabupaten Sigi, Provinsi Sulawesi Tengah. Domisili elektronik : wisdajih47@gmail.com, sebagai Penggugat;
+-,
+-
+-Pada hari ini Senin tanggal 26 Oktober 2026, Saya, Mustini sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini Senin tanggal 26 Oktober 2026, Saya, Mustini sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-,
+-
+=== 98 Relaas/[JS] 3.b. Relaas Panggilan Sidang P dan T/9870_s1.txt
+-Nur Afni binti Amir Duding alias Amir NIK 7203116505801004, tempat dan tanggal lahir Ombo, 25 Mei 1980, agama Islam, pekerjaan Ibu Rumah Tangga, pendidikan SLTA, tempat kediaman di Desa Ombo, Kecamatan Sirenja, Kabupaten Donggala, Provinsi Sulawesi Tengah, ibunurafni80@gmail.com, sebagai Penggugat;
++Nur Afni binti Amir Duding alias Amir, NIK 7203116505801004, tempat dan tanggal lahir Ombo, 25 Mei 1980, agama Islam, pekerjaan Ibu Rumah Tangga, pendidikan SLTA, tempat kediaman di Desa Ombo, Kecamatan Sirenja, Kabupaten Donggala, Provinsi Sulawesi Tengah, ibunurafni80@gmail.com, sebagai Penggugat;
+-,
+-
+-Pada hari ini Selasa tanggal 23 Juni 2026, Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 367/Pdt.G/2026/PA.Dgl Tanggal 17 Juni 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini Selasa tanggal 23 Juni 2026, Saya, Mohammad Syukri, S.H. sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 367/Pdt.G/2026/PA.Dgl Tanggal 17 Juni 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-,
+-
+=== 98 Relaas/[JS] 4. Relaas Panggilan Ikrar Talak P dan T/10077_s3.txt
+-Pada hari ini ............................. tanggal .........................................................., Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 531/Pdt.G/2026/PA.Dgl Tanggal 21 Agustus 2026;
++Pada hari ini Selasa tanggal 13 Oktober 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 531/Pdt.G/2026/PA.Dgl Tanggal 13 Oktober 2026;
+-Randi Bin Pusri NIK 7203122011940002, tempat dan tanggal lahir Sibualong, 20 November 1994, agama Islam, pekerjaan Wiraswasta, pendidikan SLTA, tempat kediaman di Desa Sibualong, RT. 000/RW. 000, Kecamatan Balaesang, Kabupaten Donggala, Provinsi Sulawesi Tengah, sebagai Pemohon;
++Randi Bin Pusri, NIK 7203122011940002, tempat dan tanggal lahir Sibualong, 20 November 1994, agama Islam, pekerjaan Wiraswasta, pendidikan SLTA, tempat kediaman di Desa Sibualong, RT. 000/RW. 000, Kecamatan Balaesang, Kabupaten Donggala, Provinsi Sulawesi Tengah, sebagai Pemohon;
+-,
+-
+-Pada hari ini Senin tanggal 19 Oktober 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 531/Pdt.G/2026/PA.Dgl Tanggal 21 Agustus 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini Senin tanggal 19 Oktober 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 531/Pdt.G/2026/PA.Dgl Tanggal 13 Oktober 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-,
+-
+=== 98 Relaas/[JS] 4. Relaas Panggilan Ikrar Talak P dan T/10083_s3.txt
+-Pada hari ini Selasa tanggal 13 Oktober 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026;
++Pada hari ini Selasa tanggal 13 Oktober 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 13 Oktober 2026;
+-Lupe bin Rodio NIK 7271021502900001, tempat dan tanggal lahir Watusampu, 15 Februari 1990, agama Islam, pekerjaan Petani, pendidikan SD, tempat kediaman di Jalan Malonda, Lorong Taipa Java, RT 001, RW 004, Kelurahan Watusampu, Kecamatan Ulujadi, Kota Palu, Provinsi Sulawesi Tengah, sebagai Pemohon;
++Lupe bin Rodio, NIK 7271021502900001, tempat dan tanggal lahir Watusampu, 15 Februari 1990, agama Islam, pekerjaan Petani, pendidikan SD, tempat kediaman di Jalan Malonda, Lorong Taipa Java, RT 001, RW 004, Kelurahan Watusampu, Kecamatan Ulujadi, Kota Palu, Provinsi Sulawesi Tengah, sebagai Pemohon;
+-,
+-
+-Pada hari ini Selasa tanggal 20 Oktober 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini Selasa tanggal 20 Oktober 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 13 Oktober 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-,
+-
+=== 98 Relaas/[JS] 4. Relaas Panggilan Ikrar Talak P dan T/10163_s2.txt
+-Pada hari ini ............................. tanggal .........................................................., Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026;
++Pada hari ini ............................. tanggal .........................................................., Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 610/Pdt.G/2026/PA.Dgl Tanggal ...;
+-Dela Safitri binti Rustam.J NIK 7210106208040001, tempat dan tanggal lahir Sibowi, 22 Agustus 2004, agama Islam, pekerjaan Asisten Rumah Tangga, pendidikan SLTA, tempat kediaman di Desa Sibowi, Kecamatan Tanambulava, Kabupaten Sigi, Provinsi Sulawesi Tengah, Domisili Elektronik:laasafitri22@gmail.com, sebagai Penggugat;
++Dela Safitri binti Rustam.J, NIK 7210106208040001, tempat dan tanggal lahir Sibowi, 22 Agustus 2004, agama Islam, pekerjaan Asisten Rumah Tangga, pendidikan SLTA, tempat kediaman di Desa Sibowi, Kecamatan Tanambulava, Kabupaten Sigi, Provinsi Sulawesi Tengah, Domisili Elektronik:laasafitri22@gmail.com, sebagai Penggugat;
+-,
+-
+-Pada hari ini Rabu tanggal 07 Oktober 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;
++Pada hari ini Rabu tanggal 07 Oktober 2026, Saya, Tanty Restianty sebagai Jurusita pada Pengadilan Agama Donggala atas perintah Ketua Majelis dalam perkara Nomor 610/Pdt.G/2026/PA.Dgl Tanggal ... yang didaftarkan secara elektronik melalui Aplikasi E-Court;
+-,
+-
+=== 98 Relaas/[JS] 5.1. Relaas Panggilan Sidang P (e-Court)/10077_s1.txt
+-Donggala, 21 Agustus 2026
++Donggala, 24 Agustus 2026
+=== 98 Relaas/[JS] 5.1. Relaas Panggilan Sidang P (e-Court)/10083_s1.txt
+-Donggala, 24 Agustus 2026
++Donggala, 26 Agustus 2026
+=== 98 Relaas/[JS] 5.1. Relaas Panggilan Sidang P (e-Court)/10155_s1.txt
+-Donggala, 18 September 2026
++Donggala, 22 September 2026
+=== 98 Relaas/[JS] 5.1. Relaas Panggilan Sidang P (e-Court)/10163_s1.txt
+-Donggala, 22 September 2026
++Donggala, 23 September 2026
+=== 98 Relaas/[JS] 5.1. Relaas Panggilan Sidang P (e-Court)/10246_s1.txt
+-Donggala, 16 Oktober 2026
++Donggala, 19 Oktober 2026
+=== 98 Relaas/[JS] 5.1. Relaas Panggilan Sidang P (e-Court)/9870_s1.txt
+-Donggala, 31 Agustus 2026
++Donggala, 22 Juni 2026
+=== 98 Relaas/[JS] 5.2. Relaas Panggilan Sidang T (e-Court)/10077_s1.txt
+-Donggala, 21 Agustus 2026
++Donggala, 28 Agustus 2026
+=== 98 Relaas/[JS] 5.2. Relaas Panggilan Sidang T (e-Court)/10083_s1.txt
+-Donggala, 24 Agustus 2026
++Donggala, 29 Agustus 2026
+=== 98 Relaas/[JS] 5.2. Relaas Panggilan Sidang T (e-Court)/10155_s1.txt
+-Donggala, 18 September 2026
++Donggala, 24 September 2026
+=== 98 Relaas/[JS] 5.2. Relaas Panggilan Sidang T (e-Court)/10163_s1.txt
+-Donggala, 22 September 2026
++Donggala, 27 September 2026
+=== 98 Relaas/[JS] 5.2. Relaas Panggilan Sidang T (e-Court)/10246_s1.txt
+-Donggala, 16 Oktober 2026
++Donggala, 26 Oktober 2026
+=== 98 Relaas/[JS] 5.2. Relaas Panggilan Sidang T (e-Court)/9870_s1.txt
+-Donggala, 31 Agustus 2026
++Donggala, 23 Juni 2026
+=== 98 Relaas/[JS] 6.2. Relaas Pemberitahuan Putusan Verstek T (e-Court)/10077_s1.txt
+-Armadiya Binti Suaib, NIK 7601054203980001, tempat dan tanggal lahir Benggaulu, 02 Maret 1998, umur 28, agama Islam, pekerjaan Mengurus Rumah Tangga, pendidikan ..., tempat kediaman di Dusun 1 Lemo, Desa Sibualong, Kecamatan Balaesang, Kabupaten Donggala, Provinsi Sulawesi Tengah dengan domisili elektronik pada alamat email  sebagai Termohon;
+-tentang isi putusan Pengadilan Agama Donggala Nomor 531/Pdt.G/2026/PA.Dgl tanggal 22 September 2026  dalam perkara Cerai Talak antara:
++Armadiya Binti Suaib, NIK 7601054203980001, tempat dan tanggal lahir Benggaulu, 02 Maret 1998, umur 28 tahun, agama Islam, pekerjaan Mengurus Rumah Tangga, pendidikan ..., tempat kediaman di Dusun 1 Lemo, Desa Sibualong, Kecamatan Balaesang, Kabupaten Donggala, Provinsi Sulawesi Tengah, sebagai Termohon;
++tentang isi putusan Pengadilan Agama Donggala Nomor 531/Pdt.G/2026/PA.Dgl tanggal 22 September 2026 dalam perkara Cerai Talak antara:
+-Melawan
++Lawan
+=== 98 Relaas/[JS] 6.2. Relaas Pemberitahuan Putusan Verstek T (e-Court)/10083_s1.txt
+-Safarni binti Lanani, NIK , tempat dan tanggal lahir Powelua, 23 Maret 1994, umur 32, agama Islam, pekerjaan Ibu Rumah Tangga, pendidikan SD, tempat kediaman di Dusun III Powelua, RT 001, RW 003, Desa Powelua, Kecamatan Banawa Tengah, Kabupaten Donggala, Provinsi Sulawesi Tengah dengan domisili elektronik pada alamat email  sebagai Termohon;
+-tentang isi putusan Pengadilan Agama Donggala Nomor 537/Pdt.G/2026/PA.Dgl tanggal 22 September 2026  dalam perkara Cerai Talak antara:
++Safarni binti Lanani, NIK , tempat dan tanggal lahir Powelua, 23 Maret 1994, umur 32 tahun, agama Islam, pekerjaan Ibu Rumah Tangga, pendidikan SD, tempat kediaman di Dusun III Powelua, RT 001, RW 003, Desa Powelua, Kecamatan Banawa Tengah, Kabupaten Donggala, Provinsi Sulawesi Tengah, sebagai Termohon;
++tentang isi putusan Pengadilan Agama Donggala Nomor 537/Pdt.G/2026/PA.Dgl tanggal 22 September 2026 dalam perkara Cerai Talak antara:
+-Melawan
++Lawan
+=== 98 Relaas/[JS] 6.2. Relaas Pemberitahuan Putusan Verstek T (e-Court)/10155_s1.txt
+-..., NIK 7203194612740003, tempat dan tanggal lahir WANI, 06 Desember 1974, umur 51, agama Islam, pekerjaan MENGURUS RUMAH TANGGA, pendidikan SLTA, tempat kediaman di  dengan domisili elektronik pada alamat email  sebagai Tergugat;
+-tentang isi putusan Pengadilan Agama Donggala Nomor 602/Pdt.G/2026/PA.Dgl tanggal ...  dalam perkara Kewarisan antara:
++..., NIK 7203194612740003, tempat dan tanggal lahir WANI, 06 Desember 1974, umur 51 tahun, agama Islam, pekerjaan MENGURUS RUMAH TANGGA, pendidikan SLTA, tempat kediaman di , sebagai Tergugat;
++tentang isi putusan Pengadilan Agama Donggala Nomor 602/Pdt.G/2026/PA.Dgl tanggal ... dalam perkara Kewarisan antara:
+-Melawan
++Lawan
+-Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Termohon;
++Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Tergugat;
+=== 98 Relaas/[JS] 6.2. Relaas Pemberitahuan Putusan Verstek T (e-Court)/10163_s1.txt
+-Mirdat bin Sahibul, NIK 7203310503020001, tempat dan tanggal lahir Manimbaya, 05 Maret 2002, umur 24, agama Islam, pekerjaan Wiraswasta (Karyawaan PLN), pendidikan SLTA, tempat kediaman di Dusun Sivia (rumah sebelah kanan sebelum SDN 13 Balaesang Tanjung), Desa Manimbaya, Kecamatan, Balaesang Tanjung, Kabupaten Donggala, Provinsi Sulawesi Tengah dengan domisili elektronik pada alamat email  sebag
+-tentang isi putusan Pengadilan Agama Donggala Nomor 610/Pdt.G/2026/PA.Dgl tanggal 15 Oktober 2026  dalam perkara Cerai Gugat antara:
++Mirdat bin Sahibul, NIK 7203310503020001, tempat dan tanggal lahir Manimbaya, 05 Maret 2002, umur 24 tahun, agama Islam, pekerjaan Wiraswasta (Karyawaan PLN), pendidikan SLTA, tempat kediaman di Dusun Sivia (rumah sebelah kanan sebelum SDN 13 Balaesang Tanjung), Desa Manimbaya, Kecamatan, Balaesang Tanjung, Kabupaten Donggala, Provinsi Sulawesi Tengah, sebagai Tergugat;
++tentang isi putusan Pengadilan Agama Donggala Nomor 610/Pdt.G/2026/PA.Dgl tanggal 15 Oktober 2026 dalam perkara Cerai Gugat antara:
+-Melawan
++Lawan
+-Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Termohon;
++Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Tergugat;
+=== 98 Relaas/[JS] 6.2. Relaas Pemberitahuan Putusan Verstek T (e-Court)/10246_s1.txt
+-Sudirman bin Kadere, NIK 7313110107810006, tempat dan tanggal lahir Cennae, 31 Desember 1984, umur 41, agama Islam, pekerjaan Petani/Pekebun, pendidikan SD, tempat kediaman di Dusun II, Desa Olu (dua rumah samping Mesjid al-musafir), Kecamatan Lindu, Kabupaten Sigi, Provinsi Sulawesi Tengah dengan domisili elektronik pada alamat email  sebagai Tergugat;
+-tentang isi putusan Pengadilan Agama Donggala Nomor 675/Pdt.G/2026/PA.Dgl tanggal ...  dalam perkara Cerai Gugat antara:
++Sudirman bin Kadere, NIK 7313110107810006, tempat dan tanggal lahir Cennae, 31 Desember 1984, umur 41 tahun, agama Islam, pekerjaan Petani/Pekebun, pendidikan SD, tempat kediaman di Dusun II, Desa Olu (dua rumah samping Mesjid al-musafir), Kecamatan Lindu, Kabupaten Sigi, Provinsi Sulawesi Tengah, sebagai Tergugat;
++tentang isi putusan Pengadilan Agama Donggala Nomor 675/Pdt.G/2026/PA.Dgl tanggal ... dalam perkara Cerai Gugat antara:
+-Melawan
++Lawan
+-Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Termohon;
++Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Tergugat;
+=== 98 Relaas/[JS] 6.2. Relaas Pemberitahuan Putusan Verstek T (e-Court)/9870_s1.txt
+-Sabir bin Ardin, NIK 7203111111771006, tempat dan tanggal lahir Alindau, 11 November 1977, umur 48, agama Islam, pekerjaan Karyawan Swasta ( Operator alat berat), pendidikan SLTP, tempat kediaman di Dahulu beralamat di Desa Ombo, Kecamatan Sirenja, Kabupaten Donggala sekarang tidak diketahui keberadaannya di dalam maupun di luar wilayah NKRI dengan domisili elektronik pada alamat email  sebagai T
+-tentang isi putusan Pengadilan Agama Donggala Nomor 367/Pdt.G/2026/PA.Dgl tanggal 19 Oktober 2026  dalam perkara Cerai Gugat antara:
++Sabir bin Ardin, NIK 7203111111771006, tempat dan tanggal lahir Alindau, 11 November 1977, umur 48 tahun, agama Islam, pekerjaan Karyawan Swasta ( Operator alat berat), pendidikan SLTP, tempat kediaman di Dahulu beralamat di Desa Ombo, Kecamatan Sirenja, Kabupaten Donggala sekarang tidak diketahui keberadaannya di dalam maupun di luar wilayah NKRI, sebagai Tergugat;
++tentang isi putusan Pengadilan Agama Donggala Nomor 367/Pdt.G/2026/PA.Dgl tanggal 19 Oktober 2026 dalam perkara Cerai Gugat antara:
+-Melawan
++Lawan
+-Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Termohon;
++Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Tergugat;
+=== 98 Relaas/[JS] 7. Relaas Panggilan Ikrar Talak (e-Court)/10077_s3.txt
+-Donggala, 21 Agustus 2026
++Donggala, 19 Oktober 2026
+=== 98 Relaas/[JS] 7. Relaas Panggilan Ikrar Talak (e-Court)/10083_s3.txt
+-Donggala, 24 Agustus 2026
++Donggala, 20 Oktober 2026
+=== 98 Relaas/[JS] 7. Relaas Panggilan Ikrar Talak (e-Court)/10163_s2.txt
+-Donggala, 22 September 2026
++Donggala, 07 Oktober 2026
+=== 99 PTSP/@ 0 - PMH - PHS/10083_s1.txt
+-Panitera Pengadilan Agama Donggala telah membaca Penetapan Wakil Ketua Pengadilan Agama Donggala Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026 Tentang Penetapan Majelis Hakim;
++Panitera Pengadilan Agama Donggala telah membaca Penetapan Wakil Ketua Pengadilan Agama Donggala Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026 tentang Penetapan Majelis Hakim;
+-Memperhatikan, Pasal 11 ayat (3) Undang-Undang Nomor 48 Tahun 2009 Tentang Kekuasaan Kehakiman jo. Pasal 96 dan 97 Undang-Undang Nomor 7 Tahun 1989 Tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Seca
++Memperhatikan, Pasal 11 ayat (3) Undang-Undang Nomor 48 Tahun 2009 tentang Kekuasaan Kehakiman jo. Pasal 96 dan 97 Undang-Undang Nomor 7 Tahun 1989 tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Seca
+-Panitera Pengadilan Agama Donggala telah membaca Penetapan Wakil Ketua Pengadilan Agama Donggala Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026 Tentang Penetapan Majelis Hakim.
++Panitera Pengadilan Agama Donggala telah membaca Penetapan Wakil Ketua Pengadilan Agama Donggala Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026 tentang Penetapan Majelis Hakim.
+-Memperhatikan, Pasal 103 Undang-Undang Nomor 7 Tahun 1989 Tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009. Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Secara Elektronik, sebagaimana telah diubah dengan Peraturan Mahkamah Agung Nomor 7 tahun 2022
++Memperhatikan, Pasal 103 Undang-Undang Nomor 7 Tahun 1989 tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Secara Elektronik, sebagaimana telah diubah dengan Peraturan Mahkamah Agung Nomor 7 Tahun 2022
+-		Ketua Majelis Pengadilan Agama Donggala membaca Penetapan Ketua Majelis Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026 dan permohonan Pemohon yang terdaftar dalam Register Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026 dalam perkara antara:
++		Ketua Majelis Pengadilan Agama Donggala membaca Penetapan Wakil Ketua Pengadilan Agama Donggala Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026 dan permohonan Pemohon yang terdaftar dalam Register Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026 dalam perkara antara:
+=== 99 PTSP/@ 0 - PMH - PHS/10155_s1.txt
+-Panitera Pengadilan Agama Donggala telah membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026 Tentang Penetapan Majelis Hakim;
++Panitera Pengadilan Agama Donggala telah membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026 tentang Penetapan Majelis Hakim;
+-Memperhatikan, Pasal 11 ayat (3) Undang-Undang Nomor 48 Tahun 2009 Tentang Kekuasaan Kehakiman jo. Pasal 96 dan 97 Undang-Undang Nomor 7 Tahun 1989 Tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Seca
++Memperhatikan, Pasal 11 ayat (3) Undang-Undang Nomor 48 Tahun 2009 tentang Kekuasaan Kehakiman jo. Pasal 96 dan 97 Undang-Undang Nomor 7 Tahun 1989 tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Seca
+-Panitera Pengadilan Agama Donggala telah membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026 Tentang Penetapan Majelis Hakim.
++Panitera Pengadilan Agama Donggala telah membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026 tentang Penetapan Majelis Hakim.
+-Memperhatikan, Pasal 103 Undang-Undang Nomor 7 Tahun 1989 Tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009. Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Secara Elektronik, sebagaimana telah diubah dengan Peraturan Mahkamah Agung Nomor 7 tahun 2022
++Memperhatikan, Pasal 103 Undang-Undang Nomor 7 Tahun 1989 tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Secara Elektronik, sebagaimana telah diubah dengan Peraturan Mahkamah Agung Nomor 7 Tahun 2022
+-		Ketua Majelis Pengadilan Agama Donggala membaca Penetapan Ketua Majelis Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026 dan gugatan Penggugat yang terdaftar dalam Register Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026 dalam perkara antara:
++		Ketua Majelis Pengadilan Agama Donggala membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026 dan gugatan Penggugat yang terdaftar dalam Register Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026 dalam perkara antara:
+=== 99 PTSP/@ 0 - PMH - PHS/10163_s1.txt
+-Panitera Pengadilan Agama Donggala telah membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026 Tentang Penetapan Majelis Hakim;
++Panitera Pengadilan Agama Donggala telah membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026 tentang Penetapan Majelis Hakim;
+-Memperhatikan, Pasal 11 ayat (3) Undang-Undang Nomor 48 Tahun 2009 Tentang Kekuasaan Kehakiman jo. Pasal 96 dan 97 Undang-Undang Nomor 7 Tahun 1989 Tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Seca
++Memperhatikan, Pasal 11 ayat (3) Undang-Undang Nomor 48 Tahun 2009 tentang Kekuasaan Kehakiman jo. Pasal 96 dan 97 Undang-Undang Nomor 7 Tahun 1989 tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Seca
+-Panitera Pengadilan Agama Donggala telah membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026 Tentang Penetapan Majelis Hakim.
++Panitera Pengadilan Agama Donggala telah membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026 tentang Penetapan Majelis Hakim.
+-Memperhatikan, Pasal 103 Undang-Undang Nomor 7 Tahun 1989 Tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009. Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Secara Elektronik, sebagaimana telah diubah dengan Peraturan Mahkamah Agung Nomor 7 tahun 2022
++Memperhatikan, Pasal 103 Undang-Undang Nomor 7 Tahun 1989 tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Secara Elektronik, sebagaimana telah diubah dengan Peraturan Mahkamah Agung Nomor 7 Tahun 2022
+-		Ketua Majelis Pengadilan Agama Donggala membaca Penetapan Ketua Majelis Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026 dan gugatan Penggugat yang terdaftar dalam Register Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026 dalam perkara antara:
++		Ketua Majelis Pengadilan Agama Donggala membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026 dan gugatan Penggugat yang terdaftar dalam Register Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026 dalam perkara antara:
+=== 99 PTSP/@ 0 - PMH - PHS/10246_s1.txt
+-Panitera Pengadilan Agama Donggala telah membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026 Tentang Penetapan Majelis Hakim;
++Panitera Pengadilan Agama Donggala telah membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026 tentang Penetapan Majelis Hakim;
+-Memperhatikan, Pasal 11 ayat (3) Undang-Undang Nomor 48 Tahun 2009 Tentang Kekuasaan Kehakiman jo. Pasal 96 dan 97 Undang-Undang Nomor 7 Tahun 1989 Tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Seca
++Memperhatikan, Pasal 11 ayat (3) Undang-Undang Nomor 48 Tahun 2009 tentang Kekuasaan Kehakiman jo. Pasal 96 dan 97 Undang-Undang Nomor 7 Tahun 1989 tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Seca
+-Panitera Pengadilan Agama Donggala telah membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026 Tentang Penetapan Majelis Hakim.
++Panitera Pengadilan Agama Donggala telah membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026 tentang Penetapan Majelis Hakim.
+-Memperhatikan, Pasal 103 Undang-Undang Nomor 7 Tahun 1989 Tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009. Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Secara Elektronik, sebagaimana telah diubah dengan Peraturan Mahkamah Agung Nomor 7 tahun 2022
++Memperhatikan, Pasal 103 Undang-Undang Nomor 7 Tahun 1989 tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Secara Elektronik, sebagaimana telah diubah dengan Peraturan Mahkamah Agung Nomor 7 Tahun 2022
+-		Ketua Majelis Pengadilan Agama Donggala membaca Penetapan Ketua Majelis Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026 dan gugatan Penggugat yang terdaftar dalam Register Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026 dalam perkara antara:
++		Ketua Majelis Pengadilan Agama Donggala membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026 dan gugatan Penggugat yang terdaftar dalam Register Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026 dalam perkara antara:
+=== 99 PTSP/@ 0 - PMH - PHS/10275_s1.txt
+-Panitera Pengadilan Agama Donggala telah membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026 Tentang Penetapan Hakim;
++Panitera Pengadilan Agama Donggala telah membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026 tentang Penetapan Hakim;
+-Memperhatikan, Pasal 11 ayat (3) Undang-Undang Nomor 48 Tahun 2009 Tentang Kekuasaan Kehakiman jo. Pasal 96 dan 97 Undang-Undang Nomor 7 Tahun 1989 Tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Seca
++Memperhatikan, Pasal 11 ayat (3) Undang-Undang Nomor 48 Tahun 2009 tentang Kekuasaan Kehakiman jo. Pasal 96 dan 97 Undang-Undang Nomor 7 Tahun 1989 tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Seca
+-Panitera Pengadilan Agama Donggala telah membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026 Tentang Penetapan Hakim.
++Panitera Pengadilan Agama Donggala telah membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026 tentang Penetapan Hakim.
+-Memperhatikan, Pasal 103 Undang-Undang Nomor 7 Tahun 1989 Tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009. Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Secara Elektronik, sebagaimana telah diubah dengan Peraturan Mahkamah Agung Nomor 7 tahun 2022
++Memperhatikan, Pasal 103 Undang-Undang Nomor 7 Tahun 1989 tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Secara Elektronik, sebagaimana telah diubah dengan Peraturan Mahkamah Agung Nomor 7 Tahun 2022
+-		Hakim Pengadilan Agama Donggala membaca Penetapan Hakim Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026 dan permohonan Pemohon yang terdaftar dalam Register Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026 dalam perkara antara:
++		Hakim Pengadilan Agama Donggala membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026 dan permohonan Pemohon yang terdaftar dalam Register Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026 dalam perkara antara:
+=== 99 PTSP/@ 0a - PPP/10083_s1.txt
+-Panitera Pengadilan Agama Donggala telah membaca Penetapan Wakil Ketua Pengadilan Agama Donggala Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026 Tentang Penetapan Majelis Hakim;
++Panitera Pengadilan Agama Donggala telah membaca Penetapan Wakil Ketua Pengadilan Agama Donggala Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026 tentang Penetapan Majelis Hakim;
+-Memperhatikan, Pasal 11 ayat (3) Undang-Undang Nomor 48 Tahun 2009 Tentang Kekuasaan Kehakiman jo. Pasal 96 dan 97 Undang-Undang Nomor 7 Tahun 1989 Tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Seca
++Memperhatikan, Pasal 11 ayat (3) Undang-Undang Nomor 48 Tahun 2009 tentang Kekuasaan Kehakiman jo. Pasal 96 dan 97 Undang-Undang Nomor 7 Tahun 1989 tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Seca
+=== 99 PTSP/@ 0a - PPP/10155_s1.txt
+-Panitera Pengadilan Agama Donggala telah membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026 Tentang Penetapan Majelis Hakim;
++Panitera Pengadilan Agama Donggala telah membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026 tentang Penetapan Majelis Hakim;
+-Memperhatikan, Pasal 11 ayat (3) Undang-Undang Nomor 48 Tahun 2009 Tentang Kekuasaan Kehakiman jo. Pasal 96 dan 97 Undang-Undang Nomor 7 Tahun 1989 Tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Seca
++Memperhatikan, Pasal 11 ayat (3) Undang-Undang Nomor 48 Tahun 2009 tentang Kekuasaan Kehakiman jo. Pasal 96 dan 97 Undang-Undang Nomor 7 Tahun 1989 tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Seca
+=== 99 PTSP/@ 0a - PPP/10163_s1.txt
+-Panitera Pengadilan Agama Donggala telah membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026 Tentang Penetapan Majelis Hakim;
++Panitera Pengadilan Agama Donggala telah membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026 tentang Penetapan Majelis Hakim;
+-Memperhatikan, Pasal 11 ayat (3) Undang-Undang Nomor 48 Tahun 2009 Tentang Kekuasaan Kehakiman jo. Pasal 96 dan 97 Undang-Undang Nomor 7 Tahun 1989 Tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Seca
++Memperhatikan, Pasal 11 ayat (3) Undang-Undang Nomor 48 Tahun 2009 tentang Kekuasaan Kehakiman jo. Pasal 96 dan 97 Undang-Undang Nomor 7 Tahun 1989 tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Seca
+=== 99 PTSP/@ 0a - PPP/10246_s1.txt
+-Panitera Pengadilan Agama Donggala telah membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026 Tentang Penetapan Majelis Hakim;
++Panitera Pengadilan Agama Donggala telah membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026 tentang Penetapan Majelis Hakim;
+-Memperhatikan, Pasal 11 ayat (3) Undang-Undang Nomor 48 Tahun 2009 Tentang Kekuasaan Kehakiman jo. Pasal 96 dan 97 Undang-Undang Nomor 7 Tahun 1989 Tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Seca
++Memperhatikan, Pasal 11 ayat (3) Undang-Undang Nomor 48 Tahun 2009 tentang Kekuasaan Kehakiman jo. Pasal 96 dan 97 Undang-Undang Nomor 7 Tahun 1989 tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Seca
+=== 99 PTSP/@ 0a - PPP/10275_s1.txt
+-Panitera Pengadilan Agama Donggala telah membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026 Tentang Penetapan Hakim;
++Panitera Pengadilan Agama Donggala telah membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026 tentang Penetapan Hakim;
+-Memperhatikan, Pasal 11 ayat (3) Undang-Undang Nomor 48 Tahun 2009 Tentang Kekuasaan Kehakiman jo. Pasal 96 dan 97 Undang-Undang Nomor 7 Tahun 1989 Tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Seca
++Memperhatikan, Pasal 11 ayat (3) Undang-Undang Nomor 48 Tahun 2009 tentang Kekuasaan Kehakiman jo. Pasal 96 dan 97 Undang-Undang Nomor 7 Tahun 1989 tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Seca
+=== 99 PTSP/@ 0b - PJS/10083_s1.txt
+-Panitera Pengadilan Agama Donggala telah membaca Penetapan Wakil Ketua Pengadilan Agama Donggala Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026 Tentang Penetapan Majelis Hakim.
++Panitera Pengadilan Agama Donggala telah membaca Penetapan Wakil Ketua Pengadilan Agama Donggala Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026 tentang Penetapan Majelis Hakim.
+-Memperhatikan, Pasal 103 Undang-Undang Nomor 7 Tahun 1989 Tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009. Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Secara Elektronik, sebagaimana telah diubah dengan Peraturan Mahkamah Agung Nomor 7 tahun 2022
++Memperhatikan, Pasal 103 Undang-Undang Nomor 7 Tahun 1989 tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Secara Elektronik, sebagaimana telah diubah dengan Peraturan Mahkamah Agung Nomor 7 Tahun 2022
+=== 99 PTSP/@ 0b - PJS/10155_s1.txt
+-Panitera Pengadilan Agama Donggala telah membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026 Tentang Penetapan Majelis Hakim.
++Panitera Pengadilan Agama Donggala telah membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026 tentang Penetapan Majelis Hakim.
+-Memperhatikan, Pasal 103 Undang-Undang Nomor 7 Tahun 1989 Tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009. Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Secara Elektronik, sebagaimana telah diubah dengan Peraturan Mahkamah Agung Nomor 7 tahun 2022
++Memperhatikan, Pasal 103 Undang-Undang Nomor 7 Tahun 1989 tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Secara Elektronik, sebagaimana telah diubah dengan Peraturan Mahkamah Agung Nomor 7 Tahun 2022
+=== 99 PTSP/@ 0b - PJS/10163_s1.txt
+-Panitera Pengadilan Agama Donggala telah membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026 Tentang Penetapan Majelis Hakim.
++Panitera Pengadilan Agama Donggala telah membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026 tentang Penetapan Majelis Hakim.
+-Memperhatikan, Pasal 103 Undang-Undang Nomor 7 Tahun 1989 Tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009. Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Secara Elektronik, sebagaimana telah diubah dengan Peraturan Mahkamah Agung Nomor 7 tahun 2022
++Memperhatikan, Pasal 103 Undang-Undang Nomor 7 Tahun 1989 tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Secara Elektronik, sebagaimana telah diubah dengan Peraturan Mahkamah Agung Nomor 7 Tahun 2022
+=== 99 PTSP/@ 0b - PJS/10246_s1.txt
+-Panitera Pengadilan Agama Donggala telah membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026 Tentang Penetapan Majelis Hakim.
++Panitera Pengadilan Agama Donggala telah membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026 tentang Penetapan Majelis Hakim.
+-Memperhatikan, Pasal 103 Undang-Undang Nomor 7 Tahun 1989 Tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009. Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Secara Elektronik, sebagaimana telah diubah dengan Peraturan Mahkamah Agung Nomor 7 tahun 2022
++Memperhatikan, Pasal 103 Undang-Undang Nomor 7 Tahun 1989 tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Secara Elektronik, sebagaimana telah diubah dengan Peraturan Mahkamah Agung Nomor 7 Tahun 2022
+=== 99 PTSP/@ 0b - PJS/10275_s1.txt
+-Panitera Pengadilan Agama Donggala telah membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026 Tentang Penetapan Hakim.
++Panitera Pengadilan Agama Donggala telah membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026 tentang Penetapan Hakim.
+-Memperhatikan, Pasal 103 Undang-Undang Nomor 7 Tahun 1989 Tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009. Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Secara Elektronik, sebagaimana telah diubah dengan Peraturan Mahkamah Agung Nomor 7 tahun 2022
++Memperhatikan, Pasal 103 Undang-Undang Nomor 7 Tahun 1989 tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Secara Elektronik, sebagaimana telah diubah dengan Peraturan Mahkamah Agung Nomor 7 Tahun 2022
+=== 99 PTSP/@ 2 - PHS/10083_s1.txt
+-		Ketua Majelis Pengadilan Agama Donggala membaca Penetapan Ketua Majelis Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026 dan permohonan Pemohon yang terdaftar dalam Register Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026 dalam perkara antara:
++		Ketua Majelis Pengadilan Agama Donggala membaca Penetapan Wakil Ketua Pengadilan Agama Donggala Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026 dan permohonan Pemohon yang terdaftar dalam Register Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026 dalam perkara antara:
+=== 99 PTSP/@ 2 - PHS/10155_s1.txt
+-		Ketua Majelis Pengadilan Agama Donggala membaca Penetapan Ketua Majelis Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026 dan gugatan Penggugat yang terdaftar dalam Register Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026 dalam perkara antara:
++		Ketua Majelis Pengadilan Agama Donggala membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026 dan gugatan Penggugat yang terdaftar dalam Register Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026 dalam perkara antara:
+=== 99 PTSP/@ 2 - PHS/10163_s1.txt
+-		Ketua Majelis Pengadilan Agama Donggala membaca Penetapan Ketua Majelis Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026 dan gugatan Penggugat yang terdaftar dalam Register Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026 dalam perkara antara:
++		Ketua Majelis Pengadilan Agama Donggala membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026 dan gugatan Penggugat yang terdaftar dalam Register Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026 dalam perkara antara:
+=== 99 PTSP/@ 2 - PHS/10246_s1.txt
+-		Ketua Majelis Pengadilan Agama Donggala membaca Penetapan Ketua Majelis Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026 dan gugatan Penggugat yang terdaftar dalam Register Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026 dalam perkara antara:
++		Ketua Majelis Pengadilan Agama Donggala membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026 dan gugatan Penggugat yang terdaftar dalam Register Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026 dalam perkara antara:
+=== 99 PTSP/@ 2 - PHS/10275_s1.txt
+-		Hakim Pengadilan Agama Donggala membaca Penetapan Hakim Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026 dan permohonan Pemohon yang terdaftar dalam Register Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026 dalam perkara antara:
++		Hakim Pengadilan Agama Donggala membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026 dan permohonan Pemohon yang terdaftar dalam Register Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026 dalam perkara antara:
+=== 99 PTSP/@ 2a - PHS - Sita Dikabulkan/10083_s1.txt
+-		Ketua Majelis Pengadilan Agama Donggala membaca Penetapan Ketua Majelis Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026 dan permohonan Pemohon yang terdaftar dalam Register Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026 dalam perkara antara:
++		Ketua Majelis Pengadilan Agama Donggala membaca Penetapan Wakil Ketua Pengadilan Agama Donggala Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026 dan permohonan Pemohon yang terdaftar dalam Register Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026 dalam perkara antara:
+=== 99 PTSP/@ 2a - PHS - Sita Dikabulkan/10155_s1.txt
+-		Ketua Majelis Pengadilan Agama Donggala membaca Penetapan Ketua Majelis Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026 dan gugatan Penggugat yang terdaftar dalam Register Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026 dalam perkara antara:
++		Ketua Majelis Pengadilan Agama Donggala membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026 dan gugatan Penggugat yang terdaftar dalam Register Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026 dalam perkara antara:
+=== 99 PTSP/@ 2a - PHS - Sita Dikabulkan/10163_s1.txt
+-		Ketua Majelis Pengadilan Agama Donggala membaca Penetapan Ketua Majelis Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026 dan gugatan Penggugat yang terdaftar dalam Register Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026 dalam perkara antara:
++		Ketua Majelis Pengadilan Agama Donggala membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026 dan gugatan Penggugat yang terdaftar dalam Register Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026 dalam perkara antara:
+=== 99 PTSP/@ 2a - PHS - Sita Dikabulkan/10246_s1.txt
+-		Ketua Majelis Pengadilan Agama Donggala membaca Penetapan Ketua Majelis Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026 dan gugatan Penggugat yang terdaftar dalam Register Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026 dalam perkara antara:
++		Ketua Majelis Pengadilan Agama Donggala membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026 dan gugatan Penggugat yang terdaftar dalam Register Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026 dalam perkara antara:
+=== 99 PTSP/@ 2a - PHS - Sita Dikabulkan/10275_s1.txt
+-		Hakim Pengadilan Agama Donggala membaca Penetapan Hakim Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026 dan permohonan Pemohon yang terdaftar dalam Register Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026 dalam perkara antara:
++		Hakim Pengadilan Agama Donggala membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026 dan permohonan Pemohon yang terdaftar dalam Register Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026 dalam perkara antara:
+=== 99 PTSP/@ 2b - PHS - Sita Ditolak/10083_s1.txt
+-		Ketua Majelis Pengadilan Agama Donggala membaca Penetapan Ketua Majelis Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026 dan permohonan Pemohon yang terdaftar dalam Register Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026 dalam perkara antara:
++		Ketua Majelis Pengadilan Agama Donggala membaca Penetapan Wakil Ketua Pengadilan Agama Donggala Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026 dan permohonan Pemohon yang terdaftar dalam Register Nomor 537/Pdt.G/2026/PA.Dgl Tanggal 24 Agustus 2026 dalam perkara antara:
+=== 99 PTSP/@ 2b - PHS - Sita Ditolak/10155_s1.txt
+-		Ketua Majelis Pengadilan Agama Donggala membaca Penetapan Ketua Majelis Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026 dan gugatan Penggugat yang terdaftar dalam Register Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026 dalam perkara antara:
++		Ketua Majelis Pengadilan Agama Donggala membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026 dan gugatan Penggugat yang terdaftar dalam Register Nomor 602/Pdt.G/2026/PA.Dgl Tanggal 18 September 2026 dalam perkara antara:
+=== 99 PTSP/@ 2b - PHS - Sita Ditolak/10163_s1.txt
+-		Ketua Majelis Pengadilan Agama Donggala membaca Penetapan Ketua Majelis Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026 dan gugatan Penggugat yang terdaftar dalam Register Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026 dalam perkara antara:
++		Ketua Majelis Pengadilan Agama Donggala membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026 dan gugatan Penggugat yang terdaftar dalam Register Nomor 610/Pdt.G/2026/PA.Dgl Tanggal 22 September 2026 dalam perkara antara:
+=== 99 PTSP/@ 2b - PHS - Sita Ditolak/10246_s1.txt
+-		Ketua Majelis Pengadilan Agama Donggala membaca Penetapan Ketua Majelis Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026 dan gugatan Penggugat yang terdaftar dalam Register Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026 dalam perkara antara:
++		Ketua Majelis Pengadilan Agama Donggala membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026 dan gugatan Penggugat yang terdaftar dalam Register Nomor 675/Pdt.G/2026/PA.Dgl Tanggal 16 Oktober 2026 dalam perkara antara:
+=== 99 PTSP/@ 2b - PHS - Sita Ditolak/10275_s1.txt
+-		Hakim Pengadilan Agama Donggala membaca Penetapan Hakim Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026 dan permohonan Pemohon yang terdaftar dalam Register Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026 dalam perkara antara:
++		Hakim Pengadilan Agama Donggala membaca Penetapan Ketua Pengadilan Agama Donggala Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026 dan permohonan Pemohon yang terdaftar dalam Register Nomor 261/Pdt.P/2026/PA.Dgl Tanggal 23 Oktober 2026 dalam perkara antara:
+=== 99 PTSP/@ 3 - PMH - PHS Ikrar Talak/10083_s1.txt
+-Memperhatikan, Pasal 11 ayat (3) Undang-Undang Nomor 48 Tahun 2009 Tentang Kekuasaan Kehakiman jo. Pasal 96 dan 97 Undang-Undang Nomor 7 Tahun 1989 Tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Seca
++Memperhatikan, Pasal 11 ayat (3) Undang-Undang Nomor 48 Tahun 2009 tentang Kekuasaan Kehakiman jo. Pasal 96 dan 97 Undang-Undang Nomor 7 Tahun 1989 tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Seca
+-Memperhatikan, Pasal 103 Undang-Undang Nomor 7 Tahun 1989 Tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009. Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Secara Elektronik, sebagaimana telah diubah dengan Peraturan Mahkamah Agung Nomor 7 tahun 2022
++Memperhatikan, Pasal 103 Undang-Undang Nomor 7 Tahun 1989 tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Secara Elektronik, sebagaimana telah diubah dengan Peraturan Mahkamah Agung Nomor 7 Tahun 2022
+=== 99 PTSP/@ 3 - PMH - PHS Ikrar Talak/10155_s1.txt
+-Memperhatikan, Pasal 11 ayat (3) Undang-Undang Nomor 48 Tahun 2009 Tentang Kekuasaan Kehakiman jo. Pasal 96 dan 97 Undang-Undang Nomor 7 Tahun 1989 Tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Seca
++Memperhatikan, Pasal 11 ayat (3) Undang-Undang Nomor 48 Tahun 2009 tentang Kekuasaan Kehakiman jo. Pasal 96 dan 97 Undang-Undang Nomor 7 Tahun 1989 tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Seca
+-Memperhatikan, Pasal 103 Undang-Undang Nomor 7 Tahun 1989 Tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009. Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Secara Elektronik, sebagaimana telah diubah dengan Peraturan Mahkamah Agung Nomor 7 tahun 2022
++Memperhatikan, Pasal 103 Undang-Undang Nomor 7 Tahun 1989 tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Secara Elektronik, sebagaimana telah diubah dengan Peraturan Mahkamah Agung Nomor 7 Tahun 2022
+=== 99 PTSP/@ 3 - PMH - PHS Ikrar Talak/10163_s1.txt
+-Memperhatikan, Pasal 11 ayat (3) Undang-Undang Nomor 48 Tahun 2009 Tentang Kekuasaan Kehakiman jo. Pasal 96 dan 97 Undang-Undang Nomor 7 Tahun 1989 Tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Seca
++Memperhatikan, Pasal 11 ayat (3) Undang-Undang Nomor 48 Tahun 2009 tentang Kekuasaan Kehakiman jo. Pasal 96 dan 97 Undang-Undang Nomor 7 Tahun 1989 tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Seca
+-Memperhatikan, Pasal 103 Undang-Undang Nomor 7 Tahun 1989 Tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009. Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Secara Elektronik, sebagaimana telah diubah dengan Peraturan Mahkamah Agung Nomor 7 tahun 2022
++Memperhatikan, Pasal 103 Undang-Undang Nomor 7 Tahun 1989 tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Secara Elektronik, sebagaimana telah diubah dengan Peraturan Mahkamah Agung Nomor 7 Tahun 2022
+=== 99 PTSP/@ 3 - PMH - PHS Ikrar Talak/10246_s1.txt
+-Memperhatikan, Pasal 11 ayat (3) Undang-Undang Nomor 48 Tahun 2009 Tentang Kekuasaan Kehakiman jo. Pasal 96 dan 97 Undang-Undang Nomor 7 Tahun 1989 Tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Seca
++Memperhatikan, Pasal 11 ayat (3) Undang-Undang Nomor 48 Tahun 2009 tentang Kekuasaan Kehakiman jo. Pasal 96 dan 97 Undang-Undang Nomor 7 Tahun 1989 tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Seca
+-Memperhatikan, Pasal 103 Undang-Undang Nomor 7 Tahun 1989 Tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009. Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Secara Elektronik, sebagaimana telah diubah dengan Peraturan Mahkamah Agung Nomor 7 tahun 2022
++Memperhatikan, Pasal 103 Undang-Undang Nomor 7 Tahun 1989 tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Secara Elektronik, sebagaimana telah diubah dengan Peraturan Mahkamah Agung Nomor 7 Tahun 2022
+=== 99 PTSP/@ 3 - PMH - PHS Ikrar Talak/10275_s1.txt
+-Memperhatikan, Pasal 11 ayat (3) Undang-Undang Nomor 48 Tahun 2009 Tentang Kekuasaan Kehakiman jo. Pasal 96 dan 97 Undang-Undang Nomor 7 Tahun 1989 Tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Seca
++Memperhatikan, Pasal 11 ayat (3) Undang-Undang Nomor 48 Tahun 2009 tentang Kekuasaan Kehakiman jo. Pasal 96 dan 97 Undang-Undang Nomor 7 Tahun 1989 tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Seca
+-Memperhatikan, Pasal 103 Undang-Undang Nomor 7 Tahun 1989 Tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009. Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Secara Elektronik, sebagaimana telah diubah dengan Peraturan Mahkamah Agung Nomor 7 tahun 2022
++Memperhatikan, Pasal 103 Undang-Undang Nomor 7 Tahun 1989 tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan terakhir dengan Undang-Undang Nomor 50 Tahun 2009, Peraturan Mahkamah Agung Nomor 1 Tahun 2019 tentang Administrasi Perkara dan Persidangan di Pengadilan Secara Elektronik, sebagaimana telah diubah dengan Peraturan Mahkamah Agung Nomor 7 Tahun 2022
+BERKAS 114, IDENTIK 0, BERUBAH 114
