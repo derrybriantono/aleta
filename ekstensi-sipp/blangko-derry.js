@@ -617,6 +617,10 @@
     hak: null,
     hakSaat: 0,
     aktif: false,
+    /** 30 Okt: keadaan tersimpan yang sedang dipulihkan sesudah muat ulang (null bila tidak ada) dan penandanya. */
+    pulih: null,
+    pulihJalan: false,
+    pulihBatas: null,
     sebagai: { peran: "", nama: "" },
     mode: "hari",
     /** 28 Okt 2026: daftar PTSP hanya perkara baru (sidang pertama) - bila dimatikan, semua perkara yang bersidang pada tanggal itu. */
@@ -912,6 +916,7 @@
     bangunAkar();
     segarkanTawar();
     renderSemua();
+    simpanKeadaan();
     if (!S.data && !S.memuat) void muatDaftar();
   }
   function tutup() {
@@ -922,6 +927,10 @@
     sembunyiTip();
     document.documentElement.classList.remove(KELAS_AKTIF);
     if (akar) akar.hidden = true;
+    clearTimeout(S.pulihBatas);
+    S.pulih = null;
+    S.pulihJalan = false;
+    simpanKeadaan();
     segarkanTawar();
   }
 
@@ -966,6 +975,7 @@
       `<div class="bd-tip" id="bd-tip" hidden role="tooltip"></div>` +
       `<div class="bd-toast" id="bd-toast" hidden role="status"></div>`;
     document.body.appendChild(akar);
+    akar.addEventListener("scroll", catatGulirPulih, { passive: true });
     // 20 Okt: tinggi kepala panel (yang menempel) dipakai CSS sebagai ruang lompat, supaya kotak yang difokuskan tidak tertutup.
     try {
       const atas = akar.querySelector(".bd-atas");
@@ -1136,7 +1146,7 @@
         "Lencana isian (Terisi a dari t, Isian lengkap): diukur otomatis; klik lencana untuk langsung membuka isian yang masih kosong.",
         "Lencana dokumen: Belum diunggah ke SIPP, Sudah dicetak, Sudah ada di SIPP, Belum waktunya (sidang belum tiba), Sudah minutasi.",
         "Klik perkara untuk memilihnya. Klik dua kali nomor perkara (atau tombol Ganti perkara) untuk kembali ke daftar. Pilihan Sidang menentukan sidang yang dipakai blangko.",
-        "Cetak massal: banyak perkara sekaligus menurut peran - Hakim putusan, Panitera Pengganti BAS, Juru sita relaas, PTSP penetapan awal.",
+        "Cetak massal: banyak perkara sekaligus menurut peran - Hakim putusan, Panitera Pengganti BAS, Juru sita relaas, PTSP penetapan awal dan sampul berkas perkara baru.",
       ],
     },
     "tampilan-daftar": {
@@ -1377,6 +1387,7 @@
     if (tombolMassal) tombolMassal.hidden = !berhakDaftar() || tesAktif();
     const ada = Boolean(S.pk);
     cari("#bd-setelah", akar).hidden = !ada;
+    simpanKeadaan();
   }
 
   // ── Daftar perkara ────────────────────────────────────────────────────────
@@ -1432,6 +1443,7 @@
       S.memuat = false;
       renderSemua();
       void lanjutTautan();
+      void lanjutPulih();
       return;
     }
     const nomor = ++nomorMuat;
@@ -1452,6 +1464,7 @@
     S.memuat = false;
     renderSemua();
     void lanjutTautan();
+    void lanjutPulih();
   }
 
   // ── Tautan dari Jadwal Sidang portal (19 Okt 2026) ────────────────────────
@@ -2422,6 +2435,8 @@
 
   const ALAT = {
     hakim: [
+      ["massal:put", "Draf putusan sidang hari ini"],
+      ["massal:salinan", "Salinan putusan perkara yang baru BHT"],
       ["putusanOto", "Putusan otomatis"],
       ["gugatan", "Isi dari gugatan (posita)"],
       ["saksi", "Set pertanyaan saksi"],
@@ -2452,6 +2467,8 @@
       ["kasir:otomatis", "Kasir otomatis (jurnal)"],
     ],
     ptsp: [
+      ["massal:sampul", "Sampul berkas perkara baru"],
+      ["massal:ptsp", "Penetapan awal perkara baru"],
       ["ptsp:dataumum", "Data Umum dari gugatan"],
       ["ptsp:ktp", "Isi data saksi dari foto KTP"],
     ],
@@ -2490,7 +2507,7 @@
    * sudah mengerjakannya (PP = BAS, juru sita = relaas) - kini membuka Cetak massal jenis itu. Alat yang ada di panel ALETA halaman
    * SIPP (kasir, PTSP) menyebut tempatnya, bukan "tahap berikutnya".
    */
-  const ALAT_MASSAL = { "massal:bas": "bas", "massal:rel": "rel" };
+  const ALAT_MASSAL = { "massal:put": "put", "massal:bas": "bas", "massal:rel": "rel", "massal:ptsp": "ptsp", "massal:sampul": "sampul", "massal:salinan": "salinan" };
   const ALAT_DI_SIPP = {
     "kasir:rekap": "Rekap kasir ada di panel ALETA halaman daftar perkara SIPP (bagian Kasir).",
     "kasir:otomatis": "Kasir otomatis ada di panel ALETA halaman daftar perkara SIPP (bagian Kasir).",
@@ -2499,7 +2516,7 @@
   };
   const alatTersedia = (id) => S.alatDaftar.has(id) || (Object.prototype.hasOwnProperty.call(ALAT_MASSAL, id) && typeof S.massal === "function");
   /** Alat yang menulis ke ABT/SIPP/e-Court atau mencatat kemajuan perkara: mati pada mode Tes putusan. */
-  const ALAT_MENULIS = new Set(["unggah", "massal:unggah", "massal:bas", "massal:rel", "konseptor", "kasir:otomatis", "ptsp:dataumum", "ptsp:ktp"]);
+  const ALAT_MENULIS = new Set(["unggah", "massal:unggah", "massal:put", "massal:bas", "massal:rel", "massal:ptsp", "massal:sampul", "massal:salinan", "konseptor", "kasir:otomatis", "ptsp:dataumum", "ptsp:ktp"]);
   function jalankanAlat(id) {
     tutupFloat();
     if (tesAktif() && ALAT_MENULIS.has(id)) return toast("Alat ini menulis atau mencatat; dimatikan pada mode Tes putusan.");
@@ -2819,6 +2836,129 @@
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Tetap di tempat saat halaman dimuat ulang (30 Okt 2026) - lihat blangko-derry-pulih.js
+  // ---------------------------------------------------------------------------
+  const PL = () => globalThis.aletaBdPulih || null;
+  /** Identitas pemilik keadaan: akun ALETA + pengguna ABT yang masuk (akun berganti = keadaan akun lain tidak dipulihkan). */
+  function idPulih() {
+    const p = PL();
+    if (!p) return "";
+    const b = cari("#header .h_right b, .h_right b");
+    return p.identitas(S.siapa, b ? String(b.textContent || "") : "");
+  }
+  /** Menyimpan penunjuk keadaan tampilan (bukan isinya). Diam bila pemulihan sedang berjalan, fitur tak terpasang, atau akun belum dikenal. */
+  function catatPulih(tambahan) {
+    const p = PL();
+    if (!p || !S.nyala || S.pulihJalan) return false;
+    const id = idPulih();
+    return id ? p.catat(id, tambahan || {}) : false;
+  }
+  function simpanKeadaan() {
+    if (!PL() || !S.nyala || S.pulihJalan) return;
+    if (!S.aktif) {
+      catatPulih({ buka: false });
+      return;
+    }
+    const pk = perkaraTerpilih();
+    const sid = pk ? riwayatPerkara(pk)[S.sidIdx] : null;
+    catatPulih({
+      buka: true,
+      nomor: S.pk || "",
+      sidangId: sid ? String(sid.sidangId || "") : "",
+      tanggalSidang: sid ? String(sid.tanggal || "") : "",
+      sebagai: { peran: S.sebagai.peran, nama: S.sebagai.nama },
+      mode: S.mode,
+      tgl: S.tgl,
+      dari: S.dari,
+      sampai: S.sampai,
+      ptspPertama: S.ptspPertama,
+      ...(S.pk ? {} : { blangko: null, langkah: "", gulir: 0, draf: null }),
+    });
+  }
+  /** Langkah (1-5) yang sedang di puncak layar dan posisi gulir; dicatat saat petugas menggulir. */
+  let jamGulirPulih = null;
+  function catatGulirPulih() {
+    if (!akar || S.pulihJalan || !S.aktif || !S.pk) return;
+    clearTimeout(jamGulirPulih);
+    jamGulirPulih = setTimeout(() => {
+      try {
+        if (!akar || S.pulihJalan) return;
+        const atas = akar.getBoundingClientRect().top;
+        let langkah = "";
+        for (const t of cariSemua(".bd-tahap[id]", akar)) if (t.getBoundingClientRect().top - atas <= 80) langkah = t.id;
+        catatPulih({ gulir: Math.max(0, Math.round(akar.scrollTop || 0)), langkah });
+      } catch {
+        /* gulir tidak tercatat: pemulihan tetap ke blangko yang sama */
+      }
+    }, 250);
+  }
+  function terapkanGulirPulih(k) {
+    if (!akar || !k) return;
+    const y = Math.max(0, Number(k.gulir) || 0);
+    const pasang = () => {
+      try {
+        if (y > 0) akar.scrollTop = y;
+        else if (k.langkah) {
+          const t = akar.querySelector("#" + k.langkah);
+          if (t && typeof t.scrollIntoView === "function") t.scrollIntoView({ block: "start" });
+        }
+      } catch {
+        /* gulir tidak dapat dipulihkan: tetap di atas */
+      }
+    };
+    pasang();
+    // Isi (pratinjau, isian) masih bertambah panjang: sekali lagi bila petugas belum menggulir sendiri.
+    const dipasang = akar.scrollTop;
+    setTimeout(() => {
+      if (akar && Math.abs((akar.scrollTop || 0) - dipasang) < 2) pasang();
+    }, 900);
+  }
+  /** Pemulihan selesai (atau tidak jadi): pencatatan normal kembali. Dipanggil juga oleh blangko-derry-isian.js sesudah blangko dipulihkan. */
+  function akhiriPulih(k) {
+    if (k && S.pulih && S.pulih !== k) return;
+    const lama = S.pulih;
+    S.pulih = null;
+    S.pulihJalan = false;
+    clearTimeout(S.pulihBatas);
+    if (lama) terapkanGulirPulih(lama);
+    simpanKeadaan();
+  }
+  /** Daftar perkara sudah termuat: pilih perkara + sidang yang tersimpan, lalu beri tahu tahap blangko. Sekali jalan; gagal = berhenti diam-diam. */
+  async function lanjutPulih() {
+    const k = S.pulih;
+    if (!k || k.jalan || !S.data) return;
+    k.jalan = true;
+    try {
+      const p = S.data.perkara.find((x) => x.nomorPerkara === k.nomor);
+      if (!p && !k.sudahLebar) {
+        // Perkara di luar daftar yang tampil sekarang: sekali melebar ke seluruh rentang (PTSP: cari nomor), lalu muat ulang daftar.
+        k.sudahLebar = true;
+        k.jalan = false;
+        if (ptspCari()) S.cariNomor = k.nomor;
+        else S.mode = "semua";
+        S.data = null;
+        return void muatDaftar();
+      }
+      if (!p) return akhiriPulih(k);
+      await muatRiwayatSidang(p);
+      if (S.pulih !== k) return;
+      pilihPerkara(p.nomorPerkara);
+      const sid = riwayatPerkara(p);
+      let i = k.sidangId ? sid.findIndex((x) => x.sidangId === k.sidangId) : -1;
+      if (i < 0 && k.tanggalSidang) i = sid.findIndex((x) => x.tanggal === k.tanggalSidang);
+      if (i >= 0 && i !== S.sidIdx) {
+        S.sidIdx = i;
+        renderSemua();
+        umumkanPerkara();
+      }
+      if (k.blangko || k.draf) document.dispatchEvent(new CustomEvent("aleta-bd-pulih", { detail: { blangko: k.blangko || null, draf: k.draf || null, langkah: k.langkah || "", gulir: Number(k.gulir) || 0 } }));
+      else akhiriPulih(k);
+    } catch {
+      akhiriPulih(k);
+    }
+  }
+
   // ──────────────────────────────────────────────────────────────────────────
   // Pemasangan
   // ──────────────────────────────────────────────────────────────────────────
@@ -2842,8 +2982,39 @@
       }
       S.tautan = null;
     }
+    // Muat ulang: tampilan Derry yang tadi terbuka dibuka lagi pada perkara, sidang, dan blangko yang sama (tanpa klik). Pilihan
+    // "Tampilan ABT lama" dan akun yang berbeda tidak memulihkan apa pun; tautan #bd= (di atas) selalu menang.
+    const k = pulihBisa();
+    if (k) {
+      mulaiPulih(k);
+      buka();
+      return;
+    }
     if (otomatisBuka()) buka();
     else segarkanTawar();
+  }
+  function pulihBisa() {
+    const p = PL();
+    if (!p || S.aktif || sesi(SESI_LAMA) === "1") return null;
+    if (!tombolDerry() || !S.siapa || !berhakDaftar()) return null;
+    const k = p.ambil(idPulih());
+    if (!k || k.buka !== true) return null;
+    // Halaman lain di ABT (grup lain sedang aktif): tidak merebut tampilan.
+    if (!(derryAktifDiHalaman() || !grupLainAktif())) return null;
+    return k;
+  }
+  function mulaiPulih(k) {
+    const sebagai = k.sebagai && typeof k.sebagai === "object" ? k.sebagai : null;
+    if (sebagai && adm() && sebagai.nama && ["hakim", "pp", "js", "ptsp"].includes(String(sebagai.peran))) S.sebagai = { peran: String(sebagai.peran), nama: String(sebagai.nama) };
+    if (["hari", "tanggal", "rentang", "semua"].includes(k.mode)) S.mode = k.mode;
+    if (typeof k.tgl === "string") S.tgl = k.tgl;
+    if (typeof k.dari === "string") S.dari = k.dari;
+    if (typeof k.sampai === "string") S.sampai = k.sampai;
+    if (typeof k.ptspPertama === "boolean") S.ptspPertama = k.ptspPertama;
+    if (!k.nomor) return; // tidak ada perkara terbuka: hanya tampilannya yang dipulihkan
+    S.pulih = { ...k, jalan: false };
+    S.pulihJalan = true;
+    S.pulihBatas = setTimeout(() => akhiriPulih(S.pulih), 25000);
   }
 
   async function mulai() {
@@ -2862,6 +3033,13 @@
         }
       }
       document.addEventListener("click", saatKlikDokumen, true);
+      // 30 Okt: keadaan terakhir (dan gulir) dicatat juga tepat sebelum halaman ditinggalkan / dimuat ulang.
+      window.addEventListener("pagehide", () => {
+        if (!S.pulihJalan) {
+          simpanKeadaan();
+          if (akar && S.aktif && S.pk) catatPulih({ gulir: Math.max(0, Math.round(akar.scrollTop || 0)) });
+        }
+      });
       try {
         chrome.storage.onChanged.addListener(saatPenyimpananBerubah);
       } catch {
@@ -2917,6 +3095,23 @@
     tesPutusan: () => tesAktif(),
     muatHak,
     siapa: () => (S.siapa ? { ...S.siapa, sebagai: { ...S.sebagai } } : null),
+    /** 30 Okt: tetap di tempat saat dimuat ulang - dipakai blangko-derry-isian.js untuk mencatat blangko/draf dan menutup pemulihan. */
+    pulih: {
+      sedangJalan: () => S.pulihJalan,
+      catat: (tambahan) => catatPulih(tambahan),
+      selesai: () => akhiriPulih(S.pulih),
+      konteks: () => (S.pk ? { nomor: S.pk } : null),
+      catatDraf: (konteks, kode, nilai) => {
+        const p = PL();
+        const id = idPulih();
+        return Boolean(p && id && !S.pulihJalan && p.catatDraf(id, konteks, kode, nilai));
+      },
+      hapusDraf: (konteks, kode) => {
+        const p = PL();
+        const id = idPulih();
+        return Boolean(p && id && !S.pulihJalan && p.hapusDraf(id, konteks, kode));
+      },
+    },
     /** Tahap F-G sudah mengisi wadah ini: tanda "menyusul" dan isi penampung dihapus. */
     tahapSiap(nama) {
       const w = akar ? cari(`[data-wadah="${nama}"]`, akar) : null;

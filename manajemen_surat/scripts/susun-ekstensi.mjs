@@ -125,6 +125,8 @@ const BERKAS = [
   // tahap A) dimuat sebelumnya; blangko-derry-isian.js (tahap F-G: perlu
   // diisi, bukti, tanya jawab, pratinjau, cetak) sesudahnya.
   "abt-klien.js",
+  // Tetap di tempat saat halaman dimuat ulang (30 Okt 2026): keadaan tampilan Derry di sessionStorage tab; dimuat sebelum blangko-derry.js.
+  "blangko-derry-pulih.js",
   "blangko-derry.js",
   // Jawaban saksi otomatis + pilihan pengetahuan saksi di Blangko Derry (19 Okt 2026): pembantu murni,
   // dimuat sebelum blangko-derry-isian.js yang memakainya.
@@ -141,6 +143,9 @@ const BERKAS = [
   "blangko-derry-berkas.js",
   // Periksa sebelum cetak (G1, 30 Okt 2026): satu daftar temuan di langkah Cetak; murni, sebelum blangko-derry-isian.js.
   "blangko-derry-periksa.js",
+  // Keterangan pasif "N bagian berubah sejak cetakan terakhir" (30 Okt 2026) dan pustaka kalimat pribadi (30 Okt 2026); dimuat sebelum blangko-derry-isian.js.
+  "blangko-derry-beda-cetak.js",
+  "blangko-derry-pustaka.js",
   "blangko-derry-isian.js",
   // Cetak massal Blangko Derry (20 Okt 2026): jendela besar per peran, memakai pengemudi satu-perkara di blangko-derry-isian.js.
   "blangko-derry-massal.js",

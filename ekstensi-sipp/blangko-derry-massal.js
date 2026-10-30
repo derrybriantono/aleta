@@ -31,15 +31,22 @@
   // ──────────────────────────────────────────────────────────────────────────
   const API_PERKARA = "/aleta/api/aleta-ecourt/perkara-saya";
   const API_GABUNG = "/aleta/api/aleta-ecourt/pdf-gabung";
+  const API_SALINAN = "/aleta/api/aleta-ecourt/salinan-bht";
   const K_CETAK_BLANGKO = "blangkoDerryCetakBlangko";
   const BATAS_DOKUMEN = 40;
   const JEDA_MS = 1200;
   const BATAS_GABUNG_BASE64 = 20 * 1024 * 1024;
   const JANGKAUAN_PTSP_HARI = 28;
   const URUT_JENIS = ["put", "bas", "rel", "ptsp"];
-  const JUDUL_JENIS = { put: "Putusan", bas: "Berita acara sidang (BAS)", rel: "Relaas panggilan dan pemberitahuan putusan", ptsp: "Penetapan awal (PMH, PPP, PJS, PHS)" };
-  const NAMA_BERKAS_JENIS = { put: "Putusan", bas: "BAS", rel: "Relaas", ptsp: "Penetapan" };
-  const NAMA_PERAN_TAMPIL = { put: "Hakim", bas: "Panitera Pengganti", rel: "Juru sita", ptsp: "PTSP" };
+  /** Jenis tambahan (30 Okt 2026) yang hanya dibuka lewat Alat saya (sampul PTSP, salinan putusan BHT); pemilih jenis bawaan tidak berubah. */
+  const JENIS_EKSTRA = ["sampul", "salinan"];
+  const JUDUL_JENIS = { put: "Putusan", bas: "Berita acara sidang (BAS)", rel: "Relaas panggilan dan pemberitahuan putusan", ptsp: "Penetapan awal (PMH, PPP, PJS, PHS)", sampul: "Sampul berkas perkara baru", salinan: "Salinan putusan perkara yang baru BHT" };
+  const NAMA_BERKAS_JENIS = { put: "Putusan", bas: "BAS", rel: "Relaas", ptsp: "Penetapan", sampul: "Sampul", salinan: "Salinan BHT" };
+  const NAMA_PERAN_TAMPIL = { put: "Hakim", bas: "Panitera Pengganti", rel: "Juru sita", ptsp: "PTSP", sampul: "PTSP", salinan: "Hakim" };
+  /** 30 Okt 2026 (5.3): jenis yang daftarnya perkara baru menurut sidang pertama (rentang tanggal), bukan sidang pada satu tanggal. */
+  const jenisPtsp = (j) => j === "ptsp" || j === "sampul";
+  const BERKAS_SAMPUL = "Sampul Berkas Perkara.rtf";
+  const KELOMPOK_SAMPUL = "99 PTSP";
   const PERAN_JENIS = { put: "hakim", bas: "pp", rel: "js" };
   const JENIS_PERAN = { hakim: "put", pp: "bas", js: "rel", ptsp: "ptsp" };
   // 28 Okt 2026: PTSP memilih penetapan mana yang dicetak. Empat penetapan awal tercentang sejak awal (perilaku lama); PMH+PHS gabungan
@@ -207,11 +214,15 @@
           if (b.sudahAda) b.catatan = "BAS sidang ini sudah ada di SIPP";
           hasil.push(b);
         }
-      } else if (jenis === "ptsp") {
+      } else if (jenis === "ptsp" || jenis === "sampul") {
         const urut = (Array.isArray(p.sidang) ? p.sidang : []).slice().sort((a, b) => String(a.tanggal).localeCompare(String(b.tanggal)) || (a.urutan || 0) - (b.urutan || 0));
         const pertama = urut.find((s) => (Number(s.urutan) || 1) <= 1) || null;
         const batasAtas = o.sampai && o.sampai >= tanggal ? o.sampai : tambahHari(tanggal, JANGKAUAN_PTSP_HARI);
         if (!pertama || !pertama.tanggal || pertama.tanggal < tanggal || pertama.tanggal > batasAtas) continue;
+        if (jenis === "sampul") {
+          hasil.push(buat(p, pertama));
+          continue;
+        }
         const dipakai = POLA_PTSP.filter((x) => (Array.isArray(o.penetapan) ? o.penetapan.includes(x.label) : x.utama));
         for (const x of dipakai) hasil.push(buat(p, pertama, x));
       }
@@ -278,6 +289,17 @@
     const ada = d.jenisBoleh();
     return URUT_JENIS.filter((j) => ada.includes(j));
   }
+  /** Jenis tambahan yang boleh dibuka akun ini lewat Alat saya: sampul (hak PTSP + mesin sampul terpasang), salinan BHT (hak putusan). */
+  function jenisEkstra() {
+    const d = driver();
+    if (!d) return [];
+    const ada = d.jenisBoleh();
+    const bk = globalThis.AletaBerkasKhusus;
+    const hasil = [];
+    if (ada.includes("ptsp") && bk && typeof bk.cetakSampulTanpaLayar === "function") hasil.push("sampul");
+    if (ada.includes("put")) hasil.push("salinan");
+    return hasil;
+  }
   /** Jenis bawaan menurut peran akun; Super Admin/Admin mulai dari putusan. */
   function jenisBawaan(ada) {
     const a = api();
@@ -291,16 +313,16 @@
     const q = new URLSearchParams();
     q.set("mode", "rentang");
     q.set("dari", M.tanggal);
-    q.set("sampai", M.jenis === "ptsp" ? sampaiPtsp() : M.tanggal);
+    q.set("sampai", jenisPtsp(M.jenis) ? sampaiPtsp() : M.tanggal);
     if (adm()) {
       const kd = api() && typeof api().keadaan === "function" ? api().keadaan() : null;
       if (kd && kd.sebagai && kd.sebagai.nama && kd.sebagai.peran) {
         q.set("sebagai", kd.sebagai.nama);
         q.set("peranSebagai", kd.sebagai.peran);
         // Admin yang melihat sebagai akun PTSP: perkara satker seperti yang dilihat PTSP (baca saja).
-        if (kd.sebagai.peran === "ptsp" && M.jenis === "ptsp") q.set("massal", "ptsp");
+        if (kd.sebagai.peran === "ptsp" && jenisPtsp(M.jenis)) q.set("massal", "ptsp");
       }
-    } else if (M.jenis === "ptsp") q.set("massal", "ptsp");
+    } else if (jenisPtsp(M.jenis)) q.set("massal", "ptsp");
     else if (M.jenis === "bas" && M.semua) q.set("massal", "bas");
     return `${API_PERKARA}?${q.toString()}`;
   }
@@ -326,6 +348,7 @@
   function tetapkanBlangko(b) {
     const d = driver();
     b.alternatif = [];
+    if (b.jenis === "sampul") return pasangBlangko(b, KELOMPOK_SAMPUL, BERKAS_SAMPUL);
     if (b.jenis === "ptsp") {
       for (const k of M.menu.filter((x) => x.jenis === "ptsp")) {
         const ketemu = k.berkas.find((x) => b.pola && b.pola.test(tanpaRtf(x)));
@@ -337,7 +360,7 @@
     }
     let saran = [];
     try {
-      saran = d.saran(b.item, b.jenis);
+      saran = d.saran(b.item, b.jenis === "salinan" ? "put" : b.jenis);
     } catch {
       saran = [];
     }
@@ -440,6 +463,45 @@
   // ──────────────────────────────────────────────────────────────────────────
   // Memuat daftar
   // ──────────────────────────────────────────────────────────────────────────
+  /**
+   * Salinan putusan perkara yang baru BHT (30 Okt 2026): daftar dari portal (pendeteksi BHT dari SIPP) digabung dengan "Semua perkara saya"
+   * supaya sidang putusannya diketahui; blangko putusan dipilih mesin saran yang sama, hasilnya PDF SALINAN (naskah ABT, "ttd", tanda
+   * tangan Panitera) lewat alur cetak salinan yang ada. Perkara yang tidak ada di daftar akun ini ditampilkan, tidak dapat dipilih.
+   */
+  async function barisSalinan() {
+    const d = driver();
+    const j = await d.ambilPortal(API_SALINAN, {}, "Membaca perkara yang baru BHT");
+    const bht = j && Array.isArray(j.perkara) ? j.perkara : [];
+    if (!bht.length) return [];
+    const q = new URLSearchParams({ mode: "semua" });
+    if (adm()) {
+      const kd = api() && typeof api().keadaan === "function" ? api().keadaan() : null;
+      if (kd && kd.sebagai && kd.sebagai.nama && kd.sebagai.peran) {
+        q.set("sebagai", kd.sebagai.nama);
+        q.set("peranSebagai", kd.sebagai.peran);
+      }
+    }
+    const data = await d.ambilPortal(`${API_PERKARA}?${q.toString()}`, {}, "Membaca daftar perkara");
+    const peta = new Map((data && Array.isArray(data.perkara) ? data.perkara : []).map((p) => [p.nomorPerkara, p]));
+    const hasil = [];
+    for (const b of bht) {
+      const p = peta.get(b.nomorPerkara);
+      const ket = `BHT ${tglIndo(b.tanggalBht)}`;
+      const dasar = p ? barisDariPerkara("put", [p], p.tanggalPutusan || b.tanggalPutusan || "", { semuaSidang: true, abaikanPeran: true }) : [];
+      if (dasar.length) {
+        const r = dasar[0];
+        r.jenis = "salinan";
+        r.id = `salinan|${p.perkaraId || p.nomorPerkara}`;
+        r.agenda = ket;
+        r.sudahAda = false;
+        r.catatan = "";
+        hasil.push(r);
+      } else {
+        hasil.push({ id: `salinan|${b.perkaraId}`, jenis: "salinan", nomor: b.nomorPerkara, perkaraId: String(b.perkaraId), pihak: "", jenisPerkara: "", tanggal: b.tanggalPutusan || "", agenda: ket, label: "", pola: null, sudahAda: false, catatan: p ? "sidang putusan tidak ditemukan" : "tidak ada di daftar perkara akun ini", status: "tanpa", item: null, berkas: "" });
+      }
+    }
+    return hasil;
+  }
   async function bacaPernah() {
     M.pernah = new Map();
     try {
@@ -552,16 +614,21 @@
       await bacaPernah();
       let baris;
       if (M.jenis === "rel") baris = await barisRelaas();
+      else if (M.jenis === "salinan") baris = await barisSalinan();
       else {
         const data = await d.ambilPortal(alamatPerkara(), {}, "Membaca daftar perkara");
-        baris = barisDariPerkara(M.jenis, data && data.perkara, M.tanggal, { semuaSidang: M.semuaSidang, abaikanPeran: M.jenis === "ptsp", sampai: M.jenis === "ptsp" ? sampaiPtsp() : "", penetapan: M.penetapan });
+        baris = barisDariPerkara(M.jenis, data && data.perkara, M.tanggal, { semuaSidang: M.semuaSidang, abaikanPeran: jenisPtsp(M.jenis), sampai: jenisPtsp(M.jenis) ? sampaiPtsp() : "", penetapan: M.penetapan });
       }
       if (nomor !== M.urut) return;
-      M.menu = await d.menu(M.jenis);
-      if (M.jenis !== "rel" && M.jenis !== "ptsp") await d.muatSaranTanggal(M.tanggal);
+      M.menu = M.jenis === "sampul" ? [] : await d.menu(M.jenis === "salinan" ? "put" : M.jenis);
+      if (M.jenis === "salinan") {
+        // saran blangko dibaca per tanggal sidang putusan masing-masing perkara
+        for (const t of new Set(baris.filter((b) => b.item && b.tanggal).map((b) => b.tanggal))) await d.muatSaranTanggal(t);
+      } else if (M.jenis !== "rel" && !jenisPtsp(M.jenis)) await d.muatSaranTanggal(M.tanggal);
       if (nomor !== M.urut) return;
       for (const b of baris) {
         if (M.jenis === "rel") tetapkanBlangkoRelaas(b);
+        else if (b.jenis === "salinan" && !b.item) continue;
         else tetapkanBlangko(b);
       }
       M.baris = baris;
@@ -592,8 +659,9 @@
       `<label class="bd-ms-cek"><input type="checkbox" data-mscek="${esc(b.id)}" ${dipilih ? "checked" : ""} ${tanpa || kunci ? "disabled" : ""} aria-label="Pilih ${esc(b.nomor)}"></label>` +
       `<div class="bd-ms-pk"><b class="bd-ms-no">${esc(nomorPendek(b.nomor))}</b><span class="bd-ms-pihak">${esc(b.pihak)}</span>` +
       `<small>${esc([b.label && b.jenis === "ptsp" ? b.label : "", b.tanggal ? tglIndo(b.tanggal) : "", b.agenda].filter(Boolean).join(" · "))}</small></div>` +
-      `<div class="bd-ms-bl">${tanpa ? `<span class="bd-ms-kosong">Belum ada blangko</span>` : `<span class="bd-ms-nama" title="${esc(b.berkas)}">${esc(driver().namaTampil(b.berkas, b.jenis))}</span>`}` +
-      `<button type="button" class="bd-btn kecil" data-msganti="${esc(b.id)}" ${kunci ? "disabled" : ""}>${tanpa ? "Pilih blangko" : "Ganti"}</button></div>` +
+      `<div class="bd-ms-bl">${tanpa ? `<span class="bd-ms-kosong">Belum ada blangko</span>` : `<span class="bd-ms-nama" title="${esc(b.berkas)}">${esc(b.jenis === "sampul" ? "Sampul berkas perkara" : driver().namaTampil(b.berkas, b.jenis))}</span>`}` +
+      (b.jenis === "sampul" || !b.item ? "" : `<button type="button" class="bd-btn kecil" data-msganti="${esc(b.id)}" ${kunci ? "disabled" : ""}>${tanpa ? "Pilih blangko" : "Ganti"}</button>`) +
+      `</div>` +
       `<div class="bd-ms-st"><span class="bd-ms-chip st-${b.status}">${ikon(b.status) ? `<i aria-hidden="true">${ikon(b.status)}</i> ` : ""}${esc(label)}</span>${rincian ? `<small>${esc(rincian)}</small>` : ""}</div>` +
       `</div>`
     );
@@ -635,7 +703,7 @@
     const akar = el("bd-massal-modal");
     if (!akar || !M.terbuka) return;
     const d = driver();
-    const ada = jenisBoleh();
+    const ada = jenisBoleh().concat(JENIS_EKSTRA.includes(M.jenis) ? [M.jenis] : []);
     const sibuk = M.jalan !== "";
     const pilihJumlah = M.pilih.size;
     const siapAda = M.baris.filter(bolehDipilihSiap).length;
@@ -651,9 +719,9 @@
           : M.jenis === "put"
             ? `<label class="bd-cek"><input type="checkbox" id="bd-ms-semuasidang" ${M.semuaSidang ? "checked" : ""} ${sibuk ? "disabled" : ""}> Tampilkan semua sidang hari itu</label>`
             : "";
-    const ketTanggal = M.jenis === "ptsp" ? "Sidang pertama dari" : M.jenis === "rel" ? "Relaas yang lahir pada" : "Tanggal sidang";
+    const ketTanggal = jenisPtsp(M.jenis) ? "Sidang pertama dari" : M.jenis === "rel" ? "Relaas yang lahir pada" : "Tanggal sidang";
     const rentangPtsp =
-      M.jenis === "ptsp"
+      jenisPtsp(M.jenis)
         ? `<label class="bd-lbl" for="bd-ms-sampai">sampai</label><input type="date" id="bd-ms-sampai" value="${esc(sampaiPtsp())}" min="${esc(M.tanggal)}" ${sibuk ? "disabled" : ""}>`
         : "";
     const pilihanPtsp =
@@ -675,27 +743,29 @@
         ? `<div class="bd-peringatan" role="alert">${esc(M.galat)} <button type="button" class="bd-btn kecil" data-ms="muat">Coba lagi</button></div>`
         : M.baris.length
           ? `<div class="bd-ms-daftar" role="list">${M.baris.map(barisHtml).join("")}</div>`
-          : `<p class="bd-catat">Tidak ada ${M.jenis === "put" ? "perkara yang diputus atau beragenda putusan" : M.jenis === "bas" ? "sidang" : M.jenis === "rel" ? "relaas" : "perkara baru"} pada tanggal ini.</p>`;
+          : `<p class="bd-catat">Tidak ada ${M.jenis === "put" ? "perkara yang diputus atau beragenda putusan" : M.jenis === "bas" ? "sidang" : M.jenis === "rel" ? "relaas" : M.jenis === "salinan" ? "perkara BHT yang salinannya belum diurus" : "perkara baru"}${M.jenis === "salinan" ? "." : " pada tanggal ini."}</p>`;
     const sebelumGulir = akar.querySelector(".bd-ms-daftar") ? akar.querySelector(".bd-ms-daftar").scrollTop : 0;
     akar.innerHTML =
       `<div class="bd-ms-kotak" role="dialog" aria-modal="true" aria-label="Cetak massal">` +
       `<div class="bd-ms-kepala"><div><b>Cetak massal</b> <small>${esc(adm() ? "Super Admin / Admin" : NAMA_PERAN_TAMPIL[M.jenis] || "")}</small></div>` +
       `<button type="button" class="bd-btn kecil" data-ms="tutup" ${sibuk ? "disabled" : ""}>Tutup</button></div>` +
-      `<div class="bd-ms-kontrol"><label class="bd-lbl" for="bd-ms-tgl">${ketTanggal}</label><input type="date" id="bd-ms-tgl" value="${esc(M.tanggal)}" ${sibuk ? "disabled" : ""}>${rentangPtsp}` +
-      `<button type="button" class="bd-btn kecil" data-ms="hariini" ${sibuk ? "disabled" : ""}>Hari ini</button>${kontrolJenis}${saringan}</div>` +
+      (M.jenis === "salinan"
+        ? `<div class="bd-ms-kontrol"><span class="bd-catat">Perkara yang baru BHT menurut SIPP (14 hari terakhir) dan salinannya belum dicetak</span>${kontrolJenis}</div>`
+        : `<div class="bd-ms-kontrol"><label class="bd-lbl" for="bd-ms-tgl">${ketTanggal}</label><input type="date" id="bd-ms-tgl" value="${esc(M.tanggal)}" ${sibuk ? "disabled" : ""}>${rentangPtsp}` +
+          `<button type="button" class="bd-btn kecil" data-ms="hariini" ${sibuk ? "disabled" : ""}>Hari ini</button>${kontrolJenis}${saringan}</div>`) +
       pilihanPtsp +
       `<div class="bd-ms-aksi"><button type="button" class="bd-btn kecil" data-ms="pilihsiap" ${sibuk || !siapAda ? "disabled" : ""}>Pilih semua yang siap</button>` +
       `<button type="button" class="bd-btn kecil" data-ms="kosongkan" ${sibuk || !pilihJumlah ? "disabled" : ""}>Kosongkan pilihan</button>` +
       `<span class="bd-catat" id="bd-ms-hitung">${pilihJumlah} dipilih dari ${M.baris.length}${pilihJumlah > BATAS_DOKUMEN ? ` · paling banyak ${BATAS_DOKUMEN} sekali jalan` : ""}</span>` +
-      `<button type="button" class="bd-btn kecil" data-ms="isi" ${sibuk || !pilihJumlah ? "disabled" : ""}>Isi otomatis semua</button></div>` +
+      `${M.jenis === "sampul" || M.jenis === "salinan" ? "" : `<button type="button" class="bd-btn kecil" data-ms="isi" ${sibuk || !pilihJumlah ? "disabled" : ""}>Isi otomatis semua</button>`}</div>` +
       badan +
       hasilServerHtml() +
       pulihHtml() +
       ringkasanHtml() +
       `<div class="bd-ms-kaki"><div class="bd-ms-format" role="radiogroup" aria-label="Bentuk hasil">` +
-      `<label class="bd-cek"><input type="radio" name="bd-ms-format" value="rtf" ${M.format === "rtf" ? "checked" : ""} ${sibuk ? "disabled" : ""}> RTF (satu ZIP)</label>` +
-      `<label class="bd-cek"><input type="radio" name="bd-ms-format" value="pdf" ${M.format === "pdf" ? "checked" : ""} ${sibuk ? "disabled" : ""}> PDF gabungan</label>` +
-      `<label class="bd-cek"><input type="checkbox" id="bd-ms-ttd" ${M.ttd ? "checked" : ""} ${sibuk || M.format !== "pdf" ? "disabled" : ""}> Bubuhkan tanda tangan sah</label></div>` +
+      `<label class="bd-cek"><input type="radio" name="bd-ms-format" value="rtf" ${M.format === "rtf" && M.jenis !== "salinan" ? "checked" : ""} ${sibuk || M.jenis === "salinan" ? "disabled" : ""}> RTF (satu ZIP)</label>` +
+      `<label class="bd-cek"><input type="radio" name="bd-ms-format" value="pdf" ${M.format === "pdf" || M.jenis === "salinan" ? "checked" : ""} ${sibuk || M.jenis === "salinan" ? "disabled" : ""}> PDF gabungan</label>` +
+      `<label class="bd-cek"><input type="checkbox" id="bd-ms-ttd" ${M.ttd ? "checked" : ""} ${sibuk || M.format !== "pdf" || M.jenis === "sampul" || M.jenis === "salinan" ? "disabled" : ""}> Bubuhkan tanda tangan sah</label></div>` +
       `<div class="bd-ms-tombol">${kemajuan}${sibuk ? `<button type="button" class="bd-btn" data-ms="henti" ${M.henti ? "disabled" : ""}>${M.henti ? "Menghentikan…" : "Hentikan"}</button>` : ""}` +
       `<button type="button" class="bd-btn utama besar" data-ms="cetak" ${sibuk || !pilihJumlah ? "disabled" : ""}>${M.jalan === "cetak" ? "Sedang mencetak…" : `Cetak${pilihJumlah ? ` ${pilihJumlah}` : ""}`}</button></div></div>` +
       pickerHtml() +
@@ -899,15 +969,26 @@
   async function lengkapiPdfLokal(hasil, d) {
     for (const x of hasil) {
       if (x.h.pdf) continue;
-      x.h = await d.cetakSatu(x.baris.item, { pdf: true, ttd: M.ttd, isiOto: false });
+      x.h = await cetakSatuBaris(d, x.baris, { pdf: true, ttd: M.ttd });
     }
+  }
+
+  /** Satu baris -> hasil cetak. Sampul (PTSP) dikerjakan mesin Sampul tanpa layar; selain itu pengemudi blangko biasa. */
+  async function cetakSatuBaris(d, b, opsi) {
+    if (b.jenis === "sampul") {
+      const bk = globalThis.AletaBerkasKhusus;
+      if (!bk || typeof bk.cetakSampulTanpaLayar !== "function") throw new Error("Mesin sampul belum terpasang. Muat ulang halaman ABT.");
+      return bk.cetakSampulTanpaLayar(d.hostBerkas(), { perkaraId: b.perkaraId, nomor: b.nomor }, { pdf: opsi.pdf });
+    }
+    if (b.jenis === "salinan") return d.cetakSatu(b.item, { pdf: true, salinan: true, ttd: false, isiOto: false });
+    return d.cetakSatu(b.item, { pdf: opsi.pdf, ttd: opsi.ttd, isiOto: false });
   }
 
   async function cetakSemua() {
     const dipilih = awal("cetak");
     if (!dipilih) return;
     const d = driver();
-    const pdf = M.format === "pdf";
+    const pdf = M.format === "pdf" || M.jenis === "salinan";
     gambar();
     const hasil = [];
     const gagal = [];
@@ -915,7 +996,7 @@
     // di peramban (gambar tanda tangan tidak dikirim), jadi PDF bertanda tangan tetap memakai jalur lama.
     const B = serverBerkas();
     let kerjaServer = null;
-    if (B && (!pdf || !M.ttd)) {
+    if (B && M.jenis !== "salinan" && (!pdf || !M.ttd)) {
       try {
         kerjaServer = await B.buat({ format: pdf ? "pdf" : "rtf", nama: `Cetak massal - ${NAMA_BERKAS_JENIS[M.jenis]} - ${M.tanggal}` });
       } catch {
@@ -931,7 +1012,7 @@
         M.kemajuan.sekarang = nomorPendek(b.nomor);
         segarkanBaris();
         try {
-          const h = await d.cetakSatu(b.item, { pdf: pdf && !kerjaServer, ttd: pdf && M.ttd && !kerjaServer, isiOto: false });
+          const h = await cetakSatuBaris(d, b, { pdf: pdf && !kerjaServer, ttd: pdf && M.ttd && !kerjaServer });
           const n = nilaiKeadaan(h.keadaan);
           // Cetak selesai walau ada yang perlu dicek: naskah tetap ikut, perkaranya ditandai supaya diperiksa.
           b.status = n.status === "cek" ? "cek" : "selesai";
@@ -983,6 +1064,14 @@
           }
         }
         teksHasil = await rakitLokal(hasil, pdf, d, nama);
+      }
+    }
+    // Salinan BHT: perkara yang salinannya BERHASIL dicetak dan hasilnya tersimpan ditutup di server (tidak muncul lagi); yang gagal tetap ada.
+    if (M.jenis === "salinan" && hasil.length && !/gagal|tidak dapat disimpan/i.test(teksHasil)) {
+      try {
+        await d.ambilPortal(API_SALINAN, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ aksi: "selesai", perkaraIds: hasil.map((x) => x.baris.perkaraId).filter(Boolean) }) }, "Menutup perkara BHT");
+      } catch {
+        /* tetap tampil di daftar berikutnya; dapat dicetak ulang */
       }
     }
     // K15: selesai bersih = salinan di server ditutup; dihentikan/ada yang gagal = keadaan terakhir disalin supaya dapat dilanjutkan.
@@ -1191,17 +1280,20 @@
     akar.hidden = false;
     sambungkan();
     M.terbuka = true;
-    if (typeof jenis === "string" && ada.includes(jenis)) M.jenis = jenis;
-    if (!M.jenis || !ada.includes(M.jenis)) M.jenis = jenisBawaan(ada);
+    const ekstra = jenisEkstra();
+    if (typeof jenis === "string" && (ada.includes(jenis) || ekstra.includes(jenis))) M.jenis = jenis;
+    else if (JENIS_EKSTRA.includes(M.jenis)) M.jenis = jenisBawaan(ada); // tombol Cetak massal biasa: tidak mewarisi jenis tambahan terakhir
+    if (!M.jenis || !(ada.includes(M.jenis) || (JENIS_EKSTRA.includes(M.jenis) && ekstra.includes(M.jenis)))) M.jenis = jenisBawaan(ada);
     M.tanggal = M.tanggal || tanggalLokal();
     // 28 Okt 2026: daftar perkara PTSP sedang "tanggal tertentu" / "rentang tanggal" -> Cetak massal PTSP memulai dari rentang yang sama.
     const kd = typeof a.keadaan === "function" ? a.keadaan() : null;
-    if (M.jenis === "ptsp" && kd && kd.ptspDaftar && kd.rentang && kd.rentang.dari) {
+    if (jenisPtsp(M.jenis) && kd && kd.ptspDaftar && kd.rentang && kd.rentang.dari) {
       M.tanggal = kd.rentang.dari;
       M.sampai = kd.rentang.sampai || kd.rentang.dari;
     }
     M.picker = null;
     M.ringkasan = null;
+    if (M.jenis === "salinan") M.format = "pdf";
     gambar();
     void muat();
   }
@@ -1214,7 +1306,7 @@
     atur(o) {
       if (o && Number.isFinite(Number(o.jedaMs))) jedaMs = Math.min(10000, Math.max(0, Number(o.jedaMs)));
     },
-    keadaan: () => ({ terbuka: M.terbuka, jenis: M.jenis, tanggal: M.tanggal, sampai: M.jenis === "ptsp" ? sampaiPtsp() : "", penetapan: M.penetapan.slice(), format: M.format, ttd: M.ttd, pilih: Array.from(M.pilih), jalan: M.jalan, baris: M.baris.map((b) => ({ id: b.id, nomor: b.nomor, status: b.status, berkas: b.berkas, kelompok: b.kelompok, catatan: b.catatan, label: b.label })) }),
+    keadaan: () => ({ terbuka: M.terbuka, jenis: M.jenis, tanggal: M.tanggal, sampai: jenisPtsp(M.jenis) ? sampaiPtsp() : "", penetapan: M.penetapan.slice(), format: M.format, ttd: M.ttd, pilih: Array.from(M.pilih), jalan: M.jalan, baris: M.baris.map((b) => ({ id: b.id, nomor: b.nomor, status: b.status, berkas: b.berkas, kelompok: b.kelompok, catatan: b.catatan, label: b.label })) }),
     murni: { buatZip, crc32, namaUnik, barisDariPerkara, nilaiKeadaan, pihakRingkas, beragendaPutus, batas: { dokumen: BATAS_DOKUMEN, jedaMs: JEDA_MS } },
   };
   globalThis.aletaBlangkoDerryMassal = apiMassal;

@@ -199,7 +199,9 @@ describe("peta fitur K11: kelompok manifest dan modul malas", () => {
     // 30 Okt 2026: bas-word-pdf.js = BAS Word ke PDF bertanda tangan di jendela e-Doc BAS SIPP (berkas baru di luar K11).
     // 30 Okt 2026 (G1): blangko-derry-periksa.js = Periksa sebelum cetak di Blangko Derry (berkas baru di luar K11).
     // 30 Okt 2026 (G2a): blangko-derry-draf-saksi.js = draf tanya jawab saksi otomatis, blangko-derry-draf-bas.js = BAS H-1 (pembantu murni Blangko Derry, di luar K11).
-    expect([...new Set(baru)].sort()).toEqual(["tampilan-sipp.js", "modul-malas.js", "bas-word-pdf.js", "sidang-terjadwal.js", "blangko-derry-berkas.js", "blangko-derry-draf-saksi.js", "blangko-derry-draf-bas.js", "blangko-derry-periksa.js"].sort());
+    // 30 Okt 2026: blangko-derry-beda-cetak.js = "N bagian berubah sejak cetakan terakhir"; blangko-derry-pustaka.js = pustaka kalimat pribadi (berkas baru di luar K11).
+    // 30 Okt 2026: blangko-derry-pulih.js = tampilan Derry tetap di tempat saat halaman dimuat ulang (berkas baru di luar K11).
+    expect([...new Set(baru)].sort()).toEqual(["tampilan-sipp.js", "modul-malas.js", "bas-word-pdf.js", "sidang-terjadwal.js", "blangko-derry-pulih.js", "blangko-derry-berkas.js", "blangko-derry-draf-saksi.js", "blangko-derry-draf-bas.js", "blangko-derry-periksa.js", "blangko-derry-beda-cetak.js", "blangko-derry-pustaka.js"].sort());
     const tanpaTampilan = sesudah.kelompok.filter((k) => !(k.js.length === 1 && k.js[0] === "tampilan-sipp.js"));
     expect(tanpaTampilan.map((k) => k.css.filter((c: string) => c !== "sidang-terjadwal.css"))).toEqual(sebelum.kelompok.map((k) => k.css));
   });

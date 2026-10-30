@@ -831,3 +831,20 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar .bd-periksabutir > span { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
 #aleta-bd-akar .bd-periksabutir > button { flex: 0 0 auto; }
 #aleta-bd-akar .bd-sorot { outline: 3px solid var(--accent); outline-offset: 2px; box-shadow: 0 0 0 6px var(--accentbg); transition: outline-color .3s; }
+
+/* 30 Okt 2026: keterangan pasif "N bagian berubah sejak cetakan terakhir" (langkah Cetak) dan pustaka kalimat pribadi */
+#aleta-bd-akar .bd-bedacetak { margin: 4px 0 0; font-size: 12px; color: var(--muted, inherit); }
+#aleta-bd-akar .bd-bedacetak summary { cursor: pointer; list-style: none; padding: 2px 0; }
+#aleta-bd-akar .bd-bedacetak summary::before { content: "\25B8 "; }
+#aleta-bd-akar .bd-bedacetak[open] summary::before { content: "\25BE "; }
+#aleta-bd-akar .bd-bedacetak.sama summary { opacity: .75; }
+#aleta-bd-akar .bd-bedacetak ul { margin: 4px 0 0; padding-left: 18px; max-height: 220px; overflow: auto; }
+#aleta-bd-akar .bd-bedacetak li { margin: 2px 0; overflow-wrap: anywhere; }
+#aleta-bd-akar .bd-pustaka { margin: 6px 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); display: flex; flex-direction: column; gap: 6px; }
+#aleta-bd-akar .bd-pusbaris { display: flex; gap: 6px; align-items: flex-start; }
+#aleta-bd-akar .bd-pusisip { flex: 1; text-align: left; display: flex; flex-direction: column; gap: 2px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--deep, transparent); color: inherit; cursor: pointer; font: inherit; }
+#aleta-bd-akar .bd-pusisip:hover, #aleta-bd-akar .bd-pusisip:focus-visible { border-color: var(--accent, currentColor); }
+#aleta-bd-akar .bd-pusisip small { color: var(--muted, inherit); }
+#aleta-bd-akar .bd-pussimpan { border-top: 1px dashed var(--line); padding-top: 6px; display: flex; flex-direction: column; gap: 4px; }
+#aleta-bd-akar .bd-pussimpan summary { cursor: pointer; font-weight: 600; }
+#aleta-bd-akar .bd-pusbagi { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; }

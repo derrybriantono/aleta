@@ -1110,6 +1110,94 @@
       /* tautan hanya kemudahan: petugas memilih blangko sendiri */
     }
   }
+  // ---------------------------------------------------------------------------
+  // Tetap di tempat saat halaman dimuat ulang (30 Okt 2026): kerangka (blangko-derry.js) memulihkan perkara dan sidang, lalu mengirim
+  // peristiwa "aleta-bd-pulih"; di sini blangko yang sama dibuka lagi dan ketikan yang belum sempat tersimpan dikembalikan sebagai DRAF
+  // di kotaknya (tanpa menulis ke ABT; petugas yang menyimpannya). Pencatatan blangko dan draf lewat api().pulih.
+  // ---------------------------------------------------------------------------
+  const PUL = () => {
+    const a = api();
+    return a && a.pulih ? a.pulih : null;
+  };
+  function konteksPulih() {
+    const p = PUL();
+    const k = p && p.konteks();
+    return k && S.blangko ? { nomor: k.nomor, berkas: S.blangko.berkas } : null;
+  }
+  function pulihCatat(tambahan) {
+    try {
+      const p = PUL();
+      if (p && !tes()) p.catat(tambahan);
+    } catch {
+      /* pencatatan keadaan hanya kemudahan */
+    }
+  }
+  function pulihCatatDraf(kode, nilai) {
+    try {
+      const p = PUL();
+      const k = konteksPulih();
+      if (p && k && !tes()) p.catatDraf(k, kode, nilai);
+    } catch {
+      /* draf hanya kemudahan */
+    }
+  }
+  function pulihHapusDraf(kode) {
+    try {
+      const p = PUL();
+      const k = konteksPulih();
+      if (p && k && !tes()) p.hapusDraf(k, kode);
+    } catch {
+      /* draf hanya kemudahan */
+    }
+  }
+  async function saatPulih(e) {
+    const d = e && e.detail;
+    const p = PUL();
+    const akhir = () => {
+      try {
+        if (p) p.selesai();
+      } catch {
+        /* diabaikan */
+      }
+    };
+    try {
+      if (!d || !S.pk || tes()) return akhir();
+      const b = d.blangko;
+      if (b && b.berkas && b.kelompok && !S.blangko) {
+        const pk = S.pk;
+        const a = api();
+        if (a && typeof a.muatHak === "function") await Promise.resolve(a.muatHak()).catch(() => undefined);
+        await muatMenu();
+        if (S.pk !== pk) return akhir();
+        const k = S.menu && S.menu.kelompok.find((x) => x.nama === b.kelompok);
+        if (k && !k.berkas) {
+          await muatBerkasKelompok(k);
+          for (let i = 0; k.memuat && i < 40; i += 1) await jedaTautan(100);
+        }
+        if (S.pk !== pk) return akhir();
+        if (k && k.berkas && kelompokBoleh(k) && k.berkas.some((x) => x.berkas === b.berkas)) await pilihBlangko(b.berkas, k.nama);
+      }
+      const modul = globalThis.aletaBdPulih;
+      if (S.blangko && S.susunan && d.draf && modul && typeof modul.drafUntuk === "function") {
+        const draf = modul.drafUntuk({ draf: d.draf }, nomorPerkara(), S.blangko.berkas);
+        let n = 0;
+        for (const [kode, nilai] of Object.entries(draf)) {
+          const bb = S.susunan.isian.find((x) => x.kode === kode);
+          if (!bb || bb.jenis === "tj" || bb.khusus || String(S.isi[kode] || "") === nilai) continue;
+          S.isi[kode] = nilai;
+          S.tersimpan[kode] = "draf";
+          n += 1;
+        }
+        if (n) {
+          renderIsian();
+          toast(`${n} isian yang belum sempat tersimpan sebelum halaman dimuat ulang dikembalikan sebagai draf di kotaknya. Belum tersimpan ke ABT.`);
+        }
+      }
+    } catch {
+      /* pemulihan hanya kemudahan: petugas memilih sendiri */
+    }
+    akhir();
+  }
   function saatTautan(e) {
     const d = e && e.detail;
     if (!d || typeof d !== "object") return;
@@ -1783,6 +1871,9 @@
     if (BK()) BK().tutup();
     blangko.khusus = await berkasKhususSiap(b.berkas);
     S.blangko = blangko;
+    PUS.kode = "";
+    riwayatKode = new Map();
+    pulihCatat({ blangko: { berkas: b.berkas, kelompok: k.nama }, draf: null });
     S.susunan = null;
     S.galatSusunan = "";
     S.nilai = {};
@@ -1897,6 +1988,8 @@
       void muatSaranAbt(d);
       S.janjiBukti = siapkanBukti();
       void muatSematan();
+      void saranDariPustakaAwal(d);
+      void muatRiwayatKode();
       // 19 Okt: bawaan itsbat, e-litigasi 7139 dan bacaan SIPP/gugatan/e-Court berjalan sendiri bila saklar "Isi otomatis dari SIPP" menyala.
       // Cetak massal menunggu pekerjaan otomatis ini selesai sebelum berpindah ke perkara berikutnya (kerjaOto).
       void lacakOto(isiOtomatisBlangko(d));
@@ -3102,6 +3195,7 @@
     S.isi[kode] = nilai;
     clearTimeout(antreSimpan.get(kode));
     if (segera) return simpanIsian(kode, nilai);
+    pulihCatatDraf(kode, nilai);
     antreSimpan.set(kode, setTimeout(() => void simpanIsian(kode, nilai), 500));
     return undefined;
   }
@@ -3178,8 +3272,11 @@
         catatBuktiTertulis(kode, nilai);
       }
       if (S.isi[kode] !== nilai) return true; // sudah diketik lagi: hasil ini tidak dipakai
+      if (h.ok) pulihHapusDraf(kode);
       S.tersimpan[kode] = h.ok ? "tersimpan" : jejakAktif && h.tersimpan && h.terverifikasi === false ? BEDA_BACA_ULANG : `gagal: ${h.pesan || "ABT menolak"}`;
       if (h.ok) {
+        // 30 Okt: nilai benar-benar berubah = ada riwayat baru untuk isian ini (ikon ⟲ tampil pada penggambaran berikutnya).
+        if ((S.nilai[kode] ? String(S.nilai[kode].teks || "") : "") !== String(nilai)) riwayatKode.set(kode, (riwayatKode.get(kode) || 0) + 1);
         S.nilai[kode] = { status: String(nilai).trim() ? "terisi" : "kosong", teks: String(nilai) };
         tandaiKotor();
         S.peringat = false;
@@ -5611,12 +5708,38 @@
           const bisa = bolehTulis() && !samaKet(x.sebelum, skrg) && !dipotong && !sudahDiurungkan;
           const yakinTekan = S.konfirmPulih && S.konfirmPulih.kode === kode && S.konfirmPulih.idx === idx && Date.now() < S.konfirmPulih.sampai;
           const dariServer = x.dariServerLengkap === true ? ` · dicatat di server${x.oleh ? ` oleh ${esc(x.oleh)}` : ""}` : "";
-          return `<div class="bd-ketriw-baris"><span class="bd-catat">${esc(waktu)} · ${esc(potong(x.cara || "", 70))}: "${esc(potong(x.sebelum || "(kosong)", 80))}" → "${esc(potong(x.sesudah || "(kosong)", 80))}"${dariServer}</span>${bisa ? ` <button type="button" class="bd-tautankecil" data-bd2="ketpulih" data-ket="${esc(kode)}" data-idx="${idx}">${yakinTekan ? "yakin? kembalikan ↺" : "kembalikan ↺"}</button>` : ""}</div>`;
+          // 30 Okt: siapa, kapan, sumber (diisi otomatis / diketik / saran diterima / dikembalikan), nilai lama -> baru. Catatan tanpa nama = akun ini.
+          const siapa = x.dariServerLengkap === true ? "" : ` · ${x.oleh ? esc(x.oleh) : "Anda"}`;
+          return `<div class="bd-ketriw-baris"><span class="bd-catat">${esc(waktu)}${siapa} · ${esc(potong(x.cara || "", 70))}: "${esc(potong(x.sebelum || "(kosong)", 80))}" → "${esc(potong(x.sesudah || "(kosong)", 80))}"${dariServer}</span>${bisa ? ` <button type="button" class="bd-tautankecil" data-bd2="ketpulih" data-ket="${esc(kode)}" data-idx="${idx}">${yakinTekan ? "yakin? kembalikan ↺" : "kembalikan ↺"}</button>` : ""}</div>`;
         })
         .join("") +
       `</div>`
     );
   }
+  // 30 Okt 2026: isian yang punya riwayat ubah (diisi otomatis, diketik, saran diterima, dikembalikan) mendapat ikon kecil ⟲ di kepalanya
+  // meskipun tidak punya kartu usulan; terlipat bawaan, tidak ada langkah wajib. "Kembalikan" hanya muncul pada catatan yang nilai
+  // sebelumnya berbeda dari isi sekarang. Tanpa riwayat: tidak ada ikon.
+  let riwayatKode = new Map(); // kode -> banyaknya perubahan tercatat untuk perkara ini
+  async function muatRiwayatKode() {
+    try {
+      if (typeof bacaRiwayat !== "function" || !S.pk || !S.susunan || tes()) return;
+      const pk = S.pk;
+      const d = S.susunan;
+      const daftar = await bacaRiwayat(perkaraId());
+      if (S.pk !== pk || S.susunan !== d) return;
+      const peta = new Map();
+      for (const x of Array.isArray(daftar) ? daftar : []) if (x && x.kode && String(x.sebelum || "") !== String(x.sesudah || "")) peta.set(String(x.kode), (peta.get(String(x.kode)) || 0) + 1);
+      riwayatKode = peta;
+      renderIsian();
+    } catch {
+      /* riwayat hanya tambahan */
+    }
+  }
+  const tombolRiwayat = (b) =>
+    S.info[b.kode] || b.khusus || b.jenis === "tj" || !((riwayatKode.get(b.kode) || 0) > 0)
+      ? ""
+      : `<button type="button" class="bd-ikon" data-bd2="ketriwayat" data-ket="${esc(b.kode)}" aria-expanded="${S.ketRiwayatBuka.has(b.kode)}" title="Riwayat isian ini - siapa mengubah, kapan, dan tombol kembalikan">⟲</button>`;
+  const riwayatTanpaKartu = (b) => (!S.info[b.kode] && !b.khusus && b.jenis !== "tj" && S.ketRiwayatBuka.has(b.kode) ? riwayatKet(b.kode) : "");
   function kepingKet(b) {
     const i = S.info[b.kode];
     // Isian yang tidak mungkin otomatis (penilaian hakim, pemeriksaan sidang, data tidak ada di SIPP): ditandai "diisi manual"
@@ -5693,7 +5816,120 @@
     laporKeKerangka();
     toast(n ? `${n} isian disimpan ke ABT. Periksa sebelum cetak.` : "Tidak ada isian yang dapat disimpan.");
   }
-  async function aksiKet(kode, aksi, idx) {
+  // ---------------------------------------------------------------------------
+  // Pustaka kalimat pribadi (30 Okt 2026) - blangko-derry-pustaka.js. Isian teks panjang punya tombol kecil di kepala kotaknya; kalimat yang
+  // disimpan khusus untuk isian + jenis perkara + status yang sama juga muncul sendiri sebagai SARAN SAMAR (Tab) saat kotak masih kosong.
+  // Menyisipkan = tindakan petugas lewat jalur simpan isian biasa; pengisian otomatis dari SIPP TIDAK memakainya.
+  // ---------------------------------------------------------------------------
+  const PUS = { kode: "", daftar: [] };
+  const PS = () => globalThis.aletaPustaka || null;
+  const konteksPustaka = () => ({ jenisPerkara: String((S.pk && S.pk.jenisPerkara) || ""), status: faktaPolaPerkara().verstek ? "verstek" : "kontradiktoir" });
+  const idSayaPustaka = () => {
+    const a = api();
+    const t = a && typeof a.siapa === "function" ? a.siapa() : null;
+    return t ? String(t.id || "") : "";
+  };
+  function bolehPustaka(b) {
+    return Boolean(PS()) && !tes() && bolehTulis() && b.jenis === "teks" && !b.khusus && !(Array.isArray(b.opsi) && b.opsi.length) && !(Array.isArray(b.pilihan) && b.pilihan.length);
+  }
+  function tombolPustaka(b, panjang) {
+    if (!panjang || !bolehPustaka(b)) return "";
+    return `<button type="button" class="bd-ikon bd-pustakabtn" data-bd2="ketpustaka" data-ket="${esc(b.kode)}" aria-expanded="${PUS.kode === b.kode}" title="Kalimat tersimpan: klik satu untuk menyisipkannya, atau simpan isi kotak ini ke pustaka">❝</button>`;
+  }
+  function panelPustaka(b, v) {
+    if (PUS.kode !== b.kode || !PS() || !bolehPustaka(b)) return "";
+    const k = konteksPustaka();
+    return PS().htmlPanel({ kode: b.kode, daftar: PUS.daftar, saya: idSayaPustaka(), jenisPerkara: k.jenisPerkara, status: k.status, golonganBagi: PS().golonganBagi(k), bolehSimpan: true, kotakKosong: !String(v || "").trim() });
+  }
+  async function saranDariPustakaAwal(d) {
+    try {
+      const m = PS();
+      if (!m || tes() || !bolehTulis() || !S.pk) return 0;
+      const pk = S.pk;
+      const daftar = await m.muat(konteksPustaka());
+      if (S.susunan !== d || S.pk !== pk || !daftar.length) return 0;
+      let n = 0;
+      for (const b of d.isian) {
+        if (!bolehPustaka(b) || !sedangKosong(b)) continue;
+        if ((S.saranSipp[b.kode] && S.saranSipp[b.kode].nilai) || (S.saranH7 && S.saranH7[b.kode])) continue;
+        const u = m.usulan(daftar, b.kode);
+        if (!u) continue;
+        S.saranSipp[b.kode] = { nilai: u.teks, keyakinan: "ragu", asal: "pustaka kalimat", pustakaId: u.id };
+        n += 1;
+      }
+      if (n) renderIsian();
+      return n;
+    } catch {
+      return 0;
+    }
+  }
+  /** Saran dari pustaka diterima (Tab): satu pemakaian dicatat untuk urutan "paling sering dipakai". */
+  function pustakaDiterima(kode, nilai) {
+    try {
+      const s2 = S.saranSipp[kode];
+      if (s2 && s2.asal === "pustaka kalimat" && s2.pustakaId && s2.nilai === nilai && PS()) void PS().pakai(s2.pustakaId);
+    } catch {
+      /* pencatatan pemakaian hanya kemudahan */
+    }
+  }
+  async function aksiPustaka(kode, aksi, id) {
+    const m = PS();
+    if (!m) return undefined;
+    const k = konteksPustaka();
+    if (aksi === "ketpustaka") {
+      const lama = PUS.kode;
+      if (lama === kode) {
+        PUS.kode = "";
+        return segarKartu(kode);
+      }
+      PUS.kode = kode;
+      PUS.daftar = await m.muat(k, true);
+      if (lama) segarKartu(lama);
+      return segarKartu(kode);
+    }
+    if (aksi === "ketpusisip") {
+      const item = PUS.daftar.find((x) => x.id === id);
+      if (!item) return undefined;
+      const lama = String(S.isi[kode] || "").replace(/\s+$/, "");
+      S.diketik.add(kode);
+      PUS.kode = "";
+      await jadwalkanSimpan(kode, lama ? `${lama} ${item.teks}` : item.teks, true);
+      void m.pakai(id);
+      return segarKartu(kode);
+    }
+    if (aksi === "ketpushapus") {
+      const h = await m.hapus(id);
+      if (!h.ok) toast(`Kalimat tidak dapat dihapus: ${h.sebab}`);
+      PUS.daftar = await m.muat(k, true);
+      return segarKartu(kode);
+    }
+    if (aksi === "ketpussimpan") {
+      const el = wadah.isian && cari(`.bd-f[data-f="${kode}"]`, wadah.isian);
+      const teks = String(S.isi[kode] || "").trim();
+      if (!el) return undefined;
+      if (teks.length < 5) return toast("Kotak masih kosong atau terlalu pendek untuk disimpan ke pustaka.");
+      const cek = (sel) => Boolean(el.querySelector(sel) && el.querySelector(sel).checked);
+      const judulEl = el.querySelector("[data-pus-judul]");
+      const bagi = Array.from(el.querySelectorAll("[data-pus-bagi]")).filter((x) => x.checked).map((x) => x.getAttribute("data-pus-bagi"));
+      const h = await m.simpan({
+        jenisPerkara: cek("[data-pus-jenis]") ? k.jenisPerkara : "",
+        status: cek("[data-pus-status]") ? k.status : "",
+        kode: cek("[data-pus-kode]") ? kode : "",
+        judul: judulEl ? judulEl.value : "",
+        teks,
+        dibagikan: bagi,
+      });
+      toast(h.ok ? "Kalimat disimpan ke pustaka." : `Kalimat tidak tersimpan: ${h.sebab}`);
+      PUS.daftar = await m.muat(k, true);
+      return segarKartu(kode);
+    }
+    return undefined;
+  }
+  async function aksiKet(kode, aksi, idx, idPustaka) {
+    if (aksi === "ketpustaka" || aksi === "ketpusisip" || aksi === "ketpushapus" || aksi === "ketpussimpan") {
+      if (!S.susunan || !bolehTulis()) return undefined;
+      return aksiPustaka(kode, aksi, idPustaka);
+    }
     if (aksi === "ketsumber") {
       if (S.ketBuka.has(kode)) S.ketBuka.delete(kode);
       else S.ketBuka.add(kode);
@@ -5723,6 +5959,11 @@
     }
     const b = S.susunan && S.susunan.isian.find((x) => x.kode === kode);
     if (!b || !bolehTulis()) return undefined;
+    if (aksi === "ketsimpandraf") {
+      S.diketik.add(kode);
+      await jadwalkanSimpan(kode, String(S.isi[kode] || ""), true);
+      return segarKartu(kode);
+    }
     if (aksi === "ketpakai") {
       const i = S.info[kode];
       if (!i || !i.nilai) return undefined;
@@ -5841,20 +6082,22 @@
           : "")
       : "";
     return (
-      `<div class="bd-f${v.trim() ? " beres" : ""}${panjang ? " panjang" : ""}${tanda}" data-f="${b.kode}"><div class="bd-fh"><label for="bd-i${b.kode}" title="${esc(namaIsian(b))}">${esc(namaIsian(b))}</label>${ikonSumber(b.kode, namaIsian(b), ketItem(b))}</div>${muncul}${kepingKet(b)}` +
+      `<div class="bd-f${v.trim() ? " beres" : ""}${panjang ? " panjang" : ""}${tanda}" data-f="${b.kode}"><div class="bd-fh"><label for="bd-i${b.kode}" title="${esc(namaIsian(b))}">${esc(namaIsian(b))}</label>${ikonSumber(b.kode, namaIsian(b), ketItem(b))}${tombolRiwayat(b)}${tombolPustaka(b, panjang || lebarSelalu)}</div>${muncul}${kepingKet(b)}${riwayatTanpaKartu(b)}` +
       isian +
+      panelPustaka(b, v) +
       sandingKet(b) +
       pilihBunyi +
       (b.kode === "7139" && S.el7 && v === S.el7.nilai ? `<span class="bd-catat bd-el7">${esc(S.el7.keterangan)}</span>` : "") +
       (b.kode === "7139" && S.el7Saran && !v.trim() ? `<span class="bd-catat bd-el7">Saran: ${esc(S.el7Saran.keterangan)}</span>` : "") +
       `<span class="bd-status" data-status="${b.kode}">${esc(teksStatus(st, b.kode))}</span>` +
+      (st === "draf" && bolehTulis() ? `<button type="button" class="bd-tautankecil" data-bd2="ketsimpandraf" data-ket="${esc(b.kode)}">simpan draf ke ABT</button>` : "") +
       (b.kode === "8503" ? (() => { const w = peringatan8503(); return `<span class="bd-peringatan" data-peringatan="8503" role="alert" ${w ? "" : "hidden"}>${esc(w)}</span>`; })() : "") +
       (b.kode === "8503" ? belajarHtml8503() : "") +
       catatSidangHtml(b) +
       `</div>`
     );
   }
-  const teksStatus = (st, kode) => (st === "tersimpan" ? `✓ ${kode && S.dariSipp.has(kode) ? "terisi dari SIPP, tersimpan di ABT" : "tersimpan di ABT"}${kode && S.ganti[kode] ? ` (huruf ${S.ganti[kode]} diganti ke bentuk aman ABT)` : ""}` : st === "menyimpan" ? "menyimpan…" : st === "dicoba" ? "dipakai di pratinjau, tidak disimpan" : st.startsWith("gagal") ? st : "");
+  const teksStatus = (st, kode) => (st === "tersimpan" ? `✓ ${kode && S.dariSipp.has(kode) ? "terisi dari SIPP, tersimpan di ABT" : "tersimpan di ABT"}${kode && S.ganti[kode] ? ` (huruf ${S.ganti[kode]} diganti ke bentuk aman ABT)` : ""}` : st === "menyimpan" ? "menyimpan…" : st === "dicoba" ? "dipakai di pratinjau, tidak disimpan" : st === "draf" ? "draf dari sebelum dimuat ulang - belum tersimpan ke ABT" : st.startsWith("gagal") ? st : "");
   function renderStatusIsian(kode) {
     const bb = S.susunan && S.susunan.isian.find((x) => x.khusus === "bukti" && x.kode === kode);
     if (bb) segarStatusBuktiAbt(bb.pihak);
@@ -7201,6 +7444,7 @@
     // Isian berubah selama ABT menyusun: naskah ini sudah lama, tetap kotor supaya disusun ulang (dulu ditandai bersih).
     if (S.versiIsian === versi) pr.kotor = false;
     pr.penanda = cekPenandaRtf(h.rtf);
+    perbaruiBedaCetak();
     pr.titikTiga = h.periksa ? h.periksa.jumlahTitikTiga : 0;
     return h.rtf;
   }
@@ -7807,10 +8051,12 @@
       `<ul class="bd-periksa" id="bd-periksa"></ul></div>` +
       `<div class="bd-ingat" id="bd-ingat" hidden role="alert"></div>` +
       `<div class="bd-utas"><button type="button" class="bd-btn utama besar" data-bd2="cetak" ${S.sibuk || S.unggahSibuk ? "disabled" : ""}>${S.sibuk ? "Sedang mencetak…" : "Cetak"}</button><span class="bd-catat" id="bd-statuscetak">${esc(teksAkanTerbit())} ${tes() ? "" : sudah ? `Sudah dicetak ${esc(sudah)}.` : "Belum dicetak."}</span> <span class="bd-catat" id="bd-siapnaskah">${esc(ketSiapNaskah())}</span></div>` +
+      `<details class="bd-bedacetak" id="bd-bedacetak" hidden><summary></summary><ul></ul></details>` +
       `<ul class="bd-logcetak" id="bd-logcetak" ${S.log.length ? "" : "hidden"}>${S.log.slice(-6).map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` +
       `<div class="bd-float lebar" id="bd-popttd" hidden role="dialog" aria-label="Tambah tanda tangan"></div>`;
     perbaruiSaksiKosong();
     perbaruiTemuanHadir();
+    perbaruiBedaCetak();
   }
   // ──────────────────────────────────────────────────────────────────────────
   // 30 Okt 2026 (keputusan pengguna 1c): berita acara dan putusan Blangko Derry membaca keterangan saksi HANYA dari tanya
@@ -8044,6 +8290,76 @@
     setTimeout(() => sasaran.classList.remove("bd-sorot"), 2600);
     if (sasaran.scrollIntoView) sasaran.scrollIntoView({ block: "center" });
     if (el && el.focus) el.focus();
+  }
+  // ---------------------------------------------------------------------------
+  // "N bagian berubah sejak cetakan terakhir" (30 Okt 2026): keterangan PASIF di langkah Cetak. Ringkasan cetakan terakhir tiap
+  // perkara + blangko disimpan di server ALETA (blangko-derry-beda-cetak.js); tidak ada langkah atau konfirmasi tambahan dan cetak
+  // tidak pernah ditahan. Tanpa cetakan sebelumnya, atau naskah belum tersusun/sudah basi: tidak menampilkan apa pun.
+  // ---------------------------------------------------------------------------
+  const bedaCache = new Map(); // "perkaraId|berkas" -> rekaman { ada, dicetakPada, dicetakOleh, bagian } | "memuat" | null
+  const bedaKunci = () => (S.pk && S.blangko ? `${perkaraId()}|${String(S.blangko.berkas).toLowerCase()}` : "");
+  function teksNaskahBeda(rtf) {
+    return rtfKeTeks(typeof rtf === "string" ? rtf : latin1(rtf));
+  }
+  function perbaruiBedaCetak() {
+    try {
+      const e = wadah.cetak ? cari("#bd-bedacetak", wadah.cetak) : null;
+      if (!e) return;
+      const m = globalThis.aletaBedaCetak;
+      const pr = S.prat;
+      if (!m || tes() || !S.blangko || !S.pk || S.blangko.khusus || !pr || !pr.rtf || pr.kotor) {
+        e.hidden = true;
+        return;
+      }
+      const kunci = bedaKunci();
+      const rek = bedaCache.get(kunci);
+      if (rek === undefined) {
+        bedaCache.set(kunci, "memuat");
+        void m.baca(perkaraId(), S.blangko.berkas).then((d) => {
+          bedaCache.set(kunci, d && d.ada ? d : null);
+          if (bedaKunci() === kunci) perbaruiBedaCetak();
+        });
+        e.hidden = true;
+        return;
+      }
+      if (rek === "memuat" || !rek) {
+        e.hidden = true;
+        return;
+      }
+      const beda = m.bandingkan(rek.bagian, m.ringkas(teksNaskahBeda(pr.rtf)));
+      const waktu = rek.dicetakPada ? `${tglIndo(String(rek.dicetakPada).slice(0, 10))} ${new Date(rek.dicetakPada).toTimeString().slice(0, 5).replace(":", ".")}` : "";
+      const ringkasan = beda.n ? `${beda.n} bagian berubah sejak cetakan terakhir${waktu ? ` (${waktu})` : ""}` : `Sama dengan cetakan terakhir${waktu ? ` (${waktu})` : ""}`;
+      e.hidden = false;
+      e.classList.toggle("sama", beda.n === 0);
+      e.querySelector("summary").textContent = ringkasan;
+      e.querySelector("ul").innerHTML = beda.perubahan
+        .slice(0, 40)
+        .map((x) => {
+          const kata = x.jenis === "diubah" ? "diubah" : x.jenis === "tambah" ? "ditambah" : "dihapus";
+          const isi = x.jenis === "diubah" ? `"${esc(potong(x.lama, 90))}" → "${esc(potong(x.baru, 90))}"` : `"${esc(potong(x.jenis === "tambah" ? x.baru : x.lama, 140))}"`;
+          return `<li><b>${kata}</b> ${isi}</li>`;
+        })
+        .join("") + (beda.perubahan.length > 40 ? `<li>…dan ${beda.perubahan.length - 40} bagian lain</li>` : "");
+      e.querySelector("summary").title = rek.dicetakOleh ? `Dicetak oleh ${rek.dicetakOleh}` : "";
+    } catch {
+      /* keterangan hanya tambahan: cetak tidak terpengaruh */
+    }
+  }
+  /** Sesudah cetak berhasil: ringkasan naskah yang dicetak menggantikan cetakan terakhir (di server dan di singgahan). Tidak pernah melempar. */
+  function catatCetakTerakhir(rtf) {
+    try {
+      const m = globalThis.aletaBedaCetak;
+      if (!m || tes() || !S.pk || !S.blangko || S.blangko.khusus || !rtf) return;
+      const kunci = bedaKunci();
+      const berkas = S.blangko.berkas;
+      const id = perkaraId();
+      void m.simpan({ perkaraId: id, nomorPerkara: nomorPerkara(), berkas, teks: teksNaskahBeda(rtf) }).then((r) => {
+        if (r) bedaCache.set(kunci, r);
+        if (bedaKunci() === kunci) perbaruiBedaCetak();
+      });
+    } catch {
+      /* ringkasan tidak tersimpan: keterangan berikutnya tidak tampil */
+    }
   }
   function catatLog(teks) {
     S.log.push(`${jamSekarang()}: ${teks}`);
@@ -8543,6 +8859,7 @@
       S.cetakTercatat[`${nomor}|${j}`] = jamSekarang();
       void tulisPenyimpanan({ [`${K_CETAK}:${nomor}|${j}`]: jamSekarang() });
       laporCetakWajib();
+      catatCetakTerakhir(rtfBuf);
     }
     for (const h of hasil) catatLog(h);
     toast(hasil.join(" · "));
@@ -8656,6 +8973,8 @@
       if (b.jenis !== "teks" || (b.opsi && b.opsi.length) || String(S.isi[b.kode] || "").trim() || S.diketik.has(b.kode)) continue;
       // Tanggal akta nikah pada bukti belum tentu tanggal nikah: hanya saran samar (Tab), tidak ikut pengisian massal.
       if (S.saranSipp[b.kode] && S.saranSipp[b.kode].asal === "bukti akta nikah" && !(S.saranH7 && S.saranH7[b.kode])) continue;
+      // 30 Okt: kalimat dari pustaka pribadi hanya SARAN (Tab); pengisian otomatis/massal tidak menuliskannya sendiri.
+      if (S.saranSipp[b.kode] && S.saranSipp[b.kode].asal === "pustaka kalimat" && !(S.saranH7 && S.saranH7[b.kode])) continue;
       // F4.2: usulan draf H-7 yang BELUM pasti tidak ikut diisi sekaligus - dipakai satu per satu (Tab) sesudah diperiksa.
       const m = mesinIsi();
       const mentahH7 = S.saranH7 && S.saranH7[b.kode] && S.saranH7[b.kode].golongan !== "pasti" ? S.saran[b.kode] || "" : "";
@@ -8751,7 +9070,7 @@
     if (kode === "isisipp") return void isiSemuaOtomatis();
     if (kode === "inputyakin") return void masukkanCalon(calonInput().yakin);
     if (kode === "inputpasti") return void masukkanCalon(calonInput().pasti);
-    if (kode && kode.startsWith("ket") && aksi.getAttribute("data-ket")) return void aksiKet(aksi.getAttribute("data-ket"), kode, Number(aksi.getAttribute("data-idx")));
+    if (kode && kode.startsWith("ket") && aksi.getAttribute("data-ket")) return void aksiKet(aksi.getAttribute("data-ket"), kode, Number(aksi.getAttribute("data-idx")), aksi.getAttribute("data-id") || "");
     if (kode === "pakaisaran") return pakaiSemuaSaran();
     if (kode === "ktpbukti") return void ambilTanggalKtp();
     if (kode === "takberlaku") {
@@ -9408,6 +9727,7 @@
       const sebelum = k === "8503" ? daftarPerlu().map((x) => x.kode).join() : "";
       S.isi[k] = t.value;
       S.diketik.add(k);
+      pulihCatatDraf(k, t.value); // 30 Okt: ketikan belum tersimpan sampai kotak dilepas; dicatat sebagai draf bila halaman dimuat ulang
       S.peringat = false;
       if (k === "8503") {
         const pos = t.selectionStart;
@@ -9612,6 +9932,7 @@
       if (e.key === "Tab" && !e.shiftKey && !t.value && sr && cfg().saran && t.type !== "date") {
         e.preventDefault();
         t.value = sr;
+        pustakaDiterima(k, sr);
         jadwalkanSimpan(k, sr, true);
         const f = cari(`.bd-f[data-f="${k}"]`, wadah.isian);
         if (f) f.classList.add("beres");
@@ -9725,6 +10046,9 @@
       if (m) m.hidden = true;
     }
     S.blangko = null;
+    PUS.kode = "";
+    riwayatKode = new Map();
+    pulihCatat({ blangko: null, draf: null, gulir: 0, langkah: "" });
     S.susunan = null;
     S.galatSusunan = "";
     S.isi = {};
@@ -9984,6 +10308,7 @@
     document.addEventListener("aleta-bd-buka-isian", saatBukaIsian);
     document.addEventListener("aleta-bd-perkara", saatPerkara);
     document.addEventListener("aleta-bd-tautan", saatTautan);
+    document.addEventListener("aleta-bd-pulih", saatPulih);
     daftarkanAlat();
     const ada = typeof a.perkaraTerpilih === "function" ? a.perkaraTerpilih() : null;
     if (ada && ada.perkara) saatPerkara({ detail: { nomorPerkara: ada.perkara.nomorPerkara, perkaraId: ada.perkara.perkaraId, jenisPerkara: ada.perkara.jenisPerkara, sidang: ada.sidang, sidangKe: ada.sidangKe, sidangDipilih: ada.sidangDipilih, perkara: ada.perkara } });
@@ -10129,7 +10454,13 @@
       const nomor = nomorPerkara();
       const berkas = S.blangko.berkas;
       const hasil = { rtf: biner(rtf), pdf: null, namaRtf: namaUnduhan(nomor, berkas, "rtf"), namaPdf: namaUnduhan(nomor, berkas, "pdf"), keadaan: keadaanAkhir, ttd: { dipasang: [], tidakDitemukan: [], gagal: [] } };
-      if (o.pdf) {
+      if (o.pdf && o.salinan) {
+        // 30 Okt (salinan BHT): PDF SALINAN seperti pilihan "PDF SALINAN" di langkah Cetak - "ttd" di tempat majelis, tanda tangan Panitera pengesah.
+        const hs = await pdfDari(latin1(rtf), true);
+        hasil.pdf = hs.bita;
+        hasil.namaPdf = namaUnduhan(nomor, `${berkas} - SALINAN`, "pdf");
+        hasil.salinan = hs.keterangan || null;
+      } else if (o.pdf) {
         if (o.ttd) {
           S.ttdManual = false;
           await autoCentangTtd();
@@ -10143,6 +10474,7 @@
         S.cetakTercatat[`${nomor}|${S.blangko.jenis}`] = jam;
         void tulisPenyimpanan({ [`${K_CETAK}:${nomor}|${S.blangko.jenis}`]: jam });
         laporCetakWajib();
+        catatCetakTerakhir(rtf);
       }
       return hasil;
     }
@@ -10181,6 +10513,7 @@
       unduh,
       namaUnduhan,
       ambilPortal,
+      hostBerkas,
       tanpaRtf,
       namaTampil,
     };

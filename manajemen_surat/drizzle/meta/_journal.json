@@ -722,6 +722,20 @@
       "when": 1792305000001,
       "tag": "0116_aleta_tampilan_sipp",
       "breakpoints": true
+    },
+    {
+      "idx": 106,
+      "version": "7",
+      "when": 1792319400001,
+      "tag": "0120_aleta_cetak_terakhir_salinan_bht",
+      "breakpoints": true
+    },
+    {
+      "idx": 107,
+      "version": "7",
+      "when": 1792323000001,
+      "tag": "0121_aleta_kalimat_pribadi",
+      "breakpoints": true
     }
   ]
 }

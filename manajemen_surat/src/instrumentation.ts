@@ -74,6 +74,13 @@ export async function register() {
     mulaiPelaksanaBerkala();
   }
   /* === AKHIR PUTUSAN TERJADWAL === */
+  /* === SALINAN BHT 30 Okt === detak 30 menit: mencatat perkara yang baru BHT menurut SIPP (bot membaca) agar salinan putusannya
+     muncul di Cetak massal "Salinan putusan BHT". Hanya penunjuk perkara; tidak menulis ke SIPP/ABT. Matikan dengan ALETA_SALINAN_BHT=0. */
+  if (process.env.ALETA_SALINAN_BHT !== "0") {
+    const [{ mulaiSalinanBhtBerkala }, { getDatabase }] = await Promise.all([import("@/server/modules/aleta-ecourt/salinan-bht"), import("@/server/db/client")]);
+    mulaiSalinanBhtBerkala(getDatabase);
+  }
+  /* === AKHIR SALINAN BHT === */
   /* === SIDANG TERJADWAL 27 Okt === pelaksana server unggah BAS terjadwal & tundaan terjadwal: tiap 30 detik menulis ke SIPP
      (lewat bot) paling banyak SATU pekerjaan yang jatuh tempo - BAS di dalam jam kerja atas akun SIPP penjadwal, tunda
      hanya pada hari sidangnya (yang terlambat kedaluwarsa, tidak pernah pindah hari). Hak penjadwal dinilai ulang saat

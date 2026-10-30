@@ -263,7 +263,7 @@ async function berkasEcourt(nomorPerkara, deps = {}) {
     const jenis = jenisEcourt(nama);
     if (!jenis) continue;
     const h = await halamanBerkas(path.join(akar, folder, nama), deps);
-    hasil.push({ jenis, nama: nama.replace(/__[0-9a-f]{6,}(\.[A-Za-z0-9]+)?$/, ""), ...h });
+    hasil.push({ jenis, nama: nama.replace(/__[0-9a-f]{6,}(\.[A-Za-z0-9]+)?$/, ""), jalurMutlak: path.join(akar, folder, nama), ...h });
   }
   return hasil;
 }
@@ -275,15 +275,21 @@ async function halamanBaris(jalurRelatif, jenisBawaan, deps) {
   let semuaTerbaca = daftar.length > 0;
   let ragu = false;
   let ada = 0;
+  const jalurAda = [];
   for (const j of daftar) {
     const mutlak = jalurSipp(j, deps.akarSipp || AKAR_SIPP, deps);
     const h = mutlak ? await halamanBerkas(mutlak, deps) : { ada: false };
-    if (h.ada) ada += 1;
+    if (h.ada) {
+      ada += 1;
+      jalurAda.push(mutlak);
+    }
     if (h.halaman) {
       jumlah += h.halaman;
       if (h.ragu) ragu = true;
     } else semuaTerbaca = false;
   }
+  // Jalur berkas yang ADA dicatat di sisi (bukan di hasil): dipakai bundel satu PDF, tidak pernah keluar dari bot sebagai jalur.
+  if (deps.jejak) deps.jejak.jalur = jalurAda;
   if (semuaTerbaca && jumlah > 0) return { halaman: jumlah, sumber: ragu ? "perkiraan" : "pasti", dasar: ragu ? "halaman berkas: dua cara hitung berbeda" : "halaman dibaca dari berkas" };
   return { halaman: null, sumber: "perkiraan", dasar: ada ? "berkas RTF/DOC: halaman belum terbaca" : "tidak ada berkas", jenisBawaan };
 }
@@ -491,7 +497,11 @@ function deteksiSusulan(bahan = {}) {
 // ---------------------------------------------------------------------------
 // fakta
 // ---------------------------------------------------------------------------
-async function fakta(params = {}, deps = {}) {
+async function fakta(params = {}, deps0 = {}) {
+  // Sisi jejak berkas per baris (bundel satu PDF): jalur mutlak tiap baris dicatat di sini dan hanya dikembalikan bila diminta (denganJalur).
+  const jejak = { jalur: null };
+  const jalurPerKunci = {};
+  const deps = { ...deps0, jejak };
   const perkaraId = Number(params.perkaraId);
   if (!Number.isFinite(perkaraId) || perkaraId <= 0) return { ok: false, sebab: "Perkara tidak disebut." };
   const q = deps.kueri || kueriBawaan;
@@ -552,7 +562,11 @@ async function fakta(params = {}, deps = {}) {
   const sebP = permohonan ? "Pemohon" : "Penggugat";
   const sebT = permohonan ? "Termohon" : "Tergugat";
   const baris = [];
-  const tambah = (bundel, grup, kunci, nama, tanggal, hal, ket = "") => baris.push({ bundel, grup, kunci, nama, ket, tanggal: iso(tanggal), ...hal });
+  const tambah = (bundel, grup, kunci, nama, tanggal, hal, ket = "") => {
+    if (jejak.jalur && jejak.jalur.length) jalurPerKunci[kunci] = jejak.jalur;
+    jejak.jalur = null;
+    baris.push({ bundel, grup, kunci, nama, ket, tanggal: iso(tanggal), ...hal });
+  };
   const bawaan = (jenis, dasar = "belum ada berkas: nilai bawaan jenis dokumen") => ({ halaman: null, sumber: "perkiraan", dasar, jenisBawaan: jenis });
 
   const G1 = "I. PENDAFTARAN";
@@ -563,6 +577,7 @@ async function fakta(params = {}, deps = {}) {
   const ecJenis = (j) => ec.filter((x) => x.jenis === j);
   const dariEc = (j, bawaanJenis) => {
     const daftar = ecJenis(j);
+    jejak.jalur = daftar.filter((x) => x.jalurMutlak && x.ada !== false).map((x) => x.jalurMutlak);
     const terbaca = daftar.filter((x) => x.halaman);
     if (daftar.length && terbaca.length === daftar.length) {
       const ragu = terbaca.some((x) => x.ragu);
@@ -656,7 +671,9 @@ async function fakta(params = {}, deps = {}) {
   if (keTanggalPutus) {
     const batal = alur === 16 || [7, 37, 67].includes(nomorBaris(put.status_putusan_id));
     const hp = await halamanBaris(put.amar_putusan_dok, "putusan", deps);
+    const jalurPutusan = jejak.jalur;
     tambah("A", ikrar ? "V. PUTUSAN / PENETAPAN" : G4, "putusan", batal ? "Penetapan" : "Putusan", put.tanggal_putusan, hp.halaman ? hp : bawaan("putusan", hp.dasar === "tidak ada berkas" ? "berkas putusan belum ada" : "putusan RTF: halaman dihitung dari PDF buatan panel saat cetak"));
+    jejak.jalur = jalurPutusan;
     tambah("A", GP, "salinan", `Salinan ${batal ? "Penetapan" : "Putusan"}`, put.tanggal_putusan, hp.halaman ? hp : bawaan("putusan", "mengikuti halaman putusan"));
   }
   // Bundel B: pasca putusan
@@ -944,9 +961,84 @@ async function fakta(params = {}, deps = {}) {
     riwayat,
     isian,
     dokumen: baris,
+    ...(params.denganJalur === true ? { jalurPerKunci } : {}),
     ecourtBerkas: ec.length,
     pdfLib: Boolean(pdfLib()),
   };
+}
+
+// ---------------------------------------------------------------------------
+// Bundel satu PDF per perkara (5.1, 30 Okt 2026): bahan berkas tiap baris daftar isi - BACA SAJA
+// ---------------------------------------------------------------------------
+const cacheJalur = new Map(); // perkaraId -> { saat, peta: kunci -> [jalur mutlak] }
+const MASA_JALUR_MS = 3 * 60 * 1000;
+const BATAS_BUNDEL_BYTE = 24 * 1024 * 1024;
+
+async function petaJalur(perkaraId, deps = {}) {
+  const kini = Date.now();
+  const ada = cacheJalur.get(perkaraId);
+  if (ada && kini - ada.saat < MASA_JALUR_MS && !deps.tanpaCache) return ada.peta;
+  const f = await fakta({ perkaraId, denganJalur: true }, deps);
+  if (!f || !f.ok) return null;
+  if (cacheJalur.size >= 40) cacheJalur.clear();
+  cacheJalur.set(perkaraId, { saat: kini, peta: f.jalurPerKunci || {} });
+  return f.jalurPerKunci || {};
+}
+
+/**
+ * berkas.bundel { perkaraId, kunci:[...], mode } -> bahan berkas baris daftar isi untuk bundel satu PDF.
+ *   mode "periksa": per kunci { berkas, pdf, bukanPdf, halaman (jumlah PDF bila SEMUA terbaca, selain itu null), ragu }
+ *   mode "isi":     per kunci PDF-nya (base64, urut jalur); berkas bukan PDF (RTF, DOC, DOCX) tidak ikut dan dihitung di bukanPdf
+ * Jalur berkas tidak pernah dikembalikan; kunci tak dikenal dijawab kosong. SIPP dan arsip hanya dibaca.
+ */
+async function bundelBahan(params = {}, deps = {}) {
+  const perkaraId = Number(params.perkaraId);
+  if (!Number.isFinite(perkaraId) || perkaraId <= 0) return { ok: false, sebab: "Perkara tidak disebut." };
+  const kunci = (Array.isArray(params.kunci) ? params.kunci : []).map((k) => String(k)).filter((k) => /^[A-Za-z0-9_:.\-]{1,60}$/.test(k)).slice(0, 300);
+  const peta = await petaJalur(perkaraId, deps);
+  if (!peta) return { ok: false, sebab: "Berkas perkara tidak terbaca dari SIPP." };
+  const fsp = (deps.fs || fs).promises;
+  if (params.mode === "isi") {
+    let total = 0;
+    const berkas = [];
+    const bukanPdf = {};
+    for (const k of kunci) {
+      for (const jalur of peta[k] || []) {
+        if (path.extname(jalur).toLowerCase() !== ".pdf") {
+          bukanPdf[k] = (bukanPdf[k] || 0) + 1;
+          continue;
+        }
+        const st = await fsp.stat(jalur).catch(() => null);
+        if (!st || !st.isFile()) continue;
+        total += st.size;
+        if (total > BATAS_BUNDEL_BYTE) return { ok: false, sebab: "Berkas satu kali ambil terlalu besar; ambil lebih sedikit baris sekaligus." };
+        berkas.push({ kunci: k, base64: (await fsp.readFile(jalur)).toString("base64") });
+      }
+    }
+    return { ok: true, berkas, bukanPdf };
+  }
+  const dokumen = [];
+  for (const k of kunci) {
+    let pdf = 0;
+    let bukanPdf = 0;
+    let halaman = 0;
+    let semuaTerbaca = true;
+    let ragu = false;
+    for (const jalur of peta[k] || []) {
+      if (path.extname(jalur).toLowerCase() !== ".pdf") {
+        bukanPdf += 1;
+        continue;
+      }
+      pdf += 1;
+      const h = await halamanBerkas(jalur, deps);
+      if (h.halaman) {
+        halaman += h.halaman;
+        if (h.ragu) ragu = true;
+      } else semuaTerbaca = false;
+    }
+    dokumen.push({ kunci: k, berkas: pdf + bukanPdf, pdf, bukanPdf, halaman: pdf > 0 && semuaTerbaca && halaman > 0 ? halaman : null, ragu });
+  }
+  return { ok: true, dokumen };
 }
 
 /** Konseptor putusan yang sudah tercatat di SIPP: pengguna tahapan putusan (perkara_proses proses_id 210) terbaru, nama dari sys_users. "" bila belum ada. */
@@ -1053,6 +1145,7 @@ module.exports = {
   KUNCI_SUSULAN,
   median,
   fakta,
+  bundelBahan,
   pelajari,
   _cache: cache,
 };
