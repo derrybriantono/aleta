@@ -4579,6 +4579,35 @@
       "catatan": "Penahanan belum tentu pidana yang dijalani - ragu."
     },
     {
+      "kode": "tambah-c-ditahan-di",
+      "label": "penjara: ditahan di rutan/lapas/polres, menjalani masa tahanan",
+      "kunci": "C",
+      "sebab": "salah satu pihak menjalani pidana penjara",
+      "jenis": "tambahan",
+      "regex": "\\bdi\\s?tahan\\s+di\\s*(?:rutan|lapas|lp|polres|polsek|polda|kantor\\s+polisi|penjara|sel)\\b|\\bdi\\s?tahan\\s+(?:oleh\\s+)?(?:pihak\\s+)?kepolis\\w*|\\bmenjalani\\s+masa\\s+tahanan\\b|\\bdipidana\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "tergugat sekarang ada ditahan dirutan maesa",
+        "setelah Tergugat ditahan di Polres Sigi",
+        "tergugat sekarang menjalani masa tahanan di LP Maesa",
+        "Tergugat ditahan oleh pihak kepolisisan"
+      ],
+      "contohSalah": [
+        "Tergugat menahan diri",
+        "Penggugat ditahan oleh orang tuanya untuk tidak pergi"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "sipp_2810 (dump 28 Okt) posita cerai + faktor akta cerai",
+        "tanggal": "2026-10-30"
+      },
+      "catatan": "30 Okt (deteksi-luas): diperluas atas posita nyata sipp_2810 - lihat deteksi-luas-30okt.test.ts."
+    },
+    {
       "kode": "tambah-c-di-penjara",
       "label": "penjara: di penjara / masuk penjara / narapidana",
       "kunci": "C",

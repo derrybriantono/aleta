@@ -13,7 +13,10 @@
  *   Sebanyak 228 deteksi baru dibaca satu per satu; 22 salah tangkap lama (ancaman "mengancam untuk memukul"
  *   dibaca KDRT fisik, kekerasan kepada anak/orang tua berbunyi "terhadap Penggugat") dan 4 subjek terbalik
  *   ("menyebabkan Penggugat pergi" dibaca "Tergugat pergi") hilang.
- *   P1 huruf: mabuk 146->149/171, murtad 9->12/22 (+5 murtad nyata pada perkara berfaktor 9).
+ *   P1 huruf: mabuk 146->149/171, murtad 9->12/22 (+5 murtad nyata pada perkara berfaktor 9), cacat 0->1/7 (+1).
+ *   Terhadap 5227 yang DIKETIK petugas di ABT (aps_badilag_2810, 344 perkara): sebab yang diketik dan
+ *   tertangkap dari posita 685 -> 697 dari 776; 10 deteksi baru di luar isian manusia, dibaca: semuanya benar menurut posita.
+ *   P4 hak asuh: 52 -> 54 dari 171 amar ber-hak asuh (sisanya memang tidak diminta di petitum SIPP).
  *
  * Pihak terbalik diuji DUA ARAH (memori pelaku-lawan-terbalik): pelaku = Tergugat/Termohon (0047).
  */
@@ -209,5 +212,29 @@ describe("P1 huruf E: penyakit yang membuat tidak dapat menjalankan kewajiban", 
     expect(sebab("Termohon tidak memenuhi nafkah batin Pemohon dikarenakan penyakit Termohon sehingga Termohon tidak bisa melayani Pemohon")).toContain("cacat badan atau penyakit");
     expect(sebab("c. Termohon mengidap penyakit sehingga tidak bisa memberikan keturunan")).toContain("cacat badan atau penyakit");
     expect(sebab("Termohon sakit sehingga tidak bisa hadir di persidangan")).not.toContain("cacat badan atau penyakit");
+  });
+});
+
+describe("salah tangkap lama KDRT fisik: perusakan barang & tuduhan", () => {
+  it("147/Pdt.G/2020: 'membanting barang-barang' = merusak barang, bukan kekerasan terhadap Penggugat", () => {
+    const r = rinci(CG, "Tergugat sering membanting barang-barang yang ada di dalam rumah setiap kali bertengkar dengan Penggugat.");
+    expect(kunci(r).has("kdrt-fisik")).toBe(false);
+    expect(kunci(r).has("merusak-barang")).toBe(true);
+    expect(kunci(rinci(CG, "Tergugat sering membanting Penggugat ke lantai")).has("kdrt-fisik")).toBe(true);
+  });
+  it("106/Pdt.G/2020 (CT): 'Termohon menuduh Pemohon melakukan KDRT' bukan KDRT oleh Termohon", () => {
+    expect(kunci(rinci(CT, "Termohon menuduh pemohon melakukan KDRT padahal hanya tergores kuku pemohon")).has("kdrt-fisik")).toBe(false);
+  });
+});
+
+describe("P1 huruf C: ditahan di rutan/polres", () => {
+  const sebab = (k: string) => p1.sebabDariButir([k]).filter((s) => s.pelaku !== "lawan").map((s) => s.sebab);
+  const C = "salah satu pihak menjalani pidana penjara";
+  it("110/Pdt.G/2021, 169/Pdt.G/2021, 30/Pdt.G/2024, 616/Pdt.G/2025", () => {
+    expect(sebab("tergugat sekarang ada ditahan dirutan maesa karena kasus penyalah gunaan jabatan")).toContain(C);
+    expect(sebab("setelah Tergugat ditahan di Polres Sigi Penggugat dan anak-anaknya pindah")).toContain(C);
+    expect(sebab("4.Bahwa tergugat sekarang menjalani masa tahanan di LP Maesa")).toContain(C);
+    expect(sebab("d. Pada bulan April 2024 Tergugat ditahan oleh pihak kepolisisan atas kasus narkoba")).toContain(C);
+    expect(sebab("Tergugat menahan diri untuk tidak marah")).not.toContain(C);
   });
 });

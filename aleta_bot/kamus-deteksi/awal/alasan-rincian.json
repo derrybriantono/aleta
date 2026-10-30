@@ -545,8 +545,8 @@
     "melakukan Kekerasan Dalam Rumah Tangga (KDRT) terhadap {lawan}",
     "memukul {lawan}"
    ],
-   "tolakSebelum": "\\b(?:mengancam|diancam|ancaman|ingin|hendak|hampir|nyaris|berniat)\\s+(?:(?:untuk|akan|melakukan|tindak|tindakan|penggugat|pemohon|tergugat|termohon)\\s+){0,3}$",
-   "tolakSesudah": "^\\s*(?:pada|kepada|terhadap)\\s+(?:anak|orang\\s*tua|orangtua|mertua|ibu|ayah|adik|kakak|keluarga)",
+   "tolakSebelum": "\\b(?:mengancam|diancam|ancaman|ingin|hendak|hampir|nyaris|berniat)\\s+(?:(?:untuk|akan|melakukan|tindak|tindakan|penggugat|pemohon|tergugat|termohon)\\s+){0,3}$|\\b(?:menuduh|dituduh|tuduhan|memfitnah|difitnah)\\b[^.;]{0,40}$",
+   "tolakSesudah": "^\\s*(?:pada|kepada|terhadap)\\s+(?:anak|orang\\s*tua|orangtua|mertua|ibu|ayah|adik|kakak|keluarga)|^\\s*(?:barang|barang-barang|gelas|piring|pintu|hp|handphone|perabot\\w*|peralatan|kursi|meja|televisi|tv|lemari|alat|benda|kaca|jendela|motor)",
    "serap": [
     "kasar-sikap"
    ]
