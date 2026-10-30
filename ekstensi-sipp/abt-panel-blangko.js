@@ -3097,7 +3097,9 @@ async function muatTemplatAbt(kodeTemplat, urutan) {
 /** Menulis satu daftar tanya-jawab ke ABT lewat rute simpannya sendiri. */
 async function kirimTanyaJawab(kodeVariabel, urutan, barisMasuk) {
   const saring = saringBarisPenutup(barisMasuk);
-  const baris = saring.baris;
+  // 30 Okt (G2a): jawaban yang disimpan diawali huruf besar - aturan yang sama dengan Blangko Derry (AletaBdSaksi.hurufBesarAwal).
+  const besar = globalThis.AletaBdSaksi && typeof globalThis.AletaBdSaksi.hurufBesarAwal === "function" ? globalThis.AletaBdSaksi.hurufBesarAwal : (t) => t;
+  const baris = saring.baris.map((b) => (b && typeof b.jawab === "string" ? { ...b, jawab: besar(b.jawab) } : b));
   const badan = new URLSearchParams();
   badan.set("data", JSON.stringify(baris));
   await a2JedaTulis("simpan", alamatTanyaJawab(kodeVariabel, true, urutan));

@@ -65,7 +65,47 @@
     return `Draf disusun otomatis${jam ? ` pukul ${jam}` : ""} dari set pertanyaan yang disarankan (${judul}): ${Number(jumlah) || 0} pertanyaan. Belum disimpan ke ABT - sesuaikan dengan keterangan saksi, lengkapi yang bertanda, lalu tekan Simpan ke ABT.`;
   }
 
-  const api = { pilihSetDraf, perluDraf, kalimatStatus, adaIsi };
+  // ──────────────────────────────────────────────────────────────────────────
+  // 30 Okt (G2a): pertanyaan "Mengapa yang menikahkan bukan ayah kandungnya / masih ada wali yang lebih berhak?" (katalog itsbat
+  // q-in-wali-urutan-*) hanya masuk draf bila wali BUKAN ayah kandung atau belum diketahui. Diketahui dari isian "Status Wali
+  // Nikah" ABT, atau dari jawaban "siapa wali nikahnya" yang diisi dari data perkara. Baris yang sudah diketik petugas tetap.
+  // ──────────────────────────────────────────────────────────────────────────
+  const BUTIR_WALI_LAIN = /^q-in-wali-urutan-/;
+  const BUTIR_WALI_SIAPA = /^q-in-wali-(?:pb|lw|pm|km)$/;
+
+  /** Teks status/hubungan wali menyebut ayah kandung (bukan "bukan ayah kandung", "selain ayah", ayah tiri/angkat)? */
+  function waliAyahKandung(nilai) {
+    const t = teks(nilai).toLowerCase();
+    if (!/\bayah\s+kandung\b/.test(t)) return false;
+    return !/\b(?:bukan|selain|tanpa)\s+(?:oleh\s+)?ayah\b|\bayah\s+(?:tiri|angkat)\b/.test(t);
+  }
+
+  const diketikPetugas = (r) => {
+    const j = teks(r && r.jawab).trim();
+    if (!j) return false;
+    if (r.otomatis !== undefined && teks(r.otomatis) === teks(r.jawab)) return false;
+    if (r.dasar !== undefined && teks(r.dasar) === teks(r.jawab)) return false;
+    return true;
+  };
+
+  /**
+   * @param {Array<{butir?: string, jawab?: string, otomatis?: string, dasar?: string}>} rows
+   * @param {{statusWali?: string}} opsi  nilai isian "Status Wali Nikah" (kosong bila belum diisi)
+   * @returns {{rows: Array, dibuang: number}}
+   */
+  function saringTanyaWali(rows, opsi) {
+    const daftar = Array.isArray(rows) ? rows : [];
+    const o = opsi || {};
+    const jawabData = daftar.filter((r) => r && BUTIR_WALI_SIAPA.test(teks(r.butir)) && r.otomatis !== undefined && teks(r.otomatis) === teks(r.jawab)).map((r) => teks(r.jawab));
+    const dataAyah = jawabData.some(waliAyahKandung);
+    // Data perkara menyebut wali kerabat lain / wali hakim sedangkan isian ABT "ayah kandung": sumber berselisih - pertanyaan tetap.
+    const dataBukanAyah = jawabData.some((j) => !waliAyahKandung(j) && /\b(?:kakak|adik|paman|saudara|kakek|sepupu|keponakan|hakim|imam|penghulu)\b/i.test(j));
+    if (!dataAyah && !(waliAyahKandung(o.statusWali) && !dataBukanAyah)) return { rows: daftar, dibuang: 0 };
+    const keluar = daftar.filter((r) => !(r && BUTIR_WALI_LAIN.test(teks(r.butir)) && !diketikPetugas(r)));
+    return { rows: keluar, dibuang: daftar.length - keluar.length };
+  }
+
+  const api = { pilihSetDraf, perluDraf, kalimatStatus, adaIsi, waliAyahKandung, saringTanyaWali };
   globalThis.AletaBdDrafSaksi = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();

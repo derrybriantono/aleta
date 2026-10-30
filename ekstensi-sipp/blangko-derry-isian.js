@@ -4846,9 +4846,14 @@
       renderTj();
       let hasil;
       let usulan = null;
+      let statusWali = "";
+      const DSW = typeof globalThis !== "undefined" ? globalThis.AletaBdDrafSaksi : null;
+      const saringWali = (rows) => (DSW && typeof DSW.saringTanyaWali === "function" ? DSW.saringTanyaWali(rows, { statusWali }).rows : rows);
       try {
         hasil = susun(undefined);
         const nilaiVar = await ktBacaVariabel(hasil.variabelTanya);
+        // 30 Okt (G2a): status wali nikah (isian ABT) menentukan ada/tidaknya pertanyaan "mengapa bukan ayah kandung".
+        statusWali = String((await ktBacaVariabel(["1046"]))["1046"] || "");
         if (Object.keys(nilaiVar).length) hasil = susun((kode) => nilaiVar[kode]);
         const pengisi = typeof globalThis !== "undefined" ? globalThis.AletaBdJawabanKatalog : null;
         if (pengisi && typeof pengisi.usulkan === "function") {
@@ -4885,6 +4890,8 @@
         if (tinjau) {
           const biasa = usulan ? K.terapkanUsulan(g.rows, usulan, k) : { rows: g.rows, tertahan: 0 };
           const timpaSemua = usulan ? K.terapkanUsulan(g.rows, usulan, k, { timpa: true }) : { rows: g.rows };
+          biasa.rows = saringWali(biasa.rows);
+          timpaSemua.rows = saringWali(timpaSemua.rows);
           const lama = new Set(t.rows.map((r) => `${r.tanya}${r.jawab}`));
           const ubah = biasa.rows.filter((r) => !lama.has(`${r.tanya}${r.jawab}`)).length;
           S.sk.status[k] = null;
@@ -4895,7 +4902,7 @@
           S.sk.status[k] = { teks: "Daftar pertanyaan ini bukan susunan katalog. Pilih set pertanyaan katalog di atas lalu tekan Muat bila ingin menyusunnya; jawaban yang sudah Anda ketik tetap dipertahankan." };
           continue;
         }
-        const rows = usulan ? K.terapkanUsulan(g.rows, usulan, k).rows : g.rows;
+        const rows = saringWali(usulan ? K.terapkanUsulan(g.rows, usulan, k).rows : g.rows);
         const sama = JSON.stringify(rows.map((r) => [r.tanya, r.jawab])) === JSON.stringify(t.rows.map((r) => [r.tanya, r.jawab]));
         if (!sama) {
           if (!dicatat.size) tjCatat(grupSaksi(k));
@@ -8698,7 +8705,9 @@
   /** Merapikan jawaban saksi menjadi satu paragraf (baris baru di tengah kalimat dilebur); dipakai tombol dan Simpan ke ABT. */
   const rapikanJawabSaksi = (x) => {
     const m = SK();
-    return m && typeof m.rapikanJawaban === "function" ? m.rapikanJawaban(x) : String(x == null ? "" : x).replace(/\s*[\r\n]+\s*/g, " ").trim();
+    const rapi = m && typeof m.rapikanJawaban === "function" ? m.rapikanJawaban(x) : String(x == null ? "" : x).replace(/\s*[\r\n]+\s*/g, " ").trim();
+    // 30 Okt (G2a): jawaban tersimpan diawali huruf besar (kalimat katalog berawal huruf kecil); putusan tetap lcfirst di ABT.
+    return m && typeof m.hurufBesarAwal === "function" ? m.hurufBesarAwal(rapi) : rapi;
   };
   /** Kunci saksi yang sedang tampil (berdampingan: kedua saksi; satu per satu: satu saksi). */
   function kunciTampilTj() {

@@ -661,3 +661,60 @@ describe("BAS sidang berikutnya disiapkan otomatis (G2a 2.4)", () => {
     void tandaBas;
   });
 });
+
+describe("Jawaban tersimpan berhuruf besar dan pertanyaan wali menurut status wali (G2a lanjutan)", () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const SKM = require(path.join(EKSTENSI, "blangko-derry-saksi.js"));
+  it("hurufBesarAwal: huruf pertama a-z dibesarkan; titik-titik, angka, huruf besar, kutip pembuka dijaga; idempoten", () => {
+    expect(SKM.hurufBesarAwal("sudah lama saya mengenal Pemohon I")).toBe("Sudah lama saya mengenal Pemohon I");
+    expect(SKM.hurufBesarAwal("  “ya, saya kenal")).toBe("  “Ya, saya kenal");
+    expect(SKM.hurufBesarAwal("... (membantah)")).toBe("... (membantah)");
+    expect(SKM.hurufBesarAwal("2 orang anak")).toBe("2 orang anak");
+    expect(SKM.hurufBesarAwal("Sudah")).toBe("Sudah");
+    expect(SKM.hurufBesarAwal(SKM.hurufBesarAwal("tidak"))).toBe("Tidak");
+    expect(SKM.hurufBesarAwal("")).toBe("");
+    // perapi lama tidak berubah (putusan merangkai dengan lcfirst di ABT)
+    expect(SKM.rapikanJawaban("rumah\ntangga,\nTergugat ;")).toBe("rumah tangga, Tergugat;");
+  });
+
+  it("Simpan ke ABT: semua jawaban tersimpan diawali huruf besar", async () => {
+    const h = bukaPP();
+    await bukaSaksiPertama(h);
+    await sampai(() => asalTampil(h).includes("data"), "jawaban dari data", 8000);
+    await tunggu(100);
+    klik(h, '[data-bd2="simpantj"]');
+    await sampai(() => h.tj["5058@3"] && h.tj["5058@3"].length, "tersimpan", 8000);
+    expect(h.tj["5058@3"].filter((r) => /^[a-z]/.test(r.jawab))).toEqual([]);
+  });
+
+  it("wali ayah kandung: pertanyaan 'mengapa bukan ayah kandung' tidak masuk draf; wali lain atau belum diketahui: tetap", () => {
+    expect(DS.waliAyahKandung("Ayah Kandung Pemohon II")).toBe(true);
+    expect(DS.waliAyahKandung("ayah kandung Penggugat")).toBe(true);
+    expect(DS.waliAyahKandung("kakak kandung Pemohon II")).toBe(false);
+    expect(DS.waliAyahKandung("bukan ayah kandung, melainkan paman")).toBe(false);
+    expect(DS.waliAyahKandung("")).toBe(false);
+    const rows = [
+      { butir: "q-in-wali-pb", tanya: "Siapa wali?", jawab: "ayah kandung bernama Saliduna", otomatis: "ayah kandung bernama Saliduna" },
+      { butir: "q-in-wali-urutan-pb", tanya: "Mengapa bukan ayah kandungnya?", jawab: "...", dasar: "..." },
+      { butir: "q-in-wali-syarat-pb", tanya: "Syarat wali?", jawab: "x", dasar: "x" },
+    ];
+    expect(DS.saringTanyaWali(rows, {}).rows.map((r: { butir: string }) => r.butir)).toEqual(["q-in-wali-pb", "q-in-wali-syarat-pb"]);
+    const tanpaData = rows.map((r, i) => (i === 0 ? { ...r, jawab: "...", otomatis: undefined, dasar: "..." } : r));
+    expect(DS.saringTanyaWali(tanpaData, {}).dibuang).toBe(0);
+    expect(DS.saringTanyaWali(tanpaData, { statusWali: "Ayah Kandung Pemohon II" }).dibuang).toBe(1);
+    expect(DS.saringTanyaWali(tanpaData, { statusWali: "paman kandung Pemohon II" }).dibuang).toBe(0);
+    // ketikan petugas pada baris itu tidak pernah dibuang
+    const diketik = tanpaData.map((r, i) => (i === 1 ? { ...r, jawab: "Ayahnya sudah meninggal sebelum akad" } : r));
+    expect(DS.saringTanyaWali(diketik, { statusWali: "Ayah Kandung Pemohon II" }).dibuang).toBe(0);
+  });
+});
+
+describe("Status wali berselisih antar sumber (ukur 222/Pdt.P/2026)", () => {
+  it("isian ABT 'ayah kandung' tetapi data perkara menyebut kakak kandung: pertanyaan wali yang lebih berhak tetap", () => {
+    const rows = [
+      { butir: "q-in-wali-pb", tanya: "Siapa wali?", jawab: "Pemohon II dinikahkan dengan wali nikah kakak kandung bernama Fahrudin", otomatis: "Pemohon II dinikahkan dengan wali nikah kakak kandung bernama Fahrudin" },
+      { butir: "q-in-wali-urutan-pb", tanya: "Mengapa bukan ayah kandungnya?", jawab: "...", dasar: "..." },
+    ];
+    expect(DS.saringTanyaWali(rows, { statusWali: "Ayah Kandung Pemohon II" }).dibuang).toBe(0);
+  });
+});

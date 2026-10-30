@@ -377,6 +377,17 @@
     return rapiIsian(teks, "");
   }
 
+  /**
+   * 30 Okt 2026 (G2a): jawaban saksi yang DISIMPAN diawali huruf besar. Kalimat katalog (itsbat, dispensasi, waris, ...) berawal
+   * huruf kecil ("sudah lama saya mengenal ...") karena disusun untuk dirangkai "Bahwa ..." di putusan - di tabel tanya jawab BAS
+   * ia tercetak "- sudah lama ...". Putusan tetap benar: ABT merangkainya dengan lcfirst. Hanya huruf pertama a-z yang diubah
+   * (sesudah spasi/tanda kutip/kurung pembuka); titik-titik isian, angka, dan huruf besar dibiarkan. Idempoten.
+   */
+  function hurufBesarAwal(teks) {
+    const t = String(teks == null ? "" : teks);
+    return t.replace(/^([\s"'“‘(]*)([a-z])/, (_, depan, huruf) => depan + huruf.toUpperCase());
+  }
+
   /** Baris dengan jawaban yang memuat baris baru (jumlah), untuk laporan "N jawaban digabung". */
   const adaBarisBaru = (teks) => /[\r\n]/.test(String(teks || ""));
 
@@ -507,6 +518,7 @@
     rapiButir,
     rapiDaftar,
     rapiIsian,
+    hurufBesarAwal,
     adaBarisBaru,
     geserJawaban,
     tukarJawaban,

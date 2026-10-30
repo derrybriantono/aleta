@@ -1301,8 +1301,11 @@
       // T2 (25 Okt, keputusan pengguna): butir penutup ("Apakah masih ada yang ingin saksi sampaikan?" - "saya sudah cukup")
       // tidak ditampilkan dan tidak disimpan untuk SEMUA jenis perkara; nomor diurutkan ulang.
       const idPenutup = new Set((S.kat.pertanyaan || []).filter((q) => q && q.kelompok === "penutup").map((q) => q.id));
+      // 30 Okt (G2a): wali nikah ayah kandung (isian Status Wali Nikah) = pertanyaan "mengapa bukan ayah kandung" tidak disusun.
+      const DSW = globalThis.AletaBdDrafSaksi;
+      const waliAyah = Boolean(DSW && typeof DSW.waliAyahKandung === "function" && DSW.waliAyahKandung(kodeVar("1046")));
       for (const sk of hasilSusun.saksi || []) {
-        sk.baris = (sk.baris || []).filter((b) => !idPenutup.has(b.butir));
+        sk.baris = (sk.baris || []).filter((b) => !idPenutup.has(b.butir) && !(waliAyah && /^q-in-wali-urutan-/.test(String(b.butir || ""))));
         sk.baris.forEach((b, i) => {
           b.no = i + 1;
         });
