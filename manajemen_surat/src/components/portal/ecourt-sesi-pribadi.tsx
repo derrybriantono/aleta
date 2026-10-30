@@ -61,6 +61,8 @@ type AkunTersimpan = {
   diperbaruiPada: string;
   diujiPada: string;
   hasilUji: string;
+  /** Diisi Super Admin/Admin untuk Anda (G4, 30 Okt 2026). */
+  diisiOleh?: string;
 };
 
 type Data = {
@@ -339,6 +341,7 @@ export function EcourtSesiPribadi() {
                     <span className="text-muted-foreground" data-akun-ecourt-tersimpan={p.kode}>
                       akun tersimpan: {a.email}
                       {a.hasilUji ? ` (${SEBUT_UJI[a.hasilUji] || a.hasilUji} ${waktu(a.diujiPada)})` : " (belum diuji)"}
+                      {a.diisiOleh ? `, diisi oleh ${a.diisiOleh}` : ""}
                     </span>
                   ) : null}
                   <span className="ml-auto flex flex-wrap gap-2">

@@ -1040,6 +1040,27 @@ export const TUTORIAL: readonly Tutorial[] = [
     kataKunci: ["tampilan sipp", "sembunyikan", "lencana", "tombol hilang", "atur tampilan", "widget", "pengaturan tampilan"],
   },
   {
+    id: "pengelola-tautan-akun-pegawai",
+    judul: "Tautan akun pegawai (ALETA, SIPP, ABT, e-Court)",
+    ringkas: "Admin melihat tautan akun tiap pegawai dalam satu layar, memilih akun SIPP yang ragu, dan mengisi akun e-Court pegawai tanpa pegawai masuk sendiri.",
+    kelompok: "pengelola",
+    mencakup: { aksi: ["tautan-akun.atur"] },
+    halaman: ["/admin/tautan-akun"],
+    tautan: { teks: "Buka Tautan Akun Pegawai", href: "/admin/tautan-akun" },
+    langkah: [
+      "Buka Pusat Kendali, lalu Tautan Akun Pegawai (Super Admin dan Admin).",
+      "Akun SIPP yang nama atau NIP-nya sama persis dengan satu-satunya akun SIPP aktif sudah ditautkan sendiri saat layar dibuka.",
+      "Baris berlabel Perlu dipilih: pilih akun SIPP yang benar, lalu Tautkan.",
+      "ABT masuk dengan akun SIPP yang sama; folder blangko pribadi ditampilkan bila namanya cocok.",
+      "Kolom e-Court: Isi atau Ganti untuk mengisi surel dan sandi e-Court pegawai. Sandi tidak pernah tampil lagi, juga bagi pegawai itu sendiri.",
+    ],
+    peringatan: [
+      "Pengisian akun e-Court tercatat di riwayat audit sebagai diisi oleh admin untuk pegawai itu, tanpa sandi.",
+      "Akun e-Court Super Admin hanya dapat diisi Super Admin. Sandi SIPP tidak disimpan di mana pun.",
+    ],
+    kataKunci: ["tautan akun", "akun sipp", "akun ecourt", "akun abt", "isi sandi ecourt", "kartu akun"],
+  },
+  {
     id: "pengelola-tampilan-sipp-peran",
     judul: "Tampilan SIPP per peran dan per pegawai",
     ringkas: "Admin menentukan bagian ALETA mana yang tampil di halaman SIPP untuk tiap peran, dan dapat menimpa per pegawai.",

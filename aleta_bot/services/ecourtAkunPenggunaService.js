@@ -122,7 +122,17 @@ function barisLayar(baris) {
     diperbaruiPada: String(baris.diperbaruiPada || ""),
     diujiPada: String(baris.diujiPada || ""),
     hasilUji: String(baris.hasilUji || ""),
+    // 30 Okt 2026 (G4): akun diisi Super Admin/Admin untuk pegawai ini - NAMA pengisinya saja, tanpa surel/sandi.
+    diisiOleh: String(baris.diisiOleh || ""),
   };
+}
+
+/** Nama pengisi dari Pusat Kendali (Super Admin/Admin): dipangkas, tanpa ganti baris. Kosong = pemilik sendiri. */
+function bersihkanPengisi(nilai) {
+  return String(nilai || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 120);
 }
 
 /**
@@ -132,7 +142,7 @@ function barisLayar(baris) {
  * surel baru dengan sandi lama berarti mengetik sandi akun A ke akun B, dan
  * percobaan login berulang dengan sandi keliru dapat mengunci akun B.
  */
-function simpan({ penggunaId, peran, namaPengguna = "", email = "", sandi = "", olehSiapa = "" } = {}) {
+function simpan({ penggunaId, peran, namaPengguna = "", email = "", sandi = "", olehSiapa = "", diisiOleh = "" } = {}) {
   const id = normalkanPengguna(penggunaId);
   const p = normalkanPeran(peran);
   if (!id || !p) return { ok: false, alasan: "pengguna_atau_peran_tidak_sah" };
@@ -163,6 +173,9 @@ function simpan({ penggunaId, peran, namaPengguna = "", email = "", sandi = "", 
       // Sandi atau surel berganti = hasil uji lama tidak berlaku lagi.
       diujiPada: sandiBaru || !lama ? "" : String(lama.diujiPada || ""),
       hasilUji: sandiBaru || !lama ? "" : String(lama.hasilUji || ""),
+      // Diisi admin untuk pegawai (G4, 30 Okt 2026): nama pengisi disimpan supaya pemilik dan admin melihat
+      // "diisi oleh ..."; disimpan pemilik sendiri = tanda itu hilang.
+      diisiOleh: bersihkanPengisi(diisiOleh),
     };
     tulisSemua(semua);
   } catch (galat) {
@@ -177,7 +190,7 @@ function simpan({ penggunaId, peran, namaPengguna = "", email = "", sandi = "", 
     eventType: "ecourt_akun_pengguna_disimpan",
     severity: "warning",
     message: `Akun e-Court pribadi (${p}) pengguna ${id} disimpan.`,
-    metadata: { penggunaId: id, peran: p, sandiDiganti: Boolean(sandiBaru), olehSiapa: String(olehSiapa || "") },
+    metadata: { penggunaId: id, peran: p, sandiDiganti: Boolean(sandiBaru), olehSiapa: String(olehSiapa || ""), diisiOleh: bersihkanPengisi(diisiOleh) },
   });
   return { ok: true, alasan: "" };
 }

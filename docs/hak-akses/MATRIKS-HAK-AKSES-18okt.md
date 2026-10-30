@@ -180,6 +180,7 @@ Catatan kewenangan:
 | Menyalakan Mode pemeliharaan, mengatur pesan dan jadwalnya | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Mengatur ambang peringatan kapasitas penyimpanan dan pembersihan otomatis sisa pembuatan pembaruan; meminta pemeriksaan ruang | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Mengatur tampilan ALETA di halaman SIPP per peran dan per pengguna | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Kartu tautan akun pegawai (ALETA, SIPP, ABT, e-Court): menautkan akun SIPP dan mengisi akun e-Court pegawai | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Lihat sebagai akun atau peran (pratinjau menu dan hak, baca-saja, tercatat) | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Menyalakan verifikasi dua langkah (OTP WhatsApp, authenticator), aturan per peran, dan jaringan kantor | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Membantu pengguna yang kehilangan HP: kode cadangan dan reset authenticator | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |

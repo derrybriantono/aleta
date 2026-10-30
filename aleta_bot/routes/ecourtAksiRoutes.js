@@ -123,6 +123,8 @@ router.post("/ecourt-pengguna/akun/simpan", wajibToken, (req, res) => {
       email: String(req.body?.email || ""),
       sandi: String(req.body?.sandi || ""),
       olehSiapa: String(req.body?.olehSiapa || ""),
+      // G4 (30 Okt 2026): diisi Super Admin/Admin dari kartu tautan akun - nama pengisi, tanpa isi akun.
+      diisiOleh: String(req.body?.diisiOleh || ""),
     });
     if (req.body) req.body.sandi = "";
     res.status(hasil.ok ? 200 : 400).json({ ok: hasil.ok, alasan: hasil.alasan });
