@@ -53,6 +53,46 @@
     "beda": 467
    }
   },
+  "rincianVerzet": {
+   "prodeo": {
+    "n": 124,
+    "beda": 124
+   },
+   "bukan": {
+    "n": 1765,
+    "beda": 1
+   }
+  },
+  "amarDasar": {
+   "prodeo": {
+    "n": 124,
+    "beda": 124
+   },
+   "bukan": {
+    "n": 1765,
+    "beda": 1
+   }
+  },
+  "meterai": {
+   "prodeo": {
+    "n": 124,
+    "beda": 0
+   },
+   "bukan": {
+    "n": 1765,
+    "beda": 1
+   }
+  },
+  "v8527": {
+   "prodeo": {
+    "n": 124,
+    "beda": 124
+   },
+   "bukan": {
+    "n": 1765,
+    "beda": 0
+   }
+  },
   "tglT": {
    "prodeo": {
     "n": 124,
@@ -140,7 +180,7 @@
    },
    "bukan": {
     "n": 1765,
-    "beda": 1
+    "beda": 1765
    }
   },
   "varian11153": {
@@ -150,7 +190,7 @@
    },
    "bukan": {
     "n": 1765,
-    "beda": 399
+    "beda": 1
    }
   },
   "varian11154": {
@@ -160,7 +200,7 @@
    },
    "bukan": {
     "n": 1765,
-    "beda": 1
+    "beda": 399
    }
   },
   "varian11155": {
@@ -202,6 +242,86 @@
     "n": 1765,
     "beda": 1
    }
+  },
+  "varian11159": {
+   "prodeo": {
+    "n": 124,
+    "beda": 124
+   },
+   "bukan": {
+    "n": 1765,
+    "beda": 1
+   }
+  },
+  "varian11160": {
+   "prodeo": {
+    "n": 124,
+    "beda": 124
+   },
+   "bukan": {
+    "n": 1765,
+    "beda": 399
+   }
+  },
+  "varian11161": {
+   "prodeo": {
+    "n": 124,
+    "beda": 124
+   },
+   "bukan": {
+    "n": 1765,
+    "beda": 1
+   }
+  },
+  "varian11162": {
+   "prodeo": {
+    "n": 124,
+    "beda": 124
+   },
+   "bukan": {
+    "n": 1765,
+    "beda": 1
+   }
+  },
+  "varian11163": {
+   "prodeo": {
+    "n": 124,
+    "beda": 124
+   },
+   "bukan": {
+    "n": 1765,
+    "beda": 399
+   }
+  },
+  "varian11164": {
+   "prodeo": {
+    "n": 124,
+    "beda": 124
+   },
+   "bukan": {
+    "n": 1765,
+    "beda": 399
+   }
+  },
+  "varian11165": {
+   "prodeo": {
+    "n": 124,
+    "beda": 124
+   },
+   "bukan": {
+    "n": 1765,
+    "beda": 399
+   }
+  },
+  "varian11166": {
+   "prodeo": {
+    "n": 124,
+    "beda": 124
+   },
+   "bukan": {
+    "n": 1765,
+    "beda": 399
+   }
   }
  },
  "panggilan_T_putus_2025_2026": {
@@ -215,5 +335,5 @@
   },
   "lama_tanggal_ganda_sama": 195
  },
- "catatan": "non-prodeo beda: amar/rincian/varian 1 = perkara 9321 (galat lama 5223 subkueri >1 baris); amarA2/varian11153 399 = #8504# kini tercetak utuh (dulu ABT memformat ulang 350.000 -> 350); rincianIkrar 467 = jumlah ikrar 0 \"( rupiah)\" -> \"(rupiah)\""
+ "catatan": "beda bukan prodeo yang disengaja: 399 = #8504# kini tercetak utuh (ABT dulu \"Rp290,00\" untuk 290.000); 467 = ikrar biaya 0 tanpa \"sejumlah Rp0,00 ( rupiah)\" dan rincian (nihil); varian11152 semua = bunyi amar ikrar keputusan 30 Okt; 1 = perkara 9321 (galat lama #5223#, verzet kini otomatis)"
 }

@@ -1,12 +1,12 @@
 #!/bin/bash
 # =============================================================================
 # PASANG paket ABT "abt-prodeo-panggilan-29okt" (29 Okt 2026). Dijalankan DI SERVER sebagai root, dari folder paket. HANYA blangko derry_briantono.
-# Isi: fungsi isian_rtf_terbilang, variabel baru (nomor-baru.txt: 11120-11124, 11130-11143, 11150..), 3 variabel Derry diubah (8508, 8547, 8600),
+# Isi: fungsi isian_rtf_terbilang, variabel baru (nomor-baru.txt, blok 11120-11199), variabel Derry diubah (nomor-ubah.txt),
 #      dan blangko RTF derry_briantono ditimpa (daftar-timpa.tsv: HANYA bila md5 server persis md5 lama).
 # Urutan: md5 paket -> PRASYARAT (baca saja) + CEK BERKAS (baca saja) -> CADANGAN -> FUNGSI -> PASANG SQL (satu transaksi) -> PERIKSA
 #         -> UJI kueri baru atas perkara nyata (baca saja) -> BERKAS RTF -> PERIKSA BERKAS. Gagal sesudah FUNGSI = PULIH otomatis.
 # TANPA_RTF=1: hanya fungsi + variabel (bila ada blangko yang md5-nya sudah berubah; amar/rincian prodeo baru berlaku sesudah
-#              paket dibangun ulang dari blangko terbaru - lihat PASANG.md). Tanggal panggilan di 8508/8547/8600 tetap terpasang.
+#              paket dibangun ulang dari blangko terbaru - lihat PASANG.md). Variabel ubahan (nomor-ubah.txt) tetap terpasang.
 # Laptop: ABT_LOKAL=1 ABT_DB=aps_badilag_pp29 SIPP_DB=sipp_2810 ABT_BLANGKO=<_blangko_abt uji> MYSQL_BIN=<folder mysql.exe> PY=python bash pasang-satker.sh
 # =============================================================================
 set -u
@@ -14,15 +14,16 @@ cd "$(dirname "$0")" || exit 1
 SINI=$(pwd)
 N=abt-prodeo-panggilan-29okt
 NB=$(grep -vc '^#' nomor-baru.txt)
-HARAP='0|0|3|0|1'
-ULANG="0|$NB|0|3|1"
+NUB=$(grep -vc '^#' nomor-ubah.txt)
+HARAP="0|0|$NUB|0|1"
+ULANG="0|$NB|0|$NUB|1"
 CAD="$SINI/cadangan"
 B="${ABT_BLANGKO:-/var/www/html/aps_badilag/_blangko_abt}"
 SDB="${SIPP_DB:-SIPP}"
 ADB="${ABT_DB:-aps_badilag}"
 PY="${PY:-python}"
 BIN="${MYSQL_BIN:-}"; [ -n "$BIN" ] && BIN="$BIN/"
-NOMOR="$(grep -v '^#' nomor-baru.txt | tr '\n' ',')8508,8547,8600"
+NOMOR="$(grep -hv '^#' nomor-baru.txt nomor-ubah.txt | tr '\n' ',' | sed 's/,$//')"
 gagal() { echo "GAGAL: $*"; exit 1; }
 
 md5sum -c MD5SUMS.txt >/dev/null 2>&1 || gagal "isi paket rusak (md5sum -c MD5SUMS.txt) - salin ulang paket dengan scp"

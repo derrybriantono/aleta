@@ -31,8 +31,8 @@ TOK = re.compile(rb"\\([a-zA-Z]+)(-?\d+)? ?|\\'([0-9a-fA-F]{2})|\\(.)|([{}])|([^
 
 PETA_RINCIAN = {"0279": "11130", "6060": "11131", "6074": "11132", "6063": "11133", "8891": "11134", "0312": "11135",
                 "0281": "11136", "5223": "11137", "0242": "11138", "0244": "11139", "0143": "11140",
-                "1090": "11141", "1164": "11142", "1101": "11143"}
-AMAR, JUMLAH, JUMLAH_IKRAR = "11122", "11123", "11124"
+                "1090": "11141", "1164": "11142", "1101": "11143", "3993": "11144"}
+AMAR, JUMLAH, JUMLAH_IKRAR, JUMLAH_VERZET = "11122", "11123", "11124", "11145"
 TGL_P, TGL_T = "11120", "11121"
 
 
@@ -109,10 +109,11 @@ aturan("P2", r"#1077# dan tanggal #0120#", "#1077#", "#" + TGL_T + "#", True)
 aturan("P3", r"(?<=dipanggil dengan sah dan patut, pada tanggal )#1077#(?=,)", "#1077#", "#" + TGL_T + "#", True)
 aturan("P4", r"(?<=Nomor #0001# tanggal )#1077#(?= yang dibacakan)", "#1077#", "#" + TGL_T + "#", True)
 
-# Amar biaya "Membebankan ... sejumlah Rp#0143#/#8504#,00 (#0155# #7095#|rupiah)" yang ditulis langsung (bukan #8505#).
-# "Menghukum ..." (perkara kontensius: pihak kalah) dan isian kesepakatan #9354# (perdamaian) TIDAK disentuh.
-POLA_VARIAN = re.compile(r"Membebankan (?:(?!Membebankan)[^.;\n()]){0,220}?sejumlah Rp\.? ?#(?:0143|8504|1101)#,00 \((?:#0155# (?:#7095#|rupiah)|#2050# rupiah)\)")
-VARIAN_TOLAK = ("#9354#",)
+# Amar biaya "Membebankan/Menghukum ... sejumlah Rp#0143#/#8504#/#1101#/#3993#,00 (terbilang rupiah)" yang ditulis langsung
+# (bukan #8505#), termasuk perdamaian #9354# dan verzet: prodeo = kalimat DIPA #8505#, selain itu kalimat blangko dengan nominal benar.
+POLA_VARIAN = re.compile(r"(?:Membebankan|Menghukum) (?:(?!Membebankan|Menghukum)[^.;\n()]){0,220}?sejumlah Rp\.? ?#(?:0143|8504|1101|3993)#,00 "
+                         r"\((?:#0155# (?:#7095#|rupiah)|#2050# rupiah|#3994# rupiah)\)")
+VARIAN_TOLAK = ()  # 30 Okt: "Menghukum ..." dan perdamaian #9354# ikut (keputusan pengguna)
 VARIAN = {}        # kalimat -> nomor variabel (diisi bangun_paket.py)
 DIKUMPUL = set()   # kalimat yang ditemukan tetapi belum bernomor
 
@@ -137,9 +138,6 @@ def cari_edit(t, rel):
         if not jm or jm.start() - m.end() > 4000:
             catatan.append("rincian tanpa baris Jumlah")
             continue
-        if jm.group(1) == "3993":
-            catatan.append("rincian verzet (#3993#) dibiarkan")
-            continue
         pm = PAREN.search(t, jm.end(), jm.end() + 400)
         antara = re.sub(r"Untuk Salinan|#8008#|Panitera,|#8004#|Terbilang\s*:|\s", "", t[jm.end():pm.start()]) if pm else "x"
         if antara:
@@ -154,9 +152,7 @@ def cari_edit(t, rel):
             elif v not in ("8008", "8004"):
                 catatan.append("rincian memuat #%s# (dibiarkan)" % v)
         isi = pm.group(1)
-        baru = "#" + (JUMLAH_IKRAR if isi.startswith("#2050#") else JUMLAH) + "#"
-        if isi.startswith("#3994#"):
-            continue
+        baru = "#" + (JUMLAH_IKRAR if isi.startswith("#2050#") else JUMLAH_VERZET if isi.startswith("#3994#") else JUMLAH) + "#"
         a = pm.start() + 1
         edit.append((a, pm.end() - 1, a, a + 6, baru, "RJ"))
     # amar biaya tertulis langsung di blangko (putusan dan BAS): satu variabel per bentuk kalimat (VARIAN, disusun bangun_paket.py)

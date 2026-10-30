@@ -1,6 +1,6 @@
 #!/bin/bash
 # PULIH paket ABT "abt-prodeo-panggilan-29okt" (29 Okt 2026) - deterministik: blangko dikembalikan dari cadangan HANYA bila isinya masih persis isi paket,
-# variabel baru dihapus HANYA bila masih persis isi paket, 8508/8547/8600 dikembalikan HANYA bila masih persis isi baru, fungsi isian_rtf_terbilang dihapus.
+# variabel baru dihapus HANYA bila masih persis isi paket, variabel ubahan (nomor-ubah.txt) dikembalikan HANYA bila masih persis isi baru, fungsi isian_rtf_terbilang dihapus.
 # Baris terakhir harus "PULIH COCOK". Laptop: ABT_LOKAL=1 ABT_DB=aps_badilag_pp29 ABT_BLANGKO=<_blangko_abt uji> MYSQL_BIN=<folder mysql.exe> PY=python bash pulih-satker.sh
 set -u
 cd "$(dirname "$0")" || exit 1
@@ -29,5 +29,6 @@ fi
 sqlf "$N-PULIH.sql" | $MY -N || { echo "GAGAL: PULIH SQL berhenti"; exit 1; }
 sqlf "$N-FUNGSI-PULIH.sql" | $MY || { echo "GAGAL: fungsi tidak terhapus"; exit 1; }
 p=$(sqlf "$N-PRASYARAT.sql" | $MY -N)
-echo "PRASYARAT sesudah pulih: $p (harus 0|0|3|0|1)"
-if [ "$p" = "0|0|3|0|1" ] && [ "$ok" = 1 ]; then echo "PULIH COCOK"; else echo "PULIH SEBAGIAN"; exit 1; fi
+NUB=$(grep -vc '^#' nomor-ubah.txt)
+echo "PRASYARAT sesudah pulih: $p (harus 0|0|$NUB|0|1)"
+if [ "$p" = "0|0|$NUB|0|1" ] && [ "$ok" = 1 ]; then echo "PULIH COCOK"; else echo "PULIH SEBAGIAN"; exit 1; fi

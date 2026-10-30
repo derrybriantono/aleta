@@ -184,6 +184,7 @@ async function keadaanIkrar(jadwalId) {
             j.alasan_ditunda AS alasanDitunda, j.keterangan AS keterangan,
             j.dihadiri_oleh AS dihadiriOleh,
             p.nomor_perkara AS nomorPerkara, p.pihak1_text AS pihak1, p.pihak2_text AS pihak2,
+            p.prodeo AS prodeo, YEAR(p.tanggal_pendaftaran) AS tahunDaftar,
             pu.tanggal_putusan AS tanggalPutusan, pu.tanggal_bht AS tanggalBht,
             it.perkara_id AS adaBarisIkrar, it.tgl_ikrar_talak AS tglIkrar,
             it.status_penetapan_ikrar_talak_id AS statusIkrar, it.amar_ikrar_talak AS amarIkrar,
@@ -267,8 +268,9 @@ function escHtml(teks) {
  * sama dengan angka yang diketik petugas di amar_ikrar_talak mereka.
  *
  * `nilai` = {noVar: {status, teks}} (keluaran abt.nilaiPenanda). Murni.
- * Pulang { angka: "14.500", terbilang: "empat belas ribu lima ratus", jumlah: 14500 } atau null
- * bila #1101# belum terisi / bukan angka / nol - amar lalu TANPA angka (tidak dikarang).
+ * Pulang { angka: "14.500", terbilang: "empat belas ribu lima ratus", jumlah: 14500 }, { angka: "0", terbilang: "",
+ * jumlah: 0 } bila biaya ikrar NOL (30 Okt: tetap dibebankan, angka 0 tidak disebut), atau null bila #1101# belum
+ * terisi / bukan angka (amar lalu TANPA angka, tidak dikarang).
  */
 function bacaBiayaIkrar(nilai) {
   const a = nilai && nilai["1101"];
@@ -276,7 +278,8 @@ function bacaBiayaIkrar(nilai) {
   const angka = bersih(a.teks);
   if (!/^\d{1,3}(\.\d{3})*$/.test(angka)) return null;
   const jumlah = Number(angka.replace(/\./g, ""));
-  if (!jumlah) return null;
+  if (!Number.isFinite(jumlah)) return null;
+  if (jumlah === 0) return { angka: "0", terbilang: "", jumlah: 0 };
   const t = nilai["2050"];
   const terbilang = t && t.status === "terisi" ? bersih(t.teks).replace(/\s+/g, " ") : "";
   return { angka, terbilang: /^[A-Za-z ]+$/.test(terbilang) ? terbilang : "", jumlah };
@@ -294,23 +297,41 @@ async function ambilBiayaIkrar(perkaraId) {
 }
 
 /**
+ * Butir biaya amar penetapan ikrar (30 Okt 2026, keputusan pengguna) - tanpa <li>. Murni.
+ *   prodeo (perkara.prodeo = 1): "Membebankan biaya perkara kepada DIPA <Pengadilan Agama ...> Tahun <tahun pendaftaran>";
+ *     nama pengadilan dari identitas satker (sys_config NamaPN), tahun dari perkara.tanggal_pendaftaran - bila salah satu
+ *     tidak terbaca: "" (pemanggil menolak, tidak dikarang).
+ *   bukan prodeo, biaya > 0: "Membebankan biaya perkara kepada Pemohon sejumlah Rp<angka>,00 (<terbilang> rupiah)";
+ *   bukan prodeo, biaya 0: "Membebankan biaya perkara kepada Pemohon" (tetap dibebankan; angka 0 tidak disebut);
+ *   biaya tidak terbaca: "... kepada Pemohon sesuai ketentuan yang berlaku" (petugas diberi tahu lewat andaian).
+ * `b` = { biaya, prodeo, namaPengadilan, tahunDaftar }.
+ */
+function butirBiayaIkrar(b = {}) {
+  if (b.prodeo === true) {
+    const pengadilan = bersih(b.namaPengadilan);
+    const tahun = /^\d{4}$/.test(bersih(b.tahunDaftar)) ? bersih(b.tahunDaftar) : "";
+    return pengadilan && tahun ? `Membebankan biaya perkara kepada DIPA ${escHtml(pengadilan)} Tahun ${tahun}` : "";
+  }
+  return `Membebankan biaya perkara kepada Pemohon${kalimatBiaya(b.biaya)}`;
+}
+
+/**
  * Amar penetapan ikrar (HTML penyunting SIPP, minimal 50 huruf). Bentuk dari
  * amar_ikrar_talak yang sudah ada di satker: dua butir - perkawinan putus
- * karena talak satu raj'i, dan pembebanan biaya penetapan. JUMLAH biaya diambil
+ * karena talak satu raj'i, dan pembebanan biaya (butirBiayaIkrar). JUMLAH biaya diambil
  * dari variabel ABT biaya ikrar (bacaBiayaIkrar); bila tidak terbaca, butir kedua
  * tidak menyebut angka dan petugas diberi tahu lewat andaian.
+ * `opsi` = { prodeo, namaPengadilan, tahunDaftar } (perkara prodeo: biaya kepada DIPA).
  */
-function susunAmar(pihak1, pihak2, biaya = null) {
+function susunAmar(pihak1, pihak2, biaya = null, opsi = {}) {
   const p1 = bersih(pihak1);
   const p2 = bersih(pihak2);
-  const jumlah =
-    biaya && biaya.angka
-      ? ` sebesar Rp${biaya.angka},-${biaya.terbilang ? ` (${biaya.terbilang} rupiah)` : ""}`
-      : " sesuai ketentuan yang berlaku";
+  const butir = butirBiayaIkrar({ ...opsi, biaya });
+  if (!butir) return "";
   return (
     `<ol>\n <li>Menyatakan perkawinan antara Pemohon (<strong>${escHtml(p1)}</strong>) dengan Termohon ` +
     `(<strong>${escHtml(p2)}</strong>) putus karena perceraian dengan talak satu raj&#39;i;</li>\n` +
-    ` <li>Membebankan kepada Pemohon untuk membayar biaya penetapan ini${jumlah};</li>\n</ol>`
+    ` <li>${butir};</li>\n</ol>`
   );
 }
 
@@ -323,10 +344,11 @@ function tanggalPanjang(iso) {
   return `${Number(m[3])} ${BULAN[Number(m[2]) - 1]} ${m[1]}`;
 }
 
+/** Nominal biaya ikrar sesudah "kepada Pemohon" (lihat butirBiayaIkrar). Murni. */
 function kalimatBiaya(biaya) {
-  return biaya && biaya.angka
-    ? ` sebesar Rp${biaya.angka},-${biaya.terbilang ? ` (${biaya.terbilang} rupiah)` : ""}`
-    : " sesuai ketentuan yang berlaku";
+  if (!biaya || !biaya.angka) return " sesuai ketentuan yang berlaku";
+  if (Number(biaya.jumlah) === 0) return "";
+  return ` sejumlah Rp${biaya.angka},00${biaya.terbilang ? ` (${biaya.terbilang} rupiah)` : ""}`;
 }
 
 /**
@@ -343,9 +365,12 @@ function kalimatBiaya(biaya) {
  */
 function susunAmarIkrar(status, b = {}) {
   const s = Number(status);
-  if (s === STATUS_DIIKRARKAN) return susunAmar(b.pihak1, b.pihak2, b.biaya || null);
+  const opsi = { prodeo: b.prodeo === true, namaPengadilan: b.namaPengadilan, tahunDaftar: b.tahunDaftar };
+  if (s === STATUS_DIIKRARKAN) return susunAmar(b.pihak1, b.pihak2, b.biaya || null, opsi);
   const nomor = escHtml(bersih(b.nomorPerkara));
-  const biaya = `<li>Membebankan kepada Pemohon untuk membayar biaya penetapan ini${kalimatBiaya(b.biaya)};</li>`;
+  const butir = butirBiayaIkrar({ ...opsi, biaya: b.biaya || null });
+  if (!butir) return "";
+  const biaya = `<li>${butir};</li>`;
   if (s === STATUS_PEMOHON_TIDAK_HADIR) {
     const tgl = tanggalPanjang(b.tanggalPutusan);
     if (!nomor || !tgl) return "";
@@ -487,7 +512,9 @@ async function siapkanIsianIkrar(minta, k) {
   const amarSudahAda =
     bersih(k.amarIkrar).length >= 50 && (statusTercatat === status || (statusTercatat === 0 && status === STATUS_DIIKRARKAN));
   const biaya = amarSudahAda ? null : await (typeof minta.ambilBiaya === "function" ? minta.ambilBiaya : ambilBiayaIkrar)(k.perkaraId);
-  const namaPengadilan = !amarSudahAda && status === STATUS_RUKUN_KEMBALI ? await namaPengadilanSatker() : "";
+  // 30 Okt: perkara prodeo -> biaya kepada DIPA <pengadilan> Tahun <tahun pendaftaran> (nama pengadilan dari identitas satker)
+  const prodeo = Number(k.prodeo) === 1;
+  const namaPengadilan = !amarSudahAda && (status === STATUS_RUKUN_KEMBALI || prodeo) ? await namaPengadilanSatker() : "";
   const amar = amarSudahAda
     ? k.amarIkrar
     : susunAmarIkrar(status, {
@@ -497,6 +524,8 @@ async function siapkanIsianIkrar(minta, k) {
         nomorPerkara: k.nomorPerkara,
         tanggalPutusan: k.tanggalPutusan,
         namaPengadilan,
+        prodeo,
+        tahunDaftar: k.tahunDaftar,
       });
   if (bersih(amar).length < 50) return { ok: false, alasan: "amar_ikrar_tidak_dapat_disusun", status };
   if (menyebutAleta(amar)) return { ok: false, alasan: "teks_menyebut_aleta" };
@@ -510,9 +539,13 @@ async function siapkanIsianIkrar(minta, k) {
           ? "Pemohon tidak hadir - putusan tidak mempunyai kekuatan hukum"
           : "rukun kembali - ikrar tidak dijatuhkan, perkara dicoret dari register";
     andaian.push(
-      biaya
-        ? `Amar penetapan ikrar disusun otomatis (${isi}); biaya penetapan Rp${biaya.angka},- diambil dari biaya perkara yang tercatat pada data satker.`
-        : `Amar penetapan ikrar disusun otomatis (${isi}); jumlah biaya penetapan tidak disebut karena tidak terbaca dari biaya perkara - periksa di SIPP.`
+      prodeo
+        ? `Amar penetapan ikrar disusun otomatis (${isi}); perkara prodeo - biaya perkara dibebankan kepada DIPA ${namaPengadilan} Tahun ${k.tahunDaftar}.`
+        : biaya && Number(biaya.jumlah) === 0
+          ? `Amar penetapan ikrar disusun otomatis (${isi}); biaya ikrar yang tercatat Rp0 - biaya tetap dibebankan kepada Pemohon tanpa menyebut angka.`
+          : biaya
+            ? `Amar penetapan ikrar disusun otomatis (${isi}); biaya penetapan Rp${biaya.angka},00 diambil dari biaya perkara yang tercatat pada data satker.`
+            : `Amar penetapan ikrar disusun otomatis (${isi}); jumlah biaya penetapan tidak disebut karena tidak terbaca dari biaya perkara - periksa di SIPP.`
     );
   }
   if (batas && tanggalIkrar > batas && status === STATUS_DIIKRARKAN) {
@@ -728,6 +761,8 @@ module.exports = {
   ketuaMajelisIkrar,
   bacaBiayaIkrar,
   ambilBiayaIkrar,
+  butirBiayaIkrar,
+  kalimatBiaya,
   susunAmar,
   susunIsianBorangIkrar,
   susunRencanaIsiIkrar,

@@ -10,6 +10,7 @@ import gzip
 import hashlib
 import io
 import json
+import re
 import os
 import shutil
 import subprocess
@@ -26,7 +27,9 @@ HASIL = os.path.join(SINI, "..", "hasil")
 N = "abt-prodeo-panggilan-29okt"
 MYSQL = r"D:\Satker Asal\Website PA Bungku\xampp\mysql\bin\mysql.exe"
 BASIS = sys.argv[1] if len(sys.argv) > 1 else "aps_badilag_2810"
-RTF = sys.argv[2] if len(sys.argv) > 2 else r"D:\Aplikasi\aleta\tmp\w82\rtf\derry_briantono"
+# pohon blangko PERKIRAAN SERVER sebelum paket ini (agen BAS, w124 alat/susun_dasar.py SEMUA=1): salinan server w82 + alamat-ganda-26okt,
+# sampul-daftar-isi-26okt, pihak-urut-ecourt-27okt, court-calendar-28okt, blangko-ikrar-92-28okt (semua sudah terpasang di server)
+RTF = sys.argv[2] if len(sys.argv) > 2 else r"D:\Aplikasi\aleta\tmp\bas29\dasar2\derry_briantono"
 REPO_PAKET = os.path.join(SINI, "..", "..")
 TINDIH = ["blangko-ikrar-92-28okt", "court-calendar-28okt", "sampul-daftar-isi-26okt"]
 KEPALA = "-- Paket ABT \"%s\" (29 Okt 2026): perkara prodeo (amar tanpa nominal, rincian Rp0,00 (nihil)) dan tanggal panggilan sebanyak relaas.\n" % N
@@ -76,11 +79,25 @@ def main():
     # --- bentuk amar biaya tertulis langsung: dikumpulkan dari semua blangko, diberi nomor 11150.. urut kalimat -------------
     for rel in sorted(dasar):
         TR.cari_edit(TR.urai(open(dasar[rel], 'rb').read())[0], rel[len('derry_briantono/'):])
-    kalimat = sorted(TR.DIKUMPUL)
-    assert len(kalimat) <= 50, len(kalimat)
-    for i, k in enumerate(kalimat):
-        TR.VARIAN[k] = 11150 + i
-        IV.BARU.append(IV.varian(11150 + i, k))
+    # nomor TETAP per kalimat (sumber/varian-nomor.tsv): paket lain (BAS w124) dibangun di atas RTF paket ini, jadi kalimat lama
+    # tidak boleh berganti nomor; kalimat baru mendapat nomor berikutnya dan dicatat
+    tetap_p = os.path.join(SINI, "varian-nomor.tsv")
+    tetap = {}
+    for b in io.open(tetap_p, encoding="utf-8"):
+        if b.strip() and not b.startswith("#"):
+            no, k = b.rstrip("\n").split("\t")
+            tetap[k] = int(no)
+    for k in sorted(TR.DIKUMPUL - set(tetap)):
+        tetap[k] = max(list(tetap.values()) + [11149]) + 1
+    assert max(tetap.values()) <= 11199
+    with io.open(tetap_p, "w", encoding="utf-8", newline="\n") as o:
+        o.write("# nomor<TAB>kalimat amar biaya tertulis - nomor TETAP (bentuk baru mendapat nomor berikutnya; jangan diurut ulang: paket lain dibangun di atas RTF paket ini)\n")
+        for k, no in sorted(tetap.items(), key=lambda x: x[1]):
+            o.write("%d\t%s\n" % (no, k))
+    for k, no in sorted(tetap.items(), key=lambda x: x[1]):
+        if k in TR.DIKUMPUL:
+            TR.VARIAN[k] = no
+            IV.BARU.append(IV.varian(no, k))
 
     # --- variabel ----------------------------------------------------------------------------------------------------
     nomor_baru = [n for n, _, _ in IV.BARU]
@@ -101,9 +118,13 @@ def main():
                 assert baru.count(a) == k, "%d: '%s' muncul %d kali, harap %d" % (no, a, baru.count(a), k)
                 baru = baru.replace(a, b)
         ubah[no] = (lama, baru, m, md5(baru.encode("latin1")))
+    # NAMA variabel ikut dirender ABT (data_variabel_detil: 'nama' => variabel($nama)): penanda #NNNN# di nama DIHITUNG tiap cetak.
+    # Di nama hanya sebutan #0046#/#0047# yang boleh; selain itu ditulis [NNNN] (mis. #8505# -> #0143# -> #5223# membuat verzet GALAT).
+    IV.BARU[:] = [(n, re.sub(r"#(?!0046#|0047#)(\d{4,5})#", r"[\1]", nama), q) for n, nama, q in IV.BARU]
     for n, nama, q in IV.BARU:
         assert "aleta" not in (nama + q).lower()
         assert len(nama) <= 200, "nama %d terlalu panjang (%d)" % (n, len(nama))
+        assert not re.search(r"#(?!0046#|0047#)\d{4,5}#", nama), nama
     for no, (lama, baru, a, b) in ubah.items():
         assert "aleta" not in baru.lower()
 
@@ -118,7 +139,7 @@ def main():
     daftar_baru = " UNION ALL ".join("SELECT %d AS n, '%s' AS h" % (n, tanda_baris(n, nama, q)) for n, nama, q in IV.BARU)
     daftar_ubah = " UNION ALL ".join("SELECT %d AS n, '%s' AS l, '%s' AS b" % (no, v[2], v[3]) for no, v in sorted(ubah.items()))
     pras = (KEPALA + "-- PRASYARAT (baca saja) \"A|B|C|D|E\": A = nomor 11120-11199 yang sudah ada tetapi isinya bukan isi paket (harus 0) | B = nomor baru"
-            " yang sudah persis isi paket | C = variabel 8508/8547/8600 berisi LAMA | D = berisi BARU | E = fungsi isian_rtf_tanggal ada (1).\n"
+            " yang sudah persis isi paket | C = variabel ubahan (nomor-ubah.txt) berisi LAMA | D = berisi BARU | E = fungsi isian_rtf_tanggal ada (1).\n"
             "-- Benar: \"0|0|%d|0|1\" (pasang pertama) atau \"0|%d|0|%d|1\" (pasang ulang). Selain itu berhenti, tidak ada yang diubah.\n" % (len(ubah), nb, len(ubah)))
     pras += ("SELECT CONCAT_WS('|',\n"
              "  (SELECT COUNT(*) FROM aps_badilag.abt_variabel v WHERE v.no_var BETWEEN 11120 AND 11199 AND NOT EXISTS (SELECT 1 FROM (%s) d WHERE d.n = v.no_var AND d.h = MD5(CONCAT_WS('|', v.nama, v.data_type, IFNULL(v.sql_query, ''), v.locked)))),\n"
@@ -152,6 +173,8 @@ def main():
         io.open(os.path.join(PAKET, "%s-%s.sql" % (N, nama)), "w", encoding="ascii", newline="\n").write("\n".join(isi) + "\n")
     with io.open(os.path.join(PAKET, "nomor-baru.txt"), "w", encoding="ascii", newline="\n") as o:
         o.write("# nomor variabel baru paket (satu per baris)\n" + "".join("%d\n" % n for n in nomor_baru))
+    with io.open(os.path.join(PAKET, "nomor-ubah.txt"), "w", encoding="ascii", newline="\n") as o:
+        o.write("# nomor variabel Derry yang diubah bersyarat md5 (satu per baris)\n" + "".join("%d\n" % n for n in sorted(ubah)))
     # uji kueri (server, baca saja): nomor<TAB>kueri satu baris
     with io.open(os.path.join(PAKET, "uji-kueri.tsv"), "w", encoding="ascii", newline="\n") as o:
         o.write("# nomor<TAB>kueri satu baris (#perkara_id# diganti; penanda #NNNN# lain dibiarkan apa adanya: diuji bahwa kueri JALAN)\n")
