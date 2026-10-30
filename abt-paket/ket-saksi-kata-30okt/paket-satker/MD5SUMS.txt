@@ -1,0 +1,7 @@
+debb8bf022c7866c2624c723e5aaedc4  abt-ket-saksi-kata-30okt-FUNGSI.sql
+34c4a6752883084472abb1cd2310010c  abt-ket-saksi-kata-30okt-FUNGSI-LAMA.sql
+305c5b20f3c185cc2ccb8f59816bf458  abt-ket-saksi-kata-30okt-PRASYARAT.sql
+df41de535ea1f813584e983f6e7de2a1  abt-ket-saksi-kata-30okt-PERIKSA.sql
+502fc68c0e9f0ccf8c57e1bcf21a8c94  harap.txt
+d296f4b2d2ce107c999c11a1165b915a  pasang-satker.sh
+1bdc3972ea0ff9211db28029ef446579  pulih-satker.sh

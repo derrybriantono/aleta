@@ -1,0 +1,9 @@
+278298631fe4e2574793c599718dcac2  harap.txt
+e970ca907a7d5308f646c390932691ff  tambal-rtf.pl
+81605b2eec8b8ecfec433e1901835a24  rtf-daftar-tambal.tsv
+70edf045f3a041e88204e135ae3d2c35  rtf-tambal.tsv
+2c1753e0ba7c33964fd969170f1b5b47  nomor-dirujuk.txt
+9ffa341465044033b6c35b357e12ae34  daftar-berkas.tsv
+1e108fabed0964871bd703478f770b19  abt-bas-tanya-jawab-29okt-PRASYARAT.sql
+5b5bd464b755bfc229938b170815d89c  pasang-satker.sh
+a6253c8c744ef8426fd55a3aac2990f8  pulih-satker.sh

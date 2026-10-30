@@ -1,0 +1,10 @@
+PRASYARAT awal: 1|0|1|0
+PRASYARAT sesudah pasang: 1|1|0|1
+pola | kelompok | sama | beda: 0	946	946	0
+pola | kelompok | sama | beda: 1	985	445	540
+UJI fungsi kata utuh (harus 1 semua):
+1	1	1	1	1
+PULIH:
+PRASYARAT sesudah pulih: 1|0|1|0
+sesudah pulih kelompok | sama dengan lama: 1931	1931
+PRASYARAT pasang lagi: 1|1|0|1

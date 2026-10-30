@@ -1,0 +1,3 @@
+e5ccadef0e3e659108bf8437671869e9  pindah.tsv
+aa7ca88f927aeffb03d9ba01eb6fe729  pasang-satker.sh
+c934f8a2a200b04043112a3a8539667f  pulih-satker.sh

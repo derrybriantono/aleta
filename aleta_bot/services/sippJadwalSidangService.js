@@ -925,6 +925,9 @@ async function putusanPerkara(perkaraId) {
     // Amar dipotong: yang diperlukan di layar jadwal adalah keadaannya, bukan
     // seluruh naskah putusan. Naskah lengkapnya tetap ada di SIPP.
     amarRingkas: putusan ? bersihkanAmar(putusan.amarPutusan) : "",
+    // 30 Okt: amar memuat "verstek" (LOCATE tanpa beda huruf besar, seperti aturan upaya hukum pemberitahuan putusan) -
+    // dibaca dari amar UTUH, bukan amarRingkas yang dipotong 600 huruf. Dipakai catatan temuan cetak Blangko Derry.
+    amarVerstek: Boolean(putusan && /verstek/i.test(String(putusan.amarPutusan || ""))),
     // Naskah putusan tersimpan sebagai berkas. Yang anonim adalah yang boleh
     // dipublikasikan; yang asli memuat identitas para pihak.
     adaBerkasPutusan: Boolean(putusan && cleanText(putusan.amarDok)),

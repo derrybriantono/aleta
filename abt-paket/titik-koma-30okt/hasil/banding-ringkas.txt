@@ -1,0 +1,24 @@
+Seluruh kelompok saksi 4.831 (perkara x saksi) dan seluruh isian bukti 2.918 di salinan dump 28 Okt; contoh teks tidak disimpan (data pribadi).
+kelompok berbeda: saksi 3252, bukti 1752
+PENJAGA huruf/angka berubah: 0
+bukti ; di tengah BARU: 0
+bukti ; di tengah LAMA: 16
+saksi ; di tengah BARU: 0
+saksi ; di tengah LAMA: 552
+bukti | 2648 | spasi ganda / ganti baris / tab dirapikan
+bukti | 278 | spasi sebelum tanda baca dibuang
+bukti | 94 | tanda baca ganda dirapikan
+bukti | 60 | tanda butir "-" sesudah ":"/";" dibuang
+bukti | 55 | spasi sesudah tanda baca ditambah
+bukti | 12 | LAIN
+bukti | 8 | ";" di tengah -> ","
+saksi | 9235 | spasi ganda / ganti baris / tab dirapikan
+saksi | 3229 | spasi sebelum tanda baca dibuang
+saksi | 995 | ujung butir diberi ";"
+saksi | 831 | tanda baca ganda dirapikan
+saksi | 296 | spasi sesudah tanda baca ditambah
+saksi | 201 | ganti baris / <br> / tab di dalam butir -> spasi
+saksi | 163 | ";" di tengah -> ","
+saksi | 134 | LAIN
+saksi | 101 | titik ujung butir -> ";"
+saksi | 23 | tanda butir "-" sesudah ":"/";" dibuang

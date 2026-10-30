@@ -1,0 +1,532 @@
+[
+ {
+  "perkara_id": "9870",
+  "blangko": "1 Perceraian CG - BAS/BAS ALUR 01 [1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verstek di Sidang Pertama - Cerai Gugat.rtf",
+  "label": "CG verstek 1x sidang - BAS (diubah)",
+  "sebelum": {
+   "baris": 128,
+   "penanda_sisa": [],
+   "baris_saksi": 84,
+   "bahwa_saksi": 0,
+   "tanya": 34
+  },
+  "sesudah": {
+   "baris": 102,
+   "penanda_sisa": [],
+   "baris_saksi": 58,
+   "bahwa_saksi": 0,
+   "tanya": 22
+  }
+ },
+ {
+  "perkara_id": "9870",
+  "blangko": "1 Perceraian CG - BAS/BAS ALUR 02 [2] BAS 2 P Hadir & T Tidak Hadir - Saksi dan Putusan Verstek (2 Saksi).rtf",
+  "label": "CG verstek - BAS patokan (tidak diubah)",
+  "sebelum": {
+   "baris": 97,
+   "penanda_sisa": [],
+   "baris_saksi": 58,
+   "bahwa_saksi": 0,
+   "tanya": 22
+  },
+  "sesudah": {
+   "baris": 97,
+   "penanda_sisa": [],
+   "baris_saksi": 58,
+   "bahwa_saksi": 0,
+   "tanya": 22
+  }
+ },
+ {
+  "perkara_id": "9870",
+  "blangko": "1 Perceraian CG/[01] [Kabul Verstek] Cerai (Format Lengkap).rtf",
+  "label": "CG verstek - putusan patokan (tidak diubah)",
+  "sebelum": {
+   "baris": 131,
+   "penanda_sisa": [],
+   "baris_saksi": 24,
+   "bahwa_saksi": 22,
+   "tanya": 0
+  },
+  "sesudah": {
+   "baris": 131,
+   "penanda_sisa": [],
+   "baris_saksi": 24,
+   "bahwa_saksi": 22,
+   "tanya": 0
+  }
+ },
+ {
+  "perkara_id": "9870",
+  "blangko": "1 Perceraian CG/[01a] [Kabul Verstek] Cerai - Alasan E (Qabla Ad Dukhul).rtf",
+  "label": "CG verstek - putusan Qabla (diubah)",
+  "sebelum": {
+   "baris": 136,
+   "penanda_sisa": [],
+   "baris_saksi": 30,
+   "bahwa_saksi": 2,
+   "tanya": 0
+  },
+  "sesudah": {
+   "baris": 130,
+   "penanda_sisa": [],
+   "baris_saksi": 24,
+   "bahwa_saksi": 22,
+   "tanya": 0
+  }
+ },
+ {
+  "perkara_id": "10041",
+  "blangko": "2 Itsbat Nikah - BAS/BAS ALUR 11 [1] BAS 1 IN - Kabul (1x Sidang).rtf",
+  "label": "Itsbat kabul - BAS 1x sidang (diubah)",
+  "sebelum": {
+   "baris": 117,
+   "penanda_sisa": [],
+   "baris_saksi": 75,
+   "bahwa_saksi": 0,
+   "tanya": 30
+  },
+  "sesudah": {
+   "baris": 133,
+   "penanda_sisa": [],
+   "baris_saksi": 91,
+   "bahwa_saksi": 0,
+   "tanya": 38
+  }
+ },
+ {
+  "perkara_id": "10041",
+  "blangko": "2 Itsbat Nikah - BAS/BAS ALUR 11 [1b] BAS 1 IN - Kabul (1x Sidang) - Tanya Jawab dari Katalog Saksi.rtf",
+  "label": "Itsbat kabul - BAS tanya-jawab (tidak diubah)",
+  "sebelum": {
+   "baris": 133,
+   "penanda_sisa": [],
+   "baris_saksi": 91,
+   "bahwa_saksi": 0,
+   "tanya": 38
+  },
+  "sesudah": {
+   "baris": 133,
+   "penanda_sisa": [],
+   "baris_saksi": 91,
+   "bahwa_saksi": 0,
+   "tanya": 38
+  }
+ },
+ {
+  "perkara_id": "10041",
+  "blangko": "2 Itsbat Nikah/[01] [Kabul] IN.rtf",
+  "label": "Itsbat kabul - putusan (diubah)",
+  "sebelum": {
+   "baris": 166,
+   "penanda_sisa": [],
+   "baris_saksi": 38,
+   "bahwa_saksi": 0,
+   "tanya": 0
+  },
+  "sesudah": {
+   "baris": 166,
+   "penanda_sisa": [],
+   "baris_saksi": 38,
+   "bahwa_saksi": 36,
+   "tanya": 0
+  }
+ },
+ {
+  "perkara_id": "10015",
+  "blangko": "1 Perceraian CG - BAS/BAS ALUR 05 [3a] BAS 3 P & T Hadir - Pembuktian P dan T.rtf",
+  "label": "CG kontradiktoir - BAS pembuktian P dan T (diubah)",
+  "sebelum": {
+   "baris": 205,
+   "penanda_sisa": [],
+   "baris_saksi": 185,
+   "bahwa_saksi": 0,
+   "tanya": 56
+  },
+  "sesudah": {
+   "baris": 159,
+   "penanda_sisa": [],
+   "baris_saksi": 139,
+   "bahwa_saksi": 0,
+   "tanya": 38
+  }
+ },
+ {
+  "perkara_id": "10015",
+  "blangko": "1 Perceraian CG/[02] [Kabul] CG - F.rtf",
+  "label": "CG kontradiktoir - putusan (diubah)",
+  "sebelum": {
+   "baris": 285,
+   "penanda_sisa": [],
+   "baris_saksi": 28,
+   "bahwa_saksi": 0,
+   "tanya": 0
+  },
+  "sesudah": {
+   "baris": 265,
+   "penanda_sisa": [],
+   "baris_saksi": 32,
+   "bahwa_saksi": 30,
+   "tanya": 0
+  }
+ },
+ {
+  "perkara_id": "10008",
+  "blangko": "3 Dispensasi Kawin - BAS/BAS ALUR 12 [1] BAS DK - Anak Perempuan Hamil.rtf",
+  "label": "DK - BAS (diubah)",
+  "sebelum": {
+   "baris": 187,
+   "penanda_sisa": [],
+   "baris_saksi": 47,
+   "bahwa_saksi": 0,
+   "tanya": 18
+  },
+  "sesudah": {
+   "baris": 229,
+   "penanda_sisa": [],
+   "baris_saksi": 89,
+   "bahwa_saksi": 0,
+   "tanya": 39
+  }
+ },
+ {
+  "perkara_id": "10008",
+  "blangko": "3 Dispensasi Kawin/[01] [Kabul] DK - (Anak P Cewek) Hamil.rtf",
+  "label": "DK - putusan (diubah)",
+  "sebelum": {
+   "baris": 195,
+   "penanda_sisa": [],
+   "baris_saksi": 20,
+   "bahwa_saksi": 12,
+   "tanya": 0
+  },
+  "sesudah": {
+   "baris": 214,
+   "penanda_sisa": [],
+   "baris_saksi": 39,
+   "bahwa_saksi": 37,
+   "tanya": 0
+  }
+ },
+ {
+  "perkara_id": "9962",
+  "blangko": "9 Penetapan Ahli Waris/[01] [Kabul] PAW - Ahli Waris Anak Kandung (Suami-Istri dan Orang Tua Pewaris Telah Meninggal).rtf",
+  "label": "P3HP - putusan (diubah)",
+  "sebelum": {
+   "baris": 179,
+   "penanda_sisa": [],
+   "baris_saksi": 26,
+   "bahwa_saksi": 24,
+   "tanya": 0
+  },
+  "sesudah": {
+   "baris": 185,
+   "penanda_sisa": [],
+   "baris_saksi": 32,
+   "bahwa_saksi": 30,
+   "tanya": 2
+  }
+ },
+ {
+  "perkara_id": "9995",
+  "blangko": "6 Perwalian/[01b] [Kabul] Perwalian - Anak Yatim Piatu oleh Kerabat (Bukan Orang Tua).rtf",
+  "label": "Perwalian - putusan (diubah)",
+  "sebelum": {
+   "baris": 159,
+   "penanda_sisa": [],
+   "baris_saksi": 18,
+   "bahwa_saksi": 0,
+   "tanya": 0
+  },
+  "sesudah": {
+   "baris": 161,
+   "penanda_sisa": [],
+   "baris_saksi": 20,
+   "bahwa_saksi": 18,
+   "tanya": 0
+  }
+ },
+ {
+  "perkara_id": "10184",
+  "blangko": "1 Perceraian CG - BAS/BAS ALUR 02 [2] BAS 2 P Hadir & T Tidak Hadir - Saksi dan Putusan Verstek (2 Saksi).rtf",
+  "label": "CG verstek 2x sidang - BAS patokan",
+  "sebelum": {
+   "baris": 113,
+   "penanda_sisa": [],
+   "baris_saksi": 74,
+   "baris_ganda": 0,
+   "titik_saksi": 1,
+   "jawab_bas": 30,
+   "bahwa_saksi": 0,
+   "tanya": 30
+  },
+  "sesudah": {
+   "baris": 113,
+   "penanda_sisa": [],
+   "baris_saksi": 74,
+   "baris_ganda": 0,
+   "titik_saksi": 1,
+   "jawab_bas": 30,
+   "bahwa_saksi": 0,
+   "tanya": 30,
+   "catatan": "berkas tidak diubah paket - sama dengan sebelum"
+  }
+ },
+ {
+  "perkara_id": "10184",
+  "blangko": "1 Perceraian CG/[01] [Kabul Verstek] Cerai (Format Lengkap).rtf",
+  "label": "CG verstek 2x sidang - putusan patokan",
+  "sebelum": {
+   "baris": 141,
+   "penanda_sisa": [],
+   "baris_saksi": 32,
+   "baris_ganda": 0,
+   "titik_saksi": 0,
+   "jawab_bas": 0,
+   "bahwa_saksi": 30,
+   "tanya": 0
+  },
+  "sesudah": {
+   "baris": 141,
+   "penanda_sisa": [],
+   "baris_saksi": 32,
+   "baris_ganda": 0,
+   "titik_saksi": 0,
+   "jawab_bas": 0,
+   "bahwa_saksi": 30,
+   "tanya": 0,
+   "catatan": "berkas tidak diubah paket - sama dengan sebelum"
+  }
+ },
+ {
+  "perkara_id": "8668",
+  "blangko": "1a Perceraian CT/[02] [Kabul] CT - F.rtf",
+  "label": "CT hadir (2 sidang) - putusan (diubah)",
+  "sebelum": {
+   "baris": 283,
+   "penanda_sisa": [],
+   "baris_saksi": 28,
+   "baris_ganda": 0,
+   "titik_saksi": 20,
+   "jawab_bas": 0,
+   "bahwa_saksi": 0,
+   "tanya": 0
+  },
+  "sesudah": {
+   "baris": 257,
+   "penanda_sisa": [],
+   "baris_saksi": 26,
+   "baris_ganda": 0,
+   "titik_saksi": 0,
+   "jawab_bas": 0,
+   "bahwa_saksi": 24,
+   "tanya": 0
+  }
+ },
+ {
+  "perkara_id": "8668",
+  "blangko": "1a Perceraian CT/[02] [Kabul] [Rekonvensi] CT - F (Mutah iddah nafkah anak).rtf",
+  "label": "CT hadir (2 sidang) rekonvensi - putusan (tidak diubah)",
+  "sebelum": {
+   "baris": 517,
+   "penanda_sisa": [],
+   "baris_saksi": 26,
+   "baris_ganda": 0,
+   "titik_saksi": 0,
+   "jawab_bas": 0,
+   "bahwa_saksi": 24,
+   "tanya": 0
+  },
+  "sesudah": {
+   "baris": 517,
+   "penanda_sisa": [],
+   "baris_saksi": 26,
+   "baris_ganda": 0,
+   "titik_saksi": 0,
+   "jawab_bas": 0,
+   "bahwa_saksi": 24,
+   "tanya": 0,
+   "catatan": "berkas tidak diubah paket - sama dengan sebelum"
+  }
+ },
+ {
+  "perkara_id": "8668",
+  "blangko": "1a Perceraian CT - BAS/BAS ALUR 05 [3a] BAS 3 P & T Hadir - Pembuktian P dan T.rtf",
+  "label": "CT hadir (2 sidang) - BAS pembuktian P dan T (diubah)",
+  "sebelum": {
+   "baris": 205,
+   "penanda_sisa": [],
+   "baris_saksi": 185,
+   "baris_ganda": 0,
+   "titik_saksi": 37,
+   "jawab_bas": 0,
+   "bahwa_saksi": 0,
+   "tanya": 56
+  },
+  "sesudah": {
+   "baris": 151,
+   "penanda_sisa": [],
+   "baris_saksi": 131,
+   "baris_ganda": 0,
+   "titik_saksi": 7,
+   "jawab_bas": 26,
+   "bahwa_saksi": 0,
+   "tanya": 34
+  }
+ },
+ {
+  "perkara_id": "9817",
+  "blangko": "7 Wali Adhal - BAS/BAS ALUR 19 Wali Adhal - [2] Sidang Lanjutan - Pemeriksaan 2 Saksi, Tunda Pembacaan Penetapan.rtf",
+  "label": "Wali adhal - BAS (tidak diubah)",
+  "sebelum": {
+   "baris": 80,
+   "penanda_sisa": [],
+   "baris_saksi": 61,
+   "baris_ganda": 0,
+   "titik_saksi": 0,
+   "jawab_bas": 24,
+   "bahwa_saksi": 0,
+   "tanya": 24
+  },
+  "sesudah": {
+   "baris": 80,
+   "penanda_sisa": [],
+   "baris_saksi": 61,
+   "baris_ganda": 0,
+   "titik_saksi": 0,
+   "jawab_bas": 24,
+   "bahwa_saksi": 0,
+   "tanya": 24,
+   "catatan": "berkas tidak diubah paket - sama dengan sebelum"
+  }
+ },
+ {
+  "perkara_id": "9817",
+  "blangko": "7 Wali Adhal/[01] [Kabul] Wali Adhal - Wali Tidak Hadir.rtf",
+  "label": "Wali adhal - putusan (tidak diubah)",
+  "sebelum": {
+   "baris": 120,
+   "penanda_sisa": [],
+   "baris_saksi": 24,
+   "baris_ganda": 0,
+   "titik_saksi": 0,
+   "jawab_bas": 0,
+   "bahwa_saksi": 22,
+   "tanya": 0
+  },
+  "sesudah": {
+   "baris": 120,
+   "penanda_sisa": [],
+   "baris_saksi": 24,
+   "baris_ganda": 0,
+   "titik_saksi": 0,
+   "jawab_bas": 0,
+   "bahwa_saksi": 22,
+   "tanya": 0,
+   "catatan": "berkas tidak diubah paket - sama dengan sebelum"
+  }
+ },
+ {
+  "perkara_id": "7883",
+  "blangko": "5 Izin Poligami - BAS/BAS ALUR 04 [6] BAS 6 P & T Hadir - Pembuktian P.rtf",
+  "label": "Izin poligami - BAS (tidak diubah)",
+  "sebelum": {
+   "baris": 118,
+   "penanda_sisa": [],
+   "baris_saksi": 98,
+   "baris_ganda": 0,
+   "titik_saksi": 0,
+   "jawab_bas": 30,
+   "bahwa_saksi": 0,
+   "tanya": 34
+  },
+  "sesudah": {
+   "baris": 118,
+   "penanda_sisa": [],
+   "baris_saksi": 98,
+   "baris_ganda": 0,
+   "titik_saksi": 0,
+   "jawab_bas": 30,
+   "bahwa_saksi": 0,
+   "tanya": 34,
+   "catatan": "berkas tidak diubah paket - sama dengan sebelum"
+  }
+ },
+ {
+  "perkara_id": "7883",
+  "blangko": "5 Izin Poligami/[01] [Kabul] Izin Poligami.rtf",
+  "label": "Izin poligami - putusan (tidak diubah)",
+  "sebelum": {
+   "baris": 134,
+   "penanda_sisa": [],
+   "baris_saksi": 30,
+   "baris_ganda": 0,
+   "titik_saksi": 0,
+   "jawab_bas": 0,
+   "bahwa_saksi": 28,
+   "tanya": 0
+  },
+  "sesudah": {
+   "baris": 134,
+   "penanda_sisa": [],
+   "baris_saksi": 30,
+   "baris_ganda": 0,
+   "titik_saksi": 0,
+   "jawab_bas": 0,
+   "bahwa_saksi": 28,
+   "tanya": 0,
+   "catatan": "berkas tidak diubah paket - sama dengan sebelum"
+  }
+ },
+ {
+  "perkara_id": "7741",
+  "blangko": "9a Lain-Lain (Pengangkatan Anak) - BAS/BAS ALUR 18 Angkat Anak - [2] Sidang Lanjutan - Pemeriksaan 2 Saksi, Tunda Pembacaan Penetapan.rtf",
+  "label": "Lain-lain 369 - BAS (tidak diubah)",
+  "sebelum": {
+   "baris": 70,
+   "penanda_sisa": [],
+   "baris_saksi": 49,
+   "baris_ganda": 0,
+   "titik_saksi": 0,
+   "jawab_bas": 18,
+   "bahwa_saksi": 0,
+   "tanya": 18
+  },
+  "sesudah": {
+   "baris": 70,
+   "penanda_sisa": [],
+   "baris_saksi": 49,
+   "baris_ganda": 0,
+   "titik_saksi": 0,
+   "jawab_bas": 18,
+   "bahwa_saksi": 0,
+   "tanya": 18,
+   "catatan": "berkas tidak diubah paket - sama dengan sebelum"
+  }
+ },
+ {
+  "perkara_id": "7741",
+  "blangko": "9a Lain-Lain (Pengangkatan Anak)/[01] [Kabul] Pengangkatan Anak.rtf",
+  "label": "Lain-lain 369 - putusan pengangkatan anak (diubah)",
+  "sebelum": {
+   "baris": 122,
+   "penanda_sisa": [],
+   "baris_saksi": 18,
+   "baris_ganda": 0,
+   "titik_saksi": 1,
+   "jawab_bas": 0,
+   "bahwa_saksi": 16,
+   "tanya": 0
+  },
+  "sesudah": {
+   "baris": 122,
+   "penanda_sisa": [],
+   "baris_saksi": 18,
+   "baris_ganda": 0,
+   "titik_saksi": 0,
+   "jawab_bas": 0,
+   "bahwa_saksi": 16,
+   "tanya": 0
+  }
+ }
+]

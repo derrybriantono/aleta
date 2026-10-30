@@ -2876,6 +2876,22 @@
     antreSimpan.set(kode, setTimeout(() => void simpanIsian(kode, nilai), 500));
     return undefined;
   }
+  /** Bunyi rapi isian sebelum disimpan (30 Okt): hanya isian teks bebas; pilihan, tanggal, huruf alasan dibiarkan. */
+  function rapiSimpan(kode, nilai) {
+    const m = SK();
+    if (!m || typeof m.rapiIsian !== "function" || typeof nilai !== "string" || !nilai.trim()) return nilai;
+    const b = isianBlangko(kode);
+    if (b.khusus === "bukti") {
+      return nilai
+        .split(/\r\n|\r|\n/)
+        .map((x) => m.rapiButir(x, ""))
+        .filter(Boolean)
+        .join("\n");
+    }
+    if (b.jenis !== "teks" || (Array.isArray(b.opsi) && b.opsi.length) || (Array.isArray(b.pilihan) && b.pilihan.length)) return nilai;
+    if (/^(8503|9463|9475|9790|9820|9865)$/.test(kode) || /^\d{4}-\d{2}-\d{2}$/.test(nilai.trim())) return nilai;
+    return m.rapiIsian(nilai, "");
+  }
   async function simpanIsian(kode, nilai) {
     if (!S.blangko || !S.pk) return false;
     if (tes()) return false;
@@ -2894,6 +2910,16 @@
       S.isi[kode] = nilai;
       const el8503 = cari(`#bd-i${kode}`, wadah.isian);
       if (el8503 && el8503.value !== nilai && el8503.tagName !== "SELECT") el8503.value = nilai;
+    }
+    // 30 Okt (keputusan pengguna): isian teks disimpan RAPI - tanpa ganti baris (rincian berbaris dirangkai "X, Y dan Z"), titik koma
+    // hanya di akhir, tanpa tanda baca ganda/spasi sebelum tanda baca. Daftar bukti: tiap baris = satu bukti, dirapikan per baris.
+    // Aturan = fungsi ABT perangkai cetak (rapiButir kembar isian_rtf_butir_rapi), jadi kotak panel menampilkan bunyi tercetak.
+    const rapi = rapiSimpan(kode, nilai);
+    if (rapi !== nilai) {
+      nilai = rapi;
+      S.isi[kode] = nilai;
+      const elR = cari(`#bd-i${kode}`, wadah.isian);
+      if (elR && elR.value !== nilai && elR.tagName !== "SELECT") elR.value = nilai;
     }
     const norm = normalAbt(nilai);
     if (norm.diganti.length) {
@@ -5892,6 +5918,7 @@
   }
 
   function renderTj() {
+    perbaruiSaksiKosong();
     const tombol = cari("#bd-tjtombol", wadah.isian);
     const wad = cari("#bd-tjwadah", wadah.isian);
     if (!tombol || !wad) return;
@@ -7370,10 +7397,87 @@
       `${pil("salinan", "PDF SALINAN")}${ikonKet("fmt-salinan")}` +
       `${pil("anon", "PDF anonim", j === "put" ? "" : "hanya putusan")}${ikonKet("fmt-anon")}${pil("edoc", "Unggah ke e-Doc SIPP", tes() ? "mati pada Tes putusan" : j === "put" ? "" : "hanya putusan; BAS dan relaas diunggah lewat SIPP")}${ikonKet("fmt-edoc")}</div>` +
       htmlUnggahanPutusan() +
+      `<div id="bd-saksikosong"></div>` +
+      `<div id="bd-temuanhadir"></div>` +
       `<div class="bd-ingat" id="bd-ingat" hidden role="alert"></div>` +
       `<div class="bd-utas"><button type="button" class="bd-btn utama besar" data-bd2="cetak" ${S.sibuk || S.unggahSibuk ? "disabled" : ""}>${S.sibuk ? "Sedang mencetak…" : "Cetak"}</button><span class="bd-catat" id="bd-statuscetak">${esc(teksAkanTerbit())} ${tes() ? "" : sudah ? `Sudah dicetak ${esc(sudah)}.` : "Belum dicetak."}</span> <span class="bd-catat" id="bd-siapnaskah">${esc(ketSiapNaskah())}</span></div>` +
       `<ul class="bd-logcetak" id="bd-logcetak" ${S.log.length ? "" : "hidden"}>${S.log.slice(-6).map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` +
       `<div class="bd-float lebar" id="bd-popttd" hidden role="dialog" aria-label="Tambah tanda tangan"></div>`;
+    perbaruiSaksiKosong();
+    perbaruiTemuanHadir();
+  }
+  // ──────────────────────────────────────────────────────────────────────────
+  // 30 Okt 2026 (keputusan pengguna 1c): berita acara dan putusan Blangko Derry membaca keterangan saksi HANYA dari tanya
+  // jawab saksi (bentuk seragam). Saksi yang tanya jawabnya belum ada tercetak kosong - panel memperingatkan sebelum
+  // cetak/pratinjau (menyebut saksinya, dengan tombol ke penyunting tanya jawab yang memuat "Set pertanyaan"), TANPA
+  // menahan cetak.
+  // ──────────────────────────────────────────────────────────────────────────
+  /** Saksi (bukan jawaban/replik lisan) yang tanya jawabnya diketahui KOSONG untuk blangko dan sidang yang terbuka. */
+  function saksiTanpaTanyaJawab() {
+    if (!S.blangko || !S.susunan || S.blangko.khusus) return [];
+    const hasil = [];
+    for (const it of daftarPerlu()) {
+      if (it.jenis !== "tj" || !it.tj || !/^saksi\b/i.test(String(it.tj.sebutan || ""))) continue;
+      const t = S.tj[it.tj.kunci];
+      const kodeNilai = [it.kode, it.tj.kodeSunting].filter(Boolean);
+      // Sama dengan hitungan "terisi" layar (nilaiTerisi): baris di layar ATAU nilai ABT/bot untuk penanda/penyuntingnya.
+      const terisi = Boolean(t && t.dimuat && barisTjBerisi(t.rows)) || kodeNilai.some((k) => S.nilai[k] && S.nilai[k].status === "terisi");
+      const diketahui = Boolean(t && t.dimuat && !t.memuat) || kodeNilai.some((k) => S.nilai[k] && S.nilai[k].status === "kosong");
+      const kosong = !terisi && diketahui;
+      if (kosong && !hasil.some((x) => x.kunci === it.tj.kunci)) hasil.push({ kunci: it.tj.kunci, sebutan: String(it.tj.sebutan) });
+    }
+    return hasil;
+  }
+  const daftarSebutan = (l) => (l.length < 2 ? l.join("") : `${l.slice(0, -1).join(", ")} dan ${l[l.length - 1]}`);
+  function perbaruiSaksiKosong() {
+    const e = wadah.cetak ? cari("#bd-saksikosong", wadah.cetak) : null;
+    if (!e) return;
+    const l = saksiTanpaTanyaJawab();
+    if (!l.length) {
+      e.innerHTML = "";
+      return;
+    }
+    const baca = deretTj().hanyaBaca;
+    const dok = S.blangko && S.blangko.jenis === "put" ? "Putusan" : "Berita acara";
+    e.innerHTML =
+      `<div class="bd-peringatan bd-saksikosong" role="status">` +
+      `<b>Keterangan saksi belum diisi:</b> ${daftarSebutan(l.map((x) => `<b>${esc(x.sebutan)}</b>`))} belum punya tanya jawab saksi${baca ? "" : ` pada sidang ke-${esc(sidangUrutan())}`}. ` +
+      `${dok} tetap dapat dicetak, tetapi keterangan saksi tersebut tercetak kosong.` +
+      (baca ? " Tanya jawab saksi diisi panitera pengganti pada berita acara sidang pemeriksaan saksi. " : " ") +
+      `<button type="button" class="bd-btn kecil" data-bd2="isisaksi" data-kunci="${esc(l[0].kunci)}">${baca ? "Lihat tanya jawab saksi" : "Isi tanya jawab saksi"}</button></div>`;
+  }
+  // ──────────────────────────────────────────────────────────────────────────
+  // 30 Okt 2026: catatan temuan cetak - putusan VERSTEK padahal pilihan kehadiran SIPP mencatat Tergugat/Termohon hadir.
+  // Aturan SAMA PERSIS dengan deteksi konflik paket relaas-penetapan-30okt (PASANG.md "Deteksi konflik"): perkara gugatan
+  // (alur 15); amar putusan SIPP memuat "verstek" (tanpa beda huruf besar; dibaca bot dari amar utuh = amarVerstek); ada sidang
+  // dengan pilihan kehadiran 1 (semua pihak), 3 (pihak kedua saja), 8 (Tergugat + intervensi), 9 (Penggugat + Tergugat),
+  // 11 (sebagian Tergugat), 15 (Tergugat + turut Tergugat) dan tanggal sidang <= tanggal putusan. Belum putus = tidak diperiksa.
+  // Tidak menahan cetak; dicatat sesudah cetak.
+  // ──────────────────────────────────────────────────────────────────────────
+  const KEHADIRAN_TERGUGAT = new Set([1, 3, 8, 9, 11, 15]);
+  function temuanHadirVerstek() {
+    const pk = S.pk;
+    if (!pk) return null;
+    const p = pk.perkara || {};
+    const ps = pk.putusanSipp && typeof pk.putusanSipp === "object" ? pk.putusanSipp : null;
+    const alur = Number((ps && ps.alurPerkaraId) || p.alurPerkaraId) || 0;
+    if (alur ? alur !== 15 : !/\/Pdt\.G\//i.test(String(pk.nomorPerkara || ""))) return null;
+    const sd = Array.isArray(pk.sidang) ? pk.sidang : [];
+    if (!ps || ps.amarVerstek !== true) return null;
+    const batas = String(ps.tanggalPutusan || "").slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(batas)) return null;
+    const hadir = sd.filter((x) => x && KEHADIRAN_TERGUGAT.has(Number(x.hadir)) && /^\d{4}-\d{2}-\d{2}/.test(String(x.tanggal || "")) && String(x.tanggal).slice(0, 10) <= batas);
+    if (!hadir.length) return null;
+    const jenis = String(pk.jenisPerkara || p.jenisPerkara || "");
+    const sebutan = /talak/i.test(jenis) ? "Termohon" : "Tergugat";
+    const sidang = hadir.map((x) => (Number(x.urutan) > 0 ? `ke-${Number(x.urutan)} (${tglIndo(x.tanggal)})` : tglIndo(x.tanggal)));
+    return { sebutan, sidang, teks: `Kehadiran ${sebutan} di SIPP tercatat hadir padahal putusan verstek - periksa pilihan kehadiran di SIPP (sidang ${daftarSebutan(sidang)})` };
+  }
+  function perbaruiTemuanHadir() {
+    const e = wadah.cetak ? cari("#bd-temuanhadir", wadah.cetak) : null;
+    if (!e) return;
+    const t = temuanHadirVerstek();
+    e.innerHTML = t ? `<div class="bd-peringatan bd-temuanhadir" role="status"><b>Catatan temuan:</b> ${esc(t.teks)}. Cetak tidak ditahan.</div>` : "";
   }
   function catatLog(teks) {
     S.log.push(`${jamSekarang()}: ${teks}`);
@@ -7614,6 +7718,11 @@
         if (pulih) await pulih();
       }
       const hs = S.prat.penanda.map(namaPenanda);
+      // 30 Okt (keputusan 1c): tanya jawab SAKSI yang kosong tidak menahan cetak - sudah diperingatkan di atas tombol Cetak
+      // (bd-saksikosong) dan dicatat sesudah cetak.
+      const saksiKosong = saksiTanpaTanyaJawab();
+      const kunciSaksiKosong = new Set(saksiKosong.map((x) => x.kunci));
+      kos = kos.filter((x) => !(x.b && x.b.jenis === "tj" && x.b.tj && kunciSaksiKosong.has(x.b.tj.kunci)));
       // Keputusan 17 Okt (F1.5): hanya isian Penting dan penanda # tersisa yang menahan cetak; isian Tidak wajib
       // yang kosong tidak - cetak langsung jalan dengan catatan kecil. Bila ada yang menahan, daftar Tidak wajib tetap ikut tampil.
       const penting = kos.filter((x) => x.tingkat !== "tambahan");
@@ -7627,6 +7736,9 @@
       const tidakWajib = !S.peringat && !paksa ? kos.length - penting.length : 0;
       await lakukanCetak(rtf);
       if (tidakWajib) catatLog(`catatan: ${tidakWajib} isian tidak wajib masih kosong (tercetak titik-titik)`);
+      if (saksiKosong.length) catatLog(`catatan: keterangan ${daftarSebutan(saksiKosong.map((x) => x.sebutan))} belum diisi pada tanya jawab saksi (tercetak kosong)`);
+      const hadirVerstek = temuanHadirVerstek();
+      if (hadirVerstek) catatLog(`catatan temuan: ${hadirVerstek.teks}`);
     } catch (e) {
       catatLog(`gagal: ${String((e && e.message) || e)}`);
       toast(`Cetak gagal: ${String((e && e.message) || e)}`);
@@ -8075,6 +8187,18 @@
     if (kode === "bukatj") {
       const it = daftarPerlu().find((x) => x.jenis === "tj");
       return it ? void bukaTj(it.tj.kunci) : undefined;
+    }
+    if (kode === "isisaksi") {
+      // Peringatan "keterangan saksi belum diisi": buka tanya jawab saksi pertama yang kosong (penyunting BAS memuat
+      // pilihan "Set pertanyaan"; putusan hanya menampilkannya).
+      const k = String(aksi.getAttribute("data-kunci") || "");
+      if (!tjItem(k)) return;
+      if (deretTj().hanyaBaca) S.tjLipat = true;
+      if (S.tjBuka !== k) void bukaTj(k);
+      else renderTj();
+      const w2 = cari("#bd-tjwadah", wadah.isian) || cari("#bd-tjtombol", wadah.isian);
+      if (w2 && w2.scrollIntoView) w2.scrollIntoView({ block: "center" });
+      return;
     }
     if (kode === "semua") {
       S.semuaBuka = !S.semuaBuka;
