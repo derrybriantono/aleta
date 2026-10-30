@@ -1360,6 +1360,11 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "kode": "NO",
         "berkas": "BAS ALUR 42 Wasiat - Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022).rtf",
         "keterangan": "Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022)"
+      },
+      {
+        "kode": "PS",
+        "berkas": "BAS ALUR 42 Wasiat - Sidang PS - Pemeriksaan Setempat di Lokasi Objek (antara ALUR 04 [7] dan [8]).rtf",
+        "keterangan": "Sidang PS - Pemeriksaan Setempat di Lokasi Objek (antara ALUR 04 [7] dan [8])"
       }
     ]
   },
@@ -1415,6 +1420,11 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "kode": "CM",
         "berkas": "BAS ALUR 43 ES Acara Biasa - Cabut sesudah Jawaban - Tergugat Menolak.rtf",
         "keterangan": "Cabut sesudah jawaban - Tergugat menolak (dilanjutkan)"
+      },
+      {
+        "kode": "PS",
+        "berkas": "BAS ALUR 43 ES Acara Biasa - Sidang PS - Pemeriksaan Setempat di Lokasi Objek (antara ALUR 04 [7] dan [8]).rtf",
+        "keterangan": "Sidang PS - Pemeriksaan Setempat di Lokasi Objek (antara ALUR 04 [7] dan [8])"
       }
     ]
   },
@@ -1684,6 +1694,11 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "kode": "N",
         "berkas": "BAS ALUR 47 Hibah Mohon - [N] Pemohon Tidak Hadir Lagi - Tidak Dapat Diterima (SEMA 1 2022).rtf",
         "keterangan": "Pemohon Tidak Hadir Lagi - Tidak Dapat Diterima (SEMA 1 2022)"
+      },
+      {
+        "kode": "PS",
+        "berkas": "BAS ALUR 47 Hibah - Sidang PS - Pemeriksaan Setempat di Lokasi Objek (antara ALUR 04 [7] dan [8]).rtf",
+        "keterangan": "Sidang PS - Pemeriksaan Setempat di Lokasi Objek (antara ALUR 04 [7] dan [8])"
       }
     ]
   },
@@ -1779,6 +1794,11 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "kode": "N",
         "berkas": "BAS ALUR 48 Wakaf Mohon - [N] Pemohon Tidak Hadir Lagi - Tidak Dapat Diterima (SEMA 1 2022).rtf",
         "keterangan": "Pemohon Tidak Hadir Lagi - Tidak Dapat Diterima (SEMA 1 2022)"
+      },
+      {
+        "kode": "PS",
+        "berkas": "BAS ALUR 48 Wakaf - Sidang PS - Pemeriksaan Setempat di Lokasi Objek (antara ALUR 04 [7] dan [8]).rtf",
+        "keterangan": "Sidang PS - Pemeriksaan Setempat di Lokasi Objek (antara ALUR 04 [7] dan [8])"
       }
     ]
   },

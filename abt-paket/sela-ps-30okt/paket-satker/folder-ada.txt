@@ -1,0 +1,8 @@
+# folder (relatif _blangko_abt) yang harus SUDAH ada
+derry_briantono
+derry_briantono/10a Ekonomi Syariah Biasa - BAS
+derry_briantono/4a Harta Bersama - BAS
+derry_briantono/4b Kewarisan - BAS
+derry_briantono/4c Wasiat - BAS
+derry_briantono/4d Hibah - BAS
+derry_briantono/4e Wakaf - BAS

@@ -1,0 +1,65 @@
+SNAP awal   : menu[137 78638617145a65c81916178b6fe7b09c ] variabel[2715 6dc323bf9f0d1d59d2fd8d7c76c4cdd0 ] pohon[583a9479b91d]
+== 1. PASANG
+PRASYARAT COCOK (0|0|79|0|0|2)
+SIAP_TIMPA=2
+BERKAS SIAP
+CADANGAN: /d/Aplikasi/aleta/tmp/sela30/paket/cadangan (variabel bernomor paket: 0; menu 151/152: 0)
+SEMUA COCOK
+uji perkara 10276: 46 kueri COCOK
+uji perkara 10284: 46 kueri COCOK
+uji perkara 9291: 46 kueri COCOK
+uji perkara 9496: 46 kueri COCOK
+uji perkara 9575: 46 kueri COCOK
+uji perkara 9806: 46 kueri COCOK
+FOLDER BARU derry_briantono/97a Putusan Sela
+FOLDER BARU derry_briantono/97a Putusan Sela - BAS
+BUAT=22 TIMPA=2
+COCOK=24
+BERKAS COCOK
+TANPA KATA NAMA APLIKASI
+SELESAI - paket abt-sela-ps-30okt terpasang. Cadangan: /d/Aplikasi/aleta/tmp/sela30/paket/cadangan. Pulih: bash /d/Aplikasi/aleta/tmp/sela30/paket/pulih-satker.sh
+SNAP pasang : menu[139 74973702bdbc59608b0eb22da467c7ef ] variabel[2785 879168fec3348114d0863bcd416c34b6 ] pohon[f3b5232a8674]
+== 2. pasang ulang (idempoten)
+PRASYARAT COCOK (0|70|79|0|2|2)
+SUDAH_BARU=22 SUDAH_TIMPA=2
+BERKAS SIAP
+CADANGAN: /d/Aplikasi/aleta/tmp/sela30/paket/cadangan (variabel bernomor paket: 70; menu 151/152: 2)
+SEMUA COCOK
+FOLDER SUDAH ADA derry_briantono/97a Putusan Sela
+FOLDER SUDAH ADA derry_briantono/97a Putusan Sela - BAS
+SUDAH=24
+COCOK=24
+BERKAS COCOK
+TANPA KATA NAMA APLIKASI
+SELESAI - paket abt-sela-ps-30okt terpasang. Cadangan: /d/Aplikasi/aleta/tmp/sela30/paket/cadangan. Pulih: bash /d/Aplikasi/aleta/tmp/sela30/paket/pulih-satker.sh
+SNAP ulang  : menu[139 74973702bdbc59608b0eb22da467c7ef ] variabel[2785 879168fec3348114d0863bcd416c34b6 ] pohon[f3b5232a8674]
+PASANG ULANG = TIDAK ADA PERUBAHAN
+== 3. PULIH
+ARSIP=22 KEMBALI=2
+BERKAS PULIH
+FOLDER DILEPAS (kosong, isinya di /d/Aplikasi/aleta/tmp/sela30/paket/cadangan/pulih-arsip) derry_briantono/97a Putusan Sela
+FOLDER DILEPAS (kosong, isinya di /d/Aplikasi/aleta/tmp/sela30/paket/cadangan/pulih-arsip) derry_briantono/97a Putusan Sela - BAS
+CADANGAN ISIAN: /d/Aplikasi/aleta/tmp/sela30/paket/cadangan/abt_data_teks-pulih-20261030112332.sql (0 baris)
+PULIH SQL SELESAI; sisa variabel paket: 0, sisa menu paket: 0
+PULIH COCOK
+SNAP pulih  : menu[137 78638617145a65c81916178b6fe7b09c ] variabel[2715 6dc323bf9f0d1d59d2fd8d7c76c4cdd0 ] pohon[583a9479b91d]
+PULIH = KEADAAN AWAL PERSIS (menu, variabel, pohon blangko)
+   arsip pulih: 24 berkas (tidak ada yang dihapus permanen)
+== 4. PRASYARAT sesudah pulih (harus 0|0|79|0|0|2)
+0|0|79|0|0|2
+== 5. pasang lagi
+TANPA KATA NAMA APLIKASI
+SELESAI - paket abt-sela-ps-30okt terpasang. Cadangan: /d/Aplikasi/aleta/tmp/sela30/paket/cadangan. Pulih: bash /d/Aplikasi/aleta/tmp/sela30/paket/pulih-satker.sh
+SNAP lagi   : menu[139 74973702bdbc59608b0eb22da467c7ef ] variabel[2785 879168fec3348114d0863bcd416c34b6 ] pohon[f3b5232a8674]
+PASANG LAGI = SAMA DENGAN PASANG PERTAMA
+== 6. PULIH lagi
+PULIH SQL SELESAI; sisa variabel paket: 0, sisa menu paket: 0
+PULIH COCOK
+== 7. PENJAGA: menu 151 dipakai lain -> pasang HARUS berhenti tanpa mengubah apa pun
+GAGAL: prasyarat '0|0|79|1|0|2' (harus '0|0|79|0|0|2' pasang pertama atau '0|70|79|0|2|2' pasang ulang) - TIDAK ada yang diubah. Arti angka: lihat abt-sela-ps-30okt-PRASYARAT.sql
+PENJAGA 1: TIDAK ADA YANG BERUBAH
+== 8. PENJAGA: berkas yang akan ditimpa sudah disunting orang -> pasang HARUS berhenti
+BERKAS TIDAK SIAP
+GAGAL: berkas tujuan tidak sesuai - TIDAK ada yang diubah
+PENJAGA 2: TIDAK ADA YANG BERUBAH
+AKHIR = KEADAAN AWAL

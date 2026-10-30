@@ -1,0 +1,39 @@
+92291f7e1a58502e21d80b6282fc076a  abt-sela-ps-30okt-PASANG.sql
+eca2cd3efdc1287ec83a14e51e47063a  abt-sela-ps-30okt-PERIKSA.sql
+6e0819f32154647f33d668fa38f3f5ce  abt-sela-ps-30okt-PRASYARAT.sql
+ffb1b2cd71745da8de075e915b38b484  abt-sela-ps-30okt-PULIH.sql
+3066e3870707d1bc598cb03387c9b403  berkas_rtf.py
+279a306dcbe79aa2115c4184c312b8f0  daftar-rtf.tsv
+6968649a5302471d2e16efa1308f6a40  daftar-timpa.tsv
+199b63bd2ee62fc0e1df8bc13929604e  folder-ada.txt
+7128548b5308c01c22dde101df7ea686  folder-baru.txt
+9f5a367f64ef4fa876ce9c3f1e369945  harap.txt
+54a773ac1d80d44fdbbbcd2d6dc5f81f  nomor-dirujuk.txt
+ed377bc2a0035b06bd8673795744c7e2  nomor-variabel.txt
+e756d939e1407059d12a0e4befa41465  pasang-satker.sh
+6a7e2b831a1b44c22c17d4c98a95ddf8  pulih-satker.sh
+818aa4f082deb7eb8aeca9b1c62a91f7  rtf/derry_briantono/10a Ekonomi Syariah Biasa - BAS/BAS ALUR 43 ES Acara Biasa - Sidang PS - Pemeriksaan Setempat di Lokasi Objek (antara ALUR 04 [7] dan [8]).rtf
+e837e96491d22b99317029833423f6aa  rtf/derry_briantono/4c Wasiat - BAS/BAS ALUR 42 Wasiat - Sidang PS - Pemeriksaan Setempat di Lokasi Objek (antara ALUR 04 [7] dan [8]).rtf
+2f346d31d8e8f6618db67d1d1115e8b1  rtf/derry_briantono/4d Hibah - BAS/BAS ALUR 47 Hibah - Sidang PS - Pemeriksaan Setempat di Lokasi Objek (antara ALUR 04 [7] dan [8]).rtf
+91e2a951c3129a94e40d53f33a05f5a5  rtf/derry_briantono/4e Wakaf - BAS/BAS ALUR 48 Wakaf - Sidang PS - Pemeriksaan Setempat di Lokasi Objek (antara ALUR 04 [7] dan [8]).rtf
+cb9721647d727d1d71295eb550cb1952  rtf/derry_briantono/97a Putusan Sela - BAS/BAS SELA [1] Sidang Insidentil - Pemeriksaan Eksepsi, Provisi atau Intervensi, Tunda Putusan Sela.rtf
+261722a6462ba95190a50cc4bae06832  rtf/derry_briantono/97a Putusan Sela - BAS/BAS SELA [2] Pembacaan Putusan Sela - Pemeriksaan Dilanjutkan.rtf
+e96790742e0f59996990c02c3621f0b8  rtf/derry_briantono/97a Putusan Sela - BAS/BAS SELA [3] Pengucapan Sumpah Pelengkap (Suppletoir).rtf
+82206fc0693604163f2cc04fa441777b  rtf/derry_briantono/97a Putusan Sela/[01] [Sela Tolak] Eksepsi Kewenangan Absolut Ditolak - Pemeriksaan Dilanjutkan.rtf
+6a72490134ad5373aae84ddfc45d0d45  rtf/derry_briantono/97a Putusan Sela/[02] [NO] Eksepsi Kewenangan Absolut Dikabulkan - Pengadilan Agama Tidak Berwenang (Putusan Akhir).rtf
+e962f8d7aede1474376b3a6c50b5b084  rtf/derry_briantono/97a Putusan Sela/[03] [Sela Tolak] Eksepsi Kewenangan Relatif Ditolak - Pemeriksaan Dilanjutkan.rtf
+cd85c896be3bda1b982bdaf7a41f81f0  rtf/derry_briantono/97a Putusan Sela/[04] [NO] Eksepsi Kewenangan Relatif Dikabulkan - Pengadilan Agama Tidak Berwenang (Putusan Akhir).rtf
+f6ad2b7daab42daadf505347100d4b3a  rtf/derry_briantono/97a Putusan Sela/[05] [Sela Kabul] Tuntutan Provisi Dikabulkan.rtf
+733c68f284daeef9dfb297e3a2e220e0  rtf/derry_briantono/97a Putusan Sela/[06] [Sela Tolak] Tuntutan Provisi Ditolak.rtf
+6e0437f662e567872aa3e2c0b76003cc  rtf/derry_briantono/97a Putusan Sela/[07] [Sela Kabul] Intervensi Voeging (Menggabungkan Diri) Dikabulkan.rtf
+edef44155782d80b7315d2c1758b878a  rtf/derry_briantono/97a Putusan Sela/[08] [Sela Tolak] Intervensi Voeging (Menggabungkan Diri) Ditolak.rtf
+5d3d1f0a32674f3bcdfa63358a663380  rtf/derry_briantono/97a Putusan Sela/[09] [Sela Kabul] Intervensi Tussenkomst (Menengahi) Dikabulkan.rtf
+6420d81a76ea93bd7caad0132410f7c3  rtf/derry_briantono/97a Putusan Sela/[10] [Sela Tolak] Intervensi Tussenkomst (Menengahi) Ditolak.rtf
+f8ec64a8df030f4008bb16418dad71e5  rtf/derry_briantono/97a Putusan Sela/[11] [Sela Kabul] Intervensi Vrijwaring (Penanggungan) Dikabulkan.rtf
+52e0eaa936969484807ed25e0bcc7057  rtf/derry_briantono/97a Putusan Sela/[12] [Sela Tolak] Intervensi Vrijwaring (Penanggungan) Ditolak.rtf
+4fd1b83328d587d76065c3c43ecf8876  rtf/derry_briantono/97a Putusan Sela/[13] [Sela] Sumpah Pelengkap (Suppletoir) - Gugatan.rtf
+46be8139e034dbacf21365fa4d92c230  rtf/derry_briantono/97a Putusan Sela/[14] [Sela] Sumpah Pelengkap (Suppletoir) - Permohonan (Penetapan Sela).rtf
+31c7a191d983492cafa3308a7ce6a9bd  rtf/derry_briantono/97a Putusan Sela/[15] [Sela] Pemeriksaan Setempat - Perintah Pemeriksaan di Lokasi Objek.rtf
+61279b076bb8b897716e551a1385c3a9  timpa/derry_briantono/4a Harta Bersama - BAS/BAS ALUR 30 HB - Sidang PS - Pemeriksaan Setempat di Lokasi Objek (antara ALUR 04 [7] dan [8]).rtf
+0db10098a7b99608f69d6336c8d4a524  timpa/derry_briantono/4b Kewarisan - BAS/BAS ALUR 32 Waris - Sidang PS - Pemeriksaan Setempat di Lokasi Objek (antara ALUR 04 [7] dan [8]).rtf
+a60ac4eed44598eb85659c974598cf22  uji-kueri.tsv
