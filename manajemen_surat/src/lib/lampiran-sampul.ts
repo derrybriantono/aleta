@@ -250,23 +250,24 @@ function tabelLampiran(kolom: Kolom[], lebarIsi: number, barisData: Array<{ bagi
     return a + w;
   }, 0);
   const garis = (b: number) => `\\clbrdrt\\brdrs\\brdrw${b}\\clbrdrl\\brdrs\\brdrw${b}\\clbrdrb\\brdrs\\brdrw${b}\\clbrdrr\\brdrs\\brdrw${b}`;
-  const para = (teks: string, o: { b?: boolean; al?: "l" | "c"; sz?: number } = {}) => `\\pard\\plain\\intbl\\q${o.al ?? "l"}\\f0\\fs${o.sz ?? 17}\\sb20\\sa20 ${o.b ? "\\b " : ""}${esc(teks)}\\cell\n`;
-  let s = `\\trowd\\trgaph60\\trleft0\\trkeep\\trhdr\n${batas.map((x) => `\\clcbpat2${garis(10)}\\clvertalt\\cellx${x}`).join("")}\n${kolom.map((k) => para(k.judul, { b: true, al: k.rata ?? "l", sz: 15 })).join("")}\\row\n`;
+  // 30 Okt (sampul-rapi): huruf dan tinggi baris sama dengan lampiran ABT (fungsi isian_rtf_lampiran_sampul); judul bagian berlatar tipis
+  const para = (teks: string, o: { b?: boolean; al?: "l" | "c"; sz?: number } = {}) => `\\pard\\plain\\intbl\\q${o.al ?? "l"}\\f0\\fs${o.sz ?? 18}\\sb20\\sa20 ${o.b ? "\\b " : ""}${esc(teks)}\\cell\n`;
+  let s = `\\trowd\\trgaph70\\trleft0\\trkeep\\trhdr\\trrh380\n${batas.map((x) => `\\clcbpat2${garis(10)}\\clvertalc\\cellx${x}`).join("")}\n${kolom.map((k) => para(k.judul, { b: true, al: k.rata ?? "l", sz: 16 })).join("")}\\row\n`;
   for (const r of barisData) {
     if (r.bagian !== undefined) {
-      s += `\\trowd\\trgaph60\\trleft0\\trkeep\n\\clcbpat2${garis(10)}\\cellx${lebarIsi}\n\\pard\\plain\\intbl\\ql\\f0\\fs16\\sb30\\sa30 \\b ${esc(r.bagian)}\\cell\n\\row\n`;
+      s += `\\trowd\\trgaph70\\trleft0\\trkeep\\trrh340\n\\clcbpat3${garis(10)}\\clvertalc\\cellx${lebarIsi}\n\\pard\\plain\\intbl\\ql\\f0\\fs16\\sb20\\sa20 \\b ${esc(r.bagian)}\\cell\n\\row\n`;
       continue;
     }
-    s += `\\trowd\\trgaph60\\trleft0\\trkeep${r.tinggi ? `\\trrh${r.tinggi}` : ""}\n${batas.map((x) => `${garis(10)}\\clvertalc\\cellx${x}`).join("")}\n${(r.sel ?? []).map((t, i) => para(t, { al: kolom[i].rata ?? "l", b: r.tebal })).join("")}\\row\n`;
+    s += `\\trowd\\trgaph70\\trleft0\\trkeep\\trrh${r.tinggi ?? 380}\n${batas.map((x) => `${garis(10)}\\clvertalc\\cellx${x}`).join("")}\n${(r.sel ?? []).map((t, i) => para(t, { al: kolom[i].rata ?? "l", b: r.tebal })).join("")}\\row\n`;
   }
-  return s;
+  return `${s}\\pard\\plain\\f0\\fs4\\par\n`;
 }
 
 function judulLampiran(n: number, judul: string, nomorPerkara: string, alasan: string): string {
   return (
-    `\\page\n\\pard\\plain\\qc\\f0\\fs26\\b\\expndtw40 ${esc(`LAMPIRAN ${n} - ${judul}`)}\\par\n` +
-    `\\pard\\plain\\qc\\f0\\fs18\\sb40\\sa20 ${esc(`Perkara Nomor ${String(nomorPerkara || "").replace(/[\u0000-\u001F]/g, " ").slice(0, 80)}`)}\\par\n` +
-    `\\pard\\plain\\qc\\f0\\fs15\\sb0\\sa120 ${esc(`Halaman ${n + 1} sampul berkas - dicetak karena ${alasan}`)}\\par\n`
+    `\\pard\\plain\\pagebb\\qc\\f0\\fs26\\b\\sa40 ${esc(`LAMPIRAN ${n} - ${judul}`)}\\par\n` +
+    `\\pard\\plain\\qc\\f0\\fs19\\sb0\\sa20 ${esc(`Perkara Nomor ${String(nomorPerkara || "").replace(/[\u0000-\u001F]/g, " ").slice(0, 80)}`)}\\par\n` +
+    `\\pard\\plain\\qc\\f0\\fs15\\sb0\\sa140 ${esc(`Halaman ${n + 1} sampul berkas - dicetak karena ${alasan}`)}\\par\n`
   );
 }
 

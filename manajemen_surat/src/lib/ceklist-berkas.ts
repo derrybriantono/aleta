@@ -255,8 +255,9 @@ function esc(t: string): string {
 export const PENANDA_TABEL_CEKLIST = "@@TABEL-CEKLIST@@";
 
 /** Tabel ceklist sebagai RTF (baris tabel sungguhan); `lebar` = lebar isi dalam twip. Kotak ADA / TIDAK ADA dengan centang pada font simbol. */
-export function tabelCeklistRtf(baris: BarisCeklist[], lebar: number): string {
-  const w = [560, 4300, 1050, 650, 800, 3146];
+export function tabelCeklistRtf(baris: BarisCeklist[], lebar: number, barisMin = 0): string {
+  // 30 Okt (sampul-rapi): kolom dan huruf sama dengan tabel ABT isian_rtf_tabel_ceklist; baris tulis tangan ditambah sampai barisMin (penuh halaman)
+  const w = [560, 4500, 1100, 700, 800, 2806];
   const total = w.reduce((a, x) => a + x, 0);
   const lk = w.map((x) => Math.trunc((x * lebar) / total));
   lk[5] = lebar - lk.slice(0, 5).reduce((a, x) => a + x, 0);
@@ -266,29 +267,34 @@ export function tabelCeklistRtf(baris: BarisCeklist[], lebar: number): string {
     return a + x;
   }, 0);
   const garis = (t = 10) => `\\clbrdrt\\brdrs\\brdrw${t}\\clbrdrl\\brdrs\\brdrw${t}\\clbrdrb\\brdrs\\brdrw${t}\\clbrdrr\\brdrs\\brdrw${t}`;
-  const para = (teks: string, o: { b?: boolean; al?: "l" | "c"; sz?: number } = {}) => `\\pard\\plain\\intbl\\q${o.al ?? "l"}\\f0\\fs${o.sz ?? 15}\\sb15\\sa15 ${o.b ? "\\b " : ""}${teks}\\cell\n`;
-  const kepala = (t: string, al: "l" | "c" = "l") => para(esc(t), { b: true, al, sz: 13 });
-  const awal = (tinggi?: number) => `\\trowd\\trgaph60\\trleft0\\trkeep${tinggi ? `\\trrh${tinggi}` : ""}\n`;
-  let s = `${awal()}${batas.map((x) => `\\clcbpat2${garis()}\\clvertalc\\cellx${x}`).join("")}\n${kepala("NO", "c")}${kepala("JENIS SURAT / DOKUMEN")}${kepala("SIFAT", "c")}${kepala("ADA", "c")}${kepala("TIDAK ADA", "c")}${kepala("SUMBER / KETERANGAN")}\\row\n`;
+  const para = (teks: string, o: { b?: boolean; al?: "l" | "c"; sz?: number } = {}) => `\\pard\\plain\\intbl\\q${o.al ?? "l"}\\f0\\fs${o.sz ?? 18}\\sb20\\sa20 ${o.b ? "\\b " : ""}${teks}\\cell\n`;
+  const kepala = (t: string, al: "l" | "c" = "l") => para(esc(t), { b: true, al, sz: 15 });
+  const awal = (tinggi: number, kepalaBaris = false) => `\\trowd\\trgaph70\\trleft0\\trkeep${kepalaBaris ? "\\trhdr" : ""}\\trrh${tinggi}\n`;
+  let s = `${awal(380, true)}${batas.map((x) => `\\clcbpat2${garis()}\\clvertalc\\cellx${x}`).join("")}\n${kepala("NO", "c")}${kepala("JENIS SURAT / DOKUMEN")}${kepala("SIFAT", "c")}${kepala("ADA", "c")}${kepala("TIDAK ADA", "c")}${kepala("SUMBER / KETERANGAN")}\\row\n`;
   let no = 0;
+  const kolom = batas.map((x) => `${garis()}\\clvertalc\\cellx${x}`).join("");
+  const kosong = () => `${awal(400)}${kolom}\n${para(String(no), { al: "c" })}${para("")}${para("")}${para("")}${para("")}${para("")}\\row\n`;
   for (const r of baris) {
     if ("grup" in r) {
-      s += `${awal()}\\clcbpat3${garis()}\\cellx${lebar}\n\\pard\\plain\\intbl\\ql\\f0\\fs13\\sb20\\sa20 \\b ${esc(r.grup)}\\cell\n\\row\n`;
+      s += `${awal(340)}\\clcbpat3${garis()}\\clvertalc\\cellx${lebar}\n\\pard\\plain\\intbl\\ql\\f0\\fs16\\sb20\\sa20 \\b ${esc(r.grup)}\\cell\n\\row\n`;
       continue;
     }
     no += 1;
-    const tinggi = 300;
-    const kolom = batas.map((x) => `${garis()}\\clvertalc\\cellx${x}`).join("");
     if ("tangan" in r) {
-      s += `${awal(tinggi)}${kolom}\n${para(String(no), { al: "c" })}${para("")}${para("")}${para("")}${para("")}${para("")}\\row\n`;
+      s += kosong();
       continue;
     }
-    const centang = (adaTanda: boolean, tanda: string) => para(adaTanda ? `{\\f1\\b\\u${tanda}?}` : "", { al: "c", sz: 17 });
-    const nama = `${esc(r.nama)}${r.kecil ? ` {\\fs11 ${esc(r.kecil)}}` : ""}`;
+    const centang = (adaTanda: boolean, tanda: string) => para(adaTanda ? `{\\f1\\b\\u${tanda}?}` : "", { al: "c", sz: 19 });
+    const nama = `${esc(r.nama)}${r.kecil ? ` {\\fs14 ${esc(r.kecil)}}` : ""}`;
     const sumber = `${esc(r.sumber)}${r.oto ? " {\\super\\b OTO}" : ""}`;
-    s += `${awal(tinggi)}${kolom}\n${para(String(no), { al: "c" })}${para(nama)}${para(esc(r.sifat), { al: "c", sz: 12 })}${centang(r.st === "ok", "10003")}${centang(r.st === "no", "10007")}${para(sumber, { sz: 13 })}\\row\n`;
+    s += `${awal(400)}${kolom}\n${para(String(no), { al: "c" })}${para(nama)}${para(esc(r.sifat), { al: "c", sz: 15 })}${centang(r.st === "ok", "10003")}${centang(r.st === "no", "10007")}${para(sumber, { sz: 15 })}\\row\n`;
   }
-  return s;
+  // baris tulis tangan tambahan sampai nomor barisMin (memenuhi halaman; judul bagian tidak dihitung, sama dengan fungsi ABT)
+  while (no < barisMin) {
+    no += 1;
+    s += kosong();
+  }
+  return `${s}\\pard\\plain\\f0\\fs4 `;
 }
 
 /** Menggantikan paragraf penanda di RTF hasil isian ABT dengan tabel; tanpa penanda RTF dikembalikan apa adanya. */

@@ -74,7 +74,7 @@ describe("daftar dokumen mengikuti jenis dan keadaan", () => {
     const h = susunCeklist(bahan("cg", fakta()));
     expect(h.baris.filter((x) => "tangan" in x)).toHaveLength(4);
     const rtf = tabelCeklistRtf(h.baris, 10506);
-    const nomor = [...rtf.matchAll(/\\fs15\\sb15\\sa15 (\d+)\\cell/g)].map((m) => Number(m[1]));
+    const nomor = [...rtf.matchAll(/\\fs18\\sb20\\sa20 (\d+)\\cell/g)].map((m) => Number(m[1]));
     expect(nomor).toEqual(nomor.map((_, i) => i + 1));
     expect(nomor.length).toBe(dok(h.baris).length + 4);
   });

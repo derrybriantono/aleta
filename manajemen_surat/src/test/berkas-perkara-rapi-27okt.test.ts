@@ -37,7 +37,7 @@ describe("daftar isi sebagai tabel RTF (portal)", () => {
     // sel pertama tiap baris dokumen = nomor (baris judul bagian hanya satu sel)
     const nomor = t
       .split("\\row")
-      .map((r) => r.match(/\\qc\\f0\\fs17\\sb40\\sa40 (\d+)\\cell/))
+      .map((r) => r.match(/\\qc\\f0\\fs19\\sb20\\sa20 (\d+)\\cell/))
       .filter((m): m is RegExpMatchArray => Boolean(m))
       .map((m) => Number(m[1]));
     expect(nomor).toEqual([1, 2, 3]);
@@ -79,12 +79,12 @@ describe("logo satker di kop RTF", () => {
     expect(sisipLogoRtf(rtf, "")).toBe("\\cell");
     expect(sisipLogoRtf("{\\b x}", "{GAMBAR}")).toBe("{\\b x}");
   });
-  it("logoMonokrom: berwarna jadi skala abu-abu (R=G=B), tinggi tetap; bukan gambar = null", async () => {
+  it("logoMonokrom: berwarna jadi hitam-putih (R=G=B), lebar tetap 640 px (30 Okt: satu bit tajam); bukan gambar = null", async () => {
     const sharp = (await import("sharp")).default;
     const warna = await sharp({ create: { width: 60, height: 30, channels: 4, background: { r: 200, g: 30, b: 60, alpha: 0.5 } } }).png().toBuffer();
     const hasil = await logoMonokrom(warna);
     expect(hasil).not.toBeNull();
-    expect(hasil!.tinggi).toBe(220);
+    expect(hasil!.lebar).toBe(640);
     const { data, info } = await sharp(hasil!.png).raw().toBuffer({ resolveWithObject: true });
     for (let i = 0; i < data.length; i += info.channels) {
       expect(data[i]).toBe(data[i + 1]);
