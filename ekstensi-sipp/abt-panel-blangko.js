@@ -312,7 +312,9 @@ const NILAI_KOSONG = new Set(["", "-", "0", "...", "DATA_TIDAK_ADA", "TIDAK_BISA
 /** Frasa yang berarti "ini pesan mesin", dicari tanpa jangkar. */
 // 30 Okt 2026 (keputusan pengguna): paket ABT alasan-belum-dipilih-30okt mengganti bunyi cabang terakhir 10 variabel alasan
 // perceraian menjadi "[HURUF ALASAN PERCERAIAN BELUM DIPILIH]"; bunyi lama tetap dikenali untuk server yang belum dipasang paket.
-const FRASA_GALAT = [/TIDAK BENAR QUERY NYA/i, /BELUM ISI ALASAN/i, /HURUF ALASAN PERCERAIAN BELUM DIPILIH/i];
+// 30 Okt 2026 (G1): paket ABT agama-belum-diubah-30okt - cabang "alasan H, agama pihak di SIPP belum diubah" (8521/8522/8528/8531)
+// berbunyi "[AGAMA PIHAK YANG MURTAD BELUM DIUBAH DI SIPP]"; bunyi lama ("TIDAK BENAR QUERY NYA / ALASAN H: AGAMA ...") tetap dikenali.
+const FRASA_GALAT = [/TIDAK BENAR QUERY NYA/i, /BELUM ISI ALASAN/i, /HURUF ALASAN PERCERAIAN BELUM DIPILIH/i, /AGAMA PIHAK YANG MURTAD BELUM DIUBAH DI SIPP/i];
 
 /**
  * @param {string} nilai isi sel variabel apa adanya
@@ -9378,7 +9380,7 @@ async function t6SusunPratinjau(k, wadah, pilih) {
   wadah.appendChild(perbesar);
   let jalan = 0;
   let halamanKe = 1;
-  const pola = /\[?HURUF ALASAN PERCERAIAN BELUM DIPILIH\]?|TIDAK BENAR QUERY NYA|BELUM ISI ALASAN|DATA_TIDAK_ADA/gi;
+  const pola = /\[?HURUF ALASAN PERCERAIAN BELUM DIPILIH\]?|\[?AGAMA PIHAK YANG MURTAD BELUM DIUBAH DI SIPP\]?|TIDAK BENAR QUERY NYA|BELUM ISI ALASAN|DATA_TIDAK_ADA/gi;
   for (const p of paragraf.slice(0, 800)) {
     const el = t6El("p", "aleta-t6-naskah-p");
     let akhir = 0;

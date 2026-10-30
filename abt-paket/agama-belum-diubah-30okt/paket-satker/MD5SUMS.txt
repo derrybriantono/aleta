@@ -1,0 +1,7 @@
+8e2f3396bbaa5a110cbcce2059f6bf18 *abt-agama-belum-diubah-30okt-PASANG.sql
+a9d7c79f3c83dbd16b0b566b4a8cb640 *abt-agama-belum-diubah-30okt-PERIKSA.sql
+c1588a61e883d381de12ae4bbd670a7e *abt-agama-belum-diubah-30okt-PRASYARAT.sql
+decbba0553a321a353258e144c7d44ec *abt-agama-belum-diubah-30okt-PULIH.sql
+bf010e1678d67e5555f28eac9c8123d2 *harap.txt
+5514eaa8d5939a6509d7af982acf0671 *pasang-satker.sh
+4f31284b9beda9b7160c3a951ce956ef *pulih-satker.sh
