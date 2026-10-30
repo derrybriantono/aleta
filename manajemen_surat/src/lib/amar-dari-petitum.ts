@@ -23,7 +23,8 @@
  *     apa adanya (petitum memang ditulis dalam bentuk amar); "Mohon"/"agar" di depannya dibuang.
  *
  * Yang TIDAK pernah dikarang: besaran yang tidak tertulis (biaya belum diketahui -> titik-titik), butir yang dikabulkan pada "kabul
- * sebagian", pihak yang dibebani biaya pada gugatan non-perkawinan - semuanya menjadi PERTANYAAN bernomor dan titik-titik di amar.
+ * sebagian", - semuanya titik-titik di amar / pertanyaan bernomor. Gugatan kebendaan dikabulkan: biaya kepada pihak kalah (Pasal 192 ayat (1) RBg)
+ * dan tolak verstek didahului pernyataan ketidakhadiran (keputusan pengguna 30 Okt malam no. 35-36). Permohonan tidak pernah verstek.
  * Murni: tanpa jaringan dan basis data.
  */
 import { terbilang } from "@/lib/biaya-perkara";
@@ -52,8 +53,10 @@ export type MasukanAmar = {
   satker: string;
   /** Tahun pendaftaran perkara (untuk DIPA prodeo); kosong = dari nomor perkara. */
   tahunDaftar?: number | null;
-  /** Biaya perkara (rupiah) bila sudah diketahui; kosong = titik-titik + pertanyaan. */
+  /** Biaya perkara (rupiah) bila sudah diketahui (#8504# ABT = rincian biaya putusan); kosong = titik-titik + catatan; 0 = tanpa "sejumlah". */
   biaya?: number | null;
+  /** Terbilang dari ABT (#0155#) - dipakai bila ada, selain itu dihitung sendiri. */
+  biayaTerbilang?: string;
 };
 
 export type PertanyaanAmar = { no: number; teks: string; usulan: string };
@@ -199,7 +202,7 @@ export function susunAmar(m: MasukanAmar): HasilAmar {
     // Itsbat nikah yang petitumnya tidak memuat butir pengesahan (petitum SIPP sering kosong): butir baku amar SIPP PA Donggala, tanggal
     // dan tempat akad dari isian hakim (titik-titik).
     const itsbat = /itsbat|istbat|pengesahan perkawinan/.test(j) || Number(m.jenisPerkaraId) === 360;
-    if (itsbat && !lain.some((b) => /sah|itsbat|istbat|isbat|pengesahan/i.test(b.teks))) {
+    if (itsbat && !lain.some((b) => /\bsah\b|itsbat|istbat|isbat|pengesahan/i.test(b.teks))) {
       const pasangan = jumlah1 >= 2 ? `${P1} I (${m.namaPihak1[0]}) dengan ${P1} II (${m.namaPihak1[1]})` : `${P1} (${n1 || "..."}) dengan ...`;
       butir.push(`Menyatakan sah perkawinan antara ${pasangan} yang dilaksanakan pada tanggal ... di ...`);
       butir.push(`Memerintahkan kepada ${jumlah1 >= 2 ? "para Pemohon" : P1} untuk mencatatkan perkawinan tersebut pada Kantor Urusan Agama Kecamatan ...`);
@@ -214,10 +217,8 @@ export function susunAmar(m: MasukanAmar): HasilAmar {
     }
     if (lain.some((b) => /rp\.?\s*[\d.]+/i.test(b.teks))) catatan.push("Besaran uang diambil dari petitum (yang DITUNTUT) - sesuaikan dengan yang dikabulkan majelis.");
   } else if (status === "ditolak") {
-    if (verstek) {
-      butir.push(pernyataanVerstek);
-      tanya("Putusan ditolak secara verstek: perlu butir 'Menyatakan Tergugat ... tidak hadir' di depan 'Menolak gugatan'?", "Ya, seperti blangko [01ab] Tolak Verstek; hapus butir pertama bila majelis tidak memakainya.");
-    }
+    // Keputusan pengguna 30 Okt malam (no. 36): tolak verstek tetap didahului pernyataan ketidakhadiran (seperti blangko [01ab]).
+    if (verstek) butir.push(pernyataanVerstek);
     butir.push(`Menolak ${naskah} ${sebut1}`);
   } else if (status === "tidak-dapat-diterima") {
     butir.push(`Menyatakan ${naskah} ${sebut1} tidak dapat diterima (niet ontvankelijke verklaard)`);
@@ -241,14 +242,19 @@ export function susunAmar(m: MasukanAmar): HasilAmar {
   } else {
     const perkawinan = cg || ct || /itsbat|istbat|dispensasi|poligami|asal usul|perwalian|wali adhal|pembatalan perkawinan|hak asuh|nafkah anak/.test(j);
     let dibebani = sebut1;
-    if (!perkawinan && !permohonan && (status === "dikabulkan" || status === "dikabulkan-sebagian")) {
-      dibebani = sebut2;
-      tanya(`Gugatan ${m.jenisPerkara} dikabulkan: biaya dibebankan kepada pihak yang kalah (${sebut2}, Pasal 192 ayat (1) RBg)?`, `Ya - ${sebut2}; ubah bila majelis membebankan lain (mis. ditanggung bersama).`);
+    // Keputusan pengguna 30 Okt malam (no. 35): gugatan kebendaan dikabulkan - biaya kepada pihak yang kalah (Pasal 192 ayat (1) RBg).
+    if (!perkawinan && !permohonan && (status === "dikabulkan" || status === "dikabulkan-sebagian")) dibebani = sebut2;
+    const biaya = m.biaya === null || m.biaya === undefined || String(m.biaya) === "" ? NaN : Number(m.biaya);
+    if (biaya === 0) {
+      // Biaya tercatat Rp0 (bukan prodeo): tetap dibebankan, angka 0 tidak disebut (keputusan 30 Okt, sama dengan amar ikrar).
+      butir.push(`Membebankan biaya perkara kepada ${dibebani}`);
+    } else {
+      const ada = Number.isFinite(biaya) && biaya > 0;
+      const kata = String(m.biayaTerbilang ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+      const angka = ada ? `${rupiahAmar(biaya)} (${/^[a-z ]+$/.test(kata) && kata ? kata : terbilang(biaya)} rupiah)` : "Rp............,00 (............ rupiah)";
+      if (!ada) catatan.push("Jumlah biaya perkara belum diketahui - isi titik-titik sebelum Simpan.");
+      butir.push(`Membebankan kepada ${dibebani} untuk membayar biaya perkara ini sejumlah ${angka}`);
     }
-    const biaya = Number(m.biaya);
-    const angka = Number.isFinite(biaya) && biaya > 0 ? `${rupiahAmar(biaya)} (${terbilang(biaya)} rupiah)` : "Rp............,00 (............ rupiah)";
-    if (!(Number.isFinite(biaya) && biaya > 0)) catatan.push("Jumlah biaya perkara belum diketahui - isi titik-titik sebelum Simpan.");
-    butir.push(`Membebankan kepada ${dibebani} untuk membayar biaya perkara ini sejumlah ${angka}`);
   }
 
   // Tanda akhir: ';' antarbutir, '.' butir terakhir; titik-titik isian ("...") dipertahankan.

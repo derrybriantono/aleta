@@ -2438,6 +2438,17 @@ router.get("/sipp/obyek-sengketa/kebiasaan", requireInternalToken, async (req, r
  * `tanggal` (YYYY-MM-DD) adalah tanggal putusan yang SEDANG diusulkan borang;
  * dipakai hanya untuk menyertakan keterangan hari liburnya.
  */
+// G2B 30 Okt 2026: prodeo, tahun daftar, nama pengadilan, dan biaya putusan (#8504#/#0155# lewat mesin variabel ABT) untuk usulan
+// amar Putusan Akhir SIPP - satu sumber dengan amar & rincian biaya blangko putusan. Hanya membaca.
+router.get("/sipp/amar-biaya", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await require("../services/amarBiayaPutusanService").biayaAmarPutusan(req.query.perkaraId);
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
 router.get("/sipp/praperiksa-putusan/fakta", requireInternalToken, async (req, res) => {
   try {
     const hasil = await praperiksaPutusanService.bacaFakta(String(req.query.nomor || ""), {

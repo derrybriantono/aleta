@@ -2,7 +2,7 @@ import { type NextRequest } from "next/server";
 
 import { susunAmar } from "@/lib/amar-dari-petitum";
 import { getDatabase } from "@/server/db/client";
-import { getGatewayPraperiksaFakta } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
+import { getGatewayAmarBiaya, getGatewayPraperiksaFakta } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { bacaSatkerAktif } from "@/server/modules/satker/identitas";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
@@ -30,10 +30,16 @@ export async function GET(request: NextRequest) {
     const fakta = await getGatewayPraperiksaFakta(nomor);
     if (!fakta.ok || !fakta.data?.ok) return ok({ ada: false, alasan: "Data perkara belum terbaca dari SIPP." });
     const f = fakta.data;
+    // G2B lanjutan: prodeo (perkara.prodeo), tahun daftar, nama pengadilan (NamaPN) dan biaya putusan (#8504#/#0155# ABT) dari bot -
+    // sumber yang sama dengan amar & rincian biaya blangko putusan. Tidak terbaca = titik-titik + catatan.
+    const ab = f.perkaraId ? await getGatewayAmarBiaya(Number(f.perkaraId)).catch(() => null) : null;
+    const b = ab && ab.ok && ab.data && ab.data.ok ? ab.data : null;
     const satker = await bacaSatkerAktif(db).catch(() => null);
-    const namaSatker = String(satker?.namaPengadilan ?? "").replace(/^\s*pengadilan\s+agama\s+/i, "").trim();
+    const bersihPa = (x: unknown) => String(x ?? "").replace(/^\s*pengadilan\s+agama\s+/i, "").trim();
+    const namaSatker = bersihPa(b?.namaPengadilan) || bersihPa(satker?.namaPengadilan);
     const nama = (ke: number) => (f.pihak ?? []).filter((p) => Number(p.pihakKe) === ke).map((p) => String(p.nama || "").trim()).filter(Boolean);
-    const biaya = Number(q.get("biaya"));
+    const biayaMinta = Number(q.get("biaya"));
+    const biaya = Number.isFinite(biayaMinta) && biayaMinta > 0 ? biayaMinta : b?.biaya ? b.biaya.jumlah : null;
     const hasil = susunAmar({
       jenisPerkara: f.jenisPerkara || f.jenisPerkaraLengkap,
       nomorPerkara: f.nomorPerkara || nomor,
@@ -43,10 +49,11 @@ export async function GET(request: NextRequest) {
       petitum: f.petitum,
       namaPihak1: nama(1),
       namaPihak2: nama(2),
-      prodeo: q.get("prodeo") === "1",
+      prodeo: q.get("prodeo") === "1" || b?.prodeo === true,
       satker: namaSatker || "...",
-      tahunDaftar: Number(String(f.tanggalDaftar || "").slice(0, 4)) || null,
-      biaya: Number.isFinite(biaya) && biaya > 0 ? biaya : null,
+      tahunDaftar: b?.tahunDaftar || Number(String(f.tanggalDaftar || "").slice(0, 4)) || null,
+      biaya,
+      biayaTerbilang: b?.biaya && b.biaya.jumlah === biaya ? b.biaya.terbilang : "",
     });
     return ok({ ada: hasil.ok, ...hasil });
   } catch (error) {

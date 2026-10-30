@@ -4169,6 +4169,22 @@ export type GatewayPraperiksaFakta = {
   tidakTerbaca: string[];
 };
 
+/** G2B 30 Okt: prodeo / tahun daftar / nama pengadilan / biaya putusan (#8504#, #0155#) satu perkara untuk usulan amar SIPP. */
+export type GatewayAmarBiaya = {
+  ok: boolean;
+  alasan?: string;
+  perkaraId: number;
+  prodeo: boolean;
+  tahunDaftar: number | null;
+  namaPengadilan: string;
+  biaya: { angka: string; jumlah: number; terbilang: string } | null;
+};
+
+export async function getGatewayAmarBiaya(perkaraId: number): Promise<GatewayResult<GatewayAmarBiaya>> {
+  const params = new URLSearchParams({ perkaraId: String(perkaraId) });
+  return gatewayFetch(`/internal/aleta-bot/sipp/amar-biaya?${params.toString()}`);
+}
+
 export async function getGatewayPraperiksaFakta(
   nomor: string,
   tanggal = ""

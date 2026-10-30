@@ -12,7 +12,11 @@ import path from "node:path";
 import { JSDOM } from "jsdom";
 import { describe, expect, it } from "vitest";
 
+import { createRequire } from "node:module";
+
 import { butirPetitum, susunAmar, type MasukanAmar } from "@/lib/amar-dari-petitum";
+
+const require_ = createRequire(path.resolve(process.cwd(), "../aleta_bot/routes/internalGatewayRoutes.js"));
 
 const CG: MasukanAmar = {
   jenisPerkara: "Cerai Gugat",
@@ -76,6 +80,15 @@ describe("susunAmar - bentuk amar SIPP menurut status", () => {
     for (const s of ["Ditolak", "Tidak Dapat Diterima", "Gugur", "Dicabut"]) expect(susunAmar({ ...CG, status: s }).butir.at(-1)).toMatch(/^Membebankan kepada Penggugat untuk membayar biaya perkara ini sejumlah Rp199\.000,00/);
   });
 
+  it("biaya dari ABT (#8504#/#0155#): terbilang ABT dipakai; biaya Rp0 bukan prodeo tanpa 'sejumlah'", () => {
+    expect(susunAmar({ ...CG, biaya: 229000, biayaTerbilang: "dua ratus dua puluh sembilan ribu" }).butir.at(-1)).toBe(
+      "Membebankan kepada Penggugat untuk membayar biaya perkara ini sejumlah Rp229.000,00 (dua ratus dua puluh sembilan ribu rupiah)."
+    );
+    expect(susunAmar({ ...CG, biaya: 0 }).butir.at(-1)).toBe("Membebankan biaya perkara kepada Penggugat.");
+    // terbilang ABT yang rusak tidak dipakai - dihitung sendiri
+    expect(susunAmar({ ...CG, biaya: 199000, biayaTerbilang: "#0155#" }).butir.at(-1)).toContain("(seratus sembilan puluh sembilan ribu rupiah)");
+  });
+
   it("status belum dipilih: tidak ada amar (bukan tebakan dikabulkan)", () => {
     const h = susunAmar({ ...CG, status: "" });
     expect(h.ok).toBe(false);
@@ -90,8 +103,15 @@ describe("susunAmar - bentuk amar SIPP menurut status", () => {
     expect(sebagian.butir).toContain("Menolak gugatan Penggugat untuk selain dan selebihnya;");
     expect(sebagian.pertanyaan[0]).toMatchObject({ no: 1 });
     const waris = susunAmar({ ...CG, jenisPerkara: "Kewarisan", jenisPerkaraId: 356, petitum: "1. Mengabulkan gugatan Para Penggugat;<br>2. Menetapkan ahli waris almarhum ...;", namaPihak1: ["A", "B"] });
+    // Keputusan 30 Okt malam (no. 35): biaya kepada pihak kalah, tanpa pertanyaan.
     expect(waris.butir.at(-1)).toMatch(/^Membebankan kepada Tergugat/);
-    expect(waris.pertanyaan.some((p) => /Pasal 192/.test(p.teks))).toBe(true);
+    expect(waris.pertanyaan).toEqual([]);
+    // No. 36: tolak verstek didahului pernyataan ketidakhadiran, tanpa pertanyaan.
+    const tolakV = susunAmar({ ...CG, status: "Ditolak", verstek: true });
+    expect(tolakV.butir.slice(0, 2)).toEqual(["Menyatakan Tergugat yang telah dipanggil secara resmi dan patut untuk menghadap ke persidangan, tidak hadir;", "Menolak gugatan Penggugat;"]);
+    expect(tolakV.pertanyaan).toEqual([]);
+    // No. 38a: permohonan bertanda verstek tidak pernah beramar verstek.
+    expect(susunAmar({ ...CG, jenisPerkara: "Dispensasi Kawin", nomorPerkara: "17/Pdt.P/2025/PA.Dgl", alurPerkaraId: 16, verstek: true }).butir.join(" ")).not.toMatch(/verstek|tidak hadir/);
   });
 
   it("itsbat dua Pemohon tanpa butir pengesahan di petitum: butir baku bertitik-titik + catatan", () => {
@@ -170,5 +190,36 @@ describe("ekstensi amar-petitum-sipp.js di borang Putusan Akhir (jsdom)", () => 
     h.amar.isi = "<ol><li>Mengabulkan gugatan Penggugat; disunting</li></ol>";
     await h.pilih("status_putusan", "63");
     expect(h.amar.isi).toBe("<ol><li>Mengabulkan gugatan Penggugat; disunting</li></ol>");
+  });
+});
+
+describe("bot amarBiayaPutusanService (prodeo perkara.prodeo, biaya #8504#/#0155# mesin ABT)", () => {
+  const svc = () => require_("../services/amarBiayaPutusanService.js");
+  it("bacaBiayaPutusan: angka bertitik + terbilang; Rp0; isian kosong/bukan angka = null", () => {
+    const { bacaBiayaPutusan } = svc();
+    expect(bacaBiayaPutusan({ "8504": { status: "terisi", teks: "199.000" }, "0155": { status: "terisi", teks: "Seratus Sembilan Puluh Sembilan Ribu" } })).toEqual({ angka: "199.000", jumlah: 199000, terbilang: "seratus sembilan puluh sembilan ribu" });
+    expect(bacaBiayaPutusan({ "8504": { status: "terisi", teks: "0" } })).toEqual({ angka: "0", jumlah: 0, terbilang: "" });
+    expect(bacaBiayaPutusan({ "8504": { status: "kosong", teks: "" } })).toBeNull();
+    expect(bacaBiayaPutusan({ "8504": { status: "terisi", teks: "#0143#" } })).toBeNull();
+    // #0143# (jumlah rincian) didahulukan atas #8504# yang terpotong ("170" untuk Rp170.000 tanpa paket prodeo-panggilan).
+    expect(bacaBiayaPutusan({ "0143": { status: "terisi", teks: "170.000" }, "8504": { status: "terisi", teks: "170" } })?.jumlah).toBe(170000);
+  });
+  it("prodeo: biaya tidak dibaca (DIPA); bukan prodeo: biaya dari mesin ABT; tahun daftar & nama pengadilan ikut", async () => {
+    const { biayaAmarPutusan } = svc();
+    let dibaca = 0;
+    const deps = (prodeo: number) => ({
+      kueri: async () => [{ prodeo, tahunDaftar: 2026 }],
+      namaPengadilan: async () => "Pengadilan Agama Donggala",
+      nilaiPenanda: async () => {
+        dibaca += 1;
+        return { "8504": { status: "terisi", teks: "209.500" }, "0155": { status: "terisi", teks: "dua ratus sembilan ribu lima ratus" } };
+      },
+    });
+    const p = await biayaAmarPutusan(10246, deps(1));
+    expect(p).toMatchObject({ ok: true, prodeo: true, tahunDaftar: 2026, namaPengadilan: "Pengadilan Agama Donggala", biaya: null });
+    expect(dibaca).toBe(0);
+    const b = await biayaAmarPutusan(10163, deps(0));
+    expect(b).toMatchObject({ prodeo: false, biaya: { jumlah: 209500, terbilang: "dua ratus sembilan ribu lima ratus" } });
+    expect((await biayaAmarPutusan("x", deps(0))).ok).toBe(false);
   });
 });
