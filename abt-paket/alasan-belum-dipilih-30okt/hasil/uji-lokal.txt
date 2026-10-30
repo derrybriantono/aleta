@@ -1,0 +1,15 @@
+=== pasang
+PRASYARAT COCOK (10|0)
+CADANGAN: paket-satker/cadangan/variabel-sebelum.*.sql
+PERIKSA: SEMUA COCOK
+PRASYARAT SESUDAH: 0|10 (harus 0|10)
+SELESAI
+=== banding: variabel lain abt_variabel tak berubah
+2675	8af730c0bc0381955632f2237e88bfc2
+=== pulih
+PRASYARAT SESUDAH PULIH: 10|0
+PULIH COCOK
+PULIH = AWAL (md5 10 variabel sama persis)
+=== pasang lagi
+PRASYARAT SESUDAH: 0|10 (harus 0|10)
+SELESAI

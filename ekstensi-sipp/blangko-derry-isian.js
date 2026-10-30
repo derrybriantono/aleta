@@ -2636,7 +2636,7 @@
   const peringatan8503 = () => {
     const v = String(S.isi["8503"] || "").trim();
     // 21 Okt (temuan pengguna): tanpa alasan tersimpan, pertimbangan alasan perceraian di tabel ABT berbunyi "TIDAK BENAR QUERY NYA".
-    if (!v) return "Alasan perceraian belum dipilih. Selama belum disimpan, bagian pertimbangan alasan perceraian di ABT berbunyi \"TIDAK BENAR QUERY NYA\" dan ikut tercetak.";
+    if (!v) return "Alasan perceraian belum dipilih. Selama belum disimpan, bagian pertimbangan alasan perceraian di ABT berbunyi \"[HURUF ALASAN PERCERAIAN BELUM DIPILIH]\" (di ABT yang belum diperbarui: \"TIDAK BENAR QUERY NYA\") dan ikut tercetak.";
     return !alasanHuruf() ? `ABT tidak mengenali "${v}" sebagai huruf alasan - tulis hurufnya saja, rapat, mis. F, BF, ABF (atau Murtad untuk H).` : "";
   };
   function perbaruiPeringatan8503() {

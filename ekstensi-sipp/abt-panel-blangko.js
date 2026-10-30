@@ -310,7 +310,9 @@ const VAR_OTOMATIS = [
 const NILAI_KOSONG = new Set(["", "-", "0", "...", "DATA_TIDAK_ADA", "TIDAK_BISA_LOAD"]);
 
 /** Frasa yang berarti "ini pesan mesin", dicari tanpa jangkar. */
-const FRASA_GALAT = [/TIDAK BENAR QUERY NYA/i, /BELUM ISI ALASAN/i];
+// 30 Okt 2026 (keputusan pengguna): paket ABT alasan-belum-dipilih-30okt mengganti bunyi cabang terakhir 10 variabel alasan
+// perceraian menjadi "[HURUF ALASAN PERCERAIAN BELUM DIPILIH]"; bunyi lama tetap dikenali untuk server yang belum dipasang paket.
+const FRASA_GALAT = [/TIDAK BENAR QUERY NYA/i, /BELUM ISI ALASAN/i, /HURUF ALASAN PERCERAIAN BELUM DIPILIH/i];
 
 /**
  * @param {string} nilai isi sel variabel apa adanya
@@ -9376,7 +9378,7 @@ async function t6SusunPratinjau(k, wadah, pilih) {
   wadah.appendChild(perbesar);
   let jalan = 0;
   let halamanKe = 1;
-  const pola = /TIDAK BENAR QUERY NYA|BELUM ISI ALASAN|DATA_TIDAK_ADA/gi;
+  const pola = /\[?HURUF ALASAN PERCERAIAN BELUM DIPILIH\]?|TIDAK BENAR QUERY NYA|BELUM ISI ALASAN|DATA_TIDAK_ADA/gi;
   for (const p of paragraf.slice(0, 800)) {
     const el = t6El("p", "aleta-t6-naskah-p");
     let akhir = 0;

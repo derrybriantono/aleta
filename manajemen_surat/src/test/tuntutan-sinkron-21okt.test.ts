@@ -225,7 +225,8 @@ describe("C. panel = tabel ABT; tuntutan yang tidak diminta tidak tampil", () =>
     expect(js).toMatch(/if \(kode === "jabatan"\) \{\s*\/\/[^\n]*\n\s*if \(!bolehTulis\(\) \|\| !S\.blangko \|\| S\.blangko\.jenis !== "put"\) return;/);
     expect(js).toContain("Tuntutan dalam posita dan petitum");
     expect(js).toContain("Isian di dalam bagian otomatis");
-    expect(js).toContain('TIDAK BENAR QUERY NYA\\" dan ikut tercetak.');
+    // 30 Okt: bunyi baru paket ABT alasan-belum-dipilih-30okt + bunyi lama untuk server yang belum dipasang.
+    expect(js).toContain('[HURUF ALASAN PERCERAIAN BELUM DIPILIH]\\" (di ABT yang belum diperbarui: \\"TIDAK BENAR QUERY NYA\\") dan ikut tercetak.');
     // isi otomatis tetap mencakup isian di dalam bagian otomatis (fitur lama tidak berkurang)
     expect(js).toMatch(/const perlu = \(\) => daftarIsiOtomatis\(\)\.filter/);
   });
