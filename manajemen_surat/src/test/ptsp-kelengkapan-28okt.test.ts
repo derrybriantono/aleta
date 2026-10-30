@@ -653,3 +653,28 @@ describe("C. Lencana: keterangan dan klik membuka isian kosong pertama", () => {
     expect(h.w.aletaBlangkoDerryIsian.keadaan().blangko).toBeNull();
   });
 });
+
+// G2B 30 Okt 2026 (arahan pengguna: yang dapat otomatis tidak boleh menambah klik): membuka perkara dari daftar langsung memilih saran
+// PERTAMA portal untuk peran itu - tombol "Pakai saran ini" tidak perlu ditekan; tanpa saran portal tidak ada blangko yang dipaksakan.
+describe("D. G2B: saran pertama langsung terpilih tanpa klik", () => {
+  it("PP membuka perkara dari daftar: BAS saran portal langsung terpilih dan ringkasannya 'sesuai saran'", async () => {
+    const h = buka({ orang: "pp" });
+    await daftarRingkas(h);
+    (q(h, `#bd-dpk [data-pk="${NO.b}"]`) as HTMLElement).click();
+    await sampai(() => h.w.aletaBlangkoDerryIsian.keadaan().blangko, "blangko terpilih sendiri");
+    expect(h.w.aletaBlangkoDerryIsian.keadaan().pk.nomorPerkara).toBe(NO.b);
+    expect(h.w.aletaBlangkoDerryIsian.keadaan().blangko.berkas).toBe(BLANGKO_BAS_1);
+    const ringkas = await sampai(() => q(h, "#bd-saranblangko"), "baris saran");
+    expect(ringkas.textContent).toContain("Blangko ini sesuai saran");
+    expect(q(h, '[data-bd2="pakairek"]')).toBeNull();
+  });
+
+  it("perkara tanpa saran portal (hanya cadangan kata agenda): tidak ada blangko yang dipilih sendiri", async () => {
+    const h = buka({ orang: "pp", tanpaSaran: ["584"] });
+    await daftarRingkas(h);
+    (q(h, `#bd-dpk [data-pk="${NO.d}"]`) as HTMLElement).click();
+    await sampai(() => h.w.aletaBlangkoDerryIsian.keadaan().pk, "perkara terbuka");
+    await tunggu(300);
+    expect(h.w.aletaBlangkoDerryIsian.keadaan().blangko).toBeNull();
+  });
+});

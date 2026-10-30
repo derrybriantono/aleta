@@ -14,6 +14,8 @@
  * Frekuensi alur sungguhan (SIPP PA Donggala, 10.078 perkara berstatus): D:/aleta-dev/kerja/abt-bas-alur-sidang/hasil/alur-bas-frekuensi.md.
  */
 
+import { tergugatHadirSandi } from "@/lib/sandi-kehadiran";
+
 /** Nomor sidang yang dilayani langkah; 0 = sidang terakhir (putusan / penetapan) - nomornya tidak tetap. */
 export type PeranLangkahAlurBas = "pertama" | "lanjutan" | "terakhir" | "varian";
 
@@ -233,7 +235,8 @@ export function tentukanAlurBas(m: MasukanAlurBas): HasilAlurBas {
   if (m.akhir === "cabut") return hasil("alur-08", n >= 2 ? "B" : "A", false, "Cerai dicabut.", ["A", "B", "C1", "C2"].filter((k) => k !== (n >= 2 ? "B" : "A")));
   if (m.akhir === "no") return hasil("alur-09", n >= 2 ? "2" : "1", false, "Cerai tidak dapat diterima.", ["1", "2"].filter((k) => k !== (n >= 2 ? "2" : "1")));
 
-  const tHadirKini = h === 1 || h === 3;
+  // 30 Okt (G2B): sandi Tergugat hadir satu sumber (1, 3, 8, 9, 11, 15) - identik paket relaas-penetapan-30okt.
+  const tHadirKini = tergugatHadirSandi(h);
   const tPernah = m.tergugatPernahHadir === true || tHadirKini;
   const semuaTidakHadir = h === 4;
   const dilihat = n === 0 ? 1 : n;

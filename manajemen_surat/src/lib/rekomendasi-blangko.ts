@@ -32,6 +32,7 @@ import { tentukanAlurBasKumulasi } from "@/lib/alur-bas-kumulasi";
 import { tentukanBasBaru } from "@/lib/alur-bas-baru";
 import { batasEnamBulanIkrar } from "@/lib/ikrar-talak";
 import { keadaanPutusan, type MasukanKeadaanPutusan } from "@/lib/keadaan-putusan";
+import { sebabVerstek, terapkanKeadaanPerkara } from "@/lib/saran-keadaan-perkara";
 import { STATUS_PUTUSAN_SIPP, kunciJenisPerkara, kunciStatusPutusan } from "@/lib/pemetaan-blangko";
 import { JENIS_PENCEGAHAN_PERKAWINAN, blangkoAmplopPendamping, blangkoRelaas, pihakDipanggil, type BlangkoRelaas, type KeadaanRelaas, type PihakDipanggil } from "@/lib/pohon-blangko";
 import { CERMIN_EKSTENSI } from "@/lib/tipe-keluaran/bawaan/bawaan-ekstensi";
@@ -144,6 +145,14 @@ export type MasukanRekomendasi = {
   eksepsiKewenangan?: string;
   putusanSela?: boolean;
   alasanItsbat?: string;
+  /** G2B 30 Okt: amar SIPP memuat "verstek" walau putusan_verstek bukan 'Y' (bot amarVerstek). */
+  amarVerstek?: boolean;
+  /** G2B 30 Okt: penanda prodeo perkara (bot penandaPerkara.prodeo), kuasa tiap sisi (bot kuasaPihak1/2), saksi diajukan tiap sisi. */
+  prodeo?: boolean;
+  kuasaPihak1?: boolean;
+  kuasaPihak2?: boolean;
+  saksiP?: number | null;
+  saksiT?: number | null;
 };
 
 export type HasilRekomendasi = {
@@ -151,6 +160,9 @@ export type HasilRekomendasi = {
   teksDasar: string;
   /** 19 Okt: banyaknya saksi perkara (bila diketahui) - ekstensi memilih varian "(N Saksi)" putusan. */
   jumlahSaksi?: number;
+  /** G2B 30 Okt: saksi Penggugat / Tergugat terpisah - ekstensi memilih varian "(N Saksi)" BAS pembuktian P / T. */
+  saksiP?: number;
+  saksiT?: number;
   bas: Rekomendasi[];
   putusan: Rekomendasi[];
   relaas: Rekomendasi[];
@@ -967,6 +979,13 @@ export function masukanRekomendasiDariBaris(b: Record<string, unknown>): Masukan
     ...(typeof b.eksepsiKewenangan === "string" ? { eksepsiKewenangan: b.eksepsiKewenangan } : {}),
     ...(typeof b.putusanSela === "boolean" ? { putusanSela: b.putusanSela } : {}),
     ...(typeof b.alasanItsbat === "string" ? { alasanItsbat: b.alasanItsbat } : {}),
+    // G2B 30 Okt: keadaan perkara untuk saran pertama yang benar (saran-keadaan-perkara.ts).
+    ...(b.amarVerstek === true ? { amarVerstek: true } : {}),
+    ...(b.penandaPerkara && typeof b.penandaPerkara === "object" && (b.penandaPerkara as { prodeo?: unknown }).prodeo === true ? { prodeo: true } : {}),
+    ...(typeof b.kuasaPihak1 === "boolean" ? { kuasaPihak1: b.kuasaPihak1 } : {}),
+    ...(typeof b.kuasaPihak2 === "boolean" ? { kuasaPihak2: b.kuasaPihak2 } : {}),
+    ...(typeof b.saksiPihak1 === "number" ? { saksiP: b.saksiPihak1 } : {}),
+    ...(typeof b.saksiPihak2 === "number" ? { saksiT: b.saksiPihak2 } : {}),
   };
 }
 export function rekomendasiBlangko(m: MasukanRekomendasi): HasilRekomendasi {
@@ -987,7 +1006,9 @@ export function rekomendasiBlangko(m: MasukanRekomendasi): HasilRekomendasi {
         : [x];
     });
   }
-  hasil.putusan = rekomendasiPutusan(m, teks);
-  hasil.relaas = rekomendasiRelaas(m, teks);
-  return hasil;
+  // G2B 30 Okt: verstek menurut keadaan perkara (amar SIPP menyebut verstek; Tergugat tidak pernah hadir) sebelum peta putusan dibaca.
+  const verstekSebab = sebabVerstek(m, teks);
+  hasil.putusan = rekomendasiPutusan(verstekSebab ? { ...m, verstekPutusan: true } : m, teks);
+  hasil.relaas = rekomendasiRelaas(verstekSebab === "amar" ? { ...m, verstekPutusan: true } : m, teks);
+  return terapkanKeadaanPerkara(hasil, m, teks, verstekSebab);
 }

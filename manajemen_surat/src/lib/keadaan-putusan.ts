@@ -73,6 +73,8 @@
  * Konservatif: kehadiran yang belum dicatat SIPP (dihadiri_oleh kosong) atau mediasi yang gagal dibaca TIDAK ditebak - tidak ada kode.
  */
 
+import { tergugatHadirSandi } from "@/lib/sandi-kehadiran";
+
 export type KodeKeadaanPutusan =
   | "mediasi-sebagian"
   | "t-tidak-hadir-setelah-mediasi"
@@ -330,7 +332,8 @@ export function keadaanPutusan(m: MasukanKeadaanPutusan): KodeKeadaanPutusan[] {
   const hasil: KodeKeadaanPutusan[] = [];
   const hadir = angka(m.dihadiriOleh);
   const sebelumnya = angka(m.panggilan?.hadirSebelumnya);
-  const tHadirKini = hadir === 1 || hadir === 3;
+  // 30 Okt (G2B): sandi Tergugat hadir satu sumber (1, 3, 8, 9, 11, 15) - identik paket relaas-penetapan-30okt.
+  const tHadirKini = tergugatHadirSandi(hadir);
   const tPernah = m.panggilan?.tergugatPernahHadir === true || tHadirKini;
   const mediasiTerbaca = m.mediasiTerbaca !== false;
   const pernahMediasi = mediasiTerbaca && Boolean(m.mediasi);

@@ -903,7 +903,7 @@
         if (Array.isArray(h) && h.length) {
           return h
             .filter((x) => x && x.berkas)
-            .map((x) => sesuaikanSaran({ berkas: String(x.berkas).replace(/\.rtf$/i, ""), kelompok: x.kelompok || "", jenis: x.jenis || jenisKelompok(x.kelompok || ""), alasan: x.alasan || "", saksi: Number(x.saksi) || 0 }));
+            .map((x) => sesuaikanSaran({ berkas: String(x.berkas).replace(/\.rtf$/i, ""), kelompok: x.kelompok || "", jenis: x.jenis || jenisKelompok(x.kelompok || ""), alasan: x.alasan || "", saksi: Number(x.saksi) || 0, saksiP: Number(x.saksiP) || 0, saksiT: Number(x.saksiT) || 0 }));
         }
       } catch {
         /* rekomendasi luar gagal: cadangan di bawah */
@@ -990,6 +990,18 @@
       const cocok = nama.match(POLA);
       if (cocok && nama.replace(POLA, "") === dasar) varian.set(Number(cocok[1]), nama);
       else if (nama === dasar) ada = nama;
+    }
+    // G2B 30 Okt: varian BAS bernomor berhuruf ("[2] ... (2 Saksi)" -> "[2a] ... (3 Saksi)", "[6] ... P" -> "[6a] ... P (3 Saksi)"):
+    // dibandingkan tanpa huruf kode bila nama persisnya tidak punya varian.
+    if (![...varian.keys()].some((k) => k > 2)) {
+      const tanpaHuruf = (x) => x.replace(/\[(\d+)[a-z]{0,2}\]/i, "[$1]");
+      const kunci = tanpaHuruf(dasar);
+      for (const nama of daftar.map(bersih)) {
+        const cocok = nama.match(POLA);
+        if (cocok && tanpaHuruf(nama.replace(POLA, "")) === kunci) varian.set(Number(cocok[1]), nama);
+        else if (!cocok && tanpaHuruf(nama) === kunci && !ada) ada = nama;
+      }
+      if (varian.has(2) && !ada) ada = varian.get(2);
     }
     if (n <= 2) return ada || berkas;
     if (!varian.size) return berkas;
@@ -1218,8 +1230,9 @@
   /** Satu saran: alasan diramahkan dan varian saksi dipilih (bila kelompoknya sudah termuat). */
   function sesuaikanSaran(r) {
     let berkas = r.berkas;
-    const saksi = Number(r.saksi) || saksiTautan();
-    if (r.jenis === "put" && saksi > 0 && S.menu) {
+    // G2B 30 Okt: BAS memakai saksi sisinya (pembuktian Tergugat = saksi Tergugat; selain itu saksi Penggugat), putusan seperti dulu.
+    const saksi = r.jenis === "bas" ? (/Pembuktian T/.test(r.berkas) ? Number(r.saksiT) : Number(r.saksiP)) || Number(r.saksi) || 0 : Number(r.saksi) || saksiTautan();
+    if ((r.jenis === "put" || r.jenis === "bas") && saksi > 0 && S.menu) {
       const k = S.menu.kelompok.find((x) => x.nama === r.kelompok);
       if (k && k.berkas) berkas = pilihVarianSaksi(r.berkas, k.berkas.map((b) => b.berkas), saksi);
     }
@@ -1284,7 +1297,7 @@
         if (!berkas || lihat.has(`${kode}|${berkas}`)) continue;
         lihat.add(`${kode}|${berkas}`);
         const sebab = String(r.alasan || "").trim().replace(/\.$/, "");
-        out.push({ berkas, kelompok: kelompokUntukSaran(menu, r), jenis: kode, alasan: `${dasar}${sebab ? ` - ${sebab}` : ""}${r.perkiraan ? " (perkiraan, periksa kembali)" : ""}`, utama: Boolean(r.utama), ...(Number(hasil.jumlahSaksi) > 0 ? { saksi: Number(hasil.jumlahSaksi) } : {}) });
+        out.push({ berkas, kelompok: kelompokUntukSaran(menu, r), jenis: kode, alasan: `${dasar}${sebab ? ` - ${sebab}` : ""}${r.perkiraan ? " (perkiraan, periksa kembali)" : ""}`, utama: Boolean(r.utama), ...(Number(hasil.jumlahSaksi) > 0 ? { saksi: Number(hasil.jumlahSaksi) } : {}), ...(Number(hasil.saksiP) > 0 ? { saksiP: Number(hasil.saksiP) } : {}), ...(Number(hasil.saksiT) > 0 ? { saksiT: Number(hasil.saksiT) } : {}) });
       }
     }
     const boleh = Array.isArray(o.jenis) ? o.jenis : [];
@@ -1330,6 +1343,38 @@
     }
     renderModal();
     renderRingkasBlangko();
+    await pilihSaranPertamaOtomatis(k);
+  }
+
+  /**
+   * G2B 30 Okt 2026 (arahan pengguna: tanpa klik bila dapat otomatis): begitu saran portal untuk sidang ini tiba dan belum ada blangko
+   * dipilih, saran PERTAMA jenis yang aktif (putusan bagi hakim, BAS bagi panitera pengganti, relaas bagi juru sita) langsung dipilih -
+   * tombol "Pakai saran ini" tidak perlu ditekan. Sekali per sidang (petugas yang melepas/mengganti blangko tidak ditimpa), tidak pada
+   * Tes putusan, "Semua akun" admin, tautan yang sedang dijalankan, atau bila saran dimatikan di setelan. Saran yang hanya perkiraan tetap
+   * dipilih; alasannya tertulis di bawah ringkasan dengan tanda "perkiraan, periksa kembali".
+   */
+  async function pilihSaranPertamaOtomatis(k) {
+    try {
+      if (!S.pk || S.blangko || tes() || semuaAkun() || cfg().saran === false) return;
+      if (S.tautan && !S.tautan.dipakai) return;
+      if (S.saranOtoKunci === k.kunci) return;
+      const c = rekPortal.get(k.kunci);
+      if (!c || c.status !== "siap" || !c.hasil) return;
+      const jenis = jenisSaranAktif();
+      const r = jenis ? rekomendasiJenis(jenis)[0] : null;
+      if (!r || !S.menu) return;
+      // Hanya saran PORTAL (keadaan perkara); saran cadangan dari kata agenda tidak dipilih sendiri.
+      const portal = saranDariPortal(c.hasil, S.menu.kelompok, {}).filter((x) => x.jenis === jenis);
+      if (!portal.length || portal[0].kelompok !== r.kelompok) return;
+      const kel = S.menu.kelompok.find((x) => x.nama === r.kelompok);
+      if (!kel || !kel.berkas || !kelompokBoleh(kel)) return;
+      const asli = kel.berkas.find((b) => samaBerkasSaran(b.berkas, r.berkas));
+      if (!asli) return;
+      S.saranOtoKunci = k.kunci;
+      await pilihBlangko(asli.berkas, kel.nama);
+    } catch {
+      /* pemilihan otomatis hanya kemudahan: petugas tetap dapat memilih lewat Pilih blangko */
+    }
   }
 
   /** Fungsi yang dipasang ke aletaBlangkoDerry.pasangRekomendasi: saran portal untuk sidang yang dipilih, [] selama belum tiba. */
@@ -3765,6 +3810,8 @@
   async function barisBuktiEcourt(pihak) {
     try {
       if (!S.pk || !bolehTulis()) return null;
+      // G2B: perkara yang pasti bukan e-Court tidak menanyai portal (daftar e-Court kini dibaca sebelum bawaan ABT).
+      if ((S.pk.perkara && S.pk.perkara.lewatEcourt === false) || S.pk.lewatEcourt === false) return null;
       const tanda = `bdBuktiOto:${perkaraId()}:${pihak}`;
       if ((await bacaPenyimpanan(tanda))[tanda]) return null;
       const sb = sebutan();
@@ -3815,21 +3862,25 @@
         if (pisah.el.length) el = butirElDariTeks(pisah.el, pihak);
       }
       else {
-        // Bawaan blangko dihitung ABT (nama pihak, NIK dari SIPP) - dibaca dari jendela sembulnya.
-        try {
-          const h = await klienAbt().bacaIsian(b.kode, perkaraId(), "", sidangUrutan());
-          if (h.ok && String(h.nilai || "").trim()) {
-            teksAsal = String(h.nilai);
-            rows = uraiBukti(h.nilai);
-          }
-        } catch {
-          /* tanpa bawaan */
+        // G2B 30 Okt: ABT belum menyimpan apa pun -> daftar bukti yang DIUNGGAH PIHAK di e-Court (rapi, saklar Fitur Satker
+        // "ecourt-bukti-otomatis") lebih dulu dari bawaan hitungan ABT: itulah bukti yang sungguh diajukan, berurut P.1/T.1 seperti di
+        // berkasnya. Dulu e-Court hanya dipakai bila bawaan ABT kosong - padahal bawaan 1214/9911 hampir selalu berisi (KTP/akta dari
+        // SIPP), sehingga daftar e-Court tidak pernah terpakai. Isian yang sudah tersimpan di ABT tetap tidak disentuh (cabang di atas).
+        const baruEcourt = await barisBuktiEcourt(pihak);
+        if (baruEcourt && baruEcourt.length) {
+          rows = baruEcourt;
+          dariEcourt = true;
         }
+        // Bawaan blangko dihitung ABT (nama pihak, NIK dari SIPP) - dibaca dari jendela sembulnya.
         if (!rows || !rows.length) {
-          const baruEcourt = await barisBuktiEcourt(pihak);
-          if (baruEcourt && baruEcourt.length) {
-            rows = baruEcourt;
-            dariEcourt = true;
+          try {
+            const h = await klienAbt().bacaIsian(b.kode, perkaraId(), "", sidangUrutan());
+            if (h.ok && String(h.nilai || "").trim()) {
+              teksAsal = String(h.nilai);
+              rows = uraiBukti(h.nilai);
+            }
+          } catch {
+            /* tanpa bawaan */
           }
         }
         if (!rows || !rows.length) {
@@ -9311,6 +9362,7 @@
     S.log = [];
     S.tampilTakBerlaku = false;
     S.tandaKosong = new Set();
+    S.saranOtoKunci = ""; // G2B: perkara dibuka lagi = saran pertama boleh dipilih otomatis lagi
   }
   const kunciPeranSekarang = () => {
     const a = api();
@@ -9379,6 +9431,9 @@
           if (k && !k.berkas) await muatBerkasKelompok(k);
         }
         if (S.pk === d && !S.blangko) renderRingkasBlangko();
+        // G2B 30 Okt: saran portal yang sudah tersinggah (sidang yang sama dibuka lagi) langsung dipilih tanpa klik.
+        const kk = S.pk === d ? kunciSidangSaran({ nomorPerkara: nomorPerkara(), sidangDipilih: d.sidangDipilih }) : null;
+        if (kk) await pilihSaranPertamaOtomatis(kk);
       });
     }
   }
