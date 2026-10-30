@@ -1,0 +1,32 @@
+Pindai keluaran variabel blangko Derry aktif lewat php56 ABT asli (basis salinan sesudah semua paket 30 Okt), 1.630 penanda (data_sql/data_sipp/data_teks/tanggal/terbilang) x 9 perkara sampel: CG putus+belum, CT putus+belum, DK putus+belum, PAW putus, itsbat (alur 16) putus+belum (alat/sampel-kecil.tsv; sampel 36 perkara alat/sampel.tsv dihentikan karena waktu).
+Galat dihitung hanya atas perkara sejenis dengan folder blangko pemakai variabel (alat/analisa_galat.py).
+
+variabel bermasalah atas perkara sejenis: Derry (admin) 8
+4020 | Derry (admin) | data_sql | 36 blangko | <mark>ISI JIKA ADA YANG KUNING DI BAWAH, JIKA TIDAK BERHENTI | galat 4, penanda mentah 0 | contoh 10185 Cerai Gugat alur 15: TIDAK BENAR QUERY NYA / BELUM ISI ALASAN DI KOLOM ABT
+8521 | Derry (admin) | data_sql | 36 blangko | PERTIMBANGAN FAKTA HUKUM PERCERAIAN (OTOMATIS) (A-H DAN GABU | galat 4, penanda mentah 0 | contoh 10185 Cerai Gugat alur 15: TIDAK BENAR QUERY NYA
+8522 | Derry (admin) | data_sql | 34 blangko | PERTIMBANGAN PETITUM BERDASARKAN FAKTA PERCERAIAN (OTOMATIS) | galat 4, penanda mentah 0 | contoh 10185 Cerai Gugat alur 15: TIDAK BENAR QUERY NYA
+8528 | Derry (admin) | data_sql | 34 blangko | PERTIMBANGAN ALAT BUKTI SAKSI PERCERAIAN VERSTEK (A-H DAN GA | galat 4, penanda mentah 0 | contoh 10185 Cerai Gugat alur 15: TIDAK BENAR QUERY NYA
+8529 | Derry (admin) | data_sql | 36 blangko | PERTIMBANGAN BUKTI SURAT PERCERAIAN VERSTEK (KTP/SURAT DOMIS | galat 2, penanda mentah 0 | contoh 10284 Cerai Gugat alur 15: TIDAK BENAR QUERY NYA
+8530 | Derry (admin) | data_sql | 34 blangko | PERTIMBANGAN PETITUM PERCERAIAN (A-H DAN GABUNGANNYA) | galat 4, penanda mentah 0 | contoh 10185 Cerai Gugat alur 15: TIDAK BENAR QUERY NYA / BELUM ISI ALASAN DI KOLOM ABT
+8531 | Derry (admin) | data_sql | 33 blangko | POKOK ALASAN PERCERAIAN (OTOMATIS DARI 8503) | galat 4, penanda mentah 0 | contoh 10185 Cerai Gugat alur 15: TIDAK BENAR QUERY NYA / BELUM ISI ALASAN DI KOLOM ABT
+8532 | Derry (admin) | data_sql | 33 blangko | DASAR NORMATIF ALASAN PERCERAIAN (OTOMATIS DARI 8503) | galat 4, penanda mentah 0 | contoh 10185 Cerai Gugat alur 15: TIDAK BENAR QUERY NYA / BELUM ISI ALASAN DI KOLOM ABT
+
+SQL galat (Unknown column/syntax/Error Number/Database Error): 0 variabel. Penanda #NNNN# mentah di keluaran: 0 variabel.
+Semua 8 temuan = penanda sengaja 'TIDAK BENAR QUERY NYA' paket alasan A-H karena isian 8503 kosong pada keempat perkara cerai sampel (lihat temuan-tidak-benar-query.txt).
+
+data_sql Derry yang KOSONG di semua sampel sejenis: 167 dari 717 - ditinjau: variabel bersyarat (kuasa hukum, pihak ke-2 dst./ke-5 dst., penggantian/cuti hakim-panitera, sidang lanjutan, dsb.) yang memang kosong bila keadaannya tidak ada. 15 terbanyak dipakai:
+8540 | KALIMAT KUASA #0046# (OTOMATIS: advokat, kantor, alamat, tgl | 909 blangko
+3507 | PIHAK: IDENTITAS #0046# KE-5 DST (OTOMATIS dari SIPP perkara | 906 blangko
+5403 | NAMA PANITERA SIDANG YANG SEBELUMNYA (PENGGANTIAN PANITERA D | 611 blangko
+5405 | KETERANGAN CUTI PANITERA SIDANG | 611 blangko
+5406 | NAMA HAKIM SIDANG YANG SEBELUMNYA (PENGGANTIAN HAKIM DISIDAN | 611 blangko
+5407 | KETERANGAN CUTI HAKIM SIDANG | 611 blangko
+8562 | SIDANG SEBELUMNYA untuk BAS LANJUTAN (OTOMATIS dari SIPP men | 611 blangko
+8541 | KALIMAT KUASA #0047# (OTOMATIS: advokat, kantor, alamat, tgl | 570 blangko
+3509 | PIHAK: IDENTITAS #0047# KE-6 DST (OTOMATIS dari SIPP perkara | 561 blangko
+5078 | No. NIK #0047# II | 561 blangko
+5079 | Tempat Lahir #0047# II | 561 blangko
+5080 | Tgl. Lahir #0047# II | 561 blangko
+5081 | Agama #0047# II | 561 blangko
+5083 | No. NIK #0047# III | 561 blangko
+5084 | Tempat Lahir #0047# III | 561 blangko
