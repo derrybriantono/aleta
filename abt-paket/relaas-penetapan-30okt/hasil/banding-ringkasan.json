@@ -1,0 +1,510 @@
+{
+ "perkara": 161,
+ "render_gagal": 0,
+ "galat_lama": {},
+ "galat_baru": {},
+ "pasangan": {
+  "1064+7100->11204": {
+   "spasi sebelum 'yang didaftarkan'": 123,
+   "identik": 38
+  },
+  "1099+7100->11214": {
+   "spasi sebelum 'yang didaftarkan'": 123,
+   "identik": 38
+  },
+  "1064+7100->11216": {
+   "tanggal putusan (bukan PHS)": 161
+  },
+  "7108->11205": {
+   "identik": 29,
+   "koma sesudah nama": 124,
+   "nomor I menurut jumlah pihak": 8
+  },
+  "7109->11206": {
+   "identik": 156,
+   "nomor I (Tergugat lebih dari satu)": 4,
+   "agama dari SIPP": 1
+  },
+  "7008->11207": {
+   "upaya (kosong) -> kasasi": 3,
+   "upaya (kosong) -> banding": 8,
+   "upaya banding -> kasasi": 27,
+   "upaya banding -> banding": 21,
+   "upaya verzet -> banding": 84,
+   "upaya banding -> dibuang (cabut/coret/gugur)": 17,
+   "cabang Bupati (ghaib Tergugat) dibuang; upaya verzet -> banding": 1
+  },
+  "7006->11208": {
+   "upaya (kosong) -> kasasi": 3,
+   "upaya (kosong) -> banding": 4,
+   "upaya banding -> kasasi": 27,
+   "upaya banding -> banding": 20,
+   "upaya verzet -> verzet": 85,
+   "upaya banding -> dibuang (cabut/coret/gugur)": 17,
+   "upaya banding -> verzet": 1,
+   "upaya (kosong) -> verzet": 4
+  },
+  "9564->11209": {
+   "identik": 146,
+   "relaas kepada kuasa terbaca": 15
+  },
+  "9565->11210": {
+   "identik": 161
+  },
+  "0180->11200": {
+   "tanggal relaas (bukan tanggal PJS)": 140,
+   "identik": 21
+  },
+  "0180->11201": {
+   "tanggal relaas (bukan tanggal PJS)": 158,
+   "identik": 3
+  },
+  "1066->11202": {
+   "PA tujuan delegasi dari SIPP": 150,
+   "identik": 11
+  },
+  "1167->11203": {
+   "PA tujuan belum dicatat = titik-titik": 132,
+   "PA tujuan delegasi dari SIPP": 28,
+   "identik": 1
+  }
+ },
+ "contoh": {
+  "1064+7100->11204 spasi sebelum 'yang didaftarkan'": [
+   {
+    "perkara": "10275",
+    "lama": "23 Oktober 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;",
+    "baru": "23 Oktober 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;"
+   },
+   {
+    "perkara": "10253",
+    "lama": "19 Oktober 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;",
+    "baru": "19 Oktober 2026 yang didaftarkan secara elektronik melalui Aplikasi E-Court;"
+   }
+  ],
+  "1099+7100->11214 spasi sebelum 'yang didaftarkan'": [
+   {
+    "perkara": "10275",
+    "lama": "...yang didaftarkan secara elektronik melalui Aplikasi E-Court;",
+    "baru": "... yang didaftarkan secara elektronik melalui Aplikasi E-Court;"
+   },
+   {
+    "perkara": "10253",
+    "lama": "...yang didaftarkan secara elektronik melalui Aplikasi E-Court;",
+    "baru": "... yang didaftarkan secara elektronik melalui Aplikasi E-Court;"
+   }
+  ],
+  "1064+7100->11216 tanggal putusan (bukan PHS)": [
+   {
+    "perkara": "10275",
+    "lama": "23 Oktober 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;",
+    "baru": "... yang didaftarkan secara elektronik melalui Aplikasi E-Court;"
+   },
+   {
+    "perkara": "10253",
+    "lama": "19 Oktober 2026yang didaftarkan secara elektronik melalui Aplikasi E-Court;",
+    "baru": "... yang didaftarkan secara elektronik melalui Aplikasi E-Court;"
+   }
+  ],
+  "7108->11205 identik": [
+   {
+    "perkara": "10275",
+    "lama": "Hermansyah bin Abdul Wahab, NIK 7271020107860040, tempat dan tanggal lahir Palu, 01 Juli 1986, agama Islam, pekerjaan Wiraswasta, pendidikan SLTA, tempat kediaman di Desa Tompi Bugis, Kecamatan Kulawi Selatan, Kabupaten Sigi, Provinsi Sulawesi Tengah, Domisili Elektronik:allakola76@gmail.com, sebagai Pemohon I;",
+    "baru": "Hermansyah bin Abdul Wahab, NIK 7271020107860040, tempat dan tanggal lahir Palu, 01 Juli 1986, agama Islam, pekerjaan Wiraswasta, pendidikan SLTA, tempat kediaman di Desa Tompi Bugis, Kecamatan Kulawi Selatan, Kabupaten Sigi, Provinsi Sulawesi Tengah, Domisili Elektronik:allakola76@gmail.com, sebagai Pemohon I;"
+   },
+   {
+    "perkara": "10253",
+    "lama": "Sultan bin Darwis, NIK 7203100405800004, tempat dan tanggal lahir Masaingi, 04 Mei 1980, agama Islam, pekerjaan Petani/Pekebun, pendidikan SD, tempat kediaman di Desa Labuan Toposo, Kecamatan Labuan, Kabupaten Donggala, Provinsi Sulawesi Tengah, Domisili Elektronik:sultantan898@gmail.com, sebagai Pemohon I;",
+    "baru": "Sultan bin Darwis, NIK 7203100405800004, tempat dan tanggal lahir Masaingi, 04 Mei 1980, agama Islam, pekerjaan Petani/Pekebun, pendidikan SD, tempat kediaman di Desa Labuan Toposo, Kecamatan Labuan, Kabupaten Donggala, Provinsi Sulawesi Tengah, Domisili Elektronik:sultantan898@gmail.com, sebagai Pemohon I;"
+   }
+  ],
+  "7109->11206 identik": [
+   {
+    "perkara": "10275",
+    "lama": "Rosmala Dewi binti Hasan Kibe, NIK 7210064103930001, tempat dan tanggal lahir Palu, 01 Maret 1993, agama Islam, pekerjaan Mengurus Rumah Tangga, pendidikan SLTA, tempat kediaman di Desa Tompi Bugis, Kecamatan Kulawi Selatan, Kabupaten Sigi, Provinsi Sulawesi Tengah, Domisili Elektronik:allakola76@gmail.com, sebagai Pemohon II;",
+    "baru": "Rosmala Dewi binti Hasan Kibe, NIK 7210064103930001, tempat dan tanggal lahir Palu, 01 Maret 1993, agama Islam, pekerjaan Mengurus Rumah Tangga, pendidikan SLTA, tempat kediaman di Desa Tompi Bugis, Kecamatan Kulawi Selatan, Kabupaten Sigi, Provinsi Sulawesi Tengah, Domisili Elektronik:allakola76@gmail.com, sebagai Pemohon II;"
+   },
+   {
+    "perkara": "10253",
+    "lama": "Leni Marlina binti Anwar Tinjo, NIK 7203094606750003, tempat dan tanggal lahir Labuan Panimba, 06 Juni 1975, agama Islam, pekerjaan Mengurus Rumah Tangga, pendidikan SLTP, tempat kediaman di Desa Labuan Toposo, Kecamatan Labuan, Kabupaten Donggala, Provinsi Sulawesi Tengah, Domisili Elektronik:sultantan898@gmail.com, sebagai Pemohon II;",
+    "baru": "Leni Marlina binti Anwar Tinjo, NIK 7203094606750003, tempat dan tanggal lahir Labuan Panimba, 06 Juni 1975, agama Islam, pekerjaan Mengurus Rumah Tangga, pendidikan SLTP, tempat kediaman di Desa Labuan Toposo, Kecamatan Labuan, Kabupaten Donggala, Provinsi Sulawesi Tengah, Domisili Elektronik:sultantan898@gmail.com, sebagai Pemohon II;"
+   }
+  ],
+  "7008->11207 upaya (kosong) -> kasasi": [
+   {
+    "perkara": "10275",
+    "lama": "Bahwa terhadap putusan tersebut Pemohon dapat mengajukan dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;\n \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Pemohon;\n \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan.",
+    "baru": "Bahwa terhadap putusan tersebut Para Pemohon dapat mengajukan kasasi dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 46 ayat (1) Undang-Undang Nomor 14 Tahun 1985 tentang Mahkamah Agung sebagaimana telah diubah dengan Undang-Undang Nomor 5 Tahun 2004 dan perubahan kedua dengan Undang-Undang Nomor 3 Tahun 2009;\n \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaika"
+   },
+   {
+    "perkara": "10253",
+    "lama": "Bahwa terhadap putusan tersebut Pemohon dapat mengajukan dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;\n \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Pemohon;\n \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan.",
+    "baru": "Bahwa terhadap putusan tersebut Para Pemohon dapat mengajukan kasasi dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 46 ayat (1) Undang-Undang Nomor 14 Tahun 1985 tentang Mahkamah Agung sebagaimana telah diubah dengan Undang-Undang Nomor 5 Tahun 2004 dan perubahan kedua dengan Undang-Undang Nomor 3 Tahun 2009;\n \tPemberitahuan isi putusan ini saya kirimkan secara elektronik melalui domisili elektronik Pemohon"
+   }
+  ],
+  "7006->11208 upaya (kosong) -> kasasi": [
+   {
+    "perkara": "10275",
+    "lama": "Bahwa terhadap putusan tersebut Termohon dapat mengajukan dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;\n     \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Termohon;\n     \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan.",
+    "baru": "Bahwa terhadap putusan tersebut Para Pemohon dapat mengajukan kasasi dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 46 ayat (1) Undang-Undang Nomor 14 Tahun 1985 tentang Mahkamah Agung sebagaimana telah diubah dengan Undang-Undang Nomor 5 Tahun 2004 dan perubahan kedua dengan Undang-Undang Nomor 3 Tahun 2009;\n     \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disamp"
+   },
+   {
+    "perkara": "10253",
+    "lama": "Bahwa terhadap putusan tersebut Termohon dapat mengajukan dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;\n     \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Termohon;\n     \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan.",
+    "baru": "Bahwa terhadap putusan tersebut Para Pemohon dapat mengajukan kasasi dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 46 ayat (1) Undang-Undang Nomor 14 Tahun 1985 tentang Mahkamah Agung sebagaimana telah diubah dengan Undang-Undang Nomor 5 Tahun 2004 dan perubahan kedua dengan Undang-Undang Nomor 3 Tahun 2009;\n     \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disamp"
+   }
+  ],
+  "9564->11209 identik": [
+   {
+    "perkara": "10275",
+    "lama": "Rabu tanggal 28 Oktober 2026",
+    "baru": "Rabu tanggal 28 Oktober 2026"
+   },
+   {
+    "perkara": "10253",
+    "lama": "............................. tanggal ..........................................................",
+    "baru": "............................. tanggal .........................................................."
+   }
+  ],
+  "9565->11210 identik": [
+   {
+    "perkara": "10275",
+    "lama": "............................. tanggal ..........................................................",
+    "baru": "............................. tanggal .........................................................."
+   },
+   {
+    "perkara": "10253",
+    "lama": "............................. tanggal ..........................................................",
+    "baru": "............................. tanggal .........................................................."
+   }
+  ],
+  "0180->11200 tanggal relaas (bukan tanggal PJS)": [
+   {
+    "perkara": "10275",
+    "lama": "23 Oktober 2026",
+    "baru": "28 Oktober 2026"
+   },
+   {
+    "perkara": "10253",
+    "lama": "19 Oktober 2026",
+    "baru": ".............................."
+   }
+  ],
+  "0180->11201 tanggal relaas (bukan tanggal PJS)": [
+   {
+    "perkara": "10275",
+    "lama": "23 Oktober 2026",
+    "baru": ".............................."
+   },
+   {
+    "perkara": "10253",
+    "lama": "19 Oktober 2026",
+    "baru": ".............................."
+   }
+  ],
+  "1066->11202 PA tujuan delegasi dari SIPP": [
+   {
+    "perkara": "10275",
+    "lama": "Pengadilan Agama",
+    "baru": "Pengadilan Agama ........................"
+   },
+   {
+    "perkara": "10253",
+    "lama": "Pengadilan Agama",
+    "baru": "Pengadilan Agama ........................"
+   }
+  ],
+  "1167->11203 PA tujuan belum dicatat = titik-titik": [
+   {
+    "perkara": "10275",
+    "lama": "",
+    "baru": "........................"
+   },
+   {
+    "perkara": "10253",
+    "lama": "",
+    "baru": "........................"
+   }
+  ],
+  "7108->11205 koma sesudah nama": [
+   {
+    "perkara": "10202",
+    "lama": "Suhartini binti Zainudin NIK 7203065212870002, tempat dan tanggal lahir Karya Mukti, 12 Desember 1987, agama Islam, pekerjaan Mengurus Rumah Tangga, pendidikan SLTA, tempat kediaman di Desa Karya Mukti, Kecamatan Dampelas, Kabupaten Donggala, Provinsi Sulawesi Tengah, sebagai Penggugat;",
+    "baru": "Suhartini binti Zainudin, NIK 7203065212870002, tempat dan tanggal lahir Karya Mukti, 12 Desember 1987, agama Islam, pekerjaan Mengurus Rumah Tangga, pendidikan SLTA, tempat kediaman di Desa Karya Mukti, Kecamatan Dampelas, Kabupaten Donggala, Provinsi Sulawesi Tengah, sebagai Penggugat;"
+   },
+   {
+    "perkara": "10188",
+    "lama": "Ratno Hadi alias Retno Hadi bin Ribut Suyoto NIK 7208060103860003, tempat dan tanggal lahir Sausu Trans, 01 Maret 1986, agama Islam, pekerjaan Wiraswasta, pendidikan SLTA, tempat kediaman di Jalan Malontara, RT004/RW007, Kelurahan Pengawu, Kecamatan Tatanga, Kota Palu (sesuai dengan surat tanda bukti Pendataan Penduduk Non-Permanen, No. 727106/NPI/05102026/0001), sebagai Pemohon;",
+    "baru": "Ratno Hadi alias Retno Hadi bin Ribut Suyoto, NIK 7208060103860003, tempat dan tanggal lahir Sausu Trans, 01 Maret 1986, agama Islam, pekerjaan Wiraswasta, pendidikan SLTA, tempat kediaman di Jalan Malontara, RT004/RW007, Kelurahan Pengawu, Kecamatan Tatanga, Kota Palu (sesuai dengan surat tanda bukti Pendataan Penduduk Non-Permanen, No. 727106/NPI/05102026/0001), sebagai Pemohon;"
+   }
+  ],
+  "7008->11207 upaya (kosong) -> banding": [
+   {
+    "perkara": "10202",
+    "lama": "Bahwa terhadap putusan tersebut Penggugat dapat mengajukan dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;\n \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Penggugat;\n \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan.",
+    "baru": "Bahwa terhadap putusan tersebut Penggugat dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 199 ayat (1) RBg;\n \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Penggugat;\n \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan."
+   },
+   {
+    "perkara": "10188",
+    "lama": "Bahwa terhadap putusan tersebut Pemohon dapat mengajukan dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;\n \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Pemohon;\n \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan.",
+    "baru": "Bahwa terhadap putusan tersebut Pemohon dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 199 ayat (1) RBg;\n \tPemberitahuan isi putusan ini saya kirimkan secara elektronik melalui domisili elektronik Pemohon yang telah terdaftar, yaitu ratnohadi.nacwa@gmail.com;\n \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan."
+   }
+  ],
+  "7006->11208 upaya (kosong) -> banding": [
+   {
+    "perkara": "10202",
+    "lama": "Bahwa terhadap putusan tersebut Tergugat dapat mengajukan dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;\n     \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Tergugat;\n     \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan.",
+    "baru": "Bahwa terhadap putusan tersebut Tergugat dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 199 ayat (1) RBg;\n     \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Tergugat;\n     \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan."
+   },
+   {
+    "perkara": "10188",
+    "lama": "Bahwa terhadap putusan tersebut Termohon dapat mengajukan dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;\n     \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Termohon;\n     \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan.",
+    "baru": "Bahwa terhadap putusan tersebut Termohon dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 199 ayat (1) RBg;\n     \tPemberitahuan isi putusan ini saya kirimkan secara elektronik melalui domisili elektronik Kuasa Hukum Termohon yang telah terdaftar, yaitu thithienaja@yahoo.co.id;\n     \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan."
+   }
+  ],
+  "0180->11200 identik": [
+   {
+    "perkara": "10188",
+    "lama": "06 Oktober 2026",
+    "baru": "06 Oktober 2026"
+   },
+   {
+    "perkara": "10167",
+    "lama": "23 September 2026",
+    "baru": "23 September 2026"
+   }
+  ],
+  "7008->11207 upaya banding -> kasasi": [
+   {
+    "perkara": "10167",
+    "lama": "Bahwa terhadap putusan tersebut Pemohon dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;\n \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Pemohon;\n \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan.",
+    "baru": "Bahwa terhadap putusan tersebut Para Pemohon dapat mengajukan kasasi dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 46 ayat (1) Undang-Undang Nomor 14 Tahun 1985 tentang Mahkamah Agung sebagaimana telah diubah dengan Undang-Undang Nomor 5 Tahun 2004 dan perubahan kedua dengan Undang-Undang Nomor 3 Tahun 2009;\n \tPemberitahuan isi putusan ini saya kirimkan secara elektronik melalui domisili elektronik Pemohon"
+   },
+   {
+    "perkara": "9694",
+    "lama": "Bahwa terhadap putusan tersebut Pemohon dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;\n \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Pemohon;\n \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan.",
+    "baru": "Bahwa terhadap putusan tersebut Para Pemohon dapat mengajukan kasasi dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 46 ayat (1) Undang-Undang Nomor 14 Tahun 1985 tentang Mahkamah Agung sebagaimana telah diubah dengan Undang-Undang Nomor 5 Tahun 2004 dan perubahan kedua dengan Undang-Undang Nomor 3 Tahun 2009;\n \tPemberitahuan isi putusan ini saya kirimkan secara elektronik melalui domisili elektronik Pemohon"
+   }
+  ],
+  "7006->11208 upaya banding -> kasasi": [
+   {
+    "perkara": "10167",
+    "lama": "Bahwa terhadap putusan tersebut Termohon dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;\n     \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Termohon;\n     \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan.",
+    "baru": "Bahwa terhadap putusan tersebut Para Pemohon dapat mengajukan kasasi dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 46 ayat (1) Undang-Undang Nomor 14 Tahun 1985 tentang Mahkamah Agung sebagaimana telah diubah dengan Undang-Undang Nomor 5 Tahun 2004 dan perubahan kedua dengan Undang-Undang Nomor 3 Tahun 2009;\n     \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disamp"
+   },
+   {
+    "perkara": "9694",
+    "lama": "Bahwa terhadap putusan tersebut Termohon dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;\n     \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Termohon;\n     \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan.",
+    "baru": "Bahwa terhadap putusan tersebut Para Pemohon dapat mengajukan kasasi dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 46 ayat (1) Undang-Undang Nomor 14 Tahun 1985 tentang Mahkamah Agung sebagaimana telah diubah dengan Undang-Undang Nomor 5 Tahun 2004 dan perubahan kedua dengan Undang-Undang Nomor 3 Tahun 2009;\n     \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disamp"
+   }
+  ],
+  "7108->11205 nomor I menurut jumlah pihak": [
+   {
+    "perkara": "10155",
+    "lama": "MULTAZAM NIK 7203190803990001, tempat dan tanggal lahir PALU, 08 Maret 1999, agama Islam, pekerjaan pelajar/mahasiswa, pendidikan S1, tempat kediaman di Desa Wanl II, RT/RW 00/00, KEL/DESA.WANI DUA, KEC.TANANTOVEA, Kabupaten Donggala, Provinsi Sulawesi Tengah, sebagai Penggugat;",
+    "baru": "MULTAZAM, NIK 7203190803990001, tempat dan tanggal lahir PALU, 08 Maret 1999, agama Islam, pekerjaan pelajar/mahasiswa, pendidikan S1, tempat kediaman di Desa Wanl II, RT/RW 00/00, KEL/DESA.WANI DUA, KEC.TANANTOVEA, Kabupaten Donggala, Provinsi Sulawesi Tengah, sebagai Penggugat I;"
+   },
+   {
+    "perkara": "9588",
+    "lama": "Hijra binti Djarudin, NIK 7210124206690001, tempat dan tanggal lahir Dolo, 02 Juni 1969, agama Islam, pekerjaan Mengurus Rumah Tangga, pendidikan SLTA, tempat kediaman di Desa Kotarindau, RT005, RW001, Kecamatan Dolo, Kabupaten Sigi, Provinsi Sulawesi Tengah, ijahijrah82@gmail.com, sebagai Pemohon I;",
+    "baru": "Hijra binti Djarudin, NIK 7210124206690001, tempat dan tanggal lahir Dolo, 02 Juni 1969, agama Islam, pekerjaan Mengurus Rumah Tangga, pendidikan SLTA, tempat kediaman di Desa Kotarindau, RT005, RW001, Kecamatan Dolo, Kabupaten Sigi, Provinsi Sulawesi Tengah, ijahijrah82@gmail.com, sebagai Pemohon;"
+   }
+  ],
+  "7109->11206 nomor I (Tergugat lebih dari satu)": [
+   {
+    "perkara": "10155",
+    "lama": ", umur 51 tahun, agama Islam, pendidikan SLTA, pekerjaan MENGURUS RUMAH TANGGA, tempat kediaman di , sebagai Tergugat;",
+    "baru": ", umur 51 tahun, agama Islam, pendidikan SLTA, pekerjaan MENGURUS RUMAH TANGGA, tempat kediaman di , sebagai Tergugat I;"
+   },
+   {
+    "perkara": "7900",
+    "lama": ", umur 2024 tahun, agama Islam, pendidikan , pekerjaan , tempat kediaman di , sebagai Tergugat;",
+    "baru": ", umur 2024 tahun, agama Islam, pendidikan , pekerjaan , tempat kediaman di , sebagai Tergugat I;"
+   }
+  ],
+  "7008->11207 upaya banding -> banding": [
+   {
+    "perkara": "10007",
+    "lama": "Bahwa terhadap putusan tersebut Pemohon dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;\n \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Pemohon;\n \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan.",
+    "baru": "Bahwa terhadap putusan tersebut Pemohon dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 199 ayat (1) RBg;\n \tPemberitahuan isi putusan ini saya kirimkan secara elektronik melalui domisili elektronik Pemohon yang telah terdaftar, yaitu sutiowahono532@gmail.com;\n \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan."
+   },
+   {
+    "perkara": "9718",
+    "lama": "Bahwa terhadap putusan tersebut Penggugat dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;\n \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Penggugat;\n \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan.",
+    "baru": "Bahwa terhadap putusan tersebut Penggugat dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 199 ayat (1) RBg;\n \tPemberitahuan isi putusan ini saya kirimkan secara elektronik melalui domisili elektronik Penggugat yang telah terdaftar, yaitu fitripollofitripolo@gmail.com;\n \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan."
+   }
+  ],
+  "7006->11208 upaya banding -> banding": [
+   {
+    "perkara": "10007",
+    "lama": "Bahwa terhadap putusan tersebut Termohon dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;\n     \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Termohon;\n     \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan.",
+    "baru": "Bahwa terhadap putusan tersebut Termohon dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 199 ayat (1) RBg;\n     \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Termohon;\n     \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan."
+   },
+   {
+    "perkara": "9718",
+    "lama": "Bahwa terhadap putusan tersebut Tergugat dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;\n     \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Tergugat;\n     \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan.",
+    "baru": "Bahwa terhadap putusan tersebut Tergugat dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 199 ayat (1) RBg;\n     \tPemberitahuan isi putusan ini saya kirimkan secara elektronik melalui domisili elektronik Tergugat yang telah terdaftar, yaitu agus0541919@gmail.com;\n     \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan."
+   }
+  ],
+  "7008->11207 upaya verzet -> banding": [
+   {
+    "perkara": "9984",
+    "lama": "Bahwa terhadap putusan tersebut Penggugat dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;\n \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Penggugat;\n \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan.",
+    "baru": "Bahwa terhadap putusan tersebut Penggugat dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 199 ayat (1) RBg;\n \tPemberitahuan isi putusan ini saya kirimkan secara elektronik melalui domisili elektronik Penggugat yang telah terdaftar, yaitu arsitarasi94@gmail.com;\n \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan."
+   },
+   {
+    "perkara": "9827",
+    "lama": "Bahwa terhadap putusan tersebut Penggugat dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;\n \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Penggugat;\n \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan.",
+    "baru": "Bahwa terhadap putusan tersebut Penggugat dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 199 ayat (1) RBg;\n \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Penggugat;\n \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan."
+   }
+  ],
+  "7006->11208 upaya verzet -> verzet": [
+   {
+    "perkara": "9984",
+    "lama": "Bahwa terhadap putusan tersebut Tergugat dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;\n     \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Tergugat;\n     \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan.",
+    "baru": "Bahwa terhadap putusan tersebut Tergugat dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 153 ayat (1) RBg;\n     \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Tergugat;\n     \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan."
+   },
+   {
+    "perkara": "9827",
+    "lama": "Bahwa terhadap putusan tersebut Tergugat dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;\n     \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Tergugat;\n     \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan.",
+    "baru": "Bahwa terhadap putusan tersebut Tergugat dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 153 ayat (1) RBg;\n     \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Tergugat;\n     \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan."
+   }
+  ],
+  "7008->11207 upaya banding -> dibuang (cabut/coret/gugur)": [
+   {
+    "perkara": "9893",
+    "lama": "Bahwa terhadap putusan tersebut Penggugat dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;\n \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Penggugat;\n \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan.",
+    "baru": "Pemberitahuan isi putusan ini saya kirimkan secara elektronik melalui domisili elektronik Penggugat yang telah terdaftar, yaitu fadlinanita@gmail.com;\n \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan."
+   },
+   {
+    "perkara": "8768",
+    "lama": "Bahwa terhadap putusan tersebut Penggugat dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;\n \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Penggugat;\n \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan.",
+    "baru": "Pemberitahuan isi putusan ini saya kirimkan secara elektronik melalui domisili elektronik Penggugat yang telah terdaftar, yaitu ua2964657@gmail.com;\n \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan."
+   }
+  ],
+  "7006->11208 upaya banding -> dibuang (cabut/coret/gugur)": [
+   {
+    "perkara": "9893",
+    "lama": "Bahwa terhadap putusan tersebut Tergugat dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;\n     \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Tergugat;\n     \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan.",
+    "baru": "Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Tergugat;\n     \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan."
+   },
+   {
+    "perkara": "8768",
+    "lama": "Bahwa terhadap putusan tersebut Tergugat dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;\n     \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Tergugat;\n     \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan.",
+    "baru": "Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Tergugat;\n     \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan."
+   }
+  ],
+  "0180->11201 identik": [
+   {
+    "perkara": "8768",
+    "lama": "01 Juli 2025",
+    "baru": "01 Juli 2025"
+   },
+   {
+    "perkara": "6479",
+    "lama": "14 April 2022",
+    "baru": "14 April 2022"
+   }
+  ],
+  "9564->11209 relaas kepada kuasa terbaca": [
+   {
+    "perkara": "8264",
+    "lama": "............................. tanggal ..........................................................",
+    "baru": "Senin tanggal 04 November 2024"
+   },
+   {
+    "perkara": "7984",
+    "lama": "............................. tanggal ..........................................................",
+    "baru": "Selasa tanggal 16 Juli 2024"
+   }
+  ],
+  "1064+7100->11204 identik": [
+   {
+    "perkara": "8198",
+    "lama": "25 September 2024;",
+    "baru": "25 September 2024;"
+   },
+   {
+    "perkara": "7875",
+    "lama": "03 Juni 2024;",
+    "baru": "03 Juni 2024;"
+   }
+  ],
+  "1099+7100->11214 identik": [
+   {
+    "perkara": "8198",
+    "lama": "...;",
+    "baru": "...;"
+   },
+   {
+    "perkara": "7875",
+    "lama": "22 Juli 2024;",
+    "baru": "22 Juli 2024;"
+   }
+  ],
+  "1167->11203 PA tujuan delegasi dari SIPP": [
+   {
+    "perkara": "8198",
+    "lama": "Kabupaten Buol.",
+    "baru": "Buol"
+   },
+   {
+    "perkara": "7732",
+    "lama": "Kabupaten Morowali",
+    "baru": "Bungku"
+   }
+  ],
+  "1066->11202 identik": [
+   {
+    "perkara": "7570",
+    "lama": "Pengadilan Agama Palu",
+    "baru": "Pengadilan Agama Palu"
+   },
+   {
+    "perkara": "5877",
+    "lama": "Pengadilan Agama Palu",
+    "baru": "Pengadilan Agama Palu"
+   }
+  ],
+  "7006->11208 upaya banding -> verzet": [
+   {
+    "perkara": "5877",
+    "lama": "Bahwa terhadap putusan tersebut Tergugat dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;\n       \tPemberitahuan isi putusan ini saya laksanakan di tempat yang bersangkutan dan disana saya .......................................................................................................................\n.......................................................",
+    "baru": "Bahwa terhadap putusan tersebut Tergugat dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 153 ayat (1) RBg;\n       \tPemberitahuan isi putusan ini saya laksanakan di tempat yang bersangkutan dan disana saya .......................................................................................................................\n................................................."
+   }
+  ],
+  "7006->11208 upaya (kosong) -> verzet": [
+   {
+    "perkara": "10246",
+    "lama": "Bahwa terhadap putusan tersebut Tergugat dapat mengajukan dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;\n     \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Tergugat;\n     \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan.",
+    "baru": "Bahwa terhadap putusan tersebut Tergugat dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 153 ayat (1) RBg;\n     \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Tergugat;\n     \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan."
+   },
+   {
+    "perkara": "10201",
+    "lama": "Bahwa terhadap putusan tersebut Tergugat dapat mengajukan dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;\n     \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Tergugat;\n     \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan.",
+    "baru": "Bahwa terhadap putusan tersebut Tergugat dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 153 ayat (1) RBg;\n     \tPemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman Tergugat;\n     \tDemikian pemberitahuan ini dibuat dan ditandatangani oleh saya dengan mengingat sumpah jabatan."
+   }
+  ],
+  "1167->11203 identik": [
+   {
+    "perkara": "6080",
+    "lama": "Jakarta Utara",
+    "baru": "Jakarta Utara"
+   }
+  ],
+  "7109->11206 agama dari SIPP": [
+   {
+    "perkara": "9987",
+    "lama": "Romi Bin Saidin, umur 51 tahun, agama Islam, pendidikan SLTA, pekerjaan Karyawan Swasta, tempat kediaman di Desa Tanah Harapan, RT/RW 006/002, Kecamatan Palolo, Kabupaten Sigi, Provinsi Sulawesi Tengah, sebagai Tergugat;",
+    "baru": "Romi Bin Saidin, umur 51 tahun, agama Lainnya, pendidikan SLTA, pekerjaan Karyawan Swasta, tempat kediaman di Desa Tanah Harapan, RT/RW 006/002, Kecamatan Palolo, Kabupaten Sigi, Provinsi Sulawesi Tengah, sebagai Tergugat;"
+   }
+  ],
+  "7008->11207 cabang Bupati (ghaib Tergugat) dibuang; upaya verzet -> banding": [
+   {
+    "perkara": "7656",
+    "lama": "Bahwa terhadap putusan tersebut Pemohon dapat mengajukan perlawanan (verzet) dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana telah ditetapkan dalam Pasal 153 ayat (1) RBg;\n \tPemberitahuan ini saya sampaikan melalui Bupati Kabupaten Donggala, sesuai ketentuan Pasal 718 ayat (3) RBg, karena Termohon tidak diketahui tempat tinggalnya dengan jelas dan pasti di wilayah Republik Indonesia, dan disana saya bertemu dan berbicara dengan ..",
+    "baru": "Bahwa terhadap putusan tersebut Pemohon dapat mengajukan banding dalam tenggang waktu 14 (empat belas) hari terhitung sejak hari berikutnya setelah pemberitahuan ini, sebagaimana ditentukan dalam Pasal 199 ayat (1) RBg;\n \tPemberitahuan isi putusan ini saya laksanakan di tempat yang bersangkutan dan disana saya .......................................................................................................................\n...................................................................."
+   }
+  ]
+ }
+}
