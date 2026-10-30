@@ -122,8 +122,8 @@ aturan("K6c", F62, r"tanggal #1278#  dalam", "tanggal #1069# dalam", 1)
 aturan("K6d", F62, r"(?m)^Melawan$", "Lawan", 1)
 aturan("K6e", F62, r"kediaman Termohon;", "kediaman #0047#;", 1)
 # K6f upaya hukum ditentukan kehadiran (keputusan pengguna 30 Okt), kalimat dan pasal dari satu tempat (#11211#)
-aturan("K6f", F62, r"#0047# dapat mengajukan perlawanan \(verzet\) dalam tenggang waktu 14 \(empat belas\) hari terhitung sejak hari "
-       r"berikutnya setelah pemberitahuan ini", "#11211#", 1)
+aturan("K6f", F62, r"Bahwa terhadap putusan tersebut #0047# dapat mengajukan perlawanan \(verzet\) dalam tenggang waktu 14 \(empat belas\) "
+       r"hari terhitung sejak hari berikutnya setelah pemberitahuan ini;", "#11220#", 1)
 # K7 surat permohonan bantuan panggilan delegasi: PA tujuan dari SIPP delegasi_keluar (bukan potongan alamat #0105#)
 F3A = R + r"\[JS\] 3\.a\. "
 aturan("K7a", F3A, r"(?<=Ketua )#1066#", "#11202#", 1)

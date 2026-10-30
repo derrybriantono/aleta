@@ -1,7 +1,7 @@
 #!/bin/bash
 # =============================================================================
 # PASANG paket ABT "abt-relaas-penetapan-30okt" (30 Okt 2026). Dijalankan DI SERVER sebagai root, dari folder paket. HANYA blangko derry_briantono.
-# Isi: 14 variabel BARU (nomor-baru.txt, blok 11200-11219; tidak ada variabel lama yang diubah) dan 25 blangko RTF derry_briantono
+# Isi: 14 variabel BARU (nomor-baru.txt, blok 11200-11229; tidak ada variabel lama yang diubah) dan 25 blangko RTF derry_briantono
 #      (98 Relaas, 99 PTSP) ditimpa (daftar-timpa.tsv: HANYA bila md5 server persis md5 lama).
 # URUTAN: SESUDAH paket prodeo-panggilan-29okt dan bas-tanya-jawab-29okt (lihat PASANG.md). Kedua paket itu tidak menyentuh
 #         folder 98 Relaas / 99 PTSP dan tidak memakai nomor 11200-11219, jadi paket ini juga aman bila dipasang lebih dulu.
@@ -55,9 +55,9 @@ mkdir -p "$CAD" || gagal "tidak bisa membuat $CAD"
 T=abt_variabel
 [ -f "$CAD/$T-sebelum.sql" ] && mv "$CAD/$T-sebelum.sql" "$CAD/$T-sebelum.$(date +%Y%m%d%H%M%S).sql"
 "${BIN}mysqldump" -h "$H" -u root --default-character-set=latin1 --skip-tz-utc --no-create-info --replace --skip-extended-insert \
-  --complete-insert --skip-comments --hex-blob --where="no_var BETWEEN 11200 AND 11219" "$ADB" "$T" > "$CAD/$T-sebelum.sql" \
+  --complete-insert --skip-comments --hex-blob --where="no_var BETWEEN 11200 AND 11229" "$ADB" "$T" > "$CAD/$T-sebelum.sql" \
   || gagal "mysqldump $T gagal - TIDAK ada yang diubah"
-echo "CADANGAN: $CAD (baris variabel blok 11200-11219 sebelum pasang: $(grep -c '^REPLACE' "$CAD/$T-sebelum.sql"))"
+echo "CADANGAN: $CAD (baris variabel blok 11200-11229 sebelum pasang: $(grep -c '^REPLACE' "$CAD/$T-sebelum.sql"))"
 
 # --- 3. PASANG SQL, PERIKSA -------------------------------------------------------------------------------------------------
 sqlf "$N-PASANG.sql" | $MY || { pulih_db; gagal "$N-PASANG.sql gagal (transaksi tidak di-COMMIT) - dipulihkan"; }

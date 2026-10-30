@@ -72,6 +72,8 @@ def jenis(lama, baru, a, b):
             return "cabang Bupati (ghaib Tergugat) dibuang; upaya %s -> %s" % (ul, ub)
         if lb == bb:
             return "upaya %s -> %s" % (ul, ub)
+        if ub == "-" and ul != "-" and re.sub(r"Bahwa terhadap putusan tersebut X dapat mengajukan X dalam [^;]*sebagaimana DASAR; ?", "", lb).strip() == bb.strip():
+            return "upaya %s -> dibuang (cabut/coret)" % ul
         return "LAIN"
     if (a, b) in (("9564", "11209"), ("9565", "11210")):
         return "relaas kepada kuasa terbaca" if lama.startswith("....") and not baru.startswith("....") else "LAIN"

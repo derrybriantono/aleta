@@ -75,16 +75,35 @@ HADIR_T = ("EXISTS (SELECT 1 FROM perkara_jadwal_sidang j WHERE j.perkara_id = '
            "AND j.tanggal_sidang <= IFNULL((SELECT MAX(u.tanggal_putusan) FROM perkara_putusan u WHERE u.perkara_id = '#perkara_id#'), '9999-12-31'))")
 
 
-def upaya(sisi):
-    """Kalimat upaya hukum (tanpa 'Bahwa terhadap putusan tersebut' dan tanpa titik koma)."""
+# Status putusan cabut/coret (SIPP status_putusan.nama lewat perkara_putusan.status_putusan_id): kalimat upaya hukum DIBUANG.
+CABUT_CORET = ("EXISTS (SELECT 1 FROM perkara_putusan u JOIN status_putusan s ON s.id = u.status_putusan_id WHERE u.perkara_id = '#perkara_id#' "
+               "AND (s.nama LIKE 'Dicabut%' OR s.nama LIKE 'Dicoret%'))")
+# Amar/jenis putusan verstek (sama dengan #7007# lama: kata 'verstek' di amar SIPP perkara_putusan.amar_putusan): #0047# SELALU verzet.
+VERSTEK = "EXISTS (SELECT 1 FROM perkara_putusan u WHERE u.perkara_id = '#perkara_id#' AND LOCATE('verstek', u.amar_putusan) > 0)"
+
+
+def upaya_inti(sisi):
+    """Ungkapan SQL: isi kalimat upaya hukum tanpa 'Bahwa terhadap putusan tersebut' dan tanpa titik koma; '' = tanpa kalimat."""
     kasasi = ('CONCAT(IF(' + BANYAK.format(s=1) + ', "Para Pemohon", "Pemohon"), " dapat mengajukan kasasi ' + TENGGANG + ' #11219#")')
     banding = '"#%s# dapat mengajukan banding %s #11217#"' % ('0046' if sisi == 1 else '0047', TENGGANG)
+    verzet = '"#0047# dapat mengajukan perlawanan (<I>verzet</I>) ' + TENGGANG + ' #11218#"'
+    k = "CASE WHEN " + CABUT_CORET + " THEN '' WHEN p.alur_perkara_id = 16 THEN " + kasasi
     if sisi == 1:
-        gugatan = banding
+        k += " ELSE " + banding + " END"
     else:
-        gugatan = 'IF(' + HADIR_T + ', ' + banding + ', "#0047# dapat mengajukan perlawanan (<I>verzet</I>) ' + TENGGANG + ' #11218#")'
-    return ("SELECT CASE WHEN p.alur_perkara_id = 16 THEN " + kasasi + " ELSE " + gugatan + " END AS data "
-            "FROM perkara p WHERE p.perkara_id = '#perkara_id#'")
+        k += " WHEN " + VERSTEK + " THEN " + verzet + " WHEN " + HADIR_T + " THEN " + banding + " ELSE " + verzet + " END"
+    return k
+
+
+def upaya(sisi, butir):
+    """butir=True: '<li>Bahwa terhadap putusan tersebut ...;' + baris baru (dipakai di dalam 11207/11208); False: kalimat polos (6.2).
+    Cabut/coret = '' (tanpa sisa tanda baca)."""
+    if butir:
+        isi = "CONCAT('<li>Bahwa terhadap putusan tersebut ', x.t, ';', CHAR(10))"
+    else:
+        isi = "CONCAT('Bahwa terhadap putusan tersebut ', x.t, ';')"
+    return ("SELECT IF(x.t = '', '', " + isi + ") AS data FROM (SELECT " + upaya_inti(sisi) + " AS t "
+            "FROM perkara p WHERE p.perkara_id = '#perkara_id#') x")
 
 
 SURAT_TERCATAT = "<li>Pemberitahuan isi putusan ini saya laksanakan melalui Surat Tercatat untuk selanjutnya disampaikan ke tempat tinggal/kediaman {p};"
@@ -131,7 +150,7 @@ def buat(asal):
     #   permohonan (alur 16) = kasasi oleh Pemohon / Para Pemohon. Pasal di SATU tempat: 11217 banding, 11218 verzet, 11219 kasasi.
     #   Kehadiran SIPP dicatat per sidang (bukan per orang): pihak banyak = salah satu #0047# pernah hadir.
     s = asal[7008]
-    s = ganti(s, KALIMAT_UPAYA.format(p='#0046#'), '#11215#;', 3)
+    s = ganti(s, '<li>Bahwa terhadap putusan tersebut ' + KALIMAT_UPAYA.format(p='#0046#') + '\n', '#11215#', 3)
     s = ganti(s, SURAT_TERCATAT.format(p='#0046#'), '<li>#11213#')
     a_ = s.index("WHEN (SELECT ghaib FROM perkara_pihak2")
     b_ = s.index('WHEN LOCATE("Gugur"')
@@ -139,7 +158,7 @@ def buat(asal):
     v[11207] = ("RELAAS PEMBERITAHUAN PUTUSAN #0046#: UPAYA HUKUM DAN CARA PENYAMPAIAN (OTOMATIS: upaya #11215#; e-Court = #11213#; "
                 "pengganti #7008# di blangko Derry)", s)
     s = asal[7006]
-    s = ganti(s, KALIMAT_UPAYA.format(p='#0047#'), '#11211#;', 3)
+    s = ganti(s, '<li>Bahwa terhadap putusan tersebut ' + KALIMAT_UPAYA.format(p='#0047#') + '\n', '#11211#', 3)
     s = ganti(s, SURAT_TERCATAT.format(p='#0047#'), '<li>#11212#')
     v[11208] = ("RELAAS PEMBERITAHUAN PUTUSAN #0047#: UPAYA HUKUM DAN CARA PENYAMPAIAN (OTOMATIS: upaya #11211#, e-Court = #11212#; "
                 "pengganti #7006# di blangko Derry)", s)
@@ -149,9 +168,11 @@ def buat(asal):
         v[baru] = ("RELAAS: HARI DAN TANGGAL PELAKSANAAN PANGGILAN #%s# (OTOMATIS SIPP perkara_pelaksanaan_relaas untuk #%s# ATAU KUASANYA "
                    "pada sidang dicetak; belum tercatat = titik-titik; ganti #%04d#)"
                    % ('0046' if sisi == 1 else '0047', '0046' if sisi == 1 else '0047', lama), s)
-    v[11211] = ("RELAAS PEMBERITAHUAN PUTUSAN #0047#: KALIMAT UPAYA HUKUM (OTOMATIS: permohonan = kasasi; gugatan: #0047# pernah hadir = banding, "
-                "tidak pernah hadir = verzet)", upaya(2))
-    v[11215] = ("RELAAS PEMBERITAHUAN PUTUSAN #0046#: KALIMAT UPAYA HUKUM (OTOMATIS: permohonan = kasasi; gugatan = banding)", upaya(1))
+    v[11211] = ("RELAAS PEMBERITAHUAN PUTUSAN #0047#: BUTIR UPAYA HUKUM (OTOMATIS: cabut/coret = tanpa; permohonan = kasasi; amar verstek = "
+                "verzet; selain itu #0047# pernah hadir = banding, tidak = verzet)", upaya(2, True))
+    v[11215] = ("RELAAS PEMBERITAHUAN PUTUSAN #0046#: BUTIR UPAYA HUKUM (OTOMATIS: cabut/coret = tanpa; permohonan = kasasi; gugatan = banding)",
+                upaya(1, True))
+    v[11220] = ("RELAAS PEMBERITAHUAN PUTUSAN #0047#: KALIMAT UPAYA HUKUM POLOS untuk 6.2 (aturan sama dengan #11211#)", upaya(2, False))
     v[11217] = ("DASAR HUKUM BANDING (satu tempat; RBg)", 'SELECT "Pasal 199 ayat (1) RBg" AS data')
     v[11218] = ("DASAR HUKUM PERLAWANAN/VERZET (satu tempat; RBg)", 'SELECT "Pasal 153 ayat (1) RBg" AS data')
     v[11219] = ("DASAR HUKUM KASASI (satu tempat)", 'SELECT "Pasal 46 ayat (1) Undang-Undang Nomor 14 Tahun 1985 tentang Mahkamah Agung sebagaimana '

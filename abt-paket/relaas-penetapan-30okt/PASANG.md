@@ -1,7 +1,7 @@
 # Paket ABT `abt-relaas-penetapan-30okt` - relaas/pemberitahuan dan penetapan PTSP blangko Derry (30 Okt 2026)
 
 **Status: dibangun dan diuji di LAPTOP (server mati). Server: BELUM dipasang - dipasang sesi utama.**
-Hanya blangko `derry_briantono` folder **98 Relaas** dan **99 PTSP** (25 berkas) + **20 variabel BARU** (blok 11200-11219).
+Hanya blangko `derry_briantono` folder **98 Relaas** dan **99 PTSP** (25 berkas) + **21 variabel BARU** (blok 11200-11229: 11200-11220).
 **Tidak ada variabel lama yang diubah** (variabel lama yang keliru dibiarkan - sebagian dipakai salinan blangko di luar Derry
 `_ikrar_talak`, 7006/7008 terkunci - blangko Derry dialihkan ke nomor baru). Tanpa kata nama aplikasi, tanpa nama satker tertulis mati.
 
@@ -9,16 +9,16 @@ Hanya blangko `derry_briantono` folder **98 Relaas** dan **99 PTSP** (25 berkas)
 1. `prodeo-panggilan-29okt` (versi bangun ulang atas pohon server perkiraan) -> 2. `bas-tanya-jawab-29okt` -> 3. `ket-saksi-kata-30okt` -> **4. paket ini**.
 Tumpang-tindih: **tidak ada**. Ketiga paket itu tidak menyentuh folder 98 Relaas / 99 PTSP (diperiksa: `daftar-timpa.tsv` prodeo w125 dan
 bangun ulang `D:/Aplikasi/aleta/tmp/bas29/pr`, `daftar-berkas.tsv` / `rtf-daftar-tambal.tsv` BAS, ket-saksi-kata hanya fungsi), tidak memakai
-nomor 11200-11219 (prodeo 11120-11166), dan tidak mengubah variabel/fungsi yang dirujuk paket ini. Jadi md5 dasar 25 berkas paket ini =
+nomor 11200-11229 (prodeo 11120-11166), dan tidak mengubah variabel/fungsi yang dirujuk paket ini. Jadi md5 dasar 25 berkas paket ini =
 pohon server perkiraan sebelum maupun sesudah ketiganya, dan PRASYARAT-nya tidak bergantung urutan; urutan di atas tetap dipakai.
 
 ## Dasar
 - Basis ABT: `aps_badilag_2810` (dump server 28 Okt 15.44): kueri lama 7100 7108 7109 7006 7008 9564 9565 (pengganti diturunkan
-  darinya, tiap penggantian harus ditemukan tepat sekali) dan bukti blok 11200-11219 kosong.
+  darinya, tiap penggantian harus ditemukan tepat sekali) dan bukti blok 11200-11229 kosong.
 - Pohon RTF: `D:/Aplikasi/aleta/tmp/bas29/dasar3/derry_briantono` = salinan server w82 + paket alamat-ganda-26okt, sampul-daftar-isi-26okt,
   pihak-urut-ecourt-27okt, court-calendar-28okt, blangko-ikrar-92-28okt (disusun agen BAS dengan `alat/susun_dasar.py`, penjaga md5 tiap paket).
-- PRASYARAT `A|B|C|D` = blok 11200-11219 berisi lain (0) | sudah persis paket (0 / 20) | 38 variabel yang dirujuk ADA | 7 variabel asal
-  persis dasar. Benar: `0|0|38|7` (pertama) atau `0|20|38|7` (ulang). RTF: tiap berkas harus md5 persis `md5_lama` (`daftar-timpa.tsv`),
+- PRASYARAT `A|B|C|D` = blok 11200-11229 berisi lain (0) | sudah persis paket (0 / 21) | 38 variabel yang dirujuk ADA | 7 variabel asal
+  persis dasar. Benar: `0|0|38|7` (pertama) atau `0|21|38|7` (ulang). RTF: tiap berkas harus md5 persis `md5_lama` (`daftar-timpa.tsv`),
   satu saja beda -> berhenti tanpa mengubah apa pun.
 
 ## Inventaris blangko Derry yang bukan putusan/BAS (`hasil/inventaris.json`, 374 variabel berbeda)
@@ -67,40 +67,62 @@ dibuang, kotak teks ikut) lalu dipindai (`alat/periksa_keluaran.py`) dan dibaca.
 | P1 | @0 @2 @2a @2b | PHS "Ketua Majelis ... membaca Penetapan **Ketua Majelis** Nomor ..." | "membaca Penetapan `#7051#` `#8008#`" (Ketua/Wakil/Plh. Ketua Pengadilan yang menetapkan PMH) |
 | P2 | @0 @0a @0b @3 | "Tahun 2009 Tentang", "Nomor 7 tahun 2022", "Tahun 2009. Peraturan", "Tentang Penetapan" | "tentang", "Tahun", koma |
 
-## Upaya hukum pemberitahuan putusan (keputusan pengguna 30 Okt)
-Ditentukan KEHADIRAN, bukan jenis amar:
-- **Gugatan (alur 15), kepada Tergugat/Termohon** (`#11211#`): pernah hadir di sidang mana pun sampai tanggal putusan = **banding**
-  (`#11217#` Pasal 199 ayat (1) RBg); tidak pernah hadir = **perlawanan (verzet)** (`#11218#` Pasal 153 ayat (1) RBg).
-- **Gugatan, kepada Penggugat/Pemohon** (`#11215#`): selalu **banding** Pasal 199 ayat (1) RBg, juga pada perkara verstek (Penggugat tidak
-  dapat verzet) - **dikonfirmasi pengguna 30 Okt (pilihan a)**.
-- **Permohonan (alur 16), kepada Pemohon** (2.P dan 2.T): **kasasi** (`#11219#`), sebutan "Pemohon" / "Para Pemohon" menurut jumlah pihak.
-- Pasal di SATU tempat: `#11217#` banding, `#11218#` verzet, `#11219#` kasasi (padanan HIR nanti cukup mengubah tiga variabel ini).
-- "Pernah hadir" = `perkara_jadwal_sidang.dihadiri_oleh` 1 (semua pihak), 3 (pihak kedua saja), 8 (T + intervensi), 9 (P + T), 11 (sebagian
-  Tergugat), 15 (T + turut T), `tanggal_sidang` <= tanggal putusan. SIPP mencatat kehadiran per SIDANG, bukan per orang (tabel per pihak
-  tidak ada; `perkara_jadwal_sidang_detil` kosong), jadi pada Tergugat banyak dipakai "salah satu Tergugat/Termohon pernah hadir"
-  (termasuk sandi 11 "sebagian Tergugat"); pemberitahuan kepada Tergugat lain di perkara itu ikut banding.
+## Upaya hukum pemberitahuan putusan (keputusan pengguna 30 Okt, final)
+Satu aturan (`#11211#` butir kepada Tergugat/Termohon di 2.T, `#11220#` kalimat yang sama di 6.2, `#11215#` butir kepada Penggugat/Pemohon di 2.P),
+diperiksa berurutan:
+1. **Putusan dicabut / dicoret** (SIPP `perkara_putusan.status_putusan_id` -> `status_putusan.nama` LIKE 'Dicabut%' / 'Dicoret%'):
+   kalimat upaya hukum **dibuang seluruhnya** (butir `<li>` ikut hilang; tidak ada sisa "Bahwa ...;").
+2. **Permohonan** (`perkara.alur_perkara_id = 16`): **kasasi** (`#11219#` Pasal 46 ayat (1) UU 14/1985 sebagaimana diubah UU 5/2004 dan
+   UU 3/2009), sebutan "Pemohon" / "Para Pemohon" menurut jumlah `perkara_pihak1`.
+3. **Gugatan, kepada Penggugat/Pemohon**: **banding** (`#11217#` Pasal 199 ayat (1) RBg), juga pada perkara verstek (pilihan a).
+4. **Gugatan, kepada Tergugat/Termohon, amar verstek** (`LOCATE('verstek', perkara_putusan.amar_putusan) > 0`, tanpa membedakan huruf besar):
+   **selalu perlawanan (verzet)** (`#11218#` Pasal 153 ayat (1) RBg), walau sandi kehadiran mencatat hadir.
+5. **Gugatan, kepada Tergugat/Termohon, bukan verstek**: pernah hadir = **banding**; tidak pernah hadir = **verzet**. "Pernah hadir" =
+   ada baris `perkara_jadwal_sidang` perkara itu dengan `dihadiri_oleh` IN (1, 3, 8, 9, 11, 15) dan `tanggal_sidang` <= tanggal putusan
+   (1 semua pihak, 3 pihak kedua saja, 8 T + intervensi, 9 P + T, 11 sebagian Tergugat, 15 T + turut T). SIPP mencatat kehadiran per
+   SIDANG, bukan per orang, jadi pada Tergugat banyak = salah satu Tergugat/Termohon pernah hadir.
+Pasal hanya di 11217/11218/11219 (padanan HIR nanti cukup mengubah tiga variabel itu).
+
+### Deteksi konflik "amar verstek tetapi sandi kehadiran Tergugat hadir" (untuk catatan temuan panel cetak - aturan IDENTIK)
+Perkara dianggap KONFLIK bila semuanya benar:
+- `perkara.alur_perkara_id = 15` (gugatan);
+- ada `perkara_putusan` perkara itu dengan `LOCATE('verstek', amar_putusan) > 0`;
+- ada `perkara_jadwal_sidang` perkara itu dengan `dihadiri_oleh IN (1, 3, 8, 9, 11, 15)` dan `tanggal_sidang <= perkara_putusan.tanggal_putusan`.
+```sql
+SELECT p.perkara_id, p.nomor_perkara, u.tanggal_putusan, j.urutan, j.tanggal_sidang, j.dihadiri_oleh
+FROM perkara p JOIN perkara_putusan u ON u.perkara_id = p.perkara_id
+JOIN perkara_jadwal_sidang j ON j.perkara_id = p.perkara_id
+WHERE p.alur_perkara_id = 15 AND LOCATE('verstek', u.amar_putusan) > 0
+  AND j.dihadiri_oleh IN (1, 3, 8, 9, 11, 15) AND j.tanggal_sidang <= u.tanggal_putusan;
+```
+Data sekarang (dump 28 Okt): **83 perkara** (contoh 9813 315/Pdt.G/2026). Pemberitahuan putusan tetap verzet (keputusan pengguna); catatan
+temuan sebaiknya menyebut sidang (urutan, tanggal, sandi) yang dicatat hadir agar panitera sidang memperbaiki kehadiran di SIPP.
 
 ## Banding lama vs baru
-- **Render php56 contoh**: 126 berkas lama/baru (atas); 161 perkara (sampel acak 150 + 11 perkara wakil) x 13 pasangan variabel
-  (`alat/banding.py`, `alat/ringkas_banding.py`, `hasil/banding-ringkasan.json`): 0 galat render, 0 galat/sisa penanda baru, 0 beda di luar
-  jenis yang dimaksud. Upaya hukum kepada Tergugat (2.T, 161 perkara): verzet->verzet 83, banding->banding 24, banding->kasasi 31 (Pdt.P),
-  banding->verzet 10 (bukan verstek, Tergugat tidak pernah hadir), verzet->banding 2 (verstek, sandi SIPP mencatat hadir), kosong->... 11
-  (belum putus; pemberitahuan putusan belum dicetak). Kepada Penggugat: verzet->banding 85, banding->banding 34, banding->kasasi 31, kosong 11.
-  Pindai pembaca (`hasil/pindai-render.txt`, 126 render yang sama): koma sendiri 53 -> 3 (sisa = amar SIPP berbutir "."), "2026yang" 47 -> 0;
-  tambahan 3 "tempat kediaman di ," hanya pada 6.2 (PBT verstek) yang dicoba pada perkara Pdt.P/urutan pihak rusak (alamat Tergugat kosong).
-- **SEMUA perkara (10.278)**: tiap kueri baru dijalankan untuk tiap perkara (penanda bersarang = 0): versi 15 variabel 154.170 kueri 0 galat;
-  versi akhir: 6 variabel yang berubah sesudah keputusan pengguna (11206 11207 11208 11211 11215 11216) x 10.278 = 61.668 kueri, 0 galat
-  (`hasil/uji-semua-perkara.txt`); jumlah perkara yang berubah per aturan dihitung langsung dari datanya (`alat/hitung_beda_sql.py`,
-  `hasil/hitung-beda-semua-perkara.json`): 2.695 e-Court ber-PHS (spasi), 5.836 gugatan (koma), 12 + 429 (nomor I), 19 + 49 (agama/nomor I
-  Tergugat; 111 agama kosong tetap "Islam"), 26 (cabang Bupati), 313 + 15 sidang (relaas kuasa), 904 (PHS ikrar), 9.889 (tanggal perintah
-  pemberitahuan = putusan, bukan PHS), 406 (PA tujuan delegasi). Upaya hukum (perkara putus): gugatan verstek + Tergugat tidak pernah hadir
-  4.281 (verzet, sama); verstek + Tergugat tercatat hadir 83 (verzet -> banding; sandi kehadiran SIPP perlu dicek, contoh 9813); bukan verstek +
-  hadir 863 (banding, dasar 153 -> 199); bukan verstek + tidak pernah hadir 516 (banding -> verzet: 272 dicabut, 92 dikabulkan, 57 digugurkan,
-  37 NO, 27 gugur, 23 dicoret, 8 ditolak - lihat pertanyaan 1); permohonan tunggal 429 dan para pemohon 3.980 (banding/verzet -> kasasi).
+- **Render php56 contoh**: 134 berkas lama/baru; contoh keputusan pengguna: cabut 10225 656/Pdt.G/2026 dan 10096 224/Pdt.P/2026 (tanpa
+  kalimat upaya hukum, butir berikut langsung "Pemberitahuan isi putusan ..."), coret 6268 (tanpa kalimat), verstek dengan sandi hadir 9813
+  315/Pdt.G/2026 (Tergugat verzet, Penggugat banding), NO bukan verstek 10143 (Tergugat tidak pernah hadir = verzet), cerai talak Termohon
+  hadir sekali 10139 (banding), Pdt.P tunggal 10172 (Pemohon kasasi), Pdt.P dua pemohon 10191 (Para Pemohon kasasi), ikrar 10083/10077.
+- **Banding 161 perkara** (sampel acak 150 + 11 wakil) x 13 pasangan variabel (`alat/banding.py`, `alat/ringkas_banding.py`,
+  `hasil/banding-ringkasan.json`): 0 galat render, 0 galat/sisa penanda baru, 0 beda di luar jenis yang dimaksud. Kepada Tergugat (2.T):
+  verzet->verzet 85 (termasuk 2 verstek bersandi hadir), banding->banding 20, banding->kasasi 29, banding->verzet 2 (bukan verstek, tidak
+  pernah hadir), banding->dibuang 14 (semua Dicabut), belum putus 11. Kepada Penggugat (2.P): verzet->banding 85, banding->banding 22,
+  banding->kasasi 29, banding->dibuang 14, belum putus 11.
+- Pindai pembaca (`hasil/pindai-render.txt`): koma sendiri 59 -> 3 (sisa = amar SIPP berbutir "."), "2026yang" 50 -> 0; tambahan "tempat
+  kediaman di ," hanya pada 6.2 (PBT verstek) yang dicoba pada perkara Pdt.P / urutan pihak rusak (alamat Tergugat kosong).
+- **SEMUA perkara (10.278)**: kueri tiap variabel baru dijalankan untuk tiap perkara (penanda bersarang = 0): versi 15 variabel 154.170 kueri,
+  versi 20 variabel 61.668 kueri, versi akhir (11207 11208 11211 11215 11220) 51.390 kueri - semua 0 galat (`hasil/uji-semua-perkara.txt`).
+  Jumlah perkara yang berubah per aturan dari datanya (`alat/hitung_beda_sql.py`, `hasil/hitung-beda-semua-perkara.json`): 2.695 e-Court
+  ber-PHS (spasi), 5.836 gugatan (koma), 12 + 429 (nomor I), 19 + 49 (agama/nomor I Tergugat; 111 agama kosong tetap "Islam"), 26 (cabang
+  Bupati), 313 + 15 sidang (relaas kuasa), 904 (PHS ikrar), 9.889 (tanggal perintah pemberitahuan = putusan), 406 (PA tujuan delegasi).
+  Upaya hukum (perkara putus): cabut/coret 584 (428 gugatan + 156 permohonan) -> kalimat dibuang; gugatan verstek 4.364 -> verzet (termasuk
+  83 KONFLIK sandi hadir, kembali verzet); bukan verstek + pernah hadir 730 -> banding (dasar 153 -> 199); bukan verstek + tidak pernah hadir
+  221 -> verzet (92 dikabulkan, 37 NO, 8 ditolak, 84 gugur/digugurkan - lihat catatan terbuka); permohonan 394 tunggal + 3.859 para pemohon
+  -> kasasi; Penggugat semua gugatan -> banding.
 
 ## Siklus di laptop (`ABT_LOKAL=1`, basis `aps_badilag_rp30b`, blangko salinan)
-pasang `PRASYARAT COCOK (0|0|38|7)`, `SIAP_TIMPA=25`, `SEMUA COCOK`, uji kueri 9 perkara x 20 variabel 0 galat, `TIMPA=25 COCOK=25 BERKAS COCOK`
--> pasang ulang `0|20|38|7`, `SUDAH=25` -> pulih `KEMBALI=25 BERKAS PULIH`, `PULIH COCOK`, md5 25 blangko = awal, CHECKSUM abt_variabel = dump
+pasang `PRASYARAT COCOK (0|0|38|7)`, `SIAP_TIMPA=25`, `SEMUA COCOK`, uji kueri 9 perkara x 21 variabel 0 galat, `TIMPA=25 COCOK=25 BERKAS COCOK`
+-> pasang ulang `0|21|38|7`, `SUDAH=25` -> pulih `KEMBALI=25 BERKAS PULIH`, `PULIH COCOK`, md5 25 blangko = awal, CHECKSUM abt_variabel = dump
 server -> pasang lagi. Jalur gagal: satu blangko disunting (1 bait) -> `BERKAS TIDAK SIAP ... TIDAK ada yang diubah`, blok variabel tetap kosong.
 
 ## Pasang (Git Bash, server hidup) - SESUDAH tiga paket di atas
@@ -112,7 +134,7 @@ scp -r paket-satker/* aleta:/root/abt-relaas-penetapan-20261030/
 ssh aleta 'cd /root/abt-relaas-penetapan-20261030 && md5sum -c MD5SUMS.txt | grep -v OK'     # harus kosong
 ssh aleta 'bash /root/abt-relaas-penetapan-20261030/pasang-satker.sh'
 ```
-Keluaran benar: `PRASYARAT COCOK (0|0|38|7)`, `SIAP_TIMPA=25`, `BERKAS SIAP`, `CADANGAN: ...`, `SEMUA COCOK`, baris `uji kueri perkara NNNN: 20 variabel
+Keluaran benar: `PRASYARAT COCOK (0|0|38|7)`, `SIAP_TIMPA=25`, `BERKAS SIAP`, `CADANGAN: ...`, `SEMUA COCOK`, baris `uji kueri perkara NNNN: 21 variabel
 jalan, 0 galat`, `TIMPA=25`, `COCOK=25`, `BERKAS COCOK`, `SELESAI`. Gagal sesudah PASANG SQL = pulih otomatis. Pulih:
 `ssh aleta 'bash /root/abt-relaas-penetapan-20261030/pulih-satker.sh'` (baris akhir `PULIH COCOK`). Tidak perlu memulai ulang apa pun.
 **Bila `BERKAS TIDAK SIAP`**: tidak ada yang diubah. Ambil pohon server (`ssh aleta 'tar czf - -C /var/www/html/aps_badilag/_blangko_abt derry_briantono' > derry.tgz`,
@@ -134,17 +156,16 @@ variabel asal berubah - PRASYARAT D), salin ulang. Bangun deterministik (timpa.t
 - `_ikrar_talak/2 Relaas Ikrar Talak/[JS] 4. ...` (salinan blangko Derry di grup bawaan, laptop) memakai variabel lama yang sama: tidak disentuh.
 
 ## Keputusan pengguna 30 Okt (sudah dipasang)
-1. Upaya hukum menurut kehadiran (lihat bagian "Upaya hukum"); Penggugat pada perkara verstek = banding Pasal 199 ayat (1) RBg (pilihan a).
+1. Upaya hukum menurut aturan di atas; Penggugat pada perkara verstek = banding Pasal 199 ayat (1) RBg (pilihan a).
 2. Dasar banding Tergugat kontradiktoir = Pasal 199 ayat (1) RBg.
 3. "atas perintah ... tanggal" pada pemberitahuan putusan = tanggal putusan.
 4. Panggilan ikrar = "untuk menghadiri sidang penyaksian ikrar talak".
 5. Agama Tergugat kosong di SIPP = bawaan "Islam".
+6. Penetapan cabut dan coret = kalimat upaya hukum dibuang; NO / ditolak / dikabulkan tetap aturan kehadiran.
+7. Dasar kasasi permohonan = Pasal 46 ayat (1) UU 14/1985 sebagaimana diubah UU 5/2004 dan UU 3/2009.
+8. Amar verstek = selalu verzet bagi Tergugat/Termohon walau sandi kehadiran SIPP mencatat hadir (biasanya salah pilih kehadiran).
 
-## Pertanyaan lanjutan
-1. Aturan kehadiran memberi "perlawanan (verzet)" juga pada putusan gugatan yang BUKAN verstek bila Tergugat tidak pernah hadir: 272 dicabut,
-   23 dicoret, 37 NO, 8 ditolak, 92 dikabulkan (gugur/digugurkan tidak memuat kalimat upaya hukum). Untuk penetapan cabut/coret: tetap verzet,
-   atau kalimat upaya hukum dibuang?
-2. Dasar kasasi `#11219#` = "Pasal 46 ayat (1) Undang-Undang Nomor 14 Tahun 1985 tentang Mahkamah Agung sebagaimana telah diubah dengan
-   Undang-Undang Nomor 5 Tahun 2004 dan perubahan kedua dengan Undang-Undang Nomor 3 Tahun 2009" (tenggang 14 hari) - mohon dipastikan.
-3. 83 perkara verstek dengan sandi kehadiran SIPP "Tergugat hadir" (mis. 9813 315/Pdt.G/2026) kini tercetak banding: sandi SIPP-nya yang
-   keliru (perbaiki di SIPP) atau aturan tetap?
+## Catatan terbuka (tidak diubah, tidak ditanyakan sebelumnya)
+- Putusan GUGUR / DIGUGURKAN bukan verstek pada perkara e-Court (84 perkara: 57 digugurkan, 27 gugur) masih memuat kalimat upaya hukum
+  (Tergugat tidak pernah hadir -> verzet). Cabang "gugur" tanpa kalimat upaya hukum di variabel lama hanya berlaku untuk perkara bukan
+  e-Court. Bila gugur juga harus tanpa kalimat, cukup tambah 'Gugur%' / 'Digugurkan%' ke aturan 1.

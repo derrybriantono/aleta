@@ -29,7 +29,7 @@ MYSQL = r"D:\Satker Asal\Website PA Bungku\xampp\mysql\bin\mysql.exe"
 BASIS = sys.argv[1] if len(sys.argv) > 1 else "aps_badilag_2810"
 RTF = sys.argv[2] if len(sys.argv) > 2 else r"D:\Aplikasi\aleta\tmp\bas29\dasar3\derry_briantono"
 FOLDER = ("98 Relaas", "99 PTSP")
-BLOK = (11200, 11219)
+BLOK = (11200, 11229)
 KEPALA = ("-- Paket ABT \"%s\" (30 Okt 2026): relaas/pemberitahuan dan penetapan PTSP blangko Derry - koma tunggal, spasi, identitas, "
           "upaya hukum pemberitahuan putusan, tanggal relaas e-Court, PA tujuan delegasi, penetapan hari sidang.\n" % N)
 

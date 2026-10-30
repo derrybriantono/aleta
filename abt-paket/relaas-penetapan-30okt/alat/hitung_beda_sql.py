@@ -42,19 +42,18 @@ Q = {
     "PBT_putus_verstek (P: verzet->banding)": "SELECT COUNT(*) FROM perkara_putusan WHERE LOCATE('Verstek', amar_putusan) > 0",
     "PBT_putus_bukan_verstek (T: dasar 153->199)": "SELECT COUNT(*) FROM perkara_putusan WHERE amar_putusan IS NOT NULL AND LOCATE('Verstek', amar_putusan) = 0",
     "PBT_P_bukan_ecourt_T_ghaib (cabang Bupati dibuang)": "SELECT COUNT(*) FROM perkara p WHERE NOT " + EF + " AND (SELECT ghaib FROM perkara_pihak2 WHERE perkara_id = p.perkara_id LIMIT 1) = 1",
-    # upaya hukum menurut kehadiran (keputusan pengguna 30 Okt): gugatan putus x verstek x Tergugat pernah hadir; permohonan = kasasi
-    "UH_gugatan_verstek_T_tidak_pernah_hadir (verzet, sama)": "SELECT COUNT(*) FROM perkara p JOIN perkara_putusan u ON u.perkara_id = p.perkara_id "
-        "WHERE p.alur_perkara_id = 15 AND LOCATE('Verstek', u.amar_putusan) > 0 AND NOT " + HADIR,
-    "UH_gugatan_verstek_T_pernah_hadir (verzet -> banding)": "SELECT COUNT(*) FROM perkara p JOIN perkara_putusan u ON u.perkara_id = p.perkara_id "
-        "WHERE p.alur_perkara_id = 15 AND LOCATE('Verstek', u.amar_putusan) > 0 AND " + HADIR,
-    "UH_gugatan_bukan_verstek_T_pernah_hadir (banding, dasar 153 -> 199)": "SELECT COUNT(*) FROM perkara p JOIN perkara_putusan u ON u.perkara_id = p.perkara_id "
-        "WHERE p.alur_perkara_id = 15 AND u.amar_putusan IS NOT NULL AND LOCATE('Verstek', u.amar_putusan) = 0 AND " + HADIR,
-    "UH_gugatan_bukan_verstek_T_tidak_pernah_hadir (banding -> verzet)": "SELECT COUNT(*) FROM perkara p JOIN perkara_putusan u ON u.perkara_id = p.perkara_id "
-        "WHERE p.alur_perkara_id = 15 AND u.amar_putusan IS NOT NULL AND LOCATE('Verstek', u.amar_putusan) = 0 AND NOT " + HADIR,
-    "UH_permohonan_tunggal (kasasi Pemohon)": "SELECT COUNT(*) FROM perkara p JOIN perkara_putusan u ON u.perkara_id = p.perkara_id WHERE p.alur_perkara_id = 16 "
-        "AND (SELECT COUNT(*) FROM perkara_pihak1 a WHERE a.perkara_id = p.perkara_id) <= 1",
-    "UH_permohonan_para (kasasi Para Pemohon)": "SELECT COUNT(*) FROM perkara p JOIN perkara_putusan u ON u.perkara_id = p.perkara_id WHERE p.alur_perkara_id = 16 "
-        "AND (SELECT COUNT(*) FROM perkara_pihak1 a WHERE a.perkara_id = p.perkara_id) > 1",
+    # upaya hukum (keputusan pengguna 30 Okt, final): cabut/coret = tanpa kalimat; permohonan = kasasi; gugatan: amar verstek = verzet
+    # (walau sandi hadir); bukan verstek: Tergugat pernah hadir = banding, tidak = verzet; Penggugat = banding
+    "UH_cabut_coret_semua (kalimat upaya hukum dibuang)": "SELECT COUNT(*) FROM perkara p JOIN perkara_putusan u ON u.perkara_id = p.perkara_id WHERE EXISTS (SELECT 1 FROM status_putusan s WHERE s.id = u.status_putusan_id AND (s.nama LIKE 'Dicabut%' OR s.nama LIKE 'Dicoret%'))",
+    "UH_cabut_coret_gugatan": "SELECT COUNT(*) FROM perkara p JOIN perkara_putusan u ON u.perkara_id = p.perkara_id WHERE p.alur_perkara_id = 15 AND EXISTS (SELECT 1 FROM status_putusan s WHERE s.id = u.status_putusan_id AND (s.nama LIKE 'Dicabut%' OR s.nama LIKE 'Dicoret%'))",
+    "UH_cabut_coret_permohonan": "SELECT COUNT(*) FROM perkara p JOIN perkara_putusan u ON u.perkara_id = p.perkara_id WHERE p.alur_perkara_id = 16 AND EXISTS (SELECT 1 FROM status_putusan s WHERE s.id = u.status_putusan_id AND (s.nama LIKE 'Dicabut%' OR s.nama LIKE 'Dicoret%'))",
+    "UH_gugatan_verstek (verzet)": "SELECT COUNT(*) FROM perkara p JOIN perkara_putusan u ON u.perkara_id = p.perkara_id WHERE p.alur_perkara_id = 15 AND NOT EXISTS (SELECT 1 FROM status_putusan s WHERE s.id = u.status_putusan_id AND (s.nama LIKE 'Dicabut%' OR s.nama LIKE 'Dicoret%')) AND LOCATE('verstek', u.amar_putusan) > 0",
+    "UH_gugatan_verstek_KONFLIK_sandi_hadir (tetap verzet; tanda panel)": "SELECT COUNT(*) FROM perkara p JOIN perkara_putusan u ON u.perkara_id = p.perkara_id WHERE p.alur_perkara_id = 15 AND LOCATE('verstek', u.amar_putusan) > 0 AND " + HADIR,
+    "UH_gugatan_bukan_verstek_T_pernah_hadir (banding, dasar 153 -> 199)": "SELECT COUNT(*) FROM perkara p JOIN perkara_putusan u ON u.perkara_id = p.perkara_id WHERE p.alur_perkara_id = 15 AND u.amar_putusan IS NOT NULL AND NOT EXISTS (SELECT 1 FROM status_putusan s WHERE s.id = u.status_putusan_id AND (s.nama LIKE 'Dicabut%' OR s.nama LIKE 'Dicoret%')) AND NOT LOCATE('verstek', u.amar_putusan) > 0 AND " + HADIR,
+    "UH_gugatan_bukan_verstek_T_tidak_pernah_hadir (banding -> verzet)": "SELECT COUNT(*) FROM perkara p JOIN perkara_putusan u ON u.perkara_id = p.perkara_id WHERE p.alur_perkara_id = 15 AND u.amar_putusan IS NOT NULL AND NOT EXISTS (SELECT 1 FROM status_putusan s WHERE s.id = u.status_putusan_id AND (s.nama LIKE 'Dicabut%' OR s.nama LIKE 'Dicoret%')) AND NOT LOCATE('verstek', u.amar_putusan) > 0 AND NOT " + HADIR,
+    "UH_gugatan_bukan_verstek_T_tidak_pernah_hadir_rinci": "SELECT s.nama, COUNT(*) FROM perkara p JOIN perkara_putusan u ON u.perkara_id = p.perkara_id LEFT JOIN status_putusan s ON s.id = u.status_putusan_id WHERE p.alur_perkara_id = 15 AND u.amar_putusan IS NOT NULL AND NOT EXISTS (SELECT 1 FROM status_putusan s WHERE s.id = u.status_putusan_id AND (s.nama LIKE 'Dicabut%' OR s.nama LIKE 'Dicoret%')) AND NOT LOCATE('verstek', u.amar_putusan) > 0 AND NOT " + HADIR + " GROUP BY 1",
+    "UH_permohonan_tunggal (kasasi Pemohon)": "SELECT COUNT(*) FROM perkara p JOIN perkara_putusan u ON u.perkara_id = p.perkara_id WHERE p.alur_perkara_id = 16 AND NOT EXISTS (SELECT 1 FROM status_putusan s WHERE s.id = u.status_putusan_id AND (s.nama LIKE 'Dicabut%' OR s.nama LIKE 'Dicoret%')) AND (SELECT COUNT(*) FROM perkara_pihak1 a WHERE a.perkara_id = p.perkara_id) <= 1",
+    "UH_permohonan_para (kasasi Para Pemohon)": "SELECT COUNT(*) FROM perkara p JOIN perkara_putusan u ON u.perkara_id = p.perkara_id WHERE p.alur_perkara_id = 16 AND NOT EXISTS (SELECT 1 FROM status_putusan s WHERE s.id = u.status_putusan_id AND (s.nama LIKE 'Dicabut%' OR s.nama LIKE 'Dicoret%')) AND (SELECT COUNT(*) FROM perkara_pihak1 a WHERE a.perkara_id = p.perkara_id) > 1",
     "PBT_tanggal_perintah_PHS_ke_putusan (beda tanggal)": "SELECT COUNT(*) FROM perkara_putusan u JOIN perkara_penetapan t ON t.perkara_id = u.perkara_id "
         "WHERE u.tanggal_putusan IS NOT NULL AND NOT (u.tanggal_putusan <=> t.penetapan_hari_sidang)",
     # 11209/11210: relaas kepada kuasa

@@ -33,11 +33,11 @@
   },
   "11207": {
    "nama": "RELAAS PEMBERITAHUAN PUTUSAN #0046#: UPAYA HUKUM DAN CARA PENYAMPAIAN (OTOMATIS: upaya #11215#; e-Court = #11213#; pengganti #7008# di blangko Derry)",
-   "md5": "d0ad64e1256bd1b69bab4e33f7031d21"
+   "md5": "74a9c3f0168c3b63bfa03f14abed04d9"
   },
   "11208": {
    "nama": "RELAAS PEMBERITAHUAN PUTUSAN #0047#: UPAYA HUKUM DAN CARA PENYAMPAIAN (OTOMATIS: upaya #11211#, e-Court = #11212#; pengganti #7006# di blangko Derry)",
-   "md5": "86dee5dc178d9336dfe2f37a28d92a4e"
+   "md5": "7eb5bf1594eea1f9cb4feef531b43a4a"
   },
   "11209": {
    "nama": "RELAAS: HARI DAN TANGGAL PELAKSANAAN PANGGILAN #0046# (OTOMATIS SIPP perkara_pelaksanaan_relaas untuk #0046# ATAU KUASANYA pada sidang dicetak; belum tercatat = titik-titik; ganti #9564#)",
@@ -48,8 +48,8 @@
    "md5": "c16e7b9e46b121d5f4b28c8c2bef96f9"
   },
   "11211": {
-   "nama": "RELAAS PEMBERITAHUAN PUTUSAN #0047#: KALIMAT UPAYA HUKUM (OTOMATIS: permohonan = kasasi; gugatan: #0047# pernah hadir = banding, tidak pernah hadir = verzet)",
-   "md5": "e360e8dadea28b18c78e7807495f4104"
+   "nama": "RELAAS PEMBERITAHUAN PUTUSAN #0047#: BUTIR UPAYA HUKUM (OTOMATIS: cabut/coret = tanpa; permohonan = kasasi; amar verstek = verzet; selain itu #0047# pernah hadir = banding, tidak = verzet)",
+   "md5": "8afb9dda76ccc2496a39d505dde24491"
   },
   "11212": {
    "nama": "RELAAS PEMBERITAHUAN PUTUSAN #0047# E-COURT: CARA PENYAMPAIAN (OTOMATIS: domisili elektronik #8809# bila ada, selain itu surat tercatat)",
@@ -64,8 +64,8 @@
    "md5": "9a70427a3c38e6f9e65c6b11ef635710"
   },
   "11215": {
-   "nama": "RELAAS PEMBERITAHUAN PUTUSAN #0046#: KALIMAT UPAYA HUKUM (OTOMATIS: permohonan = kasasi; gugatan = banding)",
-   "md5": "3f1d612e1df2496756a0fa8b77c1d78e"
+   "nama": "RELAAS PEMBERITAHUAN PUTUSAN #0046#: BUTIR UPAYA HUKUM (OTOMATIS: cabut/coret = tanpa; permohonan = kasasi; gugatan = banding)",
+   "md5": "74ed6a67d4534dc51ca0e300cb31a1e4"
   },
   "11216": {
    "nama": "TANGGAL PUTUSAN + PENDETEKSI E-COURT DI KEPALA RELAAS PEMBERITAHUAN (OTOMATIS: #1069# lalu yang didaftarkan ... / titik koma; pengganti #1064##7100# di 2. pemberitahuan T Derry)",
@@ -82,6 +82,10 @@
   "11219": {
    "nama": "DASAR HUKUM KASASI (satu tempat)",
    "md5": "3d919013a22d837400a5a8709a7e0890"
+  },
+  "11220": {
+   "nama": "RELAAS PEMBERITAHUAN PUTUSAN #0047#: KALIMAT UPAYA HUKUM POLOS untuk 6.2 (aturan sama dengan #11211#)",
+   "md5": "60f07ec6af6f6d62f73246315be94fc2"
   }
  },
  "variabel_asal_md5": {
@@ -250,7 +254,7 @@
    "folder": "98 Relaas",
    "berkas": "[JS] 6.2. Relaas Pemberitahuan Putusan Verstek T (e-Court).rtf",
    "md5_lama": "87641a1dbdc9c1e40e946e70ed14904e",
-   "md5_baru": "2dd1ef9924e3bd5e246dbf808416541e",
+   "md5_baru": "845b0122662c2391ac84b336594e3775",
    "aturan": "K6a=1 K6b=1 K6c=1 K6d=1 K6e=1 K6f=1"
   },
   {

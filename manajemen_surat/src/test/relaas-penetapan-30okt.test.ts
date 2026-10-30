@@ -11,7 +11,7 @@ import { describe, expect, it } from "vitest";
  *  mati "Islam", Penggugat "dapat mengajukan perlawanan (verzet)" + dasar Pasal 153 RBg untuk banding, tanggal relaas e-Court =
  *  tanggal penunjukan jurusita, relaas kepada kuasa tidak terbaca, panggilan ikrar "atas perintah ... tanggal PHS pokok", PA tujuan
  *  delegasi dari potongan alamat; penetapan hari sidang "membaca Penetapan Ketua Majelis" (PMH = Ketua Pengadilan).
- * Uji tanpa DB: keutuhan paket, tar = daftar-timpa, SQL hanya INSERT/DELETE bersyarat atas blok 11200-11219 (tidak ada variabel lama
+ * Uji tanpa DB: keutuhan paket, tar = daftar-timpa, SQL hanya INSERT/DELETE bersyarat atas blok 11200-11229 (tidak ada variabel lama
  * yang diubah), tanpa kata nama aplikasi, tanpa nama satker tertulis mati, MariaDB 5.5 (tanpa REGEXP_REPLACE). Render php56 dan
  * siklus pasang/pulih: PASANG.md paket.
  */
@@ -90,12 +90,12 @@ describe("paket ABT relaas-penetapan-30okt", () => {
     }
   });
 
-  it("SQL hanya INSERT/DELETE bersyarat atas blok 11200-11219; tidak ada UPDATE variabel lama", () => {
-    expect(nomorBaru.length).toBe(20);
-    expect(nomorBaru.every((n) => n >= 11200 && n <= 11219)).toBe(true);
+  it("SQL hanya INSERT/DELETE bersyarat atas blok 11200-11229; tidak ada UPDATE variabel lama", () => {
+    expect(nomorBaru.length).toBe(21);
+    expect(nomorBaru.every((n) => n >= 11200 && n <= 11229)).toBe(true);
     const pasang = baca(`${N}-PASANG.sql`);
     expect(pasang).not.toMatch(/\bUPDATE\b|\bDELETE\b|\bDROP\b|\bALTER\b/i);
-    expect(pasang.match(/^INSERT INTO aps_badilag\.abt_variabel/gm)?.length).toBe(20);
+    expect(pasang.match(/^INSERT INTO aps_badilag\.abt_variabel/gm)?.length).toBe(21);
     for (const n of nomorBaru) expect(pasang).toContain(`WHERE NOT EXISTS (SELECT 1 FROM aps_badilag.abt_variabel WHERE no_var = ${n})`);
     const pulih = baca(`${N}-PULIH.sql`);
     expect(pulih).not.toMatch(/\bUPDATE\b|\bINSERT\b|\bDROP\b/i);
@@ -107,7 +107,7 @@ describe("paket ABT relaas-penetapan-30okt", () => {
   it("isi variabel baru (heksadesimal) tanpa kata aplikasi, tanpa satker tertulis mati, MariaDB 5.5", () => {
     const pasang = baca(`${N}-PASANG.sql`);
     const hex = [...pasang.matchAll(/0x([0-9a-f]+)/g)].map((m) => Buffer.from(m[1], "hex").toString("latin1"));
-    expect(hex.length).toBe(40);
+    expect(hex.length).toBe(42);
     const semua = hex.join("\n");
     expect(semua).not.toMatch(/aleta/i);
     expect(semua).not.toMatch(/donggala|bungku|morowali/i);
@@ -129,6 +129,10 @@ describe("paket ABT relaas-penetapan-30okt", () => {
     expect(semua.match(/Pasal 199 ayat \(1\) RBg/g)?.length).toBe(1);
     expect(semua.match(/Pasal 153 ayat \(1\) RBg/g)?.length).toBe(1);
     expect(semua).toContain("#11217#");
+    // keputusan pengguna 30 Okt (lanjutan): cabut/coret = tanpa kalimat upaya hukum; amar verstek = selalu verzet bagi Tergugat
+    expect(semua).toContain("s.nama LIKE 'Dicabut%' OR s.nama LIKE 'Dicoret%'");
+    expect(semua).toContain("LOCATE('verstek', u.amar_putusan) > 0) THEN \"#0047# dapat mengajukan perlawanan (<I>verzet</I>)");
+    expect(semua).toContain("SELECT IF(x.t = '', '', CONCAT('<li>Bahwa terhadap putusan tersebut ', x.t, ';', CHAR(10)))");
     expect(semua).toContain("k.pengacara_id FROM perkara_pengacara k");
     expect(semua).toContain("FROM delegasi_keluar d");
   });
@@ -158,7 +162,8 @@ describe("paket ABT relaas-penetapan-30okt", () => {
     expect(v62).toContain("umur #0103# tahun,");
     expect(v62).toContain("tanggal #1069# dalam");
     expect(v62).not.toMatch(/Melawan|kediaman Termohon;|#1278#|perlawanan \(verzet\)/);
-    expect(v62).toContain("#11211#");
+    expect(v62).toContain("#11220#");
+    expect(v62).not.toContain("Bahwa terhadap putusan tersebut #");
     const del = berkas("3.a. Permohonan Bantuan Panggilan Delegasi.rtf");
     expect(del).toContain("Ketua #11202#");
     expect(del).not.toContain("#1066#");

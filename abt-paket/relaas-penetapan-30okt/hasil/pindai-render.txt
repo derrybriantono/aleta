@@ -1,3 +1,3 @@
-SAMA 126 render (25 blangko yang diubah x perkara wakil + contoh upaya hukum)
-LAMA: {'koma_sendiri': 53, 'isian_kosong': 54, 'spasi_sebelum_tanda': 65, 'huruf_menempel': 47, 'nama_kosong': 6, 'di_kosong': 12, 'koma_ganda': 11, 'rupiah_kosong': 3, 'tanggal_kosong': 27}
-BARU: {'isian_kosong': 54, 'spasi_sebelum_tanda': 68, 'nama_kosong': 6, 'di_kosong': 15, 'koma_sendiri': 3, 'koma_ganda': 11, 'rupiah_kosong': 3, 'tanggal_kosong': 27}
+SAMA 134 render (25 blangko yang diubah x perkara wakil + contoh upaya hukum)
+LAMA: {'koma_sendiri': 59, 'isian_kosong': 61, 'spasi_sebelum_tanda': 74, 'huruf_menempel': 50, 'nama_kosong': 8, 'di_kosong': 14, 'koma_ganda': 14, 'umur_janggal': 1, 'rupiah_kosong': 3, 'tanggal_kosong': 27}
+BARU: {'isian_kosong': 61, 'spasi_sebelum_tanda': 77, 'nama_kosong': 8, 'di_kosong': 17, 'koma_sendiri': 3, 'koma_ganda': 12, 'umur_janggal': 1, 'rupiah_kosong': 3, 'tanggal_kosong': 27}
