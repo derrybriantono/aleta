@@ -23,6 +23,7 @@
 (function () {
   const API = "/aleta/api/aleta-ecourt/sampul-berkas";
   const API_NASKAH = `${API}/naskah`;
+  const API_BUNDEL = `${API}/bundel`;
   const KODE_SAKLAR = "berkas-perkara-khusus";
   const K_KERTAS = "blangkoDerryKertas";
   const BULAN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
@@ -392,6 +393,7 @@
       sibuk: false,
       log: [],
       ringkasHitung: "",
+      halamanAsli: null, // bundel satu PDF: kunci -> halaman asli berkas PDF (hanya selama bundel disusun)
     };
   }
 
@@ -532,7 +534,9 @@
   function barisDasarDariFakta() {
     return ((ST.fakta && ST.fakta.dokumen) || []).map((d) => {
       const bawaanJenis = d.jenisBawaan || "lain";
-      const halaman = d.halaman ? Number(d.halaman) : halamanBawaan(bawaanJenis);
+      // Bundel satu PDF (5.1): selama bundel disusun, halaman ASLI berkas PDF menggantikan perkiraan supaya daftar isi cocok dengan isi bundel.
+      const asli = ST.halamanAsli && ST.halamanAsli[String(d.kunci)] ? Number(ST.halamanAsli[String(d.kunci)]) : 0;
+      const halaman = asli || (d.halaman ? Number(d.halaman) : halamanBawaan(bawaanJenis));
       return {
         bundel: d.bundel === "B" ? "B" : "A",
         grup: String(d.grup || ""),
@@ -541,7 +545,7 @@
         ket: String(d.ket || ""),
         tanggal: String(d.tanggal || ""),
         halaman,
-        sumber: d.halaman && d.sumber === "pasti" ? "pasti" : "perkiraan",
+        sumber: asli || (d.halaman && d.sumber === "pasti") ? "pasti" : "perkiraan",
         dasar: String(d.dasar || ""),
       };
     });
@@ -812,6 +816,84 @@
     ST.sibuk = false;
     gambarCetak();
   }
+  // ---------------------------------------------------------------------------
+  // Bundel satu PDF (5.1): sampul + daftar isi + dokumen perkara (BAS, putusan, relaas, bukti dari SIPP dan arsip e-Court) digabung dan
+  // diberi nomor halaman sesuai daftar isi. Disusun portal; tidak ada yang ditulis ke SIPP maupun ABT dan tidak ada yang disimpan.
+  // ---------------------------------------------------------------------------
+  const keBase64 = async (blob) => {
+    const buf = typeof blob.arrayBuffer === "function" ? await blob.arrayBuffer() : await new Promise((ok, gagal) => {
+      const fr = new FileReader();
+      fr.onload = () => ok(fr.result);
+      fr.onerror = () => gagal(fr.error);
+      fr.readAsArrayBuffer(blob);
+    });
+    const bita = new Uint8Array(buf);
+    let t = "";
+    for (let i = 0; i < bita.length; i += 0x8000) t += String.fromCharCode.apply(null, bita.subarray(i, i + 0x8000));
+    return btoa(t);
+  };
+  /** Baris daftar isi bundel yang dicetak yang ikut digabung (tidak disembunyikan, halaman sah). Murni terhadap hasil hitungDaftarIsi. */
+  function barisBundel(hasil, bundel) {
+    return hasil.baris.filter((b) => b.bundel === bundel && !b.tersembunyi && !b.salah && b.awal != null && b.akhir != null);
+  }
+  async function bundelSatuPdf() {
+    if (ST.sibuk) return;
+    ST.sibuk = true;
+    ST.log = ["Memeriksa halaman asli tiap dokumen…"];
+    gambarCetak();
+    const tabAwal = ST.tab;
+    try {
+      await simpanSekarang();
+      const bundel = ST.bundelCetak === "B" && adaUpayaHukum() ? "B" : "A";
+      const dasarKunci = barisBundel(hitung(), bundel).filter((b) => !b.tambahan).map((b) => b.kunci);
+      const p = await H.ambilPortal(API_BUNDEL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ perkaraId: ST.perkaraId, aksi: "periksa", kunci: dasarKunci }), batasMs: 120000 }, "Memeriksa halaman berkas");
+      ST.halamanAsli = {};
+      for (const d of (p && p.dokumen) || []) if (d && d.halaman && !d.ragu) ST.halamanAsli[String(d.kunci)] = Number(d.halaman);
+      const h = hitung();
+      const baris = barisBundel(h, bundel);
+      if (!baris.length) throw new Error("Daftar isi belum memuat dokumen untuk digabung.");
+      ST.log = ["Menyusun sampul dan daftar isi…"];
+      gambarCetak();
+      const sampul = await ambilNaskah("sampul");
+      const daftar = await ambilNaskah("daftar-isi");
+      const pdfSampul = await H.pdfDari(sampul.rtf, false);
+      const pdfDaftar = await H.pdfDari(daftar.rtf, false);
+      ST.log = [`Menggabung ${baris.length} dokumen menjadi satu PDF… (bisa sampai beberapa menit bila berkasnya banyak)`];
+      gambarCetak();
+      const d = await H.ambilPortal(
+        API_BUNDEL,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            perkaraId: ST.perkaraId,
+            aksi: "susun",
+            nomor: ST.nomor,
+            sampulPdfBase64: await keBase64(pdfSampul.blob),
+            daftarIsiPdfBase64: await keBase64(pdfDaftar.blob),
+            baris: baris.map((b) => ({ kunci: b.kunci, nama: b.nama, awal: b.awal, akhir: b.akhir })),
+          }),
+          batasMs: 600000,
+        },
+        "Menggabung bundel berkas perkara"
+      );
+      const pdf = new Blob([Uint8Array.from(atob(String((d && d.pdfBase64) || "")), (c) => c.charCodeAt(0))], { type: "application/pdf" });
+      const u = await H.unduh(pdf, H.namaUnduhan(ST.nomor, "Berkas Perkara Lengkap.pdf", "pdf"));
+      const penanda = ((d && d.baris) || []).filter((x) => x.penanda).length;
+      const hasil = [u.ok ? `Bundel diunduh: ${d.halaman} halaman, ${baris.length} dokumen.` : `Bundel gagal diunduh: ${u.pesan}`];
+      if (penanda) hasil.push(`${penanda} dokumen belum berbentuk PDF di arsip: diganti halaman penanda bernomor (lihat rincian).`);
+      for (const w of ((d && d.peringatan) || []).slice(0, 12)) hasil.push(String(w));
+      ST.log = hasil;
+      H.toast(hasil[0]);
+    } catch (e) {
+      ST.log = [`Bundel gagal: ${String((e && e.message) || e)}`];
+      H.toast(ST.log[0]);
+    }
+    ST.halamanAsli = null;
+    ST.tab = tabAwal;
+    ST.sibuk = false;
+    gambarCetak();
+  }
   function gambarCetak() {
     const k = W && W.querySelector("[data-bk-cetak]");
     if (!k || !ST) return;
@@ -819,6 +901,7 @@
       `<label class="bk-pil"><input type="checkbox" data-bk-fmt="rtf" checked> RTF</label>` +
       `<label class="bk-pil"><input type="checkbox" data-bk-fmt="pdf" checked> PDF</label>` +
       `<button type="button" class="bd-btn utama" data-bk="cetak" ${ST.sibuk ? "disabled" : ""}>${ST.sibuk ? "Sedang mencetak…" : ST.tab === "sampul" ? "Cetak sampul" : ST.tab === "ceklist" ? "Cetak ceklist" : "Cetak daftar isi"}</button>` +
+      (ST.tab === "ceklist" ? "" : `<button type="button" class="bd-btn" data-bk="bundel" ${ST.sibuk ? "disabled" : ""} title="Menggabung sampul, daftar isi, dan dokumen perkara dari SIPP dan arsip e-Court menjadi satu PDF; nomor halamannya sama dengan daftar isi. Dokumen yang belum berbentuk PDF diganti halaman penanda.">Bundel satu PDF</button>`) +
       (ST.log.length ? `<ul class="bk-log">${ST.log.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : "");
   }
 
@@ -1210,6 +1293,8 @@
       const fmt = { rtf: Boolean(W.querySelector('[data-bk-fmt="rtf"]:checked')), pdf: Boolean(W.querySelector('[data-bk-fmt="pdf"]:checked')) };
       if (!fmt.rtf && !fmt.pdf) return H.toast("Pilih RTF atau PDF.");
       void cetak(fmt);
+    } else if (aksi === "bundel") {
+      void bundelSatuPdf();
     } else if (aksi === "prat-ulang") {
       ST.prat.kunci = "";
       void muatPratinjau();
@@ -1394,6 +1479,7 @@
     buka,
     tutup,
     // dipakai uji
+    _bundel: { barisBundel, bundelSatuPdf },
     _murni: { definisiAlasan, ciriSampulAwal, daftarSusulan, rangkaiSusulan, pihakBanyak, perluLampiran, KUNCI_SUSULAN, uraiHalaman, hitungDaftarIsi, susunUrutan, rangkaiCiri, teksRentang, tanggalIndonesia, halamanPdf, BAWAAN_HALAMAN, CIRI },
   });
 })();
