@@ -613,3 +613,50 @@ describe("3.3 perbandingan paragraf (murni)", () => {
     expect(panjang[0].t).toHaveLength(160);
   });
 });
+
+describe("3.2 riwayat ubah isian: pasif, terlipat, kembalikan bila perlu", () => {
+  // 1006 = isian tanpa kartu usulan (ikon riwayat hanya bila ada riwayat); 8729 = isian dengan kartu usulan (ikon sudah ada sejak dulu)
+  const catatan = [
+    { kode: "1006", nama: "Tempat tinggal", sebelum: "Palu", sesudah: "Poso", cara: "diketik petugas", pada: "2026-10-30T02:15:00.000Z" },
+    { kode: "1006", nama: "Tempat tinggal", sebelum: "", sesudah: "Palu", cara: "diisi ALETA", pada: "2026-10-30T02:10:00.000Z" },
+    { kode: "8729", nama: "Uraian pertimbangan hakim", sebelum: "Uraian lama", sesudah: "Uraian baru", cara: "usulan diubah petugas", pada: "2026-10-30T01:00:00.000Z", oleh: "PP Satu", dariServerLengkap: true, bisaDiurungkan: true, utuh: true, idJejak: "j-1" },
+  ];
+
+  it("isian tanpa riwayat tidak diberi ikon", async () => {
+    const h = buka();
+    h.w.bacaRiwayat = async () => [];
+    await pilihBlangko(h);
+    await tunggu(150);
+    expect(q(h, '.bd-f[data-f="1006"] [data-bd2="ketriwayat"]')).toBeNull();
+    expect(qq(h, ".bd-ketriw")).toHaveLength(0);
+  });
+
+  it("ikon muncul sendiri bila ada riwayat; terlipat bawaan; baris memuat siapa, kapan, sumber, lama -> baru; Kembalikan menulis nilai lama hanya atas klik (catatan server: dua langkah)", async () => {
+    const h = buka({ abtAwal: { "1006": "Poso", "8729": "Uraian baru" } });
+    h.w.bacaRiwayat = async () => catatan;
+    await pilihBlangko(h);
+    await sampai(() => q(h, '.bd-f[data-f="1006"] [data-bd2="ketriwayat"]'), "ikon riwayat muncul");
+    expect(qq(h, ".bd-ketriw")).toHaveLength(0); // terlipat bawaan
+    klik(h, '.bd-f[data-f="1006"] [data-bd2="ketriwayat"]');
+    await sampai(() => qq(h, '.bd-f[data-f="1006"] .bd-ketriw-baris').length === 2, "dua catatan");
+    const baris = qq(h, '.bd-f[data-f="1006"] .bd-ketriw-baris').map((x) => x.textContent || "");
+    expect(baris[0]).toMatch(/Anda · diketik petugas: "Palu" → "Poso"/);
+    expect(baris[0]).toMatch(/30 Okt/i);
+    expect(baris[1]).toMatch(/diisi ALETA: "\(kosong\)" → "Palu"/);
+    // tidak ada penulisan tanpa klik
+    expect(mintaKe(h, /edit_data\?no_var=1006/, "POST")).toEqual([]);
+    const tombolKembali = qq(h, '.bd-f[data-f="1006"] [data-bd2="ketpulih"]');
+    expect(tombolKembali.length).toBeGreaterThan(0);
+    tombolKembali[0].click();
+    await sampai(() => h.abt["1006"] === "Palu", "nilai lama ditulis ulang atas klik");
+    // catatan dari server (akun/PC lain): konfirmasi dua langkah sebelum menimpa
+    klik(h, '.bd-f[data-f="8729"] [data-bd2="ketriwayat"]');
+    await sampai(() => qq(h, '.bd-f[data-f="8729"] .bd-ketriw-baris').length === 1, "catatan server");
+    expect(qq(h, '.bd-f[data-f="8729"] .bd-ketriw-baris')[0].textContent).toMatch(/PP Satu · usulan diubah petugas: "Uraian lama" → "Uraian baru" · dicatat di server/);
+    qq(h, '.bd-f[data-f="8729"] [data-bd2="ketpulih"]')[0].click();
+    await tunggu(100);
+    expect(h.abt["8729"]).toBe("Uraian baru"); // belum: perlu menekan sekali lagi
+    qq(h, '.bd-f[data-f="8729"] [data-bd2="ketpulih"]')[0].click();
+    await sampai(() => h.abt["8729"] === "Uraian lama", "dikembalikan setelah konfirmasi");
+  });
+});

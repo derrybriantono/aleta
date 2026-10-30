@@ -1826,6 +1826,7 @@
     blangko.khusus = await berkasKhususSiap(b.berkas);
     S.blangko = blangko;
     PUS.kode = "";
+    riwayatKode = new Map();
     pulihCatat({ blangko: { berkas: b.berkas, kelompok: k.nama }, draf: null });
     S.susunan = null;
     S.galatSusunan = "";
@@ -1942,6 +1943,7 @@
       S.janjiBukti = siapkanBukti();
       void muatSematan();
       void saranDariPustakaAwal(d);
+      void muatRiwayatKode();
       // 19 Okt: bawaan itsbat, e-litigasi 7139 dan bacaan SIPP/gugatan/e-Court berjalan sendiri bila saklar "Isi otomatis dari SIPP" menyala.
       // Cetak massal menunggu pekerjaan otomatis ini selesai sebelum berpindah ke perkara berikutnya (kerjaOto).
       void lacakOto(isiOtomatisBlangko(d));
@@ -3175,6 +3177,8 @@
       if (h.ok) pulihHapusDraf(kode);
       S.tersimpan[kode] = h.ok ? "tersimpan" : jejakAktif && h.tersimpan && h.terverifikasi === false ? BEDA_BACA_ULANG : `gagal: ${h.pesan || "ABT menolak"}`;
       if (h.ok) {
+        // 30 Okt: nilai benar-benar berubah = ada riwayat baru untuk isian ini (ikon ⟲ tampil pada penggambaran berikutnya).
+        if ((S.nilai[kode] ? String(S.nilai[kode].teks || "") : "") !== String(nilai)) riwayatKode.set(kode, (riwayatKode.get(kode) || 0) + 1);
         S.nilai[kode] = { status: String(nilai).trim() ? "terisi" : "kosong", teks: String(nilai) };
         tandaiKotor();
         S.peringat = false;
@@ -5439,13 +5443,39 @@
           const sudahDiurungkan = x.dariServerLengkap === true && x.bisaDiurungkan === false;
           const bisa = bolehTulis() && !samaKet(x.sebelum, skrg) && !dipotong && !sudahDiurungkan;
           const yakinTekan = S.konfirmPulih && S.konfirmPulih.kode === kode && S.konfirmPulih.idx === idx && Date.now() < S.konfirmPulih.sampai;
-          const dariServer = x.dariServerLengkap === true ? ` · dicatat di server${x.oleh ? ` oleh ${esc(x.oleh)}` : ""}` : "";
-          return `<div class="bd-ketriw-baris"><span class="bd-catat">${esc(waktu)} · ${esc(potong(x.cara || "", 70))}: "${esc(potong(x.sebelum || "(kosong)", 80))}" → "${esc(potong(x.sesudah || "(kosong)", 80))}"${dariServer}</span>${bisa ? ` <button type="button" class="bd-tautankecil" data-bd2="ketpulih" data-ket="${esc(kode)}" data-idx="${idx}">${yakinTekan ? "yakin? kembalikan ↺" : "kembalikan ↺"}</button>` : ""}</div>`;
+          const dariServer = x.dariServerLengkap === true ? " · dicatat di server" : "";
+          // 30 Okt: siapa, kapan, sumber (diisi otomatis / diketik / saran diterima / dikembalikan), nilai lama -> baru. Catatan tanpa nama = akun ini.
+          const siapa = x.oleh ? esc(x.oleh) : "Anda";
+          return `<div class="bd-ketriw-baris"><span class="bd-catat">${esc(waktu)} · ${siapa} · ${esc(potong(x.cara || "", 70))}: "${esc(potong(x.sebelum || "(kosong)", 80))}" → "${esc(potong(x.sesudah || "(kosong)", 80))}"${dariServer}</span>${bisa ? ` <button type="button" class="bd-tautankecil" data-bd2="ketpulih" data-ket="${esc(kode)}" data-idx="${idx}">${yakinTekan ? "yakin? kembalikan ↺" : "kembalikan ↺"}</button>` : ""}</div>`;
         })
         .join("") +
       `</div>`
     );
   }
+  // 30 Okt 2026: isian yang punya riwayat ubah (diisi otomatis, diketik, saran diterima, dikembalikan) mendapat ikon kecil ⟲ di kepalanya
+  // meskipun tidak punya kartu usulan; terlipat bawaan, tidak ada langkah wajib. "Kembalikan" hanya muncul pada catatan yang nilai
+  // sebelumnya berbeda dari isi sekarang. Tanpa riwayat: tidak ada ikon.
+  let riwayatKode = new Map(); // kode -> banyaknya perubahan tercatat untuk perkara ini
+  async function muatRiwayatKode() {
+    try {
+      if (typeof bacaRiwayat !== "function" || !S.pk || !S.susunan || tes()) return;
+      const pk = S.pk;
+      const d = S.susunan;
+      const daftar = await bacaRiwayat(perkaraId());
+      if (S.pk !== pk || S.susunan !== d) return;
+      const peta = new Map();
+      for (const x of Array.isArray(daftar) ? daftar : []) if (x && x.kode && String(x.sebelum || "") !== String(x.sesudah || "")) peta.set(String(x.kode), (peta.get(String(x.kode)) || 0) + 1);
+      riwayatKode = peta;
+      renderIsian();
+    } catch {
+      /* riwayat hanya tambahan */
+    }
+  }
+  const tombolRiwayat = (b) =>
+    S.info[b.kode] || b.khusus || b.jenis === "tj" || !((riwayatKode.get(b.kode) || 0) > 0)
+      ? ""
+      : `<button type="button" class="bd-ikon" data-bd2="ketriwayat" data-ket="${esc(b.kode)}" aria-expanded="${S.ketRiwayatBuka.has(b.kode)}" title="Riwayat isian ini - siapa mengubah, kapan, dan tombol kembalikan">⟲</button>`;
+  const riwayatTanpaKartu = (b) => (!S.info[b.kode] && !b.khusus && b.jenis !== "tj" && S.ketRiwayatBuka.has(b.kode) ? riwayatKet(b.kode) : "");
   function kepingKet(b) {
     const i = S.info[b.kode];
     // Isian yang tidak mungkin otomatis (penilaian hakim, pemeriksaan sidang, data tidak ada di SIPP): ditandai "diisi manual"
@@ -5788,7 +5818,7 @@
           : "")
       : "";
     return (
-      `<div class="bd-f${v.trim() ? " beres" : ""}${panjang ? " panjang" : ""}${tanda}" data-f="${b.kode}"><div class="bd-fh"><label for="bd-i${b.kode}" title="${esc(namaIsian(b))}">${esc(namaIsian(b))}</label>${ikonSumber(b.kode, namaIsian(b), ketItem(b))}${tombolPustaka(b, panjang || lebarSelalu)}</div>${muncul}${kepingKet(b)}` +
+      `<div class="bd-f${v.trim() ? " beres" : ""}${panjang ? " panjang" : ""}${tanda}" data-f="${b.kode}"><div class="bd-fh"><label for="bd-i${b.kode}" title="${esc(namaIsian(b))}">${esc(namaIsian(b))}</label>${ikonSumber(b.kode, namaIsian(b), ketItem(b))}${tombolRiwayat(b)}${tombolPustaka(b, panjang || lebarSelalu)}</div>${muncul}${kepingKet(b)}${riwayatTanpaKartu(b)}` +
       isian +
       panelPustaka(b, v) +
       sandingKet(b) +
@@ -9562,6 +9592,7 @@
     }
     S.blangko = null;
     PUS.kode = "";
+    riwayatKode = new Map();
     pulihCatat({ blangko: null, draf: null, gulir: 0, langkah: "" });
     S.susunan = null;
     S.galatSusunan = "";
