@@ -188,3 +188,17 @@ describe("P1 sebab berhuruf (deteksiAlasanService)", () => {
     expect(sebab("Tergugat bekerja keras")).not.toContain("mabuk");
   });
 });
+
+describe("P4 tuntutan: ejaan hak asuh dari petitum SIPP", () => {
+  const T = require_(path.join(AKAR, "services/tuntutanDeteksiService.js")) as {
+    deteksiTuntutan: (t: string, o?: Record<string, unknown>) => { tuntutan: { jenis: string; diPetitum: boolean }[] };
+  };
+  const jenis = (t: string) => T.deteksiTuntutan(t, { peran: "gugatan" }).tuntutan.map((x) => x.jenis);
+  it("238/Pdt.G/2016 'berhak atas hadlanah', 267/Pdt.G/2025 'Perwalian dan Pengasuhan anak'", () => {
+    expect(jenis("PRIMAIR:\n3. Menetapkan bahwa Penggugat berhak atas hadlanah (Penguasaan dan pemeliharaan) atas 2 (dua) orang anak Penggugat;")).toContain("hadhanah");
+    expect(jenis("PRIMAIR:\nMenyatakan Perwalian dan Pengasuhan anak atas nama A binti B diberikan kepada Penggugat sebagai ibu kandungnya;")).toContain("hadhanah");
+  });
+  it("kata 'pengasuhan anak' di posita tanpa permintaan bukan tuntutan", () => {
+    expect(jenis("Bahwa selama ini pengasuhan anak dilakukan bersama oleh orang tua Penggugat.")).not.toContain("hadhanah");
+  });
+});
