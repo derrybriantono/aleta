@@ -1,0 +1,113 @@
+{
+ "keterangan": "render php56 ABT asli, basis salinan; [sebelum, sesudah] paket; sisa sesudah = teks blangko sendiri (9864: kalimat pilihan PERTIMBANGAN di RTF; 9730: paragraf daftar bukti disusul teks blangko/variabel lain)",
+ "hasil": [
+  {
+   "perkara_id": "9780",
+   "blangko": "1 Perceraian CG/[01] [Kabul Verstek] Cerai (Format Lengkap).rtf",
+   "saksi_butir": 25,
+   "saksi_titik_koma_tengah": [
+    6,
+    0
+   ],
+   "bukti_butir": 2,
+   "bukti_titik_koma_tengah": [
+    0,
+    0
+   ],
+   "penanda_sisa": [
+    [],
+    []
+   ]
+  },
+  {
+   "perkara_id": "9864",
+   "blangko": "1 Perceraian CG/[02] [Kabul] CG - F.rtf",
+   "saksi_butir": 60,
+   "saksi_titik_koma_tengah": [
+    6,
+    2
+   ],
+   "bukti_butir": 0,
+   "bukti_titik_koma_tengah": [
+    0,
+    0
+   ],
+   "penanda_sisa": [
+    [],
+    []
+   ]
+  },
+  {
+   "perkara_id": "9536",
+   "blangko": "2 Itsbat Nikah/[01] [Kabul] IN.rtf",
+   "saksi_butir": 35,
+   "saksi_titik_koma_tengah": [
+    0,
+    0
+   ],
+   "bukti_butir": 2,
+   "bukti_titik_koma_tengah": [
+    0,
+    0
+   ],
+   "penanda_sisa": [
+    [],
+    []
+   ]
+  },
+  {
+   "perkara_id": "9831",
+   "blangko": "2a Itsbat Nikah Kontensius/[01] [Kabul] IN Kontensius - Pasangan Meninggal, Ahli Waris Mengakui.rtf",
+   "saksi_butir": 22,
+   "saksi_titik_koma_tengah": [
+    1,
+    0
+   ],
+   "bukti_butir": 10,
+   "bukti_titik_koma_tengah": [
+    1,
+    0
+   ],
+   "penanda_sisa": [
+    [],
+    []
+   ]
+  },
+  {
+   "perkara_id": "9730",
+   "blangko": "1 Perceraian CG/[01] [Kabul Verstek] Cerai (Format Lengkap).rtf",
+   "saksi_butir": 0,
+   "saksi_titik_koma_tengah": [
+    0,
+    0
+   ],
+   "bukti_butir": 17,
+   "bukti_titik_koma_tengah": [
+    2,
+    2
+   ],
+   "penanda_sisa": [
+    [],
+    []
+   ]
+  },
+  {
+   "perkara_id": "9571",
+   "blangko": "9 Penetapan Ahli Waris/[01] [Kabul] PAW - Ahli Waris Anak Kandung (Suami-Istri dan Orang Tua Pewaris Telah Meninggal).rtf",
+   "saksi_butir": 50,
+   "saksi_titik_koma_tengah": [
+    3,
+    0
+   ],
+   "bukti_butir": 17,
+   "bukti_titik_koma_tengah": [
+    0,
+    0
+   ],
+   "penanda_sisa": [
+    [],
+    []
+   ]
+  }
+ ]
+}

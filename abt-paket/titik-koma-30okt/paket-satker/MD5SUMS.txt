@@ -1,0 +1,7 @@
+3f0883ed4a30c903e874f4ab4c94bc8e *abt-titik-koma-30okt-FUNGSI-LAMA.sql
+f9c1eac0b8ef16e1d3ad5f957d200604 *abt-titik-koma-30okt-FUNGSI.sql
+0aa9ae0afd1a030a3cc16dd69fa61ba9 *abt-titik-koma-30okt-PERIKSA.sql
+5e864a0a9a62152cbaa12a17ccad9cf5 *abt-titik-koma-30okt-PRASYARAT.sql
+0ac65becfa3f606aa4f2ab90c7fffe08 *harap.txt
+58af0cc5d3aa43a79c22da80544bfdc4 *pasang-satker.sh
+a87a7db5880c7e0cde0bb18e15e0b405 *pulih-satker.sh

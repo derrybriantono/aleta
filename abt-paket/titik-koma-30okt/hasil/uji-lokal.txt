@@ -1,0 +1,16 @@
+PRASYARAT awal: 1|1|0|0|0
+CADANGAN: paket-satker/cadangan/{ket-saksi,bukti}-sebelum.20261030121132.txt
+PERIKSA: SEMUA COCOK
+PRASYARAT SESUDAH: 0|0|1|1|1 (harus 0|0|1|1|1)
+SELESAI
+jenis | jumlah | sama | beda: saksi	4831	1579	3252
+jenis | jumlah | sama | beda: bukti	2918	1166	1752
+baris beda: 5004 -> /d/Aplikasi/aleta/tmp/bas29/t30/beda.tsv
+PULIH:
+PRASYARAT SESUDAH PULIH: 1|1|0|0|0
+PULIH COCOK
+sesudah pulih kelompok saksi | sama dengan lama: 4831	4831
+sesudah pulih isian bukti | sama dengan lama: 2918	2918
+PASANG LAGI:
+PRASYARAT SESUDAH: 0|0|1|1|1 (harus 0|0|1|1|1)
+SELESAI
