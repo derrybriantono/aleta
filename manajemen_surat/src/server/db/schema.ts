@@ -502,6 +502,66 @@ export const DDL_TAMPILAN_SIPP = {
 } as const;
 
 /**
+ * Cetakan terakhir per perkara + salinan putusan sesudah BHT (0120, 30 Okt 2026). Cermin PERSIS dari
+ * drizzle/0120_aleta_cetak_terakhir_salinan_bht.sql; penjaga g3g5-migrasi-30okt.test.ts membandingkan keduanya.
+ */
+export const DDL_CETAK_TERAKHIR = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_cetak_terakhir (
+  perkara_id TEXT NOT NULL,
+  berkas_kunci TEXT NOT NULL,
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  bagian TEXT NOT NULL DEFAULT '[]',
+  jumlah_bagian INTEGER NOT NULL DEFAULT 0,
+  dicetak_pada TEXT NOT NULL,
+  dicetak_oleh TEXT NOT NULL DEFAULT '',
+  PRIMARY KEY (perkara_id, berkas_kunci)
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_salinan_bht (
+  perkara_id TEXT NOT NULL PRIMARY KEY,
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  tanggal_putusan TEXT NOT NULL DEFAULT '',
+  tanggal_bht TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'menunggu',
+  terdeteksi_pada TEXT NOT NULL,
+  selesai_pada TEXT NOT NULL DEFAULT '',
+  selesai_oleh TEXT NOT NULL DEFAULT ''
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_cetak_terakhir_pada ON aleta_cetak_terakhir(dicetak_pada)`,
+    `CREATE INDEX IF NOT EXISTS idx_salinan_bht_status ON aleta_salinan_bht(status, tanggal_bht)`,
+  ],
+} as const;
+
+/**
+ * Pustaka kalimat pribadi (0121, 30 Okt 2026). Cermin PERSIS dari drizzle/0121_aleta_kalimat_pribadi.sql.
+ */
+export const DDL_KALIMAT_PRIBADI = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_kalimat_pribadi (
+  id TEXT NOT NULL PRIMARY KEY,
+  pemilik_id TEXT NOT NULL,
+  pemilik_nama TEXT NOT NULL DEFAULT '',
+  jenis_perkara TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT '',
+  kode TEXT NOT NULL DEFAULT '',
+  judul TEXT NOT NULL DEFAULT '',
+  teks TEXT NOT NULL,
+  dibagikan TEXT NOT NULL DEFAULT '',
+  dipakai INTEGER NOT NULL DEFAULT 0,
+  dipakai_terakhir TEXT NOT NULL DEFAULT '',
+  dibuat_pada TEXT NOT NULL,
+  diubah_pada TEXT NOT NULL
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_kalimat_pribadi_pemilik ON aleta_kalimat_pribadi(pemilik_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_kalimat_pribadi_jenis ON aleta_kalimat_pribadi(jenis_perkara, kode)`,
+  ],
+} as const;
+
+/**
  * Cadangan dan riwayat suntingan atas ABT dari halaman "Pengaturan SIPP & ABT"
  * (0066, 16 Okt 2026, Tahap H). Cermin PERSIS dari
  * drizzle/0066_aleta_abt_suntingan.sql; penjaga
@@ -3356,6 +3416,9 @@ const schemaStatements = [
   ...DDL_KAMUS_RIWAYAT.tabel,
   // Tampilan ALETA di halaman SIPP per peran & per pengguna (0116).
   ...DDL_TAMPILAN_SIPP.tabel,
+  // Cetakan terakhir per perkara + salinan putusan sesudah BHT (0120) dan pustaka kalimat pribadi (0121).
+  ...DDL_CETAK_TERAKHIR.tabel,
+  ...DDL_KALIMAT_PRIBADI.tabel,
   // Cadangan & riwayat suntingan ABT dari Pengaturan SIPP & ABT (0066).
   ...DDL_ABT_SUNTINGAN.tabel,
   // Checklist Konseptor Sementara: tanda langkah & laporan Blangko Derry (0067).
@@ -5370,6 +5433,8 @@ const indexStatements = [
   ...DDL_KAMUS_DETEKSI.indeks,
   ...DDL_KAMUS_RIWAYAT.indeks,
   ...DDL_TAMPILAN_SIPP.indeks,
+  ...DDL_CETAK_TERAKHIR.indeks,
+  ...DDL_KALIMAT_PRIBADI.indeks,
   ...DDL_ABT_SUNTINGAN.indeks,
   ...DDL_BLANGKO_PRIBADI.indeks,
   ...DDL_TAUTAN_JADWAL.indeks,
