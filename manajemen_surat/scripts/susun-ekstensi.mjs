@@ -189,6 +189,7 @@ const BERKAS = [
   // Tombol + panel "Putusan Otomatis" di halaman perkara SIPP (20 Okt 2026, agen B2): menjalankan
   // alur Putusan otomatis panel ekstensi dan e-Doc-nya; tepat di sebelah Penetapan Otomatis.
   "putusan-sipp.js",
+  "amar-petitum-sipp.js",
   "putusan-sipp.css",
   // Pratinjau BAS/relaas di SIPP sebelum diunduh (20 Okt 2026).
   "pratinjau-bas-relaas.js",
