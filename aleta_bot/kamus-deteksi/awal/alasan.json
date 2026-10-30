@@ -4090,6 +4090,33 @@
       "catatan": "Bunyi saksi PA Donggala untuk murtad: 'kembali ke agamanya (semula) yaitu Kristen'. Ciri lama hanya 'murtad'/'pindah agama'/'keluar dari agama islam' - faktor SIPP Murtad 9 perkara, ciri lama 3."
     },
     {
+      "kode": "tambah-h-kembali-memeluk",
+      "label": "murtad: kembali memeluk agama semula / sekarang beragama lain",
+      "kunci": "H",
+      "sebab": "murtad/pindah agama",
+      "jenis": "tambahan",
+      "regex": "(?<!(?:ingin|mau|hendak|akan)\\s+)kembali\\s+memeluk\\s+(?:agama|kepercayaan)|memeluk\\s+kembali\\s+agama|\\b(?:sekarang|kini|telah|sudah)\\s+(?:telah\\s+|sudah\\s+)?(?:ber)?agama\\s+(?:kristen|katolik|katholik|protestan|hindu|budha|buddha|konghucu)\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Termohon telah kembali memeluk agama dan kepercayaan Termohon sebelumnya yaitu Kristen",
+        "Penggugat sekarang beragama Kristen Protestan"
+      ],
+      "contohSalah": [
+        "Tergugat ingin kembali memeluk agama semula",
+        "Tergugat beragama Islam"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "sipp_2810 (dump 28 Okt) posita cerai + faktor akta cerai",
+        "tanggal": "2026-10-30"
+      },
+      "catatan": "30 Okt (deteksi-luas): ditambah atas posita nyata sipp_2810 yang terlewat - lihat deteksi-luas-30okt.test.ts."
+    },
+    {
       "kode": "tambah-h-keluar-dari-islam",
       "label": "murtad: keluar dari / tidak lagi beragama Islam (tanpa penyangkalan)",
       "kunci": "H",
@@ -4692,6 +4719,34 @@
         "tanggal": "2026-10-10"
       },
       "catatan": "Minuman keras setempat Sulawesi: ballo, saguer, cap tikus."
+    },
+    {
+      "kode": "tambah-a-mabuk-salah-ketik",
+      "label": "mabuk: salah ketik minuman keras",
+      "kunci": "A",
+      "sebab": "mabuk",
+      "jenis": "tambahan",
+      "regex": "\\b(?:minum|mnum|meminum|mengkonsumsi|mengonsumsi)[\\s-]*(?:mnuman|minumah|minuma)?[\\s-]*keras\\b|\\bsopi\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "contohBenar": [
+        "Tergugat sering minum mnuman keras",
+        "Tergugat sering meminum-minumah keras",
+        "Tergugat sering mengkonsumsi minum keras"
+      ],
+      "contohSalah": [
+        "Tergugat bekerja keras",
+        "Tergugat minum obat"
+      ],
+      "ukur": {
+        "n": 0,
+        "tepat": 0,
+        "salahTangkap": 0,
+        "sumber": "sipp_2810 (dump 28 Okt) posita cerai + faktor akta cerai",
+        "tanggal": "2026-10-30"
+      },
+      "catatan": "30 Okt (deteksi-luas): ditambah atas posita nyata sipp_2810 yang terlewat - lihat deteksi-luas-30okt.test.ts."
     },
     {
       "kode": "tambah-a-obat-varian",
