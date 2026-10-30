@@ -1,0 +1,8 @@
+5fe5cab7964796c7dc68fad624ec1007 *abt-variabel-sehat-30okt-PASANG.sql
+0d24bc65a9f6edba1c47e488596f2504 *abt-variabel-sehat-30okt-PERIKSA.sql
+48601b9377c6a422d6253bba433188f0 *abt-variabel-sehat-30okt-PRASYARAT.sql
+82395eacc92273fbf14bc7b4c2e2e94e *abt-variabel-sehat-30okt-PULIH.sql
+c8dab286e70d95c2f841cb8b61b68aff *harap.txt
+4d9c3d7ef1a0466dc458258298d80970 *nomor-variabel.txt
+df6d98a4a870a58ed61f372083caff3f *pasang-satker.sh
+1092bce73518314546f96b21e1c86e25 *pulih-satker.sh
