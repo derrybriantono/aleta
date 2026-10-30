@@ -35,6 +35,8 @@
   const POLA_HURUF = /\[HURUF ALASAN PERCERAIAN BELUM DIPILIH\]|TIDAK BENAR QUERY NYA \/ BELUM ISI ALASAN|BELUM ISI ALASAN DI KOLOM ABT/i;
   const POLA_AGAMA = /\[AGAMA PIHAK YANG MURTAD BELUM DIUBAH DI SIPP\]|ALASAN H: AGAMA PIHAK YANG MURTAD BELUM DIUBAH DI SIPP/i;
   const POLA_QUERY_LAMA = /TIDAK BENAR QUERY NYA/i;
+  /** 31 Okt (keputusan pengguna 9): cabang terakhir 8529 - daftar bukti surat tanpa KTP/surat domisili (paket bukti-8529-31okt). */
+  const POLA_BUKTI = /\[BUKTI SURAT KTP\/SURAT DOMISILI BELUM ADA DI DAFTAR BUKTI\]/i;
   /**
    * Nominal biaya pada perkara prodeo: "biaya perkara ... sejumlah Rp290.000,00" (bukan Rp0), atau terbilang di belakang DIPA
    * ("... DIPA Pengadilan Agama Donggala Tahun 2026 (dua puluh ribu Nihil)" - bunyi blangko sebelum paket prodeo-panggilan-29okt,
@@ -62,6 +64,7 @@
    *   kodeAda   Set kode isian blangko (memetakan #kode# di naskah ke isiannya)
    *   namaIsian Map kode -> nama isian tampil (opsional; untuk menyebut isian, bukan nomornya)
    *   relaas    { ada, P: [iso], T: [iso] } tanggal relaas SIPP per pihak (opsional; butir 50), sebutanP/sebutanT, jenisNaskah put|bas
+   *   bertentangan [{ kode, nama, isi, usulan }] isian pihak vs usulan PASTI keterangan kedua saksi (keputusan 17; peringatan pasif)
    * -> [{ jenis, teks, perbaiki: { aksi: "isian"|"rapikan"|"pratinjau", kode? } | null, judulTombol }]
    */
   function kumpulkan(bahan) {
@@ -84,7 +87,7 @@
     if (hurufDiNaskah && !hurufKosong && !hurufTakDikenal && h && h.ada) {
       hasil.push({
         jenis: "huruf-cabang",
-        teks: `Huruf alasan perceraian "${potong(h.nilai, 30)}" sudah dipilih, tetapi naskah masih memuat "[HURUF ALASAN PERCERAIAN BELUM DIPILIH]" - biasanya pada pertimbangan bukti surat karena daftar bukti surat belum memuat KTP atau surat domisili. Periksa bagian itu di pratinjau.`,
+        teks: `Huruf alasan perceraian "${potong(h.nilai, 30)}" sudah dipilih, tetapi naskah masih memuat "[HURUF ALASAN PERCERAIAN BELUM DIPILIH]" - pada ABT yang belum diperbarui biasanya di pertimbangan bukti surat, karena daftar bukti surat belum memuat KTP atau surat domisili. Periksa bagian itu di pratinjau.`,
         perbaiki: { aksi: "pratinjau" },
         judulTombol: "Membuka pratinjau naskah",
       });
@@ -108,6 +111,32 @@
         teks: "Alasan perceraian huruf H (murtad) dipilih, tetapi agama pihak di SIPP belum diubah - naskah memuat \"[AGAMA PIHAK YANG MURTAD BELUM DIUBAH DI SIPP]\". Ubah agama pihak itu di SIPP, lalu muat ulang.",
         perbaiki: { aksi: "pratinjau" },
         judulTombol: "Membuka pratinjau naskah",
+      });
+    }
+    // 2b. Daftar bukti surat tanpa KTP/surat domisili (bunyi 8529 sesudah paket bukti-8529-31okt).
+    if (POLA_BUKTI.test(isiNaskah)) {
+      const keBukti = kodeAda.has("1214");
+      hasil.push({
+        jenis: "bukti",
+        teks: "Daftar bukti surat belum memuat KTP atau surat domisili - pertimbangan bukti surat tercetak \"[BUKTI SURAT KTP/SURAT DOMISILI BELUM ADA DI DAFTAR BUKTI]\".",
+        perbaiki: keBukti ? { aksi: "isian", kode: "1214" } : { aksi: "pratinjau" },
+        judulTombol: keBukti ? "Membuka daftar bukti surat" : "Membuka pratinjau naskah",
+      });
+    }
+    // 2c. Keputusan pengguna 17 (31 Okt): isian yang meninggalkan rumah bertentangan dengan keterangan KEDUA saksi (usulan pasti).
+    //     Peringatan PASIF: isian tidak diubah; Perbaiki hanya membuka isiannya.
+    for (const x of Array.isArray(b.bertentangan) ? b.bertentangan : []) {
+      const beda = pihakBerbeda(x.isi, x.usulan);
+      if (!beda || sudah.has(teks(x.kode))) continue;
+      sudah.add(teks(x.kode));
+      hasil.push({
+        jenis: "bertentangan",
+        teks:
+          beda === "pihak"
+            ? `${teks(x.nama)}: isian berbunyi "${potong(x.isi, 40)}", tetapi keterangan kedua saksi menyebut ${potong(x.usulan, 40)}.`
+            : `${teks(x.nama)}: isian berbunyi "${potong(x.isi, 40)}" - menurut keterangan kedua saksi sebutan pihaknya ${potong(x.usulan, 40)}.`,
+        perbaiki: { aksi: "isian", kode: teks(x.kode) },
+        judulTombol: "Membuka isian ini (tidak diubah sendiri)",
       });
     }
     // 3. Prodeo tetapi naskah memuat nominal biaya.
@@ -139,7 +168,7 @@
     for (const t of Array.isArray(naskah && naskah.temuanSisa) ? naskah.temuanSisa : []) {
       if (!t || !t.jenis) continue;
       const cocok = teks(t.cocok);
-      if (POLA_HURUF.test(cocok) || POLA_AGAMA.test(cocok)) continue;
+      if (POLA_HURUF.test(cocok) || POLA_AGAMA.test(cocok) || POLA_BUKTI.test(cocok)) continue;
       const k = kelompok.get(t.jenis) || { label: teks(t.label) || "Sisa blangko", contoh: [], jumlah: 0, kode: "" };
       k.jumlah += 1;
       // Tanda isian "#nnnn#" tidak dikutip (teks tampil tanpa nomor variabel): yang disebut nama isiannya bila ada di blangko.
@@ -271,6 +300,23 @@
     return keluar;
   }
 
+  /**
+   * Isian pihak (mis. yang meninggalkan rumah) dibandingkan dengan usulan saksi: "pihak" bila kedudukannya berbeda (pihak pertama
+   * Penggugat/Pemohon vs pihak kedua Tergugat/Termohon), "sebutan" bila kedudukannya sama tetapi sebutannya lain, "" bila sama/tak terbaca.
+   * Terukur 31 Okt atas data 28 Okt: 318 isian berusulan pasti, 33 beda pihak, 1 beda sebutan (cerai talak berisi "Tergugat").
+   */
+  function pihakBerbeda(isi, usulan) {
+    const sebut = (t) => {
+      const m = teks(t).match(/\b(Penggugat|Tergugat|Pemohon|Termohon)\b/i);
+      return m ? m[1].toLowerCase() : "";
+    };
+    const a = sebut(isi);
+    const u = sebut(usulan);
+    if (!a || !u || a === u) return "";
+    const kedudukan = (x) => (x === "penggugat" || x === "pemohon" ? 1 : 2);
+    return kedudukan(a) !== kedudukan(u) ? "pihak" : "sebutan";
+  }
+
   /** Titik koma di TENGAH teks (ada huruf/angka sesudahnya); titik koma di akhir boleh. */
   function adaTitikKomaTengah(nilai) {
     return /;(?=[^;]*[\p{L}\p{N}])/u.test(teks(nilai));
@@ -290,5 +336,5 @@
       .join("");
   }
 
-  akar.AletaPeriksaCetak = Object.freeze({ kumpulkan, html, adaTitikKomaTengah, bandingRelaas, kalimatPanggilan, POLA_HURUF, POLA_AGAMA, POLA_BIAYA_NOMINAL, POLA_TANGGAL_GANDA, BATAS_ISIAN });
+  akar.AletaPeriksaCetak = Object.freeze({ kumpulkan, html, adaTitikKomaTengah, bandingRelaas, kalimatPanggilan, pihakBerbeda, POLA_BUKTI, POLA_HURUF, POLA_AGAMA, POLA_BIAYA_NOMINAL, POLA_TANGGAL_GANDA, BATAS_ISIAN });
 })(typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : null);

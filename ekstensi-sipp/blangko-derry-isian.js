@@ -8280,6 +8280,21 @@
       });
     return null;
   }
+  /**
+   * Keputusan pengguna 17 (31 Okt): isian yang meninggalkan rumah (7035) di ABT berlawanan dengan usulan PASTI dari keterangan kedua
+   * saksi (S.info dari isi otomatis: usulan tetap tercatat walau isian sudah berisi). Hanya bahan peringatan - tidak menulis apa pun.
+   */
+  function isianBertentanganSaksi(perlu) {
+    const hasil = [];
+    for (const kode of ["7035"]) {
+      const b = (perlu || []).find((x) => x.kode === kode);
+      const i = S.info && S.info[kode];
+      const isi = nilaiTampil(kode);
+      if (!b || !i || String(i.keyakinan || "") !== "pasti" || !String(i.nilai || "").trim() || !isi.trim()) continue;
+      hasil.push({ kode, nama: namaIsian(b), isi, usulan: String(i.nilai) });
+    }
+    return hasil;
+  }
   /** Isian teks yang memuat titik koma di tengah dan akan dirapikan aturan rapi isian 30 Okt (rapiSimpan). */
   function isianTitikKoma() {
     const m = PC();
@@ -8310,6 +8325,7 @@
             .filter((x) => x.tingkat !== "tambahan" && x.b.jenis !== "tj")
             .map((x) => ({ kode: x.b.kode, nama: x.nama })),
           titikKoma: isianTitikKoma(),
+          bertentangan: isianBertentanganSaksi(perlu),
           naskah: bahanNaskahPeriksa(),
           // Butir 50 (30 Okt malam): relaas SIPP per pihak, dibaca sekali per perkara sesudah naskah siap (hanya baca).
           relaas: relaasUntukPeriksa(),
@@ -8360,7 +8376,9 @@
       f = cari(`.bd-f[data-f="${kode}"]`, wadah.isian);
     }
     const el = cari(`#bd-i${kode}`, wadah.isian) || (f && cari("input, textarea, select", f));
-    const sasaran = f || el;
+    // Daftar bukti surat (P) tidak berbentuk kotak isian biasa: sasarannya blok bukti pertama.
+    const bukti = !f && !el && (kode === "1214" || kode === "9911") ? cari(".bd-bukti", wadah.isian) : null;
+    const sasaran = f || el || (bukti && (bukti.parentElement || bukti));
     if (!sasaran) return toast("Isian itu tidak tampil di blangko ini; periksa pratinjau naskah.");
     sasaran.classList.remove("bd-sorot");
     void sasaran.offsetWidth;
