@@ -17,6 +17,11 @@ paket ini TEKS BLANGKO. Penggolongan tiap ";" yang masih diikuti teks di paragra
 | bahwa-berangkai (`...; bahwa ...` gaya pertimbangan berangkai) | dibiarkan - **keputusan sementara, ditanyakan** |
 | **salah-tanda-baca** (`...tidak berhasil; dan oleh karena ...`, `...persidangan; terhadap panggilan ...`, `...; sedangkan Pasal ...`) | **";" -> ","** (722 tempat di 292 berkas) |
 
+Jumlah atas pohon sesudah SEMUA paket 29-30 Okt (1.779 blangko aktif; arsip ALUR*/- BAS * -/terhapus dilewati): salah-tanda-baca 722 (292
+berkas, DIPERBAIKI) | penanda-sebaris 516 (362) | akhir-butir 391 (233) | pilih-petunjuk 213 (189) | bahwa-berangkai 132 (63) | kutipan-berhuruf 86
+(28) | susunan-majelis 62 (62) | akhir-butir-daftar 23 (12) | lain 13 (10). ("akhir-butir" memakai penanda yang SEMUA cabang keluarannya
+diawali `<br>`/kosong menurut kueri - heuristik ketat; yang ragu masuk penanda-sebaris dan dibiarkan.)
+
 ## Pasang / pulih (server, root)
 
 ```bash
