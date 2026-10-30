@@ -58,7 +58,7 @@ export type CatatanEkstensi = {
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
     versi: "1.205.56",
-    dirilis: "2026-10-30T05:00:00+08:00",
+    dirilis: "2026-10-31T04:45:00+08:00",
     judul: "Unggah BAS Word jadi PDF bertanda tangan, status e-Court satu sumber, putusan sela, dan tampilan SIPP per peran",
     butir: [
       "Tampilan ALETA di SIPP per peran dan pengguna: admin mengatur elemen yang tampil per peran (usulan per peran langsung menjadi bawaan), Super Admin dapat mengunci di atas aturan admin, dan tiap pegawai mengatur tampilannya sendiri lewat halaman Tampilan SIPP (dari widget atau popup); pilihan tersimpan di akun, termasuk saklar Tampilkan ALETA di SIPP.",
@@ -75,6 +75,14 @@ export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
       "Tab baru Putusan sela di Pilih blangko: putusan sela per jenis perkara dan per jenis/status (eksepsi, provisi, intervensi, sumpah, pemeriksaan setempat, rekonvensi, penggabungan dan pemisahan, mediasi), termasuk sita; saran blangko mengenali agenda sela dan mediasi elektronik.",
       "Sampul, daftar isi, dan ceklist berkas perkara: layar kerja menyala bawaan, lampiran terisi, penuh satu halaman dengan tinggi baris menyesuaikan isi perkara, dan logo pengadilan monokrom yang tajam.",
       "Pusat Kendali Kapasitas penyimpanan: pemakaian ruang server, ambang peringatan, pembersihan sisa pembuatan pembaruan otomatis (mati bawaan), dan petunjuk memindahkan data ke partisi besar.",
+      "Huruf alasan perceraian terisi sendiri bila pasti (F), lainnya usulan; satu kotak Periksa sebelum cetak dengan tombol Perbaiki (saksi kosong, verstek tetapi SIPP mencatat hadir, prodeo bernominal, tanggal panggilan tidak sama dengan relaas, sisa blangko, titik koma di tengah).",
+      "Draf tanya jawab saksi langsung terisi dan tersimpan sendiri saat jawaban diganti (tombol Simpan tetap ada); BAS sidang besok disiapkan tiap sore dengan saran Sidang besok di panel dan Jadwal Sidang.",
+      "Saran blangko menurut keadaan perkara (verstek, prodeo, kuasa, itsbat satu pemohon, mediasi, kesimpulan) langsung terpilih; amar dari petitum terisi di form Putusan Akhir SIPP termasuk biaya dan prodeo DIPA; bukti dari e-Court langsung masuk daftar bukti.",
+      "Muat ulang halaman ABT tetap di Blangko ABT by Derry pada perkara, sidang, blangko, dan akun yang sama; riwayat ubah isian dengan Kembalikan; keterangan bagian yang berubah sejak cetakan terakhir; pustaka kalimat pribadi; bundel satu PDF per perkara; cetak massal per peran; salinan putusan sesudah BHT.",
+      "Kartu tautan akun ALETA, SIPP, ABT, dan e-Court per pegawai (admin dapat mengisi akun e-Court pegawai); data SIPP diperbarui sendiri saat perkara dibuka; putusan di SIPP dicocokkan dengan dokumennya; tombol Betulkan kehadiran di SIPP dari catatan temuan.",
+      "Putusan otomatis cukup satu klik tanpa tombol persetujuan kedua.",
+      "Unggah e-Doc dengan seret-lepas ke tombol Unggah di SIPP (BAS, relaas, penetapan, putusan, gugatan, dan lainnya), dengan pemeriksaan isi; dapat dinyalakan atau dimatikan di Tampilan SIPP.",
+      "Perluasan deteksi alasan perceraian (salah ketik, ungkapan sehari-hari, pihak yang tertukar), pindai mingguan variabel di Pusat Kesehatan, statistik pemakaian blangko, dan penanda hukum acara RBg atau HIR per satker.",
     ],
   },
   {
