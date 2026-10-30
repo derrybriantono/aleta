@@ -1,0 +1,12 @@
+# variabel yang diubah paket (dibungkus fungsi isian_rtf_identitas_kosong; tidak ada variabel baru)
+3507
+3509
+3970
+3971
+7047
+7048
+7062
+9230
+9231
+11205
+11206
