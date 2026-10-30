@@ -29,3 +29,6 @@ KEPUTUSAN
 - TIDAK diubah: ini bukan kesalahan kueri melainkan penanda "isian wajib belum diisi" milik Derry. Mengganti bunyinya akan
   memutus pengenal di ekstensi (FRASA_GALAT dan peringatan 8503 bergantung pada frasa yang persis sama). Perbaikan yang benar =
   mengisi 8503 (hakim memilih huruf alasan), bukan mengubah variabel.
+
+PEMBARUAN 30 Okt (keputusan pengguna): bunyi cabang itu DIGANTI menjadi "[HURUF ALASAN PERCERAIAN BELUM DIPILIH]" lewat paket
+../../alasan-belum-dipilih-30okt, bersamaan dengan pengenal di ekstensi yang mengenali bunyi baru dan lama.
