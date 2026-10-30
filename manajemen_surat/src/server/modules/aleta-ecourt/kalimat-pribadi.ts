@@ -58,11 +58,11 @@ const keBaris = (b: Baris): BarisKalimat => ({
 
 const golonganAktor = (aktor: Aktor): string[] => golonganPengguna({ roleId: aktor.roleId ?? undefined, additionalRoleIds: aktor.additionalRoleIds ?? [] } as never) as string[];
 
-/** Kalimat yang berlaku bagi aktor untuk konteks ini (milik sendiri + yang dibagikan kepada golongannya), urut kecocokan. */
-export async function kalimatUntuk(db: AletaDatabase, aktor: Aktor, konteks: { jenisPerkara?: string; status?: string; kode?: string }) {
+/** Kalimat yang berlaku bagi aktor untuk konteks ini (milik sendiri + yang dibagikan kepada golongannya), urut kecocokan. `semuaKode`: untuk isian mana pun (ekstensi mengelompokkan sendiri). */
+export async function kalimatUntuk(db: AletaDatabase, aktor: Aktor, konteks: { jenisPerkara?: string; status?: string; kode?: string; semuaKode?: boolean }) {
   const semua = (await db.queryAll<Baris>(`SELECT ${KOLOM} FROM aleta_kalimat_pribadi WHERE pemilik_id = ? OR dibagikan <> ''`, [aktor.id])).map(keBaris);
   const golongan = golonganAktor(aktor);
-  const berlaku = semua.filter((k) => terlihatOleh(k, aktor.id, golongan) && berlakuUntuk(k, konteks));
+  const berlaku = semua.filter((k) => terlihatOleh(k, aktor.id, golongan) && berlakuUntuk(konteks.semuaKode ? { ...k, kode: "" } : k, konteks));
   return urutkanKalimat(berlaku, aktor.id).slice(0, 50);
 }
 

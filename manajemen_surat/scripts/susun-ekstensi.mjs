@@ -137,6 +137,9 @@ const BERKAS = [
   "blangko-derry-katalog.js",
   "blangko-derry-jawab-katalog.js",
   "blangko-derry-berkas.js",
+  // Keterangan pasif "N bagian berubah sejak cetakan terakhir" (30 Okt 2026) dan pustaka kalimat pribadi (30 Okt 2026); dimuat sebelum blangko-derry-isian.js.
+  "blangko-derry-beda-cetak.js",
+  "blangko-derry-pustaka.js",
   "blangko-derry-isian.js",
   // Cetak massal Blangko Derry (20 Okt 2026): jendela besar per peran, memakai pengemudi satu-perkara di blangko-derry-isian.js.
   "blangko-derry-massal.js",

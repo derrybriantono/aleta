@@ -1825,6 +1825,7 @@
     if (BK()) BK().tutup();
     blangko.khusus = await berkasKhususSiap(b.berkas);
     S.blangko = blangko;
+    PUS.kode = "";
     pulihCatat({ blangko: { berkas: b.berkas, kelompok: k.nama }, draf: null });
     S.susunan = null;
     S.galatSusunan = "";
@@ -1940,6 +1941,7 @@
       void muatSaranAbt(d);
       S.janjiBukti = siapkanBukti();
       void muatSematan();
+      void saranDariPustakaAwal(d);
       // 19 Okt: bawaan itsbat, e-litigasi 7139 dan bacaan SIPP/gugatan/e-Court berjalan sendiri bila saklar "Isi otomatis dari SIPP" menyala.
       // Cetak massal menunggu pekerjaan otomatis ini selesai sebelum berpindah ke perkara berikutnya (kerjaOto).
       void lacakOto(isiOtomatisBlangko(d));
@@ -5520,7 +5522,120 @@
     laporKeKerangka();
     toast(n ? `${n} isian disimpan ke ABT. Periksa sebelum cetak.` : "Tidak ada isian yang dapat disimpan.");
   }
-  async function aksiKet(kode, aksi, idx) {
+  // ---------------------------------------------------------------------------
+  // Pustaka kalimat pribadi (30 Okt 2026) - blangko-derry-pustaka.js. Isian teks panjang punya tombol kecil di kepala kotaknya; kalimat yang
+  // disimpan khusus untuk isian + jenis perkara + status yang sama juga muncul sendiri sebagai SARAN SAMAR (Tab) saat kotak masih kosong.
+  // Menyisipkan = tindakan petugas lewat jalur simpan isian biasa; pengisian otomatis dari SIPP TIDAK memakainya.
+  // ---------------------------------------------------------------------------
+  const PUS = { kode: "", daftar: [] };
+  const PS = () => globalThis.aletaPustaka || null;
+  const konteksPustaka = () => ({ jenisPerkara: String((S.pk && S.pk.jenisPerkara) || ""), status: faktaPolaPerkara().verstek ? "verstek" : "kontradiktoir" });
+  const idSayaPustaka = () => {
+    const a = api();
+    const t = a && typeof a.siapa === "function" ? a.siapa() : null;
+    return t ? String(t.id || "") : "";
+  };
+  function bolehPustaka(b) {
+    return Boolean(PS()) && !tes() && bolehTulis() && b.jenis === "teks" && !b.khusus && !(Array.isArray(b.opsi) && b.opsi.length) && !(Array.isArray(b.pilihan) && b.pilihan.length);
+  }
+  function tombolPustaka(b, panjang) {
+    if (!panjang || !bolehPustaka(b)) return "";
+    return `<button type="button" class="bd-ikon bd-pustakabtn" data-bd2="ketpustaka" data-ket="${esc(b.kode)}" aria-expanded="${PUS.kode === b.kode}" title="Kalimat tersimpan: klik satu untuk menyisipkannya, atau simpan isi kotak ini ke pustaka">❝</button>`;
+  }
+  function panelPustaka(b, v) {
+    if (PUS.kode !== b.kode || !PS() || !bolehPustaka(b)) return "";
+    const k = konteksPustaka();
+    return PS().htmlPanel({ kode: b.kode, daftar: PUS.daftar, saya: idSayaPustaka(), jenisPerkara: k.jenisPerkara, status: k.status, golonganBagi: PS().golonganBagi(k), bolehSimpan: true, kotakKosong: !String(v || "").trim() });
+  }
+  async function saranDariPustakaAwal(d) {
+    try {
+      const m = PS();
+      if (!m || tes() || !bolehTulis() || !S.pk) return 0;
+      const pk = S.pk;
+      const daftar = await m.muat(konteksPustaka());
+      if (S.susunan !== d || S.pk !== pk || !daftar.length) return 0;
+      let n = 0;
+      for (const b of d.isian) {
+        if (!bolehPustaka(b) || !sedangKosong(b)) continue;
+        if ((S.saranSipp[b.kode] && S.saranSipp[b.kode].nilai) || (S.saranH7 && S.saranH7[b.kode])) continue;
+        const u = m.usulan(daftar, b.kode);
+        if (!u) continue;
+        S.saranSipp[b.kode] = { nilai: u.teks, keyakinan: "ragu", asal: "pustaka kalimat", pustakaId: u.id };
+        n += 1;
+      }
+      if (n) renderIsian();
+      return n;
+    } catch {
+      return 0;
+    }
+  }
+  /** Saran dari pustaka diterima (Tab): satu pemakaian dicatat untuk urutan "paling sering dipakai". */
+  function pustakaDiterima(kode, nilai) {
+    try {
+      const s2 = S.saranSipp[kode];
+      if (s2 && s2.asal === "pustaka kalimat" && s2.pustakaId && s2.nilai === nilai && PS()) void PS().pakai(s2.pustakaId);
+    } catch {
+      /* pencatatan pemakaian hanya kemudahan */
+    }
+  }
+  async function aksiPustaka(kode, aksi, id) {
+    const m = PS();
+    if (!m) return undefined;
+    const k = konteksPustaka();
+    if (aksi === "ketpustaka") {
+      const lama = PUS.kode;
+      if (lama === kode) {
+        PUS.kode = "";
+        return segarKartu(kode);
+      }
+      PUS.kode = kode;
+      PUS.daftar = await m.muat(k, true);
+      if (lama) segarKartu(lama);
+      return segarKartu(kode);
+    }
+    if (aksi === "ketpusisip") {
+      const item = PUS.daftar.find((x) => x.id === id);
+      if (!item) return undefined;
+      const lama = String(S.isi[kode] || "").replace(/\s+$/, "");
+      S.diketik.add(kode);
+      PUS.kode = "";
+      await jadwalkanSimpan(kode, lama ? `${lama} ${item.teks}` : item.teks, true);
+      void m.pakai(id);
+      return segarKartu(kode);
+    }
+    if (aksi === "ketpushapus") {
+      const h = await m.hapus(id);
+      if (!h.ok) toast(`Kalimat tidak dapat dihapus: ${h.sebab}`);
+      PUS.daftar = await m.muat(k, true);
+      return segarKartu(kode);
+    }
+    if (aksi === "ketpussimpan") {
+      const el = wadah.isian && cari(`.bd-f[data-f="${kode}"]`, wadah.isian);
+      const teks = String(S.isi[kode] || "").trim();
+      if (!el) return undefined;
+      if (teks.length < 5) return toast("Kotak masih kosong atau terlalu pendek untuk disimpan ke pustaka.");
+      const cek = (sel) => Boolean(el.querySelector(sel) && el.querySelector(sel).checked);
+      const judulEl = el.querySelector("[data-pus-judul]");
+      const bagi = Array.from(el.querySelectorAll("[data-pus-bagi]")).filter((x) => x.checked).map((x) => x.getAttribute("data-pus-bagi"));
+      const h = await m.simpan({
+        jenisPerkara: cek("[data-pus-jenis]") ? k.jenisPerkara : "",
+        status: cek("[data-pus-status]") ? k.status : "",
+        kode: cek("[data-pus-kode]") ? kode : "",
+        judul: judulEl ? judulEl.value : "",
+        teks,
+        dibagikan: bagi,
+      });
+      toast(h.ok ? "Kalimat disimpan ke pustaka." : `Kalimat tidak tersimpan: ${h.sebab}`);
+      PUS.daftar = await m.muat(k, true);
+      return segarKartu(kode);
+    }
+    return undefined;
+  }
+  async function aksiKet(kode, aksi, idx, idPustaka) {
+    if (aksi === "ketpustaka" || aksi === "ketpusisip" || aksi === "ketpushapus" || aksi === "ketpussimpan") {
+      if (!S.susunan || !bolehTulis()) return undefined;
+      return aksiPustaka(kode, aksi, idPustaka);
+    }
     if (aksi === "ketsumber") {
       if (S.ketBuka.has(kode)) S.ketBuka.delete(kode);
       else S.ketBuka.add(kode);
@@ -5673,8 +5788,9 @@
           : "")
       : "";
     return (
-      `<div class="bd-f${v.trim() ? " beres" : ""}${panjang ? " panjang" : ""}${tanda}" data-f="${b.kode}"><div class="bd-fh"><label for="bd-i${b.kode}" title="${esc(namaIsian(b))}">${esc(namaIsian(b))}</label>${ikonSumber(b.kode, namaIsian(b), ketItem(b))}</div>${muncul}${kepingKet(b)}` +
+      `<div class="bd-f${v.trim() ? " beres" : ""}${panjang ? " panjang" : ""}${tanda}" data-f="${b.kode}"><div class="bd-fh"><label for="bd-i${b.kode}" title="${esc(namaIsian(b))}">${esc(namaIsian(b))}</label>${ikonSumber(b.kode, namaIsian(b), ketItem(b))}${tombolPustaka(b, panjang || lebarSelalu)}</div>${muncul}${kepingKet(b)}` +
       isian +
+      panelPustaka(b, v) +
       sandingKet(b) +
       pilihBunyi +
       (b.kode === "7139" && S.el7 && v === S.el7.nilai ? `<span class="bd-catat bd-el7">${esc(S.el7.keterangan)}</span>` : "") +
@@ -7028,6 +7144,7 @@
     // Isian berubah selama ABT menyusun: naskah ini sudah lama, tetap kotor supaya disusun ulang (dulu ditandai bersih).
     if (S.versiIsian === versi) pr.kotor = false;
     pr.penanda = cekPenandaRtf(h.rtf);
+    perbaruiBedaCetak();
     pr.titikTiga = h.periksa ? h.periksa.jumlahTitikTiga : 0;
     return h.rtf;
   }
@@ -7631,10 +7748,12 @@
       `<div id="bd-temuanhadir"></div>` +
       `<div class="bd-ingat" id="bd-ingat" hidden role="alert"></div>` +
       `<div class="bd-utas"><button type="button" class="bd-btn utama besar" data-bd2="cetak" ${S.sibuk || S.unggahSibuk ? "disabled" : ""}>${S.sibuk ? "Sedang mencetak…" : "Cetak"}</button><span class="bd-catat" id="bd-statuscetak">${esc(teksAkanTerbit())} ${tes() ? "" : sudah ? `Sudah dicetak ${esc(sudah)}.` : "Belum dicetak."}</span> <span class="bd-catat" id="bd-siapnaskah">${esc(ketSiapNaskah())}</span></div>` +
+      `<details class="bd-bedacetak" id="bd-bedacetak" hidden><summary></summary><ul></ul></details>` +
       `<ul class="bd-logcetak" id="bd-logcetak" ${S.log.length ? "" : "hidden"}>${S.log.slice(-6).map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` +
       `<div class="bd-float lebar" id="bd-popttd" hidden role="dialog" aria-label="Tambah tanda tangan"></div>`;
     perbaruiSaksiKosong();
     perbaruiTemuanHadir();
+    perbaruiBedaCetak();
   }
   // ──────────────────────────────────────────────────────────────────────────
   // 30 Okt 2026 (keputusan pengguna 1c): berita acara dan putusan Blangko Derry membaca keterangan saksi HANYA dari tanya
@@ -7708,6 +7827,76 @@
     if (!e) return;
     const t = temuanHadirVerstek();
     e.innerHTML = t ? `<div class="bd-peringatan bd-temuanhadir" role="status"><b>Catatan temuan:</b> ${esc(t.teks)}. Cetak tidak ditahan.</div>` : "";
+  }
+  // ---------------------------------------------------------------------------
+  // "N bagian berubah sejak cetakan terakhir" (30 Okt 2026): keterangan PASIF di langkah Cetak. Ringkasan cetakan terakhir tiap
+  // perkara + blangko disimpan di server ALETA (blangko-derry-beda-cetak.js); tidak ada langkah atau konfirmasi tambahan dan cetak
+  // tidak pernah ditahan. Tanpa cetakan sebelumnya, atau naskah belum tersusun/sudah basi: tidak menampilkan apa pun.
+  // ---------------------------------------------------------------------------
+  const bedaCache = new Map(); // "perkaraId|berkas" -> rekaman { ada, dicetakPada, dicetakOleh, bagian } | "memuat" | null
+  const bedaKunci = () => (S.pk && S.blangko ? `${perkaraId()}|${String(S.blangko.berkas).toLowerCase()}` : "");
+  function teksNaskahBeda(rtf) {
+    return rtfKeTeks(typeof rtf === "string" ? rtf : latin1(rtf));
+  }
+  function perbaruiBedaCetak() {
+    try {
+      const e = wadah.cetak ? cari("#bd-bedacetak", wadah.cetak) : null;
+      if (!e) return;
+      const m = globalThis.aletaBedaCetak;
+      const pr = S.prat;
+      if (!m || tes() || !S.blangko || !S.pk || S.blangko.khusus || !pr || !pr.rtf || pr.kotor) {
+        e.hidden = true;
+        return;
+      }
+      const kunci = bedaKunci();
+      const rek = bedaCache.get(kunci);
+      if (rek === undefined) {
+        bedaCache.set(kunci, "memuat");
+        void m.baca(perkaraId(), S.blangko.berkas).then((d) => {
+          bedaCache.set(kunci, d && d.ada ? d : null);
+          if (bedaKunci() === kunci) perbaruiBedaCetak();
+        });
+        e.hidden = true;
+        return;
+      }
+      if (rek === "memuat" || !rek) {
+        e.hidden = true;
+        return;
+      }
+      const beda = m.bandingkan(rek.bagian, m.ringkas(teksNaskahBeda(pr.rtf)));
+      const waktu = rek.dicetakPada ? `${tglIndo(String(rek.dicetakPada).slice(0, 10))} ${new Date(rek.dicetakPada).toTimeString().slice(0, 5).replace(":", ".")}` : "";
+      const ringkasan = beda.n ? `${beda.n} bagian berubah sejak cetakan terakhir${waktu ? ` (${waktu})` : ""}` : `Sama dengan cetakan terakhir${waktu ? ` (${waktu})` : ""}`;
+      e.hidden = false;
+      e.classList.toggle("sama", beda.n === 0);
+      e.querySelector("summary").textContent = ringkasan;
+      e.querySelector("ul").innerHTML = beda.perubahan
+        .slice(0, 40)
+        .map((x) => {
+          const kata = x.jenis === "diubah" ? "diubah" : x.jenis === "tambah" ? "ditambah" : "dihapus";
+          const isi = x.jenis === "diubah" ? `"${esc(potong(x.lama, 90))}" → "${esc(potong(x.baru, 90))}"` : `"${esc(potong(x.jenis === "tambah" ? x.baru : x.lama, 140))}"`;
+          return `<li><b>${kata}</b> ${isi}</li>`;
+        })
+        .join("") + (beda.perubahan.length > 40 ? `<li>…dan ${beda.perubahan.length - 40} bagian lain</li>` : "");
+      e.querySelector("summary").title = rek.dicetakOleh ? `Dicetak oleh ${rek.dicetakOleh}` : "";
+    } catch {
+      /* keterangan hanya tambahan: cetak tidak terpengaruh */
+    }
+  }
+  /** Sesudah cetak berhasil: ringkasan naskah yang dicetak menggantikan cetakan terakhir (di server dan di singgahan). Tidak pernah melempar. */
+  function catatCetakTerakhir(rtf) {
+    try {
+      const m = globalThis.aletaBedaCetak;
+      if (!m || tes() || !S.pk || !S.blangko || S.blangko.khusus || !rtf) return;
+      const kunci = bedaKunci();
+      const berkas = S.blangko.berkas;
+      const id = perkaraId();
+      void m.simpan({ perkaraId: id, nomorPerkara: nomorPerkara(), berkas, teks: teksNaskahBeda(rtf) }).then((r) => {
+        if (r) bedaCache.set(kunci, r);
+        if (bedaKunci() === kunci) perbaruiBedaCetak();
+      });
+    } catch {
+      /* ringkasan tidak tersimpan: keterangan berikutnya tidak tampil */
+    }
   }
   function catatLog(teks) {
     S.log.push(`${jamSekarang()}: ${teks}`);
@@ -8204,6 +8393,7 @@
       S.cetakTercatat[`${nomor}|${j}`] = jamSekarang();
       void tulisPenyimpanan({ [`${K_CETAK}:${nomor}|${j}`]: jamSekarang() });
       laporCetakWajib();
+      catatCetakTerakhir(rtfBuf);
     }
     for (const h of hasil) catatLog(h);
     toast(hasil.join(" · "));
@@ -8317,6 +8507,8 @@
       if (b.jenis !== "teks" || (b.opsi && b.opsi.length) || String(S.isi[b.kode] || "").trim() || S.diketik.has(b.kode)) continue;
       // Tanggal akta nikah pada bukti belum tentu tanggal nikah: hanya saran samar (Tab), tidak ikut pengisian massal.
       if (S.saranSipp[b.kode] && S.saranSipp[b.kode].asal === "bukti akta nikah" && !(S.saranH7 && S.saranH7[b.kode])) continue;
+      // 30 Okt: kalimat dari pustaka pribadi hanya SARAN (Tab); pengisian otomatis/massal tidak menuliskannya sendiri.
+      if (S.saranSipp[b.kode] && S.saranSipp[b.kode].asal === "pustaka kalimat" && !(S.saranH7 && S.saranH7[b.kode])) continue;
       // F4.2: usulan draf H-7 yang BELUM pasti tidak ikut diisi sekaligus - dipakai satu per satu (Tab) sesudah diperiksa.
       const m = mesinIsi();
       const mentahH7 = S.saranH7 && S.saranH7[b.kode] && S.saranH7[b.kode].golongan !== "pasti" ? S.saran[b.kode] || "" : "";
@@ -8405,7 +8597,7 @@
     if (kode === "isisipp") return void isiSemuaOtomatis();
     if (kode === "inputyakin") return void masukkanCalon(calonInput().yakin);
     if (kode === "inputpasti") return void masukkanCalon(calonInput().pasti);
-    if (kode && kode.startsWith("ket") && aksi.getAttribute("data-ket")) return void aksiKet(aksi.getAttribute("data-ket"), kode, Number(aksi.getAttribute("data-idx")));
+    if (kode && kode.startsWith("ket") && aksi.getAttribute("data-ket")) return void aksiKet(aksi.getAttribute("data-ket"), kode, Number(aksi.getAttribute("data-idx")), aksi.getAttribute("data-id") || "");
     if (kode === "pakaisaran") return pakaiSemuaSaran();
     if (kode === "ktpbukti") return void ambilTanggalKtp();
     if (kode === "takberlaku") {
@@ -9255,6 +9447,7 @@
       if (e.key === "Tab" && !e.shiftKey && !t.value && sr && cfg().saran && t.type !== "date") {
         e.preventDefault();
         t.value = sr;
+        pustakaDiterima(k, sr);
         jadwalkanSimpan(k, sr, true);
         const f = cari(`.bd-f[data-f="${k}"]`, wadah.isian);
         if (f) f.classList.add("beres");
@@ -9368,6 +9561,7 @@
       if (m) m.hidden = true;
     }
     S.blangko = null;
+    PUS.kode = "";
     pulihCatat({ blangko: null, draf: null, gulir: 0, langkah: "" });
     S.susunan = null;
     S.galatSusunan = "";
@@ -9689,6 +9883,7 @@
         S.cetakTercatat[`${nomor}|${S.blangko.jenis}`] = jam;
         void tulisPenyimpanan({ [`${K_CETAK}:${nomor}|${S.blangko.jenis}`]: jam });
         laporCetakWajib();
+        catatCetakTerakhir(rtf);
       }
       return hasil;
     }

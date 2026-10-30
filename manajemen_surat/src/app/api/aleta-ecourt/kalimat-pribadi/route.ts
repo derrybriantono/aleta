@@ -19,6 +19,7 @@ export const dynamic = "force-dynamic";
  * ============================================================================
  *
  *   GET ?jenis=&status=&kode=      kalimat yang berlaku untuk konteks itu (milik sendiri + dibagikan kepada golongan akun), urut kecocokan
+ *   GET ?...&semuaKode=1           (ekstensi) kalimat untuk isian mana pun pada jenis perkara + status itu
  *   GET ?milik=1                   semua kalimat milik akun ini (mengelola)
  *   POST {aksi:"simpan", id?, jenisPerkara, status, kode, judul, teks, dibagikan:[golongan]}
  *   POST {aksi:"pakai", id}        mencatat satu pemakaian (dasar urutan "paling sering dipakai")
@@ -38,6 +39,7 @@ export async function GET(request: NextRequest) {
       jenisPerkara: String(getSearchParam(request, "jenis") ?? ""),
       status: String(getSearchParam(request, "status") ?? ""),
       kode: String(getSearchParam(request, "kode") ?? ""),
+      semuaKode: getSearchParam(request, "semuaKode") === "1",
     });
     return ok({ kalimat, golonganBagi: GOLONGAN_BAGI });
   } catch (error) {
