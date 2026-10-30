@@ -1136,7 +1136,7 @@
         "Lencana isian (Terisi a dari t, Isian lengkap): diukur otomatis; klik lencana untuk langsung membuka isian yang masih kosong.",
         "Lencana dokumen: Belum diunggah ke SIPP, Sudah dicetak, Sudah ada di SIPP, Belum waktunya (sidang belum tiba), Sudah minutasi.",
         "Klik perkara untuk memilihnya. Klik dua kali nomor perkara (atau tombol Ganti perkara) untuk kembali ke daftar. Pilihan Sidang menentukan sidang yang dipakai blangko.",
-        "Cetak massal: banyak perkara sekaligus menurut peran - Hakim putusan, Panitera Pengganti BAS, Juru sita relaas, PTSP penetapan awal.",
+        "Cetak massal: banyak perkara sekaligus menurut peran - Hakim putusan, Panitera Pengganti BAS, Juru sita relaas, PTSP penetapan awal dan sampul berkas perkara baru.",
       ],
     },
     "tampilan-daftar": {
@@ -2421,6 +2421,7 @@
 
   const ALAT = {
     hakim: [
+      ["massal:put", "Draf putusan sidang hari ini"],
       ["putusanOto", "Putusan otomatis"],
       ["gugatan", "Isi dari gugatan (posita)"],
       ["saksi", "Set pertanyaan saksi"],
@@ -2451,6 +2452,8 @@
       ["kasir:otomatis", "Kasir otomatis (jurnal)"],
     ],
     ptsp: [
+      ["massal:sampul", "Sampul berkas perkara baru"],
+      ["massal:ptsp", "Penetapan awal perkara baru"],
       ["ptsp:dataumum", "Data Umum dari gugatan"],
       ["ptsp:ktp", "Isi data saksi dari foto KTP"],
     ],
@@ -2489,7 +2492,7 @@
    * sudah mengerjakannya (PP = BAS, juru sita = relaas) - kini membuka Cetak massal jenis itu. Alat yang ada di panel ALETA halaman
    * SIPP (kasir, PTSP) menyebut tempatnya, bukan "tahap berikutnya".
    */
-  const ALAT_MASSAL = { "massal:bas": "bas", "massal:rel": "rel" };
+  const ALAT_MASSAL = { "massal:put": "put", "massal:bas": "bas", "massal:rel": "rel", "massal:ptsp": "ptsp", "massal:sampul": "sampul" };
   const ALAT_DI_SIPP = {
     "kasir:rekap": "Rekap kasir ada di panel ALETA halaman daftar perkara SIPP (bagian Kasir).",
     "kasir:otomatis": "Kasir otomatis ada di panel ALETA halaman daftar perkara SIPP (bagian Kasir).",
@@ -2498,7 +2501,7 @@
   };
   const alatTersedia = (id) => S.alatDaftar.has(id) || (Object.prototype.hasOwnProperty.call(ALAT_MASSAL, id) && typeof S.massal === "function");
   /** Alat yang menulis ke ABT/SIPP/e-Court atau mencatat kemajuan perkara: mati pada mode Tes putusan. */
-  const ALAT_MENULIS = new Set(["unggah", "massal:unggah", "massal:bas", "massal:rel", "konseptor", "kasir:otomatis", "ptsp:dataumum", "ptsp:ktp"]);
+  const ALAT_MENULIS = new Set(["unggah", "massal:unggah", "massal:put", "massal:bas", "massal:rel", "massal:ptsp", "massal:sampul", "konseptor", "kasir:otomatis", "ptsp:dataumum", "ptsp:ktp"]);
   function jalankanAlat(id) {
     tutupFloat();
     if (tesAktif() && ALAT_MENULIS.has(id)) return toast("Alat ini menulis atau mencatat; dimatikan pada mode Tes putusan.");

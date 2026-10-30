@@ -9627,6 +9627,7 @@
       unduh,
       namaUnduhan,
       ambilPortal,
+      hostBerkas,
       tanpaRtf,
       namaTampil,
     };

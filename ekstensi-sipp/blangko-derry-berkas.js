@@ -820,14 +820,20 @@
   // Bundel satu PDF (5.1): sampul + daftar isi + dokumen perkara (BAS, putusan, relaas, bukti dari SIPP dan arsip e-Court) digabung dan
   // diberi nomor halaman sesuai daftar isi. Disusun portal; tidak ada yang ditulis ke SIPP maupun ABT dan tidak ada yang disimpan.
   // ---------------------------------------------------------------------------
+  const blobKeBita = async (blob) => {
+    const buf =
+      typeof blob.arrayBuffer === "function"
+        ? await blob.arrayBuffer()
+        : await new Promise((ok, gagal) => {
+            const fr = new FileReader();
+            fr.onload = () => ok(fr.result);
+            fr.onerror = () => gagal(fr.error);
+            fr.readAsArrayBuffer(blob);
+          });
+    return new Uint8Array(buf);
+  };
   const keBase64 = async (blob) => {
-    const buf = typeof blob.arrayBuffer === "function" ? await blob.arrayBuffer() : await new Promise((ok, gagal) => {
-      const fr = new FileReader();
-      fr.onload = () => ok(fr.result);
-      fr.onerror = () => gagal(fr.error);
-      fr.readAsArrayBuffer(blob);
-    });
-    const bita = new Uint8Array(buf);
+    const bita = await blobKeBita(blob);
     let t = "";
     for (let i = 0; i < bita.length; i += 0x8000) t += String.fromCharCode.apply(null, bita.subarray(i, i + 0x8000));
     return btoa(t);
@@ -1465,6 +1471,49 @@
     ST.kertas = await bacaKertas();
     await muat(false);
   }
+  /**
+   * Cetak massal PTSP (5.3): sampul satu perkara TANPA layar, memakai bahan, sunting tersimpan, dan mesin naskah yang sama dengan layar
+   * Sampul. Hasil { rtf, pdf?, namaRtf, namaPdf, keadaan } sama bentuknya dengan hasil cetak blangko biasa supaya Cetak massal merakitnya
+   * sama. Menolak bila layar Sampul/Daftar Isi sedang terbuka (keadaannya satu) agar tidak saling menimpa. Tidak menulis apa pun.
+   */
+  async function cetakSampulTanpaLayar(host, info, opsi) {
+    if (ST && W && W.isConnected) throw new Error("Tutup layar Sampul/Daftar Isi yang sedang terbuka, lalu ulangi.");
+    const o = opsi || {};
+    const dulu = { ST, W, H };
+    H = host;
+    W = null;
+    ST = barukan("sampul");
+    ST.jenisBlangko = "sampul";
+    ST.bentuk = info && info.bentuk === "lengkap" ? "lengkap" : "awal";
+    ST.perkaraId = String((info && info.perkaraId) || "");
+    ST.nomor = String((info && info.nomor) || "");
+    try {
+      if (!/^\d{1,12}$/.test(ST.perkaraId)) throw new Error("Perkara tidak sah.");
+      ST.kertas = await bacaKertas();
+      const d = await H.ambilPortal(`${API}?perkaraId=${encodeURIComponent(ST.perkaraId)}`, { method: "GET", batasMs: 90000 }, "Membaca bahan sampul");
+      ST.fakta = d.fakta;
+      ST.bawaan = d.bawaan || {};
+      terapkanSunting(d.sunting);
+      selaraskanUrutan();
+      const n = await ambilNaskah("sampul");
+      const nomorTanpa = ST.nomor;
+      const hasil = {
+        rtf: Uint8Array.from(n.rtf, (c) => c.charCodeAt(0)),
+        pdf: null,
+        namaRtf: H.namaUnduhan(nomorTanpa, "Sampul Berkas Perkara.rtf", "rtf"),
+        namaPdf: H.namaUnduhan(nomorTanpa, "Sampul Berkas Perkara.rtf", "pdf"),
+        keadaan: { penandaSisa: (n.kosong || []).length, lampiran: (n.lampiran || []).length },
+      };
+      if (o.pdf) hasil.pdf = await blobKeBita((await H.pdfDari(n.rtf, false)).blob);
+      return hasil;
+    } finally {
+      clearTimeout(jamSimpan);
+      clearTimeout(jamPratinjau);
+      ST = dulu.ST;
+      W = dulu.W;
+      H = dulu.H;
+    }
+  }
   function tutup() {
     clearTimeout(jamSimpan);
     clearTimeout(jamPratinjau);
@@ -1478,6 +1527,7 @@
     bentukDari,
     buka,
     tutup,
+    cetakSampulTanpaLayar,
     // dipakai uji
     _bundel: { barisBundel, bundelSatuPdf },
     _murni: { definisiAlasan, ciriSampulAwal, daftarSusulan, rangkaiSusulan, pihakBanyak, perluLampiran, KUNCI_SUSULAN, uraiHalaman, hitungDaftarIsi, susunUrutan, rangkaiCiri, teksRentang, tanggalIndonesia, halamanPdf, BAWAAN_HALAMAN, CIRI },
