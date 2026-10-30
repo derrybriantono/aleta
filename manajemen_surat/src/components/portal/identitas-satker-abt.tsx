@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { HukumAcaraSatker, type KeadaanHukumAcara } from "@/components/portal/hukum-acara-satker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,6 +37,7 @@ type DataSatker = {
   sipp: { kodePN: string; namaPN: string; namaPT: string; alamatPN: string; zonaWaktu: string } | null;
   abt: Array<{ noVar: string; ada: boolean; nama: string; nilai: string; bentukSatker: boolean }>;
   rencana: ButirRencana[];
+  hukumAcara?: KeadaanHukumAcara | null;
   galatAbt: string;
 };
 type GambarBlangko = {
@@ -387,6 +389,15 @@ export function BagianIdentitasSatker({ hak, riwayat }: { hak: HakPengaturanAbt;
           </details>
         </CardContent>
       </Card>
+
+      <HukumAcaraSatker
+        keadaan={data.hukumAcara ?? null}
+        bolehUbah={hak.ubahKueri}
+        sesudah={() => {
+          void muat();
+          setSegarkan((x) => x + 1);
+        }}
+      />
 
       <LogoKopBlangko boleh={boleh} adaLogo={data.logo.ada} sesudahPakai={() => void muat()} />
 

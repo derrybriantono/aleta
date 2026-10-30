@@ -5,6 +5,10 @@ import {
   IDENTITAS_KOSONG,
   KOLOM_IDENTITAS,
   LOGO_MAKS_BYTE,
+  NO_VAR_HUKUM_ACARA,
+  hukumAcaraDariProvinsi,
+  kueriHukumAcara,
+  pilihanHukumAcara,
   LOGO_SISI_MAKS,
   NO_VAR_KODE_SURAT,
   VARIABEL_SATKER,
@@ -301,6 +305,29 @@ export function saranIdentitas(abt: KeadaanSatkerBot): IdentitasSatker {
   };
 }
 
+/**
+ * Keadaan hukum acara (#11850#, G6 6.1) dari bacaan ABT: nilai yang dihasilkan sekarang, pilihan tersimpan
+ * (otomatis/RBg/HIR), provinsi satker (#9276#) dan hasil otomatisnya. Murni - diuji.
+ */
+export function keadaanHukumAcara(abt: KeadaanSatkerBot) {
+  const v = abt.variabel.find((x) => x.noVar === NO_VAR_HUKUM_ACARA);
+  const provinsi = abt.variabel.find((x) => x.noVar === "9276")?.nilai ?? "";
+  const otomatis = hukumAcaraDariProvinsi(provinsi);
+  if (!v || !v.ada) {
+    return { ada: false, nilai: "", pilihan: "otomatis" as const, provinsi, otomatis, bisa: false, sebab: `#${NO_VAR_HUKUM_ACARA}# belum ada di ABT - paket hir-rbg-30okt belum terpasang.` };
+  }
+  const bentuk = bentukSatker(v.sql_query) && !v.dikunci;
+  return {
+    ada: true,
+    nilai: v.nilai,
+    pilihan: bentuk ? pilihanHukumAcara(v.sql_query, abt.sipp.kodePN) : ("otomatis" as const),
+    provinsi,
+    otomatis,
+    bisa: bentuk && Boolean(abt.sipp.kodePN),
+    sebab: bentuk ? "" : `Kueri #${NO_VAR_HUKUM_ACARA}# bukan bentuk isian satker - ubah lewat Isian blangko.`,
+  };
+}
+
 export async function bacaSatker(db: AletaDatabase) {
   const aleta = await bacaIdentitasAleta(db);
   let abt: KeadaanSatkerBot | null = null;
@@ -318,6 +345,7 @@ export async function bacaSatker(db: AletaDatabase) {
     sipp: abt?.sipp ?? null,
     abt: abt ? abt.variabel.map((v) => ({ noVar: v.noVar, ada: v.ada, nama: v.nama, nilai: v.nilai, bentukSatker: v.bentukSatker })) : [],
     rencana: abt && aleta.tersimpan ? susunRencana(aleta.identitas, abt) : [],
+    hukumAcara: abt ? keadaanHukumAcara(abt) : null,
     galatAbt,
   };
 }
@@ -378,6 +406,35 @@ export async function terapkanKeAbt(db: AletaDatabase, aktor: AktorPengaturan, i
     }
   }
   return { hasil };
+}
+
+/**
+ * Super Admin menetapkan hukum acara satker ini di ABT (#11850#): "otomatis" (dari provinsi satker),
+ * "RBg", atau "HIR". Satu suntingan tercatat (nilai lama, dapat Kembalikan). Blangko yang memakai
+ * variabel padanan pasal langsung mengikuti.
+ */
+export async function terapkanHukumAcara(db: AletaDatabase, aktor: AktorPengaturan, ip: string, badan: Record<string, unknown>) {
+  if (!hakPengaturanAbt(aktor.roleId).ubahKueri) throw new ApiError(403, "Hanya Super Admin yang dapat mengubah hukum acara satker.");
+  const pilihan = String(badan.pilihan ?? "").trim();
+  const abt = await bot<KeadaanSatkerBot>("/satker", { timeoutMs: 45000 });
+  const k = keadaanHukumAcara(abt);
+  if (!k.bisa) throw new ApiError(409, k.sebab || "Hukum acara tidak dapat diubah dari sini.");
+  const v = abt.variabel.find((x) => x.noVar === NO_VAR_HUKUM_ACARA)!;
+  let baru: string;
+  try {
+    baru = kueriHukumAcara(v.sql_query, abt.sipp.kodePN, pilihan);
+  } catch (e) {
+    throw galatIdentitas(e);
+  }
+  if (baru === v.sql_query) return { ok: true, dilewati: true, pesan: "Sudah sama - tidak diubah." };
+  const label = pilihan === "otomatis" ? `otomatis dari provinsi (${k.otomatis})` : pilihan;
+  const h = await simpanKueriSatker(db, aktor, ip, {
+    noVar: NO_VAR_HUKUM_ACARA,
+    lama: v.sql_query,
+    baru,
+    ringkas: `identitas satker: hukum acara ${label} (#${NO_VAR_HUKUM_ACARA}#, ${abt.sipp.kodePN})`.slice(0, 480),
+  });
+  return { ok: true, dilewati: false, pesan: "Tersimpan di ABT.", suntinganId: h.suntinganId };
 }
 
 // ---------------------------------------------------------------------------

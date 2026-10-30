@@ -6,6 +6,7 @@ import {
   Database,
   DatabaseBackup,
   Eye,
+  FileText,
   Globe,
   HardDrive,
   Landmark,
@@ -420,6 +421,13 @@ export function AdminHub() {
               description="Seberapa penuh ruang server (data aplikasi, database, arsip, cadangan), batas peringatan, pembersihan otomatis sisa pembuatan pembaruan, dan cara pindah ke partisi yang besar."
               icon={<HardDrive className="h-5 w-5 text-sky-600" />}
               badge="Ruang"
+            />
+            <AdminMenuAction
+              href="/admin/statistik-blangko"
+              title="Statistik pemakaian blangko"
+              description="Blangko yang paling sering dan yang tidak pernah dicetak per folder dan per jenis perkara, serta varian yang hampir sama sebagai kandidat arsip. Hanya informasi."
+              icon={<FileText className="h-5 w-5 text-sky-600" />}
+              badge="Blangko"
             />
             <AdminMenuAction
               href="/admin/pusat-kesehatan"

@@ -27,6 +27,7 @@ import {
   paketLogoKop,
   pindaiLogo,
   simpanIdentitas,
+  terapkanHukumAcara,
   terapkanKeAbt,
 } from "@/server/modules/pengaturan-abt/identitas-satker";
 import { bacaLayarNomorSk, simpanNomorSk, terapkanNomorSkKeAbt } from "@/server/modules/pengaturan-abt/nomor-sk";
@@ -63,6 +64,7 @@ export const dynamic = "force-dynamic";
  *   POST {tindakan: "kembalikan", id}
  *   POST {tindakan: "simpan-satker", identitas:{...}, logoBase64?, hapusLogo?}   hanya ALETA
  *   POST {tindakan: "terapkan-satker", kunci:[alamat|telepon|laman|surel|kodeSurat]}  ke ABT, tercatat
+ *   POST {tindakan: "terapkan-hukum-acara", pilihan: otomatis|RBg|HIR}  #11850# di ABT, Super Admin saja, tercatat (30 Okt)
  *   POST {tindakan: "logo-dari-blangko", md5}
  *   POST {tindakan: "simpan-nomor-sk", nilai:{majelis:{nomor, tanggal}}}   hanya ALETA
  *   POST {tindakan: "terapkan-nomor-sk", kunci?:["majelis"]}   ke ABT (#9550#), tercatat jenis nomor_sk
@@ -168,6 +170,8 @@ export async function POST(request: NextRequest) {
         return ok(await simpanIdentitas(db, a.aktor, badan));
       case "terapkan-satker":
         return ok(await terapkanKeAbt(db, a.aktor, ip, badan));
+      case "terapkan-hukum-acara":
+        return ok(await terapkanHukumAcara(db, a.aktor, ip, badan));
       case "simpan-nomor-sk":
         return ok(await simpanNomorSk(db, a.aktor, badan));
       case "terapkan-nomor-sk":

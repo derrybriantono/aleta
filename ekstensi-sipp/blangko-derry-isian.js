@@ -3434,8 +3434,19 @@
       /* laporan tertinggal */
     }
   }
+  /** G6 6.4 (30 Okt): satu catatan per cetakan untuk Statistik pemakaian blangko (statistik-cetak.js; tanpa isi naskah). */
+  function laporStatistikCetak() {
+    try {
+      const st = typeof globalThis !== "undefined" && globalThis.AletaStatistikCetak;
+      if (!st || typeof st.laporCetak !== "function" || tes() || !S.pk || !S.blangko) return;
+      void st.laporCetak({ perkaraId: String(S.pk.perkaraId || ""), nomorPerkara: nomorPerkara(), kelompok: S.blangko.folder || S.blangko.kelompok || "", berkas: S.blangko.berkas, jenisBlangko: S.blangko.jenis || "", jenisPerkara: String(S.pk.jenisPerkara || "") });
+    } catch {
+      /* statistik tertinggal; cetak tidak terganggu */
+    }
+  }
   /** Keadaan kelengkapan SAAT blangko dicetak (bahan belajar "isian yang biasanya terisi"). */
   function laporCetakWajib() {
+    laporStatistikCetak();
     try {
       const j = JI();
       if (!j || typeof j.laporWajib !== "function" || tes()) return;

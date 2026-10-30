@@ -26,6 +26,9 @@
  *   GET  /logo/pindai           gambar di blangko Derry per isi (md5) + tebakan logo - baca saja
  *   GET  /logo/gambar?md5=      bita satu gambar PNG/JPG (pratinjau)
  *   POST /logo/paket            {md5:[...], logoBase64, oleh} - paket ganti logo ke folder runtime
+ *
+ *   30 Okt 2026 - statistik pemakaian blangko (G6 6.4):
+ *   GET  /blangko-katalog[?segarkan=1]  blangko Derry aktif + pasangan mirip satu folder (baca saja)
  *                               (blangko TIDAK ditulis; dipasang petugas server)
  */
 
@@ -34,6 +37,7 @@ const express = require("express");
 
 const { readRuntimeConfig } = require("../config/runtime-config");
 const { layanan, kalimatAwam } = require("../services/abtPengaturanService");
+const { buatKatalog } = require("../services/katalogBlangkoDerry");
 const penjagaTandaSipp = require("../services/penjagaTandaSipp");
 
 const router = express.Router();
@@ -136,6 +140,14 @@ router.get("/logo/gambar", async (req, res) => {
   }
 });
 router.post("/logo/paket", bungkus((req) => layanan().paketLogo(req.body || {})));
+let katalogBlangko = null;
+router.get(
+  "/blangko-katalog",
+  bungkus((req) => {
+    if (!katalogBlangko) katalogBlangko = buatKatalog();
+    return katalogBlangko.katalog({ segarkan: String(req.query.segarkan || "") === "1" });
+  })
+);
 
 module.exports = router;
 module.exports.pagarTanda = pagarTanda;

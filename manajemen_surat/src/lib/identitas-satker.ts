@@ -54,6 +54,50 @@ export const VARIABEL_SATKER: Record<"alamat" | "telepon" | "laman" | "surel", s
 };
 export const NO_VAR_KODE_SURAT = "1154";
 
+// ---------------------------------------------------------------------------
+// Hukum acara perdata per wilayah satker (30 Okt 2026, G6 butir 6.1)
+// ---------------------------------------------------------------------------
+//
+// Satker di luar Jawa dan Madura memakai RBg (Rechtsreglement Buitengewesten,
+// S. 1927-227); satker di Jawa dan Madura memakai HIR (Herzien Inlandsch
+// Reglement, S. 1941-44). Variabel ABT #11850# (paket hir-rbg-30okt) berbentuk
+// isian satker per KodePN:
+//   SELECT CASE (SELECT TRIM(value) FROM sys_config WHERE name = 'KodePN' LIMIT 1)
+//     WHEN '' THEN 'RBg' ELSE IF(<provinsi #9276# di Jawa/Madura>, 'HIR', 'RBg') END AS data
+// Tanpa cabang satker = OTOMATIS dari provinsi satker; cabang WHEN '<KodePN>'
+// THEN 'RBg'|'HIR' = ditetapkan Super Admin. Variabel padanan pasal
+// (#11851#-#11899#) membaca #11850#. Isiannya disimpan di ABT (satu sumber),
+// bukan di ALETA - tidak ada migrasi.
+
+export const NO_VAR_HUKUM_ACARA = "11850";
+export const HUKUM_ACARA = ["RBg", "HIR"] as const;
+export type HukumAcara = (typeof HUKUM_ACARA)[number];
+export type PilihanHukumAcara = "otomatis" | HukumAcara;
+
+/** Kata provinsi yang termasuk Jawa dan Madura - SAMA dengan kueri #11850# (DKI Jakarta, Jawa Barat/Tengah/Timur, DI Yogyakarta, Banten). */
+export const KATA_PROVINSI_JAWA_MADURA = ["jawa", "jakarta", "yogyakarta", "banten", "madura"] as const;
+
+/** Hukum acara otomatis dari nama provinsi satker (kosong/tidak dikenal = RBg, seperti kueri). */
+export function hukumAcaraDariProvinsi(provinsi: string): HukumAcara {
+  const p = String(provinsi ?? "").toLowerCase();
+  return KATA_PROVINSI_JAWA_MADURA.some((k) => p.includes(k)) ? "HIR" : "RBg";
+}
+
+/** Pilihan yang tersimpan di kueri #11850# untuk satker `kode`: cabang satker = ditetapkan; tanpa cabang = otomatis. */
+export function pilihanHukumAcara(sql: string, kode: string): PilihanHukumAcara {
+  const c = isiCabangSatker(sql, kode);
+  if (!c.ada) return "otomatis";
+  return (HUKUM_ACARA as readonly string[]).includes(c.nilai) ? (c.nilai as HukumAcara) : "otomatis";
+}
+
+/** Kueri #11850# baru untuk pilihan Super Admin ("otomatis" = cabang satker dibuang). */
+export function kueriHukumAcara(sql: string, kode: string, pilihan: string): string {
+  if (pilihan !== "otomatis" && !(HUKUM_ACARA as readonly string[]).includes(pilihan)) {
+    throw new GalatIdentitasSatker("Hukum acara harus Otomatis, RBg, atau HIR.");
+  }
+  return gantiCabangSatker(sql, kode, pilihan === "otomatis" ? "" : pilihan);
+}
+
 export class GalatIdentitasSatker extends Error {}
 
 const CP1252_TAMBAHAN = new Set("€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ");

@@ -1,0 +1,210 @@
+6.3 variabel data_sql Derry yang KOSONG di semua 35 sampel yang dirender (Asal Usul Anak alur 16 150/Pdt.P/2026/PA.Dgl Asal usul; Asal Usul Anak alur 16 221/Pdt.P/2026/PA.Dgl Asal usul; Cerai Gugat 550/Pdt.G/2026/PA.Dgl panitera berganti; Cerai Gugat alur 15 495/Pdt.G/2026/PA.Dgl CG putus kuasa; Cerai Gugat alur 15 535/Pdt.G/2026/PA.Dgl CG putus kuasa; Cerai Gugat alur 15 628/Pdt.G/2026/PA.Dgl CG putus verstek ecourt; Cerai Gugat alur 15 629/Pdt.G/2026/PA.Dgl CG putus verstek ecourt; Cerai Gugat alur 15 630/Pdt.G/2026/PA.Dgl CG putus verstek ecourt; Cerai Gugat alur 15 694/Pdt.G/2026/PA.Dgl CG belum putus; Cerai Gugat alur 15 695/Pdt.G/2026/PA.Dgl CG belum putus; Cerai Talak 537/Pdt.G/2026/PA.Dgl hakim berganti; Cerai Talak 537/Pdt.G/2026/PA.Dgl panitera berganti; Cerai Talak 548/Pdt.G/2026/PA.Dgl hakim berganti; Cerai Talak alur 15 533/Pdt.G/2026/PA.Dgl CT kuasa; Cerai Talak alur 15 597/Pdt.G/2026/PA.Dgl CT putus; Cerai Talak alur 15 608/Pdt.G/2026/PA.Dgl CT putus; Cerai Talak alur 15 692/Pdt.G/2026/PA.Dgl CT belum putus; Dispensasi Kawin alur 16 217/Pdt.P/2026/PA.Dgl DK; Dispensasi Kawin alur 16 223/Pdt.P/2026/PA.Dgl DK; Dispensasi Kawin alur 16 231/Pdt.P/2026/PA.Dgl DK; Ekonomi Syariah alur 17 2/Pdt.G.S/2025/PA.Dgl ES; Harta Bersama alur 15 175/Pdt.G/2026/PA.Dgl HB; Harta Bersama alur 15 296/Pdt.G/2026/PA.Dgl HB; Harta Bersama alur 15 506/Pdt.G/2026/PA.Dgl HB; Izin Poligami alur 15 376/Pdt.G/2025/PA.Dgl Poligami; Kewarisan 273/Pdt.G/2026/PA.Dgl pihak T >= 6; Kewarisan 490/Pdt.G/2026/PA.Dgl pihak P >= 5; Kewarisan 490/Pdt.G/2026/PA.Dgl pihak T >= 6; Kewarisan 656/Pdt.G/2026/PA.Dgl pihak P >= 5; Kewarisan alur 15 142/Pdt.G/2026/PA.Dgl Waris; Kewarisan alur 15 635/Pdt.G/2025/PA.Dgl Waris; Kewarisan alur 15 656/Pdt.G/2026/PA.Dgl Waris; Lain-Lain alur 16 152/Pdt.P/2025/PA.Dgl Lain; P3HP/Penetapan Ahli Waris alur 16 229/Pdt.P/2026/PA.Dgl P3HP; Pengesahan Perkawinan/Istbat Nikah alur 16 225/Pdt.P/2026/PA.Dgl Itsbat)
+Golongan dari nama + kueri = KEPUTUSAN SEMENTARA (tidak ada variabel yang dihapus atau diubah).
+
+== perlu-ditinjau: 6
+7081 | 173 blangko | PENANDA OTOMATIS AGENDA SIDANG TUNDAAN SELANJUTNYA (OTOMATIS) | 1 Perceraian CG - BAS, 10a Ekonomi Syariah Biasa - BAS, 1a Perceraian CT - BAS
+1252 | 104 blangko | Hbgn. Saksi2 T dg. Pihak | 1 Perceraian CG, 10a Ekonomi Syariah Biasa, 1a Perceraian CT
+7078 | 7 blangko | KEDUDUKAN PIHAK DI RELAAS #0046# | 98 Relaas
+7153 | 7 blangko | IDENTITAS NAMA DI TTD RELAAS #0046# | 98 Relaas
+7005 | 6 blangko | IDENTITAS NAMA DI TTD RELAAS #0047# | 98 Relaas
+7110 | 6 blangko | KEDUDUKAN PIHAK DI RELAAS #0047# | 98 Relaas
+
+== isian-petugas: 7
+3411 | 8 blangko | AMAR AKIBAT CERAI LAIN PADA VARIAN MUT'AH IDDAH (OTOMATIS: hak asuh, nafkah anak, harta bersama, menolak seleb | 1a Perceraian CT
+3726 | 5 blangko | KELALAIAN KEWAJIBAN: PERTIMBANGAN DALIL TERGUGAT TIDAK TERBUKTI (OTOMATIS: isian 3699; untuk putusan yang meng | 1e Kelalaian Kewajiban Suami Istri
+4823 | 4 blangko | KEWARISAN: PERTIMBANGAN HARTA BERSAMA PEWARIS DAN UTANG ATAU WASIAT (OTOMATIS dari isian 4818 dan 4819; Pasal  | 4b Kewarisan
+3727 | 2 blangko | KELALAIAN KEWAJIBAN: PERTIMBANGAN DALIL TERGUGAT TERBUKTI (OTOMATIS: isian 3699; untuk putusan yang menolak) | 1e Kelalaian Kewajiban Suami Istri
+3413 | 1 blangko | AMAR AKIBAT CERAI LAIN PADA CT EX OFFICIO MUT'AH IDDAH NAFKAH ANAK (OTOMATIS: hak asuh, madliyah, harta bersam | 1a Perceraian CT
+9257 | 1 blangko | KESIMPULAN #0046# PARAGRAF SENDIRI (OTOMATIS dari isian Kesimpulan #0046#, butir berinden gantung; RTF) | 1a Perceraian CT
+9258 | 1 blangko | KESIMPULAN #0047# PARAGRAF SENDIRI (OTOMATIS dari isian Kesimpulan #0047#, butir berinden gantung; RTF) | 1a Perceraian CT
+
+== bersyarat-keadaan: 144
+5078 | 634 blangko | No. NIK #0047# II | 1 Perceraian CG, 1 Perceraian CG - BAS, 10 Ekonomi Syariah
+5079 | 634 blangko | Tempat Lahir #0047# II | 1 Perceraian CG, 1 Perceraian CG - BAS, 10 Ekonomi Syariah
+5080 | 634 blangko | Tgl. Lahir #0047# II | 1 Perceraian CG, 1 Perceraian CG - BAS, 10 Ekonomi Syariah
+5083 | 634 blangko | No. NIK #0047# III | 1 Perceraian CG, 1 Perceraian CG - BAS, 10 Ekonomi Syariah
+5084 | 634 blangko | Tempat Lahir #0047# III | 1 Perceraian CG, 1 Perceraian CG - BAS, 10 Ekonomi Syariah
+5085 | 634 blangko | Tgl. Lahir #0047# III | 1 Perceraian CG, 1 Perceraian CG - BAS, 10 Ekonomi Syariah
+5086 | 634 blangko | Agama #0047# III | 1 Perceraian CG, 1 Perceraian CG - BAS, 10 Ekonomi Syariah
+5087 | 634 blangko | Pendidikan #0047# III | 1 Perceraian CG, 1 Perceraian CG - BAS, 10 Ekonomi Syariah
+5088 | 634 blangko | Pekerjaan #0047# III | 1 Perceraian CG, 1 Perceraian CG - BAS, 10 Ekonomi Syariah
+5091 | 634 blangko | No. NIK #0047# IV | 1 Perceraian CG, 1 Perceraian CG - BAS, 10 Ekonomi Syariah
+5092 | 634 blangko | Tempat Lahir #0047# IV | 1 Perceraian CG, 1 Perceraian CG - BAS, 10 Ekonomi Syariah
+5093 | 634 blangko | Tgl. Lahir #0047# IV | 1 Perceraian CG, 1 Perceraian CG - BAS, 10 Ekonomi Syariah
+5094 | 634 blangko | Agama #0047# IV | 1 Perceraian CG, 1 Perceraian CG - BAS, 10 Ekonomi Syariah
+5095 | 634 blangko | Pekerjaan #0047# IV | 1 Perceraian CG, 1 Perceraian CG - BAS, 10 Ekonomi Syariah
+5096 | 634 blangko | Pendidikan #0047# IV | 1 Perceraian CG, 1 Perceraian CG - BAS, 10 Ekonomi Syariah
+5099 | 634 blangko | No. NIK #0047# V | 1 Perceraian CG, 1 Perceraian CG - BAS, 10 Ekonomi Syariah
+5102 | 634 blangko | Tempat Lahir #0047# V | 1 Perceraian CG, 1 Perceraian CG - BAS, 10 Ekonomi Syariah
+5103 | 634 blangko | Tgl. Lahir #0047# V | 1 Perceraian CG, 1 Perceraian CG - BAS, 10 Ekonomi Syariah
+5104 | 634 blangko | Agama #0047# V | 1 Perceraian CG, 1 Perceraian CG - BAS, 10 Ekonomi Syariah
+5106 | 634 blangko | Pekerjaan #0047# V | 1 Perceraian CG, 1 Perceraian CG - BAS, 10 Ekonomi Syariah
+5107 | 634 blangko | Pendidikan #0047# V | 1 Perceraian CG, 1 Perceraian CG - BAS, 10 Ekonomi Syariah
+5403 | 626 blangko | NAMA PANITERA SIDANG YANG SEBELUMNYA (PENGGANTIAN PANITERA DISIDANG) | 1 Perceraian CG - BAS, 10 Ekonomi Syariah - BAS, 10a Ekonomi Syariah Biasa - BAS
+5405 | 626 blangko | KETERANGAN CUTI PANITERA SIDANG | 1 Perceraian CG - BAS, 10 Ekonomi Syariah - BAS, 10a Ekonomi Syariah Biasa - BAS
+3521 | 522 blangko | PIHAK: SEBUTAN PIHAK INTERVENSI UNTUK KAKI PUTUSAN (OTOMATIS dari SIPP perkara_pihak3; kosong bila tidak ada) | 1 Perceraian CG, 10a Ekonomi Syariah Biasa, 1a Perceraian CT
+7054 | 442 blangko | PHS PARA INTERVENSI OTOMATIS | 1 Perceraian CG, 10a Ekonomi Syariah Biasa, 10a Ekonomi Syariah Biasa - BAS
+8507 | 239 blangko | DUDUK PERKARA PRODEO (OTOMATIS) | 1 Perceraian CG, 10a Ekonomi Syariah Biasa, 1a Perceraian CT
+9265 | 104 blangko | KETERANGAN SAKSI 2 #0047# TANPA BARIS KOSONG (OTOMATIS: sama dengan tanya jawab keterangan saksi ABT, tanpa en | 1 Perceraian CG, 10a Ekonomi Syariah Biasa, 1a Perceraian CT
+7032 | 66 blangko | KHUSUS BAS SUMPAH AGAMA SAKSI II #8147# | 1 Perceraian CG - BAS, 10a Ekonomi Syariah Biasa - BAS, 1a Perceraian CT - BAS
+6144 | 64 blangko | Nama Saksi 4 P | 1 Perceraian CG, 1 Perceraian CG - BAS, 10a Ekonomi Syariah Biasa - BAS
+6145 | 64 blangko | Umur Saksi 4 P | 1 Perceraian CG, 1 Perceraian CG - BAS, 10a Ekonomi Syariah Biasa - BAS
+6146 | 64 blangko | Agama Saksi 4 P | 1 Perceraian CG, 1 Perceraian CG - BAS, 10a Ekonomi Syariah Biasa - BAS
+6147 | 64 blangko | Pendidikan Saksi 4 P | 1 Perceraian CG, 1 Perceraian CG - BAS, 10a Ekonomi Syariah Biasa - BAS
+6148 | 64 blangko | Alamat Saksi 4 P | 1 Perceraian CG, 1 Perceraian CG - BAS, 10a Ekonomi Syariah Biasa - BAS
+6151 | 64 blangko | Pekerjaan Saksi 4 P | 1 Perceraian CG, 1 Perceraian CG - BAS, 10a Ekonomi Syariah Biasa - BAS
+4138 | 57 blangko | AMAR AKIBAT PERCERAIAN LENGKAP (OTOMATIS: gabungan 4130 s.d. 4134; satu baris per butir, kosong bila tidak ada | 1 Perceraian CG, 1 Perceraian CG - BAS, 1a Perceraian CT
+7039 | 52 blangko | KHUSUS BAS SUMPAH AGAMA SAKSI IV #8146# | 1 Perceraian CG - BAS, 10a Ekonomi Syariah Biasa - BAS, 1a Perceraian CT - BAS
+7040 | 41 blangko | KHUSUS BAS SUMPAH AGAMA SAKSI III #8147# | 1 Perceraian CG - BAS, 10a Ekonomi Syariah Biasa - BAS, 1a Perceraian CT - BAS
+8924 | 32 blangko | Nama Saksi 5 P | 1 Perceraian CG, 1 Perceraian CG - BAS, 10a Ekonomi Syariah Biasa - BAS
+8925 | 32 blangko | Umur Saksi 5 P | 1 Perceraian CG, 1 Perceraian CG - BAS, 10a Ekonomi Syariah Biasa - BAS
+8926 | 32 blangko | Agama Saksi 5 P | 1 Perceraian CG, 1 Perceraian CG - BAS, 10a Ekonomi Syariah Biasa - BAS
+8927 | 32 blangko | Pendidikan Saksi 5 P | 1 Perceraian CG, 1 Perceraian CG - BAS, 10a Ekonomi Syariah Biasa - BAS
+8928 | 32 blangko | Pekerjaan Saksi 5 P | 1 Perceraian CG, 1 Perceraian CG - BAS, 10a Ekonomi Syariah Biasa - BAS
+8929 | 32 blangko | Alamat Saksi 5 P | 1 Perceraian CG, 1 Perceraian CG - BAS, 10a Ekonomi Syariah Biasa - BAS
+7184 | 28 blangko | PENANDA BAS ADA KUMULASI ITSBAT NIKAH CG CT | 1 Perceraian CG - BAS, 1a Perceraian CT - BAS, 1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS
+7114 | 26 blangko | Tanggal Duplik Rekonvensi ( tgl ) | 1 Perceraian CG - BAS, 10a Ekonomi Syariah Biasa - BAS, 1a Perceraian CT
+8933 | 26 blangko | KHUSUS BAS SUMPAH AGAMA SAKSI V P | 1 Perceraian CG - BAS, 10a Ekonomi Syariah Biasa - BAS, 1a Perceraian CT - BAS
+4833 | 23 blangko | WASIAT, HIBAH, WAKAF, EKONOMI SYARIAH: ANALISIS BUKTI SURAT PENGGUGAT (OTOMATIS dari daftar bukti surat menuru | 10 Ekonomi Syariah, 10a Ekonomi Syariah Biasa, 4c Wasiat
+7118 | 23 blangko | Hari Duplik Rekonvensi | 1 Perceraian CG - BAS, 10a Ekonomi Syariah Biasa - BAS, 1a Perceraian CT - BAS
+0218 | 22 blangko | Tanggal Putusan Sela Sita Jaminan (OTOMATIS SIPP perkara_putusan_sela; putusan sela tentang sita didahulukan) | 10 Ekonomi Syariah, 10a Ekonomi Syariah Biasa, 4a Harta Bersama
+7088 | 22 blangko | PERUBAHAN STATUS KONVENSI MENJADI KONVENSI/REKONVENSI UNTUK BAS (OTOMATIS) | 1 Perceraian CG - BAS, 10a Ekonomi Syariah Biasa - BAS, 1a Perceraian CT - BAS
+8934 | 20 blangko | Nama Saksi 4 T | 1 Perceraian CG - BAS, 10a Ekonomi Syariah Biasa - BAS, 1a Perceraian CT - BAS
+8935 | 20 blangko | Umur Saksi 4 T | 1 Perceraian CG - BAS, 10a Ekonomi Syariah Biasa - BAS, 1a Perceraian CT - BAS
+8936 | 20 blangko | Agama Saksi 4 T | 1 Perceraian CG - BAS, 10a Ekonomi Syariah Biasa - BAS, 1a Perceraian CT - BAS
+8937 | 20 blangko | Pendidikan Saksi 4 T | 1 Perceraian CG - BAS, 10a Ekonomi Syariah Biasa - BAS, 1a Perceraian CT - BAS
+8938 | 20 blangko | Pekerjaan Saksi 4 T | 1 Perceraian CG - BAS, 10a Ekonomi Syariah Biasa - BAS, 1a Perceraian CT - BAS
+8939 | 20 blangko | Alamat Saksi 4 T | 1 Perceraian CG - BAS, 10a Ekonomi Syariah Biasa - BAS, 1a Perceraian CT - BAS
+8943 | 20 blangko | KHUSUS BAS SUMPAH AGAMA SAKSI IV T | 1 Perceraian CG - BAS, 10a Ekonomi Syariah Biasa - BAS, 1a Perceraian CT - BAS
+9754 | 14 blangko | NAFKAH ANAK: AMAR TAMBAHAN - BIAYA PENDIDIKAN-KESEHATAN, PEMOTONGAN PENGHASILAN, SITA JAMINAN (OTOMATIS: isian | 1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak, 1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS, 6a Hak Asuh Anak (Hadhanah)
+11313 | 14 blangko | EKSEPSI KEWENANGAN: ISI EKSEPSI #0047# (OTOMATIS: isian 9685; kosong = isian 9681; belum diisi = titik-titik) | 97a Putusan Sela
+8923 | 12 blangko | Hbgn. Saksi 4 P dg. Pihak | 1 Perceraian CG, 1a Perceraian CT
+9262 | 12 blangko | KETERANGAN SAKSI 4 #0046# TANPA BARIS KOSONG (OTOMATIS: sama dengan tanya jawab keterangan saksi ABT, tanpa en | 1 Perceraian CG, 1a Perceraian CT
+9753 | 11 blangko | NAFKAH ANAK: PERTIMBANGAN TAMBAHAN - DASAR KEMAMPUAN/STANDAR BIAYA HIDUP, PENDIDIKAN-KESEHATAN, PEMOTONGAN, SI | 1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak, 6a Hak Asuh Anak (Hadhanah), 6c Nafkah Anak
+3992 | 10 blangko | VERZET: BIAYA PERLAWANAN ANGKA MURNI (OTOMATIS dari isian 3991, tanpa titik; dasar terbilang 3994) | 96a Verzet, 96a Verzet - BAS
+4428 | 10 blangko | DK: PERTIMBANGAN REKOMENDASI (OTOMATIS: muncul hanya bila isian 4427 terisi) | 3 Dispensasi Kawin
+3732 | 9 blangko | KELALAIAN KEWAJIBAN: PERTIMBANGAN PENGANGKATAN SITA JAMINAN BILA GUGATAN TIDAK DIKABULKAN (OTOMATIS: isian 370 | 1e Kelalaian Kewajiban Suami Istri
+3733 | 9 blangko | KELALAIAN KEWAJIBAN: AMAR PENGANGKATAN SITA JAMINAN BILA GUGATAN TIDAK DIKABULKAN (OTOMATIS: isian 3709) | 1e Kelalaian Kewajiban Suami Istri
+3778 | 9 blangko | PERTIMBANGAN HAK BEKAS ISTRI: PENGANGKATAN SITA JAMINAN BILA GUGATAN TIDAK DIKABULKAN (OTOMATIS dari isian 375 | 1f Hak Bekas Istri
+3779 | 9 blangko | AMAR HAK BEKAS ISTRI: PENGANGKATAN SITA JAMINAN BILA GUGATAN TIDAK DIKABULKAN (OTOMATIS dari isian 3754; koson | 1f Hak Bekas Istri
+4834 | 9 blangko | WASIAT, HIBAH, WAKAF, EKONOMI SYARIAH: ANALISIS BUKTI SURAT TERGUGAT (OTOMATIS dari daftar bukti surat Terguga | 10 Ekonomi Syariah, 10a Ekonomi Syariah Biasa, 4c Wasiat
+11315 | 9 blangko | EKSEPSI KEWENANGAN: KALIMAT TANGGAPAN #0046# (OTOMATIS dari isian 11314; kosong bila tidak diisi) | 97a Putusan Sela
+11346 | 9 blangko | PEMERIKSAAN SETEMPAT: OBJEK SENGKETA (OTOMATIS: isian 11347; kosong = isian objek jenis: HB/cerai kumulasi 873 | 1 Perceraian CG - BAS, 10a Ekonomi Syariah Biasa - BAS, 1a Perceraian CT - BAS
+9971 | 8 blangko | PERKARA GHAIB | 98 Relaas, 99 PTSP
+11350 | 8 blangko | PEMERIKSAAN SETEMPAT: KALIMAT PEJABAT LAIN YANG HADIR (OTOMATIS dari isian 11349; kosong bila tidak diisi) | 1 Perceraian CG - BAS, 10a Ekonomi Syariah Biasa - BAS, 1a Perceraian CT - BAS
+11356 | 8 blangko | PEMERIKSAAN SETEMPAT: KALIMAT KETERANGAN APARAT (OTOMATIS dari isian 11355 dan 9166; kosong bila tidak diisi) | 1 Perceraian CG - BAS, 10a Ekonomi Syariah Biasa - BAS, 1a Perceraian CT - BAS
+11362 | 8 blangko | PEMERIKSAAN SETEMPAT: RUJUKAN PUTUSAN SELA PEMERIKSAAN SETEMPAT (OTOMATIS SIPP perkara_putusan_sela yang memua | 1 Perceraian CG - BAS, 10a Ekonomi Syariah Biasa - BAS, 1a Perceraian CT - BAS
+3723 | 7 blangko | KELALAIAN KEWAJIBAN: AMAR NAFKAH LAMPAU (MADLIYAH) (OTOMATIS: isian 3701-3702; kosong bila 3702 kosong) | 1e Kelalaian Kewajiban Suami Istri, 1e Kelalaian Kewajiban Suami Istri - BAS
+3725 | 7 blangko | KELALAIAN KEWAJIBAN: AMAR TAMBAHAN - KISWAH, TEMPAT KEDIAMAN, BIAYA, KEWAJIBAN LAIN, PEMOTONGAN, SITA (OTOMATI | 1e Kelalaian Kewajiban Suami Istri, 1e Kelalaian Kewajiban Suami Istri - BAS
+3729 | 7 blangko | KELALAIAN KEWAJIBAN: AMAR UANG PAKSA / DWANGSOM (OTOMATIS: isian 3710; kosong = tidak tercetak) | 1e Kelalaian Kewajiban Suami Istri, 1e Kelalaian Kewajiban Suami Istri - BAS
+3761 | 7 blangko | HAK BEKAS ISTRI: JUMLAH UANG SELURUH HAK DALAM RUPIAH (OTOMATIS dari isian jumlah; mis. Rp12.500.000,00; koson | 1f Hak Bekas Istri, 1f Hak Bekas Istri - BAS
+3762 | 7 blangko | HAK BEKAS ISTRI: TERBILANG JUMLAH UANG SELURUH HAK (OTOMATIS; mis. dua belas juta lima ratus ribu rupiah; koso | 1f Hak Bekas Istri, 1f Hak Bekas Istri - BAS
+3774 | 7 blangko | AMAR HAK BEKAS ISTRI: JUMLAH SELURUHNYA DAN WAKTU PEMBAYARAN (OTOMATIS dari jumlah hak dan isian 3756; kosong  | 1f Hak Bekas Istri, 1f Hak Bekas Istri - BAS
+3775 | 7 blangko | PERTIMBANGAN HAK BEKAS ISTRI: BANTAHAN/EKSEPSI TERGUGAT (OTOMATIS dari isian 3750; kosong bila tidak ada banta | 1f Hak Bekas Istri
+3777 | 7 blangko | AMAR HAK BEKAS ISTRI: SITA JAMINAN BILA GUGATAN DIKABULKAN (OTOMATIS dari isian 3754; kosong = tanpa sita) | 1f Hak Bekas Istri, 1f Hak Bekas Istri - BAS
+9342 | 7 blangko | EKONOMI SYARIAH: JUMLAH KEWAJIBAN ANGKA MURNI (OTOMATIS dari isian 9341, tanpa titik; dasar terbilang 9343) | 10 Ekonomi Syariah, 10 Ekonomi Syariah - BAS, 10a Ekonomi Syariah Biasa
+9344 | 7 blangko | EKONOMI SYARIAH: JUMLAH KEWAJIBAN BERTITIK (OTOMATIS dari 9342, mis. 61.241.800; kosong = titik-titik) | 10 Ekonomi Syariah, 10 Ekonomi Syariah - BAS, 10a Ekonomi Syariah Biasa
+3658 | 6 blangko | IZIN KAWIN: PERTIMBANGAN KESIAPAN (OTOMATIS: muncul hanya bila isian 3657 terisi; diawali satu baris baru) | 3a Izin Kawin
+8930 | 6 blangko | Hbgn. Saksi 5 P dg. Pihak | 1 Perceraian CG, 1a Perceraian CT
+9263 | 6 blangko | KETERANGAN SAKSI 5 #0046# TANPA BARIS KOSONG (OTOMATIS: sama dengan tanya jawab keterangan saksi ABT, tanpa en | 1 Perceraian CG, 1a Perceraian CT
+11328 | 6 blangko | INTERVENSI: NAMA PEMOHON INTERVENSI (OTOMATIS: SIPP pihak intervensi pertama; belum tercatat = isian 11326 sam | 97a Putusan Sela
+3720 | 5 blangko | KELALAIAN KEWAJIBAN: PERTIMBANGAN NAFKAH KE DEPAN (OTOMATIS: isian 3700 dan 3707; kosong = tidak tercetak) | 1e Kelalaian Kewajiban Suami Istri
+3722 | 5 blangko | KELALAIAN KEWAJIBAN: PERTIMBANGAN NAFKAH LAMPAU (MADLIYAH) (OTOMATIS: isian 3701-3702; kosong bila 3702 kosong | 1e Kelalaian Kewajiban Suami Istri
+3724 | 5 blangko | KELALAIAN KEWAJIBAN: PERTIMBANGAN TAMBAHAN - KISWAH, TEMPAT KEDIAMAN, BIAYA, KEWAJIBAN LAIN, PEMOTONGAN, SITA  | 1e Kelalaian Kewajiban Suami Istri
+3728 | 5 blangko | KELALAIAN KEWAJIBAN: PERTIMBANGAN UANG PAKSA / DWANGSOM (OTOMATIS: isian 3710; kosong = tidak tercetak) | 1e Kelalaian Kewajiban Suami Istri
+3763 | 5 blangko | HAK BEKAS ISTRI: DAFTAR HAK YANG DIKABULKAN (OTOMATIS dari isian jumlah hak dan biaya hadhanah; kosong bila ti | 1f Hak Bekas Istri
+3766 | 5 blangko | PERTIMBANGAN HAK BEKAS ISTRI: NAFKAH IDDAH, MASKAN, KISWAH (OTOMATIS dari isian 9712, 3751, 3752, 3741-3746; k | 1f Hak Bekas Istri
+3767 | 5 blangko | PERTIMBANGAN HAK BEKAS ISTRI: MUT'AH (OTOMATIS dari isian 9713, 3741, 3745, 3746; kosong bila mut'ah tidak dii | 1f Hak Bekas Istri
+3768 | 5 blangko | PERTIMBANGAN HAK BEKAS ISTRI: NAFKAH MADLIYAH/LAMPAU ISTRI (OTOMATIS dari isian 9711; kosong bila tidak diisi) | 1f Hak Bekas Istri
+3769 | 5 blangko | PERTIMBANGAN HAK BEKAS ISTRI: MAHAR YANG MASIH TERHUTANG (OTOMATIS dari isian 3753 dan 3745; kosong bila mahar | 1f Hak Bekas Istri
+3770 | 5 blangko | PERTIMBANGAN HAK BEKAS ISTRI: BIAYA HADHANAH/NAFKAH ANAK (OTOMATIS dari isian 9740, 9741, 9746, 9747; kosong b | 1f Hak Bekas Istri
+3771 | 5 blangko | PERTIMBANGAN HAK BEKAS ISTRI: BESARAN DAN KEPATUTAN (OTOMATIS dari isian 9714, 3749 dan jumlah hak; kosong bil | 1f Hak Bekas Istri
+3776 | 5 blangko | PERTIMBANGAN HAK BEKAS ISTRI: SITA JAMINAN BILA GUGATAN DIKABULKAN (OTOMATIS dari isian 3754; kosong = tanpa s | 1f Hak Bekas Istri
+9331 | 5 blangko | PEMBATALAN NIKAH: TENGGANG 6 BULAN PASAL 27 AYAT (3) UU 1/1974 (OTOMATIS: hanya alasan E paksaan / F penipuan- | 5a Pembatalan Perkawinan
+9568 | 5 blangko | RELAAS: SEBUTAN #0046# YANG DITEMUI JURUSITA (OTOMATIS SIPP relaas ket_temu Y dan catatan hasil menyebut #0046 | 98 Relaas
+4820 | 4 blangko | KEWARISAN: AHLI WARIS UNTUK FAKTA (OTOMATIS: susunan lengkap dari isian 9701 s.d. 9704, 9718, 9762 s.d. 9767 b | 4b Kewarisan
+4821 | 4 blangko | KEWARISAN: AHLI WARIS YANG BERHAK UNTUK AMAR (OTOMATIS: dari isian terstruktur 9701 dst. tanpa yang terhalang  | 4b Kewarisan
+4822 | 4 blangko | KEWARISAN: PERTIMBANGAN BAGIAN AHLI WARIS MENURUT KHI (OTOMATIS: Pasal 176 s.d. 182, 185, 192, 193 bila isian  | 4b Kewarisan
+4831 | 4 blangko | KEWARISAN: FAKTA OBJEK YANG TIDAK TERBUKTI (OTOMATIS dari isian 4816: satu butir per objek; kosong bila semua  | 4b Kewarisan
+9569 | 4 blangko | RELAAS: SEBUTAN #0047# YANG DITEMUI JURUSITA (OTOMATIS SIPP relaas ket_temu Y dan catatan hasil menyebut #0047 | 98 Relaas
+3417 | 3 blangko | AMAR AKIBAT CERAI LAIN PADA CG KUMULASI HAK ASUH (OTOMATIS: nafkah anak, nafkah istri, harta bersama, menolak  | 1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak, 1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS, BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)
+3419 | 3 blangko | AMAR AKIBAT CERAI LAIN PADA CG KUMULASI HAK ASUH DAN NAFKAH ANAK (OTOMATIS: nafkah istri, harta bersama, menol | 1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak, 1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS, BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)
+4313 | 3 blangko | AUA: JARAK AKAD NIKAH DENGAN KELAHIRAN ANAK (OTOMATIS dari SIPP tgl_menikah dan tanggal lahir anak; kosong bil | 8 Asal Usul Anak, 8a Pengesahan Anak
+8721 | 3 blangko | IZIN POLIGAMI: KALIMAT ALASAN MENURUT HURUF (OTOMATIS dari isian 8720; a/b/c digabung "dan/atau") | 5 Izin Poligami
+9160 | 3 blangko | AMAR PUTUSAN SELA (OTOMATIS SIPP amar_sela pada tanggal sidang yang dicetak, maks. 2 setanggal; tidak ada = pu | 4a Harta Bersama - BAS, 4b Kewarisan - BAS, 97a Putusan Sela - BAS
+3415 | 2 blangko | AMAR AKIBAT CERAI LAIN PADA CG KUMULASI NAFKAH ISTRI (OTOMATIS: hak asuh, nafkah anak, harta bersama, menolak  | 1 Perceraian CG
+3618 | 2 blangko | PENOLAKAN KAWIN: PERTIMBANGAN IZIN ORANG TUA (OTOMATIS: hanya bila salah seorang Pemohon pada SIPP belum 21 ta | 5c Penolakan Perkawinan
+3639 | 2 blangko | PERKAWINAN CAMPURAN: PERTIMBANGAN IZIN ORANG TUA (OTOMATIS: hanya bila salah seorang Pemohon pada SIPP belum 2 | 5d Perkawinan Campuran
+4504 | 2 blangko | ANAK ANGKAT - PERTIMBANGAN (OTOMATIS: hanya bila isian 4502 terisi; Pasal 171 huruf h dan c, Pasal 209 ayat (2 | 9 Penetapan Ahli Waris
+4506 | 2 blangko | ANAK ANGKAT - AMAR (OTOMATIS: hanya bila isian 4502 terisi dan pilihan hakim 4505 = 1) | 9 Penetapan Ahli Waris
+4509 | 2 blangko | WASIAT PEWARIS - PERTIMBANGAN (OTOMATIS: hanya bila isian 4507 terisi; Pasal 171 huruf f, 175 ayat (1) huruf c | 9 Penetapan Ahli Waris
+4512 | 2 blangko | AGAMA AHLI WARIS - PERTIMBANGAN (OTOMATIS: hanya bila isian 4510 terisi; Pasal 171 huruf c KHI, kerabat beda a | 9 Penetapan Ahli Waris
+4514 | 2 blangko | KEADAAN PERKAWINAN PEWARIS - PERTIMBANGAN (OTOMATIS: hanya bila pilihan 4513 = 1 atau 2; Pasal 171 huruf c KHI | 9 Penetapan Ahli Waris
+4516 | 2 blangko | BAGIAN MASING-MASING AHLI WARIS (P3HP) - AMAR (OTOMATIS: hanya bila isian 4515 terisi) | 9 Penetapan Ahli Waris
+4517 | 2 blangko | BAGIAN MASING-MASING AHLI WARIS (P3HP) - PERTIMBANGAN (OTOMATIS: hanya bila isian 4515 terisi) | 9 Penetapan Ahli Waris
+4521 | 2 blangko | HARTA BERSAMA - PERTIMBANGAN (OTOMATIS: hanya bila isian 4520 terisi dan pasangan Pewaris yang masih hidup dii | 9 Penetapan Ahli Waris
+4535 | 2 blangko | PEMBATASAN PENGGUNAAN PENETAPAN - AMAR (OTOMATIS: hanya bila pilihan 4534 = 1; tujuan dari 4501) | 9 Penetapan Ahli Waris
+4809 | 2 blangko | HARTA BERSAMA: FAKTA OBJEK YANG TIDAK TERBUKTI (OTOMATIS dari isian 4781: satu butir per objek; kosong bila se | 4a Harta Bersama
+9707 | 2 blangko | AMAR PENCAIRAN DANA (OTOMATIS: hanya bila isian 9700 terisi) | 9 Penetapan Ahli Waris
+9708 | 2 blangko | PERTIMBANGAN PENCAIRAN DANA (OTOMATIS: hanya bila isian 9700 terisi) | 9 Penetapan Ahli Waris
+9716 | 2 blangko | NAFKAH ISTRI - AMAR (OTOMATIS dari isian 9711 s.d. 9715; kosong bila tidak ada nafkah) | 1 Perceraian CG
+9717 | 2 blangko | NAFKAH ISTRI - PERTIMBANGAN (OTOMATIS dari isian 9711 s.d. 9715; kosong bila tidak ada nafkah) | 1 Perceraian CG
+11322 | 2 blangko | PROVISI: KALIMAT TANGGAPAN #0047# (OTOMATIS dari isian 11321; kosong bila tidak diisi) | 97a Putusan Sela
+11395 | 2 blangko | MEDIASI TIDAK BERIKTIKAD BAIK: KALIMAT PERBUATAN MENURUT PASAL 7 AYAT (2) PERMA 1/2016 (OTOMATIS dari isian 11 | 97a Putusan Sela
+11412 | 2 blangko | LI'AN: AMAR NASAB ANAK KEPADA IBU (OTOMATIS dari isian 11411; kosong bila tidak ada pengingkaran anak) | 1 Perceraian CG, 1a Perceraian CT
+3452 | 1 blangko | AMAR HARTA BERSAMA DALAM REKONVENSI CERAI TALAK (OTOMATIS dari keputusan isian 4105; disambung di ujung butir  | 1a Perceraian CT
+3667 | 1 blangko | PENGESAHAN ANAK: PERTIMBANGAN BUKTI HUBUNGAN DARAH (OTOMATIS: muncul hanya bila isian 3666 terisi; Putusan MK  | 8a Pengesahan Anak
+3675 | 1 blangko | PENGESAHAN ANAK: PERTIMBANGAN PENGAKUAN AYAH (OTOMATIS: muncul hanya bila isian 3670 terisi; diawali satu bari | 8a Pengesahan Anak
+4542 | 1 blangko | AHLI WARIS PENGGANTI SAUDARA - PERTIMBANGAN (OTOMATIS dari 4540 dan 4541; Pasal 185 KHI; besarnya bagian diten | 9 Penetapan Ahli Waris
+4543 | 1 blangko | AHLI WARIS PENGGANTI SAUDARA - KALIMAT SUSUNAN (OTOMATIS dari 4540 dan 4541; disambung sesudah susunan ahli wa | 9 Penetapan Ahli Waris
+4924 | 1 blangko | MAFQUD: PERTIMBANGAN KELUARGA DAN HARTA YANG DITINGGALKAN (OTOMATIS dari #4921# dan #4922#; kosong bila keduan | 9c Penetapan Mafqud
+4925 | 1 blangko | MAFQUD: KETERANGAN TAMBAHAN ORANG YANG HILANG (OTOMATIS dari #4920# dan #4923#; kosong bila keduanya belum dii | 9c Penetapan Mafqud
+9221 | 1 blangko | IKRAR: TANGGAL LAPORAN/PENETAPAN KEMBALI HARI SIDANG IKRAR (OTOMATIS SIPP perkara_penetapan_kembali_ikrar tera | 99 PTSP
+9435 | 1 blangko | HARTA BERSAMA REKONVENSI: OBJEK YANG DITETAPKAN SEBAGAI HARTA BERSAMA (OTOMATIS: isian 9434; kosong = objek gu | 4a Harta Bersama
+11318 | 1 blangko | EKSEPSI KEWENANGAN RELATIF DIKABULKAN: KALIMAT PENGADILAN YANG BERWENANG (OTOMATIS dari isian 11317; kosong bi | 97a Putusan Sela
+11410 | 1 blangko | REKONVENSI DIKABULKAN SEBAGIAN: AMAR MENOLAK SELEBIHNYA (OTOMATIS dari isian 11408; kosong bila seluruhnya) | 97a Putusan Sela
+
+== jenis-lain: 42
+4883 | 29 blangko | ANAK: PERINGATAN ANAK SUDAH DEWASA (OTOMATIS: kalimat [PERIKSA] hanya bila tanggal lahir anak di SIPP menunjuk | 6a Hak Asuh Anak (Hadhanah), 6b Penguasaan Anak, 6c Nafkah Anak
+4885 | 24 blangko | HAK ASUH: PERTIMBANGAN KELAYAKAN PEMEGANG HADHANAH (OTOMATIS: isian 4884; kosong = tidak tercetak; diawali sat | 6a Hak Asuh Anak (Hadhanah), 6b Penguasaan Anak
+4887 | 24 blangko | ANAK: PERTIMBANGAN PENDAPAT AHLI ATAU LAPORAN LEMBAGA (OTOMATIS: isian 4886; kosong = tidak tercetak; diawali  | 6a Hak Asuh Anak (Hadhanah), 6b Penguasaan Anak
+4889 | 23 blangko | ANAK: KALIMAT RINCIAN AKSES BERTEMU DI AMAR DAN PERTIMBANGAN (OTOMATIS: isian 4888; kosong = tidak tercetak) | 6a Hak Asuh Anak (Hadhanah), 6a Hak Asuh Anak (Hadhanah) - BAS, 6b Penguasaan Anak
+4904 | 21 blangko | HAK ASUH: PERINGATAN PETITUM NAFKAH ANAK BELUM DIPUTUS (OTOMATIS: [PERIKSA] bila petitum SIPP memuat nafkah an | 6a Hak Asuh Anak (Hadhanah), 6b Penguasaan Anak
+9758 | 10 blangko | NAFKAH LAMPAU ANAK: AMAR (OTOMATIS: isian 9746 dan 9747; kosong bila jumlah 9747 tidak diisi) | 6a Hak Asuh Anak (Hadhanah), 6c Nafkah Anak, 6c Nafkah Anak - BAS
+9755 | 9 blangko | NAFKAH ANAK: PERTIMBANGAN PENGANGKATAN SITA JAMINAN BILA GUGATAN TIDAK DIKABULKAN (OTOMATIS: isian 9743; koson | 6c Nafkah Anak
+9756 | 9 blangko | NAFKAH ANAK: AMAR PENGANGKATAN SITA JAMINAN BILA GUGATAN TIDAK DIKABULKAN (OTOMATIS: isian 9743; kosong = tida | 6c Nafkah Anak
+3833 | 8 blangko | KEKUASAAN WALI: KALIMAT DASAR KEWALIAN (OTOMATIS: hanya bila isian 3832 terisi, berbunyi ", yang menjadi wali  | 6e Pencabutan Kekuasaan Wali
+4900 | 8 blangko | NAFKAH ANAK: PERTIMBANGAN JUMLAH DIMOHON DAN DITETAPKAN (OTOMATIS: isian 4899 dan 9740; sama = sesuai; rendah  | 6a Hak Asuh Anak (Hadhanah), 6c Nafkah Anak
+9751 | 8 blangko | NAFKAH ANAK: PERTIMBANGAN NAFKAH KE DEPAN DAN KENAIKAN (OTOMATIS: isian 9740 dan 9741; kosong = tidak tercetak | 6a Hak Asuh Anak (Hadhanah), 6c Nafkah Anak
+9757 | 8 blangko | NAFKAH LAMPAU ANAK: PERTIMBANGAN (OTOMATIS: isian 9746 s.d. 9748; kosong bila jumlah 9747 tidak diisi) | 6a Hak Asuh Anak (Hadhanah), 6c Nafkah Anak
+4892 | 6 blangko | HAK ASUH: PERTIMBANGAN PENYERAHAN ANAK (OTOMATIS: saklar 4890 = 1 sesuai petitum, = 2 ditetapkan hakim; kosong | 6a Hak Asuh Anak (Hadhanah)
+4893 | 6 blangko | HAK ASUH: KALIMAT PENYERAHAN DI PERTIMBANGAN AKHIR (OTOMATIS: hanya bila saklar 4890 = 1 atau 2; kosong = tida | 6a Hak Asuh Anak (Hadhanah)
+3811 | 5 blangko | KEKUASAAN ORANG TUA: AMAR PENUNJUKAN WALI (OTOMATIS: hanya bila isian 3809 terisi; satu butir rinci di bawah a | 6d Pencabutan Kekuasaan Orang Tua, 6d Pencabutan Kekuasaan Orang Tua - BAS
+3840 | 5 blangko | KEKUASAAN WALI: KALIMAT JANGKA WAKTU (OTOMATIS: hanya bila isian 3839 terisi, berbunyi " untuk waktu ...") | 6e Pencabutan Kekuasaan Wali, 6e Pencabutan Kekuasaan Wali - BAS
+3845 | 5 blangko | KEKUASAAN WALI: AMAR WALI PENGGANTI (OTOMATIS: hanya bila isian 3841 terisi; satu butir rinci di bawah amar pe | 6e Pencabutan Kekuasaan Wali, 6e Pencabutan Kekuasaan Wali - BAS
+3846 | 5 blangko | KEKUASAAN WALI: AMAR PENGEMBALIAN KUASA ASUH (OTOMATIS: hanya bila isian 3842 terisi; satu butir rinci di bawa | 6e Pencabutan Kekuasaan Wali, 6e Pencabutan Kekuasaan Wali - BAS
+3851 | 5 blangko | KEKUASAAN WALI: AMAR PENYERAHAN HARTA ANAK (OTOMATIS: hanya bila isian 3849 terisi; penerima = wali pengganti  | 6e Pencabutan Kekuasaan Wali, 6e Pencabutan Kekuasaan Wali - BAS
+3914 | 5 blangko | GANTI RUGI WALI: PERTIMBANGAN TEGURAN SEBELUM GUGATAN (OTOMATIS: hanya bila isian 3913 terisi; diawali satu ba | 6g Ganti Rugi terhadap Wali
+3918 | 5 blangko | GANTI RUGI WALI: PERTIMBANGAN DAFTAR HARTA DAN PEMBUKUAN (OTOMATIS: hanya bila isian 3917 terisi; Pasal 51 aya | 6g Ganti Rugi terhadap Wali
+4891 | 5 blangko | HAK ASUH: AMAR MENGHUKUM MENYERAHKAN ANAK (OTOMATIS: hanya bila saklar 4890 = 1 atau 2; kosong = tidak terceta | 6a Hak Asuh Anak (Hadhanah)
+9722 | 5 blangko | PENGUASAAN ANAK: PERTIMBANGAN PENYERAHAN ANAK (OTOMATIS: saklar 9720 = 1 petitum, = 2 ditetapkan hakim; selain | 6b Penguasaan Anak
+9724 | 5 blangko | PENGUASAAN ANAK: KALIMAT PENYERAHAN DI PERTIMBANGAN AKHIR (OTOMATIS: hanya bila saklar 9720 = 1; kosong = tida | 6b Penguasaan Anak
+3810 | 4 blangko | KEKUASAAN ORANG TUA: PERTIMBANGAN PENUNJUKAN WALI (OTOMATIS: hanya bila isian 3809 terisi; PP 29/2019 Pasal 9  | 6d Pencabutan Kekuasaan Orang Tua
+3813 | 4 blangko | KEKUASAAN ORANG TUA: PERTIMBANGAN REKOMENDASI DINAS SOSIAL (OTOMATIS: hanya bila isian 3812 terisi; diawali sa | 6d Pencabutan Kekuasaan Orang Tua
+3843 | 4 blangko | KEKUASAAN WALI: PERTIMBANGAN WALI PENGGANTI (OTOMATIS: hanya bila isian 3841 terisi; Pasal 53 ayat (2) UU 1/19 | 6e Pencabutan Kekuasaan Wali
+3844 | 4 blangko | KEKUASAAN WALI: PERTIMBANGAN PENGEMBALIAN KUASA ASUH (OTOMATIS: hanya bila isian 3842 terisi; Pasal 19 ayat (3 | 6e Pencabutan Kekuasaan Wali
+3848 | 4 blangko | KEKUASAAN WALI: PERTIMBANGAN REKOMENDASI DINAS SOSIAL (OTOMATIS: hanya bila isian 3847 terisi; diawali satu ba | 6e Pencabutan Kekuasaan Wali
+3850 | 4 blangko | KEKUASAAN WALI: PERTIMBANGAN HARTA ANAK (OTOMATIS: hanya bila isian 3849 terisi; Pasal 50 ayat (2) dan Pasal 5 | 6e Pencabutan Kekuasaan Wali
+3899 | 4 blangko | GANTI RUGI WALI: JUMLAH KERUGIAN ANGKA MURNI (OTOMATIS dari isian 3898, tanpa titik; dasar terbilang 3900) | 6g Ganti Rugi terhadap Wali, 6g Ganti Rugi terhadap Wali - BAS
+9721 | 4 blangko | PENGUASAAN ANAK: AMAR BUTIR 3 MENGHUKUM MENYERAHKAN ANAK (OTOMATIS: hanya bila saklar 9720 = 1 atau 2; kosong  | 6b Penguasaan Anak
+4882 | 3 blangko | ANAK: PERINGATAN BLANGKO ANAK MUMAYYIZ MEMILIH (OTOMATIS: kalimat [PERIKSA] hanya bila tanggal lahir anak di S | 6a Hak Asuh Anak (Hadhanah), 6b Penguasaan Anak
+4411 | 2 blangko | PERWALIAN: PERTIMBANGAN PETITUM TINDAKAN HUKUM (OTOMATIS: muncul hanya bila isian 4410 terisi) | 6 Perwalian
+4412 | 2 blangko | PERWALIAN: TAMBAHAN AMAR - WEWENANG MEWAKILI ANAK (OTOMATIS: muncul hanya bila isian 4410 terisi) | 6 Perwalian
+4442 | 2 blangko | WALI ADHAL: PERTIMBANGAN MASA TUNGGU (IDDAH) (OTOMATIS: hanya bila status #1002# memuat kata janda; diawali sa | 7 Wali Adhal
+4903 | 2 blangko | NAFKAH ANAK (KABUL SEBAGIAN): PERTIMBANGAN IBU IKUT MEMIKUL BIAYA (OTOMATIS: isian 4901 dan 4902; kosong = tid | 6c Nafkah Anak
+4908 | 2 blangko | HAK ASUH: AMAR MENGHUKUM MENYERAHKAN ANAK, PUTUSAN VERSTEK (OTOMATIS: hanya bila saklar 4890 = 1 atau 2; koson | 6a Hak Asuh Anak (Hadhanah), 6a Hak Asuh Anak (Hadhanah) - BAS
+9725 | 2 blangko | PENGUASAAN ANAK: AMAR BUTIR 4 MENGHUKUM MENYERAHKAN ANAK, PUTUSAN VERSTEK (OTOMATIS: hanya bila saklar 9720 =  | 6b Penguasaan Anak, 6b Penguasaan Anak - BAS
+3878 | 1 blangko | PENUNJUKAN WALI: PERTIMBANGAN REKOMENDASI DINAS SOSIAL (OTOMATIS: hanya bila isian 3867 terisi; PP 29/2019 Pas | 6f Penunjukan Wali oleh Pengadilan
+3879 | 1 blangko | PENUNJUKAN WALI: PERTIMBANGAN HARTA ATAU TINDAKAN HUKUM ANAK (OTOMATIS: hanya bila isian 3868 terisi; diawali  | 6f Penunjukan Wali oleh Pengadilan
+3880 | 1 blangko | PENUNJUKAN WALI: AMAR HARTA ATAU TINDAKAN HUKUM ANAK (OTOMATIS: hanya bila isian 3868 terisi; satu butir rinci | 6f Penunjukan Wali oleh Pengadilan
+

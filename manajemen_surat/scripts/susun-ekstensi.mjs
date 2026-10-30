@@ -103,6 +103,8 @@ const BERKAS = [
   // Jejak isian dan butir saksi (rantai C, C1, 25 Okt 2026): pembantu bersama abt.js, saksi-susun.js, blangko-derry-isian.js.
   // Saklar server "jejak-isian" (bawaan mati) - tanpa itu tidak ada yang dikirim.
   "jejak-isian.js",
+  // Statistik pemakaian blangko (G6 6.4, 30 Okt 2026): satu catatan per cetakan dari panel Blangko Derry, tanpa isi naskah.
+  "statistik-cetak.js",
   // Saklar Fitur Satker yang ditanyakan ekstensi (C3, 25 Okt 2026): fitur baru bawaan mati; gagal bertanya = mati.
   "saklar-fitur.js",
   // Susun saksi menurut keadaan dan jenis perkara (18 Okt 2026): mesin katalog
