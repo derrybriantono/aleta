@@ -606,8 +606,15 @@ describe("5. penanda SINKRON: tiap keadaan tampil sama di semua penanda", () => 
   const t4LampuEcourt = fungsiEkstensi("aleta.js", "t4LampuEcourt") as (e: unknown) => [string, string];
   const t7LampuEcourt = fungsiEkstensi("konten-panel-perkara.js", "t7LampuEcourt") as (k: unknown, u: unknown) => [string, string, string];
 
-  // "memeriksa" sesaat tidak menimpa penilaian penarikan; keadaannya tetap tertulis di rincian.
-  const WARNA_KESEHATAN: Record<KeadaanEcourt, string> = { aktif: "hijau", perlu_masuk: "kuning", tidak_tersambung: "merah", memeriksa: "hijau", belum_diatur: "kelabu" };
+  /** Warna baris popup dibaca dari CSS popup.html yang sungguh dipakai: data-keadaan -> heks -> nada. */
+  const popupHtmlCss = bacaEks("popup.html");
+  const NADA_HEKS: Record<string, string> = { "#2e9d62": "hijau", "#d99a1e": "kuning", "#d4483b": "merah", "#8a8f98": "kelabu" };
+  const nadaPopup = (keadaanPopup: string) => {
+    const pola = `.tarik-ecourt[data-keadaan="${keadaanPopup}"] { --tarik-warna: `;
+    const i = popupHtmlCss.indexOf(pola);
+    const m = i < 0 ? null : /^(#[0-9a-f]{6});/.exec(popupHtmlCss.slice(i + pola.length));
+    return m ? NADA_HEKS[m[1]] : "tidak ada aturan warna";
+  };
 
   for (const keadaan of DAFTAR_KEADAAN_ECOURT) {
     it(`keadaan "${keadaan}": judul & warna sama di portal, lampu ekstensi, panel perkara, popup, kesehatan`, () => {
@@ -628,13 +635,10 @@ describe("5. penanda SINKRON: tiap keadaan tampil sama di semua penanda", () => 
       // Lampu "e-Court" panel perkara (konten-panel-perkara.js).
       const [nama, kelas, ketPanel] = t7LampuEcourt({ konteks: { statusEcourt: t } }, { teks: "5 menit lalu", basi: false });
       expect(nama).toBe("e-Court");
-      if (keadaan === "aktif") {
-        expect(kelas).toBe("baik");
-        expect(ketPanel).toMatch(/tersambung/);
-      } else {
-        expect(kelas).toBe(t.lampu);
-        expect(ketPanel).toContain(t.judul);
-      }
+      expect(kelas).toBe(t.lampu);
+      expect(ketPanel.startsWith(t.judul)).toBe(true);
+      expect(lampu).toBe({ hijau: "baik", kuning: "awas", merah: "buruk", kelabu: "netral" }[t.nada]);
+      expect(ket.startsWith(t.judul)).toBe(true);
 
       // Baris Tarik data e-Court (popup) - diputuskan server.
       const r = ringkasTarikEcourt({
@@ -644,15 +648,24 @@ describe("5. penanda SINKRON: tiap keadaan tampil sama di semua penanda", () => 
         terakhirKode: 2, // kode basi di memori bot - TIDAK boleh mengalahkan status
         statusUtama: st,
       });
-      expect(r.sesi?.judul).toBe(t.judul);
-      expect(r.keadaan).toBe(
-        ({ perlu_masuk: "perhatian", tidak_tersambung: "terputus", belum_diatur: "belum-diatur", aktif: "aktif", memeriksa: "aktif" } as const)[keadaan]
-      );
+      // Judul baris = keadaan SAMBUNGAN, persis lencana portal - tidak lagi "Aktif, ...".
+      expect(r.label).toBe(t.judul);
+      expect(r.label).not.toMatch(/^Aktif/);
+      expect(nadaPopup(r.keadaan)).toBe(t.nada);
+      expect(r.aktif).toBe(true);
+      // Penarikan berkala = kalimat kedua.
+      expect(r.keterangan).toMatch(/^Penarikan berkala menyala/);
       if (keadaan !== "aktif") expect(r.keterangan).toContain(t.teks);
+      if (["perlu_masuk", "tidak_tersambung", "belum_diatur"].includes(keadaan)) expect(r.keterangan).toMatch(/tertunda sampai/);
+      // Saklar mati: judul tetap keadaan sambungan; penarikan disebut mati, tetap dapat diklik.
+      const mati = ringkasTarikEcourt({ pengaturan: { aktif: false, jarakJam: 2, jamMulai: 7, jamSelesai: 17, maksPerkara: 50 }, sedangJalan: false, statusUtama: st });
+      expect(mati).toMatchObject({ label: t.judul, aktif: false });
+      expect(mati.keterangan).toMatch(/^Penarikan berkala mati/);
 
       // Kesehatan server.
       const k = periksaEcourt({ ok: true, data: { jadwal: { pengaturan: { aktif: true, jarakJam: 2 }, terakhirSelesai: new Date().toISOString(), statusUtama: st } } }, new Date());
-      expect(k.warna).toBe(WARNA_KESEHATAN[keadaan]);
+      expect(k.warna).toBe(t.nada);
+      expect(k.ringkas.startsWith(`e-Court: ${t.judul}.`)).toBe(true);
       expect(JSON.stringify(k.rincian)).toContain(t.judul);
 
       // Peringatan kartu Status penarikan.
@@ -718,7 +731,10 @@ describe("5. penanda SINKRON: tiap keadaan tampil sama di semua penanda", () => 
     };
     try {
       await sampai(() => bagian().getAttribute("data-keadaan") === "perhatian", "perlu masuk tergambar kuning");
-      expect(d.getElementById("tarikEcourtStatus")!.textContent).toBe("Aktif, perlu masuk ulang");
+      expect(d.getElementById("tarikEcourtStatus")!.textContent).toBe("Perlu masuk ulang");
+      expect(bagian().getAttribute("data-saklar")).toBe("menyala");
+      expect((d.getElementById("tarikEcourtStatus") as HTMLButtonElement).disabled).toBe(false);
+      expect(d.getElementById("tarikEcourtKet")!.textContent).toMatch(/^Penarikan berkala menyala, tertunda sampai masuk ulang\./);
       expect(d.getElementById("tarikEcourtKet")!.textContent).toContain(tampilanStatus(st).teks);
       // Gaya warna popup sesuai keadaan (kuning/merah/hijau).
       expect(popupHtml).toMatch(/\.tarik-ecourt\[data-keadaan="perhatian"\] \{ --tarik-warna: #d99a1e; \}/);
@@ -729,9 +745,11 @@ describe("5. penanda SINKRON: tiap keadaan tampil sama di semua penanda", () => 
     }
     // Sesudah masuk: popup baru (dibuka lagi) langsung hijau walau kode 2 masih di memori bot.
     st = statusContoh("aktif");
-    expect(ringkas()).toMatchObject({ keadaan: "aktif", label: "Aktif" });
+    expect(ringkas()).toMatchObject({ keadaan: "aktif", label: "Tersambung" });
     st = statusContoh("tidak_tersambung");
-    expect(ringkas()).toMatchObject({ keadaan: "terputus", label: "Aktif, e-Court tidak tersambung" });
+    expect(ringkas()).toMatchObject({ keadaan: "terputus", label: "Tidak tersambung" });
+    st = statusContoh("memeriksa");
+    expect(ringkas()).toMatchObject({ keadaan: "memeriksa", label: "Sedang memeriksa" });
   });
 
   it("rute sambungan ekstensi: status ringkas dari model, BUKAN 'hidup' untuk yang belum pasti", async () => {

@@ -228,6 +228,14 @@ type JadwalEcourtMentah = {
   statusUtama?: StatusAkunEcourt | null;
 };
 
+/** Nada status e-Court -> warna lampu kesehatan (sama persis). */
+const WARNA_NADA: Record<"hijau" | "kuning" | "merah" | "kelabu", Warna> = {
+  hijau: "hijau",
+  kuning: "kuning",
+  merah: "merah",
+  kelabu: "kelabu",
+};
+
 export function periksaEcourt(jadwal: Hasil<{ jadwal?: JadwalEcourtMentah | null }>, kini: Date) {
   if (!jadwal.ok) return { warna: "kelabu" as Warna, ringkas: "Tidak terukur karena ALETA Bot tidak menjawab.", rincian: [] };
   const j = jadwal.data.jadwal;
@@ -242,16 +250,28 @@ export function periksaEcourt(jadwal: Hasil<{ jadwal?: JadwalEcourtMentah | null
   // walau sesinya sudah habis sejak semalam.
   const sesi = j.statusUtama && j.statusUtama.keadaan ? tampilanStatus(j.statusUtama) : null;
   if (sesi) rincian.push({ label: "Sesi e-Court", nilai: `${sesi.judul} - ${sesi.teks}` });
+  if (sesi) {
+    // Warna & judul = keadaan sambungan, PERSIS lencana portal dan lampu
+    // ekstensi (hijau/kuning/merah/kelabu). Penarikan berkala kalimat kedua.
+    const awal = `e-Court: ${sesi.judul}.`;
+    if (sesi.keadaan !== "aktif") {
+      const lanjut: Record<string, string> = {
+        perlu_masuk: "Penarikan tertunda sampai masuk ulang.",
+        tidak_tersambung: "Penarikan tertunda sampai e-Court terjangkau lagi.",
+        memeriksa: "Sambungan sedang dipastikan.",
+        belum_diatur: "Akun utama belum pernah masuk dari server ini.",
+      };
+      return { warna: WARNA_NADA[sesi.nada], ringkas: `${awal} ${lanjut[sesi.keadaan] || ""}`.trim(), rincian };
+    }
+    if (!j.pengaturan?.aktif) return { warna: "hijau" as Warna, ringkas: `${awal} Penarikan berkala dimatikan.`, rincian };
+    if (j.sedangJalan) return { warna: "hijau" as Warna, ringkas: `${awal} Penarikan sedang berjalan.`, rincian };
+    if (j.terakhirGalat) return { warna: "kuning" as Warna, ringkas: `${awal} Putaran terakhir mencatat error.`, rincian };
+    const jarak = Math.max(1, Number(j.pengaturan?.jarakJam ?? 6));
+    const umur = j.terakhirSelesai ? (kini.getTime() - new Date(j.terakhirSelesai).getTime()) / 3_600_000 : Infinity;
+    if (umur > Math.max(24, jarak * 3)) return { warna: "kuning" as Warna, ringkas: `${awal} Penarikan belum selesai dalam ${Math.round(umur)} jam.`, rincian };
+    return { warna: "hijau" as Warna, ringkas: `${awal} Penarikan berjalan sesuai jadwal.`, rincian };
+  }
   if (!j.pengaturan?.aktif) return { warna: "kelabu" as Warna, ringkas: "Penarikan berkala e-Court dimatikan.", rincian };
-  if (sesi && sesi.keadaan === "perlu_masuk") {
-    return { warna: "kuning" as Warna, ringkas: "Sesi e-Court akun utama perlu masuk ulang - penarikan berhenti.", rincian };
-  }
-  if (sesi && sesi.keadaan === "tidak_tersambung") {
-    return { warna: "merah" as Warna, ringkas: "e-Court tidak tersambung dari server - penarikan tertunda.", rincian };
-  }
-  if (sesi && sesi.keadaan === "belum_diatur") {
-    return { warna: "kelabu" as Warna, ringkas: "Akun utama e-Court belum diatur (belum pernah masuk dari server ini).", rincian };
-  }
   if (j.sedangJalan) return { warna: "hijau" as Warna, ringkas: "Penarikan e-Court sedang berjalan.", rincian };
   if (j.terakhirGalat) return { warna: "kuning" as Warna, ringkas: "Putaran e-Court terakhir mencatat error.", rincian };
   const jarakJam = Math.max(1, Number(j.pengaturan?.jarakJam ?? 6));

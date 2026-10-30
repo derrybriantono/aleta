@@ -29,11 +29,24 @@
 import { tampilanStatus, type StatusAkunEcourt, type TampilanStatusEcourt } from "@/lib/ecourt-status-akun";
 
 /**
- * 30 Okt 2026 (status akun satu sumber): "terputus" = saklar menyala tetapi
- * e-Court tidak tersambung dari server (merah); "belum-diatur" = saklar
- * menyala tetapi akun utama belum pernah masuk dari server (kelabu).
+ * 30 Okt 2026 (status akun satu sumber): bila bot mengirim status akun utama,
+ * WARNA dan JUDUL baris adalah keadaan SAMBUNGAN, persis lencana portal:
+ *   aktif -> "aktif" (hijau), perlu_masuk -> "perhatian" (kuning),
+ *   tidak_tersambung -> "terputus" (merah), memeriksa -> "memeriksa" (kelabu),
+ *   belum_diatur -> "belum-diatur" (kelabu).
+ * Saklar penarikan berkala menjadi kalimat kedua dan ruas `aktif`.
+ * "mati" hanya dipakai bila bot belum mengirim status akun (bentuk lama).
  */
-export type KeadaanTarikEcourt = "aktif" | "perhatian" | "terputus" | "belum-diatur" | "mati" | "tidak-terjangkau";
+export type KeadaanTarikEcourt = "aktif" | "perhatian" | "terputus" | "memeriksa" | "belum-diatur" | "mati" | "tidak-terjangkau";
+
+/** Keadaan sambungan -> data-keadaan baris popup (warna). */
+export const KEADAAN_POPUP_DARI_SAMBUNGAN = {
+  aktif: "aktif",
+  perlu_masuk: "perhatian",
+  tidak_tersambung: "terputus",
+  memeriksa: "memeriksa",
+  belum_diatur: "belum-diatur",
+} as const;
 
 /** Bagian keadaan penjadwal bot yang dibutuhkan (GatewayEcourtJadwal). */
 export type JadwalTarikEcourt = {
@@ -112,6 +125,9 @@ export function ringkasTarikEcourt(jadwal: JadwalTarikEcourt | null | undefined)
       ? jadwal.terakhirSelesai
       : null;
 
+  const sesiAwal = jadwal.statusUtama && jadwal.statusUtama.keadaan ? tampilanStatus(jadwal.statusUtama) : null;
+  if (sesiAwal) return ringkasBersesi(jadwal, sesiAwal, sedangJalan, terakhirSelesai);
+
   if (p.aktif !== true) {
     return {
       keadaan: "mati",
@@ -123,25 +139,9 @@ export function ringkasTarikEcourt(jadwal: JadwalTarikEcourt | null | undefined)
     };
   }
 
-  // Sesi akun utama dari model satu sumber didahulukan atas kode putaran
-  // terakhir: kode 2 tinggal di memori bot sampai putaran berikutnya, sehingga
-  // dulu baris ini tetap "perlu perhatian - sesi habis" walau sudah masuk lagi;
-  // dan sesudah bot menyala ulang kodenya kosong, sehingga tertulis "Aktif"
-  // walau sesinya mati.
-  const sesi = jadwal.statusUtama && jadwal.statusUtama.keadaan ? tampilanStatus(jadwal.statusUtama) : null;
-  if (sesi && !sedangJalan && sesi.keadaan === "perlu_masuk") {
-    return { keadaan: "perhatian", aktif: true, label: "Aktif, perlu masuk ulang", keterangan: sesi.teks, sedangJalan, terakhirSelesai, sesi };
-  }
-  if (sesi && !sedangJalan && sesi.keadaan === "tidak_tersambung") {
-    return { keadaan: "terputus", aktif: true, label: "Aktif, e-Court tidak tersambung", keterangan: sesi.teks, sedangJalan, terakhirSelesai, sesi };
-  }
-  if (sesi && !sedangJalan && sesi.keadaan === "belum_diatur") {
-    return { keadaan: "belum-diatur", aktif: true, label: "Aktif, akun belum diatur", keterangan: sesi.teks, sedangJalan, terakhirSelesai, sesi };
-  }
-  const kodeDipakai = sesi && jadwal.terakhirKode === 2 ? null : jadwal.terakhirKode;
-  const sebab = sedangJalan ? "" : sebabPerhatianTarik(kodeDipakai);
+  const sebab = sedangJalan ? "" : sebabPerhatianTarik(jadwal.terakhirKode);
   if (sebab) {
-    return { keadaan: "perhatian", aktif: true, label: "Aktif, perlu perhatian", keterangan: sebab, sedangJalan, terakhirSelesai, sesi };
+    return { keadaan: "perhatian", aktif: true, label: "Aktif, perlu perhatian", keterangan: sebab, sedangJalan, terakhirSelesai };
   }
 
   const rentang = `jam ${dua(p.jamMulai)}.00-${dua(p.jamSelesai)}.00, Senin-Jumat`;
@@ -155,11 +155,47 @@ export function ringkasTarikEcourt(jadwal: JadwalTarikEcourt | null | undefined)
     : jadwal.dalamJamKerja === false
       ? `Menunggu jam kerja (${rentang}); ${selang}.`
       : `Menarik ${selang}, ${rentang}.`;
+  return { keadaan: "aktif", aktif: true, label: "Aktif", keterangan, sedangJalan, terakhirSelesai };
+}
+
+/**
+ * Baris popup bila status akun utama tersedia: judul & warna = keadaan
+ * sambungan (sama persis dengan lencana portal); penarikan berkala = kalimat
+ * kedua. Klik tetap menyalakan/mematikan saklar penarikan (`aktif`).
+ */
+function ringkasBersesi(
+  jadwal: JadwalTarikEcourt,
+  sesi: TampilanStatusEcourt,
+  sedangJalan: boolean,
+  terakhirSelesai: string | null
+): RingkasTarikEcourt {
+  const p = jadwal.pengaturan;
+  const menyala = p.aktif === true;
+  const rentang = `jam ${dua(p.jamMulai)}.00-${dua(p.jamSelesai)}.00, Senin-Jumat`;
+  const selang =
+    typeof p.selangMinMenit === "number" && typeof p.selangMaksMenit === "number"
+      ? `tiap ${p.selangMinMenit}-${p.selangMaksMenit} menit (acak)`
+      : `tiap ${p.jarakJam} jam`;
+  const TERTUNDA: Partial<Record<string, string>> = {
+    perlu_masuk: "tertunda sampai masuk ulang",
+    tidak_tersambung: "tertunda sampai e-Court terjangkau lagi",
+    belum_diatur: "tertunda sampai akun utama masuk e-Court",
+  };
+  let penarikan: string;
+  if (!menyala) penarikan = "Penarikan berkala mati - klik status untuk menyalakan.";
+  else if (sedangJalan) penarikan = "Penarikan berkala sedang menarik berkas sekarang.";
+  else if (TERTUNDA[sesi.keadaan]) penarikan = `Penarikan berkala menyala, ${TERTUNDA[sesi.keadaan]}.`;
+  else if (jadwal.dalamJamKerja === false) penarikan = `Penarikan berkala menyala - menunggu jam kerja (${rentang}); ${selang}.`;
+  else penarikan = `Penarikan berkala menyala - ${selang}, ${rentang}.`;
+  // Kode 2 (sesi habis) di memori bot sudah diwakili status sambungan; sebab
+  // lain (ruang disk, putaran gagal) tetap disebut.
+  const sebabLain = menyala && !sedangJalan && jadwal.terakhirKode !== 2 ? sebabPerhatianTarik(jadwal.terakhirKode) : "";
+  const kalimat = [penarikan, sebabLain, sesi.keadaan === "aktif" ? "" : sesi.teks].filter(Boolean).join(" ");
   return {
-    keadaan: "aktif",
-    aktif: true,
-    label: "Aktif",
-    keterangan: sesi && sesi.keadaan !== "aktif" ? `${keterangan} e-Court: ${sesi.judul.toLowerCase()} - ${sesi.teks}` : keterangan,
+    keadaan: KEADAAN_POPUP_DARI_SAMBUNGAN[sesi.keadaan],
+    aktif: menyala,
+    label: sesi.judul,
+    keterangan: kalimat,
     sedangJalan,
     terakhirSelesai,
     sesi,

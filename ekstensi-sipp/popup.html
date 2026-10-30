@@ -180,8 +180,10 @@
   .tarik-ecourt[data-keadaan="tidak-terjangkau"] { --tarik-warna: #d4483b; }
   /* 30 Okt: menyala tetapi e-Court tidak tersambung dari server (status akun satu sumber). */
   .tarik-ecourt[data-keadaan="terputus"] { --tarik-warna: #d4483b; }
-  /* 30 Okt: menyala tetapi akun utama e-Court belum pernah masuk dari server (kelabu, titik penuh). */
+  /* 30 Okt: judul = keadaan sambungan e-Court (sama dengan lencana portal); kelabu = sedang memeriksa / belum diatur. */
   .tarik-ecourt[data-keadaan="belum-diatur"] { --tarik-warna: #8a8f98; }
+  .tarik-ecourt[data-keadaan="memeriksa"] { --tarik-warna: #8a8f98; }
+  .tarik-ecourt[data-saklar="mati"] .tarik-titik { background: transparent; border: 2px solid var(--tarik-warna); box-sizing: border-box; }
   .hubungan-saksi-isi { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; max-height: 220px; overflow: auto; }
   .hubungan-saksi-baris { display: flex; align-items: center; gap: 6px; font-size: 11.5px; }
   .hubungan-saksi-baris[data-sembunyi="ya"] > span { opacity: .6; text-decoration: line-through; }
