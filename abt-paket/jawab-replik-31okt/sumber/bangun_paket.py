@@ -299,6 +299,74 @@ def pengunggah_bas(raw, no, rel, catat):
     return [(j, j + 6, ganti)]
 
 
+def akhir_grup(raw, i):
+    d, k = 0, i
+    while k < len(raw):
+        c = raw[k]
+        if c == BS:
+            k += 2
+            continue
+        if c == '{':
+            d += 1
+        elif c == '}':
+            d -= 1
+            if d == 0:
+                return k
+        k += 1
+    return -1
+
+
+RE_DAFTAR_BUKTI = re.compile(r'#(?:1117\d|1214|9955|9911|9958|0378|373[01]|375[78]|398[34])#')
+
+
+def tanda_z_bukti(raw, rel, catat):
+    """31 Okt (pengguna): tanda penutup "SC Z 1x" + garis Z + tanggal harus jatuh SESUDAH daftar bukti. Bentuk itu dijangkarkan ke paragraf
+    tempatnya berada; bila paragraf jangkar berada SEBELUM daftar bukti (izin poligami ALUR 34: "Bukti-bukti tersebut sebagai berikut:"
+    lalu #11170#), seluruh grup bentuknya dipindah ke awal paragraf sesudah daftar bukti - seperti blangko pembuktian lainnya."""
+    z = raw.find('SC Z')
+    if z < 0 or raw.count('SC Z') != 1:
+        return None
+    # kedalaman kurawal tiap posisi sampai z; grup pembungkus = grup terluar di tingkat badan dokumen (kedalaman 1) yang memuat z
+    d, k, buka = 0, 0, []
+    while k < z:
+        c = raw[k]
+        if c == BS:
+            k += 2
+            continue
+        if c == '{':
+            buka.append(k)
+            d += 1
+        elif c == '}':
+            buka.pop()
+            d -= 1
+        k += 1
+    if len(buka) < 2:
+        return None
+    w = buka[1]
+    we = akhir_grup(raw, w)
+    if we < z or BS + 'shp' not in raw[w:we]:
+        return None
+    sesudah = tampak(raw[we + 1:we + 3000])
+    m = RE_DAFTAR_BUKTI.search(raw, we)
+    if not m or m.start() - we > 6000 or not sesudah.lstrip().startswith('Bukti-bukti tersebut sebagai berikut'):
+        return None
+    # Bentuk Z mengisi ruang kosong sesudah paragraf jangkarnya ("Bukti-bukti tersebut sebagai berikut:" + ruang tempel bukti) - jadi
+    # seluruh paragraf itu (beserta bentuknya) dipindah ke sesudah paragraf daftar bukti, sama dengan urutan blangko pembuktian lain:
+    # "... menyerahkan bukti surat berupa:" / daftar bukti / "Bukti-bukti tersebut sebagai berikut:" + Z / kalimat berikutnya.
+    b0 = raw.rfind(BS + 'pard', 0, w)
+    b1 = raw.rfind(BS + 'pard', 0, m.start())
+    e = akhir_paragraf(raw, m.end())
+    q = raw.find(BS + 'pard', e)
+    if b0 < 0 or not (b0 < w < we < b1) or e < 0 or q < 0:
+        return None
+    baru = raw[:b0] + raw[b1:q] + raw[b0:b1] + raw[q:]
+    lama_kal = 'menyerahkan bukti surat.}'
+    if baru[:b0].count(lama_kal) == 1:
+        baru = baru.replace(lama_kal, 'menyerahkan bukti surat berupa:}', 1)
+    catat.append((rel, 'TANDA Z', 'paragraf "Bukti-bukti tersebut sebagai berikut:" + bentuk "SC Z" dipindah dari sebelum daftar bukti ke sesudahnya'))
+    return baru
+
+
 def duplik_oleh(raw, rel, catat):
     """31 Okt (sesi utama): "... disampaikan oleh #0046#, kemudian #0046# mengajukan dupliknya" -> duplik oleh #0047#."""
     keluar = []
@@ -322,7 +390,8 @@ def ubah_berkas(rel, raw0, catat):
             if s:
                 ubah.append(s)
                 catat.append((rel, 'BAS', 'sisip #%d# sesudah #7083#' % no))
-        return terapkan(raw0, ubah)
+        r = terapkan(raw0, ubah)
+        return tanda_z_bukti(r, rel, catat) or r
     if gol != 'put':
         return raw0
     kontra = not RE_BUKAN_KONTRA.search(f)
