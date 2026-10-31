@@ -24,10 +24,19 @@ export const VARIABEL_PERIODE: readonly string[] = ["0222", "0246"];
 export const VARIABEL_HANYA_SARAN: readonly string[] = ["8503", "5227"];
 
 /** Variabel yang memicu bacaan berkas bukti e-Court (VAR_BUKTI). */
-export const VAR_BUKTI: readonly string[] = ["9470", "9488", "9489", "9492", "9493", "9804", "9805", "9810", "9834", "9835", "9840", "9873", "9951", "9952", "0654", "0655"];
+export const VAR_BUKTI: readonly string[] = ["9470", "9488", "9489", "9492", "9493", "9804", "9805", "9810", "9834", "9835", "9840", "9873", "9951", "9952", "0654", "0655", "12040", "12041", "12042", "12043", "12044", "12045", "12046", "12047", "12048", "12049"];
+
+/**
+ * T11 (31 Okt 2026): bukti surat dan bukti elektronik TERPISAH - lima variabel ABT per pihak (P = Penggugat/Pemohon, T = Tergugat/Termohon).
+ * Sama dengan KODE_BUKTI_PISAH di ekstensi-sipp/blangko-derry-isian.js (uji bukti-pisah-t11 menjaganya).
+ */
+export const KODE_BUKTI_PISAH: Readonly<Record<"P" | "T", Readonly<Record<"surat" | "el" | "pengantarSurat" | "pengantarEl" | "putusan", string>>>> = {
+  P: { surat: "12040", el: "12041", pengantarSurat: "12042", pengantarEl: "12043", putusan: "12044" },
+  T: { surat: "12045", el: "12046", pengantarSurat: "12047", pengantarEl: "12048", putusan: "12049" },
+};
 
 /** Variabel yang diisi dari berkas e-Court (VAR_ECOURT): bacaan isi-gugatan hanya diminta bila blangko memuatnya. */
-export const VAR_ECOURT: readonly string[] = ["6055", "6054", "7120", "6071", "6072", "7778", "5110", "5111", "0007", "2004", "7084", "9881", "5227", "8436", "8437", "9355", "9491", "9681", "9164", "9283", "9470", "9488", "9489", "9492", "9493", "9804", "9805", "9810", "9834", "9835", "9840", "9873", "9951", "9952", "0654", "0655", "12020", "12021", "12022", "12023", "12024", "12025", "12026", "12027", "12028", "0027", "0045", "8175", "8179", "8180", "0370", "0372", "0123", "7139", "8548", "8549", "8800", "8801", "8802", "8803", "8804", "8805", "8806", "8807", "8808", "8809", "8810", "8811", "8813"];
+export const VAR_ECOURT: readonly string[] = ["6055", "6054", "7120", "6071", "6072", "7778", "5110", "5111", "0007", "2004", "7084", "9881", "5227", "8436", "8437", "9355", "9491", "9681", "9164", "9283", "9470", "9488", "9489", "9492", "9493", "9804", "9805", "9810", "9834", "9835", "9840", "9873", "9951", "9952", "0654", "0655", "12020", "12021", "12022", "12023", "12024", "12025", "12026", "12027", "12028", "12040", "12041", "12042", "12043", "12044", "12045", "12046", "12047", "12048", "12049", "0027", "0045", "8175", "8179", "8180", "0370", "0372", "0123", "7139", "8548", "8549", "8800", "8801", "8802", "8803", "8804", "8805", "8806", "8807", "8808", "8809", "8810", "8811", "8813"];
 
 /** Variabel kuasa dari surat gugatan (VAR_KUASA). */
 export const VAR_KUASA: readonly string[] = ["0156", "0184", "8538", "8537"];

@@ -3956,6 +3956,66 @@
     const baris = butir.map((b, i) => kalimatBuktiEl(b, { urut: dasar + i + 1, tanda: dasar + i + 1, sb, nomori: el.nomori !== false }));
     return surat ? `${surat}\n${baris.join("\n")}` : baris.join("\n");
   }
+  // ── T11 (31 Okt 2026): bukti surat dan bukti elektronik TERPISAH (blok variabel ABT 12040-12049) ──
+  // Dulu bukti elektronik ikut satu daftar dengan bukti surat (1214 / 9911 / 9955 dst.). Kini ada variabel sendiri-sendiri supaya BAS dapat
+  // mencetak "bukti surat berupa:" dan "bukti elektronik berupa:" dengan pengantar masing-masing, dan putusan dapat mencetak sub-bab huruf
+  // berurut. Lima variabel per pihak (P = Penggugat/Pemohon, T = Tergugat/Termohon). Variabel lama TIDAK diubah (susunTeksBukti tetap).
+  // Sama dengan KODE_BUKTI_PISAH di manajemen_surat/src/lib/isi-sipp-format.ts (daftar kode: VAR_BUKTI dan VAR_ECOURT; dijaga uji bukti-pisah-t11).
+  const KODE_BUKTI_PISAH = Object.freeze({
+    P: Object.freeze({ surat: "12040", el: "12041", pengantarSurat: "12042", pengantarEl: "12043", putusan: "12044" }),
+    T: Object.freeze({ surat: "12045", el: "12046", pengantarSurat: "12047", pengantarEl: "12048", putusan: "12049" }),
+  });
+  /** Huruf sub-bab: a, b, c ... (urutan menurut yang ADA). */
+  const hurufSubBab = (i) => String.fromCharCode(97 + i);
+  /**
+   * Kalimat pengantar BAS (keputusan pengguna 31 Okt). Pengantar surat memuat pertanyaan Ketua Majelis; kalimat "Selanjutnya ... bukti surat
+   * berupa:" hanya bila ada bukti surat. Tanpa bukti surat tetapi ada elektronik: "alat bukti elektronik dan saksi-saksi". Tanpa bukti sama
+   * sekali: hanya "siap mengajukan saksi-saksi." (tanpa kalimat "menyerahkan ... berupa:" yang tidak diikuti daftar).
+   */
+  function pengantarBuktiPisah(adaSurat, adaEl, namaPihak) {
+    const p = String(namaPihak || "").trim() || "Penggugat";
+    const alat = adaSurat ? "alat bukti surat dan saksi-saksi" : adaEl ? "alat bukti elektronik dan saksi-saksi" : "saksi-saksi";
+    const buka = `Atas pertanyaan Ketua Majelis, ${p} menyatakan bahwa pada hari ini ia telah siap mengajukan ${alat}.`;
+    return {
+      surat: adaSurat ? `${buka} Selanjutnya ${p} menyerahkan bukti surat berupa:` : buka,
+      el: adaEl ? `Selanjutnya ${p} menyerahkan bukti elektronik berupa:` : "",
+    };
+  }
+  /**
+   * Satu pihak -> nilai kelima variabel + keterangan pembantu. Murni (diuji). Bagian yang kosong bernilai "" (tidak tercetak, tanpa
+   * paragraf kosong - lihat rapikanBarisKosong di deteksi-sisa-blangko.js). Baris bukti surat yang kosong tidak dihitung; nomor tanda
+   * bukti elektronik melanjutkan jumlah bukti surat (seperti susunTeksBukti). `putusan` = sub-bab putusan lengkap dengan huruf berurut
+   * (a. Bukti Surat/Tertulis, b. Bukti Elektronik, c. Saksi - bagian yang tidak ada dilewati dan huruf maju) memuat daftar di bawah judulnya;
+   * `judul` = judul sub-bab saja (bila blangko memisahkan judul dari daftar). `akhir` = daftar TERAKHIR yang tercetak ("el" | "surat" | ""):
+   * tanda SC Z ditaruh sesudahnya.
+   */
+  function susunBuktiPisah(rows, pihak, el, sb) {
+    const w = pihak === "T" ? "T" : "P";
+    const aktif = (Array.isArray(rows) ? rows : []).filter((r) => r && String(r.nm || r.manual || "").trim());
+    const surat = susunKalimatBukti(aktif, w);
+    const butir = el && Array.isArray(el.butir) ? el.butir.filter((b) => !butirElKosong(b)) : [];
+    const dasar = aktif.length;
+    const elTeks = butir.map((b, i) => kalimatBuktiEl(b, { urut: dasar + i + 1, tanda: dasar + i + 1, sb, nomori: !el || el.nomori !== false })).join("\n");
+    const adaSurat = Boolean(surat);
+    const adaEl = Boolean(elTeks);
+    const nama = (sb && sb[w]) || (w === "T" ? "Tergugat" : "Penggugat");
+    const pengantar = pengantarBuktiPisah(adaSurat, adaEl, nama);
+    let i = 0;
+    const judul = { surat: "", el: "", saksi: "" };
+    if (adaSurat) judul.surat = `${hurufSubBab(i++)}. Bukti Surat/Tertulis`;
+    if (adaEl) judul.el = `${hurufSubBab(i++)}. Bukti Elektronik`;
+    judul.saksi = `${hurufSubBab(i)}. Saksi`;
+    const putusan = [judul.surat, adaSurat ? surat : "", judul.el, adaEl ? elTeks : "", judul.saksi].filter(Boolean).join("\n");
+    const k = KODE_BUKTI_PISAH[w];
+    return {
+      pihak: w,
+      adaSurat,
+      adaEl,
+      akhir: adaEl ? "el" : adaSurat ? "surat" : "",
+      judul,
+      nilai: { [k.surat]: surat, [k.el]: elTeks, [k.pengantarSurat]: pengantar.surat, [k.pengantarEl]: pengantar.el, [k.putusan]: putusan },
+    };
+  }
   /** Teks ruas -> { surat, el[] }: baris yang memuat "bukti elektronik tersebut" dipisahkan dari kalimat bukti surat. */
   function pisahBuktiElektronik(teks) {
     const surat = [];
