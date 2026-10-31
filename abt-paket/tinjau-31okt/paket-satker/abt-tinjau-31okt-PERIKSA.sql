@@ -18,15 +18,15 @@ UNION ALL SELECT 'var 12010' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE 
 UNION ALL SELECT 'var 12011' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 12011 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), IFNULL(referensi, ''), IFNULL(multi_sidang, ''), locked, IFNULL(modifier, ''))) = 'e1fddfb6d41a89116659a34b4c23cd75') AS ok
 UNION ALL SELECT 'var 12012' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 12012 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), IFNULL(referensi, ''), IFNULL(multi_sidang, ''), locked, IFNULL(modifier, ''))) = 'e5fd8ade98d55cff2b2fc88f2aaaf099') AS ok
 UNION ALL SELECT 'ubah 3976' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 3976 AND MD5(IFNULL(sql_query, '')) = 'da72a7d85b01e0db74b633b1c1d700f5') AS ok
-UNION ALL SELECT 'ubah 4303' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4303 AND MD5(IFNULL(sql_query, '')) = '3c939838de25bc5a0a1430a1cd56097d') AS ok
-UNION ALL SELECT 'ubah 4308' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4308 AND MD5(IFNULL(sql_query, '')) = '57487f59a85e53bfe4e32dfde8a89908') AS ok
+UNION ALL SELECT 'ubah 4303' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4303 AND MD5(IFNULL(sql_query, '')) = '67c3acd43ac22d774df4a73b1f21fda5') AS ok
+UNION ALL SELECT 'ubah 4308' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4308 AND MD5(IFNULL(sql_query, '')) = 'd9977cef3e59205de505e96e70ace4bb') AS ok
 UNION ALL SELECT 'ubah 4807' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4807 AND MD5(IFNULL(sql_query, '')) = '4870d7c29c9c357d41817894042253b2') AS ok
 UNION ALL SELECT 'ubah 4808' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4808 AND MD5(IFNULL(sql_query, '')) = '24469349329d87b9dbd3de23a8300eac') AS ok
 UNION ALL SELECT 'ubah 4829' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4829 AND MD5(IFNULL(sql_query, '')) = '138d1577e5de15239478d39fc151ce72') AS ok
 UNION ALL SELECT 'ubah 4830' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4830 AND MD5(IFNULL(sql_query, '')) = 'a7a278176b606b6cf641805458947b82') AS ok
 UNION ALL SELECT 'ubah 4833' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4833 AND MD5(IFNULL(sql_query, '')) = '16ff5a1ffc8c2a80f6a83e999c881fd0') AS ok
 UNION ALL SELECT 'ubah 4834' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4834 AND MD5(IFNULL(sql_query, '')) = '4f1baee20b8a5aec8c98f1143a09239e') AS ok
-UNION ALL SELECT 'ubah 4864' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4864 AND MD5(IFNULL(sql_query, '')) = 'ed556c5431ecffc947ae94848ddcea03') AS ok
+UNION ALL SELECT 'ubah 4864' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4864 AND MD5(IFNULL(sql_query, '')) = '3a83121dfd47ba02f64e8916283d9d60') AS ok
 UNION ALL SELECT 'ubah 7006' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 7006 AND MD5(IFNULL(sql_query, '')) = '6f11dea89df14e41dcafefeb9d434b0c') AS ok
 UNION ALL SELECT 'ubah 7008' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 7008 AND MD5(IFNULL(sql_query, '')) = '6ef9cf7e616743a46a2c67eb3a09c3a0') AS ok
 UNION ALL SELECT 'ubah 7169' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 7169 AND MD5(IFNULL(sql_query, '')) = '3601e8739c0691a86d77956821fb9d95') AS ok
@@ -52,15 +52,15 @@ UNION ALL SELECT 'var 12010' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE 
 UNION ALL SELECT 'var 12011' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 12011 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), IFNULL(referensi, ''), IFNULL(multi_sidang, ''), locked, IFNULL(modifier, ''))) = 'e1fddfb6d41a89116659a34b4c23cd75') AS ok
 UNION ALL SELECT 'var 12012' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 12012 AND MD5(CONCAT_WS('|', nama, data_type, IFNULL(sql_query, ''), IFNULL(referensi, ''), IFNULL(multi_sidang, ''), locked, IFNULL(modifier, ''))) = 'e5fd8ade98d55cff2b2fc88f2aaaf099') AS ok
 UNION ALL SELECT 'ubah 3976' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 3976 AND MD5(IFNULL(sql_query, '')) = 'da72a7d85b01e0db74b633b1c1d700f5') AS ok
-UNION ALL SELECT 'ubah 4303' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4303 AND MD5(IFNULL(sql_query, '')) = '3c939838de25bc5a0a1430a1cd56097d') AS ok
-UNION ALL SELECT 'ubah 4308' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4308 AND MD5(IFNULL(sql_query, '')) = '57487f59a85e53bfe4e32dfde8a89908') AS ok
+UNION ALL SELECT 'ubah 4303' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4303 AND MD5(IFNULL(sql_query, '')) = '67c3acd43ac22d774df4a73b1f21fda5') AS ok
+UNION ALL SELECT 'ubah 4308' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4308 AND MD5(IFNULL(sql_query, '')) = 'd9977cef3e59205de505e96e70ace4bb') AS ok
 UNION ALL SELECT 'ubah 4807' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4807 AND MD5(IFNULL(sql_query, '')) = '4870d7c29c9c357d41817894042253b2') AS ok
 UNION ALL SELECT 'ubah 4808' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4808 AND MD5(IFNULL(sql_query, '')) = '24469349329d87b9dbd3de23a8300eac') AS ok
 UNION ALL SELECT 'ubah 4829' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4829 AND MD5(IFNULL(sql_query, '')) = '138d1577e5de15239478d39fc151ce72') AS ok
 UNION ALL SELECT 'ubah 4830' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4830 AND MD5(IFNULL(sql_query, '')) = 'a7a278176b606b6cf641805458947b82') AS ok
 UNION ALL SELECT 'ubah 4833' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4833 AND MD5(IFNULL(sql_query, '')) = '16ff5a1ffc8c2a80f6a83e999c881fd0') AS ok
 UNION ALL SELECT 'ubah 4834' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4834 AND MD5(IFNULL(sql_query, '')) = '4f1baee20b8a5aec8c98f1143a09239e') AS ok
-UNION ALL SELECT 'ubah 4864' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4864 AND MD5(IFNULL(sql_query, '')) = 'ed556c5431ecffc947ae94848ddcea03') AS ok
+UNION ALL SELECT 'ubah 4864' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4864 AND MD5(IFNULL(sql_query, '')) = '3a83121dfd47ba02f64e8916283d9d60') AS ok
 UNION ALL SELECT 'ubah 7006' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 7006 AND MD5(IFNULL(sql_query, '')) = '6f11dea89df14e41dcafefeb9d434b0c') AS ok
 UNION ALL SELECT 'ubah 7008' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 7008 AND MD5(IFNULL(sql_query, '')) = '6ef9cf7e616743a46a2c67eb3a09c3a0') AS ok
 UNION ALL SELECT 'ubah 7169' AS label, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 7169 AND MD5(IFNULL(sql_query, '')) = '3601e8739c0691a86d77956821fb9d95') AS ok
