@@ -307,12 +307,12 @@ Uji rantai 22 paket 31 Okt 13.59-14.13 (salinan baru dump 28 Okt + dasar2, paket
 paket cocok; keadaan akhir variabel dan seluruh pohon RTF SAMA PERSIS dengan pasang laptop w148 (`uji-rantai-31okt/hasil-rantai-22.txt`).
 Keluaran benar:
 ```
-PRASYARAT COCOK (0|0|5|0|4)
-SIAP=273
+PRASYARAT COCOK (0|0|6|0|4)
+SIAP=274
 BERKAS SIAP
 SEMUA COCOK
-UJI: 12 kueri berjalan (perkara <id>)
-TAMBAL=273
+UJI: 13 kueri berjalan (perkara <id>)
+TAMBAL=274
 BERKAS COCOK
 SELESAI - paket abt-jawab-replik-31okt terpasang. ...
 ```
