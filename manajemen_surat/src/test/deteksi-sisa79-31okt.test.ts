@@ -118,7 +118,26 @@ describe("posita + keterangan saksi", () => {
     expect(s.yakin).toBe("ragu");
     expect(s.asalLabel).toBe("dari keterangan kedua saksi");
     expect(r.butir.find((b) => b.asal === "posita")!.asalLabel).toBe("dari posita");
-    expect(m.pilihanBunyi(r)[0].nilai).toBe("Tergugat sering mabuk-mabukan dan Tergugat melakukan kekerasan fisik terhadap Penggugat");
+    // Keputusan sesi utama 31 Okt: usulan saksi BELUM dicentang - kalimat bawaan tetap dari posita; varian "dengan keterangan
+    // kedua saksi" menyambungkannya.
+    const pil = m.pilihanBunyi(r);
+    expect(pil[0].nilai).toBe("Tergugat sering mabuk-mabukan");
+    expect(pil.find((x) => /keterangan kedua saksi/.test((x as { keadaan?: string }).keadaan || ""))!.nilai).toBe(
+      "Tergugat sering mabuk-mabukan dan Tergugat melakukan kekerasan fisik terhadap Penggugat"
+    );
+  });
+  it("kartu 5227: alasan posita yang dikuatkan kedua saksi tetap 'cukup' (ikut otomatis) walau ada usulan saksi", () => {
+    const L = require_(path.join(AKAR, "services/deteksi/alasanRincian.js")) as { terapkan: (h: unknown, r: unknown) => boolean };
+    const r = jalan(
+      ["Tergugat sering mabuk-mabukan"],
+      saksi(["Penyebabnya karena Tergugat sering mabuk-mabukan dan memukul Penggugat"], ["Penyebabnya karena Tergugat sering mabuk-mabukan dan pernah memukul Penggugat"])
+    );
+    const hasil = { usulan: [{ kode: "5227", nilai: "" }] } as { usulan: { kode: string; nilai: string; keyakinan?: string; rincian?: { asal: string }[] }[] };
+    L.terapkan(hasil, r);
+    const u = hasil.usulan[0];
+    expect(u.nilai).toBe("Tergugat sering mabuk-mabukan");
+    expect(u.keyakinan).toBe("cukup");
+    expect(u.rincian!.map((x) => x.asal)).toEqual(["posita", "saksi"]);
   });
   it("(c) satu saksi saja -> catatan, tidak diusulkan", () => {
     const r = jalan(["Tergugat sering mabuk-mabukan"], saksi(["Penyebabnya karena Tergugat sering memukul Penggugat"], ["Penyebabnya karena Tergugat sering mabuk"]));

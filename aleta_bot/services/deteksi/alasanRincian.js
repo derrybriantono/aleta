@@ -938,8 +938,10 @@ function gabungKalimat(bagian) {
 }
 
 /** Kalimat 5227 pada varian ke-k dari semua butir; "ringkas" = perbuatan sebab saja. */
-function susunVarian(rincian, k, ringkas) {
-  const bagian = rincian.butir.map((b) => {
+function susunVarian(rincian, k, ringkas, denganSaksi) {
+  // 31 Okt (keputusan sesi utama): alasan "dari keterangan kedua saksi" = usulan yang BELUM dicentang - tidak masuk kalimat
+  // bawaan; hanya varian "dengan keterangan kedua saksi" dan centang manual di panel yang memuatnya.
+  const bagian = rincian.butir.filter((b) => denganSaksi || b.asal !== "saksi").map((b) => {
     if (ringkas) {
       const r = b.bunyi.find((x) => x.keadaan === "tanpa hubungan sebab-akibat");
       return (r || b.bunyi[0] || {}).nilai || "";
@@ -969,6 +971,7 @@ function pilihanBunyi(rincian) {
   if (Array.isArray(rincian.penutup) && rincian.penutup[0] && rincian.butir.some((b) => !b.penutup)) {
     tambah("sesuai gugatan, dengan perselisihan di akhir", `${susunVarian(rincian, 0, false)} sehingga ${rincian.penutup[0]}`);
   }
+  if (rincian.butir.some((b) => b.asal === "saksi")) tambah("sesuai gugatan dan keterangan kedua saksi", susunVarian(rincian, 0, false, true));
   return hasil;
 }
 
@@ -1006,7 +1009,8 @@ function ringkasButir(b) {
 function terapkan(hasil, rincian) {
   const u = (hasil.usulan || []).find((x) => x && x.kode === "5227");
   if (!u || !rincian || !rincian.butir.length) return false;
-  const konkret = rincian.butir.filter((b) => !b.penutup);
+  const konkret = rincian.butir.filter((b) => !b.penutup && b.asal !== "saksi");
+  const butirPosita = rincian.butir.filter((b) => b.asal !== "saksi");
   const pil = pilihanBunyi(rincian);
   const lama = String(u.nilai || "").trim();
   const baru = pil.length ? pil[0].nilai : "";
@@ -1020,7 +1024,7 @@ function terapkan(hasil, rincian) {
       u.nilaiLama = lama;
     }
     u.nilai = baru;
-    u.keyakinan = rincian.butir.every((b) => b.yakin === "cukup") ? "cukup" : "ragu";
+    u.keyakinan = butirPosita.length && butirPosita.every((b) => b.yakin === "cukup") ? "cukup" : "ragu";
     u.dariPosita = true;
     u.dariGugatan = true;
     const sumberGugatan = [];
@@ -1043,7 +1047,7 @@ function terapkan(hasil, rincian) {
   }
   const dariSaksi = rincian.butir.filter((b) => b.asal === "saksi");
   if (dariSaksi.length) {
-    catatan.push(`Ikut diusulkan dari keterangan kedua saksi (tidak didalilkan di gugatan): ${dariSaksi.map((b) => b.label).join(", ")}.`);
+    catatan.push(`Usulan dari keterangan kedua saksi (tidak didalilkan di gugatan, belum dicentang - centang bila setuju): ${dariSaksi.map((b) => b.label).join(", ")}.`);
   }
   if ((rincian.bertentangan || []).length) {
     catatan.push(`Keterangan saksi bertentangan dengan posita: ${rincian.bertentangan.map((x) => `${x.label} (saksi ${x.saksi.join(" dan ")})`).join(", ")} - periksa pembuktiannya.`);

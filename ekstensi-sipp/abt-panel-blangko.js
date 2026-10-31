@@ -2131,7 +2131,8 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
     );
     a5227PasangKeterangan(tandaPasti, u, ujiSaksi.sama ? "Setiap alasan dikuatkan kedua saksi." : `Sebab: ${ujiSaksi.sebab || "perlu diperiksa"}.`);
     wadahRincian.appendChild(tandaPasti);
-    const status = rincianKartu.map(() => ({ pakai: true, bunyi: 0 }));
+    // 31 Okt: alasan "dari keterangan kedua saksi" = usulan yang BELUM dicentang (tidak masuk kalimat bawaan).
+    const status = rincianKartu.map((r) => ({ pakai: r.asal !== "saksi", bunyi: 0 }));
     const susunUlang = () => {
       const bagian = rincianKartu.map((r, i) => (status[i].pakai ? String((r.bunyi[status[i].bunyi] || r.bunyi[0]).nilai || "") : "")).filter(Boolean);
       if (!bagian.length) return;
@@ -2145,8 +2146,8 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
       const baris = buatElemen("div", "aleta-abt-rincian-baris");
       const kotak = document.createElement("input");
       kotak.type = "checkbox";
-      kotak.checked = true;
-      kotak.title = "Hilangkan centang untuk membuang alasan ini dari kalimat";
+      kotak.checked = status[i].pakai;
+      kotak.title = r.asal === "saksi" ? "Centang untuk menambahkan alasan dari keterangan kedua saksi ke kalimat" : "Hilangkan centang untuk membuang alasan ini dari kalimat";
       kotak.addEventListener("change", () => {
         status[i].pakai = kotak.checked;
         susunUlang();
