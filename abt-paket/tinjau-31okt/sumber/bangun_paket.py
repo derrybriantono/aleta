@@ -259,8 +259,9 @@ def butir(raw, rel, catat):
         pb = '%spard%s%sfi-284%sli%d%slin%d%stx%d' % (BS, props, BS, BS, li, BS, li, BS, li)
         # butir sebelumnya di paragraf yang sama: propertinya dipasang lagi tepat sebelum \par yang menutupnya (bisa di kelompok {...} lain)
         lanjut = bool(ubah) and not re.search(r'\\par(?![a-z])', raw[ubah[-1][1]:pos])
-        ganti = ';%s%spar%s -%stab ' % (pb + ' ' if lanjut else '', BS, pb, BS)
-        ubah.append((pos, e, ganti))
+        # 31 Okt (pengguna): awal butir berhuruf kapital "- Bahwa"
+        ganti = ';%s%spar%s -%stab B' % (pb + ' ' if lanjut else '', BS, pb, BS)
+        ubah.append((pos, e + 1, ganti))
         catat.append((rel, sb[-50:] + '[;]' + sd[:30], 'butir'))
     return ubah
 
@@ -293,7 +294,7 @@ def pastikan_pard_sesudah(raw, ubah):
 
 # --- kueri variabel ---------------------------------------------------------------------------------------------------------
 BUTIR_SQL = ';' + BS * 2 + 'par' + BS * 2 + 'pard' + BS * 2 + 'qj' + BS * 2 + 'sl360' + BS * 2 + 'slmult1' + BS * 2 + 'widctlpar' + \
-    BS * 2 + 'fi-284' + BS * 2 + 'li1004' + BS * 2 + 'lin1004' + BS * 2 + 'tx1004 -' + BS * 2 + 'tab bahwa'
+    BS * 2 + 'fi-284' + BS * 2 + 'li1004' + BS * 2 + 'lin1004' + BS * 2 + 'tx1004 -' + BS * 2 + 'tab Bahwa'
 PULIH_SQL = BS * 2 + 'par' + BS * 2 + 'pard' + BS * 2 + 'qj' + BS * 2 + 'fi720' + BS * 2 + 'li0' + BS * 2 + 'lin0' + BS * 2 + 'sl360' + BS * 2 + 'slmult1' + \
     BS * 2 + 'widctlpar '
 VAR_BUTIR = (4303, 4864, 4308)  # kueri pertimbangan Derry yang memuat "...; bahwa ..." di tengah paragraf
