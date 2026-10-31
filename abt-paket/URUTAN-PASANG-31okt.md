@@ -323,7 +323,7 @@ cd butir-rata-31okt/paket-satker && bash pasang-satker.sh
 ```
 Keputusan pengguna 31 Okt: paragraf tanpa nomor sesudah butir bernomor ("Berdasarkan ... mohon:", "Atau apabila ...") rata kiri berinden
 baris pertama; fungsi isian_rtf_butir + isian_rtf_judul diganti (tersyarat md5), lihat `butir-rata-31okt/PASANG.md` dan banding
-`butir-rata-31okt/hasil/banding.txt`. Uji rantai 23 paket 31 Okt 15.27-15.40 (`uji-rantai-31okt/hasil-rantai-23.txt`): semua SELESAI;
+`butir-rata-31okt/hasil/banding.txt`. Uji rantai 23 paket 31 Okt 16.55-17.10 (sesudah perbaikan tanda Z, TAMBAL=274) (`uji-rantai-31okt/hasil-rantai-23.txt`): semua SELESAI;
 variabel (2.960, md5 GROUP_CONCAT penuh) dan seluruh pohon RTF sama persis dengan pasang laptop w148; fungsi sama kecuali 4 fungsi paket lama yang di laptop memuat nama
 basis salinan (khusus laptop). Paket 22 ikut diperbarui (keputusan sesi utama: pengunggah BAS replik/duplik rekonvensi/kesimpulan, duplik
 oleh Tergugat, spasi "secara elektronik" #0206#) - kini PRASYARAT `0|0|6|0|4`, `UJI: 13 kueri`.
