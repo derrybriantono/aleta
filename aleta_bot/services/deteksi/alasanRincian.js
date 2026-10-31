@@ -39,7 +39,7 @@ const BATAS_KALIMAT = 600; // potongan teks per kalimat yang dipindai (hindari r
 const BATAS_KUTIPAN = 140;
 
 // Penghubung antar simpul dalam satu kalimat.
-const RE_AKIBAT = /\b(?:sehingga|hingga|akibatnya|sampai[\s-]*sampai|yang\s+(?:me)?nyebabkan|yang\s+mengakibatkan|yang\s+berakibat|menyebabkan|mengakibatkan|berujung|mengakibatkan|maka\s+dari\s+itu)\b/i;
+const RE_AKIBAT = /\b(?:sehingga|hingga|higga|hinga|sehinga|akibatnya|sampai[\s-]*sampai|yang\s+(?:me)?nyebabkan|yang\s+mengakibatkan|yang\s+berakibat|menyebabkan|mengakibatkan|berujung|mengakibatkan|maka\s+dari\s+itu)\b/i;
 const RE_KONDISI = /\b(?:bila|jika|apabila|kalau|ketika|saat)\b/i;
 const RE_SEBAB = /\b(?:karena|dikarenakan|disebabkan|lantaran|akibat\s+dari)\b/i;
 // Akhir klausa akibat yang dikutip dari gugatan.
@@ -144,6 +144,14 @@ function simpulKalimat(kalimatAsli, set, opsi) {
   if (!(opsi && opsi.kunci) && !set.gabungan.test(kalimat)) return [];
   if (RE_NORMA.test(kalimat)) return [];
   const longgarNegasi = Boolean(opsi && opsi.longgarNegasi);
+  // 31 Okt (sisa 79): keterangan dalam kurung ("Orang Tua Tergugat (ibu mertua Penggugat) selalu ikut campur", "Keluarga Tergugat
+  // (Orangtua dan Saudara Tergugat) ketimbang Penggugat ... hingga kurang memberikan nafkah") tidak ikut menentukan subjek.
+  // Panjang teks tetap (diganti spasi) sehingga letak kecocokan tidak bergeser.
+  // Hanya keterangan orang (pihak/keluarga) yang dibuang; "(enam) tahun", "(memukul)", "(Tergugat)" tetap.
+  const kalimatSubjek = kalimat.replace(
+    /\((?=[^()]*\b(?:penggugat|tergugat|pemohon|termohon|orang\s*tua|orangtua|ibu|ayah|bapak|saudara|mertua|keluarga|kakak|adik)\b)(?!\s*(?:penggugat|tergugat|pemohon|termohon)\s*\))[^()]{1,80}\)/gi,
+    (x) => " ".repeat(x.length)
+  );
   const terbaik = new Map();
   const sumberPola = opsi && opsi.kunci ? [...opsi.kunci].flatMap((k) => set.perKunci.get(k) || []) : set.daftar;
   for (const p of sumberPola) {
@@ -163,14 +171,14 @@ function simpulKalimat(kalimatAsli, set, opsi) {
       // 28 Okt: ruas `subjekDekat` - sebutan pihak TEPAT di depan perbuatan (paling banyak dua kata) menang atas subjek
       // klausa ("Kondisi Penggugat yang sakit membuat Tergugat tidak bisa menerima ..." -> Tergugat).
       const dekat = p.subjekDekat ? RE_SUBJEK_DEKAT.exec(depan) : null;
-      let sub = dekat ? { s: /^(?:tergugat|termohon)$/i.test(dekat[1]) ? "P" : "" } : sebab.terimaSubjek(p, kalimat, m.index);
+      let sub = dekat ? { s: /^(?:tergugat|termohon)$/i.test(dekat[1]) ? "P" : "" } : sebab.terimaSubjek(p, kalimatSubjek, m.index);
       let tersirat = false;
       if (!sub.s) {
         // Tanpa pelaku yang terbaca sama sekali ("Sering mabuk-mabukan dan memukul Penggugat") dibaca
         // sebagai perbuatan pelaku, bertanda tersirat (keyakinan ragu).
         const jenisSubjek = String(p.subjek || "pelaku");
         if (jenisSubjek === "pelaku" || jenisSubjek === "pelaku/keluarga") {
-          if (!sebab.subjekKlausa(kalimat, m.index).s) {
+          if (!sebab.subjekKlausa(kalimatSubjek, m.index).s) {
             sub = { s: "P" };
             tersirat = true;
           }
@@ -223,6 +231,11 @@ function hubungan(kalimat, a, b) {
   if (/\.\s+[A-Z]/.test(antara)) return null;
   let m = RE_AKIBAT.exec(antara);
   if (m) return { jenis: "akibat", sampai: a.akhir + m.index + m[0].length };
+  // 31 Okt (sisa 79): "Tergugat kurang memberi nafkah DAN UNTUK MEMENUHI kebutuhan sehari-hari dibantu orang tua Penggugat" -
+  // akibat (peran akibat) yang disambung "dan untuk memenuhi" = akibat dari perbuatan sebelumnya.
+  if ((b.pola.peran || "sebab") === "akibat" && (m = /^([\s,]*(?:dan|serta)\s+)(?:untuk|guna)\s+(?=memenuhi|mencukupi)/i.exec(antara))) {
+    return { jenis: "akibat", sampai: a.akhir + m.index + m[1].length };
+  }
   m = RE_SEBAB.exec(antara);
   if (m) return { jenis: "sebab", sampai: a.akhir + m.index + m[0].length };
   m = RE_KONDISI.exec(antara);
@@ -347,6 +360,17 @@ function itemKalimat(kalimatAsli, set) {
     const h = hubungan(kalimat, simpul[i], simpul[i + 1]);
     if (!h) continue;
     const [sebabIdx, akibatIdx] = h.jenis === "sebab" ? [i + 1, i] : [i, i + 1];
+    // 31 Okt (sisa 79): "... pertengkaran yang disebabkan karena Tergugat tidak memberi nafkah HINGGA kebutuhan dibantu orang tua
+    // Penggugat" - sambungan ke penutup umum (pertengkaran) diganti akibat konkret sesudahnya; penutup tetap dilepas seperti biasa.
+    if (berikut.has(sebabIdx) && !punyaMasuk.has(akibatIdx)) {
+      const lama = berikut.get(sebabIdx);
+      const peranLama = simpul[lama.ke].pola.peran || "sebab";
+      const peranBaru = simpul[akibatIdx].pola.peran || "sebab";
+      if (peranLama === "penutup" && peranBaru !== "penutup" && !simpul[akibatIdx].pola.hanyaAkibat && !(lama.tambahan || []).length) {
+        berikut.delete(sebabIdx);
+        punyaMasuk.delete(lama.ke);
+      }
+    }
     if (berikut.has(sebabIdx) || punyaMasuk.has(akibatIdx)) continue;
     // "hanyaAkibat"/"penutup" tidak boleh menjadi sebab.
     const peranSebab = simpul[sebabIdx].pola.peran || "sebab";

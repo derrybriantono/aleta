@@ -7,18 +7,20 @@
    "kode": "rincian-nafkah-kurang",
    "label": "nafkah (kurang)",
    "kunci": "nafkah",
-   "regex": "\\b(?:kurang|jarang)\\s+(?:dalam\\s+)?(?:memberi(?:kan)?|menafkahi|menyediakan)\\s+(?:\\S+\\s+){0,2}?(?:nafkah|uang\\s+(?:belanja|bulanan)|biaya\\s+hidup)(?!\\s+batin)|\\bnafkah\\s+(?:lahir\\s+)?(?:yang\\s+(?:di)?beri(?:kan)?\\s+)?(?:tidak|kurang)\\s+(?:mencukupi|cukup|memadai)|\\b(?:tidak|kurang)\\s+(?:dapat\\s+|mampu\\s+|bisa\\s+)?mencukupi\\s+(?:\\S+\\s+){0,2}?(?:nafkah|kebutuhan)|\\b(?:kurang|jarang)\\s+menafkahi\\b",
+   "regex": "\\b(?:kurang|jarang)\\s+(?:dalam\\s+)?(?:memberi(?:kan)?|menafkahi|menyediakan)\\s+(?:\\S+\\s+){0,2}?(?:nafkah|uang\\s+(?:belanja|bulanan)|biaya\\s+hidup)(?!\\s+batin)|\\bnafkah\\s+(?:lahir\\s+)?(?:yang\\s+(?:di)?beri(?:kan)?\\s+)?(?:tidak|kurang)\\s+(?:mencukupi|cukup|memadai)|\\b(?:tidak|kurang)\\s+(?:dapat\\s+|mampu\\s+|bisa\\s+)?mencukupi\\s+(?:\\S+\\s+){0,2}?(?:nafkah|kebutuhan)|\\b(?:kurang|jarang)\\s+menafkahi\\b|\\bpelit\\b[^.;]{0,40}?\\b(?:nafkah|uang\\s+belanja)\\b",
    "flags": "i",
    "status": "aktif",
    "yakin": "ragu",
    "contohBenar": [
     "Tergugat kurang memberikan nafkah kepada Penggugat",
     "nafkah yang diberikan Tergugat tidak mencukupi kebutuhan",
-    "Tergugat jarang memberi nafkah"
+    "Tergugat jarang memberi nafkah",
+    "Tergugat pelit kepada Penggugat dalam memberikan nafkah untuk kebutuhan sehari-hari"
    ],
    "contohSalah": [
     "Tergugat tidak memberikan nafkah batin",
-    "Penggugat memberi nafkah kepada anak"
+    "Penggugat memberi nafkah kepada anak",
+    "Penggugat pelit"
    ],
    "ukur": {
     "n": 0,
@@ -27,7 +29,7 @@
     "sumber": "",
     "tanggal": ""
    },
-   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi. 31 Okt (sisa 79): diperluas atas posita nyata yang terlewat dibanding 5227 isian petugas - lihat deteksi-sisa79-31okt.test.ts.",
    "peran": "sebab",
    "subjek": "pelaku",
    "urut": 1,
@@ -249,14 +251,15 @@
    "kode": "rincian-tanpa-kerja-a",
    "label": "tidak punya pekerjaan tetap (a)",
    "kunci": "tanpa-kerja",
-   "regex": "\\b(?:tidak|belum|tak)\\s+(?:memiliki|mempunyai|punya|ada)\\s+(?:\\S+\\s+){0,2}?(?:pekerjaan|penghasilan|mata\\s+pencaharian)(?:\\s+(?:tetap|yang\\s+tetap|yang\\s+jelas|yang\\s+layak))?|\\b(?:tidak|tak)\\s+bekerja\\b|\\bpenghasilan\\s+(?:yang\\s+)?(?:tidak\\s+(?:tetap|menentu)|kecil|pas[\\s-]*pasan)",
+   "regex": "\\b(?:tidak|belum|tak)\\s+(?:memiliki|mempunyai|punya|ada)\\s+(?:\\S+\\s+){0,2}?(?:pekerjaan|penghasilan|mata\\s+pencaharian)(?:\\s+(?:tetap|yang\\s+tetap|yang\\s+jelas|yang\\s+layak))?|\\b(?:tidak|tak)\\s+bekerja\\b|\\bpenghasilan\\s+(?:yang\\s+)?(?:tidak\\s+(?:tetap|menentu)|kecil|pas[\\s-]*pasan)|\\b(?:tidak|belum|tak)\\s+(?:memliki|memilki|mepunyai)\\s+(?:\\S+\\s+){0,2}?(?:pekerjaan|penghasilan|mata\\s+pencaharian)",
    "flags": "i",
    "status": "aktif",
    "yakin": "ragu",
    "contohBenar": [
     "Tergugat tidak memiliki pekerjaan tetap",
     "Tergugat tidak bekerja",
-    "Tergugat tidak punya penghasilan"
+    "Tergugat tidak punya penghasilan",
+    "Tergugat tidak memliki pekerjaan sehingga tidak memberikan nafkah"
    ],
    "contohSalah": [
     "Tergugat memiliki pekerjaan sebagai sopir",
@@ -269,7 +272,7 @@
     "sumber": "",
     "tanggal": ""
    },
-   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi. 31 Okt (sisa 79): diperluas atas posita nyata yang terlewat dibanding 5227 isian petugas - lihat deteksi-sisa79-31okt.test.ts.",
    "peran": "sebab",
    "subjek": "pelaku",
    "urut": 1,
@@ -513,7 +516,7 @@
    "kode": "rincian-kdrt-fisik-aktif",
    "label": "kekerasan fisik (aktif)",
    "kunci": "kdrt-fisik",
-   "regex": "\\b(?:memukul(?:i)?|pemukulan|menampar|menendang|menganiaya|penganiayaan|mencekik|menjambak|membanting|menyiksa|menyundut|menusuk|membacok|kdrt|kekerasan\\s+(?:dalam\\s+rumah\\s+tangga|fisik)|main\\s+tangan|ringan\\s+tangan|melakukan\\s+kekerasan|menyakiti\\s+(?:secara\\s+)?fisik)\\b|\\btindak(?:an)?\\s+kekerasan\\b",
+   "regex": "\\b(?:memukul(?:i)?|pemukulan|menampar|menendang|menganiaya|penganiayaan|mencekik|menjambak|membanting|menyiksa|menyundut|menusuk|membacok|kdrt|kekerasan\\s+(?:dalam\\s+rumah\\s+tangga|fisik)|main\\s+tangan|ringan\\s+tangan|melakukan\\s+kekerasan|menyakiti\\s+(?:secara\\s+)?fisik)\\b|\\btindak(?:an)?\\s+kekerasan\\b|\\bmelakukan\\s+kerasan\\b",
    "flags": "i",
    "status": "aktif",
    "yakin": "ragu",
@@ -522,7 +525,8 @@
     "Tergugat melakukan KDRT",
     "Tergugat menendang dan menampar Penggugat",
     "Tergugat main tangan",
-    "tergugat melakukan tindak kekerasan terhadap penggugat"
+    "tergugat melakukan tindak kekerasan terhadap penggugat",
+    "Tergugat melakukan Kerasan kepada Penggugat"
    ],
    "contohSalah": [
     "Tergugat bermain bola",
@@ -535,7 +539,7 @@
     "sumber": "",
     "tanggal": ""
    },
-   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi. 30 Okt (deteksi-luas): diperluas atas posita nyata sipp_2810 - lihat deteksi-luas-30okt.test.ts.",
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi. 30 Okt (deteksi-luas): diperluas atas posita nyata sipp_2810 - lihat deteksi-luas-30okt.test.ts. 31 Okt (sisa 79): diperluas atas posita nyata yang terlewat dibanding 5227 isian petugas - lihat deteksi-sisa79-31okt.test.ts.",
    "peran": "sebab",
    "subjek": "pelaku",
    "urut": 1,
@@ -627,13 +631,15 @@
    "kode": "rincian-kasar-sikap-a",
    "label": "bersikap kasar",
    "kunci": "kasar-sikap",
-   "regex": "\\b(?:bersikap|berlaku|berperilaku|bertindak|berperangai)\\s+(?:\\S+\\s+){0,3}?kasar\\b(?!\\s+(?:secara\\s+)?(?:verbal|lisan|ucapan))",
+   "regex": "\\b(?:bersikap|berlaku|berperilaku|bertindak|berperangai)\\s+(?:\\S+\\s+){0,3}?kasar\\b(?!\\s+(?:secara\\s+)?(?:verbal|lisan|ucapan))|\\b(?:memiliki\\s+sikap|berbuat)\\s+(?:\\S+\\s+){0,3}?kasar\\b(?!\\s+(?:secara\\s+)?(?:verbal|lisan|ucapan))",
    "flags": "i",
    "status": "aktif",
    "yakin": "ragu",
    "contohBenar": [
     "Tergugat sering bersikap temperamental dan kasar kepada Penggugat",
-    "Tergugat bersikap kasar kepada Penggugat"
+    "Tergugat bersikap kasar kepada Penggugat",
+    "Tergugat memiliki sikap temperamental dan kasar kepada Penggugat",
+    "Tergugat sering berbuat kasar kepada Penggugat"
    ],
    "contohSalah": [
     "Tergugat bersikap baik kepada Penggugat"
@@ -645,7 +651,7 @@
     "sumber": "sipp_2810 (dump 28 Okt) posita cerai + faktor akta cerai",
     "tanggal": "2026-10-30"
    },
-   "catatan": "30 Okt (deteksi-luas): diperluas atas posita nyata sipp_2810 - lihat deteksi-luas-30okt.test.ts.",
+   "catatan": "30 Okt (deteksi-luas): diperluas atas posita nyata sipp_2810 - lihat deteksi-luas-30okt.test.ts. 31 Okt (sisa 79): diperluas atas posita nyata yang terlewat dibanding 5227 isian petugas - lihat deteksi-sisa79-31okt.test.ts.",
    "peran": "sebab",
    "subjek": "pelaku",
    "urut": 2,
@@ -695,18 +701,22 @@
    "kode": "rincian-temperamental-a",
    "label": "temperamental (a)",
    "kunci": "temperamental",
-   "regex": "\\b(?:temperamental|tempramental|tempramen|temperamen|emosian|emosional|pemarah|pemberang|mudah\\s+(?:marah|emosi|tersulut|tersinggung)|cepat\\s+(?:marah|emosi)|gampang\\s+(?:marah|emosi)|sering\\s+(?:marah|emosi)|suka\\s+marah)\\b",
+   "regex": "\\b(?:temperamental|tempramental|tempramen|temperamen|emosian|emosional|pemarah|pemberang|mudah\\s+(?:marah|emosi|tersulut|tersinggung)|cepat\\s+(?:marah|emosi)|gampang\\s+(?:marah|emosi)|sering\\s+(?:marah|emosi)|suka\\s+marah)\\b|\\b(?:temparamen\\w*|temprametal|temperamenal|tempramenal|temperemen\\w*)\\b|\\b(?:hanya|malah|justru|langsung)\\s+marah(?:-marah)?\\b",
    "flags": "i",
    "status": "aktif",
    "yakin": "ragu",
    "contohBenar": [
     "Tergugat bersikap temperamental",
     "Tergugat mudah marah",
-    "Tergugat pemarah"
+    "Tergugat pemarah",
+    "Tergugat memiliki sifat temparamen",
+    "Tergugat memiliki sifat temprametal",
+    "apabila Penggugat menasehati Tergugat hanya marah kepada Penggugat"
    ],
    "contohSalah": [
     "Tergugat tenang",
-    "Penggugat tidak tahu"
+    "Penggugat tidak tahu",
+    "Penggugat hanya diam"
    ],
    "ukur": {
     "n": 0,
@@ -715,7 +725,7 @@
     "sumber": "",
     "tanggal": ""
    },
-   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi. 31 Okt (sisa 79): diperluas atas posita nyata yang terlewat dibanding 5227 isian petugas - lihat deteksi-sisa79-31okt.test.ts.",
    "peran": "sebab",
    "subjek": "pelaku",
    "urut": 1,
@@ -730,7 +740,7 @@
    "kode": "rincian-selingkuh-a",
    "label": "orang ketiga (a)",
    "kunci": "selingkuh",
-   "regex": "\\b(?:selingkuh(?:an)?|berselingkuh|perselingkuhan|wanita\\s+idaman\\s+lain|pria\\s+idaman\\s+lain|\\bwil\\b|\\bpil\\b|pihak\\s+ketiga|orang\\s+ketiga|(?:hubungan|berhubungan|menjalin\\s+hubungan|dekat|berpacaran|pacaran|kencan)\\s+(?:asmara\\s+|khusus\\s+|gelap\\s+|spesial\\s+)?(?:dengan|bersama)\\s+(?:seorang\\s+)?(?:wanita|perempuan|laki[\\s-]*laki|lelaki|pria|cewek|cowok|janda|duda)\\s+(?:lain|yang\\s+bukan)|(?:wanita|perempuan|laki[\\s-]*laki|lelaki|pria)\\s+lain)\\b",
+   "regex": "\\b(?:selingkuh(?:an)?|berselingkuh|perselingkuhan|wanita\\s+idaman\\s+lain|pria\\s+idaman\\s+lain|\\bwil\\b|\\bpil\\b|pihak\\s+ketiga|orang\\s+ketiga|(?:hubungan|berhubungan|menjalin\\s+hubungan|dekat|berpacaran|pacaran|kencan)\\s+(?:asmara\\s+|khusus\\s+|gelap\\s+|spesial\\s+)?(?:dengan|bersama)\\s+(?:seorang\\s+)?(?:wanita|perempuan|laki[\\s-]*laki|lelaki|pria|cewek|cowok|janda|duda)\\s+(?:lain|yang\\s+bukan)|(?:wanita|perempuan|laki[\\s-]*laki|lelaki|pria)\\s+lain)\\b|\\b(?:lelaki|laki[\\s-]*laki)\\s+idaman\\s+lain\\b|\\b(?:bertemu|berhubungan|berkomunikasi|jalan)\\s+(?:dengan|dangan|bersama)\\s+lawan\\s+jenis\\b",
    "flags": "i",
    "status": "aktif",
    "yakin": "ragu",
@@ -738,7 +748,9 @@
     "Tergugat menjalin hubungan dengan perempuan lain",
     "Tergugat berselingkuh",
     "Tergugat memiliki wanita idaman lain",
-    "Termohon dekat dengan pria lain"
+    "Termohon dekat dengan pria lain",
+    "Termohon diketahui memiliki lelaki idaman lain",
+    "Tergugat sering bertemu dangan lawan jenis tanpa sepengetahuan Penggugat"
    ],
    "contohSalah": [
     "Tergugat bertemu seorang teman",
@@ -751,7 +763,7 @@
     "sumber": "",
     "tanggal": ""
    },
-   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi. 31 Okt (sisa 79): diperluas atas posita nyata yang terlewat dibanding 5227 isian petugas - lihat deteksi-sisa79-31okt.test.ts.",
    "peran": "sebab",
    "subjek": "pelaku",
    "urut": 1,
@@ -760,7 +772,8 @@
     "menjalin hubungan dengan {lain}",
     "berselingkuh dengan {lain}",
     "menjalin hubungan dengan pihak ketiga"
-   ]
+   ],
+   "tolakSebelum": "\\b(?:menuduh|menuduhnya|dituduh|tuduhan|memfitnah|difitnah|fitnah|curiga|mencurigai|kecurigaan)\\b[^.;]{0,50}$"
   },
   {
    "kode": "rincian-zina-a",
@@ -833,14 +846,16 @@
    "kode": "rincian-menikah-lagi-umum",
    "label": "menikah lagi (umum)",
    "kunci": "menikah-lagi",
-   "regex": "\\b(?:menikah|kawin|nikah|beristri|bersuami)\\s+(?:lagi|siri|sirri|di\\s+bawah\\s+tangan|dengan\\s+(?:wanita|perempuan|laki[\\s-]*laki|pria|lelaki)\\s+lain)|\\bmenikah\\s+dengan\\s+(?:wanita|perempuan|laki[\\s-]*laki|pria|lelaki)\\s+(?:lain|bernama)\\b|\\bberpoligami\\b",
+   "regex": "\\b(?:menikah|kawin|nikah|beristri|bersuami)\\s+(?:lagi|siri|sirri|di\\s+bawah\\s+tangan|dengan\\s+(?:wanita|perempuan|laki[\\s-]*laki|pria|lelaki)\\s+lain)|\\bmenikah\\s+dengan\\s+(?:wanita|perempuan|laki[\\s-]*laki|pria|lelaki)\\s+(?:lain|bernama)\\b|\\bberpoligami\\b|\\b(?:telah|sudah)\\s+menikah\\s+(?:lagi\\s+)?dengan\\s+(?:wanita|perempuan|laki[\\s-]*laki|pria|lelaki)\\s+(?:tersebut|itu)\\b|\\b(?:melakukan|melangsungkan)\\s+(?:pernikahan|perkawinan|nikah)\\s+(?:siri|sirri|sirih|di\\s+bawah\\s+tangan)\\s+dengan\\s+(?:seorang\\s+)?(?:wanita|perempuan|laki[\\s-]*laki|pria|lelaki)\\b",
    "flags": "i",
    "status": "aktif",
    "yakin": "ragu",
    "contohBenar": [
     "Tergugat telah menikah lagi",
     "Tergugat menikah siri",
-    "Tergugat berpoligami"
+    "Tergugat berpoligami",
+    "Tergugat diketahui telah menikah dengan wanita tersebut",
+    "Tergugat telah melakukan pernikahan siri dengan wanita lain"
    ],
    "contohSalah": [
     "Tergugat dan Penggugat menikah pada tahun 2010",
@@ -853,7 +868,7 @@
     "sumber": "",
     "tanggal": ""
    },
-   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi. 31 Okt (sisa 79): diperluas atas posita nyata yang terlewat dibanding 5227 isian petugas - lihat deteksi-sisa79-31okt.test.ts.",
    "peran": "sebab",
    "subjek": "pelaku",
    "urut": 2,
@@ -937,18 +952,20 @@
    "kode": "rincian-merendahkan-a",
    "label": "merendahkan atau tidak menghargai (a)",
    "kunci": "merendahkan",
-   "regex": "\\b(?:merendahkan|meremehkan|menghina|mempermalukan|mencemooh|menjelek[\\s-]*jelek(?:k)?an|tidak\\s+(?:pernah\\s+|lagi\\s+)?(?:menghargai|menghormati|memuliakan)|kurang\\s+(?:menghargai|menghormati))\\b",
+   "regex": "\\b(?:merendahkan|meremehkan|menghina|mempermalukan|mencemooh|menjelek[\\s-]*jelek(?:k)?an|tidak\\s+(?:pernah\\s+|lagi\\s+)?(?:menghargai|menghormati|memuliakan)|kurang\\s+(?:menghargai|menghormati))\\b|\\btidak\\s+(?:memiliki|mempunyai|punya|ada)\\s+(?:rasa\\s+)?hormat\\b",
    "flags": "i",
    "status": "aktif",
    "yakin": "ragu",
    "contohBenar": [
     "Tergugat tidak menghargai Penggugat",
     "Tergugat merendahkan Penggugat",
-    "keluarga Tergugat menghina Penggugat"
+    "keluarga Tergugat menghina Penggugat",
+    "Tergugat tidak memiliki rasa hormat kepada orangtua Penggugat"
    ],
    "contohSalah": [
     "Tergugat menghargai Penggugat",
-    "Tergugat membantu keluarga"
+    "Tergugat membantu keluarga",
+    "Tergugat memiliki rasa hormat"
    ],
    "ukur": {
     "n": 0,
@@ -957,7 +974,7 @@
     "sumber": "",
     "tanggal": ""
    },
-   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi. 31 Okt (sisa 79): diperluas atas posita nyata yang terlewat dibanding 5227 isian petugas - lihat deteksi-sisa79-31okt.test.ts.",
    "peran": "sebab",
    "subjek": "pelaku/keluarga",
    "urut": 1,
@@ -1231,14 +1248,16 @@
    "kode": "rincian-keluar-malam-a",
    "label": "sering keluar malam (a)",
    "kunci": "keluar-malam",
-   "regex": "\\b(?:keluar\\s+malam|pulang\\s+(?:larut|pagi|subuh|dini\\s+hari)|(?:sering|jarang)\\s+(?:tidak\\s+)?pulang|tidak\\s+pulang(?!\\s+(?:lagi|sampai|hingga|ke\\s+rumah\\s+(?:sampai|hingga)))|keluyuran|kelayapan|nongkrong|begadang|karaoke|tidak\\s+pulang[\\s-]*pulang|jarang\\s+berada\\s+di\\s+rumah|pulang\\s+larut\\s+malam)\\b",
+   "regex": "\\b(?:keluar\\s+malam|pulang\\s+(?:larut|pagi|subuh|dini\\s+hari)|(?:sering|jarang)\\s+(?:tidak\\s+)?pulang|tidak\\s+pulang(?!\\s+(?:lagi|sampai|hingga|ke\\s+rumah\\s+(?:sampai|hingga)))|keluyuran|kelayapan|nongkrong|begadang|karaoke|tidak\\s+pulang[\\s-]*pulang|jarang\\s+berada\\s+di\\s+rumah|pulang\\s+larut\\s+malam)\\b|\\bkeluar\\s+(?:hingga\\s+|sampai\\s+)?larut\\s+malam\\b|\\bpulang\\s+(?:hingga|sampai)\\s+(?:larut\\s+malam|pagi|subuh|dini\\s+hari|tengah\\s+malam)\\b",
    "flags": "i",
    "status": "aktif",
    "yakin": "ragu",
    "contohBenar": [
     "Tergugat sering pulang larut malam",
     "Tergugat jarang pulang",
-    "Tergugat sering keluyuran"
+    "Tergugat sering keluyuran",
+    "Tergugat sering keluar larut malam dengan alasan berkumpul",
+    "Tergugat sering keluar rumah dan pulang hingga larut malam"
    ],
    "contohSalah": [
     "Tergugat pulang kerja tepat waktu",
@@ -1251,7 +1270,7 @@
     "sumber": "",
     "tanggal": ""
    },
-   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi. 30 Okt (deteksi-luas): diperluas atas posita nyata sipp_2810 - lihat deteksi-luas-30okt.test.ts.",
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi. 30 Okt (deteksi-luas): diperluas atas posita nyata sipp_2810 - lihat deteksi-luas-30okt.test.ts. 31 Okt (sisa 79): diperluas atas posita nyata yang terlewat dibanding 5227 isian petugas - lihat deteksi-sisa79-31okt.test.ts.",
    "peran": "sebab",
    "subjek": "pelaku",
    "urut": 1,
@@ -1514,14 +1533,15 @@
    "kode": "rincian-boros-a",
    "label": "boros atau tidak mengelola keuangan (a)",
    "kunci": "boros",
-   "regex": "\\b(?:boros|pemboros|foya[\\s-]*foya|menghamburkan|menghambur[\\s-]*hamburkan|menghabiskan\\s+(?:uang|gaji|penghasilan|harta)|tidak\\s+(?:bisa|pandai|mampu)\\s+mengelola\\s+(?:uang|keuangan)|keuangan\\s+(?:tidak\\s+)?(?:terbuka|transparan)|tidak\\s+terbuka\\s+(?:soal|mengenai|tentang)\\s+(?:uang|keuangan|penghasilan|gaji)|gaji\\s+(?:tidak\\s+)?(?:diserahkan|diberikan))\\b",
+   "regex": "\\b(?:boros|pemboros|foya[\\s-]*foya|menghamburkan|menghambur[\\s-]*hamburkan|menghabiskan\\s+(?:uang|gaji|penghasilan|harta)|tidak\\s+(?:bisa|pandai|mampu)\\s+mengelola\\s+(?:uang|keuangan)|keuangan\\s+(?:tidak\\s+)?(?:terbuka|transparan)|tidak\\s+terbuka\\s+(?:soal|mengenai|tentang)\\s+(?:uang|keuangan|penghasilan|gaji)|gaji\\s+(?:tidak\\s+)?(?:diserahkan|diberikan))\\b|\\b(?:menghaburkan|menghamburkn|mengambur(?:kan)?)\\b",
    "flags": "i",
    "status": "aktif",
    "yakin": "ragu",
    "contohBenar": [
     "Tergugat boros",
     "Tergugat menghabiskan uang untuk kesenangan",
-    "Tergugat tidak terbuka soal keuangan"
+    "Tergugat tidak terbuka soal keuangan",
+    "Tergugat sering menghaburkan uang untuk bermain Judi Online"
    ],
    "contohSalah": [
     "Tergugat berhemat",
@@ -1534,7 +1554,7 @@
     "sumber": "",
     "tanggal": ""
    },
-   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi. 31 Okt (sisa 79): diperluas atas posita nyata yang terlewat dibanding 5227 isian petugas - lihat deteksi-sisa79-31okt.test.ts.",
    "peran": "sebab",
    "subjek": "pelaku",
    "urut": 1,
@@ -1650,13 +1670,14 @@
    "kode": "rincian-orang-tua-utama-a",
    "label": "mengutamakan orang tua atau keluarga sendiri (a)",
    "kunci": "orang-tua-utama",
-   "regex": "\\blebih\\s+(?:mementingkan|mengutamakan|memilih|membela|berpihak)\\s+(?:\\S+\\s+){0,2}?(?:orang\\s*tua|ibu|keluarga|saudara|kakak|adik)|\\b(?:tetap|lebih)\\s+(?:ingin|memilih|mau)\\s+tinggal\\s+(?:bersama|dengan)\\s+(?:orang\\s*tua|ibu|keluarga)",
+   "regex": "\\blebih\\s+(?:mementingkan|mengutamakan|memilih|membela|berpihak)\\s+(?:\\S+\\s+){0,2}?(?:orang\\s*tua|ibu|keluarga|saudara|kakak|adik)|\\b(?:tetap|lebih)\\s+(?:ingin|memilih|mau)\\s+tinggal\\s+(?:bersama|dengan)\\s+(?:orang\\s*tua|ibu|keluarga)|\\blebih\\s+(?:mementingankan|mementinkan|mengutamkan)\\s+(?:\\S+\\s+){0,2}?(?:orang\\s*tua|ibu|keluarga|saudara)",
    "flags": "i",
    "status": "aktif",
    "yakin": "ragu",
    "contohBenar": [
     "Tergugat lebih mengutamakan orang tuanya",
-    "Tergugat lebih memilih tinggal bersama orang tua"
+    "Tergugat lebih memilih tinggal bersama orang tua",
+    "Tergugat lebih mementingankan Keluarga Tergugat ketimbang Penggugat"
    ],
    "contohSalah": [
     "Tergugat menghormati orang tua",
@@ -1669,7 +1690,7 @@
     "sumber": "",
     "tanggal": ""
    },
-   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi. 31 Okt (sisa 79): diperluas atas posita nyata yang terlewat dibanding 5227 isian petugas - lihat deteksi-sisa79-31okt.test.ts.",
    "peran": "sebab",
    "subjek": "pelaku",
    "urut": 1,
@@ -1752,14 +1773,15 @@
    "kode": "rincian-merusak-barang-a",
    "label": "merusak barang (a)",
    "kunci": "merusak-barang",
-   "regex": "\\b(?:merusak|menghancurkan|memecahkan|membanting|membakar|melempar)\\s+(?:\\S+\\s+){0,2}?(?:barang|perabot|perabotan|piring|gelas|pintu|jendela|kaca|tv|televisi|hp|handphone|pakaian|motor|rumah)\\b|\\bpengrusakan\\b",
+   "regex": "\\b(?:merusak|menghancurkan|memecahkan|membanting|membakar|melempar)\\s+(?:\\S+\\s+){0,2}?(?:barang|perabot|perabotan|piring|gelas|pintu|jendela|kaca|tv|televisi|hp|handphone|pakaian|motor|rumah)\\b|\\bpengrusakan\\b|\\b(?:menhancurkan|mengancurkan|merusakkan)\\s+(?:\\S+\\s+){0,2}?(?:barang|perabot|perabotan|piring|gelas|pintu|jendela|kaca|tv|televisi|hp|handphone)\\b",
    "flags": "i",
    "status": "aktif",
    "yakin": "ragu",
    "contohBenar": [
     "Tergugat merusak barang",
     "Tergugat membanting piring",
-    "Tergugat memecahkan kaca"
+    "Tergugat memecahkan kaca",
+    "Tergugat sering menhancurkan barang rumah tangga"
    ],
    "contohSalah": [
     "Tergugat membeli barang",
@@ -1772,7 +1794,7 @@
     "sumber": "",
     "tanggal": ""
    },
-   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi.",
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi. 31 Okt (sisa 79): diperluas atas posita nyata yang terlewat dibanding 5227 isian petugas - lihat deteksi-sisa79-31okt.test.ts.",
    "peran": "sebab",
    "subjek": "pelaku",
    "urut": 1,
@@ -1822,7 +1844,7 @@
    "kode": "rincian-kebutuhan-dibantu-a",
    "label": "kebutuhan dipenuhi pihak lain (a)",
    "kunci": "kebutuhan-dibantu",
-   "regex": "\\b(?:kebutuhan|keperluan)\\s+(?:\\S+\\s+){0,3}?(?:di(?:bantu|penuhi|tanggung|tutupi|cukupi)|ditopang)\\s+(?:\\S+\\s+){0,3}?(?:oleh\\s+|dari\\s+|dengan\\s+)?(?:orang\\s*tua|penghasilan|keluarga|penggugat|pemohon|istri|isteri|suami)|\\bmengharapkan\\s+penghasilan\\b|\\b(?:hanya\\s+)?mengharap(?:kan)?\\s+(?:dari\\s+)?(?:penghasilan|gaji|pemberian|bantuan|orang\\s*tua)\\b|\\b(?:bergantung|menggantungkan\\s+(?:hidup|diri))\\s+(?:pada|kepada|dari)\\s+(?:penghasilan|gaji|orang\\s*tua)\\b",
+   "regex": "\\b(?:kebutuhan|keperluan)\\s+(?:\\S+\\s+){0,3}?(?:di(?:bantu|penuhi|tanggung|tutupi|cukupi)|ditopang)\\s+(?:\\S+\\s+){0,3}?(?:oleh\\s+|dari\\s+|dengan\\s+)?(?:orang\\s*tua|penghasilan|keluarga|penggugat|pemohon|istri|isteri|suami)|\\bmengharapkan\\s+penghasilan\\b|\\b(?:hanya\\s+)?mengharap(?:kan)?\\s+(?:dari\\s+)?(?:penghasilan|gaji|pemberian|bantuan|orang\\s*tua)\\b|\\b(?:bergantung|menggantungkan\\s+(?:hidup|diri))\\s+(?:pada|kepada|dari)\\s+(?:penghasilan|gaji|orang\\s*tua)\\b|\\b(?:kebutuhan|keperluan)\\s+(?:\\S+\\s+){0,3}?dibetu\\b",
    "flags": "i",
    "status": "aktif",
    "yakin": "ragu",
@@ -1830,7 +1852,8 @@
     "sehingga kebutuhan sehari-hari dibantu oleh orang tua Penggugat",
     "kebutuhan rumah tangga dipenuhi dari penghasilan Penggugat",
     "untuk memenuhi kebutuhan sehari-hari hanya mengharap penghasilan Penggugat",
-    "hanya bergantung pada penghasilan Penggugat"
+    "hanya bergantung pada penghasilan Penggugat",
+    "untuk memenuhi kebutuhan sehari-hari dibetu oleh orangtua Penggugat"
    ],
    "contohSalah": [
     "kebutuhan rumah tangga tercukupi",
@@ -1844,7 +1867,7 @@
     "sumber": "",
     "tanggal": ""
    },
-   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi. 30 Okt (deteksi-luas): diperluas atas posita nyata sipp_2810 - lihat deteksi-luas-30okt.test.ts.",
+   "catatan": "Rincian alasan cerai (5227): pola sebab/akibat dari gugatan; bunyi keluaran di ruas bunyi. 30 Okt (deteksi-luas): diperluas atas posita nyata sipp_2810 - lihat deteksi-luas-30okt.test.ts. 31 Okt (sisa 79): diperluas atas posita nyata yang terlewat dibanding 5227 isian petugas - lihat deteksi-sisa79-31okt.test.ts.",
    "peran": "akibat",
    "subjek": "bersama",
    "urut": 1,
