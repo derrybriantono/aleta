@@ -108,8 +108,9 @@ const KATALOG = new Map<string, Definisi>([
   D("4001", "AMAR PUTUSAN CERAI UNIVERSAL", "data_sql", "select data from aps_badilag.abt_data_teks where no_var = '8503'"),
   D("5125", "Posita", "data_sql", "select posita from perkara"),
   D("0222", "Awal Konflik : bulan _ / tahun _ / awal tahun / akhir tahun / tanggal _", "data_teks", "", "#8493#"),
+  D("7035", "Yang meninggalkan tempat kediaman bersama", "data_teks"),
 ]);
-const PENANDA = ["0001", "0046", "4001", "0007", "1006", "8503", "0222"];
+const PENANDA = ["0001", "0046", "4001", "0007", "1006", "8503", "0222", "7035"];
 const PK = () => ({
   nomorPerkara: NOMOR, perkaraId: "10154", jenisPerkara: "Cerai Gugat", alurPerkaraId: 15, sudahPutus: false, tanggalPutusan: "", tanggalMinutasi: "",
   adaBerkasPutusan: false, lewatEcourt: null, ghaib: false, prodeo: false, majelisKode: "", majelisNama: "Hakim Satu, S.H.", paniteraNama: "PP Satu", jurusitaNama: "JS Satu",
@@ -371,7 +372,7 @@ describe("1.2 panel: Periksa sebelum cetak - satu daftar, Perbaiki, tersembunyi 
   });
 
   it("semua isian penting terisi dan tanpa temuan: daftar tersembunyi (tidak menambah apa pun di layar)", async () => {
-    const h = buka({ abtAwal: { ...POSITA_ABT, "8503": "F", "0007": "telah dikaruniai 2 orang anak", "1006": "di rumah orang tua Penggugat", "0222": "bulan Januari 2025" } });
+    const h = buka({ abtAwal: { ...POSITA_ABT, "8503": "F", "0007": "telah dikaruniai 2 orang anak", "1006": "di rumah orang tua Penggugat", "0222": "bulan Januari 2025", "7035": "Tergugat" } });
     await bukaBlangko(h);
     await sampai(() => q(h, '[data-bd2="cetak"]') && q(h, "#bd-periksacetak"), "langkah cetak");
     await tunggu(200);
@@ -791,5 +792,69 @@ describe("48 paket ABT murtad-8529-30okt", () => {
     const r = JSON.parse(readFileSync(path.join(dir, "hasil/render-ringkasan.json"), "utf8")).hasil as Array<{ sebelum: { paragraf_murtad_8529: number }; sesudah: { pihak_murtad_8529: string[]; penanda_sisa: string[] } }>;
     expect(r.map((x) => x.sesudah.pihak_murtad_8529.join(""))).toEqual(["Penggugat", "Penggugat", "Tergugat", "Pemohon", "Termohon", ""]);
     expect(r.every((x) => x.sebelum.paragraf_murtad_8529 === 0 && x.sesudah.penanda_sisa.length === 0)).toBe(true);
+  });
+});
+
+// ============================================================================
+// 31 Okt (keputusan pengguna 9 dan 17): bunyi bukti 8529 dan isian "yang meninggalkan rumah" vs keterangan kedua saksi
+// ============================================================================
+describe("31 Okt: bunyi bukti 8529 dan 7035 bertentangan dengan saksi", () => {
+  const m = (() => {
+    const g: Record<string, unknown> = {};
+    new Function("globalThis", "window", baca("blangko-derry-periksa.js"))(g, g);
+    return g.AletaPeriksaCetak as { kumpulkan: (b: unknown) => Array<{ jenis: string; teks: string; perbaiki: unknown }>; pihakBerbeda: (a: string, b: string) => string };
+  })();
+  const BUKTI = "[BUKTI SURAT KTP/SURAT DOMISILI BELUM ADA DI DAFTAR BUKTI]";
+  it("bunyi bukti baru: butir sendiri (bukan huruf alasan), Perbaiki ke daftar bukti; tidak disebut ulang sebagai kurung siku", () => {
+    const sisa = reqEks("./deteksi-sisa-blangko.js") as { periksaRtf: (r: string) => { temuan: Array<{ jenis: string; cocok: string }> } };
+    const t = sisa.periksaRtf(`{\\rtf1\\ansi\\deff0{\\fonttbl{\\f0 Times New Roman;}}\\pard Menimbang, bahwa ${BUKTI};\\par}`);
+    expect(t.temuan.some((x) => x.jenis === "kurung")).toBe(true);
+    const d = m.kumpulkan({ huruf: { ada: true, nilai: "F", dikenal: true }, naskah: { teks: `Menimbang, bahwa ${BUKTI};`, temuanSisa: t.temuan }, kodeAda: new Set(["1214"]) });
+    expect(d.map((x) => x.jenis)).toEqual(["bukti"]);
+    expect(d[0].perbaiki).toEqual({ aksi: "isian", kode: "1214" });
+    expect(d[0].teks).toContain("Daftar bukti surat belum memuat KTP atau surat domisili");
+  });
+  it("panel ABT mengenali bunyi bukti baru sebagai isian bermasalah", () => {
+    const isi = baca("abt-panel-blangko.js");
+    const a = isi.indexOf("const NILAI_KOSONG = new Set(");
+    const b = isi.indexOf('return "terisi";\n}', a);
+    const keadaanNilai = new Function(`${isi.slice(a, b + 'return "terisi";\n}'.length)}\nreturn keadaanNilai;`)() as (n: unknown) => string;
+    expect(keadaanNilai(BUKTI)).toBe("galat");
+    expect(keadaanNilai("Menimbang, bahwa bukti P.1 dan P.2 telah bermeterai cukup;")).toBe("terisi");
+  });
+  it("pihakBerbeda: kedudukan beda = pihak; sebutan beda kedudukan sama = sebutan; sama/tak terbaca = kosong", () => {
+    expect(m.pihakBerbeda("Penggugat", "Tergugat")).toBe("pihak");
+    expect(m.pihakBerbeda("Tergugat", "Termohon")).toBe("sebutan");
+    expect(m.pihakBerbeda("Tergugat", "Tergugat")).toBe("");
+    expect(m.pihakBerbeda("keduanya", "Tergugat")).toBe("");
+  });
+  it("7035 bertentangan: peringatan pasif dengan Perbaiki ke isiannya", () => {
+    const d = m.kumpulkan({ bertentangan: [{ kode: "7035", nama: "Yang meninggalkan tempat kediaman bersama", isi: "Penggugat", usulan: "Tergugat" }] });
+    expect(d).toEqual([expect.objectContaining({ jenis: "bertentangan", perbaiki: { aksi: "isian", kode: "7035" } })]);
+    expect(d[0].teks).toBe('Yang meninggalkan tempat kediaman bersama: isian berbunyi "Penggugat", tetapi keterangan kedua saksi menyebut Tergugat.');
+  });
+  it("panel: usulan PASTI saksi berlawanan dengan isian ABT -> butir tampil, isian TIDAK ditimpa; usulan ragu -> tanpa butir", async () => {
+    const h = buka({ abtAwal: { ...POSITA_ABT, "7035": "Penggugat" }, usulanSipp: [{ kode: "7035", nama: "Yang meninggalkan", nilai: "Tergugat", keyakinan: "pasti", sumber: [{ saksi: 1, kalimat: "Bahwa yang meninggalkan kediaman bersama adalah Tergugat" }] }] });
+    await bukaBlangko(h);
+    const b = await sampai(() => q(h, '#bd-periksa [data-periksa="bertentangan"]'), "butir bertentangan");
+    expect(b.textContent).toContain('isian berbunyi "Penggugat", tetapi keterangan kedua saksi menyebut Tergugat');
+    (b.querySelector('[data-bd2="perbaiki"]') as HTMLElement).click();
+    await sampai(() => q(h, '.bd-f[data-f="7035"]')?.classList.contains("bd-sorot"), "isian disorot");
+    expect(mintaKe(h, /edit_data\?no_var=7035/, "POST")).toEqual([]);
+    expect(h.abt["7035"]).toBe("Penggugat");
+    const h2 = buka({ abtAwal: { ...POSITA_ABT, "7035": "Penggugat" }, usulanSipp: [{ kode: "7035", nama: "Yang meninggalkan", nilai: "Tergugat", keyakinan: "ragu", sumber: [] }] });
+    await bukaBlangko(h2);
+    await sampai(() => q(h2, "#bd-periksacetak"), "langkah cetak");
+    await tunggu(300);
+    expect(q(h2, '#bd-periksa [data-periksa="bertentangan"]')).toBeNull();
+  });
+  it("paket ABT bukti-8529-31okt: hanya 8529, satu frasa, dasar md5 sesudah rantai", () => {
+    const dir = path.join(AKAR, "abt-paket/bukti-8529-31okt/paket-satker");
+    const pasang = readFileSync(path.join(dir, "abt-bukti-8529-31okt-PASANG.sql"), "utf8");
+    expect(pasang).toContain("WHERE no_var IN (8529)");
+    expect(pasang).toContain(`'<mark>[HURUF ALASAN PERCERAIAN BELUM DIPILIH]</mark>', '<mark>${BUKTI}</mark>'`);
+    expect(pasang.match(/UPDATE/g)).toHaveLength(1);
+    expect(readFileSync(path.join(dir, "harap.txt"), "utf8")).toBe("1|0\n0|1\n");
+    for (const b of ["PASANG", "PULIH", "PRASYARAT", "PERIKSA"]) expect(readFileSync(path.join(dir, `abt-bukti-8529-31okt-${b}.sql`), "utf8")).not.toMatch(/aleta/i);
   });
 });
