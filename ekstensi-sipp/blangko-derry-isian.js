@@ -2432,6 +2432,9 @@
       };
       await terapkan(bacaan.usulan);
       if (S.susunan !== d || S.pk !== pk) return null;
+      // 31 Okt (jawab-replik): naskah tertulis yang sudah ada di ABT -> "lisan atau tertulis" ikut "tertulis" bila belum disunting petugas.
+      if (!bacaSaja && (await ikutkanTertulis())) ringkas.ditulis += 1;
+      if (S.susunan !== d || S.pk !== pk) return null;
       // G1 30 Okt: huruf alasan yang PASTI dari keterangan kedua saksi terisi sendiri; yang mungkin menjadi saran (Tab).
       await terapkanHurufAlasan(bacaan.bagian && bacaan.bagian.saksi, perlu(), jejak, bacaSaja, ringkas);
       if (S.susunan !== d || S.pk !== pk) return null;
@@ -3047,6 +3050,26 @@
   const tuntutanBlangko = () => (S.susunan && Array.isArray(S.susunan.tuntutan) ? S.susunan.tuntutan : []);
   const nilaiIsianKini = (kode) => (S.isi[kode] !== undefined ? S.isi[kode] : S.nilai[kode] && S.nilai[kode].teks);
   const isianBlangko = (kode) => (S.susunan && Array.isArray(S.susunan.isian) ? S.susunan.isian.find((x) => x.kode === kode) : null) || { kode };
+  /**
+   * 31 Okt (jawab-replik, keputusan sesi utama): naskah jawab-menjawab TERTULIS terisi (dari e-Court atau ditempel petugas) -> isian
+   * "lisan atau tertulis" (9881, dipakai jawaban/replik/duplik/kesimpulan) menjadi "tertulis" - hanya bila isian itu ada di blangko ini,
+   * belum "tertulis", dan TIDAK pernah diketik/disunting petugas (riwayat isian). Suntingan petugas selalu menang.
+   */
+  const KODE_LISAN_TERTULIS = "9881";
+  async function ikutkanTertulis() {
+    try {
+      const mi = mesinIsi();
+      if (!mi || !Array.isArray(mi.KODE_NASKAH_BERBARIS) || !S.susunan || !S.pk || !S.blangko || !bolehTulis()) return false;
+      const b = S.susunan.isian.find((x) => x.kode === KODE_LISAN_TERTULIS);
+      if (!b || !mi.KODE_NASKAH_BERBARIS.some((k) => String(nilaiIsianKini(k) || "").trim())) return false;
+      const kini = String(nilaiIsianKini(KODE_LISAN_TERTULIS) || "").trim();
+      if (kini.toLowerCase() === "tertulis" || S.diketik.has(KODE_LISAN_TERTULIS)) return false;
+      if ((await kodeBerjejakKetikan()).has(KODE_LISAN_TERTULIS)) return false;
+      return await tulisIsianSipp(b, "tertulis", "naskah jawab-menjawab tertulis", "cukup", false, Boolean(kini));
+    } catch {
+      return false;
+    }
+  }
   /** Keputusan majelis tuntutan p (4100-4105) sudah DIPILIH? Hanya bila nilainya tepat satu pilihan sah - daftar pilihan bawaan ABT bukan pilihan. */
   function keputusanTuntutan(p) {
     const t = tuntutanBlangko().find((x) => x.pemicu === p);
@@ -3255,6 +3278,9 @@
   }
   /** Bunyi rapi isian sebelum disimpan (30 Okt): hanya isian teks bebas; pilihan, tanggal, huruf alasan dibiarkan. */
   function rapiSimpan(kode, nilai) {
+    // 31 Okt (jawab-replik): naskah jawab-menjawab berparagraf - Enter tetap pemisah paragraf, tidak dirangkai satu baris.
+    const mi = mesinIsi();
+    if (mi && Array.isArray(mi.KODE_NASKAH_BERBARIS) && mi.KODE_NASKAH_BERBARIS.includes(String(kode))) return typeof nilai === "string" ? mi.rapikanNaskah(nilai) : nilai;
     const m = SK();
     if (!m || typeof m.rapiIsian !== "function" || typeof nilai !== "string" || !nilai.trim()) return nilai;
     const b = isianBlangko(kode);
@@ -3324,6 +3350,7 @@
         cerminSekali(kode, nilai);
         cerminSidang(kode, nilai);
         catatBuktiTertulis(kode, nilai);
+        if (String(nilai).trim() && kode !== KODE_LISAN_TERTULIS) void ikutkanTertulis();
       }
       if (S.isi[kode] !== nilai) return true; // sudah diketik lagi: hasil ini tidak dipakai
       if (h.ok) pulihHapusDraf(kode);

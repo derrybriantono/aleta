@@ -1,0 +1,98 @@
+[
+ {
+  "no": 12020,
+  "nama": "URAIAN JAWABAN #0047# (TERTULIS; DALAM KONVENSI BILA ADA REKONVENSI) - ISIAN otomatis dari dokumen yang diunggah pihak: dalil dan petitum, satu paragraf per baris; kosong = jawaban lisan atau titik-ti",
+  "jenis": "data_teks",
+  "sql": ""
+ },
+ {
+  "no": 12021,
+  "nama": "URAIAN GUGATAN REKONVENSI #0047# (BAGIAN DALAM REKONVENSI JAWABAN SAMPAI PETITUM) - ISIAN otomatis dari dokumen jawaban; kosong = tidak dicetak",
+  "jenis": "data_teks",
+  "sql": ""
+ },
+ {
+  "no": 12022,
+  "nama": "URAIAN REPLIK #0046# (TERTULIS; DALAM KONVENSI BILA ADA REKONVENSI) - ISIAN otomatis dari dokumen yang diunggah pihak: dalil dan petitum, satu paragraf per baris; kosong = replik lisan atau titik-titi",
+  "jenis": "data_teks",
+  "sql": ""
+ },
+ {
+  "no": 12023,
+  "nama": "URAIAN JAWABAN REKONVENSI #0046# (BAGIAN DALAM REKONVENSI REPLIK) - ISIAN otomatis dari dokumen replik; kosong = tidak dicetak",
+  "jenis": "data_teks",
+  "sql": ""
+ },
+ {
+  "no": 12024,
+  "nama": "URAIAN DUPLIK #0047# (TERTULIS; DALAM KONVENSI BILA ADA REKONVENSI) - ISIAN otomatis dari dokumen yang diunggah pihak: dalil dan petitum, satu paragraf per baris; kosong = duplik lisan atau titik-titi",
+  "jenis": "data_teks",
+  "sql": ""
+ },
+ {
+  "no": 12025,
+  "nama": "URAIAN REPLIK REKONVENSI #0047# (BAGIAN DALAM REKONVENSI DUPLIK) - ISIAN otomatis dari dokumen duplik; kosong = tidak dicetak",
+  "jenis": "data_teks",
+  "sql": ""
+ },
+ {
+  "no": 12026,
+  "nama": "URAIAN DUPLIK REKONVENSI #0046# (TERTULIS) - ISIAN otomatis dari dokumen duplik rekonvensi yang diunggah pihak; kosong = titik-titik",
+  "jenis": "data_teks",
+  "sql": ""
+ },
+ {
+  "no": 12027,
+  "nama": "URAIAN KESIMPULAN #0046# (TERTULIS) - ISIAN otomatis dari dokumen kesimpulan yang diunggah pihak: dalil dan petitum; kosong = isian Kesimpulan oleh #0046#",
+  "jenis": "data_teks",
+  "sql": ""
+ },
+ {
+  "no": 12028,
+  "nama": "URAIAN KESIMPULAN #0047# (TERTULIS) - ISIAN otomatis dari dokumen kesimpulan yang diunggah pihak: dalil dan petitum; kosong = isian Kesimpulan oleh #0047#",
+  "jenis": "data_teks",
+  "sql": ""
+ },
+ {
+  "no": 12030,
+  "nama": "JAWAB-MENJAWAB BAS: JAWABAN #0047# DAN GUGATAN REKONVENSI TERTULIS (OTOMATIS dari isian 12020 dan 12021; paragraf berinden gantung; kosong = titik-titik)",
+  "jenis": "data_sql",
+  "sql": "SELECT CONCAT(aps_badilag.isian_rtf_blok((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 12020 AND t.perkara_id = '#perkara_id#' LIMIT 1), 'teks', 426), IFNULL(aps_badilag.isian_rtf_butir((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 12021 AND t.perkara_id = '#perkara_id#' LIMIT 1), 'teks', 426), '')) AS data"
+ },
+ {
+  "no": 12031,
+  "nama": "JAWAB-MENJAWAB BAS: REPLIK #0046# DAN JAWABAN REKONVENSI TERTULIS (OTOMATIS dari isian 12022 dan 12023; kosong = titik-titik)",
+  "jenis": "data_sql",
+  "sql": "SELECT CONCAT(aps_badilag.isian_rtf_blok((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 12022 AND t.perkara_id = '#perkara_id#' LIMIT 1), 'teks', 426), IFNULL(aps_badilag.isian_rtf_butir((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 12023 AND t.perkara_id = '#perkara_id#' LIMIT 1), 'teks', 426), '')) AS data"
+ },
+ {
+  "no": 12032,
+  "nama": "JAWAB-MENJAWAB BAS: DUPLIK #0047# DAN REPLIK REKONVENSI TERTULIS (OTOMATIS dari isian 12024 dan 12025; kosong = titik-titik)",
+  "jenis": "data_sql",
+  "sql": "SELECT CONCAT(aps_badilag.isian_rtf_blok((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 12024 AND t.perkara_id = '#perkara_id#' LIMIT 1), 'teks', 426), IFNULL(aps_badilag.isian_rtf_butir((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 12025 AND t.perkara_id = '#perkara_id#' LIMIT 1), 'teks', 426), '')) AS data"
+ },
+ {
+  "no": 12033,
+  "nama": "JAWAB-MENJAWAB: DUPLIK REKONVENSI #0046# TERTULIS (OTOMATIS dari isian 12026; BAS dan duduk perkara; kosong = titik-titik)",
+  "jenis": "data_sql",
+  "sql": "SELECT aps_badilag.isian_rtf_blok((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 12026 AND t.perkara_id = '#perkara_id#' LIMIT 1), 'teks', 426) AS data"
+ },
+ {
+  "no": 12034,
+  "nama": "JAWAB-MENJAWAB BAS: KESIMPULAN KEDUA PIHAK (OTOMATIS dari isian 12027/12028; kosong = isian Kesimpulan oleh #0046#/#0047#)",
+  "jenis": "data_sql",
+  "sql": "SELECT CONCAT(CONCAT(REPLACE('|pard|qj|fi0|li0|sl360|slmult1|widctlpar ', '|', CHAR(92)), 'Kesimpulan #0046#:', REPLACE('|par ', '|', CHAR(92))), IF(CHAR_LENGTH(TRIM(REPLACE(REPLACE(IFNULL((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 12027 AND t.perkara_id = '#perkara_id#' LIMIT 1), ''), CHAR(13), ''), CHAR(10), ''))) > 0, aps_badilag.isian_rtf_blok((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 12027 AND t.perkara_id = '#perkara_id#' LIMIT 1), 'teks', 426), aps_badilag.isian_rtf_blok((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 8436 AND t.perkara_id = '#perkara_id#' LIMIT 1), 'teks', 426)), CONCAT(REPLACE('|pard|qj|fi0|li0|sl360|slmult1|widctlpar ', '|', CHAR(92)), 'Kesimpulan #0047#:', REPLACE('|par ', '|', CHAR(92))), IF(CHAR_LENGTH(TRIM(REPLACE(REPLACE(IFNULL((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 12028 AND t.perkara_id = '#perkara_id#' LIMIT 1), ''), CHAR(13), ''), CHAR(10), ''))) > 0, aps_badilag.isian_rtf_blok((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 12028 AND t.perkara_id = '#perkara_id#' LIMIT 1), 'teks', 426), aps_badilag.isian_rtf_blok((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 8437 AND t.perkara_id = '#perkara_id#' LIMIT 1), 'teks', 426))) AS data"
+ },
+ {
+  "no": 12035,
+  "nama": "JAWAB-MENJAWAB DUDUK PERKARA: NASKAH TERTULIS MENYUSUL KALIMAT POKOK JAWABAN (OTOMATIS dari isian 12020-12026; kosong bila belum ada naskah tertulis)",
+  "jenis": "data_sql",
+  "sql": "SELECT CONCAT(IF(CHAR_LENGTH(TRIM(REPLACE(REPLACE(IFNULL((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 12020 AND t.perkara_id = '#perkara_id#' LIMIT 1), ''), CHAR(13), ''), CHAR(10), ''))) > 0 OR CHAR_LENGTH(TRIM(REPLACE(REPLACE(IFNULL((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 12021 AND t.perkara_id = '#perkara_id#' LIMIT 1), ''), CHAR(13), ''), CHAR(10), ''))) > 0, CONCAT(CONCAT(REPLACE('|pard|qj|fi720|li0|sl360|slmult1|widctlpar ', '|', CHAR(92)), CONCAT('Bahwa, jawaban #0047# tersebut diajukan secara tertulis', IF(TRIM('#7111#') <> '', CONCAT(' tanggal ', TRIM('#7111#')), ''), ' yang selengkapnya sebagai berikut:'), REPLACE('|par ', '|', CHAR(92))), aps_badilag.isian_rtf_blok((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 12020 AND t.perkara_id = '#perkara_id#' LIMIT 1), 'teks', 426), IFNULL(aps_badilag.isian_rtf_butir((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 12021 AND t.perkara_id = '#perkara_id#' LIMIT 1), 'teks', 426), '')), ''),\n IF(CHAR_LENGTH(TRIM(REPLACE(REPLACE(IFNULL((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 12022 AND t.perkara_id = '#perkara_id#' LIMIT 1), ''), CHAR(13), ''), CHAR(10), ''))) > 0 OR CHAR_LENGTH(TRIM(REPLACE(REPLACE(IFNULL((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 12023 AND t.perkara_id = '#perkara_id#' LIMIT 1), ''), CHAR(13), ''), CHAR(10), ''))) > 0, CONCAT(CONCAT(REPLACE('|pard|qj|fi720|li0|sl360|slmult1|widctlpar ', '|', CHAR(92)), CONCAT('Bahwa, terhadap jawaban #0047# tersebut, #0046# mengajukan replik secara tertulis', IF(TRIM('#7112#') <> '', CONCAT(' tanggal ', TRIM('#7112#')), ''), ' yang pada pokoknya sebagai berikut:'), REPLACE('|par ', '|', CHAR(92))), aps_badilag.isian_rtf_blok((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 12022 AND t.perkara_id = '#perkara_id#' LIMIT 1), 'teks', 426), IFNULL(aps_badilag.isian_rtf_butir((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 12023 AND t.perkara_id = '#perkara_id#' LIMIT 1), 'teks', 426), '')), ''),\n IF(CHAR_LENGTH(TRIM(REPLACE(REPLACE(IFNULL((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 12024 AND t.perkara_id = '#perkara_id#' LIMIT 1), ''), CHAR(13), ''), CHAR(10), ''))) > 0 OR CHAR_LENGTH(TRIM(REPLACE(REPLACE(IFNULL((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 12025 AND t.perkara_id = '#perkara_id#' LIMIT 1), ''), CHAR(13), ''), CHAR(10), ''))) > 0, CONCAT(CONCAT(REPLACE('|pard|qj|fi720|li0|sl360|slmult1|widctlpar ', '|', CHAR(92)), CONCAT('Bahwa, terhadap replik #0046# tersebut, #0047# mengajukan duplik secara tertulis', IF(TRIM('#7113#') <> '', CONCAT(' tanggal ', TRIM('#7113#')), ''), ' yang pada pokoknya sebagai berikut:'), REPLACE('|par ', '|', CHAR(92))), aps_badilag.isian_rtf_blok((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 12024 AND t.perkara_id = '#perkara_id#' LIMIT 1), 'teks', 426), IFNULL(aps_badilag.isian_rtf_butir((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 12025 AND t.perkara_id = '#perkara_id#' LIMIT 1), 'teks', 426), '')), ''),\n IF(CHAR_LENGTH(TRIM(REPLACE(REPLACE(IFNULL((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 12026 AND t.perkara_id = '#perkara_id#' LIMIT 1), ''), CHAR(13), ''), CHAR(10), ''))) > 0, CONCAT(CONCAT(REPLACE('|pard|qj|fi720|li0|sl360|slmult1|widctlpar ', '|', CHAR(92)), CONCAT('Bahwa, terhadap replik rekonvensi tersebut, #0046# mengajukan duplik rekonvensi secara tertulis', IF(TRIM('#7114#') <> '', CONCAT(' tanggal ', TRIM('#7114#')), ''), ' yang pada pokoknya sebagai berikut:'), REPLACE('|par ', '|', CHAR(92))), aps_badilag.isian_rtf_blok((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 12026 AND t.perkara_id = '#perkara_id#' LIMIT 1), 'teks', 426)), '')) AS data"
+ },
+ {
+  "no": 12036,
+  "nama": "JAWAB-MENJAWAB DUDUK PERKARA: NASKAH KESIMPULAN TERTULIS MENYUSUL KALIMAT KESIMPULAN (OTOMATIS dari isian 12027/12028; kosong bila belum ada naskah tertulis)",
+  "jenis": "data_sql",
+  "sql": "SELECT CONCAT(IF(CHAR_LENGTH(TRIM(REPLACE(REPLACE(IFNULL((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 12027 AND t.perkara_id = '#perkara_id#' LIMIT 1), ''), CHAR(13), ''), CHAR(10), ''))) > 0, CONCAT(CONCAT(REPLACE('|pard|qj|fi720|li0|sl360|slmult1|widctlpar ', '|', CHAR(92)), 'Bahwa, kesimpulan #0046# yang diajukan secara tertulis selengkapnya sebagai berikut:', REPLACE('|par ', '|', CHAR(92))), aps_badilag.isian_rtf_blok((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 12027 AND t.perkara_id = '#perkara_id#' LIMIT 1), 'teks', 426)), ''),\n IF(CHAR_LENGTH(TRIM(REPLACE(REPLACE(IFNULL((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 12028 AND t.perkara_id = '#perkara_id#' LIMIT 1), ''), CHAR(13), ''), CHAR(10), ''))) > 0, CONCAT(CONCAT(REPLACE('|pard|qj|fi720|li0|sl360|slmult1|widctlpar ', '|', CHAR(92)), 'Bahwa, kesimpulan #0047# yang diajukan secara tertulis selengkapnya sebagai berikut:', REPLACE('|par ', '|', CHAR(92))), aps_badilag.isian_rtf_blok((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 12028 AND t.perkara_id = '#perkara_id#' LIMIT 1), 'teks', 426)), '')) AS data"
+ }
+]

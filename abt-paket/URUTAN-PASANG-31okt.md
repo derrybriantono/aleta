@@ -1,4 +1,4 @@
-# URUTAN PASANG paket ABT 29-31 Okt 2026 (21 paket; diuji rantai penuh dari dump 28 Okt pada 31 Okt 07.36-07.46)
+# URUTAN PASANG paket ABT 29-31 Okt 2026 (23 paket; diuji rantai penuh dari dump 28 Okt pada 31 Okt 07.36-07.46)
 
 Semua paket dipasang di SERVER sebagai root, dari folder `paket-satker` masing-masing, BERURUTAN persis seperti di bawah
 (`cd <paket>/paket-satker && bash pasang-satker.sh`). Setiap paket harus berakhir "SELESAI" (dan PERIKSA "SEMUA COCOK" /
@@ -296,3 +296,35 @@ SELESAI - paket abt-tanggal-agenda-31okt terpasang. Pulih: bash tanggal-agenda-3
 ```
 Catatan: tinjau-31okt tidak menyentuh 8529 maupun 7111-7122/8438/2111/2112, jadi md5 dasar kedua paket terakhir (keadaan sesudah 18 paket)
 tetap cocok sesudah tinjau-31okt - tidak perlu dibangun ulang (diuji rantai).
+
+### 22. `jawab-replik-31okt` (cabang jawab-replik w148) - PALING AKHIR
+```
+cd jawab-replik-31okt/paket-satker && bash pasang-satker.sh
+```
+Naskah utuh jawab-menjawab (jawaban + gugatan rekonvensi, replik + jawaban rekonvensi, duplik + replik rekonvensi, duplik rekonvensi,
+kesimpulan kedua pihak) di BAS sidang jawab-menjawab dan duduk perkara putusan kontradiktoir; lihat `jawab-replik-31okt/PASANG.md`.
+Uji rantai 22 paket 31 Okt 13.59-14.13 (salinan baru dump 28 Okt + dasar2, paket dari `git archive HEAD`): semua SELESAI, md5 semua
+paket cocok; keadaan akhir variabel dan seluruh pohon RTF SAMA PERSIS dengan pasang laptop w148 (`uji-rantai-31okt/hasil-rantai-22.txt`).
+Keluaran benar:
+```
+PRASYARAT COCOK (0|0|5|0|4)
+SIAP=273
+BERKAS SIAP
+SEMUA COCOK
+UJI: 12 kueri berjalan (perkara <id>)
+TAMBAL=273
+BERKAS COCOK
+SELESAI - paket abt-jawab-replik-31okt terpasang. ...
+```
+
+### 23. `butir-rata-31okt` (cabang jawab-replik w148) - PALING AKHIR
+```
+cd butir-rata-31okt/paket-satker && bash pasang-satker.sh
+```
+Keputusan pengguna 31 Okt: paragraf tanpa nomor sesudah butir bernomor ("Berdasarkan ... mohon:", "Atau apabila ...") rata kiri berinden
+baris pertama; fungsi isian_rtf_butir + isian_rtf_judul diganti (tersyarat md5), lihat `butir-rata-31okt/PASANG.md` dan banding
+`butir-rata-31okt/hasil/banding.txt`. Uji rantai 23 paket 31 Okt 15.27-15.40 (`uji-rantai-31okt/hasil-rantai-23.txt`): semua SELESAI;
+variabel (2.960, md5 GROUP_CONCAT penuh) dan seluruh pohon RTF sama persis dengan pasang laptop w148; fungsi sama kecuali 4 fungsi paket lama yang di laptop memuat nama
+basis salinan (khusus laptop). Paket 22 ikut diperbarui (keputusan sesi utama: pengunggah BAS replik/duplik rekonvensi/kesimpulan, duplik
+oleh Tergugat, spasi "secara elektronik" #0206#) - kini PRASYARAT `0|0|6|0|4`, `UJI: 13 kueri`.
+Keluaran benar: `PRASYARAT COCOK (2|0)`, `PERIKSA: SEMUA COCOK`, `UJI: 14 contoh sama dengan laptop`, `SELESAI ...`.

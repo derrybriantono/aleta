@@ -1,0 +1,19 @@
+== pasang ulang
+PRASYARAT COCOK (0|16|0|6|4)
+SUDAH=273
+SUDAH=273
+SELESAI - paket abt-jawab-replik-31okt terpasang. Cadangan: /d/aleta-dev/wt/w148/abt-paket/jawab-replik-31okt/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w148/abt-paket/jawab-replik-31okt/paket-satker/pulih-satker.sh
+PASANG ULANG: tidak ada yang berubah
+== pulih
+PULIH=273
+BERKAS PULIH
+PULIH COCOK (0|0|6|0|4)
+PULIH: variabel dan seluruh pohon RTF SAMA PERSIS dengan sebelum paket
+== pasang lagi
+PRASYARAT COCOK (0|0|6|0|4)
+TAMBAL=273
+SELESAI - paket abt-jawab-replik-31okt terpasang. Cadangan: /d/aleta-dev/wt/w148/abt-paket/jawab-replik-31okt/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w148/abt-paket/jawab-replik-31okt/paket-satker/pulih-satker.sh
+PASANG LAGI: sama persis dengan pasang pertama
+== penjaga: 9252 disunting orang
+GAGAL: prasyarat '0|16|0|5|4' (harus '0|0|6|0|4' pasang pertama atau '0|16|0|6|4' pasang ulang) - TIDAK ada yang diubah. Arti angka: lihat abt-jawab-replik-31okt-PRASYARAT.sql
+PENJAGA: tidak ada yang berubah

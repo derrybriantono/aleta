@@ -38,6 +38,7 @@ const J = require("./jawabMenjawabEcourtService");
 const TJ = require("./tanyaJawabEcourtService");
 const KH = require("./jawabKhususEcourtService");
 const B = require("./buktiEcourtService");
+const NJ = require("./naskahJawabMenjawabService");
 
 const VAR = Object.freeze({
   mutah: "6055",
@@ -331,6 +332,9 @@ function susunIsiGugatan(masukan) {
   // (kesimpulan), 9355/9491/9681 (pokok jawaban & eksepsi) dari jawabMenjawabEcourtService. Semua jagaIsianLama.
   usulan.push(...jm.usulan);
   catatan.push(...jm.catatan);
+  // JAWAB-REPLIK 31 Okt: naskah UTUH jawaban/gugatan rekonvensi, replik/jawaban rekonvensi, duplik/replik rekonvensi, duplik rekonvensi,
+  // kesimpulan kedua pihak (12020-12028, teks berparagraf yang dirapikan) - "cukup" hanya bila berkasnya pasti dan rapi.
+  usulan.push(...NJ.usulanNaskah({ dokumen, sebutan }));
 
   // JJ2: 9164 (tanggapan Tergugat atas sita) dan 9283 (objek harta bersama rekonvensi) dari jawaban; semuanya ragu, isian petugas menang.
   {
