@@ -57,6 +57,17 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.57",
+    dirilis: "2026-10-31T09:30:00+08:00",
+    judul: "Pertimbangan berbutir tanpa titik koma, hukum acara HIR atau RBg per satker, dan pemeriksa bukti",
+    butir: [
+      "Pertimbangan tanpa titik koma di tengah kalimat: rangkaian \"bahwa ...; bahwa ...\" dipecah menjadi butir baru berawalan tanda pisah dengan inden gantung; penulisan RBg dibakukan dan tenggang perlawanan menyebut Pasal 153 ayat (2) RBg.",
+      "Hukum acara per satker: satker di Jawa dan Madura memakai padanan HIR (termasuk Undang-Undang Nomor 20 Tahun 1947 untuk banding, Pasal 1875 KUHPerdata, dan pasal eksekusi), satker lain tetap RBg tanpa perubahan cetakan.",
+      "Daftar bukti tanpa KTP atau surat domisili tercetak dengan penanda yang tepat dan muncul di Periksa sebelum cetak; peringatan bila isian pihak yang meninggalkan rumah berlawanan dengan keterangan kedua saksi.",
+      "Tanggal awal konflik dan pisah rumah memakai tanggal lengkap bila saksi menyebutnya; tanggal jawaban, replik, duplik, kesimpulan, dan pembuktian diambil dari jadwal sidang SIPP bila court calendar kosong.",
+    ],
+  },
+  {
     versi: "1.205.56",
     dirilis: "2026-10-31T04:45:00+08:00",
     judul: "Unggah BAS Word jadi PDF bertanda tangan, status e-Court satu sumber, putusan sela, dan tampilan SIPP per peran",
