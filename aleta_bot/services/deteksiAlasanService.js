@@ -360,6 +360,15 @@ function usulHuruf({ s1, s2, posita, lamaPisahBulan }) {
       const dalil = posita ? sebabHuruf(posita, huruf).map((x) => x.sebab) : null;
       pemicu = a.filter((x) => b.includes(x) && (!dalil || dalil.includes(x)));
       usul = pemicu.length > 0;
+      // 31 Okt (arahan pengguna, mengubah keputusan 27 Okt): diterangkan KEDUA saksi tetapi tidak didalilkan di posita ->
+      // tetap DIUSULKAN, bertanda dariSaksi (huruf selain F sudah selalu usulan, tidak pernah pasti).
+      if (!usul && dalil) {
+        const keduaSaksi = a.filter((x) => b.includes(x));
+        if (keduaSaksi.length) {
+          hasil.push({ huruf, usul: true, pemicu: keduaSaksi, dariSaksi: true, asalLabel: "dari keterangan kedua saksi" });
+          continue;
+        }
+      }
     }
     hasil.push({ huruf, usul, pemicu });
   }

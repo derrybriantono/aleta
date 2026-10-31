@@ -392,7 +392,8 @@
    */
   function keduaSaksiSama5227(u) {
     if (!u || teks(u.kode) !== "5227" || !u.dariGugatan) return { sama: false, sebab: "" };
-    const rincian = (Array.isArray(u.rincian) ? u.rincian : []).filter((r) => r && Array.isArray(r.bunyi) && r.bunyi.length);
+    // 31 Okt: usulan "dari keterangan kedua saksi" (belum dicentang) tidak ikut menentukan - alasan posita tetap otomatis.
+    const rincian = (Array.isArray(u.rincian) ? u.rincian : []).filter((r) => r && Array.isArray(r.bunyi) && r.bunyi.length && r.asal !== "saksi");
     if (!rincian.length) return { sama: false, sebab: "rincian alasan dari gugatan belum ada" };
     if (teks(u.bentrok).trim() || teks(u.keyakinan) === "bentrok") return { sama: false, sebab: "keterangan kedua saksi berbeda" };
     const kurang = rincian.filter((r) => r.yakin !== "cukup" || !Array.isArray(r.dukung) || r.dukung.length < 2);
