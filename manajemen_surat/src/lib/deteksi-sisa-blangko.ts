@@ -30,7 +30,7 @@
  * (DecompressionStream untuk DOCX).
  */
 
-export type JenisTemuan = "merah" | "kurung" | "tanda" | "perbaikan" | "titik" | "garis" | "kalimat" | "sesuai";
+export type JenisTemuan = "merah" | "kurung" | "tanda" | "perbaikan" | "titik" | "garis" | "kalimat" | "kosong" | "ulang" | "ragu" | "sesuai";
 export type JenisNaskah = "putusan" | "bas" | "relaas";
 
 export type Temuan = {
@@ -68,9 +68,14 @@ export const LABEL: Record<JenisTemuan, string> = {
   titik: "Titik-titik isian yang belum diisi",
   garis: "Garis isian yang belum diisi",
   kalimat: "Kalimat yang masih berbentuk blangko",
+  kosong: "Isian yang masih kosong",
+  ulang: "Kata berulang (bekas isian yang tidak dibersihkan)",
+  ragu: "Periksa: pilihan atau isian yang mungkin belum beres (belum tentu salah)",
   sesuai: "Tidak sesuai dengan perkara atau sidang ini",
 };
-export const URUTAN_JENIS: JenisTemuan[] = ["sesuai", "merah", "kurung", "tanda", "perbaikan", "titik", "garis", "kalimat"];
+export const URUTAN_JENIS: JenisTemuan[] = ["sesuai", "merah", "kurung", "tanda", "perbaikan", "titik", "garis", "kalimat", "kosong", "ulang", "ragu"];
+/** Tingkat RAGU: hanya masuk daftar .txt (bertanda "periksa"), TIDAK dimerahkan di naskah. Selain itu (dan selain "merah" yang sudah merah) = PASTI. */
+export const JENIS_RAGU: ReadonlySet<JenisTemuan> = new Set<JenisTemuan>(["ragu"]);
 export const NAMA_NASKAH: Record<JenisNaskah, string> = { putusan: "putusan", bas: "berita acara sidang (BAS)", relaas: "relaas" };
 
 const BATAS_TEMUAN = 500;
@@ -478,13 +483,51 @@ export function titikIsianTanganRelaas(p: string, dari: number, sampai: number):
 
 /** Opsi pemeriksaan: jenis "relaas" = isian tangan jurusita dikecualikan; "umum" = hanya sinyal kuat (kurung, tanda, perbaikan, merah). */
 export type OpsiPeriksa = { jenis?: JenisNaskah | "umum" | "" };
-const JENIS_LEMAH: ReadonlySet<JenisTemuan> = new Set<JenisTemuan>(["titik", "garis", "kalimat"]);
+const JENIS_LEMAH: ReadonlySet<JenisTemuan> = new Set<JenisTemuan>(["titik", "garis", "kalimat", "ulang", "ragu"]);
 
 type Aturan = {
   jenis: JenisTemuan;
+  /** true = tidak dipakai pada pemeriksaan "umum" (hanya sinyal kuat). */
+  lemah?: boolean;
   re: RegExp;
   lewat?: (isi: string, p: string, dari: number, sampai: number, opsi?: OpsiPeriksa) => boolean;
 };
+
+// ============================================================================
+// 31 Okt 2026 (sisa merah): pembantu aturan - salinan JS di ekstensi-sipp/deteksi-sisa-blangko.js
+// ============================================================================
+/** Pengecualian titik-titik (biaya, isian tangan relaas, kutipan). true = bukan sisa blangko. */
+function titikLewat(p: string, dari: number, sampai: number, opsi?: OpsiPeriksa): boolean {
+  // Titik pengantar antara uraian dan nominal biaya ("Biaya panggilan ........ Rp. 60.000,-") bukan isian.
+  if (/^[  ]*Rp\b/i.test(p.slice(sampai, sampai + 12))) return true;
+  // Relaas: titik yang memang diisi tangan jurusita bukan sisa blangko.
+  if (opsi && opsi.jenis === "relaas" && titikIsianTanganRelaas(p, dari, sampai)) return true;
+  return dalamKutipan(p, dari, sampai);
+}
+/** Isian setengah: dilewati hanya bila SEMUA gugus titik di dalam temuan adalah pengecualian titik. */
+function titikBagianLewat(isi: string, p: string, dari: number, opsi?: OpsiPeriksa): boolean {
+  const re = /[.…]{2,}|…/g;
+  let m: RegExpExecArray | null;
+  let ada = false;
+  while ((m = re.exec(isi))) {
+    ada = true;
+    const d = dari + m.index;
+    if (!titikLewat(p, d, d + m[0].length, opsi)) return false;
+  }
+  return ada;
+}
+const KATA_ULANG_PASTI = new Set([
+  "para", "pada", "yang", "dan", "di", "ke", "dari", "untuk", "dengan", "oleh", "atas", "bahwa", "itu", "ini", "tersebut",
+  "adalah", "telah", "akan", "dalam", "tidak", "penggugat", "tergugat", "pemohon", "termohon", "majelis", "hakim", "pengadilan", "agama",
+]);
+/** Pengecualian tingkat RAGU: teks Arab, kutipan bertanda kutip, kutipan pasal/ayat/undang-undang, dan "... Rekonvensi/Konvensi". */
+function raguLewat(p: string, dari: number, sampai: number): boolean {
+  if (dekatArab(p, dari, sampai) || diapitKutip(p, dari)) return true;
+  if (/\b(?:pasal|ayat|undang-undang|kompilasi|kuhper|kuhperdata)\b/i.test(p.slice(Math.max(0, dari - 120), dari))) return true;
+  return /^\s*(?:rekonvensi|konvensi)\b/i.test(p.slice(sampai, sampai + 20));
+}
+const LABEL_ISIAN =
+  "(?:nama(?:\\s+lengkap)?|umur|usia|nik|alamat|pekerjaan|agama|pendidikan|tempat\\s+(?:dan\\s+)?tanggal\\s+lahir|tempat\\s+lahir|tanggal\\s+lahir|tempat\\s+tinggal|kewarganegaraan|jabatan|nip|no\\.?\\s*hp|nomor\\s+(?:hp|telepon))";
 
 const ATURAN: Aturan[] = [
   {
@@ -506,6 +549,60 @@ const ATURAN: Aturan[] = [
   { jenis: "tanda", re: /\bplace\s?holder\b/gi },
   { jenis: "tanda", re: /\bisi\s+(?:di\s?)?sini\b/gi },
   { jenis: "tanda", re: /(?<![A-Za-z0-9])X{4,}(?![A-Za-z0-9])/g },
+  // 31 Okt 2026 (sisa merah) - PASTI: "XXX"/"xx" sebagai isian (angka Romawi XX/XXX sesudah Pasal/Bab/dst. dikecualikan),
+  // {tanda}, #kode# huruf, dan placeholder berkurung "(nama)", "(alamat)", "(pilih salah satu)".
+  {
+    jenis: "tanda",
+    lemah: true,
+    // Huruf kecil "xx"/"xxx" TIDAK ditandai: itu topeng anonimisasi putusan ("Penggugat ( xxx ) bin xxx, NIK xxxxxxxxxxxxxxxx").
+    re: /(?<![A-Za-z0-9])X{2,3}(?![A-Za-z0-9])/g,
+    lewat(isi, p, dari) {
+      return /^X+$/.test(isi) && /\b(?:pasal|bab|bagian|jilid|juz|abad|buku|surat|ke|tingkat|halaman|hlm)[\s.\-]*$/i.test(p.slice(Math.max(0, dari - 14), dari));
+    },
+  },
+  { jenis: "tanda", lemah: true, re: /\{[^{}]{0,120}\}/g },
+  { jenis: "tanda", lemah: true, re: /#[A-Za-z_][A-Za-z0-9_]{1,30}#/g },
+  { jenis: "tanda", re: /\(\s*(?:nama|alamat|umur|pekerjaan|agama|tempat\s+lahir|tanggal\s+lahir|jabatan|diisi|isi\s+di\s?sini)\s*\)/gi },
+  { jenis: "kalimat", re: /\(\s*(?:pilih\s+salah\s+satu(?:nya)?|coret\s+yang\s+tidak\s+perlu)\s*\)/gi },
+  // "verifikasi" sebagai penanda isian ("butuh verifikasi", "perlu verifikasi", "(verifikasi)", "verifikasi dulu"); kata "verifikasi" polos dalam kalimat biasa BUKAN penanda.
+  { jenis: "perbaikan", re: /\b(?:butuh|perlu|harus|tinggal)\s+(?:di)?verifikasi\w*|\bverifikasi\s+dulu\b|\(\s*verifikasi\b[^()]{0,40}\)|\*{1,2}\s*verifikasi\b[^*]{0,40}\*{1,2}/gi },
+  // 31 Okt 2026 - PASTI: isian setengah ("20..", "Nomor ..../Pdt.G/....", "Rp. ....", "hari ..., tanggal ..."). Pengecualian titik
+  // (kutipan, isian tangan relaas) berlaku per gugus titik: temuan dilewati hanya bila SETIAP gugusnya pengecualian.
+  { jenis: "titik", lemah: true, re: /\b(?:19|20)\d?(?:[.…]{2,}|…)/g, lewat: (isi, p, dari, _s, opsi) => titikBagianLewat(isi, p, dari, opsi) },
+  {
+    jenis: "titik",
+    lemah: true,
+    re: /[.…]{2,}\s*\/\s*Pdt\.[A-Za-z]+\s*\/\s*(?:\d{4}|[.…]{2,})(?:\s*\/\s*[A-Za-z]+(?:\.[A-Za-z]+)*)?|\bPdt\.[A-Za-z]+\s*\/\s*[.…]{2,}(?:\s*\/\s*[A-Za-z]+(?:\.[A-Za-z]+)*)?/g,
+    lewat: (isi, p, dari, _s, opsi) => titikBagianLewat(isi, p, dari, opsi),
+  },
+  { jenis: "titik", lemah: true, re: /\bRp\.?\s*[.…]{2,}/gi, lewat: (isi, p, dari, _s, opsi) => titikBagianLewat(isi, p, dari, opsi) },
+  {
+    jenis: "titik",
+    lemah: true,
+    re: /\bhari\s*[.…]{2,}\s*,?\s*tanggal\s*[.…]{2,}|\btanggal\s*[.…]{2,}\s*,?\s*(?:bulan|tahun)\s*[.…]{2,}/gi,
+    lewat: (isi, p, dari, _s, opsi) => titikBagianLewat(isi, p, dari, opsi),
+  },
+  // 31 Okt 2026 - PASTI: kata berulang hasil isian ("para Para", "pada pada", "yang yang"), tidak peka huruf besar. Nama orang kembar
+  // ("Siti Siti") tidak ditandai kecuali kata fungsi/sebutan pihak.
+  {
+    jenis: "ulang",
+    lemah: true,
+    re: /(?<![\p{L}\p{N}-])(\p{L}{2,20})\s+\1(?![\p{L}\p{N}-])/giu,
+    lewat(isi, p, dari, sampai) {
+      if (dekatArab(p, dari, sampai)) return true;
+      const kata = isi.split(/\s+/);
+      return kata[0] === kata[1] && /^\p{Lu}/u.test(kata[0]) && !KATA_ULANG_PASTI.has(kata[0].toLowerCase());
+    },
+  },
+  // 31 Okt 2026 - RAGU (hanya daftar .txt, tidak dimerahkan): pilihan bergaris miring yang belum dipilih. "dan/atau" SAH (tidak ada di daftar);
+  // "Penggugat/Tergugat Rekonvensi", kutipan pasal/ayat, dan kutipan bertanda kutip tidak ditandai.
+  {
+    jenis: "ragu",
+    lemah: true,
+    re: /\b(?:penggugat\s*\/\s*tergugat|tergugat\s*\/\s*penggugat|pemohon\s*\/\s*termohon|termohon\s*\/\s*pemohon|laki-laki\s*\/\s*perempuan|perempuan\s*\/\s*laki-laki|suami\s*\/\s*(?:istri|isteri)|(?:istri|isteri)\s*\/\s*suami)\b/gi,
+    lewat: (_isi, p, dari, sampai) => raguLewat(p, dari, sampai),
+  },
+  { jenis: "ragu", lemah: true, re: /\bbin\s*\/\s*binti\b|\bbinti\s*\/\s*bin\b/gi, lewat: (_isi, p, dari, sampai) => raguLewat(p, dari, sampai) },
   { jenis: "perbaikan", re: /\bperlu\s+(?:di\s?)?(?:review|reviu|cek|check)\w*/gi },
   { jenis: "perbaikan", re: /\bperiksa\s+kembali\b/gi },
   { jenis: "perbaikan", re: /\bTODO\b/gi },
@@ -529,8 +626,53 @@ const ATURAN: Aturan[] = [
       return /^[\s_\-=*+]*$/.test(p);
     },
   },
-  { jenis: "kalimat", re: /\bbin\s*\/\s*binti\b|\bbinti\s*\/\s*bin\b/gi },
+  { jenis: "kalimat", re: /\*+\)\s*(?:coret|hapus)\s+yang\s+tidak\s+(?:perlu|sesuai|diperlukan)/gi },
   { jenis: "kalimat", re: /\b(?:pilih|pilihlah)\s+salah\s+satu(?:nya)?\b|\b(?:coret|hapus)\s+yang\s+tidak\s+(?:perlu|sesuai|diperlukan)\b/gi },
+  // 31 Okt 2026 (permintaan tambahan A) - bahasa blangko / isian kosong di luar daftar. PASTI = jelas sisa blangko; RAGU = bisa sah.
+  // Kalimat petunjuk blangko (PASTI): "isi dengan ...", "isilah", "sesuaikan dengan ...", "hapus bagian ini".
+  {
+    jenis: "kalimat",
+    lemah: true,
+    re: /\b(?:isi|isilah|isikan|diisi)\s+(?:dengan|sesuai|nama|alamat|tanggal|nomor|di\s?sini)\b|\bsesuaikan\s+(?:dengan|nama|tanggal|nomor|alamat|isian|perkara)\b|\b(?:hapus|coret)\s+(?:bagian|kalimat|paragraf)\s+(?:ini|yang)\b/gi,
+    lewat: (_i, p, dari, sampai) => dekatArab(p, dari, sampai) || diapitKutip(p, dari),
+  },
+  // Label tanpa isi (PASTI): "Nama : ......", "Umur : ____" (labelnya ikut merah) dan label berturut-turut tanpa isi ("Nama : Umur :").
+  {
+    jenis: "kosong",
+    lemah: true,
+    re: new RegExp(`(?<![\\p{L}\\p{N}])${LABEL_ISIAN}\\s*:\\s*(?:[.\\u2026_]{2,}|-{2,})`, "giu"),
+    lewat: (isi, p, dari, _s, opsi) => !/[_-]/.test(isi) && titikBagianLewat(isi, p, dari, opsi),
+  },
+  {
+    jenis: "kosong",
+    lemah: true,
+    re: new RegExp(`(?<![\\p{L}\\p{N}])${LABEL_ISIAN}\\s*:(?=\\s*${LABEL_ISIAN}\\s*:)`, "giu"),
+  },
+  // Tanggal / nomor / nominal kosong (PASTI): "tanggal bulan tahun", "Rp,00", "Rp ,-", "Nomor /Pdt.G/", "/Pdt.G//", "terbilang: )".
+  { jenis: "kosong", lemah: true, re: /\btanggal\s+bulan\s+tahun\b|\bhari\s+tanggal\s+bulan\b/gi },
+  { jenis: "kosong", lemah: true, re: /\bRp\.?\s*,\s*(?:00|-)|\bRp\.?\s*(?=$|[;)])/gi },
+  { jenis: "kosong", lemah: true, re: /\b(?:Nomor|No\.?)\s*:?\s*\/\s*(?:Pdt\.[A-Za-z]+\s*\/)?|\/\s*Pdt\.[A-Za-z]+\s*\/\s*\/|\/\s*Pdt\.[A-Za-z]+\s*\/\s*PA\b/g },
+  { jenis: "kosong", lemah: true, re: /\bterbilang\s*:?\s*(?=\)|$)/gi },
+  // Bekas isian kosong di tengah kalimat (PASTI): "pada tanggal , ", "berumur ,", "Penggugat  bin  ", ", ,", "( )".
+  { jenis: "kosong", lemah: true, re: /\b(?:tanggal|bulan|tahun|pukul|jam|berumur|beralamat|nomor)\s+[,;]/gi, lewat: (_i, p, dari, sampai) => dekatArab(p, dari, sampai) },
+  { jenis: "kosong", lemah: true, re: /\b(?:bin|binti)\s{2,}(?=\S)|(?<=\S)\s{2,}(?:bin|binti)\b|\b(?:bin|binti)\s*(?:[,;]|$)/gi, lewat: (_i, p, dari, sampai) => dekatArab(p, dari, sampai) },
+  { jenis: "kosong", lemah: true, re: /,(?:\s*,)+/g, lewat: (_i, p, dari, sampai) => dekatArab(p, dari, sampai) },
+  { jenis: "kosong", lemah: true, re: /\(\s*\)/g },
+  // RAGU (hanya .txt): kata kerja petunjuk polos, "contoh:", label di ujung paragraf tanpa isi, spasi ganda antar kata kecil, koma/titik ganda.
+  {
+    jenis: "ragu",
+    lemah: true,
+    re: /\b(?:ketik|ketikkan|tulis|tuliskan|pilih|pilihlah)\s+(?:sesuai|nama|tanggal|nomor|alamat|di\s?sini|dengan|yang|jenis|huruf)\b|\bcontoh\s*:|\bdiisi\b/gi,
+    lewat: (_i, p, dari, sampai) => raguLewat(p, dari, sampai),
+  },
+  {
+    jenis: "ragu",
+    lemah: true,
+    re: new RegExp(`(?<![\\p{L}\\p{N}])${LABEL_ISIAN}\\s*:\\s*$`, "giu"),
+    lewat: (_i, p, dari, sampai) => p.slice(0, dari).trim() === "" || raguLewat(p, dari, sampai),
+  },
+  { jenis: "ragu", lemah: true, re: /\p{L}+[  ]{2,}\p{Ll}+/gu, lewat: (_i, p, dari, sampai) => raguLewat(p, dari, sampai) },
+  { jenis: "ragu", lemah: true, re: /(?<=[\p{L}\p{N}])\s+,(?=\s|$)|,\s*\.(?![.…\d])|(?<=[\p{L}])\.\.(?!\.)/gu, lewat: (_i, p, dari, sampai) => raguLewat(p, dari, sampai) },
 ];
 
 function potong(teks: string, maks: number): string {
@@ -554,12 +696,34 @@ function kutipanSekitar(p: string, dari: number, sampai: number) {
 
 export type RentangTemuan = { jenis: JenisTemuan; dari: number; sampai: number };
 
+// Blok Jurusita / Jurusita Pengganti (31 Okt 2026): paragraf pendek yang menyebut "Jurusita" dan paragraf pendek sesudahnya (paling banyak 6)
+// adalah tempat jurusita mengisi tangan nama, tanda tangan, keterangan, tanggal/jam. Titik/garis/isian kosong di situ tidak ditandai.
+// Salinan JS di ekstensi-sipp/deteksi-sisa-blangko.js.
+const JENIS_ISIAN_JURUSITA: ReadonlySet<JenisTemuan> = new Set<JenisTemuan>(["titik", "garis", "kosong", "ragu"]);
+export function blokJurusita(daftar: Paragraf[]): boolean[] {
+  const hasil: boolean[] = new Array(daftar.length).fill(false);
+  let sisa = 0;
+  for (let n = 0; n < daftar.length; n += 1) {
+    const t = daftar[n].teks;
+    // Judul blok: paragraf yang DIAWALI "Jurusita" (boleh didahului titik/tab: "..........\tJurusita,"). Kalimat biasa yang kebetulan
+    // menyebut "... sebagai Jurusita" bukan judul blok.
+    if (/^[\s.…_-]*jurusita\b/i.test(t) && t.length <= 160) {
+      hasil[n] = true;
+      sisa = 6;
+    } else if (sisa > 0 && t.length <= 120) {
+      hasil[n] = true;
+      sisa -= 1;
+    } else sisa = 0;
+  }
+  return hasil;
+}
+
 /**
  * Rentang sisa blangko pada SATU paragraf (sesudah rentang yang tertelan rentang
  * lebih besar disisihkan), terurut menurut letaknya. Dipakai periksaParagraf dan
  * penanda kekosongan pada perintah AI - satu aturan, satu hasil.
  */
-export function rentangParagraf(par: Paragraf, opsi?: OpsiPeriksa): { p: string; pemenang: RentangTemuan[] } {
+export function rentangParagraf(par: Paragraf, opsi?: OpsiPeriksa, dalamJurusita?: boolean): { p: string; pemenang: RentangTemuan[] } {
     const p = par.teks.replace(/ /g, " ");
     const rentang: Array<{ jenis: JenisTemuan; dari: number; sampai: number }> = [];
     // Rentang merah yang hanya dipisah spasi digabung: "Saksi kenal dengan" satu temuan, bukan tiga.
@@ -575,7 +739,9 @@ export function rentangParagraf(par: Paragraf, opsi?: OpsiPeriksa): { p: string;
       rentang.push({ jenis: "merah", dari, sampai });
     }
     for (const a of ATURAN) {
-      if (opsi && opsi.jenis === "umum" && JENIS_LEMAH.has(a.jenis)) continue;
+      if (opsi && opsi.jenis === "umum" && (JENIS_LEMAH.has(a.jenis) || a.lemah)) continue;
+      // Blok Jurusita / Jurusita Pengganti: titik-titik, garis, dan isian kosong di situ diisi tangan oleh jurusita - bukan sisa blangko.
+      if (dalamJurusita && JENIS_ISIAN_JURUSITA.has(a.jenis)) continue;
       for (const m of p.matchAll(a.re)) {
         const dari = m.index ?? 0;
         const sampai = dari + m[0].length;
@@ -587,6 +753,8 @@ export function rentangParagraf(par: Paragraf, opsi?: OpsiPeriksa): { p: string;
     const pemenang = rentang.filter((r) => {
       for (const o of rentang) {
         if (o === r) continue;
+        // Tingkat RAGU tidak pernah menelan temuan PASTI.
+        if (JENIS_RAGU.has(o.jenis) && !JENIS_RAGU.has(r.jenis)) continue;
         const lebihBesar =
           o.sampai - o.dari > r.sampai - r.dari ||
           (o.sampai - o.dari === r.sampai - r.dari && URUTAN_JENIS.indexOf(o.jenis) < URUTAN_JENIS.indexOf(r.jenis));
@@ -602,8 +770,10 @@ export function rentangParagraf(par: Paragraf, opsi?: OpsiPeriksa): { p: string;
 export function periksaParagraf(daftar: Paragraf[], opsi?: OpsiPeriksa): HasilPeriksa {
   const temuan: Temuan[] = [];
   let terpotong = 0;
-  for (const par of daftar) {
-    const { p, pemenang } = rentangParagraf(par, opsi);
+  const jur = blokJurusita(daftar);
+  for (let n = 0; n < daftar.length; n += 1) {
+    const par = daftar[n];
+    const { p, pemenang } = rentangParagraf(par, opsi, jur[n]);
     for (const r of pemenang) {
       if (temuan.length >= BATAS_TEMUAN) {
         terpotong += 1;
@@ -789,7 +959,7 @@ export function kalimatTemuan(t: Temuan): string {
 }
 
 /** Isi berkas .txt daftar masalah (CRLF supaya terbuka rapi di Notepad). */
-export function susunDaftarTxt(temuan: Temuan[], opsi?: { nama?: string; jenis?: string; terpotong?: number }): string {
+export function susunDaftarTxt(temuan: Temuan[], opsi?: { nama?: string; jenis?: string; terpotong?: number; catatan?: string[] }): string {
   const o = opsi || {};
   const baris: string[] = [];
   baris.push("DAFTAR MASALAH PADA NASKAH");
@@ -801,6 +971,12 @@ export function susunDaftarTxt(temuan: Temuan[], opsi?: { nama?: string; jenis?:
   baris.push("Ringkasan:");
   for (const r of ringkasJenis(temuan)) baris.push(`  - ${r.label}: ${r.jumlah}`);
   baris.push("");
+  if (Array.isArray(o.catatan)) for (const c of o.catatan) baris.push(`Info   : ${c}`);
+  if (Array.isArray(o.catatan) && o.catatan.length) baris.push("");
+  if (temuan.some((t) => JENIS_RAGU.has(t.jenis))) {
+    baris.push('Butir bertanda "Periksa" belum tentu salah: hanya diingatkan di daftar ini dan TIDAK diwarnai merah di naskah.');
+    baris.push("");
+  }
   baris.push("Rincian (tulisan yang bermasalah ditandai « »; letak hanya perkiraan):");
   baris.push("");
   temuan.forEach((t, i) => {

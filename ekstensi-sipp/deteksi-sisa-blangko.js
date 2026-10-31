@@ -47,9 +47,14 @@
     titik: "Titik-titik isian yang belum diisi",
     garis: "Garis isian yang belum diisi",
     kalimat: "Kalimat yang masih berbentuk blangko",
+    kosong: "Isian yang masih kosong",
+    ulang: "Kata berulang (bekas isian yang tidak dibersihkan)",
+    ragu: "Periksa: pilihan atau isian yang mungkin belum beres (belum tentu salah)",
     sesuai: "Tidak sesuai dengan perkara atau sidang ini",
   };
-  const URUTAN_JENIS = ["sesuai", "merah", "kurung", "tanda", "perbaikan", "titik", "garis", "kalimat"];
+  const URUTAN_JENIS = ["sesuai", "merah", "kurung", "tanda", "perbaikan", "titik", "garis", "kalimat", "kosong", "ulang", "ragu"];
+  /** Tingkat RAGU: hanya masuk daftar .txt (bertanda "periksa"), TIDAK dimerahkan di naskah. Selain itu (dan selain "merah" yang sudah merah) = PASTI. */
+  const JENIS_RAGU = new Set(["ragu"]);
   const NAMA_NASKAH = { putusan: "putusan", bas: "berita acara sidang (BAS)", relaas: "relaas" };
 
   const BATAS_TEMUAN = 500;
@@ -118,9 +123,13 @@
     let muatan = 0;
     let lastRendered = false;
     return {
-      tulis(teks, merah) {
+      tulis(teks, merah, sumber) {
         if (!teks) return;
         const dari = cur.teks.length;
+        if (sumber) {
+          if (!cur.src) cur.src = [];
+          for (const s of sumber) cur.src.push(s);
+        }
         // Halaman paragraf = halaman tempat tulisannya DIMULAI (pemisah halaman di tengah paragraf tidak memecahnya).
         if (cur.halamanMulai === undefined && /\S/.test(teks)) cur.halamanMulai = lastRendered ? keras + 1 : keras + 1 + Math.floor(muatan / HURUF_PER_HALAMAN);
         cur.teks += teks;
@@ -151,7 +160,8 @@
     };
   }
 
-  function bacaRtfParagraf(rtfMasuk) {
+  /** peta=true: tiap paragraf membawa `src` = [awal, akhir, cf] per huruf (letak di RTF) - dipakai merahkanRtf. */
+  function bacaRtfParagraf(rtfMasuk, peta) {
     const rtf = String(rtfMasuk == null ? "" : rtfMasuk);
     const merahIdx = indeksMerahRtf(rtf);
     const bangun = pembangunParagraf();
@@ -160,15 +170,22 @@
     let lewati = 0;
     let i = 0;
     const merahSekarang = () => merahIdx.has(k.cf) || merahIdx.has(k.hl);
-    const tulis = (t) => {
+    // a, b: letak sumber di RTF (b kosong = tiap huruf teks satu posisi sumber mulai dari a). Hanya dipakai bila peta=true.
+    const tulis = (t, a, b) => {
       if (k.buang || !t) return;
+      let sum;
+      if (peta) {
+        sum = [];
+        for (let n = 0; n < t.length; n += 1) sum.push(b == null ? [a + n, a + n + 1, k.cf] : [a, b, k.cf]);
+      }
       if (lewati > 0) {
         const pakai = Math.min(lewati, t.length);
         lewati -= pakai;
         t = t.slice(pakai);
+        if (sum) sum = sum.slice(pakai);
         if (!t) return;
       }
-      bangun.tulis(t, merahSekarang());
+      bangun.tulis(t, merahSekarang(), sum);
     };
     while (i < rtf.length) {
       const h = rtf[i];
@@ -190,18 +207,18 @@
       if (h === "\\") {
         const s = rtf[i + 1];
         if (s === "\\" || s === "{" || s === "}") {
-          tulis(s);
+          tulis(s, i, i + 2);
           i += 2;
           continue;
         }
         if (s === "'") {
           const kode = Number.parseInt(rtf.slice(i + 2, i + 4), 16);
-          if (!Number.isNaN(kode) && (kode >= 0x20 || kode === 0x09)) tulis(CP1252[kode] || String.fromCharCode(kode));
+          if (!Number.isNaN(kode) && (kode >= 0x20 || kode === 0x09)) tulis(CP1252[kode] || String.fromCharCode(kode), i, i + 4);
           i += 4;
           continue;
         }
         if (s === "~") {
-          tulis(" ");
+          tulis(" ", i, i + 2);
           i += 2;
           continue;
         }
@@ -239,7 +256,7 @@
             break;
           case "line":
           case "tab":
-            tulis(" ");
+            tulis(" ", i - c[0].length, i);
             break;
           case "page":
           case "pagebb":
@@ -261,7 +278,7 @@
             break;
           case "u":
             if (angka !== null) {
-              tulis(String.fromCharCode(angka < 0 ? angka + 65536 : angka));
+              tulis(String.fromCharCode(angka < 0 ? angka + 65536 : angka), i - c[0].length, i);
               lewati = k.uc;
             }
             break;
@@ -269,7 +286,7 @@
             if (angka && angka > 0) i += angka;
             break;
           default:
-            if (Object.prototype.hasOwnProperty.call(RTF_TEKS_KENDALI, kata)) tulis(RTF_TEKS_KENDALI[kata]);
+            if (Object.prototype.hasOwnProperty.call(RTF_TEKS_KENDALI, kata)) tulis(RTF_TEKS_KENDALI[kata], i - c[0].length, i);
             break;
         }
         continue;
@@ -280,7 +297,7 @@
       }
       let j = i;
       while (j < rtf.length && rtf[j] !== "\\" && rtf[j] !== "{" && rtf[j] !== "}" && rtf[j] !== "\r" && rtf[j] !== "\n") j += 1;
-      tulis(rtf.slice(i, j));
+      tulis(rtf.slice(i, j), i);
       i = j;
     }
     return bangun.selesai();
@@ -445,7 +462,43 @@
   }
 
   /** Opsi pemeriksaan { jenis }: "relaas" = isian tangan jurusita dikecualikan; "umum" = hanya sinyal kuat (kurung, tanda, perbaikan, merah). */
-  const JENIS_LEMAH = new Set(["titik", "garis", "kalimat"]);
+  const JENIS_LEMAH = new Set(["titik", "garis", "kalimat", "ulang", "ragu"]);
+
+  // ==========================================================================
+  // 31 Okt 2026 (sisa merah): pembantu aturan - salinan di deteksi-sisa-blangko.ts
+  // ==========================================================================
+  /** Pengecualian titik-titik (biaya, isian tangan relaas, kutipan). true = bukan sisa blangko. */
+  function titikLewat(p, dari, sampai, opsi) {
+    // Titik pengantar antara uraian dan nominal biaya ("Biaya panggilan ........ Rp. 60.000,-") bukan isian.
+    if (/^[  ]*Rp\b/i.test(p.slice(sampai, sampai + 12))) return true;
+    // Relaas: titik yang memang diisi tangan jurusita bukan sisa blangko.
+    if (opsi && opsi.jenis === "relaas" && titikIsianTanganRelaas(p, dari, sampai)) return true;
+    return dalamKutipan(p, dari, sampai);
+  }
+  /** Isian setengah: dilewati hanya bila SEMUA gugus titik di dalam temuan adalah pengecualian titik. */
+  function titikBagianLewat(isi, p, dari, opsi) {
+    const re = /[.…]{2,}|…/g;
+    let m;
+    let ada = false;
+    while ((m = re.exec(isi))) {
+      ada = true;
+      const d = dari + m.index;
+      if (!titikLewat(p, d, d + m[0].length, opsi)) return false;
+    }
+    return ada;
+  }
+  const KATA_ULANG_PASTI = new Set([
+    "para", "pada", "yang", "dan", "di", "ke", "dari", "untuk", "dengan", "oleh", "atas", "bahwa", "itu", "ini", "tersebut",
+    "adalah", "telah", "akan", "dalam", "tidak", "penggugat", "tergugat", "pemohon", "termohon", "majelis", "hakim", "pengadilan", "agama",
+  ]);
+  /** Pengecualian tingkat RAGU: teks Arab, kutipan bertanda kutip, kutipan pasal/ayat/undang-undang, dan "... Rekonvensi/Konvensi". */
+  function raguLewat(p, dari, sampai) {
+    if (dekatArab(p, dari, sampai) || diapitKutip(p, dari)) return true;
+    if (/\b(?:pasal|ayat|undang-undang|kompilasi|kuhper|kuhperdata)\b/i.test(p.slice(Math.max(0, dari - 120), dari))) return true;
+    return /^\s*(?:rekonvensi|konvensi)\b/i.test(p.slice(sampai, sampai + 20));
+  }
+  const LABEL_ISIAN =
+    "(?:nama(?:\\s+lengkap)?|umur|usia|nik|alamat|pekerjaan|agama|pendidikan|tempat\\s+(?:dan\\s+)?tanggal\\s+lahir|tempat\\s+lahir|tanggal\\s+lahir|tempat\\s+tinggal|kewarganegaraan|jabatan|nip|no\\.?\\s*hp|nomor\\s+(?:hp|telepon))";
 
   const ATURAN = [
     {
@@ -467,6 +520,23 @@
     { jenis: "tanda", re: /\bplace\s?holder\b/gi },
     { jenis: "tanda", re: /\bisi\s+(?:di\s?)?sini\b/gi },
     { jenis: "tanda", re: /(?<![A-Za-z0-9])X{4,}(?![A-Za-z0-9])/g },
+    // 31 Okt 2026 (sisa merah) - PASTI: "XXX"/"xx" sebagai isian (angka Romawi XX/XXX sesudah Pasal/Bab/dst. dikecualikan),
+    // {tanda}, #kode# huruf, dan placeholder berkurung "(nama)", "(alamat)", "(pilih salah satu)".
+    {
+      jenis: "tanda",
+      lemah: true,
+      // Huruf kecil "xx"/"xxx" TIDAK ditandai: itu topeng anonimisasi putusan ("Penggugat ( xxx ) bin xxx, NIK xxxxxxxxxxxxxxxx").
+      re: /(?<![A-Za-z0-9])X{2,3}(?![A-Za-z0-9])/g,
+      lewat(isi, p, dari) {
+        return /^X+$/.test(isi) && /\b(?:pasal|bab|bagian|jilid|juz|abad|buku|surat|ke|tingkat|halaman|hlm)[\s.\-]*$/i.test(p.slice(Math.max(0, dari - 14), dari));
+      },
+    },
+    { jenis: "tanda", lemah: true, re: /\{[^{}]{0,120}\}/g },
+    { jenis: "tanda", lemah: true, re: /#[A-Za-z_][A-Za-z0-9_]{1,30}#/g },
+    { jenis: "tanda", re: /\(\s*(?:nama|alamat|umur|pekerjaan|agama|tempat\s+lahir|tanggal\s+lahir|jabatan|diisi|isi\s+di\s?sini)\s*\)/gi },
+    { jenis: "kalimat", re: /\(\s*(?:pilih\s+salah\s+satu(?:nya)?|coret\s+yang\s+tidak\s+perlu)\s*\)/gi },
+    // "verifikasi" sebagai penanda isian ("butuh verifikasi", "perlu verifikasi", "(verifikasi)", "verifikasi dulu"); kata "verifikasi" polos dalam kalimat biasa BUKAN penanda.
+    { jenis: "perbaikan", re: /\b(?:butuh|perlu|harus|tinggal)\s+(?:di)?verifikasi\w*|\bverifikasi\s+dulu\b|\(\s*verifikasi\b[^()]{0,40}\)|\*{1,2}\s*verifikasi\b[^*]{0,40}\*{1,2}/gi },
     { jenis: "perbaikan", re: /\bperlu\s+(?:di\s?)?(?:review|reviu|cek|check)\w*/gi },
     { jenis: "perbaikan", re: /\bperiksa\s+kembali\b/gi },
     { jenis: "perbaikan", re: /\bTODO\b/gi },
@@ -474,14 +544,45 @@
       jenis: "titik",
       // Satu "gugus" titik: tiga titik atau lebih (boleh berspasi satu) atau "…", dengan sambungan titik di sebelahnya.
       re: /(?:\u2026|\.{3}|(?:\.[\u00a0 ]){2}\.)(?:[\u00a0 ]?(?:\u2026|\.))*/g,
-      lewat(_isi, p, dari, sampai, opsi) {
-        // Titik pengantar antara uraian dan nominal biaya ("Biaya panggilan ........ Rp. 60.000,-") bukan isian.
-        if (/^[\u00a0 ]*Rp\b/i.test(p.slice(sampai, sampai + 12))) return true;
-        // Relaas: titik yang memang diisi tangan jurusita bukan sisa blangko.
-        if (opsi && opsi.jenis === "relaas" && titikIsianTanganRelaas(p, dari, sampai)) return true;
-        return dalamKutipan(p, dari, sampai);
+      lewat: (_isi, p, dari, sampai, opsi) => titikLewat(p, dari, sampai, opsi),
+    },
+    // 31 Okt 2026 - PASTI: isian setengah ("20..", "Nomor ..../Pdt.G/....", "Rp. ....", "hari ..., tanggal ..."). Pengecualian titik
+    // (kutipan, isian tangan relaas) berlaku per gugus titik: temuan dilewati hanya bila SETIAP gugusnya pengecualian.
+    { jenis: "titik", lemah: true, re: /\b(?:19|20)\d?(?:[.\u2026]{2,}|\u2026)/g, lewat: (isi, p, dari, _s, opsi) => titikBagianLewat(isi, p, dari, opsi) },
+    {
+      jenis: "titik",
+      lemah: true,
+      re: /[.\u2026]{2,}\s*\/\s*Pdt\.[A-Za-z]+\s*\/\s*(?:\d{4}|[.\u2026]{2,})(?:\s*\/\s*[A-Za-z]+(?:\.[A-Za-z]+)*)?|\bPdt\.[A-Za-z]+\s*\/\s*[.\u2026]{2,}(?:\s*\/\s*[A-Za-z]+(?:\.[A-Za-z]+)*)?/g,
+      lewat: (isi, p, dari, _s, opsi) => titikBagianLewat(isi, p, dari, opsi),
+    },
+    { jenis: "titik", lemah: true, re: /\bRp\.?\s*[.\u2026]{2,}/gi, lewat: (isi, p, dari, _s, opsi) => titikBagianLewat(isi, p, dari, opsi) },
+    {
+      jenis: "titik",
+      lemah: true,
+      re: /\bhari\s*[.\u2026]{2,}\s*,?\s*tanggal\s*[.\u2026]{2,}|\btanggal\s*[.\u2026]{2,}\s*,?\s*(?:bulan|tahun)\s*[.\u2026]{2,}/gi,
+      lewat: (isi, p, dari, _s, opsi) => titikBagianLewat(isi, p, dari, opsi),
+    },
+    // 31 Okt 2026 - PASTI: kata berulang hasil isian ("para Para", "pada pada", "yang yang"), tidak peka huruf besar. Nama orang kembar
+    // ("Siti Siti") tidak ditandai kecuali kata fungsi/sebutan pihak.
+    {
+      jenis: "ulang",
+      lemah: true,
+      re: /(?<![\p{L}\p{N}-])(\p{L}{2,20})\s+\1(?![\p{L}\p{N}-])/giu,
+      lewat(isi, p, dari, sampai) {
+        if (dekatArab(p, dari, sampai)) return true;
+        const kata = isi.split(/\s+/);
+        return kata[0] === kata[1] && /^\p{Lu}/u.test(kata[0]) && !KATA_ULANG_PASTI.has(kata[0].toLowerCase());
       },
     },
+    // 31 Okt 2026 - RAGU (hanya daftar .txt, tidak dimerahkan): pilihan bergaris miring yang belum dipilih. "dan/atau" SAH (tidak ada di daftar);
+    // "Penggugat/Tergugat Rekonvensi", kutipan pasal/ayat, dan kutipan bertanda kutip tidak ditandai.
+    {
+      jenis: "ragu",
+      lemah: true,
+      re: /\b(?:penggugat\s*\/\s*tergugat|tergugat\s*\/\s*penggugat|pemohon\s*\/\s*termohon|termohon\s*\/\s*pemohon|laki-laki\s*\/\s*perempuan|perempuan\s*\/\s*laki-laki|suami\s*\/\s*(?:istri|isteri)|(?:istri|isteri)\s*\/\s*suami)\b/gi,
+      lewat: (isi, p, dari, sampai) => raguLewat(p, dari, sampai),
+    },
+    { jenis: "ragu", lemah: true, re: /\bbin\s*\/\s*binti\b|\bbinti\s*\/\s*bin\b/gi, lewat: (isi, p, dari, sampai) => raguLewat(p, dari, sampai) },
     {
       jenis: "garis",
       re: /_{3,}/g,
@@ -490,8 +591,53 @@
         return /^[\s_\-=*+]*$/.test(p);
       },
     },
-    { jenis: "kalimat", re: /\bbin\s*\/\s*binti\b|\bbinti\s*\/\s*bin\b/gi },
+    { jenis: "kalimat", re: /\*+\)\s*(?:coret|hapus)\s+yang\s+tidak\s+(?:perlu|sesuai|diperlukan)/gi },
     { jenis: "kalimat", re: /\b(?:pilih|pilihlah)\s+salah\s+satu(?:nya)?\b|\b(?:coret|hapus)\s+yang\s+tidak\s+(?:perlu|sesuai|diperlukan)\b/gi },
+    // 31 Okt 2026 (permintaan tambahan A) - bahasa blangko / isian kosong di luar daftar. PASTI = jelas sisa blangko; RAGU = bisa sah.
+    // Kalimat petunjuk blangko (PASTI): "isi dengan ...", "isilah", "sesuaikan dengan ...", "hapus bagian ini".
+    {
+      jenis: "kalimat",
+      lemah: true,
+      re: /\b(?:isi|isilah|isikan|diisi)\s+(?:dengan|sesuai|nama|alamat|tanggal|nomor|di\s?sini)\b|\bsesuaikan\s+(?:dengan|nama|tanggal|nomor|alamat|isian|perkara)\b|\b(?:hapus|coret)\s+(?:bagian|kalimat|paragraf)\s+(?:ini|yang)\b/gi,
+      lewat: (_i, p, dari, sampai) => dekatArab(p, dari, sampai) || diapitKutip(p, dari),
+    },
+    // Label tanpa isi (PASTI): "Nama : ......", "Umur : ____" (labelnya ikut merah) dan label berturut-turut tanpa isi ("Nama : Umur :").
+    {
+      jenis: "kosong",
+      lemah: true,
+      re: new RegExp(`(?<![\\p{L}\\p{N}])${LABEL_ISIAN}\\s*:\\s*(?:[.\\u2026_]{2,}|-{2,})`, "giu"),
+      lewat: (isi, p, dari, _s, opsi) => !/[_-]/.test(isi) && titikBagianLewat(isi, p, dari, opsi),
+    },
+    {
+      jenis: "kosong",
+      lemah: true,
+      re: new RegExp(`(?<![\\p{L}\\p{N}])${LABEL_ISIAN}\\s*:(?=\\s*${LABEL_ISIAN}\\s*:)`, "giu"),
+    },
+    // Tanggal / nomor / nominal kosong (PASTI): "tanggal bulan tahun", "Rp,00", "Rp ,-", "Nomor /Pdt.G/", "/Pdt.G//", "terbilang: )".
+    { jenis: "kosong", lemah: true, re: /\btanggal\s+bulan\s+tahun\b|\bhari\s+tanggal\s+bulan\b/gi },
+    { jenis: "kosong", lemah: true, re: /\bRp\.?\s*,\s*(?:00|-)|\bRp\.?\s*(?=$|[;)])/gi },
+    { jenis: "kosong", lemah: true, re: /\b(?:Nomor|No\.?)\s*:?\s*\/\s*(?:Pdt\.[A-Za-z]+\s*\/)?|\/\s*Pdt\.[A-Za-z]+\s*\/\s*\/|\/\s*Pdt\.[A-Za-z]+\s*\/\s*PA\b/g },
+    { jenis: "kosong", lemah: true, re: /\bterbilang\s*:?\s*(?=\)|$)/gi },
+    // Bekas isian kosong di tengah kalimat (PASTI): "pada tanggal , ", "berumur ,", "Penggugat  bin  ", ", ,", "( )".
+    { jenis: "kosong", lemah: true, re: /\b(?:tanggal|bulan|tahun|pukul|jam|berumur|beralamat|nomor)\s+[,;]/gi, lewat: (_i, p, dari, sampai) => dekatArab(p, dari, sampai) },
+    { jenis: "kosong", lemah: true, re: /\b(?:bin|binti)\s{2,}(?=\S)|(?<=\S)\s{2,}(?:bin|binti)\b|\b(?:bin|binti)\s*(?:[,;]|$)/gi, lewat: (_i, p, dari, sampai) => dekatArab(p, dari, sampai) },
+    { jenis: "kosong", lemah: true, re: /,(?:\s*,)+/g, lewat: (_i, p, dari, sampai) => dekatArab(p, dari, sampai) },
+    { jenis: "kosong", lemah: true, re: /\(\s*\)/g },
+    // RAGU (hanya .txt): kata kerja petunjuk polos, "contoh:", label di ujung paragraf tanpa isi, spasi ganda antar kata kecil, koma/titik ganda.
+    {
+      jenis: "ragu",
+      lemah: true,
+      re: /\b(?:ketik|ketikkan|tulis|tuliskan|pilih|pilihlah)\s+(?:sesuai|nama|tanggal|nomor|alamat|di\s?sini|dengan|yang|jenis|huruf)\b|\bcontoh\s*:|\bdiisi\b/gi,
+      lewat: (_i, p, dari, sampai) => raguLewat(p, dari, sampai),
+    },
+    {
+      jenis: "ragu",
+      lemah: true,
+      re: new RegExp(`(?<![\\p{L}\\p{N}])${LABEL_ISIAN}\\s*:\\s*$`, "giu"),
+      lewat: (_i, p, dari, sampai) => p.slice(0, dari).trim() === "" || raguLewat(p, dari, sampai),
+    },
+    { jenis: "ragu", lemah: true, re: /\p{L}+[  ]{2,}\p{Ll}+/gu, lewat: (_i, p, dari, sampai) => raguLewat(p, dari, sampai) },
+    { jenis: "ragu", lemah: true, re: /(?<=[\p{L}\p{N}])\s+,(?=\s|$)|,\s*\.(?![.…\d])|(?<=[\p{L}])\.\.(?!\.)/gu, lewat: (_i, p, dari, sampai) => raguLewat(p, dari, sampai) },
   ];
 
   function potong(teks, maks) {
@@ -513,11 +659,31 @@
     };
   }
 
-  /** Periksa daftar paragraf -> { temuan, jumlahParagraf, jumlahHalaman, terpotong }. */
-  function periksaParagraf(daftar, opsi) {
-    const temuan = [];
-    let terpotong = 0;
-    for (const par of daftar) {
+  // Blok Jurusita / Jurusita Pengganti (31 Okt 2026): paragraf pendek yang menyebut "Jurusita" dan paragraf pendek sesudahnya (paling banyak 6)
+  // adalah tempat jurusita mengisi tangan nama, tanda tangan, keterangan, tanggal/jam. Titik/garis/isian kosong di situ tidak ditandai,
+  // tidak dimerahkan, dan baris kosongnya tidak dirapikan. Salinan di deteksi-sisa-blangko.ts.
+  const JENIS_ISIAN_JURUSITA = new Set(["titik", "garis", "kosong", "ragu"]);
+  function blokJurusita(daftar) {
+    const hasil = new Array(daftar.length).fill(false);
+    let sisa = 0;
+    for (let n = 0; n < daftar.length; n += 1) {
+      const t = daftar[n].teks;
+      // Judul blok: paragraf yang DIAWALI "Jurusita" (boleh didahului titik/tab: "..........\tJurusita,"). Kalimat biasa yang kebetulan
+      // menyebut "... sebagai Jurusita" bukan judul blok.
+      if (/^[\s.…_-]*jurusita\b/i.test(t) && t.length <= 160) {
+        hasil[n] = true;
+        sisa = 6;
+      } else if (sisa > 0 && t.length <= 120) {
+        hasil[n] = true;
+        sisa -= 1;
+      } else sisa = 0;
+    }
+    return hasil;
+  }
+
+  /** Rentang sisa blangko pada SATU paragraf (yang tertelan rentang lebih besar sudah disisihkan), terurut menurut letaknya. */
+  function rentangParagraf(par, opsi, dalamJurusita) {
+    {
       const p = par.teks.replace(/\u00a0/g, " ");
       const rentang = [];
       // Merah lebih dulu: satu temuan per rentang merah.
@@ -534,7 +700,9 @@
         rentang.push({ jenis: "merah", dari, sampai });
       }
       for (const a of ATURAN) {
-        if (opsi && opsi.jenis === "umum" && JENIS_LEMAH.has(a.jenis)) continue;
+        if (opsi && opsi.jenis === "umum" && (JENIS_LEMAH.has(a.jenis) || a.lemah)) continue;
+        // Blok Jurusita / Jurusita Pengganti: titik-titik, garis, dan isian kosong di situ diisi tangan oleh jurusita - bukan sisa blangko.
+        if (dalamJurusita && JENIS_ISIAN_JURUSITA.has(a.jenis)) continue;
         for (const m of p.matchAll(a.re)) {
           const dari = m.index;
           const sampai = dari + m[0].length;
@@ -546,12 +714,26 @@
       const pemenang = rentang.filter((r) => {
         for (const o of rentang) {
           if (o === r) continue;
+          // Tingkat RAGU tidak pernah menelan temuan PASTI.
+          if (JENIS_RAGU.has(o.jenis) && !JENIS_RAGU.has(r.jenis)) continue;
           const lebihBesar = o.sampai - o.dari > r.sampai - r.dari || (o.sampai - o.dari === r.sampai - r.dari && URUTAN_JENIS.indexOf(o.jenis) < URUTAN_JENIS.indexOf(r.jenis));
           if (o.dari <= r.dari && o.sampai >= r.sampai && lebihBesar) return false;
         }
         return true;
       });
       pemenang.sort((x, y) => x.dari - y.dari);
+      return { p, pemenang };
+    }
+  }
+
+  /** Periksa daftar paragraf -> { temuan, jumlahParagraf, jumlahHalaman, terpotong }. */
+  function periksaParagraf(daftar, opsi) {
+    const temuan = [];
+    let terpotong = 0;
+    const jur = blokJurusita(daftar);
+    for (let n = 0; n < daftar.length; n += 1) {
+      const par = daftar[n];
+      const { p, pemenang } = rentangParagraf(par, opsi, jur[n]);
       for (const r of pemenang) {
         if (temuan.length >= BATAS_TEMUAN) {
           terpotong += 1;
@@ -581,6 +763,375 @@
   }
   function periksaDocxXml(xml, opsi) {
     return periksaParagraf(bacaDocxXml(xml), opsi);
+  }
+
+  // ==========================================================================
+  // 31 Okt 2026 - (1) MERAHKAN sisa blangko tingkat PASTI pada RTF yang dicetak/diunduh dari panel,
+  //               (2) RAPIKAN baris kosong berlebih (paling banyak SATU baris kosong antar paragraf).
+  // Keduanya murni mengubah teks RTF hasil; tidak menulis apa pun ke SIPP/ABT.
+  // ==========================================================================
+  const MERAH_RTF = "\\red255\\green0\\blue0;";
+
+  /** Indeks penutup "}" dari grup yang dibuka di `awal` (tanda lolos \\ { } dilewati), atau -1. */
+  function akhirGrupRtf(rtf, awal) {
+    let dalam = 0;
+    for (let a = awal; a < rtf.length; a += 1) {
+      const c = rtf[a];
+      if (c === "\\") {
+        a += 1;
+        continue;
+      }
+      if (c === "{") dalam += 1;
+      else if (c === "}") {
+        dalam -= 1;
+        if (dalam === 0) return a;
+      }
+    }
+    return -1;
+  }
+
+  /** Indeks warna merah murni (255,0,0) di \colortbl - dipakai bila sudah ada, atau ditambahkan. { indeks, sisip:{pos,teks}|null } atau null. */
+  function siapkanWarnaMerah(rtf) {
+    const awal = rtf.indexOf("{\\colortbl");
+    if (awal >= 0) {
+      const akhir = akhirGrupRtf(rtf, awal);
+      if (akhir > 0) {
+        const bagian = rtf.slice(awal + "{\\colortbl".length, akhir).split(";");
+        for (let n = 0; n < bagian.length - 1; n += 1) {
+          const r = /\\red(\d+)/.exec(bagian[n]);
+          const g = /\\green(\d+)/.exec(bagian[n]);
+          const b = /\\blue(\d+)/.exec(bagian[n]);
+          if (r && g && b && Number(r[1]) === 255 && Number(g[1]) === 0 && Number(b[1]) === 0) return { indeks: n, sisip: null };
+        }
+        return { indeks: bagian.length - 1, sisip: { pos: akhir, teks: MERAH_RTF } };
+      }
+    }
+    // Tanpa tabel warna: sisipkan sesudah tabel huruf, atau sesudah kepala "{\rtf1\ansi...".
+    let pos = -1;
+    const f = rtf.indexOf("{\\fonttbl");
+    const fa = f >= 0 ? akhirGrupRtf(rtf, f) : -1;
+    if (fa > 0) pos = fa + 1;
+    else {
+      const m = /^\s*\{\\rtf\d*(?:\\[a-zA-Z]+-?\d*[ ]?)*/.exec(rtf);
+      if (m) pos = m[0].length;
+    }
+    if (pos < 0) return null;
+    return { indeks: 1, sisip: { pos, teks: `{\\colortbl;${MERAH_RTF}}` } };
+  }
+
+  /**
+   * Mewarnai MERAH setiap sisa blangko tingkat PASTI (semua jenis kecuali "merah" yang sudah merah dan "ragu"):
+   * tabel warna ditambah merah, potongan dibungkus \cfN ... (kembali ke warna semula, lazimnya \cf0). Potongan yang melintasi
+   * pemformatan dipecah per bagian yang bersambung supaya kurung kurawal tetap seimbang. opsi: { jenis (sama dengan pemeriksaan),
+   * untukBaca: salinan teks RTF yang sama panjang untuk dibaca (mis. didekode windows-1252) }.
+   * Pulang { rtf, jumlah (bagian yang diwarnai), potongan (temuan PASTI), indeks }.
+   */
+  function merahkanRtf(rtfMasuk, opsi) {
+    const rtf = String(rtfMasuk == null ? "" : rtfMasuk);
+    const tanpaUbah = { rtf, jumlah: 0, potongan: 0, indeks: -1 };
+    try {
+      const baca = opsi && typeof opsi.untukBaca === "string" && opsi.untukBaca.length === rtf.length ? opsi.untukBaca : rtf;
+      const warna = siapkanWarnaMerah(rtf);
+      if (!warna) return tanpaUbah;
+      const sisip = [];
+      let potongan = 0;
+      let jumlah = 0;
+      const semuaPar = bacaRtfParagraf(baca, true);
+      const jur = blokJurusita(semuaPar);
+      for (let nn = 0; nn < semuaPar.length; nn += 1) {
+        const par = semuaPar[nn];
+        if (!par.src || par.src.length !== par.teks.length) continue;
+        const { p, pemenang } = rentangParagraf(par, opsi, jur[nn]);
+        for (const r of pemenang) {
+          if (r.jenis === "merah" || JENIS_RAGU.has(r.jenis)) continue;
+          potongan += 1;
+          let mulai = r.dari;
+          for (let n = r.dari; n < r.sampai; n += 1) {
+            const putus = n === r.sampai - 1 || par.src[n + 1][0] !== par.src[n][1] || par.src[n + 1][2] !== par.src[n][2];
+            if (!putus) continue;
+            if (/\S/.test(p.slice(mulai, n + 1))) {
+              const s = par.src[mulai];
+              sisip.push({ pos: s[0], teks: `\\cf${warna.indeks} `, urut: sisip.length });
+              sisip.push({ pos: par.src[n][1], teks: `\\cf${s[2]} `, urut: sisip.length });
+              jumlah += 1;
+            }
+            mulai = n + 1;
+          }
+        }
+      }
+      if (!jumlah) return { ...tanpaUbah, potongan };
+      if (warna.sisip) sisip.push({ pos: warna.sisip.pos, teks: warna.sisip.teks, urut: -1 });
+      sisip.sort((x, y) => x.pos - y.pos || x.urut - y.urut);
+      let hasil = "";
+      let akhir = 0;
+      for (const s of sisip) {
+        hasil += rtf.slice(akhir, s.pos) + s.teks;
+        akhir = s.pos;
+      }
+      hasil += rtf.slice(akhir);
+      return { rtf: hasil, jumlah, potongan, indeks: warna.indeks };
+    } catch {
+      return tanpaUbah;
+    }
+  }
+
+  const RTF_GAMBAR = new Set(["pict", "shp", "shpinst", "shppict", "nonshppict", "object", "do", "dpline", "dprect", "dpellipse", "dppolyline"]);
+
+  /**
+   * Daftar paragraf RTF isi naskah: { parPos, parLen, teks, gambar, tabel, halaman }. parPos/parLen = letak kata \par
+   * penutupnya (parLen 0 = penutup yang tidak boleh dihapus: \cell, \row, \sect, atau garis miring + baris baru).
+   */
+  function strukturParagrafRtf(rtf) {
+    const hasil = [];
+    const tumpuk = [];
+    let k = { uc: 1, buang: false };
+    // sampah: letak [awal, akhir) spasi/tab/garis baru di paragraf ini - ikut dibuang bila paragrafnya kosong (jangan menempel ke paragraf berikutnya).
+    const baru = () => ({ teks: "", gambar: false, tabel: false, halaman: false, jarak: false, teksPos: -1, sampah: [] });
+    let cur = baru();
+    let lewati = 0;
+    let i = 0;
+    const tambah = (t, pos, panjang) => {
+      if (k.buang || !t) return;
+      if (lewati > 0) {
+        const pakai = Math.min(lewati, t.length);
+        lewati -= pakai;
+        t = t.slice(pakai);
+        if (!t) return;
+      }
+      if (!/\S/.test(t)) cur.sampah.push([pos, pos + (panjang || t.length)]);
+      else if (cur.teksPos < 0) cur.teksPos = pos;
+      cur.teks += t;
+    };
+    const tutup = (pos, panjang) => {
+      hasil.push({ parPos: pos, parLen: panjang, teks: cur.teks, gambar: cur.gambar, tabel: cur.tabel || panjang === 0, halaman: cur.halaman, jarak: cur.jarak, teksPos: cur.teksPos, sampah: cur.sampah });
+      cur = baru();
+    };
+    while (i < rtf.length) {
+      const h = rtf[i];
+      if (h === "{") {
+        tumpuk.push(k);
+        k = { uc: k.uc, buang: k.buang };
+        const m = /^\{\s*\\(\*)?\s*\\?([a-zA-Z]+)?/.exec(rtf.slice(i, i + 40));
+        if (m && (m[1] === "*" || (m[2] && RTF_BUANG.has(m[2])))) k.buang = true;
+        if (m && m[2] && RTF_GAMBAR.has(m[2])) cur.gambar = true;
+        i += 1;
+        continue;
+      }
+      if (h === "}") {
+        k = tumpuk.pop() || { uc: 1, buang: false };
+        lewati = 0;
+        i += 1;
+        continue;
+      }
+      if (h === "\\") {
+        const s = rtf[i + 1];
+        if (s === "\\" || s === "{" || s === "}") {
+          tambah(s, i);
+          i += 2;
+          continue;
+        }
+        if (s === "'") {
+          const kode = Number.parseInt(rtf.slice(i + 2, i + 4), 16);
+          if (!Number.isNaN(kode) && (kode >= 0x20 || kode === 0x09)) tambah(String.fromCharCode(kode), i, 4);
+          i += 4;
+          continue;
+        }
+        if (s === "~") {
+          tambah(" ", i, 2);
+          i += 2;
+          continue;
+        }
+        if (s === "-" || s === "_" || s === "|" || s === ":" || s === "*") {
+          i += 2;
+          continue;
+        }
+        if (s === "\n" || s === "\r") {
+          if (!k.buang) tutup(i, 0);
+          i += 2;
+          continue;
+        }
+        const c = /^\\([a-zA-Z]+)(-?\d+)? ?/.exec(rtf.slice(i, i + 64));
+        if (!c) {
+          i += 1;
+          continue;
+        }
+        const kata = c[1];
+        const angka = c[2] === undefined ? null : Number(c[2]);
+        const letak = i;
+        i += c[0].length;
+        if (RTF_GAMBAR.has(kata)) cur.gambar = true;
+        if (RTF_BUANG.has(kata)) {
+          k.buang = true;
+          continue;
+        }
+        if (k.buang) continue;
+        switch (kata) {
+          case "par":
+            tutup(letak, c[0].length);
+            break;
+          case "sect":
+          case "cell":
+          case "row":
+          case "nestcell":
+          case "nestrow":
+            tutup(letak, 0);
+            break;
+          case "intbl":
+          case "trowd":
+            cur.tabel = true;
+            break;
+          case "tab":
+          case "line":
+            cur.sampah.push([letak, i]);
+            break;
+          case "sb":
+          case "sa":
+            if (angka !== null && angka > 0) cur.jarak = true;
+            break;
+          case "page":
+          case "pagebb":
+          case "sbkpage":
+            cur.halaman = true;
+            break;
+          case "uc":
+            if (angka !== null) k.uc = angka;
+            break;
+          case "u":
+            if (angka !== null) {
+              tambah(String.fromCharCode(angka < 0 ? angka + 65536 : angka), letak, c[0].length);
+              lewati = k.uc;
+            }
+            break;
+          case "bin":
+            if (angka && angka > 0) i += angka;
+            break;
+          default:
+            if (Object.prototype.hasOwnProperty.call(RTF_TEKS_KENDALI, kata)) tambah(RTF_TEKS_KENDALI[kata], letak, c[0].length);
+            break;
+        }
+        continue;
+      }
+      if (h === "\r" || h === "\n") {
+        i += 1;
+        continue;
+      }
+      let j = i;
+      while (j < rtf.length && rtf[j] !== "\\" && rtf[j] !== "{" && rtf[j] !== "}" && rtf[j] !== "\r" && rtf[j] !== "\n") j += 1;
+      tambah(rtf.slice(i, j), i);
+      i = j;
+    }
+    return hasil;
+  }
+
+  /** Baris tanda tangan: sebutan jabatan di ujung blok TTD (pendek). Ruang kosong di sekitarnya adalah ruang tanda tangan. */
+  const BARIS_TTD = /^(?:ketua(?:\s+majelis)?|hakim(?:\s+(?:ketua|anggota|tunggal))?(?:\s+(?:i|ii|iii|iv|\d+))?|panitera(?:\s+(?:pengganti|sidang))?|jurusita(?:\s+pengganti)?|penerima|yang\s+menerima|ttd|mengetahui|mengesahkan|untuk\s+salinan|pejabat)\b/i;
+  function barisTtd(teks) {
+    const t = String(teks).replace(/\s+/g, " ").trim();
+    // Blok Jurusita / Jurusita Pengganti: ruang isian tangan jurusita, baris kosongnya tidak dirapikan.
+    if (t.length > 0 && t.length <= 100 && /^[\s.…_-]*jurusita\b/i.test(t)) return true;
+    return t.length > 0 && t.length <= 60 && BARIS_TTD.test(t);
+  }
+
+  function paragrafKosongRtf(par) {
+    return par.parLen > 0 && !par.gambar && !par.tabel && !par.halaman && !/\S/.test(par.teks);
+  }
+
+  /** Judul bab huruf kapital yang tidak boleh rapat ke paragraf di sekitarnya ("DUDUK PERKARA", "PERTIMBANGAN HUKUM", "MENGADILI", ...). */
+  const JUDUL_BAB = /^(?:TENTANG\s+\S+|DUDUK\s+PERKARA|PERTIMBANGAN\s+HUKUM|MENGADILI|MEMUTUSKAN|MENETAPKAN|MENIMBANG|MENGINGAT|DALAM\s+\S+|AMAR\s+PUTUSAN|PUTUSAN|PENETAPAN)\b/;
+  function judulBab(par) {
+    const t = String(par.teks).replace(/\s+/g, " ").trim();
+    return t.length > 0 && t.length <= 70 && t === t.toUpperCase() && /\p{L}/u.test(t) && JUDUL_BAB.test(t);
+  }
+  /** Paragraf non-kosong pertama di kop surat: deret kosong sebelum paragraf ke-KOP dibiarkan (jarak kop diatur pengguna). */
+  const PARAGRAF_KOP = 5;
+
+  /** true = deret paragraf kosong daftar[n..m] jangan dihapus (kop surat, ruang tanda tangan, blok Jurusita, atau sekitar ganti halaman). */
+  function deretKosongDilindungi(daftar, n, m, jur) {
+    const sebelum = daftar[n - 1];
+    const sesudah = daftar[m + 1];
+    if ((sebelum && sebelum.halaman) || (sesudah && sesudah.halaman)) return true;
+    for (let q = n; q <= m; q += 1) if (jur[q]) return true;
+    if ((sebelum && jur[n - 1]) || (sesudah && jur[m + 1])) return true;
+    let isi = 0;
+    for (let q = 0; q < n; q += 1) if (!paragrafKosongRtf(daftar[q])) isi += 1;
+    if (isi < PARAGRAF_KOP) return true;
+    let ketemu = 0;
+    for (let q = n - 1; q >= 0 && ketemu < 3; q -= 1) {
+      if (paragrafKosongRtf(daftar[q])) continue;
+      if (barisTtd(daftar[q].teks)) return true;
+      ketemu += 1;
+    }
+    for (let q = m + 1; q < daftar.length; q += 1) {
+      if (paragrafKosongRtf(daftar[q])) continue;
+      return barisTtd(daftar[q].teks);
+    }
+    return false;
+  }
+
+  /**
+   * HAPUS SEMUA paragraf kosong akibat enter (termasuk yang lahir dari isian kosong): jarak antar paragraf datang dari \sb/\sa format
+   * blangko, bukan dari paragraf kosong. Dikecualikan: kop surat (sebelum paragraf isi ke-5), ruang tanda tangan (sekitar sebutan Ketua
+   * Majelis/Hakim/Panitera/Jurusita/ttd), seluruh blok Jurusita/Jurusita Pengganti, sekitar ganti halaman (\page, \pagebb, \sect), sel tabel,
+   * dan bentuk gambar. Judul bab huruf kapital yang berdampingan dengan paragraf kosong terhapus dan tidak punya \sb/\sa diberi \sb240 supaya
+   * tetap renggang. Pulang { rtf, tempat (jumlah deret yang dibuang), dihapus (jumlah paragraf kosong), judul (jumlah judul diberi jarak) }.
+   */
+  function rapikanBarisKosong(rtfMasuk) {
+    const rtf = String(rtfMasuk == null ? "" : rtfMasuk);
+    const tanpaUbah = { rtf, tempat: 0, dihapus: 0, judul: 0 };
+    try {
+      const daftar = strukturParagrafRtf(rtf);
+      const jur = blokJurusita(daftar);
+      const ubah = []; // { pos, hapus (panjang yang dibuang), teks (yang disisipkan) }
+      const judulSudah = new Set();
+      let tempat = 0;
+      let dihapus = 0;
+      let n = 0;
+      while (n < daftar.length) {
+        if (!paragrafKosongRtf(daftar[n])) {
+          n += 1;
+          continue;
+        }
+        let m = n;
+        while (m + 1 < daftar.length && paragrafKosongRtf(daftar[m + 1])) m += 1;
+        if (!deretKosongDilindungi(daftar, n, m, jur)) {
+          tempat += 1;
+          for (let q = n; q <= m; q += 1) {
+            // Spasi/tab/garis baru di dalam paragraf kosong ikut dibuang (kalau tidak, menempel ke awal paragraf berikutnya), lalu kata \par-nya.
+            for (const [a, b] of daftar[q].sampah) ubah.push({ pos: a, hapus: b - a, teks: "" });
+            ubah.push({ pos: daftar[q].parPos, hapus: daftar[q].parLen, teks: "" });
+            dihapus += 1;
+          }
+          for (const tetangga of [daftar[n - 1], daftar[m + 1]]) {
+            if (tetangga && !judulSudah.has(tetangga) && !tetangga.jarak && tetangga.teksPos >= 0 && judulBab(tetangga)) {
+              judulSudah.add(tetangga);
+              ubah.push({ pos: tetangga.teksPos, hapus: 0, teks: "\\sb240 " });
+            }
+          }
+        }
+        n = m + 1;
+      }
+      if (!ubah.length) return tanpaUbah;
+      ubah.sort((x, y) => x.pos - y.pos);
+      let hasil = "";
+      let akhir = 0;
+      let sesudahBuang = false;
+      for (const u of ubah) {
+        if (u.pos < akhir) continue; // tumpang tindih: sudah terbuang
+        const utuh = rtf.slice(akhir, u.pos);
+        // Kata kendali sebelum bagian yang dibuang (mis. "\ql" + "\par " + "G") butuh pembatas: tanpa spasi ia menempel ke huruf berikutnya ("\qlG").
+        if (sesudahBuang && utuh && /[A-Za-z0-9]$/.test(hasil) && /^[A-Za-z0-9-]/.test(utuh)) hasil += " ";
+        hasil += utuh;
+        if (utuh) sesudahBuang = false;
+        if (u.hapus > 0) sesudahBuang = true;
+        hasil += u.teks;
+        akhir = u.pos + u.hapus;
+      }
+      if (sesudahBuang && /[A-Za-z0-9]$/.test(hasil) && /^[A-Za-z0-9-]/.test(rtf.slice(akhir))) hasil += " ";
+      hasil += rtf.slice(akhir);
+      return { rtf: hasil, tempat, dihapus, judul: judulSudah.size };
+    } catch {
+      return tanpaUbah;
+    }
   }
 
   // ==========================================================================
@@ -742,6 +1293,12 @@
     baris.push("Ringkasan:");
     for (const r of ringkasJenis(temuan)) baris.push(`  - ${r.label}: ${r.jumlah}`);
     baris.push("");
+    if (Array.isArray(o.catatan)) for (const c of o.catatan) baris.push(`Info   : ${c}`);
+    if (Array.isArray(o.catatan) && o.catatan.length) baris.push("");
+    if (temuan.some((t) => JENIS_RAGU.has(t.jenis))) {
+      baris.push("Butir bertanda \"Periksa\" belum tentu salah: hanya diingatkan di daftar ini dan TIDAK diwarnai merah di naskah.");
+      baris.push("");
+    }
     baris.push("Rincian (tulisan yang bermasalah ditandai « »; letak hanya perkiraan):");
     baris.push("");
     temuan.forEach((t, i) => {
@@ -956,6 +1513,7 @@
         jenis: o.jenis,
         aksi: o.aksi,
         terpotong: h.hasil.terpotong,
+        catatan: o.catatan,
         tawarkanIngat: beruntun || o.massal === true,
       });
       if (pilihan === "lanjut") ingatan.set(kunci, Date.now());
@@ -1083,6 +1641,11 @@
     periksaRtf,
     periksaDocxXml,
     periksaDocxBita,
+    /* 31 Okt: sisa blangko PASTI dimerahkan di RTF cetak/unduh panel; baris kosong berlebih dirapikan. */
+    rentangParagraf,
+    merahkanRtf,
+    rapikanBarisKosong,
+    JENIS_RAGU,
     /* 20 Okt: dipakai pratinjau BAS/relaas (pratinjau-bas-relaas.js) untuk tampilan teks cadangan DOCX dan nama daftar masalah. */
     ambilDariZip,
     namaTxt,

@@ -87,7 +87,7 @@ describe("1. aturan yang diminta (positif)", () => {
     ["titik isian panjang", "bin/binti ..................... pekerjaan tani", "titik"],
     ["elipsis tunggal", "pada tanggal … di Donggala", "titik"],
     ["garis isian", "tanggal ______ bulan Oktober", "garis"],
-    ["bin/binti belum dipilih", "Fulan bin/binti Fulan", "kalimat"],
+    ["bin/binti belum dipilih", "Fulan bin/binti Fulan", "ragu"], // 31 Okt: pilihan bergaris miring = tingkat RAGU (hanya .txt, tidak merah)
     ["pilih salah satu", "(pilih salah satunya) sesuai keadaan", "kalimat"],
     ["kalimat Nomor ... tanggal ...", "Nomor ........ tanggal ........ dibacakan di persidangan", "titik"],
   ];
@@ -131,7 +131,7 @@ describe("1. aturan yang diminta (positif)", () => {
   });
 
   it("letak tanpa pemisah halaman: perkiraan dari banyaknya tulisan", () => {
-    const panjang = Array.from({ length: 40 }, (_, i) => `Paragraf nomor ${i + 1} ${"kata ".repeat(40)}`);
+    const panjang = Array.from({ length: 40 }, (_, i) => `Paragraf nomor ${i + 1} ${Array.from({ length: 40 }, (_, j) => `kata${String(j).padStart(2, "0")}`).join(" ")} `); // 31 Okt: kata berbeda (kata berulang kini temuan PASTI)
     const h = JS.periksaRtf(rtf(...panjang, "Penutup [nama]"));
     const k = h.temuan.find((t) => t.jenis === "kurung")!;
     expect(k.paragraf).toBe(41);

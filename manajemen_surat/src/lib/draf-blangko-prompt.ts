@@ -28,7 +28,7 @@
  */
 
 import type { DrafH7 } from "@/lib/agen-h7-putusan";
-import { LABEL, rentangParagraf, type JenisTemuan, type Paragraf } from "@/lib/deteksi-sisa-blangko";
+import { LABEL, blokJurusita, rentangParagraf, type JenisTemuan, type Paragraf } from "@/lib/deteksi-sisa-blangko";
 import type { DrafBlangkoBahan } from "@/lib/prompt-ai";
 
 export const BATAS_TEKS_DRAF = 60000;
@@ -43,6 +43,9 @@ const SINGKAT: Record<JenisTemuan, string> = {
   titik: "titik-titik",
   garis: "garis isian",
   kalimat: "kalimat blangko",
+  kosong: "isian kosong",
+  ulang: "kata berulang",
+  ragu: "pilihan yang mungkin belum dipilih",
   sesuai: "tidak sesuai dengan perkara", // hanya dari pemeriksa seret-lepas e-Doc; tidak muncul pada perintah AI
 };
 
@@ -77,8 +80,12 @@ export function tandaiKekosongan(paragraf: Paragraf[]): HasilTandai {
   const kekosongan: Kekosongan[] = [];
   const keluar: string[] = [];
   let nomor = 0;
-  for (const par of paragraf) {
-    const { p, pemenang } = rentangParagraf(par);
+  const jur = blokJurusita(paragraf);
+  for (let idx = 0; idx < paragraf.length; idx += 1) {
+    const par = paragraf[idx];
+    const { p, pemenang: semua } = rentangParagraf(par, undefined, jur[idx]);
+    // Tingkat RAGU ("Penggugat/Tergugat", spasi ganda, ...) hanya untuk daftar .txt petugas, bukan penanda kekosongan bagi AI.
+    const pemenang = semua.filter((r) => r.jenis !== "ragu");
     if (pemenang.length === 0) {
       keluar.push(p);
       continue;

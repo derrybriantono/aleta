@@ -8826,10 +8826,29 @@
     const nomor = nomorPerkara();
     const berkas = S.blangko.berkas;
     const j = S.blangko.jenis;
+    const jenisNaskahCetak = { put: "putusan", bas: "bas", rel: "relaas" }[j] || "";
+    const deteksiAda = typeof aletaDeteksiSisa === "object" && aletaDeteksiSisa;
+    // 31 Okt 2026: paragraf kosong akibat enter (juga dari isian kosong) dibuang SEBELUM diperiksa; jarak antar paragraf datang dari \sb/\sa
+    // format blangko. Kop surat, ruang tanda tangan, blok Jurusita, sekitar ganti halaman, tabel, dan gambar tidak disentuh. Jumlahnya
+    // dicatat di log dan (bila ada dialog) di daftar masalah .txt sebagai info.
+    const catatanRapi = [];
+    if (deteksiAda && typeof aletaDeteksiSisa.rapikanBarisKosong === "function") {
+      try {
+        const r = aletaDeteksiSisa.rapikanBarisKosong(latin1(rtfBuf));
+        if (r && r.dihapus > 0) {
+          rtfBuf = typeof rtfBuf === "string" ? r.rtf : bufDariLatin1(r.rtf);
+          const ket = `${r.dihapus} paragraf kosong di ${r.tempat} tempat dirapikan otomatis${r.judul ? `, ${r.judul} judul diberi jarak` : ""}`;
+          catatanRapi.push(ket);
+          catatLog(`rapikan: ${ket}`);
+        }
+      } catch {
+        /* merapikan gagal tidak boleh menahan cetak: naskah dipakai apa adanya */
+      }
+    }
     // Deteksi sisa blangko (17 Okt 2026): naskah diperiksa SEKALI untuk semua keluaran (RTF, PDF,
     // e-Doc). Bila masih ada sisa blangko/perbaikan, petugas diperingatkan - tetap boleh lanjut.
-    if (typeof aletaDeteksiSisa === "object" && aletaDeteksiSisa) {
-      const jenisNaskah = { put: "putusan", bas: "bas", rel: "relaas" }[j] || "";
+    if (deteksiAda) {
+      const jenisNaskah = jenisNaskahCetak;
       if (jenisNaskah) {
         let tinjau = { lanjut: true };
         try {
@@ -8837,6 +8856,7 @@
             nama: namaUnduhan(nomor, berkas, "rtf"),
             jenis: jenisNaskah,
             aksi: S.fmt.edoc && j === "put" && !tes() ? "unggah" : "unduh",
+            catatan: catatanRapi,
           });
         } catch {
           tinjau = { lanjut: true }; // galat pemeriksa tidak boleh menahan cetak/unggah
@@ -8853,12 +8873,26 @@
     const mulaiCetak = Date.now();
     const ukur = { rtf: 0, pdf: 0, salinan: 0, anonim: 0, pdfAnonim: 0, edoc: 0, total: 0 };
     S.ukurCetak = ukur;
-    const rtfLatin1 = latin1(rtfBuf);
+    // 31 Okt 2026: sisa blangko tingkat PASTI diwarnai MERAH pada RTF dan PDF yang dicetak/diunduh (tingkat RAGU hanya di daftar .txt).
+    // Naskah untuk e-Doc SIPP dan salinan anonim tetap apa adanya (unggahan ke SIPP tidak membawa warna; pemeriksa unggah tetap jalan).
+    let rtfCetak = rtfBuf;
+    if (deteksiAda && jenisNaskahCetak && typeof aletaDeteksiSisa.merahkanRtf === "function") {
+      try {
+        const m = aletaDeteksiSisa.merahkanRtf(latin1(rtfBuf), { jenis: jenisNaskahCetak, untukBaca: rtfTeks(rtfBuf) });
+        if (m && m.jumlah > 0) {
+          rtfCetak = typeof rtfBuf === "string" ? m.rtf : bufDariLatin1(m.rtf);
+          catatLog(`${m.potongan} sisa blangko diwarnai merah pada RTF/PDF cetak`);
+        }
+      } catch {
+        rtfCetak = rtfBuf; // mewarnai gagal tidak boleh menahan cetak
+      }
+    }
+    const rtfLatin1 = latin1(rtfCetak);
     if (S.fmt.pdf) await autoCentangTtd(); // tanda tangan sah otomatis ikut bila pengguna belum memilih sendiri
     const pesanRtf = [];
     if (S.fmt.rtf) {
       const nama = namaUnduhan(nomor, berkas, "rtf");
-      const u = await unduh(new Blob([rtfBuf], { type: "application/rtf" }), nama);
+      const u = await unduh(new Blob([rtfCetak], { type: "application/rtf" }), nama);
       pesanRtf.push(u.ok ? `RTF diunduh "${nama}"` : `RTF gagal: ${u.pesan}`);
       ukur.rtf = Date.now() - mulaiCetak;
       tampilStatus(pesanRtf[0]);
@@ -8875,7 +8909,7 @@
       const pesan = [];
       try {
         catatLog("membuat PDF…");
-        const { h, t } = await pdfBiasaDenganTtd(rtfBuf);
+        const { h, t } = await pdfBiasaDenganTtd(rtfCetak);
         const nama = namaUnduhan(nomor, berkas, "pdf");
         const u = await unduh(h.blob, nama);
         let ket = u.ok ? `PDF diunduh "${nama}"` : `PDF gagal: ${u.pesan}`;
