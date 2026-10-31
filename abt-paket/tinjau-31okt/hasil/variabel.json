@@ -18,5 +18,70 @@
   "no": 11899,
   "nama": "ACARA: NOMOR PASAL GUGATAN LISAN BERAYAT (\"144 ayat (1)\" RBg = \"120\" HIR tanpa ayat; OTOMATIS #11850#)",
   "sql": "SELECT IF('#11850#' = 'HIR', '120', '144 ayat (1)') AS data"
+ },
+ {
+  "no": 12000,
+  "nama": "ACARA: EKSEKUSI - BUTIR \"208\" (RBg) = \"197 ayat (1)\" (HIR); PERINTAH SITA EKSEKUSI; OTOMATIS #11850#",
+  "sql": "SELECT IF('#11850#' = 'HIR', '197 ayat (1)', '208') AS data"
+ },
+ {
+  "no": 12001,
+  "nama": "ACARA: EKSEKUSI - BUTIR \"209\" (RBg) = \"197 ayat (2) sampai dengan ayat (5)\" (HIR); SITA EKSEKUSI OLEH PANITERA, PENGGANTI, BERITA ACARA; OTOMATIS #11850#",
+  "sql": "SELECT IF('#11850#' = 'HIR', '197 ayat (2) sampai dengan ayat (5)', '209') AS data"
+ },
+ {
+  "no": 12002,
+  "nama": "ACARA: EKSEKUSI - BUTIR \"209 ayat (2) dan ayat (3)\" (RBg) = \"197 ayat (3) dan ayat (4)\" (HIR); PANITERA BERHALANGAN DIGANTI, CARA PENUNJUKAN; OTOMATIS #11850#",
+  "sql": "SELECT IF('#11850#' = 'HIR', '197 ayat (3) dan ayat (4)', '209 ayat (2) dan ayat (3)') AS data"
+ },
+ {
+  "no": 12003,
+  "nama": "ACARA: EKSEKUSI - BUTIR \"209 ayat (4)\" (RBg) = \"197 ayat (5)\" (HIR); BERITA ACARA SITA; OTOMATIS #11850#",
+  "sql": "SELECT IF('#11850#' = 'HIR', '197 ayat (5)', '209 ayat (4)') AS data"
+ },
+ {
+  "no": 12004,
+  "nama": "ACARA: EKSEKUSI - BUTIR \"210\" (RBg) = \"197 ayat (6) dan ayat (7)\" (HIR); DUA SAKSI PENYITAAN; OTOMATIS #11850#",
+  "sql": "SELECT IF('#11850#' = 'HIR', '197 ayat (6) dan ayat (7)', '210') AS data"
+ },
+ {
+  "no": 12005,
+  "nama": "ACARA: EKSEKUSI - BUTIR \"210 ayat (1)\" (RBg) = \"197 ayat (6)\" (HIR); DUA SAKSI PENYITAAN; OTOMATIS #11850#",
+  "sql": "SELECT IF('#11850#' = 'HIR', '197 ayat (6)', '210 ayat (1)') AS data"
+ },
+ {
+  "no": 12006,
+  "nama": "ACARA: EKSEKUSI - BUTIR \"215 ayat (1)\" (RBg) = \"200 ayat (1)\" (HIR); PENJUALAN BARANG SITAAN LEWAT KANTOR LELANG; OTOMATIS #11850#",
+  "sql": "SELECT IF('#11850#' = 'HIR', '200 ayat (1)', '215 ayat (1)') AS data"
+ },
+ {
+  "no": 12007,
+  "nama": "ACARA: EKSEKUSI - BUTIR \"216\" (RBg) = \"200 ayat (4) dan ayat (5)\" (HIR); URUTAN BARANG DILELANG, LELANG DIHENTIKAN; OTOMATIS #11850#",
+  "sql": "SELECT IF('#11850#' = 'HIR', '200 ayat (4) dan ayat (5)', '216') AS data"
+ },
+ {
+  "no": 12008,
+  "nama": "ACARA: EKSEKUSI - BUTIR \"217\" (RBg) = \"200 ayat (6) sampai dengan ayat (9)\" (HIR); PENGUMUMAN DAN TATA CARA LELANG; OTOMATIS #11850#",
+  "sql": "SELECT IF('#11850#' = 'HIR', '200 ayat (6) sampai dengan ayat (9)', '217') AS data"
+ },
+ {
+  "no": 12009,
+  "nama": "ACARA: EKSEKUSI - BUTIR \"217 ayat (1)\" (RBg) = \"200 ayat (6)\" (HIR); PENGUMUMAN LELANG BARANG BERGERAK; OTOMATIS #11850#",
+  "sql": "SELECT IF('#11850#' = 'HIR', '200 ayat (6)', '217 ayat (1)') AS data"
+ },
+ {
+  "no": 12010,
+  "nama": "ACARA: EKSEKUSI - BUTIR \"218 ayat (2)\" (RBg) = \"200 ayat (11)\" (HIR); PENGOSONGAN SESUDAH LELANG; OTOMATIS #11850#",
+  "sql": "SELECT IF('#11850#' = 'HIR', '200 ayat (11)', '218 ayat (2)') AS data"
+ },
+ {
+  "no": 12011,
+  "nama": "ACARA: EKSEKUSI - BUTIR \"207 ayat (1)\" (RBg) = \"196\" (HIR); AANMANING (HIR 196 SATU PARAGRAF TANPA AYAT); OTOMATIS #11850#",
+  "sql": "SELECT IF('#11850#' = 'HIR', '196', '207 ayat (1)') AS data"
+ },
+ {
+  "no": 12012,
+  "nama": "ACARA: EKSEKUSI - BUTIR \"207 ayat (1) dan ayat (2)\" (RBg) = \"196\" (HIR); AANMANING (HIR 196 SATU PARAGRAF TANPA AYAT); OTOMATIS #11850#",
+  "sql": "SELECT IF('#11850#' = 'HIR', '196', '207 ayat (1) dan ayat (2)') AS data"
  }
 ]

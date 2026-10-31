@@ -4,7 +4,7 @@
 pakai: python bangun_paket.py <akar _blangko_abt sesudah SEMUA paket rantai> <basis ABT sesudah semua paket> [<nama basis salinan>]
   nama basis salinan (laptop, mis. aps_badilag_rantai): teksnya di kueri dikembalikan ke bentuk server 'aps_badilag.' sebelum md5.
 
-Isi (nomor variabel BARU hanya 11896-11899, sisa blok G6 11850-11899):
+Isi (nomor variabel BARU 11896-11899 sisa blok G6, dan 12000-12012 dari blok eksekusi 12000-12019):
   18  #11896# dasar banding: Pasal 199 ayat (1) RBg / Pasal 7 ayat (1) Undang-Undang Nomor 20 Tahun 1947 tentang Peradilan Ulangan (#11217#)
   19  #11897# akta bawah tangan yang diakui: Pasal 288 RBg / Pasal 1875 Kitab Undang-Undang Hukum Perdata (isi dicocokkan; catatan RBg "KUHperd. 1875")
   20  #11898# nomor Pasal 718 RBg = 390 HIR; #11899# "144 ayat (1)" / "120" (HIR Pasal 120 tanpa ayat).
@@ -53,6 +53,61 @@ VAR_BARU = [
          sql="SELECT IF('#11850#' = 'HIR', '120', '144 ayat (1)') AS data"),
 ]
 NILAI_RBG = {11896: 'Pasal 199 ayat (1) RBg', 11897: 'Pasal 288 RBg', 11898: '718', 11899: '144 ayat (1)'}
+
+# --- 20 lanjutan: eksekusi (blok 12000-12019, diklaim sesi utama 31 Okt) ------------------------------------------------------
+# Padanan ayat HIR 197/200 menurut catatan "IR." naskah RBg dan urutan kalimat HIR 197/200 (HIR 197 ayat (6)-(7) = RBg 210 dikunci catatan
+# "IR. 197 6,7"; HIR 200 ayat (1), (10), (11) bernomor di naskah). Satu variabel = satu BUTIR rujukan (nomor pasal + ayatnya) karena
+# HIR menyebutnya dengan ayat lain atau tanpa ayat. Kunci: (pasal RBg, teks ayat sesudah nomor pasal).
+EKS = [
+    (12000, ('208', ''), '197 ayat (1)', 'perintah sita eksekusi'),
+    (12001, ('209', ''), '197 ayat (2) sampai dengan ayat (5)', 'sita eksekusi oleh panitera, pengganti, berita acara'),
+    (12002, ('209', ' ayat (2) dan ayat (3)'), '197 ayat (3) dan ayat (4)', 'panitera berhalangan diganti, cara penunjukan'),
+    (12003, ('209', ' ayat (4)'), '197 ayat (5)', 'berita acara sita'),
+    (12004, ('210', ''), '197 ayat (6) dan ayat (7)', 'dua saksi penyitaan'),
+    (12005, ('210', ' ayat (1)'), '197 ayat (6)', 'dua saksi penyitaan'),
+    (12006, ('215', ' ayat (1)'), '200 ayat (1)', 'penjualan barang sitaan lewat kantor lelang'),
+    (12007, ('216', ''), '200 ayat (4) dan ayat (5)', 'urutan barang dilelang, lelang dihentikan'),
+    (12008, ('217', ''), '200 ayat (6) sampai dengan ayat (9)', 'pengumuman dan tata cara lelang'),
+    (12009, ('217', ' ayat (1)'), '200 ayat (6)', 'pengumuman lelang barang bergerak'),
+    (12010, ('218', ' ayat (2)'), '200 ayat (11)', 'pengosongan sesudah lelang'),
+    (12011, ('207', ' ayat (1)'), '196', 'aanmaning (HIR 196 satu paragraf tanpa ayat)'),
+    (12012, ('207', ' ayat (1) dan ayat (2)'), '196', 'aanmaning (HIR 196 satu paragraf tanpa ayat)'),
+]
+for no, (ps, ay), hir, pokok in EKS:
+    VAR_BARU.append(dict(no=no, nama=('ACARA: EKSEKUSI - BUTIR "%s%s" (RBg) = "%s" (HIR); %s; OTOMATIS #11850#' % (ps, ay, hir, pokok.upper()))[:200],
+                         sql="SELECT IF('#11850#' = 'HIR', '%s', '%s%s') AS data" % (hir, ps, ay)))
+    NILAI_RBG[no] = ps + ay
+EKS_KUNCI = {k: no for no, k, _, _ in EKS}
+RE_BUTIR = re.compile(r'(?<![0-9#])(\d{1,3})((?:\s+[Aa]yat\s+\(\d+\)(?:\s*(?:,|dan|,\s*dan)\s+[Aa]yat\s+\(\d+\))*)?)')
+
+
+def eksekusi(teks, A):
+    """Rujukan "Pasal ... RBg" yang masih tersisa (gagal di mesin padanan) dan memuat butir eksekusi: tiap butir diganti variabel butir
+    (EKS) atau padanan biasa (nomor pasal #N# + ayat sama); satu saja butir belum pasti = rujukan dibiarkan."""
+    ubah = []
+    for m in G.RE_RUJUKAN.finditer(teks):
+        inti = m.group(1)
+        keluar, pos, ok, ada_eks = [], 0, True, False
+        for b in RE_BUTIR.finditer(inti):
+            p, ay = b.group(1), re.sub(r'\s+', ' ', b.group(2))
+            keluar.append(inti[pos:b.start()])
+            if (p, ay) in EKS_KUNCI:
+                keluar.append('#%d#' % EKS_KUNCI[(p, ay)])
+                ada_eks = True
+            else:
+                t, _ = G.templat(b.group(0), A)
+                if t is None:
+                    ok = False
+                    break
+                keluar.append(t)
+            pos = b.end()
+        if not ok or not ada_eks:
+            continue
+        keluar.append(inti[pos:])
+        awal = m.start(1)
+        ubah.append((awal, m.end(1), ''.join(keluar)))
+        ubah.append((m.end() - 3, m.end(), '#11851#'))
+    return ubah
 
 
 def panjang(p):
@@ -279,7 +334,7 @@ def main():
     TK.BARIS_BARU = {no for no, v in var.items() if v['jenis'] == 'data_sql' and TK.mulai_baris_baru(v['sql'])}
 
     def sebagai_rbg(t):
-        return re.sub(r'#(118[5-9]\d)#', lambda m: nilai[int(m.group(1))], t)
+        return re.sub(r'#(118[5-9]\d|120[01]\d)#', lambda m: nilai[int(m.group(1))], t)
 
     akar_d = os.path.join(akar, 'derry_briantono')
     rels = []
@@ -303,6 +358,7 @@ def main():
         r2 = terapkan(r1, u2)
         c = []
         r3 = G.terapkan(r2, G.rencana_rtf(r2, A, c))
+        r3 = terapkan(r3, ubah_rtf_teks(r3, lambda t: eksekusi(t, A)))
         catat['padanan'] += [(rel, a, h or ('TIDAK: ' + s)) for a, h, s in c]
         assert sebagai_rbg(r3).replace('\r', '').replace('\n', '') == sebagai_rbg(r1).replace('\r', '').replace('\n', ''), rel
         # 21 tenggang verzet
@@ -332,6 +388,7 @@ def main():
         s2 = terapkan(s1, kalimat(s1, A))
         c = []
         s3 = G.ganti_teks(s2, A, c)
+        s3 = terapkan(s3, eksekusi(s3, A))
         catat['padanan-var'] += [('#%d#' % no, a, h or ('TIDAK: ' + sb)) for a, h, sb in c]
         assert sebagai_rbg(s3) == sebagai_rbg(s1), no
         s4 = terapkan(s3, tenggang(s3))
@@ -410,9 +467,9 @@ def tulis(keluar, berkas, ubah_var, var):
         .replace("multi_sidang", "v.multi_sidang").replace("locked", "v.locked").replace("modifier", "v.modifier")
     lama_c = ' OR '.join("(no_var = %d AND MD5(IFNULL(sql_query, '')) = '%s')" % (n, md5b(u['lama'].encode('latin1'))) for n, u in uv)
     baru_d = ' OR '.join("(no_var = %d AND MD5(IFNULL(sql_query, '')) = '%s')" % (n, md5b(u['baru'].encode('latin1'))) for n, u in uv)
-    pras = kepala + ('-- PRASYARAT "A|B|C|D|E": A = 11896-11899 berisi lain (0) | B = variabel baru persis (0/%d) | C = kueri lama persis dasar (%d/0) | '
+    pras = kepala + ('-- PRASYARAT "A|B|C|D|E": A = 11896-11899 / 12000-12019 berisi lain (0) | B = variabel baru persis (0/%d) | C = kueri lama persis dasar (%d/0) | '
                      'D = kueri lama sudah isi baru (0/%d) | E = #11850# dan #11861# paket hir-rbg ada (2)\n' % (len(nb), len(uv), len(uv)))
-    pras += ("SELECT CONCAT_WS('|',\n (SELECT COUNT(*) FROM abt_variabel v WHERE v.no_var BETWEEN 11896 AND 11899 AND NOT EXISTS (SELECT 1 FROM (%s) p WHERE p.n = v.no_var AND p.h = %s)),\n"
+    pras += ("SELECT CONCAT_WS('|',\n (SELECT COUNT(*) FROM abt_variabel v WHERE (v.no_var BETWEEN 11896 AND 11899 OR v.no_var BETWEEN 12000 AND 12019) AND NOT EXISTS (SELECT 1 FROM (%s) p WHERE p.n = v.no_var AND p.h = %s)),\n"
              " (SELECT COUNT(*) FROM abt_variabel v JOIN (%s) p ON p.n = v.no_var AND p.h = %s),\n (SELECT COUNT(*) FROM abt_variabel WHERE %s),\n"
              " (SELECT COUNT(*) FROM abt_variabel WHERE %s),\n (SELECT COUNT(*) FROM abt_variabel WHERE no_var IN (11850, 11861))) AS p;\n"
              % (nl, sv, nl, sv, lama_c or '0', baru_d or '0'))
