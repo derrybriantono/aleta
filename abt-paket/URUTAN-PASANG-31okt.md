@@ -262,11 +262,11 @@ Jawaban pengguna 31 Okt atas pertanyaan G6: banding Jawa-Madura UU 20/1947 (#118
 718 RBg = 390 HIR (#11898#), 144 ayat (1) RBg = 120 HIR (#11899#), tenggang verzet Pasal 153 ayat (2), RBg dibakukan, ";" di tengah
 pertimbangan "...; bahwa ..." jadi butir "-" berinden gantung (98 blangko, 15 kueri). Keluaran benar (uji rantai 31 Okt 07.36-07.46):
 ```
-PRASYARAT COCOK (0|0|15|0|2)
-SIAP=98
+PRASYARAT COCOK (0|0|16|0|2)
+SIAP=99
 SEMUA COCOK
 UJI: satker <KodePN> provinsi '<provinsi>' -> hukum acara RBg
-TAMBAL=98
+TAMBAL=99
 BERKAS COCOK
 SELESAI - paket abt-tinjau-31okt terpasang. Cadangan: tinjau-31okt/paket-satker/cadangan. Pulih: bash tinjau-31okt/paket-satker/pulih-satker.sh
 ```
