@@ -128,9 +128,24 @@ function cariButir(butir, wajib, terlarang) {
   return "";
 }
 
-/** Bulan dan tahun dari sepotong kalimat, dalam bentuk yang dipakai blangko. */
-function ambilBulanTahun(kalimat) {
+/**
+ * Bulan dan tahun dari sepotong kalimat, dalam bentuk yang dipakai blangko.
+ * 31 Okt (keputusan pengguna butir 16): opsi `tanggal` - bila kalimat menyebut hari ("sejak tanggal 23 Juli 2024"),
+ * nilainya "tanggal 23 Juli 2024" (bentuk "tanggal _" variabel 0222/0246). Tanpa opsi bentuknya tetap seperti dahulu.
+ */
+function ambilBulanTahun(kalimat, opsi) {
   const teks = String(kalimat || "");
+  if (opsi && opsi.tanggal) {
+    const polaTanggal = new RegExp(`(?:\\btanggal\\s+|\\b)(\\d{1,2})\\s+(${BULAN.join("|")}|Pebruari|Nopember)\\s*,?\\s+(?:tahun\\s+)?(\\d{4})\\b`, "i");
+    const t = teks.match(polaTanggal);
+    const hari = t ? Number(t[1]) : 0;
+    if (t && hari >= 1 && hari <= 31) {
+      const kecil = t[2].toLowerCase();
+      const baku = kecil === "pebruari" ? "februari" : kecil === "nopember" ? "november" : kecil;
+      const namaBulan = BULAN.find((b) => b.toLowerCase() === baku);
+      return { nilai: `tanggal ${t[1]} ${namaBulan} ${t[3]}`, jenis: "tanggal" };
+    }
+  }
   // S5=H1 (10 Okt 2026): "bulan Desember tahun 2013" dan ejaan petugas
   // "Pebruari"/"Nopember" dahulu jatuh ke cadangan tahun - terukur pada
   // 392/Pdt.G/2025 ("sejak bulan Desember tahun 2013" -> "tahun 2013",
@@ -179,7 +194,7 @@ function ambilLamaPisah(kalimat) {
  * memutuskan tetap manusia, sebab "sejak Mei" bisa berarti awal Mei atau akhir
  * Mei, dan selisih itu tidak dapat diperas dari kalimatnya.
  */
-const POLA_BULAN_TAHUN = /^(?:bulan\s+)?([A-Za-z]+)?\s*(\d{4})$/;
+const POLA_BULAN_TAHUN = /^(?:bulan\s+|tanggal\s+(\d{1,2})\s+)?([A-Za-z]+)?\s*(\d{4})$/;
 
 function bulanKeAngka(nama) {
   const i = BULAN.findIndex((b) => b.toLowerCase() === String(nama || "").toLowerCase());
@@ -210,15 +225,18 @@ function uraikanTanggal(teks) {
 function hitungLamaPisah(nilai0246, tanggalSidang) {
   const cocok = String(nilai0246 || "").replace(/\s+/g, " ").trim().match(POLA_BULAN_TAHUN);
   if (!cocok) return null;
-  const bulanMulai = cocok[1] ? bulanKeAngka(cocok[1]) : 0;
+  const hariMulai = cocok[1] ? Number(cocok[1]) : 0;
+  const bulanMulai = cocok[2] ? bulanKeAngka(cocok[2]) : 0;
   if (bulanMulai === null) return null;
   const sidang = uraikanTanggal(tanggalSidang);
   if (!sidang || Number.isNaN(sidang.getTime())) return null;
 
-  const mulai = new Date(Number(cocok[2]), bulanMulai, 1);
+  const mulai = new Date(Number(cocok[3]), bulanMulai, hariMulai || 1);
   if (sidang < mulai) return null;
 
   let bulan = (sidang.getFullYear() - mulai.getFullYear()) * 12 + (sidang.getMonth() - mulai.getMonth());
+  // 31 Okt: hari mulai diketahui - bulan yang belum genap tidak dihitung (23 Juli -> 22 Oktober = 2 bulan).
+  if (hariMulai && sidang.getDate() < hariMulai) bulan -= 1;
   if (bulan < 0) bulan = 0;
   const tahun = Math.floor(bulan / 12);
   const sisaBulan = bulan % 12;
@@ -563,6 +581,39 @@ function gabungkan(dariSaksi1, dariSaksi2) {
   return { nilai: "", keyakinan: "kosong", bentrok: "" };
 }
 
+/**
+ * 31 Okt (butir 16): dua bacaan waktu setara bila sama persis, atau yang satu "bulan X YYYY" dan yang lain
+ * "tanggal N X YYYY" pada bulan itu. Memulangkan bentuk yang LEBIH RINCI, atau "" bila tidak setara.
+ */
+function waktuSetara(a, b) {
+  const x = String(a || "").trim();
+  const y = String(b || "").trim();
+  if (!x || !y) return "";
+  if (x.toLowerCase() === y.toLowerCase()) return x;
+  // Hari ditulis "05" atau "5" - sama.
+  const baku = (t) => t.toLowerCase().replace(/^tanggal\s+0*(\d)/, "tanggal $1");
+  if (baku(x) === baku(y)) return x;
+  const bulanDari = (t) => {
+    const m = t.match(/^(?:bulan|tanggal\s+\d{1,2})\s+(\S+\s+\d{4})$/i);
+    return m ? m[1].toLowerCase() : "";
+  };
+  const tgl = (t) => /^tanggal\s/i.test(t);
+  if (tgl(x) && tgl(y)) return "";
+  const bx = bulanDari(x);
+  if (!bx || bx !== bulanDari(y)) return "";
+  return tgl(x) ? x : y;
+}
+
+/** gabungkan() untuk 0222/0246: bulan & tanggal di bulan itu = sama (pasti), nilai = yang lebih rinci. */
+function gabungkanWaktu(dariSaksi1, dariSaksi2) {
+  const g = gabungkan(dariSaksi1, dariSaksi2);
+  if (g.keyakinan === "bentrok") {
+    const rinci = waktuSetara(dariSaksi1, dariSaksi2);
+    if (rinci) return { nilai: rinci, keyakinan: "pasti", bentrok: "" };
+  }
+  return g;
+}
+
 function usulan(kode, nama, hasil, sumber) {
   const u = {
     kode,
@@ -868,7 +919,8 @@ function upayaDamaiDari(butir) {
  * posita). Angka per golongan ada di ATURAN_TINGKAT_S5.
  */
 function normalWaktu(x) {
-  const t = String(x || "").toLowerCase().replace(/^bulan\s+/, "").replace(/[.,;]+$/, "").replace(/\s+/g, " ").trim();
+  // 31 Okt: "tanggal 23 Juli 2024" dibandingkan dengan posita pada tingkat bulan.
+  const t = String(x || "").toLowerCase().replace(/^(?:bulan|tanggal\s+\d{1,2})\s+/, "").replace(/[.,;]+$/, "").replace(/\s+/g, " ").trim();
   return t;
 }
 
@@ -963,7 +1015,7 @@ function golonganS5(kode, info, u) {
     : "";
   const fitur = [];
   if (kode === "0222" || kode === "0246") {
-    fitur.push(/^bulan /.test(u.nilai) ? "bulan" : /^(awal|akhir|pertengahan) /.test(u.nilai) ? "bagian" : "tahun");
+    fitur.push(/^(?:bulan|tanggal) /.test(u.nilai) ? "bulan" : /^(awal|akhir|pertengahan) /.test(u.nilai) ? "bagian" : "tahun");
     if (gab.diperkaya) fitur.push("bulan-dari-posita");
     const p = normalWaktu(info.posita);
     const n = normalWaktu(u.nilai);
@@ -1087,7 +1139,7 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak, posit
   // Bila keduanya berbeda, bunyi posita disebut di catatan sebagai pembanding.
   const konflik1 = kalimatAwalKonflik(b1);
   const konflik2 = kalimatAwalKonflik(b2);
-  const awal = gabungkan(ambilBulanTahun(konflik1).nilai, ambilBulanTahun(konflik2).nilai);
+  const awal = gabungkanWaktu(ambilBulanTahun(konflik1, { tanggal: true }).nilai, ambilBulanTahun(konflik2, { tanggal: true }).nilai);
   let konflikPosita = kalimatAwalKonflik(butirPosita);
   let awalPosita = ambilBulanTahun(konflikPosita).nilai;
   if (!awalPosita && butirPosita.length) {
@@ -1112,7 +1164,7 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak, posit
   // 0246 - pisah rumah, termasuk bentuk "puncak ... pergi meninggalkan".
   const pisah1 = kalimatPisahRumah(b1);
   const pisah2 = kalimatPisahRumah(b2);
-  const pisah = gabungkan(ambilBulanTahun(pisah1).nilai, ambilBulanTahun(pisah2).nilai);
+  const pisah = gabungkanWaktu(ambilBulanTahun(pisah1, { tanggal: true }).nilai, ambilBulanTahun(pisah2, { tanggal: true }).nilai);
   let sumberPisah = [...sumberDari(pisah1, 1), ...sumberDari(pisah2, 2)];
 
   // ==========================================================================
@@ -1536,12 +1588,12 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak, posit
   const bandingkan = (judul, a, b) => {
     const kiri = (a || "").trim();
     const kanan = (b || "").trim();
-    if (kiri && kanan && kiri.toLowerCase() !== kanan.toLowerCase()) {
+    if (kiri && kanan && kiri.toLowerCase() !== kanan.toLowerCase() && !waktuSetara(kiri, kanan)) {
       selisih.push({ hal: judul, saksi1: kiri, saksi2: kanan });
     }
   };
-  bandingkan("Awal konflik", ambilBulanTahun(konflik1).nilai, ambilBulanTahun(konflik2).nilai);
-  bandingkan("Pisah rumah", ambilBulanTahun(pisah1).nilai, ambilBulanTahun(pisah2).nilai);
+  bandingkan("Awal konflik", ambilBulanTahun(konflik1, { tanggal: true }).nilai, ambilBulanTahun(konflik2, { tanggal: true }).nilai);
+  bandingkan("Pisah rumah", ambilBulanTahun(pisah1, { tanggal: true }).nilai, ambilBulanTahun(pisah2, { tanggal: true }).nilai);
   bandingkan("Lama pisah", ucap1.nilai, ucap2.nilai);
   bandingkan("Yang meninggalkan", siapa1.nilai, siapa2.nilai);
 
@@ -1685,8 +1737,8 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak, posit
         .filter((h) => h.usul || h.kesesuaian.status !== "tidak ada")
         .map((h) => ({ huruf: h.huruf, usul: h.usul, didalilkan: h.didalilkan, ...h.kesesuaian })),
       fakta: [
-        deteksiAlasan.kesesuaianFakta("0222", "Awal Konflik", ambilBulanTahun(konflik1).nilai, ambilBulanTahun(konflik2).nilai),
-        deteksiAlasan.kesesuaianFakta("0246", "Pisah Rumah", ambilBulanTahun(pisah1).nilai, ambilBulanTahun(pisah2).nilai),
+        deteksiAlasan.kesesuaianFakta("0222", "Awal Konflik", ambilBulanTahun(konflik1, { tanggal: true }).nilai, ambilBulanTahun(konflik2, { tanggal: true }).nilai),
+        deteksiAlasan.kesesuaianFakta("0246", "Pisah Rumah", ambilBulanTahun(pisah1, { tanggal: true }).nilai, ambilBulanTahun(pisah2, { tanggal: true }).nilai),
         deteksiAlasan.kesesuaianFakta("9944", "Lama Pisah", ucap1.nilai, ucap2.nilai),
         deteksiAlasan.kesesuaianFakta("7035", "Meninggalkan Kediaman Bersama", siapa1.nilai, siapa2.nilai),
         deteksiAlasan.kesesuaianFakta("1268", "Upaya Damai Keluarga", damai1.keadaan, damai2.keadaan),
@@ -4191,7 +4243,10 @@ function hariIniTeks(hariIni) {
  * @returns {{teks:string, totalBulan:number, taksiran:boolean}|null}
  */
 function lamaSejakAcuan(nilaiSejak, tanggalAcuan) {
-  const t = String(nilaiSejak || "").replace(/\s+/g, " ").trim();
+  // 31 Okt (butir 16): 0246 boleh "tanggal 23 Juli 2024" - hitungan tetap per bulan; bulan yang belum genap dibuang.
+  const mTgl = String(nilaiSejak || "").replace(/\s+/g, " ").trim().match(/^tanggal\s+(\d{1,2})\s+(.+)$/i);
+  const hariSejak = mTgl ? Number(mTgl[1]) : 0;
+  const t = mTgl ? `bulan ${mTgl[2]}` : String(nilaiSejak || "").replace(/\s+/g, " ").trim();
   const acuan = uraikanTanggal(tanggalKeTeks(tanggalAcuan));
   if (!t || !acuan || Number.isNaN(acuan.getTime())) return null;
   let tahun;
@@ -4212,7 +4267,7 @@ function lamaSejakAcuan(nilaiSejak, tanggalAcuan) {
   } else {
     return null;
   }
-  const total = (acuan.getFullYear() - tahun) * 12 + (acuan.getMonth() - bulan);
+  const total = (acuan.getFullYear() - tahun) * 12 + (acuan.getMonth() - bulan) - (hariSejak && acuan.getDate() < hariSejak ? 1 : 0);
   if (total < 1) return null;
   const th = Math.floor(total / 12);
   const bl = total % 12;
@@ -5774,6 +5829,7 @@ module.exports = {
   faktaDariPosita,
   lengkapiJawabanTemplat,
   ambilBulanTahun,
+  waktuSetara,
   ambilLamaPisah,
   usulkanHuruf,
   hitungLamaPisah,
