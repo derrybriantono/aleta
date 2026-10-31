@@ -1,0 +1,9 @@
+PRASYARAT COCOK (2|0)
+CADANGAN: /d/aleta-dev/wt/w148/abt-paket/butir-rata-31okt/paket-satker/cadangan/fungsi-sebelum.txt
+PERIKSA: SEMUA COCOK
+UJI: 14 contoh sama dengan laptop
+SELESAI - paket abt-butir-rata-31okt terpasang. Cadangan: /d/aleta-dev/wt/w148/abt-paket/butir-rata-31okt/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w148/abt-paket/butir-rata-31okt/paket-satker/pulih-satker.sh
+SELESAI - paket abt-butir-rata-31okt sudah terpasang
+PULIH COCOK (2|0)
+UJI: 14 contoh sama dengan laptop
+SELESAI - paket abt-butir-rata-31okt terpasang. Cadangan: /d/aleta-dev/wt/w148/abt-paket/butir-rata-31okt/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w148/abt-paket/butir-rata-31okt/paket-satker/pulih-satker.sh

@@ -1,0 +1,7 @@
+af91c0894c071dff4debf6aa44d4318c  abt-butir-rata-31okt-FUNGSI-LAMA.sql
+7c554cb3fc6b17b45ae69e0b51fe41ac  abt-butir-rata-31okt-FUNGSI.sql
+11e8f7fb70d89bf0897303edd6372885  abt-butir-rata-31okt-PRASYARAT.sql
+cf20596e891e6c294d68584f6bee78dc  harap.txt
+4e7351204a2bb588c735fe377e04be5f  pasang-satker.sh
+aa22db7e10aba7e8332f7b792c92b866  pulih-satker.sh
+6d3d138bd64ed26edfc19d9c1931fa17  uji.tsv

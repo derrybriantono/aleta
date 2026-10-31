@@ -8,7 +8,7 @@ export PATH="/d/satker asal/website pa bungku/xampp/mysql/bin:$PATH"
 export ABT_LOKAL=1 ABT_DB=${ABT_DB:-aps_badilag_rantai} TMPDIR=/d/Aplikasi/aleta/tmp TMP=D:/Aplikasi/aleta/tmp TEMP=D:/Aplikasi/aleta/tmp
 R=${RANTAI_DIR:-/d/r}
 AKAR=$R/_blangko_abt
-URUT="prodeo-panggilan-29okt bas-tanya-jawab-29okt bas-itsbat-varian-30okt bukti-nomor-30okt ket-saksi-kata-30okt ket-saksi-baris-30okt titik-koma-30okt titik-koma-data-30okt alasan-belum-dipilih-30okt agama-belum-diubah-30okt murtad-8529-30okt relaas-penetapan-30okt sampul-rapi-30okt sela-ps-30okt hir-rbg-30okt titik-koma-teks-30okt variabel-sehat-30okt identitas-kosong-31okt tinjau-31okt bukti-8529-31okt tanggal-agenda-31okt jawab-replik-31okt"
+URUT="prodeo-panggilan-29okt bas-tanya-jawab-29okt bas-itsbat-varian-30okt bukti-nomor-30okt ket-saksi-kata-30okt ket-saksi-baris-30okt titik-koma-30okt titik-koma-data-30okt alasan-belum-dipilih-30okt agama-belum-diubah-30okt murtad-8529-30okt relaas-penetapan-30okt sampul-rapi-30okt sela-ps-30okt hir-rbg-30okt titik-koma-teks-30okt variabel-sehat-30okt identitas-kosong-31okt tinjau-31okt bukti-8529-31okt tanggal-agenda-31okt jawab-replik-31okt butir-rata-31okt"
 jalan=0; [ -z "$MULAI" ] && jalan=1
 for p in $URUT; do
   [ "$p" = "$MULAI" ] && jalan=1
