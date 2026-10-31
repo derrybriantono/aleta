@@ -1,0 +1,29 @@
+SNAP awal   : 2927 f4510610e2cf8b895605687f25f3505f 
+== 1. PASANG
+PRASYARAT COCOK (14|0)
+CADANGAN: /d/Aplikasi/aleta/tmp/w147-agenda/pk/cadangan/variabel-sebelum.*.sql (7111,7115,7112,7116,7113,7117,7114,7118,8438,7122,2111,7119,2112,7121)
+PERIKSA: SEMUA COCOK
+PRASYARAT SESUDAH: 0|14 (harus 0|14)
+SELESAI - paket abt-tanggal-agenda-31okt terpasang. Pulih: bash /d/Aplikasi/aleta/tmp/w147-agenda/pk/pulih-satker.sh
+SNAP pasang : 2927 0be0530954b4c992c89407400be3c54b 
+== 2. pasang ulang
+PRASYARAT COCOK (0|14)
+PERIKSA: SEMUA COCOK
+PRASYARAT SESUDAH: 0|14 (harus 0|14)
+SELESAI - paket abt-tanggal-agenda-31okt terpasang. Pulih: bash /d/Aplikasi/aleta/tmp/w147-agenda/pk/pulih-satker.sh
+PASANG ULANG = TIDAK ADA PERUBAHAN
+== 3. PULIH
+PRASYARAT SESUDAH PULIH: 14|0
+PULIH COCOK
+PULIH = KEADAAN AWAL PERSIS (seluruh tabel variabel)
+== 4. pasang lagi
+PRASYARAT SESUDAH: 0|14 (harus 0|14)
+SELESAI - paket abt-tanggal-agenda-31okt terpasang. Pulih: bash /d/Aplikasi/aleta/tmp/w147-agenda/pk/pulih-satker.sh
+PASANG LAGI = SAMA DENGAN PASANG PERTAMA
+PULIH COCOK
+== 5. PENJAGA: 7111 disunting orang -> pasang HARUS berhenti tanpa mengubah apa pun
+GAGAL: prasyarat '13|0' (harus '14|0', atau '0|14' bila pasang ulang) - TIDAK ada yang diubah. Arti angka: lihat abt-tanggal-agenda-31okt-PRASYARAT.sql
+PENJAGA: TIDAK ADA YANG BERUBAH
+SESUDAH PENJAGA = KEADAAN AWAL
+== 6. pasang akhir
+SELESAI - paket abt-tanggal-agenda-31okt terpasang. Pulih: bash /d/Aplikasi/aleta/tmp/w147-agenda/pk/pulih-satker.sh

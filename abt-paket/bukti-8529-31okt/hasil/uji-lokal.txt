@@ -1,0 +1,30 @@
+=== dasar: basis salinan aps_badilag_g1r = salinan aps_badilag_rantai (uji-rantai-31okt, 18 paket); sidik seluruh variabel ternormal:
+e266097630d5cacc57e89472b785d430
+=== sidik variabel lain sebelum
+2926	26503ee72e8376d53693a51542b3d113
+=== pasang
+PRASYARAT COCOK (1|0)
+CADANGAN: <paket>/paket-satker/cadangan/variabel-sebelum.*.sql
+PERIKSA: SEMUA COCOK
+PRASYARAT SESUDAH: 0|1 (harus 0|1)
+SELESAI
+=== variabel lain tak berubah
+2926	26503ee72e8376d53693a51542b3d113
+=== pulih
+PRASYARAT SESUDAH PULIH: 1|0
+PULIH COCOK
+=== sidik seluruh variabel sesudah pulih (harus sama dengan dasar)
+e266097630d5cacc57e89472b785d430
+=== pasang lagi
+PRASYARAT COCOK (1|0)
+CADANGAN: <paket>/paket-satker/cadangan/variabel-sebelum.*.sql
+PERIKSA: SEMUA COCOK
+PRASYARAT SESUDAH: 0|1 (harus 0|1)
+SELESAI
+=== pasang ulang
+PRASYARAT COCOK (0|1)
+PERIKSA: SEMUA COCOK
+PRASYARAT SESUDAH: 0|1 (harus 0|1)
+SELESAI
+=== jalur gagal: basis sebelum rantai (aps_badilag_2810, PRASYARAT baca saja)
+0|0

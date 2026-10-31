@@ -1,0 +1,626 @@
+[
+ {
+  "berkas": "000.txt",
+  "boleh": 0,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "001.txt",
+  "boleh": 0,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "002.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "003.txt",
+  "boleh": 0,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "004.txt",
+  "boleh": 0,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "005.txt",
+  "boleh": 0,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "006.txt",
+  "boleh": 0,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "007.txt",
+  "boleh": 0,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "008.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "009.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "010.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "011.txt",
+  "boleh": 15,
+  "salah": [],
+  "baris_tambah": 12
+ },
+ {
+  "berkas": "012.txt",
+  "boleh": 12,
+  "salah": [],
+  "baris_tambah": 10
+ },
+ {
+  "berkas": "013.txt",
+  "boleh": 17,
+  "salah": [],
+  "baris_tambah": 14
+ },
+ {
+  "berkas": "014.txt",
+  "boleh": 7,
+  "salah": [],
+  "baris_tambah": 5
+ },
+ {
+  "berkas": "015.txt",
+  "boleh": 7,
+  "salah": [],
+  "baris_tambah": 5
+ },
+ {
+  "berkas": "016.txt",
+  "boleh": 11,
+  "salah": [],
+  "baris_tambah": 7
+ },
+ {
+  "berkas": "017.txt",
+  "boleh": 6,
+  "salah": [],
+  "baris_tambah": 4
+ },
+ {
+  "berkas": "018.txt",
+  "boleh": 6,
+  "salah": [],
+  "baris_tambah": 4
+ },
+ {
+  "berkas": "019.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "020.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "021.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "022.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "023.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "024.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "025.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "026.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "027.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "028.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "029.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "030.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "031.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "032.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "033.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "034.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "035.txt",
+  "boleh": 0,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "036.txt",
+  "boleh": 0,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "037.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "038.txt",
+  "boleh": 2,
+  "salah": [],
+  "baris_tambah": 2
+ },
+ {
+  "berkas": "039.txt",
+  "boleh": 3,
+  "salah": [],
+  "baris_tambah": 3
+ },
+ {
+  "berkas": "040.txt",
+  "boleh": 2,
+  "salah": [],
+  "baris_tambah": 2
+ },
+ {
+  "berkas": "041.txt",
+  "boleh": 2,
+  "salah": [],
+  "baris_tambah": 2
+ },
+ {
+  "berkas": "042.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "043.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "044.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "045.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "046.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "047.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "048.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "049.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "050.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "051.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "052.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "053.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "054.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "055.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "056.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "057.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "058.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "059.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "060.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "061.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "062.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "063.txt",
+  "boleh": 2,
+  "salah": [],
+  "baris_tambah": 2
+ },
+ {
+  "berkas": "064.txt",
+  "boleh": 2,
+  "salah": [],
+  "baris_tambah": 2
+ },
+ {
+  "berkas": "065.txt",
+  "boleh": 2,
+  "salah": [],
+  "baris_tambah": 2
+ },
+ {
+  "berkas": "066.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "067.txt",
+  "boleh": 2,
+  "salah": [],
+  "baris_tambah": 2
+ },
+ {
+  "berkas": "068.txt",
+  "boleh": 3,
+  "salah": [],
+  "baris_tambah": 3
+ },
+ {
+  "berkas": "069.txt",
+  "boleh": 3,
+  "salah": [],
+  "baris_tambah": 3
+ },
+ {
+  "berkas": "070.txt",
+  "boleh": 2,
+  "salah": [],
+  "baris_tambah": 2
+ },
+ {
+  "berkas": "071.txt",
+  "boleh": 2,
+  "salah": [],
+  "baris_tambah": 2
+ },
+ {
+  "berkas": "072.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "073.txt",
+  "boleh": 2,
+  "salah": [],
+  "baris_tambah": 2
+ },
+ {
+  "berkas": "074.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "075.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "076.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "077.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "078.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "079.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "080.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "081.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "082.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "083.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "084.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "085.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "086.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "087.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "088.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "089.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "090.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "091.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "092.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "093.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "094.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "095.txt",
+  "boleh": 0,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "096.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 1
+ },
+ {
+  "berkas": "097.txt",
+  "boleh": 0,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "098.txt",
+  "boleh": 1,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "099.txt",
+  "boleh": 0,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "100.txt",
+  "boleh": 0,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "101.txt",
+  "boleh": 0,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "102.txt",
+  "boleh": 0,
+  "salah": [],
+  "baris_tambah": 0
+ },
+ {
+  "berkas": "103.txt",
+  "boleh": 0,
+  "salah": [],
+  "baris_tambah": 0
+ }
+]

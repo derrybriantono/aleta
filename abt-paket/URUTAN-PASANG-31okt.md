@@ -1,4 +1,4 @@
-# URUTAN PASANG paket ABT 29-31 Okt 2026 (diuji rantai penuh 31 Okt 03.08-03.14)
+# URUTAN PASANG paket ABT 29-31 Okt 2026 (21 paket; diuji rantai penuh dari dump 28 Okt pada 31 Okt 07.36-07.46)
 
 Semua paket dipasang di SERVER sebagai root, dari folder `paket-satker` masing-masing, BERURUTAN persis seperti di bawah
 (`cd <paket>/paket-satker && bash pasang-satker.sh`). Setiap paket harus berakhir "SELESAI" (dan PERIKSA "SEMUA COCOK" /
@@ -9,10 +9,10 @@ Semua paket dipasang di SERVER sebagai root, dari folder `paket-satker` masing-m
   tanpa ubahan) dan pohon `_blangko_abt/derry_briantono` = salinan server 28 Okt (`bas29/dasar2`).
 - Paket diambil dari `git archive HEAD abt-paket` (isi repo apa adanya, seolah di-scp); `md5sum -c MD5SUMS.txt` di SEMUA
   paket-satker cocok dari arsip itu.
-- Satu langkah KHUSUS LAPTOP sebelum hir-rbg-30okt: skrip pasang menulis nama basis salinan (`aps_badilag_rantai.`) ke kueri yang
+- Satu langkah KHUSUS LAPTOP sebelum hir-rbg-30okt, tinjau-31okt, bukti-8529-31okt, tanggal-agenda-31okt: skrip pasang menulis nama basis salinan (`aps_badilag_rantai.`) ke kueri yang
   ditulisnya (di server namanya memang `aps_badilag.`); karena hir-rbg memeriksa md5 kueri mentah, teks salinan dikembalikan ke
   bentuk server (9 variabel). Di SERVER langkah ini TIDAK ada.
-- Hasil: `uji-rantai-31okt/hasil-rantai.txt` (18 paket SELESAI), `uji-rantai-31okt/hasil-pulih3.txt` (pulih terbalik 3 paket
+- Hasil: `uji-rantai-31okt/hasil-rantai.txt` (21 paket SELESAI, 31 Okt 07.36-07.46, salinan baru `aps_badilag_rantai2` + `/d/r2`); dulu 18 paket (03.08-03.14), `uji-rantai-31okt/hasil-pulih3.txt` (pulih terbalik 3 paket
   terakhir: semua "PULIH COCOK", lalu pasang lagi -> sidik seluruh variabel dan seluruh pohon RTF SAMA PERSIS dengan sebelum pulih).
 
 ## Perbaikan 31 Okt yang membuat rantai lolos
@@ -253,3 +253,46 @@ PERIKSA: SEMUA COCOK
 PRASYARAT SESUDAH: 0|11|1 (harus 0|11|1)
 SELESAI - paket abt-identitas-kosong-31okt terpasang. Pulih: bash identitas-kosong-31okt/paket-satker/pulih-satker.sh
 ```
+
+### 19. `tinjau-31okt`
+```
+cd tinjau-31okt/paket-satker && bash pasang-satker.sh
+```
+Jawaban pengguna 31 Okt atas pertanyaan G6: banding Jawa-Madura UU 20/1947 (#11896#), Pasal 288 RBg = Pasal 1875 KUHPerdata (#11897#),
+718 RBg = 390 HIR (#11898#), 144 ayat (1) RBg = 120 HIR (#11899#), tenggang verzet Pasal 153 ayat (2), RBg dibakukan, ";" di tengah
+pertimbangan "...; bahwa ..." jadi butir "-" berinden gantung (98 blangko, 15 kueri). Keluaran benar (uji rantai 31 Okt 07.36-07.46):
+```
+PRASYARAT COCOK (0|0|16|0|2)
+SIAP=99
+SEMUA COCOK
+UJI: satker <KodePN> provinsi '<provinsi>' -> hukum acara RBg
+TAMBAL=99
+BERKAS COCOK
+SELESAI - paket abt-tinjau-31okt terpasang. Cadangan: tinjau-31okt/paket-satker/cadangan. Pulih: bash tinjau-31okt/paket-satker/pulih-satker.sh
+```
+
+### 20. `bukti-8529-31okt` (dari cabang tinjau-periksa w146, commit 3945d178, isi apa adanya)
+```
+cd bukti-8529-31okt/paket-satker && bash pasang-satker.sh
+```
+Keluaran benar:
+```
+PRASYARAT COCOK (1|0)
+PERIKSA: SEMUA COCOK
+PRASYARAT SESUDAH: 0|1 (harus 0|1)
+SELESAI
+```
+
+### 21. `tanggal-agenda-31okt` (dari cabang tinjau-deteksi w147, commit 08b72508, isi apa adanya)
+```
+cd tanggal-agenda-31okt/paket-satker && bash pasang-satker.sh
+```
+Keluaran benar:
+```
+PRASYARAT COCOK (14|0)
+PERIKSA: SEMUA COCOK
+PRASYARAT SESUDAH: 0|14 (harus 0|14)
+SELESAI - paket abt-tanggal-agenda-31okt terpasang. Pulih: bash tanggal-agenda-31okt/paket-satker/pulih-satker.sh
+```
+Catatan: tinjau-31okt tidak menyentuh 8529 maupun 7111-7122/8438/2111/2112, jadi md5 dasar kedua paket terakhir (keadaan sesudah 18 paket)
+tetap cocok sesudah tinjau-31okt - tidak perlu dibangun ulang (diuji rantai).
