@@ -284,12 +284,38 @@ def terapkan(raw, ubah):
     return ''.join(hasil)
 
 
+def pengunggah_bas(raw, no, rel, catat):
+    """31 Okt (sesi utama): "meneliti ... yang telah diunggah #7037# ke dalam SIP" benar untuk jawaban/duplik saja - replik dan duplik
+    rekonvensi diunggah #7036#, kesimpulan oleh keduanya."""
+    ganti = {12031: '#7036#', 12033: '#7036#', 12034: '#7036# dan #7037#'}.get(no)
+    if not ganti:
+        return []
+    i = raw.find('telah diunggah')
+    j = raw.find('#7037#', i, i + 600) if i >= 0 else -1
+    if j < 0 or not re.search(r'telah diunggah\s*#7037#\s*ke dalam SIP', tampak(raw[i:j + 400])):
+        catat.append((rel, 'PENGUNGGAH', 'DILEWATI: kalimat "telah diunggah #7037#" tidak terbaca'))
+        return []
+    catat.append((rel, 'PENGUNGGAH', 'diunggah #7037# -> %s' % ganti))
+    return [(j, j + 6, ganti)]
+
+
+def duplik_oleh(raw, rel, catat):
+    """31 Okt (sesi utama): "... disampaikan oleh #0046#, kemudian #0046# mengajukan dupliknya" -> duplik oleh #0047#."""
+    keluar = []
+    for m in re.finditer(r'kemudian #0046# mengajukan dupliknya', raw):
+        keluar.append((m.start() + len('kemudian '), m.start() + len('kemudian #0046#'), '#0047#'))
+        catat.append((rel, 'DUPLIK OLEH', 'kemudian #0046# mengajukan dupliknya -> #0047#'))
+    return keluar
+
+
 def ubah_berkas(rel, raw0, catat):
     gol = golongan(rel)
     f = rel.split('/')[-1]
     ubah = []
     if gol == 'bas':
         no = jenis_bas(f)
+        if no and '#7083#' in raw0:
+            ubah += pengunggah_bas(raw0, no, rel, catat)
         i = raw0.find('#7083#')
         if no and i >= 0:
             s = sisip_sesudah_paragraf(raw0, i, no)
@@ -301,6 +327,7 @@ def ubah_berkas(rel, raw0, catat):
         return raw0
     kontra = not RE_BUKAN_KONTRA.search(f)
     ubah += ubah_petunjuk(raw0, rel, catat)
+    ubah += duplik_oleh(raw0, rel, catat)
     batas = duduk_perkara(raw0)
     par = paragraf_ke(raw0, batas)
     # duplik rekonvensi tanpa isi
@@ -377,6 +404,13 @@ def main():
     for no, (_, akhiran) in UBAH.items():
         v = var[no]
         ubah_var[no] = dict(lama=v['sql'], baru=kueri_ubah(no, v['sql']), nama_lama=v['nama'], nama_baru=(v['nama'] + akhiran)[:200])
+    # 31 Okt (sesi utama): "dilangsungkan#0206# di" tercetak "dilangsungkansecara elektronik" - ABT memangkas spasi tepi nilai (trim
+    # sesudah filter_var membuang <i> </i>). Spasi tak terpecah RTF (\~) tidak dipangkas; perkara biasa tetap kosong.
+    v = var[206]
+    lama_i = "'<i> </i>secara elektronik'"
+    assert v['sql'].count(lama_i) == 1, 'kueri 0206 berubah'
+    ubah_var[206] = dict(lama=v['sql'], baru=v['sql'].replace(lama_i, "CONCAT(CHAR(92), '~secara elektronik')"), nama_lama=v['nama'],
+                         nama_baru=(v['nama'] + ' (31 Okt: spasi pemisah tak terpecah, tidak terpangkas ABT)')[:200])
     tulis(keluar, berkas, ubah_var, baru)
     with open(os.path.join(hasil, 'ubahan.tsv'), 'w', encoding='utf-8', newline='\n') as o:
         o.write('berkas\tbagian\tubahan\n')
