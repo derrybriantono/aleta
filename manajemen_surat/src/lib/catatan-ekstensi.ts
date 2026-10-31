@@ -57,6 +57,16 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.58",
+    dirilis: "2026-10-31T17:30:00+08:00",
+    judul: "Jawaban, replik, duplik, dan kesimpulan terisi sendiri, serta usulan alasan dari keterangan saksi",
+    butir: [
+      "Jawaban (serta gugatan rekonvensi), replik (serta jawaban rekonvensi), duplik (serta replik rekonvensi), duplik rekonvensi, dan kesimpulan kedua pihak terisi sendiri dari dokumen e-Court, hanya dalil dan petitumnya, dengan paragraf, penomoran, dan sub-judul yang rapi; tetap dapat disunting dan masuk ke BAS serta putusan kontradiktoir.",
+      "Rincian alasan perceraian mengenali lebih banyak bunyi posita dan mengusulkan alasan yang diterangkan kedua saksi dengan tanda asalnya; alasan dari posita yang pasti tetap terisi sendiri, usulan dari saksi menunggu dicentang hakim.",
+      "Isian lisan atau tertulis menjadi tertulis sendiri bila naskah tertulis sudah ada; paragraf tanpa nomor sesudah butir bernomor tercetak rata kiri seperti posita.",
+    ],
+  },
+  {
     versi: "1.205.57",
     dirilis: "2026-10-31T09:30:00+08:00",
     judul: "Pertimbangan berbutir tanpa titik koma, hukum acara HIR atau RBg per satker, dan pemeriksa bukti",

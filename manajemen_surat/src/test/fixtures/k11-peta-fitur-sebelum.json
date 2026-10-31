@@ -1859,7 +1859,7 @@
     "10cea25d3521",
     "3a946d141396",
     "762fd0a3bf31",
-    "a461645aa81e",
+    "639ba4a904c7",
     "7ed0ad0a82e0",
     "ff24bc6fa185",
     "ca800ab4b6de",
@@ -2251,8 +2251,8 @@
    "jumlahPernyataan": 2
   },
   "blangko-derry-isian.js": {
-   "byte": 624233,
-   "sidik": "b8235c4ab54b1b649e965b2ea36f3e08934398be",
+   "byte": 626152,
+   "sidik": "03b8249186ace53de28abbba8f0e2eeaefba3023",
    "nama": [],
    "ekspor": [
     "AletaBdIsianSaksi",
@@ -2367,8 +2367,8 @@
    "jumlahPernyataan": 2
   },
   "isi-sipp-bersama.js": {
-   "byte": 42490,
-   "sidik": "59d445255fa544b53426dafa15f4f3bc2b10765e",
+   "byte": 43617,
+   "sidik": "5faa87be888d808f82d6f399b14635cb36aba38f",
    "nama": [],
    "ekspor": [
     "AletaIsiSipp"
