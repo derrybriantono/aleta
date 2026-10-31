@@ -95,3 +95,61 @@ describe("bunyi posita yang dulu tidak dikenali", () => {
     expect(kunci(rinci(CG, "antara Penggugat dan Tergugat telah melangsungkan pernikahan siri/tidak tercatat pada awal tahun 2018")).has("menikah-lagi")).toBe(false);
   });
 });
+
+/**
+ * 31 Okt (arahan pengguna, MENGUBAH keputusan 27 Okt): alasan yang diterangkan KEDUA saksi tetapi tidak di posita ikut
+ * DIUSULKAN (ragu, tidak mengisi sendiri), bertanda asal; satu saksi = catatan; saksi menyangkal posita = catatan temuan.
+ * Ukur 344 perkara (posita + tanya-jawab saksi ABT): persis 718 -> 736 dari 776, setara 729 -> 746; usulan dari saksi 58
+ * (18 sama dengan isian petugas, 40 di luar isian).
+ */
+describe("posita + keterangan saksi", () => {
+  type B = { sebab: string[]; asal: string; asalLabel: string; yakin: string; lencana: string; bunyi: { nilai: string }[] };
+  const m = mesin as unknown as {
+    deteksiRincian: (o: Record<string, unknown>) => { butir: B[]; diLuarGugatan: { kunci: string }[]; bertentangan: { kunci: string }[] };
+    pilihanBunyi: (r: unknown) => { nilai: string }[];
+  };
+  const saksi = (a: string[], b: string[]) => [{ no: 1, butir: a }, { no: 2, butir: b }];
+  const jalan = (gugatan: string[], s: { no: number; butir: string[] }[], pihak = CG) => m.deteksiRincian({ gugatan, saksi: s, jawab: [], pihak });
+
+  it("(b) kedua saksi menerangkan pemukulan yang tidak di posita -> diusulkan, asal saksi, ragu, satu rangkaian", () => {
+    const r = jalan(["Tergugat sering mabuk-mabukan"], saksi(["Yang menjadi penyebab pertengkaran karena Tergugat sering mabuk dan memukul Penggugat"], ["Penyebabnya karena Tergugat pernah memukul Penggugat sampai berdarah"]));
+    const s = r.butir.find((b) => b.asal === "saksi")!;
+    expect(s.sebab).toEqual(["kdrt-fisik"]);
+    expect(s.yakin).toBe("ragu");
+    expect(s.asalLabel).toBe("dari keterangan kedua saksi");
+    expect(r.butir.find((b) => b.asal === "posita")!.asalLabel).toBe("dari posita");
+    expect(m.pilihanBunyi(r)[0].nilai).toBe("Tergugat sering mabuk-mabukan dan Tergugat melakukan kekerasan fisik terhadap Penggugat");
+  });
+  it("(c) satu saksi saja -> catatan, tidak diusulkan", () => {
+    const r = jalan(["Tergugat sering mabuk-mabukan"], saksi(["Penyebabnya karena Tergugat sering memukul Penggugat"], ["Penyebabnya karena Tergugat sering mabuk"]));
+    expect(r.butir.some((b) => b.asal === "saksi")).toBe(false);
+    expect(r.diLuarGugatan.map((x) => x.kunci)).toContain("kdrt-fisik");
+  });
+  it("setara dengan alasan posita tidak didobel; pihak yang mengajukan tidak dijadikan pelaku", () => {
+    const r = jalan(["Tergugat sering berkata kasar kepada Penggugat"], saksi(["Penyebabnya karena Tergugat bersikap kasar kepada Penggugat"], ["Penyebabnya karena Tergugat berlaku kasar kepada Penggugat"]));
+    expect(r.butir.some((b) => b.asal === "saksi")).toBe(false);
+    const t = jalan(["Tergugat sering mabuk-mabukan"], saksi(["Penyebabnya karena Penggugat berselingkuh dengan laki-laki lain"], ["Penyebabnya karena Penggugat selingkuh"]));
+    expect(t.butir.some((b) => b.asal === "saksi")).toBe(false);
+  });
+  it("bukan keterangan penyebab ('Tergugat sudah tidak pernah memberikan nafkah' selama pisah) -> tidak diusulkan", () => {
+    const r = jalan(["Tergugat sering mabuk-mabukan"], saksi(["Tergugat sudah tidak pernah memberikan nafkah kepada Penggugat"], ["Selama pisah Tergugat tidak pernah memberikan nafkah kepada Penggugat"]));
+    expect(r.butir.some((b) => b.asal === "saksi")).toBe(false);
+  });
+  it("(d) saksi menyangkal dalil posita -> catatan temuan, bukan usulan", () => {
+    const r = jalan(["Tergugat sering memukul Penggugat"], saksi(["Tergugat tidak pernah memukul Penggugat"], ["Saya tidak tahu"]));
+    expect(r.bertentangan.map((x) => x.kunci)).toEqual(["kdrt-fisik"]);
+    expect(r.butir.every((b) => b.asal === "posita")).toBe(true);
+  });
+  it("huruf alasan: diterangkan kedua saksi tetapi tidak didalilkan -> diusulkan bertanda dariSaksi", () => {
+    const da = require_(path.join(AKAR, "services/deteksiAlasanService.js")) as {
+      sebabDariButir: (b: string[]) => unknown[];
+      usulHuruf: (o: Record<string, unknown>) => { huruf: string; usul: boolean; dariSaksi?: boolean }[];
+    };
+    const s1 = da.sebabDariButir(["Tergugat sering mabuk dan minum minuman keras"]);
+    const s2 = da.sebabDariButir(["Tergugat sering mabuk-mabukan"]);
+    const p = da.sebabDariButir(["Tergugat tidak memberikan nafkah"]);
+    const a = da.usulHuruf({ s1, s2, posita: p }).find((h) => h.huruf === "A")!;
+    expect(a.usul).toBe(true);
+    expect(a.dariSaksi).toBe(true);
+  });
+});

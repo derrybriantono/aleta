@@ -789,14 +789,142 @@ function deteksiRincian(o) {
       catatan: [tersirat ? "pelakunya tidak disebut di kalimat gugatan (dianggap " + ph.pelaku + ")" : "", it.kutipGugatan ? "sebabnya dikutip dari gugatan (belum dikenali kamus) - periksa" : kutip ? "akibatnya dikutip dari gugatan - periksa" : ""].filter(Boolean).join("; "),
       jawab: j,
       kodePola: it.simpul.map((s) => s.pola.kode),
+      asal: "posita",
+      asalLabel: ASAL_LABEL.posita,
     };
   });
 
-  // Yang disebut saksi tetapi tidak didalilkan: dicatat, TIDAK diusulkan.
+  // 31 Okt (arahan pengguna, MENGUBAH keputusan 27 Okt): alasan yang disebut KEDUA saksi tetapi tidak didalilkan ikut
+  // DIUSULKAN (keyakinan ragu - tidak pernah mengisi sendiri), bunyinya disusun mesin yang sama sehingga menyambung dengan
+  // alasan posita ("A, B, dan C"); alasan yang setara dengan alasan posita tidak diulang. Satu saksi saja = catatan.
+  const diusulkanSaksi = new Set();
+  if (!(o && o.saksiTidakDibaca === true)) {
+    const tambahan = alasanKeduaSaksi(saksi, set, kunciGugatan, terserap);
+    for (const t of tambahan) {
+      const it = t.item;
+      it.simpul.forEach((s) => diusulkanSaksi.add(s.kunci));
+      hasil.butir.push({
+        id: hasil.butir.length + 1,
+        jenis: it.jenis,
+        penutup: false,
+        sebab: it.simpul.map((s) => s.kunci),
+        label: it.simpul.map((s) => s.pola.label.replace(/\s*\([^)]*\)$/, "")).join(" -> "),
+        huruf: [...new Set(it.simpul.map((s) => s.pola.huruf).filter(Boolean))],
+        bunyi: daftarBunyi(it, ph, jenis),
+        kalimatGugatan: "",
+        kalimatSaksi: t.kalimat.map((x) => ({ no: x.no, kalimat: x.kalimat.slice(0, 300) })),
+        dukungan: t.kalimat.map((x) => {
+          const s = saksi.find((y) => y.no === x.no) || { no: x.no };
+          return { no: x.no, pihak: s.pihak || "", nama: namaSaksi(s, ph), sebutan: sisiSaksi(s, ph), kalimat: x.kalimat.slice(0, 300) };
+        }),
+        saksiDiperiksa: saksi.filter((s) => (s.butir || []).length).length,
+        lencana: "dari keterangan kedua saksi - tidak didalilkan di gugatan",
+        yakin: "ragu",
+        catatan: "Alasan ini tidak tertulis di posita; diusulkan karena diterangkan kedua saksi. Periksa sebelum diinput.",
+        jawab: null,
+        kodePola: it.simpul.map((s) => s.pola.kode),
+        asal: "saksi",
+        asalLabel: ASAL_LABEL.saksi,
+      });
+    }
+    // Saksi menerangkan SEBALIKNYA dari dalil posita ("tidak pernah memukul") = catatan temuan, bukan usulan.
+    hasil.bertentangan = bertentanganSaksi(hasil.butir.filter((b) => b.asal === "posita"), saksi, set);
+    for (const t of hasil.bertentangan) {
+      const b = hasil.butir.find((x) => x.asal === "posita" && x.sebab.includes(t.kunci));
+      if (b) b.catatan = [b.catatan, `saksi ${t.saksi.join(" dan ")} menerangkan sebaliknya: "${t.kalimat.slice(0, 160)}"`].filter(Boolean).join("; ");
+    }
+  }
+
+  // Yang disebut SATU saksi saja (atau tidak terbaca pelakunya) dan tidak didalilkan: dicatat, TIDAK diusulkan.
   for (const [k, nomor] of kunciDisebut(saksi, set)) {
     const pola = set.perKunci.get(k)[0];
-    if (kunciGugatan.has(k) || terserap.has(k) || (pola.peran || "sebab") !== "sebab" || pola.hanyaAkibat) continue;
+    if (kunciGugatan.has(k) || diusulkanSaksi.has(k) || terserap.has(k) || (pola.peran || "sebab") !== "sebab" || pola.hanyaAkibat) continue;
     hasil.diLuarGugatan.push({ kunci: k, label: pola.label.replace(/\s*\([^)]*\)$/, ""), saksi: [...nomor] });
+  }
+  return hasil;
+}
+
+const ASAL_LABEL = { posita: "dari posita", saksi: "dari keterangan kedua saksi" };
+const RE_KONTEKS_PENYEBAB = /\b(?:penyebab\w*|sebab|disebabkan|karena|dikarenakan|lantaran|berselisih|bertengkar|pertengkaran|perselisihan|percekcokan|cekcok|masalah)\b/i;
+
+/**
+ * Alasan SETARA - yang satu sudah termuat di yang lain (tidak diusulkan dobel dari keterangan saksi): "berkata kasar" ~ "bersikap
+ * kasar", "menikah lagi" ~ "berselingkuh", "boros" ~ "judi", "tidak memberi nafkah" ~ "kebutuhan dibantu/tidak bersyukur".
+ */
+const SETARA_ALASAN = {
+  "kasar-sikap": ["kasar-verbal", "kdrt-fisik"],
+  "kasar-verbal": ["kasar-sikap"],
+  "kdrt-fisik": ["kasar-sikap"],
+  selingkuh: ["menikah-lagi", "zina"],
+  "menikah-lagi": ["selingkuh"],
+  zina: ["selingkuh"],
+  boros: ["judi"],
+  nafkah: ["tidak-bersyukur", "malas-kerja", "tanpa-kerja"],
+  "malas-kerja": ["tanpa-kerja"],
+  "tanpa-kerja": ["malas-kerja"],
+  "pergi-tanpa-kabar": ["tak-diketahui"],
+  murtad: ["kembali-agama"],
+  "kembali-agama": ["murtad"],
+};
+
+/**
+ * Alasan konkret yang diterangkan KEDUA saksi (pelakunya pihak 0047, tidak disangkal) dan tidak didalilkan di gugatan.
+ * @returns {Array<{item, kalimat: Array<{no, kalimat}>}>} satu item per alasan (rantai bila saksi menyebut sebab-akibatnya)
+ */
+function alasanKeduaSaksi(saksi, set, kunciGugatan, terserap) {
+  const per = new Map(); // kunci -> {no: Set, item, kalimat: Map(no -> kalimat)}
+  for (const s of saksi || []) {
+    for (const b of s.butir || []) {
+      // Hanya keterangan tentang PENYEBAB perselisihan ("penyebabnya karena Tergugat ...") - jawaban "Tergugat sudah tidak
+      // pernah memberikan nafkah" (selama pisah) atau "saat ini sudah pisah, Tergugat meninggalkan kediaman" bukan alasan.
+      if (!RE_KONTEKS_PENYEBAB.test(String(b))) continue;
+      for (const it of itemKalimat(b, set)) {
+        if (it.kutipGugatan) continue;
+        for (const sm of it.simpul) {
+          const peran = sm.pola.peran || "sebab";
+          if (peran !== "sebab" || sm.pola.hanyaAkibat || sm.subjek !== "P" || sm.ternegasi) continue;
+          // Selalu perbuatannya saja (tanpa rantai sebab-akibat dari kalimat saksi) - bunyi rapi menyambung alasan posita.
+          // Bunyi baku kamus (tanpa kutipan predikat dari kalimat saksi yang sering tidak utuh).
+          if (!per.has(sm.kunci)) per.set(sm.kunci, { no: new Set(), item: { jenis: "tunggal", simpul: [{ ...sm, rinci: null }], hubungan: [], kutipan: [], kalimat: String(b) }, kalimat: new Map() });
+          const e = per.get(sm.kunci);
+          e.no.add(s.no);
+          if (!e.kalimat.has(s.no)) e.kalimat.set(s.no, String(b));
+        }
+      }
+    }
+  }
+  const setara = (k) => (SETARA_ALASAN[k] || []).some((x) => kunciGugatan.has(x));
+  const hasil = [];
+  const dipakai = new Set();
+  for (const [k, e] of per) {
+    if (e.no.size < 2 || kunciGugatan.has(k) || terserap.has(k) || setara(k) || dipakai.has(k)) continue;
+    const it = e.item;
+    dipakai.add(k);
+    it.id = `saksi:${k}`;
+    hasil.push({ item: it, kalimat: [...e.kalimat].sort((a, b) => a[0] - b[0]).map(([no, kalimat]) => ({ no, kalimat })) });
+  }
+  return hasil;
+}
+
+/** Dalil posita yang DISANGKAL saksi ("Tergugat tidak pernah memukul Penggugat"): [{kunci, label, saksi:[no], kalimat}]. */
+function bertentanganSaksi(butirPosita, saksi, set) {
+  const hasil = [];
+  for (const b of butirPosita) {
+    for (const k of b.sebab) {
+      const nomor = [];
+      let kalimat = "";
+      for (const s of saksi || []) {
+        for (const x of s.butir || []) {
+          const sm = simpulKalimat(x, set, { kunci: new Set([k]), longgarNegasi: true }).find((z) => z.kunci === k);
+          if (sm && sm.ternegasi && sm.subjek === "P" && !/^(?:tidak|tak|belum)\b/i.test(sm.teks)) {
+            if (!nomor.includes(s.no)) nomor.push(s.no);
+            if (!kalimat) kalimat = String(x);
+            break;
+          }
+        }
+      }
+      if (nomor.length && !hasil.some((h) => h.kunci === k)) hasil.push({ kunci: k, label: b.label, saksi: nomor, kalimat });
+    }
   }
   return hasil;
 }
@@ -863,6 +991,9 @@ function ringkasButir(b) {
     jawab: b.jawab ? { status: b.jawab.status, jenis: b.jawab.jenis } : null,
     catatan: b.catatan,
     kalimatGugatan: b.kalimatGugatan,
+    asal: b.asal || "posita",
+    asalLabel: b.asalLabel || ASAL_LABEL.posita,
+    ...(Array.isArray(b.kalimatSaksi) ? { kalimatSaksi: b.kalimatSaksi } : {}),
   };
 }
 
@@ -880,7 +1011,7 @@ function terapkan(hasil, rincian) {
   const lama = String(u.nilai || "").trim();
   const baru = pil.length ? pil[0].nilai : "";
   if (!baru) return false;
-  hasil.rincianAlasan = { jenis: rincian.jenis, butir: rincian.butir.map(ringkasButir), diLuarGugatan: rincian.diLuarGugatan };
+  hasil.rincianAlasan = { jenis: rincian.jenis, butir: rincian.butir.map(ringkasButir), diLuarGugatan: rincian.diLuarGugatan, bertentangan: rincian.bertentangan || [] };
   u.rincian = hasil.rincianAlasan.butir;
   const catatan = [];
   if (konkret.length || !lama) {
@@ -910,8 +1041,15 @@ function terapkan(hasil, rincian) {
   } else {
     catatan.push("Gugatan hanya menyebut perselisihan; kalimat yang sudah ada dipertahankan.");
   }
+  const dariSaksi = rincian.butir.filter((b) => b.asal === "saksi");
+  if (dariSaksi.length) {
+    catatan.push(`Ikut diusulkan dari keterangan kedua saksi (tidak didalilkan di gugatan): ${dariSaksi.map((b) => b.label).join(", ")}.`);
+  }
+  if ((rincian.bertentangan || []).length) {
+    catatan.push(`Keterangan saksi bertentangan dengan posita: ${rincian.bertentangan.map((x) => `${x.label} (saksi ${x.saksi.join(" dan ")})`).join(", ")} - periksa pembuktiannya.`);
+  }
   if (rincian.diLuarGugatan.length) {
-    catatan.push(`Disebut saksi tetapi tidak didalilkan di gugatan (tidak diusulkan): ${rincian.diLuarGugatan.slice(0, 5).map((x) => x.label).join(", ")}${rincian.diLuarGugatan.length > 5 ? ` dan ${rincian.diLuarGugatan.length - 5} lainnya` : ""}.`);
+    catatan.push(`Disebut satu saksi saja dan tidak didalilkan di gugatan (dicatat, tidak diusulkan): ${rincian.diLuarGugatan.slice(0, 5).map((x) => x.label).join(", ")}${rincian.diLuarGugatan.length > 5 ? ` dan ${rincian.diLuarGugatan.length - 5} lainnya` : ""}.`);
   }
   u.pilihan = pil;
   u.catatan = [u.catatan, ...catatan].filter(Boolean).join(" ");
