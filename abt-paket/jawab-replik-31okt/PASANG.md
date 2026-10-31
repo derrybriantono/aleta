@@ -25,6 +25,7 @@ sidang jawab-menjawab. Hanya blangko dan variabel milik **derry_briantono**.
 | 12036 | data_sql | idem untuk kesimpulan |
 | 9252 / 9253 / 9254 | diubah | jawaban/replik/duplik duduk perkara: naskah tertulis (+ rekonvensinya) bila ada, selain itu tanya jawab lisan PERSIS seperti dulu |
 | 9257 / 9258 | diubah | kesimpulan paragraf: naskah tertulis bila ada, selain itu isian 8436/8437 seperti dulu |
+| 0206 | diubah | "dilangsungkan#0206# di": spasi tak terpecah RTF di depan "secara elektronik" (ABT memangkas spasi tepi nilai; dulu tercetak "dilangsungkansecara") |
 
 Isian 12020-12028 = teks POLOS satu paragraf per baris (diisi ekstensi dari dokumen e-Court, lihat `aleta_bot/services/naskahJawabMenjawabService.js`);
 dicetak lewat fungsi `isian_rtf_blok`/`isian_rtf_butir` yang sudah ada (inden gantung menurut penanda butir 1. a. 1) -, sub-judul
@@ -38,6 +39,8 @@ Blangko RTF (273 berkas, `paket-satker/daftar-tambal.tsv`, rincian `hasil/ubahan
   atasnya (72); CT rekonvensi: #12033# sesudah kalimat "mengajukan duplik rekonvensi secara ..." yang dulu tanpa isi;
 - 41 putusan kontradiktoir yang hanya memuat POKOK jawaban (ES sederhana, izin poligami, itsbat kontensius, cabut sesudah jawaban,
   li'an, putusan sela eksepsi/intervensi): #12035# sesudah kalimat jawaban (dan #12036# sesudah kalimat kesimpulan bila ada);
+- keputusan sesi utama 31 Okt: BAS replik dan duplik rekonvensi "diunggah #7036#" (42), BAS kesimpulan "diunggah #7036# dan #7037#" (22),
+  24 putusan "kemudian #0046# mengajukan dupliknya" -> #0047#;
 - di samping tiap penampil: kelompok tersembunyi `{\*\isianasal #12020# ...}` - isian tampil di tabel ABT blangko itu.
 TIDAK disentuh: blangko verstek / T tidak hadir setelah mediasi / gugur / coret / cabut sebelum jawaban / perdamaian / Pdt.P.
 
@@ -54,15 +57,15 @@ ssh aleta 'bash /root/abt-jawab-replik-20261031/pasang-satker.sh'
 
 Keluaran benar:
 ```
-PRASYARAT COCOK (0|0|5|0|4)
+PRASYARAT COCOK (0|0|6|0|4)
 SIAP=273
 BERKAS SIAP
-CADANGAN: ... (baris variabel: 5)
+CADANGAN: ... (baris variabel: 6)
 SEMUA COCOK
-UJI: 12 kueri berjalan (perkara <id>)
+UJI: 13 kueri berjalan (perkara <id>)
 TAMBAL=273
 BERKAS COCOK
 SELESAI - paket abt-jawab-replik-31okt terpasang. ...
 ```
-Pasang ulang aman (`0|16|0|5|4`, `SUDAH=273`). PRASYARAT lain = berhenti TANPA mengubah apa pun (mis. `0|0|4|0|4` = salah satu dari
+Pasang ulang aman (`0|16|0|6|4`, `SUDAH=273`). PRASYARAT lain = berhenti TANPA mengubah apa pun (mis. `0|0|4|0|4` = salah satu dari
 9252/9253/9254/9257/9258 sudah disunting orang). Pulih: `ssh aleta 'bash /root/abt-jawab-replik-20261031/pulih-satker.sh'` -> `PULIH COCOK`.

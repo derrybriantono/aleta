@@ -7,13 +7,13 @@ export PATH="/d/Satker Asal/Website PA Bungku/xampp/mysql/bin:$PATH" TMPDIR=/d/A
 P=$(cd "$(dirname "$0")/../paket-satker" && pwd)
 E="ABT_LOKAL=1 ABT_DB=aps_badilag_w148 SIPP_DB=sipp_w148 ABT_BLANGKO=/d/r148/_blangko_abt PY=python"
 sidik() {
-  mysql -h127.0.0.1 -uroot -N aps_badilag_w148 -e "SELECT MD5(GROUP_CONCAT(CONCAT_WS('|', no_var, nama, data_type, IFNULL(sql_query,'')) ORDER BY no_var SEPARATOR '#')) FROM abt_variabel"
+  mysql -h127.0.0.1 -uroot -N aps_badilag_w148 -e "SET SESSION group_concat_max_len = 1000000000; SELECT MD5(GROUP_CONCAT(CONCAT_WS('|', no_var, nama, data_type, IFNULL(sql_query,'')) ORDER BY no_var SEPARATOR '#')) FROM abt_variabel"
   (cd /d/r148/_blangko_abt && find derry_briantono -name '*.rtf' -print0 | sort -z | xargs -0 md5sum | md5sum | cut -c1-32)
 }
 echo "== pasang ulang"; S1=$(sidik); (cd "$P" && env $E bash pasang-satker.sh | grep -E "PRASYARAT|SUDAH|SELESAI|GAGAL"); S2=$(sidik)
 [ "$S1" = "$S2" ] && echo "PASANG ULANG: tidak ada yang berubah" || echo "PASANG ULANG: BERUBAH (salah)"
 echo "== pulih"; (cd "$P" && env $E bash pulih-satker.sh | tail -3)
-mysql -h127.0.0.1 -uroot -N -e "SELECT MD5(GROUP_CONCAT(CONCAT_WS('|', no_var, nama, data_type, IFNULL(sql_query,'')) ORDER BY no_var SEPARATOR '#')) FROM aps_badilag_rantai2.abt_variabel" > /tmp/_w148_a
+mysql -h127.0.0.1 -uroot -N -e "SET SESSION group_concat_max_len = 1000000000; SELECT MD5(GROUP_CONCAT(CONCAT_WS('|', no_var, nama, data_type, IFNULL(sql_query,'')) ORDER BY no_var SEPARATOR '#')) FROM aps_badilag_rantai2.abt_variabel" > /tmp/_w148_a
 (cd /d/r2/_blangko_abt && find derry_briantono -name '*.rtf' -print0 | sort -z | xargs -0 md5sum | md5sum | cut -c1-32) >> /tmp/_w148_a
 S3=$(sidik)
 [ "$S3" = "$(cat /tmp/_w148_a)" ] && echo "PULIH: variabel dan seluruh pohon RTF SAMA PERSIS dengan sebelum paket" || echo "PULIH: BEDA dengan dasar (salah)"
