@@ -216,6 +216,11 @@ export const ISIAN_MANUAL: Record<string, string> = {
 export const ISIAN_OPSIONAL: Record<string, string> = {
   // #9134# = petunjuk perbaikan permohonan dari majelis pada BAS permohonan (keputusan pengguna 20 Okt: bukan bagian "Perlu diisi").
   "9134": "Petunjuk perbaikan permohonan (bila majelis memberi petunjuk)",
+  // JAWAB-REPLIK 31 Okt: bagian rekonvensi jawab-menjawab hanya ada bila Tergugat/Termohon menggugat balik - terisi sendiri dari berkas
+  // e-Court; bagian tertutup terbuka sendiri bila sudah berisi.
+  "12021": "Gugatan rekonvensi (bila ada)",
+  "12023": "Jawaban rekonvensi (bila ada)",
+  "12025": "Replik rekonvensi (bila ada)",
   // Itsbat nikah dan asal usul anak (paket abt-u3-itsbat-aua, 20 Okt 2026): pilihan majelis bernilai bawaan atau isian khusus keadaan tertentu
   "4300": "Dasar itsbat nikah menurut Pasal 7 ayat (3) KHI (pilihan majelis; kosong = huruf d bila nikah sebelum 1974, selain itu huruf e)",
   "4301": "Keraguan atas syarat perkawinan (hanya bila dasar itsbat huruf c)",

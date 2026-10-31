@@ -1,0 +1,13 @@
+ec78400153908308a94e3fc81ba20919  abt-jawab-replik-31okt-PASANG.sql
+787d4cbfefde71584f95980c5da71747  abt-jawab-replik-31okt-PERIKSA.sql
+1f1272b33653ff0e1e4b8b2dd75b1ca4  abt-jawab-replik-31okt-PRASYARAT.sql
+18f8977c17a8b74f6f497c683aeb2881  abt-jawab-replik-31okt-PULIH.sql
+3d40549daea39b22e49d1121ed450c97  daftar-tambal.tsv
+1e1f383cdf953e6a85c9eb7356bf39b6  harap.txt
+d657cfaa177aacd1aa261df96f4f343e  nomor-diubah.txt
+4804014536610c54a6043fbae61d77a7  nomor-variabel.txt
+fec12a9a2ee4bcc4d05abd93268c649c  pasang-satker.sh
+cedcc54cfc91739ee04b9c1b8e07d329  pulih-satker.sh
+307e75b04881faca74a9eedcd50e6420  tambal.tsv
+d949a1c1e10c9b60e8cc4fd18adc9b54  tambal_rtf.py
+4e94ba6bb88e4e62671e706a94da58f1  uji-kueri.tsv

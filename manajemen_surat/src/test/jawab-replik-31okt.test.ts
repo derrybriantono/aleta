@@ -3,6 +3,8 @@ import path from "node:path";
 import vm from "node:vm";
 import { createRequire } from "node:module";
 
+import { rujukan } from "@/app/api/aleta-ecourt/blangko-derry/susun";
+
 import { describe, expect, it } from "vitest";
 
 /**
@@ -288,6 +290,39 @@ describe("ekstensi: mesin isi otomatis bersama menulis naskah berparagraf apa ad
   it("usulan ragu hanya menjadi saran (tidak ditulis)", () => {
     const ragu = { ...u12020, keyakinan: "ragu" };
     expect(m.putuskan(ragu, { kosong: true, jenis: "teks" }).golongan).toBe("saran");
+  });
+});
+
+describe("paket ABT: penampil merujuk isian naskah (panel Blangko Derry menemukannya lewat kueri)", () => {
+  const kueri = new Map(
+    readFileSync(path.join(AKAR, "abt-paket/jawab-replik-31okt/paket-satker/uji-kueri.tsv"), "utf8")
+      .split("\n")
+      .filter(Boolean)
+      .map((l) => l.split("\t"))
+      .map(([no, b64]) => [no, Buffer.from(b64, "base64").toString("latin1")] as [string, string])
+  );
+  const ruj = (no: string) => rujukan({ kode: no, nama: "", jenis: "data_sql", sql: kueri.get(no) || "", bawaan: "" });
+  it("9252/9253/9254 lama tetap merujuk pihak lisan, ditambah isian tertulis; 12035 merujuk ketujuh isian jawab-menjawab", () => {
+    expect(ruj("9252")).toEqual(expect.arrayContaining(["0102", "0047", "12020", "12021"]));
+    expect(ruj("9253")).toEqual(expect.arrayContaining(["0098", "0046", "12022", "12023"]));
+    expect(ruj("9254")).toEqual(expect.arrayContaining(["12024", "12025"]));
+    expect(ruj("9257")).toEqual(expect.arrayContaining(["12027", "8436"]));
+    expect(ruj("12035")).toEqual(expect.arrayContaining(["12020", "12021", "12022", "12023", "12024", "12025", "12026", "7111", "7112", "7113", "7114"]));
+    expect(ruj("12034")).toEqual(expect.arrayContaining(["12027", "12028", "8436", "8437"]));
+  });
+  it("kueri baru tanpa kata 'Aleta' dan tanpa titik koma di teks pengantar (ABT memberi spasi sesudah ';')", () => {
+    for (const [no, q] of kueri) {
+      expect(q, no).not.toMatch(/aleta/i);
+      for (const m of q.matchAll(/'(Bahwa,[^']*)'/g)) expect(m[1], no).not.toMatch(/;/);
+    }
+  });
+});
+
+describe("berkas sumber bersih", () => {
+  it("tanpa karakter kendali tersembunyi (\\b salah ketik mematikan pola diam-diam)", () => {
+    for (const rel of ["aleta_bot/services/naskahJawabMenjawabService.js", "ekstensi-sipp/isi-sipp-bersama.js", "abt-paket/jawab-replik-31okt/sumber/bangun_paket.py"]) {
+      expect(readFileSync(path.join(AKAR, rel), "utf8"), rel).not.toMatch(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/);
+    }
   });
 });
 
