@@ -1,4 +1,6 @@
+import { readFileSync } from "node:fs";
 import path from "node:path";
+import vm from "node:vm";
 import { createRequire } from "node:module";
 
 import { describe, expect, it } from "vitest";
@@ -254,6 +256,38 @@ describe("usulan isian 12020-12028 lewat susunIsiGugatan", () => {
     const g = S.susunIsiGugatan({ dokumen: [dok("Duplik Rekonvensi Pemohon", F.REREPLIK, "Duplik", "Penggugat", "2026-07-22", { peran: "duplik" })], sebutan: CT });
     expect(g.usulan.filter((x: Apa) => x.kode === "12026")).toHaveLength(1);
     expect(g.usulan.filter((x: Apa) => x.kode === "12024")).toHaveLength(0);
+  });
+});
+
+describe("ekstensi: mesin isi otomatis bersama menulis naskah berparagraf apa adanya", () => {
+  const ctx: Apa = {};
+  ctx.globalThis = ctx;
+  vm.runInNewContext(readFileSync(path.join(AKAR, "ekstensi-sipp/isi-sipp-bersama.js"), "utf8"), ctx);
+  const m = ctx.AletaIsiSipp;
+  const usulan = S.susunIsiGugatan({ dokumen: PERKARA_REKON(), sebutan: CT }).usulan;
+  const u12020 = usulan.find((x: Apa) => x.kode === "12020");
+
+  it("kode naskah dikenal ekstensi: dibaca dari berkas e-Court dan tidak dirangkai satu baris", () => {
+    expect([...m.KODE_NASKAH_BERBARIS]).toEqual(N.KODE_BERBARIS);
+    for (const k of N.KODE_BERBARIS) expect(m.VAR_ECOURT).toContain(k);
+    for (const t of ["Dalam Konvensi  \r\n\r\n1.  Bahwa   x;\n\n 2. y ", u12020.nilai, "a\tb c"]) expect(m.rapikanNaskah(t)).toBe(N.rapikanSimpanan(t));
+  });
+
+  it("isian KOSONG + usulan cukup -> ditulis sendiri, Enter dan penomoran utuh; isian berisi (suntingan petugas) -> tidak disentuh", () => {
+    const peta = m.pilihPerKode([usulan], new Set(N.KODE_BERBARIS));
+    const r = m.rencanakan(peta, N.KODE_BERBARIS.map((kode: string) => ({ kode, nama: "Uraian", jenis: "teks", kosong: kode !== "12022" })), () => "", [usulan]);
+    const tulis = new Map(r.tulis.map((x: Apa) => [x.kode, x.nilai]));
+    expect(tulis.get("12020")).toBe(u12020.nilai);
+    expect(String(tulis.get("12020")).split("\n").length).toBeGreaterThan(5);
+    expect(tulis.has("12022")).toBe(false);
+    expect(r.lewati.find((x: Apa) => x.kode === "12022")).toMatchObject({ sebab: "sudah ada isinya" });
+    expect(r.info["12020"].lencana.asal.teks).toBe("dari berkas e-Court");
+    expect(r.info["12020"].catatan).toMatch(/diunggah 27 Juli 2026/);
+  });
+
+  it("usulan ragu hanya menjadi saran (tidak ditulis)", () => {
+    const ragu = { ...u12020, keyakinan: "ragu" };
+    expect(m.putuskan(ragu, { kosong: true, jenis: "teks" }).golongan).toBe("saran");
   });
 });
 

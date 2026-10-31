@@ -61,7 +61,7 @@
   const VAR_BUKTI = Object.freeze(["9470", "9488", "9489", "9492", "9493", "9804", "9805", "9810", "9834", "9835", "9840", "9873", "9951", "9952", "0654", "0655"]);
   /** Variabel yang diisi dari berkas e-Court (P4_VAR_ECOURT + K5_VAR_KONTAK di abt.js): bacaan e-Court hanya diminta bila blangko memuatnya. */
   const VAR_ECOURT = Object.freeze([
-    "6055", "6054", "7120", "6071", "6072", "7778", "5110", "5111", "0007", "2004", "7084", "9881", "5227", "8436", "8437", "9355", "9491", "9681", "9164", "9283", "9470", "9488", "9489", "9492", "9493", "9804", "9805", "9810", "9834", "9835", "9840", "9873", "9951", "9952", "0654", "0655",
+    "6055", "6054", "7120", "6071", "6072", "7778", "5110", "5111", "0007", "2004", "7084", "9881", "5227", "8436", "8437", "9355", "9491", "9681", "9164", "9283", "9470", "9488", "9489", "9492", "9493", "9804", "9805", "9810", "9834", "9835", "9840", "9873", "9951", "9952", "0654", "0655", "12020", "12021", "12022", "12023", "12024", "12025", "12026", "12027", "12028",
     "0027", "0045", "8175", "8179", "8180", "0370", "0372", "0123", "7139", "8548", "8549", "8800", "8801", "8802", "8803", "8804", "8805", "8806", "8807", "8808", "8809", "8810", "8811", "8813",
   ]);
   /** Variabel kuasa dari surat gugatan (A3_VAR_KUASA di abt.js). */
@@ -74,6 +74,21 @@
   const KODE_HTML = Object.freeze([
     "0067", "0068", "0206", "10101", "10102", "4001", "5404", "6000", "6001", "7006", "7007", "7008", "7044", "7045", "7046", "7047", "7048", "7050", "7052", "7054", "7055", "7057", "7058", "7061", "7062", "7080", "7089", "7097", "7098", "7100", "7102", "7104", "7107", "7108", "7109", "7129", "7131", "7133", "7140", "7169", "7170", "8185", "8495", "8499", "8500", "8502", "8506", "8507", "8508", "8509", "8510", "8521", "8522", "8523", "8524", "8526", "8527", "8528", "8530", "8531", "8533", "8534", "8547",
   ]);
+  /**
+   * JAWAB-REPLIK 31 Okt: isian NASKAH berparagraf (jawaban, gugatan rekonvensi, replik, jawaban rekonvensi, duplik, replik rekonvensi,
+   * duplik rekonvensi, kesimpulan kedua pihak) - Enter = pemisah paragraf dan TIDAK dirangkai menjadi satu baris saat disimpan
+   * (blangko-derry-isian.js rapiSimpan). Sama dengan KODE_BERBARIS di aleta_bot/services/naskahJawabMenjawabService.js.
+   */
+  const KODE_NASKAH_BERBARIS = Object.freeze(["12020", "12021", "12022", "12023", "12024", "12025", "12026", "12027", "12028"]);
+  /** Simpanan isian berparagraf: tiap baris dirapatkan (spasi ganda, spasi tepi), baris kosong dibuang; isi tidak diubah. */
+  function rapikanNaskah(t) {
+    return teks(t)
+      .replace(/\r\n?/g, "\n")
+      .split("\n")
+      .map((l) => l.replace(/[ \t\u00A0]+/g, " ").trim())
+      .filter(Boolean)
+      .join("\n");
+  }
   /** Isian periode (awal konflik, pisah rumah): "bulan Januari 2023" / "tahun 2023". */
   const KODE_PERIODE = Object.freeze(["0222", "0246"]);
   /** Isian pendek (periode/lama pisah): nilai panjang di sini pasti potongan posita mentah, bukan isian. */
@@ -670,6 +685,8 @@
     VAR_ECOURT,
     VAR_KUASA,
     KODE_HTML,
+    KODE_NASKAH_BERBARIS,
+    rapikanNaskah,
     KODE_PERIODE,
     ISIAN_PENDEK,
     NADA_TINGKAT,

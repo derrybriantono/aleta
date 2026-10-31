@@ -3255,6 +3255,9 @@
   }
   /** Bunyi rapi isian sebelum disimpan (30 Okt): hanya isian teks bebas; pilihan, tanggal, huruf alasan dibiarkan. */
   function rapiSimpan(kode, nilai) {
+    // 31 Okt (jawab-replik): naskah jawab-menjawab berparagraf - Enter tetap pemisah paragraf, tidak dirangkai satu baris.
+    const mi = mesinIsi();
+    if (mi && Array.isArray(mi.KODE_NASKAH_BERBARIS) && mi.KODE_NASKAH_BERBARIS.includes(String(kode))) return typeof nilai === "string" ? mi.rapikanNaskah(nilai) : nilai;
     const m = SK();
     if (!m || typeof m.rapiIsian !== "function" || typeof nilai !== "string" || !nilai.trim()) return nilai;
     const b = isianBlangko(kode);
