@@ -61,6 +61,32 @@ const RE_AKUI = /\b(?:membenarkan|mengakui|diakui|benar\s+(?:bahwa|adanya)|meman
 // Sebutan pihak tepat di depan perbuatan (bukan objek "kepada/oleh/antara ..."), tanpa penghubung di antaranya.
 const RE_SUBJEK_DEKAT = /(?<!\b(?:kepada|terhadap|oleh|dengan|antara|dan|serta|keluarga|tua)\s+)\b(tergugat|termohon|penggugat|pemohon)((?:\s+(?!(?:dan|serta|yang|karena|sehingga|bahwa|kepada|terhadap|oleh)\b)[\w-]+){0,2})\s+$/i;
 
+// 1 Nov (keputusan pengguna 53, memperbaiki 35): perbuatan yang didahului kata TUDUHAN ("menuduh", "dituduh", "curiga",
+// "memfitnah" - ruas `tolakSebelum` kamus) tidak lagi dibuang diam-diam. Kunci di sini diperiksa sebagai TUDUHAN:
+//   - yang dituduh pihak lawan ("Tergugat menuduh Penggugat selingkuh")  -> bukan alasan, dicatat ("terhadap-lawan");
+//   - yang dituduh pelaku ("Penggugat mencurigai bahwa Tergugat berhubungan dengan wanita lain") -> TERBUKTI hanya bila
+//     dikuatkan dua saksi yang bersesuaian, atau satu saksi + bukti lain (lalu diusulkan seperti alasan posita biasa); satu saksi
+//     saja / bukti tanpa saksi = "belum-cukup", tanpa penguat = "tidak-terbukti" (keduanya dicatat di kartu, tidak diusulkan);
+//     saksi belum diperiksa = "belum-dinilai";
+//   - yang dituduh tidak terbaca: diperiksa hanya bila posita menyebut pengakuan/pembenaran ("ternyata benar", "mengakui").
+const KUNCI_TUDUHAN = new Set(["selingkuh"]);
+const RE_KATA_TUDUH = /\b(?:menuduh(?:nya)?|dituduh|tuduhan(?:nya)?|memfitnah|difitnah|fitnah|curiga|mencurigai|dicurigai|kecurigaan)\b/gi;
+const RE_TUDUH_PASIF = /^(?:dituduh|difitnah|dicurigai)$/i;
+const RE_PENGAKUAN = /\b(?:ternyata\s+(?:benar|memang|betul)|mengakui|diakui|pengakuan|terbukti|kedapatan|tertangkap\s+basah|memergoki|dipergoki|melihat\s+(?:sendiri|langsung))\b/gi;
+/**
+ * Penguat yang CUKUP agar tuduhan dianggap terbukti (keputusan sementara sesi utama 1 Nov, satu saksi bukan saksi - Pasal 306 RBg /
+ * 169 HIR): dua saksi yang bersesuaian, ATAU satu saksi + bukti lain (surat/elektronik/pengakuan di persidangan). Satu saksi saja,
+ * atau bukti lain tanpa saksi yang bersesuaian = "belum-cukup" (dicatat, tidak diusulkan).
+ */
+const penguatCukup = (penguat) => {
+  const saksi = penguat.filter((x) => x.jenis === "saksi").length;
+  const bukti = penguat.filter((x) => x.jenis === "bukti").length;
+  return saksi >= 2 || (saksi >= 1 && bukti >= 1);
+};
+// Bunyi catatan per perbuatan: kata benda dan kalimat "<pihak> <perbuatan>".
+const NAMA_TUDUHAN = { selingkuh: { benda: "perselingkuhan", kerja: "berselingkuh" } };
+const PERINGKAT_TUDUHAN = { terbukti: 4, "belum-cukup": 3, "tidak-terbukti": 3, "belum-dinilai": 3, "tidak-terbaca": 2, "terhadap-lawan": 1 };
+
 let cache = { versi: -1, jenis: {} };
 
 /** Pola aktif untuk satu jenis cerai, siap pakai (RegExp global + saringan gabungan). Dibangun sekali per versi lapis. */
@@ -193,6 +219,97 @@ function simpulKalimat(kalimatAsli, set, opsi) {
     }
   }
   return [...terbaik.values()].sort((a, b) => a.idx - b.idx);
+}
+
+/**
+ * Keputusan 53: perbuatan KUNCI_TUDUHAN yang ditolak `tolakSebelum` (didahului kata tuduhan) dalam satu kalimat posita.
+ * @returns {Array<{kunci, pola, teks, kalimat, tertuduh: "pelaku"|"lawan"|"", pengakuan: boolean, kosong: string}>}
+ *   `kosong` = kalimat dengan kata tuduhan di depan perbuatan diganti spasi (dipakai menyusun butir bila terbukti).
+ */
+function tuduhanKalimat(kalimatAsli, set, jenis) {
+  const kalimat = String(kalimatAsli || "").replace(/\s+/g, " ").slice(0, BATAS_KALIMAT);
+  const hasil = [];
+  if (!kalimat || !set.gabungan || !set.gabungan.test(kalimat)) return hasil;
+  const sudah = new Set();
+  for (const p of set.daftar) {
+    if (!KUNCI_TUDUHAN.has(p.kunci) || !p.reTolakSebelum || sudah.has(p.kunci)) continue;
+    const re = p.reG;
+    re.lastIndex = 0;
+    let m;
+    while ((m = re.exec(kalimat)) !== null) {
+      if (m[0] === "") {
+        re.lastIndex++;
+        continue;
+      }
+      const awalDepan = Math.max(0, m.index - 40);
+      const depan = kalimat.slice(awalDepan, m.index);
+      if (!p.reTolakSebelum.test(depan)) continue; // bukan tuduhan: jalur biasa (simpulKalimat) yang menilai
+      if (sebab.RE_PENYANGKAL.test(depan.replace(RE_KATA_TUDUH, " "))) continue; // "tidak pernah curiga Tergugat selingkuh"
+      const kata = [...depan.matchAll(RE_KATA_TUDUH)];
+      if (!kata.length) continue;
+      const akhirTuduh = kata[kata.length - 1];
+      // Yang dituduh: sebutan pihak di ANTARA kata tuduhan dan perbuatannya ("menuduh Penggugat selingkuh",
+      // "mencurigai bahwa Tergugat berhubungan ..."); tanpa itu, bentuk pasif membaca subjek di depannya ("Tergugat dituduh").
+      const antara = depan.slice(akhirTuduh.index + akhirTuduh[0].length);
+      const sebutAntara = [...antara.matchAll(/\b(penggugat|tergugat|pemohon|termohon)\b/gi)];
+      let tertuduh = "";
+      const sisi = (s) => (/^(?:tergugat|termohon)$/i.test(s) ? "pelaku" : "lawan");
+      if (sebutAntara.length) {
+        tertuduh = sisi(sebutAntara[sebutAntara.length - 1][1]);
+      } else if (RE_TUDUH_PASIF.test(akhirTuduh[0])) {
+        const sebelum = [...kalimat.slice(0, awalDepan + akhirTuduh.index).matchAll(/\b(penggugat|tergugat|pemohon|termohon)\b/gi)];
+        if (sebelum.length) tertuduh = sisi(sebelum[sebelum.length - 1][1]);
+      }
+      // Jenis kelamin orang ketiga menentukan siapa yang dituduh: cerai gugat pelakunya suami, cerai talak istri. "menuduh
+      // Tergugat memiliki hubungan dengan laki-laki lain" (salah ketik 224/Pdt.G/2025) = tuduhan terhadap istri (Penggugat).
+      const lainPria = /\b(?:laki[\s-]*laki|lelaki|pria|cowok|duda|pil)\b/i.test(m[0]);
+      const lainWanita = /\b(?:wanita|perempuan|cewek|janda|wil)\b/i.test(m[0]);
+      if (lainPria !== lainWanita && (jenis === "CG" || jenis === "CT")) {
+        const pelakuSuami = jenis === "CG";
+        const tertuduhSuami = lainWanita;
+        tertuduh = tertuduhSuami === pelakuSuami ? (tertuduh === "lawan" ? "" : "pelaku") : "lawan";
+      }
+      // Pengakuan/pembenaran SESUDAH perbuatan di kalimat yang sama, bukan yang disangkal ("tidak terbukti").
+      let pengakuan = false;
+      const sesudah = kalimat.slice(m.index + m[0].length);
+      for (const a of sesudah.matchAll(RE_PENGAKUAN)) {
+        if (!/\b(?:tidak|tak|belum|bukan|tanpa)\s+(?:pernah\s+|dapat\s+|bisa\s+)?$/i.test(sesudah.slice(Math.max(0, a.index - 20), a.index))) {
+          pengakuan = true;
+          break;
+        }
+      }
+      // Kalimat tanpa tuduhannya (panjang tetap, diganti spasi): kata tuduhan di jendela depan perbuatan, dan - bila yang dituduh
+      // disebut sesudah kata tuduhan - juga penuduhnya ("Penggugat mencurigai bahwa | Tergugat berhubungan ...") agar subjek
+      // klausa perbuatan menjadi yang dituduh.
+      let kosong = kalimat.slice(0, awalDepan) + depan.replace(RE_KATA_TUDUH, (x) => " ".repeat(x.length)) + kalimat.slice(m.index);
+      if (sebutAntara.length) {
+        const awalTuduh = awalDepan + kata[0].index;
+        const penuduh = [...kalimat.slice(0, awalTuduh).matchAll(/\b(penggugat|tergugat|pemohon|termohon)\b/gi)].pop();
+        const dari = penuduh && !/[.;:]/.test(kalimat.slice(penuduh.index, awalTuduh)) ? penuduh.index : awalTuduh;
+        const sampai = awalDepan + akhirTuduh.index + akhirTuduh[0].length + sebutAntara[sebutAntara.length - 1].index;
+        kosong = kalimat.slice(0, dari) + " ".repeat(sampai - dari) + kalimat.slice(sampai);
+      }
+      hasil.push({ kunci: p.kunci, pola: p, teks: m[0], kalimat, tertuduh, pengakuan, kosong });
+      sudah.add(p.kunci);
+      break;
+    }
+  }
+  return hasil;
+}
+
+/** Penguat tuduhan: saksi / bukti lain yang menerangkan perbuatan itu (atau yang setara) oleh PELAKU. */
+function penguatTuduhan(t, saksi, bukti, set) {
+  const kunci = new Set([t.kunci, ...(SETARA_ALASAN[t.kunci] || [])]);
+  const penguat = [];
+  for (const s of saksi || []) {
+    const b = (s.butir || []).find((x) => simpulKalimat(x, set, { kunci }).length);
+    if (b) penguat.push({ jenis: "saksi", no: s.no, pihak: s.pihak || "", kalimat: String(b).slice(0, 300) });
+  }
+  for (const x of bukti || []) {
+    const teks = typeof x === "string" ? x : String((x && (x.teks || x.keterangan)) || "");
+    if (teks && simpulKalimat(teks, set, { kunci }).length) penguat.push({ jenis: "bukti", kalimat: teks.slice(0, 300), ...(x && x.tanda ? { tanda: String(x.tanda) } : {}) });
+  }
+  return penguat;
 }
 
 function subjekTeks(simpul, ph) {
@@ -693,12 +810,36 @@ function deteksiRincian(o) {
   const set = polaUntuk(jenis);
   const saksi = (o && o.saksi) || [];
   const gugatan = (o && o.gugatan) || [];
-  const hasil = { jenis, butir: [], diLuarGugatan: [], bacaGugatan: gugatan.length > 0 };
+  const hasil = { jenis, pihak: ph, butir: [], diLuarGugatan: [], tuduhan: [], bacaGugatan: gugatan.length > 0 };
   if (!set.daftar.length || !gugatan.length) return hasil;
+  const bukti = Array.isArray(o && o.bukti) ? o.bukti : [];
+  const saksiAda = !(o && o.saksiTidakDibaca === true) && saksi.some((s) => (s.butir || []).length);
 
   const peta = new Map();
   for (const k of gugatan) {
     const daftarItem = itemKalimat(k, set);
+    // Keputusan 53: tuduhan (selingkuh) dinilai - terbukti bila dikuatkan saksi/bukti, selain itu dicatat.
+    for (const t of tuduhanKalimat(k, set, jenis)) {
+      if (hasil.tuduhan.some((x) => x.kunci === t.kunci && x.status === "terbukti")) continue;
+      const diperiksa = t.tertuduh === "pelaku" || (t.tertuduh === "" && t.pengakuan);
+      const penguat = diperiksa ? penguatTuduhan(t, saksiAda ? saksi : [], bukti, set) : [];
+      const status = t.tertuduh === "lawan" ? "terhadap-lawan" : !diperiksa ? "tidak-terbaca" : penguatCukup(penguat) ? "terbukti" : !saksiAda ? "belum-dinilai" : penguat.length ? "belum-cukup" : "tidak-terbukti";
+      const catat = { kunci: t.kunci, label: t.pola.label.replace(/\s*\([^)]*\)$/, ""), status, tertuduh: t.tertuduh, pengakuan: t.pengakuan, penguat, kalimat: String(k).slice(0, 400) };
+      if (status === "terbukti") {
+        // Butir disusun mesin yang sama atas kalimat tanpa kata tuduhan; hanya butir yang memuat perbuatan itu yang diambil.
+        const tambah = itemKalimat(t.kosong, set).filter((it) => it.simpul.some((s) => s.kunci === t.kunci && s.subjek === "P"));
+        if (!tambah.length) catat.status = "tidak-terbaca";
+        for (const it of tambah) {
+          it.kalimat = k;
+          it.tuduhan = catat;
+          daftarItem.push(it);
+        }
+      }
+      // Satu catatan per perbuatan: yang paling menentukan menang (terbukti > tidak terbukti/belum dinilai > lainnya).
+      const lama = hasil.tuduhan.findIndex((x) => x.kunci === catat.kunci);
+      if (lama < 0) hasil.tuduhan.push(catat);
+      else if (PERINGKAT_TUDUHAN[catat.status] > PERINGKAT_TUDUHAN[hasil.tuduhan[lama].status]) hasil.tuduhan[lama] = catat;
+    }
     // 28 Okt: cadangan kutip - klausa sebab eksplisit yang tidak dikenali kamus menjadi butir konkret (ragu).
     const kutip = kutipSebab(k, daftarItem, ph);
     if (kutip) {
@@ -786,7 +927,12 @@ function deteksiRincian(o) {
       saksiDiperiksa: d.diperiksa,
       lencana: l.teks,
       yakin: tersirat || kutip ? "ragu" : l.yakin,
-      catatan: [tersirat ? "pelakunya tidak disebut di kalimat gugatan (dianggap " + ph.pelaku + ")" : "", it.kutipGugatan ? "sebabnya dikutip dari gugatan (belum dikenali kamus) - periksa" : kutip ? "akibatnya dikutip dari gugatan - periksa" : ""].filter(Boolean).join("; "),
+      catatan: [
+        tersirat ? "pelakunya tidak disebut di kalimat gugatan (dianggap " + ph.pelaku + ")" : "",
+        it.kutipGugatan ? "sebabnya dikutip dari gugatan (belum dikenali kamus) - periksa" : kutip ? "akibatnya dikutip dari gugatan - periksa" : "",
+        it.tuduhan ? catatanTerbukti(it.tuduhan, ph) : "",
+      ].filter(Boolean).join("; "),
+      ...(it.tuduhan ? { tuduhan: { status: it.tuduhan.status, pengakuan: it.tuduhan.pengakuan, penguat: it.tuduhan.penguat } } : {}),
       jawab: j,
       kodePola: it.simpul.map((s) => s.pola.kode),
       asal: "posita",
@@ -841,7 +987,49 @@ function deteksiRincian(o) {
     if (kunciGugatan.has(k) || diusulkanSaksi.has(k) || terserap.has(k) || (pola.peran || "sebab") !== "sebab" || pola.hanyaAkibat) continue;
     hasil.diLuarGugatan.push({ kunci: k, label: pola.label.replace(/\s*\([^)]*\)$/, ""), saksi: [...nomor] });
   }
+  // Keputusan 53: perbuatan yang SUDAH didalilkan tegas di kalimat lain (bukan tuduhan) tidak diberi catatan "tidak terbukti".
+  const didalilkan = new Set(hasil.butir.filter((b) => b.asal === "posita" && !b.tuduhan).flatMap((b) => b.sebab));
+  hasil.tuduhan = hasil.tuduhan.filter((t) => t.status === "terbukti" || !didalilkan.has(t.kunci));
   return hasil;
+}
+
+/** Catatan butir yang berasal dari tuduhan yang terbukti. */
+function catatanTerbukti(t, ph) {
+  const saksiP = t.penguat.filter((x) => x.jenis === "saksi");
+  const buktiP = t.penguat.filter((x) => x.jenis === "bukti");
+  const namaS = saksiP.map((x) => (x.pihak === "penggugat" ? `saksi ${ph.lawan}` : x.pihak === "tergugat" ? `saksi ${ph.pelaku}` : `saksi ${x.no}`));
+  const oleh = [
+    namaS.length === 2 && namaS[0] === namaS[1] && !/\d$/.test(namaS[0]) ? `kedua ${namaS[0]}` : namaS.join(" dan "),
+    buktiP.length ? `bukti ${buktiP.map((x) => x.tanda || "").filter(Boolean).join(", ") || "lain"}` : "",
+  ].filter(Boolean).join(" serta ");
+  return `di gugatan berupa kecurigaan/tuduhan${t.pengakuan ? " (disebut diakui)" : ""}; dianggap terbukti karena dikuatkan ${oleh}`;
+}
+
+/** Kalimat catatan kartu 5227 untuk tuduhan yang TIDAK diusulkan (keputusan 53: tidak dibuang diam-diam). */
+function catatanTuduhan(daftar, pihak) {
+  const ph = pihakDari(pihak);
+  const kalimat = [];
+  for (const t of daftar || []) {
+    const nama = NAMA_TUDUHAN[t.kunci] || { benda: String(t.label || ""), kerja: String(t.label || "") };
+    if (t.status === "tidak-terbukti") {
+      kalimat.push(`Tuduhan/kecurigaan bahwa ${ph.pelaku} ${nama.kerja} di gugatan tidak dikuatkan keterangan saksi atau bukti lain${t.pengakuan ? " (walau disebut diakui)" : ""} - dianggap tidak terbukti, tidak diusulkan.`);
+    } else if (t.status === "belum-cukup") {
+      const satu = (t.penguat || []).filter((x) => x.jenis === "saksi");
+      const siapa = satu.length ? (satu[0].pihak === "penggugat" ? `saksi ${ph.lawan}` : satu[0].pihak === "tergugat" ? `saksi ${ph.pelaku}` : `saksi ${satu[0].no}`) : "";
+      kalimat.push(
+        satu.length
+          ? `Tuduhan/kecurigaan bahwa ${ph.pelaku} ${nama.kerja} di gugatan hanya diterangkan satu saksi (${siapa}) tanpa bukti lain - belum cukup terbukti (hanya satu saksi), tidak diusulkan.`
+          : `Tuduhan/kecurigaan bahwa ${ph.pelaku} ${nama.kerja} di gugatan hanya didukung bukti lain tanpa saksi yang menerangkannya - belum cukup terbukti, tidak diusulkan.`
+      );
+    } else if (t.status === "belum-dinilai") {
+      kalimat.push(`Kecurigaan bahwa ${ph.pelaku} ${nama.kerja} di gugatan belum dapat dinilai (saksi belum diperiksa) - diusulkan bila dikuatkan dua saksi, atau satu saksi dan bukti lain.`);
+    } else if (t.status === "terhadap-lawan") {
+      kalimat.push(`Gugatan menyebut tuduhan bahwa ${ph.lawan} ${nama.kerja} - bukan alasan ${nama.benda} ${ph.pelaku}, tidak diusulkan.`);
+    } else if (t.status === "tidak-terbaca") {
+      kalimat.push(`Gugatan menyebut tuduhan ${nama.benda} tetapi siapa yang dituduh tidak terbaca - tidak diusulkan, periksa posita.`);
+    }
+  }
+  return kalimat;
 }
 
 const ASAL_LABEL = { posita: "dari posita", saksi: "dari keterangan kedua saksi" };
@@ -997,6 +1185,7 @@ function ringkasButir(b) {
     asal: b.asal || "posita",
     asalLabel: b.asalLabel || ASAL_LABEL.posita,
     ...(Array.isArray(b.kalimatSaksi) ? { kalimatSaksi: b.kalimatSaksi } : {}),
+    ...(b.tuduhan ? { tuduhan: b.tuduhan } : {}),
   };
 }
 
@@ -1008,6 +1197,13 @@ function ringkasButir(b) {
  */
 function terapkan(hasil, rincian) {
   const u = (hasil.usulan || []).find((x) => x && x.kode === "5227");
+  // Keputusan 53: tuduhan yang tidak diusulkan tetap DICATAT di kartu, juga bila tidak ada butir lain.
+  const catatTuduh = u && rincian ? catatanTuduhan(rincian.tuduhan, rincian.pihak) : [];
+  if (u && rincian && !rincian.butir.length && catatTuduh.length) {
+    hasil.rincianAlasan = { jenis: rincian.jenis, butir: [], diLuarGugatan: rincian.diLuarGugatan, bertentangan: rincian.bertentangan || [], tuduhan: rincian.tuduhan || [] };
+    u.catatan = [u.catatan, ...catatTuduh].filter(Boolean).join(" ");
+    return true;
+  }
   if (!u || !rincian || !rincian.butir.length) return false;
   const konkret = rincian.butir.filter((b) => !b.penutup && b.asal !== "saksi");
   const butirPosita = rincian.butir.filter((b) => b.asal !== "saksi");
@@ -1015,7 +1211,7 @@ function terapkan(hasil, rincian) {
   const lama = String(u.nilai || "").trim();
   const baru = pil.length ? pil[0].nilai : "";
   if (!baru) return false;
-  hasil.rincianAlasan = { jenis: rincian.jenis, butir: rincian.butir.map(ringkasButir), diLuarGugatan: rincian.diLuarGugatan, bertentangan: rincian.bertentangan || [] };
+  hasil.rincianAlasan = { jenis: rincian.jenis, butir: rincian.butir.map(ringkasButir), diLuarGugatan: rincian.diLuarGugatan, bertentangan: rincian.bertentangan || [], tuduhan: rincian.tuduhan || [] };
   u.rincian = hasil.rincianAlasan.butir;
   const catatan = [];
   if (konkret.length || !lama) {
@@ -1055,6 +1251,7 @@ function terapkan(hasil, rincian) {
   if (rincian.diLuarGugatan.length) {
     catatan.push(`Disebut satu saksi saja dan tidak didalilkan di gugatan (dicatat, tidak diusulkan): ${rincian.diLuarGugatan.slice(0, 5).map((x) => x.label).join(", ")}${rincian.diLuarGugatan.length > 5 ? ` dan ${rincian.diLuarGugatan.length - 5} lainnya` : ""}.`);
   }
+  catatan.push(...catatTuduh);
   u.pilihan = pil;
   u.catatan = [u.catatan, ...catatan].filter(Boolean).join(" ");
   if (konkret.length && rincian.butir.some((b) => b.kodePola && b.kodePola.length)) u.kodePola = rincian.butir.find((b) => !b.penutup).kodePola[0];
@@ -1088,4 +1285,4 @@ function terapkanSisiSaksi(hasil, sisi, pihak) {
   return true;
 }
 
-module.exports = { terapkanSisiSaksi, terapkan, ringkasButir, deteksiRincian, pilihanBunyi, susunVarian, gabungKalimat, polaUntuk, simpulKalimat, itemKalimat, KELOMPOK };
+module.exports = { terapkanSisiSaksi, terapkan, ringkasButir, deteksiRincian, catatanTuduhan, tuduhanKalimat, pilihanBunyi, susunVarian, gabungKalimat, polaUntuk, simpulKalimat, itemKalimat, KELOMPOK };

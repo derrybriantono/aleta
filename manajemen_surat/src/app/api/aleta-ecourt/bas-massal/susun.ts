@@ -62,6 +62,7 @@ import { ALUR_BAS_KUMULASI, tentukanAlurBasKumulasi } from "@/lib/alur-bas-kumul
 import { ALUR_BAS, padananBasArsip, type AlurBas, type HasilAlurBas, type LangkahAlurBas, type PadananBas } from "@/lib/alur-bas";
 import { cariBerkasBasJenis, salinanBasJenis, type SalinanBas } from "@/lib/salinan-bas-jenis";
 import { tentukanBasBaru, type HasilBasBaru, type LangkahBasBaru } from "@/lib/alur-bas-baru";
+import { sisiTahapPembuktian } from "@/lib/alur-bas";
 import { namaAdaDi } from "@/lib/perkara-sendiri";
 import { setUntukPerkara } from "@/lib/pohon-blangko";
 
@@ -107,6 +108,8 @@ export type BarisSidangBas = {
     relaasTanpaKedudukan?: unknown;
     tenggangMepet?: unknown;
     tenggangTersempit?: { patut?: unknown; dinilai?: unknown; alasan?: unknown } | null;
+    /** 1 Nov (keputusan 52): pihak yang membuktikan pada sidang ini (bot tahapPembuktianService). */
+    tahapPembuktian?: { sisi?: unknown; sebab?: unknown } | null;
   } | null;
 };
 
@@ -1196,6 +1199,7 @@ export function susunBarisBasMassal(
       penggugatPernahHadir: s.panggilan?.penggugatPernahHadir,
       sudahJawaban: s.sudahJawaban === true || Number(s.penandaJawaban?.berkas) > 0,
       sikapTergugatCabut: typeof s.sikapTergugatCabut === "string" ? s.sikapTergugatCabut : null,
+      tahapPembuktian: sisiTahapPembuktian(s.panggilan?.tahapPembuktian),
     });
     // Q3 16 Okt: hasil lengkap penebak alur (bukan hanya ringkasannya) - dipakai juga untuk pilihan blangko.
     const hasilAlurDasar = tentukanAlurBasKumulasi({
@@ -1206,6 +1210,7 @@ export function susunBarisBasMassal(
       tergugatPernahHadir: s.panggilan?.tergugatPernahHadir,
       sidangIkrarTalak: s.sidangIkrarTalak === true,
       kumulasi: s.kumulasi, // T 13 Okt
+      tahapPembuktian: sisiTahapPembuktian(s.panggilan?.tahapPembuktian),
     });
     const alurDasar = ringkasAlurBas(hasilAlurDasar);
     semua.push({

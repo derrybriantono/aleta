@@ -1,0 +1,29 @@
+SNAP awal   : 2960 d646ed6cfef56676cf5987e824e62489 
+== 1. PASANG
+PRASYARAT COCOK (4|0)
+CADANGAN: /d/Aplikasi/aleta/tmp/w153-pembuktian/pk/cadangan/variabel-sebelum.*.sql (2111,7119,2112,7121)
+PERIKSA: SEMUA COCOK
+PRASYARAT SESUDAH: 0|4 (harus 0|4)
+SELESAI - paket abt-pembuktian-urut-1nov terpasang. Pulih: bash /d/Aplikasi/aleta/tmp/w153-pembuktian/pk/pulih-satker.sh
+SNAP pasang : 2960 34545228755e010446d566e713d15e9b 
+== 2. pasang ulang
+PRASYARAT COCOK (0|4)
+PERIKSA: SEMUA COCOK
+PRASYARAT SESUDAH: 0|4 (harus 0|4)
+SELESAI - paket abt-pembuktian-urut-1nov terpasang. Pulih: bash /d/Aplikasi/aleta/tmp/w153-pembuktian/pk/pulih-satker.sh
+PASANG ULANG = TIDAK ADA PERUBAHAN
+== 3. PULIH
+PRASYARAT SESUDAH PULIH: 4|0
+PULIH COCOK
+PULIH = KEADAAN AWAL PERSIS (seluruh tabel variabel)
+== 4. pasang lagi
+PRASYARAT SESUDAH: 0|4 (harus 0|4)
+SELESAI - paket abt-pembuktian-urut-1nov terpasang. Pulih: bash /d/Aplikasi/aleta/tmp/w153-pembuktian/pk/pulih-satker.sh
+PASANG LAGI = SAMA DENGAN PASANG PERTAMA
+PULIH COCOK
+== 5. PENJAGA: 2112 disunting orang -> pasang HARUS berhenti tanpa mengubah apa pun
+GAGAL: prasyarat '3|0' (harus '4|0', atau '0|4' bila pasang ulang) - TIDAK ada yang diubah. Arti angka: lihat abt-pembuktian-urut-1nov-PRASYARAT.sql
+PENJAGA: TIDAK ADA YANG BERUBAH
+SESUDAH PENJAGA = KEADAAN AWAL
+== 6. pasang akhir
+SELESAI - paket abt-pembuktian-urut-1nov terpasang. Pulih: bash /d/Aplikasi/aleta/tmp/w153-pembuktian/pk/pulih-satker.sh

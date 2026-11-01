@@ -1,0 +1,118 @@
+{
+ "2111": {
+  "n": 10278,
+  "samaTerisi": 1315,
+  "samaKosong": 8963,
+  "baruTerisi": 0,
+  "hilang": 0,
+  "berubahTerisi": 0,
+  "galat": 0,
+  "cocokBot": 10107,
+  "bedaBot": 0,
+  "contoh": [],
+  "bedaBotContoh": []
+ },
+ "2112": {
+  "n": 10278,
+  "samaTerisi": 130,
+  "samaKosong": 10141,
+  "baruTerisi": 5,
+  "hilang": 0,
+  "berubahTerisi": 2,
+  "galat": 0,
+  "cocokBot": 10237,
+  "bedaBot": 0,
+  "contoh": [
+   [
+    "BARU",
+    "178/Pdt.G/2017/PA.Dgl",
+    "2017-09-12"
+   ],
+   [
+    "BERUBAH",
+    "61/Pdt.G/2018/PA.Dgl",
+    "2018-04-24",
+    "2018-04-17"
+   ],
+   [
+    "BARU",
+    "117/Pdt.G/2018/PA.Dgl",
+    "2018-08-01"
+   ],
+   [
+    "BARU",
+    "347/Pdt.G/2018/PA.Dgl",
+    "2019-02-20"
+   ],
+   [
+    "BERUBAH",
+    "67/Pdt.G/2020/PA.Dgl",
+    "2020-05-27",
+    "2020-05-20"
+   ],
+   [
+    "BARU",
+    "134/Pdt.G/2020/PA.Dgl",
+    "2020-08-04"
+   ],
+   [
+    "BARU",
+    "35/Pdt.G/2021/PA.Dgl",
+    "2021-02-09"
+   ]
+  ],
+  "bedaBotContoh": []
+ },
+ "7119": {
+  "n": 10278,
+  "samaTerisi": 1315,
+  "samaKosong": 8963,
+  "baruTerisi": 0,
+  "hilang": 0,
+  "berubahTerisi": 0,
+  "galat": 0,
+  "cocokBot": 10107,
+  "bedaBot": 0,
+  "contoh": [],
+  "bedaBotContoh": []
+ },
+ "7121": {
+  "n": 10278,
+  "samaTerisi": 132,
+  "samaKosong": 10141,
+  "baruTerisi": 5,
+  "hilang": 0,
+  "berubahTerisi": 0,
+  "galat": 0,
+  "cocokBot": 10237,
+  "bedaBot": 0,
+  "contoh": [
+   [
+    "BARU",
+    "178/Pdt.G/2017/PA.Dgl",
+    "Selasa"
+   ],
+   [
+    "BARU",
+    "117/Pdt.G/2018/PA.Dgl",
+    "Rabu"
+   ],
+   [
+    "BARU",
+    "347/Pdt.G/2018/PA.Dgl",
+    "Rabu"
+   ],
+   [
+    "BARU",
+    "134/Pdt.G/2020/PA.Dgl",
+    "Selasa"
+   ],
+   [
+    "BARU",
+    "35/Pdt.G/2021/PA.Dgl",
+    "Selasa"
+   ]
+  ],
+  "bedaBotContoh": []
+ }
+}

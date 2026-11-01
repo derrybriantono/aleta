@@ -1,0 +1,2 @@
+-- PERIKSA abt-pembuktian-urut-1nov (BACA SAJA). Harus "SEMUA COCOK".
+SELECT IF((SELECT COUNT(*) FROM abt_variabel WHERE no_var IN (2111,7119,2112,7121) AND MD5(REPLACE(sql_query, CONCAT(DATABASE(), '.'), 'aps_badilag.')) IN ('ea1a6f017492be339d9d4b8a3278e03f','0c815b2c17526e849a5bd39eb2d04938','417bc583ed9d4d91306176483ce6af5c','b7775bd84b3b028e6157fdfed46a016c')) = 4, 'SEMUA COCOK', 'TIDAK COCOK') AS periksa;

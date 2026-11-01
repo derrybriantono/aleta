@@ -52,6 +52,12 @@ export function alurBasMenurutId(id: string): AlurBas | undefined {
 
 export type GrupJenisAlur = "cerai-gugat" | "cerai-talak" | "itsbat" | "dispensasi" | "asal-usul" | "permohonan-lain" | "";
 
+/** 1 Nov (keputusan 52): sisi tahap pembuktian dari jawaban bot (panggilan.tahapPembuktian = {sisi, sebab} | null); lainnya = null. */
+export function sisiTahapPembuktian(x: unknown): "P" | "T" | "PT" | null {
+  const sisi = x && typeof x === "object" ? (x as { sisi?: unknown }).sisi : x;
+  return sisi === "P" || sisi === "T" || sisi === "PT" ? sisi : null;
+}
+
 export function grupJenisAlur(jenisPerkara: unknown): GrupJenisAlur {
   const j = String(jenisPerkara ?? "").toLowerCase().replace(/\s+/g, " ").trim();
   if (!j) return "";
@@ -77,6 +83,11 @@ export type MasukanAlurBas = {
   sidangIkrarTalak?: boolean;
   /** Hasil akhir bila sudah diketahui (jarang pada BAS massal - sidang masih berjalan). */
   akhir?: "gugur" | "cabut" | "no" | null;
+  /**
+   * 1 Nov (keputusan 52): pihak yang membuktikan pada sidang ini menurut URUTAN TAHAP pembuktian (bot: panggilan.tahapPembuktian.sisi,
+   * aleta_bot/services/tahapPembuktianService.js). Dipakai bila agenda pembuktian tidak menyebut pihak; tidak ada = bot lama (urutan sidang).
+   */
+  tahapPembuktian?: "P" | "T" | "PT" | null;
 };
 
 export type LangkahLainAlur = { alur: AlurBas; langkah: LangkahAlurBas };
@@ -141,7 +152,11 @@ const AGENDA_AKHIR = /putus|musyawarah|penetapan|bukti|pembuktian|saksi/i;
  * (Penggugat, atau tak disebut) -> [6]. Sidang pertama selalu [1] dan sidang kedua [2] (laporan mediasi). Varian saksi (6a-c, 7a-b)
  * selalu ikut sebagai alternatif karena jumlah saksi tidak ada di SIPP.
  */
-export function langkahAlur04(dilihat: number, agendaMentah: string): { kode: string; alternatif: string[]; dariAgenda: boolean } {
+export function langkahAlur04(
+  dilihat: number,
+  agendaMentah: string,
+  tahapPembuktian?: "P" | "T" | "PT" | null
+): { kode: string; alternatif: string[]; dariAgenda: boolean } {
   const ag = String(agendaMentah ?? "").toLowerCase();
   const urutan = dilihat >= 9 ? "9" : String(Math.max(1, dilihat));
   const dariUrutan = () => ({
@@ -164,7 +179,12 @@ export function langkahAlur04(dilihat: number, agendaMentah: string): { kode: st
     const sisiP = /penggugat|pemohon/.test(ag);
     if (sisiT && !sisiP) return { kode: "7", alternatif: ["7a", "7b"], dariAgenda: true };
     if (sisiP && !sisiT) return { kode: "6", alternatif: ["6a", "6b", "6c"], dariAgenda: true };
-    // Sisi tak disebut: pembuktian pertama = P. Sesudah sidang ke-6 lebih mungkin T; sisi lainnya ikut ditawarkan.
+    // 1 Nov (keputusan 52): sisi tak disebut = urutan tahap pembuktian dari jadwal sidang SIPP (diawali P; "lanjutan" melanjutkan pihak
+    // yang sedang membuktikan; sesudah P selesai = T). Sidang tempat T mulai membuktikan (PT) = lanjutan P, T sebagai pilihan pertama.
+    if (tahapPembuktian === "T") return { kode: "7", alternatif: ["7a", "7b", "6"], dariAgenda: true };
+    if (tahapPembuktian === "P") return { kode: "6", alternatif: ["6a", "6b", "6c", "7"], dariAgenda: true };
+    if (tahapPembuktian === "PT") return { kode: "6", alternatif: ["7", "7a", "7b", "6a", "6b", "6c"], dariAgenda: true };
+    // Bot lama (tanpa tahap): pembuktian pertama = P. Sesudah sidang ke-6 lebih mungkin T; sisi lainnya ikut ditawarkan.
     return dilihat >= 7
       ? { kode: "7", alternatif: ["7a", "7b", "6"], dariAgenda: true }
       : { kode: "6", alternatif: ["6a", "6b", "6c", "7"], dariAgenda: true };
@@ -278,7 +298,7 @@ export function tentukanAlurBas(m: MasukanAlurBas): HasilAlurBas {
       return hasil("alur-05", kode, true, "P dan T hadir, jawab-menjawab lisan.", kode === "3" ? ["3a"] : [], akhirLain(grup, dilihat, true, "alur-05"));
     }
     // Q3 16 Okt: langkah ALUR 04 ditebak dari AGENDA lebih dulu (peta L3: urutan saja meleset 10-40% per langkah), baru dari urutan sidang.
-    const l4 = langkahAlur04(dilihat, agenda);
+    const l4 = langkahAlur04(dilihat, agenda, m.tahapPembuktian);
     // ALUR 05 (lisan) ditawarkan untuk sidang awal yang agendanya tak menyebut penanda tertulis (14 CG + 12 CT lisan, <= 5 sidang).
     const lisanLain: Array<[string, string]> =
       dilihat <= 4 && !AGENDA_TERTULIS.test(agenda)

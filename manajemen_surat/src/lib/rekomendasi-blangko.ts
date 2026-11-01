@@ -29,6 +29,7 @@ import { gabungSemuaBas, type PilihanBlangkoBas } from "@/app/api/aleta-ecourt/b
 import { perluasAliasMenu } from "@/lib/alias-menu-derry";
 import { FOLDER_MENU_W3B } from "@/lib/w3b-jenis-data";
 import { tentukanAlurBasKumulasi } from "@/lib/alur-bas-kumulasi";
+import { sisiTahapPembuktian } from "@/lib/alur-bas";
 import { tentukanBasBaru } from "@/lib/alur-bas-baru";
 import { batasEnamBulanIkrar } from "@/lib/ikrar-talak";
 import { keadaanPutusan, type MasukanKeadaanPutusan } from "@/lib/keadaan-putusan";
@@ -72,6 +73,8 @@ export type MasukanRekomendasi = {
   alasanDitunda?: string;
   /** Keterangan lain yang menerangkan sidang ini (mis. catatan petugas); diperlakukan sama dengan alasanDitunda. */
   keterangan?: string;
+  /** 1 Nov (keputusan 52): pihak yang membuktikan pada sidang ini menurut urutan tahap pembuktian (bot panggilan.tahapPembuktian). */
+  tahapPembuktian?: "P" | "T" | "PT" | null;
   tergugatPernahHadir?: boolean;
   penggugatPernahHadir?: boolean | null;
   hadirSebelumnya?: number | null;
@@ -222,6 +225,7 @@ function rekomendasiBas(m: MasukanRekomendasi, teks: string): Rekomendasi[] {
     sudahJawaban: m.sesudahJawaban === true || Number(m.penandaJawaban?.berkas) > 0,
     sikapTergugatCabut: m.sikapTergugatCabut ?? null,
     mafqud: m.mafqud,
+    tahapPembuktian: m.tahapPembuktian ?? null,
   };
   const hAlur = tentukanAlurBasKumulasi(masukan);
   const baru = tentukanBasBaru(masukan);
@@ -937,6 +941,7 @@ export function masukanRekomendasiDariBaris(b: Record<string, unknown>): Masukan
     tergugatPernahHadir: panggilan.tergugatPernahHadir === true,
     penggugatPernahHadir: panggilan.penggugatPernahHadir === true ? true : panggilan.penggugatPernahHadir === false ? false : null,
     hadirSebelumnya: angka(panggilan.hadirSebelumnya),
+    tahapPembuktian: sisiTahapPembuktian(panggilan.tahapPembuktian),
     sidangIkrarTalak: b.sidangIkrarTalak === true,
     tanggalSidang: String(b.tanggalSidang ?? "").slice(0, 10),
     tanggalPenetapanSidangIkrar: typeof b.tanggalPenetapanSidangIkrar === "string" ? b.tanggalPenetapanSidangIkrar.slice(0, 10) : null,
