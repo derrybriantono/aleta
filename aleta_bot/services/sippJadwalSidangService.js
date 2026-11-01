@@ -1,6 +1,8 @@
 "use strict";
 
 const sandiKehadiran = require("./sandiKehadiranService");
+// 1 Nov (keputusan 52): pihak yang membuktikan pada tiap sidang dari urutan tahap pembuktian (kembaran paket ABT pembuktian-urut-1nov).
+const tahapPembuktianService = require("./tahapPembuktianService");
 const { relaasRetur, sqlRetur } = require("./returRelaas");
 // Kepatutan satu relaas: SEMA 1/2023 (surat tercatat) & Pasal 718 RBg (jurusita).
 const { nilaiRelaas } = require("./kepatutanRelaas");
@@ -2542,8 +2544,11 @@ async function keadaanPanggilanSidang(daftarSidang = []) {
   const [semuaSidang, semuaRelaas, semuaPihak] = await Promise.all([
     runQuery(
       `SELECT j.id AS sidangId, j.perkara_id AS perkaraId,
-              j.tanggal_sidang AS tanggalSidang, j.dihadiri_oleh AS dihadiriOleh
+              j.tanggal_sidang AS tanggalSidang, j.dihadiri_oleh AS dihadiriOleh,
+              j.agenda AS agenda, j.alasan_ditunda AS alasanDitunda, j.keterangan AS keterangan,
+              p.nomor_perkara AS nomorPerkara
          FROM perkara_jadwal_sidang j
+         LEFT JOIN perkara p ON p.perkara_id = j.perkara_id
         WHERE j.perkara_id IN (${isianPerkara})
         ORDER BY j.perkara_id ASC, j.tanggal_sidang ASC, j.id ASC`,
       idPerkara
@@ -2580,6 +2585,21 @@ async function keadaanPanggilanSidang(daftarSidang = []) {
 
   // --- Kehadiran pada sidang SEBELUMNYA, per sidang -------------------------
   const { sebelumnya, tergugatPernahHadir, penggugatPernahHadir } = kehadiranSebelumnya(semuaSidang);
+
+  // --- Tahap pembuktian tiap sidang (keputusan 52): "P" | "T" | "PT" | null ---
+  const tahapBukti = {};
+  {
+    const perPerkara = new Map();
+    for (const baris of Array.isArray(semuaSidang) ? semuaSidang : []) {
+      const k = String(baris.perkaraId);
+      if (!perPerkara.has(k)) perPerkara.set(k, []);
+      perPerkara.get(k).push(baris);
+    }
+    for (const daftar of perPerkara.values()) {
+      const gugatan = /pdt\.g/i.test(String((daftar[0] && daftar[0].nomorPerkara) || "Pdt.G"));
+      for (const r of tahapPembuktianService.tahapPembuktian(daftar, { gugatan })) tahapBukti[String(r.sidangId)] = r.sisi ? { sisi: r.sisi, sebab: r.sebab } : null;
+    }
+  }
 
   // --- Relaas per sidang, dikelompokkan menurut sisi pihak ------------------
   const relaasPerSidang = {};
@@ -2728,6 +2748,8 @@ async function keadaanPanggilanSidang(daftarSidang = []) {
       // memilih "gugur" atau "tunda panggil para pihak" (9 Okt 2026).
       penggugatPernahHadir:
         penggugatPernahHadir[kunci] === undefined ? null : penggugatPernahHadir[kunci],
+      // Keputusan 52: pihak yang membuktikan pada sidang ini menurut urutan tahap pembuktian ({sisi, sebab} | null).
+      tahapPembuktian: tahapBukti[kunci] || null,
       wajibDipanggil: wajib,
       // Disebutkan supaya dapat ditelusuri bila penandanya terasa keliru.
       sisiPihakAda: sisiAda ? [...sisiAda].sort() : [],

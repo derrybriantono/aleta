@@ -1,0 +1,54 @@
+{
+ "2111": {
+  "n": 1917,
+  "samaTerisi": 330,
+  "samaKosong": 1587,
+  "baruTerisi": 0,
+  "hilang": 0,
+  "berubahTerisi": 0,
+  "galat": 0,
+  "cocokBot": 1868,
+  "bedaBot": 0,
+  "contoh": [],
+  "bedaBotContoh": []
+ },
+ "2112": {
+  "n": 1917,
+  "samaTerisi": 33,
+  "samaKosong": 1884,
+  "baruTerisi": 0,
+  "hilang": 0,
+  "berubahTerisi": 0,
+  "galat": 0,
+  "cocokBot": 1899,
+  "bedaBot": 0,
+  "contoh": [],
+  "bedaBotContoh": []
+ },
+ "7119": {
+  "n": 1917,
+  "samaTerisi": 330,
+  "samaKosong": 1587,
+  "baruTerisi": 0,
+  "hilang": 0,
+  "berubahTerisi": 0,
+  "galat": 0,
+  "cocokBot": 1868,
+  "bedaBot": 0,
+  "contoh": [],
+  "bedaBotContoh": []
+ },
+ "7121": {
+  "n": 1917,
+  "samaTerisi": 33,
+  "samaKosong": 1884,
+  "baruTerisi": 0,
+  "hilang": 0,
+  "berubahTerisi": 0,
+  "galat": 0,
+  "cocokBot": 1899,
+  "bedaBot": 0,
+  "contoh": [],
+  "bedaBotContoh": []
+ }
+}

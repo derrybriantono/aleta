@@ -1,0 +1,8 @@
+0e270d4ef857bfac9ebd36c66f4cbf4d *abt-pembuktian-urut-1nov-PASANG.sql
+2f692c3995dfb656732c2e9506c38aa2 *abt-pembuktian-urut-1nov-PERIKSA.sql
+0ff24358c3e528872e0b52db67245234 *abt-pembuktian-urut-1nov-PRASYARAT.sql
+8191829cf2f5754a36fb7764ac1520f8 *abt-pembuktian-urut-1nov-PULIH.sql
+bf010e1678d67e5555f28eac9c8123d2 *harap.txt
+726132468cc07ded91568331c8ee40eb *nomor-variabel.txt
+15002d4573205d5a96797d5db437f9eb *pasang-satker.sh
+238a162961ff9969bbce3c59869b0690 *pulih-satker.sh
