@@ -1,14 +1,14 @@
 #!/bin/bash
 # Uji rantai pasang paket ABT 29-30 Okt di salinan yang meniru server (basis aps_badilag_rantai = dump server 28 Okt 15.44,
 # pohon _blangko_abt/derry_briantono = salinan server 28 Okt), memakai salinan repo apa adanya (git archive = seolah di-scp).
-# pakai: bash rantai.sh <folder abt-paket salinan> [paket-mulai]
+# pakai: bash rantai.sh <folder abt-paket salinan> [paket-mulai]   (env SAMPAI=<paket>: berhenti sesudah paket itu)
 set -u
 AP="$1"; MULAI="${2:-}"
 export PATH="/d/satker asal/website pa bungku/xampp/mysql/bin:$PATH"
 export ABT_LOKAL=1 ABT_DB=${ABT_DB:-aps_badilag_rantai} TMPDIR=/d/Aplikasi/aleta/tmp TMP=D:/Aplikasi/aleta/tmp TEMP=D:/Aplikasi/aleta/tmp
 R=${RANTAI_DIR:-/d/r}
 AKAR=$R/_blangko_abt
-URUT="prodeo-panggilan-29okt bas-tanya-jawab-29okt bas-itsbat-varian-30okt bukti-nomor-30okt ket-saksi-kata-30okt ket-saksi-baris-30okt titik-koma-30okt titik-koma-data-30okt alasan-belum-dipilih-30okt agama-belum-diubah-30okt murtad-8529-30okt relaas-penetapan-30okt sampul-rapi-30okt sela-ps-30okt hir-rbg-30okt titik-koma-teks-30okt variabel-sehat-30okt identitas-kosong-31okt tinjau-31okt bukti-8529-31okt tanggal-agenda-31okt jawab-replik-31okt butir-rata-31okt bukti-pisah-1nov"
+URUT="prodeo-panggilan-29okt bas-tanya-jawab-29okt bas-itsbat-varian-30okt bukti-nomor-30okt ket-saksi-kata-30okt ket-saksi-baris-30okt titik-koma-30okt titik-koma-data-30okt alasan-belum-dipilih-30okt agama-belum-diubah-30okt murtad-8529-30okt relaas-penetapan-30okt sampul-rapi-30okt sela-ps-30okt hir-rbg-30okt titik-koma-teks-30okt variabel-sehat-30okt identitas-kosong-31okt tinjau-31okt bukti-8529-31okt tanggal-agenda-31okt pembuktian-urut-1nov jawab-replik-31okt butir-rata-31okt bukti-pisah-1nov teks-pihak-1nov"
 jalan=0; [ -z "$MULAI" ] && jalan=1
 for p in $URUT; do
   [ "$p" = "$MULAI" ] && jalan=1
@@ -27,5 +27,6 @@ for p in $URUT; do
   rc=$?
   tail -4 "$R/log-$p.txt" | sed 's/^/    /'
   if [ $rc != 0 ]; then echo "### GAGAL $p (kode $rc) - rantai berhenti"; exit 1; fi
+  [ "${SAMPAI:-}" = "$p" ] && { echo "### BERHENTI sesudah $p (SAMPAI)"; break; }
 done
 echo "### RANTAI SELESAI $(date +%H:%M:%S)"
