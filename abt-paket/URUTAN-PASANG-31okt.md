@@ -1,4 +1,4 @@
-# URUTAN PASANG paket ABT 29-31 Okt 2026 (23 paket; diuji rantai penuh dari dump 28 Okt pada 31 Okt 07.36-07.46)
+# URUTAN PASANG paket ABT 29 Okt - 1 Nov 2026 (24 paket; diuji rantai penuh dari dump 28 Okt; paket ke-24 pada 1 Nov)
 
 Semua paket dipasang di SERVER sebagai root, dari folder `paket-satker` masing-masing, BERURUTAN persis seperti di bawah
 (`cd <paket>/paket-satker && bash pasang-satker.sh`). Setiap paket harus berakhir "SELESAI" (dan PERIKSA "SEMUA COCOK" /
@@ -328,3 +328,23 @@ variabel (2.960, md5 GROUP_CONCAT penuh) dan seluruh pohon RTF sama persis denga
 basis salinan (khusus laptop). Paket 22 ikut diperbarui (keputusan sesi utama: pengunggah BAS replik/duplik rekonvensi/kesimpulan, duplik
 oleh Tergugat, spasi "secara elektronik" #0206#) - kini PRASYARAT `0|0|6|0|4`, `UJI: 13 kueri`.
 Keluaran benar: `PRASYARAT COCOK (2|0)`, `PERIKSA: SEMUA COCOK`, `UJI: 14 contoh sama dengan laptop`, `SELESAI ...`.
+
+### 24. `bukti-pisah-1nov` (cabang bukti-pisah-abt w152) - PALING AKHIR
+```
+cd bukti-pisah-1nov/paket-satker && bash pasang-satker.sh
+```
+Bukti surat dan bukti elektronik dicetak TERPISAH di 201 BAS pembuktian dan 270 daftar bukti putusan (395 blangko; 2 putusan Harta Bersama yang sudah
+punya sub-bab "B. Bukti Elektronik:" sendiri dibiarkan): fungsi baru isian_bukti_baris / isian_bukti_sumber / isian_bukti_rtf, variabel baru 12040-12076
+(turunan isian bukti yang sudah ada, tanpa isian baru), lihat `bukti-pisah-1nov/PASANG.md`. md5 dasar = keadaan sesudah ke-23 paket di atas.
+Keluaran benar:
+```
+PRASYARAT COCOK (0|0|0|3|0)
+SIAP=395
+BERKAS SIAP
+SEMUA COCOK
+UJI: 20 contoh fungsi sama dengan laptop
+UJI: 37 kueri berjalan (perkara <id>)
+TAMBAL=395
+BERKAS COCOK
+SELESAI - paket abt-bukti-pisah-1nov terpasang. ...
+```

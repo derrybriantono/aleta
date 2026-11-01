@@ -1,0 +1,15 @@
+a8fdc89fb890af03f68312daf7ffe1a8  abt-bukti-pisah-1nov-FUNGSI-PULIH.sql
+2c74c0bcf06d92e3ff5a5f17542e4cc4  abt-bukti-pisah-1nov-FUNGSI.sql
+2d4f8155c64a303b53958a74568d86cd  abt-bukti-pisah-1nov-PASANG.sql
+012afb316a0d5dc92e9b7ffd86a8e6aa  abt-bukti-pisah-1nov-PERIKSA.sql
+263c4aa21507fbfd6bce0dc967c0ddf8  abt-bukti-pisah-1nov-PRASYARAT.sql
+241d06e050fb3468bac6b2c3ac4790b2  abt-bukti-pisah-1nov-PULIH.sql
+cb83e102f1ed6ba8e540705d3a99cbd8  daftar-tambal.tsv
+7dd30a4371a5687520ab113957edc5fd  harap.txt
+5a667c529c8a3aca4cca5802cc089b55  nomor-variabel.txt
+4091e054a39261210c7491bb672a25cd  pasang-satker.sh
+b88e06bcec812ca85a380d896f23825c  pulih-satker.sh
+bbea0d4511688b61be2977f933bfc2e7  tambal.tsv
+d949a1c1e10c9b60e8cc4fd18adc9b54  tambal_rtf.py
+32788145c5a22359c2dd1cfe51a071ec  uji-fungsi.tsv
+9f516cafee9b645db19d348f088c6973  uji-kueri.tsv

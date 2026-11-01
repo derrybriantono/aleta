@@ -1,0 +1,403 @@
+[
+ {
+  "no": 12040,
+  "nama": "BUKTI PISAH: DAFTAR BUKTI SURAT SAJA PENGGUGAT/PEMOHON bernomor (OTOMATIS dari isian bukti yang tersimpan; bukti elektronik tidak ikut; kosong = tidak tercetak)",
+  "jenis": "data_sql",
+  "sql": "SELECT aps_badilag.isian_bukti_rtf(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 0) AS data",
+  "kunci": [
+   "DS",
+   "P"
+  ]
+ },
+ {
+  "no": 12041,
+  "nama": "BUKTI PISAH: DAFTAR BUKTI ELEKTRONIK SAJA PENGGUGAT/PEMOHON bernomor (OTOMATIS dari isian bukti yang tersimpan; kosong = tidak tercetak)",
+  "jenis": "data_sql",
+  "sql": "SELECT aps_badilag.isian_bukti_rtf(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 1) AS data",
+  "kunci": [
+   "DE",
+   "P"
+  ]
+ },
+ {
+  "no": 12042,
+  "nama": "BUKTI PISAH BAS: KLAUSA MENYERAHKAN BUKTI SURAT PENGGUGAT/PEMOHON: \"Selanjutnya #7085# menyerahkan bukti surat berupa :\" (kosong bila tidak ada bukti surat: titik)",
+  "jenis": "data_sql",
+  "sql": "SELECT IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 0)) > 0, '. Selanjutnya #7085# menyerahkan bukti surat berupa :', '.') AS data",
+  "kunci": [
+   "SL",
+   "P",
+   ". Selanjutnya #7085# menyerahkan bukti surat berupa :"
+  ]
+ },
+ {
+  "no": 12043,
+  "nama": "BUKTI PISAH BAS/PUTUSAN: PENGANTAR BUKTI ELEKTRONIK PENGGUGAT/PEMOHON oleh #7085# (tidak tercetak bila tidak ada bukti elektronik)",
+  "jenis": "data_sql",
+  "sql": "SELECT IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 1)) > 0, CONCAT('Selanjutnya #7085# menyerahkan bukti elektronik berupa:', CHAR(92 USING latin1), 'par'), '') AS data",
+  "kunci": [
+   "EI",
+   "P",
+   "#7085#"
+  ]
+ },
+ {
+  "no": 12044,
+  "nama": "BUKTI PISAH PUTUSAN: JUDUL SUB-BAB BUKTI SURAT PENGGUGAT/PEMOHON \"A. Bukti Surat:\" (tidak tercetak bila tidak ada bukti surat)",
+  "jenis": "data_sql",
+  "sql": "SELECT IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 0)) > 0, CONCAT('A.', CHAR(92 USING latin1), 'tab Bukti Surat:', CHAR(92 USING latin1), 'par'), '') AS data",
+  "kunci": [
+   "HA",
+   "P",
+   "Bukti Surat:"
+  ]
+ },
+ {
+  "no": 12045,
+  "nama": "BUKTI PISAH: DAFTAR BUKTI SURAT SAJA TERGUGAT/TERMOHON bernomor (OTOMATIS dari isian bukti yang tersimpan; bukti elektronik tidak ikut; kosong = tidak tercetak)",
+  "jenis": "data_sql",
+  "sql": "SELECT aps_badilag.isian_bukti_rtf(aps_badilag.isian_bukti_sumber('#perkara_id#', 'T'), 0) AS data",
+  "kunci": [
+   "DS",
+   "T"
+  ]
+ },
+ {
+  "no": 12046,
+  "nama": "BUKTI PISAH: DAFTAR BUKTI ELEKTRONIK SAJA TERGUGAT/TERMOHON bernomor (OTOMATIS dari isian bukti yang tersimpan; kosong = tidak tercetak)",
+  "jenis": "data_sql",
+  "sql": "SELECT aps_badilag.isian_bukti_rtf(aps_badilag.isian_bukti_sumber('#perkara_id#', 'T'), 1) AS data",
+  "kunci": [
+   "DE",
+   "T"
+  ]
+ },
+ {
+  "no": 12047,
+  "nama": "BUKTI PISAH BAS: KLAUSA MENYERAHKAN BUKTI SURAT TERGUGAT/TERMOHON: \"Selanjutnya #7086# menyerahkan bukti surat berupa:\" (kosong bila tidak ada bukti surat: titik)",
+  "jenis": "data_sql",
+  "sql": "SELECT IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'T'), 0)) > 0, '. Selanjutnya #7086# menyerahkan bukti surat berupa:', '.') AS data",
+  "kunci": [
+   "SL",
+   "T",
+   ". Selanjutnya #7086# menyerahkan bukti surat berupa:"
+  ]
+ },
+ {
+  "no": 12048,
+  "nama": "BUKTI PISAH BAS/PUTUSAN: PENGANTAR BUKTI ELEKTRONIK TERGUGAT/TERMOHON oleh #7086# (tidak tercetak bila tidak ada bukti elektronik)",
+  "jenis": "data_sql",
+  "sql": "SELECT IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'T'), 1)) > 0, CONCAT('Selanjutnya #7086# menyerahkan bukti elektronik berupa:', CHAR(92 USING latin1), 'par'), '') AS data",
+  "kunci": [
+   "EI",
+   "T",
+   "#7086#"
+  ]
+ },
+ {
+  "no": 12049,
+  "nama": "BUKTI PISAH PUTUSAN: JUDUL SUB-BAB BUKTI SURAT TERGUGAT/TERMOHON \"A. Bukti Surat:\" (tidak tercetak bila tidak ada bukti surat)",
+  "jenis": "data_sql",
+  "sql": "SELECT IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'T'), 0)) > 0, CONCAT('A.', CHAR(92 USING latin1), 'tab Bukti Surat:', CHAR(92 USING latin1), 'par'), '') AS data",
+  "kunci": [
+   "HA",
+   "T",
+   "Bukti Surat:"
+  ]
+ },
+ {
+  "no": 12050,
+  "nama": "BUKTI PISAH BAS: FRASA ALAT BUKTI PENGGUGAT/PEMOHON bentuk a (surat / elektronik / hanya saksi-saksi; OTOMATIS)",
+  "jenis": "data_sql",
+  "sql": "SELECT IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 0)) > 0, 'alat bukti surat dan saksi-saksi', IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 1)) > 0, 'alat bukti elektronik dan saksi-saksi', 'saksi-saksi')) AS data",
+  "kunci": [
+   "A",
+   "a",
+   "P"
+  ]
+ },
+ {
+  "no": 12051,
+  "nama": "BUKTI PISAH BAS: FRASA ALAT BUKTI TERGUGAT/TERMOHON bentuk a (surat / elektronik / hanya saksi-saksi; OTOMATIS)",
+  "jenis": "data_sql",
+  "sql": "SELECT IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'T'), 0)) > 0, 'alat bukti surat dan saksi-saksi', IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'T'), 1)) > 0, 'alat bukti elektronik dan saksi-saksi', 'saksi-saksi')) AS data",
+  "kunci": [
+   "A",
+   "a",
+   "T"
+  ]
+ },
+ {
+  "no": 12052,
+  "nama": "BUKTI PISAH BAS: FRASA ALAT BUKTI PENGGUGAT/PEMOHON bentuk b (surat / elektronik / hanya saksi-saksi; OTOMATIS)",
+  "jenis": "data_sql",
+  "sql": "SELECT IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 0)) > 0, 'alat bukti surat', IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 1)) > 0, 'alat bukti elektronik', 'saksi-saksi')) AS data",
+  "kunci": [
+   "A",
+   "b",
+   "P"
+  ]
+ },
+ {
+  "no": 12053,
+  "nama": "BUKTI PISAH BAS: FRASA ALAT BUKTI PENGGUGAT/PEMOHON bentuk c (surat / elektronik / hanya saksi-saksi; OTOMATIS)",
+  "jenis": "data_sql",
+  "sql": "SELECT IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 0)) > 0, 'alat bukti berupa surat dan saksi-saksi untuk menguatkan dalil-dalil permohonannya', IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 1)) > 0, 'alat bukti berupa elektronik dan saksi-saksi untuk menguatkan dalil-dalil permohonannya', 'saksi-saksi untuk menguatkan dalil-dalil permohonannya')) AS data",
+  "kunci": [
+   "A",
+   "c",
+   "P"
+  ]
+ },
+ {
+  "no": 12054,
+  "nama": "BUKTI PISAH BAS: KLAUSA MENYERAHKAN BUKTI SURAT PENGGUGAT/PEMOHON: \"lalu #7036# menyerahkan bukti surat berupa:\" (kosong bila tidak ada bukti surat: titik)",
+  "jenis": "data_sql",
+  "sql": "SELECT IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 0)) > 0, ', lalu #7036# menyerahkan bukti surat berupa:', '.') AS data",
+  "kunci": [
+   "SL",
+   "P",
+   ", lalu #7036# menyerahkan bukti surat berupa:"
+  ]
+ },
+ {
+  "no": 12055,
+  "nama": "BUKTI PISAH BAS: KLAUSA MENYERAHKAN BUKTI SURAT PENGGUGAT/PEMOHON: \"selanjutnya #0046# I dan #0046# II menyerahkan bukti surat berupa :\" (kosong bila tidak ada bukti surat: titik)",
+  "jenis": "data_sql",
+  "sql": "SELECT IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 0)) > 0, ', selanjutnya #0046# I dan #0046# II menyerahkan bukti surat berupa :', '.') AS data",
+  "kunci": [
+   "SL",
+   "P",
+   ", selanjutnya #0046# I dan #0046# II menyerahkan bukti surat berupa :"
+  ]
+ },
+ {
+  "no": 12056,
+  "nama": "BUKTI PISAH BAS: KLAUSA MENYERAHKAN BUKTI SURAT PENGGUGAT/PEMOHON: \"Selanjutnya #0046# menyerahkan bukti surat berupa :\" (kosong bila tidak ada bukti surat: titik)",
+  "jenis": "data_sql",
+  "sql": "SELECT IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 0)) > 0, '. Selanjutnya #0046# menyerahkan bukti surat berupa :', '.') AS data",
+  "kunci": [
+   "SL",
+   "P",
+   ". Selanjutnya #0046# menyerahkan bukti surat berupa :"
+  ]
+ },
+ {
+  "no": 12057,
+  "nama": "BUKTI PISAH BAS: KLAUSA MENYERAHKAN BUKTI SURAT PENGGUGAT/PEMOHON: \"Selanjutnya #0046# menyerahkan bukti surat berupa:\" (kosong bila tidak ada bukti surat: titik)",
+  "jenis": "data_sql",
+  "sql": "SELECT IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 0)) > 0, '. Selanjutnya #0046# menyerahkan bukti surat berupa:', '.') AS data",
+  "kunci": [
+   "SL",
+   "P",
+   ". Selanjutnya #0046# menyerahkan bukti surat berupa:"
+  ]
+ },
+ {
+  "no": 12058,
+  "nama": "BUKTI PISAH BAS: KLAUSA MENYERAHKAN BUKTI SURAT PENGGUGAT/PEMOHON: \"Selanjutnya #4046# menyerahkan bukti surat berupa:\" (kosong bila tidak ada bukti surat: titik)",
+  "jenis": "data_sql",
+  "sql": "SELECT IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 0)) > 0, '. Selanjutnya #4046# menyerahkan bukti surat berupa:', '.') AS data",
+  "kunci": [
+   "SL",
+   "P",
+   ". Selanjutnya #4046# menyerahkan bukti surat berupa:"
+  ]
+ },
+ {
+  "no": 12059,
+  "nama": "BUKTI PISAH BAS: KLAUSA MENYERAHKAN BUKTI SURAT PENGGUGAT/PEMOHON: \"Selanjutnya para #0046# menyerahkan bukti surat berupa:\" (kosong bila tidak ada bukti surat: titik)",
+  "jenis": "data_sql",
+  "sql": "SELECT IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 0)) > 0, '. Selanjutnya para #0046# menyerahkan bukti surat berupa:', '.') AS data",
+  "kunci": [
+   "SL",
+   "P",
+   ". Selanjutnya para #0046# menyerahkan bukti surat berupa:"
+  ]
+ },
+ {
+  "no": 12060,
+  "nama": "BUKTI PISAH BAS: KLAUSA MENYERAHKAN BUKTI SURAT TERGUGAT/TERMOHON: \"Selanjutnya #0047# menyerahkan bukti surat berupa :\" (kosong bila tidak ada bukti surat: titik)",
+  "jenis": "data_sql",
+  "sql": "SELECT IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'T'), 0)) > 0, '. Selanjutnya #0047# menyerahkan bukti surat berupa :', '.') AS data",
+  "kunci": [
+   "SL",
+   "T",
+   ". Selanjutnya #0047# menyerahkan bukti surat berupa :"
+  ]
+ },
+ {
+  "no": 12061,
+  "nama": "BUKTI PISAH BAS/PUTUSAN: PENGANTAR BUKTI ELEKTRONIK PENGGUGAT/PEMOHON oleh #0046# (tidak tercetak bila tidak ada bukti elektronik)",
+  "jenis": "data_sql",
+  "sql": "SELECT IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 1)) > 0, CONCAT('Selanjutnya #0046# menyerahkan bukti elektronik berupa:', CHAR(92 USING latin1), 'par'), '') AS data",
+  "kunci": [
+   "EI",
+   "P",
+   "#0046#"
+  ]
+ },
+ {
+  "no": 12062,
+  "nama": "BUKTI PISAH BAS/PUTUSAN: PENGANTAR BUKTI ELEKTRONIK PENGGUGAT/PEMOHON oleh #0046# I dan #0046# II (tidak tercetak bila tidak ada bukti elektronik)",
+  "jenis": "data_sql",
+  "sql": "SELECT IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 1)) > 0, CONCAT('Selanjutnya #0046# I dan #0046# II menyerahkan bukti elektronik berupa:', CHAR(92 USING latin1), 'par'), '') AS data",
+  "kunci": [
+   "EI",
+   "P",
+   "#0046# I dan #0046# II"
+  ]
+ },
+ {
+  "no": 12063,
+  "nama": "BUKTI PISAH BAS/PUTUSAN: PENGANTAR BUKTI ELEKTRONIK PENGGUGAT/PEMOHON oleh #4046# (tidak tercetak bila tidak ada bukti elektronik)",
+  "jenis": "data_sql",
+  "sql": "SELECT IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 1)) > 0, CONCAT('Selanjutnya #4046# menyerahkan bukti elektronik berupa:', CHAR(92 USING latin1), 'par'), '') AS data",
+  "kunci": [
+   "EI",
+   "P",
+   "#4046#"
+  ]
+ },
+ {
+  "no": 12064,
+  "nama": "BUKTI PISAH BAS/PUTUSAN: PENGANTAR BUKTI ELEKTRONIK PENGGUGAT/PEMOHON oleh #7036# (tidak tercetak bila tidak ada bukti elektronik)",
+  "jenis": "data_sql",
+  "sql": "SELECT IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 1)) > 0, CONCAT('Selanjutnya #7036# menyerahkan bukti elektronik berupa:', CHAR(92 USING latin1), 'par'), '') AS data",
+  "kunci": [
+   "EI",
+   "P",
+   "#7036#"
+  ]
+ },
+ {
+  "no": 12065,
+  "nama": "BUKTI PISAH BAS/PUTUSAN: PENGANTAR BUKTI ELEKTRONIK PENGGUGAT/PEMOHON oleh para #0046# (tidak tercetak bila tidak ada bukti elektronik)",
+  "jenis": "data_sql",
+  "sql": "SELECT IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 1)) > 0, CONCAT('Selanjutnya para #0046# menyerahkan bukti elektronik berupa:', CHAR(92 USING latin1), 'par'), '') AS data",
+  "kunci": [
+   "EI",
+   "P",
+   "para #0046#"
+  ]
+ },
+ {
+  "no": 12066,
+  "nama": "BUKTI PISAH BAS/PUTUSAN: PENGANTAR BUKTI ELEKTRONIK TERGUGAT/TERMOHON oleh #0047# (tidak tercetak bila tidak ada bukti elektronik)",
+  "jenis": "data_sql",
+  "sql": "SELECT IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'T'), 1)) > 0, CONCAT('Selanjutnya #0047# menyerahkan bukti elektronik berupa:', CHAR(92 USING latin1), 'par'), '') AS data",
+  "kunci": [
+   "EI",
+   "T",
+   "#0047#"
+  ]
+ },
+ {
+  "no": 12067,
+  "nama": "BUKTI PISAH PUTUSAN: JUDUL SUB-BAB BUKTI SURAT PENGGUGAT/PEMOHON \"A. Bukti Surat\" (tidak tercetak bila tidak ada bukti surat)",
+  "jenis": "data_sql",
+  "sql": "SELECT IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 0)) > 0, CONCAT('A.', CHAR(92 USING latin1), 'tab Bukti Surat', CHAR(92 USING latin1), 'par'), '') AS data",
+  "kunci": [
+   "HA",
+   "P",
+   "Bukti Surat"
+  ]
+ },
+ {
+  "no": 12068,
+  "nama": "BUKTI PISAH PUTUSAN: JUDUL SUB-BAB BUKTI SURAT PENGGUGAT/PEMOHON \"A. Surat\" (tidak tercetak bila tidak ada bukti surat)",
+  "jenis": "data_sql",
+  "sql": "SELECT IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 0)) > 0, CONCAT('A.', CHAR(92 USING latin1), 'tab Surat', CHAR(92 USING latin1), 'par'), '') AS data",
+  "kunci": [
+   "HA",
+   "P",
+   "Surat"
+  ]
+ },
+ {
+  "no": 12069,
+  "nama": "BUKTI PISAH PUTUSAN: JUDUL SUB-BAB BUKTI SURAT PENGGUGAT/PEMOHON \"A. Surat :\" (tidak tercetak bila tidak ada bukti surat)",
+  "jenis": "data_sql",
+  "sql": "SELECT IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 0)) > 0, CONCAT('A.', CHAR(92 USING latin1), 'tab Surat :', CHAR(92 USING latin1), 'par'), '') AS data",
+  "kunci": [
+   "HA",
+   "P",
+   "Surat :"
+  ]
+ },
+ {
+  "no": 12070,
+  "nama": "BUKTI PISAH PUTUSAN: JUDUL SUB-BAB BUKTI SURAT PENGGUGAT/PEMOHON \"A. Surat:\" (tidak tercetak bila tidak ada bukti surat)",
+  "jenis": "data_sql",
+  "sql": "SELECT IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 0)) > 0, CONCAT('A.', CHAR(92 USING latin1), 'tab Surat:', CHAR(92 USING latin1), 'par'), '') AS data",
+  "kunci": [
+   "HA",
+   "P",
+   "Surat:"
+  ]
+ },
+ {
+  "no": 12071,
+  "nama": "BUKTI PISAH PUTUSAN: JUDUL SUB-BAB BUKTI ELEKTRONIK PENGGUGAT/PEMOHON gaya titik dua \"\" (huruf berurut; tidak tercetak bila tidak ada)",
+  "jenis": "data_sql",
+  "sql": "SELECT IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 1)) > 0, CONCAT(IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 0)) > 0, 'B.', 'A.'), CHAR(92 USING latin1), 'tab Bukti Elektronik', CHAR(92 USING latin1), 'par'), '') AS data",
+  "kunci": [
+   "HE",
+   "P",
+   ""
+  ]
+ },
+ {
+  "no": 12072,
+  "nama": "BUKTI PISAH PUTUSAN: JUDUL SUB-BAB BUKTI ELEKTRONIK PENGGUGAT/PEMOHON gaya titik dua \" :\" (huruf berurut; tidak tercetak bila tidak ada)",
+  "jenis": "data_sql",
+  "sql": "SELECT IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 1)) > 0, CONCAT(IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 0)) > 0, 'B.', 'A.'), CHAR(92 USING latin1), 'tab Bukti Elektronik :', CHAR(92 USING latin1), 'par'), '') AS data",
+  "kunci": [
+   "HE",
+   "P",
+   " :"
+  ]
+ },
+ {
+  "no": 12073,
+  "nama": "BUKTI PISAH PUTUSAN: JUDUL SUB-BAB BUKTI ELEKTRONIK PENGGUGAT/PEMOHON gaya titik dua \":\" (huruf berurut; tidak tercetak bila tidak ada)",
+  "jenis": "data_sql",
+  "sql": "SELECT IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 1)) > 0, CONCAT(IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 0)) > 0, 'B.', 'A.'), CHAR(92 USING latin1), 'tab Bukti Elektronik:', CHAR(92 USING latin1), 'par'), '') AS data",
+  "kunci": [
+   "HE",
+   "P",
+   ":"
+  ]
+ },
+ {
+  "no": 12074,
+  "nama": "BUKTI PISAH PUTUSAN: JUDUL SUB-BAB BUKTI ELEKTRONIK TERGUGAT/TERMOHON gaya titik dua \":\" (huruf berurut; tidak tercetak bila tidak ada)",
+  "jenis": "data_sql",
+  "sql": "SELECT IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'T'), 1)) > 0, CONCAT(IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'T'), 0)) > 0, 'B.', 'A.'), CHAR(92 USING latin1), 'tab Bukti Elektronik:', CHAR(92 USING latin1), 'par'), '') AS data",
+  "kunci": [
+   "HE",
+   "T",
+   ":"
+  ]
+ },
+ {
+  "no": 12075,
+  "nama": "BUKTI PISAH PUTUSAN: HURUF SUB-BAB SAKSI PENGGUGAT/PEMOHON (A / B / C menurut sub-bab bukti yang ada)",
+  "jenis": "data_sql",
+  "sql": "SELECT CONCAT(CHAR(65 + IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 0)) > 0, 1, 0) + IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 1)) > 0, 1, 0)), '.') AS data",
+  "kunci": [
+   "LT",
+   "P"
+  ]
+ },
+ {
+  "no": 12076,
+  "nama": "BUKTI PISAH PUTUSAN: HURUF SUB-BAB SAKSI TERGUGAT/TERMOHON (A / B / C menurut sub-bab bukti yang ada)",
+  "jenis": "data_sql",
+  "sql": "SELECT CONCAT(CHAR(65 + IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'T'), 0)) > 0, 1, 0) + IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'T'), 1)) > 0, 1, 0)), '.') AS data",
+  "kunci": [
+   "LT",
+   "T"
+  ]
+ }
+]

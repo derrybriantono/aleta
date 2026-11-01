@@ -1,0 +1,52 @@
+== b01 surat sama
+== b02 surat sama
+== b03 surat sama
+== b04 surat sama
+== b05 surat sama
+== b06 surat sama
+== p01 surat 8 baris beda
+== p02 surat sama
+== p03 surat 4 baris beda
+== p04 surat 4 baris beda
+== p05 surat 4 baris beda
+== p06 surat sama
+== p07 surat 4 baris beda
+== b01 elektronik 3 baris beda
+== b02 elektronik 3 baris beda
+== b03 elektronik 3 baris beda
+== b04 elektronik 3 baris beda
+== b05 elektronik 3 baris beda
+== b06 elektronik 3 baris beda
+== p01 elektronik 8 baris beda
+== p02 elektronik 2 baris beda
+== p03 elektronik 4 baris beda
+== p04 elektronik 4 baris beda
+== p05 elektronik 4 baris beda
+== p06 elektronik 1 baris beda
+== p07 elektronik 4 baris beda
+== b01 keduanya 5 baris beda
+== b02 keduanya 5 baris beda
+== b03 keduanya 5 baris beda
+== b04 keduanya 5 baris beda
+== b05 keduanya 5 baris beda
+== b06 keduanya 5 baris beda
+== p01 keduanya 18 baris beda
+== p02 keduanya 7 baris beda
+== p03 keduanya 9 baris beda
+== p04 keduanya 9 baris beda
+== p05 keduanya 9 baris beda
+== p06 keduanya 5 baris beda
+== p07 keduanya 9 baris beda
+== b01 tanpa 3 baris beda
+== b02 tanpa 3 baris beda
+== b03 tanpa 3 baris beda
+== b04 tanpa 3 baris beda
+== b05 tanpa 3 baris beda
+== b06 tanpa 3 baris beda
+== p01 tanpa 8 baris beda
+== p02 tanpa 4 baris beda
+== p03 tanpa 4 baris beda
+== p04 tanpa 4 baris beda
+== p05 tanpa 4 baris beda
+== p06 tanpa 1 baris beda
+== p07 tanpa 4 baris beda
