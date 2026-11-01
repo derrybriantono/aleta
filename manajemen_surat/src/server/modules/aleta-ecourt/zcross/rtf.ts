@@ -276,7 +276,11 @@ export const POLA_UJUNG_DAFTAR = /(?:berikut|berupa)\s*:\s*$/i;
 
 export type JangkarRtf = { indeks: number; via: "bentuk" | "ujung-daftar"; paragrafUkur: ParagrafRtf; paragrafBentuk: ParagrafRtf | null };
 
+const bermakna = (t: string): boolean => /\p{L}{2,}/u.test(t);
 const bentukZ = (isi: string): boolean => /zcross-|SC\s*Z/.test(isi);
+/** Z gambar tangan blangko lama TANPA kotak "SC Z" (bentuk bebas "FreeForm") - keputusan 87 (1 Nov): ikut disesuaikan otomatis bila
+ * paragraf bertulisan terdekat di atasnya penutup daftar ("...berikut:" / "...berupa:"). */
+const bentukFreeForm = (isi: string): boolean => /\{\\sv\s*FreeForm/.test(isi);
 
 /**
  * Paragraf jangkar: (1) paragraf pemilik bentuk "SC Z" / "zcross-*" yang TERAKHIR (mundur ke paragraf bertulisan terdekat bila pemiliknya
@@ -286,10 +290,16 @@ export function cariJangkarRtf(s: string, urai: HasilUrai): JangkarRtf | null {
   const { paragraf } = urai;
   for (let i = paragraf.length - 1; i >= 0; i -= 1) {
     const p = paragraf[i];
-    if (!p.shp.some(([a, b]) => bentukZ(s.slice(a, b)))) continue;
+    const sc = p.shp.some(([a, b]) => bentukZ(s.slice(a, b)));
+    if (!sc && !p.shp.some(([a, b]) => bentukFreeForm(s.slice(a, b)))) continue;
     let t = i;
-    while (t > 0 && !paragraf[t].teks.trim()) t -= 1;
-    if (!paragraf[t].teks.trim()) return null;
+    // paragraf ukur = paragraf BERTULISAN terdekat; isian kosong "..." dilewati (ekornya tidak dapat dicari di PDF) - keputusan 87
+    while (t > 0 && !bermakna(paragraf[t].teks)) t -= 1;
+    if (!bermakna(paragraf[t].teks)) {
+      if (sc) return null;
+      continue;
+    }
+    if (!sc && !POLA_UJUNG_DAFTAR.test(paragraf[t].teks)) continue;
     return { indeks: t, via: "bentuk", paragrafUkur: paragraf[t], paragrafBentuk: p };
   }
   for (let i = paragraf.length - 1; i >= 0; i -= 1) {
@@ -340,10 +350,14 @@ export function bersihkanZRtf(sumber: string): Pembersihan {
   const buang: Segmen[] = [];
   let kotak: string | null = null;
   const lihat = (p: ParagrafRtf) => {
+    // Z gambar tangan blangko lama berupa garis lurus (AutoShape garis / penghubung lurus) di paragraf pemilik tanda Z ikut dibuang supaya
+    // tidak bertumpuk dengan Z otomatis (keputusan 87, BAS jawab-menjawab).
+    const adaTanda = p.shp.some(([a, b]) => /SC\s*Z|\{\\sv\s*FreeForm/.test(s.slice(a, b)));
     for (const [a, b] of p.shp) {
       const isi = s.slice(a, b);
       const buatanKita = /zcross-/.test(isi);
-      const templat = /SC\s*Z/.test(isi) || /\{\\sv\s*FreeForm/.test(isi);
+      const garisLama = adaTanda && /\{\\sn\s*shapeType\}\{\\sv\s*(?:20|32)\}/.test(isi) && !/\\shptxt/.test(isi);
+      const templat = /SC\s*Z/.test(isi) || /\{\\sv\s*FreeForm/.test(isi) || garisLama;
       if (!buatanKita && !templat) continue;
       buang.push([a, b]);
       if (/\\shptxt/.test(isi) && !kotak) kotak = isi;

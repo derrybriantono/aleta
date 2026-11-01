@@ -743,6 +743,13 @@
       "when": 1792323000001,
       "tag": "0121_aleta_kalimat_pribadi",
       "breakpoints": true
+    },
+    {
+      "idx": 107,
+      "version": "7",
+      "when": 1792323000003,
+      "tag": "0123_aleta_bas_halaman",
+      "breakpoints": true
     }
   ]
 }

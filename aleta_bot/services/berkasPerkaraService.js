@@ -1129,8 +1129,68 @@ async function pelajari(params = {}, deps = {}) {
   return { ok: true, bawaan: hasil };
 }
 
+/**
+ * BAS RUNUT (keputusan pengguna 71, 1 Nov 2026) - HANYA MEMBACA. Daftar sidang perkara (tanpa sidang ikrar talak) urut tanggal_sidang, id -
+ * urutan yang sama dengan berkas perkara di atas - beserta jumlah halaman PDF e-Doc BAS bila sudah diunggah dan terbaca. Portal memakainya
+ * untuk nomor halaman awal BAS (halaman terakhir BAS sebelumnya + 1) dan untuk BAS sebelumnya yang belum tercatat di portal.
+ * perkara dikenali dari perkaraId atau nomorPerkara. -> { ok, perkaraId, nomorPerkara, sidang: [{ id, urutan, tanggal, ikrar, halamanEdoc, edoc }] }
+ */
+async function jadwalBas(params = {}, deps = {}) {
+  const q = deps.kueri || kueriBawaan;
+  const aman = async (sql, p = []) => {
+    try {
+      return await q(sql, p);
+    } catch {
+      return [];
+    }
+  };
+  let perkaraId = Number(params.perkaraId) || 0;
+  let nomor = String(params.nomorPerkara || "").trim();
+  if (!perkaraId && nomor) {
+    const [p] = await aman("SELECT perkara_id, nomor_perkara FROM perkara WHERE nomor_perkara = ? LIMIT 1", [nomor]);
+    perkaraId = p ? nomorBaris(p.perkara_id) : 0;
+  } else if (perkaraId && !nomor) {
+    const [p] = await aman("SELECT nomor_perkara FROM perkara WHERE perkara_id = ? LIMIT 1", [perkaraId]);
+    nomor = p ? String(p.nomor_perkara || "") : "";
+  }
+  if (!perkaraId) return { ok: false, sebab: "Perkara tidak ditemukan di SIPP." };
+  const jadwal = await aman(
+    "SELECT id, urutan, tanggal_sidang, ikrar_talak, edoc_bas FROM perkara_jadwal_sidang WHERE perkara_id = ? ORDER BY tanggal_sidang, id",
+    [perkaraId]
+  );
+  const sidang = [];
+  for (const j of jadwal) {
+    const ikrar = String(j.ikrar_talak || "T") === "Y";
+    const edoc = String(j.edoc_bas || "").trim();
+    let halamanEdoc = null;
+    if (edoc && params.denganHalaman !== false && !ikrar) {
+      const h = await halamanBaris(edoc, "bas", deps);
+      halamanEdoc = h.halaman && h.sumber === "pasti" ? h.halaman : null;
+    }
+    sidang.push({ id: String(j.id), urutan: nomorBaris(j.urutan), tanggal: iso(j.tanggal_sidang), ikrar, edoc: Boolean(edoc), halamanEdoc });
+  }
+  // Keputusan 87: halaman lampiran jawab-menjawab tertulis dari arsip e-Court (jumlah berkas + jumlah halaman bila SEMUA terbaca).
+  const lampiran = {};
+  if (nomor && params.denganHalaman !== false) {
+    let ec = [];
+    try {
+      ec = await berkasEcourt(nomor, deps);
+    } catch {
+      ec = [];
+    }
+    for (const jenis of ["jawaban", "replik", "duplik", "kesimpulan"]) {
+      const daftar = ec.filter((x) => x.jenis === jenis);
+      if (!daftar.length) continue;
+      const terbaca = daftar.every((x) => x.halaman > 0);
+      lampiran[jenis] = { jumlah: daftar.length, halaman: terbaca ? daftar.reduce((n, x) => n + x.halaman, 0) : null };
+    }
+  }
+  return { ok: true, perkaraId: String(perkaraId), nomorPerkara: nomor, sidang, lampiran };
+}
+
 module.exports = {
   KUNCI_JENIS,
+  jadwalBas,
   strukturPdf,
   halamanPdf,
   halamanDocx,

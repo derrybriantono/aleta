@@ -3919,6 +3919,8 @@ export async function getGatewayAbtUsulan(muatan: {
   saksiPihak?: { saksi1?: string; saksi2?: string };
   /** 5227: jawab-menjawab (jawaban/replik/duplik) - hanya keterangan diakui/dibantah, tidak pernah memunculkan alasan. */
   jawab?: Array<{ jenis: string; teks: string }>;
+  /** Keputusan 70 (1 Nov 2026): uraian daftar bukti - putusan pidana perzinahan menguatkan tuduhan selingkuh tanpa saksi. */
+  bukti?: Array<{ tanda: string; teks: string }>;
   /**
    * Blangko tanya jawab ABT, diambil ekstensi lewat halaman penyunting ABT.
    * jawabMentah = jawaban templat SEBELUM variabelnya diganti ABT

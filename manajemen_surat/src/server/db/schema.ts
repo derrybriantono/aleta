@@ -562,6 +562,32 @@ export const DDL_KALIMAT_PRIBADI = {
 } as const;
 
 /**
+ * Halaman BAS runut (0123, 1 Nov 2026, keputusan 71). Cermin PERSIS dari drizzle/0123_aleta_bas_halaman.sql;
+ * penjaga bas-halaman-runut-1nov.test.ts membandingkan keduanya.
+ */
+export const DDL_BAS_HALAMAN = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_bas_halaman (
+  perkara_id TEXT NOT NULL,
+  sidang_kunci TEXT NOT NULL,
+  sidang_id TEXT NOT NULL DEFAULT '',
+  tanggal_sidang TEXT NOT NULL DEFAULT '',
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  halaman_awal INTEGER NOT NULL DEFAULT 1,
+  halaman_akhir INTEGER NOT NULL DEFAULT 1,
+  halaman_fisik INTEGER NOT NULL DEFAULT 1,
+  lompat_bukti INTEGER NOT NULL DEFAULT 0,
+  sumber TEXT NOT NULL DEFAULT '',
+  dicatat_oleh TEXT NOT NULL DEFAULT '',
+  dicatat_pada TEXT NOT NULL,
+  sidik TEXT NOT NULL DEFAULT '',
+  PRIMARY KEY (perkara_id, sidang_kunci)
+)`,
+  ],
+  indeks: [`CREATE INDEX IF NOT EXISTS idx_bas_halaman_tanggal ON aleta_bas_halaman(perkara_id, tanggal_sidang)`],
+} as const;
+
+/**
  * Putusan SIPP vs dokumen putusan yang diunggah - hasil pencocokan per perkara (0117, 30 Okt 2026, G4 4.3).
  * Cermin PERSIS dari drizzle/0117_aleta_cocok_putusan.sql; penjaga cocok-putusan-30okt.test.ts membandingkan keduanya.
  */
@@ -3440,6 +3466,8 @@ const schemaStatements = [
   ...DDL_CETAK_TERAKHIR.tabel,
   ...DDL_KALIMAT_PRIBADI.tabel,
   ...DDL_COCOK_PUTUSAN.tabel,
+  // Halaman BAS runut per perkara + sidang (0123).
+  ...DDL_BAS_HALAMAN.tabel,
   // Cadangan & riwayat suntingan ABT dari Pengaturan SIPP & ABT (0066).
   ...DDL_ABT_SUNTINGAN.tabel,
   // Checklist Konseptor Sementara: tanda langkah & laporan Blangko Derry (0067).
@@ -5457,6 +5485,7 @@ const indexStatements = [
   ...DDL_CETAK_TERAKHIR.indeks,
   ...DDL_KALIMAT_PRIBADI.indeks,
   ...DDL_COCOK_PUTUSAN.indeks,
+  ...DDL_BAS_HALAMAN.indeks,
   ...DDL_ABT_SUNTINGAN.indeks,
   ...DDL_BLANGKO_PRIBADI.indeks,
   ...DDL_TAUTAN_JADWAL.indeks,

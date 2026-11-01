@@ -376,7 +376,9 @@ export async function wordKePdfBas(masukan: MasukanWordPdf, deps: DepsWordPdf): 
       // Z otomatis tidak boleh menggagalkan PDF: lanjut dengan naskah apa adanya
     }
   }
-  let pdf = await deps.ubahKePdf(awal, bentuk);
+  // naskah sesudah penyesuaian bisa berganti bentuk (DOC lama -> DOCX untuk nomor halaman runut, keputusan 87): kenali lagi dari isinya
+  const bentukAkhir = kenaliBerkasWord(awal);
+  let pdf = await deps.ubahKePdf(awal, bentukAkhir === "rtf" || bentukAkhir === "docx" || bentukAkhir === "doc" ? bentukAkhir : bentuk);
   if (kenaliBentukNaskah(pdf) !== "pdf") throw new ApiError(502, "Hasil ubahan bukan PDF.");
 
   let penandatangan: Penanda[] = [];

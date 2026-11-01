@@ -2324,7 +2324,14 @@
     const tanggalSidang = sd && sd.tanggal ? tglIndo(String(sd.tanggal).slice(0, 10)) : "";
     const perluAlasan = m.VAR_ALASAN_CERAI.some((k) => kodeAda.has(k));
     if (perluAlasan && (bahan.teks1.trim() || bahan.teks2.trim() || bahan.posita.trim())) {
-      hasil.push({ sumber: "saksi", muatan: { saksi1: bahan.teks1, saksi2: bahan.teks2, tanggalSidang, pelaku: sb.T, lawan: sb.P, posita: bahan.posita } });
+      // 1 Nov (keputusan 70): uraian daftar bukti ikut dikirim - putusan pidana perzinahan menguatkan tuduhan selingkuh tanpa saksi.
+      const bukti = [];
+      for (const w of ["P", "T"]) {
+        (S.bukti[w] || []).forEach((r, i) => {
+          if (r && String(r.manual || r.nm || "").trim()) bukti.push({ tanda: `${w}.${i + 1}`, teks: kalimatBukti(r, w, i).slice(0, 600) });
+        });
+      }
+      hasil.push({ sumber: "saksi", muatan: { saksi1: bahan.teks1, saksi2: bahan.teks2, tanggalSidang, pelaku: sb.T, lawan: sb.P, posita: bahan.posita, ...(bukti.length ? { bukti: bukti.slice(0, 60) } : {}) } });
     }
     if (bahan.posita.trim() && /itsbat/i.test(jenis)) {
       hasil.push({ sumber: "itsbat", muatan: { posita: bahan.posita, pemohon: sb.P, pelaku: sb.T } });
@@ -9304,17 +9311,49 @@
       return 0;
     }
   }
-  /** RTF BAS -> RTF dengan Z cross. Gagal / rute tak terjangkau = RTF apa adanya (tidak mengganggu unduhan). */
-  async function zCrossRtf(rtf, jumlahBukti) {
+  /**
+   * 1 Nov 2026 (keputusan 71) - nomor halaman BAS RUNUT: perkara + sidang BAS ini dikirim ke portal; portal memasang halaman awal = halaman
+   * terakhir BAS sidang sebelumnya + 1 dan mencatat halaman terakhir BAS ini. Tanpa tombol; galat tidak menahan cetak.
+   */
+  function konteksRunutBas() {
+    const pk = S.pk || {};
+    const sd = pk.sidangDipilih || {};
+    const daftar = (Array.isArray(pk.sidang) ? pk.sidang : []).map((x) => ({ sidangId: String((x && x.sidangId) || ""), tanggal: String((x && x.tanggal) || "").slice(0, 10), urutan: Number(x && x.urutan) || 0 })).filter((x) => x.tanggal);
+    // typeof: potongan ini juga dijalankan uji tanpa seluruh panel (perkaraId/nomorPerkara/toast belum ada)
+    const pid = typeof perkaraId === "function" ? perkaraId() : String(pk.perkaraId || "");
+    const nomor = typeof nomorPerkara === "function" ? nomorPerkara() : String(pk.nomorPerkara || "");
+    return { perkaraId: pid, nomorPerkara: nomor, sidangId: String(sd.sidangId || ""), tanggalSidang: String(sd.tanggal || "").slice(0, 10), sidang: daftar.slice(0, 200) };
+  }
+  /** Peringatan halaman runut dari portal -> log panel (yang menyebut BAS belum tercatat juga muncul sebagai pemberitahuan). */
+  function laporRunut(peringatan) {
+    for (const p of Array.isArray(peringatan) ? peringatan : []) {
+      if (!/halaman|BAS sidang/i.test(String(p))) continue;
+      catatLog(`nomor halaman: ${p}`);
+      if (/belum pernah dicetak|cetak ulang BAS sidang|tidak ditemukan di jadwal/i.test(String(p)) && typeof toast === "function") toast(String(p));
+    }
+  }
+  /** RTF BAS -> RTF dengan Z cross dan nomor halaman runut. Gagal / rute tak terjangkau = RTF apa adanya (tidak mengganggu unduhan). */
+  async function zCrossRtf(rtf, jumlahBukti, catat = true) {
     try {
       const badan = new FormData();
       badan.append("berkas", new Blob([bufDariLatin1(latin1(rtf))], { type: "application/rtf" }), "bas.rtf");
       badan.append("keluar", "rtf");
       if (jumlahBukti > 0) badan.append("jumlahBukti", String(jumlahBukti));
+      const k = konteksRunutBas();
+      if (k.perkaraId || k.nomorPerkara) {
+        for (const kunci of ["perkaraId", "nomorPerkara", "sidangId", "tanggalSidang"]) if (k[kunci]) badan.append(kunci, k[kunci]);
+        if (k.sidang.length) badan.append("sidang", JSON.stringify(k.sidang));
+      }
+      if (!catat) badan.append("catat", "0");
       const d = await ambilPortal(API_ZCROSS, { method: "POST", body: badan, batasMs: BATAS_LAMA_MS }, "Memasang Z");
+      if (d) laporRunut(d.peringatan);
       if (!d || !d.diubah || !d.berkasBase64) return { rtf, ket: "" };
       const biner = Uint8Array.from(atob(d.berkasBase64), (c) => c.charCodeAt(0));
-      const ket = d.laporan && d.laporan.jumlahHalamanBuktiBawaan ? "Z dipasang; jumlah halaman bukti memakai bawaan 1 per bukti" : "Z dipasang";
+      // portal lama (tanpa nomor runut): diubah = Z dipasang
+      const z = !d.laporan || d.laporan.diubah !== false;
+      const ketZ = !z ? "" : d.laporan.jumlahHalamanBuktiBawaan ? "Z dipasang; jumlah halaman bukti memakai bawaan 1 per bukti" : "Z dipasang";
+      const ketH = d.runut && d.runut.awal ? `halaman ${d.runut.awal}${d.runut.akhir > d.runut.awal ? `-${d.runut.akhir}` : ""}` : "";
+      const ket = [ketZ, ketH].filter(Boolean).join("; ");
       return { rtf: typeof rtf === "string" ? latin1(biner) : biner.buffer, ket };
     } catch (e) {
       catatLog(`Z cross dilewati: ${e && e.message ? e.message : e}`);
@@ -9329,9 +9368,11 @@
       if (ada) return { blob: new Blob([ada.bita], { type: "application/pdf" }), bita: ada.bita, keterangan: null, ttdPdf: ada.ttdPdf, dariCache: true };
     }
     const buf = bufDariLatin1(rtfLatin1);
-    const badan = { rtfBase64: base64DariBuffer(buf), ...(!salinan && S.jumlahBuktiZ > 0 ? { jumlahBukti: S.jumlahBuktiZ } : {}), ...(salinan ? { salinan: true } : {}), ...(adaTtd ? { ttd: ttd.map((x) => ({ nama: x.nama, pngBase64: x.pngBase64 })) } : {}) };
+    const basRunut = !salinan && S.blangko && S.blangko.jenis === "bas" && !tes() ? konteksRunutBas() : null;
+    const badan = { rtfBase64: base64DariBuffer(buf), ...(!salinan && S.jumlahBuktiZ > 0 ? { jumlahBukti: S.jumlahBuktiZ } : {}), ...(salinan ? { salinan: true } : {}), ...(adaTtd ? { ttd: ttd.map((x) => ({ nama: x.nama, pngBase64: x.pngBase64 })) } : {}), ...(basRunut && (basRunut.perkaraId || basRunut.nomorPerkara) ? { basRunut } : {}) };
     const d = await ambilPortal(API_PDF, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(badan), batasMs: BATAS_LAMA_MS }, salinan ? "Membuat PDF salinan" : "Membuat PDF");
     if (!d || !d.available) throw new Error((d && d.message) || "pengubah PDF tidak tersedia");
+    if (d.runut) laporRunut(d.runut.peringatan);
     const biner = Uint8Array.from(atob(d.pdfBase64), (c) => c.charCodeAt(0));
     const hasil = { blob: new Blob([biner], { type: "application/pdf" }), bita: biner, keterangan: d.salinan || null, ttdPdf: d.ttdPdf || null };
     if (!salinan) {
@@ -9455,7 +9496,8 @@
     S.jumlahBuktiZ = jumlahBuktiPanel();
     let ketZ = "";
     if (S.fmt.rtf && j === "bas" && !tes()) {
-      const z = await zCrossRtf(rtfCetak, S.jumlahBuktiZ);
+      // PDF yang ikut dicetak mencatat halaman BAS ini (satu render saja); RTF saja = rute Z yang mencatat.
+      const z = await zCrossRtf(rtfCetak, S.jumlahBuktiZ, !S.fmt.pdf);
       rtfCetak = z.rtf;
       ketZ = z.ket;
     }

@@ -1,4 +1,4 @@
-# URUTAN PASANG paket ABT 29 Okt - 1 Nov 2026 (26 paket; diuji rantai penuh dari dump 28 Okt; MENGGANTIKAN URUTAN-PASANG-31okt.md)
+# URUTAN PASANG paket ABT 29 Okt - 1 Nov 2026 (27 paket; diuji rantai penuh dari dump 28 Okt; MENGGANTIKAN URUTAN-PASANG-31okt.md)
 
 Nomor "KE-n" di komentar dan PASANG.md paket lama mengikuti urutan 24 paket yang lama; yang berlaku adalah nomor di berkas ini
 (pembuktian-urut-1nov disisipkan sebagai ke-22, sehingga jawab-replik, butir-rata, bukti-pisah menjadi ke-23, ke-24, ke-25, teks-pihak ke-26).
@@ -373,7 +373,7 @@ SELESAI - paket abt-bukti-pisah-1nov terpasang. ...
 Uji rantai 24 paket 1 Nov 11.19-11.27 (`uji-rantai-31okt/hasil-rantai-24.txt`): semua SELESAI, `RANTAI-KELUAR 0`; pulih/pasang ulang/pasang lagi lolos
 (`bukti-pisah-1nov/hasil/uji-lokal.txt`).
 
-### 26. `teks-pihak-1nov` (cabang paket-25 w155; keputusan 55) - PALING AKHIR
+### 26. `teks-pihak-1nov` (cabang paket-25 w155; keputusan 55)
 ```
 cd teks-pihak-1nov/paket-satker && bash pasang-satker.sh
 ```
@@ -392,4 +392,21 @@ UJI: 13 kueri berjalan (perkara <id>)
 TAMBAL=313
 BERKAS COCOK
 SELESAI - paket abt-teks-pihak-1nov terpasang. ...
+```
+
+### 27. `bas-halaman-1nov` (cabang bas-halaman-runut w159; keputusan 71) - PALING AKHIR
+```
+cd bas-halaman-1nov/paket-satker && bash pasang-satker.sh
+```
+Nomor halaman di kaki halaman BAS Derry: 609 blangko BAS yang kaki halamannya belum bernomor diberi field PAGE rata kanan bawah (585 kaki yang ada
+diisi, 24 blangko tanpa kaki diberi kaki); 510 BAS yang sudah bernomor tidak disentuh. Hanya berkas RTF (tanpa variabel/menu/data). Nomor halaman
+AWAL tiap BAS diatur portal saat cetak/unduh/unggah (halaman runut). Lihat `bas-halaman-1nov/PASANG.md`. md5 dasar = keadaan sesudah ke-26 paket.
+Keluaran benar:
+```
+SIAP=609
+BERKAS SIAP
+PRASYARAT COCOK (SIAP=609)
+TAMBAL=609
+BERKAS COCOK
+SELESAI - paket abt-bas-halaman-1nov terpasang. ...
 ```

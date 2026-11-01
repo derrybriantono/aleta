@@ -3,7 +3,8 @@ import { type NextRequest } from "next/server";
 import { getDatabase } from "@/server/db/client";
 import { kenaliBerkasWord } from "@/server/modules/aleta-ecourt/bas-word-pdf";
 import { BATAS_KONVERSI } from "@/server/modules/aleta-ecourt/konversi-naskah";
-import { bacaOpsiBukti, peringatanZcross, sesuaikanZcrossOtomatis } from "@/server/modules/aleta-ecourt/zcross/pakai";
+import { bacaKonteksBas, catatRunut, pasangRunut } from "@/server/modules/aleta-ecourt/bas-halaman/layanan";
+import { bacaOpsiBukti, peringatanZcross, pilihMesinPortal, sesuaikanZcrossOtomatis } from "@/server/modules/aleta-ecourt/zcross/pakai";
 import { requireActorUser } from "@/server/modules/organization/service";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -27,8 +28,13 @@ const MIME: Record<string, string> = {
  *                   jumlahBukti (angka, opsional), halamanBukti ("2,1,3" jumlah halaman tiap bukti, opsional), tanggal (opsional)
  *   -> { berkasBase64, bentuk, mime, diubah, alasan, laporan, peringatan[] }
  *
- * Hanya menghitung: tidak ada yang disimpan dan tidak ada tulisan ke SIPP/ABT. Naskah tanpa bentuk "SC Z" (atau bila mesin gagal) dikembalikan
- * APA ADANYA (diubah = false) supaya cetak/unduh tidak pernah tertahan oleh Z. Cukup akun yang masuk.
+ * Tidak ada tulisan ke SIPP/ABT. Naskah tanpa bentuk "SC Z" (atau bila mesin gagal) dikembalikan APA ADANYA supaya cetak/unduh tidak pernah
+ * tertahan oleh Z. Cukup akun yang masuk.
+ *
+ * NOMOR HALAMAN RUNUT (1 Nov 2026, keputusan 71): ruas perkaraId / nomorPerkara, sidangId, tanggalSidang, sidang (JSON daftar sidang panel)
+ * - bila kosong perkara & sidang dikenali dari naskah. Halaman awal BAS = halaman terakhir BAS sidang sebelumnya + 1 (tabel portal
+ * aleta_bas_halaman) dipasang SEBELUM Z; sesudahnya jumlah halaman dihitung (render PDF) dan halaman terakhir BAS ini dicatat
+ * (catat = "0" bila pemanggil juga meminta PDF yang dicatat rute PDF). -> ruas runut { awal, akhir } + peringatan.
  */
 export async function POST(request: NextRequest) {
   let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
@@ -56,16 +62,47 @@ export async function POST(request: NextRequest) {
     const keluar = (["rtf", "docx", "doc", "pdf"] as const).find((k) => k === keluarMinta) ?? bentuk;
     const tanggal = String(formulir.get("tanggal") ?? "").trim().slice(0, 40) || undefined;
 
-    const hasil = await sesuaikanZcrossOtomatis(bita, bentuk, { keluar, tanggal, ...bacaOpsiBukti(formulir.get("jumlahBukti"), formulir.get("halamanBukti")) });
+    const konteks =
+      bacaKonteksBas({
+        perkaraId: formulir.get("perkaraId"),
+        nomorPerkara: formulir.get("nomorPerkara"),
+        sidangId: formulir.get("sidangId"),
+        tanggalSidang: formulir.get("tanggalSidang"),
+        sidang: formulir.get("sidang"),
+      }) ?? {};
+    const runutMati = String(formulir.get("runut") ?? "") === "0";
+    const r = runutMati ? null : await pasangRunut(db, bita, bentuk, konteks);
+    const hasil = await sesuaikanZcrossOtomatis(r ? r.bita : bita, r ? r.bentuk : bentuk, { keluar, tanggal, ...bacaOpsiBukti(formulir.get("jumlahBukti"), formulir.get("halamanBukti")), ...(r?.opsiZ ?? {}) });
+    const peringatan = [...(r?.peringatan ?? []), ...peringatanZcross(hasil.laporan)];
+    let runut: { awal: number; akhir: number } | null = null;
+    if (r?.rencana) {
+      runut = { awal: r.rencana.awal, akhir: 0 };
+      if (String(formulir.get("catat") ?? "1") !== "0") {
+        // KINERJA (arahan 1 Nov): halaman terakhir dihitung & dicatat DI LATAR - unduhan tidak menunggu render hitung halaman.
+        // PDF ukur lampiran dipakai ulang bila Z tidak mengubah naskah; BAS yang sama persis dengan catatan tidak dirender lagi.
+        const rencana = r.rencana;
+        const pdfUkur = r.pdfUkur ?? null;
+        const dbLatar = db;
+        void catatRunut(dbLatar, rencana, {
+          pdf: hasil.bentuk === "pdf" ? hasil.bita : null,
+          pdfUkur,
+          naskah: hasil.bentuk === "pdf" ? undefined : { bita: hasil.bita, bentuk: hasil.bentuk, mesin: pilihMesinPortal() },
+          z: hasil.laporan,
+          sumber: "unduh",
+          olehId: String(actorUserId ?? ""),
+        }).catch(() => undefined);
+      }
+    }
     return ok({
       berkasBase64: Buffer.from(hasil.bita).toString("base64"),
       byte: hasil.bita.length,
       bentuk: hasil.bentuk,
       mime: MIME[hasil.bentuk],
-      diubah: hasil.laporan.diubah,
+      diubah: hasil.laporan.diubah || Boolean(r?.rencana),
       alasan: hasil.laporan.alasan,
       laporan: hasil.laporan,
-      peringatan: peringatanZcross(hasil.laporan),
+      runut,
+      peringatan,
     });
   } catch (error) {
     return handleAdminRouteError(error, request, {

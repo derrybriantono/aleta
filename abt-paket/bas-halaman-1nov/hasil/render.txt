@@ -1,0 +1,6 @@
+# Render sungguhan 1 Nov (alat/render159.py: renderer ABT php56 asli, salinan sendiri aps_badilag_w159d + sipp_w159, blangko sesudah 27 paket),
+# perkara 350/Pdt.G/2026/PA.Dgl (perkara_id 9853), BAS ALUR 04 [6] (sidang 6, 23 Jul) lalu [7] (sidang 7, 28 Jul), bukti surat 2 per pihak;
+# lalu jalur portal (pasangRunut -> Z cross mesin Word -> PDF Word -> catatRunut), uji G bas-halaman-runut-1nov.test.ts. PNG: D:/Aplikasi/aleta/tmp/w159/render/
+bas-a-pembuktian-p	sidang 19649 2026-07-23	halaman 1-15	fisik 13	Z hal 2 (fisik 2), bukti 2 hal, sesudahnya 5	peringatan BAS sidang 25 Juni 2026, 9 Juli 2026, 13 Juli 2026, 16 Juli 2026, 20 Juli 2026 belum pernah dicetak, diunduh, atau diunggah: halamannya belum dapat dihitung, jadi nomor halaman BAS ini (mulai 1) dihitung dari BAS yang ada. Cetak BAS sidang itu lebih dulu agar nomornya runut.
+bas-b-pembuktian-t	sidang 19734 2026-07-28	halaman 16-22	fisik 5	Z hal 17 (fisik 2), bukti 2 hal, sesudahnya 20	peringatan -
+# PNG dicek: hal fisik 1 BAS [7] bernomor 16 (BAS [6] berakhir 15), hal 2 = halaman Z bernomor 17, hal 3 sesudah 2 halaman bukti bernomor 20; nomor di kaki kanan bawah (field PAGE paket ini).

@@ -1,0 +1,5 @@
+b0cf6ea8f311dcae6e3d78e19efdc20c  daftar-tambal.tsv
+8a38993680ddfb42f7f8278970a9d240  pasang-satker.sh
+4e8d8ea802361b67456414cad088ef1a  pulih-satker.sh
+d327412dc587d5f55676ce0e8cb7da16  tambal.tsv
+d949a1c1e10c9b60e8cc4fd18adc9b54  tambal_rtf.py

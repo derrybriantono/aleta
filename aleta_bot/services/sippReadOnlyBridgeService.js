@@ -3218,6 +3218,8 @@ async function handleBridgeOperation(operation, params = {}) {
     "berkas.fakta": (params) => require("./berkasPerkaraService").fakta(params),
     "berkas.pelajari": (params) => require("./berkasPerkaraService").pelajari(params),
     "berkas.bundel": (params) => require("./berkasPerkaraService").bundelBahan(params),
+    // 1 Nov (keputusan 71): urutan sidang + halaman e-Doc BAS untuk nomor halaman BAS runut. Baca saja.
+    "berkas.jadwalBas": (params) => require("./berkasPerkaraService").jadwalBas(params),
     "salinan.bht": (params) => require("./salinanBhtService").daftarBht(params),
     "tes.cariPerkara": cariPerkaraTes,
     "abt.nilaiPenanda": nilaiPenandaAbt,
