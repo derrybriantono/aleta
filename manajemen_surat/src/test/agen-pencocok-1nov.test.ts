@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import {
   KATALOG_JENIS,
+  PADANAN_STATUS_SIPP_ABT,
   PETA_JENIS,
   cocokkanPerkara,
   kunciNama,
@@ -165,8 +166,25 @@ describe("mesin aturan: putusan (SIPP - ABT - e-Court - dokumen)", () => {
     const dasar = fakta().abt;
     const masuk = { nomorPerkara: "901/Pdt.G/2026/PA.Dgl", tanggalPendaftaran: "2026-08-03", jenisPerkaraId: 345, paraPihak: "" };
     const status = cocokkanPerkara({ acuan: HARI, fakta: fakta({ putusan: putus(), abt: { ...dasar, masuk, putus: { tanggal: "2026-10-12", statusId: 92 } } }) });
-    expect(status.map((t) => [t.jenis, t.tingkat])).toEqual([["putus-status-abt", "rendah"]]);
+    expect(status.map((t) => [t.jenis, t.tingkat])).toEqual([["putus-status-abt", "sedang"]]);
+    expect(status[0].ringkas).toContain("Dikabulkan");
+    expect(status[0].ringkas).toContain("Dismissal");
+    expect(status[0].ringkas).toContain("periksa validasi ABT");
     expect(jenisDari({ fakta: fakta({ putusan: putus({ tanggal: "2026-10-20" }), abt: { ...dasar, masuk } }) })).toEqual([]); // baru 8 hari
+  });
+
+  it("padanan sebutan: SIPP 65 Digugurkan = ABT 93 Gugur dianggap SAMA; 62 vs 92 dan 67 vs 85 tetap temuan; arah sebaliknya (SIPP 93, ABT 65) tidak dianggap sama", () => {
+    const dasar = fakta().abt;
+    const masuk = { nomorPerkara: "901/Pdt.G/2026/PA.Dgl", tanggalPendaftaran: "2026-08-03", jenisPerkaraId: 345, paraPihak: "" };
+    const jenis = (sipp: number, abt: number) =>
+      jenisDari({ fakta: fakta({ putusan: putus({ statusId: sipp }), abt: { ...dasar, masuk, putus: { tanggal: "2026-10-12", statusId: abt } } }) });
+    expect(jenis(65, 93)).toEqual([]);
+    expect(jenis(62, 62)).toEqual([]);
+    expect(jenis(62, 92)).toEqual(["putus-status-abt"]);
+    expect(jenis(67, 85)).toEqual(["putus-status-abt"]);
+    expect(jenis(93, 65)).toEqual(["putus-status-abt"]);
+    expect(jenis(65, 62)).toEqual(["putus-status-abt"]);
+    expect(PADANAN_STATUS_SIPP_ABT).toEqual([[65, 93]]);
   });
 
   it("belum masuk register ABT: menyala sesudah 14 hari, diam sebelum itu atau bila ABT belum mencatat perkaranya", () => {
