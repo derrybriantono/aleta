@@ -171,30 +171,9 @@
   const dompetTersedia = (ringkas) => akar.AletaBdAi.murni.dompetTersedia(ringkas);
   const keadaanSaklar = (ringkas, tersimpan) => akar.AletaBdAi.murni.keadaanSaklar(ringkas, tersimpan);
 
-  /** Isi pojok saldo: mode "pengguna" (bawaan) atau "satker". */
-  function tampilSaldo(ringkas, mode) {
-    if (!ringkas || ringkas.aktif !== true) return null;
-    if (mode === "satker") {
-      const s = ringkas.satker || {};
-      const sisa = s.sisaBatasRp === null || s.sisaBatasRp === undefined ? null : Number(s.sisaBatasRp);
-      const batas = s.boleh === true && sisa !== null ? ` (batas Anda bulan ini tersisa ${rupiah(sisa)})` : "";
-      return {
-        mode: "satker",
-        ikon: "satker",
-        teks: s.boleh === true ? `Satker: ${rupiah(s.saldoRp)}` : `Satker: ${rupiah(s.saldoRp)} (Anda belum berhak)`,
-        judul: `Saldo bersama satker${batas}. Klik untuk kembali ke saldo Anda.`,
-        habis: !dompetTersedia(ringkas).satker,
-      };
-    }
-    const habis = ringkas.gratis !== true && !dompetTersedia(ringkas).pengguna;
-    return {
-      mode: "pengguna",
-      ikon: "pengguna",
-      teks: ringkas.gratis === true ? `Saldo: ${rupiah(ringkas.saldoRp)} (gratis dipakai)` : `Saldo: ${rupiah(ringkas.saldoRp)}${habis ? " (habis)" : ""}`,
-      judul: "Sisa saldo ALETA Ai Anda. Klik untuk melihat saldo satker.",
-      habis,
-    };
-  }
+  // Pojok saldo (tampilan, ikon, penyegaran saat mati) dimiliki pemuat ringan; inti hanya membaca dompet yang dipilih.
+  const modeDompet = () => akar.AletaBdAi.mode();
+  const aturMode = (m) => akar.AletaBdAi.aturMode(m);
 
   /** Kata kunci Aleta dan Markdown tebal dibuang dari hasil (aturan keras: tanpa tanda ALETA di naskah). */
   function bersihkan(t) {
@@ -443,10 +422,6 @@
   // ──────────────────────────────────────────────────────────────────────────
   // Tampilan: saklar, bilah, saldo
   // ──────────────────────────────────────────────────────────────────────────
-  const IKON = {
-    pengguna: '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4" fill="currentColor"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7z" fill="currentColor"/></svg>',
-    satker: '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false"><path d="M3 21V9l9-6 9 6v12h-6v-6H9v6z" fill="currentColor"/></svg>',
-  };
 
   /** Bilah dan pojok saldo dibuat SEKALI per panel (dihapus saat saklar mati); isinya dirender hanya bila keadaannya berubah. */
   function buatKomponen(akarEl) {
@@ -470,20 +445,6 @@
           gambarBilah();
         }
       });
-    }
-    if (!akarEl.querySelector(`#${ID_SALDO}`)) {
-      const saldo = akar.document.createElement("button");
-      saldo.type = "button";
-      saldo.id = ID_SALDO;
-      saldo.className = "bd-ai-saldo";
-      saldo.hidden = true;
-      saldo.addEventListener("click", () => {
-        K.mode = K.mode === "pengguna" ? "satker" : "pengguna";
-        K.menu = "";
-        gambarSaldo();
-        gambarBilah();
-      });
-      akarEl.appendChild(saldo);
     }
   }
 
@@ -558,9 +519,9 @@
     pasangPendengar(akarEl);
     await muatRingkas(false);
     // Saldo sendiri habis tetapi saldo satker dapat dipakai: langsung memakai saldo satker (dapat dikembalikan lewat klik saldo).
-    if (K.ringkas && K.ringkas.gratis !== true && K.mode === "pengguna") {
+    if (K.ringkas && K.ringkas.gratis !== true && modeDompet() === "pengguna") {
       const d = dompetTersedia(K.ringkas);
-      if (!d.pengguna && d.satker) K.mode = "satker";
+      if (!d.pengguna && d.satker) aturMode("satker");
     }
     const kead = keadaanSaklar(K.ringkas, true);
     // Terkunci (saldo habis, peran belum dibuka): saklar dimatikan dan pilihan tersimpan ikut mati.
@@ -603,7 +564,7 @@
     lepasPendengar();
     const akarEl = K.akar;
     if (akarEl) {
-      for (const id of [ID_BILAH, ID_SALDO]) {
+      for (const id of [ID_BILAH]) {
         const e = akarEl.querySelector(`#${id}`);
         if (e) e.remove();
       }
@@ -629,10 +590,10 @@
    */
   function dompetAktif() {
     const r = K.ringkas;
-    if (!r) return { mode: K.mode, bisa: false, alasan: "" };
+    if (!r) return { mode: modeDompet(), bisa: false, alasan: "" };
     if (r.gratis === true) return { mode: "pengguna", bisa: true, alasan: "" };
     const d = dompetTersedia(r);
-    if (K.mode === "satker") {
+    if (modeDompet() === "satker") {
       const s = r.satker || {};
       const alasan = d.satker ? "" : s.boleh !== true ? "Anda belum berhak memakai saldo satker" : Number(s.saldoRp) < (Number(r.minimumRp) > 0 ? Number(r.minimumRp) : 1) ? "Saldo satker habis" : "Batas pemakaian saldo satker Anda bulan ini habis";
       return { mode: "satker", bisa: d.satker, alasan };
@@ -762,23 +723,7 @@
     }
   }
 
-  function gambarSaldo() {
-    const tmb = K.akar && cari(`#${ID_SALDO}`);
-    if (!tmb) return;
-    const t = tampilSaldo(K.ringkas, K.mode);
-    if (!t || !K.idAkun) {
-      tmb.hidden = true;
-      return;
-    }
-    tmb.hidden = false;
-    tmb.innerHTML = `<span class="bd-ai-ikon" data-ikon="${t.ikon}">${IKON[t.ikon]}</span><span>${esc(t.teks)}</span>`;
-    tmb.title = t.judul;
-    tmb.setAttribute("aria-label", `${t.teks}. ${t.judul}`);
-    tmb.setAttribute("data-mode", t.mode);
-    tmb.classList.toggle("habis", t.habis === true);
-    // Gelembung tanya jawab ALETA Ai (kiri bawah, bila ada) tidak boleh menutupi saldo.
-    tmb.style.left = akar.__aletaAiGelembung ? "84px" : "";
-  }
+  const gambarSaldo = () => akar.AletaBdAi.gambarSaldo();
 
   // ──────────────────────────────────────────────────────────────────────────
   // Jendela fitur
@@ -1162,6 +1107,7 @@
     if (selesai && K.ringkas && Number.isFinite(Number(selesai.saldoRp))) {
       K.ringkas = selesai.dompet === "satker" ? { ...K.ringkas, satker: { ...(K.ringkas.satker || {}), saldoRp: Number(selesai.saldoRp) } } : { ...K.ringkas, saldoRp: Number(selesai.saldoRp) };
       K.ringkasSaat = Date.now();
+      void akar.AletaBdAi.sinkron({ ringkas: K.ringkas }); // pojok saldo (milik pemuat) langsung memakai saldo terbaru
     }
     void muatRingkas(true).then(() => {
       gambarSaklar();
@@ -1440,20 +1386,25 @@
     nyalakan,
     matikan,
     /** Titik sambung proyek: pilihan proyek kelolaan (hanya yang boleh dipakai akun ini) ikut terkirim sebagai proyekId. */
+    /** Pojok saldo (milik pemuat) berganti dompet: bilah menyesuaikan kunci fitur. */
+    modeBerubah() {
+      K.menu = "";
+      gambarBilah();
+    },
     aturProyek(id) {
       K.proyekId = teks(id).trim();
       gambarBilah();
       return tulisSimpan({ [KUNCI_PROYEK]: K.proyekId });
     },
     proyekAktif,
-    keadaan: () => ({ idAkun: K.idAkun, tersimpan: K.tersimpan, nyala: nyala(), mode: K.mode, dompet: dompetAktif(), proyekId: K.proyekId, ringkas: K.ringkas }),
+    keadaan: () => ({ idAkun: K.idAkun, tersimpan: K.tersimpan, nyala: nyala(), mode: modeDompet(), dompet: dompetAktif(), proyekId: K.proyekId, ringkas: K.ringkas }),
     bukaFitur,
     tutup: tutupJendela,
     mulaiTur,
     tutupTur,
     turTerbuka: () => (K.tur ? K.tur.langkah : -1),
     FITUR,
-    murni: { teksDariMedanKtp, samaranDariMedanKtp, proyekAktifDari: (id, daftar) => (id && (daftar || []).some((p) => p && p.id === id) ? id : ""), saringMenu, fiturDariPemicu, LANGKAH_TUR, tampilSaldo, bersihkan, uraiIsian, uraiSaksi, uraiTemuan, tandaiRujukan, samaranDariKtp, susunBadan, kekuranganBahan, uraiBlokSse, cariFitur },
+    murni: { teksDariMedanKtp, samaranDariMedanKtp, proyekAktifDari: (id, daftar) => (id && (daftar || []).some((p) => p && p.id === id) ? id : ""), saringMenu, fiturDariPemicu, LANGKAH_TUR, bersihkan, uraiIsian, uraiSaksi, uraiTemuan, tandaiRujukan, samaranDariKtp, susunBadan, kekuranganBahan, uraiBlokSse, cariFitur },
   };
   if (typeof module !== "undefined" && module.exports) module.exports = akar.AletaBdAiInti;
 })(typeof window !== "undefined" ? window : typeof globalThis !== "undefined" ? globalThis : null);

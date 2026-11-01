@@ -188,6 +188,22 @@ const KTP_TERBACA = {
   medan: { nama: "SITI AMINAH", nik: "7203010101900001", tempatLahir: "DONGGALA", tanggalLahir: "01/01/1990", jenisKelamin: "P", agama: "ISLAM", pekerjaan: "MENGURUS RUMAH TANGGA", alamat: "JL. MAWAR NO. 1", kelurahan: "BOYA", kecamatan: "BANAWA" },
   teks: "NIK 7203010101900001",
 };
+/** Ringkasan ringan yang disimpan pemuat di chrome.storage (kunci blangkoDerryAiRingkas); `umurMs` = berapa lama lalu disimpan. */
+const simpananRingkas = (r: Record<string, unknown> = RINGKAS_BAIK, umurMs = 60_000) => ({
+  blangkoDerryAiRingkas: {
+    id: "usr-1",
+    saat: Date.now() - umurMs,
+    ringkas: {
+      aktif: r.aktif !== false,
+      saldoRp: r.saldoRp,
+      minimumRp: r.minimumRp,
+      gratis: r.gratis === true,
+      aplikasiDibuka: r.aplikasiDibuka === false ? false : true,
+      alasanAplikasi: r.alasanAplikasi ?? "",
+      satker: { boleh: (r.satker as { boleh?: boolean })?.boleh === true, saldoRp: (r.satker as { saldoRp?: number })?.saldoRp ?? 0, sisaBatasRp: (r.satker as { sisaBatasRp?: number | null })?.sisaBatasRp ?? null },
+    },
+  },
+});
 const terbuka: JSDOM[] = [];
 afterEach(() => {
   while (terbuka.length) terbuka.pop()!.window.close();
@@ -332,23 +348,44 @@ const sakelar = (h: ReturnType<typeof bukaPanel>) => h.q<HTMLInputElement>("#bd-
 const alamatAi = (h: ReturnType<typeof bukaPanel>) => h.panggilan.filter((p) => p.alamat !== "/aleta/api/aleta-ai/ringkas").map((p) => `${p.metode} ${p.alamat}`);
 
 describe("panel Blangko Derry: saklar ALETA Ai", () => {
-  it("bawaan MATI: saklar ada di dekat akun; NOL beban - tidak ada panggilan jaringan, inti tidak dimuat, tidak ada bilah/saldo di halaman, isian lama tak berubah", async () => {
-    const h = bukaPanel();
+  it("bawaan MATI dengan ringkasan simpanan segar: saklar di dekat akun, saldo kiri bawah TAMPIL dari simpanan, NOL panggilan jaringan, inti tidak dimuat, tanpa bilah", async () => {
+    const h = bukaPanel({ simpanan: simpananRingkas() });
     await sampai(() => h.q("#bd-ai-saklar") && !h.q("#bd-ai-saklar")!.hasAttribute("hidden"), "saklar tampil");
     expect(h.q("#bd-siapa")!.nextElementSibling!.id).toBe("bd-ai-saklar");
     expect(sakelar(h).checked).toBe(false);
     expect(sakelar(h).disabled).toBe(false);
+    const tmb = await sampai(() => (!h.q("#bd-ai-saldo")!.hasAttribute("hidden") ? h.q<HTMLButtonElement>("#bd-ai-saldo") : null), "saldo tampil walau mati");
+    expect(tmb.textContent).toContain("Saldo: Rp20.000");
     await tunggu(30);
     expect(h.q("#bd-ai-bilah")).toBeNull();
-    expect(h.q("#bd-ai-saldo")).toBeNull();
     expect(h.q("[data-ai-fitur]")).toBeNull();
     expect(h.q("#isian-lama")!.textContent).toBe("isian lama");
-    expect(h.panggilan).toEqual([]); // tidak membaca ringkasan, tidak ada permintaan apa pun
+    expect(h.panggilan).toEqual([]); // simpanan < 10 menit: tidak ada permintaan apa pun
     expect(h.pemuatan.jumlah).toBe(0);
     expect(h.w.AletaBdAiInti).toBeUndefined();
     expect(h.ai().keadaan()).toMatchObject({ idAkun: "usr-1", tersimpan: false, nyala: false, inti: false, pemuatanInti: 0 });
-    // Tidak ada yang ditulis ke penyimpanan juga.
-    expect(h.simpanan).toEqual({});
+  });
+
+  it("MATI, klik saldo tetap berganti pengguna/satker tanpa jaringan dan tanpa memuat inti", async () => {
+    const h = bukaPanel({ simpanan: simpananRingkas() });
+    const tmb = await sampai(() => (!h.q("#bd-ai-saldo")!.hasAttribute("hidden") ? h.q<HTMLButtonElement>("#bd-ai-saldo") : null), "saldo");
+    tmb.click();
+    expect(tmb.textContent).toContain("Satker: Rp3.750.000");
+    expect(tmb.querySelector("[data-ikon]")!.getAttribute("data-ikon")).toBe("satker");
+    tmb.click();
+    expect(tmb.textContent).toContain("Saldo: Rp20.000");
+    expect(h.panggilan).toEqual([]);
+    expect(h.pemuatan.jumlah).toBe(0);
+  });
+
+  it("MATI tanpa simpanan: tepat SATU panggilan ringkasan ringan, lalu saldo tampil dan ringkasan tersimpan; inti tetap tidak dimuat", async () => {
+    const h = bukaPanel();
+    await sampai(() => !h.q("#bd-ai-saldo")!.hasAttribute("hidden"), "saldo tampil");
+    expect(h.panggilan.map((p) => p.alamat)).toEqual(["/aleta/api/aleta-ai/ringkas"]);
+    expect(h.q("#bd-ai-saldo")!.textContent).toContain("Saldo: Rp20.000");
+    expect(h.pemuatan.jumlah).toBe(0);
+    expect(h.q("#bd-ai-bilah")).toBeNull();
+    expect(Object.keys(h.simpanan)).toEqual(["blangkoDerryAiRingkas"]); // tidak ada pilihan saklar yang ditulis
   });
 
   it("saldo habis -> saklar mati, tidak bisa diklik, keterangan 'saldo habis'; pilihan tersimpan yang menyala dipaksa mati", async () => {
@@ -436,14 +473,15 @@ describe("panel Blangko Derry: saldo kiri bawah", () => {
     expect(tmb.classList.contains("habis")).toBe(true); // satker tidak dapat dipakai pengguna ini
   });
 
-  it("tidak ada saldo (elemennya dihapus) bila ALETA Ai belum aktif di server atau saldo habis; OFF: tidak ada pojok saldo sama sekali", async () => {
+  it("ALETA Ai belum aktif di server: pojok saldo tersembunyi (ON maupun OFF)", async () => {
     const h = bukaPanel({ simpanan: { "blangkoDerryAi:usr-1": true }, ringkas: { ...RINGKAS_BAIK, aktif: false } });
     await sampai(() => h.ai().keadaan().inti && h.simpanan["blangkoDerryAi:usr-1"] === false, "terkunci");
-    expect(h.q("#bd-ai-saldo")).toBeNull();
+    expect(h.q("#bd-ai-saldo")!.hasAttribute("hidden")).toBe(true);
     expect(h.q("#bd-ai-bilah")).toBeNull();
-    const mati = bukaPanel();
-    await tunggu(30);
-    expect(mati.q("#bd-ai-saldo")).toBeNull();
+    const mati = bukaPanel({ ringkas: { ...RINGKAS_BAIK, aktif: false } });
+    await sampai(() => mati.panggilan.length === 1, "ringkasan dibaca");
+    await tunggu(20);
+    expect(mati.q("#bd-ai-saldo")!.hasAttribute("hidden")).toBe(true);
   });
 });
 
@@ -1217,8 +1255,9 @@ describe("server: B5 - teks KTP tersamar sebelum keluar ke layanan AI", () => {
 describe("kinerja: ALETA Ai tidak membebani panel", () => {
   const hidup = { "blangkoDerryAi:usr-1": true };
 
-  it("MATI: segarkan/peristiwa perkara berkali-kali tidak memuat inti, tidak membaca jaringan, tidak menulis penyimpanan", async () => {
-    const h = bukaPanel();
+  it("MATI + simpanan segar: segarkan/peristiwa perkara berkali-kali tidak memuat inti, tidak membaca jaringan, tidak menulis penyimpanan", async () => {
+    const awal = simpananRingkas();
+    const h = bukaPanel({ simpanan: awal });
     await sampai(() => !h.q("#bd-ai-saklar")!.hasAttribute("hidden"), "saklar");
     for (let i = 0; i < 25; i += 1) {
       h.ai().segarkan();
@@ -1227,20 +1266,45 @@ describe("kinerja: ALETA Ai tidak membebani panel", () => {
     await tunggu(30);
     expect(h.panggilan).toEqual([]);
     expect(h.pemuatan.jumlah).toBe(0);
-    expect(h.simpanan).toEqual({});
+    expect(Object.keys(h.simpanan)).toEqual(["blangkoDerryAiRingkas"]);
   });
 
-  it("MATI dengan ringkasan simpanan segar: kunci 'saldo habis' digambar dari simpanan TANPA jaringan dan tanpa memuat inti; simpanan basi diabaikan", async () => {
-    const habis = { id: "usr-1", saat: Date.now() - 60_000, ringkas: { aktif: true, saldoRp: 0, minimumRp: 1000, gratis: false, aplikasiDibuka: true, alasanAplikasi: "", satker: { boleh: false, saldoRp: 0, sisaBatasRp: null } } };
-    const h = bukaPanel({ simpanan: { blangkoDerryAiRingkas: habis } });
+  it("MATI: penyegaran ringkasan paling sering 10 menit sekali dan hanya bila panel terbuka dan tab terlihat", async () => {
+    // Simpanan basi (11 menit) + tab tersembunyi: tidak ada panggilan sampai tab terlihat.
+    const h = bukaPanel({ simpanan: simpananRingkas(RINGKAS_BAIK, 11 * 60_000) });
+    Object.defineProperty(h.doc, "visibilityState", { value: "hidden", configurable: true });
+    h.ai().pasang(h.akarEl); // pasang ulang tidak menggandakan apa pun
+    await sampai(() => !h.q("#bd-ai-saklar")!.hasAttribute("hidden"), "saklar");
+    await tunggu(30);
+    expect(h.panggilan).toEqual([]);
+    Object.defineProperty(h.doc, "visibilityState", { value: "visible", configurable: true });
+    h.doc.dispatchEvent(new h.w.Event("visibilitychange"));
+    await sampai(() => h.panggilan.length === 1, "satu panggilan sesudah tab terlihat");
+    // Sesudahnya (simpanan baru): visibilitychange berulang tidak memanggil lagi.
+    for (let i = 0; i < 10; i += 1) h.doc.dispatchEvent(new h.w.Event("visibilitychange"));
+    await tunggu(30);
+    expect(h.panggilan.filter((p) => p.alamat === "/aleta/api/aleta-ai/ringkas")).toHaveLength(1);
+    expect(h.pemuatan.jumlah).toBe(0);
+    // Panel ditutup (hidden): juga tidak memanggil walau simpanan basi.
+    const tutup = bukaPanel({ simpanan: simpananRingkas(RINGKAS_BAIK, 11 * 60_000) });
+    tutup.akarEl.hidden = true;
+    tutup.ai().segarkan();
+    await tunggu(30);
+    expect(tutup.panggilan).toEqual([]);
+  });
+
+  it("MATI dengan ringkasan simpanan segar: kunci 'saldo habis' digambar dari simpanan TANPA jaringan dan tanpa memuat inti; simpanan basi tidak dipercaya (dibaca ulang)", async () => {
+    const habis = simpananRingkas({ ...RINGKAS_BAIK, saldoRp: 0, satker: { boleh: false, saldoRp: 0, sisaBatasRp: null } });
+    const h = bukaPanel({ simpanan: habis });
     await sampai(() => h.q("#bd-ai-saklar-ket")?.textContent, "keterangan dari simpanan");
     expect(h.q("#bd-ai-saklar-ket")!.textContent).toBe("(saldo habis)");
     expect(sakelar(h).disabled).toBe(true);
     expect(h.panggilan).toEqual([]);
     expect(h.pemuatan.jumlah).toBe(0);
-    const basi = bukaPanel({ simpanan: { blangkoDerryAiRingkas: { ...habis, saat: Date.now() - 11 * 60_000 } } });
-    await sampai(() => !basi.q("#bd-ai-saklar")!.hasAttribute("hidden"), "saklar");
-    expect(sakelar(basi).disabled).toBe(false); // simpanan > 10 menit tidak dipercaya: saklar biasa, alasannya diberi tahu saat diklik
+    const basi = bukaPanel({ simpanan: simpananRingkas({ ...RINGKAS_BAIK, saldoRp: 0, satker: { boleh: false, saldoRp: 0, sisaBatasRp: null } }, 11 * 60_000) });
+    await sampai(() => basi.panggilan.length === 1, "dibaca ulang");
+    await tunggu(20);
+    expect(sakelar(basi).disabled).toBe(false); // server menjawab saldo cukup: kunci hilang
   });
 
   it("MENYALA: inti dimuat tepat sekali; ringkasan dibaca SEKALI walau segarkan/peristiwa perkara diulang; bilah tidak dirender ulang bila keadaan sama", async () => {
@@ -1260,7 +1324,7 @@ describe("kinerja: ALETA Ai tidak membebani panel", () => {
     sakelar(h).checked = false;
     sakelar(h).dispatchEvent(new h.w.Event("change", { bubbles: true }));
     await sampai(() => h.q("#bd-ai-bilah") === null, "mati");
-    expect(h.q("#bd-ai-saldo")).toBeNull();
+    expect(h.q("#bd-ai-saldo")).not.toBeNull(); // pojok saldo tetap ada walau mati
   });
 
   it("jendela fitur: ketikan beruntun hanya memicu SATU perkiraan (ditunda), dan pembacaan bahan tidak membekukan (async)", async () => {

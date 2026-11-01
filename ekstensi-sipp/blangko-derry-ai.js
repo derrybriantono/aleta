@@ -13,6 +13,9 @@
  *   - tidak ada berkas inti yang dimuat, tidak ada pendengar peristiwa, tidak ada elemen bilah/saldo di halaman;
  *   - kunci saklar ("saldo habis", "belum dibuka untuk peran Anda") digambar dari ringkasan yang DISIMPAN di chrome.storage
  *     (paling lama 10 menit) bila ada; tanpa simpanan, saklar tampil biasa dan alasannya diberitahu begitu diklik.
+ * POJOK SALDO kiri bawah (permintaan Derry) TETAP tampil walau saklar mati, dari ringkasan simpanan itu, tanpa memuat inti. Ringkasan
+ * dibaca ulang (satu panggilan ringan) paling sering 10 menit sekali, hanya bila panel terbuka dan tab terlihat; klik saldo tetap
+ * berganti saldo pengguna / satker. Saat saklar menyala, penyegaran dipegang inti.
  *
  * Keputusan 77-78: ALETA Ai alat bantu; bawaan MATI; diingat per akun (kunci memuat id akun), bukan per perkara.
  * Murni (dapat diuji tanpa DOM): globalThis.AletaBdAi.murni.
@@ -25,8 +28,12 @@
   const ID_SAKLAR = "bd-ai-saklar";
   const ID_MODUL = "ai-blangko";
   const UMUR_SIMPANAN_MS = 10 * 60 * 1000;
+  const ID_SALDO = "bd-ai-saldo";
+  const API_RINGKAS = "/aleta/api/aleta-ai/ringkas";
 
   const teks = (v) => (v === null || v === undefined ? "" : String(v));
+  const esc = (v) => teks(v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  const rupiah = (n) => `Rp${Math.round(Number(n) || 0).toLocaleString("id-ID")}`;
 
   // ──────────────────────────────────────────────────────────────────────────
   // Murni
@@ -59,6 +66,36 @@
     return { terkunci: false, aktif: tersimpan === true, alasan: "", jenis: "ok" };
   }
 
+  /** Isi pojok saldo: mode "pengguna" (bawaan) atau "satker". */
+  function tampilSaldo(ringkas, mode) {
+    if (!ringkas || ringkas.aktif !== true) return null;
+    if (mode === "satker") {
+      const s = ringkas.satker || {};
+      const sisa = s.sisaBatasRp === null || s.sisaBatasRp === undefined ? null : Number(s.sisaBatasRp);
+      const batas = s.boleh === true && sisa !== null ? ` (batas Anda bulan ini tersisa ${rupiah(sisa)})` : "";
+      return {
+        mode: "satker",
+        ikon: "satker",
+        teks: s.boleh === true ? `Satker: ${rupiah(s.saldoRp)}` : `Satker: ${rupiah(s.saldoRp)} (Anda belum berhak)`,
+        judul: `Saldo bersama satker${batas}. Klik untuk kembali ke saldo Anda.`,
+        habis: !dompetTersedia(ringkas).satker,
+      };
+    }
+    const habis = ringkas.gratis !== true && !dompetTersedia(ringkas).pengguna;
+    return {
+      mode: "pengguna",
+      ikon: "pengguna",
+      teks: ringkas.gratis === true ? `Saldo: ${rupiah(ringkas.saldoRp)} (gratis dipakai)` : `Saldo: ${rupiah(ringkas.saldoRp)}${habis ? " (habis)" : ""}`,
+      judul: "Sisa saldo ALETA Ai Anda. Klik untuk melihat saldo satker.",
+      habis,
+    };
+  }
+
+  const IKON = {
+    pengguna: '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4" fill="currentColor"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7z" fill="currentColor"/></svg>',
+    satker: '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false"><path d="M3 21V9l9-6 9 6v12h-6v-6H9v6z" fill="currentColor"/></svg>',
+  };
+
   /** Bagian ringkasan yang cukup untuk menentukan kunci saklar (tanpa daftar menu/fitur/proyek yang besar). */
   function ringkasRingan(r) {
     if (!r || typeof r !== "object") return null;
@@ -80,7 +117,7 @@
   // ──────────────────────────────────────────────────────────────────────────
   // Keadaan dan penyimpanan
   // ──────────────────────────────────────────────────────────────────────────
-  const L = { akar: null, idAkun: "", tersimpan: false, ringkas: null, siap: false, janjiSegar: null, janjiInti: null, muatInti: 0, fila: Promise.resolve() };
+  const L = { akar: null, idAkun: "", tersimpan: false, ringkas: null, ringkasSaat: 0, mode: "pengguna", janjiRingkas: null, pewaktu: null, siap: false, janjiSegar: null, janjiInti: null, muatInti: 0, fila: Promise.resolve() };
 
   const penyimpan = () => {
     try {
@@ -149,7 +186,9 @@
     }
     if (o && o.ringkas) {
       L.ringkas = ringkasRingan(o.ringkas);
-      await tulisSimpan({ [KUNCI_RINGKAS]: { id: L.idAkun, saat: Date.now(), ringkas: L.ringkas } });
+      L.ringkasSaat = Date.now();
+      gambarSaldo();
+      await tulisSimpan({ [KUNCI_RINGKAS]: { id: L.idAkun, saat: L.ringkasSaat, ringkas: L.ringkas } });
     }
   }
 
@@ -200,6 +239,84 @@
     await inti.nyalakan(L.akar, { idAkun: L.idAkun });
   }
 
+  // ─── Pojok saldo (tetap tampil walau saklar mati) ──────────────────────────
+  function gambarSaldo() {
+    const tmb = cari(`#${ID_SALDO}`);
+    if (!tmb) return;
+    const t = L.idAkun ? tampilSaldo(L.ringkas, L.mode) : null;
+    if (!t) {
+      tmb.hidden = true;
+      return;
+    }
+    tmb.hidden = false;
+    tmb.innerHTML = `<span class="bd-ai-ikon" data-ikon="${t.ikon}">${IKON[t.ikon]}</span><span>${esc(t.teks)}</span>`;
+    tmb.title = t.judul;
+    tmb.setAttribute("aria-label", `${t.teks}. ${t.judul}`);
+    tmb.setAttribute("data-mode", t.mode);
+    tmb.classList.toggle("habis", t.habis === true);
+    // Gelembung tanya jawab ALETA Ai (kiri bawah, bila ada) tidak boleh menutupi saldo.
+    tmb.style.left = akar.__aletaAiGelembung ? "84px" : "";
+  }
+
+  function buatSaldo(akarEl) {
+    if (akarEl.querySelector(`#${ID_SALDO}`)) return;
+    const saldo = akar.document.createElement("button");
+    saldo.type = "button";
+    saldo.id = ID_SALDO;
+    saldo.className = "bd-ai-saldo";
+    saldo.hidden = true;
+    saldo.addEventListener("click", () => {
+      L.mode = L.mode === "pengguna" ? "satker" : "pengguna";
+      gambarSaldo();
+      if (akar.AletaBdAiInti) akar.AletaBdAiInti.modeBerubah();
+    });
+    akarEl.appendChild(saldo);
+  }
+
+  const panelTerbuka = () => Boolean(L.akar && L.akar.isConnected && !L.akar.hidden && akar.document && akar.document.visibilityState !== "hidden");
+
+  /**
+   * Saklar MATI: ringkasan dibaca ulang (satu panggilan ringan) paling sering tiap 10 menit, hanya bila panel terbuka dan tab terlihat.
+   * Saklar menyala: inti yang memegang penyegaran (tidak ada panggilan ganda).
+   */
+  function segarkanRingkasMati() {
+    if (L.tersimpan || !L.idAkun || L.janjiRingkas || !panelTerbuka()) return Promise.resolve();
+    if (L.ringkas && Date.now() - L.ringkasSaat < UMUR_SIMPANAN_MS) return Promise.resolve();
+    L.janjiRingkas = (async () => {
+      const r = await akar.fetch(API_RINGKAS, { credentials: "include", cache: "no-store" });
+      let isi = null;
+      try {
+        isi = await r.json();
+      } catch {
+        isi = null;
+      }
+      if (!r.ok || !isi || isi.ok === false || !isi.data) return;
+      if (L.tersimpan) return;
+      L.ringkas = ringkasRingan(isi.data);
+      L.ringkasSaat = Date.now();
+      await tulisSimpan({ [KUNCI_RINGKAS]: { id: L.idAkun, saat: L.ringkasSaat, ringkas: L.ringkas } });
+      gambarSaldo();
+      gambarSaklar(keadaanSaklar(L.ringkas, false), L.ringkas);
+    })()
+      .catch(() => undefined)
+      .then(() => {
+        L.janjiRingkas = null;
+      });
+    return L.janjiRingkas;
+  }
+
+  function jadwalkanPenyegar() {
+    if (L.pewaktu || typeof akar.setTimeout !== "function") return;
+    const tik = () => {
+      L.pewaktu = akar.setTimeout(tik, UMUR_SIMPANAN_MS);
+      void segarkanRingkasMati();
+    };
+    L.pewaktu = akar.setTimeout(tik, UMUR_SIMPANAN_MS);
+    if (akar.document && typeof akar.document.addEventListener === "function") {
+      akar.document.addEventListener("visibilitychange", () => void segarkanRingkasMati());
+    }
+  }
+
   function pasang(akarEl) {
     if (!akarEl || !akar.document) return;
     if (L.akar === akarEl && akarEl.querySelector(`#${ID_SAKLAR}`)) return;
@@ -216,6 +333,7 @@
       siapa.insertAdjacentElement("afterend", wadah);
       wadah.querySelector("input").addEventListener("change", saatSaklar);
     }
+    buatSaldo(akarEl);
     void segarkan();
   }
 
@@ -232,10 +350,15 @@
       L.idAkun = id;
       const s = await bacaSimpan([kunciSaklar(id), KUNCI_RINGKAS]);
       L.tersimpan = s[kunciSaklar(id)] === true;
-      L.ringkas = simpananSegar(s[KUNCI_RINGKAS], id, Date.now()) ? s[KUNCI_RINGKAS].ringkas : null;
+      const segar = simpananSegar(s[KUNCI_RINGKAS], id, Date.now());
+      L.ringkas = segar ? s[KUNCI_RINGKAS].ringkas : null;
+      L.ringkasSaat = segar ? s[KUNCI_RINGKAS].saat : 0;
       L.siap = true;
-      // Keadaan awal dari simpanan; bila menyala, inti mengambil alih (ringkasan segar, bilah, saldo).
+      // Keadaan awal dari simpanan; bila menyala, inti mengambil alih (ringkasan segar, bilah). Saldo tampil dari simpanan walau mati.
       gambarSaklar(L.ringkas ? keadaanSaklar(L.ringkas, L.tersimpan) : null, L.ringkas);
+      gambarSaldo();
+      jadwalkanPenyegar();
+      if (!L.tersimpan) await segarkanRingkasMati(); // hanya bila simpanan tidak ada / lebih dari 10 menit
       if (L.tersimpan) {
         const inti = await muatInti();
         if (inti) await inti.aktifkan(L.akar, { idAkun: id, tersimpan: true });
@@ -271,7 +394,14 @@
     pasang,
     segarkan,
     gambarSaklar,
+    gambarSaldo,
     sinkron,
+    /** Dompet yang dipilih lewat klik saldo ("pengguna" | "satker"); inti membacanya, bukan menyimpannya sendiri. */
+    mode: () => L.mode,
+    aturMode(m) {
+      L.mode = m === "satker" ? "satker" : "pengguna";
+      gambarSaldo();
+    },
     bacaSimpan,
     tulisSimpan,
     /** Pilihan proyek / alat lain diteruskan ke inti bila sudah dimuat (saat mati: tidak ada yang dikerjakan). */
@@ -286,8 +416,8 @@
       return inti() ? inti().FITUR : [];
     },
     /** Keadaan gabungan (uji/alat): akun, pilihan, jumlah pemuatan inti, dan keadaan inti bila dimuat. */
-    keadaan: () => ({ idAkun: L.idAkun, tersimpan: L.tersimpan, inti: Boolean(inti()), pemuatanInti: L.muatInti, ringkasSimpanan: L.ringkas, ...(inti() ? inti().keadaan() : { nyala: false }) }),
-    murni: { dompetTersedia, keadaanSaklar, ringkasRingan, simpananSegar },
+    keadaan: () => ({ idAkun: L.idAkun, tersimpan: L.tersimpan, mode: L.mode, inti: Boolean(inti()), pemuatanInti: L.muatInti, ringkasSimpanan: L.ringkas, ...(inti() ? inti().keadaan() : { nyala: false }) }),
+    murni: { dompetTersedia, keadaanSaklar, ringkasRingan, simpananSegar, tampilSaldo },
   };
   if (typeof module !== "undefined" && module.exports) module.exports = akar.AletaBdAi;
 })(typeof window !== "undefined" ? window : typeof globalThis !== "undefined" ? globalThis : null);
