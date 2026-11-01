@@ -19,8 +19,8 @@ const { positaTambahan } = require("./isiJawabanSaksiPosita");
 const { sebutanUntuk, tandaiFaktaSaran } = require("./saranSebabSaksi");
 
 /** Kode jenis jawaban saksi dari id jenis perkara SIPP, kunci katalog, atau namanya. */
-const JENIS_ID = Object.freeze({ 346: "ct", 347: "cg", 360: "itsbat", 362: "dk", 363: "wa", 354: "perwalian", 358: "aua", 371: "paw", 364: "waris", 348: "hb", 341: "ip", 342: "cegah", 344: "batal", 349: "asuh", 743: "nafkahAnak", 365: "wasiat", 366: "hibah", 367: "wakaf", 370: "eksyar" });
-const JENIS_KATALOG = Object.freeze({ "pengangkatan-anak": "angkat", mafqud: "mafqud", "hak-asuh": "asuh", "penguasaan-anak": "asuh", "nafkah-anak": "nafkahAnak", "izin-poligami": "ip", "pencegahan-perkawinan": "cegah", "pembatalan-perkawinan": "batal", hibah: "hibah", wakaf: "wakaf", wasiat: "wasiat", "ekonomi-syariah": "eksyar" });
+const JENIS_ID = Object.freeze({ 346: "ct", 347: "cg", 360: "itsbat", 362: "dk", 363: "wa", 354: "perwalian", 358: "aua", 371: "paw", 364: "waris", 348: "hb", 341: "ip", 342: "cegah", 344: "batal", 349: "asuh", 743: "nafkahAnak", 365: "wasiat", 366: "hibah", 367: "wakaf", 370: "eksyar", 745: "angkat", 352: "aua", 355: "perwalian", 356: "perwalian", 357: "perwalian", 353: "asuh", 343: "umum", 359: "umum", 361: "umum", 744: "umum" });
+const JENIS_KATALOG = Object.freeze({ "pengangkatan-anak": "angkat", mafqud: "mafqud", "hak-asuh": "asuh", "penguasaan-anak": "asuh", "nafkah-anak": "nafkahAnak", "izin-poligami": "ip", "pencegahan-perkawinan": "cegah", "pembatalan-perkawinan": "batal", hibah: "hibah", wakaf: "wakaf", wasiat: "wasiat", "ekonomi-syariah": "eksyar", "pengangkatan-anak-745": "angkat", "pengesahan-anak": "aua", "pencabutan-kuasa-wali": "perwalian", "penunjukan-wali": "perwalian", "ganti-rugi-wali": "perwalian", "pencabutan-kuasa-asuh": "asuh" });
 function kodeJenis(jenisPerkara, alur, kunciKatalog) {
   const j = String(jenisPerkara || "").trim();
   if (JENIS_ID[j]) return JENIS_ID[j];

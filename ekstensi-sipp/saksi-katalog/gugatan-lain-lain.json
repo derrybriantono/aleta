@@ -1,0 +1,1205 @@
+{
+  "skema": "saksi-katalog/1",
+  "kunci": "gugatan-lain-lain",
+  "judul": "Gugatan lain-lain (di luar hak asuh)",
+  "versi": 1,
+  "penulis": "H2",
+  "tahap": 2,
+  "contoh": false,
+  "syarat": {
+    "jenisPerkaraId": [
+      "369"
+    ],
+    "alurPerkaraId": [
+      "15"
+    ],
+    "kecualiPolaNama": "asuh|hadhanah|hadanah|pemeliharaan anak"
+  },
+  "pihak": {
+    "pengaju": "#0046#",
+    "lawan": "#0047#"
+  },
+  "blangkoBas": [],
+  "dasarHukum": [
+    {
+      "id": "dh-sebab-pengetahuan",
+      "rujukan": "Buku II Edisi Revisi 2013 hlm. 102: syarat materiil saksi (Pasal 308 ayat (2) RBg)",
+      "uraian": "keterangan saksi harus tentang peristiwa yang dialami, didengar atau dilihat sendiri dan menyebut sumber pengetahuannya; pendapat atau dugaan bukan kesaksian",
+      "status": "terverifikasi",
+      "sumber": "Buku II Pedoman Pelaksanaan Tugas dan Administrasi Peradilan Agama Edisi Revisi 2013, bagian Bukti Saksi (hlm. 101-102; dibaca dari salinan teks)"
+    },
+    {
+      "id": "dh-de-auditu",
+      "rujukan": "Buku II Edisi Revisi 2013 hlm. 101 butir (7)",
+      "uraian": "keterangan yang diperoleh saksi dari orang lain (de auditu) dapat dipakai hanya sebagai sumber persangkaan",
+      "status": "terverifikasi",
+      "sumber": "Buku II Pedoman Pelaksanaan Tugas dan Administrasi Peradilan Agama Edisi Revisi 2013, bagian Bukti Saksi (hlm. 101-102; dibaca dari salinan teks)"
+    },
+    {
+      "id": "dh-unus-testis",
+      "rujukan": "Buku II Edisi Revisi 2013 hlm. 101 butir (8)",
+      "uraian": "keterangan seorang saksi saja tanpa alat bukti lain tidak cukup (satu saksi bukan saksi)",
+      "status": "terverifikasi",
+      "sumber": "Buku II Pedoman Pelaksanaan Tugas dan Administrasi Peradilan Agama Edisi Revisi 2013, bagian Bukti Saksi (hlm. 101-102; dibaca dari salinan teks)"
+    },
+    {
+      "id": "dh-larangan-saksi",
+      "rujukan": "Buku II Edisi Revisi 2013 hlm. 100-101 butir (3)-(4) (Pasal 172 RBg)",
+      "uraian": "keluarga sedarah dan semenda garis lurus serta suami atau istri salah satu pihak tidak dapat didengar sebagai saksi; pengecualian untuk perkara tentang keadaan menurut hukum sipil seseorang. Penilaian ada pada hakim",
+      "status": "terverifikasi",
+      "sumber": "Buku II Pedoman Pelaksanaan Tugas dan Administrasi Peradilan Agama Edisi Revisi 2013, bagian Bukti Saksi (hlm. 101-102; dibaca dari salinan teks)"
+    },
+    {
+      "id": "dh-kesesuaian-saksi",
+      "rujukan": "Buku II Edisi Revisi 2013 hlm. 101 butir (2) (Pasal 309 RBg)",
+      "uraian": "hakim menilai kesesuaian keterangan saksi yang satu dengan lainnya dan alasan saksi memberi keterangan",
+      "status": "terverifikasi",
+      "sumber": "Buku II Pedoman Pelaksanaan Tugas dan Administrasi Peradilan Agama Edisi Revisi 2013, bagian Bukti Saksi (hlm. 101-102; dibaca dari salinan teks)"
+    },
+    {
+      "id": "dh-pasal-49",
+      "rujukan": "Pasal 49 UU 7/1989 sebagaimana diubah UU 3/2006",
+      "uraian": "pengadilan agama berwenang memeriksa perkara tingkat pertama antara orang-orang yang beragama Islam di bidang perkawinan, waris, wasiat, hibah, wakaf, zakat, infaq, shadaqah dan ekonomi syariah",
+      "status": "terverifikasi",
+      "sumber": "naskah lokal referensi/_unduhan/ekstra/uu3-2006.txt (dibaca H2 1 Nov 2026)"
+    },
+    {
+      "id": "dh-rbg-283",
+      "rujukan": "Pasal 283 RBg jo Pasal 1865 KUH Perdata",
+      "uraian": "pihak yang mengaku mempunyai hak atau menunjuk suatu peristiwa wajib membuktikannya",
+      "status": "terverifikasi",
+      "sumber": "RBg 283 dibaca dari salinan lokal (VERIFIKASI-HIR-RBG.md no 4)"
+    },
+    {
+      "id": "dh-khi-171",
+      "rujukan": "Pasal 171 huruf b, c, d Kompilasi Hukum Islam",
+      "uraian": "pewaris beragama Islam saat meninggal, ahli waris mempunyai hubungan darah atau perkawinan dengan pewaris, beragama Islam dan tidak terhalang karena hukum, dan harta peninggalan adalah harta yang ditinggalkan pewaris",
+      "status": "terverifikasi",
+      "sumber": "KHI salinan lokal khi-pasalid.json (dibaca H2 1 Nov 2026)"
+    },
+    {
+      "id": "dh-khi-173",
+      "rujukan": "Pasal 173 Kompilasi Hukum Islam",
+      "uraian": "seseorang terhalang menjadi ahli waris bila dengan putusan hakim berkekuatan tetap dihukum karena membunuh atau menganiaya berat pewaris atau memfitnah pewaris melakukan kejahatan berat",
+      "status": "terverifikasi",
+      "sumber": "KHI salinan lokal khi-pasalid.json (dibaca H2 1 Nov 2026)"
+    },
+    {
+      "id": "dh-khi-174",
+      "rujukan": "Pasal 174 ayat (1) Kompilasi Hukum Islam",
+      "uraian": "kelompok ahli waris menurut hubungan darah (laki-laki dan perempuan) dan menurut hubungan perkawinan (duda atau janda)",
+      "status": "terverifikasi",
+      "sumber": "KHI salinan lokal khi-pasalid.json (dibaca H2 1 Nov 2026)"
+    }
+  ],
+  "keadaan": {
+    "kehadiran": {
+      "sumber": "otomatis",
+      "nilai": [
+        "verstek",
+        "kontradiktoir",
+        "t-tidak-hadir-setelah-mediasi"
+      ],
+      "label": "Kehadiran Tergugat",
+      "bawaan": "kontradiktoir"
+    },
+    "pokokGugatan": {
+      "sumber": "borang",
+      "nilai": [
+        "lainnya",
+        "ahli-waris"
+      ],
+      "label": "Pokok gugatan",
+      "bawaan": "lainnya",
+      "labelNilai": {
+        "lainnya": "sengketa keperdataan lain",
+        "ahli-waris": "penetapan ahli waris melalui gugatan"
+      }
+    }
+  },
+  "pokokPembuktian": [
+    {
+      "id": "pp-hubungan-saksi",
+      "judul": "Hubungan saksi dengan para pihak",
+      "uraian": "saksi menerangkan siapa dirinya dan bagaimana ia mengenal para pihak",
+      "wajib": true,
+      "dasarHukum": [
+        "dh-sebab-pengetahuan",
+        "dh-larangan-saksi",
+        "dh-unus-testis"
+      ]
+    },
+    {
+      "id": "pp-kewenangan",
+      "judul": "Para pihak beragama Islam",
+      "uraian": "para pihak beragama Islam dan perkara termasuk kewenangan pengadilan agama",
+      "wajib": true,
+      "dasarHukum": [
+        "dh-pasal-49"
+      ]
+    },
+    {
+      "id": "pp-hubungan-hukum",
+      "judul": "Hubungan hukum para pihak",
+      "uraian": "hubungan antara Penggugat dan Tergugat yang menjadi dasar gugatan",
+      "wajib": true,
+      "dasarHukum": [
+        "dh-rbg-283"
+      ]
+    },
+    {
+      "id": "pp-peristiwa",
+      "judul": "Peristiwa dasar gugatan",
+      "uraian": "peristiwa yang didalilkan Penggugat, waktu terjadinya, dan pokok sengketa",
+      "wajib": true,
+      "dasarHukum": [
+        "dh-rbg-283"
+      ]
+    },
+    {
+      "id": "pp-bantahan",
+      "judul": "Sikap Tergugat",
+      "uraian": "tanggapan atau bantahan Tergugat atas dalil Penggugat atau keadaan Tergugat yang tidak hadir",
+      "wajib": false,
+      "dasarHukum": [
+        "dh-rbg-283"
+      ]
+    },
+    {
+      "id": "pp-akibat",
+      "judul": "Akibat bagi Penggugat dan upaya penyelesaian",
+      "uraian": "kerugian atau akibat yang dialami Penggugat dan upaya penyelesaian secara kekeluargaan",
+      "wajib": false,
+      "dasarHukum": [
+        "dh-rbg-283"
+      ]
+    },
+    {
+      "id": "pp-waris-pewaris",
+      "judul": "Kematian dan agama pewaris",
+      "uraian": "pewaris meninggal dunia dalam keadaan beragama Islam",
+      "wajib": false,
+      "dasarHukum": [
+        "dh-khi-171"
+      ],
+      "keadaan": {
+        "pokokGugatan": "ahli-waris"
+      }
+    },
+    {
+      "id": "pp-waris-ahli",
+      "judul": "Ahli waris dan tidak ada penghalang",
+      "uraian": "para ahli waris, hubungannya dengan pewaris, agama, dan tidak terhalang",
+      "wajib": false,
+      "dasarHukum": [
+        "dh-khi-171",
+        "dh-khi-173",
+        "dh-khi-174"
+      ],
+      "keadaan": {
+        "pokokGugatan": "ahli-waris"
+      }
+    },
+    {
+      "id": "pp-waris-harta",
+      "judul": "Harta peninggalan, wasiat dan utang",
+      "uraian": "harta yang ditinggalkan pewaris serta wasiat dan utangnya",
+      "wajib": false,
+      "dasarHukum": [
+        "dh-khi-171"
+      ],
+      "keadaan": {
+        "pokokGugatan": "ahli-waris"
+      }
+    },
+    {
+      "id": "pp-penutup",
+      "judul": "Penutup keterangan",
+      "uraian": "saksi menyatakan keterangannya telah cukup",
+      "wajib": false,
+      "dasarHukum": []
+    }
+  ],
+  "pertanyaan": [
+    {
+      "id": "q-kenal",
+      "pokok": "pp-hubungan-saksi",
+      "urutan": 10,
+      "tingkat": "inti",
+      "kelompok": "hubungan",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Apakah saksi kenal dengan #0046# dan #0047# ? Apa hubungan saksi dengan mereka ?",
+      "variabelAbt": [
+        "0046",
+        "0047"
+      ],
+      "hal": "hubungan saksi dengan para pihak",
+      "tidakBerlaku": [
+        "mendengar",
+        "de-auditu",
+        "sebagian",
+        "tidak-tahu",
+        "ragu",
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi mengenal kedua pihak dan menyebut hubungannya",
+          "saksi1": [
+            "saya kenal dengan #0046# dan #0047# karena saya adalah {hubungan}",
+            "saya mengenal #0046# serta #0047# sebab saya adalah {hubungan}",
+            "benar saya kenal kedua pihak yaitu #0046# dan #0047# dan saya adalah {hubungan}",
+            "dalam kedudukan saya sebagai {hubungan} saya mengenal #0046# dan #0047#"
+          ],
+          "saksi2": [
+            "kedua pihak #0046# dan #0047# saya kenal dengan baik karena saya adalah {hubungan}",
+            "saya tahu dan kenal #0046# serta #0047# sebab hubungan saya dengan mereka adalah {hubungan}",
+            "saya lama mengenal #0046# berikut #0047# dan saya adalah {hubungan}",
+            "yang saya kenal adalah #0046# dan #0047# karena saya berkedudukan sebagai {hubungan}"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-maksud",
+      "pokok": "pp-peristiwa",
+      "urutan": 20,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Apakah saksi mengetahui maksud #0046# mengajukan gugatan terhadap #0047# ?",
+      "teksVarian": [
+        "Apa yang saksi ketahui tentang gugatan #0046# terhadap #0047# ?"
+      ],
+      "variabelAbt": [
+        "0046",
+        "0047"
+      ],
+      "hal": "maksud Penggugat mengajukan gugatan",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi mengetahui maksud Penggugat menggugat Tergugat",
+          "saksi1": [
+            "saya mengetahui maksud #0046# menggugat #0047# adalah menuntut haknya yang dipersengketakan",
+            "benar #0046# mengajukan gugatan terhadap #0047# untuk memperoleh haknya",
+            "sepengetahuan saya #0046# menggugat #0047# karena persoalan di antara mereka belum selesai",
+            "maksud #0046# menggugat #0047# yang saya ketahui adalah menyelesaikan sengketa mereka melalui pengadilan"
+          ],
+          "saksi2": [
+            "saya tahu #0046# menggugat #0047# supaya haknya dipulihkan oleh pengadilan",
+            "#0046# hendak menuntut #0047# lewat pengadilan dan saya mengetahuinya",
+            "yang #0046# inginkan lewat gugatan terhadap #0047# menurut saya adalah penyelesaian sengketa",
+            "saya mengerti #0046# membawa persoalannya dengan #0047# ke pengadilan"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-agama",
+      "pokok": "pp-kewenangan",
+      "urutan": 30,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Apa agama #0046# dan #0047# ?",
+      "variabelAbt": [
+        "0046",
+        "0047"
+      ],
+      "hal": "agama para pihak",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "kedua pihak beragama Islam",
+          "saksi1": [
+            "#0046# dan #0047# sama-sama beragama Islam dan saya mengetahuinya langsung",
+            "agama #0046# serta #0047# adalah Islam menurut yang saya ketahui sendiri",
+            "saya tahu sendiri #0046# dan #0047# memeluk agama Islam",
+            "#0046# maupun #0047# menganut agama Islam sebagaimana saya lihat sehari-hari"
+          ],
+          "saksi2": [
+            "keduanya yaitu #0046# dan #0047# beragama Islam dan saya melihat ibadah mereka",
+            "#0046# berikut #0047# memeluk agama Islam sepanjang yang saya ketahui",
+            "menurut penglihatan saya #0046# dan #0047# beragama Islam",
+            "saya menyaksikan sendiri #0046# dan #0047# menjalankan ajaran agama Islam"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-hubungan-para-pihak",
+      "pokok": "pp-hubungan-hukum",
+      "urutan": 40,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Apa hubungan antara #0046# dengan #0047# ?",
+      "teksVarian": [
+        "Bagaimana hubungan #0046# dengan #0047# sebelum perkara ini ?"
+      ],
+      "variabelAbt": [
+        "0046",
+        "0047"
+      ],
+      "hal": "hubungan antara para pihak",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi menerangkan hubungan keluarga atau hubungan hukum antara kedua pihak",
+          "saksi1": [
+            "hubungan antara #0046# dengan #0047# yang saya ketahui adalah hubungan keluarga yang dekat",
+            "saya mengetahui sendiri #0046# dan #0047# berhubungan sebagai kerabat sebelum timbul persoalan",
+            "#0046# dan #0047# adalah keluarga menurut yang saya ketahui langsung",
+            "yang saya ketahui #0046# dengan #0047# masih terikat hubungan kekerabatan"
+          ],
+          "saksi2": [
+            "saya tahu #0046# dan #0047# masih berkerabat satu sama lain",
+            "hubungan #0046# dengan #0047# sebagaimana saya saksikan adalah hubungan keluarga",
+            "menurut penglihatan saya #0046# dan #0047# saling berhubungan sebagai kerabat",
+            "sepanjang pengetahuan saya #0046# berhubungan dekat dengan #0047# sebagai keluarga"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: para pihak berkerabat dekat; versi B: para pihak berkerabat jauh - berselisih pada PERISTIWA",
+          "saksi1": [
+            "#0046# dan #0047# berkerabat dekat",
+            "saya tahu #0046# serta #0047# masih sangat dekat kekerabatannya",
+            "#0046# dengan #0047# adalah keluarga dekat",
+            "kekerabatan #0046# dan #0047# dekat menurut saya"
+          ],
+          "saksi2": [
+            "#0046# dan #0047# berkerabat jauh",
+            "saya tahu #0046# serta #0047# kekerabatannya sudah jauh",
+            "#0046# dengan #0047# adalah keluarga jauh",
+            "kekerabatan #0046# dan #0047# renggang menurut saya"
+          ],
+          "bedaPada": "peristiwa"
+        }
+      }
+    },
+    {
+      "id": "q-peristiwa",
+      "pokok": "pp-peristiwa",
+      "urutan": 50,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Peristiwa apa yang menjadi dasar gugatan #0046# terhadap #0047# ?",
+      "teksVarian": [
+        "Apa yang saksi ketahui tentang persoalan antara #0046# dan #0047# ?"
+      ],
+      "variabelAbt": [
+        "0046",
+        "0047"
+      ],
+      "hal": "peristiwa yang menjadi dasar gugatan",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi menerangkan peristiwa yang menjadi dasar gugatan yang ia alami atau lihat sendiri",
+          "saksi1": [
+            "peristiwa yang menjadi dasar gugatan #0046# terhadap #0047# saya lihat sendiri",
+            "saya menyaksikan langsung peristiwa antara #0046# dan #0047# yang kini dipersengketakan",
+            "saya ada di tempat ketika peristiwa antara #0046# dan #0047# itu terjadi",
+            "peristiwa yang digugat #0046# kepada #0047# saya alami sendiri"
+          ],
+          "saksi2": [
+            "saya tahu sendiri peristiwa yang menjadi pangkal gugatan #0046# kepada #0047#",
+            "peristiwa antara #0046# dan #0047# itu terjadi di depan mata saya",
+            "saya hadir dan menyaksikan peristiwa yang kini digugat #0046# terhadap #0047#",
+            "menurut penglihatan saya peristiwa yang dipersoalkan #0046# dengan #0047# memang terjadi"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: peristiwa terjadi sebagaimana didalilkan; versi B: peristiwa tidak terjadi seperti itu - berselisih pada PERISTIWA",
+          "saksi1": [
+            "peristiwa antara #0046# dan #0047# terjadi seperti yang digugat",
+            "saya tahu peristiwa itu memang terjadi sebagaimana dalil #0046#",
+            "peristiwa yang digugat #0046# benar terjadi",
+            "saya melihat peristiwa itu terjadi menurut dalil #0046#"
+          ],
+          "saksi2": [
+            "peristiwa antara #0046# dan #0047# tidak terjadi seperti yang digugat",
+            "saya tahu peristiwa itu tidak terjadi sebagaimana dalil #0046#",
+            "peristiwa yang digugat #0046# tidak sesuai kenyataan",
+            "saya tidak melihat peristiwa itu terjadi menurut dalil #0046#"
+          ],
+          "bedaPada": "peristiwa"
+        }
+      }
+    },
+    {
+      "id": "q-kapan",
+      "pokok": "pp-peristiwa",
+      "urutan": 60,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Sejak kapan persoalan antara #0046# dan #0047# itu timbul ?",
+      "variabelAbt": [
+        "0046",
+        "0047"
+      ],
+      "hal": "waktu timbulnya persoalan antara para pihak",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "persoalan antara kedua pihak timbul sejak waktu tertentu yang diketahui saksi",
+          "saksi1": [
+            "persoalan antara #0046# dan #0047# timbul sejak beberapa waktu yang lalu dan saya mengetahuinya sendiri",
+            "saya mengetahui sendiri persoalan #0046# dengan #0047# bermula sudah lama",
+            "sejak lama persoalan antara #0046# dan #0047# sudah ada sebagaimana saya saksikan",
+            "awal mula persoalan #0046# dengan #0047# saya ketahui langsung"
+          ],
+          "saksi2": [
+            "saya tahu persoalan #0046# dengan #0047# sudah berlangsung sejak lama",
+            "persoalan antara #0046# dan #0047# muncul sejak waktu yang saya ingat sendiri",
+            "menurut penglihatan saya persoalan #0046# dengan #0047# sudah ada dari dulu",
+            "sejak awal saya mengetahui persoalan antara #0046# dan #0047#"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: persoalan timbul baru-baru ini; versi B: persoalan sudah lama - berselisih pada WAKTU",
+          "saksi1": [
+            "persoalan antara #0046# dan #0047# baru timbul belakangan ini",
+            "saya tahu persoalan #0046# dengan #0047# belum lama muncul",
+            "persoalan #0046# dan #0047# baru terjadi baru-baru ini",
+            "awal persoalan #0046# dengan #0047# belum lama"
+          ],
+          "saksi2": [
+            "persoalan antara #0046# dan #0047# sudah timbul bertahun-tahun lalu",
+            "saya tahu persoalan #0046# dengan #0047# sudah lama muncul",
+            "persoalan #0046# dan #0047# sudah terjadi sejak lama",
+            "awal persoalan #0046# dengan #0047# sudah lama sekali"
+          ],
+          "bedaPada": "waktu"
+        }
+      }
+    },
+    {
+      "id": "q-pokok-sengketa",
+      "pokok": "pp-peristiwa",
+      "urutan": 70,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Apa yang dipersengketakan antara #0046# dan #0047# ?",
+      "variabelAbt": [
+        "0046",
+        "0047"
+      ],
+      "hal": "pokok sengketa antara para pihak",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi menerangkan hal yang dipersengketakan para pihak",
+          "saksi1": [
+            "yang dipersengketakan antara #0046# dan #0047# adalah haknya yang belum diselesaikan dan saya mengetahuinya",
+            "saya mengetahui sengketa #0046# dengan #0047# mengenai hak yang belum dipenuhi",
+            "pokok sengketa #0046# dan #0047# yang saya ketahui adalah soal hak yang masih tertunda",
+            "sepengetahuan saya #0046# dan #0047# berselisih tentang hak yang belum selesai"
+          ],
+          "saksi2": [
+            "saya tahu #0046# dan #0047# bersengketa tentang hak yang belum dipenuhi",
+            "sengketa antara #0046# dengan #0047# menurut yang saya saksikan menyangkut hak yang tertunda",
+            "yang diperselisihkan #0046# dan #0047# adalah hak yang belum diselesaikan menurut penglihatan saya",
+            "saya mengetahui sendiri bahwa #0046# dengan #0047# bersengketa soal hak yang belum tuntas"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: sengketa soal hak yang belum diserahkan; versi B: sengketa soal hak yang sudah diserahkan - berselisih pada PERISTIWA",
+          "saksi1": [
+            "hak #0046# belum diserahkan oleh #0047#",
+            "saya tahu #0047# belum menyerahkan hak #0046#",
+            "#0047# masih menahan hak #0046#",
+            "hak #0046# yang dituntut belum diterima"
+          ],
+          "saksi2": [
+            "hak #0046# sudah diserahkan oleh #0047#",
+            "saya tahu #0047# telah menyerahkan hak #0046#",
+            "#0047# sudah memberikan hak #0046#",
+            "hak #0046# yang dituntut sudah diterima"
+          ],
+          "bedaPada": "peristiwa"
+        }
+      }
+    },
+    {
+      "id": "q-upaya",
+      "pokok": "pp-akibat",
+      "urutan": 80,
+      "tingkat": "pilihan",
+      "kelompok": "upaya",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Apakah pernah ada upaya penyelesaian secara kekeluargaan antara #0046# dan #0047# ?",
+      "variabelAbt": [
+        "0046",
+        "0047"
+      ],
+      "hal": "upaya penyelesaian kekeluargaan antara para pihak",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "pernah ada upaya penyelesaian kekeluargaan tetapi belum berhasil",
+          "saksi1": [
+            "antara #0046# dan #0047# pernah diupayakan penyelesaian secara kekeluargaan tetapi belum berhasil",
+            "saya mengetahui keluarga pernah mempertemukan #0046# dengan #0047# namun belum ada penyelesaian",
+            "pernah ada musyawarah keluarga antara #0046# dan #0047# yang saya ikuti dan tidak membuahkan hasil",
+            "upaya kekeluargaan antara #0046# dan #0047# sudah ada dan belum menghasilkan kesepakatan"
+          ],
+          "saksi2": [
+            "saya tahu #0046# dan #0047# pernah dimusyawarahkan di tingkat keluarga tanpa hasil",
+            "keluarga sudah berusaha menyelesaikan persoalan #0046# dengan #0047# tetapi belum berhasil",
+            "saya hadir ketika #0046# dan #0047# dipertemukan keluarga dan tidak mencapai kesepakatan",
+            "menurut penglihatan saya penyelesaian kekeluargaan antara #0046# dan #0047# belum membuahkan hasil"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: pernah ada upaya kekeluargaan; versi B: tidak pernah ada upaya kekeluargaan - berselisih pada PERISTIWA",
+          "saksi1": [
+            "pernah ada upaya kekeluargaan antara #0046# dan #0047#",
+            "saya tahu keluarga pernah mempertemukan #0046# dengan #0047#",
+            "musyawarah keluarga antara #0046# dan #0047# pernah dilakukan",
+            "upaya kekeluargaan #0046# dengan #0047# sudah ada"
+          ],
+          "saksi2": [
+            "tidak pernah ada upaya kekeluargaan antara #0046# dan #0047#",
+            "saya tahu keluarga belum pernah mempertemukan #0046# dengan #0047#",
+            "musyawarah keluarga antara #0046# dan #0047# tidak pernah dilakukan",
+            "upaya kekeluargaan #0046# dengan #0047# belum ada"
+          ],
+          "bedaPada": "peristiwa"
+        }
+      }
+    },
+    {
+      "id": "q-akibat",
+      "pokok": "pp-akibat",
+      "urutan": 90,
+      "tingkat": "pilihan",
+      "kelompok": "akibat",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Apa akibat persoalan itu bagi #0046# ?",
+      "variabelAbt": [
+        "0046",
+        "0047"
+      ],
+      "hal": "akibat persoalan bagi Penggugat",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "persoalan itu menimbulkan kerugian atau kesulitan bagi Penggugat",
+          "saksi1": [
+            "persoalan itu membuat #0046# dirugikan dan mengalami kesulitan sebagaimana saya lihat sendiri",
+            "saya mengetahui #0046# menderita kerugian akibat persoalan dengan #0047#",
+            "akibat persoalan itu #0046# kesulitan dan hal itu saya saksikan langsung",
+            "benar #0046# dirugikan oleh persoalan dengan #0047#"
+          ],
+          "saksi2": [
+            "saya tahu #0046# mengalami kesulitan akibat persoalan itu",
+            "menurut penglihatan saya #0046# merugi karena persoalan dengan #0047#",
+            "akibat persoalan itu #0046# terganggu hidupnya sebagaimana saya ketahui sendiri",
+            "yang saya saksikan #0046# dirugikan oleh persoalan yang belum selesai itu"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-sikap-tergugat",
+      "pokok": "pp-bantahan",
+      "urutan": 100,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "kehadiran": "kontradiktoir"
+      },
+      "teks": "Bagaimana sikap #0047# terhadap tuntutan #0046# ?",
+      "variabelAbt": [
+        "0046",
+        "0047"
+      ],
+      "hal": "sikap Tergugat terhadap tuntutan Penggugat",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "Tergugat tidak memenuhi tuntutan Penggugat",
+          "saksi1": [
+            "#0047# tidak memenuhi tuntutan #0046# walaupun sudah diminta berkali-kali",
+            "saya mengetahui #0047# menolak memenuhi permintaan #0046#",
+            "setiap kali diminta #0047# tidak menyelesaikan tuntutan #0046# dan saya menyaksikannya",
+            "benar #0047# tidak menanggapi tuntutan #0046# dengan itikad menyelesaikan"
+          ],
+          "saksi2": [
+            "saya tahu #0047# belum mau memenuhi tuntutan #0046#",
+            "#0047# tetap tidak menyelesaikan tuntutan #0046# menurut penglihatan saya",
+            "yang saya saksikan #0047# menolak ketika #0046# menuntut haknya",
+            "permintaan #0046# tidak dipenuhi #0047# sebagaimana saya ketahui sendiri"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: Tergugat menolak tuntutan; versi B: Tergugat bersedia memenuhi tuntutan - berselisih pada PERISTIWA",
+          "saksi1": [
+            "#0047# menolak tuntutan #0046#",
+            "saya tahu #0047# tidak mau memenuhi permintaan #0046#",
+            "#0047# menampik tuntutan #0046#",
+            "permintaan #0046# ditolak #0047#"
+          ],
+          "saksi2": [
+            "#0047# bersedia memenuhi tuntutan #0046#",
+            "saya tahu #0047# mau menyelesaikan permintaan #0046#",
+            "#0047# menyetujui tuntutan #0046#",
+            "permintaan #0046# diterima #0047#"
+          ],
+          "bedaPada": "peristiwa"
+        }
+      }
+    },
+    {
+      "id": "q-tergugat-tinggal",
+      "pokok": "pp-bantahan",
+      "urutan": 110,
+      "tingkat": "pilihan",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "kehadiran": [
+          "verstek",
+          "t-tidak-hadir-setelah-mediasi"
+        ]
+      },
+      "teks": "Di mana #0047# bertempat tinggal sekarang dan apakah ia mengetahui gugatan #0046# ?",
+      "variabelAbt": [
+        "0046",
+        "0047"
+      ],
+      "hal": "tempat tinggal Tergugat dan pengetahuannya tentang gugatan",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "Tergugat bertempat tinggal di alamat yang diketahui saksi dan mengetahui adanya persoalan",
+          "saksi1": [
+            "#0047# sekarang bertempat tinggal di tempat yang saya ketahui dan ia mengetahui persoalan dengan #0046#",
+            "saya mengetahui sendiri tempat tinggal #0047# dan ia tahu ada persoalan dengan #0046#",
+            "#0047# masih tinggal di alamat yang saya kenal dan paham persoalannya dengan #0046#",
+            "benar #0047# berdomisili di tempat yang saya ketahui serta mengetahui tuntutan #0046#"
+          ],
+          "saksi2": [
+            "saya tahu di mana #0047# tinggal sekarang dan ia sadar akan persoalan dengan #0046#",
+            "tempat tinggal #0047# saya ketahui langsung dan ia mengetahui persoalan itu",
+            "menurut penglihatan saya #0047# menetap di alamat yang saya tahu dan paham tuntutan #0046#",
+            "#0047# berada di tempat tinggal yang saya kenal serta mengetahui sengketa dengan #0046#"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-bukti-sendiri",
+      "pokok": "pp-peristiwa",
+      "urutan": 120,
+      "tingkat": "pilihan",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Apakah saksi pernah melihat sendiri surat atau benda yang berkaitan dengan persoalan antara #0046# dan #0047# ?",
+      "variabelAbt": [
+        "0046",
+        "0047"
+      ],
+      "hal": "surat atau benda yang berkaitan dengan persoalan",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi pernah melihat sendiri surat atau benda yang berkaitan dengan persoalan",
+          "saksi1": [
+            "saya pernah melihat sendiri surat atau benda yang berkaitan dengan persoalan #0046# dan #0047#",
+            "saya melihat langsung surat yang menyangkut persoalan #0046# dengan #0047#",
+            "benar benda yang dipersoalkan #0046# dan #0047# pernah diperlihatkan kepada saya",
+            "saya menyaksikan sendiri surat atau barang yang menjadi bagian persoalan #0046# dan #0047#"
+          ],
+          "saksi2": [
+            "saya tahu wujud surat atau benda yang dipersoalkan #0046# dan #0047# karena pernah melihatnya",
+            "surat yang berkaitan dengan persoalan #0046# dengan #0047# pernah saya lihat sendiri",
+            "menurut penglihatan saya benda yang disengketakan #0046# dan #0047# memang ada",
+            "saya pernah memegang atau melihat langsung surat yang menyangkut #0046# dan #0047#"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-waris-pewaris",
+      "pokok": "pp-waris-pewaris",
+      "urutan": 130,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "pokokGugatan": "ahli-waris"
+      },
+      "teks": "Siapa yang telah meninggal dunia, kapan, dan di mana ?",
+      "variabelAbt": [
+        "1025"
+      ],
+      "hal": "kematian pewaris",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "pewaris meninggal dunia pada waktu dan tempat tertentu dan saksi mengetahuinya",
+          "saksi1": [
+            "#1025# telah meninggal dunia dan saya mengetahui sendiri kematiannya",
+            "saya mengetahui langsung bahwa #1025# meninggal dunia",
+            "kematian #1025# saya ketahui sendiri karena saya ikut mengurus jenazahnya",
+            "benar #1025# sudah meninggal dunia sebagaimana saya saksikan"
+          ],
+          "saksi2": [
+            "saya tahu #1025# meninggal dunia karena ikut melayat",
+            "menurut penglihatan saya #1025# telah wafat",
+            "saya hadir pada pemakaman #1025# yang telah meninggal dunia",
+            "#1025# wafat dan saya mengetahuinya langsung"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: pewaris meninggal belum lama ini; versi B: pewaris meninggal sudah lama - berselisih pada WAKTU",
+          "saksi1": [
+            "#1025# meninggal dunia belum lama ini",
+            "saya tahu #1025# wafat baru beberapa waktu lalu",
+            "#1025# meninggal belakangan ini",
+            "kematian #1025# belum lama berselang"
+          ],
+          "saksi2": [
+            "#1025# meninggal dunia sudah bertahun-tahun lalu",
+            "saya tahu #1025# wafat sudah lama",
+            "#1025# meninggal sejak lama",
+            "kematian #1025# sudah lama berselang"
+          ],
+          "bedaPada": "waktu"
+        }
+      }
+    },
+    {
+      "id": "q-waris-hubungan",
+      "pokok": "pp-waris-ahli",
+      "urutan": 140,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "pokokGugatan": "ahli-waris"
+      },
+      "teks": "Apa hubungan #0046# dengan #1025# ?",
+      "variabelAbt": [
+        "0046",
+        "1025"
+      ],
+      "hal": "hubungan Penggugat dengan pewaris",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "Penggugat mempunyai hubungan darah atau perkawinan dengan pewaris",
+          "saksi1": [
+            "#0046# mempunyai hubungan keluarga dengan #1025# dan saya mengetahuinya langsung",
+            "saya tahu sendiri #0046# adalah keluarga dekat #1025#",
+            "hubungan #0046# dengan #1025# adalah hubungan darah menurut yang saya ketahui",
+            "benar #0046# berkerabat dengan #1025# sebagaimana saya saksikan"
+          ],
+          "saksi2": [
+            "saya mengetahui #0046# adalah kerabat #1025# karena sering bersama mereka",
+            "menurut penglihatan saya #0046# masih keluarga #1025#",
+            "#0046# bertalian darah dengan #1025# yang saya ketahui sendiri",
+            "saya kenal #0046# sebagai keluarga #1025# sejak lama"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-waris-ahli",
+      "pokok": "pp-waris-ahli",
+      "urutan": 150,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "pokokGugatan": "ahli-waris"
+      },
+      "teks": "Siapa saja ahli waris #1025# yang meninggalkan pewaris ini ?",
+      "variabelAbt": [
+        "1025"
+      ],
+      "hal": "daftar ahli waris",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi menerangkan siapa saja ahli waris pewaris",
+          "saksi1": [
+            "ahli waris #1025# yang saya ketahui adalah anggota keluarganya yang masih hidup saat ia meninggal",
+            "saya mengetahui sendiri siapa saja keluarga #1025# yang menjadi ahli warisnya",
+            "saya kenal semua ahli waris #1025# yang ditinggalkannya",
+            "benar ahli waris #1025# adalah keluarga yang masih hidup ketika ia wafat"
+          ],
+          "saksi2": [
+            "saya tahu ahli waris #1025# karena mengenal keluarganya satu per satu",
+            "menurut yang saya ketahui langsung ahli waris #1025# adalah kerabat yang masih ada saat ia wafat",
+            "ahli waris #1025# yang saya kenal adalah anggota keluarganya yang ditinggalkan",
+            "saya menyaksikan sendiri siapa keluarga yang ditinggalkan #1025#"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: ahli waris hanya para pihak yang ada; versi B: ada ahli waris lain - berselisih pada JUMLAH",
+          "saksi1": [
+            "ahli waris #1025# hanya mereka yang ada dalam perkara ini",
+            "saya tahu tidak ada ahli waris #1025# lain selain yang berperkara",
+            "ahli waris #1025# terbatas pada pihak yang ada",
+            "yang menjadi ahli waris #1025# hanya mereka"
+          ],
+          "saksi2": [
+            "ahli waris #1025# masih ada yang lain di luar perkara ini",
+            "saya tahu ada ahli waris #1025# lain selain yang berperkara",
+            "ahli waris #1025# tidak hanya pihak yang ada",
+            "masih ada ahli waris #1025# yang lain"
+          ],
+          "bedaPada": "jumlah"
+        }
+      }
+    },
+    {
+      "id": "q-waris-islam",
+      "pokok": "pp-waris-pewaris",
+      "urutan": 160,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "pokokGugatan": "ahli-waris"
+      },
+      "teks": "Apakah #1025# meninggal dalam keadaan beragama Islam, dan apakah #0046# juga beragama Islam ?",
+      "variabelAbt": [
+        "0046",
+        "1025"
+      ],
+      "hal": "agama pewaris dan Penggugat",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "pewaris meninggal dalam keadaan Islam dan Penggugat beragama Islam",
+          "saksi1": [
+            "#1025# meninggal dalam keadaan beragama Islam dan #0046# juga beragama Islam",
+            "saya mengetahui sendiri #1025# beragama Islam sampai wafat dan #0046# pun beragama Islam",
+            "benar agama #1025# dan #0046# adalah Islam",
+            "#1025# wafat sebagai muslim dan #0046# juga muslim menurut yang saya ketahui"
+          ],
+          "saksi2": [
+            "saya tahu #1025# beragama Islam hingga akhir hayatnya begitu pula #0046#",
+            "menurut penglihatan saya #1025# serta #0046# sama-sama muslim",
+            "#1025# memeluk Islam sampai meninggal dan #0046# juga memeluk Islam",
+            "agama #1025# dan #0046# yang saya ketahui langsung adalah Islam"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-waris-halangan",
+      "pokok": "pp-waris-ahli",
+      "urutan": 170,
+      "tingkat": "pilihan",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "pokokGugatan": "ahli-waris"
+      },
+      "teks": "Apakah ada ahli waris yang pernah dihukum karena membunuh, menganiaya berat, atau memfitnah #1025# ?",
+      "variabelAbt": [
+        "1025"
+      ],
+      "hal": "penghalang mewarisi",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "tidak ada ahli waris yang terhalang karena pembunuhan, penganiayaan berat atau fitnah terhadap pewaris",
+          "saksi1": [
+            "tidak ada ahli waris #1025# yang pernah dihukum karena membunuh atau menganiaya berat pewaris",
+            "saya mengetahui tidak ada ahli waris yang dihukum karena memfitnah #1025#",
+            "benar tidak ada penghalang hukum bagi ahli waris #1025# menurut yang saya ketahui",
+            "sepengetahuan saya tidak ada ahli waris yang terhalang mewarisi #1025#"
+          ],
+          "saksi2": [
+            "saya tahu tidak ada ahli waris #1025# yang terhukum atas perbuatan terhadap pewaris",
+            "menurut penglihatan saya tidak ada ahli waris yang bermasalah hukum terhadap #1025#",
+            "tidak pernah ada ahli waris yang dihukum karena mencelakai #1025# sepanjang yang saya ketahui",
+            "yang saya ketahui langsung semua ahli waris #1025# tidak terhalang oleh hukum"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-waris-harta",
+      "pokok": "pp-waris-harta",
+      "urutan": 180,
+      "tingkat": "pilihan",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "pokokGugatan": "ahli-waris"
+      },
+      "teks": "Apa saja harta yang ditinggalkan #1025# ?",
+      "variabelAbt": [
+        "1025"
+      ],
+      "hal": "harta peninggalan pewaris",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi menerangkan harta yang ditinggalkan pewaris",
+          "saksi1": [
+            "harta yang ditinggalkan #1025# saya ketahui sendiri karena saya pernah melihatnya",
+            "saya mengetahui langsung harta peninggalan #1025#",
+            "benar #1025# meninggalkan harta yang saya lihat sendiri",
+            "saya menyaksikan sendiri harta peninggalan #1025#"
+          ],
+          "saksi2": [
+            "saya tahu harta yang ditinggalkan #1025# karena sering berada di sana",
+            "menurut penglihatan saya harta peninggalan #1025# memang ada",
+            "harta #1025# yang tersisa saya ketahui langsung",
+            "saya pernah melihat harta yang menjadi peninggalan #1025#"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: harta peninggalan ada dan belum dibagi; versi B: harta peninggalan sudah dibagi - berselisih pada PERISTIWA",
+          "saksi1": [
+            "harta peninggalan #1025# belum dibagi",
+            "saya tahu harta #1025# masih utuh dan belum dibagi",
+            "harta peninggalan #1025# masih belum dibagikan",
+            "belum ada pembagian harta #1025#"
+          ],
+          "saksi2": [
+            "harta peninggalan #1025# sudah dibagi",
+            "saya tahu harta #1025# sudah dibagikan",
+            "harta peninggalan #1025# telah dibagi",
+            "sudah ada pembagian harta #1025#"
+          ],
+          "bedaPada": "peristiwa"
+        }
+      }
+    },
+    {
+      "id": "q-waris-wasiat",
+      "pokok": "pp-waris-harta",
+      "urutan": 190,
+      "tingkat": "pilihan",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "pokokGugatan": "ahli-waris"
+      },
+      "teks": "Apakah #1025# meninggalkan wasiat atau utang yang belum dilunasi ?",
+      "variabelAbt": [
+        "1025"
+      ],
+      "hal": "wasiat dan utang pewaris",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "pewaris tidak meninggalkan wasiat maupun utang yang belum dilunasi",
+          "saksi1": [
+            "#1025# tidak meninggalkan wasiat dan tidak meninggalkan utang menurut yang saya ketahui",
+            "saya mengetahui tidak ada wasiat dan tidak ada utang dari #1025#",
+            "benar #1025# tidak berwasiat dan tidak berutang sebagaimana saya ketahui",
+            "sepengetahuan saya tidak ada wasiat maupun utang yang ditinggalkan #1025#"
+          ],
+          "saksi2": [
+            "saya tahu #1025# tidak meninggalkan wasiat atau utang",
+            "menurut penglihatan saya tidak ada wasiat dan tidak ada utang peninggalan #1025#",
+            "tidak pernah ada utang atau wasiat dari #1025# yang saya ketahui langsung",
+            "yang saya ketahui #1025# wafat tanpa wasiat dan tanpa utang"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-penutup",
+      "pokok": "pp-penutup",
+      "urutan": 900,
+      "tingkat": "inti",
+      "kelompok": "penutup",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Apakah masih ada yang ingin saksi sampaikan ?",
+      "teksVarian": [
+        "Apakah masih ada keterangan lain yang akan saksi sampaikan ?",
+        "Adakah hal lain yang hendak saksi terangkan ?"
+      ],
+      "variabelAbt": [],
+      "hal": "keterangan tambahan",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi menyatakan keterangannya sudah cukup",
+          "saksi1": [
+            "sudah cukup",
+            "sudah cukup sekian dari saya",
+            "sudah cukup keterangan saya",
+            "sudah cukup itu saja"
+          ],
+          "saksi2": [
+            "sudah cukup demikian keterangan saya",
+            "sudah cukup semua yang dapat saya terangkan",
+            "sudah cukup sampai di sini keterangan saya",
+            "sudah cukup demikian yang saya ketahui"
+          ]
+        }
+      }
+    }
+  ],
+  "jawabanUmum": {
+    "tidak-tahu": {
+      "maksud": "saksi tidak mengetahui hal yang ditanyakan",
+      "saksi1": [
+        "saya tidak mengetahui {hal}",
+        "mengenai {hal} saya tidak tahu sama sekali",
+        "{hal} tidak saya ketahui",
+        "saya tidak pernah mengetahui {hal}"
+      ],
+      "saksi2": [
+        "tentang {hal} saya tidak mengetahui apa pun",
+        "saya tidak tahu menahu soal {hal}",
+        "perihal {hal} tidak ada yang saya ketahui",
+        "soal {hal} saya sama sekali tidak tahu"
+      ]
+    },
+    "ragu": {
+      "maksud": "saksi ragu dan tidak yakin mengenai hal yang ditanyakan sehingga tidak dapat memastikannya",
+      "saksi1": [
+        "saya ragu dan kurang yakin mengenai {hal}",
+        "mengenai {hal} saya lupa dan kurang jelas bagi saya",
+        "soal {hal} saya hanya menduga-duga dan kurang pasti",
+        "saya agak ragu untuk menjelaskan {hal}"
+      ],
+      "saksi2": [
+        "mengenai {hal} ingatan saya kurang jelas dan saya ragu",
+        "saya mungkin keliru soal {hal} sehingga saya ragu menjawabnya",
+        "mengenai {hal} saya hanya bisa mengira-ngira dan kurang yakin",
+        "saya lupa-lupa ingat tentang {hal}"
+      ]
+    },
+    "sebagian": {
+      "maksud": "saksi hanya mengetahui sebagian dari hal yang ditanyakan, selebihnya tidak diketahuinya",
+      "saksi1": [
+        "yang saya ketahui mengenai {hal} hanya sebagian saja dan selebihnya saya tidak tahu",
+        "mengenai {hal} saya hanya tahu sebagian dan selebihnya tidak saya ketahui",
+        "sebagian dari {hal} saya ketahui sendiri dan sisanya saya tidak tahu",
+        "tentang {hal} hanya sebagian yang saya tahu sedangkan sisanya tidak saya ketahui"
+      ],
+      "saksi2": [
+        "pengetahuan saya tentang {hal} terbatas pada sebagian saja dan selain itu saya tidak tahu",
+        "soal {hal} sebatas yang saya ketahui saja dan selebihnya saya tidak dapat menerangkan",
+        "saya hanya mengetahui sebagian mengenai {hal} dan tidak tahu sisanya",
+        "mengenai {hal} baru sebagian yang saya ketahui sedangkan lainnya tidak saya ketahui"
+      ]
+    },
+    "de-auditu": {
+      "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya sendiri",
+      "saksi1": [
+        "saya mengetahui {hal} dari cerita {sumber} dan saya tidak menyaksikannya sendiri",
+        "{sumber} yang menceritakan {hal} kepada saya dan saya sendiri tidak melihatnya",
+        "tentang {hal} saya diberi tahu oleh {sumber} dan saya tidak pernah menyaksikannya",
+        "{hal} hanya saya ketahui dari penuturan {sumber} dan tidak dari penglihatan saya sendiri"
+      ],
+      "saksi2": [
+        "yang saya ketahui mengenai {hal} berasal dari cerita {sumber} bukan dari yang saya lihat sendiri",
+        "saya mendengar dari {sumber} soal {hal} dan saya tidak berada di sana ketika itu",
+        "perihal {hal} {sumber} bercerita kepada saya dan saya tidak mengalaminya langsung",
+        "soal {hal} saya dikabari oleh {sumber} dan saya tidak menyaksikan sendiri kejadiannya"
+      ]
+    },
+    "mendengar": {
+      "maksud": "saksi mendengar sendiri secara langsung ucapan atau pembicaraan para pihak mengenai hal itu",
+      "saksi1": [
+        "mengenai {hal} saya mendengar sendiri ucapan mereka di hadapan saya",
+        "saya sendiri yang mendengar langsung perkataan mereka tentang {hal}",
+        "tentang {hal} saya mendengarnya sendiri ketika mereka berbicara",
+        "saya mendengar secara langsung mereka membicarakan {hal}"
+      ],
+      "saksi2": [
+        "soal {hal} ucapan mereka terdengar langsung oleh saya",
+        "perihal {hal} saya ikut mendengar pembicaraan mereka secara langsung",
+        "saya turut mendengar sendiri mereka berbicara mengenai {hal}",
+        "mengenai {hal} saya mendengar langsung dari mulut mereka sendiri"
+      ]
+    }
+  },
+  "catatanPetugas": [
+    "Keterangan saksi harus menyebut sebab pengetahuannya; keterangan seorang saksi saja tanpa alat bukti lain tidak cukup.",
+    "Keluarga sedarah dan semenda garis lurus serta suami atau istri salah satu pihak pada dasarnya tidak dapat didengar sebagai saksi; perkara tentang keadaan menurut hukum sipil seseorang dikecualikan (Buku II Edisi Revisi 2013 hlm. 100-101). Penilaian ada pada hakim.",
+    "Keterangan yang hanya berasal dari cerita orang lain hanya dapat menjadi sumber persangkaan.",
+    "Katalog ini untuk gugatan jenis lain-lain di luar hak asuh. Gugatan hak asuh memakai katalog hak asuh; permohonan (bukan gugatan) memakai katalog permohonan umum.",
+    "Pilih \"Pokok gugatan\" sesuai gugatan: pilihan penetapan ahli waris menambah pertanyaan tentang pewaris, ahli waris, harta peninggalan, wasiat dan utang. Pilihan itu hanya menentukan pertanyaan yang diajukan, bukan putusan.",
+    "Ketentuan hukum untuk sengketa jenis lain-lain berbeda-beda; periksa dasar gugatan sebelum menyusun pertanyaan tambahan."
+  ]
+}
