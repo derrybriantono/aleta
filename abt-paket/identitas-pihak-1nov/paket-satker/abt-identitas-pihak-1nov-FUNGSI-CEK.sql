@@ -1,0 +1,3 @@
+-- Paket ABT "abt-identitas-pihak-1nov" (1 Nov 2026, agen V; keputusan pengguna 101 dan 102): format identitas pihak putusan/penetapan = blangko acuan "[01] [Kabul Verstek] Cerai (Format Lengkap)".
+-- Variabel 7047, 7048 dan fungsi isian_rtf_pihak_identitas, isian_rtf_pihak_tambahan diubah; blangko RTF lewat daftar-tambal.tsv/tambal.tsv. Hanya pengguna derry_briantono. Prasyarat: paket ke-30 (perbaikan-1nov) terpasang.
+SELECT (SELECT COUNT(*) FROM information_schema.routines WHERE routine_schema=DATABASE() AND routine_type='FUNCTION' AND ((routine_name='isian_rtf_pihak_identitas' AND MD5(routine_definition)='5ec160298fe05aabdc4460ef1c58ff0e') OR (routine_name='isian_rtf_pihak_tambahan' AND MD5(routine_definition)='0737d6b33330c45da2597a8aa0755237'))) AS fungsi_baru;
