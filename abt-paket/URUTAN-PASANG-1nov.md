@@ -1,4 +1,4 @@
-# URUTAN PASANG paket ABT 29 Okt - 1 Nov 2026 (30 paket; diuji rantai penuh dari dump 28 Okt; MENGGANTIKAN URUTAN-PASANG-31okt.md)
+# URUTAN PASANG paket ABT 29 Okt - 1 Nov 2026 (31 paket; diuji rantai penuh dari dump 28 Okt; MENGGANTIKAN URUTAN-PASANG-31okt.md)
 
 Nomor "KE-n" di komentar dan PASANG.md paket lama mengikuti urutan 24 paket yang lama; yang berlaku adalah nomor di berkas ini
 (pembuktian-urut-1nov disisipkan sebagai ke-22, sehingga jawab-replik, butir-rata, bukti-pisah menjadi ke-23, ke-24, ke-25, teks-pihak ke-26).
@@ -15,7 +15,8 @@ Semua paket dipasang di SERVER sebagai root, dari folder `paket-satker` masing-m
 - Satu langkah KHUSUS LAPTOP sebelum hir-rbg-30okt, tinjau-31okt, bukti-8529-31okt, tanggal-agenda-31okt: skrip pasang menulis nama basis salinan (`aps_badilag_rantai.`) ke kueri yang
   ditulisnya (di server namanya memang `aps_badilag.`); karena hir-rbg memeriksa md5 kueri mentah, teks salinan dikembalikan ke
   bentuk server (9 variabel). Di SERVER langkah ini TIDAK ada.
-- Hasil terbaru: `uji-rantai-31okt/hasil-rantai-30.txt` - 30 paket SELESAI berurutan dari salinan baru (1 Nov 23.21-23.42, `perbaikan-1nov/sumber/rantai174.sh`: basis `aps_badilag_rantai174`, pohon `/d/r174c`, paket dari `git archive HEAD`, `md5sum -c MD5SUMS.txt` di semua paket cocok), `RANTAI-KELUAR 0`; sidik pohon sesudah 30 paket = uji lokal paket ke-30 (`9931cdd9...`), sidik seluruh tabel variabel = uji lokal (`9087068d...`).
+- Hasil terbaru: `uji-rantai-31okt/hasil-rantai-31.txt` - 31 paket SELESAI (`identitas-pihak-1nov/sumber/rantai177.sh`), `RANTAI-KELUAR 0` pada tahap 2; tahap 1 berhenti di paket ke-31 karena fungsi dasar dump laptop menunjuk basis `sipp` (PA Bungku) - KHUSUS LAPTOP diarahkan ke salinan SIPP uji, di server tidak perlu (lihat `identitas-pihak-1nov/PASANG.md`).
+- Hasil sebelumnya: `uji-rantai-31okt/hasil-rantai-30.txt` - 30 paket SELESAI berurutan dari salinan baru (1 Nov 23.21-23.42, `perbaikan-1nov/sumber/rantai174.sh`: basis `aps_badilag_rantai174`, pohon `/d/r174c`, paket dari `git archive HEAD`, `md5sum -c MD5SUMS.txt` di semua paket cocok), `RANTAI-KELUAR 0`; sidik pohon sesudah 30 paket = uji lokal paket ke-30 (`9931cdd9...`), sidik seluruh tabel variabel = uji lokal (`9087068d...`).
 - Hasil sebelumnya: `uji-rantai-31okt/hasil-rantai-29.txt` - 29 paket SELESAI berurutan dari salinan baru (1 Nov 20.55-21.11, `tanya-jawab-format-1nov/sumber/rantai164.sh`: basis `aps_badilag_rantai164`, pohon `/d/r164c`, paket dari `git archive HEAD`, `md5sum -c MD5SUMS.txt` di semua paket cocok), `RANTAI-KELUAR 0`.
 - Hasil sebelumnya: `uji-rantai-31okt/hasil-rantai-28.txt` - 28 paket SELESAI berurutan dari salinan baru (1 Nov 17.44-17.58, `bas-lanjutan-1nov/sumber/rantai163.sh`: basis `aps_badilag_rantai163`, pohon `/d/r163`), `RANTAI-KELUAR 0`.
 - Hasil sebelumnya: `uji-rantai-31okt/hasil-rantai-26.txt` - 26 paket SELESAI berurutan dari salinan baru (1 Nov 13.58-14.20, `rantai155.sh`: basis `aps_badilag_rantai155f`, pohon `/d/r155f`,
