@@ -59,6 +59,11 @@ export type PembuktianDalil = {
   catatan?: string;
   oleh?: string;
   pada?: string;
+  /** A2: kekuatan pembuktian (sempurna/cukup/lemah) dan dasar (saksi mana, bukti mana) - diisi penilai aturan. */
+  kekuatan?: "sempurna" | "cukup" | "lemah" | "";
+  dasar?: { saksi: string[]; bukti: string[] };
+  /** A2: sidik bahan (saksi + bukti) saat status aturan dihitung. */
+  sidik?: string;
 };
 
 export type MatriksDalil = {
