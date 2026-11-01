@@ -39,7 +39,7 @@ bernomor (Ketua, Anggota, atau "-" untuk hakim tunggal) "; dan dibantu" panitera
 **KINERJA (arahan Derry 1 Nov)**: ABT memecahkan SETIAP kemunculan penanda `#nnnn#` di kueri (bukan per nomor): tiap kemunculan = pembacaan data + `call perkara_jadwal_sidang_reorder`
 untuk penanda sidang, dan penanda yang tertanam di teks keluaran dievaluasi lebih dulu (eager). Kueri lama memuat 8x #0033#, 6x #6034#, #5403#, #5405#, #5406#, #5407#, #0012#..#0015#, #4004# dst.
 Kueri baru memuat penanda angka tepat tiga, masing-masing SEKALI (#0033#, #6091#, #6034#; `#perkara_id#` bukan penanda ABT dan boleh berulang), dan bagian berat (nama, alasan, nomor)
-hanya dihitung bila id hakim/panitera berbeda (`IF(e.chg=1, ...)`). Waktu render `#5404#` di ABT php56 (30 sidang campuran, `hasil/waktu.md`): lama ~8,0-8,5 dtk, baru ~1,2-1,4 dtk.
+hanya dihitung bila id hakim/panitera berbeda (`IF(e.chg=1, ...)`). Waktu render `#5404#` di ABT php56 (30 sidang campuran, `hasil/ukur-5404.md`): lama ~8,0-8,5 dtk, baru ~1,2-1,4 dtk.
 
 ## Pasang / pulih (server, root)
 ```bash
