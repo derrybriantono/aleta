@@ -17,6 +17,7 @@ import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ApiError } from "@/server/shared/errors";
 import { ok } from "@/server/shared/http";
+import { bacaHariLibur } from "@/server/modules/hari-libur/sumber";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -55,6 +56,8 @@ export async function GET(request: NextRequest) {
     let gagal: Record<string, string> = catatan.jalan?.gagal ?? {};
     let dibuatPada = catatan.jalan?.pada ?? "";
     if (!rapor || langsung) {
+      // Kalender libur (termasuk tambahan Super Admin) dipasang dahulu: batas masa hak yang jatuh di hari libur bergeser.
+      await bacaHariLibur(db).catch(() => undefined);
       const nilai = await nilaiLangsung(tanggal);
       if (!nilai.ok) {
         // Gagal terbaca BUKAN "tidak ada tenggat".

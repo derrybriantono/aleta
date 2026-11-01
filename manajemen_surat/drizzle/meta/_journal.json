@@ -771,6 +771,13 @@
       "when": 1792338300001,
       "tag": "0125_aleta_penjaga_server",
       "breakpoints": true
+    },
+    {
+      "idx": 110,
+      "version": "7",
+      "when": 1792341000001,
+      "tag": "0127_aleta_tenggat_kabar",
+      "breakpoints": true
     }
   ]
 }

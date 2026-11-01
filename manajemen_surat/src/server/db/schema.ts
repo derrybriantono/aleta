@@ -1319,6 +1319,29 @@ export const DDL_ALETA_TENGGAT_KIRIM = {
 } as const;
 
 /**
+ * Penjaga Tenggat N2 (0127, 2 Nov 2026): kabar yang sudah terkirim per penerima, perkara, aturan, dan tahap
+ * (H-3, H-1, lewat, catatan) - ingatan antar hari supaya satu tenggat tidak dikabarkan dua kali pada tahap yang sama.
+ * Cermin PERSIS dari drizzle/0127_aleta_tenggat_kabar.sql (dijaga agen-tenggat-1nov.test.ts). Tanpa kunci asing.
+ */
+export const DDL_ALETA_TENGGAT_KABAR = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_tenggat_kabar (
+  id TEXT PRIMARY KEY,
+  penerima_id TEXT NOT NULL,
+  perkara_id TEXT NOT NULL DEFAULT '',
+  aturan TEXT NOT NULL DEFAULT '',
+  tahap TEXT NOT NULL DEFAULT '',
+  tanggal TEXT NOT NULL,
+  dibuat_at TEXT NOT NULL
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_tenggat_kabar_penerima ON aleta_tenggat_kabar(penerima_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_tenggat_kabar_tanggal ON aleta_tenggat_kabar(tanggal)`,
+  ],
+} as const;
+
+/**
  * Sampul berkas dan daftar isi berkas (0112, 26 Okt 2026): sunting petugas, halaman manual, ciri tangan, bawaan halaman.
  * Cermin PERSIS dari drizzle/0112_aleta_berkas_perkara.sql; berkas-perkara-26okt.test.ts membandingkan keduanya. Tanpa kunci asing.
  */
@@ -3643,6 +3666,7 @@ const schemaStatements = [
   // Katalog saksi di basis data dengan versi (0093, rantai C).
   ...DDL_SAKSI_KATALOG.tabel,
   ...DDL_ALETA_TENGGAT_KIRIM.tabel,
+  ...DDL_ALETA_TENGGAT_KABAR.tabel,
   ...DDL_ALETA_BERKAS_PERKARA.tabel,
   // Cermin Perkara: perkara, sidang, pihak, mediasi, penanda, jejak (0090).
   ...DDL_ALETA_CERMIN_PERKARA.tabel,
@@ -5643,6 +5667,7 @@ const indexStatements = [
   ...DDL_ISIAN_SIDANG.indeks,
   ...DDL_SAKSI_KATALOG.indeks,
   ...DDL_ALETA_TENGGAT_KIRIM.indeks,
+  ...DDL_ALETA_TENGGAT_KABAR.indeks,
   ...DDL_ALETA_BERKAS_PERKARA.indeks,
   ...DDL_ALETA_CERMIN_PERKARA.indeks,
   ...DDL_KESEHATAN_GALAT.indeks,

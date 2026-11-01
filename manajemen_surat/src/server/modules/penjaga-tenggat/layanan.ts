@@ -14,14 +14,19 @@ import {
   SETELAN_TENGGAT_BAWAAN,
   bersihkanSetelanTenggat,
   butirUntukPenerima,
+  dalamJamKerja,
   jatuhTempoTenggat,
+  kunciKabar,
   pemilikButir,
   pengingatWaAktif,
   potongPesan,
   raporDariButir,
   ringkasLonceng,
+  tahapHariSah,
+  tahapKabar,
   type RingkasanLonceng,
   type SetelanTenggat,
+  type TahapKabar,
 } from "@/lib/tenggat-terjadwal";
 import { waktuPengadilan } from "@/lib/waktu-pengadilan";
 import type { AletaDatabase } from "@/server/db/client";
@@ -45,9 +50,13 @@ import { sendPortalWhatsappMessage, type PortalWhatsappSendInput, type PortalWha
  *     HANYA pada hari kerja dan HANYA bila saklar jadwal menyala. Saklar mati = tidak ada jalan, tidak ada
  *     pembacaan SIPP, tidak ada catatan.
  *   - PENGINGAT WHATSAPP: hanya bila KEDUA saklar menyala. Satu pesan ringkas per orang per hari, hanya
- *     perkara yang namanya tercantum sebagai majelis / panitera pengganti / jurusita / mediator, hanya
- *     aturan yang tercantum di setelan.aturanPengingat. Pencegah ganda: aleta_tenggat_kirim (0110) -
- *     baris DIKLAIM sebelum mengirim.
+ *     perkara yang namanya tercantum sebagai majelis / panitera pengganti / jurusita / mediator (aturan
+ *     yang menyebut ruas penanggung jawab hanya ke ruas itu), hanya aturan yang tercantum di
+ *     setelan.aturanPengingat. Pencegah ganda harian: aleta_tenggat_kirim (0110) - baris DIKLAIM sebelum mengirim.
+ *   - KABAR BERTAHAP (N2, 2 Nov 2026): tiap perkara per tenggat per tahap hanya SEKALI (H-3, H-1, lewat, catatan;
+ *     tahap dapat diatur di setelan.tahapHari). Yang sudah dikabarkan dicatat di aleta_tenggat_kabar (0127) SESUDAH
+ *     pesan masuk antrean - pesan yang gagal tidak dicatat, jadi dicoba lagi hari berikutnya. Pesan hanya dikirim
+ *     pada hari kerja dalam jam kerja WITA.
  *   - LONCENG: pemberitahuan dibaca dari hasil harian oleh tasks/service.ts.
  *
  * Tidak menulis APA PUN ke SIPP/ABT/e-Court.
@@ -72,6 +81,10 @@ export type RingkasKirim = {
   gagal: number;
   dilewati: number;
   tanpaPerkara: number;
+  /** Penerima yang butirnya belum sampai tahap kabar (mis. sisa 6 hari padahal tahap H-3). */
+  belumSaatnya?: number;
+  /** Penerima yang semua butirnya SUDAH pernah dikabarkan pada tahap ini. */
+  sudahDikabari?: number;
 };
 
 export type JalanTenggat = {
@@ -143,6 +156,7 @@ export async function simpanSetelanTenggat(
     pengingatWa: typeof badan.pengingatWa === "boolean" ? badan.pengingatWa : lama.pengingatWa,
     jam: badan.jam ?? lama.jam,
     aturanPengingat: Array.isArray(badan.aturanPengingat) ? badan.aturanPengingat : lama.aturanPengingat,
+    tahapHari: Array.isArray(badan.tahapHari) ? badan.tahapHari : lama.tahapHari,
     diubahOleh: teks(aktor.name) || aktor.id,
     diubahPada: new Date().toISOString(),
   });
@@ -204,7 +218,12 @@ export async function nilaiLangsung(
 ): Promise<{ ok: true; rapor: Rapor; gagal: Record<string, string> } | { ok: false; galat: string }> {
   const f = await sumber.fakta(tanggal);
   if (!f.ok) return { ok: false, galat: f.galat };
-  return { ok: true, rapor: nilaiTenggat(f.fakta, f.acuan || tanggal, { aturan: SEMUA_ATURAN, hitungMundur: true }), gagal: f.gagal };
+  // tanggalLibur memakai kalender libur yang sudah dipasang pemanggil (bacaHariLibur) - satu sumber dengan kalender 1.205.38.
+  return {
+    ok: true,
+    rapor: nilaiTenggat(f.fakta, f.acuan || tanggal, { aturan: SEMUA_ATURAN, hitungMundur: true, libur: (iso) => tanggalLibur(iso) }),
+    gagal: f.gagal,
+  };
 }
 
 // ============================================================================
@@ -224,13 +243,32 @@ export async function kirimPengingat(
   // Pagar terakhir: dua saklar, di titik pengirimannya sendiri.
   if (!pengingatWaAktif(setelan)) return ringkas;
 
+  ringkas.belumSaatnya = 0;
+  ringkas.sudahDikabari = 0;
+  const tahapHari = setelan.tahapHari ?? tahapHariSah(undefined);
   const akun = await sumber.penerima(db);
   for (const a of akun) {
-    const butir = butirUntukPenerima(rapor.butir, a.nama, setelan.aturanPengingat);
-    if (butir.length === 0) {
+    const milik = butirUntukPenerima(rapor.butir, a.nama, setelan.aturanPengingat);
+    if (milik.length === 0) {
       ringkas.tanpaPerkara += 1;
       continue;
     }
+    // Kabar bertahap: hanya butir yang sudah sampai tahapnya DAN belum pernah dikabarkan pada tahap itu.
+    const kandidat = milik.flatMap((b) => {
+      const tahap = tahapKabar(b, tahapHari);
+      return tahap ? [{ b, tahap, kunci: kunciKabar(a.id, b, tahap) }] : [];
+    });
+    if (kandidat.length === 0) {
+      ringkas.belumSaatnya += 1;
+      continue;
+    }
+    const sudah = await kabarSudahTerkirim(db, a.id, kandidat.map((k) => k.kunci));
+    const baru = kandidat.filter((k) => !sudah.has(k.kunci));
+    if (baru.length === 0) {
+      ringkas.sudahDikabari += 1;
+      continue;
+    }
+    const butir = baru.map((k) => k.b);
     const id = `${rapor.acuan}:${a.id}`;
     const sekarang = (opsi.kini ?? new Date()).toISOString();
 
@@ -299,6 +337,7 @@ export async function kirimPengingat(
       if (hasil.ok && (hasil.status === "enqueued" || hasil.status === "sent")) {
         ringkas.terkirim += 1;
         await tutup("terkirim", hasil.message, String(hasil.queueId ?? ""));
+        await catatKabar(db, a.id, baru, rapor.acuan, sekarang);
       } else if (hasil.status === "skipped") {
         ringkas.dilewati += 1;
         ringkas.dicoba -= 1;
@@ -313,6 +352,46 @@ export async function kirimPengingat(
     }
   }
   return ringkas;
+}
+
+// ============================================================================
+// CATATAN KABAR (aleta_tenggat_kabar, 0127)
+// ============================================================================
+
+const POTONG_KUERI = 150;
+
+/** Kunci kabar penerima ini yang SUDAH tercatat terkirim. Kueri berindeks (penerima_id), dipotong agar parameter tidak membengkak. */
+async function kabarSudahTerkirim(db: AletaDatabase, penerimaId: string, kunci: string[]): Promise<Set<string>> {
+  const ada = new Set<string>();
+  for (let i = 0; i < kunci.length; i += POTONG_KUERI) {
+    const potong = kunci.slice(i, i + POTONG_KUERI);
+    const baris = await db.queryAll<{ id: string }>(
+      "SELECT id FROM aleta_tenggat_kabar WHERE penerima_id = ? AND id IN (" + potong.map(() => "?").join(",") + ")",
+      [penerimaId, ...potong]
+    );
+    for (const b of baris) ada.add(b.id);
+  }
+  return ada;
+}
+
+/** Mencatat kabar yang baru masuk antrean. Gagal mencatat tidak menggagalkan jalan (risikonya hanya kabar ulang esok hari). */
+async function catatKabar(
+  db: AletaDatabase,
+  penerimaId: string,
+  baru: Array<{ b: Butir; tahap: TahapKabar; kunci: string }>,
+  tanggal: string,
+  pada: string
+) {
+  for (const k of baru) {
+    try {
+      await db.run(
+        "INSERT INTO aleta_tenggat_kabar (id, penerima_id, perkara_id, aturan, tahap, tanggal, dibuat_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        [k.kunci, penerimaId, k.b.perkaraId, k.b.aturan, k.tahap, tanggal, pada]
+      );
+    } catch {
+      /* sudah tercatat (bentrokan kunci) atau gagal tulis: tidak menggagalkan jalan */
+    }
+  }
 }
 
 // ============================================================================
@@ -341,6 +420,8 @@ export async function jalankanTenggat(
   w.berjalan.add(tanggal);
   try {
     const jam = waktuPengadilan(opsi.kini).jam.slice(0, 5);
+    // Kalender libur (termasuk tambahan Super Admin) dipasang dahulu: batas masa hak yang jatuh di hari libur bergeser.
+    await bacaHariLibur(db).catch(() => undefined);
     const nilai = await nilaiLangsung(tanggal, sumber);
     if (!nilai.ok) {
       // Gagal baca BUKAN hari bersih: tidak ada hasil, dan detak berikutnya mencoba lagi (sampai BATAS_PERCOBAAN).
@@ -354,7 +435,9 @@ export async function jalankanTenggat(
     c.percobaan = 0;
     c.jalan = { pada: new Date().toISOString(), pemicu: opsi.pemicu, oleh: teks(opsi.oleh) || "Penjaga tenggat", jam, galat: "", gagal: nilai.gagal };
     await simpanCatatan(db, c);
-    if (pengingatWaAktif(setelan)) {
+    // Pesan hanya pada hari kerja dalam jam kerja WITA. Di luar itu hasil harian tetap tersimpan (layar, lonceng) dan
+    // pengingat menunggu jalan berikutnya - tidak ada yang dicatat terkirim, jadi tidak ada yang hilang.
+    if (pengingatWaAktif(setelan) && dalamJamKerja(jam, setelan.jam, tanggalLibur(tanggal))) {
       c.wa = await kirimPengingat(db, nilai.rapor, setelan, { sumber, kini: opsi.kini, ulangiGagal: opsi.ulangiGagal, satker: opsi.satker });
       await simpanCatatan(db, c);
     }

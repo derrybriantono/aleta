@@ -126,7 +126,8 @@ describe("TenggatLayar", () => {
     // aturan baru TIDAK dicentang di daftar pengingat; aturan lama dicentang
     const kotakBanding = screen.getByRole("checkbox", { name: /Masa banding 14 hari/ }) as HTMLInputElement;
     expect(kotakBanding.checked).toBe(false);
-    const kotakAkta = screen.getAllByRole("checkbox").filter((c) => (c as HTMLInputElement).checked);
+    // kotak tahap kabar (H-3, H-1; N2) bukan daftar aturan pengingat: dikecualikan
+    const kotakAkta = screen.getAllByRole("checkbox").filter((c) => (c as HTMLInputElement).checked && !/^(H-\d|Hari H)/.test(c.parentElement?.textContent?.trim() ?? ""));
     expect(kotakAkta.length).toBe(ATURAN_TENGGAT.length);
   });
 
