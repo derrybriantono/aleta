@@ -1,0 +1,37 @@
+dasar (26 paket)  : 531bdaef1bf5087da059cee607a76ede
+== pasang pertama
+BERKAS SIAP
+PRASYARAT COCOK (SIAP=609)
+TAMBAL=609
+BERKAS COCOK
+SELESAI - paket abt-bas-halaman-1nov terpasang. Cadangan: /d/r159u/paket/cadangan. Pulih: bash /d/r159u/paket/pulih-satker.sh
+terpasang (27)    : f2c3f212431226e75a6c4dc7a6997baf
+== pasang ulang
+SUDAH=609
+PRASYARAT COCOK (SUDAH=609)
+SUDAH=609
+SELESAI - paket abt-bas-halaman-1nov terpasang. Cadangan: /d/r159u/paket/cadangan. Pulih: bash /d/r159u/paket/pulih-satker.sh
+PASANG ULANG: tidak ada yang berubah
+== pulih
+BERKAS PULIH
+PULIH COCOK (SIAP=609)
+PULIH: seluruh pohon RTF SAMA PERSIS dengan sebelum paket
+== pasang lagi
+PRASYARAT COCOK (SIAP=609)
+TAMBAL=609
+SELESAI - paket abt-bas-halaman-1nov terpasang. Cadangan: /d/r159u/paket/cadangan. Pulih: bash /d/r159u/paket/pulih-satker.sh
+PASANG LAGI: sama persis dengan pasang pertama
+== penjaga 1: berkas disunting orang sesudah dipasang -> pulih membiarkannya (dilaporkan), yang lain dipulihkan
+BIARKAN=1 PULIH=608
+BERKAS PULIH SEBAGIAN
+PULIH SEBAGIAN: GAGAL=1 SIAP=608 (ada yang sudah disunting orang, dibiarkan)
+== penjaga 2: berkas dasar disunting orang -> pasang menolak tanpa mengubah apa pun
+GAGAL	derry_briantono/1 Perceraian CG - BAS/BAS ALUR 03 [2] BAS Lanjutan P Hadir & T Tidak Hadir - Tunda Panggil T Lagi.rtf	md5 ed0d1c7d0a2b59f43670e07572e786e2 bukan dasar 9335051ab904985ecc1303d672bacb91 (disunting orang/paket lain belum terpasang)
+GAGAL=1 SIAP=608
+PENJAGA 2: tidak ada yang berubah
+KEMBALI KE DASAR: ya
+== pasang akhir
+PRASYARAT COCOK (SIAP=609)
+TAMBAL=609
+SELESAI - paket abt-bas-halaman-1nov terpasang. Cadangan: /d/r159u/paket/cadangan. Pulih: bash /d/r159u/paket/pulih-satker.sh
+AKHIR: sama persis dengan pasang pertama
