@@ -82,6 +82,8 @@ export type BarisPenilaian = {
   /** Saksi yang ditanya tentang hal ini tetapi tidak mengetahuinya. */
   tidakTahu: string[];
   catatan: string[];
+  /** Dalil diakui tegas pihak lawan (pada perselisihan & pertengkaran tetap perlu saksi, keputusan sementara 1 Nov). */
+  diakui: boolean;
 };
 
 export type HasilPenilaian = {
@@ -363,6 +365,8 @@ type BarisSaksi = {
   bulanPisah: number | null;
 };
 
+/** Alasan pengetahuan saksi disebut (Pasal 308 ayat (1) RBg): melihat/mendengar, berkunjung, bertetangga, tinggal berdekatan. */
+const RE_SUMBER = /\b(?:melihat|mendengar|menyaksikan|berkunjung|datang ke rumah|tetangga|bertetangga|tinggal (?:bersama|serumah|berdekatan|bersebelahan))\b/;
 /** "tidak pernah melihat dan mendengar langsung" bukan pengetahuan langsung. */
 const RE_TIDAK_LANGSUNG = /\b(?:tidak|belum) (?:pernah )?(?:melihat|mendengar|menyaksikan)\b/;
 const ANGKA_KATA: Record<string, number> = {
@@ -590,6 +594,8 @@ export function nilaiPembuktian(m: MatriksDalil, saksi: SaksiMasuk[], bukti: Buk
   const { pilih, lewat } = dalilDinilai(m, sumber);
   const perId = new Map(m.dalil.map((d) => [d.id, d]));
   const { baris, sisa: saksiSisa } = siapkanSaksi(Array.isArray(saksi) ? saksi : [], sb);
+  // Saksi yang menyebut sumber pengetahuannya di salah satu jawaban (melihat/mendengar sendiri, dari cerita, tetangga, berkunjung).
+  const sumberDisebut = new Set(baris.filter((r) => r.langsung || r.deAuditu || RE_SUMBER.test(r.s)).map((r) => r.saksi.id));
   const bk: BuktiSiap[] = (Array.isArray(bukti) ? bukti : [])
     .filter((b) => b && polos(b.teks))
     .map((b) => {
@@ -619,21 +625,34 @@ export function nilaiPembuktian(m: MatriksDalil, saksi: SaksiMasuk[], bukti: Buk
       if (terlemah.u !== "isi") alasan = `${TOPIK_ID.get(terlemah.u)?.label || ""}: ${alasan}`;
     }
 
-    // Pengakuan tegas pihak lawan mengalahkan semuanya (Pasal 311 RBg / 174 HIR).
+    // Pengakuan tegas pihak lawan (Pasal 311 RBg / 174 HIR): dalil fakta lain (perkawinan, anak, ...) tidak perlu dibuktikan.
+    // Keputusan sementara 1 Nov (sesi utama): dalil PERSELISIHAN DAN PERTENGKARAN yang diakui TIDAK dibebaskan dari pembuktian -
+    // tetap perlu didengar keluarga/orang dekat (Pasal 22 ayat (2) PP 9/1975); dihitung belum terbukti sampai saksi bersesuaian
+    // (status hitungan saksi/bukti dipakai apa adanya; pengakuan tidak dihitung sebagai "bukti lain").
     const t = d.tanggapan;
+    let diakui = false;
     if (t && t.status === "diakui" && !t.ragu) {
+      diakui = true;
       const r = (t.rincian || [])[0];
       const lawanSebut = pembukti === "P" ? sb.T : sb.P;
-      const dulu = { status, alasan };
-      status = "tidak-perlu-dibuktikan";
-      kekuatan = "sempurna";
-      alasan = `${r && r.nomor ? `Diakui ${lawanSebut} (${r.sumber} angka ${r.nomor})` : `Diakui ${lawanSebut}`}; ${DASAR.akui}.`;
-      if (cerai && [...td.keys()].some((k) => TOPIK_ID.get(k)?.alasanCerai))
-        catatan.unshift(
-          dulu.status === "terbukti"
-            ? `Alasan perceraian ini juga terbukti dari keterangan saksi/bukti: ${dulu.alasan}`
-            : "Alasan perceraian: pengakuan saja tidak cukup; majelis tetap mendengar keterangan keluarga/orang dekat (Pasal 22 ayat (2) PP 9/1975)."
-        );
+      const sebutAkui = r && r.nomor ? `Diakui ${lawanSebut} (${r.sumber} angka ${r.nomor})` : `Diakui ${lawanSebut}`;
+      if (cerai && td.has("selisih")) {
+        const dulu = { status, alasan };
+        if (dulu.status === "terbukti") {
+          alasan = `${sebutAkui} dan dikuatkan keterangan saksi: ${dulu.alasan}`;
+        } else {
+          if (dulu.status !== "bertentangan") {
+            status = "belum-terbukti";
+            kekuatan = "";
+          }
+          alasan = `${sebutAkui} - tetap perlu didengar keluarga/orang dekat (Pasal 22 ayat (2) PP 9/1975); belum ada saksi yang bersesuaian.`;
+          catatan.unshift(`Hitungan saksi/bukti: ${dulu.alasan}`);
+        }
+      } else {
+        status = "tidak-perlu-dibuktikan";
+        kekuatan = "sempurna";
+        alasan = `${sebutAkui}; ${DASAR.akui}.`;
+      }
     }
 
     // Dasar: saksi & bukti dari semua satuan (satu baris per saksi/bukti).
@@ -659,6 +678,9 @@ export function nilaiPembuktian(m: MatriksDalil, saksi: SaksiMasuk[], bukti: Buk
         buktiDasar.set(label, { kode: b.b.kode, label, jenis: b.b.jenis, otentik: b.otentik, kelas: b.kelas });
       }
     if (tidakTahu.size && !/tidak mengetahui/.test(alasan)) catatan.push(`${[...tidakTahu].join(" dan ")} tidak mengetahui hal ini.`);
+    // Keputusan sementara 1 Nov: saksi yang tidak menyebut sumber pengetahuannya dianggap tahu langsung, dengan catatan.
+    const tanpaSumber = [...dasarSaksi.values()].filter((x) => x.sikap === "mendukung" && x.langsung && !sumberDisebut.has(x.saksi)).map((x) => x.label);
+    if (tanpaSumber.length) catatan.push(`Sumber pengetahuan ${tanpaSumber.join(" dan ")} tidak disebut (dianggap mengetahui langsung).`);
     const saksiLawan = [...dasarSaksi.values()].filter((x) => x.sikap === "mendukung" && x.pihak && x.pihak !== pembukti);
     if (saksiLawan.length && status === "terbukti") catatan.push(`${ringkasSaksi(saksiLawan)} (saksi pihak lawan) ikut menerangkan sesuai dalil.`);
 
@@ -676,6 +698,7 @@ export function nilaiPembuktian(m: MatriksDalil, saksi: SaksiMasuk[], bukti: Buk
       bukti: [...buktiDasar.values()],
       tidakTahu: [...tidakTahu],
       catatan,
+      diakui,
     });
   }
 

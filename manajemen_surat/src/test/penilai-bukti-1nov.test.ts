@@ -119,16 +119,35 @@ describe("aturan pembuktian (lapis 1, tanpa AI)", () => {
     expect(nomor(nilaiPembuktian(matriks(), [], [pn], { sebutan: SB }), "6")).toMatchObject({ status: "terbukti", kekuatan: "sempurna" });
   });
 
-  it("dalil diakui tegas lawan -> tidak perlu dibuktikan; alasan perceraian tetap diberi catatan Pasal 22 ayat (2) PP 9/1975", () => {
+  it("diakui tegas: fakta lain (perkawinan) tidak perlu dibuktikan; perselisihan & pertengkaran tetap perlu saksi (Pasal 22 ayat (2) PP 9/1975)", () => {
     const m = matriks();
-    const empat = m.dalil.find((d: Dalil) => d.nomor === "4")!;
-    empat.tanggapan = { status: "diakui", ragu: false, rincian: [{ dari: "j", sumber: "jawaban", nomor: "2", status: "diakui", cara: "rujukan", kutipan: "membenarkan dalil angka 4" }] };
-    const r = nomor(nilaiPembuktian(m, [], [], { sebutan: SB, cerai: true }), "4");
-    expect(r).toMatchObject({ status: "tidak-perlu-dibuktikan", kekuatan: "sempurna" });
-    expect(r.alasan).toMatch(/Diakui Tergugat \(jawaban angka 2\).*Pasal 311 RBg/);
-    expect(r.catatan[0]).toMatch(/Pasal 22 ayat \(2\) PP 9\/1975/);
-    empat.tanggapan.ragu = true; // pengakuan yang belum pasti tidak membebaskan pembuktian
-    expect(nomor(nilaiPembuktian(m, [], [], { sebutan: SB }), "4").status).toBe("belum-terbukti");
+    const akui = (n: string, no: string) => {
+      m.dalil.find((d: Dalil) => d.nomor === n)!.tanggapan = { status: "diakui", ragu: false, rincian: [{ dari: "j", sumber: "jawaban", nomor: no, status: "diakui", cara: "rujukan", kutipan: `membenarkan dalil angka ${n}` }] };
+    };
+    akui("1", "1");
+    akui("4", "2");
+    const h = nilaiPembuktian(m, [], [], { sebutan: SB, cerai: true });
+    expect(nomor(h, "1")).toMatchObject({ status: "tidak-perlu-dibuktikan", kekuatan: "sempurna", diakui: true });
+    expect(nomor(h, "1").alasan).toMatch(/Diakui Tergugat \(jawaban angka 1\).*Pasal 311 RBg/);
+    const r = nomor(h, "4");
+    expect(r).toMatchObject({ status: "belum-terbukti", diakui: true });
+    expect(r.alasan).toMatch(/Diakui Tergugat \(jawaban angka 2\) - tetap perlu didengar keluarga\/orang dekat \(Pasal 22 ayat \(2\) PP 9\/1975\)/);
+    expect(h.kesimpulan.alasanTerbukti).toEqual([]);
+    // Satu saksi + pengakuan: pengakuan bukan "bukti lain" -> tetap belum; dua saksi bersesuaian -> terbukti.
+    expect(nomor(nilaiPembuktian(m, [S1], [], { sebutan: SB, cerai: true }), "4").status).toBe("belum-terbukti");
+    const dua = nomor(nilaiPembuktian(m, [S1, S2], [], { sebutan: SB, cerai: true }), "4");
+    expect(dua).toMatchObject({ status: "terbukti", diakui: true });
+    expect(dua.alasan).toMatch(/dikuatkan keterangan saksi/);
+    expect(PB.htmlTabel({ ada: true, hasil: h }, SB, false, false)).toMatch(/belum terbukti<\/span> <span class="bd-catat" title="Diakui pihak lawan/);
+    m.dalil.find((d: Dalil) => d.nomor === "1")!.tanggapan!.ragu = true; // pengakuan yang belum pasti tidak membebaskan pembuktian
+    expect(nomor(nilaiPembuktian(m, [], [], { sebutan: SB }), "1").status).toBe("belum-terbukti");
+  });
+
+  it("saksi tanpa sumber pengetahuan: dianggap tahu langsung, diberi catatan", () => {
+    const h = nilaiPembuktian(matriks(), [S1, S2], [], { sebutan: SB });
+    expect(nomor(h, "4").status).toBe("terbukti");
+    expect(nomor(h, "4").catatan.join(" ")).toMatch(/Sumber pengetahuan Saksi 2 Penggugat tidak disebut \(dianggap mengetahui langsung\)/);
+    expect(nomor(h, "4").catatan.join(" ")).not.toMatch(/Saksi 1 Penggugat tidak disebut/); // S1 "pernah melihat langsung"
   });
 
   it("isian blangko yang belum diisi/dipilih tidak dinilai dan dicatat; pisah < 6 bulan diberi catatan", () => {
