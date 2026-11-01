@@ -375,7 +375,7 @@ function susunIsiGugatan(masukan) {
         jagaIsianLama: true,
         sumber: sumberDari(dk, t.kutipan, null),
         kodePola: "jawaban-tanggapan-sita",
-        catatan: `Dalil jawaban tentang sita diambil apa adanya${t.kandidat > 1 ? ` (ada ${t.kandidat} dalil yang menyebut sita, dipakai yang pertama bersikap)` : ""}${t.orangPertamaDiganti ? "; kata saya/kami diganti sebutan pihak" : ""} - sunting bila tanggapan di sidang insidentil berbeda.`,
+        catatan: `Dalil jawaban tentang sita diambil apa adanya (huruf, ejaan, dan sebutannya tidak diubah)${t.kandidat > 1 ? `; ada ${t.kandidat} dalil yang menyebut sita, dipakai yang pertama bersikap` : ""}${t.orangPertama ? "; masih ada kata saya/kami dari surat" : ""} - sunting bila tanggapan di sidang insidentil berbeda.`,
       });
     }
   }

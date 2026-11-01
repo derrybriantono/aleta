@@ -46,10 +46,12 @@ function tanggapanSita(bersih, opsi) {
     const isi = TJ.amankan(J.tanpaNomor(par));
     if (!RE_SUBJEK_PELAKU.test(isi) || !RE_SIKAP_SITA.test(isi)) continue;
     const sisa = isi.replace(RE_SUBJEK_PELAKU, "");
-    const sama = J.samakanSebutan(sisa, o.sebutan, penulis);
+    // Keputusan 55 (1 Nov): dalilnya disalin APA ADANYA - sebutan, kata ganti orang pertama, dan huruf awal tidak diubah
+    // (hanya subjek di depan yang dilepas dan tanda baca akhir dipotong). Kata ganti "saya/kami" yang tersisa hanya dilaporkan.
+    const sama = J.periksaOrangPertama(sisa);
     const nilai = potongDiKlausa(sama.teks.replace(/[\s.;:,]+$/, ""), 400);
     if (nilai.replace(/[^A-Za-z]/g, "").length < 20) continue;
-    return { nilai: J.lcfirst(nilai), kutipan: isi.slice(0, 260), kandidat: calon.length, orangPertamaDiganti: sama.diganti };
+    return { nilai, kutipan: isi.slice(0, 260), kandidat: calon.length, orangPertama: sama.orangPertama, orangPertamaDiganti: false };
   }
   return null;
 }

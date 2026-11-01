@@ -103,7 +103,7 @@ describe("JJ - pembersihan surat", () => {
 });
 
 describe("JJ - pokok surat setia pada kata-kata surat", () => {
-  it("setiap butir hanya memakai kata yang ada di surat (selain sebutan pihak pengganti 'saya' dan akhiran -nya)", () => {
+  it("setiap butir hanya memakai kata yang ada di surat (keputusan 55: tanpa pengganti 'saya', tanpa perubahan akhiran)", () => {
     const h = J.susunJawabMenjawab({ dokumen: SEMUA, sebutan: SEBUTAN });
     for (const d of h.dokumen.filter((x: Apa) => x.dipakai)) {
       const asli = new Set(kata(SEMUA[d.indeks].teks));
@@ -114,11 +114,11 @@ describe("JJ - pokok surat setia pada kata-kata surat", () => {
     }
   });
 
-  it("jawaban awam: 'saya' diganti sebutan pihak dan ditandai ragu untuk diperiksa", () => {
+  it("jawaban awam (keputusan 55): 'saya' TIDAK diganti sebutan pihak - disalin apa adanya dan ditandai ragu untuk diperiksa", () => {
     const h = J.susunJawabMenjawab({ dokumen: [dok("Jawaban Termohon", "Jawaban", "Termohon", F.JAWABAN_AWAM, "0047")], sebutan: { lawan: "Pemohon", pelaku: "Termohon" } });
     const d = h.dokumen[0];
-    expect(d.butir[0]).toMatch(/^Bahwa Termohon mengakui telah menikah dengan Pemohon pada tahun 2015/);
-    expect(d.butir.join(" ")).not.toMatch(/\bsaya\b/i);
+    expect(d.butir[0]).toMatch(/^Bahwa saya mengakui telah menikah dengan Pemohon pada tahun 2015/);
+    expect(d.butir.join(" ")).toMatch(/\bsaya\b/i);
     expect(d.ragu).toBe(true);
     expect(d.catatan.join(" ")).toMatch(/kata ganti orang pertama/);
   });
@@ -128,7 +128,8 @@ describe("JJ - pokok surat setia pada kata-kata surat", () => {
     const bernomor = olah("Jawaban", "Tergugat", ["JAWABAN TERGUGAT", "Dengan hormat,", "Saya yang bertanda tangan di bawah ini menyampaikan jawaban sebagai berikut:", "1. Bahwa benar Penggugat dan Tergugat telah menikah pada tanggal 5 Juni 2019 di Kecamatan Contoh.", "2. Bahwa tidak benar Tergugat pernah meninggalkan Penggugat selama berbulan-bulan, karena Tergugat bekerja di luar kota.", "Demikian jawaban ini saya buat dengan sebenar-benarnya.", "Hormat saya,", "ttd", "Rahmat"].join("\n"));
     expect(bernomor.butir).toEqual(["Bahwa benar Penggugat dan Tergugat telah menikah pada tanggal 5 Juni 2019 di Kecamatan Contoh", "Bahwa tidak benar Tergugat pernah meninggalkan Penggugat selama berbulan-bulan, karena Tergugat bekerja di luar kota"]);
     const besar = olah("Jawaban", "Tergugat", ["JAWABAN TERMOHON", "BAHWA TERMOHON MEMBANTAH DALIL PEMOHON PADA ANGKA 3 KARENA TIDAK BENAR;", "BAHWA TERMOHON TIDAK PERNAH MEMUKUL PEMOHON SEBAGAIMANA YANG DIDALILKAN;", "DEMIKIAN JAWABAN INI DISAMPAIKAN."].join("\n"));
-    expect(besar.butir[0]).toBe("Bahwa Termohon membantah dalil Pemohon pada angka 3 karena tidak benar");
+    // Keputusan 55: huruf besar semua TIDAK diturunkan (hanya tanda baca akhir dipotong).
+    expect(besar.butir[0]).toBe("BAHWA TERMOHON MEMBANTAH DALIL PEMOHON PADA ANGKA 3 KARENA TIDAK BENAR");
     expect(besar.ragu).toBe(true);
     expect(besar.catatan.join(" ")).toMatch(/huruf besar semua/);
     const tanpa = olah("Replik", "Penggugat", ["REPLIK", "Penggugat menolak seluruh dalil jawaban Tergugat dan tetap pada gugatan semula.", "Tergugat tidak pernah memberikan nafkah selama berpisah rumah dan tidak pernah menjenguk anak.", "Hormat kami"].join("\n"));
@@ -174,7 +175,8 @@ describe("JJ - usulan isian", () => {
 
   it("9881 tertulis (cukup); 8436/8437 kesimpulan kedua pihak ragu; tak ada yang pasti", () => {
     expect(per["9881"]).toMatchObject({ nilai: "tertulis", keyakinan: "cukup" });
-    expect(per["8436"]).toMatchObject({ nilai: "tetap pada gugatan semula untuk bercerai dengan Tergugat", keyakinan: "ragu", kodePola: "kesimpulan-tetap-pada" });
+    // Keputusan 55: "gugatannya" tidak diubah menjadi "gugatan".
+    expect(per["8436"]).toMatchObject({ nilai: "tetap pada gugatannya semula untuk bercerai dengan Tergugat", keyakinan: "ragu", kodePola: "kesimpulan-tetap-pada" });
     expect(per["8437"]).toMatchObject({ nilai: "tidak ingin bercerai dengan Penggugat karena masih ingin mempertahankan rumah tangga", keyakinan: "ragu" });
     for (const u of h.usulan) expect(u.keyakinan).not.toBe("pasti");
     expect(per["9881"].sumber[0].kalimat).not.toMatch(/DAFTAR BUKTI/);

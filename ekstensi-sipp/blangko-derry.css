@@ -504,6 +504,11 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar .bd-ketriw { border-left: 3px solid var(--line); padding: 2px 8px; display: grid; gap: 2px; }
 #aleta-bd-akar .bd-bunyi { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--muted); }
 #aleta-bd-akar .bd-bunyi select { width: 100%; }
+/* 1 Nov (keputusan 56): beberapa berkas e-Court untuk satu bagian - pemberitahuan, pilihan berkas, dan isi tiap berkas */
+#aleta-bd-akar .bd-berkas { display: flex; flex-direction: column; gap: 4px; }
+#aleta-bd-akar .bd-berkaslihat summary { cursor: pointer; font-size: 12px; color: var(--muted); }
+#aleta-bd-akar .bd-berkasitem { margin-top: 6px; font-size: 12px; color: var(--fg); }
+#aleta-bd-akar .bd-berkasisi { max-height: 180px; overflow: auto; margin-top: 2px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); overflow-wrap: anywhere; }
 
 /* ===== 20 Okt 2026: tanya jawab saksi (warna menurut asal jawaban, Isi ulang, Isian tambahan) dan kepala panel menempel ===== */
 #aleta-bd-akar {

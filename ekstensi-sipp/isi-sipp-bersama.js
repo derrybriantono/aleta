@@ -80,6 +80,13 @@
    * (blangko-derry-isian.js rapiSimpan). Sama dengan KODE_BERBARIS di aleta_bot/services/naskahJawabMenjawabService.js.
    */
   const KODE_NASKAH_BERBARIS = Object.freeze(["12020", "12021", "12022", "12023", "12024", "12025", "12026", "12027", "12028"]);
+  /**
+   * Keputusan 55 (1 Nov 2026): isian yang berisi SALINAN teks para pihak (naskah jawab-menjawab, frasa kesimpulan 8436/8437, pokok jawaban
+   * 9355, pokok eksepsi 9491/9681, tanggapan sita 9164). Disimpan APA ADANYA: aturan rapi isian 30 Okt (titik koma tengah menjadi koma,
+   * tanda baca ganda, spasi) TIDAK berlaku di sini - hanya baris kosong yang dibuang (naskah berparagraf).
+   * Sama dengan KODE_TEKS_PIHAK_ISIAN di aleta_bot/services/naskahJawabMenjawabService.js.
+   */
+  const KODE_TEKS_PIHAK = Object.freeze([...KODE_NASKAH_BERBARIS, "8436", "8437", "9355", "9491", "9681", "9164"]);
   /** Simpanan isian berparagraf: tiap baris dirapatkan (spasi ganda, spasi tepi), baris kosong dibuang; isi tidak diubah. */
   function rapikanNaskah(t) {
     return teks(t)
@@ -687,6 +694,7 @@
     VAR_KUASA,
     KODE_HTML,
     KODE_NASKAH_BERBARIS,
+    KODE_TEKS_PIHAK,
     rapikanNaskah,
     KODE_PERIODE,
     ISIAN_PENDEK,

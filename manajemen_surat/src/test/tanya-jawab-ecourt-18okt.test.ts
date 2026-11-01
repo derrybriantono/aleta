@@ -34,11 +34,11 @@ describe("JJ2 - ukuran rapi tanya-jawab", () => {
     const h = hitung(F.JAWABAN_PDF);
     expect(h).toMatchObject({ rapi: true, alasan: [], kode: "6112", rujukan: "2018", kunci: "jawaban lisan 0047", pihak: "0047" });
     expect(h.baris.map((r: Apa) => r.tanya)).toEqual([
-      "Dalam Konvensi:",
+      "DALAM KONVENSI:", // keputusan 55: judul bagian persis seperti di surat (tidak diubah huruf besar-kecilnya)
       "Jawaban Tergugat (tertulis), butir 1:",
       "Jawaban Tergugat (tertulis), butir 2:",
       "Jawaban Tergugat (tertulis), butir 3:",
-      "Dalam Rekonvensi:",
+      "DALAM REKONVENSI:",
       "Jawaban Tergugat (tertulis), butir 4:",
     ]);
     const jawab = h.baris.map((r: Apa) => r.jawab).filter(Boolean);
@@ -46,7 +46,6 @@ describe("JJ2 - ukuran rapi tanya-jawab", () => {
     for (const j of jawab) {
       expect(j).not.toMatch(/^bahwa\b/i);
       expect(j).toMatch(/;$/);
-      expect(j).toMatch(/^[A-Z]/);
     }
     // Kop, salam, identitas, penutup, tanda tangan, nomor halaman tidak ikut.
     const semua = h.baris.map((r: Apa) => `${r.tanya} ${r.jawab}`).join(" ");
@@ -67,7 +66,7 @@ describe("JJ2 - ukuran rapi tanya-jawab", () => {
   it("eksepsi dan pokok perkara: judul bagian jadi baris sendiri", () => {
     const h = hitung(F.JAWABAN_EKSEPSI_KEWENANGAN);
     expect(h.rapi).toBe(true);
-    expect(h.baris.filter((r: Apa) => !r.jawab).map((r: Apa) => r.tanya)).toEqual(["Dalam Eksepsi:", "Dalam Pokok Perkara:"]);
+    expect(h.baris.filter((r: Apa) => !r.jawab).map((r: Apa) => r.tanya)).toEqual(["DALAM EKSEPSI:", "DALAM POKOK PERKARA:"]);
   });
 
   it("ukuran 4a: terlalu sedikit butir dan terlalu pendek -> tidak rapi, tidak ada baris", () => {
@@ -110,6 +109,8 @@ describe("JJ2 - ukuran rapi tanya-jawab", () => {
     const awam = hitung(F.JAWABAN_AWAM, "Jawaban", "Termohon", "0047");
     expect(awam.rapi).toBe(false);
     expect(awam.alasan.join(" ")).toMatch(/kata ganti orang pertama/);
+    // Keputusan 55: tidak ditulis otomatis, dan tidak ada baris yang kata-katanya diganti.
+    expect(awam.baris).toEqual([]);
   });
 
   it("ukuran 1-2: jenis ragu, Turut Tergugat, pengunggah salah kolom, OCR, rereplik, dua berkas peran sama -> tidak rapi", () => {

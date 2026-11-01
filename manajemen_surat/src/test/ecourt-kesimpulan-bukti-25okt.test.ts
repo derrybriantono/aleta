@@ -220,7 +220,7 @@ describe("G2 - kesimpulan: tanya-jawab hanya bila diminta", () => {
   it("dengan permintaan: kesimpulan Penggugat dan Tergugat masing-masing punya kunci sendiri, tanpa kode tetap", () => {
     const p = hitung(KESIMPULAN_P, "Kesimpulan", "Penggugat", "0046", { denganKesimpulan: true });
     expect(p).toMatchObject({ rapi: true, alasan: [], peran: "kesimpulan", kode: "", rujukan: "", kunci: "kesimpulan lisan 0046", pihak: "0046" });
-    expect(p.baris.map((r: Apa) => r.tanya)).toEqual(["Dalam Konvensi:", "Kesimpulan Penggugat (tertulis), butir 1:", "Kesimpulan Penggugat (tertulis), butir 2:", "Kesimpulan Penggugat (tertulis), butir 3:"]);
+    expect(p.baris.map((r: Apa) => r.tanya)).toEqual(["DALAM KONVENSI:", "Kesimpulan Penggugat (tertulis), butir 1:", "Kesimpulan Penggugat (tertulis), butir 2:", "Kesimpulan Penggugat (tertulis), butir 3:"]);
     const t = hitung(KESIMPULAN_T, "Kesimpulan", "Tergugat", "0047", { denganKesimpulan: true });
     expect(t).toMatchObject({ rapi: true, kunci: "kesimpulan lisan 0047", pihak: "0047" });
     expect(t.baris[1].tanya).toBe("Kesimpulan Tergugat (tertulis), butir 1:");
