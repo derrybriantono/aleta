@@ -88,15 +88,28 @@
     return daftar.map((a) => ({ kunci: a, label: a }));
   }
 
-  /** Pilihan bawaan: saksi pertama tahu semuanya, yang lain hanya sebagian (sama dengan borang Susun saksi). */
-  const modusBawaan = (urut) => (Number(urut) === 0 ? "sama" : "sebagian");
+  // 1 Nov 2026 (keputusan 62/63): arah putusan Tolak/NO dan saksi Tergugat/Termohon - blangko-derry-saksi-arah.js.
+  const ARAH = () => (typeof globalThis !== "undefined" && globalThis.AletaBdSaksiArah) || null;
+  const MODUS_ARAH_CADANGAN = ["tidak-tahu-apa", "sebaliknya"];
 
-  /** Pilihan satu saksi yang sudah dibersihkan; nilai di luar daftar jatuh ke bawaan. */
-  function bakukanPilihan(p, urut) {
+  /**
+   * Pilihan bawaan: saksi pertama tahu semuanya, yang lain hanya sebagian (sama dengan borang Susun saksi). 1 Nov: arah
+   * Tolak/NO -> "tidak tahu"; saksi Tergugat/Termohon -> "sama" (isinya dari jawaban & duplik). opsi {arah, pihak}.
+   */
+  const modusBawaan = (urut, opsi) => (ARAH() ? ARAH().modusBawaan(urut, opsi) : Number(urut) === 0 ? "sama" : "sebagian");
+
+  /**
+   * Pilihan satu saksi yang sudah dibersihkan; nilai di luar daftar jatuh ke bawaan. Saksi Tergugat/Termohon (opsi.pihak "T")
+   * juga membawa `dasar` ("jawaban" bawaan | "gugatan").
+   */
+  function bakukanPilihan(p, urut, opsi) {
     const r = p && typeof p === "object" ? p : {};
-    const modus = DAFTAR_MODUS.some(([n]) => n === r.modus) ? r.modus : modusBawaan(urut);
+    const o = opsi || {};
+    const arahModus = (ARAH() ? ARAH().MODUS_ARAH : MODUS_ARAH_CADANGAN).includes(r.modus);
+    const modus = DAFTAR_MODUS.some(([n]) => n === r.modus) || arahModus ? r.modus : modusBawaan(urut, o);
     const sumber = DAFTAR_SUMBER.some(([n]) => n === r.sumber) ? r.sumber : "penggugat";
     const alasan = Array.isArray(r.alasan) ? r.alasan.map(String).filter(Boolean).slice(0, 16) : [];
+    if (o.pihak === "T") return { modus, sumber, alasan, dasar: r.dasar === "gugatan" ? "gugatan" : "jawaban" };
     return { modus, sumber, alasan };
   }
 
@@ -116,7 +129,18 @@
   function susunMuatan(o) {
     const r = o && typeof o === "object" ? o : {};
     // 20 Okt 2026: isian blangko perkara itu ikut dikirim (kode -> {nilai, keyakinan}) sebagai sumber pertama jawaban.
-    const denganIsian = (m) => (r.isian && typeof r.isian === "object" && Object.keys(r.isian).length ? { ...m, isian: r.isian } : m);
+    const denganIsianSaja = (m) => (r.isian && typeof r.isian === "object" && Object.keys(r.isian).length ? { ...m, isian: r.isian } : m);
+    // 1 Nov 2026 (keputusan 62): dasar keterangan saksi Tergugat/Termohon dan naskah jawaban/duplik ikut bila ada.
+    const denganIsian = (m) => {
+      const h = denganIsianSaja(m);
+      const asal = Array.isArray(r.saksi) ? r.saksi : [];
+      if (Array.isArray(h.saksi) && asal.some((s) => s && (s.dasar === "jawaban" || s.dasar === "gugatan"))) {
+        h.saksi = h.saksi.map((s, i) => (asal[i] && (asal[i].dasar === "jawaban" || asal[i].dasar === "gugatan") ? { ...s, dasar: asal[i].dasar } : s));
+      }
+      const n = r.naskahT && typeof r.naskahT === "object" ? r.naskahT : null;
+      if (n && (String(n.jawaban || "").trim() || String(n.duplik || "").trim())) h.naskahT = { jawaban: String(n.jawaban || ""), duplik: String(n.duplik || "") };
+      return h;
+    };
     if (typeof susunMuatanSdg === "function") return denganIsian(susunMuatanSdg(r));
     const saksi = (Array.isArray(r.saksi) ? r.saksi : []).map((s) => ({
       ke: Number(s.ke),
@@ -234,7 +258,7 @@
         r.jawab = usul;
         r.otomatis = usul;
         // Kontrak bersama {teks, yakin, sumber} (+ ket untuk ikon i) dari pengisi jawaban bersumber; tampilan menghitung r.asal darinya.
-        if (b.usulan && typeof b.usulan === "object" && b.usulan.yakin) r.usulan = { teks: usul, yakin: String(b.usulan.yakin), sumber: String(b.usulan.sumber || ""), ket: String(b.usulan.ket || ""), ...(b.usulan.kodePola ? { kodePola: String(b.usulan.kodePola) } : {}) };
+        if (b.usulan && typeof b.usulan === "object" && b.usulan.yakin) r.usulan = { teks: usul, yakin: String(b.usulan.yakin), sumber: String(b.usulan.sumber || ""), ket: String(b.usulan.ket || ""), ...(b.usulan.kodePola ? { kodePola: String(b.usulan.kodePola) } : {}), ...(b.usulan.peringatan ? { peringatan: String(b.usulan.peringatan) } : {}) };
         else delete r.usulan;
         hasil.terisi += 1;
         if (adaTitik(usul)) hasil.tetapTitik += 1;

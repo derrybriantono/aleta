@@ -336,7 +336,7 @@
     tjTujuan: null, // 19 Okt (tahap 2): { kunci, i, aksi: "tukar"|"salin" } - memilih saksi tujuan bila saksinya lebih dari dua
     // Jawaban saksi otomatis & pilihan pengetahuan saksi (blangko-derry-saksi.js): pil = kunci saksi -> {modus, sumber, alasan[]}.
     // alasanPosita: alasan yang terbaca dari posita perkara ini (centang "sebagian"); lainBuka: kunci saksi -> "Alasan lain" terbuka.
-    sk: { pil: {}, perkara: "", alasan: null, alasanPosita: { perkara: "", keadaan: "", sesuai: null }, lainBuka: {}, status: {}, tertahan: {}, konfirmasi: {}, sig: {}, rantai: Promise.resolve(), tinjau: null },
+    sk: { pil: {}, pembuktian: {}, perkara: "", alasan: null, alasanPosita: { perkara: "", keadaan: "", sesuai: null }, lainBuka: {}, status: {}, tertahan: {}, konfirmasi: {}, sig: {}, rantai: Promise.resolve(), tinjau: null },
     tambahanBuka: false, // 20 Okt: bagian "Isian tambahan (bila ada)" terbuka
     semua: null, // "Lihat semua isi data"
     semuaBuka: false,
@@ -4513,18 +4513,105 @@
   function drafSaksiOtomatis(kunciDaftar) {
     const m = typeof globalThis !== "undefined" ? globalThis.AletaBdDrafSaksi : null;
     if (!m || !S.blangko || !S.pk) return [];
-    const pilih = m.pilihSetDraf(S.setSaksi && S.setSaksi.daftar);
-    if (!pilih) return [];
+    const daftarSet = S.setSaksi && S.setSaksi.daftar;
+    // 1 Nov (keputusan 62): saksi Tergugat/Termohon mendapat set "sesuai jawaban dan duplik" (bawaan) atau set Penggugat ("ikut gugatan").
+    const pilihUntuk = (k) => {
+      if (!SA()) return m.pilihSetDraf(daftarSet);
+      const p = SK() ? SK().bakukanPilihan(S.sk.pil[k], urutSaksi(k), opsiPil(k)) : {};
+      return SA().pilihSetPihak(daftarSet, pihakTj(k), p.dasar);
+    };
+    const pertama = pilihUntuk(kunciDaftar[0]);
+    if (!pertama && !kunciDaftar.some((k) => pilihUntuk(k))) return [];
     const opsi = { hanyaBaca: deretTj().hanyaBaca, katalog: ktAktif() };
-    const sasaran = kunciDaftar.filter((k) => tjItem(k) && m.perluDraf(S.tj[k], opsi));
+    const sasaran = kunciDaftar.filter((k) => tjItem(k) && m.perluDraf(S.tj[k], opsi) && pilihUntuk(k));
     if (!sasaran.length) return [];
     tjCatat(sasaran); // Urungkan mengembalikan daftar kosong
     for (const k of sasaran) {
+      const pilih = pilihUntuk(k);
       pakaiSetSaksi(k, pilih.utama.id);
       for (const t of pilih.tambahan) pakaiSetSaksi(k, t.id);
     }
-    catatMuatTj(kunciDaftar, m.kalimatStatus(pilih, jumlahBarisMuat(kunciDaftar), jamSekarang()));
+    catatMuatTj(kunciDaftar, m.kalimatStatus(pilihUntuk(sasaran[0]), jumlahBarisMuat(kunciDaftar), jamSekarang()));
     return sasaran;
+  }
+  /**
+   * 1 Nov (keputusan 62): dasar keterangan saksi Tergugat/Termohon diganti. Daftar yang masih seluruhnya draf (kalimat contoh,
+   * titik-titik, atau hasil susunan otomatis - belum ada ketikan petugas) diganti set yang sesuai lalu diisi ulang; daftar yang
+   * sudah diketik tidak disentuh (set dapat dipilih sendiri lewat Muat).
+   */
+  function gantiSetDasarT(k) {
+    const m = typeof globalThis !== "undefined" ? globalThis.AletaBdDrafSaksi : null;
+    const t = S.tj[k];
+    if (!m || !SA() || !SK() || !t || deretTj().hanyaBaca || ktAktif()) return;
+    const rows = Array.isArray(t.rows) ? t.rows : [];
+    const isi = rows.filter((r) => String(r.tanya || "").trim() || String(r.jawab || "").trim());
+    if (isi.length && !isi.every((r) => SK().dapatDiganti(r))) {
+      S.sk.status[k] = { teks: "Daftar ini sudah berisi ketikan; set pertanyaan tidak diganti. Pilih set lewat Muat bila perlu." };
+      return;
+    }
+    const p = SK().bakukanPilihan(S.sk.pil[k], urutSaksi(k), opsiPil(k));
+    const pilih = SA().pilihSetPihak(S.setSaksi && S.setSaksi.daftar, "T", p.dasar);
+    if (!pilih) return;
+    tjCatat([k]);
+    t.rows = [];
+    pakaiSetSaksi(k, pilih.utama.id);
+    for (const x of pilih.tambahan) pakaiSetSaksi(k, x.id);
+    S.sk.sig = {};
+  }
+  /**
+   * 1 Nov (tinjauan saksi E): set tambahan yang disarankan hasil susunan (h.saranSet) dipasang pada daftar saksi Penggugat yang masih
+   * seluruhnya draf (belum ada ketikan petugas) dan belum memuatnya. Mengembalikan kunci daftar yang berubah.
+   */
+  function pasangSaranSet(kunci, h) {
+    const saran = h && Array.isArray(h.saranSet) ? h.saranSet.map(String) : [];
+    const daftar = (S.setSaksi && S.setSaksi.daftar) || [];
+    if (!saran.length || !SK() || deretTj().hanyaBaca || ktAktif()) return [];
+    const berubah = [];
+    for (const k of kunci) {
+      const t = S.tj[k];
+      if (!t || pihakTj(k) === "T" || !Array.isArray(t.rows)) continue;
+      t.saranDipasang = t.saranDipasang || [];
+      const isi = t.rows.filter((r) => String(r.tanya || "").trim() || String(r.jawab || "").trim());
+      if (!isi.length || !isi.every((r) => SK().dapatDiganti(r))) continue;
+      for (const id of saran) {
+        const s = daftar.find((x) => x.id === id && x.tambahan);
+        if (!s || t.saranDipasang.includes(id)) continue;
+        const sudah = s.baris.some((b) => t.rows.some((r) => String(r.tanya || "").trim() === String(b.tanya || "").trim()));
+        t.saranDipasang.push(id);
+        if (sudah) continue;
+        pakaiSetSaksi(k, id);
+        if (!berubah.includes(k)) berubah.push(k);
+      }
+    }
+    return berubah;
+  }
+  /** 1 Nov (tinjauan saksi E): hanya satu saksi Penggugat/Pemohon (unus testis) - dari nama blangko atau daftar saksi BAS. */
+  function satuSaksiP() {
+    if (!SA() || !S.blangko) return false;
+    const b = S.blangko;
+    const daftar = kunciSaksiSemua().map((k) => ({ pihak: pihakTj(k), dimuat: Boolean(S.tj[k] && S.tj[k].dimuat), rows: (S.tj[k] && S.tj[k].rows) || [] }));
+    return SA().satuSaksi({ blangko: [b.judul, b.berkas, b.kelompok, b.folder].filter(Boolean).join(" "), daftar });
+  }
+  /** Naskah jawaban & duplik Tergugat/Termohon: isian 12020/12024 Blangko Derry bila ada, selain itu usulan e-Court (diingat per perkara). */
+  async function bacaNaskahT() {
+    const a = SA();
+    if (!a || !S.pk) return null;
+    const id = perkaraId();
+    const isiAda = { [a.KODE_JAWABAN]: (S.isi && S.isi[a.KODE_JAWABAN]) || "", [a.KODE_DUPLIK]: (S.isi && S.isi[a.KODE_DUPLIK]) || "" };
+    if (isiAda[a.KODE_JAWABAN] || isiAda[a.KODE_DUPLIK]) return a.naskahT({ isi: isiAda });
+    if (S.sk.naskahT && S.sk.naskahT.perkara === id) return S.sk.naskahT.naskah;
+    let usulan = [];
+    try {
+      const sb = sebutan();
+      const q = new URLSearchParams({ nomor: nomorPerkara(), lawan: sb.P, pelaku: sb.T });
+      const isi = await ambilPortal(`${API_ISI_GUGATAN_JM}?${q.toString()}`, {}, "Membaca jawaban dan duplik dari e-Court");
+      usulan = Array.isArray(isi && isi.usulan) ? isi.usulan : [];
+    } catch {
+      /* tanpa naskah: keterangan saksi Tergugat dibiarkan bertitik-titik */
+    }
+    const naskah = a.naskahT({ isi: {}, usulan });
+    S.sk.naskahT = { perkara: id, naskah };
+    return naskah;
   }
   /** Baris tanya-jawab yang berisi (pertanyaan atau jawaban tidak kosong). */
   const barisTjBerisi = (baris) => (Array.isArray(baris) ? baris : []).some((r) => String((r && r.tanya) || "").trim() || String((r && r.jawab) || "").trim());
@@ -4668,6 +4755,18 @@
   // Isian yang sudah diketik petugas tidak pernah ditimpa tanpa konfirmasi di halaman.
   // ──────────────────────────────────────────────────────────────────────────
   const SK = () => (typeof globalThis !== "undefined" && globalThis.AletaBdSaksi) || null;
+  // 1 Nov 2026 (keputusan 61-63): arah putusan Tolak/NO, saksi Tergugat/Termohon, tanda peringatan - blangko-derry-saksi-arah.js.
+  const SA = () => (typeof globalThis !== "undefined" && globalThis.AletaBdSaksiArah) || null;
+  /** Arah putusan dari blangko yang dipilih ("[Tolak]", "[NO]") atau keterangan sidang/status putusan SIPP; "" bila tidak diketahui. */
+  function arahTj() {
+    const a = SA();
+    if (!a || !S.blangko) return "";
+    const b = S.blangko;
+    const pk = S.pk || {};
+    return a.arahPutusan({ blangko: [b.judul, b.berkas, b.kelompok, b.folder].filter(Boolean).join(" | "), sidang: Array.isArray(pk.sidang) ? pk.sidang : [], status: (pk.perkara && pk.perkara.statusPutusan) || "" });
+  }
+  const pihakTj = (k) => (/ t$/.test(String(k)) ? "T" : "P");
+  const opsiPil = (k) => ({ arah: arahTj(), pihak: pihakTj(k) });
   const tandaiDasarBaris = (rows, semua) => (SK() ? SK().tandaiDasar(rows, semua) : rows);
   const kunciSaksiSemua = () => daftarPerlu().filter((x) => x.jenis === "tj").map((x) => x.tj.kunci);
   const urutSaksi = (kunci) => Math.max(0, kunciSaksiSemua().indexOf(kunci));
@@ -4859,10 +4958,12 @@
         const templat = m.templatDariBaris(sumber);
         const saksi = grup.map((k) => {
           const n = Number((String(k).match(/^saksi (\d+)/) || [])[1]) || 1;
-          const p = m.bakukanPilihan(S.sk.pil[k], urutSaksi(k));
+          const p = m.bakukanPilihan(S.sk.pil[k], urutSaksi(k), opsiPil(k));
           const pihak = / t$/.test(k) ? "T" : "P";
-          return { pihak, ke: Math.min(n, m.BATAS_SAKSI[pihak]), modus: p.modus, sumber: p.sumber, alasan: p.alasan };
+          return { pihak, ke: Math.min(n, m.BATAS_SAKSI[pihak]), modus: p.modus, sumber: p.sumber, alasan: p.alasan, ...(p.dasar ? { dasar: p.dasar } : {}) };
         });
+        // 1 Nov (keputusan 62): saksi Tergugat/Termohon menurut jawaban & duplik - naskahnya dari isian 12020/12024 atau e-Court.
+        const naskahT = saksi.some((x) => x.dasar === "jawaban") ? await bacaNaskahT() : null;
         const tanda = JSON.stringify([saksi, templat, tg]);
         const kunciSig = grup.join("|");
         if (!o.lapor && S.sk.sig[kunciSig] === tanda) continue;
@@ -4878,6 +4979,7 @@
           lawan: sb.P,
           saksi,
           isian: kumpulIsianSaksi(),
+          ...(naskahT ? { naskahT } : {}),
         });
         const tgl = tanggalSidangIso();
         if (tgl) muatan.tanggalSidang = tgl;
@@ -4919,8 +5021,14 @@
           S.sk.tertahan[x.k] = o.lapor ? x.res.tertahan : [];
           S.sk.konfirmasi[x.k] = false;
           S.sk.status[x.k] = o.lapor || x.res.terisi ? { teks: m.ringkasan(x.res) } : null;
+          // 1 Nov (tinjauan saksi E): peringatan pembuktian dari data perkara (pisah kurang 6 bulan / masih serumah).
+          S.sk.pembuktian[x.k] = Array.isArray(h.peringatanPembuktian) ? h.peringatanPembuktian.map(String) : [];
         }
+        // 1 Nov (tinjauan saksi E): set tambahan yang ditunjuk data perkara (masih serumah / pisah kurang 6 bulan) dipasang sendiri
+        // pada daftar yang masih seluruhnya draf, sekali per daftar; lalu jawabannya diisi seperti biasa.
+        const tambahSaran = pasangSaranSet(tg, h);
         renderTj();
+        if (tambahSaran.length) void isiOtomatis(tambahSaran, {});
       }
       if (o.tinjau && S.sk.tinjau) {
         if (S.sk.tinjau.item.length) S.sk.tinjau.siap = true;
@@ -4960,16 +5068,19 @@
     if (String(bidang).indexOf("kat-") === 0) return ubahKatalog(kunci, bidang, el);
     const m = SK();
     if (!m || !tjItem(kunci)) return;
-    const p = m.bakukanPilihan(S.sk.pil[kunci], urutSaksi(kunci));
+    const p = m.bakukanPilihan(S.sk.pil[kunci], urutSaksi(kunci), opsiPil(kunci));
     if (bidang === "modus") p.modus = el.value;
     else if (bidang === "sumber") p.sumber = el.value;
+    else if (bidang === "dasar") p.dasar = el.value === "gugatan" ? "gugatan" : "jawaban";
     else if (bidang === "alasan") {
       const kartu = el.closest ? el.closest("[data-skkartu]") : null;
       p.alasan = Array.from(kartu ? kartu.querySelectorAll('[data-skfld="alasan"]') : []).filter((x) => x.checked).map((x) => x.value);
     }
-    S.sk.pil[kunci] = m.bakukanPilihan(p, urutSaksi(kunci));
+    S.sk.pil[kunci] = m.bakukanPilihan(p, urutSaksi(kunci), opsiPil(kunci));
     S.sk.tinjau = null;
     simpanPilSaksi();
+    // 1 Nov (keputusan 62): dasar saksi Tergugat/Termohon diganti - set draf diganti bila daftar masih seluruhnya draf (belum diketik).
+    if (bidang === "dasar") gantiSetDasarT(kunci);
     renderTj();
     if (tjSiap([kunci])) void isiOtomatis([kunci], { lapor: true });
   }
@@ -4984,9 +5095,15 @@
       .map((k) => {
         const it = tjItem(k);
         if (!it) return "";
-        const p = m.bakukanPilihan(S.sk.pil[k], urutSaksi(k));
+        const p = m.bakukanPilihan(S.sk.pil[k], urutSaksi(k), opsiPil(k));
         const mati = tjSiap([k]) ? "" : " disabled";
-        const modus = m.DAFTAR_MODUS.map(([n, nama]) => `<option value="${esc(n)}"${n === p.modus ? " selected" : ""}>${esc(nama)}</option>`).join("");
+        const satuOpsi = ([n, nama]) => `<option value="${esc(n)}"${n === p.modus ? " selected" : ""}>${esc(nama)}</option>`;
+        // 1 Nov (keputusan 63): arah Tolak/NO -> menu tiga pilihan di depan (bawaan "Tidak tahu"), pilihan lama tetap ada.
+        const grupModus = SA() ? SA().opsiModus(m.DAFTAR_MODUS, arahTj(), p.modus) : [{ label: "", opsi: m.DAFTAR_MODUS }];
+        const modus = grupModus.map((g) => (g.label ? `<optgroup label="${esc(g.label)}">${g.opsi.map(satuOpsi).join("")}</optgroup>` : g.opsi.map(satuOpsi).join(""))).join("");
+        // 1 Nov (keputusan 62): saksi Tergugat/Termohon perkara cerai - dasar keterangannya.
+        const sbD = sebutan();
+        const dasarT = p.dasar && SA() ? SA().daftarDasarT(sbD.P, sbD.T).map(([n, nama]) => `<option value="${esc(n)}"${n === p.dasar ? " selected" : ""}>${esc(nama)}</option>`).join("") : "";
         const sumber = m.DAFTAR_SUMBER.map(([n, nama]) => `<option value="${esc(n)}"${n === p.sumber ? " selected" : ""}>cerita dari ${esc(nama)}</option>`).join("");
         // 19 Okt (tahap 2): hanya alasan yang ada di posita perkara ini tampil langsung; sisanya di "Alasan lain" (dapat dibuka).
         // Semua kotak tetap ada di halaman (yang terlipat hanya disembunyikan) supaya pilihan tidak hilang saat menyimpan.
@@ -5005,6 +5122,7 @@
         const konf = S.sk.konfirmasi[k];
         return (
           `<div class="bd-skkartu" data-skkartu="${esc(k)}"><b class="bd-sknama">${esc(it.tj.sebutan)}</b>` +
+          (dasarT ? `<label class="bd-sklbl">Dasar keterangan<select data-skkunci="${esc(k)}" data-skfld="dasar"${mati}>${dasarT}</select></label>` : "") +
           `<label class="bd-sklbl">Yang diketahui saksi<select data-skkunci="${esc(k)}" data-skfld="modus"${mati}>${modus}</select></label>` +
           (p.modus === "dari-cerita" ? `<label class="bd-sklbl">Siapa yang bercerita<select data-skkunci="${esc(k)}" data-skfld="sumber"${mati}>${sumber}</select></label>` : "") +
           (p.modus === "sebagian" ? `<fieldset class="bd-skalasan"><legend>Alasan yang ia ketahui</legend>${ketPosita}${centang}</fieldset>` : "") +
@@ -5020,7 +5138,11 @@
       })
       .join("");
     if (!kartu) return "";
-    return `<div class="bd-skpanel" role="group" aria-label="Pengetahuan saksi"><div class="bd-skhead"><span class="bd-lbl">Pengetahuan saksi</span><button type="button" class="bd-btn kecil" data-bd2="isioto" data-kunci="${esc(keys.join("|"))}" ${tjSiap(keys) ? "" : "disabled"} title="Menyusun ulang jawaban dari data perkara. Sebelum dipasang, Anda melihat dulu berapa jawaban yang berubah.">Isi ulang dari data perkara</button></div>${htmlKonfirmasiIsiUlang(keys)}<div class="bd-skgrid">${kartu}</div></div>`;
+    // 1 Nov (tinjauan saksi E): peringatan pembuktian - satu saksi saja (Pasal 306 RBg), pisah kurang 6 bulan / masih serumah.
+    const pb = [...new Set(keys.flatMap((k) => (S.sk.pembuktian && S.sk.pembuktian[k]) || []))];
+    if (satuSaksiP()) pb.unshift("Hanya satu saksi: satu saksi saja bukan bukti yang cukup (Pasal 306 RBg / Pasal 169 HIR, unus testis nullus testis). Keterangannya tetap disusun; lengkapi dengan alat bukti lain atau saksi kedua.");
+    const htmlPb = pb.length ? pb.map((x) => `<p class="bd-peringatan" role="status" data-pembuktian>${esc(x)}</p>`).join("") : "";
+    return `<div class="bd-skpanel" role="group" aria-label="Pengetahuan saksi">${htmlPb}<div class="bd-skhead"><span class="bd-lbl">Pengetahuan saksi</span><button type="button" class="bd-btn kecil" data-bd2="isioto" data-kunci="${esc(keys.join("|"))}" ${tjSiap(keys) ? "" : "disabled"} title="Menyusun ulang jawaban dari data perkara. Sebelum dipasang, Anda melihat dulu berapa jawaban yang berubah.">Isi ulang dari data perkara</button></div>${htmlKonfirmasiIsiUlang(keys)}<div class="bd-skgrid">${kartu}</div></div>`;
   }
   /** Konfirmasi di halaman (bukan kotak dialog peramban) sebelum jawaban diisi ulang: jumlah yang berubah dan yang tertahan. */
   function htmlKonfirmasiIsiUlang(keys) {
@@ -6667,6 +6789,13 @@
     const m = TP();
     if (!m) return "";
     const a = m.asalBaris(r);
+    // 1 Nov (keputusan 61): butir dari gugatan/jawaban atau pengetahuan langsung yang disusun otomatis - tanda di panel saja.
+    const pr = SA() ? SA().peringatanBaris(r) : null;
+    const capPr = pr ? `<span class="bd-asallencana peringatan" data-peringatan="${esc(pr.jenis)}">⚠ ${esc(pr.label)} <button type="button" class="bd-ikon bd-asalinfo" data-bd2="infoasal" title="${esc(pr.teks)}" aria-label="Peringatan: ${esc(pr.teks)}">ⓘ</button></span>` : "";
+    return capPr + isiCapAsalLama(r, a);
+  }
+  function isiCapAsalLama(r, a) {
+    const m = TP();
     if (a === "ragu") {
       const alasan = m.alasanRagu(r);
       return `<span class="bd-asallencana ragu">ragu <button type="button" class="bd-ikon bd-asalinfo" data-bd2="infoasal" title="${esc(alasan)}" aria-label="Mengapa ragu: ${esc(alasan)}">ⓘ</button></span>`;

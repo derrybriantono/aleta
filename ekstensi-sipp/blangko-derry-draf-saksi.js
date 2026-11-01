@@ -39,7 +39,8 @@
    * @param {Array<{id:string, judul?:string, utama?:boolean, tambahan?:boolean, baris?:Array}>} daftar
    */
   function pilihSetDraf(daftar) {
-    const sah = (Array.isArray(daftar) ? daftar : []).filter((x) => x && teks(x.id) && Array.isArray(x.baris) && x.baris.length);
+    // 1 Nov 2026: set ber-pihak "T" (saksi Tergugat/Termohon) tidak pernah dipasang pada daftar saksi Penggugat - lihat blangko-derry-saksi-arah.js pilihSetPihak.
+    const sah = (Array.isArray(daftar) ? daftar : []).filter((x) => x && teks(x.id) && Array.isArray(x.baris) && x.baris.length && x.pihak !== "T");
     const utama = sah.find((x) => x.utama === true && !x.tambahan) || null;
     if (!utama) return null;
     const tambahan = sah.filter((x) => x.utama === true && x.tambahan === true && x.id !== utama.id);

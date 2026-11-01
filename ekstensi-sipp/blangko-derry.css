@@ -555,6 +555,8 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar .bd-asallencana.ragu { border-color: var(--asal-ragu-ln); color: var(--asal-ragu-ln); font-weight: 600; }
 #aleta-bd-akar .bd-asallencana.kosong { border-color: var(--asal-kosong-ln); color: var(--asal-kosong-ln); }
 #aleta-bd-akar .bd-asallencana.contoh { border-color: var(--asal-contoh-ln); color: var(--asal-contoh-ln); border-style: dashed; }
+/* 1 Nov 2026 (keputusan 61): butir dari gugatan/jawaban atau pengetahuan langsung yang disusun otomatis - tanda di panel saja. */
+#aleta-bd-akar .bd-asallencana.peringatan { border-color: var(--asal-ragu-ln); color: var(--asal-ragu-ln); font-weight: 600; margin-right: 4px; }
 #aleta-bd-akar .bd-asalinfo { all: unset; cursor: help; font-size: 12.5px; line-height: 1; color: inherit; }
 #aleta-bd-akar .bd-asalinfo:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 /* Ringkasan di atas tabel */

@@ -50,7 +50,9 @@
     const yakin = YAKIN.includes(teks(m.yakin)) ? teks(m.yakin) : "";
     const sumber = teks(m.sumber).trim();
     const ket = teks(m.ket).trim();
-    return yakin || sumber ? { yakin, sumber, ...(ket ? { ket } : {}) } : null;
+    // 1 Nov 2026 (keputusan 61): tanda peringatan butir dari gugatan/jawaban/pengetahuan langsung ikut terbawa.
+    const peringatan = teks(m.peringatan).trim();
+    return yakin || sumber ? { yakin, sumber, ...(ket ? { ket } : {}), ...(peringatan ? { peringatan } : {}) } : null;
   }
 
   /**
