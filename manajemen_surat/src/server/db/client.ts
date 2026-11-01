@@ -374,6 +374,8 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_cocok_putusan",
   // 1 November 2026 (0123, keputusan 71): halaman awal & akhir tiap BAS per perkara + sidang (nomor halaman runut). Tanpa kunci asing.
   "aleta_bas_halaman",
+  // 1 November 2026 (0125, N4): riwayat kejadian penjaga server. Tanpa kunci asing.
+  "aleta_penjaga_kejadian",
   // 16 Oktober 2026 (0066): cadangan & riwayat suntingan ABT dari halaman
   // Pengaturan SIPP & ABT. Tanpa kunci asing - urutannya bebas.
   "aleta_abt_suntingan",

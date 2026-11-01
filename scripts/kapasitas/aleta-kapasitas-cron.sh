@@ -57,6 +57,11 @@ mkdir -p "$DIR" 2>/dev/null || exit 1
 # Container portal menulis setelan-host.json/minta-periksa.json di folder ini.
 chmod 0777 "$DIR" 2>/dev/null || true
 
+# Penjaga server (N4, 1 Nov 2026): pemeriksaan ringan + kabar WhatsApp. Berjalan SEBELUM kunci kapasitas supaya tidak
+# tertahan pengukuran berat; punya kunci, jeda, dan batas waktu sendiri. Hanya mengukur dan mengabari.
+PENJAGA_HOST="$(dirname "$0")/penjaga-host.sh"
+[ -f "$PENJAGA_HOST" ] && { timeout 90 bash "$PENJAGA_HOST" "$@" || true; }
+
 exec 9>"$DIR/.kunci"
 command -v flock >/dev/null 2>&1 && { flock -n 9 || exit 0; }
 

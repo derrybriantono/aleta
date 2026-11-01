@@ -608,6 +608,35 @@ export const DDL_COCOK_PUTUSAN = {
 } as const;
 
 /**
+ * Penjaga server - riwayat kejadian (0125, 1 Nov 2026, N4).
+ * Cermin PERSIS dari drizzle/0125_aleta_penjaga_server.sql; penjaga penjaga-server-1nov.test.ts membandingkan keduanya.
+ */
+export const DDL_PENJAGA_SERVER = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_penjaga_kejadian (
+  id TEXT PRIMARY KEY,
+  kunci TEXT NOT NULL,
+  tingkat TEXT NOT NULL,
+  judul TEXT NOT NULL DEFAULT '',
+  uraian TEXT NOT NULL DEFAULT '',
+  mulai_at TEXT NOT NULL,
+  terakhir_dilihat_at TEXT NOT NULL,
+  berturut INTEGER NOT NULL DEFAULT 1,
+  pulih_at TEXT NOT NULL DEFAULT '',
+  kabar_at TEXT NOT NULL DEFAULT '',
+  kabar_tingkat TEXT NOT NULL DEFAULT '',
+  jumlah_kabar INTEGER NOT NULL DEFAULT 0,
+  kabar_pulih_at TEXT NOT NULL DEFAULT '',
+  catatan TEXT NOT NULL DEFAULT ''
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_penjaga_kejadian_kunci ON aleta_penjaga_kejadian(kunci, pulih_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_penjaga_kejadian_mulai ON aleta_penjaga_kejadian(mulai_at)`,
+  ],
+} as const;
+
+/**
  * Cadangan dan riwayat suntingan atas ABT dari halaman "Pengaturan SIPP & ABT"
  * (0066, 16 Okt 2026, Tahap H). Cermin PERSIS dari
  * drizzle/0066_aleta_abt_suntingan.sql; penjaga
@@ -3576,6 +3605,7 @@ const schemaStatements = [
   ...DDL_COCOK_PUTUSAN.tabel,
   // Halaman BAS runut per perkara + sidang (0123).
   ...DDL_BAS_HALAMAN.tabel,
+  ...DDL_PENJAGA_SERVER.tabel,
   // Cadangan & riwayat suntingan ABT dari Pengaturan SIPP & ABT (0066).
   ...DDL_ABT_SUNTINGAN.tabel,
   // Checklist Konseptor Sementara: tanda langkah & laporan Blangko Derry (0067).
@@ -5597,6 +5627,7 @@ const indexStatements = [
   ...DDL_KALIMAT_PRIBADI.indeks,
   ...DDL_COCOK_PUTUSAN.indeks,
   ...DDL_BAS_HALAMAN.indeks,
+  ...DDL_PENJAGA_SERVER.indeks,
   ...DDL_ABT_SUNTINGAN.indeks,
   ...DDL_BLANGKO_PRIBADI.indeks,
   ...DDL_TAUTAN_JADWAL.indeks,

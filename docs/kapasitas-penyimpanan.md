@@ -51,3 +51,14 @@ ALETA mati dari "hentikan" sampai "nyalakan": salinan rsync sebesar data (Docker
 ## Belum diuji di server
 
 Skrip pindah/rollback hanya lolos `bash -n` dan uji fungsi pembantu (daemon.json, deteksi volume Postgres) di laptop; cron diuji dengan `docker`/`df` tiruan. Pemindahan sungguhan belum pernah dijalankan - jalankan `--periksa` dulu dan awasi log tahap demi tahap.
+
+## Penjaga server (1 Nov 2026)
+
+Mengabari Super Admin lewat WhatsApp (ALETA Bot) bila: ruang disk melewati ambang di atas (`/`, `/home`, partisi data Docker/Postgres/ALETA), cadangan harian gagal/tidak terbentuk/terlalu kecil, layanan merah (basis data, bot, WhatsApp, SIPP, ABT, antrian, e-Court, kontainer `aleta-*`), jumlah berkas (inode) penuh, folder sementara penuh, sertifikat hampir habis, halaman ABT mati, portal tidak menjawab. HANYA mengabari - tidak membersihkan apa pun.
+
+- **Satu jadwal cron yang sama** (`aleta-kapasitas-cron.sh`) kini juga memanggil `scripts/kapasitas/penjaga-host.sh`: pemeriksaan cepat tiap >= 2 menit (satu curl, batas 5 detik) dan pemeriksaan penuh tiap 10 menit (df, df -i, docker ps, openssl). Tidak ada `du`/`find`. Tidak ada langkah pemasangan baru selain `chmod +x scripts/kapasitas/*.sh` (sudah ada di urutan di atas).
+- **Putaran portal** tiap 5 menit (mulai 2 menit sesudah portal menyala; matikan dengan `ALETA_PENJAGA_SERVER=0`): memakai hasil Pusat Kesehatan bila < 4 menit, membaca `penjaga-host.json`, menulis `penjaga-penerima.json` (cerminan penerima untuk skrip host).
+- **Portal mati**: portal tidak bisa mengabari, jadi `penjaga-host.sh` menyuruh ALETA Bot (`/internal/aleta-bot/messages/enqueue`, `sourceApp=aleta_bot_gateway`) mengabari penerima di `penjaga-penerima.json`. Token bot dibaca dari `ALETA_BOT_INTERNAL_API_TOKEN` atau `$APP_DIR/.env.production` dan diberikan ke curl lewat stdin. Bila ALETA Bot juga mati, tidak ada yang bisa mengirim WhatsApp: lonceng/halaman Pusat Kesehatan tetap menandai.
+- Pengaturan (Super Admin): Admin > Kapasitas penyimpanan > Penjaga server. Bawaan: kabar merah MENYALA, pemberitahuan biasa MENYALA, jam tenang 21.00-05.30 WITA (hanya merah yang menembus), ingatkan merah tiap 6 jam / biasa tiap 24 jam, penerima semua Super Admin bernomor.
+- Variabel opsional skrip host: `ALETA_PORTAL_URL`, `ALETA_BOT_BASE_URL`, `ALETA_ABT_URL` (kosong = ABT tidak diperiksa), `ALETA_CERT_FILES`, `ALETA_TMP_DIR`, `ALETA_KONTAINER_POLA`.
+- Migrasi 0125 (journal idx 109): tabel `aleta_penjaga_kejadian` (riwayat kejadian). idx 106-108 milik 0122-0124 dari cabang lain; idx baru berurutan setelah semua digabung.

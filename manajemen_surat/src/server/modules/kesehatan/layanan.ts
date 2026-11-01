@@ -397,6 +397,11 @@ export async function jalankanPemeriksaan(db: AletaDatabase, opsi: { ping?: bool
   };
   const durasi = Date.now() - mulai;
   const komponen = KOMPONEN.map((k) => bentukKomponen(k, isi[k.kunci], diukurPada, durasi));
+  // N4 (1 Nov 2026): penjaga server memakai hasil yang baru ini (bukan memeriksa ulang). Hanya pemeriksaan asli dengan ping.
+  if (!opsi.deps && opsi.ping) {
+    const { titipHasilKesehatan } = await import("@/server/modules/penjaga-server/layanan");
+    titipHasilKesehatan(komponen.map((k) => ({ kunci: k.kunci, warna: k.warna, ringkas: k.ringkas })));
+  }
   return {
     diukurPada,
     warna: warnaTerburuk(komponen.filter((k) => KOMPONEN_PENENTU.has(k.kunci)).map((k) => k.warna)),
@@ -554,7 +559,12 @@ export async function detakKesehatan(db: AletaDatabase, opsi: { deps?: DepsKeseh
   if (!pengaturan.berkala) return null;
   const hasil = await jalankanPemeriksaan(db, { ping: true, deps: opsi.deps });
   await catatRiwayatKesehatan(db, hasil);
-  const status = await perbaruiStatus(db, hasil, { pengaturan, kirim: opsi.kirim, kini: opsi.kini });
+  // N4 (1 Nov 2026): bila penjaga server mengabari, ialah satu-satunya yang mengirim WhatsApp untuk komponen merah
+  // (Super Admin, satu pesan per kejadian, jam tenang). Peringatan lama dimatikan agar tidak ada dua pesan untuk hal yang sama.
+  // Lonceng portal dan riwayat tetap dari perbaruiStatus.
+  const { bacaPengaturanPenjaga, penjagaMengabari } = await import("@/server/modules/penjaga-server/layanan");
+  const penjagaMenyala = penjagaMengabari(await bacaPengaturanPenjaga(db));
+  const status = await perbaruiStatus(db, hasil, { pengaturan: penjagaMenyala ? { ...pengaturan, wa: false } : pengaturan, kirim: opsi.kirim, kini: opsi.kini });
   return { hasil, status };
 }
 
