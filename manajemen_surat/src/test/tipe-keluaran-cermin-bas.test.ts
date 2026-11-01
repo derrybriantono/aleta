@@ -166,7 +166,10 @@ describe("bas.saksi.jawaban-modus = bank yang DIJALANKAN jawabMenurutModus", () 
 
   it("tiap kunci: setiap modus yang dilayaninya menghasilkan bank cermin, urut demi urut", () => {
     for (const [kunci, cabang] of Object.entries(CABANG_JAWABAN_MODUS)) {
-      const harapan = modusCermin.filter((e) => e.kunci === kunci).map((e) => isiPenanda(e.nilai));
+      // Tinjauan 1 Nov (B4): pertanyaan "kapan MULAI terjadi" tidak dijawab bentuk yang menyebut PUNCAK, jadi bot menyaring
+      // bank kelompok waktu (bank cermin tetap utuh - bentuk itu dipakai untuk pertanyaan puncak, diuji di bawah).
+      const saringMulai = (nilai: string) => cabang.kelompok !== "waktu" || !/puncak/i.test(nilai);
+      const harapan = modusCermin.filter((e) => e.kunci === kunci && saringMulai(e.nilai)).map((e) => isiPenanda(e.nilai));
       expect(harapan.length, kunci).toBeGreaterThan(0);
       for (const modus of cabang.modus) {
         const keluar = harapan.map((_, urutan) =>
@@ -184,6 +187,19 @@ describe("bas.saksi.jawaban-modus = bank yang DIJALANKAN jawabMenurutModus", () 
         expect(keluar, `${kunci} / ${modus}`).toEqual(harapan);
       }
     }
+  });
+
+  it("pertanyaan PUNCAK perselisihan dijawab bentuk bank waktu yang tidak hanya bicara 'mulai' (B4), dan bentuk puncak tidak hilang dari bank", () => {
+    const puncak = "Kapan puncak perselisihan dan pertengkaran antara Penggugat dan Tergugat?";
+    const bank = modusCermin.filter((e) => e.kunci === "waktu|tahu-pisah").map((e) => e.nilai);
+    expect(bank.some((n) => /puncak/i.test(n))).toBe(true);
+    const bolehPuncak = (b: string) => !/\b(?:mulai|mulainya|dimulai|awal)\b|sejak kapan/i.test(b) || /puncak/i.test(b);
+    const harapan = bank.filter(bolehPuncak);
+    expect(harapan.length).toBeGreaterThan(0);
+    const keluar = harapan.map((_, urutan) =>
+      layanan.jawabMenurutModus({ tanya: puncak, modus: "tahu-pisah", alasan: [], daftar: "x", sumber: "y", nomorSaksi: 1, urutan })
+    );
+    expect(keluar).toEqual(harapan);
   });
 
   it("tidak ada cabang tanpa kunci cermin, dan pertanyaan bukan perselisihan tidak dijawab modus", () => {

@@ -265,13 +265,22 @@ describe("sembilan katalog saksi keluarga versi 2", () => {
   const CAD = path.join(AKAR, "cadangan-katalog");
   const JENIS = ["izin-poligami", "pencegahan-perkawinan", "pembatalan-perkawinan", "hak-asuh", "penguasaan-anak", "nafkah-anak", "pengangkatan-anak", "mafqud", "permohonan-umum"];
 
+  // Perubahan SAH yang disetujui (tinjauan 1 Nov, commit 06bf0c7a; keputusan 67 - katalog lama tidak boleh dikurangi):
+  // butir "cara mengetahui peristiwa" ditulis sebagai kalimat saksi (label hal) dan hanya berlaku bagi saksi yang melihat
+  // sendiri (tidakBerlaku), sebab saksi de auditu pernah tercetak mengaku melihat sendiri. Teks pertanyaan, pokok, urutan,
+  // tingkat, keadaan, dan jawabannya TIDAK berubah, dan tidak ada butir/pokok/dasar hukum yang hilang.
+  const SAH_1NOV: Record<string, Record<string, unknown>> = {
+    "permohonan-umum/q-sebab-tahu": { hal: "cara saya mengetahui peristiwa itu", tidakBerlaku: ["mendengar", "de-auditu", "sebagian", "tidak-tahu"] },
+  };
+  const lamaSah = (j: string, q: any) => ({ ...q, ...(SAH_1NOV[j + "/" + q.id] ?? {}) });
+
   it("butir, pokok, dasar hukum dan keadaan lama utuh dan tidak berubah; versi naik satu; jumlah butir bertambah", () => {
     for (const j of JENIS) {
       const lama = muat(CAD, j);
       const baru = muat(path.join(EKS, "saksi-katalog"), j);
       expect(baru.versi, j).toBe(lama.versi + 1);
       expect(baru.pertanyaan.length, j).toBeGreaterThan(lama.pertanyaan.length);
-      for (const q of lama.pertanyaan) expect(JSON.stringify(baru.pertanyaan.find((x: any) => x.id === q.id)), `${j} ${q.id}`).toBe(JSON.stringify(q));
+      for (const q of lama.pertanyaan) expect(JSON.stringify(baru.pertanyaan.find((x: any) => x.id === q.id)), `${j} ${q.id}`).toBe(JSON.stringify(lamaSah(j, q)));
       for (const p of lama.pokokPembuktian) expect(baru.pokokPembuktian.some((x: any) => x.id === p.id), `${j} ${p.id}`).toBe(true);
       for (const d of lama.dasarHukum) expect(baru.dasarHukum.some((x: any) => x.id === d.id), `${j} ${d.id}`).toBe(true);
       for (const k of Object.keys(lama.keadaan)) expect(baru.keadaan[k], `${j} ${k}`).toBeTruthy();

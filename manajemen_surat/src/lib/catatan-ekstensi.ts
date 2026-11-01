@@ -57,6 +57,19 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.60",
+    dirilis: "2026-11-02T00:30:00+08:00",
+    judul: "Keterangan saksi lebih tepat, ALETA Ai di Blangko Derry, nomor halaman BAS runut, tanya jawab dua kolom, dan agen penjaga",
+    butir: [
+      "Keterangan saksi: butir yang berasal dari gugatan atau jawaban diberi tanda peringatan, saksi Tergugat disusun dari jawaban dan duplik (termasuk jawaban lisan di BAS), menu pengetahuan saksi untuk putusan ditolak atau tidak dapat diterima, pilihan upaya keluarga sudah atau belum, alamat Tergugat tidak lagi diambil dari kediaman bersama, dan itsbat nikah membaca umur, status, wali, saksi nikah, serta mahar dari posita.",
+      "Pertanyaan saksi dapat ditambah dari katalog di tengah daftar dan dihapus untuk kedua saksi atau satu saksi, termasuk perkara cerai; katalog baru untuk pengangkatan anak, perjanjian perkawinan, dan gugatan lain-lain.",
+      "ALETA Ai di Blangko Derry dengan saklar di dekat akun (mati bawaan), saldo pengguna atau satker di kiri bawah, menu proyek, panduan bergambar, dan dua puluh tiga alat bantu yang hasilnya berupa usulan; proyek, instruksi, dan memori ALETA Ai dikelola Super Admin; dompet satker dapat dipakai semua peran sesuai haknya.",
+      "Nomor halaman berita acara bersambung dari sidang pertama sampai putus, termasuk lompatan halaman bukti dan lampiran; garis Z untuk semua berita acara bukti; berita acara lanjutan cukup menyebut susunan majelis, dan pergantian hakim atau panitera pengganti tercatat lengkap.",
+      "Tanya jawab saksi dan tanya jawab majelis dengan para pihak di semua blangko tercetak dua kolom bersilang; pemeriksa dasar hukum di Periksa sebelum cetak; peta dalil gugatan dan jawaban di panel.",
+      "Agen otomatis tanpa biaya: kesiapan hari sidang, penjaga tenggat, pencocok data SIPP, ABT, dan e-Court, serta penjaga server yang mengabari Super Admin.",
+    ],
+  },
+  {
     versi: "1.205.59",
     dirilis: "2026-11-01T18:00:00+08:00",
     judul: "Sisa blangko tercetak merah, bukti surat dan elektronik terpisah, garis Z otomatis, dan teks para pihak apa adanya",

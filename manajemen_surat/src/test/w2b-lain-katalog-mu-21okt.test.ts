@@ -66,11 +66,20 @@ const VAR_PU = {
 const baruMf = MF.pertanyaan.filter((q: any) => q.id.startsWith("q-mf-"));
 const baruPu = PU.pertanyaan.filter((q: any) => q.id.startsWith("q-pu-"));
 
+// Perubahan SAH yang disetujui (tinjauan 1 Nov, commit 06bf0c7a; keputusan 67 - katalog lama tidak boleh dikurangi):
+// butir "cara mengetahui peristiwa" ditulis sebagai kalimat saksi (label hal) dan hanya berlaku bagi saksi yang melihat
+// sendiri (tidakBerlaku), sebab saksi de auditu pernah tercetak mengaku melihat sendiri. Teks pertanyaan, pokok, urutan,
+// tingkat, keadaan, dan jawabannya TIDAK berubah, dan tidak ada butir/pokok/dasar hukum yang hilang.
+const SAH_1NOV: Record<string, Record<string, unknown>> = {
+  "permohonan-umum/q-sebab-tahu": { hal: "cara saya mengetahui peristiwa itu", tidakBerlaku: ["mendengar", "de-auditu", "sebagian", "tidak-tahu"] },
+};
+const lamaSah = (j: string, q: any) => ({ ...q, ...(SAH_1NOV[j + "/" + q.id] ?? {}) });
+
 describe("katalog lama tidak dikurangi", () => {
   for (const [kunci, baru, awalan] of [["mafqud", MF, "q-mf-"], ["permohonan-umum", PU, "q-pu-"]] as const) {
     it(`${kunci}: butir, pokok, dasar hukum, dan keadaan lama utuh; versi naik satu; butir baru >= 20`, () => {
       const lama = muat(CAD, `${kunci}.json`);
-      for (const q of lama.pertanyaan) expect(JSON.stringify(baru.pertanyaan.find((x: any) => x.id === q.id)), q.id).toBe(JSON.stringify(q));
+      for (const q of lama.pertanyaan) expect(JSON.stringify(baru.pertanyaan.find((x: any) => x.id === q.id)), q.id).toBe(JSON.stringify(lamaSah(kunci, q)));
       for (const p of lama.pokokPembuktian) expect(JSON.stringify(baru.pokokPembuktian.find((x: any) => x.id === p.id)), p.id).toBe(JSON.stringify(p));
       for (const d of lama.dasarHukum) expect(JSON.stringify(baru.dasarHukum.find((x: any) => x.id === d.id)), d.id).toBe(JSON.stringify(d));
       for (const k of Object.keys(lama.keadaan)) expect(JSON.stringify(baru.keadaan[k]), k).toBe(JSON.stringify(lama.keadaan[k]));
