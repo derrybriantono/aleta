@@ -118,7 +118,7 @@
         "selama-nikah"
       ],
       "label": "Perjanjian perkawinan dibuat",
-      "bawaan": "selama-nikah",
+      "bawaan": "sebelum-nikah",
       "labelNilai": {
         "sebelum-nikah": "sebelum perkawinan dilangsungkan",
         "saat-nikah": "pada waktu perkawinan dilangsungkan",

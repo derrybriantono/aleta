@@ -159,7 +159,74 @@
     return { ubah: diubah, tahan: tertahan, kalimat: `${bagian.join("; ")}.` };
   }
 
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // 1 Nov 2026 (keputusan 79): dua saksi berdampingan - pertanyaan yang hanya ada pada SATU saksi (sesudah "hapus hanya untuk
+  // saksi ini" atau "tambah untuk satu saksi"). Pertanyaan yang dibangun dari katalog membawa `butir`; baris yang dibaca dari ABT
+  // tidak, dan rumusan pertanyaan dua saksi boleh berbeda (varian), jadi tanda `hanya` pada baris ikut menentukan.
+  // ──────────────────────────────────────────────────────────────────────────
+  const normTanya = (x) => teks(x).toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+  const barisKosong = (r) => !teks(r && r.tanya).trim() && !teks(r && r.jawab).trim();
+
+  /** Saksi lain memuat pertanyaan yang sama dengan baris ini (butir sama, atau bunyi sama persis)? */
+  function lainMemuat(baris, daftarLain) {
+    const b = baris || {};
+    const n = normTanya(b.tanya);
+    return (daftarLain || []).some((r) => r && !barisKosong(r) && ((b.butir && r.butir && b.butir === r.butir) || (n && normTanya(r.tanya) === n)));
+  }
+
+  /**
+   * Indeks baris yang hanya ada pada satu saksi. Baris dihitung "hanya" bila ditandai `hanya` (hasil hapus/tambah untuk satu
+   * saksi) atau butir katalognya tidak ada pada saksi lain yang daftarnya juga bertanda butir; keduanya batal bila saksi lain
+   * ternyata memuat pertanyaan yang sama.
+   * @returns {{hanyaA:number[], hanyaB:number[], beda:boolean}}
+   */
+  function bandingSusunan(rowsA, rowsB) {
+    const A = Array.isArray(rowsA) ? rowsA : [];
+    const B = Array.isArray(rowsB) ? rowsB : [];
+    const adaButir = (d) => d.some((r) => r && teks(r.butir));
+    const tentukan = (d, lain) =>
+      d.map((r, i) => ({ r, i })).filter(({ r }) => r && !barisKosong(r) && (r.hanya === true || (teks(r.butir) && adaButir(lain))) && !lainMemuat(r, lain)).map(({ i }) => i);
+    const hanyaA = tentukan(A, B);
+    const hanyaB = tentukan(B, A);
+    return { hanyaA, hanyaB, beda: hanyaA.length + hanyaB.length > 0 };
+  }
+
+  /**
+   * Pasangan baris `daftar[i]` pada daftar saksi lain (untuk memberi tanda `hanya` sesudah baris dihapus dari satu saksi):
+   * butir sama, bunyi sama, atau - bila kedua daftar sama panjang - baris pada indeks yang sama. -1 bila tidak ada.
+   */
+  function cariPasangan(daftar, i, daftarLain) {
+    const d = Array.isArray(daftar) ? daftar : [];
+    const L = Array.isArray(daftarLain) ? daftarLain : [];
+    const b = d[i];
+    if (!b) return -1;
+    const n = normTanya(b.tanya);
+    const j = L.findIndex((r) => r && ((teks(b.butir) && r.butir === b.butir) || (n && normTanya(r.tanya) === n)));
+    if (j >= 0) return j;
+    return d.length === L.length && L[i] && !barisKosong(L[i]) ? i : -1;
+  }
+
+  /** Kalimat banner perbedaan susunan dua saksi (tanpa istilah teknis). */
+  function kalimatBeda(namaA, namaB, h) {
+    const bagian = [];
+    if (h.hanyaA.length) bagian.push(`${h.hanyaA.length} pertanyaan hanya ada pada ${namaA}`);
+    if (h.hanyaB.length) bagian.push(`${h.hanyaB.length} hanya pada ${namaB}`);
+    return bagian.length ? `Pertanyaan ${namaA} dan ${namaB} tidak sama lagi: ${bagian.join(", ")}.` : "";
+  }
+
+  /** Teks pertanyaan katalog untuk pencarian di pilihan tambah pertanyaan. */
+  const cocokCari = (teksTanya, kata) => {
+    const k = normTanya(kata);
+    return !k || k.split(" ").every((w) => normTanya(teksTanya).includes(w));
+  };
+
   const api = {
+    bandingSusunan,
+    cariPasangan,
+    lainMemuat,
+    kalimatBeda,
+    cocokCari,
     asalBaris,
     alasanRagu,
     hitungAsal,
