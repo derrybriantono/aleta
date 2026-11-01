@@ -970,6 +970,18 @@
       .filter((q) => laRaya(q) && q.kelompok !== "penutup" && !sudah.has(q.id) && pihak.every((p) => daftar(q.pihakSaksi).includes("*") || daftar(q.pihakSaksi).includes(p)))
       .sort((a, b) => urutan(a) - urutan(b));
     if (!kandidat.length || !target.length) return { ada: true, calon: [] };
+    // o.saring: pilihan disaring menurut keadaan perkara (perkara cerai): butir kumulasi yang tidak diminta "kumulasi" (tersembunyi,
+    // hanya muncul lewat pencarian); butir yang syarat keadaan lainnya tidak cocok (huruf alasan yang tidak dipilih, dsb.) "lainnya".
+    const semuaPokok = daftar(kat.pokokPembuktian);
+    const keadaanPerkara = m.keadaanBawaan(kat, laRaya(o.keadaan) ? o.keadaan : {});
+    const lipatDari = (q) => {
+      const syarat = laRaya(q.keadaan) ? q.keadaan : {};
+      const pokok = semuaPokok.find((x) => x && x.id === q.pokok);
+      const syaratPokok = pokok && laRaya(pokok.keadaan) ? pokok.keadaan : {};
+      const gabungan = Object.assign({}, syaratPokok, syarat);
+      if (Object.prototype.hasOwnProperty.call(gabungan, "kumulasi") && !m.cocokKeadaan({ kumulasi: gabungan.kumulasi }, keadaanPerkara)) return "kumulasi";
+      return m.cocokKeadaan(gabungan, keadaanPerkara) ? "" : "lainnya";
+    };
     const hasil = susun(Object.assign({}, o, { kat: katTambahan(kat, kandidat.map((q) => q.id)), jarang: true }));
     const calon = [];
     for (const q of kandidat) {
@@ -988,7 +1000,7 @@
       const tanya = baris[target[0]].tanya;
       const pk = daftar(kat.pokokPembuktian).find((x) => x && x.id === q.pokok);
       const judul = (pk && teks(pk.judul)) || JUDUL_KELOMPOK[q.kelompok] || "Lainnya";
-      calon.push({ id: q.id, judul, tingkat: teks(q.tingkat), urutan: urutan(q), kelompok: teks(q.kelompok), tanya, baris });
+      calon.push({ id: q.id, judul, tingkat: teks(q.tingkat), urutan: urutan(q), kelompok: teks(q.kelompok), tanya, baris, lipat: o.saring === true ? lipatDari(q) : "" });
     }
     // kelompok menurut urutan butir pertamanya; di dalam kelompok menurut urutan katalog
     const awal = new Map();
@@ -1000,18 +1012,31 @@
   /** Baris tabel dari satu butir hasil susun() (bentuk sama dengan baris baru di gabung()), ditandai sebagai tambahan petugas. */
   const barisTambahan = (b) => ({ tanya: b.tanya, jawab: b.jawab, dasar: b.jawab, butir: b.butir, jenisKat: b.jenis, kunciJawaban: b.kunciJawaban, ditambah: true });
 
-  /** Pilihan tambah pertanyaan, dikelompokkan: [{judul, butir:[calon]}] dengan saringan kata (semua kata harus ada). */
+  /**
+   * Pilihan tambah pertanyaan, dikelompokkan: [{judul, butir:[calon], lipat?: true}] dengan saringan kata (semua kata harus ada).
+   * Tanpa kata cari: butir biasa dikelompokkan menurut pokoknya; butir "lainnya" (keadaan perkara tidak cocok) masuk satu kelompok
+   * "Lainnya" di bawah (terlipat, `lipat: true`); butir "kumulasi" yang tidak diminta tidak tampil. Dengan kata cari: SEMUA butir dicari,
+   * yang tidak cocok keadaan perkara masuk kelompok "Lainnya".
+   */
   function kelompokkanCalon(calon, kataCari) {
     const k = rapat(kataCari).toLowerCase();
     const kata = k ? k.split(" ") : [];
     const kelompok = [];
+    const lain = [];
     for (const c of daftar(calon)) {
       const t = `${c.tanya} ${c.judul}`.toLowerCase();
       if (kata.some((w) => !t.includes(w))) continue;
-      let g = kelompok.find((x) => x.judul === c.judul);
+      const lipat = teks(c.lipat);
+      if (lipat && (kata.length || lipat === "lainnya")) {
+        lain.push(c);
+        continue;
+      }
+      if (lipat) continue; // kumulasi yang tidak diminta: hanya lewat pencarian
+      let g = kelompok.find((x) => x.judul === c.judul && !x.lipat);
       if (!g) kelompok.push((g = { judul: c.judul, butir: [] }));
       g.butir.push(c);
     }
+    if (lain.length) kelompok.push({ judul: "Lainnya", butir: lain, lipat: true });
     return kelompok;
   }
 

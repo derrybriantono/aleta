@@ -118,7 +118,7 @@ type Halaman = { dom: JSDOM; w: any; simpanan: Record<string, unknown>; minta: M
 const terbuka: JSDOM[] = [];
 const usulanMinta: any[] = [];
 const usulanAlasan: any[] = [];
-const penanganBot = async (_b: unknown) => ({ status: 503, json: { ok: false } as unknown });
+let penanganBot = async (_b: unknown): Promise<{ status: number; json: unknown }> => ({ status: 503, json: { ok: false } });
 afterEach(async () => {
   await tunggu(20);
   while (terbuka.length) terbuka.pop()!.window.close();
@@ -876,5 +876,136 @@ describe.each([
     expect(h.tj["5058"].map((r) => r.tanya)).toEqual(akhir);
     expect(h.tj["5058"].map((r) => r.tanya)).not.toContain(awal[1]);
     expect(JSON.stringify(h.tj)).not.toMatch(/aleta|"butir"|ditambah|"hanya"|kunciJawaban/i);
+  });
+});
+
+// ============================================================================
+// Perkara cerai: daftar "belum tersusun" disaring menurut keadaan perkara + jawaban diisi dari data perkara
+// ============================================================================
+describe("cerai: saringan daftar menurut keadaan perkara (murni)", () => {
+  const dasar = () => {
+    const K: Mod = muat();
+    const kn = K.kenali({ jenisPerkara: "Cerai Gugat", jenisPerkaraId: "347", alurPerkaraId: "15", nomorPerkara: "1/Pdt.G/2026/PA.Dgl" });
+    const saksi = DUA;
+    const hitung = (keadaan: Record<string, unknown>) =>
+      K.calonTambah({ kat: kn.kat, sebutan: kn.sebutan, benih: "1", keadaan: K.lengkapiBawaan(kn.kat, keadaan), saksi, target: ["saksi 1 p", "saksi 2 p"], rows: { "saksi 1 p": [], "saksi 2 p": [] }, saring: true }).calon;
+    return { K, hitung };
+  };
+
+  it("kumulasi yang tidak diminta tersembunyi; huruf alasan yang tidak dipilih masuk kelompok 'Lainnya' terlipat di bawah; kotak cari tetap mencari semua", () => {
+    const { K, hitung } = dasar();
+    const calon = hitung({ alasan: ["F"], kumulasi: [] });
+    const per = (l: string) => calon.filter((c: Mod) => c.lipat === l);
+    expect(per("kumulasi").length).toBeGreaterThan(30);
+    expect(per("lainnya").length).toBeGreaterThan(10);
+    const kel = K.kelompokkanCalon(calon, "");
+    // tidak satu pun butir kumulasi di daftar; 'Lainnya' hanya berisi butir yang syarat keadaannya tidak cocok dan ada di paling bawah
+    expect(kel.at(-1)).toMatchObject({ judul: "Lainnya", lipat: true });
+    expect(kel.slice(0, -1).every((g: Mod) => !g.lipat)).toBe(true);
+    const semuaTampil = kel.flatMap((g: Mod) => g.butir.map((b: Mod) => b.id));
+    expect(per("kumulasi").some((c: Mod) => semuaTampil.includes(c.id))).toBe(false);
+    expect(kel.at(-1).butir.every((b: Mod) => b.lipat === "lainnya")).toBe(true);
+    // kotak cari menjangkau semua, termasuk kumulasi yang tersembunyi
+    const cariAsuh = K.kelompokkanCalon(calon, "asuh");
+    expect(cariAsuh.length).toBeGreaterThan(0);
+    expect(cariAsuh.at(-1)).toMatchObject({ judul: "Lainnya", lipat: true });
+    expect(cariAsuh.flatMap((g: Mod) => g.butir).some((b: Mod) => b.lipat === "kumulasi")).toBe(true);
+  });
+
+  it("perkara kumulasi hak asuh: butir hak asuh tampil di daftar biasa; alasan lain (A) hanya bila dipilih", () => {
+    const { K, hitung } = dasar();
+    const polos = hitung({ alasan: ["F"], kumulasi: [] });
+    const asuh = hitung({ alasan: ["F"], kumulasi: ["hak-asuh"] });
+    const tampil = (calon: Mod[]) => K.kelompokkanCalon(calon, "").filter((g: Mod) => !g.lipat).flatMap((g: Mod) => g.butir.map((b: Mod) => b.id));
+    expect(tampil(asuh).length).toBeGreaterThan(tampil(polos).length);
+    const hanyaAsuh = tampil(asuh).filter((id: string) => !tampil(polos).includes(id));
+    expect(hanyaAsuh.length).toBeGreaterThan(5);
+    const hurufA = hitung({ alasan: ["F", "A"], kumulasi: [] });
+    expect(tampil(hurufA).length).toBeGreaterThan(tampil(polos).length);
+    // tanpa saring (jenis bukan cerai): tidak ada yang tersembunyi atau terlipat
+    const K2: Mod = muat();
+    const kn = K2.kenali({ jenisPerkara: "Cerai Gugat", jenisPerkaraId: "347", alurPerkaraId: "15", nomorPerkara: "1/Pdt.G/2026/PA.Dgl" });
+    const tanpa = K2.calonTambah({ kat: kn.kat, sebutan: kn.sebutan, benih: "1", keadaan: K2.lengkapiBawaan(kn.kat, {}), saksi: DUA, target: ["saksi 1 p"], rows: { "saksi 1 p": [] } }).calon;
+    expect(tanpa.every((c: Mod) => c.lipat === "")).toBe(true);
+    expect(K2.kelompokkanCalon(tanpa, "").some((g: Mod) => g.lipat)).toBe(false);
+  });
+});
+
+describe("Blangko Derry cerai (CG): daftar tersaring + jawaban diisi dari data perkara", () => {
+  const rapiKoma = (t: string) => t.replace(/;/g, ",");
+  const teksButir = (h: Halaman) => qd(h, '[data-bd2="pilihq-pilih"]').map((b) => (b.textContent || "").trim());
+  async function bukaCerai() {
+    const h = await bukaSaksi({ jenis: "Cerai Gugat", alur: 15 }, false);
+    await sampai(() => qd(h, "[data-sbq]").length >= 10, "set pertanyaan cerai terpasang", 9000);
+    await tunggu(200);
+    return h;
+  }
+  afterEach(() => {
+    penanganBot = async (_b: unknown) => ({ status: 503, json: { ok: false } as unknown });
+  });
+
+  it("daftar di layar: butir biasa dulu, 'Lainnya' terlipat di bawah (terbuka sendiri saat mencari), butir kumulasi hanya lewat pencarian", async () => {
+    const h = await bukaCerai();
+    klik(h, '[data-bd2="pilihq"][data-pos="2"]');
+    await sampai(() => q(h, "#bd-pilihq") && teksButir(h).length > 20, "pilihan tergambar");
+    const lain = q(h, "details.bd-pilihq-lain") as HTMLDetailsElement;
+    expect(lain).not.toBeNull();
+    expect(lain.open).toBe(false);
+    expect(lain.querySelector("summary")!.textContent).toMatch(/^Lainnya \(\d+\)/);
+    // 'Lainnya' adalah kelompok terakhir
+    const grup = qd(h, ".bd-pilihq-grup");
+    expect(grup.at(-1)).toBe(lain);
+    // butir kumulasi (mis. hak asuh) tidak tampil di daftar biasa
+    const judulBiasa = grup.filter((g) => g !== lain).map((g) => g.querySelector(".bd-pilihq-judul")!.textContent || "");
+    expect(judulBiasa.join("|")).not.toMatch(/Pengasuhan anak|Anak dari perkawinan|Harta bersama|Nafkah/i);
+    const jumlahAwal = teksButir(h).length;
+    // pencarian menjangkau semua: butir hak asuh muncul di 'Lainnya' yang terbuka
+    ketik(h, q(h, "[data-pilihq-cari]") as HTMLInputElement, "asuh", false);
+    await sampai(() => (q(h, "details.bd-pilihq-lain") as HTMLDetailsElement | null)?.open === true, "Lainnya terbuka saat mencari");
+    expect(teksButir(h).length).toBeGreaterThan(0);
+    expect(teksButir(h).length).toBeLessThan(jumlahAwal);
+    expect(teksButir(h).join("|")).toMatch(/asuh/i);
+  });
+
+  it("pertanyaan yang ditambahkan diisi dari data perkara lewat pengisi set cerai bila punya padanan; baris lain dan jawaban bawaan katalog tidak terganggu", async () => {
+    const h = await bukaCerai();
+    const awal = semuaTanya(h);
+    const diminta: Array<Record<string, unknown>> = [];
+    penanganBot = async (b: unknown) => {
+      const body = b as { sumber?: string; templat?: Array<{ no: string; tanya: string; jawab: string }> };
+      if (body.sumber !== "saksi-sdg") return { status: 503, json: { ok: false } };
+      diminta.push(body as Record<string, unknown>);
+      const isi = (ke: number) => (body.templat || []).map((r) => ({ no: r.no, tanya: r.tanya, jawab: r.no === "3" ? `Jawaban dari data perkara untuk saksi ke-${ke}.` : r.jawab }));
+      return { status: 200, json: { ok: true, data: { available: true, saksiSdg: { ok: true, saksi1: isi(1), saksi2: isi(2) } } } };
+    };
+    klik(h, '[data-bd2="pilihq"][data-pos="2"]');
+    await sampai(() => q(h, "#bd-pilihq") && teksButir(h).length > 20, "pilihan tergambar");
+    const j0 = semuaJawab(h, 0);
+    const j1 = semuaJawab(h, 1);
+    klik(h, `[data-butir="${qd(h, '[data-bd2="pilihq-pilih"]')[0].getAttribute("data-butir")}"]`);
+    await sampai(() => semuaTanya(h).length === awal.length + 1, "pertanyaan masuk");
+    await sampai(() => semuaJawab(h, 0)[2] === "Jawaban dari data perkara untuk saksi ke-1." && semuaJawab(h, 1)[2] === "Jawaban dari data perkara untuk saksi ke-2.", "diisi dari data perkara", 6000);
+    // permintaan ke pengisi memuat pertanyaan baru; jawaban baris lain tetap
+    expect(diminta.length).toBeGreaterThan(0);
+    // tiap saksi (rumusan pertanyaannya boleh berbeda) menanyakan pengisi dengan pertanyaan barunya sendiri
+    expect(diminta.some((d) => JSON.stringify(d.templat).includes(semuaTanya(h)[2].slice(0, 20)))).toBe(true);
+    expect(diminta.some((d) => JSON.stringify(d.templat).includes(nilaiTa(qd(h, "[data-sbq]")[2]).slice(0, 20)))).toBe(true);
+    // jawaban baris lain tidak berubah (selain perapian titik koma di tengah kalimat yang memang selalu dilakukan pemasang jawaban)
+    expect(semuaJawab(h, 0).filter((_, i) => i !== 2).map(rapiKoma)).toEqual(j0.map(rapiKoma));
+    // jawaban baris lain tidak berubah (selain perapian titik koma di tengah kalimat yang memang selalu dilakukan pemasang jawaban)
+    expect(semuaJawab(h, 1).filter((_, i) => i !== 2).map(rapiKoma)).toEqual(j1.map(rapiKoma));
+    expect(qd(h, '[data-sba="2"][data-sk="0"]')[0].getAttribute("data-asal")).toBe("data");
+  });
+
+  it("pertanyaan tanpa padanan di pengisi tetap memakai jawaban bawaan katalog", async () => {
+    const h = await bukaCerai();
+    const awal = semuaTanya(h);
+    klik(h, '[data-bd2="pilihq"][data-pos="2"]');
+    await sampai(() => q(h, "#bd-pilihq") && teksButir(h).length > 20, "pilihan tergambar");
+    klik(h, `[data-butir="${qd(h, '[data-bd2="pilihq-pilih"]')[0].getAttribute("data-butir")}"]`);
+    await sampai(() => semuaTanya(h).length === awal.length + 1, "pertanyaan masuk");
+    await tunggu(400); // pengisi (bot mati) tidak menjawab
+    expect(semuaJawab(h, 0)[2].trim()).not.toBe("");
+    expect(qd(h, '[data-sba="2"][data-sk="0"]')[0].getAttribute("data-asal")).toMatch(/contoh|kosong/);
   });
 });

@@ -5807,8 +5807,33 @@
     if (kenal.mode === "cerai") {
       const huruf = alasanHuruf();
       if (huruf) ker.keadaan = Object.assign({}, ker.keadaan, { alasan: huruf.split("") });
+      ker.keadaan = Object.assign({}, ker.keadaan, { kumulasi: kumulasiCerai() });
     }
     return ker;
+  }
+  /**
+   * Gugatan/permohonan yang digabung pada perkara cerai ini (nilai keadaan "kumulasi" katalog): tuntutan akibat cerai yang diminta
+   * petitum atau ditetapkan karena jabatan (4140-4145), set tambahan yang disarankan data perkara/blangko (hak asuh, nafkah, itsbat),
+   * dan blangko rekonvensi.
+   */
+  function kumulasiCerai() {
+    const hasil = new Set();
+    const PETA = { 4140: "hak-asuh", 4141: "nafkah-anak", 4142: "nafkah-iddah", 4143: "mutah", 4144: "nafkah-madliyah", 4145: "harta-bersama" };
+    try {
+      for (const t of keadaanTuntutan()) if (PETA[t.pemicu] && (t.status === "ya" || t.jabatan)) hasil.add(PETA[t.pemicu]);
+    } catch {
+      /* status tuntutan belum terbaca: tidak ada kumulasi yang diklaim */
+    }
+    for (const x of (S.setSaksi && S.setSaksi.daftar) || []) {
+      if (!x || x.utama !== true || x.tambahan !== true) continue;
+      const id = String(x.id || "");
+      if (/itsbat/.test(id)) hasil.add("itsbat-nikah");
+      else if (/hak-asuh|hadh/.test(id)) hasil.add("hak-asuh");
+      else if (/nafkah/.test(id)) ["nafkah-anak", "nafkah-iddah", "mutah", "nafkah-madliyah"].forEach((v) => hasil.add(v));
+      else if (/harta/.test(id)) hasil.add("harta-bersama");
+    }
+    if (S.blangko && /rekonvensi/i.test(`${S.blangko.berkas || ""} ${S.blangko.folder || ""}`)) hasil.add("rekonvensi");
+    return Array.from(hasil);
   }
   /** Baris satu saksi untuk PERBANDINGAN: baris tanpa id butir diberi id butir katalog yang bunyinya cocok (salinan; baris asli tidak berubah). */
   function rowsCocok(kunci) {
@@ -5843,7 +5868,7 @@
     for (const k of grup) rows[k] = S.tj[k].rows;
     let calon = [];
     try {
-      calon = K.calonTambah({ kat: kenal.kat, sebutan: kenal.sebutan, benih: nomorPerkara(), keadaan: ker.keadaan, variabel: (kode) => st.var[kode], saksi: ktMasukanSaksi(semua, efektif), target: grup, rows }).calon;
+      calon = K.calonTambah({ kat: kenal.kat, sebutan: kenal.sebutan, benih: nomorPerkara(), keadaan: ker.keadaan, variabel: (kode) => st.var[kode], saksi: ktMasukanSaksi(semua, efektif), target: grup, rows, saring: kenal.mode === "cerai" }).calon;
     } catch {
       calon = [];
     }
@@ -5859,14 +5884,13 @@
     if (!p.calon.length) return `<p class="bd-catat">Semua pertanyaan katalog untuk saksi ini sudah ada di susunan.</p>`;
     const kel = KT().kelompokkanCalon(p.calon, p.cari);
     if (!kel.length) return `<p class="bd-catat">Tidak ada pertanyaan yang cocok dengan “${esc(p.cari)}”.</p>`;
+    const butir = (g, c) =>
+      `<button type="button" class="bd-pilihq-butir" data-bd2="pilihq-pilih" data-butir="${esc(c.id)}">${esc(c.tanya)}${c.tingkat === "jarang" ? ` <span class="bd-asallencana">jarang diajukan</span>` : ""}${g.lipat ? ` <span class="bd-pilihq-asal">${esc(c.judul)}</span>` : ""}</button>`;
     return kel
-      .map(
-        (g) =>
-          `<div class="bd-pilihq-grup"><div class="bd-pilihq-judul">${esc(g.judul)} <span>(${g.butir.length})</span></div>` +
-          g.butir
-            .map((c) => `<button type="button" class="bd-pilihq-butir" data-bd2="pilihq-pilih" data-butir="${esc(c.id)}">${esc(c.tanya)}${c.tingkat === "jarang" ? ` <span class="bd-asallencana">jarang diajukan</span>` : ""}</button>`)
-            .join("") +
-          `</div>`
+      .map((g) =>
+        g.lipat
+          ? `<details class="bd-pilihq-grup bd-pilihq-lain"${p.cari ? " open" : ""}><summary class="bd-pilihq-judul">${esc(g.judul)} <span>(${g.butir.length}) · tidak cocok dengan keadaan perkara ini</span></summary>${g.butir.map((c) => butir(g, c)).join("")}</details>`
+          : `<div class="bd-pilihq-grup"><div class="bd-pilihq-judul">${esc(g.judul)} <span>(${g.butir.length})</span></div>${g.butir.map((c) => butir(g, c)).join("")}</div>`
       )
       .join("");
   }
@@ -5938,6 +5962,13 @@
     renderTj();
     jadwalTjOtomatis(grup, JEDA_TJ_OTO_MS);
     toast(`Pertanyaan ditambahkan sebagai nomor ${pos + 1}. Tekan Urungkan bila tidak jadi.`);
+    // Perkara cerai: jawaban diisi dari data perkara lewat pengisi yang sama dengan baris set cerai (bila pertanyaan itu punya padanan
+    // di pengisi; bila tidak, jawaban bawaan katalog tetap).
+    if (hitung && hitung.kenal.mode === "cerai") {
+      void Promise.resolve(isiOtomatis(grup, {})).then(() => {
+        if (grup.every((k) => S.tj[k])) jadwalTjOtomatis(grup, JEDA_TJ_OTO_MS);
+      });
+    }
     const pengisi = typeof globalThis !== "undefined" ? globalThis.AletaBdJawabanKatalog : null;
     if (hitung && hitung.kenal.mode === "katalog" && pengisi && typeof pengisi.usulkan === "function") {
       void pengisi

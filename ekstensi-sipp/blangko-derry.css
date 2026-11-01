@@ -868,3 +868,5 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar .bd-pilihq-butir:hover, #aleta-bd-akar .bd-pilihq-butir:focus-visible { border-color: var(--accent, currentColor); }
 #aleta-bd-akar .bd-hanya { display: inline-block; margin: 3px 4px 0 0; padding: 0 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; border: 1px solid var(--accentln, var(--line)); color: var(--accent); background: var(--accentbg, transparent); }
 #aleta-bd-akar .bd-hanyabanner { padding: 6px 10px; border: 1px solid var(--accentln, var(--line)); border-radius: 8px; background: var(--accentbg, transparent); margin: 6px 0; }
+#aleta-bd-akar .bd-pilihq-lain > summary { cursor: pointer; list-style: revert; }
+#aleta-bd-akar .bd-pilihq-asal { display: block; margin-top: 2px; font-size: 11.5px; color: var(--muted); }
