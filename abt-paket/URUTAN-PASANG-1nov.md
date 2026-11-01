@@ -1,4 +1,4 @@
-# URUTAN PASANG paket ABT 29 Okt - 1 Nov 2026 (27 paket; diuji rantai penuh dari dump 28 Okt; MENGGANTIKAN URUTAN-PASANG-31okt.md)
+# URUTAN PASANG paket ABT 29 Okt - 1 Nov 2026 (28 paket; diuji rantai penuh dari dump 28 Okt; MENGGANTIKAN URUTAN-PASANG-31okt.md)
 
 Nomor "KE-n" di komentar dan PASANG.md paket lama mengikuti urutan 24 paket yang lama; yang berlaku adalah nomor di berkas ini
 (pembuktian-urut-1nov disisipkan sebagai ke-22, sehingga jawab-replik, butir-rata, bukti-pisah menjadi ke-23, ke-24, ke-25, teks-pihak ke-26).
@@ -15,7 +15,8 @@ Semua paket dipasang di SERVER sebagai root, dari folder `paket-satker` masing-m
 - Satu langkah KHUSUS LAPTOP sebelum hir-rbg-30okt, tinjau-31okt, bukti-8529-31okt, tanggal-agenda-31okt: skrip pasang menulis nama basis salinan (`aps_badilag_rantai.`) ke kueri yang
   ditulisnya (di server namanya memang `aps_badilag.`); karena hir-rbg memeriksa md5 kueri mentah, teks salinan dikembalikan ke
   bentuk server (9 variabel). Di SERVER langkah ini TIDAK ada.
-- Hasil terbaru: `uji-rantai-31okt/hasil-rantai-26.txt` - 26 paket SELESAI berurutan dari salinan baru (1 Nov 13.58-14.20, `rantai155.sh`: basis `aps_badilag_rantai155f`, pohon `/d/r155f`,
+- Hasil terbaru: `uji-rantai-31okt/hasil-rantai-28.txt` - 28 paket SELESAI berurutan dari salinan baru (1 Nov 17.44-17.58, `bas-lanjutan-1nov/sumber/rantai163.sh`: basis `aps_badilag_rantai163`, pohon `/d/r163`), `RANTAI-KELUAR 0`.
+- Hasil sebelumnya: `uji-rantai-31okt/hasil-rantai-26.txt` - 26 paket SELESAI berurutan dari salinan baru (1 Nov 13.58-14.20, `rantai155.sh`: basis `aps_badilag_rantai155f`, pohon `/d/r155f`,
   paket dari `git archive HEAD`, `md5sum -c MD5SUMS.txt` di semua paket cocok), `RANTAI-KELUAR 0`. Paket 26 sendiri: `teks-pihak-1nov/hasil/uji-lokal.txt` (pasang ulang tidak mengubah
   apa pun; pulih = variabel, SEMUA fungsi, dan seluruh pohon RTF sama persis dengan keadaan sesudah 25 paket; pasang lagi = pasang pertama; dua penjaga menolak tanpa mengubah apa pun).
   Penyisipan `pembuktian-urut-1nov` di tengah TIDAK mengubah md5 dasar paket 23-26 (rantai lolos tanpa membangun ulang PRASYARAT mana pun).
@@ -409,4 +410,22 @@ PRASYARAT COCOK (SIAP=609)
 TAMBAL=609
 BERKAS COCOK
 SELESAI - paket abt-bas-halaman-1nov terpasang. ...
+```
+
+### 28. `bas-lanjutan-1nov` (cabang bas-lanjutan-ringkas w163; keputusan 82) - PALING AKHIR
+```
+cd bas-lanjutan-1nov/paket-satker && bash pasang-satker.sh
+```
+Kalimat "Sidang ini merupakan lanjutan dari sidang tanggal ...; pada sidang tersebut ... hadir ...; kemudian sidang ditunda ..." (variabel 8562, dipakai di
+blangko BAS sebagai "#5404# #8562#") dibuang dari 676 blangko BAS Derry (semua jenis perkara, semua sidang lanjutan); tinggal "Susunan majelis yang
+bersidang sama dengan sidang yang lalu;" dan paragraf itu diberi inden baris pertama yang sama dengan paragraf BAS lain (bukan inden gantung).
+Variabel 8562 TIDAK diubah; hanya pemakaiannya di BAS dihapus. Hanya berkas RTF (tanpa variabel/menu/data). Lihat `bas-lanjutan-1nov/PASANG.md`.
+md5 dasar = keadaan sesudah ke-27 paket.
+Keluaran benar:
+```
+BERKAS SIAP
+PRASYARAT COCOK (SIAP=676)
+TAMBAL=676
+BERKAS COCOK
+SELESAI - paket abt-bas-lanjutan-1nov terpasang. ...
 ```

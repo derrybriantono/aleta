@@ -1,0 +1,37 @@
+dasar (27 paket)  : f2c3f212431226e75a6c4dc7a6997baf
+== pasang pertama
+BERKAS SIAP
+PRASYARAT COCOK (SIAP=676)
+TAMBAL=676
+BERKAS COCOK
+SELESAI - paket abt-bas-lanjutan-1nov terpasang. Cadangan: /d/aleta-dev/wt/w163/abt-paket/bas-lanjutan-1nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w163/abt-paket/bas-lanjutan-1nov/paket-satker/pulih-satker.sh
+terpasang (28)    : 52f66a37c7f643a98790be8360782b9b
+== pasang ulang
+SUDAH=676
+PRASYARAT COCOK (SUDAH=676)
+SUDAH=676
+SELESAI - paket abt-bas-lanjutan-1nov terpasang. Cadangan: /d/aleta-dev/wt/w163/abt-paket/bas-lanjutan-1nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w163/abt-paket/bas-lanjutan-1nov/paket-satker/pulih-satker.sh
+PASANG ULANG: tidak ada yang berubah
+== pulih
+BERKAS PULIH
+PULIH COCOK (SIAP=676)
+PULIH: seluruh pohon RTF SAMA PERSIS dengan sebelum paket
+== pasang lagi
+PRASYARAT COCOK (SIAP=676)
+TAMBAL=676
+SELESAI - paket abt-bas-lanjutan-1nov terpasang. Cadangan: /d/aleta-dev/wt/w163/abt-paket/bas-lanjutan-1nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w163/abt-paket/bas-lanjutan-1nov/paket-satker/pulih-satker.sh
+PASANG LAGI: sama persis dengan pasang pertama
+== penjaga 1: berkas disunting orang sesudah dipasang -> pulih membiarkannya (dilaporkan), yang lain dipulihkan
+BIARKAN=1 PULIH=675
+BERKAS PULIH SEBAGIAN
+PULIH SEBAGIAN: GAGAL=1 SIAP=675 (ada yang sudah disunting orang, dibiarkan)
+== penjaga 2: berkas dasar disunting orang -> pasang menolak tanpa mengubah apa pun
+GAGAL	derry_briantono/- BAS CONTRA PERCERAIAN -/[02] BAS 2 P & T Hadir Laporan Mediasi dan Pemeriksaan Pokok Perkara PERMA 7 2022 & Keputusan Dirjen 1465.rtf	md5 5a26e53bbca8bb59bd7983bdfa7df0b3 bukan dasar 4373365d3d29e40b604159d73c0398be (disunting orang/paket lain belum terpasang)
+GAGAL=1 SIAP=675
+PENJAGA 2: tidak ada yang berubah
+KEMBALI KE DASAR: ya
+== pasang akhir
+PRASYARAT COCOK (SIAP=676)
+TAMBAL=676
+SELESAI - paket abt-bas-lanjutan-1nov terpasang. Cadangan: /d/aleta-dev/wt/w163/abt-paket/bas-lanjutan-1nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w163/abt-paket/bas-lanjutan-1nov/paket-satker/pulih-satker.sh
+AKHIR: sama persis dengan pasang pertama
