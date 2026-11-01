@@ -33,6 +33,7 @@ import {
   segarkanUsulan,
   susunLaporan,
   teruskanUsulan,
+  teruskanOtomatis,
   tolakUsulan,
   ukurPerkara,
   type DepsPengukur,
@@ -561,6 +562,66 @@ describe("laporan, usulan memori, dan titik sambung", () => {
     const akhir = await bacaUsulan(db!);
     expect(akhir.find((x) => x.id === a.id)?.status).toBe("diteruskan");
     expect(akhir.find((x) => x.id === b.id)?.status).toBe("ditolak");
+  });
+
+  it("keputusan 119: usulan baru diteruskan sendiri bila proyek tujuannya jelas, tanpa klik teruskan", async () => {
+    const diterima: string[] = [];
+    const proyek = [
+      { id: "p1", nama: "Proyek Putusan", memoriAktif: true },
+      { id: "p2", nama: "Proyek Mati", memoriAktif: false },
+    ];
+    const tiruan: PelabuhanMemoriProyek = {
+      daftarProyek: async () => proyek,
+      simpanUsulan: async (_db, proyekId, daftar) => {
+        expect(proyekId).toBe("p1");
+        diterima.push(...daftar);
+        return daftar.length;
+      },
+    };
+    const jumlah = (await bacaUsulan(db!)).length;
+    // satu-satunya proyek bermemori = tujuan
+    const r = await teruskanOtomatis(db!, HARI_INI, tiruan);
+    expect(r).toMatchObject({ ok: true, diteruskan: jumlah });
+    expect((await bacaUsulan(db!)).every((x) => x.status === "diteruskan" && x.proyekId === "p1")).toBe(true);
+    expect(diterima).toHaveLength(jumlah);
+    // tidak ada yang baru = tidak ada kiriman lagi
+    expect(await teruskanOtomatis(db!, HARI_INI, tiruan)).toBeNull();
+    expect(diterima).toHaveLength(jumlah);
+  });
+
+  it("keputusan 119: banyak proyek tanpa riwayat = usulan menunggu (tidak menebak); tanpa modul proyek = diam", async () => {
+    const tiruan: PelabuhanMemoriProyek = {
+      daftarProyek: async () => [
+        { id: "p1", nama: "Proyek Putusan", memoriAktif: true },
+        { id: "p3", nama: "Proyek Lain", memoriAktif: true },
+      ],
+      simpanUsulan: async () => {
+        throw new Error("tidak boleh dipanggil");
+      },
+    };
+    expect(await teruskanOtomatis(db!, HARI_INI, tiruan)).toBeNull();
+    expect(await teruskanOtomatis(db!, HARI_INI, null)).toBeNull();
+    expect((await bacaUsulan(db!)).every((x) => x.status === "baru")).toBe(true);
+  });
+
+  it("keputusan 119: sesudah satu kali diteruskan ke sebuah proyek, usulan berikutnya ikut ke proyek yang sama", async () => {
+    const ke: string[] = [];
+    const tiruan: PelabuhanMemoriProyek = {
+      daftarProyek: async () => [
+        { id: "p1", nama: "Proyek Putusan", memoriAktif: true },
+        { id: "p3", nama: "Proyek Lain", memoriAktif: true },
+      ],
+      simpanUsulan: async (_db, proyekId, daftar) => {
+        ke.push(proyekId);
+        return daftar.length;
+      },
+    };
+    const [a] = await bacaUsulan(db!);
+    await teruskanUsulan(db!, { proyekId: "p3", ids: [a.id], oleh: "SA", kini: HARI_INI, pelabuhan: tiruan });
+    const r = await teruskanOtomatis(db!, HARI_INI, tiruan);
+    expect(r?.ok).toBe(true);
+    expect(ke).toEqual(["p3", "p3"]);
+    expect((await bacaUsulan(db!)).every((x) => x.status === "diteruskan" && x.proyekId === "p3")).toBe(true);
   });
 
   it("usulan yang tak lagi memenuhi ambang dihapus saat dihitung ulang", async () => {

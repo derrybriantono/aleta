@@ -273,7 +273,16 @@ export async function jalankanPengukur(db: AletaDatabase, deps: DepsPengukur, pe
         else hasil.dilewati += 1;
       }
     }
-    if (hasil.diukur) hasil.usulanBaru = (await segarkanUsulan(db, kini)).baru;
+    if (hasil.diukur) {
+      hasil.usulanBaru = (await segarkanUsulan(db, kini)).baru;
+      // Keputusan 119: tanpa klik tambahan - usulan langsung masuk antrean persetujuan memori proyek.
+      // Gagal meneruskan tidak boleh menggagalkan pengukuran; usulan tetap tersimpan di sini.
+      try {
+        await teruskanOtomatis(db, kini);
+      } catch {
+        /* dicoba lagi pada lintasan berikutnya */
+      }
+    }
     return hasil;
   } finally {
     w.berjalan = false;
@@ -491,6 +500,29 @@ export async function teruskanUsulan(
     await db.run(`UPDATE aleta_pengukur_usulan SET status = 'diteruskan', proyek_id = ?, diputuskan_oleh = ?, diputuskan_pada = ? WHERE id = ? AND status = 'baru'`, [proyek.id, opsi.oleh, saat, b.id]);
   }
   return { ok: true, pesan: `${baris.length} usulan diteruskan ke proyek ${proyek.nama}; di sana tetap menunggu persetujuan.`, diteruskan: baris.length, baruDiProyek };
+}
+
+/**
+ * Keputusan 119 (2 Nov 2026): usulan baru diteruskan sendiri ke memori proyek, supaya Super Admin cukup satu kali
+ * memutuskan (setujui/tolak di memori proyek), bukan "teruskan" lalu "setujui". Proyek tujuan: proyek tempat usulan
+ * pengukur terakhir diteruskan bila masih aktif dan memorinya menyala; bila belum pernah, hanya bila ada TEPAT SATU
+ * proyek aktif bermemori. Selain itu usulan menunggu di sini seperti sebelumnya (tidak menebak proyek).
+ */
+export async function teruskanOtomatis(
+  db: AletaDatabase,
+  kini = new Date(),
+  pakaiPelabuhan: PelabuhanMemoriProyek | null = pelabuhan
+): Promise<HasilTeruskan | null> {
+  if (!pakaiPelabuhan) return null;
+  const usulan = (await bacaUsulan(db)).filter((u) => u.status === "baru");
+  if (!usulan.length) return null;
+  const proyek = (await pakaiPelabuhan.daftarProyek(db)).filter((x) => x.memoriAktif);
+  const terakhir = await db.queryOne<{ proyek_id: string }>(
+    `SELECT proyek_id FROM aleta_pengukur_usulan WHERE status = 'diteruskan' AND proyek_id IS NOT NULL AND proyek_id <> '' ORDER BY diputuskan_pada DESC LIMIT 1`
+  );
+  const tujuan = proyek.find((x) => x.id === teks(terakhir?.proyek_id)) ?? (proyek.length === 1 ? proyek[0] : undefined);
+  if (!tujuan) return null;
+  return teruskanUsulan(db, { proyekId: tujuan.id, ids: usulan.map((u) => u.id), oleh: "otomatis", kini, pelabuhan: pakaiPelabuhan });
 }
 
 export async function tolakUsulan(db: AletaDatabase, id: string, oleh: string, kini = new Date()): Promise<boolean> {
