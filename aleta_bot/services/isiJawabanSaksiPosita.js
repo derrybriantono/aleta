@@ -317,7 +317,12 @@ function positaTambahan(posita, jenis, petitum) {
   // daftar nama anak pewaris dari pola baru lebih rapi dan lengkap daripada pola lama: yang baru menggantikan
   const gantiLama = new Set(tambahan.filter((x) => x.kunci === "anakPewaris").map((x) => x.kunci));
   const ada = new Set(dasar.filter((x) => !gantiLama.has(x.kunci)).map((x) => x.kunci));
-  return [...dasar.filter((x) => !gantiLama.has(x.kunci)), ...tambahan.filter((x) => !ada.has(x.kunci))];
+  // fakta tanpa nilai (pola lama yang menangkap tanda baca saja) dibuang supaya tidak menutup pembaca U2 di bawah
+  const gabung = [...dasar.filter((x) => !gantiLama.has(x.kunci)), ...tambahan.filter((x) => !ada.has(x.kunci))].filter((x) => String((x && x.nilai) || "").replace(/[\s:;,.\-]/g, "") !== "");
+  // U2 (1 Nov 2026): kunci yang belum dikeluarkan pembaca di atas (dispensasi kawin, wali adhal, perwalian, tujuan itsbat)
+  const sudah = new Set(gabung.map((x) => x.kunci));
+  const u2 = require("./isiJawabanSaksiPositaU2").tambahanU2(butir, jenis, gabung).filter((x) => !sudah.has(x.kunci));
+  return u2.length ? [...gabung, ...u2] : gabung;
 }
 
 module.exports = { positaTambahan, polosPosita, butirPosita, potongPeristiwa };

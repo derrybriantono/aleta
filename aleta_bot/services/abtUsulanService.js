@@ -2647,7 +2647,7 @@ function dariPositaItsbat(posita, pihak) {
   // tanpa batas itu, nama saksi nikah terbaca sebagai nama wali.
   const kWali = cari(["wali nikah"]) || cari(["wali", "bernama"]);
   const AWAL_WALI = "wali(?: nikah)?(?:nya)?(?:(?!menikahkan|saksi|mahar|mas kawin)[^;])*?\\b";
-  const namaWali =
+  let namaWali =
     namaSesudah(kWali, `${AWAL_WALI}bernama`) ||
     namaSesudah(kWali, `${AWAL_WALI}(?:yaitu|adalah|ialah)`) ||
     // "wali nikah sekaligus yang menikahkan yaitu Elyas (...)"
@@ -2687,8 +2687,17 @@ function dariPositaItsbat(posita, pihak) {
   // Saksi nikah - "dihadiri 2 (dua) orang saksi masing-masing bernama MILLO dan MALIWAN".
   const kSaksi = cari(["saksi", "bernama"]);
   const sesudahSaksi = String(kSaksi || "").replace(/^[\s\S]*?\bsaksi\b/, "");
-  const saksi1 = namaSesudah(sesudahSaksi, "bernama");
-  const saksi2 = saksi1 ? namaSesudah(sesudahSaksi, `${lolos(saksi1)}\\s+dan`) : "";
+  const saksi1Lama = namaSesudah(sesudahSaksi, "bernama");
+  const saksi2Lama = saksi1Lama ? namaSesudah(sesudahSaksi, `${lolos(saksi1Lama)}\\s+dan`) : "";
+
+  // U2 (1 Nov 2026): wali, yang menikahkan, dan saksi nikah dibaca per peran (satu kalimat dipotong pada penanda peran) di
+  // isiJawabanSaksiPositaNikah.peranNikah - SATU pembaca yang sama dengan fakta saksi, supaya dua jalur tidak berbeda isi.
+  // Pola lama di atas tinggal cadangan bila pembaca peran tidak menemukan apa pun.
+  const peran = require("./isiJawabanSaksiPositaNikah").peranNikah(kalimat);
+  const saksi1 = peran.saksi ? peran.saksi[0] : peran.saksiAda ? "" : saksi1Lama;
+  const saksi2 = peran.saksi ? peran.saksi[1] : peran.saksiAda ? "" : saksi2Lama;
+  if (peran.penikah) yangMenikahkan = peran.penikah;
+  if (peran.waliNama) namaWali = peran.waliNama;
 
   // ==========================================================================
   // MAHAR - TIDAK BERHENTI PADA TITIK DI DALAM "Rp.11.000"
@@ -2773,7 +2782,14 @@ function dariPositaItsbat(posita, pihak) {
     usulan("5178", "KUA kecamatan", hasilItsbat(t5178.nilai, t5178.k, t5178.nilai ? "" : "posita tidak menyebut KUA/kecamatan"), sumber(t5178.k)),
     usulan("1217", "Nama wali nikah", hasilItsbat(namaWali, kWali), sumber(kWali)),
     usulan("1046", "Status wali nikah", hasilItsbat(t1046.nilai, t1046.k), sumber(t1046.k)),
-    usulan("8087", "Yang menikahkan", hasilItsbat(yangMenikahkan, kMenikahkan), sumber(kMenikahkan)),
+    usulan(
+      "8087",
+      "Yang menikahkan",
+      peran.penikahRagu && yangMenikahkan === peran.penikah
+        ? { ...hasilItsbat(yangMenikahkan, kWali), keyakinan: "ragu", catatan: "Posita menyebut imam itu sebagai wali nikah; dianggap juga yang menikahkan. Periksa." }
+        : hasilItsbat(yangMenikahkan, kMenikahkan),
+      sumber(kMenikahkan || kWali)
+    ),
     usulan("0650", "Saksi nikah 1", hasilItsbat(saksi1, kSaksi), sumber(kSaksi)),
     usulan("0651", "Saksi nikah 2", hasilItsbat(saksi2, kSaksi), sumber(kSaksi)),
     usulan("1001", "Mas kawin", hasilItsbat(mahar, kMahar), sumber(kMahar)),

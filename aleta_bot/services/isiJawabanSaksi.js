@@ -461,6 +461,8 @@ const POKOK = [
       { kiri: kiri("\\bbernama"), isi: ({ h }) => h.nilai("calonNama") },
       { kiri: kiri("\\b(?:umur|berumur|usia)"), isi: ({ h, kanan }) => h.nilai("calonUmur", (n) => satuanTahun(n, kanan)) },
       { kiri: kiri("\\b(?:bekerja sebagai|pekerjaan)"), isi: ({ h }) => h.nilai("calonPekerjaan") },
+      // U2 (1 Nov): "sudah saling mengenal dan ..." <- posita "sudah saling mencintai" (fakta eratHubungan)
+      { kiri: kiri("\\bsaling mengenal dan"), isi: ({ h }) => h.nilai("eratHubungan") },
     ],
   },
   {

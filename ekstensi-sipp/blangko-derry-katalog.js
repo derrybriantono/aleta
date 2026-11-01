@@ -282,6 +282,17 @@
       const b = alur === "16" ? "permohonan" : alur === "15" || alur === "17" ? "gugatan" : "";
       if (b && sah("perkara", b)) keadaan.perkara = b;
     }
+    // U2 (1 Nov 2026): bentuk itsbat, dasar itsbat (Pasal 7 ayat 3 KHI), dan tiga pilihan dispensasi kawin dari posita yang sudah dibaca
+    const KP = typeof globalThis !== "undefined" ? globalThis.AletaBdKeadaanPosita : null;
+    if (KP && teks(k.posita).trim()) {
+      let turun = {};
+      try {
+        turun = KP.turunkan(kat.kunci, { posita: k.posita, alurId: alur, jumlahPemohon: k.jumlahPemohon }) || {};
+      } catch {
+        turun = {};
+      }
+      for (const kunci of Object.keys(turun)) if (dipakai.has(kunci) && sah(kunci, turun[kunci])) keadaan[kunci] = turun[kunci];
+    }
     return { keadaan, dariData: Object.keys(keadaan) };
   }
 
