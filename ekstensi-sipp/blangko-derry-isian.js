@@ -8466,6 +8466,7 @@
       catatTeknis("periksa sebelum cetak gagal:", String((e && e.message) || e));
       daftar = [];
     }
+    S.periksaAi = daftar; // bahan fitur bantu (jelaskan temuan); hanya dibaca
     const ul = cari("#bd-periksa", w);
     if (ul) ul.innerHTML = m ? m.html(daftar, esc) : "";
     const lama = ["#bd-saksikosong", "#bd-temuanhadir"].filter((s) => {
@@ -10984,8 +10985,180 @@
     }
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // ALETA Ai (1 Nov 2026): BAHAN dan PENERAPAN untuk fitur bantu di blangko-derry-ai.js.
+  //   - bahanAi hanya MEMBACA keadaan panel (perkara, sidang, posita, teks pihak, isian, saksi, naskah yang sudah siap, temuan);
+  //   - penerapan (aiTerapkanIsian, aiTambahSaksi) hanya atas klik petugas pada usulan yang sudah dilihatnya; tidak pernah menimpa
+  //     isian yang sudah berisi, tidak menyentuh salinan teks para pihak (keputusan 55), dan tanya jawab saksi baru ditandai
+  //     "kalimat contoh - sesuaikan" serta TIDAK ikut simpan otomatis sampai petugas mengubah atau menyimpannya sendiri.
+  // ──────────────────────────────────────────────────────────────────────────
+  const AI_KODE_HURUF = /^(8503|9463|9475|9790|9820|9865)$/;
+  const aiTeks = (v) => (v == null ? "" : String(v));
+  function aiKodeTeksPihak() {
+    const mi = mesinIsi();
+    return mi && Array.isArray(mi.KODE_TEKS_PIHAK) ? mi.KODE_TEKS_PIHAK : [];
+  }
+  /** Isian teks bebas yang boleh diisi usulan: bukan pilihan, bukan daftar bukti/tanya jawab, bukan huruf alasan, bukan salinan teks pihak. */
+  function aiIsianBisa(b) {
+    if (!b || b.jenis !== "teks" || b.khusus) return false;
+    if ((Array.isArray(b.opsi) && b.opsi.length) || (Array.isArray(b.pilihan) && b.pilihan.length)) return false;
+    return !AI_KODE_HURUF.test(String(b.kode)) && !aiKodeTeksPihak().includes(String(b.kode));
+  }
+  const aiNamaPihak = (daftar) => (Array.isArray(daftar) ? daftar : []).map((x) => aiTeks(x).trim()).filter(Boolean);
+  /**
+   * @param {string[]} butuh  bagian bahan yang diminta fitur (perkara, sidang, posita, teksPihak, saksi, isian, kosong, naskah, temuan)
+   * @returns {Promise<{ok: boolean, pesan?: string, bahan?: object, samarkan?: Array, peta?: object}>}
+   */
+  async function bahanAi(butuh) {
+    if (!S.pk) return { ok: false, pesan: "Pilih perkara dulu." };
+    const ada = new Set(Array.isArray(butuh) ? butuh : []);
+    const pk = { ...S.pk, ...(S.pk.perkara || {}) };
+    const sb = sebutan();
+    const bahan = {};
+    const samarkan = [];
+    const peta = { saksi: [], kosong: [], naskahBelum: false, perluBlangko: false };
+    const P = aiNamaPihak(pk.pihak && pk.pihak.penggugat);
+    const T = aiNamaPihak(pk.pihak && pk.pihak.tergugat);
+    for (const n of [...P, ...T]) samarkan.push({ jenis: "NAMA", nilai: n });
+    bahan.perkara = [
+      `Nomor perkara: ${nomorPerkara()}`,
+      `Jenis perkara: ${aiTeks(pk.jenisPerkara)}`,
+      `${sb.P}: ${P.join("; ") || "-"}`,
+      `${sb.T}: ${T.join("; ") || "-"}`,
+      pk.prodeo === true || pk.prodeo === 1 || pk.prodeo === "1" ? "Berperkara secara prodeo." : "",
+      pk.ghaib ? "Tergugat/Termohon ghaib." : "",
+      `Sidang yang dipilih: ke-${sidangUrutan() || "?"}`,
+    ]
+      .filter(Boolean)
+      .join("\n");
+    if (ada.has("sidang")) {
+      bahan.sidang = (Array.isArray(pk.sidang) ? pk.sidang : [])
+        .slice(0, 40)
+        .map((s, i) => `Sidang ke-${s.urutan || i + 1} (${aiTeks(s.tanggal)}${s.jam ? ` ${aiTeks(s.jam)}` : ""}): agenda ${aiTeks(s.agenda) || "-"}${s.ditunda ? "; ditunda" : ""}${aiTeks(s.ket).trim() ? `; keterangan: ${aiTeks(s.ket).trim()}` : ""}`)
+        .join("\n");
+    }
+    if (ada.has("posita")) {
+      try {
+        const bs = await bacaBahanSaksi(false, false);
+        if (bs && bs.posita) bahan.posita = bs.posita;
+      } catch {
+        /* posita tidak terbaca: fitur yang mewajibkannya akan menolak dengan kalimat biasa */
+      }
+    }
+    if (ada.has("teksPihak")) {
+      const bagian = [];
+      for (const kode of aiKodeTeksPihak()) {
+        const v = nilaiTampil(kode).trim();
+        if (v) bagian.push(`[${aiTeks(isianBlangko(kode).nama) || kode}]\n${v}`);
+      }
+      bahan.teksPihak = bagian.join("\n\n");
+    }
+    const semua = daftarPerlu();
+    if (ada.has("isian")) {
+      bahan.isian = semua
+        .filter((b) => b.jenis !== "tj" && b.khusus !== "bukti" && !aiKodeTeksPihak().includes(String(b.kode)))
+        .map((b) => ({ b, v: nilaiTampil(b.kode).trim() }))
+        .filter((x) => x.v)
+        .map((x) => `[${x.b.kode}] ${namaIsian(x.b)}: ${x.v}`)
+        .join("\n");
+    }
+    if (ada.has("kosong")) {
+      const kosong = semua.filter((b) => aiIsianBisa(b) && !nilaiTampil(b.kode).trim());
+      peta.kosong = kosong.map((b) => ({ kode: String(b.kode), nama: namaIsian(b) }));
+      bahan.kosong = kosong.map((b) => `[${b.kode}] ${namaIsian(b)}`).join("\n");
+    }
+    if (ada.has("saksi")) {
+      const bagian = [];
+      for (const it of semua.filter((x) => x.jenis === "tj" && x.tj)) {
+        const k = it.tj.kunci;
+        if (!tjSiap([k])) {
+          try {
+            await muatTj(k);
+          } catch {
+            /* saksi ini tidak terbaca: dilewati */
+          }
+        }
+        const t = S.tj[k];
+        const rows = ((t && t.rows) || []).filter((r) => aiTeks(r.tanya).trim() || aiTeks(r.jawab).trim());
+        peta.saksi.push({ kunci: k, sebutan: it.tj.sebutan, jumlah: rows.length, siap: tjSiap([k]) });
+        if (rows.length) bagian.push(`${it.tj.sebutan}:\n${rows.map((r, i) => `${i + 1}. Tanya: ${aiTeks(r.tanya).trim()}\n   Jawab: ${aiTeks(r.jawab).trim()}`).join("\n")}`);
+      }
+      bahan.saksi = bagian.join("\n\n");
+    }
+    if (ada.has("naskah") || ada.has("temuan")) {
+      const n = bahanNaskahPeriksa();
+      if (ada.has("naskah")) {
+        if (n && n.teks) bahan.naskah = n.teks;
+        else {
+          peta.naskahBelum = true;
+          peta.perluBlangko = !S.blangko;
+        }
+      }
+      if (ada.has("temuan")) {
+        const baris = [];
+        for (const x of Array.isArray(S.periksaAi) ? S.periksaAi : []) baris.push(`- ${aiTeks(x.teks).replace(/\s+/g, " ").trim()}`);
+        for (const t of (n && n.temuanSisa) || []) {
+          baris.push(`- Sisa di naskah (${aiTeks(t.label)}${t.halaman ? `, halaman ${t.halaman}` : ""}): "${aiTeks(t.sebelum)}[${aiTeks(t.cocok)}]${aiTeks(t.sesudah)}"`.replace(/\s+/g, " "));
+        }
+        bahan.temuan = baris.slice(0, 60).join("\n");
+      }
+    }
+    bahan.samarkan = samarkan;
+    return { ok: true, bahan, samarkan, peta };
+  }
+  /** Isian teks yang boleh menampung usulan (untuk pilihan "Pakai di isian"): [{ kode, nama, kosong }]. */
+  function aiIsianTeks() {
+    return daftarPerlu()
+      .filter(aiIsianBisa)
+      .map((b) => ({ kode: String(b.kode), nama: namaIsian(b), kosong: !nilaiTampil(b.kode).trim(), nilai: nilaiTampil(b.kode) }));
+  }
+  /** Menaruh usulan di satu isian sebagai ketikan petugas (tersimpan ke ABT seperti ketikan). Isian yang sudah berisi hanya diganti dengan opsi.timpa. Mengembalikan { ok, pesan? }. */
+  async function aiTerapkanIsian(kode, nilai, opsi) {
+    const k = String(kode);
+    const b = S.susunan && S.susunan.isian.find((x) => String(x.kode) === k);
+    if (!b || !aiIsianBisa(b)) return { ok: false, pesan: "Isian itu tidak dapat diisi dari usulan." };
+    if (!bolehTulis()) return { ok: false, pesan: "Akun ini tidak berhak menulis blangko tersebut." };
+    const teksBaru = aiTeks(nilai).replace(/\s+$/, "");
+    if (!teksBaru.trim()) return { ok: false, pesan: "Usulan kosong." };
+    // Isian yang sudah berisi hanya diganti bila petugas menyatakannya (kotak "Ganti isi yang sudah ada"); isi lama tetap tercatat di riwayat isian.
+    if (nilaiTampil(k).trim() && !(opsi && opsi.timpa === true)) return { ok: false, pesan: "Isian sudah berisi; centang \"Ganti isi yang sudah ada\" bila memang mau diganti." };
+    S.diketik.add(k);
+    S.isi[k] = teksBaru;
+    const el = cari(`#bd-i${k}`, wadah.isian);
+    if (el && el.tagName !== "SELECT") el.value = teksBaru;
+    await jadwalkanSimpan(k, teksBaru, true);
+    try {
+      segarKartu(k);
+    } catch {
+      /* kartu belum tergambar: nilainya tetap tersimpan */
+    }
+    return { ok: true };
+  }
+  /** Menambah baris tanya jawab usulan ke satu saksi (belum disimpan; ditandai kalimat contoh). Mengembalikan { ok, jumlah?, pesan? }. */
+  function aiTambahSaksi(kunci, baris) {
+    const k = String(kunci);
+    if (deretTj().hanyaBaca) return { ok: false, pesan: "Tanya jawab saksi pada blangko ini hanya dibaca." };
+    if (!tjSiap([k])) return { ok: false, pesan: PESAN_TJ_BELUM_TERBACA };
+    const daftar = (Array.isArray(baris) ? baris : []).filter((r) => r && (aiTeks(r.tanya).trim() || aiTeks(r.jawab).trim()));
+    if (!daftar.length) return { ok: false, pesan: "Tidak ada baris untuk ditambahkan." };
+    tjCatat([k]);
+    const t = S.tj[k];
+    for (const r of daftar) {
+      const jawab = aiTeks(r.jawab).trim();
+      t.rows.push({ no: String(t.rows.length + 1), tanya: aiTeks(r.tanya).trim(), jawab, ...(jawab ? { dasar: jawab } : {}) });
+    }
+    t.berubah = true;
+    renderTj();
+    return { ok: true, jumlah: daftar.length };
+  }
+
   const apiIsian = {
     versi: "tahap-F-G",
+    /** ALETA Ai (1 Nov): bahan baca-saja untuk fitur bantu dan penerapan usulan atas klik petugas (blangko-derry-ai.js). */
+    bahanAi,
+    aiIsianTeks,
+    aiTerapkanIsian,
+    aiTambahSaksi,
     mulai,
     pasangRekomendasi(fn) {
       rekomendasiLuar = typeof fn === "function" ? fn : null;

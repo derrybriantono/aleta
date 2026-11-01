@@ -45,6 +45,11 @@ export type RingkasAi = {
   superAdmin: boolean;
   pemicu: Pemicu[];
   proyekVersi?: string | number;
+  /** Panel Blangko Derry: harga minimum satu giliran, status tak-ditagih, saldo satker (sisa pagu bulan ini), dan fitur bantu yang boleh. */
+  minimumRp?: number;
+  gratis?: boolean;
+  satker?: { batasRp: number; terpakaiRp: number; sisaRp: number | null };
+  fiturBlangko?: string[];
 };
 
 export type RingkasPercakapan = { id: string; judul: string; diperbarui: string; perkara?: string };

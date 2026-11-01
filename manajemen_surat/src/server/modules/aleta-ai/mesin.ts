@@ -30,9 +30,9 @@ import {
   type RuteKelompok,
 } from "@/lib/aleta-ai/rute";
 import type { AletaDatabase } from "@/server/db/client";
-import { kemampuanDiminta } from "@/lib/aleta-ai/kemampuan";
-import { PemulihAliran } from "@/lib/aleta-ai/samaran";
-import { bolehDrafPenetapanAi, bolehKemampuanAi, pesanTolakKemampuanAi } from "@/lib/matriks-peran";
+import { kemampuanDiminta, type PermintaanKemampuan } from "@/lib/aleta-ai/kemampuan";
+import { PemulihAliran, type JenisSamaran } from "@/lib/aleta-ai/samaran";
+import { bolehDrafPenetapanAi, bolehKemampuanAi, pesanTolakKemampuanAi, type KemampuanAi } from "@/lib/matriks-peran";
 import { golonganPelakuAi, type PelakuAi } from "@/server/modules/aleta-ai/akses";
 import { alatApiUntukPelaku, jalankanAlat } from "@/server/modules/aleta-ai/alat";
 import { ambilKlienAi, GalatKlienAi, jinakkanGalat, type HasilAi, type KlienAi } from "@/server/modules/aleta-ai/klien";
@@ -95,7 +95,24 @@ export type EventAi =
   | { jenis: "selesai"; pesanId: string; mode: string; label: string; biayaRp: number; saldoRp: number }
   | { jenis: "gagal"; pesan: string };
 
-export type MasukanPesan = { teks?: string; pemicu?: string };
+export type MasukanPesan = {
+  teks?: string;
+  pemicu?: string;
+  /**
+   * Fitur bantu panel Blangko Derry (1 Nov): kelompok rute DIPAKSA (tanpa pengklasifikasi berbayar dan tanpa pemicu menu),
+   * kemampuan yang dicek hak perannya dinyatakan eksplisit (bukan ditebak dari kata di pesan), nama/identitas yang pasti
+   * disamarkan didaftarkan lebih dulu, dan `fitur` dicatat di jejak. Tanpa ini, perilaku giliran persis seperti sebelumnya.
+   */
+  kelompok?: string;
+  kemampuan?: KemampuanAi;
+  samarkan?: ReadonlyArray<{ jenis: JenisSamaran; nilai: string }>;
+  fitur?: string;
+  /**
+   * Titik sambung proyek ALETA Ai (parameter dari panel). Saat ini hanya proyek aktif bawaan yang dipakai; nilai ini dibawa
+   * dan dicatat supaya pemilihan proyek banyak dapat menyambung tanpa mengubah panel.
+   */
+  proyekId?: string;
+};
 
 export type OpsiMesin = {
   sinyal?: AbortSignal;
@@ -349,17 +366,22 @@ export async function* kirimPesan(
   const timpaan = await bacaTimpaanKemampuan(db);
 
   // 2. Rute -------------------------------------------------------------------
-  let pemicu: PemicuMenu | null = kodePemicu ? (proyek.menu.find((p) => p.kode === kodePemicu) ?? null) : null;
-  if (!pemicu) pemicu = cariPemicuDiAwalTeks(proyek.menu, teksPengguna);
+  // Fitur bantu Blangko Derry: kelompok dipaksa; pemicu menu tidak dicari di awal teks (pesan tugas bukan perintah menu).
+  const kelompokPaksa = teks(masukan.kelompok) && tabel.has(teks(masukan.kelompok)) ? teks(masukan.kelompok) : "";
+  let pemicu: PemicuMenu | null = kelompokPaksa ? null : kodePemicu ? (proyek.menu.find((p) => p.kode === kodePemicu) ?? null) : null;
+  if (!pemicu && !kelompokPaksa) pemicu = cariPemicuDiAwalTeks(proyek.menu, teksPengguna);
   const diawaliAlias = pemicu ? cariPemicuDiAwalTeks([pemicu], teksPengguna) !== null : false;
   const teksKerja = pemicu && !diawaliAlias ? `${pemicu.label}${teksPengguna ? `\n${teksPengguna}` : ""}` : teksPengguna;
+  for (const x of masukan.samarkan ?? []) penyamar.daftar(x.jenis, x.nilai);
 
   const percobaan: Percobaan[] = [];
   const catat = (p: Percobaan) => percobaan.push(p);
 
-  let klas: HasilKlasifikasi = pemicu
-    ? { kelompok: pemicu.kelompok, yakin: 1, sumber: "pemicu" }
-    : await klasifikasikan(klien, tabel, tarif, penyamar.samarkan(teksKerja), opsi.sinyal, catat);
+  let klas: HasilKlasifikasi = kelompokPaksa
+    ? { kelompok: kelompokPaksa, yakin: 1, sumber: "pemicu" }
+    : pemicu
+      ? { kelompok: pemicu.kelompok, yakin: 1, sumber: "pemicu" }
+      : await klasifikasikan(klien, tabel, tarif, penyamar.samarkan(teksKerja), opsi.sinyal, catat);
   if (klas.sumber !== "pemicu" && terlaluRagu(klas)) {
     const naik = naikSatuTingkat(tabel, klas.kelompok, pelaku.peranId);
     if (naik) klas = { ...klas, kelompok: naik.kelompok };
@@ -374,7 +396,9 @@ export async function* kirimPesan(
 
   // Matriks kemampuan per peran (rencana v2 10.3), ditegakkan di server.
   const golongan = golonganPelakuAi(pelaku);
-  for (const diminta of kemampuanDiminta(teksKerja, rute.kelompok)) {
+  // Fitur bantu: kemampuan yang dicek hanya yang dinyatakan fitur (kata di pesan tugas tidak ditebak).
+  const dimintaKemampuan: PermintaanKemampuan[] = kelompokPaksa ? (masukan.kemampuan ? [{ kemampuan: masukan.kemampuan }] : []) : kemampuanDiminta(teksKerja, rute.kelompok);
+  for (const diminta of dimintaKemampuan) {
     const boleh =
       diminta.kemampuan === "draf-penetapan"
         ? bolehDrafPenetapanAi(golongan, diminta.jenisPenetapan ?? "", timpaan)
@@ -392,6 +416,17 @@ export async function* kirimPesan(
     });
     yield gagal(pesanTolakKemampuanAi(diminta.kemampuan, timpaan));
     return;
+  }
+
+  if (kelompokPaksa && teks(masukan.fitur)) {
+    await catatJejak(db, {
+      penggunaId: pelaku.id,
+      peranId: pelaku.peranId,
+      aksi: "fitur-blangko",
+      percakapanId,
+      hasil: "mulai",
+      ringkas: `fitur=${teks(masukan.fitur).slice(0, 8)}; kelompok=${rute.kelompok}${teks(masukan.proyekId) ? `; proyek=${teks(masukan.proyekId).slice(0, 60)}` : ""}`,
+    });
   }
 
   // 3. Permintaan, perkiraan, tahan dana --------------------------------------
@@ -774,11 +809,16 @@ export async function perkirakanPesan(
   const tarif = new Map((await bacaTarif(db)).map((t) => [t.model, t]));
   const tabel = tabelRuteDari(await bacaRute(db));
 
-  let pemicu: PemicuMenu | null = kodePemicu ? (proyek.menu.find((p) => p.kode === kodePemicu) ?? null) : null;
-  if (!pemicu) pemicu = cariPemicuDiAwalTeks(proyek.menu, teksPengguna);
+  const kelompokPaksa = teks(masukan.kelompok) && tabel.has(teks(masukan.kelompok)) ? teks(masukan.kelompok) : "";
+  let pemicu: PemicuMenu | null = kelompokPaksa ? null : kodePemicu ? (proyek.menu.find((p) => p.kode === kodePemicu) ?? null) : null;
+  if (!pemicu && !kelompokPaksa) pemicu = cariPemicuDiAwalTeks(proyek.menu, teksPengguna);
   const diawaliAlias = pemicu ? cariPemicuDiAwalTeks([pemicu], teksPengguna) !== null : false;
   const teksKerja = pemicu && !diawaliAlias ? `${pemicu.label}${teksPengguna ? `\n${teksPengguna}` : ""}` : teksPengguna;
-  let klas: HasilKlasifikasi = pemicu ? { kelompok: pemicu.kelompok, yakin: 1, sumber: "pemicu" } : klasifikasiKataKunci(teksKerja);
+  let klas: HasilKlasifikasi = kelompokPaksa
+    ? { kelompok: kelompokPaksa, yakin: 1, sumber: "pemicu" }
+    : pemicu
+      ? { kelompok: pemicu.kelompok, yakin: 1, sumber: "pemicu" }
+      : klasifikasiKataKunci(teksKerja);
   if (klas.sumber !== "pemicu" && terlaluRagu(klas)) {
     const naik = naikSatuTingkat(tabel, klas.kelompok, pelaku.peranId);
     if (naik) klas = { ...klas, kelompok: naik.kelompok };
