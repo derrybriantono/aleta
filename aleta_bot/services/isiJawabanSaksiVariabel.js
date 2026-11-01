@@ -83,6 +83,7 @@ const KODE = {
   8717: ({ h }) => h.nilai("ahliWaris"),
   // 8718 = HARTA PENINGGALAN (tirkah); sebelum 21 Okt 2026 salah menunjuk ke fakta ahli waris
   8718: ({ h }) => h.nilai("hartaPeninggalan"),
+  9700: ({ h }) => h.nilai("danaPencairan"),
   8730: ({ h }) => h.nilai("hartaPeninggalan"),
   // ---- anak (perwalian, asal usul anak, hak asuh, pengangkatan anak) ----
   5110: ({ h }) => h.nilai("anakNama"),

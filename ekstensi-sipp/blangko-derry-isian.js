@@ -5286,6 +5286,13 @@
         if (v.saksi && typeof v.saksi === "object") st.saksi = v.saksi;
         st.jarang = v.jarang === true;
       }
+      // U2: itsbat nikah dan dispensasi kawin menurunkan keadaannya dari posita; dibaca SEKALI per perkara (singgahan dua menit di bacaBahanSaksi)
+      try {
+        const kn = ktKenal();
+        if (kn && kn.kat && /^(?:itsbat-nikah|dispensasi-kawin)/.test(String(kn.kat.kunci || ""))) await bacaBahanSaksi(false);
+      } catch {
+        /* posita tidak terbaca: keadaan tetap bawaan/data */
+      }
       renderTj();
     })();
     return st.muat;
@@ -5307,6 +5314,7 @@
       jumlahPemohon: Array.isArray(pihak) ? pihak.length : 0,
       teksBlangko: S.blangko ? `${S.blangko.berkas || ""} ${S.blangko.folder || ""}` : "",
       hadir: sd && sd.hadir !== undefined && sd.hadir !== null && sd.hadir !== "" ? Number(sd.hadir) : null,
+      posita: S.bahanSaksi && S.bahanSaksi.posita ? S.bahanSaksi.posita : "", // U2: keadaan itsbat / dispensasi kawin dari posita
     });
     const keadaan = K.lengkapiBawaan(kenal.kat, Object.assign({}, m.keadaanBawaan(kenal.kat, {}), data.keadaan, st.keadaan));
     return { keadaan, dariData: data.dariData.filter((x) => !(x in st.keadaan)) };

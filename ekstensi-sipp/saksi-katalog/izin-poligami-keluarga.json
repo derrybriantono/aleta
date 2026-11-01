@@ -178,7 +178,9 @@
       "pihakSaksi": [
         "*"
       ],
-      "keadaan": {},
+      "keadaan": {
+        "anak": "ada"
+      },
       "teks": "Bagaimana tanggapan anak-anak #0046# dan #0047# terhadap rencana #0046# menikah lagi ?",
       "variabelAbt": [
         "0046",

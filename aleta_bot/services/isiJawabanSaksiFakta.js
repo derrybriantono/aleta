@@ -234,6 +234,7 @@ const KODE_FAKTA = Object.freeze({
   1509: "wafatTempat",
   8610: "pewarisPasangan",
   8614: "hartaPeninggalan",
+  9700: "danaPencairan", // U2: dana yang hendak dicairkan (penetapan ahli waris)
   8608: "anakPewaris",
   // U5 20 Okt: susunan ahli waris dan isian paket u5-ahli-waris (daftar dipisah titik koma di isian, ditulis "A, B dan C" di jawaban)
   9702: "anakPewaris",
@@ -293,6 +294,7 @@ const LABEL_FAKTA = Object.freeze({
   anakPewaris: "anak kandung pewaris",
   jumlahAnakPewaris: "jumlah anak pewaris",
   pewarisPasangan: "suami/istri pewaris",
+  danaPencairan: "dana yang dicairkan",
   saudaraPewaris: "saudara pewaris",
   jumlahSaudaraPewaris: "jumlah saudara pewaris",
   pewarisPengganti: "ahli waris yang meninggal lebih dahulu",
