@@ -1,6 +1,7 @@
 import { teksDokumen } from "@/server/modules/aleta-ecourt/cocok-putusan";
 import { panggilBotJadwalSidang } from "@/server/modules/aleta-ecourt/jadwal-sidang-gateway";
-import type { DepsPengukur, PutusanBot } from "@/server/modules/aleta-ecourt/pengukur-draf";
+import { simpanUsulanMemori } from "@/server/modules/aleta-ai/proyek-kelola";
+import { pasangPelabuhanMemori, type DepsPengukur, type PelabuhanMemoriProyek, type PutusanBot } from "@/server/modules/aleta-ecourt/pengukur-draf";
 import { ambilBerkasSippGateway } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 
 /**
@@ -31,3 +32,17 @@ export const DEPS_PENGUKUR_BAWAAN: DepsPengukur = {
     }
   },
 };
+
+/**
+ * Titik sambung memori proyek ALETA Ai (P3): usulan pengukur diteruskan Super Admin ke memori proyek kelola (0122),
+ * di sana tetap berstatus "usulan" sampai disetujui. Dipasang saat modul ini dimuat (rute pengukur & detak memuatnya).
+ */
+export const PELABUHAN_MEMORI_BAWAAN: PelabuhanMemoriProyek = {
+  daftarProyek: async (db) =>
+    (await db.queryAll<{ id: string; nama: string; memori_aktif: number | string }>(
+      `SELECT id, nama, memori_aktif FROM aleta_ai_proyek_kelola WHERE aktif = 1 ORDER BY nama`
+    )).map((r) => ({ id: String(r.id), nama: String(r.nama ?? ""), memoriAktif: Number(r.memori_aktif) === 1 })),
+  simpanUsulan: simpanUsulanMemori,
+};
+
+pasangPelabuhanMemori(PELABUHAN_MEMORI_BAWAAN);
