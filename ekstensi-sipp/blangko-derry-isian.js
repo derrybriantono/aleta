@@ -46,6 +46,8 @@
   const BATAS_UNGGAH_PUTUSAN_MB = 20;
   /** 22 Okt malam: Tes putusan - naskah dihitung di ALETA (data perkara acuan + ketikan petugas). Hanya MENGHITUNG, tidak menyimpan apa pun. */
   const API_TES_NASKAH = "/aleta/api/aleta-ecourt/blangko-derry/tes-naskah";
+  /** P1 (1 Nov): kutipan dasar hukum dicocokkan dengan rak peraturan terverifikasi (baca saja, sekali per naskah). */
+  const API_KUTIPAN = "/aleta/api/aleta-ecourt/blangko-derry/periksa-kutipan";
   const API_USULAN = "/aleta/api/aleta-bot/abt/usulan";
   const API_TTD = "/aleta/api/aleta-ecourt/tanda-tangan";
   const API_UKURAN_TTD = "/aleta/api/aleta-ecourt/ukuran-ttd-cap"; // 20 Okt: ukuran TTD & cap satu set (kartu portal)
@@ -226,7 +228,7 @@
   /** Permintaan ke portal ALETA (JSON). alatAmbil (panel-alat.js) bila ada - memakai batas waktu & pesan baku. */
   async function ambilPortal(alamat, opsi, yang) {
     // Tes putusan: ke portal hanya membaca, ditambah tiga permintaan yang cuma MENGHITUNG (usulan jawaban saksi, pengubah PDF, naskah tes) - tidak menyimpan apa pun.
-    if (tes() && String((opsi && opsi.method) || "GET").toUpperCase() !== "GET" && alamat !== API_USULAN && alamat !== API_PDF && alamat !== API_TES_NASKAH) throw new Error(PESAN_TES);
+    if (tes() && String((opsi && opsi.method) || "GET").toUpperCase() !== "GET" && alamat !== API_USULAN && alamat !== API_PDF && alamat !== API_TES_NASKAH && alamat !== API_KUTIPAN) throw new Error(PESAN_TES);
     const o = { credentials: "include", cache: "no-store", ...(opsi || {}) };
     const r = typeof alatAmbil === "function" ? await alatAmbil(alamat, o, yang) : await fetch(alamat, o);
     const luar = await r.json().catch(() => null);
@@ -8369,7 +8371,7 @@
   // ──────────────────────────────────────────────────────────────────────────
   const PC = () => (typeof globalThis !== "undefined" && globalThis.AletaPeriksaCetak) || null;
   const KET_PERIKSA =
-    "Satu daftar hal yang perlu dibetulkan sebelum naskah dicetak; hanya muncul bila ada temuan dan tidak menahan cetak. Diperiksa: keterangan saksi yang belum diisi, putusan verstek padahal SIPP mencatat pihak hadir, huruf alasan perceraian, isian penting yang kosong, titik koma di tengah isian, perkara prodeo yang naskahnya memuat nominal biaya, tanggal panggilan yang tertulis dua kali, dan sisa blangko di naskah (kurung siku, titik-titik, tanda isian, tulisan merah) sesudah naskah selesai disiapkan. Perbaiki membuka isian atau bagian naskahnya; pada titik koma di tengah isian, Perbaiki merapikan isian itu lalu menyimpannya.";
+    "Satu daftar hal yang perlu dibetulkan sebelum naskah dicetak; hanya muncul bila ada temuan dan tidak menahan cetak. Diperiksa: keterangan saksi yang belum diisi, putusan verstek padahal SIPP mencatat pihak hadir, huruf alasan perceraian, isian penting yang kosong, titik koma di tengah isian, perkara prodeo yang naskahnya memuat nominal biaya, tanggal panggilan yang tertulis dua kali, kutipan dasar hukum yang tidak cocok dengan rak peraturan (pasal, ayat, huruf, atau bunyinya; naskah tidak diubah), dan sisa blangko di naskah (kurung siku, titik-titik, tanda isian, tulisan merah) sesudah naskah selesai disiapkan. Perbaiki membuka isian atau bagian naskahnya; pada titik koma di tengah isian, Perbaiki merapikan isian itu lalu menyimpannya.";
   let singgahSisa = { kunci: "", temuan: [], teks: "" };
   /** Nilai isian yang tampil: ketikan/isian sesi ini, atau nilai tersimpan di ABT. */
   const nilaiTampil = (kode) => String(S.isi[kode] != null && String(S.isi[kode]) !== "" ? S.isi[kode] : (S.nilai[kode] && S.nilai[kode].teks) || "");
@@ -8436,6 +8438,29 @@
     return null;
   }
   /**
+   * P1 (1 Nov): kutipan dasar hukum di naskah yang sudah disiapkan dicocokkan dengan rak peraturan (rute portal periksa-kutipan,
+   * baca saja). KINERJA: diminta SEKALI per naskah (kunci sidik|saat naskah, sama dengan singgah sisa blangko) sesudah naskah siap -
+   * bukan tiap ketikan; selama belum datang (atau gagal) butirnya tidak tampil dan daftar lain tetap jalan.
+   */
+  let kutipanPeriksa = { kunci: "", data: null };
+  function kutipanUntukPeriksa(naskah) {
+    if (!naskah || !String(naskah.teks || "").trim() || !S.prat || !naskahSegar(S.prat)) return null;
+    const kunci = `${S.prat.sidik}|${S.prat.saat}`;
+    if (kutipanPeriksa.kunci === kunci) return kutipanPeriksa.data;
+    const jaga = { kunci, data: null };
+    kutipanPeriksa = jaga;
+    ambilPortal(API_KUTIPAN, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ teks: String(naskah.teks) }) }, "Memeriksa dasar hukum")
+      .then((d) => {
+        if (kutipanPeriksa !== jaga) return;
+        jaga.data = d && Array.isArray(d.temuan) ? { temuan: d.temuan, lebih: Number(d.lebih) || 0 } : null;
+        if (jaga.data && jaga.data.temuan.length) perbaruiPeriksa();
+      })
+      .catch(() => {
+        /* rak tidak terbaca: butir dasar hukum tidak tampil */
+      });
+    return null;
+  }
+  /**
    * Keputusan pengguna 17 (31 Okt): isian yang meninggalkan rumah (7035) di ABT berlawanan dengan usulan PASTI dari keterangan kedua
    * saksi (S.info dari isi otomatis: usulan tetap tercatat walau isian sudah berisi). Hanya bahan peringatan - tidak menulis apa pun.
    */
@@ -8474,6 +8499,7 @@
         const ada8503 = perlu.some((x) => x.kode === "8503");
         const pk = { ...(S.pk || {}), ...((S.pk && S.pk.perkara) || {}) };
         const v8503 = nilaiTampil("8503");
+        let naskahPeriksa = null;
         daftar = m.kumpulkan({
           huruf: ada8503 ? { ada: true, nilai: v8503, dikenal: Boolean(hurufAlasanDari(v8503)) } : null,
           kosong: kosongRinci()
@@ -8481,7 +8507,9 @@
             .map((x) => ({ kode: x.b.kode, nama: x.nama })),
           titikKoma: isianTitikKoma(),
           bertentangan: isianBertentanganSaksi(perlu),
-          naskah: bahanNaskahPeriksa(),
+          naskah: (naskahPeriksa = bahanNaskahPeriksa()),
+          // P1 (1 Nov): dasar hukum vs rak peraturan - sekali per naskah, hanya info.
+          kutipan: kutipanUntukPeriksa(naskahPeriksa),
           // Butir 50 (30 Okt malam): relaas SIPP per pihak, dibaca sekali per perkara sesudah naskah siap (hanya baca).
           relaas: relaasUntukPeriksa(),
           sebutanP: sebutan().P,
