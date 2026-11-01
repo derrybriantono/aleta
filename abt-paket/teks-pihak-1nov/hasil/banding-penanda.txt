@@ -1,0 +1,26 @@
+== posita SIPP: 8270 masukan, 32 berpola (dijalankan semua) + contoh acak tanpa pola; dijalankan 331 | sama persis 315 | berubah 16 (teks tampak sama 6, teks tampak beda 10)
+   berubah: 2764
+   berubah: 3093
+   berubah: 3229  <-- TEKS TAMPAK BEDA
+   berubah: 3230  <-- TEKS TAMPAK BEDA
+   berubah: 3234  <-- TEKS TAMPAK BEDA
+   berubah: 3236  <-- TEKS TAMPAK BEDA
+   berubah: 3238  <-- TEKS TAMPAK BEDA
+   berubah: 3239  <-- TEKS TAMPAK BEDA
+   berubah: 3249  <-- TEKS TAMPAK BEDA
+   berubah: 3253  <-- TEKS TAMPAK BEDA
+   berubah: 3259  <-- TEKS TAMPAK BEDA
+   berubah: 4292
+   berubah: 4295
+   berubah: 4303
+   berubah: 4982  <-- TEKS TAMPAK BEDA
+   berubah: 5602
+   berubah tanpa pola (harus 0): 0
+== petitum SIPP: 10246 masukan, 3 berpola (dijalankan semua) + contoh acak tanpa pola; dijalankan 318 | sama persis 315 | berubah 3 (teks tampak sama 2, teks tampak beda 1)
+   berubah: 2764
+   berubah: 3093
+   berubah: 4982  <-- TEKS TAMPAK BEDA
+   berubah tanpa pola (harus 0): 0
+== isian teks tersimpan: 16230 masukan, 1 berpola (dijalankan semua) + contoh acak tanpa pola; dijalankan 301 | sama persis 300 | berubah 1 (teks tampak sama 0, teks tampak beda 1)
+   berubah: 8133/7917  <-- TEKS TAMPAK BEDA
+   berubah tanpa pola (harus 0): 0

@@ -1,0 +1,83 @@
+{
+ "baru": [
+  {
+   "no": 12100,
+   "nama": "KESIMPULAN #0046# DALAM KALIMAT PUTUSAN (OTOMATIS: naskah kesimpulan tertulis isian 12027 UTUH bila ada, selain itu frasa isian 8436 berhuruf pertama kecil; RTF)",
+   "sql": "SELECT IF(CHAR_LENGTH(TRIM(REPLACE(REPLACE(IFNULL((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 12027 AND t.perkara_id = '#perkara_id#' LIMIT 1), ''), CHAR(13), ''), CHAR(10), ''))) > 0, CONCAT('sebagai berikut:', REPLACE('|par ', '|', CHAR(92)), aps_badilag.isian_rtf_blok((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 12027 AND t.perkara_id = '#perkara_id#' LIMIT 1), 'teks', 426)), aps_badilag.isian_rtf_kalimat_kecil((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 8436 AND t.perkara_id = '#perkara_id#' LIMIT 1), 426)) AS data"
+  },
+  {
+   "no": 12101,
+   "nama": "KESIMPULAN #0047# DALAM KALIMAT PUTUSAN (OTOMATIS: naskah kesimpulan tertulis isian 12028 UTUH bila ada, selain itu frasa isian 8437 berhuruf pertama kecil; RTF)",
+   "sql": "SELECT IF(CHAR_LENGTH(TRIM(REPLACE(REPLACE(IFNULL((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 12028 AND t.perkara_id = '#perkara_id#' LIMIT 1), ''), CHAR(13), ''), CHAR(10), ''))) > 0, CONCAT('sebagai berikut:', REPLACE('|par ', '|', CHAR(92)), aps_badilag.isian_rtf_blok((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 12028 AND t.perkara_id = '#perkara_id#' LIMIT 1), 'teks', 426)), aps_badilag.isian_rtf_kalimat_kecil((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 8437 AND t.perkara_id = '#perkara_id#' LIMIT 1), 426)) AS data"
+  },
+  {
+   "no": 12102,
+   "nama": "EKONOMI SYARIAH: POKOK JAWABAN #0047# DALAM KALIMAT (OTOMATIS dari isian 9355; huruf pertama diturunkan saat cetak, selebihnya apa adanya)",
+   "sql": "SELECT IFNULL(aps_badilag.isian_awal_kecil((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 9355 AND t.perkara_id = '#perkara_id#' LIMIT 1)), 'DATA_TIDAK_ADA') AS data"
+  },
+  {
+   "no": 12103,
+   "nama": "EKONOMI SYARIAH (NO ARBITRASE): POKOK EKSEPSI #0047# DALAM KALIMAT (OTOMATIS dari isian 9491; huruf pertama diturunkan saat cetak)",
+   "sql": "SELECT IFNULL(aps_badilag.isian_awal_kecil((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 9491 AND t.perkara_id = '#perkara_id#' LIMIT 1)), 'DATA_TIDAK_ADA') AS data"
+  },
+  {
+   "no": 12104,
+   "nama": "EKSEPSI KEWENANGAN: ISI EKSEPSI #0047# DALAM KALIMAT (OTOMATIS dari isian 9681; huruf pertama diturunkan saat cetak)",
+   "sql": "SELECT IFNULL(aps_badilag.isian_awal_kecil((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 9681 AND t.perkara_id = '#perkara_id#' LIMIT 1)), 'DATA_TIDAK_ADA') AS data"
+  },
+  {
+   "no": 12105,
+   "nama": "SITA: TANGGAPAN #0047# ATAS PERMOHONAN SITA DALAM KALIMAT (OTOMATIS dari isian 9164; huruf pertama diturunkan saat cetak)",
+   "sql": "SELECT IFNULL(aps_badilag.isian_awal_kecil((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 9164 AND t.perkara_id = '#perkara_id#' LIMIT 1)), 'DATA_TIDAK_ADA') AS data"
+  },
+  {
+   "no": 12106,
+   "nama": "ASAL USUL ANAK PUTUSAN: KLAUSA \"menyerahkan alat bukti surat/elektronik berupa:\" PEMOHON (OTOMATIS menurut isian bukti: surat, elektronik saja, atau kosong = surat)",
+   "sql": "SELECT IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 0)) > 0, 'menyerahkan alat bukti surat berupa:', IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 1)) > 0, 'menyerahkan alat bukti elektronik berupa:', 'menyerahkan alat bukti surat berupa:')) AS data"
+  },
+  {
+   "no": 12107,
+   "nama": "ASAL USUL ANAK PUTUSAN: PENGANTAR BUKTI ELEKTRONIK PEMOHON oleh #7036# (hanya bila ada bukti surat DAN elektronik; elektronik saja sudah disebut di kalimat atas)",
+   "sql": "SELECT IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 0)) > 0 AND CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 1)) > 0, CONCAT('Selanjutnya #7036# menyerahkan bukti elektronik berupa:', CHAR(92 USING latin1), 'par'), '') AS data"
+  },
+  {
+   "no": 12108,
+   "nama": "BAS/PUTUSAN: \"telah cukup dengan ...\" PENGGUGAT/PEMOHON (OTOMATIS: bukti suratnya / bukti elektroniknya / bukti surat dan bukti elektroniknya; kosong = bukti suratnya)",
+   "sql": "SELECT IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 0)) > 0, IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 1)) > 0, 'bukti surat dan bukti elektroniknya', 'bukti suratnya'), IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'P'), 1)) > 0, 'bukti elektroniknya', 'bukti suratnya')) AS data"
+  },
+  {
+   "no": 12109,
+   "nama": "BAS/PUTUSAN: \"telah cukup dengan ...\" TERGUGAT/TERMOHON (OTOMATIS: bukti suratnya / bukti elektroniknya / bukti surat dan bukti elektroniknya; kosong = bukti suratnya)",
+   "sql": "SELECT IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'T'), 0)) > 0, IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'T'), 1)) > 0, 'bukti surat dan bukti elektroniknya', 'bukti suratnya'), IF(CHAR_LENGTH(aps_badilag.isian_bukti_baris(aps_badilag.isian_bukti_sumber('#perkara_id#', 'T'), 1)) > 0, 'bukti elektroniknya', 'bukti suratnya')) AS data"
+  }
+ ],
+ "diganti": [
+  {
+   "no": 9255,
+   "nama_lama": "KESIMPULAN #0046# DALAM KALIMAT (OTOMATIS dari isian Kesimpulan #0046#: satu frasa + titik koma, bernomor = \"sebagai berikut:\" + butir; RTF)",
+   "nama_baru": "KESIMPULAN #0046# DALAM KALIMAT (OTOMATIS dari isian Kesimpulan #0046#: satu frasa + titik koma, bernomor = \"sebagai berikut:\" + butir; RTF; 1 Nov: huruf pertama frasa diturunkan saat cetak)",
+   "sql_lama": "SELECT aps_badilag.isian_rtf_kalimat((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 8436 AND t.perkara_id = '#perkara_id#' LIMIT 1), 426) AS data",
+   "sql_baru": "SELECT aps_badilag.isian_rtf_kalimat_kecil((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 8436 AND t.perkara_id = '#perkara_id#' LIMIT 1), 426) AS data"
+  },
+  {
+   "no": 9256,
+   "nama_lama": "KESIMPULAN #0047# DALAM KALIMAT (OTOMATIS dari isian Kesimpulan #0047#: satu frasa + titik koma, bernomor = \"sebagai berikut:\" + butir; RTF)",
+   "nama_baru": "KESIMPULAN #0047# DALAM KALIMAT (OTOMATIS dari isian Kesimpulan #0047#: satu frasa + titik koma, bernomor = \"sebagai berikut:\" + butir; RTF; 1 Nov: huruf pertama frasa diturunkan saat cetak)",
+   "sql_lama": "SELECT aps_badilag.isian_rtf_kalimat((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 8437 AND t.perkara_id = '#perkara_id#' LIMIT 1), 426) AS data",
+   "sql_baru": "SELECT aps_badilag.isian_rtf_kalimat_kecil((SELECT t.data FROM aps_badilag.abt_data_teks t WHERE t.no_var = 8437 AND t.perkara_id = '#perkara_id#' LIMIT 1), 426) AS data"
+  },
+  {
+   "no": 11313,
+   "nama_lama": "EKSEPSI KEWENANGAN: ISI EKSEPSI #0047# (OTOMATIS: isian 9685; kosong = isian 9681; belum diisi = titik-titik)",
+   "nama_baru": "EKSEPSI KEWENANGAN: ISI EKSEPSI #0047# (OTOMATIS: isian 9685; kosong = isian 9681; belum diisi = titik-titik; 1 Nov: isian 9681 berhuruf pertama kecil)",
+   "sql_lama": "SELECT COALESCE(NULLIF(NULLIF(NULLIF(TRIM(IFNULL((SELECT TRIM(REPLACE(REPLACE(REPLACE(CONVERT(t.data USING utf8), '\\\\', '/'), '\"', '&quot;'), '''', '&#39;')) FROM aps_badilag.abt_data_teks t WHERE t.no_var = 9685 AND t.perkara_id = '#perkara_id#' LIMIT 1), '')), ''), '...'), '-'), NULLIF(NULLIF(NULLIF(TRIM(IFNULL((SELECT TRIM(REPLACE(REPLACE(REPLACE(CONVERT(t.data USING utf8), '\\\\', '/'), '\"', '&quot;'), '''', '&#39;')) FROM aps_badilag.abt_data_teks t WHERE t.no_var = 9681 AND t.perkara_id = '#perkara_id#' LIMIT 1), '')), ''), '...'), '-'), \"...\") AS data",
+   "sql_baru": "SELECT COALESCE(NULLIF(NULLIF(NULLIF(TRIM(IFNULL((SELECT TRIM(REPLACE(REPLACE(REPLACE(CONVERT(t.data USING utf8), '\\\\', '/'), '\"', '&quot;'), '''', '&#39;')) FROM aps_badilag.abt_data_teks t WHERE t.no_var = 9685 AND t.perkara_id = '#perkara_id#' LIMIT 1), '')), ''), '...'), '-'), aps_badilag.isian_awal_kecil(NULLIF(NULLIF(NULLIF(TRIM(IFNULL((SELECT TRIM(REPLACE(REPLACE(REPLACE(CONVERT(t.data USING utf8), '\\\\', '/'), '\"', '&quot;'), '''', '&#39;')) FROM aps_badilag.abt_data_teks t WHERE t.no_var = 9681 AND t.perkara_id = '#perkara_id#' LIMIT 1), '')), ''), '...'), '-')), \"...\") AS data"
+  }
+ ],
+ "md5_fungsi": {
+  "isian_awal_kecil": "c52e782cd2f205f687896a30ce0c43ca",
+  "isian_rtf_kalimat_kecil": "4b49fe27b4fa222b9901932221adacd3",
+  "isian_rtf_penanda": "1023049d03285626f41df2166e2dbd58"
+ },
+ "md5_penanda_lama": "45baa9b3cac475be6dc2d58d86f63ec5"
+}
