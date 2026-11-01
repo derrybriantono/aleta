@@ -100,15 +100,16 @@ describe("isi paket sungguhan", () => {
   });
 });
 
-describe("urutan pasang 28 paket", () => {
+describe("urutan pasang 28 paket (paket ke-29 tanya-jawab-format-1nov ditambahkan sesudahnya)", () => {
   const urut = readFileSync(path.join(AKAR, "abt-paket/URUTAN-PASANG-1nov.md"), "utf8");
   const rantai = readFileSync(path.join(AKAR, "abt-paket/uji-rantai-31okt/rantai.sh"), "utf8");
   const daftarRantai = /^URUT="([^"]+)"/m.exec(rantai)![1].split(/\s+/);
   const daftarUrut = [...urut.matchAll(/^### (\d+)\. `([a-z0-9-]+)`/gm)].map((m) => [Number(m[1]), m[2]] as const);
 
-  it("rantai.sh dan URUTAN-PASANG-1nov.md memuat paket yang sama dalam urutan yang sama; nomor 1..28; bas-lanjutan paling akhir sesudah bas-halaman", () => {
+  it("rantai.sh dan URUTAN-PASANG-1nov.md memuat paket yang sama dalam urutan yang sama; nomor berurutan; bas-lanjutan = ke-28 sesudah bas-halaman", () => {
     expect(daftarUrut.map((x) => x[1])).toEqual(daftarRantai);
-    expect(daftarUrut.map((x) => x[0])).toEqual(Array.from({ length: 28 }, (_, i) => i + 1));
+    expect(daftarUrut.map((x) => x[0])).toEqual(Array.from({ length: daftarUrut.length }, (_, i) => i + 1));
+    expect(daftarUrut.length).toBeGreaterThanOrEqual(28);
     expect(daftarRantai[26]).toBe("bas-halaman-1nov");
     expect(daftarRantai[27]).toBe("bas-lanjutan-1nov");
     for (const p of daftarRantai) expect(existsSync(path.join(AKAR, "abt-paket", p, "paket-satker/pasang-satker.sh")), p).toBe(true);

@@ -1,0 +1,1 @@
+BERKAS DIUBAH=586 | TABEL=1475 (baris 4577; lebar lama 3936/8755 x8, 4111/8505 x53, 4360/8721 x36, 4361/8613 x8, 4397/8897 x127, 4400/8800 x1231, 4503/8721 x12) | SUSUNAN MAJELIS->5404=98 (gantung-banyak-run 45, gantung-grup 32, gantung-polos 21) | DILEWATI=0

@@ -1,0 +1,11 @@
+3d91ee9c97fe441df15b215799c39af0 *abt-tanya-jawab-format-1nov-PASANG.sql
+ba45f3159ebeee798a96d0d6defab246 *abt-tanya-jawab-format-1nov-PERIKSA.sql
+434a9e190b47d3db1e4bfacf6d3ca2f9 *abt-tanya-jawab-format-1nov-PRASYARAT.sql
+19a64065987b7138ec2416df21b726b0 *abt-tanya-jawab-format-1nov-PULIH.sql
+291f1311b7b06ee3eda46404f5fe8618 *daftar-tambal.tsv
+829ccd84c7007b25c4fb2028af92525c *harap.txt
+a079c649a172262bec593f07133ee764 *nomor-diubah.txt
+42da7b88ec65e568ef1b31175af27ad6 *pasang-satker.sh
+2fff80eed5053f8653ab6356416d5ceb *pulih-satker.sh
+c7da4b29bf9db2a7d7ef7c29993f2b3a *tambal.tsv
+d949a1c1e10c9b60e8cc4fd18adc9b54 *tambal_rtf.py
