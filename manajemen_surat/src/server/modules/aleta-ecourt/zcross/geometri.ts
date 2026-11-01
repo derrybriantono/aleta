@@ -104,10 +104,11 @@ export function rencanaZ(j: LetakJangkar, tepi: Tepi): RencanaZ {
 }
 
 /**
- * Nomor halaman bagian berikutnya = halaman Z (nomor TAMPIL) + jumlah halaman bukti (+ tambah).
- * Rumus arahan Derry apa adanya: tambah = 0. Contoh: Z di halaman 3, 4 halaman bukti -> bagian berikutnya bernomor 7.
+ * Nomor halaman bagian berikutnya = halaman Z (nomor TAMPIL) + jumlah halaman bukti + 1 (keputusan Derry 1 Nov: bukti menempati halaman
+ * sesudah Z). Contoh: Z di halaman 3, 4 halaman bukti menempati 4-7, bagian berikutnya bernomor 8.
  */
-export const nomorBagianBerikutnya = (halamanZTampil: number, jumlahHalamanBukti: number, tambah = 0): number =>
+export const TAMBAH_NOMOR_BAWAAN = 1;
+export const nomorBagianBerikutnya = (halamanZTampil: number, jumlahHalamanBukti: number, tambah = TAMBAH_NOMOR_BAWAAN): number =>
   Math.max(1, Math.round(halamanZTampil + jumlahHalamanBukti + tambah));
 
 /** Jumlah halaman bukti: dari PDF tiap bukti bila diketahui, selainnya 1 per bukti (bawaan = true supaya pemanggil memberi tahu). */

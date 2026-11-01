@@ -31,7 +31,7 @@ export type OpsiZcross = {
   jumlahBukti?: number;
   /** Jumlah halaman tiap bukti (dari PDF berkas bukti) menurut urutan; yang kosong dihitung 1 halaman. */
   halamanBukti?: ReadonlyArray<number | null | undefined>;
-  /** Penyesuaian rumus nomor halaman (bawaan 0 = halaman Z + jumlah halaman bukti apa adanya). */
+  /** Penyesuaian rumus nomor halaman (bawaan 1 = halaman Z + jumlah halaman bukti + 1: bukti menempati halaman sesudah Z). */
   tambahNomor?: number;
   /** Banyak ukur ulang maksimal untuk merapatkan kalimat (bawaan 3). */
   maksRapat?: number;
@@ -49,6 +49,9 @@ export type LaporanZcross = {
   jumlahHalamanBukti?: number;
   jumlahHalamanBuktiBawaan?: boolean;
   nomorBagianBerikut?: number | null;
+  /** Halaman yang ditempati bukti (sesudah halaman Z): dari - sampai. */
+  halamanBuktiDari?: number;
+  halamanBuktiSampai?: number;
   seksi?: string;
   dirapatkan?: boolean;
   jangkar?: string;
@@ -331,11 +334,13 @@ export async function sesuaikanZcross(bita: Uint8Array, bentukAsal: BentukMasuk,
     if (hb.bawaan) {
       laporan.temuan.push({
         tingkat: "info",
-        pesan: `Jumlah halaman bukti memakai bawaan (1 halaman per bukti${nBukti ? `, ${nBukti} bukti` : ""}): nomor halaman bagian berikutnya ${nomorBagianBerikutnya(tampil, hb.jumlah, opsi.tambahNomor ?? 0)}. Isi jumlah halaman bukti bila berbeda.`,
+        pesan: `Jumlah halaman bukti memakai bawaan (1 halaman per bukti${nBukti ? `, ${nBukti} bukti` : ""}): bukti menempati halaman ${tampil + 1}-${tampil + hb.jumlah}, halaman berikutnya bernomor ${nomorBagianBerikutnya(tampil, hb.jumlah, opsi.tambahNomor)}. Isi jumlah halaman bukti bila berbeda.`,
       });
     }
-    const nomor = nomorBagianBerikutnya(tampil, hb.jumlah, opsi.tambahNomor ?? 0);
+    const nomor = nomorBagianBerikutnya(tampil, hb.jumlah, opsi.tambahNomor);
     laporan.nomorBagianBerikut = nomor;
+    laporan.halamanBuktiDari = tampil + 1;
+    laporan.halamanBuktiSampai = tampil + hb.jumlah;
 
     const tanggal = naskah.tanggalNaskah() ?? opsi.tanggal ?? tanggalIndonesia();
     const tulis = naskah.tulis(rencana, nomor, tanggal, twip);

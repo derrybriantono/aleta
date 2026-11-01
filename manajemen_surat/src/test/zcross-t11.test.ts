@@ -107,11 +107,11 @@ describe("Z cross - geometri murni", () => {
     expect(r.temuan.length).toBeGreaterThan(0);
   });
 
-  it("nomor halaman bagian berikutnya = halaman Z + jumlah halaman bukti (melompat)", () => {
-    expect(nomorBagianBerikutnya(3, 4)).toBe(7);
-    expect(nomorBagianBerikutnya(1, 1)).toBe(2);
-    expect(nomorBagianBerikutnya(2, 12)).toBe(14);
-    expect(nomorBagianBerikutnya(3, 4, 1)).toBe(8);
+  it("nomor halaman bagian berikutnya = halaman Z + jumlah halaman bukti + 1 (bukti menempati halaman sesudah Z)", () => {
+    expect(nomorBagianBerikutnya(3, 4)).toBe(8);
+    expect(nomorBagianBerikutnya(1, 1)).toBe(3);
+    expect(nomorBagianBerikutnya(2, 12)).toBe(15);
+    expect(nomorBagianBerikutnya(3, 4, 0)).toBe(7);
   });
 
   it("jumlah halaman bukti: dari PDF bila ada, selainnya 1 per bukti dan ditandai bawaan", () => {
@@ -308,8 +308,10 @@ describe("Z cross - orkestrasi (mesin palsu)", () => {
     expect(h.laporan.halamanTampilZ).toBe(1);
     expect(h.laporan.jumlahHalamanBukti).toBe(7);
     expect(h.laporan.jumlahHalamanBuktiBawaan).toBe(false);
-    expect(h.laporan.nomorBagianBerikut).toBe(8);
-    expect(lat1(h.bita)).toContain("\\pgnstarts8");
+    expect(h.laporan.nomorBagianBerikut).toBe(9);
+    expect(h.laporan.halamanBuktiDari).toBe(2);
+    expect(h.laporan.halamanBuktiSampai).toBe(8);
+    expect(lat1(h.bita)).toContain("\\pgnstarts9");
     expect(seimbang(lat1(h.bita))).toBe(true);
     expect(kenaliBerkasWord(h.bita)).toBe("rtf");
   });
@@ -420,6 +422,7 @@ describe("Z cross - penyambung otomatis", () => {
     const h = await sesuaikanZcrossOtomatis(bita(s), "rtf", { mesin: mesinPalsu() });
     const teks = peringatanZcross(h.laporan).join(" ");
     expect(teks).toMatch(/1 halaman per bukti/);
+    expect(teks).toMatch(/menempati halaman 2-5\): halaman berikutnya bernomor 6/);
     expect(teks).not.toMatch(/aleta|rtf|docx|soffice/i);
   });
 
@@ -450,7 +453,7 @@ describe("Z cross - penyambung otomatis", () => {
     });
     expect(urutan).toEqual(["z:rtf:2:3,1", "pdf:dengan-Z"]);
     expect(r.zcross?.diubah).toBe(true);
-    expect(r.zcross?.nomorBagianBerikut).toBe(5);
+    expect(r.zcross?.nomorBagianBerikut).toBe(6);
 
     const r2 = await wordKePdfBas(masukan, {
       ...dasar,
@@ -460,6 +463,79 @@ describe("Z cross - penyambung otomatis", () => {
     });
     expect(r2.pdf.length).toBeGreaterThan(100);
     expect(r2.zcross).toBeUndefined();
+  });
+});
+
+// ----------------------------------------------------------------------------
+// A6. Penyambung di panel ekstensi (unduh RTF): kode SUNGGUHAN dari blangko-derry-isian.js dijalankan dengan kaki palsu
+// ----------------------------------------------------------------------------
+describe("Z cross - panel ekstensi (unduh RTF)", () => {
+  const sumber = readFileSync(path.resolve(process.cwd(), "../ekstensi-sipp/blangko-derry-isian.js"), "utf8");
+  const awal = sumber.indexOf("const API_ZCROSS");
+  const akhir = sumber.indexOf("async function pdfDari(");
+  expect(awal).toBeGreaterThan(0);
+  const kode = sumber.slice(awal, akhir);
+  const latin1Js = (buf: string | ArrayBuffer | Uint8Array) => (typeof buf === "string" ? buf : Buffer.from(buf instanceof Uint8Array ? buf : new Uint8Array(buf)).toString("latin1"));
+  const bufDariLatin1 = (t: string) => {
+    const u = new Uint8Array(t.length);
+    for (let i = 0; i < t.length; i += 1) u[i] = t.charCodeAt(i) & 0xff;
+    return u.buffer;
+  };
+  const buat = (S: unknown, ambilPortal: (a: string, o: { body: FormData }, y: string) => Promise<unknown>, log: string[] = []) => {
+    const f = new Function("S", "ambilPortal", "latin1", "bufDariLatin1", "butirElKosong", "catatLog", "BATAS_LAMA_MS", `${kode}; return { jumlahBuktiPanel, zCrossRtf, API_ZCROSS };`);
+    return f(S, ambilPortal, latin1Js, bufDariLatin1, (b: { objek?: string }) => !String(b.objek || "").trim(), (t: string) => log.push(t), 1000) as {
+      jumlahBuktiPanel: () => number;
+      zCrossRtf: (rtf: string | ArrayBuffer, n: number) => Promise<{ rtf: string | ArrayBuffer; ket: string }>;
+      API_ZCROSS: string;
+    };
+  };
+
+  it("jumlah bukti dari daftar bukti panel: surat + elektronik pihak BAS ini, baris kosong tidak dihitung", () => {
+    const S = {
+      susunan: { isian: [{ khusus: "bukti", pihak: "P" }, { khusus: "lain", pihak: "T" }] },
+      bukti: { P: [{ nm: "Fotokopi KTP" }, { manual: "Kutipan akta nikah" }, { nm: " " }], T: [{ nm: "tidak ikut" }] },
+      buktiEl: { P: { butir: [{ objek: "Tangkapan layar" }, { objek: "" }] }, T: null },
+    };
+    expect(buat(S, async () => ({})).jumlahBuktiPanel()).toBe(3);
+    expect(buat({ susunan: null, bukti: {}, buktiEl: {} }, async () => ({})).jumlahBuktiPanel()).toBe(0);
+  });
+
+  it("RTF dikirim ke rute z-cross (keluar rtf + jumlahBukti) dan hasilnya dipakai; byte tinggi tetap utuh", async () => {
+    const dikirim: { alamat: string; badan: FormData }[] = [];
+    const hasil = `{rtf hasil Z ${String.fromCharCode(0xe9)}}`;
+    const api = buat({ susunan: null, bukti: {}, buktiEl: {} }, async (alamat, o) => {
+      dikirim.push({ alamat, badan: o.body });
+      return { diubah: true, berkasBase64: Buffer.from(hasil, "latin1").toString("base64"), laporan: { jumlahHalamanBuktiBawaan: false } };
+    });
+    const asal = `{rtf asal ${String.fromCharCode(0xe9, 0x96)}}`;
+    const r = await api.zCrossRtf(asal, 4);
+    expect(dikirim[0].alamat).toBe("/aleta/api/aleta-ecourt/bas/z-cross");
+    expect(dikirim[0].badan.get("keluar")).toBe("rtf");
+    expect(dikirim[0].badan.get("jumlahBukti")).toBe("4");
+    const berkas = dikirim[0].badan.get("berkas") as File;
+    expect(Buffer.from(await berkas.arrayBuffer()).toString("latin1")).toBe(asal);
+    expect(r.rtf).toBe(hasil);
+    expect(r.ket).toBe("Z dipasang");
+    // tanpa jumlah bukti panel: ruas tidak dikirim (portal menghitung dari naskah)
+    await api.zCrossRtf(asal, 0);
+    expect(dikirim[1].badan.get("jumlahBukti")).toBeNull();
+  });
+
+  it("jumlah halaman bukti bawaan disebut di keterangan unduhan", async () => {
+    const api = buat({}, async () => ({ diubah: true, berkasBase64: Buffer.from("{rtf z}").toString("base64"), laporan: { jumlahHalamanBuktiBawaan: true } }));
+    const r = await api.zCrossRtf("{rtf a}", 2);
+    expect(r.ket).toMatch(/bawaan 1 per bukti/);
+  });
+
+  it("rute gagal / tak terjangkau / tidak mengubah: RTF apa adanya, tanpa galat", async () => {
+    const log: string[] = [];
+    const rusak = buat({}, async () => { throw new Error("gagal (kode 503)"); }, log);
+    const asal = "{rtf asal}";
+    const r = await rusak.zCrossRtf(asal, 2);
+    expect(r).toEqual({ rtf: asal, ket: "" });
+    expect(log.join(" ")).toContain("Z cross dilewati");
+    const tidak = buat({}, async () => ({ diubah: false, alasan: "tanpa bentuk" }));
+    expect(await tidak.zCrossRtf(asal, 2)).toEqual({ rtf: asal, ket: "" });
   });
 });
 
@@ -502,7 +578,7 @@ describe.skipIf(!MESIN_SUNGGUHAN)(`Z cross - mesin sungguhan (${MESIN_SUNGGUHAN?
       expect(seimbang(hasilRtf)).toBe(true);
       expect(hasilRtf).not.toContain("FreeForm");
       expect((hasilRtf.match(/SC Z 1x/g) ?? []).length).toBe(1);
-      expect(h.laporan.nomorBagianBerikut).toBe((h.laporan.halamanTampilZ ?? 0) + h.laporan.jumlahHalamanBukti!);
+      expect(h.laporan.nomorBagianBerikut).toBe((h.laporan.halamanTampilZ ?? 0) + h.laporan.jumlahHalamanBukti! + 1);
 
       // PDF dari RTF hasil (mesin yang sama) lalu dibaca balik
       const pdf = await mesin.ubah(h.bita, "rtf", "pdf");
@@ -623,7 +699,7 @@ describe.skipIf(!MESIN_SUNGGUHAN)(`Z cross - mesin sungguhan (${MESIN_SUNGGUHAN?
       expect((hasil.match(/zcross-garis/g) ?? []).length).toBe(1);
       expect((hasil.match(/SC Z 1x/g) ?? []).length).toBe(1);
       expect(hasil).toContain(`\\pgnstarts${h.laporan.nomorBagianBerikut}`);
-      expect(h.laporan.nomorBagianBerikut).toBe((h.laporan.halamanTampilZ ?? 0) + k.bukti * 2);
+      expect(h.laporan.nomorBagianBerikut).toBe((h.laporan.halamanTampilZ ?? 0) + k.bukti * 2 + 1);
       mkdirSync(keluarRender, { recursive: true });
       const pdf = await mesin.ubah(h.bita, "rtf", "pdf");
       writeFileSync(path.join(keluarRender, `blangko-${k.nama.slice(0, 1)}.pdf`), pdf);

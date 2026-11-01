@@ -40,7 +40,7 @@ export function peringatanZcross(l: HasilZcross["laporan"]): string[] {
   const hasil: string[] = [];
   if (l.jumlahHalamanBuktiBawaan) {
     hasil.push(
-      `Garis Z dan tanggal dipasang otomatis. Jumlah halaman bukti memakai bawaan 1 halaman per bukti (${l.jumlahHalamanBukti ?? 0} halaman): halaman berikutnya bernomor ${l.nomorBagianBerikut ?? "-"}. Isi jumlah halaman bukti bila berbeda.`
+      `Garis Z dan tanggal dipasang otomatis. Jumlah halaman bukti memakai bawaan 1 halaman per bukti (${l.jumlahHalamanBukti ?? 0} halaman, menempati halaman ${l.halamanBuktiDari ?? "-"}-${l.halamanBuktiSampai ?? "-"}): halaman berikutnya bernomor ${l.nomorBagianBerikut ?? "-"}. Isi jumlah halaman bukti bila berbeda.`
     );
   }
   for (const t of l.temuan) if (t.tingkat === "peringatan") hasil.push(t.pesan);
