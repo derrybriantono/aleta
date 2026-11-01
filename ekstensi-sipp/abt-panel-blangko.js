@@ -15010,9 +15010,11 @@ function a3KartuKuasaKosong(tampil, sama, data) {
  */
 const P4_VAR_ECOURT = Object.freeze(["6055", "6054", "7120", "6071", "6072", "7778", "5110", "5111", "0007", "2004", "7084", "9881", "5227", "8436", "8437", "9355", "9491", "9681", "9164", "9283", "9470", "9488", "9489", "9492", "9493", "9804", "9805", "9810", "9834", "9835", "9840", "9873", "9951", "9952", "0654", "0655",
   // JAWAB-REPLIK 31 Okt: naskah utuh jawab-menjawab dari dokumen e-Court (isi-sipp-bersama.js KODE_NASKAH_BERBARIS).
-  "12020", "12021", "12022", "12023", "12024", "12025", "12026", "12027", "12028"]);
+  "12020", "12021", "12022", "12023", "12024", "12025", "12026", "12027", "12028",
+  // BUKTI-PISAH 1 Nov: bukti surat dan elektronik terpisah (isi-sipp-bersama.js VAR_BUKTI).
+  "12040", "12041", "12042", "12043", "12044", "12045", "12046", "12047", "12048", "12049"]);
 /** JJ2 (18 Okt): variabel bukti - halaman yang memuatnya meminta portal membaca juga berkas bukti (daftar bukti, surat keterangan KUA). */
-const P4_VAR_BUKTI = Object.freeze(["9470", "9488", "9489", "9492", "9493", "9804", "9805", "9810", "9834", "9835", "9840", "9873", "9951", "9952", "0654", "0655"]);
+const P4_VAR_BUKTI = Object.freeze(["9470", "9488", "9489", "9492", "9493", "9804", "9805", "9810", "9834", "9835", "9840", "9873", "9951", "9952", "0654", "0655", "12040", "12041", "12042", "12043", "12044", "12045", "12046", "12047", "12048", "12049"]);
 const ALETA_API_ISI_GUGATAN = "/aleta/api/aleta-ecourt/isi-gugatan";
 
 /** Dibaca bersama bacaan Isi dari SIPP lainnya. Diam bila server lama belum punya rutenya. */

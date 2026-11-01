@@ -726,7 +726,11 @@ describe("5. penjaga", () => {
   it("tulisan dan kode baru tidak menyebut Aleta ke SIPP/ABT dan tidak menambah jalur tulis SIPP", () => {
     const isi = baca("blangko-derry-isian.js");
     const awal = isi.indexOf("Putusan yang disunting sendiri (28 Okt 2026)");
-    const akhir = isi.indexOf("async function pdfDari") > awal ? isi.indexOf("async function pdfDari") : isi.length;
+    // Bagian 28 Okt berakhir sebelum blok Z cross (1 Nov, zcross-2): blok itu punya satu permintaan portal sendiri
+    // (rute z-cross, hanya menghitung/menyusun naskah) dan dijaga terpisah di bawah.
+    const markerZ = isi.indexOf("Z cross otomatis: portal memasang garis Z");
+    const akhirPdf = isi.indexOf("async function pdfDari");
+    const akhir = markerZ > awal ? markerZ : akhirPdf > awal ? akhirPdf : isi.length;
     const bagian = isi.slice(awal, akhir);
     expect(awal).toBeGreaterThan(0);
     // nama tampil ke petugas: tanpa label teknis yang dilarang
@@ -736,6 +740,13 @@ describe("5. penjaga", () => {
     expect(bagian.match(/ambilPortal\(/g) || []).toHaveLength(1);
     expect(bagian).toContain("API_KONVERSI_NASKAH");
     expect(bagian).not.toMatch(/klienAbt\(\)|\/edit_data|unggah-sipp/);
+    // blok Z cross (1 Nov): satu permintaan ke rute z-cross portal, bukan jalur tulis SIPP/ABT, tanpa kata Aleta di teks tampil/log
+    expect(markerZ).toBeGreaterThan(awal);
+    const blokZ = isi.slice(markerZ, akhirPdf);
+    expect(blokZ.match(/ambilPortal\(/g) || []).toHaveLength(1);
+    expect(blokZ).toContain("API_ZCROSS");
+    expect(blokZ).not.toMatch(/klienAbt\(\)|\/edit_data|unggah-sipp/);
+    expect((blokZ.match(/(?:toast|catatLog)\(`[^`]*`|"[A-Z][^"]{8,}"/g) || []).join(" ")).not.toMatch(/aleta/i);
     // konversi-naskah sudah diizinkan selama latihan / pada daftar yang hanya menghitung
     const panel = baca("panel-alat.js");
     expect((panel.match(/putusan\\\/konversi-naskah/g) || []).length).toBeGreaterThanOrEqual(2);

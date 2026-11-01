@@ -57,6 +57,19 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.59",
+    dirilis: "2026-11-01T18:00:00+08:00",
+    judul: "Sisa blangko tercetak merah, bukti surat dan elektronik terpisah, garis Z otomatis, dan teks para pihak apa adanya",
+    butir: [
+      "Saat dicetak atau diunduh dari panel, sisa blangko yang belum terisi (titik-titik, kurung siku, kode, tulisan butuh verifikasi, pilihan yang belum dipilih, label tanpa isi) tercetak merah dan tetap dicatat di pengingat .txt; titik-titik isian Jurusita dibiarkan.",
+      "Paragraf kosong akibat enter atau isian kosong dibuang sendiri; tab, inden, dan format paragraf blangko tidak berubah, ruang tanda tangan dan blok Jurusita dibiarkan.",
+      "Bukti surat dan bukti elektronik terpisah di BAS (kalimat pengantar masing-masing) dan putusan (sub-bab berurut Bukti Surat, Bukti Elektronik, Saksi).",
+      "Garis Z sesudah daftar bukti terpasang sendiri: menyambung di samping kalimat terakhir, turun sampai dekat batas bawah, tanggal di bawahnya, lalu halaman berikutnya bernomor sesudah halaman bukti.",
+      "Jawaban, replik, duplik, rekonvensi, dan kesimpulan para pihak disalin apa adanya tanpa dirapikan; bila ada beberapa berkas e-Court untuk bagian yang sama, panel memberi tahu dan berkas dapat dipilih, bawaannya yang terakhir diunggah.",
+      "Tanggal pembuktian mengikuti urutan agenda (Penggugat lebih dahulu, sidang lanjutan, lalu Tergugat), dan tuduhan perselingkuhan diusulkan hanya bila dikuatkan dua saksi atau satu saksi dan bukti lain.",
+    ],
+  },
+  {
     versi: "1.205.58",
     dirilis: "2026-10-31T17:30:00+08:00",
     judul: "Jawaban, replik, duplik, dan kesimpulan terisi sendiri, serta usulan alasan dari keterangan saksi",

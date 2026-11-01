@@ -1859,8 +1859,8 @@
     "10cea25d3521",
     "3a946d141396",
     "762fd0a3bf31",
-    "639ba4a904c7",
-    "7ed0ad0a82e0",
+    "cc31fbccf6ab",
+    "a753fde17776",
     "ff24bc6fa185",
     "ca800ab4b6de",
     "3ea7e08c3714",
@@ -2251,8 +2251,8 @@
    "jumlahPernyataan": 2
   },
   "blangko-derry-isian.js": {
-   "byte": 626152,
-   "sidik": "03b8249186ace53de28abbba8f0e2eeaefba3023",
+   "byte": 637337,
+   "sidik": "b210820b759d0948347be6358de922a95c61a1b5",
    "nama": [],
    "ekspor": [
     "AletaBdIsianSaksi",
@@ -2333,8 +2333,8 @@
    "jumlahPernyataan": 2
   },
   "deteksi-sisa-blangko.js": {
-   "byte": 50215,
-   "sidik": "75d88b87f7857af44b3a194cf503c70f643ff039",
+   "byte": 82284,
+   "sidik": "a4dbe5fc38b9b27ae8e289a8385d4d31772a694c",
    "nama": [],
    "ekspor": [
     "aletaDeteksiSisa"
@@ -2367,8 +2367,8 @@
    "jumlahPernyataan": 2
   },
   "isi-sipp-bersama.js": {
-   "byte": 43617,
-   "sidik": "5faa87be888d808f82d6f399b14635cb36aba38f",
+   "byte": 44423,
+   "sidik": "cc2dd5b67906b60d56b2c50ba641d09eba7b763f",
    "nama": [],
    "ekspor": [
     "AletaIsiSipp"

@@ -17,7 +17,7 @@ const panggilan: Array<{ nama: string; url: string; kuki: string }> = [];
 const rekam = (nama: string, status: number, isi: unknown) =>
   vi.fn(async (q: NextRequest) => {
     panggilan.push({ nama, url: q.nextUrl.pathname + q.nextUrl.search, kuki: q.headers.get("cookie") || "" });
-    await new Promise((r) => setTimeout(r, 20));
+    await new Promise((r) => setTimeout(r, 100));
     return Response.json(isi, { status });
   });
 
@@ -60,8 +60,8 @@ describe("GET /api/aleta-ecourt/denyut", () => {
     expect(panggilan.every((p) => p.kuki === "better-auth.session_token=uji")).toBe(true);
     expect(panggilan.find((p) => p.nama === "checklist")!.url).toContain("peran=hakim");
     expect(panggilan.find((p) => p.nama === "kehadiran")!.url).toContain("/api/aleta-ecourt/antrian/kehadiran-saya");
-    // Tiga bagian @20 ms bersamaan, bukan 60 ms berurutan.
-    expect(lama).toBeLessThan(55);
+    // Tiga bagian @100 ms bersamaan (sekitar 100 ms), bukan 300 ms berurutan; batas longgar agar tahan beban mesin saat uji penuh.
+    expect(lama).toBeLessThan(250);
   });
 
   it("tanpa bagian: jawaban kosong, tidak ada rute yang dipanggil", async () => {

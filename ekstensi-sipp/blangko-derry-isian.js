@@ -104,6 +104,8 @@
     return "";
   }
   const nomorPendek = (n) => String(n || "").replace(/\/PA\.[A-Za-z]+$/, "");
+  /** Batas panjang isi tiap berkas e-Court pada "Lihat isi tiap berkas" (jumlah huruf, bukan teks tampil). */
+  const BATAS_LIHAT_BERKAS = 4000;
   const potong = (t, n) => (String(t || "").length > n ? `${String(t).slice(0, n - 1)}…` : String(t || ""));
   const gelar = /\b(drs|dra|dr|h|hj|s\.?h\.?i?|m\.?h|m\.?a|s\.?ag|s\.?sy|s\.?e|s\.?t|ir|lc|m\.?si|m\.?kn|s\.?pd\.?i|bin|binti)\b\.?/gi;
   const namaInti = (n) =>
@@ -6236,7 +6238,7 @@
           .map((o, i) => `<option value="${i}" title="${esc(potong(o.nilai, 600))}" ${v.trim() && v.trim() === o.nilai ? "selected" : ""}>${esc(o.keadaan)}</option>`)
           .join("")}</select></label>` +
         `<details class="bd-berkaslihat"><summary>Lihat isi tiap berkas</summary>${bunyi
-          .map((o) => `<div class="bd-berkasitem"><b>${esc(o.keadaan)}</b><div class="bd-berkasisi">${esc(String(o.nilai).slice(0, 4000)).replace(/\n/g, "<br>")}${String(o.nilai).length > 4000 ? "…" : ""}</div></div>`)
+          .map((o) => `<div class="bd-berkasitem"><b>${esc(o.keadaan)}</b><div class="bd-berkasisi">${esc(String(o.nilai).slice(0, BATAS_LIHAT_BERKAS)).replace(/\n/g, "<br>")}${String(o.nilai).length > BATAS_LIHAT_BERKAS ? "…" : ""}</div></div>`)
           .join("")}</details></div>`
       : "";
     const pilihBunyi = naskahBanyak

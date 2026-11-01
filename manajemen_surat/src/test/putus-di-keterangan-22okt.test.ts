@@ -22,7 +22,8 @@ describe("hasil putus yang diketik di kolom keterangan jadwal sidang", () => {
 
   it("jadwal sidang, keadaan dan riwayat hasil sidang membaca lewat aturan bersama", () => {
     const jadwal = readFileSync(bot("sippJadwalSidangService.js"), "utf8");
-    expect(jadwal.match(/\$\{sqlAlasanHasil\("j"\)\} AS alasanDitunda/g)?.length).toBe(2);
+    // 3 tempat: daftar jadwal, riwayat/keadaan, dan (1 Nov) sidang yang dibaca untuk urutan tahap pembuktian (keputusan 52).
+    expect(jadwal.match(/\$\{sqlAlasanHasil\("j"\)\} AS alasanDitunda/g)?.length).toBe(3);
     expect(jadwal).not.toMatch(/j\.alasan_ditunda\s+AS alasanDitunda/);
     const hasil = readFileSync(bot("sidangHasilService.js"), "utf8");
     expect(hasil).toContain('${sqlAlasanHasil("j")} AS alasanDitunda');
