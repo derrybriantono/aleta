@@ -872,6 +872,8 @@ export const AKSI = {
       "GET /api/aleta-ecourt/ktp-terbit",
       "GET /api/aleta-ecourt/pekerjaan-pihak",
       "GET /api/aleta-ecourt/isi-gugatan",
+      // P2 1 Nov 2026: matriks dalil (teks dalil para pihak dari berkas yang sama dengan isi-gugatan).
+      "GET /api/aleta-ecourt/matriks-dalil",
       "GET /api/aleta-ecourt/kuasa-gugatan",
       "POST /api/aleta-ecourt/saksi-scan",
     ],

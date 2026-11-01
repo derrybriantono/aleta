@@ -743,6 +743,13 @@
       "when": 1792323000001,
       "tag": "0121_aleta_kalimat_pribadi",
       "breakpoints": true
+    },
+    {
+      "idx": 110,
+      "version": "7",
+      "when": 1792339200001,
+      "tag": "0126_aleta_matriks_dalil",
+      "breakpoints": true
     }
   ]
 }

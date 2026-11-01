@@ -39,6 +39,7 @@ const TJ = require("./tanyaJawabEcourtService");
 const KH = require("./jawabKhususEcourtService");
 const B = require("./buktiEcourtService");
 const NJ = require("./naskahJawabMenjawabService");
+const MD = require("./matriksDalilService");
 
 const VAR = Object.freeze({
   mutah: "6055",
@@ -392,6 +393,15 @@ function susunIsiGugatan(masukan) {
   usulan.push(...bk.usulan);
   catatan.push(...bk.catatan);
 
+  // P2 (1 Nov 2026): matriks dalil satu sumber - dalil gugatan/jawaban/replik/duplik/kesimpulan per butir dari teks yang SAMA
+  // (tanpa pembaca kedua); disimpan portal per perkara dan dipakai rincian alasan, keterangan saksi, ALETA Ai, agen A1/A2.
+  let matriksDalil = null;
+  try {
+    matriksDalil = MD.susunMatriksDalil({ dokumen, sebutan });
+  } catch (_) {
+    matriksDalil = null;
+  }
+
   // 5227 - bunyi pilihan dari dalil gugatan (templat hakim)
   const v5227 = ciri.length ? K.varian5227(ciri, sebutan) : { varian: [], tanpaFrasa: [] };
   // R2 14 Okt: sebab yang tidak tertangkap ciri lama (cerai talak: keluarga Termohon ikut campur,
@@ -450,7 +460,16 @@ function susunIsiGugatan(masukan) {
       // Bunyi templat hakim lebih dulu (urutan lama); bunyi sebab dari deteksi/sebabCerai di belakang -
       // pada cerai talak sering satu-satunya (ciri lama tanpa frasa / nafkah bukan kewajiban istri).
       pilihan: [...v5227.varian.map((v) => ({ keadaan: `templat hakim - ${v.label.replace(/^5227 - /, "")}`, nilai: v.nilai, kodePola: v.kode })), ...pilihanSebab, ...pilihanRincian],
-      ...(rincianGugatan ? { rincian: rincianGugatan.butir.map((b) => require("./deteksi/alasanRincian").ringkasButir(b)) } : {}),
+      ...(rincianGugatan
+        ? {
+            rincian: rincianGugatan.butir.map((b) => {
+              const r = require("./deteksi/alasanRincian").ringkasButir(b);
+              // P2: butir rincian ditautkan ke dalil asalnya di matriks (id stabil) - lencana dan agen memakai satu sumber.
+              const asal = matriksDalil && b.kalimatGugatan ? MD.cariDalil(matriksDalil, b.kalimatGugatan, { sumber: ["gugatan"] }) : null;
+              return asal ? { ...r, dalilId: asal.id } : r;
+            }),
+          }
+        : {}),
       // Tiap bunyi membawa kode templatnya sendiri (pilihan[].kodePola); kartunya semua kode.
       kodePola: [...v5227.varian.map((v) => v.kode), ...pilihanSebab.map((p) => p.kodePola), ...pilihanRincian.map((p) => p.kodePola)].join(","),
       sumber: [{ asal: "gugatan-ecourt", kalimat: `${labelSumber(gugatan, null)} - dalil: ${[...ciri, ...(sebabGugatan ? sebabGugatan.butir.map((b) => b.sebab) : [])].join(", ")}` }],
@@ -526,6 +545,7 @@ function susunIsiGugatan(masukan) {
     buktiOtomatis: bk.otomatis,
     otomatis: izin,
     suratKua: bk.kua ? { nomor: bk.kua.nomor, tanggal: bk.kua.tanggal ? bk.kua.tanggal.tampil : "", asal: bk.kua.asal, jelas: Boolean(bk.kua.jelas) } : null,
+    matriksDalil,
     catatan,
   };
 }

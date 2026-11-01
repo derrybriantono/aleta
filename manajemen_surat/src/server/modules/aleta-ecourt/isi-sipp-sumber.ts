@@ -2,7 +2,12 @@ import { bacaPdfDariBita } from "@/server/modules/aleta-ecourt/baca-pdf";
 import { bacaIsiGugatan, type HasilIsiGugatan } from "@/server/modules/aleta-ecourt/isi-gugatan";
 import { bacaKuasaGugatan, type BarisKuasaSipp, type DokumenArsip, type HasilKuasaGugatan } from "@/server/modules/aleta-ecourt/kuasa-gugatan";
 import { bacaTeksJawaban } from "@/server/modules/aleta-ecourt/penanda-jawaban";
-import { ambilBerkasGateway, getGatewayAbtUsulan, getGatewayArsipRincian, postGatewayIsiGugatan } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
+import { ambilBerkasGateway, getGatewayAbtUsulan, getGatewayArsipRincian, postGatewayIsiGugatan, postGatewayMatriksDalil } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
+import { matriksSah } from "@/lib/matriks-dalil";
+import { type AletaDatabase } from "@/server/db/client";
+import { bacaSetelanBerkas } from "@/server/modules/aleta-ecourt/berkas-otomatis";
+import { bacaGugatanSinggah } from "@/server/modules/aleta-ecourt/isi-gugatan-singgah";
+import { pastikanMatriksDalil, type DepsMatriksDalil, type HasilMatriksDalil } from "@/server/modules/aleta-ecourt/matriks-dalil";
 
 /**
  * ============================================================================
@@ -68,4 +73,34 @@ export function bacaKuasaEcourt(nomor: string): Promise<HasilKuasaGugatan> {
       return { kuasaSipp: Array.isArray(s.kuasaSipp) ? s.kuasaSipp : [], tanggalDaftar: String(s.tanggalDaftar || "") };
     },
   });
+}
+
+/**
+ * P2 (1 Nov 2026): sumber matriks dalil = pembaca e-Court yang SAMA dengan rute isi-gugatan (bacaGugatanSinggah + bacaGugatanEcourt,
+ * singgahan 30 menit bersama), atau posita/petitum SIPP lewat bot bila perkara tanpa berkas.
+ */
+export function depsMatriksDalil(db: AletaDatabase): DepsMatriksDalil {
+  return {
+    rincian: async (n) => {
+      const r = await getGatewayArsipRincian(n);
+      return { ok: r.ok, dokumen: r.ok ? ((r.data.dokumen || []) as DokumenArsip[]) : [] };
+    },
+    bacaEcourt: async (nomor, sebutan, ulang) => {
+      const setelan = await bacaSetelanBerkas(db);
+      const { hasil } = await bacaGugatanSinggah(nomor, sebutan, undefined, { denganBukti: false, otomatis: { bukti: setelan.bukti, kesimpulan: setelan.kesimpulan }, ulang }, bacaGugatanEcourt);
+      return hasil;
+    },
+    bacaSipp: async (nomor, sebutan) => {
+      const r = await postGatewayMatriksDalil({ nomorPerkara: nomor, sebutan });
+      return r.ok ? { matriks: matriksSah(r.data.matriksDalil), sidik: String(r.data.sidikSipp || "") } : { matriks: null, sidik: "" };
+    },
+  };
+}
+
+/**
+ * API agen A1/A2 (sisi server): matriks dalil terbaru satu perkara - dari simpanan bila berkas e-Court tidak berubah, selain itu
+ * dihitung ulang dan disimpan (menunggu hasil, tanpa batas waktu). Hanya membaca SIPP/e-Court.
+ */
+export function matriksDalilPerkara(db: AletaDatabase, nomor: string, sebutan: { lawan: string; pelaku: string }): Promise<HasilMatriksDalil> {
+  return pastikanMatriksDalil(db, nomor, sebutan, depsMatriksDalil(db));
 }

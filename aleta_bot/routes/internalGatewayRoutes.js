@@ -8009,12 +8009,61 @@ router.post("/abt/isi-gugatan", requireInternalToken, async (req, res) => {
     } catch (_) {
       hasil.lampiran = null;
     }
+    // P2 (1 Nov 2026): surat gugatan tidak ada di arsip e-Court (hanya jawaban/replik terbaca) - posita/petitum SIPP (HANYA SELECT,
+    // batas 2,5 detik) menjadi dalil gugatan supaya tanggapan jawaban tetap dapat dicocokkan. Galat tidak menggagalkan isi gugatan.
+    try {
+      const nomorMd = String(req.body?.nomorPerkara || "").trim().slice(0, 80);
+      if (hasil.matriksDalil && !hasil.matriksDalil.sumberGugatan && nomorMd) {
+        const k = await abtUsulanService.konteksPerkaraSaksi(nomorMd).catch(() => null);
+        if (k && k.posita) {
+          hasil.matriksDalil = matriksDalilService.susunMatriksDalil({
+            dokumen: isiGugatanService.saringDokumen(req.body?.dokumen).filter((d) => d.peran !== "bukti"),
+            sebutan: {
+              lawan: String(req.body?.sebutan?.lawan || "").replace(/[^A-Za-z /]/g, "").slice(0, 40) || "Penggugat",
+              pelaku: String(req.body?.sebutan?.pelaku || "").replace(/[^A-Za-z /]/g, "").slice(0, 40) || "Tergugat",
+            },
+            sipp: { posita: k.posita, petitum: k.petitum },
+          });
+        }
+      }
+    } catch (_) {
+      /* matriks tetap seperti hasil isi gugatan */
+    }
     res.json({ ...hasil, nomorPerkara: String(req.body?.nomorPerkara || "").slice(0, 80) });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }
 });
 /* === AKHIR P4P7B2 === */
+
+/* === P2 MATRIKS DALIL 1 Nov === */
+/**
+ * P2 (1 Nov 2026): matriks dalil perkara TANPA berkas e-Court - posita dan petitum SIPP (HANYA SELECT lewat konteksPerkaraSaksi,
+ * batas 2,5 detik) dipecah per butir. Perkara e-Court memperoleh matriksnya dari /abt/isi-gugatan (teks berkas yang sama).
+ *
+ *   POST /abt/matriks-dalil  { nomorPerkara, sebutan: {lawan, pelaku} }
+ *     -> { ok, ada, matriksDalil: { versi, sumberGugatan, dalil[], dokumen[], ringkas, catatan[], ms }, sidikSipp }
+ *
+ * Tidak menulis apa pun.
+ */
+const matriksDalilService = require("../services/matriksDalilService");
+
+router.post("/abt/matriks-dalil", requireInternalToken, async (req, res) => {
+  try {
+    const nomor = String(req.body?.nomorPerkara || "").trim().slice(0, 80);
+    if (!nomor) return res.json({ ok: true, ada: false, matriksDalil: null, sidikSipp: "" });
+    const bersih = (x, cadangan) => String(x || "").replace(/[^A-Za-z /]/g, "").slice(0, 40) || cadangan;
+    const sebutan = { lawan: bersih(req.body?.sebutan?.lawan, "Penggugat"), pelaku: bersih(req.body?.sebutan?.pelaku, "Tergugat") };
+    const k = await abtUsulanService.konteksPerkaraSaksi(nomor).catch(() => null);
+    if (!k) return res.json({ ok: true, ada: false, matriksDalil: null, sidikSipp: "" });
+    const sidikSipp = require("crypto").createHash("sha1").update(`${k.posita}\n${k.petitum}`).digest("hex");
+    const matriksDalil = matriksDalilService.susunMatriksDalil({ dokumen: [], sebutan, sipp: { posita: k.posita, petitum: k.petitum } });
+    res.json({ ok: true, ada: matriksDalil.dalil.length > 0, matriksDalil, sidikSipp, jenisPerkaraId: k.jenisPerkaraId });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+/* === AKHIR P2 MATRIKS DALIL === */
 
 /* === KONTAK-EC 11 Okt === */
 /**
