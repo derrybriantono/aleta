@@ -1,0 +1,51 @@
+dasar pohon (28 paket)  : 52f66a37c7f643a98790be8360782b9b
+dasar variabel (28 paket): 5a5fd9c58c26ad7c165bd7fe2159dd26
+== pasang pertama
+PRASYARAT COCOK (1|0|3)
+BERKAS SIAP
+CADANGAN: /d/aleta-dev/wt/w164/abt-paket/tanya-jawab-format-1nov/paket-satker/cadangan (baris variabel: 1)
+SEMUA COCOK
+UJI contoh 1: perkara 10261 -> Susunan majelis yang bersidang sama dengan sidang yang lalu;
+UJI contoh 2: perkara 10099 hakim berganti -> Susunan majelis sidang sebelumnya mengalami perubahan karena
+TAMBAL=586
+BERKAS COCOK
+SELESAI - paket abt-tanya-jawab-format-1nov terpasang. Cadangan: /d/aleta-dev/wt/w164/abt-paket/tanya-jawab-format-1nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w164/abt-paket/tanya-jawab-format-1nov/paket-satker/pulih-satker.sh
+terpasang pohon (29)    : 6c3a63aa26b8dd09557e9537f024c421
+terpasang variabel (29) : 5ef30c24d0f55a3c844127bf2ba70b85
+== pasang ulang
+PRASYARAT COCOK (0|1|3)
+SUDAH=586
+UJI contoh 1: perkara 10261 -> Susunan majelis yang bersidang sama dengan sidang yang lalu;
+UJI contoh 2: perkara 10099 hakim berganti -> Susunan majelis sidang sebelumnya mengalami perubahan karena
+SUDAH=586
+SELESAI - paket abt-tanya-jawab-format-1nov terpasang. Cadangan: /d/aleta-dev/wt/w164/abt-paket/tanya-jawab-format-1nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w164/abt-paket/tanya-jawab-format-1nov/paket-satker/pulih-satker.sh
+PASANG ULANG: tidak ada yang berubah (pohon dan variabel)
+== pulih
+PULIH=586
+BERKAS PULIH
+PULIH COCOK (1|0|3)
+PULIH: seluruh pohon RTF SAMA PERSIS dengan sebelum paket
+PULIH: seluruh variabel SAMA PERSIS dengan sebelum paket
+== pasang lagi
+PRASYARAT COCOK (1|0|3)
+UJI contoh 1: perkara 10261 -> Susunan majelis yang bersidang sama dengan sidang yang lalu;
+UJI contoh 2: perkara 10099 hakim berganti -> Susunan majelis sidang sebelumnya mengalami perubahan karena
+TAMBAL=586
+SELESAI - paket abt-tanya-jawab-format-1nov terpasang. Cadangan: /d/aleta-dev/wt/w164/abt-paket/tanya-jawab-format-1nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w164/abt-paket/tanya-jawab-format-1nov/paket-satker/pulih-satker.sh
+PASANG LAGI: sama persis dengan pasang pertama (pohon dan variabel)
+== penjaga 1: berkas disunting orang sesudah dipasang -> pulih membiarkannya (dilaporkan), yang lain dipulihkan
+BIARKAN	derry_briantono/- BAS ASAL USUL ANAK -/[01a] BAS 1 Asal Usul Anak - Kabul.rtf	(sudah disunting sesudah dipasang)
+BIARKAN=1 PULIH=585
+BERKAS PULIH SEBAGIAN
+== penjaga 2: berkas dasar disunting orang -> pasang menolak tanpa mengubah apa pun
+GAGAL	derry_briantono/- BAS ASAL USUL ANAK -/[01a] BAS 1 Asal Usul Anak - Kabul.rtf	md5 0456272bb41029641386338443341a45 bukan dasar 9a0ea33cedcbea25db3a08860cae6ca8 (disunting orang/paket lain belum terpasang)
+GAGAL=1 SIAP=585
+PENJAGA 2: tidak ada yang berubah (pohon dan variabel)
+KEMBALI KE DASAR: ya
+== pasang akhir
+PRASYARAT COCOK (1|0|3)
+UJI contoh 1: perkara 10261 -> Susunan majelis yang bersidang sama dengan sidang yang lalu;
+UJI contoh 2: perkara 10099 hakim berganti -> Susunan majelis sidang sebelumnya mengalami perubahan karena
+TAMBAL=586
+SELESAI - paket abt-tanya-jawab-format-1nov terpasang. Cadangan: /d/aleta-dev/wt/w164/abt-paket/tanya-jawab-format-1nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w164/abt-paket/tanya-jawab-format-1nov/paket-satker/pulih-satker.sh
+AKHIR: sama persis dengan pasang pertama (pohon dan variabel)

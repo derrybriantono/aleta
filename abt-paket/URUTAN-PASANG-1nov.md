@@ -1,4 +1,4 @@
-# URUTAN PASANG paket ABT 29 Okt - 1 Nov 2026 (28 paket; diuji rantai penuh dari dump 28 Okt; MENGGANTIKAN URUTAN-PASANG-31okt.md)
+# URUTAN PASANG paket ABT 29 Okt - 1 Nov 2026 (29 paket; diuji rantai penuh dari dump 28 Okt; MENGGANTIKAN URUTAN-PASANG-31okt.md)
 
 Nomor "KE-n" di komentar dan PASANG.md paket lama mengikuti urutan 24 paket yang lama; yang berlaku adalah nomor di berkas ini
 (pembuktian-urut-1nov disisipkan sebagai ke-22, sehingga jawab-replik, butir-rata, bukti-pisah menjadi ke-23, ke-24, ke-25, teks-pihak ke-26).
@@ -428,4 +428,24 @@ PRASYARAT COCOK (SIAP=676)
 TAMBAL=676
 BERKAS COCOK
 SELESAI - paket abt-bas-lanjutan-1nov terpasang. ...
+```
+
+### 29. `tanya-jawab-format-1nov` (cabang tanya-jawab-format w164; keputusan 85, 86, 89-B1) - PALING AKHIR
+```
+cd tanya-jawab-format-1nov/paket-satker && bash pasang-satker.sh
+```
+SEMUA tanya jawab tertulis tangan (tabel dua kolom: majelis/pihak bertanya kepada pihak/saksi) di 586 blangko BAS/putusan Derry (aktif dan arsip, tanpa `terhapus`) dibentuk persis keluaran ABT
+(`kolom_kode_A4`): pertanyaan kiri, jawaban kanan di bawahnya diawali "- ", lebar 4250/8500 seragam, tanpa garis/indentasi/baris kosong (1.475 tabel). 98 BAS yang menulis
+"Susunan majelis yang bersidang sama dengan sidang yang lalu;" sebagai teks biasa memakai `#5404#`. BAS ALUR 05 [3a] (CG, CT, arsip): bagian Tergugat memakai sebutan `#0047#`.
+Variabel `#5404#` diganti kueri baru (membandingkan susunan majelis/PP sidang ini dengan sidang sebelumnya dari SIPP; kalimat pergantian lengkap; 3 penanda angka, tiap SEKALI): hanya
+variabel ini yang diubah, tanpa variabel/menu/data baru. Lihat `tanya-jawab-format-1nov/PASANG.md`. md5 dasar = keadaan sesudah ke-28 paket.
+Keluaran benar:
+```
+PRASYARAT COCOK (1|0|3)
+BERKAS SIAP
+SEMUA COCOK
+UJI contoh 1: ... ; UJI contoh 2: ...
+TAMBAL=586
+BERKAS COCOK
+SELESAI - paket abt-tanya-jawab-format-1nov terpasang. ...
 ```

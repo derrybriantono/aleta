@@ -1,0 +1,3 @@
+-- Paket ABT "abt-tanya-jawab-format-1nov" (1 Nov 2026, agen M; keputusan pengguna 86): #5404# MAJELIS HAKIM DAN PANITERA SIDANG diganti kueri baru: membandingkan susunan hakim/panitera SIDANG INI dengan SIDANG SEBELUMNYA dari SIPP dan menyusun kalimat pergantian lengkap. Satu variabel; tanpa variabel/menu baru. Hanya pengguna derry_briantono.
+-- PERIKSA (baca saja): baris terakhir harus SEMUA COCOK
+SELECT IF((SELECT COUNT(*) FROM abt_variabel WHERE no_var = 5404 AND MD5(IFNULL(sql_query, '')) = 'f919277e90e2d570161fd86fd4363657' AND MD5(nama) = '03de4212ee1b3c65669aa59c8a95d6b6') = 1, 'SEMUA COCOK', 'ADA BEDA'), '';
