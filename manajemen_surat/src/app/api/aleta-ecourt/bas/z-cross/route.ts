@@ -72,23 +72,25 @@ export async function POST(request: NextRequest) {
       }) ?? {};
     const runutMati = String(formulir.get("runut") ?? "") === "0";
     const r = runutMati ? null : await pasangRunut(db, bita, bentuk, konteks);
-    const hasil = await sesuaikanZcrossOtomatis(r ? r.bita : bita, bentuk, { keluar, tanggal, ...bacaOpsiBukti(formulir.get("jumlahBukti"), formulir.get("halamanBukti")) });
+    const hasil = await sesuaikanZcrossOtomatis(r ? r.bita : bita, r ? r.bentuk : bentuk, { keluar, tanggal, ...bacaOpsiBukti(formulir.get("jumlahBukti"), formulir.get("halamanBukti")), ...(r?.opsiZ ?? {}) });
     const peringatan = [...(r?.peringatan ?? []), ...peringatanZcross(hasil.laporan)];
     let runut: { awal: number; akhir: number } | null = null;
     if (r?.rencana) {
       runut = { awal: r.rencana.awal, akhir: 0 };
       if (String(formulir.get("catat") ?? "1") !== "0") {
-        const c = await catatRunut(db, r.rencana, {
+        // KINERJA (arahan 1 Nov): halaman terakhir dihitung & dicatat DI LATAR - unduhan tidak menunggu render hitung halaman.
+        // PDF ukur lampiran dipakai ulang bila Z tidak mengubah naskah; BAS yang sama persis dengan catatan tidak dirender lagi.
+        const rencana = r.rencana;
+        const pdfUkur = r.pdfUkur ?? null;
+        const dbLatar = db;
+        void catatRunut(dbLatar, rencana, {
           pdf: hasil.bentuk === "pdf" ? hasil.bita : null,
+          pdfUkur,
           naskah: hasil.bentuk === "pdf" ? undefined : { bita: hasil.bita, bentuk: hasil.bentuk, mesin: pilihMesinPortal() },
           z: hasil.laporan,
           sumber: "unduh",
           olehId: String(actorUserId ?? ""),
-        });
-        if (c) {
-          runut = { awal: c.awal, akhir: c.akhir };
-          peringatan.push(...c.peringatan);
-        }
+        }).catch(() => undefined);
       }
     }
     return ok({

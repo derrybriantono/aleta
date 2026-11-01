@@ -580,6 +580,7 @@ export const DDL_BAS_HALAMAN = {
   sumber TEXT NOT NULL DEFAULT '',
   dicatat_oleh TEXT NOT NULL DEFAULT '',
   dicatat_pada TEXT NOT NULL,
+  sidik TEXT NOT NULL DEFAULT '',
   PRIMARY KEY (perkara_id, sidang_kunci)
 )`,
   ],

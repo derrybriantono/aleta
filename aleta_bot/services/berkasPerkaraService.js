@@ -1169,7 +1169,23 @@ async function jadwalBas(params = {}, deps = {}) {
     }
     sidang.push({ id: String(j.id), urutan: nomorBaris(j.urutan), tanggal: iso(j.tanggal_sidang), ikrar, edoc: Boolean(edoc), halamanEdoc });
   }
-  return { ok: true, perkaraId: String(perkaraId), nomorPerkara: nomor, sidang };
+  // Keputusan 87: halaman lampiran jawab-menjawab tertulis dari arsip e-Court (jumlah berkas + jumlah halaman bila SEMUA terbaca).
+  const lampiran = {};
+  if (nomor && params.denganHalaman !== false) {
+    let ec = [];
+    try {
+      ec = await berkasEcourt(nomor, deps);
+    } catch {
+      ec = [];
+    }
+    for (const jenis of ["jawaban", "replik", "duplik", "kesimpulan"]) {
+      const daftar = ec.filter((x) => x.jenis === jenis);
+      if (!daftar.length) continue;
+      const terbaca = daftar.every((x) => x.halaman > 0);
+      lampiran[jenis] = { jumlah: daftar.length, halaman: terbaca ? daftar.reduce((n, x) => n + x.halaman, 0) : null };
+    }
+  }
+  return { ok: true, perkaraId: String(perkaraId), nomorPerkara: nomor, sidang, lampiran };
 }
 
 module.exports = {

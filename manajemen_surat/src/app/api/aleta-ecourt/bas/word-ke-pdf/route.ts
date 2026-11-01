@@ -78,7 +78,9 @@ export async function POST(request: NextRequest) {
         // Z cross otomatis tiap unggah (tanpa tombol): garis Z, tanggal, ganti halaman, nomor halaman bagian berikutnya
         sesuaikanZ: async (bita, bentuk, opsi) => {
           runutPasang = db ? await pasangRunut(db, bita, bentuk, konteksRunut) : null;
-          const r = await sesuaikanZcrossOtomatis(runutPasang?.rencana ? runutPasang.bita : bita, bentuk, opsi);
+          // DOC lama diubah ke DOCX oleh pasangRunut (keputusan 87); bentuk ikut berganti
+          const bentukZ = runutPasang ? runutPasang.bentuk : bentuk;
+          const r = await sesuaikanZcrossOtomatis(runutPasang ? runutPasang.bita : bita, bentukZ, { ...opsi, ...(runutPasang?.opsiZ ?? {}) });
           const l = r.laporan;
           laporanZ = l;
           return {

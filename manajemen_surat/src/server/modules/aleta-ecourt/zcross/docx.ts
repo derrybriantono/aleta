@@ -83,7 +83,7 @@ export function cariJangkarDocx(x: string, paragraf: ParagrafDocx[]): JangkarDoc
     const rb = runBentuk(paragraf[i].simpul);
     if (!rb.some((r) => adalahZ(x.slice(r.awal, r.akhir)))) continue;
     let t = i;
-    while (t > 0 && !paragraf[t].teks.trim()) t -= 1;
+    while (t > 0 && !/\p{L}{2,}/u.test(paragraf[t].teks)) t -= 1;
     if (!paragraf[t].teks.trim()) return null;
     return { indeks: t, via: "bentuk" };
   }
@@ -99,10 +99,15 @@ export function bersihkanZDocx(sumber: string): PembersihanDocx {
   const jangkar = cariJangkarDocx(sumber, paragraf);
   const buang: Array<[number, number]> = [];
   let label: string | null = null;
+  // Z gambar tangan lama berupa garis lurus (DrawingML garis/penghubung lurus, VML jenis 20/32) di paragraf-paragraf pemilik tanda Z ikut
+  // dibuang (keputusan 87; DOC lama yang diubah Word ke DOCX menaruh garisnya di paragraf tetangga kotak "SC Z").
+  const RE_GARIS = /prst="(?:line|straightConnector1)"|<v:line\b|o:spt="(?:20|32)"|type="#_x0000_t(?:20|32)"/;
+  let adaTanda = false;
   const lihat = (p: SimpulXml) => {
     for (const r of runBentuk(p)) {
       const potong = sumber.slice(r.awal, r.akhir);
-      if (!adalahZ(potong)) continue;
+      const garisLama = adaTanda && RE_GARIS.test(potong) && !/<w:txbxContent/.test(potong);
+      if (!adalahZ(potong) && !garisLama) continue;
       buang.push([r.awal, r.akhir]);
       if (!label) {
         const m = /<w:txbxContent[^>]*>([\s\S]*?)<\/w:txbxContent>/.exec(potong);
@@ -112,9 +117,14 @@ export function bersihkanZDocx(sumber: string): PembersihanDocx {
   };
   const diJangkar = new Set<number>();
   if (jangkar) {
-    // pemilik bentuk bisa paragraf lain (kosong) di sesudah paragraf ukur
-    for (let i = jangkar.indeks; i < Math.min(paragraf.length, jangkar.indeks + 3); i += 1) {
-      if (i > jangkar.indeks && paragraf[i].teks.trim()) break;
+    // pemilik bentuk bisa paragraf lain (kosong) di sesudah paragraf ukur; isian kosong "..." tidak menghentikan pencarian
+    const jendela: number[] = [];
+    for (let i = jangkar.indeks; i < Math.min(paragraf.length, jangkar.indeks + 4); i += 1) {
+      if (i > jangkar.indeks && /\p{L}{2,}/u.test(paragraf[i].teks)) break;
+      jendela.push(i);
+    }
+    adaTanda = jendela.some((i) => runBentuk(paragraf[i].simpul).some((r) => adalahZ(sumber.slice(r.awal, r.akhir))));
+    for (const i of jendela) {
       lihat(paragraf[i].simpul);
       diJangkar.add(i);
     }

@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
       if (runutPasang.rencana) rtfBase64 = Buffer.from(runutPasang.bita).toString("base64");
     }
     if (!salinan) {
-      const z = await sesuaikanZcrossOtomatis(new Uint8Array(Buffer.from(rtfBase64, "base64")), "rtf", bacaOpsiBukti(body.jumlahBukti, body.halamanBukti));
+      const z = await sesuaikanZcrossOtomatis(new Uint8Array(Buffer.from(rtfBase64, "base64")), "rtf", { ...bacaOpsiBukti(body.jumlahBukti, body.halamanBukti), ...(runutPasang?.opsiZ ?? {}) });
       laporanZ = z.laporan;
       if (z.laporan.diubah) {
         rtfBase64 = Buffer.from(z.bita).toString("base64");

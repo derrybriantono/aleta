@@ -17,7 +17,7 @@ PHP = r'D:\sipp-server\php56\php.exe'
 TMP = r'D:\Aplikasi\aleta\tmp\w159'
 SALINAN = os.path.join(TMP, 'abt')
 SRC, RDB, SIPP = 'aps_badilag_w159d', 'aps_badilag_w159r', 'sipp_w159'
-KELUAR = os.path.join(TMP, 'render', 'abt')
+KELUAR = os.environ.get('RENDER_KELUAR') or os.path.join(TMP, 'render', 'abt')
 PERKARA = 9853  # 350/Pdt.G/2026/PA.Dgl: sidang 6 Pembuktian, 7 Pembuktian Lanjutan
 # BAS ALUR 04 cerai gugat kontradiktoir: pembuktian Penggugat lalu pembuktian Tergugat (dua sidang berurutan)
 KASUS = [('bas-a-pembuktian-p', '1 Perceraian CG - BAS/BAS ALUR 04 [6] BAS 6 P & T Hadir - Pembuktian P.rtf'),
@@ -62,7 +62,14 @@ def main():
         jadwal.append({'id': i, 'urutan': int(u or 0), 'tanggal': t, 'ikrar': ik == 'Y', 'agenda': ag})
     json.dump({'perkaraId': str(PERKARA), 'sidang': jadwal}, open(os.path.join(KELUAR, 'jadwal.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     # sidang yang dirender: sidang 6 (Pembuktian) dan 7 (Pembuktian Lanjutan) - urutan ABT = parameter d
-    pilih = [j for j in jadwal if not j['ikrar'] and j['urutan'] in (6, 7)]
+    # RENDER_KASUS (keputusan 87): JSON [[nama, berkas relatif, urutan sidang], ...] menggantikan dua BAS bawaan
+    kasus_env = json.loads(os.environ['RENDER_KASUS']) if os.environ.get('RENDER_KASUS') else None
+    global KASUS
+    if kasus_env:
+        KASUS = [(k[0], k[1]) for k in kasus_env]
+        pilih = [next(j for j in jadwal if j['urutan'] == int(k[2])) for k in kasus_env]
+    else:
+        pilih = [j for j in jadwal if not j['ikrar'] and j['urutan'] in (6, 7)]
     tugas = []
     for (nama, rel), sd in zip(KASUS, pilih):
         k = os.path.join(KELUAR, nama + '.rtf')

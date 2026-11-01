@@ -388,6 +388,200 @@ describe.skipIf(!DIR_RENDER || !existsSync(path.join(DIR_RENDER, "tugas.json")))
 // ----------------------------------------------------------------------------
 // E. Migrasi
 // ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// H. Keputusan 87: lampiran jawab-menjawab melompat, Z tanpa kotak "SC Z", DOC lama -> DOCX
+// ----------------------------------------------------------------------------
+describe("H. keputusan 87", () => {
+  let db: AletaDatabase | null = null;
+  beforeEach(async () => {
+    db = await createAletaDatabase({ useInMemory: true, seed: true });
+  });
+  afterEach(async () => {
+    await db?.close();
+    db = null;
+  });
+  const palsu = mesinPalsu();
+  let render = 0;
+  const mesin: Mesin = {
+    nama: "uji",
+    async ubah(b, dari, ke) {
+      if (ke === "pdf") render += 1;
+      return palsu.ubah(b, dari, ke);
+    },
+  };
+  const PEMISAH = "\\pard\\plain\\f0\\fs24 \\sect\r\n";
+  /** BAS jawaban: paragraf "meneliti jawaban ... SIP" lalu pemisah bagian bernomor tetap (blangko: \pgnstarts15) dan sambungan BAS. */
+  const basJawaban = () =>
+    buatBasRtf({ bukti: 0, tanpaJangkar: true, isi: 45, penanda: "Jawab" }).replace(
+      PEMISAH,
+      `\\pard\\plain\\qj\\f0\\fs24 Kemudian Ketua Majelis meneliti jawaban yang telah diunggah Tergugat ke dalam SIP;\\par\r\n${PEMISAH}`
+    );
+  const jadwal = (lampiran?: Record<string, { halaman: number | null; jumlah: number }>): DepsRunut["jadwal"] => async () => ({ perkaraId: "9001", nomorPerkara: "12/Pdt.G/2026/PA.Dgl", sidang: SIDANG, lampiran });
+
+  it("1. sesudah jawaban tertulis nomor melompat sebanyak halaman PDF jawaban e-Court; satu render ukur, dipakai ulang untuk hitungan akhir", async () => {
+    render = 0;
+    const r = await pasangRunut(db!, bita(basJawaban()), "rtf", { perkaraId: "9001", sidangId: "305" }, { jadwal: jadwal({ jawaban: { halaman: 4, jumlah: 1 } }), mesin });
+    expect(r.rencana!.awal).toBe(1); // BAS 1 belum tercatat (peringatan) -> mulai 1
+    expect(render).toBe(1);
+    expect(r.rencana!.peta).toHaveLength(1);
+    const { fisik, nomor } = r.rencana!.peta[0];
+    // halaman fisik jangkar = fisik - 1 (tampil sama karena mulai 1), 4 halaman jawaban, bagian sesudahnya mulai tampil + 4 + 1
+    expect(nomor).toBe(fisik - 1 + 4 + 1);
+    const s = lat1(r.bita);
+    expect(s).toMatch(new RegExp(`\\\\pgnrestart\\\\pgnstarts${nomor} `));
+    expect(s).not.toMatch(/pgnstarts15/);
+    expect(r.peringatan.join(" ")).not.toMatch(/bawaan 1 per jawaban/);
+    const z = await sesuaikanZcross(r.bita, "rtf", { mesin, hanyaBentuk: true });
+    expect(z.laporan.diubah).toBe(false);
+    const c = (await catatRunut(db!, r.rencana!, { pdfUkur: r.pdfUkur, z: z.laporan, naskah: { bita: z.bita, bentuk: "rtf", mesin }, sumber: "unduh", olehId: "u" }))!;
+    expect(render).toBe(1); // tidak dirender ulang: PDF ukur dipakai
+    const P = await halamanPdf(r.pdfUkur!);
+    expect(c.akhir).toBe(nomor + (P - fisik));
+    // cetak ulang naskah yang sama: hasil ukur disinggahkan (tanpa render)
+    const ulang = await pasangRunut(db!, bita(basJawaban()), "rtf", { perkaraId: "9001", sidangId: "305" }, { jadwal: jadwal({ jawaban: { halaman: 4, jumlah: 1 } }), mesin });
+    expect(render).toBe(1);
+    expect(lat1(ulang.bita)).toBe(s);
+  });
+
+  it("1c. lampiran yang ditutup tanda Z blangko (BAS 3 Jawaban): Z cross melompat sebanyak halaman jawaban, tanpa render ukur tambahan", async () => {
+    render = 0;
+    const asal = buatBasRtf({ bukti: 0, templatZ: true, isi: 20 }).replace(
+      "Bukti-bukti tersebut sebagai berikut:",
+      "Setelah meneliti jawaban yang telah diunggah Tergugat, Majelis meneruskannya kepada Penggugat sebagai berikut;"
+    );
+    const r = await pasangRunut(db!, bita(asal), "rtf", { perkaraId: "9001", sidangId: "305" }, { jadwal: jadwal({ jawaban: { halaman: 4, jumlah: 1 } }), mesin });
+    expect(render).toBe(0);
+    expect(r.opsiZ).toEqual({ jumlahBukti: 1, halamanBukti: [4] });
+    const z = await sesuaikanZcross(r.bita, "rtf", { mesin, hanyaBentuk: true, ...r.opsiZ });
+    expect(z.laporan.diubah).toBe(true);
+    expect(z.laporan.nomorBagianBerikut).toBe(z.laporan.halamanTampilZ! + 4 + 1); // dulu: semua paragraf di atasnya dihitung "bukti"
+  });
+
+  it("1b. halaman jawaban e-Court tidak terbaca -> 1 halaman per berkas + peringatan; tanpa lampiran -> tanpa render tambahan", async () => {
+    render = 0;
+    const r = await pasangRunut(db!, bita(basJawaban().replace("Jawab 1.", "Jawab satu.")), "rtf", { perkaraId: "9001", sidangId: "305" }, { jadwal: jadwal({ jawaban: { halaman: null, jumlah: 2 } }), mesin });
+    expect(r.rencana!.peta[0].nomor).toBe(r.rencana!.peta[0].fisik - 1 + 2 + 1);
+    expect(r.peringatan.join(" ")).toMatch(/Halaman jawaban tertulis belum terbaca dari berkas e-Court: nomor halaman sesudahnya melompat 2 halaman/);
+    const tanpa = await pasangRunut(db!, bita(buatBasRtf({ bukti: 0, tanpaJangkar: true, isi: 5 })), "rtf", { perkaraId: "9001", sidangId: "305" }, { jadwal: jadwal(), mesin });
+    expect(tanpa.rencana!.peta).toEqual([]);
+    expect(render).toBe(1);
+  });
+
+  it("2. Z blangko tanpa kotak 'SC Z' (hanya FreeForm) sesudah daftar bukti kini dipasang otomatis; FreeForm di paragraf lain tidak", async () => {
+    const asal = buatBasRtf({ bukti: 3, templatZ: true, isi: 20 });
+    const a = asal.indexOf("{\\shp{\\*\\shpinst\\shpleft-501");
+    const b = asal.indexOf("31 Oktober 2026\\par}}}") + "31 Oktober 2026\\par}}}".length;
+    const tanpaSc = asal.slice(0, a) + asal.slice(b);
+    expect(tanpaSc).not.toMatch(/SC Z/);
+    expect(tanpaSc).toMatch(/FreeForm/);
+    const z = await sesuaikanZcross(bita(tanpaSc), "rtf", { mesin: palsu, hanyaBentuk: true, jumlahBukti: 3 });
+    expect(z.laporan).toMatchObject({ diubah: true, jangkar: "bentuk" });
+    expect(z.laporan.nomorBagianBerikut).toBe(z.laporan.halamanTampilZ! + 3 + 1);
+    expect(lat1(z.bita)).not.toMatch(/FreeForm/); // Z lama diganti Z otomatis
+    expect(lat1(z.bita)).toMatch(/zcross-garis/);
+    const bukanDaftar = tanpaSc.replace("Bukti-bukti tersebut sebagai berikut:", "Bukti-bukti tersebut telah diperiksa.");
+    const n = await sesuaikanZcross(bita(bukanDaftar), "rtf", { mesin: palsu, hanyaBentuk: true });
+    expect(n.laporan.diubah).toBe(false);
+  });
+
+  it("3. DOC lama diubah otomatis ke DOCX lalu diberi nomor awal (tanpa tombol)", async () => {
+    const xml =
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>` +
+      `<w:p><w:r><w:t>BERITA ACARA SIDANG</w:t></w:r></w:p><w:p><w:r><w:t>Nomor 12/Pdt.G/2026/PA.Dgl pada hari Senin tanggal 10 Agustus 2026</w:t></w:r></w:p>` +
+      `<w:sectPr><w:pgSz w:w="12191" w:h="16840"/><w:cols w:space="708"/></w:sectPr></w:body></w:document>`;
+    const docx = tulisZip([entriBaru("word/document.xml", new TextEncoder().encode(xml))]);
+    const doc = new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 1, 2, 3]);
+    const diubah: string[] = [];
+    const m: Mesin = {
+      nama: "uji",
+      async ubah(b, dari, ke) {
+        diubah.push(`${dari}->${ke}`);
+        if (dari === "doc" && ke === "docx") return docx;
+        throw new Error("tidak dipakai");
+      },
+    };
+    await simpanCatat(db!, "301", 1, 6);
+    const r = await pasangRunut(db!, doc, "doc", {}, { jadwal: jadwal(), mesin: m });
+    expect(diubah).toEqual(["doc->docx"]);
+    expect(r.bentuk).toBe("docx");
+    expect(r.rencana).toMatchObject({ sasaran: { id: "305" }, awal: 7 });
+    expect(bukaDocx(r.bita).xml).toContain(`<w:pgNumType w:start="7"/>`);
+    const gagal = await pasangRunut(db!, doc, "doc", {}, { jadwal: jadwal(), mesin: { nama: "uji", ubah: async () => Promise.reject(new Error("Word mati")) } });
+    expect(gagal).toMatchObject({ bentuk: "doc", rencana: null });
+    expect(gagal.peringatan[0]).toMatch(/DOC tidak dapat diubah ke DOCX/);
+  });
+
+  async function simpanCatat(d: AletaDatabase, sidangId: string, awal: number, akhir: number) {
+    const { simpanCatatanHalaman } = await import("@/server/modules/aleta-ecourt/bas-halaman/layanan");
+    const s = SIDANG.find((x) => x.id === sidangId)!;
+    await simpanCatatanHalaman(d, { perkaraId: "9001", nomorPerkara: "12/Pdt.G/2026/PA.Dgl", sidang: s, awal, akhir, fisik: akhir - awal + 1, lompatBukti: 0, sumber: "cetak", olehId: "u" });
+  }
+});
+
+// K. Render keputusan 87 (hanya bila BAS_K87_RENDER = folder render159.py RENDER_KASUS): satu contoh tiap butir + waktu sebelum/sesudah.
+const DIR_K87 = process.env.BAS_K87_RENDER || "";
+describe.skipIf(!DIR_K87 || !existsSync(path.join(DIR_K87, "tugas.json")))("K. render keputusan 87 (Word) + waktu", () => {
+  it("lampiran jawaban, Z tanpa kotak SC Z, DOC lama; waktu unduh RTF lama (Z saja) vs baru (nomor runut + Z)", async () => {
+    const { writeFileSync } = await import("node:fs");
+    const { mesinWord } = await import("@/server/modules/aleta-ecourt/zcross/mesin");
+    const mesin = mesinWord();
+    const db = await createAletaDatabase({ useInMemory: true, seed: true });
+    const jadwal = JSON.parse(readFileSync(path.join(DIR_K87, "jadwal.json"), "utf8")) as { perkaraId: string; sidang: SidangBas[] };
+    const tugas = JSON.parse(readFileSync(path.join(DIR_K87, "tugas.json"), "utf8")) as Array<{ berkas: string; sidangId: string; tanggal: string }>;
+    const deps: DepsRunut = { jadwal: async () => ({ perkaraId: jadwal.perkaraId, nomorPerkara: "", sidang: jadwal.sidang, lampiran: {} }), mesin };
+    const doc = tugas[0].berkas.replace(/k87-1-jawaban\.rtf$/, "k87-3-doc-lama.doc");
+    writeFileSync(doc, await mesin.ubah(new Uint8Array(readFileSync(tugas[0].berkas)), "rtf", "doc"));
+    const kasus: Array<{ berkas: string; bentuk: "rtf" | "doc"; sidangId: string }> = [
+      { berkas: tugas[0].berkas, bentuk: "rtf", sidangId: tugas[0].sidangId },
+      { berkas: tugas[1].berkas, bentuk: "rtf", sidangId: tugas[1].sidangId },
+      { berkas: doc, bentuk: "doc", sidangId: tugas[0].sidangId },
+    ];
+    const ringkas: string[] = ["# berkas\twaktu lama (Z saja) ms\twaktu baru (runut + Z) ms\tcatat latar ms\thalaman\tZ\tlompatan lampiran\tperingatan"];
+    for (const k of kasus) {
+      const asal = new Uint8Array(readFileSync(k.berkas));
+      let t = Date.now();
+      await sesuaikanZcross(asal, k.bentuk, { mesin, hanyaBentuk: true });
+      const lama = Date.now() - t;
+      t = Date.now();
+      const r = await pasangRunut(db, asal, k.bentuk, { perkaraId: jadwal.perkaraId, sidangId: k.sidangId }, deps);
+      const z = await sesuaikanZcross(r.bita, r.bentuk, { mesin, hanyaBentuk: true, ...(r.opsiZ ?? {}) });
+      const baru = Date.now() - t;
+      expect(r.rencana, k.berkas).not.toBeNull();
+      t = Date.now();
+      const c = (await catatRunut(db, r.rencana!, { pdfUkur: r.pdfUkur, z: z.laporan, naskah: { bita: z.bita, bentuk: z.bentuk as "rtf" | "docx", mesin }, sumber: "unduh", olehId: "render" }))!;
+      const latar = Date.now() - t;
+      const pdf = await mesin.ubah(z.bita, z.bentuk as "rtf" | "docx", "pdf");
+      const dasar = k.berkas.replace(/\.(rtf|doc)$/, "");
+      writeFileSync(`${dasar}.k87.${z.bentuk}`, z.bita);
+      writeFileSync(`${dasar}.k87.pdf`, pdf);
+      ringkas.push(
+        `${path.basename(k.berkas)}\t${lama}\t${baru}\t${latar}\t${c.awal}-${c.akhir} (fisik ${c.fisik})\t${z.laporan.diubah ? `hal ${z.laporan.halamanTampilZ}, sesudahnya ${z.laporan.nomorBagianBerikut} (jangkar ${z.laporan.jangkar})` : "tidak"}\t${r.rencana!.peta.map((p) => `fisik ${p.fisik} -> ${p.nomor}`).join(", ") || "-"}\t${r.peringatan.join(" | ") || "-"}`
+      );
+      if (k.bentuk === "doc") expect(r.bentuk).toBe("docx");
+    }
+    writeFileSync(path.join(DIR_K87, "ringkas.txt"), ringkas.join("\n") + "\n");
+    await db.close();
+  }, 900_000);
+});
+
+// I. Ukur (hanya bila BAS_SURVEI = akar derry_briantono): bagian mana yang dikenali sebagai sesudah lampiran di seluruh BAS Derry.
+const AKAR_SURVEI = process.env.BAS_SURVEI || "";
+describe.skipIf(!AKAR_SURVEI)("I. survei lampiran di blangko BAS", () => {
+  it("menulis daftar BAS + jenis lampiran ke survei-lampiran.tsv", async () => {
+    const { readdirSync, writeFileSync } = await import("node:fs");
+    const baris: string[] = [];
+    let berbagian = 0;
+    for (const d of readdirSync(AKAR_SURVEI).filter((x) => x.endsWith(" - BAS") && !/^98[bc] /.test(x))) {
+      for (const f of readdirSync(path.join(AKAR_SURVEI, d)).filter((x) => x.toLowerCase().endsWith(".rtf"))) {
+        const h = pasangNomorAwal(new Uint8Array(readFileSync(path.join(AKAR_SURVEI, d, f))), "rtf", 1);
+        if (h.bagianDisambung) berbagian += 1;
+        for (const l of h.lampiran) baris.push(`${d}/${f}\t${l.jenis}\t${l.teksJangkar.slice(0, 140)}`);
+      }
+    }
+    writeFileSync(path.join(process.env.TMP || ".", "w159", "survei-lampiran.tsv"), `# BAS berbagian bernomor tetap: ${berbagian}; bagian sesudah lampiran: ${baris.length}\n${baris.join("\n")}\n`);
+  }, 600_000);
+});
+
 describe("E. migrasi 0123", () => {
   it("DDL 0123 = cermin schema.ts; terdaftar di jurnal (idx 107, unik) dan urutan simpan pg-mem", () => {
     const AKAR = path.resolve(process.cwd());

@@ -133,16 +133,24 @@ export type RingkasZ = {
  * Halaman TERAKHIR (nomor tampil) yang ditempati BAS ini: awal + halaman fisik - 1; bila ada Z dengan bagian sesudahnya, bagian itu bernomor
  * `nomorBagianBerikut` mulai halaman fisik Z + 1; bila Z menutup naskah, bukti sesudah halaman Z ikut ditempati (sampai halamanBuktiSampai).
  */
-export function halamanAkhirBas(p: { awal: number; fisik: number; z?: RingkasZ | null }): number {
+export type TitikNomor = { fisik: number; nomor: number };
+
+/**
+ * `peta` (keputusan 87) = bagian sesudah lampiran jawaban/replik/duplik/kesimpulan: mulai halaman fisik `fisik` dengan nomor `nomor`.
+ * Nomor halaman fisik terakhir = titik nomor terakhir yang dimulai sebelum/di halaman itu + selisih halamannya.
+ */
+export function halamanAkhirBas(p: { awal: number; fisik: number; z?: RingkasZ | null; peta?: ReadonlyArray<TitikNomor> }): number {
   const fisik = Math.max(1, Math.floor(p.fisik) || 1);
-  const biasa = p.awal + fisik - 1;
-  const z = p.z;
-  if (!z || !z.diubah) return biasa;
-  if (z.seksi && z.seksi !== "tanpa-bagian-berikut" && z.nomorBagianBerikut != null && z.halamanFisikZ) {
-    const sisa = fisik - z.halamanFisikZ; // halaman fisik sesudah halaman Z
-    return sisa > 0 ? z.nomorBagianBerikut + sisa - 1 : Math.max(biasa, (z.halamanBuktiSampai ?? biasa));
-  }
-  return Math.max(biasa, z.halamanBuktiSampai ?? biasa);
+  const titik: TitikNomor[] = [{ fisik: 1, nomor: p.awal }, ...(p.peta ?? [])];
+  const z = p.z && p.z.diubah ? p.z : null;
+  if (z && z.seksi && z.seksi !== "tanpa-bagian-berikut" && z.nomorBagianBerikut != null && z.halamanFisikZ) titik.push({ fisik: z.halamanFisikZ + 1, nomor: z.nomorBagianBerikut });
+  titik.sort((a, b) => a.fisik - b.fisik);
+  const berlaku = titik.filter((t) => t.fisik <= fisik).pop() ?? titik[0];
+  let akhir = berlaku.nomor + (fisik - berlaku.fisik);
+  // bagian bernomor yang dimulai sesudah halaman terakhir (lampiran/bukti di ujung naskah): halaman lampirannya tetap ditempati
+  for (const t of titik) if (t.fisik > fisik) akhir = Math.max(akhir, t.nomor - 1);
+  if (z && (!z.seksi || z.seksi === "tanpa-bagian-berikut" || z.nomorBagianBerikut == null)) akhir = Math.max(akhir, z.halamanBuktiSampai ?? akhir);
+  return akhir;
 }
 
 /** Peringatan bila BAS sidang SESUDAHNYA sudah dicetak dengan halaman awal yang kini tidak sambung lagi. */

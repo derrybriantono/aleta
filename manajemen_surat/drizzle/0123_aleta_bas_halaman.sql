@@ -8,7 +8,7 @@
 --   aleta_bas_halaman   perkara_id (SIPP), sidang_kunci (id jadwal sidang SIPP; 't:YYYY-MM-DD' bila id tidak diketahui), sidang_id,
 --                       tanggal_sidang, nomor_perkara, halaman_awal, halaman_akhir (nomor tampil terakhir, lompatan bukti ikut),
 --                       halaman_fisik (jumlah halaman PDF), lompat_bukti (halaman bukti sesudah Z), sumber ('cetak'|'unduh'|'unggah'),
---                       dicatat_oleh (id akun), dicatat_pada.
+--                       dicatat_oleh (id akun), dicatat_pada, sidik (sha256 naskah/PDF terakhir: cetak ulang yang sama tidak dirender lagi).
 --
 -- Tanpa kunci asing. Modul: src/server/modules/aleta-ecourt/bas-halaman/.
 --
@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS aleta_bas_halaman (
   sumber TEXT NOT NULL DEFAULT '',
   dicatat_oleh TEXT NOT NULL DEFAULT '',
   dicatat_pada TEXT NOT NULL,
+  sidik TEXT NOT NULL DEFAULT '',
   PRIMARY KEY (perkara_id, sidang_kunci)
 );
 
