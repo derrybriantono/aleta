@@ -372,6 +372,8 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_kalimat_pribadi",
   // 30 Oktober 2026 (0117, G4 4.3): hasil pencocokan putusan SIPP vs dokumen putusan per perkara. Tanpa kunci asing.
   "aleta_cocok_putusan",
+  // 1 November 2026 (0129, N3): temuan Pencocok SIPP-ABT-e-Court per perkara + jenis. Tanpa kunci asing.
+  "aleta_pencocok_temuan",
   // 16 Oktober 2026 (0066): cadangan & riwayat suntingan ABT dari halaman
   // Pengaturan SIPP & ABT. Tanpa kunci asing - urutannya bebas.
   "aleta_abt_suntingan",

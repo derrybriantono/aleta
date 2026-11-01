@@ -28,6 +28,9 @@
 
   const API_HADIR = "/aleta/api/aleta-ecourt/kehadiran-sidang";
   const API_PUTUSAN = "/aleta/api/aleta-ecourt/cocok-putusan";
+  const API_PENCOCOK = "/aleta/api/aleta-ecourt/pencocok";
+  // Jenis yang SUDAH punya penanda/alat sendiri di panel - tidak diulang di kotak Pencocok.
+  const SUDAH_DITAMPILKAN = new Set(["hadir-verstek", "putus-dokumen", "calendar-sinkron"]);
   const UMUR_MS = 60 * 1000;
   const BULAN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
@@ -207,6 +210,24 @@
       ` <span class="bd-catat" title="${esc(beda.map((b) => `${b.label}: SIPP ${b.sipp || "-"} / dokumen ${b.dokumen || "-"}`).join("\n"))}">ⓘ</span>`;
   }
 
+  // ── N3 Pencocok data: perbedaan SIPP - ABT - e-Court untuk perkara ini (ringan, cache, pasif) ─────────
+  async function gambarPencocok(wadah, k, nomor) {
+    const id = teks(k.perkaraId);
+    if (!/^\d+$/.test(id)) return;
+    const d = await bacaSinggah(`pencocok|${id}`, () => ambilJson(`${API_PENCOCOK}?perkaraId=${encodeURIComponent(id)}`));
+    if (nomor !== urutGambar || !wadah.isConnected || !d || d.tersedia !== true || !Array.isArray(d.temuan)) return;
+    const butir = d.temuan.filter((t) => t && !SUDAH_DITAMPILKAN.has(t.jenis));
+    if (!butir.length) return;
+    const penting = butir.filter((t) => t.tingkat !== "rendah");
+    const ringan = butir.length - penting.length;
+    if (!penting.length && !ringan) return;
+    const el = kotak(wadah, "bd-temuanpencocok");
+    const baris = penting.slice(0, 4).map((t) => `<li>${esc(t.judul || t.jenis)}: ${esc(t.ringkas)}</li>`).join("");
+    const lebih = penting.length > 4 ? ` <span class="bd-catat">dan ${penting.length - 4} lainnya</span>` : "";
+    const catatRingan = ringan ? ` <span class="bd-catat">${ringan} catatan ringan</span>` : "";
+    el.innerHTML = `<b>Data berbeda antar sistem:</b>${penting.length ? `<ul>${baris}</ul>` : ""}${lebih}${catatRingan} <span class="bd-catat" title="Hanya penanda. Perbaikan dilakukan di sistem yang keliru. Daftar lengkap di Pencocok data (ALETA e-Court).">ⓘ</span>`;
+  }
+
   /** Dipanggil blangko-derry-isian.js tiap catatan temuan digambar ulang. Tidak pernah melempar. */
   function gambar(wadah, konteks) {
     try {
@@ -215,6 +236,7 @@
       const nomor = urutGambar;
       void gambarKehadiran(wadah, konteks, nomor).catch(() => undefined);
       void gambarPutusan(wadah, konteks, nomor).catch(() => undefined);
+      void gambarPencocok(wadah, konteks, nomor).catch(() => undefined);
     } catch {
       /* diam */
     }
