@@ -5,6 +5,7 @@ import { getGatewayAbtPdf } from "@/server/modules/aleta-bot/whatsapp-gateway-cl
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { pilihCap } from "@/server/modules/aleta-ecourt/penetapan-edoc";
 import { bacaOpsiBukti, peringatanZcross, sesuaikanZcrossOtomatis } from "@/server/modules/aleta-ecourt/zcross/pakai";
+import { bacaKonteksBas, catatRunut, pasangRunut } from "@/server/modules/aleta-ecourt/bas-halaman/layanan";
 import { ukuranTtdCapBerlaku } from "@/server/modules/aleta-ecourt/ukuran-ttd-cap";
 import { ukuranUntukBot } from "@/lib/ukuran-ttd-cap";
 import { bubuhkanTtdPdf, type TtdMasuk } from "@/server/modules/aleta-ecourt/pdf-bubuh-ttd";
@@ -67,8 +68,8 @@ export async function POST(request: NextRequest) {
     actorUserId = await resolveActorUserId(request);
     await pastikanKapabilitas(db, actorUserId, "blangko-abt");
 
-    const body = await readJsonBody<{ rtfBase64?: unknown; salinan?: unknown; ttd?: unknown; jumlahBukti?: unknown; halamanBukti?: unknown }>(request).catch(
-      () => ({}) as { rtfBase64?: unknown; salinan?: unknown; ttd?: unknown; jumlahBukti?: unknown; halamanBukti?: unknown }
+    const body = await readJsonBody<{ rtfBase64?: unknown; salinan?: unknown; ttd?: unknown; jumlahBukti?: unknown; halamanBukti?: unknown; basRunut?: unknown }>(request).catch(
+      () => ({}) as { rtfBase64?: unknown; salinan?: unknown; ttd?: unknown; jumlahBukti?: unknown; halamanBukti?: unknown; basRunut?: unknown }
     );
     // 14 Okt: PDF SALINAN - "SALINAN" kanan atas, "ttd", blok Untuk Salinan
     // tampak, dan tanda tangan Panitera yang sudah disahkan (dibubuhkan bot).
@@ -104,8 +105,18 @@ export async function POST(request: NextRequest) {
     // Z cross otomatis (1 Nov): RTF BAS yang memuat bentuk "SC Z" disesuaikan sebelum diubah ke PDF - garis Z di samping kata terakhir
     // "...berikut:", tanggal di bawahnya, ganti halaman, nomor halaman bagian berikutnya. Gagal/tanpa bentuk = RTF apa adanya.
     let zcross: { diubah: boolean; halamanZ?: number; jumlahHalamanBukti?: number; nomorBagianBerikut?: number | null; bawaan?: boolean; peringatan: string[] } | undefined;
+    // 1 Nov 2026 (keputusan 71): BAS dari panel (ruas basRunut {perkaraId, sidangId, tanggalSidang, sidang}) - halaman awal = halaman terakhir
+    // BAS sidang sebelumnya + 1, dipasang SEBELUM Z; jumlah halaman PDF akhir dicatat. Putusan/relaas (tanpa basRunut) tidak tersentuh.
+    const konteksRunut = !salinan && body.basRunut && typeof body.basRunut === "object" ? bacaKonteksBas(body.basRunut as Record<string, unknown>) : null;
+    let runutPasang: Awaited<ReturnType<typeof pasangRunut>> | null = null;
+    let laporanZ: Awaited<ReturnType<typeof sesuaikanZcrossOtomatis>>["laporan"] | null = null;
+    if (konteksRunut) {
+      runutPasang = await pasangRunut(db, new Uint8Array(Buffer.from(rtfBase64, "base64")), "rtf", konteksRunut);
+      if (runutPasang.rencana) rtfBase64 = Buffer.from(runutPasang.bita).toString("base64");
+    }
     if (!salinan) {
       const z = await sesuaikanZcrossOtomatis(new Uint8Array(Buffer.from(rtfBase64, "base64")), "rtf", bacaOpsiBukti(body.jumlahBukti, body.halamanBukti));
+      laporanZ = z.laporan;
       if (z.laporan.diubah) {
         rtfBase64 = Buffer.from(z.bita).toString("base64");
         const l = z.laporan;
@@ -135,6 +146,15 @@ export async function POST(request: NextRequest) {
       ttdPdf = { dipasang: r.dipasang, tidakDitemukan: r.tidakDitemukan, ...(r.galat ? { galat: r.galat } : {}) };
     }
 
+    let runut: { awal: number; akhir: number; peringatan: string[] } | undefined;
+    if (runutPasang) {
+      runut = { awal: runutPasang.rencana?.awal ?? 0, akhir: 0, peringatan: [...runutPasang.peringatan] };
+      if (runutPasang.rencana && pdfBase64) {
+        const c = await catatRunut(db, runutPasang.rencana, { pdf: new Uint8Array(Buffer.from(pdfBase64, "base64")), z: laporanZ, sumber: "cetak", olehId: String(actorUserId ?? "") });
+        if (c) runut = { awal: c.awal, akhir: c.akhir, peringatan: [...runut.peringatan, ...c.peringatan] };
+      }
+    }
+
     if (salinan && pdfBase64 && hasil.data?.ttdPanitera) {
       // PDF SALINAN: satu-satunya gambar tanda tangan adalah Panitera pengesah di blok "Untuk Salinan" (+ cap kantor bila ada).
       const t = hasil.data.ttdPanitera;
@@ -161,6 +181,7 @@ export async function POST(request: NextRequest) {
       ...(salinan ? { salinan: keteranganSalinan } : {}),
       ...(ttdPdf ? { ttdPdf } : {}),
       ...(zcross ? { zcross } : {}),
+      ...(runut ? { runut } : {}),
     });
   } catch (error) {
     return handleAdminRouteError(error, request, {

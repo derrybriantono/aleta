@@ -8,6 +8,7 @@ import { BATAS_WORD_PDF, ubahKePdfLewatBot, wordKePdfBas } from "@/server/module
 import { ukuranTtdCapBerlaku } from "@/server/modules/aleta-ecourt/ukuran-ttd-cap";
 import { requireActorUser } from "@/server/modules/organization/service";
 import { bacaOpsiBukti, peringatanZcross, sesuaikanZcrossOtomatis } from "@/server/modules/aleta-ecourt/zcross/pakai";
+import { bacaKonteksBas, catatRunut, pasangRunut, type HasilPasangRunut } from "@/server/modules/aleta-ecourt/bas-halaman/layanan";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ApiError } from "@/server/shared/errors";
@@ -55,6 +56,13 @@ export async function POST(request: NextRequest) {
       bolehSemuaTtd = false;
     }
 
+    // 1 Nov 2026 (keputusan 71): nomor halaman BAS RUNUT. Perkara & sidang dari ruas perkaraId/sidangId bila dikirim; selainnya dikenali dari
+    // naskah (nomor perkara + tanggal sidang). Halaman awal dipasang sebelum Z; halaman PDF akhir dicatat sesudah PDF jadi.
+    const konteksRunut =
+      bacaKonteksBas({ perkaraId: formulir.get("perkaraId"), nomorPerkara: formulir.get("nomorPerkara"), sidangId: formulir.get("sidangId"), tanggalSidang: formulir.get("tanggalSidang") }) ?? {};
+    let runutPasang: HasilPasangRunut | null = null;
+    let laporanZ: Awaited<ReturnType<typeof sesuaikanZcrossOtomatis>>["laporan"] | null = null;
+
     const hasil = await wordKePdfBas(
       {
         bita: new Uint8Array(await berkas.arrayBuffer()),
@@ -69,11 +77,13 @@ export async function POST(request: NextRequest) {
         ubahKePdf: ubahKePdfLewatBot,
         // Z cross otomatis tiap unggah (tanpa tombol): garis Z, tanggal, ganti halaman, nomor halaman bagian berikutnya
         sesuaikanZ: async (bita, bentuk, opsi) => {
-          const r = await sesuaikanZcrossOtomatis(bita, bentuk, opsi);
+          runutPasang = db ? await pasangRunut(db, bita, bentuk, konteksRunut) : null;
+          const r = await sesuaikanZcrossOtomatis(runutPasang?.rencana ? runutPasang.bita : bita, bentuk, opsi);
           const l = r.laporan;
+          laporanZ = l;
           return {
             bita: r.bita,
-            peringatan: peringatanZcross(l),
+            peringatan: [...(runutPasang?.peringatan ?? []), ...peringatanZcross(l)],
             ringkas: { diubah: l.diubah, halamanZ: l.halamanTampilZ, jumlahHalamanBukti: l.jumlahHalamanBukti, nomorBagianBerikut: l.nomorBagianBerikut, bawaan: l.jumlahHalamanBuktiBawaan },
           };
         },
@@ -99,6 +109,14 @@ export async function POST(request: NextRequest) {
       }
     );
 
+    const pasang = runutPasang as HasilPasangRunut | null;
+    let runut: { awal: number; akhir: number } | undefined;
+    if (pasang?.rencana && db) {
+      const c = await catatRunut(db, pasang.rencana, { pdf: hasil.pdf, z: laporanZ, sumber: "unggah", olehId: String(actorUserId ?? "") });
+      runut = { awal: pasang.rencana.awal, akhir: c?.akhir ?? 0 };
+      if (c?.peringatan.length) hasil.peringatan.push(...c.peringatan);
+    }
+
     return ok({
       pdfBase64: Buffer.from(hasil.pdf).toString("base64"),
       byte: hasil.pdf.length,
@@ -108,6 +126,7 @@ export async function POST(request: NextRequest) {
       penandatangan: hasil.penandatangan,
       peringatan: hasil.peringatan,
       ...(hasil.zcross ? { zcross: hasil.zcross } : {}),
+      ...(runut ? { runut } : {}),
     });
   } catch (error) {
     return handleAdminRouteError(error, request, {
