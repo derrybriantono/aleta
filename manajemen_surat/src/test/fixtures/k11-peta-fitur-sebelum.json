@@ -2251,8 +2251,8 @@
    "jumlahPernyataan": 2
   },
   "blangko-derry-isian.js": {
-   "byte": 637337,
-   "sidik": "b210820b759d0948347be6358de922a95c61a1b5",
+   "byte": 686552,
+   "sidik": "e594a61590eb4e7e2e07658c14830bc69c848a64",
    "nama": [],
    "ekspor": [
     "AletaBdIsianSaksi",
@@ -2270,8 +2270,8 @@
    "jumlahPernyataan": 2
   },
   "blangko-derry-katalog.js": {
-   "byte": 45272,
-   "sidik": "516d49eef6f3c65a5fded13e12f9ce9edde24d20",
+   "byte": 56648,
+   "sidik": "146203418d2856a4e8f1f7bb7313e5777ae67eb2",
    "nama": [],
    "ekspor": [
     "AletaBdKatalog"
@@ -2292,8 +2292,8 @@
    "jumlahPernyataan": 2
   },
   "blangko-derry-saksi-tampil.js": {
-   "byte": 8765,
-   "sidik": "aa4f1518fe4648ee6639ef85828114a7f4242c19",
+   "byte": 12747,
+   "sidik": "522186f2663e37ecedb73a9d55a7dd9c2dd03701",
    "nama": [],
    "ekspor": [
     "AletaBdSaksiTampil"
@@ -2301,8 +2301,8 @@
    "jumlahPernyataan": 2
   },
   "blangko-derry-saksi.js": {
-   "byte": 26269,
-   "sidik": "9354a671e4eeeb66b4f70f7af59c598a1b03ed16",
+   "byte": 28558,
+   "sidik": "d39cb4576d73931af3dd153777bf15a8619b3203",
    "nama": [],
    "ekspor": [
     "AletaBdSaksi"
@@ -2310,8 +2310,8 @@
    "jumlahPernyataan": 2
   },
   "blangko-derry.js": {
-   "byte": 169838,
-   "sidik": "79c7968cbd97032fb2a515bedf80d1bfb6757781",
+   "byte": 170479,
+   "sidik": "7c7ac94442c02a21df4c0a4a2754e572dfbb8478",
    "nama": [],
    "ekspor": [
     "aletaBlangkoDerry",
@@ -5059,8 +5059,8 @@
    "jumlahPernyataan": 2
   },
   "saksi-katalog-indeks.js": {
-   "byte": 13517,
-   "sidik": "b561038e8b0d1ca4afe736e9a01591c806d40096",
+   "byte": 14732,
+   "sidik": "f44df594febeb0b68c36034ee61f9ed93d10eac3",
    "nama": [],
    "ekspor": [
     "ALETA_SAKSI_KATALOG_INDEKS"
@@ -5078,8 +5078,8 @@
    "jumlahPernyataan": 2
   },
   "saksi-katalog.js": {
-   "byte": 79941,
-   "sidik": "56622dd33e54430ce2e4907b1a5f3a9ed5adbd1a",
+   "byte": 81898,
+   "sidik": "6e872ee81be369dba4b7b4845690713c63cfa116",
    "nama": [],
    "ekspor": [
     "AletaSaksiKatalog"
@@ -5087,8 +5087,8 @@
    "jumlahPernyataan": 2
   },
   "saksi-susun.js": {
-   "byte": 88374,
-   "sidik": "c8fe93992ce41db30c583317779ef3647d63a3f0",
+   "byte": 90203,
+   "sidik": "1821a7b5b684fddc1f40ce34b2067a235d4c89c9",
    "nama": [],
    "ekspor": [
     "AletaSaksiSusun"
