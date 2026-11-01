@@ -54,6 +54,14 @@ const PERKARA = "252/Pdt.G/2024/PA.Dgl";
 
 const VAR = { "8723": "Yunita binti Yos", "8724": "janda, umur 35 tahun, pekerjaan mengurus rumah tangga", "8725": "Rp15.000.000,00", "1152": "istri tidak dapat melahirkan keturunan", "8722": "rumah satu unit", "1031": "pegawai swasta", "8726": "Nomor 12 tanggal 3 Maret 2025", "5197": "18 Juli 2022", "7777": "4 tahun", "8535": "telah dikaruniai satu orang anak", "4851": "takut nafkah anak berkurang", "4852": "menderita gangguan jiwa berat", "1029": "Ardi bin Lamo", "5105": "Desa Labuan" };
 
+// 2 Nov 2026 (e80b15e6, keadaan dari posita): dua butir yang menyebut "anak-anak" kini hanya muncul bila perkara
+// mempunyai anak (keadaan anak=ada). Teks, pokok, urutan, dan jawabannya TIDAK berubah; tidak ada butir yang hilang.
+const SAH_2NOV: Record<string, Record<string, unknown>> = {
+  "izin-poligami/q-kemampuan": { keadaan: { anak: "ada" } },
+  "izin-poligami/q-keadilan": { keadaan: { anak: "ada" } },
+};
+const lamaSah = (j: string, q: any) => ({ ...q, ...(SAH_2NOV[j + "/" + q.id] ?? {}) });
+
 describe("katalog lama tidak dikurangi", () => {
   for (const [kunci, baru, minimum] of [["izin-poligami", PG, 40], ["pencegahan-perkawinan", PC, 20], ["pembatalan-perkawinan", BT, 20]] as const) {
     it(`${kunci}: butir, pokok, dasar hukum, dan keadaan lama utuh dan tidak berubah; versi naik satu; butir baru >= ${minimum}`, () => {
@@ -61,7 +69,7 @@ describe("katalog lama tidak dikurangi", () => {
       const ids = new Set(baru.pertanyaan.map((q: any) => q.id));
       for (const q of lama.pertanyaan) {
         expect(ids.has(q.id), `${kunci} kehilangan ${q.id}`).toBe(true);
-        expect(JSON.stringify(baru.pertanyaan.find((x: any) => x.id === q.id))).toBe(JSON.stringify(q));
+        expect(JSON.stringify(baru.pertanyaan.find((x: any) => x.id === q.id))).toBe(JSON.stringify(lamaSah(kunci, q)));
       }
       for (const p of lama.pokokPembuktian) expect(baru.pokokPembuktian.some((x: any) => x.id === p.id), p.id).toBe(true);
       for (const d of lama.dasarHukum) expect(JSON.stringify(baru.dasarHukum.find((x: any) => x.id === d.id)), d.id).toBe(JSON.stringify(d));
