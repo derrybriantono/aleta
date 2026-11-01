@@ -743,6 +743,13 @@
       "when": 1792323000001,
       "tag": "0121_aleta_kalimat_pribadi",
       "breakpoints": true
+    },
+    {
+      "idx": 106,
+      "version": "7",
+      "when": 1792326600001,
+      "tag": "0122_aleta_ai_proyek_kelola",
+      "breakpoints": true
     }
   ]
 }

@@ -69,3 +69,10 @@ export async function penggunaAda(db: AletaDatabase, penggunaId: string): Promis
   const p = await getUserByIdFromDb(db, penggunaId);
   return Boolean(p && p.isActive);
 }
+
+/** Pelaku yang HARUS Super Admin (pengelolaan proyek ALETA Ai: membaca isi, menulis apa pun). 401 tanpa sesi, 403 bila bukan Super Admin. */
+export async function pelakuSuperAi(db: AletaDatabase, actorUserId: string | null | undefined): Promise<PelakuAi> {
+  const pelaku = await pelakuAi(db, actorUserId);
+  wajibSuperAdmin(pelaku);
+  return pelaku;
+}
