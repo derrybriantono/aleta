@@ -182,7 +182,7 @@ const K = Object.freeze({
   sering: /(?:sering|terus-menerus|terus\s+menerus).*(?:selisih|tengkar)|(?:selisih|tengkar).*(?:sering|terus-menerus|sejak\s+kapan)/i,
   serumah: /masih\s+(?:tinggal\s+)?(?:serumah|bersama|satu\s+rumah)|sejak\s+kapan\s+(?:ber)?pisah|berapa\s+lama\s+(?:ber)?pisah/i,
   pergi: /siapa\s+yang\s+(?:meninggalkan|pergi|keluar)/i,
-  komunikasi: /berkomunikasi|saling\s+mengunjungi/i,
+  komunikasi: /berkomunikasi|saling\s+mengunjungi|ada\s+komunikasi|menjalin\s+komunikasi/i,
   nafkah: /nafkah/i,
   kabar: /memberi\s+kabar|menemui/i,
   keberadaanT: /(?:di\s*mana|keberadaan)\b.*\btinggal\s+sekarang|keberadaan\s+(?:tergugat|termohon)|di\s*mana\s+(?:tergugat|termohon)\s+(?:tinggal|berada)/i,
@@ -416,6 +416,22 @@ const KELOMPOK_DALIL = new Set(["kehidupan", "sering", "penyebab", "lihat", "ben
 
 // ─── Alamat Tergugat sekarang (A3) ───────────────────────────────────────────
 
+/**
+ * Dua alamat SIPP dianggap sama (kediaman bersama) bila kata-katanya hampir sama (selisih huruf besar/kecil, "Kabupaten", spasi ganda).
+ * Alamat yang jelas berbeda desa/kecamatan = tempat tinggal lain.
+ */
+const KATA_ALAMAT_ABAI = new Set(["kabupaten", "kab", "kota", "provinsi", "jalan", "jl", "dusun", "desa", "kelurahan", "kecamatan", "kec", "no", "nomor", "rt", "rw"]);
+function samaAlamat(a, b) {
+  const kata = (t) => new Set(norm(t).split(" ").filter((k) => k && !KATA_ALAMAT_ABAI.has(k)));
+  const x = kata(a);
+  const y = kata(b);
+  if (!x.size || !y.size) return norm(a) === norm(b);
+  let irisan = 0;
+  for (const k of x) if (y.has(k)) irisan += 1;
+  return irisan / Math.min(x.size, y.size) >= 0.85 && irisan / Math.max(x.size, y.size) >= 0.7;
+}
+
+
 const RE_TAK_DIKETAHUI = /tidak\s+(?:lagi\s+)?(?:diketahui|jelas)\s+(?:lagi\s+)?(?:keberadaannya|alamatnya|tempat\s+tinggalnya|di\s*mana)|\bghaib\b|\bgaib\b|tidak\s+diketahui\s+(?:alamat|keberadaan)/i;
 function alamatTergugat(o) {
   const { posita, alamatPihak, T, P } = o;
@@ -426,7 +442,7 @@ function alamatTergugat(o) {
   const reT = new RegExp(`\\b${T}\\b[^.;]{0,120}?${RE_TAK_DIKETAHUI.source}`, "i");
   if (reT.test(p) || new RegExp(`(?:keberadaan|alamat)\\s+${T}[^.;]{0,40}tidak\\s+diketahui`, "i").test(p)) return { teks: kalimat(`Sekarang ${T} tidak diketahui keberadaannya`), sumber: "gugatan", peringatan: "gugatan" };
   // Alamat SIPP Tergugat yang SAMA dengan alamat Penggugat = alamat kediaman bersama di surat gugatan, bukan tempat tinggal sekarang.
-  if (aT && norm(aT) !== norm(aP) && !/data_tidak_ada/i.test(aT)) return { teks: kalimat(`Sekarang ${T} tinggal di ${aT}`), sumber: "data SIPP", peringatan: "" };
+  if (aT && !samaAlamat(aT, aP) && !/data_tidak_ada/i.test(aT)) return { teks: kalimat(`Sekarang ${T} tinggal di ${aT}`), sumber: "data SIPP", peringatan: "" };
   // "alamat Tergugat saat ini berada di Kota Makassar" / "Tergugat sekarang tinggal di ..." (posita 627/Pdt.G/2026)
   const kini =
     new RegExp(`alamat\\s+${T}\\s+(?:saat\\s+ini|sekarang|kini)\\s+(?:berada\\s+|adalah\\s+)?di\\s+([A-Z][^.;]{2,90})`).exec(p) ||
@@ -565,7 +581,8 @@ function perbaiki(hasil, k) {
       }
       // 63: pengetahuan untuk arah Tolak/NO
       if (cerai && MODUS_ARAH.includes(modus)) {
-        const isi = jawabArah({ tanya, modus, P, T, ke: idx });
+        // U1/6: butir huruf A (kebiasaan buruk) dan D (kekerasan) yang bergantung pada sebab - pola sama dengan T11 jawabTidakTahuSebab.
+        const isi = require("./saksiU1").jawabArahSebab({ tanya, modus, P, T, ke: idx, n }) || jawabArah({ tanya, modus, P, T, ke: idx });
         if (isi) {
           j.jawab = isi;
           delete j.pilihan;
@@ -722,6 +739,15 @@ function perbaiki(hasil, k) {
     });
   }
 
+  // U1 (1 Nov, lanjutan audit kekurangan saksi): hubungan saksi, kesaksian murni, huruf A/B/H dari posita - lihat saksiU1.js.
+  if (cerai) {
+    try {
+      ringkas.u1 = require("./saksiU1").terapkan(hasil, { ...o, P, T, cerai, ct, templat, bantahan, naskahTeks: naskahT, sumberJawaban, hanyaLisan });
+    } catch (galatU1) {
+      hasil.u1Gagal = String((galatU1 && galatU1.message) || galatU1).slice(0, 200);
+    }
+  }
+
   const polos = (x) => (x ? (x.jawaban || []).map(({ no, tanya, jawab }) => ({ no, tanya, jawab })) : []);
   hasil.saksi1 = polos(hasil.saksi[0]);
   hasil.saksi2 = polos(hasil.saksi[1]);
@@ -750,4 +776,4 @@ function perbaiki(hasil, k) {
   return hasil;
 }
 
-module.exports = { jawabTidakTahuSebab, perbaiki, keadaanPisah, bulanDari, rapikanEjaan, hapusKataGanda, rapikanKalimat, jawabArah, bacaBantahan, jawabSaksiT, alamatTergugat, kelompokCerai, variasi, PERINGATAN, MODUS_ARAH };
+module.exports = { samaAlamat, jawabTidakTahuSebab, perbaiki, keadaanPisah, bulanDari, rapikanEjaan, hapusKataGanda, rapikanKalimat, jawabArah, bacaBantahan, jawabSaksiT, alamatTergugat, kelompokCerai, variasi, PERINGATAN, MODUS_ARAH };

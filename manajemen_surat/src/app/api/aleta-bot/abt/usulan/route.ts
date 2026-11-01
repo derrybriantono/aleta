@@ -85,6 +85,8 @@ type BadanUsulan = {
   saksi?: unknown;
   /** 20 Okt 2026: isian blangko perkara itu (kode -> {nilai, keyakinan}) dan baris yang diisi (sumber 'isi-jawaban'). */
   isian?: unknown;
+  /** 1 Nov 2026: naskah jawaban & duplik Tergugat/Termohon (keputusan 62) - diteruskan ke bot. */
+  naskahT?: unknown;
   saksiIsi?: unknown;
   /** 20 Okt 2026 (U1): minta fakta perkara apa adanya (sumber isi-jawaban) untuk penyusun saksi katalog. */
   mintaFakta?: unknown;
@@ -118,6 +120,22 @@ function saringModus(x: unknown) {
     // Penggugat" tercetak "Tergugat bercerita".
     sumberNama: String(r.sumberNama || "").slice(0, 40),
     alasan: Array.isArray(r.alasan) ? (r.alasan as unknown[]).map((a) => String(a).slice(0, 80)).slice(0, 12) : [],
+    // 1 Nov 2026: dasar keterangan saksi Tergugat/Termohon (keputusan 62) dan hubungan saksi dengan pihak (U1) ikut ke bot -
+    // dahulu dibuang di sini sehingga bot tidak pernah menerimanya. Bot menyaring lagi (saringModusAbt).
+    ...(r.dasar === "jawaban" || r.dasar === "gugatan" ? { dasar: r.dasar } : {}),
+    ...(typeof r.hubungan === "string" && /^[a-z-]{2,30}$/.test(r.hubungan) ? { hubungan: r.hubungan } : {}),
+  };
+}
+
+/** Naskah jawaban & duplik Tergugat/Termohon dari ekstensi (e-Court, isian blangko, atau jawaban lisan di BAS); dibatasi panjangnya, disaring lagi di bot. */
+function saringNaskahT(x: unknown) {
+  if (!x || typeof x !== "object") return undefined;
+  const r = x as Record<string, unknown>;
+  const asal = (r.asal && typeof r.asal === "object" ? r.asal : {}) as Record<string, unknown>;
+  return {
+    jawaban: String(r.jawaban || "").slice(0, 60000),
+    duplik: String(r.duplik || "").slice(0, 60000),
+    asal: { jawaban: asal.jawaban === "lisan" ? "lisan" : "", duplik: asal.duplik === "lisan" ? "lisan" : "" },
   };
 }
 
@@ -344,6 +362,7 @@ export async function POST(request: NextRequest) {
           : undefined,
       saksi: saringSaksi(body.saksi),
       isian: saringIsianBadan(body.isian),
+      naskahT: saringNaskahT(body.naskahT),
       saksiIsi: saringSaksiIsi(body.saksiIsi),
       mintaFakta: body.mintaFakta === true,
       pertanyaanSaksi: saringPertanyaanSaksi(body.pertanyaanSaksi),

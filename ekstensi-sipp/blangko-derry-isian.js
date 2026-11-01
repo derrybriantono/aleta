@@ -341,7 +341,7 @@
     tjTujuan: null, // 19 Okt (tahap 2): { kunci, i, aksi: "tukar"|"salin" } - memilih saksi tujuan bila saksinya lebih dari dua
     // Jawaban saksi otomatis & pilihan pengetahuan saksi (blangko-derry-saksi.js): pil = kunci saksi -> {modus, sumber, alasan[]}.
     // alasanPosita: alasan yang terbaca dari posita perkara ini (centang "sebagian"); lainBuka: kunci saksi -> "Alasan lain" terbuka.
-    sk: { pil: {}, pembuktian: {}, perkara: "", alasan: null, alasanPosita: { perkara: "", keadaan: "", sesuai: null }, lainBuka: {}, status: {}, tertahan: {}, konfirmasi: {}, sig: {}, rantai: Promise.resolve(), tinjau: null },
+    sk: { pil: {}, hubOto: {}, pembuktian: {}, perkara: "", alasan: null, alasanPosita: { perkara: "", keadaan: "", sesuai: null }, lainBuka: {}, status: {}, tertahan: {}, konfirmasi: {}, sig: {}, rantai: Promise.resolve(), tinjau: null },
     tambahanBuka: false, // 20 Okt: bagian "Isian tambahan (bila ada)" terbuka
     semua: null, // "Lihat semua isi data"
     semuaBuka: false,
@@ -4917,6 +4917,8 @@
         continue;
       }
       const { sj, hubungan } = jawabanSaksiDari(h, grup, k);
+      const dipakai = Array.isArray(h.saksi) && h.saksi[grup.indexOf(k)] ? h.saksi[grup.indexOf(k)].hubunganDipakai : null;
+      S.sk.hubOto[k] = dipakai && dipakai.sumber !== "pilihan hubungan saksi" ? String(dipakai.teks || "") : "";
       const biasa = m.pasangJawaban(t.rows, sj, { hubungan });
       tj.item.push({ k, sj, hubungan, tanda: tandaKirim, ubah: biasa.terisi, tahan: biasa.tertahan.length });
     }
@@ -4995,10 +4997,12 @@
           const n = Number((String(k).match(/^saksi (\d+)/) || [])[1]) || 1;
           const p = m.bakukanPilihan(S.sk.pil[k], urutSaksi(k), opsiPil(k));
           const pihak = / t$/.test(k) ? "T" : "P";
-          return { pihak, ke: Math.min(n, m.BATAS_SAKSI[pihak]), modus: p.modus, sumber: p.sumber, alasan: p.alasan, ...(p.dasar ? { dasar: p.dasar } : {}) };
+          return { pihak, ke: Math.min(n, m.BATAS_SAKSI[pihak]), modus: p.modus, sumber: p.sumber, alasan: p.alasan, ...(p.dasar ? { dasar: p.dasar } : {}), ...(p.hubungan ? { hubungan: p.hubungan } : {}) };
         });
         // 1 Nov (keputusan 62): saksi Tergugat/Termohon menurut jawaban & duplik - naskahnya dari isian 12020/12024 atau e-Court.
-        const naskahT = saksi.some((x) => x.dasar === "jawaban") ? await bacaNaskahT() : null;
+        // U1: saksi Penggugat/Pemohon juga memerlukannya bila daftar memuat butir sikap/bantahan Tergugat (kontradiktoir); diingat per perkara.
+        const perluNaskahT = saksi.some((x) => x.dasar === "jawaban") || templat.some((r) => /bagaimana\s+sikap\s+\S+\s+terhadap\s+rumah\s+tangga|pernah\s+mendengar\s+\S+\s+membantah\s+atau\s+membenarkan/i.test(String(r.tanya || "")));
+        const naskahT = perluNaskahT ? await bacaNaskahT() : null;
         const tanda = JSON.stringify([saksi, templat, tg]);
         const kunciSig = grup.join("|");
         if (!o.lapor && S.sk.sig[kunciSig] === tanda) continue;
@@ -5039,6 +5043,8 @@
           const sj = Array.isArray(h.saksi) && h.saksi[idx] ? h.saksi[idx].jawaban : idx === 0 ? h.saksi1 : idx === 1 ? h.saksi2 : [];
           const para = Array.isArray(h.paragrafSaksi) ? h.paragrafSaksi[idx] : null;
           const t = S.tj[k];
+          // U1: hubungan saksi yang ditemukan dari SIPP/isian blangko ditampilkan di kotak pilih ("Otomatis: ...").
+          S.sk.hubOto[k] = h.saksi && h.saksi[idx] && h.saksi[idx].hubunganDipakai && h.saksi[idx].hubunganDipakai.sumber !== "pilihan hubungan saksi" ? String(h.saksi[idx].hubunganDipakai.teks || "") : "";
           if (!t || m.tandaTanya(t.rows) !== tandaTanyaKirim) return { k, lewat: true };
           return { k, res: tandaiUsulanRes(t.rows, m.pasangJawaban(t.rows, sj, { hubungan: para && para.hubungan, timpa: o.timpa === true }), sj) };
         });
@@ -5107,6 +5113,11 @@
     if (bidang === "modus") p.modus = el.value;
     else if (bidang === "sumber") p.sumber = el.value;
     else if (bidang === "dasar") p.dasar = el.value === "gugatan" ? "gugatan" : "jawaban";
+    else if (bidang === "hubungan") {
+      // U1: hubungan saksi dengan pihak; "" = otomatis dari data perkara (SIPP / isian blangko).
+      if (m.kunciHubunganSah(el.value)) p.hubungan = el.value;
+      else delete p.hubungan;
+    }
     else if (bidang === "alasan") {
       const kartu = el.closest ? el.closest("[data-skkartu]") : null;
       p.alasan = Array.from(kartu ? kartu.querySelectorAll('[data-skfld="alasan"]') : []).filter((x) => x.checked).map((x) => x.value);
@@ -5140,6 +5151,13 @@
         const sbD = sebutan();
         const dasarT = p.dasar && SA() ? SA().daftarDasarT(sbD.P, sbD.T).map(([n, nama]) => `<option value="${esc(n)}"${n === p.dasar ? " selected" : ""}>${esc(nama)}</option>`).join("") : "";
         const sumber = m.DAFTAR_SUMBER.map(([n, nama]) => `<option value="${esc(n)}"${n === p.sumber ? " selected" : ""}>cerita dari ${esc(nama)}</option>`).join("");
+        // U1 1 Nov: hubungan saksi dengan pihak. Bawaan "Otomatis" (kolom Keterangan saksi SIPP / isian blangko); pilihan petugas menang.
+        const sebH = sebutan();
+        const pihakH = pihakTj(k) === "T" ? sebH.T : sebH.P;
+        const oto = String((S.sk.hubOto && S.sk.hubOto[k]) || "").trim();
+        const hubungan =
+          `<option value=""${p.hubungan ? "" : " selected"}>${oto ? `Otomatis: ${esc(oto)}` : "Otomatis dari data perkara"}</option>` +
+          m.kelompokHubungan().map((g) => `<optgroup label="${esc(g.label)}">${g.opsi.map(([n, nama]) => `<option value="${esc(n)}"${n === p.hubungan ? " selected" : ""}>${esc(nama)}</option>`).join("")}</optgroup>`).join("");
         // 19 Okt (tahap 2): hanya alasan yang ada di posita perkara ini tampil langsung; sisanya di "Alasan lain" (dapat dibuka).
         // Semua kotak tetap ada di halaman (yang terlipat hanya disembunyikan) supaya pilihan tidak hilang saat menyimpan.
         const bagi = m.bagiAlasan(alasan, S.sk.alasanPosita.sesuai, p.alasan);
@@ -5159,6 +5177,7 @@
           `<div class="bd-skkartu" data-skkartu="${esc(k)}"><b class="bd-sknama">${esc(it.tj.sebutan)}</b>` +
           (dasarT ? `<label class="bd-sklbl">Dasar keterangan<select data-skkunci="${esc(k)}" data-skfld="dasar"${mati}>${dasarT}</select></label>` : "") +
           `<label class="bd-sklbl">Yang diketahui saksi<select data-skkunci="${esc(k)}" data-skfld="modus"${mati}>${modus}</select></label>` +
+          `<label class="bd-sklbl" title="Dipakai pada jawaban saya kenal ... karena saya adalah ... . Bila dibiarkan Otomatis, dibaca dari kolom Keterangan saksi di SIPP.">Hubungan dengan ${esc(pihakH)}<select data-skkunci="${esc(k)}" data-skfld="hubungan"${mati}>${hubungan}</select></label>` +
           (p.modus === "dari-cerita" ? `<label class="bd-sklbl">Siapa yang bercerita<select data-skkunci="${esc(k)}" data-skfld="sumber"${mati}>${sumber}</select></label>` : "") +
           (p.modus === "sebagian" ? `<fieldset class="bd-skalasan"><legend>Alasan yang ia ketahui</legend>${ketPosita}${centang}</fieldset>` : "") +
           (st && st.teks ? `<p class="bd-catat" role="status">${esc(st.teks)}</p>` : "") +
@@ -5329,7 +5348,7 @@
     const keadaan = Object.assign({}, ker.keadaan, st.keadaan, { pihakSaksi: pihak });
     const pilihan = K.pilihanPengetahuan(kenal.kat, keadaan, pihak, K.tingkatDipakai(ktState().jarang));
     const jenis = pilihan.some((x) => x.nilai === st.jenis) ? st.jenis : "melihat";
-    return { pihak, keadaan, pilihan, jenis, sumber: st.sumber };
+    return { pihak, keadaan, pilihan, jenis, sumber: st.sumber, hubungan: st.hubungan || "" };
   }
   /** Nilai variabel #nnnn# untuk teks pertanyaan: isian blangko, nilai yang sudah terbaca, lalu dibaca dari ABT (diingat per sidang). */
   async function ktBacaVariabel(kodes) {
@@ -5391,7 +5410,10 @@
           variabel,
           saksi: semua.map((k) => {
             const e = efektif.get(k);
-            return { kunci: k, pihak: e.pihak, jenis: e.jenis, sumber: e.sumber, keadaan: ktSaksi(k).keadaan };
+            // U1: hubungan saksi pilihan petugas (kotak pilih) -> slot {hubungan} katalog: "ibu kandung Pemohon" (menentukan juga saksi keluarga/bukan).
+            const sbH = sebutan();
+            const frasaH = e.hubungan && SK() ? SK().frasaHubungan(e.hubungan, e.pihak === "T" ? sbH.T : sbH.P) : "";
+            return { kunci: k, pihak: e.pihak, jenis: e.jenis, sumber: e.sumber, keadaan: ktSaksi(k).keadaan, ...(frasaH ? { hubungan: frasaH } : {}) };
           }),
         });
       for (const k of sasaran) S.sk.status[k] = { teks: "Menyusun pertanyaan dari katalog jenis perkara…" };
@@ -5498,6 +5520,7 @@
     else if (aksi === "kat-jenis") ktSaksi(kunci).jenis = el.value;
     else if (aksi === "kat-sumber") ktSaksi(kunci).sumber = el.value;
     else if (aksi === "kat-saksi") ktSaksi(kunci).keadaan[sub] = el.value;
+    else if (aksi === "kat-hubungan") ktSaksi(kunci).hubungan = SK() && SK().kunciHubunganSah(el.value) ? el.value : "";
     else return;
     ktSimpan();
     S.sk.tinjau = null;
@@ -5527,6 +5550,8 @@
           pilihan: e.pilihan,
           sumber: e.sumber || K.pilihanSumberCerita()[0].nilai,
           sumberPilihan: K.pilihanSumberCerita(),
+          hubungan: e.hubungan,
+          hubunganKelompok: SK() ? SK().kelompokHubungan() : [],
           bidangSaksi: per,
           status: st && st.teks,
           galat: st && st.galat,

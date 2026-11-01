@@ -3910,7 +3910,12 @@ export async function getGatewayAbtUsulan(muatan: {
     sumber: string;
     sumberNama: string;
     alasan: string[];
+    /** 1 Nov 2026: dasar saksi Tergugat/Termohon (jawaban | gugatan) dan hubungan saksi (kunci pilihan panel). */
+    dasar?: string;
+    hubungan?: string;
   }>;
+  /** 1 Nov 2026: naskah jawaban & duplik Tergugat/Termohon (keputusan 62); asal "lisan" = tanya-jawab lisan di BAS. */
+  naskahT?: { jawaban: string; duplik: string; asal?: { jawaban: string; duplik: string } };
   /** Pengaturan tipe keluaran efektif dari portal (K6). Tanpa ini bot memakai konstanta tertanam. */
   tipeKeluaran?: { versi: string; daftar: Record<string, unknown> };
   /** Gugatannya. Dipakai menyaring alasan yang tidak pernah didalilkan. */

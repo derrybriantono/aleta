@@ -67,6 +67,45 @@
     "masalah ekonomi",
     "menikah lagi",
   ];
+  // U1 1 Nov 2026: hubungan saksi dengan pihak (kotak pilih per saksi). Kunci SAMA dengan HUBUNGAN di aleta_bot/services/saksiU1.js
+  // (diuji sama); bot menyusun frasanya ("ibu kandung Penggugat") untuk panel cerai, panel katalog memakai frasaHubungan di bawah. [kunci, label, keluarga, frasa]
+  const DAFTAR_HUBUNGAN = [
+    ["ayah-kandung", "Ayah kandung", true, "ayah kandung"],
+    ["ibu-kandung", "Ibu kandung", true, "ibu kandung"],
+    ["kakak-kandung", "Kakak kandung", true, "kakak kandung"],
+    ["adik-kandung", "Adik kandung", true, "adik kandung"],
+    ["saudara-kandung", "Saudara kandung", true, "saudara kandung"],
+    ["anak-kandung", "Anak kandung", true, "anak kandung"],
+    ["paman", "Paman", true, "paman"],
+    ["bibi", "Bibi", true, "bibi"],
+    ["kakek", "Kakek", true, "kakek"],
+    ["nenek", "Nenek", true, "nenek"],
+    ["sepupu", "Sepupu", true, "sepupu"],
+    ["keponakan", "Keponakan", true, "keponakan"],
+    ["ipar", "Ipar", true, "ipar"],
+    ["mertua", "Mertua", true, "mertua"],
+    ["menantu", "Menantu", true, "menantu"],
+    ["keluarga-lain", "Keluarga dekat lainnya", true, "keluarga dekat"],
+    ["tetangga", "Tetangga", false, "tetangga"],
+    ["teman", "Teman", false, "teman"],
+    ["sahabat", "Sahabat", false, "sahabat"],
+    ["rekan-kerja", "Rekan kerja", false, "rekan kerja"],
+    ["ketua-rt", "Ketua RT/RW", false, "Ketua RT/RW di lingkungan tempat tinggal"],
+    ["kepala-desa", "Kepala desa/lurah", false, "Kepala Desa/Lurah tempat tinggal"],
+    ["tokoh-masyarakat", "Tokoh masyarakat/adat", false, "tokoh masyarakat di lingkungan tempat tinggal"],
+  ];
+
+  const kunciHubunganSah = (k) => DAFTAR_HUBUNGAN.some(([n]) => n === k);
+  /** "ibu kandung Penggugat" dari kunci pilihan dan sebutan pihak; "" bila kunci tidak dikenal (sama dengan frasaHubungan di bot). */
+  const frasaHubungan = (kunci, sebutan) => {
+    const h = DAFTAR_HUBUNGAN.find(([n]) => n === kunci);
+    return h ? `${h[3]} ${String(sebutan || "").trim()}`.trim() : "";
+  };
+  /** Pilihan hubungan untuk kotak pilih: dua kelompok (keluarga / bukan keluarga). */
+  const kelompokHubungan = () => [
+    { label: "Keluarga", opsi: DAFTAR_HUBUNGAN.filter((h) => h[2]).map(([n, l]) => [n, l]) },
+    { label: "Bukan keluarga", opsi: DAFTAR_HUBUNGAN.filter((h) => !h[2]).map(([n, l]) => [n, l]) },
+  ];
   const BATAS_SAKSI = { P: 5, T: 4 };
 
   const RE_TITIK = /\.{3,}|…|_{2,}|#\d{3,5}#/;
@@ -109,8 +148,9 @@
     const modus = DAFTAR_MODUS.some(([n]) => n === r.modus) || arahModus ? r.modus : modusBawaan(urut, o);
     const sumber = DAFTAR_SUMBER.some(([n]) => n === r.sumber) ? r.sumber : "penggugat";
     const alasan = Array.isArray(r.alasan) ? r.alasan.map(String).filter(Boolean).slice(0, 16) : [];
-    if (o.pihak === "T") return { modus, sumber, alasan, dasar: r.dasar === "gugatan" ? "gugatan" : "jawaban" };
-    return { modus, sumber, alasan };
+    const hubungan = kunciHubunganSah(r.hubungan) ? { hubungan: r.hubungan } : {};
+    if (o.pihak === "T") return { modus, sumber, alasan, dasar: r.dasar === "gugatan" ? "gugatan" : "jawaban", ...hubungan };
+    return { modus, sumber, alasan, ...hubungan };
   }
 
   function sebutanSumber(kode, pelaku, lawan) {
@@ -136,6 +176,10 @@
       const asal = Array.isArray(r.saksi) ? r.saksi : [];
       if (Array.isArray(h.saksi) && asal.some((s) => s && (s.dasar === "jawaban" || s.dasar === "gugatan"))) {
         h.saksi = h.saksi.map((s, i) => (asal[i] && (asal[i].dasar === "jawaban" || asal[i].dasar === "gugatan") ? { ...s, dasar: asal[i].dasar } : s));
+      }
+      // U1: hubungan saksi pilihan petugas (kunci daftar) ikut ke bot.
+      if (Array.isArray(h.saksi) && asal.some((s) => s && kunciHubunganSah(s.hubungan))) {
+        h.saksi = h.saksi.map((s, i) => (asal[i] && kunciHubunganSah(asal[i].hubungan) ? { ...s, hubungan: asal[i].hubungan } : s));
       }
       const n = r.naskahT && typeof r.naskahT === "object" ? r.naskahT : null;
       if (n && (String(n.jawaban || "").trim() || String(n.duplik || "").trim())) h.naskahT = { jawaban: String(n.jawaban || ""), duplik: String(n.duplik || ""), asal: { jawaban: n.asal && n.asal.jawaban === "lisan" ? "lisan" : "", duplik: n.asal && n.asal.duplik === "lisan" ? "lisan" : "" } };
@@ -556,6 +600,10 @@
     MENU_LAINNYA,
     DAFTAR_MODUS,
     DAFTAR_SUMBER,
+    DAFTAR_HUBUNGAN,
+    kelompokHubungan,
+    kunciHubunganSah,
+    frasaHubungan,
     BATAS_SAKSI,
     alasanBawaan,
     modusBawaan,
