@@ -585,6 +585,63 @@ export const DDL_MATRIKS_DALIL = {
   indeks: [`CREATE INDEX IF NOT EXISTS idx_matriks_dalil_dihitung ON aleta_matriks_dalil(dihitung_pada)`],
 } as const;
 
+/**
+ * Pengukur draf putusan vs putusan akhir (0130, 1 Nov 2026, P3). Cermin PERSIS dari drizzle/0130_aleta_pengukur_draf.sql.
+ */
+export const DDL_PENGUKUR_DRAF = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_pengukur_draf (
+  perkara_id TEXT NOT NULL PRIMARY KEY,
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  jenis_perkara TEXT NOT NULL DEFAULT '',
+  hakim TEXT NOT NULL DEFAULT '',
+  majelis TEXT NOT NULL DEFAULT '',
+  tanggal_putusan TEXT NOT NULL DEFAULT '',
+  bulan TEXT NOT NULL DEFAULT '',
+  arah TEXT NOT NULL DEFAULT '',
+  varian TEXT NOT NULL DEFAULT '',
+  sumber TEXT NOT NULL DEFAULT '',
+  tanggal_sidang_draf TEXT NOT NULL DEFAULT '',
+  draf_dibuat_pada TEXT NOT NULL DEFAULT '',
+  sidik TEXT NOT NULL DEFAULT '',
+  amar_akhir INTEGER NOT NULL DEFAULT 0,
+  amar_cocok INTEGER NOT NULL DEFAULT 0,
+  amar_persis INTEGER NOT NULL DEFAULT 0,
+  dasar_akhir INTEGER NOT NULL DEFAULT 0,
+  dasar_cocok INTEGER NOT NULL DEFAULT 0,
+  dasar_terverifikasi INTEGER NOT NULL DEFAULT 0,
+  bagian_akhir INTEGER NOT NULL DEFAULT 0,
+  bagian_cocok INTEGER NOT NULL DEFAULT 0,
+  huruf_draf TEXT NOT NULL DEFAULT '',
+  huruf_akhir TEXT NOT NULL DEFAULT '',
+  huruf_sama INTEGER NOT NULL DEFAULT -1,
+  koreksi_json TEXT NOT NULL DEFAULT '[]',
+  lama_ms INTEGER NOT NULL DEFAULT 0,
+  diukur_pada TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_pengukur_usulan (
+  id TEXT NOT NULL PRIMARY KEY,
+  lingkup TEXT NOT NULL DEFAULT 'semua',
+  hakim TEXT NOT NULL DEFAULT '',
+  jenis TEXT NOT NULL DEFAULT '',
+  kunci TEXT NOT NULL DEFAULT '',
+  teks TEXT NOT NULL DEFAULT '',
+  perkara INTEGER NOT NULL DEFAULT 0,
+  dari INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'baru',
+  proyek_id TEXT NOT NULL DEFAULT '',
+  dibuat_pada TEXT NOT NULL,
+  diperbarui_pada TEXT NOT NULL,
+  diputuskan_oleh TEXT NOT NULL DEFAULT '',
+  diputuskan_pada TEXT NOT NULL DEFAULT ''
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_pengukur_draf_bulan ON aleta_pengukur_draf(bulan, hakim)`,
+    `CREATE INDEX IF NOT EXISTS idx_pengukur_usulan_status ON aleta_pengukur_usulan(status, lingkup)`,
+  ],
+} as const;
+
 export const DDL_COCOK_PUTUSAN = {
   tabel: [
     `CREATE TABLE IF NOT EXISTS aleta_cocok_putusan (
@@ -3462,6 +3519,8 @@ const schemaStatements = [
   ...DDL_COCOK_PUTUSAN.tabel,
   // Matriks dalil satu sumber per perkara (0126, P2 1 Nov 2026).
   ...DDL_MATRIKS_DALIL.tabel,
+  // Pengukur draf putusan vs putusan akhir (0130, P3 1 Nov 2026).
+  ...DDL_PENGUKUR_DRAF.tabel,
   // Cadangan & riwayat suntingan ABT dari Pengaturan SIPP & ABT (0066).
   ...DDL_ABT_SUNTINGAN.tabel,
   // Checklist Konseptor Sementara: tanda langkah & laporan Blangko Derry (0067).
@@ -5480,6 +5539,7 @@ const indexStatements = [
   ...DDL_KALIMAT_PRIBADI.indeks,
   ...DDL_COCOK_PUTUSAN.indeks,
   ...DDL_MATRIKS_DALIL.indeks,
+  ...DDL_PENGUKUR_DRAF.indeks,
   ...DDL_ABT_SUNTINGAN.indeks,
   ...DDL_BLANGKO_PRIBADI.indeks,
   ...DDL_TAUTAN_JADWAL.indeks,

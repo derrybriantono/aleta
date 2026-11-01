@@ -750,6 +750,13 @@
       "when": 1792339200001,
       "tag": "0126_aleta_matriks_dalil",
       "breakpoints": true
+    },
+    {
+      "idx": 113,
+      "version": "7",
+      "when": 1792348200001,
+      "tag": "0130_aleta_pengukur_draf",
+      "breakpoints": true
     }
   ]
 }

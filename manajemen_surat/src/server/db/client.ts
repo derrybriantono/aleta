@@ -374,6 +374,9 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_cocok_putusan",
   // 1 November 2026 (0126, P2): matriks dalil satu sumber per perkara. Tanpa kunci asing.
   "aleta_matriks_dalil",
+  // 1 November 2026 (0130, P3): hasil ukur draf vs putusan akhir per perkara + usulan memori proyek. Tanpa kunci asing.
+  "aleta_pengukur_draf",
+  "aleta_pengukur_usulan",
   // 16 Oktober 2026 (0066): cadangan & riwayat suntingan ABT dari halaman
   // Pengaturan SIPP & ABT. Tanpa kunci asing - urutannya bebas.
   "aleta_abt_suntingan",

@@ -40,6 +40,7 @@
  *   GET  /kehadiran-sidang?perkaraId  sidang + usulan pembetulan kehadiran (30 Okt 2026, G4 4.4)
  *   POST /kehadiran-sidang        pembetulan kehadiran sidang ke SIPP atas akun PP (kering bawaan)
  *   GET  /putusan-dokumen?perkaraId  tanggal + amar putusan SIPP utuh + nama berkas (G4 4.3, hanya SELECT)
+ *   GET  /putusan-akhir?perkaraId=1,2,3  amar + pertimbangan UTUH + ketua majelis untuk pengukur draf (P3, hanya SELECT)
  *   GET  /court-calendar?perkaraId  Court Calendar SIPP + id baris (hanya SELECT)
  *   GET  /court-calendar/jumlah?perkaraId=1,2,3  jumlah baris per perkara
  *   POST /court-calendar          tambah/sunting Court Calendar ke SIPP atas
@@ -756,6 +757,16 @@ router.post(
 router.get("/putusan-dokumen", wajibToken, async (req, res) => {
   try {
     const hasil = await require("../services/putusanDokumenService").layanan().bahanPutusan(req.query.perkaraId);
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
+
+/** Bahan pengukur draf vs putusan akhir (P3, 1 Nov 2026): amar + pertimbangan UTUH + ketua majelis, banyak perkara (?perkaraId=1,2,3, maks 40). Hanya SELECT. */
+router.get("/putusan-akhir", wajibToken, async (req, res) => {
+  try {
+    const hasil = await require("../services/putusanDokumenService").layanan().bahanPengukur(req.query.perkaraId);
     res.status(hasil.ok ? 200 : 400).json(hasil);
   } catch (galat) {
     galat500(res, galat);
