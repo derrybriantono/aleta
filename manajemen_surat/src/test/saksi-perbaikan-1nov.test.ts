@@ -179,8 +179,12 @@ describe("63 - arah putusan Tolak/NO: menu tiga pilihan, bawaan tidak tahu", () 
     expect(cari(h, 0, /penyebab/i).jawab).toMatch(/tidak mengetahui/);
     expect(cari(h, 0, /melihat atau mendengar sendiri/i).jawab).toMatch(/tidak pernah melihat/);
     expect(cari(h, 0, /upaya dari keluarga/i).jawab).toMatch(/tidak mengetahui/);
-    expect(cari(h, 1, /nafkah/i).jawab).toMatch(/Tergugat masih memberi nafkah kepada Penggugat/);
+    // saksi kedua: bunyi lain yang setara (dua saksi tidak sama persis)
+    expect(cari(h, 1, /nafkah/i).jawab).toMatch(/Tergugat masih memberi(?:kan)? nafkah kepada Penggugat/);
     expect(cari(h, 1, /masih tinggal serumah/i).jawab).toMatch(/masih tinggal bersama/);
+    const sama = susun("347", templat, POSITA["347"], [{ ke: 1, pihak: "P", modus: "tidak-tahu-apa" }, { ke: 2, pihak: "P", modus: "tidak-tahu-apa" }]);
+    expect(cari(sama, 1, /penyebab/i).jawab).not.toBe(cari(sama, 0, /penyebab/i).jawab);
+    expect(cari(sama, 1, /penyebab/i).jawab).toMatch(/tidak saya ketahui/);
     // identitas & pernikahan tetap dari data
     expect(cari(h, 0, /hubungan antara/i).jawab).toMatch(/12 Mei 2015/);
   });
