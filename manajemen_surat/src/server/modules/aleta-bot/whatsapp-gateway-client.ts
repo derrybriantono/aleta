@@ -5418,6 +5418,18 @@ export async function postGatewayMatriksDalil(muatan: { nomorPerkara: string; se
   );
 }
 
+/** A2 (1 Nov 2026): keterangan saksi tersimpan (sidang terakhir per saksi) + alat bukti ABT 1214/9911/1262. Bot hanya SELECT, batas 4 detik. */
+export async function postGatewayBahanPembuktian(muatan: { nomorPerkara: string }) {
+  return gatewayFetch<{
+    ok?: boolean;
+    ada?: boolean;
+    alasan?: string;
+    perkaraId?: number | null;
+    saksi?: Array<{ id: string; pihak: string; ke?: number; hubungan?: string; baris: Array<{ tanya?: string; jawab: string }> }>;
+    bukti?: Array<{ kode: string; pihak: string; jenis: string; teks: string }>;
+  }>("/internal/aleta-bot/abt/bahan-pembuktian", { method: "POST", body: JSON.stringify(muatan), timeoutMs: 6_000 });
+}
+
 /* === KONTAK-EC 11 Okt === */
 /**
  * KONTAK-EC (11 Okt 2026): email & nomor HP/WA pihak dan kuasa dari e-Court

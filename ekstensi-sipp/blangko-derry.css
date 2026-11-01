@@ -587,6 +587,13 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar .bd-pd-tabel td { vertical-align: top; border-top: 1px dotted var(--line); padding: 4px 6px; overflow-wrap: anywhere; }
 #aleta-bd-akar .bd-pd-tabel td.bd-pd-no { width: 3.2em; color: var(--muted); white-space: nowrap; }
 #aleta-bd-akar .bd-pd-tabel td:last-child { width: 15em; }
+/* Penilaian pembuktian (A2, 1 Nov 2026): tabel dalil x status x dasar; dasar = lencana kecil saksi/bukti (teks lengkap di title). */
+#aleta-bd-akar .bd-pb-tabel td:nth-child(3) { width: 9.5em; }
+#aleta-bd-akar .bd-pb-tabel td:last-child { width: 13em; }
+#aleta-bd-akar .bd-pb-dasar { display: inline-block; margin: 0 4px 3px 0; padding: 0 6px; border: 1px solid var(--line); border-radius: 9px; font-size: 12px; line-height: 18px; color: var(--fg); cursor: help; }
+#aleta-bd-akar .bd-pb-dasar.lawan { border-color: var(--warn); color: var(--warn); }
+#aleta-bd-akar .bd-pb-dasar.bukti { border-style: dashed; }
+#aleta-bd-akar .bd-pb-kesimpulan { margin: 4px 0 6px 18px; padding: 0; font-size: 12.5px; color: var(--warn); }
 
 /* ===== Tata letak kartu isian ("Perlu diisi") dan alat bukti surat (19 Okt 2026) =====
    Tujuan: kartu tidak ada yang besar-kecil tanpa sebab, tidak berdempetan, tidak ada teks terpotong.

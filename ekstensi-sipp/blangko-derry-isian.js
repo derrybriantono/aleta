@@ -3177,6 +3177,7 @@
   const kosongDaftar = () => kosongRinci().map((x) => x.nama);
   function laporKeKerangka() {
     perbaruiPeriksa();
+    segarPenilaian(); // A2 1 Nov: saksi/bukti berubah -> penilaian pembuktian dihitung ulang (debounce, hanya bila sidik bahan berubah)
     const a = api();
     if (tes() || !a || typeof a.laporIsian !== "function" || !S.pk) return;
     jadwalkanSiapNaskah("isian"); // isian lengkap + tenang -> naskah disiapkan di latar (cetak cepat)
@@ -6457,6 +6458,55 @@
     if (!PD || !S.blangko || !["put", "bas"].includes(S.blangko.jenis) || !/\/Pdt\.G\//i.test(nomorPerkara())) return "";
     return PD.htmlBungkus(nomorPerkara(), sebutan());
   }
+  /**
+   * A2 1 Nov: Penilaian pembuktian (blangko-derry-penilai-bukti.js) - blangko putusan & BAS kesimpulan, perkara gugatan. Dilipat bawaan;
+   * dihitung ulang sendiri saat keterangan saksi/bukti berubah (segarPenilaian dari laporKeKerangka).
+   */
+  function PB() {
+    return globalThis.AletaBdPenilaiBukti || null;
+  }
+  function penilaianBerlaku() {
+    if (!PB() || !S.blangko || !S.pk || !/\/Pdt\.G\//i.test(nomorPerkara())) return false;
+    if (S.blangko.jenis === "put") return true;
+    return S.blangko.jenis === "bas" && /kesimpulan/i.test(`${S.blangko.berkas || ""} ${S.blangko.judul || ""} ${S.blangko.kelompok || ""}`);
+  }
+  /** Bahan yang SEDANG ada di panel: keterangan saksi termuat (kunci "saksi 1 p") + daftar bukti surat & elektronik pihak yang termuat. */
+  function bahanPenilaian() {
+    const saksi = [];
+    for (const [kunci, t] of Object.entries(S.tj || {})) {
+      const m = /^saksi (\d+) ([pt])$/.exec(kunci);
+      if (!m || !t || !t.dimuat || !Array.isArray(t.rows)) continue;
+      const baris = t.rows.filter((r) => r && String(r.jawab || "").trim()).map((r) => ({ tanya: String(r.tanya || ""), jawab: String(r.jawab || "") }));
+      if (baris.length) saksi.push({ id: kunci.replace(/\s+/g, "-"), pihak: m[2].toUpperCase(), ke: Number(m[1]), baris });
+    }
+    const bukti = [];
+    const pihakBukti = [];
+    for (const w of ["P", "T"]) {
+      if (!Array.isArray(S.bukti && S.bukti[w])) continue;
+      pihakBukti.push(w);
+      S.bukti[w].forEach((r, i) => {
+        const t = String((r && (typeof r.manual === "string" && r.manual.trim() ? r.manual : r.nm)) || "").trim();
+        if (t) bukti.push({ kode: `${w}.${i + 1}`, pihak: w, jenis: "surat", teks: t });
+      });
+      elPihak(w).butir.forEach((b, i) => {
+        if (butirElKosong(b)) return;
+        const t = typeof b.manual === "string" ? b.manual : `${b.bentuk || ""} ${b.objek || ""} ${b.ket || ""}`;
+        bukti.push({ kode: `${b.awalan || w}.${urutEl(w, i)}`, pihak: w, jenis: "elektronik", teks: t.trim() });
+      });
+    }
+    return saksi.length || bukti.length ? { saksi: saksi.length ? saksi : null, bukti, pihakBukti } : null;
+  }
+  function opsiPenilaian() {
+    return { nomor: nomorPerkara(), sebutan: sebutan(), bahan: bahanPenilaian, ambil: (u, o) => ambilPortal(u, o || {}, "Menilai pembuktian") };
+  }
+  function segarPenilaian() {
+    try {
+      if (tes() || !penilaianBerlaku()) return;
+      PB().segarkan(opsiPenilaian());
+    } catch {
+      /* penilaian hanya bahan bantu: galat di sini tidak boleh mengganggu laporan panel */
+    }
+  }
   function renderIsian() {
     const w = wadah.isian;
     if (!w) return;
@@ -6501,6 +6551,7 @@
       htmlTuntutanTakDiminta() +
       htmlIsianLanjutan() +
       htmlPetaDalil() +
+      (penilaianBerlaku() ? PB().htmlBungkus(nomorPerkara(), sebutan()) : "") +
       `<div id="bd-tjtombol" class="bd-baris"></div><div id="bd-tjwadah"></div>` +
       (S.blangko.jenis === "bas" ? `<div id="bd-skorsbas"></div>` : "") +
       `<div class="bd-baris"><button type="button" class="bd-btn kecil" data-bd2="semua" aria-expanded="${S.semuaBuka}">Lihat semua isi data (${S.susunan.otomatis.length + pilihan.length})</button></div>` +
@@ -6521,6 +6572,8 @@
     cari("#bd-alatisi", w).innerHTML = alat.join("");
     const petaDalil = globalThis.AletaBdPetaDalil && cari("#bd-petadalil", w);
     if (petaDalil) globalThis.AletaBdPetaDalil.pasang(petaDalil, { nomor: nomorPerkara(), sebutan: sebutan(), ambil: (u) => ambilPortal(u, {}, "Membaca peta dalil") });
+    const penilaian = penilaianBerlaku() && cari("#bd-penilaian", w);
+    if (penilaian) PB().pasang(penilaian, opsiPenilaian());
     renderTj();
     renderProgres();
     tumbuhkanSemua(w);

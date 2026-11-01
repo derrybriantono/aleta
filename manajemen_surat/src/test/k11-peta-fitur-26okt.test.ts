@@ -204,7 +204,8 @@ describe("peta fitur K11: kelompok manifest dan modul malas", () => {
     // 30 Okt 2026: blangko-derry-pulih.js = tampilan Derry tetap di tempat saat halaman dimuat ulang (berkas baru di luar K11).
     // 30 Okt 2026 (G4): temuan-perkara.js = usul pembetulan kehadiran SIPP + putusan SIPP vs dokumen di panel cetak Blangko Derry;
     // sinkron-isian-sipp.js = aturan isian dari SIPP yang ikut diperbarui saat data SIPP berubah (keduanya di luar K11).
-    expect([...new Set(baru)].sort()).toEqual(["tampilan-sipp.js", "modul-malas.js", "bas-word-pdf.js", "sidang-terjadwal.js", "blangko-derry-pulih.js", "blangko-derry-berkas.js", "blangko-derry-draf-saksi.js", "blangko-derry-draf-bas.js", "blangko-derry-periksa.js", "blangko-derry-beda-cetak.js", "blangko-derry-pustaka.js", "sinkron-isian-sipp.js", "temuan-perkara.js", "edoc-seret.js", "amar-petitum-sipp.js", "statistik-cetak.js"].sort());
+    // 1 Nov 2026: blangko-derry-peta-dalil.js (P2 Peta dalil) dan blangko-derry-penilai-bukti.js (A2 Penilaian pembuktian), di luar K11.
+    expect([...new Set(baru)].sort()).toEqual(["tampilan-sipp.js", "modul-malas.js", "bas-word-pdf.js", "sidang-terjadwal.js", "blangko-derry-pulih.js", "blangko-derry-berkas.js", "blangko-derry-draf-saksi.js", "blangko-derry-draf-bas.js", "blangko-derry-periksa.js", "blangko-derry-beda-cetak.js", "blangko-derry-pustaka.js", "sinkron-isian-sipp.js", "temuan-perkara.js", "edoc-seret.js", "amar-petitum-sipp.js", "statistik-cetak.js", "blangko-derry-peta-dalil.js", "blangko-derry-penilai-bukti.js"].sort());
     const tanpaTampilan = sesudah.kelompok.filter((k) => !(k.js.length === 1 && k.js[0] === "tampilan-sipp.js"));
     expect(tanpaTampilan.map((k) => k.css.filter((c: string) => c !== "sidang-terjadwal.css"))).toEqual(sebelum.kelompok.map((k) => k.css));
   });
