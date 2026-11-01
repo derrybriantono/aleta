@@ -1691,4 +1691,30 @@ export const USER_GUIDES: UserGuide[] = [
       "Jika ada informasi status yang belum jelas, lihat Patch Notes terbaru atau tanyakan ke Super Admin.",
     ],
   },
+  {
+    id: "aleta-ai-panel-blangko-derry",
+    title: "ALETA Ai di panel Blangko Derry (alat bantu)",
+    module: "ai",
+    audiences: ["hakim", "panitera", "pimpinan", "admin", "super_admin"],
+    summary: "ALETA Ai di panel Blangko Derry hanya alat bantu: memberi usulan yang Anda baca dulu. Saat dimatikan, panel bekerja seperti biasa.",
+    steps: [
+      "Nyalakan saklar ALETA Ai di bagian atas panel, dekat nama akun Anda. Bawaannya mati, dan pilihan Anda diingat untuk akun Anda sendiri.",
+      "Lihat saldo di pojok kiri bawah. Klik sekali untuk melihat sisa saldo kantor (ikon berubah menjadi gedung), klik lagi untuk kembali ke saldo Anda.",
+      "Pilih bantuan dari baris ALETA Ai: Saksi, BAS, Isian, Putusan, Periksa, Tanya, atau Menu proyek (perintah siap pakai yang sudah disaring menurut perkara yang sedang dibuka; yang lain ada di Semua menu).",
+      "Baca perkiraan biaya yang tampil lebih dulu, lalu tekan Jalankan bila setuju.",
+      "Hasil muncul sebagai kartu bertanda USULAN. Baca dan sunting dulu; tekan Pakai bila cocok, atau Tutup/Ulangi bila tidak. Tidak ada yang tertulis ke ABT atau SIPP sebelum Anda memakainya.",
+      "Untuk melihat panduan bergambar langkah demi langkah, tekan tanda (?) di baris ALETA Ai. Panduan ini juga muncul sekali saat saklar pertama kali dinyalakan.",
+    ],
+    notes: [
+      "Nama, NIK, dan alamat disamarkan sebelum dikirim ke layanan AI.",
+      "Saldo habis: saklar mati sendiri dan tidak dapat diklik sampai saldo terisi. Hubungi Super Admin untuk mengisi saldo.",
+      "Fitur putusan (pertimbangan, amar) hanya untuk hakim, ketua, dan wakil ketua. Dasar hukum yang tidak ada di data diberi tanda PERLU VERIFIKASI.",
+      "Isian yang sudah Anda isi tidak pernah ditimpa tanpa persetujuan Anda; teks para pihak tidak diubah.",
+    ],
+    troubleshooting: [
+      "Saklar abu-abu: lihat keterangan di sebelahnya (saldo habis atau belum tersedia).",
+      "Tombol Jalankan tidak aktif: lengkapi bahan yang disebut di jendela, atau siapkan naskah dulu bila diminta.",
+      "Hasil tidak cocok: tekan Ulangi dengan catatan yang lebih jelas, atau abaikan; pekerjaan Anda tidak berubah.",
+    ],
+  },
 ];

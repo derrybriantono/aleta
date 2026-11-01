@@ -6,6 +6,7 @@ import { periksaBatas } from "@/server/modules/aleta-ai/batas";
 import { kursBerlaku, type KursBerlaku } from "@/server/modules/aleta-ai/kurs";
 import { awalanPromoHabis, statusPromo, type StatusPromo } from "@/server/modules/aleta-ai/promo";
 import { bacaPengaturan, bacaRute, bacaTarif, type PengaturanAi } from "@/server/modules/aleta-ai/pengaturan";
+import { nilaiDompetSatker } from "@/server/modules/aleta-ai/dompet-satker";
 import { aletaAiDihentikan } from "@/server/modules/aleta-ai/saklar";
 import { saldoPengguna } from "@/server/modules/aleta-ai/saldo";
 import { ApiError } from "@/server/shared/errors";
@@ -58,6 +59,8 @@ export type PerkiraanBiaya = {
   promo?: boolean;
   /** Keadaan jatah promosi pengguna ini (null bila tidak ada program/bukan sasaran). */
   statusPromo?: StatusPromo | null;
+  /** "satker" bila perkiraan ini dinilai terhadap dompet satker (saldoRp = saldo satker); kosong = dompet pengguna. */
+  dompet?: "satker";
   /** Saldo cukup DAN batas belum tercapai. */
   bolehJalan: boolean;
   /** Bila tidak boleh jalan: sebabnya, dalam bahasa pengguna. */
@@ -70,7 +73,8 @@ export async function nilaiPerkiraan(
   pelaku: PelakuAi,
   pengaturan: PengaturanAi,
   dasar: { kelompok: string; label: string; tokenMasuk: number; tokenKeluar: number; perkiraanRp: number; tahanRp: number; biayaApiRp: number; kurs: KursBerlaku },
-  sekarang: Date = new Date()
+  sekarang: Date = new Date(),
+  opsi: { dompetSatker?: boolean } = {}
 ): Promise<PerkiraanBiaya> {
   const saldoRp = await saldoPengguna(db, pelaku.id);
   const promo = await statusPromo(db, pelaku, { sekarang, tambahanApiRp: dasar.biayaApiRp });
@@ -99,6 +103,12 @@ export async function nilaiPerkiraan(
     tanpaTagihan: promoBerlaku,
   });
   if (!batas.ok) return tolak(batas.alasan);
+  // Dompet satker (dipilih pengguna): hak, saldo satker, dan batas bulanan; saldo pengguna tidak ikut dinilai.
+  if (opsi.dompetSatker && !pelaku.superAdmin && !promoBerlaku) {
+    const n = await nilaiDompetSatker(db, pelaku, dasar.perkiraanRp, pengaturan.minimumRp, sekarang);
+    const satker: PerkiraanBiaya = { ...hasil, saldoRp: n.saldoRp, dompet: "satker" };
+    return n.ok ? satker : { ...satker, bolehJalan: false, alasan: n.alasan };
+  }
   if (!pelaku.superAdmin && !promoBerlaku && saldoRp < dasar.perkiraanRp) {
     return tolak(`${awalanPromoHabis(promo)}Saldo ALETA Ai Anda (Rp${saldoRp.toLocaleString("id-ID")}) tidak cukup (perkiraan Rp${dasar.perkiraanRp.toLocaleString("id-ID")}). Hubungi Super Admin untuk mengisi saldo.`);
   }

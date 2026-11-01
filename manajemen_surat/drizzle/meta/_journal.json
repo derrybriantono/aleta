@@ -757,6 +757,13 @@
       "when": 1792330200001,
       "tag": "0123_aleta_bas_halaman",
       "breakpoints": true
+    },
+    {
+      "idx": 108,
+      "version": "7",
+      "when": 1792337400001,
+      "tag": "0124_aleta_ai_dompet_satker",
+      "breakpoints": true
     }
   ]
 }

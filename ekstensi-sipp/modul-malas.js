@@ -73,6 +73,8 @@
     "abt-bersama": modul([], ["abt-panel-bersama.js"]),
     "abt-blangko": modul(["abt-bersama"], ["abt-panel-blangko.js"]),
     "abt-beranda": modul(["abt-bersama"], ["abt-panel-beranda.js"]),
+    // ALETA Ai di panel Blangko Derry (1 Nov 2026): fitur lengkapnya dimuat HANYA saat saklar ALETA Ai menyala; saat mati tidak ada yang dimuat
+    "ai-blangko": modul([], ["blangko-derry-ai-inti.js"]),
   });
 
   /**

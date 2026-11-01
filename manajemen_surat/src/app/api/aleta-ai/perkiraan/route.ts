@@ -2,6 +2,7 @@ import { type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
 import { pelakuAiBerhak } from "@/server/modules/aleta-ai/akses";
+import { masukanDariBadan, type BadanFitur } from "@/server/modules/aleta-ai/fitur-blangko";
 import { perkirakanPesan } from "@/server/modules/aleta-ai/mesin";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { handleRouteError, ok } from "@/server/shared/http";
@@ -18,8 +19,8 @@ export async function POST(request: NextRequest) {
   try {
     const db = await getDatabase();
     const pelaku = await pelakuAiBerhak(db, await resolveActorUserId(request), "aleta-ai.dompet");
-    const badan = (await request.json().catch(() => ({}))) as { percakapanId?: unknown; teks?: unknown; pemicu?: unknown };
-    const p = await perkirakanPesan(db, pelaku, String(badan.percakapanId ?? ""), { teks: String(badan.teks ?? ""), pemicu: String(badan.pemicu ?? "") });
+    const badan = (await request.json().catch(() => ({}))) as BadanFitur & { percakapanId?: unknown };
+    const p = await perkirakanPesan(db, pelaku, String(badan.percakapanId ?? ""), masukanDariBadan(badan));
     // Kelompok internal dan nama model tidak dikirim ke layar pengguna.
     return ok({
       label: p.label,

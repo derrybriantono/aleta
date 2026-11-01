@@ -12,7 +12,8 @@ import { ApiError } from "@/server/shared/errors";
  *
  *   1. saldo = jumlah mutasi, untuk SETIAP pengguna (aturan inti saldo.ts);
  *      juga saldo_setelah mutasi terakhir = saldo sekarang (rantai utuh).
- *   2. pendapatan giliran hari itu (aleta_ai_obrolan_pesan.biaya_rp) = jumlah
+ *   2. pendapatan giliran hari itu (aleta_ai_obrolan_pesan.biaya_rp; giliran yang dibebankan ke DOMPET SATKER dikecualikan, buku
+ *      satker diperiksa sendiri oleh verifikasiSatker) = jumlah
  *      potongan di buku mutasi yang merujuk giliran-giliran itu.
  *   2b. tugas T9: untuk tiap tugas yang jalannya dipotong hari itu, biaya_rp
  *      tugas (akumulasi semua jalan) = jumlah potongan mutasi jalan-jalannya
@@ -88,7 +89,8 @@ export async function jalankanRekonsiliasi(
 
   // 2. Pendapatan giliran hari itu = potongan mutasi yang merujuk giliran itu.
   const giliran = await db.queryAll<{ id: string; biaya_rp: number | string }>(
-    `SELECT id, biaya_rp FROM aleta_ai_obrolan_pesan WHERE peran = 'ai' AND status <> 'berjalan' AND dibuat_at >= ? AND dibuat_at < ?`,
+    `SELECT id, biaya_rp FROM aleta_ai_obrolan_pesan WHERE peran = 'ai' AND status <> 'berjalan' AND dibuat_at >= ? AND dibuat_at < ?
+     AND id NOT IN (SELECT rujukan_id FROM aleta_ai_satker_mutasi WHERE rujukan_id <> '')`,
     [awal, akhir]
   );
   const idGiliran = new Set(giliran.map((g) => g.id));

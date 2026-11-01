@@ -7,6 +7,9 @@ import { bacaKuotaPeran, pastikanKuotaBulanIni } from "@/server/modules/aleta-ai
 import { PESAN_NONAKTIF_KUNCI, PESAN_NONAKTIF_PROYEK, PESAN_NONAKTIF_SAKLAR } from "@/server/modules/aleta-ai/mesin";
 import { bacaPengaturan, bacaRute, bacaTarif } from "@/server/modules/aleta-ai/pengaturan";
 import { statusPromo, type StatusPromo } from "@/server/modules/aleta-ai/promo";
+import { keadaanSatkerPengguna, type KeadaanSatker } from "@/server/modules/aleta-ai/dompet-satker";
+import { fiturBlangkoBoleh } from "@/server/modules/aleta-ai/fitur-blangko";
+import { bacaTimpaanKemampuan } from "@/server/modules/aleta-ai/kemampuan";
 import { proyekAktif } from "@/server/modules/aleta-ai/proyek";
 import { daftarPilihanProyek } from "@/server/modules/aleta-ai/proyek-kelola";
 import type { PilihanProyek } from "@/lib/aleta-ai/proyek-kelola";
@@ -32,6 +35,14 @@ export type RingkasAi = {
   proyekPilihan: PilihanProyek[];
   /** Program promosi gratis untuk pengguna ini; tidak ada bila tidak berlaku bagi pengguna ini. */
   promo?: StatusPromo;
+  /** Harga minimum satu giliran: saldo di bawah ini tidak cukup untuk menjalankan apa pun (panel Blangko Derry mengunci saklar). */
+  minimumRp: number;
+  /** Tidak ditagih (Super Admin atau promosi gratis sedang berlaku): saldo habis bukan penghalang. */
+  gratis: boolean;
+  /** DOMPET SATKER (0124): hak pengguna ini memakainya menurut aturan Super Admin, saldo satker, dan batas bulanan. */
+  satker: KeadaanSatker;
+  /** Kode fitur bantu panel Blangko Derry yang boleh dipakai peran ini. */
+  fiturBlangko: string[];
 };
 
 export async function ringkasAi(db: AletaDatabase, pelaku: PelakuAi): Promise<RingkasAi> {
@@ -53,6 +64,10 @@ export async function ringkasAi(db: AletaDatabase, pelaku: PelakuAi): Promise<Ri
   const saldoRp = await saldoPengguna(db, pelaku.id);
   const promo = await statusPromo(db, pelaku);
   return {
+    minimumRp: pengaturan.minimumRp,
+    gratis: pelaku.superAdmin || promo.berlaku === true,
+    satker: await keadaanSatkerPengguna(db, pelaku),
+    fiturBlangko: fiturBlangkoBoleh(tabel, pelaku, await bacaTimpaanKemampuan(db)),
     aktif: !alasan,
     ...(promo.tampil ? { promo } : {}),
     ...(alasan ? { alasanNonaktif: alasan } : {}),

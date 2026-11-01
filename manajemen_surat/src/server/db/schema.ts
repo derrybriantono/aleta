@@ -1075,6 +1075,47 @@ export const DDL_ALETA_AI_PROMO = {
 } as const;
 
 /**
+ * ALETA Ai - dompet satker (0124, 1 Nov 2026). Cermin PERSIS dari drizzle/0124_aleta_ai_dompet_satker.sql; penjaga
+ * ai-dompet-satker-1nov.test.ts membandingkan keduanya. Tanpa kunci asing.
+ */
+export const DDL_ALETA_AI_SATKER = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_ai_satker_saldo (
+  id TEXT PRIMARY KEY,
+  saldo_rp INTEGER NOT NULL DEFAULT 0,
+  diubah_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_ai_satker_mutasi (
+  id TEXT PRIMARY KEY,
+  jenis TEXT NOT NULL,
+  jumlah_rp INTEGER NOT NULL,
+  saldo_setelah INTEGER NOT NULL,
+  rujukan_id TEXT NOT NULL DEFAULT '',
+  pengguna_id TEXT NOT NULL DEFAULT '',
+  peran_id TEXT NOT NULL DEFAULT '',
+  oleh_id TEXT NOT NULL DEFAULT '',
+  catatan TEXT NOT NULL DEFAULT '',
+  dibuat_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_ai_satker_aturan (
+  id TEXT PRIMARY KEY,
+  sasaran TEXT NOT NULL,
+  sasaran_id TEXT NOT NULL,
+  boleh INTEGER NOT NULL DEFAULT 1,
+  batas_bulanan_rp INTEGER NOT NULL DEFAULT 0,
+  diubah_oleh TEXT NOT NULL DEFAULT '',
+  diubah_at TEXT NOT NULL
+)`,
+  ],
+  indeks: [
+    `CREATE UNIQUE INDEX IF NOT EXISTS uq_ai_satker_aturan ON aleta_ai_satker_aturan(sasaran, sasaran_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_ai_satker_mutasi_waktu ON aleta_ai_satker_mutasi(dibuat_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_ai_satker_mutasi_pengguna ON aleta_ai_satker_mutasi(pengguna_id, dibuat_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_ai_satker_mutasi_rujukan ON aleta_ai_satker_mutasi(rujukan_id)`,
+  ],
+} as const;
+
+/**
  * Cermin Perkara (0090, 25 Okt 2026, C0): salinan keadaan perkara SIPP di basis
  * data ALETA - perkara, sidang, pihak, mediasi, penanda Status Perkara, dan
  * jejak pemindai. Cermin PERSIS dari drizzle/0090_aleta_cermin_perkara.sql;
@@ -3555,6 +3596,8 @@ const schemaStatements = [
   ...DDL_ALETA_AI_DOMPET.tabel,
   // ALETA Ai: program promosi gratis (0113).
   ...DDL_ALETA_AI_PROMO.tabel,
+  // ALETA Ai: dompet satker (0124).
+  ...DDL_ALETA_AI_SATKER.tabel,
   // Antrean kerja peramban di basis data (0098, rantai B / K15).
   ...DDL_ANTREAN_PERAMBAN.tabel,
   // Kamus alias nama pihak (0100, rantai B / U18).
@@ -5560,6 +5603,7 @@ const indexStatements = [
   ...DDL_ALETA_AI.indeks,
   ...DDL_ALETA_AI_DOMPET.indeks,
   ...DDL_ALETA_AI_PROMO.indeks,
+  ...DDL_ALETA_AI_SATKER.indeks,
   ...DDL_ANTREAN_PERAMBAN.indeks,
   ...DDL_ALIAS_NAMA.indeks,
   ...DDL_JEJAK_ISIAN.indeks,

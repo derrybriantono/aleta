@@ -32,9 +32,9 @@ import {
   type RuteKelompok,
 } from "@/lib/aleta-ai/rute";
 import type { AletaDatabase } from "@/server/db/client";
-import { kemampuanDiminta } from "@/lib/aleta-ai/kemampuan";
-import { PemulihAliran } from "@/lib/aleta-ai/samaran";
-import { bolehDrafPenetapanAi, bolehKemampuanAi, pesanTolakKemampuanAi } from "@/lib/matriks-peran";
+import { kemampuanDiminta, type PermintaanKemampuan } from "@/lib/aleta-ai/kemampuan";
+import { PemulihAliran, type JenisSamaran } from "@/lib/aleta-ai/samaran";
+import { bolehDrafPenetapanAi, bolehKemampuanAi, pesanTolakKemampuanAi, type KemampuanAi } from "@/lib/matriks-peran";
 import { golonganPelakuAi, type PelakuAi } from "@/server/modules/aleta-ai/akses";
 import { alatApiUntukPelaku, jalankanAlat } from "@/server/modules/aleta-ai/alat";
 import { ambilKlienAi, GalatKlienAi, jinakkanGalat, type HasilAi, type KlienAi } from "@/server/modules/aleta-ai/klien";
@@ -50,6 +50,7 @@ import { nilaiPerkiraan, parameterHarga, rupiahPerkiraan, type PerkiraanBiaya } 
 import { proyekAktif } from "@/server/modules/aleta-ai/proyek";
 import { bacaPilihanPercakapan, proyekUntukPrompt, simpanUsulanMemori, type ProyekUntukPrompt } from "@/server/modules/aleta-ai/proyek-kelola";
 import { dibatalkanSaklar, pantauSaklar } from "@/server/modules/aleta-ai/saklar";
+import { nilaiDompetSatker, selesaikanSatker, tahanSatker } from "@/server/modules/aleta-ai/dompet-satker";
 import { saldoPengguna, selesaikanTahanan, tahanDana, tambahTahanan } from "@/server/modules/aleta-ai/saldo";
 import { ApiError } from "@/server/shared/errors";
 
@@ -95,10 +96,32 @@ export type EventAi =
   | { jenis: "perkiraan"; mode: string; label: string; perkiraanRp: number }
   | { jenis: "teks"; delta: string }
   | { jenis: "alat"; nama: string; label: string }
-  | { jenis: "selesai"; pesanId: string; mode: string; label: string; biayaRp: number; saldoRp: number }
+  | { jenis: "selesai"; pesanId: string; mode: string; label: string; biayaRp: number; saldoRp: number; dompet?: "satker" }
   | { jenis: "gagal"; pesan: string };
 
-export type MasukanPesan = { teks?: string; pemicu?: string };
+export type MasukanPesan = {
+  teks?: string;
+  pemicu?: string;
+  /**
+   * Fitur bantu panel Blangko Derry (1 Nov): kelompok rute DIPAKSA (tanpa pengklasifikasi berbayar dan tanpa pemicu menu),
+   * kemampuan yang dicek hak perannya dinyatakan eksplisit (bukan ditebak dari kata di pesan), nama/identitas yang pasti
+   * disamarkan didaftarkan lebih dulu, dan `fitur` dicatat di jejak. Tanpa ini, perilaku giliran persis seperti sebelumnya.
+   */
+  kelompok?: string;
+  kemampuan?: KemampuanAi;
+  samarkan?: ReadonlyArray<{ jenis: JenisSamaran; nilai: string }>;
+  fitur?: string;
+  /**
+   * Dompet yang dipotong: "satker" = dompet satker (bila pengguna berhak menurut aturan Super Admin dan saldo/batas bulanan
+   * cukup; selain itu giliran ditolak dengan kalimat biasa). Kosong = dompet pengguna, persis seperti sebelumnya.
+   */
+  dompet?: "pengguna" | "satker";
+  /**
+   * Proyek kelolaan Super Admin yang dipilih di panel ("" = proyek bawaan satker). Dipakai bila percakapan belum punya pilihan
+   * sendiri; proyek yang tidak boleh dipakai pengguna ini ditolak (404 biasa) dan dicatat di jejak.
+   */
+  proyekId?: string;
+};
 
 export type OpsiMesin = {
   sinyal?: AbortSignal;
@@ -337,7 +360,8 @@ export async function* kirimPesan(
   }
   // Proyek kelolaan yang dipilih pada percakapan ini (kosong = proyek bawaan satker saja).
   let kelola: ProyekUntukPrompt | null = null;
-  const proyekPilihId = await bacaPilihanPercakapan(db, percakapanId);
+  // Pilihan pada percakapan menang; bila belum ada, proyekId dari panel Blangko Derry (hak tetap diperiksa proyekUntukPrompt).
+  const proyekPilihId = (await bacaPilihanPercakapan(db, percakapanId)) || teks(masukan.proyekId);
   if (proyekPilihId) {
     try {
       kelola = await proyekUntukPrompt(db, pelaku, proyekPilihId);
@@ -359,7 +383,15 @@ export async function* kirimPesan(
   await pastikanKuotaBulanIni(db, pelaku, sekarang);
   // Program promosi gratis (bila menyala dan pengguna sasaran, jatah ada): giliran ini ditagih Rp0, tanpa saldo.
   let promo = await statusPromo(db, pelaku, { sekarang });
-  if (!pelaku.superAdmin && !promo.berlaku) {
+  // Dompet satker dipilih pengguna: hak (aturan peran/pengguna), saldo satker, dan batas bulanan dinilai di sini dan lagi sesudah perkiraan.
+  const pakaiSatker = masukan.dompet === "satker" && !pelaku.superAdmin && !promo.berlaku;
+  if (pakaiSatker) {
+    const awal = await nilaiDompetSatker(db, pelaku, 0, pengaturan.minimumRp, sekarang);
+    if (!awal.ok) {
+      yield gagal(awal.alasan);
+      return;
+    }
+  } else if (!pelaku.superAdmin && !promo.berlaku) {
     const saldo = await saldoPengguna(db, pelaku.id);
     if (saldo < pengaturan.minimumRp) {
       yield gagal(`${awalanPromoHabis(promo)}Saldo ALETA Ai Anda (Rp${saldo.toLocaleString("id-ID")}) tidak cukup. Hubungi Super Admin untuk mengisi saldo.`);
@@ -381,17 +413,22 @@ export async function* kirimPesan(
   const timpaan = await bacaTimpaanKemampuan(db);
 
   // 2. Rute -------------------------------------------------------------------
-  let pemicu: PemicuMenu | null = kodePemicu ? (proyek.menu.find((p) => p.kode === kodePemicu) ?? null) : null;
-  if (!pemicu) pemicu = cariPemicuDiAwalTeks(proyek.menu, teksPengguna);
+  // Fitur bantu Blangko Derry: kelompok dipaksa; pemicu menu tidak dicari di awal teks (pesan tugas bukan perintah menu).
+  const kelompokPaksa = teks(masukan.kelompok) && tabel.has(teks(masukan.kelompok)) ? teks(masukan.kelompok) : "";
+  let pemicu: PemicuMenu | null = kelompokPaksa ? null : kodePemicu ? (proyek.menu.find((p) => p.kode === kodePemicu) ?? null) : null;
+  if (!pemicu && !kelompokPaksa) pemicu = cariPemicuDiAwalTeks(proyek.menu, teksPengguna);
   const diawaliAlias = pemicu ? cariPemicuDiAwalTeks([pemicu], teksPengguna) !== null : false;
   const teksKerja = pemicu && !diawaliAlias ? `${pemicu.label}${teksPengguna ? `\n${teksPengguna}` : ""}` : teksPengguna;
+  for (const x of masukan.samarkan ?? []) penyamar.daftar(x.jenis, x.nilai);
 
   const percobaan: Percobaan[] = [];
   const catat = (p: Percobaan) => percobaan.push(p);
 
-  let klas: HasilKlasifikasi = pemicu
-    ? { kelompok: pemicu.kelompok, yakin: 1, sumber: "pemicu" }
-    : await klasifikasikan(klien, tabel, tarif, penyamar.samarkan(teksKerja), opsi.sinyal, catat);
+  let klas: HasilKlasifikasi = kelompokPaksa
+    ? { kelompok: kelompokPaksa, yakin: 1, sumber: "pemicu" }
+    : pemicu
+      ? { kelompok: pemicu.kelompok, yakin: 1, sumber: "pemicu" }
+      : await klasifikasikan(klien, tabel, tarif, penyamar.samarkan(teksKerja), opsi.sinyal, catat);
   if (klas.sumber !== "pemicu" && terlaluRagu(klas)) {
     const naik = naikSatuTingkat(tabel, klas.kelompok, pelaku.peranId);
     if (naik) klas = { ...klas, kelompok: naik.kelompok };
@@ -406,7 +443,9 @@ export async function* kirimPesan(
 
   // Matriks kemampuan per peran (rencana v2 10.3), ditegakkan di server.
   const golongan = golonganPelakuAi(pelaku);
-  for (const diminta of kemampuanDiminta(teksKerja, rute.kelompok)) {
+  // Fitur bantu: kemampuan yang dicek hanya yang dinyatakan fitur (kata di pesan tugas tidak ditebak).
+  const dimintaKemampuan: PermintaanKemampuan[] = kelompokPaksa ? (masukan.kemampuan ? [{ kemampuan: masukan.kemampuan }] : []) : kemampuanDiminta(teksKerja, rute.kelompok);
+  for (const diminta of dimintaKemampuan) {
     const boleh =
       diminta.kemampuan === "draf-penetapan"
         ? bolehDrafPenetapanAi(golongan, diminta.jenisPenetapan ?? "", timpaan)
@@ -424,6 +463,17 @@ export async function* kirimPesan(
     });
     yield gagal(pesanTolakKemampuanAi(diminta.kemampuan, timpaan));
     return;
+  }
+
+  if (kelompokPaksa && teks(masukan.fitur)) {
+    await catatJejak(db, {
+      penggunaId: pelaku.id,
+      peranId: pelaku.peranId,
+      aksi: "fitur-blangko",
+      percakapanId,
+      hasil: "mulai",
+      ringkas: `fitur=${teks(masukan.fitur).slice(0, 8)}; kelompok=${rute.kelompok}${teks(masukan.proyekId) ? `; proyek=${teks(masukan.proyekId).slice(0, 60)}` : ""}`,
+    });
   }
 
   // 3. Permintaan, perkiraan, tahan dana --------------------------------------
@@ -460,7 +510,21 @@ export async function* kirimPesan(
 
   const pesanId = `aip-${randomUUID()}`;
   let ditahan = 0;
-  if (!bebasTagih) {
+  const pemakai = { id: pelaku.id, peranId: pelaku.peranId };
+  if (pakaiSatker && !bebasTagih) {
+    const n = await nilaiDompetSatker(db, pelaku, perkiraan.perkiraanRp, pengaturan.minimumRp, sekarang);
+    if (!n.ok) {
+      await catatPemakaianTanpaPesan(db, pelaku, percakapanId, percobaan, kurs.kurs);
+      yield gagal(n.alasan);
+      return;
+    }
+    ditahan = Math.min(n.saldoRp, Math.max(perkiraan.tahanRp, perkiraan.perkiraanRp));
+    if (!(await tahanSatker(db, pemakai, ditahan, pesanId))) {
+      await catatPemakaianTanpaPesan(db, pelaku, percakapanId, percobaan, kurs.kurs);
+      yield gagal("Saldo satker tidak cukup. Pakai saldo Anda sendiri atau hubungi Super Admin.");
+      return;
+    }
+  } else if (!bebasTagih) {
     const saldo = await saldoPengguna(db, pelaku.id);
     if (saldo < perkiraan.perkiraanRp) {
       await catatPemakaianTanpaPesan(db, pelaku, percakapanId, percobaan, kurs.kurs);
@@ -538,7 +602,7 @@ export async function* kirimPesan(
     if (bebasTagih) {
       potong.saldoSetelah = await saldoPengguna(db, pelaku.id);
     } else {
-      const s = await selesaikanTahanan(db, pelaku.id, pesanId, tagih);
+      const s = pakaiSatker ? await selesaikanSatker(db, pemakai, pesanId, tagih) : await selesaikanTahanan(db, pelaku.id, pesanId, tagih);
       potong = { dipotongRp: s.dipotongRp, tidakTertagihRp: s.tidakTertagihRp, saldoSetelah: s.saldoSetelah };
     }
 
@@ -675,7 +739,7 @@ export async function* kirimPesan(
           jawaban += CATATAN_BATAS_ALAT;
           yield { jenis: "teks", delta: CATATAN_BATAS_ALAT };
           const t = await tutup();
-          yield { jenis: "selesai", pesanId, mode: rute.label, label: rute.label, biayaRp: t.biayaRp, saldoRp: t.saldoRp };
+          yield { jenis: "selesai", pesanId, mode: rute.label, label: rute.label, biayaRp: t.biayaRp, saldoRp: t.saldoRp, ...(pakaiSatker ? { dompet: "satker" as const } : {}) };
           return;
         }
         putaranAlat += 1;
@@ -712,7 +776,7 @@ export async function* kirimPesan(
           if (!bebasTagih) {
             const perlu = Math.max(0, perkiraanBaru.tahanRp - ditahan);
             if (perlu > 0) {
-              if (!(await tambahTahanan(db, pelaku.id, perlu, pesanId))) {
+              if (!(await (pakaiSatker ? tahanSatker(db, pemakai, perlu, pesanId) : tambahTahanan(db, pelaku.id, perlu, pesanId)))) {
                 status = "ditolak";
                 yield gagal(PESAN_DITOLAK);
                 return;
@@ -733,7 +797,7 @@ export async function* kirimPesan(
           jawaban += catatan;
           yield { jenis: "teks", delta: catatan };
           const t = await tutup();
-          yield { jenis: "selesai", pesanId, mode: rute.label, label: rute.label, biayaRp: t.biayaRp, saldoRp: t.saldoRp };
+          yield { jenis: "selesai", pesanId, mode: rute.label, label: rute.label, biayaRp: t.biayaRp, saldoRp: t.saldoRp, ...(pakaiSatker ? { dompet: "satker" as const } : {}) };
         } else {
           await tutup();
           yield gagal(PESAN_DITOLAK);
@@ -749,7 +813,7 @@ export async function* kirimPesan(
         status = "selesai";
       }
       const t = await tutup();
-      yield { jenis: "selesai", pesanId, mode: rute.label, label: rute.label, biayaRp: t.biayaRp, saldoRp: t.saldoRp };
+      yield { jenis: "selesai", pesanId, mode: rute.label, label: rute.label, biayaRp: t.biayaRp, saldoRp: t.saldoRp, ...(pakaiSatker ? { dompet: "satker" as const } : {}) };
       return;
     }
   } finally {
@@ -812,7 +876,7 @@ export async function perkirakanPesan(
   if (percakapanId && !(await ambilMilik(db, pelaku.id, percakapanId))) throw new ApiError(404, "Percakapan tidak ditemukan.");
   const proyek = await proyekAktif(db);
   if (!proyek) throw new ApiError(409, PESAN_NONAKTIF_PROYEK);
-  const proyekPilihId = percakapanId ? await bacaPilihanPercakapan(db, percakapanId) : "";
+  const proyekPilihId = (percakapanId ? await bacaPilihanPercakapan(db, percakapanId) : "") || teks(masukan.proyekId);
   const kelola = proyekPilihId ? await proyekUntukPrompt(db, pelaku, proyekPilihId) : null;
 
   const pengaturan = await bacaPengaturan(db);
@@ -820,11 +884,16 @@ export async function perkirakanPesan(
   const tarif = new Map((await bacaTarif(db)).map((t) => [t.model, t]));
   const tabel = tabelRuteDari(await bacaRute(db));
 
-  let pemicu: PemicuMenu | null = kodePemicu ? (proyek.menu.find((p) => p.kode === kodePemicu) ?? null) : null;
-  if (!pemicu) pemicu = cariPemicuDiAwalTeks(proyek.menu, teksPengguna);
+  const kelompokPaksa = teks(masukan.kelompok) && tabel.has(teks(masukan.kelompok)) ? teks(masukan.kelompok) : "";
+  let pemicu: PemicuMenu | null = kelompokPaksa ? null : kodePemicu ? (proyek.menu.find((p) => p.kode === kodePemicu) ?? null) : null;
+  if (!pemicu && !kelompokPaksa) pemicu = cariPemicuDiAwalTeks(proyek.menu, teksPengguna);
   const diawaliAlias = pemicu ? cariPemicuDiAwalTeks([pemicu], teksPengguna) !== null : false;
   const teksKerja = pemicu && !diawaliAlias ? `${pemicu.label}${teksPengguna ? `\n${teksPengguna}` : ""}` : teksPengguna;
-  let klas: HasilKlasifikasi = pemicu ? { kelompok: pemicu.kelompok, yakin: 1, sumber: "pemicu" } : klasifikasiKataKunci(teksKerja);
+  let klas: HasilKlasifikasi = kelompokPaksa
+    ? { kelompok: kelompokPaksa, yakin: 1, sumber: "pemicu" }
+    : pemicu
+      ? { kelompok: pemicu.kelompok, yakin: 1, sumber: "pemicu" }
+      : klasifikasiKataKunci(teksKerja);
   if (klas.sumber !== "pemicu" && terlaluRagu(klas)) {
     const naik = naikSatuTingkat(tabel, klas.kelompok, pelaku.peranId);
     if (naik) klas = { ...klas, kelompok: naik.kelompok };
@@ -844,7 +913,8 @@ export async function perkirakanPesan(
     pelaku,
     pengaturan,
     { kelompok: rute.kelompok, label: rute.label, tokenMasuk: perkiraan.tokenMasuk, tokenKeluar: rute.perkiraanKeluaran, perkiraanRp: perkiraan.perkiraanRp, tahanRp: perkiraan.tahanRp, biayaApiRp: perkiraan.biayaApiRp, kurs },
-    sekarang
+    sekarang,
+    { dompetSatker: masukan.dompet === "satker" }
   );
   if (!klienAsli && hasil.bolehJalan) return { ...hasil, bolehJalan: false, alasan: PESAN_NONAKTIF_KUNCI };
   return hasil;

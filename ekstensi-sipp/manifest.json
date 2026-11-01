@@ -154,6 +154,7 @@
         "checklist.js",
         "abt-klien.js",
         "blangko-derry-pulih.js",
+        "blangko-derry-ai.js",
         "blangko-derry.js",
         "blangko-derry-saksi.js",
         "blangko-derry-saksi-tampil.js",
@@ -178,7 +179,8 @@
       ],
       "css": [
         "panel.css",
-        "blangko-derry.css"
+        "blangko-derry.css",
+        "blangko-derry-ai.css"
       ],
       "run_at": "document_idle"
     },

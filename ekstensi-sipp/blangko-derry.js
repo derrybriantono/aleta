@@ -976,6 +976,12 @@
       `<div class="bd-tip" id="bd-tip" hidden role="tooltip"></div>` +
       `<div class="bd-toast" id="bd-toast" hidden role="status"></div>`;
     document.body.appendChild(akar);
+    // ALETA Ai (1 Nov): saklar, bilah fitur bantu, dan saldo dipasang oleh blangko-derry-ai.js (bawaan mati; tanpa itu panel berjalan seperti biasa).
+    try {
+      if (globalThis.AletaBdAi) globalThis.AletaBdAi.pasang(akar);
+    } catch {
+      /* fitur bantu tidak boleh menahan panel */
+    }
     akar.addEventListener("scroll", catatGulirPulih, { passive: true });
     // 20 Okt: tinggi kepala panel (yang menempel) dipakai CSS sebagai ruang lompat, supaya kotak yang difokuskan tidak tertutup.
     try {
@@ -1299,6 +1305,11 @@
     const siapa = cari("#bd-siapa", akar);
     if (siapa) siapa.textContent = sebutAkun();
     renderTes();
+    try {
+      if (globalThis.AletaBdAi) globalThis.AletaBdAi.segarkan();
+    } catch {
+      /* fitur bantu tidak boleh menahan panel */
+    }
     const wrap = cari("#bd-lihatwrap", akar);
     if (!wrap) return;
     wrap.hidden = !adm();
@@ -3165,6 +3176,8 @@
     akar: () => akar,
     /** Peran akun (himpunan peran tampilan: hakim, pp, js, kasir, ptsp, admin). */
     peranAkun: () => Array.from(S.peranSet),
+    /** Akun ALETA yang sedang masuk (untuk ingatan per pengguna); null bila belum terbaca. */
+    akun: () => (S.siapa ? { id: String(S.siapa.id || ""), nama: String(S.siapa.nama || "") } : null),
     /** Titik sambung tahap E: fn(ctx) -> [{ berkas, kelompok, jenis, alasan }]. */
     pasangRekomendasi(fn) {
       S.rekomendasi = typeof fn === "function" ? fn : null;

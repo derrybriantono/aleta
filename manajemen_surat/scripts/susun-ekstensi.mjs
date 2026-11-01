@@ -132,6 +132,10 @@ const BERKAS = [
   "abt-klien.js",
   // Tetap di tempat saat halaman dimuat ulang (30 Okt 2026): keadaan tampilan Derry di sessionStorage tab; dimuat sebelum blangko-derry.js.
   "blangko-derry-pulih.js",
+  // ALETA Ai sebagai alat bantu di panel Blangko Derry (1 Nov 2026): saklar, bilah fitur bantu, saldo; dimuat sebelum blangko-derry.js (dipasang saat panel dibangun).
+  "blangko-derry-ai.js",
+  // Inti ALETA Ai: dimuat malas (AletaModul "ai-blangko") hanya saat saklarnya menyala; bukan skrip konten manifest.
+  "blangko-derry-ai-inti.js",
   "blangko-derry.js",
   // Jawaban saksi otomatis + pilihan pengetahuan saksi di Blangko Derry (19 Okt 2026): pembantu murni,
   // dimuat sebelum blangko-derry-isian.js yang memakainya.
@@ -242,6 +246,7 @@ const BERKAS = [
   "kasir-jurnal-popup.css",
   "penetapan-sipp.css",
   "blangko-derry.css",
+  "blangko-derry-ai.css",
   // Menu kiri ABT bisa digulir (19 Okt 2026) - skrip konten ABT: #navbar diberi
   // max-height + overflow-y supaya submenu Blangko Derry terjangkau; gaya saja.
   "abt-gulir.js",
