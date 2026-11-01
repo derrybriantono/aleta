@@ -686,8 +686,8 @@
     const tanpaPendahulu = [];
     L.forEach((r, i) => {
       if (cocokIdx.has(i)) return;
-      if (r.butir && !diketikPetugas(r)) {
-        dibuang += 1; // butir katalog yang tidak berlaku lagi untuk keadaan ini
+      if (r.butir && !diketikPetugas(r) && !r.ditambah) {
+        dibuang += 1; // butir katalog yang tidak berlaku lagi untuk keadaan ini (baris yang ditambahkan petugas dari katalog tetap)
         return;
       }
       if (o.gantiDaftar && !diketikPetugas(r)) {
@@ -840,7 +840,104 @@
     return `<div class="bd-skpanel" role="group" aria-label="Pengetahuan saksi"><div class="bd-skhead"><span class="bd-lbl">Pengetahuan saksi</span></div><p class="bd-catat">Jenis perkara ${esc(nama || "ini")} belum punya katalog pertanyaan saksi. Ketik pertanyaan dan jawaban saksi sendiri, atau muat set pertanyaan dari ABT.</p></div>`;
   }
 
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // 1 Nov 2026 (keputusan 79): "Tambah pertanyaan" - pertanyaan katalog yang TIDAK ikut tersusun (tidak cocok keadaan, tingkat
+  // jarang, atau sudah dihapus petugas), dipilih lalu disisipkan di tengah keterangan saksi beserta jawaban bawaannya.
+  // ──────────────────────────────────────────────────────────────────────────
+  const JUDUL_KELOMPOK = Object.freeze({
+    identitas: "Identitas saksi",
+    hubungan: "Hubungan saksi dengan para pihak",
+    pokok: "Pokok perkara",
+    akibat: "Akibat",
+    upaya: "Upaya",
+  });
+  const URUT_KELOMPOK = Object.freeze(["identitas", "hubungan", "pokok", "akibat", "upaya"]);
+
+  /** Katalog ringkas berisi hanya butir `ids`, syarat keadaan/tingkat/pihaknya dinetralkan supaya pasti ikut tersusun untuk saksi mana pun. */
+  function katTambahan(kat, ids) {
+    const pilih = new Set(daftar(ids));
+    const butir = daftar(kat && kat.pertanyaan)
+      .filter((q) => laRaya(q) && pilih.has(q.id))
+      .map((q) => Object.assign({}, q, { keadaan: {}, tingkat: "inti", pihakSaksi: ["*"], pokok: undefined, menggantikan: [], kelompok: q.kelompok === "penutup" ? "pokok" : q.kelompok }));
+    return Object.assign({}, kat, { pertanyaan: butir });
+  }
+
+  /**
+   * Pertanyaan katalog yang belum ada pada saksi-saksi `target`, dikelompokkan menurut pokok pembuktiannya, dengan rumusan
+   * pertanyaan dan jawaban bawaan MENURUT pengetahuan dan keadaan tiap saksi (jalur susun() yang sama).
+   *   masukan = masukan susun() + { target: [kunciSaksi], rows: { [kunciSaksi]: baris-baris sekarang } }
+   * @returns {{ada: boolean, calon: Array<{id, judul, tingkat, urutan, tanya, baris: Object<string, object>}>}}
+   */
+  function calonTambah(masukan) {
+    const m = Mesin();
+    const o = masukan || {};
+    const kat = o.kat;
+    if (!m || !kat) return { ada: false, calon: [] };
+    const target = daftar(o.target).map(teks);
+    const rowsDari = (k) => daftar(laRaya(o.rows) ? o.rows[k] : []);
+    const sudah = new Set();
+    for (const k of target) for (const r of rowsDari(k)) if (r && r.butir) sudah.add(teks(r.butir));
+    const pihak = target.map((k) => pihakDariKunci(k));
+    const urutan = (q) => (typeof q.urutan === "number" ? q.urutan : 0);
+    const kandidat = daftar(kat.pertanyaan)
+      .filter((q) => laRaya(q) && q.kelompok !== "penutup" && !sudah.has(q.id) && pihak.every((p) => daftar(q.pihakSaksi).includes("*") || daftar(q.pihakSaksi).includes(p)))
+      .sort((a, b) => urutan(a) - urutan(b));
+    if (!kandidat.length || !target.length) return { ada: true, calon: [] };
+    const hasil = susun(Object.assign({}, o, { kat: katTambahan(kat, kandidat.map((q) => q.id)), jarang: true }));
+    const jeniskosong = (k) => rowsDari(k).filter((r) => r && !r.butir && rapat(r.tanya));
+    const calon = [];
+    for (const q of kandidat) {
+      const baris = {};
+      let lengkap = true;
+      for (const k of target) {
+        const sk = hasil.saksi.find((x) => x.kunci === k);
+        const b = sk ? sk.baris.find((x) => x.butir === q.id) : null;
+        if (!b) {
+          lengkap = false;
+          break;
+        }
+        baris[k] = b;
+      }
+      if (!lengkap) continue;
+      const tanya = baris[target[0]].tanya;
+      // baris hasil bacaan ABT tidak membawa butir: pertanyaan yang bunyinya sama/mirip sudah ada pada saksi itu
+      const sudahAda = target.some((k) => jeniskosong(k).some((r) => rapat(r.tanya).toLowerCase() === rapat(baris[k].tanya).toLowerCase() || m.jaccard(r.tanya, baris[k].tanya) >= 0.6));
+      if (sudahAda) continue;
+      const pk = daftar(kat.pokokPembuktian).find((x) => x && x.id === q.pokok);
+      const judul = (pk && teks(pk.judul)) || JUDUL_KELOMPOK[q.kelompok] || "Lainnya";
+      calon.push({ id: q.id, judul, tingkat: teks(q.tingkat), urutan: urutan(q), kelompok: teks(q.kelompok), tanya, baris });
+    }
+    // kelompok menurut urutan butir pertamanya; di dalam kelompok menurut urutan katalog
+    const awal = new Map();
+    for (const c of calon) if (!awal.has(c.judul)) awal.set(c.judul, URUT_KELOMPOK.indexOf(c.kelompok) * 100000 + c.urutan);
+    calon.sort((a, b) => awal.get(a.judul) - awal.get(b.judul) || a.urutan - b.urutan);
+    return { ada: true, calon, peringatan: hasil.peringatan };
+  }
+
+  /** Baris tabel dari satu butir hasil susun() (bentuk sama dengan baris baru di gabung()), ditandai sebagai tambahan petugas. */
+  const barisTambahan = (b) => ({ tanya: b.tanya, jawab: b.jawab, dasar: b.jawab, butir: b.butir, jenisKat: b.jenis, kunciJawaban: b.kunciJawaban, ditambah: true });
+
+  /** Pilihan tambah pertanyaan, dikelompokkan: [{judul, butir:[calon]}] dengan saringan kata (semua kata harus ada). */
+  function kelompokkanCalon(calon, kataCari) {
+    const k = rapat(kataCari).toLowerCase();
+    const kata = k ? k.split(" ") : [];
+    const kelompok = [];
+    for (const c of daftar(calon)) {
+      const t = `${c.tanya} ${c.judul}`.toLowerCase();
+      if (kata.some((w) => !t.includes(w))) continue;
+      let g = kelompok.find((x) => x.judul === c.judul);
+      if (!g) kelompok.push((g = { judul: c.judul, butir: [] }));
+      g.butir.push(c);
+    }
+    return kelompok;
+  }
+
   return Object.freeze({
+    katTambahan,
+    calonTambah,
+    barisTambahan,
+    kelompokkanCalon,
     ID_JENIS,
     KEADAAN_PER_SAKSI,
     URUTAN_JENIS,
