@@ -15,6 +15,7 @@
  * Keluaran bagian dari faktaPerkara().bas dan dapat dipakai sendiri:
  *
  *     { ada, jumlahSaksi: {P, T}, saksi: [ {id, ke, pihak, urutan, nama, hubungan, sidang:[...], tanyaJawab:[ {no, tanya, jawab, pokok:[...]} ]} ],
+ *       diabaikan: [ {saksiId, alasan: saksi-tidak-ada-di-sipp|saksi-perkara-lain|ganda-di-sidang-lain, sidang:[...], jumlah} ],   // kebersihan data, tidak dipakai
  *       pokok: { pernikahan: [ {saksi, pihak, nama, tanya, jawab} ], ... },   // pokok = peta-fakta-variabel.json -> pokokBas
  *       bukti: [ {sisi, tanda, jenis, nomor, tanggal, penerbit, teks} ], jumlahBukti: {P, T}, adaJenisBukti: {aktaNikah:true,...} }
  *
@@ -113,10 +114,43 @@ async function bacaBas(perkaraId, runAbt, runQuery, opsi) {
   const peranSaksi = new Map();
   for (const s of Array.isArray(saksiSipp) ? saksiSipp : []) peranSaksi.set(Number(s.id), s);
 
+  // Kebersihan data (1 Nov 2026, temuan 11): jawaban yang saksinya sudah tidak ada di SIPP, atau milik perkara lain, tidak dipakai;
+  // pertanyaan-jawaban yang sama persis untuk saksi yang sama di sidang berikutnya tidak dihitung dua kali. Hanya jalur baca:
+  // tidak ada baris di ABT yang diubah atau dihapus. Saksi SIPP tidak terbaca/kosong = tidak bisa menilai, tidak ada yang dibuang.
+  const dapatMenilaiYatim = peranSaksi.size > 0;
+  const idAsing = [...new Set((Array.isArray(jawaban) ? jawaban : []).map((j) => Number(j.saksi_id)).filter((x) => Number.isFinite(x) && x > 0 && dapatMenilaiYatim && !peranSaksi.has(x)))].slice(0, 50);
+  const milikLain = new Set();
+  if (idAsing.length && typeof runQuery === "function") {
+    const baris = await diam(() => runQuery(`SELECT id, perkara_id FROM perkara_pihak5 WHERE id IN (${idAsing.map(() => "?").join(",")})`, idAsing));
+    for (const b of Array.isArray(baris) ? baris : []) if (b && Number(b.perkara_id) > 0 && Number(b.perkara_id) !== id) milikLain.add(Number(b.id));
+  }
+  const diabaikan = [];
+  const catatDiabaikan = (saksiId, sidangId, alasan) => {
+    const ada = diabaikan.find((d) => d.saksiId === saksiId && d.alasan === alasan);
+    if (ada) {
+      ada.jumlah += 1;
+      if (!ada.sidang.includes(sidangId)) ada.sidang.push(sidangId);
+    } else diabaikan.push({ saksiId, alasan, sidang: [sidangId], jumlah: 1 });
+  };
+  const sudahDiSidang = new Map();
   const perSaksi = new Map();
   for (const j of Array.isArray(jawaban) ? jawaban : []) {
     if (!rapat(j.jawaban)) continue;
     const sid = Number(j.saksi_id);
+    const sidangJ = Number(j.sidang_id);
+    if (dapatMenilaiYatim && !peranSaksi.has(sid)) {
+      catatDiabaikan(sid, sidangJ, milikLain.has(sid) ? "saksi-perkara-lain" : "saksi-tidak-ada-di-sipp");
+      continue;
+    }
+    const kunciSama = `${sid}|${rapat(j.pertanyaan).toLowerCase()}|${rapat(j.jawaban).toLowerCase()}`;
+    const sidangAwal = sudahDiSidang.get(kunciSama);
+    if (sidangAwal !== undefined && sidangAwal !== sidangJ) {
+      const sudah = perSaksi.get(sid);
+      if (sudah && !sudah.sidang.includes(sidangJ)) sudah.sidang.push(sidangJ);
+      catatDiabaikan(sid, sidangJ, "ganda-di-sidang-lain");
+      continue;
+    }
+    sudahDiSidang.set(kunciSama, sidangJ);
     const meta = peranSaksi.get(sid) || {};
     const s =
       perSaksi.get(sid) ||
@@ -157,7 +191,7 @@ async function bacaBas(perkaraId, runAbt, runQuery, opsi) {
   for (const b of bukti) adaJenisBukti[b.jenisKode] = true;
 
   const jumlahSaksi = { P: saksi.filter((s) => s.pihak === "P").length, T: saksi.filter((s) => s.pihak === "T").length };
-  return { ada: saksi.length > 0 || bukti.length > 0, jumlahSaksi, saksi, pokok, bukti, jumlahBukti, adaJenisBukti };
+  return { ada: saksi.length > 0 || bukti.length > 0, jumlahSaksi, saksi, pokok, bukti, jumlahBukti, adaJenisBukti, diabaikan };
 }
 
 module.exports = { bacaBas, uraiBukti, pecahBukti, KODE_BUKTI, JENIS_BUKTI };
