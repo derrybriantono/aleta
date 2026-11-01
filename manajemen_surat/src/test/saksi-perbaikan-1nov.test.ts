@@ -185,7 +185,11 @@ describe("63 - arah putusan Tolak/NO: menu tiga pilihan, bawaan tidak tahu", () 
     const up = cari(h, 0, /upaya dari keluarga/i);
     expect(up.jawab).toMatch(/sudah berupaya merukunkan/);
     expect(up.pilihanJawab.map((x: any) => x.kunci)).toEqual(["sudah", "belum"]);
-    expect(cari(h, 1, /upaya dari keluarga/i).jawab).toMatch(/belum/);
+    // keputusan 87: "keterangan sebaliknya" -> bawaan upaya keluarga "belum" (pilihan "sudah" tetap tersedia)
+    const upB = cari(h, 1, /upaya dari keluarga/i);
+    expect(upB.jawab).toMatch(/belum/);
+    expect(upB.jawab).toBe(upB.pilihanJawab.find((x: any) => x.kunci === "belum").jawab);
+    expect(ARAH.pilihanJawabBaris(BDS.pasangJawaban([{ no: "1", tanya: upB.tanya, jawab: "...", dasar: "..." }], [upB]).rows[0])).toMatchObject({ terpilih: "belum" });
     // saksi kedua: bunyi lain yang setara (dua saksi tidak sama persis)
     expect(cari(h, 1, /nafkah/i).jawab).toMatch(/Tergugat masih memberi(?:kan)? nafkah kepada Penggugat/);
     expect(cari(h, 1, /masih tinggal serumah/i).jawab).toMatch(/masih tinggal bersama/);
