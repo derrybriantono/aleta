@@ -30,6 +30,7 @@
 
   const teks = (v) => (v === null || v === undefined ? "" : String(v));
   const BATAS_ISIAN = 8;
+  const BATAS_KUTIPAN = 6;
 
   /** Bunyi penanda di naskah -> jenis temuan. Bunyi baru dan lama. */
   const POLA_HURUF = /\[HURUF ALASAN PERCERAIAN BELUM DIPILIH\]|TIDAK BENAR QUERY NYA \/ BELUM ISI ALASAN|BELUM ISI ALASAN DI KOLOM ABT/i;
@@ -65,6 +66,8 @@
    *   namaIsian Map kode -> nama isian tampil (opsional; untuk menyebut isian, bukan nomornya)
    *   relaas    { ada, P: [iso], T: [iso] } tanggal relaas SIPP per pihak (opsional; butir 50), sebutanP/sebutanT, jenisNaskah put|bas
    *   bertentangan [{ kode, nama, isi, usulan }] isian pihak vs usulan PASTI keterangan kedua saksi (keputusan 17; peringatan pasif)
+   *   kutipan   { temuan: [{ jenis, pasti, rujukan, pesan, jumlah }], lebih } dasar hukum vs rak peraturan (P1 1 Nov; rute portal
+   *             periksa-kutipan, sekali per naskah) - butir INFO, tidak menahan cetak, naskah tidak diubah
    * -> [{ jenis, teks, perbaiki: { aksi: "isian"|"rapikan"|"pratinjau", kode? } | null, judulTombol }]
    */
   function kumpulkan(bahan) {
@@ -201,6 +204,19 @@
         judulTombol: "Merapikan isian ini (titik koma di tengah menjadi koma) lalu menyimpannya",
       });
     }
+    // 6b. P1 (1 Nov): kutipan dasar hukum yang tidak cocok dengan rak peraturan terverifikasi. Hanya info - naskah tidak diubah.
+    const kut = b.kutipan && Array.isArray(b.kutipan.temuan) ? b.kutipan.temuan : [];
+    for (const x of kut.slice(0, BATAS_KUTIPAN)) {
+      if (!x || !x.pesan) continue;
+      hasil.push({
+        jenis: `kutipan-${teks(x.jenis)}`,
+        teks: `Dasar hukum${x.pasti ? "" : " (perlu dicek)"}: ${teks(x.pesan)}${Number(x.jumlah) > 1 ? ` (${Number(x.jumlah)} tempat)` : ""}`,
+        perbaiki: { aksi: "pratinjau" },
+        judulTombol: "Membuka pratinjau naskah (naskah tidak diubah)",
+      });
+    }
+    const sisaKut = Math.max(0, kut.length - BATAS_KUTIPAN) + (b.kutipan && Number(b.kutipan.lebih) > 0 ? Number(b.kutipan.lebih) : 0);
+    if (sisaKut) hasil.push({ jenis: "kutipan-lain", teks: `${sisaKut} catatan dasar hukum lain.`, perbaiki: { aksi: "pratinjau" }, judulTombol: "Membuka pratinjau naskah" });
     // 7. Isian penting yang masih kosong (sama dengan pengingat Cetak).
     const kos = (Array.isArray(b.kosong) ? b.kosong : []).filter((x) => x && x.kode && !sudah.has(teks(x.kode)));
     for (const x of kos.slice(0, BATAS_ISIAN)) {
