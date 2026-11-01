@@ -709,7 +709,10 @@
    ],
    "hal": "anak mereka",
    "tidakBerlaku": [
-    "berbeda"
+    "berbeda",
+    "mendengar",
+    "de-auditu",
+    "sebagian"
    ],
    "jawaban": {
     "melihat": {
@@ -1697,8 +1700,13 @@
     "0046",
     "0047"
    ],
-   "hal": "upaya saksi merukunkan mereka",
-   "tidakBerlaku": [],
+   "hal": "upaya saya merukunkan mereka",
+   "tidakBerlaku": [
+    "mendengar",
+    "de-auditu",
+    "sebagian",
+    "tidak-tahu"
+   ],
    "jawaban": {
     "melihat": {
      "maksud": "saksi sendiri pernah berusaha merukunkan namun tidak berhasil",
@@ -1748,9 +1756,13 @@
     "0046",
     "0047"
    ],
-   "hal": "kesanggupan saksi mendamaikan mereka",
+   "hal": "kesanggupan saya mendamaikan mereka",
    "tidakBerlaku": [
-    "berbeda"
+    "berbeda",
+    "mendengar",
+    "de-auditu",
+    "sebagian",
+    "tidak-tahu"
    ],
    "jawaban": {
     "melihat": {
@@ -3069,61 +3081,91 @@
     "melihat": {
      "maksud": "saksi melihat dan menyaksikan sendiri hal itu",
      "saksi1": [
-      "saya melihat sendiri bahwa mereka pernah bertengkar di hadapan saya",
-      "saya menyaksikan langsung bahwa saya pernah berada di dekat mereka ketika mereka sedang bertengkar",
-      "pertengkaran mereka pernah terjadi ketika saya ada di sekitar mereka dan hal itu saya lihat sendiri",
-      "saya berada di tempat kejadian dan melihat bahwa saya pernah mengalami sendiri mereka bertengkar di tempat saya berada"
+      "saya pernah melihat sendiri mereka bertengkar di hadapan saya",
+      "saya pernah berada di dekat mereka ketika mereka sedang bertengkar dan melihatnya langsung",
+      "pertengkaran mereka pernah terjadi ketika saya ada di rumah mereka dan saya lihat sendiri",
+      "saya menyaksikan sendiri mereka bertengkar ketika saya berkunjung"
      ],
      "saksi2": [
-      "yang saya saksikan sendiri adalah bahwa saya pernah berada di tempat ketika mereka bertengkar",
-      "dengan mata kepala saya sendiri saya melihat bahwa pertengkaran #0046# dan #0047# beberapa kali terjadi di depan saya",
-      "saya mengalami dan melihat langsung bahwa saya hadir pada saat mereka sedang cekcok",
-      "mereka pernah bertengkar sewaktu saya berkunjung ke tempat mereka sebagaimana yang saya saksikan sendiri"
+      "dengan mata kepala saya sendiri saya melihat #0046# dan #0047# beberapa kali bertengkar",
+      "saya hadir dan melihat langsung ketika mereka sedang cekcok",
+      "mereka pernah bertengkar sewaktu saya singgah ke tempat mereka dan saya menyaksikannya",
+      "yang saya saksikan sendiri adalah keributan di antara keduanya di rumah kediaman mereka"
      ]
     },
     "mendengar": {
      "maksud": "saksi mendengar sendiri hal itu tetapi tidak melihatnya",
      "saksi1": [
-      "saya mendengar sendiri bahwa mereka pernah bertengkar di hadapan saya tetapi saya tidak melihatnya",
-      "saya mendengar langsung bahwa saya pernah berada di dekat mereka ketika mereka sedang bertengkar sedangkan saya tidak menyaksikannya",
-      "telinga saya sendiri yang mendengar bahwa pertengkaran mereka pernah terjadi ketika saya ada di sekitar mereka sementara saya tidak melihatnya",
-      "saya pernah mengalami sendiri mereka bertengkar di tempat saya berada dan itu saya dengar sendiri tanpa melihat kejadiannya"
+      "saya pernah mendengar sendiri mereka bertengkar tetapi tidak melihat kejadiannya",
+      "suara pertengkaran #0046# dan #0047# pernah saya dengar sendiri walaupun saya tidak melihatnya",
+      "saya mendengar langsung mereka bertengkar dari ruangan sebelah dan tidak menyaksikannya",
+      "pertengkaran mereka pernah terdengar oleh saya sendiri meskipun saya tidak berada di depan mereka"
      ],
      "saksi2": [
-      "yang terdengar oleh saya sendiri adalah bahwa saya pernah berada di tempat ketika mereka bertengkar namun saya tidak melihatnya",
-      "saya mendengar dengan jelas bahwa pertengkaran #0046# dan #0047# beberapa kali terjadi di depan saya walaupun saya tidak menyaksikannya",
-      "saya ikut mendengar sendiri bahwa saya hadir pada saat mereka sedang cekcok akan tetapi saya tidak melihat kejadiannya",
-      "mereka pernah bertengkar sewaktu saya berkunjung ke tempat mereka dan itu saya dengar sendiri bukan saya lihat"
+      "telinga saya sendiri yang mendengar keduanya bercekcok, tetapi kejadiannya tidak saya lihat",
+      "saya beberapa kali mendengar #0046# dan #0047# ribut namun tidak menyaksikan langsung",
+      "dari luar rumah saya mendengar suara keributan itu sementara saya tidak melihat mereka",
+      "keributan itu saya ketahui karena terdengar oleh saya sendiri dan bukan karena saya melihatnya"
      ]
     },
     "de-auditu": {
      "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya",
      "saksi1": [
-      "menurut cerita {sumber} mereka pernah bertengkar di hadapan saya dan saya tidak menyaksikannya sendiri",
-      "saya diceritakan oleh {sumber} bahwa saya pernah berada di dekat mereka ketika mereka sedang bertengkar dan saya tidak melihatnya langsung",
-      "{sumber} menceritakan kepada saya bahwa pertengkaran mereka pernah terjadi ketika saya ada di sekitar mereka sedangkan saya tidak mengalaminya",
-      "dari penuturan {sumber} saya tahu bahwa saya pernah mengalami sendiri mereka bertengkar di tempat saya berada dan saya tidak berada di tempat kejadian"
+      "saya tidak pernah melihat sendiri mereka bertengkar, saya hanya mendapat cerita dari {sumber}",
+      "pertengkaran mereka tidak saya saksikan sendiri dan saya mengetahuinya dari cerita {sumber}",
+      "{sumber} yang menceritakan kepada saya bahwa mereka sering bertengkar, saya sendiri tidak melihatnya",
+      "saya diberi tahu oleh {sumber} bahwa mereka pernah bertengkar, tetapi saya tidak menyaksikannya"
      ],
      "saksi2": [
-      "sepengetahuan saya dari cerita {sumber} saya pernah berada di tempat ketika mereka bertengkar dan saya tidak melihatnya sendiri",
-      "saya mengetahuinya hanya dari kabar {sumber} bahwa pertengkaran #0046# dan #0047# beberapa kali terjadi di depan saya karena saya tidak ada di sana",
-      "kabar dari {sumber} yang sampai kepada saya adalah bahwa saya hadir pada saat mereka sedang cekcok sedangkan saya tidak menyaksikannya",
-      "{sumber} bercerita bahwa mereka pernah bertengkar sewaktu saya berkunjung ke tempat mereka dan saya sendiri tidak mengetahuinya secara langsung"
+      "menurut penuturan {sumber} keduanya pernah ribut, sedangkan saya tidak berada di tempat kejadian",
+      "saya tidak hadir saat keributan itu dan baru mengetahuinya karena dikabari oleh {sumber}",
+      "kejadian cekcok itu hanya saya ketahui lewat cerita {sumber} dan tidak dari penglihatan saya",
+      "{sumber} bercerita kepada saya tentang keributan rumah tangga itu, adapun saya tidak pernah menyaksikan"
      ]
     },
     "sebagian": {
-     "maksud": "saksi hanya mengetahui sebagian dari hal itu",
+     "maksud": "saksi hanya mengetahui sebagian hal itu",
      "saksi1": [
-      "saya hanya mengetahui sebagian bahwa mereka pernah bertengkar di hadapan saya dan selebihnya tidak saya ketahui",
-      "sebagian saja yang saya ketahui yaitu bahwa saya pernah berada di dekat mereka ketika mereka sedang bertengkar sedangkan sisanya tidak saya ketahui",
-      "yang saya ketahui sebatas bahwa pertengkaran mereka pernah terjadi ketika saya ada di sekitar mereka dan hal lainnya tidak saya ketahui",
-      "pengetahuan saya hanya sebagian yaitu saya pernah mengalami sendiri mereka bertengkar di tempat saya berada dan selebihnya tidak saya ketahui"
+      "saya pernah melihat mereka bertengkar satu kali, selebihnya tidak saya ketahui",
+      "hanya sekali saya menyaksikan sendiri mereka bertengkar dan pertengkaran lainnya tidak saya lihat",
+      "sebatas yang saya lihat mereka pernah bertengkar di rumah mereka, selain itu saya tidak tahu",
+      "saya hanya sempat melihat sebagian pertengkaran mereka dan sisanya tidak saya saksikan"
      ],
      "saksi2": [
-      "hanya sebagian yang saya lihat yaitu bahwa saya pernah berada di tempat ketika mereka bertengkar dan selebihnya saya tidak tahu",
-      "saya mengetahui sebagian saja bahwa pertengkaran #0046# dan #0047# beberapa kali terjadi di depan saya sementara bagian lainnya tidak saya ketahui",
-      "sejauh yang saya ketahui hanya bahwa saya hadir pada saat mereka sedang cekcok dan selain itu tidak ada yang saya ketahui",
-      "sebatas itu yang saya ketahui yakni mereka pernah bertengkar sewaktu saya berkunjung ke tempat mereka selebihnya tidak saya ketahui"
+      "keributan yang saya saksikan sendiri hanya sebagian, yang lain tidak saya ketahui",
+      "sejauh pengamatan saya keduanya pernah cekcok di depan saya dan selebihnya saya tidak menyaksikan",
+      "satu kali saya melihat langsung keributan itu dan sisanya tidak sempat saya ikuti",
+      "sepanjang pengetahuan saya mereka pernah ribut ketika saya berkunjung, hal lainnya tidak saya ketahui"
+     ]
+    },
+    "tidak-tahu": {
+     "maksud": "saksi tidak pernah melihat maupun mendengar sendiri hal itu",
+     "saksi1": [
+      "saya tidak pernah melihat maupun mendengar sendiri mereka bertengkar",
+      "pertengkaran mereka tidak pernah saya lihat ataupun saya dengar sendiri",
+      "saya sendiri tidak pernah menyaksikan mereka bertengkar",
+      "selama ini saya tidak pernah mendapati mereka bertengkar di hadapan saya"
+     ],
+     "saksi2": [
+      "tidak sekali pun saya melihat atau mendengar #0046# dan #0047# ribut",
+      "saya tidak mengetahui adanya keributan yang terjadi di depan saya",
+      "di hadapan saya keduanya tidak pernah cekcok",
+      "sepanjang saya bergaul dengan keduanya keributan semacam itu tidak pernah saya saksikan"
+     ]
+    },
+    "ragu": {
+     "maksud": "saksi ragu atau kurang ingat tentang hal itu",
+     "saksi1": [
+      "saya kurang ingat apakah pernah melihat sendiri mereka bertengkar",
+      "rasanya saya pernah mendengar mereka bertengkar tetapi saya kurang yakin",
+      "saya ragu apakah pertengkaran itu saya saksikan sendiri",
+      "ingatan saya samar tentang pertengkaran mereka yang pernah saya lihat"
+     ],
+     "saksi2": [
+      "saya lupa apakah pernah menyaksikan langsung keributan keduanya",
+      "mungkin saya pernah mendengar mereka cekcok, tetapi ingatan saya kurang jelas",
+      "saya agak ragu soal pernah tidaknya melihat keributan itu",
+      "entah saya pernah melihat sendiri atau hanya mendengar keributan rumah tangga itu"
      ]
     }
    }
@@ -4574,7 +4616,8 @@
     "kehadiran": [
      "verstek",
      "t-tidak-hadir-setelah-mediasi"
-    ]
+    ],
+    "pisahRumah": "sudah-pisah"
    },
    "teks": "Sejak berpisah, apakah #0047# pernah memberi kabar atau menemui #0046# dan keluarganya ?",
    "variabelAbt": [

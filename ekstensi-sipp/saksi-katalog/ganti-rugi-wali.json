@@ -1206,9 +1206,13 @@
       "keadaan": {},
       "teks": "Dari mana saksi mengetahui nilai harta benda dan besarnya kerugian itu ?",
       "variabelAbt": [],
-      "hal": "dasar pengetahuan saksi tentang nilai kerugian anak tersebut",
+      "hal": "dasar pengetahuan saya tentang nilai kerugian anak tersebut",
       "tidakBerlaku": [
-        "berbeda"
+        "berbeda",
+        "mendengar",
+        "de-auditu",
+        "sebagian",
+        "tidak-tahu"
       ],
       "jawaban": {
         "melihat": {

@@ -281,6 +281,15 @@
       "bawaan": "kontradiktoir",
       "label": "Kehadiran Termohon (istri)"
     },
+    "anak": {
+      "sumber": "otomatis",
+      "nilai": [
+        "ada",
+        "tidak"
+      ],
+      "bawaan": "ada",
+      "label": "Anak dari perkawinan"
+    },
     "alasanPoligami": {
       "sumber": "borang",
       "nilai": [
@@ -991,7 +1000,9 @@
       "pihakSaksi": [
         "*"
       ],
-      "keadaan": {},
+      "keadaan": {
+        "anak": "ada"
+      },
       "teks": "Dengan siapa anak-anak #0046# dan #0047# sekarang tinggal dan siapa yang membiayai kebutuhan mereka?",
       "teksVarian": [
         "Siapa yang mengasuh dan menanggung biaya hidup serta sekolah anak-anak #0046# dan #0047# sekarang?"
@@ -4830,21 +4841,44 @@
       "hal": "orang-orang yang menjadi tanggungan nafkah #0046#",
       "tidakBerlaku": [],
       "jawaban": {
-        "melihat": {
-          "maksud": "saksi menerangkan orang-orang yang menjadi tanggungan nafkah #0046# sebagai hal yang dilihat atau dialaminya sendiri",
-          "saksi1": [
-            "saya mengetahui sendiri bahwa yang menjadi tanggungan #0046# adalah #0047# dan anak-anak mereka yang masih menjadi beban nafkahnya",
-            "saya tahu betul bahwa kebutuhan hidup #0047# dan anak-anak mereka ditanggung oleh #0046# sampai sekarang",
-            "hal yang saya ketahui sendiri adalah bahwa yang menjadi tanggungan #0046# adalah #0047# dan anak-anak mereka yang masih menjadi beban nafkahnya",
-            "sebagai orang yang dekat dengan mereka saya mengetahui bahwa kebutuhan hidup #0047# dan anak-anak mereka ditanggung oleh #0046# sampai sekarang"
-          ],
-          "saksi2": [
-            "yang saya ketahui secara langsung adalah bahwa #0046# menanggung kebutuhan hidup #0047# serta anak-anak yang masih membutuhkan nafkah",
-            "tanggungan nafkah #0046# meliputi #0047# dan anak-anak mereka, sebagaimana yang saya alami dalam pergaulan dengan mereka",
-            "karena sering bersama mereka saya paham bahwa #0046# menanggung kebutuhan hidup #0047# serta anak-anak yang masih membutuhkan nafkah",
-            "saya paham dengan baik bahwa tanggungan nafkah #0046# meliputi #0047# dan anak-anak mereka"
-          ]
-        },
+        "melihat": [
+          {
+            "maksud": "saksi menerangkan orang-orang yang menjadi tanggungan nafkah #0046# sebagai hal yang dilihat atau dialaminya sendiri",
+            "saksi1": [
+              "saya mengetahui sendiri bahwa yang menjadi tanggungan #0046# adalah #0047# dan anak-anak mereka yang masih menjadi beban nafkahnya",
+              "saya tahu betul bahwa kebutuhan hidup #0047# dan anak-anak mereka ditanggung oleh #0046# sampai sekarang",
+              "hal yang saya ketahui sendiri adalah bahwa yang menjadi tanggungan #0046# adalah #0047# dan anak-anak mereka yang masih menjadi beban nafkahnya",
+              "sebagai orang yang dekat dengan mereka saya mengetahui bahwa kebutuhan hidup #0047# dan anak-anak mereka ditanggung oleh #0046# sampai sekarang"
+            ],
+            "saksi2": [
+              "yang saya ketahui secara langsung adalah bahwa #0046# menanggung kebutuhan hidup #0047# serta anak-anak yang masih membutuhkan nafkah",
+              "tanggungan nafkah #0046# meliputi #0047# dan anak-anak mereka, sebagaimana yang saya alami dalam pergaulan dengan mereka",
+              "karena sering bersama mereka saya paham bahwa #0046# menanggung kebutuhan hidup #0047# serta anak-anak yang masih membutuhkan nafkah",
+              "saya paham dengan baik bahwa tanggungan nafkah #0046# meliputi #0047# dan anak-anak mereka"
+            ],
+            "keadaan": {
+              "anak": "ada"
+            }
+          },
+          {
+            "maksud": "saksi menerangkan orang-orang yang menjadi tanggungan nafkah #0046# sebagai hal yang dilihat atau dialaminya sendiri",
+            "keadaan": {
+              "anak": "tidak"
+            },
+            "saksi1": [
+              "saya mengetahui sendiri bahwa yang menjadi tanggungan #0046# adalah #0047# yang masih menjadi beban nafkahnya",
+              "saya tahu betul bahwa kebutuhan hidup #0047# ditanggung oleh #0046# sampai sekarang",
+              "hal yang saya ketahui sendiri adalah bahwa yang menjadi tanggungan #0046# adalah #0047# yang masih menjadi beban nafkahnya",
+              "sebagai orang yang dekat dengan mereka saya mengetahui bahwa kebutuhan hidup #0047# ditanggung oleh #0046# sampai sekarang"
+            ],
+            "saksi2": [
+              "yang saya ketahui secara langsung adalah bahwa #0046# menanggung kebutuhan hidup #0047# yang masih membutuhkan nafkah",
+              "tanggungan nafkah #0046# meliputi #0047# mereka, sebagaimana yang saya alami dalam pergaulan dengan mereka",
+              "karena sering bersama mereka saya paham bahwa #0046# menanggung kebutuhan hidup #0047# yang masih membutuhkan nafkah",
+              "saya paham dengan baik bahwa tanggungan nafkah #0046# meliputi #0047#"
+            ]
+          }
+        ],
         "de-auditu": {
           "maksud": "saksi menerangkan orang-orang yang menjadi tanggungan nafkah #0046# hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
           "saksi1": [
@@ -5907,21 +5941,44 @@
         "berbeda"
       ],
       "jawaban": {
-        "melihat": {
-          "maksud": "saksi menerangkan surat pernyataan kesanggupan berlaku adil #0046# sebagai hal yang dilihat atau dialaminya sendiri",
-          "saksi1": [
-            "saya melihat sendiri bahwa #0046# membuat surat pernyataan sanggup berlaku adil terhadap istri-istri dan anak-anaknya dan menandatanganinya sendiri",
-            "saya menyaksikan langsung bahwa surat pernyataan kesanggupan berlaku adil ditulis dan ditandatangani oleh #0046# sendiri",
-            "#0046# membuat surat pernyataan sanggup berlaku adil terhadap istri-istri dan anak-anaknya dan menandatanganinya sendiri, dan hal itu saya lihat dengan mata kepala saya sendiri",
-            "pada waktu itu saya berada di tempat kejadian dan melihat bahwa surat pernyataan kesanggupan berlaku adil ditulis dan ditandatangani oleh #0046# sendiri"
-          ],
-          "saksi2": [
-            "karena saya turut hadir maka saya terangkan bahwa kesanggupan berlaku adil #0046# kepada istri-istri dan anak-anaknya dituangkan dalam surat yang ia tandatangani sendiri",
-            "#0046# menandatangani sendiri surat pernyataan yang berisi kesanggupan berlaku adil, demikian yang tampak oleh saya waktu itu",
-            "saya ada di lokasi pada saat itu dan mendapati bahwa kesanggupan berlaku adil #0046# kepada istri-istri dan anak-anaknya dituangkan dalam surat yang ia tandatangani sendiri",
-            "#0046# menandatangani sendiri surat pernyataan yang berisi kesanggupan berlaku adil, sebagaimana yang saya alami"
-          ]
-        },
+        "melihat": [
+          {
+            "maksud": "saksi menerangkan surat pernyataan kesanggupan berlaku adil #0046# sebagai hal yang dilihat atau dialaminya sendiri",
+            "saksi1": [
+              "saya melihat sendiri bahwa #0046# membuat surat pernyataan sanggup berlaku adil terhadap istri-istri dan anak-anaknya dan menandatanganinya sendiri",
+              "saya menyaksikan langsung bahwa surat pernyataan kesanggupan berlaku adil ditulis dan ditandatangani oleh #0046# sendiri",
+              "#0046# membuat surat pernyataan sanggup berlaku adil terhadap istri-istri dan anak-anaknya dan menandatanganinya sendiri, dan hal itu saya lihat dengan mata kepala saya sendiri",
+              "pada waktu itu saya berada di tempat kejadian dan melihat bahwa surat pernyataan kesanggupan berlaku adil ditulis dan ditandatangani oleh #0046# sendiri"
+            ],
+            "saksi2": [
+              "karena saya turut hadir maka saya terangkan bahwa kesanggupan berlaku adil #0046# kepada istri-istri dan anak-anaknya dituangkan dalam surat yang ia tandatangani sendiri",
+              "#0046# menandatangani sendiri surat pernyataan yang berisi kesanggupan berlaku adil, demikian yang tampak oleh saya waktu itu",
+              "saya ada di lokasi pada saat itu dan mendapati bahwa kesanggupan berlaku adil #0046# kepada istri-istri dan anak-anaknya dituangkan dalam surat yang ia tandatangani sendiri",
+              "#0046# menandatangani sendiri surat pernyataan yang berisi kesanggupan berlaku adil, sebagaimana yang saya alami"
+            ],
+            "keadaan": {
+              "anak": "ada"
+            }
+          },
+          {
+            "maksud": "saksi menerangkan surat pernyataan kesanggupan berlaku adil #0046# sebagai hal yang dilihat atau dialaminya sendiri",
+            "keadaan": {
+              "anak": "tidak"
+            },
+            "saksi1": [
+              "saya melihat sendiri bahwa #0046# membuat surat pernyataan sanggup berlaku adil terhadap istri-istri dan menandatanganinya sendiri",
+              "saya menyaksikan langsung bahwa surat pernyataan kesanggupan berlaku adil ditulis dan ditandatangani oleh #0046# sendiri",
+              "#0046# membuat surat pernyataan sanggup berlaku adil terhadap istri-istri dan menandatanganinya sendiri, dan hal itu saya lihat dengan mata kepala saya sendiri",
+              "pada waktu itu saya berada di tempat kejadian dan melihat bahwa surat pernyataan kesanggupan berlaku adil ditulis dan ditandatangani oleh #0046# sendiri"
+            ],
+            "saksi2": [
+              "karena saya turut hadir maka saya terangkan bahwa kesanggupan berlaku adil #0046# kepada istri-istri dituangkan dalam surat yang ia tandatangani sendiri",
+              "#0046# menandatangani sendiri surat pernyataan yang berisi kesanggupan berlaku adil, demikian yang tampak oleh saya waktu itu",
+              "saya ada di lokasi pada saat itu dan mendapati bahwa kesanggupan berlaku adil #0046# kepada istri-istri dituangkan dalam surat yang ia tandatangani sendiri",
+              "#0046# menandatangani sendiri surat pernyataan yang berisi kesanggupan berlaku adil, sebagaimana yang saya alami"
+            ]
+          }
+        ],
         "de-auditu": {
           "maksud": "saksi menerangkan surat pernyataan kesanggupan berlaku adil #0046# hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
           "saksi1": [
@@ -5981,7 +6038,9 @@
       "pihakSaksi": [
         "*"
       ],
-      "keadaan": {},
+      "keadaan": {
+        "anak": "ada"
+      },
       "teks": "Selama ini apakah #0046# adil dan tidak pilih kasih kepada anak-anaknya dan bersikap baik kepada #0047#?",
       "teksVarian": [
         "Bagaimana perlakuan #0046# kepada #0047# dan anak-anaknya selama ini apakah ia dikenal adil dan tidak pilih kasih?"
@@ -6080,7 +6139,9 @@
       "pihakSaksi": [
         "*"
       ],
-      "keadaan": {},
+      "keadaan": {
+        "anak": "ada"
+      },
       "teks": "Apakah #0046# menyatakan akan tetap membiayai sekolah dan kebutuhan anak-anaknya dengan #0047# setelah menikah lagi?",
       "teksVarian": [
         "Bagaimana kepastian biaya sekolah dan kebutuhan anak-anak dengan #0047# sesudah #0046# beristri dua?"

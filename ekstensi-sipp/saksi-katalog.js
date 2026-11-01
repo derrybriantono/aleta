@@ -961,7 +961,18 @@
    * Koma sesudah "...ya" dibuang ("anaknya, dan" -> "anaknya dan").
    */
   function amankanKeAbt(teks) {
-    return String(teks).replace(/(ya),(\s)/gi, "$1$2").replace(/\s{2,}/g, " ").trim();
+    return (
+      String(teks)
+        .replace(/(ya),(\s)/gi, "$1$2")
+        // 1 Nov 2026 (tinjauan saksi C3): kata yang terulang karena isian slot ("ibu kandung saya" + "saya tahu", "objek-objek itu
+        // itu", "para pemohon Pemohon"); bila salah satunya berhuruf besar (sebutan/nama), itu yang dipakai.
+        .replace(/\b([A-Za-z]{2,})(\s+)\1\b/gi, (m, a, sp) => {
+          const b = m.slice(a.length + sp.length);
+          return /^[A-Z]/.test(b) ? b : a;
+        })
+        .replace(/\s{2,}/g, " ")
+        .trim()
+    );
   }
 
   function tanpaKosongGanda(daftarKosong) {
@@ -1380,13 +1391,43 @@
         });
       }
     };
+    // 1 Nov 2026 (tinjauan saksi D): nilai/kunci keadaan yang benar-benar disebut syarat butir. Kunci yang tidak disebut satu syarat
+    // pun (dan tidak dibaca kode, KEADAAN_DIBACA_KODE) ditandai tanpaPengaruh - borang tidak menggambarnya; kunci baku yang hanya
+    // disebut sebagian nilainya (mis. kumulasi pada hak asuh) hanya menawarkan nilai yang disebut.
+    const disebut = new Map();
+    const catatSebut = (syarat) => {
+      if (!laRaya(syarat)) return;
+      for (const [kunciMentah, v] of Object.entries(syarat)) {
+        const kunci = kunciMentah.replace(/^bukan:/, "");
+        if (!disebut.has(kunci)) disebut.set(kunci, new Set());
+        for (const x of [].concat(v)) disebut.get(kunci).add(String(x));
+      }
+    };
     for (const q of daftar(kat && kat.pertanyaan)) {
       sebut(q.keadaan);
-      for (const j of Object.keys(laRaya(q.jawaban) ? q.jawaban : {})) for (const x of bentukJawaban(q.jawaban[j])) sebut(x.keadaan);
+      catatSebut(q.keadaan);
+      for (const j of Object.keys(laRaya(q.jawaban) ? q.jawaban : {}))
+        for (const x of bentukJawaban(q.jawaban[j])) {
+          sebut(x.keadaan);
+          catatSebut(x.keadaan);
+        }
     }
-    for (const p of daftar(kat && kat.pokokPembuktian)) sebut(p.keadaan);
+    for (const p of daftar(kat && kat.pokokPembuktian)) {
+      sebut(p.keadaan);
+      catatSebut(p.keadaan);
+    }
+    for (const f of hasil.values()) {
+      if (!disebut.has(f.kunci) && !KEADAAN_DIBACA_KODE.includes(f.kunci)) f.tanpaPengaruh = true;
+      else if (f.sumber === "otomatis" && KEADAAN_BAKU[f.kunci] && !laRaya(dek[f.kunci]) && disebut.has(f.kunci)) {
+        const pakai = disebut.get(f.kunci);
+        const saring = f.nilai.filter((n) => pakai.has(n));
+        if (saring.length) f.nilai = saring;
+      }
+    }
     return Array.from(hasil.values());
   }
+  /** Kunci keadaan yang dibaca kode penyusun walau tidak disebut syarat butir (tidak pernah ditandai tanpa pengaruh). */
+  const KEADAAN_DIBACA_KODE = Object.freeze(["kerabat", "tidakHadir", "suami", "alasan"]);
 
   /** Slot yang diisi petugas di borang (teks bebas). */
   const ISIAN_PETUGAS = Object.freeze(["daftar", "isi", "lama", "sejak", "pekerjaan", "penghasilan", "waktu", "peristiwa"]);

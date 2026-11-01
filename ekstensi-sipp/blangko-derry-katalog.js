@@ -376,6 +376,7 @@
     const sah = new Set(daftar(dariData));
     const hasil = [];
     for (const f of m.keadaanUntukBorang(kat)) {
+      if (f.tanpaPengaruh) continue; // 1 Nov 2026: tidak disebut satu syarat pun - pilihan tanpa akibat tidak digambar
       if (!keadaanRelevan(kat, f.kunci, ada)) continue;
       if (!f.nilai.length) continue;
       const sekarang = ada[f.kunci];

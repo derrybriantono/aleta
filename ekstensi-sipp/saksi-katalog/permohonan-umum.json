@@ -1506,8 +1506,13 @@
       "keadaan": {},
       "teks": "Bagaimana saksi mengetahui peristiwa itu, apakah melihat, mendengar atau mengalami sendiri ?",
       "variabelAbt": [],
-      "hal": "cara saksi mengetahui peristiwa",
-      "tidakBerlaku": [],
+      "hal": "cara saya mengetahui peristiwa itu",
+      "tidakBerlaku": [
+        "mendengar",
+        "de-auditu",
+        "sebagian",
+        "tidak-tahu"
+      ],
       "jawaban": {
         "melihat": {
           "maksud": "saksi mengetahui peristiwa karena melihat dan mengalami sendiri",

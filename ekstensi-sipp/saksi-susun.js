@@ -81,6 +81,9 @@
    * @param {object} kat
    * @param {{teks?: string, peta?: Map<string, {nilai: string}>|null}} konteks
    */
+  /** 1 Nov 2026: jawaban masih memuat titik-titik (tiga titik atau elipsis). */
+  const titikDiJawab = (t) => /\.{3,}|…/.test(String(t == null ? "" : t));
+
   function turunkanKeadaan(kat, konteks) {
     const m = Mesin();
     const k = konteks || {};
@@ -129,6 +132,11 @@
       const huruf = it && it.nilai ? String(it.nilai).toUpperCase().replace(/[^A-G]/g, "") : "";
       if (huruf.length === 1 && Array.isArray(kat.keadaan.pokokTuntutan.nilai) && kat.keadaan.pokokTuntutan.nilai.includes(huruf)) hasil.pokokTuntutan = huruf;
     }
+    // 1 Nov 2026 (tinjauan saksi A4): itsbat kontensius (alur 15) - bentuk "gugatan", bukan bawaan "permohonan berdua" yang
+    // tercetak "Penggugat I dan Penggugat II". "gugatan pasangan meninggal" tetap pilihan petugas (bentuk yang sudah dipilih tidak
+    // ditimpa karena turunan hanya mengisi yang belum dipilih). Nilai di luar daftar katalog tidak dipakai.
+    const bentukSah = (b) => kat.keadaan && kat.keadaan.bentuk && Array.isArray(kat.keadaan.bentuk.nilai) && kat.keadaan.bentuk.nilai.includes(b);
+    if (alur === "15" && dipakai.has("bentuk") && bentukSah("gugatan")) hasil.bentuk = "gugatan";
     if (alur === "16" && dipakai.has("perkara")) hasil.perkara = "permohonan";
     if (alur === "15" && dipakai.has("perkara")) hasil.perkara = "gugatan";
     if (alur === "17" && dipakai.has("acara")) hasil.acara = "gugatan-sederhana";
@@ -549,6 +557,7 @@
       for (const f of m.keadaanUntukBorang(sumberKat)) {
         if (tanpa.includes(f.kunci)) continue;
         if (f.perSaksi) continue; // digambar pada baris tiap saksi
+        if (f.tanpaPengaruh) continue; // 1 Nov 2026 (tinjauan saksi D): tidak disebut satu syarat pun - pilihan tanpa akibat tidak digambar
         if (!keadaanRelevan(f.kunci, sumberKat)) continue;
         const nilaiSekarang = S.keadaan[f.kunci];
         const labelNilai = (n) =>
@@ -1020,6 +1029,9 @@
           if (b.tandaKuning) baris.classList.add("aleta-ssk-kuning");
           if (b.kosong.length) baris.classList.add("aleta-ssk-merah");
           for (const x of b.kosong) semuaKosong.add(x);
+          // 1 Nov 2026 (tinjauan saksi C9): titik-titik yang tertulis di kalimat katalog (bukan isian) juga harus dilengkapi.
+          const titikHarfiah = !b.kosong.length && titikDiJawab(b.jawab);
+          if (titikHarfiah) baris.classList.add("aleta-ssk-merah");
           baris.appendChild(buat("div", "aleta-ssk-tanya", `${b.no}. ${b.tanya}`));
           const jawab = document.createElement("textarea");
           jawab.className = "aleta-ssk-jawab";
@@ -1054,6 +1066,8 @@
             const kabarKosong = buat("div", "aleta-abt-kabar aleta-abt-gagal", `Belum terisi dari data perkara: ${nk.teks} (jadi titik-titik)`);
             if (nk.kode) kabarKosong.title = `Kode isian: ${nk.kode}`;
             baris.appendChild(kabarKosong);
+          } else if (titikHarfiah) {
+            baris.appendChild(buat("div", "aleta-abt-kabar aleta-abt-gagal", "Masih ada titik-titik di jawaban ini - lengkapi dari keterangan saksi."));
           }
           kolom.appendChild(baris);
         }
@@ -1450,6 +1464,9 @@
           if (b.tandaKuning) baris.classList.add("aleta-ssk-kuning");
           if (b.kosong.length) baris.classList.add("aleta-ssk-merah");
           for (const x of b.kosong) semuaKosong.add(x);
+          // 1 Nov 2026 (tinjauan saksi C9): titik-titik yang tertulis di kalimat katalog (bukan isian) juga harus dilengkapi.
+          const titikHarfiah = !b.kosong.length && titikDiJawab(b.jawab);
+          if (titikHarfiah) baris.classList.add("aleta-ssk-merah");
           // C3/U7: dengan saklar mesin-saksi-tunggal menyala, pertanyaan dapat disunting; nomornya terpisah dalam span sendiri
           // (teks tanya-jawab yang disimpan tetap dibaca dari textContent tanpa awalan nomor).
           const tanya = alatBaris ? buatTanyaDapatSunting(b.no, b.tanya) : buat("div", "aleta-ssk-tanya", `${b.no}. ${b.tanya}`);
@@ -1507,6 +1524,8 @@
             const kabarKosong = buat("div", "aleta-abt-kabar aleta-abt-gagal", `Belum terisi dari data perkara: ${nk.teks} (jadi titik-titik)`);
             if (nk.kode) kabarKosong.title = `Kode isian: ${nk.kode}`;
             baris.appendChild(kabarKosong);
+          } else if (titikHarfiah) {
+            baris.appendChild(buat("div", "aleta-abt-kabar aleta-abt-gagal", "Masih ada titik-titik di jawaban ini - lengkapi dari keterangan saksi."));
           }
           if (alatBaris) baris.insertBefore(buatAlatBaris(baris), baris.firstChild);
           kolom.appendChild(baris);
