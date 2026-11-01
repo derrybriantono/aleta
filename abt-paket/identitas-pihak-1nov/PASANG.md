@@ -52,4 +52,6 @@ ssh aleta 'bash /root/abt-identitas-pihak-20261102/pulih-satker.sh'    # BERKAS 
 - Kinerja (`hasil/kinerja.md`): render identitas 34 perkara contoh, sebelum 173,3 dtk -> sesudah 5,5 dtk.
 - Banding variabel sebelum/sesudah atas 34 perkara contoh (1 pihak, 2, 3, 4, >= 5, tidak rapat, kuasa satu/dua pihak, alamat diubah pengguna, ghoib): 31 SAMA setelah menormalkan umur/urutan/koma kuasa; 3 beda semuanya perbaikan di atas.
 - Render sungguhan (renderer ABT php56) sebelum/sesudah: `hasil/render.md`; PNG di `D:/Aplikasi/aleta/tmp/w177/render/png/` (memuat data asli, tidak dikirim keluar).
-- Penjaga isi paket: `manajemen_surat/src/test/paket-identitas-pihak-1nov.test.ts`. Uji rantai 31 paket: `../uji-rantai-31okt/hasil-rantai-31.txt`.
+- Penjaga isi paket: `manajemen_surat/src/test/paket-identitas-pihak-1nov.test.ts`. Uji rantai 31 paket: `../uji-rantai-31okt/hasil-rantai-31.txt` (`sumber/rantai177.sh`): RANTAI-KELUAR 0, sidik pohon rantai = sidik uji lokal `19ee866e4cc04670a3c8c8ff7a015ad6`;
+  dasar sesudah 30 paket = `9931cdd9c3f77cb0575d9ab9ec9322ee` (sama dengan rantai agen Q). Catatan laptop: fungsi bawaan dump menunjuk basis `sipp` (PA Bungku), jadi rantai mengarahkannya ke salinan SIPP uji sebelum paket ke-31 (di server tidak perlu).
+- `npx tsc --noEmit` bersih; vitest paket-identitas-pihak-1nov (11), alamat-putusan-28okt, alamat-ganda-26okt, paket-bas-lanjutan-1nov, paket-tanya-jawab-format-1nov, paket-perbaikan-1nov hijau.
