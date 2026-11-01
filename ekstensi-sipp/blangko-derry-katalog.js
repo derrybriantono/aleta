@@ -441,6 +441,18 @@
    *   jarang?: boolean                      sertakan pertanyaan yang jarang diajukan
    * }} masukan
    */
+  /** Jenis pengetahuan yang sah: tingkat katalog, atau "profil:<kunci>" yang ada di katalog.profilSaksi (saksi cerai); selain itu "melihat". */
+  function jenisSah(kat, jenis) {
+    if (URUTAN_JENIS.includes(jenis)) return jenis;
+    const kode = teks(jenis).startsWith("profil:") ? teks(jenis).slice(7) : "";
+    return kode && laRaya(kat && kat.profilSaksi) && laRaya(kat.profilSaksi[kode]) ? jenis : "melihat";
+  }
+  /** Pengetahuan ini memakai slot "cerita dari siapa" (de-auditu, atau profil yang bersumber)? */
+  function perluSumber(kat, jenis) {
+    if (jenis === "de-auditu") return true;
+    const kode = teks(jenis).startsWith("profil:") ? teks(jenis).slice(7) : "";
+    return Boolean(kode && laRaya(kat && kat.profilSaksi) && laRaya(kat.profilSaksi[kode]) && kat.profilSaksi[kode].sumber === true);
+  }
   function susun(masukan) {
     const m = Mesin();
     const o = masukan || {};
@@ -461,12 +473,12 @@
     });
     const masukSaksi = saksiMasuk.map((s) => ({
       pihak: s.pihak,
-      jenis: URUTAN_JENIS.includes(s.jenis) ? s.jenis : "melihat",
+      jenis: jenisSah(kat, s.jenis),
       perButir: laRaya(s.perButir) ? s.perButir : undefined,
       berbeda: Array.isArray(s.berbeda) ? s.berbeda : undefined,
       keadaan: laRaya(s.keadaan) ? s.keadaan : undefined,
     }));
-    const slotSaksi = saksiMasuk.map((s) => (s.jenis === "de-auditu" && rapat(s.sumber) ? { sumber: rapat(s.sumber) } : {}));
+    const slotSaksi = saksiMasuk.map((s) => (perluSumber(kat, s.jenis) && rapat(s.sumber) ? { sumber: rapat(s.sumber) } : {}));
     const hasil = m.susunSaksi(kat, { keadaan: laRaya(o.keadaan) ? o.keadaan : {}, benih, saksi: masukSaksi, variabel, slotSaksi, tingkat });
 
     const jumlah = saksiMasuk.length;
@@ -854,6 +866,80 @@
   });
   const URUT_KELOMPOK = Object.freeze(["identitas", "hubungan", "pokok", "akibat", "upaya"]);
 
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // 1 Nov 2026 (keputusan 79, perkara cerai): baris dari set pertanyaan lama / ABT tidak membawa id butir. Tiap baris dicocokkan ke
+  // butir katalog menurut bunyi pertanyaan (kata-kata yang sama, penanda #nnnn#/{slot} dibuang, sebutan pihak diisi; semua rumusan
+  // varian dipertimbangkan). Satu butir hanya untuk satu baris (yang paling mirip). Baris yang tidak cocok tidak diberi butir.
+  // ──────────────────────────────────────────────────────────────────────────
+  const AMBANG_COCOK = 0.5;
+  const memoKata = new Map();
+  const kataDari = (t) => {
+    const k = teks(t);
+    let h = memoKata.get(k);
+    if (!h) {
+      h = new Set(k.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter(Boolean));
+      if (memoKata.size > 4000) memoKata.clear();
+      memoKata.set(k, h);
+    }
+    return h;
+  };
+  const mirip = (a, b) => {
+    if (!a.size && !b.size) return 1;
+    let irisan = 0;
+    for (const w of a) if (b.has(w)) irisan += 1;
+    return irisan / (a.size + b.size - irisan);
+  };
+  const bersihTanya = (t, sebutan) => rapat(teks(t).replace(/#0046#/g, sebutan.P).replace(/#0047#/g, sebutan.T).replace(/#\d{4,5}#|\{[a-zA-Z]+\}/g, " "));
+  const memoIndeks = new WeakMap();
+  function indeksTanya(kat, sebutan) {
+    const kunci = `${sebutan.P}|${sebutan.T}`;
+    let peta = memoIndeks.get(kat);
+    if (!peta) memoIndeks.set(kat, (peta = new Map()));
+    if (!peta.has(kunci)) {
+      peta.set(
+        kunci,
+        daftar(kat.pertanyaan)
+          .filter((q) => laRaya(q) && q.kelompok !== "penutup")
+          .map((q) => ({ id: q.id, pihak: daftar(q.pihakSaksi), kata: [q.teks, ...daftar(q.teksVarian)].map((v) => kataDari(bersihTanya(v, sebutan))) }))
+      );
+    }
+    return peta.get(kunci);
+  }
+  /**
+   * @param {object} kat
+   * @param {Array<{butir?: string, tanya?: string}>} rows
+   * @param {"P"|"T"} pihak
+   * @param {{P: string, T: string}} sebutan
+   * @returns {string[]} id butir tiap baris ("" bila tidak cocok); baris yang sudah membawa `butir` memakai butirnya.
+   */
+  function cocokkanButir(kat, rows, pihak, sebutan) {
+    const sb = sebutan && sebutan.P ? sebutan : { P: "Penggugat", T: "Tergugat" };
+    const hasil = daftar(rows).map((r) => (r && r.butir ? teks(r.butir) : ""));
+    if (!kat) return hasil;
+    const dipakai = new Set(hasil.filter(Boolean));
+    const indeks = indeksTanya(kat, sb).filter((x) => (x.pihak.includes("*") || x.pihak.includes(pihak)) && !dipakai.has(x.id));
+    const pasangan = [];
+    daftar(rows).forEach((r, i) => {
+      if (!r || r.butir || !rapat(r.tanya)) return;
+      const kata = kataDari(bersihTanya(r.tanya, sb));
+      for (const x of indeks) {
+        let terbaik = 0;
+        for (const v of x.kata) terbaik = Math.max(terbaik, mirip(kata, v));
+        if (terbaik >= AMBANG_COCOK) pasangan.push({ i, id: x.id, skor: terbaik });
+      }
+    });
+    pasangan.sort((a, b) => b.skor - a.skor || a.i - b.i);
+    const barisTerpakai = new Set();
+    for (const p of pasangan) {
+      if (barisTerpakai.has(p.i) || dipakai.has(p.id)) continue;
+      hasil[p.i] = p.id;
+      barisTerpakai.add(p.i);
+      dipakai.add(p.id);
+    }
+    return hasil;
+  }
+
   /** Katalog ringkas berisi hanya butir `ids`, syarat keadaan/tingkat/pihaknya dinetralkan supaya pasti ikut tersusun untuk saksi mana pun. */
   function katTambahan(kat, ids) {
     const pilih = new Set(daftar(ids));
@@ -877,7 +963,7 @@
     const target = daftar(o.target).map(teks);
     const rowsDari = (k) => daftar(laRaya(o.rows) ? o.rows[k] : []);
     const sudah = new Set();
-    for (const k of target) for (const r of rowsDari(k)) if (r && r.butir) sudah.add(teks(r.butir));
+    for (const k of target) for (const id of cocokkanButir(kat, rowsDari(k), pihakDariKunci(k), o.sebutan)) if (id) sudah.add(id);
     const pihak = target.map((k) => pihakDariKunci(k));
     const urutan = (q) => (typeof q.urutan === "number" ? q.urutan : 0);
     const kandidat = daftar(kat.pertanyaan)
@@ -885,7 +971,6 @@
       .sort((a, b) => urutan(a) - urutan(b));
     if (!kandidat.length || !target.length) return { ada: true, calon: [] };
     const hasil = susun(Object.assign({}, o, { kat: katTambahan(kat, kandidat.map((q) => q.id)), jarang: true }));
-    const jeniskosong = (k) => rowsDari(k).filter((r) => r && !r.butir && rapat(r.tanya));
     const calon = [];
     for (const q of kandidat) {
       const baris = {};
@@ -901,9 +986,6 @@
       }
       if (!lengkap) continue;
       const tanya = baris[target[0]].tanya;
-      // baris hasil bacaan ABT tidak membawa butir: pertanyaan yang bunyinya sama/mirip sudah ada pada saksi itu
-      const sudahAda = target.some((k) => jeniskosong(k).some((r) => rapat(r.tanya).toLowerCase() === rapat(baris[k].tanya).toLowerCase() || m.jaccard(r.tanya, baris[k].tanya) >= 0.6));
-      if (sudahAda) continue;
       const pk = daftar(kat.pokokPembuktian).find((x) => x && x.id === q.pokok);
       const judul = (pk && teks(pk.judul)) || JUDUL_KELOMPOK[q.kelompok] || "Lainnya";
       calon.push({ id: q.id, judul, tingkat: teks(q.tingkat), urutan: urutan(q), kelompok: teks(q.kelompok), tanya, baris });
@@ -935,6 +1017,7 @@
 
   return Object.freeze({
     katTambahan,
+    cocokkanButir,
     calonTambah,
     barisTambahan,
     kelompokkanCalon,

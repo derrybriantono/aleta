@@ -5784,7 +5784,40 @@
   /** Tambah pertanyaan hanya untuk jenis perkara bermode katalog, pada penyunting yang dapat menulis. */
   function bolehTambahPertanyaan(grup) {
     const k = ktKenal();
-    return Boolean(KT() && TP() && k && k.mode === "katalog" && k.kat && bolehTulis() && !deretTj().hanyaBaca && grup && grup.length && tjSiap(grup));
+    return Boolean(KT() && TP() && k && (k.mode === "katalog" || k.mode === "cerai") && k.kat && bolehTulis() && !deretTj().hanyaBaca && grup && grup.length && tjSiap(grup));
+  }
+  // Perkara cerai (346/347): jalur set pertanyaan lama; baris dicocokkan ke butir katalog cerai menurut bunyi pertanyaannya, dan
+  // pilihan pengetahuan lama dipetakan ke profil pengetahuan katalog. Bunyi set cerai tidak diubah.
+  const MODUS_KE_PROFIL = { sama: "sama", mendengar: "mendengar-sendiri", sebagian: "sebagian-alasan", "tidak-tahu": "tidak-tahu-sebab", "tidak-melihat": "tidak-menyaksikan", "dari-cerita": "dari-cerita", "tahu-pisah": "hanya-tahu-pisah", ragu: "ragu", "tidak-tahu-apa": "tidak-tahu-sebab" };
+  /** Pengetahuan dan keadaan efektif satu saksi untuk menyusun pertanyaan tambahan (katalog: panel katalog; cerai: pilihan lama). */
+  function tjEfektif(kunci, kenal, ker) {
+    if (kenal.mode !== "cerai") return ktSaksiEfektif(kunci, kenal, ker);
+    const K = KT();
+    const pihak = K.pihakDariKunci(kunci);
+    const p = SK() ? SK().bakukanPilihan(S.sk.pil[kunci], urutSaksi(kunci), opsiPil(kunci)) : {};
+    const kode = MODUS_KE_PROFIL[p.modus] || "";
+    const profil = kenal.kat && kenal.kat.profilSaksi && kenal.kat.profilSaksi[kode] ? `profil:${kode}` : "melihat";
+    const sb = kenal.sebutan;
+    const sumber = p.sumber === "keluarga" ? "keluarga mereka" : p.sumber === "tergugat" ? sb.T : sb.P;
+    return { pihak, keadaan: Object.assign({}, ker.keadaan, { pihakSaksi: pihak }), pilihan: [], jenis: profil, sumber };
+  }
+  /** Keadaan perkara untuk pertanyaan tambahan; perkara cerai membawa huruf alasan yang sedang terisi. */
+  function keadaanTambah(kenal) {
+    const ker = ktKeadaanPerkara(kenal);
+    if (kenal.mode === "cerai") {
+      const huruf = alasanHuruf();
+      if (huruf) ker.keadaan = Object.assign({}, ker.keadaan, { alasan: huruf.split("") });
+    }
+    return ker;
+  }
+  /** Baris satu saksi untuk PERBANDINGAN: baris tanpa id butir diberi id butir katalog yang bunyinya cocok (salinan; baris asli tidak berubah). */
+  function rowsCocok(kunci) {
+    const rows = (S.tj[kunci] && S.tj[kunci].rows) || [];
+    const kenal = ktKenal();
+    const K = KT();
+    if (!K || !kenal || !kenal.kat || (kenal.mode !== "katalog" && kenal.mode !== "cerai") || typeof K.cocokkanButir !== "function") return rows;
+    const ids = K.cocokkanButir(kenal.kat, rows, K.pihakDariKunci(kunci), kenal.sebutan);
+    return rows.map((r, i) => (ids[i] && r && !r.butir ? Object.assign({}, r, { butir: ids[i] }) : r));
   }
   function ktMasukanSaksi(semua, efektif) {
     return semua.map((k) => {
@@ -5803,8 +5836,8 @@
       return renderTj();
     }
     const semua = kunciSaksiSemua().filter((k) => tjItem(k));
-    const ker = ktKeadaanPerkara(kenal);
-    const efektif = new Map(semua.map((k) => [k, ktSaksiEfektif(k, kenal, ker)]));
+    const ker = keadaanTambah(kenal);
+    const efektif = new Map(semua.map((k) => [k, tjEfektif(k, kenal, ker)]));
     const st = ktState();
     const rows = {};
     for (const k of grup) rows[k] = S.tj[k].rows;
@@ -5853,11 +5886,11 @@
   async function ktHitungTambahan(grup, id) {
     const K = KT();
     const kenal = ktKenal();
-    if (!K || !kenal || kenal.mode !== "katalog" || !S.pk) return null;
-    await ktMuat();
+    if (!K || !kenal || (kenal.mode !== "katalog" && kenal.mode !== "cerai") || !S.pk) return null;
+    if (kenal.mode === "katalog") await ktMuat();
     const semua = kunciSaksiSemua().filter((k) => tjItem(k));
-    const ker = ktKeadaanPerkara(kenal);
-    const efektif = new Map(semua.map((k) => [k, ktSaksiEfektif(k, kenal, ker)]));
+    const ker = keadaanTambah(kenal);
+    const efektif = new Map(semua.map((k) => [k, tjEfektif(k, kenal, ker)]));
     const mini = K.katTambahan(kenal.kat, [id]);
     const susun = (variabel) => K.susun({ kat: mini, sebutan: kenal.sebutan, benih: nomorPerkara(), keadaan: ker.keadaan, jarang: true, variabel, saksi: ktMasukanSaksi(semua, efektif) });
     let hasil = susun(undefined);
@@ -5906,7 +5939,7 @@
     jadwalTjOtomatis(grup, JEDA_TJ_OTO_MS);
     toast(`Pertanyaan ditambahkan sebagai nomor ${pos + 1}. Tekan Urungkan bila tidak jadi.`);
     const pengisi = typeof globalThis !== "undefined" ? globalThis.AletaBdJawabanKatalog : null;
-    if (hitung && pengisi && typeof pengisi.usulkan === "function") {
+    if (hitung && hitung.kenal.mode === "katalog" && pengisi && typeof pengisi.usulkan === "function") {
       void pengisi
         .usulkan({ perkara: ktPerkaraObj(), kenal: hitung.kenal, keadaan: hitung.ker.keadaan, saksi: hitung.hasil.saksi, variabel: hitung.nilaiVar, kodeBelum: (hitung.hasil.variabelAbt || []).filter((kd) => !(kd in hitung.nilaiVar)) })
         .then((usulan) => {
@@ -5938,7 +5971,7 @@
     tjCatat([kunci]);
     const lawan = tjLawanPasangan(kunci);
     if (lawan && S.tj[lawan] && TP() && typeof TP().cariPasangan === "function") {
-      const j = TP().cariPasangan(t.rows, i, S.tj[lawan].rows);
+      const j = TP().cariPasangan(rowsCocok(kunci), i, rowsCocok(lawan));
       if (j >= 0) S.tj[lawan].rows[j].hanya = true;
     }
     ktCatatDihapus(kunci, t.rows[i]);
@@ -5953,7 +5986,7 @@
   function bedaSusunan(ps) {
     const m = TP();
     if (!m || typeof m.bandingSusunan !== "function" || !ps || !S.tj[ps[0]] || !S.tj[ps[1]]) return { hanyaA: [], hanyaB: [], beda: false };
-    return m.bandingSusunan(S.tj[ps[0]].rows, S.tj[ps[1]].rows);
+    return m.bandingSusunan(rowsCocok(ps[0]), rowsCocok(ps[1]));
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -7255,7 +7288,7 @@
     const kk = S.tjBuka;
     // 1 Nov (keputusan 79): pertanyaan yang hanya ada pada saksi ini (tidak pada pasangannya) ditandai; tambah pertanyaan dari katalog.
     const lawanSatu = tjLawanPasangan(kk);
-    const bdSatu = lawanSatu && S.tj[lawanSatu] && TP() && TP().bandingSusunan ? TP().bandingSusunan(rows, S.tj[lawanSatu].rows) : null;
+    const bdSatu = lawanSatu && S.tj[lawanSatu] && TP() && TP().bandingSusunan ? TP().bandingSusunan(rowsCocok(kk), rowsCocok(lawanSatu)) : null;
     const hanyaSatu = new Set(bdSatu ? bdSatu.hanyaA : []);
     const bisaTambahS = bolehTambahPertanyaan([kk]);
     const pilihAdaS = (i) => Boolean(S.tjPilih && S.tjPilih.grup.join("|") === kk && S.tjPilih.pos === i + 1);

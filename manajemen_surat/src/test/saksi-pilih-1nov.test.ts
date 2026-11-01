@@ -704,13 +704,6 @@ describe("Blangko Derry: Tambah pertanyaan dan hapus per saksi", () => {
     expect(JSON.stringify(terakhir)).not.toMatch(/aleta/i);
   });
 
-  it("jenis perkara cerai (panel lama) tidak mendapat tombol Tambah pertanyaan katalog; fitur lama tetap ada", async () => {
-    const gugat = await bukaSaksi({ jenis: "Cerai Gugat", alur: 15 }, false);
-    await tunggu(100);
-    expect(qd(gugat, '[data-bd2="pilihq"]')).toHaveLength(0);
-    for (const s of ['[data-bd2="tambahtj"]', '[data-bd2="simpantj"]', '[data-sbaksi="urung"]']) expect(q(gugat, s), s).not.toBeNull();
-  });
-
   it("fitur lama tetap: Tambah baris, naik/turun, tombol tukar/salin ada di tiap baris berdampingan; tombol hapus per saksi dan tambah pertanyaan ada di tiap baris", async () => {
     const h = await mulaiSaksiTersusun();
     const n = semuaTanya(h).length;
@@ -725,5 +718,163 @@ describe("Blangko Derry: Tambah pertanyaan dan hapus per saksi", () => {
     expect(q(h, "#bd-pilihq")!.textContent).toContain(`nomor ${n + 2}`);
     klik(h, '[data-bd2="pilihq-tutup"]');
     expect(q(h, "#bd-pilihq")).toBeNull();
+  });
+});
+
+// ============================================================================
+// Perkara cerai (346/347): jalur set pertanyaan lama, baris dicocokkan ke butir katalog cerai menurut bunyinya
+// ============================================================================
+describe("cerai: pencocokan baris ke butir katalog (murni)", () => {
+  it("baris yang bunyinya sama dengan butir katalog dicocokkan (satu butir untuk satu baris), baris ketikan sendiri tidak diberi butir", () => {
+    const K: Mod = muat();
+    const kn = K.kenali({ jenisPerkara: "Cerai Gugat", jenisPerkaraId: "347", alurPerkaraId: "15", nomorPerkara: "1/Pdt.G/2026/PA.Dgl" });
+    expect(kn.mode).toBe("cerai");
+    const rows = [{ tanya: "Apakah Saudara kenal dengan Penggugat dan Tergugat?" }, { tanya: "Di mana Penggugat dan Tergugat tinggal bersama setelah menikah?" }, { tanya: "Ketikan sendiri tentang sepeda motor yang dijual?" }, { tanya: "Apakah Saudara kenal dengan Penggugat dan Tergugat?" }, { butir: "q-maksud", tanya: "apa saja" }];
+    const id = K.cocokkanButir(kn.kat, rows, "P", kn.sebutan);
+    expect(id[0]).toBe("q-kenal");
+    expect(id[1]).toBe("q-tinggal");
+    expect(id[2]).toBe("");
+    expect(id[3]).not.toBe("q-kenal"); // satu butir hanya untuk satu baris
+    expect(id[4]).toBe("q-maksud");
+  });
+
+  it("set cerai yang ditawarkan portal sebagian besar dikenali (>= 14 dari 18 baris) pada cerai gugat dan cerai talak", async () => {
+    const { tawarkanSetSaksi } = await import("@/lib/set-pertanyaan-saksi");
+    const K: Mod = muat();
+    for (const [nama, id] of [["Cerai Gugat", "347"], ["Cerai Talak", "346"]]) {
+      const kn = K.kenali({ jenisPerkara: nama, jenisPerkaraId: id, alurPerkaraId: "15", nomorPerkara: "1/Pdt.G/2026/PA.Dgl" });
+      const t = tawarkanSetSaksi({ namaJenis: nama, nomor: "1/Pdt.G/2026/PA.Dgl", folder: "", huruf: "F", sebutanP: kn.sebutan.P, sebutanT: kn.sebutan.T, jumlahP: 1 });
+      const utama = t.set.find((x) => x.utama)!;
+      const cocok = K.cocokkanButir(kn.kat, utama.baris.map((b) => ({ tanya: b.tanya })), "P", kn.sebutan).filter(Boolean);
+      expect(cocok.length, nama).toBeGreaterThanOrEqual(14);
+      expect(new Set(cocok).size).toBe(cocok.length);
+    }
+  });
+
+  it("calonTambah cerai: butir yang sudah ada di set tidak ditawarkan lagi; saksi dengan pengetahuan 'dari cerita' memakai profil katalog cerai", () => {
+    const K: Mod = muat();
+    const kn = K.kenali({ jenisPerkara: "Cerai Gugat", jenisPerkaraId: "347", alurPerkaraId: "15", nomorPerkara: "1/Pdt.G/2026/PA.Dgl" });
+    const rows = [{ tanya: "Apakah Saudara kenal dengan Penggugat dan Tergugat?", jawab: "x" }, { tanya: "Di mana Penggugat dan Tergugat tinggal bersama setelah menikah?", jawab: "y" }];
+    const saksi = [{ kunci: "saksi 1 p", pihak: "P", jenis: "profil:dari-cerita", sumber: "keluarga mereka" }, { kunci: "saksi 2 p", pihak: "P" }];
+    const c = K.calonTambah({ kat: kn.kat, sebutan: kn.sebutan, benih: "1", keadaan: K.lengkapiBawaan(kn.kat, {}), saksi, target: ["saksi 1 p", "saksi 2 p"], rows: { "saksi 1 p": rows, "saksi 2 p": rows } });
+    const ids = c.calon.map((x: Mod) => x.id);
+    expect(ids).not.toContain("q-kenal");
+    expect(ids).not.toContain("q-tinggal");
+    expect(ids.length).toBeGreaterThan(20);
+    expect(c.calon.some((x: Mod) => x.baris["saksi 1 p"].jawab && x.baris["saksi 1 p"].jawab !== x.baris["saksi 2 p"].jawab)).toBe(true);
+  });
+});
+
+describe.each([
+  { nama: "Cerai Gugat (CG)", jenis: "Cerai Gugat", sebutan: "Penggugat" },
+  { nama: "Cerai Talak (CT)", jenis: "Cerai Talak", sebutan: "Pemohon" },
+])("Blangko Derry cerai: $nama", ({ jenis, sebutan }) => {
+  const tanyaSatu = (h: Halaman) => qd(h, "textarea[data-tjb][data-sisi='tanya']").map(nilaiTa);
+  const jawabSatu = (h: Halaman) => qd(h, "textarea[data-tjb][data-sisi='jawab']").map(nilaiTa);
+  const teksButir = (h: Halaman) => qd(h, '[data-bd2="pilihq-pilih"]').map((b) => (b.textContent || "").replace(/\s*jarang diajukan$/, "").trim());
+  async function bukaCerai() {
+    const h = await bukaSaksi({ jenis, alur: 15 }, false);
+    // draf set pertanyaan yang disarankan terpasang sendiri pada daftar yang kosong
+    await sampai(() => qd(h, "[data-sbq]").length >= 10, "set pertanyaan cerai terpasang", 9000);
+    await tunggu(200);
+    return h;
+  }
+
+  it("tombol ＋ dan '+ Pertanyaan dari katalog' ada; Tambah pertanyaan di tengah: hanya butir yang belum ada di set, masuk di posisi itu untuk KEDUA saksi, Urungkan mengembalikan", async () => {
+    const h = await bukaCerai();
+    expect(akar(h).textContent).toContain(sebutan);
+    expect(q(h, ".bd-skkatalog")).toBeNull(); // tetap panel lama cerai (bunyi set tidak diubah)
+    const awal = semuaTanya(h);
+    const j0 = semuaJawab(h, 0);
+    expect(qd(h, '[data-bd2="pilihq"]').length).toBeGreaterThanOrEqual(awal.length);
+    expect(q(h, '.bd-tjkaki [data-bd2="pilihq"]')).not.toBeNull();
+    klik(h, '[data-bd2="pilihq"][data-pos="2"]');
+    await sampai(() => q(h, "#bd-pilihq") && teksButir(h).length > 20, "pilihan tergambar");
+    const daftar = teksButir(h);
+    // pertanyaan yang sudah ada di set tidak ditawarkan lagi
+    expect(daftar.some((t) => awal.includes(t))).toBe(false);
+    expect(qd(h, ".bd-pilihq-judul").length).toBeGreaterThan(3);
+    ketik(h, q(h, "[data-pilihq-cari]") as HTMLInputElement, "tinggal", false);
+    await sampai(() => teksButir(h).length > 0 && teksButir(h).length < daftar.length, "tersaring");
+    const pilih = qd(h, '[data-bd2="pilihq-pilih"]')[0];
+    klik(h, `[data-butir="${pilih.getAttribute("data-butir")}"]`);
+    await sampai(() => semuaTanya(h).length === awal.length + 1, "pertanyaan masuk");
+    const sesudah = semuaTanya(h);
+    expect(sesudah.slice(0, 2)).toEqual(awal.slice(0, 2));
+    expect(sesudah.slice(3)).toEqual(awal.slice(2));
+    expect(semuaJawab(h, 0).slice(0, 2)).toEqual(j0.slice(0, 2));
+    expect(semuaJawab(h, 0)[2].trim()).not.toBe("");
+    expect(semuaJawab(h, 1)[2].trim()).not.toBe("");
+    expect(semuaJawab(h, 0)[2]).not.toBe(semuaJawab(h, 1)[2]);
+    expect(q(h, ".bd-hanyabanner")).toBeNull();
+    klik(h, '[data-sbaksi="urung"]');
+    await sampai(() => semuaTanya(h).length === awal.length, "diurungkan");
+    expect(semuaTanya(h)).toEqual(awal);
+    expect(semuaJawab(h, 0)).toEqual(j0);
+  });
+
+  it("hapus untuk kedua saksi, lalu hapus HANYA untuk satu saksi: tampilan berpindah, banner dan lencana muncul, baris yang tidak cocok ke katalog tetap tampil biasa", async () => {
+    const h = await bukaCerai();
+    // baris ketikan sendiri (tidak cocok ke butir katalog mana pun) ditambah di akhir untuk kedua saksi
+    klik(h, '.bd-tjkaki [data-bd2="tambahtj"]');
+    await sampai(() => semuaTanya(h).at(-1) === "", "baris kosong");
+    const n = semuaTanya(h).length;
+    ketik(h, qd(h, "[data-sbq]")[n - 1] as unknown as HTMLInputElement, "Ketikan sendiri tentang sepeda motor yang dijual?", true);
+    const awal = semuaTanya(h);
+    const j0 = semuaJawab(h, 0);
+    const j1 = semuaJawab(h, 1);
+    expect(q(h, ".bd-hanyabanner")).toBeNull();
+    // hapus untuk kedua saksi
+    klik(h, '[data-sbhapus="3"]');
+    await sampai(() => semuaTanya(h).length === n - 1, "dihapus kedua saksi");
+    expect(semuaTanya(h)).toEqual([...awal.slice(0, 3), ...awal.slice(4)]);
+    expect(q(h, ".bd-hanyabanner")).toBeNull();
+    klik(h, '[data-sbaksi="urung"]');
+    await sampai(() => semuaTanya(h).length === n, "diurungkan");
+    // hapus hanya untuk saksi 1
+    klik(h, '[data-sbhapus1="2.0"]');
+    await sampai(() => qd(h, "textarea[data-tjb]").length > 0, "berpindah ke satu saksi");
+    expect(q(h, '[data-tjmode="satu"]')!.getAttribute("aria-selected")).toBe("true");
+    expect(tanyaSatu(h)).toHaveLength(n - 1);
+    expect(q(h, ".bd-hanyabanner")!.textContent).toMatch(/tidak sama lagi: 1 hanya pada Saksi 2/);
+    // baris ketikan sendiri tetap tampil biasa tanpa lencana
+    expect(tanyaSatu(h)).toContain("Ketikan sendiri tentang sepeda motor yang dijual?");
+    expect(qd(h, ".bd-hanya")).toHaveLength(0);
+    klik(h, '.bd-hanyabanner [data-bd2="lihatsaksi"]');
+    await sampai(() => tanyaSatu(h).length === n, "saksi 2 tampil");
+    const tanda = qd(h, ".bd-hanya");
+    expect(tanda).toHaveLength(1);
+    expect(tanda[0].textContent).toMatch(/^hanya ada pada Saksi 2 /);
+    expect(nilaiTa(tanda[0].closest("tr")!.querySelector("textarea[data-sisi='tanya']")!)).toBe(awal[2]);
+    expect(jawabSatu(h)).toEqual(j1);
+    // berdampingan: banner dan lencana ikut
+    klik(h, '[data-tjmode="sisi"]');
+    await sampai(() => qd(h, "[data-sbq]").length > 0, "berdampingan");
+    expect(q(h, ".bd-hanyabanner")!.textContent).toMatch(/tidak sama lagi/);
+    expect(qd(h, ".bd-hanya").length).toBe(1);
+    // Urungkan: kedua saksi sama lagi
+    klik(h, '[data-sbaksi="urung"]');
+    await sampai(() => !q(h, ".bd-hanyabanner"), "sama lagi");
+    expect(semuaTanya(h)).toEqual(awal);
+    expect(semuaJawab(h, 0)).toEqual(j0);
+    expect(semuaJawab(h, 1)).toEqual(j1);
+  });
+
+  it("Simpan ke ABT sesudah tambah dan hapus: nomor berurut ulang, tanpa penanda internal", async () => {
+    const h = await bukaCerai();
+    const awal = semuaTanya(h);
+    klik(h, '[data-sbhapus="1"]');
+    await sampai(() => semuaTanya(h).length === awal.length - 1, "dihapus");
+    klik(h, '[data-bd2="pilihq"][data-pos="1"]');
+    await sampai(() => teksButir(h).length > 20, "pilihan tergambar");
+    klik(h, `[data-butir="${qd(h, '[data-bd2="pilihq-pilih"]')[0].getAttribute("data-butir")}"]`);
+    await sampai(() => semuaTanya(h).length === awal.length, "ditambah");
+    const akhir = semuaTanya(h);
+    klik(h, '[data-bd2="simpantj"]');
+    await sampai(() => h.tj["5058"].length === akhir.length && h.tj["5059"].length === akhir.length, "tersimpan");
+    expect(h.tj["5058"].map((r) => r.no)).toEqual(akhir.map((_, i) => String(i + 1)));
+    expect(h.tj["5058"].map((r) => r.tanya)).toEqual(akhir);
+    expect(h.tj["5058"].map((r) => r.tanya)).not.toContain(awal[1]);
+    expect(JSON.stringify(h.tj)).not.toMatch(/aleta|"butir"|ditambah|"hanya"|kunciJawaban/i);
   });
 });
