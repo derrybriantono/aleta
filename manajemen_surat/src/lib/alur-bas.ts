@@ -53,6 +53,20 @@ export function alurBasMenurutId(id: string): AlurBas | undefined {
 export type GrupJenisAlur = "cerai-gugat" | "cerai-talak" | "itsbat" | "dispensasi" | "asal-usul" | "permohonan-lain" | "";
 
 /** 1 Nov (keputusan 52): sisi tahap pembuktian dari jawaban bot (panggilan.tahapPembuktian = {sisi, sebab} | null); lainnya = null. */
+/**
+ * 1 Nov 2026: pihak pembuktian yang DISEBUT tundaan sidang sebelumnya - pola sama dengan tahapPembuktianService (POSIX.T / POSIX.P):
+ * kata bukti/saksi lalu sebutan pihak. "T" | "P" | null (tidak menyebut pihak, atau menyebut keduanya).
+ */
+export function sisiTundaanPembuktian(teks: unknown): "P" | "T" | null {
+  const t = String(teks ?? "").toLowerCase().replace(/\s+/g, " ");
+  if (!/bukti|saksi/.test(t)) return null;
+  const T = /(bukti|saksi)[a-z-]*( lanjutan| tambahan)?( dari| oleh| untuk)? ((penggugat|pemohon|p) dan )?(tergugat|termohon|t([^a-z]|$))/.test(t);
+  const P = /(bukti|saksi)[a-z-]*( lanjutan| tambahan)?( dari| oleh| untuk)? (penggugat|pemohon|p([^a-z]|$))/.test(t) && !/(penggugat|pemohon) dan (tergugat|termohon)/.test(t);
+  if (T && !P && !/(penggugat|pemohon) dan (tergugat|termohon)/.test(t)) return "T";
+  if (P && !T) return "P";
+  return null;
+}
+
 export function sisiTahapPembuktian(x: unknown): "P" | "T" | "PT" | null {
   const sisi = x && typeof x === "object" ? (x as { sisi?: unknown }).sisi : x;
   return sisi === "P" || sisi === "T" || sisi === "PT" ? sisi : null;
@@ -88,6 +102,11 @@ export type MasukanAlurBas = {
    * aleta_bot/services/tahapPembuktianService.js). Dipakai bila agenda pembuktian tidak menyebut pihak; tidak ada = bot lama (urutan sidang).
    */
   tahapPembuktian?: "P" | "T" | "PT" | null;
+  /**
+   * 1 Nov 2026 (keputusan pengguna): tundaan sidang SEBELUMNYA (alasan ditunda = agenda yang ditetapkan untuk sidang ini; bot:
+   * panggilan.tundaanSebelumnya, dibaca lewat sqlAlasanHasil). Cadangan bila bot belum mengirim tahapPembuktian.
+   */
+  tundaanSebelumnya?: string;
 };
 
 export type LangkahLainAlur = { alur: AlurBas; langkah: LangkahAlurBas };
@@ -155,7 +174,8 @@ const AGENDA_AKHIR = /putus|musyawarah|penetapan|bukti|pembuktian|saksi/i;
 export function langkahAlur04(
   dilihat: number,
   agendaMentah: string,
-  tahapPembuktian?: "P" | "T" | "PT" | null
+  tahapPembuktian?: "P" | "T" | "PT" | null,
+  tundaanSebelumnya?: string
 ): { kode: string; alternatif: string[]; dariAgenda: boolean } {
   const ag = String(agendaMentah ?? "").toLowerCase();
   const urutan = dilihat >= 9 ? "9" : String(Math.max(1, dilihat));
@@ -166,6 +186,17 @@ export function langkahAlur04(
   });
   if (dilihat <= 1) return { kode: "1", alternatif: [], dariAgenda: false };
   if (dilihat === 2) return { kode: "2", alternatif: [], dariAgenda: false };
+  // 1 Nov 2026 (keputusan pengguna): pihak pembuktian dari TUNDAAN sidang sebelumnya ("ditunda untuk pembuktian Tergugat" -> [7],
+  // "pembuktian lanjutan Penggugat" / "saksi Penggugat" -> [6]); tanpa sebutan pihak -> tahap pembuktian (keputusan 52).
+  const tunda = sisiTundaanPembuktian(tundaanSebelumnya);
+  const tahapLain = /mediasi|laporan|pokok|jawab|replik|duplik|kesimpulan|musyawarah|putus|ikrar|sela/.test(ag);
+  // Agenda umum/kosong ("sidang lanjutan") yang ditunda untuk pembuktian = sidang pembuktian (sisi dari bot, lalu tundaan).
+  const sisiUmum = tahapPembuktian || tunda;
+  if (!/bukti|pembuktian|saksi/.test(ag) && !tahapLain && sisiUmum) {
+    if (sisiUmum === "T") return { kode: "7", alternatif: ["7a", "7b", "6"], dariAgenda: true };
+    if (sisiUmum === "PT") return { kode: "6", alternatif: ["7", "7a", "7b", "6a", "6b", "6c"], dariAgenda: true };
+    return { kode: "6", alternatif: ["6a", "6b", "6c", "7"], dariAgenda: true };
+  }
   if (!ag.trim()) return dariUrutan();
   if (/mediasi|laporan|pokok/.test(ag)) return { kode: "2", alternatif: [], dariAgenda: true };
   if (/jawab/.test(ag)) return { kode: "3", alternatif: [], dariAgenda: true };
@@ -184,6 +215,9 @@ export function langkahAlur04(
     if (tahapPembuktian === "T") return { kode: "7", alternatif: ["7a", "7b", "6"], dariAgenda: true };
     if (tahapPembuktian === "P") return { kode: "6", alternatif: ["6a", "6b", "6c", "7"], dariAgenda: true };
     if (tahapPembuktian === "PT") return { kode: "6", alternatif: ["7", "7a", "7b", "6a", "6b", "6c"], dariAgenda: true };
+    // Bot tanpa tahap: tundaan sidang sebelumnya lebih dulu.
+    if (tunda === "T") return { kode: "7", alternatif: ["7a", "7b", "6"], dariAgenda: true };
+    if (tunda === "P") return { kode: "6", alternatif: ["6a", "6b", "6c", "7"], dariAgenda: true };
     // Bot lama (tanpa tahap): pembuktian pertama = P. Sesudah sidang ke-6 lebih mungkin T; sisi lainnya ikut ditawarkan.
     return dilihat >= 7
       ? { kode: "7", alternatif: ["7a", "7b", "6"], dariAgenda: true }
@@ -298,7 +332,7 @@ export function tentukanAlurBas(m: MasukanAlurBas): HasilAlurBas {
       return hasil("alur-05", kode, true, "P dan T hadir, jawab-menjawab lisan.", kode === "3" ? ["3a"] : [], akhirLain(grup, dilihat, true, "alur-05"));
     }
     // Q3 16 Okt: langkah ALUR 04 ditebak dari AGENDA lebih dulu (peta L3: urutan saja meleset 10-40% per langkah), baru dari urutan sidang.
-    const l4 = langkahAlur04(dilihat, agenda, m.tahapPembuktian);
+    const l4 = langkahAlur04(dilihat, agenda, m.tahapPembuktian, m.tundaanSebelumnya);
     // ALUR 05 (lisan) ditawarkan untuk sidang awal yang agendanya tak menyebut penanda tertulis (14 CG + 12 CT lisan, <= 5 sidang).
     const lisanLain: Array<[string, string]> =
       dilihat <= 4 && !AGENDA_TERTULIS.test(agenda)

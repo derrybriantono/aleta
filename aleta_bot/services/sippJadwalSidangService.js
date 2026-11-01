@@ -2588,6 +2588,7 @@ async function keadaanPanggilanSidang(daftarSidang = []) {
 
   // --- Tahap pembuktian tiap sidang (keputusan 52): "P" | "T" | "PT" | null ---
   const tahapBukti = {};
+  const tundaanLalu = {};
   {
     const perPerkara = new Map();
     for (const baris of Array.isArray(semuaSidang) ? semuaSidang : []) {
@@ -2598,6 +2599,10 @@ async function keadaanPanggilanSidang(daftarSidang = []) {
     for (const daftar of perPerkara.values()) {
       const gugatan = /pdt\.g/i.test(String((daftar[0] && daftar[0].nomorPerkara) || "Pdt.G"));
       for (const r of tahapPembuktianService.tahapPembuktian(daftar, { gugatan })) tahapBukti[String(r.sidangId)] = r.sisi ? { sisi: r.sisi, sebab: r.sebab } : null;
+      // 1 Nov 2026: alasan ditunda sidang sebelumnya (sqlAlasanHasil) untuk portal - pihak pembuktian yang ditetapkan untuk sidang ini.
+      daftar.forEach((baris, i) => {
+        if (i > 0) tundaanLalu[String(baris.sidangId)] = String(daftar[i - 1].alasanDitunda || "").slice(0, 300);
+      });
     }
   }
 
@@ -2750,6 +2755,7 @@ async function keadaanPanggilanSidang(daftarSidang = []) {
         penggugatPernahHadir[kunci] === undefined ? null : penggugatPernahHadir[kunci],
       // Keputusan 52: pihak yang membuktikan pada sidang ini menurut urutan tahap pembuktian ({sisi, sebab} | null).
       tahapPembuktian: tahapBukti[kunci] || null,
+      tundaanSebelumnya: tundaanLalu[kunci] || "",
       wajibDipanggil: wajib,
       // Disebutkan supaya dapat ditelusuri bila penandanya terasa keliru.
       sisiPihakAda: sisiAda ? [...sisiAda].sort() : [],

@@ -75,6 +75,8 @@ export type MasukanRekomendasi = {
   keterangan?: string;
   /** 1 Nov (keputusan 52): pihak yang membuktikan pada sidang ini menurut urutan tahap pembuktian (bot panggilan.tahapPembuktian). */
   tahapPembuktian?: "P" | "T" | "PT" | null;
+  /** 1 Nov 2026: alasan ditunda sidang SEBELUMNYA (bot panggilan.tundaanSebelumnya) - pihak pembuktian yang ditetapkan untuk sidang ini. */
+  tundaanSebelumnya?: string;
   tergugatPernahHadir?: boolean;
   penggugatPernahHadir?: boolean | null;
   hadirSebelumnya?: number | null;
@@ -226,6 +228,7 @@ function rekomendasiBas(m: MasukanRekomendasi, teks: string): Rekomendasi[] {
     sikapTergugatCabut: m.sikapTergugatCabut ?? null,
     mafqud: m.mafqud,
     tahapPembuktian: m.tahapPembuktian ?? null,
+    tundaanSebelumnya: m.tundaanSebelumnya ?? "",
   };
   const hAlur = tentukanAlurBasKumulasi(masukan);
   const baru = tentukanBasBaru(masukan);
@@ -942,6 +945,7 @@ export function masukanRekomendasiDariBaris(b: Record<string, unknown>): Masukan
     penggugatPernahHadir: panggilan.penggugatPernahHadir === true ? true : panggilan.penggugatPernahHadir === false ? false : null,
     hadirSebelumnya: angka(panggilan.hadirSebelumnya),
     tahapPembuktian: sisiTahapPembuktian(panggilan.tahapPembuktian),
+    tundaanSebelumnya: typeof panggilan.tundaanSebelumnya === "string" ? panggilan.tundaanSebelumnya.slice(0, 300) : "",
     sidangIkrarTalak: b.sidangIkrarTalak === true,
     tanggalSidang: String(b.tanggalSidang ?? "").slice(0, 10),
     tanggalPenetapanSidangIkrar: typeof b.tanggalPenetapanSidangIkrar === "string" ? b.tanggalPenetapanSidangIkrar.slice(0, 10) : null,

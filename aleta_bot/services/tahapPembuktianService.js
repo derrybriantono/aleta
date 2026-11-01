@@ -48,6 +48,10 @@ const RE_P = keJs(POSIX.P);
 const RE_CUKUP = keJs(POSIX.CUKUP);
 const RE_T_MULAI = keJs(POSIX.T_MULAI);
 const RE_KESIMPULAN = /kesimpulan/;
+// Agenda tahap lain (bukan pembuktian): tundaan pembuktian tidak mengubahnya.
+const RE_TAHAP_LAIN = /jawab|replik|duplik|kesimpulan|putus|musyawarah|mediasi|ikrar|pembacaan|sela|damai/;
+// "pembuktian Penggugat dan Tergugat" tertangkap RE_T sebagai kedua pihak - bukan tanda Penggugat saja.
+const RE_PIHAK_GANDA = /(penggugat|pemohon)\s+dan\s+(tergugat|termohon)/;
 const RE_BELUM = /belum\s+cukup/;
 
 const kecil = (x) => String(x == null ? "" : x).toLowerCase().replace(/\s+/g, " ").trim();
@@ -73,9 +77,18 @@ function tahapPembuktian(sidang, opsi) {
   let selesaiP = false; // pembuktian Penggugat selesai SEBELUM sidang ini
   let sebabSelesai = "";
   const hasil = [];
+  // 1 Nov 2026 (keputusan pengguna, sesudah 52): sisi sidang pembuktian ditentukan DULU dari tundaan sidang sebelumnya (alasan
+  // ditunda = agenda yang ditetapkan untuk sidang ini; dibaca lewat sqlAlasanHasil): "ditunda untuk pembuktian Tergugat" -> T,
+  // "pembuktian lanjutan Penggugat" / "saksi Penggugat" -> P. Tundaan tanpa sebutan pihak -> aturan tahap keputusan 52.
+  let tundaanLalu = "";
   for (const s of Array.isArray(sidang) ? sidang : []) {
     const a = kecil(s && s.agenda);
-    const bukti = RE_BUKTI.test(a);
+    const tl = tundaanLalu;
+    tundaanLalu = kecil(s && s.alasanDitunda);
+    const tundaT = Boolean(tl) && RE_T.test(tl);
+    const tundaP = Boolean(tl) && RE_P.test(tl) && !RE_PIHAK_GANDA.test(tl);
+    // Agenda umum/kosong ("sidang lanjutan") yang tundaannya pembuktian berpihak = sidang pembuktian.
+    const bukti = RE_BUKTI.test(a) || (!RE_TAHAP_LAIN.test(a) && (tundaT || tundaP));
     const tanda = [tandaTeks(s && s.alasanDitunda), tandaTeks(s && s.keterangan)];
     let sisi = null;
     let sebab = "";
@@ -85,6 +98,9 @@ function tahapPembuktian(sidang, opsi) {
       if (t && p) [sisi, sebab] = ["PT", "agenda menyebut kedua pihak"];
       else if (t) [sisi, sebab] = ["T", "agenda pembuktian Tergugat"];
       else if (p) [sisi, sebab] = ["P", "agenda pembuktian Penggugat"];
+      else if (tundaT && RE_PIHAK_GANDA.test(tl)) [sisi, sebab] = ["PT", "tundaan sidang sebelumnya: pembuktian kedua pihak"];
+      else if (tundaT && !tundaP) [sisi, sebab] = ["T", "tundaan sidang sebelumnya: pembuktian Tergugat"];
+      else if (tundaP && !tundaT) [sisi, sebab] = ["P", "tundaan sidang sebelumnya: pembuktian Penggugat"];
       else if (!mulai) [sisi, sebab] = ["P", "pembuktian diawali Penggugat"];
       else if (selesaiP && gugatan) [sisi, sebab] = ["T", `pembuktian Penggugat sudah selesai (${sebabSelesai})`];
       else [sisi, sebab] = ["P", "pembuktian lanjutan pihak yang sedang membuktikan"];
