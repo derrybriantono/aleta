@@ -146,6 +146,16 @@ export async function register() {
     mulaiTenggatBerkala(getDatabase);
   }
   /* === AKHIR PENJAGA TENGGAT TERJADWAL === */
+  /* === PENCOCOK DATA SIPP-ABT-e-COURT 1 Nov (N3) === detak 5 menit; putaran SEKALI per tanggal WITA sesudah jam pemicu (bawaan 22.30).
+     HANYA MEMBACA (SIPP, ABT, e-Court lewat bot) dan menandai; saklar jadwal Super Admin bawaan menyala. Matikan dengan ALETA_PENCOCOK=0. */
+  if (process.env.ALETA_PENCOCOK !== "0") {
+    const [{ mulaiPencocokBerkala }, { getDatabase }] = await Promise.all([
+      import("@/server/modules/pencocok/layanan"),
+      import("@/server/db/client"),
+    ]);
+    mulaiPencocokBerkala(getDatabase);
+  }
+  /* === AKHIR PENCOCOK DATA === */
   /* === KAIT KEAMANAN 26 Okt (gabung rantai E + Bagian 6) === mengisi kait keamanan/kait.ts: langkah kedua pengaman aksi admin
      (authenticator E5) dan laporan uji pulih gagal ke Catatan error Pusat kesehatan (E2). Tidak mengubah bawaan: saklar
      authenticator, saklar langkah kedua, dan saklar uji pulih tetap MATI sampai Super Admin menyalakannya. */

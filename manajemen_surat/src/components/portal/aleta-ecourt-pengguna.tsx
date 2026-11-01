@@ -17,6 +17,7 @@ import {
   Handshake,
   FileSearch,
   FolderCheck,
+  GitCompareArrows,
   History,
   LayoutDashboard,
   PenLine,
@@ -785,6 +786,20 @@ export function AletaEcourtPengguna() {
               </p>
             ) : null}
           </div>
+
+          {/* Pencocok data (N3, 1 Nov 2026): halaman tersendiri, satu tempat untuk perkara yang datanya berbeda antara SIPP, ABT, dan e-Court. */}
+          <Link
+            href="/aleta-ecourt/pencocok"
+            data-tautan-pencocok=""
+            title="Pencocok data: perkara yang datanya berbeda antara SIPP, ABT, dan e-Court"
+            className={cn(
+              "flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] text-xs text-slate-300 transition hover:bg-white/10 hover:text-white",
+              sidebarCiut ? "h-11 w-11 justify-center self-center" : "px-3 py-2"
+            )}
+          >
+            <GitCompareArrows className="h-4 w-4 shrink-0" />
+            {!sidebarCiut ? <span>Pencocok data</span> : <span className="sr-only">Pencocok data</span>}
+          </Link>
 
           {/* Lebar halaman (butir 12, 2 Okt 2026) - hanya berarti pada
               jendela 1600 px ke atas, jadi hanya tampil di sana. */}

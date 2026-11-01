@@ -785,6 +785,13 @@
       "when": 1792341000001,
       "tag": "0127_aleta_tenggat_kabar",
       "breakpoints": true
+    },
+    {
+      "idx": 112,
+      "version": "7",
+      "when": 1792344600001,
+      "tag": "0129_aleta_pencocok_temuan",
+      "breakpoints": true
     }
   ]
 }

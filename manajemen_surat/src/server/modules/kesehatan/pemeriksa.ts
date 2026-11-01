@@ -409,6 +409,31 @@ export function periksaPutusanDokumen(beda: Array<{ nomor_perkara: string; ringk
   };
 }
 
+/**
+ * Pencocok data SIPP - ABT - e-Court (N3, 1 Nov 2026): ringkasan temuan hasil putaran malam. Informasi, bukan alarm:
+ * kuning bila ada perbedaan penting (tingkat tinggi), kelabu bila hanya yang ringan / belum ada putaran.
+ */
+export function periksaPencocok(
+  r: {
+    ringkasan: { jumlah: number; perkara: number; perTingkat: { tinggi: number; sedang: number; rendah: number } } | null;
+    catatan: { tanggal: string; pada: string; durasiMs: number; diperiksa: number; galat: string; lengkap: boolean } | null;
+    contoh: Array<{ nomorPerkara: string; jenis: string; ringkas: string }>;
+  } | null,
+  kini: Date
+) {
+  if (!r) return { warna: "kelabu" as Warna, ringkas: "Pencocok data belum terbaca.", rincian: [] };
+  if (!r.catatan) return { warna: "kelabu" as Warna, ringkas: "Pencocok data belum pernah berjalan (putaran malam atau tombol Jalankan sekarang).", rincian: [] };
+  const rincian = [
+    { label: "Putaran terakhir", nilai: `${umurTeks(r.catatan.pada, kini)}, ${r.catatan.diperiksa} perkara, ${(r.catatan.durasiMs / 1000).toFixed(1)} detik` },
+    ...(r.catatan.galat ? [{ label: "Galat", nilai: r.catatan.galat }] : []),
+    ...r.contoh.map((c) => ({ label: c.nomorPerkara || "-", nilai: c.ringkas })),
+  ];
+  if (r.catatan.galat) return { warna: "kuning" as Warna, ringkas: "Putaran Pencocok data terakhir terhenti: " + r.catatan.galat, rincian };
+  const tinggi = r.ringkasan?.perTingkat.tinggi ?? 0;
+  const ringkas = `${r.ringkasan?.jumlah ?? 0} perbedaan pada ${r.ringkasan?.perkara ?? 0} perkara (penting ${tinggi}).`;
+  return { warna: (tinggi > 0 ? "kuning" : "kelabu") as Warna, ringkas, rincian };
+}
+
 export function periksaUjiBeban(uji: UjiBebanRingkas | null, kini: Date) {
   if (!uji) return { warna: "kelabu" as Warna, ringkas: "Belum ada hasil uji beban yang diimpor.", rincian: [] };
   const rincian = [

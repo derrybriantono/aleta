@@ -101,8 +101,33 @@ describe("temuan-perkara.js", () => {
     const w = document.createElement("div");
     M.gambar(w, { perkaraId: "1", jenis: "bas", berkas: NAMA_BAS[1], sidang: { sidangId: "9", hadir: 2 }, temuanVerstek: false });
     await tunggu();
-    expect(kiriman).toHaveLength(0);
+    // Kehadiran dan putusan tidak ditanyakan; satu-satunya permintaan adalah Pencocok data (N3, 1 Nov), pasif dan ringan.
+    expect(kiriman.map((k) => k.url)).toEqual(["/aleta/api/aleta-ecourt/pencocok?perkaraId=1"]);
     expect(w.textContent).toBe("");
+  });
+
+  it("Pencocok data (N3): perbedaan antar sistem muncul sebagai catatan pasif tanpa tombol; yang sudah punya alat sendiri tidak diulang; ringan hanya dihitung", async () => {
+    tiruPortal((url) =>
+      url.includes("/pencocok?")
+        ? {
+            tersedia: true,
+            temuan: [
+              { jenis: "pihak-nik", tingkat: "tinggi", judul: "NIK pihak di SIPP berbeda dengan NIK pada KTP yang diunggah", ringkas: "NIK di SIPP berbeda dengan KTP untuk 1 pihak" },
+              { jenis: "hadir-verstek", tingkat: "tinggi", judul: "Putusan verstek tetapi SIPP mencatat Tergugat hadir", ringkas: "sudah punya tombol Betulkan kehadiran" },
+              { jenis: "pihak-abt", tingkat: "rendah", judul: "Nama pihak", ringkas: "ejaan" },
+            ],
+          }
+        : {}
+    );
+    const w = document.createElement("div");
+    document.body.appendChild(w);
+    M.gambar(w, { perkaraId: "10190", jenis: "put", berkas: "x", temuanVerstek: false });
+    await tunggu();
+    expect(w.textContent).toContain("Data berbeda antar sistem");
+    expect(w.textContent).toContain("NIK di SIPP berbeda dengan KTP untuk 1 pihak");
+    expect(w.textContent).not.toContain("sudah punya tombol");
+    expect(w.textContent).toContain("1 catatan ringan");
+    expect(w.querySelector("button")).toBeNull();
   });
 
   it("putusan SIPP vs dokumen beda: peringatan pasif", async () => {

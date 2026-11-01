@@ -40,6 +40,7 @@
  *   GET  /kehadiran-sidang?perkaraId  sidang + usulan pembetulan kehadiran (30 Okt 2026, G4 4.4)
  *   POST /kehadiran-sidang        pembetulan kehadiran sidang ke SIPP atas akun PP (kering bawaan)
  *   GET  /putusan-dokumen?perkaraId  tanggal + amar putusan SIPP utuh + nama berkas (G4 4.3, hanya SELECT)
+ *   GET  /pencocok/lingkup, /pencocok/fakta  bahan Pencocok SIPP-ABT-e-Court (N3, 1 Nov 2026, hanya SELECT)
  *   GET  /court-calendar?perkaraId  Court Calendar SIPP + id baris (hanya SELECT)
  *   GET  /court-calendar/jumlah?perkaraId=1,2,3  jumlah baris per perkara
  *   POST /court-calendar          tambah/sunting Court Calendar ke SIPP atas
@@ -756,6 +757,36 @@ router.post(
 router.get("/putusan-dokumen", wajibToken, async (req, res) => {
   try {
     const hasil = await require("../services/putusanDokumenService").layanan().bahanPutusan(req.query.perkaraId);
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
+
+/**
+ * Pencocok SIPP - ABT - e-Court (N3, 1 Nov 2026) - bahan fakta saja, HANYA SELECT; keputusan "beda" ada di portal.
+ *   GET /pencocok/lingkup?acuan&hariPutus&setelahId&batas   perkara_id yang diperiksa (belum putus + putus <= hariPutus)
+ *   GET /pencocok/fakta?perkaraId=1,2,3&acuan               fakta sekelompok perkara (paling banyak 200)
+ */
+router.get("/pencocok/lingkup", wajibToken, async (req, res) => {
+  try {
+    res.json(await require("../services/pencocokFaktaService").layanan().daftarLingkup({
+      acuan: req.query.acuan,
+      hariPutus: req.query.hariPutus,
+      setelahId: req.query.setelahId,
+      batas: req.query.batas,
+    }));
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
+
+router.get("/pencocok/fakta", wajibToken, async (req, res) => {
+  try {
+    const hasil = await require("../services/pencocokFaktaService").layanan().fakta({
+      perkaraId: String(req.query.perkaraId || "").split(",").slice(0, 200),
+      acuan: req.query.acuan,
+    });
     res.status(hasil.ok ? 200 : 400).json(hasil);
   } catch (galat) {
     galat500(res, galat);

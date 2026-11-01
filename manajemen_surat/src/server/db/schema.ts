@@ -657,6 +657,33 @@ export const DDL_PENJAGA_SERVER = {
 } as const;
 
 /**
+ * Pencocok data SIPP - ABT - e-Court: temuan per perkara + jenis (0129, 1 Nov 2026, N3).
+ * Cermin PERSIS dari drizzle/0129_aleta_pencocok_temuan.sql; penjaga agen-pencocok-1nov.test.ts membandingkan keduanya.
+ */
+export const DDL_PENCOCOK_TEMUAN = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_pencocok_temuan (
+  perkara_id TEXT NOT NULL,
+  jenis TEXT NOT NULL,
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  tingkat TEXT NOT NULL DEFAULT 'sedang',
+  ringkas TEXT NOT NULL DEFAULT '',
+  sisi TEXT NOT NULL DEFAULT '[]',
+  majelis TEXT NOT NULL DEFAULT '',
+  panitera TEXT NOT NULL DEFAULT '',
+  sidik TEXT NOT NULL DEFAULT '',
+  pertama_terlihat TEXT NOT NULL,
+  diperiksa_pada TEXT NOT NULL,
+  PRIMARY KEY (perkara_id, jenis)
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_pencocok_temuan_tingkat ON aleta_pencocok_temuan(tingkat, diperiksa_pada)`,
+    `CREATE INDEX IF NOT EXISTS idx_pencocok_temuan_jenis ON aleta_pencocok_temuan(jenis, tingkat)`,
+  ],
+} as const;
+
+/**
  * Cadangan dan riwayat suntingan atas ABT dari halaman "Pengaturan SIPP & ABT"
  * (0066, 16 Okt 2026, Tahap H). Cermin PERSIS dari
  * drizzle/0066_aleta_abt_suntingan.sql; penjaga
@@ -3651,6 +3678,7 @@ const schemaStatements = [
   ...DDL_PENJAGA_SERVER.tabel,
   // Matriks dalil satu sumber per perkara (0126, P2 1 Nov 2026).
   ...DDL_MATRIKS_DALIL.tabel,
+  ...DDL_PENCOCOK_TEMUAN.tabel,
   // Cadangan & riwayat suntingan ABT dari Pengaturan SIPP & ABT (0066).
   ...DDL_ABT_SUNTINGAN.tabel,
   // Checklist Konseptor Sementara: tanda langkah & laporan Blangko Derry (0067).
@@ -5675,6 +5703,7 @@ const indexStatements = [
   ...DDL_BAS_HALAMAN.indeks,
   ...DDL_PENJAGA_SERVER.indeks,
   ...DDL_MATRIKS_DALIL.indeks,
+  ...DDL_PENCOCOK_TEMUAN.indeks,
   ...DDL_ABT_SUNTINGAN.indeks,
   ...DDL_BLANGKO_PRIBADI.indeks,
   ...DDL_TAUTAN_JADWAL.indeks,

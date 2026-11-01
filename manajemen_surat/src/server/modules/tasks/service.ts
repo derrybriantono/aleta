@@ -37,6 +37,7 @@ import { pemberitahuanPutusOtomatis } from "@/server/modules/putus-otomatis/laya
 import { lihatSemuaTenggat, pemberitahuanTenggat } from "@/server/modules/penjaga-tenggat/layanan";
 import { pemberitahuanKelengkapan } from "@/server/modules/aleta-ecourt/agen-kelengkapan"; /* N1 */
 import { golonganPengguna } from "@/lib/matriks-peran";
+import { pemberitahuanPencocok } from "@/server/modules/pencocok/layanan";
 
 export type TaskQuery = {
   source?: string | null;
@@ -1339,7 +1340,25 @@ async function buildTundaOtomatisTasks(db: AletaDatabase, readSet: Set<string>, 
       footer: "Kesiapan sidang",
       seen: isSeen(readSet, "system_task", p.id),
     }));
-    return [...butirKelengkapan, ...butirTenggat, ...daftar.map((p) => ({
+    // Pencocok data (N3, 1 Nov): satu ringkasan temuan TINGGI; per orang hanya perkara yang namanya tercantum.
+    const pencocok = await pemberitahuanPencocok(db, { nama: opsi.nama, lihatSemua: lihatSemuaTenggat(actor) }).catch(() => []);
+    const butirPencocok: TaskItem[] = pencocok.map((p) => ({
+      id: `system_task:${p.id}`,
+      entityType: "system_task" as const,
+      entityId: p.id,
+      sourceApp: "aleta-bot",
+      sourceLabel: "Pencocok data",
+      title: p.judul,
+      description: p.uraian,
+      href: "/aleta-ecourt/pencocok",
+      status: "Perlu diperiksa",
+      priority: "normal" as const,
+      sourceType: "system_task" as const,
+      createdAt: p.waktu,
+      footer: "Pencocok data",
+      seen: isSeen(readSet, "system_task", p.id),
+    }));
+    return [...butirKelengkapan, ...butirTenggat, ...butirPencocok, ...daftar.map((p) => ({
       id: `system_task:${p.id}`,
       entityType: "system_task" as const,
       entityId: p.id,

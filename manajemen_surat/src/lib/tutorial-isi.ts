@@ -260,6 +260,28 @@ export const TUTORIAL: readonly Tutorial[] = [
     kataKunci: ["tenggat", "banding", "kasasi", "mediasi", "ikrar", "akta cerai", "pengingat", "lonceng"],
   },
   {
+    id: "pencocok-data",
+    judul: "Pencocok data: perkara yang datanya berbeda antara SIPP, ABT, dan e-Court",
+    ringkas: "Daftar perkara yang tanggal putus, kehadiran, pihak, majelis, jadwal, dokumen, biaya, atau tahapannya tidak sama antar sistem.",
+    kelompok: "persidangan",
+    mencakup: {},
+    untuk: ["pimpinan", "hakim", "panitera", "panmud", "pp"],
+    halaman: ["/aleta-ecourt/pencocok"],
+    tautan: { teks: "Buka Pencocok data", href: "/aleta-ecourt/pencocok" },
+    langkah: [
+      "Buka Pencocok data dari tombol di bawah menu ALETA e-Court, dari tombol di bawah ini, atau dari lonceng.",
+      "Pemeriksaan berjalan sendiri tiap malam (bawaan 22.30 WITA). Hakim dan panitera pengganti hanya melihat perkara yang namanya tercantum; pimpinan, panitera, dan admin melihat seluruh satker.",
+      "Tingkat Penting perlu segera dicek, Perlu dicek untuk perbedaan yang wajar ditinjau, Ringan hanya keterangan. Buka Rincian untuk melihat nilai di tiap sistem.",
+      "Layar ini hanya menandai dan tidak mengubah apa pun. Perbaikan dilakukan di sistem yang keliru, atau lewat tombol yang sudah ada (misalnya Betulkan kehadiran di panel cetak Blangko Derry).",
+      "Perkara yang dibuka di panel juga diperiksa ringan (hasilnya disimpan sebentar, tidak dibaca ulang tiap dibuka).",
+    ],
+    peringatan: [
+      "Tidak ada temuan tidak sama dengan tidak diperiksa: bila sebagian data tidak terbaca, layar menyebutnya.",
+      "Register ABT adalah potret saat pendaftaran; perbedaan nama pihak dengan SIPP sering hanya koreksi ejaan sesudahnya.",
+    ],
+    kataKunci: ["pencocok", "beda data", "tidak sinkron", "sipp", "abt", "e-court", "court calendar", "kehadiran", "putusan"],
+  },
+  {
     id: "jadwal-sidang",
     judul: "Jadwal Sidang: membaca dan mengelola sidang hari ini",
     ringkas: "Daftar perkara yang bersidang, lengkap dengan penanda yang perlu diperhatikan.",
