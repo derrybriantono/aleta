@@ -743,6 +743,13 @@
       "when": 1792323000001,
       "tag": "0121_aleta_kalimat_pribadi",
       "breakpoints": true
+    },
+    {
+      "idx": 111,
+      "version": "7",
+      "when": 1792341000001,
+      "tag": "0127_aleta_tenggat_kabar",
+      "breakpoints": true
     }
   ]
 }

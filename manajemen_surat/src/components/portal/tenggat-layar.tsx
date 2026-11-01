@@ -11,7 +11,7 @@ import { apiPath } from "@/lib/base-path";
 import { PETA_SEMUA_ATURAN, sebutPeristiwa, tanggalPanjang, tanggalPendek, type Butir } from "@/lib/penjaga-tenggat";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 import { usePortal } from "@/lib/app-state";
-import { daftarPetugasTenggat, kalimatSisa, saringButirTenggat, type SetelanTenggat } from "@/lib/tenggat-terjadwal";
+import { LABEL_JANGKA, daftarPetugasTenggat, jangkaButir, kalimatSisa, saringButirTenggat, type JangkaTenggat, type SetelanTenggat } from "@/lib/tenggat-terjadwal";
 
 /**
  * ============================================================================
@@ -27,7 +27,7 @@ import { daftarPetugasTenggat, kalimatSisa, saringButirTenggat, type SetelanTeng
  */
 
 type JalanRingkas = { pada: string; pemicu: string; oleh: string; jam: string; galat: string; gagal: Record<string, string> };
-type KirimRingkas = { pada: string; dicoba: number; terkirim: number; gagal: number; dilewati: number; tanpaPerkara: number };
+type KirimRingkas = { pada: string; dicoba: number; terkirim: number; gagal: number; dilewati: number; tanpaPerkara: number; belumSaatnya?: number; sudahDikabari?: number };
 type AturanInfo = { kode: string; judul: string; dasar: string; perluVerifikasi: boolean };
 
 type Data = {
@@ -84,7 +84,7 @@ export function TenggatLayar() {
   const [galat, setGalat] = useState("");
   const [pesan, setPesan] = useState("");
   const [sibuk, setSibuk] = useState("");
-  const [saring, setSaring] = useState({ tingkat: "", aturan: "", majelis: "", panitera: "", cari: "", milikSaya: false });
+  const [saring, setSaring] = useState({ jangka: "", tingkat: "", aturan: "", majelis: "", panitera: "", cari: "", milikSaya: false });
 
   const muat = useCallback(async (langsung: boolean) => {
     setMemuat(true);
@@ -131,6 +131,7 @@ export function TenggatLayar() {
   const tampil = useMemo(
     () =>
       saringButirTenggat(butir, {
+        jangka: saring.jangka,
         tingkat: saring.tingkat,
         aturan: saring.aturan,
         majelis: saring.majelis,
@@ -140,6 +141,12 @@ export function TenggatLayar() {
       }),
     [butir, saring, currentUser?.name]
   );
+  // Hitungan ringkas per jangka (sekali per data, bukan per ketikan): lewat / hari ini / minggu ini.
+  const hitungJangka = useMemo(() => {
+    const h: Record<JangkaTenggat, number> = { lewat: 0, "hari-ini": 0, "minggu-ini": 0, nanti: 0, catatan: 0 };
+    for (const b of butir) h[jangkaButir(b)] += 1;
+    return h;
+  }, [butir]);
   const namaMajelis = useMemo(() => daftarPetugasTenggat(butir, "majelis"), [butir]);
   const namaPanitera = useMemo(() => daftarPetugasTenggat(butir, "panitera"), [butir]);
   const aturanBelumDiperiksa = (data?.aturan ?? []).filter((a) => a.perluVerifikasi);
@@ -204,6 +211,26 @@ export function TenggatLayar() {
             </p>
           ) : null}
           <div className="mt-3">
+            <p className="text-xs font-medium text-muted-foreground">Kabar menjelang tenggat (hari sebelum batas; tiap tahap sekali per perkara)</p>
+            <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
+              {[7, 5, 3, 2, 1, 0].map((h) => {
+                const dipilih = setelan.tahapHari.includes(h);
+                const berikut = dipilih ? setelan.tahapHari.filter((x) => x !== h) : [...setelan.tahapHari, h];
+                return (
+                  <label key={h} className="flex items-center gap-1.5 text-xs">
+                    <input
+                      type="checkbox"
+                      checked={dipilih}
+                      disabled={Boolean(sibuk) || (dipilih && setelan.tahapHari.length === 1)}
+                      onChange={() => void kirim({ aksi: "setelan", tahapHari: berikut }, "setelan")}
+                    />
+                    {h === 0 ? "Hari H" : `H-${h}`}
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+          <div className="mt-3">
             <p className="text-xs font-medium text-muted-foreground">Aturan yang boleh masuk pengingat WhatsApp</p>
             <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
               {(data.aturan ?? []).map((a) => {
@@ -234,7 +261,9 @@ export function TenggatLayar() {
           {data.wa ? (
             <p className="mt-2 text-xs text-muted-foreground">
               Pengingat terakhir {jamWita(data.wa.pada)} WITA: {data.wa.terkirim} terkirim, {data.wa.gagal} gagal, {data.wa.dilewati} dilewati,{" "}
-              {data.wa.tanpaPerkara} orang tanpa perkara bertenggat.
+              {data.wa.tanpaPerkara} orang tanpa perkara bertenggat
+              {data.wa.belumSaatnya ? `, ${data.wa.belumSaatnya} belum sampai tahap kabar` : ""}
+              {data.wa.sudahDikabari ? `, ${data.wa.sudahDikabari} sudah dikabari` : ""}.
             </p>
           ) : null}
           {data.jalan?.galat ? <p className="mt-2 text-xs">Jalan terakhir tidak lengkap: {data.jalan.galat}</p> : null}
@@ -255,6 +284,20 @@ export function TenggatLayar() {
       {data.tersedia ? (
         <section className="rounded-2xl border border-border bg-card p-4">
           <div className="flex flex-wrap items-end gap-3">
+            <div className="flex flex-wrap gap-1.5 pb-1" role="group" aria-label="Jangka waktu tenggat">
+              {(["", "lewat", "hari-ini", "minggu-ini"] as const).map((k) => (
+                <Button
+                  key={k || "semua"}
+                  type="button"
+                  size="sm"
+                  variant={saring.jangka === k ? "default" : "outline"}
+                  aria-pressed={saring.jangka === k}
+                  onClick={() => setSaring((x) => ({ ...x, jangka: k }))}
+                >
+                  {k ? `${LABEL_JANGKA[k]} (${hitungJangka[k]})` : "Semua"}
+                </Button>
+              ))}
+            </div>
             <label className="flex min-w-[9rem] flex-col gap-1 text-xs text-muted-foreground">
               Tingkat
               <NativeSelect aria-label="Saring tingkat" value={saring.tingkat} onChange={(e) => setSaring((x) => ({ ...x, tingkat: e.target.value }))}>

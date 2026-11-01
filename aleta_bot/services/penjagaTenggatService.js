@@ -384,6 +384,44 @@ function rapikanBaru(baris, tambahan = {}) {
 }
 
 /**
+ * Putusan terbaru (60 hari) yang belum BHT dan belum dimohonkan banding - bahan BERSAMA aturan banding, verzet, BHT, dan
+ * pemberitahuan putusan. Dibaca SEKALI per acuan: `konteks.putusan` menyimpan janjinya, bukan hasilnya, supaya pembaca yang
+ * berjalan bersamaan tidak mengulang kueri yang sama.
+ */
+function putusanBelumBht(acuan, konteks) {
+  const simpan = konteks && konteks.putusan;
+  if (simpan && simpan.has(acuan)) return simpan.get(acuan);
+  const janji = (() => {
+    return jalankan(
+      `SELECT p.perkara_id AS perkaraId, p.nomor_perkara AS nomorPerkara,
+              p.jenis_perkara_nama AS jenisPerkara, p.alur_perkara_id AS alurPerkaraId,
+              p.jenis_perkara_id AS jenisPerkaraId,
+              pu.tanggal_putusan AS tanggalPutusan, pu.putusan_verstek AS verstek,
+              pu.tanggal_bht AS tanggalBht, pu.status_putusan_id AS statusPutusanId,
+              (SELECT j.dihadiri_oleh FROM perkara_jadwal_sidang j
+                WHERE j.perkara_id = pu.perkara_id AND j.tanggal_sidang = pu.tanggal_putusan
+                ORDER BY j.id DESC LIMIT 1) AS dihadiriSaatPutus,
+              (SELECT MAX(b.tanggal_pemberitahuan_putusan) FROM perkara_putusan_pemberitahuan_putusan b
+                WHERE b.perkara_id = pu.perkara_id AND b.pihak = 1) AS pbtPihak1,
+              (SELECT MAX(b.tanggal_pemberitahuan_putusan) FROM perkara_putusan_pemberitahuan_putusan b
+                WHERE b.perkara_id = pu.perkara_id AND b.pihak = 2) AS pbtPihak2,
+              EXISTS (SELECT 1 FROM perkara_pihak2 x WHERE x.perkara_id = pu.perkara_id) AS adaPihak2
+         FROM perkara_putusan pu
+         JOIN perkara p ON p.perkara_id = pu.perkara_id
+        WHERE pu.tanggal_putusan BETWEEN ? AND ?
+          AND pu.tanggal_bht IS NULL
+          AND NOT EXISTS (SELECT 1 FROM perkara_banding bd
+                           WHERE bd.perkara_id = pu.perkara_id AND bd.permohonan_banding IS NOT NULL)
+        ORDER BY pu.tanggal_putusan ASC
+        LIMIT 500`,
+      [geserHari(acuan, -JENDELA_PUTUSAN_HARI), acuan]
+    );
+  })();
+  if (simpan) simpan.set(acuan, janji);
+  return janji;
+}
+
+/**
  * 8. Masa banding 14 hari, PER PIHAK.
  *
  * Putusan terbaru (60 hari), belum BHT, belum ada permohonan banding. Tiap pihak dihitung oleh
@@ -391,31 +429,8 @@ function rapikanBaru(baris, tambahan = {}) {
  * pemberitahuan putusan bagi yang tidak hadir. Pihak tidak hadir yang BELUM diberitahu tidak diberi
  * tanggal - hanya catatan "masa banding belum berjalan".
  */
-async function bandingMasa(acuan) {
-  const baris = await jalankan(
-    `SELECT p.perkara_id AS perkaraId, p.nomor_perkara AS nomorPerkara,
-            p.jenis_perkara_nama AS jenisPerkara, p.alur_perkara_id AS alurPerkaraId,
-            p.jenis_perkara_id AS jenisPerkaraId,
-            pu.tanggal_putusan AS tanggalPutusan, pu.putusan_verstek AS verstek,
-            pu.tanggal_bht AS tanggalBht, pu.status_putusan_id AS statusPutusanId,
-            (SELECT j.dihadiri_oleh FROM perkara_jadwal_sidang j
-              WHERE j.perkara_id = pu.perkara_id AND j.tanggal_sidang = pu.tanggal_putusan
-              ORDER BY j.id DESC LIMIT 1) AS dihadiriSaatPutus,
-            (SELECT MAX(b.tanggal_pemberitahuan_putusan) FROM perkara_putusan_pemberitahuan_putusan b
-              WHERE b.perkara_id = pu.perkara_id AND b.pihak = 1) AS pbtPihak1,
-            (SELECT MAX(b.tanggal_pemberitahuan_putusan) FROM perkara_putusan_pemberitahuan_putusan b
-              WHERE b.perkara_id = pu.perkara_id AND b.pihak = 2) AS pbtPihak2,
-            EXISTS (SELECT 1 FROM perkara_pihak2 x WHERE x.perkara_id = pu.perkara_id) AS adaPihak2
-       FROM perkara_putusan pu
-       JOIN perkara p ON p.perkara_id = pu.perkara_id
-      WHERE pu.tanggal_putusan BETWEEN ? AND ?
-        AND pu.tanggal_bht IS NULL
-        AND NOT EXISTS (SELECT 1 FROM perkara_banding bd
-                         WHERE bd.perkara_id = pu.perkara_id AND bd.permohonan_banding IS NOT NULL)
-      ORDER BY pu.tanggal_putusan ASC
-      LIMIT 500`,
-    [geserHari(acuan, -JENDELA_PUTUSAN_HARI), acuan]
-  );
+async function bandingMasa(acuan, konteks) {
+  const baris = await putusanBelumBht(acuan, konteks);
 
   const fakta = [];
   for (const b of baris) {
@@ -565,6 +580,138 @@ async function mediasiBatas(acuan) {
   );
 }
 
+/** Masa verzet/banding/kasasi (14 hari) - satu angka dengan appealDeadlineService.APPEAL_DAYS. */
+const MASA_VERZET_HARI = 14;
+
+/** Pemberitahuan putusan yang dikirim lewat pos/jurusita dan relaasnya belum kembali: yang masih dibaca (hari sejak dikirim). */
+const JENDELA_RELAAS_HARI = 90;
+
+/** Perkara (dari baris yang diberikan) yang sudah diajukan verzet; kolom/tabel tidak ada = kosong. Dibaca sekali per acuan. */
+function perkaraDenganVerzet(baris, acuan, konteks) {
+  const simpan = konteks && konteks.verzet;
+  if (simpan && simpan.has(acuan)) return simpan.get(acuan);
+  const janji = (async () => {
+    const ids = [...new Set(baris.map((b) => String(b.perkaraId || "")).filter(Boolean))];
+    if (!ids.length) return new Set();
+    if (!(await penjawabKolom("perkara_verzet", "tanggal_pendaftaran_verzet"))) return new Set();
+    const hasil = new Set();
+    for (let i = 0; i < ids.length; i += UKURAN_POTONGAN) {
+      const potong = ids.slice(i, i + UKURAN_POTONGAN);
+      const rows = await jalankan(
+        "SELECT perkara_id AS perkaraId FROM perkara_verzet WHERE tanggal_pendaftaran_verzet IS NOT NULL AND perkara_id IN (?)",
+        [potong]
+      );
+      for (const r of rows) hasil.add(String(r.perkaraId));
+    }
+    return hasil;
+  })();
+  if (simpan) simpan.set(acuan, janji);
+  return janji;
+}
+
+/** Jendela upaya hukum satu putusan (per pihak), dihitung appealDeadlineService - aturan lama, tidak digandakan. */
+function jendelaPutusan(b, acuan) {
+  return appeal.computeAppealWindows({
+    tanggalPutusan: isoTanggal(b.tanggalPutusan),
+    tanggalBht: isoTanggal(b.tanggalBht),
+    dihadiriOleh: b.dihadiriSaatPutus === null || b.dihadiriSaatPutus === undefined ? null : Number(b.dihadiriSaatPutus),
+    verstek: String(b.verstek || "").toUpperCase() === "Y",
+    pemberitahuan: { 1: isoTanggal(b.pbtPihak1), 2: isoTanggal(b.pbtPihak2) },
+    adaPihak2: Number(b.adaPihak2) === 1,
+    today: tengahHari(acuan),
+  });
+}
+
+/**
+ * 11. Masa verzet 14 hari (putusan VERSTEK), dihitung dari pemberitahuan putusan kepada Tergugat/Termohon (pihak 2).
+ *
+ * Dasar: Pasal 153 ayat (2) RBg (keputusan Derry 31 Okt, butir 21). Putusan verstek yang pihak keduanya BELUM tercatat
+ * diberitahu tidak diberi tanggal di sini (itu urusan aturan pemberitahuan-putusan-belum). Perkara yang sudah
+ * diajukan verzet keluar. Pemberitahuan yang tidak disampaikan kepada Tergugat sendiri memperpanjang masa - tidak
+ * terbaca dari SIPP, jadi penerimanya diminta memeriksa.
+ */
+async function verzetMasa(acuan, konteks) {
+  const baris = await putusanBelumBht(acuan, konteks);
+  // Perkara berverzet dicari untuk SEMUA putusan itu (hasilnya dibagi dengan aturan BHT); jangan dipersempit di sini.
+  const sudah = await perkaraDenganVerzet(baris, acuan, konteks);
+  const verstek = baris.filter((x) => String(x.verstek || "").toUpperCase() === "Y" && isoTanggal(x.pbtPihak2));
+  return verstek
+    .filter((b) => !sudah.has(String(b.perkaraId)))
+    .map((b) => {
+      const mulai = isoTanggal(b.pbtPihak2);
+      return rapikanBaru(b, {
+        tanggalAcuan: mulai,
+        tanggalBatas: geserHari(mulai, MASA_VERZET_HARI),
+        pihakKe: 2,
+        dasarMulai: "pemberitahuan",
+        pasti: true,
+      });
+    });
+}
+
+/**
+ * 12. BHT belum dicatat padahal SEMUA masa upaya hukum sudah berakhir.
+ *
+ * Putusan belum BHT, tanpa banding dan tanpa verzet, yang setiap pihaknya pasti (kehadiran dikenal, atau verstek)
+ * dan masanya sudah habis menurut appealDeadlineService. Tanggal acuan = hari TERAKHIR masa terpanjang; hari
+ * libur dan batas internal 3 hari ditangani mesin aturan portal. Yang kehadirannya tidak pasti TIDAK dituduh.
+ */
+async function bhtBelumDicatat(acuan, konteks) {
+  const baris = await putusanBelumBht(acuan, konteks);
+  const sudah = await perkaraDenganVerzet(baris, acuan, konteks);
+  const fakta = [];
+  for (const b of baris) {
+    if (sudah.has(String(b.perkaraId))) continue;
+    const jendela = jendelaPutusan(b, acuan);
+    if (!jendela.length || !jendela.every((w) => w.status === "habis" && w.kehadiranPasti)) continue;
+    const akhir = jendela.map((w) => w.tanggalBatas).sort().pop();
+    fakta.push(rapikanBaru(b, { tanggalAcuan: akhir, statusPutusanId: b.statusPutusanId }));
+  }
+  return fakta;
+}
+
+/**
+ * 13. Pemberitahuan putusan kepada pihak yang tidak hadir BELUM tercatat (hitungan banding/verzet belum bisa mulai).
+ * Tanggal acuan = tanggal putusan; batas internal ada di mesin aturan. Satu butir per perkara dan pihak.
+ */
+async function pemberitahuanPutusanBelum(acuan, konteks) {
+  const baris = await putusanBelumBht(acuan, konteks);
+  const fakta = [];
+  for (const b of baris) {
+    for (const w of jendelaPutusan(b, acuan)) {
+      if (w.status !== "menunggu_beritahu") continue;
+      fakta.push(rapikanBaru(b, { tanggalAcuan: isoTanggal(b.tanggalPutusan), pihakKe: w.pihakKe }));
+    }
+  }
+  return fakta;
+}
+
+/**
+ * 14. Relaas pemberitahuan putusan yang BELUM KEMBALI: sudah diserahkan ke pos/jurusita (tanggal_jursit_pos) tetapi
+ * tanggal pemberitahuan (relaas kembali) belum terisi. Putusan belum BHT. Kolom yang tidak ada = aturan diam.
+ */
+async function relaasPutusanKembali(acuan) {
+  if (!(await penjawabKolom("perkara_putusan_pemberitahuan_putusan", "tanggal_jursit_pos"))) return [];
+  const baris = await jalankan(
+    `SELECT p.perkara_id AS perkaraId, p.nomor_perkara AS nomorPerkara,
+            p.jenis_perkara_nama AS jenisPerkara, p.alur_perkara_id AS alurPerkaraId,
+            p.jenis_perkara_id AS jenisPerkaraId,
+            b.pihak AS pihakKe, b.tanggal_jursit_pos AS tanggalAcuan
+       FROM perkara_putusan_pemberitahuan_putusan b
+       JOIN perkara p ON p.perkara_id = b.perkara_id
+       JOIN perkara_putusan pu ON pu.perkara_id = b.perkara_id
+      WHERE b.tanggal_jursit_pos BETWEEN ? AND ?
+        AND b.tanggal_pemberitahuan_putusan IS NULL
+        AND pu.tanggal_bht IS NULL
+      ORDER BY b.tanggal_jursit_pos ASC
+      LIMIT 300`,
+    [geserHari(acuan, -JENDELA_RELAAS_HARI), acuan]
+  );
+  return baris
+    .filter((b) => isoTanggal(b.tanggalAcuan))
+    .map((b) => rapikanBaru(b, { tanggalAcuan: isoTanggal(b.tanggalAcuan), pihakKe: Number(b.pihakKe) || undefined }));
+}
+
 /* -------------------------------------------------------------------------- */
 /* PETUGAS PERKARA - supaya pengingat per orang hanya memuat perkara miliknya  */
 /* -------------------------------------------------------------------------- */
@@ -703,6 +850,10 @@ const PEMBACA_BARU = {
   "banding-14-hari": bandingMasa,
   "kasasi-14-hari": kasasiMasa,
   "mediasi-30-hari": mediasiBatas,
+  "verzet-14-hari": verzetMasa,
+  "bht-belum-dicatat": bhtBelumDicatat,
+  "pemberitahuan-putusan-belum": pemberitahuanPutusanBelum,
+  "relaas-putusan-belum-kembali": relaasPutusanKembali,
 };
 
 /**
@@ -723,10 +874,13 @@ async function bacaFakta(acuanIso, opsi = {}) {
   const baru = Boolean(opsi && opsi.baru);
   const pembaca = baru ? { ...PEMBACA, ...PEMBACA_BARU } : PEMBACA;
 
+  // Bahan yang dibagi antar pembaca (putusan 60 hari, perkara berverzet) dibaca sekali per jalan.
+  const konteks = { putusan: new Map(), verzet: new Map() };
+
   await Promise.all(
     Object.entries(pembaca).map(async ([kode, baca]) => {
       try {
-        fakta[kode] = await baca(acuan);
+        fakta[kode] = await baca(acuan, konteks);
       } catch (galat) {
         fakta[kode] = [];
         gagal[kode] = String((galat && galat.message) || galat).slice(0, 200);

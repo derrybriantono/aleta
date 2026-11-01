@@ -87,7 +87,7 @@ describe("aturan baru G1 - banding 14 hari per pihak, kasasi 14 hari, mediasi 30
       "anonimisasi-hilang",
     ]);
     expect(PETA_ATURAN.size).toBe(7);
-    expect(PETA_SEMUA_ATURAN.size).toBe(10);
+    expect(PETA_SEMUA_ATURAN.size).toBe(14); // 7 lama + 3 G1 + 4 N2 (verzet, BHT, pemberitahuan putusan, relaas)
   });
 
   it("banding memakai RBg (bukan HIR) dan kasasi/mediasi tidak menyebut HIR", () => {
@@ -372,10 +372,12 @@ describe("pembaca fakta bot - aturan baru hanya bila diminta, jalur lama tidak b
 
       // dan mesin aturan portal menilainya tanpa tuduhan: P1 pihak 1 berjalan; menunggu = catatan
       const rapor = nilaiTenggat(h.fakta, HARI, { aturan: SEMUA_ATURAN, hitungMundur: true });
-      const b501 = rapor.butir.filter((b) => b.perkaraId === "501");
+      const b501 = rapor.butir.filter((b) => b.perkaraId === "501" && b.aturan === "banding-14-hari");
       expect(b501.map((b) => b.tingkat).sort()).toEqual(["berjalan", "catatan"]);
       // 503: masa berakhir 19 Okt, pasti -> catatan (bukan lewat)
-      expect(rapor.butir.find((b) => b.perkaraId === "503")?.tingkat).toBe("catatan");
+      expect(rapor.butir.find((b) => b.perkaraId === "503" && b.aturan === "banding-14-hari")?.tingkat).toBe("catatan")
+      // dan aturan BHT (N2) menangkap yang sama dengan benar: masa 19 Okt berakhir, BHT belum dicatat, batas internal 22 Okt
+      expect(rapor.butir.find((b) => b.perkaraId === "503" && b.aturan === "bht-belum-dicatat")?.tingkat).toBe("lewat");
       // 502 pihak 1 tidak pasti dan sudah lewat batas? batas 2 Nov belum lewat -> berjalan, bukan catatan
       expect(rapor.butir.find((b) => b.perkaraId === "502" && b.pihak.length > 0 && b.keterangan.includes("kehadiran saat putusan tidak tercatat"))?.tingkat).toBe("berjalan");
       // mediasi 701: batas 20 Okt, lewat 6 hari -> lewat
@@ -485,6 +487,7 @@ describe("penjadwal harian dan pengingat WhatsApp pribadi", () => {
 
   beforeEach(async () => {
     await db.run("DELETE FROM aleta_tenggat_kirim");
+    await db.run("DELETE FROM aleta_tenggat_kabar"); // kabar bertahap (N2) ingatan antar hari: ikut dibersihkan bersama catatan harian
     await db.run("DELETE FROM aleta_ekstensi_setelan WHERE pengguna_id = '*sistem*' AND kunci LIKE 'sistem:penjaga-tenggat%'");
   });
 
@@ -593,6 +596,7 @@ describe("penjadwal harian dan pengingat WhatsApp pribadi", () => {
     // dua klaim serentak atas rapor yang sama: hanya satu yang menang
     const c = await bacaCatatanTenggat(db, "2026-10-26");
     await db.run("DELETE FROM aleta_tenggat_kirim");
+    await db.run("DELETE FROM aleta_tenggat_kabar"); // kabar bertahap (N2) ingatan antar hari: ikut dibersihkan bersama catatan harian
     fungsi.kirim.mockClear();
     const s = await bacaSetelanTenggat(db);
     await Promise.all([kirimPengingat(db, c.rapor!, s, { sumber, kini: SENIN_0800 }), kirimPengingat(db, c.rapor!, s, { sumber, kini: SENIN_0800 })]);
@@ -616,6 +620,7 @@ describe("penjadwal harian dan pengingat WhatsApp pribadi", () => {
 
     // kegagalan kirim -> status gagal, tidak diulang otomatis; diulang bila diminta eksplisit
     await db.run("DELETE FROM aleta_tenggat_kirim");
+    await db.run("DELETE FROM aleta_tenggat_kabar"); // kabar bertahap (N2) ingatan antar hari: ikut dibersihkan bersama catatan harian
     fungsi.kirim.mockReset();
     fungsi.kirim.mockResolvedValue({ ok: false, status: "error", message: "Bot WhatsApp tidak siap." });
     await jalankanTenggat(db, { pemicu: "tangan", tanggal: "2026-10-26", sumber, kini: SENIN_0800 });
@@ -691,7 +696,9 @@ describe("migrasi 0110 - berkas = DDL schema.ts, jurnal idx 98, ikut cadangan", 
 
   it("jurnal: 0110 sekali di idx 98, tanpa lubang, when naik", () => {
     const j = JSON.parse(readFileSync(path.join(process.cwd(), "drizzle/meta/_journal.json"), "utf8")) as { entries: Array<{ idx: number; tag: string; when: number }> };
-    j.entries.forEach((e, i) => expect(e.idx).toBe(i));
+    // idx 106-110 diklaim cabang lain (0122-0126, D:/Aplikasi/aleta/tmp/klaim-1nov.txt) dan 0127 memakai idx 111:
+    // sampai semuanya digabung, celahnya disengaja. Yang dijaga: idx unik dan menaik, dan tanpa lubang sampai 105.
+    j.entries.forEach((e, i) => (e.idx <= 105 ? expect(e.idx).toBe(i) : expect(e.idx).toBeGreaterThan(j.entries[i - 1]?.idx ?? -1)));
     expect(j.entries.filter((e) => e.tag.startsWith("0110_"))).toEqual([expect.objectContaining({ idx: 97, tag: "0110_aleta_tenggat_kirim" })]);
     for (let i = 1; i < j.entries.length; i += 1) expect(j.entries[i]?.when).toBeGreaterThan(j.entries[i - 1]?.when ?? 0);
     expect(existsSync(SQL)).toBe(true);

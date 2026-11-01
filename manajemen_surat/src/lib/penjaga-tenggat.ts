@@ -147,7 +147,11 @@ export type Butir = {
   perluVerifikasi: boolean;
   /** Hitungan belum dimulai (pemberitahuan putusan belum tercatat). */
   menunggu: boolean;
+  /** Ruas petugas yang bertanggung jawab (dari aturannya); tidak ada = semua petugas perkara. */
+  ruas?: ReadonlyArray<RuasPetugas>;
 };
+
+export type RuasPetugas = "majelis" | "panitera" | "jurusita" | "mediator";
 
 export type Aturan = {
   kode: string;
@@ -189,6 +193,21 @@ export type Aturan = {
   perluVerifikasi?: boolean;
   /** Sebut hari terakhirnya pada tiap baris laporan ("batas 29-10-2026"). */
   tampilBatas?: boolean;
+  /**
+   * Hari terakhir yang jatuh pada hari libur (Sabtu, Minggu, libur nasional/cuti bersama/daerah dari kalender libur
+   * portal) bergeser ke hari kerja berikutnya. Hanya berlaku bila pemanggil memberi `opsi.libur`. Dipakai masa HAK
+   * (banding, kasasi, verzet) dan batas internal yang bertumpu pada akhir masa itu (BHT). Batas yang bersifat
+   * kewajiban petugas atau gugur menurut undang-undang (ikrar 6 bulan, 5 bulan perkara, mediasi) TIDAK digeser:
+   * mengingatkan lebih awal tidak merugikan siapa pun, mengingatkan terlambat bisa.
+   */
+  geserLibur?: boolean;
+  /** Dengan geserLibur: geser dahulu tanggal ACUAN (akhir masa upaya hukum) lalu tambahkan batasHari, bukan menggeser hasilnya saja. */
+  geserAcuan?: boolean;
+  /**
+   * Siapa yang bertanggung jawab atas aturan ini: ruas petugas perkara yang menerima pengingat pribadinya. Tanpa
+   * nilai = semua petugas yang tercantum (perilaku aturan lama tidak berubah).
+   */
+  ruas?: ReadonlyArray<RuasPetugas>;
 };
 
 /**
@@ -325,6 +344,7 @@ export const ATURAN_BARU: Aturan[] = [
     jendelaCatatanHari: 30,
     perluVerifikasi: false,
     tampilBatas: true,
+    geserLibur: true,
   },
   {
     kode: "kasasi-14-hari",
@@ -342,6 +362,7 @@ export const ATURAN_BARU: Aturan[] = [
     jendelaCatatanHari: 30,
     perluVerifikasi: false,
     tampilBatas: true,
+    geserLibur: true,
   },
   {
     kode: "mediasi-30-hari",
@@ -360,8 +381,83 @@ export const ATURAN_BARU: Aturan[] = [
   },
 ];
 
-/** Aturan lama + baru: dipakai jadwal harian dan layar Tenggat. */
-export const SEMUA_ATURAN: Aturan[] = [...ATURAN_TENGGAT, ...ATURAN_BARU];
+/**
+ * ============================================================================
+ * ATURAN PENJAGA TENGGAT N2 (2 Nov 2026) - verzet, BHT, pemberitahuan putusan, relaas
+ * ============================================================================
+ *
+ * Perintah Derry (butir 90, agen N2). Angka internal (3 hari, 14 hari) adalah KEPUTUSAN SEMENTARA yang diukur atas
+ * sipp_2810 (dump 28 Okt) - lihat tiap komentar - dan harus mudah diganti: satu angka per aturan, di sini saja.
+ *
+ * Tidak dimasukkan: minutasi (SIPP tidak mencatatnya secara terbaca: tanggal_minutasi = tanggal putusan pada 844/844
+ * putusan 2026, proses "Minutasi" otomatis tercatat saat putus, dan tanggal penerbitan salinan kosong pada 216/216
+ * putusan dikabulkan), dan PK (180 hari sejak ditemukan bukti baru: tanggal "ditemukan" tidak ada di SIPP).
+ * Akta cerai belum terbit, ikrar talak 6 bulan, dan batas 5 bulan (SEMA 2/2014) SUDAH ada di ATURAN_TENGGAT.
+ */
+export const ATURAN_N2: Aturan[] = [
+  {
+    kode: "verzet-14-hari",
+    judul: "Masa verzet 14 hari (putusan verstek)",
+    // Pasal 153 ayat (2) RBg: 14 hari sejak putusan verstek diberitahukan kepada Tergugat/Termohon (butir 21 dan 33
+    // keputusan Derry 31 Okt: ayat (2) untuk tenggang, ayat (1) untuk hak). Pemberitahuan yang TIDAK disampaikan
+    // kepada Tergugat sendiri memperpanjang masa - tidak terbaca dari SIPP, jadi tindakan meminta memeriksanya.
+    dasar: "Pasal 153 ayat (2) RBg - 14 hari sejak putusan verstek diberitahukan kepada Tergugat/Termohon (keputusan Derry 31 Okt 2026)",
+    batasHari: 14,
+    peringatanHari: 3,
+    tindakan:
+      "Pastikan putusan verstek diberitahukan kepada Tergugat/Termohon sendiri; bila masa berakhir tanpa verzet, periksa pernyataan BHT.",
+    hanyaDikabulkan: false,
+    masaHak: true,
+    jendelaCatatanHari: 30,
+    tampilBatas: true,
+    geserLibur: true,
+    ruas: ["panitera", "jurusita"],
+  },
+  {
+    kode: "bht-belum-dicatat",
+    judul: "BHT belum dicatat - masa upaya hukum sudah berakhir",
+    // Tanggal acuan = hari TERAKHIR masa banding/verzet terpanjang (semua pihak pasti, tanpa banding/verzet). Batas internal
+    // 3 hari sesudahnya (bergeser bila libur): praktik satker (sipp_2810, 2026) mencatat BHT 1 hari sesudah batas bila
+    // batasnya hari kerja, dan pada hari kerja pertama sesudah akhir pekan - jadi 3 hari memberi ruang tanpa menuduh.
+    dasar: "Batas internal 3 hari sesudah masa banding/verzet berakhir (keputusan sementara 2 Nov 2026)",
+    batasHari: 3,
+    peringatanHari: 0,
+    tindakan: "Catat tanggal BHT di SIPP lalu lanjutkan akta cerai/arsip perkara.",
+    hanyaDikabulkan: false,
+    tampilBatas: true,
+    geserLibur: true,
+    geserAcuan: true,
+    ruas: ["panitera"],
+  },
+  {
+    kode: "pemberitahuan-putusan-belum",
+    judul: "Pemberitahuan putusan ke pihak yang tidak hadir belum tercatat",
+    // Diukur atas putusan verstek 2026 yang pemberitahuannya tercatat: 94% dalam 14 hari sejak putusan (384 dari 410).
+    dasar: "Batas internal 14 hari sejak putusan diucapkan (keputusan sementara 2 Nov 2026)",
+    batasHari: 14,
+    peringatanHari: 4,
+    tindakan: "Sampaikan pemberitahuan putusan kepada pihak yang tidak hadir dan catat relaasnya di SIPP.",
+    hanyaDikabulkan: false,
+    tampilBatas: true,
+    ruas: ["jurusita", "panitera"],
+  },
+  {
+    kode: "relaas-putusan-belum-kembali",
+    judul: "Relaas pemberitahuan putusan belum kembali",
+    // Diukur atas pemberitahuan putusan 2026 yang diserahkan ke pos: relaas kembali rata-rata 3,5 hari, 98,6% dalam
+    // 14 hari (hanya 6 dari 442 yang lebih lama).
+    dasar: "Batas internal 14 hari sejak diserahkan ke pos/jurusita (keputusan sementara 2 Nov 2026)",
+    batasHari: 14,
+    peringatanHari: 3,
+    tindakan: "Tanyakan relaas ke pos/jurusita dan catat tanggal pemberitahuan putusan di SIPP.",
+    hanyaDikabulkan: false,
+    tampilBatas: true,
+    ruas: ["jurusita", "panitera"],
+  },
+];
+
+/** Aturan lama + baru G1 + N2: dipakai jadwal harian dan layar Tenggat. */
+export const SEMUA_ATURAN: Aturan[] = [...ATURAN_TENGGAT, ...ATURAN_BARU, ...ATURAN_N2];
 
 /** Peta ketujuh aturan LAMA (bentuk dan isinya tidak berubah; dijaga penjaga-tenggat.test.ts). */
 export const PETA_ATURAN: ReadonlyMap<string, Aturan> = new Map(
@@ -417,6 +513,11 @@ export type OpsiNilai = {
   aturan?: readonly Aturan[];
   /** Ikut menghasilkan butir "berjalan" (hitung mundur) untuk layar Tenggat. Bawaan: tidak. */
   hitungMundur?: boolean;
+  /**
+   * Apakah tanggal ini hari libur (Sabtu/Minggu/libur kalender). Bila diberikan, aturan bertanda geserLibur menggeser
+   * hari terakhirnya ke hari kerja berikutnya. Bila tidak: perilaku lama persis (tanpa pergeseran).
+   */
+  libur?: (iso: string) => boolean;
 };
 
 /** Sebutan pihak butir ("Penggugat") dari nomor sebutan di fakta; "" bila fakta tidak per pihak. */
@@ -443,6 +544,14 @@ function tambahHariIso(iso: string, hari: number): string {
   if (Number.isNaN(t.getTime())) return "";
   t.setUTCDate(t.getUTCDate() + hari);
   return tanggalIso(t.toISOString());
+}
+
+/** Hari kerja pertama pada atau sesudah `iso` menurut `libur` (paling jauh 60 hari; tanpa `libur` = apa adanya). */
+export function majuHariKerja(iso: string, libur?: (iso: string) => boolean): string {
+  if (!libur || !iso) return iso;
+  let t = iso;
+  for (let i = 0; i < 60 && libur(t); i += 1) t = tambahHariIso(t, 1);
+  return t;
 }
 
 type BahanButir = {
@@ -477,6 +586,7 @@ function susunButir(aturan: Aturan, fakta: FaktaTenggat, s: BahanButir): Butir {
     mediator: String(fakta.mediator || ""),
     perluVerifikasi: Boolean(aturan.perluVerifikasi),
     menunggu: s.menunggu,
+    ...(aturan.ruas ? { ruas: aturan.ruas } : {}),
   };
 }
 
@@ -490,7 +600,7 @@ export function nilaiSatu(
   aturan: Aturan,
   fakta: FaktaTenggat,
   acuanHariIni: string,
-  opsi: Pick<OpsiNilai, "hitungMundur"> = {}
+  opsi: Pick<OpsiNilai, "hitungMundur" | "libur"> = {}
 ): Butir | null {
   const acuan = tanggalIso(fakta.tanggalAcuan);
   if (!acuan) return null;
@@ -502,7 +612,18 @@ export function nilaiSatu(
 
   const pihak = sebutPihakFakta(fakta);
   const batasTegas = tanggalIso(fakta.tanggalBatas);
-  const batas = batasTegas || (aturan.batasHari >= 0 && !aturan.acuanDiDepan ? tambahHariIso(acuan, aturan.batasHari) : "");
+  let batas = batasTegas || (aturan.batasHari >= 0 && !aturan.acuanDiDepan ? tambahHariIso(acuan, aturan.batasHari) : "");
+  // Hari terakhir yang jatuh pada hari libur bergeser ke hari kerja berikutnya (hanya aturan bertanda geserLibur).
+  let geseranDari = "";
+  if (aturan.geserLibur && opsi.libur && batas) {
+    const asli = batas;
+    batas =
+      aturan.geserAcuan && !batasTegas
+        ? majuHariKerja(tambahHariIso(majuHariKerja(acuan, opsi.libur), aturan.batasHari), opsi.libur)
+        : majuHariKerja(batas, opsi.libur);
+    if (batas !== asli) geseranDari = asli;
+  }
+  const catatanGeser = geseranDari ? `batas ${tanggalPendek(geseranDari)} jatuh pada hari libur, bergeser ke hari kerja berikutnya` : "";
 
   // Hitungan yang BELUM dimulai (pihak tidak hadir, pemberitahuan putusan belum tercatat): hanya catatan, tanpa tanggal.
   if (fakta.menunggu) {
@@ -566,7 +687,7 @@ export function nilaiSatu(
     acuanHariIni,
     tingkat,
     menunggu: false,
-    keterangan: [keteranganPihak(fakta, pihak, acuan), String(fakta.keterangan || "")].filter(Boolean).join(" · "),
+    keterangan: [keteranganPihak(fakta, pihak, acuan), String(fakta.keterangan || ""), catatanGeser].filter(Boolean).join(" · "),
   });
 }
 
@@ -599,7 +720,7 @@ export function nilaiTenggat(
         const lewat = selisihHari(acuan, acuanHariIni) - aturan.batasHari;
         if (lewat > 0) lama[aturan.kode] = (lama[aturan.kode] || 0) + 1;
       }
-      const hasil = nilaiSatu(aturan, satu, acuanHariIni, { hitungMundur: opsi.hitungMundur });
+      const hasil = nilaiSatu(aturan, satu, acuanHariIni, { hitungMundur: opsi.hitungMundur, libur: opsi.libur });
       if (hasil) butir.push(hasil);
     }
   }
