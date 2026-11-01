@@ -3281,6 +3281,9 @@
     // 31 Okt (jawab-replik): naskah jawab-menjawab berparagraf - Enter tetap pemisah paragraf, tidak dirangkai satu baris.
     const mi = mesinIsi();
     if (mi && Array.isArray(mi.KODE_NASKAH_BERBARIS) && mi.KODE_NASKAH_BERBARIS.includes(String(kode))) return typeof nilai === "string" ? mi.rapikanNaskah(nilai) : nilai;
+    // Keputusan 55 (1 Nov): isian yang berisi salinan teks para pihak disimpan APA ADANYA - aturan rapi 30 Okt (titik koma, tanda baca, huruf)
+    // tidak berlaku pada tulisan pihak.
+    if (mi && Array.isArray(mi.KODE_TEKS_PIHAK) && mi.KODE_TEKS_PIHAK.includes(String(kode))) return nilai;
     const m = SK();
     if (!m || typeof m.rapiIsian !== "function" || typeof nilai !== "string" || !nilai.trim()) return nilai;
     const b = isianBlangko(kode);
@@ -6224,7 +6227,21 @@
     }
     // Pilih bunyi (mis. alasan cerai 5227): varian dari mesin bersama, wajib dipilih petugas - tidak terisi sendiri.
     const bunyi = S.bunyi[b.kode] || [];
-    const pilihBunyi = bunyi.length
+    // Keputusan 56 (1 Nov): dua berkas e-Court atau lebih untuk bagian yang sama (jawaban/replik/duplik/kesimpulan) - panel memberi tahu,
+    // petugas dapat melihat dan memilih masing-masing; saran bawaan = yang terakhir diunggah. Satu berkas: tidak ada kotak ini.
+    const naskahBanyak = bunyi.length >= 2 && Boolean(mesinIsi() && Array.isArray(mesinIsi().KODE_NASKAH_BERBARIS) && mesinIsi().KODE_NASKAH_BERBARIS.includes(String(b.kode)));
+    const pilihBerkas = naskahBanyak
+      ? `<div class="bd-berkas"><span class="bd-catat bd-berkasinfo" role="status">Ada ${bunyi.length} berkas di e-Court untuk bagian ini. Yang disarankan: yang terakhir diunggah. Pilih berkas lain di bawah bila perlu.</span>` +
+        `<label class="bd-bunyi"><span>pilih berkas</span><select data-bunyi="${b.kode}" ${ro} aria-label="Pilih berkas untuk ${esc(b.nama)}"><option value="">— saran: yang terakhir diunggah —</option>${bunyi
+          .map((o, i) => `<option value="${i}" title="${esc(potong(o.nilai, 600))}" ${v.trim() && v.trim() === o.nilai ? "selected" : ""}>${esc(o.keadaan)}</option>`)
+          .join("")}</select></label>` +
+        `<details class="bd-berkaslihat"><summary>Lihat isi tiap berkas</summary>${bunyi
+          .map((o) => `<div class="bd-berkasitem"><b>${esc(o.keadaan)}</b><div class="bd-berkasisi">${esc(String(o.nilai).slice(0, 4000)).replace(/\n/g, "<br>")}${String(o.nilai).length > 4000 ? "…" : ""}</div></div>`)
+          .join("")}</details></div>`
+      : "";
+    const pilihBunyi = naskahBanyak
+      ? pilihBerkas
+      : bunyi.length
       ? `<label class="bd-bunyi"><span>pilih bunyi</span><select data-bunyi="${b.kode}" ${ro} aria-label="Pilih bunyi ${esc(b.nama)}"><option value="">— wajib dipilih petugas —</option>${bunyi
           .map((o, i) => `<option value="${i}" ${v.trim() && v.trim() === o.nilai ? "selected" : ""}>${esc(`${o.keadaan}: ${potong(o.nilai, 150)}`)}</option>`)
           .join("")}</select></label>` +
@@ -8324,6 +8341,25 @@
   let singgahSisa = { kunci: "", temuan: [], teks: "" };
   /** Nilai isian yang tampil: ketikan/isian sesi ini, atau nilai tersimpan di ABT. */
   const nilaiTampil = (kode) => String(S.isi[kode] != null && String(S.isi[kode]) !== "" ? S.isi[kode] : (S.nilai[kode] && S.nilai[kode].teks) || "");
+  /**
+   * Keputusan 55 (1 Nov): teks para pihak yang disalin ke naskah ini (isian naskah jawab-menjawab, frasa kesimpulan, pokok jawaban, dan posita
+   * gugatan bila sudah dibaca). Deteksi sisa blangko tidak memerahkannya; temuan di dalamnya hanya info di daftar .txt.
+   */
+  function teksPihakKini() {
+    const mi = mesinIsi();
+    const hasil = [];
+    try {
+      for (const kode of mi && Array.isArray(mi.KODE_TEKS_PIHAK) ? mi.KODE_TEKS_PIHAK : []) {
+        const v = nilaiTampil(kode);
+        if (v.trim()) hasil.push(v);
+      }
+      const posita = S.bahanSaksi && S.bahanSaksi.posita;
+      if (posita && String(posita).trim()) hasil.push(String(posita));
+    } catch {
+      /* tanpa bahan pengecualian: pemeriksaan seperti biasa */
+    }
+    return hasil;
+  }
   /** Naskah yang sudah disiapkan (segar) -> teks + temuan sisa blangko; tidak meminta naskah baru ke ABT. */
   function bahanNaskahPeriksa() {
     const pr = S.prat;
@@ -8335,7 +8371,7 @@
       try {
         const r = rtfTeks(pr.rtf);
         isi = rtfKeTeks(r);
-        const d = typeof aletaDeteksiSisa === "object" && aletaDeteksiSisa && typeof aletaDeteksiSisa.periksaRtf === "function" ? aletaDeteksiSisa.periksaRtf(r) : null;
+        const d = typeof aletaDeteksiSisa === "object" && aletaDeteksiSisa && typeof aletaDeteksiSisa.periksaRtf === "function" ? aletaDeteksiSisa.periksaRtf(r, { teksPihak: teksPihakKini() }) : null;
         temuan = d && Array.isArray(d.temuan) ? d.temuan : [];
       } catch {
         temuan = [];
@@ -8917,6 +8953,7 @@
             jenis: jenisNaskah,
             aksi: S.fmt.edoc && j === "put" && !tes() ? "unggah" : "unduh",
             catatan: catatanRapi,
+            teksPihak: teksPihakKini(),
           });
         } catch {
           tinjau = { lanjut: true }; // galat pemeriksa tidak boleh menahan cetak/unggah
@@ -8938,7 +8975,7 @@
     let rtfCetak = rtfBuf;
     if (deteksiAda && jenisNaskahCetak && typeof aletaDeteksiSisa.merahkanRtf === "function") {
       try {
-        const m = aletaDeteksiSisa.merahkanRtf(latin1(rtfBuf), { jenis: jenisNaskahCetak, untukBaca: rtfTeks(rtfBuf) });
+        const m = aletaDeteksiSisa.merahkanRtf(latin1(rtfBuf), { jenis: jenisNaskahCetak, untukBaca: rtfTeks(rtfBuf), teksPihak: teksPihakKini() });
         if (m && m.jumlah > 0) {
           rtfCetak = typeof rtfBuf === "string" ? m.rtf : bufDariLatin1(m.rtf);
           catatLog(`${m.potongan} sisa blangko diwarnai merah pada RTF/PDF cetak`);

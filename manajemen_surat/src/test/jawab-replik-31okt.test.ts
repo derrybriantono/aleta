@@ -62,47 +62,44 @@ describe("bentuk naskah - jawaban bernomor dengan gugatan rekonvensi (PDF berhal
     );
   });
 
-  it("penomoran dipertahankan (1. 2. 3. dan rincian a. b. c.), sub-judul baku berdiri sendiri", () => {
+  it("KEPUTUSAN 55: penomoran dan sub-judul PERSIS seperti di surat (huruf besar tidak diubah)", () => {
     const k = baris(h.konvensi);
-    expect(k[0]).toBe("Dalam Konvensi");
+    expect(k[0]).toBe("DALAM KONVENSI");
     expect(k.filter((l) => /^\d\. Bahwa/.test(l)).map((l) => l.slice(0, 2))).toEqual(["1.", "2.", "3.", "4."]);
     expect(k.filter((l) => /^[a-c]\. /.test(l)).map((l) => l.slice(0, 2))).toEqual(["a.", "b.", "c."]);
-    expect(baris(h.rekonvensi)[0]).toBe("Dalam Rekonvensi");
-    expect(baris(h.rekonvensi)).toContain("Dalam Konvensi dan Rekonvensi");
+    expect(baris(h.rekonvensi)[0]).toBe("DALAM REKONVENSI");
+    expect(baris(h.rekonvensi)).toContain("DALAM KONVENSI DAN REKONVENSI");
   });
 
-  it("titik koma di tengah butir: '; bahwa' menjadi butir '- Bahwa' di bawah butir bernomor", () => {
+  it("KEPUTUSAN 55: titik koma di tengah butir TIDAK diubah ('; bahwa' tetap dalam satu butir)", () => {
     const k = baris(h.konvensi);
-    const i = k.findIndex((l) => l.startsWith("2. Bahwa Termohon membenarkan dalil angka 3"));
-    expect(k[i]).toMatch(/pengasuhan Termohon;$/);
-    expect(k[i + 1]).toBe("- Bahwa selama ini anak-anak tersebut tidak pernah diberi nafkah oleh Pemohon sejak bulan Januari 2026;");
-    for (const l of baris(`${h.konvensi}\n${h.rekonvensi}`)) expect(l.replace(/;$/, "")).not.toMatch(/;/);
+    const asli = F.PAR_JAWABAN_REKON.find((p: string) => p.startsWith("2. Bahwa saya membenarkan dalil angka 3"));
+    expect(k).toContain(asli);
+    expect(asli).toMatch(/pengasuhan Termohon; bahwa selama ini anak-anak/);
+    expect(k.some((l) => /^- Bahwa/.test(l))).toBe(false);
   });
 
   it("rekonvensi dipisah ke isiannya sendiri: dalil rekonvensi dan seluruh petitum, urutan surat tetap", () => {
     expect(h.konvensi).not.toMatch(/Rekonvensi menuntut|Mengabulkan gugatan/);
-    expect(h.rekonvensi).toMatch(/^Dalam Rekonvensi\n1\. Bahwa apa yang telah diuraikan dalam konvensi/);
+    expect(h.rekonvensi).toMatch(/^DALAM REKONVENSI\n1\. Bahwa apa yang telah diuraikan dalam konvensi/);
     expect(h.rekonvensi).toMatch(/Berdasarkan alasan-alasan tersebut di atas, Termohon mohon/);
     // Isi surat tidak hilang: tiap dalil/petitum sumber ada di salah satu bagian.
     for (const p of ["nafkah iddah selama 3 (tiga) bulan", "kenaikan 10% setiap tahun", "ex aequo et bono"]) expect(`${h.konvensi}\n${h.rekonvensi}`).toContain(p);
   });
 
-  it("petitum: butir amar tanpa nomor diberi nomor per sub-judul; rincian sebaris ': a. ...; b. ...' dipecah per baris", () => {
+  it("KEPUTUSAN 55: petitum apa adanya - butir amar tanpa nomor TIDAK diberi nomor, rincian sebaris tidak dipecah", () => {
     const r = baris(h.rekonvensi);
-    const i = r.indexOf("Dalam Konvensi");
-    expect(r[i + 1]).toBe("1. Menolak permohonan Pemohon untuk seluruhnya;");
+    const i = r.indexOf("DALAM KONVENSI");
+    expect(r[i + 1]).toBe("Menolak permohonan Pemohon untuk seluruhnya;");
     const j = r.findIndex((l) => l.startsWith("2. Menghukum Tergugat Rekonvensi untuk membayar kepada Penggugat Rekonvensi:"));
-    expect(r[j]).toMatch(/Rekonvensi:$/);
-    expect(r[j + 1]).toBe("a. Nafkah iddah sejumlah Rp3.000.000,00 (tiga juta rupiah);");
-    expect(r[j + 2]).toBe("b. Mut'ah berupa uang sejumlah Rp5.000.000,00 (lima juta rupiah);");
-    expect(r[r.indexOf("Dalam Konvensi dan Rekonvensi") + 1]).toBe("1. Membebankan biaya perkara sesuai ketentuan yang berlaku;");
+    expect(r[j]).toMatch(/: a\. Nafkah iddah sejumlah Rp3\.000\.000,00 \(tiga juta rupiah\); b\. Mut'ah berupa uang sejumlah Rp5\.000\.000,00 \(lima juta rupiah\);$/);
+    expect(r[r.indexOf("DALAM KONVENSI DAN REKONVENSI") + 1]).toBe("Membebankan biaya perkara sesuai ketentuan yang berlaku;");
     expect(r[r.length - 1]).toBe("Atau apabila Majelis Hakim berpendapat lain, mohon putusan yang seadil-adilnya (ex aequo et bono).");
   });
 
-  it("sebutan: 'saya' -> Termohon, 'Rekonpensi' -> Rekonvensi; kata pihak rekonvensi tidak diganti", () => {
-    expect(h.konvensi).not.toMatch(/\bsaya\b/i);
-    expect(h.konvensi).toMatch(/^1\. Bahwa Termohon membenarkan/m);
-    expect(`${h.konvensi}${h.rekonvensi}`).not.toMatch(/Rekonpensi/);
+  it("KEPUTUSAN 55: 'saya' tidak diganti sebutan pihak; kata pihak rekonvensi tidak diubah", () => {
+    expect(h.konvensi).toMatch(/^1\. Bahwa saya membenarkan/m);
+    expect(h.konvensi).toMatch(/^3\. Bahwa saya menolak dalil Pemohon angka 4/m);
     expect(h.rekonvensi).toMatch(/Termohon Konvensi disebut Penggugat Rekonvensi dan Pemohon Konvensi disebut Tergugat Rekonvensi/);
   });
 });
@@ -116,35 +113,36 @@ describe("bentuk naskah - eksepsi + pokok perkara oleh kuasa (sub-judul Romawi, 
     expect(h.rekonvensi).toBe("");
   });
 
-  it("'I. DALAM EKSEPSI' / 'II. DALAM POKOK PERKARA' -> sub-judul baku; nomor butir per bagian tetap", () => {
-    expect(b[0]).toBe("Dalam Eksepsi");
-    expect(b).toContain("Dalam Pokok Perkara");
+  it("KEPUTUSAN 55: 'I. DALAM EKSEPSI' / 'II. DALAM POKOK PERKARA' tetap seperti ditulis; nomor butir per bagian tetap", () => {
+    expect(b[0]).toBe("I. DALAM EKSEPSI");
+    expect(b).toContain("II. DALAM POKOK PERKARA");
     expect(b.slice(1, 3).map((l) => l.slice(0, 3))).toEqual(["1. ", "2. "]);
   });
 
-  it("PRIMAIR/SUBSIDAIR menjadi 'Primair:'/'Subsidair:', amar tanpa nomor diberi nomor per sub-judul", () => {
-    const p = b.indexOf("Primair:");
-    expect(b.slice(p, p + 4)).toEqual(["Primair:", "Dalam Eksepsi", "1. Menerima eksepsi Tergugat;", "2. Menyatakan gugatan Penggugat tidak dapat diterima;"]);
-    expect(b[b.indexOf("Subsidair:") + 1]).toMatch(/^Apabila Majelis Hakim berpendapat lain/);
+  it("KEPUTUSAN 55: PRIMAIR/SUBSIDAIR dan amar tanpa nomor persis seperti di surat", () => {
+    const p = b.indexOf("PRIMAIR");
+    expect(b.slice(p, p + 4)).toEqual(["PRIMAIR", "DALAM EKSEPSI", "Menerima eksepsi Tergugat;", "Menyatakan gugatan Penggugat tidak dapat diterima;"]);
+    expect(b[b.indexOf("SUBSIDAIR") + 1]).toMatch(/^Apabila Majelis Hakim berpendapat lain/);
   });
 
-  it("'klien kami' -> Tergugat", () => {
-    expect(h.konvensi).toMatch(/karena Tergugat selalu mengirimkan uang/);
-    expect(h.konvensi).not.toMatch(/klien kami/);
+  it("KEPUTUSAN 55: 'klien kami' tidak diganti sebutan pihak", () => {
+    expect(h.konvensi).toMatch(/karena klien kami selalu mengirimkan uang/);
   });
 });
 
 describe("bentuk naskah - replik gaya 'Bahwa' tanpa nomor + jawaban rekonvensi", () => {
   const h = N.naskahDariSurat(F.REPLIK_REKON, { sebutan: CT, penulis: "Pemohon" });
-  it("tiap 'Bahwa' satu paragraf; '; bahwa' menjadi paragraf 'Bahwa' baru (bukan butir '-')", () => {
+  it("tiap 'Bahwa' satu paragraf; '; bahwa' di tengah TETAP satu paragraf (keputusan 55)", () => {
     const k = baris(h.konvensi);
     expect(k[0]).toBe("Dalam Konvensi");
     expect(k.slice(1).every((l) => /^Bahwa /.test(l))).toBe(true);
-    expect(k).toContain("Bahwa hal itu telah diketahui Termohon sejak sebelum menikah;");
+    expect(k).toHaveLength(4);
+    expect(k).toContain("Bahwa tidak benar Pemohon sering pulang larut malam tanpa alasan, karena Pemohon bekerja sebagai sopir angkutan antar kota yang jadwalnya tidak tetap; bahwa hal itu telah diketahui Termohon sejak sebelum menikah;");
   });
-  it("jawaban rekonvensi terpisah, berawal sub-judul, petitum bernomor", () => {
+  it("jawaban rekonvensi terpisah, berawal sub-judul, petitum tanpa nomor tambahan", () => {
     expect(baris(h.rekonvensi)[0]).toBe("Dalam Rekonvensi");
-    expect(h.rekonvensi).toMatch(/\n1\. Mengabulkan permohonan Pemohon;\n2\. Memberi izin kepada Pemohon untuk menjatuhkan talak satu raj'i/);
+    expect(h.rekonvensi).toMatch(/\nMengabulkan permohonan Pemohon;\nMemberi izin kepada Pemohon untuk menjatuhkan talak satu raj'i/);
+    expect(h.rekonvensi).not.toMatch(/^\d\. /m);
   });
 });
 
@@ -162,10 +160,10 @@ describe("bentuk naskah - PDF terpotong keras (duplik + replik rekonvensi)", () 
 
 describe("arahan pengguna 31 Okt: hanya dalil (posita) dan petitum yang diambil", () => {
   const h = N.naskahDariSurat(F.JAWABAN_LENGKAP, { sebutan: CG, penulis: "Tergugat" });
-  it("surat lengkap menyisakan PERSIS sub-judul + dalil + petitum, berurutan", () => {
+  it("surat lengkap menyisakan PERSIS sub-judul + dalil + petitum, berurutan, persis seperti ditulis (keputusan 55)", () => {
     expect(h.yakin).toBe(true);
     expect(baris(h.konvensi)).toEqual([
-      "Dalam Pokok Perkara",
+      "DALAM POKOK PERKARA",
       "1. Bahwa Tergugat menolak seluruh dalil gugatan Penggugat, kecuali yang secara tegas diakui kebenarannya oleh Tergugat;",
       "2. Bahwa benar Penggugat dan Tergugat menikah pada tanggal 10 Mei 2018 dan telah dikaruniai 1 (satu) orang anak;",
       "3. Bahwa tidak benar Tergugat meninggalkan tempat kediaman bersama, karena yang meninggalkan rumah adalah Penggugat sejak bulan Maret 2026;",
@@ -212,7 +210,7 @@ describe("usulan isian 12020-12028 lewat susunIsiGugatan", () => {
       expect(u(kode)[0]).toMatchObject({ keyakinan: "cukup", jagaIsianLama: true });
       expect(u(kode)[0].nilai.length).toBeGreaterThan(80);
     }
-    expect(u("12021")[0].nilai).toMatch(/^Dalam Rekonvensi/);
+    expect(u("12021")[0].nilai).toMatch(/^DALAM REKONVENSI/);
     expect(u("12026")[0].nilai).toMatch(/^Bahwa Tergugat Rekonvensi tetap pada jawaban rekonvensi semula/);
     expect(u("12027")[0].nilai).toMatch(/^1\. Bahwa Pemohon tetap pada dalil-dalil permohonan semula/);
   });
@@ -232,11 +230,11 @@ describe("usulan isian 12020-12028 lewat susunIsiGugatan", () => {
     expect(u("8437").find((x: Apa) => x.keyakinan === "cukup").nilai).toBe("tetap pada jawaban dan duplik semula");
   });
 
-  it("tanpa rekonvensi: hanya isian konvensi, tanpa sub-judul 'Dalam Konvensi' tambahan", () => {
+  it("tanpa rekonvensi: hanya isian konvensi, tanpa sub-judul tambahan (keputusan 55: sub-judul persis seperti di surat)", () => {
     const g = S.susunIsiGugatan({ dokumen: [dok("Jawaban Tergugat", F.JAWABAN_EKSEPSI, "Jawaban", "Tergugat", "2026-08-05")], sebutan: CG });
     expect(g.usulan.filter((x: Apa) => x.kode === "12021")).toHaveLength(0);
     const j = g.usulan.find((x: Apa) => x.kode === "12020");
-    expect(j.nilai).toMatch(/^Dalam Eksepsi\n/);
+    expect(j.nilai).toMatch(/^I\. DALAM EKSEPSI\n/);
   });
 
   it("saran saja (ragu) bila: dua berkas untuk bagian yang sama, dibaca OCR, jenis/isi bertentangan; Turut Tergugat tidak diisi", () => {

@@ -108,13 +108,9 @@ function terstruktur(par) {
   return RE_DALIL.test(par) || RE_SIKAP.test(par);
 }
 
+/** Judul bagian surat sebagai label baris: tanda baca akhir diganti ":" - hurufnya TIDAK diubah (keputusan 55: teks pihak apa adanya). */
 function judulBagianRapi(teks) {
-  const t = amankan(teks).replace(/[:;.]+$/, "").toLowerCase();
-  return `${t.replace(/(^|\s)(\S)/g, (_m, a, b) => a + b.toUpperCase())}:`;
-}
-
-function ucfirst(s) {
-  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+  return `${amankan(teks).replace(/[:;.]+$/, "")}:`;
 }
 
 /** Sisa kop/penutup di baris yang akan ditulis: daftar alasan. */
@@ -186,15 +182,17 @@ function tanyaJawabDariSurat(m) {
     let isi = amankan(J.tanpaNomor(par));
     if (J.bagianHuruf(isi) >= 0.8 && isi.replace(/[^A-Za-z]/g, "").length >= 12) hurufBesar = true;
     isi = isi.replace(/^bahwa[,]?\s+/i, "");
-    const sama = J.samakanSebutan(isi, sebutan, k.turut ? "" : penulis);
-    if (sama.diganti) diganti = true;
+    // Keputusan 55 (1 Nov): teks pihak disalin APA ADANYA - sebutan, kata ganti orang pertama, dan huruf besar/kecil tidak diubah.
+    // Surat yang memuat "saya/kami" hanya ditandai (tidak rapi -> disalin petugas), bukan diubah.
+    const sama = J.periksaOrangPertama(isi);
+    if (sama.orangPertama) diganti = true;
     if (sama.orangPertamaTersisa) tersisaOrangPertama = true;
-    isi = sama.teks;
     if (isi.replace(/[^A-Za-z]/g, "").length < 20) {
       dilewati += 1;
       return;
     }
-    isi = ucfirst(isi.replace(/[\s.;:,]+$/, "")) + (/[?!]$/.test(isi.trim()) ? "" : ";");
+    // Penutup baris tabel: tanda baca akhir surat dibuang, lalu ";" (tanda butir daftar). Isi di depannya tidak disentuh.
+    isi = isi.replace(/[\s.;:,]+$/, "") + (/[?!]$/.test(isi.trim()) ? "" : ";");
     if (/[?!];$/.test(isi)) isi = isi.slice(0, -1);
     nomor += 1;
     butirAsli.push({ asal: par, isi });
@@ -210,7 +208,7 @@ function tanyaJawabDariSurat(m) {
   hasil.ukuran = { butir: jawabRows.length, judul: baris.length - jawabRows.length, total, terpanjang, dilewati, akhirTanda: Math.round(akhirTanda * 100) / 100, terstrukturSemua, dibuang: bersih.dibuang };
 
   if (hurufBesar) alasan.push("surat diketik huruf besar semua");
-  if (diganti) alasan.push("kata ganti orang pertama (saya/kami) perlu diganti sebutan pihak");
+  if (diganti) alasan.push("ada kata ganti orang pertama (saya/kami) - tidak ditulis otomatis (teks pihak tidak diubah), silakan salin dan periksa");
   if (tersisaOrangPertama) alasan.push("kata ganti orang pertama dari kuasa tersisa");
   if (jawabRows.length < AMBANG.butirMin) alasan.push(`butir dalil terlalu sedikit (${jawabRows.length})`);
   if (jawabRows.length > AMBANG.butirMaks) alasan.push(`butir dalil terlalu banyak (${jawabRows.length})`);

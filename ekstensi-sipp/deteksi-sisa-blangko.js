@@ -726,21 +726,73 @@
     }
   }
 
-  /** Periksa daftar paragraf -> { temuan, jumlahParagraf, jumlahHalaman, terpotong }. */
+  // ==========================================================================
+  // Keputusan 55 (1 Nov 2026): TEKS SALINAN DARI PARA PIHAK (gugatan/posita/petitum, jawaban, replik, duplik, rekonvensi, kesimpulan)
+  // disalin apa adanya ke naskah, jadi titik-titik, "[...]", kata berulang, dan huruf kecil di dalamnya BUKAN sisa blangko. Paragraf naskah
+  // yang memuat salah satu baris `opsi.teksPihak` tidak dimerahkan dan tidak masuk `temuan` (tidak memunculkan dialog); temuannya
+  // dikumpulkan di `infoPihak` dan hanya dicatat sebagai info di daftar .txt. Tanpa `teksPihak` perilaku PERSIS seperti sebelumnya.
+  // Salinan di deteksi-sisa-blangko.ts.
+  // ==========================================================================
+  const BATAS_BARIS_PIHAK_MIN = 12;
+  const BATAS_PARAGRAF_BALIK_MIN = 25;
+  function normPihak(t) {
+    return String(t == null ? "" : t)
+      .replace(/[‘’‛′`´]/g, "'")
+      .replace(/[“”„″]/g, '"')
+      .replace(/[–—−]/g, "-")
+      .replace(/…/g, "...")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+  }
+  /** Baris-baris teks pihak yang sudah dinormalkan (minimal 12 huruf), atau null bila tidak ada. */
+  function barisPihak(teksPihak) {
+    const sumber = Array.isArray(teksPihak) ? teksPihak : typeof teksPihak === "string" ? [teksPihak] : [];
+    const hasil = new Set();
+    for (const t of sumber) {
+      for (const l of String(t == null ? "" : t).split(/\r\n|\r|\n/)) {
+        const n = normPihak(l);
+        if (n.length >= BATAS_BARIS_PIHAK_MIN) hasil.add(n);
+      }
+    }
+    return hasil.size ? [...hasil] : null;
+  }
+  /** Penanda per paragraf (true = salinan teks pihak), atau null bila `teksPihak` kosong. */
+  function tandaiPihak(daftar, teksPihak) {
+    const baris = barisPihak(teksPihak);
+    if (!baris) return null;
+    const himpunan = new Set(baris);
+    return daftar.map((par) => {
+      const pn = normPihak(par.teks);
+      if (pn.length < BATAS_BARIS_PIHAK_MIN) return false;
+      if (himpunan.has(pn)) return true;
+      for (const l of baris) {
+        if (pn.includes(l)) return true;
+        if (pn.length >= BATAS_PARAGRAF_BALIK_MIN && l.includes(pn)) return true;
+      }
+      return false;
+    });
+  }
+
+  /** Periksa daftar paragraf -> { temuan, jumlahParagraf, jumlahHalaman, terpotong[, infoPihak] }. */
   function periksaParagraf(daftar, opsi) {
     const temuan = [];
+    const infoPihak = [];
     let terpotong = 0;
     const jur = blokJurusita(daftar);
+    const pihak = tandaiPihak(daftar, opsi && opsi.teksPihak);
     for (let n = 0; n < daftar.length; n += 1) {
       const par = daftar[n];
       const { p, pemenang } = rentangParagraf(par, opsi, jur[n]);
+      const untukInfo = Boolean(pihak && pihak[n]);
       for (const r of pemenang) {
-        if (temuan.length >= BATAS_TEMUAN) {
-          terpotong += 1;
+        const tujuan = untukInfo ? infoPihak : temuan;
+        if (tujuan.length >= BATAS_TEMUAN) {
+          if (!untukInfo) terpotong += 1;
           continue;
         }
         const k = kutipanSekitar(p, r.dari, r.sampai);
-        temuan.push({
+        tujuan.push({
           jenis: r.jenis,
           label: LABEL[r.jenis],
           sebelum: k.sebelum,
@@ -752,7 +804,7 @@
       }
     }
     const jumlahHalaman = daftar.length ? daftar[daftar.length - 1].halaman : 0;
-    return { temuan, jumlahParagraf: daftar.length, jumlahHalaman, terpotong };
+    return { temuan, jumlahParagraf: daftar.length, jumlahHalaman, terpotong, ...(pihak ? { infoPihak } : {}) };
   }
 
   function periksaTeks(teks, opsi) {
@@ -838,9 +890,12 @@
       let jumlah = 0;
       const semuaPar = bacaRtfParagraf(baca, true);
       const jur = blokJurusita(semuaPar);
+      const pihak = tandaiPihak(semuaPar, opsi && opsi.teksPihak);
       for (let nn = 0; nn < semuaPar.length; nn += 1) {
         const par = semuaPar[nn];
         if (!par.src || par.src.length !== par.teks.length) continue;
+        // Keputusan 55: salinan teks pihak tidak pernah diwarnai (tampilan dokumen pihak tidak diubah).
+        if (pihak && pihak[nn]) continue;
         const { p, pemenang } = rentangParagraf(par, opsi, jur[nn]);
         for (const r of pemenang) {
           if (r.jenis === "merah" || JENIS_RAGU.has(r.jenis)) continue;
@@ -1307,6 +1362,19 @@
       baris.push("");
     });
     baris.push("Perbaiki naskah di Word, lalu unduh atau unggah lagi bila perlu.");
+    // Keputusan 55 (1 Nov 2026): hal-hal di dalam teks salinan para pihak hanya info - bukan masalah, tidak diwarnai merah.
+    if (Array.isArray(o.infoPihak) && o.infoPihak.length) {
+      baris.push("");
+      baris.push(`Info (bukan masalah): ${o.infoPihak.length} hal ada di dalam teks salinan dari para pihak (gugatan, jawaban, replik, duplik, kesimpulan).`);
+      baris.push("Teks itu disalin apa adanya sesuai tulisan pihak - tidak diubah, tidak diwarnai merah, dan tidak perlu diperbaiki.");
+      baris.push("");
+      o.infoPihak.slice(0, 200).forEach((t, i) => {
+        baris.push(`${i + 1}. ${t.label} - ${letak(t)}`);
+        baris.push(`   ${kalimatTemuan(t)}`);
+        baris.push("");
+      });
+      if (o.infoPihak.length > 200) baris.push(`(ditambah ${o.infoPihak.length - 200} hal lagi yang tidak ditampilkan)`);
+    }
     return baris.join("\r\n");
   }
 
@@ -1476,7 +1544,9 @@
   async function periksaBitaServerAtauLokal(bita, nama, opsi) {
     try {
       const B = akar.ALETA_BERKAS_SERVER;
-      if (B && typeof B.periksaSisaRtf === "function" && !(opsi && opsi.jenis === "relaas") && kenaliBentuk(bita, nama) === "rtf") {
+      // Dengan teksPihak (salinan teks para pihak) pemeriksaan selalu lokal: pemeriksa server tidak mengenal pengecualian itu.
+      const adaTeksPihak = Boolean(opsi && barisPihak(opsi.teksPihak));
+      if (!adaTeksPihak && B && typeof B.periksaSisaRtf === "function" && !(opsi && opsi.jenis === "relaas") && kenaliBentuk(bita, nama) === "rtf") {
         const h = await B.periksaSisaRtf(bita);
         if (h && h.dibaca && h.hasil && Array.isArray(h.hasil.temuan)) return { dibaca: true, bentuk: "rtf", hasil: h.hasil };
       }
@@ -1500,7 +1570,7 @@
       if (!bita) return { lanjut: true, periksa: false, temuan: [] };
       const kunci = kunciBerkas(o.nama, bita.length, o.jenis);
       if (sudahDilanjutkan(kunci)) return { lanjut: true, periksa: false, temuan: [] };
-      const h = await periksaBitaServerAtauLokal(bita, o.nama, { bacaPdf: o.bacaPdf, jenis: o.jenis });
+      const h = await periksaBitaServerAtauLokal(bita, o.nama, { bacaPdf: o.bacaPdf, jenis: o.jenis, teksPihak: o.teksPihak });
       if (!h.dibaca || !h.hasil || !h.hasil.temuan.length) return { lanjut: true, periksa: h.dibaca, temuan: [] };
       if (o.tanpaDialog) return { lanjut: true, periksa: true, temuan: h.hasil.temuan };
       const sekarang = Date.now();
@@ -1514,6 +1584,7 @@
         aksi: o.aksi,
         terpotong: h.hasil.terpotong,
         catatan: o.catatan,
+        infoPihak: h.hasil.infoPihak,
         tawarkanIngat: beruntun || o.massal === true,
       });
       if (pilihan === "lanjut") ingatan.set(kunci, Date.now());
@@ -1644,6 +1715,7 @@
     /* 31 Okt: sisa blangko PASTI dimerahkan di RTF cetak/unduh panel; baris kosong berlebih dirapikan. */
     rentangParagraf,
     merahkanRtf,
+    tandaiPihak,
     rapikanBarisKosong,
     JENIS_RAGU,
     /* 20 Okt: dipakai pratinjau BAS/relaas (pratinjau-bas-relaas.js) untuk tampilan teks cadangan DOCX dan nama daftar masalah. */

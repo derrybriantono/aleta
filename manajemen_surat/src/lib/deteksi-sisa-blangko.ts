@@ -48,6 +48,8 @@ export type HasilPeriksa = {
   jumlahParagraf: number;
   jumlahHalaman: number;
   terpotong: number;
+  /** Keputusan 55: temuan di dalam teks salinan para pihak (hanya ada bila `opsi.teksPihak` diberikan). Info saja, bukan masalah. */
+  infoPihak?: Temuan[];
 };
 
 export type Paragraf = {
@@ -482,7 +484,11 @@ export function titikIsianTanganRelaas(p: string, dari: number, sampai: number):
 }
 
 /** Opsi pemeriksaan: jenis "relaas" = isian tangan jurusita dikecualikan; "umum" = hanya sinyal kuat (kurung, tanda, perbaikan, merah). */
-export type OpsiPeriksa = { jenis?: JenisNaskah | "umum" | "" };
+export type OpsiPeriksa = {
+  jenis?: JenisNaskah | "umum" | "";
+  /** Keputusan 55 (1 Nov 2026): teks salinan dari para pihak (satu string atau daftar) - paragraf naskah yang memuatnya bukan sisa blangko. */
+  teksPihak?: string | string[];
+};
 const JENIS_LEMAH: ReadonlySet<JenisTemuan> = new Set<JenisTemuan>(["titik", "garis", "kalimat", "ulang", "ragu"]);
 
 type Aturan = {
@@ -766,21 +772,69 @@ export function rentangParagraf(par: Paragraf, opsi?: OpsiPeriksa, dalamJurusita
     return { p, pemenang };
 }
 
-/** Periksa daftar paragraf -> { temuan, jumlahParagraf, jumlahHalaman, terpotong }. */
+// ============================================================================
+// Keputusan 55 (1 Nov 2026): TEKS SALINAN DARI PARA PIHAK - salinan JS di ekstensi-sipp/deteksi-sisa-blangko.js (ubah di KEDUA berkas).
+// Paragraf yang memuat salah satu baris `opsi.teksPihak` tidak dimerahkan dan tidak masuk `temuan`; temuannya masuk `infoPihak`.
+// ============================================================================
+const BATAS_BARIS_PIHAK_MIN = 12;
+const BATAS_PARAGRAF_BALIK_MIN = 25;
+function normPihak(t: unknown): string {
+  return String(t == null ? "" : t)
+    .replace(/[\u2018\u2019\u201B\u2032`\u00B4]/g, "'")
+    .replace(/[\u201C\u201D\u201E\u2033]/g, '"')
+    .replace(/[\u2013\u2014\u2212]/g, "-")
+    .replace(/\u2026/g, "...")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+function barisPihak(teksPihak: unknown): string[] | null {
+  const sumber = Array.isArray(teksPihak) ? teksPihak : typeof teksPihak === "string" ? [teksPihak] : [];
+  const hasil = new Set<string>();
+  for (const t of sumber) {
+    for (const l of String(t == null ? "" : t).split(/\r\n|\r|\n/)) {
+      const n = normPihak(l);
+      if (n.length >= BATAS_BARIS_PIHAK_MIN) hasil.add(n);
+    }
+  }
+  return hasil.size ? [...hasil] : null;
+}
+/** Penanda per paragraf (true = salinan teks pihak), atau null bila `teksPihak` kosong. */
+export function tandaiPihak(daftar: Paragraf[], teksPihak: unknown): boolean[] | null {
+  const baris = barisPihak(teksPihak);
+  if (!baris) return null;
+  const himpunan = new Set(baris);
+  return daftar.map((par) => {
+    const pn = normPihak(par.teks);
+    if (pn.length < BATAS_BARIS_PIHAK_MIN) return false;
+    if (himpunan.has(pn)) return true;
+    for (const l of baris) {
+      if (pn.includes(l)) return true;
+      if (pn.length >= BATAS_PARAGRAF_BALIK_MIN && l.includes(pn)) return true;
+    }
+    return false;
+  });
+}
+
+/** Periksa daftar paragraf -> { temuan, jumlahParagraf, jumlahHalaman, terpotong[, infoPihak] }. */
 export function periksaParagraf(daftar: Paragraf[], opsi?: OpsiPeriksa): HasilPeriksa {
   const temuan: Temuan[] = [];
+  const infoPihak: Temuan[] = [];
   let terpotong = 0;
   const jur = blokJurusita(daftar);
+  const pihak = tandaiPihak(daftar, opsi && opsi.teksPihak);
   for (let n = 0; n < daftar.length; n += 1) {
     const par = daftar[n];
     const { p, pemenang } = rentangParagraf(par, opsi, jur[n]);
+    const untukInfo = Boolean(pihak && pihak[n]);
     for (const r of pemenang) {
-      if (temuan.length >= BATAS_TEMUAN) {
-        terpotong += 1;
+      const tujuan = untukInfo ? infoPihak : temuan;
+      if (tujuan.length >= BATAS_TEMUAN) {
+        if (!untukInfo) terpotong += 1;
         continue;
       }
       const k = kutipanSekitar(p, r.dari, r.sampai);
-      temuan.push({
+      tujuan.push({
         jenis: r.jenis,
         label: LABEL[r.jenis],
         sebelum: k.sebelum,
@@ -792,7 +846,7 @@ export function periksaParagraf(daftar: Paragraf[], opsi?: OpsiPeriksa): HasilPe
     }
   }
   const jumlahHalaman = daftar.length ? daftar[daftar.length - 1].halaman : 0;
-  return { temuan, jumlahParagraf: daftar.length, jumlahHalaman, terpotong };
+  return { temuan, jumlahParagraf: daftar.length, jumlahHalaman, terpotong, ...(pihak ? { infoPihak } : {}) };
 }
 
 export function periksaTeks(teks: string, opsi?: OpsiPeriksa): HasilPeriksa {
@@ -959,7 +1013,7 @@ export function kalimatTemuan(t: Temuan): string {
 }
 
 /** Isi berkas .txt daftar masalah (CRLF supaya terbuka rapi di Notepad). */
-export function susunDaftarTxt(temuan: Temuan[], opsi?: { nama?: string; jenis?: string; terpotong?: number; catatan?: string[] }): string {
+export function susunDaftarTxt(temuan: Temuan[], opsi?: { nama?: string; jenis?: string; terpotong?: number; catatan?: string[]; infoPihak?: Temuan[] }): string {
   const o = opsi || {};
   const baris: string[] = [];
   baris.push("DAFTAR MASALAH PADA NASKAH");
@@ -985,5 +1039,18 @@ export function susunDaftarTxt(temuan: Temuan[], opsi?: { nama?: string; jenis?:
     baris.push("");
   });
   baris.push("Perbaiki naskah di Word, lalu unduh atau unggah lagi bila perlu.");
+  // Keputusan 55 (1 Nov 2026): hal-hal di dalam teks salinan para pihak hanya info - bukan masalah, tidak diwarnai merah.
+  if (Array.isArray(o.infoPihak) && o.infoPihak.length) {
+    baris.push("");
+    baris.push(`Info (bukan masalah): ${o.infoPihak.length} hal ada di dalam teks salinan dari para pihak (gugatan, jawaban, replik, duplik, kesimpulan).`);
+    baris.push("Teks itu disalin apa adanya sesuai tulisan pihak - tidak diubah, tidak diwarnai merah, dan tidak perlu diperbaiki.");
+    baris.push("");
+    o.infoPihak.slice(0, 200).forEach((t, i) => {
+      baris.push(`${i + 1}. ${t.label} - ${letakTemuan(t)}`);
+      baris.push(`   ${kalimatTemuan(t)}`);
+      baris.push("");
+    });
+    if (o.infoPihak.length > 200) baris.push(`(ditambah ${o.infoPihak.length - 200} hal lagi yang tidak ditampilkan)`);
+  }
   return baris.join("\r\n");
 }

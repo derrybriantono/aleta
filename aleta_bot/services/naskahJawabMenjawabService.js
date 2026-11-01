@@ -15,26 +15,22 @@
  * POLOS satu paragraf per baris, yang dicetak ABT lewat fungsi isian_rtf_butir (inden gantung menurut penanda butir) -
  * lihat paket abt-paket/jawab-replik-31okt.
  *
- * ATURAN BENTUK (diuji jawab-replik-31okt.test.ts):
+ * ATURAN BENTUK (diuji jawab-replik-31okt.test.ts dan teks-pihak-1nov.test.ts):
  *   1. baris PDF yang terpotong disambung jadi paragraf utuh; kata terpenggal "pem-/bayaran" disambung; nomor butir yang
- *      terbaca sendirian ("1." lalu isinya di baris berikut) disatukan (J.barisSurat);
+ *      terbaca sendirian ("1." lalu isinya di baris berikut) disatukan (J.barisSurat). Ini pemulihan tata letak PDF, bukan
+ *      perubahan isi;
  *   2. kop/kepala surat, salam pembuka ("Dengan hormat", "Yth."), identitas pihak, nomor halaman, kepala berulang, penutup
  *      ("Demikian ...", "Hormat kami"), tempat-tanggal, dan blok tanda tangan dibuang; isi tidak dikarang;
- *   3. penanda butir dipertahankan dan dirapikan: "1 ." -> "1.", "1.Bahwa" -> "1. Bahwa", bulatan/kotak -> "-", satu spasi
- *      sesudah penanda; tingkatan inden dihitung ABT dari penanda (1. -> a. -> 1) -> -);
- *   4. "Dalam Eksepsi" / "Dalam Pokok Perkara" / "Dalam Konvensi" / "Dalam Rekonvensi" / "Dalam Konvensi dan Rekonvensi" /
- *      "Dalam Provisi" / "Primair:" / "Subsidair:" menjadi sub-judul tersendiri dengan ejaan baku;
- *   5. petitum ("Berdasarkan ... mohon ...") - butir amar tanpa nomor diberi nomor 1., 2., ... per sub-judul;
- *   6. titik koma di TENGAH butir (keputusan pengguna 30-31 Okt): "...; bahwa ..." -> butir baru ("- Bahwa ..." di bawah butir
- *      bernomor, "Bahwa ..." pada surat tanpa nomor); rincian sebaris "...: a. X; b. Y" -> satu baris per rincian; titik koma
- *      tengah lainnya -> koma. Titik koma di UJUNG butir tetap;
- *   7. sebutan pihak mengikuti blangko: Penggugat/Pemohon dan Tergugat/Termohon menurut jenis perkara; "Penggugat Rekonvensi" /
- *      "Tergugat Rekonvensi" tetap; "Termohon/Penggugat Rekonvensi" -> "Termohon Konvensi/Penggugat Rekonvensi"; kata ganti
- *      orang pertama (saya/kami) diganti sebutan penulis (kecuali "klien kami"); huruf di luar latin1 (kutip lengkung, garis
- *      panjang) dibakukan;
- *   8. bagian rekonvensi (sub-judul "Dalam Rekonvensi" sebelum petitum) DIPISAH ke isiannya sendiri, sampai akhir surat
- *      (petitum ikut di bagian itu supaya urutan surat tetap bila keduanya dicetak berurutan); bagian konvensi diberi sub-judul
- *      "Dalam Konvensi" bila suratnya tidak menyebutnya.
+ *   3. KEPUTUSAN 55 (1 Nov 2026, menggantikan perapian 31 Okt): isi surat disalin APA ADANYA. TIDAK diubah, dirapikan, atau dibetulkan:
+ *      salah ketik, huruf besar/kecil, ejaan, ";" (tengah maupun ujung), "...", penanda butir ("1 ." tetap "1 ."), sub-judul
+ *      ("DALAM POKOK PERKARA" tetap), sebutan pihak ("Penggugat/Pemohon", "Rekonpensi"), kata ganti orang pertama (saya/kami),
+ *      kata berulang, petitum tanpa nomor. Satu-satunya yang berubah: baris kosong/Enter (satu paragraf = satu baris), spasi ganda,
+ *      dan huruf yang tidak dapat disimpan kolom latin1 ABT (kutip/garis lengkung, titik tiga) - lihat TJ.amankan, selalu dicatat;
+ *   4. sub-judul dikenali (untuk memisah rekonvensi dan menandai awal isi) tetapi dicetak persis seperti di surat;
+ *   5. bagian rekonvensi (sub-judul "Dalam Rekonvensi" sebelum petitum) DIPISAH ke isiannya sendiri, sampai akhir surat
+ *      (petitum ikut di bagian itu supaya urutan surat tetap bila keduanya dicetak berurutan). Tidak ada sub-judul tambahan.
+ *   6. KEPUTUSAN 56: dua berkas atau lebih untuk bagian yang sama -> usulan "ragu" (saran) yang memuat SEMUA berkas di `pilihan`
+ *      (yang terakhir diunggah paling atas = bawaan); satu berkas = perilaku biasa tanpa klik tambahan.
  */
 
 const T = require("./tuntutanDeteksiService");
@@ -55,6 +51,11 @@ const KODE = Object.freeze({
 });
 /** Kode isian berparagraf: TIDAK dirapikan menjadi satu baris saat disimpan (ekstensi: isi-sipp-bersama.js KODE_NASKAH_BERBARIS). */
 const KODE_BERBARIS = Object.freeze(Object.values(KODE));
+/**
+ * Keputusan 55 (1 Nov 2026): isian yang berisi SALINAN teks para pihak - disimpan apa adanya (tanpa aturan rapi isian 30 Okt).
+ * Sama dengan KODE_TEKS_PIHAK di ekstensi-sipp/isi-sipp-bersama.js (uji teks-pihak-1nov menjaganya).
+ */
+const KODE_TEKS_PIHAK_ISIAN = Object.freeze([...KODE_BERBARIS, "8436", "8437", "9355", "9491", "9681", "9164"]);
 
 const BATAS_MIN = 150;
 const BATAS_MAKS = 60000;
@@ -142,7 +143,8 @@ function susunParagraf(baris) {
     const jd = judulBaku(l);
     if (jd) {
       tutup();
-      hasil.push({ teks: jd, judul: jd });
+      // Keputusan 55: teks sub-judul PERSIS seperti di surat; bentuk bakunya (jd) hanya penanda untuk logika pemisahan.
+      hasil.push({ teks: l, judul: jd });
       barisAkhir = l;
       continue;
     }
@@ -240,182 +242,55 @@ function potongIsi(par) {
   return { isi, yakin, dibuang };
 }
 
-// ─── Sebutan pihak ───────────────────────────────────────────────────────────
-
-/**
- * Sebutan surat -> sebutan blangko. lawan/pelaku = sebutan konvensi perkara ini (Penggugat/Tergugat atau Pemohon/Termohon).
- * Kata pihak yang diikuti "Rekonvensi" tidak diubah (dalam rekonvensi sebutannya selalu Penggugat/Tergugat Rekonvensi).
- */
-function samakanPihak(teks, sebutan) {
-  const lawan = (sebutan && sebutan.lawan) || "Penggugat";
-  const pelaku = (sebutan && sebutan.pelaku) || "Tergugat";
-  let s = String(teks || "");
-  s = s.replace(/\bRekonpensi\b/g, "Rekonvensi").replace(/\bREKONPENSI\b/g, "REKONVENSI").replace(/\brekonpensi\b/g, "rekonvensi").replace(/\bKonpensi\b/g, "Konvensi");
-  // "Penggugat/Pemohon" -> sebutan perkara ini.
-  s = s.replace(/\b(?:Penggugat|Pemohon)\s*\/\s*(?:Penggugat|Pemohon)\b(?!\s+Rekonvensi)/g, lawan).replace(/\b(?:Tergugat|Termohon)\s*\/\s*(?:Tergugat|Termohon)\b(?!\s+Rekonvensi)/g, pelaku);
-  // "Termohon/Penggugat Rekonvensi" -> "Termohon Konvensi/Penggugat Rekonvensi".
-  s = s.replace(/\b(Penggugat|Pemohon|Tergugat|Termohon)(\s+Konvensi)?\s*\/\s*(Penggugat|Tergugat)\s+Rekonvensi\b/g, (_m, a, _k, b) => `${a} Konvensi/${b} Rekonvensi`);
-  // Kata pihak konvensi tunggal (bukan "... Rekonvensi"): sistem kata Pemohon/Termohon vs Penggugat/Tergugat menurut blangko.
-  const keLawan = (w) => (/^[A-Z]+$/.test(w) ? lawan.toUpperCase() : lawan);
-  const kePelaku = (w) => (/^[A-Z]+$/.test(w) ? pelaku.toUpperCase() : pelaku);
-  s = s.replace(/\b(Penggugat|Pemohon|PENGGUGAT|PEMOHON)\b(?!\s+(?:Rekonvensi|REKONVENSI|rekonvensi))/g, (w) => (lawan === "Penggugat" || lawan === "Pemohon" ? keLawan(w) : w));
-  s = s.replace(/\b(Tergugat|Termohon|TERGUGAT|TERMOHON)\b(?!\s+(?:Rekonvensi|REKONVENSI|rekonvensi))/g, (w) => (pelaku === "Tergugat" || pelaku === "Termohon" ? kePelaku(w) : w));
-  return s;
-}
-
-/** Kata ganti orang pertama -> sebutan penulis ("saya" -> "Tergugat"), kecuali surat kuasa ("klien kami"). */
-function gantiOrangPertama(teks, penulis) {
-  if (!penulis) return { teks, diganti: false };
-  // Surat kuasa: "klien kami" / "prinsipal kami" = pihak yang diwakili; "kami" lainnya = kuasa, dibiarkan.
-  if (/\b(?:klien|prinsipal|pemberi\s+kuasa)\s+kami\b|\bkuasa\s+hukum\s+kami\b|\bkami\s+selaku\s+kuasa\b/i.test(teks)) {
-    const t = teks.replace(/\b(?:klien|prinsipal|pemberi\s+kuasa)\s+kami\b/gi, penulis);
-    return { teks: t, diganti: t !== teks };
-  }
-  if (!/\b(?:saya|kami|aku)\b/i.test(teks)) return { teks, diganti: false };
-  const t = teks.replace(/\b(?:saya|kami|aku)\b/gi, penulis);
-  return { teks: t, diganti: true };
-}
-
-// ─── Titik koma di tengah butir ──────────────────────────────────────────────
-
-/**
- * Satu paragraf -> beberapa paragraf (keputusan pengguna: tanpa ";" di tengah butir).
- *   "...; bahwa ..." -> butir baru; rincian sebaris "...: a. X; b. Y" / "1) X; 2) Y" -> satu baris per rincian; ";" lainnya -> ",".
- */
-function pecahTitikKoma(teks, opsi) {
-  const o = opsi || {};
-  const { penanda } = pisahPenanda(teks);
-  // 1. Rincian sebaris berurutan sesudah ":" lalu ";" (": a. X; b. Y" / ": 1) X; 2) Y" / ": (a) X; (b) Y") - dipecah di depan tiap penanda.
-  const re = /([:;])\s+(\(?)([a-z]|\d{1,2})([.)])\s+(?=\S)/g;
-  const calon = [];
-  let m;
-  while ((m = re.exec(teks))) {
-    const p = m[3];
-    calon.push({ potong: m.index + 1, tanda: m[1], nilai: /^\d+$/.test(p) ? Number(p) : p.charCodeAt(0) - 96, gaya: `${m[2]}${/\d/.test(p) ? "1" : "a"}${m[4]}` });
-  }
-  const potong = [];
-  let rantai = [];
-  const tutupRantai = () => {
-    if (rantai.length >= 2) potong.push(...rantai.map((x) => x.potong));
-    rantai = [];
-  };
-  for (const x of calon) {
-    const akhir = rantai[rantai.length - 1];
-    if (akhir && x.tanda === ";" && x.gaya === akhir.gaya && x.nilai === akhir.nilai + 1) {
-      rantai.push(x);
-      continue;
-    }
-    tutupRantai();
-    if (x.tanda === ":" && x.nilai === 1) rantai = [x];
-  }
-  tutupRantai();
-  if (!potong.length) return pecahBahwa(teks, penanda, o);
-  const bagian = [];
-  let dari = 0;
-  for (const i of potong) {
-    bagian.push(teks.slice(dari, i).trim());
-    dari = i;
-  }
-  bagian.push(teks.slice(dari).trim());
-  return bagian.filter(Boolean).flatMap((x) => pecahBahwa(x, penanda, o));
-}
-
-function pecahBahwa(teks, penandaInduk, o) {
-  const bagian = String(teks).split(/;\s+(?=bahwa\b)/i);
-  const keluar = [];
-  bagian.forEach((b, i) => {
-    let t = b.trim();
-    if (i < bagian.length - 1) t = `${t};`;
-    if (i > 0) {
-      t = t.replace(/^bahwa\b/i, "Bahwa");
-      // Di bawah butir bernomor: butir "-"; pada surat tanpa nomor: paragraf "Bahwa" baru seperti paragraf lainnya.
-      if (penandaInduk || o.bernomor) t = `- ${t}`;
-    }
-    keluar.push(koma(t));
-  });
-  return keluar;
-}
-
-/** ";" yang tersisa di tengah paragraf (diikuti teks lain) -> ","; ";" di ujung tetap. */
-function koma(t) {
-  return String(t).replace(/;(?=\s*\S)/g, ",").replace(/,\s*,/g, ",");
-}
-
 // ─── Petitum ─────────────────────────────────────────────────────────────────
 
-/** Butir amar petitum tanpa nomor diberi nomor 1., 2., ... per sub-judul; yang sudah bernomor dibiarkan. */
-function nomoriPetitum(par) {
-  const awal = par.findIndex((p, i) => i > 0 && !p.judul && RE_PEMBUKA_PETITUM.test(p.teks));
-  if (awal < 0) return { par, awalPetitum: -1 };
-  const keluar = par.slice(0, awal + 1);
-  let n = 0;
-  for (const p of par.slice(awal + 1)) {
-    if (p.judul) {
-      n = 0;
-      keluar.push(p);
-      continue;
-    }
-    const { penanda, isi } = pisahPenanda(p.teks);
-    if (!penanda && RE_AMAR.test(isi)) {
-      n += 1;
-      keluar.push({ ...p, teks: `${n}. ${isi}` });
-      continue;
-    }
-    if (/^\d{1,2}[.)]$/.test(penanda)) n = Number(penanda.replace(/\D/g, "")) || n;
-    keluar.push(p);
-  }
-  return { par: keluar, awalPetitum: awal };
+/** Indeks paragraf pembuka petitum ("Berdasarkan ..., mohon ...") atau -1. Hanya untuk MENANDAI letak petitum; teksnya tidak diubah. */
+function cariAwalPetitum(par) {
+  return par.findIndex((p, i) => i > 0 && !p.judul && RE_PEMBUKA_PETITUM.test(p.teks));
 }
 
 // ─── Rakit ───────────────────────────────────────────────────────────────────
 
 /**
- * Teks dokumen -> naskah rapi.
+ * Teks dokumen -> naskah salinan (keputusan 55: isi surat apa adanya, hanya baris kosong/Enter yang dirapikan).
  * @param {string} teks
  * @param {{peran?:string, sebutan?:{lawan:string, pelaku:string}, penulis?:string, pisahRekonvensi?:boolean}} opsi
+ *   sebutan dan penulis diterima agar pemanggil lama tetap jalan, tetapi TIDAK dipakai untuk mengubah isi.
  * @returns {{konvensi:string, rekonvensi:string, yakin:boolean, alasan:string[], catatan:string[], dibuang:object, butir:number}}
  */
 function naskahDariSurat(teks, opsi) {
   const o = opsi || {};
-  const sebutan = o.sebutan || { lawan: "Penggugat", pelaku: "Tergugat" };
   const { baris, dibuang: dibuangBaris } = J.barisSurat(T.rapikanTeks(teks));
   const par = susunParagraf(baris);
   const potong = potongIsi(par);
   const alasan = [];
   const catatan = [];
   if (!potong.yakin) alasan.push("awal isi surat tidak terpisah jelas dari kop");
-  // Normalisasi tiap paragraf.
-  let diganti = false;
-  let hurufBesar = 0;
+  // Tiap paragraf disalin apa adanya. TJ.amankan hanya menyeragamkan huruf yang tak dapat disimpan ABT (kutip/garis lengkung, titik tiga).
+  let disesuaikan = 0;
   const bersih = [];
-  const bernomor = potong.isi.filter((p) => !p.judul && /^\d{1,2}[.)]/.test(rapikanPenanda(p.teks))).length >= 2;
   for (const p of potong.isi) {
     if (p.judul) {
       bersih.push(p);
       continue;
     }
-    let t = TJ.amankan(rapikanPenanda(p.teks));
-    t = samakanPihak(t, sebutan);
-    const g = gantiOrangPertama(t, o.penulis);
-    if (g.diganti) diganti = true;
-    t = g.teks;
-    if (J.bagianHuruf(t) >= 0.8 && t.replace(/[^A-Za-z]/g, "").length >= 20) hurufBesar += 1;
-    for (const x of pecahTitikKoma(t, { bernomor })) bersih.push({ teks: x.replace(/\s+/g, " ").trim(), judul: null });
+    const asli = p.teks.replace(/\s+/g, " ").trim();
+    const aman = TJ.amankan(p.teks);
+    if (aman !== asli) disesuaikan += 1;
+    bersih.push({ teks: aman, judul: null });
   }
-  if (diganti) catatan.push("kata ganti orang pertama (saya/kami) diganti sebutan pihak");
-  if (hurufBesar >= 2) alasan.push("surat diketik huruf besar semua - ejaan nama perlu diperiksa");
-  const { par: berNomor, awalPetitum } = nomoriPetitum(bersih);
+  if (disesuaikan) catatan.push(`${disesuaikan} paragraf memuat huruf yang tidak dapat disimpan ABT (kutip/garis lengkung atau titik tiga) - hanya huruf itu yang disesuaikan`);
+  const awalPetitum = cariAwalPetitum(bersih);
   // Pisah rekonvensi: sub-judul "Dalam Rekonvensi" SEBELUM petitum.
-  let konv = berNomor;
+  let konv = bersih;
   let rekon = [];
   if (o.pisahRekonvensi !== false) {
-    const batas = awalPetitum >= 0 ? awalPetitum : berNomor.length;
-    const r = berNomor.findIndex((p, i) => i < batas && p.judul === "Dalam Rekonvensi");
+    const batas = awalPetitum >= 0 ? awalPetitum : bersih.length;
+    const r = bersih.findIndex((p, i) => i < batas && p.judul === "Dalam Rekonvensi");
     if (r >= 0) {
-      konv = berNomor.slice(0, r);
-      rekon = berNomor.slice(r);
-      if (!konv.some((p) => p.judul === "Dalam Konvensi")) konv = [{ teks: "Dalam Konvensi", judul: "Dalam Konvensi" }, ...konv];
-    } else if (berNomor.some((p) => p.judul === "Dalam Rekonvensi")) {
+      konv = bersih.slice(0, r);
+      rekon = bersih.slice(r);
+    } else if (bersih.some((p) => p.judul === "Dalam Rekonvensi")) {
       catatan.push("bagian rekonvensi hanya ada di petitum - tidak dipisah");
     }
   }
@@ -488,8 +363,7 @@ function usulanNaskah(m) {
     daftar.sort((a, b) => String(a.d.diunggah || "").localeCompare(String(b.d.diunggah || "")) || a.indeks - b.indeks);
     const pilih = daftar[daftar.length - 1];
     const { d, k, tj } = pilih;
-    const penulis = J.sebutanPeran(k.peran === "duplik" && tj.pihak === "0046" ? "replik" : k.peran, tj.pihak, sebutan, false);
-    const n = naskahDariSurat(d.teks, { sebutan, penulis, pisahRekonvensi: Boolean(tj.rekon) });
+    const n = naskahDariSurat(d.teks, { pisahRekonvensi: Boolean(tj.rekon) });
     const ragu = [];
     if (k.ragu) ragu.push(`jenis berkas diragukan${k.catatan && k.catatan[0] ? ` (${k.catatan[0]})` : ""}`);
     if (!k.pihak) ragu.push("pengunggah tidak dikenali");
@@ -500,10 +374,29 @@ function usulanNaskah(m) {
     const tgl = tanggalPanjang(d.diunggah);
     const siapa = tj.pihak === "0046" ? sebutan.lawan : sebutan.pelaku;
     const asal = `dokumen e-Court "${d.judul}" (${siapa}${tgl ? `, diunggah ${tgl}` : ""})`;
-    const ket = `Diisi dari ${asal}. Kop, salam, tanda tangan, dan nomor halaman dibuang; paragraf, penomoran, dan sub-judul dirapikan - periksa sebelum dipakai.${ragu.length ? ` Belum diisi sendiri: ${ragu.join("; ")}.` : ""}${n.catatan.length ? ` Catatan: ${n.catatan.join("; ")}.` : ""}`;
+    const ket = `Diisi dari ${asal}. Kop, salam, tanda tangan, dan nomor halaman dibuang; isi surat disalin apa adanya (tidak dirapikan atau dibetulkan, hanya baris kosong yang dibuang) - periksa sebelum dipakai.${ragu.length ? ` Belum diisi sendiri: ${ragu.join("; ")}.` : ""}${n.catatan.length ? ` Catatan: ${n.catatan.join("; ")}.` : ""}`;
     const sumber = [{ asal: "gugatan-ecourt", kalimat: `e-Court: ${d.judul}${tgl ? ` (diunggah ${tgl})` : ""}${d.baca === "ocr" ? " (dibaca OCR)" : ""}` }];
     const dasar = { bentrok: "", jagaIsianLama: true, sumber, kodePola: `naskah-${tj.jenis}`, dokumen: d.judul, diunggah: String(d.diunggah || "") };
-    if (n.konvensi) usulan.push({ ...dasar, kode: tj.kode, nama: `${NAMA_JENIS[tj.jenis]} ${siapa} (uraian lengkap)`, nilai: n.konvensi, keyakinan, catatan: ket });
+    // Keputusan 56: dua berkas atau lebih untuk bagian yang sama -> semua berkas ikut sebagai `pilihan` (terakhir diunggah paling atas = bawaan);
+    // panel memberi tahu ada beberapa berkas dan petugas dapat melihat/memilih masing-masing. Satu berkas: tidak ada `pilihan`.
+    const banyak = daftar.length > 1;
+    const urutBaru = daftar.slice().reverse();
+    const naskahDari = (x) => (x === pilih ? n : naskahDariSurat(x.d.teks, { pisahRekonvensi: Boolean(tj.rekon) }));
+    const susunPilihan = (ambil) => {
+      if (!banyak) return {};
+      const daftarPilihan = [];
+      urutBaru.forEach((y, i) => {
+        const nilai = ambil(naskahDari(y));
+        if (!String(nilai || "").trim()) return;
+        const t = tanggalPanjang(y.d.diunggah);
+        daftarPilihan.push({ keadaan: `${y.d.judul}${t ? `, diunggah ${t}` : ""}${i === 0 ? " (terakhir diunggah, bawaan)" : ""}`, nilai });
+      });
+      return daftarPilihan.length > 1 ? { pilihan: daftarPilihan, berkasBanyak: daftar.length } : {};
+    };
+    const ketBanyak = banyak
+      ? ` Ada ${daftar.length} berkas ${NAMA_JENIS[tj.jenis].toLowerCase()} di e-Court (${urutBaru.map((y) => `"${y.d.judul}"${tanggalPanjang(y.d.diunggah) ? `, ${tanggalPanjang(y.d.diunggah)}` : ""}`).join("; ")}); yang disarankan adalah yang terakhir diunggah - berkas lain dapat dipilih di kotak pilihan berkas.`
+      : "";
+    if (n.konvensi) usulan.push({ ...dasar, kode: tj.kode, nama: `${NAMA_JENIS[tj.jenis]} ${siapa} (uraian lengkap)`, nilai: n.konvensi, keyakinan, catatan: ket + ketBanyak, ...susunPilihan((h) => h.konvensi) });
     // Kesimpulan dalam kalimat blangko ("... yang pada pokoknya <frasa>;", isian 8436/8437): frasa "tetap pada ..." dari surat yang
     // sama ditulis sendiri bila suratnya pasti; bentuk lain tetap saran dari jawabMenjawabEcourtService (keputusan sementara 31 Okt).
     if (tj.jenis === "kesimpulan" && keyakinan === "cukup") {
@@ -513,16 +406,16 @@ function usulanNaskah(m) {
           ...dasar,
           kode: tj.pihak === "0046" ? "8436" : "8437",
           nama: `Kesimpulan oleh ${siapa}`,
-          nilai: J.lcfirst(samakanPihak(TJ.amankan(kl.klausa), sebutan)),
+          nilai: TJ.amankan(kl.klausa),
           keyakinan: "cukup",
           kodePola: "kesimpulan-tetap-pada",
-          catatan: `Frasa "tetap pada ..." diambil apa adanya dari ${asal} - dicetak sesudah "yang pada pokoknya".`,
+          catatan: `Frasa "tetap pada ..." diambil apa adanya dari ${asal} (huruf, ejaan, dan sebutannya tidak diubah) - dicetak sesudah "yang pada pokoknya".`,
         });
       }
     }
     if (tj.rekon && n.rekonvensi) {
       const namaRekon = tj.jenis === "jawaban" ? "Gugatan rekonvensi" : tj.jenis === "replik" ? "Jawaban rekonvensi" : "Replik rekonvensi";
-      usulan.push({ ...dasar, kode: tj.rekon, nama: `${namaRekon} ${siapa} (uraian lengkap)`, nilai: n.rekonvensi, keyakinan, catatan: ket });
+      usulan.push({ ...dasar, kode: tj.rekon, nama: `${namaRekon} ${siapa} (uraian lengkap)`, nilai: n.rekonvensi, keyakinan, catatan: ket + ketBanyak, ...susunPilihan((h) => h.rekonvensi) });
     }
   }
   return usulan.sort((a, b) => Number(a.kode) - Number(b.kode));
@@ -541,15 +434,13 @@ function rapikanSimpanan(teks) {
 module.exports = {
   KODE,
   KODE_BERBARIS,
+  KODE_TEKS_PIHAK_ISIAN,
   judulBaku,
   rapikanPenanda,
   pisahPenanda,
   susunParagraf,
   potongIsi,
-  samakanPihak,
-  gantiOrangPertama,
-  pecahTitikKoma,
-  nomoriPetitum,
+  cariAwalPetitum,
   naskahDariSurat,
   tujuanDokumen,
   usulanNaskah,

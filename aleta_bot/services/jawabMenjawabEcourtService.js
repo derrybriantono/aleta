@@ -457,34 +457,33 @@ function potongKlausa(s, maks) {
   return { teks: akhiriKlausa(kepala.slice(0, spasi > 0 ? spasi : maks)), terpotong: true };
 }
 
-/** "Penggugat/Pemohon" -> sebutan perkara; "saya"/"kami" -> sebutan penulis bila aman. */
-function samakanSebutan(s, sebutan, penulis) {
-  let hasil = s;
-  const lawan = (sebutan && sebutan.lawan) || "Penggugat";
-  const pelaku = (sebutan && sebutan.pelaku) || "Tergugat";
-  hasil = hasil.replace(/\b(?:Penggugat|Pemohon)\s*\/\s*(?:Penggugat|Pemohon)\b/g, lawan).replace(/\b(?:Tergugat|Termohon)\s*\/\s*(?:Tergugat|Termohon)\b/g, pelaku);
-  let diganti = false;
+/**
+ * Keputusan 55 (1 Nov 2026): teks para pihak disalin APA ADANYA - sebutan ("Penggugat/Pemohon"), kata ganti orang pertama (saya/kami), huruf
+ * kapital, dan ejaan TIDAK diubah. Fungsi ini hanya MENDETEKSI kata ganti orang pertama (untuk catatan "periksa"); teksnya dikembalikan utuh.
+ * (Dulu samakanSebutan mengganti "saya"/"kami" dengan sebutan pihak.)
+ */
+function periksaOrangPertama(s, _sebutan, _penulis) {
+  const hasil = String(s == null ? "" : s);
   const klien = /\bklien\s+kami\b|\bkuasa\s+hukum\s+kami\b|\bkami\s+selaku\s+kuasa\b/i.test(hasil);
-  if (penulis && !klien && /\b(?:saya|kami|aku)\b/i.test(hasil)) {
-    hasil = hasil.replace(/\b(?:saya|kami|aku)\b/gi, penulis);
-    diganti = true;
-  }
-  return { teks: hasil, orangPertamaTersisa: klien && /\b(?:saya|kami|aku)\b/i.test(hasil), diganti };
+  return { teks: hasil, orangPertama: /\b(?:saya|kami|aku)\b/i.test(hasil), orangPertamaTersisa: klien && /\b(?:saya|kami|aku)\b/i.test(hasil), diganti: false };
 }
 
-/** Satu paragraf dalil -> satu klausa pokok. */
+/**
+ * Satu paragraf dalil -> satu klausa pokok. Keputusan 55: klausanya disalin APA ADANYA dari surat (tanpa menurunkan huruf besar, tanpa
+ * mengganti sebutan/kata ganti, tanpa memperbaiki ejaan); yang dikerjakan hanya MEMOTONG: nomor butir di depan dibuang, kalimat pertama
+ * (atau dua bila yang pertama sangat pendek) dipakai, dan dipotong di batas klausa bila terlalu panjang.
+ */
 function klausaPokok(par, opsi) {
   const o = opsi || {};
-  let bersih = tanpaNomor(par).replace(/\s+/g, " ");
-  // Surat diketik HURUF BESAR semua: diturunkan, sebutan pihak dikembalikan berhuruf awal besar; nama orang tak dapat dipulihkan -> ragu.
+  const bersih = tanpaNomor(par).replace(/\s+/g, " ");
+  // Surat diketik HURUF BESAR semua: tidak diturunkan (disalin apa adanya), hanya diberi tanda "periksa".
   const hurufBesar = bagianHuruf(bersih) >= 0.8 && bersih.replace(/[^A-Za-z]/g, "").length >= 12;
-  if (hurufBesar) bersih = bersih.toLowerCase().replace(/^(?:bahwa)\b/, "Bahwa").replace(/\b(penggugat|tergugat|pemohon|termohon|rekonvensi)\b/g, (x) => x.charAt(0).toUpperCase() + x.slice(1));
   const kalimat = pecahKalimat(bersih);
   let pertama = kalimat[0] || "";
   if (pertama.length < 45 && kalimat[1]) pertama = `${pertama.replace(/[.;:]$/, ";")} ${kalimat[1]}`;
-  const sama = samakanSebutan(pertama, o.sebutan, o.penulis);
+  const sama = periksaOrangPertama(pertama);
   const potong = potongKlausa(sama.teks, o.maks || BATAS_KLAUSA);
-  return { teks: potong.teks.replace(/^bahwa[,]?\s+/i, "Bahwa "), terpotong: potong.terpotong, orangPertamaTersisa: sama.orangPertamaTersisa, diganti: sama.diganti || hurufBesar, hurufBesar };
+  return { teks: potong.teks, terpotong: potong.terpotong, orangPertamaTersisa: sama.orangPertamaTersisa, diganti: false, orangPertama: sama.orangPertama, hurufBesar };
 }
 
 /** Surat tanpa gaya "Bahwa ...": tiap kalimat paragraf menjadi dalil sendiri (paling banyak 6 per paragraf). */
@@ -514,8 +513,11 @@ function pokokSurat(dalil, opsi) {
     butir.push(k.teks);
     panjang += k.teks.length;
     if (k.terpotong) terpotong = true;
-    if (k.orangPertamaTersisa || k.diganti) ragu = true;
-    if (k.hurufBesar) hurufBesar = true;
+    if (k.orangPertama || k.orangPertamaTersisa) ragu = true;
+    if (k.hurufBesar) {
+      hurufBesar = true;
+      ragu = true;
+    }
   }
   return { butir, terpotong, ragu, dipangkas, hurufBesar };
 }
@@ -564,8 +566,8 @@ function klausaKesimpulan(bersih) {
   const gabung = sumber.join(" ").replace(/\s+/g, " ");
   const potong = (s) => potongKlausa(s, 200).teks;
   let m = /\btetap\s+(?:pada|berpegang\s+pada|dengan)\s+(?:dalil[- ]dalil\s+)?(?:gugatan|permohonan|jawaban|replik|duplik|dalil)\w*[^.;]{0,140}/i.exec(gabung);
-  // Bunyi blangko: "tetap pada gugatan semula ..." - akhiran -nya dibuang (perubahan ejaan saja, bukan isi).
-  if (m) return { klausa: potong(m[0]).replace(/\b(gugatan|permohonan|jawaban|replik|duplik)nya\b/gi, "$1"), pola: "kesimpulan-tetap-pada" };
+  // Keputusan 55: klausanya disalin apa adanya ("tetap pada gugatannya" tidak diubah menjadi "gugatan").
+  if (m) return { klausa: potong(m[0]), pola: "kesimpulan-tetap-pada" };
   m = /\b(?:keberatan|tidak\s+(?:ingin|bersedia|mau|setuju|rela))\s+(?:untuk\s+)?(?:bercerai|diceraikan|perceraian|dicerai|cerai)[^.;]{0,120}/i.exec(gabung);
   if (m) return { klausa: potong(m[0]), pola: "kesimpulan-keberatan-cerai" };
   m = /\b(?:memohon|mohon)\s+(?:kepada\s+)?(?:yang\s+mulia\s+)?(?:majelis\s+hakim|hakim|pengadilan)[^.;]{0,50}?\s+(?:untuk\s+|agar\s+(?:kiranya\s+)?)?(?:menolak|mengabulkan|menerima|menjatuhkan|memutus)[^.;]{0,150}/i.exec(gabung);
@@ -620,8 +622,8 @@ function susunJawabMenjawab(masukan) {
     if (!bersih.yakin) catatanDok.push("kop dan isi surat tidak terpisah jelas - pokok diambil dari seluruh paragraf");
     if (pokok.terpotong) catatanDok.push("ada dalil yang dipotong di batas klausa");
     if (pokok.dipangkas) catatanDok.push(`${pokok.dipangkas} dalil lain tidak dimuat (terlalu panjang)`);
-    if (pokok.hurufBesar) catatanDok.push("surat diketik huruf besar semua dan diturunkan - ejaan nama dan sebutan perlu diperiksa");
-    else if (pokok.ragu) catatanDok.push("kata ganti orang pertama (saya/kami) diganti sebutan pihak - periksa");
+    if (pokok.hurufBesar) catatanDok.push("surat diketik huruf besar semua - disalin apa adanya, periksa sebelum dipakai");
+    else if (pokok.ragu) catatanDok.push("ada kata ganti orang pertama (saya/kami) - disalin apa adanya, periksa sebelum dipakai");
     if (d.baca === "ocr") catatanDok.push("dibaca OCR");
     const ragu = k.ragu || !bersih.yakin || pokok.ragu || d.baca === "ocr" || pokok.terpotong || !pokok.butir.length;
     diolah.push({ d, k, bersih, pokok, rekon, eksepsi, penulis, ragu, catatanDok });
@@ -690,20 +692,20 @@ function susunJawabMenjawab(masukan) {
     const x = kandidat[kandidat.length - 1];
     if (!x) continue;
     const kl = klausaKesimpulan(x.bersih);
-    const klausa = kl.klausa || (x.pokok.butir[0] ? x.pokok.butir[0].replace(/^Bahwa\s+/i, "") : "");
+    const klausa = kl.klausa || (x.pokok.butir[0] ? x.pokok.butir[0].replace(/^bahwa[,]?\s+/i, "") : "");
     if (!klausa) continue;
     x.klausaKesimpulan = klausa;
     hasil.usulan.push(
       tandai({
         kode,
         nama,
-        nilai: lcfirst(klausa),
+        nilai: klausa,
         keyakinan: "ragu",
         sumber: sumberDok(x.d, klausa),
         kodePola: kl.pola || "kesimpulan-dalil-pertama",
         catatan: kl.klausa
-          ? "Klausa diambil apa adanya dari surat kesimpulan di e-Court (kata 'yang pada pokoknya' sudah ada di blangko) - periksa sebelum dipakai."
-          : "Surat kesimpulan tidak memuat kalimat 'tetap pada ...' atau permohonan yang jelas; dipakai dalil pertamanya - periksa.",
+          ? "Klausa diambil apa adanya dari surat kesimpulan di e-Court (huruf, ejaan, dan sebutannya tidak diubah; kata 'yang pada pokoknya' sudah ada di blangko) - periksa sebelum dipakai."
+          : "Surat kesimpulan tidak memuat kalimat 'tetap pada ...' atau permohonan yang jelas; dipakai dalil pertamanya apa adanya - periksa.",
       })
     );
   }
@@ -720,7 +722,7 @@ function susunJawabMenjawab(masukan) {
         tandai({
           kode: KODE.pokokJawaban,
           nama: "Pokok jawaban Tergugat/Termohon (satu kalimat)",
-          nilai: lcfirst(pokokJawab.butir[0].replace(/^Bahwa\s+/i, "")),
+          nilai: pokokJawab.butir[0].replace(/^bahwa[,]?\s+/i, ""),
           keyakinan: "ragu",
           sumber: sumberDok(jawabUtama.d, pokokJawab.butir[0]),
           kodePola: "jawaban-pokok-pertama",
@@ -730,7 +732,7 @@ function susunJawabMenjawab(masukan) {
     }
     if (eks.ada && eks.kutipan) {
       const klausaEks = klausaPokok(eks.kutipan, { sebutan, penulis: jawabUtama.penulis, maks: 200 });
-      const nilai = lcfirst(klausaEks.teks.replace(/^Bahwa\s+/i, ""));
+      const nilai = klausaEks.teks.replace(/^bahwa[,]?\s+/i, "");
       if (eks.jenis === "arbitrase") {
         hasil.usulan.push(tandai({ kode: KODE.eksepsiArbitrase, nama: "Pokok eksepsi Tergugat/Termohon (satu kalimat)", nilai, keyakinan: "ragu", sumber: sumberDok(jawabUtama.d, eks.kutipan), kodePola: "jawaban-eksepsi-arbitrase", catatan: "Eksepsi tentang arbitrase dalam jawaban e-Court." }));
       } else if (eks.jenis === "kewenangan") {
@@ -750,7 +752,7 @@ function susunJawabMenjawab(masukan) {
         label: `Kesimpulan ${siapa} (tertulis, e-Court)`.replace(/\s+/g, " "),
         bagian: "jawab-menjawab",
         jenis: "",
-        teks: `yang pada pokoknya ${lcfirst(x.klausaKesimpulan)}`,
+        teks: `yang pada pokoknya ${x.klausaKesimpulan}`,
         kosong: [],
       });
       continue;
@@ -782,7 +784,7 @@ module.exports = {
   klausaKesimpulan,
   susunJawabMenjawab,
   // JJ2 (18 Okt): dipakai tanyaJawabEcourtService / buktiEcourtService (pembersih yang sama, tanpa menyalin).
-  samakanSebutan,
+  periksaOrangPertama,
   tanpaNomor,
   lcfirst,
   pecahKalimat,
