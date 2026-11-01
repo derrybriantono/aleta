@@ -164,7 +164,10 @@ describe("63 - arah putusan Tolak/NO: menu tiga pilihan, bawaan tidak tahu", () 
   });
   it("bawaan dan menu", () => {
     expect(BDS.bakukanPilihan({}, 0, { arah: "tolak" }).modus).toBe("tidak-tahu-apa");
-    expect(BDS.bakukanPilihan({}, 1, { arah: "no" }).modus).toBe("tidak-tahu-apa");
+    // keputusan lanjutan 1 Nov: NO -> "tahu sesuai gugatan"; Tolak tetap "tidak tahu"
+    expect(BDS.bakukanPilihan({}, 1, { arah: "no" }).modus).toBe("sama");
+    expect(BDS.bakukanPilihan({}, 1, { arah: "tolak" }).modus).toBe("tidak-tahu-apa");
+    expect(ARAH.opsiModus(BDS.DAFTAR_MODUS, "no", "sama")[0].opsi.map((x: string[]) => x[0])).toEqual(["tidak-tahu-apa", "sebaliknya", "sama"]);
     expect(BDS.bakukanPilihan({}, 0, {}).modus).toBe("sama");
     expect(BDS.bakukanPilihan({ modus: "sebaliknya" }, 0, {}).modus).toBe("sebaliknya");
     const g = ARAH.opsiModus(BDS.DAFTAR_MODUS, "tolak", "tidak-tahu-apa");
@@ -178,7 +181,11 @@ describe("63 - arah putusan Tolak/NO: menu tiga pilihan, bawaan tidak tahu", () 
     const h = susun("347", templat, POSITA["347"], [{ ke: 1, pihak: "P", modus: "tidak-tahu-apa" }, { ke: 2, pihak: "P", modus: "sebaliknya" }]);
     expect(cari(h, 0, /penyebab/i).jawab).toMatch(/tidak mengetahui/);
     expect(cari(h, 0, /melihat atau mendengar sendiri/i).jawab).toMatch(/tidak pernah melihat/);
-    expect(cari(h, 0, /upaya dari keluarga/i).jawab).toMatch(/tidak mengetahui/);
+    // upaya damai keluarga: pilihan sudah/belum, bawaan "sudah" juga pada "tidak tahu" (keputusan lanjutan 1 Nov)
+    const up = cari(h, 0, /upaya dari keluarga/i);
+    expect(up.jawab).toMatch(/sudah berupaya merukunkan/);
+    expect(up.pilihanJawab.map((x: any) => x.kunci)).toEqual(["sudah", "belum"]);
+    expect(cari(h, 1, /upaya dari keluarga/i).jawab).toMatch(/belum/);
     // saksi kedua: bunyi lain yang setara (dua saksi tidak sama persis)
     expect(cari(h, 1, /nafkah/i).jawab).toMatch(/Tergugat masih memberi(?:kan)? nafkah kepada Penggugat/);
     expect(cari(h, 1, /masih tinggal serumah/i).jawab).toMatch(/masih tinggal bersama/);
@@ -356,6 +363,59 @@ describe("tinjauan bagian E - pisah kurang 6 bulan, masih serumah, satu saksi", 
     const h = susun("347", templatDraf("347", "F", FOLDER.verstek), POSITA["347"], [{ ke: 1, pihak: "P", modus: "sama" }]);
     expect(h.saksi.length).toBe(1);
     expect(h.saksi[0].jawaban.filter((j: any) => j.jawab && !/\.\.\./.test(j.jawab)).length).toBeGreaterThan(10);
+  });
+});
+
+describe("keputusan lanjutan 1 Nov - upaya damai keluarga sudah/belum, tinggal dipilih", () => {
+  it("bot: pilihan sudah/belum, bawaan sudah (juga 'tidak tahu'); panel memasang dan menampilkan pilihannya", () => {
+    const templat = templatDraf("347", "F", FOLDER.verstek);
+    for (const modus of ["sama", "tidak-tahu-apa", "tahu-pisah"]) {
+      const h = susun("347", templat, POSITA["347"], [{ ke: 1, pihak: "P", modus }]);
+      const up = cari(h, 0, /upaya dari keluarga/i);
+      expect(up.pilihanJawab.map((x: any) => x.kunci), modus).toEqual(["sudah", "belum"]);
+      expect(up.jawab, modus).toBe(up.pilihanJawab[0].jawab);
+      expect(up.jawab).not.toMatch(/^(sudah|belum),/i);
+    }
+    const h = susun("347", templat, POSITA["347"], [{ ke: 1, pihak: "P", modus: "sama" }, { ke: 2, pihak: "P", modus: "sama" }]);
+    const a = cari(h, 0, /upaya dari keluarga/i);
+    const b = cari(h, 1, /upaya dari keluarga/i);
+    expect(a.pilihanJawab[1].jawab).not.toBe(b.pilihanJawab[1].jawab);
+    const ps = BDS.pasangJawaban([{ no: "1", tanya: a.tanya, jawab: "...", dasar: "..." }], [a]);
+    const r = ps.rows[0];
+    expect(ARAH.pilihanJawabBaris(r)).toMatchObject({ terpilih: "sudah" });
+    expect(ARAH.pilihanJawabBaris({ ...r, jawab: r.pilihanJawab[1].jawab })).toMatchObject({ terpilih: "belum" });
+    expect(ARAH.pilihanJawabBaris({ ...r, jawab: "Ketikan petugas;" })).toBeNull();
+  });
+});
+
+describe("keputusan lanjutan 1 Nov - BAS peralihan pembuktian ditentukan dulu dari tundaan sidang sebelumnya", () => {
+  const TP = require_(path.join(REPO, "aleta_bot/services/tahapPembuktianService.js"));
+  const sisi = (arr: Array<{ agenda: string; alasanDitunda?: string }>) =>
+    TP.tahapPembuktian(arr.map((x, i) => ({ sidangId: i + 1, tanggalSidang: `2026-0${i + 1}-01`, ...x }))).map((r: any) => r.sisi);
+  it("bot: 'ditunda untuk pembuktian Tergugat' -> T; 'pembuktian lanjutan Penggugat' / 'saksi Penggugat' -> P; tanpa pihak -> keputusan 52", () => {
+    expect(sisi([{ agenda: "Pembuktian", alasanDitunda: "pembuktian lanjutan Penggugat" }, { agenda: "Pembuktian", alasanDitunda: "ditunda untuk pembuktian Tergugat" }, { agenda: "Pembuktian" }])).toEqual(["P", "P", "T"]);
+    // tundaan menyebut Penggugat menang atas tanda selesai sebelumnya
+    expect(sisi([{ agenda: "Pembuktian", alasanDitunda: "Penggugat mencukupkan alat buktinya" }, { agenda: "Pembuktian", alasanDitunda: "saksi Penggugat" }, { agenda: "Pembuktian" }])).toEqual(["P", "T", "P"]);
+    // tanpa sebutan pihak: aturan tahap (lanjutan = pihak yang sedang membuktikan; T hanya sesudah P selesai)
+    expect(sisi([{ agenda: "Pembuktian", alasanDitunda: "pembuktian" }, { agenda: "Pembuktian" }])).toEqual(["P", "P"]);
+    // agenda umum yang ditunda untuk pembuktian Tergugat
+    expect(sisi([{ agenda: "Duplik", alasanDitunda: "pembuktian Tergugat" }, { agenda: "Sidang lanjutan" }])).toEqual([null, "T"]);
+    expect(sisi([{ agenda: "Pembuktian", alasanDitunda: "pembuktian Penggugat dan Tergugat" }, { agenda: "Pembuktian" }])).toEqual(["P", "PT"]);
+  });
+  it("portal: langkah ALUR 04 dari tundaan bila bot belum mengirim tahap; tahap bot dipakai pada agenda umum", async () => {
+    const { langkahAlur04, sisiTundaanPembuktian } = await import("@/lib/alur-bas");
+    expect(sisiTundaanPembuktian("Ditunda untuk pembuktian Tergugat")).toBe("T");
+    expect(sisiTundaanPembuktian("pembuktian lanjutan Penggugat")).toBe("P");
+    expect(sisiTundaanPembuktian("saksi Penggugat")).toBe("P");
+    expect(sisiTundaanPembuktian("pembuktian")).toBeNull();
+    expect(langkahAlur04(6, "Pembuktian", null, "ditunda untuk pembuktian Tergugat").kode).toBe("7");
+    expect(langkahAlur04(8, "Pembuktian", null, "pembuktian lanjutan Penggugat").kode).toBe("6");
+    expect(langkahAlur04(6, "Sidang lanjutan", null, "saksi Tergugat").kode).toBe("7");
+    expect(langkahAlur04(6, "Sidang lanjutan", "T", "").kode).toBe("7");
+    // agenda tegas menang; tahap bot menang atas tundaan
+    expect(langkahAlur04(6, "Pembuktian Penggugat", null, "pembuktian Tergugat").kode).toBe("6");
+    expect(langkahAlur04(6, "Pembuktian", "P", "pembuktian Tergugat").kode).toBe("6");
+    expect(langkahAlur04(6, "Kesimpulan", null, "pembuktian Tergugat").kode).toBe("8");
   });
 });
 

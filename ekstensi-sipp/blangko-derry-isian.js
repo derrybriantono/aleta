@@ -6794,7 +6794,12 @@
     // 1 Nov (keputusan 61): butir dari gugatan/jawaban atau pengetahuan langsung yang disusun otomatis - tanda di panel saja.
     const pr = SA() ? SA().peringatanBaris(r) : null;
     const capPr = pr ? `<span class="bd-asallencana peringatan" data-peringatan="${esc(pr.jenis)}">⚠ ${esc(pr.label)} <button type="button" class="bd-ikon bd-asalinfo" data-bd2="infoasal" title="${esc(pr.teks)}" aria-label="Peringatan: ${esc(pr.teks)}">ⓘ</button></span>` : "";
-    return capPr + isiCapAsalLama(r, a);
+    // 1 Nov (keputusan pengguna): jawaban yang tinggal dipilih (upaya damai keluarga sudah/belum).
+    const pj = SA() ? SA().pilihanJawabBaris(r) : null;
+    const capPj = pj
+      ? `<select class="bd-asalpilih" data-pilihjawab="1" aria-label="Pilih jawaban">${pj.opsi.map((x) => `<option value="${esc(x.kunci)}"${x.kunci === pj.terpilih ? " selected" : ""}>${esc(x.label)}</option>`).join("")}</select>`
+      : "";
+    return capPj + capPr + isiCapAsalLama(r, a);
   }
   function isiCapAsalLama(r, a) {
     const m = TP();
@@ -10237,11 +10242,29 @@
     }
     return false;
   }
+  /**
+   * 1 Nov (keputusan pengguna): pilihan jawaban (upaya damai keluarga sudah/belum) mengganti bunyi kotak jawaban di sebelahnya;
+   * perubahan berjalan lewat jalur ketikan biasa (asal "ketikan petugas", tersimpan otomatis seperti ketikan).
+   */
+  function pilihJawabTj(sel) {
+    const cap = sel.closest ? sel.closest("[data-asalcap]") : null;
+    const ta = cap ? cap.previousElementSibling : null;
+    if (!ta || !ta.hasAttribute || !ta.hasAttribute("data-asal")) return;
+    let r = null;
+    const ps = S.tjSisi ? tjPasangan(S.tjBuka) : null;
+    if (ta.hasAttribute("data-sba") && ps) r = S.tj[ps[Number(ta.getAttribute("data-sk"))]].rows[Number(ta.getAttribute("data-sba"))];
+    else if (ta.hasAttribute("data-tjb") && S.tj[S.tjBuka]) r = S.tj[S.tjBuka].rows[Number(ta.getAttribute("data-tjb"))];
+    const pil = r && Array.isArray(r.pilihanJawab) ? r.pilihanJawab.find((x) => x.kunci === sel.value) : null;
+    if (!pil) return;
+    ta.value = pil.jawab;
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+  }
   function saatUbah(e) {
     const t = e.target;
     if (t && t.id === "bd-muattpl") return segarRekapMuat();
     const skKunci = t.getAttribute && t.getAttribute("data-skkunci");
     if (skKunci) return ubahPilSaksi(skKunci, t.getAttribute("data-skfld"), t);
+    if (t.hasAttribute && t.hasAttribute("data-pilihjawab")) return pilihJawabTj(t);
     const bunyiKode = t.getAttribute && t.getAttribute("data-bunyi");
     if (bunyiKode) {
       // Bunyi dipilih petugas: itu tindakan manusia (dihitung ketikan), disimpan lewat jalur simpan yang sama.

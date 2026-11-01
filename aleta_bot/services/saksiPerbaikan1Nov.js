@@ -641,6 +641,36 @@ function perbaiki(hasil, k) {
     });
   });
 
+  // Keputusan pengguna 1 Nov (lanjutan): upaya damai keluarga = PILIHAN "sudah" / "belum", tinggal dipilih di panel (bawaan "sudah",
+  // juga pada arah Tolak/NO "tidak tahu"; "keterangan sebaliknya" bawaan "belum" karena saksinya menerangkan rumah tangga baik).
+  if (cerai) {
+    hasil.saksi.forEach((s, idx) => {
+      const masuk = (Array.isArray(o.saksi) && o.saksi[idx]) || {};
+      if ((s.pihak || masuk.pihak) === "T") return;
+      const modus = teks(masuk.modus || s.modus);
+      (s.jawaban || []).forEach((j) => {
+        if (!j || j.belumTerisi || !/upaya/i.test(teks(j.tanya)) || !/rukun|damai/i.test(teks(j.tanya))) return;
+        const kini = teks(j.jawab);
+        const genap = idx % 2 === 0;
+        const dariData = !MODUS_ARAH.includes(modus) && /dirukunkan|didamaikan|merukunkan|mendamaikan|dinasihati/i.test(kini) && !/belum|tidak (?:tahu|mengetahui)/i.test(kini) && !adaTitik(kini);
+        const sudah = dariData ? kini : kalimat(genap ? `Keluarga sudah berupaya merukunkan ${P} dan ${T}, tetapi tidak berhasil` : `Pihak keluarga pernah mencoba merukunkan ${P} dan ${T}, namun tidak berhasil`);
+        const belum =
+          modus === "sebaliknya" && kini && !adaTitik(kini)
+            ? kini
+            : kalimat(genap ? `Setahu saya keluarga belum pernah berupaya merukunkan ${P} dan ${T}` : `Sepengetahuan saya belum ada upaya keluarga untuk merukunkan ${P} dan ${T}`);
+        const bawaan = modus === "sebaliknya" ? "belum" : "sudah";
+        j.pilihanJawab = [
+          { kunci: "sudah", label: "Sudah ada upaya keluarga", jawab: sudah },
+          { kunci: "belum", label: "Belum ada upaya keluarga", jawab: belum },
+        ];
+        j.jawab = bawaan === "sudah" ? sudah : belum;
+        delete j.pilihan;
+        if (j.usulan) j.usulan.teks = j.jawab;
+        else j.usulan = { teks: j.jawab, yakin: "cukup", sumber: "pilihan upaya keluarga", ket: "Pilih sudah/belum menurut keterangan saksi." };
+      });
+    });
+  }
+
   const polos = (x) => (x ? (x.jawaban || []).map(({ no, tanya, jawab }) => ({ no, tanya, jawab })) : []);
   hasil.saksi1 = polos(hasil.saksi[0]);
   hasil.saksi2 = polos(hasil.saksi[1]);

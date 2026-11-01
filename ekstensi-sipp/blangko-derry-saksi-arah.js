@@ -55,7 +55,10 @@
   function modusBawaan(urut, opsi) {
     const o = opsi || {};
     if (o.pihak === "T") return "sama";
-    if (o.arah === "tolak" || o.arah === "no") return "tidak-tahu-apa";
+    // Keputusan pengguna 1 Nov (lanjutan): Tolak -> "tidak tahu"; NO -> "tahu sesuai gugatan" (NO kebanyakan cacat formil, saksinya
+    // tahu). Menu tiga pilihan tetap tampil pada keduanya.
+    if (o.arah === "tolak") return "tidak-tahu-apa";
+    if (o.arah === "no") return "sama";
     return Number(urut) === 0 ? "sama" : "sebagian";
   }
 
@@ -160,7 +163,21 @@
     return p.filter((x) => x.dimuat && berisi(x)).length === 1 && p.filter(kosong).length === p.length - 1;
   }
 
-  const api = { satuSaksi, DAFTAR_MODUS_ARAH, MODUS_ARAH, arahPutusan, modusBawaan, opsiModus, daftarDasarT, dasarSah, pilihSetPihak, naskahT, peringatanBaris, TEKS_PERINGATAN, KODE_JAWABAN, KODE_DUPLIK };
+  /**
+   * 1 Nov 2026 (keputusan pengguna): jawaban yang tinggal dipilih (upaya damai keluarga sudah/belum). Pilihan tampil selama bunyi
+   * jawaban masih SAMA dengan salah satu pilihan (sudah diketik lain = tidak ditampilkan). null bila baris tidak berpilihan.
+   * @returns {{opsi: Array<{kunci, label, jawab}>, terpilih: string}|null}
+   */
+  function pilihanJawabBaris(r) {
+    const b = r && typeof r === "object" ? r : {};
+    const pj = Array.isArray(b.pilihanJawab) ? b.pilihanJawab.filter((x) => x && teks(x.jawab).trim()) : [];
+    if (pj.length < 2) return null;
+    const kini = teks(b.jawab).replace(/\s+/g, " ").trim();
+    const cocok = pj.find((x) => teks(x.jawab).replace(/\s+/g, " ").trim() === kini);
+    return cocok ? { opsi: pj, terpilih: teks(cocok.kunci) } : null;
+  }
+
+  const api = { pilihanJawabBaris, satuSaksi, DAFTAR_MODUS_ARAH, MODUS_ARAH, arahPutusan, modusBawaan, opsiModus, daftarDasarT, dasarSah, pilihSetPihak, naskahT, peringatanBaris, TEKS_PERINGATAN, KODE_JAWABAN, KODE_DUPLIK };
   globalThis.AletaBdSaksiArah = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();

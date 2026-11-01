@@ -260,6 +260,10 @@
         // Kontrak bersama {teks, yakin, sumber} (+ ket untuk ikon i) dari pengisi jawaban bersumber; tampilan menghitung r.asal darinya.
         if (b.usulan && typeof b.usulan === "object" && b.usulan.yakin) r.usulan = { teks: usul, yakin: String(b.usulan.yakin), sumber: String(b.usulan.sumber || ""), ket: String(b.usulan.ket || ""), ...(b.usulan.kodePola ? { kodePola: String(b.usulan.kodePola) } : {}), ...(b.usulan.peringatan ? { peringatan: String(b.usulan.peringatan) } : {}) };
         else delete r.usulan;
+        // 1 Nov 2026 (keputusan pengguna): jawaban berpilihan yang tinggal dipilih (upaya damai keluarga sudah/belum).
+        const pj = Array.isArray(b.pilihanJawab) ? b.pilihanJawab.filter((x) => x && x.jawab && !RE_ALETA.test(String(x.jawab))).slice(0, 4) : [];
+        if (pj.length >= 2) r.pilihanJawab = pj.map((x) => ({ kunci: String(x.kunci || ""), label: String(x.label || x.kunci || ""), jawab: rapikanJawaban(x.jawab) }));
+        else delete r.pilihanJawab;
         hasil.terisi += 1;
         if (adaTitik(usul)) hasil.tetapTitik += 1;
         return;
