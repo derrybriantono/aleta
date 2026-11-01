@@ -68,7 +68,8 @@ function susun(paket: Apa, keadaan: Record<string, unknown>, jenis: string | str
   const saksi = Array.from({ length: jumlah }, (_v, i) => ({ pihak: "P", jenis: Array.isArray(jenis) ? jenis[i % jenis.length] : jenis }));
   // slot isian petugas (lama, sejak, daftar, ...) diisi supaya "..." yang tersisa hanya yang tidak disengaja
   const slot = { lama: "dua tahun", sejak: "tahun 2020", daftar: "alasan pertama dan kedua", isi: "perselisihan terus-menerus", pekerjaan: "petani", penghasilan: "dua juta rupiah", waktu: "tahun 2020", peristiwa: "kejadian di rumah", hubungan: "tetangga" };
-  return Mesin.susunSaksi(paket, { keadaan, benih, saksi, variabel: variabelPenuh, slot });
+  // butir "jarang" ikut diuji walau tidak masuk susunan bawaan: petugas dapat menambahkannya
+  return Mesin.susunSaksi(paket, { keadaan, benih, saksi, variabel: variabelPenuh, slot, tingkat: ["inti", "pilihan", "tambahan", "jarang"] });
 }
 
 const rapi = (t: string) => Mesin.rapikan(t);
@@ -172,6 +173,9 @@ describe("semua kombinasi dropdown dan centangan menghasilkan keterangan yang be
     const dasar = Mesin.keadaanBawaan(paket, {});
     const id = (ke: Record<string, unknown>) => Mesin.pertanyaanAktif(paket, ke, "P").map((q: Apa) => q.id);
     expect(id(dasar)).not.toContain("q-umur-mendesak");
+    // bawaan mengikuti praktik PA Donggala: butir rincian "jarang" tidak ikut susunan bawaan
+    expect(id(dasar).length).toBeLessThanOrEqual(32);
+    expect(id(dasar)).not.toContain("q-pa-kesehatan-anak-aa");
     expect(id({ ...dasar, umurAnak: "6-sampai-12" })).toContain("q-umur-mendesak");
     expect(id({ ...dasar, umurAnak: "12-sampai-18" })).toContain("q-umur-perlindungan");
     expect(id({ ...dasar, asuhanAnak: "lembaga" })).toEqual(expect.arrayContaining(["q-lembaga", "q-terlantar"]));
