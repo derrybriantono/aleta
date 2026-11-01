@@ -13,6 +13,7 @@ import { ambil, kirimJson } from "@/lib/aleta-ai/klien";
 import { LABEL_MODE, formatRupiah, type PengaturanAi } from "@/lib/aleta-ai/kontrak";
 import { apiPath } from "@/lib/base-path";
 
+import { AletaAiProyekKelola } from "./aleta-ai-proyek-kelola";
 import { MatriksKemampuanAi } from "./matriks-kemampuan";
 import { KartuPromoAi } from "./promo-ai";
 
@@ -607,6 +608,8 @@ export function AletaAiPengaturan({ pengguna, peran = [] }: { pengguna: Pengguna
           </ul>
         ) : null}
       </Bagian>
+
+      <AletaAiProyekKelola pengguna={pengguna} peran={peran} />
 
       <Bagian judul="Isi saldo pengguna" deskripsi="Menambah saldo pengguna. Untuk mengurangi atau membetulkan saldo, pakai Koreksi saldo (alasan wajib). Setiap perubahan tercatat sebagai mutasi.">
         <div className="grid gap-4 md:grid-cols-2">

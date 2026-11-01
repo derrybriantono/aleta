@@ -8,6 +8,8 @@ import { PESAN_NONAKTIF_KUNCI, PESAN_NONAKTIF_PROYEK, PESAN_NONAKTIF_SAKLAR } fr
 import { bacaPengaturan, bacaRute, bacaTarif } from "@/server/modules/aleta-ai/pengaturan";
 import { statusPromo, type StatusPromo } from "@/server/modules/aleta-ai/promo";
 import { proyekAktif } from "@/server/modules/aleta-ai/proyek";
+import { daftarPilihanProyek } from "@/server/modules/aleta-ai/proyek-kelola";
+import type { PilihanProyek } from "@/lib/aleta-ai/proyek-kelola";
 import { daftarMutasi, saldoPengguna } from "@/server/modules/aleta-ai/saldo";
 
 /**
@@ -26,6 +28,8 @@ export type RingkasAi = {
   superAdmin: boolean;
   pemicu: Array<{ kode: string; label: string; kelompok: string; mode: string; grup: string }>;
   proyekVersi: number;
+  /** Proyek kelolaan yang boleh dipilih pengguna ini saat bertanya (hanya nama + deskripsi; kosong = hanya proyek bawaan satker). */
+  proyekPilihan: PilihanProyek[];
   /** Program promosi gratis untuk pengguna ini; tidak ada bila tidak berlaku bagi pengguna ini. */
   promo?: StatusPromo;
 };
@@ -58,6 +62,7 @@ export async function ringkasAi(db: AletaDatabase, pelaku: PelakuAi): Promise<Ri
     superAdmin: pelaku.superAdmin,
     pemicu,
     proyekVersi: proyek?.versi ?? 0,
+    proyekPilihan: await daftarPilihanProyek(db, pelaku),
   };
 }
 

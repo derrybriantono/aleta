@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import type { AletaDatabase } from "@/server/db/client";
+import { bacaPilihanPercakapan } from "@/server/modules/aleta-ai/proyek-kelola";
 import { ApiError } from "@/server/shared/errors";
 import { decryptCredentialSecret, encryptCredentialSecret } from "@/server/shared/security";
 
@@ -105,7 +106,7 @@ type BarisPesan = {
   dibuat_at: string;
 };
 
-export async function ambilPercakapan(db: AletaDatabase, pemilikId: string, percakapanId: string): Promise<{ id: string; judul: string; pesan: PesanTampil[] }> {
+export async function ambilPercakapan(db: AletaDatabase, pemilikId: string, percakapanId: string): Promise<{ id: string; judul: string; pesan: PesanTampil[]; proyekId: string }> {
   const p = await wajibMilik(db, pemilikId, percakapanId);
   const baris = await db.queryAll<BarisPesan>(`SELECT id, peran, isi, mode_label, status, biaya_rp, gratis, dibuat_at FROM aleta_ai_obrolan_pesan WHERE percakapan_id = ? ORDER BY dibuat_at, id`, [p.id]);
   const pesan: PesanTampil[] = [];
@@ -124,7 +125,7 @@ export async function ambilPercakapan(db: AletaDatabase, pemilikId: string, perc
       ...(ai ? { status: b.status } : {}),
     });
   }
-  return { id: p.id, judul: bukaIsi(p.judul) || JUDUL_BAWAAN, pesan };
+  return { id: p.id, judul: bukaIsi(p.judul) || JUDUL_BAWAAN, pesan, proyekId: await bacaPilihanPercakapan(db, p.id) };
 }
 
 export async function ubahJudul(db: AletaDatabase, pemilikId: string, percakapanId: string, judul: string): Promise<{ id: string; judul: string }> {

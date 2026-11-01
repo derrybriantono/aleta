@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ListChecks, PanelLeftOpen, Settings2, Sparkles, Wallet } from "lucide-react";
+import { FolderOpen, ListChecks, PanelLeftOpen, Settings2, Sparkles, Wallet } from "lucide-react";
 
 import {
   formatRupiah,
@@ -16,6 +16,7 @@ import {
   type Pemicu,
 } from "@/lib/aleta-ai/kontrak";
 import { ambil, kirimJson, kirimPesanAlir } from "@/lib/aleta-ai/klien";
+import { pisahUsulanMemori } from "@/lib/aleta-ai/proyek-kelola";
 import { cn } from "@/lib/utils";
 
 import { DaftarPesan, Sambutan, type AlirAktif } from "./daftar-pesan";
@@ -71,6 +72,7 @@ export function AletaAiChat() {
   const [status, setStatus] = useState("");
   const [pemicuDipilih, setPemicuDipilih] = useState<string | null>(null);
   const [isianLuar, setIsianLuar] = useState<{ teks: string; nomor: number } | null>(null);
+  const [proyekId, setProyekId] = useState("");
   const [laci, setLaci] = useState(false);
   const [riwayatLebar, setRiwayatLebar] = useState(true);
 
@@ -131,6 +133,7 @@ export function AletaAiChat() {
       }
       setJudulAktif(r.data.judul);
       setPesan(r.data.pesan ?? []);
+      setProyekId(r.data.proyekId ?? "");
     },
     []
   );
@@ -146,6 +149,19 @@ export function AletaAiChat() {
     setStatus("");
     setPemicuDipilih(null);
     setMemuatPesan(false);
+  }
+
+  // Memilih proyek: pada percakapan yang sudah ada langsung disimpan; pada percakapan baru berlaku saat pesan pertama dikirim.
+  async function pilihProyek(nilai: string) {
+    if (sibuk.current) return;
+    const lama = proyekId;
+    setProyekId(nilai);
+    if (!aktifId) return;
+    const r = await kirimJson<unknown>(`/api/aleta-ai/percakapan/${encodeURIComponent(aktifId)}`, "PATCH", { proyekId: nilai });
+    if (!r.ok) {
+      setProyekId(lama);
+      setGalat(r.galat);
+    }
   }
 
   async function ubahNama(id: string, judul: string) {
@@ -177,7 +193,7 @@ export function AletaAiChat() {
     let id = aktifId;
     if (!id) {
       const judul = judulDariTeks(isi);
-      const r = await kirimJson<{ id: string }>("/api/aleta-ai/percakapan", "POST", { judul });
+      const r = await kirimJson<{ id: string }>("/api/aleta-ai/percakapan", "POST", { judul, ...(proyekId ? { proyekId } : {}) });
       if (!r.ok) {
         setGalat(r.galat);
         sibuk.current = false;
@@ -218,9 +234,10 @@ export function AletaAiChat() {
         setStatus(`Membaca ${e.label || "data"} dari SIPP...`);
       } else if (e.jenis === "selesai") {
         ditangani = true;
+        // Baris usulan memori proyek hanya untuk Super Admin (di pengaturan); tidak ditampilkan di percakapan.
         setPesan((p) => [
           ...p,
-          { id: e.pesanId, peran: "ai", isi: kumpul, mode: e.mode, label: e.label, biayaRp: e.biayaRp, waktu: new Date().toISOString() },
+          { id: e.pesanId, peran: "ai", isi: pisahUsulanMemori(kumpul).teks, mode: e.mode, label: e.label, biayaRp: e.biayaRp, waktu: new Date().toISOString() },
         ]);
         setSaldoRp(e.saldoRp);
         setDaftar((d) => d.map((x) => (x.id === id ? { ...x, diperbarui: new Date().toISOString() } : x)));
@@ -368,6 +385,29 @@ export function AletaAiChat() {
             </Link>
           ) : null}
         </header>
+        {ringkas.proyekPilihan?.length ? (
+          <div className="flex items-center gap-2 border-b border-border/60 px-3 py-1.5 sm:px-4" data-testid="pemilih-proyek">
+            <FolderOpen className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+            <label htmlFor="ai-pilih-proyek" className="shrink-0 text-xs font-medium text-muted-foreground">
+              Proyek
+            </label>
+            <select
+              id="ai-pilih-proyek"
+              value={proyekId}
+              disabled={alir !== null}
+              onChange={(e) => void pilihProyek(e.target.value)}
+              className="h-8 min-w-0 flex-1 rounded-lg border border-input/90 bg-background/60 px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60 sm:max-w-sm"
+            >
+              <option value="">Proyek bawaan satker</option>
+              {ringkas.proyekPilihan.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.nama}
+                </option>
+              ))}
+            </select>
+            {proyekId ? <span className="hidden min-w-0 truncate text-xs text-muted-foreground md:inline">{ringkas.proyekPilihan.find((p) => p.id === proyekId)?.deskripsi}</span> : null}
+          </div>
+        ) : null}
         <PitaPromoAi awal={ringkas.promo} picu={pesan.length} />
 
         {kosong ? (

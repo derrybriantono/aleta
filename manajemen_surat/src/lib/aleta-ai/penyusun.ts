@@ -21,6 +21,7 @@ import type { EffortAi, RuteKelompok, TabelRute } from "@/lib/aleta-ai/rute";
 import { susunInstruksiPengklasifikasi } from "@/lib/aleta-ai/rute";
 import type { AlatApi } from "@/lib/aleta-ai/alat-data";
 import type { ModulProyek } from "@/lib/aleta-ai/proyek";
+import { PETUNJUK_USULAN_MEMORI, rakitBlokPengetahuan, rakitBlokProyekTetap, type BagianTerpilih, type MemoriProyek } from "@/lib/aleta-ai/proyek-kelola";
 
 export type BlokSistem = { type: "text"; text: string; cache_control?: { type: "ephemeral" } };
 export type BlokTeks = { type: "text"; text: string; cache_control?: { type: "ephemeral" } };
@@ -110,6 +111,24 @@ export function susunRiwayat(riwayat: readonly PesanRiwayat[]): PesanApi[] {
   return gabung;
 }
 
+/**
+ * Proyek kelolaan Super Admin yang dipilih pada percakapan (isi dibaca server; tidak pernah ke peramban).
+ *   sertakanBawaan = true  : Core Prompt + modul V4.5 tetap ikut; instruksi proyek, memori, pengetahuan ditambahkan di bawahnya.
+ *   sertakanBawaan = false : instruksi proyek MENGGANTIKAN Core Prompt (pemanggil juga tidak mengirim modul V4.5).
+ * Urutan blok menjaga awalan cache: [core] [modul] [instruksi+memori: tetap] [pengetahuan: berubah per pertanyaan].
+ */
+export type ProyekDipilih = {
+  nama: string;
+  instruksi: string;
+  sertakanBawaan: boolean;
+  memori: readonly MemoriProyek[];
+  pengetahuan: readonly BagianTerpilih[];
+  /** true = ALETA Ai diminta mengusulkan memori baru (menunggu persetujuan Super Admin). */
+  usulMemori: boolean;
+};
+
+export const PENGANTAR_TANPA_BAWAAN = "Ikuti instruksi proyek di bawah ini.";
+
 export function susunPermintaan(opsi: {
   rute: RuteKelompok;
   corePrompt: string;
@@ -119,13 +138,24 @@ export function susunPermintaan(opsi: {
   fallback: boolean;
   /** Tahap 2a: alat data yang boleh dipakai pelaku ini (sudah disaring hak peran). */
   alat?: AlatApi[];
+  /** Proyek kelolaan yang dipilih (tidak ada = proyek bawaan satker saja, perilaku lama). */
+  proyek?: ProyekDipilih;
 }): PermintaanAi {
   const adaAlat = Boolean(opsi.alat?.length);
-  const system: BlokSistem[] = [
-    { type: "text", text: `${adaAlat ? PENGANTAR_ALETA_DATA : PENGANTAR_ALETA}\n\n${opsi.corePrompt.trim()}`, cache_control: { type: "ephemeral" } },
-  ];
-  const blokModul = rakitBlokModul(opsi.modul);
+  const proyek = opsi.proyek;
+  const mandiri = Boolean(proyek && !proyek.sertakanBawaan);
+  const core = mandiri ? (proyek as ProyekDipilih).instruksi : opsi.corePrompt;
+  let pengantar = adaAlat ? PENGANTAR_ALETA_DATA : PENGANTAR_ALETA;
+  if (mandiri) pengantar = pengantar.replace("Ikuti Core Prompt Proyek ALETA AI PA V4.5 di bawah ini.", PENGANTAR_TANPA_BAWAAN);
+  const system: BlokSistem[] = [{ type: "text", text: `${pengantar}\n\n${core.trim()}`.trimEnd(), cache_control: { type: "ephemeral" } }];
+  const blokModul = mandiri ? "" : rakitBlokModul(opsi.modul);
   if (blokModul) system.push({ type: "text", text: blokModul, cache_control: { type: "ephemeral" } });
+  if (proyek) {
+    const tetap = [rakitBlokProyekTetap({ nama: proyek.nama, instruksi: proyek.instruksi, memori: proyek.memori, instruksiTerpisah: !mandiri }), proyek.usulMemori ? PETUNJUK_USULAN_MEMORI : ""].filter(Boolean).join("\n\n");
+    if (tetap) system.push({ type: "text", text: tetap, cache_control: { type: "ephemeral" } });
+    const pengetahuan = rakitBlokPengetahuan(proyek.pengetahuan);
+    if (pengetahuan) system.push({ type: "text", text: pengetahuan });
+  }
 
   const messages = susunRiwayat(opsi.riwayat);
   // Titik cache ketiga: akhir riwayat, supaya giliran berikutnya membaca riwayat dari cache.
