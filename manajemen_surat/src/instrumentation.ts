@@ -166,6 +166,18 @@ export async function register() {
     mulaiKesehatanBerkala(getDatabase);
   }
   /* === AKHIR PUSAT KESEHATAN === */
+  /* === PENJAGA SERVER 1 Nov (N4) === putaran 5 menit (mulai 2 menit sesudah menyala): memantau ruang disk, cadangan, layanan,
+     sertifikat, lalu mengabari Super Admin lewat WhatsApp (satu pesan per kejadian, jam tenang malam kecuali merah). HANYA mengabari -
+     tidak membersihkan/menghapus apa pun. Saklar kabar merah/peringatan di Admin > Kapasitas penyimpanan. Matikan seluruhnya
+     dengan ALETA_PENJAGA_SERVER=0. */
+  if (process.env.ALETA_PENJAGA_SERVER !== "0") {
+    const [{ mulaiPenjagaBerkala }, { getDatabase }] = await Promise.all([
+      import("@/server/modules/penjaga-server/layanan"),
+      import("@/server/db/client"),
+    ]);
+    mulaiPenjagaBerkala(getDatabase);
+  }
+  /* === AKHIR PENJAGA SERVER === */
   /* === MODE PEMELIHARAAN 25 Okt (E3) === detak 60 detik; hanya mengirim SATU WhatsApp 15 menit sebelum jadwal mulai bila
      Super Admin mencentang kabar WhatsApp (mati bawaan). Mode pemeliharaannya sendiri dinilai tiap permintaan, bukan di sini.
      Matikan detaknya dengan ALETA_PEMELIHARAAN_DETAK=0. */

@@ -1,6 +1,7 @@
 "use client";
 
 import { KapasitasPanel } from "@/components/portal/kapasitas-panel";
+import { PenjagaServerPanel } from "@/components/portal/penjaga-server-panel";
 import { AccessDeniedCard, PageIntro } from "@/components/portal/shared";
 import { usePortal } from "@/lib/app-state";
 import { getEffectiveRoleId } from "@/lib/permissions";
@@ -19,9 +20,10 @@ export default function AdminKapasitasPenyimpananPage() {
       <PageIntro
         eyebrow="Pusat Kendali"
         title="Kapasitas Penyimpanan"
-        description="Seberapa penuh ruang server, kapan perlu diperingatkan, dan cara menambah ruang. Peringatan juga muncul di Pusat Kesehatan Sistem."
+        description="Seberapa penuh ruang server, kapan perlu diperingatkan, dan cara menambah ruang. Peringatan juga muncul di Pusat Kesehatan Sistem, dan Penjaga server mengabari Super Admin lewat WhatsApp."
       />
       <KapasitasPanel />
+      <PenjagaServerPanel />
     </div>
   );
 }
