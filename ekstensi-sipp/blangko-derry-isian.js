@@ -2323,7 +2323,14 @@
     const tanggalSidang = sd && sd.tanggal ? tglIndo(String(sd.tanggal).slice(0, 10)) : "";
     const perluAlasan = m.VAR_ALASAN_CERAI.some((k) => kodeAda.has(k));
     if (perluAlasan && (bahan.teks1.trim() || bahan.teks2.trim() || bahan.posita.trim())) {
-      hasil.push({ sumber: "saksi", muatan: { saksi1: bahan.teks1, saksi2: bahan.teks2, tanggalSidang, pelaku: sb.T, lawan: sb.P, posita: bahan.posita } });
+      // 1 Nov (keputusan 70): uraian daftar bukti ikut dikirim - putusan pidana perzinahan menguatkan tuduhan selingkuh tanpa saksi.
+      const bukti = [];
+      for (const w of ["P", "T"]) {
+        (S.bukti[w] || []).forEach((r, i) => {
+          if (r && String(r.manual || r.nm || "").trim()) bukti.push({ tanda: `${w}.${i + 1}`, teks: kalimatBukti(r, w, i).slice(0, 600) });
+        });
+      }
+      hasil.push({ sumber: "saksi", muatan: { saksi1: bahan.teks1, saksi2: bahan.teks2, tanggalSidang, pelaku: sb.T, lawan: sb.P, posita: bahan.posita, ...(bukti.length ? { bukti: bukti.slice(0, 60) } : {}) } });
     }
     if (bahan.posita.trim() && /itsbat/i.test(jenis)) {
       hasil.push({ sumber: "itsbat", muatan: { posita: bahan.posita, pemohon: sb.P, pelaku: sb.T } });

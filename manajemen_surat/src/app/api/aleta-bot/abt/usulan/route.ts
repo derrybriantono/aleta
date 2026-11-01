@@ -72,6 +72,8 @@ type BadanUsulan = {
   /** 5227 (27 Okt 2026): pihak tiap saksi dan jawab-menjawab; keduanya opsional. */
   saksiPihak?: unknown;
   jawab?: unknown;
+  /** Keputusan 70 (1 Nov 2026): uraian daftar bukti {tanda, teks} - putusan pidana perzinahan menguatkan tuduhan selingkuh. */
+  bukti?: unknown;
   pemohon?: unknown;
   pemohon2?: unknown;
   templat?: unknown;
@@ -312,6 +314,12 @@ export async function POST(request: NextRequest) {
         ? (body.jawab as unknown[]).slice(0, 6).map((j) => {
             const r = (j && typeof j === "object" ? j : {}) as Record<string, unknown>;
             return { jenis: String(r.jenis || "jawaban").slice(0, 20), teks: String(r.teks || "").slice(0, BATAS_TEKS) };
+          })
+        : undefined,
+      bukti: Array.isArray(body.bukti)
+        ? (body.bukti as unknown[]).slice(0, 60).map((x) => {
+            const r = (x && typeof x === "object" ? x : {}) as Record<string, unknown>;
+            return { tanda: String(r.tanda || "").slice(0, 12), teks: String(r.teks || "").slice(0, 600) };
           })
         : undefined,
       // Sebutan pemohon (variabel 0046). Itsbat dahulu memakai `pelaku`

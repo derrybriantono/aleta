@@ -3349,6 +3349,11 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
           jawab: (Array.isArray(req.body?.jawab) ? req.body.jawab : [])
             .slice(0, 6)
             .map((j) => ({ jenis: String(j?.jenis || "jawaban").slice(0, 20), teks: String(j?.teks || "").slice(0, 60000) })),
+          // Keputusan 70 (1 Nov): uraian daftar bukti - putusan pidana perzinahan menguatkan tuduhan selingkuh tanpa saksi.
+          bukti: (Array.isArray(req.body?.bukti) ? req.body.bukti : [])
+            .slice(0, 60)
+            .map((b) => ({ tanda: String(b?.tanda || "").slice(0, 12), teks: String(b?.teks || "").slice(0, 600) }))
+            .filter((b) => b.teks.trim()),
         }
       );
       /* === KDL2 11 Okt === */

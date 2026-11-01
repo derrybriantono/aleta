@@ -239,3 +239,71 @@ describe("keputusan 53: selingkuh sesudah kata tuduhan - terbukti hanya bila dik
     expect(String(hasil.usulan[0].catatan)).toBe("Gugatan menyebut tuduhan bahwa Penggugat berselingkuh - bukan alasan perselingkuhan Tergugat, tidak diusulkan.");
   });
 });
+
+describe("keputusan 70: putusan pengadilan pidana perzinahan = terbukti tanpa saksi", () => {
+  const SAKSI_LAIN = [
+    { no: 1, pihak: "penggugat", butir: ["Tergugat sering keluar malam"] },
+    { no: 2, pihak: "penggugat", butir: ["Penggugat dan Tergugat sudah pisah rumah"] },
+  ];
+  const PN = { tanda: "P.4", teks: "Fotokopi Putusan Pengadilan Negeri Donggala Nomor 41/Pid.B/2025/PN Dgl tanggal 3 Maret 2025 tentang tindak pidana perzinahan (Pasal 284 KUHP) atas nama Tergugat, telah bermeterai cukup, lalu diberi tanda P.4 serta diberi tanggal dan paraf oleh Ketua Majelis;" };
+
+  it("putusan PN Pasal 284 KUHP + saksi tidak menyebutnya -> terbukti, diusulkan, catatan & lencana menyebut putusan", () => {
+    const r = mesin.deteksiRincian({ gugatan: [P499], saksi: SAKSI_LAIN, bukti: [PN], pihak: CG });
+    const b = selingkuh(r);
+    expect(b).toHaveLength(1);
+    expect(r.tuduhan).toMatchObject([{ status: "terbukti", penguat: [{ jenis: "bukti", tanda: "P.4" }] }]);
+    expect(b[0].catatan).toMatch(/dianggap terbukti berdasarkan putusan pengadilan pidana tentang perzinahan \(bukti P\.4\) tanpa memerlukan saksi$/);
+    expect(b[0].lencana).toBe("dikuatkan putusan pengadilan pidana (bukti P.4)");
+  });
+
+  it("saksi belum diperiksa: putusan pidana tetap cukup (dulu 'belum dapat dinilai')", () => {
+    const r = mesin.deteksiRincian({ gugatan: ["Penggugat curiga Tergugat selingkuh"], saksi: [], saksiTidakDibaca: true, bukti: [PN], pihak: CG });
+    expect(selingkuh(r)).toHaveLength(1);
+    expect(r.tuduhan[0].status).toBe("terbukti");
+  });
+
+  it("KUHP baru Pasal 411 / kata 'zina' / Pengadilan Tinggi juga dikenali; cerai talak (Termohon)", () => {
+    for (const teks of [
+      "Salinan Putusan Pengadilan Negeri Palu Nomor 12/Pid.B/2026/PN Pal yang menyatakan Termohon terbukti melakukan tindak pidana Pasal 411 KUHP",
+      "Petikan putusan Pengadilan Tinggi Sulawesi Tengah Nomor 5/PID/2026/PT PAL tentang perkara zina",
+      "fotokopi putusan PN Donggala nomor 7/Pid.B/2025/PN Dgl atas nama Termohon, perkara perzinaan",
+    ]) {
+      const r = mesin.deteksiRincian({ gugatan: ["Pemohon mencurigai Termohon berselingkuh dengan laki-laki lain"], saksi: [], saksiTidakDibaca: true, bukti: [{ tanda: "P.3", teks }], pihak: CT });
+      expect(r.tuduhan[0]?.status, teks).toBe("terbukti");
+    }
+  });
+
+  it("BUKAN putusan pidana perzinahan -> bukti saja tetap belum cukup (keputusan 70 bagian 'sudah')", () => {
+    const tetapBelum = [
+      // bukti elektronik / surat biasa
+      "tangkapan layar percakapan Tergugat berselingkuh dengan perempuan lain",
+      // putusan pidana yang membebaskan
+      "Fotokopi Putusan Pengadilan Negeri Donggala Nomor 41/Pid.B/2025/PN Dgl tentang perzinahan yang menyatakan Tergugat tidak terbukti dan membebaskan Tergugat",
+      // terdakwanya pihak lawan (Penggugat), bukan yang dituduh
+      "Fotokopi Putusan Pengadilan Negeri Donggala Nomor 41/Pid.B/2025/PN Dgl tentang perzinahan atas nama Penggugat",
+      // laporan polisi, bukan putusan
+      "Surat Tanda Terima Laporan Polisi tentang dugaan perzinahan Pasal 284 KUHP oleh Tergugat",
+    ];
+    for (const teks of tetapBelum) {
+      const r = mesin.deteksiRincian({ gugatan: [P499], saksi: SAKSI_LAIN, bukti: [{ tanda: "P.5", teks }], pihak: CG });
+      expect(selingkuh(r), teks).toHaveLength(0);
+      expect(r.tuduhan[0].status, teks).not.toBe("terbukti");
+    }
+    // putusan pidana KDRT (tanpa tanda zina dan tanpa perselingkuhan) tidak menguatkan selingkuh sama sekali
+    const kdrt = mesin.deteksiRincian({ gugatan: [P499], saksi: SAKSI_LAIN, bukti: [{ tanda: "P.6", teks: "Fotokopi Putusan Pengadilan Negeri Donggala Nomor 9/Pid.Sus/2025/PN Dgl tentang kekerasan dalam rumah tangga atas nama Tergugat" }], pihak: CG });
+    expect(kdrt.tuduhan[0]).toMatchObject({ status: "tidak-terbukti", penguat: [] });
+  });
+
+  it("dari kiriman ekstensi sampai kartu 5227: abtUsulanService meneruskan opsi.bukti ke mesin", () => {
+    const usulan = require_(path.join(AKAR, "services/abtUsulanService.js")) as {
+      dariKeteranganSaksi: (s1: string, s2: string, tgl: string, p: Pihak, posita: string, opsi: Record<string, unknown>) => { usulan: Array<Record<string, unknown>>; rincianAlasan?: { tuduhan: Tuduhan[] } };
+    };
+    const opsi = { rincianAlasan: true, saksiPihak: { saksi1: "penggugat", saksi2: "penggugat" } };
+    const s1 = "Saksi tahu Tergugat sering keluar malam.";
+    const s2 = "Saksi tahu Penggugat dan Tergugat sudah pisah rumah.";
+    const dengan = usulan.dariKeteranganSaksi(s1, s2, "", CG, P499, { ...opsi, bukti: [PN] });
+    const tanpa = usulan.dariKeteranganSaksi(s1, s2, "", CG, P499, opsi);
+    expect(dengan.rincianAlasan?.tuduhan[0]?.status).toBe("terbukti");
+    expect(tanpa.rincianAlasan?.tuduhan[0]?.status).not.toBe("terbukti");
+  });
+});

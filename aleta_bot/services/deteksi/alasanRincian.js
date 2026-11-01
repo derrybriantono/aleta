@@ -79,10 +79,37 @@ const RE_PENGAKUAN = /\b(?:ternyata\s+(?:benar|memang|betul)|mengakui|diakui|pen
  * atau bukti lain tanpa saksi yang bersesuaian = "belum-cukup" (dicatat, tidak diusulkan).
  */
 const penguatCukup = (penguat) => {
+  // Keputusan 70 (1 Nov): putusan pengadilan pidana yang menyatakan pihak itu terbukti berzina = cukup TANPA saksi.
+  if (penguat.some((x) => x.jenis === "bukti" && x.putusanPidana)) return true;
   const saksi = penguat.filter((x) => x.jenis === "saksi").length;
   const bukti = penguat.filter((x) => x.jenis === "bukti").length;
   return saksi >= 2 || (saksi >= 1 && bukti >= 1);
 };
+
+/**
+ * Keputusan 70 (1 Nov 2026): bukti surat/elektronik saja TIDAK menguatkan tuduhan selingkuh, KECUALI bukti surat berupa PUTUSAN
+ * PENGADILAN pidana yang menyatakan pihak itu terbukti (perzinahan - Pasal 284 KUHP lama / Pasal 411 KUHP baru). Dikenali dari uraian
+ * daftar bukti: "putusan" + pengadilan (Pengadilan Negeri/Tinggi, Mahkamah Agung, "PN ...") + tanda perzinahan (zina/perzinahan/overspel/
+ * Pasal 284/411) ATAU nomor perkara pidana ("/Pid") yang uraiannya sendiri menyebut perselingkuhan. Ditolak bila uraiannya menyebut
+ * putusan BEBAS / lepas / tidak terbukti, atau terdakwanya pihak lawan (bukan yang dituduh).
+ */
+const RE_PUTUSAN_PENGADILAN = /\b(?:salinan\s+|fotokopi\s+|foto\s+copy\s+|fotocopy\s+)?(?:putusan|petikan\s+putusan)\b[\s\S]{0,160}?(?:\bpengadilan\s+(?:negeri|tinggi)\b|\bmahkamah\s+agung\b|\bPN\b|\/PN\b|\bPT\b\s+\w)/i;
+const RE_NOMOR_PIDANA = /\/\s*Pid(?:\.|\b|\s*[A-Z])/i;
+const RE_TANDA_ZINA = /\b(?:zina|zinah|berzina|berzinah|perzinahan|perzinaan|overspel|mukah)\b|\bpasal\s+(?:284|411)\b|\b(?:284|411)\s+(?:ayat\s+\(?\d\)?\s+)?(?:KUHP|KUH\s*Pidana|Kitab\s+Undang)/i;
+const RE_PUTUSAN_BEBAS = /\b(?:bebas|dibebaskan|lepas\s+dari\s+(?:segala\s+)?tuntutan|tidak\s+terbukti|onslag|vrijspraak)\b/i;
+const RE_TERDAKWA_SEBUTAN = /\b(?:atas\s+nama|terdakwa(?:nya)?|terpidana(?:nya)?|menghukum|terhadap|kepada)\s+(?:saudara\s+|sdr\.?\s+)?(penggugat|tergugat|pemohon|termohon)\b/i;
+
+/** Uraian bukti = putusan pidana perzinahan yang menyatakan `tertuduh` (sebutan pihak) terbukti? (murni) */
+function putusanPidanaZina(teks, set, kunci, ph) {
+  const t = String(teks || "");
+  if (!RE_PUTUSAN_PENGADILAN.test(t)) return false;
+  const zina = RE_TANDA_ZINA.test(t);
+  if (!zina && !(RE_NOMOR_PIDANA.test(t) && simpulKalimat(t, set, { kunci }).length)) return false;
+  if (RE_PUTUSAN_BEBAS.test(t)) return false;
+  const m = RE_TERDAKWA_SEBUTAN.exec(t);
+  if (m && ph && ph.lawan && m[1].toLowerCase() === String(ph.lawan).toLowerCase()) return false;
+  return true;
+}
 // Bunyi catatan per perbuatan: kata benda dan kalimat "<pihak> <perbuatan>".
 const NAMA_TUDUHAN = { selingkuh: { benda: "perselingkuhan", kerja: "berselingkuh" } };
 const PERINGKAT_TUDUHAN = { terbukti: 4, "belum-cukup": 3, "tidak-terbukti": 3, "belum-dinilai": 3, "tidak-terbaca": 2, "terhadap-lawan": 1 };
@@ -298,7 +325,7 @@ function tuduhanKalimat(kalimatAsli, set, jenis) {
 }
 
 /** Penguat tuduhan: saksi / bukti lain yang menerangkan perbuatan itu (atau yang setara) oleh PELAKU. */
-function penguatTuduhan(t, saksi, bukti, set) {
+function penguatTuduhan(t, saksi, bukti, set, ph) {
   const kunci = new Set([t.kunci, ...(SETARA_ALASAN[t.kunci] || [])]);
   const penguat = [];
   for (const s of saksi || []) {
@@ -307,7 +334,11 @@ function penguatTuduhan(t, saksi, bukti, set) {
   }
   for (const x of bukti || []) {
     const teks = typeof x === "string" ? x : String((x && (x.teks || x.keterangan)) || "");
-    if (teks && simpulKalimat(teks, set, { kunci }).length) penguat.push({ jenis: "bukti", kalimat: teks.slice(0, 300), ...(x && x.tanda ? { tanda: String(x.tanda) } : {}) });
+    if (!teks) continue;
+    const tanda = x && x.tanda ? { tanda: String(x.tanda) } : {};
+    // Keputusan 70: putusan pidana perzinahan atas pihak yang dituduh menguatkan SENDIRI (tanpa saksi) - hanya untuk selingkuh.
+    if (t.kunci === "selingkuh" && putusanPidanaZina(teks, set, kunci, ph)) penguat.push({ jenis: "bukti", putusanPidana: true, kalimat: teks.slice(0, 300), ...tanda });
+    else if (simpulKalimat(teks, set, { kunci }).length) penguat.push({ jenis: "bukti", kalimat: teks.slice(0, 300), ...tanda });
   }
   return penguat;
 }
@@ -822,7 +853,7 @@ function deteksiRincian(o) {
     for (const t of tuduhanKalimat(k, set, jenis)) {
       if (hasil.tuduhan.some((x) => x.kunci === t.kunci && x.status === "terbukti")) continue;
       const diperiksa = t.tertuduh === "pelaku" || (t.tertuduh === "" && t.pengakuan);
-      const penguat = diperiksa ? penguatTuduhan(t, saksiAda ? saksi : [], bukti, set) : [];
+      const penguat = diperiksa ? penguatTuduhan(t, saksiAda ? saksi : [], bukti, set, ph) : [];
       const status = t.tertuduh === "lawan" ? "terhadap-lawan" : !diperiksa ? "tidak-terbaca" : penguatCukup(penguat) ? "terbukti" : !saksiAda ? "belum-dinilai" : penguat.length ? "belum-cukup" : "tidak-terbukti";
       const catat = { kunci: t.kunci, label: t.pola.label.replace(/\s*\([^)]*\)$/, ""), status, tertuduh: t.tertuduh, pengakuan: t.pengakuan, penguat, kalimat: String(k).slice(0, 400) };
       if (status === "terbukti") {
@@ -911,7 +942,13 @@ function deteksiRincian(o) {
     const d = dukungan(it, saksi, petaSaksi, ph);
     if (o && o.saksiTidakDibaca === true) d.tidakDibaca = true;
     const j = jawabPer.get(it.id) || null;
-    const l = lencana(d, j, ph);
+    let l = lencana(d, j, ph);
+    // Keputusan 70: tuduhan yang terbukti oleh putusan pidana perzinahan - lencana menyebut putusan itu bila saksi tidak menguatkan.
+    const pidana = it.tuduhan ? it.tuduhan.penguat.filter((x) => x.jenis === "bukti" && x.putusanPidana) : [];
+    if (pidana.length && d.mendukung.length < 2) {
+      const tanda = pidana.map((x) => x.tanda || "").filter(Boolean).join(", ");
+      l = { teks: `dikuatkan putusan pengadilan pidana${tanda ? ` (bukti ${tanda})` : ""}${d.mendukung.length === 1 ? " dan satu saksi" : ""}${j ? `; ${j.status === "dibantah" ? "dibantah dalam" : j.status === "diakui" ? "diakui dalam" : "disebut dalam"} ${j.jenis}` : ""}`, yakin: "cukup" };
+    }
     const tersirat = it.simpul.some((s) => s.tersirat);
     const kutip = it.kutipan.some(Boolean) || Boolean(it.akibatBebas) || Boolean(it.kutipGugatan);
     return {
@@ -995,6 +1032,11 @@ function deteksiRincian(o) {
 
 /** Catatan butir yang berasal dari tuduhan yang terbukti. */
 function catatanTerbukti(t, ph) {
+  const pidana = t.penguat.filter((x) => x.jenis === "bukti" && x.putusanPidana);
+  if (pidana.length) {
+    const tanda = pidana.map((x) => x.tanda || "").filter(Boolean).join(", ");
+    return `di gugatan berupa kecurigaan/tuduhan${t.pengakuan ? " (disebut diakui)" : ""}; dianggap terbukti berdasarkan putusan pengadilan pidana tentang perzinahan${tanda ? ` (bukti ${tanda})` : ""} tanpa memerlukan saksi`;
+  }
   const saksiP = t.penguat.filter((x) => x.jenis === "saksi");
   const buktiP = t.penguat.filter((x) => x.jenis === "bukti");
   const namaS = saksiP.map((x) => (x.pihak === "penggugat" ? `saksi ${ph.lawan}` : x.pihak === "tergugat" ? `saksi ${ph.pelaku}` : `saksi ${x.no}`));

@@ -1836,6 +1836,8 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak, posit
           { no: 2, pihak: sisi.saksi2 || "", butir: b2 },
         ],
         jawab: (Array.isArray(opsi.jawab) ? opsi.jawab : []).slice(0, 6).map((j) => ({ jenis: String((j && j.jenis) || "jawaban").slice(0, 20), butir: butirKeterangan(String((j && j.teks) || "").slice(0, 60000)) })),
+        // Keputusan 70 (1 Nov): uraian daftar bukti {tanda, teks}.
+        bukti: (Array.isArray(opsi.bukti) ? opsi.bukti : []).slice(0, 60).filter((b) => b && String(b.teks || "").trim()),
         pihak,
       });
       rinci.terapkan(hasil, rincian);
