@@ -1,4 +1,4 @@
-# URUTAN PASANG paket ABT 29 Okt - 1 Nov 2026 (29 paket; diuji rantai penuh dari dump 28 Okt; MENGGANTIKAN URUTAN-PASANG-31okt.md)
+# URUTAN PASANG paket ABT 29 Okt - 1 Nov 2026 (30 paket; diuji rantai penuh dari dump 28 Okt; MENGGANTIKAN URUTAN-PASANG-31okt.md)
 
 Nomor "KE-n" di komentar dan PASANG.md paket lama mengikuti urutan 24 paket yang lama; yang berlaku adalah nomor di berkas ini
 (pembuktian-urut-1nov disisipkan sebagai ke-22, sehingga jawab-replik, butir-rata, bukti-pisah menjadi ke-23, ke-24, ke-25, teks-pihak ke-26).
@@ -15,7 +15,8 @@ Semua paket dipasang di SERVER sebagai root, dari folder `paket-satker` masing-m
 - Satu langkah KHUSUS LAPTOP sebelum hir-rbg-30okt, tinjau-31okt, bukti-8529-31okt, tanggal-agenda-31okt: skrip pasang menulis nama basis salinan (`aps_badilag_rantai.`) ke kueri yang
   ditulisnya (di server namanya memang `aps_badilag.`); karena hir-rbg memeriksa md5 kueri mentah, teks salinan dikembalikan ke
   bentuk server (9 variabel). Di SERVER langkah ini TIDAK ada.
-- Hasil terbaru: `uji-rantai-31okt/hasil-rantai-29.txt` - 29 paket SELESAI berurutan dari salinan baru (1 Nov 20.55-21.11, `tanya-jawab-format-1nov/sumber/rantai164.sh`: basis `aps_badilag_rantai164`, pohon `/d/r164c`, paket dari `git archive HEAD`, `md5sum -c MD5SUMS.txt` di semua paket cocok), `RANTAI-KELUAR 0`.
+- Hasil terbaru: `uji-rantai-31okt/hasil-rantai-30.txt` - 30 paket SELESAI berurutan dari salinan baru (1 Nov 23.21-23.42, `perbaikan-1nov/sumber/rantai174.sh`: basis `aps_badilag_rantai174`, pohon `/d/r174c`, paket dari `git archive HEAD`, `md5sum -c MD5SUMS.txt` di semua paket cocok), `RANTAI-KELUAR 0`; sidik pohon sesudah 30 paket = uji lokal paket ke-30 (`9931cdd9...`), sidik seluruh tabel variabel = uji lokal (`9087068d...`).
+- Hasil sebelumnya: `uji-rantai-31okt/hasil-rantai-29.txt` - 29 paket SELESAI berurutan dari salinan baru (1 Nov 20.55-21.11, `tanya-jawab-format-1nov/sumber/rantai164.sh`: basis `aps_badilag_rantai164`, pohon `/d/r164c`, paket dari `git archive HEAD`, `md5sum -c MD5SUMS.txt` di semua paket cocok), `RANTAI-KELUAR 0`.
 - Hasil sebelumnya: `uji-rantai-31okt/hasil-rantai-28.txt` - 28 paket SELESAI berurutan dari salinan baru (1 Nov 17.44-17.58, `bas-lanjutan-1nov/sumber/rantai163.sh`: basis `aps_badilag_rantai163`, pohon `/d/r163`), `RANTAI-KELUAR 0`.
 - Hasil sebelumnya: `uji-rantai-31okt/hasil-rantai-26.txt` - 26 paket SELESAI berurutan dari salinan baru (1 Nov 13.58-14.20, `rantai155.sh`: basis `aps_badilag_rantai155f`, pohon `/d/r155f`,
   paket dari `git archive HEAD`, `md5sum -c MD5SUMS.txt` di semua paket cocok), `RANTAI-KELUAR 0`. Paket 26 sendiri: `teks-pihak-1nov/hasil/uji-lokal.txt` (pasang ulang tidak mengubah
@@ -449,4 +450,26 @@ UJI contoh 1: ... ; UJI contoh 2: ...
 TAMBAL=586
 BERKAS COCOK
 SELESAI - paket abt-tanya-jawab-format-1nov terpasang. ...
+```
+
+### 30. `perbaikan-1nov` (cabang paket-30 w174; keputusan 89-B2/73 dan 92) - PALING AKHIR
+```
+cd perbaikan-1nov/paket-satker && bash pasang-satker.sh
+```
+A. Variabel tanggal/hari pembuktian #0046# (2111/7119) dan #0047# (2112/7121) memakai aturan TUNDAAN juga (kembaran SQL dari bot ddf15a3a): tahap pembuktian ditentukan DULU dari
+alasan ditunda sidang sebelumnya ("pembuktian Tergugat" -> Tergugat; "pembuktian lanjutan Penggugat"/"saksi Penggugat" -> Penggugat; tanpa sebutan pihak -> aturan tahap keputusan 52).
+Kueri = keluaran bot untuk 10.237/10.237 perkara (2112) dan 10.107/10.107 (2111) di SIPP 28 Okt; 37+6 perkara 2111 dan 13+1 perkara 2112 berubah/terisi baru. Cabang Court Calendar tidak diubah.
+B. 5 perbaikan dasar hukum di 14 blangko (spesifikasi keputusan 92): KHI Pasal 7 ayat (4) tanpa "huruf a" (7 Itsbat Nikah Kontensius), KHI Pasal 58 ayat (1) "huruf b dan huruf c" -> "huruf b" (Izin Poligami [01b]),
+Pasal 35 UU 1/1974 ayat (2) dengan bunyi naskah (Harta Bersama [01] E-Court), bunyi Pasal 7 ayat (1) UU 16/2019 (Itsbat Nikah [99]), "Pasal 1 Ayat 1" -> "Pasal 1 angka 1" UU 35/2014 (4 Dispensasi Kawin). Kata saja yang diganti.
+Tanpa variabel/menu/fungsi baru. Lihat `perbaikan-1nov/PASANG.md`. md5 dasar = keadaan sesudah ke-29 paket.
+Keluaran benar:
+```
+PRASYARAT COCOK (4|0)
+BERKAS SIAP
+CADANGAN: ... (baris variabel: 4)
+SEMUA COCOK
+UJI contoh 1: ... ; UJI contoh 2: ...
+TAMBAL=14
+BERKAS COCOK
+SELESAI - paket abt-perbaikan-1nov terpasang. ...
 ```

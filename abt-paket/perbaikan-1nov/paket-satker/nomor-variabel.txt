@@ -1,0 +1,5 @@
+# variabel yang diubah paket (syarat agenda cabang jadwal sidang diberi aturan tundaan; tidak ada variabel baru)
+2111
+7119
+2112
+7121
