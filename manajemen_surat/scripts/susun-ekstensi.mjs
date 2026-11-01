@@ -134,6 +134,8 @@ const BERKAS = [
   "blangko-derry-pulih.js",
   // ALETA Ai sebagai alat bantu di panel Blangko Derry (1 Nov 2026): saklar, bilah fitur bantu, saldo; dimuat sebelum blangko-derry.js (dipasang saat panel dibangun).
   "blangko-derry-ai.js",
+  // Inti ALETA Ai: dimuat malas (AletaModul "ai-blangko") hanya saat saklarnya menyala; bukan skrip konten manifest.
+  "blangko-derry-ai-inti.js",
   "blangko-derry.js",
   // Jawaban saksi otomatis + pilihan pengetahuan saksi di Blangko Derry (19 Okt 2026): pembantu murni,
   // dimuat sebelum blangko-derry-isian.js yang memakainya.

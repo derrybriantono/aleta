@@ -496,6 +496,12 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_ai_tugas_langkah",
   "aleta_ai_berkas",
   "aleta_ai_proyek_berkas",
+  // 1 November 2026 (0122): proyek kelolaan Super Admin (instruksi, pengetahuan, memori, riwayat, pilihan). Tanpa kunci asing.
+  "aleta_ai_proyek_kelola",
+  "aleta_ai_pengetahuan",
+  "aleta_ai_memori_proyek",
+  "aleta_ai_proyek_catatan",
+  "aleta_ai_proyek_pilihan",
   "aleta_ai_kiriman",
   // 25 Oktober 2026 (0105): jejak tunda/putus otomatis terstruktur (U19). Tanpa kunci asing.
   "aleta_otomatis_jejak",

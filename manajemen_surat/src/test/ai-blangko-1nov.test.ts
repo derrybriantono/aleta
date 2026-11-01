@@ -17,6 +17,7 @@ import { simpanKurs, tanggalLokal } from "@/server/modules/aleta-ai/kurs";
 import { ringkasAi } from "@/server/modules/aleta-ai/layanan";
 import { kirimPesan, perkirakanPesan, ulangiBatasLaju, type EventAi } from "@/server/modules/aleta-ai/mesin";
 import { buatPercakapan } from "@/server/modules/aleta-ai/percakapan";
+import { buatProyekKelola } from "@/server/modules/aleta-ai/proyek-kelola";
 import { unggahProyek } from "@/server/modules/aleta-ai/proyek";
 import { terapkanMutasi } from "@/server/modules/aleta-ai/saldo";
 import { susunZip } from "@/server/shared/zip";
@@ -35,6 +36,7 @@ import { susunZip } from "@/server/shared/zip";
 
 const AKAR = path.resolve(process.cwd(), "../ekstensi-sipp");
 const SKRIP_AI = readFileSync(path.join(AKAR, "blangko-derry-ai.js"), "utf8");
+const SKRIP_INTI = readFileSync(path.join(AKAR, "blangko-derry-ai-inti.js"), "utf8");
 const tunggu = (ms = 0) => new Promise((r) => setTimeout(r, ms));
 async function sampai<T>(periksa: () => T, ket: string, batas = 3000): Promise<NonNullable<T>> {
   const mulai = Date.now();
@@ -55,9 +57,13 @@ async function sampai<T>(periksa: () => T, ket: string, batas = 3000): Promise<N
 function muatModulAi() {
   const kotak: Record<string, any> = {};
   kotak.window = kotak;
-  const modul = { exports: {} as any };
-  vm.runInNewContext(SKRIP_AI, { module: modul, globalThis: kotak, window: kotak, self: kotak }, { filename: "blangko-derry-ai.js" });
-  return (kotak.AletaBdAi ?? modul.exports) as any;
+  const konteks = vm.createContext({ module: { exports: {} }, globalThis: kotak, window: kotak, self: kotak });
+  vm.runInContext(SKRIP_AI, konteks, { filename: "blangko-derry-ai.js" });
+  vm.runInContext(SKRIP_INTI, konteks, { filename: "blangko-derry-ai-inti.js" });
+  // Pemuat ringan + inti: bagian murni dan tabel fitur digabung seperti yang dilihat panel setelah saklar menyala.
+  const pemuat = konteks.window.AletaBdAi;
+  const inti = konteks.window.AletaBdAiInti;
+  return { FITUR: inti.FITUR, murni: { ...pemuat.murni, ...inti.murni } } as any;
 }
 
 // ─── 1. Lib ──────────────────────────────────────────────────────────────────
@@ -151,6 +157,8 @@ type OpsiPanel = {
   kosong?: Array<{ kode: string; nama: string }>;
   /** Konteks menu proyek: jenis blangko yang dipilih ("put" | "bas" | "rel" | ""), jenis perkara, agenda sidang. */
   konteks?: { jenisBlangko?: string; jenisPerkara?: string; agenda?: string };
+  /** Jawaban rute baca gambar KTP (OCR di server); bawaan: berhasil membaca satu KTP rekaan. */
+  ktp?: Record<string, unknown>;
 };
 
 const RINGKAS_BAIK = {
@@ -173,6 +181,13 @@ const RINGKAS_BAIK = {
   ],
 };
 
+const KTP_TERBACA = {
+  available: true,
+  ok: true,
+  sumber: "ocr",
+  medan: { nama: "SITI AMINAH", nik: "7203010101900001", tempatLahir: "DONGGALA", tanggalLahir: "01/01/1990", jenisKelamin: "P", agama: "ISLAM", pekerjaan: "MENGURUS RUMAH TANGGA", alamat: "JL. MAWAR NO. 1", kelurahan: "BOYA", kecamatan: "BANAWA" },
+  teks: "NIK 7203010101900001",
+};
 const terbuka: JSDOM[] = [];
 afterEach(() => {
   while (terbuka.length) terbuka.pop()!.window.close();
@@ -224,6 +239,7 @@ function bukaPanel(o: OpsiPanel = {}) {
       const r = ringkas as { satker?: Record<string, unknown> } | null;
       return r ? json({ ...r, ...(r.satker && saldoSatkerKini !== null ? { satker: { ...r.satker, saldoRp: saldoSatkerKini } } : {}) }) : json(null, 401);
     }
+    if (alamat === "/aleta/api/aleta-ecourt/saksi-scan") return json(o.ktp ?? KTP_TERBACA);
     if (alamat === "/aleta/api/aleta-ai/perkiraan")
       return json({ label: "Teliti", perkiraanRp: 1500, tahanRp: 2500, saldoRp: badan?.dompet === "satker" ? 3_750_000 : 20_000, kursDipakai: 16000, gratis: false, bolehJalan: true, ...(badan?.dompet === "satker" ? { dompet: "satker" } : {}) });
     if (alamat === "/aleta/api/aleta-ai/percakapan" && metode === "POST") return json({ id: `aic-${++nomor}` });
@@ -292,30 +308,47 @@ function bukaPanel(o: OpsiPanel = {}) {
     keadaan: () => ({ blangko: o.konteks?.jenisBlangko ? { jenis: o.konteks.jenisBlangko } : null }),
   };
   const ctx = (dom as unknown as { getInternalVMContext(): vm.Context }).getInternalVMContext();
+  // Pemuat modul malas tiruan: inti ALETA Ai baru dijalankan saat diminta (saklar menyala).
+  const pemuatan = { jumlah: 0 };
+  w.AletaModul = {
+    pastikan: async (id: string) => {
+      if (id !== "ai-blangko") return false;
+      if (!w.AletaBdAiInti) {
+        pemuatan.jumlah += 1;
+        vm.runInContext(SKRIP_INTI, ctx, { filename: "blangko-derry-ai-inti.js" });
+      }
+      return true;
+    },
+  };
   vm.runInContext(SKRIP_AI, ctx, { filename: "blangko-derry-ai.js" });
   const doc = w.document as Document;
   const akarEl = doc.getElementById("aleta-bd-akar") as HTMLElement;
   w.AletaBdAi.pasang(akarEl);
   const q = <T extends Element = HTMLElement>(s: string) => akarEl.querySelector(s) as T | null;
-  return { dom, w, doc, akarEl, q, panggilan, simpanan, terapan, saksiDitambah, ai: () => w.AletaBdAi };
+  return { dom, w, doc, akarEl, q, panggilan, simpanan, terapan, saksiDitambah, pemuatan, ai: () => w.AletaBdAi };
 }
 
 const sakelar = (h: ReturnType<typeof bukaPanel>) => h.q<HTMLInputElement>("#bd-ai-saklar-cek")!;
 const alamatAi = (h: ReturnType<typeof bukaPanel>) => h.panggilan.filter((p) => p.alamat !== "/aleta/api/aleta-ai/ringkas").map((p) => `${p.metode} ${p.alamat}`);
 
 describe("panel Blangko Derry: saklar ALETA Ai", () => {
-  it("bawaan MATI: saklar ada di dekat akun, bilah AI tersembunyi, tak ada panggilan AI selain membaca ringkasan, isian lama tak berubah", async () => {
+  it("bawaan MATI: saklar ada di dekat akun; NOL beban - tidak ada panggilan jaringan, inti tidak dimuat, tidak ada bilah/saldo di halaman, isian lama tak berubah", async () => {
     const h = bukaPanel();
-    await sampai(() => h.q("#bd-ai-saklar") && (!h.q("#bd-ai-saklar")!.hasAttribute("hidden") && h.ai().keadaan().ringkas), "saklar tampil");
+    await sampai(() => h.q("#bd-ai-saklar") && !h.q("#bd-ai-saklar")!.hasAttribute("hidden"), "saklar tampil");
     expect(h.q("#bd-siapa")!.nextElementSibling!.id).toBe("bd-ai-saklar");
     expect(sakelar(h).checked).toBe(false);
     expect(sakelar(h).disabled).toBe(false);
-    expect(h.q("#bd-ai-bilah")!.hasAttribute("hidden")).toBe(true);
-    expect(h.q("#bd-ai-bilah")!.innerHTML).toBe("");
+    await tunggu(30);
+    expect(h.q("#bd-ai-bilah")).toBeNull();
+    expect(h.q("#bd-ai-saldo")).toBeNull();
     expect(h.q("[data-ai-fitur]")).toBeNull();
     expect(h.q("#isian-lama")!.textContent).toBe("isian lama");
-    expect(h.panggilan.map((p) => p.alamat)).toEqual(["/aleta/api/aleta-ai/ringkas"]);
-    expect(h.ai().keadaan()).toMatchObject({ idAkun: "usr-1", tersimpan: false, nyala: false });
+    expect(h.panggilan).toEqual([]); // tidak membaca ringkasan, tidak ada permintaan apa pun
+    expect(h.pemuatan.jumlah).toBe(0);
+    expect(h.w.AletaBdAiInti).toBeUndefined();
+    expect(h.ai().keadaan()).toMatchObject({ idAkun: "usr-1", tersimpan: false, nyala: false, inti: false, pemuatanInti: 0 });
+    // Tidak ada yang ditulis ke penyimpanan juga.
+    expect(h.simpanan).toEqual({});
   });
 
   it("saldo habis -> saklar mati, tidak bisa diklik, keterangan 'saldo habis'; pilihan tersimpan yang menyala dipaksa mati", async () => {
@@ -326,7 +359,7 @@ describe("panel Blangko Derry: saklar ALETA Ai", () => {
     expect(sakelar(h).checked).toBe(false);
     expect(h.q("#bd-ai-saklar")!.getAttribute("data-keadaan")).toBe("habis");
     expect(h.q("#bd-ai-saklar")!.classList.contains("terkunci")).toBe(true);
-    expect(h.q("#bd-ai-bilah")!.hasAttribute("hidden")).toBe(true);
+    expect(h.q("#bd-ai-bilah")).toBeNull();
     await sampai(() => h.simpanan["blangkoDerryAi:usr-1"] === false, "tersimpan mati");
     // Dipaksa klik pun tetap mati.
     sakelar(h).checked = true;
@@ -338,25 +371,25 @@ describe("panel Blangko Derry: saklar ALETA Ai", () => {
 
   it("Super Admin / promosi gratis: saldo nol bukan penghalang", async () => {
     const h = bukaPanel({ ringkas: { ...RINGKAS_BAIK, saldoRp: 0, gratis: true, superAdmin: true } });
-    await sampai(() => h.q("#bd-ai-saklar") && (!h.q("#bd-ai-saklar")!.hasAttribute("hidden") && h.ai().keadaan().ringkas), "tampil");
+    await sampai(() => h.q("#bd-ai-saklar") && !h.q("#bd-ai-saklar")!.hasAttribute("hidden"), "tampil");
     expect(sakelar(h).disabled).toBe(false);
   });
 
   it("dinyalakan: tersimpan PER PENGGUNA (kunci memuat id akun, bukan perkara) dan bilah fitur tampil; akun lain tetap mati", async () => {
     const h = bukaPanel();
-    await sampai(() => (!h.q("#bd-ai-saklar")!.hasAttribute("hidden") && h.ai().keadaan().ringkas), "tampil");
+    await sampai(() => !h.q("#bd-ai-saklar")!.hasAttribute("hidden"), "tampil");
     sakelar(h).checked = true;
     sakelar(h).dispatchEvent(new h.w.Event("change", { bubbles: true }));
     await sampai(() => !h.q("#bd-ai-bilah")!.hasAttribute("hidden"), "bilah tampil");
     expect(h.simpanan["blangkoDerryAi:usr-1"]).toBe(true);
-    expect(Object.keys(h.simpanan).sort()).toEqual(["blangkoDerryAi:usr-1", "blangkoDerryAiTur:usr-1"]); // saklar + panduan sekali; tidak ada kunci per perkara
+    expect(Object.keys(h.simpanan).sort()).toEqual(["blangkoDerryAi:usr-1", "blangkoDerryAiRingkas", "blangkoDerryAiTur:usr-1"]); // saklar + ringkasan ringan untuk kunci + panduan sekali; tidak ada kunci per perkara
     const grup = [...h.akarEl.querySelectorAll("[data-ai-grup]")].map((x) => x.getAttribute("data-ai-grup"));
     expect(grup).toEqual(["Saksi", "BAS", "Isian", "Putusan", "Periksa", "Tanya", "Menu proyek"]);
     // Akun lain di Chrome yang sama: pilihan akun pertama tidak ikut.
     const h2 = bukaPanel({ akun: { id: "usr-2", nama: "Lain" }, simpanan: h.simpanan });
-    await sampai(() => (!h2.q("#bd-ai-saklar")!.hasAttribute("hidden") && h2.ai().keadaan().ringkas), "tampil 2");
+    await sampai(() => !h2.q("#bd-ai-saklar")!.hasAttribute("hidden"), "tampil 2");
     expect(sakelar(h2).checked).toBe(false);
-    expect(h2.q("#bd-ai-bilah")!.hasAttribute("hidden")).toBe(true);
+    expect(h2.q("#bd-ai-bilah")).toBeNull();
     // Akun pertama dibuka lagi: ingat menyala.
     const h3 = bukaPanel({ simpanan: h.simpanan });
     await sampai(() => !h3.q("#bd-ai-bilah")!.hasAttribute("hidden"), "ingat menyala");
@@ -371,14 +404,14 @@ describe("panel Blangko Derry: saklar ALETA Ai", () => {
     expect([...h.akarEl.querySelectorAll("[data-ai-fitur]")].map((x) => x.getAttribute("data-ai-fitur"))).toEqual(["A1"]);
     sakelar(h).checked = false;
     sakelar(h).dispatchEvent(new h.w.Event("change", { bubbles: true }));
-    await sampai(() => h.q("#bd-ai-bilah")!.hasAttribute("hidden"), "bilah hilang");
+    await sampai(() => h.q("#bd-ai-bilah") === null, "bilah hilang");
     expect(h.simpanan["blangkoDerryAi:usr-1"]).toBe(false);
   });
 });
 
 describe("panel Blangko Derry: saldo kiri bawah", () => {
   it("menampilkan saldo PENGGUNA; diklik berganti saldo SATKER (ikon berubah), diklik lagi kembali", async () => {
-    const h = bukaPanel();
+    const h = bukaPanel({ simpanan: { "blangkoDerryAi:usr-1": true } });
     const tmb = await sampai(() => (!h.q("#bd-ai-saldo")!.hasAttribute("hidden") ? h.q<HTMLButtonElement>("#bd-ai-saldo") : null), "saldo tampil");
     expect(tmb.textContent).toContain("Saldo: Rp20.000");
     expect(tmb.querySelector("[data-ikon]")!.getAttribute("data-ikon")).toBe("pengguna");
@@ -394,18 +427,23 @@ describe("panel Blangko Derry: saldo kiri bawah", () => {
   });
 
   it("pengguna yang belum berhak atas saldo satker: saldo satker tampil dengan keterangan; saldo sendiri habis diberi tanda", async () => {
-    const h = bukaPanel({ ringkas: { ...RINGKAS_BAIK, saldoRp: 0, satker: { boleh: false, saldoRp: 900_000, batasBulananRp: 0, terpakaiBulanIniRp: 0, sisaBatasRp: null } } });
+    // Saldo sendiri nol dan belum berhak atas satker: saklar terkunci, jadi pojok saldo tidak ada; keadaan ini dilihat dari Gratis=false lewat cara lain.
+    const h = bukaPanel({ simpanan: { "blangkoDerryAi:usr-1": true }, ringkas: { ...RINGKAS_BAIK, saldoRp: 5000, satker: { boleh: false, saldoRp: 900_000, batasBulananRp: 0, terpakaiBulanIniRp: 0, sisaBatasRp: null } } });
     const tmb = await sampai(() => (!h.q("#bd-ai-saldo")!.hasAttribute("hidden") ? h.q<HTMLButtonElement>("#bd-ai-saldo") : null), "saldo");
-    expect(tmb.textContent).toContain("(habis)");
-    expect(tmb.classList.contains("habis")).toBe(true);
+    expect(tmb.textContent).toContain("Saldo: Rp5.000");
     tmb.click();
     expect(tmb.textContent).toContain("Anda belum berhak");
+    expect(tmb.classList.contains("habis")).toBe(true); // satker tidak dapat dipakai pengguna ini
   });
 
-  it("tidak ada saldo bila ALETA Ai belum aktif di server", async () => {
-    const h = bukaPanel({ ringkas: { ...RINGKAS_BAIK, aktif: false } });
+  it("tidak ada saldo (elemennya dihapus) bila ALETA Ai belum aktif di server atau saldo habis; OFF: tidak ada pojok saldo sama sekali", async () => {
+    const h = bukaPanel({ simpanan: { "blangkoDerryAi:usr-1": true }, ringkas: { ...RINGKAS_BAIK, aktif: false } });
+    await sampai(() => h.ai().keadaan().inti && h.simpanan["blangkoDerryAi:usr-1"] === false, "terkunci");
+    expect(h.q("#bd-ai-saldo")).toBeNull();
+    expect(h.q("#bd-ai-bilah")).toBeNull();
+    const mati = bukaPanel();
     await tunggu(30);
-    expect(h.q("#bd-ai-saldo")!.hasAttribute("hidden")).toBe(true);
+    expect(mati.q("#bd-ai-saldo")).toBeNull();
   });
 });
 
@@ -554,15 +592,18 @@ describe("panel Blangko Derry: tiap fitur memakai klien tiruan, perkiraan lebih 
   });
 
   it("titik sambung proyek: proyekId tersimpan dan ikut di perkiraan dan pesan", async () => {
-    const h = bukaPanel({ simpanan: { "blangkoDerryAi:usr-1": true, blangkoDerryAiProyek: "proyek-derry" }, hasil });
+    const proyek = [{ id: "proyek-derry", nama: "ALETA AI PA CLAUDE", deskripsi: "Proyek Derry" }];
+    const h = bukaPanel({ simpanan: { "blangkoDerryAi:usr-1": true, blangkoDerryAiProyek: "proyek-derry" }, ringkas: { ...RINGKAS_BAIK, proyekPilihan: proyek }, hasil });
     await sampai(() => !h.q("#bd-ai-bilah")!.hasAttribute("hidden"), "bilah");
+    expect(h.q<HTMLSelectElement>("[data-ai-proyek]")!.value).toBe("proyek-derry");
     await jalankanFitur(h, "D1");
     for (const p of h.panggilan.filter((x) => x.alamat.endsWith("/perkiraan") || x.alamat.endsWith("/pesan"))) expect(p.badan.proyekId).toBe("proyek-derry");
+    expect(h.panggilan.find((x) => x.alamat.endsWith("/percakapan") && x.metode === "POST")!.badan).toMatchObject({ proyekId: "proyek-derry" });
   });
 
   it("MATI = tidak ada jalur AI sama sekali: bukaFitur diabaikan, tak ada perkiraan/pesan/percakapan", async () => {
     const h = bukaPanel();
-    await sampai(() => (!h.q("#bd-ai-saklar")!.hasAttribute("hidden") && h.ai().keadaan().ringkas), "tampil");
+    await sampai(() => !h.q("#bd-ai-saklar")!.hasAttribute("hidden"), "tampil");
     await h.ai().bukaFitur("D1");
     await tunggu(30);
     expect(h.q("#bd-ai-jendela")).toBeNull();
@@ -686,7 +727,7 @@ describe("ALETA Ai Blangko Derry di server: kelompok dipaksa, samaran sebelum ki
   it("fitur A1 dijalankan: TANPA pengklasifikasi berbayar, rute sesuai tabel fitur, data asli TIDAK keluar ke layanan AI, jawaban dipulihkan", async () => {
     const klien = new KlienTiruan();
     const id = await siap(hakim, klien);
-    const masukan = masukanDariBadan({ fitur: "A1", bahan: { ...BAHAN, masukan: "Saksi melihat Ahmad Fauzi bin Hasan pergi" }, proyekId: "proyek-uji" });
+    const masukan = masukanDariBadan({ fitur: "A1", bahan: { ...BAHAN, masukan: "Saksi melihat Ahmad Fauzi bin Hasan pergi" } });
     const e = await kumpulkan(kirimPesan(db, hakim, id, masukan));
     expect(e.map((x) => x.jenis)).toEqual(["perkiraan", "teks", "selesai"]);
     // Tidak ada panggilan pengklasifikasi: hanya satu panggilan (jawaban).
@@ -702,8 +743,31 @@ describe("ALETA Ai Blangko Derry di server: kelompok dipaksa, samaran sebelum ki
     // Jejak fitur tercatat tanpa isi pesan.
     const jejak = await db.queryAll<{ aksi: string; ringkas: string }>(`SELECT aksi, ringkas FROM aleta_ai_jejak WHERE aksi = 'fitur-blangko'`);
     expect(jejak).toHaveLength(1);
-    expect(jejak[0]!.ringkas).toBe("fitur=A1; kelompok=teliti-ringkas; proyek=proyek-uji");
+    expect(jejak[0]!.ringkas).toBe("fitur=A1; kelompok=teliti-ringkas");
     expect(jejak[0]!.ringkas).not.toMatch(/siti|ahmad/i);
+  });
+
+  it("proyek kelolaan Super Admin dipilih dari panel (proyekId): instruksi proyek ikut ke layanan AI; proyek yang tidak boleh dipakai ditolak", async () => {
+    const proyekHakim = await buatProyekKelola(db, superAdmin, { nama: "ALETA AI PA CLAUDE", deskripsi: "Proyek Derry", instruksi: "INSTRUKSI-PROYEK-DERRY: jawab ringkas.", akses: "peran", aksesPeran: ["hakim"], aktif: true });
+    const proyekPp = await buatProyekKelola(db, superAdmin, { nama: "Proyek PP", instruksi: "INSTRUKSI-PROYEK-PP", akses: "peran", aksesPeran: ["panitera-pengganti"], aktif: true });
+    // Ringkas hanya menyebut proyek yang boleh dipakai pengguna itu.
+    expect((await ringkasAi(db, hakim)).proyekPilihan.map((x) => x.nama)).toEqual(["ALETA AI PA CLAUDE"]);
+    const klien = new KlienTiruan();
+    const id = await siap(hakim, klien);
+    const e = await kumpulkan(kirimPesan(db, hakim, id, masukanDariBadan({ fitur: "D1", bahan: { perkara: "p", naskah: "n" }, proyekId: proyekHakim.id })));
+    expect(e.map((x) => x.jenis)).toEqual(["perkiraan", "teks", "selesai"]);
+    expect(klien.semuaTeks).toContain("INSTRUKSI-PROYEK-DERRY");
+    expect(klien.semuaTeks).not.toContain("INSTRUKSI-PROYEK-PP");
+    // Perkiraan memakai proyek yang sama (isi proyek ikut menambah perkiraan token).
+    expect((await perkirakanPesan(db, hakim, "", masukanDariBadan({ fitur: "D1", bahan: { perkara: "p", naskah: "n" }, proyekId: proyekHakim.id }))).bolehJalan).toBe(true);
+    // Proyek milik peran lain: ditolak, tanpa memanggil layanan AI.
+    const klien2 = new KlienTiruan();
+    const id2 = await siap({ ...hakim, id: "usr-proyek-2" }, klien2);
+    const tolak = await kumpulkan(kirimPesan(db, { ...hakim, id: "usr-proyek-2" }, id2, masukanDariBadan({ fitur: "D1", bahan: { perkara: "p", naskah: "n" }, proyekId: proyekPp.id })));
+    expect(tolak).toHaveLength(1);
+    expect((tolak[0] as { pesan: string }).pesan).toMatch(/tidak lagi tersedia untuk Anda/);
+    expect(klien2.panggilan).toHaveLength(0);
+    await expect(perkirakanPesan(db, hakim, "", masukanDariBadan({ fitur: "D1", bahan: { perkara: "p", naskah: "n" }, proyekId: proyekPp.id }))).rejects.toMatchObject({ status: 404 });
   });
 
   it("nama yang tidak berpola tetap disamarkan karena didaftarkan panel (daftar samarkan)", async () => {
@@ -848,14 +912,14 @@ describe("panel: menu proyek dan panduan bergambar", () => {
     await sampai(() => !h.q("#bd-ai-bilah")!.hasAttribute("hidden"), "bilah");
     expect(h.q<HTMLButtonElement>('[data-ai-grup="Menu proyek"]')!.disabled).toBe(true);
     const mati = bukaPanel();
-    await sampai(() => mati.ai().keadaan().ringkas, "ringkas");
+    await sampai(() => !mati.q("#bd-ai-saklar")!.hasAttribute("hidden"), "saklar");
     expect(mati.q("[data-ai-menu]")).toBeNull();
     expect(mati.q("[data-ai-grup]")).toBeNull();
   });
 
   it("panduan: tampil SEKALI saat saklar pertama dinyalakan (menyorot elemen nyata), 7 langkah; tidak muncul lagi; dibuka lewat (?)", async () => {
     const h = bukaPanel();
-    await sampai(() => h.ai().keadaan().ringkas && !h.q("#bd-ai-saklar")!.hasAttribute("hidden"), "tampil");
+    await sampai(() => !h.q("#bd-ai-saklar")!.hasAttribute("hidden"), "tampil");
     expect(h.ai().turTerbuka()).toBe(-1);
     expect(Object.keys(h.simpanan).some((k) => k.startsWith("blangkoDerryAiTur"))).toBe(false); // MATI = tanpa jejak
     sakelar(h).checked = true;
@@ -878,7 +942,7 @@ describe("panel: menu proyek dan panduan bergambar", () => {
     sakelar(h).checked = true;
     sakelar(h).dispatchEvent(new h.w.Event("change", { bubbles: true }));
     await sampai(() => h.simpanan["blangkoDerryAi:usr-1"] === true, "nyala lagi");
-    await tunggu(30);
+    await sampai(() => h.q("#bd-ai-bilah") && !h.q("#bd-ai-bilah")!.hasAttribute("hidden"), "bilah lagi");
     expect(h.q("#bd-ai-tur")).toBeNull();
     // Dibuka lagi lewat tanda (?).
     h.q<HTMLButtonElement>("[data-ai-tur]")!.click();
@@ -997,7 +1061,219 @@ describe("panel: peran yang aplikasinya belum dibuka", () => {
     expect(h.q("#bd-ai-saklar-ket")!.textContent).toBe("(belum dibuka untuk peran Anda)");
     expect(h.q("#bd-ai-saklar")!.getAttribute("title")).toBe(kalimat);
     expect(sakelar(h).disabled).toBe(true);
-    expect(h.q("#bd-ai-bilah")!.hasAttribute("hidden")).toBe(true);
+    expect(h.q("#bd-ai-bilah")).toBeNull();
     expect(alamatAi(h)).toEqual([]);
+  });
+});
+
+// ─── 6. B5: gambar KTP ───────────────────────────────────────────────────────
+
+describe("B5: membaca GAMBAR KTP (OCR di server kantor), NIK disamarkan, hasil berupa usulan isian", () => {
+  const hidup = { "blangkoDerryAi:usr-1": true };
+  const HASIL_ISIAN = '[{"kode":"2222","nilai":"SITI AMINAH, lahir di DONGGALA","alasan":"dari KTP"}]';
+
+  async function bukaB5(h: ReturnType<typeof bukaPanel>) {
+    await sampai(() => !h.q("#bd-ai-bilah")!.hasAttribute("hidden"), "bilah");
+    await h.ai().bukaFitur("B5");
+    await sampai(() => h.q("#bd-ai-ktp"), "pemilih gambar");
+  }
+  const pilihGambar = (h: ReturnType<typeof bukaPanel>, nama = "ktp.png", tipe = "image/png", ukuran = 1000) => {
+    const berkas = new h.w.File([new Uint8Array(ukuran)], nama, { type: tipe });
+    const input = h.q<HTMLInputElement>("#bd-ai-ktp")!;
+    Object.defineProperty(input, "files", { value: [berkas], configurable: true });
+    input.dispatchEvent(new h.w.Event("change", { bubbles: true }));
+    return berkas;
+  };
+
+  it("unggah gambar: dikirim ke rute baca KTP (bukan ke jalur AI); hasil baca menjadi teks berlabel yang dapat dikoreksi; gambar tidak ikut ke perkiraan/pesan AI", async () => {
+    const h = bukaPanel({ simpanan: hidup, hasil: () => HASIL_ISIAN });
+    await bukaB5(h);
+    expect(h.q("#bd-ai-ktp-status")!.textContent).toMatch(/tidak disimpan dan tidak dikirim ke layanan AI/);
+    pilihGambar(h);
+    await sampai(() => /Nama : SITI AMINAH/.test(h.q<HTMLTextAreaElement>("#bd-ai-masukan")!.value), "teks hasil baca");
+    const ocr = h.panggilan.filter((p) => p.alamat === "/aleta/api/aleta-ecourt/saksi-scan");
+    expect(ocr).toHaveLength(1);
+    expect(ocr[0]!.metode).toBe("POST");
+    expect(ocr[0]!.badan.gambar).toMatch(/^data:image\/png;base64,/);
+    const teksKtp = h.q<HTMLTextAreaElement>("#bd-ai-masukan")!.value;
+    expect(teksKtp).toContain("NIK : 7203010101900001");
+    expect(teksKtp).toContain("Jenis kelamin : Perempuan");
+    expect(h.q("#bd-ai-ktp-status")!.textContent).toMatch(/Periksa dan koreksi dulu/);
+    // Perkiraan -> jalankan: bahan memuat daftar samaran dari KTP; gambar sendiri tidak ikut.
+    await sampai(() => /Perkiraan biaya: sekitar Rp1\.500/.test(h.q("#bd-ai-kendali")?.textContent ?? ""), "perkiraan");
+    h.q<HTMLButtonElement>('[data-ai="jalan"]')!.click();
+    await sampai(() => h.q("#bd-ai-hasil .bd-ai-tanda"), "hasil");
+    const keAi = h.panggilan.filter((p) => p.alamat.endsWith("/perkiraan") || p.alamat.endsWith("/pesan"));
+    expect(keAi.length).toBeGreaterThanOrEqual(2);
+    for (const p of keAi) {
+      expect(JSON.stringify(p.badan)).not.toContain("data:image");
+      const jenis = new Set((p.badan.bahan.samarkan as Array<{ jenis: string }>).map((x) => x.jenis));
+      for (const j of ["NAMA", "NIK", "ALAMAT", "LAHIR"]) expect(jenis.has(j), j).toBe(true);
+      expect(p.badan.bahan.samarkan).toEqual(expect.arrayContaining([{ jenis: "NIK", nilai: "7203010101900001" }]));
+    }
+    // Hasil = usulan isian; belum ditulis ke isian mana pun sebelum petugas memakainya.
+    expect(h.akarEl.querySelectorAll("[data-ai-isian]")).toHaveLength(1);
+    expect(h.terapan).toHaveLength(0);
+  });
+
+  it("teks hasil baca dapat dikoreksi petugas lebih dulu, dan koreksi itulah yang dikirim", async () => {
+    const h = bukaPanel({ simpanan: hidup, hasil: () => HASIL_ISIAN });
+    await bukaB5(h);
+    pilihGambar(h);
+    await sampai(() => /Nama : SITI AMINAH/.test(h.q<HTMLTextAreaElement>("#bd-ai-masukan")!.value), "teks hasil baca");
+    const ta = h.q<HTMLTextAreaElement>("#bd-ai-masukan")!;
+    ta.value = ta.value.replace("SITI AMINAH", "SITI AMINA");
+    ta.dispatchEvent(new h.w.Event("input", { bubbles: true }));
+    await sampai(() => /Perkiraan biaya/.test(h.q("#bd-ai-kendali")?.textContent ?? ""), "perkiraan");
+    h.q<HTMLButtonElement>('[data-ai="jalan"]')!.click();
+    await sampai(() => h.q("#bd-ai-hasil .bd-ai-tanda"), "hasil");
+    expect(h.panggilan.find((p) => p.alamat.endsWith("/pesan"))!.badan.bahan.masukan).toContain("Nama : SITI AMINA\n");
+  });
+
+  it("mesin OCR belum terpasang / gambar tak terbaca: kalimat server tampil, teks tetap bisa diketik, tak ada panggilan AI", async () => {
+    const pesan = "ALETA belum dapat membaca gambar: mesin OCR belum terpasang di server. Ketik atau tempel teks KTP di kotak teks.";
+    const h = bukaPanel({ simpanan: hidup, ktp: { available: true, ok: false, alasan: "ocr_belum_tersedia", pesan } });
+    await bukaB5(h);
+    pilihGambar(h);
+    await sampai(() => /belum dapat membaca gambar/.test(h.q("#bd-ai-ktp-status")?.textContent ?? ""), "status gagal");
+    expect(h.q("#bd-ai-ktp-status")!.textContent).toContain("Ketik atau tempel teks KTP di kotak.");
+    expect(h.q<HTMLTextAreaElement>("#bd-ai-masukan")!.value).toBe("");
+    expect(alamatAi(h).some((a) => a.endsWith("/perkiraan") || a.endsWith("/pesan"))).toBe(false);
+    // Ketikan manual tetap jalan seperti biasa.
+    const ta = h.q<HTMLTextAreaElement>("#bd-ai-masukan")!;
+    ta.value = "Nama : SITI AMINAH\nNIK : 7203010101900001";
+    ta.dispatchEvent(new h.w.Event("input", { bubbles: true }));
+    await sampai(() => /Perkiraan biaya/.test(h.q("#bd-ai-kendali")?.textContent ?? ""), "perkiraan");
+  });
+
+  it("berkas bukan gambar atau terlalu besar ditolak di panel tanpa permintaan jaringan", async () => {
+    const h = bukaPanel({ simpanan: hidup });
+    await bukaB5(h);
+    pilihGambar(h, "ktp.pdf", "application/pdf");
+    expect(h.q("#bd-ai-ktp-status")!.textContent).toMatch(/bukan gambar/);
+    pilihGambar(h, "besar.jpg", "image/jpeg", 7 * 1024 * 1024);
+    expect(h.q("#bd-ai-ktp-status")!.textContent).toMatch(/terlalu besar/);
+    expect(h.panggilan.some((p) => p.alamat.includes("saksi-scan"))).toBe(false);
+  });
+
+  it("gambar ditempel (Ctrl+V) dibaca sama seperti diunggah; pemilih gambar hanya ada di B5", async () => {
+    const h = bukaPanel({ simpanan: hidup });
+    await bukaB5(h);
+    const berkas = new h.w.File([new Uint8Array(500)], "tempel.png", { type: "image/png" });
+    const ev = new h.w.Event("paste", { bubbles: true, cancelable: true }) as Event & { clipboardData?: unknown };
+    ev.clipboardData = { items: [{ type: "image/png", getAsFile: () => berkas }] };
+    h.q("#bd-ai-jendela")!.dispatchEvent(ev);
+    await sampai(() => /Nama : SITI AMINAH/.test(h.q<HTMLTextAreaElement>("#bd-ai-masukan")!.value), "teks hasil baca");
+    expect(ev.defaultPrevented).toBe(true);
+    await h.ai().bukaFitur("A3");
+    await sampai(() => h.q("#bd-ai-masukan"), "jendela A3");
+    expect(h.q("#bd-ai-ktp")).toBeNull();
+  });
+});
+
+describe("server: B5 - teks KTP tersamar sebelum keluar ke layanan AI", () => {
+  it("NIK, nama, alamat, tempat/tanggal lahir dari hasil baca KTP tidak ikut ke layanan AI (daftar samaran dari panel + pola NIK)", async () => {
+    const db = await createAletaDatabase({ useInMemory: true, seed: false });
+    ctx.db = db;
+    try {
+      await simpanKurs(db, { tanggal: tanggalLokal(), kurs: 16000, sumber: "uji" });
+      await unggahProyek(db, superAdmin.id, { bita: zipRekaan(), namaBerkas: "proyek-rekaan.zip" });
+      const klien = new KlienTiruan();
+      klien.jawaban = '[{"kode":"2222","nilai":"[NAMA-1], lahir di [LAHIR-1]","alasan":"dari KTP"}]';
+      suntikKlienAi(klien);
+      await terapkanMutasi(db, { penggunaId: hakim.id, jenis: "isi", jumlahRp: 20_000, catatan: "uji" });
+      const id = (await buatPercakapan(db, hakim.id)).id;
+      const masukan = masukanDariBadan({
+        fitur: "B5",
+        bahan: {
+          perkara: "Nomor perkara: 1/Pdt.G/2026/PA.Dgl",
+          kosong: "[2222] Identitas Penggugat",
+          masukan: "Nama : SITI AMINAH\nNIK : 7203010101900001\nTempat lahir : DONGGALA\nTanggal lahir : 01/01/1990\nAlamat : JL. MAWAR NO. 1",
+          samarkan: [
+            { jenis: "NAMA", nilai: "SITI AMINAH" },
+            { jenis: "NIK", nilai: "7203010101900001" },
+            { jenis: "ALAMAT", nilai: "JL. MAWAR NO. 1" },
+            { jenis: "LAHIR", nilai: "DONGGALA, 01/01/1990" },
+            { jenis: "LAHIR", nilai: "01/01/1990" },
+          ],
+        },
+      });
+      const e = await kumpulkan(kirimPesan(db, hakim, id, masukan));
+      expect(e.map((x) => x.jenis)).toEqual(["perkiraan", "teks", "selesai"]);
+      for (const rahasia of ["SITI AMINAH", "7203010101900001", "JL. MAWAR", "DONGGALA", "01/01/1990"]) expect(klien.semuaTeks, rahasia).not.toContain(rahasia);
+      expect(klien.semuaTeks).toMatch(/\[NIK-\d+\]/);
+      // Jawaban kembali dengan data asli (untuk usulan isian yang akan ditinjau petugas).
+      const jawab = e.filter((x) => x.jenis === "teks").map((x) => (x as { delta: string }).delta).join("");
+      expect(jawab).toContain("SITI AMINAH");
+    } finally {
+      suntikKlienAi(undefined);
+      await db.close();
+    }
+  });
+});
+
+// ─── 7. Kinerja: nol beban saat mati, ringkasan disinggahkan, bilah dirender sekali ───────
+
+describe("kinerja: ALETA Ai tidak membebani panel", () => {
+  const hidup = { "blangkoDerryAi:usr-1": true };
+
+  it("MATI: segarkan/peristiwa perkara berkali-kali tidak memuat inti, tidak membaca jaringan, tidak menulis penyimpanan", async () => {
+    const h = bukaPanel();
+    await sampai(() => !h.q("#bd-ai-saklar")!.hasAttribute("hidden"), "saklar");
+    for (let i = 0; i < 25; i += 1) {
+      h.ai().segarkan();
+      h.doc.dispatchEvent(new h.w.Event("aleta-bd-perkara"));
+    }
+    await tunggu(30);
+    expect(h.panggilan).toEqual([]);
+    expect(h.pemuatan.jumlah).toBe(0);
+    expect(h.simpanan).toEqual({});
+  });
+
+  it("MATI dengan ringkasan simpanan segar: kunci 'saldo habis' digambar dari simpanan TANPA jaringan dan tanpa memuat inti; simpanan basi diabaikan", async () => {
+    const habis = { id: "usr-1", saat: Date.now() - 60_000, ringkas: { aktif: true, saldoRp: 0, minimumRp: 1000, gratis: false, aplikasiDibuka: true, alasanAplikasi: "", satker: { boleh: false, saldoRp: 0, sisaBatasRp: null } } };
+    const h = bukaPanel({ simpanan: { blangkoDerryAiRingkas: habis } });
+    await sampai(() => h.q("#bd-ai-saklar-ket")?.textContent, "keterangan dari simpanan");
+    expect(h.q("#bd-ai-saklar-ket")!.textContent).toBe("(saldo habis)");
+    expect(sakelar(h).disabled).toBe(true);
+    expect(h.panggilan).toEqual([]);
+    expect(h.pemuatan.jumlah).toBe(0);
+    const basi = bukaPanel({ simpanan: { blangkoDerryAiRingkas: { ...habis, saat: Date.now() - 11 * 60_000 } } });
+    await sampai(() => !basi.q("#bd-ai-saklar")!.hasAttribute("hidden"), "saklar");
+    expect(sakelar(basi).disabled).toBe(false); // simpanan > 10 menit tidak dipercaya: saklar biasa, alasannya diberi tahu saat diklik
+  });
+
+  it("MENYALA: inti dimuat tepat sekali; ringkasan dibaca SEKALI walau segarkan/peristiwa perkara diulang; bilah tidak dirender ulang bila keadaan sama", async () => {
+    const h = bukaPanel({ simpanan: hidup });
+    await sampai(() => h.q("#bd-ai-bilah") && !h.q("#bd-ai-bilah")!.hasAttribute("hidden"), "bilah");
+    const penanda = h.q("#bd-ai-bilah .bd-ai-judul")!;
+    for (let i = 0; i < 25; i += 1) {
+      h.ai().segarkan();
+      h.doc.dispatchEvent(new h.w.Event("aleta-bd-perkara"));
+    }
+    await tunggu(30);
+    expect(h.panggilan.filter((p) => p.alamat === "/aleta/api/aleta-ai/ringkas")).toHaveLength(1);
+    expect(h.pemuatan.jumlah).toBe(1);
+    // Simpul bilah yang sama (tidak diganti innerHTML-nya) = tidak digambar ulang.
+    expect(h.q("#bd-ai-bilah .bd-ai-judul")).toBe(penanda);
+    // Pendengar peristiwa perkara terpasang hanya SATU kali (menyalakan ulang tidak menggandakan).
+    sakelar(h).checked = false;
+    sakelar(h).dispatchEvent(new h.w.Event("change", { bubbles: true }));
+    await sampai(() => h.q("#bd-ai-bilah") === null, "mati");
+    expect(h.q("#bd-ai-saldo")).toBeNull();
+  });
+
+  it("jendela fitur: ketikan beruntun hanya memicu SATU perkiraan (ditunda), dan pembacaan bahan tidak membekukan (async)", async () => {
+    const h = bukaPanel({ simpanan: hidup });
+    await sampai(() => !h.q("#bd-ai-bilah")!.hasAttribute("hidden"), "bilah");
+    await h.ai().bukaFitur("E1");
+    await sampai(() => h.q("#bd-ai-masukan"), "jendela");
+    const ta = h.q<HTMLTextAreaElement>("#bd-ai-masukan")!;
+    for (const kata of ["S", "Si", "Sia", "Siapa", "Siapa s", "Siapa saksi?"]) {
+      ta.value = kata;
+      ta.dispatchEvent(new h.w.Event("input", { bubbles: true }));
+    }
+    await sampai(() => /Perkiraan biaya/.test(h.q("#bd-ai-kendali")?.textContent ?? ""), "perkiraan");
+    expect(h.panggilan.filter((p) => p.alamat.endsWith("/perkiraan"))).toHaveLength(1);
   });
 });

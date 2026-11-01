@@ -61,6 +61,8 @@ export type RingkasAi = {
   gratis?: boolean;
   satker?: KeadaanSatkerAi;
   fiturBlangko?: string[];
+  /** Proyek kelolaan yang boleh dipakai pengguna ini (nama + deskripsi saja). */
+  proyekPilihan?: Array<{ id: string; nama: string; deskripsi: string }>;
 };
 
 export type RingkasPercakapan = { id: string; judul: string; diperbarui: string; perkara?: string };
@@ -77,7 +79,7 @@ export type PesanAi = {
   terputus?: boolean;
 };
 
-export type RincianPercakapan = { id: string; judul: string; pesan: PesanAi[] };
+export type RincianPercakapan = { id: string; judul: string; pesan: PesanAi[]; proyekId?: string };
 
 export type PeristiwaAlir =
   | { jenis: "perkiraan"; mode: string; label?: string; perkiraanRp: number }

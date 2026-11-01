@@ -2157,6 +2157,73 @@ export const DDL_ALETA_AI_TEMPLAT_KIRIMAN = {
 } as const;
 
 /**
+ * ALETA Ai: banyak proyek kelolaan Super Admin (0122, 1 Nov 2026) - instruksi, berkas pengetahuan,
+ * memori, riwayat, dan pilihan proyek per percakapan. Cermin PERSIS dari
+ * drizzle/0122_aleta_ai_proyek_kelola.sql. Tanpa kunci asing.
+ */
+export const DDL_ALETA_AI_PROYEK_KELOLA = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_ai_proyek_kelola (
+  id TEXT PRIMARY KEY,
+  nama TEXT NOT NULL,
+  deskripsi TEXT NOT NULL DEFAULT '',
+  instruksi TEXT NOT NULL DEFAULT '',
+  sertakan_bawaan INTEGER NOT NULL DEFAULT 1,
+  akses TEXT NOT NULL DEFAULT 'semua',
+  akses_peran TEXT NOT NULL DEFAULT '',
+  akses_pengguna TEXT NOT NULL DEFAULT '',
+  memori_aktif INTEGER NOT NULL DEFAULT 1,
+  aktif INTEGER NOT NULL DEFAULT 1,
+  versi INTEGER NOT NULL DEFAULT 1,
+  dibuat_oleh TEXT NOT NULL DEFAULT '',
+  dibuat_at TEXT NOT NULL,
+  diubah_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_ai_pengetahuan (
+  id TEXT PRIMARY KEY,
+  proyek_id TEXT NOT NULL,
+  nama TEXT NOT NULL,
+  jenis TEXT NOT NULL DEFAULT '',
+  ukuran INTEGER NOT NULL DEFAULT 0,
+  karakter INTEGER NOT NULL DEFAULT 0,
+  teks TEXT NOT NULL DEFAULT '',
+  selalu INTEGER NOT NULL DEFAULT 0,
+  dibuat_at TEXT NOT NULL,
+  diubah_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_ai_memori_proyek (
+  id TEXT PRIMARY KEY,
+  proyek_id TEXT NOT NULL,
+  isi TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'disetujui',
+  sumber TEXT NOT NULL DEFAULT 'super-admin',
+  dibuat_at TEXT NOT NULL,
+  diputuskan_oleh TEXT NOT NULL DEFAULT '',
+  diputuskan_at TEXT NOT NULL DEFAULT ''
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_ai_proyek_catatan (
+  id TEXT PRIMARY KEY,
+  proyek_id TEXT NOT NULL,
+  aksi TEXT NOT NULL,
+  ringkas TEXT NOT NULL DEFAULT '',
+  oleh TEXT NOT NULL DEFAULT '',
+  waktu TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_ai_proyek_pilihan (
+  percakapan_id TEXT PRIMARY KEY,
+  proyek_id TEXT NOT NULL,
+  dipilih_at TEXT NOT NULL
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_ai_pengetahuan_proyek ON aleta_ai_pengetahuan(proyek_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_ai_memori_proyek_proyek ON aleta_ai_memori_proyek(proyek_id, status)`,
+    `CREATE INDEX IF NOT EXISTS idx_ai_proyek_catatan_proyek ON aleta_ai_proyek_catatan(proyek_id, waktu)`,
+    `CREATE INDEX IF NOT EXISTS idx_ai_proyek_pilihan_proyek ON aleta_ai_proyek_pilihan(proyek_id)`,
+  ],
+} as const;
+
+/**
  * Sidang keliling per hari & hakim yang menyidangkan per perkara (0083, 22 Okt
  * 2026). Cermin PERSIS dari drizzle/0083_aleta_sidang_keliling_hakim.sql;
  * penjaga jadwal-keliling-hakim-massal-22okt.test.ts membandingkan keduanya.
@@ -3542,6 +3609,7 @@ const schemaStatements = [
   // ALETA Ai tahap 3: tugas, langkah, berkas keluaran (0086); templat proyek & kiriman (0087).
   ...DDL_ALETA_AI_TUGAS.tabel,
   ...DDL_ALETA_AI_TEMPLAT_KIRIMAN.tabel,
+  ...DDL_ALETA_AI_PROYEK_KELOLA.tabel,
   // Jejak tunda/putus otomatis terstruktur (0105).
   ...DDL_OTOMATIS_JEJAK.tabel,
   // Kebijakan sandi + setelan keamanan (0107).
@@ -5528,6 +5596,7 @@ const indexStatements = [
   ...DDL_JEJAK_PERANGKAT.indeks,
   ...DDL_ALETA_AI_TUGAS.indeks,
   ...DDL_ALETA_AI_TEMPLAT_KIRIMAN.indeks,
+  ...DDL_ALETA_AI_PROYEK_KELOLA.indeks,
   ...DDL_OTOMATIS_JEJAK.indeks,
   ...DDL_KEBIJAKAN_SANDI.indeks,
   ...DDL_BATAS_JARINGAN.indeks,

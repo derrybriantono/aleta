@@ -11,6 +11,8 @@ import { keadaanSatkerPengguna, type KeadaanSatker } from "@/server/modules/alet
 import { fiturBlangkoBoleh } from "@/server/modules/aleta-ai/fitur-blangko";
 import { bacaTimpaanKemampuan } from "@/server/modules/aleta-ai/kemampuan";
 import { proyekAktif } from "@/server/modules/aleta-ai/proyek";
+import { daftarPilihanProyek } from "@/server/modules/aleta-ai/proyek-kelola";
+import type { PilihanProyek } from "@/lib/aleta-ai/proyek-kelola";
 import { daftarMutasi, saldoPengguna } from "@/server/modules/aleta-ai/saldo";
 
 /**
@@ -29,6 +31,8 @@ export type RingkasAi = {
   superAdmin: boolean;
   pemicu: Array<{ kode: string; label: string; kelompok: string; mode: string; grup: string }>;
   proyekVersi: number;
+  /** Proyek kelolaan yang boleh dipilih pengguna ini saat bertanya (hanya nama + deskripsi; kosong = hanya proyek bawaan satker). */
+  proyekPilihan: PilihanProyek[];
   /** Program promosi gratis untuk pengguna ini; tidak ada bila tidak berlaku bagi pengguna ini. */
   promo?: StatusPromo;
   /** Harga minimum satu giliran: saldo di bawah ini tidak cukup untuk menjalankan apa pun (panel Blangko Derry mengunci saklar). */
@@ -73,6 +77,7 @@ export async function ringkasAi(db: AletaDatabase, pelaku: PelakuAi): Promise<Ri
     superAdmin: pelaku.superAdmin,
     pemicu,
     proyekVersi: proyek?.versi ?? 0,
+    proyekPilihan: await daftarPilihanProyek(db, pelaku),
   };
 }
 

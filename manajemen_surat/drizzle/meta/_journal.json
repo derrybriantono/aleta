@@ -745,6 +745,13 @@
       "breakpoints": true
     },
     {
+      "idx": 106,
+      "version": "7",
+      "when": 1792326600001,
+      "tag": "0122_aleta_ai_proyek_kelola",
+      "breakpoints": true
+    },
+    {
       "idx": 108,
       "version": "7",
       "when": 1792337400001,

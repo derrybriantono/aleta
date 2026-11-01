@@ -11,9 +11,11 @@ import {
   type Tarif,
 } from "@/lib/aleta-ai/biaya";
 import { cariPemicuDiAwalTeks, pilihModul, type PemicuMenu } from "@/lib/aleta-ai/proyek";
+import { ANGGARAN_PENGETAHUAN_BAWAAN, ANGGARAN_PENGETAHUAN_KARAKTER, pilihPengetahuan, pisahUsulanMemori } from "@/lib/aleta-ai/proyek-kelola";
 import {
   hitungKarakterPermintaan,
   susunPermintaan,
+  type ProyekDipilih,
   susunPermintaanKlasifikasi,
   BATAS_KARAKTER_PESAN_PENGGUNA,
   type BlokPesan,
@@ -46,6 +48,7 @@ import { ambilMilik, bukaIsi, JUDUL_BAWAAN, riwayatUntukPermintaan, sandiIsi } f
 import { bacaPengaturan, bacaRute, bacaTarif, catatJejak, type PengaturanAi } from "@/server/modules/aleta-ai/pengaturan";
 import { nilaiPerkiraan, parameterHarga, rupiahPerkiraan, type PerkiraanBiaya } from "@/server/modules/aleta-ai/perkiraan";
 import { proyekAktif } from "@/server/modules/aleta-ai/proyek";
+import { bacaPilihanPercakapan, proyekUntukPrompt, simpanUsulanMemori, type ProyekUntukPrompt } from "@/server/modules/aleta-ai/proyek-kelola";
 import { dibatalkanSaklar, pantauSaklar } from "@/server/modules/aleta-ai/saklar";
 import { nilaiDompetSatker, selesaikanSatker, tahanSatker } from "@/server/modules/aleta-ai/dompet-satker";
 import { saldoPengguna, selesaikanTahanan, tahanDana, tambahTahanan } from "@/server/modules/aleta-ai/saldo";
@@ -114,8 +117,8 @@ export type MasukanPesan = {
    */
   dompet?: "pengguna" | "satker";
   /**
-   * Titik sambung proyek ALETA Ai (parameter dari panel). Saat ini hanya proyek aktif bawaan yang dipakai; nilai ini dibawa
-   * dan dicatat supaya pemilihan proyek banyak dapat menyambung tanpa mengubah panel.
+   * Proyek kelolaan Super Admin yang dipilih di panel ("" = proyek bawaan satker). Dipakai bila percakapan belum punya pilihan
+   * sendiri; proyek yang tidak boleh dipakai pengguna ini ditolak (404 biasa) dan dicatat di jejak.
    */
   proyekId?: string;
 };
@@ -292,6 +295,24 @@ async function klasifikasikan(
 }
 
 // ----------------------------------------------------------------------------
+// Proyek kelolaan Super Admin yang dipilih pada percakapan
+// ----------------------------------------------------------------------------
+
+/** Isi proyek untuk satu permintaan: pengetahuan dipilih menurut kata kunci pertanyaan dan anggaran mode. */
+function proyekDipilihUntuk(kelola: ProyekUntukPrompt | null, teksKerja: string, labelMode: string): ProyekDipilih | undefined {
+  if (!kelola) return undefined;
+  const anggaran = ANGGARAN_PENGETAHUAN_KARAKTER[labelMode] ?? ANGGARAN_PENGETAHUAN_BAWAAN;
+  return {
+    nama: kelola.nama,
+    instruksi: kelola.instruksi,
+    sertakanBawaan: kelola.sertakanBawaan,
+    memori: kelola.memori,
+    pengetahuan: pilihPengetahuan({ berkas: kelola.berkas, teks: teksKerja, anggaran }),
+    usulMemori: kelola.memoriAktif,
+  };
+}
+
+// ----------------------------------------------------------------------------
 // Mesin
 // ----------------------------------------------------------------------------
 
@@ -336,6 +357,18 @@ export async function* kirimPesan(
   if (!proyek) {
     yield gagal(PESAN_NONAKTIF_PROYEK);
     return;
+  }
+  // Proyek kelolaan yang dipilih pada percakapan ini (kosong = proyek bawaan satker saja).
+  let kelola: ProyekUntukPrompt | null = null;
+  // Pilihan pada percakapan menang; bila belum ada, proyekId dari panel Blangko Derry (hak tetap diperiksa proyekUntukPrompt).
+  const proyekPilihId = (await bacaPilihanPercakapan(db, percakapanId)) || teks(masukan.proyekId);
+  if (proyekPilihId) {
+    try {
+      kelola = await proyekUntukPrompt(db, pelaku, proyekPilihId);
+    } catch (e) {
+      yield gagal(e instanceof ApiError ? e.message : "Proyek yang dipilih belum dapat dibuka.");
+      return;
+    }
   }
   if (!izinkanLaju(pelaku.id, pengaturan.batasLajuPerMenit, sekarang.getTime())) {
     yield gagal("Terlalu banyak pesan dalam satu menit. Tunggu sebentar lalu kirim lagi.");
@@ -450,9 +483,9 @@ export async function* kirimPesan(
   const perkaraRef = teks(percakapan.perkara_ref);
   const teksKeluar = `${perkaraRef && alatApi.length ? `[Konteks perkara percakapan ini: ${perkaraRef}]\n` : ""}${penyamar.samarkan(teksKerja)}`;
   const buatPermintaan = (r: RuteKelompok): PermintaanAi => {
-    const modul = pilihModul({ modul: proyek.modul, teks: teksKerja, pemicu, kelompok: r.kelompok, labelMode: r.label }).terpilih;
+    const modul = kelola && !kelola.sertakanBawaan ? [] : pilihModul({ modul: proyek.modul, teks: teksKerja, pemicu, kelompok: r.kelompok, labelMode: r.label }).terpilih;
     const adaFallback = tarif.get(r.model)?.fallback === true;
-    return susunPermintaan({ rute: r, corePrompt: proyek.corePrompt, modul, riwayat, teksPengguna: teksKeluar, fallback: adaFallback, alat: alatApi });
+    return susunPermintaan({ rute: r, corePrompt: proyek.corePrompt, modul, riwayat, teksPengguna: teksKeluar, fallback: adaFallback, alat: alatApi, proyek: proyekDipilihUntuk(kelola, teksKerja, r.label) });
   };
 
   let permintaan = buatPermintaan(rute);
@@ -540,6 +573,18 @@ export async function* kirimPesan(
   const tutup = async (): Promise<{ biayaRp: number; saldoRp: number }> => {
     if (hasilTutup) return hasilTutup;
     ditutup = true;
+    // Usulan memori dari jawaban: baris "USUL-MEMORI:" dilepas dari teks yang disimpan dan menjadi usulan yang
+    // menunggu Super Admin. Usulan yang memuat data orang (kode samaran atau nilai yang dikenal penyamar) dibuang.
+    if (kelola?.memoriAktif && jawaban && status !== "gagal") {
+      const pisah = pisahUsulanMemori(jawaban);
+      jawaban = pisah.teks;
+      const aman = pisah.usulan.filter((u) => penyamar.samarkan(u) === u);
+      try {
+        await simpanUsulanMemori(db, kelola.id, aman);
+      } catch {
+        /* usulan memori tidak boleh menggagalkan giliran */
+      }
+    }
     try {
       await simpanPenyamar(db, percakapanId, penyamar);
     } catch {
@@ -831,6 +876,8 @@ export async function perkirakanPesan(
   if (percakapanId && !(await ambilMilik(db, pelaku.id, percakapanId))) throw new ApiError(404, "Percakapan tidak ditemukan.");
   const proyek = await proyekAktif(db);
   if (!proyek) throw new ApiError(409, PESAN_NONAKTIF_PROYEK);
+  const proyekPilihId = (percakapanId ? await bacaPilihanPercakapan(db, percakapanId) : "") || teks(masukan.proyekId);
+  const kelola = proyekPilihId ? await proyekUntukPrompt(db, pelaku, proyekPilihId) : null;
 
   const pengaturan = await bacaPengaturan(db);
   const kurs = await kursBerlaku(db, sekarang);
@@ -856,8 +903,8 @@ export async function perkirakanPesan(
   const rute = pilihan.rute;
 
   const riwayat = percakapanId ? await riwayatUntukPermintaan(db, percakapanId) : [];
-  const modul = pilihModul({ modul: proyek.modul, teks: teksKerja, pemicu, kelompok: rute.kelompok, labelMode: rute.label }).terpilih;
-  const permintaan = susunPermintaan({ rute, corePrompt: proyek.corePrompt, modul, riwayat, teksPengguna: teksKerja, fallback: tarif.get(rute.model)?.fallback === true });
+  const modul = kelola && !kelola.sertakanBawaan ? [] : pilihModul({ modul: proyek.modul, teks: teksKerja, pemicu, kelompok: rute.kelompok, labelMode: rute.label }).terpilih;
+  const permintaan = susunPermintaan({ rute, corePrompt: proyek.corePrompt, modul, riwayat, teksPengguna: teksKerja, fallback: tarif.get(rute.model)?.fallback === true, proyek: proyekDipilihUntuk(kelola, teksKerja, rute.label) });
   const klienAsli = await ambilKlienAi(db);
   const klien = klienAsli ?? { alirkan: async () => Promise.reject(new Error("tanpa klien")) };
   const perkiraan = await perkirakanGiliran(klien, permintaan, rute, tarif, kurs.kurs, pengaturan, pelaku.superAdmin);

@@ -67,3 +67,7 @@
 #aleta-bd-akar .bd-ai-contoh.kolom { flex-direction: column; align-items: stretch; }
 #aleta-bd-akar .bd-ai-contoh-isi { color: var(--muted); }
 @media (max-width: 760px) { #aleta-bd-akar .bd-ai-kartu-tur:not(.tengah) { left: 8px !important; right: 8px; width: auto; } }
+
+/* Pemilih proyek */
+#aleta-bd-akar .bd-ai-proyek { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
+#aleta-bd-akar .bd-ai-proyek select { background: var(--deep); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 2px 8px; font-size: 12.8px; max-width: 220px; }
