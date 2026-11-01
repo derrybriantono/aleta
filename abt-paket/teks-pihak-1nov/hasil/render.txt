@@ -1,0 +1,128 @@
+# Render sungguhan (renderer ABT php56 asli, alat/driver155.py) SEBELUM (basis sesudah 25 paket, pohon /d/r155) vs SESUDAH (paket terpasang). 1 Nov 2026.
+# Gambar (Word -> PDF -> PNG): D:/Aplikasi/aleta/tmp/w155/render/png/ ; RTF dan teks tampak: D:/Aplikasi/aleta/tmp/w155/render/<sebelum|sesudah>/<keadaan>/<kasus>[.rtf]
+# kasus: kes1 putusan CG kontradiktoir (perkara 10284), kes2 putusan Verzet, ver1 putusan verstek/T tidak hadir; es1 ES gugatan sederhana, eks1 eksepsi kewenangan, sita1 putusan sela sita;
+#        aua1/aua2 Asal Usul Anak (perkara 10090), bas1/bas2 BAS pembuktian P/T CG, bas3 BAS itsbat nikah (perkara 10276)
+
+## bukti-elektronik / aua1 : 130 baris sebelum, 129 baris sesudah, 7 baris beda
+   -Bahwa pada persidangan tanggal 14 September 2026 tersebut, untuk meneguhkan dalil-dalil permohonannya, para Pemohon telah menyerahkan alat bukti surat berupa:
+   - Selanjutnya para Pemohon menyerahkan bukti elektronik berupa:
+   -1.	Tangkapan layar (screenshot) percakapan WhatsApp antara Penggugat dan Tergugat tanggal 3 Maret 2026, bukti surat tersebut telah diberi meterai cukup, di-nazegelen, bukti elektronik tersebut telah dicocokkan dengan aslinya dengan telekomunikasi atau alat ya
+   +Bahwa pada persidangan tanggal 14 September 2026 tersebut, untuk meneguhkan dalil-dalil permohonannya, para Pemohon telah menyerahkan alat bukti elektronik berupa:
+   + 1.	Tangkapan layar (screenshot) percakapan WhatsApp antara Penggugat dan Tergugat tanggal 3 Maret 2026, bukti surat tersebut telah diberi meterai cukup, di-nazegelen, bukti elektronik tersebut telah dicocokkan dengan aslinya dengan telekomunikasi atau alat y
+   -Bahwa atas pertanyaan Majelis Hakim, para Pemohon menyatakan telah cukup dengan bukti suratnya dan mengajukan 2 (dua) orang saksi pada persidangan yang sama, yang masing-masing menerangkan sebagai berikut:
+   +Bahwa atas pertanyaan Majelis Hakim, para Pemohon menyatakan telah cukup dengan bukti elektroniknya dan mengajukan 2 (dua) orang saksi pada persidangan yang sama, yang masing-masing menerangkan sebagai berikut:
+
+## bukti-elektronik / aua2 : 116 baris sebelum, 115 baris sesudah, 7 baris beda
+   -Bahwa pada persidangan tanggal 14 September 2026 tersebut, untuk meneguhkan dalil-dalil permohonannya, para Pemohon telah menyerahkan alat bukti surat berupa:
+   - Selanjutnya para Pemohon menyerahkan bukti elektronik berupa:
+   -1.	Tangkapan layar (screenshot) percakapan WhatsApp antara Penggugat dan Tergugat tanggal 3 Maret 2026, bukti surat tersebut telah diberi meterai cukup, di-nazegelen, bukti elektronik tersebut telah dicocokkan dengan aslinya dengan telekomunikasi atau alat ya
+   +Bahwa pada persidangan tanggal 14 September 2026 tersebut, untuk meneguhkan dalil-dalil permohonannya, para Pemohon telah menyerahkan alat bukti elektronik berupa:
+   + 1.	Tangkapan layar (screenshot) percakapan WhatsApp antara Penggugat dan Tergugat tanggal 3 Maret 2026, bukti surat tersebut telah diberi meterai cukup, di-nazegelen, bukti elektronik tersebut telah dicocokkan dengan aslinya dengan telekomunikasi atau alat y
+   -Bahwa atas pertanyaan Majelis Hakim, para Pemohon menyatakan telah cukup dengan bukti suratnya dan mengajukan 2 (dua) orang saksi pada persidangan yang sama, yang masing-masing menerangkan sebagai berikut:
+   +Bahwa atas pertanyaan Majelis Hakim, para Pemohon menyatakan telah cukup dengan bukti elektroniknya dan mengajukan 2 (dua) orang saksi pada persidangan yang sama, yang masing-masing menerangkan sebagai berikut:
+
+## bukti-elektronik / bas1 : 69 baris sebelum, 69 baris sesudah, 2 baris beda
+   -Selanjutnya atas pertanyaan Ketua Majelis, Penggugat menyatakan telah cukup dengan bukti suratnya;
+   +Selanjutnya atas pertanyaan Ketua Majelis, Penggugat menyatakan telah cukup dengan bukti elektroniknya;
+
+## bukti-elektronik / bas2 : 68 baris sebelum, 68 baris sesudah, 2 baris beda
+   -Selanjutnya atas pertanyaan Ketua Majelis, Tergugat menyatakan telah cukup dengan bukti suratnya;
+   +Selanjutnya atas pertanyaan Ketua Majelis, Tergugat menyatakan telah cukup dengan bukti elektroniknya;
+
+## bukti-elektronik / bas3 : 67 baris sebelum, 67 baris sesudah, 2 baris beda
+   -Selanjutnya atas pertanyaan Hakim, para Pemohon menyatakan telah cukup dengan bukti suratnya;
+   +Selanjutnya atas pertanyaan Hakim, para Pemohon menyatakan telah cukup dengan bukti elektroniknya;
+
+## bukti-keduanya / aua1 : 132 baris sebelum, 132 baris sesudah, 2 baris beda
+   -Bahwa atas pertanyaan Majelis Hakim, para Pemohon menyatakan telah cukup dengan bukti suratnya dan mengajukan 2 (dua) orang saksi pada persidangan yang sama, yang masing-masing menerangkan sebagai berikut:
+   +Bahwa atas pertanyaan Majelis Hakim, para Pemohon menyatakan telah cukup dengan bukti surat dan bukti elektroniknya dan mengajukan 2 (dua) orang saksi pada persidangan yang sama, yang masing-masing menerangkan sebagai berikut:
+
+## bukti-keduanya / aua2 : 118 baris sebelum, 118 baris sesudah, 2 baris beda
+   -Bahwa atas pertanyaan Majelis Hakim, para Pemohon menyatakan telah cukup dengan bukti suratnya dan mengajukan 2 (dua) orang saksi pada persidangan yang sama, yang masing-masing menerangkan sebagai berikut:
+   +Bahwa atas pertanyaan Majelis Hakim, para Pemohon menyatakan telah cukup dengan bukti surat dan bukti elektroniknya dan mengajukan 2 (dua) orang saksi pada persidangan yang sama, yang masing-masing menerangkan sebagai berikut:
+
+## bukti-keduanya / bas1 : 71 baris sebelum, 71 baris sesudah, 2 baris beda
+   -Selanjutnya atas pertanyaan Ketua Majelis, Penggugat menyatakan telah cukup dengan bukti suratnya;
+   +Selanjutnya atas pertanyaan Ketua Majelis, Penggugat menyatakan telah cukup dengan bukti surat dan bukti elektroniknya;
+
+## bukti-keduanya / bas2 : 70 baris sebelum, 70 baris sesudah, 2 baris beda
+   -Selanjutnya atas pertanyaan Ketua Majelis, Tergugat menyatakan telah cukup dengan bukti suratnya;
+   +Selanjutnya atas pertanyaan Ketua Majelis, Tergugat menyatakan telah cukup dengan bukti surat dan bukti elektroniknya;
+
+## bukti-keduanya / bas3 : 69 baris sebelum, 69 baris sesudah, 2 baris beda
+   -Selanjutnya atas pertanyaan Hakim, para Pemohon menyatakan telah cukup dengan bukti suratnya;
+   +Selanjutnya atas pertanyaan Hakim, para Pemohon menyatakan telah cukup dengan bukti surat dan bukti elektroniknya;
+
+## bukti-surat / aua1 : 129 baris sebelum, 129 baris sesudah, 0 baris beda
+
+## bukti-surat / aua2 : 115 baris sebelum, 115 baris sesudah, 0 baris beda
+
+## bukti-surat / bas1 : 68 baris sebelum, 68 baris sesudah, 0 baris beda
+
+## bukti-surat / bas2 : 67 baris sebelum, 67 baris sesudah, 0 baris beda
+
+## bukti-surat / bas3 : 66 baris sebelum, 66 baris sesudah, 0 baris beda
+
+## bukti-tanpa / aua1 : 127 baris sebelum, 127 baris sesudah, 0 baris beda
+
+## bukti-tanpa / aua2 : 113 baris sebelum, 113 baris sesudah, 0 baris beda
+
+## bukti-tanpa / bas1 : 66 baris sebelum, 66 baris sesudah, 0 baris beda
+
+## bukti-tanpa / bas2 : 65 baris sebelum, 65 baris sesudah, 0 baris beda
+
+## bukti-tanpa / bas3 : 64 baris sebelum, 64 baris sesudah, 0 baris beda
+
+## huruf-kecil / eks1 : 85 baris sebelum, 85 baris sesudah, 2 baris beda
+   -Menimbang, bahwa dalam jawabannya Tergugat mengajukan eksepsi mengenai kewenangan absolut pengadilan yang pada pokoknya Perkara ini merupakan kewenangan Pengadilan Negeri;
+   +Menimbang, bahwa dalam jawabannya Tergugat mengajukan eksepsi mengenai kewenangan absolut pengadilan yang pada pokoknya perkara ini merupakan kewenangan Pengadilan Negeri;
+
+## huruf-kecil / es1 : 108 baris sebelum, 108 baris sesudah, 2 baris beda
+   -Bahwa, atas gugatan tersebut, Tergugat telah memberikan jawaban secara ... yang pada pokoknya Menolak seluruh dalil Penggugat dan menyatakan tidak ada wanprestasi;
+   +Bahwa, atas gugatan tersebut, Tergugat telah memberikan jawaban secara ... yang pada pokoknya menolak seluruh dalil Penggugat dan menyatakan tidak ada wanprestasi;
+
+## huruf-kecil / sita1 : 50 baris sebelum, 50 baris sesudah, 2 baris beda
+   -Bahwa dalam sidang insidentil pemeriksaan permohonan sita, Tergugat telah menanggapi permohonan tersebut yang pada pokoknya menyatakan Tidak keberatan atas permohonan sita tersebut;
+   +Bahwa dalam sidang insidentil pemeriksaan permohonan sita, Tergugat telah menanggapi permohonan tersebut yang pada pokoknya menyatakan tidak keberatan atas permohonan sita tersebut;
+
+## kesimpulan-kosong / kes1 : 239 baris sebelum, 239 baris sesudah, 0 baris beda
+
+## kesimpulan-kosong / kes2 : 98 baris sebelum, 98 baris sesudah, 0 baris beda
+
+## kesimpulan-kosong / ver1 : 181 baris sebelum, 181 baris sesudah, 0 baris beda
+
+## kesimpulan-naskah / kes1 : 239 baris sebelum, 251 baris sesudah, 16 baris beda
+   -Bahwa, Penggugat telah menyampaikan kesimpulannya secara ... di persidangan pada tanggal , yang pada pokoknya Bahwa Penggugat tetap pada gugatan semula dan memohon gugatannya dikabulkan;
+   -Bahwa, Tergugat telah menyampaikan kesimpulannya secara ... di persidangan pada tanggal , yang pada pokoknya Tergugat tetap pada jawabannya dan memohon gugatan ditolak;
+   +Bahwa, Penggugat telah menyampaikan kesimpulannya secara ... di persidangan pada tanggal , yang pada pokoknya sebagai berikut:
+   +KESIMPULAN PENGGUGAT
+   +Bahwa Penggugat tetap pada dalil gugatanya semula ;
+   +1.	Bahwa berdasarkan keterangan saksi-saksi terbukti rumah tangga sudah tidak harmonis ;
+   +2 .	Bahwa tergugat pergi meninggalkan penggugat sejak bulan mei 2025 ;
+   +3 .	Bahwa Penggugat telah berusaha rukun namun tidak berhasil
+
+## kesimpulan-naskah / kes2 : 98 baris sebelum, 110 baris sesudah, 16 baris beda
+   -Bahwa, Pelawan telah menyampaikan kesimpulannya di persidangan yang pada pokoknya Tergugat tetap pada jawabannya dan memohon gugatan ditolak;
+   +Bahwa, Pelawan telah menyampaikan kesimpulannya di persidangan yang pada pokoknya sebagai berikut:
+   +Bahwa Tergugat tetap pada jawabanya dan menolak seluruh dalil Penggugat kecuali yang diakui ;
+   +1 .	Bahwa Tergugat tidak pernah meninggalkan Penggugat
+   +2.	Bahwa Tergugat masih sayang kepada Penggugat
+   +Mohon gugatan Penggugat ditolak
+   -Bahwa, Terlawan telah menyampaikan kesimpulannya di persidangan yang pada pokoknya Bahwa Penggugat tetap pada gugatan semula dan memohon gugatannya dikabulkan;
+   +Bahwa, Terlawan telah menyampaikan kesimpulannya di persidangan yang pada pokoknya sebagai berikut:
+
+## kesimpulan-naskah / ver1 : 181 baris sebelum, 181 baris sesudah, 2 baris beda
+   -Bahwa, Penggugat telah menyampaikan kesimpulannya secara lisan di persidangan pada tanggal , yang pada pokoknya Bahwa Penggugat tetap pada gugatan semula dan memohon gugatannya dikabulkan;
+   +Bahwa, Penggugat telah menyampaikan kesimpulannya secara lisan di persidangan pada tanggal , yang pada pokoknya bahwa Penggugat tetap pada gugatan semula dan memohon gugatannya dikabulkan;
+
+## kesimpulan-pokok / kes1 : 239 baris sebelum, 239 baris sesudah, 2 baris beda
+   -Bahwa, Penggugat telah menyampaikan kesimpulannya secara ... di persidangan pada tanggal , yang pada pokoknya Bahwa Penggugat tetap pada gugatan semula dan memohon gugatannya dikabulkan;
+   +Bahwa, Penggugat telah menyampaikan kesimpulannya secara ... di persidangan pada tanggal , yang pada pokoknya bahwa Penggugat tetap pada gugatan semula dan memohon gugatannya dikabulkan;
+
+## kesimpulan-pokok / kes2 : 98 baris sebelum, 98 baris sesudah, 2 baris beda
+   -Bahwa, Terlawan telah menyampaikan kesimpulannya di persidangan yang pada pokoknya Bahwa Penggugat tetap pada gugatan semula dan memohon gugatannya dikabulkan;
+   +Bahwa, Terlawan telah menyampaikan kesimpulannya di persidangan yang pada pokoknya bahwa Penggugat tetap pada gugatan semula dan memohon gugatannya dikabulkan;
+
+## kesimpulan-pokok / ver1 : 181 baris sebelum, 181 baris sesudah, 2 baris beda
+   -Bahwa, Penggugat telah menyampaikan kesimpulannya secara lisan di persidangan pada tanggal , yang pada pokoknya Bahwa Penggugat tetap pada gugatan semula dan memohon gugatannya dikabulkan;
+   +Bahwa, Penggugat telah menyampaikan kesimpulannya secara lisan di persidangan pada tanggal , yang pada pokoknya bahwa Penggugat tetap pada gugatan semula dan memohon gugatannya dikabulkan;

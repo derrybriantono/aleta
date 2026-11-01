@@ -1,0 +1,32 @@
+dasar (25 paket) : c4b99c53200e2e786b3dad6b3b654f14 c9b8920e478500baa36ae45c28618ced 68 ee0eeb37f0e54ef238dd03e0213f54f4 
+terpasang (26)   : 41d5e780480f237f2414720a7dcb89be b2cf8abe0b40ef64a28c424eedbe821c 70 531bdaef1bf5087da059cee607a76ede 
+== pasang ulang
+PRASYARAT COCOK (0|3|10|0|0|1|2|0|4)
+SUDAH=313
+UJI: 29 contoh fungsi sama dengan laptop
+UJI: 13 kueri berjalan (perkara 10284)
+SUDAH=313
+SELESAI - paket abt-teks-pihak-1nov terpasang. Cadangan: /d/r155f/ap/teks-pihak-1nov/paket-satker/cadangan. Pulih: bash /d/r155f/ap/teks-pihak-1nov/paket-satker/pulih-satker.sh
+PASANG ULANG: tidak ada yang berubah
+== pulih
+PULIH=313
+BERKAS PULIH
+PULIH COCOK (3|0|0|0|1|0|0|0|4)
+PULIH: variabel, SEMUA fungsi, dan seluruh pohon RTF SAMA PERSIS dengan sebelum paket
+== pasang lagi
+PRASYARAT COCOK (3|0|0|0|1|0|0|0|4)
+TAMBAL=313
+SELESAI - paket abt-teks-pihak-1nov terpasang. Cadangan: /d/r155f/ap/teks-pihak-1nov/paket-satker/cadangan. Pulih: bash /d/r155f/ap/teks-pihak-1nov/paket-satker/pulih-satker.sh
+PASANG LAGI: sama persis dengan pasang pertama
+== penjaga 1: variabel paket disunting orang -> pasang ulang menolak, tidak ada yang berubah
+GAGAL: prasyarat '0|3|9|1|0|1|2|0|4' (harus '3|0|0|0|1|0|0|0|4' pasang pertama atau '0|3|10|0|0|1|2|0|4' pasang ulang) - TIDAK ada yang diubah. Arti angka: lihat abt-teks-pihak-1nov-PRASYARAT.sql
+PENJAGA 1: tidak ada yang berubah
+== penjaga 2: variabel lama 9255 disunting orang -> pasang pertama menolak (uji pada keadaan dasar)
+PULIH COCOK (3|0|0|0|1|0|0|0|4)
+GAGAL: prasyarat '2|0|0|0|1|0|0|0|4' (harus '3|0|0|0|1|0|0|0|4' pasang pertama atau '0|3|10|0|0|1|2|0|4' pasang ulang) - TIDAK ada yang diubah. Arti angka: lihat abt-teks-pihak-1nov-PRASYARAT.sql
+PENJAGA 2: tidak ada yang berubah (tetap keadaan dasar)
+== pasang lagi (kembali ke terpasang)
+PRASYARAT COCOK (3|0|0|0|1|0|0|0|4)
+TAMBAL=313
+SELESAI - paket abt-teks-pihak-1nov terpasang. Cadangan: /d/r155f/ap/teks-pihak-1nov/paket-satker/cadangan. Pulih: bash /d/r155f/ap/teks-pihak-1nov/paket-satker/pulih-satker.sh
+AKHIR: sama persis dengan pasang pertama
