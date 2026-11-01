@@ -1,0 +1,55 @@
+dasar pohon (29 paket)  : 6c3a63aa26b8dd09557e9537f024c421
+dasar variabel (29 paket): 5ef30c24d0f55a3c844127bf2ba70b85
+== pasang pertama
+PRASYARAT COCOK (4|0)
+BERKAS SIAP
+CADANGAN: /d/Aplikasi/aleta/tmp/w174/pk/cadangan (baris variabel: 4)
+SEMUA COCOK
+UJI contoh 1: perkara 283 tundaan Pembuktian Tergugat -> Tanggal Pembuktian Tergugat 2015-12-16 (sidang tundaan 2015-12-16)
+UJI contoh 2: perkara 10188 -> keempat variabel menjawab tanpa galat
+TAMBAL=14
+BERKAS COCOK
+SELESAI - paket abt-perbaikan-1nov terpasang. Cadangan: /d/Aplikasi/aleta/tmp/w174/pk/cadangan. Pulih: bash /d/Aplikasi/aleta/tmp/w174/pk/pulih-satker.sh
+terpasang pohon (30)    : 9931cdd9c3f77cb0575d9ab9ec9322ee
+terpasang variabel (30) : 9087068dd3d48268446ab9ccaaa63f35
+== pasang ulang
+PRASYARAT COCOK (0|4)
+SUDAH=14
+UJI contoh 1: perkara 283 tundaan Pembuktian Tergugat -> Tanggal Pembuktian Tergugat 2015-12-16 (sidang tundaan 2015-12-16)
+UJI contoh 2: perkara 10188 -> keempat variabel menjawab tanpa galat
+SUDAH=14
+SELESAI - paket abt-perbaikan-1nov terpasang. Cadangan: /d/Aplikasi/aleta/tmp/w174/pk/cadangan. Pulih: bash /d/Aplikasi/aleta/tmp/w174/pk/pulih-satker.sh
+PASANG ULANG: tidak ada yang berubah (pohon dan variabel)
+== pulih
+PULIH=14
+BERKAS PULIH
+PULIH COCOK (4|0)
+PULIH: seluruh pohon RTF SAMA PERSIS dengan sebelum paket
+PULIH: seluruh variabel SAMA PERSIS dengan sebelum paket
+== pasang lagi
+PRASYARAT COCOK (4|0)
+UJI contoh 1: perkara 283 tundaan Pembuktian Tergugat -> Tanggal Pembuktian Tergugat 2015-12-16 (sidang tundaan 2015-12-16)
+UJI contoh 2: perkara 10188 -> keempat variabel menjawab tanpa galat
+TAMBAL=14
+SELESAI - paket abt-perbaikan-1nov terpasang. Cadangan: /d/Aplikasi/aleta/tmp/w174/pk/cadangan. Pulih: bash /d/Aplikasi/aleta/tmp/w174/pk/pulih-satker.sh
+PASANG LAGI: sama persis dengan pasang pertama (pohon dan variabel)
+== penjaga 1: berkas disunting orang sesudah dipasang -> pulih membiarkannya (dilaporkan), yang lain dipulihkan
+BIARKAN	derry_briantono/2 Itsbat Nikah/[99] [NO] IN - Dibawah Umur.rtf	(sudah disunting sesudah dipasang)
+BIARKAN=1 PULIH=13
+BERKAS PULIH SEBAGIAN
+== penjaga 2: berkas dasar disunting orang -> pasang menolak tanpa mengubah apa pun
+GAGAL	derry_briantono/2 Itsbat Nikah/[99] [NO] IN - Dibawah Umur.rtf	md5 de29c5eec8a9bf3887efb05cce881c04 bukan dasar 93d0fd38b686aa81cd29062f329ebb39 (disunting orang/paket lain belum terpasang)
+GAGAL=1 SIAP=13
+PENJAGA 2: tidak ada yang berubah (pohon dan variabel)
+KEMBALI KE DASAR: ya
+== penjaga 3: variabel 2112 disunting orang -> pasang menolak tanpa mengubah apa pun (pohon dan variabel)
+GAGAL: prasyarat '3|0' (harus '4|0' pasang pertama atau '0|4' pasang ulang) - TIDAK ada yang diubah. Arti angka: lihat a
+PENJAGA 3: tidak ada yang berubah (pohon dan variabel)
+SESUDAH PENJAGA 3 = KEADAAN DASAR: ya
+== pasang akhir
+PRASYARAT COCOK (4|0)
+UJI contoh 1: perkara 283 tundaan Pembuktian Tergugat -> Tanggal Pembuktian Tergugat 2015-12-16 (sidang tundaan 2015-12-16)
+UJI contoh 2: perkara 10188 -> keempat variabel menjawab tanpa galat
+TAMBAL=14
+SELESAI - paket abt-perbaikan-1nov terpasang. Cadangan: /d/Aplikasi/aleta/tmp/w174/pk/cadangan. Pulih: bash /d/Aplikasi/aleta/tmp/w174/pk/pulih-satker.sh
+AKHIR: sama persis dengan pasang pertama (pohon dan variabel)

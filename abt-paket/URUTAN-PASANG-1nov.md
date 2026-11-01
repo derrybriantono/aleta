@@ -1,4 +1,4 @@
-# URUTAN PASANG paket ABT 29 Okt - 1 Nov 2026 (29 paket; diuji rantai penuh dari dump 28 Okt; MENGGANTIKAN URUTAN-PASANG-31okt.md)
+# URUTAN PASANG paket ABT 29 Okt - 1 Nov 2026 (30 paket; diuji rantai penuh dari dump 28 Okt; MENGGANTIKAN URUTAN-PASANG-31okt.md)
 
 Nomor "KE-n" di komentar dan PASANG.md paket lama mengikuti urutan 24 paket yang lama; yang berlaku adalah nomor di berkas ini
 (pembuktian-urut-1nov disisipkan sebagai ke-22, sehingga jawab-replik, butir-rata, bukti-pisah menjadi ke-23, ke-24, ke-25, teks-pihak ke-26).
@@ -449,4 +449,26 @@ UJI contoh 1: ... ; UJI contoh 2: ...
 TAMBAL=586
 BERKAS COCOK
 SELESAI - paket abt-tanya-jawab-format-1nov terpasang. ...
+```
+
+### 30. `perbaikan-1nov` (cabang paket-30 w174; keputusan 89-B2/73 dan 92) - PALING AKHIR
+```
+cd perbaikan-1nov/paket-satker && bash pasang-satker.sh
+```
+A. Variabel tanggal/hari pembuktian #0046# (2111/7119) dan #0047# (2112/7121) memakai aturan TUNDAAN juga (kembaran SQL dari bot ddf15a3a): tahap pembuktian ditentukan DULU dari
+alasan ditunda sidang sebelumnya ("pembuktian Tergugat" -> Tergugat; "pembuktian lanjutan Penggugat"/"saksi Penggugat" -> Penggugat; tanpa sebutan pihak -> aturan tahap keputusan 52).
+Kueri = keluaran bot untuk 10.237/10.237 perkara (2112) dan 10.107/10.107 (2111) di SIPP 28 Okt; 37+6 perkara 2111 dan 13+1 perkara 2112 berubah/terisi baru. Cabang Court Calendar tidak diubah.
+B. 5 perbaikan dasar hukum di 14 blangko (spesifikasi keputusan 92): KHI Pasal 7 ayat (4) tanpa "huruf a" (7 Itsbat Nikah Kontensius), KHI Pasal 58 ayat (1) "huruf b dan huruf c" -> "huruf b" (Izin Poligami [01b]),
+Pasal 35 UU 1/1974 ayat (2) dengan bunyi naskah (Harta Bersama [01] E-Court), bunyi Pasal 7 ayat (1) UU 16/2019 (Itsbat Nikah [99]), "Pasal 1 Ayat 1" -> "Pasal 1 angka 1" UU 35/2014 (4 Dispensasi Kawin). Kata saja yang diganti.
+Tanpa variabel/menu/fungsi baru. Lihat `perbaikan-1nov/PASANG.md`. md5 dasar = keadaan sesudah ke-29 paket.
+Keluaran benar:
+```
+PRASYARAT COCOK (4|0)
+BERKAS SIAP
+CADANGAN: ... (baris variabel: 4)
+SEMUA COCOK
+UJI contoh 1: ... ; UJI contoh 2: ...
+TAMBAL=14
+BERKAS COCOK
+SELESAI - paket abt-perbaikan-1nov terpasang. ...
 ```

@@ -1,0 +1,90 @@
+{
+ "2111": {
+  "msLama": 8263,
+  "msBaru": 17087,
+  "maksBaru": [
+   67.3,
+   "514/Pdt.G/2026/PA.Dgl"
+  ],
+  "n": 1917,
+  "samaTerisi": 330,
+  "samaKosong": 1586,
+  "baruTerisi": 1,
+  "hilang": 0,
+  "berubahTerisi": 0,
+  "galat": 0,
+  "cocokBot": 1868,
+  "bedaBot": 0,
+  "contoh": [
+   [
+    "BARU",
+    "433/Pdt.G/2025/PA.Dgl",
+    "2025-08-25"
+   ]
+  ],
+  "bedaBotContoh": []
+ },
+ "2112": {
+  "msLama": 9663,
+  "msBaru": 19722,
+  "maksBaru": [
+   78.5,
+   "20/Pdt.G/2026/PA.Dgl"
+  ],
+  "n": 1917,
+  "samaTerisi": 33,
+  "samaKosong": 1884,
+  "baruTerisi": 0,
+  "hilang": 0,
+  "berubahTerisi": 0,
+  "galat": 0,
+  "cocokBot": 1899,
+  "bedaBot": 0,
+  "contoh": [],
+  "bedaBotContoh": []
+ },
+ "7119": {
+  "msLama": 7810,
+  "msBaru": 16449,
+  "maksBaru": [
+   67.7,
+   "137/Pdt.G/2026/PA.Dgl"
+  ],
+  "n": 1917,
+  "samaTerisi": 330,
+  "samaKosong": 1586,
+  "baruTerisi": 1,
+  "hilang": 0,
+  "berubahTerisi": 0,
+  "galat": 0,
+  "cocokBot": 1868,
+  "bedaBot": 0,
+  "contoh": [
+   [
+    "BARU",
+    "433/Pdt.G/2025/PA.Dgl",
+    "Senin"
+   ]
+  ],
+  "bedaBotContoh": []
+ },
+ "7121": {
+  "msLama": 7935,
+  "msBaru": 16790,
+  "maksBaru": [
+   44.3,
+   "564/Pdt.G/2026/PA.Dgl"
+  ],
+  "n": 1917,
+  "samaTerisi": 33,
+  "samaKosong": 1884,
+  "baruTerisi": 0,
+  "hilang": 0,
+  "berubahTerisi": 0,
+  "galat": 0,
+  "cocokBot": 1899,
+  "bedaBot": 0,
+  "contoh": [],
+  "bedaBotContoh": []
+ }
+}
