@@ -23,7 +23,16 @@ import { temukanRujukan } from "@/lib/rak-peraturan/rujukan";
 export type PutusanAkhir = { amarHtml: string; pertimbanganHtml: string; huruf8503?: string };
 
 export type HasilBandingA1 = {
-  amar: { akhir: number; draf: number; sama: number; mirip: number; hilang: string[]; lebih: string[] };
+  amar: {
+    akhir: number;
+    draf: number;
+    sama: number;
+    mirip: number;
+    hilang: string[];
+    lebih: string[];
+    /** P3: butir amar akhir yang hanya "mirip" beserta butir drafnya (bahan pola "kalimat yang diganti hakim"). */
+    pasangan: Array<{ draf: string; akhir: string; skor: number }>;
+  };
   dasar: { akhir: string[]; sama: string[]; samaBertanda: string[]; hilang: string[]; lebih: string[] };
   bagian: { akhir: TopikPertimbangan[]; hilang: TopikPertimbangan[] };
   huruf: { draf: string; akhir: string; sama: boolean };
@@ -54,9 +63,16 @@ export function butirAmarAkhir(html: string): string[] {
     .filter((x) => x.length > 8 && !/^(?:mengadili|dalam\s+(?:konvensi|rekonvensi|pokok\s+perkara|eksepsi))\s*[:;]?$/i.test(x));
 }
 
+/** Nominal biaya ("Rp184.500,00 (seratus ... rupiah)") dan titik-titik isian kosong tidak ikut dibandingkan: hanya bunyi kalimatnya. */
+function tanpaNominal(t: string): string {
+  return String(t ?? "")
+    .replace(/\([^()]*rupiah[^()]*\)/gi, " ")
+    .replace(/Rp\s*[\d.,]+|Rp\s*\.{3,}[\d.,]*/gi, " ");
+}
+
 function tumpang(a: string, b: string): number {
-  const x = kataIsiA1(a);
-  const y = kataIsiA1(b);
+  const x = kataIsiA1(tanpaNominal(a));
+  const y = kataIsiA1(tanpaNominal(b));
   if (!x.size || !y.size) return 0;
   let sama = 0;
   for (const k of x) if (y.has(k)) sama += 1;
@@ -170,6 +186,7 @@ export function bandingDrafA1(draf: DrafPutusanA1, akhir: PutusanAkhir): HasilBa
   let sama = 0;
   let mirip = 0;
   const hilang: string[] = [];
+  const pasangan: Array<{ draf: string; akhir: string; skor: number }> = [];
   for (const a of amarAkhir) {
     let terbaik = -1;
     let skor = 0;
@@ -184,7 +201,10 @@ export function bandingDrafA1(draf: DrafPutusanA1, akhir: PutusanAkhir): HasilBa
     if (terbaik >= 0 && skor >= AMBANG_AMAR.mirip) {
       dipakai.add(terbaik);
       if (skor >= AMBANG_AMAR.sama) sama += 1;
-      else mirip += 1;
+      else {
+        mirip += 1;
+        pasangan.push({ draf: amarDraf[terbaik], akhir: a, skor: Math.round(skor * 100) / 100 });
+      }
     } else hilang.push(a);
   }
   const lebih = amarDraf.filter((_, i) => !dipakai.has(i));
@@ -209,7 +229,7 @@ export function bandingDrafA1(draf: DrafPutusanA1, akhir: PutusanAkhir): HasilBa
 
   const hurufAkhir = hurufDari(polosAkhir) || String(akhir.huruf8503 ?? "").toUpperCase().replace(/[^A-H]/g, "").split("").sort().join("");
   return {
-    amar: { akhir: amarAkhir.length, draf: amarDraf.length, sama, mirip, hilang, lebih },
+    amar: { akhir: amarAkhir.length, draf: amarDraf.length, sama, mirip, hilang, lebih, pasangan },
     dasar,
     bagian: { akhir: topik, hilang: bagianHilang },
     huruf: { draf: draf.huruf, akhir: hurufAkhir, sama: Boolean(hurufAkhir) && hurufAkhir === draf.huruf },

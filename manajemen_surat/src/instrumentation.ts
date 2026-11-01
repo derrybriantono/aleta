@@ -49,6 +49,18 @@ export async function register() {
     mulaiAgenH7Berkala(getDatabase);
   }
   /* === AKHIR AGEN H-7 === */
+  /* === PENGUKUR DRAF 1 Nov (P3) === draf putusan A1 dibandingkan dengan putusan akhir begitu putusan masuk (jam kerja, tiap 30 menit)
+     dan sekali tiap malam sesudah 22.30 WITA; hanya membaca SIPP lewat bot, menulis basis data ALETA (0130). Tanpa AI. Matikan
+     dengan ALETA_PENGUKUR_DRAF=0. */
+  if (process.env.ALETA_PENGUKUR_DRAF !== "0") {
+    const [{ mulaiPengukurDrafBerkala }, { DEPS_PENGUKUR_BAWAAN }, { getDatabase }] = await Promise.all([
+      import("@/server/modules/aleta-ecourt/pengukur-draf"),
+      import("@/server/modules/aleta-ecourt/pengukur-draf-bawaan"),
+      import("@/server/db/client"),
+    ]);
+    mulaiPengukurDrafBerkala(getDatabase, DEPS_PENGUKUR_BAWAAN);
+  }
+  /* === AKHIR PENGUKUR DRAF === */
   /* === AGEN H-1 BAS 30 Okt (G2a 2.4) === BAS sidang hari kerja berikutnya disiapkan tiap sore hari kerja (bawaan 15.30 WITA,
      ALETA_AGEN_H1_JAM): blangko BAS Derry menurut agenda + keadaan tanya jawab saksi; draf di memori portal, hanya membaca
      SIPP/ABT. Matikan dengan ALETA_AGEN_H1=0. */

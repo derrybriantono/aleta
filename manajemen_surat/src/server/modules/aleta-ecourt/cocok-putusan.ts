@@ -38,7 +38,7 @@ export type DepsCocokPutusan = {
 
 export type HasilCocokPutusan = HasilCocok & { perkaraId: string; nomorPerkara: string; tanggalPutusan: string; dariSinggah: boolean; diperiksaPada: string };
 
-async function teksDokumen(bita: Uint8Array, nama: string): Promise<string | null> {
+export async function teksDokumen(bita: Uint8Array, nama: string): Promise<string | null> {
   const { bacaPdfDariBita } = await import("@/server/modules/aleta-ecourt/baca-pdf");
   const r = await bacaParagrafBerkas(bita, nama || "putusan", async (b) => {
     const isi = await bacaPdfDariBita(b, nama || "putusan.pdf", 200);
