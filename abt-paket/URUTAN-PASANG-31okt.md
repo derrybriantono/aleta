@@ -348,3 +348,5 @@ TAMBAL=395
 BERKAS COCOK
 SELESAI - paket abt-bukti-pisah-1nov terpasang. ...
 ```
+Uji rantai 24 paket 1 Nov 11.19-11.27 (`uji-rantai-31okt/hasil-rantai-24.txt`): semua SELESAI, `RANTAI-KELUAR 0`; pulih/pasang ulang/pasang lagi lolos
+(`bukti-pisah-1nov/hasil/uji-lokal.txt`).

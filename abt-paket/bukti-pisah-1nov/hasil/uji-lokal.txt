@@ -1,0 +1,23 @@
+dasar (23 paket) : e0671702f97b709861037bb7d8cabafb 0 ca997181bf52358098c96fcfeec27a19 
+terpasang        : 7eb5c23cd97ca070ffdfd5405c3f28d2 3 ee0eeb37f0e54ef238dd03e0213f54f4 
+== pasang ulang
+PRASYARAT COCOK (0|37|3|3|0)
+SUDAH=395
+UJI: 20 contoh fungsi sama dengan laptop
+UJI: 37 kueri berjalan (perkara 10284)
+SUDAH=395
+SELESAI - paket abt-bukti-pisah-1nov terpasang. Cadangan: /d/r152b/ap/bukti-pisah-1nov/paket-satker/cadangan. Pulih: bash /d/r152b/ap/bukti-pisah-1nov/paket-satker/pulih-satker.sh
+PASANG ULANG: tidak ada yang berubah
+== pulih
+PULIH=395
+BERKAS PULIH
+PULIH COCOK (0|0|0|3|0)
+PULIH: variabel, fungsi, dan seluruh pohon RTF SAMA PERSIS dengan sebelum paket
+== pasang lagi
+PRASYARAT COCOK (0|0|0|3|0)
+TAMBAL=395
+SELESAI - paket abt-bukti-pisah-1nov terpasang. Cadangan: /d/r152b/ap/bukti-pisah-1nov/paket-satker/cadangan. Pulih: bash /d/r152b/ap/bukti-pisah-1nov/paket-satker/pulih-satker.sh
+PASANG LAGI: sama persis dengan pasang pertama
+== penjaga 1: variabel paket disunting orang -> pasang ulang menolak
+GAGAL: prasyarat '1|36|3|3|0' (harus '0|0|0|3|0' pasang pertama atau '0|37|3|3|0' pasang ulang) - TIDAK ada yang diubah. Arti angka: lihat abt-bukti-pisah-1nov-PRASYARAT.sql
+PENJAGA 1: tidak ada yang berubah

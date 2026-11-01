@@ -56,6 +56,15 @@ SELESAI - paket abt-bukti-pisah-1nov terpasang. ...
 ```
 Pasang ulang aman (`0|37|3|3|0`, `SUDAH=395`). PRASYARAT lain = berhenti TANPA mengubah apa pun. Pulih: `ssh aleta 'bash /root/abt-bukti-pisah-20261101/pulih-satker.sh'` -> `PULIH COCOK`.
 
+## Hasil uji laptop (1 Nov 2026)
+- Uji rantai 24 paket (`../uji-rantai-31okt/hasil-rantai-24.txt`, salinan baru dump 28 Okt, paket dari `git archive HEAD`): semua SELESAI, `RANTAI-KELUAR 0`.
+- `sumber/uji_lokal.sh` (`hasil/uji-lokal.txt`): pasang ulang tidak mengubah apa pun; pulih = variabel, fungsi, dan seluruh pohon RTF SAMA PERSIS dengan
+  sebelum paket; pasang lagi = pasang pertama; variabel paket disunting orang -> pasang menolak tanpa mengubah apa pun.
+- Render sungguhan (renderer ABT php56 asli, `alat/driver.py`): 13 blangko (6 BAS + 7 putusan; CG, CT-folder IN, DK, perwalian, AUA, PAW) x 4 keadaan
+  (surat saja, elektronik saja, keduanya, tanpa bukti) x sebelum/sesudah. Keadaan "surat saja": 6 BAS teks persis sama dengan sebelum; putusan sama
+  kecuali huruf "A."/"B." yang dulu otomatis daftar-butir Word kini diketik (`hasil/banding-keadaan.txt`). Gambar: `D:/Aplikasi/aleta/tmp/w152/render/png/`.
+- Yang TIDAK tersentuh: kalimat statis lain di blangko ("telah cukup dengan bukti suratnya", AUA "menyerahkan alat bukti surat berupa:") tetap apa adanya.
+
 ## Keputusan yang perlu diperiksa pengguna
 1. Huruf sub-bab putusan mengikuti blangko yang ada (A./B./C. kapital dengan titik dua), bukan "a. Bukti Surat/Tertulis" huruf kecil di rencana.
 2. Daftar elektronik bernomor 1. 2. lagi (terpisah dari daftar surat); tanda bukti (P.3, P.4) tetap melanjutkan.
