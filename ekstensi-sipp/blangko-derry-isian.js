@@ -11705,16 +11705,17 @@
   const aiNamaPihak = (daftar) => (Array.isArray(daftar) ? daftar : []).map((x) => aiTeks(x).trim()).filter(Boolean);
   /**
    * @param {string[]} butuh  bagian bahan yang diminta fitur (perkara, sidang, posita, teksPihak, saksi, isian, kosong, naskah, temuan)
+   * @param {string} [kode]     kode fitur; C6 (A2) memakai tabel Penilaian pembuktian sebagai "temuan"
    * @returns {Promise<{ok: boolean, pesan?: string, bahan?: object, samarkan?: Array, peta?: object}>}
    */
-  async function bahanAi(butuh) {
+  async function bahanAi(butuh, kode) {
     if (!S.pk) return { ok: false, pesan: "Pilih perkara dulu." };
     const ada = new Set(Array.isArray(butuh) ? butuh : []);
     const pk = { ...S.pk, ...(S.pk.perkara || {}) };
     const sb = sebutan();
     const bahan = {};
     const samarkan = [];
-    const peta = { saksi: [], kosong: [], naskahBelum: false, perluBlangko: false };
+    const peta = { saksi: [], kosong: [], naskahBelum: false, perluBlangko: false, perkaraId: String(S.pk.perkaraId || "") };
     const P = aiNamaPihak(pk.pihak && pk.pihak.penggugat);
     const T = aiNamaPihak(pk.pihak && pk.pihak.tergugat);
     for (const n of [...P, ...T]) samarkan.push({ jenis: "NAMA", nilai: n });
@@ -11782,6 +11783,16 @@
         if (rows.length) bagian.push(`${it.tj.sebutan}:\n${rows.map((r, i) => `${i + 1}. Tanya: ${aiTeks(r.tanya).trim()}\n   Jawab: ${aiTeks(r.jawab).trim()}`).join("\n")}`);
       }
       bahan.saksi = bagian.join("\n\n");
+    }
+    if (kode === "C6" && ada.has("temuan")) {
+      // A2 1 Nov: tabel Penilaian pembuktian yang sudah terbaca di panel (tanpa jaringan); belum terbaca -> bagian wajib kosong.
+      const pb = PB();
+      const data = pb && typeof pb.tersinggah === "function" ? pb.tersinggah(nomorPerkara(), sb) : null;
+      if (data && data.hasil && typeof pb.teksUntukAi === "function") {
+        bahan.temuan = aiTeks(pb.teksUntukAi(data)).slice(0, 6000);
+        peta.barisPenilaian = (data.hasil.baris || []).map((r) => ({ id: String(r.id), status: String(r.status), nomor: String(r.nomor || ""), ringkas: aiTeks(r.ringkas).slice(0, 200) }));
+      }
+      ada.delete("temuan");
     }
     if (ada.has("naskah") || ada.has("temuan")) {
       const n = bahanNaskahPeriksa();
