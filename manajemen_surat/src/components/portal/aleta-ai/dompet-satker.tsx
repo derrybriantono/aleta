@@ -121,7 +121,7 @@ export function KartuDompetSatker({ pengguna, peran }: { pengguna: Array<{ id: s
       <CardHeader className="pb-3">
         <CardTitle className="text-lg">Dompet satker</CardTitle>
         <CardDescription>
-          Saldo bersama yang dapat dipakai pengguna menurut aturan di bawah. Pengguna memilihnya dengan mengklik saldo di panel; bila saldo satker habis, pemakaian dari dompet satker terkunci dan saldo pribadi tetap bisa dipakai. Tanpa aturan, tidak ada yang boleh memakainya.
+          Saldo bersama yang dapat dipakai pengguna menurut aturan di bawah. Pengguna memilihnya dengan mengklik saldo di panel; bila saldo satker habis, pemakaian dari dompet satker terkunci dan saldo pribadi tetap bisa dipakai. Bawaannya semua peran boleh memakainya tanpa batas bulanan; tambahkan aturan untuk membatasi atau melarang.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
@@ -161,7 +161,7 @@ export function KartuDompetSatker({ pengguna, peran }: { pengguna: Array<{ id: s
 
             <div className="space-y-2">
               <h3 className="text-sm font-semibold">Aturan pemakaian</h3>
-              <p className="text-xs text-muted-foreground">Aturan untuk satu pengguna mengalahkan aturan peran. Batas bulanan berlaku untuk tiap pengguna (0 = tanpa batas).</p>
+              <p className="text-xs text-muted-foreground">Aturan untuk satu pengguna mengalahkan aturan peran. Peran atau pengguna tanpa aturan memakai bawaan (boleh, tanpa batas). Batas bulanan berlaku untuk tiap pengguna (0 = tanpa batas).</p>
               {data.aturan.length ? (
                 <ul className="space-y-1.5" data-testid="aturan-satker">
                   {data.aturan.map((a) => (
@@ -177,7 +177,7 @@ export function KartuDompetSatker({ pengguna, peran }: { pengguna: Array<{ id: s
                   ))}
                 </ul>
               ) : (
-                <p className="text-sm text-muted-foreground">Belum ada aturan: tidak ada yang boleh memakai dompet satker.</p>
+                <p className="text-sm text-muted-foreground">Belum ada aturan khusus: semua peran boleh memakai dompet satker tanpa batas bulanan.</p>
               )}
               <div className="flex flex-wrap items-end gap-2 rounded-lg border border-dashed border-border/70 p-3">
                 <label className="space-y-1.5 text-sm font-medium">

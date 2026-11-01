@@ -75,14 +75,20 @@ describe("migrasi 0124 dan aturan murni", () => {
       { sasaran: "pengguna", sasaranId: "usr-hakim-2", boleh: false, batasBulananRp: 0 },
       { sasaran: "pengguna", sasaranId: "usr-pp", boleh: true, batasBulananRp: 10_000 },
     ];
-    expect(hakSatker([], { id: "x", peranId: "hakim" })).toMatchObject({ boleh: false, sumber: "tidak-ada" });
+    // Keputusan 88: tanpa aturan yang mengena, semua peran boleh tanpa batas bulanan (aturan BAWAAN).
+    expect(hakSatker([], { id: "x", peranId: "hakim" })).toMatchObject({ boleh: true, batasBulananRp: 0, sumber: "bawaan" });
     expect(hakSatker(aturan, { id: "usr-hakim", peranId: "hakim" })).toMatchObject({ boleh: true, batasBulananRp: 50_000, sumber: "peran" });
     // Peran tambahan kasir tanpa batas = paling longgar.
     expect(hakSatker(aturan, { id: "usr-hakim", peranId: "hakim", peranTambahan: ["kasir"] })).toMatchObject({ boleh: true, batasBulananRp: 0 });
     // Aturan pengguna mengalahkan aturan peran, ke dua arah.
     expect(hakSatker(aturan, { id: "usr-hakim-2", peranId: "hakim" })).toMatchObject({ boleh: false, sumber: "pengguna" });
     expect(hakSatker(aturan, { id: "usr-pp", peranId: "panitera-pengganti" })).toMatchObject({ boleh: true, batasBulananRp: 10_000, sumber: "pengguna" });
-    expect(hakSatker(aturan, { id: "usr-lain", peranId: "jurusita" })).toMatchObject({ boleh: false });
+    expect(hakSatker(aturan, { id: "usr-lain", peranId: "jurusita" })).toMatchObject({ boleh: true, batasBulananRp: 0, sumber: "bawaan" });
+    // Larangan khusus peran: berlaku bagi peran itu saja; peran tambahan yang diizinkan membukanya kembali.
+    const larang: AturanSatker[] = [{ sasaran: "peran", sasaranId: "panitera-pengganti", boleh: false, batasBulananRp: 0 }];
+    expect(hakSatker(larang, { id: "usr-pp", peranId: "panitera-pengganti" })).toMatchObject({ boleh: false, sumber: "peran" });
+    expect(hakSatker(larang, { id: "usr-jr", peranId: "jurusita" })).toMatchObject({ boleh: true, sumber: "bawaan" });
+    expect(hakSatker([...larang, aturan[1]!], { id: "usr-pp", peranId: "panitera-pengganti", peranTambahan: ["kasir"] })).toMatchObject({ boleh: true, batasBulananRp: 0 });
     expect(sisaBatas(50_000, 20_000)).toBe(30_000);
     expect(sisaBatas(50_000, 90_000)).toBe(0);
     expect(sisaBatas(0, 90_000)).toBeNull();
@@ -161,6 +167,17 @@ describe("dompet satker (pg-mem)", () => {
     expect(jejak).toHaveLength(1);
   });
 
+  it("ATURAN BAWAAN: tanpa aturan apa pun semua peran boleh memakai dompet satker tanpa batas bulanan, dan pemakaian dari satker langsung berjalan", async () => {
+    const k = await keadaanSatkerPengguna(db, pp);
+    expect(k).toMatchObject({ boleh: true, batasBulananRp: 0, sisaBatasRp: null });
+    const klien = new KlienTiruan();
+    const id = await siapkan(pp, klien, 0);
+    const e = await kumpulkan(kirimPesan(db, pp, id, satker(pp)));
+    expect(e[e.length - 1]).toMatchObject({ jenis: "selesai", dompet: "satker" });
+    expect(await saldoPengguna(db, pp.id)).toBe(0);
+    expect((await ringkasAi(db, pp)).satker).toMatchObject({ boleh: true, sisaBatasRp: null });
+  });
+
   it("aturan: simpan, ganti, hapus; sasaran dan batas divalidasi; perubahan tercatat di jejak", async () => {
     await expect(simpanAturanSatker(db, superAdmin.id, { sasaran: "kelompok", sasaranId: "x", boleh: true })).rejects.toMatchObject({ status: 400 });
     await expect(simpanAturanSatker(db, superAdmin.id, { sasaran: "peran", sasaranId: "", boleh: true })).rejects.toMatchObject({ status: 400 });
@@ -195,10 +212,10 @@ describe("dompet satker (pg-mem)", () => {
     expect((await verifikasiSaldo(db, hakim.id)).seimbang).toBe(true);
     expect(await saldoSatker(db)).toBe(selesai.saldoRp);
     expect(await verifikasiSatker(db)).toMatchObject({ seimbang: true });
-    const potong = (await riwayatSatker(db)).filter((m) => m.jenis === "potong");
+    const potong = (await riwayatSatker(db)).filter((m) => m.jenis === "potong" && m.penggunaId === hakim.id);
     expect(potong).toHaveLength(1);
     expect(potong[0]).toMatchObject({ penggunaId: hakim.id, peranId: "hakim", jumlahRp: -selesai.biayaRp });
-    expect(await pemakaianSatkerBulanIni(db)).toEqual([{ penggunaId: hakim.id, peranId: "hakim", terpakaiRp: selesai.biayaRp }]);
+    expect((await pemakaianSatkerBulanIni(db)).filter((x) => x.penggunaId === hakim.id)).toEqual([{ penggunaId: hakim.id, peranId: "hakim", terpakaiRp: selesai.biayaRp }]);
     const k = await keadaanSatkerPengguna(db, hakim);
     expect(k).toMatchObject({ boleh: true, batasBulananRp: 40_000, terpakaiBulanIniRp: selesai.biayaRp, sisaBatasRp: 40_000 - selesai.biayaRp });
   });
@@ -216,7 +233,8 @@ describe("dompet satker (pg-mem)", () => {
     expect((await verifikasiSaldo(db, hakim.id)).seimbang).toBe(true);
   });
 
-  it("tanpa hak (aturan pengguna menolak / peran tanpa aturan): ditolak dengan kalimat biasa, layanan AI tidak dipanggil, saldo tak berubah", async () => {
+  it("tanpa hak (larangan khusus pengguna / peran): ditolak dengan kalimat biasa, layanan AI tidak dipanggil, saldo tak berubah", async () => {
+    await simpanAturanSatker(db, superAdmin.id, { sasaran: "peran", sasaranId: "panitera-pengganti", boleh: false });
     for (const p of [hakim2, pp]) {
       const klien = new KlienTiruan();
       const id = await siapkan(p, klien, 10_000);

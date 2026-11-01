@@ -5,7 +5,8 @@
  *   - aturan PENGGUNA mengalahkan aturan peran (boleh atau tidak, dan batasnya);
  *   - tanpa aturan pengguna: aturan peran dari peran utama dan peran tambahan; boleh bila salah satu mengizinkan,
  *     batasnya yang paling longgar (0 = tanpa batas paling longgar);
- *   - tanpa aturan sama sekali: TIDAK boleh;
+ *   - ATURAN BAWAAN (keputusan 88): bila tidak ada aturan pengguna maupun aturan peran yang mengena, SEMUA peran boleh
+ *     memakai dompet satker tanpa batas bulanan; Super Admin menambah batas atau larangan lewat aturan khusus;
  *   - Super Admin tidak ditagih sama sekali (bukan urusan dompet).
  * Batas bulanan pada aturan peran berlaku untuk TIAP pengguna peran itu; pada aturan pengguna berlaku untuk pengguna itu.
  */
@@ -18,7 +19,7 @@ export type HakSatker = {
   boleh: boolean;
   /** 0 = tanpa batas bulanan. */
   batasBulananRp: number;
-  sumber: "pengguna" | "peran" | "tidak-ada";
+  sumber: "pengguna" | "peran" | "bawaan";
   alasan?: string;
 };
 
@@ -39,7 +40,9 @@ export function hakSatker(aturan: readonly AturanSatker[], pelaku: { id: string;
     const tanpaBatas = cocok.some((a) => !(a.batasBulananRp > 0));
     return { boleh: true, batasBulananRp: tanpaBatas ? 0 : Math.max(...cocok.map((a) => a.batasBulananRp)), sumber: "peran" };
   }
-  return { boleh: false, batasBulananRp: 0, sumber: aturan.some((a) => a.sasaran === "peran" && peran.has(a.sasaranId)) ? "peran" : "tidak-ada", alasan: PESAN_TANPA_HAK_SATKER };
+  // Ada aturan untuk peran-peran ini tetapi semuanya melarang: dilarang. Tidak ada aturan yang mengena: bawaan (boleh, tanpa batas).
+  if (aturan.some((a) => a.sasaran === "peran" && peran.has(a.sasaranId))) return { boleh: false, batasBulananRp: 0, sumber: "peran", alasan: PESAN_TANPA_HAK_SATKER };
+  return { boleh: true, batasBulananRp: 0, sumber: "bawaan" };
 }
 
 /** Sisa batas bulanan (null = tanpa batas). */

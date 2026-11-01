@@ -10,7 +10,7 @@
 --                            dan peran_id = SIAPA yang memakai), koreksi. Saldo selalu = jumlah mutasi.
 --   aleta_ai_satker_aturan   aturan pakai: sasaran 'peran' | 'pengguna' (+ sasaran_id), boleh (1/0), batas_bulanan_rp
 --                            (0 = tanpa batas; pada aturan peran = batas tiap pengguna peran itu; pada aturan pengguna =
---                            batas pengguna itu). Aturan pengguna mengalahkan aturan peran. Tanpa aturan = tidak boleh.
+--                            batas pengguna itu). Aturan pengguna mengalahkan aturan peran. ATURAN BAWAAN (keputusan 88): tanpa aturan yang mengena, semua peran boleh tanpa batas bulanan.
 --
 -- Tanpa kunci asing. NOMOR 0124, jurnal idx 108 (idx 106 = 0122 aleta-ai-proyek, 107 = 0123 bas-halaman-runut; berurutan
 -- setelah ketiga cabang digabung). TIGA TEMPAT: berkas ini + meta/_journal.json, DDL_ALETA_AI_SATKER di schema.ts, dan daftar

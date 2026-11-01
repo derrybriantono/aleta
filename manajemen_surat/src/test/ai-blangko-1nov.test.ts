@@ -772,8 +772,8 @@ describe("ALETA Ai Blangko Derry di server: kelompok dipaksa, samaran sebelum ki
   it("ringkas memuat minimumRp, gratis, saldo satker (sisa pagu), dan fitur yang boleh per peran", async () => {
     const r = await ringkasAi(db, hakim);
     expect(r).toMatchObject({ minimumRp: 1000, gratis: false });
-    // Dompet satker: tanpa aturan Super Admin, pengguna belum berhak.
-    expect(r.satker).toMatchObject({ boleh: false, saldoRp: 0, terpakaiBulanIniRp: 0, sisaBatasRp: null });
+    // Dompet satker: aturan bawaan (keputusan 88) = semua peran boleh tanpa batas bulanan.
+    expect(r.satker).toMatchObject({ boleh: true, saldoRp: 0, terpakaiBulanIniRp: 0, sisaBatasRp: null });
     expect(r.fiturBlangko).toEqual(expect.arrayContaining(["A1", "A3", "B1", "D1", "D4", "C1", "C5"]));
     const rPp = await ringkasAi(db, pp);
     expect(rPp.fiturBlangko).toEqual(expect.arrayContaining(["A1", "A3", "B1", "D1", "D4"]));
