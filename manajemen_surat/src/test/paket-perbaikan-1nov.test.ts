@@ -194,7 +194,6 @@ describe("isi paket sungguhan - SQL variabel (A: tundaan)", () => {
 });
 
 describe("acuan perilaku A (salinan bot ddf15a3a): contoh aturan tundaan yang dimaksud keputusan 89-B2/73", () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const bot = createRequire(import.meta.url)(path.join(PAKET, "alat/tahapPembuktianService-ddf15a3a.js")) as {
     tahapPembuktian: (s: unknown[], o?: { gugatan?: boolean }) => { sisi: string | null }[];
     mulaiTahap: (s: unknown[], o?: { gugatan?: boolean }) => { P: string | null; T: string | null };
