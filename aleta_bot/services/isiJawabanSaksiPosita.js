@@ -18,6 +18,7 @@
 
 const { bersihNilai, tanggalIndo, kuaBaku, rapat, jumlahAnakDariTeks } = require("./isiJawabanSaksiFakta");
 const { positaLain } = require("./isiJawabanSaksiPositaLain");
+const { faktaNikahDariPosita } = require("./isiJawabanSaksiPositaNikah");
 
 /** Posita (HTML atau teks) -> teks polos, butir dipisah baris baru. */
 function polosPosita(html) {
@@ -75,26 +76,8 @@ function itsbat(butir) {
       break;
     }
   }
-  // Mahar yang tidak terbaca mesin lama: "dengan maskawin berupa 10 Pohon Cengkeh dibayar tunai", "mas kawin: seperangkat alat salat".
-  for (const b of butir) {
-    const m = /\b(?:mas\s*kawin|maskawin|mahar)\s*(?:nya)?\s*(?:berupa|yaitu|sebesar|sejumlah|:)\s*(.+)$/i.exec(b);
-    if (!m) continue;
-    const mentah = m[1].split(/\s+(?:dibayar(?:kan)?|dan\s+dibayar|secara\s+tunai|tunai|dihutang|belum\s+dibayar)\b|[;]|\.\s+[A-Z]/i)[0];
-    const nilai = bersihNilai(mentah);
-    if (nilai.length >= 3 && nilai.length < 160) {
-      const bayar = /\b(?:dihutang|belum\s+dibayar|terhutang)\b/i.test(m[1]) ? "dihutang" : /\btunai|kontan\b/i.test(m[1]) ? "dibayar tunai" : "";
-      hasil.push({ kunci: "mahar", nilai: bayar ? `${nilai}, ${bayar}` : nilai, yakin: "cukup", ket: "Dari kalimat 'maskawin berupa ...' pada posita." });
-      break;
-    }
-  }
-  // Umur saat menikah: "Pemohon I berstatus Perjaka dengan usia 27 tahun, dan Pemohon II berstatus Perawan dengan usia 18 tahun"
-  for (const b of butir) {
-    const m = /berstatus\s+[A-Za-z]+(?:\s*\([^)]*\))?\s*(?:,\s*)?(?:dalam\s+|dengan\s+)?usia\s+(\d{1,2})\s*tahun[^.]*?berstatus\s+[A-Za-z]+(?:\s*\([^)]*\))?\s*(?:,\s*)?(?:dalam\s+|dengan\s+)?usia\s+(\d{1,2})\s*tahun/i.exec(b);
-    if (m) {
-      hasil.push({ kunci: "umurP1", nilai: m[1], yakin: "cukup" }, { kunci: "umurP2", nilai: m[2], yakin: "cukup" });
-      break;
-    }
-  }
+  // T11 (1 Nov 2026): umur, status, wali, saksi nikah, mahar, tanggal/tempat akad - satu lintasan di isiJawabanSaksiPositaNikah.js
+  hasil.push(...faktaNikahDariPosita(butir));
   // Anak yang dimohonkan (asal usul anak): "telah dikaruniai seorang anak yang bernama X yang lahir di T, pada hari Senin, tanggal 18 Agustus 2019"
   for (const b of butir) {
     const m = /dikaruniai\s+(?:seorang|satu|\d+\s*(?:\([^)]*\)\s*)?orang)?\s*anak\s+(?:laki-laki\s+|perempuan\s+)?(?:yang\s+)?bernama\s+(.+?)(?:\s+(?:yang\s+)?lahir\b|,|;|$)/i.exec(b);

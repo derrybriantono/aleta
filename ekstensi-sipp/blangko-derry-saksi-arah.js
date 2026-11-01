@@ -128,6 +128,34 @@
     return { jawaban: ambil(KODE_JAWABAN).slice(0, 60000), duplik: ambil(KODE_DUPLIK).slice(0, 60000) };
   }
 
+  /**
+   * T11/3: melengkapi naskah jawaban & duplik Tergugat dengan jawaban/duplik LISAN yang tercatat di BAS (tanya-jawab ABT 6112 jawaban lisan,
+   * 6114 duplik lisan). Urutan sumber: (a) e-Court / isian 12020-12024 (yang sudah ada di `naskah` tidak pernah ditimpa), (b) lisan,
+   * (c) tidak ada: tetap kosong. Teks lisan disalin apa adanya (keputusan 55). `asal.<peran>` = "lisan" bila bagian itu dari BAS.
+   * @param {{jawaban?: string, duplik?: string}|null} naskah
+   * @param {{jawaban?: Array<{tanya?: string, jawab?: string}>, duplik?: Array<{tanya?: string, jawab?: string}>}|null} lisan baris tanya-jawab
+   */
+  function naskahTDenganLisan(naskah, lisan) {
+    const n = naskah && typeof naskah === "object" ? naskah : {};
+    const l = lisan && typeof lisan === "object" ? lisan : {};
+    const gabung = (baris) =>
+      (Array.isArray(baris) ? baris : [])
+        .map((r) => teks(r && r.jawab).replace(/\s+/g, " ").replace(/[;\s]+$/, "").trim())
+        .filter(Boolean)
+        .join(". ")
+        .slice(0, 60000);
+    const hasil = { jawaban: teks(n.jawaban).trim(), duplik: teks(n.duplik).trim(), asal: { jawaban: "", duplik: "" } };
+    for (const peran of ["jawaban", "duplik"]) {
+      if (hasil[peran]) continue;
+      const t = gabung(l[peran]);
+      if (t) {
+        hasil[peran] = t;
+        hasil.asal[peran] = "lisan";
+      }
+    }
+    return hasil;
+  }
+
   /** Teks peringatan untuk lencana di panel (keputusan 61). */
   const TEKS_PERINGATAN = {
     gugatan: { label: "dari gugatan", teks: "Bunyi ini diambil dari gugatan/posita, bukan dari ucapan saksi. Sesuaikan dengan keterangan saksi di persidangan." },
@@ -177,7 +205,7 @@
     return cocok ? { opsi: pj, terpilih: teks(cocok.kunci) } : null;
   }
 
-  const api = { pilihanJawabBaris, satuSaksi, DAFTAR_MODUS_ARAH, MODUS_ARAH, arahPutusan, modusBawaan, opsiModus, daftarDasarT, dasarSah, pilihSetPihak, naskahT, peringatanBaris, TEKS_PERINGATAN, KODE_JAWABAN, KODE_DUPLIK };
+  const api = { pilihanJawabBaris, satuSaksi, DAFTAR_MODUS_ARAH, MODUS_ARAH, arahPutusan, modusBawaan, opsiModus, daftarDasarT, dasarSah, pilihSetPihak, naskahT, naskahTDenganLisan, peringatanBaris, TEKS_PERINGATAN, KODE_JAWABAN, KODE_DUPLIK };
   globalThis.AletaBdSaksiArah = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();

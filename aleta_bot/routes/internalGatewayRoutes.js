@@ -3288,7 +3288,11 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
             lawan,
             saksi: saksiMasuk.saksi,
             ...(alamatPihakSipp ? { alamatPihak: alamatPihakSipp } : {}),
-            naskahT: { jawaban: String(naskahMasuk.jawaban || "").slice(0, 60000), duplik: String(naskahMasuk.duplik || "").slice(0, 60000) },
+            naskahT: {
+              jawaban: String(naskahMasuk.jawaban || "").slice(0, 60000),
+              duplik: String(naskahMasuk.duplik || "").slice(0, 60000),
+              asal: { jawaban: naskahMasuk.asal && naskahMasuk.asal.jawaban === "lisan" ? "lisan" : "", duplik: naskahMasuk.asal && naskahMasuk.asal.duplik === "lisan" ? "lisan" : "" },
+            },
             tanggalSidang: tanggalSidangMasuk || (konteksSipp && konteksSipp.tanggalSidang) || "",
           });
         } catch (galatPerbaikan) {

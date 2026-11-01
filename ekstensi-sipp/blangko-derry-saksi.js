@@ -138,7 +138,7 @@
         h.saksi = h.saksi.map((s, i) => (asal[i] && (asal[i].dasar === "jawaban" || asal[i].dasar === "gugatan") ? { ...s, dasar: asal[i].dasar } : s));
       }
       const n = r.naskahT && typeof r.naskahT === "object" ? r.naskahT : null;
-      if (n && (String(n.jawaban || "").trim() || String(n.duplik || "").trim())) h.naskahT = { jawaban: String(n.jawaban || ""), duplik: String(n.duplik || "") };
+      if (n && (String(n.jawaban || "").trim() || String(n.duplik || "").trim())) h.naskahT = { jawaban: String(n.jawaban || ""), duplik: String(n.duplik || ""), asal: { jawaban: n.asal && n.asal.jawaban === "lisan" ? "lisan" : "", duplik: n.asal && n.asal.duplik === "lisan" ? "lisan" : "" } };
       return h;
     };
     if (typeof susunMuatanSdg === "function") return denganIsian(susunMuatanSdg(r));

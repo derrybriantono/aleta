@@ -314,13 +314,46 @@ function jawabArah(o) {
   return t ? kalimat(t) : null;
 }
 
+// ─── T11 butir 2: pengetahuan "tahu berselisih, tidak tahu sebab" pada butir yang bergantung pada sebab ───────
+
+/** Butir huruf A (kebiasaan buruk) dan D (kekerasan) yang rincinya hanya diketahui saksi yang tahu SEBAB perselisihan. */
+const RE_BERGANTUNG_SEBAB = /kebiasaan|kekerasan|bekas\s+luka|kejadian\s+itu|dinasihati\s+agar\s+berhenti/i;
+
+/**
+ * Jawaban butir yang bergantung pada sebab untuk saksi yang tahu keduanya berselisih tetapi tidak tahu sebabnya
+ * (modus "tidak-tahu"). null = butir ini bukan butir yang bergantung pada sebab. Dua kelompok bunyi (saksi 1 dan 2) dan tiap
+ * kelompok bergantian menurut nomor butir - dua saksi tidak pernah berbunyi sama persis pada butir yang sama.
+ */
+function jawabTidakTahuSebab(o) {
+  const { tanya, kel, T, ke, n } = o;
+  const q = teks(tanya);
+  const penyebab = kel === "penyebab";
+  if (!penyebab && !RE_BERGANTUNG_SEBAB.test(q)) return null;
+  const hal = /kebiasaan|dinasihati/i.test(q) ? `kebiasaan buruk ${T}` : /kekerasan|bekas\s+luka|kejadian\s+itu/i.test(q) ? "kekerasan tersebut" : "";
+  const daftar =
+    Number(ke) % 2 === 1
+      ? [
+          `Apa penyebabnya tidak saya ketahui${hal ? `, begitu pula soal ${hal}` : ""}`,
+          `Saya hanya tahu mereka berselisih, tetapi penyebabnya tidak saya ketahui${hal ? `, termasuk soal ${hal}` : ""}`,
+          `Penyebab perselisihan mereka tidak saya ketahui${hal ? `, begitu pula ${hal}` : ""}`,
+        ]
+      : [
+          hal ? `Saya tidak mengetahui penyebabnya, jadi soal ${hal} saya tidak tahu` : "Saya tidak mengetahui penyebabnya",
+          `Penyebab perselisihan mereka tidak saya ketahui${hal ? `, sehingga soal ${hal} tidak dapat saya terangkan` : ""}`,
+          `Saya tidak mengetahui apa penyebabnya${hal ? `, termasuk soal ${hal}` : ""}`,
+        ];
+  return kalimat(daftar[Number(n) % daftar.length]);
+}
+
 // ─── Saksi Tergugat/Termohon dari jawaban & duplik (keputusan 62) ────────────
 
 /** Bantahan dalam naskah jawaban/duplik (bentuk sama dengan keadaan.bantahan katalog cerai-*-tergugat). */
-function bacaBantahan(naskah, P, T) {
+function bacaBantahan(naskah, P, T, opsi) {
   const t = bersihPosita(naskah);
   const bantahan = new Set();
-  const out = { bantahan, sebab: "", ada: t.length >= 40, membenarkan: false };
+  // T11/3: jawaban LISAN di BAS biasanya lebih pendek daripada surat jawaban e-Court, ambangnya lebih rendah.
+  const ambang = opsi && opsi.lisan ? 20 : 40;
+  const out = { bantahan, sebab: "", ada: t.length >= ambang, membenarkan: false };
   if (!out.ada) return out;
   const kal = t.split(/(?<=[.;!?])\s+|\s+(?=\d{1,2}\s*[.)]\s+[A-Z])/).map((x) => x.trim()).filter(Boolean);
   const reP = new RegExp(`\\b${P}\\b`, "i");
@@ -496,8 +529,13 @@ function perbaiki(hasil, k) {
   const adaPosita = posita.length >= 20;
   const templat = Array.isArray(o.templat) ? o.templat : [];
   const naskahT = o.naskahT && typeof o.naskahT === "object" ? [teks(o.naskahT.jawaban), teks(o.naskahT.duplik)].join("\n") : "";
-  const bantahan = bacaBantahan(naskahT, P, T);
-  const ringkas = { gugatan: 0, jawaban: 0, pengetahuan: 0, ejaan: 0, arah: 0, alamat: 0, ragam: 0, saksiT: 0 };
+  // T11/3: urutan sumber naskah Tergugat - (a) jawaban/duplik e-Court atau isian 12020/12024, (b) jawaban/duplik LISAN di BAS
+  // (asal "lisan" dari ekstensi), (c) tidak ada: butir tetap titik-titik + catatan di panel.
+  const asalNaskah = o.naskahT && typeof o.naskahT === "object" && o.naskahT.asal && typeof o.naskahT.asal === "object" ? o.naskahT.asal : {};
+  const hanyaLisan = ["jawaban", "duplik"].every((k) => !teks(o.naskahT && o.naskahT[k]).trim() || asalNaskah[k] === "lisan");
+  const bantahan = bacaBantahan(naskahT, P, T, { lisan: hanyaLisan });
+  const sumberJawaban = bantahan.ada && hanyaLisan ? `jawaban lisan ${T} (BAS)` : `jawaban ${T}`;
+  const ringkas = { gugatan: 0, jawaban: 0, pengetahuan: 0, ejaan: 0, arah: 0, alamat: 0, ragam: 0, saksiT: 0, sebab: 0 };
 
   hasil.saksi.forEach((s, idx) => {
     const masuk = (Array.isArray(o.saksi) && o.saksi[idx]) || {};
@@ -516,7 +554,7 @@ function perbaiki(hasil, k) {
         if (isi) {
           j.jawab = kalimat(isi);
           delete j.pilihan;
-          j.usulan = { teks: j.jawab, yakin: "ragu", sumber: `jawaban ${T}`, ket: `Disusun dari jawaban/duplik ${T}; periksa dengan keterangan saksi.`, peringatan: "jawaban" };
+          j.usulan = { teks: j.jawab, yakin: "ragu", sumber: sumberJawaban, ket: hanyaLisan ? `Disusun dari jawaban/duplik LISAN ${T} yang tercatat di BAS; periksa dengan keterangan saksi.` : `Disusun dari jawaban/duplik ${T}; periksa dengan keterangan saksi.`, peringatan: "jawaban" };
           ringkas.jawaban += 1;
         } else {
           j.jawab = rapikanKalimat(asli || "...", tanya);
@@ -534,6 +572,19 @@ function perbaiki(hasil, k) {
           delete j.saran;
           j.usulan = { teks: isi, yakin: "ragu", sumber: "pilihan pengetahuan saksi", ket: modus === "sebaliknya" ? `Keterangan berkebalikan dengan dalil ${P} (pilihan pengetahuan saksi); sesuaikan dengan keterangan saksi.` : "Saksi tidak mengetahui hal ini (pilihan pengetahuan saksi); sesuaikan dengan keterangan saksi." };
           ringkas.arah += 1;
+          return;
+        }
+      }
+      // T11/2: modus "tidak-tahu" (tahu berselisih, tidak tahu sebab) - butir yang bergantung pada sebab (huruf A, D, dan butir
+      // penyebab) berbunyi konsisten "tidak mengetahui penyebabnya", bukan titik-titik atau bunyi gugatan. Butir lain tidak disentuh.
+      if (cerai && modus === "tidak-tahu" && (adaTitik(j.jawab) || (j.usulan && /gugatan|posita/i.test(teks(j.usulan.sumber))))) {
+        const isi = jawabTidakTahuSebab({ tanya, kel, T, ke: idx, n });
+        if (isi) {
+          j.jawab = isi;
+          delete j.pilihan;
+          delete j.saran;
+          j.usulan = { teks: isi, yakin: "cukup", sumber: "pilihan pengetahuan saksi", ket: "Saksi tahu keduanya berselisih tetapi tidak tahu sebabnya (pilihan pengetahuan saksi); sesuaikan dengan keterangan saksi." };
+          ringkas.sebab += 1;
           return;
         }
       }
@@ -693,9 +744,10 @@ function perbaiki(hasil, k) {
     if (peringatan.length) hasil.peringatanPembuktian = peringatan;
   }
   if (ringkas.saksiT && !bantahan.ada) {
-    hasil.catatan = `${teks(hasil.catatan)} Jawaban dan duplik ${T} belum terbaca - keterangan saksi ${T} dibiarkan bertitik-titik untuk diisi dari keterangan saksi.`.trim();
+    hasil.catatan = `${teks(hasil.catatan)} Jawaban ${T} belum ada (jawaban dan duplik e-Court maupun jawaban lisan di BAS tidak terbaca) - isi dari keterangan saksi atau pilih 'Ikut membenarkan gugatan ${P}'. Butir keterangan saksi ${T} dibiarkan bertitik-titik.`.trim();
+    hasil.jawabanTBelumAda = true;
   }
   return hasil;
 }
 
-module.exports = { perbaiki, keadaanPisah, bulanDari, rapikanEjaan, hapusKataGanda, rapikanKalimat, jawabArah, bacaBantahan, jawabSaksiT, alamatTergugat, kelompokCerai, variasi, PERINGATAN, MODUS_ARAH };
+module.exports = { jawabTidakTahuSebab, perbaiki, keadaanPisah, bulanDari, rapikanEjaan, hapusKataGanda, rapikanKalimat, jawabArah, bacaBantahan, jawabSaksiT, alamatTergugat, kelompokCerai, variasi, PERINGATAN, MODUS_ARAH };
