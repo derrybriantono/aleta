@@ -42,6 +42,13 @@ export type Penanda = {
   keterangan: string;
 };
 
+/** Z cross otomatis (zcross/): hasil penyesuaian sebelum BAS diubah ke PDF. */
+export type SesuaikanZ = (
+  bita: Uint8Array,
+  bentuk: BentukWord,
+  opsi: { jumlahBukti?: number; halamanBukti?: ReadonlyArray<number | null | undefined> }
+) => Promise<{ bita: Uint8Array; peringatan: string[]; ringkas?: { diubah: boolean; halamanZ?: number; jumlahHalamanBukti?: number; nomorBagianBerikut?: number | null; bawaan?: boolean } }>;
+
 export type HasilWordPdf = {
   pdf: Uint8Array;
   namaBerkas: string;
@@ -50,6 +57,8 @@ export type HasilWordPdf = {
   blokTtd: "ditemukan" | "tidak-dikenali" | "dimatikan";
   penandatangan: Penanda[];
   peringatan: string[];
+  /** Ringkasan Z cross otomatis bila naskah disesuaikan. */
+  zcross?: { diubah: boolean; halamanZ?: number; jumlahHalamanBukti?: number; nomorBagianBerikut?: number | null; bawaan?: boolean };
 };
 
 export const BATAS_WORD_PDF = BATAS_KONVERSI;
@@ -321,6 +330,11 @@ export type DepsWordPdf = {
   gambarTtd: (id: number) => Promise<Uint8Array | null>;
   /** Ukuran tanda tangan di PDF (satu set dengan PDF Blangko Derry). */
   atur?: Partial<AturTtd>;
+  /**
+   * Z cross otomatis: garis Z di samping kata terakhir "...berikut:", tanggal di bawahnya, ganti halaman, nomor halaman bagian berikutnya
+   * (halaman Z + jumlah halaman bukti). Dipanggil SEBELUM Word diubah ke PDF; tidak menggagalkan PDF bila gagal (naskah apa adanya).
+   */
+  sesuaikanZ?: SesuaikanZ;
 };
 
 export type MasukanWordPdf = {
@@ -330,6 +344,8 @@ export type MasukanWordPdf = {
   /** Akun yang meminta; `bolehSemuaTtd` = punya kapabilitas "blangko-abt" (admin). */
   akun: { id: string; nama: string };
   bolehSemuaTtd: boolean;
+  /** Jumlah bukti dan halaman tiap bukti (dari panel / berkas bukti); kosong = dihitung dari naskah, 1 halaman per bukti. */
+  zcross?: { jumlahBukti?: number; halamanBukti?: ReadonlyArray<number | null | undefined> };
 };
 
 const KET_STATUS: Record<StatusPenanda, string> = {
@@ -348,7 +364,18 @@ export async function wordKePdfBas(masukan: MasukanWordPdf, deps: DepsWordPdf): 
   if (!bentuk) throw new ApiError(400, "Isinya bukan berkas Word (RTF, DOCX, atau DOC) - dikenali dari isi berkasnya, bukan dari namanya.");
 
   const peringatan: string[] = [];
-  const awal = bentuk === "rtf" ? buangGrupTersembunyiRtf(masukan.bita) : masukan.bita;
+  let awal = bentuk === "rtf" ? buangGrupTersembunyiRtf(masukan.bita) : masukan.bita;
+  let zcross: HasilWordPdf["zcross"];
+  if (deps.sesuaikanZ) {
+    try {
+      const z = await deps.sesuaikanZ(awal, bentuk, masukan.zcross ?? {});
+      awal = z.bita;
+      peringatan.push(...z.peringatan);
+      zcross = z.ringkas;
+    } catch {
+      // Z otomatis tidak boleh menggagalkan PDF: lanjut dengan naskah apa adanya
+    }
+  }
   let pdf = await deps.ubahKePdf(awal, bentuk);
   if (kenaliBentukNaskah(pdf) !== "pdf") throw new ApiError(502, "Hasil ubahan bukan PDF.");
 
@@ -419,7 +446,7 @@ export async function wordKePdfBas(masukan: MasukanWordPdf, deps: DepsWordPdf): 
 
   pdf = await pdfTanpaTandaAleta(pdf);
   if (bentuk !== "rtf") peringatan.push("Berkas Word diubah langsung ke PDF; periksa tata letaknya (tabel, kolom, tanda tangan) sebelum disimpan.");
-  return { pdf, namaBerkas: namaPdfDariWord(masukan.namaBerkas), bentukAsal: bentuk, blokTtd, penandatangan, peringatan };
+  return { pdf, namaBerkas: namaPdfDariWord(masukan.namaBerkas), bentukAsal: bentuk, blokTtd, penandatangan, peringatan, ...(zcross ? { zcross } : {}) };
 }
 
 // ----------------------------------------------------------------------------

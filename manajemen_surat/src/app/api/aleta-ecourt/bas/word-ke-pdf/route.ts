@@ -7,6 +7,7 @@ import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { BATAS_WORD_PDF, ubahKePdfLewatBot, wordKePdfBas } from "@/server/modules/aleta-ecourt/bas-word-pdf";
 import { ukuranTtdCapBerlaku } from "@/server/modules/aleta-ecourt/ukuran-ttd-cap";
 import { requireActorUser } from "@/server/modules/organization/service";
+import { bacaOpsiBukti, peringatanZcross, sesuaikanZcrossOtomatis } from "@/server/modules/aleta-ecourt/zcross/pakai";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ApiError } from "@/server/shared/errors";
@@ -61,9 +62,21 @@ export async function POST(request: NextRequest) {
         denganTtd,
         akun: { id: String(aktor.id), nama: String(aktor.name ?? "") },
         bolehSemuaTtd,
+        // jumlah halaman bukti dari panel / berkas bukti; kosong = dihitung dari naskah, 1 halaman per bukti
+        zcross: bacaOpsiBukti(formulir.get("jumlahBukti"), formulir.get("halamanBukti")),
       },
       {
         ubahKePdf: ubahKePdfLewatBot,
+        // Z cross otomatis tiap unggah (tanpa tombol): garis Z, tanggal, ganti halaman, nomor halaman bagian berikutnya
+        sesuaikanZ: async (bita, bentuk, opsi) => {
+          const r = await sesuaikanZcrossOtomatis(bita, bentuk, opsi);
+          const l = r.laporan;
+          return {
+            bita: r.bita,
+            peringatan: peringatanZcross(l),
+            ringkas: { diubah: l.diubah, halamanZ: l.halamanTampilZ, jumlahHalamanBukti: l.jumlahHalamanBukti, nomorBagianBerikut: l.nomorBagianBerikut, bawaan: l.jumlahHalamanBuktiBawaan },
+          };
+        },
         daftarTtdSah: async () => {
           const r = (await getGatewayTandaTangan(true)) as { ok?: boolean; baris?: Array<Record<string, unknown>> } | null;
           if (!r || r.ok === false) throw new ApiError(502, "Daftar tanda tangan belum dapat dibaca.");
@@ -94,6 +107,7 @@ export async function POST(request: NextRequest) {
       blokTtd: hasil.blokTtd,
       penandatangan: hasil.penandatangan,
       peringatan: hasil.peringatan,
+      ...(hasil.zcross ? { zcross: hasil.zcross } : {}),
     });
   } catch (error) {
     return handleAdminRouteError(error, request, {

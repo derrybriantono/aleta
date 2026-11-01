@@ -4,6 +4,7 @@ import { getDatabase } from "@/server/db/client";
 import { getGatewayAbtPdf } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { pilihCap } from "@/server/modules/aleta-ecourt/penetapan-edoc";
+import { bacaOpsiBukti, peringatanZcross, sesuaikanZcrossOtomatis } from "@/server/modules/aleta-ecourt/zcross/pakai";
 import { ukuranTtdCapBerlaku } from "@/server/modules/aleta-ecourt/ukuran-ttd-cap";
 import { ukuranUntukBot } from "@/lib/ukuran-ttd-cap";
 import { bubuhkanTtdPdf, type TtdMasuk } from "@/server/modules/aleta-ecourt/pdf-bubuh-ttd";
@@ -66,13 +67,13 @@ export async function POST(request: NextRequest) {
     actorUserId = await resolveActorUserId(request);
     await pastikanKapabilitas(db, actorUserId, "blangko-abt");
 
-    const body = await readJsonBody<{ rtfBase64?: unknown; salinan?: unknown; ttd?: unknown }>(request).catch(
-      () => ({}) as { rtfBase64?: unknown; salinan?: unknown; ttd?: unknown }
+    const body = await readJsonBody<{ rtfBase64?: unknown; salinan?: unknown; ttd?: unknown; jumlahBukti?: unknown; halamanBukti?: unknown }>(request).catch(
+      () => ({}) as { rtfBase64?: unknown; salinan?: unknown; ttd?: unknown; jumlahBukti?: unknown; halamanBukti?: unknown }
     );
     // 14 Okt: PDF SALINAN - "SALINAN" kanan atas, "ttd", blok Untuk Salinan
     // tampak, dan tanda tangan Panitera yang sudah disahkan (dibubuhkan bot).
     const salinan = body.salinan === true;
-    const rtfBase64 = String(body.rtfBase64 || "");
+    let rtfBase64 = String(body.rtfBase64 || "");
     if (!rtfBase64) {
       return ok({ available: false, message: "Berkas RTF tidak terkirim." });
     }
@@ -99,6 +100,18 @@ export async function POST(request: NextRequest) {
       salinanOpsi = { salinan: true, atur, cap: c ? { jenis: c.jenisBerkas, isiBase64: c.isi.toString("base64") } : null, ttdDiPdf: true };
     }
     const ttdMasuk = salinan ? [] : bacaTtdMasuk(body.ttd);
+
+    // Z cross otomatis (1 Nov): RTF BAS yang memuat bentuk "SC Z" disesuaikan sebelum diubah ke PDF - garis Z di samping kata terakhir
+    // "...berikut:", tanggal di bawahnya, ganti halaman, nomor halaman bagian berikutnya. Gagal/tanpa bentuk = RTF apa adanya.
+    let zcross: { diubah: boolean; halamanZ?: number; jumlahHalamanBukti?: number; nomorBagianBerikut?: number | null; bawaan?: boolean; peringatan: string[] } | undefined;
+    if (!salinan) {
+      const z = await sesuaikanZcrossOtomatis(new Uint8Array(Buffer.from(rtfBase64, "base64")), "rtf", bacaOpsiBukti(body.jumlahBukti, body.halamanBukti));
+      if (z.laporan.diubah) {
+        rtfBase64 = Buffer.from(z.bita).toString("base64");
+        const l = z.laporan;
+        zcross = { diubah: true, halamanZ: l.halamanTampilZ, jumlahHalamanBukti: l.jumlahHalamanBukti, nomorBagianBerikut: l.nomorBagianBerikut, bawaan: l.jumlahHalamanBuktiBawaan, peringatan: peringatanZcross(l) };
+      }
+    }
     const hasil = await getGatewayAbtPdf(rtfBase64, salinanOpsi ?? { salinan });
     if (!hasil.ok) {
       return ok({
@@ -147,6 +160,7 @@ export async function POST(request: NextRequest) {
       versiMesin: hasil.data?.versiMesin ?? "",
       ...(salinan ? { salinan: keteranganSalinan } : {}),
       ...(ttdPdf ? { ttdPdf } : {}),
+      ...(zcross ? { zcross } : {}),
     });
   } catch (error) {
     return handleAdminRouteError(error, request, {
