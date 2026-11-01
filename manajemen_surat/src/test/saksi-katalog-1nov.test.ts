@@ -185,7 +185,11 @@ describe("semua kombinasi dropdown dan centangan menghasilkan keterangan yang be
   it("perjanjian perkawinan: waktu pembuatan, bentuk pengesahan, isi, dan perubahan menentukan butir", () => {
     const paket = pilih("744", "16", "");
     const dasar = Mesin.keadaanBawaan(paket, {});
+    // keputusan 1 Nov: bawaannya SEBELUM menikah; pilihan saat menikah dan selama perkawinan tetap ada di menu
+    expect(dasar.waktuPerjanjian).toBe("sebelum-nikah");
+    expect(paket.keadaan.waktuPerjanjian.nilai).toEqual(["sebelum-nikah", "saat-nikah", "selama-nikah"]);
     const id = (ke: Record<string, unknown>) => Mesin.pertanyaanAktif(paket, ke, "P").map((q: Apa) => q.id);
+    expect(id(dasar)).toContain("q-waktu-sebelum");
     expect(id({ ...dasar, waktuPerjanjian: "sebelum-nikah" })).toContain("q-waktu-sebelum");
     expect(id({ ...dasar, waktuPerjanjian: "saat-nikah" })).toContain("q-waktu-saat");
     expect(id({ ...dasar, waktuPerjanjian: "selama-nikah" })).toContain("q-waktu-selama");
