@@ -4611,11 +4611,32 @@
       const isi = await ambilPortal(`${API_ISI_GUGATAN_JM}?${q.toString()}`, {}, "Membaca jawaban dan duplik dari e-Court");
       usulan = Array.isArray(isi && isi.usulan) ? isi.usulan : [];
     } catch {
-      /* tanpa naskah: keterangan saksi Tergugat dibiarkan bertitik-titik */
+      /* tanpa naskah e-Court: dicoba jawaban lisan di BAS, lalu dibiarkan bertitik-titik */
     }
-    const naskah = a.naskahT({ isi: {}, usulan });
+    let naskah = a.naskahT({ isi: {}, usulan });
+    // T11/3: jawaban/duplik e-Court tidak ada -> jawaban/duplik LISAN yang tercatat di BAS (tanya-jawab ABT 6112 / 6114). Hanya MEMBACA.
+    if ((!naskah.jawaban || !naskah.duplik) && typeof a.naskahTDenganLisan === "function") {
+      const lisan = {};
+      if (!naskah.jawaban) lisan.jawaban = await bacaLisanT("6112");
+      if (!naskah.duplik) lisan.duplik = await bacaLisanT("6114");
+      naskah = a.naskahTDenganLisan(naskah, lisan);
+    }
     S.sk.naskahT = { perkara: id, naskah };
     return naskah;
+  }
+  /** Baris tanya-jawab lisan (6112 jawaban, 6114 duplik) dari sidang pertama yang memuatnya; [] bila tidak ada/terbaca. */
+  async function bacaLisanT(kode) {
+    try {
+      const k = klienAbt();
+      const daftar = (S.pk && Array.isArray(S.pk.sidang) ? S.pk.sidang : []).map((s) => Number(s && s.urutan)).filter((n) => n > 0);
+      for (const n of [...new Set(daftar)].sort((x, y) => x - y).slice(0, 8)) {
+        const h = await k.bacaTanyaJawab({ kode, perkaraId: perkaraId(), sidang: String(n), a: S.blangko ? S.blangko.a : "", b: S.blangko ? S.blangko.b : "" });
+        if (h && h.ok && (Array.isArray(h.baris) ? h.baris : []).some((r) => String((r && r.jawab) || "").trim())) return h.baris;
+      }
+    } catch {
+      /* sidang itu tidak terbaca */
+    }
+    return [];
   }
   /** Baris tanya-jawab yang berisi (pertanyaan atau jawaban tidak kosong). */
   const barisTjBerisi = (baris) => (Array.isArray(baris) ? baris : []).some((r) => String((r && r.tanya) || "").trim() || String((r && r.jawab) || "").trim());

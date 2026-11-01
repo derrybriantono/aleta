@@ -136,7 +136,7 @@ describe("62 - saksi Tergugat/Termohon cerai: jawaban & duplik, pilihan ikut gug
     const templat = templatDraf("347", "F", FOLDER.pembuktianT, "T", "jawaban");
     const h = susun("347", templat, POSITA["347"], [{ ke: 1, pihak: "T", modus: "sama", dasar: "jawaban" }]);
     expect(cari(h, 0, /sebenarnya menjadi masalah/i).jawab).toMatch(/\.\.\./);
-    expect(h.catatan).toMatch(/Jawaban dan duplik Tergugat belum terbaca/);
+    expect(h.catatan).toMatch(/Jawaban Tergugat belum ada/);
   });
   it("ikut gugatan: saksi T memakai set dan susunan saksi Penggugat seperti dahulu", () => {
     const templat = templatDraf("347", "F", FOLDER.pembuktianT, "T", "gugatan");

@@ -168,6 +168,9 @@ function uraiMahar(t) {
   let bayar = "";
   if (/\b(?:belum\s+dibayar|dihutang|terhutang|hutang|utang|secara\s+kredit|ditangguhkan)\b/i.test(s)) bayar = "hutang";
   else if (/\b(?:tunai|kontan|lunas|dibayar\s+(?:langsung|saat))\b/i.test(s)) bayar = "tunai";
+  // T11: "uang tunai Rp. 1.000.000,-" - 'tunai' di depan nominal menerangkan uangnya (sudah tercatat sebagai cara bayar), bukan ekor cara bayar
+  // yang boleh memotong sisa kalimat (dahulu hasilnya "uang" saja).
+  s = s.replace(/\b(uang)\s+(?:secara\s+)?(?:tunai|kontan)\b(?=\s+(?:sebesar\s+|senilai\s+|sejumlah\s+)?(?:Rp|\d))/i, "$1");
   s = s
     .replace(/[,;]?\s*(?:dan\s+)?(?:yang\s+)?(?:telah\s+|sudah\s+)?(?:dibayar(?:kan)?|dibayarkan)\s+(?:secara\s+)?(?:tunai|kontan|lunas)\b.*$/i, "")
     .replace(/[,;]?\s*(?:dan\s+)?(?:dengan\s+)?(?:pembayaran\s+)?(?:secara\s+)?(?:tunai|kontan)\b.*$/i, "")
