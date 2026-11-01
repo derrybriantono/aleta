@@ -7,6 +7,7 @@ import { sebutanAman } from "@/server/modules/aleta-ecourt/isi-gugatan";
 import { bacaSetelanBerkas } from "@/server/modules/aleta-ecourt/berkas-otomatis";
 import { bacaGugatanSinggah } from "@/server/modules/aleta-ecourt/isi-gugatan-singgah";
 import { bacaGugatanEcourt } from "@/server/modules/aleta-ecourt/isi-sipp-sumber";
+import { simpanDariIsiGugatan } from "@/server/modules/aleta-ecourt/matriks-dalil";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
@@ -53,7 +54,11 @@ export async function GET(request: NextRequest) {
 
     // 19 Okt: pembaca yang sama dengan agen draf putusan (bacaGugatanEcourt, isi-sipp-sumber.ts).
     const { hasil, dariSinggahan } = await bacaGugatanSinggah(nomor, sebutan, majelis, { denganBukti, otomatis, ulang: q.get("ulang") === "1" }, bacaGugatanEcourt);
-    return ok(dariSinggahan ? { ...hasil, dariSinggahan: true } : hasil);
+    // P2 1 Nov: berkas yang baru dibaca ulang -> matriks dalil perkara ikut tersimpan (tanpa tombol). Matriksnya sendiri dibaca
+    // panel lewat rute matriks-dalil, jadi tidak ikut dikirim di sini (jawaban isi gugatan tetap ringan).
+    if (!dariSinggahan && db) await simpanDariIsiGugatan(db, nomor, hasil).catch(() => false);
+    const { matriksDalil: _matriks, ...ringan } = hasil;
+    return ok(dariSinggahan ? { ...ringan, dariSinggahan: true } : ringan);
   } catch (error) {
     return handleAdminRouteError(error, request, {
       db,

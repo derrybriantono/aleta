@@ -6853,6 +6853,12 @@
       `<div class="bd-pgrid">${l.map((b) => (b.khusus === "bukti" ? kotakBukti(b) : kotakIsian(b))).join("")}</div></details>`
     );
   }
+  /** P2 1 Nov: Peta dalil (dilipat bawaan, dibaca hanya saat dibuka) - blangko-derry-peta-dalil.js; perkara gugatan, putusan & BAS. */
+  function htmlPetaDalil() {
+    const PD = globalThis.AletaBdPetaDalil;
+    if (!PD || !S.blangko || !["put", "bas"].includes(S.blangko.jenis) || !/\/Pdt\.G\//i.test(nomorPerkara())) return "";
+    return PD.htmlBungkus(nomorPerkara(), sebutan());
+  }
   function renderIsian() {
     const w = wadah.isian;
     if (!w) return;
@@ -6896,6 +6902,7 @@
       htmlIsianTambahan() +
       htmlTuntutanTakDiminta() +
       htmlIsianLanjutan() +
+      htmlPetaDalil() +
       `<div id="bd-tjtombol" class="bd-baris"></div><div id="bd-tjwadah"></div>` +
       (S.blangko.jenis === "bas" ? `<div id="bd-skorsbas"></div>` : "") +
       `<div class="bd-baris"><button type="button" class="bd-btn kecil" data-bd2="semua" aria-expanded="${S.semuaBuka}">Lihat semua isi data (${S.susunan.otomatis.length + pilihan.length})</button></div>` +
@@ -6914,6 +6921,8 @@
       // 19 Okt: deret isi diganti satu tombol "Isi otomatis" (di atas); "Set pertanyaan saksi" pindah ke tombol saksi di tanya jawab.
     }
     cari("#bd-alatisi", w).innerHTML = alat.join("");
+    const petaDalil = globalThis.AletaBdPetaDalil && cari("#bd-petadalil", w);
+    if (petaDalil) globalThis.AletaBdPetaDalil.pasang(petaDalil, { nomor: nomorPerkara(), sebutan: sebutan(), ambil: (u) => ambilPortal(u, {}, "Membaca peta dalil") });
     renderTj();
     renderProgres();
     tumbuhkanSemua(w);
@@ -7090,12 +7099,33 @@
       return `<span class="bd-asallencana ragu">ragu <button type="button" class="bd-ikon bd-asalinfo" data-bd2="infoasal" title="${esc(alasan)}" aria-label="Mengapa ragu: ${esc(alasan)}">ⓘ</button></span>`;
     }
     if (a === "kosong") return `<span class="bd-asallencana kosong">perlu dilengkapi</span>`;
+    // P2 1 Nov (keputusan 61-62): jawaban otomatis yang isinya dari dalil para pihak diberi tanda asal ("dari gugatan" / "dari jawaban")
+    // - matriks dalil satu sumber, dibaca sekali per perkara di latar; tanpa matriks = tanpa tanda.
+    if (a === "data") return lencanaDalilSaksi(r);
     // 30 Okt: kalimat contoh set pertanyaan (draf otomatis) - hal yang hanya diketahui saksi; alasannya di ikon (i).
     if (a === "contoh") {
       const alasan = m.alasanRagu(r);
       return `<span class="bd-asallencana contoh">kalimat contoh <button type="button" class="bd-ikon bd-asalinfo" data-bd2="infoasal" title="${esc(alasan)}" aria-label="Kalimat contoh: ${esc(alasan)}">ⓘ</button></span>`;
     }
     return "";
+  }
+  function lencanaDalilSaksi(r) {
+    const PD = globalThis.AletaBdPetaDalil;
+    const nomor = nomorPerkara();
+    if (!PD || !/\/Pdt\.G\//i.test(nomor)) return "";
+    const sb = sebutan();
+    const data = PD.tersinggah(nomor, sb);
+    if (!data) {
+      if (!S.petaDalilDiminta || S.petaDalilDiminta !== nomor) {
+        S.petaDalilDiminta = nomor;
+        PD.muat(nomor, sb, (u) => ambilPortal(u, {}, "Membaca peta dalil"))
+          .then(() => segarAsalTampil())
+          .catch(() => {});
+      }
+      return "";
+    }
+    const l = PD.lencanaDalil(r && r.jawab, data);
+    return l ? `<span class="bd-asallencana dalil" title="Kalimat ini sama dengan dalil ${esc(l.label.replace(/^dari /, ""))}${l.nomor ? ` angka ${esc(l.nomor)}` : ""}, bukan ucapan saksi - sesuaikan dengan keterangan saksi di persidangan.">${esc(l.label)}</span>` : "";
   }
   const htmlCapAsal = (r) => (TP() ? `<span class="bd-asalcap" data-asalcap>${isiCapAsal(r)}</span>` : "");
   function htmlRingkasAsal(daftar) {

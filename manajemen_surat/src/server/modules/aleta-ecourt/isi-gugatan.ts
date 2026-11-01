@@ -1,3 +1,4 @@
+import { sidikBerkas } from "@/lib/matriks-dalil";
 import { pilihDokumenGugatan, type DokumenArsip } from "@/server/modules/aleta-ecourt/kuasa-gugatan";
 
 /**
@@ -209,6 +210,10 @@ export type HasilIsiGugatan = {
   buktiOtomatis?: Record<string, unknown> | null;
   /** G2 25 Okt: saklar yang berlaku saat pembacaan ini (bukti, kesimpulan). */
   otomatis?: { bukti: boolean; kesimpulan: boolean } | null;
+  /** P2 1 Nov: matriks dalil satu sumber dari teks berkas yang sama (bot matriksDalilService) - null bila bot lama. */
+  matriksDalil?: Record<string, unknown> | null;
+  /** P2 1 Nov: sidik daftar berkas e-Court yang dibaca (lib/matriks-dalil sidikBerkas) - penentu hitung ulang matriks. */
+  sidikBerkas?: string;
 };
 
 export type OpsiOtomatisBerkas = { bukti: boolean; kesimpulan: boolean };
@@ -225,9 +230,10 @@ export async function bacaIsiGugatan(
   const kosong = (c: string[]): HasilIsiGugatan => ({ ada: false, tuntutan: [], anak: [], jawab: [], usulan: [], kalimat: [], diabaikan: [], dokumen: [], catatan: c });
   const rincian = await deps.rincian(nomor).catch(() => ({ ok: false, dokumen: [] as DokumenArsip[] }));
   if (!rincian.ok) return kosong(["Arsip e-Court perkara ini tidak terbaca dari ALETA Bot."]);
+  const sidik = sidikBerkas(rincian.dokumen || []);
   const rencana = rencanaBaca(rincian.dokumen || []);
   const bacaBukti = Boolean(opsi.denganBukti) && rencana.bukti.length > 0;
-  if (!rencana.gugatan.length && !rencana.jawab.length && !bacaBukti) return kosong(["Surat gugatan dan jawaban belum ada di arsip e-Court ALETA (perkara bukan e-Court, atau berkas belum ditarik)."]);
+  if (!rencana.gugatan.length && !rencana.jawab.length && !bacaBukti) return { ...kosong(["Surat gugatan dan jawaban belum ada di arsip e-Court ALETA (perkara bukan e-Court, atau berkas belum ditarik)."]), sidikBerkas: sidik };
 
   let ocrDipakai = false;
   let sisa = BATAS_TOTAL;
@@ -270,7 +276,7 @@ export async function bacaIsiGugatan(
     }
   }
   for (const d of daftar) if (!d.terbaca) catatan.push(`${d.judul}: teks tidak terbaca (${d.sebab || "kosong"}).`);
-  if (!terbacaDok.length) return { ...kosong(catatan), dokumen: daftar };
+  if (!terbacaDok.length) return { ...kosong(catatan), dokumen: daftar, sidikBerkas: sidik };
 
   const jawaban = await deps
     .kirimBot({
@@ -283,7 +289,7 @@ export async function bacaIsiGugatan(
     })
     .catch(() => null);
   if (!jawaban || jawaban.ok === false) {
-    return { ...kosong([...catatan, "ALETA Bot belum mengenal pembacaan isi gugatan (rute /abt/isi-gugatan) - bangun ulang bot."]), dokumen: daftar };
+    return { ...kosong([...catatan, "ALETA Bot belum mengenal pembacaan isi gugatan (rute /abt/isi-gugatan) - bangun ulang bot."]), dokumen: daftar, sidikBerkas: sidik };
   }
   const larik = (k: string) => (Array.isArray(jawaban[k]) ? (jawaban[k] as unknown[]) : []);
   return {
@@ -305,6 +311,9 @@ export async function bacaIsiGugatan(
     // G2 25 Okt
     buktiOtomatis: jawaban.buktiOtomatis && typeof jawaban.buktiOtomatis === "object" ? (jawaban.buktiOtomatis as Record<string, unknown>) : null,
     otomatis: jawaban.otomatis && typeof jawaban.otomatis === "object" ? (jawaban.otomatis as { bukti: boolean; kesimpulan: boolean }) : null,
+    // P2 1 Nov
+    matriksDalil: jawaban.matriksDalil && typeof jawaban.matriksDalil === "object" ? (jawaban.matriksDalil as Record<string, unknown>) : null,
+    sidikBerkas: sidik,
   };
 }
 

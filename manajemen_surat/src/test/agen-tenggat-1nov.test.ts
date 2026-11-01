@@ -596,7 +596,7 @@ describe("kabar bertahap - satu pesan per perkara per tenggat per tahap", () => 
 
 // ─── 7. Migrasi 0127 ─────────────────────────────────────────────────────────
 
-describe("migrasi 0127 - berkas = DDL schema.ts, jurnal idx 110 (111 sesudah 0126), ikut cadangan, tanpa kunci asing", () => {
+describe("migrasi 0127 - berkas = DDL schema.ts, jurnal idx 111, ikut cadangan, tanpa kunci asing", () => {
   const SQL = path.join(process.cwd(), "drizzle", "0127_aleta_tenggat_kabar.sql");
   const pernyataan = (s: string) =>
     s
@@ -607,10 +607,10 @@ describe("migrasi 0127 - berkas = DDL schema.ts, jurnal idx 110 (111 sesudah 012
       .map((x) => x.replace(/\s+/g, " ").trim())
       .filter(Boolean);
 
-  it("jurnal: 0127 tepat sekali di idx 110 (111 sesudah 0126), idx unik, when menaik", () => {
+  it("jurnal: 0127 tepat sekali di idx 111, idx unik, when menaik", () => {
     const j = JSON.parse(readFileSync(path.join(process.cwd(), "drizzle/meta/_journal.json"), "utf8")) as { entries: Array<{ idx: number; tag: string; when: number }> };
-    // G2 1 Nov: selama 0126 (P2 matriks-dalil) belum digabung, 0127 sementara di idx 110; sesudah 0126 masuk, idx 111. idx selalu = urutan.
-    const idx0127 = j.entries.some((e) => e.tag.startsWith("0126_")) ? 111 : 110;
+    // G2 1 Nov: 0126 (P2) di idx 110, 0127 di idx 111 - urut nomor, idx = urutan, when naik.
+    const idx0127 = 111;
     j.entries.forEach((e, i) => expect(e.idx).toBe(i));
     expect(j.entries.filter((e) => e.tag.startsWith("0127_"))).toEqual([expect.objectContaining({ idx: idx0127, tag: "0127_aleta_tenggat_kabar" })]);
     expect(new Set(j.entries.map((e) => e.idx)).size).toBe(j.entries.length);

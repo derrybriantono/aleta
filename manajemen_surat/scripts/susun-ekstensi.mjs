@@ -157,6 +157,8 @@ const BERKAS = [
   // Keterangan pasif "N bagian berubah sejak cetakan terakhir" (30 Okt 2026) dan pustaka kalimat pribadi (30 Okt 2026); dimuat sebelum blangko-derry-isian.js.
   "blangko-derry-beda-cetak.js",
   "blangko-derry-pustaka.js",
+  // Peta dalil (P2, 1 Nov 2026): matriks dalil satu sumber x tanggapan lawan, dilipat bawaan; murni + pasang, sebelum blangko-derry-isian.js.
+  "blangko-derry-peta-dalil.js",
   "blangko-derry-isian.js",
   // Temuan perkara di panel cetak Blangko Derry (G4, 30 Okt 2026): usul pembetulan kehadiran SIPP (satu tombol bagi PP perkara)
   // dan putusan SIPP vs dokumen - mengisi wadah catatan temuan yang sudah ada, dipanggil blangko-derry-isian.js.

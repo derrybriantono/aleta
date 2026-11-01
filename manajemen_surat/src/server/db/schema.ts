@@ -591,6 +591,26 @@ export const DDL_BAS_HALAMAN = {
  * Putusan SIPP vs dokumen putusan yang diunggah - hasil pencocokan per perkara (0117, 30 Okt 2026, G4 4.3).
  * Cermin PERSIS dari drizzle/0117_aleta_cocok_putusan.sql; penjaga cocok-putusan-30okt.test.ts membandingkan keduanya.
  */
+/**
+ * Matriks dalil satu sumber per perkara (0126, 1 Nov 2026, P2). Cermin PERSIS dari drizzle/0126_aleta_matriks_dalil.sql.
+ */
+export const DDL_MATRIKS_DALIL = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_matriks_dalil (
+  nomor_perkara TEXT NOT NULL PRIMARY KEY,
+  sidik TEXT NOT NULL DEFAULT '',
+  versi INTEGER NOT NULL DEFAULT 1,
+  sumber_gugatan TEXT NOT NULL DEFAULT '',
+  jumlah INTEGER NOT NULL DEFAULT 0,
+  matriks TEXT NOT NULL DEFAULT '{}',
+  pembuktian TEXT NOT NULL DEFAULT '{}',
+  lama_ms INTEGER NOT NULL DEFAULT 0,
+  dihitung_pada TEXT NOT NULL
+)`,
+  ],
+  indeks: [`CREATE INDEX IF NOT EXISTS idx_matriks_dalil_dihitung ON aleta_matriks_dalil(dihitung_pada)`],
+} as const;
+
 export const DDL_COCOK_PUTUSAN = {
   tabel: [
     `CREATE TABLE IF NOT EXISTS aleta_cocok_putusan (
@@ -3629,6 +3649,8 @@ const schemaStatements = [
   // Halaman BAS runut per perkara + sidang (0123).
   ...DDL_BAS_HALAMAN.tabel,
   ...DDL_PENJAGA_SERVER.tabel,
+  // Matriks dalil satu sumber per perkara (0126, P2 1 Nov 2026).
+  ...DDL_MATRIKS_DALIL.tabel,
   // Cadangan & riwayat suntingan ABT dari Pengaturan SIPP & ABT (0066).
   ...DDL_ABT_SUNTINGAN.tabel,
   // Checklist Konseptor Sementara: tanda langkah & laporan Blangko Derry (0067).
@@ -5652,6 +5674,7 @@ const indexStatements = [
   ...DDL_COCOK_PUTUSAN.indeks,
   ...DDL_BAS_HALAMAN.indeks,
   ...DDL_PENJAGA_SERVER.indeks,
+  ...DDL_MATRIKS_DALIL.indeks,
   ...DDL_ABT_SUNTINGAN.indeks,
   ...DDL_BLANGKO_PRIBADI.indeks,
   ...DDL_TAUTAN_JADWAL.indeks,

@@ -5412,6 +5412,14 @@ export async function postGatewayIsiGugatan(muatan: {
 }
 /* === AKHIR P4P7B2 === */
 
+/** P2 (1 Nov 2026): matriks dalil dari posita/petitum SIPP (perkara tanpa berkas e-Court). Bot hanya SELECT, batas 2,5 detik. */
+export async function postGatewayMatriksDalil(muatan: { nomorPerkara: string; sebutan: { lawan: string; pelaku: string } }) {
+  return gatewayFetch<{ ok?: boolean; ada?: boolean; matriksDalil?: Record<string, unknown> | null; sidikSipp?: string; jenisPerkaraId?: number | null }>(
+    "/internal/aleta-bot/abt/matriks-dalil",
+    { method: "POST", body: JSON.stringify(muatan), timeoutMs: 8_000 }
+  );
+}
+
 /* === KONTAK-EC 11 Okt === */
 /**
  * KONTAK-EC (11 Okt 2026): email & nomor HP/WA pihak dan kuasa dari e-Court
