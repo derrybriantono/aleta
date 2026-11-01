@@ -6,7 +6,8 @@
  *     sesudah Penggugat SELESAI = Tergugat; satu tahap bisa beberapa sidang. Mesin: aleta_bot/services/tahapPembuktianService.js
  *     (kembaran paket ABT abt-paket/pembuktian-urut-1nov untuk 2111/7119/2112/7121 - kueri paket = mesin atas 10.278 perkara
  *     sipp_2810, lihat hasil/banding-semua.json) dan usulan BAS ALUR 04 (lib/alur-bas.ts langkahAlur04).
- * 53: selingkuh sesudah kata tuduhan tidak dibuang diam-diam: terbukti hanya bila dikuatkan saksi atau bukti lain; tanpa penguat =
+ * 53: selingkuh sesudah kata tuduhan tidak dibuang diam-diam: terbukti hanya bila dikuatkan DUA saksi atau satu saksi + bukti lain
+ *     (satu saksi saja = "belum cukup terbukti", keputusan sementara sesi utama 1 Nov); tanpa penguat =
  *     tidak terbukti (dicatat di kartu 5227). Diukur atas 4.691 posita cerai sipp_2810 + saksi aps_badilag_2810: 99 salah tangkap lama
  *     (aturan sebelum 31 Okt) tetap bersih (98 "tuduhan terhadap lawan", 1 = 499/Pdt.G/2025 pengakuan sungguhan kini kembali).
  * Kasus = kalimat/urutan sidang SIPP nyata (nomor perkara di judul).
@@ -173,13 +174,36 @@ describe("keputusan 53: selingkuh sesudah kata tuduhan - terbukti hanya bila dik
     ]);
   });
 
-  it("saksi belum diperiksa -> 'belum dapat dinilai', bukan dibuang; bukti lain (P.3) menguatkan -> terbukti", () => {
+  it("satu saksi saja BUKAN penguat yang cukup (satu saksi bukan saksi) -> 'belum cukup terbukti (hanya satu saksi)', tidak diusulkan", () => {
+    const r = mesin.deteksiRincian({ gugatan: [P499], saksi: [SAKSI_499[0], { no: 2, pihak: "penggugat", butir: ["Penggugat dan Tergugat sudah pisah rumah"] }], pihak: CG });
+    expect(selingkuh(r)).toHaveLength(0);
+    expect(r.tuduhan[0]).toMatchObject({ status: "belum-cukup", penguat: [{ jenis: "saksi", no: 1 }] });
+    expect(mesin.catatanTuduhan(r.tuduhan, CG)).toEqual([
+      "Tuduhan/kecurigaan bahwa Tergugat berselingkuh di gugatan hanya diterangkan satu saksi (saksi Penggugat) tanpa bukti lain - belum cukup terbukti (hanya satu saksi), tidak diusulkan.",
+    ]);
+    const hasil = { usulan: [{ kode: "5227", nilai: "", catatan: "" } as Record<string, unknown>] };
+    mesin.terapkan(hasil, r);
+    expect(String(hasil.usulan[0].catatan)).toContain("belum cukup terbukti (hanya satu saksi)");
+  });
+
+  it("satu saksi + bukti lain (P.3) = cukup -> terbukti; bukti lain tanpa saksi yang bersesuaian = belum cukup", () => {
+    const bukti = [{ tanda: "P.3", teks: "tangkapan layar percakapan Tergugat berselingkuh dengan perempuan lain" }];
+    const r = mesin.deteksiRincian({ gugatan: [P499], saksi: [SAKSI_499[0], { no: 2, butir: ["Penggugat dan Tergugat sudah pisah rumah"] }], bukti, pihak: CG });
+    expect(selingkuh(r)).toHaveLength(1);
+    expect(selingkuh(r)[0].catatan).toMatch(/dikuatkan saksi Penggugat serta bukti P\.3$/);
+    const tanpa = mesin.deteksiRincian({ gugatan: [P499], saksi: [{ no: 1, butir: ["Tergugat sering keluar malam"] }, { no: 2, butir: ["Penggugat dan Tergugat sudah pisah rumah"] }], bukti, pihak: CG });
+    expect(selingkuh(tanpa)).toHaveLength(0);
+    expect(tanpa.tuduhan[0].status).toBe("belum-cukup");
+    expect(mesin.catatanTuduhan(tanpa.tuduhan, CG)[0]).toMatch(/hanya didukung bukti lain tanpa saksi yang menerangkannya - belum cukup terbukti/);
+  });
+
+  it("saksi belum diperiksa -> 'belum dapat dinilai', bukan dibuang; bukti lain saja tidak cukup", () => {
     const belum = mesin.deteksiRincian({ gugatan: ["Penggugat curiga Tergugat selingkuh"], saksi: [], saksiTidakDibaca: true, pihak: CG });
     expect(selingkuh(belum)).toHaveLength(0);
     expect(belum.tuduhan[0].status).toBe("belum-dinilai");
     const bukti = mesin.deteksiRincian({ gugatan: ["Penggugat curiga Tergugat selingkuh"], saksi: [], saksiTidakDibaca: true, bukti: [{ tanda: "P.3", teks: "tangkapan layar percakapan Tergugat berselingkuh dengan perempuan lain" }], pihak: CG });
-    expect(selingkuh(bukti)).toHaveLength(1);
-    expect(selingkuh(bukti)[0].catatan).toMatch(/dikuatkan bukti P\.3/);
+    expect(selingkuh(bukti)).toHaveLength(0);
+    expect(bukti.tuduhan[0].status).toBe("belum-dinilai");
   });
 
   it("salah tangkap lama tetap bersih walau saksi menyebut perselingkuhan Tergugat: yang dituduh = Penggugat/Pemohon", () => {

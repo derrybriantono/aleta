@@ -65,18 +65,27 @@ const RE_SUBJEK_DEKAT = /(?<!\b(?:kepada|terhadap|oleh|dengan|antara|dan|serta|k
 // "memfitnah" - ruas `tolakSebelum` kamus) tidak lagi dibuang diam-diam. Kunci di sini diperiksa sebagai TUDUHAN:
 //   - yang dituduh pihak lawan ("Tergugat menuduh Penggugat selingkuh")  -> bukan alasan, dicatat ("terhadap-lawan");
 //   - yang dituduh pelaku ("Penggugat mencurigai bahwa Tergugat berhubungan dengan wanita lain") -> TERBUKTI hanya bila
-//     dikuatkan keterangan saksi atau bukti lain (lalu diusulkan seperti alasan posita biasa); tanpa penguat = "tidak-terbukti"
-//     (dicatat di kartu, tidak diusulkan); saksi belum diperiksa = "belum-dinilai";
+//     dikuatkan dua saksi yang bersesuaian, atau satu saksi + bukti lain (lalu diusulkan seperti alasan posita biasa); satu saksi
+//     saja / bukti tanpa saksi = "belum-cukup", tanpa penguat = "tidak-terbukti" (keduanya dicatat di kartu, tidak diusulkan);
+//     saksi belum diperiksa = "belum-dinilai";
 //   - yang dituduh tidak terbaca: diperiksa hanya bila posita menyebut pengakuan/pembenaran ("ternyata benar", "mengakui").
 const KUNCI_TUDUHAN = new Set(["selingkuh"]);
 const RE_KATA_TUDUH = /\b(?:menuduh(?:nya)?|dituduh|tuduhan(?:nya)?|memfitnah|difitnah|fitnah|curiga|mencurigai|dicurigai|kecurigaan)\b/gi;
 const RE_TUDUH_PASIF = /^(?:dituduh|difitnah|dicurigai)$/i;
 const RE_PENGAKUAN = /\b(?:ternyata\s+(?:benar|memang|betul)|mengakui|diakui|pengakuan|terbukti|kedapatan|tertangkap\s+basah|memergoki|dipergoki|melihat\s+(?:sendiri|langsung))\b/gi;
-/** Penguat paling sedikit (saksi ATAU bukti) agar tuduhan dianggap terbukti. */
-const MIN_PENGUAT_TUDUHAN = 1;
+/**
+ * Penguat yang CUKUP agar tuduhan dianggap terbukti (keputusan sementara sesi utama 1 Nov, satu saksi bukan saksi - Pasal 306 RBg /
+ * 169 HIR): dua saksi yang bersesuaian, ATAU satu saksi + bukti lain (surat/elektronik/pengakuan di persidangan). Satu saksi saja,
+ * atau bukti lain tanpa saksi yang bersesuaian = "belum-cukup" (dicatat, tidak diusulkan).
+ */
+const penguatCukup = (penguat) => {
+  const saksi = penguat.filter((x) => x.jenis === "saksi").length;
+  const bukti = penguat.filter((x) => x.jenis === "bukti").length;
+  return saksi >= 2 || (saksi >= 1 && bukti >= 1);
+};
 // Bunyi catatan per perbuatan: kata benda dan kalimat "<pihak> <perbuatan>".
 const NAMA_TUDUHAN = { selingkuh: { benda: "perselingkuhan", kerja: "berselingkuh" } };
-const PERINGKAT_TUDUHAN = { terbukti: 4, "tidak-terbukti": 3, "belum-dinilai": 3, "tidak-terbaca": 2, "terhadap-lawan": 1 };
+const PERINGKAT_TUDUHAN = { terbukti: 4, "belum-cukup": 3, "tidak-terbukti": 3, "belum-dinilai": 3, "tidak-terbaca": 2, "terhadap-lawan": 1 };
 
 let cache = { versi: -1, jenis: {} };
 
@@ -814,7 +823,7 @@ function deteksiRincian(o) {
       if (hasil.tuduhan.some((x) => x.kunci === t.kunci && x.status === "terbukti")) continue;
       const diperiksa = t.tertuduh === "pelaku" || (t.tertuduh === "" && t.pengakuan);
       const penguat = diperiksa ? penguatTuduhan(t, saksiAda ? saksi : [], bukti, set) : [];
-      const status = t.tertuduh === "lawan" ? "terhadap-lawan" : !diperiksa ? "tidak-terbaca" : penguat.length >= MIN_PENGUAT_TUDUHAN ? "terbukti" : saksiAda ? "tidak-terbukti" : "belum-dinilai";
+      const status = t.tertuduh === "lawan" ? "terhadap-lawan" : !diperiksa ? "tidak-terbaca" : penguatCukup(penguat) ? "terbukti" : !saksiAda ? "belum-dinilai" : penguat.length ? "belum-cukup" : "tidak-terbukti";
       const catat = { kunci: t.kunci, label: t.pola.label.replace(/\s*\([^)]*\)$/, ""), status, tertuduh: t.tertuduh, pengakuan: t.pengakuan, penguat, kalimat: String(k).slice(0, 400) };
       if (status === "terbukti") {
         // Butir disusun mesin yang sama atas kalimat tanpa kata tuduhan; hanya butir yang memuat perbuatan itu yang diambil.
@@ -1004,8 +1013,16 @@ function catatanTuduhan(daftar, pihak) {
     const nama = NAMA_TUDUHAN[t.kunci] || { benda: String(t.label || ""), kerja: String(t.label || "") };
     if (t.status === "tidak-terbukti") {
       kalimat.push(`Tuduhan/kecurigaan bahwa ${ph.pelaku} ${nama.kerja} di gugatan tidak dikuatkan keterangan saksi atau bukti lain${t.pengakuan ? " (walau disebut diakui)" : ""} - dianggap tidak terbukti, tidak diusulkan.`);
+    } else if (t.status === "belum-cukup") {
+      const satu = (t.penguat || []).filter((x) => x.jenis === "saksi");
+      const siapa = satu.length ? (satu[0].pihak === "penggugat" ? `saksi ${ph.lawan}` : satu[0].pihak === "tergugat" ? `saksi ${ph.pelaku}` : `saksi ${satu[0].no}`) : "";
+      kalimat.push(
+        satu.length
+          ? `Tuduhan/kecurigaan bahwa ${ph.pelaku} ${nama.kerja} di gugatan hanya diterangkan satu saksi (${siapa}) tanpa bukti lain - belum cukup terbukti (hanya satu saksi), tidak diusulkan.`
+          : `Tuduhan/kecurigaan bahwa ${ph.pelaku} ${nama.kerja} di gugatan hanya didukung bukti lain tanpa saksi yang menerangkannya - belum cukup terbukti, tidak diusulkan.`
+      );
     } else if (t.status === "belum-dinilai") {
-      kalimat.push(`Kecurigaan bahwa ${ph.pelaku} ${nama.kerja} di gugatan belum dapat dinilai (saksi belum diperiksa) - diusulkan bila dikuatkan saksi atau bukti lain.`);
+      kalimat.push(`Kecurigaan bahwa ${ph.pelaku} ${nama.kerja} di gugatan belum dapat dinilai (saksi belum diperiksa) - diusulkan bila dikuatkan dua saksi, atau satu saksi dan bukti lain.`);
     } else if (t.status === "terhadap-lawan") {
       kalimat.push(`Gugatan menyebut tuduhan bahwa ${ph.lawan} ${nama.kerja} - bukan alasan ${nama.benda} ${ph.pelaku}, tidak diusulkan.`);
     } else if (t.status === "tidak-terbaca") {
