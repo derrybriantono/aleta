@@ -51,6 +51,6 @@ ssh aleta 'bash /root/abt-bas-lanjutan-20261101/pulih-satker.sh'    # PULIH=676 
 - `hasil/uji-lokal.txt` (`sumber/uji_lokal.sh` atas salinan pohon sesudah 27 paket): pasang, pasang ulang (tidak mengubah apa pun), pulih
   (= pohon dasar persis), pasang lagi (= pasang pertama), penjaga (berkas disunting -> pulih membiarkan; berkas dasar disunting -> pasang menolak
   tanpa mengubah apa pun).
-- Uji rantai 28 paket: `../uji-rantai-31okt/rantai.sh` (hasil `../uji-rantai-31okt/hasil-rantai-28.txt`).
+- Uji rantai 28 paket: `../uji-rantai-31okt/rantai.sh` (hasil `../uji-rantai-31okt/hasil-rantai-28.txt`: 28 paket SELESAI berurutan dari salinan baru, `RANTAI-KELUAR 0`, sidik pohon sesudah 28 paket = uji lokal `52f66a37...`).
 - Render sungguhan (renderer ABT php56): `alat/render163.py`, hasil `hasil/render.txt`; PNG sebelum/sesudah di `D:/Aplikasi/aleta/tmp/w163/render/`.
 - Penjaga isi paket: `manajemen_surat/src/test/paket-bas-lanjutan-1nov.test.ts`.

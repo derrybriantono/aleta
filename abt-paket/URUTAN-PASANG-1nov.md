@@ -15,7 +15,8 @@ Semua paket dipasang di SERVER sebagai root, dari folder `paket-satker` masing-m
 - Satu langkah KHUSUS LAPTOP sebelum hir-rbg-30okt, tinjau-31okt, bukti-8529-31okt, tanggal-agenda-31okt: skrip pasang menulis nama basis salinan (`aps_badilag_rantai.`) ke kueri yang
   ditulisnya (di server namanya memang `aps_badilag.`); karena hir-rbg memeriksa md5 kueri mentah, teks salinan dikembalikan ke
   bentuk server (9 variabel). Di SERVER langkah ini TIDAK ada.
-- Hasil terbaru: `uji-rantai-31okt/hasil-rantai-26.txt` - 26 paket SELESAI berurutan dari salinan baru (1 Nov 13.58-14.20, `rantai155.sh`: basis `aps_badilag_rantai155f`, pohon `/d/r155f`,
+- Hasil terbaru: `uji-rantai-31okt/hasil-rantai-28.txt` - 28 paket SELESAI berurutan dari salinan baru (1 Nov 17.44-17.58, `bas-lanjutan-1nov/sumber/rantai163.sh`: basis `aps_badilag_rantai163`, pohon `/d/r163`), `RANTAI-KELUAR 0`.
+- Hasil sebelumnya: `uji-rantai-31okt/hasil-rantai-26.txt` - 26 paket SELESAI berurutan dari salinan baru (1 Nov 13.58-14.20, `rantai155.sh`: basis `aps_badilag_rantai155f`, pohon `/d/r155f`,
   paket dari `git archive HEAD`, `md5sum -c MD5SUMS.txt` di semua paket cocok), `RANTAI-KELUAR 0`. Paket 26 sendiri: `teks-pihak-1nov/hasil/uji-lokal.txt` (pasang ulang tidak mengubah
   apa pun; pulih = variabel, SEMUA fungsi, dan seluruh pohon RTF sama persis dengan keadaan sesudah 25 paket; pasang lagi = pasang pertama; dua penjaga menolak tanpa mengubah apa pun).
   Penyisipan `pembuktian-urut-1nov` di tengah TIDAK mengubah md5 dasar paket 23-26 (rantai lolos tanpa membangun ulang PRASYARAT mana pun).
