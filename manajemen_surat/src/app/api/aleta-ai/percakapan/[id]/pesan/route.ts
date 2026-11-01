@@ -1,7 +1,7 @@
 import { type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
-import { pelakuAi } from "@/server/modules/aleta-ai/akses";
+import { pelakuAi, pelakuAiBerhak } from "@/server/modules/aleta-ai/akses";
 import { masukanDariBadan, type BadanFitur } from "@/server/modules/aleta-ai/fitur-blangko";
 import { kirimPesan, type EventAi } from "@/server/modules/aleta-ai/mesin";
 import { ambilMilik } from "@/server/modules/aleta-ai/percakapan";
@@ -30,11 +30,14 @@ export const maxDuration = 800;
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const db = await getDatabase();
-    const pelaku = await pelakuAi(db, await resolveActorUserId(request));
+    const aktorId = await resolveActorUserId(request);
+    const badan = (await request.json().catch(() => ({}))) as BadanFitur;
+    // Permintaan dari alat bantu panel (fitur / menu proyek dengan bahan): peran yang aplikasinya belum dibuka ditolak dengan kalimat biasa.
+    const dariPanel = Boolean(String(badan.fitur ?? "").trim() || (badan.bahan && typeof badan.bahan === "object"));
+    const pelaku = dariPanel ? await pelakuAiBerhak(db, aktorId, "aleta-ai.dompet") : await pelakuAi(db, aktorId);
     const { id } = await params;
     // Bukan milik sendiri (termasuk Super Admin): 404 biasa, bukan aliran.
     if (!(await ambilMilik(db, pelaku.id, id))) throw new ApiError(404, "Percakapan tidak ditemukan.");
-    const badan = (await request.json().catch(() => ({}))) as BadanFitur;
     const masukan = masukanDariBadan(badan);
 
     const kendali = new AbortController();

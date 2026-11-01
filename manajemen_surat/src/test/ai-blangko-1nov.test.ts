@@ -17,7 +17,6 @@ import { simpanKurs, tanggalLokal } from "@/server/modules/aleta-ai/kurs";
 import { ringkasAi } from "@/server/modules/aleta-ai/layanan";
 import { kirimPesan, perkirakanPesan, ulangiBatasLaju, type EventAi } from "@/server/modules/aleta-ai/mesin";
 import { buatPercakapan } from "@/server/modules/aleta-ai/percakapan";
-import { simpanPengaturan } from "@/server/modules/aleta-ai/pengaturan";
 import { unggahProyek } from "@/server/modules/aleta-ai/proyek";
 import { terapkanMutasi } from "@/server/modules/aleta-ai/saldo";
 import { susunZip } from "@/server/shared/zip";
@@ -160,7 +159,7 @@ const RINGKAS_BAIK = {
   minimumRp: 1000,
   gratis: false,
   superAdmin: false,
-  satker: { batasRp: 5_000_000, terpakaiRp: 1_250_000, sisaRp: 3_750_000 },
+  satker: { boleh: true, saldoRp: 3_750_000, batasBulananRp: 500_000, terpakaiBulanIniRp: 120_000, sisaBatasRp: 380_000 },
   fiturBlangko: FITUR_BLANGKO.map((f) => f.kode),
   pemicu: [
     { kode: "peta-perkara", label: "Peta Perkara", kelompok: "Proses Sidang", mode: "Teliti", grup: "C" },
@@ -214,23 +213,29 @@ function bukaPanel(o: OpsiPanel = {}) {
   const ringkas = o.ringkas === undefined ? RINGKAS_BAIK : o.ringkas;
   const panggilan: Array<{ alamat: string; metode: string; badan: any }> = [];
   let nomor = 0;
+  let saldoSatkerKini: number | null = null; // saldo satker di server tiruan: turun sesudah giliran satker selesai
   const hasilFitur = o.hasil ?? (() => "Hasil rekaan.");
   w.fetch = async (alamat: string, opsi: any = {}) => {
     const metode = String(opsi.method || "GET").toUpperCase();
     const badan = opsi.body ? JSON.parse(opsi.body) : null;
     panggilan.push({ alamat, metode, badan });
     const json = (data: unknown, status = 200) => ({ ok: status < 400, status, json: async () => (status < 400 ? { ok: true, data } : { ok: false, error: { message: "Ditolak." } }) });
-    if (alamat === "/aleta/api/aleta-ai/ringkas") return ringkas ? json(ringkas) : json(null, 401);
-    if (alamat === "/aleta/api/aleta-ai/perkiraan") return json({ label: "Teliti", perkiraanRp: 1500, tahanRp: 2500, saldoRp: 20_000, kursDipakai: 16000, gratis: false, bolehJalan: true });
+    if (alamat === "/aleta/api/aleta-ai/ringkas") {
+      const r = ringkas as { satker?: Record<string, unknown> } | null;
+      return r ? json({ ...r, ...(r.satker && saldoSatkerKini !== null ? { satker: { ...r.satker, saldoRp: saldoSatkerKini } } : {}) }) : json(null, 401);
+    }
+    if (alamat === "/aleta/api/aleta-ai/perkiraan")
+      return json({ label: "Teliti", perkiraanRp: 1500, tahanRp: 2500, saldoRp: badan?.dompet === "satker" ? 3_750_000 : 20_000, kursDipakai: 16000, gratis: false, bolehJalan: true, ...(badan?.dompet === "satker" ? { dompet: "satker" } : {}) });
     if (alamat === "/aleta/api/aleta-ai/percakapan" && metode === "POST") return json({ id: `aic-${++nomor}` });
     if (/\/percakapan\/[^/]+$/.test(alamat) && metode === "DELETE") return json({ ok: true });
     if (/\/percakapan\/[^/]+\/pesan$/.test(alamat)) {
       const isi = hasilFitur(badan.fitur);
+      if (badan.dompet === "satker") saldoSatkerKini = 18_500;
       const sse = sseDari([
         { jenis: "perkiraan", mode: "Teliti", label: "Teliti", perkiraanRp: 1500 },
         { jenis: "teks", delta: isi.slice(0, Math.ceil(isi.length / 2)) },
         { jenis: "teks", delta: isi.slice(Math.ceil(isi.length / 2)) },
-        { jenis: "selesai", pesanId: "aip-1", mode: "Teliti", label: "Teliti", biayaRp: 1500, saldoRp: 18_500 },
+        { jenis: "selesai", pesanId: "aip-1", mode: "Teliti", label: "Teliti", biayaRp: 1500, saldoRp: 18_500, ...(badan.dompet === "satker" ? { dompet: "satker" } : {}) },
       ]);
       let sudah = false;
       return { ok: true, status: 200, json: async () => ({}), body: { getReader: () => ({ read: async () => (sudah ? { done: true } : ((sudah = true), { done: false, value: sse })) }) } };
@@ -314,7 +319,7 @@ describe("panel Blangko Derry: saklar ALETA Ai", () => {
   });
 
   it("saldo habis -> saklar mati, tidak bisa diklik, keterangan 'saldo habis'; pilihan tersimpan yang menyala dipaksa mati", async () => {
-    const h = bukaPanel({ ringkas: { ...RINGKAS_BAIK, saldoRp: 0 }, simpanan: { "blangkoDerryAi:usr-1": true } });
+    const h = bukaPanel({ ringkas: { ...RINGKAS_BAIK, saldoRp: 0, satker: { boleh: false, saldoRp: 0, batasBulananRp: 0, terpakaiBulanIniRp: 0, sisaBatasRp: null } }, simpanan: { "blangkoDerryAi:usr-1": true } });
     await sampai(() => h.q("#bd-ai-saklar-ket")?.textContent, "keterangan");
     expect(h.q("#bd-ai-saklar-ket")!.textContent).toBe("(saldo habis)");
     expect(sakelar(h).disabled).toBe(true);
@@ -388,13 +393,13 @@ describe("panel Blangko Derry: saldo kiri bawah", () => {
     expect(tmb.querySelector("[data-ikon]")!.getAttribute("data-ikon")).toBe("pengguna");
   });
 
-  it("saldo satker tanpa batas bulanan tampil terus terang; saldo habis diberi tanda", async () => {
-    const h = bukaPanel({ ringkas: { ...RINGKAS_BAIK, saldoRp: 0, satker: { batasRp: 0, terpakaiRp: 0, sisaRp: null } } });
+  it("pengguna yang belum berhak atas saldo satker: saldo satker tampil dengan keterangan; saldo sendiri habis diberi tanda", async () => {
+    const h = bukaPanel({ ringkas: { ...RINGKAS_BAIK, saldoRp: 0, satker: { boleh: false, saldoRp: 900_000, batasBulananRp: 0, terpakaiBulanIniRp: 0, sisaBatasRp: null } } });
     const tmb = await sampai(() => (!h.q("#bd-ai-saldo")!.hasAttribute("hidden") ? h.q<HTMLButtonElement>("#bd-ai-saldo") : null), "saldo");
     expect(tmb.textContent).toContain("(habis)");
     expect(tmb.classList.contains("habis")).toBe(true);
     tmb.click();
-    expect(tmb.textContent).toContain("tanpa batas");
+    expect(tmb.textContent).toContain("Anda belum berhak");
   });
 
   it("tidak ada saldo bila ALETA Ai belum aktif di server", async () => {
@@ -583,7 +588,13 @@ describe("panel: bagian murni", () => {
     const m = murni();
     expect(m.keadaanSaklar(RINGKAS_BAIK, undefined)).toMatchObject({ aktif: false, terkunci: false });
     expect(m.keadaanSaklar(RINGKAS_BAIK, true)).toMatchObject({ aktif: true, terkunci: false });
-    expect(m.keadaanSaklar({ ...RINGKAS_BAIK, saldoRp: 999 }, true)).toMatchObject({ aktif: false, terkunci: true, alasan: "saldo habis" });
+    expect(m.keadaanSaklar({ ...RINGKAS_BAIK, saldoRp: 999, satker: { boleh: false, saldoRp: 0, batasBulananRp: 0, terpakaiBulanIniRp: 0, sisaBatasRp: null } }, true)).toMatchObject({ aktif: false, terkunci: true, alasan: "saldo habis" });
+    // Saldo sendiri habis tetapi berhak atas saldo satker yang masih ada: tidak terkunci.
+    expect(m.keadaanSaklar({ ...RINGKAS_BAIK, saldoRp: 0 }, true)).toMatchObject({ aktif: true, terkunci: false });
+    // Keduanya tidak dapat dipakai (satker habis / batas bulanan habis): terkunci.
+    expect(m.keadaanSaklar({ ...RINGKAS_BAIK, saldoRp: 0, satker: { ...RINGKAS_BAIK.satker, saldoRp: 200 } }, true)).toMatchObject({ terkunci: true, alasan: "saldo habis" });
+    expect(m.keadaanSaklar({ ...RINGKAS_BAIK, saldoRp: 0, satker: { ...RINGKAS_BAIK.satker, sisaBatasRp: 0 } }, true)).toMatchObject({ terkunci: true });
+    expect(m.dompetTersedia(RINGKAS_BAIK)).toEqual({ pengguna: true, satker: true });
     expect(m.keadaanSaklar({ ...RINGKAS_BAIK, saldoRp: 0, gratis: true }, true)).toMatchObject({ aktif: true, terkunci: false });
     expect(m.keadaanSaklar(null, true)).toMatchObject({ aktif: false, terkunci: true, alasan: "belum tersedia" });
   });
@@ -761,17 +772,14 @@ describe("ALETA Ai Blangko Derry di server: kelompok dipaksa, samaran sebelum ki
   it("ringkas memuat minimumRp, gratis, saldo satker (sisa pagu), dan fitur yang boleh per peran", async () => {
     const r = await ringkasAi(db, hakim);
     expect(r).toMatchObject({ minimumRp: 1000, gratis: false });
-    expect(r.satker.batasRp).toBeGreaterThan(0);
-    expect(r.satker.sisaRp).toBe(Math.max(0, r.satker.batasRp - r.satker.terpakaiRp));
+    // Dompet satker: tanpa aturan Super Admin, pengguna belum berhak.
+    expect(r.satker).toMatchObject({ boleh: false, saldoRp: 0, terpakaiBulanIniRp: 0, sisaBatasRp: null });
     expect(r.fiturBlangko).toEqual(expect.arrayContaining(["A1", "A3", "B1", "D1", "D4", "C1", "C5"]));
     const rPp = await ringkasAi(db, pp);
     expect(rPp.fiturBlangko).toEqual(expect.arrayContaining(["A1", "A3", "B1", "D1", "D4"]));
     for (const k of ["C1", "C2", "C3", "C4"]) expect(rPp.fiturBlangko).not.toContain(k);
     const rSa = await ringkasAi(db, superAdmin);
     expect(rSa.gratis).toBe(true);
-    // Tanpa batas satker dari Super Admin: sisa tidak ada (null), bukan nol.
-    await simpanPengaturan(db, superAdmin.id, { batasSatkerBulananRp: 0 });
-    expect((await ringkasAi(db, hakim)).satker).toMatchObject({ batasRp: 0, sisaRp: null });
     const tabel = tabelRuteDari(RUTE_BAWAAN);
     expect(fiturBlangkoBoleh(tabel, pp)).not.toContain("C1");
   });
@@ -899,5 +907,97 @@ describe("server: menu proyek (pemicu) memakai jalur lama dengan data tersamar",
     expect(() => masukanDariBadan({ pemicu: "duduk-perkara", bahan: {} })).toThrow(/data perkara/);
     // Tanpa bahan: bentuk lama persis.
     expect(masukanDariBadan({ pemicu: "duduk-perkara", teks: "" })).toEqual({ teks: "", pemicu: "duduk-perkara" });
+  });
+});
+
+// ─── 5. Dompet satker di panel ───────────────────────────────────────────────
+
+describe("panel: memilih dompet (pengguna / satker) dan penguncian", () => {
+  const hidup = { "blangkoDerryAi:usr-1": true };
+  const bodiPesan = (h: ReturnType<typeof bukaPanel>) => h.panggilan.filter((p) => p.alamat.endsWith("/perkiraan") || p.alamat.endsWith("/pesan")).map((p) => p.badan);
+  const bukaDanJalan = async (h: ReturnType<typeof bukaPanel>) => {
+    await h.ai().bukaFitur("D1");
+    await sampai(() => /Perkiraan biaya: sekitar Rp1\.500/.test(h.q("#bd-ai-kendali")?.textContent ?? ""), "perkiraan");
+    h.q<HTMLButtonElement>('[data-ai="jalan"]')!.click();
+    await sampai(() => h.q("#bd-ai-hasil .bd-ai-tanda"), "hasil");
+  };
+
+  it("bawaan memakai saldo pengguna: permintaan tanpa penanda satker; hasil menyebut saldo pengguna", async () => {
+    const h = bukaPanel({ simpanan: hidup });
+    await sampai(() => !h.q("#bd-ai-bilah")!.hasAttribute("hidden"), "bilah");
+    await bukaDanJalan(h);
+    for (const b of bodiPesan(h)) expect(b.dompet).toBeUndefined();
+    expect(h.q("#bd-ai-hasil")!.textContent).toContain("saldo Rp18.500");
+  });
+
+  it("saldo satker dipilih (klik saldo): permintaan membawa dompet=satker; saldo satker di pojok ikut turun sesudah selesai", async () => {
+    const h = bukaPanel({ simpanan: hidup });
+    await sampai(() => !h.q("#bd-ai-bilah")!.hasAttribute("hidden"), "bilah");
+    h.q<HTMLButtonElement>("#bd-ai-saldo")!.click();
+    expect(h.ai().keadaan().dompet).toMatchObject({ mode: "satker", bisa: true });
+    await bukaDanJalan(h);
+    const badan = bodiPesan(h);
+    expect(badan.length).toBeGreaterThanOrEqual(2);
+    for (const b of badan) expect(b.dompet).toBe("satker");
+    expect(h.q("#bd-ai-hasil")!.textContent).toContain("saldo satker Rp18.500");
+    expect(h.ai().keadaan().ringkas.satker.saldoRp).toBe(18_500); // saldo satker diperbarui, saldo pengguna tidak
+    expect(h.ai().keadaan().ringkas.saldoRp).toBe(20_000);
+  });
+
+  it("saldo satker habis: saat satker dipilih tombol fitur terkunci dengan alasan; kembali ke saldo sendiri membukanya lagi", async () => {
+    const h = bukaPanel({ simpanan: hidup, ringkas: { ...RINGKAS_BAIK, satker: { ...RINGKAS_BAIK.satker, saldoRp: 300 } } });
+    await sampai(() => !h.q("#bd-ai-bilah")!.hasAttribute("hidden"), "bilah");
+    expect(h.q<HTMLButtonElement>('[data-ai-grup="Saksi"]')!.disabled).toBe(false);
+    h.q<HTMLButtonElement>("#bd-ai-saldo")!.click();
+    expect(h.q<HTMLButtonElement>('[data-ai-grup="Saksi"]')!.disabled).toBe(true);
+    expect(h.q<HTMLButtonElement>('[data-ai-grup="Saksi"]')!.title).toMatch(/Saldo satker habis/);
+    expect(h.q("#bd-ai-bilah")!.textContent).toMatch(/Saldo satker habis/);
+    expect(h.q("#bd-ai-saldo")!.classList.contains("habis")).toBe(true);
+    await h.ai().bukaFitur("D1");
+    expect(h.q("#bd-ai-jendela")).toBeNull(); // terkunci juga lewat jalur programatik
+    h.q<HTMLButtonElement>("#bd-ai-saldo")!.click(); // kembali ke saldo sendiri
+    expect(h.q<HTMLButtonElement>('[data-ai-grup="Saksi"]')!.disabled).toBe(false);
+  });
+
+  it("belum berhak atas saldo satker: terkunci dengan alasan 'belum berhak'; batas bulanan habis: alasan batas", async () => {
+    const belum = bukaPanel({ simpanan: hidup, ringkas: { ...RINGKAS_BAIK, satker: { ...RINGKAS_BAIK.satker, boleh: false } } });
+    await sampai(() => !belum.q("#bd-ai-bilah")!.hasAttribute("hidden"), "bilah");
+    belum.q<HTMLButtonElement>("#bd-ai-saldo")!.click();
+    expect(belum.q<HTMLButtonElement>('[data-ai-grup="Saksi"]')!.title).toMatch(/belum berhak/);
+    const batas = bukaPanel({ simpanan: hidup, ringkas: { ...RINGKAS_BAIK, satker: { ...RINGKAS_BAIK.satker, sisaBatasRp: 0 } } });
+    await sampai(() => !batas.q("#bd-ai-bilah")!.hasAttribute("hidden"), "bilah");
+    batas.q<HTMLButtonElement>("#bd-ai-saldo")!.click();
+    expect(batas.q<HTMLButtonElement>('[data-ai-grup="Saksi"]')!.title).toMatch(/Batas pemakaian saldo satker/);
+  });
+
+  it("saldo sendiri habis tetapi berhak atas saldo satker: saklar tidak terkunci dan satker terpilih otomatis", async () => {
+    const h = bukaPanel({ simpanan: hidup, ringkas: { ...RINGKAS_BAIK, saldoRp: 0 } });
+    await sampai(() => !h.q("#bd-ai-bilah")!.hasAttribute("hidden"), "bilah");
+    expect(sakelar(h).disabled).toBe(false);
+    expect(h.ai().keadaan().dompet).toMatchObject({ mode: "satker", bisa: true });
+    expect(h.q("#bd-ai-saldo")!.getAttribute("data-mode")).toBe("satker");
+    await bukaDanJalan(h);
+    for (const b of bodiPesan(h)) expect(b.dompet).toBe("satker");
+  });
+
+  it("Super Admin / gratis: tidak pernah mengirim penanda satker walau saldo satker dipilih", async () => {
+    const h = bukaPanel({ simpanan: hidup, ringkas: { ...RINGKAS_BAIK, gratis: true, superAdmin: true } });
+    await sampai(() => !h.q("#bd-ai-bilah")!.hasAttribute("hidden"), "bilah");
+    h.q<HTMLButtonElement>("#bd-ai-saldo")!.click();
+    await bukaDanJalan(h);
+    for (const b of bodiPesan(h)) expect(b.dompet).toBeUndefined();
+  });
+});
+
+describe("panel: peran yang aplikasinya belum dibuka", () => {
+  it("saklar terkunci dengan keterangan 'belum dibuka untuk peran Anda' dan kalimat server sebagai penjelasan; tak ada bilah, tak ada panggilan AI", async () => {
+    const kalimat = "ALETA Ai tidak dibuka untuk peran Anda. Hubungi Super Admin - Akses Menu.";
+    const h = bukaPanel({ simpanan: { "blangkoDerryAi:usr-1": true }, ringkas: { ...RINGKAS_BAIK, aplikasiDibuka: false, alasanAplikasi: kalimat, fiturBlangko: [] } });
+    await sampai(() => h.q("#bd-ai-saklar-ket")?.textContent, "keterangan");
+    expect(h.q("#bd-ai-saklar-ket")!.textContent).toBe("(belum dibuka untuk peran Anda)");
+    expect(h.q("#bd-ai-saklar")!.getAttribute("title")).toBe(kalimat);
+    expect(sakelar(h).disabled).toBe(true);
+    expect(h.q("#bd-ai-bilah")!.hasAttribute("hidden")).toBe(true);
+    expect(alamatAi(h)).toEqual([]);
   });
 });

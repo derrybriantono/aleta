@@ -170,12 +170,26 @@
 
   /**
    * Keadaan saklar dari ringkasan server dan pilihan tersimpan.
-   * @returns {{terkunci: boolean, aktif: boolean, alasan: string, jenis: "ok"|"habis"|"belum"}}
+   * @returns {{terkunci: boolean, aktif: boolean, alasan: string, jenis: "ok"|"habis"|"belum"|"peran"}}
    */
+  function dompetTersedia(ringkas) {
+    const r = ringkas || {};
+    const minimum = Number(r.minimumRp) > 0 ? Number(r.minimumRp) : 1;
+    const s = r.satker || {};
+    const sisa = s.sisaBatasRp === null || s.sisaBatasRp === undefined ? null : Number(s.sisaBatasRp);
+    return {
+      pengguna: r.gratis === true || Number(r.saldoRp) >= minimum,
+      // Dompet satker: berhak menurut aturan Super Admin, saldo satker cukup, dan batas bulanan pengguna belum habis.
+      satker: s.boleh === true && Number(s.saldoRp) >= minimum && (sisa === null || sisa >= minimum),
+    };
+  }
   function keadaanSaklar(ringkas, tersimpan) {
     if (!ringkas || ringkas.aktif !== true) return { terkunci: true, aktif: false, alasan: "belum tersedia", jenis: "belum" };
-    const minimum = Number(ringkas.minimumRp) > 0 ? Number(ringkas.minimumRp) : 1;
-    const habis = ringkas.gratis !== true && !(Number(ringkas.saldoRp) >= minimum);
+    // Peran yang aplikasinya belum dibuka (Akses Menu): tidak dapat dinyalakan; kalimat lengkap dari server jadi keterangan.
+    if (ringkas.aplikasiDibuka === false) return { terkunci: true, aktif: false, alasan: "belum dibuka untuk peran Anda", jenis: "peran" };
+    const d = dompetTersedia(ringkas);
+    // Habis hanya bila KEDUA dompet tidak dapat dipakai: pengguna yang berhak atas saldo satker tetap bisa walau saldonya sendiri nol.
+    const habis = ringkas.gratis !== true && !d.pengguna && !d.satker;
     if (habis) return { terkunci: true, aktif: false, alasan: "saldo habis", jenis: "habis" };
     return { terkunci: false, aktif: tersimpan === true, alasan: "", jenis: "ok" };
   }
@@ -185,20 +199,23 @@
     if (!ringkas || ringkas.aktif !== true) return null;
     if (mode === "satker") {
       const s = ringkas.satker || {};
-      const sisa = s.sisaRp === null || s.sisaRp === undefined ? null : Number(s.sisaRp);
+      const sisa = s.sisaBatasRp === null || s.sisaBatasRp === undefined ? null : Number(s.sisaBatasRp);
+      const batas = s.boleh === true && sisa !== null ? ` (batas Anda bulan ini tersisa ${rupiah(sisa)})` : "";
       return {
         mode: "satker",
         ikon: "satker",
-        teks: sisa === null ? "Satker: tanpa batas bulan ini" : `Satker: ${rupiah(sisa)}`,
-        judul: "Sisa pagu pemakaian ALETA Ai satker bulan ini. Klik untuk kembali ke saldo Anda.",
+        teks: s.boleh === true ? `Satker: ${rupiah(s.saldoRp)}` : `Satker: ${rupiah(s.saldoRp)} (Anda belum berhak)`,
+        judul: `Saldo bersama satker${batas}. Klik untuk kembali ke saldo Anda.`,
+        habis: !dompetTersedia(ringkas).satker,
       };
     }
-    const habis = keadaanSaklar(ringkas, true).jenis === "habis";
+    const habis = ringkas.gratis !== true && !dompetTersedia(ringkas).pengguna;
     return {
       mode: "pengguna",
       ikon: "pengguna",
       teks: ringkas.gratis === true ? `Saldo: ${rupiah(ringkas.saldoRp)} (gratis dipakai)` : `Saldo: ${rupiah(ringkas.saldoRp)}${habis ? " (habis)" : ""}`,
       judul: "Sisa saldo ALETA Ai Anda. Klik untuk melihat saldo satker.",
+      habis,
     };
   }
 
@@ -277,7 +294,7 @@
   }
 
   /** Badan permintaan perkiraan/pesan: hanya bagian yang dibutuhkan fitur, ditambah masukan petugas dan titik sambung proyek. */
-  function susunBadan(fitur, bahan, isian, proyekId) {
+  function susunBadan(fitur, bahan, isian, proyekId, dompet) {
     const sumber = { ...(bahan || {}) };
     if (fitur.masukan && teks(isian && isian.masukan).trim()) sumber.masukan = teks(isian.masukan).trim();
     if (fitur.acuan && teks(isian && isian.acuan).trim()) sumber.acuan = teks(isian.acuan).trim();
@@ -286,7 +303,7 @@
     const samarkan = [...((bahan && bahan.samarkan) || [])];
     if (fitur.kode === "B5") samarkan.push(...samaranDariKtp(sumber.masukan));
     ambil.samarkan = samarkan;
-    const sambung = teks(proyekId).trim() ? { proyekId: teks(proyekId).trim() } : {};
+    const sambung = { ...(teks(proyekId).trim() ? { proyekId: teks(proyekId).trim() } : {}), ...(dompet === "satker" ? { dompet: "satker" } : {}) };
     if (fitur.pemicu) {
       // Menu proyek: pemicu dikirim terpisah, catatan petugas menjadi teks; data perkara tetap di bahan.
       delete ambil.masukan;
@@ -465,7 +482,9 @@
       saldo.hidden = true;
       saldo.addEventListener("click", () => {
         K.mode = K.mode === "pengguna" ? "satker" : "pengguna";
+        K.menu = "";
         gambarSaldo();
+        gambarBilah();
       });
       akarEl.appendChild(saldo);
     }
@@ -502,6 +521,11 @@
       return;
     }
     await muatRingkas(false);
+    // Saldo sendiri habis tetapi saldo satker dapat dipakai: langsung memakai saldo satker (dapat dikembalikan lewat klik saldo).
+    if (K.ringkas && K.ringkas.gratis !== true && K.mode === "pengguna") {
+      const d = dompetTersedia(K.ringkas);
+      if (!d.pengguna && d.satker) K.mode = "satker";
+    }
     const kead = keadaanSaklar(K.ringkas, K.tersimpan);
     // Saldo habis: saklar dimatikan dan pilihan tersimpan ikut mati (nyala lagi hanya atas klik setelah saldo terisi).
     if (kead.jenis === "habis" && K.tersimpan) {
@@ -523,6 +547,9 @@
     wadah.classList.toggle("terkunci", kead.terkunci);
     wadah.hidden = !K.idAkun || (kead.jenis === "belum" && !K.ringkas);
     cari(`#${ID_SAKLAR}-ket`, wadah).textContent = kead.terkunci && K.idAkun ? `(${kead.alasan})` : "";
+    const pesanServer = kead.jenis === "peran" && K.ringkas ? teks(K.ringkas.alasanAplikasi) : "";
+    if (pesanServer) wadah.title = pesanServer;
+    else wadah.removeAttribute("title");
     wadah.setAttribute("data-keadaan", kead.jenis === "ok" ? (kead.aktif ? "nyala" : "mati") : kead.jenis);
   }
 
@@ -558,6 +585,23 @@
     return FITUR.filter((f) => !izin || izin.has(f.kode));
   }
 
+  /**
+   * Dompet yang SEDANG dipilih (klik saldo kiri bawah) dan apakah dapat dipakai sekarang. Saldo satker habis / belum berhak /
+   * batas bulanan habis = fitur terkunci selama satker dipilih; saldo sendiri tetap bisa dengan memilihnya kembali.
+   */
+  function dompetAktif() {
+    const r = K.ringkas;
+    if (!r) return { mode: K.mode, bisa: false, alasan: "" };
+    if (r.gratis === true) return { mode: "pengguna", bisa: true, alasan: "" };
+    const d = dompetTersedia(r);
+    if (K.mode === "satker") {
+      const s = r.satker || {};
+      const alasan = d.satker ? "" : s.boleh !== true ? "Anda belum berhak memakai saldo satker" : Number(s.saldoRp) < (Number(r.minimumRp) > 0 ? Number(r.minimumRp) : 1) ? "Saldo satker habis" : "Batas pemakaian saldo satker Anda bulan ini habis";
+      return { mode: "satker", bisa: d.satker, alasan };
+    }
+    return { mode: "pengguna", bisa: d.pengguna, alasan: d.pengguna ? "" : "Saldo Anda habis" };
+  }
+
   /** Menu proyek untuk konteks perkara/blangko yang sedang dibuka. */
   function menuProyek() {
     const daftar = K.ringkas && Array.isArray(K.ringkas.pemicu) ? K.ringkas.pemicu : [];
@@ -586,7 +630,10 @@
       K.menu = "";
       return;
     }
-    const ada = !!(derry() && derry().perkaraTerpilih && derry().perkaraTerpilih());
+    const ada0 = !!(derry() && derry().perkaraTerpilih && derry().perkaraTerpilih());
+    const dom = dompetAktif();
+    const ada = ada0 && dom.bisa;
+    const alasanMati = !ada0 ? "Pilih perkara dulu." : `${dom.alasan}${dom.mode === "satker" ? "; klik saldo di kiri bawah untuk memakai saldo Anda." : "."}`;
     const boleh = fiturBoleh();
     const grup = KELOMPOK.map((nama) => ({ nama, isi: boleh.filter((f) => f.kel === nama) })).filter((g) => g.isi.length);
     const menu = menuProyek();
@@ -606,7 +653,7 @@
       grup
         .map(
           (g) =>
-            `<span class="bd-ai-grup"><button type="button" class="bd-btn kecil bd-ai-tmb" data-ai-grup="${esc(g.nama)}" aria-expanded="${K.menu === g.nama}" aria-haspopup="menu"${ada ? "" : ' disabled title="Pilih perkara dulu."'}>${esc(g.nama)} ▾</button>` +
+            `<span class="bd-ai-grup"><button type="button" class="bd-btn kecil bd-ai-tmb" data-ai-grup="${esc(g.nama)}" aria-expanded="${K.menu === g.nama}" aria-haspopup="menu"${ada ? "" : ` disabled title="${esc(alasanMati)}"`}>${esc(g.nama)} ▾</button>` +
             (K.menu === g.nama
               ? `<span class="bd-ai-menu" role="menu">${g.isi.map((f) => `<button type="button" role="menuitem" class="bd-ai-butir" data-ai-fitur="${esc(f.kode)}">${esc(f.judul)}</button>`).join("")}</span>`
               : "") +
@@ -614,9 +661,9 @@
         )
         .join("") +
       (menu.semua.length
-        ? `<span class="bd-ai-grup"><button type="button" class="bd-btn kecil bd-ai-tmb" data-ai-grup="Menu proyek" aria-expanded="${K.menu === "Menu proyek"}" aria-haspopup="menu"${ada ? "" : ' disabled title="Pilih perkara dulu."'}>Menu proyek ▾</button>${K.menu === "Menu proyek" ? htmlMenuProyek() : ""}</span>`
+        ? `<span class="bd-ai-grup"><button type="button" class="bd-btn kecil bd-ai-tmb" data-ai-grup="Menu proyek" aria-expanded="${K.menu === "Menu proyek"}" aria-haspopup="menu"${ada ? "" : ` disabled title="${esc(alasanMati)}"`}>Menu proyek ▾</button>${K.menu === "Menu proyek" ? htmlMenuProyek() : ""}</span>`
         : "") +
-      `<span class="bd-ai-pesan">Hasil berupa usulan; Anda yang memutuskan.</span>`;
+      `<span class="bd-ai-pesan">${ada0 && !dom.bisa ? esc(`${dom.alasan}. ${dom.mode === "satker" ? "Klik saldo di kiri bawah untuk memakai saldo Anda." : ""}`.trim()) : "Hasil berupa usulan; Anda yang memutuskan."}</span>`;
     bilah.hidden = false;
   }
 
@@ -669,7 +716,7 @@
     tmb.title = t.judul;
     tmb.setAttribute("aria-label", `${t.teks}. ${t.judul}`);
     tmb.setAttribute("data-mode", t.mode);
-    tmb.classList.toggle("habis", keadaanSaklar(K.ringkas, true).jenis === "habis" && t.mode === "pengguna");
+    tmb.classList.toggle("habis", t.habis === true);
     // Gelembung tanya jawab ALETA Ai (kiri bawah, bila ada) tidak boleh menutupi saldo.
     tmb.style.left = akar.__aletaAiGelembung ? "84px" : "";
   }
@@ -695,7 +742,7 @@
 
   async function bukaFitur(kode) {
     const f = kode && typeof kode === "object" ? kode : cariFitur(kode);
-    if (!f || !nyala()) return;
+    if (!f || !nyala() || !dompetAktif().bisa) return;
     tutupJendela();
     const J = (K.jendela = { f, bahan: null, peta: null, masukan: "", acuan: "", sumberIsian: "", perkiraan: null, hitung: 0, jalan: false, hasil: null, galat: "", batal: null, catatan: "" });
     const el = akar.document.createElement("div");
@@ -738,7 +785,8 @@
   }
 
   function badanSekarang(J) {
-    return susunBadan(J.f, J.bahan, { masukan: J.masukan, acuan: J.acuan }, K.proyekId);
+    const dom = dompetAktif();
+    return susunBadan(J.f, J.bahan, { masukan: J.masukan, acuan: J.acuan }, K.proyekId, dom.mode === "satker" && !(K.ringkas && K.ringkas.gratis === true) ? "satker" : "");
   }
 
   let pewaktuPerkiraan = null;
@@ -775,7 +823,8 @@
     if (p.memuat) return "Menghitung perkiraan biaya…";
     if (!p.ok) return p.alasan || "";
     const biaya = p.gratis ? "gratis (tidak mengurangi saldo)" : `sekitar ${rupiah(p.perkiraanRp)}`;
-    return `Perkiraan biaya: ${biaya} · mode ${teks(p.label) || "Teliti"} · saldo ${rupiah(p.saldoRp)}.${p.bolehJalan === false ? ` ${teks(p.alasan)}` : ""}`;
+    const dompet = p.dompet === "satker" ? `dipotong dari saldo satker ${rupiah(p.saldoRp)}` : `saldo ${rupiah(p.saldoRp)}`;
+    return `Perkiraan biaya: ${biaya} · mode ${teks(p.label) || "Teliti"} · ${dompet}.${p.bolehJalan === false ? ` ${teks(p.alasan)}` : ""}`;
   }
 
   function gambarJendela() {
@@ -980,7 +1029,7 @@
     J.jalan = false;
     J.batal = null;
     if (selesai && K.ringkas && Number.isFinite(Number(selesai.saldoRp))) {
-      K.ringkas = { ...K.ringkas, saldoRp: Number(selesai.saldoRp) };
+      K.ringkas = selesai.dompet === "satker" ? { ...K.ringkas, satker: { ...(K.ringkas.satker || {}), saldoRp: Number(selesai.saldoRp) } } : { ...K.ringkas, saldoRp: Number(selesai.saldoRp) };
       K.ringkasSaat = Date.now();
     }
     void muatRingkas(true).then(() => {
@@ -1001,6 +1050,7 @@
       teks: tandaiRujukan(bersihkan(hasil), semuaBahan(J)),
       biayaRp: selesai ? Number(selesai.biayaRp) || 0 : 0,
       saldoRp: selesai ? Number(selesai.saldoRp) : NaN,
+      dompet: selesai && selesai.dompet === "satker" ? "satker" : "",
     };
     gambarJendela();
   }
@@ -1017,7 +1067,7 @@
     }
     const f = J.f;
     const h = J.hasil;
-    const biaya = `<p class="bd-catat">Biaya sebenarnya: ${h.biayaRp > 0 ? rupiah(h.biayaRp) : "tidak ditagih"}${Number.isFinite(h.saldoRp) ? ` · saldo ${rupiah(h.saldoRp)}` : ""}.</p>`;
+    const biaya = `<p class="bd-catat">Biaya sebenarnya: ${h.biayaRp > 0 ? rupiah(h.biayaRp) : "tidak ditagih"}${Number.isFinite(h.saldoRp) ? ` · ${h.dompet === "satker" ? "saldo satker" : "saldo"} ${rupiah(h.saldoRp)}` : ""}.</p>`;
     const tanda = `<div class="bd-ai-tanda" role="note"><b>USULAN</b> - belum dipakai. Periksa dulu; Anda yang memutuskan.</div>`;
     const ulang = `<button type="button" class="bd-btn kecil" data-ai="ulang">Ulangi</button>`;
     let badan = "";
@@ -1285,14 +1335,14 @@
       K.proyekId = teks(id).trim();
       return tulisSimpan({ [KUNCI_PROYEK]: K.proyekId });
     },
-    keadaan: () => ({ idAkun: K.idAkun, tersimpan: K.tersimpan, nyala: nyala(), mode: K.mode, proyekId: K.proyekId, ringkas: K.ringkas }),
+    keadaan: () => ({ idAkun: K.idAkun, tersimpan: K.tersimpan, nyala: nyala(), mode: K.mode, dompet: dompetAktif(), proyekId: K.proyekId, ringkas: K.ringkas }),
     bukaFitur,
     tutup: tutupJendela,
     mulaiTur,
     tutupTur,
     turTerbuka: () => (K.tur ? K.tur.langkah : -1),
     FITUR,
-    murni: { saringMenu, fiturDariPemicu, LANGKAH_TUR, keadaanSaklar, tampilSaldo, bersihkan, uraiIsian, uraiSaksi, uraiTemuan, tandaiRujukan, samaranDariKtp, susunBadan, kekuranganBahan, uraiBlokSse, cariFitur },
+    murni: { dompetTersedia, saringMenu, fiturDariPemicu, LANGKAH_TUR, keadaanSaklar, tampilSaldo, bersihkan, uraiIsian, uraiSaksi, uraiTemuan, tandaiRujukan, samaranDariKtp, susunBadan, kekuranganBahan, uraiBlokSse, cariFitur },
   };
   if (typeof module !== "undefined" && module.exports) module.exports = akar.AletaBdAi;
 })(typeof window !== "undefined" ? window : typeof globalThis !== "undefined" ? globalThis : null);

@@ -47,6 +47,7 @@ import { bacaPengaturan, bacaRute, bacaTarif, catatJejak, type PengaturanAi } fr
 import { nilaiPerkiraan, parameterHarga, rupiahPerkiraan, type PerkiraanBiaya } from "@/server/modules/aleta-ai/perkiraan";
 import { proyekAktif } from "@/server/modules/aleta-ai/proyek";
 import { dibatalkanSaklar, pantauSaklar } from "@/server/modules/aleta-ai/saklar";
+import { nilaiDompetSatker, selesaikanSatker, tahanSatker } from "@/server/modules/aleta-ai/dompet-satker";
 import { saldoPengguna, selesaikanTahanan, tahanDana, tambahTahanan } from "@/server/modules/aleta-ai/saldo";
 import { ApiError } from "@/server/shared/errors";
 
@@ -92,7 +93,7 @@ export type EventAi =
   | { jenis: "perkiraan"; mode: string; label: string; perkiraanRp: number }
   | { jenis: "teks"; delta: string }
   | { jenis: "alat"; nama: string; label: string }
-  | { jenis: "selesai"; pesanId: string; mode: string; label: string; biayaRp: number; saldoRp: number }
+  | { jenis: "selesai"; pesanId: string; mode: string; label: string; biayaRp: number; saldoRp: number; dompet?: "satker" }
   | { jenis: "gagal"; pesan: string };
 
 export type MasukanPesan = {
@@ -107,6 +108,11 @@ export type MasukanPesan = {
   kemampuan?: KemampuanAi;
   samarkan?: ReadonlyArray<{ jenis: JenisSamaran; nilai: string }>;
   fitur?: string;
+  /**
+   * Dompet yang dipotong: "satker" = dompet satker (bila pengguna berhak menurut aturan Super Admin dan saldo/batas bulanan
+   * cukup; selain itu giliran ditolak dengan kalimat biasa). Kosong = dompet pengguna, persis seperti sebelumnya.
+   */
+  dompet?: "pengguna" | "satker";
   /**
    * Titik sambung proyek ALETA Ai (parameter dari panel). Saat ini hanya proyek aktif bawaan yang dipakai; nilai ini dibawa
    * dan dicatat supaya pemilihan proyek banyak dapat menyambung tanpa mengubah panel.
@@ -344,7 +350,15 @@ export async function* kirimPesan(
   await pastikanKuotaBulanIni(db, pelaku, sekarang);
   // Program promosi gratis (bila menyala dan pengguna sasaran, jatah ada): giliran ini ditagih Rp0, tanpa saldo.
   let promo = await statusPromo(db, pelaku, { sekarang });
-  if (!pelaku.superAdmin && !promo.berlaku) {
+  // Dompet satker dipilih pengguna: hak (aturan peran/pengguna), saldo satker, dan batas bulanan dinilai di sini dan lagi sesudah perkiraan.
+  const pakaiSatker = masukan.dompet === "satker" && !pelaku.superAdmin && !promo.berlaku;
+  if (pakaiSatker) {
+    const awal = await nilaiDompetSatker(db, pelaku, 0, pengaturan.minimumRp, sekarang);
+    if (!awal.ok) {
+      yield gagal(awal.alasan);
+      return;
+    }
+  } else if (!pelaku.superAdmin && !promo.berlaku) {
     const saldo = await saldoPengguna(db, pelaku.id);
     if (saldo < pengaturan.minimumRp) {
       yield gagal(`${awalanPromoHabis(promo)}Saldo ALETA Ai Anda (Rp${saldo.toLocaleString("id-ID")}) tidak cukup. Hubungi Super Admin untuk mengisi saldo.`);
@@ -463,7 +477,21 @@ export async function* kirimPesan(
 
   const pesanId = `aip-${randomUUID()}`;
   let ditahan = 0;
-  if (!bebasTagih) {
+  const pemakai = { id: pelaku.id, peranId: pelaku.peranId };
+  if (pakaiSatker && !bebasTagih) {
+    const n = await nilaiDompetSatker(db, pelaku, perkiraan.perkiraanRp, pengaturan.minimumRp, sekarang);
+    if (!n.ok) {
+      await catatPemakaianTanpaPesan(db, pelaku, percakapanId, percobaan, kurs.kurs);
+      yield gagal(n.alasan);
+      return;
+    }
+    ditahan = Math.min(n.saldoRp, Math.max(perkiraan.tahanRp, perkiraan.perkiraanRp));
+    if (!(await tahanSatker(db, pemakai, ditahan, pesanId))) {
+      await catatPemakaianTanpaPesan(db, pelaku, percakapanId, percobaan, kurs.kurs);
+      yield gagal("Saldo satker tidak cukup. Pakai saldo Anda sendiri atau hubungi Super Admin.");
+      return;
+    }
+  } else if (!bebasTagih) {
     const saldo = await saldoPengguna(db, pelaku.id);
     if (saldo < perkiraan.perkiraanRp) {
       await catatPemakaianTanpaPesan(db, pelaku, percakapanId, percobaan, kurs.kurs);
@@ -529,7 +557,7 @@ export async function* kirimPesan(
     if (bebasTagih) {
       potong.saldoSetelah = await saldoPengguna(db, pelaku.id);
     } else {
-      const s = await selesaikanTahanan(db, pelaku.id, pesanId, tagih);
+      const s = pakaiSatker ? await selesaikanSatker(db, pemakai, pesanId, tagih) : await selesaikanTahanan(db, pelaku.id, pesanId, tagih);
       potong = { dipotongRp: s.dipotongRp, tidakTertagihRp: s.tidakTertagihRp, saldoSetelah: s.saldoSetelah };
     }
 
@@ -666,7 +694,7 @@ export async function* kirimPesan(
           jawaban += CATATAN_BATAS_ALAT;
           yield { jenis: "teks", delta: CATATAN_BATAS_ALAT };
           const t = await tutup();
-          yield { jenis: "selesai", pesanId, mode: rute.label, label: rute.label, biayaRp: t.biayaRp, saldoRp: t.saldoRp };
+          yield { jenis: "selesai", pesanId, mode: rute.label, label: rute.label, biayaRp: t.biayaRp, saldoRp: t.saldoRp, ...(pakaiSatker ? { dompet: "satker" as const } : {}) };
           return;
         }
         putaranAlat += 1;
@@ -703,7 +731,7 @@ export async function* kirimPesan(
           if (!bebasTagih) {
             const perlu = Math.max(0, perkiraanBaru.tahanRp - ditahan);
             if (perlu > 0) {
-              if (!(await tambahTahanan(db, pelaku.id, perlu, pesanId))) {
+              if (!(await (pakaiSatker ? tahanSatker(db, pemakai, perlu, pesanId) : tambahTahanan(db, pelaku.id, perlu, pesanId)))) {
                 status = "ditolak";
                 yield gagal(PESAN_DITOLAK);
                 return;
@@ -724,7 +752,7 @@ export async function* kirimPesan(
           jawaban += catatan;
           yield { jenis: "teks", delta: catatan };
           const t = await tutup();
-          yield { jenis: "selesai", pesanId, mode: rute.label, label: rute.label, biayaRp: t.biayaRp, saldoRp: t.saldoRp };
+          yield { jenis: "selesai", pesanId, mode: rute.label, label: rute.label, biayaRp: t.biayaRp, saldoRp: t.saldoRp, ...(pakaiSatker ? { dompet: "satker" as const } : {}) };
         } else {
           await tutup();
           yield gagal(PESAN_DITOLAK);
@@ -740,7 +768,7 @@ export async function* kirimPesan(
         status = "selesai";
       }
       const t = await tutup();
-      yield { jenis: "selesai", pesanId, mode: rute.label, label: rute.label, biayaRp: t.biayaRp, saldoRp: t.saldoRp };
+      yield { jenis: "selesai", pesanId, mode: rute.label, label: rute.label, biayaRp: t.biayaRp, saldoRp: t.saldoRp, ...(pakaiSatker ? { dompet: "satker" as const } : {}) };
       return;
     }
   } finally {
@@ -838,7 +866,8 @@ export async function perkirakanPesan(
     pelaku,
     pengaturan,
     { kelompok: rute.kelompok, label: rute.label, tokenMasuk: perkiraan.tokenMasuk, tokenKeluar: rute.perkiraanKeluaran, perkiraanRp: perkiraan.perkiraanRp, tahanRp: perkiraan.tahanRp, biayaApiRp: perkiraan.biayaApiRp, kurs },
-    sekarang
+    sekarang,
+    { dompetSatker: masukan.dompet === "satker" }
   );
   if (!klienAsli && hasil.bolehJalan) return { ...hasil, bolehJalan: false, alasan: PESAN_NONAKTIF_KUNCI };
   return hasil;

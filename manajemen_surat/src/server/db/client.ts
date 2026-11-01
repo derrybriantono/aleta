@@ -425,6 +425,10 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_ai_rekonsiliasi",
   // 27 Oktober 2026 (0113): ALETA Ai - catatan pemakaian program promosi gratis.
   "aleta_ai_promo_pakai",
+  // 1 November 2026 (0124): ALETA Ai - dompet satker (saldo, buku mutasi, aturan pakai per peran/pengguna).
+  "aleta_ai_satker_saldo",
+  "aleta_ai_satker_mutasi",
+  "aleta_ai_satker_aturan",
   // 25 Oktober 2026 (0110): catatan kirim pengingat WhatsApp penjaga tenggat terjadwal.
   "aleta_tenggat_kirim",
   // 26 Oktober 2026 (0112): sunting sampul dan daftar isi berkas (halaman manual, ciri tangan, bawaan halaman).

@@ -33,6 +33,17 @@ export type StatusPromoAi = {
   sisaRupiah: number | null;
 };
 
+/** Dompet satker menurut sudut pandang satu pengguna. */
+export type KeadaanSatkerAi = {
+  boleh: boolean;
+  saldoRp: number;
+  batasBulananRp: number;
+  terpakaiBulanIniRp: number;
+  /** null = tanpa batas bulanan. */
+  sisaBatasRp: number | null;
+  alasan?: string;
+};
+
 export type RingkasAi = {
   /** Ada hanya bila program promosi tampil untuk pengguna ini. */
   promo?: StatusPromoAi;
@@ -48,7 +59,7 @@ export type RingkasAi = {
   /** Panel Blangko Derry: harga minimum satu giliran, status tak-ditagih, saldo satker (sisa pagu bulan ini), dan fitur bantu yang boleh. */
   minimumRp?: number;
   gratis?: boolean;
-  satker?: { batasRp: number; terpakaiRp: number; sisaRp: number | null };
+  satker?: KeadaanSatkerAi;
   fiturBlangko?: string[];
 };
 

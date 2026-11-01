@@ -10,10 +10,15 @@ import { ApiError } from "@/server/shared/errors";
  * Tidak ada rute baru: rute "pesan" dan "perkiraan" yang ada menerima `fitur` + `bahan` (+ `proyekId`) di samping `teks`/`pemicu`.
  */
 
-export type BadanFitur = { teks?: unknown; pemicu?: unknown; fitur?: unknown; bahan?: unknown; proyekId?: unknown };
+export type BadanFitur = { teks?: unknown; pemicu?: unknown; fitur?: unknown; bahan?: unknown; proyekId?: unknown; dompet?: unknown };
 
 /** Badan permintaan -> masukan mesin. Tanpa `fitur`: bentuk lama persis. Fitur/bahan tak sah -> 400 dengan kalimat siap tampil. */
 export function masukanDariBadan(badan: BadanFitur): MasukanPesan {
+  const m = masukanDasar(badan);
+  return String(badan.dompet ?? "") === "satker" ? { ...m, dompet: "satker" } : m;
+}
+
+function masukanDasar(badan: BadanFitur): MasukanPesan {
   const kode = String(badan.fitur ?? "").trim();
   const pemicu = String(badan.pemicu ?? "").trim();
   if (!kode && pemicu && badan.bahan && typeof badan.bahan === "object") {

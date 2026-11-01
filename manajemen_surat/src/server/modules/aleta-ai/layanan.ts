@@ -7,7 +7,7 @@ import { bacaKuotaPeran, pastikanKuotaBulanIni } from "@/server/modules/aleta-ai
 import { PESAN_NONAKTIF_KUNCI, PESAN_NONAKTIF_PROYEK, PESAN_NONAKTIF_SAKLAR } from "@/server/modules/aleta-ai/mesin";
 import { bacaPengaturan, bacaRute, bacaTarif } from "@/server/modules/aleta-ai/pengaturan";
 import { statusPromo, type StatusPromo } from "@/server/modules/aleta-ai/promo";
-import { pemakaianSatkerBulanIni } from "@/server/modules/aleta-ai/batas";
+import { keadaanSatkerPengguna, type KeadaanSatker } from "@/server/modules/aleta-ai/dompet-satker";
 import { fiturBlangkoBoleh } from "@/server/modules/aleta-ai/fitur-blangko";
 import { bacaTimpaanKemampuan } from "@/server/modules/aleta-ai/kemampuan";
 import { proyekAktif } from "@/server/modules/aleta-ai/proyek";
@@ -35,8 +35,8 @@ export type RingkasAi = {
   minimumRp: number;
   /** Tidak ditagih (Super Admin atau promosi gratis sedang berlaku): saldo habis bukan penghalang. */
   gratis: boolean;
-  /** Saldo satker = sisa pagu pemakaian bulan ini (null bila Super Admin tidak memasang batas). Ditampilkan di panel Blangko Derry. */
-  satker: { batasRp: number; terpakaiRp: number; sisaRp: number | null };
+  /** DOMPET SATKER (0124): hak pengguna ini memakainya menurut aturan Super Admin, saldo satker, dan batas bulanan. */
+  satker: KeadaanSatker;
   /** Kode fitur bantu panel Blangko Derry yang boleh dipakai peran ini. */
   fiturBlangko: string[];
 };
@@ -59,12 +59,10 @@ export async function ringkasAi(db: AletaDatabase, pelaku: PelakuAi): Promise<Ri
   await pastikanKuotaBulanIni(db, pelaku);
   const saldoRp = await saldoPengguna(db, pelaku.id);
   const promo = await statusPromo(db, pelaku);
-  const terpakaiSatker = await pemakaianSatkerBulanIni(db);
-  const batasSatker = pengaturan.batasSatkerBulananRp;
   return {
     minimumRp: pengaturan.minimumRp,
     gratis: pelaku.superAdmin || promo.berlaku === true,
-    satker: { batasRp: batasSatker, terpakaiRp: Math.round(terpakaiSatker), sisaRp: batasSatker > 0 ? Math.max(0, Math.round(batasSatker - terpakaiSatker)) : null },
+    satker: await keadaanSatkerPengguna(db, pelaku),
     fiturBlangko: fiturBlangkoBoleh(tabel, pelaku, await bacaTimpaanKemampuan(db)),
     aktif: !alasan,
     ...(promo.tampil ? { promo } : {}),

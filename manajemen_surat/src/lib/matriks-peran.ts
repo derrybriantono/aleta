@@ -1179,11 +1179,11 @@ export const AKSI = {
     alasan: "Setiap pemakai ALETA Ai melihat dompet dan biayanya SENDIRI; tidak ada data pengguna lain.",
   },
   "aleta-ai.kelola-dompet": {
-    label: "Kelola dompet ALETA Ai (isi & koreksi saldo, kuota peran, laporan laba, ekspor, rekonsiliasi)",
+    label: "Kelola dompet ALETA Ai (isi & koreksi saldo, dompet satker dan aturannya, kuota peran, laporan laba, ekspor, rekonsiliasi)",
     crud: "CUD",
     golongan: [],
     lingkup: "semua",
-    rute: ["POST /api/aleta-ai/saldo/isi", "POST /api/aleta-ai/saldo/koreksi", "GET|PUT|POST /api/aleta-ai/kuota", "GET /api/aleta-ai/laporan/ekspor", "GET|POST /api/aleta-ai/rekonsiliasi"],
+    rute: ["POST /api/aleta-ai/saldo/isi", "POST /api/aleta-ai/saldo/koreksi", "GET|PUT|POST /api/aleta-ai/kuota", "GET|POST|PUT|DELETE /api/aleta-ai/satker", "GET /api/aleta-ai/laporan/ekspor", "GET|POST /api/aleta-ai/rekonsiliasi"],
     alasan: "Uang dan laba pengelola - rute menegakkan HANYA Super Admin (Admin pun ditolak: wajibSuperAdmin).",
   },
 } as const satisfies Record<string, AturanAksi>;

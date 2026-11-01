@@ -14,6 +14,7 @@ import { LABEL_MODE, formatRupiah, type PengaturanAi } from "@/lib/aleta-ai/kont
 import { apiPath } from "@/lib/base-path";
 
 import { MatriksKemampuanAi } from "./matriks-kemampuan";
+import { KartuDompetSatker } from "./dompet-satker";
 import { KartuPromoAi } from "./promo-ai";
 
 /**
@@ -382,6 +383,7 @@ export function AletaAiPengaturan({ pengguna, peran = [] }: { pengguna: Pengguna
   return (
     <div className="space-y-6" data-testid="aleta-ai-pengaturan">
       <KartuPromoAi peranTersedia={peran} />
+      <KartuDompetSatker pengguna={pengguna} peran={peran} />
       <Bagian judul="Layanan" deskripsi="Saklar darurat: bila dimatikan, ALETA Ai tidak dapat dipakai siapa pun.">
         <div className="flex items-center justify-between gap-4 rounded-xl border border-border/70 bg-muted/30 px-4 py-3">
           <div>
