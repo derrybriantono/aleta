@@ -883,6 +883,36 @@ describe("Blangko Derry (tahap 2): tombol tanya jawab saksi menurut peran", () =
     expect(qq(h2, '[data-skkunci="saksi 2 p"][data-skfld="alasan"]').filter((c) => tersembunyi(c)).length).toBe(0);
     expect(q(h2, '[data-bd2="alasanlain"]')).toBeNull();
   });
+
+  it("U1 1 Nov: kotak 'Hubungan dengan Penggugat' per saksi - dipilih petugas, ikut ke bot, mengisi 'karena saya adalah ...' tanpa titik; Otomatis kembali ke data perkara", async () => {
+    const h = bukaPP();
+    pasangPotonganAbt(h);
+    await bukaSaksiDanMuat(h);
+    const kotak = (k: string) => q(h, `[data-skkunci="${k}"][data-skfld="hubungan"]`) as HTMLSelectElement;
+    expect(kotak("saksi 1 p")).toBeTruthy();
+    expect(kotak("saksi 2 p")).toBeTruthy();
+    expect(kotak("saksi 1 p").options[0].value).toBe("");
+    expect(kotak("saksi 1 p").closest("label")!.textContent).toMatch(/Hubungan dengan Penggugat/);
+    const grup = Array.from(kotak("saksi 1 p").querySelectorAll("optgroup")).map((g) => g.getAttribute("label"));
+    expect(grup).toEqual(["Keluarga", "Bukan keluarga"]);
+    const sebelum = usulanMinta.length;
+    pilih(h, "saksi 1 p", "hubungan", "ketua-rt");
+    await sampai(() => usulanMinta.length > sebelum, "permintaan jawaban setelah memilih hubungan");
+    const terakhir = usulanMinta[usulanMinta.length - 1];
+    expect(terakhir.saksi[0]).toMatchObject({ pihak: "P", ke: 1, hubungan: "ketua-rt" });
+    expect(terakhir.saksi[1].hubungan).toBeUndefined();
+    const kenal = () => barisKe(h, /kenal dengan Penggugat dan Tergugat/);
+    await sampai(() => /Ketua RT\/RW di lingkungan tempat tinggal Penggugat/.test(jawab(h, 0, kenal())), "hubungan terpasang di jawaban saksi 1");
+    expect(jawab(h, 0, kenal())).not.toMatch(/\.{3,}/);
+    expect(kotak("saksi 1 p").value).toBe("ketua-rt");
+    // pilihan tersimpan per perkara (dipulihkan bila halaman dibuka lagi)
+    expect(JSON.stringify(h.simpanan)).toMatch(/"hubungan":"ketua-rt"/);
+    // kembali ke Otomatis: kunci hubungan tidak ikut lagi
+    const lalu = usulanMinta.length;
+    pilih(h, "saksi 1 p", "hubungan", "");
+    await sampai(() => usulanMinta.length > lalu, "permintaan setelah Otomatis");
+    expect(usulanMinta[usulanMinta.length - 1].saksi[0].hubungan).toBeUndefined();
+  });
 });
 
 describe("Blangko Derry (tahap 2): putusan dan peran hakim hanya membaca tanya jawab saksi", () => {

@@ -2562,6 +2562,8 @@ function saringModusAbt(m) {
     // 1 Nov 2026 (keputusan 62): dasar keterangan saksi Tergugat/Termohon cerai - "jawaban" (jawaban & duplik, bawaan) atau
     // "gugatan" (ikut set Penggugat). Nilai lain dibuang.
     ...(r.dasar === "jawaban" || r.dasar === "gugatan" ? { dasar: r.dasar } : {}),
+    // U1 1 Nov: hubungan saksi dengan pihak, pilihan petugas di panel (kunci daftar HUBUNGAN di saksiU1.js; kunci lain dibuang).
+    ...(require("../services/saksiU1").kunciHubunganSah(r.hubungan) ? { hubungan: String(r.hubungan) } : {}),
   };
 }
 
@@ -3293,6 +3295,9 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
               asal: { jawaban: naskahMasuk.asal && naskahMasuk.asal.jawaban === "lisan" ? "lisan" : "", duplik: naskahMasuk.asal && naskahMasuk.asal.duplik === "lisan" ? "lisan" : "" },
             },
             tanggalSidang: tanggalSidangMasuk || (konteksSipp && konteksSipp.tanggalSidang) || "",
+            // U1: hubungan saksi dari kolom Keterangan saksi SIPP / variabel ABT; alasan perceraian (5227) dari isian blangko.
+            sipp: await janjiSippSaksi.catch(() => null),
+            isian: req.body?.isian && typeof req.body.isian === "object" ? req.body.isian : null,
           });
         } catch (galatPerbaikan) {
           jawaban.saksiSdg.perbaikanGagal = String((galatPerbaikan && galatPerbaikan.message) || galatPerbaikan).slice(0, 200);
