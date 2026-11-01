@@ -3442,6 +3442,10 @@ const MODUS_SAKSI = new Set([
   // 20 Okt 2026 (U1): mendengar sendiri pertengkaran tanpa melihat, dan ragu/kurang ingat.
   "mendengar",
   "ragu",
+  // 1 Nov 2026 (keputusan 63): arah putusan Tolak/NO - tidak tahu perselisihan maupun pisahnya, atau keterangan
+  // berkebalikan dengan dalil. Jawabannya disusun saksiPerbaikan1Nov.jawabArah (langkah penutup rute).
+  "tidak-tahu-apa",
+  "sebaliknya",
 ]);
 
 /**
@@ -3529,8 +3533,11 @@ function jawabMenurutModus({ tanya, modus, alasan, sumber, nomorSaksi, urutan, d
   const bankEfektif = bank || ragamBawaan.JAWABAN_MODUS;
   // Bank kalimat per 'kelompok|modus'; penanda diisi. Bank yang kosong
   // (dimatikan di pengaturan) berarti modus tidak menjawab - templat bicara.
-  const pilih = (kunci) => {
-    const bentuk = (bankEfektif[kunci] || []).map((t) =>
+  // 1 Nov 2026 (B4): `saring` memilih bentuk yang sesuai pertanyaannya (mis. "puncak" vs "mulai") dari bank yang sama.
+  const pilih = (kunci, saring) => {
+    const semuaBentuk = bankEfektif[kunci] || [];
+    const tersaring = typeof saring === "function" ? semuaBentuk.filter(saring) : semuaBentuk;
+    const bentuk = (tersaring.length ? tersaring : semuaBentuk).map((t) =>
       t
         .split("{sumber}")
         .join(sumber_)
@@ -3587,7 +3594,13 @@ function jawabMenurutModus({ tanya, modus, alasan, sumber, nomorSaksi, urutan, d
     /(keadaan|kehidupan|kondisi) rumah tangga|bagaimana rumah tangga/i.test(tanya) && !/setelah menikah/i.test(tanya);
   if (tanyaWaktu || tanyaKehidupan) {
     const kelompok = tanyaWaktu ? "waktu" : "kehidupan";
-    if (modus === "tidak-melihat" || modus === "dari-cerita" || modus === "tahu-pisah" || modus === "ragu") return pilih(`${kelompok}|${modus}`);
+    // B4 (tinjauan 1 Nov): "sejak kapan bertengkar?" tidak dijawab "kurang ingat kapan PUNCAKnya", dan "puncak?" tidak dijawab
+    // "lupa kapan MULAI berselisih" - bentuk bank waktu dipilih menurut yang ditanyakan.
+    const tanyaPuncak = /puncak/i.test(tanya);
+    const saringWaktu = tanyaWaktu
+      ? (b) => (tanyaPuncak ? !/\b(?:mulai|mulainya|dimulai|awal)\b|sejak kapan/i.test(b) || /puncak/i.test(b) : !/puncak/i.test(b))
+      : null;
+    if (modus === "tidak-melihat" || modus === "dari-cerita" || modus === "tahu-pisah" || modus === "ragu") return pilih(`${kelompok}|${modus}`, saringWaktu);
     return null; // sama / mendengar / sebagian / tidak-tahu: saksi mengalaminya, templat tepat
   }
 

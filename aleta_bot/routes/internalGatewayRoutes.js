@@ -2559,6 +2559,9 @@ function saringModusAbt(m) {
     // dari Penggugat" menjadi "Tergugat bercerita" di berita acara.
     sumberNama: String(r.sumberNama || "").replace(/\s+/g, " ").trim().slice(0, 40),
     alasan: Array.isArray(r.alasan) ? r.alasan.map((x) => String(x).slice(0, 80)).slice(0, 12) : [],
+    // 1 Nov 2026 (keputusan 62): dasar keterangan saksi Tergugat/Termohon cerai - "jawaban" (jawaban & duplik, bawaan) atau
+    // "gugatan" (ikut set Penggugat). Nilai lain dibuang.
+    ...(r.dasar === "jawaban" || r.dasar === "gugatan" ? { dasar: r.dasar } : {}),
   };
 }
 
@@ -3187,7 +3190,8 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
       /* === AKHIR P5P6 === */
       // 19 Okt 2026: alamat pihak di SIPP (cadangan "sekarang Penggugat tinggal di ...") dibaca hanya bila templatnya
       // menanyakan tempat tinggal masing-masing pihak sekarang; SELECT saja, 2,5 detik.
-      const tanyaTempatKini = templatMasuk.some((b) => /masing-masing\s+tinggal|tinggal\s+di\s+mana/i.test(String((b && (b.tanya || b.pertanyaan)) || "")));
+      // 1 Nov: "di mana Tergugat tinggal sekarang?" (tambahan verstek) juga - alamat SIPP menggantikan kediaman bersama.
+      const tanyaTempatKini = templatMasuk.some((b) => /masing-masing\s+tinggal|tinggal\s+di\s+mana|di\s*mana\s+\S+\s+tinggal\s+sekarang/i.test(String((b && (b.tanya || b.pertanyaan)) || "")));
       // 20 Okt 2026: data SIPP untuk pengisi jawaban bersumber (SELECT saja, 2,5 detik) - hanya bila templat masih bertitik-titik.
       const isiSumber = require("../services/isiJawabanSaksiService");
       const perluSumber = templatMasuk.some((b) => /(?:[.]{3,}|…|\{[a-zA-Z0-9_]+\})/.test(String((b && (b.jawab || b.jawaban)) || "")));
@@ -3268,6 +3272,26 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
           if (ringkasIsi && ringkasIsi.terisi) jawaban.saksiSdg.terisiDariSumber = { jawaban: ringkasIsi.terisi, ragu: ringkasIsi.ragu };
         } catch (galatIsi) {
           jawaban.saksiSdg.isiSumberGagal = String((galatIsi && galatIsi.message) || galatIsi).slice(0, 200);
+        }
+      }
+      // 1 Nov 2026 (tinjauan saksi, keputusan 61-67): tanda peringatan butir dari gugatan/jawaban, saksi Tergugat cerai dari
+      // jawaban & duplik, pengetahuan arah Tolak/NO, alamat Tergugat sekarang, ejaan posita, kerapian, ragam antar saksi.
+      if (jawaban.saksiSdg && jawaban.saksiSdg.ok) {
+        try {
+          const naskahMasuk = req.body?.naskahT && typeof req.body.naskahT === "object" ? req.body.naskahT : {};
+          require("../services/saksiPerbaikan1Nov").perbaiki(jawaban.saksiSdg, {
+            templat: templatSebelumJenis3,
+            posita: positaDipakai,
+            jenisPerkara: String(req.body?.jenisPerkara || "").slice(0, 80),
+            pelaku,
+            lawan,
+            saksi: saksiMasuk.saksi,
+            ...(alamatPihakSipp ? { alamatPihak: alamatPihakSipp } : {}),
+            naskahT: { jawaban: String(naskahMasuk.jawaban || "").slice(0, 60000), duplik: String(naskahMasuk.duplik || "").slice(0, 60000) },
+            tanggalSidang: tanggalSidangMasuk || (konteksSipp && konteksSipp.tanggalSidang) || "",
+          });
+        } catch (galatPerbaikan) {
+          jawaban.saksiSdg.perbaikanGagal = String((galatPerbaikan && galatPerbaikan.message) || galatPerbaikan).slice(0, 200);
         }
       }
       // Dari mana fakta gugatan diambil - supaya panel dapat menyebutnya.

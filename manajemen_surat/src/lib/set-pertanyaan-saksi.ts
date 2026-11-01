@@ -81,6 +81,8 @@ export type SetSaksi = {
   huruf?: string;
   /** Set tambahan: ditambahkan di bawah pertanyaan yang sudah ada (kumulasi), bukan mengganti. */
   tambahan?: boolean;
+  /** 1 Nov 2026: "T" = set untuk saksi yang diajukan Tergugat/Termohon (draf otomatis memasangnya hanya pada daftar saksi T). */
+  pihak?: "T";
   dasar: string[];
   perluDicek: string[];
   /** Ringkas hasil ukur data nyata PA Donggala. */
@@ -506,6 +508,63 @@ const SET_KONTRA: SetSaksi = {
   penutup: PENUTUP_UMUM,
 };
 
+/**
+ * 1 Nov 2026 (keputusan 62): saksi yang diajukan Tergugat/Termohon perkara cerai (BAS Pembuktian T). Dahulu draf otomatis memasang
+ * set saksi Penggugat ("saya adalah ... Penggugat", sebab = posita Penggugat). Kini bawaannya set ini: keterangan menurut JAWABAN
+ * dan DUPLIK pihak itu - isiannya disusun bot (saksiPerbaikan1Nov) dari naskah jawaban/duplik e-Court (12020/12024); yang tidak
+ * terbaca tetap titik-titik. Pilihan "ikut gugatan" di panel memakai set Penggugat (set utama) seperti dahulu.
+ */
+const SET_CERAI_TERGUGAT: SetSaksi = {
+  id: "cerai-saksi-tergugat",
+  judul: "Saksi Tergugat/Termohon - sesuai jawaban dan duplik",
+  pihak: "T",
+  untuk: "Saksi yang diajukan Tergugat/Termohon pada perkara cerai yang dijawab: keadaan rumah tangga menurut jawaban dan duplik pihak itu.",
+  jenis: ["cg", "ct"],
+  dasar: ["RBg Pasal 283 / HIR Pasal 163: pihak yang membantah dalil wajib membuktikan bantahannya", DASAR_SAKSI, DASAR_KELUARGA],
+  perluDicek: ["Bantahan dibaca dari jawaban/duplik; keterangan saksi tetap harus sesuai yang ia sampaikan di persidangan."],
+  ukur: "ABT server: saksi Tergugat/Termohon pada BAS Pembuktian T ditanya dengan set saksi Penggugat (tinjauan 1 Nov 2026: draf otomatis memasang set Penggugat).",
+  pembuka: [
+    B("Apakah Saudara kenal dengan {P} dan {T}?", "Ya, saya kenal dengan {P} dan {T} karena saya adalah ... {T};", "hubungan saksi dengan para pihak"),
+    B("Apa hubungan antara {P} dan {T}?", "{P} dan {T} adalah suami isteri yang sah, menikah pada ... di ...;", "perkawinan yang sah"),
+    B("Apakah {P} dan {T} sudah dikaruniai anak?", "{P} dan {T} sudah dikaruniai ... orang anak;", "anak dari perkawinan"),
+  ],
+  inti: [
+    B("Bagaimana keadaan rumah tangga {P} dan {T} menurut yang Saudara ketahui?", "Rumah tangga {P} dan {T} ...;", "keadaan rumah tangga menurut saksi pihak lawan"),
+    B("Apakah antara {P} dan {T} sering terjadi perselisihan dan pertengkaran?", "...;", "bantahan perselisihan terus-menerus"),
+    B("Menurut yang Saudara ketahui, apa yang sebenarnya menjadi masalah dalam rumah tangga {P} dan {T}?", "...;", "sebab menurut pihak lawan"),
+    B("Apakah Saudara pernah melihat atau mendengar sendiri {P} dan {T} bertengkar?", "...;", "pengetahuan langsung saksi"),
+    B("Apakah sekarang {P} dan {T} masih tinggal serumah? Siapa yang meninggalkan tempat tinggal bersama dan apa sebabnya?", "...;", "pisah tempat tinggal dan sebabnya"),
+    B("Selama ini apakah {suami} memberikan nafkah kepada {isteri}?", "...;", "nafkah"),
+    B("Apakah {T} masih ingin mempertahankan rumah tangganya dengan {P}?", "...;", "kehendak rukun pihak lawan"),
+    B("Apakah sudah ada upaya dari keluarga untuk merukunkan {P} dan {T}? Bagaimana hasilnya?", "...;", "upaya damai"),
+    B("Apakah Saudara masih sanggup merukunkan {P} dan {T}?", "...;", "harapan rukun"),
+  ],
+  penutup: PENUTUP_UMUM,
+};
+
+/**
+ * 1 Nov 2026 (tinjauan saksi bagian E): para pihak baru berpisah kurang dari 6 bulan. Disarankan bila blangko menyebutnya
+ * ("Kurang 6 Bulan") dan dipasang sendiri oleh draf bila data perkara menunjukkannya (saran bot saksi-sdg, lihat saksiPerbaikan1Nov).
+ */
+const SET_PISAH_KURANG: SetSaksi = {
+  id: "tambah-pisah-kurang",
+  judul: "Tambahan - pisah tempat tinggal kurang dari 6 bulan",
+  untuk: "Perselisihan terus-menerus bila para pihak baru berpisah kurang dari enam bulan: lama pisah yang sebenarnya, pengecualian kekerasan dalam rumah tangga, dan harapan rukun.",
+  jenis: ["cg", "ct"],
+  tambahan: true,
+  dasar: ["PP 9/1975 Pasal 19 huruf f; KHI Pasal 116 huruf f", DASAR_PISAH_6_BULAN, DASAR_SAKSI],
+  perluDicek: ["Pisah kurang dari enam bulan tanpa fakta KDRT: dalil perselisihan terus-menerus belum terpenuhi (SEMA 1/2022 jo. SEMA 3/2023); periksa pertimbangannya."],
+  ukur: "ABT server: pertanyaan pisah rumah 89% mengasumsikan pisah lama; keadaan pisah kurang dari enam bulan tidak punya pertanyaan khusus (tinjauan 1 Nov 2026).",
+  pembuka: [],
+  inti: [
+    B("Sejak kapan tepatnya {P} dan {T} berpisah tempat tinggal, dan sudah berapa lama sampai sekarang?", "{P} dan {T} berpisah tempat tinggal sejak ..., sampai sekarang baru sekitar ... bulan;", "lama pisah kurang dari 6 bulan (SEMA 1/2022 jo. SEMA 3/2023)"),
+    B("Apakah selama berumah tangga pernah terjadi kekerasan fisik atau ancaman di antara {P} dan {T}?", "...;", "pengecualian kekerasan dalam rumah tangga"),
+    B("Bagaimana keadaan rumah tangga {P} dan {T} sebelum berpisah, dan sudah berapa lama tidak harmonis?", "...;", "perselisihan sebelum pisah"),
+    B("Selama berpisah, apakah ada upaya dari salah satu pihak untuk rukun kembali?", "...;", "harapan rukun"),
+  ],
+  penutup: PENUTUP_UMUM,
+};
+
 const SET_SERUMAH: SetSaksi = {
   id: "tambah-serumah",
   judul: "Tambahan - para pihak masih serumah",
@@ -883,6 +942,8 @@ export function semuaSetSaksi(): SetSaksi[] {
     SET_VERSTEK,
     SET_KONTRA,
     SET_SERUMAH,
+    SET_PISAH_KURANG,
+    SET_CERAI_TERGUGAT,
     SET_ITSBAT,
     setDispensasi(true),
     setDispensasi(false),
@@ -983,6 +1044,8 @@ export type TawaranSet = {
   untuk: string;
   utama: boolean;
   tambahan: boolean;
+  /** 1 Nov 2026: "T" = untuk saksi Tergugat/Termohon (lihat SetSaksi.pihak). */
+  pihak?: "T";
   sebab: string;
   dasar: string[];
   perluDicek: string[];
@@ -1014,7 +1077,7 @@ export function tawarkanSetSaksi(
   const out: TawaranSet[] = [];
   const tawar = (s: SetSaksi, utama: boolean, sebab: string, jenisIsi: KodeJenisSaksi = jenis) => {
     if (out.some((x) => x.id === s.id)) return;
-    out.push({ id: s.id, judul: s.judul, untuk: s.untuk, utama, tambahan: Boolean(s.tambahan), sebab, dasar: s.dasar, perluDicek: s.perluDicek, baris: barisSet(s, jenisIsi, k) });
+    out.push({ id: s.id, judul: s.judul, untuk: s.untuk, utama, tambahan: Boolean(s.tambahan), ...(s.pihak ? { pihak: s.pihak } : {}), sebab, dasar: s.dasar, perluDicek: s.perluDicek, baris: barisSet(s, jenisIsi, k) });
   };
   if (jenis === "cg" || jenis === "ct") {
     const sah = huruf.split("").filter((h) => h !== "G" || jenis === "cg").join("");
@@ -1043,8 +1106,13 @@ export function tawarkanSetSaksi(
     const kontra = !verstek && /kontra|\bp\s*&\s*t\s+hadir|tertulis/.test(folder);
     tawar(SET_VERSTEK, verstek, verstek ? "blangko BAS perkara verstek (Tergugat/Termohon tidak hadir)" : "bila Tergugat/Termohon tidak hadir");
     tawar(SET_KONTRA, kontra, kontra ? "blangko BAS perkara dijawab (Tergugat/Termohon hadir)" : "bila Tergugat/Termohon hadir dan menjawab");
+    // 1 Nov 2026 (keputusan 62): set saksi Tergugat/Termohon - draf otomatis memasangnya pada daftar saksi T (pilihSetPihak memilihnya
+    // menurut pihak, bukan menurut "disarankan"; yang disarankan tetap set saksi Penggugat).
+    tawar(SET_CERAI_TERGUGAT, false, "saksi yang diajukan Tergugat/Termohon: keterangan menurut jawaban dan duplik");
     tawar(SET_SEBAB, false, "bila sebab perselisihan perlu diperinci");
-    tawar(SET_SERUMAH, false, "bila para pihak masih serumah");
+    tawar(SET_SERUMAH, /serumah|satu\s+rumah/.test(folder), "bila para pihak masih serumah");
+    // 1 Nov 2026 (tinjauan saksi E): pisah kurang dari 6 bulan - disarankan bila blangkonya menyebut; draf memasangnya sendiri bila data menunjukkan.
+    tawar(SET_PISAH_KURANG, /kurang\s*(?:dari\s*)?(?:6|enam)\s*bulan/.test(folder), "bila para pihak baru berpisah kurang dari 6 bulan");
     tawar(SET_HADHANAH, false, "bila ada tuntutan hak asuh anak");
     tawar(SET_NAFKAH, false, "bila ada tuntutan nafkah");
     tawar({ ...SET_ITSBAT, id: "tambah-itsbat", judul: "Tambahan - itsbat nikah", tambahan: true }, false, "bila digabung dengan itsbat nikah", "itsbat");
