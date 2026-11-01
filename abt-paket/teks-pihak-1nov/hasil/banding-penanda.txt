@@ -24,3 +24,7 @@
 == isian teks tersimpan: 16230 masukan, 1 berpola (dijalankan semua) + contoh acak tanpa pola; dijalankan 301 | sama persis 300 | berubah 1 (teks tampak sama 0, teks tampak beda 1)
    berubah: 8133/7917  <-- TEKS TAMPAK BEDA
    berubah tanpa pola (harus 0): 0
+
+CATATAN (diperiksa tangan atas perkara 3229, 4982, 2764, 4292, isian 8133/7917): "TEKS TAMPAK BEDA" = nomor butir daftar HTML sesudah penanda "1 ." kini melanjutkan
+(2, 3, ... dulu 1, 2, ... karena "1 ." tidak dikenali sebagai butir), dan penanda "N ." kini butir bergantung (dulu paragraf polos). Isi kalimat sama persis,
+jumlah paragraf sama persis. Masukan tanpa pola "angka + spasi + titik/kurung": 0 yang berubah.

@@ -40,7 +40,10 @@ ditambahi (kesimpulan tidak lazim pada putusan itu).
 Fungsi `isian_rtf_penanda` (DIGANTI, dijaga md5 LAMA) mengenali juga penanda angka dengan spasi sebelum titik/kurung ("1 .Bahwa", "2 . Bahwa", "3 )"). Dulu
 baris itu bukan penanda: ditempel ke baris di atasnya bila baris di atasnya belum berakhir tanda baca (judul "DALAM POKOK PERKARA" + "1 .Bahwa ..." menjadi satu
 paragraf) atau jatuh sebagai paragraf biasa tanpa inden gantung. "1.Bahwa" (tanpa spasi) sudah dikenali. Teks penanda dicetak persis ("1 ." tetap "1 .")
-diikuti tab. Pengaruh pada masukan nyata: lihat `hasil/banding-penanda.txt` (posita/petitum SIPP seluruh perkara dan isian teks tersimpan).
+diikuti tab. Pengaruh pada masukan nyata (`alat/banding_penanda.py`, `hasil/banding-penanda.txt`): dari 8.270 posita dan 10.246 petitum SIPP serta 16.230 isian teks
+tersimpan, hanya 16 posita, 3 petitum, dan 1 isian yang memuat penanda berspasi; semuanya berubah menjadi butir bergantung ("3 .Fotocopy ..." tadinya paragraf
+polos) dan penomoran daftar sesudahnya menjadi benar (dulu daftar HTML sesudah "1 ." mulai lagi dari 1, kini lanjut 2, 3, ...). Masukan tanpa pola itu: 0 yang berubah
+(dijaga contoh acak 300 per sumber).
 
 ### d. Bukti: Asal Usul Anak dan BAS
 | variabel | isi |
@@ -80,8 +83,14 @@ Pasang ulang aman (`0|3|10|0|0|1|2|0|4`, `SUDAH=313`). PRASYARAT lain = berhenti
 Pulih (SEBELUM mem-pulih paket sebelumnya): `ssh aleta 'bash /root/abt-teks-pihak-20261101/pulih-satker.sh'` -> `PULIH COCOK (3|0|0|0|1|0|0|0|4)`.
 
 ## Hasil uji laptop (1 Nov 2026)
-Lihat `hasil/uji-lokal.txt` (rantai 26 paket, pasang ulang, pulih, pasang lagi, penjaga) dan `hasil/banding-*.txt`; render sungguhan (renderer ABT php56 asli,
-`alat/driver155.py`) sebelum/sesudah: `D:/Aplikasi/aleta/tmp/w155/render/` (RTF + teks) dan `.../render/png/` (gambar).
+- Rantai 26 paket (`../uji-rantai-31okt/hasil-rantai-26.txt`, salinan baru dump 28 Okt, paket dari `git archive HEAD`): semua SELESAI, `RANTAI-KELUAR 0`.
+- `sumber/uji_lokal.sh` (`hasil/uji-lokal.txt`): pasang ulang tidak mengubah apa pun; pulih = variabel, SEMUA fungsi, dan seluruh pohon RTF SAMA PERSIS dengan
+  keadaan sesudah 25 paket; pasang lagi = pasang pertama; variabel paket disunting orang -> pasang menolak (`0|3|9|1|...`), variabel lama 9255 disunting -> pasang pertama
+  menolak (`2|0|...`), tidak ada yang berubah.
+- Banding fungsi penanda atas masukan nyata: `hasil/banding-penanda.txt` (bagian c di atas).
+- Render sungguhan (renderer ABT php56 asli, `alat/driver155.py`, ringkasan `hasil/render.txt`): putusan CG kontradiktoir, Verzet, verstek, ES, eksepsi, sita, Asal Usul Anak
+  (4 keadaan bukti), BAS pembuktian P/T dan itsbat (4 keadaan bukti) sebelum/sesudah. RTF dan teks: `D:/Aplikasi/aleta/tmp/w155/render/<sebelum|sesudah>/`; gambar:
+  `D:/Aplikasi/aleta/tmp/w155/render/png/` (14 PNG).
 
 ## Keputusan yang perlu diperiksa pengguna
 1. Pengecualian huruf awal (sebutan pihak, huruf besar semua, satu huruf) - keputusan 55 berbunyi "hanya huruf pertama"; tanpa pengecualian nama pihak di awal

@@ -3,12 +3,13 @@
 # keadaan DASAR = sesudah 25 paket: basis aps_badilag_rantai155, pohon /d/r155/_blangko_abt (tidak pernah diubah). Paket harus SUDAH terpasang sekali:
 # pasang ulang (tidak mengubah apa pun), pulih (= keadaan dasar persis: variabel, SEMUA fungsi, DAN seluruh pohon RTF), pasang lagi (= pasang pertama),
 # penjaga (variabel paket disunting orang -> pasang menolak; berkas disunting -> pulih membiarkan).
+# Isi fungsi dibanding dengan nama basis laptop diseragamkan (5 fungsi lama memuat nama basis salinan yang ditulis paket-paket lama; di server namanya aps_badilag).
 set -u
 export PATH="/d/Satker Asal/Website PA Bungku/xampp/mysql/bin:$PATH" TMPDIR=/d/Aplikasi/aleta/tmp
 P=/d/r155f/ap/teks-pihak-1nov/paket-satker
 E="ABT_LOKAL=1 ABT_DB=aps_badilag_rantai155f SIPP_DB=sipp_w155 ABT_BLANGKO=/d/r155f/_blangko_abt PY=python"
 sidik() {  # $1 = basis ABT, $2 = akar pohon
-  mysql -h127.0.0.1 -uroot -N "$1" -e "SET SESSION group_concat_max_len = 1000000000; SELECT MD5(GROUP_CONCAT(CONCAT_WS('|', no_var, nama, data_type, IFNULL(sql_query,'')) ORDER BY no_var SEPARATOR '#')), (SELECT MD5(GROUP_CONCAT(CONCAT_WS('|', routine_name, MD5(routine_definition)) ORDER BY routine_name SEPARATOR '#')) FROM information_schema.routines WHERE routine_schema = '$1'), (SELECT COUNT(*) FROM information_schema.routines WHERE routine_schema = '$1') FROM abt_variabel" | tr '\t' ' '
+  mysql -h127.0.0.1 -uroot -N "$1" -e "SET SESSION group_concat_max_len = 1000000000; SELECT MD5(GROUP_CONCAT(CONCAT_WS('|', no_var, nama, data_type, IFNULL(sql_query,'')) ORDER BY no_var SEPARATOR '#')), (SELECT MD5(GROUP_CONCAT(CONCAT_WS('|', routine_name, MD5(REPLACE(routine_definition, '$1', 'DB'))) ORDER BY routine_name SEPARATOR '#')) FROM information_schema.routines WHERE routine_schema = '$1'), (SELECT COUNT(*) FROM information_schema.routines WHERE routine_schema = '$1') FROM abt_variabel" | tr '\t' ' '
   (cd "$2" && find derry_briantono -name '*.rtf' -print0 | sort -z | xargs -0 md5sum | md5sum | cut -c1-32)
 }
 DASAR="$(sidik aps_badilag_rantai155 /d/r155/_blangko_abt | tr '\n' ' ')"
