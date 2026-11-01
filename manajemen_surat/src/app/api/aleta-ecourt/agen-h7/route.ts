@@ -9,6 +9,7 @@ import {
   bacaRingkasDrafH7,
   jalankanAgenH7,
 } from "@/server/modules/aleta-ecourt/agen-h7-putusan";
+import { bolehDrafPutusanA1, tanpaDrafPutusan } from "@/server/modules/aleta-ecourt/draf-putusan-a1";
 import { pastikanAksi } from "@/server/modules/akses/hak-peran";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -42,7 +43,7 @@ export async function GET(request: NextRequest) {
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
-    await pastikanKapabilitas(db, actorUserId, "panel");
+    const aktor = await pastikanKapabilitas(db, actorUserId, "panel");
     const q = request.nextUrl.searchParams;
     if (q.get("jalan") === "1") return ok({ ada: true, jalan: await bacaJalanTerakhir(db) });
     const daftar = String(q.get("perkaraId") || "")
@@ -57,7 +58,9 @@ export async function GET(request: NextRequest) {
     // 18 Okt 2026 (matriks hak akses): isi draf putusan hanya penyusun draf (majelis, PP, panitera, panmud); juru sita tidak.
     await pastikanAksi(db, actorUserId, "putusan.draf");
     const draf = await bacaDrafH7(db, daftar);
-    const peta = Object.fromEntries(Object.entries(draf).map(([pid, d]) => [pid, { ...d, laporan: teksLaporanH7(d) }]));
+    // A1 (1 Nov): draf pertimbangan & amar hanya untuk hakim, ketua, wakil ketua, Super Admin (hak fitur putusan C1-C4).
+    const bolehA1 = bolehDrafPutusanA1(aktor);
+    const peta = Object.fromEntries(Object.entries(draf).map(([pid, d]) => [pid, { ...(bolehA1 ? d : tanpaDrafPutusan(d)), laporan: teksLaporanH7(d) }]));
     return ok({ ada: true, peta });
   } catch (error) {
     return handleAdminRouteError(error, request, {

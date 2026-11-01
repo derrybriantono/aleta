@@ -15,6 +15,7 @@ import {
 } from "@/lib/agen-h7-putusan";
 import { TAHAP_H7, hariTanggal, susunTahapanH7, type KodeTahapH7, type StatusTahapH7 } from "@/lib/draf-h7-tahapan";
 import { tautanBlangkoDerry, type DataTautanBlangko } from "@/lib/tautan-blangko-derry";
+import { KartuDrafPutusanA1 } from "@/components/portal/draf-putusan-a1";
 import { waktuSingkat } from "@/lib/konseptor-langkah";
 import { cn } from "@/lib/utils";
 
@@ -191,6 +192,8 @@ export function PanelDrafH7({
   const semuaVarian = useMemo(() => (draf ? daftarVarianH7(draf) : []), [draf]);
   const varianAktif = semuaVarian.find((v) => v.status === pilihVarian)?.status ?? "dikabulkan";
   const t = useMemo(() => (draf ? susunTahapanH7(draf, varianAktif) : null), [draf, varianAktif]);
+  // A1: draf pertimbangan & amar varian aktif (rute hanya mengirimkannya untuk hakim/ketua/wakil/Super Admin).
+  const putusanAktif = semuaVarian.find((v) => v.status === varianAktif)?.putusan ?? null;
 
   if (!ringkas) return null;
 
@@ -279,6 +282,7 @@ export function PanelDrafH7({
       case "perlu":
         return (
           <div className="space-y-2" data-isi-tahap="perlu">
+            {putusanAktif ? <KartuDrafPutusanA1 putusan={putusanAktif} tautanIsian={(nama) => tautanIsian(nama)} /> : null}
             {t.perlu.length ? (
               <ul className="space-y-2">
                 {t.perlu.slice(0, 10).map((p) => {
