@@ -1,0 +1,1667 @@
+{
+  "skema": "saksi-katalog/1",
+  "kunci": "perjanjian-perkawinan",
+  "judul": "Perjanjian perkawinan",
+  "versi": 1,
+  "penulis": "H2",
+  "tahap": 2,
+  "contoh": false,
+  "syarat": {
+    "jenisPerkaraId": [
+      "744"
+    ]
+  },
+  "pihak": {
+    "pengaju": "#0046#",
+    "lawan": "#0047#"
+  },
+  "blangkoBas": [],
+  "dasarHukum": [
+    {
+      "id": "dh-sebab-pengetahuan",
+      "rujukan": "Buku II Edisi Revisi 2013 hlm. 102: syarat materiil saksi (Pasal 308 ayat (2) RBg)",
+      "uraian": "keterangan saksi harus tentang peristiwa yang dialami, didengar atau dilihat sendiri dan menyebut sumber pengetahuannya; pendapat atau dugaan bukan kesaksian",
+      "status": "terverifikasi",
+      "sumber": "Buku II Pedoman Pelaksanaan Tugas dan Administrasi Peradilan Agama Edisi Revisi 2013, bagian Bukti Saksi (hlm. 101-102; dibaca dari salinan teks)"
+    },
+    {
+      "id": "dh-de-auditu",
+      "rujukan": "Buku II Edisi Revisi 2013 hlm. 101 butir (7)",
+      "uraian": "keterangan yang diperoleh saksi dari orang lain (de auditu) dapat dipakai hanya sebagai sumber persangkaan",
+      "status": "terverifikasi",
+      "sumber": "Buku II Pedoman Pelaksanaan Tugas dan Administrasi Peradilan Agama Edisi Revisi 2013, bagian Bukti Saksi (hlm. 101-102; dibaca dari salinan teks)"
+    },
+    {
+      "id": "dh-unus-testis",
+      "rujukan": "Buku II Edisi Revisi 2013 hlm. 101 butir (8)",
+      "uraian": "keterangan seorang saksi saja tanpa alat bukti lain tidak cukup (satu saksi bukan saksi)",
+      "status": "terverifikasi",
+      "sumber": "Buku II Pedoman Pelaksanaan Tugas dan Administrasi Peradilan Agama Edisi Revisi 2013, bagian Bukti Saksi (hlm. 101-102; dibaca dari salinan teks)"
+    },
+    {
+      "id": "dh-larangan-saksi",
+      "rujukan": "Buku II Edisi Revisi 2013 hlm. 100-101 butir (3)-(4) (Pasal 172 RBg)",
+      "uraian": "keluarga sedarah dan semenda garis lurus serta suami atau istri salah satu pihak tidak dapat didengar sebagai saksi; pengecualian untuk perkara tentang keadaan menurut hukum sipil seseorang. Penilaian ada pada hakim",
+      "status": "terverifikasi",
+      "sumber": "Buku II Pedoman Pelaksanaan Tugas dan Administrasi Peradilan Agama Edisi Revisi 2013, bagian Bukti Saksi (hlm. 101-102; dibaca dari salinan teks)"
+    },
+    {
+      "id": "dh-kesesuaian-saksi",
+      "rujukan": "Buku II Edisi Revisi 2013 hlm. 101 butir (2) (Pasal 309 RBg)",
+      "uraian": "hakim menilai kesesuaian keterangan saksi yang satu dengan lainnya dan alasan saksi memberi keterangan",
+      "status": "terverifikasi",
+      "sumber": "Buku II Pedoman Pelaksanaan Tugas dan Administrasi Peradilan Agama Edisi Revisi 2013, bagian Bukti Saksi (hlm. 101-102; dibaca dari salinan teks)"
+    },
+    {
+      "id": "dh-uu1-29",
+      "rujukan": "Pasal 29 UU 1/1974 tentang Perkawinan",
+      "uraian": "perjanjian perkawinan dibuat secara tertulis atas persetujuan bersama kedua pihak, disahkan oleh pegawai pencatat perkawinan, dan tidak dapat disahkan bila melanggar batas hukum, agama dan kesusilaan; naskah lama membatasi pada waktu atau sebelum perkawinan",
+      "status": "terverifikasi",
+      "sumber": "naskah lokal uu1-1974-bpk.txt (BPK), dibaca H2 1 Nov 2026; pemaknaan baru ada pada putusan MK (lihat dh-mk-69)"
+    },
+    {
+      "id": "dh-mk-69",
+      "rujukan": "Putusan Mahkamah Konstitusi 69/PUU-XIII/2015",
+      "uraian": "perjanjian perkawinan dapat dibuat pada waktu, sebelum, atau selama dalam ikatan perkawinan, disahkan pegawai pencatat perkawinan atau notaris; perubahan atau pencabutannya perlu persetujuan kedua pihak dan tidak boleh merugikan pihak ketiga",
+      "status": "perlu-verifikasi",
+      "sumber": "disebut dalam arahan pengguna; naskah putusan belum dibaca dari sumber resmi (tidak ada salinan di folder referensi)"
+    },
+    {
+      "id": "dh-khi-45",
+      "rujukan": "Pasal 45 Kompilasi Hukum Islam",
+      "uraian": "kedua calon mempelai dapat mengadakan perjanjian perkawinan dalam bentuk taklik talak dan perjanjian lain yang tidak bertentangan dengan hukum Islam",
+      "status": "terverifikasi",
+      "sumber": "KHI salinan lokal khi-pasalid.json (dibaca H2 1 Nov 2026)"
+    },
+    {
+      "id": "dh-khi-47",
+      "rujukan": "Pasal 47 ayat (1) sampai (3) Kompilasi Hukum Islam",
+      "uraian": "perjanjian tertulis mengenai kedudukan harta dalam perkawinan dapat meliputi percampuran harta pribadi dan pemisahan harta pencaharian masing-masing sepanjang tidak bertentangan dengan hukum Islam, serta kewenangan mengadakan ikatan hipotik atas harta",
+      "status": "terverifikasi",
+      "sumber": "KHI salinan lokal khi-pasalid.json (dibaca H2 1 Nov 2026)"
+    },
+    {
+      "id": "dh-khi-48",
+      "rujukan": "Pasal 48 ayat (1) dan (2) Kompilasi Hukum Islam",
+      "uraian": "perjanjian pemisahan harta tidak boleh menghilangkan kewajiban suami memenuhi kebutuhan rumah tangga; bila dilanggar, dianggap tetap terjadi pemisahan harta dengan kewajiban suami menanggung biaya kebutuhan rumah tangga",
+      "status": "terverifikasi",
+      "sumber": "KHI salinan lokal khi-pasalid.json (dibaca H2 1 Nov 2026)"
+    },
+    {
+      "id": "dh-khi-49",
+      "rujukan": "Pasal 49 ayat (1) dan (2) Kompilasi Hukum Islam",
+      "uraian": "percampuran harta pribadi dapat mencakup semua harta bawaan dan harta yang diperoleh selama perkawinan, atau dibatasi hanya pada harta yang dibawa saat perkawinan",
+      "status": "terverifikasi",
+      "sumber": "KHI salinan lokal khi-pasalid.json (dibaca H2 1 Nov 2026)"
+    },
+    {
+      "id": "dh-khi-50",
+      "rujukan": "Pasal 50 ayat (1) sampai (5) Kompilasi Hukum Islam",
+      "uraian": "perjanjian mengenai harta mengikat para pihak dan pihak ketiga sejak perkawinan dilangsungkan di hadapan pegawai pencatat nikah; dapat dicabut atas persetujuan bersama dan wajib didaftarkan; pencabutan tidak boleh merugikan perjanjian yang telah diperbuat dengan pihak ketiga",
+      "status": "terverifikasi",
+      "sumber": "KHI salinan lokal khi-pasalid.json (dibaca H2 1 Nov 2026)"
+    },
+    {
+      "id": "dh-khi-51",
+      "rujukan": "Pasal 51 Kompilasi Hukum Islam",
+      "uraian": "pelanggaran atas perjanjian perkawinan memberi hak kepada istri untuk meminta pembatalan nikah atau mengajukannya sebagai alasan gugatan perceraian",
+      "status": "terverifikasi",
+      "sumber": "KHI salinan lokal khi-pasalid.json (dibaca H2 1 Nov 2026)"
+    }
+  ],
+  "keadaan": {
+    "waktuPerjanjian": {
+      "sumber": "borang",
+      "nilai": [
+        "sebelum-nikah",
+        "saat-nikah",
+        "selama-nikah"
+      ],
+      "label": "Perjanjian perkawinan dibuat",
+      "bawaan": "selama-nikah",
+      "labelNilai": {
+        "sebelum-nikah": "sebelum perkawinan dilangsungkan",
+        "saat-nikah": "pada waktu perkawinan dilangsungkan",
+        "selama-nikah": "selama dalam ikatan perkawinan"
+      }
+    },
+    "bentukPengesahan": {
+      "sumber": "borang",
+      "nilai": [
+        "notaris",
+        "pegawai-pencatat"
+      ],
+      "label": "Perjanjian disahkan oleh",
+      "bawaan": "notaris",
+      "labelNilai": {
+        "notaris": "notaris",
+        "pegawai-pencatat": "pegawai pencatat perkawinan"
+      }
+    },
+    "isiPerjanjian": {
+      "sumber": "borang",
+      "nilai": [
+        "pisah-harta",
+        "harta-bawaan",
+        "utang-masing-masing",
+        "lainnya"
+      ],
+      "label": "Pokok isi perjanjian",
+      "bawaan": [
+        "pisah-harta"
+      ],
+      "jamak": true,
+      "labelNilai": {
+        "pisah-harta": "pemisahan harta pencaharian",
+        "harta-bawaan": "harta bawaan tetap milik pribadi",
+        "utang-masing-masing": "utang ditanggung masing-masing",
+        "lainnya": "hal lain di luar harta"
+      }
+    },
+    "jenisPermohonan": {
+      "sumber": "borang",
+      "nilai": [
+        "baru",
+        "ubah-atau-cabut"
+      ],
+      "label": "Yang dimohonkan",
+      "bawaan": "baru",
+      "labelNilai": {
+        "baru": "perjanjian perkawinan yang baru dibuat",
+        "ubah-atau-cabut": "perubahan atau pencabutan perjanjian yang sudah ada"
+      }
+    }
+  },
+  "pokokPembuktian": [
+    {
+      "id": "pp-hubungan-saksi",
+      "judul": "Hubungan saksi dengan para pemohon",
+      "uraian": "saksi menerangkan siapa dirinya dan bagaimana ia mengenal para pemohon",
+      "wajib": true,
+      "dasarHukum": [
+        "dh-sebab-pengetahuan",
+        "dh-larangan-saksi",
+        "dh-unus-testis"
+      ]
+    },
+    {
+      "id": "pp-maksud",
+      "judul": "Maksud permohonan",
+      "uraian": "para pemohon memohon perjanjian perkawinan mereka ditetapkan atau disahkan oleh pengadilan",
+      "wajib": true,
+      "dasarHukum": [
+        "dh-uu1-29",
+        "dh-mk-69",
+        "dh-khi-45"
+      ]
+    },
+    {
+      "id": "pp-perkawinan",
+      "judul": "Perkawinan yang sah antara para pemohon",
+      "uraian": "para pemohon suami istri yang sah menurut hukum Islam dan perkawinannya tercatat",
+      "wajib": true,
+      "dasarHukum": [
+        "dh-uu1-29",
+        "dh-khi-45"
+      ]
+    },
+    {
+      "id": "pp-perjanjian",
+      "judul": "Adanya perjanjian tertulis",
+      "uraian": "perjanjian dibuat tertulis, kapan dibuat, dan oleh siapa saja ditandatangani",
+      "wajib": true,
+      "dasarHukum": [
+        "dh-uu1-29",
+        "dh-mk-69"
+      ]
+    },
+    {
+      "id": "pp-persetujuan",
+      "judul": "Persetujuan bersama tanpa paksaan",
+      "uraian": "kedua pihak sepakat dan tidak ada paksaan, tekanan atau penipuan",
+      "wajib": true,
+      "dasarHukum": [
+        "dh-uu1-29",
+        "dh-khi-45"
+      ]
+    },
+    {
+      "id": "pp-pengesahan",
+      "judul": "Pengesahan perjanjian",
+      "uraian": "perjanjian disahkan oleh notaris atau pegawai pencatat perkawinan",
+      "wajib": true,
+      "dasarHukum": [
+        "dh-uu1-29",
+        "dh-mk-69",
+        "dh-khi-50"
+      ]
+    },
+    {
+      "id": "pp-isi",
+      "judul": "Isi perjanjian mengenai harta",
+      "uraian": "kedudukan harta selama perkawinan: pemisahan harta, harta bawaan, utang",
+      "wajib": true,
+      "dasarHukum": [
+        "dh-khi-47",
+        "dh-khi-49"
+      ]
+    },
+    {
+      "id": "pp-alasan",
+      "judul": "Alasan membuat perjanjian",
+      "uraian": "tujuan dan kebutuhan para pemohon membuat perjanjian",
+      "wajib": false,
+      "dasarHukum": [
+        "dh-mk-69"
+      ]
+    },
+    {
+      "id": "pp-pihak-ketiga",
+      "judul": "Tidak merugikan pihak ketiga",
+      "uraian": "perjanjian tidak merugikan kreditur atau pihak ketiga lain",
+      "wajib": true,
+      "dasarHukum": [
+        "dh-mk-69",
+        "dh-khi-50"
+      ]
+    },
+    {
+      "id": "pp-kebutuhan-rumah-tangga",
+      "judul": "Nafkah rumah tangga tetap terpenuhi",
+      "uraian": "perjanjian tidak menghilangkan kewajiban suami memenuhi kebutuhan rumah tangga",
+      "wajib": true,
+      "dasarHukum": [
+        "dh-khi-48"
+      ]
+    },
+    {
+      "id": "pp-tidak-bertentangan",
+      "judul": "Tidak melanggar batas hukum, agama dan kesusilaan",
+      "uraian": "isi perjanjian tidak bertentangan dengan hukum Islam dan kesusilaan",
+      "wajib": false,
+      "dasarHukum": [
+        "dh-uu1-29",
+        "dh-khi-45"
+      ]
+    },
+    {
+      "id": "pp-perubahan",
+      "judul": "Perubahan atau pencabutan perjanjian",
+      "uraian": "kedua pihak setuju mengubah atau mencabut, dan tidak merugikan pihak ketiga",
+      "wajib": false,
+      "dasarHukum": [
+        "dh-mk-69",
+        "dh-khi-50"
+      ],
+      "keadaan": {
+        "jenisPermohonan": "ubah-atau-cabut"
+      }
+    },
+    {
+      "id": "pp-harta-rinci",
+      "judul": "Rincian harta",
+      "uraian": "harta yang terkena perjanjian dan asal-usulnya",
+      "wajib": false,
+      "dasarHukum": [
+        "dh-khi-47",
+        "dh-khi-49"
+      ]
+    },
+    {
+      "id": "pp-penutup",
+      "judul": "Penutup keterangan",
+      "uraian": "saksi menyatakan keterangannya telah cukup",
+      "wajib": false,
+      "dasarHukum": []
+    }
+  ],
+  "pertanyaan": [
+    {
+      "id": "q-kenal",
+      "pokok": "pp-hubungan-saksi",
+      "urutan": 10,
+      "tingkat": "inti",
+      "kelompok": "hubungan",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Apakah saksi kenal dengan #7036# ? Apa hubungan saksi dengan #7036# ?",
+      "variabelAbt": [
+        "7036"
+      ],
+      "hal": "hubungan saksi dengan para pemohon",
+      "tidakBerlaku": [
+        "mendengar",
+        "de-auditu",
+        "sebagian",
+        "tidak-tahu",
+        "ragu",
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi mengenal para pemohon dan menyebut hubungannya",
+          "saksi1": [
+            "saya kenal dengan #7036# karena saya adalah {hubungan}",
+            "saya mengenal #7036# sejak lama sebab saya adalah {hubungan}",
+            "benar saya kenal #7036# dalam kedudukan saya sebagai {hubungan}",
+            "#7036# saya kenal baik karena saya adalah {hubungan}"
+          ],
+          "saksi2": [
+            "saya mengetahui siapa #7036# sebab kedudukan saya sebagai {hubungan}",
+            "hubungan saya dengan #7036# adalah sebagai {hubungan} sehingga saya mengenalnya",
+            "sebagai {hubungan} saya telah lama kenal dengan #7036#",
+            "saya lama bergaul dengan #7036# dan saya adalah {hubungan}"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-maksud",
+      "pokok": "pp-maksud",
+      "urutan": 20,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Apakah saksi mengetahui maksud #7036# datang ke persidangan ?",
+      "teksVarian": [
+        "Apa yang saksi ketahui tentang maksud #7036# mengajukan permohonan ini ?"
+      ],
+      "variabelAbt": [
+        "7036"
+      ],
+      "hal": "maksud para pemohon datang ke persidangan",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi mengetahui para pemohon memohon penetapan atas perjanjian perkawinan mereka",
+          "saksi1": [
+            "saya mengetahui maksud #7036# di persidangan adalah memohon penetapan atas perjanjian perkawinan mereka",
+            "benar #7036# datang untuk memohon pengadilan menetapkan perjanjian perkawinan yang mereka buat",
+            "sepengetahuan saya #7036# bermaksud meminta pengesahan pengadilan atas perjanjian perkawinan mereka",
+            "maksud kedatangan #7036# ke pengadilan yang saya ketahui adalah perihal perjanjian perkawinan mereka"
+          ],
+          "saksi2": [
+            "saya tahu #7036# mengajukan permohonan agar perjanjian perkawinan mereka ditetapkan pengadilan",
+            "#7036# hendak meminta penetapan pengadilan tentang perjanjian perkawinannya dan saya mengetahuinya",
+            "yang #7036# inginkan lewat permohonan ini menurut saya adalah penetapan atas perjanjian perkawinan mereka",
+            "saya mengerti #7036# memohon pengadilan memberi penetapan mengenai perjanjian perkawinan yang telah mereka buat"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-suami-istri",
+      "pokok": "pp-perkawinan",
+      "urutan": 30,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Apakah #7036# suami istri yang sah, kapan dan di mana mereka menikah ?",
+      "teksVarian": [
+        "Sejak kapan #7036# menikah dan di mana pernikahan itu dilangsungkan ?"
+      ],
+      "variabelAbt": [
+        "5105",
+        "5197",
+        "7036"
+      ],
+      "hal": "perkawinan sah para pemohon",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "para pemohon suami istri yang sah dan menikah pada waktu dan tempat tertentu",
+          "saksi1": [
+            "#7036# adalah suami istri yang sah dan mereka menikah pada #5197# di #5105# yang saya ketahui sendiri",
+            "benar #7036# suami istri sah yang menikah pada #5197# di #5105# dan saya mengetahuinya",
+            "saya tahu #7036# telah menikah secara sah pada #5197# bertempat di #5105#",
+            "pernikahan #7036# dilangsungkan pada #5197# di #5105# dan mereka suami istri yang sah menurut yang saya ketahui"
+          ],
+          "saksi2": [
+            "#7036# suami istri yang sah menurut agama Islam dan menikah pada #5197# di #5105# sebagaimana saya ketahui",
+            "saya mengetahui sendiri #7036# menikah pada #5197# di #5105# dan hingga kini masih suami istri",
+            "yang saya ketahui langsung #7036# menikah sah di #5105# pada #5197#",
+            "akad nikah #7036# berlangsung pada #5197# di #5105# dan keduanya suami istri yang sah menurut penglihatan saya"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: menikah pada tanggal yang disebut pemohon; versi B: menikah pada waktu yang lain - berselisih pada WAKTU",
+          "saksi1": [
+            "#7036# menikah pada #5197# di #5105#",
+            "saya tahu pernikahan #7036# berlangsung pada #5197# di #5105#",
+            "akad nikah #7036# terjadi pada #5197# bertempat di #5105#",
+            "#7036# menikah di #5105# pada #5197# sebagaimana saya ketahui"
+          ],
+          "saksi2": [
+            "#7036# menikah beberapa tahun sebelum waktu itu dan bukan pada #5197# di #5105#",
+            "saya ingat pernikahan #7036# jauh lebih dahulu daripada #5197# yang disebutkan di #5105#",
+            "akad nikah #7036# bukan terjadi pada #5197# melainkan lebih awal di #5105#",
+            "#7036# sebenarnya menikah di #5105# lebih dahulu daripada #5197# menurut yang saya ketahui"
+          ],
+          "bedaPada": "waktu"
+        }
+      }
+    },
+    {
+      "id": "q-tercatat",
+      "pokok": "pp-perkawinan",
+      "urutan": 40,
+      "tingkat": "pilihan",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Apakah pernikahan #7036# tercatat di Kantor Urusan Agama dan apakah mereka memegang buku nikah ?",
+      "variabelAbt": [
+        "7036"
+      ],
+      "hal": "pencatatan pernikahan para pemohon",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "pernikahan para pemohon tercatat di Kantor Urusan Agama dan mereka memegang buku nikah",
+          "saksi1": [
+            "pernikahan #7036# tercatat di Kantor Urusan Agama dan saya pernah melihat buku nikah mereka",
+            "saya melihat sendiri #7036# memegang buku nikah yang diterbitkan Kantor Urusan Agama",
+            "benar pernikahan #7036# sudah dicatat resmi dan buku nikahnya pernah diperlihatkan kepada saya",
+            "#7036# mempunyai buku nikah dari Kantor Urusan Agama sebagaimana pernah saya lihat"
+          ],
+          "saksi2": [
+            "saya tahu pernikahan #7036# dicatat oleh Kantor Urusan Agama dan mereka menyimpan buku nikahnya",
+            "buku nikah #7036# pernah saya lihat langsung dan pernikahan itu tercatat di Kantor Urusan Agama",
+            "yang saya ketahui sendiri #7036# telah mencatatkan pernikahannya dan memegang buku nikah",
+            "#7036# mencatatkan pernikahannya di Kantor Urusan Agama dan buku nikah mereka saya saksikan sendiri"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-agama",
+      "pokok": "pp-perkawinan",
+      "urutan": 50,
+      "tingkat": "pilihan",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Apa agama #7036# ?",
+      "variabelAbt": [
+        "7036"
+      ],
+      "hal": "agama para pemohon",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "para pemohon beragama Islam",
+          "saksi1": [
+            "#7036# beragama Islam dan saya mengetahuinya langsung",
+            "agama #7036# adalah Islam menurut yang saya ketahui sendiri",
+            "saya tahu sendiri #7036# memeluk agama Islam",
+            "#7036# menganut agama Islam sebagaimana saya lihat sehari-hari"
+          ],
+          "saksi2": [
+            "keduanya yaitu #7036# beragama Islam dan saya melihat ibadah mereka",
+            "#7036# memeluk agama Islam sepanjang yang saya ketahui",
+            "menurut penglihatan saya #7036# beragama Islam",
+            "saya menyaksikan sendiri #7036# menjalankan ajaran agama Islam"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-ada-perjanjian",
+      "pokok": "pp-perjanjian",
+      "urutan": 60,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Apakah #7036# membuat perjanjian perkawinan secara tertulis ?",
+      "variabelAbt": [
+        "7036"
+      ],
+      "hal": "adanya perjanjian perkawinan tertulis",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "para pemohon membuat perjanjian perkawinan secara tertulis",
+          "saksi1": [
+            "saya mengetahui #7036# telah membuat perjanjian perkawinan secara tertulis",
+            "benar #7036# membuat perjanjian perkawinan dan dituangkan dalam tulisan",
+            "#7036# menuangkan perjanjian perkawinan mereka ke dalam surat tertulis yang pernah saya lihat",
+            "saya melihat sendiri surat perjanjian perkawinan yang dibuat #7036#"
+          ],
+          "saksi2": [
+            "saya tahu #7036# sudah membuat perjanjian perkawinan tertulis",
+            "perjanjian perkawinan #7036# dibuat dalam bentuk tertulis sebagaimana saya ketahui langsung",
+            "surat perjanjian perkawinan #7036# pernah diperlihatkan kepada saya",
+            "yang saya saksikan #7036# membuat perjanjian perkawinan secara tertulis"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-waktu-sebelum",
+      "pokok": "pp-perjanjian",
+      "urutan": 70,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "waktuPerjanjian": "sebelum-nikah"
+      },
+      "teks": "Kapan #7036# membuat perjanjian perkawinan itu, apakah sebelum perkawinan dilangsungkan ?",
+      "variabelAbt": [
+        "7036"
+      ],
+      "hal": "waktu dibuatnya perjanjian sebelum perkawinan",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "perjanjian dibuat sebelum perkawinan dilangsungkan",
+          "saksi1": [
+            "#7036# membuat perjanjian perkawinan itu sebelum perkawinan mereka dilangsungkan",
+            "saya mengetahui perjanjian itu dibuat #7036# lebih dahulu sebelum akad nikah",
+            "perjanjian perkawinan #7036# sudah dibuat sebelum mereka menikah",
+            "benar perjanjian itu ditandatangani #7036# sebelum hari pernikahan"
+          ],
+          "saksi2": [
+            "saya tahu #7036# menandatangani perjanjian itu sebelum menikah",
+            "sebelum akad nikah #7036# telah membuat perjanjian perkawinan sebagaimana saya ketahui",
+            "waktu pembuatan perjanjian #7036# lebih awal daripada pernikahan mereka",
+            "yang saya saksikan perjanjian itu dibuat #7036# menjelang pernikahan mereka"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: dibuat sebelum menikah; versi B: dibuat sesudah menikah - berselisih pada WAKTU",
+          "saksi1": [
+            "perjanjian itu dibuat #7036# sebelum mereka menikah",
+            "saya tahu #7036# membuat perjanjian itu sebelum akad nikah",
+            "#7036# menandatangani perjanjian itu sebelum pernikahan",
+            "waktu pembuatan perjanjian #7036# lebih dahulu daripada pernikahan"
+          ],
+          "saksi2": [
+            "perjanjian itu dibuat #7036# sesudah mereka menikah",
+            "saya tahu #7036# membuat perjanjian itu setelah akad nikah",
+            "#7036# menandatangani perjanjian itu sesudah pernikahan",
+            "waktu pembuatan perjanjian #7036# lebih belakangan daripada pernikahan"
+          ],
+          "bedaPada": "waktu"
+        }
+      }
+    },
+    {
+      "id": "q-waktu-saat",
+      "pokok": "pp-perjanjian",
+      "urutan": 71,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "waktuPerjanjian": "saat-nikah"
+      },
+      "teks": "Apakah #7036# membuat perjanjian perkawinan itu pada waktu perkawinan dilangsungkan ?",
+      "variabelAbt": [
+        "7036"
+      ],
+      "hal": "waktu dibuatnya perjanjian pada saat perkawinan",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "perjanjian dibuat pada waktu perkawinan dilangsungkan",
+          "saksi1": [
+            "#7036# membuat perjanjian perkawinan itu pada waktu perkawinan mereka dilangsungkan",
+            "saya mengetahui perjanjian itu ditandatangani #7036# bersamaan dengan akad nikah",
+            "perjanjian perkawinan #7036# dibuat pada hari mereka menikah",
+            "benar perjanjian itu dibuat #7036# di saat pernikahan berlangsung"
+          ],
+          "saksi2": [
+            "saya tahu #7036# menandatangani perjanjian itu pada hari akad nikah",
+            "pada saat perkawinan dilangsungkan #7036# sekaligus membuat perjanjian sebagaimana saya ketahui",
+            "waktu pembuatan perjanjian #7036# bersamaan dengan pernikahan mereka",
+            "yang saya saksikan perjanjian itu dibuat #7036# ketika pernikahan berlangsung"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-waktu-selama",
+      "pokok": "pp-perjanjian",
+      "urutan": 72,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "waktuPerjanjian": "selama-nikah"
+      },
+      "teks": "Kapan #7036# membuat perjanjian perkawinan itu, apakah sesudah mereka menikah dan sudah berapa lama menikah ?",
+      "variabelAbt": [
+        "7036"
+      ],
+      "hal": "waktu dibuatnya perjanjian selama perkawinan",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "perjanjian dibuat selama para pemohon dalam ikatan perkawinan",
+          "saksi1": [
+            "#7036# membuat perjanjian perkawinan itu setelah mereka menikah dan masih dalam ikatan perkawinan",
+            "saya mengetahui perjanjian itu dibuat #7036# ketika pernikahan sudah berjalan",
+            "perjanjian perkawinan #7036# ditandatangani selama mereka menjadi suami istri",
+            "benar perjanjian itu baru dibuat #7036# sesudah menikah"
+          ],
+          "saksi2": [
+            "saya tahu #7036# menandatangani perjanjian itu sesudah menikah dan masih suami istri",
+            "selama pernikahan berjalan #7036# membuat perjanjian sebagaimana saya ketahui",
+            "waktu pembuatan perjanjian #7036# jauh sesudah akad nikah mereka",
+            "yang saya saksikan perjanjian itu dibuat #7036# saat rumah tangga mereka sudah berjalan"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: dibuat tidak lama sesudah menikah; versi B: dibuat bertahun-tahun sesudah menikah - berselisih pada LAMA",
+          "saksi1": [
+            "#7036# membuat perjanjian itu beberapa waktu sesudah menikah",
+            "saya tahu perjanjian itu dibuat #7036# tidak lama setelah pernikahan",
+            "#7036# menandatangani perjanjian itu belum lama sesudah akad nikah",
+            "waktu pembuatan perjanjian #7036# masih dekat dengan pernikahan"
+          ],
+          "saksi2": [
+            "#7036# membuat perjanjian itu bertahun-tahun sesudah menikah",
+            "saya tahu perjanjian itu dibuat #7036# sudah lama setelah pernikahan",
+            "#7036# menandatangani perjanjian itu lama sesudah akad nikah",
+            "waktu pembuatan perjanjian #7036# jauh dari pernikahan"
+          ],
+          "bedaPada": "lama"
+        }
+      }
+    },
+    {
+      "id": "q-isi",
+      "pokok": "pp-isi",
+      "urutan": 80,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Apa isi pokok perjanjian perkawinan #7036# ?",
+      "teksVarian": [
+        "Apa yang diperjanjikan oleh #7036# dalam perjanjian perkawinannya ?"
+      ],
+      "variabelAbt": [
+        "7036"
+      ],
+      "hal": "isi pokok perjanjian perkawinan",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "perjanjian mengatur kedudukan harta para pemohon selama perkawinan",
+          "saksi1": [
+            "perjanjian perkawinan #7036# mengatur kedudukan harta mereka selama perkawinan",
+            "saya mengetahui isi pokok perjanjian #7036# adalah pengaturan harta dalam perkawinan",
+            "yang diatur dalam perjanjian #7036# adalah harta mereka selama berumah tangga",
+            "saya pernah membaca perjanjian #7036# dan isinya mengatur kedudukan harta"
+          ],
+          "saksi2": [
+            "isi perjanjian #7036# yang saya ketahui menyangkut kedudukan harta selama perkawinan",
+            "perjanjian #7036# memuat pengaturan harta mereka sebagaimana saya ketahui langsung",
+            "pokok perjanjian #7036# adalah mengenai harta suami istri dalam perkawinan",
+            "saya mengetahui isi perjanjian #7036# karena ikut mendengar pembacaannya dan isinya tentang harta"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: isi perjanjian hanya soal harta; versi B: isi perjanjian juga mengatur hal lain - berselisih pada ISI PERJANJIAN",
+          "saksi1": [
+            "isi perjanjian #7036# hanya mengatur harta",
+            "saya tahu perjanjian #7036# semata-mata soal harta",
+            "perjanjian #7036# hanya memuat harta",
+            "yang diatur perjanjian #7036# hanyalah harta"
+          ],
+          "saksi2": [
+            "isi perjanjian #7036# juga mengatur hal lain di luar harta",
+            "saya tahu perjanjian #7036# memuat pengaturan lain selain harta",
+            "perjanjian #7036# juga memuat urusan rumah tangga yang lain",
+            "perjanjian #7036# turut mengatur hal yang lain"
+          ],
+          "bedaPada": "peristiwa"
+        }
+      }
+    },
+    {
+      "id": "q-isi-pisah",
+      "pokok": "pp-isi",
+      "urutan": 81,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "isiPerjanjian": "pisah-harta"
+      },
+      "teks": "Apakah dalam perjanjian itu harta yang diperoleh #7036# selama perkawinan dipisahkan, dan bagaimana pengaturannya ?",
+      "variabelAbt": [
+        "7036"
+      ],
+      "hal": "pemisahan harta pencaharian para pemohon",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "harta pencaharian masing-masing dipisahkan menurut perjanjian",
+          "saksi1": [
+            "menurut perjanjian itu harta yang diperoleh #7036# masing-masing dipisahkan",
+            "saya mengetahui perjanjian #7036# memisahkan harta pencaharian masing-masing",
+            "isi perjanjian #7036# menetapkan harta hasil usaha masing-masing menjadi milik sendiri",
+            "benar dalam perjanjian itu #7036# sepakat memisahkan harta penghasilan mereka"
+          ],
+          "saksi2": [
+            "yang saya ketahui perjanjian #7036# memisahkan harta yang mereka peroleh sendiri-sendiri",
+            "harta pencaharian #7036# dipisah menurut perjanjian sebagaimana saya baca",
+            "perjanjian #7036# menyatakan penghasilan masing-masing tidak dicampur menjadi satu",
+            "saya tahu #7036# sepakat harta yang diperoleh masing-masing menjadi milik pribadi"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-isi-bawaan",
+      "pokok": "pp-isi",
+      "urutan": 82,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "isiPerjanjian": "harta-bawaan"
+      },
+      "teks": "Apakah harta yang dibawa #7036# ke dalam perkawinan tetap menjadi milik pribadi masing-masing ?",
+      "variabelAbt": [
+        "7036"
+      ],
+      "hal": "harta bawaan para pemohon",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "harta bawaan tetap menjadi milik pribadi masing-masing",
+          "saksi1": [
+            "harta yang dibawa #7036# ke dalam perkawinan tetap milik pribadi masing-masing menurut perjanjian",
+            "saya mengetahui perjanjian #7036# menegaskan harta bawaan tetap milik sendiri",
+            "isi perjanjian #7036# menyebut harta yang dibawa sebelum menikah tidak bercampur",
+            "benar harta bawaan #7036# tetap menjadi milik pribadi masing-masing"
+          ],
+          "saksi2": [
+            "yang saya ketahui harta bawaan #7036# tetap dikuasai pemiliknya masing-masing",
+            "menurut perjanjian #7036# harta yang dibawa sebelum menikah tidak dicampur",
+            "saya tahu #7036# sepakat harta bawaan tetap milik pribadi",
+            "perjanjian #7036# yang saya baca menjaga harta bawaan masing-masing tetap terpisah"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-isi-utang",
+      "pokok": "pp-isi",
+      "urutan": 83,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "isiPerjanjian": "utang-masing-masing"
+      },
+      "teks": "Apakah utang yang timbul sebelum dan selama perkawinan ditanggung masing-masing #7036# menurut perjanjian ?",
+      "variabelAbt": [
+        "7036"
+      ],
+      "hal": "utang masing-masing para pemohon",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "utang ditanggung masing-masing sesuai perjanjian",
+          "saksi1": [
+            "menurut perjanjian itu utang #7036# ditanggung masing-masing",
+            "saya mengetahui perjanjian #7036# menetapkan utang menjadi tanggungan yang berutang sendiri",
+            "isi perjanjian #7036# membuat utang masing-masing tidak dibebankan kepada pasangannya",
+            "benar dalam perjanjian itu #7036# menanggung utang sendiri-sendiri"
+          ],
+          "saksi2": [
+            "yang saya ketahui utang #7036# dipikul sendiri-sendiri menurut perjanjian",
+            "perjanjian #7036# yang saya baca membagi tanggungan utang menurut yang berutang",
+            "saya tahu #7036# sepakat utang ditanggung oleh yang membuatnya",
+            "menurut perjanjian #7036# setiap utang menjadi beban orang yang membuatnya"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-isi-lain",
+      "pokok": "pp-isi",
+      "urutan": 84,
+      "tingkat": "pilihan",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "isiPerjanjian": "lainnya"
+      },
+      "teks": "Hal apa lagi yang diperjanjikan #7036# selain mengenai harta ?",
+      "variabelAbt": [
+        "7036"
+      ],
+      "hal": "hal lain yang diperjanjikan para pemohon",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "perjanjian juga memuat hal lain yang disepakati para pemohon",
+          "saksi1": [
+            "selain harta #7036# juga memperjanjikan hal lain yang saya ketahui dari isi perjanjian",
+            "saya mengetahui perjanjian #7036# memuat kesepakatan lain di luar harta",
+            "isi perjanjian #7036# yang saya baca meliputi hal lain di luar harta",
+            "benar #7036# memperjanjikan pula hal lain dalam rumah tangga mereka"
+          ],
+          "saksi2": [
+            "yang saya ketahui perjanjian #7036# memuat pula kesepakatan di luar urusan harta",
+            "selain pengaturan harta perjanjian #7036# mencakup hal lain sebagaimana saya baca",
+            "saya tahu #7036# menyepakati hal lain dalam perjanjian itu",
+            "perjanjian #7036# turut mengatur hal di luar harta menurut yang saya ketahui"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-alasan",
+      "pokok": "pp-alasan",
+      "urutan": 90,
+      "tingkat": "pilihan",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Apa alasan #7036# membuat perjanjian perkawinan itu ?",
+      "variabelAbt": [
+        "7036"
+      ],
+      "hal": "alasan para pemohon membuat perjanjian",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "para pemohon membuat perjanjian demi ketertiban dan kejelasan hak atas harta",
+          "saksi1": [
+            "alasan #7036# membuat perjanjian itu agar hak atas harta masing-masing jelas",
+            "saya mengetahui #7036# membuat perjanjian supaya urusan harta tertib dan tidak menimbulkan perselisihan",
+            "menurut yang saya ketahui #7036# ingin kejelasan harta mereka dalam perkawinan",
+            "#7036# membuat perjanjian itu untuk menjaga ketertiban pengelolaan harta"
+          ],
+          "saksi2": [
+            "yang saya ketahui tujuan #7036# membuat perjanjian adalah kejelasan hak atas harta",
+            "saya tahu #7036# sepakat membuat perjanjian agar harta tertata dan tidak jadi sengketa",
+            "#7036# menginginkan ketertiban urusan harta sehingga membuat perjanjian itu",
+            "alasan #7036# menurut penuturan mereka di depan saya adalah kejelasan pengelolaan harta"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: alasan agar urusan harta jelas; versi B: alasan karena usaha atau pekerjaan salah satu pihak - berselisih pada ALASAN",
+          "saksi1": [
+            "alasan #7036# membuat perjanjian agar urusan harta jelas",
+            "saya tahu #7036# ingin kejelasan harta masing-masing",
+            "#7036# membuat perjanjian untuk ketertiban harta",
+            "tujuan #7036# membuat perjanjian adalah menata harta"
+          ],
+          "saksi2": [
+            "alasan #7036# membuat perjanjian karena usaha atau pekerjaan salah satu pihak",
+            "saya tahu #7036# membuat perjanjian terkait usaha yang dijalankan salah satunya",
+            "#7036# membuat perjanjian karena pekerjaan salah satu pihak yang berisiko",
+            "tujuan #7036# membuat perjanjian berkaitan dengan usaha salah satu pihak"
+          ],
+          "bedaPada": "peristiwa"
+        }
+      }
+    },
+    {
+      "id": "q-sepakat",
+      "pokok": "pp-persetujuan",
+      "urutan": 100,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Apakah #7036# sama-sama menyetujui isi perjanjian itu ?",
+      "variabelAbt": [
+        "7036"
+      ],
+      "hal": "persetujuan bersama para pemohon atas perjanjian",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "kedua pemohon sama-sama menyetujui isi perjanjian",
+          "saksi1": [
+            "#7036# sama-sama menyetujui isi perjanjian itu dan saya mengetahuinya",
+            "saya melihat sendiri #7036# sepakat atas isi perjanjian",
+            "benar tidak ada perbedaan pendapat antara #7036# tentang isi perjanjian itu",
+            "keduanya yaitu #7036# menyatakan setuju atas isi perjanjian di depan saya"
+          ],
+          "saksi2": [
+            "saya tahu #7036# bersepakat atas seluruh isi perjanjian",
+            "#7036# sepaham tentang isi perjanjian sebagaimana saya saksikan sendiri",
+            "menurut penglihatan saya #7036# sama-sama setuju dengan perjanjian itu",
+            "tidak ada salah satu dari #7036# yang menolak isi perjanjian itu menurut yang saya ketahui"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-tanpa-paksaan",
+      "pokok": "pp-persetujuan",
+      "urutan": 110,
+      "tingkat": "pilihan",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Apakah perjanjian itu dibuat #7036# dengan sukarela tanpa paksaan, tekanan atau penipuan ?",
+      "variabelAbt": [
+        "7036"
+      ],
+      "hal": "kesukarelaan para pemohon membuat perjanjian",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "perjanjian dibuat dengan sukarela tanpa paksaan, tekanan atau penipuan",
+          "saksi1": [
+            "#7036# membuat perjanjian itu dengan sukarela tanpa paksaan dari siapa pun",
+            "saya melihat sendiri tidak ada tekanan atau ancaman kepada #7036# saat membuat perjanjian",
+            "perjanjian itu lahir dari kemauan #7036# sendiri dan bukan karena dipaksa",
+            "benar tidak ada penipuan dalam pembuatan perjanjian #7036#"
+          ],
+          "saksi2": [
+            "saya tahu #7036# menandatangani perjanjian itu atas kemauan sendiri",
+            "#7036# tidak ditekan siapa pun ketika membuat perjanjian sebagaimana saya saksikan",
+            "menurut penglihatan saya #7036# bebas dan tidak dipaksa membuat perjanjian",
+            "yang saya ketahui langsung perjanjian itu dibuat #7036# dengan kesadaran penuh tanpa paksaan"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-pengesahan-notaris",
+      "pokok": "pp-pengesahan",
+      "urutan": 120,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "bentukPengesahan": "notaris"
+      },
+      "teks": "Apakah perjanjian perkawinan #7036# dibuat atau disahkan di hadapan notaris ?",
+      "variabelAbt": [
+        "7036"
+      ],
+      "hal": "pengesahan perjanjian oleh notaris",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "perjanjian dibuat atau disahkan di hadapan notaris dan ditandatangani kedua pihak",
+          "saksi1": [
+            "perjanjian perkawinan #7036# dibuat di hadapan notaris dan ditandatangani keduanya",
+            "saya mengetahui #7036# menghadap notaris untuk mengesahkan perjanjian perkawinannya",
+            "benar perjanjian #7036# disahkan notaris dengan akta tertulis",
+            "saya melihat akta notaris tentang perjanjian perkawinan #7036#"
+          ],
+          "saksi2": [
+            "saya tahu #7036# datang ke kantor notaris untuk mengesahkan perjanjian itu",
+            "perjanjian #7036# telah dituangkan dalam akta notaris sebagaimana saya ketahui",
+            "akta notaris atas perjanjian #7036# pernah diperlihatkan kepada saya",
+            "yang saya saksikan #7036# menandatangani perjanjian itu di hadapan notaris"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-pengesahan-pencatat",
+      "pokok": "pp-pengesahan",
+      "urutan": 121,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "bentukPengesahan": "pegawai-pencatat"
+      },
+      "teks": "Apakah perjanjian perkawinan #7036# disahkan oleh pegawai pencatat perkawinan ?",
+      "variabelAbt": [
+        "7036"
+      ],
+      "hal": "pengesahan perjanjian oleh pegawai pencatat",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "perjanjian disahkan oleh pegawai pencatat perkawinan",
+          "saksi1": [
+            "perjanjian perkawinan #7036# disahkan oleh pegawai pencatat perkawinan",
+            "saya mengetahui #7036# mengesahkan perjanjiannya kepada pegawai pencatat perkawinan",
+            "benar perjanjian #7036# telah disahkan dan dicatat oleh pegawai pencatat",
+            "saya melihat catatan pengesahan perjanjian #7036# dari pegawai pencatat perkawinan"
+          ],
+          "saksi2": [
+            "saya tahu #7036# membawa perjanjiannya ke pegawai pencatat perkawinan untuk disahkan",
+            "pengesahan perjanjian #7036# oleh pegawai pencatat sebagaimana saya ketahui sendiri",
+            "bukti pengesahan perjanjian #7036# dari pegawai pencatat pernah diperlihatkan kepada saya",
+            "yang saya saksikan perjanjian #7036# dicatat dan disahkan pegawai pencatat perkawinan"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-didaftarkan",
+      "pokok": "pp-pengesahan",
+      "urutan": 130,
+      "tingkat": "pilihan",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "waktuPerjanjian": "selama-nikah"
+      },
+      "teks": "Apakah perjanjian perkawinan #7036# sudah dicatatkan pada buku nikah atau didaftarkan di Kantor Urusan Agama ?",
+      "variabelAbt": [
+        "7036"
+      ],
+      "hal": "pencatatan perjanjian pada buku nikah",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "perjanjian sudah dicatatkan pada buku nikah atau didaftarkan",
+          "saksi1": [
+            "perjanjian perkawinan #7036# sudah dicatatkan pada buku nikah mereka",
+            "saya mengetahui #7036# mendaftarkan perjanjiannya di Kantor Urusan Agama",
+            "benar ada catatan perjanjian pada buku nikah #7036#",
+            "saya melihat sendiri catatan perjanjian pada buku nikah #7036#"
+          ],
+          "saksi2": [
+            "saya tahu #7036# sudah mendaftarkan perjanjian itu dan buku nikahnya diberi catatan",
+            "pendaftaran perjanjian #7036# di Kantor Urusan Agama sebagaimana saya ketahui",
+            "buku nikah #7036# memuat catatan perjanjian menurut yang saya lihat",
+            "yang saya saksikan #7036# mencatatkan perjanjiannya pada pegawai Kantor Urusan Agama"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-pihak-ketiga",
+      "pokok": "pp-pihak-ketiga",
+      "urutan": 140,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Apakah perjanjian itu merugikan pihak ketiga, misalnya orang yang memberi utang kepada #7036# ?",
+      "variabelAbt": [
+        "7036"
+      ],
+      "hal": "kerugian pihak ketiga akibat perjanjian",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "perjanjian tidak merugikan pihak ketiga",
+          "saksi1": [
+            "perjanjian #7036# itu tidak merugikan pihak ketiga mana pun menurut yang saya ketahui",
+            "saya mengetahui tidak ada orang lain yang dirugikan oleh perjanjian #7036#",
+            "benar tidak ada pihak ketiga yang mengeluh atas perjanjian #7036#",
+            "perjanjian #7036# tidak menyangkut hak orang lain sebagaimana saya ketahui"
+          ],
+          "saksi2": [
+            "saya tahu tidak ada kreditur yang dirugikan perjanjian #7036#",
+            "menurut penglihatan saya perjanjian #7036# tidak mengurangi hak pihak lain",
+            "tidak pernah ada pihak lain yang keberatan atas perjanjian #7036# yang saya ketahui",
+            "yang saya ketahui langsung perjanjian #7036# tidak membawa kerugian bagi orang lain"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-utang",
+      "pokok": "pp-pihak-ketiga",
+      "urutan": 150,
+      "tingkat": "pilihan",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Apakah #7036# mempunyai utang kepada pihak lain pada waktu perjanjian dibuat ?",
+      "variabelAbt": [
+        "7036"
+      ],
+      "hal": "utang para pemohon kepada pihak lain",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "para pemohon tidak mempunyai utang kepada pihak lain pada waktu perjanjian dibuat",
+          "saksi1": [
+            "#7036# tidak mempunyai utang kepada pihak lain pada waktu perjanjian dibuat",
+            "saya mengetahui #7036# tidak sedang berutang kepada siapa pun saat membuat perjanjian",
+            "benar tidak ada utang #7036# yang belum lunas ketika perjanjian dibuat",
+            "#7036# bebas dari utang kepada pihak lain sebagaimana saya ketahui"
+          ],
+          "saksi2": [
+            "saya tahu #7036# tidak punya tanggungan utang ketika perjanjian dibuat",
+            "menurut yang saya ketahui sendiri #7036# tidak berutang kepada orang lain saat itu",
+            "tidak ada kreditur yang menagih #7036# pada waktu perjanjian dibuat menurut saya",
+            "yang saya saksikan #7036# tidak memiliki utang yang tertunda ketika membuat perjanjian"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: tidak ada utang; versi B: ada utang yang belum lunas - berselisih pada ADA TIDAKNYA UTANG",
+          "saksi1": [
+            "#7036# tidak mempunyai utang saat itu",
+            "saya tahu tidak ada utang #7036# ketika itu",
+            "#7036# tidak berutang kepada siapa pun pada waktu itu",
+            "tidak ada utang #7036# yang tertunggak saat itu"
+          ],
+          "saksi2": [
+            "#7036# masih mempunyai utang saat itu",
+            "saya tahu ada utang #7036# yang belum lunas ketika itu",
+            "#7036# berutang kepada pihak lain pada waktu itu",
+            "ada utang #7036# yang tertunggak saat itu"
+          ],
+          "bedaPada": "peristiwa"
+        }
+      }
+    },
+    {
+      "id": "q-nafkah",
+      "pokok": "pp-kebutuhan-rumah-tangga",
+      "urutan": 160,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Apakah setelah perjanjian itu suami tetap memenuhi kebutuhan rumah tangga #7036# ?",
+      "variabelAbt": [
+        "7036"
+      ],
+      "hal": "pemenuhan kebutuhan rumah tangga oleh suami",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "suami tetap memenuhi kebutuhan rumah tangga walau ada perjanjian",
+          "saksi1": [
+            "suami #7036# tetap memenuhi kebutuhan rumah tangga walaupun ada perjanjian",
+            "saya melihat sendiri suami tetap menafkahi rumah tangga #7036# seperti biasa",
+            "benar perjanjian itu tidak membuat suami berhenti memenuhi kebutuhan keluarga #7036#",
+            "kebutuhan rumah tangga #7036# tetap dipenuhi suami sebagaimana saya saksikan"
+          ],
+          "saksi2": [
+            "saya tahu nafkah rumah tangga #7036# masih dipenuhi suami meskipun ada perjanjian",
+            "menurut penglihatan saya suami tetap bertanggung jawab atas kebutuhan rumah tangga #7036#",
+            "setelah perjanjian dibuat suami tetap mencukupi kebutuhan keluarga #7036# yang saya ketahui",
+            "perjanjian itu tidak menghilangkan kewajiban suami menafkahi rumah tangga #7036# sepanjang pengetahuan saya"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: nafkah tetap dipenuhi; versi B: nafkah tidak lagi dipenuhi - berselisih pada PEMENUHAN NAFKAH",
+          "saksi1": [
+            "suami tetap memberi nafkah kepada keluarga #7036#",
+            "saya tahu nafkah keluarga #7036# masih dipenuhi suami",
+            "kebutuhan rumah tangga #7036# selalu dicukupi suami",
+            "suami #7036# selalu menafkahi keluarganya"
+          ],
+          "saksi2": [
+            "suami tidak lagi memberi nafkah kepada keluarga #7036#",
+            "saya tahu nafkah keluarga #7036# sudah tidak dipenuhi suami",
+            "kebutuhan rumah tangga #7036# tidak dicukupi lagi oleh suami",
+            "suami #7036# telah menghentikan nafkah"
+          ],
+          "bedaPada": "peristiwa"
+        }
+      }
+    },
+    {
+      "id": "q-tidak-bertentangan",
+      "pokok": "pp-tidak-bertentangan",
+      "urutan": 170,
+      "tingkat": "pilihan",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Apakah menurut yang saksi ketahui isi perjanjian #7036# bertentangan dengan ajaran agama Islam atau kesusilaan ?",
+      "variabelAbt": [
+        "7036"
+      ],
+      "hal": "kesesuaian isi perjanjian dengan hukum Islam dan kesusilaan",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "isi perjanjian tidak bertentangan dengan ajaran Islam dan kesusilaan",
+          "saksi1": [
+            "menurut yang saya ketahui isi perjanjian #7036# tidak bertentangan dengan ajaran Islam",
+            "saya membaca perjanjian #7036# dan tidak ada isinya yang melanggar kesusilaan",
+            "tidak ada isi perjanjian #7036# yang menyimpang dari ajaran agama sepanjang pengetahuan saya",
+            "perjanjian #7036# hanya mengatur harta dan tidak bertentangan dengan agama atau kesusilaan"
+          ],
+          "saksi2": [
+            "saya tahu isi perjanjian #7036# sejalan dengan ajaran Islam",
+            "perjanjian #7036# tidak memuat hal yang melanggar kesusilaan menurut penglihatan saya",
+            "setahu saya perjanjian #7036# tidak ada yang menyalahi aturan agama",
+            "isi perjanjian #7036# yang saya ketahui tidak berlawanan dengan hukum Islam maupun kesusilaan"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-harta-rinci",
+      "pokok": "pp-harta-rinci",
+      "urutan": 180,
+      "tingkat": "pilihan",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "isiPerjanjian": [
+          "pisah-harta",
+          "harta-bawaan"
+        ]
+      },
+      "teks": "Apa saja harta #7036# yang terkena perjanjian itu dan bagaimana harta itu diperoleh ?",
+      "variabelAbt": [
+        "7036"
+      ],
+      "hal": "harta para pemohon yang terkena perjanjian",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "harta yang terkena perjanjian diperoleh para pemohon dengan cara yang diketahui saksi",
+          "saksi1": [
+            "harta #7036# yang terkena perjanjian saya ketahui diperoleh dari hasil usaha mereka sendiri",
+            "saya mengetahui harta #7036# yang diperjanjikan berasal dari penghasilan masing-masing",
+            "harta yang dimaksud perjanjian #7036# saya lihat sendiri dan asalnya dari jerih payah mereka",
+            "benar harta #7036# yang terkena perjanjian diperoleh dari bekerja"
+          ],
+          "saksi2": [
+            "saya tahu harta #7036# dalam perjanjian itu berasal dari pekerjaan mereka masing-masing",
+            "yang saya ketahui langsung harta #7036# yang diperjanjikan hasil usaha sendiri",
+            "harta #7036# yang disebut perjanjian saya saksikan diperoleh dari penghasilan mereka",
+            "menurut penglihatan saya harta #7036# berasal dari kerja keras masing-masing"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-tidak-sengketa",
+      "pokok": "pp-pihak-ketiga",
+      "urutan": 190,
+      "tingkat": "pilihan",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Apakah antara #7036# ada perselisihan atau perkara perceraian yang sedang berjalan ?",
+      "variabelAbt": [
+        "7036"
+      ],
+      "hal": "perselisihan atau perkara perceraian para pemohon",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "tidak ada perselisihan atau perkara perceraian antara para pemohon",
+          "saksi1": [
+            "antara #7036# tidak ada perselisihan dan tidak ada perkara perceraian yang berjalan",
+            "saya mengetahui rumah tangga #7036# rukun dan tidak sedang berperkara",
+            "benar #7036# tidak sedang bercerai atau berselisih menurut yang saya ketahui",
+            "saya melihat sendiri #7036# hidup rukun dan tidak ada perkara di antara mereka"
+          ],
+          "saksi2": [
+            "saya tahu #7036# tidak sedang berperkara perceraian",
+            "setahu saya tidak ada pertikaian antara #7036#",
+            "#7036# hidup bersama dengan baik dan tidak ada gugatan di antara mereka sepanjang yang saya ketahui",
+            "menurut penglihatan saya hubungan #7036# baik dan tidak ada perkara perceraian"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-ubah-sepakat",
+      "pokok": "pp-perubahan",
+      "urutan": 200,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "jenisPermohonan": "ubah-atau-cabut"
+      },
+      "teks": "Apakah #7036# sama-sama sepakat mengubah atau mencabut perjanjian perkawinan yang lama ?",
+      "variabelAbt": [
+        "7036"
+      ],
+      "hal": "kesepakatan para pemohon mengubah atau mencabut perjanjian",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "kedua pemohon sama-sama sepakat mengubah atau mencabut perjanjian",
+          "saksi1": [
+            "#7036# sama-sama sepakat mengubah atau mencabut perjanjian perkawinan yang lama dan saya mengetahuinya",
+            "saya melihat sendiri #7036# bersepakat atas perubahan perjanjian mereka",
+            "benar tidak ada keberatan dari salah satu #7036# atas pencabutan perjanjian itu",
+            "kedua pihak yaitu #7036# menyatakan setuju mengubah perjanjian di depan saya"
+          ],
+          "saksi2": [
+            "saya tahu #7036# bersepakat mencabut atau mengubah perjanjian yang lama",
+            "#7036# sepaham tentang perubahan perjanjian sebagaimana saya saksikan sendiri",
+            "menurut penglihatan saya #7036# sama-sama setuju perjanjian lama diubah",
+            "tidak ada yang menolak perubahan perjanjian itu di antara #7036# menurut yang saya ketahui"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-ubah-alasan",
+      "pokok": "pp-perubahan",
+      "urutan": 210,
+      "tingkat": "pilihan",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "jenisPermohonan": "ubah-atau-cabut"
+      },
+      "teks": "Apa alasan #7036# mengubah atau mencabut perjanjian yang lama ?",
+      "variabelAbt": [
+        "7036"
+      ],
+      "hal": "alasan mengubah atau mencabut perjanjian",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "para pemohon mengubah atau mencabut perjanjian karena keadaan mereka telah berubah",
+          "saksi1": [
+            "alasan #7036# mengubah perjanjian lama karena keadaan rumah tangga mereka sudah berubah",
+            "saya mengetahui #7036# mengubah perjanjian sebab kebutuhan mereka sekarang berbeda",
+            "menurut yang saya ketahui #7036# ingin menyesuaikan perjanjian dengan keadaan sekarang",
+            "#7036# mencabut perjanjian lama karena tidak lagi sesuai dengan keadaan mereka"
+          ],
+          "saksi2": [
+            "yang saya ketahui sebab #7036# mengubah perjanjian adalah keadaan keluarga yang telah berubah",
+            "saya tahu #7036# ingin perjanjian disesuaikan dengan kebutuhan mereka kini",
+            "#7036# menyampaikan di depan saya bahwa perjanjian lama sudah tidak sesuai lagi",
+            "alasan #7036# menurut penuturan langsung kepada saya adalah penyesuaian dengan keadaan sekarang"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-ubah-pihak-ketiga",
+      "pokok": "pp-perubahan",
+      "urutan": 220,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "jenisPermohonan": "ubah-atau-cabut"
+      },
+      "teks": "Apakah perubahan atau pencabutan perjanjian itu merugikan pihak ketiga yang sudah mengadakan perjanjian dengan #7036# ?",
+      "variabelAbt": [
+        "7036"
+      ],
+      "hal": "kerugian pihak ketiga akibat perubahan perjanjian",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "perubahan atau pencabutan perjanjian tidak merugikan pihak ketiga",
+          "saksi1": [
+            "perubahan perjanjian #7036# tidak merugikan pihak ketiga yang pernah berurusan dengan mereka",
+            "saya mengetahui tidak ada pihak ketiga yang dirugikan oleh pencabutan perjanjian #7036#",
+            "benar tidak ada orang lain yang menderita rugi karena perubahan perjanjian #7036#",
+            "perubahan perjanjian #7036# tidak mengganggu perjanjian mereka dengan pihak lain"
+          ],
+          "saksi2": [
+            "saya tahu pihak ketiga tidak dirugikan oleh perubahan perjanjian #7036#",
+            "menurut penglihatan saya tidak ada kreditur yang terhambat karena perjanjian #7036# diubah",
+            "tidak ada pihak lain yang mengeluh atas perubahan perjanjian #7036# sepanjang pengetahuan saya",
+            "yang saya ketahui langsung perubahan perjanjian #7036# tidak membawa kerugian bagi orang lain"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-akibat-tujuan",
+      "pokok": "pp-maksud",
+      "urutan": 230,
+      "tingkat": "pilihan",
+      "kelompok": "akibat",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Untuk keperluan apa #7036# memerlukan penetapan pengadilan atas perjanjian itu ?",
+      "variabelAbt": [
+        "7036"
+      ],
+      "hal": "keperluan para pemohon atas penetapan perjanjian",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "para pemohon memerlukan penetapan sebagai dasar pencatatan dan kepastian hukum perjanjian",
+          "saksi1": [
+            "#7036# memerlukan penetapan itu sebagai dasar pencatatan dan kepastian hukum perjanjian mereka",
+            "saya mengetahui #7036# butuh penetapan supaya perjanjiannya sah dan dapat dicatat",
+            "keperluan #7036# adalah agar perjanjian perkawinan mereka mempunyai kekuatan hukum",
+            "#7036# menginginkan penetapan untuk kepastian hukum atas harta mereka"
+          ],
+          "saksi2": [
+            "yang saya ketahui #7036# memerlukan penetapan itu untuk dicatat pada instansi yang berwenang",
+            "saya tahu #7036# meminta penetapan supaya perjanjiannya punya kepastian hukum",
+            "#7036# mengatakan di depan saya bahwa penetapan itu untuk keperluan pencatatan perjanjian",
+            "tujuan #7036# meminta penetapan menurut yang saya dengar langsung adalah kepastian hukum harta mereka"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-penutup",
+      "pokok": "pp-penutup",
+      "urutan": 900,
+      "tingkat": "inti",
+      "kelompok": "penutup",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Apakah masih ada yang ingin saksi sampaikan ?",
+      "teksVarian": [
+        "Apakah masih ada keterangan lain yang akan saksi sampaikan ?",
+        "Adakah hal lain yang hendak saksi terangkan ?"
+      ],
+      "variabelAbt": [],
+      "hal": "keterangan tambahan",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi menyatakan keterangannya sudah cukup",
+          "saksi1": [
+            "sudah cukup",
+            "sudah cukup sekian dari saya",
+            "sudah cukup keterangan saya",
+            "sudah cukup itu saja"
+          ],
+          "saksi2": [
+            "sudah cukup demikian keterangan saya",
+            "sudah cukup semua yang dapat saya terangkan",
+            "sudah cukup sampai di sini keterangan saya",
+            "sudah cukup demikian yang saya ketahui"
+          ]
+        }
+      }
+    }
+  ],
+  "jawabanUmum": {
+    "tidak-tahu": {
+      "maksud": "saksi tidak mengetahui hal yang ditanyakan",
+      "saksi1": [
+        "saya tidak mengetahui {hal}",
+        "mengenai {hal} saya tidak tahu sama sekali",
+        "{hal} tidak saya ketahui",
+        "saya tidak pernah mengetahui {hal}"
+      ],
+      "saksi2": [
+        "tentang {hal} saya tidak mengetahui apa pun",
+        "saya tidak tahu menahu soal {hal}",
+        "perihal {hal} tidak ada yang saya ketahui",
+        "soal {hal} saya sama sekali tidak tahu"
+      ]
+    },
+    "ragu": {
+      "maksud": "saksi ragu dan tidak yakin mengenai hal yang ditanyakan sehingga tidak dapat memastikannya",
+      "saksi1": [
+        "saya ragu dan kurang yakin mengenai {hal}",
+        "mengenai {hal} saya lupa dan kurang jelas bagi saya",
+        "soal {hal} saya hanya menduga-duga dan kurang pasti",
+        "saya agak ragu untuk menjelaskan {hal}"
+      ],
+      "saksi2": [
+        "mengenai {hal} ingatan saya kurang jelas dan saya ragu",
+        "saya mungkin keliru soal {hal} sehingga saya ragu menjawabnya",
+        "mengenai {hal} saya hanya bisa mengira-ngira dan kurang yakin",
+        "saya lupa-lupa ingat tentang {hal}"
+      ]
+    },
+    "sebagian": {
+      "maksud": "saksi hanya mengetahui sebagian dari hal yang ditanyakan, selebihnya tidak diketahuinya",
+      "saksi1": [
+        "yang saya ketahui mengenai {hal} hanya sebagian saja dan selebihnya saya tidak tahu",
+        "mengenai {hal} saya hanya tahu sebagian dan selebihnya tidak saya ketahui",
+        "sebagian dari {hal} saya ketahui sendiri dan sisanya saya tidak tahu",
+        "tentang {hal} hanya sebagian yang saya tahu sedangkan sisanya tidak saya ketahui"
+      ],
+      "saksi2": [
+        "pengetahuan saya tentang {hal} terbatas pada sebagian saja dan selain itu saya tidak tahu",
+        "soal {hal} sebatas yang saya ketahui saja dan selebihnya saya tidak dapat menerangkan",
+        "saya hanya mengetahui sebagian mengenai {hal} dan tidak tahu sisanya",
+        "mengenai {hal} baru sebagian yang saya ketahui sedangkan lainnya tidak saya ketahui"
+      ]
+    },
+    "de-auditu": {
+      "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya sendiri",
+      "saksi1": [
+        "saya mengetahui {hal} dari cerita {sumber} dan saya tidak menyaksikannya sendiri",
+        "{sumber} yang menceritakan {hal} kepada saya dan saya sendiri tidak melihatnya",
+        "tentang {hal} saya diberi tahu oleh {sumber} dan saya tidak pernah menyaksikannya",
+        "{hal} hanya saya ketahui dari penuturan {sumber} dan tidak dari penglihatan saya sendiri"
+      ],
+      "saksi2": [
+        "yang saya ketahui mengenai {hal} berasal dari cerita {sumber} bukan dari yang saya lihat sendiri",
+        "saya mendengar dari {sumber} soal {hal} dan saya tidak berada di sana ketika itu",
+        "perihal {hal} {sumber} bercerita kepada saya dan saya tidak mengalaminya langsung",
+        "soal {hal} saya dikabari oleh {sumber} dan saya tidak menyaksikan sendiri kejadiannya"
+      ]
+    },
+    "mendengar": {
+      "maksud": "saksi mendengar sendiri secara langsung ucapan atau pembicaraan para pihak mengenai hal itu",
+      "saksi1": [
+        "mengenai {hal} saya mendengar sendiri ucapan mereka di hadapan saya",
+        "saya sendiri yang mendengar langsung perkataan mereka tentang {hal}",
+        "tentang {hal} saya mendengarnya sendiri ketika mereka berbicara",
+        "saya mendengar secara langsung mereka membicarakan {hal}"
+      ],
+      "saksi2": [
+        "soal {hal} ucapan mereka terdengar langsung oleh saya",
+        "perihal {hal} saya ikut mendengar pembicaraan mereka secara langsung",
+        "saya turut mendengar sendiri mereka berbicara mengenai {hal}",
+        "mengenai {hal} saya mendengar langsung dari mulut mereka sendiri"
+      ]
+    }
+  },
+  "catatanPetugas": [
+    "Keterangan saksi harus menyebut sebab pengetahuannya; keterangan seorang saksi saja tanpa alat bukti lain tidak cukup.",
+    "Keluarga sedarah dan semenda garis lurus serta suami atau istri salah satu pihak pada dasarnya tidak dapat didengar sebagai saksi; perkara tentang keadaan menurut hukum sipil seseorang dikecualikan (Buku II Edisi Revisi 2013 hlm. 100-101). Penilaian ada pada hakim.",
+    "Keterangan yang hanya berasal dari cerita orang lain hanya dapat menjadi sumber persangkaan.",
+    "Perjanjian perkawinan dibuat tertulis atas persetujuan bersama; pada waktu atau sebelum perkawinan menurut Pasal 29 UU 1/1974 dan Pasal 47 KHI. Pilihan \"selama dalam ikatan perkawinan\" mengikuti putusan Mahkamah Konstitusi yang naskah resminya masih perlu diperiksa.",
+    "Perjanjian pemisahan harta tidak boleh menghilangkan kewajiban suami memenuhi kebutuhan rumah tangga (Pasal 48 KHI); perubahan atau pencabutan wajib atas persetujuan bersama dan tidak boleh merugikan pihak ketiga (Pasal 50 KHI).",
+    "Pilihan \"Pokok isi perjanjian\", \"Perjanjian dibuat\", \"Perjanjian disahkan oleh\" dan \"Yang dimohonkan\" hanya menentukan pertanyaan yang diajukan, bukan putusan; samakan dengan permohonan.",
+    "Tanggal dan tempat menikah diambil dari isian blangko; periksa dan lengkapi sebelum keterangan saksi dibacakan."
+  ]
+}

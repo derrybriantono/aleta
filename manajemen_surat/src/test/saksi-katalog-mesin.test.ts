@@ -93,7 +93,7 @@ describe("deteksi jenis - bukan dari variabel cerai", () => {
     expect(pilih("369", "Lain-lain Pengangkatan Anak", "16")).toBe("pengangkatan-anak");
     expect(pilih("369", "Permohonan Umum", "16")).toBe("permohonan-umum");
     expect(pilih("369", "Hibah", "16")).toBe("permohonan-umum"); // penampung 369/permohonan di luar angkat, asuh, perwalian, waris
-    expect(pilih("369", "Hibah", "15")).toBeNull();
+    expect(pilih("369", "Hibah", "15")).toBe("gugatan-lain-lain"); // 1 Nov: gugatan 369 di luar hak asuh punya katalog sendiri
     expect(pilih("349", "", "15")).toBe("penguasaan-anak");
     expect(pilih("743")).toBe("nafkah-anak");
     expect(pilih("350")).toBe("nafkah-anak");
