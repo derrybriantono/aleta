@@ -203,10 +203,11 @@ describe("peta fitur K11: kelompok manifest dan modul malas", () => {
     // 30 Okt 2026 (G2a): blangko-derry-draf-saksi.js = draf tanya jawab saksi otomatis, blangko-derry-draf-bas.js = BAS H-1 (pembantu murni Blangko Derry, di luar K11).
     // 30 Okt 2026: blangko-derry-beda-cetak.js = "N bagian berubah sejak cetakan terakhir"; blangko-derry-pustaka.js = pustaka kalimat pribadi (berkas baru di luar K11).
     // 30 Okt 2026: blangko-derry-pulih.js = tampilan Derry tetap di tempat saat halaman dimuat ulang (berkas baru di luar K11).
+    // 1 Nov 2026: blangko-derry-peta-dalil.js = peta dalil satu sumber per perkara di panel Blangko Derry (P2 matriks-dalil, di luar K11).
     // 1 Nov 2026: blangko-derry-ai.js = pemuat ringan + saklar ALETA Ai di panel Blangko Derry (berkas baru di luar K11).
     // 30 Okt 2026 (G4): temuan-perkara.js = usul pembetulan kehadiran SIPP + putusan SIPP vs dokumen di panel cetak Blangko Derry;
     // sinkron-isian-sipp.js = aturan isian dari SIPP yang ikut diperbarui saat data SIPP berubah (keduanya di luar K11).
-    expect([...new Set(baru)].sort()).toEqual(["tampilan-sipp.js", "modul-malas.js", "bas-word-pdf.js", "sidang-terjadwal.js", "blangko-derry-pulih.js", "blangko-derry-ai.js", "blangko-derry-berkas.js", "blangko-derry-draf-saksi.js", "blangko-derry-saksi-arah.js", "blangko-derry-draf-bas.js", "blangko-derry-periksa.js", "blangko-derry-beda-cetak.js", "blangko-derry-pustaka.js", "sinkron-isian-sipp.js", "temuan-perkara.js", "edoc-seret.js", "amar-petitum-sipp.js", "statistik-cetak.js"].sort());
+    expect([...new Set(baru)].sort()).toEqual(["tampilan-sipp.js", "modul-malas.js", "bas-word-pdf.js", "sidang-terjadwal.js", "blangko-derry-pulih.js", "blangko-derry-ai.js", "blangko-derry-berkas.js", "blangko-derry-draf-saksi.js", "blangko-derry-saksi-arah.js", "blangko-derry-draf-bas.js", "blangko-derry-periksa.js", "blangko-derry-beda-cetak.js", "blangko-derry-pustaka.js", "blangko-derry-peta-dalil.js", "sinkron-isian-sipp.js", "temuan-perkara.js", "edoc-seret.js", "amar-petitum-sipp.js", "statistik-cetak.js"].sort());
     const tanpaTampilan = sesudah.kelompok.filter((k) => !(k.js.length === 1 && k.js[0] === "tampilan-sipp.js"));
     // 1 Nov 2026: blangko-derry-ai.css = gaya saklar/bilah/jendela ALETA Ai di panel Blangko Derry (di luar K11).
     expect(tanpaTampilan.map((k) => k.css.filter((c: string) => c !== "sidang-terjadwal.css" && c !== "blangko-derry-ai.css"))).toEqual(sebelum.kelompok.map((k) => k.css));

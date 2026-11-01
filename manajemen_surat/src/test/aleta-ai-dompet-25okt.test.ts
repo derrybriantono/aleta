@@ -893,6 +893,8 @@ describe("rekonsiliasi harian terjadwal: sekali per tanggal, selisih -> lonceng 
     await isi(db, "u-rek-2", 10_000);
     await tahanDana(db, "u-rek-2", 4000, "tugas-t9-rekaan-1", { sekali: true });
     await db.run(`UPDATE aleta_ai_mutasi SET dibuat_at = ? WHERE rujukan_id = 'tugas-t9-rekaan-1'`, [new Date(pada(2, "00:00").getTime() - 30 * 3600_000).toISOString()]);
+    // Isi saldo ditetapkan sejam SEBELUM tahanan (bukan jam sebenarnya), agar urutan mutasi tidak bergantung jam uji dijalankan.
+    await db.run(`UPDATE aleta_ai_mutasi SET dibuat_at = ? WHERE pengguna_id = 'u-rek-2' AND jenis = 'isi'`, [new Date(pada(2, "00:00").getTime() - 31 * 3600_000).toISOString()]);
     await db.run(`UPDATE aleta_ai_saldo SET saldo_rp = saldo_rp + 250 WHERE pengguna_id = 'u-rek-1'`);
     try {
       const r = await detakRekonsiliasi(db, { kini: pada(3, "01:30") });
