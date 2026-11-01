@@ -29,6 +29,7 @@ const sippKonteksService = require("../services/sippKonteksService");
 const obyekSengketaService = require("../services/obyekSengketaService");
 const praperiksaPutusanService = require("../services/praperiksaPutusanService");
 const penjagaTenggatService = require("../services/penjagaTenggatService");
+const kelengkapanSidangService = require("../services/kelengkapanSidangService");
 const checklistMilestoneService = require("../services/checklistMilestoneService");
 const penyusunPertimbanganService = require("../services/penyusunPertimbanganService");
 const arsipBertindakService = require("../services/arsipBertindakService");
@@ -6214,6 +6215,22 @@ router.get("/sipp/penjaga-tenggat", requireInternalToken, async (req, res) => {
     // baru=1 (G1): banding/kasasi/mediasi + petugas perkara. Tanpa itu bentuk dan isinya sama dengan sebelum G1.
     const hasil = await penjagaTenggatService.bacaFakta(String(req.query.acuan || ""), { baru: String(req.query.baru || "") === "1" });
     res.json({ ok: true, ...hasil });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * KELENGKAPAN HARI SIDANG (N1, 1 Nov 2026) - FAKTANYA SAJA. Hanya SELECT; yang menilai portal
+ * (src/lib/kelengkapan-sidang.ts). ?hariIni=YYYY-MM-DD&tanggal=YYYY-MM-DD[,YYYY-MM-DD]
+ */
+router.get("/sipp/kelengkapan-sidang", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await kelengkapanSidangService.bacaFakta({
+      hariIni: String(req.query.hariIni || ""),
+      tanggal: String(req.query.tanggal || "").split(","),
+    });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }
