@@ -92,6 +92,9 @@
     { kode: "C5", kel: "Putusan", judul: "Saran pasal dari naskah terverifikasi", tahap: 2, keluaran: "teks", pakai: "salin",
       butuh: ["perkara", "posita", "isian", "masukan"], wajib: ["posita"],
       masukan: { label: "Hal yang dicari dasar hukumnya (boleh dikosongkan)", bantu: "", wajib: false } },
+    { kode: "C6", kel: "Putusan", judul: "Penilaian pembuktian lanjutan", tahap: 2, keluaran: "teks", pakai: "salin",
+      butuh: ["perkara", "posita", "teksPihak", "saksi", "temuan", "masukan"], wajib: ["temuan"],
+      masukan: { label: "Catatan majelis (boleh dikosongkan)", bantu: "", wajib: false } },
     { kode: "D1", kel: "Periksa", judul: "Periksa konsistensi naskah", tahap: 1, keluaran: "temuan", pakai: "salin",
       butuh: ["perkara", "sidang", "naskah", "isian"], wajib: ["naskah"], masukan: null },
     { kode: "D2", kel: "Periksa", judul: "Cek pertimbangan, amar, dan petitum", tahap: 2, keluaran: "temuan", pakai: "salin",
@@ -299,10 +302,12 @@
   function susunBadan(fitur, bahan, isian, proyekId, dompet) {
     const sumber = { ...(bahan || {}) };
     if (fitur.masukan && teks(isian && isian.masukan).trim()) sumber.masukan = teks(isian.masukan).trim();
+    // A1 (1 Nov): draf aturan pertimbangan/amar ikut sebagai MASUKAN PETUGAS fitur C1-C4 (catatan petugas lebih dulu).
+    if (fitur.butuh.includes("masukan") && teks(sumber.masukanAturan).trim()) sumber.masukan = [teks(sumber.masukan).trim(), teks(sumber.masukanAturan).trim()].filter(Boolean).join("\n\n");
     if (fitur.acuan && teks(isian && isian.acuan).trim()) sumber.acuan = teks(isian.acuan).trim();
     const ambil = {};
     for (const k of fitur.butuh) if (teks(sumber[k]).trim()) ambil[k] = sumber[k];
-    const samarkan = [...((bahan && bahan.samarkan) || [])];
+    const samarkan = [...((bahan && bahan.samarkan) || []), ...((bahan && bahan.samarkanAturan) || [])];
     if (fitur.kode === "B5") samarkan.push(...samaranDariKtp(sumber.masukan), ...samaranDariMedanKtp(isian && isian.medanKtp));
     ambil.samarkan = samarkan;
     const sambung = { ...(teks(proyekId).trim() ? { proyekId: teks(proyekId).trim() } : {}), ...(dompet === "satker" ? { dompet: "satker" } : {}) };
@@ -320,6 +325,7 @@
     if (teks(isian && isian.masukan).trim()) sumber.masukan = isian.masukan;
     if (teks(isian && isian.acuan).trim()) sumber.acuan = isian.acuan;
     const kurang = fitur.wajib.filter((k) => !teks(sumber[k]).trim());
+    if (fitur.kode === "C6" && kurang.includes("temuan")) return "Tabel penilaian pembuktian belum terbaca. Buka bagian Penilaian pembuktian pada panel ini dulu.";
     if (fitur.masukan && fitur.masukan.wajib && !kurang.includes("masukan") && !teks(sumber.masukan).trim()) kurang.push("masukan");
     return kurang.length ? `Belum ada ${kurang.map((k) => NAMA_BAGIAN[k] || k).join(" dan ")}.` : "";
   }
@@ -777,15 +783,60 @@
       return;
     }
     try {
-      const h = await api.bahanAi(J.f.butuh);
+      const h = await api.bahanAi(J.f.butuh, J.f.kode);
       if (!h || !h.ok) {
         J.galat = (h && h.pesan) || "Pilih perkara dulu.";
         return;
       }
       J.bahan = h.bahan;
       J.peta = h.peta || {};
+      await bahanAturanA1(J);
     } catch (e) {
       J.galat = `Bahan belum terbaca: ${teks(e && e.message)}`;
+    }
+  }
+
+  // ─── Sambungan draf aturan (A1) dan pemeriksa rak peraturan (C1-C6) ────────
+  const API_DRAF_A1 = "/aleta/api/aleta-ecourt/draf-putusan-a1";
+  const FITUR_A1 = new Set(["C1", "C2", "C3", "C4"]);
+  /**
+   * C1-C4: draf pertimbangan & amar yang sudah disusun aturan (draf H-7) menjadi bahan MASUKAN PETUGAS, supaya ALETA Ai
+   * menyempurnakan, bukan menyusun dari nol. Tanpa draf (belum disusun / bukan hakim) fitur tetap berjalan seperti sebelumnya.
+   */
+  async function bahanAturanA1(J) {
+    const pid = teks(J.peta && J.peta.perkaraId);
+    if (!FITUR_A1.has(J.f.kode) || !/^\d+$/.test(pid) || !J.bahan) return;
+    try {
+      const d = await ambilJson(`${API_DRAF_A1}?${new URLSearchParams({ perkaraId: pid, fitur: J.f.kode }).toString()}`);
+      if (!d || !d.ada || !d.ai || !teks(d.ai.masukan).trim()) return;
+      J.bahan = { ...J.bahan, masukanAturan: teks(d.ai.masukan), samarkanAturan: Array.isArray(d.ai.samarkan) ? d.ai.samarkan : [] };
+      J.drafA1 = { perkaraId: pid, varian: teks(d.varian) || "dikabulkan" };
+    } catch {
+      /* draf aturan belum ada atau akun tidak berhak: fitur berjalan dengan bahan panel saja */
+    }
+  }
+
+  /**
+   * Hasil AI diperiksa server terhadap rak peraturan SEBELUM tampil: C1-C4 (bila draf aturan dipakai) lewat draf-putusan-a1,
+   * C5 & C6 lewat periksa-hasil. Gagal diperiksa -> hasil tetap tampil dengan penanda bawaan panel dan satu catatan.
+   */
+  async function periksaHasilRak(J, teksHasil) {
+    const k = J.f.kode;
+    let jalur = null;
+    if (FITUR_A1.has(k) && J.drafA1) jalur = { alamat: API_DRAF_A1, badan: { perkaraId: J.drafA1.perkaraId, varian: J.drafA1.varian, teks: teksHasil } };
+    else if (k === "C5") jalur = { alamat: `${API}/periksa-hasil`, badan: { fitur: "C5", teks: teksHasil } };
+    else if (k === "C6") jalur = { alamat: `${API}/periksa-hasil`, badan: { fitur: "C6", teks: teksHasil, baris: (J.peta && J.peta.barisPenilaian) || [] } };
+    if (!jalur) return null;
+    try {
+      const h = await kirimJson(jalur.alamat, "POST", jalur.badan);
+      if (!h || typeof h.teks !== "string") throw new Error("kosong");
+      const catatan = Array.isArray(h.catatan) ? h.catatan.map(teks) : [];
+      if (Array.isArray(h.pasalDitandai) && h.pasalDitandai.length) catatan.push(`${h.pasalDitandai.length} rujukan belum terverifikasi di rak peraturan dan diberi tanda [PERLU VERIFIKASI].`);
+      for (const x of (Array.isArray(h.temuanKutipan) ? h.temuanKutipan : []).slice(0, 10)) catatan.push(`Bunyi ${teks(x.rujukan)}: ${teks(x.pesan)}`);
+      for (const x of (Array.isArray(h.kutipanBerubah) ? h.kutipanBerubah : []).slice(0, 10)) catatan.push(`Kutipan dalil angka ${teks(x.nomor)} tidak sama dengan teks para pihak; sesuaikan dengan aslinya.`);
+      return { teks: h.teks, catatan };
+    } catch {
+      return { teks: null, catatan: ["Pemeriksaan rak peraturan belum dapat dijalankan; periksa sendiri dasar hukum pada usulan ini."] };
     }
   }
 
@@ -1122,9 +1173,13 @@
       void hitungPerkiraan(J);
       return;
     }
+    const diperiksa = await periksaHasilRak(J, bersihkan(hasil));
+    if (K.jendela !== J) return;
     J.hasil = {
       mentah: hasil,
-      teks: tandaiRujukan(bersihkan(hasil), semuaBahan(J)),
+      // Sudah diperiksa rak di server: penandanya yang berlaku (pasal terverifikasi tidak ditandai walau tidak ada di bahan).
+      teks: diperiksa && diperiksa.teks ? bersihkan(diperiksa.teks) : tandaiRujukan(bersihkan(hasil), semuaBahan(J)),
+      catatanPeriksa: diperiksa ? diperiksa.catatan : [],
       biayaRp: selesai ? Number(selesai.biayaRp) || 0 : 0,
       saldoRp: selesai ? Number(selesai.saldoRp) : NaN,
       dompet: selesai && selesai.dompet === "satker" ? "satker" : "",
@@ -1207,7 +1262,8 @@
         }
       }
     }
-    el.innerHTML = `${tanda}${badan}${biaya}<p class="bd-ai-status" id="bd-ai-status" role="status"></p><div class="bd-ai-aksi">${aksi}${ulang}<button type="button" class="bd-btn kecil" data-ai="tutup">Tutup</button></div>`;
+    const periksa = Array.isArray(h.catatanPeriksa) && h.catatanPeriksa.length ? `<ul class="bd-catat bd-ai-periksa">${h.catatanPeriksa.map((c) => `<li>${esc(c)}</li>`).join("")}</ul>` : "";
+    el.innerHTML = `${tanda}${badan}${periksa}${biaya}<p class="bd-ai-status" id="bd-ai-status" role="status"></p><div class="bd-ai-aksi">${aksi}${ulang}<button type="button" class="bd-btn kecil" data-ai="tutup">Tutup</button></div>`;
   }
 
   const status = (pesan) => {

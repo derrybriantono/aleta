@@ -54,6 +54,14 @@ const baris = (h: any, id: string, ke = 0) => h.saksi[ke].baris.find((b: any) =>
 
 const VAR = { "1046": "Ayah Kandung Pemohon II", "1217": "Samsul", "8087": "Imam Desa Ahmad", "0650": "Asdar", "0651": "Indrawan", "5197": "02 Oktober 2022", "5105": "Desa Labuan", "5178": "Kantor Urusan Agama Kecamatan Labuan", "1001": "seperangkat alat salat", "7211": "21 tahun", "7212": "19 tahun", "1002": "Perjaka", "1003": "Perawan", "8171": "mengurus buku nikah", "0228": "belum lahir saat akad", "0101": "Desa Labuan", "1358": "tidak melaporkan pernikahannya ke Pegawai Pencatat Nikah", "8602": "Iki Rafael bin Amir", "9709": "di Tibo pada tanggal 18 Agustus 2019", "9710": "pernikahan belum dicatat saat anak lahir", "4311": "Hamid", "4310": "Nomor 12/Pdt.P/2025/PA.Dgl tanggal 3 Maret 2025", "8605": "pada tanggal 20 April 2026 di KUA Sindue", "1025": "Hasan bin Ali" };
 
+// 2 Nov 2026 (e80b15e6, keadaan dari posita): kendala akta dan pengasuhan bersama hanya ditanyakan bila pemohonnya
+// suami-istri (keadaan pemohon=suami-istri). Teks, pokok, urutan, dan jawabannya TIDAK berubah; tidak ada butir yang hilang.
+const SAH_2NOV: Record<string, Record<string, unknown>> = {
+  "asal-usul-anak/q-kendala-akta": { keadaan: { pemohon: "suami-istri" } },
+  "asal-usul-anak/q-pengasuhan": { keadaan: { pemohon: "suami-istri" } },
+};
+const lamaSah = (j: string, q: any) => ({ ...q, ...(SAH_2NOV[j + "/" + q.id] ?? {}) });
+
 describe("katalog lama tidak dikurangi", () => {
   for (const [kunci, baru] of [["itsbat-nikah", IN], ["asal-usul-anak", AUA], ["cerai-kumulasi-itsbat", KM]] as const) {
     it(`${kunci}: butir, pokok, dasar hukum, dan keadaan lama utuh; versi naik satu`, () => {
@@ -66,7 +74,7 @@ describe("katalog lama tidak dikurangi", () => {
       expect(baru.versi).toBe(lama.versi + 1);
       expect(baru.pertanyaan.length).toBeGreaterThan(lama.pertanyaan.length);
       // butir lama tidak berubah isinya
-      for (const q of lama.pertanyaan) expect(JSON.stringify(baru.pertanyaan.find((x: any) => x.id === q.id))).toBe(JSON.stringify(q));
+      for (const q of lama.pertanyaan) expect(JSON.stringify(baru.pertanyaan.find((x: any) => x.id === q.id))).toBe(JSON.stringify(lamaSah(kunci, q)));
     });
   }
   it("jumlah butir per saksi pada itsbat dua pemohon naik dari 20 menjadi 28 (tingkat bawaan)", () => {

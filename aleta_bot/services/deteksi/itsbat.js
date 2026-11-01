@@ -295,7 +295,8 @@ function statusMenurutJenisKelamin(kalimat) {
 function anakDariPosita(kalimat) {
   for (const k of kalimat || []) {
     const m = k.match(
-      /\b((?:telah|sudah|belum)\s+)?(?:di)?karunia(?:i)?\s+(?:oleh\s+allah\s+(?:swt\.?\s+)?)?((?:\d+\s*(?:\([a-z ]+\)\s*)?orang\s+anak)|(?:seorang|satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh)\s+(?:\(\d+\)\s*)?(?:orang\s+)?anak|anak|keturunan)\b/i
+      // U2 (1 Nov 2026): salah ketik umum ("dikaruniayai", "dikarunaiai", "di karuniai", "dikaruniai2 orang"), "3 anak" tanpa "orang".
+      /(?<![A-Za-z])((?:telah|sudah|belum)\s+)?(?:di\s*)?karun(?:ia|ai)[a-z]{0,3}\s*(?:oleh\s+allah\s+(?:swt\.?\s+)?)?((?:\d+\s*(?:\([a-z ]+\)\s*)?(?:orang\s*)?anak)|(?:seorang|satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh)\s+(?:\(\d+\)\s*)?(?:orang\s+)?anak|anak|keturunan)\b/i
     );
     if (!m) continue;
     const kata = (m[1] || "").trim().toLowerCase();

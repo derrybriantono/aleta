@@ -29,6 +29,7 @@ import {
 import { VAR_BUKTI, VAR_ECOURT, VAR_KUASA } from "@/lib/isi-sipp-format";
 import { namaAdaDi } from "@/lib/perkara-sendiri";
 import { waktuPengadilan } from "@/lib/waktu-pengadilan";
+import { HARI_PERISTIWA_A1, sasaranPeristiwaA1 } from "@/lib/draf-putusan-a1";
 import { sebutanPihak, susunIsian, type Definisi, type Susunan } from "@/app/api/aleta-ecourt/blangko-derry/susun";
 import type { AletaDatabase } from "@/server/db/client";
 import { getGatewayAbtUsulan, getGatewayJadwalSidang, getGatewayKtpPerkara } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
@@ -36,6 +37,7 @@ import { callAletaBotSippBridge } from "@/server/modules/aleta-sipp/aleta-sipp-d
 import { untukBot } from "@/server/modules/aleta-ecourt/tipe-keluaran";
 import { bacaKonseptorSementara } from "@/server/modules/aleta-ecourt/konseptor-sementara";
 import { bacaGugatanEcourt, bacaKuasaEcourt } from "@/server/modules/aleta-ecourt/isi-sipp-sumber";
+import { SUMBER_A1_BAWAAN, susunA1UntukDraf, type SumberA1 } from "@/server/modules/aleta-ecourt/draf-putusan-a1";
 
 /**
  * ============================================================================
@@ -60,7 +62,7 @@ const AKAR_DERRY = "derry_briantono";
 const BATAS_PERKARA = 60;
 const UMUR_KATALOG_MS = 30 * 60 * 1000;
 /** Penanda yang selalu dinilai: keterangan saksi, tanggal sidang, sebutan pihak, posita, bukti, kesimpulan. */
-const PENANDA_BAHAN = ["2021", "2022", "0033", "0046", "0047", "5125", "1214", "9911", "8436", "8437", "8503"];
+const PENANDA_BAHAN = ["2021", "2022", "0033", "0046", "0047", "5125", "1214", "9911", "8436", "8437", "8503", "9944"];
 
 // ============================================================================
 // SUMBER BAHAN (dapat disuntik untuk uji)
@@ -84,6 +86,11 @@ export type SumberAgenH7 = {
   gugatan?(nomorPerkara: string, sebutan: { lawan: string; pelaku: string }, denganBukti: boolean): Promise<UsulanDeteksi[]>;
   /** 19 Okt: usulan kuasa dari surat gugatan (rute kuasa-gugatan yang sama). */
   kuasa?(nomorPerkara: string): Promise<UsulanDeteksi[]>;
+  /**
+   * A1 (1 Nov): bahan draf pertimbangan & amar (petitum, biaya, satker, matriks dalil + pembuktian A2, pustaka disahkan).
+   * Opsional: sumber suntikan uji lama tidak memilikinya = draf tanpa bagian pertimbangan & amar.
+   */
+  a1?: SumberA1;
 };
 
 let singgahKatalog: { saat: number; peta: Map<string, Definisi> } | null = null;
@@ -201,6 +208,7 @@ export const SUMBER_BAWAAN: SumberAgenH7 = {
     const h = await bacaKuasaEcourt(nomorPerkara);
     return Array.isArray(h.usulan) ? (h.usulan as unknown as UsulanDeteksi[]) : [];
   },
+  a1: SUMBER_A1_BAWAAN,
 };
 
 // ============================================================================
@@ -229,10 +237,11 @@ export async function susunDrafSatu(
   baris: BarisSidangH7,
   sumber: SumberAgenH7 = SUMBER_BAWAAN,
   kini: Date = new Date(),
-  opsi: { verstek?: boolean } = {}
+  opsi: { verstek?: boolean; a1?: boolean; pemicu?: string } = {}
 ): Promise<DrafH7 | null> {
   const alasan = alasanH7(baris, opsi);
   if (!alasan) return null;
+  const mulaiMs = Date.now();
   const perkaraId = teks(baris.perkaraId);
   const nomorPerkara = teks(baris.nomorPerkara);
   const jenisPerkara = teks(baris.jenisPerkara);
@@ -364,6 +373,26 @@ export async function susunDrafSatu(
     sebutan: { P: sebutan.P, T: sebutan.T },
   });
 
+  // A1 (1 Nov): draf pertimbangan & amar per varian, dari bahan yang sudah terkumpul + matriks dalil/pembuktian A2.
+  const msBahanH7 = Date.now() - mulaiMs;
+  let putusan: DrafH7["putusan"];
+  let kinerjaA1 = { msBahanA1: 0, msSusunA1: 0 };
+  if (opsi.a1 !== false && sumber.a1 && nomorPerkara && (blangko.utama || adaTolak)) {
+    try {
+      const a1 = await susunA1UntukDraf(
+        db,
+        { baris, nomorPerkara, jenisPerkara, sebutan: { P: sebutan.P, T: sebutan.T }, nilai, saksi, verstek: blangko.perkiraanVerstek, varian: adaTolak ? ["dikabulkan", "ditolak"] : ["dikabulkan"] },
+        sumber.a1
+      );
+      putusan = a1.per.dikabulkan;
+      for (const v of varian) if (a1.per[v.status]) v.putusan = a1.per[v.status];
+      for (const k of a1.kendala) kendala.push(k);
+      kinerjaA1 = { msBahanA1: a1.msBahan, msSusunA1: a1.msSusun };
+    } catch (e) {
+      kendala.push(`draf pertimbangan dan amar (${teks((e as Error)?.message).slice(0, 80) || "gagal"})`);
+    }
+  }
+
   return {
     perkaraId,
     nomorPerkara,
@@ -381,6 +410,8 @@ export async function susunDrafSatu(
     varian,
     kendala,
     dibuatPada: kini.toISOString(),
+    ...(putusan ? { putusan } : {}),
+    kinerja: { ...(opsi.pemicu ? { pemicu: opsi.pemicu } : {}), msBahanH7, ...kinerjaA1, msTotal: Date.now() - mulaiMs },
   };
 }
 
@@ -537,7 +568,7 @@ export async function bacaJalanTerakhir(db: AletaDatabase, batas = 10): Promise<
 // SATU JALAN
 // ============================================================================
 
-const SIMPAN = globalThis as unknown as { __aletaAgenH7?: { berjalan: boolean; detak: NodeJS.Timeout | null } };
+const SIMPAN = globalThis as unknown as { __aletaAgenH7?: { berjalan: boolean; detak: NodeJS.Timeout | null; peristiwaTerakhir?: number } };
 const wadah = () => (SIMPAN.__aletaAgenH7 ??= { berjalan: false, detak: null });
 
 export type HasilJalan = JalanAgenH7 & { perkara: Array<{ perkaraId: string; nomorPerkara: string; tanggalSidang: string; hasil: string }> };
@@ -555,7 +586,7 @@ export async function jalankanAgenH7(
   const kini = opsi.kini ?? new Date();
   const hariIni = opsi.hariIni || waktuPengadilan(kini).tanggal;
   const sumber = opsi.sumber ?? SUMBER_BAWAAN;
-  const pilihan = { verstek: opsi.verstek ?? process.env.ALETA_AGEN_H7_VERSTEK !== "0" };
+  const pilihan = { verstek: opsi.verstek ?? process.env.ALETA_AGEN_H7_VERSTEK !== "0", pemicu: opsi.pemicu, a1: process.env.ALETA_AGEN_A1 !== "0" };
   const jalan: HasilJalan = {
     id: `h7_${kini.getTime().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
     tanggal: hariIni,
@@ -626,6 +657,117 @@ export async function jalankanAgenH7(
 }
 
 // ============================================================================
+// A1 - PEMICU PERISTIWA (BAS kesimpulan selesai / agenda berikutnya musyawarah-putusan)
+// ============================================================================
+
+/** Jarak paling dekat antar-pemeriksaan peristiwa (ms) dan jam kerjanya (WITA). */
+export const JEDA_PERISTIWA_A1_MS = 30 * 60 * 1000;
+export const JAM_PERISTIWA_A1 = { mulai: "07:00", sampai: "21:00" };
+
+/**
+ * Tanpa tombol: jadwal hari ini-14..hari ini+14 dibaca SEKALI, lalu sidang Hari Putusan yang sidang sebelumnya sudah
+ * berlangsung (biasanya kesimpulan) dan belum punya draf A1 yang lebih baru disusun drafnya (H-7 + pertimbangan & amar).
+ * Paling banyak BATAS_PERISTIWA_A1 perkara per detak; catatan jalan hanya ditulis bila ada yang disusun (tidak menyampah).
+ */
+export async function jalankanPemicuA1(
+  db: AletaDatabase,
+  opsi: { hariIni?: string; sumber?: SumberAgenH7; kini?: Date; verstek?: boolean } = {}
+): Promise<HasilJalan | null> {
+  const w = wadah();
+  if (w.berjalan) return null;
+  const kini = opsi.kini ?? new Date();
+  const hariIni = opsi.hariIni || waktuPengadilan(kini).tanggal;
+  const sumber = opsi.sumber ?? SUMBER_BAWAAN;
+  const pilihan = { verstek: opsi.verstek ?? process.env.ALETA_AGEN_H7_VERSTEK !== "0", pemicu: "peristiwa", a1: process.env.ALETA_AGEN_A1 !== "0" };
+  w.berjalan = true;
+  let jalan: HasilJalan | null = null;
+  try {
+    const j = await sumber.jadwal(tambahHari(hariIni, -HARI_PERISTIWA_A1), tambahHari(hariIni, HARI_PERISTIWA_A1));
+    if (!j.ok) return null;
+    const ids = [...new Set(j.sidang.map((b) => teks(b.perkaraId)).filter(Boolean))].slice(0, 500);
+    const simpanan = new Map<string, { dibuatPada: string; adaPutusan: boolean }>();
+    if (ids.length) {
+      const baris = await db.queryAll<Record<string, unknown>>(
+        `SELECT perkara_id, tanggal_sidang, diperbarui_pada, draf_json FROM aleta_agen_h7_draf WHERE tanggal_sidang >= ? AND perkara_id IN (${ids.map(() => "?").join(", ")})`,
+        [hariIni, ...ids]
+      );
+      for (const b of baris) {
+        const json = teks(b.draf_json);
+        simpanan.set(`${teks(b.perkara_id)}|${teks(b.tanggal_sidang)}`, { dibuatPada: teks(b.diperbarui_pada), adaPutusan: json.includes('"putusan":{') });
+      }
+    }
+    const sasaran = sasaranPeristiwaA1(j.sidang, hariIni, simpanan, (b) => alasanH7(b, { verstek: false }) === "putusan");
+    if (!sasaran.length) return null;
+    jalan = {
+      id: `h7p_${kini.getTime().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+      tanggal: hariIni,
+      pemicu: "peristiwa",
+      oleh: "Agen ALETA",
+      mulai: kini.toISOString(),
+      selesai: "",
+      diperiksa: 0,
+      dibuat: 0,
+      diperbarui: 0,
+      gagal: 0,
+      galat: "",
+      perkara: [],
+    };
+    await db.run(
+      `INSERT INTO aleta_agen_h7_jalan (id, tanggal, pemicu, oleh, mulai, selesai, diperiksa, dibuat, diperbarui, gagal, galat) VALUES (?, ?, ?, ?, ?, '', 0, 0, 0, 0, '')`,
+      [jalan.id, jalan.tanggal, jalan.pemicu, jalan.oleh, jalan.mulai]
+    );
+    for (const s of sasaran) {
+      jalan.diperiksa += 1;
+      const ringkas = { perkaraId: teks(s.baris.perkaraId), nomorPerkara: teks(s.baris.nomorPerkara), tanggalSidang: teks(s.baris.tanggalSidang).slice(0, 10), hasil: "" };
+      try {
+        const d = await susunDrafSatu(db, s.baris, sumber, new Date(), pilihan);
+        if (!d) continue;
+        const hasil = await simpanDraf(db, d, jalan.id);
+        if (hasil === "dibuat") jalan.dibuat += 1;
+        else jalan.diperbarui += 1;
+        ringkas.hasil = `${hasil} (${s.sebab === "kesimpulan-selesai" ? "kesimpulan selesai" : "agenda putusan"}) - ${d.kinerja?.msTotal ?? 0} ms`;
+      } catch (e) {
+        jalan.gagal += 1;
+        ringkas.hasil = `gagal: ${teks((e as Error)?.message).slice(0, 160)}`;
+      }
+      jalan.perkara.push(ringkas);
+    }
+  } catch (e) {
+    if (jalan) jalan.galat = teks((e as Error)?.message).slice(0, 300) || "Pemicu draf putusan gagal.";
+  } finally {
+    if (jalan) {
+      jalan.selesai = new Date().toISOString();
+      try {
+        await db.run(`UPDATE aleta_agen_h7_jalan SET selesai = ?, diperiksa = ?, dibuat = ?, diperbarui = ?, gagal = ?, galat = ? WHERE id = ?`, [
+          jalan.selesai,
+          jalan.diperiksa,
+          jalan.dibuat,
+          jalan.diperbarui,
+          jalan.gagal,
+          jalan.galat.slice(0, 500),
+          jalan.id,
+        ]);
+      } catch {
+        /* drafnya tetap tersimpan */
+      }
+    }
+    w.berjalan = false;
+  }
+  return jalan;
+}
+
+/** Detak peristiwa: jam kerja, paling sering tiap 30 menit, mati dengan ALETA_AGEN_A1=0. */
+export async function detakPemicuA1(db: AletaDatabase, env: Record<string, string | undefined> = process.env, kini = new Date()) {
+  if (env.ALETA_AGEN_H7 === "0" || env.ALETA_AGEN_A1 === "0") return null;
+  const w = wadah();
+  const jam = waktuPengadilan(kini).jam.slice(0, 5);
+  if (jam < JAM_PERISTIWA_A1.mulai || jam > JAM_PERISTIWA_A1.sampai) return null;
+  if (w.peristiwaTerakhir && kini.getTime() - w.peristiwaTerakhir < JEDA_PERISTIWA_A1_MS) return null;
+  w.peristiwaTerakhir = kini.getTime();
+  return jalankanPemicuA1(db, { kini, verstek: env.ALETA_AGEN_H7_VERSTEK !== "0" });
+}
+
+// ============================================================================
 // PENJADWAL HARIAN
 // ============================================================================
 
@@ -659,7 +801,9 @@ export function mulaiAgenH7Berkala(getDb: () => Promise<AletaDatabase>, env: Rec
   if (w.detak) return;
   const detak = async () => {
     try {
-      await detakAgenH7(await getDb(), env);
+      const db = await getDb();
+      await detakAgenH7(db, env);
+      await detakPemicuA1(db, env);
     } catch (e) {
       console.error("[AGEN H-7] detak gagal:", e);
     }

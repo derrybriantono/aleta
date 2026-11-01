@@ -3910,7 +3910,12 @@ export async function getGatewayAbtUsulan(muatan: {
     sumber: string;
     sumberNama: string;
     alasan: string[];
+    /** 1 Nov 2026: dasar saksi Tergugat/Termohon (jawaban | gugatan) dan hubungan saksi (kunci pilihan panel). */
+    dasar?: string;
+    hubungan?: string;
   }>;
+  /** 1 Nov 2026: naskah jawaban & duplik Tergugat/Termohon (keputusan 62); asal "lisan" = tanya-jawab lisan di BAS. */
+  naskahT?: { jawaban: string; duplik: string; asal?: { jawaban: string; duplik: string } };
   /** Pengaturan tipe keluaran efektif dari portal (K6). Tanpa ini bot memakai konstanta tertanam. */
   tipeKeluaran?: { versi: string; daftar: Record<string, unknown> };
   /** Gugatannya. Dipakai menyaring alasan yang tidak pernah didalilkan. */
@@ -5438,6 +5443,18 @@ export async function postGatewayMatriksDalil(muatan: { nomorPerkara: string; se
     "/internal/aleta-bot/abt/matriks-dalil",
     { method: "POST", body: JSON.stringify(muatan), timeoutMs: 8_000 }
   );
+}
+
+/** A2 (1 Nov 2026): keterangan saksi tersimpan (sidang terakhir per saksi) + alat bukti ABT 1214/9911/1262. Bot hanya SELECT, batas 4 detik. */
+export async function postGatewayBahanPembuktian(muatan: { nomorPerkara: string }) {
+  return gatewayFetch<{
+    ok?: boolean;
+    ada?: boolean;
+    alasan?: string;
+    perkaraId?: number | null;
+    saksi?: Array<{ id: string; pihak: string; ke?: number; hubungan?: string; baris: Array<{ tanya?: string; jawab: string }> }>;
+    bukti?: Array<{ kode: string; pihak: string; jenis: string; teks: string }>;
+  }>("/internal/aleta-bot/abt/bahan-pembuktian", { method: "POST", body: JSON.stringify(muatan), timeoutMs: 6_000 });
 }
 
 /* === KONTAK-EC 11 Okt === */

@@ -211,7 +211,7 @@ describe("urutan pasang", () => {
   it("uji rantai memuat tanya-jawab-format-1nov paling akhir (ke-29) dan URUTAN-PASANG-1nov menyebutnya", () => {
     const rantai = readFileSync(path.join(AKAR, "abt-paket/uji-rantai-31okt/rantai.sh"), "utf8");
     const urut = /URUT="([^"]+)"/.exec(rantai)![1].split(/\s+/);
-    expect(urut.length).toBe(29);
+    expect(urut.length).toBeGreaterThanOrEqual(29); // paket ke-30 perbaikan-1nov menyusul sesudahnya
     expect(urut[28]).toBe("tanya-jawab-format-1nov");
     expect(urut[27]).toBe("bas-lanjutan-1nov");
     const pasang = readFileSync(path.join(AKAR, "abt-paket/URUTAN-PASANG-1nov.md"), "utf8");

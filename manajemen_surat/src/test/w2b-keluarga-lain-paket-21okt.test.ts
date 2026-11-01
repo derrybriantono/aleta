@@ -271,6 +271,10 @@ describe("sembilan katalog saksi keluarga versi 2", () => {
   // tingkat, keadaan, dan jawabannya TIDAK berubah, dan tidak ada butir/pokok/dasar hukum yang hilang.
   const SAH_1NOV: Record<string, Record<string, unknown>> = {
     "permohonan-umum/q-sebab-tahu": { hal: "cara saya mengetahui peristiwa itu", tidakBerlaku: ["mendengar", "de-auditu", "sebagian", "tidak-tahu"] },
+    // U2 (saksi-u2 e80b15e6, 1 Nov): izin poligami tanpa anak punya padanan sendiri (q-kemampuan-tt, q-keadilan-tt) yang tidak
+    // menyebut anak-anak; butir lama tetap utuh teksnya dan hanya berlaku bila perkara memang mempunyai anak.
+    "izin-poligami/q-kemampuan": { keadaan: { anak: "ada" } },
+    "izin-poligami/q-keadilan": { keadaan: { anak: "ada" } },
   };
   const lamaSah = (j: string, q: any) => ({ ...q, ...(SAH_1NOV[j + "/" + q.id] ?? {}) });
 

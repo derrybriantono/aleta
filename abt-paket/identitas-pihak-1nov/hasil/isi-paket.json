@@ -1,0 +1,27 @@
+{
+ "variabel": [
+  {
+   "no": 7047,
+   "lama_md5": "e301c4feae2efcb0794fdff285d8f155",
+   "baru_md5": "94f40d4f4bd51b9fab75184521617176"
+  },
+  {
+   "no": 7048,
+   "lama_md5": "f9552a7f198356fd6394e7c212bdfc37",
+   "baru_md5": "0424f2f0336893a1b4080e660d707361"
+  }
+ ],
+ "fungsi": {
+  "isian_rtf_pihak_identitas": {
+   "lama_md5": "4c758ce53cd541a39a32cf3cb0ba9898",
+   "baru_md5": "5ec160298fe05aabdc4460ef1c58ff0e"
+  },
+  "isian_rtf_pihak_tambahan": {
+   "lama_md5": "9cf2a80618cfee32d3b096c4b1c83dc8",
+   "baru_md5": "0737d6b33330c45da2597a8aa0755237"
+  }
+ },
+ "harap": "2|0|2|0|0|6",
+ "ulang": "0|2|0|2|0|6",
+ "ringkas": "BERKAS DIUBAH=608 | A menjorok=985 | B tertulis tangan->variabel=120 (paragraf Pemohon II dibuang 22) | C lanjutan DK=7 | DILEWATI=0"
+}

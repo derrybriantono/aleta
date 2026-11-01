@@ -122,12 +122,13 @@ const INTI_F: ButirSaksi[] = [
   B("Apakah Saudara pernah melihat atau mendengar sendiri {P} dan {T} bertengkar? Berapa kali dan di mana?", "Saya pernah melihat dan mendengar sendiri {P} dan {T} bertengkar sebanyak ... kali, di ...;", "pengetahuan langsung saksi"),
   B("Apakah ada kejadian yang menjadi puncak perselisihan dan pertengkaran tersebut? Kapan?", "Puncaknya terjadi pada ... ketika ...;", "puncak perselisihan"),
   B(
-    "Apakah sekarang {P} dan {T} masih tinggal serumah? Sejak kapan berpisah?",
+    "Apakah saat ini {P} dan {T} masih tinggal serumah?",
     "Tidak, {P} dan {T} sudah berpisah tempat tinggal sejak ..., sudah sekitar ... bulan/tahun;",
     "pisah tempat tinggal paling singkat 6 bulan, kecuali terbukti ada KDRT (SEMA 1/2022 jo. SEMA 3/2023)"
   ),
   B("Siapa yang meninggalkan tempat tinggal bersama, dan sekarang masing-masing tinggal di mana?", "Yang meninggalkan tempat tinggal bersama adalah ...; sekarang {P} tinggal di ... dan {T} tinggal di ...;", "pisah tempat tinggal"),
-  B("Selama berpisah, apakah {P} dan {T} masih berkomunikasi atau saling mengunjungi?", "Selama berpisah {P} dan {T} tidak lagi berkomunikasi dan tidak saling mengunjungi;", "tidak ada harapan rukun"),
+  // U1 1 Nov: bunyi pertanyaan dan jawaban sama dengan BAS nyata (2.343 saksi cerai gugat) supaya pasangan tanya-jawabnya dikenali pemilih ragam.
+  B("Apakah selama pisah antara {P} dan {T} masih ada komunikasi?", "Selama pisah antara {P} dan {T} sudah tidak ada komunikasi;", "tidak ada harapan rukun"),
   B("Selama berpisah, apakah {suami} masih memberi nafkah kepada {isteri}?", "Selama berpisah {suami} tidak pernah lagi memberi nafkah kepada {isteri};", "keadaan nafkah selama pisah"),
 ];
 

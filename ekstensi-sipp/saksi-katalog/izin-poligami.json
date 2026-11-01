@@ -929,7 +929,9 @@
       "pihakSaksi": [
         "*"
       ],
-      "keadaan": {},
+      "keadaan": {
+        "anak": "ada"
+      },
       "teks": "Apakah dari pernikahan #0046# dan #0047# sudah ada anak dan berapa orang jumlahnya?",
       "teksVarian": [
         "Berapa orang anak yang lahir dari pernikahan #0046# dan #0047#?"
@@ -3414,7 +3416,8 @@
         "*"
       ],
       "keadaan": {
-        "sikapIstri": "setuju"
+        "sikapIstri": "setuju",
+        "anak": "ada"
       },
       "teks": "Bagaimana sikap keluarga besar #0046# dan #0047# serta anak-anak mereka terhadap rencana #0046# menikah lagi?",
       "teksVarian": [
@@ -3488,6 +3491,81 @@
             "sejauh yang saya tahu bahwa anak-anak dan keluarga #0046# dan #0047# tahu rencana menikah lagi itu dan menerimanya sedangkan sisanya kurang saya pahami",
             "bagian yang saya kuasai hanyalah bahwa keluarga kedua belah pihak serta anak-anak sudah mengetahui rencana itu dan menerimanya dengan baik, dan lainnya kurang saya pahami",
             "yang bisa saya terangkan sebatas bahwa anak-anak dan keluarga #0046# dan #0047# tahu rencana menikah lagi itu dan menerimanya selebihnya kurang saya pahami"
+          ]
+        }
+      },
+      "variabelAbt": [
+        "0046",
+        "0047"
+      ]
+    },
+    {
+      "id": "q-pg-setuju-keluarga-sikap-tt",
+      "pokok": "pp-pg-keluarga",
+      "urutan": 87.5,
+      "tingkat": "tambahan",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "sikapIstri": "setuju",
+        "anak": "tidak"
+      },
+      "teks": "Bagaimana sikap keluarga besar #0046# dan #0047# terhadap rencana #0046# menikah lagi?",
+      "teksVarian": [
+        "Apakah keluarga #0046# dan #0047# mengetahui serta menyetujui rencana #0046# menikah lagi?"
+      ],
+      "hal": "sikap keluarga atas rencana #0046# menikah lagi",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": [
+          {
+            "maksud": "saksi menerangkan sikap keluarga atas rencana #0046# menikah lagi sebagai hal yang dilihat atau dialaminya sendiri",
+            "saksi1": [
+              "saya mengetahui sendiri bahwa keluarga besar #0046# dan #0047# mengetahui rencana itu dan menerimanya dengan baik",
+              "saya tahu betul bahwa rencana #0046# menikah lagi sudah diketahui keluarga dan mereka menerimanya",
+              "keluarga besar #0046# dan #0047# mengetahui rencana itu dan menerimanya dengan baik, dan hal itu saya ketahui sendiri",
+              "sebagai orang yang dekat dengan mereka saya mengetahui bahwa rencana #0046# menikah lagi sudah diketahui keluarga dan mereka menerimanya"
+            ],
+            "saksi2": [
+              "yang saya ketahui secara langsung adalah bahwa keluarga kedua belah pihak sudah mengetahui rencana itu dan menerimanya dengan baik",
+              "dalam pergaulan dengan mereka saya alami bahwa keluarga #0046# dan #0047# tahu rencana menikah lagi itu dan menerimanya",
+              "karena sering bersama mereka saya paham bahwa keluarga kedua belah pihak sudah mengetahui rencana itu dan menerimanya dengan baik",
+              "saya paham dengan baik bahwa keluarga #0046# dan #0047# tahu rencana menikah lagi itu dan menerimanya"
+            ]
+          }
+        ],
+        "de-auditu": {
+          "maksud": "saksi menerangkan sikap keluarga atas rencana #0046# menikah lagi hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+          "saksi1": [
+            "{sumber} bercerita kepada saya bahwa keluarga besar #0046# dan #0047# mengetahui rencana itu dan menerimanya dengan baik",
+            "saya diberi tahu oleh {sumber} bahwa rencana #0046# menikah lagi sudah diketahui keluarga dan mereka menerimanya",
+            "keluarga besar #0046# dan #0047# mengetahui rencana itu dan menerimanya dengan baik, begitulah cerita {sumber} kepada saya",
+            "setahu saya berdasarkan cerita {sumber} bahwa rencana #0046# menikah lagi sudah diketahui keluarga dan mereka menerimanya"
+          ],
+          "saksi2": [
+            "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa keluarga kedua belah pihak sudah mengetahui rencana itu dan menerimanya dengan baik",
+            "kabar dari {sumber} yang saya terima menyebutkan bahwa keluarga #0046# dan #0047# tahu rencana menikah lagi itu dan menerimanya",
+            "keluarga kedua belah pihak sudah mengetahui rencana itu dan menerimanya dengan baik, demikian yang diceritakan {sumber} kepada saya",
+            "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa keluarga #0046# dan #0047# tahu rencana menikah lagi itu dan menerimanya"
+          ]
+        },
+        "sebagian": {
+          "maksud": "saksi hanya mengetahui sebagian dari sikap keluarga atas rencana #0046# menikah lagi",
+          "saksi1": [
+            "yang saya ketahui hanya sebagian saja yaitu bahwa keluarga besar #0046# dan #0047# mengetahui rencana itu dan menerimanya dengan baik, sedangkan selebihnya kurang saya ketahui",
+            "saya hanya tahu sebagian yaitu bahwa rencana #0046# menikah lagi sudah diketahui keluarga dan mereka menerimanya dan selebihnya kurang saya ketahui",
+            "sebagian saja yang saya ketahui yakni bahwa keluarga besar #0046# dan #0047# mengetahui rencana itu dan menerimanya dengan baik",
+            "hanya sebatas itu yang saya ketahui yaitu bahwa rencana #0046# menikah lagi sudah diketahui keluarga dan mereka menerimanya"
+          ],
+          "saksi2": [
+            "pengetahuan saya terbatas pada satu hal bahwa keluarga kedua belah pihak sudah mengetahui rencana itu dan menerimanya dengan baik, adapun selebihnya kurang jelas bagi saya",
+            "sejauh yang saya tahu bahwa keluarga #0046# dan #0047# tahu rencana menikah lagi itu dan menerimanya sedangkan sisanya kurang saya pahami",
+            "bagian yang saya kuasai hanyalah bahwa keluarga kedua belah pihak sudah mengetahui rencana itu dan menerimanya dengan baik, dan lainnya kurang saya pahami",
+            "yang bisa saya terangkan sebatas bahwa keluarga #0046# dan #0047# tahu rencana menikah lagi itu dan menerimanya selebihnya kurang saya pahami"
           ]
         }
       },
@@ -5024,7 +5102,9 @@
       "pihakSaksi": [
         "*"
       ],
-      "keadaan": {},
+      "keadaan": {
+        "anak": "ada"
+      },
       "teks": "Apakah selama ini #0046# mencukupi nafkah lahir #0047# dan anak-anaknya dan pernah menelantarkan mereka?",
       "teksVarian": [
         "Bagaimana pemenuhan nafkah #0047# dan anak-anaknya oleh #0046# selama ini dan apakah pernah ditelantarkan?"
@@ -5106,6 +5186,107 @@
             "yang saya alami adalah bahwa #0046# kadang terlambat memberi nafkah kepada #0047# dan anak-anaknya",
             "yang saya ingat dan saya sampaikan adalah bahwa nafkah #0047# dan anak-anak kadang terlambat diberikan #0046#",
             "keterangan saya adalah bahwa #0046# kadang terlambat memberi nafkah kepada #0047# dan anak-anaknya"
+          ]
+        }
+      },
+      "variabelAbt": [
+        "0046",
+        "0047"
+      ]
+    },
+    {
+      "id": "q-pg-nafkah-selama-ini-tt",
+      "pokok": "pp-kemampuan-nafkah",
+      "urutan": 106.5,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "anak": "tidak"
+      },
+      "teks": "Apakah selama ini #0046# mencukupi nafkah lahir #0047# dan pernah menelantarkannya?",
+      "teksVarian": [
+        "Bagaimana pemenuhan nafkah #0047# oleh #0046# selama ini dan apakah pernah ditelantarkan?"
+      ],
+      "hal": "pemenuhan nafkah #0047# oleh #0046# selama ini",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi menerangkan pemenuhan nafkah #0047# oleh #0046# selama ini sebagai hal yang dilihat atau dialaminya sendiri",
+          "saksi1": [
+            "saya mengetahui sendiri bahwa selama ini #0046# mencukupi nafkah #0047# dan #0047# tidak pernah ditelantarkan",
+            "saya tahu betul bahwa #0047# selalu dicukupi nafkahnya oleh #0046# dan tidak pernah ditelantarkan",
+            "selama ini #0046# mencukupi nafkah #0047# dan #0047# tidak pernah ditelantarkan, dan hal itu saya ketahui sendiri",
+            "sebagai orang yang dekat dengan mereka saya mengetahui bahwa #0047# selalu dicukupi nafkahnya oleh #0046# dan tidak pernah ditelantarkan"
+          ],
+          "saksi2": [
+            "yang saya ketahui secara langsung adalah bahwa nafkah lahir #0047# dipenuhi #0046# secara baik dan #0047# tidak pernah ditelantarkan",
+            "#0046# senantiasa memenuhi nafkah #0047# dan tidak pernah membiarkan mereka telantar, sebagaimana yang saya alami dalam pergaulan dengan mereka",
+            "karena sering bersama mereka saya paham bahwa nafkah lahir #0047# dipenuhi #0046# secara baik dan #0047# tidak pernah ditelantarkan",
+            "saya paham dengan baik bahwa #0046# senantiasa memenuhi nafkah #0047# dan tidak pernah membiarkan mereka telantar"
+          ]
+        },
+        "de-auditu": {
+          "maksud": "saksi menerangkan pemenuhan nafkah #0047# oleh #0046# selama ini hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+          "saksi1": [
+            "{sumber} bercerita kepada saya bahwa selama ini #0046# mencukupi nafkah #0047# dan #0047# tidak pernah ditelantarkan",
+            "saya diberi tahu oleh {sumber} bahwa #0047# selalu dicukupi nafkahnya oleh #0046# dan tidak pernah ditelantarkan",
+            "selama ini #0046# mencukupi nafkah #0047# dan #0047# tidak pernah ditelantarkan, begitulah cerita {sumber} kepada saya",
+            "setahu saya berdasarkan cerita {sumber} bahwa #0047# selalu dicukupi nafkahnya oleh #0046# dan tidak pernah ditelantarkan"
+          ],
+          "saksi2": [
+            "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa nafkah lahir #0047# dipenuhi #0046# secara baik dan #0047# tidak pernah ditelantarkan",
+            "kabar dari {sumber} yang saya terima menyebutkan bahwa #0046# senantiasa memenuhi nafkah #0047# dan tidak pernah membiarkan mereka telantar",
+            "nafkah lahir #0047# dipenuhi #0046# secara baik dan #0047# tidak pernah ditelantarkan, demikian yang diceritakan {sumber} kepada saya",
+            "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa #0046# senantiasa memenuhi nafkah #0047# dan tidak pernah membiarkan mereka telantar"
+          ]
+        },
+        "mendengar": {
+          "maksud": "saksi menerangkan pemenuhan nafkah #0047# oleh #0046# selama ini sebagai hal yang didengarnya sendiri dari pihak atau peristiwa itu",
+          "saksi1": [
+            "saya mendengar sendiri bahwa selama ini #0046# mencukupi nafkah #0047# dan #0047# tidak pernah ditelantarkan",
+            "saya mendengar langsung bahwa #0047# selalu dicukupi nafkahnya oleh #0046# dan tidak pernah ditelantarkan",
+            "selama ini #0046# mencukupi nafkah #0047# dan #0047# tidak pernah ditelantarkan, dan itu saya dengar sendiri pada waktu itu",
+            "saat itu saya berada di dekat mereka dan mendengar bahwa #0047# selalu dicukupi nafkahnya oleh #0046# dan tidak pernah ditelantarkan"
+          ],
+          "saksi2": [
+            "ucapan yang terdengar oleh saya waktu itu menyatakan bahwa nafkah lahir #0047# dipenuhi #0046# secara baik dan #0047# tidak pernah ditelantarkan",
+            "#0046# senantiasa memenuhi nafkah #0047# dan tidak pernah membiarkan mereka telantar, begitulah perkataan yang terdengar di hadapan saya",
+            "di hadapan saya mereka mengatakan bahwa nafkah lahir #0047# dipenuhi #0046# secara baik dan #0047# tidak pernah ditelantarkan",
+            "para pihak berkata di depan saya bahwa #0046# senantiasa memenuhi nafkah #0047# dan tidak pernah membiarkan mereka telantar"
+          ]
+        },
+        "sebagian": {
+          "maksud": "saksi hanya mengetahui sebagian dari pemenuhan nafkah #0047# oleh #0046# selama ini",
+          "saksi1": [
+            "yang saya ketahui hanya sebagian saja yaitu bahwa selama ini #0046# mencukupi nafkah #0047# dan #0047# tidak pernah ditelantarkan, sedangkan selebihnya kurang saya ketahui",
+            "saya hanya tahu sebagian yaitu bahwa #0047# selalu dicukupi nafkahnya oleh #0046# dan tidak pernah ditelantarkan, dan selebihnya kurang saya ketahui",
+            "sebagian saja yang saya ketahui yakni bahwa selama ini #0046# mencukupi nafkah #0047# dan #0047# tidak pernah ditelantarkan",
+            "hanya sebatas itu yang saya ketahui yaitu bahwa #0047# selalu dicukupi nafkahnya oleh #0046# dan tidak pernah ditelantarkan"
+          ],
+          "saksi2": [
+            "pengetahuan saya terbatas pada satu hal bahwa nafkah lahir #0047# dipenuhi #0046# secara baik dan #0047# tidak pernah ditelantarkan, adapun selebihnya kurang jelas bagi saya",
+            "sejauh yang saya tahu bahwa #0046# senantiasa memenuhi nafkah #0047# dan tidak pernah membiarkan mereka telantar, sedangkan sisanya kurang saya pahami",
+            "bagian yang saya kuasai hanyalah bahwa nafkah lahir #0047# dipenuhi #0046# secara baik dan #0047# tidak pernah ditelantarkan, dan lainnya kurang saya pahami",
+            "yang bisa saya terangkan sebatas bahwa #0046# senantiasa memenuhi nafkah #0047# dan tidak pernah membiarkan mereka telantar, selebihnya kurang saya pahami"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: nafkah selalu dicukupi; versi B: kadang terlambat - berselisih pada PERISTIWA",
+          "bedaPada": "peristiwa",
+          "saksi1": [
+            "menurut yang saya ketahui sendiri bahwa nafkah #0047# selalu dicukupi #0046# dengan baik",
+            "keterangan saya adalah bahwa #0046# selalu memenuhi nafkah #0047#",
+            "nafkah #0047# selalu dicukupi #0046# dengan baik, itulah yang saya ketahui",
+            "yang saya terangkan di sini adalah bahwa #0046# selalu memenuhi nafkah #0047#"
+          ],
+          "saksi2": [
+            "sepengetahuan saya bahwa nafkah #0047# kadang terlambat diberikan #0046#",
+            "yang saya alami adalah bahwa #0046# kadang terlambat memberi nafkah kepada #0047#",
+            "yang saya ingat dan saya sampaikan adalah bahwa nafkah #0047# kadang terlambat diberikan #0046#",
+            "keterangan saya adalah bahwa #0046# kadang terlambat memberi nafkah kepada #0047#"
           ]
         }
       },
@@ -5291,7 +5472,9 @@
       "pihakSaksi": [
         "*"
       ],
-      "keadaan": {},
+      "keadaan": {
+        "anak": "ada"
+      },
       "teks": "Menurut pengetahuan saksi apakah #0046# mampu membiayai dua rumah tangga sekaligus yaitu rumah tangga dengan #0047# dan dengan #8723#?",
       "teksVarian": [
         "Apakah #0046# sanggup memenuhi kebutuhan #0047# dan #8723# sekaligus berikut anak-anak mereka?"
@@ -5369,6 +5552,94 @@
       ]
     },
     {
+      "id": "q-pg-kemampuan-dua-rumah-tt",
+      "pokok": "pp-kemampuan-nafkah",
+      "urutan": 109.5,
+      "tingkat": "pilihan",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "anak": "tidak"
+      },
+      "teks": "Menurut pengetahuan saksi apakah #0046# mampu membiayai dua rumah tangga sekaligus yaitu rumah tangga dengan #0047# dan dengan #8723#?",
+      "teksVarian": [
+        "Apakah #0046# sanggup memenuhi kebutuhan #0047# dan #8723# sekaligus?"
+      ],
+      "hal": "kesanggupan #0046# membiayai dua rumah tangga",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi menerangkan kesanggupan #0046# membiayai dua rumah tangga sebagai hal yang dilihat atau dialaminya sendiri",
+          "saksi1": [
+            "saya mengetahui sendiri bahwa #0046# mampu membiayai dua rumah tangga yaitu bersama #0047# dan bersama #8723# dari penghasilannya #8725# setiap bulan",
+            "saya tahu betul bahwa penghasilan #8725# setiap bulan memadai bagi #0046# untuk menanggung kebutuhan #0047# dan #8723#",
+            "#0046# mampu membiayai dua rumah tangga yaitu bersama #0047# dan bersama #8723# dari penghasilannya #8725# setiap bulan, dan hal itu saya ketahui sendiri",
+            "sebagai orang yang dekat dengan mereka saya mengetahui bahwa penghasilan #8725# setiap bulan memadai bagi #0046# untuk menanggung kebutuhan #0047# dan #8723#"
+          ],
+          "saksi2": [
+            "yang saya ketahui secara langsung adalah bahwa dengan penghasilan #8725# setiap bulan #0046# sanggup menafkahi #0047# dan #8723# sekaligus",
+            "kebutuhan dua rumah tangga yaitu #0047# dan #8723# dapat ditanggung #0046# dari penghasilan #8725# tiap bulan, sebagaimana yang saya alami dalam pergaulan dengan mereka",
+            "karena sering bersama mereka saya paham bahwa dengan penghasilan #8725# setiap bulan #0046# sanggup menafkahi #0047# dan #8723# sekaligus",
+            "saya paham dengan baik bahwa kebutuhan dua rumah tangga yaitu #0047# dan #8723# dapat ditanggung #0046# dari penghasilan #8725# tiap bulan"
+          ]
+        },
+        "de-auditu": {
+          "maksud": "saksi menerangkan kesanggupan #0046# membiayai dua rumah tangga hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+          "saksi1": [
+            "{sumber} bercerita kepada saya bahwa #0046# mampu membiayai dua rumah tangga yaitu bersama #0047# dan bersama #8723# dari penghasilannya #8725# setiap bulan",
+            "saya diberi tahu oleh {sumber} bahwa penghasilan #8725# setiap bulan memadai bagi #0046# untuk menanggung kebutuhan #0047# dan #8723#",
+            "#0046# mampu membiayai dua rumah tangga yaitu bersama #0047# dan bersama #8723# dari penghasilannya #8725# setiap bulan, begitulah cerita {sumber} kepada saya",
+            "setahu saya berdasarkan cerita {sumber} bahwa penghasilan #8725# setiap bulan memadai bagi #0046# untuk menanggung kebutuhan #0047# dan #8723#"
+          ],
+          "saksi2": [
+            "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa dengan penghasilan #8725# setiap bulan #0046# sanggup menafkahi #0047# dan #8723# sekaligus",
+            "kabar dari {sumber} yang saya terima menyebutkan bahwa kebutuhan dua rumah tangga yaitu #0047# dan #8723# dapat ditanggung #0046# dari penghasilan #8725# tiap bulan",
+            "dengan penghasilan #8725# setiap bulan #0046# sanggup menafkahi #0047# dan #8723# sekaligus, demikian yang diceritakan {sumber} kepada saya",
+            "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa kebutuhan dua rumah tangga yaitu #0047# dan #8723# dapat ditanggung #0046# dari penghasilan #8725# tiap bulan"
+          ]
+        },
+        "sebagian": {
+          "maksud": "saksi hanya mengetahui sebagian dari kesanggupan #0046# membiayai dua rumah tangga",
+          "saksi1": [
+            "yang saya ketahui hanya sebagian saja yaitu bahwa #0046# mampu membiayai dua rumah tangga yaitu bersama #0047# dan bersama #8723# dari penghasilannya #8725# setiap bulan, sedangkan selebihnya kurang saya ketahui",
+            "saya hanya tahu sebagian yaitu bahwa penghasilan #8725# setiap bulan memadai bagi #0046# untuk menanggung kebutuhan #0047# dan #8723#, dan selebihnya kurang saya ketahui",
+            "sebagian saja yang saya ketahui yakni bahwa #0046# mampu membiayai dua rumah tangga yaitu bersama #0047# dan bersama #8723# dari penghasilannya #8725# setiap bulan",
+            "hanya sebatas itu yang saya ketahui yaitu bahwa penghasilan #8725# setiap bulan memadai bagi #0046# untuk menanggung kebutuhan #0047# dan #8723#"
+          ],
+          "saksi2": [
+            "pengetahuan saya terbatas pada satu hal bahwa dengan penghasilan #8725# setiap bulan #0046# sanggup menafkahi #0047# dan #8723# sekaligus, adapun selebihnya kurang jelas bagi saya",
+            "sejauh yang saya tahu bahwa kebutuhan dua rumah tangga yaitu #0047# dan #8723# dapat ditanggung #0046# dari penghasilan #8725# tiap bulan, sedangkan sisanya kurang saya pahami",
+            "bagian yang saya kuasai hanyalah bahwa dengan penghasilan #8725# setiap bulan #0046# sanggup menafkahi #0047# dan #8723# sekaligus, dan lainnya kurang saya pahami",
+            "yang bisa saya terangkan sebatas bahwa kebutuhan dua rumah tangga yaitu #0047# dan #8723# dapat ditanggung #0046# dari penghasilan #8725# tiap bulan, selebihnya kurang saya pahami"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: lebih dari cukup; versi B: cukup asal berhemat - berselisih pada JUMLAH kecukupan penghasilan",
+          "bedaPada": "jumlah",
+          "saksi1": [
+            "menurut yang saya ketahui sendiri bahwa penghasilan #0046# lebih dari cukup untuk dua rumah tangga",
+            "keterangan saya adalah bahwa #0046# sanggup dengan mudah menanggung dua rumah tangga",
+            "penghasilan #0046# lebih dari cukup untuk dua rumah tangga, itulah yang saya ketahui",
+            "yang saya terangkan di sini adalah bahwa #0046# sanggup dengan mudah menanggung dua rumah tangga"
+          ],
+          "saksi2": [
+            "sepengetahuan saya bahwa penghasilan #0046# cukup untuk dua rumah tangga asalkan ia berhemat",
+            "#0046# sanggup menanggung dua rumah tangga bila pengeluaran dijaga, begitulah yang saya alami",
+            "yang saya ingat dan saya sampaikan adalah bahwa penghasilan #0046# cukup untuk dua rumah tangga asalkan ia berhemat",
+            "#0046# sanggup menanggung dua rumah tangga bila pengeluaran dijaga, dan itulah keterangan saya"
+          ]
+        }
+      },
+      "variabelAbt": [
+        "0046",
+        "0047",
+        "8723",
+        "8725"
+      ]
+    },
+    {
       "id": "q-kemampuan",
       "pokok": "pp-kemampuan-nafkah",
       "urutan": 110,
@@ -5377,7 +5648,9 @@
       "pihakSaksi": [
         "*"
       ],
-      "keadaan": {},
+      "keadaan": {
+        "anak": "ada"
+      },
       "teks": "Apakah penghasilan itu cukup untuk menjamin kebutuhan hidup dua orang istri dan anak-anak ?",
       "hal": "kecukupan penghasilan untuk dua orang istri dan anak-anak",
       "tidakBerlaku": [],
@@ -5410,6 +5683,58 @@
             "saya menyaksikan sendiri #0046# tidak sanggup menanggung dua orang istri dan anak-anaknya",
             "#0046# tidak sanggup menopang kebutuhan dua orang istri dan anak-anaknya sebagaimana saya saksikan",
             "#0046# tidak cukup mampu menghidupi dua orang istri dan anak-anaknya yang saya ketahui langsung"
+          ],
+          "bedaPada": "peristiwa"
+        }
+      },
+      "variabelAbt": [
+        "0046"
+      ]
+    },
+    {
+      "id": "q-kemampuan-tt",
+      "pokok": "pp-kemampuan-nafkah",
+      "urutan": 110.5,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "anak": "tidak"
+      },
+      "teks": "Apakah penghasilan itu cukup untuk menjamin kebutuhan hidup dua orang istri ?",
+      "hal": "kecukupan penghasilan untuk dua orang istri",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "penghasilan pengaju mencukupi kebutuhan dua istri",
+          "saksi1": [
+            "penghasilan #0046# cukup untuk menjamin kebutuhan hidup kedua istri sebagaimana saya ketahui",
+            "saya melihat sendiri #0046# mampu menafkahi dua orang istri",
+            "kemampuan #0046# untuk membiayai kebutuhan dua orang istri sudah saya lihat sendiri",
+            "dari penghasilannya #0046# sanggup memenuhi kebutuhan kedua istri yang saya saksikan"
+          ],
+          "saksi2": [
+            "menurut pengamatan saya penghasilan #0046# mencukupi untuk menghidupi dua istri",
+            "#0046# sanggup menanggung biaya hidup kedua istrinya yang saya ketahui langsung",
+            "saya tahu #0046# mampu mencukupi nafkah dua orang istri",
+            "nafkah untuk kedua istri dapat dipenuhi #0046# dari penghasilannya sebagaimana saya lihat"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: pengaju mampu menafkahi dua istri; versi B: pengaju tidak mampu - berselisih pada PERISTIWA (kemampuan nafkah)",
+          "saksi1": [
+            "saya melihat sendiri #0046# mampu menafkahi dua orang istri",
+            "saya menyaksikan sendiri #0046# sanggup menanggung dua orang istri",
+            "kemampuan #0046# menafkahi dua orang istri saya lihat langsung",
+            "#0046# cukup mampu menghidupi dua orang istri sebagaimana saya saksikan"
+          ],
+          "saksi2": [
+            "saya melihat sendiri #0046# tidak mampu menafkahi dua orang istri",
+            "saya menyaksikan sendiri #0046# tidak sanggup menanggung dua orang istri",
+            "#0046# tidak sanggup menopang kebutuhan dua orang istri sebagaimana saya saksikan",
+            "#0046# tidak cukup mampu menghidupi dua orang istri yang saya ketahui langsung"
           ],
           "bedaPada": "peristiwa"
         }
@@ -5709,7 +6034,9 @@
       "pihakSaksi": [
         "*"
       ],
-      "keadaan": {},
+      "keadaan": {
+        "anak": "ada"
+      },
       "teks": "Bagaimana sikap #0046# terhadap #0047# dan anak-anaknya selama ini dan apakah ia sanggup berlaku adil ?",
       "hal": "sikap pengaju terhadap istri dan anak-anak serta kesanggupannya berlaku adil",
       "tidakBerlaku": [],
@@ -5742,6 +6069,59 @@
             "selama ini #0046# tidak adil dalam memperlakukan #0047# dan anak-anaknya sebagaimana saya saksikan",
             "#0046# memperlakukan #0047# dan anak-anaknya secara tidak adil dan itu saya lihat langsung",
             "sikap #0046# kepada #0047# dan anak-anaknya tidak adil menurut penglihatan saya sendiri"
+          ],
+          "bedaPada": "peristiwa"
+        }
+      },
+      "variabelAbt": [
+        "0046",
+        "0047"
+      ]
+    },
+    {
+      "id": "q-keadilan-tt",
+      "pokok": "pp-keadilan",
+      "urutan": 130.5,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "anak": "tidak"
+      },
+      "teks": "Bagaimana sikap #0046# terhadap #0047# selama ini dan apakah ia sanggup berlaku adil ?",
+      "hal": "sikap pengaju terhadap istri serta kesanggupannya berlaku adil",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "pengaju bersikap baik dan sanggup berlaku adil",
+          "saksi1": [
+            "selama ini #0046# memenuhi kebutuhan #0047# dengan baik dan menyatakan sanggup berlaku adil",
+            "saya melihat sendiri #0046# bersikap adil kepada #0047# serta berjanji akan adil kepada kedua istrinya",
+            "#0046# memperlakukan #0047# dengan baik selama ini dan telah menyatakan kesanggupannya berlaku adil",
+            "sikap #0046# kepada #0047# baik dan adil dan ia bersedia berlaku adil kepada para istrinya"
+          ],
+          "saksi2": [
+            "sepanjang yang saya ketahui #0046# menafkahi dan memperhatikan #0047# dan sanggup berlaku adil",
+            "perlakuan #0046# kepada #0047# selama ini baik dan ia menyatakan akan berlaku adil",
+            "saya menyaksikan sendiri #0046# bersikap baik kepada #0047# dan berkomitmen berlaku adil kepada istri-istrinya",
+            "kesanggupan #0046# berlaku adil kepada istri-istri ia sampaikan sendiri dan sikapnya selama ini baik kepada #0047#"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: pengaju bersikap adil; versi B: pengaju tidak adil - berselisih pada PERISTIWA (sikap adil)",
+          "saksi1": [
+            "saya melihat sendiri #0046# bersikap adil kepada #0047#",
+            "selama ini #0046# adil dalam memperlakukan #0047# sebagaimana saya saksikan",
+            "#0046# memperlakukan #0047# secara adil dan itu saya lihat langsung",
+            "sikap #0046# kepada #0047# adil menurut penglihatan saya sendiri"
+          ],
+          "saksi2": [
+            "saya melihat sendiri #0046# tidak adil kepada #0047#",
+            "selama ini #0046# tidak adil dalam memperlakukan #0047# sebagaimana saya saksikan",
+            "#0046# memperlakukan #0047# secara tidak adil dan itu saya lihat langsung",
+            "sikap #0046# kepada #0047# tidak adil menurut penglihatan saya sendiri"
           ],
           "bedaPada": "peristiwa"
         }
@@ -5931,7 +6311,9 @@
       "pihakSaksi": [
         "*"
       ],
-      "keadaan": {},
+      "keadaan": {
+        "anak": "ada"
+      },
       "teks": "Apakah #0046# membuat surat pernyataan bersedia berlaku adil terhadap istri-istri dan anak-anaknya, dan apakah saksi mengetahuinya?",
       "teksVarian": [
         "Apakah ada surat pernyataan kesanggupan berlaku adil yang dibuat dan ditandatangani oleh #0046#?"
@@ -6006,6 +6388,115 @@
             "ucapan yang terdengar oleh saya waktu itu menyatakan bahwa kesanggupan berlaku adil #0046# kepada istri-istri dan anak-anaknya dituangkan dalam surat yang ia tandatangani sendiri",
             "#0046# menandatangani sendiri surat pernyataan yang berisi kesanggupan berlaku adil, begitulah perkataan yang terdengar di hadapan saya",
             "di hadapan saya mereka mengatakan bahwa kesanggupan berlaku adil #0046# kepada istri-istri dan anak-anaknya dituangkan dalam surat yang ia tandatangani sendiri",
+            "para pihak berkata di depan saya bahwa #0046# menandatangani sendiri surat pernyataan yang berisi kesanggupan berlaku adil"
+          ]
+        },
+        "sebagian": {
+          "maksud": "saksi hanya mengetahui sebagian dari surat pernyataan kesanggupan berlaku adil #0046#",
+          "saksi1": [
+            "yang saya ketahui hanya sebagian saja yaitu bahwa #0046# membuat surat pernyataan sanggup berlaku adil, sedangkan selebihnya kurang saya ketahui",
+            "saya hanya tahu sebagian yaitu bahwa surat pernyataan kesanggupan berlaku adil memang dibuat #0046#, dan selebihnya kurang saya ketahui",
+            "sebagian saja yang saya ketahui yakni bahwa #0046# membuat surat pernyataan sanggup berlaku adil",
+            "hanya sebatas itu yang saya ketahui yaitu bahwa surat pernyataan kesanggupan berlaku adil memang dibuat #0046#"
+          ],
+          "saksi2": [
+            "pengetahuan saya terbatas pada satu hal bahwa kesanggupan berlaku adil #0046# dituangkan dalam sebuah surat, adapun selebihnya kurang jelas bagi saya",
+            "sejauh yang saya tahu bahwa #0046# menandatangani surat pernyataan kesanggupan berlaku adil, sedangkan sisanya kurang saya pahami",
+            "bagian yang saya kuasai hanyalah bahwa kesanggupan berlaku adil #0046# dituangkan dalam sebuah surat, dan lainnya kurang saya pahami",
+            "yang bisa saya terangkan sebatas bahwa #0046# menandatangani surat pernyataan kesanggupan berlaku adil, selebihnya kurang saya pahami"
+          ]
+        }
+      },
+      "variabelAbt": [
+        "0046"
+      ]
+    },
+    {
+      "id": "q-pg-adil-surat-tt",
+      "pokok": "pp-pg-adil-rinci",
+      "urutan": 133.5,
+      "tingkat": "pilihan",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "anak": "tidak"
+      },
+      "teks": "Apakah #0046# membuat surat pernyataan bersedia berlaku adil terhadap istri-istri, dan apakah saksi mengetahuinya?",
+      "teksVarian": [
+        "Apakah ada surat pernyataan kesanggupan berlaku adil yang dibuat dan ditandatangani oleh #0046#?"
+      ],
+      "hal": "surat pernyataan kesanggupan berlaku adil #0046#",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": [
+          {
+            "maksud": "saksi menerangkan surat pernyataan kesanggupan berlaku adil #0046# sebagai hal yang dilihat atau dialaminya sendiri",
+            "saksi1": [
+              "saya melihat sendiri bahwa #0046# membuat surat pernyataan sanggup berlaku adil terhadap istri-istri dan menandatanganinya sendiri",
+              "saya menyaksikan langsung bahwa surat pernyataan kesanggupan berlaku adil ditulis dan ditandatangani oleh #0046# sendiri",
+              "#0046# membuat surat pernyataan sanggup berlaku adil terhadap istri-istri dan menandatanganinya sendiri, dan hal itu saya lihat dengan mata kepala saya sendiri",
+              "pada waktu itu saya berada di tempat kejadian dan melihat bahwa surat pernyataan kesanggupan berlaku adil ditulis dan ditandatangani oleh #0046# sendiri"
+            ],
+            "saksi2": [
+              "karena saya turut hadir maka saya terangkan bahwa kesanggupan berlaku adil #0046# kepada istri-istri dituangkan dalam surat yang ia tandatangani sendiri",
+              "#0046# menandatangani sendiri surat pernyataan yang berisi kesanggupan berlaku adil, demikian yang tampak oleh saya waktu itu",
+              "saya ada di lokasi pada saat itu dan mendapati bahwa kesanggupan berlaku adil #0046# kepada istri-istri dituangkan dalam surat yang ia tandatangani sendiri",
+              "#0046# menandatangani sendiri surat pernyataan yang berisi kesanggupan berlaku adil, sebagaimana yang saya alami"
+            ],
+            "keadaan": {
+              "anak": "ada"
+            }
+          },
+          {
+            "maksud": "saksi menerangkan surat pernyataan kesanggupan berlaku adil #0046# sebagai hal yang dilihat atau dialaminya sendiri",
+            "keadaan": {
+              "anak": "tidak"
+            },
+            "saksi1": [
+              "saya melihat sendiri bahwa #0046# membuat surat pernyataan sanggup berlaku adil terhadap istri-istri dan menandatanganinya sendiri",
+              "saya menyaksikan langsung bahwa surat pernyataan kesanggupan berlaku adil ditulis dan ditandatangani oleh #0046# sendiri",
+              "#0046# membuat surat pernyataan sanggup berlaku adil terhadap istri-istri dan menandatanganinya sendiri, dan hal itu saya lihat dengan mata kepala saya sendiri",
+              "pada waktu itu saya berada di tempat kejadian dan melihat bahwa surat pernyataan kesanggupan berlaku adil ditulis dan ditandatangani oleh #0046# sendiri"
+            ],
+            "saksi2": [
+              "karena saya turut hadir maka saya terangkan bahwa kesanggupan berlaku adil #0046# kepada istri-istri dituangkan dalam surat yang ia tandatangani sendiri",
+              "#0046# menandatangani sendiri surat pernyataan yang berisi kesanggupan berlaku adil, demikian yang tampak oleh saya waktu itu",
+              "saya ada di lokasi pada saat itu dan mendapati bahwa kesanggupan berlaku adil #0046# kepada istri-istri dituangkan dalam surat yang ia tandatangani sendiri",
+              "#0046# menandatangani sendiri surat pernyataan yang berisi kesanggupan berlaku adil, sebagaimana yang saya alami"
+            ]
+          }
+        ],
+        "de-auditu": {
+          "maksud": "saksi menerangkan surat pernyataan kesanggupan berlaku adil #0046# hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+          "saksi1": [
+            "{sumber} bercerita kepada saya bahwa #0046# membuat surat pernyataan sanggup berlaku adil terhadap istri-istri dan menandatanganinya sendiri",
+            "saya diberi tahu oleh {sumber} bahwa surat pernyataan kesanggupan berlaku adil ditulis dan ditandatangani oleh #0046# sendiri",
+            "#0046# membuat surat pernyataan sanggup berlaku adil terhadap istri-istri dan menandatanganinya sendiri, begitulah cerita {sumber} kepada saya",
+            "setahu saya berdasarkan cerita {sumber} bahwa surat pernyataan kesanggupan berlaku adil ditulis dan ditandatangani oleh #0046# sendiri"
+          ],
+          "saksi2": [
+            "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa kesanggupan berlaku adil #0046# kepada istri-istri dituangkan dalam surat yang ia tandatangani sendiri",
+            "kabar dari {sumber} yang saya terima menyebutkan bahwa #0046# menandatangani sendiri surat pernyataan yang berisi kesanggupan berlaku adil",
+            "kesanggupan berlaku adil #0046# kepada istri-istri dituangkan dalam surat yang ia tandatangani sendiri, demikian yang diceritakan {sumber} kepada saya",
+            "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa #0046# menandatangani sendiri surat pernyataan yang berisi kesanggupan berlaku adil"
+          ]
+        },
+        "mendengar": {
+          "maksud": "saksi menerangkan surat pernyataan kesanggupan berlaku adil #0046# sebagai hal yang didengarnya sendiri dari pihak atau peristiwa itu",
+          "saksi1": [
+            "saya mendengar sendiri bahwa #0046# membuat surat pernyataan sanggup berlaku adil terhadap istri-istri dan menandatanganinya sendiri",
+            "saya mendengar langsung bahwa surat pernyataan kesanggupan berlaku adil ditulis dan ditandatangani oleh #0046# sendiri",
+            "#0046# membuat surat pernyataan sanggup berlaku adil terhadap istri-istri dan menandatanganinya sendiri, dan itu saya dengar sendiri pada waktu itu",
+            "saat itu saya berada di dekat mereka dan mendengar bahwa surat pernyataan kesanggupan berlaku adil ditulis dan ditandatangani oleh #0046# sendiri"
+          ],
+          "saksi2": [
+            "ucapan yang terdengar oleh saya waktu itu menyatakan bahwa kesanggupan berlaku adil #0046# kepada istri-istri dituangkan dalam surat yang ia tandatangani sendiri",
+            "#0046# menandatangani sendiri surat pernyataan yang berisi kesanggupan berlaku adil, begitulah perkataan yang terdengar di hadapan saya",
+            "di hadapan saya mereka mengatakan bahwa kesanggupan berlaku adil #0046# kepada istri-istri dituangkan dalam surat yang ia tandatangani sendiri",
             "para pihak berkata di depan saya bahwa #0046# menandatangani sendiri surat pernyataan yang berisi kesanggupan berlaku adil"
           ]
         },
@@ -6226,7 +6717,9 @@
       "pihakSaksi": [
         "*"
       ],
-      "keadaan": {},
+      "keadaan": {
+        "anak": "ada"
+      },
       "teks": "Apakah #0046# pernah berlaku kasar atau melakukan kekerasan kepada #0047# atau anak-anaknya?",
       "teksVarian": [
         "Apakah pernah terjadi kekerasan dalam rumah tangga yang dilakukan #0046# terhadap #0047# atau anak-anak mereka?"
@@ -6277,6 +6770,92 @@
             "sejauh yang saya tahu bahwa #0046# tidak pernah memukul atau menyakiti #0047# maupun anak-anaknya sedangkan sisanya kurang saya pahami",
             "bagian yang saya kuasai hanyalah bahwa kekerasan terhadap #0047# dan anak-anak tidak pernah dilakukan #0046#, dan lainnya kurang saya pahami",
             "yang bisa saya terangkan sebatas bahwa #0046# tidak pernah memukul atau menyakiti #0047# maupun anak-anaknya selebihnya kurang saya pahami"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: tidak pernah ada kekerasan sama sekali; versi B: pernah cekcok keras tanpa kekerasan fisik - berselisih pada PERISTIWA",
+          "bedaPada": "peristiwa",
+          "saksi1": [
+            "menurut yang saya ketahui sendiri bahwa tidak pernah ada kekerasan di rumah tangga #0046# dan #0047#",
+            "keterangan saya adalah bahwa rumah tangga #0046# dan #0047# tidak pernah diwarnai kekerasan",
+            "tidak pernah ada kekerasan di rumah tangga #0046# dan #0047#, itulah yang saya ketahui",
+            "yang saya terangkan di sini adalah bahwa rumah tangga #0046# dan #0047# tidak pernah diwarnai kekerasan"
+          ],
+          "saksi2": [
+            "sepengetahuan saya bahwa pernah ada adu mulut keras di rumah tangga #0046# dan #0047# namun tanpa kekerasan fisik",
+            "pernah terjadi cekcok keras di rumah tangga #0046# dan #0047# tetapi tidak sampai main tangan, begitulah yang saya alami",
+            "yang saya ingat dan saya sampaikan adalah bahwa pernah ada adu mulut keras di rumah tangga #0046# dan #0047# namun tanpa kekerasan fisik",
+            "pernah terjadi cekcok keras di rumah tangga #0046# dan #0047# tetapi tidak sampai main tangan, dan itulah keterangan saya"
+          ]
+        }
+      },
+      "variabelAbt": [
+        "0046",
+        "0047"
+      ]
+    },
+    {
+      "id": "q-pg-adil-kekerasan-tt",
+      "pokok": "pp-keadilan",
+      "urutan": 136.5,
+      "tingkat": "tambahan",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "anak": "tidak"
+      },
+      "teks": "Apakah #0046# pernah berlaku kasar atau melakukan kekerasan kepada #0047#?",
+      "teksVarian": [
+        "Apakah pernah terjadi kekerasan dalam rumah tangga yang dilakukan #0046# terhadap #0047#?"
+      ],
+      "hal": "kekerasan dalam rumah tangga #0046# dan #0047#",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi menerangkan ada tidaknya kekerasan dalam rumah tangga #0046# dan #0047# sebagai hal yang dilihat atau dialaminya sendiri",
+          "saksi1": [
+            "saya mengetahui sendiri bahwa #0046# tidak pernah berlaku kasar atau melakukan kekerasan kepada #0047#",
+            "saya tahu betul bahwa tidak pernah ada kekerasan yang dilakukan #0046# terhadap #0047#",
+            "hal yang saya ketahui sendiri adalah bahwa #0046# tidak pernah berlaku kasar atau melakukan kekerasan kepada #0047#",
+            "sebagai orang yang dekat dengan mereka saya mengetahui bahwa tidak pernah ada kekerasan yang dilakukan #0046# terhadap #0047#"
+          ],
+          "saksi2": [
+            "yang saya ketahui secara langsung adalah bahwa kekerasan terhadap #0047# tidak pernah dilakukan #0046#",
+            "dalam pergaulan dengan mereka saya alami bahwa #0046# tidak pernah memukul atau menyakiti #0047#",
+            "karena sering bersama mereka saya paham bahwa kekerasan terhadap #0047# tidak pernah dilakukan #0046#",
+            "saya paham dengan baik bahwa #0046# tidak pernah memukul atau menyakiti #0047#"
+          ]
+        },
+        "de-auditu": {
+          "maksud": "saksi menerangkan ada tidaknya kekerasan dalam rumah tangga #0046# dan #0047# hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+          "saksi1": [
+            "{sumber} bercerita kepada saya bahwa #0046# tidak pernah berlaku kasar atau melakukan kekerasan kepada #0047#",
+            "saya diberi tahu oleh {sumber} bahwa tidak pernah ada kekerasan yang dilakukan #0046# terhadap #0047#",
+            "cerita {sumber} kepada saya adalah bahwa #0046# tidak pernah berlaku kasar atau melakukan kekerasan kepada #0047#",
+            "setahu saya berdasarkan cerita {sumber} bahwa tidak pernah ada kekerasan yang dilakukan #0046# terhadap #0047#"
+          ],
+          "saksi2": [
+            "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa kekerasan terhadap #0047# tidak pernah dilakukan #0046#",
+            "kabar dari {sumber} yang saya terima menyebutkan bahwa #0046# tidak pernah memukul atau menyakiti #0047#",
+            "kekerasan terhadap #0047# tidak pernah dilakukan #0046#, demikian yang diceritakan {sumber} kepada saya",
+            "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa #0046# tidak pernah memukul atau menyakiti #0047#"
+          ]
+        },
+        "sebagian": {
+          "maksud": "saksi hanya mengetahui sebagian dari ada tidaknya kekerasan dalam rumah tangga #0046# dan #0047#",
+          "saksi1": [
+            "yang saya ketahui hanya sebagian saja yaitu bahwa #0046# tidak pernah berlaku kasar atau melakukan kekerasan kepada #0047# sedangkan selebihnya kurang saya ketahui",
+            "saya hanya tahu sebagian yaitu bahwa tidak pernah ada kekerasan yang dilakukan #0046# terhadap #0047#, dan selebihnya kurang saya ketahui",
+            "sebagian saja yang saya ketahui yakni bahwa #0046# tidak pernah berlaku kasar atau melakukan kekerasan kepada #0047#",
+            "hanya sebatas itu yang saya ketahui yaitu bahwa tidak pernah ada kekerasan yang dilakukan #0046# terhadap #0047#"
+          ],
+          "saksi2": [
+            "pengetahuan saya terbatas pada satu hal bahwa kekerasan terhadap #0047# tidak pernah dilakukan #0046#, adapun selebihnya kurang jelas bagi saya",
+            "sejauh yang saya tahu bahwa #0046# tidak pernah memukul atau menyakiti #0047# sedangkan sisanya kurang saya pahami",
+            "bagian yang saya kuasai hanyalah bahwa kekerasan terhadap #0047# tidak pernah dilakukan #0046#, dan lainnya kurang saya pahami",
+            "yang bisa saya terangkan sebatas bahwa #0046# tidak pernah memukul atau menyakiti #0047# selebihnya kurang saya pahami"
           ]
         },
         "berbeda": {

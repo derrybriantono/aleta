@@ -151,6 +151,8 @@ const BERKAS = [
   // Tanya jawab saksi Blangko Derry menurut KATALOG jenis perkara (20 Okt 2026): murni, dimuat sebelum blangko-derry-isian.js.
   "blangko-derry-katalog.js",
   "blangko-derry-jawab-katalog.js",
+  // Keadaan perkara dari posita (U2, 1 Nov 2026): bentuk/dasar itsbat dan pilihan dispensasi kawin; murni, sebelum blangko-derry-isian.js.
+  "blangko-derry-keadaan-posita.js",
   "blangko-derry-berkas.js",
   // Periksa sebelum cetak (G1, 30 Okt 2026): satu daftar temuan di langkah Cetak; murni, sebelum blangko-derry-isian.js.
   "blangko-derry-periksa.js",
@@ -159,6 +161,8 @@ const BERKAS = [
   "blangko-derry-pustaka.js",
   // Peta dalil (P2, 1 Nov 2026): matriks dalil satu sumber x tanggapan lawan, dilipat bawaan; murni + pasang, sebelum blangko-derry-isian.js.
   "blangko-derry-peta-dalil.js",
+  // Penilaian pembuktian (A2, 1 Nov 2026): dalil x bukti x saksi (aturan di portal), dilipat bawaan; sebelum blangko-derry-isian.js.
+  "blangko-derry-penilai-bukti.js",
   "blangko-derry-isian.js",
   // Temuan perkara di panel cetak Blangko Derry (G4, 30 Okt 2026): usul pembetulan kehadiran SIPP (satu tombol bagi PP perkara)
   // dan putusan SIPP vs dokumen - mengisi wadah catatan temuan yang sudah ada, dipanggil blangko-derry-isian.js.

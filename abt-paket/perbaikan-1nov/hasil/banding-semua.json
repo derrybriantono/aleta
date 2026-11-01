@@ -1,0 +1,624 @@
+{
+ "2111": {
+  "msLama": 52166,
+  "msBaru": 103902,
+  "maksBaru": [
+   61.7,
+   "75/Pdt.P/2021/PA.Dgl"
+  ],
+  "n": 10278,
+  "samaTerisi": 1309,
+  "samaKosong": 8926,
+  "baruTerisi": 37,
+  "hilang": 0,
+  "berubahTerisi": 6,
+  "galat": 0,
+  "cocokBot": 10107,
+  "bedaBot": 0,
+  "contoh": [
+   [
+    "BARU",
+    "0011/Pdt.G/2015/PA.Dgl",
+    "2015-09-22"
+   ],
+   [
+    "BARU",
+    "0033/Pdt.G/2015/PA.Dgl",
+    "2015-05-06"
+   ],
+   [
+    "BARU",
+    "0036/Pdt.G/2015/PA.Dgl",
+    "2015-04-30"
+   ],
+   [
+    "BARU",
+    "0037/Pdt.G/2015/PA.Dgl",
+    "2015-04-17"
+   ],
+   [
+    "BARU",
+    "0041/Pdt.G/2015/PA.Dgl",
+    "2015-05-13"
+   ],
+   [
+    "BARU",
+    "0054/Pdt.G/2015/PA.Dgl",
+    "2015-07-02"
+   ],
+   [
+    "BARU",
+    "0133/Pdt.G/2015/PA.Dgl",
+    "2015-06-08"
+   ],
+   [
+    "BARU",
+    "0138/Pdt.G/2015/PA.Dgl",
+    "2015-06-24"
+   ],
+   [
+    "BARU",
+    "0155/Pdt.G/2015/PA.Dgl",
+    "2015-08-26"
+   ],
+   [
+    "BARU",
+    "0017/Pdt.P/2015/PA.Dgl",
+    "2015-08-04"
+   ],
+   [
+    "BARU",
+    "0218/Pdt.G/2015/PA.Dgl",
+    "2015-12-17"
+   ],
+   [
+    "BARU",
+    "0263/Pdt.G/2015/PA.Dgl",
+    "2015-12-02"
+   ],
+   [
+    "BARU",
+    "0305/Pdt.G/2015/PA.Dgl",
+    "2016-01-06"
+   ],
+   [
+    "BARU",
+    "0312/Pdt.G/2015/PA.Dgl",
+    "2016-02-03"
+   ],
+   [
+    "BARU",
+    "0024/Pdt.P/2015/PA.Dgl",
+    "2015-12-14"
+   ],
+   [
+    "BARU",
+    "0322/Pdt.G/2015/PA.Dgl",
+    "2016-02-23"
+   ],
+   [
+    "BARU",
+    "0323/Pdt.G/2015/PA.Dgl",
+    "2016-02-24"
+   ],
+   [
+    "BARU",
+    "0324/Pdt.G/2015/PA.Dgl",
+    "2016-01-27"
+   ],
+   [
+    "BARU",
+    "0330/Pdt.G/2015/PA.Dgl",
+    "2016-03-02"
+   ],
+   [
+    "BARU",
+    "0337/Pdt.G/2015/PA.Dgl",
+    "2016-01-13"
+   ],
+   [
+    "BARU",
+    "0345/Pdt.G/2015/PA.Dgl",
+    "2016-02-15"
+   ],
+   [
+    "BARU",
+    "527/Pdt.P/2016/PA.Dgl",
+    "2016-11-21"
+   ],
+   [
+    "BARU",
+    "32/Pdt.G/2017/PA.Dgl",
+    "2017-03-01"
+   ],
+   [
+    "BARU",
+    "309/Pdt.P/2017/PA.Dgl",
+    "2017-05-17"
+   ],
+   [
+    "BERUBAH",
+    "245/Pdt.G/2017/PA.Dgl",
+    "2018-01-16",
+    "2017-12-05"
+   ],
+   [
+    "BARU",
+    "331/Pdt.G/2017/PA.Dgl",
+    "2017-11-28"
+   ],
+   [
+    "BARU",
+    "337/Pdt.G/2017/PA.Dgl",
+    "2018-01-16"
+   ],
+   [
+    "BARU",
+    "75/Pdt.G/2018/PA.Dgl",
+    "2018-03-26"
+   ],
+   [
+    "BERUBAH",
+    "240/Pdt.G/2018/PA.Dgl",
+    "2018-12-12",
+    "2018-11-28"
+   ],
+   [
+    "BARU",
+    "248/Pdt.G/2018/PA.Dgl",
+    "2018-11-21"
+   ],
+   [
+    "BARU",
+    "172/Pdt.G/2019/PA.Dgl",
+    "2019-07-24"
+   ],
+   [
+    "BARU",
+    "268/Pdt.G/2019/PA.Dgl",
+    "2019-10-24"
+   ],
+   [
+    "BERUBAH",
+    "27/Pdt.G/2020/PA.Dgl",
+    "2020-04-01",
+    "2020-03-18"
+   ],
+   [
+    "BERUBAH",
+    "50/Pdt.G/2020/PA.Dgl",
+    "2020-04-01",
+    "2020-03-18"
+   ],
+   [
+    "BERUBAH",
+    "134/Pdt.G/2020/PA.Dgl",
+    "2020-07-07",
+    "2020-07-14"
+   ],
+   [
+    "BARU",
+    "369/Pdt.P/2020/PA.Dgl",
+    "2020-10-01"
+   ],
+   [
+    "BARU",
+    "392/Pdt.G/2020/PA.Dgl",
+    "2020-12-07"
+   ],
+   [
+    "BARU",
+    "402/Pdt.G/2020/PA.Dgl",
+    "2020-12-10"
+   ],
+   [
+    "BARU",
+    "33/Pdt.G/2021/PA.Dgl",
+    "2021-02-08"
+   ],
+   [
+    "BARU",
+    "108/Pdt.G/2021/PA.Dgl",
+    "2021-03-15"
+   ],
+   [
+    "BERUBAH",
+    "206/Pdt.G/2021/PA.Dgl",
+    "2021-07-12",
+    "2021-06-21"
+   ],
+   [
+    "BARU",
+    "150/Pdt.G/2022/PA.Dgl",
+    "2022-04-28"
+   ],
+   [
+    "BARU",
+    "433/Pdt.G/2025/PA.Dgl",
+    "2025-08-25"
+   ]
+  ],
+  "bedaBotContoh": []
+ },
+ "2112": {
+  "msLama": 70120,
+  "msBaru": 105102,
+  "maksBaru": [
+   1811.2,
+   "450/Pdt.G/2019/PA.Dgl"
+  ],
+  "n": 10278,
+  "samaTerisi": 136,
+  "samaKosong": 10128,
+  "baruTerisi": 13,
+  "hilang": 0,
+  "berubahTerisi": 1,
+  "galat": 0,
+  "cocokBot": 10237,
+  "bedaBot": 0,
+  "contoh": [
+   [
+    "BARU",
+    "0037/Pdt.G/2015/PA.Dgl",
+    "2015-05-07"
+   ],
+   [
+    "BARU",
+    "0054/Pdt.G/2015/PA.Dgl",
+    "2015-07-09"
+   ],
+   [
+    "BARU",
+    "0218/Pdt.G/2015/PA.Dgl",
+    "2015-12-10"
+   ],
+   [
+    "BARU",
+    "0263/Pdt.G/2015/PA.Dgl",
+    "2015-12-16"
+   ],
+   [
+    "BARU",
+    "0309/Pdt.G/2015/PA.Dgl",
+    "2016-03-16"
+   ],
+   [
+    "BARU",
+    "0324/Pdt.G/2015/PA.Dgl",
+    "2016-02-10"
+   ],
+   [
+    "BARU",
+    "0330/Pdt.G/2015/PA.Dgl",
+    "2016-03-23"
+   ],
+   [
+    "BARU",
+    "152/Pdt.G/2016/PA.Dgl",
+    "2016-07-26"
+   ],
+   [
+    "BARU",
+    "271/Pdt.G/2017/PA.Dgl",
+    "2018-01-23"
+   ],
+   [
+    "BARU",
+    "305/Pdt.G/2017/PA.Dgl",
+    "2017-11-07"
+   ],
+   [
+    "BARU",
+    "337/Pdt.G/2017/PA.Dgl",
+    "2018-01-23"
+   ],
+   [
+    "BERUBAH",
+    "134/Pdt.G/2020/PA.Dgl",
+    "2020-08-04",
+    "2020-07-07"
+   ],
+   [
+    "BARU",
+    "336/Pdt.G/2020/PA.Dgl",
+    "2020-11-17"
+   ],
+   [
+    "BARU",
+    "138/Pdt.G/2022/PA.Dgl",
+    "2022-04-19"
+   ]
+  ],
+  "bedaBotContoh": []
+ },
+ "7119": {
+  "msLama": 39623,
+  "msBaru": 81534,
+  "maksBaru": [
+   942.3,
+   "62/Pdt.P/2022/PA.Dgl"
+  ],
+  "n": 10278,
+  "samaTerisi": 1315,
+  "samaKosong": 8926,
+  "baruTerisi": 37,
+  "hilang": 0,
+  "berubahTerisi": 0,
+  "galat": 0,
+  "cocokBot": 10107,
+  "bedaBot": 0,
+  "contoh": [
+   [
+    "BARU",
+    "0011/Pdt.G/2015/PA.Dgl",
+    "Selasa"
+   ],
+   [
+    "BARU",
+    "0033/Pdt.G/2015/PA.Dgl",
+    "Rabu"
+   ],
+   [
+    "BARU",
+    "0036/Pdt.G/2015/PA.Dgl",
+    "Kamis"
+   ],
+   [
+    "BARU",
+    "0037/Pdt.G/2015/PA.Dgl",
+    "Jumat"
+   ],
+   [
+    "BARU",
+    "0041/Pdt.G/2015/PA.Dgl",
+    "Rabu"
+   ],
+   [
+    "BARU",
+    "0054/Pdt.G/2015/PA.Dgl",
+    "Kamis"
+   ],
+   [
+    "BARU",
+    "0133/Pdt.G/2015/PA.Dgl",
+    "Senin"
+   ],
+   [
+    "BARU",
+    "0138/Pdt.G/2015/PA.Dgl",
+    "Rabu"
+   ],
+   [
+    "BARU",
+    "0155/Pdt.G/2015/PA.Dgl",
+    "Rabu"
+   ],
+   [
+    "BARU",
+    "0017/Pdt.P/2015/PA.Dgl",
+    "Selasa"
+   ],
+   [
+    "BARU",
+    "0218/Pdt.G/2015/PA.Dgl",
+    "Kamis"
+   ],
+   [
+    "BARU",
+    "0263/Pdt.G/2015/PA.Dgl",
+    "Rabu"
+   ],
+   [
+    "BARU",
+    "0305/Pdt.G/2015/PA.Dgl",
+    "Rabu"
+   ],
+   [
+    "BARU",
+    "0312/Pdt.G/2015/PA.Dgl",
+    "Rabu"
+   ],
+   [
+    "BARU",
+    "0024/Pdt.P/2015/PA.Dgl",
+    "Senin"
+   ],
+   [
+    "BARU",
+    "0322/Pdt.G/2015/PA.Dgl",
+    "Selasa"
+   ],
+   [
+    "BARU",
+    "0323/Pdt.G/2015/PA.Dgl",
+    "Rabu"
+   ],
+   [
+    "BARU",
+    "0324/Pdt.G/2015/PA.Dgl",
+    "Rabu"
+   ],
+   [
+    "BARU",
+    "0330/Pdt.G/2015/PA.Dgl",
+    "Rabu"
+   ],
+   [
+    "BARU",
+    "0337/Pdt.G/2015/PA.Dgl",
+    "Rabu"
+   ],
+   [
+    "BARU",
+    "0345/Pdt.G/2015/PA.Dgl",
+    "Senin"
+   ],
+   [
+    "BARU",
+    "527/Pdt.P/2016/PA.Dgl",
+    "Senin"
+   ],
+   [
+    "BARU",
+    "32/Pdt.G/2017/PA.Dgl",
+    "Rabu"
+   ],
+   [
+    "BARU",
+    "309/Pdt.P/2017/PA.Dgl",
+    "Rabu"
+   ],
+   [
+    "BARU",
+    "331/Pdt.G/2017/PA.Dgl",
+    "Selasa"
+   ],
+   [
+    "BARU",
+    "337/Pdt.G/2017/PA.Dgl",
+    "Selasa"
+   ],
+   [
+    "BARU",
+    "75/Pdt.G/2018/PA.Dgl",
+    "Senin"
+   ],
+   [
+    "BARU",
+    "248/Pdt.G/2018/PA.Dgl",
+    "Rabu"
+   ],
+   [
+    "BARU",
+    "172/Pdt.G/2019/PA.Dgl",
+    "Rabu"
+   ],
+   [
+    "BARU",
+    "268/Pdt.G/2019/PA.Dgl",
+    "Kamis"
+   ],
+   [
+    "BARU",
+    "369/Pdt.P/2020/PA.Dgl",
+    "Kamis"
+   ],
+   [
+    "BARU",
+    "392/Pdt.G/2020/PA.Dgl",
+    "Senin"
+   ],
+   [
+    "BARU",
+    "402/Pdt.G/2020/PA.Dgl",
+    "Kamis"
+   ],
+   [
+    "BARU",
+    "33/Pdt.G/2021/PA.Dgl",
+    "Senin"
+   ],
+   [
+    "BARU",
+    "108/Pdt.G/2021/PA.Dgl",
+    "Senin"
+   ],
+   [
+    "BARU",
+    "150/Pdt.G/2022/PA.Dgl",
+    "Kamis"
+   ],
+   [
+    "BARU",
+    "433/Pdt.G/2025/PA.Dgl",
+    "Senin"
+   ]
+  ],
+  "bedaBotContoh": []
+ },
+ "7121": {
+  "msLama": 107269,
+  "msBaru": 162992,
+  "maksBaru": [
+   8283.5,
+   "531/Pdt.G/2026/PA.Dgl"
+  ],
+  "n": 10278,
+  "samaTerisi": 137,
+  "samaKosong": 10128,
+  "baruTerisi": 13,
+  "hilang": 0,
+  "berubahTerisi": 0,
+  "galat": 0,
+  "cocokBot": 10237,
+  "bedaBot": 0,
+  "contoh": [
+   [
+    "BARU",
+    "0037/Pdt.G/2015/PA.Dgl",
+    "Kamis"
+   ],
+   [
+    "BARU",
+    "0054/Pdt.G/2015/PA.Dgl",
+    "Kamis"
+   ],
+   [
+    "BARU",
+    "0218/Pdt.G/2015/PA.Dgl",
+    "Kamis"
+   ],
+   [
+    "BARU",
+    "0263/Pdt.G/2015/PA.Dgl",
+    "Rabu"
+   ],
+   [
+    "BARU",
+    "0309/Pdt.G/2015/PA.Dgl",
+    "Rabu"
+   ],
+   [
+    "BARU",
+    "0324/Pdt.G/2015/PA.Dgl",
+    "Rabu"
+   ],
+   [
+    "BARU",
+    "0330/Pdt.G/2015/PA.Dgl",
+    "Rabu"
+   ],
+   [
+    "BARU",
+    "152/Pdt.G/2016/PA.Dgl",
+    "Selasa"
+   ],
+   [
+    "BARU",
+    "271/Pdt.G/2017/PA.Dgl",
+    "Selasa"
+   ],
+   [
+    "BARU",
+    "305/Pdt.G/2017/PA.Dgl",
+    "Selasa"
+   ],
+   [
+    "BARU",
+    "337/Pdt.G/2017/PA.Dgl",
+    "Selasa"
+   ],
+   [
+    "BARU",
+    "336/Pdt.G/2020/PA.Dgl",
+    "Selasa"
+   ],
+   [
+    "BARU",
+    "138/Pdt.G/2022/PA.Dgl",
+    "Selasa"
+   ]
+  ],
+  "bedaBotContoh": []
+ }
+}

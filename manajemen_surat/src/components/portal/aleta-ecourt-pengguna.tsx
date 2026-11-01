@@ -31,6 +31,7 @@ import {
 import { CatatanEkstensiDaftar } from "@/components/portal/catatan-ekstensi-daftar";
 import { EcourtStatusPenarikan } from "@/components/portal/ecourt-status-penarikan";
 import { AletaEcourtTte } from "@/components/portal/aleta-ecourt-tte";
+import { AletaEcourtPengukurDraf } from "@/components/portal/aleta-ecourt-pengukur-draf";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1365,6 +1366,9 @@ export function AletaEcourtPengguna() {
           ) : null}
         </CardContent>
       </Card>
+
+      {/* Kecocokan draf putusan (P3, 1 Nov 2026): hanya hakim dan Super Admin, dimuat saat dibuka. */}
+      <AletaEcourtPengukurDraf />
 
       <Card>
         <CardHeader>

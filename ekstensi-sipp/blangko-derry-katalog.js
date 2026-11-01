@@ -282,6 +282,17 @@
       const b = alur === "16" ? "permohonan" : alur === "15" || alur === "17" ? "gugatan" : "";
       if (b && sah("perkara", b)) keadaan.perkara = b;
     }
+    // U2 (1 Nov 2026): bentuk itsbat, dasar itsbat (Pasal 7 ayat 3 KHI), dan tiga pilihan dispensasi kawin dari posita yang sudah dibaca
+    const KP = typeof globalThis !== "undefined" ? globalThis.AletaBdKeadaanPosita : null;
+    if (KP && teks(k.posita).trim()) {
+      let turun = {};
+      try {
+        turun = KP.turunkan(kat.kunci, { posita: k.posita, alurId: alur, jumlahPemohon: k.jumlahPemohon }) || {};
+      } catch {
+        turun = {};
+      }
+      for (const kunci of Object.keys(turun)) if (dipakai.has(kunci) && sah(kunci, turun[kunci])) keadaan[kunci] = turun[kunci];
+    }
     return { keadaan, dariData: Object.keys(keadaan) };
   }
 
@@ -478,7 +489,8 @@
       berbeda: Array.isArray(s.berbeda) ? s.berbeda : undefined,
       keadaan: laRaya(s.keadaan) ? s.keadaan : undefined,
     }));
-    const slotSaksi = saksiMasuk.map((s) => (perluSumber(kat, s.jenis) && rapat(s.sumber) ? { sumber: rapat(s.sumber) } : {}));
+    // U1: hubungan saksi pilihan petugas (sudah berupa frasa lengkap, mis. "ibu kandung Pemohon") mendahului variabel ABT hubungan saksi.
+    const slotSaksi = saksiMasuk.map((s) => Object.assign(perluSumber(kat, s.jenis) && rapat(s.sumber) ? { sumber: rapat(s.sumber) } : {}, rapat(s.hubungan) ? { hubungan: rapat(s.hubungan) } : {}));
     const hasil = m.susunSaksi(kat, { keadaan: laRaya(o.keadaan) ? o.keadaan : {}, benih, saksi: masukSaksi, variabel, slotSaksi, tingkat });
 
     const jumlah = saksiMasuk.length;
@@ -816,6 +828,14 @@
    *   kartu: Array<{kunci, nama, jenis, pilihan: Array<{nilai,label}>, sumber: string, sumberPilihan: Array<{nilai,label}>, bidangSaksi: Array, status?: string, galat?: string}>
    * }} o
    */
+  /** U1: kotak pilih hubungan saksi dengan pihak (kosong = otomatis dari variabel ABT hubungan saksi). */
+  function hubunganHtml(k, mati) {
+    const kel = daftar(k.hubunganKelompok);
+    if (!kel.length) return "";
+    const grup = kel.map((g) => `<optgroup label="${esc(g.label)}">${daftar(g.opsi).map(([n, l]) => `<option value="${esc(n)}"${n === k.hubungan ? " selected" : ""}>${esc(l)}</option>`).join("")}</optgroup>`).join("");
+    return `<label class="bd-sklbl" title="Dipakai pada jawaban saya adalah ... Bila dibiarkan Otomatis, dibaca dari isian hubungan saksi di ABT.">Hubungan dengan pihak<select data-skkunci="${esc(k.kunci)}" data-skfld="kat-hubungan"${mati}><option value=""${k.hubungan ? "" : " selected"}>Otomatis dari data perkara</option>${grup}</select></label>`;
+  }
+
   function panelHtml(o) {
     const mati = o.siap ? "" : " disabled";
     const kartu = daftar(o.kartu)
@@ -831,6 +851,7 @@
           `<div class="bd-skkartu" data-skkartu="${esc(k.kunci)}"><b class="bd-sknama">${esc(k.nama)}</b>` +
           `<label class="bd-sklbl">Yang diketahui saksi<select data-skkunci="${esc(k.kunci)}" data-skfld="kat-jenis"${mati}>${opsiSelect(k.pilihan, k.jenis)}</select></label>` +
           sumber +
+          hubunganHtml(k, mati) +
           saksi +
           (k.status ? `<p class="bd-catat" role="status">${esc(k.status)}</p>` : "") +
           (k.galat ? `<p class="bd-peringatan">${esc(k.galat)}</p>` : "") +

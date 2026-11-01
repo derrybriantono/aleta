@@ -22,11 +22,12 @@ import type { KemampuanAi } from "@/lib/matriks-peran";
 import { BATAS_KARAKTER_PESAN_PENGGUNA } from "@/lib/aleta-ai/penyusun";
 import { KELOMPOK_PUTUSAN } from "@/lib/aleta-ai/rute";
 import type { JenisSamaran } from "@/lib/aleta-ai/samaran";
+import { FITUR_PENILAIAN_AI } from "@/lib/penilai-bukti-ai";
 
 export type KodeFitur =
   | "A1" | "A2" | "A3" | "A4" | "A5"
   | "B1" | "B2" | "B3" | "B4" | "B5"
-  | "C1" | "C2" | "C3" | "C4" | "C5"
+  | "C1" | "C2" | "C3" | "C4" | "C5" | "C6"
   | "D1" | "D2" | "D3" | "D4" | "D5"
   | "E1" | "E2" | "E3";
 
@@ -189,6 +190,8 @@ export const FITUR_BLANGKO: readonly DefinisiFitur[] = [
     butuh: ["perkara", "posita", "isian", "masukan"], wajib: ["posita"],
     tugas: "Sarankan dasar hukum (pasal) yang relevan untuk perkara ini HANYA dari naskah/pengetahuan proyek yang terverifikasi. Tiap saran: bunyi rujukan, hubungannya dengan perkara. Yang tidak terverifikasi ditulis dengan penanda [PERLU VERIFIKASI].",
   },
+  // A2 (1 Nov 2026): penilaian pembuktian lanjutan atas tabel aturan (definisi & pengurai di lib/penilai-bukti-ai.ts).
+  FITUR_PENILAIAN_AI,
   {
     kode: "D2", judul: "Cek kesesuaian pertimbangan, amar, dan petitum", tahap: 2, kelompok: "teliti-sidang", keluaran: "temuan",
     butuh: ["perkara", "posita", "naskah", "isian"], wajib: ["naskah"],

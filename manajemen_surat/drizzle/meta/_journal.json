@@ -792,6 +792,13 @@
       "when": 1792344600001,
       "tag": "0129_aleta_pencocok_temuan",
       "breakpoints": true
+    },
+    {
+      "idx": 113,
+      "version": "7",
+      "when": 1792348200001,
+      "tag": "0130_aleta_pengukur_draf",
+      "breakpoints": true
     }
   ]
 }

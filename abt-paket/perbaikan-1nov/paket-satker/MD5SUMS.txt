@@ -1,0 +1,11 @@
+28470c0812fa552bbf7086920c849283 *abt-perbaikan-1nov-PASANG.sql
+42393db0a64b162061ab5e7cf06c0680 *abt-perbaikan-1nov-PERIKSA.sql
+93a3e5736c0f67ff5c421d9c56312f5a *abt-perbaikan-1nov-PRASYARAT.sql
+cacf4d0ace58b3f5ec9b0e286e07dfe1 *abt-perbaikan-1nov-PULIH.sql
+dd9584fda53eb92a31007880624e69a4 *daftar-tambal.tsv
+bf010e1678d67e5555f28eac9c8123d2 *harap.txt
+2958f196e4c21dde9c7db32a219e482c *nomor-variabel.txt
+6817821ef7aec96302b692425ae7176a *pasang-satker.sh
+a21779ed73c33df3110ec7b63b76e83e *pulih-satker.sh
+d9ce3eeaea42861e5a708d0cbab886b4 *tambal.tsv
+d949a1c1e10c9b60e8cc4fd18adc9b54 *tambal_rtf.py

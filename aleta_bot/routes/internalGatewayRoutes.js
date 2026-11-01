@@ -2563,6 +2563,8 @@ function saringModusAbt(m) {
     // 1 Nov 2026 (keputusan 62): dasar keterangan saksi Tergugat/Termohon cerai - "jawaban" (jawaban & duplik, bawaan) atau
     // "gugatan" (ikut set Penggugat). Nilai lain dibuang.
     ...(r.dasar === "jawaban" || r.dasar === "gugatan" ? { dasar: r.dasar } : {}),
+    // U1 1 Nov: hubungan saksi dengan pihak, pilihan petugas di panel (kunci daftar HUBUNGAN di saksiU1.js; kunci lain dibuang).
+    ...(require("../services/saksiU1").kunciHubunganSah(r.hubungan) ? { hubungan: String(r.hubungan) } : {}),
   };
 }
 
@@ -3294,6 +3296,9 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
               asal: { jawaban: naskahMasuk.asal && naskahMasuk.asal.jawaban === "lisan" ? "lisan" : "", duplik: naskahMasuk.asal && naskahMasuk.asal.duplik === "lisan" ? "lisan" : "" },
             },
             tanggalSidang: tanggalSidangMasuk || (konteksSipp && konteksSipp.tanggalSidang) || "",
+            // U1: hubungan saksi dari kolom Keterangan saksi SIPP / variabel ABT; alasan perceraian (5227) dari isian blangko.
+            sipp: await janjiSippSaksi.catch(() => null),
+            isian: req.body?.isian && typeof req.body.isian === "object" ? req.body.isian : null,
           });
         } catch (galatPerbaikan) {
           jawaban.saksiSdg.perbaikanGagal = String((galatPerbaikan && galatPerbaikan.message) || galatPerbaikan).slice(0, 200);
@@ -8114,6 +8119,32 @@ router.post("/abt/matriks-dalil", requireInternalToken, async (req, res) => {
   }
 });
 /* === AKHIR P2 MATRIKS DALIL === */
+
+/* === A2 PENILAI PEMBUKTIAN (1 Nov 2026) === */
+/**
+ * Bahan penilai pembuktian portal: keterangan saksi tersimpan di ABT (sidang terakhir per saksi) + alat bukti ABT 1214/9911/1262.
+ *   POST /abt/bahan-pembuktian { nomorPerkara } -> { ok, ada, perkaraId, saksi:[{id,pihak,ke,hubungan,baris:[{tanya,jawab}]}], bukti:[{kode,pihak,jenis,teks}] }
+ * Hanya SELECT; paling lama 4 detik (sesudahnya { ok:false, alasan:"lambat" }).
+ */
+router.post("/abt/bahan-pembuktian", requireInternalToken, async (req, res) => {
+  try {
+    const nomor = String(req.body?.nomorPerkara || "").trim().slice(0, 80);
+    if (!nomor) return res.json({ ok: true, ada: false, saksi: [], bukti: [] });
+    const jalan = (db) => (sql, p) => new Promise((ok, no) => db.query(sql, p || [], (e, r) => (e ? no(e) : ok(r))));
+    let runAbt = null;
+    try {
+      runAbt = jalan(require("../db_config5"));
+    } catch {
+      runAbt = null;
+    }
+    const kerja = require("../services/bahanPembuktianService").bahanPembuktian(nomor, { runQuery: jalan(require("../db_config")), runAbt });
+    const habis = new Promise((ok) => setTimeout(() => ok({ ok: false, alasan: "lambat", saksi: [], bukti: [] }), 4000));
+    res.json(await Promise.race([kerja, habis]));
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error?.code || error?.message || error).slice(0, 200) });
+  }
+});
+/* === AKHIR A2 PENILAI PEMBUKTIAN === */
 
 /* === KONTAK-EC 11 Okt === */
 /**

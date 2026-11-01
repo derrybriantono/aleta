@@ -71,6 +71,7 @@ import { VARIABEL_HANYA_SARAN, bersihkanNilai, bersihkanNilaiUsulan } from "@/li
 import { hurufAlasan as hurufAlasanAbt } from "@/lib/set-pertanyaan-saksi";
 import { masukanRekomendasiDariBaris, rekomendasiBlangko, type Rekomendasi } from "@/lib/rekomendasi-blangko";
 import type { ButirIsian, Keadaan, Susunan } from "@/app/api/aleta-ecourt/blangko-derry/susun";
+import type { DrafPutusanA1 } from "@/lib/draf-putusan-a1";
 
 /** Jarak hari antara pagi pemeriksaan dan Hari Putusan yang drafnya DIBUAT. */
 export const HARI_H7 = 7;
@@ -798,6 +799,13 @@ export type DrafH7 = {
   /** Bahan yang gagal dibaca (bot tidak menjawab, blangko tidak terbaca) - disebut jujur. */
   kendala: string[];
   dibuatPada: string;
+  /**
+   * A1 (1 Nov 2026): draf pertimbangan & amar varian "dikabulkan" (lib/draf-putusan-a1.ts) - hanya untuk hakim, ketua,
+   * wakil ketua, Super Admin (rute melepasnya untuk akun lain). Draf lama tanpa ruas ini.
+   */
+  putusan?: DrafPutusanA1;
+  /** A1: pemicu penyusunan ("jadwal" 06.00, "peristiwa" BAS kesimpulan/agenda putusan, "tangan") dan lama kerja (ms). */
+  kinerja?: { pemicu?: string; msBahanH7: number; msBahanA1: number; msSusunA1: number; msTotal: number };
 };
 
 export type VarianDrafH7 = {
@@ -806,11 +814,13 @@ export type VarianDrafH7 = {
   isian: IsianDraf[];
   otomatis: OtomatisDraf | null;
   kesiapan: KesiapanH7;
+  /** A1: draf pertimbangan & amar varian ini. */
+  putusan?: DrafPutusanA1;
 };
 
 /** Semua varian draf, "dikabulkan" (ruas utama) lebih dulu. */
-export function daftarVarianH7(d: Pick<DrafH7, "blangko" | "isian" | "otomatis" | "kesiapan" | "varian">): VarianDrafH7[] {
-  return [{ status: "dikabulkan", blangko: d.blangko, isian: d.isian, otomatis: d.otomatis, kesiapan: d.kesiapan }, ...(d.varian ?? [])];
+export function daftarVarianH7(d: Pick<DrafH7, "blangko" | "isian" | "otomatis" | "kesiapan" | "varian"> & { putusan?: DrafPutusanA1 }): VarianDrafH7[] {
+  return [{ status: "dikabulkan", blangko: d.blangko, isian: d.isian, otomatis: d.otomatis, kesiapan: d.kesiapan, ...(d.putusan ? { putusan: d.putusan } : {}) }, ...(d.varian ?? [])];
 }
 
 /** Ringkas untuk Jadwal Sidang, checklist konseptor, dan widget. */

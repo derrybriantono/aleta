@@ -2275,7 +2275,9 @@
       "pihakSaksi": [
         "*"
       ],
-      "keadaan": {},
+      "keadaan": {
+        "pemohon": "suami-istri"
+      },
       "teks": "Apa kendala yang menyebabkan anak itu sulit mendapatkan akta kelahiran padahal orang tuanya sekarang sudah menikah ?",
       "hal": "kendala anak mendapatkan akta kelahiran",
       "tidakBerlaku": [],
@@ -2333,6 +2335,99 @@
               "saya tahu langsung bahwa akta kelahiran anak itu belum diajukan ke Dinas Kependudukan dan Pencatatan Sipil",
               "penyebab akta kelahiran anak itu belum ada ialah dokumen itu terlambat diurus oleh orang tuanya yang saya saksikan",
               "akta kelahiran anak itu tertunda sebab permohonannya belum pernah diajukan oleh #0046# I dan #0046# II sebagaimana saya ketahui"
+            ]
+          }
+        ],
+        "berbeda": {
+          "maksud": "versi A: sebab akta belum terbit adalah pernikahan orang tua yang belum dicatat; versi B: sebab akta belum terbit adalah belum diurus - berselisih pada PENYEBAB",
+          "saksi1": [
+            "saya melihat sendiri akta kelahiran anak itu tertunda karena pernikahan orang tuanya belum tercatat",
+            "sebab terhambatnya akta kelahiran anak itu adalah pencatatan nikah orang tuanya belum ada",
+            "sepengetahuan saya akta kelahiran anak itu terhambat pencatatan nikah yang belum dilakukan",
+            "saya mengetahui sendiri akta anak itu tertunda gara-gara nikah orang tuanya belum tercatat"
+          ],
+          "saksi2": [
+            "saya melihat sendiri akta kelahiran anak itu tertunda karena orang tuanya belum mengurusnya",
+            "sebab terhambatnya akta kelahiran anak itu adalah pengurusannya belum dilakukan",
+            "sepengetahuan saya akta kelahiran anak itu terhambat karena belum pernah diajukan permohonannya",
+            "saya mengetahui sendiri akta anak itu tertunda sebab belum dimohonkan oleh orang tuanya"
+          ],
+          "bedaPada": "penyebab"
+        }
+      },
+      "variabelAbt": [
+        "0046"
+      ]
+    },
+    {
+      "id": "q-kendala-akta-ibu",
+      "pokok": "pp-kendala-akta",
+      "urutan": 150.5,
+      "tingkat": "inti",
+      "kelompok": "akibat",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "pemohon": "ibu-saja"
+      },
+      "teks": "Apa kendala yang menyebabkan anak itu sulit mendapatkan akta kelahiran padahal orang tuanya sekarang sudah menikah ?",
+      "hal": "kendala anak mendapatkan akta kelahiran",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": [
+          {
+            "keadaan": {
+              "perkawinan": "sirri-dicatat-kemudian"
+            },
+            "maksud": "akta kelahiran sulit dibuat karena perkawinan orang tua belum dicatat ketika anak lahir",
+            "saksi1": [
+              "anak itu sulit dibuatkan akta kelahiran karena ketika ia lahir pernikahan orang tuanya belum dicatatkan di Kantor Urusan Agama",
+              "saya mengetahui sendiri bahwa akta kelahiran anak itu terhambat sebab pernikahan orang tuanya waktu itu belum tercatat",
+              "sebab anak itu sulit memperoleh akta kelahiran adalah pernikahan #0046# belum dicatat ketika ia dilahirkan",
+              "kendala akta kelahiran anak itu ada pada pernikahan orang tuanya yang belum dicatatkan saat ia lahir dan saya mengetahuinya"
+            ],
+            "saksi2": [
+              "sepengetahuan saya akta kelahiran anak itu terhambat karena pada waktu lahir pernikahan orang tuanya belum tercatat",
+              "saya tahu langsung bahwa anak itu sulit memperoleh akta kelahiran sebab saat kelahirannya pernikahan orang tuanya belum dicatat",
+              "penyebab sulitnya akta kelahiran anak itu ialah pernikahan orang tuanya belum tercatat pada saat ia lahir yang saya saksikan",
+              "akta kelahiran anak itu tertunda karena waktu ia lahir pernikahan #0046# belum dicatatkan sebagaimana saya ketahui"
+            ]
+          },
+          {
+            "keadaan": {
+              "perkawinan": "sirri-belum-dicatat"
+            },
+            "maksud": "akta kelahiran sulit dibuat karena perkawinan orang tua sampai sekarang belum dicatat",
+            "saksi1": [
+              "anak itu sulit dibuatkan akta kelahiran karena pernikahan orang tuanya sampai kini belum dicatat di Kantor Urusan Agama",
+              "saya mengetahui sendiri bahwa akta kelahiran anak itu terhambat sebab pernikahan orang tuanya hingga sekarang belum tercatat",
+              "sebab anak itu sulit memperoleh akta kelahiran adalah pernikahan #0046# belum dicatatkan sampai saat ini",
+              "kendala akta kelahiran anak itu ada pada pernikahan orang tuanya yang sampai sekarang belum dicatatkan dan saya mengetahuinya"
+            ],
+            "saksi2": [
+              "sepengetahuan saya akta kelahiran anak itu terhambat karena pernikahan orang tuanya hingga hari ini belum tercatat",
+              "saya tahu langsung bahwa anak itu sulit memperoleh akta kelahiran sebab pernikahan orang tuanya sampai kini belum dicatat",
+              "penyebab sulitnya akta kelahiran anak itu ialah pernikahan orang tuanya hingga sekarang belum tercatat yang saya saksikan",
+              "akta kelahiran anak itu tertunda karena pernikahan #0046# sampai saat ini belum dicatatkan sebagaimana saya ketahui"
+            ]
+          },
+          {
+            "keadaan": {
+              "perkawinan": "dicatat-sebelum-lahir"
+            },
+            "maksud": "akta kelahiran belum diurus meskipun perkawinan orang tua sudah dicatat",
+            "saksi1": [
+              "akta kelahiran anak itu belum terbit karena pengurusannya ke Dinas Kependudukan dan Pencatatan Sipil sampai sekarang tertunda",
+              "saya mengetahui sendiri bahwa akta kelahiran anak itu belum diurus oleh #0046#",
+              "sebab akta kelahiran anak itu belum ada adalah orang tuanya menunda mengurusnya ke Dinas Kependudukan dan Pencatatan Sipil",
+              "kendala akta kelahiran anak itu karena pengurusannya belum dilakukan dan saya mengetahuinya"
+            ],
+            "saksi2": [
+              "sepengetahuan saya akta kelahiran anak itu belum terbit karena orang tuanya menunda pengurusannya",
+              "saya tahu langsung bahwa akta kelahiran anak itu belum diajukan ke Dinas Kependudukan dan Pencatatan Sipil",
+              "penyebab akta kelahiran anak itu belum ada ialah dokumen itu terlambat diurus oleh orang tuanya yang saya saksikan",
+              "akta kelahiran anak itu tertunda sebab permohonannya belum pernah diajukan oleh #0046# sebagaimana saya ketahui"
             ]
           }
         ],
@@ -2710,7 +2805,9 @@
       "pihakSaksi": [
         "*"
       ],
-      "keadaan": {},
+      "keadaan": {
+        "pemohon": "suami-istri"
+      },
       "teks": "Siapa yang mengasuh dan membiayai anak itu sehari-hari ?",
       "hal": "siapa yang mengasuh dan membiayai anak itu sehari-hari",
       "tidakBerlaku": [],
@@ -2742,6 +2839,58 @@
             "saya melihat sendiri anak itu diasuh oleh #0046# II saja",
             "ibunya yang mengurus anak itu sehari-hari sebagaimana saya saksikan",
             "sepengetahuan saya hanya #0046# II yang merawat anak itu",
+            "saya mengetahui sendiri anak itu dibesarkan oleh ibunya seorang diri"
+          ],
+          "bedaPada": "pelaku"
+        }
+      },
+      "variabelAbt": [
+        "0046"
+      ]
+    },
+    {
+      "id": "q-pengasuhan-ibu",
+      "pokok": "pp-kendala-akta",
+      "urutan": 160.5,
+      "tingkat": "pilihan",
+      "kelompok": "akibat",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "pemohon": "ibu-saja"
+      },
+      "teks": "Siapa yang mengasuh dan membiayai anak itu sehari-hari ?",
+      "hal": "siapa yang mengasuh dan membiayai anak itu sehari-hari",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "anak diasuh dan dibiayai oleh orang tuanya sendiri",
+          "saksi1": [
+            "anak itu diasuh dan dibiayai sehari-hari oleh ibunya sendiri yaitu #0046# yang saya lihat sendiri",
+            "saya mengetahui sendiri bahwa #0046# yang mengurus dan membiayai anak itu setiap hari",
+            "kebutuhan sehari-hari anak itu ditanggung oleh #0046# yang juga mengasuhnya sebagaimana saya saksikan",
+            "pengasuhan dan biaya hidup anak itu dipikul oleh #0046# sendiri dan saya melihatnya langsung"
+          ],
+          "saksi2": [
+            "sepengetahuan saya anak itu tinggal bersama #0046# yang merawat dan membiayainya",
+            "saya tahu langsung #0046# sendiri yang merawat anak itu dan menanggung biayanya",
+            "yang membesarkan dan membiayai anak itu adalah ibunya yaitu #0046# sebagaimana saya ketahui",
+            "anak itu berada dalam asuhan dan tanggungan #0046# sehari-hari yang saya saksikan"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: anak diasuh oleh kedua orang tuanya; versi B: anak diasuh oleh ibunya saja - berselisih pada PELAKU (pengasuh)",
+          "saksi1": [
+            "saya melihat sendiri anak itu diasuh oleh #0046# sendiri",
+            "kedua orang tuanya mengurus anak itu sehari-hari sebagaimana saya saksikan",
+            "sepengetahuan saya #0046# merawat anak itu",
+            "saya mengetahui sendiri anak itu dibesarkan oleh ayah dan ibunya"
+          ],
+          "saksi2": [
+            "saya melihat sendiri anak itu diasuh oleh #0046# bersama keluarganya",
+            "ibunya yang mengurus anak itu sehari-hari sebagaimana saya saksikan",
+            "sepengetahuan saya hanya #0046# yang merawat anak itu",
             "saya mengetahui sendiri anak itu dibesarkan oleh ibunya seorang diri"
           ],
           "bedaPada": "pelaku"

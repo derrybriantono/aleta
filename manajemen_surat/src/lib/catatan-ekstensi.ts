@@ -57,6 +57,17 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.61",
+    dirilis: "2026-11-02T06:00:00+08:00",
+    judul: "Penilaian pembuktian, draf putusan otomatis, keterangan saksi lebih lengkap, dan identitas pihak seragam",
+    butir: [
+      "Penilaian pembuktian per dalil (terbukti, belum terbukti, bertentangan, tidak perlu dibuktikan) dari keterangan saksi dan bukti, tampil di panel putusan dan BAS kesimpulan; dapat ditetapkan majelis.",
+      "Draf pertimbangan dan amar tersusun sendiri menjelang musyawarah untuk dibaca hakim, dengan dasar hukum hanya dari naskah peraturan yang sudah dicocokkan; kecocokan draf dengan putusan akhir diukur dan pola koreksi hakim menjadi usulan memori ALETA Ai.",
+      "Keterangan saksi lebih lengkap: hubungan saksi, alamat Tergugat dari SIPP, sikap dan bantahan Tergugat dari jawaban, itsbat nikah (yang menikahkan, wali, saksi nikah, dasar itsbat), dispensasi kawin (calon mempelai dan keadaan), wali adhal, perwalian, dan izin poligami tanpa anak.",
+      "Identitas pihak di putusan, penetapan, dan berita acara seragam dengan format lengkap: nama tebal, inden gantung sejajar, umur, dan kalimat kuasa utuh; tanggal pembuktian mengikuti tundaan sidang dan lima rujukan pasal dibetulkan.",
+    ],
+  },
+  {
     versi: "1.205.60",
     dirilis: "2026-11-02T00:30:00+08:00",
     judul: "Keterangan saksi lebih tepat, ALETA Ai di Blangko Derry, nomor halaman BAS runut, tanya jawab dua kolom, dan agen penjaga",

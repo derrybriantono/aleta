@@ -69,16 +69,16 @@ function muatModulAi() {
 // ─── 1. Lib ──────────────────────────────────────────────────────────────────
 
 describe("fitur bantu: tabel, penyusun pesan, penjaga keluaran", () => {
-  it("23 fitur (tahap 1: A1, A3, B1, D1, D4; tahap 2: 18 lainnya), kode unik, kelompok rute dikenal", () => {
-    expect(FITUR_BLANGKO).toHaveLength(23);
-    expect(new Set(KODE_FITUR).size).toBe(23);
+  it("24 fitur (tahap 1: A1, A3, B1, D1, D4; tahap 2: 19 lainnya, termasuk C6 penilaian pembuktian A2), kode unik, kelompok rute dikenal", () => {
+    expect(FITUR_BLANGKO).toHaveLength(24);
+    expect(new Set(KODE_FITUR).size).toBe(24);
     expect(FITUR_BLANGKO.filter((f) => f.tahap === 1).map((f) => f.kode).sort()).toEqual(["A1", "A3", "B1", "D1", "D4"]);
-    const tahap2 = "A2 A4 A5 B2 B3 B4 B5 C1 C2 C3 C4 C5 D2 D3 D5 E1 E2 E3".split(" ");
+    const tahap2 = "A2 A4 A5 B2 B3 B4 B5 C1 C2 C3 C4 C5 C6 D2 D3 D5 E1 E2 E3".split(" ");
     expect(FITUR_BLANGKO.filter((f) => f.tahap === 2).map((f) => f.kode).sort()).toEqual(tahap2.sort());
     const kelompokSah = new Set(RUTE_BAWAAN.map((r) => r.kelompok));
     for (const f of FITUR_BLANGKO) expect(kelompokSah.has(f.kelompok), f.kode).toBe(true);
-    // Fitur putusan C1-C4 hanya jalur putusan (hakim/ketua/wakil); lainnya bukan.
-    expect(FITUR_BLANGKO.filter((f) => f.kelompok === "mendalam-putusan").map((f) => f.kode).sort()).toEqual(["C1", "C2", "C3", "C4"]);
+    // Fitur putusan C1-C4 dan C6 (penilaian pembuktian A2) hanya jalur putusan (hakim/ketua/wakil); lainnya bukan.
+    expect(FITUR_BLANGKO.filter((f) => f.kelompok === "mendalam-putusan").map((f) => f.kode).sort()).toEqual(["C1", "C2", "C3", "C4", "C6"]);
   });
 
   it("tabel di panel (blangko-derry-ai.js) sama dengan tabel server: kode, bagian bahan, bagian wajib, bentuk keluaran", () => {
@@ -1339,5 +1339,130 @@ describe("kinerja: ALETA Ai tidak membebani panel", () => {
     }
     await sampai(() => /Perkiraan biaya/.test(h.q("#bd-ai-kendali")?.textContent ?? ""), "perkiraan");
     expect(h.panggilan.filter((p) => p.alamat.endsWith("/perkiraan"))).toHaveLength(1);
+  });
+});
+
+describe("G3 1 Nov: sambungan draf aturan A1 (C1-C4) dan pemeriksa rak peraturan (C5, C6)", () => {
+  type Panel = ReturnType<typeof bukaPanel>;
+  /** Panel dengan perkara SIPP berid + tabel penilaian, dan server tiruan untuk draf A1 / periksa-hasil. */
+  function panelSambung(jawabAi: string, server: { drafA1?: unknown; periksaA1?: (b: any) => unknown; periksaHasil?: (b: any) => unknown }) {
+    const h = bukaPanel({ simpanan: { "blangkoDerryAi:usr-1": true }, hasil: () => jawabAi });
+    const bahanAsli = h.w.aletaBlangkoDerryIsian.bahanAi;
+    const dimintaKode: string[] = [];
+    h.w.aletaBlangkoDerryIsian.bahanAi = async (butuh: string[], kode: string) => {
+      dimintaKode.push(kode);
+      const r = await bahanAsli(butuh);
+      return { ...r, peta: { ...r.peta, perkaraId: "4321", barisPenilaian: [{ id: "g-3", status: "belum-terbukti", nomor: "3", ringkas: "pertengkaran terus-menerus" }] } };
+    };
+    const fetchAsli = h.w.fetch;
+    h.w.fetch = async (a: string, o: any = {}) => {
+      const badan = o.body ? JSON.parse(o.body) : null;
+      const json = (data: unknown, status = 200) => {
+        h.panggilan.push({ alamat: a, metode: String(o.method || "GET").toUpperCase(), badan });
+        return { ok: status < 400, status, json: async () => (status < 400 ? { ok: true, data } : { ok: false, error: { message: "Ditolak." } }) };
+      };
+      if (a.startsWith("/aleta/api/aleta-ecourt/draf-putusan-a1?")) return server.drafA1 === undefined ? json(null, 403) : json(server.drafA1);
+      if (a === "/aleta/api/aleta-ecourt/draf-putusan-a1") return server.periksaA1 ? json(server.periksaA1(badan)) : json(null, 500);
+      if (a === "/aleta/api/aleta-ai/periksa-hasil") return server.periksaHasil ? json(server.periksaHasil(badan)) : json(null, 500);
+      return fetchAsli(a, o);
+    };
+    return { h, dimintaKode };
+  }
+  async function jalankan(h: Panel, kode: string, masukan?: string) {
+    await sampai(() => !h.q("#bd-ai-bilah")!.hasAttribute("hidden"), "bilah");
+    await h.ai().bukaFitur(kode);
+    await sampai(() => h.q("#bd-ai-jendela"), `jendela ${kode}`);
+    const ta = h.q<HTMLTextAreaElement>("#bd-ai-masukan");
+    if (ta && masukan) {
+      ta.value = masukan;
+      ta.dispatchEvent(new h.w.Event("input", { bubbles: true }));
+    }
+    await sampai(() => /Perkiraan biaya/.test(h.q("#bd-ai-kendali")?.textContent ?? ""), `perkiraan ${kode}`, 4000);
+    h.q<HTMLButtonElement>('[data-ai="jalan"]')!.click();
+    await sampai(() => h.q("#bd-ai-hasil .bd-ai-tanda"), `hasil ${kode}`, 4000);
+  }
+
+  it("C1: draf aturan ikut sebagai MASUKAN sesudah catatan petugas, nama draf disamarkan, hasil diperiksa rak lewat draf A1 dan catatannya tampil", async () => {
+    const { h, dimintaKode } = panelSambung("Menimbang, bahwa berdasarkan Pasal 116 huruf f KHI dan Pasal 999 KHI gugatan beralasan.", {
+      drafA1: { ada: true, varian: "dikabulkan", ai: { masukan: "DRAF ATURAN: Menimbang, bahwa [NAMA] mendalilkan ...", samarkan: [{ jenis: "NAMA", nilai: "BUDI BIN AHMAD" }] } },
+      periksaA1: (b) => ({ ok: true, teks: String(b.teks).replace("Pasal 999 KHI", "Pasal 999 KHI [PERLU VERIFIKASI]"), pasalDitandai: [{ rujukan: "Pasal 999 KHI", sebab: "tidak ada" }], temuanKutipan: [], kutipanBerubah: [{ nomor: "2", dalil: "Bahwa ..." }] }),
+    });
+    await jalankan(h, "C1", "arah: dikabulkan");
+    expect(dimintaKode).toContain("C1");
+    const pesan = h.panggilan.find((p) => p.alamat.endsWith("/pesan"))!.badan;
+    expect(pesan.bahan.masukan).toBe(["arah: dikabulkan", "DRAF ATURAN: Menimbang, bahwa [NAMA] mendalilkan ..."].join(String.fromCharCode(10, 10)));
+    expect(pesan.bahan.samarkan).toEqual(expect.arrayContaining([{ jenis: "NAMA", nilai: "BUDI BIN AHMAD" }, { jenis: "NAMA", nilai: "SITI AMINAH BINTI RAHMAN" }]));
+    const periksa = h.panggilan.find((p) => p.alamat === "/aleta/api/aleta-ecourt/draf-putusan-a1" && p.metode === "POST")!;
+    expect(periksa.badan).toMatchObject({ perkaraId: "4321", varian: "dikabulkan" });
+    const ta = h.q<HTMLTextAreaElement>("#bd-ai-teks")!.value;
+    // Penanda dari rak yang berlaku: pasal terverifikasi (116 f KHI) TIDAK ditandai walau tidak ada di bahan; 999 ditandai sekali.
+    expect(ta.match(/\[PERLU VERIFIKASI\]/g)).toHaveLength(1);
+    expect(ta).toContain("Pasal 999 KHI [PERLU VERIFIKASI]");
+    const catatan = h.q(".bd-ai-periksa")!.textContent!;
+    expect(catatan).toMatch(/1 rujukan belum terverifikasi/);
+    expect(catatan).toMatch(/Kutipan dalil angka 2/);
+  });
+
+  it("C2 tanpa draf aturan (belum disusun / tidak berhak): tetap berjalan dengan masukan petugas saja, tanpa pemeriksaan A1", async () => {
+    const { h } = panelSambung("Mengadili: mengabulkan gugatan.", {});
+    await jalankan(h, "C2", "mengabulkan");
+    const pesan = h.panggilan.find((p) => p.alamat.endsWith("/pesan"))!.badan;
+    expect(pesan.bahan.masukan).toBe("mengabulkan");
+    expect(h.panggilan.some((p) => p.alamat === "/aleta/api/aleta-ecourt/draf-putusan-a1" && p.metode === "POST")).toBe(false);
+    expect(h.q(".bd-ai-periksa")).toBeNull();
+  });
+
+  it("C5: hasil dikirim ke periksa-hasil; gagal diperiksa -> penanda bawaan panel tetap dipakai dan satu catatan memberi tahu", async () => {
+    const jawab = "Saran: Pasal 39 ayat (2) Undang-Undang Nomor 1 Tahun 1974 dan Pasal 999 KHI.";
+    const a = panelSambung(jawab, { periksaHasil: (b) => ({ teks: String(b.teks).replace("Pasal 999 KHI", "Pasal 999 KHI [PERLU VERIFIKASI]"), catatan: ["1 rujukan belum terverifikasi di rak peraturan dan diberi tanda [PERLU VERIFIKASI]."] }) });
+    await jalankan(a.h, "C5");
+    expect(a.h.panggilan.find((p) => p.alamat === "/aleta/api/aleta-ai/periksa-hasil")!.badan).toMatchObject({ fitur: "C5", teks: jawab });
+    expect(a.h.q<HTMLTextAreaElement>("#bd-ai-teks")!.value.match(/\[PERLU VERIFIKASI\]/g)).toHaveLength(1);
+
+    const b = panelSambung(jawab, {});
+    await jalankan(b.h, "C5");
+    expect(b.h.q<HTMLTextAreaElement>("#bd-ai-teks")!.value.match(/\[PERLU VERIFIKASI\]/g)).toHaveLength(2);
+    expect(b.h.q(".bd-ai-periksa")!.textContent).toMatch(/belum dapat dijalankan/);
+  });
+
+  it("C6: bahan meminta kode C6 dan baris tabel penilaian ikut ke pemeriksa; usulan terurai menggantikan JSON mentah", async () => {
+    const jawab = '[{"id":"g-3","status":"terbukti","alasan":"dua saksi bersesuaian","pasal":["Pasal 309 RBg"]}]';
+    const { h, dimintaKode } = panelSambung(jawab, { periksaHasil: (b) => ({ teks: `Dalil ${b.baris[0].nomor}: status aturan belum terbukti -> usulan terbukti.`, catatan: [] }) });
+    await jalankan(h, "C6");
+    expect(dimintaKode).toContain("C6");
+    const p = h.panggilan.find((x) => x.alamat === "/aleta/api/aleta-ai/periksa-hasil")!;
+    expect(p.badan).toMatchObject({ fitur: "C6", baris: [{ id: "g-3", status: "belum-terbukti" }] });
+    expect(h.q<HTMLTextAreaElement>("#bd-ai-teks")!.value).toBe("Dalil 3: status aturan belum terbukti -> usulan terbukti.");
+  });
+});
+
+describe("G3 1 Nov: pemeriksa hasil C5/C6 di server (rak peraturan sungguhan)", async () => {
+  const { periksaHasilC5, periksaHasilC6, bersihBarisPenilaian } = await import("@/lib/aleta-ai/periksa-hasil-fitur");
+  const { bolehDisarankan, periksaNaskah } = await import("@/lib/rak-peraturan/indeks");
+
+  it("C5: rujukan terverifikasi dibiarkan, yang tidak ditandai sekali dan dicatat; kata Aleta dibuang", () => {
+    const h = periksaHasilC5("ALETA Ai menyarankan Pasal 39 ayat (2) Undang-Undang Nomor 1 Tahun 1974 dan Pasal 149 ayat (1) RBg.", { boleh: bolehDisarankan, periksaNaskah });
+    expect(h.teks).not.toMatch(/aleta/i);
+    expect(h.teks.match(/\[PERLU VERIFIKASI\]/g)).toHaveLength(1);
+    expect(h.teks).toMatch(/RBg \[PERLU VERIFIKASI\]/);
+    expect(h.catatan[0]).toMatch(/^1 rujukan belum terverifikasi/);
+  });
+
+  it("C6: hanya id dalil yang ada & status sah; pasal tak terverifikasi dibuang dan disebut; tanpa usulan = kalimat tetap", () => {
+    const baris = bersihBarisPenilaian([
+      { id: "g-1", status: "belum-terbukti", nomor: "1", ringkas: "pertengkaran" },
+      { id: "g-2", status: "liar" },
+      { id: "", status: "terbukti" },
+    ]);
+    expect(baris.map((b) => b.id)).toEqual(["g-1"]);
+    const jawab = '[{"id":"g-1","status":"terbukti","alasan":"dua saksi bersesuaian","pasal":["Pasal 309 RBg","Pasal 999 KHI"]},{"id":"g-9","status":"terbukti"},{"id":"g-1","status":"bertentangan"}]';
+    const h = periksaHasilC6(jawab, baris);
+    expect(h.teks.split(String.fromCharCode(10))).toHaveLength(1);
+    expect(h.teks).toMatch(/^Dalil 1 \(pertengkaran\): status aturan belum terbukti -> usulan terbukti\. dua saksi bersesuaian\./);
+    expect(h.teks).not.toContain("999");
+    expect(h.catatan.join(" ")).toMatch(/Pasal 999 KHI/);
+    expect(periksaHasilC6("[]", baris).teks).toMatch(/Tidak ada usulan perubahan/);
+    expect(periksaHasilC6("semua sudah tepat", baris).catatan[0]).toMatch(/tidak berbentuk daftar/);
+    expect(periksaHasilC6(jawab, []).teks).toBe("");
   });
 });
