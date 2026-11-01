@@ -35,6 +35,8 @@ import { pemberitahuanRekonsiliasi } from "@/server/modules/aleta-ai/rekonsilias
 import { bolehLihatKesehatan, pemberitahuanKesehatan } from "@/server/modules/kesehatan/layanan";
 import { pemberitahuanPutusOtomatis } from "@/server/modules/putus-otomatis/layanan";
 import { lihatSemuaTenggat, pemberitahuanTenggat } from "@/server/modules/penjaga-tenggat/layanan";
+import { pemberitahuanKelengkapan } from "@/server/modules/aleta-ecourt/agen-kelengkapan"; /* N1 */
+import { golonganPengguna } from "@/lib/matriks-peran";
 
 export type TaskQuery = {
   source?: string | null;
@@ -1319,7 +1321,25 @@ async function buildTundaOtomatisTasks(db: AletaDatabase, readSet: Set<string>, 
       footer: "Penjaga tenggat",
       seen: isSeen(readSet, "system_task", p.id),
     }));
-    return [...butirTenggat, ...daftar.map((p) => ({
+    // Kesiapan sidang (N1, 1 Nov 2026): ringkasan pagi hari ini + hari kerja berikutnya; kosong bila hari bersih / jadwal mati.
+    const kelengkapan = await pemberitahuanKelengkapan(db, { nama: opsi.nama, golongan: golonganPengguna(actor), lihatSemua: opsi.lihatSemua }).catch(() => []);
+    const butirKelengkapan: TaskItem[] = kelengkapan.map((p) => ({
+      id: `system_task:${p.id}`,
+      entityType: "system_task" as const,
+      entityId: p.id,
+      sourceApp: "aleta-bot",
+      sourceLabel: "Kesiapan sidang",
+      title: p.judul,
+      description: p.uraian,
+      href: "/aleta-ecourt",
+      status: p.penting ? "Perlu ditindak" : "Dicatat",
+      priority: p.penting ? ("urgent" as const) : ("normal" as const),
+      sourceType: "system_task" as const,
+      createdAt: p.waktu,
+      footer: "Kesiapan sidang",
+      seen: isSeen(readSet, "system_task", p.id),
+    }));
+    return [...butirKelengkapan, ...butirTenggat, ...daftar.map((p) => ({
       id: `system_task:${p.id}`,
       entityType: "system_task" as const,
       entityId: p.id,

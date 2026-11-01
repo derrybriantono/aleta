@@ -411,6 +411,17 @@ const BUTIR_FITUR: readonly ButirPeta[] = [
     rute: ["GET|POST /api/aleta-ecourt/agen-h1-bas"],
   }),
   buat({
+    id: "fitur.kesiapan-sidang",
+    kelompok: "fitur",
+    judul: "Kesiapan sidang hari ini dan besok (agen pagi)",
+    keterangan:
+      "Tiap pagi hari kerja perkara yang bersidang hari ini dan hari kerja berikutnya diperiksa: panggilan sudah kembali dan patut, BAS sidang lalu terunggah, saksi, dokumen e-Court, panjar, mediator, kuasa. Lencana hijau/kuning/merah di Jadwal Sidang, lonceng, dan satu pesan WhatsApp per petugas per hari (saklar, bawaan mati).",
+    hak: dari(["pimpinan", "hakim", "panitera", "panmud", "pp", "jurusita", "kasir", "analis-perkara"], "L"),
+    catatan: "Butir panjar (angka keuangan) hanya tampak bagi Kasir, pimpinan, dan kepaniteraan. Menjalankan sekarang: Admin/Super Admin; mengubah saklar: Super Admin.",
+    sumber: "lib/kelengkapan-sidang",
+    rute: ["GET|POST /api/aleta-ecourt/agen-kelengkapan"],
+  }),
+  buat({
     id: "fitur.susun-saksi",
     kelompok: "fitur",
     judul: "Susun keterangan saksi menurut keadaan perkara (panel ABT)",

@@ -4316,6 +4316,26 @@ export async function getGatewayPenjagaTenggat(acuan = "", opsi: { baru?: boolea
 }
 
 /**
+ * Fakta kelengkapan hari sidang (N1, 1 Nov 2026): sidang pada `tanggal` (hari ini + hari kerja berikutnya) beserta panggilan,
+ * BAS sidang lalu, dokumen e-Court, panjar, mediasi, kuasa. Bot hanya membaca; yang menilai
+ * src/lib/kelengkapan-sidang.ts. Pembacaan panjar lewat Kasir bisa belasan detik: batas waktu penilaian.
+ */
+export async function getGatewayKelengkapanSidang(hariIni: string, tanggal: string[]): Promise<
+  GatewayResult<{
+    ok: boolean;
+    hariIni: string;
+    tanggal: string[];
+    sidang: unknown[];
+    gagal: Record<string, string>;
+    ms: Record<string, number>;
+    terpotong: boolean;
+  }>
+> {
+  const params = new URLSearchParams({ hariIni, tanggal: tanggal.join(",") });
+  return gatewayFetch(`/internal/aleta-bot/sipp/kelengkapan-sidang?${params.toString()}`, { timeoutMs: TIMEOUT_PENILAIAN_MS });
+}
+
+/**
  * Fakta checklist milestone untuk satu peran - dibatasi bot pada perkara yang
  * menyebut id pejabat pengguna. Yang menilai portal (lib/checklist-milestone).
  */

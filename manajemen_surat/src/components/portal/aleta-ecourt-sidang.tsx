@@ -129,6 +129,7 @@ import { ChecklistKonseptor, LencanaKesiapanPutusan } from "@/components/portal/
 import { LencanaDrafH7, PanelDrafH7 } from "@/components/portal/draf-h7"; /* F4.2 */
 import { LencanaBasH1, SaranBasBesok } from "@/components/portal/lencana-bas-h1"; /* G2a 2.4 */
 import type { RingkasDrafH1 } from "@/lib/agen-h1-bas";
+import { LencanaKesiapanSidang, type RingkasKesiapanTampil } from "@/components/portal/lencana-kesiapan-sidang"; /* N1 */
 import type { RingkasDrafH7 } from "@/lib/agen-h7-putusan";
 import { saringPerkaraSendiri } from "@/lib/perkara-sendiri";
 import { pitaJarak, sebutanJarak } from "@/lib/jarak-antar-sidang";
@@ -4495,6 +4496,8 @@ export function AletaEcourtSidang({
   /** F4.2: ringkas draf H-7 agen ALETA per perkara (hanya yang punya draf). */
   const [drafH7, setDrafH7] = useState<Record<string, RingkasDrafH7>>({});
   const [drafH1, setDrafH1] = useState<Record<string, RingkasDrafH1 & { keterangan?: string }>>({});
+  /** N1: kesiapan sidang (agen kelengkapan pagi) per perkara; gagal dimuat atau agen mati = tanpa lencana. */
+  const [kesiapanSidang, setKesiapanSidang] = useState<Record<string, RingkasKesiapanTampil>>({});
   const [keterangan, setKeterangan] = useState<Record<string, KeteranganPerkara>>({});
   const [keteranganKunci, setKeteranganKunci] = useState<string | null>(null);
   const [tunjukKunci, setTunjukKunci] = useState<string | null>(null);
@@ -5903,6 +5906,25 @@ export function AletaEcourtSidang({
     }, 0);
     return () => window.clearTimeout(timer);
   }, [muatDrafH1]);
+
+  /** N1: hasil pemeriksaan pagi (dibaca dari simpanan portal; tidak membaca SIPP). */
+  const muatKesiapanSidang = useCallback(async () => {
+    if (!perkaraTampil) return;
+    try {
+      const balasan = await fetch(apiPath(`/api/aleta-ecourt/agen-kelengkapan?ringkas=1&perkaraId=${encodeURIComponent(perkaraTampil)}`), { cache: "no-store" });
+      const isi = (await balasan.json()) as { data?: { peta?: Record<string, RingkasKesiapanTampil> } };
+      setKesiapanSidang(isi?.data?.peta ?? {});
+    } catch {
+      setKesiapanSidang({});
+    }
+  }, [perkaraTampil]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void muatKesiapanSidang();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [muatKesiapanSidang]);
 
   /**
    * Keadaan keterangan tiap perkara - hanya yang TERKINI beserta jumlah
@@ -8605,6 +8627,10 @@ export function AletaEcourtSidang({
                             {!sudahPutusHariIni(baris) && drafH1[String(baris.perkaraId)]?.tanggalSidang === String(baris.tanggalSidang).slice(0, 10) ? (
                               <LencanaBasH1 ringkas={drafH1[String(baris.perkaraId)]} />
                             ) : null}
+                            {/* N1: kesiapan sidang ini menurut pemeriksaan pagi (relaas, BAS lalu, saksi, e-Court, panjar, mediasi, kuasa). */}
+                            {!sudahPutusHariIni(baris) && kesiapanSidang[String(baris.perkaraId)]?.tanggalSidang === String(baris.tanggalSidang).slice(0, 10) ? (
+                              <LencanaKesiapanSidang ringkas={kesiapanSidang[String(baris.perkaraId)]} />
+                            ) : null}
 
                             {/* ==============================================
                                 IKRAR TALAK - BIRU, MENGGANTIKAN YANG KUNING
@@ -9649,6 +9675,7 @@ export function AletaEcourtSidang({
                         sidik(berjalanIni),
                         // Lencana BAS disiapkan (drafH1) per perkara - tanpa ini lencananya tertinggal (warna-tertinggal-di-usecallback).
                         sidik(drafH1[pid]),
+                        sidik(kesiapanSidang[pid]),
                         sidik(skorsIni),
                         ruangIni,
                         bisaDipanggilIni,

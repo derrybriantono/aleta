@@ -231,6 +231,7 @@ Catatan kewenangan:
 | Putusan Advance (periksa dan susun draf putusan utuh) | P | P | P | P | - | - | - | - | - | - | - | - | - | - | - | - |
 | Draf putusan H-7 (isi lengkap) | P | P | P | P | P | P | P | - | - | - | - | - | - | - | - | - |
 | BAS sidang berikutnya disiapkan otomatis (H-1) | L | L | L | L | L | L | L | - | - | - | - | - | L | - | - | - |
+| Kesiapan sidang hari ini dan besok (agen pagi) | L | L | L | L | L | L | L | L | L | - | - | - | L | - | - | - |
 | Susun keterangan saksi menurut keadaan perkara (panel ABT) | P | P | - | - | P | P | P | - | - | - | - | - | P | - | - | - |
 | Blangko Saya: pemakai selama tahap awal | U | U | U | U | U | U | U | - | - | - | - | - | - | - | - | - |
 | Penetapan PMH, PPP, PJS, dan PHS di panel SIPP | U | U | U | - | - | - | - | - | - | P | - | - | - | - | - | - |
@@ -252,6 +253,7 @@ Catatan kewenangan:
 - **Putusan Advance (periksa dan susun draf putusan utuh)**: Konseptor (biasanya Panitera Pengganti) ikut untuk perkara yang ia konsep. Daftar akun yang memakainya diatur Super Admin di Pengaturan SIPP & ABT; saklar fitur satker harus menyala. Draf hanya diunduh ke komputer sendiri.
 - **Draf putusan H-7 (isi lengkap)**: Isi lengkap ikut aksi 'Simpan draf putusan' (18 Okt 2026: juru sita tidak lagi dapat membaca isi draf).
 - **BAS sidang berikutnya disiapkan otomatis (H-1)**: Hanya membaca SIPP/ABT; isi lengkap ikut aksi 'Membaca lembar BAS'. Menjalankan sekarang hanya Admin/Super Admin.
+- **Kesiapan sidang hari ini dan besok (agen pagi)**: Butir panjar (angka keuangan) hanya tampak bagi Kasir, pimpinan, dan kepaniteraan. Menjalankan sekarang: Admin/Super Admin; mengubah saklar: Super Admin.
 - **Susun keterangan saksi menurut keadaan perkara (panel ABT)**: Menu panel ABT 'Susun keterangan saksi' hanya golongan kepaniteraan; hakim memakai Panduan pertanyaan saksi (baca). Katalog pertanyaannya dijaga aksi 'Set pertanyaan saksi'.
 - **Blangko Saya: pemakai selama tahap awal**: Tahap awal (keputusan 18 Okt 2026): ubin, menu, dan rute tertutup bagi selain Super Admin. Hak di kolom ini berlaku setelah Super Admin menyalakan saklar (status bawaan: Mati). Admin juga baru bisa setelah saklar menyala.
 - **Penetapan PMH, PPP, PJS, dan PHS di panel SIPP**: Keputusan 111 (18 Okt 2026): yang boleh MENJALANKAN adalah Ketua, Wakil Ketua, Admin, Super Admin, dan pengguna dengan sub-peran Operator, Petugas Meja (Meja 1, 2, 3, informasi), atau PTSP. Hakim dan Panitera tidak mendapat tab sendiri. Sub-peran disimpan di akun (peran utama tidak berubah); Petugas Meja 2 dan 3 dikenali dari sub-perannya, bukan dari golongannya, sehingga analis perkara tanpa sub-peran itu tidak. Pencatatan di SIPP tetap atas akun pejabat pilihan (keputusan 13 Okt), bukan akun penekan tombol. Tombol otomatis tetap ikut pengaturan Admin, tetapi hanya untuk yang memenuhi syarat itu.

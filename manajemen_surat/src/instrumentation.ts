@@ -57,6 +57,18 @@ export async function register() {
     mulaiAgenH1Berkala();
   }
   /* === AKHIR AGEN H-1 BAS === */
+  /* === AGEN KELENGKAPAN HARI SIDANG 1 Nov (N1) === tiap pagi hari kerja (bawaan 07.00 WITA, diatur di setelan) perkara yang bersidang
+     hari ini dan hari kerja berikutnya diperiksa kelengkapannya (relaas, BAS lalu, saksi, e-Court, panjar, mediasi, kuasa); hasil
+     tersimpan di basis data portal untuk lencana Jadwal Sidang dan lonceng; kabar WhatsApp bersaklar (bawaan MATI). Hanya membaca
+     SIPP/ABT. Matikan dengan ALETA_AGEN_KELENGKAPAN=0. */
+  if (process.env.ALETA_AGEN_KELENGKAPAN !== "0") {
+    const [{ mulaiKelengkapanBerkala }, { getDatabase }] = await Promise.all([
+      import("@/server/modules/aleta-ecourt/agen-kelengkapan"),
+      import("@/server/db/client"),
+    ]);
+    mulaiKelengkapanBerkala(getDatabase);
+  }
+  /* === AKHIR AGEN KELENGKAPAN === */
   /* === CERMIN PERKARA 25 Okt (C0) === pemindai awal keadaan perkara SIPP ke basis data ALETA: berkelompok, hanya di jendela
      malam (bawaan 18.00-06.30 WITA), bisa dilanjutkan, hanya MEMBACA SIPP lewat bot. Saklar pemindai MATI bawaan (layar Pemantau
      Cermin Perkara, dibaca tiap detak); saat mati detak tidak menembak bot sama sekali. Matikan detaknya dengan ALETA_CERMIN_PEMINDAI=0. */
