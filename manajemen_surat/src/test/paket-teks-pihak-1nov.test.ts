@@ -287,15 +287,17 @@ describe("urutan pasang 26 paket", () => {
   const daftarRantai = /^URUT="([^"]+)"/m.exec(rantai)![1].split(/\s+/);
   const daftarUrut = [...urut.matchAll(/^### (\d+)\. `([a-z0-9-]+)`/gm)].map((m) => [Number(m[1]), m[2]] as const);
 
-  it("rantai.sh dan URUTAN-PASANG-1nov.md memuat paket yang sama dalam urutan yang sama; nomor berurutan 1..26", () => {
+  it("rantai.sh dan URUTAN-PASANG-1nov.md memuat paket yang sama dalam urutan yang sama; nomor berurutan 1..jumlah paket", () => {
     expect(daftarUrut.map((x) => x[1])).toEqual(daftarRantai);
-    expect(daftarUrut.map((x) => x[0])).toEqual(Array.from({ length: 26 }, (_, i) => i + 1));
+    expect(daftarUrut.map((x) => x[0])).toEqual(Array.from({ length: daftarRantai.length }, (_, i) => i + 1));
+    expect(daftarRantai.length).toBeGreaterThanOrEqual(26);
   });
 
-  it("pembuktian-urut tepat sesudah tanggal-agenda; teks-pihak paling akhir; setiap paket punya folder paket-satker dengan pasang-satker.sh", () => {
+  it("pembuktian-urut tepat sesudah tanggal-agenda; teks-pihak ke-26; setiap paket punya folder paket-satker dengan pasang-satker.sh", () => {
     const i = daftarRantai.indexOf("tanggal-agenda-31okt");
     expect(daftarRantai[i + 1]).toBe("pembuktian-urut-1nov");
-    expect(daftarRantai[daftarRantai.length - 1]).toBe("teks-pihak-1nov");
+    // paket sesudahnya (27 bas-halaman, 28 bas-lanjutan, ...) boleh menyusul; teks-pihak tetap ke-26
+    expect(daftarRantai[25]).toBe("teks-pihak-1nov");
     for (const p of daftarRantai) expect(existsSync(path.join(AKAR, "abt-paket", p, "paket-satker/pasang-satker.sh")), p).toBe(true);
   });
 

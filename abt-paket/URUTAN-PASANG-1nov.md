@@ -1,4 +1,4 @@
-# URUTAN PASANG paket ABT 29 Okt - 1 Nov 2026 (27 paket; diuji rantai penuh dari dump 28 Okt; MENGGANTIKAN URUTAN-PASANG-31okt.md)
+# URUTAN PASANG paket ABT 29 Okt - 1 Nov 2026 (28 paket; diuji rantai penuh dari dump 28 Okt; MENGGANTIKAN URUTAN-PASANG-31okt.md)
 
 Nomor "KE-n" di komentar dan PASANG.md paket lama mengikuti urutan 24 paket yang lama; yang berlaku adalah nomor di berkas ini
 (pembuktian-urut-1nov disisipkan sebagai ke-22, sehingga jawab-replik, butir-rata, bukti-pisah menjadi ke-23, ke-24, ke-25, teks-pihak ke-26).
@@ -409,4 +409,22 @@ PRASYARAT COCOK (SIAP=609)
 TAMBAL=609
 BERKAS COCOK
 SELESAI - paket abt-bas-halaman-1nov terpasang. ...
+```
+
+### 28. `bas-lanjutan-1nov` (cabang bas-lanjutan-ringkas w163; keputusan 82) - PALING AKHIR
+```
+cd bas-lanjutan-1nov/paket-satker && bash pasang-satker.sh
+```
+Kalimat "Sidang ini merupakan lanjutan dari sidang tanggal ...; pada sidang tersebut ... hadir ...; kemudian sidang ditunda ..." (variabel 8562, dipakai di
+blangko BAS sebagai "#5404# #8562#") dibuang dari 676 blangko BAS Derry (semua jenis perkara, semua sidang lanjutan); tinggal "Susunan majelis yang
+bersidang sama dengan sidang yang lalu;" dan paragraf itu diberi inden baris pertama yang sama dengan paragraf BAS lain (bukan inden gantung).
+Variabel 8562 TIDAK diubah; hanya pemakaiannya di BAS dihapus. Hanya berkas RTF (tanpa variabel/menu/data). Lihat `bas-lanjutan-1nov/PASANG.md`.
+md5 dasar = keadaan sesudah ke-27 paket.
+Keluaran benar:
+```
+BERKAS SIAP
+PRASYARAT COCOK (SIAP=676)
+TAMBAL=676
+BERKAS COCOK
+SELESAI - paket abt-bas-lanjutan-1nov terpasang. ...
 ```
