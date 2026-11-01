@@ -1,0 +1,15 @@
+8e3a9495d2cd3e1817e21c4b31185cc0  abt-teks-pihak-1nov-FUNGSI-PULIH.sql
+10ad72ce572afbae4c466a2c472d5b97  abt-teks-pihak-1nov-FUNGSI.sql
+5bf6c7594d2b66f9113766ec5a070f74  abt-teks-pihak-1nov-PASANG.sql
+a7011f1bf40bbb798f2729972167f2b0  abt-teks-pihak-1nov-PERIKSA.sql
+2e86d935e99f30333e795b695986977d  abt-teks-pihak-1nov-PRASYARAT.sql
+2e1e150db330366a9d5cad5b33f384db  abt-teks-pihak-1nov-PULIH.sql
+a0473bbaf639639f535f9a3c69047bfd  daftar-tambal.tsv
+7601c818d33b27e6c50ddf3ceca80737  harap.txt
+89707678d0a22a4052e82b1bf46e2de6  nomor-variabel.txt
+6666d50243047d61cd36a463e54a3280  pasang-satker.sh
+1ab429fe0b17aa07ebc7aab2c635cf75  pulih-satker.sh
+7fa164859ea20cfd392f0d8352a33be4  tambal.tsv
+d949a1c1e10c9b60e8cc4fd18adc9b54  tambal_rtf.py
+021e78b8ca19bca79b5a5daef2f6aa92  uji-fungsi.tsv
+cc58eabc3b6a42320c4c95e07046f8c4  uji-kueri.tsv

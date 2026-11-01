@@ -2545,7 +2545,7 @@ async function keadaanPanggilanSidang(daftarSidang = []) {
     runQuery(
       `SELECT j.id AS sidangId, j.perkara_id AS perkaraId,
               j.tanggal_sidang AS tanggalSidang, j.dihadiri_oleh AS dihadiriOleh,
-              j.agenda AS agenda, j.alasan_ditunda AS alasanDitunda, j.keterangan AS keterangan,
+              j.agenda AS agenda, ${sqlAlasanHasil("j")} AS alasanDitunda, j.keterangan AS keterangan,
               p.nomor_perkara AS nomorPerkara
          FROM perkara_jadwal_sidang j
          LEFT JOIN perkara p ON p.perkara_id = j.perkara_id

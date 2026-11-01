@@ -1,5 +1,7 @@
 # URUTAN PASANG paket ABT 29 Okt - 1 Nov 2026 (24 paket; diuji rantai penuh dari dump 28 Okt; paket ke-24 pada 1 Nov)
 
+> **DIGANTI oleh URUTAN-PASANG-1nov.md** (26 paket: pembuktian-urut-1nov disisipkan ke-22, teks-pihak-1nov ke-26). Berkas ini dibiarkan sebagai riwayat 24 paket.
+
 Semua paket dipasang di SERVER sebagai root, dari folder `paket-satker` masing-masing, BERURUTAN persis seperti di bawah
 (`cd <paket>/paket-satker && bash pasang-satker.sh`). Setiap paket harus berakhir "SELESAI" (dan PERIKSA "SEMUA COCOK" /
 "COCOK" bila ada). Paket yang berhenti di PRASYARAT/praperiksa TIDAK mengubah apa pun - jangan dipaksa; laporkan keluarannya.
