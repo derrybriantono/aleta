@@ -8820,6 +8820,40 @@
   // menambah pilihan tidak menjalankan LibreOffice lagi. PDF SALINAN tidak disinggahkan (bergantung tanda tangan Panitera di server).
   const cachePdf = [];
   const UMUR_CACHE_PDF_MS = 10 * 60 * 1000;
+  // 1 Nov 2026 - Z cross otomatis: portal memasang garis Z + tanggal + nomor halaman sesudah bukti pada BAS (PDF: di rute PDF; RTF: rute z-cross).
+  const API_ZCROSS = "/aleta/api/aleta-ecourt/bas/z-cross";
+  /** Jumlah bukti (surat + elektronik) pihak yang dibuktikan di BAS ini, dari daftar bukti di panel; 0 = tidak diketahui (portal menghitung dari naskah). */
+  function jumlahBuktiPanel() {
+    try {
+      const pihak = [...new Set(((S.susunan && S.susunan.isian) || []).filter((b) => b && b.khusus === "bukti").map((b) => b.pihak))];
+      let n = 0;
+      for (const w of pihak) {
+        n += (S.bukti[w] || []).filter((r) => r && String(r.nm || r.manual || "").trim()).length;
+        const el = S.buktiEl[w];
+        n += el && Array.isArray(el.butir) ? el.butir.filter((b) => !butirElKosong(b)).length : 0;
+      }
+      return n;
+    } catch {
+      return 0;
+    }
+  }
+  /** RTF BAS -> RTF dengan Z cross. Gagal / rute tak terjangkau = RTF apa adanya (tidak mengganggu unduhan). */
+  async function zCrossRtf(rtf, jumlahBukti) {
+    try {
+      const badan = new FormData();
+      badan.append("berkas", new Blob([bufDariLatin1(latin1(rtf))], { type: "application/rtf" }), "bas.rtf");
+      badan.append("keluar", "rtf");
+      if (jumlahBukti > 0) badan.append("jumlahBukti", String(jumlahBukti));
+      const d = await ambilPortal(API_ZCROSS, { method: "POST", body: badan, batasMs: BATAS_LAMA_MS }, "Memasang Z");
+      if (!d || !d.diubah || !d.berkasBase64) return { rtf, ket: "" };
+      const biner = Uint8Array.from(atob(d.berkasBase64), (c) => c.charCodeAt(0));
+      const ket = d.laporan && d.laporan.jumlahHalamanBuktiBawaan ? "Z dipasang; jumlah halaman bukti memakai bawaan 1 per bukti" : "Z dipasang";
+      return { rtf: typeof rtf === "string" ? latin1(biner) : biner.buffer, ket };
+    } catch (e) {
+      catatLog(`Z cross dilewati: ${e && e.message ? e.message : e}`);
+      return { rtf, ket: "" };
+    }
+  }
   async function pdfDari(rtfLatin1, salinan, ttd) {
     const adaTtd = Array.isArray(ttd) && ttd.length > 0;
     const kunciTtd = adaTtd ? ttd.map((x) => `${x.nama}\u0001${sidikTeks(x.pngBase64)}`).join("\u0002") : "";
@@ -8828,7 +8862,7 @@
       if (ada) return { blob: new Blob([ada.bita], { type: "application/pdf" }), bita: ada.bita, keterangan: null, ttdPdf: ada.ttdPdf, dariCache: true };
     }
     const buf = bufDariLatin1(rtfLatin1);
-    const badan = { rtfBase64: base64DariBuffer(buf), ...(salinan ? { salinan: true } : {}), ...(adaTtd ? { ttd: ttd.map((x) => ({ nama: x.nama, pngBase64: x.pngBase64 })) } : {}) };
+    const badan = { rtfBase64: base64DariBuffer(buf), ...(!salinan && S.jumlahBuktiZ > 0 ? { jumlahBukti: S.jumlahBuktiZ } : {}), ...(salinan ? { salinan: true } : {}), ...(adaTtd ? { ttd: ttd.map((x) => ({ nama: x.nama, pngBase64: x.pngBase64 })) } : {}) };
     const d = await ambilPortal(API_PDF, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(badan), batasMs: BATAS_LAMA_MS }, salinan ? "Membuat PDF salinan" : "Membuat PDF");
     if (!d || !d.available) throw new Error((d && d.message) || "pengubah PDF tidak tersedia");
     const biner = Uint8Array.from(atob(d.pdfBase64), (c) => c.charCodeAt(0));
@@ -8950,10 +8984,17 @@
     const rtfLatin1 = latin1(rtfCetak);
     if (S.fmt.pdf) await autoCentangTtd(); // tanda tangan sah otomatis ikut bila pengguna belum memilih sendiri
     const pesanRtf = [];
+    S.jumlahBuktiZ = jumlahBuktiPanel();
+    let ketZ = "";
+    if (S.fmt.rtf && j === "bas" && !tes()) {
+      const z = await zCrossRtf(rtfCetak, S.jumlahBuktiZ);
+      rtfCetak = z.rtf;
+      ketZ = z.ket;
+    }
     if (S.fmt.rtf) {
       const nama = namaUnduhan(nomor, berkas, "rtf");
       const u = await unduh(new Blob([rtfCetak], { type: "application/rtf" }), nama);
-      pesanRtf.push(u.ok ? `RTF diunduh "${nama}"` : `RTF gagal: ${u.pesan}`);
+      pesanRtf.push(u.ok ? `RTF diunduh "${nama}"${ketZ ? ` (${ketZ})` : ""}` : `RTF gagal: ${u.pesan}`);
       ukur.rtf = Date.now() - mulaiCetak;
       tampilStatus(pesanRtf[0]);
     }
