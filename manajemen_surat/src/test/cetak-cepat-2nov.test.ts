@@ -73,7 +73,7 @@ describe("A. slot profil soffice", () => {
     a.kembalikan(true);
     const d = profil.pinjam("/tmp/cadangan-d/profil");
     expect(d.folder).toBe(a.folder);
-    expect(d.url).toBe(`file://${a.folder}`);
+    expect(d.url).toBe(`file://${a.folder.split(path.sep).join("/")}`); // Windows: folder memakai pemisah "\", URL selalu "/"
     b.kembalikan(true);
     d.kembalikan(true);
     c.kembalikan(false);

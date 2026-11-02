@@ -161,9 +161,11 @@ describe("unduhan tidak lagi diblokir Chrome", () => {
     // tetap diblokir. Yang menolong adalah menerbitkannya dari ekstensi.
     expect(latar).toContain('pesan.jenis === "unduh"');
     expect(latar).toContain("chrome.downloads.download(");
-    // Hanya data: yang diterima - alamat sembarang dari halaman tidak boleh
-    // menumpang izin unduh ekstensi.
-    expect(latar).toContain('if (!alamat.startsWith("data:"))');
+    // Hanya data: dan blob: milik ekstensi sendiri (dokumen offscreen unduh-aman, 2 Nov) yang diterima -
+    // alamat sembarang atau blob: milik halaman tidak boleh menumpang izin unduh ekstensi.
+    expect(latar).toContain('if (!alamat.startsWith("data:") && !alamatBlobEkstensi(alamat))');
+    expect(latar).toContain("function alamatBlobEkstensi(");
+    expect(latar).toContain("startsWith(`blob:${String(chrome.runtime.getURL(");
   });
 
   it("panel mengirimkannya, dan punya jalan mundur bila gagal", () => {

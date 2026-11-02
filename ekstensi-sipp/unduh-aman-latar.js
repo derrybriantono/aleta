@@ -87,7 +87,7 @@
   }
 
   function teksGalat(g) {
-    return String((g && g.message) || g || "galat tidak dikenal").slice(0, 200);
+    return String((g && g.message) || g || "sebab tidak diketahui").slice(0, 200);
   }
 
   /**

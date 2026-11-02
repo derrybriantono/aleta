@@ -57,6 +57,30 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.63",
+    dirilis: "2026-11-02T18:00:00+08:00",
+    judul: "PDF berita acara dan putusan lebih rapi, panel Blangko Derry ringkas, pemasang Windows, dan unduhan berkas aman",
+    butir: [
+      "Garis Z pada PDF berita acara tidak lagi terbalik: ditarik dari kanan atas ke kiri bawah, seperti di Word.",
+      "Nomor halaman PDF berita acara kembali di kanan bawah.",
+      "Garis Z otomatis membuang garis Z lama di blangko dan menarik garis sampai batas area tulisan, dengan tanggal di bawahnya.",
+      "Salinan berita acara memakai tanda tangan asli Ketua Majelis dan Panitera Sidang yang sudah disahkan.",
+      "Tulisan \"ttd\" di salinan putusan muncul juga pada susunan tanda tangan blangko yang lain, dan nama penanda tangan dicocokkan tanpa gelar.",
+      "PDF putusan biasa tidak lagi memuat ruang kosong sesudah \"1. PNBP :\", karena blok \"Untuk Salinan\" yang tersembunyi tidak ikut tercetak.",
+      "Rekomendasi putusan di panel Blangko Derry ringkas dalam satu baris dan dapat dibuka bila perlu; pilihan buka-tutupnya diingat per pengguna.",
+      "Keadaan perkara di panel Blangko Derry juga terlipat menjadi satu baris ringkas.",
+      "Daftar Pilih blangko diberi pemisah per golongan (putusan per status, berita acara per agenda sidang, relaas per keperluan) dan baris lompat; blangko yang disarankan naik ke atas dan tidak ada yang hilang.",
+      "Saran blangko searah dengan rekomendasi putusan: bila rekomendasi cukup kuat, arah lain tidak disarankan; bila ragu, saran ditandai ragu dan tidak dipilih otomatis.",
+      "Tanya jawab saksi tampil langsung sesudah alat bukti surat dan bukti elektronik.",
+      "Bagian di bawah tanya jawab saksi diringkas menjadi Isian untuk amar, Tuntutan, dan Bahan musyawarah majelis, masing-masing dengan tanda perlu diisi, perlu diperiksa, atau lengkap.",
+      "Daftar \"Semua perkara saya\" di Blangko Derry dimuat lebih cepat dengan isi yang sama.",
+      "Cetak berita acara dan putusan ke PDF lebih cepat.",
+      "Bawaan pengetahuan saksi kedua kini \"tahu seluruh alasan, melihat sendiri\" seperti saksi pertama; arah Tolak tetap \"tidak tahu\".",
+      "Pemasang ALETA untuk Windows: petugas cukup klik dua kali satu berkas untuk memasang ekstensi di lokasi tetap, menyalakan Mode Pengembang, dan mengaktifkan pembaruan otomatis.",
+      "Unduh seluruh berkas perkara dari portal tidak lagi ditolak Chrome sebagai unduhan tidak aman, tanpa batas ukuran berkas.",
+    ],
+  },
+  {
     versi: "1.205.62",
     dirilis: "2026-11-02T12:30:00+08:00",
     judul: "Rekomendasi putusan dari bukti dan saksi, kaidah fikih di blangko, syarat nafkah 12 bulan, dan tenggat minutasi, PK, serta kasir",

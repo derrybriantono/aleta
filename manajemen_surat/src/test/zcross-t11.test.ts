@@ -724,7 +724,11 @@ describe.skipIf(!MESIN_SUNGGUHAN)(`Z cross - mesin sungguhan (${MESIN_SUNGGUHAN?
       const g = (await bacaGarisPdf(pdf)).filter((x) => x.halaman === akhir.halaman);
       expect(g.find((x) => Math.abs(x.y1 - x.y2) < 0.5 && x.x2 - x.x1 > 40 && dalam(x.y1, akhir.yDasar - 12, akhir.yDasar + 1) && Math.min(x.x1, x.x2) >= akhir.x2 - 0.5)).toBeTruthy();
       const tinggi = baca.halaman[akhir.halaman - 1].tinggi;
-      expect(g.find((x) => Math.abs(x.y1 - x.y2) < 0.5 && x.x2 - x.x1 > 200 && Math.abs(x.y1 - (tinggi - 3 * CM)) < 2.5)).toBeTruthy();
+      // 2 Nov: garis bawah sampai dekat batas bawah AREA TEKS (margin bawah seksi blangko), menyisakan ruang dua baris tanggal -
+      // sama dengan uji bentuk sintetis di atas; dulu jarak tetap 3 cm dari tepi kertas.
+      const margbTwip = Number((hasil.match(/\\margbsxn(\d+)/) ?? hasil.match(/\\margb(\d+)/) ?? [])[1] ?? 1440);
+      const yBawah = tinggi - margbTwip / 20 - RUANG_TANGGAL_AREA_TEKS;
+      expect(g.find((x) => Math.abs(x.y1 - x.y2) < 0.5 && x.x2 - x.x1 > 200 && Math.abs(x.y1 - yBawah) < 2.5), `garis=${JSON.stringify(g)}`).toBeTruthy();
     }, 180000);
   }
 
