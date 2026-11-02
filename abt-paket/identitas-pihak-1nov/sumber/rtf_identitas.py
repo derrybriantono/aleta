@@ -34,6 +34,9 @@ RE_SENDIRI = re.compile(r'^(#7047#|#7048#)(#8710#)?(#7054#)?$')
 # D (revisi 2 Nov, keputusan 112): identitas tertulis tangan yang TIDAK cocok dengan MANUAL (mis. ";" pada run terpisah di "[99] BAS LAINNYA" folder BAS lama):
 # hanya tulisan umur "(umur)" dan "(#nnnn# tahun)" dibuang dari teksnya, gaya tulisan tangan dibiarkan.
 RE_UMUR = re.compile(r'\(umur\) (#\d{4}#, #\d{4}#) \(#\d{4}# tahun\)')
+# E (keputusan 134, Derry 2 Nov): relaas yang mencetak umur pihak dengan variabel umur pihak (#0099# Penggugat/Pemohon I, #0103# Tergugat/Termohon I, #1034# Pemohon II) di tengah
+# kalimat identitas: ", umur #0103# tahun" dibuang berikut koma depannya sehingga "lahir #0343#, #0347#, agama ..." tetap rapi (tanpa koma/kata ganda).
+RE_UMUR_VAR = re.compile(r', umur #(?:0099|0103|1034)# tahun(?=, )')
 
 
 class Lewat(Exception):
@@ -81,7 +84,7 @@ def sudah_acuan(ppr):
 def rancang(raw):
     """-> (potongan [(offset, lama, baru)], info dict). info: A, B, C (jumlah paragraf per golongan)."""
     pot = []
-    info = {'A': 0, 'B': 0, 'C': 0, 'D': 0, 'hapus': 0}
+    info = {'A': 0, 'B': 0, 'C': 0, 'D': 0, 'E': 0, 'hapus': 0}
     par = paragraf(raw)
     i = 0
     sesudah_hapus = False
@@ -130,6 +133,11 @@ def rancang(raw):
             continue
         pot.append((m.start(), m.group(0), m.group(1)))
         info['D'] += 1
+    for m in RE_UMUR_VAR.finditer(raw):
+        if any(o <= m.start() < o + len(l) for o, l, _ in pot):
+            continue
+        pot.append((m.start(), m.group(0), ''))
+        info['E'] += 1
     return pot, info
 
 

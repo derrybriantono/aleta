@@ -1,7 +1,7 @@
-# Uji rantai 33 paket (agen V2, 2 Nov): tahap 1 = paket 1-30 dari dump 28 Okt (rantai181.sh); tahap 2 diulang dengan paket ke-31 revisi (610 berkas) dan ke-33 (rantai181b.sh: pulih paket lama dulu = uji pulih dalam rantai)
-===== tahap 1 + tahap 2 pertama (paket ke-31 versi 608 berkas dan ke-33): =====
+# Uji rantai paket 1-30, 31 (revisi 611 berkas), 32 (kaidah-fikih-2nov dari cabang kaidah-fikih 074ddeba, tidak diubah), 33 - agen V2, 2 Nov (tahap 1 = rantai181.sh, 1-30 dari dump 28 Okt; tahap 2 = rantai181c.sh: pulih paket lama, ganti dari HEAD, pasang ulang)
+sidik pohon: sesudah 30 = 9931cdd9c3f77cb0575d9ab9ec9322ee; sesudah 31 = beb5eb9269b80822ef8e775065702b15 (uji lokal); sesudah 33 tanpa 32 = 5f2e7abf6e6409bb83669f710d69e6a5 (uji lokal); sesudah 31+32+33 (rantai) = cf5b9accdecf834e60e87aa75abbaa67
+===== tahap 1 (paket 1-30) =====
 08:36:18 siapkan
-08:51:17 rantai tahap 1 (sampai perbaikan-1nov)
 ### prodeo-panggilan-29okt (ABT_BLANGKO=/d/r181c/_blangko_abt) 08:51:17
 ### bas-tanya-jawab-29okt (ABT_BLANGKO=/d/r181c/_blangko_abt/derry_briantono) 08:53:30
 ### bas-itsbat-varian-30okt (ABT_BLANGKO=/d/r181c/_blangko_abt/derry_briantono) 08:53:47
@@ -35,16 +35,12 @@
 ### BERHENTI sesudah perbaikan-1nov (SAMPAI)
 ### RANTAI SELESAI 09:09:56
 sidik pohon sesudah 30 paket: 9931cdd9c3f77cb0575d9ab9ec9322ee (harus 9931cdd9c3f77cb0575d9ab9ec9322ee)
-09:11:03 rantai tahap 2 (ke-31 revisi dan ke-33)
 ### identitas-pihak-1nov (ABT_BLANGKO=/d/r181c/_blangko_abt) 09:11:04
 ### bas-halaman-semua-2nov (ABT_BLANGKO=/d/r181c/_blangko_abt) 09:12:31
 ### RANTAI SELESAI 09:12:46
 RANTAI-KELUAR 0
-sidik pohon rantai : 6cc4dd746905283b740405ec9a88f596
-rantai181.sh: line 22: cd: /d/r181/uji33: No such file or directory
-sidik uji lokal 33 : 
-===== tahap 2 ulang (paket terbaru dari HEAD) =====
-09:15:37 sidik sebelum pulih: 6cc4dd746905283b740405ec9a88f596
+===== tahap 2 =====
+10:57:23 sidik sebelum pulih: 723799221c763995c259c607a8c5c723
 == pulih ke-33 (lama)
 BERKAS PULIH
 PULIH COCOK (SIAP=180)
@@ -54,21 +50,29 @@ VARIABEL KEMBALI
 FUNGSI identitas dan tambahan DIKEMBALIKAN ke definisi lama
 PULIH COCOK (2|0|2|0|0|6)
 sidik sesudah pulih (harus 9931cdd9c3f77cb0575d9ab9ec9322ee): 9931cdd9c3f77cb0575d9ab9ec9322ee
+paket 32 dari cabang kaidah-fikih: 074ddeba
 md5 paket cocok identitas-pihak-1nov
+md5 paket cocok kaidah-fikih-2nov
 md5 paket cocok bas-halaman-semua-2nov
-09:16:25 rantai tahap 2 (ke-31 revisi 610 berkas, ke-33)
-### identitas-pihak-1nov (ABT_BLANGKO=/d/r181c/_blangko_abt) 09:16:25
+11:01:52 rantai tahap 2 (ke-31 revisi 611 berkas, ke-32 kaidah-fikih, ke-33)
+### identitas-pihak-1nov (ABT_BLANGKO=/d/r181c/_blangko_abt) 11:01:52
     uji kueri baru perkara 9987: 2 variabel jalan, 0 galat, 0 galat tabel luar tidak ada
-    TAMBAL=610
+    TAMBAL=611
     BERKAS COCOK
     SELESAI - paket abt-identitas-pihak-1nov terpasang. Cadangan: /d/r181c/ap/identitas-pihak-1nov/paket-satker/cadangan. Pulih: bash /d/r181c/ap/identitas-pihak-1nov/paket-satker/pulih-satker.sh
-### bas-halaman-semua-2nov (ABT_BLANGKO=/d/r181c/_blangko_abt) 09:17:39
+### kaidah-fikih-2nov (ABT_BLANGKO=/d/r181c/_blangko_abt) 11:02:57
+    BERKAS SIAP
+    TAMBAL=85
+    BERKAS COCOK
+    SELESAI - paket abt-kaidah-fikih-2nov terpasang (85 blangko). Cadangan: /d/r181c/ap/kaidah-fikih-2nov/paket-satker/cadangan. Pulih: bash /d/r181c/ap/kaidah-fikih-2nov/paket-satker/pulih-satker.sh
+### bas-halaman-semua-2nov (ABT_BLANGKO=/d/r181c/_blangko_abt) 11:03:06
     PRASYARAT COCOK (SIAP=180)
     TAMBAL=180
     BERKAS COCOK
     SELESAI - paket abt-bas-halaman-semua-2nov terpasang. Cadangan: /d/r181c/ap/bas-halaman-semua-2nov/paket-satker/cadangan. Pulih: bash /d/r181c/ap/bas-halaman-semua-2nov/paket-satker/pulih-satker.sh
-### RANTAI SELESAI 09:18:03
+### RANTAI SELESAI 11:03:23
 RANTAI-KELUAR 0
-sidik pohon rantai : 723799221c763995c259c607a8c5c723
-sidik uji lokal 33 : 723799221c763995c259c607a8c5c723
-09:18:09 selesai
+sidik pohon rantai : cf5b9accdecf834e60e87aa75abbaa67
+sidik pohon sesudah 31 (uji lokal, harus beb5eb9269b80822ef8e775065702b15): beb5eb9269b80822ef8e775065702b15
+sidik uji lokal 33 : 5f2e7abf6e6409bb83669f710d69e6a5
+11:03:33 selesai
