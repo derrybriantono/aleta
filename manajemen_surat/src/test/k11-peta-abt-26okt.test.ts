@@ -58,6 +58,15 @@ describe("peta fitur K11 (abt.js): pernyataan", () => {
     expect(lem.sort()).toEqual(["modulAbtSiap", "pastikanModulAbt", "selesai", "selesai", "selesai"]);
     const hilang: string[] = [];
     const tambah: string[] = [];
+    // Perubahan isi yang DISENGAJA (sidik lama -> sidik baru), satu per keputusan pengguna:
+    // 2 Nov 2026 (Derry): bawaan saksi II di "Susun keterangan saksi" panel ABT lama = "sama", disamakan dengan panel Blangko Derry.
+    const SAH: Record<string, string> = { "416f2fd8167a": "9ad3dda03378" };
+    for (const [l, b] of Object.entries(SAH)) {
+      if (lama.has(l) && baru.has(b)) {
+        lama.set(b, (lama.get(b) || 0) + (lama.get(l) || 0));
+        lama.delete(l);
+      }
+    }
     for (const [k, n] of lama) if ((baru.get(k) || 0) !== n) hilang.push(k);
     for (const [k, n] of baru) if ((lama.get(k) || 0) !== n) tambah.push(k);
     expect({ hilang, tambah }).toEqual({ hilang: [], tambah: [] });
