@@ -180,8 +180,8 @@ def main():
 
     # ---- berkas fungsi
     kep_fn = ("-- Paket %s: dua fungsi diganti (md5 definisi lama = keadaan server sesudah paket alamat-putusan-28okt dan pihak-urut-ecourt-27okt; md5 baru di hasil/isi-paket.json).\n"
-              "-- isian_rtf_pihak_identitas: umur dalam kurung sesudah tanggal lahir, urutan agama-pendidikan-pekerjaan, kalimat kuasa \"... yang telah didaftarkan\" tanpa koma.\n"
-              "-- isian_rtf_pihak_tambahan (Turut Tergugat, intervensi): umur dalam kurung dan pendidikan ikut bila ada. Tanpa komentar -- di badan fungsi (md5 definisi dihitung tanpa komentar).\n") % N
+              "-- isian_rtf_pihak_identitas: TANPA umur (keputusan 112), urutan agama-pendidikan-pekerjaan, kalimat kuasa \"... yang telah didaftarkan\" tanpa koma.\n"
+              "-- isian_rtf_pihak_tambahan (Turut Tergugat, intervensi): pendidikan ikut bila ada, tanpa umur. Tanpa komentar -- di badan fungsi (md5 definisi dihitung tanpa komentar).\n") % N
     fungsi_sql = kep_fn + 'DELIMITER $$\n\n' + ''.join(fn[f]['baru'] + '$$\n\n' for f in FN_UBAH) + 'DELIMITER ;\n'
     lama_sql = "-- Definisi LAMA (persis keadaan server) dua fungsi yang diganti; dipakai pulih-satker.sh.\nDELIMITER $$\n\n" + ''.join(fn[f]['lama'] + '$$\n\n' for f in FN_UBAH) + 'DELIMITER ;\n'
     for f in FN_UBAH:
@@ -190,7 +190,7 @@ def main():
     # ---- berkas RTF
     dasar = os.path.join(akar, 'derry_briantono')
     daftar_b, lewat = [], []
-    tot = {'A': 0, 'B': 0, 'C': 0, 'hapus': 0}
+    tot = {'A': 0, 'B': 0, 'C': 0, 'D': 0, 'hapus': 0}
     for dp, dn, fns in os.walk(dasar):
         dn.sort()
         rel_d = os.path.relpath(dp, dasar).replace(os.sep, '/')
@@ -230,15 +230,15 @@ def main():
             for off, a, z in pot:
                 t.write(u'%s\t%d\t%s\t%s\n' % (kode, off, base64.b64encode(a.encode('latin1')).decode('ascii'), base64.b64encode(z.encode('latin1')).decode('ascii')))
     with io.open(os.path.join(hasil, 'rincian.tsv'), 'w', encoding='utf-8', newline='\n') as o:
-        o.write(u'# kode\tberkas\tA menjorok disamakan\tB tertulis tangan -> variabel\tC lanjutan DK\tPemohon II dibuang\n')
+        o.write(u'# kode\tberkas\tA menjorok disamakan\tB tertulis tangan -> variabel\tC lanjutan DK\tPemohon II dibuang\tD umur dibuang dari tulisan tangan\n')
         for i, (rel, lama, baru, pot, info) in enumerate(daftar_b, 1):
-            o.write(u'I%04d\t%s\t%d\t%d\t%d\t%d\n' % (i, rel, info['A'], info['B'], info['C'], info['hapus']))
+            o.write(u'I%04d\t%s\t%d\t%d\t%d\t%d\t%d\n' % (i, rel, info['A'], info['B'], info['C'], info['hapus'], info['D']))
     with io.open(os.path.join(hasil, 'lewat.tsv'), 'w', encoding='utf-8', newline='\n') as o:
         o.write(u'# berkas yang TIDAK diubah\talasan\n')
         for rel, alasan in lewat:
             o.write(u'%s\t%s\n' % (rel, alasan))
-    ringkas = 'BERKAS DIUBAH=%d | A menjorok=%d | B tertulis tangan->variabel=%d (paragraf Pemohon II dibuang %d) | C lanjutan DK=%d | DILEWATI=%d' % (
-        len(daftar_b), tot['A'], tot['B'], tot['hapus'], tot['C'], len(lewat))
+    ringkas = 'BERKAS DIUBAH=%d | A menjorok=%d | B tertulis tangan->variabel=%d (paragraf Pemohon II dibuang %d) | C lanjutan DK=%d | D umur dibuang dari tulisan tangan=%d | DILEWATI=%d' % (
+        len(daftar_b), tot['A'], tot['B'], tot['hapus'], tot['C'], tot['D'], len(lewat))
     open(os.path.join(hasil, 'ringkas.txt'), 'w', newline='\n').write(ringkas + '\n')
 
     # ---- tulis berkas paket

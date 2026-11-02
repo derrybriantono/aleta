@@ -9,6 +9,7 @@ Tiga golongan perubahan, semuanya hanya pada paragraf identitas (teks lain blang
   B. paragraf identitas TERTULIS TANGAN (nama, NIK, "tempat dan tanggal lahir (umur) ...", agama, pendidikan, pekerjaan, tempat kediaman, "sebagai Penggugat;" dst.
      dari variabel per bagian, tulisan "(umur)" tersisa) -> diganti penanda #7047# / #7048# dengan properti paragraf acuan: bunyinya sama dengan blangko putusan (kuasa ikut, tebal, umur).
   C. paragraf "#0046# I dan #0046# II selanjutnya ..." yang mengikuti dua paragraf Pemohon I/II (dispensasi kawin) -> menjorok acuan (hanya angka menjorok).
+  D. (REVISI 2 Nov, keputusan 112) sisa tulisan umur di identitas tertulis tangan yang tidak tercakup B: "(umur) #nnnn#, #nnnn# (#nnnn# tahun)" -> "#nnnn#, #nnnn#".
 Tidak diubah (disengaja): akta perdamaian ("I.<tab>#7047#" bernomor), identitas dalam sel tabel (BAS ikrar talak, BAS LAINNYA), relaas/PTSP, identitas ringkas."""
 import re
 
@@ -30,6 +31,9 @@ MANUAL_HAPUS = {
 }
 LANJUT = '#0046# I dan #0046# II selanjutnya'
 RE_SENDIRI = re.compile(r'^(#7047#|#7048#)(#8710#)?(#7054#)?$')
+# D (revisi 2 Nov, keputusan 112): identitas tertulis tangan yang TIDAK cocok dengan MANUAL (mis. ";" pada run terpisah di "[99] BAS LAINNYA" folder BAS lama):
+# hanya tulisan umur "(umur)" dan "(#nnnn# tahun)" dibuang dari teksnya, gaya tulisan tangan dibiarkan.
+RE_UMUR = re.compile(r'\(umur\) (#\d{4}#, #\d{4}#) \(#\d{4}# tahun\)')
 
 
 class Lewat(Exception):
@@ -77,7 +81,7 @@ def sudah_acuan(ppr):
 def rancang(raw):
     """-> (potongan [(offset, lama, baru)], info dict). info: A, B, C (jumlah paragraf per golongan)."""
     pot = []
-    info = {'A': 0, 'B': 0, 'C': 0, 'hapus': 0}
+    info = {'A': 0, 'B': 0, 'C': 0, 'D': 0, 'hapus': 0}
     par = paragraf(raw)
     i = 0
     sesudah_hapus = False
@@ -121,6 +125,11 @@ def rancang(raw):
                 pot.append((a, ppr, ppr_acuan(ppr)))
                 info['C'] += 1
         i += 1
+    for m in RE_UMUR.finditer(raw):
+        if any(o <= m.start() < o + len(l) for o, l, _ in pot):
+            continue
+        pot.append((m.start(), m.group(0), m.group(1)))
+        info['D'] += 1
     return pot, info
 
 

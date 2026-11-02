@@ -1,4 +1,4 @@
-# URUTAN PASANG paket ABT 29 Okt - 1 Nov 2026 (31 paket; diuji rantai penuh dari dump 28 Okt; MENGGANTIKAN URUTAN-PASANG-31okt.md)
+# URUTAN PASANG paket ABT 29 Okt - 2 Nov 2026 (31 paket + ke-33 di bawah; paket ke-32 kaidah-fikih-2nov dari cabang lain; diuji rantai penuh dari dump 28 Okt; MENGGANTIKAN URUTAN-PASANG-31okt.md)
 
 Nomor "KE-n" di komentar dan PASANG.md paket lama mengikuti urutan 24 paket yang lama; yang berlaku adalah nomor di berkas ini
 (pembuktian-urut-1nov disisipkan sebagai ke-22, sehingga jawab-replik, butir-rata, bukti-pisah menjadi ke-23, ke-24, ke-25, teks-pihak ke-26).
@@ -480,10 +480,10 @@ SELESAI - paket abt-perbaikan-1nov terpasang. ...
 cd identitas-pihak-1nov/paket-satker && bash pasang-satker.sh
 ```
 Format identitas pihak di putusan/penetapan = blangko acuan "[01] [Kabul Verstek] Cerai (Format Lengkap)" (folder 1 Perceraian CG): nama dan sebutan tebal, baris pertama menjorok 1,25 cm, baris lanjutan
-menjorok gantung 4,5 cm, rata kanan-kiri, "(N tahun)" sesudah tanggal lahir untuk SEMUA pihak yang tanggal lahirnya ada, urutan agama-pendidikan-pekerjaan, kalimat kuasa "... Surat Kuasa Khusus tanggal ... yang telah didaftarkan ...".
+menjorok gantung 4,5 cm, rata kanan-kiri, TANPA umur (REVISI 2 Nov, keputusan 112 Derry: "umur tidak perlu dalam putusan"; "(N tahun)" dibuang dari kedua fungsi, jadi juga di penetapan dan BAS), urutan agama-pendidikan-pekerjaan, kalimat kuasa "... Surat Kuasa Khusus tanggal ... yang telah didaftarkan ...".
 A. Variabel 7047/7048 (identitas Penggugat-Pemohon / Tergugat-Termohon) dipangkas dari ~45 penanda dan 5 cabang menjadi SATU panggilan fungsi `isian_rtf_pihak_identitas` (2 penanda: sebutan dan kalimat kuasa);
-fungsi itu diganti (umur, urutan, kuasa, kalimat kuasa panjang tidak terpotong) dan `isian_rtf_pihak_tambahan` (Turut Tergugat/intervensi) diselaraskan.
-B. Blangko RTF (daftar-tambal.tsv + tambal.tsv): paragraf identitas disamakan inden acuan; identitas tertulis tangan di BAS ALUR dan dispensasi kawin diganti `#7047#`/`#7048#`.
+fungsi itu diganti (urutan, kuasa, kalimat kuasa panjang tidak terpotong; tanpa umur) dan `isian_rtf_pihak_tambahan` (Turut Tergugat/intervensi) diselaraskan.
+B. Blangko RTF (daftar-tambal.tsv + tambal.tsv, 610 berkas): paragraf identitas disamakan inden acuan; identitas tertulis tangan di BAS ALUR dan dispensasi kawin diganti `#7047#`/`#7048#`; sisa tulisan umur di 2 berkas `[99] BAS LAINNYA` (folder BAS lama) dibuang (revisi 2 Nov).
 Lihat `identitas-pihak-1nov/PASANG.md`. md5 dasar = keadaan sesudah ke-30 paket.
 Keluaran benar:
 ```
@@ -493,7 +493,25 @@ CADANGAN: ... (2 baris lama)
 FUNGSI: 2 diganti (isian_rtf_pihak_identitas, isian_rtf_pihak_tambahan)
 SEMUA COCOK
 UJI identitas sisi 1 ...; UJI identitas sisi 2 ...; UJI Turut Tergugat ...; uji kueri baru ...
-TAMBAL=608
+TAMBAL=610
 BERKAS COCOK
 SELESAI - paket abt-identitas-pihak-1nov terpasang. ...
 ```
+
+### 33. `bas-halaman-semua-2nov` (cabang umur-bas-halaman w181; keputusan 113) - PALING AKHIR (sesudah ke-31 dan ke-32 kaidah-fikih-2nov)
+```
+cd bas-halaman-semua-2nov/paket-satker && bash pasang-satker.sh
+```
+SEMUA blangko BAS bernomor halaman. Paket ke-27 melewati berkas yang SATU kakinya sudah ber-PAGE dan hanya memeriksa folder berakhiran " - BAS"; audit per BAGIAN atas 1.216 BAS (kelompok BAS ekstensi, kecuali
+98b/98c) menemukan 144 berkas "sebagian" (bagian pertama BAS Mediasi/Replik tanpa kaki) dan 36 berkas "tanpa" (folder BAS lama `ALUR 03-08`, `- BAS CONTRA PERCERAIAN -`): **180 berkas** ditambal
+(field PAGE rata kanan di kaki yang ada, atau kaki baru di bagian tanpa kaki; bentuk sama dengan paket ke-27). Tanpa variabel/menu/data; tanpa nomor variabel baru. Portal tidak berubah (nomor awal runut sudah generik).
+Lihat `bas-halaman-semua-2nov/PASANG.md`. md5 dasar = keadaan sesudah ke-31 paket (ke-32 hanya menyentuh blangko putusan).
+Keluaran benar:
+```
+BERKAS SIAP
+PRASYARAT COCOK (SIAP=180)
+TAMBAL=180
+BERKAS COCOK
+SELESAI - paket abt-bas-halaman-semua-2nov terpasang. ...
+```
+

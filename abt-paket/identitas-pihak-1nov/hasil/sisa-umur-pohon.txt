@@ -1,0 +1,19 @@
+berkas diperiksa 1872
+(umur) berkas: 0 kemunculan: 0
+#0099# berkas: 0 kemunculan: 0
+#0103# berkas: 1 kemunculan: 1
+    1 98 Relaas/[JS] 6.2. Relaas Pemberitahuan Putusan Verstek T (e-Court).rtf
+#1034# berkas: 0 kemunculan: 0
+(N tahun) literal berkas: 20 kemunculan: 20
+    1 1a Perceraian CT/[01a] [Kabul Verstek] CT - F (Ex Offiicio mutah iddah dan nafkah anak).rtf
+    1 1a Perceraian CT/[02] [Kabul] [Rekonvensi] CT - F (Mutah iddah nafkah anak).rtf
+    1 1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak/[01b] [Kabul Verstek] Putusan CG Kumulasi Hak Asuh Anak dan Nafkah Anak - Anak Belum Mumayyiz.rtf
+    1 1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak/[01d] [Kabul] Putusan CG Kumulasi Hak Asuh dan Nafkah Anak - T Tidak Hadir Setelah Mediasi.rtf
+    1 1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak/[02b] [Kabul] Putusan CG Kumulasi Hak Asuh dan Nafkah Anak - Kontradiktoir.rtf
+    1 6a Hak Asuh Anak (Hadhanah)/[02a] [Kabul] Hak Asuh dan Nafkah Anak - T Tidak Hadir Setelah Mediasi - Anak Belum Mumayyiz.rtf
+    1 6a Hak Asuh Anak (Hadhanah)/[02b] [Kabul Verstek] Hak Asuh dan Nafkah Anak - Anak Belum Mumayyiz.rtf
+    1 6a Hak Asuh Anak (Hadhanah)/[02] [Kabul] Hak Asuh dan Nafkah Anak - Kontradiktoir - Anak Belum Mumayyiz.rtf
+    1 6c Nafkah Anak/[01a] [Kabul] Nafkah Anak - T Tidak Hadir Setelah Mediasi.rtf
+    1 6c Nafkah Anak/[01b] [Kabul Verstek] Nafkah Anak.rtf
+    1 6c Nafkah Anak/[01] [Kabul] Nafkah Anak - Kontradiktoir.rtf
+    1 6c Nafkah Anak/[02b] [Kabul Sebagian Verstek] Nafkah Anak - T Tidak Hadir - Petitum Selebihnya Ditolak.rtf
