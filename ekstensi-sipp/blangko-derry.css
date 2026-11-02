@@ -901,3 +901,4 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar .bd-rp-ragu { color: var(--warn); margin: 2px 0; }
 #aleta-bd-akar .bd-rp-beda { margin: 4px 0; }
 #aleta-bd-akar .bd-rp-kaki, #aleta-bd-akar .bd-rp-blangko { margin: 3px 0 0; }
+#aleta-bd-akar .bd-rp-lain { margin: 2px 0 4px; padding: 4px 8px; border: 1px dashed var(--line); border-radius: 8px; font-size: 12.6px; }

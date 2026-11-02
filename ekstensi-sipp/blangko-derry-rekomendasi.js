@@ -114,6 +114,11 @@
         ? `<p class="bd-peringatan bd-rp-beda" role="note">Majelis sudah memutus <b>${esc(opsi.putusSipp)}</b>; rekomendasi ini berbeda - periksa unsur di bawah.</p>`
         : "";
     const ragu = r.sebabRagu && r.sebabRagu.length ? `<p class="bd-catat bd-rp-ragu">Perlu dicermati: ${esc(r.sebabRagu.join("; "))}.</p>` : "";
+    // Keputusan 133 (R1): pilihan kedua yang tegas (mis. DK tanpa kehamilan: Ditolak - ragu, pilihan lain Dikabulkan - ragu).
+    const pl = r.pilihanLain;
+    const lain = pl
+      ? `<p class="bd-rp-lain"><b>Pilihan lain:</b> <span class="bd-tanda ${WARNA_HASIL[pl.hasil] || "abu"}">${esc(pl.label)}</span> <span class="bd-tanda kuning">keyakinan ${esc(pl.keyakinan)}</span> <span class="bd-catat">${esc(pl.alasan)}${pl.blangko ? ` Blangko: <b>${esc(teks(pl.blangko).replace(/\.rtf$/i, ""))}</b> (tepat di bawah blangko utama).` : ""}</span></p>`
+      : "";
     const unsur = (r.unsur || []).slice(0, BATAS_UNSUR);
     const baris = unsur
       .map((u) => {
@@ -125,7 +130,7 @@
       .join("");
     const belum = r.belum && r.belum.length ? `<p class="bd-catat"><b>Belum terbukti:</b> ${esc(r.belum.join("; "))}.</p>` : "";
     const blangko = r.blangko && r.blangko[0] ? `<p class="bd-catat bd-rp-blangko">Blangko yang cocok: <b>${esc(teks(r.blangko[0].berkas).replace(/\.rtf$/i, ""))}</b> - ditaruh paling atas di saran blangko.</p>` : "";
-    return `${kepala}${beda}${ragu}<ul class="bd-rp-daftar">${baris}</ul>${belum}${blangko}<p class="bd-catat bd-rp-kaki">Usulan dari alat bukti tertulis dan keterangan saksi${data.denganPenilaian ? " (dengan penilaian pembuktian per dalil)" : ""} - bukan putusan; majelis yang menilai.</p>`;
+    return `${kepala}${lain}${beda}${ragu}<ul class="bd-rp-daftar">${baris}</ul>${belum}${blangko}<p class="bd-catat bd-rp-kaki">Usulan dari alat bukti tertulis dan keterangan saksi${data.denganPenilaian ? " (dengan penilaian pembuktian per dalil)" : ""} - bukan putusan; majelis yang menilai.</p>`;
   }
 
   /** Kelompok menu Derry untuk satu blangko rekomendasi: nama menu, alias, atau nama folder (sama dengan saran portal). */
