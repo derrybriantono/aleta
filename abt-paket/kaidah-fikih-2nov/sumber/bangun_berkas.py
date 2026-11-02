@@ -347,23 +347,120 @@ def batas_paragraf(raw, pos, arah):
     return j
 
 
+def grup_pembuka(raw, p):
+    """Posisi '{' pembuka grup yang melingkupi titik p."""
+    d = 0
+    k = p - 1
+    while k >= 0:
+        c = raw[k]
+        bs = 0
+        j = k - 1
+        while j >= 0 and raw[j] == '\\':
+            bs += 1
+            j -= 1
+        if c in '{}' and bs % 2 == 0:
+            if c == '}':
+                d += 1
+            elif d == 0:
+                return k
+            else:
+                d -= 1
+        k -= 1
+    raise AssertionError('grup pembuka tidak ada')
+
+
 def awalan_berlaku(raw, pos):
     p = raw.rfind('\\pard', 0, pos)
     assert p > 0
     return p, raw[p:raw.index('{', p)]
 
 
+HURUF_KATA = re.compile(r'\\(f|fs|af|afs|lang|langfe|langnp|langfenp|hich|loch|dbch|rtlch|ltrch|fcs|cf)(-?\d+)?(?![A-Za-z])')
+
+
+def saring_huruf(seg):
+    """Hanya kata kendali format HURUF (huruf, ukuran, bahasa, warna) dari potongan kata kendali; yang lain (\\par, \\i, \\b, rsid ...) dibuang."""
+    return ''.join('\\%s%s ' % (m.group(1), m.group(2) or '') for m in HURUF_KATA.finditer(seg))
+
+
+def tanpa_grup(seg):
+    while True:
+        x = seg.find('{')
+        if x < 0:
+            return seg
+        y = grup_akhir_rtf(seg, x)
+        seg = seg[:x] + (seg[y + 1:] if y >= 0 else '')
+
+
+def grup_akhir_rtf(s, i):
+    d = 0
+    j = i
+    while j < len(s):
+        c = s[j]
+        if c == '\\':
+            j += 2
+            continue
+        if c == '{':
+            d += 1
+        elif c == '}':
+            d -= 1
+            if d == 0:
+                return j
+        j += 1
+    return -1
+
+
 def format_run(raw, b):
-    """Format run pertama paragraf yang mulai di titik b."""
+    """Format huruf run pertama paragraf yang mulai di titik b."""
     a = raw.index('{', b)
-    m = re.match(r'\{((?:\\[a-z]+-?\d* ?)+)', raw[a:])
-    run = m.group(1) if m else '\\fs24 '
-    # buang hanya kata kendali miring/tebal/garis bawah UTUH (\i, \i1, \b0 ...), bukan awalan kata lain (\insrsid, \brdr ...)
-    run = re.sub(r'\\(i|b|ul|ulnone|strike|caps)(0|1)?(?![A-Za-z0-9-]) ?', '', run)
-    assert re.fullmatch(r'(\\[a-z]+-?\d* ?)*', run), ('format run tidak utuh', run)
-    if not run.endswith(' '):
-        run += ' '
+    m = re.match(r'\{((?:\\[a-z]+-?\d* ?)+)', raw[a:a + 2000].replace('\r', '').replace('\n', ''))
+    run = saring_huruf(m.group(1)) if m else ''
+    return run or '\\fs24 '
+
+
+TOKEN = re.compile(r'\\([a-z]+)(-?\d+)? ?|\\.|[{}]|[^\\{}]+', re.S)
+
+
+def format_di(raw, pos):
+    """Format HURUF yang berlaku tepat di posisi pos (penelusuran grup dari awal berkas; \\plain mengosongkan)."""
+    tumpuk = [{}]
+    for m in TOKEN.finditer(raw, 0, pos):
+        s = m.group(0)
+        if s == '{':
+            tumpuk.append(dict(tumpuk[-1]))
+        elif s == '}':
+            if len(tumpuk) > 1:
+                tumpuk.pop()
+        elif m.group(1):
+            w, n = m.group(1), m.group(2)
+            if w == 'plain':
+                for k in ('f', 'fs', 'af', 'afs', 'lang', 'langfe', 'langnp', 'langfenp', 'cf'):
+                    tumpuk[-1].pop(k, None)
+            elif w in ('f', 'fs', 'af', 'afs', 'lang', 'langfe', 'langnp', 'langfenp', 'cf') and n is not None:
+                tumpuk[-1][w] = n
+    st = tumpuk[-1]
+    run = ''
+    if 'af' in st or 'afs' in st:
+        run += '\\rtlch \\fcs1 ' + ('\\af%s ' % st['af'] if 'af' in st else '') + ('\\afs%s ' % st['afs'] if 'afs' in st else '')
+    run += '\\ltrch \\fcs0 '
+    for k in ('f', 'fs', 'lang', 'langfe', 'langnp', 'langfenp', 'cf'):
+        if k in st:
+            run += '\\%s%s ' % (k, st[k])
+    if 'fs' not in st:
+        run += '\\fs24 '
     return run
+
+
+def format_aktif(raw, a, p):
+    """Format huruf yang BERLAKU di titik p di dalam grup yang dibuka di a: kemunculan TERAKHIR tiap kata kendali huruf
+    di antara pembuka grup dan p (grup bersarang di antaranya diabaikan)."""
+    seg = tanpa_grup(raw[a + 1:p]).replace('\r', '').replace('\n', '')
+    akhir = {}
+    for m in HURUF_KATA.finditer(seg):
+        akhir[m.group(1)] = m.group(2) or ''
+    urut = ['rtlch', 'fcs', 'af', 'afs', 'ltrch', 'f', 'fs', 'lang', 'langfe', 'langnp', 'langfenp', 'cf', 'hich', 'dbch', 'loch']
+    run = ''.join('\\%s%s ' % (k, akhir[k]) for k in urut if k in akhir and k not in ('hich', 'dbch', 'loch'))
+    return run or '\\fs24 '
 
 
 def esc(s):
@@ -583,7 +680,7 @@ def main():
                 pos = cari_baris(raw, jb, rel)
                 pg, awalan = awalan_berlaku(raw, pos)
                 b0 = batas_paragraf(raw, pos, -1)
-                run = format_run(raw, b0)
+                run = format_di(raw, pos)  # format huruf teks jangkar itu sendiri
                 p = batas_paragraf(raw, pos, +1) if sesudah else b0
                 # blangko simpanan Word: beberapa paragraf hidup dalam SATU grup run ("... \par Menimbang ... \par }"); titik sisip
                 # lalu berada satu tingkat di dalam grup itu - sisipan tetap seimbang dan format paragraf jangkar diulang sesudahnya.

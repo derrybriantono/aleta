@@ -5,7 +5,7 @@ BERKAS SIAP
 TAMBAL=85
 BERKAS COCOK
 SELESAI - paket abt-kaidah-fikih-2nov terpasang (85 blangko). Cadangan: /d/Aplikasi/aleta/tmp/w180/uji/pk/cadangan. Pulih: bash /d/Aplikasi/aleta/tmp/w180/uji/pk/pulih-satker.sh
-terpasang pohon (32)    : c9cb56f1a330b949c352c8f68935efa5
+terpasang pohon (32)    : 23e206aebdb9d24f0e1994654a184aa9
 == pasang ulang
 SUDAH=85
 SUDAH TERPASANG - tidak ada yang diubah
