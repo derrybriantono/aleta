@@ -906,15 +906,17 @@
       try {
         const h = fn(ctx);
         if (Array.isArray(h) && h.length) {
-          return h
-            .filter((x) => x && x.berkas)
-            .map((x) => sesuaikanSaran({ berkas: String(x.berkas).replace(/\.rtf$/i, ""), kelompok: x.kelompok || "", jenis: x.jenis || jenisKelompok(x.kelompok || ""), alasan: x.alasan || "", saksi: Number(x.saksi) || 0, saksiP: Number(x.saksiP) || 0, saksiT: Number(x.saksiT) || 0 }));
+          return tambahRekomendasiPutusan(
+            h
+              .filter((x) => x && x.berkas)
+              .map((x) => sesuaikanSaran({ berkas: String(x.berkas).replace(/\.rtf$/i, ""), kelompok: x.kelompok || "", jenis: x.jenis || jenisKelompok(x.kelompok || ""), alasan: x.alasan || "", saksi: Number(x.saksi) || 0, saksiP: Number(x.saksiP) || 0, saksiT: Number(x.saksiT) || 0 }))
+          );
         }
       } catch {
         /* rekomendasi luar gagal: cadangan di bawah */
       }
     }
-    return rekomendasiCadangan().map(sesuaikanSaran);
+    return tambahRekomendasiPutusan(rekomendasiCadangan().map(sesuaikanSaran));
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -6134,6 +6136,7 @@
           ? `<span class="bd-chip">${esc(b.judul || namaMenuTampil(b.kelompok) || NAMA_JENIS[b.jenis] || b.jenis)}</span><span class="bd-potong" title="${esc(namaTampil(b.berkas, b.jenis))} (klik dua kali untuk mengganti blangko)">${esc(namaTampil(b.berkas, b.jenis))}</span>${disaran ? `<span class="bd-chip sebagian">disarankan</span>` : ""}`
           : `<span class="bd-catat">Belum ada blangko dipilih</span>`
       }</div><button type="button" class="bd-btn kecil${b ? "" : " utama"}" data-bd2="bukamodal">${b ? "Ganti blangko" : "Pilih blangko"}</button>${peringatanSidang}</div>` +
+      htmlRekomendasiPutusan() +
       (S.pk
         ? `<p class="bd-petunjuk" id="bd-saranblangko">${
             saranPertama
@@ -6149,6 +6152,7 @@
         : "") +
       htmlSaranH1();
     muatSaranH1();
+    segarRekomendasiPutusan();
   }
 
   /**
@@ -11258,6 +11262,84 @@
       .join(" ");
     return `<div class="bd-petunjuk" id="bd-saranh1" role="note"><b>Sidang besok (${esc(tglIndo(r.tanggal))}): ${r.perkara.length} perkara - BAS sudah disiapkan.</b> ${tombol}</div>`;
   }
+  // ── R 2 Nov (keputusan 124-125): Rekomendasi putusan menurut alat bukti tertulis & keterangan saksi ─────────────────────────────
+  // blangko-derry-rekomendasi.js dimuat MALAS (AletaModul "rekomendasi-putusan") hanya untuk cerai/itsbat/DK saat saran putusan berlaku;
+  // kotaknya di atas saran blangko, blangko yang cocok naik paling atas (tambahRekomendasiPutusan). Hanya membaca & menghitung.
+  const RP = () => (typeof globalThis !== "undefined" && globalThis.AletaBdRekomendasi) || null;
+  const RE_JENIS_RP = /cerai gugat|cerai talak|dispensasi kawin|dispensasi nikah|itsbat|isbat|istbat|pengesahan perkawinan|pengesahan nikah/i;
+  let rpMemuat = false;
+  function rpBerlaku() {
+    if (!S.pk || semuaAkun() || jenisSaranAktif() !== "put") return false;
+    return RP() ? Boolean(RP().jenisBerlaku(S.pk.jenisPerkara, nomorPerkara())) : RE_JENIS_RP.test(String(S.pk.jenisPerkara || ""));
+  }
+  /** Status putusan yang sudah tercatat (SIPP) - pembanding; kosong bila belum putus. */
+  function rpPutusTercatat() {
+    const p = (S.pk && S.pk.perkara) || {};
+    return p.sudahPutus ? String(p.statusPutusan || p.statusPutusanNama || "") : "";
+  }
+  function htmlRekomendasiPutusan() {
+    if (!RP() || !rpBerlaku()) return "";
+    try {
+      return RP().htmlBungkus(nomorPerkara(), S.pk.jenisPerkara, rpPutusTercatat());
+    } catch {
+      return "";
+    }
+  }
+  function segarRekomendasiPutusan() {
+    try {
+      if (!rpBerlaku()) return;
+      if (!RP()) {
+        const m = globalThis.AletaModul;
+        if (rpMemuat || !m || typeof m.pastikan !== "function") return;
+        rpMemuat = true;
+        void m
+          .pastikan("rekomendasi-putusan")
+          .then((ok) => {
+            rpMemuat = false;
+            if (ok && RP()) renderRingkasBlangko();
+          })
+          .catch(() => {
+            rpMemuat = false;
+          });
+        return;
+      }
+      const d = new Date();
+      const hari = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const pu = S.pk.putusanSipp || null;
+      RP().segarkan({
+        nomor: nomorPerkara(),
+        jenisPerkara: S.pk.jenisPerkara,
+        jenisPerkaraId: Number(S.pk.perkara && S.pk.perkara.jenisPerkaraId) || 0,
+        sebutan: sebutan(),
+        kehadiran: RP().kehadiranDari(S.pk.sidang, pu, hari),
+        acuan: (pu && pu.tanggalPutusan) || hari,
+        putusSipp: rpPutusTercatat(),
+        tes: tes(),
+        ambil: (u, o) => ambilPortal(u, o || {}, "Menyusun rekomendasi putusan"),
+        bahan: bahanPenilaian,
+        saatSiap: () => {
+          renderRingkasBlangko();
+          renderModal();
+        },
+      });
+    } catch {
+      /* rekomendasi hanya bahan bantu: galat di sini tidak boleh mengganggu panel */
+    }
+  }
+  /** Saran blangko + blangko rekomendasi (paling atas bila belum diputus majelis). */
+  function tambahRekomendasiPutusan(daftar) {
+    try {
+      const data = RP() && S.pk ? RP().tersinggah(nomorPerkara()) : null;
+      if (!data) return daftar;
+      const rek = RP().saranBlangko(data, S.menu ? S.menu.kelompok : []).map(sesuaikanSaran);
+      const s = (S.pk && S.pk.sidangDipilih) || {};
+      const sudah = Boolean(rpPutusTercatat()) || /\bputus(?:an)?\b\s+\S/i.test(String(s.ket || ""));
+      return RP().gabungSaran(daftar, rek, sudah);
+    } catch {
+      return daftar;
+    }
+  }
+
   function daftarkanAlat() {
     const a = api();
     if (!a || typeof a.daftarkanAlat !== "function") return;
