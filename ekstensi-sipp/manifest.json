@@ -8,7 +8,8 @@
     "storage",
     "downloads",
     "nativeMessaging",
-    "scripting"
+    "scripting",
+    "offscreen"
   ],
   "host_permissions": [
     "http://192.168.10.10/*",

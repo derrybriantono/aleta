@@ -306,6 +306,11 @@ const BERKAS = [
   // chrome.downloads supaya tidak diblokir Chrome di situs http.
   "unduh-universal.js",
   "unduh-halaman.js",
+  // Unduhan aman berkas besar (2 Nov 2026): modul pekerja latar (importScripts dari latar.js) dan dokumen
+  // offscreen yang mengambil rute portal lalu menyerahkan blob:chrome-extension:// ke chrome.downloads.
+  "unduh-aman-latar.js",
+  "unduh-aman.html",
+  "unduh-aman.js",
   // Pekerja latar. Satu-satunya tempat requestUpdateCheck dan reload dapat
   // dipanggil - skrip konten tidak punya keduanya.
   "latar.js",

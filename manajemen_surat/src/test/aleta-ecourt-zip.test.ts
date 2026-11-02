@@ -175,7 +175,9 @@ describe("isi ekstensi yang ditanam", () => {
     // "scripting" sejak K11 (26 Okt 2026): pekerja latar menyuntikkan potongan konten.js (panel perkara/daftar)
     // ke dunia terasing halaman TEPAT sebelum dipakai (modul-malas.js). Tanpa peringatan pasang di Chrome;
     // hanya berkas dalam daftar putih latar.js yang mau disuntikkan.
-    expect(manifest.permissions).toEqual(["storage", "downloads", "nativeMessaging", "scripting"]);
+    // "offscreen" sejak unduhan aman (2 Nov 2026): dokumen offscreen mengambil ZIP portal lalu chrome.downloads
+    // menyimpannya dari blob:chrome-extension:// - tanpa peringatan pasang di Chrome.
+    expect(manifest.permissions).toEqual(["storage", "downloads", "nativeMessaging", "scripting", "offscreen"]);
   });
 
   it("ikonnya ikut tertanam sebagai PNG yang utuh", async () => {

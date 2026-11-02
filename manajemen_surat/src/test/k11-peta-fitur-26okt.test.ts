@@ -172,7 +172,7 @@ describe("peta fitur K11: kelompok manifest dan modul malas", () => {
   const sesudah = bangunPeta(EKS, { tambahan: berkasModul });
 
   it("izin baru hanya 'scripting' (penyuntikan modul malas), tanpa peringatan pasang", () => {
-    expect(sesudah.permissions.filter((p) => !sebelum.permissions.includes(p))).toEqual(["scripting"]);
+    expect(sesudah.permissions.filter((p) => !sebelum.permissions.includes(p))).toEqual(["scripting", "offscreen"]); // offscreen: unduhan aman berkas besar (2 Nov 2026), juga tanpa peringatan pasang
     expect(sebelum.permissions.filter((p) => !sesudah.permissions.includes(p))).toEqual([]);
   });
 
@@ -267,7 +267,9 @@ describe("peta fitur K11: kelompok manifest dan modul malas", () => {
     // blangko-derry-saksi-tampil.js: 30 Okt 2026 (G2a) MENAMBAH asal jawaban "contoh"; blangko-derry-saksi.js MENAMBAH hurufBesarAwal; saksi-susun.js menyaring pertanyaan wali; blangko-derry.js MENAMBAH api.bukaTautan + draf "h1"; ekspor lama tetap.
     // blangko-derry-katalog.js: 1 Nov 2026 (tinjauan saksi D) keadaan tanpa pengaruh (keadaanUntukBorang.tanpaPengaruh) tidak digambar.
     // saksi-katalog-indeks.js: 1 Nov 2026 (H2 saksi-katalog) indeks hasil susun-saksi-katalog memuat 4 jenis baru (pengangkatan anak 745, izin poligami keluarga, perjanjian perkawinan, gugatan lain-lain); saksi-katalog.js (H1 saksi-perbaikan) kalimat sesuai pengetahuan, itsbat kontensius, keadaan tanpa pengaruh.
-    const diubah = new Set(["saksi-katalog-indeks.js", "saksi-katalog.js", "konten.js", "abt.js", "manifest.json", "latar.js", "blangko-derry-isian.js", "blangko-derry-saksi-tampil.js", "blangko-derry-saksi.js", "saksi-susun.js", "blangko-derry.js", "deteksi-sisa-blangko.js", "panel-alat.js", "blangko-derry-katalog.js"]);
+    // aleta.js, unduh-universal.js: 2 Nov 2026 (unduhan aman) MENAMBAH jenis jembatan "unduh-berkas", data-aleta-unduh-aman di portal,
+    // dan unduhAman (dokumen offscreen ekstensi) di depan jalur lama; jenis/jalur lama tetap.
+    const diubah = new Set(["aleta.js", "unduh-universal.js", "saksi-katalog-indeks.js", "saksi-katalog.js", "konten.js", "abt.js", "manifest.json", "latar.js", "blangko-derry-isian.js", "blangko-derry-saksi-tampil.js", "blangko-derry-saksi.js", "saksi-susun.js", "blangko-derry.js", "deteksi-sisa-blangko.js", "panel-alat.js", "blangko-derry-katalog.js"]);
     for (const [nama, info] of Object.entries(sebelum.berkas)) {
       if (diubah.has(nama) || !sesudah.berkas[nama]) continue;
       // berkas yang sengaja disentuh didaftarkan di KEMBALI_DISENTUH

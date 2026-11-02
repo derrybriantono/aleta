@@ -280,8 +280,8 @@ describe("unduhan panel tidak lagi bernama download - 1.158.1", () => {
     expect(latar).toContain("antrikanNama(nama);");
   });
 
-  it("pendengar penamaan menyarankannya untuk alamat data:", () => {
-    expect(latar).toContain('if (alamat.startsWith("data:")) {');
+  it("pendengar penamaan menyarankannya untuk alamat data: (dan blob: milik ekstensi sejak unduhan aman 2 Nov 2026)", () => {
+    expect(latar).toContain('if (alamat.startsWith("data:") || alamatBlobEkstensi(alamat)) {');
     expect(latar).toContain('sarankan({ filename: diminta, conflictAction: "uniquify" });');
   });
 
@@ -298,7 +298,7 @@ describe("unduhan panel tidak lagi bernama download - 1.158.1", () => {
   });
 
   it("cabang data: berjalan SEBELUM pagar dariAbt", () => {
-    const iData = latar.indexOf('if (alamat.startsWith("data:")) {');
+    const iData = latar.indexOf('if (alamat.startsWith("data:") || alamatBlobEkstensi(alamat)) {');
     const iAbt = latar.indexOf("const dariAbt =");
     expect(iData).toBeGreaterThan(-1);
     expect(iAbt).toBeGreaterThan(iData);

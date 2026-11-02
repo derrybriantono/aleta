@@ -25,6 +25,17 @@ try {
   /* tanpa relai: gelembung di e-Court tidak tampil */
 }
 
+// Unduhan aman berkas besar (2 Nov 2026): rute portal diambil dokumen offscreen ekstensi lalu disimpan dari
+// blob:chrome-extension:// lewat terbitkanUnduhan - bukan unduhan http halaman yang ditahan Chrome. Lihat unduh-aman-latar.js.
+try {
+  if (typeof importScripts === "function") importScripts("unduh-aman-latar.js");
+  if (typeof AletaUnduhAman !== "undefined") {
+    AletaUnduhAman.pasang(chrome, { terbitkan: (alamat, nama, tuntasMs) => terbitkanUnduhan(alamat, nama, tuntasMs) });
+  }
+} catch {
+  /* tanpa jalur aman: portal memakai unduhan peramban biasa */
+}
+
 /**
  * ============================================================================
  * PEKERJA LATAR - SATU-SATUNYA TEMPAT PEMBARUAN DAPAT DIMINTA
@@ -472,7 +483,7 @@ if (chrome.downloads && chrome.downloads.onDeterminingFilename) {
       // Pendengar inilah satu-satunya yang benar-benar dapat memaksakan nama,
       // jadi di sinilah ia disarankan - serentak, tanpa menunggu apa pun,
       // supaya unduhannya tidak tertahan seperti pada 2.19.7.
-      if (alamat.startsWith("data:")) {
+      if (alamat.startsWith("data:") || alamatBlobEkstensi(alamat)) {
         const diminta = ambilNamaAntrean();
         if (diminta) {
           sarankan({ filename: diminta, conflictAction: "uniquify" });
@@ -590,13 +601,22 @@ async function ambilBerkasSipp(pesan, pengirim) {
  *
  * Pulang { ok, id } atau { ok: false, pesan } - tidak pernah melempar.
  */
+/** blob: milik ekstensi ini sendiri (dokumen offscreen unduh-aman.html) - asal aman seperti data:. */
+function alamatBlobEkstensi(alamat) {
+  try {
+    return String(alamat || "").startsWith(`blob:${String(chrome.runtime.getURL("")).replace(/\/+$/, "")}/`);
+  } catch {
+    return false;
+  }
+}
+
 function terbitkanUnduhan(alamatMentah, nama, tuntasMs) {
   const alamat = String(alamatMentah || "");
   return new Promise((jawab) => {
-    if (!alamat.startsWith("data:")) {
+    if (!alamat.startsWith("data:") && !alamatBlobEkstensi(alamat)) {
       // Ditolak SEBELUM namanya diantrikan: nama yang tertinggal di antrean
       // akan dipakai unduhan data: berikutnya - berkas lain, nama yang salah.
-      jawab({ ok: false, pesan: "alamat unduhan bukan data: - ditolak" });
+      jawab({ ok: false, pesan: "alamat unduhan bukan data:/blob ekstensi - ditolak" });
       return;
     }
     antrikanNama(nama);

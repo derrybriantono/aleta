@@ -33,6 +33,7 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { apiPath } from "@/lib/base-path";
+import { unduhBerkasPortal } from "@/lib/unduh-ekstensi";
 import {
   type AttendancePermissionDto,
   type EmployeeProfileDto,
@@ -1309,11 +1310,16 @@ export function EKepegawaianPanel({
       const normalized = String(value ?? "").trim();
       if (normalized && normalized !== "all") params.set(key, normalized);
     });
-    window.open(apiPath(`/api/e-kepegawaian/export?${params.toString()}`), "_blank", "noopener,noreferrer");
+    // Unduhan lewat ekstensi ALETA bila ada (tidak ditahan Chrome di http); tanpa ekstensi = tab baru seperti dulu.
+    void unduhBerkasPortal(apiPath(`/api/e-kepegawaian/export?${params.toString()}`), {
+      onGalat: (pesan) => setNotice({ type: "error", message: pesan }),
+    });
   }
 
   function openHrFile(fileName: string, disposition: "inline" | "attachment") {
-    window.open(apiPath(`/api/e-kepegawaian/files/${encodeURIComponent(fileName)}?disposition=${disposition}`), "_blank", "noopener,noreferrer");
+    const alamat = apiPath(`/api/e-kepegawaian/files/${encodeURIComponent(fileName)}?disposition=${disposition}`);
+    if (disposition === "attachment") void unduhBerkasPortal(alamat, { onGalat: (pesan) => setNotice({ type: "error", message: pesan }) });
+    else window.open(alamat, "_blank", "noopener,noreferrer");
   }
 
   function leavePdfUrl(requestId: string, disposition: "inline" | "attachment") {
@@ -1321,7 +1327,11 @@ export function EKepegawaianPanel({
   }
 
   function openLeavePdf(requestId: string, disposition: "inline" | "attachment") {
-    window.open(leavePdfUrl(requestId, disposition), "_blank", "noopener,noreferrer");
+    if (disposition === "attachment") {
+      void unduhBerkasPortal(leavePdfUrl(requestId, disposition), { onGalat: (pesan) => setNotice({ type: "error", message: pesan }) });
+    } else {
+      window.open(leavePdfUrl(requestId, disposition), "_blank", "noopener,noreferrer");
+    }
   }
 
   function updateWorkflowSteps(updater: (steps: string[]) => string[]) {

@@ -38,13 +38,24 @@
  * ditawarkan - SIPP dan e-Court terpisah, masing-masing lebih kecil.
  *
  * Tulisannya "Unduh seluruh berkas" sejak butir 25 - permintaan pengguna.
+ *
+ * ============================================================================
+ * SEJAK 2 NOVEMBER 2026: LEWAT EKSTENSI ALETA BILA ADA (mulaiUnduhAman)
+ * ============================================================================
+ *
+ * Unduhan bingkai lahir dari halaman http dan ditahan Chrome ("Insecure
+ * download blocked", 273/Pdt.G/2026/PA.Dgl). Dengan ekstensi terpasang,
+ * ekstensi yang mengambil dan menyimpan ZIP-nya (src/lib/unduh-ekstensi.ts):
+ * tombol menampilkan kemajuan MB, dan sesudah tersimpan nama berkasnya.
+ * Tanpa ekstensi jalannya tetap bingkai seperti di atas, ditambah petunjuk.
  */
 
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { apiPath } from "@/lib/base-path";
-import { mulaiUnduhAlir } from "@/lib/unduh-alir";
+import { mulaiUnduhAman, type HasilUnduhAman } from "@/lib/unduh-alir";
+import { formatMb, teksKemajuanUnduh } from "@/lib/unduh-ekstensi";
 /* === STATUS-ZIP 12 Okt === */
 import {
   KATEGORI_ARSIP,
@@ -94,6 +105,10 @@ export function TombolUnduhZip({
   /** Bagian yang sedang menunggu kabar mulai unduh ("utama", "sipp", "ecourt"). */
   const [sibuk, setSibuk] = useState<"" | "utama" | "sipp" | "ecourt">("");
   const [catatan, setCatatan] = useState("");
+  /** Keterangan bukan-galat: nama berkas yang tersimpan, atau petunjuk bila Chrome menahan unduhan. */
+  const [info, setInfo] = useState("");
+  /** Tulisan tombol selama ekstensi mengunduh ("Mengunduh 12,3 MB…"). */
+  const [kemajuan, setKemajuan] = useState("");
   /** Sudah pernah dimulai - jalan per bagian ditawarkan sebagai cadangan. */
   const [pernahMulai, setPernahMulai] = useState(false);
   /**
@@ -106,6 +121,35 @@ export function TombolUnduhZip({
    * tiga puluh megabita tanpa diminta.
    */
   const [arsipFisik, setArsipFisik] = useState(false);
+
+  /** Satu jalan untuk semua tombol: ekstensi bila ada, bingkai bila tidak. */
+  const jalankan = async (alamat: string) => {
+    setCatatan("");
+    setInfo("");
+    setKemajuan("");
+    try {
+      const hasil: HasilUnduhAman = await mulaiUnduhAman(alamat, { onKabar: (k) => setKemajuan(teksKemajuanUnduh(k)) });
+      if (hasil.ok) {
+        setPernahMulai(true);
+        if (hasil.lewat === "ekstensi") {
+          setInfo(
+            hasil.berjalan
+              ? `Ekstensi ALETA sedang menyimpan ${hasil.nama} - lihat bilah unduhan Chrome.`
+              : `Tersimpan lewat ekstensi ALETA: ${hasil.nama}${hasil.ukuran ? ` (${formatMb(hasil.ukuran)})` : ""}.`
+          );
+        } else {
+          setInfo(hasil.petunjuk);
+        }
+      } else {
+        setCatatan(hasil.pesan);
+      }
+    } catch (kesalahan) {
+      setCatatan(kesalahan instanceof Error ? kesalahan.message : "Unduhan ZIP tidak dapat dimulai.");
+    } finally {
+      setKemajuan("");
+      setSibuk("");
+    }
+  };
 
   /* === STATUS-ZIP 12 Okt === */
   /**
@@ -124,43 +168,25 @@ export function TombolUnduhZip({
       return;
     }
     setSibuk("utama");
-    setCatatan("");
-    try {
-      const hasil = await mulaiUnduhAlir(
-        // Urutan baku (sama dengan folder 00-08), bukan urutan mencentang.
-        alamatZipPerkara({ nomorPerkara, sumber, isi: "lengkap", kategori: KATEGORI_ARSIP.filter((k) => terpilih.includes(k)) })
-      );
-      if (hasil.ok) setPernahMulai(true);
-      else setCatatan(hasil.pesan);
-    } catch (kesalahan) {
-      setCatatan(kesalahan instanceof Error ? kesalahan.message : "Unduhan ZIP tidak dapat dimulai.");
-    } finally {
-      setSibuk("");
-    }
+    await jalankan(
+      // Urutan baku (sama dengan folder 00-08), bukan urutan mencentang.
+      alamatZipPerkara({ nomorPerkara, sumber, isi: "lengkap", kategori: KATEGORI_ARSIP.filter((k) => terpilih.includes(k)) })
+    );
   };
   /* === AKHIR STATUS-ZIP === */
 
   const unduh = async (bagian: "utama" | "sipp" | "ecourt") => {
     setSibuk(bagian);
-    setCatatan("");
-    try {
-      // Per bagian: SIPP membawa data + berkas SIPP (+ arsip fisik bila
+    // Per bagian: SIPP membawa data + berkas SIPP (+ arsip fisik bila
       // dicentang); e-Court hanya berkas e-Court. Keduanya lebih kecil
       // daripada ZIP seluruhnya.
-      const alamat =
-        bagian === "utama"
-          ? alamatZipPerkara({ nomorPerkara, sumber, isi, arsipFisik })
-          : bagian === "sipp"
-            ? alamatZipPerkara({ nomorPerkara, sumber: "sipp", isi, arsipFisik })
-            : alamatZipPerkara({ nomorPerkara, sumber: "ecourt", isi: "berkas" });
-      const hasil = await mulaiUnduhAlir(alamat);
-      if (hasil.ok) setPernahMulai(true);
-      else setCatatan(hasil.pesan);
-    } catch (kesalahan) {
-      setCatatan(kesalahan instanceof Error ? kesalahan.message : "Unduhan ZIP tidak dapat dimulai.");
-    } finally {
-      setSibuk("");
-    }
+    const alamat =
+      bagian === "utama"
+        ? alamatZipPerkara({ nomorPerkara, sumber, isi, arsipFisik })
+        : bagian === "sipp"
+          ? alamatZipPerkara({ nomorPerkara, sumber: "sipp", isi, arsipFisik })
+          : alamatZipPerkara({ nomorPerkara, sumber: "ecourt", isi: "berkas" });
+    await jalankan(alamat);
   };
 
   const judul =
@@ -181,7 +207,7 @@ export function TombolUnduhZip({
   return (
     <div className="space-y-1">
       <Button size={ukuran} variant="outline" disabled={Boolean(sibuk)} onClick={() => void unduh("utama")}>
-        {sibuk === "utama" ? "Menyusun…" : judul}
+        {sibuk === "utama" ? kemajuan || "Menyusun…" : judul}
       </Button>
       {isi === "lengkap" ? (
         <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -244,7 +270,7 @@ export function TombolUnduhZip({
                 disabled={Boolean(sibuk) || terpilih.length === 0}
                 onClick={() => void unduhPilihan()}
               >
-                {sibuk === "utama" ? "Menyusun…" : "Unduh yang dipilih"}
+                {sibuk === "utama" ? kemajuan || "Menyusun…" : "Unduh yang dipilih"}
               </Button>
               <p className="text-muted-foreground">
                 Berkas yang tercatat tetapi gagal diambil disebut beserta sebabnya di DAFTAR ISI.csv dan KETERANGAN.txt
@@ -255,6 +281,11 @@ export function TombolUnduhZip({
         </div>
       ) : null}
       {/* === AKHIR STATUS-ZIP === */}
+      {info ? (
+        <p className="max-w-[24rem] text-xs text-muted-foreground" role="status" data-bagian="info-unduh-zip">
+          {info}
+        </p>
+      ) : null}
       {catatan ? (
         <p className="max-w-[20rem] text-xs text-rose-700 dark:text-rose-300" role="alert" data-bagian="galat-unduh-zip">
           {catatan}
