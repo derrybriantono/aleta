@@ -102,6 +102,8 @@ export type FaktaTenggat = {
   panitera?: string;
   jurusita?: string;
   mediator?: string;
+  /** Kasir (nama, dipisah koma): penanggung jawab aturan keuangan perkara (grup Kasir SIPP yang aktif). */
+  kasir?: string;
   /** Pihak yang dihitung (1 = pihak pertama, 2 = pihak kedua) pada aturan per pihak (banding). */
   pihakKe?: number;
   alurPerkaraId?: number;
@@ -143,6 +145,8 @@ export type Butir = {
   panitera: string;
   jurusita: string;
   mediator: string;
+  /** Kasir penanggung jawab; hanya terisi pada aturan keuangan perkara. */
+  kasir?: string;
   /** Dasar hukumnya belum diperiksa Derry (aturan G1 sudah diperiksa 26 Okt 2026, jadi salah). */
   perluVerifikasi: boolean;
   /** Hitungan belum dimulai (pemberitahuan putusan belum tercatat). */
@@ -151,7 +155,7 @@ export type Butir = {
   ruas?: ReadonlyArray<RuasPetugas>;
 };
 
-export type RuasPetugas = "majelis" | "panitera" | "jurusita" | "mediator";
+export type RuasPetugas = "majelis" | "panitera" | "jurusita" | "mediator" | "kasir";
 
 export type Aturan = {
   kode: string;
@@ -208,7 +212,15 @@ export type Aturan = {
    * nilai = semua petugas yang tercantum (perilaku aturan lama tidak berubah).
    */
   ruas?: ReadonlyArray<RuasPetugas>;
+  /**
+   * Batas harinya (`batasHari`) boleh diganti Super Admin lewat setelan (`ambangHari`, 0-AMBANG_MAKS_HARI). Hanya untuk batas
+   * KEBIASAAN satker yang tidak punya angka tertulis; masa hak menurut undang-undang tidak pernah bisa diatur.
+   */
+  bisaDiatur?: boolean;
 };
+
+/** Batas atas angka yang boleh diatur Super Admin pada aturan bertanda bisaDiatur. */
+export const AMBANG_MAKS_HARI = 60;
 
 /**
  * ============================================================================
@@ -456,8 +468,118 @@ export const ATURAN_N2: Aturan[] = [
   },
 ];
 
-/** Aturan lama + baru G1 + N2: dipakai jadwal harian dan layar Tenggat. */
-export const SEMUA_ATURAN: Aturan[] = [...ATURAN_TENGGAT, ...ATURAN_BARU, ...ATURAN_N2];
+/**
+ * ============================================================================
+ * ATURAN PENJAGA TENGGAT T (2 Nov 2026) - minutasi, peninjauan kembali (PK), dan keuangan perkara (kasir)
+ * ============================================================================
+ *
+ * Keputusan Derry 2 Nov (butir 114): minutasi, PK, dan kasir DIBANGUN di mesin yang sama (satu sumber aturan).
+ *
+ * MINUTASI. Dasar tertulis: Buku II edisi 2013 (Pedoman Pelaksanaan Tugas dan Administrasi Pengadilan Agama), hlm. 43,
+ * "Minutasi Berkas Perkara": selesai paling lambat 14 hari sejak putusan diucapkan; Majelis Hakim bertanggung jawab,
+ * dibantu Panitera Pengganti. Edisi 2026 belum terbaca di referensi, jadi angkanya tetap keputusan sementara. PENANDA:
+ * kolom tanggal_minutasi SIPP terisi otomatis sama dengan tanggal putusan (388/388, 844/844), proses "Minutasi" otomatis
+ * tercatat saat putus, tanggal_masuk_arsip rata-rata 0 hari sesudah putus, dokumen putusan dan BAS terunggah 100%: tak satu pun
+ * bisa membuktikan minutasi dikerjakan. Yang nyata dikerjakan manusia: validasi minutasi oleh petugas di register ABT
+ * (register_minutasi.divalidasi_oleh; rata-rata 2,4-3,2 hari sesudah putus; 2026: 782 putusan, 2 tanpa catatan). Itulah penandanya.
+ *
+ * PK. Pasal 69 UU 14/1985 jo UU 5/2004 jo UU 3/2009: 180 hari. Titik mulai per alasan (Pasal 67): huruf c, d, f sejak putusan
+ * berkekuatan hukum tetap DAN diberitahukan kepada para pihak; huruf e sejak putusan terakhir yang bertentangan; huruf a
+ * sejak kebohongan diketahui / putusan pidana BHT; huruf b (novum) sejak surat bukti ditemukan (disumpah). SEMA 1/2014 (Kamar
+ * Agama) angka 5: dihitung sejak pemberitahuan isi putusan diterima para pihak. SIPP hanya mencatat titik mulai c/d/e/f; huruf a
+ * dan b TIDAK terbaca. PK nyaris tidak terjadi (satu permohonan dalam seluruh SIPP Donggala), maka hitungan hanya dibuat untuk
+ * perkara yang sudah melalui banding atau kasasi (putusan tingkat akhir diberitahukan dalam 210 hari terakhir); putusan tingkat
+ * pertama yang BHT tanpa upaya hukum tidak dihitung (ratusan baris tanpa guna). Perkara yang sudah mengajukan PK keluar.
+ *
+ * KASIR. Tidak ada batas tertulis di Buku II 2013 untuk sisa panjar atau jurnal; angka diukur atas sipp_2810 (28 Okt 2026) dan
+ * dapat diubah Super Admin (bisaDiatur). Pembacanya memakai pengingat Kasir yang sudah ada (kasirRekapService.pengingat), bukan
+ * aturan kedua.
+ */
+export const ATURAN_T: Aturan[] = [
+  {
+    kode: "minutasi-belum",
+    judul: "Minutasi berkas belum selesai",
+    dasar:
+      "Buku II edisi 2013 hlm. 43: minutasi paling lambat 14 hari sejak putusan diucapkan; penandanya validasi minutasi di register ABT karena kolom minutasi SIPP terisi otomatis (keputusan sementara 2 Nov 2026)",
+    batasHari: 14,
+    peringatanHari: 3,
+    tindakan: "Selesaikan minutasi berkas (disusun kronologis, diparaf Ketua Majelis) dan pastikan minutasinya tervalidasi di register ABT.",
+    hanyaDikabulkan: false,
+    tampilBatas: true,
+    ruas: ["majelis", "panitera"],
+    bisaDiatur: true,
+  },
+  {
+    kode: "pk-180-hari",
+    judul: "Masa peninjauan kembali (PK) 180 hari",
+    dasar:
+      "Pasal 69 UU 14/1985 jo UU 5/2004 jo UU 3/2009 - 180 hari sejak putusan berkekuatan hukum tetap dan diberitahukan kepada para pihak (alasan huruf c, d, e, f; SEMA 1/2014 Kamar Agama angka 5); huruf a dan b dihitung dari tanggal diketahui/ditemukan yang tidak tercatat di SIPP (keputusan sementara 2 Nov 2026)",
+    batasHari: 180,
+    peringatanHari: 30,
+    tindakan:
+      "Pastikan para pihak yang berperkara sudah diberi tahu putusannya; bila masa berakhir tanpa PK, perkara dapat dianggap final untuk arsip (alasan huruf a dan b dapat berjalan dari tanggal lain).",
+    hanyaDikabulkan: false,
+    masaHak: true,
+    jendelaCatatanHari: 30,
+    tampilBatas: true,
+    geserLibur: true,
+    ruas: ["panitera"],
+  },
+  {
+    kode: "kasir-sisa-panjar",
+    judul: "Sisa panjar belum dikembalikan",
+    dasar:
+      "Kebiasaan satker, bukan angka tertulis: 2026 sisa panjar dikembalikan pada hari putusan di 732 dari 801 perkara dan dalam 14 hari di 743 (sipp_2810, 28 Okt 2026); talak dihitung sejak ikrar (keputusan sementara 2 Nov 2026, dapat diubah Super Admin)",
+    batasHari: 14,
+    peringatanHari: 3,
+    tindakan: "Kembalikan sisa panjar kepada yang berhak lalu catat di jurnal Kasir.",
+    hanyaDikabulkan: false,
+    tampilBatas: true,
+    ruas: ["kasir"],
+    bisaDiatur: true,
+  },
+  {
+    kode: "kasir-belum-dijurnal",
+    judul: "Redaksi dan meterai hari putusan belum dijurnal",
+    dasar:
+      "Kebiasaan satker: 2026 dijurnal pada hari putusan di 827 dari 828 perkara dan semuanya dalam 1 hari (sipp_2810, 28 Okt 2026); batas 3 hari = keputusan sementara 2 Nov 2026, dapat diubah Super Admin",
+    batasHari: 3,
+    peringatanHari: 1,
+    tindakan: "Jurnalkan Redaksi dan Meterai hari putusan di Kasir.",
+    hanyaDikabulkan: false,
+    tampilBatas: true,
+    ruas: ["kasir"],
+    bisaDiatur: true,
+  },
+  {
+    kode: "kasir-panjar-kurang",
+    judul: "Saldo jurnal perkara putus minus",
+    dasar: "Pembukuan biaya perkara: saldo tidak boleh minus setelah putus; batas 7 hari = keputusan sementara 2 Nov 2026, dapat diubah Super Admin",
+    batasHari: 7,
+    peringatanHari: 2,
+    tindakan: "Periksa jurnal; catat Tambahan Panjar Biaya Perkara atau betulkan pencatatan yang keliru.",
+    hanyaDikabulkan: false,
+    tampilBatas: true,
+    ruas: ["kasir"],
+    bisaDiatur: true,
+  },
+  {
+    kode: "kasir-pnbp-belum-setor",
+    judul: "Setoran PNBP belum dicatat",
+    dasar:
+      "Tenggat = hari kerja sesudah PNBP diterima (aturan pengingat Kasir yang sudah ada); dasar tertulisnya tidak ditemukan di referensi (keputusan sementara 2 Nov 2026, dapat diubah Super Admin)",
+    batasHari: 0,
+    peringatanHari: 1,
+    tindakan: "Setor PNBP ke kas negara lalu catat setorannya (NTPN) di Kasir.",
+    hanyaDikabulkan: false,
+    tampilBatas: true,
+    ruas: ["kasir"],
+    bisaDiatur: true,
+  },
+];
+
+/** Aturan lama + baru G1 + N2 + T: dipakai jadwal harian dan layar Tenggat. */
+export const SEMUA_ATURAN: Aturan[] = [...ATURAN_TENGGAT, ...ATURAN_BARU, ...ATURAN_N2, ...ATURAN_T];
 
 /** Peta ketujuh aturan LAMA (bentuk dan isinya tidak berubah; dijaga penjaga-tenggat.test.ts). */
 export const PETA_ATURAN: ReadonlyMap<string, Aturan> = new Map(
@@ -518,7 +640,18 @@ export type OpsiNilai = {
    * hari terakhirnya ke hari kerja berikutnya. Bila tidak: perilaku lama persis (tanpa pergeseran).
    */
   libur?: (iso: string) => boolean;
+  /** Pengganti batasHari (kode aturan -> hari), hanya berlaku pada aturan bertanda bisaDiatur. Setelan Super Admin. */
+  ambang?: Readonly<Record<string, number>>;
 };
+
+/** Aturan dengan batas hari dari setelan (aturan bukan bisaDiatur tidak pernah berubah). */
+export function terapkanAmbang(aturan: readonly Aturan[], ambang?: Readonly<Record<string, number>>): readonly Aturan[] {
+  if (!ambang) return aturan;
+  return aturan.map((a) => {
+    const n = ambang[a.kode];
+    return a.bisaDiatur && Number.isInteger(n) && n >= 0 && n <= AMBANG_MAKS_HARI ? { ...a, batasHari: n } : a;
+  });
+}
 
 /** Sebutan pihak butir ("Penggugat") dari nomor sebutan di fakta; "" bila fakta tidak per pihak. */
 function sebutPihakFakta(fakta: FaktaTenggat): string {
@@ -584,6 +717,7 @@ function susunButir(aturan: Aturan, fakta: FaktaTenggat, s: BahanButir): Butir {
     panitera: String(fakta.panitera || ""),
     jurusita: String(fakta.jurusita || ""),
     mediator: String(fakta.mediator || ""),
+    ...(fakta.kasir ? { kasir: String(fakta.kasir) } : {}),
     perluVerifikasi: Boolean(aturan.perluVerifikasi),
     menunggu: s.menunggu,
     ...(aturan.ruas ? { ruas: aturan.ruas } : {}),
@@ -710,7 +844,7 @@ export function nilaiTenggat(
 ): Rapor {
   const butir: Butir[] = [];
   const lama: Record<string, number> = {};
-  const daftarAturan = opsi.aturan ?? ATURAN_TENGGAT;
+  const daftarAturan = terapkanAmbang(opsi.aturan ?? ATURAN_TENGGAT, opsi.ambang);
 
   for (const aturan of daftarAturan) {
     for (const satu of fakta[aturan.kode] || []) {

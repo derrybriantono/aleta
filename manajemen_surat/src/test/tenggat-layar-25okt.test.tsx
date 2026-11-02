@@ -131,6 +131,29 @@ describe("TenggatLayar", () => {
     expect(kotakAkta.length).toBe(ATURAN_TENGGAT.length);
   });
 
+  it("Super Admin: batas hari aturan kebiasaan (minutasi, kasir) dapat diubah; kosong menghapus; PK tidak punya kotak batas", async () => {
+    const aturan = SEMUA_ATURAN.map((a) => ({ kode: a.kode, judul: a.judul, dasar: a.dasar, perluVerifikasi: Boolean(a.perluVerifikasi), bisaDiatur: Boolean(a.bisaDiatur), batasHari: a.batasHari }));
+    const f = tiruFetch(data({ aturan, setelan: { ...SETELAN_TENGGAT_BAWAAN, ambangHari: { "kasir-belum-dijurnal": 5 } } }));
+    render(<TenggatLayar />);
+    const sisa = (await screen.findByLabelText("Batas hari: Sisa panjar belum dikembalikan")) as HTMLInputElement;
+    expect(sisa.placeholder).toBe("14");
+    expect((screen.getByLabelText("Batas hari: Redaksi dan meterai hari putusan belum dijurnal") as HTMLInputElement).value).toBe("5");
+    expect(screen.queryByLabelText(/Batas hari: Masa peninjauan kembali/)).toBeNull();
+    fireEvent.change(sisa, { target: { value: "7" } });
+    fireEvent.blur(sisa);
+    await waitFor(() => {
+      const post = f.mock.calls.find(([, init]) => init?.method === "POST");
+      expect(JSON.parse(String(post?.[1]?.body))).toEqual({ aksi: "setelan", ambangHari: { "kasir-sisa-panjar": 7 } });
+    });
+    const lain = screen.getByLabelText("Batas hari: Redaksi dan meterai hari putusan belum dijurnal") as HTMLInputElement;
+    fireEvent.change(lain, { target: { value: "" } });
+    fireEvent.blur(lain);
+    await waitFor(() => {
+      const kirim = f.mock.calls.filter(([, init]) => init?.method === "POST").map(([, init]) => JSON.parse(String(init?.body)));
+      expect(kirim).toContainEqual({ aksi: "setelan", ambangHari: { "kasir-belum-dijurnal": null } });
+    });
+  });
+
   it("bukan pengelola: tanpa bagian pengaturan, tanpa saringan majelis/PP, dan ada keterangan 'hanya perkara yang namanya tercantum'", async () => {
     tiruFetch(data({ lihatSemua: false, bolehKelola: false, setelan: null }));
     render(<TenggatLayar />);

@@ -157,6 +157,8 @@ export async function simpanSetelanTenggat(
     jam: badan.jam ?? lama.jam,
     aturanPengingat: Array.isArray(badan.aturanPengingat) ? badan.aturanPengingat : lama.aturanPengingat,
     tahapHari: Array.isArray(badan.tahapHari) ? badan.tahapHari : lama.tahapHari,
+    // Ambang digabung dengan yang lama (satu aturan per kali ubah); nilai kosong/null menghapus ambang aturan itu.
+    ambangHari: badan.ambangHari && typeof badan.ambangHari === "object" ? { ...lama.ambangHari, ...(badan.ambangHari as Record<string, unknown>) } : lama.ambangHari,
     diubahOleh: teks(aktor.name) || aktor.id,
     diubahPada: new Date().toISOString(),
   });
@@ -214,14 +216,15 @@ export function lihatSemuaTenggat(aktor: (PenggunaGolongan & Parameters<typeof i
  */
 export async function nilaiLangsung(
   tanggal: string,
-  sumber: SumberTenggat = SUMBER_TENGGAT_BAWAAN
+  sumber: SumberTenggat = SUMBER_TENGGAT_BAWAAN,
+  ambang?: Readonly<Record<string, number>>
 ): Promise<{ ok: true; rapor: Rapor; gagal: Record<string, string> } | { ok: false; galat: string }> {
   const f = await sumber.fakta(tanggal);
   if (!f.ok) return { ok: false, galat: f.galat };
   // tanggalLibur memakai kalender libur yang sudah dipasang pemanggil (bacaHariLibur) - satu sumber dengan kalender 1.205.38.
   return {
     ok: true,
-    rapor: nilaiTenggat(f.fakta, f.acuan || tanggal, { aturan: SEMUA_ATURAN, hitungMundur: true, libur: (iso) => tanggalLibur(iso) }),
+    rapor: nilaiTenggat(f.fakta, f.acuan || tanggal, { aturan: SEMUA_ATURAN, hitungMundur: true, libur: (iso) => tanggalLibur(iso), ambang }),
     gagal: f.gagal,
   };
 }
@@ -422,7 +425,7 @@ export async function jalankanTenggat(
     const jam = waktuPengadilan(opsi.kini).jam.slice(0, 5);
     // Kalender libur (termasuk tambahan Super Admin) dipasang dahulu: batas masa hak yang jatuh di hari libur bergeser.
     await bacaHariLibur(db).catch(() => undefined);
-    const nilai = await nilaiLangsung(tanggal, sumber);
+    const nilai = await nilaiLangsung(tanggal, sumber, setelan.ambangHari);
     if (!nilai.ok) {
       // Gagal baca BUKAN hari bersih: tidak ada hasil, dan detak berikutnya mencoba lagi (sampai BATAS_PERCOBAAN).
       c.percobaan += 1;
