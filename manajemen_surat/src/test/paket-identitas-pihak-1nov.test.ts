@@ -53,7 +53,8 @@ const seimbang = (s: string) => {
 };
 const angkaMenjorok = (s: string) => s.replace(/\\fi-?\d+(?![0-9a-z])/, "\\fiN").replace(/\\lin\d+(?![0-9a-z])/, "\\linN").replace(/\\li\d+(?![0-9a-z])/, "\\liN");
 
-const golA = potong.filter((p) => !p.lama.includes("{") && p.baru !== "");
+const golD = potong.filter((p) => p.lama.startsWith("(umur) "));
+const golA = potong.filter((p) => !p.lama.includes("{") && p.baru !== "" && !p.lama.startsWith("(umur) "));
 const golB = potong.filter((p) => p.lama.includes("{") && p.baru !== "");
 const hapus = potong.filter((p) => p.baru === "");
 
@@ -83,6 +84,7 @@ describe("isi paket sungguhan - berkas", () => {
     expect(golA.length).toBeGreaterThan(900);
     expect(golB.length).toBe(120);
     expect(hapus.length).toBe(22);
+    expect(golD.length).toBe(4);
   });
 });
 
@@ -114,6 +116,18 @@ describe("isi paket sungguhan - perilaku potongan blangko", () => {
       // sisi Tergugat memakai 7048, sisi Penggugat/Pemohon 7047
       expect(lamaT.includes("sebagai #0047#") ? "#7048#" : "#7047#").toBe(teks(p.baru));
     }
+  });
+
+  it("golongan D (revisi keputusan 112): sisa tulisan umur di identitas tertulis tangan dibuang, hanya dua penanda tanggal yang tertinggal", () => {
+    for (const p of golD) {
+      expect(p.lama).toMatch(/^\(umur\) #\d{4}#, #\d{4}# \(#\d{4}# tahun\)$/);
+      expect(p.baru).toMatch(/^#\d{4}#, #\d{4}#$/);
+      expect(p.lama.replace(/\(umur\) /, "").replace(/ \(#\d{4}# tahun\)/, "")).toBe(p.baru);
+    }
+    // semua sisa ada di dua berkas "BAS LAINNYA" (folder BAS lama), dua paragraf (sisi 1 dan 2) tiap berkas
+    const berkas = new Set(golD.map((p) => DAFTAR.find((d) => d[0] === p.kode)![1]));
+    expect([...berkas].every((b) => /BAS LAINNYA/.test(b))).toBe(true);
+    expect(berkas.size).toBe(2);
   });
 
   it("pasangan Pemohon II dibuang HANYA bila tepat sesudah paragraf Pemohon I yang diganti #7047# (dispensasi kawin)", () => {
