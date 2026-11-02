@@ -1745,6 +1745,34 @@
       `${lencanaSaran(rek, b.berkas)}${aktif ? `<span class="tanda" aria-label="dipakai sekarang">&#10003;</span>` : ""}</button>`
     );
   }
+  /**
+   * Butir 9 (2 Nov, rancangan A+B disetujui): daftar kanan "Pilih blangko" diberi SUBJUDUL pemisah menurut fungsi blangko (putusan per
+   * status, BAS per agenda sidang, relaas per keperluan; blangko-derry-golongan.js) dan baris chip LOMPAT di atasnya (gulir saja, tidak
+   * menyaring). Blangko yang disarankan naik ke blok "Disarankan untuk sidang ini" di paling atas (tidak diulang di golongannya).
+   * Kelompok yang seragam (satu golongan saja) atau jenis tanpa aturan tetap daftar polos seperti dulu.
+   */
+  function daftarBergolongan(butir, jenis, rek, tombol, awalan) {
+    const G = globalThis.AletaBdGolongan;
+    const nama = (b) => `${b.berkas || ""} ${b.kalimat || ""}`;
+    const disaran = butir.filter((b) => b.kalimat === undefined && lencanaSaran(rek, b.berkas));
+    const sisa = butir.filter((b) => !disaran.includes(b));
+    const grup = G ? G.kelompokkan(sisa, jenis, nama) : sisa.length ? [{ kunci: "", judul: "", butir: sisa }] : [];
+    const berjudul = grup.length > 1 || (grup.length === 1 && grup[0].judul);
+    if (!berjudul && !disaran.length) return butir.map(tombol).join("");
+    const id = (k) => (G ? G.idGolongan(`bd-g-${awalan}`, k) : `bd-g-${awalan}-${k}`);
+    let html = "";
+    if (berjudul && grup.length >= 2) {
+      html += `<div class="bd-lompat" role="navigation" aria-label="Lompat ke golongan blangko">${grup
+        .map((g) => `<button type="button" class="bd-lompatgol" data-bd2="lompatgol" data-ke="${esc(id(g.kunci))}">${esc(g.judul)}<span class="n">${g.butir.length}</span></button>`)
+        .join("")}</div>`;
+    }
+    if (disaran.length) html += `<h6 class="bd-golongan saran">Disarankan untuk sidang ini<span class="n">${disaran.length}</span></h6>${disaran.map(tombol).join("")}`;
+    for (const g of grup) {
+      if (berjudul) html += `<h6 class="bd-golongan" id="${esc(id(g.kunci))}">${esc(g.judul || "Blangko lain")}<span class="n">${g.butir.length}</span></h6>`;
+      html += g.butir.map(tombol).join("");
+    }
+    return html;
+  }
   function renderModal() {
     const m = cari("#bd-modal", wadah.akar);
     if (!m) return;
@@ -1782,7 +1810,7 @@
       for (const k of daftar) {
         if (k.saran) continue;
         const ns = k.berkas.filter(cocok);
-        if (ns.length) kanan += `<h5>${esc(k.nama)}</h5>${ns.map(tombol).join("")}`;
+        if (ns.length) kanan += `<h5>${esc(k.nama)}</h5>${daftarBergolongan(ns, tabAktif, rek, tombol, `c${daftar.indexOf(k)}`)}`;
       }
       if (!kanan) kanan = `<p class="bd-catat">${S.menu && S.menu.kelompok.some((k) => k.jenis === S.modal.jenis && !k.berkas) ? "Belum ada yang cocok; kelompok lain masih dimuat…" : "Tidak ada blangko yang cocok."}</p>`;
     } else {
@@ -1790,7 +1818,7 @@
       if (!k) kanan = `<p class="bd-catat">${S.memuatMenu ? "Membaca menu Blangko Derry dari ABT…" : esc(S.galatMenu || "Tidak ada kelompok untuk jenis ini.")}</p>`;
       else if (k.memuat) kanan = `<p class="bd-catat" role="status">Membaca daftar blangko ${esc(k.nama)} dari ABT…</p>`;
       else if (k.galat) kanan = `<p class="bd-peringatan">${esc(k.galat)} <button type="button" class="bd-btn kecil" data-bd2="ulangkel" data-kel="${esc(k.id.replace(/^k:/, ""))}">Coba lagi</button></p>`;
-      else kanan = (k.sub ? `<p class="bd-ksub">${esc(k.nama)} · ${esc(k.sub)}</p>` : "") + (k.saran ? k.berkas.map((b) => `${tombolBlangko(b, S.modal.jenis, rek)}<p class="bd-catat bd-alasanrek">${asalSaran(b, daftar)}${esc(b.alasan || "")}</p>`).join("") : k.berkas.map(tombol).join("") || `<p class="bd-catat">Kelompok ini kosong.</p>`);
+      else kanan = (k.sub ? `<p class="bd-ksub">${esc(k.nama)} · ${esc(k.sub)}</p>` : "") + (k.saran ? k.berkas.map((b) => `${tombolBlangko(b, S.modal.jenis, rek)}<p class="bd-catat bd-alasanrek">${asalSaran(b, daftar)}${esc(b.alasan || "")}</p>`).join("") : daftarBergolongan(k.berkas, tabAktif, rek, tombol, "k") || `<p class="bd-catat">Kelompok ini kosong.</p>`);
     }
     // 22 Okt: innerHTML diganti utuh, jadi gulir daftar kiri dan kanan ikut hilang (memilih kategori di bagian bawah melompatkan daftar ke atas
     // dan kategori terpilih tak terlihat; daftar blangko yang selesai dimuat di latar juga menarik gulir ke atas). Gulir dicatat lalu dipulihkan;
@@ -10048,6 +10076,14 @@
       return;
     }
     if (kode === "tutupmodal") return tutupModal();
+    if (kode === "lompatgol") {
+      // Butir 9: chip lompat - gulir daftar kanan ke subjudul golongan (tidak menyaring apa pun).
+      const ke = String(aksi.getAttribute("data-ke") || "");
+      const kanan = cari(".bd-mkanan", wadah.akar);
+      const tujuan = kanan && /^[a-z0-9-]+$/i.test(ke) ? kanan.querySelector(`[id="${ke}"]`) : null;
+      if (tujuan && typeof tujuan.scrollIntoView === "function") tujuan.scrollIntoView({ block: "start" });
+      return;
+    }
     if (kode === "pakairek") {
       const r = rekomendasiJenis(jenisSaranAktif())[0];
       if (!r) return;

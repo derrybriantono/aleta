@@ -28,7 +28,7 @@ import { tawarkanSetSaksi } from "@/lib/set-pertanyaan-saksi";
 const require_ = createRequire(path.resolve(process.cwd(), "../aleta_bot/routes/internalGatewayRoutes.js"));
 const EKSTENSI = path.resolve(process.cwd(), "../ekstensi-sipp");
 const baca = (berkas: string) => readFileSync(path.join(EKSTENSI, berkas), "utf8").replace(/\r\n/g, "\n");
-const SUMBER = ["panel-alat.js", "abt-klien.js", "blangko-derry.js", "saksi-katalog.js", "saksi-katalog-data.js", "blangko-derry-saksi.js", "blangko-derry-saksi-arah.js", "blangko-derry-katalog.js", "blangko-derry-rekomendasi.js", "blangko-derry-isian.js"].map(baca).join("\n;\n");
+const SUMBER = ["panel-alat.js", "abt-klien.js", "blangko-derry.js", "saksi-katalog.js", "saksi-katalog-data.js", "blangko-derry-saksi.js", "blangko-derry-saksi-arah.js", "blangko-derry-katalog.js", "blangko-derry-rekomendasi.js", "blangko-derry-golongan.js", "blangko-derry-isian.js"].map(baca).join("\n;\n");
 
 const ASAL = "http://192.168.10.10";
 const ABT = `${ASAL}/aps_badilag/index.php/abt`;
@@ -684,5 +684,54 @@ describe("butir 15: kotak Keadaan perkara (Pengetahuan saksi katalog) terlipat s
     expect(K.keadaanHtml(bidang, "", {})).toMatch(/<details class="bd-skkeadaanlipat">/);
     expect(K.keadaanHtml(bidang, "", { buka: true })).toMatch(/<details class="bd-skkeadaanlipat" open>/);
     expect(K.keadaanHtml(bidang, "", {})).not.toMatch(/aleta/i);
+  });
+});
+
+describe("butir 9: daftar Pilih blangko diberi pemisah golongan + baris lompat", () => {
+  it("kelompok Putusan CG: subjudul Dikabulkan / Dikabulkan verstek / Ditolak berurutan, chip lompat menggulir ke subjudulnya", async () => {
+    const h = await bukaRekomendasi({ belumPutus: true, rekomendasi: REK_TOLAK_CUKUP });
+    klik(h, '[data-bd2="bukamodal"]');
+    await sampai(() => q(h, `#bd-modal [data-bl="${BLANGKO_TOLAK}"]`), "jendela pilih blangko");
+    klik(h, '#bd-modal [data-kelmodal="k:Putusan CG"]');
+    await sampai(() => q(h, "#bd-modal .bd-golongan"), "subjudul golongan");
+    const judul = qq(h, "#bd-modal .bd-mkanan .bd-golongan").map((x) => (x.firstChild?.textContent || "").trim());
+    // blangko tolak disarankan -> naik ke "Disarankan untuk sidang ini", tidak diulang di golongannya
+    expect(judul).toEqual(["Disarankan untuk sidang ini", "Dikabulkan", "Dikabulkan verstek"]);
+    const urut = qq(h, "#bd-modal .bd-mkanan > *").map((x) => (x.classList.contains("bd-golongan") ? `#${(x.firstChild?.textContent || "").trim()}` : x.getAttribute("data-bl") || ""));
+    expect(urut.filter(Boolean)).toEqual(["#Disarankan untuk sidang ini", BLANGKO_TOLAK, "#Dikabulkan", "[02] [Kabul] CG - F", "#Dikabulkan verstek", BLANGKO_PUT]);
+    // semua blangko kelompok tetap ada (tidak ada yang tersembunyi)
+    expect(qq(h, "#bd-modal .bd-mkanan [data-bl]").length).toBe(3);
+  });
+
+  it("baris chip lompat = subjudul golongan (di luar Disarankan); klik chip menggulir ke subjudulnya, tidak menyaring", async () => {
+    const h = buka({ belumPutus: true });
+    await sampaiPerkara(h);
+    klik(h, '[data-bd2="bukamodal"]');
+    await sampai(() => q(h, '#bd-modal [data-kelmodal="k:Putusan CG"]'), "kelompok putusan");
+    klik(h, '#bd-modal [data-kelmodal="k:Putusan CG"]');
+    await sampai(() => q(h, `#bd-modal [data-bl="${BLANGKO_TOLAK}"]`) && q(h, "#bd-modal .bd-lompat"), "daftar putusan + chip lompat");
+    const subjudul = qq(h, "#bd-modal .bd-mkanan .bd-golongan:not(.saran)").map((x) => (x.firstChild?.textContent || "").trim());
+    const chip = qq(h, "#bd-modal .bd-lompat .bd-lompatgol");
+    expect(subjudul.length).toBeGreaterThanOrEqual(2);
+    expect(chip.map((x) => x.firstChild?.textContent)).toEqual(subjudul);
+    expect(subjudul.indexOf("Ditolak")).toBeGreaterThan(subjudul.indexOf("Dikabulkan"));
+    const digulir: string[] = [];
+    h.w.HTMLElement.prototype.scrollIntoView = function () {
+      digulir.push(this.id);
+    };
+    const akhir = chip[chip.length - 1] as HTMLElement;
+    akhir.click();
+    expect(digulir).toEqual([akhir.getAttribute("data-ke")]);
+    expect(q(h, `#bd-modal [id="${akhir.getAttribute("data-ke")}"]`)!.textContent).toContain(subjudul[subjudul.length - 1]);
+    // tidak menyaring: ketiga blangko kelompok tetap tampil
+    expect(qq(h, "#bd-modal .bd-mkanan [data-bl]").length).toBe(3);
+  });
+
+  it("CSS pemisah: ukuran huruf >= 11,5px, warna dari token, tanpa animasi", () => {
+    const css = baca("blangko-derry.css");
+    const blok = css.split("\n").filter((b) => /bd-golongan|bd-lompat/.test(b)).join("\n");
+    expect(blok).toMatch(/bd-golongan/);
+    for (const m of blok.matchAll(/font-size:\s*([\d.]+)px/g)) expect(Number(m[1])).toBeGreaterThanOrEqual(11.5);
+    expect(blok).not.toMatch(/#[0-9a-f]{3,8}\b|rgb\(|hsl\(|animation|transition/i);
   });
 });

@@ -165,6 +165,8 @@ const BERKAS = [
   "blangko-derry-penilai-bukti.js",
   // Rekomendasi putusan (R, 2 Nov 2026): dimuat malas (AletaModul "rekomendasi-putusan") hanya untuk cerai/itsbat/DK; bukan skrip konten manifest.
   "blangko-derry-rekomendasi.js",
+  // Pemisah daftar Pilih blangko (butir 9, 2 Nov 2026): golongan dari nama blangko; murni, sebelum blangko-derry-isian.js.
+  "blangko-derry-golongan.js",
   "blangko-derry-isian.js",
   // Temuan perkara di panel cetak Blangko Derry (G4, 30 Okt 2026): usul pembetulan kehadiran SIPP (satu tombol bagi PP perkara)
   // dan putusan SIPP vs dokumen - mengisi wadah catatan temuan yang sudah ada, dipanggil blangko-derry-isian.js.
