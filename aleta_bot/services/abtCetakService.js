@@ -52,6 +52,8 @@ const path = require("node:path");
 
 // Butir 45 (17 Okt): metadata berkas yang masuk SIPP tanpa tanda ALETA.
 const { tanpaTandaAletaMetadata } = require("./metadataTanpaAletaService");
+// 2 Nov 2026 (cetak lambat): profil soffice yang sudah hangat dipakai ulang per slot - lihat berkasnya.
+const profilSoffice = require("./sofficeProfilService");
 
 /** Putusan terpanjang belasan halaman; ini jauh di atasnya. */
 const BATAS_BYTE = 20 * 1024 * 1024;
@@ -215,6 +217,9 @@ async function rtfKePdf(isiRtf) {
   const folder = await fs.mkdtemp(path.join(os.tmpdir(), "aleta-pdf-"));
   const berkasRtf = path.join(folder, "putusan.rtf");
   const berkasPdf = path.join(folder, "putusan.pdf");
+  // Profil slot hangat (eksklusif) atau, bila semua sedang dipakai, profil sekali pakai di folder ini seperti dulu.
+  const profil = profilSoffice.pinjam(path.join(folder, "profil"));
+  let profilSehat = false;
 
   try {
     // Properti naskah ({\info}) tanpa tanda ALETA - Title PDF disalin dari sana.
@@ -229,7 +234,7 @@ async function rtfKePdf(isiRtf) {
       [
         "--headless",
         "--norestore",
-        `-env:UserInstallation=file://${path.join(folder, "profil")}`,
+        `-env:UserInstallation=${profil.url}`,
         "--convert-to",
         "pdf",
         berkasRtf,
@@ -243,6 +248,7 @@ async function rtfKePdf(isiRtf) {
     if (!pdf.subarray(0, 5).toString("latin1").startsWith("%PDF-")) {
       return { ok: false, alasan: "soffice selesai tetapi hasilnya bukan PDF." };
     }
+    profilSehat = true;
     return { ok: true, pdf: tanpaTandaAletaMetadata(pdf), versiMesin: mesin.versi };
   } catch (galat) {
     if (galat.killed) {
@@ -253,6 +259,8 @@ async function rtfKePdf(isiRtf) {
     }
     return { ok: false, alasan: String(galat.message || galat).slice(0, 200) };
   } finally {
+    // Profil slot yang gagal dibuang (generasi baru); yang berhasil dipakai konversi berikutnya.
+    profil.kembalikan(profilSehat);
     // Dibuang berhasil maupun gagal. Folder yang tertinggal berisi putusan
     // lengkap beserta nama pihaknya, dan /tmp bukan tempat untuk itu.
     await fs.rm(folder, { recursive: true, force: true }).catch(() => {});
