@@ -31,6 +31,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { NativeSelect } from "@/components/ui/native-select";
 import { usePortal } from "@/lib/app-state";
 import { apiPath } from "@/lib/base-path";
+import { unduhBerkasPortal } from "@/lib/unduh-ekstensi";
 import {
   E_STATUS_MODULE_ID,
   E_STATUS_PERMISSION,
@@ -567,7 +568,7 @@ export function EStatusPanel() {
   };
 
   const downloadBatchExport = (batchId: string, format: "csv" | "json" = "csv") => {
-    window.open(apiPath(`/api/e-status/batches/${batchId}/export?format=${format}`), "_blank", "noopener,noreferrer");
+    void unduhBerkasPortal(apiPath(`/api/e-status/batches/${batchId}/export?format=${format}`), { onGalat: setError });
   };
 
   const updateTracking = async (batchId: string, status: "SENT" | "RECEIVED" | "IN_PROCESS" | "COMPLETED" | "REJECTED" | "RESENT") => {

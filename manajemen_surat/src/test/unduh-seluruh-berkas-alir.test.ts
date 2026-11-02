@@ -201,8 +201,11 @@ describe("penjaga teks: jalur fetch + blob tidak kembali", () => {
 
   it("tombol ZIP memakai unduhan biasa peramban (mulaiUnduhAlir), tanpa fetch dan tanpa blob", () => {
     const tombol = kode("components/portal/tombol-unduh-zip.tsx");
-    expect(tombol).toContain('import { mulaiUnduhAlir } from "@/lib/unduh-alir";');
-    expect(tombol).toContain("await mulaiUnduhAlir(");
+    // Sejak 2 Nov 2026 lewat mulaiUnduhAman: ekstensi ALETA bila ada (tidak ditahan Chrome), bila tidak
+    // mulaiUnduhAlir yang sama - perilakunya dijalankan di unduh-aman-portal-2nov.test.tsx.
+    expect(tombol).toContain('import { mulaiUnduhAman, type HasilUnduhAman } from "@/lib/unduh-alir";');
+    expect(tombol).toContain("await mulaiUnduhAman(");
+    expect(kode("lib/unduh-alir.ts")).toMatch(/mulaiUnduhAlir\(alamat, opsi\)/);
     expect(tombol).not.toMatch(/\bfetch\(/);
     expect(tombol).not.toMatch(/\.blob\(\)/);
     expect(tombol).not.toContain("tanganiUnduhan");

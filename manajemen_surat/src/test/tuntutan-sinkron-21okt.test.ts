@@ -223,8 +223,10 @@ describe("C. panel = tabel ABT; tuntutan yang tidak diminta tidak tampil", () =>
   it("layar: saklar karena jabatan hanya untuk penulis putusan; bagian tuntutan dan bagian isian lanjutan ada; 8503 kosong menjelaskan 'TIDAK BENAR QUERY NYA'", () => {
     const js = readFileSync(path.join(EKSTENSI, "blangko-derry-isian.js"), "utf8");
     expect(js).toMatch(/if \(kode === "jabatan"\) \{\s*\/\/[^\n]*\n\s*if \(!bolehTulis\(\) \|\| !S\.blangko \|\| S\.blangko\.jenis !== "put"\) return;/);
-    expect(js).toContain("Tuntutan dalam posita dan petitum");
-    expect(js).toContain("Isian di dalam bagian otomatis");
+    // Butir 12 (2 Nov): judul diringkas menjadi "Tuntutan" dan "Isian untuk amar" (perilaku diuji di panel-ringkas-2nov).
+    expect(js).toContain('id="bd-tuntutan"');
+    expect(js).toContain(">Tuntutan ${lencana}");
+    expect(js).toContain(">Isian untuk amar ${lencana}");
     // 30 Okt: bunyi baru paket ABT alasan-belum-dipilih-30okt + bunyi lama untuk server yang belum dipasang.
     expect(js).toContain('[HURUF ALASAN PERCERAIAN BELUM DIPILIH]\\" (di ABT yang belum diperbarui: \\"TIDAK BENAR QUERY NYA\\") dan ikut tercetak.');
     // isi otomatis tetap mencakup isian di dalam bagian otomatis (fitur lama tidak berkurang)

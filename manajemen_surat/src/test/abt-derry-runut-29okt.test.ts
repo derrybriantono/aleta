@@ -567,7 +567,9 @@ describe("E. langkah 3 tanpa label ganda dan istilah teknis", () => {
     await pilihPutusan(h);
     expect(q(h, '[data-sumber="0007"]')!.getAttribute("aria-label")).toBe("Dari mana isian Anak dari pernikahan ini?");
     const ringkas = q(h, '[data-bd2="lanjutan"]')!.textContent || "";
-    expect(ringkas).toContain("Isian di dalam bagian otomatis (1)");
+    // Butir 12 (2 Nov): judul bagian menjadi "Isian untuk amar" + lencana (8503 berisi -> "lengkap"); jumlah isian di keterangan.
+    expect(ringkas).toContain("Isian untuk amar lengkap");
+    expect(ringkas).toContain("1 isian, tidak tertulis langsung di blangko");
     expect(ringkas).toContain("tidak tertulis langsung di blangko, dibaca kalimat otomatis (mis. amar)");
     expect(ringkas).not.toContain("tabel ABT");
   });

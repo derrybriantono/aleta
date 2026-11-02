@@ -166,7 +166,9 @@ describe("tidak ada unduhan langsung dari halaman http", () => {
     const f = potongFungsi(alat, ["alatUnduh", "alatBlobKeData"]);
     expect(f).toContain('jenis: "unduh"');
     expect(f).toContain("data:${tipe};base64,");
-    expect(potongFungsi(latar, ["terbitkanUnduhan"])).toContain('if (!alamat.startsWith("data:"))');
+    // 2 Nov 2026: selain data:, hanya blob: milik ekstensi sendiri (dokumen offscreen unduhan aman) - tetap bukan http.
+    expect(potongFungsi(latar, ["terbitkanUnduhan"])).toContain('if (!alamat.startsWith("data:") && !alamatBlobEkstensi(alamat))');
+    expect(potongFungsi(latar, ["alamatBlobEkstensi"])).toContain('startsWith(`blob:${String(chrome.runtime.getURL("")).replace(/\\/+$/, "")}/`)');
     // Satu-satunya chrome.downloads.download ada di terbitkanUnduhan.
     expect(latar.match(/chrome\.downloads\.download\(/g)?.length).toBe(1);
   });

@@ -3490,7 +3490,27 @@ router.post("/abt/pdf", requireInternalToken, async (req, res) => {
     // nama di blok itu). Lihat salinanPutusanService.
     let salinan = null;
     let ttdPanitera = null;
-    if (req.body && req.body.salinan === true && isi.subarray(0, 5).toString("latin1").startsWith("{\\rtf")) {
+    let ttdPejabat = null;
+    const mintaSalinan = req.body && req.body.salinan === true && isi.subarray(0, 5).toString("latin1").startsWith("{\\rtf");
+    // 2 Nov: SALINAN BAS - tanpa blok "Untuk Salinan" dan tanpa "ttd": tanda tangan ASLI (yang sudah disahkan) tiap pejabat yang
+    // menandatangani BAS (Ketua Majelis/Hakim, Panitera Sidang/Pengganti) dikembalikan; portal membubuhkannya di atas nama di PDF.
+    if (mintaSalinan && req.body.ttdDiPdf === true && salinanPutusanService.jenisNaskahSalinan(isi.toString("latin1")) === "bas") {
+      const pejabat = salinanPutusanService.pejabatPenandatangan(isi.toString("latin1"));
+      ttdPejabat = [];
+      const tanpaTtd = [];
+      for (const p of pejabat.slice(0, 8)) {
+        let t = null;
+        try {
+          t = await tandaTanganService.untukPejabat(p.nama);
+        } catch {
+          t = null;
+        }
+        if (t && t.isi && Buffer.from(t.isi).length) {
+          ttdPejabat.push({ nama: p.nama, label: p.label, jenis: String(t.jenis || "png").toLowerCase() === "jpg" ? "jpg" : "png", isiBase64: Buffer.from(t.isi).toString("base64") });
+        } else tanpaTtd.push(p.nama);
+      }
+      salinan = { jenis: "bas", pejabat: pejabat.map((p) => ({ label: p.label, nama: p.nama })), ttdDitemukan: ttdPejabat.length, tanpaTtd };
+    } else if (mintaSalinan) {
       const teks = isi.toString("latin1");
       const namaPanitera = salinanPutusanService.namaPaniteraSalinan(teks);
       let ttd = null;
@@ -3518,6 +3538,16 @@ router.post("/abt/pdf", requireInternalToken, async (req, res) => {
         ttdPanitera = { nama: salinan.namaPanitera || namaPanitera, jenis: String(ttd.jenis || "png").toLowerCase() === "jpg" ? "jpg" : "png", isiBase64: Buffer.from(ttd.isi).toString("base64") };
       }
     }
+    // 2 Nov: PDF putusan BIASA - blok "Untuk Salinan" tersembunyi (putih, bingkai) dibuang; tanpanya LibreOffice meninggalkan
+    // ruang kosong di tengah rincian biaya (sesudah "1. PNBP :").
+    let untukSalinanDibuang = false;
+    if (!mintaSalinan && isi.subarray(0, 5).toString("latin1").startsWith("{\\rtf")) {
+      const b = salinanPutusanService.buangUntukSalinanTersembunyi(isi.toString("latin1"));
+      if (b.dibuang) {
+        isi = Buffer.from(b.rtf, "latin1");
+        untukSalinanDibuang = true;
+      }
+    }
     const hasil = await abtCetakService.rtfKePdf(isi);
     if (!hasil.ok) {
       res.status(422).json({ ok: false, error: hasil.alasan });
@@ -3530,6 +3560,8 @@ router.post("/abt/pdf", requireInternalToken, async (req, res) => {
       versiMesin: hasil.versiMesin || "",
       ...(salinan ? { salinan } : {}),
       ...(ttdPanitera ? { ttdPanitera } : {}),
+      ...(ttdPejabat ? { ttdPejabat } : {}),
+      ...(untukSalinanDibuang ? { untukSalinanDibuang } : {}),
     });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
@@ -3945,6 +3977,9 @@ router.post("/sipp/ktp-pihak/baca-ulang", requireInternalToken, async (req, res)
 /** Daftar sidang pada rentang tanggal. */
 router.get("/sipp/jadwal-sidang", requireInternalToken, async (req, res) => {
   try {
+    // 2 Nov 2026: ?bidang=ringkas (daftar Perkara Saya) - jadwal dengan keterangan yang dipakai daftar itu saja, tanpa peta antrian
+    // (basis data lain, tidak dipakai daftar). Lihat susunJawabanRingkas. Nilai lain = jawaban lengkap seperti semula.
+    const ringkas = String(req.query.bidang || "") === sippJadwalSidangService.BIDANG_RINGKAS;
     // Performa muat 19 Okt 2026: jadwal (SIPP) dan peta antrian (basis data
     // antrian) tidak saling bergantung - dibaca BERSAMAAN, tidak berurutan.
     // Gagalnya peta antrian tetap ditelan seperti semula.
@@ -3954,14 +3989,21 @@ router.get("/sipp/jadwal-sidang", requireInternalToken, async (req, res) => {
         sampai: String(req.query.sampai || ""),
         cari: String(req.query.cari || ""),
         batas: Number(req.query.batas) || 200,
+        ...(ringkas ? { bidang: sippJadwalSidangService.BIDANG_RINGKAS } : {}),
       }),
-      antrianSidangService.petaAntrian().catch((galat) => ({
-        terbaca: false,
-        alasan: String(galat.message || galat).slice(0, 200),
-        peta: {},
-        tanggal: [],
-      })),
+      ringkas
+        ? Promise.resolve(null)
+        : antrianSidangService.petaAntrian().catch((galat) => ({
+            terbaca: false,
+            alasan: String(galat.message || galat).slice(0, 200),
+            peta: {},
+            tanggal: [],
+          })),
     ]);
+    if (ringkas) {
+      res.json({ ok: true, ...hasil });
+      return;
+    }
 
     // ======================================================================
     // ANTRIAN DITEMPELKAN DI SINI, BUKAN DI DALAM LAYANAN JADWAL

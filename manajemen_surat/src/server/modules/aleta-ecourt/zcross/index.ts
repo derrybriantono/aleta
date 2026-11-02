@@ -108,7 +108,7 @@ function naskahRtf(bita: Uint8Array): NaskahZ | null {
     dokumen: (twip) => latin1ke(twip > 0 ? rapatkanParagraf(bersih.rtf, p, twip) : bersih.rtf),
     tepi: (h) => {
       const u = ukuranDiPosisi(bersih.rtf, urai, p.akhir);
-      return { kiri: u.kiri, kanan: h.lebar - u.kanan };
+      return { kiri: u.kiri, kanan: h.lebar - u.kanan, bawah: u.bawah };
     },
     tanggalNaskah: () => tanggalDariNaskah(urai),
     awalNomor: () => {
@@ -174,7 +174,8 @@ function naskahDocx(bita: Uint8Array): NaskahZ | null {
       const mar = sek ? cariXml(sek.sectPr, "w:pgMar")[0] : undefined;
       const kiri = mar ? Number(attr(mar, "w:left")) / 20 : NaN;
       const kanan = mar ? Number(attr(mar, "w:right")) / 20 : NaN;
-      return { kiri: Number.isFinite(kiri) ? kiri : 72, kanan: h.lebar - (Number.isFinite(kanan) ? kanan : 72) };
+      const bawah = mar ? Number(attr(mar, "w:bottom")) / 20 : NaN;
+      return { kiri: Number.isFinite(kiri) ? kiri : 72, kanan: h.lebar - (Number.isFinite(kanan) ? kanan : 72), ...(Number.isFinite(bawah) && bawah > 0 ? { bawah } : {}) };
     },
     tanggalNaskah: () => tanggalDariParagraf(par.map((q) => q.teks)),
     awalNomor: hitungPgNum,

@@ -162,6 +162,10 @@
     const data = k ? k.data : null;
     const ringkas = el.querySelector("summary .bd-catat");
     if (ringkas && data) ringkas.textContent = ` · ${ringkasPenilaian(data)}`;
+    // Butir 12 (2 Nov): ringkasan bungkus "Bahan musyawarah majelis" (panel Blangko Derry) ikut diperbarui bila ada.
+    const luar = el.closest("#bd-musyawarah");
+    const ringkasLuar = luar ? luar.querySelector(":scope > summary [data-musy-ringkas]") : null;
+    if (ringkasLuar && data) ringkasLuar.textContent = ` · ${ringkasPenilaian(data)}`;
     const isi = el.querySelector(".bd-pb-isi");
     if (isi && el.open) isi.innerHTML = k && k.galat && !data ? `<p class="bd-catat" role="alert">Penilaian pembuktian belum terbaca: ${esc(k.galat)}.</p>` : htmlTabel(data, o.sebutan, el.dataset.pbSemua === "1", aiTersedia());
   }

@@ -581,12 +581,34 @@ async function untukPejabat(namaPejabat) {
   const baris = await kueri(
     `SELECT id, nama_pejabat, jenis_berkas, isi FROM ${TABEL} WHERE disahkan = 1`
   );
-  for (const b of Array.isArray(baris) ? baris : []) {
+  const daftarSah = Array.isArray(baris) ? baris : [];
+  for (const b of daftarSah) {
     if (bakuNama(b.nama_pejabat) === dicari) {
       return { id: Number(b.id), namaPejabat: String(b.nama_pejabat), jenis: String(b.jenis_berkas), isi: b.isi };
     }
   }
+  // 2 Nov 2026: nama di naskah sering bergelar ("Sri Susilowati, S.H.") sedangkan tanda tangan didaftarkan tanpa gelar (atau
+  // sebaliknya). Bila tidak ada yang sama persis, dicocokkan NAMA INTINYA (tanpa gelar) - hanya bila tepat SATU yang cocok.
+  const inti = intiNama(namaPejabat);
+  if (inti.length >= 4) {
+    const cocok = daftarSah.filter((b) => intiNama(b.nama_pejabat) === inti);
+    if (cocok.length === 1) {
+      const b = cocok[0];
+      return { id: Number(b.id), namaPejabat: String(b.nama_pejabat), jenis: String(b.jenis_berkas), isi: b.isi };
+    }
+  }
   return null;
+}
+
+/** Nama tanpa gelar: bagian sebelum koma pertama, tanpa awalan Dr./Drs./Dra./H./Hj./Ir./Prof., huruf saja. */
+function intiNama(nilai) {
+  let t = String(nilai || "").split(",")[0];
+  for (;;) {
+    const baru = t.replace(/^\s*(?:prof|dr|drs|dra|hj|h|ir|kh|ust|ustz)\.?\s+/i, "");
+    if (baru === t) break;
+    t = baru;
+  }
+  return bakuNama(t);
 }
 
 /**
@@ -627,6 +649,7 @@ module.exports = {
   sahkan,
   hapus,
   untukPejabat,
+  intiNama,
   untukPengguna,
   bakuNama,
 };

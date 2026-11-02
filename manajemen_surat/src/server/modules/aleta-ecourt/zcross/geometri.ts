@@ -7,6 +7,8 @@
  *   - garis ATAS Z selalu mulai di samping kata terakhir paragraf "...berikut:" / "...berupa:" pada baris yang SAMA sampai batas kanan
  *     (tidak pernah di baris bawah paragraf); ruang < 3 cm = kalimatnya DIRAPATKAN (jarak huruf), bukan garisnya dipindah;
  *   - diagonal ke kiri bawah; garis BAWAH +-3 cm di atas batas bawah halaman;
+ *   - 2 Nov 2026 (keputusan Derry): bila margin bawah naskah diketahui, garis BAWAH ditarik sampai dekat batas bawah AREA TEKS (bukan
+ *     ujung kertas, tidak masuk kaki halaman/nomor halaman) dan kotak tanggal tepat di bawahnya, masih di dalam area teks;
  *   - tanggal tepat di bawah garis, tidak menempel tepi kertas;
  *   - ganti halaman; nomor halaman bagian berikutnya = halaman Z + jumlah halaman bukti (dikonfirmasi: melompat).
  */
@@ -24,6 +26,8 @@ export const PANJANG_MIN_GARIS_ATAS = 0.8 * CM;
 /** Ruang tanggal: tinggi satu baris tanggal dan sisa tepi kertas yang tidak boleh dilanggar. */
 export const SISA_TEPI_TANGGAL = 1.2 * CM;
 export const TINGGI_BARIS_TANGGAL = 15;
+/** Ruang kotak tanggal di bawah garis bawah (dua baris: tanda "SC Z 1x" + tanggal, 12 pt) bila garis ditarik ke batas area teks. */
+export const RUANG_TANGGAL_AREA_TEKS = 2 * TINGGI_BARIS_TANGGAL + 4;
 
 /** Letak kata terakhir paragraf jangkar, hasil pembacaan PDF. */
 export type LetakJangkar = {
@@ -39,7 +43,8 @@ export type LetakJangkar = {
   teksBaris: string;
 };
 
-export type Tepi = { kiri: number; kanan: number };
+/** kiri/kanan = batas teks (pt dari tepi kiri kertas); bawah = margin bawah halaman (pt), bila diketahui dari naskah. */
+export type Tepi = { kiri: number; kanan: number; bawah?: number };
 
 export type TemuanZ = { tingkat: "info" | "peringatan"; pesan: string };
 
@@ -80,7 +85,8 @@ export function rencanaZ(j: LetakJangkar, tepi: Tepi): RencanaZ {
     temuan.push({ tingkat: "peringatan", pesan: "Garis atas Z sangat pendek (kurang dari 0,8 cm): kata terakhir hampir menyentuh batas kanan; periksa tampilannya." });
   }
 
-  let yBawah = j.tinggiHalaman - JARAK_BAWAH_HALAMAN;
+  const batasAreaTeks = typeof tepi.bawah === "number" && Number.isFinite(tepi.bawah) && tepi.bawah > 0 ? j.tinggiHalaman - tepi.bawah : null;
+  let yBawah = batasAreaTeks != null ? batasAreaTeks - RUANG_TANGGAL_AREA_TEKS : j.tinggiHalaman - JARAK_BAWAH_HALAMAN;
   const terendah = j.tinggiHalaman - SISA_TEPI_TANGGAL - TINGGI_BARIS_TANGGAL - 2;
   const terdekat = j.yDasar + 1 * CM;
   if (yBawah < terdekat) {

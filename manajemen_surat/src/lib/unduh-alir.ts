@@ -1,4 +1,10 @@
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
+import {
+  PETUNJUK_TANPA_EKSTENSI,
+  ekstensiUnduhAmanTersedia,
+  unduhLewatEkstensi,
+  type KabarUnduhEkstensi,
+} from "@/lib/unduh-ekstensi";
 
 /**
  * ============================================================================
@@ -149,5 +155,48 @@ export function mulaiUnduhAlir(alamat: string, opsi: OpsiUnduhAlir = {}): Promis
 
     bingkai.src = alamatDenganToken(alamat, token);
     dokumen.body.appendChild(bingkai);
+  });
+}
+
+/*
+ * ============================================================================
+ * SEJAK 2 NOVEMBER 2026: LEWAT EKSTENSI BILA ADA (Insecure download blocked)
+ * ============================================================================
+ *
+ * Unduhan bingkai di atas lahir dari halaman http, dan Chrome menahannya
+ * ("Insecure download blocked") - keluhan Status Perkara 273/Pdt.G/2026/PA.Dgl.
+ * mulaiUnduhAman memilih jalannya:
+ *   - ekstensi ALETA ada -> ekstensi yang mengambil dan menyimpan berkasnya
+ *     (src/lib/unduh-ekstensi.ts): tidak ditahan, tanpa batas ukuran, dengan
+ *     kabar kemajuan; selesai sesudah berkas TERSIMPAN.
+ *   - ekstensi tidak ada / jalurnya tidak bekerja / IDM mengambil alih ->
+ *     mulaiUnduhAlir seperti sebelumnya, ditambah petunjuk singkat bila
+ *     halaman bukan konteks aman.
+ * Galat server dari jalur ekstensi TIDAK diulang lewat bingkai - sebabnya disebut.
+ */
+export type HasilUnduhAman =
+  | { ok: true; lewat: "ekstensi"; nama: string; ukuran: number; berjalan: boolean }
+  | { ok: true; lewat: "peramban"; petunjuk: string }
+  | { ok: false; sebab: "galat-server" | "tidak-ada-kabar" | "terputus"; pesan: string };
+
+export function mulaiUnduhAman(
+  alamat: string,
+  opsi: OpsiUnduhAlir & { onKabar?: (k: KabarUnduhEkstensi) => void } = {}
+): Promise<HasilUnduhAman> {
+  const dokumen = opsi.dokumen ?? document;
+  const jendela = dokumen.defaultView ?? window;
+  const lewatPeramban = (catatan = ""): Promise<HasilUnduhAman> =>
+    mulaiUnduhAlir(alamat, opsi).then((h): HasilUnduhAman => {
+      if (!h.ok) return h;
+      const petunjuk = [catatan, jendela.isSecureContext ? "" : PETUNJUK_TANPA_EKSTENSI].filter(Boolean).join(" ");
+      return { ok: true, lewat: "peramban", petunjuk };
+    });
+  // Tanpa ekstensi bingkai dipasang SEKETIKA (tanpa menunggu apa pun) - perilaku lama.
+  if (!ekstensiUnduhAmanTersedia(dokumen)) return lewatPeramban();
+  return unduhLewatEkstensi(alamat, { dokumen, onKabar: opsi.onKabar }).then((h): Promise<HasilUnduhAman> | HasilUnduhAman => {
+    if (h.ok) return { ok: true, lewat: "ekstensi", nama: h.nama, ukuran: h.ukuran, berjalan: h.berjalan };
+    if (h.sebab === "diambil-pengelola") return lewatPeramban(h.pesan);
+    if (h.sebab === "ekstensi") return lewatPeramban(`Jalur ekstensi tidak dapat dipakai (${h.pesan}) - diunduh lewat peramban biasa.`);
+    return { ok: false, sebab: h.sebab, pesan: h.pesan };
   });
 }

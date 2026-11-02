@@ -221,7 +221,7 @@ describe("B. rute GET perkara-saya", () => {
     const r = await jalankan();
     expect(r.status).toBe(200);
     expect(rute.kapabilitas).toEqual(["panel"]);
-    expect(rute.diminta).toEqual([{ dari: "2026-10-15", sampai: "2026-10-15", cari: "", batas: 500 }]);
+    expect(rute.diminta).toEqual([{ dari: "2026-10-15", sampai: "2026-10-15", cari: "", batas: 500, bidang: "ringkas" }]);
     expect(r.isi.data).toMatchObject({ hariIni: "2026-10-15", mode: "hari", lihatSemua: false, adaYangCocok: true, terpotong: false, nama: "Mazidah" });
     expect(r.isi.data.perkara.map((p: any) => p.nomorPerkara)).toEqual(["581/Pdt.G/2026/PA.Dgl"]);
     expect(r.isi.data.akun).toBeNull();

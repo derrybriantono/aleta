@@ -165,6 +165,8 @@ const BERKAS = [
   "blangko-derry-penilai-bukti.js",
   // Rekomendasi putusan (R, 2 Nov 2026): dimuat malas (AletaModul "rekomendasi-putusan") hanya untuk cerai/itsbat/DK; bukan skrip konten manifest.
   "blangko-derry-rekomendasi.js",
+  // Pemisah daftar Pilih blangko (butir 9, 2 Nov 2026): golongan dari nama blangko; murni, sebelum blangko-derry-isian.js.
+  "blangko-derry-golongan.js",
   "blangko-derry-isian.js",
   // Temuan perkara di panel cetak Blangko Derry (G4, 30 Okt 2026): usul pembetulan kehadiran SIPP (satu tombol bagi PP perkara)
   // dan putusan SIPP vs dokumen - mengisi wadah catatan temuan yang sudah ada, dipanggil blangko-derry-isian.js.
@@ -304,6 +306,11 @@ const BERKAS = [
   // chrome.downloads supaya tidak diblokir Chrome di situs http.
   "unduh-universal.js",
   "unduh-halaman.js",
+  // Unduhan aman berkas besar (2 Nov 2026): modul pekerja latar (importScripts dari latar.js) dan dokumen
+  // offscreen yang mengambil rute portal lalu menyerahkan blob:chrome-extension:// ke chrome.downloads.
+  "unduh-aman-latar.js",
+  "unduh-aman.html",
+  "unduh-aman.js",
   // Pekerja latar. Satu-satunya tempat requestUpdateCheck dan reload dapat
   // dipanggil - skrip konten tidak punya keduanya.
   "latar.js",
@@ -331,6 +338,11 @@ const BERKAS = [
   // Disajikan juga sebagai satu berkas .cmd oleh rute /ekstensi/pembaru/pemasang.
   "pembaru/pembaru-aleta.ps1",
   "pembaru/pasang-pembaru-aleta.cmd",
+  // Pemasang sepaket (2 Nov 2026): ekstensi ke %USERPROFILE%\.aleta\ekstensi + Mode Pengembang + pembaru.
+  // Disajikan rute /api/aleta-ecourt/ekstensi?bentuk=pemasang|pencopot; ikut ZIP supaya ZIP yang diekstrak
+  // pun dapat dipasang dengan klik dua kali (pembaru/pasang-aleta.cmd memakai folder di sampingnya).
+  "pembaru/pasang-aleta.cmd",
+  "pembaru/copot-aleta.cmd",
   // Padanan macOS (26 Okt 2026): pembantu bash dan pemasang .command. Hanya DISAJIKAN lewat rute
   // pemasang (?os=mac); TIDAK ikut ZIP/.crx (lihat BERKAS_TANPA_ZIP di ekstensi-paket.ts):
   // pembantu Windows yang sudah terpasang menolak jenis berkas .sh/.command di dalam ZIP.

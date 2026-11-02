@@ -38,6 +38,19 @@ export function bisaDipasang(os: OsPengguna): os is OsPemasang {
   return os === "windows" || os === "mac";
 }
 
+/**
+ * Pemasang sepaket Windows (2 Nov 2026): rute /api/aleta-ecourt/ekstensi?bentuk=pemasang|pencopot.
+ * Ditulis di sini (bukan diimpor dari server) supaya halaman tidak ikut memuat berkas ekstensi yang ditanam;
+ * uji memeriksa keduanya sama dengan nama di pembaru-pemasang.ts.
+ */
+export const NAMA_BERKAS_PAKET_PORTAL = {
+  pemasang: "pasang-aleta.cmd",
+  pencopot: "copot-aleta.cmd",
+} as const;
+
+/** Lokasi pasang tetap yang disebut di halaman (sama dengan pasang-aleta.cmd). */
+export const LOKASI_PASANG_WINDOWS = "%USERPROFILE%\\.aleta\\ekstensi";
+
 export const NAMA_BERKAS_PEMASANG_PORTAL: Record<OsPemasang, string> = {
   windows: "pasang-pembaru-aleta.cmd",
   mac: "pasang-pembaru-aleta.command",

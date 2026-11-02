@@ -801,8 +801,34 @@
     return daftarOpsi.map((x) => `<option value="${esc(x.nilai)}"${String(x.nilai) === String(terpilih) ? " selected" : ""}>${esc(x.label)}</option>`).join("");
   }
 
-  /** Kartu keadaan perkara (satu untuk seluruh perkara): pilihan dari katalog, yang terbaca dari data diberi tanda. */
-  function keadaanHtml(bidang, mati) {
+  /**
+   * Butir 15 (2 Nov sore): kalimat satu baris kotak Keadaan perkara yang terlipat. Keadaan bawaan = bawaan katalog (disusun ke arah
+   * KABUL: tidak ada halangan, saksi menyaksikan sendiri, dsb.) ditimpa yang terbaca dari data perkara, lalu pilihan petugas. Murni.
+   * @param {Array} bidang  dari bidangKeadaan()
+   * @param {{diubah?: number, arah?: string}} [o] diubah = banyaknya keadaan perkara yang dipilih petugas; arah = arah putusan blangko
+   *        ("tolak"/"no"/"" - lihat blangko-derry-saksi-arah.js)
+   */
+  function ringkasKeadaan(bidang, o) {
+    const opsi = o || {};
+    const perkara = daftar(bidang).filter((b) => !b.perSaksi);
+    const data = perkara.filter((b) => b.dariData).length;
+    const diubah = Math.max(0, Number(opsi.diubah) || 0);
+    const arah = opsi.arah === "tolak" ? " (blangko ditolak)" : opsi.arah === "no" ? " (blangko tidak dapat diterima)" : " (arah kabul)";
+    return (
+      `Keadaan perkara: otomatis menurut data perkara${arah}` +
+      (data ? ` · ${data} terbaca dari data perkara` : "") +
+      (diubah ? ` · ${diubah} diubah petugas` : "")
+    );
+  }
+
+  /**
+   * Kartu keadaan perkara (satu untuk seluruh perkara): pilihan dari katalog, yang terbaca dari data diberi tanda.
+   * Butir 15: BAWAAN TERLIPAT - satu baris ringkas (ringkasKeadaan) + "Ubah"; pilihan rinci hanya tampil bila dibuka. Semua <select>
+   * tetap ada di halaman (terlipat hanya disembunyikan) sehingga pilihan, penyimpanan, dan susunan kalimat saksi tidak berubah.
+   * @param {{buka?: boolean, diubah?: number, arah?: string}} [o]
+   */
+  function keadaanHtml(bidang, mati, o) {
+    const opsi = o || {};
     const perkara = bidang.filter((b) => !b.perSaksi);
     if (!perkara.length) return "";
     const isi = perkara
@@ -817,7 +843,12 @@
         return `<label class="bd-sklbl">${esc(b.label)}${tanda}<select data-skkunci="__perkara" data-skfld="kat-keadaan:${esc(b.kunci)}"${mati}>${opsiSelect(b.nilai, b.terpilih[0])}</select></label>`;
       })
       .join("");
-    return `<div class="bd-skkartu bd-skkeadaan" data-skkartu="__perkara"><b class="bd-sknama">Keadaan perkara</b>${isi}</div>`;
+    return (
+      `<div class="bd-skkartu bd-skkeadaan" data-skkartu="__perkara"><details class="bd-skkeadaanlipat"${opsi.buka ? " open" : ""}>` +
+      `<summary data-bd2="lipatkeadaan" title="Keadaan perkara diisi otomatis dari data perkara; buka untuk mengubahnya"><b class="bd-sknama">${esc(ringkasKeadaan(bidang, opsi))}</b>` +
+      `<span class="bd-skubah tutup"> · Ubah</span><span class="bd-skubah buka"> · Lipat</span></summary>` +
+      `<div class="bd-skkeadaanisi">${isi}</div></details></div>`
+    );
   }
 
   /**
@@ -864,7 +895,7 @@
       `<div class="bd-skpanel bd-skkatalog" role="group" aria-label="Pengetahuan saksi" data-katalog="${esc(o.judul)}">` +
       `<div class="bd-skhead"><span class="bd-lbl">Pengetahuan saksi · ${esc(o.judul)}</span><button type="button" class="bd-btn kecil" data-bd2="isioto" data-kunci="${esc(daftar(o.keys).join("|"))}"${mati}>Isi ulang dari data perkara</button></div>` +
       `${typeof o.konfirmasi === "string" ? o.konfirmasi : ""}` +
-      `<div class="bd-skgrid">${keadaanHtml(daftar(o.bidang), mati)}${kartu}</div>${jarang}</div>`
+      `<div class="bd-skgrid">${keadaanHtml(daftar(o.bidang), mati, { buka: o.keadaanBuka === true, diubah: o.keadaanDiubah, arah: o.arah })}${kartu}</div>${jarang}</div>`
     );
   }
 
@@ -1090,5 +1121,7 @@
     pilihanSumberCerita,
     panelHtml,
     panelTanpaHtml,
+    keadaanHtml,
+    ringkasKeadaan,
   });
 });

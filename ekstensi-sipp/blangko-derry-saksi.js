@@ -135,7 +135,8 @@
    * Pilihan bawaan: saksi pertama tahu semuanya, yang lain hanya sebagian (sama dengan borang Susun saksi). 1 Nov: arah
    * Tolak/NO -> "tidak tahu"; saksi Tergugat/Termohon -> "sama" (isinya dari jawaban & duplik). opsi {arah, pihak}.
    */
-  const modusBawaan = (urut, opsi) => (ARAH() ? ARAH().modusBawaan(urut, opsi) : Number(urut) === 0 ? "sama" : "sebagian");
+  // 2 Nov sore (butir 11): bawaan semua saksi "sama" (tahu seluruh alasan, melihat sendiri); arah Tolak diatur blangko-derry-saksi-arah.js.
+  const modusBawaan = (urut, opsi) => (ARAH() ? ARAH().modusBawaan(urut, opsi) : "sama");
 
   /**
    * Pilihan satu saksi yang sudah dibersihkan; nilai di luar daftar jatuh ke bawaan. Saksi Tergugat/Termohon (opsi.pihak "T")

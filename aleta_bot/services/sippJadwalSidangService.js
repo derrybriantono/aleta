@@ -116,8 +116,12 @@ function jamRingkas(nilai) {
  * tetap satu baris. Menyambungnya sebagai baris terpisah akan menggandakan
  * sidang sebanyak jumlah hakimnya - tiga baris untuk satu sidang, dan petugas
  * mengira ada tiga sidang.
+ *
+ * `bidang: "ringkas"` (2 Nov 2026, keluhan "membaca daftar perkara lambat"):
+ * hanya keterangan yang dipakai daftar Perkara Saya (Blangko Derry) - lihat
+ * susunBarisRingkas. Tanpa bidang = jawaban lengkap seperti semula.
  */
-async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } = {}) {
+async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200, bidang = "" } = {}) {
   const mulai = tanggalMysql(dari) || tanggalHariIni();
   const akhir = tanggalMysql(sampai) || mulai;
 
@@ -246,6 +250,9 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
       return {};
     }
   };
+
+  // 2 Nov 2026: jawaban RINGKAS berhenti di sini, SEBELUM kueri pelengkap lain dimulai.
+  if (bidang === BIDANG_RINGKAS) return susunJawabanRingkas({ mulai, akhir, rows, idPerkara, aman, gagal });
 
   /* === 19 Okt: tanggal penetapan hari sidang ikrar (PHS ikrar) cerai talak === */
   // Bahan aturan saran blangko [91] (penetapan kekuatan putusan gugur: Pemohon tidak
@@ -619,6 +626,130 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
       sitaTerbaca: !gagal.has("sita"),
       /* === AKHIR 12OKT-K === */
     })),
+  };
+}
+
+/**
+ * ============================================================================
+ * JAWABAN RINGKAS - DAFTAR PERKARA SAYA (2 Nov 2026)
+ * ============================================================================
+ *
+ * Daftar perkara Blangko Derry (portal: api/aleta-ecourt/perkara-saya) membaca
+ * jadwal per MINGGU - "Semua perkara saya" = 20 potongan - dan dari tiap baris
+ * hanya memakai jadwal, pihak, petugas, putusan, e-Court, dan penanda ghaib/
+ * prodeo. Jawaban lengkap menembakkan seluruh keterangan pelengkap (umur
+ * perkara, panggilan & relaas, sidang berikutnya, kuasa, saksi, mediasi, court
+ * calendar, ikrar, pembebanan, varian putusan dari petitum, kumulasi, sita,
+ * penanda jawaban, putusan e-Court) untuk TIAP potongan, lalu portal
+ * membuangnya.
+ *
+ * Yang ringkas menjalankan kueri utama yang SAMA dan peta yang SAMA untuk ruas
+ * yang dipakai; nilai ruasnya dihitung dengan ungkapan yang sama dengan jawaban
+ * lengkap (diuji setara: daftar-perkara-cepat-2nov). Gagal-terbuka/tertutup
+ * tiap peta juga sama (putusanTerbaca, ecourtTerbaca, penandaProdeoTerbaca).
+ * Peta antrian tidak dibaca (lihat rute) - daftar perkara tidak memakainya.
+ */
+const BIDANG_RINGKAS = "ringkas";
+
+/** Ruas jawaban ringkas - sumber tunggal daftar ruas (dipakai uji kesetaraan). */
+const RUAS_RINGKAS = Object.freeze([
+  "sidangId",
+  "perkaraId",
+  "nomorPerkara",
+  "jenisPerkara",
+  "alurPerkaraId",
+  "jenisPerkaraId",
+  "tanggalSidang",
+  "jamSidang",
+  "agenda",
+  "ruangan",
+  "ditunda",
+  "alasanDitunda",
+  "sidangIkrarTalak",
+  "sidangKeliling",
+  "urutanSidang",
+  "dihadiriOleh",
+  "adaBas",
+  "pihak",
+  "majelisKode",
+  "majelisNama",
+  "paniteraNama",
+  "jurusitaNama",
+  "putusanTerbaca",
+  "sudahPutus",
+  "tanggalPutusan",
+  "statusPutusan",
+  "tanggalMinutasi",
+  "tanggalBht",
+  "verstekPutusan",
+  "amarVerstek",
+  "adaBerkasPutusan",
+  "lewatEcourt",
+  "ecourtTerbaca",
+  "penandaPerkara",
+  "penandaProdeoSumber",
+  "penandaProdeoTerbaca",
+]);
+
+async function susunJawabanRingkas({ mulai, akhir, rows, idPerkara, aman, gagal }) {
+  const [petaPihak, petaPetugas, petaPutusan, petaEcourt, bahanPenanda] = await Promise.all([
+    aman(() => pihakBanyakPerkara(idPerkara)),
+    aman(() => petugasBanyakPerkara(idPerkara)),
+    aman(() => putusanBanyakPerkara(idPerkara), "putusan"),
+    aman(() => ecourtBanyakPerkara(idPerkara), "ecourt"),
+    // Hanya ghaib + prodeo (penanda PERKARA); lencana pekerjaan & izin cerai tidak dibaca.
+    penandaPerkaraPihakService.bahanPenanda(idPerkara, {}, { hanyaPerkara: true }).catch(() => null),
+  ]);
+  const bahanB = bahanPenanda || { ghaib: {}, prodeo: {}, pekerjaan: {}, terbaca: { prodeo: false, pekerjaan: false } };
+  return {
+    dari: mulai,
+    sampai: akhir,
+    diperiksaPada: new Date().toISOString(),
+    ringkas: true,
+    sidang: rows.map((row) => {
+      const id = String(row.perkaraId);
+      const petugas = petaPetugas[id] || {};
+      const putusan = petaPutusan[id] || {};
+      const penanda = penandaPerkaraPihakService.ruasBaris(bahanB, row.perkaraId);
+      return {
+        sidangId: String(row.sidangId || ""),
+        perkaraId: String(row.perkaraId || ""),
+        nomorPerkara: cleanText(row.nomorPerkara),
+        jenisPerkara: cleanText(row.jenisPerkara),
+        alurPerkaraId: Number(row.alurPerkaraId) || 0,
+        jenisPerkaraId: Number(row.jenisPerkaraId) || null,
+        tanggalSidang: isoTanggal(row.tanggalSidang),
+        jamSidang: jamRingkas(row.jamSidang),
+        agenda: cleanText(row.agenda),
+        ruangan: cleanText(row.ruangan),
+        ditunda: cleanText(row.ditunda).toUpperCase() === "Y",
+        alasanDitunda: cleanText(row.alasanDitunda),
+        sidangIkrarTalak: cleanText(row.ikrarTalak).toUpperCase() === "Y",
+        sidangKeliling: cleanText(row.sidangKeliling).toUpperCase() === "Y",
+        urutanSidang: Number(row.urutanSidang) || 0,
+        dihadiriOleh: row.dihadiriOleh === null || row.dihadiriOleh === undefined ? null : Number(row.dihadiriOleh),
+        adaBas: Boolean(cleanText(row.edocBas)),
+        pihak: petaPihak[id] || { penggugat: [], tergugat: [] },
+        majelisKode: petugas.majelisKode || "",
+        majelisNama: petugas.majelisNama || "",
+        paniteraNama: petugas.paniteraNama || "",
+        jurusitaNama: petugas.jurusitaNama || "",
+        putusanTerbaca: !gagal.has("putusan"),
+        sudahPutus: Boolean(putusan.tanggalPutusan),
+        tanggalPutusan: putusan.tanggalPutusan || "",
+        statusPutusan: putusan.statusPutusan || "",
+        tanggalMinutasi: putusan.tanggalMinutasi || "",
+        tanggalBht: putusan.tanggalBht || "",
+        verstekPutusan: Boolean(putusan.verstek),
+        amarVerstek: Boolean(putusan.amarVerstek),
+        adaBerkasPutusan: Boolean(putusan.adaBerkasPutusan),
+        lewatEcourt: Boolean(petaEcourt[id]),
+        ecourtTerbaca: !gagal.has("ecourt"),
+        penandaPerkara: penanda.penandaPerkara,
+        penandaProdeoSumber: penanda.penandaProdeoSumber,
+        penandaProdeoTerbaca: penanda.penandaProdeoTerbaca,
+      };
+    }),
   };
 }
 
@@ -3832,6 +3963,8 @@ module.exports = {
   BATAS_POTONG_MEDIASI_HARI,
   hariMediasiBersih,
   daftarSidang,
+  BIDANG_RINGKAS,
+  RUAS_RINGKAS,
   daftarJadwalMediasi,
   BATAS_MEDIASI_HARI,
   geserHari,

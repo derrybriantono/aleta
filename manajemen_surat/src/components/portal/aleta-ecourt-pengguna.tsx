@@ -44,6 +44,8 @@ import { bolehAksi, tabEcourtTampil, type TabEcourt } from "@/lib/matriks-peran"
 import {
   bisaDipasang,
   deteksiOsPengguna,
+  LOKASI_PASANG_WINDOWS,
+  NAMA_BERKAS_PAKET_PORTAL,
   NAMA_BERKAS_PEMASANG_PORTAL,
   type OsPemasang,
   type OsPengguna,
@@ -208,6 +210,7 @@ export function AletaEcourtPengguna() {
   const [memuat, setMemuat] = useState(true);
   const [mengunduh, setMengunduh] = useState(false);
   const [mengunduhPemasang, setMengunduhPemasang] = useState(false);
+  const [mengunduhPaket, setMengunduhPaket] = useState(false);
   // Sistem komputer petugas, untuk memilih pemasang pembaru otomatis (26 Okt 2026). Server dan hidrasi
   // pertama selalu "windows"; peramban membaca sistemnya tanpa lukisan ganda (useSyncExternalStore).
   const osTerdeteksi: OsPengguna = useSyncExternalStore(
@@ -439,6 +442,42 @@ export function AletaEcourtPengguna() {
       setCatatan(error instanceof Error ? error.message : "Gagal mengunduh pemasang.");
     } finally {
       setMengunduhPemasang(false);
+    }
+  }, []);
+
+  /**
+   * Pemasang sepaket Windows (2 Nov 2026): satu berkas .cmd yang memasang ekstensi ke
+   * %USERPROFILE%\.aleta\ekstensi, menyalakan Mode Pengembang Chrome, dan memasang pembaru
+   * otomatis - atau pencopotnya. Diambil lewat fetch (membawa sesi) seperti unduhan lain.
+   */
+  const unduhPaket = useCallback(async (bentuk: keyof typeof NAMA_BERKAS_PAKET_PORTAL) => {
+    setMengunduhPaket(true);
+    setCatatan("");
+    try {
+      const respons = await fetch(apiPath(`/api/aleta-ecourt/ekstensi?bentuk=${bentuk}`), { cache: "no-store" });
+      if (!respons.ok) {
+        const galat = (await respons.json().catch(() => null)) as { error?: { message?: string } } | null;
+        setCatatan(galat?.error?.message || `Gagal mengunduh (HTTP ${respons.status}).`);
+        return;
+      }
+      const blob = await respons.blob();
+      const alamat = URL.createObjectURL(blob);
+      const tautan = document.createElement("a");
+      tautan.href = alamat;
+      tautan.download = NAMA_BERKAS_PAKET_PORTAL[bentuk];
+      document.body.appendChild(tautan);
+      tautan.click();
+      tautan.remove();
+      URL.revokeObjectURL(alamat);
+      setCatatan(
+        bentuk === "pemasang"
+          ? "Pemasang ALETA terunduh. Bila Chrome bertanya, pilih Simpan (Keep). Lalu klik dua kali berkasnya dan ikuti petunjuk di jendelanya."
+          : "Pencopot ALETA terunduh. Klik dua kali berkasnya; tidak ada yang dihapus tanpa jawaban Y."
+      );
+    } catch (error) {
+      setCatatan(error instanceof Error ? error.message : "Gagal mengunduh.");
+    } finally {
+      setMengunduhPaket(false);
     }
   }, []);
 
@@ -914,7 +953,18 @@ export function AletaEcourtPengguna() {
               melewati penjelasan yang tidak lagi ia perlukan.
               ================================================================ */}
           <div className="flex flex-wrap items-center gap-3">
-            <Button size="sm" disabled={mengunduh} onClick={() => void unduhEkstensi()}>
+            {/* Windows: pemasang sepaket lebih dulu (2 Nov 2026); ZIP tetap tersedia di sebelahnya. */}
+            {osTerdeteksi === "windows" ? (
+              <Button size="sm" disabled={mengunduhPaket} onClick={() => void unduhPaket("pemasang")}>
+                {mengunduhPaket ? "Menyiapkan…" : "Unduh Pemasang ALETA (Windows)"}
+              </Button>
+            ) : null}
+            <Button
+              size="sm"
+              variant={osTerdeteksi === "windows" ? "outline" : "default"}
+              disabled={mengunduh}
+              onClick={() => void unduhEkstensi()}
+            >
               {mengunduh ? "Menyiapkan…" : "Unduh Ekstensi"}
             </Button>
 
@@ -977,8 +1027,9 @@ export function AletaEcourtPengguna() {
             <p className="text-sm font-semibold">Tahap kerjanya — sekali pasang, lalu berjalan sendiri</p>
             <ol className="mt-2 space-y-2 text-sm text-muted-foreground">
               <li>
-                <strong className="text-foreground">1. Pasang di Chrome.</strong> Unduh, ekstrak,
-                lalu Load unpacked. Cukup sekali; langkah rincinya ada di kotak bawah.
+                <strong className="text-foreground">1. Pasang di Chrome.</strong> Di Windows: unduh
+                Pemasang ALETA lalu klik dua kali. Cara lain: unduh ZIP, ekstrak, lalu Load unpacked.
+                Cukup sekali; langkah rincinya ada di kotak bawah.
               </li>
               <li>
                 <strong className="text-foreground">2. Masuk ALETA di peramban yang sama.</strong>{" "}
@@ -1170,8 +1221,60 @@ export function AletaEcourtPengguna() {
             </ul>
           </div>
 
+          {/* ================================================================
+              PEMASANG SEPAKET WINDOWS (2 Nov 2026)
+
+              Satu berkas: ekstensi ke lokasi tetap yang jarang tersentuh,
+              Mode Pengembang, dan pembaru otomatis. Batas Chrome disebut apa
+              adanya: "Load unpacked" tetap satu klik petugas, sekali saja.
+              ================================================================ */}
+          <div className="rounded border border-border bg-muted/30 p-3" data-kotak="pemasang-paket">
+            <p className="text-sm font-medium">Pemasang ALETA sepaket (Windows, disarankan)</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Satu berkas <code className="rounded bg-background px-1">{NAMA_BERKAS_PAKET_PORTAL.pemasang}</code>, tanpa
+              hak admin. Ekstensi dipasang di{" "}
+              <code className="rounded bg-background px-1">{LOKASI_PASANG_WINDOWS}</code> - folder tersembunyi di profil
+              Windows, sehingga tidak ikut terhapus saat membersihkan Unduhan atau Desktop. Lokasinya tetap: menjalankan
+              pemasang lagi hanya memperbarui isinya, setelan Anda tidak berubah.
+            </p>
+            <ol className="mt-2 space-y-1 text-sm text-muted-foreground">
+              <li>
+                1. Tekan <strong className="text-foreground">Unduh Pemasang ALETA</strong>; bila Chrome bertanya, pilih
+                Simpan (Keep)
+              </li>
+              <li>
+                2. Klik dua kali berkasnya. Pemasang mengambil ekstensi dari server ini, menyalakan{" "}
+                <strong className="text-foreground">Mode Pengembang</strong> Chrome (Anda diminta menutup Chrome
+                sebentar), dan memasang <strong className="text-foreground">pembaruan otomatis</strong>
+              </li>
+              <li>
+                3. Sekali saja: di <code className="rounded bg-background px-1">chrome://extensions</code> yang dibuka
+                pemasang, klik <strong className="text-foreground">Muat yang belum dibuka (Load unpacked)</strong>, tekan
+                Ctrl+V di bilah alamat jendela pilih folder (alamatnya sudah disalin), Enter, lalu Pilih Folder
+              </li>
+            </ol>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Langkah 3 tidak dapat diotomatiskan: Chrome tidak mengizinkan program lain memuat ekstensi di luar Chrome
+              Web Store tanpa tindakan pengguna. Bila Chrome sudah memuat folder itu, pemasang melewatinya. Catatan kerja
+              ada di <code className="rounded bg-background px-1">%USERPROFILE%\.aleta\pasang.log</code>.
+            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+              <Button size="sm" variant="outline" disabled={mengunduhPaket} onClick={() => void unduhPaket("pemasang")}>
+                {mengunduhPaket ? "Menyiapkan…" : "Unduh Pemasang ALETA"}
+              </Button>
+              <button
+                type="button"
+                className="text-xs underline underline-offset-2"
+                disabled={mengunduhPaket}
+                onClick={() => void unduhPaket("pencopot")}
+              >
+                Unduh pencopot ({NAMA_BERKAS_PAKET_PORTAL.pencopot})
+              </button>
+            </div>
+          </div>
+
           <div className="rounded border border-border bg-muted/30 p-3">
-            <p className="text-sm font-medium">Cara memasang</p>
+            <p className="text-sm font-medium">Cara memasang manual (ZIP)</p>
             <ol className="mt-2 space-y-1.5 text-sm text-muted-foreground">
               <li>
                 1. Unduh, lalu <strong className="text-foreground">Extract All</strong> berkas ZIP-nya

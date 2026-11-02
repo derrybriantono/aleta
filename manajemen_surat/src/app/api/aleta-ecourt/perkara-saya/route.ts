@@ -15,6 +15,7 @@ import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
 
 import {
+  jalankanBerbatas,
   peranDerryValid,
   potongRentang,
   susunPerkaraSaya,
@@ -28,7 +29,7 @@ export const dynamic = "force-dynamic";
 
 /** Bot menyerahkan paling banyak 500 baris per permintaan (sippJadwalSidangService). */
 const BATAS_BARIS_BOT = 500;
-/** Berapa potongan minggu dibaca bersamaan - bot dan basis data SIPP tidak dikeroyok. */
+/** Berapa potongan minggu dibaca bersamaan (paling banyak) - bot dan basis data SIPP tidak dikeroyok. */
 const SERENTAK = 4;
 
 /**
@@ -112,29 +113,38 @@ export async function GET(request: NextRequest) {
     const semuaSatkerPtsp = ptsp && (massal === "ptsp" || sidangPertama) && nomorCari === "";
     const cariNomorSatker = ptsp && (nomorCari !== "" || !punyaPeranPerkara || semuaSatkerPtsp);
 
+    // 2 Nov 2026 (keluhan "membaca daftar perkara lambat"): bacaan Postgres yang tidak bergantung pada jadwal dimulai BERSAMAAN
+    // dengan jadwal (sebelumnya sesudahnya, berurutan); gagalnya tetap seperti semula (bacaTidakAktif gagal-terbuka sendiri).
+    // Pemilih "Lihat sebagai" (admin saja): orang mutasi/nonaktif tidak ditawarkan; gagal-terbuka bila sumbernya tak terbaca.
+    const janjiTidakAktif = admin ? bacaTidakAktif(db) : Promise.resolve(undefined);
+    // Tolakan yang belum ditunggu (jalur 502 di bawah keluar lebih dulu) tidak boleh menjadi "unhandled rejection".
+    janjiTidakAktif.catch(() => undefined);
+
+    // Jadwal RINGKAS: hanya keterangan yang dipakai susunPerkaraSaya (bot: susunJawabanRingkas) - jauh lebih sedikit kueri SIPP
+    // per potongan. Potongan dibaca dengan paling banyak SERENTAK yang berjalan bersamaan, tanpa menunggu gelombang.
     const potongan = potongRentang(rentang.dari, rentang.sampai);
+    const jawaban = await jalankanBerbatas(
+      potongan,
+      SERENTAK,
+      (p) => getGatewayJadwalSidangSinggah({ dari: p.dari, sampai: p.sampai, cari: "", batas: BATAS_BARIS_BOT, bidang: "ringkas" }),
+      (j) => !j.ok
+    );
     const baris: BarisSidangSaya[] = [];
     let terpotong = false;
-    for (let i = 0; i < potongan.length; i += SERENTAK) {
-      const kelompok = potongan.slice(i, i + SERENTAK);
-      const jawaban = await Promise.all(
-        kelompok.map((p) => getGatewayJadwalSidangSinggah({ dari: p.dari, sampai: p.sampai, cari: "", batas: BATAS_BARIS_BOT }))
-      );
-      for (const j of jawaban) {
-        if (!j.ok) {
-          return Response.json(
-            { ok: false, alasan: j.error || "Jadwal sidang belum dapat dibaca dari ALETA Bot." },
-            { status: 502 }
-          );
-        }
-        const sidang = (Array.isArray(j.data?.sidang) ? j.data.sidang : []) as unknown as BarisSidangSaya[];
-        if (sidang.length >= BATAS_BARIS_BOT) terpotong = true;
-        baris.push(...sidang);
+    // Satu potongan yang gagal (atau tidak terbaca karena dihentikan) membuat seluruh jawaban 502 - daftar separuh tidak dikirim.
+    for (const j of jawaban) {
+      if (!j || !j.ok) {
+        return Response.json(
+          { ok: false, alasan: (j && j.error) || "Jadwal sidang belum dapat dibaca dari ALETA Bot." },
+          { status: 502 }
+        );
       }
+      const sidang = (Array.isArray(j.data?.sidang) ? j.data.sidang : []) as unknown as BarisSidangSaya[];
+      if (sidang.length >= BATAS_BARIS_BOT) terpotong = true;
+      baris.push(...sidang);
     }
 
-    // Pemilih "Lihat sebagai" (admin saja): orang mutasi/nonaktif tidak ditawarkan; gagal-terbuka bila sumbernya tak terbaca.
-    const tidakAktif = admin ? await bacaTidakAktif(db) : undefined;
+    const tidakAktif = await janjiTidakAktif;
     const hasil = susunPerkaraSaya(baris, {
       hariIni,
       nama: String(actor?.name || ""),

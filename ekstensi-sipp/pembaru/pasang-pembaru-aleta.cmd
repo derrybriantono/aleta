@@ -11,7 +11,7 @@ set "ALETA_ARG=%*"
 "%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -Command "$t=[IO.File]::ReadAllText($env:ALETA_CMD,[Text.Encoding]::UTF8); $i=$t.IndexOf('#PS'+'-MULAI'); & ([ScriptBlock]::Create($t.Substring($i)))"
 set "SANDI=%errorlevel%"
 echo.
-pause
+if not defined ALETA_TANPA_JEDA pause
 exit /b %SANDI%
 #PS-MULAI
 $ErrorActionPreference = 'Stop'
@@ -25,6 +25,12 @@ $IsiHost = @'
 '@
 
 $ASAL_BAWAAN = @('http://192.168.10.10/aleta', 'http://192.168.10.10:8008/aleta')
+# Dijalankan oleh pemasang sepaket (pasang-aleta.cmd, 2 Nov 2026): folder ekstensi sudah pasti
+# (%USERPROFILE%\.aleta\ekstensi) dan ID-nya dihitung pemasang, sebab ekstensinya mungkin belum
+# dimuat Chrome. Nilai bawaan dari portal (token di atas) tetap didahulukan bila terisi.
+$FolderDiminta = [string]$env:ALETA_PEMBARU_FOLDER
+$IdTambahan = @(([string]$env:ALETA_PEMBARU_ID).Split(',') | ForEach-Object { $_.Trim() } | Where-Object { $_ -match '^[a-p]{32}$' })
+if ($AsalPortal.StartsWith('@@') -and $env:ALETA_PEMBARU_ASAL) { $AsalPortal = [string]$env:ALETA_PEMBARU_ASAL }
 $RUMAH = if ($env:ALETA_PEMBARU_RUMAH) { $env:ALETA_PEMBARU_RUMAH } else { Join-Path $env:LOCALAPPDATA 'ALETA\pembaru' }
 $DASAR_REG = if ($env:ALETA_PEMBARU_REG) { $env:ALETA_PEMBARU_REG } else { 'HKCU:\Software' }
 $Cabut = ([string]$env:ALETA_ARG) -match '(?i)(^|\s)[/-]cabut'
@@ -109,7 +115,16 @@ if ($IdDiminta -and -not $IdDiminta.StartsWith('@@')) {
 }
 $folderPilihan = ''
 $daftarFolder = @($temu | ForEach-Object { $_.Folder.TrimEnd('\') } | Sort-Object -Unique)
-if ($daftarFolder.Count -eq 1) {
+if ($FolderDiminta) {
+    $penuhDiminta = [IO.Path]::GetFullPath($FolderDiminta).TrimEnd('\')
+    $mfDiminta = $null
+    try { $mfDiminta = [IO.File]::ReadAllText((Join-Path $penuhDiminta 'manifest.json')) | ConvertFrom-Json } catch { }
+    if ($null -eq $mfDiminta -or $mfDiminta.name -ne $NAMA_MANIFEST) {
+        Tulis ('Folder ini bukan ekstensi ALETA: ' + $penuhDiminta)
+        exit 1
+    }
+    $folderPilihan = $penuhDiminta
+} elseif ($daftarFolder.Count -eq 1) {
     $folderPilihan = $daftarFolder[0]
 } elseif ($daftarFolder.Count -gt 1) {
     Tulis 'Ditemukan beberapa salinan ekstensi ALETA:'
@@ -125,6 +140,11 @@ if (-not $folderPilihan) {
 }
 $idFolder = @($temu | Where-Object { $_.Folder.TrimEnd('\') -eq $folderPilihan } | ForEach-Object { $_.Id } | Sort-Object -Unique)
 if ($IdDiminta -and -not $IdDiminta.StartsWith('@@') -and ($idFolder -notcontains $IdDiminta)) { $idFolder += $IdDiminta }
+foreach ($x in $IdTambahan) { if ($idFolder -notcontains $x) { $idFolder += $x } }
+if ($idFolder.Count -eq 0) {
+    Tulis 'ID ekstensi ALETA belum diketahui. Muat dulu ekstensinya di Chrome, lalu jalankan ulang berkas ini.'
+    exit 1
+}
 Tulis ('Folder ekstensi : ' + $folderPilihan)
 
 # ---------------------------------------------------------------------------

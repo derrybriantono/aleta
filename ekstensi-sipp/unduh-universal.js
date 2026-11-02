@@ -44,10 +44,24 @@
  * bawaan ABT untuk blangko lain TIDAK disentuh sama sekali.
  *
  * ----------------------------------------------------------------------------
+ * JALUR AMAN BERKAS BESAR (2 Nov 2026) - unduhAman()
+ * ----------------------------------------------------------------------------
+ * Pekerja latar menyuruh dokumen offscreen ekstensi (unduh-aman.html) mengambil
+ * alamat GET itu sendiri lalu menyimpannya dari blob:chrome-extension:// -
+ * badan berkas tidak lewat pesan, jadi tanpa batas 40 MB dan tanpa fetch di
+ * tab yang dapat dipotong IDM. Dipakai untuk:
+ *   - portal: jembatan aleta.js (tombol ZIP perkara, ekspor), tautan unduhan
+ *     http di lapis 1, dan ulangan lapis 2 atas GET yang ditahan;
+ *   - SIPP/ABT: GET yang ternyata > 40 MB (dulu ditolak dan dibiarkan asli).
+ * Gagal karena ekstensinya (Chrome lama, pekerja latar tak menjawab) -> jalur
+ * lama di bawah tetap dipakai. Kabar mulai/kemajuan/selesai/gagal datang dari
+ * pekerja latar sebagai pesan "unduh-aman-kabar".
+ *
+ * ----------------------------------------------------------------------------
  * BATAS
  * ----------------------------------------------------------------------------
  *   - Berkas > 40 MB tidak diterbitkan lewat data: (batas pesan ke pekerja latar)
- *     - dibiarkan asli, dicatat.
+ *     - GET dialihkan ke jalur aman di atas; POST dibiarkan asli, dicatat.
  *   - Hanya bingkai utama; unduhan dari <iframe> tidak dicegat di muka, hanya
  *     lewat cadangan bila tab induknya yang terjangkau.
  *   - Penjaga tanda (penjaga-tanda.js) tetap berlaku pada fetch POST ulangan.
@@ -214,6 +228,129 @@
   }
 
   // --------------------------------------------------------------------------
+  // Jalur aman berkas besar: dokumen offscreen ekstensi mengambil, chrome.downloads menyimpan
+  // --------------------------------------------------------------------------
+  const tugasAman = new Map();
+  let nomorTugasAman = 0;
+  /** Pekerja latar wajib menjawab "diterima" secepat ini; bila tidak, jalur lama dipakai. */
+  const BATAS_TERIMA_AMAN_MS = 10000;
+  /** Sesudah diterima: tanpa kabar apa pun selama ini dianggap putus (ekstensi sendiri berbatas 180 dtk + 120 dtk). */
+  const BATAS_SENYAP_AMAN_MS = 6 * 60 * 1000;
+
+  function runtimeHidup() {
+    try {
+      return typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.id ? chrome.runtime : null;
+    } catch {
+      return null; // "Extension context invalidated"
+    }
+  }
+
+  /**
+   * Mengunduh alamat GET http(s) asal halaman ini lewat jalur aman.
+   * @param {string} alamat
+   * @param {{ nama?: string, kabar?: (k: {tahap:string, diterima?:number, ukuran?:number}) => void }} [opsi]
+   * @returns {Promise<{ok:boolean, nama?:string, ukuran?:number, berjalan?:boolean, pesan?:string,
+   *   galatServer?:boolean, status?:number, ditolakEkstensi?:boolean, diambilPengelola?:boolean}>}
+   */
+  function unduhAman(alamat, opsi) {
+    const o = opsi || {};
+    return new Promise((selesai) => {
+      const runtime = runtimeHidup();
+      if (!runtime) {
+        selesai({ ok: false, ditolakEkstensi: true, pesan: "ekstensi baru dimuat ulang - muat ulang halaman ini" });
+        return;
+      }
+      nomorTugasAman += 1;
+      const idTugas = `t${Date.now().toString(36)}-${nomorTugasAman}`;
+      let usai = false;
+      let henti = 0;
+      const akhiri = (h) => {
+        if (usai) return;
+        usai = true;
+        clearTimeout(henti);
+        tugasAman.delete(idTugas);
+        selesai(h);
+      };
+      const jaga = (ms, hasil) => {
+        clearTimeout(henti);
+        henti = setTimeout(() => akhiri(hasil), ms);
+      };
+      const putus = {
+        ok: false,
+        pesan: "ekstensi berhenti mengabarkan unduhan (pekerja latar dimatikan Chrome?) - periksa bilah unduhan, lalu ulangi bila belum ada",
+      };
+      jaga(BATAS_TERIMA_AMAN_MS, { ok: false, ditolakEkstensi: true, pesan: "pekerja latar ekstensi tidak menjawab" });
+      tugasAman.set(idTugas, {
+        akhiri,
+        sudahKabar: false,
+        kabar: (k) => {
+          const t = tugasAman.get(idTugas);
+          // Jawaban "diterima" bisa tiba SESUDAH kabar "mulai" dari dokumen offscreen - jangan mundur.
+          if (k.tahap === "diterima" && t && t.sudahKabar) return;
+          if (t) t.sudahKabar = true;
+          jaga(BATAS_SENYAP_AMAN_MS, putus);
+          if (typeof o.kabar === "function") {
+            try {
+              o.kabar(k);
+            } catch {
+              /* kabar hanya tampilan */
+            }
+          }
+        },
+      });
+      try {
+        runtime.sendMessage({ sumber: "aleta-panel", jenis: "unduh-aman-mulai", alamat, nama: String(o.nama || ""), idTugas }, (j) => {
+          let galat = null;
+          try {
+            galat = chrome.runtime.lastError || null;
+          } catch (e) {
+            galat = e;
+          }
+          if (galat || !j || j.ok !== true) {
+            akhiri({ ok: false, ditolakEkstensi: true, pesan: String((galat && galat.message) || (j && j.pesan) || "pekerja latar menolak").slice(0, 200) });
+            return;
+          }
+          const t = tugasAman.get(idTugas);
+          if (t) t.kabar({ tahap: "diterima", diterima: 0, ukuran: 0 });
+        });
+      } catch (g) {
+        akhiri({ ok: false, ditolakEkstensi: true, pesan: String((g && g.message) || g).slice(0, 200) });
+      }
+    });
+  }
+
+  /** Pesan "unduh-aman-kabar" dari pekerja latar. */
+  function terimaKabarAman(p) {
+    const t = tugasAman.get(String(p.idTugas || ""));
+    if (!t) return;
+    if (p.tahap === "selesai" || p.tahap === "gagal") {
+      t.akhiri({
+        ok: p.tahap === "selesai" && p.ok !== false,
+        nama: p.nama ? String(p.nama) : undefined,
+        ukuran: Number(p.ukuran) || 0,
+        berjalan: p.berjalan === true,
+        pesan: p.pesan ? String(p.pesan) : undefined,
+        galatServer: p.galatServer === true,
+        status: Number(p.status) || 0,
+        diambilPengelola: p.diambilPengelola === true,
+      });
+      return;
+    }
+    t.kabar({ tahap: String(p.tahap || "kemajuan"), diterima: Number(p.diterima) || 0, ukuran: Number(p.ukuran) || 0 });
+  }
+
+  function bolehJalurAman(alamat, metode) {
+    return String(metode || "GET").toUpperCase() === "GET" && /^https?:/i.test(String(alamat || ""));
+  }
+
+  async function lewatJalurAman(o) {
+    const h = await unduhAman(o.alamat, { nama: o.namaAtribut || o.petunjuk || "" });
+    return h.ok
+      ? { ok: true, lewat: "unduh-aman", nama: h.nama }
+      : { ok: false, pesan: `jalur aman: ${h.pesan || "gagal"}`, galatServer: h.galatServer === true };
+  }
+
+  // --------------------------------------------------------------------------
   // Mengambil lalu menerbitkan lewat jalur aman
   // --------------------------------------------------------------------------
   /**
@@ -234,6 +371,16 @@
     }
     if (!respons.ok) return { ok: false, pesan: `HTTP ${respons.status}` };
     const tipe = String((respons.headers && respons.headers.get("content-type")) || "");
+    const panjang = Number((respons.headers && respons.headers.get("content-length")) || 0) || 0;
+    if (panjang > BATAS_BAJT && bolehJalurAman(o.alamat, o.metode)) {
+      // Terlalu besar untuk data:: badannya tidak dibaca di tab, ekstensi yang mengambil.
+      try {
+        if (respons.body && typeof respons.body.cancel === "function") void respons.body.cancel().catch(() => {});
+      } catch {
+        /* dibiarkan */
+      }
+      return lewatJalurAman(o);
+    }
     // Alamat yang di-GET ulang padahal dulu POST (atau sebaliknya) menjawab
     // halaman web: itu BUKAN berkasnya, jangan disimpan sebagai berkas.
     if (o.tolakHtml && /text\/html/i.test(tipe) && !/html/i.test(String(o.mime || ""))) {
@@ -241,7 +388,10 @@
     }
     const blob = await respons.blob();
     if (!blob || blob.size === 0) return { ok: false, pesan: "berkas kosong / diambil pengelola unduhan lain" };
-    if (blob.size > BATAS_BAJT) return { ok: false, pesan: `berkas ${blob.size} bita melebihi batas ${BATAS_BAJT}` };
+    if (blob.size > BATAS_BAJT) {
+      if (bolehJalurAman(o.alamat, o.metode)) return lewatJalurAman(o);
+      return { ok: false, pesan: `berkas ${blob.size} bita melebihi batas ${BATAS_BAJT}` };
+    }
     const tipeBlob = blob.type || tipe.split(";")[0];
     const nama = pilihNama(
       [
@@ -289,6 +439,17 @@
 
   async function tanganiTautan(href, namaAtribut, elemen) {
     let hasil;
+    if (jenisHalaman() === "portal" && bolehJalurAman(href)) {
+      // Portal: berkas apa pun (ZIP, ekspor XLSX/CSV/PDF) diambil ekstensi - tanpa batas 40 MB.
+      const aman = await unduhAman(href, { nama: namaAtribut });
+      if (aman.ok) return { ok: true, lewat: "unduh-aman", nama: aman.nama };
+      catat("unduh-universal-gagal", `jalur aman: ${aman.pesan}`, href.slice(0, 120));
+      if (aman.galatServer) {
+        // Server menolak: mengambil ulang di tab hanya menghasilkan penolakan yang sama.
+        jalankanAsli(href, namaAtribut, elemen);
+        return aman;
+      }
+    }
     try {
       hasil = await ambilDanUnduh({ alamat: href, namaAtribut });
     } catch (g) {
@@ -511,6 +672,13 @@
       if (!hasilPost.ok) catat("unduh-universal-ulang-gagal", `ulangan unduhan terblokir gagal: ${hasilPost.pesan}`, sasaran.slice(0, 120));
       return hasilPost;
     }
+    if (jenisHalaman() === "portal" && bolehJalurAman(sasaran)) {
+      // GET portal yang ditahan (mis. bingkai unduhan ZIP): diambil ulang oleh ekstensi, tanpa batas 40 MB.
+      const aman = await unduhAman(sasaran, { nama: dasar.petunjuk });
+      if (aman.ok) return { ok: true, lewat: "unduh-aman", nama: aman.nama };
+      catat("unduh-universal-ulang-gagal", `jalur aman: ${aman.pesan}`, sasaran.slice(0, 120));
+      if (aman.galatServer) return { ok: false, pesan: aman.pesan };
+    }
     const hasil = await ambilDanUnduh(dasar);
     if (!hasil.ok) catat("unduh-universal-ulang-gagal", `ulangan unduhan terblokir gagal: ${hasil.pesan}`, sasaran.slice(0, 120));
     return hasil;
@@ -519,6 +687,10 @@
   try {
     if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.onMessage) {
       chrome.runtime.onMessage.addListener((p, _pengirim, jawab) => {
+        if (p && p.sumber === "aleta-latar" && p.jenis === "unduh-aman-kabar") {
+          terimaKabarAman(p);
+          return undefined;
+        }
         if (!p || p.sumber !== "aleta-latar" || p.jenis !== "unduh-ulang") return undefined;
         ulangiUnduhan(p).then(jawab, (g) => jawab({ ok: false, pesan: String((g && g.message) || g).slice(0, 160) }));
         return true;
@@ -535,6 +707,7 @@
 
   globalThis.aletaUnduhUniversal = {
     ambilDanUnduh,
+    unduhAman,
     ulangiUnduhan,
     layakDialihkan,
     namaDariDisposisi,

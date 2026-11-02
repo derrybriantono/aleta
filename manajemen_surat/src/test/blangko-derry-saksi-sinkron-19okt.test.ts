@@ -557,7 +557,9 @@ describe("Blangko Derry: jawaban saksi otomatis dan pilihan pengetahuan saksi", 
     const h = bukaPP();
     pasangPotonganAbt(h);
     await bukaSaksiDanMuat(h);
-    // Panel: satu kartu per saksi, daftar & urutan sama dengan abt.js; bawaan sama persis dengan Susun saksi (pertama "sama", lainnya "sebagian").
+    // Panel: satu kartu per saksi, daftar & urutan sama dengan abt.js.
+    // 2 Nov 2026 (butir 11, keputusan pengguna): bawaan saksi II di panel Blangko Derry kini "sama" (tahu seluruh alasan, melihat
+    // sendiri); dulu "sebagian" seperti Susun saksi panel ABT lama (abt-panel-blangko.js dibekukan uji K11, tidak diubah).
     expect(qq(h, "[data-skkartu]").map((k) => k.getAttribute("data-skkartu"))).toEqual(["saksi 1 p", "saksi 2 p"]);
     const modus = (k: string) => q(h, `[data-skkunci="${k}"][data-skfld="modus"]`) as HTMLSelectElement;
     const mod = require_("../../ekstensi-sipp/blangko-derry-saksi.js");
@@ -565,7 +567,7 @@ describe("Blangko Derry: jawaban saksi otomatis dan pilihan pengetahuan saksi", 
       expect(Array.from(modus(k).options).map((o) => [o.value, o.textContent])).toEqual(mod.DAFTAR_MODUS);
     }
     expect(modus("saksi 1 p").value).toBe("sama");
-    expect(modus("saksi 2 p").value).toBe("sebagian");
+    expect(modus("saksi 2 p").value).toBe("sama");
     // Panel berada DI ATAS tabel jawaban.
     const panel = q(h, ".bd-skpanel")!;
     expect(panel.compareDocumentPosition(q(h, ".bd-sblist")!) & 4).toBeTruthy();
@@ -574,7 +576,7 @@ describe("Blangko Derry: jawaban saksi otomatis dan pilihan pengetahuan saksi", 
     const m = usulanMinta[0];
     expect(m.sumber).toBe("saksi-sdg");
     expect([m.nomorPerkara, m.jenisPerkara, m.alur, m.pelaku, m.lawan]).toEqual(["581/Pdt.G/2026/PA.Dgl", "347", "15", "Tergugat", "Penggugat"]);
-    expect(m.saksi.map((s: { pihak: string; ke: number; modus: string }) => [s.pihak, s.ke, s.modus])).toEqual([["P", 1, "sama"], ["P", 2, "sebagian"]]);
+    expect(m.saksi.map((s: { pihak: string; ke: number; modus: string }) => [s.pihak, s.ke, s.modus])).toEqual([["P", 1, "sama"], ["P", 2, "sama"]]);
     expect(m.saksi[0].sumberNama).toBe("Penggugat");
     expect(m.templat.length).toBeGreaterThanOrEqual(15);
     expect(m.templat.some((b: { jawab: string }) => /\.{3,}/.test(b.jawab))).toBe(true);

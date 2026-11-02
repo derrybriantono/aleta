@@ -3103,6 +3103,16 @@ const JEMBATAN_JENIS_RELAAS = [
  * PERNAH memuat password - hanya { ok, sebab }.
  */
 const JEMBATAN_JENIS_MASUK = ["masuk-titip", "masuk-lupakan"];
+/**
+ * Unduhan aman (2 Nov 2026): tombol unduh portal (ZIP perkara, ekspor) meminta
+ * EKSTENSI mengambil dan menyimpan berkasnya - asal chrome-extension://, jadi
+ * Chrome tidak menahannya sebagai "Insecure download blocked". Jembatan hanya
+ * menerima alamat seasal halaman ini; pekerjaannya di unduh-universal.js
+ * (unduhAman) dan unduh-aman-latar.js. Selama berjalan, kabar
+ * {sumber:"aleta-ekstensi", kabar:idPesan, tahap, diterima, ukuran} dikirim ke
+ * halaman; jawaban akhirnya balasan biasa.
+ */
+const JEMBATAN_JENIS_UNDUH = "unduh-berkas";
 const JEMBATAN_ID_MAKS = 64;
 const JEMBATAN_DOKUMEN_MAKS = 500;
 const KALIMAT_EKSTENSI_DIMUAT_ULANG =
@@ -3222,6 +3232,54 @@ function jembatanTeruskan(pesan, balas) {
   }
 }
 
+function jembatanUnduhBerkas(data, balas) {
+  const m = data.muatan && typeof data.muatan === "object" ? data.muatan : {};
+  let alamat = "";
+  try {
+    const u = new URL(jembatanTeks(m.alamat, 2000), location.href);
+    if (u.origin === location.origin && (u.protocol === "http:" || u.protocol === "https:")) alamat = u.href;
+  } catch {
+    alamat = "";
+  }
+  if (!alamat) {
+    balas({ ok: false, sebab: "alamat unduhan bukan milik portal ini" });
+    return;
+  }
+  const universal = globalThis.aletaUnduhUniversal;
+  if (!universal || typeof universal.unduhAman !== "function") {
+    balas({ ok: false, ditolakEkstensi: true, sebab: "modul unduhan ekstensi belum termuat - muat ulang halaman ini" });
+    return;
+  }
+  const idPesan = data.idPesan;
+  const kabar = (k) => {
+    window.postMessage(
+      {
+        sumber: JEMBATAN_SUMBER_EKSTENSI,
+        kabar: idPesan,
+        tahap: String((k && k.tahap) || "kemajuan"),
+        diterima: Number(k && k.diterima) || 0,
+        ukuran: Number(k && k.ukuran) || 0,
+      },
+      location.origin
+    );
+  };
+  universal.unduhAman(alamat, { nama: jembatanTeks(m.nama, 200), kabar }).then(
+    (h) =>
+      balas({
+        ok: Boolean(h && h.ok === true),
+        nama: h && h.nama ? String(h.nama) : undefined,
+        ukuran: Number(h && h.ukuran) || 0,
+        berjalan: Boolean(h && h.berjalan),
+        sebab: h && h.pesan ? String(h.pesan).slice(0, 400) : undefined,
+        galatServer: Boolean(h && h.galatServer),
+        status: Number(h && h.status) || 0,
+        ditolakEkstensi: Boolean(h && h.ditolakEkstensi),
+        diambilPengelola: Boolean(h && h.diambilPengelola),
+      }),
+    (g) => balas({ ok: false, ditolakEkstensi: true, sebab: String((g && g.message) || g).slice(0, 200) })
+  );
+}
+
 function jembatanTerimaPesan(e) {
   if (e.source !== window || e.origin !== location.origin) return;
   const data = e.data;
@@ -3250,6 +3308,10 @@ function jembatanTerimaPesan(e) {
     );
     return;
   }
+  if (data.jenis === JEMBATAN_JENIS_UNDUH) {
+    jembatanUnduhBerkas(data, balas);
+    return;
+  }
   if (!JEMBATAN_JENIS_RELAAS.includes(data.jenis)) {
     balas({ ok: false, sebab: `jenis pesan "${String(data.jenis).slice(0, 40)}" tidak diterima jembatan relaas` });
     return;
@@ -3276,6 +3338,8 @@ function pasangJembatanRelaas() {
   akar.dataset.aletaRelaas = "1";
   // Layar masuk portal membaca ini sebelum menitipkan password SIPP.
   akar.dataset.aletaMasukSipp = "1";
+  // Tombol unduh portal membaca ini: ada -> berkas diambil & disimpan ekstensi (jembatanUnduhBerkas).
+  akar.dataset.aletaUnduhAman = "1";
   window.addEventListener("message", jembatanTerimaPesan);
   window.postMessage({ sumber: JEMBATAN_SUMBER_EKSTENSI, jenis: "siap", versi }, location.origin);
 }

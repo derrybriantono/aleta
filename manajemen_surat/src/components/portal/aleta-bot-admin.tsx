@@ -87,6 +87,7 @@ import {
 } from "@/components/portal/kosakata-pemeriksa-pesan";
 import { lintTemplateBody, summarizeWarnings } from "@/lib/aleta-bot-message-linter";
 import { apiPath } from "@/lib/base-path";
+import { unduhBerkasPortal } from "@/lib/unduh-ekstensi";
 import { usePortal } from "@/lib/app-state";
 import { getEffectiveRoleId } from "@/lib/permissions";
 import { formatDateTime } from "@/lib/format";
@@ -3151,11 +3152,16 @@ export function AletaBotAdminPanel() {
   const exportPolicySkipCsv = () => {
     const params = new URLSearchParams({ format: "csv" });
     if (policySkipReasonFilter !== "all") params.set("reason", policySkipReasonFilter);
-    window.location.href = apiPath(`/api/admin/aleta-bot/policy-skip-report?${params.toString()}`);
+    void unduhBerkasPortal(apiPath(`/api/admin/aleta-bot/policy-skip-report?${params.toString()}`), {
+      caraLama: "halaman-ini",
+      onGalat: (pesan) => notifyError("Ekspor Gagal", pesan),
+    });
   };
 
   const exportPilotReadinessCsv = () => {
-    window.open(apiPath("/api/admin/aleta-bot/pilot-readiness?format=csv"), "_blank", "noopener,noreferrer");
+    void unduhBerkasPortal(apiPath("/api/admin/aleta-bot/pilot-readiness?format=csv"), {
+      onGalat: (pesan) => notifyError("Ekspor Gagal", pesan),
+    });
   };
 
   const runOperationalSmokeTest = async () => {
@@ -3239,7 +3245,9 @@ export function AletaBotAdminPanel() {
     } else if (publicQaReviewFilter !== "all") {
       params.set("reviewStatus", publicQaReviewFilter);
     }
-    window.open(apiPath(`/api/admin/aleta-bot/public-qa?${params.toString()}`), "_blank", "noopener,noreferrer");
+    void unduhBerkasPortal(apiPath(`/api/admin/aleta-bot/public-qa?${params.toString()}`), {
+      onGalat: (pesan) => notifyError("Ekspor Gagal", pesan),
+    });
   };
 
   const previewNotificationRecipients = async (notification: AletaBotNotification) => {

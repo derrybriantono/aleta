@@ -149,8 +149,11 @@ async function pekerjaanPihakBanyakPerkara(daftarPerkaraId, deps = {}) {
  * apa pun dari ketiadaan lencana).
  *
  * @returns {Promise<{ghaib: Object, prodeo: Object, pekerjaan: Object, izinCerai: Object, terbaca: {prodeo: boolean, pekerjaan: boolean, izinCerai: boolean}}>}
+ *
+ * opsi.hanyaPerkara (2 Nov 2026): hanya penanda PERKARA (ghaib, prodeo) - lencana pekerjaan dan izin cerai
+ * tidak dibaca dan ditandai tidak terbaca (bukan "tidak ada"). Dipakai jawaban jadwal ringkas (daftar Perkara Saya).
  */
-async function bahanPenanda(daftarPerkaraId, deps = {}) {
+async function bahanPenanda(daftarPerkaraId, deps = {}, opsi = {}) {
   const id = idBersih(daftarPerkaraId);
   const terbaca = { prodeo: true, pekerjaan: true, izinCerai: true };
   const aman = async (kerja, nama) => {
@@ -162,6 +165,13 @@ async function bahanPenanda(daftarPerkaraId, deps = {}) {
     }
   };
   const tahapan = deps.tahapan || (() => require("./sippTahapanService"));
+  if (opsi && opsi.hanyaPerkara) {
+    const [ghaibSaja, prodeoSaja] = await Promise.all([
+      aman(() => tahapan().penandaGhaibBanyakPerkara(id), ""),
+      aman(() => prodeoPerkaraService.sumberProdeoBanyakPerkara(id, deps), "prodeo"),
+    ]);
+    return { ghaib: ghaibSaja, prodeo: prodeoSaja, pekerjaan: {}, izinCerai: {}, terbaca: { ...terbaca, pekerjaan: false, izinCerai: false } };
+  }
   const [ghaib, prodeo, pekerjaan] = await Promise.all([
     // penandaGhaibBanyakPerkara sudah gagal-tertutup sendiri (himpunan kosong).
     aman(() => tahapan().penandaGhaibBanyakPerkara(id), ""),

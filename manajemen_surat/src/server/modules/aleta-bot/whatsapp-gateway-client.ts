@@ -2468,6 +2468,11 @@ export async function getGatewayJadwalSidang(params: {
    * menanggungnya. Hanya rute jadwal sidang yang memintanya.
    */
   waktu?: boolean;
+  /**
+   * 2 Nov 2026: "ringkas" = hanya keterangan yang dipakai daftar Perkara Saya (jadwal, pihak, petugas, putusan, e-Court, penanda
+   * ghaib/prodeo), tanpa peta antrian. Bot lama mengabaikannya dan menjawab lengkap (himpunan-atas) - tetap benar.
+   */
+  bidang?: "ringkas";
 }): Promise<
   GatewayResult<{
     ok: boolean;
@@ -2516,6 +2521,7 @@ export async function getGatewayJadwalSidang(params: {
     batas: String(params.batas),
   });
   if (params.waktu === true) kueri.set("waktu", "1");
+  if (params.bidang === "ringkas") kueri.set("bidang", "ringkas");
   return gatewayFetch(`/internal/aleta-bot/sipp/jadwal-sidang?${kueri.toString()}`);
 }
 
@@ -4021,6 +4027,11 @@ export async function getGatewaySippPositaRapikan(perkaraId: string, ujiKering: 
 }
 /** Keterangan PDF SALINAN dari bot (14 Okt 2026) - lihat salinanPutusanService. */
 export type KeteranganSalinanPdf = {
+  /** "bas" (2 Nov): salinan BAS bertanda tangan asli pejabat - ruas putusan di bawah tidak terisi. */
+  jenis?: "bas";
+  pejabat?: Array<{ label: string; nama: string }>;
+  ttdDitemukan?: number;
+  tanpaTtd?: string[];
   salinan: string;
   untukSalinan: boolean;
   ttdDitambah: number;
@@ -4043,6 +4054,8 @@ export async function getGatewayAbtPdf(
     salinan?: KeteranganSalinanPdf;
     /** Gambar tanda tangan Panitera pengesah (hanya bila ttdDiPdf diminta dan bot mendukung) - portal yang membubuhkannya di PDF. */
     ttdPanitera?: { nama: string; jenis: "png" | "jpg"; isiBase64: string };
+    /** 2 Nov: salinan BAS - tanda tangan asli (sah) tiap pejabat penanda tangan; portal membubuhkannya di atas nama di PDF. */
+    ttdPejabat?: Array<{ nama: string; label: string; jenis: "png" | "jpg"; isiBase64: string }>;
   }>(
     "/internal/aleta-bot/abt/pdf",
     {

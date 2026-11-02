@@ -366,3 +366,35 @@ export function potongRentang(dari: string, sampai: string): Array<{ dari: strin
   }
   return hasil;
 }
+
+/**
+ * Menjalankan `kerja` atas tiap butir dengan paling banyak `batas` yang berjalan bersamaan (2 Nov 2026).
+ *
+ * Sebelumnya potongan minggu dibaca per GELOMBANG empat: gelombang berikutnya menunggu potongan TERLAMBAT gelombang sebelumnya,
+ * sehingga jalur lain menganggur selama satu potongan lambat. Kini begitu satu selesai, potongan berikutnya dimulai - banyaknya
+ * yang serentak tetap paling banyak `batas` (bot dan SIPP tidak dikeroyok lebih dari semula).
+ *
+ * Hasil URUT sesuai masukan. Bila `berhenti(hasil)` benar untuk satu hasil, butir yang BELUM dimulai tidak dijalankan lagi
+ * (tempatnya `undefined`); yang sedang berjalan ditunggu selesai. Pemanggil memeriksa hasil menurut urutan.
+ */
+export async function jalankanBerbatas<T, H>(
+  butir: readonly T[],
+  batas: number,
+  kerja: (b: T, i: number) => Promise<H>,
+  berhenti: (h: H) => boolean = () => false
+): Promise<Array<H | undefined>> {
+  const hasil: Array<H | undefined> = new Array(butir.length).fill(undefined);
+  let berikut = 0;
+  let stop = false;
+  const jalur = async () => {
+    while (!stop && berikut < butir.length) {
+      const i = berikut;
+      berikut += 1;
+      const h = await kerja(butir[i], i);
+      hasil[i] = h;
+      if (berhenti(h)) stop = true;
+    }
+  };
+  await Promise.all(Array.from({ length: Math.max(1, Math.min(Math.floor(batas) || 1, butir.length)) }, jalur));
+  return hasil;
+}

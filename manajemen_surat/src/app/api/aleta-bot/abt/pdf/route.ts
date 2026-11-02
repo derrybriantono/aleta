@@ -107,14 +107,16 @@ export async function POST(request: NextRequest) {
     let zcross: { diubah: boolean; halamanZ?: number; jumlahHalamanBukti?: number; nomorBagianBerikut?: number | null; bawaan?: boolean; peringatan: string[] } | undefined;
     // 1 Nov 2026 (keputusan 71): BAS dari panel (ruas basRunut {perkaraId, sidangId, tanggalSidang, sidang}) - halaman awal = halaman terakhir
     // BAS sidang sebelumnya + 1, dipasang SEBELUM Z; jumlah halaman PDF akhir dicatat. Putusan/relaas (tanpa basRunut) tidak tersentuh.
-    const konteksRunut = !salinan && body.basRunut && typeof body.basRunut === "object" ? bacaKonteksBas(body.basRunut as Record<string, unknown>) : null;
+    // 2 Nov: PDF SALINAN BAS juga bernomor runut dan ber-Z sama dengan PDF biasa (sebelumnya salinan dilewati sehingga nomor halaman
+    // dan Z-nya berbeda); hanya PDF biasa yang MENCATAT halaman terakhir.
+    const konteksRunut = body.basRunut && typeof body.basRunut === "object" ? bacaKonteksBas(body.basRunut as Record<string, unknown>) : null;
     let runutPasang: Awaited<ReturnType<typeof pasangRunut>> | null = null;
     let laporanZ: Awaited<ReturnType<typeof sesuaikanZcrossOtomatis>>["laporan"] | null = null;
     if (konteksRunut) {
       runutPasang = await pasangRunut(db, new Uint8Array(Buffer.from(rtfBase64, "base64")), "rtf", konteksRunut);
       if (runutPasang.rencana) rtfBase64 = Buffer.from(runutPasang.bita).toString("base64");
     }
-    if (!salinan) {
+    {
       const z = await sesuaikanZcrossOtomatis(new Uint8Array(Buffer.from(rtfBase64, "base64")), "rtf", { ...bacaOpsiBukti(body.jumlahBukti, body.halamanBukti), ...(runutPasang?.opsiZ ?? {}) });
       laporanZ = z.laporan;
       if (z.laporan.diubah) {
@@ -149,10 +151,18 @@ export async function POST(request: NextRequest) {
     let runut: { awal: number; akhir: number; peringatan: string[] } | undefined;
     if (runutPasang) {
       runut = { awal: runutPasang.rencana?.awal ?? 0, akhir: 0, peringatan: [...runutPasang.peringatan] };
-      if (runutPasang.rencana && pdfBase64) {
+      if (runutPasang.rencana && pdfBase64 && !salinan) {
         const c = await catatRunut(db, runutPasang.rencana, { pdf: new Uint8Array(Buffer.from(pdfBase64, "base64")), z: laporanZ, sumber: "cetak", olehId: String(actorUserId ?? "") });
         if (c) runut = { awal: c.awal, akhir: c.akhir, peringatan: [...runut.peringatan, ...c.peringatan] };
       }
+    }
+
+    if (salinan && pdfBase64 && hasil.data?.ttdPejabat?.length) {
+      // 2 Nov: PDF SALINAN BAS - tanda tangan ASLI tiap pejabat (Ketua Majelis/Hakim, Panitera Sidang) di atas namanya.
+      const daftar: TtdMasuk[] = hasil.data.ttdPejabat.map((t) => ({ nama: t.nama, gambar: new Uint8Array(Buffer.from(t.isiBase64, "base64")) }));
+      const r = await bubuhkanTtdPdf(new Uint8Array(Buffer.from(pdfBase64, "base64")), daftar, { atur: atur ?? undefined });
+      if (r.dipasang.length) pdfBase64 = Buffer.from(r.pdf).toString("base64");
+      ttdPdf = { dipasang: r.dipasang, tidakDitemukan: r.tidakDitemukan, ...(r.galat ? { galat: r.galat } : {}) };
     }
 
     if (salinan && pdfBase64 && hasil.data?.ttdPanitera) {

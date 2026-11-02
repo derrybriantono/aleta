@@ -44,6 +44,7 @@
  *      selamanya; prosesnya dibunuh dan sebabnya disebut.
  */
 
+const { rapikanUntukSoffice } = require("./rtfSofficeRapi");
 const { execFile } = require("node:child_process");
 const fs = require("node:fs/promises");
 const os = require("node:os");
@@ -51,6 +52,8 @@ const path = require("node:path");
 
 // Butir 45 (17 Okt): metadata berkas yang masuk SIPP tanpa tanda ALETA.
 const { tanpaTandaAletaMetadata } = require("./metadataTanpaAletaService");
+// 2 Nov 2026 (cetak lambat): profil soffice yang sudah hangat dipakai ulang per slot - lihat berkasnya.
+const profilSoffice = require("./sofficeProfilService");
 
 /** Putusan terpanjang belasan halaman; ini jauh di atasnya. */
 const BATAS_BYTE = 20 * 1024 * 1024;
@@ -214,10 +217,14 @@ async function rtfKePdf(isiRtf) {
   const folder = await fs.mkdtemp(path.join(os.tmpdir(), "aleta-pdf-"));
   const berkasRtf = path.join(folder, "putusan.rtf");
   const berkasPdf = path.join(folder, "putusan.pdf");
+  // Profil slot hangat (eksklusif) atau, bila semua sedang dipakai, profil sekali pakai di folder ini seperti dulu.
+  const profil = profilSoffice.pinjam(path.join(folder, "profil"));
+  let profilSehat = false;
 
   try {
     // Properti naskah ({\info}) tanpa tanda ALETA - Title PDF disalin dari sana.
-    await fs.writeFile(berkasRtf, tanpaTandaAletaMetadata(normalkanBahasaRtf(isiRtf)));
+    // 2 Nov: anggota grup bercermin (garis Z BAS ALUR) dan kotak nomor halaman di kaki dirapikan supaya PDF sama dengan Word/WPS.
+    await fs.writeFile(berkasRtf, tanpaTandaAletaMetadata(normalkanBahasaRtf(rapikanUntukSoffice(isiRtf).isi)));
 
     // -env:UserInstallation memberi soffice profil tersendiri. Tanpa itu, dua
     // konversi yang berjalan bersamaan bertengkar atas profil yang sama dan
@@ -227,7 +234,7 @@ async function rtfKePdf(isiRtf) {
       [
         "--headless",
         "--norestore",
-        `-env:UserInstallation=file://${path.join(folder, "profil")}`,
+        `-env:UserInstallation=${profil.url}`,
         "--convert-to",
         "pdf",
         berkasRtf,
@@ -241,6 +248,7 @@ async function rtfKePdf(isiRtf) {
     if (!pdf.subarray(0, 5).toString("latin1").startsWith("%PDF-")) {
       return { ok: false, alasan: "soffice selesai tetapi hasilnya bukan PDF." };
     }
+    profilSehat = true;
     return { ok: true, pdf: tanpaTandaAletaMetadata(pdf), versiMesin: mesin.versi };
   } catch (galat) {
     if (galat.killed) {
@@ -251,6 +259,8 @@ async function rtfKePdf(isiRtf) {
     }
     return { ok: false, alasan: String(galat.message || galat).slice(0, 200) };
   } finally {
+    // Profil slot yang gagal dibuang (generasi baru); yang berhasil dipakai konversi berikutnya.
+    profil.kembalikan(profilSehat);
     // Dibuang berhasil maupun gagal. Folder yang tertinggal berisi putusan
     // lengkap beserta nama pihaknya, dan /tmp bukan tempat untuk itu.
     await fs.rm(folder, { recursive: true, force: true }).catch(() => {});
@@ -340,7 +350,7 @@ async function dokumenKePdf(isi) {
   const berkasPdf = path.join(folder, "naskah.pdf");
 
   try {
-    await fs.writeFile(berkasAsal, tanpaTandaAletaMetadata(jenis === "rtf" ? normalkanBahasaRtf(isi) : isi));
+    await fs.writeFile(berkasAsal, tanpaTandaAletaMetadata(jenis === "rtf" ? normalkanBahasaRtf(rapikanUntukSoffice(isi).isi) : isi));
     await jalankan(
       SOFFICE,
       [
@@ -474,7 +484,9 @@ async function dokumenKeBentuk(isi, ke, opsi = {}) {
   const berkasHasil = path.join(folder, `naskah.${tujuan}`);
 
   try {
-    await fs.writeFile(berkasAsal, tanpaTandaAletaMetadata(isi));
+    // RTF -> PDF: dirapikan sama seperti rtfKePdf (pengukuran Z dan PDF unggahan memakai jalur ini).
+    const masuk = bentukAsal === "rtf" && tujuan === "pdf" ? rapikanUntukSoffice(isi).isi : isi;
+    await fs.writeFile(berkasAsal, tanpaTandaAletaMetadata(masuk));
     await jalan(SOFFICE, argumenKonversi(tujuan, berkasAsal, folder), { cwd: folder });
     const hasil = await fs.readFile(berkasHasil);
     // Diperiksa HASILNYA: kepala berkasnya harus bentuk yang diminta.

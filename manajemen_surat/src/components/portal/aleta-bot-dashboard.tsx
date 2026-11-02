@@ -41,6 +41,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePortal } from "@/lib/app-state";
 import { apiPath } from "@/lib/base-path";
+import { unduhBerkasPortal } from "@/lib/unduh-ekstensi";
 import { pesanGangguan } from "@/lib/pesan-gangguan";
 import { getEffectiveRoleId } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
@@ -661,7 +662,7 @@ function MessagesTab() {
   const unduh = (format: "xlsx" | "csv") => {
     const params = susunParams();
     params.set("format", format);
-    window.open(apiPath(`/api/aleta-bot/messages?${params.toString()}`), "_blank", "noopener,noreferrer");
+    void unduhBerkasPortal(apiPath(`/api/aleta-bot/messages?${params.toString()}`), { onGalat: (pesan) => setError(pesan) });
   };
 
   const cetakLaporan = async () => {

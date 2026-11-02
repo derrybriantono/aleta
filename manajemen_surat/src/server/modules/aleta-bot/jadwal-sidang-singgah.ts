@@ -73,6 +73,8 @@ export function kunciSinggahJadwal(p: MasukanJadwal) {
     String(p.cari || ""),
     Number(p.batas) || 0,
     p.waktu === true,
+    // 2 Nov 2026: jawaban ringkas (daftar Perkara Saya) berkunci sendiri; kunci permintaan lain tidak berubah.
+    ...(p.bidang === "ringkas" ? ["ringkas"] : []),
   ]);
 }
 
@@ -92,7 +94,7 @@ const BATAS_LAZIM = [200, 500];
 /**
  * Kunci jawaban yang boleh dipinjam permintaan ini: rentang dan pencarian yang
  * sama, `waktu: true` (himpunan-atas) dan/atau batas lain yang lazim. Tanpa
- * kunci permintaan sendiri; urut dari batas yang paling dekat. Kelayakan tiap
+ * kunci permintaan sendiri; urut dari batas yang paling dekat (permintaan ringkas: kunci ringkas lalu kunci lengkap). Kelayakan tiap
  * jawaban (utuh, muat di batas yang diminta) diperiksa pinjamJawaban.
  */
 export function kunciPinjaman(p: MasukanJadwal): Array<{ kunci: string; batas: number }> {
@@ -101,10 +103,14 @@ export function kunciPinjaman(p: MasukanJadwal): Array<{ kunci: string; batas: n
   const sendiri = kunciSinggahJadwal(p);
   const batas = [...new Set([batasDiminta, ...BATAS_LAZIM])].sort((a, b) => Math.abs(a - batasDiminta) - Math.abs(b - batasDiminta));
   const hasil: Array<{ kunci: string; batas: number }> = [];
-  for (const waktu of p.waktu === true ? [true] : [true, false]) {
-    for (const b of batas) {
-      const kunci = kunciSinggahJadwal({ ...p, batas: b, waktu });
-      if (kunci !== sendiri) hasil.push({ kunci, batas: b });
+  // Permintaan ringkas boleh meminjam jawaban LENGKAP (himpunan-atas: ruas ringkas dihitung sama); sebaliknya tidak pernah.
+  const daftarBidang: Array<MasukanJadwal["bidang"]> = p.bidang === "ringkas" ? ["ringkas", undefined] : [undefined];
+  for (const bidang of daftarBidang) {
+    for (const waktu of p.waktu === true ? [true] : [true, false]) {
+      for (const b of batas) {
+        const kunci = kunciSinggahJadwal({ ...p, batas: b, waktu, bidang });
+        if (kunci !== sendiri) hasil.push({ kunci, batas: b });
+      }
     }
   }
   return hasil;

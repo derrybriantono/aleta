@@ -670,7 +670,7 @@ describe("berkas, manifest, dan izin", () => {
   const manifest = JSON.parse(baca("manifest.json"));
 
   it("izin: storage + downloads (+ nativeMessaging untuk pembaru otomatis, 23 Okt; + scripting untuk modul malas K11, 26 Okt); host satker (+ port ALETA 8008, K1 19 Okt) dan lokal", () => {
-    expect(manifest.permissions).toEqual(["storage", "downloads", "nativeMessaging", "scripting"]);
+    expect(manifest.permissions).toEqual(["storage", "downloads", "nativeMessaging", "scripting", "offscreen"]); // offscreen: unduhan aman berkas besar (2 Nov)
     expect(manifest.host_permissions).toEqual(["http://192.168.10.10/*", "http://192.168.10.10:8008/*", "http://127.0.0.1/*"]);
   });
 

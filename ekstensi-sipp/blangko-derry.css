@@ -334,6 +334,15 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar .bd-mkanan { flex: 1; min-width: 0; overflow: auto; padding: 8px 12px; }
 #aleta-bd-akar .bd-mkanan h5 { margin: 12px 0 4px; font-size: 12.5px; color: var(--muted); font-weight: 600; }
 #aleta-bd-akar .bd-ksub { margin: 2px 0 8px; font-size: 12.5px; color: var(--muted); }
+/* Butir 9 (2 Nov): pemisah golongan di daftar Pilih blangko + baris chip lompat (token warna saja, tanpa animasi). */
+#aleta-bd-akar .bd-golongan { display: flex; align-items: baseline; gap: 8px; margin: 12px 0 4px; padding: 3px 2px; border-bottom: 1px solid var(--line); font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+#aleta-bd-akar .bd-golongan:first-child, #aleta-bd-akar .bd-lompat + .bd-golongan { margin-top: 4px; }
+#aleta-bd-akar .bd-golongan .n, #aleta-bd-akar .bd-lompatgol .n { font-family: var(--mono); font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--muted); }
+#aleta-bd-akar .bd-golongan.saran { color: var(--accent); border-bottom-color: var(--accentln); }
+#aleta-bd-akar .bd-lompat { position: sticky; top: 0; z-index: 1; display: flex; flex-wrap: wrap; gap: 5px; padding: 4px 0 6px; background: var(--deep); }
+#aleta-bd-akar .bd-lompatgol { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; gap: 5px; align-items: baseline; padding: 2px 9px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--fg); font-size: 11.5px; }
+#aleta-bd-akar .bd-lompatgol:hover { border-color: var(--okln); }
+#aleta-bd-akar .bd-lompatgol:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 #aleta-bd-akar .bd-bl { all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: auto 5.2em 1fr auto auto; gap: 8px; align-items: center; width: 100%; padding: 5px 10px; font-size: 13.6px; border-radius: 8px; color: var(--fg); }
 #aleta-bd-akar .bd-bl:hover { background: var(--panel2); }
 #aleta-bd-akar .bd-bl:focus-visible { outline: 2px solid var(--accent); }
@@ -577,6 +586,15 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar .bd-tambahan { border: 1px dashed var(--line); border-radius: 10px; padding: 6px 10px; background: var(--deep); }
 #aleta-bd-akar .bd-tambahan > summary { cursor: pointer; font-weight: 600; padding: 2px 0; }
 #aleta-bd-akar .bd-tambahan > .bd-pgrid { margin-top: 8px; }
+/* Butir 12 (2 Nov): lencana di ringkasan bagian tertutup (Isian untuk amar, Tuntutan, Bahan musyawarah majelis), lipatan kedua
+   "Isian lain", dan isi bungkus Bahan musyawarah majelis. Hanya token warna; tanpa animasi. */
+#aleta-bd-akar .bd-tambahan > summary .bd-tanda { font-size: 11.5px; font-weight: 600; margin-left: 4px; vertical-align: 1px; }
+#aleta-bd-akar .bd-tambahan > .bd-catat { margin-top: 6px; }
+#aleta-bd-akar .bd-tambahan .bd-lipat2 { margin-top: 10px; background: var(--panel); border-color: var(--line); }
+#aleta-bd-akar .bd-tambahan .bd-lipat2 > summary { font-weight: 500; color: var(--muted); }
+#aleta-bd-akar .bd-musyawarah > summary { color: var(--muted); }
+#aleta-bd-akar .bd-musyawarah[open] > summary { color: var(--fg); }
+#aleta-bd-akar .bd-musyawarahisi { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
 /* 21 Okt: tuntutan dalam posita dan petitum (diminta / tidak diminta / ragu / karena jabatan) */
 #aleta-bd-akar .bd-tanda.biru { background: #1f5fa8; border-color: #174a84; }
 #aleta-bd-akar .bd-tuntutandaftar { list-style: none; margin: 6px 0 2px; padding: 0; display: grid; gap: 6px; }
@@ -902,3 +920,23 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar .bd-rp-beda { margin: 4px 0; }
 #aleta-bd-akar .bd-rp-kaki, #aleta-bd-akar .bd-rp-blangko { margin: 3px 0 0; }
 #aleta-bd-akar .bd-rp-lain { margin: 2px 0 4px; padding: 4px 8px; border: 1px dashed var(--line); border-radius: 8px; font-size: 12.6px; }
+/* ===== 2 Nov sore (butir 7, 8, 15): rekomendasi putusan & keadaan perkara terlipat bawaan; saran ragu (warna token, tanpa animasi) ===== */
+#aleta-bd-akar details.bd-rekput { padding: 6px 10px; }
+#aleta-bd-akar details.bd-rekput > summary.bd-rp-judul { cursor: pointer; margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; list-style: none; }
+#aleta-bd-akar details.bd-rekput > summary.bd-rp-judul::-webkit-details-marker { display: none; }
+#aleta-bd-akar details.bd-rekput > summary.bd-rp-judul::before { content: "▸"; color: var(--muted); font-weight: 400; }
+#aleta-bd-akar details.bd-rekput[open] > summary.bd-rp-judul::before { content: "▾"; }
+#aleta-bd-akar details.bd-rekput[open] > summary.bd-rp-judul { margin-bottom: 6px; }
+#aleta-bd-akar details.bd-rekput:not([open]) .bd-rp-sub { display: none; }
+#aleta-bd-akar .bd-rp-chip { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 8px; border-radius: 999px; font-size: 11.8px; font-weight: 600; line-height: 1.7; color: var(--fg); background: var(--panel2); border: 1px solid var(--line); }
+#aleta-bd-akar .bd-rp-chip.cukup { border-color: var(--okln); color: var(--ok); background: var(--okbg); }
+#aleta-bd-akar .bd-rp-chip.ragu { border-color: var(--accentln); color: var(--accent); background: var(--accentbg); }
+#aleta-bd-akar .bd-rp-chip.abu { color: var(--muted); font-weight: 400; }
+#aleta-bd-akar .bd-lencana.ragu { font-size: 11.5px; border-style: dashed; border-color: var(--accentln); color: var(--accent); }
+#aleta-bd-akar .bd-skkeadaanlipat > summary { cursor: pointer; list-style: none; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 4px; }
+#aleta-bd-akar .bd-skkeadaanlipat > summary::-webkit-details-marker { display: none; }
+#aleta-bd-akar .bd-skkeadaanlipat > summary .bd-sknama { font-weight: 600; font-size: 13.4px; }
+#aleta-bd-akar .bd-skkeadaanlipat .bd-skubah { font-size: 12.3px; color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
+#aleta-bd-akar .bd-skkeadaanlipat .bd-skubah.buka, #aleta-bd-akar .bd-skkeadaanlipat[open] .bd-skubah.tutup { display: none; }
+#aleta-bd-akar .bd-skkeadaanlipat[open] .bd-skubah.buka { display: inline; }
+#aleta-bd-akar .bd-skkeadaanisi { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }

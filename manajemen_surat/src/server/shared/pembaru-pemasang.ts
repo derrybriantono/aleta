@@ -129,3 +129,50 @@ export function susunPemasang(masukan: MasukanPemasang): string {
       .replace("@@HOST_PS1@@", () => pembantu.replace(/\r?\n$/, ""))
   );
 }
+
+// ============================================================================
+// PEMASANG SEPAKET (2 Nov 2026): ekstensi + Mode Pengembang + pembaru otomatis
+// ============================================================================
+//
+// Satu berkas .cmd (bukan ZIP, supaya tidak dicegat IDM) yang memasang ekstensi
+// ke %USERPROFILE%\.aleta\ekstensi - lokasi TETAP, sebab Chrome mengikat
+// ekstensi "Load unpacked" pada alamat foldernya. Berkas ekstensinya TIDAK
+// ditanam di dalam .cmd (17 MB): pemasang mengambilnya sendiri dari rute
+// /pembaru/info + /pembaru/paket (sidik SHA-256), sama dengan pembaru otomatis.
+// Satu-satunya nilai dari server: asal portal yang dilihat petugas.
+
+const BERKAS_PEMASANG_PAKET = "pembaru/pasang-aleta.cmd";
+const BERKAS_PENCOPOT = "pembaru/copot-aleta.cmd";
+
+/** ?bentuk= pada rute unduh ekstensi. Kosong / "zip" = ZIP ekstensi (perilaku lama). */
+export type BentukUnduhEkstensi = "zip" | "pemasang" | "pencopot";
+
+export function normalisasiBentukUnduh(nilai: string | null | undefined): BentukUnduhEkstensi | null {
+  const v = String(nilai ?? "").trim().toLowerCase();
+  if (v === "" || v === "zip") return "zip";
+  if (v === "pemasang") return "pemasang";
+  if (v === "pencopot") return "pencopot";
+  return null;
+}
+
+export const NAMA_BERKAS_PEMASANG_PAKET = "pasang-aleta.cmd";
+export const NAMA_BERKAS_PENCOPOT = "copot-aleta.cmd";
+
+/** Pemasang sepaket untuk Windows: asal portal disisipkan, akhir baris CRLF. */
+export function susunPemasangPaket(masukan: { asalPortal: string }): string {
+  const pemasang = EKSTENSI_BERKAS[BERKAS_PEMASANG_PAKET];
+  if (!pemasang) {
+    throw new Error("Pemasang ALETA belum tertanam. Jalankan scripts/susun-ekstensi.mjs lalu bangun ulang.");
+  }
+  const { asalAman } = masukanAman({ asalPortal: masukan.asalPortal });
+  return crlf(pemasang.replace("@@ASAL_PORTAL@@", asalAman));
+}
+
+/** Pencopot (tanpa nilai dari server), akhir baris CRLF. */
+export function susunPencopot(): string {
+  const pencopot = EKSTENSI_BERKAS[BERKAS_PENCOPOT];
+  if (!pencopot) {
+    throw new Error("Pencopot ALETA belum tertanam. Jalankan scripts/susun-ekstensi.mjs lalu bangun ulang.");
+  }
+  return crlf(pencopot);
+}
