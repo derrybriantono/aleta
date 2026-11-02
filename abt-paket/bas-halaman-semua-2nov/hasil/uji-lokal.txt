@@ -1,11 +1,11 @@
-dasar (31 paket)  : 19ee866e4cc04670a3c8c8ff7a015ad6
+dasar (31 paket)  : 9192536631b117d5a93401685d95bfa5
 == pasang pertama
 BERKAS SIAP
 PRASYARAT COCOK (SIAP=180)
 TAMBAL=180
 BERKAS COCOK
 SELESAI - paket abt-bas-halaman-semua-2nov terpasang. Cadangan: /d/r181/ps33/cadangan. Pulih: bash /d/r181/ps33/pulih-satker.sh
-terpasang (33)    : 6cc4dd746905283b740405ec9a88f596
+terpasang (33)    : 723799221c763995c259c607a8c5c723
 == pasang ulang
 SUDAH=180
 PRASYARAT COCOK (SUDAH=180)
