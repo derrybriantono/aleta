@@ -36,8 +36,12 @@ Salinan sendiri: ABT `aps_badilag_r181` (dump server 28 Okt + 30 paket + ke-31 r
 Jumlah "(N tahun)" / "(umur)" tercetak di ketujuh hasil render: **0** (skrip `cek_umur`). PNG halaman 1 `cg-473` dilihat langsung (nama pihak SUNGGUHAN, tidak masuk repo):
 `D:/Aplikasi/aleta/tmp/w181/png-id/cg-473-h1.png`, `.../itsbat-2-h1.png` (inden 1,25 cm / gantung 4,5 cm tidak berubah; hanya umur yang hilang).
 
-Pindai seluruh pohon sesudah ke-31 revisi (1.872 blangko, `hasil/sisa-umur-pohon.txt`): tulisan `(umur)` dan variabel umur pihak `#0099#`/`#0103#`/`#1034#` di identitas = 0, KECUALI satu relaas
-(`98 Relaas/[JS] 6.2. Relaas Pemberitahuan Putusan Verstek T (e-Court)`: "umur #0103# tahun" - bukan putusan/penetapan/BAS, tidak memakai fungsi ini, tidak disentuh sebelum maupun sesudah paket ke-31; menunggu keputusan bila juga mau dibuang).
-20 "(21 tahun)" yang tersisa = batas usia dewasa anak di dalil nafkah anak, bukan umur pihak.
-Dua blangko `[99] BAS LAINNYA` (folder BAS lama) yang lolos dari penggantian tertulis tangan paket ini kini dibersihkan (golongan D, 4 paragraf).
+## Relaas 6.2 (keputusan 134, golongan E) - render ABT php56, perkara 164/Pdt.G/2026 (perkara_id 9572), sebelum vs sesudah
+`98 Relaas/[JS] 6.2. Relaas Pemberitahuan Putusan Verstek T (e-Court)` (teks identitas Tergugat, diekstrak dari RTF hasil render; NIK disamarkan):
+- SEBELUM: "...tempat dan tanggal lahir Palu, 13 Maret 1998, **umur 27 tahun,** agama Islam, pekerjaan Security ( Sekolah Sukma Bangsa ), pendidikan SLTA, ..."
+- SESUDAH: "...tempat dan tanggal lahir Palu, 13 Maret 1998, agama Islam, pekerjaan Security ( Sekolah Sukma Bangsa ), pendidikan SLTA, ..." (tanpa koma/kata ganda)
+RTF: `D:/Aplikasi/aleta/tmp/w181/render-relaas/{sebelum,sesudah}-relaas.rtf`.
 
+Pindai seluruh pohon sesudah ke-31 revisi+E (1.872 blangko, `hasil/sisa-umur-pohon.txt`): `(umur)`, `#0099#`, `#0103#`, `#1034#` = 0 berkas. Variabel umur pihak lain (#3116# #3126# #5027# #0107# #0171# #8427# #8440# #10122#, dan #1022# #1039# #1043# #1190#) tidak dipakai blangko mana pun. Tersisa yang BUKAN umur pihak dan dibiarkan:
+umur anak/calon mempelai di dispensasi kawin (#0601# #0607# #0999# kehamilan), calon suami di Wali Adhal (#1030#, 9 blangko), umur saat menikah di itsbat (#7211# #7212#), umur saksi (#1198# dst.), dan batas usia dewasa "21/12/18/17 tahun" (20 blangko "(21 tahun)").
+Golongan D (revisi 112): dua blangko `[99] BAS LAINNYA` (folder BAS lama) yang lolos dari penggantian tertulis tangan paket ini dibersihkan (4 paragraf). Golongan E (keputusan 134): relaas 6.2 (1 berkas).

@@ -49,4 +49,5 @@ ssh aleta 'bash /root/abt-bas-halaman-semua-20261102/pulih-satker.sh'    # BERKA
 - Audit per bagian sebelum/sesudah: `alat/audit_bagian.py` (hasil/audit-sebelum.tsv: OK 1.036, sebagian 144, tanpa 36; hasil/audit-sesudah.tsv: OK 1.216).
 - Render sungguhan (Word -> PDF) semua 180 berkas diubah + 15 pembanding: `hasil/render.md` (nomor tampak di kaki tiap halaman).
 - Penjaga isi paket + pembangun atas pohon sintetis: `manajemen_surat/src/test/paket-bas-halaman-semua-2nov.test.ts`.
-- Uji rantai 33 paket: `../uji-rantai-31okt/rantai.sh` (daftar urutan menyebut `bas-halaman-semua-2nov` paling akhir).
+- Uji rantai 1-30, 31 (611 berkas), 32 (`kaidah-fikih-2nov` dari cabang kaidah-fikih 074ddeba, 85 blangko putusan, tanpa berkas yang sama dengan paket ini - PRASYARAT SIAP=180 sesudahnya), 33: `RANTAI-KELUAR 0`, `../uji-rantai-31okt/hasil-rantai-33.txt`. Sidik pohon: sesudah 31 = `beb5eb9269b80822ef8e775065702b15`, sesudah 33 tanpa 32 = `5f2e7abf6e6409bb83669f710d69e6a5`, sesudah 31+32+33 = `cf5b9accdecf834e60e87aa75abbaa67`.
+- Uji rantai lama 33 paket: `../uji-rantai-31okt/rantai.sh` (daftar urutan menyebut `bas-halaman-semua-2nov` paling akhir).

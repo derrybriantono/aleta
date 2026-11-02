@@ -1,8 +1,7 @@
 berkas diperiksa 1872
 (umur) berkas: 0 kemunculan: 0
 #0099# berkas: 0 kemunculan: 0
-#0103# berkas: 1 kemunculan: 1
-    1 98 Relaas/[JS] 6.2. Relaas Pemberitahuan Putusan Verstek T (e-Court).rtf
+#0103# berkas: 0 kemunculan: 0
 #1034# berkas: 0 kemunculan: 0
 (N tahun) literal berkas: 20 kemunculan: 20
     1 1a Perceraian CT/[01a] [Kabul Verstek] CT - F (Ex Offiicio mutah iddah dan nafkah anak).rtf
