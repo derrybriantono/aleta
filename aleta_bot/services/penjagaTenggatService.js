@@ -55,20 +55,32 @@ function jalankanBawaan(sql, nilai = []) {
 // Penyuntik untuk uji (kueri palsu, skema palsu). Pada jalan biasa tidak pernah dipanggil.
 let pelaksana = jalankanBawaan;
 let penjawabKolom = (tabel, kolom) => require("./sippSkemaService").kolomAda(tabel, kolom);
+// ABT (register tervalidasi, aps_badilag) dan pengingat Kasir: dibaca lazy, dapat diganti uji.
+let pelaksanaAbt = (sql, nilai = []) =>
+  new Promise((selesai, gagal) => {
+    require("../db_config5").query(sql, nilai, (galat, baris) => (galat ? gagal(galat) : selesai(Array.isArray(baris) ? baris : [])));
+  });
+let pembacaKasir = (hariIni) => require("./kasirRekapService").pengingat({ hariIni });
 
 function jalankan(sql, nilai = []) {
   return pelaksana(sql, nilai);
 }
 
 /** Hanya untuk uji: ganti pelaksana kueri dan/atau pemeriksa kolom; mengembalikan fungsi pemulih. */
-function pasangSumber({ jalankan: j, kolomAda: k } = {}) {
+function pasangSumber({ jalankan: j, kolomAda: k, abt: a, kasir: ks } = {}) {
   const lamaJ = pelaksana;
   const lamaK = penjawabKolom;
+  const lamaA = pelaksanaAbt;
+  const lamaKs = pembacaKasir;
   if (j) pelaksana = j;
   if (k) penjawabKolom = k;
+  if (a) pelaksanaAbt = a;
+  if (ks) pembacaKasir = ks;
   return () => {
     pelaksana = lamaJ;
     penjawabKolom = lamaK;
+    pelaksanaAbt = lamaA;
+    pembacaKasir = lamaKs;
   };
 }
 
@@ -712,6 +724,216 @@ async function relaasPutusanKembali(acuan) {
     .map((b) => rapikanBaru(b, { tanggalAcuan: isoTanggal(b.tanggalAcuan), pihakKe: Number(b.pihakKe) || undefined }));
 }
 
+/**
+ * 15. MINUTASI berkas belum selesai (Buku II 2013 hlm. 43: 14 hari sejak putusan diucapkan).
+ *
+ * Penanda minutasi BUKAN kolom SIPP (tanggal_minutasi, proses 220, tanggal masuk arsip terisi otomatis saat putus; dokumen
+ * putusan dan BAS 100% terunggah): yang nyata dikerjakan manusia adalah VALIDASI minutasi di register ABT
+ * (aps_badilag.register_minutasi, divalidasi_oleh terisi). Putusan 45 hari terakhir tanpa catatan itu menjadi fakta; mesin aturan
+ * di portal memutuskan lewat/menjelang. ABT tidak terbaca = pembaca ini gagal sendiri (disebut di `gagal`), BUKAN hari bersih.
+ * Register ABT dibaca per 400 perkara dengan IN; tabelnya kecil (±4.400 baris) dan hanya sekali per kelompok.
+ */
+const JENDELA_MINUTASI_HARI = 45;
+const POTONGAN_ABT = 400;
+
+async function perkaraTerminutasiDiAbt(ids) {
+  const ada = new Set();
+  for (let i = 0; i < ids.length; i += POTONGAN_ABT) {
+    const potong = ids.slice(i, i + POTONGAN_ABT);
+    const baris = await pelaksanaAbt(
+      "SELECT DISTINCT perkara_id AS perkaraId FROM register_minutasi WHERE perkara_id IN (?) AND divalidasi_oleh IS NOT NULL AND divalidasi_oleh <> ''",
+      [potong]
+    );
+    for (const b of baris) ada.add(String(b.perkaraId));
+  }
+  return ada;
+}
+
+async function minutasiBelum(acuan) {
+  const baris = await jalankan(
+    `SELECT p.perkara_id AS perkaraId, p.nomor_perkara AS nomorPerkara,
+            p.jenis_perkara_nama AS jenisPerkara, p.alur_perkara_id AS alurPerkaraId,
+            p.jenis_perkara_id AS jenisPerkaraId,
+            pu.tanggal_putusan AS tanggalAcuan, pu.status_putusan_id AS statusPutusanId
+       FROM perkara_putusan pu
+       JOIN perkara p ON p.perkara_id = pu.perkara_id
+      WHERE pu.tanggal_putusan BETWEEN ? AND ?
+        AND pu.status_putusan_id IS NOT NULL
+      ORDER BY pu.tanggal_putusan ASC
+      LIMIT 800`,
+    [geserHari(acuan, -JENDELA_MINUTASI_HARI), acuan]
+  );
+  // Satu perkara, satu butir: putusan TERBARU yang menentukan.
+  const terbaru = new Map();
+  for (const b of baris) {
+    const id = String(b.perkaraId);
+    const lama = terbaru.get(id);
+    if (!lama || isoTanggal(b.tanggalAcuan) > isoTanggal(lama.tanggalAcuan)) terbaru.set(id, b);
+  }
+  if (terbaru.size === 0) return [];
+  const sudah = await perkaraTerminutasiDiAbt([...terbaru.keys()].map(Number).filter((x) => x > 0));
+  return [...terbaru.values()]
+    .filter((b) => !sudah.has(String(b.perkaraId)) && isoTanggal(b.tanggalAcuan))
+    .map((b) => rapikanBaru(b, { tanggalAcuan: isoTanggal(b.tanggalAcuan), statusPutusanId: Number(b.statusPutusanId) }));
+}
+
+/**
+ * 16. Masa PK 180 hari (Pasal 69 UU 14/1985 jo UU 5/2004 jo UU 3/2009; SEMA 1/2014 Kamar Agama angka 5).
+ *
+ * Hanya perkara yang sudah melalui KASASI (putusan kasasi diberitahukan) atau BANDING lalu BHT. Titik mulai = pemberitahuan
+ * terakhir kepada para pihak (kasasi), atau yang lebih akhir antara BHT dan pemberitahuan putusan banding. Alasan huruf a dan
+ * b (kebohongan, novum) mulai dari tanggal yang tidak tercatat di SIPP - tidak dihitung. Yang sudah mengajukan PK
+ * (perkara_pk.permohonan_pk) keluar. Putusan tingkat pertama BHT tanpa upaya hukum TIDAK dihitung (ratusan baris, PK nyaris
+ * tidak pernah). Belum ada tanggal pemberitahuan: hanya catatan (hitungan belum berjalan). Kolom/tabel yang tidak ada = diam.
+ */
+const JENDELA_PK_HARI = 210;
+const KOLOM_PBT_KASASI = Object.freeze(["pemberitahuan_putusan_kasasi", "pemberitahuan_putusan_kasasi_pihak1", "pemberitahuan_putusan_kasasi_pihak2"]);
+
+const terakhir = (daftar) => daftar.map(isoTanggal).filter(Boolean).sort().pop() || "";
+
+async function pkMasa(acuan) {
+  const dasarDari = geserHari(acuan, -JENDELA_PK_HARI);
+  const adaPk = await penjawabKolom("perkara_pk", "permohonan_pk");
+  const tanpaPk = adaPk
+    ? "AND NOT EXISTS (SELECT 1 FROM perkara_pk pk WHERE pk.nomor_perkara_pn = p.nomor_perkara AND pk.permohonan_pk IS NOT NULL)"
+    : "";
+  const hasil = new Map();
+
+  // Jalur kasasi: putusan kasasi sudah ada; BHT seketika.
+  if (await penjawabKolom("perkara_kasasi", "putusan_kasasi")) {
+    const kolom = [];
+    for (const k of KOLOM_PBT_KASASI) if (await penjawabKolom("perkara_kasasi", k)) kolom.push(k);
+    const baca = kolom.map((k, i) => `k.${k} AS pbt${i}`).join(", ");
+    const baris = await jalankan(
+      `SELECT p.perkara_id AS perkaraId, p.nomor_perkara AS nomorPerkara,
+              p.jenis_perkara_nama AS jenisPerkara, p.alur_perkara_id AS alurPerkaraId,
+              p.jenis_perkara_id AS jenisPerkaraId, k.putusan_kasasi AS putusan${baca ? `, ${baca}` : ""}
+         FROM perkara_kasasi k
+         JOIN perkara p ON p.perkara_id = k.perkara_id
+        WHERE k.putusan_kasasi IS NOT NULL AND k.putusan_kasasi BETWEEN ? AND ?
+          ${tanpaPk}
+        ORDER BY k.putusan_kasasi ASC
+        LIMIT 300`,
+      [geserHari(acuan, -400), acuan]
+    );
+    for (const b of baris) {
+      const mulai = terakhir(kolom.map((_k, i) => b[`pbt${i}`]));
+      if (mulai) {
+        if (selisihHariIso(mulai, acuan) <= JENDELA_PK_HARI && mulai >= dasarDari) {
+          hasil.set(String(b.perkaraId), rapikanBaru(b, { tanggalAcuan: mulai, dasarMulai: "pemberitahuan", pasti: true }));
+        }
+      } else if (isoTanggal(b.putusan) >= dasarDari) {
+        hasil.set(String(b.perkaraId), rapikanBaru(b, { tanggalAcuan: isoTanggal(b.putusan), dasarMulai: "pemberitahuan", menunggu: true }));
+      }
+    }
+  }
+
+  // Jalur banding: banding diputus lalu BHT (tanpa kasasi). Titik mulai = yang lebih akhir antara BHT dan pemberitahuan.
+  if (await penjawabKolom("perkara_banding", "putusan_banding")) {
+    const kolom = [];
+    for (const k of KOLOM_PBT_BANDING) if (await penjawabKolom("perkara_banding", k)) kolom.push(k);
+    const baca = kolom.map((k, i) => `bd.${k} AS pbt${i}`).join(", ");
+    const tanpaKasasi = (await penjawabKolom("perkara_kasasi", "permohonan_kasasi"))
+      ? "AND NOT EXISTS (SELECT 1 FROM perkara_kasasi kk WHERE kk.perkara_id = bd.perkara_id AND kk.permohonan_kasasi IS NOT NULL)"
+      : "";
+    const baris = await jalankan(
+      `SELECT p.perkara_id AS perkaraId, p.nomor_perkara AS nomorPerkara,
+              p.jenis_perkara_nama AS jenisPerkara, p.alur_perkara_id AS alurPerkaraId,
+              p.jenis_perkara_id AS jenisPerkaraId, bd.putusan_banding AS putusan, pu.tanggal_bht AS tanggalBht${baca ? `, ${baca}` : ""}
+         FROM perkara_banding bd
+         JOIN perkara p ON p.perkara_id = bd.perkara_id
+         JOIN perkara_putusan pu ON pu.perkara_id = bd.perkara_id
+        WHERE bd.putusan_banding IS NOT NULL AND bd.putusan_banding BETWEEN ? AND ?
+          AND pu.tanggal_bht IS NOT NULL AND pu.tanggal_bht >= bd.putusan_banding
+          ${tanpaKasasi}
+          ${tanpaPk}
+        ORDER BY bd.putusan_banding ASC
+        LIMIT 300`,
+      [geserHari(acuan, -400), acuan]
+    );
+    const terbaruBanding = new Map();
+    for (const b of baris) {
+      const id = String(b.perkaraId);
+      const lama = terbaruBanding.get(id);
+      if (!lama || isoTanggal(b.putusan) > isoTanggal(lama.putusan)) terbaruBanding.set(id, b);
+    }
+    for (const [id, b] of terbaruBanding) {
+      if (hasil.has(id)) continue;
+      const pbt = terakhir(kolom.map((_k, i) => b[`pbt${i}`]));
+      const bht = isoTanggal(b.tanggalBht);
+      const mulai = pbt && pbt > bht ? pbt : bht;
+      if (pbt) {
+        if (mulai >= dasarDari && selisihHariIso(mulai, acuan) <= JENDELA_PK_HARI) {
+          hasil.set(id, rapikanBaru(b, { tanggalAcuan: mulai, dasarMulai: "pemberitahuan", pasti: true }));
+        }
+      } else if (bht >= dasarDari) {
+        hasil.set(id, rapikanBaru(b, { tanggalAcuan: bht, dasarMulai: "pemberitahuan", menunggu: true }));
+      }
+    }
+  }
+  return [...hasil.values()];
+}
+
+function selisihHariIso(dari, sampai) {
+  return Math.round((Date.parse(`${sampai}T12:00:00Z`) - Date.parse(`${dari}T12:00:00Z`)) / 86400000);
+}
+
+/**
+ * 17-20. KASIR. SATU sumber aturan: pengingat Kasir yang sudah ada (kasirRekapService.pengingat - sisa panjar, jurnal Redaksi dan
+ * Meterai, saldo minus, setoran PNBP). Di sini hanya diubah menjadi fakta bertanggal; batas harinya milik mesin aturan portal
+ * (dapat diatur Super Admin). Dibaca SEKALI per acuan untuk keempat aturan (konteks.kasir). Kasus tanpa perkara (PNBP) memakai
+ * id sintetis "pnbp:tanggal" supaya kabar WhatsApp tetap satu per hari penerimaan.
+ */
+const JENIS_KASIR = Object.freeze({
+  "kasir-sisa-panjar": "sisa-panjar",
+  "kasir-belum-dijurnal": "belum-dijurnal",
+  "kasir-panjar-kurang": "panjar-kurang",
+  "kasir-pnbp-belum-setor": "pnbp-belum-setor",
+});
+
+function bacaPengingatKasir(acuan, konteks) {
+  const simpan = konteks && konteks.kasir;
+  if (simpan && simpan.has(acuan)) return simpan.get(acuan);
+  const janji = Promise.resolve(pembacaKasir(acuan)).then((r) => {
+    if (!r || r.ok !== true) throw new Error("pengingat_kasir_tidak_terbaca");
+    return Array.isArray(r.butir) ? r.butir : [];
+  });
+  if (simpan) simpan.set(acuan, janji);
+  return janji;
+}
+
+function pembacaKasirJenis(jenis) {
+  return async (acuan, konteks) => {
+    const butir = (await bacaPengingatKasir(acuan, konteks)).filter((b) => b.jenis === jenis);
+    return butir
+      .map((b) => {
+        const tenggat = isoTanggal(b.tenggat);
+        if (!tenggat) return null;
+        const pnbp = jenis === "pnbp-belum-setor";
+        const tanggal = isoTanggal(b.tanggal);
+        return {
+          perkaraId: pnbp ? `pnbp:${tanggal || tenggat}` : String(b.perkaraId || ""),
+          nomorPerkara: pnbp ? `PNBP ${(tanggal || tenggat).split("-").reverse().join("-")}` : String(b.nomorPerkara || ""),
+          jenisPerkara: pnbp ? "Setoran PNBP" : String(b.jenisPerkara || ""),
+          tanggalAcuan: tenggat,
+          statusPutusanId: null,
+          keterangan: teksBersih(b.keterangan),
+        };
+      })
+      .filter(Boolean);
+  };
+}
+
+/** Nama kasir (grup Kasir SIPP yang aktif), dibaca sekali; gagal = kosong (layar tetap menampilkan, pengingat pribadi tidak ada). */
+async function namaKasir() {
+  try {
+    const calon = await require("./kasirAkunService").buatLayanan({ kueri: (sql, nilai) => jalankan(sql, nilai) }).calon();
+    return [...new Set(calon.map((c) => teksBersih(c.nama)).filter(Boolean))].join(", ");
+  } catch {
+    return "";
+  }
+}
+
 /* -------------------------------------------------------------------------- */
 /* PETUGAS PERKARA - supaya pengingat per orang hanya memuat perkara miliknya  */
 /* -------------------------------------------------------------------------- */
@@ -750,7 +972,7 @@ async function lampirkanPetugas(semuaFakta) {
       Object.values(semuaFakta)
         .flat()
         .map((f) => String(f.perkaraId || ""))
-        .filter(Boolean)
+        .filter((id) => /^\d+$/.test(id))
     ),
   ];
   const gagal = {};
@@ -854,6 +1076,9 @@ const PEMBACA_BARU = {
   "bht-belum-dicatat": bhtBelumDicatat,
   "pemberitahuan-putusan-belum": pemberitahuanPutusanBelum,
   "relaas-putusan-belum-kembali": relaasPutusanKembali,
+  "minutasi-belum": minutasiBelum,
+  "pk-180-hari": pkMasa,
+  ...Object.fromEntries(Object.entries(JENIS_KASIR).map(([kode, jenis]) => [kode, pembacaKasirJenis(jenis)])),
 };
 
 /**
@@ -875,7 +1100,7 @@ async function bacaFakta(acuanIso, opsi = {}) {
   const pembaca = baru ? { ...PEMBACA, ...PEMBACA_BARU } : PEMBACA;
 
   // Bahan yang dibagi antar pembaca (putusan 60 hari, perkara berverzet) dibaca sekali per jalan.
-  const konteks = { putusan: new Map(), verzet: new Map() };
+  const konteks = { putusan: new Map(), verzet: new Map(), kasir: new Map() };
 
   await Promise.all(
     Object.entries(pembaca).map(async ([kode, baca]) => {
@@ -891,6 +1116,12 @@ async function bacaFakta(acuanIso, opsi = {}) {
   if (baru) {
     pasangBatasIkrarTegas(fakta["ikrar-talak"] || []);
     Object.assign(gagal, (await lampirkanPetugas(fakta)).gagal);
+    // Penanggung jawab aturan keuangan: kasir (grup Kasir SIPP aktif), dibaca hanya bila ada fakta kasir.
+    const faktaKasir = Object.keys(JENIS_KASIR).flatMap((k) => fakta[k] || []);
+    if (faktaKasir.length) {
+      const kasir = await namaKasir();
+      for (const f of faktaKasir) f.kasir = kasir;
+    }
   }
 
   return { acuan, fakta, gagal };

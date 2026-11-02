@@ -17,7 +17,7 @@
  *
  * Berkas ini tidak menyentuh basis data atau jaringan.
  */
-import { ATURAN_TENGGAT, PETA_SEMUA_ATURAN, SEMUA_ATURAN, type Butir, type Rapor } from "@/lib/penjaga-tenggat";
+import { AMBANG_MAKS_HARI, ATURAN_TENGGAT, PETA_SEMUA_ATURAN, SEMUA_ATURAN, type Butir, type Rapor } from "@/lib/penjaga-tenggat";
 import { namaAdaDi, pecahNamaPetugas } from "@/lib/perkara-sendiri";
 
 export const KUNCI_SETELAN_TENGGAT = "sistem:penjaga-tenggat";
@@ -40,6 +40,8 @@ export type SetelanTenggat = {
   aturanPengingat: string[];
   /** Hari sebelum batas ketika kabar "menjelang" dikirim, mis. [3, 1] = H-3 dan H-1. Tiap tahap sekali per perkara per tenggat. */
   tahapHari: number[];
+  /** Batas hari pengganti untuk aturan kebiasaan satker (minutasi, kasir): kode aturan -> hari. Kosong = angka bawaan aturan. */
+  ambangHari: Record<string, number>;
   diubahOleh: string;
   diubahPada: string;
 };
@@ -50,6 +52,7 @@ export const SETELAN_TENGGAT_BAWAAN: Readonly<SetelanTenggat> = Object.freeze({
   jam: JAM_TENGGAT_BAWAAN,
   aturanPengingat: [...ATURAN_PENGINGAT_BAWAAN],
   tahapHari: [...TAHAP_HARI_BAWAAN],
+  ambangHari: {},
   diubahOleh: "",
   diubahPada: "",
 });
@@ -68,6 +71,17 @@ export function tahapHariSah(mentah: unknown): number[] {
   return daftar.length ? daftar.sort((a, b) => b - a).slice(0, 4) : [...TAHAP_HARI_BAWAAN];
 }
 
+/** Ambang sah: hanya aturan bertanda bisaDiatur, bilangan bulat 0-AMBANG_MAKS_HARI. Selebihnya dibuang. */
+export function ambangHariSah(mentah: unknown): Record<string, number> {
+  const hasil: Record<string, number> = {};
+  if (!mentah || typeof mentah !== "object" || Array.isArray(mentah)) return hasil;
+  for (const [kode, nilai] of Object.entries(mentah as Record<string, unknown>)) {
+    const n = Number(nilai);
+    if (PETA_SEMUA_ATURAN.get(kode)?.bisaDiatur && nilai !== "" && nilai !== null && Number.isInteger(n) && n >= 0 && n <= AMBANG_MAKS_HARI) hasil[kode] = n;
+  }
+  return hasil;
+}
+
 /** Setelan dari nilai mentah tersimpan. Apa pun yang tidak dikenal jatuh ke bawaan (mati). */
 export function bersihkanSetelanTenggat(mentah: unknown): SetelanTenggat {
   const m = (mentah && typeof mentah === "object" ? mentah : {}) as Record<string, unknown>;
@@ -81,6 +95,7 @@ export function bersihkanSetelanTenggat(mentah: unknown): SetelanTenggat {
     jam: jamTenggatSah(m.jam),
     aturanPengingat: daftar,
     tahapHari: tahapHariSah(m.tahapHari),
+    ambangHari: ambangHariSah(m.ambangHari),
     diubahOleh: teks(m.diubahOleh).slice(0, 120),
     diubahPada: teks(m.diubahPada).slice(0, 40),
   };
@@ -101,8 +116,8 @@ export function jatuhTempoTenggat(jamPemicu: string, jamSekarang: string, sudahJ
 // PENERIMA PRIBADI
 // ============================================================================
 
-type PetugasButir = Pick<Butir, "majelis" | "panitera" | "jurusita" | "mediator"> & Partial<Pick<Butir, "ruas">>;
-const SEMUA_RUAS = ["majelis", "panitera", "jurusita", "mediator"] as const;
+type PetugasButir = Pick<Butir, "majelis" | "panitera" | "jurusita" | "mediator"> & Partial<Pick<Butir, "ruas" | "kasir">>;
+const SEMUA_RUAS = ["majelis", "panitera", "jurusita", "mediator", "kasir"] as const;
 
 /**
  * Apakah orang bernama `nama` tercantum sebagai petugas perkara pada butir ini? Ketat: nama kosong atau

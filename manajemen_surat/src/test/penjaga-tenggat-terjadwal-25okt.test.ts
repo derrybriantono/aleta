@@ -87,7 +87,7 @@ describe("aturan baru G1 - banding 14 hari per pihak, kasasi 14 hari, mediasi 30
       "anonimisasi-hilang",
     ]);
     expect(PETA_ATURAN.size).toBe(7);
-    expect(PETA_SEMUA_ATURAN.size).toBe(14); // 7 lama + 3 G1 + 4 N2 (verzet, BHT, pemberitahuan putusan, relaas)
+    expect(PETA_SEMUA_ATURAN.size).toBe(20); // 7 lama + 3 G1 + 4 N2 (verzet, BHT, pemberitahuan putusan, relaas) + 6 T (minutasi, PK, 4 kasir)
   });
 
   it("banding memakai RBg (bukan HIR) dan kasasi/mediasi tidak menyebut HIR", () => {

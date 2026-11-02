@@ -57,7 +57,7 @@ export const KATALOG_JENIS: readonly JenisInfo[] = [
   I("putus-tanggal-abt", "putusan", "tinggi", "SIPP - ABT", "Tanggal putus SIPP berbeda dengan register ABT", "Periksa tanggal putusan di perkara SIPP, lalu samakan register di ABT."),
   I("putus-ecourt-tanggal", "putusan", "tinggi", "SIPP - e-Court", "Tanggal putus SIPP berbeda dengan tab putusan e-Court", "Periksa tanggal putusan di SIPP dan di e-Court; yang keliru dibetulkan di sistemnya."),
   I("putus-dokumen", "putusan", "sedang", "SIPP - dokumen putusan", "Amar atau tanggal putusan SIPP berbeda dengan dokumen putusan", "Buka panel cetak Blangko Derry perkara ini; rincian bedanya ada di peringatan putusan."),
-  I("putus-status-abt", "putusan", "rendah", "SIPP - ABT", "Status putusan SIPP berbeda dengan register ABT", "Tinjau status putusan; sebagian register lama memakai kode status yang berbeda."),
+  I("putus-status-abt", "putusan", "sedang", "SIPP - ABT", "Status putusan SIPP berbeda dengan register ABT", "Periksa validasi ABT: samakan status putusan di register ABT lewat validasi, atau betulkan di SIPP bila SIPP yang keliru."),
   I("putus-belum-abt", "putusan", "rendah", "SIPP - ABT", "Sudah putus di SIPP, register putusan ABT belum ada", "Validasi register putusan di ABT."),
   I("putus-tanpa-sidang", "putusan", "rendah", "SIPP", "Tanggal putus tidak jatuh pada tanggal sidang mana pun", "Periksa tanggal putusan atau tanggal sidang pembacaan putusan."),
   I("sidang-setelah-putus", "putusan", "rendah", "SIPP", "Ada sidang sesudah tanggal putus (bukan ikrar)", "Periksa tanggal putusan atau jadwal sidang yang tercatat sesudahnya."),
@@ -304,6 +304,23 @@ function buat(jenis: string, ringkas: string, sisi: SisiTemuan[], tingkat?: Ting
 
 type Aturan = (m: MasukanPencocok) => Temuan | Temuan[] | null;
 
+/**
+ * Nama status putusan menurut tabel status_putusan SIPP (hanya yang dipakai pencocokan), dan SATU-SATUNYA tempat
+ * padanan sebutan: register ABT memakai kode 93 "Gugur" untuk hasil yang di SIPP kode 65 "Digugurkan" (hasil sama,
+ * sebutan beda - ukuran 28 Okt 2026: 32 dari 36 perbedaan). Pasangan seperti ini dianggap SAMA dan tidak jadi temuan.
+ * Keputusan Derry 2 Nov 2026 (butir 122): ABT tidak disamakan otomatis dan tidak ditulis.
+ */
+export const NAMA_STATUS_PUTUSAN: Readonly<Record<number, string>> = Object.freeze({
+  61: "Tidak dapat diterima", 62: "Dikabulkan", 63: "Ditolak", 64: "Tidak Dapat Diterima", 65: "Digugurkan", 66: "Dicoret dari Register",
+  67: "Dicabut", 85: "Perdamaian", 92: "Dismissal", 93: "Gugur",
+});
+/** Pasangan (kode SIPP, kode ABT) yang berarti hasil yang sama. */
+export const PADANAN_STATUS_SIPP_ABT: ReadonlyArray<readonly [number, number]> = Object.freeze([[65, 93]]);
+export function statusPutusanSepadan(sipp: number, abt: number): boolean {
+  return sipp === abt || PADANAN_STATUS_SIPP_ABT.some(([s, a]) => s === sipp && a === abt);
+}
+const namaStatus = (k: number) => (NAMA_STATUS_PUTUSAN[k] ? `${NAMA_STATUS_PUTUSAN[k]} (kode ${k})` : `kode ${k}`);
+
 const aturanPutusanAbt: Aturan = ({ fakta: f, terbaca }) => {
   const sipp = f.putusan;
   if (!sipp?.tanggal || !f.abt.terbaca.putus || terbaca?.abt === false) return null;
@@ -314,10 +331,10 @@ const aturanPutusanAbt: Aturan = ({ fakta: f, terbaca }) => {
       { sumber: "SIPP", nilai: tanggalPendek(sipp.tanggal) },
       { sumber: "ABT", nilai: tanggalPendek(abt.tanggal) },
     ]));
-  } else if (abt?.tanggal && sipp.statusId !== null && abt.statusId !== null && sipp.statusId !== abt.statusId) {
-    hasil.push(buat("putus-status-abt", `Kode status putusan SIPP ${sipp.statusId}, register ABT ${abt.statusId}`, [
-      { sumber: "SIPP", nilai: `kode status ${sipp.statusId}` },
-      { sumber: "ABT", nilai: `kode status ${abt.statusId}` },
+  } else if (abt?.tanggal && sipp.statusId !== null && abt.statusId !== null && !statusPutusanSepadan(sipp.statusId, abt.statusId)) {
+    hasil.push(buat("putus-status-abt", `Status putusan SIPP ${namaStatus(sipp.statusId)}, register ABT ${namaStatus(abt.statusId)} - periksa validasi ABT`, [
+      { sumber: "SIPP", nilai: namaStatus(sipp.statusId) },
+      { sumber: "ABT", nilai: namaStatus(abt.statusId) },
     ]));
   }
   return hasil.length ? hasil : null;
