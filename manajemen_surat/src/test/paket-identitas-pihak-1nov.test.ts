@@ -206,6 +206,11 @@ describe("isi paket sungguhan - fungsi", () => {
     expect(identitas).not.toMatch(/FROM SIPP\.perkara WHERE perkara_id = p_perkara LIMIT 1/);
   });
 
+  it("badan fungsi baru dan lama TANPA tanda \\ (server MariaDB 5.5 menyimpan escape string sudah diproses, laptop mentah: md5 tetap sama di keduanya)", () => {
+    for (const t of [fungsi, lama]) expect(t).not.toContain("\\");
+    // dan tanpa komentar di luar string (dibuang klien) - sudah dijaga di atas per fungsi
+  });
+
   it("isian_rtf_pihak_tambahan: pendidikan ikut TANPA umur (bagian kosong tetap dilewati); definisi lama tersimpan utuh di -FUNGSI-LAMA", () => {
     expect(tambahan).toMatch(/TRIM\(v_tempat\), ', ', isian_rtf_tanggal\(v_tgl\)\)\),/);
     expect(tambahan).not.toMatch(/v_umur|v_daftar|tahun\)|YEAR\(/);

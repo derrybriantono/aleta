@@ -5,6 +5,10 @@
 Hanya blangko RTF, dua variabel (7047, 7048) dan dua fungsi milik **derry_briantono**; tanpa variabel/menu/data baru. Dibangun deterministik:
 `python sumber/bangun_paket.py <_blangko_abt sesudah 30 paket> <var_dasar_hex.tsv> paket-satker hasil` (var_dasar_hex = `no_var, HEX(nama), data_type, HEX(sql_query)` untuk 7047/7048 sesudah 30 paket).
 
+**Sidik fungsi di server MariaDB 5.5 (catatan sesi utama 2 Nov 09.15)**: server menyimpan `routine_definition` dengan escape string SUDAH diproses, laptop mentah. Badan kedua fungsi paket ini (baru DAN lama) TIDAK memuat
+tanda `\` sama sekali (opsi 1: tanpa escape di dalam string), jadi md5 laptop = md5 bentuk server; dibuktikan dengan peniru sesi utama `D:/Aplikasi/aleta/tmp/kompat55/tiru55.py` (`alat/cek_bentuk_server.py`:
+`tiru()` lalu md5 = md5 laptop untuk keempat badan fungsi) dan dijaga uji `paket-identitas-pihak-1nov.test.ts`. Dasar paket ini di server = keadaan sesudah paket 30.
+
 ## Acuan dan bentuk yang dituju
 Blangko acuan: `1 Perceraian CG/[01] [Kabul Verstek] Cerai (Format Lengkap).rtf` (keputusan 102; ABT tidak mencatat statistik cetak, jadi dipilih blangko dasarnya). Paragraf identitas
 hanya berisi `#7047#` / `#7048#`: rata kanan-kiri, baris pertama menjorok 1,25 cm (`\fi-1843` + `\li2552`), baris lanjutan menjorok gantung 4,5 cm, jarak 1,5; nama dan sebutan tebal;
