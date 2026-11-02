@@ -52,7 +52,7 @@ function umurValid(teks) {
 // Nama orang (disalin apa adanya; harus diawali huruf besar)
 // ----------------------------------------------------------------------------
 
-const BUKAN_NAMA = /^(?:Pemohon|Termohon|Penggugat|Tergugat|Bahwa|Kantor|Kecamatan|Desa|Kelurahan|KUA|Kabupaten|Kota|Islam|Rp|Saksi|Wali|Dan|Yang|Pada|Dengan|Mas|Mahar|Maskawin|Hari|Tanggal|Ayah|Ibu|Menikah|Pernikahan|Perkawinan|Sebagai|Oleh|Serta|Atau|Karena|Setelah|Sesuai)$/;
+const BUKAN_NAMA = /^(?:Pemohon|Termohon|Penggugat|Tergugat|Bahwa|Kantor|Kecamatan|Desa|Kelurahan|KUA|Kabupaten|Kota|Islam|Rp|Saksi|Wali|Dan|Yang|Pada|Dengan|Mas|Mahar|Maskawin|Hari|Tanggal|Ayah|Ibu|Menikah|Pernikahan|Perkawinan|Sebagai|Oleh|Serta|Atau|Karena|Setelah|Sesuai|Tidak|Belum|Tanpa)$/;
 const PENGHUBUNG_NAMA = /^(?:bin|binti|bte|bt|alias|als)\.?$/i;
 
 /** Satu nama di awal teks -> { nama, sisa } atau null. Berhenti pada koma, kurung, dan kata biasa. */
@@ -194,7 +194,7 @@ const PIHAK = "(?:Pemohon|Termohon|Penggugat|Tergugat)(?:\\s+(?:II|I|1|2)(?![A-Z
 
 /** "Ayah kandung" + "pemohon ii" -> "ayah kandung Pemohon II" (hubungan huruf kecil, sebutan pihak seperti di posita). */
 function hubunganRapi(hub, pihak) {
-  const h = String(hub).replace(/\s+/g, " ").toLowerCase();
+  const h = String(hub).replace(/\s+/g, " ").toLowerCase().replace(/\bkadung\b/, "kandung");
   if (!pihak) return h;
   const p = String(pihak).replace(/\s+/g, " ").replace(/^(\w)(\w*)/, (_x, a, b) => a.toUpperCase() + b.toLowerCase()).replace(/\b(ii|i)$/i, (x) => x.toUpperCase());
   return `${h} ${p}`;
@@ -205,8 +205,10 @@ function wali(butir) {
   // U2: pembacaan per peran (isi satu kalimat dipotong pada penanda wali/menikahkan/saksi/mahar) lebih dahulu; pola lama cadangan.
   const peran = peranNikah(butir);
   if (peran.waliNama || peran.waliHubungan) {
-    if (peran.waliNama) hasil.push({ kunci: "waliNama", nilai: peran.waliNama, yakin: "cukup", ket: "Dari kalimat tentang wali nikah pada posita." });
-    if (peran.waliHubungan) hasil.push({ kunci: "waliHubungan", nilai: peran.waliHubungan, yakin: "cukup" });
+    const ragu = !!peran.waliDariPenikah;
+    const ket = ragu ? "Disimpulkan dari kalimat yang menikahkan (kerabat mempelai perempuan) pada posita; periksa." : "Dari kalimat tentang wali nikah pada posita.";
+    if (peran.waliNama) hasil.push({ kunci: "waliNama", nilai: peran.waliNama, yakin: ragu ? "ragu" : "cukup", ket });
+    if (peran.waliHubungan) hasil.push({ kunci: "waliHubungan", nilai: peran.waliHubungan, yakin: ragu ? "ragu" : "cukup", ...(ragu ? { ket } : {}) });
     return hasil;
   }
   for (const b of butir) {
@@ -289,11 +291,35 @@ function saksiNikah(butir) {
 // (wali / menikahkan / saksi / mahar) lalu tiap potongan dibaca sendiri, sehingga imam desa, wali, dan saksi tidak tertukar.
 // Keputusan Derry 99: yang menikahkan = imam desa / imam masjid (bukan saksi, bukan wali).
 
-const JABATAN = "(?:imam|penghulu|p3n|ppn|pembantu\\s+pegawai\\s+pencatat(?:\\s+nikah)?|pegawai\\s+syara[’']?|pegawai\\s+pencatat(?:\\s+nikah)?|petugas\\s+(?:kua|pencatat)|kepala\\s+(?:desa|dusun|kua|lingkungan)|tokoh\\s+(?:agama|masyarakat)|ustad[zs]?|kiai|kyai|ulama|modin|naib|khatib|tuan\\s+guru|guru\\s+ngaji|sesepuh\\s+adat|pak\\s+imam)";
+// 2 Nov (agen S): "Wakil imam", "Pegawai PPN/PPPN", dan "Pegawai Syarah" (posita 2024-2026) juga jabatan yang menikahkan.
+const JABATAN = "(?:wakil\\s+imam|imam|penghulu|p3n|pppn|ppn|pegawai\\s+(?:p{2,3}n|p3n)|pembantu\\s+pegawai\\s+pencatat(?:\\s+nikah)?|pegawai\\s+syara[’']?h?|pegawai\\s+pencatat(?:\\s+nikah)?|petugas\\s+(?:kua|pencatat|p3n|pppn|ppn)|kepala\\s+(?:desa|dusun|kua|lingkungan)|tokoh\\s+(?:agama|masyarakat)|ustad[zs]?|kiai|kyai|ulama|modin|naib|khatib|tuan\\s+guru|guru\\s+ngaji|sesepuh\\s+adat|pak\\s+imam)";
 const TEMPAT_JABATAN = "(?:desa|dusun|masjid|mesjid|musholla|mushalla|langgar|kampung|kelurahan|setempat|kecamatan|lingkungan)";
-const HUB_WALI = "(?:ayah|ayahanda|bapak|kakek|paman|kakak|abang|adik|saudara|keponakan|sepupu|orang\\s*tua|anak\\s+laki-laki|wali\\s+hakim|hakim)(?:\\s+(?:kandung|tiri|angkat|sebapak|seayah|seibu|laki-laki))?";
+const HUB_WALI = "(?:ayah|ayahanda|bapak|kakek|paman|kakak|abang|adik|saudara|keponakan|sepupu|orang\\s*tua|anak\\s+laki-laki|wali\\s+hakim|hakim)(?:\\s+(?:kandung|kadung|tiri|angkat|sebapak|seayah|seibu|laki-laki))?";
+// "Bapak M. Baktal (Imam Masjid ...)", "Bapak Kuding (Ayah Kandung Pemohon II)": "Bapak" di depan NAMA adalah sapaan hormat,
+// bukan hubungan ayah. Sapaan dibuang supaya nama dan jabatan/hubungan dalam kurung terbaca (2 Nov, agen S).
+const RE_SAPAAN = /^(?:[Bb]apak|[Bb]pk\.?|[Pp]ak)\s+(?=[A-Z])(?!(?:Kandung|Kadung|Tiri|Angkat|Dari|Pemohon|Termohon|Penggugat|Tergugat|Mempelai|Wali)(?![A-Za-z]))/;
+const buangSapaan = (t) => String(t || "").replace(RE_SAPAAN, "");
+/** Hubungan kekerabatan wali ("ayah kandung Pemohon II") -> akar untuk dibandingkan: ayah/bapak/orang tua = ayah. */
+function akarHubungan(h) {
+  const t = String(h || "").toLowerCase();
+  if (/\b(?:ayah|ayahanda|bapak|orang\s*tua)\b/.test(t)) return "ayah";
+  if (/\b(?:kakak|abang|adik|saudara)\b/.test(t)) return "saudara";
+  const m = /\b(kakek|paman|keponakan|sepupu|hakim|anak)\b/.exec(t);
+  return m ? m[1] : "";
+}
+/** Nama sama (huruf kecil, tanpa tanda baca, tanpa "bin ..."): "Burhan Dg Pawata" = "Burhan Dg. Pawata". */
+const kunciNama = (n) =>
+  String(n || "")
+    .toLowerCase()
+    .replace(/\s+(?:bin|binti)\s+.*$/, "")
+    .replace(/^(?:(?:h|hj|hi|haji|hajjah|drs|dr|ir|ust|ustadz|pak|bapak|bpk)\.?\s+)+/, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+const namaSama = (a, b) => !!a && !!b && kunciNama(a).length >= 3 && kunciNama(a) === kunciNama(b);
 const RE_JABATAN_AWAL = new RegExp(`^(${JABATAN})(?:\\s+(${TEMPAT_JABATAN}))?(?![A-Za-z])`, "i");
-const RE_HUB_WALI = new RegExp(`(?<![A-Za-z])(${HUB_WALI})(?:\\s+(?:dari\\s+)?(${PIHAK}))?`, "i");
+// (?![A-Za-z]) sesudah hubungan: nama "Hakimin" / "Pamanto" bukan hubungan "hakim" / "paman" (2 Nov).
+// Tulisan rapat "Ayahkandung", "KandungPemohon", salah ketik "Saudarah" tetap terbaca.
+const RE_HUB_WALI = new RegExp(`(?<![A-Za-z])(${HUB_WALI})(?!(?!kandung|pemohon|termohon|penggugat|tergugat|h(?![A-Za-z]))[A-Za-z])(?:\\s+(?:dari\\s+)?(${PIHAK}))?`, "i");
 const RE_PIHAK_AWAL = /^\s*(?:dari\s+)?(?:Pemohon|Termohon|Penggugat|Tergugat)(?:\s+(?:I|II|1|2)(?![A-Za-z0-9]))?/i;
 
 function awalBesar(t) {
@@ -317,7 +343,7 @@ function bukaPotongan(teks) {
     s = s
       .replace(/^[\s,:\-–]+/, "")
       .replace(/^(?:adalah|yaitu|yakni|ialah|sebagai|selaku|oleh|kepada)(?![A-Za-z])\s*/i, "")
-      .replace(/^(?:sekaligus|juga)(?![A-Za-z])\s*/i, "")
+      .replace(/^(?:sekaligus|juga|langsung|sendiri|pula)(?![A-Za-z])\s*/i, "")
       .replace(reAntara, "")
       .replace(reKedua, "");
     if (s === sebelum) break;
@@ -345,8 +371,14 @@ function namaPeran(teks) {
 
 /** Potongan "yang menikahkan ..." -> { nilai, jabatan, nama } atau null. */
 function kupasPenikah(potongan) {
-  const s = bukaPotongan(potongan);
+  // "petugas Imam Masjid yang bernama X" / "seorang Imam bernama X": kata pengantar di depan jabatan dibuang
+  const s = buangSapaan(bukaPotongan(potongan)).replace(/^(?:petugas|seorang)\s+(?=(?:imam|penghulu|ustad|kiai|kyai|tokoh)(?![A-Za-z]))/i, "");
   if (!s) return null;
+  // "yang menikahkan Tidak diketahui" / "adalah tidak diketahui": posita sendiri tidak tahu - tetap titik-titik
+  if (/^(?:tidak|belum)\s+(?:di)?(?:ketahui|tahu|ada|jelas|ingat)(?![A-Za-z])/i.test(s)) return null;
+  // "Imam Syafii (Ayah Kandung Pemohon II)": nama orang yang kebetulan diawali kata jabatan, kerabat mempelai
+  const nk = namaKurung(s);
+  if (nk && nk.hubungan) return { jabatan: nk.hubungan, nama: nk.nama, nilai: `${nk.hubungan} bernama ${nk.nama}`, kerabat: !/hakim/i.test(nk.hubungan), hubungan: nk.hubungan };
   const j = RE_JABATAN_AWAL.exec(s);
   if (j) {
     // Jabatan + (desa/masjid) + nama tempat berhuruf kapital: "Imam Desa Lero", "Imam Desa TOMADO".
@@ -368,12 +400,21 @@ function kupasPenikah(potongan) {
   const hub = RE_HUB_WALI.exec(s);
   if (hub && hub.index === 0) {
     const w = kupasWali(s, false);
-    if (w && w.nama) return { jabatan: w.hubungan, nama: w.nama, nilai: `${w.hubungan || "wali"} bernama ${w.nama}` };
+    if (w && w.nama) return { jabatan: w.hubungan, nama: w.nama, nilai: `${w.hubungan || "wali"} bernama ${w.nama}`, kerabat: true, hubungan: w.hubungan || "" };
+    // "yang menikahkan adalah Ayah Kandung Pemohon II" (tanpa nama): hubungannya saja; namanya dari kalimat wali bila orangnya sama
+    if (w && w.hubungan) return { jabatan: w.hubungan, nama: "", nilai: w.hubungan, kerabat: true, hubungan: w.hubungan, tanpaNama: true };
   }
   // "Hamsih (Imam Desa Kaleke)" / "Sahido (Imam Desa Loli Tasiburi)" / "Bernama SALEH DANTO" / "Ali Sodikin"
   const nm = namaPeran(s);
   const n = ambilNama(s.replace(/^(?:yang\s+)?(?:bernama|benama|bernma|nama(?:nya)?)\s*[:\-]?\s*/i, ""));
-  if (!n || !nm) return nm ? { jabatan: "", nama: nm, nilai: nm } : null;
+  if (!n || !nm) {
+    if (nm) return { jabatan: "", nama: nm, nilai: nm };
+    // "adalah yah kandung Pemohon II yang bernama Labina" (salah ketik di depan): nama sesudah "bernama" saja
+    const bn = /(?:yang\s+)?(?:bernama|benama|bernma)\s*[:\-]?\s*(.+)$/i.exec(s.slice(0, 160));
+    const nb = bn ? namaPeran(bn[1]) : null;
+    // posita yang spasinya hilang ("SASO WaliNikahadalah PAMAN") tidak dipakai
+    return nb && !/[a-z][A-Z]|(?:^|\s)(?:Wali|Nikah|Saksi)(?:\s|$)/.test(nb) ? { jabatan: "", nama: nb, nilai: nb } : null;
+  }
   // gelar sesudah koma ("Xxxb, S.Pd.I (Kepala KUA Yyya)") disalin apa adanya sebagai bagian nama
   let nama = n.nama;
   let sisa = n.sisa || "";
@@ -387,7 +428,32 @@ function kupasPenikah(potongan) {
     const jab = jabatanRapi(kur[1].replace(/\s+/g, " ").trim());
     return { jabatan: jab, nama, nilai: `${jab} bernama ${nama}` };
   }
+  // "Laruhi (Ayah Kandung Pemohon II)" / "Fadel Muhamad (Saudara Kandung Pemohon II)": kerabat mempelai yang menikahkan
+  const kh = kur ? RE_HUB_WALI.exec(buangSapaan(kur[1].trim())) : null;
+  if (kh && kh.index === 0 && !/^hakim$/i.test(kh[1])) {
+    const hub = hubunganRapi(kh[1].replace(/kadung/i, "kandung"), kh[2]);
+    return { jabatan: hub, nama, nilai: `${hub} bernama ${nama}`, kerabat: true, hubungan: hub };
+  }
   return { jabatan: "", nama, nilai: nama };
+}
+
+const RE_NAMA_KURUNG = /^((?:[A-Z][\w.'’`\-]*)(?:\s+(?:[A-Z][\w.'’`\-]*|bin|binti|Dg\.?)){0,5})\s*\(\s*([^()]{1,220})\)/;
+
+/** "Nama (Ayah Kandung Pemohon II)" / "Nama (Imam Desa X ...)" -> { nama, hubungan, imam? } atau null (bukan bentuk itu). */
+function namaKurung(s) {
+  const m = RE_NAMA_KURUNG.exec(String(s || ""));
+  if (!m) return null;
+  // "Kakek (ayah dari bapak) Pemohon II bernama X": kata sebelum kurung adalah HUBUNGAN, bukan nama
+  const awalHub = RE_HUB_WALI.exec(m[1]);
+  if (awalHub && awalHub.index === 0) return null;
+  const nama = namaPeran(m[1]);
+  if (!nama || /^(?:Pemohon|Termohon|Penggugat|Tergugat)(?![A-Za-z])/.test(nama)) return null;
+  const ket = buangSapaan(m[2].trim());
+  const h = RE_HUB_WALI.exec(ket);
+  if (h && h.index === 0) return { nama, hubungan: hubunganRapi(h[1].replace(/^hakim$/i, "wali hakim"), h[2]) };
+  const j = RE_JABATAN_AWAL.exec(ket);
+  if (j) return { nama, hubungan: "", imam: awalBesar(j[0].replace(/\s+/g, " ").trim()) };
+  return null;
 }
 
 /** Potongan sesudah "wali nikah" -> { nama, hubungan } (salah satunya boleh kosong) atau null. */
@@ -397,10 +463,14 @@ function kupasWali(potongan, hakim) {
   s = bukaPotongan(s);
   if (!s) return null;
   s = s.replace(/^(?:Pemohon|Termohon|Penggugat|Tergugat)(?:\s+(?:I|II|1|2)(?![A-Za-z0-9]))?\s+(?=adalah|yaitu|ialah|bernama)/i, "");
-  s = bukaPotongan(s);
+  s = buangSapaan(bukaPotongan(s));
   // "diwakilkan kepada imam masjid bernama Ladami untuk menikahkan ..." : wali = yang sebelum "diwakilkan"
   const wakil = /(?<![A-Za-z])(?:yang\s+)?(?:diwakilkan|dikuasakan|diserahkan|diwakili)(?![A-Za-z])/i.exec(s);
   const utama = (wakil ? s.slice(0, wakil.index) : s).slice(0, 160);
+  // "Abbas (Imam Mesjid Desa Baliase karena Ayah Kandung Pemohon II telah meninggal ...)", "Imam Syafii (Ayah Kandung Pemohon II)":
+  // NAMA lalu kurung keterangan - hubungan/jabatan hanya dari AWAL kurung (bukan kata kerabat lain di dalamnya).
+  const nk = namaKurung(s);
+  if (nk) return nk;
   const h = RE_HUB_WALI.exec(utama);
   let hubungan = "";
   let nama = null;
@@ -441,7 +511,7 @@ function kupasWali(potongan, hakim) {
 const RE_PENANDA = [
   { jenis: "wali", re: /(?<![A-Za-z])wali(?:\s+(?:nikah|nasab|hakim))*(?:nya)?(?![A-Za-z])/gi },
   { jenis: "penikah", re: /(?<![A-Za-z])(?:yang\s+)?menikahkan(?:nya)?/gi },
-  { jenis: "penikah", re: /(?<![A-Za-z])dinikahkan\s+(?:secara\s+\w+\s+)?oleh(?![A-Za-z])/gi },
+  { jenis: "penikah", re: /(?<![A-Za-z])dinikahkan\s+(?:secara\s+\w+\s+|langsung\s+|sendiri\s+)?oleh(?![A-Za-z])/gi },
   // "wali nikah ... yang akad nikahnya diwakilkan kepada imam masjid bernama X (untuk menikahkan ...)"
   { jenis: "penikah", re: /(?<![A-Za-z])(?:yang\s+)?(?:akad\s+nikahnya\s+|pernikahannya\s+|pernikahan\s+itu\s+)?(?:diwakilkan|dikuasakan|diserahkan|diwakili)\s+(?:kepada|oleh)(?![A-Za-z])/gi },
   { jenis: "penikah", re: /(?<![A-Za-z])ijab\s*(?:dan|\/|&)?\s*(?:kabul|qabul|qobul)\s+(?:dilakukan|diucapkan|dipimpin|dilaksanakan)\s+oleh(?![A-Za-z])/gi },
@@ -450,6 +520,33 @@ const RE_PENANDA = [
   { jenis: "mahar", re: /(?<![A-Za-z])(?:mas\s*kawin|maskawin|mahar)(?![A-Za-z])/gi },
   { jenis: "akhir", re: /(?<![A-Za-z])(?:pernikahan|perkawinan)\s+tersebut(?![A-Za-z])|(?<![A-Za-z])(?:setelah|sesudah|sejak)\s+(?:menikah|pernikahan)(?![A-Za-z])/gi },
 ];
+
+/**
+ * Posisi i berada di dalam satu kurung keterangan yang DEKAT dan TERTUTUP: "(" tanpa pasangan paling jauh 150 huruf sebelumnya
+ * dan ")" paling jauh 200 huruf sesudahnya. Kurung yang tidak pernah ditutup di posita ("(Seratus Sepuluh Ribu Rupiah") diabaikan.
+ */
+function dalamKurung(kalimat, i) {
+  let buka = -1;
+  let d = 0;
+  for (let j = i - 1; j >= Math.max(0, i - 150); j--) {
+    const c = kalimat.charCodeAt(j);
+    if (c === 41) d++;
+    else if (c === 40) {
+      if (d === 0) {
+        buka = j;
+        break;
+      }
+      d--;
+    }
+  }
+  if (buka < 0) return false;
+  for (let j = i; j < Math.min(kalimat.length, i + 200); j++) {
+    const c = kalimat.charCodeAt(j);
+    if (c === 41) return true;
+    if (c === 40) return false;
+  }
+  return false;
+}
 
 /** Bagi kalimat menjadi potongan bertanda: [{ jenis, teks, sekaligus }]. */
 function potongPeran(kalimat) {
@@ -464,6 +561,9 @@ function potongPeran(kalimat) {
       }
       const sebelum = kalimat.slice(Math.max(0, m.index - 16), m.index);
       if (jenis === "penikah" && /(?:untuk|agar|guna|tidak\s+bersedia|bersedia|enggan|tidak\s+mau|tidak\s+dapat|belum)\s*$/i.test(sebelum)) continue;
+      // penanda di dalam kurung keterangan ("Naharudin (Kakak Kandung ... sehingga diwakilkan kepada Kakak Kandung Pemohon II)")
+      // adalah keterangan orang sebelumnya, bukan peran baru (2 Nov).
+      if (dalamKurung(kalimat, m.index)) continue;
       penanda.push({ jenis, kata: m[0], awal: m.index, akhir: m.index + m[0].length, sekaligus: /sekaligus\s*(?:yang\s*)?$/i.test(sebelum) });
     }
   }
@@ -530,7 +630,9 @@ function peranNikah(butir) {
     if (!/(?:wali|nikahkan|saksi|dihadiri|disaksikan|ijab)/i.test(b)) continue;
     const potongan = potongPeran(b);
     let walinya = null;
-    for (const p of potongan) {
+    let pen = null; // calon yang menikahkan di kalimat ini: { k } atau { gabung: true } (wali sendiri yang menikahkan)
+    for (let i = 0; i < potongan.length; i++) {
+      const p = potongan[i];
       if (p.jenis === "wali" && !walinya) {
         const w = kupasWali(p.teks, /hakim/i.test(p.kata));
         if (w) {
@@ -538,12 +640,30 @@ function peranNikah(butir) {
           if (w.nama && !hasil.waliNama) hasil.waliNama = w.nama;
           if (w.hubungan && !hasil.waliHubungan) hasil.waliHubungan = w.hubungan;
         }
-      } else if (p.jenis === "penikah" && !hasil.penikah && !p.sekaligus) {
-        const k = kupasPenikah(p.teks);
-        if (k && k.nilai.length >= 3 && k.nilai.length <= 100) {
-          hasil.penikah = k.nilai;
-          hasil.penikahJabatan = k.jabatan;
-          hasil.penikahNama = k.nama || "";
+      } else if (p.jenis === "penikah" && !hasil.penikah && !pen) {
+        const sebelumnya = potongan[i - 1];
+        const berikut = potongan[i + 1];
+        const isiKosong = RE_POTONGAN_KOSONG.test(bukaPotongan(p.teks));
+        if (sebelumnya && sebelumnya.jenis === "wali" && !walinya && RE_POTONGAN_KOSONG.test(bukaPotongan(sebelumnya.teks.replace(/^\s*(?:nikah|nasab)(?![A-Za-z])/i, ""))) && !isiKosong) {
+          // "wali nikah dan yang menikahkan adalah X (Ayah Kandung Pemohon II)" / "wali nikah sekaligus yang menikahkan yaitu X":
+          // satu orang - isi potongan "menikahkan" adalah wali itu sendiri.
+          const w = kupasWali(p.teks, false);
+          if (w) {
+            walinya = w;
+            if (w.nama && !hasil.waliNama) hasil.waliNama = w.nama;
+            if (w.hubungan && !hasil.waliHubungan) hasil.waliHubungan = w.hubungan;
+          }
+          pen = { gabung: true };
+        } else if (isiKosong && berikut && berikut.jenis === "wali") {
+          // "yang menikahkan adalah Wali nikah Pemohon II" / "yang menikahkan ... dan sekaligus wali nikah adalah ayah kandung ...":
+          // wali (yang dibaca pada potongan sesudahnya atau sebelumnya) itu sendiri yang menikahkan.
+          pen = { gabung: true };
+        } else if (p.sekaligus) {
+          // "wali hakim bernama X dan sekaligus menikahkan Pemohon II": wali itu sendiri
+          if (walinya) pen = { gabung: true };
+        } else {
+          const k = kupasPenikah(p.teks);
+          if (k && k.nilai.length >= 3 && k.nilai.length <= 100) pen = { k };
         }
       } else if (p.jenis === "saksi" && !hasil.saksi) {
         hasil.saksiAda = true; // ada kata saksi: pembaca lama tidak dipakai lagi (ia sempat mengambil nama yang menikahkan sebagai saksi)
@@ -551,11 +671,25 @@ function peranNikah(butir) {
         if (dua) hasil.saksi = dua;
       }
     }
-    // "wali hakim bernama X dan sekaligus menikahkan Pemohon II": yang menikahkan = wali itu sendiri
-    if (!hasil.penikah && walinya && walinya.nama && /hakim/i.test(walinya.hubungan || "") && potongan.some((p) => p.jenis === "penikah" && p.sekaligus)) {
-      hasil.penikah = `wali hakim bernama ${walinya.nama}`;
-      hasil.penikahJabatan = "wali hakim";
-      hasil.penikahNama = walinya.nama;
+    if (pen && !hasil.penikah) {
+      const acuan = walinya || (hasil.waliNama || hasil.waliHubungan ? { nama: hasil.waliNama || "", hubungan: hasil.waliHubungan || "" } : null);
+      const k = pen.k;
+      if (pen.gabung) {
+        waliMenikahkan(hasil, acuan, false);
+      } else if (acuan && k.nama && namaSama(k.nama, acuan.nama)) {
+        // "wali nikah yaitu Laruhi (Ayah Kandung Pemohon II) dan yang menikahkan adalah Laruhi (Ayah Kandung Pemohon II)"
+        waliMenikahkan(hasil, { nama: acuan.nama, hubungan: acuan.hubungan || k.hubungan || "", imam: acuan.imam }, false, k.jabatan && !k.kerabat ? k : null);
+      } else if (acuan && k.tanpaNama && akarHubungan(k.hubungan) && akarHubungan(k.hubungan) === akarHubungan(acuan.hubungan)) {
+        // "wali nikah yaitu Supardin (Ayah kandung Pemohon II) dan yang menikahkan adalah Ayah Kandung Pemohon II"
+        waliMenikahkan(hasil, acuan, false);
+      } else if (!acuan && k.kerabat && !/(?:Pemohon|Penggugat|Termohon|Tergugat)\s+I$/.test(k.hubungan || "") && akarHubungan(k.hubungan) !== "anak") {
+        // tanpa kalimat wali: kerabat mempelai perempuan yang menikahkan dianggap juga walinya - TIDAK pasti, ditandai ragu
+        waliMenikahkan(hasil, { nama: k.nama || "", hubungan: k.hubungan || "" }, true);
+      } else {
+        hasil.penikah = k.nilai;
+        hasil.penikahJabatan = k.jabatan;
+        hasil.penikahNama = k.nama || "";
+      }
     }
     // "wali nikah imam Mesjid bernama Zabur" tanpa kalimat menikahkan lain: imam itu wali sekaligus yang menikahkan - TIDAK pasti
     // (wali bisa mewakilkan), maka ditandai ragu supaya petugas memeriksa.
@@ -571,9 +705,44 @@ function peranNikah(butir) {
   return hasil;
 }
 
+/** Sisa potongan yang hanya kata sambung ("wali nikah DAN yang menikahkan", "wali nikah SEKALIGUS yang menikahkan"). */
+const RE_POTONGAN_KOSONG = /^(?:\s|,|\bdan\b|\bserta\b|\bsekaligus\b|\bjuga\b|\bsebagai\b|\bbertindak\b|\bmenjadi\b)*$/i;
+
+/**
+ * Keputusan Derry 111 (2 Nov): wali (biasanya ayah) kadang MENIKAHKAN SENDIRI anaknya - yang menikahkan = wali itu, bukan imam.
+ * `ragu` = posita hanya menyebut kerabat itu yang menikahkan (tanpa kalimat wali): walinya disimpulkan, petugas memeriksa.
+ */
+function waliMenikahkan(hasil, w, ragu, jabatanPosita) {
+  const nama = (w && w.nama) || "";
+  const hub = (w && w.hubungan) || "";
+  // Orang yang sama disebut dengan jabatannya pada kalimat menikahkan ("yang menikahkan adalah Imam Desa X bernama Suhardin, wali
+  // nikah adalah Bapak Kandung bernama Suhardin"): bunyi jabatan posita dipakai, tandanya tetap wali yang menikahkan sendiri.
+  const jab = jabatanPosita && jabatanPosita.jabatan ? jabatanPosita : w && w.imam && nama && !hub ? { jabatan: w.imam, nilai: `${w.imam} bernama ${nama}` } : null;
+  hasil.penikah = jab ? jab.nilai : hub && nama ? `${hub} bernama ${nama}` : nama ? `wali nikah bernama ${nama}` : hub || "wali nikah";
+  hasil.penikahJabatan = jab ? jab.jabatan : hub || "wali nikah";
+  hasil.penikahNama = nama;
+  hasil.penikahWali = true;
+  if (ragu) hasil.penikahWaliRagu = true;
+  if (nama && !hasil.waliNama) {
+    hasil.waliNama = nama;
+    if (ragu) hasil.waliDariPenikah = true;
+  }
+  if (hub && !hasil.waliHubungan) {
+    hasil.waliHubungan = hub;
+    if (ragu) hasil.waliDariPenikah = true;
+  }
+}
+
 function penikah(butir) {
   const p = peranNikah(butir);
   if (!p.penikah) return [];
+  if (p.penikahWali) {
+    return [
+      p.penikahWaliRagu
+        ? { kunci: "penikah", nilai: p.penikah, yakin: "ragu", ket: "Posita menyebut kerabat mempelai perempuan itu yang menikahkan, tanpa kalimat wali nikah tersendiri; dianggap wali nikah yang menikahkan sendiri. Periksa dengan keterangan saksi." }
+        : { kunci: "penikah", nilai: p.penikah, yakin: "cukup", ket: "Posita menyebut wali nikah itu sendiri yang menikahkan (bukan imam/penghulu)." },
+    ];
+  }
   return [
     p.penikahRagu
       ? { kunci: "penikah", nilai: p.penikah, yakin: "ragu", ket: "Posita menyebut imam itu sebagai wali nikah; dianggap juga yang menikahkan. Periksa dengan keterangan saksi." }

@@ -283,6 +283,19 @@
         "langsung": "Saksi menyaksikan sendiri pernikahan itu",
         "istifadhah": "Saksi mengetahui dari kabar yang tersiar luas (syahadah al-istifadhah)"
       }
+    },
+    "penikah": {
+      "sumber": "borang",
+      "nilai": [
+        "imam-penghulu",
+        "wali-sendiri"
+      ],
+      "bawaan": "imam-penghulu",
+      "label": "Yang menikahkan",
+      "labelNilai": {
+        "imam-penghulu": "Imam, penghulu, atau orang yang diwakilkan wali",
+        "wali-sendiri": "Wali nikah sendiri yang menikahkan"
+      }
     }
   },
   "pokokPembuktian": [
@@ -3926,6 +3939,103 @@
       ]
     },
     {
+      "id": "q-in-menikahkan-wali-pb",
+      "pokok": "pp-in-ijab-kabul",
+      "urutan": 801.5,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "bentuk": "permohonan-berdua",
+        "penikah": "wali-sendiri"
+      },
+      "menggantikan": [
+        "q-in-menikahkan-pb"
+      ],
+      "teks": "Siapa yang menikahkan #0046# I dan #0046# II, apakah wali nikahnya sendiri?",
+      "teksVarian": [
+        "Apakah wali nikah sendiri yang mengucapkan ijab untuk menikahkan #0046# I dan #0046# II?"
+      ],
+      "hal": "wali nikah sendiri yang menikahkan para mempelai",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": [
+          {
+            "maksud": "saksi menerangkan bahwa wali nikah #0046# II sendiri yang menikahkan #0046# I dan #0046# II, sebagai hal yang dilihat atau dialaminya sendiri",
+            "saksi1": [
+              "saya melihat sendiri bahwa yang menikahkan #0046# I dan #0046# II adalah wali nikah #0046# II sendiri yaitu #1046# bernama #1217#",
+              "saya menyaksikan langsung bahwa #0046# I dan #0046# II dinikahkan sendiri oleh wali nikah #0046# II yaitu #1046# bernama #1217#",
+              "yang mengucapkan ijab untuk menikahkan #0046# I dan #0046# II adalah #1046# bernama #1217# selaku wali nikah #0046# II sendiri dan hal itu saya lihat dengan mata kepala saya sendiri",
+              "pada waktu itu saya berada di tempat kejadian dan melihat bahwa #1046# bernama #1217# sebagai wali nikah langsung menikahkan #0046# I dan #0046# II"
+            ],
+            "saksi2": [
+              "karena saya turut hadir maka saya terangkan bahwa wali nikah #0046# II yaitu #1046# bernama #1217# sendiri yang menikahkan #0046# I dan #0046# II",
+              "#0046# I dan #0046# II dinikahkan langsung oleh wali nikah #0046# II yaitu #1046# bernama #1217# demikian yang tampak oleh saya waktu itu",
+              "saya ada di lokasi pada saat itu dan mendapati bahwa ijab untuk menikahkan #0046# I dan #0046# II diucapkan sendiri oleh #1046# bernama #1217# selaku walinya",
+              "#0046# I dan #0046# II dinikahkan oleh wali nikah #0046# II sendiri yaitu #1046# bernama #1217# sebagaimana yang saya alami"
+            ]
+          },
+          {
+            "keadaan": {
+              "kedudukanSaksi": "wali-nikah"
+            },
+            "maksud": "saksi menerangkan bahwa ia sendiri sebagai wali nikah yang menikahkan para mempelai",
+            "saksi1": [
+              "saya sendiri sebagai wali nikah #0046# II yang menikahkan #0046# I dan #0046# II dan nama saya #1217# selaku #1046#",
+              "sayalah #1217# yang menikahkan #0046# I dan #0046# II karena saya #1046# sekaligus wali nikah #0046# II",
+              "ijab untuk menikahkan #0046# I dan #0046# II saya ucapkan sendiri sebagai wali nikah #0046# II yaitu saya #1217# selaku #1046#",
+              "yang menikahkan #0046# I dan #0046# II adalah saya sendiri #1217# selaku #1046# dan wali nikah #0046# II"
+            ],
+            "saksi2": [
+              "pada waktu itu saya #1217# bertindak sebagai wali nikah #0046# II karena saya #1046# dan saya pula yang menikahkan #0046# I dan #0046# II",
+              "saya #1217# sebagai #1046# mempelai perempuan mengucapkan sendiri ijab pernikahan #0046# I dan #0046# II",
+              "ijab pernikahan #0046# I dan #0046# II saya lafalkan sendiri karena saya #1217# adalah #1046# yang menjadi wali nikahnya",
+              "sayalah wali nikah yang mengakadkan #0046# I dan #0046# II itu yakni #1217# dalam kedudukan #1046#"
+            ]
+          }
+        ],
+        "de-auditu": {
+          "maksud": "saksi menerangkan bahwa wali nikah #0046# II sendiri yang menikahkan #0046# I dan #0046# II hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+          "saksi1": [
+            "{sumber} bercerita kepada saya bahwa yang menikahkan #0046# I dan #0046# II adalah wali nikah #0046# II sendiri yaitu #1046# bernama #1217#",
+            "saya diberi tahu oleh {sumber} bahwa #0046# I dan #0046# II dinikahkan sendiri oleh wali nikah #0046# II yaitu #1046# bernama #1217#",
+            "yang mengucapkan ijab untuk menikahkan #0046# I dan #0046# II adalah #1046# bernama #1217# selaku wali nikah #0046# II begitulah cerita {sumber} kepada saya",
+            "setahu saya berdasarkan cerita {sumber} bahwa #0046# I dan #0046# II dinikahkan langsung oleh wali nikah #0046# II yaitu #1046# bernama #1217#"
+          ],
+          "saksi2": [
+            "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa #0046# I dan #0046# II dinikahkan oleh wali nikah #0046# II sendiri yaitu #1046# bernama #1217#",
+            "kabar dari {sumber} yang saya terima menyebutkan bahwa ijab untuk menikahkan #0046# I dan #0046# II diucapkan sendiri oleh #1046# bernama #1217# sebagai wali nikah",
+            "#0046# I dan #0046# II dinikahkan langsung oleh #1046# bernama #1217# sebagai walinya demikian yang diceritakan {sumber} kepada saya",
+            "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa yang mengakadkan #0046# I dan #0046# II adalah #1046# bernama #1217# dalam kedudukan wali"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: wali nikah sendiri yang menikahkan; versi B: yang menikahkan imam/penghulu yang diwakilkan oleh wali - berselisih pada PELAKU (yang menikahkan)",
+          "bedaPada": "pelaku",
+          "saksi1": [
+            "menurut yang saya ketahui sendiri bahwa yang menikahkan #0046# I dan #0046# II adalah wali nikah #0046# II sendiri yaitu #1046# bernama #1217#",
+            "keterangan saya adalah bahwa #0046# I dan #0046# II dinikahkan langsung oleh wali nikah #0046# II yaitu #1046# bernama #1217#",
+            "yang menikahkan #0046# I dan #0046# II adalah #1046# bernama #1217# selaku wali nikah #0046# II sendiri dan itulah yang saya ketahui",
+            "yang saya terangkan di sini adalah bahwa ijab untuk menikahkan #0046# I dan #0046# II diucapkan sendiri oleh #1046# bernama #1217#"
+          ],
+          "saksi2": [
+            "sepengetahuan saya yang menikahkan #0046# I dan #0046# II bukan #1046# bernama #1217# sendiri melainkan imam setempat yang diwakilkan olehnya",
+            "yang mengucapkan ijab pernikahan #0046# I dan #0046# II adalah imam atau penghulu yang diwakilkan dan bukan #1046# bernama #1217# sendiri begitulah yang saya alami",
+            "yang saya ingat dan saya sampaikan adalah bahwa #1046# bernama #1217# mewakilkan akad kepada imam setempat sehingga bukan ia sendiri yang menikahkan #0046# I dan #0046# II",
+            "yang mengucapkan ijab pernikahan #0046# I dan #0046# II bukan #1046# bernama #1217# sendiri melainkan orang yang diwakilkannya dan itulah keterangan saya"
+          ]
+        }
+      },
+      "variabelAbt": [
+        "0046",
+        "1046",
+        "1217"
+      ],
+      "catatan": "Muncul bila posita menyebut wali nikah sendiri yang menikahkan (keadaan 'Yang menikahkan'); menggantikan butir 'Siapa yang menikahkan' yang menyebut imam/penghulu."
+    },
+    {
       "id": "q-in-menikahkan-lw",
       "pokok": "pp-in-ijab-kabul",
       "urutan": 802,
@@ -4016,6 +4126,104 @@
         "0047",
         "8087"
       ]
+    },
+    {
+      "id": "q-in-menikahkan-wali-lw",
+      "pokok": "pp-in-ijab-kabul",
+      "urutan": 802.5,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "bentuk": "gugatan",
+        "penikah": "wali-sendiri"
+      },
+      "menggantikan": [
+        "q-in-menikahkan-lw"
+      ],
+      "teks": "Siapa yang menikahkan #0046# dan #0047#, apakah wali nikahnya sendiri?",
+      "teksVarian": [
+        "Apakah wali nikah sendiri yang mengucapkan ijab untuk menikahkan #0046# dan #0047#?"
+      ],
+      "hal": "wali nikah sendiri yang menikahkan para mempelai",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": [
+          {
+            "maksud": "saksi menerangkan bahwa wali nikah mempelai perempuan sendiri yang menikahkan #0046# dan #0047#, sebagai hal yang dilihat atau dialaminya sendiri",
+            "saksi1": [
+              "saya melihat sendiri bahwa yang menikahkan #0046# dan #0047# adalah wali nikah mempelai perempuan sendiri yaitu #1046# bernama #1217#",
+              "saya menyaksikan langsung bahwa #0046# dan #0047# dinikahkan sendiri oleh wali nikah mempelai perempuan yaitu #1046# bernama #1217#",
+              "yang mengucapkan ijab untuk menikahkan #0046# dan #0047# adalah #1046# bernama #1217# selaku wali nikah mempelai perempuan sendiri dan hal itu saya lihat dengan mata kepala saya sendiri",
+              "pada waktu itu saya berada di tempat kejadian dan melihat bahwa #1046# bernama #1217# sebagai wali nikah langsung menikahkan #0046# dan #0047#"
+            ],
+            "saksi2": [
+              "karena saya turut hadir maka saya terangkan bahwa wali nikah mempelai perempuan yaitu #1046# bernama #1217# sendiri yang menikahkan #0046# dan #0047#",
+              "#0046# dan #0047# dinikahkan langsung oleh wali nikah mempelai perempuan yaitu #1046# bernama #1217# demikian yang tampak oleh saya waktu itu",
+              "saya ada di lokasi pada saat itu dan mendapati bahwa ijab untuk menikahkan #0046# dan #0047# diucapkan sendiri oleh #1046# bernama #1217# selaku walinya",
+              "#0046# dan #0047# dinikahkan oleh wali nikah mempelai perempuan sendiri yaitu #1046# bernama #1217# sebagaimana yang saya alami"
+            ]
+          },
+          {
+            "keadaan": {
+              "kedudukanSaksi": "wali-nikah"
+            },
+            "maksud": "saksi menerangkan bahwa ia sendiri sebagai wali nikah yang menikahkan para mempelai",
+            "saksi1": [
+              "saya sendiri sebagai wali nikah mempelai perempuan yang menikahkan #0046# dan #0047# dan nama saya #1217# selaku #1046#",
+              "sayalah #1217# yang menikahkan #0046# dan #0047# karena saya #1046# sekaligus wali nikah mempelai perempuan",
+              "ijab untuk menikahkan #0046# dan #0047# saya ucapkan sendiri sebagai wali nikah mempelai perempuan yaitu saya #1217# selaku #1046#",
+              "yang menikahkan #0046# dan #0047# adalah saya sendiri #1217# selaku #1046# dan wali nikah mempelai perempuan"
+            ],
+            "saksi2": [
+              "pada waktu itu saya #1217# bertindak sebagai wali nikah mempelai perempuan karena saya #1046# dan saya pula yang menikahkan #0046# dan #0047#",
+              "saya #1217# sebagai #1046# mempelai perempuan mengucapkan sendiri ijab pernikahan #0046# dan #0047#",
+              "ijab pernikahan #0046# dan #0047# saya lafalkan sendiri karena saya #1217# adalah #1046# yang menjadi wali nikahnya",
+              "sayalah wali nikah yang mengakadkan #0046# dan #0047# itu yakni #1217# dalam kedudukan #1046#"
+            ]
+          }
+        ],
+        "de-auditu": {
+          "maksud": "saksi menerangkan bahwa wali nikah mempelai perempuan sendiri yang menikahkan #0046# dan #0047# hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+          "saksi1": [
+            "{sumber} bercerita kepada saya bahwa yang menikahkan #0046# dan #0047# adalah wali nikah mempelai perempuan sendiri yaitu #1046# bernama #1217#",
+            "saya diberi tahu oleh {sumber} bahwa #0046# dan #0047# dinikahkan sendiri oleh wali nikah mempelai perempuan yaitu #1046# bernama #1217#",
+            "yang mengucapkan ijab untuk menikahkan #0046# dan #0047# adalah #1046# bernama #1217# selaku wali nikah mempelai perempuan begitulah cerita {sumber} kepada saya",
+            "setahu saya berdasarkan cerita {sumber} bahwa #0046# dan #0047# dinikahkan langsung oleh wali nikah mempelai perempuan yaitu #1046# bernama #1217#"
+          ],
+          "saksi2": [
+            "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa #0046# dan #0047# dinikahkan oleh wali nikah mempelai perempuan sendiri yaitu #1046# bernama #1217#",
+            "kabar dari {sumber} yang saya terima menyebutkan bahwa ijab untuk menikahkan #0046# dan #0047# diucapkan sendiri oleh #1046# bernama #1217# sebagai wali nikah",
+            "#0046# dan #0047# dinikahkan langsung oleh #1046# bernama #1217# sebagai walinya demikian yang diceritakan {sumber} kepada saya",
+            "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa yang mengakadkan #0046# dan #0047# adalah #1046# bernama #1217# dalam kedudukan wali"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: wali nikah sendiri yang menikahkan; versi B: yang menikahkan imam/penghulu yang diwakilkan oleh wali - berselisih pada PELAKU (yang menikahkan)",
+          "bedaPada": "pelaku",
+          "saksi1": [
+            "menurut yang saya ketahui sendiri bahwa yang menikahkan #0046# dan #0047# adalah wali nikah mempelai perempuan sendiri yaitu #1046# bernama #1217#",
+            "keterangan saya adalah bahwa #0046# dan #0047# dinikahkan langsung oleh wali nikah mempelai perempuan yaitu #1046# bernama #1217#",
+            "yang menikahkan #0046# dan #0047# adalah #1046# bernama #1217# selaku wali nikah mempelai perempuan sendiri dan itulah yang saya ketahui",
+            "yang saya terangkan di sini adalah bahwa ijab untuk menikahkan #0046# dan #0047# diucapkan sendiri oleh #1046# bernama #1217#"
+          ],
+          "saksi2": [
+            "sepengetahuan saya yang menikahkan #0046# dan #0047# bukan #1046# bernama #1217# sendiri melainkan imam setempat yang diwakilkan olehnya",
+            "yang mengucapkan ijab pernikahan #0046# dan #0047# adalah imam atau penghulu yang diwakilkan dan bukan #1046# bernama #1217# sendiri begitulah yang saya alami",
+            "yang saya ingat dan saya sampaikan adalah bahwa #1046# bernama #1217# mewakilkan akad kepada imam setempat sehingga bukan ia sendiri yang menikahkan #0046# dan #0047#",
+            "yang mengucapkan ijab pernikahan #0046# dan #0047# bukan #1046# bernama #1217# sendiri melainkan orang yang diwakilkannya dan itulah keterangan saya"
+          ]
+        }
+      },
+      "variabelAbt": [
+        "0046",
+        "0047",
+        "1046",
+        "1217"
+      ],
+      "catatan": "Muncul bila posita menyebut wali nikah sendiri yang menikahkan (keadaan 'Yang menikahkan'); menggantikan butir 'Siapa yang menikahkan' yang menyebut imam/penghulu."
     },
     {
       "id": "q-in-menikahkan-pm",
@@ -4111,6 +4319,107 @@
         "1025",
         "8087"
       ]
+    },
+    {
+      "id": "q-in-menikahkan-wali-pm",
+      "pokok": "pp-in-ijab-kabul",
+      "urutan": 803.5,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "bentuk": [
+          "permohonan-sendiri",
+          "gugatan-pasangan-meninggal"
+        ],
+        "penikah": "wali-sendiri"
+      },
+      "menggantikan": [
+        "q-in-menikahkan-pm"
+      ],
+      "teks": "Siapa yang menikahkan #0046# dengan #1025#, apakah wali nikahnya sendiri?",
+      "teksVarian": [
+        "Apakah wali nikah sendiri yang mengucapkan ijab untuk menikahkan #0046# dengan #1025#?"
+      ],
+      "hal": "wali nikah sendiri yang menikahkan para mempelai",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": [
+          {
+            "maksud": "saksi menerangkan bahwa wali nikah mempelai perempuan sendiri yang menikahkan #0046# dengan #1025#, sebagai hal yang dilihat atau dialaminya sendiri",
+            "saksi1": [
+              "saya melihat sendiri bahwa yang menikahkan #0046# dengan #1025# adalah wali nikah mempelai perempuan sendiri yaitu #1046# bernama #1217#",
+              "saya menyaksikan langsung bahwa #0046# dengan #1025# dinikahkan sendiri oleh wali nikah mempelai perempuan yaitu #1046# bernama #1217#",
+              "yang mengucapkan ijab untuk menikahkan #0046# dengan #1025# adalah #1046# bernama #1217# selaku wali nikah mempelai perempuan sendiri dan hal itu saya lihat dengan mata kepala saya sendiri",
+              "pada waktu itu saya berada di tempat kejadian dan melihat bahwa #1046# bernama #1217# sebagai wali nikah langsung menikahkan #0046# dengan #1025#"
+            ],
+            "saksi2": [
+              "karena saya turut hadir maka saya terangkan bahwa wali nikah mempelai perempuan yaitu #1046# bernama #1217# sendiri yang menikahkan #0046# dengan #1025#",
+              "#0046# dengan #1025# dinikahkan langsung oleh wali nikah mempelai perempuan yaitu #1046# bernama #1217# demikian yang tampak oleh saya waktu itu",
+              "saya ada di lokasi pada saat itu dan mendapati bahwa ijab untuk menikahkan #0046# dengan #1025# diucapkan sendiri oleh #1046# bernama #1217# selaku walinya",
+              "#0046# dengan #1025# dinikahkan oleh wali nikah mempelai perempuan sendiri yaitu #1046# bernama #1217# sebagaimana yang saya alami"
+            ]
+          },
+          {
+            "keadaan": {
+              "kedudukanSaksi": "wali-nikah"
+            },
+            "maksud": "saksi menerangkan bahwa ia sendiri sebagai wali nikah yang menikahkan para mempelai",
+            "saksi1": [
+              "saya sendiri sebagai wali nikah mempelai perempuan yang menikahkan #0046# dengan #1025# dan nama saya #1217# selaku #1046#",
+              "sayalah #1217# yang menikahkan #0046# dengan #1025# karena saya #1046# sekaligus wali nikah mempelai perempuan",
+              "ijab untuk menikahkan #0046# dengan #1025# saya ucapkan sendiri sebagai wali nikah mempelai perempuan yaitu saya #1217# selaku #1046#",
+              "yang menikahkan #0046# dengan #1025# adalah saya sendiri #1217# selaku #1046# dan wali nikah mempelai perempuan"
+            ],
+            "saksi2": [
+              "pada waktu itu saya #1217# bertindak sebagai wali nikah mempelai perempuan karena saya #1046# dan saya pula yang menikahkan #0046# dengan #1025#",
+              "saya #1217# sebagai #1046# mempelai perempuan mengucapkan sendiri ijab pernikahan #0046# dengan #1025#",
+              "ijab pernikahan #0046# dengan #1025# saya lafalkan sendiri karena saya #1217# adalah #1046# yang menjadi wali nikahnya",
+              "sayalah wali nikah yang mengakadkan #0046# dengan #1025# itu yakni #1217# dalam kedudukan #1046#"
+            ]
+          }
+        ],
+        "de-auditu": {
+          "maksud": "saksi menerangkan bahwa wali nikah mempelai perempuan sendiri yang menikahkan #0046# dengan #1025# hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+          "saksi1": [
+            "{sumber} bercerita kepada saya bahwa yang menikahkan #0046# dengan #1025# adalah wali nikah mempelai perempuan sendiri yaitu #1046# bernama #1217#",
+            "saya diberi tahu oleh {sumber} bahwa #0046# dengan #1025# dinikahkan sendiri oleh wali nikah mempelai perempuan yaitu #1046# bernama #1217#",
+            "yang mengucapkan ijab untuk menikahkan #0046# dengan #1025# adalah #1046# bernama #1217# selaku wali nikah mempelai perempuan begitulah cerita {sumber} kepada saya",
+            "setahu saya berdasarkan cerita {sumber} bahwa #0046# dengan #1025# dinikahkan langsung oleh wali nikah mempelai perempuan yaitu #1046# bernama #1217#"
+          ],
+          "saksi2": [
+            "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa #0046# dengan #1025# dinikahkan oleh wali nikah mempelai perempuan sendiri yaitu #1046# bernama #1217#",
+            "kabar dari {sumber} yang saya terima menyebutkan bahwa ijab untuk menikahkan #0046# dengan #1025# diucapkan sendiri oleh #1046# bernama #1217# sebagai wali nikah",
+            "#0046# dengan #1025# dinikahkan langsung oleh #1046# bernama #1217# sebagai walinya demikian yang diceritakan {sumber} kepada saya",
+            "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa yang mengakadkan #0046# dengan #1025# adalah #1046# bernama #1217# dalam kedudukan wali"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: wali nikah sendiri yang menikahkan; versi B: yang menikahkan imam/penghulu yang diwakilkan oleh wali - berselisih pada PELAKU (yang menikahkan)",
+          "bedaPada": "pelaku",
+          "saksi1": [
+            "menurut yang saya ketahui sendiri bahwa yang menikahkan #0046# dengan #1025# adalah wali nikah mempelai perempuan sendiri yaitu #1046# bernama #1217#",
+            "keterangan saya adalah bahwa #0046# dengan #1025# dinikahkan langsung oleh wali nikah mempelai perempuan yaitu #1046# bernama #1217#",
+            "yang menikahkan #0046# dengan #1025# adalah #1046# bernama #1217# selaku wali nikah mempelai perempuan sendiri dan itulah yang saya ketahui",
+            "yang saya terangkan di sini adalah bahwa ijab untuk menikahkan #0046# dengan #1025# diucapkan sendiri oleh #1046# bernama #1217#"
+          ],
+          "saksi2": [
+            "sepengetahuan saya yang menikahkan #0046# dengan #1025# bukan #1046# bernama #1217# sendiri melainkan imam setempat yang diwakilkan olehnya",
+            "yang mengucapkan ijab pernikahan #0046# dengan #1025# adalah imam atau penghulu yang diwakilkan dan bukan #1046# bernama #1217# sendiri begitulah yang saya alami",
+            "yang saya ingat dan saya sampaikan adalah bahwa #1046# bernama #1217# mewakilkan akad kepada imam setempat sehingga bukan ia sendiri yang menikahkan #0046# dengan #1025#",
+            "yang mengucapkan ijab pernikahan #0046# dengan #1025# bukan #1046# bernama #1217# sendiri melainkan orang yang diwakilkannya dan itulah keterangan saya"
+          ]
+        }
+      },
+      "variabelAbt": [
+        "0046",
+        "1025",
+        "1046",
+        "1217"
+      ],
+      "catatan": "Muncul bila posita menyebut wali nikah sendiri yang menikahkan (keadaan 'Yang menikahkan'); menggantikan butir 'Siapa yang menikahkan' yang menyebut imam/penghulu."
     },
     {
       "id": "q-in-ijab-kabul-pb",
