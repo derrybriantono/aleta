@@ -73,7 +73,7 @@ SELESAI - paket abt-kaidah-fikih-2nov terpasang (85 blangko). ...
 ## Uji (laptop)
 - `hasil/uji-lokal.txt` (`sumber/uji_lokal.sh`, salinan pohon sesudah 31 paket): pasang, pasang ulang (tidak mengubah apa pun), pulih (= pohon dasar persis),
   pasang lagi (= pasang pertama), penjaga 1 (berkas disunting sesudah dipasang -> pulih membiarkannya), penjaga 2 (dasar disunting -> pasang menolak tanpa mengubah apa pun).
-- Uji rantai 32 paket: `sumber/rantai180.sh` -> `../uji-rantai-31okt/hasil-rantai-32.txt`.
+- Uji rantai 32 paket: `sumber/rantai180.sh` -> `../uji-rantai-31okt/hasil-rantai-32.txt`: 32 paket SELESAI (paket 31 = revisi umur-bas-halaman 9645d496, TAMBAL=610), paket ini `SIAP=85 ... TAMBAL=85 BERKAS COCOK SELESAI`, `RANTAI-KELUAR 0`; pohon rantai berbeda dari uji lokal HANYA pada 2 berkas BAS LAINNYA milik paket 31 revisi.
 - Render sungguhan (renderer ABT php56, `alat/render180.py` + `alat/jalan180.py`): `hasil/render.md`; RTF/PNG di `D:/Aplikasi/aleta/tmp/w180/render/`
   (memuat nama pihak sungguhan: TIDAK masuk repo, TIDAK dikirim keluar).
 - Penjaga isi paket: `manajemen_surat/src/test/paket-kaidah-fikih-2nov.test.ts`.

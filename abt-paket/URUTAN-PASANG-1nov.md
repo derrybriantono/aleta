@@ -507,6 +507,7 @@ ditambahkan sebagai paragraf baru ke 84 blangko putusan/penetapan akhir yang bel
 perdamaian, hadits hadhanah, An-Nisa 7/19/32, al Hawi al Kabir, al-walad lil firasy, I'anatuth Thalibin, An-Nisa 3, tasharruful imam, al-Ahzab 5). B. Izin Poligami [01b]: syarat adil
 dikutip Pasal 58 ayat (1) huruf b KHI jo. Pasal 5 ayat (1) huruf c UU 1/1974 (keputusan 120). Pasal 119 ayat (2) KHI tidak disentuh. 67 blangko tanpa kaidah lazim berbukti -> "perlu Derry".
 Lihat `kaidah-fikih-2nov/PASANG.md`. md5 dasar = keadaan sesudah ke-31 paket (revisi paket 31 b16c216f tidak mengubah RTF).
+Uji rantai: `uji-rantai-31okt/hasil-rantai-32.txt` - 32 paket SELESAI berurutan dari salinan baru (2 Nov 10.19-10.35, `kaidah-fikih-2nov/sumber/rantai180.sh`, paket 31 = revisi umur-bas-halaman 9645d496), `RANTAI-KELUAR 0`.
 Keluaran benar:
 ```
 SIAP=85
