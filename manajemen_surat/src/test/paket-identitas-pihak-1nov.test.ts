@@ -56,7 +56,8 @@ const angkaMenjorok = (s: string) => s.replace(/\\fi-?\d+(?![0-9a-z])/, "\\fiN")
 const golD = potong.filter((p) => p.lama.startsWith("(umur) "));
 const golA = potong.filter((p) => !p.lama.includes("{") && p.baru !== "" && !p.lama.startsWith("(umur) "));
 const golB = potong.filter((p) => p.lama.includes("{") && p.baru !== "");
-const hapus = potong.filter((p) => p.baru === "");
+const golE = potong.filter((p) => p.lama.startsWith(", umur #"));
+const hapus = potong.filter((p) => p.baru === "" && !p.lama.startsWith(", umur #"));
 
 describe("isi paket sungguhan - berkas", () => {
   it("MD5SUMS cocok; berkas ber-md5 lama != baru; kode unik; tanpa terhapus; skrip tanpa CRLF; tanpa nama aplikasi", () => {
@@ -85,6 +86,7 @@ describe("isi paket sungguhan - berkas", () => {
     expect(golB.length).toBe(120);
     expect(hapus.length).toBe(22);
     expect(golD.length).toBe(4);
+    expect(golE.length).toBe(1);
   });
 });
 
@@ -128,6 +130,17 @@ describe("isi paket sungguhan - perilaku potongan blangko", () => {
     const berkas = new Set(golD.map((p) => DAFTAR.find((d) => d[0] === p.kode)![1]));
     expect([...berkas].every((b) => /BAS LAINNYA/.test(b))).toBe(true);
     expect(berkas.size).toBe(2);
+  });
+
+  it("golongan E (keputusan 134): umur pihak di relaas dibuang berikut koma depannya - kalimat tetap rapi (tanpa koma ganda atau kata ganda)", () => {
+    for (const p of golE) {
+      expect(p.lama).toBe(", umur #0103# tahun");
+      expect(p.baru).toBe("");
+      expect(DAFTAR.find((d) => d[0] === p.kode)![1]).toMatch(/^derry_briantono\/98 Relaas\/\[JS\] 6\.2\. Relaas Pemberitahuan Putusan Verstek T/);
+    }
+    // sebaris sebelum: "tanggal lahir #0343#, #0347#, umur #0103# tahun, agama" -> "tanggal lahir #0343#, #0347#, agama"
+    const sebelum = "tempat dan tanggal lahir #0343#, #0347#, umur #0103# tahun, agama #0020#";
+    expect(sebelum.replace(golE[0].lama, golE[0].baru)).toBe("tempat dan tanggal lahir #0343#, #0347#, agama #0020#");
   });
 
   it("pasangan Pemohon II dibuang HANYA bila tepat sesudah paragraf Pemohon I yang diganti #7047# (dispensasi kawin)", () => {
