@@ -1192,7 +1192,7 @@ export function rekomendasiPutusanDariBukti(m: MasukanRekomendasiPutusan): Rekom
   const statusSipp = hasil ? STATUS_SIPP[hasil] : "";
   const label = !hasil ? "Belum dapat direkomendasikan" : `${statusSipp}${r.verstek && hasil !== "tidak-dapat-diterima" ? " (verstek)" : ""}`;
   const jp = saksi.filter((x) => x.pihak !== "T").length;
-  const dk = "anak" in r ? (r as { anak: string; mendesak: string; pilihanLain: PilihanLain | null }) : null;
+  const dk = "anak" in r ? (r as unknown as { anak: string; mendesak: string; pilihanLain: PilihanLain | null }) : null;
   const pilihanLain = dk && hasil === "ditolak" ? dk.pilihanLain : null;
   const ekstra = dk ? { anak: dk.anak, mendesak: dk.mendesak, alternatif: pilihanLain ? pilihanLain.hasil : undefined, varianAlternatif: pilihanLain ? pilihanLain.blangko : undefined } : {};
   const blangko = blangkoUntuk(m, hasil, r.verstek, r.varian, { ...ekstra, jumlahSaksi: jp });
