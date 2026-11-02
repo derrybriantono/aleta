@@ -75,6 +75,8 @@
     "abt-beranda": modul(["abt-bersama"], ["abt-panel-beranda.js"]),
     // ALETA Ai di panel Blangko Derry (1 Nov 2026): fitur lengkapnya dimuat HANYA saat saklar ALETA Ai menyala; saat mati tidak ada yang dimuat
     "ai-blangko": modul([], ["blangko-derry-ai-inti.js"]),
+    // Rekomendasi putusan di panel Blangko Derry (R, 2 Nov 2026): dimuat HANYA untuk perkara cerai/itsbat/DK saat saran putusan berlaku
+    "rekomendasi-putusan": modul([], ["blangko-derry-rekomendasi.js"]),
   });
 
   /**
