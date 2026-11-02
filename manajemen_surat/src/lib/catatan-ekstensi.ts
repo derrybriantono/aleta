@@ -57,6 +57,17 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.62",
+    dirilis: "2026-11-02T12:30:00+08:00",
+    judul: "Rekomendasi putusan dari bukti dan saksi, kaidah fikih di blangko, syarat nafkah 12 bulan, dan tenggat minutasi, PK, serta kasir",
+    butir: [
+      "Rekomendasi putusan tampil sendiri di panel Blangko Derry untuk cerai, itsbat nikah, dan dispensasi kawin: hasil yang disarankan, keyakinan, bukti dan saksi per unsur, dan dasar hukumnya; dispensasi kawin tanpa kehamilan menampilkan dua pilihan bertanda ragu. Rekomendasi hanya usulan untuk hakim.",
+      "Syarat tidak dinafkahi paling singkat 12 bulan (SEMA 1 Tahun 2022) dibaca dari gugatan dan keterangan saksi; wali yang menikahkan sendiri anaknya dikenali dari posita itsbat; pertanyaan saksi baru untuk biaya dan tempat tinggal anak, puncak perselisihan, dan harta bersama pewaris.",
+      "Tenggat minutasi, peninjauan kembali, dan empat pengingat kasir masuk layar Tenggat; Pencocok data menganggap Digugurkan dan Gugur sama; usulan memori dari pengukur draf langsung masuk proyek ALETA Ai sehingga cukup satu persetujuan.",
+      "Blangko: kaidah fikih ditambahkan ke putusan yang belum memuatnya, syarat berlaku adil Izin Poligami mengutip Pasal 5 ayat (1) huruf c UU 1/1974, umur pihak tidak lagi tercetak di putusan, penetapan, berita acara, dan relaas verstek, serta semua berita acara bernomor halaman.",
+    ],
+  },
+  {
     versi: "1.205.61",
     dirilis: "2026-11-02T06:00:00+08:00",
     judul: "Penilaian pembuktian, draf putusan otomatis, keterangan saksi lebih lengkap, dan identitas pihak seragam",

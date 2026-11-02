@@ -14,14 +14,14 @@
  "fungsi": {
   "isian_rtf_pihak_identitas": {
    "lama_md5": "4c758ce53cd541a39a32cf3cb0ba9898",
-   "baru_md5": "5ec160298fe05aabdc4460ef1c58ff0e"
+   "baru_md5": "113ebf541054dcd26ae71eda56a50298"
   },
   "isian_rtf_pihak_tambahan": {
    "lama_md5": "9cf2a80618cfee32d3b096c4b1c83dc8",
-   "baru_md5": "0737d6b33330c45da2597a8aa0755237"
+   "baru_md5": "d4f6b5867b95ce1304858b49e12c1459"
   }
  },
  "harap": "2|0|2|0|0|6",
  "ulang": "0|2|0|2|0|6",
- "ringkas": "BERKAS DIUBAH=608 | A menjorok=985 | B tertulis tangan->variabel=120 (paragraf Pemohon II dibuang 22) | C lanjutan DK=7 | DILEWATI=0"
+ "ringkas": "BERKAS DIUBAH=611 | A menjorok=985 | B tertulis tangan->variabel=120 (paragraf Pemohon II dibuang 22) | C lanjutan DK=7 | D umur dibuang dari tulisan tangan=4 | E umur pihak dibuang dari relaas=1 | DILEWATI=0"
 }

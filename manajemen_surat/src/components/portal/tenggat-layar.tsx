@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Switch } from "@/components/ui/switch";
 import { apiPath } from "@/lib/base-path";
-import { PETA_SEMUA_ATURAN, sebutPeristiwa, tanggalPanjang, tanggalPendek, type Butir } from "@/lib/penjaga-tenggat";
+import { AMBANG_MAKS_HARI, PETA_SEMUA_ATURAN, sebutPeristiwa, tanggalPanjang, tanggalPendek, type Butir } from "@/lib/penjaga-tenggat";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 import { usePortal } from "@/lib/app-state";
 import { LABEL_JANGKA, daftarPetugasTenggat, jangkaButir, kalimatSisa, saringButirTenggat, type JangkaTenggat, type SetelanTenggat } from "@/lib/tenggat-terjadwal";
@@ -28,7 +28,7 @@ import { LABEL_JANGKA, daftarPetugasTenggat, jangkaButir, kalimatSisa, saringBut
 
 type JalanRingkas = { pada: string; pemicu: string; oleh: string; jam: string; galat: string; gagal: Record<string, string> };
 type KirimRingkas = { pada: string; dicoba: number; terkirim: number; gagal: number; dilewati: number; tanpaPerkara: number; belumSaatnya?: number; sudahDikabari?: number };
-type AturanInfo = { kode: string; judul: string; dasar: string; perluVerifikasi: boolean };
+type AturanInfo = { kode: string; judul: string; dasar: string; perluVerifikasi: boolean; bisaDiatur?: boolean; batasHari?: number };
 
 type Data = {
   tersedia: boolean;
@@ -258,6 +258,38 @@ export function TenggatLayar() {
               })}
             </div>
           </div>
+          {(data.aturan ?? []).some((a) => a.bisaDiatur) ? (
+            <div className="mt-3">
+              <p className="text-xs font-medium text-muted-foreground">Batas hari kebiasaan satker (minutasi dan kasir; kosongkan untuk angka bawaan)</p>
+              <div className="mt-1 flex flex-wrap gap-x-5 gap-y-2">
+                {(data.aturan ?? [])
+                  .filter((a) => a.bisaDiatur)
+                  .map((a) => (
+                    <label key={a.kode} className="flex items-center gap-1.5 text-xs">
+                      {a.judul}
+                      <input
+                        type="number"
+                        min={0}
+                        max={AMBANG_MAKS_HARI}
+                        className="h-7 w-16 rounded-md border border-border bg-background px-2 text-xs"
+                        defaultValue={setelan.ambangHari?.[a.kode] ?? ""}
+                        placeholder={String(a.batasHari ?? "")}
+                        key={`${a.kode}:${setelan.ambangHari?.[a.kode] ?? ""}`}
+                        disabled={Boolean(sibuk)}
+                        aria-label={`Batas hari: ${a.judul}`}
+                        onBlur={(e) => {
+                          const mentah = e.currentTarget.value.trim();
+                          const lama = setelan.ambangHari?.[a.kode];
+                          if (mentah === String(lama ?? "")) return;
+                          void kirim({ aksi: "setelan", ambangHari: { [a.kode]: mentah === "" ? null : Number(mentah) } }, "setelan");
+                        }}
+                      />
+                      hari
+                    </label>
+                  ))}
+              </div>
+            </div>
+          ) : null}
           {data.wa ? (
             <p className="mt-2 text-xs text-muted-foreground">
               Pengingat terakhir {jamWita(data.wa.pada)} WITA: {data.wa.terkirim} terkirim, {data.wa.gagal} gagal, {data.wa.dilewati} dilewati,{" "}

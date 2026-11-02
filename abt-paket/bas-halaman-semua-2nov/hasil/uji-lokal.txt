@@ -1,0 +1,37 @@
+dasar (31 paket)  : beb5eb9269b80822ef8e775065702b15
+== pasang pertama
+BERKAS SIAP
+PRASYARAT COCOK (SIAP=180)
+TAMBAL=180
+BERKAS COCOK
+SELESAI - paket abt-bas-halaman-semua-2nov terpasang. Cadangan: /d/r181/ps33/cadangan. Pulih: bash /d/r181/ps33/pulih-satker.sh
+terpasang (33)    : 5f2e7abf6e6409bb83669f710d69e6a5
+== pasang ulang
+SUDAH=180
+PRASYARAT COCOK (SUDAH=180)
+SUDAH=180
+SELESAI - paket abt-bas-halaman-semua-2nov terpasang. Cadangan: /d/r181/ps33/cadangan. Pulih: bash /d/r181/ps33/pulih-satker.sh
+PASANG ULANG: tidak ada yang berubah
+== pulih
+BERKAS PULIH
+PULIH COCOK (SIAP=180)
+PULIH: seluruh pohon RTF SAMA PERSIS dengan sebelum paket
+== pasang lagi
+PRASYARAT COCOK (SIAP=180)
+TAMBAL=180
+SELESAI - paket abt-bas-halaman-semua-2nov terpasang. Cadangan: /d/r181/ps33/cadangan. Pulih: bash /d/r181/ps33/pulih-satker.sh
+PASANG LAGI: sama persis dengan pasang pertama
+== penjaga 1: berkas disunting orang sesudah dipasang -> pulih membiarkannya (dilaporkan), yang lain dipulihkan
+BIARKAN=1 PULIH=179
+BERKAS PULIH SEBAGIAN
+PULIH SEBAGIAN: GAGAL=1 SIAP=179 (ada yang sudah disunting orang, dibiarkan)
+== penjaga 2: berkas dasar disunting orang -> pasang menolak tanpa mengubah apa pun
+GAGAL	derry_briantono/- BAS CONTRA PERCERAIAN -/[02] BAS 1 P & T Hadir Mediasi P dan T PERMA 7 2022 & Keputusan Dirjen 1465.rtf	md5 dc177bff91ac282473675fddd0a05ab5 bukan dasar 008429ed89093893055f5204d7dca02f (disunting orang/paket lain belum terpasang)
+GAGAL=1 SIAP=179
+PENJAGA 2: tidak ada yang berubah
+KEMBALI KE DASAR: ya
+== pasang akhir
+PRASYARAT COCOK (SIAP=180)
+TAMBAL=180
+SELESAI - paket abt-bas-halaman-semua-2nov terpasang. Cadangan: /d/r181/ps33/cadangan. Pulih: bash /d/r181/ps33/pulih-satker.sh
+AKHIR: sama persis dengan pasang pertama

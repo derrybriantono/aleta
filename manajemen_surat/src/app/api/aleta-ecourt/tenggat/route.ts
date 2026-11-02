@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
     if (!rapor || langsung) {
       // Kalender libur (termasuk tambahan Super Admin) dipasang dahulu: batas masa hak yang jatuh di hari libur bergeser.
       await bacaHariLibur(db).catch(() => undefined);
-      const nilai = await nilaiLangsung(tanggal);
+      const nilai = await nilaiLangsung(tanggal, undefined, setelan.ambangHari);
       if (!nilai.ok) {
         // Gagal terbaca BUKAN "tidak ada tenggat".
         return ok({ tersedia: false, tanggal, alasan: nilai.galat, lihatSemua: semua, bolehKelola: kelola, setelan: kelola ? setelan : null });
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
       tumpukanLama: semua ? rapor.tumpukanLama : {},
       // Aturan yang tidak terbaca dari SIPP disebut apa adanya supaya "tidak ada temuan" tidak tertukar dengan "tidak diperiksa".
       gagal,
-      aturan: SEMUA_ATURAN.map((a) => ({ kode: a.kode, judul: a.judul, dasar: a.dasar, perluVerifikasi: Boolean(a.perluVerifikasi) })),
+      aturan: SEMUA_ATURAN.map((a) => ({ kode: a.kode, judul: a.judul, dasar: a.dasar, perluVerifikasi: Boolean(a.perluVerifikasi), bisaDiatur: Boolean(a.bisaDiatur), batasHari: a.batasHari })),
       setelan: kelola ? setelan : null,
       jalan: kelola ? catatan.jalan : null,
       wa: kelola ? catatan.wa : null,

@@ -1,0 +1,78 @@
+# Uji rantai paket 1-30, 31 (revisi 611 berkas), 32 (kaidah-fikih-2nov dari cabang kaidah-fikih 074ddeba, tidak diubah), 33 - agen V2, 2 Nov (tahap 1 = rantai181.sh, 1-30 dari dump 28 Okt; tahap 2 = rantai181c.sh: pulih paket lama, ganti dari HEAD, pasang ulang)
+sidik pohon: sesudah 30 = 9931cdd9c3f77cb0575d9ab9ec9322ee; sesudah 31 = beb5eb9269b80822ef8e775065702b15 (uji lokal); sesudah 33 tanpa 32 = 5f2e7abf6e6409bb83669f710d69e6a5 (uji lokal); sesudah 31+32+33 (rantai) = cf5b9accdecf834e60e87aa75abbaa67
+===== tahap 1 (paket 1-30) =====
+08:36:18 siapkan
+### prodeo-panggilan-29okt (ABT_BLANGKO=/d/r181c/_blangko_abt) 08:51:17
+### bas-tanya-jawab-29okt (ABT_BLANGKO=/d/r181c/_blangko_abt/derry_briantono) 08:53:30
+### bas-itsbat-varian-30okt (ABT_BLANGKO=/d/r181c/_blangko_abt/derry_briantono) 08:53:47
+### bukti-nomor-30okt (ABT_BLANGKO=/d/r181c/_blangko_abt/derry_briantono) 08:53:48
+### ket-saksi-kata-30okt (ABT_BLANGKO=/d/r181c/_blangko_abt) 08:54:30
+### ket-saksi-baris-30okt (ABT_BLANGKO=/d/r181c/_blangko_abt) 08:54:36
+### titik-koma-30okt (ABT_BLANGKO=/d/r181c/_blangko_abt) 08:55:24
+### titik-koma-data-30okt (ABT_BLANGKO=/d/r181c/_blangko_abt) 08:55:32
+### alasan-belum-dipilih-30okt (ABT_BLANGKO=/d/r181c/_blangko_abt) 08:56:51
+### agama-belum-diubah-30okt (ABT_BLANGKO=/d/r181c/_blangko_abt) 08:56:53
+### murtad-8529-30okt (ABT_BLANGKO=/d/r181c/_blangko_abt) 08:56:55
+### relaas-penetapan-30okt (ABT_BLANGKO=/d/r181c/_blangko_abt) 08:56:57
+### sampul-rapi-30okt (ABT_BLANGKO=/d/r181c/_blangko_abt) 08:57:22
+### sela-ps-30okt (ABT_BLANGKO=/d/r181c/_blangko_abt) 08:57:53
+### hir-rbg-30okt (ABT_BLANGKO=/d/r181c/_blangko_abt) 08:58:35
+### titik-koma-teks-30okt (ABT_BLANGKO=/d/r181c/_blangko_abt) 08:59:46
+### variabel-sehat-30okt (ABT_BLANGKO=/d/r181c/_blangko_abt) 09:00:09
+### identitas-kosong-31okt (ABT_BLANGKO=/d/r181c/_blangko_abt) 09:00:11
+### tinjau-31okt (ABT_BLANGKO=/d/r181c/_blangko_abt) 09:00:17
+### bukti-8529-31okt (ABT_BLANGKO=/d/r181c/_blangko_abt) 09:00:45
+### tanggal-agenda-31okt (ABT_BLANGKO=/d/r181c/_blangko_abt) 09:00:52
+### pembuktian-urut-1nov (ABT_BLANGKO=/d/r181c/_blangko_abt) 09:00:58
+### jawab-replik-31okt (ABT_BLANGKO=/d/r181c/_blangko_abt) 09:01:02
+### butir-rata-31okt (ABT_BLANGKO=/d/r181c/_blangko_abt) 09:01:59
+### bukti-pisah-1nov (ABT_BLANGKO=/d/r181c/_blangko_abt) 09:02:11
+### teks-pihak-1nov (ABT_BLANGKO=/d/r181c/_blangko_abt) 09:04:17
+### bas-halaman-1nov (ABT_BLANGKO=/d/r181c/_blangko_abt) 09:05:18
+### bas-lanjutan-1nov (ABT_BLANGKO=/d/r181c/_blangko_abt) 09:06:47
+### tanya-jawab-format-1nov (ABT_BLANGKO=/d/r181c/_blangko_abt) 09:08:13
+### perbaikan-1nov (ABT_BLANGKO=/d/r181c/_blangko_abt) 09:09:37
+### BERHENTI sesudah perbaikan-1nov (SAMPAI)
+### RANTAI SELESAI 09:09:56
+sidik pohon sesudah 30 paket: 9931cdd9c3f77cb0575d9ab9ec9322ee (harus 9931cdd9c3f77cb0575d9ab9ec9322ee)
+### identitas-pihak-1nov (ABT_BLANGKO=/d/r181c/_blangko_abt) 09:11:04
+### bas-halaman-semua-2nov (ABT_BLANGKO=/d/r181c/_blangko_abt) 09:12:31
+### RANTAI SELESAI 09:12:46
+RANTAI-KELUAR 0
+===== tahap 2 =====
+10:57:23 sidik sebelum pulih: 723799221c763995c259c607a8c5c723
+== pulih ke-33 (lama)
+BERKAS PULIH
+PULIH COCOK (SIAP=180)
+== pulih ke-31 (lama)
+BERKAS PULIH
+VARIABEL KEMBALI
+FUNGSI identitas dan tambahan DIKEMBALIKAN ke definisi lama
+PULIH COCOK (2|0|2|0|0|6)
+sidik sesudah pulih (harus 9931cdd9c3f77cb0575d9ab9ec9322ee): 9931cdd9c3f77cb0575d9ab9ec9322ee
+paket 32 dari cabang kaidah-fikih: 074ddeba
+md5 paket cocok identitas-pihak-1nov
+md5 paket cocok kaidah-fikih-2nov
+md5 paket cocok bas-halaman-semua-2nov
+11:01:52 rantai tahap 2 (ke-31 revisi 611 berkas, ke-32 kaidah-fikih, ke-33)
+### identitas-pihak-1nov (ABT_BLANGKO=/d/r181c/_blangko_abt) 11:01:52
+    uji kueri baru perkara 9987: 2 variabel jalan, 0 galat, 0 galat tabel luar tidak ada
+    TAMBAL=611
+    BERKAS COCOK
+    SELESAI - paket abt-identitas-pihak-1nov terpasang. Cadangan: /d/r181c/ap/identitas-pihak-1nov/paket-satker/cadangan. Pulih: bash /d/r181c/ap/identitas-pihak-1nov/paket-satker/pulih-satker.sh
+### kaidah-fikih-2nov (ABT_BLANGKO=/d/r181c/_blangko_abt) 11:02:57
+    BERKAS SIAP
+    TAMBAL=85
+    BERKAS COCOK
+    SELESAI - paket abt-kaidah-fikih-2nov terpasang (85 blangko). Cadangan: /d/r181c/ap/kaidah-fikih-2nov/paket-satker/cadangan. Pulih: bash /d/r181c/ap/kaidah-fikih-2nov/paket-satker/pulih-satker.sh
+### bas-halaman-semua-2nov (ABT_BLANGKO=/d/r181c/_blangko_abt) 11:03:06
+    PRASYARAT COCOK (SIAP=180)
+    TAMBAL=180
+    BERKAS COCOK
+    SELESAI - paket abt-bas-halaman-semua-2nov terpasang. Cadangan: /d/r181c/ap/bas-halaman-semua-2nov/paket-satker/cadangan. Pulih: bash /d/r181c/ap/bas-halaman-semua-2nov/paket-satker/pulih-satker.sh
+### RANTAI SELESAI 11:03:23
+RANTAI-KELUAR 0
+sidik pohon rantai : cf5b9accdecf834e60e87aa75abbaa67
+sidik pohon sesudah 31 (uji lokal, harus beb5eb9269b80822ef8e775065702b15): beb5eb9269b80822ef8e775065702b15
+sidik uji lokal 33 : 5f2e7abf6e6409bb83669f710d69e6a5
+11:03:33 selesai

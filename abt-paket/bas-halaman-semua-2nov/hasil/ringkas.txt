@@ -1,0 +1,1 @@
+BAS DIPERIKSA=1216 | SUDAH BERNOMOR SEMUA BAGIAN=1036 | BERKAS DIUBAH=180 (kaki lama diisi=63 [paragraf baru 0], kaki baru=280 [bagian yang tadinya mewarisi kaki bernomor 127]) | DILEWATI=0

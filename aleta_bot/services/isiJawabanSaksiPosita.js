@@ -101,7 +101,8 @@ function itsbat(butir) {
 // ============================================================================
 
 function cerai(butir) {
-  const hasil = [];
+  // 2 Nov (keputusan 116): sejak kapan & berapa lama tidak dinafkahi (SEMA 1/2022 Kamar Agama angka 1 huruf b poin 1)
+  const hasil = require("./nafkahPosita").faktaNafkah(butir);
   for (const b of butir) {
     const m = /puncak\w*[^.;]{0,80}?\bterjadi\s+(?:pada\s+)?(?:(?:tanggal|bulan|tahun)\s+)?((?:\d{1,2}\s+)?(?:Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember|Pebruari|Nopember)\s+(?:19|20)\d{2}|(?:19|20)\d{2})\s*,?\s*(.+)$/i.exec(b);
     if (!m) continue;

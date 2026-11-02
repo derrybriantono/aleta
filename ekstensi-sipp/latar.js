@@ -833,6 +833,7 @@ const BERKAS_MODUL_MALAS = new Set([
   "abt-panel-blangko.js",
   "abt-panel-beranda.js",
   "blangko-derry-ai-inti.js",
+  "blangko-derry-rekomendasi.js",
 ]);
 
 async function layaniMuatModul(pesan, pengirim) {
