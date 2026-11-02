@@ -3048,6 +3048,80 @@
    }
   },
   {
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "tidakBerlaku": [],
+   "id": "q-puncak-akibat",
+   "pokok": "pp-perselisihan",
+   "urutan": 78.5,
+   "keadaan": {
+    "pisahRumah": "sudah-pisah"
+   },
+   "teks": "Apa yang terjadi antara #0046# dan #0047# setelah kejadian yang menjadi puncak perselisihan itu ?",
+   "teksVarian": [
+    "Setelah puncak pertengkaran itu, bagaimana keadaan #0046# dan #0047# ?"
+   ],
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ],
+   "slotDari": {
+    "waktu": "puncak"
+   },
+   "hal": "akibat kejadian puncak perselisihan",
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan sendiri bahwa sesudah puncak perselisihan para pihak berpisah tempat tinggal",
+     "saksi1": [
+      "saya melihat sendiri bahwa sejak kejadian pada {waktu} itu #0046# dan #0047# berpisah tempat tinggal dan tidak lagi hidup bersama",
+      "setelah puncak pertengkaran pada {waktu} itu mereka tidak lagi tinggal serumah dan hal itu saya lihat sendiri",
+      "sejak kejadian pada {waktu} itu salah satu dari mereka meninggalkan rumah dan sampai sekarang mereka tidak rukun kembali",
+      "saya mengetahui langsung bahwa sesudah kejadian pada {waktu} itu #0046# dan #0047# tidak lagi berkumpul sebagai suami istri"
+     ],
+     "saksi2": [
+      "yang saya saksikan sendiri adalah bahwa sesudah kejadian pada {waktu} itu #0046# dan #0047# hidup berpisah dan tidak serumah lagi",
+      "dengan mata kepala saya sendiri saya melihat bahwa sejak {waktu} mereka berpisah tempat tinggal dan tidak pernah kumpul lagi",
+      "sejak pertengkaran besar pada {waktu} itu mereka berpisah rumah dan tidak pernah berkumpul lagi sebagaimana yang saya lihat sendiri",
+      "setelah peristiwa pada {waktu} itu suami istri tersebut tidak lagi tinggal bersama sampai sekarang"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi mengetahui akibat puncak perselisihan hanya dari cerita orang lain",
+     "saksi1": [
+      "menurut cerita {sumber} sejak kejadian pada {waktu} itu #0046# dan #0047# berpisah tempat tinggal dan tidak lagi serumah",
+      "saya diceritakan oleh {sumber} bahwa setelah puncak pertengkaran pada {waktu} itu mereka tidak lagi tinggal bersama",
+      "yang saya ketahui dari cerita {sumber} adalah bahwa sesudah kejadian pada {waktu} itu mereka berpisah dan tidak berkumpul lagi",
+      "berdasarkan cerita {sumber} sejak {waktu} #0046# dan #0047# tidak lagi hidup bersama"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} saya mengetahui bahwa sejak kejadian pada {waktu} itu mereka berpisah rumah dan tidak rukun kembali",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa sesudah {waktu} #0046# dan #0047# tidak serumah lagi",
+      "suami istri itu tidak lagi tinggal bersama sejak kejadian pada {waktu} itu demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa setelah puncak pertengkaran pada {waktu} itu keduanya tidak lagi serumah"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: sesudah puncak perselisihan mereka langsung berpisah; versi B: mereka masih serumah beberapa waktu - berselisih pada WAKTU",
+     "bedaPada": "waktu",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri sejak kejadian pada {waktu} itu mereka langsung berpisah tempat tinggal",
+      "keterangan saya adalah bahwa setelah kejadian pada {waktu} itu #0046# dan #0047# langsung hidup terpisah",
+      "sejak kejadian pada {waktu} itu mereka berpisah dan itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa sesudah puncak pertengkaran pada {waktu} itu mereka berpisah rumah"
+     ],
+     "saksi2": [
+      "sepengetahuan saya setelah kejadian itu mereka masih tinggal serumah beberapa waktu sebelum akhirnya berpisah",
+      "yang saya alami sesudah pertengkaran itu mereka masih serumah beberapa lama baru kemudian berpisah",
+      "yang saya ingat dan saya sampaikan adalah bahwa mereka baru berpisah beberapa waktu setelah kejadian itu",
+      "mereka masih serumah untuk sementara waktu setelah kejadian itu dan itulah keterangan saya"
+     ]
+    }
+   }
+  },
+  {
    "id": "q-saksi-lihat",
    "pokok": "pp-perselisihan",
    "urutan": 88,

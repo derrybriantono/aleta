@@ -3169,6 +3169,87 @@
    }
   },
   {
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "tidakBerlaku": [],
+   "id": "q-na-anak-tinggal",
+   "pokok": "pp-kebutuhan-anak",
+   "urutan": 607,
+   "keadaan": {
+    "kumulasi": "nafkah-anak",
+    "bukan:kumulasi": "hak-asuh"
+   },
+   "teks": "Sejak #0046# dan #0047# berpisah, #9302# tersebut tinggal bersama siapa dan siapa yang mengasuhnya sehari-hari ?",
+   "teksVarian": [
+    "Dengan siapa #9302# tersebut tinggal sejak #0046# dan #0047# berpisah, dan siapa yang mengurusnya ?"
+   ],
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "9302"
+   ],
+   "hal": "dengan siapa anak tinggal sejak orang tuanya berpisah",
+   "jawaban": {
+    "melihat": [
+     {
+      "maksud": "saksi menerangkan bahwa sejak berpisah anak tinggal dan diasuh oleh salah satu pihak",
+      "keadaan": {
+       "pengasuhAnak": "pengaju"
+      },
+      "saksi1": [
+       "sejak #0046# dan #0047# berpisah #9302# tersebut tinggal dan diasuh oleh #0046# dan saya melihatnya sendiri",
+       "saya menyaksikan sendiri bahwa sampai sekarang #9302# itu dirawat oleh #0046# sejak orang tuanya berpisah",
+       "setelah perpisahan #0046# dan #0047# yang mengasuh #9302# itu adalah #0046# sebagaimana yang saya ketahui langsung",
+       "saya sering bertemu #9302# itu di rumah #0046# yang mengasuhnya sejak perpisahan orang tuanya"
+      ],
+      "saksi2": [
+       "#9302# tersebut berada dalam asuhan #0046# sejak #0046# dan #0047# berpisah menurut yang saya lihat sendiri",
+       "sejak perpisahan orang tuanya #9302# itu ikut tinggal bersama #0046# dan saya mengalaminya bersama keluarga",
+       "saya hadir ketika #9302# itu dibawa tinggal oleh #0046# setelah #0046# dan #0047# berpisah",
+       "#0046# yang memelihara #9302# tersebut sejak berpisah dengan #0047# sebagaimana yang saya saksikan sendiri"
+      ]
+     },
+     {
+      "maksud": "saksi menerangkan bahwa sejak berpisah anak tinggal dan diasuh oleh salah satu pihak",
+      "keadaan": {
+       "pengasuhAnak": "lawan"
+      },
+      "saksi1": [
+       "sejak #0046# dan #0047# berpisah #9302# tersebut tinggal dan diasuh oleh #0047# dan saya melihatnya sendiri",
+       "saya menyaksikan sendiri bahwa sampai sekarang #9302# itu dirawat oleh #0047# sejak orang tuanya berpisah",
+       "setelah perpisahan #0046# dan #0047# yang mengasuh #9302# itu adalah #0047# sebagaimana yang saya ketahui langsung",
+       "saya sering bertemu #9302# itu di rumah #0047# yang mengasuhnya sejak perpisahan orang tuanya"
+      ],
+      "saksi2": [
+       "#9302# tersebut berada dalam asuhan #0047# sejak #0046# dan #0047# berpisah menurut yang saya lihat sendiri",
+       "sejak perpisahan orang tuanya #9302# itu ikut tinggal bersama #0047# dan saya mengalaminya bersama keluarga",
+       "saya hadir ketika #9302# itu dibawa tinggal oleh #0047# setelah #0046# dan #0047# berpisah",
+       "#0047# yang memelihara #9302# tersebut sejak berpisah dengan #0046# sebagaimana yang saya saksikan sendiri"
+      ]
+     }
+    ],
+    "berbeda": {
+     "maksud": "versi A: anak diasuh Penggugat; versi B: anak diasuh Tergugat - berselisih pada PELAKU",
+     "bedaPada": "pelaku",
+     "saksi1": [
+      "saya melihat sendiri bahwa #9302# itu diasuh oleh #0046# sejak berpisah",
+      "menurut yang saya saksikan #9302# itu tinggal bersama #0046#",
+      "saya menyaksikan #0046# yang merawat #9302# itu sehari-hari",
+      "#9302# itu dirawat #0046# dan saya mengetahuinya langsung"
+     ],
+     "saksi2": [
+      "saya melihat sendiri bahwa #9302# itu diasuh oleh #0047# sejak berpisah",
+      "menurut yang saya saksikan #9302# itu tinggal bersama #0047#",
+      "saya menyaksikan #0047# yang merawat #9302# itu sehari-hari",
+      "#9302# itu dirawat #0047# dan saya mengetahuinya langsung"
+     ]
+    }
+   }
+  },
+  {
    "id": "q-madliyah-lama",
    "pokok": "pp-nafkah-istri-lalai",
    "urutan": 745,

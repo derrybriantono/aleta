@@ -29,7 +29,8 @@ import type { Dalil, MatriksDalil, PembuktianDalil, SumberDalil } from "@/lib/ma
  * Tidak ada yang ditulis ke SIPP/ABT/e-Court. Teks dalil dan jawaban saksi hanya dikutip, tidak diubah.
  */
 
-export const VERSI_PENILAI = 1;
+// 2: tanda syarat nafkah 12 bulan (keputusan 116, 2 Nov 2026)
+export const VERSI_PENILAI = 2;
 
 export type StatusPembuktian = "terbukti" | "belum-terbukti" | "bertentangan" | "tidak-perlu-dibuktikan";
 export type Kekuatan = "sempurna" | "cukup" | "lemah" | "";
@@ -84,6 +85,14 @@ export type BarisPenilaian = {
   catatan: string[];
   /** Dalil diakui tegas pihak lawan (pada perselisihan & pertengkaran tetap perlu saksi, keputusan sementara 1 Nov). */
   diakui: boolean;
+  /**
+   * Keputusan 116 (2 Nov 2026): tanda syarat yang belum terpenuhi - BUKAN status dan bukan penolakan (pertimbangan hakim).
+   * "belum memenuhi 12 bulan": dalil tidak dinafkahi yang menurut saksi < 12 bulan atau lamanya tidak diterangkan
+   * (SEMA Nomor 1 Tahun 2022 Rumusan Kamar Agama angka 1 huruf b poin 1).
+   */
+  tanda?: string[];
+  /** Lama tidak dinafkahi (bulan): menurut gugatan dan menurut saksi yang menerangkannya; null = tidak disebut. */
+  nafkah?: { bulanDalil: number | null; bulanSaksi: number | null; memenuhi: boolean };
 };
 
 export type HasilPenilaian = {
@@ -99,7 +108,7 @@ export type HasilPenilaian = {
    * Bahan musyawarah tingkat perkara (bukan arah putusan): apakah ada alasan perceraian pokok yang terbukti, dan berapa lama
    * pisah tempat tinggal menurut saksi yang menerangkannya (bulan; null bila tidak disebut).
    */
-  kesimpulan: { alasanTerbukti: string[]; alasanBelum: string[]; bulanPisah: number | null; catatan: string[] };
+  kesimpulan: { alasanTerbukti: string[]; alasanBelum: string[]; bulanPisah: number | null; catatan: string[]; bulanNafkah?: number | null; dasarNafkah?: string };
   ms: number;
 };
 
@@ -109,6 +118,8 @@ export type OpsiPenilai = {
   sumber?: SumberDalil[];
   /** Perkara perceraian (bawaan: ada huruf alasan pada matriks). */
   cerai?: boolean;
+  /** Tanggal acuan menghitung "sejak bulan Maret 2024" menjadi bulan (bawaan: hari ini = saat keterangan dinilai). */
+  acuan?: Date;
 };
 
 // ─── Teks ────────────────────────────────────────────────────────────────────
@@ -363,6 +374,8 @@ type BarisSaksi = {
   langsung: boolean;
   /** Lama pisah tempat tinggal yang disebut baris ini (bulan), atau null. */
   bulanPisah: number | null;
+  /** Lama tidak dinafkahi yang disebut baris ini (bulan), atau null (keputusan 116). */
+  bulanNafkah: number | null;
 };
 
 /** Alasan pengetahuan saksi disebut (Pasal 308 ayat (1) RBg): melihat/mendengar, berkunjung, bertetangga, tinggal berdekatan. */
@@ -392,6 +405,53 @@ function bulanPisah(s: string, topik: Map<string, -1 | 0 | 1>): number | null {
   return besar;
 }
 
+const NAMA_BULAN = ["januari", "februari", "maret", "april", "mei", "juni", "juli", "agustus", "september", "oktober", "november", "desember"];
+const RE_SEJAK_BULAN =
+  /\b(?:sejak|semenjak|mulai)\s+(?:\S+\s+){0,3}?(?:bulan\s+)?(januari|februari|pebruari|maret|april|mei|juni|juli|agustus|september|oktober|november|nopember|desember)\s+(?:tahun\s+)?((?:19|20)\d{2})\b/;
+const RE_SEJAK_TAHUN = /\b(?:sejak|semenjak|mulai)\s+(?:\S+\s+){0,2}?(?:tahun\s+)((?:19|20)\d{2})\b|\b(?:sejak|semenjak)\s+((?:19|20)\d{2})\b/;
+const RE_KATA_NAFKAH = /\b(?:nafkah|menafkahi|dinafkahi|uang belanja|biaya hidup|kebutuhan rumah tangga)\b/;
+
+/**
+ * Keputusan 116 (2 Nov 2026), SEMA Nomor 1 Tahun 2022 Kamar Agama angka 1 huruf b poin 1: lama tidak dinafkahi (bulan) dari kalimat
+ * yang MENEGASKAN nafkah tidak diberikan: "sudah 2 tahun tidak memberi nafkah", "sejak bulan Maret 2024 tidak dinafkahi" (dihitung
+ * sampai `acuan`), "selama 8 bulan terakhir". Hanya angka di sekitar kata nafkah; lama menikah/umur tidak dipakai. null = tidak disebut.
+ */
+export function bulanNafkahTeks(s: string, acuan: Date): number | null {
+  const i = s.search(RE_KATA_NAFKAH);
+  if (i < 0) return null;
+  const jendela = s.slice(Math.max(0, i - 120), i + 180);
+  let besar: number | null = null;
+  const pakai = (b: number) => {
+    if (b >= 0 && b < 900) besar = Math.max(besar ?? 0, b);
+  };
+  for (const m of jendela.matchAll(RE_LAMA)) {
+    const sekitar = jendela.slice(Math.max(0, (m.index ?? 0) - 25), (m.index ?? 0) + m[0].length + 25);
+    if (/\b(?:menikah|berumah tangga|dikaruniai|usia|umur|kenal)\b/.test(sekitar)) continue;
+    const n = m[3] ? 1 : /^\d+$/.test(m[1]) ? Number(m[1]) : ANGKA_KATA[m[1]] || 0;
+    pakai((m[3] || m[2]) === "tahun" ? n * 12 : n);
+  }
+  const sb = RE_SEJAK_BULAN.exec(jendela);
+  if (sb) {
+    const bln = NAMA_BULAN.indexOf(sb[1].replace("pebruari", "februari").replace("nopember", "november"));
+    pakai((acuan.getFullYear() - Number(sb[2])) * 12 + (acuan.getMonth() - bln));
+  } else {
+    const st = RE_SEJAK_TAHUN.exec(jendela);
+    if (st) pakai((acuan.getFullYear() - Number(st[1] || st[2])) * 12 + acuan.getMonth());
+  }
+  return besar;
+}
+
+function bulanNafkah(s: string, topik: Map<string, -1 | 0 | 1>, acuan: Date, tanya: string): number | null {
+  if (topik.get("nafkah") !== 1) return null;
+  // jawaban ringkas atas "Sejak kapan ... tidak memberi nafkah?" ("sejak bulan Maret 2024"): kata nafkahnya di pertanyaan
+  return bulanNafkahTeks(RE_KATA_NAFKAH.test(s) || !RE_KATA_NAFKAH.test(tanya) ? s : `nafkah ${s}`, acuan);
+}
+
+/** Bunyi dasar hukum syarat nafkah (dicocokkan dengan Kompilasi Rumusan Hukum Kamar Agama Edisi 2026, hal. 45). */
+export const DASAR_NAFKAH_12 =
+  "SEMA Nomor 1 Tahun 2022 Rumusan Hukum Kamar Agama angka 1 huruf b poin 1: perkara perceraian dengan alasan suami/istri tidak melaksanakan kewajiban nafkah lahir dan/atau batin, hanya dapat dikabulkan jika terbukti suami/istri tidak melaksanakan kewajibannya setelah minimal 12 (dua belas) bulan";
+export const TANDA_NAFKAH_12 = "belum memenuhi 12 bulan";
+
 function labelSaksi(x: SaksiMasuk, sb: { P: string; T: string }, urutLain: number): string {
   // Saksi tanpa data pihak/urutan (baris SIPP sudah diganti) tetap dapat dibedakan: "Saksi lain 1".
   if (x.pihak !== "P" && x.pihak !== "T") return `Saksi lain ${urutLain}`;
@@ -409,7 +469,7 @@ const RE_TANYA_MAKSUD = /\b(?:kenapa|mengapa|apa (?:alasan|sebab)) .*\b(?:mengaj
  */
 const RE_SISA_ISIAN = /\.{4,}|_{3,}|…{2,}|\bpernah (?:melihat|mendengar)\b.*;\s*saya tidak pernah (?:melihat|mendengar)\b/;
 
-function siapkanSaksi(daftar: SaksiMasuk[], sb: { P: string; T: string }): { baris: BarisSaksi[]; sisa: string[] } {
+function siapkanSaksi(daftar: SaksiMasuk[], sb: { P: string; T: string }, acuan: Date = new Date()): { baris: BarisSaksi[]; sisa: string[] } {
   const h: BarisSaksi[] = [];
   const sisa = new Set<string>();
   let lain = 0;
@@ -435,7 +495,7 @@ function siapkanSaksi(daftar: SaksiMasuk[], sb: { P: string; T: string }): { bar
         const iya = RE_IYA.test(sj) ? 1 : RE_BUKAN.test(sj) ? -1 : 0;
         topik = new Map([...tt].map(([k, a]) => [k, (iya === 0 ? 0 : ((a || 1) * iya) as -1 | 1)]));
       }
-      h.push({ saksi: x, label, tanya, jawab, s: sj, topik, kata: kataIsi(sj), tidakTahu: RE_TIDAK_TAHU.test(sj), deAuditu: RE_DE_AUDITU.test(sj), langsung: RE_LANGSUNG.test(sj) && !RE_TIDAK_LANGSUNG.test(sj), bulanPisah: bulanPisah(sj, topik) });
+      h.push({ saksi: x, label, tanya, jawab, s: sj, topik, kata: kataIsi(sj), tidakTahu: RE_TIDAK_TAHU.test(sj), deAuditu: RE_DE_AUDITU.test(sj), langsung: RE_LANGSUNG.test(sj) && !RE_TIDAK_LANGSUNG.test(sj), bulanPisah: bulanPisah(sj, topik), bulanNafkah: bulanNafkah(sj, topik, acuan, tanya ? kecil(tanya) : "") });
     }
   }
   return { baris: h, sisa: [...sisa] };
@@ -593,7 +653,33 @@ export function nilaiPembuktian(m: MatriksDalil, saksi: SaksiMasuk[], bukti: Buk
   const cerai = opsi.cerai ?? m.dalil.some((d) => (d.huruf || []).length > 0);
   const { pilih, lewat } = dalilDinilai(m, sumber);
   const perId = new Map(m.dalil.map((d) => [d.id, d]));
-  const { baris, sisa: saksiSisa } = siapkanSaksi(Array.isArray(saksi) ? saksi : [], sb);
+  const acuan = opsi.acuan instanceof Date && !Number.isNaN(opsi.acuan.getTime()) ? opsi.acuan : new Date();
+  const { baris, sisa: saksiSisa } = siapkanSaksi(Array.isArray(saksi) ? saksi : [], sb, acuan);
+  // Keputusan 116: lama tidak dinafkahi menurut tiap saksi (bulan terbesar yang ia sebut; saksi yang tidak tahu tidak dihitung)
+  const nafkahPerSaksi = new Map<string, { label: string; bulan: number }>();
+  for (const r of baris) {
+    if (r.bulanNafkah === null || r.tidakTahu) continue;
+    const ada = nafkahPerSaksi.get(r.saksi.id);
+    if (!ada || r.bulanNafkah > ada.bulan) nafkahPerSaksi.set(r.saksi.id, { label: r.label, bulan: r.bulanNafkah });
+  }
+  const syaratNafkah = (d: Dalil) => {
+    const bulanDalil = bulanNafkahTeks(kecil(d.teks), acuan);
+    const per = [...nafkahPerSaksi.values()];
+    const cukup = per.filter((x) => x.bulan >= 12);
+    const bulanSaksi = per.length ? Math.min(...per.map((x) => x.bulan)) : null;
+    const memenuhi = cukup.length >= 2;
+    let catatan = "";
+    if (!memenuhi) {
+      const gugatan = bulanDalil !== null ? ` Menurut gugatan ±${bulanDalil} bulan (bukan keterangan saksi).` : " Gugatan juga tidak menyebut lamanya.";
+      if (!per.length) catatan = `Belum memenuhi 12 bulan: lamanya tidak dinafkahi belum diterangkan saksi.${gugatan}`;
+      else if (!cukup.length) catatan = `Belum memenuhi 12 bulan: menurut ${per.map((x) => `${x.label} ±${x.bulan} bulan`).join(", ")}.${gugatan}`;
+      else catatan = `Belum memenuhi 12 bulan: baru ${cukup.map((x) => x.label).join(" dan ")} yang menerangkan tidak dinafkahi sedikitnya 12 bulan (${cukup.map((x) => `±${x.bulan} bulan`).join(", ")}).${gugatan}`;
+      catatan += ` ${DASAR_NAFKAH_12}. Catatan saja, penilaiannya pada majelis.`;
+    }
+    return { nafkah: { bulanDalil, bulanSaksi, memenuhi }, catatan };
+  };
+  let adaDalilNafkah = false;
+  let nafkahBelum = false;
   // Saksi yang menyebut sumber pengetahuannya di salah satu jawaban (melihat/mendengar sendiri, dari cerita, tetangga, berkunjung).
   const sumberDisebut = new Set(baris.filter((r) => r.langsung || r.deAuditu || RE_SUMBER.test(r.s)).map((r) => r.saksi.id));
   const bk: BuktiSiap[] = (Array.isArray(bukti) ? bukti : [])
@@ -684,6 +770,22 @@ export function nilaiPembuktian(m: MatriksDalil, saksi: SaksiMasuk[], bukti: Buk
     const saksiLawan = [...dasarSaksi.values()].filter((x) => x.sikap === "mendukung" && x.pihak && x.pihak !== pembukti);
     if (saksiLawan.length && status === "terbukti") catatan.push(`${ringkasSaksi(saksiLawan)} (saksi pihak lawan) ikut menerangkan sesuai dalil.`);
 
+    // Keputusan 116 (2 Nov 2026): dalil TIDAK DINAFKAHI pada perkara cerai - syarat minimal 12 bulan (SEMA 1/2022) hanya DITANDAI
+    // dan dicatat, sejajar dengan catatan pisah >= 6 bulan (keputusan 103). Status tidak diubah.
+    let tanda: string[] | undefined;
+    let nafkah: BarisPenilaian["nafkah"];
+    // hanya cerai GUGAT (istri mendalilkan suami tidak menafkahi); cerai talak tidak ditandai (keputusan sementara 2 Nov)
+    if (cerai && d.pihak === "0046" && /penggugat/i.test(sb.P) && td.get("nafkah") === 1) {
+      adaDalilNafkah = true;
+      const sy = syaratNafkah(d);
+      nafkah = sy.nafkah;
+      if (!sy.nafkah.memenuhi) {
+        tanda = [TANDA_NAFKAH_12];
+        catatan.push(sy.catatan);
+        nafkahBelum = true;
+      }
+    }
+
     hasil.push({
       id: d.id,
       sumber: d.sumber,
@@ -699,6 +801,8 @@ export function nilaiPembuktian(m: MatriksDalil, saksi: SaksiMasuk[], bukti: Buk
       tidakTahu: [...tidakTahu],
       catatan,
       diakui,
+      ...(tanda ? { tanda } : {}),
+      ...(nafkah ? { nafkah } : {}),
     });
   }
 
@@ -726,6 +830,12 @@ export function nilaiPembuktian(m: MatriksDalil, saksi: SaksiMasuk[], bukti: Buk
   if (cerai && bulan !== null && bulan < 6 && alasanTerbukti.has(TOPIK_ID.get("selisih")!.label))
     catatanPerkara.push(`Menurut saksi, pisah tempat tinggal baru ±${bulan} bulan; periksa syarat lama pisah (sedikitnya 6 bulan) pada rumusan kamar agama SEMA yang berlaku.`);
   if (cerai && !alasanTerbukti.size && alasanBelum.size) catatanPerkara.push(`Alasan perceraian belum terbukti: ${[...alasanBelum].join(", ")}.`);
+  const perNafkah = [...nafkahPerSaksi.values()];
+  const bulanNafkahPerkara = perNafkah.length ? Math.min(...perNafkah.map((x) => x.bulan)) : null;
+  if (cerai && adaDalilNafkah && nafkahBelum)
+    catatanPerkara.push(
+      `Dalil tidak dinafkahi belum memenuhi 12 bulan menurut keterangan saksi${bulanNafkahPerkara !== null ? ` (paling singkat ±${bulanNafkahPerkara} bulan)` : " (lamanya belum diterangkan)"}; bila nafkah dijadikan alasan perceraian periksa ${DASAR_NAFKAH_12.split(":")[0]}.`
+    );
   if (saksiSisa.length)
     catatanPerkara.push(`Keterangan ${saksiSisa.join(" dan ")} masih memuat isian blangko yang belum diisi/dipilih ("...." atau dua pilihan sekaligus); baris itu tidak dinilai.`);
   return {
@@ -736,7 +846,13 @@ export function nilaiPembuktian(m: MatriksDalil, saksi: SaksiMasuk[], bukti: Buk
     ringkas,
     jumlahSaksi: { P: sx.filter((x) => x.pihak === "P").length, T: sx.filter((x) => x.pihak === "T").length },
     jumlahBukti: { surat: bk.filter((x) => x.b.jenis === "surat").length, elektronik: bk.filter((x) => x.b.jenis === "elektronik").length },
-    kesimpulan: { alasanTerbukti: [...alasanTerbukti], alasanBelum: [...alasanBelum], bulanPisah: bulan, catatan: catatanPerkara },
+    kesimpulan: {
+      alasanTerbukti: [...alasanTerbukti],
+      alasanBelum: [...alasanBelum],
+      bulanPisah: bulan,
+      catatan: catatanPerkara,
+      ...(adaDalilNafkah ? { bulanNafkah: bulanNafkahPerkara, dasarNafkah: DASAR_NAFKAH_12 } : {}),
+    },
     ms: Date.now() - mulai,
   };
 }
@@ -774,8 +890,9 @@ export function ubahanPembuktian(h: HasilPenilaian, tersimpan: Record<string, Pe
       kekuatan: r.kekuatan,
       dasar: { saksi: r.saksi.map((x) => `${x.label}${x.sikap === "sebaliknya" ? " (sebaliknya)" : x.langsung ? "" : " (de auditu)"}`), bukti: r.bukti.map((x) => x.label) },
       sidik: h.sidik,
+      ...(r.tanda && r.tanda.length ? { tanda: r.tanda } : {}),
     };
-    if (lama && lama.status === baru.status && lama.catatan === baru.catatan && lama.sidik === baru.sidik) continue;
+    if (lama && lama.status === baru.status && lama.catatan === baru.catatan && lama.sidik === baru.sidik && JSON.stringify(lama.tanda || []) === JSON.stringify(baru.tanda || [])) continue;
     ubah[r.id] = baru;
   }
   for (const [id, v] of Object.entries(tersimpan)) if (v && v.oleh === "aturan" && !ada.has(id)) ubah[id] = null;

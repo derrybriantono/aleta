@@ -83,9 +83,12 @@
     const asal = r ? `${namaSumber(r.sumber, sb)}${r.nomor ? ` angka ${r.nomor}` : ""} (${CARA[r.cara] || r.cara})` : t.catatan || "";
     const kutip = r && r.kutipan ? `${asal}: "${r.kutipan}"` : asal;
     const huruf = (x.huruf || []).length ? ` <span class="bd-catat">huruf ${esc(x.huruf.join(", "))}</span>` : "";
+    // Keputusan 116 (2 Nov): tanda syarat dari penilaian pembuktian ("belum memenuhi 12 bulan" - SEMA 1/2022), catatan saja
+    const pb = x.pembuktian && Array.isArray(x.pembuktian.tanda) ? x.pembuktian.tanda : [];
+    const tanda = pb.map((s) => ` <span class="bd-tanda kuning" title="${esc(`${s}: SEMA Nomor 1 Tahun 2022 Kamar Agama angka 1 huruf b poin 1 (tidak dinafkahi minimal 12 bulan). Catatan saja, penilaiannya pada majelis.`)}">${esc(s)}</span>`).join("");
     return (
       `<tr><td class="bd-pd-no">${esc(x.nomor || "")}</td>` +
-      `<td><span title="${esc(x.teks)}">${esc(x.ringkas || x.teks)}</span>${huruf}</td>` +
+      `<td><span title="${esc(x.teks)}">${esc(x.ringkas || x.teks)}</span>${huruf}${tanda}</td>` +
       `<td><span class="bd-tanda ${st.warna}"${kutip ? ` title="${esc(kutip)}"` : ""}>${esc(st.label)}</span>${t.ragu ? ` <span class="bd-catat">periksa</span>` : ""}</td></tr>`
     );
   }

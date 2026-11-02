@@ -613,8 +613,9 @@ function isiPlaceholder(teks, tanya, h, ctx) {
     lawanSaksi: () => ctx.T,
     waktu: () => (/puncak/.test(q) ? h.nilai("puncak") : null),
     peristiwa: () => (/puncak/.test(q) ? h.nilai("puncakPeristiwa") : null),
-    sejak: () => (/pisah|meninggalkan|pergi/.test(q) ? h.nilai("pisahSejak") : /rukun|selisih|tengkar|konflik/.test(q) ? h.nilai("awalKonflik") : null),
-    lama: () => (/pisah|meninggalkan|pergi/.test(q) ? h.nilai("lamaPisah") : null),
+    // 2 Nov: "Sejak kapan ... tidak lagi memberikan nafkah ..." memakai fakta nafkah (bukan pisah)
+    sejak: () => (/nafkah/.test(q) ? h.nilai("nafkahSejak") : /pisah|meninggalkan|pergi/.test(q) ? h.nilai("pisahSejak") : /rukun|selisih|tengkar|konflik/.test(q) ? h.nilai("awalKonflik") : null),
+    lama: () => (/nafkah/.test(q) ? h.nilai("lamaNafkah") : /pisah|meninggalkan|pergi/.test(q) ? h.nilai("lamaPisah") : null),
   };
   return String(teks).replace(/\{([a-zA-Z0-9_]+)\}/g, (m, nama) => {
     const f = peta[nama];

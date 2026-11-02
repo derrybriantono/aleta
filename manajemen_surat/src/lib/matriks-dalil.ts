@@ -64,6 +64,8 @@ export type PembuktianDalil = {
   dasar?: { saksi: string[]; bukti: string[] };
   /** A2: sidik bahan (saksi + bukti) saat status aturan dihitung. */
   sidik?: string;
+  /** Keputusan 116 (2 Nov): tanda syarat yang belum terpenuhi ("belum memenuhi 12 bulan" - SEMA 1/2022), catatan saja. */
+  tanda?: string[];
 };
 
 export type MatriksDalil = {
