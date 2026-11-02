@@ -47,8 +47,10 @@
   }
 
   /**
-   * Bawaan pengetahuan satu saksi. Saksi pertama tahu semuanya, berikutnya sebagian (pola lama); arah Tolak/NO -> "tidak tahu"
-   * (keputusan 63); saksi Tergugat/Termohon -> "sama" (isinya mengikuti jawaban & duplik, bukan dalil gugatan).
+   * Bawaan pengetahuan satu saksi. 2 Nov sore (butir 11, keputusan pengguna): SEMUA saksi - termasuk saksi II - bawaannya "sama"
+   * (tahu seluruh alasan, melihat sendiri), yang paling kuat; dulu saksi kedua dan seterusnya "sebagian". Pilihan lain tetap ada di menu.
+   * Arah Tolak -> "tidak tahu" (keputusan 63) dan NO -> "tahu sesuai gugatan" tetap; saksi Tergugat/Termohon -> "sama" (isinya mengikuti
+   * jawaban & duplik, bukan dalil gugatan).
    * @param {number} urut  urutan saksi (0 = pertama)
    * @param {{arah?: string, pihak?: string}} opsi
    */
@@ -59,7 +61,8 @@
     // tahu). Menu tiga pilihan tetap tampil pada keduanya.
     if (o.arah === "tolak") return "tidak-tahu-apa";
     if (o.arah === "no") return "sama";
-    return Number(urut) === 0 ? "sama" : "sebagian";
+    void urut; // urutan saksi tidak lagi menentukan bawaan (butir 11)
+    return "sama";
   }
 
   /**

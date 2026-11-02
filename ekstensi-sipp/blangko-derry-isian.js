@@ -1459,6 +1459,8 @@
       const jenis = jenisSaranAktif();
       const r = jenis ? rekomendasiJenis(jenis)[0] : null;
       if (!r || !S.menu) return;
+      // Butir 8: saran yang ragu (rekomendasi putusan belum yakin) tidak dipilih sendiri - majelis yang menentukan.
+      if (r.ragu === true) return;
       // Hanya saran PORTAL (keadaan perkara); saran cadangan dari kata agenda tidak dipilih sendiri.
       const portal = saranDariPortal(c.hasil, S.menu.kelompok, {}).filter((x) => x.jenis === jenis);
       if (!portal.length || portal[0].kelompok !== r.kelompok) return;
@@ -1702,14 +1704,24 @@
     }
     return daftar;
   }
+  /**
+   * Lencana "disarankan" satu blangko. Butir 8 (2 Nov sore): saran yang berasal dari rekomendasi putusan RAGU (atau saran lama yang
+   * dipertahankan di samping rekomendasi ragu) bertanda "disarankan · ragu" - saran blangko tidak pura-pura pasti.
+   */
+  function lencanaSaran(rek, nama) {
+    const r = rek.find((x) => samaBerkasSaran(x.berkas, nama));
+    if (!r) return "";
+    return r.ragu === true
+      ? `<span class="bd-lencana ragu" title="Rekomendasi putusan masih ragu: majelis yang menentukan; blangko ini tidak dipilih otomatis">disarankan · ragu</span>`
+      : `<span class="bd-lencana">disarankan</span>`;
+  }
   function tombolBlangko(b, jenis, rek) {
     const nama = b.berkas;
     const aktif = S.blangko && S.blangko.berkas === nama && S.blangko.kelompok === b.kelompok;
-    const disaran = rek.some((r) => samaBerkasSaran(r.berkas, nama));
     return (
       `<button type="button" class="bd-bl${aktif ? " aktif" : ""}" data-bl="${esc(nama)}" data-kel="${esc(b.kelompok)}" ${b.belum ? "disabled" : ""}>` +
       `<span class="kd">${esc(kodeDari(jenis === "put" ? nama : nama.replace(/^BAS ALUR \d\d /, "")))}</span>${lencanaSidang(nama, jenis, false)}<span class="nm">${esc(namaTampil(nama, jenis))}</span>` +
-      `${disaran ? `<span class="bd-lencana">disarankan</span>` : ""}${aktif ? `<span class="tanda" aria-label="dipakai sekarang">&#10003;</span>` : ""}</button>`
+      `${lencanaSaran(rek, nama)}${aktif ? `<span class="tanda" aria-label="dipakai sekarang">&#10003;</span>` : ""}</button>`
     );
   }
   /**
@@ -1727,11 +1739,10 @@
   /** Satu butir kelompok maya Ikrar Talak: kalimat biasa, bukan nama berkas. */
   function tombolIkrar(b, rek) {
     const aktif = S.blangko && S.blangko.berkas === b.berkas && S.blangko.kelompok === b.kelompok;
-    const disaran = rek.some((r) => samaBerkasSaran(r.berkas, b.berkas));
     return (
       `<button type="button" class="bd-bl${aktif ? " aktif" : ""}" data-bl="${esc(b.berkas)}" data-kel="${esc(b.kelompok)}" data-ikrar="1">` +
       `<span class="kd">${esc(b.kode)}</span>${lencanaSidang(b.berkas, "", true)}<span class="nm">${esc(b.kalimat)}</span>` +
-      `${disaran ? `<span class="bd-lencana">disarankan</span>` : ""}${aktif ? `<span class="tanda" aria-label="dipakai sekarang">&#10003;</span>` : ""}</button>`
+      `${lencanaSaran(rek, b.berkas)}${aktif ? `<span class="tanda" aria-label="dipakai sekarang">&#10003;</span>` : ""}</button>`
     );
   }
   function renderModal() {
@@ -5539,6 +5550,34 @@
     const grup = ktGrupBuka();
     if (grup.length && tjSiap(grup)) void ktIsiOtomatis(grup, { lapor: true });
   }
+  // Butir 15 (2 Nov sore): kotak "Keadaan perkara" terlipat bawaan; buka/tutup diingat per pengguna di PC ini (ingatan lipat panel-alat.js).
+  const KUNCI_LIPAT_KEADAAN = "blangkoDerry:keadaanPerkara";
+  let ktLipatDibaca = false;
+  function ktKeadaanBuka() {
+    const st = ktState();
+    if (typeof st.keadaanBuka === "boolean") return st.keadaanBuka;
+    try {
+      const v = typeof alatLipatDiingat === "function" ? alatLipatDiingat(KUNCI_LIPAT_KEADAAN) : undefined;
+      if (typeof v === "boolean") return v;
+      if (!ktLipatDibaca && typeof alatMuatLipat === "function") {
+        ktLipatDibaca = true;
+        void Promise.resolve(alatMuatLipat()).then(() => {
+          if (typeof ktState().keadaanBuka !== "boolean" && ktKeadaanBuka()) renderTj();
+        });
+      }
+    } catch {
+      /* bawaan terlipat */
+    }
+    return false;
+  }
+  function ktSetelKeadaanBuka(nilai) {
+    ktState().keadaanBuka = Boolean(nilai);
+    try {
+      if (typeof alatSimpanLipat === "function") alatSimpanLipat(KUNCI_LIPAT_KEADAAN, Boolean(nilai));
+    } catch {
+      /* hanya untuk halaman ini */
+    }
+  }
   /** Panel "Pengetahuan saksi" mode katalog; null bila perkara ini cerai (panel lama dipakai). */
   function ktPanel(keys) {
     const K = KT();
@@ -5569,7 +5608,8 @@
         };
       });
     if (!kartu.length) return "";
-    return K.panelHtml({ judul: kenal.judul, keys, siap: tjSiap(keys), jarang: ktState().jarang, ada: true, bidang, kartu, konfirmasi: htmlKonfirmasiIsiUlang(keys) });
+    const diubah = bidang.filter((b) => !b.perSaksi && b.kunci in ktState().keadaan).length;
+    return K.panelHtml({ judul: kenal.judul, keys, siap: tjSiap(keys), jarang: ktState().jarang, ada: true, bidang, kartu, konfirmasi: htmlKonfirmasiIsiUlang(keys), keadaanBuka: ktKeadaanBuka(), keadaanDiubah: diubah, arah: arahTj() });
   }
   /** Pilihan "Katalog <jenis perkara>" di daftar Set pertanyaan (terpilih bawaan); kosong untuk cerai dan jenis tanpa katalog. */
   function ktOpsiSet() {
@@ -6123,8 +6163,12 @@
     const tanpaSaran = semuaAkun();
     const jenisSaran = S.pk && !tanpaSaran ? jenisSaranAktif() : "";
     const rek = jenisSaran ? rekomendasiJenis(jenisSaran) : [];
-    const disaran = b && rek.some((r) => samaBerkasSaran(r.berkas, b.berkas));
+    const saranB = b ? rek.find((r) => samaBerkasSaran(r.berkas, b.berkas)) : null;
+    const disaran = Boolean(saranB);
     const saranPertama = rek[0];
+    // Butir 8: saran yang ragu (rekomendasi putusan belum yakin) disebut ragu dan pilihan keduanya ikut disebut.
+    const raguPertama = Boolean(saranPertama && saranPertama.ragu === true);
+    const lainRagu = raguPertama ? rek.find((r, i) => i > 0 && r.jenis === saranPertama.jenis && r.rekomendasiBukti && !samaBerkasSaran(r.berkas, saranPertama.berkas)) : null;
     const urutanSaran = S.pk ? sidangUrutan() : "";
     const peringatanSidang = b && b.jenis === "bas" && S.susunan && S.susunan.isian.some((x) => x.jenis !== "tj" && x.wajib)
       ? ikonInfo("info:persidang")
@@ -6133,7 +6177,7 @@
     w.innerHTML =
       `<div class="bd-tk"><div class="bd-ringkas" id="bd-blringkas" tabindex="0" role="button" title="Klik dua kali untuk memilih blangko" style="cursor:pointer">${
         b
-          ? `<span class="bd-chip">${esc(b.judul || namaMenuTampil(b.kelompok) || NAMA_JENIS[b.jenis] || b.jenis)}</span><span class="bd-potong" title="${esc(namaTampil(b.berkas, b.jenis))} (klik dua kali untuk mengganti blangko)">${esc(namaTampil(b.berkas, b.jenis))}</span>${disaran ? `<span class="bd-chip sebagian">disarankan</span>` : ""}`
+          ? `<span class="bd-chip">${esc(b.judul || namaMenuTampil(b.kelompok) || NAMA_JENIS[b.jenis] || b.jenis)}</span><span class="bd-potong" title="${esc(namaTampil(b.berkas, b.jenis))} (klik dua kali untuk mengganti blangko)">${esc(namaTampil(b.berkas, b.jenis))}</span>${disaran ? `<span class="bd-chip sebagian">${saranB.ragu === true ? "disarankan · ragu" : "disarankan"}</span>` : ""}`
           : `<span class="bd-catat">Belum ada blangko dipilih</span>`
       }</div><button type="button" class="bd-btn kecil${b ? "" : " utama"}" data-bd2="bukamodal">${b ? "Ganti blangko" : "Pilih blangko"}</button>${peringatanSidang}</div>` +
       htmlRekomendasiPutusan() +
@@ -6141,8 +6185,8 @@
         ? `<p class="bd-petunjuk" id="bd-saranblangko">${
             saranPertama
               ? b && b.berkas === saranPertama.berkas
-                ? `Blangko ini sesuai saran untuk sidang ke-${esc(urutanSaran)}${saranPertama.alasan ? ` (${esc(saranPertama.alasan)})` : ""}.`
-                : `Saran untuk sidang ke-${esc(urutanSaran)}: <b>${esc(namaTampil(saranPertama.berkas, saranPertama.jenis))}</b>${saranPertama.alasan ? ` - ${esc(saranPertama.alasan)}` : ""} <button type="button" class="bd-btn kecil" data-bd2="pakairek">Pakai saran ini</button>`
+                ? `Blangko ini sesuai saran${raguPertama ? " (ragu)" : ""} untuk sidang ke-${esc(urutanSaran)}${saranPertama.alasan ? ` (${esc(saranPertama.alasan)})` : ""}.${lainRagu ? ` Pilihan lain: <b>${esc(namaTampil(lainRagu.berkas, lainRagu.jenis))}</b>.` : ""}`
+                : `Saran${raguPertama ? " (ragu)" : ""} untuk sidang ke-${esc(urutanSaran)}: <b>${esc(namaTampil(saranPertama.berkas, saranPertama.jenis))}</b>${saranPertama.alasan ? ` - ${esc(saranPertama.alasan)}` : ""}${lainRagu ? `; pilihan lain: <b>${esc(namaTampil(lainRagu.berkas, lainRagu.jenis))}</b>` : ""} <button type="button" class="bd-btn kecil" data-bd2="pakairek">Pakai saran ini</button>`
               : jenisSaran
                 ? `Belum ada saran blangko ${esc(NAMA_SARAN_JENIS[jenisSaran] || "")} untuk sidang ke-${esc(urutanSaran)}; ${b ? "ganti sendiri lewat Ganti blangko bila perlu" : "pilih sendiri lewat Pilih blangko"}.`
                 : b
@@ -6904,8 +6948,9 @@
     );
   }
   /** 21 Okt: isian yang hanya dibaca bagian otomatis - tidak ada di tabel ABT blangko ini; tertutup, tetap dapat diisi. */
-  function htmlIsianLanjutan() {
-    const l = daftarLanjutan();
+  function htmlIsianLanjutan(sudahDiAtas) {
+    // Butir 10: kotak bukti yang sudah ditampilkan di Perlu diisi (sebelum tanya jawab saksi) tidak diulang di sini.
+    const l = daftarLanjutan().filter((b) => !(Array.isArray(sudahDiAtas) && sudahDiAtas.includes(b)));
     if (!l.length) return "";
     const terisiN = l.filter((b) => terisi(b)).length;
     return (
@@ -6992,7 +7037,13 @@
       return;
     }
     const l = daftarPerlu();
-    const grid = l.filter((x) => x.jenis !== "tj");
+    // Butir 10 (2 Nov sore): urutan di layar = isian Perlu diisi -> alat bukti surat (bukti elektronik di dalam kotaknya) -> TANYA JAWAB
+    // SAKSI -> isian tambahan / tuntutan / isian di dalam bagian otomatis -> peta dalil / penilaian pembuktian. Kotak bukti ditaruh paling
+    // akhir di Perlu diisi; kotak bukti yang hanya dibaca bagian otomatis tetapi BERLAKU untuk perkara ini ikut di sini (tidak lagi
+    // tersembunyi di bagian tertutup di bawah tanya jawab). Isian dan isi otomatisnya tidak berubah - hanya letaknya.
+    const buktiLanjut = daftarLanjutan().filter((b) => b.khusus === "bukti" && keadaanBerlaku(b));
+    const gridSemua = l.filter((x) => x.jenis !== "tj");
+    const grid = [...gridSemua.filter((x) => x.khusus !== "bukti"), ...gridSemua.filter((x) => x.khusus === "bukti"), ...buktiLanjut.filter((b) => !gridSemua.includes(b))];
     const tj = l.filter((x) => x.jenis === "tj");
     const takBerlaku = daftarTakBerlaku();
     const pilihan = S.susunan.isian.filter((b) => !b.wajib);
@@ -7008,13 +7059,13 @@
       `<div class="bd-bar"><span id="bd-barisi"></span></div><div class="bd-alatkecil" id="bd-alatisi"></div>` +
       htmlSinkronSipp() +
       `<div class="bd-pgrid" id="bd-perlu">${grid.length ? grid.map((b) => (b.khusus === "bukti" ? kotakBukti(b) : kotakIsian(b))).join("") : tj.length ? "" : `<p class="bd-ok">Blangko ini tidak perlu diisi tangan; semua terisi sendiri dari SIPP dan aturan ABT.</p>`}</div>` +
-      htmlIsianTambahan() +
-      htmlTuntutanTakDiminta() +
-      htmlIsianLanjutan() +
-      htmlPetaDalil() +
-      (penilaianBerlaku() ? PB().htmlBungkus(nomorPerkara(), sebutan()) : "") +
       `<div id="bd-tjtombol" class="bd-baris"></div><div id="bd-tjwadah"></div>` +
       (S.blangko.jenis === "bas" ? `<div id="bd-skorsbas"></div>` : "") +
+      htmlIsianTambahan() +
+      htmlTuntutanTakDiminta() +
+      htmlIsianLanjutan(buktiLanjut) +
+      htmlPetaDalil() +
+      (penilaianBerlaku() ? PB().htmlBungkus(nomorPerkara(), sebutan()) : "") +
       `<div class="bd-baris"><button type="button" class="bd-btn kecil" data-bd2="semua" aria-expanded="${S.semuaBuka}">Lihat semua isi data (${S.susunan.otomatis.length + pilihan.length})</button></div>` +
       `<div class="bd-vdaftar" id="bd-vdaftar" ${S.semuaBuka ? "" : "hidden"}></div>`;
     // Rancangan v12: tiga alat ekstensi lama berjajar di atas kotak isian.
@@ -10100,6 +10151,18 @@
       S.tambahanBuka = d ? !d.open : !S.tambahanBuka;
       return;
     }
+    if (kode === "lipatrekput") {
+      // Butir 7: kotak rekomendasi putusan terlipat bawaan; pilihan buka/tutup diingat (peramban sendiri yang membalik <details>).
+      const d = aksi.closest("details");
+      if (RP() && typeof RP().setelBuka === "function") RP().setelBuka(d ? !d.open : true);
+      return;
+    }
+    if (kode === "lipatkeadaan") {
+      // Butir 15: kotak Keadaan perkara (Pengetahuan saksi katalog) terlipat bawaan; pilihan buka/tutup diingat.
+      const d = aksi.closest("details");
+      ktSetelKeadaanBuka(d ? !d.open : true);
+      return;
+    }
     if (kode === "lanjutan" || kode === "tuntutan") {
       const d = aksi.closest("details");
       if (kode === "lanjutan") S.lanjutanBuka = d ? !d.open : !S.lanjutanBuka;
@@ -11293,10 +11356,18 @@
     const p = (S.pk && S.pk.perkara) || {};
     return p.sudahPutus ? String(p.statusPutusan || p.statusPutusanNama || "") : "";
   }
+  /**
+   * Butir 8 (2 Nov sore): majelis sudah memutus = status SIPP tercatat ATAU keterangan sidang terpilih menyebut hasil putusnya. Satu
+   * fungsi untuk kotak rekomendasi dan saran blangko supaya keduanya tidak bertentangan.
+   */
+  function rpSudahDiputus() {
+    const s = (S.pk && S.pk.sidangDipilih) || {};
+    return Boolean(rpPutusTercatat()) || /\bputus(?:an)?\b\s+\S/i.test(String(s.ket || ""));
+  }
   function htmlRekomendasiPutusan() {
     if (!RP() || !rpBerlaku()) return "";
     try {
-      return RP().htmlBungkus(nomorPerkara(), S.pk.jenisPerkara, rpPutusTercatat());
+      return RP().htmlBungkus(nomorPerkara(), S.pk.jenisPerkara, rpPutusTercatat(), rpSudahDiputus());
     } catch {
       return "";
     }
@@ -11330,6 +11401,7 @@
         kehadiran: RP().kehadiranDari(S.pk.sidang, pu, hari),
         acuan: (pu && pu.tanggalPutusan) || hari,
         putusSipp: rpPutusTercatat(),
+        sudahDiputus: rpSudahDiputus(),
         tes: tes(),
         ambil: (u, o) => ambilPortal(u, o || {}, "Menyusun rekomendasi putusan"),
         bahan: bahanPenilaian,
@@ -11348,9 +11420,7 @@
       const data = RP() && S.pk ? RP().tersinggah(nomorPerkara()) : null;
       if (!data) return daftar;
       const rek = RP().saranBlangko(data, S.menu ? S.menu.kelompok : []).map(sesuaikanSaran);
-      const s = (S.pk && S.pk.sidangDipilih) || {};
-      const sudah = Boolean(rpPutusTercatat()) || /\bputus(?:an)?\b\s+\S/i.test(String(s.ket || ""));
-      return RP().gabungSaran(daftar, rek, sudah);
+      return RP().gabungSaran(daftar, rek, rpSudahDiputus());
     } catch {
       return daftar;
     }

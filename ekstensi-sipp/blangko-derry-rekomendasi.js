@@ -17,6 +17,16 @@
  *
  * Tampil sendiri tanpa klik; TIDAK mencetak, menyimpan, atau menulis ke SIPP/ABT.
  *
+ * 2 Nov sore (butir 7): kotak BAWAAN TERLIPAT - satu baris ringkas "Rekomendasi: Dikabulkan · keyakinan cukup" (chip lembut, warna token);
+ * klik membuka rincian lengkap. Buka/tutup diingat per pengguna di PC ini (ingatan lipat bersama panel-alat.js, kunci KUNCI_LIPAT).
+ *
+ * 2 Nov sore (butir 8) - SATU SUMBER KEBENARAN arah putusan untuk saran blangko:
+ *   1. majelis sudah memutus (status SIPP / keterangan sidang menyebut hasilnya) -> arah majelis; rekomendasi menyusul di bawah;
+ *   2. belum diputus -> arah REKOMENDASI ini (alat bukti + saksi). Keyakinan cukup: saran putusan lama yang arahnya BERTENTANGAN
+ *      (mis. perkiraan "dikabulkan" padahal rekomendasi "ditolak") tidak lagi bertanda disarankan (blangkonya tetap ada di kelompoknya);
+ *      keyakinan ragu: semua saran putusan bertanda "ragu", tidak ada yang dipilih otomatis, pilihan lain tetap tampil.
+ *   Arah blangko dibaca dari tanda namanya ([Kabul...], [Tolak...], [NO]) - arahBlangko().
+ *
  * KINERJA (arahan 1 Nov): berkas ini dimuat MALAS (AletaModul "rekomendasi-putusan") hanya untuk perkara cerai/itsbat/DK; satu
  * permintaan per perkara 1,2 detik sesudah bahan terakhir berubah (debounce), sidik bahan sama = tanpa permintaan; hasil disinggahkan
  * per perkara (5 menit, paling banyak 30 perkara); DOM hanya kotak ini yang diganti; rincian unsur dilipat (<details>) supaya ringan.
@@ -82,6 +92,67 @@
     catatan: { label: "catatan", warna: "abu" },
   };
 
+  /**
+   * Arah putusan sebuah blangko putusan menurut tanda di namanya: "[Kabul ...]" -> dikabulkan, "[Tolak ...]" -> ditolak,
+   * "[NO]" / "Tidak Dapat Diterima" -> tidak-dapat-diterima; selain itu (Gugur, Cabut, Coret, Damai, Sela, Ikrar ...) "" = bukan arah pokok.
+   * "[Sela Kabul]"/"[Sela Tolak]" adalah putusan sela, bukan arah putusan akhir -> "". Murni.
+   */
+  function arahBlangko(nama) {
+    const t = teks(nama);
+    if (/\[\s*sela\b/i.test(t)) return "";
+    if (/\[\s*no\s*\]|\btidak\s+dapat\s+diterima\b/i.test(t)) return "tidak-dapat-diterima";
+    if (/\[\s*tolak/i.test(t)) return "ditolak";
+    if (/\[\s*kabul/i.test(t)) return "dikabulkan";
+    return "";
+  }
+
+  // Butir 7: chip ringkas di baris terlipat (warna lembut dari token tema, lihat blangko-derry.css .bd-rp-chip).
+  const KUNCI_LIPAT = "blangkoDerry:rekomendasiPutusan";
+  let bukaDiingat = null; // null = belum diubah di halaman ini (pakai ingatan lipat / bawaan terlipat)
+  /** Kalimat chip ringkas (murni): "Rekomendasi: Dikabulkan (verstek) · keyakinan cukup". */
+  function ringkasChip(data, galat) {
+    if (galat && !data) return { teks: "belum terbaca", kelas: "abu" };
+    if (!data) return { teks: "menyusun…", kelas: "abu" };
+    const r = data.rekomendasi;
+    if (!data.ada || !r || !r.hasil) return { teks: "belum dapat direkomendasikan", kelas: "abu" };
+    const lain = r.pilihanLain ? ` · pilihan lain ${teks(r.pilihanLain.label)}` : "";
+    return { teks: `Rekomendasi: ${teks(r.label)} · keyakinan ${teks(r.keyakinan)}${lain}`, kelas: r.keyakinan === "cukup" ? "cukup" : "ragu" };
+  }
+  /** Terbuka? Pilihan di halaman ini > ingatan lipat per pengguna (panel-alat.js) > bawaan TERLIPAT. */
+  function terbuka() {
+    if (bukaDiingat !== null) return bukaDiingat;
+    try {
+      const v = typeof alatLipatDiingat === "function" ? alatLipatDiingat(KUNCI_LIPAT) : undefined;
+      if (typeof v === "boolean") return v;
+    } catch {
+      /* ingatan lipat tidak ada: bawaan */
+    }
+    return false;
+  }
+  /** Dicatat saat petugas membuka/menutup (sebelum peramban membalik <details>). */
+  function setelBuka(nilai) {
+    bukaDiingat = Boolean(nilai);
+    try {
+      if (typeof alatSimpanLipat === "function") alatSimpanLipat(KUNCI_LIPAT, bukaDiingat);
+    } catch {
+      /* hanya untuk halaman ini */
+    }
+    return bukaDiingat;
+  }
+  /** Ingatan lipat dibaca asinkron sekali per halaman: kotak yang sudah tergambar dibuka bila petugas dulu membukanya. */
+  function pulihkanIngatan() {
+    try {
+      if (bukaDiingat !== null || typeof alatMuatLipat !== "function" || typeof alatLipatDiingat !== "function") return;
+      void Promise.resolve(alatMuatLipat()).then(() => {
+        const el = typeof document !== "undefined" ? document.getElementById("bd-rekput") : null;
+        const v = terbuka();
+        if (el && bukaDiingat === null && el.open !== v) el.open = v;
+      });
+    } catch {
+      /* bawaan terlipat */
+    }
+  }
+
   function rincianUnsur(u) {
     const b = (u.bukti || []).map((x) => `<li><b>${esc(x.kode || x.kelas)}</b> ${esc(x.kode ? `(${x.kelas}) ` : "")}membuktikan ${esc(x.membuktikan)}</li>`);
     const s = (u.saksi || []).map((x) => {
@@ -95,9 +166,26 @@
   }
 
   /**
+   * Butir 8: kalimat blangko yang SAMA dengan tanda "disarankan" di daftar Pilih blangko (gabungSaran memakai aturan yang sama). Murni.
+   */
+  function htmlBlangko(r, opsi) {
+    const utama = r.blangko && r.blangko[0] ? teks(r.blangko[0].berkas).replace(/\.rtf$/i, "") : "";
+    if (!utama) return "";
+    const lain = r.pilihanLain && r.pilihanLain.blangko ? teks(r.pilihanLain.blangko).replace(/\.rtf$/i, "") : "";
+    if (opsi && opsi.sudahDiputus) {
+      return `<p class="bd-catat bd-rp-blangko">Majelis sudah memutus: saran blangko mengikuti putusan majelis. Blangko menurut rekomendasi ini, <b>${esc(utama)}</b>, ada di bawah saran itu.</p>`;
+    }
+    if (r.keyakinan !== "cukup") {
+      return `<p class="bd-catat bd-rp-blangko">Blangko menurut rekomendasi (ragu): <b>${esc(utama)}</b>${lain ? `; pilihan lain: <b>${esc(lain)}</b>` : ""}. Di daftar Pilih blangko bertanda "disarankan · ragu" dan tidak dipilih otomatis - majelis yang menentukan.</p>`;
+    }
+    return `<p class="bd-catat bd-rp-blangko">Blangko yang disarankan: <b>${esc(utama)}</b> - sama dengan tanda "disarankan" paling atas di daftar Pilih blangko.</p>`;
+  }
+
+  /**
    * Isi kotak (tanpa pembungkus). Murni.
    * @param {{ada:boolean, rekomendasi:object|null, catatan?:string[], denganPenilaian?:boolean}|null} data
-   * @param {{galat?:string, putusSipp?:string}} [o] putusSipp = status putusan yang sudah tercatat/terucap (pembanding)
+   * @param {{galat?:string, putusSipp?:string, sudahDiputus?:boolean}} [o] putusSipp = status putusan yang sudah tercatat/terucap
+   *        (pembanding); sudahDiputus = majelis sudah memutus (SIPP atau keterangan sidang) - saran blangko mengikuti majelis
    */
   function htmlIsi(data, o) {
     const opsi = o || {};
@@ -129,7 +217,7 @@
       })
       .join("");
     const belum = r.belum && r.belum.length ? `<p class="bd-catat"><b>Belum terbukti:</b> ${esc(r.belum.join("; "))}.</p>` : "";
-    const blangko = r.blangko && r.blangko[0] ? `<p class="bd-catat bd-rp-blangko">Blangko yang cocok: <b>${esc(teks(r.blangko[0].berkas).replace(/\.rtf$/i, ""))}</b> - ditaruh paling atas di saran blangko.</p>` : "";
+    const blangko = htmlBlangko(r, opsi);
     return `${kepala}${lain}${beda}${ragu}<ul class="bd-rp-daftar">${baris}</ul>${belum}${blangko}<p class="bd-catat bd-rp-kaki">Usulan dari alat bukti tertulis dan keterangan saksi${data.denganPenilaian ? " (dengan penilaian pembuktian per dalil)" : ""} - bukan putusan; majelis yang menilai.</p>`;
   }
 
@@ -160,13 +248,17 @@
       if (!berkas) continue;
       if (k && Array.isArray(k.berkas) && !k.berkas.some((x) => teks(x.berkas).replace(/\.rtf$/i, "").trim().toLowerCase() === berkas.toLowerCase())) continue;
       if (out.some((x) => x.berkas === berkas)) continue;
+      const ragu = r.keyakinan !== "cukup";
       out.push({
         berkas,
         kelompok: k ? k.nama : "",
         jenis: "put",
-        alasan: b.utama ? `rekomendasi dari bukti dan saksi: ${r.label.toLowerCase()}` : teks(b.alasan),
+        alasan: b.utama ? `rekomendasi dari bukti dan saksi: ${r.label.toLowerCase()}${ragu ? " (ragu - majelis yang menentukan)" : ""}` : teks(b.alasan),
         utama: Boolean(b.utama),
         rekomendasiBukti: true,
+        // Butir 8: keyakinan rekomendasi ikut ke saran blangko (ragu = tanda "disarankan · ragu", tidak dipilih otomatis).
+        ragu,
+        arah: arahBlangko(berkas) || (b.utama ? teks(r.hasil) : ""),
         // Varian "(N Saksi)" dipilih panel (sesuaikanSaran) menurut banyaknya saksi pihak pertama.
         saksi: Number(r.jumlahSaksi && r.jumlahSaksi.P) || 0,
       });
@@ -176,18 +268,39 @@
   }
 
   /**
-   * Saran blangko gabungan: rekomendasi PALING ATAS (disorot) bila perkara belum diputus; bila majelis sudah memutus (saran lama berasal
-   * dari keterangan sidang/SIPP yang menyebut hasilnya), saran lama tetap di atas dan rekomendasi yang berbeda menyusul. Murni.
+   * Saran blangko gabungan - SATU SUMBER KEBENARAN arah putusan (butir 8). Murni.
+   *   - majelis sudah memutus (saran lama dari keterangan sidang/SIPP yang menyebut hasilnya): saran lama tetap di atas, rekomendasi
+   *     yang berbeda menyusul tanpa tanda utama;
+   *   - belum diputus: rekomendasi PALING ATAS (disorot). Keyakinan cukup: saran putusan lama yang arahnya bertentangan dengan arah
+   *     rekomendasi (arahBlangko) dibuang dari "Disarankan" - blangkonya tetap dapat dipilih di kelompoknya. Keyakinan ragu: saran lama
+   *     dipertahankan tetapi ikut bertanda ragu (tidak ada yang tampil pasti), tanpa tanda utama.
    */
   function gabungSaran(lama, rek, sudahDiputus) {
     const l = Array.isArray(lama) ? lama : [];
-    const r = (Array.isArray(rek) ? rek : []).filter((x) => !l.some((y) => y.jenis === "put" && teks(y.berkas).toLowerCase() === teks(x.berkas).toLowerCase()));
-    const sama = (Array.isArray(rek) ? rek : []).filter((x) => l.some((y) => y.jenis === "put" && teks(y.berkas).toLowerCase() === teks(x.berkas).toLowerCase()));
-    // Saran lama yang sama dengan rekomendasi ikut bertanda (disorot sebagai rekomendasi).
-    const tandai = l.map((y) => (sama.some((x) => teks(x.berkas).toLowerCase() === teks(y.berkas).toLowerCase()) ? { ...y, rekomendasiBukti: true } : y));
-    if (!r.length) return tandai;
+    const semuaRek = Array.isArray(rek) ? rek : [];
+    const sama = (a, b) => teks(a).toLowerCase() === teks(b).toLowerCase();
+    const r = semuaRek.filter((x) => !l.some((y) => y.jenis === "put" && sama(y.berkas, x.berkas)));
+    const kembar = semuaRek.filter((x) => l.some((y) => y.jenis === "put" && sama(y.berkas, x.berkas)));
+    // Saran lama yang sama dengan rekomendasi ikut bertanda (disorot sebagai rekomendasi) dan membawa keyakinannya - kecuali majelis sudah
+    // memutus: putusan majelis yang menentukan, saran itu tidak ikut "ragu".
+    const tandai = l.map((y) => {
+      const x = kembar.find((z) => sama(z.berkas, y.berkas));
+      return x ? { ...y, rekomendasiBukti: true, ...(!sudahDiputus && x.ragu !== undefined ? { ragu: x.ragu } : {}), ...(x.arah ? { arah: x.arah } : {}) } : y;
+    });
+    if (!semuaRek.length) return tandai;
     if (sudahDiputus) return tandai.concat(r.map((x) => ({ ...x, utama: false })));
-    const put = tandai.filter((y) => y.jenis === "put").map((y) => ({ ...y, utama: false }));
+    const ragu = semuaRek.some((x) => x.ragu === true);
+    const arahRek = new Set(semuaRek.map((x) => teks(x.arah) || arahBlangko(x.berkas)).filter(Boolean));
+    const put = [];
+    for (const y of tandai.filter((z) => z.jenis === "put")) {
+      const arah = arahBlangko(y.berkas);
+      const bertentangan = !y.rekomendasiBukti && Boolean(arah) && arahRek.size > 0 && !arahRek.has(arah);
+      if (bertentangan && !ragu) continue; // keyakinan cukup: arah lain tidak lagi "disarankan"
+      put.push({ ...y, utama: false, ...(ragu ? { ragu: true } : {}) });
+    }
+    // Blangko rekomendasi yang sudah ada di saran lama (kembar) naik ke depan; tanpa blangko baru, yang terdepan menjadi utama.
+    put.sort((a, b) => Number(Boolean(b.rekomendasiBukti)) - Number(Boolean(a.rekomendasiBukti)));
+    if (!r.length && put.length) put[0] = { ...put[0], utama: true };
     return [...r, ...put, ...tandai.filter((y) => y.jenis !== "put")];
   }
 
@@ -212,7 +325,13 @@
     if (!el || !el.isConnected || el.dataset.rpNomor !== nomor) return;
     const k = keadaan.get(nomor);
     const isi = el.querySelector(".bd-rp-isi");
-    if (isi) isi.innerHTML = htmlIsi(k ? k.data : null, { galat: k && k.galat, putusSipp: k && k.o ? k.o.putusSipp : "" });
+    if (isi) isi.innerHTML = htmlIsi(k ? k.data : null, { galat: k && k.galat, putusSipp: k && k.o ? k.o.putusSipp : "", sudahDiputus: Boolean(k && k.o && k.o.sudahDiputus) });
+    const chip = el.querySelector(".bd-rp-chip");
+    if (chip) {
+      const c = ringkasChip(k ? k.data : null, k && k.galat);
+      chip.textContent = c.teks;
+      chip.className = `bd-rp-chip ${c.kelas}`;
+    }
   }
 
   function minta(nomor) {
@@ -254,7 +373,7 @@
    * Dipanggil panel setiap menggambar ringkasan blangko / melapor perubahan bahan. Sidik (bahan + kehadiran) berubah = satu permintaan
    * 1,2 detik kemudian; sama dan masih tersinggah = tanpa permintaan.
    * @param {{nomor:string, jenisPerkara:string, jenisPerkaraId?:number, sebutan:{P:string,T:string}, kehadiran:object, acuan?:string,
-   *          putusSipp?:string, tes?:boolean, ambil:(url:string, opsi:object)=>Promise<any>, bahan:()=>object|null, saatSiap?:(data:any)=>void}} o
+   *          putusSipp?:string, sudahDiputus?:boolean, tes?:boolean, ambil:(url:string, opsi:object)=>Promise<any>, bahan:()=>object|null, saatSiap?:(data:any)=>void}} o
    */
   function segarkan(o) {
     if (!o || !o.nomor || !jenisBerlaku(o.jenisPerkara, o.nomor)) return;
@@ -275,14 +394,24 @@
     k.waktu = setTimeout(() => void minta(nomor), k.data ? TUNDA_MS : 0);
   }
 
-  /** Pembungkus kotak (isi dari singgahan bila ada). */
-  function htmlBungkus(nomor, jenisPerkara, putusSipp) {
+  /**
+   * Pembungkus kotak (isi dari singgahan bila ada). Butir 7: <details> BAWAAN TERLIPAT; ringkasan satu baris memuat chip hasil.
+   * Rincian tetap digambar (ringan, dan gambar() memperbaruinya) - hanya tersembunyi selama terlipat.
+   */
+  function htmlBungkus(nomor, jenisPerkara, putusSipp, sudahDiputus) {
     if (!jenisBerlaku(jenisPerkara, nomor)) return "";
     const k = keadaan.get(teks(nomor));
-    return `<section class="bd-rekput" id="bd-rekput" data-rp-nomor="${esc(nomor)}" aria-label="Rekomendasi putusan"><h4 class="bd-rp-judul">Rekomendasi putusan <span class="bd-catat">menurut alat bukti tertulis dan keterangan saksi</span></h4><div class="bd-rp-isi">${htmlIsi(k ? k.data : null, { galat: k && k.galat, putusSipp })}</div></section>`;
+    const buka = terbuka();
+    if (bukaDiingat === null) pulihkanIngatan();
+    const c = ringkasChip(k ? k.data : null, k && k.galat);
+    return (
+      `<details class="bd-rekput" id="bd-rekput" data-rp-nomor="${esc(nomor)}" aria-label="Rekomendasi putusan"${buka ? " open" : ""}>` +
+      `<summary class="bd-rp-judul" data-bd2="lipatrekput" title="Buka atau lipat rincian rekomendasi putusan">Rekomendasi putusan <span class="bd-rp-chip ${c.kelas}">${esc(c.teks)}</span><span class="bd-catat bd-rp-sub"> menurut alat bukti tertulis dan keterangan saksi</span></summary>` +
+      `<div class="bd-rp-isi">${htmlIsi(k ? k.data : null, { galat: k && k.galat, putusSipp, sudahDiputus: Boolean(sudahDiputus) })}</div></details>`
+    );
   }
 
-  const api = { API, TUNDA_MS, jenisBerlaku, kehadiranDari, sidik, htmlIsi, htmlBungkus, saranBlangko, gabungSaran, segarkan, tersinggah };
+  const api = { API, TUNDA_MS, KUNCI_LIPAT, jenisBerlaku, kehadiranDari, sidik, htmlIsi, htmlBungkus, saranBlangko, gabungSaran, segarkan, tersinggah, arahBlangko, ringkasChip, terbuka, setelBuka };
   globalThis.AletaBdRekomendasi = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();
