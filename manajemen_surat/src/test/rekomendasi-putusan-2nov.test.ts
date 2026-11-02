@@ -294,6 +294,29 @@ describe("dispensasi kawin: PERMA 5/2019, Pasal 7 ayat (2) UU 16/2019", () => {
     expect(r.blangko.some((x) => /\[Kabul\]/.test(x.berkas) && !x.utama)).toBe(true);
   });
 
+  it("keputusan 133 (R1): tanpa kehamilan -> Ditolak (ragu) + pilihan lain Dikabulkan (ragu) yang tegas; blangko kabul tepat di bawah blangko tolak", () => {
+    const r = rekomendasiPutusanDariBukti(dk("Sudah saling mengenal 3 tahun dan hubungan mereka sangat erat, dikhawatirkan berbuat zina;"))!;
+    expect(r.label).toBe("Ditolak");
+    expect(r.pilihanLain).toMatchObject({ hasil: "dikabulkan", label: "Dikabulkan", keyakinan: "ragu", blangko: "[01] [Kabul] DK - (Anak P Cewek) Hamil" });
+    expect(r.pilihanLain!.alasan).toMatch(/keluarga kedua pihak merestui, calon telah bekerja, tidak ada halangan perkawinan/);
+    expect(r.blangko.map((x) => x.berkas).slice(0, 2)).toEqual(["[03] [Tolak] DK - (Anak P Cewek) Belum Hamil.rtf", "[01] [Kabul] DK - (Anak P Cewek) Hamil.rtf"]);
+    expect(r.blangko[1].utama).toBe(false);
+    const h = RP.htmlIsi({ ada: true, rekomendasi: r }, {});
+    expect(h).toMatch(/Pilihan lain:<\/b> <span class="bd-tanda hijau">Dikabulkan<\/span> <span class="bd-tanda kuning">keyakinan ragu<\/span>/);
+    expect(h.indexOf("Pilihan lain")).toBeLessThan(h.indexOf("bd-rp-daftar"));
+    // saran blangko panel: tolak paling atas, kabul tepat di bawahnya
+    const menu = [{ nama: "Putusan Dispensasi Kawin", berkas: [{ berkas: "[03] [Tolak] DK - (Anak P Cewek) Belum Hamil" }, { berkas: "[01] [Kabul] DK - (Anak P Cewek) Hamil" }] }];
+    expect(RP.saranBlangko({ ada: true, rekomendasi: r }, menu).map((x: Apa) => [x.berkas, x.utama])).toEqual([
+      ["[03] [Tolak] DK - (Anak P Cewek) Belum Hamil", true],
+      ["[01] [Kabul] DK - (Anak P Cewek) Hamil", false],
+    ]);
+    const cowok = rekomendasiPutusanDariBukti(dk("Sudah lama berpacaran dan saling mencintai;", {}, "calon istri"))!;
+    expect(cowok.pilihanLain!.blangko).toBe("[01] [Kabul] DK - (Anak P Cowok) Calon Istri Hamil");
+    expect(cowok.blangko[1].berkas).toBe("[01] [Kabul] DK - (Anak P Cowok) Calon Istri Hamil.rtf");
+    expect(rekomendasiPutusanDariBukti(dk("anak Pemohon telah hamil;"))!.pilihanLain).toBeNull();
+    expect(RP.htmlIsi({ ada: true, rekomendasi: rekomendasiPutusanDariBukti(cerai({}))! }, {})).not.toContain("Pilihan lain");
+  });
+
   it("umur calon 27 tahun tidak dibaca sebagai umur anak; anak sudah 19 tahun -> tidak dapat diterima", () => {
     const tua = dk("anak telah hamil;");
     tua.saksi = tua.saksi.map((x) => ({ ...x, baris: x.baris.map((r) => (/umur anak Pemohon tersebut/.test(r.tanya || "") ? { ...r, jawab: "Anak Pemohon sekarang sudah berumur 19 tahun;" } : r)) }));

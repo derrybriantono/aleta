@@ -80,6 +80,8 @@ export type MasukanRekomendasiPutusan = {
   tanggalNikah?: string;
 };
 
+export type PilihanLain = { hasil: Exclude<HasilRekomendasiPutusan, "">; label: string; keyakinan: "ragu"; alasan: string; blangko: string };
+
 export type RekomendasiPutusan = {
   versi: number;
   jenis: JenisRekomendasiPutusan;
@@ -96,6 +98,11 @@ export type RekomendasiPutusan = {
   belum: string[];
   /** Blangko putusan yang cocok (pertama = utama), bentuk saran blangko portal. */
   blangko: Rekomendasi[];
+  /**
+   * Keputusan 133 (R1): pilihan kedua yang ditampilkan TEGAS di kotak bila hasil bergantung penilaian hakim (DK tanpa kehamilan /
+   * hubungan badan: utama Ditolak - ragu, pilihan lain Dikabulkan - ragu). Blangkonya tepat di bawah blangko utama. null = tidak ada.
+   */
+  pilihanLain: PilihanLain | null;
   /** Kalimat ringkas untuk kepala kotak. */
   ringkas: string;
   jumlahSaksi: { P: number; T: number };
@@ -1066,7 +1073,27 @@ function rekomendasiDk(m: MasukanRekomendasiPutusan, sb: { P: string; T: string 
     varian = anak === "laki-laki" ? "[03a] [Tolak] DK - (Anak P Cowok) Calon Istri Belum Hamil, Hanya Berpacaran" : "[03] [Tolak] DK - (Anak P Cewek) Belum Hamil";
     if (mendesak === "") ragu.push("alasan sangat mendesak belum diterangkan");
   }
-  return { hasil, verstek: false, unsur: unsurL, ragu, varian, anak, mendesak };
+  // Keputusan 133 (R1): tanpa kehamilan/hubungan badan tetap Ditolak (ragu), dengan pilihan kedua Dikabulkan (ragu) yang tegas.
+  let pilihanLain: PilihanLain | null = null;
+  if (hasil === "ditolak" && (mendesak === "pacaran" || mendesak === "") && !hlAda.length && !paksa.length) {
+    const ada = [
+      mendesak === "pacaran" ? "hubungan anak dan calonnya sudah sangat erat" : "",
+      setuju.length ? "keluarga kedua pihak merestui" : "",
+      kerja.length ? "calon telah bekerja" : "",
+      hlTidak.length ? "tidak ada halangan perkawinan" : "",
+      bTolak.length || sTolak.length ? "kehendak nikah sudah ditolak KUA karena umur" : "",
+    ].filter(Boolean);
+    pilihanLain = {
+      hasil: "dikabulkan",
+      label: "Dikabulkan",
+      keyakinan: "ragu",
+      alasan:
+        `Majelis kerap mengabulkan bila hubungan sudah sangat erat sehingga dikhawatirkan terjadi perzinaan, keluarga kedua pihak merestui, calon sanggup menafkahi, dan tidak ada halangan perkawinan` +
+        `${ada.length ? `; di perkara ini ${ada.join(", ")}` : ""}${mendesak === "" ? "; alasan mendesak belum diterangkan saksi" : ""}. Blangko kabul yang tersedia bertema kehamilan - sesuaikan pertimbangannya.`,
+      blangko: anak === "laki-laki" ? "[01] [Kabul] DK - (Anak P Cowok) Calon Istri Hamil" : "[01] [Kabul] DK - (Anak P Cewek) Hamil",
+    };
+  }
+  return { hasil, verstek: false, unsur: unsurL, ragu, varian, anak, mendesak, pilihanLain };
 }
 
 // ─── Blangko ─────────────────────────────────────────────────────────────────
@@ -1098,7 +1125,7 @@ export function blangkoUntuk(
   hasil: HasilRekomendasiPutusan,
   verstek: boolean,
   varian: string,
-  ekstra: { anak?: string; mendesak?: string; jumlahSaksi?: number; alternatif?: HasilRekomendasiPutusan } = {}
+  ekstra: { anak?: string; mendesak?: string; jumlahSaksi?: number; alternatif?: HasilRekomendasiPutusan; varianAlternatif?: string } = {}
 ): Rekomendasi[] {
   if (!hasil) return [];
   const status = STATUS_SIPP[hasil];
@@ -1126,10 +1153,13 @@ export function blangkoUntuk(
   if (varian && varian.replace(/\.rtf$/i, "") !== utama.berkas.replace(/\.rtf$/i, "")) out.push({ ...utama, berkas: `${varian}.rtf`, label: varian, alasan, utama: true, perkiraan: false });
   out.push({ ...utama, alasan, utama: !out.length, perkiraan: false });
   for (const r of dasar.slice(1)) if (!out.some((x) => x.berkas === r.berkas)) out.push({ ...r, utama: false });
-  // Hasil yang bergantung penilaian hakim (mis. DK tanpa kehamilan): blangko arah sebaliknya ikut ditawarkan sebagai alternatif.
+  // Hasil yang bergantung penilaian hakim (mis. DK tanpa kehamilan): blangko pilihan lain TEPAT di bawah blangko utama (keputusan 133),
+  // alternatif lain arah itu di belakang.
   if (ekstra.alternatif && ekstra.alternatif !== hasil) {
-    for (const r of blangkoUntuk(m, ekstra.alternatif, verstek, "", { jumlahSaksi: ekstra.jumlahSaksi }))
-      if (!out.some((x) => x.berkas === r.berkas)) out.push({ ...r, utama: false, alasan: `Alternatif bila majelis menilai lain: ${STATUS_SIPP[ekstra.alternatif].toLowerCase()}.` });
+    const lain = blangkoUntuk(m, ekstra.alternatif, verstek, ekstra.varianAlternatif || "", { jumlahSaksi: ekstra.jumlahSaksi }).filter((r) => !out.some((x) => x.berkas === r.berkas));
+    const ket = `Pilihan lain bila majelis menilai lain: ${STATUS_SIPP[ekstra.alternatif].toLowerCase()} (ragu).`;
+    if (lain.length) out.splice(1, 0, { ...lain[0], utama: false, alasan: ket });
+    for (const r of lain.slice(1)) out.push({ ...r, utama: false, alasan: ket });
   }
   return out;
 }
@@ -1162,8 +1192,9 @@ export function rekomendasiPutusanDariBukti(m: MasukanRekomendasiPutusan): Rekom
   const statusSipp = hasil ? STATUS_SIPP[hasil] : "";
   const label = !hasil ? "Belum dapat direkomendasikan" : `${statusSipp}${r.verstek && hasil !== "tidak-dapat-diterima" ? " (verstek)" : ""}`;
   const jp = saksi.filter((x) => x.pihak !== "T").length;
-  const dk = "anak" in r ? (r as { anak: string; mendesak: string }) : null;
-  const ekstra = dk ? { anak: dk.anak, mendesak: dk.mendesak, alternatif: dk.mendesak === "pacaran" && hasil === "ditolak" ? ("dikabulkan" as const) : undefined } : {};
+  const dk = "anak" in r ? (r as { anak: string; mendesak: string; pilihanLain: PilihanLain | null }) : null;
+  const pilihanLain = dk && hasil === "ditolak" ? dk.pilihanLain : null;
+  const ekstra = dk ? { anak: dk.anak, mendesak: dk.mendesak, alternatif: pilihanLain ? pilihanLain.hasil : undefined, varianAlternatif: pilihanLain ? pilihanLain.blangko : undefined } : {};
   const blangko = blangkoUntuk(m, hasil, r.verstek, r.varian, { ...ekstra, jumlahSaksi: jp });
   const terbukti = r.unsur.filter((u) => u.status === "terbukti").length;
   const ringkas = !hasil
@@ -1181,6 +1212,7 @@ export function rekomendasiPutusanDariBukti(m: MasukanRekomendasiPutusan): Rekom
     unsur: r.unsur,
     belum,
     blangko,
+    pilihanLain,
     ringkas,
     jumlahSaksi: { P: jp, T: saksi.filter((x) => x.pihak === "T").length },
     jumlahBukti: bukti.length,
