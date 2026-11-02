@@ -475,7 +475,7 @@ BERKAS COCOK
 SELESAI - paket abt-perbaikan-1nov terpasang. ...
 ```
 
-### 31. `identitas-pihak-1nov` (cabang identitas-pihak w177, di atas paket-30; keputusan 101 dan 102) - PALING AKHIR
+### 31. `identitas-pihak-1nov` (cabang identitas-pihak w177, di atas paket-30; keputusan 101, 102, 112 dan 134) - SESUDAH ke-30
 ```
 cd identitas-pihak-1nov/paket-satker && bash pasang-satker.sh
 ```
