@@ -325,7 +325,7 @@
     if (teks(isian && isian.masukan).trim()) sumber.masukan = isian.masukan;
     if (teks(isian && isian.acuan).trim()) sumber.acuan = isian.acuan;
     const kurang = fitur.wajib.filter((k) => !teks(sumber[k]).trim());
-    if (fitur.kode === "C6" && kurang.includes("temuan")) return "Tabel penilaian pembuktian belum terbaca. Buka bagian Penilaian pembuktian pada panel ini dulu.";
+    if (fitur.kode === "C6" && kurang.includes("temuan")) return "Tabel penilaian pembuktian belum terbaca. Buka Bahan musyawarah majelis > Penilaian pembuktian pada panel ini dulu.";
     if (fitur.masukan && fitur.masukan.wajib && !kurang.includes("masukan") && !teks(sumber.masukan).trim()) kurang.push("masukan");
     return kurang.length ? `Belum ada ${kurang.map((k) => NAMA_BAGIAN[k] || k).join(" dan ")}.` : "";
   }
