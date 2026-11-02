@@ -3977,6 +3977,9 @@ router.post("/sipp/ktp-pihak/baca-ulang", requireInternalToken, async (req, res)
 /** Daftar sidang pada rentang tanggal. */
 router.get("/sipp/jadwal-sidang", requireInternalToken, async (req, res) => {
   try {
+    // 2 Nov 2026: ?bidang=ringkas (daftar Perkara Saya) - jadwal dengan keterangan yang dipakai daftar itu saja, tanpa peta antrian
+    // (basis data lain, tidak dipakai daftar). Lihat susunJawabanRingkas. Nilai lain = jawaban lengkap seperti semula.
+    const ringkas = String(req.query.bidang || "") === sippJadwalSidangService.BIDANG_RINGKAS;
     // Performa muat 19 Okt 2026: jadwal (SIPP) dan peta antrian (basis data
     // antrian) tidak saling bergantung - dibaca BERSAMAAN, tidak berurutan.
     // Gagalnya peta antrian tetap ditelan seperti semula.
@@ -3986,14 +3989,21 @@ router.get("/sipp/jadwal-sidang", requireInternalToken, async (req, res) => {
         sampai: String(req.query.sampai || ""),
         cari: String(req.query.cari || ""),
         batas: Number(req.query.batas) || 200,
+        ...(ringkas ? { bidang: sippJadwalSidangService.BIDANG_RINGKAS } : {}),
       }),
-      antrianSidangService.petaAntrian().catch((galat) => ({
-        terbaca: false,
-        alasan: String(galat.message || galat).slice(0, 200),
-        peta: {},
-        tanggal: [],
-      })),
+      ringkas
+        ? Promise.resolve(null)
+        : antrianSidangService.petaAntrian().catch((galat) => ({
+            terbaca: false,
+            alasan: String(galat.message || galat).slice(0, 200),
+            peta: {},
+            tanggal: [],
+          })),
     ]);
+    if (ringkas) {
+      res.json({ ok: true, ...hasil });
+      return;
+    }
 
     // ======================================================================
     // ANTRIAN DITEMPELKAN DI SINI, BUKAN DI DALAM LAYANAN JADWAL

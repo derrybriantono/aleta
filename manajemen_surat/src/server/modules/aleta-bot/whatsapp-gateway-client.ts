@@ -2468,6 +2468,11 @@ export async function getGatewayJadwalSidang(params: {
    * menanggungnya. Hanya rute jadwal sidang yang memintanya.
    */
   waktu?: boolean;
+  /**
+   * 2 Nov 2026: "ringkas" = hanya keterangan yang dipakai daftar Perkara Saya (jadwal, pihak, petugas, putusan, e-Court, penanda
+   * ghaib/prodeo), tanpa peta antrian. Bot lama mengabaikannya dan menjawab lengkap (himpunan-atas) - tetap benar.
+   */
+  bidang?: "ringkas";
 }): Promise<
   GatewayResult<{
     ok: boolean;
@@ -2516,6 +2521,7 @@ export async function getGatewayJadwalSidang(params: {
     batas: String(params.batas),
   });
   if (params.waktu === true) kueri.set("waktu", "1");
+  if (params.bidang === "ringkas") kueri.set("bidang", "ringkas");
   return gatewayFetch(`/internal/aleta-bot/sipp/jadwal-sidang?${kueri.toString()}`);
 }
 
