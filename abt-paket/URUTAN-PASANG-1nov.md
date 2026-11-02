@@ -1,4 +1,4 @@
-# URUTAN PASANG paket ABT 29 Okt - 1 Nov 2026 (31 paket; diuji rantai penuh dari dump 28 Okt; MENGGANTIKAN URUTAN-PASANG-31okt.md)
+# URUTAN PASANG paket ABT 29 Okt - 2 Nov 2026 (32 paket; diuji rantai penuh dari dump 28 Okt; MENGGANTIKAN URUTAN-PASANG-31okt.md)
 
 Nomor "KE-n" di komentar dan PASANG.md paket lama mengikuti urutan 24 paket yang lama; yang berlaku adalah nomor di berkas ini
 (pembuktian-urut-1nov disisipkan sebagai ke-22, sehingga jawab-replik, butir-rata, bukti-pisah menjadi ke-23, ke-24, ke-25, teks-pihak ke-26).
@@ -496,4 +496,22 @@ UJI identitas sisi 1 ...; UJI identitas sisi 2 ...; UJI Turut Tergugat ...; uji 
 TAMBAL=608
 BERKAS COCOK
 SELESAI - paket abt-identitas-pihak-1nov terpasang. ...
+```
+
+### 32. `kaidah-fikih-2nov` (cabang kaidah-fikih w180, di atas paket-31; keputusan 104, 110 dan 120) - PALING AKHIR
+```
+cd kaidah-fikih-2nov/paket-satker && bash pasang-satker.sh
+```
+HANYA berkas RTF (tanpa variabel/menu/fungsi). A. Kaidah fikih / dalil syar'i yang lazim (bukti kelaziman: blangko Derry lain, putusan SIPP PA Donggala, blangko ABT PA Donggala)
+ditambahkan sebagai paragraf baru ke 84 blangko putusan/penetapan akhir yang belum memuatnya (Al Muhadzdzab untuk tolak tidak terbukti, An-Nisa 128 + hadits ash-shulhu untuk akta
+perdamaian, hadits hadhanah, An-Nisa 7/19/32, al Hawi al Kabir, al-walad lil firasy, I'anatuth Thalibin, An-Nisa 3, tasharruful imam, al-Ahzab 5). B. Izin Poligami [01b]: syarat adil
+dikutip Pasal 58 ayat (1) huruf b KHI jo. Pasal 5 ayat (1) huruf c UU 1/1974 (keputusan 120). Pasal 119 ayat (2) KHI tidak disentuh. 67 blangko tanpa kaidah lazim berbukti -> "perlu Derry".
+Lihat `kaidah-fikih-2nov/PASANG.md`. md5 dasar = keadaan sesudah ke-31 paket (revisi paket 31 b16c216f tidak mengubah RTF).
+Keluaran benar:
+```
+SIAP=85
+BERKAS SIAP
+TAMBAL=85
+BERKAS COCOK
+SELESAI - paket abt-kaidah-fikih-2nov terpasang (85 blangko). ...
 ```

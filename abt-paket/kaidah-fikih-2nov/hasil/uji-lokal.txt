@@ -1,0 +1,35 @@
+dasar pohon (31 paket)  : 19ee866e4cc04670a3c8c8ff7a015ad6
+== pasang pertama
+SIAP=85
+BERKAS SIAP
+TAMBAL=85
+BERKAS COCOK
+SELESAI - paket abt-kaidah-fikih-2nov terpasang (85 blangko). Cadangan: /d/Aplikasi/aleta/tmp/w180/uji/pk/cadangan. Pulih: bash /d/Aplikasi/aleta/tmp/w180/uji/pk/pulih-satker.sh
+terpasang pohon (32)    : c9cb56f1a330b949c352c8f68935efa5
+== pasang ulang
+SUDAH=85
+SUDAH TERPASANG - tidak ada yang diubah
+SUDAH=85
+SELESAI - paket abt-kaidah-fikih-2nov terpasang (85 blangko). Cadangan: /d/Aplikasi/aleta/tmp/w180/uji/pk/cadangan. Pulih: bash /d/Aplikasi/aleta/tmp/w180/uji/pk/pulih-satker.sh
+PASANG ULANG: tidak ada yang berubah
+== pulih
+BERKAS PULIH
+PULIH COCOK
+PULIH: seluruh pohon RTF SAMA PERSIS dengan sebelum paket
+== pasang lagi
+TAMBAL=85
+SELESAI - paket abt-kaidah-fikih-2nov terpasang (85 blangko). Cadangan: /d/Aplikasi/aleta/tmp/w180/uji/pk/cadangan. Pulih: bash /d/Aplikasi/aleta/tmp/w180/uji/pk/pulih-satker.sh
+PASANG LAGI: sama persis dengan pasang pertama
+== penjaga 1: berkas disunting orang sesudah dipasang -> pulih membiarkannya (dilaporkan), yang lain dipulihkan
+BIARKAN	derry_briantono/10 Ekonomi Syariah/[97] [Perdamaian] ES Gugatan Sederhana - Akta Perdamaian di Hadapan Hakim.rtf	(sudah disunting sesudah dipasang)
+BIARKAN=1 PULIH=84
+BERKAS PULIH SEBAGIAN
+== penjaga 2: berkas dasar disunting orang -> pasang menolak tanpa mengubah apa pun
+GAGAL	derry_briantono/10 Ekonomi Syariah/[97] [Perdamaian] ES Gugatan Sederhana - Akta Perdamaian di Hadapan Hakim.rtf	md5 c7bedb012d006f5f365599b0c7f76893 bukan dasar 0ba0bf638edcc61135fe88ad1c6d08aa (disunting orang/paket lain belum terpasang)
+GAGAL=1 SIAP=84
+PENJAGA 2: tidak ada yang berubah
+KEMBALI KE DASAR: ya
+== pasang akhir
+TAMBAL=85
+SELESAI - paket abt-kaidah-fikih-2nov terpasang (85 blangko). Cadangan: /d/Aplikasi/aleta/tmp/w180/uji/pk/cadangan. Pulih: bash /d/Aplikasi/aleta/tmp/w180/uji/pk/pulih-satker.sh
+AKHIR: sama persis dengan pasang pertama
