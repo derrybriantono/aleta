@@ -233,7 +233,7 @@ export function AletaEcourtPengukurDraf() {
               <div className="space-y-2">
                 <div className="font-medium">Usulan memori ALETA Ai</div>
                 <p className="text-muted-foreground">
-                  Kebiasaan koreksi yang berulang, ditulis tanpa nama pihak dan tanpa data perkara. Tidak ada yang berlaku sebelum Anda meneruskannya dan menyetujuinya di proyek.
+                  Kebiasaan koreksi yang berulang, ditulis tanpa nama pihak dan tanpa data perkara. Usulan baru masuk sendiri ke memori proyek yang biasa dipakai, dan baru berlaku sesudah Anda menyetujuinya di sana. Bila proyek tujuannya belum jelas, pilih proyek di bawah.
                 </p>
                 {baru.length ? (
                   <>
