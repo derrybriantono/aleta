@@ -9,8 +9,16 @@ import { roles as daftarPeran } from "@/lib/mock-data";
 import { requireActorUser } from "@/server/modules/organization/service";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
+import { alamatDasarPortal } from "@/server/shared/ekstensi-alamat";
 import { EKSTENSI_BERKAS } from "@/server/shared/ekstensi-berkas";
 import { berkasEkstensi } from "@/server/shared/ekstensi-paket";
+import {
+  NAMA_BERKAS_PEMASANG_PAKET,
+  NAMA_BERKAS_PENCOPOT,
+  normalisasiBentukUnduh,
+  susunPemasangPaket,
+  susunPencopot,
+} from "@/server/shared/pembaru-pemasang";
 import { susunZip, type BerkasZip } from "@/server/shared/zip";
 
 export const runtime = "nodejs";
@@ -115,6 +123,36 @@ export async function GET(request: NextRequest) {
         },
         { headers: { "Cache-Control": "no-store" } }
       );
+    }
+
+    // ========================================================================
+    // PEMASANG SEPAKET (2 Nov 2026)
+    // ========================================================================
+    //
+    // ?bentuk=pemasang: satu berkas pasang-aleta.cmd yang memasang ekstensi ke
+    // %USERPROFILE%\.aleta\ekstensi, menyalakan Mode Pengembang Chrome, dan
+    // memasang pembaru otomatis. ?bentuk=pencopot: copot-aleta.cmd. Tanpa
+    // ?bentuk (atau "zip"): ZIP seperti sebelumnya. Penjaga sesi sama (di atas).
+    const bentuk = normalisasiBentukUnduh(request.nextUrl.searchParams.get("bentuk"));
+    if (!bentuk) {
+      return Response.json(
+        { ok: false, error: { code: "BENTUK_TIDAK_DIKENAL", message: "Bentuk unduhan tidak dikenal. Pilih zip, pemasang, atau pencopot." } },
+        { status: 400, headers: { "Cache-Control": "no-store" } }
+      );
+    }
+    if (bentuk !== "zip") {
+      const isi =
+        bentuk === "pemasang" ? susunPemasangPaket({ asalPortal: alamatDasarPortal(request) }) : susunPencopot();
+      const bita = Buffer.from(isi, "utf8");
+      return new Response(new Uint8Array(bita), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/octet-stream",
+          "Content-Disposition": `attachment; filename="${bentuk === "pemasang" ? NAMA_BERKAS_PEMASANG_PAKET : NAMA_BERKAS_PENCOPOT}"`,
+          "Content-Length": String(bita.length),
+          "Cache-Control": "no-store",
+        },
+      });
     }
 
     // Daftar berkasnya disusun di satu tempat bersama paket .crx - dua salinan

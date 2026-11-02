@@ -331,6 +331,11 @@ const BERKAS = [
   // Disajikan juga sebagai satu berkas .cmd oleh rute /ekstensi/pembaru/pemasang.
   "pembaru/pembaru-aleta.ps1",
   "pembaru/pasang-pembaru-aleta.cmd",
+  // Pemasang sepaket (2 Nov 2026): ekstensi ke %USERPROFILE%\.aleta\ekstensi + Mode Pengembang + pembaru.
+  // Disajikan rute /api/aleta-ecourt/ekstensi?bentuk=pemasang|pencopot; ikut ZIP supaya ZIP yang diekstrak
+  // pun dapat dipasang dengan klik dua kali (pembaru/pasang-aleta.cmd memakai folder di sampingnya).
+  "pembaru/pasang-aleta.cmd",
+  "pembaru/copot-aleta.cmd",
   // Padanan macOS (26 Okt 2026): pembantu bash dan pemasang .command. Hanya DISAJIKAN lewat rute
   // pemasang (?os=mac); TIDAK ikut ZIP/.crx (lihat BERKAS_TANPA_ZIP di ekstensi-paket.ts):
   // pembantu Windows yang sudah terpasang menolak jenis berkas .sh/.command di dalam ZIP.

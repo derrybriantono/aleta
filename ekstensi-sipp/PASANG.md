@@ -41,6 +41,25 @@ membuka menu ini.
 
 ## Memasang di komputer petugas
 
+### Cara singkat di Windows: pemasang sepaket
+
+Di portal, halaman Ekstensi SIPP → **Unduh Pemasang ALETA (Windows)** → klik dua kali
+`pasang-aleta.cmd` (tanpa hak admin). Dari ZIP yang sudah diekstrak pun bisa: klik dua kali
+`pembaru\pasang-aleta.cmd`. Pemasang:
+
+1. memasang ekstensi di `%USERPROFILE%\.aleta\ekstensi` (folder tersembunyi, lokasinya tetap —
+   menjalankan ulang hanya memperbarui isinya);
+2. menyalakan **Developer mode** Chrome (Chrome diminta ditutup sebentar; berkas setelannya
+   dicadangkan dulu di `%USERPROFILE%\.aleta\cadangan-chrome`);
+3. memasang **pembaruan otomatis** (bagian di bawah);
+4. membuka `chrome://extensions` dan menyalin alamat folder: tekan **Load unpacked**, Ctrl+V di
+   bilah alamat jendela pilih folder, Enter, Pilih Folder. Langkah ini sekali saja dan tidak
+   dapat diotomatiskan — Chrome tidak mengizinkan program lain memuat ekstensi di luar Web Store.
+
+Catatan kerjanya di `%USERPROFILE%\.aleta\pasang.log`; pencopot di `%USERPROFILE%\.aleta\copot-aleta.cmd`.
+
+### Cara manual (ZIP)
+
 1. **Ekstrak** berkas ZIP yang diunduh dari portal — klik kanan → **Extract All**
 2. Buka Chrome → `chrome://extensions`
 3. Nyalakan **Developer mode** di pojok kanan atas
