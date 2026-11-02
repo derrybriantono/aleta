@@ -44,6 +44,7 @@
  *      selamanya; prosesnya dibunuh dan sebabnya disebut.
  */
 
+const { rapikanUntukSoffice } = require("./rtfSofficeRapi");
 const { execFile } = require("node:child_process");
 const fs = require("node:fs/promises");
 const os = require("node:os");
@@ -217,7 +218,8 @@ async function rtfKePdf(isiRtf) {
 
   try {
     // Properti naskah ({\info}) tanpa tanda ALETA - Title PDF disalin dari sana.
-    await fs.writeFile(berkasRtf, tanpaTandaAletaMetadata(normalkanBahasaRtf(isiRtf)));
+    // 2 Nov: anggota grup bercermin (garis Z BAS ALUR) dan kotak nomor halaman di kaki dirapikan supaya PDF sama dengan Word/WPS.
+    await fs.writeFile(berkasRtf, tanpaTandaAletaMetadata(normalkanBahasaRtf(rapikanUntukSoffice(isiRtf).isi)));
 
     // -env:UserInstallation memberi soffice profil tersendiri. Tanpa itu, dua
     // konversi yang berjalan bersamaan bertengkar atas profil yang sama dan
@@ -340,7 +342,7 @@ async function dokumenKePdf(isi) {
   const berkasPdf = path.join(folder, "naskah.pdf");
 
   try {
-    await fs.writeFile(berkasAsal, tanpaTandaAletaMetadata(jenis === "rtf" ? normalkanBahasaRtf(isi) : isi));
+    await fs.writeFile(berkasAsal, tanpaTandaAletaMetadata(jenis === "rtf" ? normalkanBahasaRtf(rapikanUntukSoffice(isi).isi) : isi));
     await jalankan(
       SOFFICE,
       [
@@ -474,7 +476,9 @@ async function dokumenKeBentuk(isi, ke, opsi = {}) {
   const berkasHasil = path.join(folder, `naskah.${tujuan}`);
 
   try {
-    await fs.writeFile(berkasAsal, tanpaTandaAletaMetadata(isi));
+    // RTF -> PDF: dirapikan sama seperti rtfKePdf (pengukuran Z dan PDF unggahan memakai jalur ini).
+    const masuk = bentukAsal === "rtf" && tujuan === "pdf" ? rapikanUntukSoffice(isi).isi : isi;
+    await fs.writeFile(berkasAsal, tanpaTandaAletaMetadata(masuk));
     await jalan(SOFFICE, argumenKonversi(tujuan, berkasAsal, folder), { cwd: folder });
     const hasil = await fs.readFile(berkasHasil);
     // Diperiksa HASILNYA: kepala berkasnya harus bentuk yang diminta.

@@ -4021,6 +4021,11 @@ export async function getGatewaySippPositaRapikan(perkaraId: string, ujiKering: 
 }
 /** Keterangan PDF SALINAN dari bot (14 Okt 2026) - lihat salinanPutusanService. */
 export type KeteranganSalinanPdf = {
+  /** "bas" (2 Nov): salinan BAS bertanda tangan asli pejabat - ruas putusan di bawah tidak terisi. */
+  jenis?: "bas";
+  pejabat?: Array<{ label: string; nama: string }>;
+  ttdDitemukan?: number;
+  tanpaTtd?: string[];
   salinan: string;
   untukSalinan: boolean;
   ttdDitambah: number;
@@ -4043,6 +4048,8 @@ export async function getGatewayAbtPdf(
     salinan?: KeteranganSalinanPdf;
     /** Gambar tanda tangan Panitera pengesah (hanya bila ttdDiPdf diminta dan bot mendukung) - portal yang membubuhkannya di PDF. */
     ttdPanitera?: { nama: string; jenis: "png" | "jpg"; isiBase64: string };
+    /** 2 Nov: salinan BAS - tanda tangan asli (sah) tiap pejabat penanda tangan; portal membubuhkannya di atas nama di PDF. */
+    ttdPejabat?: Array<{ nama: string; label: string; jenis: "png" | "jpg"; isiBase64: string }>;
   }>(
     "/internal/aleta-bot/abt/pdf",
     {

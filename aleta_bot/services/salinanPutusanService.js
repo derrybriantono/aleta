@@ -198,6 +198,27 @@ function tambahTtdPejabat(rtf) {
   let sudahAda = 0;
   for (let k = 0; k < daftar.length; k += 1) {
     const p = daftar[k];
+    // 2 Nov: label dan nama dalam SATU paragraf dipisah pindah baris (\line): "ttd" disisipkan sesudah pindah baris pertama.
+    if (p.teks.includes("\n")) {
+      const lapis = p.teks.split("\n");
+      const kepala = lapis[0].split(/\t+/).map((x) => x.trim()).filter(Boolean);
+      if (kepala.length && kepala.every((b) => LABEL_PEJABAT.test(b))) {
+        const sisa = lapis.slice(1);
+        if (sisa.some((x) => /(^|\s)ttd\.?(\s|$)/i.test(x))) {
+          sudahAda += kepala.length;
+          continue;
+        }
+        if (sisa.length >= 2 && kosong(sisa[0])) {
+          const mentah = s.slice(p.awal, p.akhir);
+          const m = /\\line(?![a-z]) ?/.exec(mentah);
+          if (m) {
+            const isiTtd = lapis[0].replace(POLA_LABEL_GANTI, "ttd").replace(/\t/g, "\\tab ");
+            ganti.push({ awal: p.awal + m.index + m[0].length, akhir: p.awal + m.index + m[0].length, isi: `${isiTtd}`, jumlah: kepala.length });
+          }
+        }
+        continue;
+      }
+    }
     const bagian = p.teks.split(/\t+/).map((x) => x.trim()).filter(Boolean);
     if (!bagian.length || !bagian.every((b) => LABEL_PEJABAT.test(b))) continue;
     // Paragraf berikutnya sampai paragraf berisi (nama).
@@ -216,10 +237,15 @@ function tambahTtdPejabat(rtf) {
       sudahAda += bagian.length;
       continue;
     }
-    if (!kosongPertama) continue;
     const salinanLabel = s.slice(p.awal, p.akhir).replace(POLA_LABEL_GANTI, "ttd");
     if (!/ttd/.test(teksTampak(salinanLabel))) continue;
-    ganti.push({ awal: kosongPertama.awal, akhir: kosongPertama.akhir, isi: salinanLabel, jumlah: bagian.length });
+    if (kosongPertama) {
+      ganti.push({ awal: kosongPertama.awal, akhir: kosongPertama.akhir, isi: salinanLabel, jumlah: bagian.length });
+    } else if (/\\par(?![a-z])/.test(salinanLabel)) {
+      // 2 Nov: blangko tanpa paragraf kosong di antara label dan nama (ruang tanda tangan berupa jarak paragraf): baris "ttd"
+      // DISISIPKAN sesudah baris label, bukan diabaikan.
+      ganti.push({ awal: p.akhir, akhir: p.akhir, isi: salinanLabel, jumlah: bagian.length });
+    }
   }
   // Dari belakang, supaya posisi yang belum diganti tetap benar.
   for (const g of ganti.sort((a, b) => b.awal - a.awal)) s = `${s.slice(0, g.awal)}${g.isi}${s.slice(g.akhir)}`;
@@ -307,6 +333,84 @@ function tampakkanUntukSalinan(rtf) {
   const tanpa = `${s.slice(0, awal)}${s.slice(ujung)}`;
   const akhirDok = tanpa.lastIndexOf("}");
   return { rtf: `${tanpa.slice(0, akhirDok)}${pindah}${tanpa.slice(akhirDok)}`, ok: true, dipindah: true };
+}
+
+/**
+ * (2 Nov 2026) PDF PUTUSAN BIASA: blok "Untuk Salinan" yang TERSEMBUNYI (bingkai bertepatan bertulisan putih) dibuang sebelum
+ * LibreOffice. LibreOffice mengabaikan posisi bingkai, sehingga blok putih itu jatuh di tengah rincian biaya dan tampak sebagai
+ * baris kosong panjang sesudah "1. PNBP :" (diminta Derry: hapus di PDF putusan). Hanya dibuang bila SEMUA tulisan di wilayah
+ * bingkai itu berwarna putih - blok yang memang tampak (tidak putih) dibiarkan. PDF SALINAN memakai tampakkanUntukSalinan.
+ */
+function buangUntukSalinanTersembunyi(rtf) {
+  const s = String(rtf || "");
+  const blok = blokUntukSalinan(s);
+  if (!blok) return { rtf: s, dibuang: false };
+  const putih = warnaPutih(s);
+  if (!putih.length) return { rtf: s, dibuang: false };
+  const i = s.lastIndexOf("Untuk Salinan");
+  const { awal, akhir } = wilayahBaris(s, s.lastIndexOf("\\pard", i), blok.nama.akhir);
+  const tutup = s.indexOf("}", akhir);
+  const ujung = tutup >= 0 && tutup - akhir < 8 ? tutup + 1 : akhir;
+  const wilayah = s.slice(awal, ujung);
+  if (!/\\t?posx/.test(wilayah) || selisihKurung(wilayah) !== 0) return { rtf: s, dibuang: false };
+  const rePutih = new RegExp(`\\\\cf(?:${putih.join("|")})(?![0-9])`);
+  // Tiap kelompok terdalam yang bertulisan harus berwarna putih.
+  for (const m of wilayah.matchAll(/\{([^{}]*)\}/g)) {
+    const isi = m[1];
+    if (/^\\\*|^\\(?:fldinst|listtext|pntext)/.test(isi)) continue;
+    if (kosong(teksTampak(isi))) continue;
+    if (!rePutih.test(isi)) return { rtf: s, dibuang: false };
+  }
+  return { rtf: `${s.slice(0, awal)}${s.slice(ujung)}`, dibuang: true };
+}
+
+/**
+ * (2 Nov 2026) Penanda tangan naskah: nama di bawah tiap label pejabat (Ketua Majelis, Hakim Anggota, Panitera Sidang, ...),
+ * dipasangkan per kolom (tab / sel tabel). Dipakai PDF SALINAN BAS - tanda tangan ASLI tiap pejabat dibubuhkan di atas namanya
+ * (keputusan Derry: salinan BAS memakai tanda tangan asli, bukan "ttd"). Blok "Untuk Salinan" tidak ikut.
+ */
+function pejabatPenandatangan(rtf) {
+  const s = String(rtf || "");
+  const mulai = Math.floor(s.length * 0.3);
+  const batas = (() => {
+    const i = s.indexOf("Untuk Salinan", mulai);
+    return i > 0 ? i : s.length;
+  })();
+  // Kelompok tujuan (gambar, bentuk, field) dibuang; paragraf/baris/sel menjadi pemisah.
+  let potong = s.slice(mulai, batas);
+  potong = potong.replace(/\{\\(?:\*|pict|shp|object|fldinst)[^{}]*(?:\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}[^{}]*)*\}/g, "");
+  potong = potong.replace(/\\(?:par|row|sect|page)(?![a-z])/g, "\\line ").replace(/\\cell(?![a-z])/g, "\\tab ");
+  const baris = teksTampak(potong).split("\n");
+  const kolom = (t) => t.split(/\t+| {3,}/).map((x) => x.replace(/\s+/g, " ").trim()).filter(Boolean);
+  const hasil = [];
+  const sudah = new Set();
+  for (let k = 0; k < baris.length; k += 1) {
+    const label = kolom(baris[k]);
+    if (!label.length || !label.every((b) => LABEL_PEJABAT.test(b))) continue;
+    for (let j = k + 1; j < baris.length && j <= k + 12; j += 1) {
+      const isi = kolom(baris[j]).filter((x) => !/^ttd\.?$/i.test(x));
+      if (!isi.length) continue;
+      if (isi.every((b) => LABEL_PEJABAT.test(b))) break;
+      if (isi.length === label.length) {
+        isi.forEach((nama, n) => {
+          const kunci = nama.toLowerCase();
+          if (/[a-z]{3,}/i.test(nama) && !sudah.has(kunci)) {
+            sudah.add(kunci);
+            hasil.push({ label: label[n].replace(/,$/, ""), nama });
+          }
+        });
+      }
+      break;
+    }
+  }
+  return hasil;
+}
+
+/** "bas" bila naskah berjudul BERITA ACARA (sidang), selainnya "putusan". */
+function jenisNaskahSalinan(rtf) {
+  const s = String(rtf || "");
+  const awal = s.slice(0, Math.min(s.length, 60000)).replace(/\{\\(?:fonttbl|colortbl|stylesheet|info|\*)[^{}]*(?:\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}[^{}]*)*\}/g, "");
+  return /B\s*E\s*R\s*I\s*T\s*A\s+A\s*C\s*A\s*R\s*A/i.test(teksTampak(awal)) && !blokUntukSalinan(s) ? "bas" : "putusan";
 }
 
 /** Nama Panitera di blok Untuk Salinan - dipakai mencari tanda tangannya. */
@@ -496,6 +600,9 @@ module.exports = {
   salinanKeKiri,
   tambahTtdPejabat,
   tampakkanUntukSalinan,
+  buangUntukSalinanTersembunyi,
+  pejabatPenandatangan,
+  jenisNaskahSalinan,
   warnaPutih,
   namaPaniteraSalinan,
   sisipkanTtdPanitera,

@@ -25,6 +25,7 @@ import {
   CM,
   JARAK_BAWAH_HALAMAN,
   RUANG_MIN_GARIS_ATAS,
+  RUANG_TANGGAL_AREA_TEKS,
   jumlahHalamanBukti,
   nomorBagianBerikutnya,
   rencanaZ,
@@ -78,6 +79,18 @@ describe("Z cross - geometri murni", () => {
     expect(r.atas.y).toBeLessThan(400);
     expect(r.atas.y).toBeGreaterThan(400 - 12);
     expect(r.kurangRuang).toBe(0);
+  });
+
+  it("2 Nov: margin bawah diketahui -> garis bawah sampai dekat batas bawah AREA TEKS, tanggal tepat di bawahnya masih di area teks", () => {
+    const r = rencanaZ(letak(), { ...TEPI, bawah: 85 });
+    const batas = 842 - 85;
+    expect(r.bawah.y).toBeCloseTo(batas - RUANG_TANGGAL_AREA_TEKS, 3);
+    // margin bawah lebih kecil -> garis turun lebih rendah (mengikuti area teks, bukan jarak tetap dari ujung kertas)
+    expect(rencanaZ(letak(), { ...TEPI, bawah: 57 }).bawah.y).toBeCloseTo(842 - 57 - RUANG_TANGGAL_AREA_TEKS, 3);
+    expect(r.diagonal.y2).toBeCloseTo(r.bawah.y, 3);
+    expect(r.tanggal.y).toBeGreaterThan(r.bawah.y);
+    // dua baris tanggal (SC Z 1x + tanggal) muat di atas batas area teks, tidak masuk kaki halaman
+    expect(r.tanggal.y + 2 * 15).toBeLessThanOrEqual(batas + 0.5);
   });
 
   it("garis bawah 3 cm di atas tepi bawah halaman; diagonal ke kiri bawah; tanggal tepat di bawah garis dan tidak menempel tepi", () => {
@@ -600,8 +613,8 @@ describe.skipIf(!MESIN_SUNGGUHAN)(`Z cross - mesin sungguhan (${MESIN_SUNGGUHAN?
       expect(Math.min(atas!.x1, atas!.x2)).toBeGreaterThanOrEqual(kataAkhir!.x2 - 0.5);
       expect(Math.min(atas!.x1, atas!.x2)).toBeLessThan(kataAkhir!.x2 + 12);
       expect(Math.max(atas!.x1, atas!.x2)).toBeCloseTo(baca.halaman[hz - 1].lebar - 56.7, 0);
-      // garis bawah: 3 cm di atas tepi bawah
-      const bawah = g.find((x) => Math.abs(x.y1 - x.y2) < 0.5 && x.x2 - x.x1 > 200 && Math.abs(x.y1 - (tinggi - 3 * CM)) < 2.5);
+      // garis bawah (2 Nov): sampai dekat batas bawah AREA TEKS (margin bawah fixture 1701 twip), menyisakan ruang tanggal di atasnya
+      const bawah = g.find((x) => Math.abs(x.y1 - x.y2) < 0.5 && x.x2 - x.x1 > 200 && Math.abs(x.y1 - (tinggi - 1701 / 20 - RUANG_TANGGAL_AREA_TEKS)) < 2.5);
       expect(bawah, `garis bawah tidak ditemukan; garis=${JSON.stringify(g)}`).toBeTruthy();
       // diagonal
       const diagonal = g.find((x) => Math.abs(x.y1 - x.y2) > 50);

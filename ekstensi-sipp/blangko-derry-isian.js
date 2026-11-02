@@ -9539,8 +9539,9 @@
       if (ada) return { blob: new Blob([ada.bita], { type: "application/pdf" }), bita: ada.bita, keterangan: null, ttdPdf: ada.ttdPdf, dariCache: true };
     }
     const buf = bufDariLatin1(rtfLatin1);
-    const basRunut = !salinan && S.blangko && S.blangko.jenis === "bas" && !tes() ? konteksRunutBas() : null;
-    const badan = { rtfBase64: base64DariBuffer(buf), ...(!salinan && S.jumlahBuktiZ > 0 ? { jumlahBukti: S.jumlahBuktiZ } : {}), ...(salinan ? { salinan: true } : {}), ...(adaTtd ? { ttd: ttd.map((x) => ({ nama: x.nama, pngBase64: x.pngBase64 })) } : {}), ...(basRunut && (basRunut.perkaraId || basRunut.nomorPerkara) ? { basRunut } : {}) };
+    // 2 Nov: PDF SALINAN BAS juga dikirimi konteks runut dan jumlah bukti - nomor halaman dan Z salinan sama dengan PDF biasa.
+    const basRunut = S.blangko && S.blangko.jenis === "bas" && !tes() ? konteksRunutBas() : null;
+    const badan = { rtfBase64: base64DariBuffer(buf), ...(S.jumlahBuktiZ > 0 ? { jumlahBukti: S.jumlahBuktiZ } : {}), ...(salinan ? { salinan: true } : {}), ...(adaTtd ? { ttd: ttd.map((x) => ({ nama: x.nama, pngBase64: x.pngBase64 })) } : {}), ...(basRunut && (basRunut.perkaraId || basRunut.nomorPerkara) ? { basRunut } : {}) };
     const d = await ambilPortal(API_PDF, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(badan), batasMs: BATAS_LAMA_MS }, salinan ? "Membuat PDF salinan" : "Membuat PDF");
     if (!d || !d.available) throw new Error((d && d.message) || "pengubah PDF tidak tersedia");
     if (d.runut) laporRunut(d.runut.peringatan);
@@ -9711,8 +9712,23 @@
         catatLog("membuat PDF SALINAN…");
         // SALINAN: majelis dan panitera sidang hanya bertulis "ttd" (disusun bot); satu-satunya gambar tanda tangan milik Panitera
         // pengesah di blok "Untuk Salinan". Pilihan "Tambah tanda tangan" tidak berlaku di salinan.
-        const { blob, keterangan } = await pdfDari(rtfLatin1, true);
+        const { blob, keterangan, ttdPdf } = await pdfDari(rtfLatin1, true);
         const nama = namaUnduhan(nomor, `${berkas} - SALINAN`, "pdf");
+        // 2 Nov: SALINAN BAS memakai tanda tangan ASLI tiap pejabat (bukan "ttd" dan tanpa blok Untuk Salinan).
+        if (keterangan && keterangan.jenis === "bas") {
+          const ada = (ttdPdf && ttdPdf.dipasang) || [];
+          const tanpa = [...(keterangan.tanpaTtd || []), ...((ttdPdf && ttdPdf.tidakDitemukan) || [])];
+          const ketBas = ada.length
+            ? ` (tanda tangan asli tertempel: ${ada.join(", ")}${tanpa.length ? `; tanpa tanda tangan: ${tanpa.join(", ")}` : ""})`
+            : ` (tanda tangan asli TIDAK tertempel${tanpa.length ? `: ${tanpa.join(", ")} belum terdaftar/disahkan atau namanya tidak ditemukan` : ": nama penanda tangan tidak dikenali"})`;
+          const jawabBas = await kirimLatar({ jenis: "tampilkan-pdf", nama, alamat: await blobKeData(blob), pesan: "", awas: !ada.length || tanpa.length > 0 });
+          if (jawabBas && jawabBas.ok) pesan.push(`PDF SALINAN dibuka di tab baru${ketBas}`);
+          else {
+            const u = await unduh(blob, nama);
+            pesan.push(u.ok ? `PDF SALINAN diunduh "${nama}"${ketBas}` : `PDF SALINAN gagal: ${u.pesan}`);
+          }
+          return selesai("salinan", mulai, pesan);
+        }
         // 28 Okt (630/2026): pesan menyebut yang SUNGGUH terjadi - jumlah "ttd" yang tertulis (laporan bot) dan sebab tanda tangan
         // Panitera tidak tertempel - bukan kalimat tetap yang terdengar berhasil walau "ttd" tidak tertulis.
         const nTtd = keterangan ? Number(keterangan.ttdDitambah || 0) + Number(keterangan.ttdSudahAda || 0) : 0;

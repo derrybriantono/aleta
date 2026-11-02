@@ -40,7 +40,7 @@ export type HasilUrai = { paragraf: ParagrafRtf[]; kejadian: KejadianRtf[]; panj
 
 const TUJUAN_ABAIKAN = new Set([
   "fonttbl", "colortbl", "stylesheet", "info", "header", "headerl", "headerr", "headerf", "footer", "footerl", "footerr", "footerf", "pict",
-  "shp", "shpinst", "shprslt", "shptxt", "listtable", "listoverridetable", "rsidtbl", "generator", "themedata", "colorschememapping",
+  "shp", "shpgrp", "shpinst", "shprslt", "shptxt", "listtable", "listoverridetable", "rsidtbl", "generator", "themedata", "colorschememapping",
   "datastore", "latentstyles", "pgdsctbl", "fldinst", "footnote", "annotation", "comment", "xmlnstbl", "mmathpr", "background", "private",
   "objdata", "listtext", "pntext", "pntxta", "pntxtb", "revtbl", "protusertbl", "userprops", "falt", "panose",
 ]);
@@ -136,7 +136,7 @@ export function uraiRtf(s: string): HasilUrai {
           if (m) {
             const nama = m[1].toLowerCase();
             if (TUJUAN_ABAIKAN.has(nama)) {
-              if (nama === "shp" && kini.shpAwal < 0 && !tumpukan[tumpukan.length - 1].abaikan) kini.shpAwal = i;
+              if ((nama === "shp" || nama === "shpgrp") && kini.shpAwal < 0 && !tumpukan[tumpukan.length - 1].abaikan) kini.shpAwal = i;
               kini.abaikan = true;
             }
           }
@@ -280,7 +280,7 @@ const bermakna = (t: string): boolean => /\p{L}{2,}/u.test(t);
 const bentukZ = (isi: string): boolean => /zcross-|SC\s*Z/.test(isi);
 /** Z gambar tangan blangko lama TANPA kotak "SC Z" (bentuk bebas "FreeForm") - keputusan 87 (1 Nov): ikut disesuaikan otomatis bila
  * paragraf bertulisan terdekat di atasnya penutup daftar ("...berikut:" / "...berupa:"). */
-const bentukFreeForm = (isi: string): boolean => /\{\\sv\s*FreeForm/.test(isi);
+const bentukFreeForm = (isi: string): boolean => /\{\\sv\s*FreeForm/i.test(isi);
 
 /**
  * Paragraf jangkar: (1) paragraf pemilik bentuk "SC Z" / "zcross-*" yang TERAKHIR (mundur ke paragraf bertulisan terdekat bila pemiliknya
@@ -339,6 +339,14 @@ export type Pembersihan = {
   jumlahBentukDibuang: number;
 };
 
+/** Grup bentuk yang SEMUA anggotanya garis lurus (20), penghubung lurus (32), atau bentuk bebas (0) - bukan kotak teks/gambar. */
+function grupHanyaGaris(isi: string): boolean {
+  const jenis = [...isi.matchAll(/\{\\sn\s*shapeType\}\{\\sv\s*(-?\d+)\}/g)].map((m) => Number(m[1]));
+  const anggota = (isi.match(/\{\\shp[\s\\{]/g) ?? []).length;
+  if (!anggota || /\\pict(?!\s*\})|\\blipuid|\\pngblip|\\jpegblip/.test(isi.replace(/\{\\shprslt[^{}]*\{\\pict\s*\}\}/g, ""))) return false;
+  return jenis.length >= anggota && jenis.every((j) => j === 20 || j === 32 || j === 0);
+}
+
 /**
  * Membuang Z lama: bentuk buatan modul ini (zcross-*), bentuk "SC Z" / "FreeForm" di paragraf jangkar (blangko), dan jarak huruf yang
  * pernah dipasang modul ini. Kotak teks tanggal lama dipertahankan isinya.
@@ -349,24 +357,31 @@ export function bersihkanZRtf(sumber: string): Pembersihan {
   const jangkar = cariJangkarRtf(s, urai);
   const buang: Segmen[] = [];
   let kotak: string | null = null;
+  // Tanda Z ("SC Z" / FreeForm) dapat berada di paragraf jangkar ATAU di paragraf pemilik bentuk (kosong, sesudah jangkar): tandanya
+  // dilihat bersama untuk KEDUA paragraf, supaya garis Z lama di paragraf jangkar ikut dibuang walau kotak "SC Z"-nya di paragraf lain
+  // (2 Nov: BAS ALUR verstek - Z lama = grup tiga garis penghubung di paragraf "...berikut:", kotak "SC Z" di paragraf kosong sesudahnya).
+  const diperiksa: ParagrafRtf[] = [];
+  if (jangkar) {
+    diperiksa.push(jangkar.paragrafUkur);
+    if (jangkar.paragrafBentuk && jangkar.paragrafBentuk.indeks !== jangkar.paragrafUkur.indeks) diperiksa.push(jangkar.paragrafBentuk);
+  }
+  const adaTanda = diperiksa.some((p) => p.shp.some(([a, b]) => /SC\s*Z|\{\\sv\s*FreeForm/i.test(s.slice(a, b))));
   const lihat = (p: ParagrafRtf) => {
-    // Z gambar tangan blangko lama berupa garis lurus (AutoShape garis / penghubung lurus) di paragraf pemilik tanda Z ikut dibuang supaya
-    // tidak bertumpuk dengan Z otomatis (keputusan 87, BAS jawab-menjawab).
-    const adaTanda = p.shp.some(([a, b]) => /SC\s*Z|\{\\sv\s*FreeForm/.test(s.slice(a, b)));
+    // Z gambar tangan blangko lama berupa garis lurus (AutoShape garis / penghubung lurus), atau GRUP yang seluruh anggotanya garis /
+    // penghubung / bentuk bebas tanpa tulisan, di paragraf pemilik tanda Z ikut dibuang supaya tidak bertumpuk dengan Z otomatis
+    // (keputusan 87, BAS jawab-menjawab; 2 Nov grup garis BAS ALUR verstek).
     for (const [a, b] of p.shp) {
       const isi = s.slice(a, b);
       const buatanKita = /zcross-/.test(isi);
       const garisLama = adaTanda && /\{\\sn\s*shapeType\}\{\\sv\s*(?:20|32)\}/.test(isi) && !/\\shptxt/.test(isi);
-      const templat = /SC\s*Z/.test(isi) || /\{\\sv\s*FreeForm/.test(isi) || garisLama;
+      const grupGarisLama = adaTanda && /^\{\\shpgrp/.test(isi) && !/\\shptxt/.test(isi) && grupHanyaGaris(isi);
+      const templat = /SC\s*Z/.test(isi) || /\{\\sv\s*FreeForm/i.test(isi) || garisLama || grupGarisLama;
       if (!buatanKita && !templat) continue;
       buang.push([a, b]);
       if (/\\shptxt/.test(isi) && !kotak) kotak = isi;
     }
   };
-  if (jangkar) {
-    lihat(jangkar.paragrafUkur);
-    if (jangkar.paragrafBentuk && jangkar.paragrafBentuk.indeks !== jangkar.paragrafUkur.indeks) lihat(jangkar.paragrafBentuk);
-  }
+  for (const p of diperiksa) lihat(p);
   // sisa bentuk buatan modul ini di mana pun (mis. jangkar bergeser sesudah disunting)
   for (const p of urai.paragraf) {
     if (jangkar && (p.indeks === jangkar.paragrafUkur.indeks || p.indeks === jangkar.paragrafBentuk?.indeks)) continue;
@@ -409,7 +424,7 @@ export function ukuranDiPosisi(s: string, urai: HasilUrai, pos: number): UkuranR
   return { lebar: pt(lebar), tinggi: pt(tinggi), kiri: pt(kiri), kanan: pt(kanan), atas: pt(atas), bawah: pt(bawah) };
 }
 
-export const tepiDariUkuran = (u: UkuranRtf): Tepi => ({ kiri: u.kiri, kanan: u.lebar - u.kanan });
+export const tepiDariUkuran = (u: UkuranRtf): Tepi => ({ kiri: u.kiri, kanan: u.lebar - u.kanan, bawah: u.bawah });
 
 // ----------------------------------------------------------------------------
 // Bentuk
