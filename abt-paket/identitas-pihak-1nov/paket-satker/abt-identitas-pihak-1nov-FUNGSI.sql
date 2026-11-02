@@ -1,12 +1,12 @@
 -- Paket abt-identitas-pihak-1nov: dua fungsi diganti (md5 definisi lama = keadaan server sesudah paket alamat-putusan-28okt dan pihak-urut-ecourt-27okt; md5 baru di hasil/isi-paket.json).
--- isian_rtf_pihak_identitas: umur dalam kurung sesudah tanggal lahir, urutan agama-pendidikan-pekerjaan, kalimat kuasa "... yang telah didaftarkan" tanpa koma.
--- isian_rtf_pihak_tambahan (Turut Tergugat, intervensi): umur dalam kurung dan pendidikan ikut bila ada. Tanpa komentar -- di badan fungsi (md5 definisi dihitung tanpa komentar).
+-- isian_rtf_pihak_identitas: TANPA umur (keputusan 112), urutan agama-pendidikan-pekerjaan, kalimat kuasa "... yang telah didaftarkan" tanpa koma.
+-- isian_rtf_pihak_tambahan (Turut Tergugat, intervensi): pendidikan ikut bila ada, tanpa umur. Tanpa komentar -- di badan fungsi (md5 definisi dihitung tanpa komentar).
 DELIMITER $$
 
 DROP FUNCTION IF EXISTS isian_rtf_pihak_identitas$$
 CREATE FUNCTION isian_rtf_pihak_identitas(p_perkara BIGINT, p_sisi INT, p_sebutan VARCHAR(100) CHARSET latin1, p_kediaman VARCHAR(200) CHARSET latin1, p_alamat1 VARCHAR(1000) CHARSET latin1, p_kuasa TEXT CHARSET latin1)
   RETURNS LONGTEXT CHARSET latin1
-  READS SQL DATA SQL SECURITY INVOKER COMMENT 'PU: identitas SEMUA pihak sisi 1 atau 2 menurut peringkat (urut urutan, id), satu jalan untuk semua perkara (urutan rapat atau tidak); umur dalam kurung sesudah tanggal lahir; urutan agama, pendidikan, pekerjaan; satu pihak tanpa angka romawi; alamat pihak pertama boleh diganti p_alamat1; p_kuasa (bila terisi) = kalimat kuasa'
+  READS SQL DATA SQL SECURITY INVOKER COMMENT 'PU: identitas SEMUA pihak sisi 1 atau 2 menurut peringkat (urut urutan, id), satu jalan untuk semua perkara (urutan rapat atau tidak); tanpa umur; urutan agama, pendidikan, pekerjaan; satu pihak tanpa angka romawi; alamat pihak pertama boleh diganti p_alamat1; p_kuasa (bila terisi) = kalimat kuasa'
 BEGIN
   DECLARE hasil LONGTEXT CHARSET latin1 DEFAULT '';
   DECLARE selesai INT DEFAULT 0;
@@ -18,8 +18,6 @@ BEGIN
   DECLARE v_nama, v_nik, v_tempat, v_agama, v_pekerjaan, v_pendidikan, v_alamat, v_kedi VARCHAR(1000) CHARSET latin1;
   DECLARE v_akhir TEXT CHARSET latin1;
   DECLARE v_tgl DATE;
-  DECLARE v_daftar DATE;
-  DECLARE v_umur VARCHAR(40) CHARSET latin1 DEFAULT '';
   DECLARE c CURSOR FOR
     SELECT a.urutan, a.id, a.nama, b.nomor_indentitas, b.tempat_lahir, b.tanggal_lahir, g.nama, b.pekerjaan, d.kode, isian_rtf_alamat_putusan(a.alamat)
       FROM SIPP.perkara_pihak1 a
@@ -44,7 +42,6 @@ BEGIN
     RETURN '';
   END IF;
   SET v_kuasa = REPLACE(TRIM(IFNULL(p_kuasa, '')), ', yang telah didaftarkan', ' yang telah didaftarkan');
-  SELECT tanggal_pendaftaran INTO v_daftar FROM SIPP.perkara WHERE perkara_id = p_perkara LIMIT 1;
   SET selesai = 0;
   OPEN c;
   baca: LOOP
@@ -70,13 +67,9 @@ BEGIN
     ELSE
       SET v_akhir = CONCAT(', sebagai <strong>', IFNULL(p_sebutan, ''), ' ', isian_rtf_romawi(v_rn), '</strong>;');
     END IF;
-    SET v_umur = '';
-    IF v_tgl IS NOT NULL AND v_tgl >= '1900-01-01' AND v_daftar IS NOT NULL THEN
-      SET v_umur = CONCAT(' (', YEAR(v_daftar) - YEAR(v_tgl) - (DATE_FORMAT(v_daftar, '%m%d') < DATE_FORMAT(v_tgl, '%m%d')), ' tahun)');
-    END IF;
     SET hasil = CONCAT(hasil, IF(hasil = '', '', '<br>'),
       '<strong>', IFNULL(v_nama, ''), '</strong>, NIK ', IFNULL(v_nik, ''),
-      ', tempat dan tanggal lahir ', IFNULL(v_tempat, ''), ', ', isian_rtf_tanggal(v_tgl), v_umur,
+      ', tempat dan tanggal lahir ', IFNULL(v_tempat, ''), ', ', isian_rtf_tanggal(v_tgl),
       ', agama ', IFNULL(v_agama, ''), ', pendidikan ', IFNULL(v_pendidikan, ''), ', pekerjaan ', IFNULL(v_pekerjaan, ''),
       ', ', TRIM(CONCAT_WS(' ', v_kedi, IFNULL(v_alamat, ''))), v_akhir);
   END LOOP;
@@ -91,7 +84,7 @@ END$$
 DROP FUNCTION IF EXISTS isian_rtf_pihak_tambahan$$
 CREATE FUNCTION isian_rtf_pihak_tambahan(p_perkara BIGINT, p_tabel INT)
   RETURNS LONGTEXT CHARSET latin1
-  READS SQL DATA SQL SECURITY INVOKER COMMENT 'PU: identitas Turut Tergugat/Termohon (p_tabel 4, perkara_pihak4; bentuk sama dengan 8710) atau pihak intervensi (3, perkara_pihak3; bentuk sama dengan 7054), semua pihak menurut peringkat (urut urutan, id), diawali <br>; umur dalam kurung dan pendidikan ikut bila ada; kosong bila tidak ada'
+  READS SQL DATA SQL SECURITY INVOKER COMMENT 'PU: identitas Turut Tergugat/Termohon (p_tabel 4, perkara_pihak4; bentuk sama dengan 8710) atau pihak intervensi (3, perkara_pihak3; bentuk sama dengan 7054), semua pihak menurut peringkat (urut urutan, id), diawali <br>; pendidikan ikut bila ada (tanpa umur); kosong bila tidak ada'
 BEGIN
   DECLARE hasil LONGTEXT CHARSET latin1 DEFAULT '';
   DECLARE selesai INT DEFAULT 0;
@@ -104,9 +97,7 @@ BEGIN
   DECLARE v_nik, v_tempat, v_pekerjaan VARCHAR(600) CHARSET latin1;
   DECLARE v_tgl DATE;
   DECLARE v_agama_id INT;
-  DECLARE v_daftar DATE;
   DECLARE v_pend VARCHAR(100) CHARSET latin1;
-  DECLARE v_umur VARCHAR(40) CHARSET latin1 DEFAULT '';
   DECLARE v_sebut VARCHAR(700) CHARSET latin1;
   DECLARE c CURSOR FOR
     SELECT t.urutan, t.id, t.nama, isian_rtf_alamat(t.alamat), NULL, ph.nomor_indentitas, ph.tempat_lahir, ph.tanggal_lahir, ph.agama_id, ph.pekerjaan, d.kode
@@ -125,7 +116,7 @@ BEGIN
   IF v_n = 0 THEN
     RETURN '';
   END IF;
-  SELECT IF(p.alur_perkara_id = 16 OR p.jenis_perkara_id IN (346, 341), 'Termohon', 'Tergugat'), p.tanggal_pendaftaran INTO v_s2, v_daftar FROM SIPP.perkara p WHERE p.perkara_id = p_perkara;
+  SELECT IF(p.alur_perkara_id = 16 OR p.jenis_perkara_id IN (346, 341), 'Termohon', 'Tergugat') INTO v_s2 FROM SIPP.perkara p WHERE p.perkara_id = p_perkara;
   SET selesai = 0;
   OPEN c;
   baca: LOOP
@@ -139,14 +130,10 @@ BEGIN
     ELSE
       SET v_sebut = IFNULL(NULLIF(TRIM(v_jenis), ''), 'Pihak Intervensi');
     END IF;
-    SET v_umur = '';
-    IF v_tgl IS NOT NULL AND v_tgl >= '1900-01-01' AND v_daftar IS NOT NULL THEN
-      SET v_umur = CONCAT(' (', YEAR(v_daftar) - YEAR(v_tgl) - (DATE_FORMAT(v_daftar, '%m%d') < DATE_FORMAT(v_tgl, '%m%d')), ' tahun)');
-    END IF;
     SET hasil = CONCAT(hasil, '<br>',
       '<strong>', TRIM(IFNULL(v_nama, '')), '</strong>',
       IF(TRIM(IFNULL(v_nik, '')) = '' OR TRIM(v_nik) REGEXP '^[0 -]+$', '', CONCAT(', NIK ', TRIM(v_nik))),
-      IF(TRIM(IFNULL(v_tempat, '')) = '' OR v_tgl IS NULL OR v_tgl < '1900-01-01', '', CONCAT(', tempat dan tanggal lahir ', TRIM(v_tempat), ', ', isian_rtf_tanggal(v_tgl), v_umur)),
+      IF(TRIM(IFNULL(v_tempat, '')) = '' OR v_tgl IS NULL OR v_tgl < '1900-01-01', '', CONCAT(', tempat dan tanggal lahir ', TRIM(v_tempat), ', ', isian_rtf_tanggal(v_tgl))),
       IF(IFNULL(v_agama_id, 0) BETWEEN 1 AND 7, CONCAT(', agama ', ELT(v_agama_id, 'Islam','Protestan','Katolik','Budha','Hindu','Lainnya','Kong Hu Cu')), ''),
       IF(TRIM(IFNULL(v_pend, '')) = '', '', CONCAT(', pendidikan ', TRIM(v_pend))),
       IF(TRIM(IFNULL(v_pekerjaan, '')) = '', '', CONCAT(', pekerjaan ', TRIM(v_pekerjaan))),

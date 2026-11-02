@@ -2,13 +2,13 @@
 /**
  * 1 NOV 2026 - paket ABT abt-identitas-pihak-1nov (keputusan 101 dan 102, agen V, paket ke-31): format identitas pihak putusan/penetapan = blangko acuan
  * "[01] [Kabul Verstek] Cerai (Format Lengkap)": baris pertama menjorok 1,25 cm, baris lanjutan menjorok gantung 4,5 cm, rata kanan-kiri, nama dan sebutan tebal,
- * "(N tahun)" sesudah tanggal lahir, urutan agama-pendidikan-pekerjaan, kalimat kuasa tanpa koma sebelum "yang telah didaftarkan".
+ * TANPA umur (keputusan 112, 2 Nov: umur tidak perlu dalam putusan), urutan agama-pendidikan-pekerjaan, kalimat kuasa tanpa koma sebelum "yang telah didaftarkan".
  * Yang dijaga dari isi paket SUNGGUHAN (penulisan ke blangko dan variabel ABT, jadi ketat):
  *   - MD5SUMS cocok; md5 lama != baru; kode unik; tanpa folder terhapus; tanpa kata nama aplikasi; skrip tanpa CRLF;
  *   - perilaku potongan: golongan A/C hanya mengganti tiga angka menjorok (selebihnya persis), golongan B mengganti paragraf identitas tertulis tangan dengan
  *     #7047#/#7048# (tanpa tulisan "(umur)"), pasangan Pemohon II dibuang hanya sesudah Pemohon I yang diganti; kurung seimbang;
  *   - SQL: 7047/7048 diubah hanya bila md5 persis dasar, kueri baru satu jalan lewat fungsi identitas (penanda hanya sebutan dan kalimat kuasa), PULIH membalik;
- *   - fungsi: umur dalam kurung, pendidikan sebelum pekerjaan, kalimat kuasa tanpa koma, tanpa komentar -- di badan, definisi lama = keadaan server.
+ *   - fungsi: tanpa umur (tanpa v_umur/v_daftar), pendidikan sebelum pekerjaan, kalimat kuasa tanpa koma, tanpa komentar -- di badan, definisi lama = keadaan server.
  */
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
@@ -184,16 +184,17 @@ describe("isi paket sungguhan - fungsi", () => {
   const identitas = blok(fungsi, "isian_rtf_pihak_identitas");
   const tambahan = blok(fungsi, "isian_rtf_pihak_tambahan");
 
-  it("isian_rtf_pihak_identitas: umur dalam kurung sesudah tanggal lahir, agama-pendidikan-pekerjaan, kuasa tanpa koma; tanpa komentar -- di badan", () => {
-    expect(identitas).toMatch(/isian_rtf_tanggal\(v_tgl\), v_umur,\n\s+', agama ', IFNULL\(v_agama, ''\), ', pendidikan ', IFNULL\(v_pendidikan, ''\), ', pekerjaan ', IFNULL\(v_pekerjaan, ''\)/);
-    expect(identitas).toMatch(/' \(', YEAR\(v_daftar\) - YEAR\(v_tgl\) - \(DATE_FORMAT\(v_daftar, '%m%d'\) < DATE_FORMAT\(v_tgl, '%m%d'\)\), ' tahun\)'/);
+  it("isian_rtf_pihak_identitas: TANPA umur, tanggal lahir langsung disusul agama-pendidikan-pekerjaan, kuasa tanpa koma; tanpa komentar -- di badan", () => {
+    expect(identitas).toMatch(/isian_rtf_tanggal\(v_tgl\),\n\s+', agama ', IFNULL\(v_agama, ''\), ', pendidikan ', IFNULL\(v_pendidikan, ''\), ', pekerjaan ', IFNULL\(v_pekerjaan, ''\)/);
+    expect(identitas).not.toMatch(/v_umur|v_daftar|tahun\)|YEAR\(/);
     expect(identitas).toMatch(/REPLACE\(TRIM\(IFNULL\(p_kuasa, ''\)\), ', yang telah didaftarkan', ' yang telah didaftarkan'\)/);
     expect(identitas).not.toMatch(/\n\s*--/);
-    expect(identitas).toMatch(/FROM SIPP\.perkara WHERE perkara_id = p_perkara LIMIT 1/);
+    expect(identitas).not.toMatch(/FROM SIPP\.perkara WHERE perkara_id = p_perkara LIMIT 1/);
   });
 
-  it("isian_rtf_pihak_tambahan: umur dan pendidikan ikut (bagian kosong tetap dilewati); definisi lama tersimpan utuh di -FUNGSI-LAMA", () => {
-    expect(tambahan).toMatch(/isian_rtf_tanggal\(v_tgl\), v_umur\)\)/);
+  it("isian_rtf_pihak_tambahan: pendidikan ikut TANPA umur (bagian kosong tetap dilewati); definisi lama tersimpan utuh di -FUNGSI-LAMA", () => {
+    expect(tambahan).toMatch(/TRIM\(v_tempat\), ', ', isian_rtf_tanggal\(v_tgl\)\)\),/);
+    expect(tambahan).not.toMatch(/v_umur|v_daftar|tahun\)|YEAR\(/);
     expect(tambahan).toMatch(/CONCAT\(', pendidikan ', TRIM\(v_pend\)\)/);
     expect(tambahan.indexOf("', pendidikan '")).toBeLessThan(tambahan.indexOf("', pekerjaan '"));
     expect(tambahan).not.toMatch(/\n\s*--/);

@@ -180,8 +180,8 @@ def main():
 
     # ---- berkas fungsi
     kep_fn = ("-- Paket %s: dua fungsi diganti (md5 definisi lama = keadaan server sesudah paket alamat-putusan-28okt dan pihak-urut-ecourt-27okt; md5 baru di hasil/isi-paket.json).\n"
-              "-- isian_rtf_pihak_identitas: umur dalam kurung sesudah tanggal lahir, urutan agama-pendidikan-pekerjaan, kalimat kuasa \"... yang telah didaftarkan\" tanpa koma.\n"
-              "-- isian_rtf_pihak_tambahan (Turut Tergugat, intervensi): umur dalam kurung dan pendidikan ikut bila ada. Tanpa komentar -- di badan fungsi (md5 definisi dihitung tanpa komentar).\n") % N
+              "-- isian_rtf_pihak_identitas: TANPA umur (keputusan 112), urutan agama-pendidikan-pekerjaan, kalimat kuasa \"... yang telah didaftarkan\" tanpa koma.\n"
+              "-- isian_rtf_pihak_tambahan (Turut Tergugat, intervensi): pendidikan ikut bila ada, tanpa umur. Tanpa komentar -- di badan fungsi (md5 definisi dihitung tanpa komentar).\n") % N
     fungsi_sql = kep_fn + 'DELIMITER $$\n\n' + ''.join(fn[f]['baru'] + '$$\n\n' for f in FN_UBAH) + 'DELIMITER ;\n'
     lama_sql = "-- Definisi LAMA (persis keadaan server) dua fungsi yang diganti; dipakai pulih-satker.sh.\nDELIMITER $$\n\n" + ''.join(fn[f]['lama'] + '$$\n\n' for f in FN_UBAH) + 'DELIMITER ;\n'
     for f in FN_UBAH:

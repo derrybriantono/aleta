@@ -3,8 +3,8 @@
 # PASANG paket ABT "abt-identitas-pihak-1nov" (1 Nov 2026, agen V; keputusan pengguna 101 dan 102). Dijalankan DI SERVER sebagai root, dari folder paket.
 # HANYA pengguna derry_briantono. Isi:
 #   1. bunyi identitas pihak: variabel 7047/7048 (identitas Penggugat-Pemohon / Tergugat-Termohon) memakai SATU jalan (fungsi isian_rtf_pihak_identitas) dengan
-#      umur dalam kurung sesudah tanggal lahir, urutan agama-pendidikan-pekerjaan, kalimat kuasa tanpa koma sebelum "yang telah didaftarkan"; fungsi
-#      isian_rtf_pihak_tambahan (Turut Tergugat/intervensi) disamakan (umur, pendidikan);
+#      TANPA umur (keputusan 112), urutan agama-pendidikan-pekerjaan, kalimat kuasa tanpa koma sebelum "yang telah didaftarkan"; fungsi
+#      isian_rtf_pihak_tambahan (Turut Tergugat/intervensi) disamakan (pendidikan);
 #   2. blangko RTF: paragraf identitas pihak dibentuk persis blangko acuan "[01] [Kabul Verstek] Cerai (Format Lengkap)" (baris pertama menjorok 1,25 cm, baris lanjutan
 #      menjorok gantung 4,5 cm, rata kanan-kiri); identitas tertulis tangan diganti #7047#/#7048# (daftar-tambal.tsv + tambal.tsv).
 # URUTAN PASANG: KE-31, PALING AKHIR - sesudah perbaikan-1nov (ke-30) (md5 dasar = keadaan SESUDAH 30 paket ../URUTAN-PASANG-1nov.md).
@@ -83,7 +83,7 @@ fi
 # --- 6. UJI atas data nyata (baca saja) ---------------------------------------------------------------------------------------------
 SQ="${BIN}mysql -h $H -u root --default-character-set=latin1 $SDB -N"
 batal() { [ "$p" = "$HARAP" ] && pulih; gagal "$1$([ "$p" = "$HARAP" ] && echo ' - dipulihkan')"; }
-# (a) fungsi identitas atas perkara contoh: ada "(N tahun)" sesudah tanggal lahir, tanpa tulisan "(umur)", pendidikan SEBELUM pekerjaan, sebutan tebal
+# (a) fungsi identitas atas perkara contoh: TANPA "(N tahun)" dan tanpa tulisan "(umur)" (keputusan 112), pendidikan SEBELUM pekerjaan, sebutan tebal
 for SISI in 1 2; do
   T=perkara_pihak$SISI
   PID=$($SQ -e "SELECT a.perkara_id FROM $T a JOIN pihak b ON b.id = a.pihak_id JOIN perkara p ON p.perkara_id = a.perkara_id WHERE b.tanggal_lahir > '1900-01-01' AND b.tempat_lahir <> '' AND b.pekerjaan <> '' AND b.pendidikan_id IS NOT NULL AND a.alamat NOT LIKE '%dahulu%' ORDER BY a.perkara_id DESC LIMIT 1" 2>/dev/null | tr -d '\r')
@@ -91,17 +91,19 @@ for SISI in 1 2; do
   S=$([ "$SISI" = 1 ] && echo Penggugat || echo Tergugat)
   HA=$($SQ -e "SELECT $ADB.isian_rtf_pihak_identitas($PID, $SISI, '$S', 'tempat kediaman di', '', '')" 2>"$CAD/uji-id-$SISI.err" | tr -d '\r')
   [ -n "$HA" ] || { head -3 "$CAD/uji-id-$SISI.err"; batal "fungsi identitas tidak menjawab (sisi $SISI, perkara $PID)"; }
-  echo "$HA" | grep -Eq ' \([0-9]+ tahun\), agama ' || batal "identitas sisi $SISI perkara $PID tanpa umur dalam kurung sesudah tanggal lahir"
+  echo "$HA" | grep -Eq ' \([0-9]+ tahun\)' && batal "identitas sisi $SISI perkara $PID masih memuat umur dalam kurung (keputusan 112: umur tidak dicetak)"
   echo "$HA" | grep -q '(umur)' && batal "identitas sisi $SISI perkara $PID masih memuat tulisan (umur)"
+  echo "$HA" | grep -Eq '([0-9]{4}|\.\.\.), agama ' || batal "identitas sisi $SISI perkara $PID: tanggal lahir tidak langsung disusul agama"
   echo "$HA" | grep -Eq ', pendidikan .*, pekerjaan ' || batal "identitas sisi $SISI perkara $PID: urutan pendidikan-pekerjaan salah"
   echo "$HA" | grep -q "sebagai <strong>$S</strong>;" || batal "identitas sisi $SISI perkara $PID: sebutan tebal tidak ada"
   echo "UJI identitas sisi $SISI perkara $PID: ${HA:0:70}..."
 done
-# (b) Turut Tergugat (perkara_pihak4): bila ada contoh, umur dalam kurung ikut
+# (b) Turut Tergugat (perkara_pihak4): bila ada contoh, tanpa umur
 PID4=$($SQ -e "SELECT t.perkara_id FROM perkara_pihak4 t JOIN pihak b ON b.id = t.pihak_id WHERE b.tanggal_lahir > '1900-01-01' AND IFNULL(b.tempat_lahir,'') <> '' ORDER BY t.perkara_id DESC LIMIT 1" 2>/dev/null | tr -d '\r')
 if [ -n "$PID4" ]; then
   HT=$($SQ -e "SELECT $ADB.isian_rtf_pihak_tambahan($PID4, 4)" 2>"$CAD/uji-tambahan.err" | tr -d '\r')
-  echo "$HT" | grep -Eq '\([0-9]+ tahun\)' || { head -3 "$CAD/uji-tambahan.err"; batal "identitas Turut Tergugat perkara $PID4 tanpa umur dalam kurung"; }
+  [ -n "$HT" ] || { head -3 "$CAD/uji-tambahan.err"; batal "fungsi Turut Tergugat tidak menjawab (perkara $PID4)"; }
+  echo "$HT" | grep -Eq '\([0-9]+ tahun\)|\(umur\)' && batal "identitas Turut Tergugat perkara $PID4 masih memuat umur"
   echo "UJI Turut Tergugat perkara $PID4: ${HT:0:60}..."
 else
   echo "UJI Turut Tergugat dilewati: tidak ada perkara contoh"

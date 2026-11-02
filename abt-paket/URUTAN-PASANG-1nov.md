@@ -480,9 +480,9 @@ SELESAI - paket abt-perbaikan-1nov terpasang. ...
 cd identitas-pihak-1nov/paket-satker && bash pasang-satker.sh
 ```
 Format identitas pihak di putusan/penetapan = blangko acuan "[01] [Kabul Verstek] Cerai (Format Lengkap)" (folder 1 Perceraian CG): nama dan sebutan tebal, baris pertama menjorok 1,25 cm, baris lanjutan
-menjorok gantung 4,5 cm, rata kanan-kiri, "(N tahun)" sesudah tanggal lahir untuk SEMUA pihak yang tanggal lahirnya ada, urutan agama-pendidikan-pekerjaan, kalimat kuasa "... Surat Kuasa Khusus tanggal ... yang telah didaftarkan ...".
+menjorok gantung 4,5 cm, rata kanan-kiri, TANPA umur (REVISI 2 Nov, keputusan 112 Derry: "umur tidak perlu dalam putusan"; "(N tahun)" dibuang dari kedua fungsi, jadi juga di penetapan dan BAS), urutan agama-pendidikan-pekerjaan, kalimat kuasa "... Surat Kuasa Khusus tanggal ... yang telah didaftarkan ...".
 A. Variabel 7047/7048 (identitas Penggugat-Pemohon / Tergugat-Termohon) dipangkas dari ~45 penanda dan 5 cabang menjadi SATU panggilan fungsi `isian_rtf_pihak_identitas` (2 penanda: sebutan dan kalimat kuasa);
-fungsi itu diganti (umur, urutan, kuasa, kalimat kuasa panjang tidak terpotong) dan `isian_rtf_pihak_tambahan` (Turut Tergugat/intervensi) diselaraskan.
+fungsi itu diganti (urutan, kuasa, kalimat kuasa panjang tidak terpotong; tanpa umur) dan `isian_rtf_pihak_tambahan` (Turut Tergugat/intervensi) diselaraskan.
 B. Blangko RTF (daftar-tambal.tsv + tambal.tsv): paragraf identitas disamakan inden acuan; identitas tertulis tangan di BAS ALUR dan dispensasi kawin diganti `#7047#`/`#7048#`.
 Lihat `identitas-pihak-1nov/PASANG.md`. md5 dasar = keadaan sesudah ke-30 paket.
 Keluaran benar:
