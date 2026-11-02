@@ -1,10 +1,10 @@
 dasar pohon (30 paket)   : 9931cdd9c3f77cb0575d9ab9ec9322ee
 dasar variabel (30 paket): 7174f56aa8de00b36c40297b02fda945
-dasar fungsi (30 paket)  : 70 879192ce82515ee699d3a5cdb808d0af 
+dasar fungsi (30 paket)  : 70 9e3223ad0ffbdea998de26dd344f7bf6 
 == pasang pertama
 PRASYARAT COCOK (2|0|2|0|0|6)
 BERKAS SIAP
-CADANGAN: /d/aleta-dev/wt/w177/abt-paket/identitas-pihak-1nov/paket-satker/cadangan/abt_variabel-sebelum.sql (2 baris lama)
+CADANGAN: /d/r181/ps31/cadangan/abt_variabel-sebelum.sql (2 baris lama)
 FUNGSI: 2 diganti (isian_rtf_pihak_identitas, isian_rtf_pihak_tambahan)
 SEMUA COCOK
 UJI identitas sisi 1 perkara 10284: <strong>Nung Rahayu binti Bohar</strong>, NIK 7203116111910004, tempat...
@@ -12,17 +12,17 @@ UJI identitas sisi 2 perkara 10284: <strong>Simson Kembaka bin Nasarudin Kembaka
 UJI Turut Tergugat perkara 7472: <br><strong>TASYA BINTI DARLAN</strong>, agama Islam, pendid...
 TAMBAL=608
 BERKAS COCOK
-SELESAI - paket abt-identitas-pihak-1nov terpasang. Cadangan: /d/aleta-dev/wt/w177/abt-paket/identitas-pihak-1nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w177/abt-paket/identitas-pihak-1nov/paket-satker/pulih-satker.sh
+SELESAI - paket abt-identitas-pihak-1nov terpasang. Cadangan: /d/r181/ps31/cadangan. Pulih: bash /d/r181/ps31/pulih-satker.sh
 terpasang pohon (31)     : 19ee866e4cc04670a3c8c8ff7a015ad6
 terpasang variabel (31)  : 55dc9f9ee3914f77a18754fc6e650b4d
-terpasang fungsi (31)    : 70 10c8a2bd43cb86694e64945d504194ae 
+terpasang fungsi (31)    : 70 019ef7ef51ab7d49d8df8fe18da9a141 
 == pasang ulang
 PRASYARAT COCOK (0|2|0|2|0|6)
 SUDAH=608
 UJI identitas sisi 1 perkara 10284: <strong>Nung Rahayu binti Bohar</strong>, NIK 7203116111910004, tempat...
 UJI identitas sisi 2 perkara 10284: <strong>Simson Kembaka bin Nasarudin Kembaka</strong>, NIK 72020613059...
 SUDAH=608
-SELESAI - paket abt-identitas-pihak-1nov terpasang. Cadangan: /d/aleta-dev/wt/w177/abt-paket/identitas-pihak-1nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w177/abt-paket/identitas-pihak-1nov/paket-satker/pulih-satker.sh
+SELESAI - paket abt-identitas-pihak-1nov terpasang. Cadangan: /d/r181/ps31/cadangan. Pulih: bash /d/r181/ps31/pulih-satker.sh
 PASANG ULANG: tidak ada yang berubah (pohon, variabel, fungsi)
 == pulih
 BERKAS PULIH
@@ -37,7 +37,7 @@ PRASYARAT COCOK (2|0|2|0|0|6)
 UJI identitas sisi 1 perkara 10284: <strong>Nung Rahayu binti Bohar</strong>, NIK 7203116111910004, tempat...
 UJI identitas sisi 2 perkara 10284: <strong>Simson Kembaka bin Nasarudin Kembaka</strong>, NIK 72020613059...
 TAMBAL=608
-SELESAI - paket abt-identitas-pihak-1nov terpasang. Cadangan: /d/aleta-dev/wt/w177/abt-paket/identitas-pihak-1nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w177/abt-paket/identitas-pihak-1nov/paket-satker/pulih-satker.sh
+SELESAI - paket abt-identitas-pihak-1nov terpasang. Cadangan: /d/r181/ps31/cadangan. Pulih: bash /d/r181/ps31/pulih-satker.sh
 PASANG LAGI: sama persis dengan pasang pertama (pohon, variabel, fungsi)
 == penjaga 1: berkas disunting orang sesudah dipasang -> pulih membiarkannya (dilaporkan), yang lain dipulihkan
 BIARKAN	derry_briantono/- BAS ASAL USUL ANAK -/[01a] BAS 1 Asal Usul Anak - Kabul.rtf	(sudah disunting sesudah dipasang)
@@ -58,5 +58,5 @@ PRASYARAT COCOK (2|0|2|0|0|6)
 UJI identitas sisi 1 perkara 10284: <strong>Nung Rahayu binti Bohar</strong>, NIK 7203116111910004, tempat...
 UJI identitas sisi 2 perkara 10284: <strong>Simson Kembaka bin Nasarudin Kembaka</strong>, NIK 72020613059...
 TAMBAL=608
-SELESAI - paket abt-identitas-pihak-1nov terpasang. Cadangan: /d/aleta-dev/wt/w177/abt-paket/identitas-pihak-1nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w177/abt-paket/identitas-pihak-1nov/paket-satker/pulih-satker.sh
+SELESAI - paket abt-identitas-pihak-1nov terpasang. Cadangan: /d/r181/ps31/cadangan. Pulih: bash /d/r181/ps31/pulih-satker.sh
 AKHIR: sama persis dengan pasang pertama (pohon, variabel, fungsi)
