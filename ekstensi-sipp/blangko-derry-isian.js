@@ -5318,7 +5318,8 @@
       // U2: itsbat nikah dan dispensasi kawin menurunkan keadaannya dari posita; dibaca SEKALI per perkara (singgahan dua menit di bacaBahanSaksi)
       try {
         const kn = ktKenal();
-        if (kn && kn.kat && /^(?:itsbat-nikah|dispensasi-kawin)/.test(String(kn.kat.kunci || ""))) await bacaBahanSaksi(false);
+        // 2 Nov: cerai juga (nafkah 12 bulan, anak ikut siapa, kumulasi itsbat: wali sendiri yang menikahkan)
+        if (kn && kn.kat && /^(?:itsbat-nikah|dispensasi-kawin|cerai-gugat|cerai-talak)/.test(String(kn.kat.kunci || ""))) await bacaBahanSaksi(false);
       } catch {
         /* posita tidak terbaca: keadaan tetap bawaan/data */
       }

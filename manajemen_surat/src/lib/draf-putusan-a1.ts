@@ -246,7 +246,12 @@ export const CALON_DASAR = {
   elektronik: ["Pasal 26 Peraturan Mahkamah Agung Nomor 1 Tahun 2019"],
   pns: ["Pasal 3 ayat (1) Peraturan Pemerintah Nomor 10 Tahun 1983"],
   pisahSema: ["SEMA Nomor 1 Tahun 2022 jo. SEMA Nomor 3 Tahun 2023"],
+  nafkahSema: ["SEMA Nomor 1 Tahun 2022"],
 } as const;
+
+/** Dalil gugatan yang menegaskan suami tidak memberi nafkah (sama dengan pembaca bot nafkahPosita.js, nafkah anak saja tidak). */
+const RE_DALIL_TIDAK_NAFKAH =
+  /\b(?:tidak|tak|tidak\s+pernah|tidak\s+lagi|sudah\s+tidak|lalai|enggan)\s+(?:\S+\s+){0,3}?(?:memberi(?:kan)?\s+nafkah(?!\s+(?:terhadap|kepada|untuk|bagi)\s+anak)|menafkahi)/i;
 
 /** Huruf alasan -> rujukan PP 9/1975 dan KHI (diperiksa rak seperti yang lain). */
 export function calonDasarHuruf(huruf: string): string[] {
@@ -758,6 +763,21 @@ export function susunDrafPutusanA1(m: MasukanDrafA1, periksaBawaan?: PemeriksaRa
           `Menimbang, bahwa perkara perceraian dengan alasan perselisihan dan pertengkaran terus-menerus dapat dikabulkan apabila terbukti suami istri berselisih dan bertengkar terus-menerus atau telah berpisah tempat tinggal paling singkat 6 (enam) bulan${teks(m.lamaPisah) ? `, sedangkan ${P} dan ${T} telah berpisah selama ${teks(m.lamaPisah)}` : ""};`,
           "kerangka",
           tandaDasar(sema.belum)
+        )
+      );
+    }
+    // Keputusan 116 (2 Nov 2026): gugatan mendalilkan suami tidak menafkahi - rumusan SEMA 1/2022 angka 1 huruf b poin 1 tersedia
+    // sebagai bahan pertimbangan; bila penilai menandai "belum memenuhi 12 bulan", draf diberi tanda periksa (bukan ditolak sendiri).
+    const dalilNafkah = (m.matriks?.dalil ?? []).filter((d) => d.sumber === "gugatan" && RE_DALIL_TIDAK_NAFKAH.test(d.teks || ""));
+    if (/cerai\s+gugat/i.test(m.jenisPerkara) && dalilNafkah.length) {
+      const semaNafkah = pakai(CALON_DASAR.nafkahSema, "penilaian");
+      const belum12 = dalilNafkah.some((d) => (d.pembuktian?.tanda ?? []).some((t) => /12 bulan/.test(t)));
+      tambah(
+        "penilaian",
+        par(
+          `Menimbang, bahwa perkara perceraian dengan alasan suami tidak melaksanakan kewajiban nafkah lahir dan/atau batin hanya dapat dikabulkan jika terbukti suami tidak melaksanakan kewajibannya setelah minimal 12 (dua belas) bulan;`,
+          "kerangka",
+          [...tandaDasar(semaNafkah.belum), ...(belum12 ? [tandaPerlu("lamanya tidak dinafkahi belum terbukti 12 bulan menurut keterangan saksi - periksa sebelum mempertimbangkan alasan nafkah")] : [])]
         )
       );
     }

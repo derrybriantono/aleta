@@ -191,6 +191,13 @@
    "uraian": "taklik talak: ucapan setelah akad nikah dan isinya",
    "status": "perlu-verifikasi",
    "sumber": "dipakai pada set pertanyaan saksi Blangko Derry (set-pertanyaan-saksi.ts); belum dicocokkan dengan naskah resmi"
+  },
+  {
+   "id": "dh-sema-1-2022-nafkah",
+   "rujukan": "SEMA Nomor 1 Tahun 2022 Rumusan Hukum Kamar Agama angka 1 huruf b poin 1",
+   "uraian": "perkara perceraian dengan alasan suami/istri tidak melaksanakan kewajiban nafkah lahir dan/atau batin, hanya dapat dikabulkan jika terbukti suami/istri tidak melaksanakan kewajibannya setelah minimal 12 (dua belas) bulan",
+   "status": "terverifikasi",
+   "sumber": "bunyi dicocokkan dengan Kompilasi Rumusan Hukum Kamar Agama dan Perdata Umum Edisi 2026 (Faisal Saleh), halaman 45: [SEMA No. 1 Tahun 2022 - C. Kamar Agama Tahun 2022 angka 1 huruf b] butir 1); naskah lokal referensi/Kompilasi-Rumusan-Hukum-Agama-Perdata-Edisi-6-2026-Faisal-Saleh.md"
   }
  ],
  "keadaan": {
@@ -544,6 +551,19 @@
     "dh-sebab-pengetahuan"
    ],
    "wajib": false
+  },
+  {
+   "id": "pp-nafkah-12",
+   "judul": "Tidak dinafkahi sedikitnya 12 bulan",
+   "uraian": "bila nafkah menjadi alasan: saksi menerangkan sejak kapan dan sudah berapa lama nafkah lahir/batin tidak diberikan (syarat minimal 12 bulan)",
+   "dasarHukum": [
+    "dh-sema-1-2022-nafkah",
+    "dh-sebab-pengetahuan"
+   ],
+   "wajib": false,
+   "keadaan": {
+    "sebabF": "ekonomi-nafkah"
+   }
   }
  ],
  "pertanyaan": [
@@ -1571,6 +1591,82 @@
      ]
     }
    }
+  },
+  {
+   "tingkat": "inti",
+   "kelompok": "akibat",
+   "pihakSaksi": [
+    "*"
+   ],
+   "tidakBerlaku": [],
+   "id": "q-nafkah-sejak",
+   "pokok": "pp-nafkah-12",
+   "urutan": 141,
+   "keadaan": {
+    "sebabF": "ekonomi-nafkah"
+   },
+   "teks": "Sejak kapan #0047# tidak lagi memberikan nafkah kepada #0046#, dan sudah berapa lama hal itu berlangsung ?",
+   "teksVarian": [
+    "Sudah berapa lama #0047# tidak memberikan nafkah kepada #0046#, dan sejak kapan ?"
+   ],
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ],
+   "slotDari": {
+    "sejak": "nafkahSejak",
+    "lama": "lamaNafkah"
+   },
+   "hal": "sejak kapan dan berapa lama nafkah tidak diberikan",
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan sendiri sejak kapan dan berapa lama nafkah tidak diberikan",
+     "saksi1": [
+      "saya melihat sendiri bahwa sejak {sejak} #0047# tidak lagi memberikan nafkah kepada #0046# sehingga sudah {lama} lamanya",
+      "sepengetahuan saya secara langsung sejak {sejak} #0047# tidak menafkahi #0046# lagi dan hal itu sudah berlangsung {lama}",
+      "sejak {sejak} sampai sekarang #0046# tidak lagi menerima nafkah dari #0047# yaitu sudah {lama} dan hal itu saya lihat sendiri",
+      "saya mengetahui langsung bahwa kebutuhan #0046# tidak lagi ditanggung #0047# sejak {sejak} sehingga sudah {lama}"
+     ],
+     "saksi2": [
+      "yang saya saksikan sendiri adalah bahwa #0047# tidak memberi nafkah kepada #0046# sejak {sejak} atau sudah {lama}",
+      "dengan mata kepala saya sendiri saya melihat bahwa sejak {sejak} #0046# hidup tanpa nafkah dari #0047# selama {lama}",
+      "saya mengalami dan melihat langsung bahwa nafkah dari #0047# untuk #0046# tidak ada lagi sejak {sejak} dan itu sudah {lama}",
+      "sejak {sejak} #0047# tidak membiayai keperluan #0046# lagi sehingga sudah {lama} berlalu sebagaimana yang saya lihat sendiri"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi mengetahui sejak kapan nafkah tidak diberikan hanya dari cerita orang lain",
+     "saksi1": [
+      "menurut cerita {sumber} sejak {sejak} #0047# tidak lagi memberikan nafkah kepada #0046# sehingga sudah {lama}",
+      "saya diceritakan oleh {sumber} bahwa sejak {sejak} #0047# tidak menafkahi #0046# lagi selama {lama}",
+      "yang saya ketahui dari cerita {sumber} adalah bahwa sejak {sejak} #0046# tidak menerima nafkah dari #0047# sudah {lama}",
+      "berdasarkan cerita {sumber} nafkah dari #0047# untuk #0046# tidak ada lagi sejak {sejak} atau sudah {lama}"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} saya mengetahui bahwa sejak {sejak} #0047# tidak memberi nafkah kepada #0046# selama {lama}",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa #0046# tidak dinafkahi #0047# sejak {sejak} atau sudah {lama}",
+      "#0047# tidak membiayai #0046# sejak {sejak} dan sudah {lama} berlalu demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa sejak {sejak} keperluan #0046# tidak lagi dipenuhi #0047# selama {lama}"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: tidak dinafkahi sejak {sejak} (sudah {lama}); versi B: nafkah baru terhenti beberapa bulan terakhir - berselisih pada LAMA",
+     "bedaPada": "lama",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri sejak {sejak} #0047# tidak lagi memberikan nafkah kepada #0046# selama {lama}",
+      "keterangan saya adalah bahwa sejak {sejak} #0047# tidak menafkahi #0046# lagi sehingga sudah {lama}",
+      "sejak {sejak} #0046# tidak lagi menerima nafkah dari #0047# yaitu sudah {lama} dan itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa sejak {sejak} nafkah dari #0047# tidak ada lagi atau sudah {lama}"
+     ],
+     "saksi2": [
+      "sepengetahuan saya #0047# masih memberi nafkah kepada #0046# walaupun sedikit dan baru beberapa bulan terakhir berhenti",
+      "yang saya alami nafkah dari #0047# untuk #0046# baru terhenti beberapa bulan terakhir dan sebelumnya masih ada walau sedikit",
+      "yang saya ingat dan saya sampaikan adalah bahwa #0047# baru beberapa bulan ini berhenti memberi nafkah kepada #0046#",
+      "#0047# masih menafkahi #0046# sampai beberapa bulan yang lalu dan itulah keterangan saya"
+     ]
+    }
+   },
+   "catatan": "SEMA 1/2022 Kamar Agama angka 1 huruf b poin 1: alasan tidak dinafkahi hanya dapat dikabulkan bila terbukti sedikitnya 12 bulan. Tanggal awal dari gugatan diisi otomatis dan ditandai berasal dari gugatan; pastikan saksi sendiri yang menyebutnya."
   },
   {
    "id": "q-upaya-keluarga-verstek",
@@ -2800,6 +2896,63 @@
    }
   },
   {
+   "tingkat": "pilihan",
+   "kelompok": "akibat",
+   "pihakSaksi": [
+    "*"
+   ],
+   "tidakBerlaku": [],
+   "id": "q-anak-biaya",
+   "pokok": "pp-perkawinan",
+   "urutan": 52.5,
+   "keadaan": {
+    "anak": "ada",
+    "pengasuhAnak": "pengaju"
+   },
+   "teks": "Selama anak tinggal bersama #0046#, siapa yang menanggung biaya hidup anak itu, dan apakah #0047# masih memberi nafkah untuk anaknya ?",
+   "teksVarian": [
+    "Siapa yang membiayai kebutuhan anak yang tinggal bersama #0046#, dan apakah #0047# ikut memberi nafkah untuk anak ?"
+   ],
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ],
+   "hal": "biaya hidup anak yang tinggal bersama ibunya",
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan sendiri siapa yang membiayai anak dan bahwa ayahnya tidak lagi memberi nafkah anak",
+     "saksi1": [
+      "saya melihat sendiri bahwa biaya hidup anak selama ini ditanggung #0046# sendiri dan #0047# tidak lagi memberi nafkah untuk anaknya",
+      "sepengetahuan saya secara langsung kebutuhan anak itu dipenuhi oleh #0046#, sedangkan #0047# tidak ikut membiayainya",
+      "anak itu dibiayai oleh #0046# dan keluarga #0046# sedangkan #0047# tidak lagi mengirim nafkah untuk anak dan hal itu saya lihat sendiri",
+      "saya mengetahui langsung bahwa #0046# yang membiayai makan, pakaian, dan sekolah anak itu tanpa bantuan dari #0047#"
+     ],
+     "saksi2": [
+      "yang saya saksikan sendiri adalah bahwa #0046# menanggung sendiri biaya anak dan #0047# tidak memberi nafkah untuk anaknya",
+      "dengan mata kepala saya sendiri saya melihat bahwa kebutuhan anak itu dipenuhi #0046#, bukan oleh #0047#",
+      "saya mengalami dan melihat langsung bahwa #0047# tidak lagi menafkahi anaknya sehingga #0046# yang membiayai",
+      "biaya hidup anak itu ditanggung #0046# sendiri, #0047# tidak ikut membiayai, sebagaimana yang saya lihat sendiri"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: anak dibiayai ibunya sendiri; versi B: ayahnya masih memberi nafkah anak - berselisih pada PELAKU",
+     "bedaPada": "pelaku",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri biaya hidup anak itu ditanggung #0046# sendiri tanpa nafkah dari #0047#",
+      "keterangan saya adalah bahwa #0047# tidak lagi memberi nafkah untuk anaknya sehingga #0046# yang membiayai",
+      "kebutuhan anak itu dipenuhi #0046#, bukan #0047#, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa #0046# menanggung sendiri biaya anak itu tanpa bantuan #0047#"
+     ],
+     "saksi2": [
+      "sepengetahuan saya #0047# masih memberi uang untuk keperluan anaknya walaupun jumlahnya berubah-ubah",
+      "yang saya alami, #0047# masih ikut membiayai anak itu sesekali",
+      "yang saya ingat dan saya sampaikan adalah bahwa #0047# masih mengirim nafkah untuk anaknya",
+      "#0047# masih ikut menanggung biaya anak itu, dan itulah keterangan saya"
+     ]
+    }
+   }
+  },
+  {
    "id": "q-bentuk",
    "pokok": "pp-perselisihan",
    "urutan": 74,
@@ -3051,6 +3204,80 @@
       "saya mengetahui sebagian saja bahwa puncak keretakan rumah tangga mereka terjadi pada {waktu} ketika {peristiwa} sementara bagian lainnya tidak saya ketahui",
       "sejauh yang saya ketahui hanya bahwa pertengkaran terbesar #0046# dan #0047# terjadi pada {waktu} yaitu {peristiwa} dan selain itu tidak ada yang saya ketahui",
       "sebatas itu yang saya ketahui yakni ketegangan mereka mencapai puncak pada {waktu} manakala {peristiwa} selebihnya tidak saya ketahui"
+     ]
+    }
+   }
+  },
+  {
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "tidakBerlaku": [],
+   "id": "q-puncak-akibat",
+   "pokok": "pp-perselisihan",
+   "urutan": 78.5,
+   "keadaan": {
+    "pisahRumah": "sudah-pisah"
+   },
+   "teks": "Apa yang terjadi antara #0046# dan #0047# setelah kejadian yang menjadi puncak perselisihan itu ?",
+   "teksVarian": [
+    "Setelah puncak pertengkaran itu, bagaimana keadaan #0046# dan #0047# ?"
+   ],
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ],
+   "slotDari": {
+    "waktu": "puncak"
+   },
+   "hal": "akibat kejadian puncak perselisihan",
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan sendiri bahwa sesudah puncak perselisihan para pihak berpisah tempat tinggal",
+     "saksi1": [
+      "saya melihat sendiri bahwa sejak kejadian pada {waktu} itu #0046# dan #0047# berpisah tempat tinggal dan tidak lagi hidup bersama",
+      "setelah puncak pertengkaran pada {waktu} itu mereka tidak lagi tinggal serumah dan hal itu saya lihat sendiri",
+      "sejak kejadian pada {waktu} itu salah satu dari mereka meninggalkan rumah dan sampai sekarang mereka tidak rukun kembali",
+      "saya mengetahui langsung bahwa sesudah kejadian pada {waktu} itu #0046# dan #0047# tidak lagi berkumpul sebagai suami istri"
+     ],
+     "saksi2": [
+      "yang saya saksikan sendiri adalah bahwa sesudah kejadian pada {waktu} itu #0046# dan #0047# hidup berpisah dan tidak serumah lagi",
+      "dengan mata kepala saya sendiri saya melihat bahwa sejak {waktu} mereka berpisah tempat tinggal dan tidak pernah kumpul lagi",
+      "sejak pertengkaran besar pada {waktu} itu mereka berpisah rumah dan tidak pernah berkumpul lagi sebagaimana yang saya lihat sendiri",
+      "setelah peristiwa pada {waktu} itu suami istri tersebut tidak lagi tinggal bersama sampai sekarang"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi mengetahui akibat puncak perselisihan hanya dari cerita orang lain",
+     "saksi1": [
+      "menurut cerita {sumber} sejak kejadian pada {waktu} itu #0046# dan #0047# berpisah tempat tinggal dan tidak lagi serumah",
+      "saya diceritakan oleh {sumber} bahwa setelah puncak pertengkaran pada {waktu} itu mereka tidak lagi tinggal bersama",
+      "yang saya ketahui dari cerita {sumber} adalah bahwa sesudah kejadian pada {waktu} itu mereka berpisah dan tidak berkumpul lagi",
+      "berdasarkan cerita {sumber} sejak {waktu} #0046# dan #0047# tidak lagi hidup bersama"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} saya mengetahui bahwa sejak kejadian pada {waktu} itu mereka berpisah rumah dan tidak rukun kembali",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa sesudah {waktu} #0046# dan #0047# tidak serumah lagi",
+      "suami istri itu tidak lagi tinggal bersama sejak kejadian pada {waktu} itu demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa setelah puncak pertengkaran pada {waktu} itu keduanya tidak lagi serumah"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: sesudah puncak perselisihan mereka langsung berpisah; versi B: mereka masih serumah beberapa waktu - berselisih pada WAKTU",
+     "bedaPada": "waktu",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri sejak kejadian pada {waktu} itu mereka langsung berpisah tempat tinggal",
+      "keterangan saya adalah bahwa setelah kejadian pada {waktu} itu #0046# dan #0047# langsung hidup terpisah",
+      "sejak kejadian pada {waktu} itu mereka berpisah dan itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa sesudah puncak pertengkaran pada {waktu} itu mereka berpisah rumah"
+     ],
+     "saksi2": [
+      "sepengetahuan saya setelah kejadian itu mereka masih tinggal serumah beberapa waktu sebelum akhirnya berpisah",
+      "yang saya alami sesudah pertengkaran itu mereka masih serumah beberapa lama baru kemudian berpisah",
+      "yang saya ingat dan saya sampaikan adalah bahwa mereka baru berpisah beberapa waktu setelah kejadian itu",
+      "mereka masih serumah untuk sementara waktu setelah kejadian itu dan itulah keterangan saya"
      ]
     }
    }

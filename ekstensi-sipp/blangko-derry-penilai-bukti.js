@@ -82,10 +82,13 @@
     const lemah = r.kekuatan === "lemah" && st !== "terbukti" ? ` <span class="bd-catat">lemah</span>` : "";
     // Diakui pihak lawan; pada perselisihan & pertengkaran tetap perlu didengar keluarga/orang dekat (status bukan "tidak perlu").
     const akui = r.diakui && st !== "tidak-perlu-dibuktikan" ? ` <span class="bd-catat" title="Diakui pihak lawan - tetap perlu didengar keluarga/orang dekat (Pasal 22 ayat (2) PP 9/1975)">diakui</span>` : "";
+    // Keputusan 116 (2 Nov): tanda syarat (mis. "belum memenuhi 12 bulan" - SEMA 1/2022), catatan saja; keterangannya di title
+    const catatSyarat = (r.catatan || []).find((c) => /12 bulan/.test(c)) || "";
+    const tanda = (r.tanda || []).map((t) => ` <span class="bd-tanda kuning" title="${esc(catatSyarat || t)}">${esc(t)}</span>`).join("");
     return (
       `<tr><td class="bd-pd-no">${esc(r.nomor || "")}</td>` +
       `<td><span title="${esc(r.ringkas)}">${esc(r.ringkas)}</span></td>` +
-      `<td><span class="bd-tanda ${s.warna}" title="${esc(keterangan)}">${esc(s.label)}</span>${akui}${lemah}${tetap}</td>` +
+      `<td><span class="bd-tanda ${s.warna}" title="${esc(keterangan)}">${esc(s.label)}</span>${akui}${lemah}${tetap}${tanda}</td>` +
       `<td>${dasarHtml(r)}</td></tr>`
     );
   }

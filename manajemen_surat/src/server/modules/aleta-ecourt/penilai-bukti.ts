@@ -121,7 +121,7 @@ export async function nilaiPembuktianPerkara(
   const sumberBahan: HasilPenilaianPerkara["sumberBahan"] = !perluAbt ? "panel" : saksiPanel || pihakBukti.size ? "campuran" : "abt";
 
   const sb = { P: sebutan.lawan || "Penggugat", T: sebutan.pelaku || "Tergugat" };
-  const hasil = nilaiPembuktian(m.matriks, saksi, bukti, { sebutan: sb });
+  const hasil = nilaiPembuktian(m.matriks, saksi, bukti, { sebutan: sb, acuan: kini });
   const kunci = `${m.dihitungPada}|${hasil.sidik}|${m.matriks.dalil.length}`;
   const s = singgah.get(nomor);
   if (s && s.kunci === kunci && s.sampai > Date.now()) return { ...s.nilai, dariSinggahan: true, disimpan: 0 };

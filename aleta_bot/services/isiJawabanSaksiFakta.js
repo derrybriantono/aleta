@@ -277,6 +277,8 @@ const LABEL_FAKTA = Object.freeze({
   awalKonflik: "awal perselisihan",
   pisahSejak: "pisah rumah sejak",
   lamaPisah: "lama pisah",
+  nafkahSejak: "tidak dinafkahi sejak",
+  lamaNafkah: "lama tidak dinafkahi",
   siapaPergi: "yang meninggalkan rumah",
   puncak: "puncak perselisihan",
   puncakPeristiwa: "peristiwa puncak",

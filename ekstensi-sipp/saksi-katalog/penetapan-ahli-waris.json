@@ -4035,6 +4035,63 @@
    ]
   },
   {
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "tidakBerlaku": [],
+   "id": "q-paw-harta-bersama-dipisah",
+   "pokok": "pp-paw-harta",
+   "urutan": 147.5,
+   "keadaan": {
+    "asalHarta": "selama-perkawinan",
+    "pasanganPewaris": "ada",
+    "statusPasangan": "masih-hidup"
+   },
+   "teks": "Apakah dari harta yang diperoleh selama perkawinan #1025# itu separuhnya sudah dipisahkan lebih dahulu sebagai bagian pasangan #1025# yang masih hidup?",
+   "teksVarian": [
+    "Sudahkah separuh harta bersama #1025# dipisahkan untuk pasangan #1025# yang masih hidup sebelum dibagi kepada ahli waris?"
+   ],
+   "variabelAbt": [
+    "1025"
+   ],
+   "hal": "pemisahan separuh harta bersama untuk pasangan pewaris",
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan sendiri bahwa harta itu harta bersama dan separuhnya hak pasangan yang masih hidup",
+     "saksi1": [
+      "saya mengetahui sendiri bahwa harta itu diperoleh #1025# bersama pasangannya selama menikah sehingga separuhnya menjadi hak pasangan yang masih hidup",
+      "saya tahu betul bahwa harta itu harta bersama #1025# dengan pasangannya dan separuhnya dipisahkan untuk pasangan yang masih hidup",
+      "harta yang dicari selama perkawinan #1025# itu separuhnya milik pasangannya yang masih hidup, dan hal itu saya ketahui sendiri",
+      "sebagai orang yang dekat dengan mereka saya mengetahui bahwa hanya separuh dari harta bersama itu yang menjadi peninggalan #1025#"
+     ],
+     "saksi2": [
+      "yang saya ketahui secara langsung adalah bahwa separuh harta bersama itu hak pasangan #1025# yang masih hidup",
+      "harta itu diperoleh selama perkawinan #1025# dan separuhnya bagian pasangan yang masih hidup sebagaimana yang saya alami dalam pergaulan dengan mereka",
+      "karena sering bersama mereka saya paham bahwa harta itu harta bersama dan separuhnya hak pasangan #1025# yang masih hidup",
+      "saya paham dengan baik bahwa dari harta bersama itu hanya separuhnya yang menjadi harta peninggalan #1025#"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: harta itu harta bersama dan separuhnya hak pasangan; versi B: harta itu milik pribadi pewaris - berselisih pada PERISTIWA",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri harta itu diperoleh #1025# bersama pasangannya selama menikah",
+      "keterangan saya adalah bahwa separuh harta itu hak pasangan #1025# yang masih hidup",
+      "harta itu harta bersama #1025# dengan pasangan hidupnya dan itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa harta itu dicari bersama selama perkawinan #1025#"
+     ],
+     "saksi2": [
+      "sepengetahuan saya harta itu bukan harta bersama melainkan milik pribadi #1025# yang sudah ada sebelum menikah",
+      "yang saya alami, harta itu bawaan #1025# sendiri dan bukan harta bersama",
+      "yang saya ingat dan saya sampaikan adalah bahwa harta itu warisan orang tua #1025# dan bukan harta bersama",
+      "harta itu bukan hasil bersama selama perkawinan #1025#, dan itulah keterangan saya"
+     ]
+    }
+   }
+  },
+  {
    "id": "q-paw-harta-bawaan",
    "pokok": "pp-paw-harta",
    "urutan": 148,

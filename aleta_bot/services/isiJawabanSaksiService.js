@@ -280,7 +280,7 @@ function isiBaris(o) {
  * katalog di panel untuk mengisi {slot} dan variabel ABT yang masih kosong dari isian blangko > data SIPP > gugatan. Tidak pernah
  * menebak: kunci yang tidak ada di ketiga sumber tidak muncul.
  */
-const KUNCI_FAKTA_PUBLIK = ["tglNikah", "tempatNikah", "kua", "kediaman", "awalKonflik", "puncak", "puncakPeristiwa", "penyebab", "pisahSejak", "lamaPisah", "siapaPergi", "jumlahAnak", "anakNama", "anakIkutPihak", "alamatP", "alamatT", "pekerjaanP", "pekerjaanT", "upayaDamai", "putusanCerai", "aktaCerai", "hartaPeninggalan", "jumlahObjek", "nilaiTotalHarta", "ahliWaris", "pewarisNama", "wafatTgl", "wafatTempat"];
+const KUNCI_FAKTA_PUBLIK = ["tglNikah", "tempatNikah", "kua", "kediaman", "awalKonflik", "puncak", "puncakPeristiwa", "penyebab", "pisahSejak", "lamaPisah", "nafkahSejak", "lamaNafkah", "siapaPergi", "jumlahAnak", "anakNama", "anakIkutPihak", "alamatP", "alamatT", "pekerjaanP", "pekerjaanT", "upayaDamai", "putusanCerai", "aktaCerai", "hartaPeninggalan", "jumlahObjek", "nilaiTotalHarta", "ahliWaris", "pewarisNama", "wafatTgl", "wafatTempat"];
 function faktaPerkara(o) {
   const k = o && typeof o === "object" ? o : {};
   const hasil = {};
