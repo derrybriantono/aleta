@@ -7,7 +7,7 @@
  *   - MD5SUMS cocok; md5 lama != baru; kode/berkas unik; hanya derry_briantono, tanpa terhapus/BAS; skrip tanpa CRLF; tanpa nama aplikasi;
  *   - perilaku potongan: tiap sisipan ASCII murni, kurung RTF seimbang, teks polosnya = paragraf kaidah di hasil/kaidah.tsv (tanpa karangan lain);
  *   - tidak ada teks lama yang dibuang selain " dan huruf c" pada Izin Poligami [01b] (Pasal 119 ayat (2) KHI tidak mungkin terhapus);
- *   - urutan: rantai.sh dan URUTAN-PASANG-1nov.md memuat kaidah-fikih-2nov sebagai paket terakhir (ke-32).
+ *   - urutan: rantai.sh dan URUTAN-PASANG-1nov.md memuat kaidah-fikih-2nov sebagai ke-32 (sebelum bas-halaman-semua-2nov ke-33).
  */
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
@@ -105,11 +105,13 @@ describe("isi paket sungguhan kaidah-fikih-2nov", () => {
     expect(lain).toEqual([" Kompilasi Hukum Islam jo. Pasal 5 ayat (1) huruf c Undang-Undang Nomor 1 Tahun 1974"]);
   });
 
-  it("urutan: kaidah-fikih-2nov paket terakhir di rantai.sh dan URUTAN-PASANG-1nov.md", () => {
+  it("urutan: kaidah-fikih-2nov ke-32 (sesudah identitas-pihak-1nov, sebelum bas-halaman-semua-2nov) di rantai.sh dan URUTAN-PASANG-1nov.md", () => {
     const rantai = readFileSync(path.join(AKAR, "abt-paket/uji-rantai-31okt/rantai.sh"), "utf8");
     const urut = rantai.match(/URUT="([^"]+)"/)![1].trim().split(/\s+/);
-    expect(urut[urut.length - 1]).toBe("kaidah-fikih-2nov");
-    expect(urut[urut.length - 2]).toBe("identitas-pihak-1nov");
+    const i = urut.indexOf("kaidah-fikih-2nov");
+    expect(i).toBe(31);
+    expect(urut[i - 1]).toBe("identitas-pihak-1nov");
+    expect(urut[i + 1]).toBe("bas-halaman-semua-2nov");
     const md = readFileSync(path.join(AKAR, "abt-paket/URUTAN-PASANG-1nov.md"), "utf8");
     expect(md).toMatch(/### 32\. `kaidah-fikih-2nov`/);
   });
