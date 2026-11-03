@@ -1,0 +1,10 @@
+565fde294a9beecacc4d350092801334 *abt-saksi-rapi-3nov-FUNGSI-LAMA.sql
+fb21070bedb9b3b544133ba5560efb4e *abt-saksi-rapi-3nov-FUNGSI.sql
+d78106140e45424ac2fac0458a1b15c3 *abt-saksi-rapi-3nov-PERIKSA.sql
+07a19b5684f30a76120fa6bb934957ff *abt-saksi-rapi-3nov-PRASYARAT.sql
+6e25d20c01cd2cd7ac661c65488653a3 *daftar-tambal.tsv
+9aac05819eb3f210e6dad2d723337fed *harap.txt
+13de53888987f9aa5643ab32198445ac *pasang-satker.sh
+fdea5a2ac0304e3e27c8cb7d1dae0eab *pulih-satker.sh
+ab0349f4042662f7420e1d789f68e767 *tambal.tsv
+d949a1c1e10c9b60e8cc4fd18adc9b54 *tambal_rtf.py
