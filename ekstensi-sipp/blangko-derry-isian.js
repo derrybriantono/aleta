@@ -2178,6 +2178,41 @@
       catatTeknis("rapikan posita otomatis gagal:", String((e && e.message) || e));
     }
   }
+  /**
+   * 3 Nov 2026 (laporan Derry, itsbat 232): isian daftar bukti yang SUDAH tersimpan di ABT dengan dua bukti atau lebih menyambung dalam satu
+   * baris ("... paraf Ketua Majelis Fotokopi Kartu ...") dipisah satu bukti satu baris SENDIRI saat blangko dibuka - tanpa klik. Hanya bila
+   * pemisahan tidak mengubah satu huruf/angka pun (perbaikiBuktiMenyambung); ketikan yang sedang diketik, isian terstruktur 1214/9911
+   * (dipisah di penyuntingnya), dan isian yang sudah berbaris tidak disentuh. Sekali per perkara+isian per muatan halaman; tercatat di riwayat.
+   */
+  const rapiBuktiSudah = new Set();
+  async function rapikanDaftarBuktiOtomatis(d) {
+    try {
+      const m = SK();
+      if (!S.pk || !S.blangko || !bolehTulis() || !m || typeof m.perbaikiBuktiMenyambung !== "function") return;
+      const id = perkaraId();
+      for (const b of d.isian || []) {
+        if (b.jenis !== "teks" || b.khusus || !m.adalahDaftarBukti(b.kode, b.namaAsli || b.nama)) continue;
+        const kunci = `${id}|${b.kode}`;
+        if (rapiBuktiSudah.has(kunci) || S.diketik.has(b.kode) || String(S.isi[b.kode] || "").trim()) continue;
+        const v = S.nilai[b.kode] && S.nilai[b.kode].status === "terisi" ? String(S.nilai[b.kode].teks || "") : "";
+        const rapi = m.perbaikiBuktiMenyambung(v);
+        if (!rapi) continue;
+        rapiBuktiSudah.add(kunci);
+        if (S.susunan !== d) return;
+        const ok = await jadwalkanSimpan(b.kode, rapi, true);
+        if (!ok) continue;
+        segarKartu(b.kode);
+        try {
+          if (typeof catatRiwayat === "function") void catatRiwayat({ perkaraId: id, kode: b.kode, nama: b.nama, sebelum: v, sesudah: String(S.isi[b.kode] || rapi), cara: "dirapikan otomatis di Blangko Derry (satu bukti satu baris)", pada: new Date().toISOString() });
+        } catch {
+          /* jejak tidak tersedia: daftar bukti tetap rapi */
+        }
+        toast("Daftar bukti yang menyambung dipisah otomatis (satu bukti satu baris). Dapat dikembalikan lewat riwayat perubahan di panel ABT.");
+      }
+    } catch (e) {
+      catatTeknis("rapikan daftar bukti otomatis gagal:", String((e && e.message) || e));
+    }
+  }
   const BAWAAN_ABT_ITSBAT = Object.freeze(["5178", "5105", "1046", "1002", "0007"]);
   /**
    * BAWAAN ABT ITSBAT (18 Okt 2026, keputusan 25): isian popup itsbat nikah yang sumber terbaiknya BAWAAN ABT sendiri
@@ -2717,6 +2752,7 @@
         await simpanBawaanAbtItsbat(d);
         await isiElitigasiOtomatis(d);
         await rapikanPositaOtomatis(d);
+        await rapikanDaftarBuktiOtomatis(d);
       }
       // Saklar "Isi otomatis dari SIPP" hanya mengatur pengisian BARU dari mesin bersama. Saklar mati: bacaan SIPP tetap dianalisis untuk
       // lencana, sumber, dan tombol Input ke ABT, tetapi TIDAK ada yang ditulis sendiri.
@@ -3404,6 +3440,9 @@
     }
     if (b.jenis !== "teks" || (Array.isArray(b.opsi) && b.opsi.length) || (Array.isArray(b.pilihan) && b.pilihan.length)) return nilai;
     if (/^(8503|9463|9475|9790|9820|9865)$/.test(kode) || /^\d{4}-\d{2}-\d{2}$/.test(nilai.trim())) return nilai;
+    // 3 Nov (laporan Derry, itsbat 232): daftar bukti TIDAK dirangkai satu paragraf - satu bukti satu baris, tiap butir diakhiri ";"
+    // (bentuk bawaan variabel ABT; ABT menomori per baris saat mencetak). Bukti yang menyambung dalam satu baris dipisah.
+    if (typeof m.adalahDaftarBukti === "function" && m.adalahDaftarBukti(kode, b.namaAsli || b.nama)) return m.rapiDaftarBukti(nilai);
     return m.rapiIsian(nilai, "");
   }
   async function simpanIsian(kode, nilai) {
@@ -4218,7 +4257,9 @@
       .replace(/\r\n/g, "\n")
       .split(/\n+|(?<=;)\s+(?=Fotokopi|Fotocopy|Asli|Surat|Kutipan|Akta|Buku|Foto|Salinan)/)
       .map((x) => x.trim())
-      .filter(Boolean);
+      .filter(Boolean)
+      // 3 Nov: bukti yang menyambung tanpa ";" ("... paraf Ketua Majelis Fotokopi Kartu ...") juga dipisah per butir.
+      .flatMap((x) => (SK() && typeof SK().pisahBarisBukti === "function" ? SK().pisahBarisBukti(x) : [x]));
     for (const p0 of potongan) {
       const p = buangNomorAwal(p0);
       let s = p.replace(/\s+/g, " ").replace(/;$/, "");
