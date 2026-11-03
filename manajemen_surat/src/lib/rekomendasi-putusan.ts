@@ -760,6 +760,11 @@ const RE_TERIKAT =
   /\bmasih (?:terikat|bersuami|beristri|berstatus (?:istri|suami))\b|\bbelum (?:bercerai|cerai|resmi bercerai) (?:dengan|dari) (?:istri|suami)\b|\bmasih (?:dalam ikatan|menjadi (?:istri|suami)) (?:\S+\s+){0,3}(?:orang lain|lain|pertama)\b|\bistri (?:pertama|tua)\b|\bberistri (?:dua|lebih)\b|\b(?:ber)?poligami\b/;
 const RE_JANDA_DUDA = /\b(?:janda|duda)\b/;
 const RE_KEBERATAN_ADA = /\b(?:ada|pernah)\b(?:\S+\s+){0,4}\b(?:keberatan|mempermasalahkan|menggugat)\b/;
+// 3 Nov 2026 (blangko [01f] "IN Kabul (Hadir Tapi Lupa Prosesi Nikah)"): saksi hanya menghadiri pesta/walimah dan tidak mengikuti akad.
+const RE_PESTA = /\b(?:pesta|walimah|walimahan|resepsi)\b/;
+const RE_TANPA_AKAD = /\btidak (?:\S+\s+){0,3}?(?:mengikuti|menyaksikan|ikut|berada di tempat)\b[^.;]{0,40}?\bakad\b|\bakad(?: nikah)?(?:nya)? (?:tidak|tak) saya (?:ikuti|saksikan|hadiri|lihat)\b/;
+/** Jawaban "tidak tahu" (bukan keterangan tentang unsur itu). */
+const RE_TIDAK_TAHU_UNSUR = /\btidak (?:tahu|mengetahui|ingat|dapat menerangkan)\b|\btidak saya ketahui\b/;
 const RE_KEBERATAN_TIDAK = /\btidak (?:\S+\s+){0,4}(?:ada|pernah)\b(?:\S+\s+){0,6}\b(?:keberatan|mempermasalahkan)\b|\btidak ada (?:pihak|orang) (?:lain )?(?:yang )?keberatan\b/;
 
 /** Umur yang disebut untuk Pemohon I / Pemohon II (atau calon suami / calon istri) dalam satu jawaban. */
@@ -791,12 +796,17 @@ function rekomendasiItsbat(m: MasukanRekomendasiPutusan, jenis: "itsbat" | "itsb
   unsurL[0].dasar.push(DASAR.legalIn);
   unsurL.push(unsurSaksiFormil(saksi, "P", sb, [DASAR.saksiFormilP, DASAR.saksiMaterilP]));
 
+  // Saksi yang hanya menghadiri pesta pernikahan dan tidak mengikuti akad (blangko [01f]): bukan saksi peristiwa akad.
+  const pestaSaksi = sp.filter((x) => x.baris.some((r) => RE_PESTA.test(r.s)) && x.baris.some((r) => RE_TANPA_AKAD.test(r.s)));
+  const diPesta = new Set(pestaSaksi.map((x) => x.id));
   // Hadir / mengetahui sendiri peristiwa nikah: istifadhah bila semua dari cerita.
   const hadir = sp.map((x) => ({ x, r: barisCocok(x, RE_Q_HADIR, RE_J_HADIR) })).filter((y) => y.r);
-  const hadirLangsung = hadir.filter((y) => y.r && (RE_IYA.test(y.r.s) || /\b(?:saya|saksi) (?:\S+\s+){0,2}hadir\b|\bmenyaksikan\b/.test(y.r.s)) && !/\btidak (?:\S+\s+){0,2}hadir\b/.test(y.r.s) && !y.r.deAuditu);
+  const hadirLangsung = hadir.filter((y) => y.r && !diPesta.has(y.x.id) && (RE_IYA.test(y.r.s) || /\b(?:saya|saksi) (?:\S+\s+){0,2}hadir\b|\bmenyaksikan\b/.test(y.r.s)) && !/\btidak (?:\S+\s+){0,2}hadir\b/.test(y.r.s) && !y.r.deAuditu);
   const hadirCerita = hadir.filter((y) => y.r && (y.r.deAuditu || (y.r.tidakLangsung && !y.r.langsung)));
   let istifadhah = false;
-  if (hadir.length) {
+  if (pestaSaksi.length && !hadirLangsung.length)
+    unsurL.push(unsur("hadir", "Saksi mengetahui sendiri peristiwa nikah", "catatan", `${sebutSaksi(pestaSaksi)} hanya menghadiri pesta pernikahan, tidak mengikuti akad nikah, sehingga tidak mengetahui wali, lafaz akad, mahar, dan saksi nikah.`, { saksi: pestaSaksi.map((x) => saksiDari(x, x.baris.find((r) => RE_PESTA.test(r.s))!)), dasar: [DASAR.saksiMaterilP] }));
+  else if (hadir.length) {
     if (hadirLangsung.length >= 2) unsurL.push(unsur("hadir", "Saksi mengetahui sendiri peristiwa nikah", "terbukti", `${sebutSaksi(hadirLangsung.map((y) => y.x))} hadir/menyaksikan akad nikah.`, { saksi: hadirLangsung.map((y) => saksiDari(y.x, y.r!)), dasar: [DASAR.saksiMaterilP] }));
     else if (hadirCerita.length && !hadirLangsung.length) {
       istifadhah = true;
@@ -834,7 +844,7 @@ function rekomendasiItsbat(m: MasukanRekomendasiPutusan, jenis: "itsbat" | "itsb
   } else if (snAda.length) unsurL.push(unsur("saksi-nikah", "Rukun: dua orang saksi nikah", "terbukti", `${sebutSaksi(snAda.map((y) => y.x))}: ${kutip(snAda[0].r!.jawab, 110)}.`, { saksi: snAda.map((y) => saksiDari(y.x, y.r!)), dasar: [DASAR.rukun, DASAR.saksiNikah] }));
   else unsurL.push(unsur("saksi-nikah", "Rukun: dua orang saksi nikah", "belum", "Belum ada saksi yang menyebut dua orang saksi nikah.", { saksi: sn.map((y) => saksiDari(y.x, y.r!)), dasar: [DASAR.rukun, DASAR.saksiNikah] }));
 
-  const ij = sp.map((x) => ({ x, r: barisCocok(x, RE_Q_IJAB, RE_J_IJAB) })).filter((y) => y.r && RE_IJAB_YA.test(y.r.s) && !RE_BUKAN.test(y.r.s));
+  const ij = sp.map((x) => ({ x, r: barisCocok(x, RE_Q_IJAB, RE_J_IJAB) })).filter((y) => y.r && RE_IJAB_YA.test(y.r.s) && !RE_BUKAN.test(y.r.s) && !RE_TIDAK_TAHU_UNSUR.test(y.r.s));
   // Tersirat: saksi hadir dan menyebut saksi nikah "pada saat terjadinya ijab kabul" atau pernikahan "sesuai syariat Islam".
   const ijTersirat = sp
     .map((x) => ({ x, r: x.baris.find((r) => /\bijab\b/.test(`${r.q} ${r.s}`) || /\bsesuai (?:dengan )?(?:syari'?at|syariat|hukum) islam\b/.test(r.s)) || null }))
@@ -846,7 +856,7 @@ function rekomendasiItsbat(m: MasukanRekomendasiPutusan, jenis: "itsbat" | "itsb
         ? unsur("ijab", "Rukun: ijab dan kabul", "catatan", `Tidak ditanyakan tersendiri; ${sebutSaksi(ijTersirat.map((y) => y.x))} yang hadir menyebut akad/ijab kabul berlangsung (${kutip(ijTersirat[0].r!.jawab, 90)}).`, { saksi: ijTersirat.map((y) => saksiDari(y.x, y.r!)), dasar: [DASAR.rukun] })
         : unsur("ijab", "Rukun: ijab dan kabul", "belum", "Belum ada saksi yang menerangkan ijab dan kabul.", { dasar: [DASAR.rukun] })
   );
-  const mh = sp.map((x) => ({ x, r: barisCocok(x, RE_Q_MAHAR, RE_J_MAHAR) })).filter((y) => y.r && !RE_BUKAN.test(y.r.s));
+  const mh = sp.map((x) => ({ x, r: barisCocok(x, RE_Q_MAHAR, RE_J_MAHAR) })).filter((y) => y.r && !RE_BUKAN.test(y.r.s) && !RE_TIDAK_TAHU_UNSUR.test(y.r.s));
   if (mh.length) unsurL.push(unsur("mahar", "Mahar", "terbukti", `${kutip(mh[0].r!.jawab, 110)} (${sebutSaksi(mh.map((y) => y.x))}).`, { saksi: mh.map((y) => saksiDari(y.x, y.r!)), dasar: [DASAR.mahar] }));
 
   // Halangan perkawinan & status saat menikah.
@@ -929,7 +939,17 @@ function rekomendasiItsbat(m: MasukanRekomendasiPutusan, jenis: "itsbat" | "itsb
   } else {
     const rukun = unsurL.filter((u) => ["wali", "saksi-nikah", "ijab", "halangan"].includes(u.id));
     const belum = rukun.filter((u) => u.status === "belum" || u.status === "tidak-terbukti");
-    if (sp.length < 2 && !bukti.some((b) => b.tanda.has("nikah-desa"))) {
+    // [01f]: dua saksi atau lebih hanya hadir di pesta (tidak tahu wali, lafaz akad, mahar, saksi nikah), tidak ada halangan dan tidak ada
+    // yang keberatan -> dikabulkan menurut indikasi (hidup rukun, tidak ada keberatan masyarakat), ragu: penilaian hakim.
+    // Keberatan yang diterangkan tanpa penyangkalan ("Ada keluarga yang keberatan") menahan [01f]; pertimbangannya bertumpu pada
+    // tidak adanya keberatan masyarakat.
+    const kbPositif = kb.filter((y) => !/\b(?:tidak|belum|bukan|tak)\b/.test(y.r!.s));
+    const pestaKabul = jenis === "itsbat" && sp.length >= 2 && pestaSaksi.length >= 2 && !kbAda.length && !kbPositif.length && !belum.some((u) => u.id === "halangan" && u.status === "tidak-terbukti");
+    if (pestaKabul) {
+      hasil = "dikabulkan";
+      varian = "[01f] [Kabul] IN Kabul (Hadir Tapi Lupa Prosesi Nikah)";
+      ragu.push("saksi hanya menghadiri pesta pernikahan, tidak mengikuti akad nikah (wali, lafaz akad, mahar, dan saksi nikah tidak diketahui)");
+    } else if (sp.length < 2 && !bukti.some((b) => b.tanda.has("nikah-desa"))) {
       hasil = belum.length ? "ditolak" : "dikabulkan";
       ragu.push("saksi kurang dari dua orang");
     } else if (belum.length >= 2) {

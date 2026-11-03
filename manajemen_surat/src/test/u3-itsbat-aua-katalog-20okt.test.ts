@@ -61,6 +61,19 @@ const SAH_2NOV: Record<string, Record<string, unknown>> = {
   "asal-usul-anak/q-pengasuhan": { keadaan: { pemohon: "suami-istri" } },
 };
 const lamaSah = (j: string, q: any) => ({ ...q, ...(SAH_2NOV[j + "/" + q.id] ?? {}) });
+// 3 Nov 2026 (blangko [01f], keadaan bentukKesaksian "pesta"): butir lama hanya MENDAPAT jawaban "melihat" bersyarat pesta atau
+// syarat "bukan:bentukKesaksian": "pesta"; bila tambahan itu dilepas, isinya persis seperti semula (uji in-lupa-prosesi-3nov).
+const tanpaPesta = (q: any) => {
+  if (!q) return q;
+  const x = JSON.parse(JSON.stringify(q));
+  if (x.keadaan && x.keadaan["bukan:bentukKesaksian"] === "pesta") delete x.keadaan["bukan:bentukKesaksian"];
+  const m = x.jawaban && x.jawaban.melihat;
+  if (Array.isArray(m) && m.some((o: any) => o && o.keadaan && o.keadaan.bentukKesaksian === "pesta")) {
+    const sisa = m.filter((o: any) => !(o && o.keadaan && o.keadaan.bentukKesaksian === "pesta"));
+    x.jawaban.melihat = sisa.length === 1 ? sisa[0] : sisa;
+  }
+  return x;
+};
 
 describe("katalog lama tidak dikurangi", () => {
   for (const [kunci, baru] of [["itsbat-nikah", IN], ["asal-usul-anak", AUA], ["cerai-kumulasi-itsbat", KM]] as const) {
@@ -74,7 +87,7 @@ describe("katalog lama tidak dikurangi", () => {
       expect(baru.versi).toBe(lama.versi + 1);
       expect(baru.pertanyaan.length).toBeGreaterThan(lama.pertanyaan.length);
       // butir lama tidak berubah isinya
-      for (const q of lama.pertanyaan) expect(JSON.stringify(baru.pertanyaan.find((x: any) => x.id === q.id))).toBe(JSON.stringify(lamaSah(kunci, q)));
+      for (const q of lama.pertanyaan) expect(JSON.stringify(tanpaPesta(baru.pertanyaan.find((x: any) => x.id === q.id)))).toBe(JSON.stringify(lamaSah(kunci, q)));
     });
   }
   it("jumlah butir per saksi pada itsbat dua pemohon naik dari 20 menjadi 28 (tingkat bawaan)", () => {

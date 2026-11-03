@@ -188,13 +188,15 @@
       "sumber": "borang",
       "nilai": [
         "langsung",
-        "istifadhah"
+        "istifadhah",
+        "pesta"
       ],
       "bawaan": "langsung",
       "label": "Cara saksi mengetahui pernikahan itu",
       "labelNilai": {
         "langsung": "Saksi menyaksikan sendiri pernikahan itu",
-        "istifadhah": "Saksi mengetahui dari kabar yang tersiar luas (syahadah al-istifadhah)"
+        "istifadhah": "Saksi mengetahui dari kabar yang tersiar luas (syahadah al-istifadhah)",
+        "pesta": "Saksi hanya hadir di pesta pernikahan, tidak tahu prosesi akad nikah"
       }
     },
     "penikah": {
@@ -486,21 +488,41 @@
       "hal": "kehadiran saksi pada pernikahan itu",
       "tidakBerlaku": [],
       "jawaban": {
-        "melihat": {
-          "maksud": "saksi menerangkan kehadirannya ketika #0046# dan #0047# melangsungkan pernikahan sebagai hal yang dilihat atau dialaminya sendiri",
-          "saksi1": [
-            "saya hadir ketika #0046# dan #0047# melangsungkan pernikahan",
-            "saya ikut hadir pada acara akad nikah #0046# dan #0047#",
-            "saya termasuk orang yang datang dan menyaksikan akad nikah #0046# dan #0047#",
-            "saya berada di tempat saat #0046# dan #0047# menikah dan menyaksikannya sendiri"
-          ],
-          "saksi2": [
-            "benar saya hadir pada waktu #0046# dan #0047# menikah",
-            "saya datang ke acara pernikahan #0046# dan #0047# dan menyaksikan akadnya",
-            "waktu #0046# dan #0047# melangsungkan akad nikah saya ada di sana",
-            "saya hadir menyaksikan pernikahan #0046# dan #0047# dari awal sampai selesai"
-          ]
-        },
+        "melihat": [
+          {
+            "maksud": "saksi menerangkan kehadirannya ketika #0046# dan #0047# melangsungkan pernikahan sebagai hal yang dilihat atau dialaminya sendiri",
+            "saksi1": [
+              "saya hadir ketika #0046# dan #0047# melangsungkan pernikahan",
+              "saya ikut hadir pada acara akad nikah #0046# dan #0047#",
+              "saya termasuk orang yang datang dan menyaksikan akad nikah #0046# dan #0047#",
+              "saya berada di tempat saat #0046# dan #0047# menikah dan menyaksikannya sendiri"
+            ],
+            "saksi2": [
+              "benar saya hadir pada waktu #0046# dan #0047# menikah",
+              "saya datang ke acara pernikahan #0046# dan #0047# dan menyaksikan akadnya",
+              "waktu #0046# dan #0047# melangsungkan akad nikah saya ada di sana",
+              "saya hadir menyaksikan pernikahan #0046# dan #0047# dari awal sampai selesai"
+            ]
+          },
+          {
+            "keadaan": {
+              "bentukKesaksian": "pesta"
+            },
+            "maksud": "saksi menerangkan bahwa ia hanya menghadiri pesta pernikahan #0046# dan #0047# dan tidak mengikuti akad nikahnya",
+            "saksi1": [
+              "saya hadir di pesta pernikahan #0046# dan #0047#, tetapi saya tidak mengikuti acara akad nikahnya",
+              "saya datang ke pesta perkawinan #0046# dan #0047# untuk ikut merayakan, namun pada saat akad nikah saya tidak berada di tempat itu",
+              "saya hanya menghadiri pesta pernikahan #0046# dan #0047#, sedangkan prosesi akad nikahnya tidak saya ikuti",
+              "yang saya hadiri adalah pesta perkawinan #0046# dan #0047#, adapun akad nikahnya tidak saya saksikan"
+            ],
+            "saksi2": [
+              "benar saya hadir pada pesta pernikahan #0046# dan #0047#, tetapi saya tidak menyaksikan akad nikahnya",
+              "saya diundang dan datang ke pesta perkawinan #0046# dan #0047#, namun saya tidak mengikuti prosesi akad nikah",
+              "saya ikut merayakan pesta pernikahan #0046# dan #0047#, akan tetapi ketika akad nikah berlangsung saya tidak berada di tempat akad",
+              "saya menghadiri pesta perkawinan #0046# dan #0047# saja dan tidak mengikuti jalannya akad nikah"
+            ]
+          }
+        ],
         "de-auditu": {
           "maksud": "saksi menerangkan kehadirannya ketika #0046# dan #0047# melangsungkan pernikahan hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
           "saksi1": [
@@ -696,7 +718,8 @@
         "*"
       ],
       "keadaan": {
-        "kumulasi": "itsbat-nikah"
+        "kumulasi": "itsbat-nikah",
+        "bukan:bentukKesaksian": "pesta"
       },
       "teks": "Siapa saja yang hadir pada akad nikah #0046# dan #0047#, dan apakah pernikahan itu diketahui oleh keluarga serta tetangga?",
       "teksVarian": [
@@ -1086,6 +1109,24 @@
               "yang menjadi wali nikah mempelai perempuan adalah saya sendiri selaku #1046# yang bernama #1217#",
               "sayalah yang bertindak sebagai wali nikah mempelai perempuan yakni #1046# dengan nama #1217#"
             ]
+          },
+          {
+            "keadaan": {
+              "bentukKesaksian": "pesta"
+            },
+            "maksud": "saksi tidak mengetahui wali nikah karena tidak mengikuti akad nikah, hanya menghadiri pestanya",
+            "saksi1": [
+              "saya tidak tahu siapa yang menjadi wali nikahnya karena saya tidak mengikuti akad nikah, saya hanya datang ke pestanya",
+              "siapa wali nikah pada pernikahan itu tidak saya ketahui sebab saya tidak menyaksikan akad nikahnya",
+              "karena saya hanya menghadiri pesta pernikahan, saya tidak mengetahui siapa yang bertindak sebagai wali nikah",
+              "saya tidak dapat menerangkan siapa wali nikahnya karena saya tidak ikut dalam prosesi akad nikah"
+            ],
+            "saksi2": [
+              "mengenai wali nikahnya saya tidak tahu karena saya tidak mengikuti acara akad nikah",
+              "saya tidak mengetahui siapa wali nikahnya sebab yang saya hadiri hanya pestanya",
+              "wali nikah pada pernikahan itu tidak saya ketahui karena saya tidak berada di tempat akad nikah",
+              "saya tidak tahu siapa yang menjadi wali nikah, sebab saya datang ketika pesta saja dan tidak mengikuti akadnya"
+            ]
           }
         ],
         "de-auditu": {
@@ -1150,7 +1191,8 @@
         "*"
       ],
       "keadaan": {
-        "kumulasi": "itsbat-nikah"
+        "kumulasi": "itsbat-nikah",
+        "bukan:bentukKesaksian": "pesta"
       },
       "teks": "Apakah wali yang menikahkan mempelai perempuan itu laki-laki, beragama Islam, sudah dewasa, dan sehat akalnya pada waktu akad nikah?",
       "teksVarian": [
@@ -1256,7 +1298,8 @@
         "*"
       ],
       "keadaan": {
-        "kumulasi": "itsbat-nikah"
+        "kumulasi": "itsbat-nikah",
+        "bukan:bentukKesaksian": "pesta"
       },
       "teks": "Apakah masih ada wali yang lebih berhak daripada wali yang menikahkan mempelai perempuan? Mengapa yang menikahkan bukan ayah kandungnya?",
       "teksVarian": [
@@ -1385,6 +1428,24 @@
               "ijab pernikahan #0046# dan #0047# saya sendiri yang mengucapkan sebagai #8087#",
               "sayalah #8087# yang menikahkan #0046# dan #0047# pada saat itu"
             ]
+          },
+          {
+            "keadaan": {
+              "bentukKesaksian": "pesta"
+            },
+            "maksud": "saksi tidak mengetahui siapa yang menikahkan karena tidak mengikuti akad nikah, hanya menghadiri pestanya",
+            "saksi1": [
+              "saya tidak tahu siapa yang menikahkan mereka karena saya tidak mengikuti akad nikah",
+              "siapa yang menikahkan mereka tidak saya ketahui sebab saya hanya menghadiri pestanya",
+              "saya tidak mengetahui siapa yang menikahkan karena saya tidak menyaksikan prosesi akad nikah",
+              "karena saya tidak ikut dalam akad nikah, saya tidak tahu siapa yang menikahkan mereka"
+            ],
+            "saksi2": [
+              "mengenai siapa yang menikahkan saya tidak tahu karena saya tidak berada di tempat akad nikah",
+              "saya tidak mengetahui siapa yang menikahkan mereka sebab saya datang pada waktu pestanya saja",
+              "yang menikahkan mereka tidak saya ketahui karena saya tidak mengikuti acara akad nikahnya",
+              "saya tidak tahu siapa yang menikahkan, sebab yang saya hadiri hanya pesta pernikahannya"
+            ]
           }
         ],
         "de-auditu": {
@@ -1481,6 +1542,24 @@
               "ijab pernikahan #0046# dan #0047# saya lafalkan sendiri karena saya #1217# adalah #1046# yang menjadi wali nikahnya",
               "sayalah wali nikah yang mengakadkan #0046# dan #0047# itu yakni #1217# dalam kedudukan #1046#"
             ]
+          },
+          {
+            "keadaan": {
+              "bentukKesaksian": "pesta"
+            },
+            "maksud": "saksi tidak mengetahui siapa yang menikahkan karena tidak mengikuti akad nikah, hanya menghadiri pestanya",
+            "saksi1": [
+              "saya tidak tahu siapa yang menikahkan mereka karena saya tidak mengikuti akad nikah",
+              "siapa yang menikahkan mereka tidak saya ketahui sebab saya hanya menghadiri pestanya",
+              "saya tidak mengetahui siapa yang menikahkan karena saya tidak menyaksikan prosesi akad nikah",
+              "karena saya tidak ikut dalam akad nikah, saya tidak tahu siapa yang menikahkan mereka"
+            ],
+            "saksi2": [
+              "mengenai siapa yang menikahkan saya tidak tahu karena saya tidak berada di tempat akad nikah",
+              "saya tidak mengetahui siapa yang menikahkan mereka sebab saya datang pada waktu pestanya saja",
+              "yang menikahkan mereka tidak saya ketahui karena saya tidak mengikuti acara akad nikahnya",
+              "saya tidak tahu siapa yang menikahkan, sebab yang saya hadiri hanya pesta pernikahannya"
+            ]
           }
         ],
         "de-auditu": {
@@ -1542,21 +1621,41 @@
       "hal": "cara ijab dan kabul diucapkan",
       "tidakBerlaku": [],
       "jawaban": {
-        "melihat": {
-          "maksud": "saksi menerangkan pengucapan ijab dan kabul pada pernikahan #0046# dan #0047# sebagai hal yang dilihat atau dialaminya sendiri",
-          "saksi1": [
-            "saya melihat sendiri bahwa ijab diucapkan oleh #8087# dan kabul langsung diucapkan oleh mempelai laki-laki dalam satu rangkaian akad",
-            "saya menyaksikan langsung bahwa ijab dari #8087# langsung dijawab kabul oleh mempelai laki-laki pada saat itu juga",
-            "mempelai laki-laki mengucapkan kabul secara jelas sesaat setelah ijab diucapkan oleh #8087#, dan hal itu saya lihat dengan mata kepala saya sendiri",
-            "pada waktu itu saya berada di tempat kejadian dan melihat bahwa kabul mempelai laki-laki diucapkan beruntun sesudah ijab dari #8087# dalam satu majelis akad"
-          ],
-          "saksi2": [
-            "karena saya turut hadir maka saya terangkan bahwa ijab diucapkan oleh #8087# dan kabul langsung diucapkan oleh mempelai laki-laki dalam satu rangkaian akad",
-            "ijab dari #8087# langsung dijawab kabul oleh mempelai laki-laki pada saat itu juga, demikian yang tampak oleh saya waktu itu",
-            "saya ada di lokasi pada saat itu dan mendapati bahwa mempelai laki-laki mengucapkan kabul secara jelas sesaat setelah ijab diucapkan oleh #8087#",
-            "kabul mempelai laki-laki diucapkan beruntun sesudah ijab dari #8087# dalam satu majelis akad, sebagaimana yang saya alami"
-          ]
-        },
+        "melihat": [
+          {
+            "maksud": "saksi menerangkan pengucapan ijab dan kabul pada pernikahan #0046# dan #0047# sebagai hal yang dilihat atau dialaminya sendiri",
+            "saksi1": [
+              "saya melihat sendiri bahwa ijab diucapkan oleh #8087# dan kabul langsung diucapkan oleh mempelai laki-laki dalam satu rangkaian akad",
+              "saya menyaksikan langsung bahwa ijab dari #8087# langsung dijawab kabul oleh mempelai laki-laki pada saat itu juga",
+              "mempelai laki-laki mengucapkan kabul secara jelas sesaat setelah ijab diucapkan oleh #8087#, dan hal itu saya lihat dengan mata kepala saya sendiri",
+              "pada waktu itu saya berada di tempat kejadian dan melihat bahwa kabul mempelai laki-laki diucapkan beruntun sesudah ijab dari #8087# dalam satu majelis akad"
+            ],
+            "saksi2": [
+              "karena saya turut hadir maka saya terangkan bahwa ijab diucapkan oleh #8087# dan kabul langsung diucapkan oleh mempelai laki-laki dalam satu rangkaian akad",
+              "ijab dari #8087# langsung dijawab kabul oleh mempelai laki-laki pada saat itu juga, demikian yang tampak oleh saya waktu itu",
+              "saya ada di lokasi pada saat itu dan mendapati bahwa mempelai laki-laki mengucapkan kabul secara jelas sesaat setelah ijab diucapkan oleh #8087#",
+              "kabul mempelai laki-laki diucapkan beruntun sesudah ijab dari #8087# dalam satu majelis akad, sebagaimana yang saya alami"
+            ]
+          },
+          {
+            "keadaan": {
+              "bentukKesaksian": "pesta"
+            },
+            "maksud": "saksi tidak mengetahui lafaz ijab kabul karena tidak mengikuti akad nikah, hanya menghadiri pestanya",
+            "saksi1": [
+              "saya tidak tahu bagaimana lafaz ijab kabulnya karena saya tidak mengikuti akad nikah",
+              "bagaimana lafaz akad nikahnya tidak saya ketahui sebab saya hanya menghadiri pesta pernikahannya",
+              "saya tidak mengetahui ucapan ijab kabulnya karena saya tidak berada di tempat akad nikah",
+              "lafaz akad nikahnya saya tidak tahu karena saya tidak menyaksikan prosesi akad"
+            ],
+            "saksi2": [
+              "mengenai lafaz ijab kabulnya saya tidak tahu sebab saya tidak mengikuti acara akad nikah",
+              "saya tidak mengetahui bagaimana akad nikahnya diucapkan karena saya datang ketika pesta saja",
+              "ucapan ijab kabul pada pernikahan itu tidak saya ketahui karena saya tidak menyaksikan akad nikahnya",
+              "saya tidak tahu lafaz akad nikah itu sebab yang saya hadiri hanya pesta pernikahannya"
+            ]
+          }
+        ],
         "de-auditu": {
           "maksud": "saksi menerangkan pengucapan ijab dan kabul pada pernikahan #0046# dan #0047# hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
           "saksi1": [
@@ -1635,7 +1734,8 @@
         "*"
       ],
       "keadaan": {
-        "kumulasi": "itsbat-nikah"
+        "kumulasi": "itsbat-nikah",
+        "bukan:bentukKesaksian": "pesta"
       },
       "teks": "Apakah ijab dan kabul diucapkan sendiri oleh wali dan oleh mempelai laki-laki, tanpa diwakilkan kepada orang lain?",
       "teksVarian": [
@@ -1777,6 +1877,24 @@
               "saya ikut menjadi saksi nikah bersama #0650# pada akad tersebut",
               "yang menyaksikan ijab kabul sebagai saksi nikah adalah saya dan #0650#"
             ]
+          },
+          {
+            "keadaan": {
+              "bentukKesaksian": "pesta"
+            },
+            "maksud": "saksi tidak mengetahui siapa saksi nikah karena tidak mengikuti akad nikah, hanya menghadiri pestanya",
+            "saksi1": [
+              "saya tidak tahu siapa saksi nikahnya karena saya tidak mengikuti akad nikah",
+              "siapa yang menjadi saksi nikah tidak saya ketahui sebab saya hanya menghadiri pesta pernikahannya",
+              "saya tidak mengetahui siapa saksi nikahnya karena saya tidak menyaksikan prosesi akad nikah",
+              "karena saya tidak ikut dalam akad nikah, saya tidak tahu siapa yang bertindak sebagai saksi nikah"
+            ],
+            "saksi2": [
+              "mengenai saksi nikahnya saya tidak tahu karena saya tidak berada di tempat akad nikah",
+              "saya tidak mengetahui siapa saksi nikahnya sebab saya datang pada waktu pestanya saja",
+              "saksi nikah pada pernikahan itu tidak saya ketahui karena saya tidak mengikuti acara akad nikahnya",
+              "saya tidak tahu siapa yang menjadi saksi nikah, sebab yang saya hadiri hanya pesta pernikahannya"
+            ]
           }
         ],
         "de-auditu": {
@@ -1841,7 +1959,8 @@
         "*"
       ],
       "keadaan": {
-        "kumulasi": "itsbat-nikah"
+        "kumulasi": "itsbat-nikah",
+        "bukan:bentukKesaksian": "pesta"
       },
       "teks": "Apakah kedua saksi nikah itu laki-laki, beragama Islam, sudah dewasa, serta sehat pendengaran dan ingatannya?",
       "teksVarian": [
@@ -1947,7 +2066,8 @@
         "*"
       ],
       "keadaan": {
-        "kumulasi": "itsbat-nikah"
+        "kumulasi": "itsbat-nikah",
+        "bukan:bentukKesaksian": "pesta"
       },
       "teks": "Apakah kedua saksi nikah hadir dan menyaksikan langsung ijab kabul dari awal sampai selesai?",
       "teksVarian": [
@@ -2077,21 +2197,41 @@
       "hal": "mahar pernikahan itu",
       "tidakBerlaku": [],
       "jawaban": {
-        "melihat": {
-          "maksud": "saksi menerangkan mahar pernikahan #0046# dan #0047# sebagai hal yang dilihat atau dialaminya sendiri",
-          "saksi1": [
-            "saya melihat sendiri bahwa mas kawin dari mempelai laki-laki kepada mempelai perempuan berupa #1001#",
-            "saya menyaksikan langsung bahwa mempelai laki-laki memberikan mahar kepada mempelai perempuan berupa #1001#",
-            "mahar pernikahan itu berupa #1001# yang diserahkan mempelai laki-laki kepada mempelai perempuan, dan hal itu saya lihat dengan mata kepala saya sendiri",
-            "pada waktu itu saya berada di tempat kejadian dan melihat bahwa yang dijadikan mas kawin oleh mempelai laki-laki untuk mempelai perempuan adalah #1001#"
-          ],
-          "saksi2": [
-            "karena saya turut hadir maka saya terangkan bahwa mas kawin dari mempelai laki-laki kepada mempelai perempuan berupa #1001#",
-            "mempelai laki-laki memberikan mahar kepada mempelai perempuan berupa #1001#, demikian yang tampak oleh saya waktu itu",
-            "saya ada di lokasi pada saat itu dan mendapati bahwa mahar pernikahan itu berupa #1001# yang diserahkan mempelai laki-laki kepada mempelai perempuan",
-            "yang dijadikan mas kawin oleh mempelai laki-laki untuk mempelai perempuan adalah #1001#, sebagaimana yang saya alami"
-          ]
-        },
+        "melihat": [
+          {
+            "maksud": "saksi menerangkan mahar pernikahan #0046# dan #0047# sebagai hal yang dilihat atau dialaminya sendiri",
+            "saksi1": [
+              "saya melihat sendiri bahwa mas kawin dari mempelai laki-laki kepada mempelai perempuan berupa #1001#",
+              "saya menyaksikan langsung bahwa mempelai laki-laki memberikan mahar kepada mempelai perempuan berupa #1001#",
+              "mahar pernikahan itu berupa #1001# yang diserahkan mempelai laki-laki kepada mempelai perempuan, dan hal itu saya lihat dengan mata kepala saya sendiri",
+              "pada waktu itu saya berada di tempat kejadian dan melihat bahwa yang dijadikan mas kawin oleh mempelai laki-laki untuk mempelai perempuan adalah #1001#"
+            ],
+            "saksi2": [
+              "karena saya turut hadir maka saya terangkan bahwa mas kawin dari mempelai laki-laki kepada mempelai perempuan berupa #1001#",
+              "mempelai laki-laki memberikan mahar kepada mempelai perempuan berupa #1001#, demikian yang tampak oleh saya waktu itu",
+              "saya ada di lokasi pada saat itu dan mendapati bahwa mahar pernikahan itu berupa #1001# yang diserahkan mempelai laki-laki kepada mempelai perempuan",
+              "yang dijadikan mas kawin oleh mempelai laki-laki untuk mempelai perempuan adalah #1001#, sebagaimana yang saya alami"
+            ]
+          },
+          {
+            "keadaan": {
+              "bentukKesaksian": "pesta"
+            },
+            "maksud": "saksi tidak mengetahui mahar karena tidak mengikuti akad nikah, hanya menghadiri pestanya",
+            "saksi1": [
+              "saya tidak tahu apa maharnya karena saya tidak mengikuti akad nikah",
+              "mahar pernikahan itu tidak saya ketahui sebab saya hanya menghadiri pestanya",
+              "saya tidak mengetahui apa mas kawinnya karena saya tidak menyaksikan prosesi akad nikah",
+              "karena saya tidak ikut dalam akad nikah, saya tidak tahu mahar yang diberikan"
+            ],
+            "saksi2": [
+              "mengenai maharnya saya tidak tahu karena saya tidak berada di tempat akad nikah",
+              "saya tidak mengetahui apa maharnya sebab saya datang pada waktu pestanya saja",
+              "mas kawin pada pernikahan itu tidak saya ketahui karena saya tidak mengikuti acara akad nikahnya",
+              "saya tidak tahu apa mahar pada pernikahan itu sebab yang saya hadiri hanya pesta pernikahannya"
+            ]
+          }
+        ],
         "de-auditu": {
           "maksud": "saksi menerangkan mahar pernikahan #0046# dan #0047# hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
           "saksi1": [
@@ -2168,7 +2308,8 @@
         "*"
       ],
       "keadaan": {
-        "kumulasi": "itsbat-nikah"
+        "kumulasi": "itsbat-nikah",
+        "bukan:bentukKesaksian": "pesta"
       },
       "teks": "Apakah mahar berupa #1001# untuk mempelai perempuan diserahkan langsung pada waktu akad, atau masih terutang sampai sekarang?",
       "teksVarian": [
