@@ -300,16 +300,17 @@ describe("catatan grafik untuk perkara ghaib", () => {
   const pola =
     /Perkara ghaib: garis ini hari kalender di luar mediasi, dengan cara batas lima bulan SEMA 2\/2014 - TIDAK dipotong/;
 
+  // 3 Nov 2026: catatannya pindah ke tooltip (i) - tidak tampil bawaan, tidak hilang.
   it("digambar ketika perkaranya ghaib", () => {
     render(<DiagramPerjalananSidang perjalanan={perjalananLima()} pita={PITA} ghaib />);
-    expect(screen.getByText(pola)).toBeInTheDocument();
+    expect(screen.getByTitle(pola)).toBeInTheDocument();
   });
 
   it("menyebut kelonggaran 120 hari dan bahwa ia TIDAK memotong garis ini", () => {
     // Satu-satunya tempat yang menerangkan selisih sampai 120 hari antara
     // grafik ini dan lencana umur di Antrian Sidang.
     render(<DiagramPerjalananSidang perjalanan={perjalananLima()} pita={PITA} ghaib />);
-    const kalimat = screen.getByText(pola).textContent ?? "";
+    const kalimat = screen.getByTitle(pola).getAttribute("title") ?? "";
     expect(kalimat).toContain("120 hari");
     expect(kalimat).toContain("048/2024");
     expect(kalimat).toContain("penilaian kinerja");
@@ -318,7 +319,7 @@ describe("catatan grafik untuk perkara ghaib", () => {
 
   it("TIDAK digambar pada perkara biasa - ia kebisingan di sana", () => {
     render(<DiagramPerjalananSidang perjalanan={perjalananLima()} pita={PITA} />);
-    expect(screen.queryByText(pola)).toBeNull();
+    expect(screen.queryByTitle(pola)).toBeNull();
   });
 
   it("bawaannya tidak ghaib - pemanggil yang belum mengirim ruasnya tidak berubah", () => {

@@ -228,7 +228,7 @@ describe("butir 7 - empat tampilan hasil", () => {
     // gigitan 17 sebelum uji ini ditulis ulang.
     pasangFetch(() => jawabanHasil(BARIS.slice(0, 3)));
     render(<AletaEcourtStatusPerkara />);
-    fireEvent.change(screen.getByPlaceholderText(/419, nama pihak/), { target: { value: "cerai" } });
+    fireEvent.change(screen.getByPlaceholderText(/Nomor, nama pihak/), { target: { value: "cerai" } });
     fireEvent.click(screen.getByRole("button", { name: "Cari" }));
     await screen.findByText(/3 perkara cocok/);
     // Bawaan tetap Kotak - kebiasaan orang tidak diubah diam-diam.
@@ -452,7 +452,7 @@ describe("butir 7 - keterangan yang gagal dibaca bot disebutkan", () => {
     window.print = vi.fn();
     pasangFetch(() => jawabanHasil(BARIS.slice(0, 3).map(gagalDibaca), { ruasTakTerbaca: KUNCI_GAGAL }));
     render(<AletaEcourtStatusPerkara />);
-    fireEvent.change(screen.getByPlaceholderText(/419, nama pihak/), { target: { value: "cerai" } });
+    fireEvent.change(screen.getByPlaceholderText(/Nomor, nama pihak/), { target: { value: "cerai" } });
     fireEvent.click(screen.getByRole("button", { name: "Cari" }));
     await screen.findByText(/3 perkara cocok/);
 
@@ -530,7 +530,7 @@ describe("butir 7 - keterangan yang gagal dibaca bot disebutkan", () => {
         : jawabanHasil(BARIS.slice(0, 3), { adaLagi: true });
     });
     render(<AletaEcourtStatusPerkara />);
-    fireEvent.change(screen.getByPlaceholderText(/419, nama pihak/), { target: { value: "cerai" } });
+    fireEvent.change(screen.getByPlaceholderText(/Nomor, nama pihak/), { target: { value: "cerai" } });
     fireEvent.click(screen.getByRole("button", { name: "Cari" }));
     // Halaman pertama dengan adaLagi: kepalanya menyebut yang TERMUAT, bukan
     // "3 perkara cocok" (telaah 26 September 2026).
@@ -588,7 +588,7 @@ describe("butir 8 - pencarian kata bebas yang diperdalam dikatakan", () => {
       return jawabanHasil(BARIS.slice(0, 3), { lapis: kata === "pembuktian" ? "dalam" : "cepat" });
     });
     render(<AletaEcourtStatusPerkara />);
-    const kotak = screen.getByPlaceholderText(/419, nama pihak/);
+    const kotak = screen.getByPlaceholderText(/Nomor, nama pihak/);
     fireEvent.change(kotak, { target: { value: "cerai" } });
     fireEvent.click(screen.getByRole("button", { name: "Cari" }));
     await screen.findByText(/3 perkara cocok/);
@@ -609,7 +609,7 @@ describe("butir 8 - pencarian kata bebas yang diperdalam dikatakan", () => {
 
   it("kotak cari diterangkan: medan baru disebut, dan cara bacanya dapat dibuka", () => {
     render(<AletaEcourtStatusPerkara />);
-    const kotak = screen.getByPlaceholderText(/419, nama pihak/);
+    const kotak = screen.getByPlaceholderText(/Nomor, nama pihak/);
     const idKeterangan = kotak.getAttribute("aria-describedby") ?? "";
     const keterangan = document.getElementById(idKeterangan)?.textContent ?? "";
     for (const medan of ["kuasa hukum", "NIK/telepon", "akta cerai", "banding/kasasi/PK", "verstek", "agenda sidang"]) {
@@ -618,6 +618,8 @@ describe("butir 8 - pencarian kata bebas yang diperdalam dikatakan", () => {
     // Lapis dalam hanya berjalan bila lapis cepat kosong - itu dikatakan,
     // bukan dijanjikan seolah alamat dan pertimbangan selalu disisir.
     expect(keterangan).toMatch(/bila tidak ada yang cocok,\s+diperdalam ke alamat/);
+    // Penjelasan pindah ke tombol ? (rancangan 3 Nov 2026).
+    fireEvent.click(screen.getByRole("button", { name: "Bantuan pencarian" }));
     const rinci = screen.getByText("Cara kata bebas dibaca").closest("details") as HTMLDetailsElement;
     expect(rinci.open).toBe(false);
     fireEvent.click(screen.getByText("Cara kata bebas dibaca"));
@@ -958,7 +960,7 @@ describe("butir 7 - muat lebih banyak dari pencarian yang sama", () => {
         : jawabanHasil(BARIS.slice(0, 3), { adaLagi: true });
     });
     render(<AletaEcourtStatusPerkara />);
-    fireEvent.change(screen.getByPlaceholderText(/419, nama pihak/), { target: { value: "cerai" } });
+    fireEvent.change(screen.getByPlaceholderText(/Nomor, nama pihak/), { target: { value: "cerai" } });
     fireEvent.click(screen.getByRole("button", { name: "Cari" }));
     await screen.findByText(/3 perkara pertama termuat — masih ada yang cocok/);
     expect(screen.queryByText(/3 perkara cocok/)).toBeNull();
@@ -988,7 +990,7 @@ describe("butir 7 - muat lebih banyak dari pencarian yang sama", () => {
       });
     });
     render(<AletaEcourtStatusPerkara />);
-    fireEvent.change(screen.getByPlaceholderText(/419, nama pihak/), { target: { value: "cerai" } });
+    fireEvent.change(screen.getByPlaceholderText(/Nomor, nama pihak/), { target: { value: "cerai" } });
     fireEvent.click(screen.getByRole("button", { name: "Cari" }));
     await screen.findByText(/100 perkara pertama termuat — masih ada yang cocok/);
     expect(screen.getByText(/Muat lebih banyak di bawah daftar \(sampai 500\)/)).toBeTruthy();
@@ -1020,7 +1022,7 @@ describe("butir 7 - muat lebih banyak dari pencarian yang sama", () => {
     }));
     const keBot = pasangFetchLewatRute(() => ({ isi: { ok: true, perkara: seratus } }));
     render(<AletaEcourtStatusPerkara />);
-    fireEvent.change(screen.getByPlaceholderText(/419, nama pihak/), { target: { value: "cerai" } });
+    fireEvent.change(screen.getByPlaceholderText(/Nomor, nama pihak/), { target: { value: "cerai" } });
     fireEvent.click(screen.getByRole("button", { name: "Cari" }));
     // Halaman penuh tanpa keterangan dari bot: MUNGKIN bersambung - dan itu
     // yang dikatakan, bukan "100 perkara cocok".
@@ -1041,14 +1043,14 @@ describe("butir 7 - muat lebih banyak dari pencarian yang sama", () => {
     window.print = vi.fn();
     pasangFetch(() => jawabanHasil(BARIS.slice(0, 3)));
     render(<AletaEcourtStatusPerkara />);
-    fireEvent.change(screen.getByPlaceholderText(/419, nama pihak/), { target: { value: "cerai" } });
+    fireEvent.change(screen.getByPlaceholderText(/Nomor, nama pihak/), { target: { value: "cerai" } });
     fireEvent.click(screen.getByRole("button", { name: "Saringan lain" }));
     fireEvent.change(screen.getByPlaceholderText("2025"), { target: { value: "2026" } });
     fireEvent.click(screen.getByRole("button", { name: "Cari" }));
     await screen.findByText(/3 perkara cocok/);
 
     // Isian yang disunting SESUDAH pencarian tidak boleh masuk ke lembar.
-    fireEvent.change(screen.getByPlaceholderText(/419, nama pihak/), { target: { value: "lain" } });
+    fireEvent.change(screen.getByPlaceholderText(/Nomor, nama pihak/), { target: { value: "lain" } });
 
     fireEvent.click(screen.getByRole("button", { name: /Cetak$/ }));
     fireEvent.click(screen.getByRole("button", { name: "Cetak sekarang" }));
@@ -1064,14 +1066,14 @@ describe("butir 7 - pilihan tampilan diingat, tetapi tidak wajib", () => {
   it("pilihan Detail diingat peramban untuk pencarian berikutnya", async () => {
     pasangFetch(() => jawabanHasil(BARIS.slice(0, 3)));
     const { unmount } = render(<AletaEcourtStatusPerkara />);
-    fireEvent.change(screen.getByPlaceholderText(/419, nama pihak/), { target: { value: "cerai" } });
+    fireEvent.change(screen.getByPlaceholderText(/Nomor, nama pihak/), { target: { value: "cerai" } });
     fireEvent.click(screen.getByRole("button", { name: "Cari" }));
     await screen.findByText(/3 perkara cocok/);
     fireEvent.click(screen.getByRole("button", { name: "Detail" }));
     unmount();
 
     render(<AletaEcourtStatusPerkara />);
-    fireEvent.change(screen.getByPlaceholderText(/419, nama pihak/), { target: { value: "cerai" } });
+    fireEvent.change(screen.getByPlaceholderText(/Nomor, nama pihak/), { target: { value: "cerai" } });
     fireEvent.click(screen.getByRole("button", { name: "Cari" }));
     await screen.findByText(/3 perkara cocok/);
     expect(screen.getByRole("button", { name: "Detail" }).getAttribute("aria-pressed")).toBe("true");
@@ -1089,7 +1091,7 @@ describe("butir 7 - pilihan tampilan diingat, tetapi tidak wajib", () => {
     try {
       pasangFetch(() => jawabanHasil(BARIS.slice(0, 3)));
       render(<AletaEcourtStatusPerkara />);
-      fireEvent.change(screen.getByPlaceholderText(/419, nama pihak/), { target: { value: "cerai" } });
+      fireEvent.change(screen.getByPlaceholderText(/Nomor, nama pihak/), { target: { value: "cerai" } });
       fireEvent.click(screen.getByRole("button", { name: "Cari" }));
       await screen.findByText(/3 perkara cocok/);
       // Bawaan Kotak, lalu tetap dapat diganti walau tidak dapat diingat.
@@ -1309,7 +1311,7 @@ describe("telaah 26 Sep - yang termuat tidak disebut 'cocok'", () => {
 describe("telaah 26 Sep - error habis waktu dikatakan dalam bahasa orangnya (layar -> rute sungguhan -> bot)", () => {
   async function cari(kata: string) {
     render(<AletaEcourtStatusPerkara />);
-    fireEvent.change(screen.getByPlaceholderText(/419, nama pihak/), { target: { value: kata } });
+    fireEvent.change(screen.getByPlaceholderText(/Nomor, nama pihak/), { target: { value: kata } });
     fireEvent.click(screen.getByRole("button", { name: "Cari" }));
   }
 

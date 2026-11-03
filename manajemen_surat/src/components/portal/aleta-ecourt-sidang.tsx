@@ -1,6 +1,7 @@
 "use client";
 
-import { LencanaModePersidanganPihak } from "@/components/portal/kontak-para-pihak";
+import { LencanaBeracaraPerkara, LencanaModePersidanganPihak } from "@/components/portal/kontak-para-pihak";
+import { tergugatPernahHadirDariSandi } from "@/lib/beracara-elektronik";
 import { useOverlayHanyaGagal } from "@/lib/global-loading";
 import { labelTidakPatut } from "@/lib/label-kepatutan";
 import type { CaraRelaas } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
@@ -153,6 +154,8 @@ import { sebabBerbauMediasi } from "@/lib/mediasi-sidang";
 import { cariHakim, hakimPersis, type Hakim } from "@/lib/cari-hakim";
 import {
   KUNCI_SIMPANAN_TAMPILAN,
+  KUNCI_SIMPANAN_RINGKAS_3NOV,
+  terapkanRingkas3Nov,
   SAKLAR_TAMPILAN,
   bacaTampilan,
   jumlahDimatikan,
@@ -4943,7 +4946,17 @@ export function AletaEcourtSidang({
     void Promise.resolve().then(() => {
       if (batal) return;
       try {
-        setTampilan(bacaTampilan(window.localStorage.getItem(KUNCI_SIMPANAN_TAMPILAN)));
+        const lokal = window.localStorage.getItem(KUNCI_SIMPANAN_TAMPILAN);
+        let pilihan = bacaTampilan(lokal);
+        // Butir 11 (3 Nov 2026): satu kali, simpanan lama ikut bawaan baru.
+        if (window.localStorage.getItem(KUNCI_SIMPANAN_RINGKAS_3NOV) !== "1") {
+          if (lokal) {
+            pilihan = terapkanRingkas3Nov(pilihan);
+            window.localStorage.setItem(KUNCI_SIMPANAN_TAMPILAN, JSON.stringify(pilihan));
+          }
+          window.localStorage.setItem(KUNCI_SIMPANAN_RINGKAS_3NOV, "1");
+        }
+        setTampilan(pilihan);
       } catch {
         /* sama seperti modeRingkas - pilihannya saja yang tidak diingat */
       }
@@ -8093,7 +8106,13 @@ export function AletaEcourtSidang({
                                   antrian.kehadiran?.[kunciKehadiran(baris.perkaraId, baris.tanggalSidang)]?.hadir,
                                   antrianUntuk(antrian.peta, baris)
                                 ),
-                                bahanKehadiranDariBaris(baris)
+                                bahanKehadiranDariBaris(baris),
+                                {
+                                  singkat: true,
+                                  jamAmbil: tampil(tampilan, "rincian-antrian")
+                                    ? { p1: antrianUntuk(antrian.peta, baris)?.pihak1, p2: antrianUntuk(antrian.peta, baris)?.pihak2 }
+                                    : undefined,
+                                }
                               )}
                             />
                           ) : null}
@@ -8217,6 +8236,18 @@ export function AletaEcourtSidang({
                           ) : null}
                           {/* === 12OKT-B: Ghaib / Prodeo / Non e-Court di samping nomor === */}
                           <LencanaPerkaraBaris baris={baris} aktif={aktifPenandaPerkara} className="ml-2 align-middle" />
+                          {/* Beracara (3 Nov 2026): hanya dari kontak yang SUDAH terbaca - tanpa pembacaan per baris. */}
+                          {baris.lewatEcourt ? (
+                            <LencanaBeracaraPerkara
+                              nomorPerkara={baris.nomorPerkara}
+                              bacaOtomatis={false}
+                              className="ml-2 align-middle"
+                              pernahHadirTergugat={tergugatPernahHadirDariSandi(
+                                [baris.dihadiriOleh],
+                                baris.verstekPutusan === true
+                              )}
+                            />
+                          ) : null}
                           {/* === AKHIR 12OKT-B === */}
                           {/* Penanda panggilan tepat di samping nomor perkara:
                               itulah yang dicari mata saat menelusuri jadwal. */}
@@ -10033,7 +10064,7 @@ export function RincianSidang({
 
       {/* === 12OKT-K: eksepsi/rekonvensi, sita, eksekusi === */}
       {jawabanSita ? (
-        <RincianJawabanSitaEksekusi bahan={jawabanSita} tampilJawaban={tampilJawaban} tampilSita={tampilSita} tampilEksekusi={tampilEksekusi} />
+        <RincianJawabanSitaEksekusi bahan={jawabanSita} tampilJawaban={tampilJawaban} tampilSita={tampilSita} tampilEksekusi={tampilEksekusi} hanyaYangAda />
       ) : null}
       {/* === AKHIR 12OKT-K === */}
 
@@ -10398,7 +10429,7 @@ export function RincianSidang({
 
       {/* --- Riwayat relaas sidang-sidang sebelumnya --- */}
       {relaasRiwayat.length > 0 ? (
-        <Bagian judul="Riwayat panggilan sebelumnya" kunci="sidang-relaas-riwayat" keterangan={String(relaasRiwayat.length)}>
+        <Bagian judul="Riwayat panggilan sebelumnya" kunci="sidang-relaas-riwayat" ciutBawaan versiBawaan="3nov" keterangan={String(relaasRiwayat.length)}>
           {/* Bentuknya sengaja lebih ringkas daripada tabel di atas: yang
               dicari di sini polanya - sudah berapa kali dipanggil, dengan cara
               apa, dan apa hasilnya - bukan rincian tiap barisnya. */}

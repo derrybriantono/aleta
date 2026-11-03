@@ -99,6 +99,7 @@ export function AlatStatusPerkara({
   unduh,
   lencana,
   menuTambahan,
+  children,
 }: {
   nomorPerkara: string;
   jenisPerkara: string;
@@ -117,7 +118,14 @@ export function AlatStatusPerkara({
    * digambar di sini - aksi utama menonjol, sisanya di menu Lainnya. Fungsinya
    * sama dengan "kompleks": hanya letaknya yang berbeda.
    */
-  varian?: "kompleks" | "seamless";
+  varian?: "kompleks" | "seamless" | "rancangan";
+  /**
+   * Varian "rancangan" (3 Nov 2026, keputusan 142): bilah ini tidak menggambar
+   * kepala sendiri; ia menyerahkan tiga potongnya - kelompok aksi (unduh, salin,
+   * Lainnya), kotak cari di perkara ini, dan catatan salin - kepada pemanggil,
+   * yang menaruhnya di sorotan dan bilah lekat. Fungsi dan hak sama persis.
+   */
+  children?: (potongan: { aksi: ReactNode; cari: ReactNode; catatan: ReactNode }) => ReactNode;
   kepalaNomor?: ReactNode;
   unduh?: ReactNode;
   lencana?: ReactNode;
@@ -232,7 +240,7 @@ export function AlatStatusPerkara({
 
   const [menuBuka, setMenuBuka] = useState(false);
   const kepalaRef = useRef<HTMLDivElement | null>(null);
-  const seamless = varian === "seamless";
+  const seamless = varian === "seamless" || varian === "rancangan";
 
   // Menu Lainnya menutup saat mengetuk di luar atau menekan Escape.
   useEffect(() => {
@@ -298,15 +306,7 @@ export function AlatStatusPerkara({
       f();
       setMenuBuka(false);
     };
-    return (
-      <div
-        ref={kepalaRef}
-        data-kepala-seamless=""
-        className="-mx-3 border-b border-border/70 bg-card/95 px-3 pb-2 pt-2 backdrop-blur sm:sticky sm:top-0 sm:z-20 print:static print:border-0"
-      >
-        <GayaCetakStatusPerkara />
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">{kepalaNomor}</div>
+    const aksiNode = (
           <div className="relative flex flex-wrap items-center gap-1.5 print:hidden">
             {unduh}
             <Button
@@ -479,10 +479,8 @@ export function AlatStatusPerkara({
               </div>
             ) : null}
           </div>
-        </div>
-
-        {lencana}
-
+    );
+    const cariNode = (
         <div className="relative mt-2 print:hidden">
           <Search
             className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"
@@ -533,7 +531,9 @@ export function AlatStatusPerkara({
             </div>
           ) : null}
         </div>
-
+    );
+    const catatanNode = (
+      <>
         {salinTangan ? (
           <div
             role="status"
@@ -578,6 +578,28 @@ export function AlatStatusPerkara({
             ) : null}
           </p>
         ) : null}
+      </>
+    );
+    if (varian === "rancangan") {
+      return <>{children ? children({ aksi: aksiNode, cari: cariNode, catatan: catatanNode }) : null}</>;
+    }
+    return (
+      <div
+        ref={kepalaRef}
+        data-kepala-seamless=""
+        className="-mx-3 border-b border-border/70 bg-card/95 px-3 pb-2 pt-2 backdrop-blur sm:sticky sm:top-0 sm:z-20 print:static print:border-0"
+      >
+        <GayaCetakStatusPerkara />
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">{kepalaNomor}</div>
+          {aksiNode}
+        </div>
+
+        {lencana}
+
+        {cariNode}
+
+        {catatanNode}
       </div>
     );
   }

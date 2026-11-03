@@ -19,6 +19,7 @@ import {
   type KumulasiPerkara,
 } from "@/lib/kumulasi-perkara";
 import { KUNCI_SIMPANAN_TAMPILAN, bacaTampilan, tampil } from "@/lib/tampilan-antrian-sidang";
+import { PEMISAH_RINGKAS } from "@/lib/status-perkara-seamless";
 
 /**
  * Saklar "Kumulasi perkara" dari panel Tampilan Jadwal Sidang, untuk layar
@@ -114,22 +115,35 @@ export function JenisDenganKumulasi({
  * Bagian Kumulasi di rincian: tiap jenis dengan asalnya, dan kutipan butir
  * petitumnya bila dibaca dari petitum. Tidak digambar bila tidak ada.
  */
-export function RincianKumulasi({ kumulasi }: { kumulasi: KumulasiPerkara | null | undefined }) {
+export function RincianKumulasi({
+  kumulasi,
+  tanpaKotak = false,
+  tanpaCatatan = false,
+}: {
+  kumulasi: KumulasiPerkara | null | undefined;
+  /** Status Perkara: tanpa kotak dan judul sendiri - dibuka dari baris Kumulasi di sorotan. */
+  tanpaKotak?: boolean;
+  /** Catatan "dari petitum ... lengkapi" pindah menjadi butir Perlu dikerjakan. */
+  tanpaCatatan?: boolean;
+}) {
   const butir = butirKumulasi(kumulasi);
   if (butir.length === 0) return null;
   return (
-    <div className="rounded-md border border-border/70 bg-card/60 p-2 text-xs" data-rincian-kumulasi="">
-      <div className="mb-1 font-semibold">Kumulasi perkara</div>
+    <div
+      className={tanpaKotak ? "text-sm" : "rounded-lg border border-border/70 bg-card/60 px-3 py-2 text-sm"}
+      data-rincian-kumulasi=""
+    >
+      {tanpaKotak ? null : <div className="mb-1 font-semibold">Kumulasi perkara</div>}
       <ul className="space-y-1">
         {butir.map((x) => (
           <li key={x.kode}>
             <span className="font-medium">{x.nama}</span>{" "}
             {x.sumber === "petitum" ? (
-              <Badge variant="warning" className="px-1.5 py-0 text-[10px]">
+              <Badge variant="warning" className="px-1.5 py-0 text-xs">
                 dari petitum
               </Badge>
             ) : (
-              <Badge variant="muted" className="px-1.5 py-0 text-[10px]">
+              <Badge variant="muted" className="px-1.5 py-0 text-xs">
                 SIPP
               </Badge>
             )}
@@ -139,11 +153,55 @@ export function RincianKumulasi({ kumulasi }: { kumulasi: KumulasiPerkara | null
           </li>
         ))}
       </ul>
-      {adaDariPetitum(kumulasi) ? (
-        <p className="mt-1 text-[11px] text-muted-foreground">
+      {adaDariPetitum(kumulasi) && !tanpaCatatan ? (
+        <p className="mt-1 text-xs text-muted-foreground">
           Yang bertanda &ldquo;dari petitum&rdquo; dibaca dari tuntutan primer karena kumulasinya belum diisi di SIPP -
           periksa, lalu lengkapi data kumulasi di SIPP.
         </p>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Baris "Kumulasi" di sorotan Status Perkara (rancangan 3 Nov 2026): satu baris
+ * lencana tiap perkara gabungan beserta sumbernya (SIPP / dari petitum), dan
+ * tautan "rincian" yang membuka kutipan petitum. Hanya bila ada kumulasi.
+ * Keadaan terbuka dipegang pemanggil supaya butir "Perlu dikerjakan" dapat membukanya.
+ */
+export function BarisKumulasi({
+  kumulasi,
+  terbuka,
+  onUbah,
+}: {
+  kumulasi: KumulasiPerkara | null | undefined;
+  terbuka: boolean;
+  onUbah: (buka: boolean) => void;
+}) {
+  const butir = butirKumulasi(kumulasi);
+  if (butir.length === 0) return null;
+  return (
+    <div id="baris-kumulasi" className="space-y-1.5 text-sm" data-baris-kumulasi="">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="text-xs font-semibold text-muted-foreground">Kumulasi</span>
+        {butir.map((x) => (
+          <Badge key={x.kode} variant={x.sumber === "petitum" ? "warning" : "muted"}>
+            {x.nama}{PEMISAH_RINGKAS}{x.sumber === "petitum" ? "dari petitum" : "SIPP"}
+          </Badge>
+        ))}
+        <button
+          type="button"
+          aria-expanded={terbuka}
+          onClick={() => onUbah(!terbuka)}
+          className="text-xs font-semibold text-primary underline underline-offset-2"
+        >
+          {terbuka ? "tutup rincian" : "rincian"}
+        </button>
+      </div>
+      {terbuka ? (
+        <div className="border-l-2 border-border pl-2.5 text-muted-foreground">
+          <RincianKumulasi kumulasi={kumulasi} tanpaKotak tanpaCatatan />
+        </div>
       ) : null}
     </div>
   );

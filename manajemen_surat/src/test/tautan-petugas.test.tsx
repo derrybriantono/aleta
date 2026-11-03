@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { DaftarMajelisPetugas, NamaMediatorTertaut, TautanPetugas } from "@/components/portal/tautan-petugas";
@@ -331,6 +331,12 @@ describe("layar Status Perkara memakai tautan itu dan meneruskan ID dari muatann
       if (!bagian) throw new Error("bagian majelis belum tergambar");
       return bagian;
     });
+    // Majelis dan Mediasi terlipat bawaan (3 Nov 2026): dibuka seperti oleh pengguna.
+    const buka = (el: HTMLElement) => {
+      const kepala = el.querySelector("button");
+      if (kepala && kepala.getAttribute("aria-expanded") === "false") fireEvent.click(kepala);
+    };
+    buka(majelis);
     const tautanMajelis = within(majelis).getAllByRole("link");
     expect(tautanMajelis.map(tujuan).map((t) => [t.peran, t.id])).toEqual([
       ["hakim", "26"],
@@ -347,6 +353,7 @@ describe("layar Status Perkara memakai tautan itu dan meneruskan ID dari muatann
 
     const mediasi = document.getElementById("bagian-mediasi");
     expect(mediasi).not.toBeNull();
+    buka(mediasi!);
     const tautanMediator = within(mediasi!).getAllByRole("link");
     expect(tautanMediator.map(tujuan).map((t) => [t.peran, t.id])).toEqual([
       ["mediator", "25"],

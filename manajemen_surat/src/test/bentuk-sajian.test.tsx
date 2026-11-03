@@ -350,7 +350,8 @@ describe("perjalanan sidang", () => {
     expect(screen.getByText("+28 hari")).toBeInTheDocument();
     expect(screen.getByText("+14 hari")).toBeInTheDocument();
     expect(
-      screen.getByText(/Jeda terpanjang \+28 hari, dari sidang ke-1 ke sidang ke-2 \(ditunda: proses mediasi\)/)
+      // 3 Nov 2026: ringkasan satu baris, tanpa penjelasan cara hitung.
+      screen.getByText(/jeda terpanjang \+28 hari \(sidang ke-1 ke ke-2, ditunda: proses mediasi\)/)
     ).toBeInTheDocument();
   });
 
@@ -359,13 +360,13 @@ describe("perjalanan sidang", () => {
     expect(screen.getByText("ke-3")).toBeInTheDocument();
     expect(screen.getByText("ke-10")).toBeInTheDocument();
     expect(screen.queryByText("ke-1")).not.toBeInTheDocument();
-    expect(screen.getByText(/Jeda terpanjang \+28 hari, dari sidang ke-3 ke sidang ke-4/)).toBeInTheDocument();
+    expect(screen.getByText(/jeda terpanjang \+28 hari \(sidang ke-3 ke ke-4/)).toBeInTheDocument();
   });
 
   it("sumbu tidak dipaksa sampai 150 - batas yang jauh DISEBUT, dan keterangan hanya pita yang tampak", () => {
     render(<DiagramPerjalananSidang perjalanan={p385()} pita={PITA} />);
     expect(screen.getByText(/5 bulan - SEMA 2\/2014: 150 hari/)).toBeInTheDocument();
-    expect(screen.getByText(/sampai 90 hari · 3 bulan/)).toBeInTheDocument();
+    expect(screen.getByText(/sampai 90 hari\s*\|\s*3 bulan/)).toBeInTheDocument();
     expect(screen.queryByText(/lebih dari 150 hari/)).not.toBeInTheDocument();
     // Sumbu tegak BERANGKA - dulu tidak satu pun angka.
     for (const angka of ["0", "15", "30", "45", "60", "75", "90"]) {
@@ -387,7 +388,11 @@ describe("perjalanan sidang", () => {
 
   it("umur hari ini disebut terhadap batas terakhir", () => {
     render(<DiagramPerjalananSidang perjalanan={p385()} pita={PITA} hariIniDihitung={61} />);
-    expect(screen.getByText(/Hari ini hari ke-61 yang dihitung - 89 hari lagi sampai batas 5 bulan - SEMA 2\/2014/)).toBeInTheDocument();
+    expect(screen.getByText(/hari ke-61\s*\|\s*89 hari lagi sampai batas 5 bulan/)).toBeInTheDocument();
+    // Penjelasan cara hitung tidak tampil bawaan; hanya ada di tooltip (i).
+    expect(screen.queryByText(/Tinggi titik/)).toBeNull();
+    expect(screen.queryByText(/SEMA 2\/2014\s*$/)).toBeNull();
+    expect(screen.getByTitle(/Tinggi titik: hari yang dihitung/)).toBeInTheDocument();
   });
 
   it("pita di atas batas terakhir merah, dan disebut", () => {

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { tanggalHariPanjang, tanggalRingkas } from "@/lib/tanggal-indonesia";
 import type { PerjalananSidang, TitikPerjalanan } from "@/lib/perjalanan-sidang";
 import type { PitaWaktuPutus } from "@/lib/pita-waktu-putus";
+import { PEMISAH_RINGKAS } from "@/lib/status-perkara-seamless";
 
 /**
  * ============================================================================
@@ -476,7 +477,7 @@ const WARNA_PITA: Record<NadaPita, { latar: string; garis: string; teks: string;
 /** Rincian satu sidang - untuk tooltip dan baris rincian di bawah gambar. */
 function rincianTitik(t: TitikPerjalanan): string[] {
   return [
-    `Sidang ke-${t.ke} · ${tanggalHariPanjang(t.tanggal)}${t.hariPutus ? " · hari putusan" : ""}${
+    `Sidang ke-${t.ke}${PEMISAH_RINGKAS}${tanggalHariPanjang(t.tanggal)}${t.hariPutus ? "${PEMISAH_RINGKAS}hari putusan" : ""}${
       t.akanDatang ? " · belum berlangsung" : ""
     }`,
     `Agenda: ${t.agenda || "tanpa agenda"}`,
@@ -494,7 +495,7 @@ type LapisanPita = { dari: number; sampai: number; nada: NadaPita; label: string
 function sebutanPita(l: LapisanPita) {
   if (l.nada === "merah") return `lebih dari ${l.dari} hari`;
   const rentang = l.dari === 0 ? `sampai ${l.sampai} hari` : `${l.dari + 1}-${l.sampai} hari`;
-  return `${rentang} · ${l.label}`;
+  return `${rentang}${PEMISAH_RINGKAS}${l.label}`;
 }
 
 /**
@@ -516,6 +517,20 @@ function xDariTanggal(iso: string, waktuTitik: number[], xTitik: number[]) {
     }
   }
   return xTitik[akhir];
+}
+
+/**
+ * Ringkasan satu frasa umur perkara terhadap batas terakhir - untuk kepala
+ * bagian yang terlipat: "hari ke-36 · 114 hari lagi sampai batas 5 bulan".
+ */
+export function ringkasUmurTerhadapBatas(pita: PitaUmur[], hariIniDihitung: number | null): string {
+  const batas = pita.length > 0 ? pita[pita.length - 1] : null;
+  if (hariIniDihitung === null || !batas) return "";
+  const sisa = batas.sampai - hariIniDihitung;
+  const nama = batas.label.split(" - ")[0];
+  return sisa >= 0
+    ? `hari ke-${hariIniDihitung}${PEMISAH_RINGKAS}${sisa} hari lagi sampai batas ${nama}`
+    : `hari ke-${hariIniDihitung}${PEMISAH_RINGKAS}batas ${nama} sudah lewat ${-sisa} hari`;
 }
 
 export function DiagramPerjalananSidang({
@@ -643,25 +658,33 @@ export function DiagramPerjalananSidang({
       ? perjalanan.hariMediasi - titikPutus.potonganMediasi
       : 0;
 
-  const catatan = [
-    `${n} sidang${
-      perjalanan.sesudahPutus > 0
-        ? ` sampai putusan. ${perjalanan.sesudahPutus} sidang sesudah putusan (mis. ikrar talak) tidak digambar - bukan bagian jangka penyelesaian perkara`
-        : ""
-    }.`,
-    "Tinggi titik: hari yang dihitung - hari pendaftaran hari ke-1, hari mediasi tidak dihitung (PERMA 1/2016 Pasal 24), dengan cara Lama perkara. Angka di bawah sumbu: jarak dari sidang sebelumnya.",
-    selisihDenganKepala > 0
-      ? `Lama perkara di kepala layar memotong ${perjalanan.hariMediasi} hari mediasi menurut SIPP, yang menghitung mediasi tanpa laporan mediator sampai hari ini; grafik hanya memotong ${titikPutus?.potonganMediasi ?? 0} hari yang jatuh sebelum putusan - karena itu titik putusannya ${selisihDenganKepala} hari lebih tinggi.`
-      : "",
+  // Keputusan Derry 3 Nov 2026: layar hanya memuat ringkasan satu baris (angka
+  // yang berguna). Penjelasan cara menghitung dipindah ke tooltip (i) kecil -
+  // tidak tampil bawaan, tetapi tidak hilang.
+  const batasPendek = batasAkhir ? batasAkhir.label.split(" - ")[0] : "";
+  const ringkasan = [
+    `${n} sidang`,
     ruasTerpanjang > 0
-      ? `Jeda terpanjang +${jedaTerpanjang} hari, dari sidang ke-${titik[ruasTerpanjang - 1].ke} ke sidang ke-${titik[ruasTerpanjang].ke}${
-          titik[ruasTerpanjang - 1].alasanTunda ? ` (ditunda: ${titik[ruasTerpanjang - 1].alasanTunda})` : ""
-        }.`
+      ? `jeda terpanjang +${jedaTerpanjang} hari (sidang ke-${titik[ruasTerpanjang - 1].ke} ke ke-${titik[ruasTerpanjang].ke}${
+          titik[ruasTerpanjang - 1].alasanTunda ? `, ditunda: ${titik[ruasTerpanjang - 1].alasanTunda}` : ""
+        })`
       : "",
     sisa !== null && batasAkhir
       ? sisa >= 0
-        ? `Hari ini hari ke-${hariIniDihitung} yang dihitung - ${sisa} hari lagi sampai batas ${batasAkhir.label}.`
-        : `Hari ini hari ke-${hariIniDihitung} yang dihitung - batas ${batasAkhir.label} sudah lewat ${-sisa} hari.`
+        ? `hari ke-${hariIniDihitung}${PEMISAH_RINGKAS}${sisa} hari lagi sampai batas ${batasPendek}`
+        : `hari ke-${hariIniDihitung}${PEMISAH_RINGKAS}batas ${batasPendek} sudah lewat ${-sisa} hari`
+      : "",
+    perjalanan.rentangMediasi.some((r) => r.tanpaLaporan) ? "ada mediasi tanpa tanggal laporan mediator - periksa" : "",
+    perjalanan.tanpaTanggal > 0 ? `${perjalanan.tanpaTanggal} sidang tanpa tanggal tidak digambar` : "",
+  ].filter(Boolean);
+
+  const penjelasan = [
+    perjalanan.sesudahPutus > 0
+      ? `${perjalanan.sesudahPutus} sidang sesudah putusan (mis. ikrar talak) tidak digambar - bukan bagian jangka penyelesaian perkara.`
+      : "",
+    "Tinggi titik: hari yang dihitung - hari pendaftaran hari ke-1, hari mediasi tidak dihitung (PERMA 1/2016 Pasal 24), dengan cara Lama perkara. Angka di bawah sumbu: jarak dari sidang sebelumnya.",
+    selisihDenganKepala > 0
+      ? `Lama perkara di kepala layar memotong ${perjalanan.hariMediasi} hari mediasi menurut SIPP, yang menghitung mediasi tanpa laporan mediator sampai hari ini; grafik hanya memotong ${titikPutus?.potonganMediasi ?? 0} hari yang jatuh sebelum putusan - karena itu titik putusannya ${selisihDenganKepala} hari lebih tinggi.`
       : "",
     perjalanan.potonganTakTerletak
       ? `Mediasi ${perjalanan.hariMediasi} hari belum dapat ditempatkan pada tanggalnya - titik memakai hari kalender, lebih tinggi daripada Lama perkara.`
@@ -670,10 +693,7 @@ export function DiagramPerjalananSidang({
       ? "Lama mediasi belum terbaca dari SIPP - rentangnya diarsir tetapi tidak dipotong, sama seperti Lama perkara."
       : "",
     perjalanan.rentangMediasi.some((r) => r.tanpaLaporan)
-      ? "Ada mediasi tanpa tanggal laporan mediator - di grafik dianggap berjalan sampai putusan atau hari ini (SIPP sendiri menghitungnya sampai hari ini, juga pada perkara yang sudah putus). Periksa laporan mediatornya."
-      : "",
-    perjalanan.tanpaTanggal > 0
-      ? `${perjalanan.tanpaTanggal} sidang dengan tanggal tak terbaca atau sebelum pendaftaran tidak digambar.`
+      ? "Mediasi tanpa tanggal laporan mediator dianggap berjalan sampai putusan atau hari ini (SIPP sendiri menghitungnya sampai hari ini, juga pada perkara yang sudah putus)."
       : "",
     // ========================================================================
     // SELISIH 120 HARI ANTAR-LAYAR DITERANGKAN DI SINI, SEKALI
@@ -707,11 +727,19 @@ export function DiagramPerjalananSidang({
   return (
     <div>
       <Kepala judul={judul} />
-      <ul className="mb-2 space-y-0.5 text-xs leading-5 text-muted-foreground">
-        {catatan.map((kalimat) => (
-          <li key={kalimat}>{kalimat}</li>
-        ))}
-      </ul>
+      <p className="mb-2 text-xs leading-5 text-muted-foreground" data-ringkasan-perjalanan="">
+        {ringkasan.join(PEMISAH_RINGKAS)}
+        {penjelasan.length > 0 ? (
+          <span
+            role="img"
+            aria-label="Penjelasan grafik"
+            title={penjelasan.join("\n")}
+            className="ml-1.5 inline-flex h-4 w-4 cursor-help items-center justify-center rounded-full border border-border align-middle text-[10px] font-semibold not-italic"
+          >
+            i
+          </span>
+        ) : null}
+      </p>
       <div className="overflow-x-auto rounded-lg border border-border/80 bg-card/40 p-3">
         <div ref={kotak} className="w-full">
           <svg
@@ -852,7 +880,7 @@ export function DiagramPerjalananSidang({
                     textAnchor="middle"
                     className={`text-[10px] tabular-nums ${t.akanDatang ? "fill-muted-foreground" : "fill-foreground font-medium"}`}
                   >
-                    {t.hariPutus ? `${t.hari} · putus` : t.hari}
+                    {t.hariPutus ? `${t.hari}${PEMISAH_RINGKAS}putus` : t.hari}
                   </text>
                 </g>
               );
@@ -921,7 +949,7 @@ export function DiagramPerjalananSidang({
         {/* Rincian terpilih - tooltip tidak ada pada layar sentuh. */}
         <p className="mt-1.5 min-h-[1.25rem] text-xs leading-5" aria-live="polite">
           {terpilih ? (
-            rincianTitik(terpilih).join(" · ")
+            rincianTitik(terpilih).join(PEMISAH_RINGKAS)
           ) : (
             <span className="text-muted-foreground">Arahkan atau ketuk titik untuk rincian sidangnya.</span>
           )}

@@ -697,7 +697,7 @@ export function ProsesMediasiRincian({
     const sisa = cadangan ?? [];
     if (sisa.length === 0) return null;
     return (
-      <Bagian judul="Proses mediasi" kunci="sidang-mediasi-1okt" keterangan={String(sisa.length)}>
+      <Bagian judul="Proses mediasi" kunci="sidang-mediasi-1okt" ciutBawaan versiBawaan="3nov" keterangan={String(sisa.length)}>
         <ul className="space-y-1 text-sm">
           {sisa.map((m, i) => (
             <li key={`${m.mulai}-${i}`} className="flex flex-wrap items-center gap-2">
@@ -717,6 +717,8 @@ export function ProsesMediasiRincian({
     <Bagian
       judul="Proses mediasi"
       kunci="sidang-mediasi-1okt"
+      ciutBawaan
+      versiBawaan="3nov"
       keterangan={ringkasMediasi(daftar[daftar.length - 1], hariIni)}
     >
       <div className="space-y-3 text-sm">

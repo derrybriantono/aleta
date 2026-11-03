@@ -11,6 +11,7 @@ import { bolehAksiLayar } from "@/lib/matriks-peran";
 import { alamatStatusPerkara } from "@/lib/rekap-petugas";
 import { tanggalDMY } from "@/lib/tanggal-indonesia";
 import { cn } from "@/lib/utils";
+import { PEMISAH_RINGKAS } from "@/lib/status-perkara-seamless";
 
 /**
  * ============================================================================
@@ -459,10 +460,10 @@ function DaftarPerkara({
                 </span>
               </div>
               <p className="text-xs">
-                {x.jenisPerkara || "jenis perkara tidak tercatat"} · {x.kedudukan || "kedudukan tidak tercatat"}
+                {x.jenisPerkara || "jenis perkara tidak tercatat"}{PEMISAH_RINGKAS}{x.kedudukan || "kedudukan tidak tercatat"}
               </p>
               <p className="text-xs text-muted-foreground">
-                didaftarkan {tanggalDMY(x.tanggalDaftar, "—")} · {x.keadaan}
+                didaftarkan {tanggalDMY(x.tanggalDaftar, "—")}{PEMISAH_RINGKAS}{x.keadaan}
                 {x.tanggalPutusan ? ` ${tanggalDMY(x.tanggalPutusan)}` : ""}
               </p>
               {x.aktaCerai ? (

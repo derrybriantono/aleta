@@ -1,0 +1,88 @@
+{
+  "keterangan": "Kasus uji tentukanBeracaraElektronik (manajemen_surat/src/lib/beracara-elektronik.ts). Dipakai uji portal dan dapat dipakai ekstensi: masukan -> jenis ('null' = tanpa lencana).",
+  "label": { "e-litigasi": "E-Litigasi", "hybrid": "Hybrid", "tergugat-tidak-hadir": "Tergugat tidak pernah hadir" },
+  "kasus": [
+    {
+      "nama": "bukan perkara e-Court: tanpa lencana",
+      "masukan": { "eCourt": false, "tergugat": [{ "nama": "A", "email": "a@x.id", "wa": "0812", "setujuElektronik": true }], "tergugatPernahHadir": true },
+      "jenis": null
+    },
+    {
+      "nama": "Tergugat tidak pernah hadir (verstek) walau kontak lengkap",
+      "masukan": { "eCourt": true, "tergugat": [{ "nama": "A", "email": "a@x.id", "wa": "0812", "setujuElektronik": true }], "tergugatPernahHadir": false },
+      "jenis": "tergugat-tidak-hadir"
+    },
+    {
+      "nama": "Tergugat tidak pernah hadir dan tanpa kontak",
+      "masukan": { "eCourt": true, "tergugat": [], "tergugatPernahHadir": false },
+      "jenis": "tergugat-tidak-hadir"
+    },
+    {
+      "nama": "email, WA, dan setuju lengkap: e-litigasi",
+      "masukan": { "eCourt": true, "tergugat": [{ "nama": "A", "email": "a@x.id", "wa": "0812", "setujuElektronik": true }], "tergugatPernahHadir": true },
+      "jenis": "e-litigasi"
+    },
+    {
+      "nama": "belum ada sidang tercatat, kontak lengkap: e-litigasi",
+      "masukan": { "eCourt": true, "tergugat": [{ "nama": "A", "email": "a@x.id", "wa": "0812", "setujuElektronik": true }], "tergugatPernahHadir": null },
+      "jenis": "e-litigasi"
+    },
+    {
+      "nama": "tanpa email: hybrid",
+      "masukan": { "eCourt": true, "tergugat": [{ "nama": "A", "email": "", "wa": "0812", "setujuElektronik": true }], "tergugatPernahHadir": true },
+      "jenis": "hybrid"
+    },
+    {
+      "nama": "tanpa WA: hybrid",
+      "masukan": { "eCourt": true, "tergugat": [{ "nama": "A", "email": "a@x.id", "wa": null, "setujuElektronik": true }], "tergugatPernahHadir": true },
+      "jenis": "hybrid"
+    },
+    {
+      "nama": "tidak setuju: hybrid",
+      "masukan": { "eCourt": true, "tergugat": [{ "nama": "A", "email": "a@x.id", "wa": "0812", "setujuElektronik": false }], "tergugatPernahHadir": true },
+      "jenis": "hybrid"
+    },
+    {
+      "nama": "belum menyetujui: hybrid",
+      "masukan": { "eCourt": true, "tergugat": [{ "nama": "A", "email": "a@x.id", "wa": "0812", "setujuElektronik": null }], "tergugatPernahHadir": true },
+      "jenis": "hybrid"
+    },
+    {
+      "nama": "dua Tergugat, keduanya lengkap: e-litigasi",
+      "masukan": {
+        "eCourt": true,
+        "tergugat": [
+          { "nama": "A", "email": "a@x.id", "wa": "0812", "setujuElektronik": true },
+          { "nama": "B", "email": "b@x.id", "wa": "0813", "setujuElektronik": true }
+        ],
+        "tergugatPernahHadir": true
+      },
+      "jenis": "e-litigasi"
+    },
+    {
+      "nama": "dua Tergugat, salah satu tanpa WA: hybrid (alasan per pihak)",
+      "masukan": {
+        "eCourt": true,
+        "tergugat": [
+          { "nama": "A", "email": "a@x.id", "wa": "0812", "setujuElektronik": true },
+          { "nama": "B", "email": "b@x.id", "wa": "", "setujuElektronik": true }
+        ],
+        "tergugatPernahHadir": true
+      },
+      "jenis": "hybrid",
+      "alasanMemuat": ["A: email ada, WA ada, setuju", "B: email ada, WA belum ada, setuju"]
+    },
+    {
+      "nama": "kontak Tergugat belum terbaca: tanpa lencana",
+      "masukan": { "eCourt": true, "tergugat": [], "tergugatPernahHadir": true },
+      "jenis": null
+    }
+  ],
+  "sandiKehadiran": [
+    { "nama": "verstek: tidak pernah hadir", "sandi": [4, 2], "verstek": true, "pernahHadir": false },
+    { "nama": "hanya Penggugat hadir (2) dua kali: tidak pernah hadir", "sandi": [2, 2], "verstek": false, "pernahHadir": false },
+    { "nama": "semua pihak hadir (1): pernah hadir", "sandi": [2, 1], "verstek": false, "pernahHadir": true },
+    { "nama": "Tergugat saja (3): pernah hadir", "sandi": [3], "verstek": false, "pernahHadir": true },
+    { "nama": "belum ada catatan: tidak diketahui", "sandi": [null, 0], "verstek": false, "pernahHadir": null }
+  ]
+}

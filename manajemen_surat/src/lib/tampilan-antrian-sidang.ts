@@ -412,15 +412,17 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
     kunci: "kesiapan-putusan",
     label: "Kesiapan draf putusan",
     keterangan:
-      "Lencana kemajuan draf putusan (dari daftar langkah penyusun draf) di samping penanda Hari Putusan. Ikut tidak tampil bila Hari Putusan dimatikan.",
+      "Lencana kemajuan draf putusan (dari daftar langkah penyusun draf) di samping penanda Hari Putusan. Ikut tidak tampil bila Hari Putusan dimatikan. Bawaannya MATI (3 Nov 2026) - nyalakan di sini bila dibutuhkan.",
     kelompok: "penanda",
+    bawaanMati: true,
   },
   {
     kunci: "draf-putusan-agen",
     label: "Draf putusan dari agen ALETA",
     keterangan:
-      "Lencana draf putusan yang disiapkan agen tujuh hari sebelum Hari Putusan (juga perkiraan putusan verstek) beserta rinciannya di kolom Putusan. Lencananya ikut tidak tampil bila Hari Putusan dimatikan; rinciannya hanya ada di mode Lengkap.",
+      "Lencana draf putusan yang disiapkan agen tujuh hari sebelum Hari Putusan (juga perkiraan putusan verstek) beserta rinciannya di kolom Putusan. Lencananya ikut tidak tampil bila Hari Putusan dimatikan; rinciannya hanya ada di mode Lengkap. Bawaannya MATI (3 Nov 2026) - nyalakan di sini bila dibutuhkan.",
     kelompok: "penanda",
+    bawaanMati: true,
   },
   {
     kunci: "sedang-berjalan",
@@ -516,7 +518,7 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
     kunci: "kehadiran-rinci",
     label: "Kehadiran rinci",
     keterangan:
-      "Satu baris di kolom Antrian: \"Penggugat hadir 08.47 · Tergugat belum · Saksi P 1/2\" - pihak sendiri atau kuasanya, turut tergugat/intervensi, saksi tiap pihak dibanding yang diajukan di SIPP, sedang disidang, pulang. Dicatat lewat tombol Antrian (atau mesin antrian) dan menjadi usulan \"Dihadiri oleh\" saat Tunda/Putus serta usulan kehadiran BAS.",
+      "Satu baris di kolom Antrian: \"P 08:47 · T belum · Saksi P 1/2\" (jam yang sudah tampil sebagai jam ambil antrian tidak diulang) - pihak sendiri atau kuasanya, turut tergugat/intervensi, saksi tiap pihak dibanding yang diajukan di SIPP, sedang disidang, pulang. Dicatat lewat tombol Antrian (atau mesin antrian) dan menjadi usulan \"Dihadiri oleh\" saat Tunda/Putus serta usulan kehadiran BAS.",
     kelompok: "keterangan",
   },
 
@@ -557,8 +559,9 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
     kunci: "checklist-konseptor",
     label: "Daftar langkah draf putusan",
     keterangan:
-      "Daftar centang langkah menyusun draf putusan di kolom Putusan, untuk perkara yang konseptornya sudah ditunjuk atau tercatat di SIPP. Centang yang sudah diberikan tetap tersimpan; yang dimatikan hanya tidak digambar. Hanya ada di mode Lengkap.",
+      "Daftar centang langkah menyusun draf putusan di kolom Putusan, untuk perkara yang konseptornya sudah ditunjuk atau tercatat di SIPP. Centang yang sudah diberikan tetap tersimpan; yang dimatikan hanya tidak digambar. Hanya ada di mode Lengkap. Bawaannya MATI (3 Nov 2026) - nyalakan di sini bila dibutuhkan.",
     kelompok: "keterangan",
+    bawaanMati: true,
   },
   {
     kunci: "kolom-siap",
@@ -894,8 +897,9 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
     kunci: "jam-dipanggil",
     label: "Jam dipanggil masuk",
     keterangan:
-      "Tulisan hijau kecil \"dipanggil hh:mm\" di kolom Antrian / Jam pada perkara yang sudah dipanggil masuk ruang sidang. Nomor antrian tetap tampil.",
+      "Tulisan hijau kecil \"dipanggil hh:mm\" di kolom Antrian / Jam pada perkara yang sudah dipanggil masuk ruang sidang. Nomor antrian tetap tampil. Bawaannya MATI (3 Nov 2026) - nyalakan di sini bila dibutuhkan.",
     kelompok: "keterangan",
+    bawaanMati: true,
   },
 ];
 
@@ -1003,3 +1007,20 @@ export function kelompokTampilan() {
 }
 
 export const KUNCI_SIMPANAN_TAMPILAN = "aleta.jadwal-sidang.tampilan";
+
+/**
+ * Keputusan Derry 3 Nov 2026 (butir 11): lencana/daftar draf putusan dan jam
+ * "dipanggil" tersembunyi BAWAAN - tetap dapat dinyalakan dari panel Tampilan.
+ * Simpanan peramban lama memuat SEMUA kunci (true), sehingga bawaan barunya
+ * tidak pernah berlaku bagi yang sudah pernah mengubah tampilan; keempatnya
+ * dimatikan SEKALI di peramban itu (penanda KUNCI_SIMPANAN_RINGKAS_3NOV),
+ * sesudah itu pilihan orangnya dihormati apa adanya.
+ */
+export const KUNCI_SIMPANAN_RINGKAS_3NOV = "aleta.jadwal-sidang.tampilan-ringkas-3nov";
+export const SAKLAR_RINGKAS_3NOV = ["kesiapan-putusan", "draf-putusan-agen", "checklist-konseptor", "jam-dipanggil"] as const;
+
+export function terapkanRingkas3Nov(pilihan: PilihanTampilan): PilihanTampilan {
+  const hasil = { ...pilihan };
+  for (const k of SAKLAR_RINGKAS_3NOV) hasil[k] = false;
+  return hasil;
+}

@@ -28,6 +28,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { tanggalDMY, tanggalHariPendek } from "@/lib/tanggal-indonesia";
 import { cn } from "@/lib/utils";
+import { PEMISAH_RINGKAS } from "@/lib/status-perkara-seamless";
 
 /**
  * Hasil pencarian Status Perkara - empat tampilan, satu urutan, satu cetak.
@@ -1347,19 +1348,19 @@ function BarisDaftar({ b, onBuka }: { b: BarisHasil; onBuka: (nomorPerkara: stri
           <span className="shrink-0 font-medium sm:w-56">{b.nomorPerkara}</span>
           <span className="min-w-0 flex-1 text-sm">
             <span className="text-muted-foreground">{b.jenisPerkara || "—"}</span>
-            {pihak ? <span> · {pihak}</span> : null}
-            {tahap ? <span className="text-muted-foreground"> · {tahap}</span> : null}
+            {pihak ? <span>{PEMISAH_RINGKAS}{pihak}</span> : null}
+            {tahap ? <span className="text-muted-foreground"> | {tahap}</span> : null}
           </span>
           <span className="shrink-0 text-xs text-muted-foreground sm:text-right">
             Daftar {tanggalHariPendek(b.tanggalDaftar, "—")}
-            {b.sudahPutus ? ` · putus ${tanggalHariPendek(b.tanggalPutusan, "—")}` : " · belum putus"}
+            {b.sudahPutus ? `${PEMISAH_RINGKAS}putus ${tanggalHariPendek(b.tanggalPutusan, "—")}` : "${PEMISAH_RINGKAS}belum putus"}
           </span>
         </span>
         {b.cocok && b.cocok.length > 0 ? (
           <span className="mt-0.5 block text-xs leading-snug">
             {b.cocok.map((satu, i) => (
               <span key={satu.medan}>
-                {i > 0 ? " · " : ""}
+                {i > 0 ? " | " : ""}
                 <span className="font-medium text-muted-foreground">{satu.medan}: </span>
                 {satu.nilai}
               </span>
@@ -1405,7 +1406,7 @@ function KisiKotak({ baris, onBuka }: { baris: BarisHasil[]; onBuka: (nomorPerka
           <p className="text-sm text-muted-foreground">{item.jenisPerkara}</p>
           <p className="mt-1 text-sm text-muted-foreground">
             Daftar {tanggalHariPendek(item.tanggalDaftar, "—")}
-            {item.sudahPutus ? ` · putus ${tanggalHariPendek(item.tanggalPutusan, "—")}` : " · belum putus"}
+            {item.sudahPutus ? `${PEMISAH_RINGKAS}putus ${tanggalHariPendek(item.tanggalPutusan, "—")}` : "${PEMISAH_RINGKAS}belum putus"}
           </p>
 
           {/* APA yang cocok, bukan sekadar bahwa ia cocok.

@@ -525,7 +525,8 @@ describe("kalender perkara digambar", () => {
     const tanpa = status({ courtCalendar: { terbaca: true, alasan: "", baris: [] } });
     render(<KalenderPerkara status={tanpa} />);
     expect(screen.getByText(/belum diisi di SIPP/)).toBeTruthy();
-    expect(screen.getByText(/bukan tanda ada yang keliru/)).toBeTruthy();
+    // 3 Nov 2026: penjelasan "lazim" tidak lagi ditampilkan.
+    expect(screen.queryByText(/bukan tanda ada yang keliru/)).toBeNull();
   });
 
   it("bot lama yang tidak mengirim Court Calendar tidak menuliskan apa pun tentangnya", () => {
@@ -551,7 +552,7 @@ describe("kalender perkara digambar", () => {
 describe("relaas panggilan digambar runut per sidang", () => {
   it("tiap sidang menjadi satu kelompok, bernomor urut menaik", () => {
     render(<RelaasPanggilan status={status()} />);
-    const kepala = screen.getAllByText(/^Sidang ke-\d+ ·/).map((x) => x.textContent ?? "");
+    const kepala = screen.getAllByText(/^Sidang ke-\d+\s*\|/).map((x) => x.textContent ?? "");
     expect(kepala).toHaveLength(2);
     expect(kepala[0]).toContain("Sidang ke-1");
     expect(kepala[0]).toContain("Rabu, 05-08-2026");
@@ -578,13 +579,22 @@ describe("relaas panggilan digambar runut per sidang", () => {
 
   it("jejak pos, retur, dan hasil relaas ikut tergambar", () => {
     render(<RelaasPanggilan status={status()} />);
-    expect(screen.getByText(/dikirim pos Sab, 25-07-2026 · resi RESI-77/)).toBeTruthy();
+    expect(screen.getByText(/dikirim pos Sab, 25-07-2026\s*\|\s*resi RESI-77/)).toBeTruthy();
     // 22 Okt 2026: lencana retur menyebut sebabnya; status_pos 2 tanpa sebab tertulis = "Retur pos".
     expect(screen.getByText("Retur pos")).toBeTruthy();
     expect(screen.getByText("Disampaikan lewat Kepala Desa")).toBeTruthy();
     expect(screen.getByText("Bertemu orangnya")).toBeTruthy();
     // Dua relaas dilaksanakan jurusita yang sama - keduanya harus menyebutnya.
     expect(screen.getAllByText(/oleh Munir, S.H./)).toHaveLength(2);
+  });
+
+  it("tombol unduh Relaas dan Resi bernama seperti di Jadwal Sidang, hanya bila berkasnya ada", () => {
+    render(<RelaasPanggilan status={status()} />);
+    // r1: relaas ada, resi tidak; r2: resi ada, relaas tidak.
+    expect(screen.getAllByRole("button", { name: /^Relaas Panggilan Sidang ke-1 - Penggugat\/Pemohon$/ })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: /^Resi Pos Relaas Sidang ke-1 - Tergugat\/Termohon$/ })).toHaveLength(1);
+    expect(screen.queryByRole("button", { name: /^Relaas Panggilan Sidang ke-1 - Tergugat/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Resi Pos Relaas Sidang ke-1 - Penggugat/ })).toBeNull();
   });
 
   it("relaas tanpa tautan sidang tetap tampil, di kelompoknya sendiri", () => {
@@ -598,7 +608,9 @@ describe("relaas panggilan digambar runut per sidang", () => {
     expect(screen.getByText("1 tidak patut")).toBeTruthy();
     expect(screen.getByText("1 salah saluran")).toBeTruthy();
     expect(screen.getByText("1 patut")).toBeTruthy();
-    expect(screen.getByText(/bukan penetapan sah tidaknya panggilan/)).toBeTruthy();
+    // 3 Nov 2026: kalimat teknis "alat bantu" dihapus; sidang acuannya tetap disebut.
+    expect(screen.queryByText(/bukan penetapan sah tidaknya panggilan/)).toBeNull();
+    expect(screen.getByText(/Dinilai untuk sidang terakhir/)).toBeTruthy();
   });
 
   it("alasan kepatutan berbunyi kalimat, bukan kode", () => {
@@ -610,7 +622,7 @@ describe("relaas panggilan digambar runut per sidang", () => {
   it("bot versi lama yang belum mengirim panggilan tidak menjatuhkan layarnya", () => {
     const tanpaPanggilan = status({ panggilan: undefined });
     expect(() => render(<RelaasPanggilan status={tanpaPanggilan} />)).not.toThrow();
-    expect(screen.getAllByText(/^Sidang ke-\d+ ·/)).toHaveLength(2);
+    expect(screen.getAllByText(/^Sidang ke-\d+\s*\|/)).toHaveLength(2);
   });
 
   it("perkara tanpa relaas sama sekali mengatakannya", () => {
@@ -653,7 +665,7 @@ describe("relaas panggilan digambar runut per sidang", () => {
     expect(screen.queryByText(/^dipakai /)).toBeNull();
     expect(screen.getByText("1 saluran belum pasti")).toBeTruthy();
     // Sidang yang dinilai disebut tanggalnya.
-    expect(screen.getByText(/\(Rabu, 09-09-2026\), menurut/)).toBeTruthy();
+    expect(screen.getByText(/Dinilai untuk sidang terakhir.*\(Rabu, 09-09-2026\)/)).toBeTruthy();
   });
 
   it("bot lama tanpa ruas saluran: tidak ada lencana atau catatan tambahan", () => {
@@ -686,12 +698,12 @@ describe("nomor sidang diambil dari SIPP, bukan dari urutan baris", () => {
 
   it("nomor relaas diambil dari jadwal, bukan dari urutan kelompok", () => {
     render(<RelaasPanggilan status={tigaSidang()} />);
-    const kepala = screen.getAllByText(/^Sidang ke-\d+ ·/).map((x) => x.textContent ?? "");
+    const kepala = screen.getAllByText(/^Sidang ke-\d+\s*\|/).map((x) => x.textContent ?? "");
     expect(kepala).toHaveLength(2);
-    expect(kepala[0]).toContain("Sidang ke-1 ·");
+    expect(kepala[0]).toContain("Sidang ke-1 |");
     // Dulu tertulis "Sidang ke-2" - posisi kelompoknya, bukan sidangnya.
-    expect(kepala[1]).toContain("Sidang ke-3 ·");
-    expect(screen.queryByText(/^Sidang ke-2 ·/)).toBeNull();
+    expect(kepala[1]).toContain("Sidang ke-3 |");
+    expect(screen.queryByText(/^Sidang ke-2\s*\|/)).toBeNull();
   });
 
   it("relaas yang sidangId-nya tidak ada di jadwal tidak diberi nomor karangan", () => {
@@ -705,7 +717,7 @@ describe("nomor sidang diambil dari SIPP, bukan dari urutan baris", () => {
         }}
       />
     );
-    expect(screen.getByText(/^Sidang · .*Kamis, 01-10-2026/)).toBeTruthy();
+    expect(screen.getByText(/^Sidang\s*\|.*Kamis, 01-10-2026/)).toBeTruthy();
     expect(screen.queryByText(/^Sidang ke-\d+ · .*Kamis, 01-10-2026/)).toBeNull();
   });
 
@@ -721,7 +733,7 @@ describe("nomor sidang diambil dari SIPP, bukan dari urutan baris", () => {
         }}
       />
     );
-    expect(screen.getByText(/^Sidang ke-1 & ke-4 ·/)).toBeTruthy();
+    expect(screen.getByText(/^Sidang ke-1 & ke-4\s*\|/)).toBeTruthy();
   });
 
   it("Court Calendar bernomor 1..N menurut tanggal, apa pun urutan kirimnya", () => {

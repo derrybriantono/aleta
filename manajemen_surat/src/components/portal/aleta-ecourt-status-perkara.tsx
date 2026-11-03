@@ -3,7 +3,7 @@
 import { labelTidakPatut } from "@/lib/label-kepatutan";
 import type { CaraRelaas } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ChevronDown, X } from "lucide-react";
 
@@ -32,13 +32,16 @@ import {
   DiagramBatang,
   DiagramPai,
   DiagramPerjalananSidang,
+  ringkasUmurTerhadapBatas,
+  type PitaUmur,
   type TitikData,
 } from "@/components/portal/bentuk-sajian";
 import { AletaPromptPutusan } from "@/components/portal/aleta-prompt-putusan";
 import { NomorSidang, TombolUnduh } from "@/components/portal/aleta-ecourt-sidang";
 import { TombolUnduhZip } from "@/components/portal/tombol-unduh-zip";
 /* === STATUS-ZIP 12 Okt === */
-import { KontakPihak } from "@/components/portal/kontak-para-pihak";
+import { KontakPihak, LencanaBeracaraPerkara } from "@/components/portal/kontak-para-pihak";
+import { tergugatPernahHadirDariSandi } from "@/lib/beracara-elektronik";
 /* === AKHIR STATUS-ZIP === */
 /* === 12OKT-E: tanggal KTP pihak === */
 import { TanggalKtpPihak } from "@/components/portal/status-perkara-ktp-pihak";
@@ -81,11 +84,12 @@ import {
 } from "@/lib/tag-perkara";
 import { susunPerjalananSidang } from "@/lib/perjalanan-sidang";
 /* === 12OKT-A: kumulasi perkara === */
-import { JenisDenganKumulasi, RincianKumulasi, useSaklarKumulasi } from "@/components/portal/kumulasi-perkara";
+import { BarisKumulasi, JenisDenganKumulasi, useSaklarKumulasi } from "@/components/portal/kumulasi-perkara";
+import { adaDariPetitum, butirKumulasi } from "@/lib/kumulasi-perkara";
 import type { KumulasiPerkara } from "@/lib/kumulasi-perkara";
 /* === AKHIR 12OKT-A === */
 /* === 12OKT-K: eksepsi/rekonvensi, sita, eksekusi === */
-import { RincianJawabanSitaEksekusi, useSaklarTampilanAntrian } from "@/components/portal/penanda-sita-agenda";
+import { RincianJawabanSitaEksekusi, isiJawabanSitaEksekusi, useSaklarTampilanAntrian } from "@/components/portal/penanda-sita-agenda";
 import type { PenandaJawabanPerkara } from "@/lib/penanda-jawaban";
 import { KUNCI_SAKLAR_EKSEKUSI, KUNCI_SAKLAR_JAWABAN, KUNCI_SAKLAR_SITA, type EksekusiPerkara, type SitaPerkara } from "@/lib/penanda-sita";
 /* === AKHIR 12OKT-K === */
@@ -95,14 +99,23 @@ import { DaftarMajelisPetugas, NamaMediatorTertaut, type MajelisIkrar } from "@/
 import { daftarkanBagian, kunciCiut, langgananAba } from "@/lib/alat-bagian";
 import { Bagian } from "@/components/portal/bagian-ciut";
 import {
+  BarisFakta,
+  BilahLekat,
+  DaftarKelompok,
+  IndeksKompleks,
   KelompokKartu,
+  KotakBerikutnya,
+  KotakKerja,
   LinimasaPerkara,
   NavKelompok,
   SakelarTampilanStatus,
-  TataLetakSeamless,
+  SorotanPerkara,
+  loncatKeBagian,
   useTampilanStatus,
+  type ButirKerja,
 } from "@/components/portal/status-perkara-seamless";
-import { susunLinimasa } from "@/lib/status-perkara-seamless";
+import { PEMISAH_RINGKAS, bukaMenurutTahap, gabungRingkas, namaMajelisSingkat, namaTanpaGelar, susunLinimasa } from "@/lib/status-perkara-seamless";
+import { BawaanBagianKonteks, IngatanBagianKonteks } from "@/components/portal/bagian-ciut";
 import { TautanBlangkoDerry } from "@/components/portal/tombol-blangko-derry";
 import { SEBUTAN_BLANGKO, jenisBlangkoBoleh, tautanBlangkoStatusPerkara } from "@/lib/tautan-blangko-derry";
 import { apiPath, withBasePath } from "@/lib/base-path";
@@ -115,6 +128,7 @@ import { TombolTutupPesan } from "@/components/portal/tombol-tutup-pesan";
 import { cn } from "@/lib/utils";
 import { kelasTulisanPutusan, warnaStatusPutusan } from "@/lib/warna-putusan";
 import { relaasElektronik } from "@/lib/hasil-relaas";
+import { namaBerkasRelaas, namaDokumenRelaas } from "@/lib/jadwal-sidang-1okt";
 import { LencanaKepatutanRelaas, LencanaRetur, kepatutanBarisRelaas } from "@/components/portal/lencana-kepatutan-relaas";
 import { KETERANGAN_CERMIN, teksCermin } from "@/lib/cermin-tampil";
 
@@ -1266,6 +1280,7 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
   const panelTag = useRef<HTMLDivElement>(null);
   const panelSaringan = useRef<HTMLDivElement>(null);
   const [fokusRingkas, setFokusRingkas] = useState<"tag" | "saringan" | null>(null);
+  const [bantuanBuka, setBantuanBuka] = useState(false);
   // ======================================================================
   // PANEL TIDAK MENGECIL DI BAWAH PENUNJUK
   // ======================================================================
@@ -1965,38 +1980,28 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
           Keterangannya TIDAK dipotong, hanya dikecilkan: yang baru pertama
           membuka layar ini tetap perlu tahu bahwa nomornya boleh diketik
           angkanya saja, dan sejauh mana isinya. */}
-      <CardHeader className="gap-1 p-4 pb-2 sm:p-5 sm:pb-2">
-        <div className="flex items-center justify-between gap-3">
-          <CardTitle className="text-base sm:text-lg">Status Perkara</CardTitle>
-          <SakelarTampilanStatus nilai={tampilanStatus} onPilih={pilihTampilanStatus} />
-        </div>
-        <CardDescription className="text-sm">
-          Masukkan nomor perkara — cukup angkanya saja, atau cari dengan nama pihak dan jenis
-          perkara lewat Saringan lain. Seluruh keadaan perkara ditampilkan: sejak didaftarkan,
-          siapa yang menanganinya, sudah sampai mana, sampai produk pengadilannya.
-        </CardDescription>
-      </CardHeader>
+      {/* ==================================================================
+          BILAH CARI SATU BARIS (rancangan 3 Nov 2026, keputusan 142)
+          ==================================================================
 
-      <CardContent className="space-y-3 p-4 pt-0 sm:p-5 sm:pt-0">
-        <div className="flex flex-wrap items-end gap-2">
-          {/* Selebar baris di ponsel, 18rem mulai sm. "w-72 max-w-full" saja
-              TIDAK cukup: lebar tetap 288 px ikut dihitung sebagai lebar
-              minimum kartu, dan pada 320 px halaman bergulir mendatar 8 px
-              (terukur pada replika). Lebar persen pada kotak isian tidak
-              dihitung ke lebar minimum itu. */}
-          <label className="flex w-full min-w-0 flex-col gap-0.5 text-[11px] font-medium sm:w-auto">
-            Nomor perkara
-            <Input
-              placeholder="419, nama pihak, kuasa, NIK, akta cerai…"
-              aria-describedby="keterangan-cari-status-perkara"
-              value={cari}
-              onChange={(peristiwa) => setCari(peristiwa.target.value)}
-              onKeyDown={(peristiwa) => {
-                if (peristiwa.key === "Enter") void jalankanCari();
-              }}
-              className="w-full max-w-full sm:w-72"
-            />
-          </label>
+          Judul, kotak nomor, Cari, Saringan lain, Tag & rentang waktu, tombol
+          Bantuan (?), dan sakelar mode dalam SATU baris. Paragraf penjelasan dan
+          cara kata bebas dibaca pindah ke tombol ?. Panel saringan dan tag
+          tidak berubah - tetap terbuka di bawah baris ini. */}
+      <CardContent className="space-y-3 p-4 sm:p-5">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="mr-1 text-base font-bold sm:text-lg">Status Perkara</h2>
+          <Input
+            aria-label="Nomor perkara"
+            placeholder="Nomor, nama pihak, atau kata bebas"
+            aria-describedby="keterangan-cari-status-perkara"
+            value={cari}
+            onChange={(peristiwa) => setCari(peristiwa.target.value)}
+            onKeyDown={(peristiwa) => {
+              if (peristiwa.key === "Enter") void jalankanCari();
+            }}
+            className="h-9 min-w-0 flex-1 basis-60"
+          />
           <Button size="sm" disabled={memuat} onClick={() => void jalankanCari()}>
             {memuat ? "Mencari…" : "Cari"}
           </Button>
@@ -2032,31 +2037,46 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
               Kosongkan
             </Button>
           ) : null}
-        </div>
-
-        {/* Butir 8: APA SAJA yang dijangkau kata bebas, dikatakan di tempat
-            orang mengetik. Tanpa kalimat ini tidak ada yang akan mencoba
-            mengetik nomor akta cerai atau nama kuasa ke kotak "Nomor perkara". */}
-        {/* Daftarnya mengikuti cabang kata bebas di bot (cariPerkaraHalaman di
-            sippStatusPerkaraService.js: nomor urut tepat, angka panjang,
-            bergaris miring, KOSAKATA_CARI/KOSAKATA_PINJAM, lalu SYARAT_CEPAT
-            dan SYARAT_DALAM), bukan keinginan layar: yang disebut di sini dan
-            tidak dicari bot adalah janji palsu.
-
-            Lapis dalam HANYA berjalan bila lapis cepat tidak menemukan apa
-            pun - itu dikatakan, sebab nama hakim yang kebetulan juga nama
-            pihak akan menjawab dengan perkara pihaknya. */}
-        <div className="space-y-0.5 text-[11px] leading-snug text-muted-foreground">
-          {/* Ringkas: kalimat ini SELALU tampak, juga di ponsel di atas hasil.
-              Rinciannya di bawah, dapat dibuka. */}
-          <p id="keterangan-cari-status-perkara">
-            Kata bebas mencari nomor perkara, nama pihak, kuasa hukum, NIK/telepon, nomor akta cerai/akta nikah,
-            nomor banding/kasasi/PK, dan kata keadaan (verstek, ghaib, retur, e-court) — bila tidak ada yang cocok,
-            diperdalam ke alamat, KUA, petugas, agenda sidang, pertimbangan, dan amar.
-          </p>
-          <details>
+          <div className="relative">
+            <Button
+              size="sm"
+              variant="outline"
+              aria-label="Bantuan pencarian"
+              aria-expanded={bantuanBuka}
+              aria-haspopup="dialog"
+              className="w-9 px-0"
+              onClick={() => setBantuanBuka((x) => !x)}
+            >
+              ?
+            </Button>
+            {bantuanBuka ? (
+              <div
+                role="dialog"
+                aria-label="Cara mencari"
+                className="absolute right-0 top-full z-30 mt-1.5 w-[min(24rem,86vw)] space-y-1.5 rounded-lg border border-border bg-card p-3 text-xs shadow-xl max-sm:fixed max-sm:inset-x-3 max-sm:top-auto max-sm:w-auto"
+              >
+                <p className="text-sm">
+                  Masukkan nomor perkara — cukup angkanya saja, atau cari dengan nama pihak dan jenis perkara lewat
+                  Saringan lain. Seluruh keadaan perkara ditampilkan: sejak didaftarkan, siapa yang menanganinya, sudah
+                  sampai mana, sampai produk pengadilannya.
+                </p>
+                <p className="text-muted-foreground">
+                  Kata bebas mencari nomor perkara, nama pihak, kuasa hukum, NIK/telepon, nomor akta cerai/akta nikah,
+                  nomor banding/kasasi/PK, dan kata keadaan (verstek, ghaib, retur, e-court) — bila tidak ada yang
+                  cocok, diperdalam ke alamat, KUA, petugas, agenda sidang, pertimbangan, dan amar.
+                </p>
+                <div className="space-y-0.5 leading-snug text-muted-foreground">
+                  <details>
             <summary className="w-fit cursor-pointer select-none font-medium text-foreground/80 hover:text-foreground">
               Cara kata bebas dibaca
+              <span
+                role="img"
+                aria-label="Yang dicari kata bebas"
+                title="Kata bebas mencari nomor perkara, nama pihak, kuasa hukum, NIK/telepon, nomor akta cerai/akta nikah, nomor banding/kasasi/PK, dan kata keadaan (verstek, ghaib, retur, e-court) — bila tidak ada yang cocok, diperdalam ke alamat, KUA, petugas, agenda sidang, pertimbangan, dan amar."
+                className="ml-1.5 inline-flex h-4 w-4 cursor-help items-center justify-center rounded-full border border-border align-middle text-[10px] font-semibold"
+              >
+                i
+              </span>
             </summary>
             <ul className="mt-1 list-disc space-y-0.5 pl-4">
               <li>Angka 1–5 digit dicari sebagai nomor urut perkara, persis: “41” tidak memunculkan 410 sampai 419.</li>
@@ -2084,7 +2104,19 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
               <li>Tiap hasil menyebut di mana katanya ditemukan (“cocok karena”).</li>
             </ul>
           </details>
+                </div>
+              </div>
+            ) : null}
+          </div>
+          <div className="ml-auto">
+            <SakelarTampilanStatus nilai={tampilanStatus} onPilih={pilihTampilanStatus} />
+          </div>
         </div>
+        <p id="keterangan-cari-status-perkara" className="sr-only">
+            Kata bebas mencari nomor perkara, nama pihak, kuasa hukum, NIK/telepon, nomor akta cerai/akta nikah,
+            nomor banding/kasasi/PK, dan kata keadaan (verstek, ghaib, retur, e-court) — bila tidak ada yang cocok,
+            diperdalam ke alamat, KUA, petugas, agenda sidang, pertimbangan, dan amar.
+          </p>
 
         {keadaanTag === "terbuka" ? (
           <div
@@ -2163,7 +2195,7 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
             )}
             {tagBilah.tag.length > 1 ? <span className="text-xs text-muted-foreground">digabung DAN</span> : null}
             <span className="text-xs text-muted-foreground">
-              ·{" "}
+              {PEMISAH_RINGKAS.trim()}{" "}
               {kalimatRentang(
                 katalogTag,
                 tagBilah.dasar,
@@ -2866,7 +2898,7 @@ export function PanelTagPerkara({
             {dipilih.length > 1 ? " Beberapa tag digabung dengan DAN." : ""}
             {katalog?.cermin ? (
               <span data-testid="tanda-cermin-tag" title={KETERANGAN_CERMIN}>
-                {" · "}
+                {PEMISAH_RINGKAS}
                 {teksCermin(katalog.cermin)}
               </span>
             ) : null}
@@ -3038,11 +3070,11 @@ function IsiStatus({
       .join(", "),
     C: status.putusan?.sudahPutus
       ? `Putus ${tanggalHariPendek(status.putusan.tanggalPutusan, status.putusan.tanggalPutusan)}${
-          status.putusan.statusPutusan ? ` · ${status.putusan.statusPutusan}` : ""
+          status.putusan.statusPutusan ? `${PEMISAH_RINGKAS}${status.putusan.statusPutusan}` : ""
         }`
       : "Belum putus",
     D: `Sisa panjar ${rupiah(status.biaya.sisa)}`,
-    E: `Nilai kelengkapan ${status.penilaian.skor} dari 100 · ${status.penilaian.keadaan}`,
+    E: `Nilai kelengkapan ${status.penilaian.skor} dari 100${PEMISAH_RINGKAS}${status.penilaian.keadaan}`,
   };
 
   const [pihakDibuka, setPihakDibuka] = useState("");
@@ -3053,6 +3085,10 @@ function IsiStatus({
   // keduanya. sidangBerikut/sidangTerakhir di bawah sengaja tetap membaca
   // status.jadwal: "berikut" adalah pertanyaan tanggal, bukan nomor.
   const jadwalUrut = useMemo(() => urutkanMenurutNomorSidang(status.jadwal), [status.jadwal]);
+  const berurutan = useMemo(
+    () => new Map((status.jadwal ?? []).map((x) => [String(x.sidangId), Number(x.urutanSidang) || undefined] as const)),
+    [status.jadwal]
+  );
   const blangkoDerry = useMemo(
     () =>
       tautanBlangkoStatusPerkara({
@@ -3087,9 +3123,67 @@ function IsiStatus({
   const namaSaksiPandu = (sisi: RegExp) =>
     status.saksiRinci.baris.filter((x) => sisi.test(x.diajukanOleh || "")).map((x) => x.nama);
 
+  const hariIni = hariIniIso();
+  const [kumulasiTerbuka, setKumulasiTerbuka] = useState(false);
+  const tahapBuka = useMemo(
+    () =>
+      bukaMenurutTahap({
+        sudahPutus: Boolean(status.putusan?.sudahPutus),
+        sudahDiarsipkan: Boolean(status.arsipKeterangan.sudahDiarsipkan),
+        adaSidang: status.jadwal.length > 0,
+        mediasiBerjalan:
+          status.mediasi.terbaca && status.mediasi.baris.some((m) => !m.tanggalLaporan && !m.tanggalKeputusan && !m.hasil),
+        agendaBerikutPembuktian: Boolean(sidangBerikut && agendaPembuktianSaksi(sidangBerikut.agenda)),
+      }),
+    [status, sidangBerikut]
+  );
+  // Seamless: hanya bagian tahap ini yang terbuka bawaan; Kompleks memakai bawaan tiap bagian.
+  const bawaanBagian = useMemo(
+    () =>
+      seamless
+        ? (kunci: string) => !(tahapBuka.bagian.has(kunci) || kunci === "jawaban" || kunci === "eksekusi")
+        : null,
+    [seamless, tahapBuka]
+  );
+
+  const pernahHadirTergugat = tergugatPernahHadirDariSandi(
+    status.jadwal.filter((x) => x.tanggalSidang < hariIni).map((x) => x.dihadiriOleh),
+    status.putusan?.verstek === true
+  );
+
+  // Jawaban dan sita (Jalannya perkara) serta Eksekusi (Putusan dan tindak lanjut):
+  // SATU penentu "ada isi"; yang tidak terdeteksi tidak tampil sama sekali.
+  const isiJawabanSita = isiJawabanSitaEksekusi(status, { tampilJawaban: saklarJawaban, tampilSita: saklarSita });
+  const adaJawabanSita = isiJawabanSita.tampil;
+  const ringkasJawabanSita = [
+    ...isiJawabanSita.jawaban.map((k) => (k.judul === "Eksepsi" ? "Eksepsi" : "rekonvensi")),
+    isiJawabanSita.sita.length > 0 ? "sita" : "",
+    isiJawabanSita.jawabanTakTerbaca || isiJawabanSita.sitaTakTerbaca ? "sebagian tidak terbaca" : "",
+  ]
+    .filter(Boolean)
+    .join(", ");
+  const isiEksekusi = isiJawabanSitaEksekusi(status, { tampilJawaban: false, tampilSita: false, tampilEksekusi: saklarEksekusi });
+  const adaEksekusiPerkara = isiEksekusi.tampil;
+  const ringkasEksekusiPerkara = isiEksekusi.sitaTakTerbaca ? "tidak terbaca" : `${isiEksekusi.eksekusi.length} permohonan`;
+
+  // Ringkasan satu baris di kepala bagian yang terlipat bawaan (3 Nov 2026):
+  // yang dilipat tidak boleh membuat informasinya hilang dari pandangan.
+  const ringkasMajelisBagian = [
+    status.majelis.length > 0 ? `${status.majelis.length} hakim` : "majelis belum ditetapkan",
+    status.panitera.length > 0 ? `PP ${status.panitera.map((x) => x.nama).join(", ")}` : "",
+    status.jurusita.length > 0 ? `JS ${status.jurusita.map((x) => x.nama).join(", ")}` : "",
+  ]
+    .filter(Boolean)
+    .join(PEMISAH_RINGKAS);
+  const tahapTerisi = status.tahapan.terbaca ? status.tahapan.tahap.filter((x) => x.tanggal) : [];
+  const tahapAkhir = tahapTerisi.length > 0 ? tahapTerisi[tahapTerisi.length - 1] : null;
+  const ringkasTahapanBagian = tahapAkhir
+    ? `${tahapTerisi.length} tahap${PEMISAH_RINGKAS}terakhir ${tahapAkhir.label} ${tahapAkhir.tanggal}`
+    : "";
+
   const blokNomor = (
-        <div>
-          <h3 className="text-lg font-semibold">{status.identitas.nomorPerkara}</h3>
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+          <h3 className="font-mono text-[19px] font-semibold tracking-tight">{status.identitas.nomorPerkara}</h3>
           <p className="text-sm text-muted-foreground">
             {/* === 12OKT-A: kumulasi perkara === */}
             {kumulasiBaru ? (
@@ -3105,7 +3199,7 @@ function IsiStatus({
         </div>
   );
 
-  const blokUnduh = <TombolUnduhZip nomorPerkara={status.identitas.nomorPerkara} isi="lengkap" />;
+  const blokUnduh = <TombolUnduhZip nomorPerkara={status.identitas.nomorPerkara} isi="lengkap" menu />;
 
   const blokLencana = (
     <>
@@ -3121,6 +3215,10 @@ function IsiStatus({
         <Badge variant={status.lewatEcourt ? "default" : "muted"}>
           {status.lewatEcourt ? "e-Court" : "perkara biasa"}
         </Badge>
+        {/* Beracara: E-Litigasi / Hybrid / Tergugat tidak pernah hadir (aturan tunggal di lib/beracara-elektronik.ts). */}
+        {status.lewatEcourt ? (
+          <LencanaBeracaraPerkara nomorPerkara={status.identitas.nomorPerkara} pernahHadirTergugat={pernahHadirTergugat} />
+        ) : null}
 
         {/* ==================================================================
             TANGGAL DAN STATUS DIPISAH JADI DUA PENANDA
@@ -3147,7 +3245,7 @@ function IsiStatus({
             ) : null}
           </>
         ) : (
-          <Badge variant="warning">Masih berjalan</Badge>
+          <Badge variant={ringkas.keadaanBerat ? "danger" : "warning"}>{ringkas.keadaan}</Badge>
         )}
 
         {status.putusan?.verstek ? <Badge variant="muted">verstek</Badge> : null}
@@ -3207,186 +3305,11 @@ function IsiStatus({
     </>
   );
 
-  const blokKumulasi = (
-    <>
-      {/* === 12OKT-A: kumulasi perkara === */}
-      {kumulasiBaru ? <RincianKumulasi kumulasi={status.kumulasi} /> : null}
-      {/* === AKHIR 12OKT-A === */}
-
-      {/* === 12OKT-K: eksepsi/rekonvensi, sita, eksekusi === */}
-      <RincianJawabanSitaEksekusi bahan={status} tampilJawaban={saklarJawaban} tampilSita={saklarSita} tampilEksekusi={saklarEksekusi} />
-      {/* === AKHIR 12OKT-K === */}
-    </>
-  );
-
-  const blokAngka = (
-    <>
-      {/* --- Jajaran angka --- */}
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-        {/* ==================================================================
-            LAMA PERKARA: YANG DINILAI DI ATAS, YANG MENTAH DI BAWAH
-            ==================================================================
-
-            Yang menentukan nilai adalah lama BERSIH - hari pendaftaran ikut
-            dihitung, lalu lama mediasi dipotong. Itulah yang ditampilkan
-            besar.
-
-            Selisih mentah dari pendaftaran ke putusan tetap disebutkan dalam
-            kurung: itu yang dapat dicocokkan langsung dengan tanggal pada
-            berkas, dan tanpa itu angka besarnya tampak tidak berdasar. */}
-        <Angka
-          label="Lama perkara"
-          nilai={
-            status.umur.hariBersih === null
-              ? "—"
-              : `${status.umur.hariBersih} hari`
-          }
-          keterangan={
-            status.umur.hariBerjalan === null
-              ? "Tanggal pendaftaran belum tercatat."
-              : `(${status.umur.hariBerjalan} hari daftar sampai ${
-                  status.umur.sudahPutus ? status.umur.sebabSelesai || "putus" : "hari ini"
-                }${status.umur.hariMediasi > 0 ? `, mediasi ${status.umur.hariMediasi} hari` : ""})`
-          }
-          nada={
-            status.umur.hariBersih === null
-              ? undefined
-              : status.umur.hariBersih <= 90
-                ? "baik"
-                : status.umur.hariBersih <= 150
-                  ? "perhatian"
-                  : "kurang"
-          }
-        />
-        <Angka
-          label="Nilai kelengkapan"
-          nilai={`${status.penilaian.skor}`}
-          keterangan={`dari 100 · ${status.penilaian.keadaan}`}
-          nada={status.penilaian.keadaan === "baik" ? "baik" : status.penilaian.keadaan === "perhatian" ? "perhatian" : "kurang"}
-        />
-        <Angka
-          label="Sidang"
-          nilai={`${status.jadwal.length}`}
-          keterangan={
-            status.penundaan.length > 0 ? `${status.penundaan.length} kali ditunda` : "tanpa penundaan"
-          }
-        />
-        <Angka
-          label="Sisa panjar"
-          nilai={rupiah(status.biaya.sisa)}
-          keterangan={`panjar ${rupiah(status.biaya.panjar)}`}
-          nada={status.biaya.sisa < 0 ? "kurang" : undefined}
-        />
-      </div>
-    </>
-  );
-
-  const blokAlat = (
-    <>
-      {/* Bilah alat - sepuluh pekerjaan kecil yang selama ini dikerjakan
-          tangan. Riwayat dan sematan tidak pernah meninggalkan peramban; yang
-          ditanyakan ke peladen hanya alamat halaman perkara di SIPP. Muatan
-          status diteruskan utuh sebagai bahan ringkasan yang disalin. */}
-      <AlatStatusPerkara
-        nomorPerkara={status.identitas.nomorPerkara}
-        jenisPerkara={status.identitas.jenisPerkara}
-        perkaraId={status.identitas.perkaraId}
-        bahan={status}
-        ringkas={ringkas}
-        onBuka={onBuka}
-      />
-    </>
-  );
-
-  const blokKartu = (
-    <>
-      {/* ==================================================================
-          KARTU RINGKAS - TIGA PERTANYAAN PEMBUKA
-          ==================================================================
-
-          Dua puluh enam bagian di bawah, dan yang membuka layar ini hampir
-          selalu datang dengan tiga pertanyaan yang sama: perkara ini sekarang
-          DI MANA, apa yang TERLAMBAT, apa BERIKUTNYA. Ketiganya sebelumnya
-          menuntut menggulung melewati bagian yang terciut.
-
-          Tidak ada pembacaan tambahan ke SIPP - seluruhnya dari muatan yang
-          sudah ada di layar ini. */}
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div className="rounded-lg border border-border bg-card px-3 py-2">
-          <p className="text-xs text-muted-foreground">Keadaan</p>
-          <p
-            className={cn(
-              "text-sm font-semibold",
-              ringkas.keadaanBerat && "text-amber-700 dark:text-amber-300"
-            )}
-          >
-            {ringkas.keadaan}
-          </p>
-          <p className="text-xs text-muted-foreground">{ringkas.umurKalimat}</p>
-        </div>
-        <div className="rounded-lg border border-border bg-card px-3 py-2">
-          <p className="text-xs text-muted-foreground">Sidang berikutnya</p>
-          <p className="text-sm font-semibold">{ringkas.berikutnya}</p>
-        </div>
-        <div className="rounded-lg border border-border bg-card px-3 py-2">
-          <p className="text-xs text-muted-foreground">Majelis</p>
-          <p className="text-sm font-semibold">{ringkas.majelisKalimat}</p>
-          <p className="text-xs text-muted-foreground">
-            {status.panitera.length > 0
-              ? status.panitera.map((x) => x.nama).join(", ")
-              : "Panitera sidang belum ditunjuk"}
-          </p>
-        </div>
-      </div>
-    </>
-  );
-
-  const blokPeringatan = (
-    <>
-      {/* ==================================================================
-          PERLU TINDAKAN - PERINGATAN YANG DIKUMPULKAN, BUKAN DILAHIRKAN
-          ==================================================================
-
-          Tiap butir di sini sudah tampil di salah satu bagian di bawah,
-          tersebar di antara dua puluh enam bagian yang sebagian besarnya
-          terciut. Yang dikerjakan di sini mengumpulkannya.
-
-          Yang tidak dapat ditindaklanjuti petugas TIDAK masuk: "perkara ini
-          dibanding" adalah keadaan, bukan pekerjaan. */}
-      {ringkas.peringatan.length > 0 ? (
-        <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2">
-          <p className="mb-1 text-sm font-semibold">
-            Perlu tindakan — {ringkas.peringatan.length} butir
-          </p>
-          <ul className="space-y-1">
-            {ringkas.peringatan.map((x) => (
-              <li key={x.pesan} className="flex items-start gap-2 text-sm">
-                <span
-                  className={cn(
-                    "mt-[0.45rem] h-1.5 w-1.5 shrink-0 rounded-full",
-                    x.berat ? "bg-amber-600 dark:bg-amber-400" : "bg-muted-foreground/60"
-                  )}
-                  aria-hidden
-                />
-                <span>
-                  {x.pesan}
-                  {x.sebab ? (
-                    <span className="block text-xs text-muted-foreground">{x.sebab}</span>
-                  ) : null}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-    </>
-  );
-
   const blokA = (
     <>
-    <KelompokKartu id="A" seamless={seamless} ringkas={ringkasKelompok.A} perluTindakan={perluTindakanKelompok.A ?? 0}>
-      <div className={seamless ? "contents" : "grid gap-3 lg:grid-cols-2"}>
-        <Bagian judul="Majelis dan petugas" kunci="majelis">
+    <KelompokKartu id="A" seamless={seamless} ringkas={ringkasKelompok.A} perluTindakan={perluTindakanKelompok.A ?? 0} terbukaBawaan={tahapBuka.kelompok.has("A")} kunciPerkara={status.identitas.nomorPerkara}>
+      <div className="contents">
+        <Bagian judul="Majelis dan petugas" kunci="majelis" ciutBawaan versiBawaan="3nov" keterangan={ringkasMajelisBagian}>
           {/* Tiap nama membuka rekap orangnya di tab baru, lewat ID SIPP -
               lihat tautan-petugas.tsx (butir 9 permintaan 27 September 2026).
               Majelis PEMERIKSA, lalu majelis ikrar talak sebagai blok
@@ -3498,7 +3421,7 @@ function IsiStatus({
                 seluruhSaksi.filter((x) => cocok(sisiSaksi.get(x.nama.trim().toLowerCase()) || ""));
 
               const nomor = (orang: (typeof status.pihak)[number]) =>
-                orang.adaNomor ? ` · ${orang.nomorSamar}` : " · tanpa nomor";
+                orang.adaNomor ? `${PEMISAH_RINGKAS}${orang.nomorSamar}` : "${PEMISAH_RINGKAS}tanpa nomor";
 
               /**
                * Nama yang dapat diketuk untuk membuka identitasnya.
@@ -3541,11 +3464,16 @@ function IsiStatus({
                     {/* === STATUS-ZIP 12 Okt === Email, nomor WhatsApp, dan kesediaan
                         sidang elektronik (e-Litigasi) pihak dan kuasa. Saksi tidak. */}
                     {orang.pihakKe === 1 || orang.pihakKe === 2 ? (
-                      <KontakPihak nomorPerkara={status.identitas.nomorPerkara} orang={orang} />
+                      <KontakPihak nomorPerkara={status.identitas.nomorPerkara} orang={orang} pernahHadirTergugat={pernahHadirTergugat} />
                     ) : null}
                     {/* === AKHIR STATUS-ZIP === */}
-                    {/* === 12OKT-E: Tanggal KTP pihak (dari berkas KTP e-Court) === */}
-                    <TanggalKtpPihak nomorPerkara={status.identitas.nomorPerkara} orang={orang} semuaPihak={status.pihak} />
+                    {/* === 12OKT-E: Tanggal KTP pihak (dari berkas KTP e-Court) ===
+                        3 Nov 2026 (keputusan 144B): baris keterangan di bawah nama diganti email dan
+                        WhatsApp (KontakPihak di atas); tanggal KTP pindah ke identitas yang dibuka
+                        (ketuk nama) - tidak dihapus. */}
+                    {terbuka ? (
+                      <TanggalKtpPihak nomorPerkara={status.identitas.nomorPerkara} orang={orang} semuaPihak={status.pihak} />
+                    ) : null}
                     {/* === AKHIR 12OKT-E === */}
                     {terbuka ? (
                       <KartuIdentitasPihak
@@ -3632,7 +3560,7 @@ function IsiStatus({
 
   const blokB = (
     <>
-    <KelompokKartu id="B" seamless={seamless} ringkas={ringkasKelompok.B} perluTindakan={perluTindakanKelompok.B ?? 0}>
+    <KelompokKartu id="B" seamless={seamless} ringkas={ringkasKelompok.B} perluTindakan={perluTindakanKelompok.B ?? 0} terbukaBawaan={tahapBuka.kelompok.has("B")} kunciPerkara={status.identitas.nomorPerkara}>
         {/* ==================================================================
           TAHAPAN PERKARA
           ==================================================================
@@ -3645,7 +3573,7 @@ function IsiStatus({
           adanya. "Kolomnya tidak ada" sangat berbeda dari "belum dikerjakan",
           dan menyamarkan keduanya akan menuduh pengadilan atas pekerjaan yang
           sebenarnya sudah selesai. */}
-      <Bagian judul="Tahapan perkara dan waktu penginputannya" kunci="tahapan">
+      <Bagian judul="Tahapan perkara dan waktu penginputannya" kunci="tahapan" ciutBawaan versiBawaan="3nov" keterangan={ringkasTahapanBagian}>
         {status.tahapan.terbaca ? (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -3743,9 +3671,6 @@ function IsiStatus({
                     </li>
                   ))}
                 </ul>
-                <p className="mt-1">
-                  Yang dinilai tetap penetapan pertama - penetapan kembali tidak dihitung.
-                </p>
               </div>
             ) : null}
 
@@ -3794,181 +3719,9 @@ function IsiStatus({
           </div>
         ) : (
           <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300">
-            {status.tahapan.alasan} Jalankan{" "}
-            <code className="rounded bg-amber-100 px-1 dark:bg-amber-500/20">scripts/sipp-periksa-kolom.js</code> di server
-            untuk melihat nama kolom yang sebenarnya.
+            {status.tahapan.alasan}
           </p>
         )}
-      </Bagian>
-
-      <Bagian judul="Perjalanan sidang" kunci="sidang">
-        {status.jadwal.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Belum ada jadwal sidang tercatat.</p>
-        ) : (
-          <>
-            <div className="mb-2 flex flex-wrap items-center gap-2 text-sm">
-              {/* Blangko putusan / ikrar - hanya bila relevan dan sesuai peran. */}
-              {blangkoDerry.putusan ? (
-                <TautanBlangkoDerry data={blangkoDerry.putusan} jenis="putusan" label={SEBUTAN_BLANGKO.putusan} setelanAps={setelanAps} />
-              ) : null}
-              {blangkoDerry.ikrar ? (
-                <TautanBlangkoDerry data={blangkoDerry.ikrar} jenis="penetapan" label={SEBUTAN_BLANGKO.penetapan} setelanAps={setelanAps} />
-              ) : null}
-              {sidangBerikut ? (
-                <Badge variant="default">
-                  Sidang berikut: {tanggalHariPendek(sidangBerikut.tanggalSidang, sidangBerikut.tanggalSidang)}{" "}
-                  {sidangBerikut.jamSidang} —{" "}
-                  {sidangBerikut.agenda || "tanpa agenda"}
-                </Badge>
-              ) : sidangTerakhir ? (
-                <Badge variant="muted">
-                  Sidang terakhir:{" "}
-                  {tanggalHariPendek(sidangTerakhir.tanggalSidang, sidangTerakhir.tanggalSidang)}
-                </Badge>
-              ) : null}
-            </div>
-
-            <ol className="space-y-1 text-sm">
-              {jadwalUrut.map((sidang) => (
-                <li key={sidang.sidangId} className="flex flex-wrap items-baseline gap-x-2 border-l-2 border-border pl-2">
-                  {/* Nomor sidang di tepi kiri - diminta pengguna 24 September
-                      2026, sama dengan panel Rincian di Antrian Sidang. Angkanya
-                      kolom urutan SIPP, bukan nomor baris daftar ini. */}
-                  <NomorSidang urutan={sidang.urutanSidang} />
-                  <span className="font-medium">
-                    {tanggalHariPendek(sidang.tanggalSidang, sidang.tanggalSidang)}
-                  </span>
-                  {sidang.jamSidang ? (
-                    <span className="text-sm tabular-nums text-muted-foreground">{sidang.jamSidang}</span>
-                  ) : null}
-                  <span className="text-sm">{sidang.agenda || "tanpa agenda"}</span>
-                  {sidang.ruangan ? (
-                    <span className="text-xs text-muted-foreground">Ruang {sidang.ruangan}</span>
-                  ) : null}
-                  {sidang.ditunda ? (
-                    <Badge variant="warning">
-                      ditunda{sidang.alasanDitunda ? `: ${sidang.alasanDitunda}` : ""}
-                    </Badge>
-                  ) : null}
-                  {/* BAS bukan sekadar penanda - ia berkas yang perlu dibuka.
-                      Penanda yang tidak dapat ditekan memaksa orang membuka
-                      SIPP hanya untuk mengunduh satu berkas. */}
-                  {sidang.adaBas && sidang.sidangId ? (
-                    <TombolUnduh
-                      alamat={`/api/aleta-ecourt/berkas-sipp?jenis=bas&id=${encodeURIComponent(
-                        sidang.sidangId
-                      )}`}
-                      label="BAS"
-                      namaCadangan={`bas-${status.identitas.nomorPerkara}-${sidang.tanggalSidang}.pdf`}
-                    />
-                  ) : null}
-                  {blangkoDerry.perSidang[sidang.sidangId] ? (
-                    <TautanBlangkoDerry
-                      data={blangkoDerry.perSidang[sidang.sidangId]}
-                      jenis="bas"
-                      label={`BAS sidang ke-${sidang.urutanSidang}`}
-                      setelanAps={setelanAps}
-                    />
-                  ) : null}
-                </li>
-              ))}
-            </ol>
-
-            {/* ============================================================
-                UMUR PERKARA PADA TIAP SIDANG, TERHADAP AMBANG SK DAN SEMA
-                ============================================================
-
-                Daftar sidang di atas menjawab "kapan saja sidangnya". Yang
-                TIDAK dijawabnya - dan yang justru ditanyakan pengawasan tiap
-                bulan - adalah "sejauh mana perkara ini sudah berjalan
-                terhadap ambangnya, dan di penundaan mana waktunya habis".
-
-                Dihitung dengan cara yang SAMA dengan "Lama perkara" di kepala
-                layar ini: hari pendaftaran hari ke-1, dan hari mediasi yang
-                sama - status.umur.hariMediasi - dikeluarkan (PERMA 1/2016
-                Pasal 24). Grafik lama menggambar hari kalender; 94 dari 1.977
-                perkara putus bersidang tiga kali atau lebih di satker ini
-                jatuh pada pita yang berbeda dari kepala layarnya.
-
-                Sidang sesudah putusan - ikrar talak, yang dapat ditunda enam
-                bulan - tidak digambar: SEMA 2/2014 berhenti pada putusan.
-                Dengannya, 94 dari 158 perkara yang tampak melewati 150 hari
-                ternyata melewatinya HANYA karena sidang sesudah putusan.
-
-                Tiga pita, dua dasar: 90 dan 120 hari dari SK Dirjen Badilag
-                048/2024 (nilai 5 dan 3 pada rubrik waktu putus), 150 hari dari
-                SEMA 2/2014. Warnanya hijau, kuning, oranye, lalu merah di atas
-                150 - sebutan yang sama dengan pita waktu putus
-                (lib/pita-waktu-putus.ts). Ambang tanpa dasar hanya angka yang
-                harus dipercaya; ambang yang menyebut dasarnya dapat dibantah.
-
-                Titiknya menyebut nomor sidang SIPP (urutanSidang), angka yang
-                sama dengan tepi kiri daftar di atas. */}
-            {(() => {
-              const perjalanan = susunPerjalananSidang({
-                tanggalDaftar: status.identitas.tanggalDaftar,
-                tanggalPutusan: status.putusan && status.putusan.sudahPutus ? status.putusan.tanggalPutusan : "",
-                hariMediasi: status.umur.hariMediasi,
-                jadwal: status.jadwal,
-                mediasi: status.mediasi.terbaca ? status.mediasi.baris : [],
-                hariIni: hariIniIso(),
-              });
-
-              // Dua titik selalu membentuk garis lurus, dan garis lurus
-              // terbaca seperti pola. Penggambarnya sendiri menolak di bawah
-              // tiga sidang; diperiksa di sini juga supaya judulnya pun tidak
-              // sempat tergambar untuk gambar yang tidak akan ada.
-              if (!perjalanan || perjalanan.titik.length < 3) return null;
-
-              return (
-                <div className="mt-3">
-                  <DiagramPerjalananSidang
-                    perjalanan={perjalanan}
-                    judul="Umur perkara pada tiap sidang"
-                    hariIniDihitung={status.umur.sudahPutus ? null : status.umur.hariBersih}
-                    /* Perkara ghaib punya DUA angka umur yang keduanya benar,
-                       dan satu-satunya yang menerangkan selisihnya adalah
-                       catatan grafik ini.
-
-                       Terukur di sipp_donggala 25 September 2026 atas 13 perkara
-                       ghaib yang belum putus: 322/Pdt.G/2026 terbaca "1 hari" di
-                       Antrian Sidang dan 115 hari di sini. Tanpa satu kalimat
-                       penjelasan, salah satu layar akan dianggap rusak - garis
-                       ini memang TIDAK dipotong, sebab batas lima bulan SEMA
-                       2/2014 tidak mengenal kelonggaran perkara khusus. */
-                    ghaib={status.penanda?.ghaib === true}
-                    pita={[
-                      { sampai: 90, singkat: "3 bln", label: "3 bulan - SK Dirjen Badilag 048/2024", nada: "hijau" },
-                      { sampai: 120, singkat: "4 bln", label: "4 bulan - SK Dirjen Badilag 048/2024", nada: "kuning" },
-                      { sampai: AMBANG_HARI_SEMA, singkat: "5 bln", label: "5 bulan - SEMA 2/2014", nada: "oranye" },
-                    ]}
-                  />
-                </div>
-              );
-            })()}
-          </>
-        )}
-      </Bagian>
-
-      {/* ==================================================================
-          KALENDER PERKARA
-          ==================================================================
-
-          "Perjalanan sidang" di atas menjawab apa yang sudah terjadi. Yang
-          tidak dijawab daftar mana pun: KAPAN - dalam bentuk yang dapat
-          dilihat sekali pandang, berikut jarak antar peristiwanya.
-
-          Petugas yang menyiapkan berkas menanyakan "minggu ini perkara ini
-          ada apa", dan jawabannya tersebar di enam bagian yang berbeda:
-          sidang di jadwal, mediasi di mediasi, panggilan di relaas, minutasi
-          di putusan. Kalender mengumpulkannya ke satu tempat tanpa
-          memindahkan satu pun datanya. */}
-      <Bagian
-        judul="Kalender perkara"
-        kunci="kalender"
-        keterangan="seluruh peristiwa perkara ini pada satu bulan"
-      >
-        <KalenderPerkara status={status} />
       </Bagian>
 
       {/* ==================================================================
@@ -4008,6 +3761,8 @@ function IsiStatus({
       <Bagian
         judul="Mediasi"
         kunci="mediasi"
+        ciutBawaan
+        versiBawaan="3nov"
         keterangan={
           status.mediasi.terbaca && status.mediasi.baris.length > 0
             ? `${status.mediasi.baris.length} catatan`
@@ -4019,13 +3774,6 @@ function IsiStatus({
             <p>{status.mediasi.alasan}</p>
             {/* Nama kolom yang sebenarnya ada, langsung di layar. Tanpa ini,
                 menemukan nama yang benar menuntut membuka Navicat. */}
-            {status.mediasi.kolomTersedia && status.mediasi.kolomTersedia.length > 0 ? (
-              <p className="mt-1 text-sm">
-                Tambahkan nama yang sesuai ke daftar calon pada
-                <code className="mx-1 rounded bg-amber-100 px-1 dark:bg-amber-500/20">services/sippSkemaService.js</code>
-                lalu nyalakan ulang bot.
-              </p>
-            ) : null}
           </div>
         ) : status.mediasi.baris.length === 0 ? (
           <p className="text-sm text-muted-foreground">
@@ -4176,6 +3924,205 @@ function IsiStatus({
       </Bagian>
 
       {/* ==================================================================
+          JAWABAN DAN SITA (rancangan 3 Nov 2026, keputusan 9a)
+          ==================================================================
+
+          Eksepsi dan rekonvensi lahir dari jawaban Tergugat sesudah mediasi;
+          sita dimohonkan dalam gugatan dan diletakkan selama pemeriksaan.
+          Hanya baris yang terdeteksi yang ditulis - tidak ada satu pun, bagian
+          ini tidak tampil sama sekali. Penentunya SATU (isiJawabanSitaEksekusi),
+          komponennya SATU (RincianJawabanSitaEksekusi), letaknya mudah digeser. */}
+      {adaJawabanSita ? (
+        <Bagian judul="Jawaban dan sita" kunci="jawaban" keterangan={ringkasJawabanSita}>
+          <RincianJawabanSitaEksekusi bahan={status} tampilJawaban={saklarJawaban} tampilSita={saklarSita} tampilEksekusi={false} hanyaYangAda tanpaKotak />
+        </Bagian>
+      ) : null}
+
+      <Bagian judul="Perjalanan sidang" kunci="sidang">
+        {status.jadwal.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Belum ada jadwal sidang tercatat.</p>
+        ) : (
+          <>
+            <div className="mb-2 flex flex-wrap items-center gap-2 text-sm">
+              {/* Blangko putusan / ikrar - hanya bila relevan dan sesuai peran. */}
+              {blangkoDerry.putusan ? (
+                <TautanBlangkoDerry data={blangkoDerry.putusan} jenis="putusan" label={SEBUTAN_BLANGKO.putusan} setelanAps={setelanAps} />
+              ) : null}
+              {blangkoDerry.ikrar ? (
+                <TautanBlangkoDerry data={blangkoDerry.ikrar} jenis="penetapan" label={SEBUTAN_BLANGKO.penetapan} setelanAps={setelanAps} />
+              ) : null}
+              {sidangBerikut ? (
+                <Badge variant="default">
+                  Sidang berikut: {tanggalHariPendek(sidangBerikut.tanggalSidang, sidangBerikut.tanggalSidang)}{" "}
+                  {sidangBerikut.jamSidang} —{" "}
+                  {sidangBerikut.agenda || "tanpa agenda"}
+                </Badge>
+              ) : sidangTerakhir ? (
+                <Badge variant="muted">
+                  Sidang terakhir:{" "}
+                  {tanggalHariPendek(sidangTerakhir.tanggalSidang, sidangTerakhir.tanggalSidang)}
+                </Badge>
+              ) : null}
+            </div>
+
+            <ol className="space-y-1 text-sm">
+              {jadwalUrut.map((sidang) => (
+                <li key={sidang.sidangId} className="flex flex-wrap items-baseline gap-x-2 border-l-2 border-border pl-2">
+                  {/* Nomor sidang di tepi kiri - diminta pengguna 24 September
+                      2026, sama dengan panel Rincian di Antrian Sidang. Angkanya
+                      kolom urutan SIPP, bukan nomor baris daftar ini. */}
+                  <NomorSidang urutan={sidang.urutanSidang} />
+                  <span className="font-medium">
+                    {tanggalHariPendek(sidang.tanggalSidang, sidang.tanggalSidang)}
+                  </span>
+                  {sidang.jamSidang ? (
+                    <span className="text-sm tabular-nums text-muted-foreground">{sidang.jamSidang}</span>
+                  ) : null}
+                  <span className="text-sm">{sidang.agenda || "tanpa agenda"}</span>
+                  {sidang.ruangan ? (
+                    <span className="text-xs text-muted-foreground">Ruang {sidang.ruangan}</span>
+                  ) : null}
+                  {sidang.ditunda ? (
+                    <Badge variant="warning">
+                      ditunda{sidang.alasanDitunda ? `: ${sidang.alasanDitunda}` : ""}
+                    </Badge>
+                  ) : null}
+                  {/* BAS bukan sekadar penanda - ia berkas yang perlu dibuka.
+                      Penanda yang tidak dapat ditekan memaksa orang membuka
+                      SIPP hanya untuk mengunduh satu berkas. */}
+                  {sidang.adaBas && sidang.sidangId ? (
+                    <TombolUnduh
+                      alamat={`/api/aleta-ecourt/berkas-sipp?jenis=bas&id=${encodeURIComponent(
+                        sidang.sidangId
+                      )}`}
+                      label="BAS"
+                      namaCadangan={`bas-${status.identitas.nomorPerkara}-${sidang.tanggalSidang}.pdf`}
+                    />
+                  ) : null}
+                  {blangkoDerry.perSidang[sidang.sidangId] ? (
+                    <TautanBlangkoDerry
+                      data={blangkoDerry.perSidang[sidang.sidangId]}
+                      jenis="bas"
+                      label={`BAS sidang ke-${sidang.urutanSidang}`}
+                      setelanAps={setelanAps}
+                    />
+                  ) : null}
+                </li>
+              ))}
+            </ol>
+
+            {/* ============================================================
+                UMUR PERKARA PADA TIAP SIDANG, TERHADAP AMBANG SK DAN SEMA
+                ============================================================
+
+                Daftar sidang di atas menjawab "kapan saja sidangnya". Yang
+                TIDAK dijawabnya - dan yang justru ditanyakan pengawasan tiap
+                bulan - adalah "sejauh mana perkara ini sudah berjalan
+                terhadap ambangnya, dan di penundaan mana waktunya habis".
+
+                Dihitung dengan cara yang SAMA dengan "Lama perkara" di kepala
+                layar ini: hari pendaftaran hari ke-1, dan hari mediasi yang
+                sama - status.umur.hariMediasi - dikeluarkan (PERMA 1/2016
+                Pasal 24). Grafik lama menggambar hari kalender; 94 dari 1.977
+                perkara putus bersidang tiga kali atau lebih di satker ini
+                jatuh pada pita yang berbeda dari kepala layarnya.
+
+                Sidang sesudah putusan - ikrar talak, yang dapat ditunda enam
+                bulan - tidak digambar: SEMA 2/2014 berhenti pada putusan.
+                Dengannya, 94 dari 158 perkara yang tampak melewati 150 hari
+                ternyata melewatinya HANYA karena sidang sesudah putusan.
+
+                Tiga pita, dua dasar: 90 dan 120 hari dari SK Dirjen Badilag
+                048/2024 (nilai 5 dan 3 pada rubrik waktu putus), 150 hari dari
+                SEMA 2/2014. Warnanya hijau, kuning, oranye, lalu merah di atas
+                150 - sebutan yang sama dengan pita waktu putus
+                (lib/pita-waktu-putus.ts). Ambang tanpa dasar hanya angka yang
+                harus dipercaya; ambang yang menyebut dasarnya dapat dibantah.
+
+                Titiknya menyebut nomor sidang SIPP (urutanSidang), angka yang
+                sama dengan tepi kiri daftar di atas. */}
+            {(() => {
+              const perjalanan = susunPerjalananSidang({
+                tanggalDaftar: status.identitas.tanggalDaftar,
+                tanggalPutusan: status.putusan && status.putusan.sudahPutus ? status.putusan.tanggalPutusan : "",
+                hariMediasi: status.umur.hariMediasi,
+                jadwal: status.jadwal,
+                mediasi: status.mediasi.terbaca ? status.mediasi.baris : [],
+                hariIni: hariIniIso(),
+              });
+
+              // Dua titik selalu membentuk garis lurus, dan garis lurus
+              // terbaca seperti pola. Penggambarnya sendiri menolak di bawah
+              // tiga sidang; diperiksa di sini juga supaya judulnya pun tidak
+              // sempat tergambar untuk gambar yang tidak akan ada.
+              if (!perjalanan || perjalanan.titik.length < 3) return null;
+
+              const hariIniUmur = status.umur.sudahPutus ? null : status.umur.hariBersih;
+              const pitaUmur: PitaUmur[] = [
+                { sampai: 90, singkat: "3 bln", label: "3 bulan - SK Dirjen Badilag 048/2024", nada: "hijau" },
+                { sampai: 120, singkat: "4 bln", label: "4 bulan - SK Dirjen Badilag 048/2024", nada: "kuning" },
+                { sampai: AMBANG_HARI_SEMA, singkat: "5 bln", label: "5 bulan - SEMA 2/2014", nada: "oranye" },
+              ];
+
+              // Terlipat bawaan (3 Nov 2026); kepalanya tetap menyebut posisi umur
+              // terhadap batas, supaya angka yang berguna tidak hilang.
+              return (
+                <div className="mt-3">
+                  <Bagian
+                    judul="Umur perkara pada tiap sidang"
+                    kunci="umur-sidang"
+                    ciutBawaan
+                    versiBawaan="3nov"
+                    keterangan={ringkasUmurTerhadapBatas(pitaUmur, hariIniUmur)}
+                  >
+                  <DiagramPerjalananSidang
+                    perjalanan={perjalanan}
+                    hariIniDihitung={hariIniUmur}
+                    /* Perkara ghaib punya DUA angka umur yang keduanya benar,
+                       dan satu-satunya yang menerangkan selisihnya adalah
+                       catatan grafik ini.
+
+                       Terukur di sipp_donggala 25 September 2026 atas 13 perkara
+                       ghaib yang belum putus: 322/Pdt.G/2026 terbaca "1 hari" di
+                       Antrian Sidang dan 115 hari di sini. Tanpa satu kalimat
+                       penjelasan, salah satu layar akan dianggap rusak - garis
+                       ini memang TIDAK dipotong, sebab batas lima bulan SEMA
+                       2/2014 tidak mengenal kelonggaran perkara khusus. */
+                    ghaib={status.penanda?.ghaib === true}
+                    pita={pitaUmur}
+                  />
+                  </Bagian>
+                </div>
+              );
+            })()}
+          </>
+        )}
+      </Bagian>
+
+      {/* ==================================================================
+          KALENDER PERKARA
+          ==================================================================
+
+          "Perjalanan sidang" di atas menjawab apa yang sudah terjadi. Yang
+          tidak dijawab daftar mana pun: KAPAN - dalam bentuk yang dapat
+          dilihat sekali pandang, berikut jarak antar peristiwanya.
+
+          Petugas yang menyiapkan berkas menanyakan "minggu ini perkara ini
+          ada apa", dan jawabannya tersebar di enam bagian yang berbeda:
+          sidang di jadwal, mediasi di mediasi, panggilan di relaas, minutasi
+          di putusan. Kalender mengumpulkannya ke satu tempat tanpa
+          memindahkan satu pun datanya. */}
+      <Bagian
+        judul="Kalender perkara"
+        kunci="kalender"
+        ciutBawaan
+        versiBawaan="3nov"
+        keterangan="seluruh peristiwa perkara ini pada satu bulan"
+      >
+        <KalenderPerkara status={status} />
+      </Bagian>
+
+      {/* ==================================================================
           SAKSI
           ==================================================================
 
@@ -4187,6 +4134,8 @@ function IsiStatus({
       <Bagian
         judul="Saksi"
         kunci="saksi"
+        ciutBawaan
+        versiBawaan="3nov"
         keterangan={
           status.saksiRinci.terbaca && status.saksiRinci.baris.length > 0
             ? `${status.saksiRinci.baris.length} saksi`
@@ -4263,6 +4212,7 @@ function IsiStatus({
         })}
         namaSaksi={{ P: namaSaksiPandu(/penggugat|pemohon/i), T: namaSaksiPandu(/tergugat|termohon/i) }}
         kunciBagian="status-pandu-saksi"
+        ciutSelalu
         pengguna={currentUser}
       />
     </KelompokKartu>
@@ -4271,7 +4221,7 @@ function IsiStatus({
 
   const blokC = (
     <>
-    <KelompokKartu id="C" seamless={seamless} ringkas={ringkasKelompok.C} perluTindakan={perluTindakanKelompok.C ?? 0}>
+    <KelompokKartu id="C" seamless={seamless} ringkas={ringkasKelompok.C} perluTindakan={perluTindakanKelompok.C ?? 0} terbukaBawaan={tahapBuka.kelompok.has("C")} kunciPerkara={status.identitas.nomorPerkara}>
       {/* ==================================================================
           PUTUSAN LENGKAP
           ==================================================================
@@ -4788,6 +4738,19 @@ function IsiStatus({
       ) : null}
 
       {/* ==================================================================
+          EKSEKUSI (rancangan 3 Nov 2026, keputusan 9a)
+          ==================================================================
+
+          Eksekusi baru dapat diajukan sesudah putusan berkekuatan hukum tetap,
+          jadi tempatnya di tindak lanjut putusan, sesudah Upaya hukum. Hanya
+          bila tercatat. */}
+      {adaEksekusiPerkara ? (
+        <Bagian judul="Eksekusi" kunci="eksekusi" keterangan={ringkasEksekusiPerkara}>
+          <RincianJawabanSitaEksekusi bahan={status} tampilJawaban={false} tampilSita={false} tampilEksekusi={saklarEksekusi} hanyaYangAda tanpaKotak />
+        </Bagian>
+      ) : null}
+
+      {/* ==================================================================
           PUTUSAN DI E-COURT
           ==================================================================
 
@@ -4933,11 +4896,206 @@ function IsiStatus({
 
   const blokD = (
     <>
-    <KelompokKartu id="D" seamless={seamless} ringkas={ringkasKelompok.D} perluTindakan={perluTindakanKelompok.D ?? 0}>
+    <KelompokKartu id="D" seamless={seamless} ringkas={ringkasKelompok.D} perluTindakan={perluTindakanKelompok.D ?? 0} terbukaBawaan={tahapBuka.kelompok.has("D")} kunciPerkara={status.identitas.nomorPerkara}>
+        {/* ==============================================================
+            BERKAS
+            ==============================================================
+
+            Yang dicari orang di sini tiga hal: gugatan atau permohonannya,
+            relaas panggilannya, dan berita acara sidangnya. Sebelumnya bagian
+            ini hanya menghitung jumlah dokumen lalu menampilkan isi
+            perkara_dokumen - berkas LAMPIRAN - dan ketiganya justru tidak ada
+            di sana: gugatan pada kolom petitum perkara, relaas pada tabel
+            relaas, BAS pada jadwal sidang.
+
+            Susunannya disamakan dengan layar jadwal sidang supaya yang
+            dicari ada di tempat yang sama pada kedua layar. */}
+        <Bagian judul="Berkas" kunci="berkas">
+          {/* Tombolnya TIDAK diulang di sini. Dua tombol yang mengerjakan hal
+              yang sama membuat yang satu tampak berbeda dari yang lain, dan
+              yang pertama ditekan belum tentu yang dimaksud. */}
+          <p className="mb-2 text-xs text-muted-foreground">
+            Seluruh berkas di bawah ini beserta data perkaranya dapat diunduh sekaligus lewat tombol{" "}
+            <strong>Unduh seluruh perkara</strong> di kepala layar.
+          </p>
+          <div className="space-y-3">
+            {/* --- Gugatan / permohonan --- */}
+            <div>
+              <p className="mb-1 text-sm font-semibold">Gugatan / permohonan</p>
+              {status.petitum?.ada ? (
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  <span>Surat gugatan/permohonan</span>
+                  <TombolUnduh
+                    alamat={`/api/aleta-ecourt/berkas-sipp?jenis=petitum&id=${encodeURIComponent(
+                      status.identitas.perkaraId
+                    )}`}
+                    label="Unduh"
+                    namaCadangan={`gugatan-${status.identitas.nomorPerkara}.pdf`}
+                  />
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Belum diunggah ke SIPP.</p>
+              )}
+            </div>
+
+            {/* --- Relaas panggilan: hitungannya saja, rinciannya di bagian
+                sendiri ---
+
+                Daftarnya pernah digambar di sini JUGA. Dua daftar untuk satu
+                data akan berselisih pada suntingan berikutnya - salah satunya
+                diperbarui, yang lain tidak - dan tidak ada yang tahu mana yang
+                usang. Yang tinggal di sini hitungannya; rincian beserta tombol
+                unduhnya ada di bagian "Relaas panggilan", lengkap dengan
+                sidang mana yang dipanggil. */}
+            <div>
+              <p className="mb-1 text-sm font-semibold">Relaas panggilan</p>
+              {status.relaas.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Belum ada relaas tercatat.</p>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  {status.relaas.filter((x) => x.adaDokumen).length} dari {status.relaas.length}{" "}
+                  relaas sudah berdokumen
+                  {status.relaas.filter((x) => x.adaResi).length > 0
+                    ? `, ${status.relaas.filter((x) => x.adaResi).length} berresi pos`
+                    : ""}
+                  . Rincian dan unduhannya ada di bagian <strong>Relaas panggilan</strong>.
+                </p>
+              )}
+              {status.relaas.some((x) => x.adaDokumen || x.adaResi) ? (
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {status.relaas.map((x) => (
+                    <TombolUnduhRelaas
+                      key={x.id}
+                      relaas={x}
+                      nomorPerkara={status.identitas.nomorPerkara}
+                      urutanSidang={berurutan.get(String(x.sidangId || ""))}
+                    />
+                  ))}
+                </div>
+              ) : null}
+            </div>
+
+            {/* --- Berita acara sidang --- */}
+            <div>
+              <p className="mb-1 text-sm font-semibold">
+                Berita Acara Sidang
+                {status.jadwal.length > 0 ? (
+                  <span className="ml-1 font-normal text-muted-foreground">
+                    ({status.jadwal.filter((x) => x.adaBas).length} dari {status.jadwal.length} sidang)
+                  </span>
+                ) : null}
+              </p>
+              {status.jadwal.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Belum ada sidang tercatat.</p>
+              ) : (
+                <ul className="space-y-1 text-sm">
+                  {jadwalUrut.map((sidang) => (
+                    <li key={sidang.sidangId} className="flex flex-wrap items-center gap-2">
+                      {/* Sidang keberapa - angka yang sama dengan Perjalanan
+                          sidang dan dengan daftar BAS di Antrian Sidang. */}
+                      <NomorSidang urutan={sidang.urutanSidang} />
+                      <span className="min-w-0 flex-1 truncate">
+                        {tanggalHariPendek(sidang.tanggalSidang, sidang.tanggalSidang)}
+                        <span className="ml-1 text-sm text-muted-foreground">
+                          {sidang.agenda || "tanpa agenda"}
+                        </span>
+                      </span>
+                      {sidang.adaBas ? (
+                        <TombolUnduh
+                          alamat={`/api/aleta-ecourt/berkas-sipp?jenis=bas&id=${encodeURIComponent(
+                            sidang.sidangId
+                          )}`}
+                          label="BAS"
+                          namaCadangan={`bas-${status.identitas.nomorPerkara}-${sidang.tanggalSidang}.pdf`}
+                        />
+                      ) : (
+                        <span className="text-xs text-muted-foreground">BAS belum diunggah</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* --- Putusan --- */}
+            {status.putusan?.adaBerkasPutusan || status.putusan?.adaBerkasAnonim ? (
+              <div>
+                <p className="mb-1 text-sm font-semibold">Putusan</p>
+                <div className="flex flex-wrap gap-2">
+                  {status.putusan?.adaBerkasPutusan ? (
+                    <TombolUnduh
+                      alamat={`/api/aleta-ecourt/berkas-sipp?jenis=putusan&id=${encodeURIComponent(
+                        status.identitas.perkaraId
+                      )}`}
+                      label="Unduh putusan"
+                      namaCadangan={`putusan-${status.identitas.nomorPerkara}.pdf`}
+                    />
+                  ) : null}
+                  {status.putusan?.adaBerkasAnonim ? (
+                    <TombolUnduh
+                      alamat={`/api/aleta-ecourt/berkas-sipp?jenis=putusan-anonim&id=${encodeURIComponent(
+                        status.identitas.perkaraId
+                      )}`}
+                      label="Unduh putusan anonim"
+                      namaCadangan={`putusan-anonim-${status.identitas.nomorPerkara}.pdf`}
+                    />
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+
+            {/* --- Lampiran lain --- */}
+            <div>
+              <p className="mb-1 text-sm font-semibold">
+                Lampiran lain
+                <span className="ml-1 font-normal text-muted-foreground">
+                  ({status.dokumenSipp.length} dari SIPP, {status.dokumenEcourt.length} dari e-Court
+                  {status.dokumenEcourt.length > 0
+                    ? `, ${status.dokumenEcourt.filter((d) => d.statusVerifikasi === "belum").length} menunggu majelis`
+                    : ""}
+                  )
+                </span>
+              </p>
+              {status.dokumenSipp.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Tidak ada lampiran SIPP.</p>
+              ) : (
+                <ul className="space-y-1 text-sm">
+                  {status.dokumenSipp.map((dokumen) => (
+                    <li
+                      key={dokumen.id}
+                      className="flex flex-wrap items-center justify-between gap-2"
+                    >
+                      <span className="min-w-0 flex-1 truncate" title={dokumen.namaDokumen}>
+                        {dokumen.namaDokumen}
+                      </span>
+                      <TombolUnduh
+                        alamat={`/api/aleta-ecourt/berkas-sipp?jenis=dokumen&id=${encodeURIComponent(
+                          dokumen.id
+                        )}`}
+                        label="Unduh"
+                        namaCadangan={dokumen.namaDokumen || "dokumen.pdf"}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <p className="text-sm">
+              <span className="text-xs text-muted-foreground">Keterangan saksi: </span>
+              {status.saksi.ada
+                ? `${status.saksi.jumlahSaksi} saksi, ${status.saksi.jumlahKeterangan} keterangan`
+                : "belum ada"}
+            </p>
+          </div>
+        </Bagian>
+
       <Bagian
         judul="Arsip berkas"
         kunci="arsip"
-        keterangan={status.arsipKeterangan.sudahDiarsipkan ? "sudah diarsipkan" : ""}
+        ciutBawaan
+        versiBawaan="3nov"
+        keterangan={status.arsipKeterangan.terbaca ? (status.arsipKeterangan.sudahDiarsipkan ? "sudah diarsipkan" : "belum diarsipkan") : ""}
       >
         {!status.arsipKeterangan.terbaca ? (
           <p className="text-sm text-amber-700 dark:text-amber-300">{status.arsipKeterangan.alasan}</p>
@@ -4971,7 +5129,7 @@ function IsiStatus({
                         {x.berkasBesar ? (
                           <span className="text-xs text-muted-foreground">
                             {(x.berkasBesar / 1024 / 1024).toFixed(1)} MB
-                            {x.berkasDiubah ? ` · ${x.berkasDiubah}` : ""}
+                            {x.berkasDiubah ? `${PEMISAH_RINGKAS}${x.berkasDiubah}` : ""}
                           </span>
                         ) : null}
                         <TombolUnduh
@@ -5109,12 +5267,6 @@ function IsiStatus({
             angka yang tidak dapat ditunjuk dasarnya tidak dapat dibantah
             oleh yang dinilai. Bila kelak dikehendaki ikut menentukan nilai,
             yang diperlukan lebih dahulu dasar hukumnya, bukan kodenya. */}
-        {status.arsipKeterangan.sudahDiarsipkan ? (
-          <p className="mt-2 text-sm text-muted-foreground">
-            Ada atau tidaknya berkas pindaian <strong>tidak</strong> memengaruhi nilai SK Tabel 2
-            I.16 - yang dinilai di sana jeda penginputan datanya, bukan pindaiannya.
-          </p>
-        ) : null}
       </Bagian>
 
       {status.delegasiMasuk.baris.length > 0 || status.delegasiKeluar.baris.length > 0 ? (
@@ -5176,188 +5328,13 @@ function IsiStatus({
         </Bagian>
       ) : null}
 
-      <div className={seamless ? "contents" : "grid gap-3 lg:grid-cols-2"}>
-        {/* ==============================================================
-            BERKAS
-            ==============================================================
-
-            Yang dicari orang di sini tiga hal: gugatan atau permohonannya,
-            relaas panggilannya, dan berita acara sidangnya. Sebelumnya bagian
-            ini hanya menghitung jumlah dokumen lalu menampilkan isi
-            perkara_dokumen - berkas LAMPIRAN - dan ketiganya justru tidak ada
-            di sana: gugatan pada kolom petitum perkara, relaas pada tabel
-            relaas, BAS pada jadwal sidang.
-
-            Susunannya disamakan dengan layar jadwal sidang supaya yang
-            dicari ada di tempat yang sama pada kedua layar. */}
-        <Bagian judul="Berkas" kunci="berkas">
-          {/* Tombolnya TIDAK diulang di sini. Dua tombol yang mengerjakan hal
-              yang sama membuat yang satu tampak berbeda dari yang lain, dan
-              yang pertama ditekan belum tentu yang dimaksud. */}
-          <p className="mb-2 text-xs text-muted-foreground">
-            Seluruh berkas di bawah ini beserta data perkaranya dapat diunduh sekaligus lewat tombol{" "}
-            <strong>Unduh seluruh perkara</strong> di kepala layar.
-          </p>
-          <div className="space-y-3">
-            {/* --- Gugatan / permohonan --- */}
-            <div>
-              <p className="mb-1 text-sm font-semibold">Gugatan / permohonan</p>
-              {status.petitum?.ada ? (
-                <div className="flex flex-wrap items-center gap-2 text-sm">
-                  <span>Surat gugatan/permohonan</span>
-                  <TombolUnduh
-                    alamat={`/api/aleta-ecourt/berkas-sipp?jenis=petitum&id=${encodeURIComponent(
-                      status.identitas.perkaraId
-                    )}`}
-                    label="Unduh"
-                    namaCadangan={`gugatan-${status.identitas.nomorPerkara}.pdf`}
-                  />
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">Belum diunggah ke SIPP.</p>
-              )}
-            </div>
-
-            {/* --- Relaas panggilan: hitungannya saja, rinciannya di bagian
-                sendiri ---
-
-                Daftarnya pernah digambar di sini JUGA. Dua daftar untuk satu
-                data akan berselisih pada suntingan berikutnya - salah satunya
-                diperbarui, yang lain tidak - dan tidak ada yang tahu mana yang
-                usang. Yang tinggal di sini hitungannya; rincian beserta tombol
-                unduhnya ada di bagian "Relaas panggilan", lengkap dengan
-                sidang mana yang dipanggil. */}
-            <div>
-              <p className="mb-1 text-sm font-semibold">Relaas panggilan</p>
-              {status.relaas.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Belum ada relaas tercatat.</p>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  {status.relaas.filter((x) => x.adaDokumen).length} dari {status.relaas.length}{" "}
-                  relaas sudah berdokumen
-                  {status.relaas.filter((x) => x.adaResi).length > 0
-                    ? `, ${status.relaas.filter((x) => x.adaResi).length} berresi pos`
-                    : ""}
-                  . Rincian dan unduhannya ada di bagian <strong>Relaas panggilan</strong>.
-                </p>
-              )}
-            </div>
-
-            {/* --- Berita acara sidang --- */}
-            <div>
-              <p className="mb-1 text-sm font-semibold">
-                Berita Acara Sidang
-                {status.jadwal.length > 0 ? (
-                  <span className="ml-1 font-normal text-muted-foreground">
-                    ({status.jadwal.filter((x) => x.adaBas).length} dari {status.jadwal.length} sidang)
-                  </span>
-                ) : null}
-              </p>
-              {status.jadwal.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Belum ada sidang tercatat.</p>
-              ) : (
-                <ul className="space-y-1 text-sm">
-                  {jadwalUrut.map((sidang) => (
-                    <li key={sidang.sidangId} className="flex flex-wrap items-center gap-2">
-                      {/* Sidang keberapa - angka yang sama dengan Perjalanan
-                          sidang dan dengan daftar BAS di Antrian Sidang. */}
-                      <NomorSidang urutan={sidang.urutanSidang} />
-                      <span className="min-w-0 flex-1 truncate">
-                        {tanggalHariPendek(sidang.tanggalSidang, sidang.tanggalSidang)}
-                        <span className="ml-1 text-sm text-muted-foreground">
-                          {sidang.agenda || "tanpa agenda"}
-                        </span>
-                      </span>
-                      {sidang.adaBas ? (
-                        <TombolUnduh
-                          alamat={`/api/aleta-ecourt/berkas-sipp?jenis=bas&id=${encodeURIComponent(
-                            sidang.sidangId
-                          )}`}
-                          label="BAS"
-                          namaCadangan={`bas-${status.identitas.nomorPerkara}-${sidang.tanggalSidang}.pdf`}
-                        />
-                      ) : (
-                        <span className="text-xs text-muted-foreground">BAS belum diunggah</span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            {/* --- Putusan --- */}
-            {status.putusan?.adaBerkasPutusan || status.putusan?.adaBerkasAnonim ? (
-              <div>
-                <p className="mb-1 text-sm font-semibold">Putusan</p>
-                <div className="flex flex-wrap gap-2">
-                  {status.putusan?.adaBerkasPutusan ? (
-                    <TombolUnduh
-                      alamat={`/api/aleta-ecourt/berkas-sipp?jenis=putusan&id=${encodeURIComponent(
-                        status.identitas.perkaraId
-                      )}`}
-                      label="Unduh putusan"
-                      namaCadangan={`putusan-${status.identitas.nomorPerkara}.pdf`}
-                    />
-                  ) : null}
-                  {status.putusan?.adaBerkasAnonim ? (
-                    <TombolUnduh
-                      alamat={`/api/aleta-ecourt/berkas-sipp?jenis=putusan-anonim&id=${encodeURIComponent(
-                        status.identitas.perkaraId
-                      )}`}
-                      label="Unduh putusan anonim"
-                      namaCadangan={`putusan-anonim-${status.identitas.nomorPerkara}.pdf`}
-                    />
-                  ) : null}
-                </div>
-              </div>
-            ) : null}
-
-            {/* --- Lampiran lain --- */}
-            <div>
-              <p className="mb-1 text-sm font-semibold">
-                Lampiran lain
-                <span className="ml-1 font-normal text-muted-foreground">
-                  ({status.dokumenSipp.length} dari SIPP, {status.dokumenEcourt.length} dari e-Court
-                  {status.dokumenEcourt.length > 0
-                    ? `, ${status.dokumenEcourt.filter((d) => d.statusVerifikasi === "belum").length} menunggu majelis`
-                    : ""}
-                  )
-                </span>
-              </p>
-              {status.dokumenSipp.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Tidak ada lampiran SIPP.</p>
-              ) : (
-                <ul className="space-y-1 text-sm">
-                  {status.dokumenSipp.map((dokumen) => (
-                    <li
-                      key={dokumen.id}
-                      className="flex flex-wrap items-center justify-between gap-2"
-                    >
-                      <span className="min-w-0 flex-1 truncate" title={dokumen.namaDokumen}>
-                        {dokumen.namaDokumen}
-                      </span>
-                      <TombolUnduh
-                        alamat={`/api/aleta-ecourt/berkas-sipp?jenis=dokumen&id=${encodeURIComponent(
-                          dokumen.id
-                        )}`}
-                        label="Unduh"
-                        namaCadangan={dokumen.namaDokumen || "dokumen.pdf"}
-                      />
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            <p className="text-sm">
-              <span className="text-xs text-muted-foreground">Keterangan saksi: </span>
-              {status.saksi.ada
-                ? `${status.saksi.jumlahSaksi} saksi, ${status.saksi.jumlahKeterangan} keterangan`
-                : "belum ada"}
-            </p>
-          </div>
-        </Bagian>
-        <Bagian judul="Biaya perkara" kunci="biaya">
+        <Bagian
+          judul="Biaya perkara"
+          kunci="biaya"
+          ciutBawaan
+          versiBawaan="3nov"
+          keterangan={`panjar ${rupiah(status.biaya.panjar)}${PEMISAH_RINGKAS}sisa ${rupiah(status.biaya.sisa)}`}
+        >
           <dl className="space-y-1 text-sm">
             <div className="flex justify-between">
               <dt className="text-muted-foreground">Panjar masuk</dt>
@@ -5458,24 +5435,25 @@ function IsiStatus({
                   judul={`Komposisi pengeluaran — ${rupiah(status.biaya.terpakai)}`}
                   maksIrisan={6}
                 />
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Uraian biaya adalah teks bebas di SIPP. Dua tulisan yang maksudnya sama
-                  dengan ejaan berbeda tergambar sebagai dua irisan.
-                </p>
               </div>
             );
           })()}
         </Bagian>
-      </div>
     </KelompokKartu>
     </>
   );
 
   const blokE = (
     <>
-    <KelompokKartu id="E" seamless={seamless} ringkas={ringkasKelompok.E} perluTindakan={perluTindakanKelompok.E ?? 0}>
+    <KelompokKartu id="E" seamless={seamless} ringkas={ringkasKelompok.E} perluTindakan={perluTindakanKelompok.E ?? 0} terbukaBawaan={tahapBuka.kelompok.has("E")} kunciPerkara={status.identitas.nomorPerkara}>
       {/* --- Penilaian --- */}
-      <Bagian judul="Penilaian kelengkapan perkara" kunci="rubrik" ciutBawaan>
+      <Bagian
+        judul="Penilaian kelengkapan perkara"
+        kunci="rubrik"
+        ciutBawaan
+        versiBawaan="3nov"
+        keterangan={`nilai ${status.penilaian.skor} dari 100${PEMISAH_RINGKAS}${status.penilaian.keadaan}`}
+      >
         <div className="space-y-1.5">
           {status.penilaian.rinci.map((butir) => (
             <div key={butir.kunci} className="flex flex-wrap items-center gap-2 text-sm">
@@ -5511,13 +5489,12 @@ function IsiStatus({
           ))}
         </div>
 
-        {/* Batasnya disebutkan di layar, bukan disembunyikan. */}
-        <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300">
-          {status.penilaian.catatan} Butir bertanda &quot;belum waktunya&quot; - sidang belum ada yang
-          berlalu, perkara belum diputus - tidak ikut membagi nilai, sehingga perkara yang baru
-          berjalan dinilai atas apa yang sudah menjadi kewajibannya. Bobot dan ambangnya diubah di
-          menu Integrasi e-Court.
-        </p>
+        {/* Penjelasan cara menilai tidak ditampilkan (3 Nov 2026); hanya catatan keadaan perkaranya. */}
+        {status.penilaian.catatan ? (
+          <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300">
+            {status.penilaian.catatan}
+          </p>
+        ) : null}
       </Bagian>
 
       {/* ==================================================================
@@ -5528,7 +5505,7 @@ function IsiStatus({
           akhir SK dihitung atas seluruh perkara putus satu satuan kerja,
           bukan atas satu perkara - karena itu di sini tidak ada persentase
           maupun predikat bintang, supaya tidak dikira nilai satker. */}
-      <Bagian judul="Penilaian SIPP menurut SK Dirjen Badilag 048/2024" kunci="sk" ciutBawaan>
+      <Bagian judul="Penilaian SIPP menurut SK Dirjen Badilag 048/2024" kunci="sk" ciutBawaan versiBawaan="3nov">
         <div className="space-y-3">
           {ASPEK_SK.map((aspek) => {
             const unsur = status.penilaianSk.rinci.filter((x) => x.aspek === aspek.kunci);
@@ -5580,7 +5557,7 @@ function IsiStatus({
         </div>
 
         <p className="mt-2 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-900 dark:border-sky-500/40 dark:bg-sky-500/10 dark:text-sky-200">
-          {status.penilaianSk.catatan} Dasar: {status.penilaianSk.dasar}
+          {status.penilaianSk.catatan}
         </p>
 
         {/* Dari mana angka-angka yang tidak punya kolom resminya sendiri
@@ -5598,15 +5575,6 @@ function IsiStatus({
             </li>
           ) : status.nilaiRelaas.alasan ? (
             <li className="text-amber-700 dark:text-amber-300">{status.nilaiRelaas.alasan}</li>
-          ) : null}
-          {status.durasiMediasi.terbaca && status.durasiMediasi.hari > 0 ? (
-            <li>
-              Waktu putus dikurangi{" "}
-              <span className="font-medium">{status.durasiMediasi.hari} hari mediasi</span>.
-            </li>
-          ) : null}
-          {status.penetapanKembali.adaPenggantian ? (
-            <li>Penetapan pertama yang dinilai - penetapan kembali tidak dihitung.</li>
           ) : null}
         </ul>
 
@@ -5666,8 +5634,7 @@ function IsiStatus({
               <DiagramBatang data={titik} judul="Poin yang diperoleh tiap aspek" satuan="poin" />
               {belumTerbaca > 0 ? (
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {belumTerbaca} unsur belum terbaca dan tidak ikut dihitung - bukan dihitung
-                  nol.
+                  {belumTerbaca} unsur belum terbaca.
                 </p>
               ) : null}
             </div>
@@ -5687,6 +5654,70 @@ function IsiStatus({
           Ringkasan diletakkan PALING ATAS di antara keempatnya. Untuk petugas
           yang punya sepuluh detik, kalimatlah yang terbaca; gambarnya dibuka
           kalau kalimatnya bikin penasaran. */}
+      {status.analisa ? (
+        <Bagian
+          judul="Analisa perkara"
+          kunci="analisa"
+          ciutBawaan
+          versiBawaan="3nov"
+          keterangan="Disusun dari data yang sudah ada di layar ini"
+        >
+          <div className="space-y-4">
+            {/* --- ringkasan --- */}
+            {status.analisa.ringkasan.length > 0 ? (
+              <ul className="space-y-1">
+                {status.analisa.ringkasan.map((kalimat, urutan) => (
+                  <li key={`ringkas-${urutan}`} className="flex gap-2 text-sm">
+                    <span className="mt-[0.45rem] h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/60" />
+                    <span>{kalimat}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+
+            {/* --- garis waktu --- */}
+            <div>
+              <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                Garis waktu
+              </h4>
+              {status.analisa.garisWaktu.terbaca ? (
+                <GarisWaktu garisWaktu={status.analisa.garisWaktu} />
+              ) : (
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {status.analisa.garisWaktu.alasan}
+                </p>
+              )}
+            </div>
+
+            {/* --- jeda antar sidang --- */}
+            <div>
+              <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                Jeda antar sidang
+              </h4>
+              {status.analisa.jedaSidang.terbaca ? (
+                <JedaSidang jeda={status.analisa.jedaSidang} />
+              ) : (
+                <p className="mt-1 text-sm text-muted-foreground">{status.analisa.jedaSidang.alasan}</p>
+              )}
+            </div>
+
+            {/* --- ketepatan input --- */}
+            <div>
+              <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                Ketepatan input ke SIPP
+              </h4>
+              {status.analisa.ketepatanInput.terbaca ? (
+                <KetepatanInput ketepatan={status.analisa.ketepatanInput} />
+              ) : (
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {status.analisa.ketepatanInput.alasan}
+                </p>
+              )}
+            </div>
+          </div>
+        </Bagian>
+      ) : null}
+
       {/* ==================================================================
           ANALISIS LANJUTAN - DIMUAT SAAT DIMINTA
           ==================================================================
@@ -5768,162 +5799,239 @@ function IsiStatus({
         <AletaPromptPutusan nomorPerkara={status.identitas.nomorPerkara} />
       </Bagian>
 
-      {status.analisa ? (
-        <Bagian
-          judul="Analisa perkara"
-          kunci="analisa"
-          keterangan="Disusun dari data yang sudah ada di layar ini - tidak ada pembacaan tambahan ke SIPP."
-        >
-          <div className="space-y-4">
-            {/* --- ringkasan --- */}
-            {status.analisa.ringkasan.length > 0 ? (
-              <ul className="space-y-1">
-                {status.analisa.ringkasan.map((kalimat, urutan) => (
-                  <li key={`ringkas-${urutan}`} className="flex gap-2 text-sm">
-                    <span className="mt-[0.45rem] h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/60" />
-                    <span>{kalimat}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-
-            {/* --- garis waktu --- */}
-            <div>
-              <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                Garis waktu
-              </h4>
-              {status.analisa.garisWaktu.terbaca ? (
-                <GarisWaktu garisWaktu={status.analisa.garisWaktu} />
-              ) : (
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {status.analisa.garisWaktu.alasan}
-                </p>
-              )}
-            </div>
-
-            {/* --- jeda antar sidang --- */}
-            <div>
-              <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                Jeda antar sidang
-              </h4>
-              {status.analisa.jedaSidang.terbaca ? (
-                <JedaSidang jeda={status.analisa.jedaSidang} />
-              ) : (
-                <p className="mt-1 text-sm text-muted-foreground">{status.analisa.jedaSidang.alasan}</p>
-              )}
-            </div>
-
-            {/* --- ketepatan input --- */}
-            <div>
-              <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                Ketepatan input ke SIPP
-              </h4>
-              {status.analisa.ketepatanInput.terbaca ? (
-                <KetepatanInput ketepatan={status.analisa.ketepatanInput} />
-              ) : (
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {status.analisa.ketepatanInput.alasan}
-                </p>
-              )}
-            </div>
-          </div>
-        </Bagian>
-      ) : null}
     </KelompokKartu>
     </>
   );
 
-  if (seamless) {
-    return (
-      <div className="space-y-3" data-cetak-status-perkara="">
-        {/* Kepala lekat: nomor, aksi utama, lencana, dan pencarian di dalam perkara.
-            Aksi lainnya ada di menu Lainnya - fungsinya sama dengan bilah alat Kompleks. */}
-        <AlatStatusPerkara
-          varian="seamless"
-          nomorPerkara={status.identitas.nomorPerkara}
-          jenisPerkara={status.identitas.jenisPerkara}
-          perkaraId={status.identitas.perkaraId}
-          bahan={status}
-          ringkas={ringkas}
-          onBuka={onBuka}
-          kepalaNomor={blokNomor}
-          unduh={blokUnduh}
-          lencana={<div className="mt-2">{blokLencana}</div>}
-          menuTambahan={
+  // ==========================================================================
+  // PERAKITAN BARU (rancangan 3 Nov 2026, keputusan 142)
+  // ==========================================================================
+  //
+  // Urutan sama di Seamless dan Kompleks: sorotan perkara (Sidang berikutnya dan
+  // Perlu dikerjakan paling menonjol), linimasa tipis dan satu baris fakta, lalu
+  // bilah lekat (cari di perkara ini + deret kelompok), lalu kelompok: Jalannya
+  // perkara, Pihak dan majelis, Putusan dan tindak lanjut, Berkas arsip dan
+  // biaya, Penilaian dan analisis. Kolom kanan dihapus; isinya naik ke sorotan.
+  const butirKerja: ButirKerja[] = (() => {
+    const hasil: ButirKerja[] = [];
+    if (kumulasiBaru && adaDariPetitum(status.kumulasi)) {
+      const dariPetitum = butirKumulasi(status.kumulasi)
+        .filter((x) => x.sumber === "petitum")
+        .map((x) => x.nama);
+      hasil.push({ pesan: `Kumulasi ${dariPetitum.join(", ")} belum diisi di SIPP`, berat: false, ke: ["__kumulasi"] });
+    }
+    const KEL_PERTAMA: Record<string, string> = { A: "majelis", B: "sidang", C: "putusan", D: "berkas", E: "rubrik" };
+    for (const p of ringkas.peringatan) {
+      hasil.push({ pesan: p.pesan, sebab: p.sebab, berat: p.berat, ke: [p.bagian || KEL_PERTAMA[p.kelompok ?? "B"] || "sidang"] });
+    }
+    if (!status.putusan?.sudahPutus) {
+      const tanpaBas = [...jadwalUrut].reverse().find((x) => x.tanggalSidang <= hariIni && !x.adaBas);
+      if (tanpaBas) {
+        hasil.push({
+          pesan: `BAS sidang ke-${tanpaBas.urutanSidang || "?"} (${tanggalHariPendek(tanpaBas.tanggalSidang, tanpaBas.tanggalSidang)}) belum diunggah`,
+          berat: false,
+          ke: ["berkas"],
+        });
+      }
+      const belumKembali = status.relaas.filter((r) => !r.tanggalRelaas && !r.retur).length;
+      if (belumKembali > 0) {
+        hasil.push({ pesan: `${belumKembali} relaas panggilan belum kembali`, berat: false, ke: ["relaas"] });
+      }
+    }
+    return hasil;
+  })();
+
+  const keButir = (ke: string[]) => {
+    if (ke[0] === "__kumulasi") {
+      setKumulasiTerbuka(true);
+      window.setTimeout(() => document.getElementById("baris-kumulasi")?.scrollIntoView({ behavior: "smooth", block: "center" }), 60);
+      return;
+    }
+    loncatKeBagian(...ke);
+  };
+
+  const putus = Boolean(status.putusan?.sudahPutus);
+  const sudahBht = Boolean(status.putusan?.tanggalBht);
+  const hariLagi = (() => {
+    if (!sidangBerikut) return null;
+    const [t, b, h] = sidangBerikut.tanggalSidang.slice(0, 10).split("-").map(Number);
+    const [t2, b2, h2] = hariIni.split("-").map(Number);
+    const selisih = Math.round((new Date(t, b - 1, h).getTime() - new Date(t2, b2 - 1, h2).getTime()) / 86400000);
+    return Number.isFinite(selisih) ? selisih : null;
+  })();
+  const pembuktianBerikut = Boolean(sidangBerikut && agendaPembuktianSaksi(sidangBerikut.agenda));
+
+  const berikutnyaNode = putus ? (
+    <KotakBerikutnya
+      label="Putusan"
+      waktu={tanggalHariPanjang(status.putusan!.tanggalPutusan)}
+      agenda={status.putusan!.statusPutusan ? <b>{status.putusan!.statusPutusan}</b> : undefined}
+      bawah={
+        <>
+          {sudahBht ? null : <Badge variant="muted">BHT menunggu</Badge>}
+          <button type="button" className="text-[13.5px] font-semibold text-primary underline underline-offset-2" onClick={() => loncatKeBagian("putusan-lengkap")}>
+            Keterangan putusan
+          </button>
+          <button type="button" className="text-[13.5px] font-semibold text-primary underline underline-offset-2" onClick={() => loncatKeBagian("putusan")}>
+            Tindak lanjut
+          </button>
+        </>
+      }
+    />
+  ) : sidangBerikut ? (
+    <KotakBerikutnya
+      label="Sidang berikutnya"
+      waktu={`${tanggalHariPanjang(sidangBerikut.tanggalSidang)}${sidangBerikut.jamSidang ? `${PEMISAH_RINGKAS}${sidangBerikut.jamSidang}` : ""}`}
+      agenda={
+        <>
+          <b>{sidangBerikut.agenda || "agenda belum tercatat"}</b>
+          {sidangBerikut.urutanSidang ? `${PEMISAH_RINGKAS}sidang ke-${sidangBerikut.urutanSidang}` : ""}
+          {sidangBerikut.ruangan ? `${PEMISAH_RINGKAS}${sidangBerikut.ruangan}` : ""}
+        </>
+      }
+      bawah={
+        <>
+          {hariLagi !== null ? <Badge variant="default">{hariLagi === 0 ? "hari ini" : hariLagi === 1 ? "besok" : `${hariLagi} hari lagi`}</Badge> : null}
+          {pembuktianBerikut ? (
             <button
               type="button"
-              role="menuitem"
-              onClick={onKembali}
-              className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm transition hover:bg-muted/70"
+              className="text-[13.5px] font-semibold text-primary underline underline-offset-2"
+              onClick={() => loncatKeBagian("status-pandu-saksi-pembuktian", "status-pandu-saksi")}
             >
-              Cari perkara lain
+              Panduan pertanyaan saksi
             </button>
-          }
-        />
-        {blokKumulasi}
-        <TataLetakSeamless
-          linimasa={<LinimasaPerkara titik={titikLinimasa} />}
-          rail={
-            <>
-              {blokPeringatan}
-              <div className="[&>div]:!grid-cols-1">{blokKartu}</div>
-              <div className="[&>div]:!grid-cols-2">{blokAngka}</div>
-            </>
-          }
-          nav={<NavKelompok ringkasan={ringkasKelompok} perluTindakan={perluTindakanKelompok} />}
-        >
-          {blokA}
-          {blokB}
-          {blokC}
-          {blokD}
-          {blokE}
-        </TataLetakSeamless>
-      </div>
-    );
-  }
+          ) : null}
+          <button type="button" className="text-[13.5px] font-semibold text-primary underline underline-offset-2" onClick={() => loncatKeBagian("sidang")}>
+            Perjalanan sidang
+          </button>
+        </>
+      }
+    />
+  ) : (
+    <KotakBerikutnya label="Sidang berikutnya" waktu={ringkas.berikutnya} />
+  );
+
+  const faktaSorotan: Array<{ label: string; nilai: string; nada?: "baik" | "perhatian" | "kurang" }> = [
+    {
+      label: status.umur.sudahPutus ? "Selesai dalam" : "Berjalan",
+      nilai: status.umur.hariBerjalan === null ? "tidak terbaca" : `${status.umur.hariBerjalan} hari`,
+    },
+    {
+      label: "Lama perkara",
+      nilai: status.umur.hariBersih === null ? "—" : `${status.umur.hariBersih} hari`,
+      nada:
+        status.umur.hariBersih === null
+          ? undefined
+          : status.umur.hariBersih <= 90
+            ? "baik"
+            : status.umur.hariBersih <= 150
+              ? "perhatian"
+              : "kurang",
+    },
+    {
+      label: "Sidang",
+      nilai: `${status.jadwal.length}${status.penundaan.length > 0 ? `${PEMISAH_RINGKAS}${status.penundaan.length} ditunda` : ""}`,
+    },
+    { label: "Sisa panjar", nilai: rupiah(status.biaya.sisa), nada: status.biaya.sisa < 0 ? "kurang" : undefined },
+    {
+      label: "Kelengkapan",
+      nilai: `${status.penilaian.skor} / 100`,
+      nada: status.penilaian.keadaan === "baik" ? "baik" : status.penilaian.keadaan === "perhatian" ? "perhatian" : "kurang",
+    },
+  ];
+  const majelisSorotan = [
+    status.majelis.length > 0 ? namaMajelisSingkat(status.majelis) : ringkas.majelisKalimat,
+    status.panitera.length > 0 ? `PP ${status.panitera.map((x) => namaTanpaGelar(x.nama)).join(", ")}` : "",
+    status.jurusita.length > 0 ? `JS ${status.jurusita.map((x) => namaTanpaGelar(x.nama)).join(", ")}` : "",
+  ].filter(Boolean);
+
+  const beratKerja = butirKerja.filter((x) => x.berat).length;
+  const urutKelompok = [blokB, blokA, blokC, blokD, blokE];
 
   return (
     // Penanda pembungkus cetak: yang di dalamnya tercetak dengan palet kertas,
     // yang di luarnya (navigasi, pencarian) tidak - lihat cetak-status-perkara.tsx.
-    <div className="space-y-3" data-cetak-status-perkara="">
-      {/* items-start, bukan items-baseline: tombol unduh membawa pilihan
-          arsip fisik di bawahnya, dan garis alas akan menggantungnya. */}
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        {blokNomor}
-        {/* ==============================================================
-            SELURUH PERKARA DALAM SATU BERKAS
-            ==============================================================
-
-            Berdiri di KEPALA layar, bukan di bagian Berkas yang berada pada
-            urutan ketujuh belas dari dua puluh enam. Yang datang untuk
-            membawa perkaranya keluar - banding, pemeriksaan pengawas, serah
-            terima pemegang perkara - datang untuk itu saja, dan menyuruhnya
-            menggulung melewati enam belas bagian lebih dulu berarti
-            tombolnya tidak akan ditemukan.
-
-            Yang turun bukan hanya berkasnya: seluruh keterangan perkara ikut
-            sebagai JSON dan CSV, sebab yang dikirim ke banding dan yang
-            diperiksa pengawas adalah keduanya. */}
-        <div className="flex flex-wrap items-start gap-2 print:hidden">
-          {/* Tulisannya "Unduh seluruh berkas" (bawaan isi="lengkap") sejak
-              butir 25, 6 Okt 2026. */}
-          {blokUnduh}
-          <Button size="sm" variant="outline" onClick={onKembali}>
-            Cari perkara lain
-          </Button>
-        </div>
-      </div>
-      {blokLencana}
-      {blokKumulasi}
-      {blokAngka}
-      {blokAlat}
-      {blokKartu}
-      {blokPeringatan}
-      {blokA}
-      {blokB}
-      {blokC}
-      {blokD}
-      {blokE}
+    <div className="space-y-3" data-cetak-status-perkara="" data-tampilan-status={seamless ? "seamless" : "kompleks"}>
+      <IngatanBagianKonteks.Provider value={status.identitas.nomorPerkara}>
+        <BawaanBagianKonteks.Provider value={bawaanBagian}>
+          <AlatStatusPerkara
+            varian="rancangan"
+            nomorPerkara={status.identitas.nomorPerkara}
+            jenisPerkara={status.identitas.jenisPerkara}
+            perkaraId={status.identitas.perkaraId}
+            bahan={status}
+            ringkas={ringkas}
+            onBuka={onBuka}
+            unduh={blokUnduh}
+            menuTambahan={
+              <button
+                type="button"
+                role="menuitem"
+                onClick={onKembali}
+                className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm transition hover:bg-muted/70"
+              >
+                Cari perkara lain
+              </button>
+            }
+          >
+            {({ aksi, cari, catatan }) => (
+              <>
+                <SorotanPerkara
+                  kepala={
+                    <>
+                      {blokNomor}
+                      {blokLencana}
+                      {kumulasiBaru ? (
+                        <BarisKumulasi kumulasi={status.kumulasi} terbuka={kumulasiTerbuka} onUbah={setKumulasiTerbuka} />
+                      ) : null}
+                    </>
+                  }
+                  aksi={aksi}
+                  berikutnya={berikutnyaNode}
+                  kerja={<KotakKerja butir={butirKerja} onKe={keButir} />}
+                  linimasa={<LinimasaPerkara titik={titikLinimasa} />}
+                  fakta={<BarisFakta fakta={faktaSorotan} majelis={majelisSorotan} />}
+                />
+                {catatan}
+                <BilahLekat
+                  ringkas={
+                    <>
+                      <span className="font-mono text-sm font-semibold">{status.identitas.nomorPerkara}</span>
+                      <Badge variant={putus ? "muted" : ringkas.keadaanBerat ? "danger" : "warning"}>
+                        {putus ? `Putus ${tanggalHariPendek(status.putusan!.tanggalPutusan, status.putusan!.tanggalPutusan)}` : ringkas.keadaan}
+                      </Badge>
+                      {!putus && sidangBerikut ? (
+                        <span>
+                          Berikutnya <b>{tanggalHariPendek(sidangBerikut.tanggalSidang, sidangBerikut.tanggalSidang)}{sidangBerikut.jamSidang ? ` ${sidangBerikut.jamSidang}` : ""}</b>${PEMISAH_RINGKAS}{sidangBerikut.agenda || "agenda belum tercatat"}
+                        </span>
+                      ) : null}
+                      {beratKerja > 0 ? <Badge variant="warning">{beratKerja} perlu dikerjakan</Badge> : null}
+                    </>
+                  }
+                  cari={cari}
+                  deret={<NavKelompok ringkasan={ringkasKelompok} perluTindakan={perluTindakanKelompok} sembunyiDiLebar={!seamless} />}
+                />
+                {seamless ? (
+                  <DaftarKelompok>
+                    {urutKelompok.map((blok, i) => (
+                      <Fragment key={i}>{blok}</Fragment>
+                    ))}
+                  </DaftarKelompok>
+                ) : (
+                  <div className="grid gap-3.5 lg:grid-cols-[13.5rem_minmax(0,1fr)] lg:items-start">
+                    <IndeksKompleks perluTindakan={perluTindakanKelompok} />
+                    <div className="min-w-0 space-y-4">
+                      {urutKelompok.map((blok, i) => (
+                        <Fragment key={i}>{blok}</Fragment>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </AlatStatusPerkara>
+        </BawaanBagianKonteks.Provider>
+      </IngatanBagianKonteks.Provider>
     </div>
   );
 }
@@ -6095,7 +6203,7 @@ export function susunPeristiwa(status: Status): PeristiwaKalender[] {
         sidang.adaBas ? "BAS ada" : "BAS belum",
       ]
         .filter(Boolean)
-        .join(" · "),
+        .join(PEMISAH_RINGKAS),
       ditunda: sidang.ditunda,
     });
   }
@@ -6123,7 +6231,7 @@ export function susunPeristiwa(status: Status): PeristiwaKalender[] {
         rencana.keadaan === "meleset" ? "hari itu lewat tanpa sidang" : "belum dijadwalkan",
       ]
         .filter(Boolean)
-        .join(" · "),
+        .join(PEMISAH_RINGKAS),
     });
   }
 
@@ -6132,7 +6240,7 @@ export function susunPeristiwa(status: Status): PeristiwaKalender[] {
       tanggal: jadwal.tanggal,
       jenis: "mediasi",
       judul: "Mediasi",
-      rincian: [jadwal.jam, jadwal.tempat, jadwal.ditunda ? "ditunda" : ""].filter(Boolean).join(" · "),
+      rincian: [jadwal.jam, jadwal.tempat, jadwal.ditunda ? "ditunda" : ""].filter(Boolean).join(PEMISAH_RINGKAS),
       ditunda: jadwal.ditunda,
     });
   }
@@ -6155,7 +6263,7 @@ export function susunPeristiwa(status: Status): PeristiwaKalender[] {
         relaas.retur ? kepatutanBarisRelaas(relaas).labelRetur || "surat RETUR" : "",
       ]
         .filter(Boolean)
-        .join(" · "),
+        .join(PEMISAH_RINGKAS),
     });
   }
 
@@ -6171,7 +6279,7 @@ export function susunPeristiwa(status: Status): PeristiwaKalender[] {
       tanggal: putusan.tanggalPutusan,
       jenis: "putusan",
       judul: sebutan,
-      rincian: [putusan.statusPutusan, putusan.verstek ? "verstek" : ""].filter(Boolean).join(" · "),
+      rincian: [putusan.statusPutusan, putusan.verstek ? "verstek" : ""].filter(Boolean).join(PEMISAH_RINGKAS),
     });
     tambah({
       tanggal: putusan.tanggalMinutasi,
@@ -6475,8 +6583,7 @@ function CourtCalendarSipp({ status }: { status: Status }) {
   if (cc.baris.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        Court Calendar perkara ini belum diisi di SIPP. Itu lazim - pada perkara 2026 baru sekitar
-        separuh perkara mengisinya - jadi bukan tanda ada yang keliru.
+        Court Calendar perkara ini belum diisi di SIPP.
       </p>
     );
   }
@@ -6561,10 +6668,6 @@ function CourtCalendarSipp({ status }: { status: Status }) {
           </li>
         ))}
       </ol>
-      <p className="mt-1.5 text-sm text-muted-foreground">
-        Terlaksana dinilai dari ADANYA sidang pada tanggal yang direncanakan, bukan dari kecocokan
-        agendanya - agenda ditulis bebas dan ejaannya tidak ajek di SIPP.
-      </p>
     </div>
   );
 }
@@ -6613,6 +6716,7 @@ const SEBUTAN_JALUR: Record<string, string> = {
  * dan begitu pula bagian-bagian lain di layar ini disusun.
  */
 export function RelaasPanggilan({ status }: { status: Status }) {
+  const urutanPer = new Map((status.jadwal ?? []).map((x) => [String(x.sidangId), Number(x.urutanSidang) || undefined] as const));
   const panggilan = status.panggilan;
   const ringkasan = panggilan?.ringkasan;
 
@@ -6696,21 +6800,12 @@ export function RelaasPanggilan({ status }: { status: Status }) {
               </Badge>
             ) : null}
           </div>
+          {/* Penjelasan jalur dan sifat "alat bantu" tidak ditampilkan (3 Nov 2026).
+              Yang tersisa hanya sidang acuannya - tanpa ini kepatutan di atas
+              tidak jelas menilai sidang yang mana. */}
           <p className="text-sm text-muted-foreground">
-            {/* Bot jatuh ke sidang terakhir yang TERCATAT bila tidak ada satu
-                pun sidang yang punya relaas - kalimatnya harus mengikuti,
-                bukan mengaku sidang itu punya relaas (40 dari 823 perkara
-                bersidang 2026 tanpa relaas sama sekali). */}
-            Kepatutan di atas dinilai untuk{" "}
-            <strong>
-              {acuanBerelaas
-                ? "sidang terakhir yang punya relaas"
-                : "sidang terakhir yang tercatat - belum ada relaas untuk sidang itu"}
-            </strong>
-            {panggilan?.tanggalSidang ? ` (${tanggalHariPanjang(panggilan.tanggalSidang)})` : ""}, menurut
-            jalur yang SEHARUSNYA dipakai
-            {panggilan?.lewatEcourt ? " (perkara e-Court)" : " (perkara biasa)"} - bukan jalur yang
-            terlanjur dipakai. Alat bantu, bukan penetapan sah tidaknya panggilan.
+            Dinilai untuk {acuanBerelaas ? "sidang terakhir yang punya relaas" : "sidang terakhir yang tercatat - belum ada relaas untuk sidang itu"}
+            {panggilan?.tanggalSidang ? ` (${tanggalHariPanjang(panggilan.tanggalSidang)})` : ""}.
           </p>
         </div>
       ) : null}
@@ -6738,7 +6833,7 @@ export function RelaasPanggilan({ status }: { status: Status }) {
               <li key={tanggal} className="rounded-md border bg-muted/30 p-2">
                 <div className="mb-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-1 border-b pb-1">
                   <span className="text-sm font-semibold">
-                    {nomor.length > 0 ? `Sidang ke-${nomor.join(" & ke-")}` : "Sidang"} ·{" "}
+                    {nomor.length > 0 ? `Sidang ke-${nomor.join(" & ke-")}` : "Sidang"} {PEMISAH_RINGKAS.trim()}{" "}
                     {tanggalHariPanjang(tanggal)}
                   </span>
                   {sidang?.agenda ? (
@@ -6751,7 +6846,7 @@ export function RelaasPanggilan({ status }: { status: Status }) {
                 </div>
                 <ul className="space-y-1.5">
                   {baris.map((relaas) => (
-                    <BarisRelaas key={relaas.id} relaas={relaas} tanggalSidang={tanggal} />
+                    <BarisRelaas key={relaas.id} relaas={relaas} tanggalSidang={tanggal} nomorPerkara={status.identitas.nomorPerkara} urutanSidang={urutanPer.get(String(relaas.sidangId || ""))} />
                   ))}
                 </ul>
               </li>
@@ -6768,7 +6863,7 @@ export function RelaasPanggilan({ status }: { status: Status }) {
               </p>
               <ul className="space-y-1.5">
                 {tanpaSidang.map((relaas) => (
-                  <BarisRelaas key={relaas.id} relaas={relaas} tanggalSidang="" />
+                  <BarisRelaas key={relaas.id} relaas={relaas} tanggalSidang="" nomorPerkara={status.identitas.nomorPerkara} />
                 ))}
               </ul>
             </li>
@@ -6864,17 +6959,17 @@ export function RelaasPanggilan({ status }: { status: Status }) {
                         // "tidak perlu dipanggil" (tinjauan 24 September 2026).
                         <Badge variant="muted">{bunyiAlasanKepatutan(pihak.kepatutan.alasan)}</Badge>
                       ) : pihak.kepatutan.patut === true ? (
-                        <Badge variant="success">patut · {pihak.kepatutan.selisih} hari</Badge>
+                        <Badge variant="success">patut | {pihak.kepatutan.selisih} hari</Badge>
                       ) : pihak.kepatutan.patut === false ? (
                         <Badge variant="danger">
-                          {labelTidakPatut(pihak.terlaksana || pihak.seharusnya)} ·{" "}
+                          {labelTidakPatut(pihak.terlaksana || pihak.seharusnya)} {PEMISAH_RINGKAS.trim()}{" "}
                           {bunyiAlasanKepatutan(pihak.kepatutan.alasan)}
-                          {pihak.kepatutan.selisih === null ? "" : ` · ${pihak.kepatutan.selisih} hari`}
+                          {pihak.kepatutan.selisih === null ? "" : `${PEMISAH_RINGKAS}${pihak.kepatutan.selisih} hari`}
                         </Badge>
                       ) : (
                         <Badge variant="warning">
                           {bunyiAlasanKepatutan(pihak.kepatutan.alasan)}
-                          {pihak.kepatutan.selisih === null ? "" : ` · ${pihak.kepatutan.selisih} hari`}
+                          {pihak.kepatutan.selisih === null ? "" : `${PEMISAH_RINGKAS}${pihak.kepatutan.selisih} hari`}
                         </Badge>
                       )}
                       <div className="mt-0.5 text-sm text-muted-foreground">
@@ -6903,12 +6998,51 @@ export function RelaasPanggilan({ status }: { status: Status }) {
  * tidaknya panggilan - dan ia tidak dapat dibaca dari dua tanggal yang
  * berdampingan tanpa menghitung sendiri.
  */
+/**
+ * Tombol unduh Relaas dan Resi satu baris relaas - rute, penanganan unduhan,
+ * label, dan nama berkas SAMA dengan Riwayat panggilan di Jadwal Sidang
+ * (TombolUnduh + namaDokumenRelaas/namaBerkasRelaas). Tombol hanya ada bila
+ * berkasnya ada (adaDokumen / adaResi).
+ */
+function TombolUnduhRelaas({
+  relaas,
+  nomorPerkara,
+  urutanSidang,
+}: {
+  relaas: Status["relaas"][number];
+  nomorPerkara: string;
+  urutanSidang?: number;
+}) {
+  return (
+    <>
+      {relaas.adaDokumen ? (
+        <TombolUnduh
+          alamat={`/api/aleta-ecourt/berkas-sipp?jenis=relaas&id=${encodeURIComponent(relaas.id)}`}
+          label={namaDokumenRelaas(relaas, "relaas", urutanSidang)}
+          namaCadangan={namaBerkasRelaas(nomorPerkara, relaas, "relaas", urutanSidang)}
+        />
+      ) : null}
+      {relaas.adaResi ? (
+        <TombolUnduh
+          alamat={`/api/aleta-ecourt/berkas-sipp?jenis=resi&id=${encodeURIComponent(relaas.id)}`}
+          label={namaDokumenRelaas(relaas, "resi", urutanSidang)}
+          namaCadangan={namaBerkasRelaas(nomorPerkara, relaas, "resi", urutanSidang)}
+        />
+      ) : null}
+    </>
+  );
+}
+
 function BarisRelaas({
   relaas,
   tanggalSidang,
+  nomorPerkara,
+  urutanSidang,
 }: {
   relaas: Status["relaas"][number];
   tanggalSidang: string;
+  nomorPerkara: string;
+  urutanSidang?: number;
 }) {
   const jarakHari = (() => {
     if (!tanggalSidang || !relaas.tanggalRelaas) return null;
@@ -6999,7 +7133,7 @@ function BarisRelaas({
       {relaas.tanggalKirimPos ? (
         <span className="text-xs text-muted-foreground">
           dikirim pos {tanggalHariPendek(relaas.tanggalKirimPos, relaas.tanggalKirimPos)}
-          {relaas.noResiPos ? ` · resi ${relaas.noResiPos}` : ""}
+          {relaas.noResiPos ? `${PEMISAH_RINGKAS}resi ${relaas.noResiPos}` : ""}
         </span>
       ) : null}
       {/* Sebab returnya disebut (keputusan pengguna 22 Okt 2026). */}
@@ -7007,22 +7141,8 @@ function BarisRelaas({
       {relaas.statusPos === 1 ? <Badge variant="success">pos sampai</Badge> : null}
 
       <span className="ml-auto flex flex-wrap items-center gap-1">
-        {relaas.adaDokumen ? (
-          <TombolUnduh
-            alamat={`/api/aleta-ecourt/berkas-sipp?jenis=relaas&id=${encodeURIComponent(relaas.id)}`}
-            label="Relaas"
-            namaCadangan={`relaas-${relaas.id}.pdf`}
-          />
-        ) : (
-          <span className="text-xs text-muted-foreground">relaas belum diunggah</span>
-        )}
-        {relaas.adaResi ? (
-          <TombolUnduh
-            alamat={`/api/aleta-ecourt/berkas-sipp?jenis=resi&id=${encodeURIComponent(relaas.id)}`}
-            label="Resi"
-            namaCadangan={`resi-${relaas.id}.pdf`}
-          />
-        ) : null}
+        <TombolUnduhRelaas relaas={relaas} nomorPerkara={nomorPerkara} urutanSidang={urutanSidang} />
+        {relaas.adaDokumen ? null : <span className="text-xs text-muted-foreground">relaas belum diunggah</span>}
       </span>
     </li>
   );
@@ -7083,7 +7203,7 @@ function GarisWaktu({
         <span>{tanggalHariPendek(garisWaktu.mulai, garisWaktu.mulai)}</span>
         <span>
           {garisWaktu.totalHari} hari
-          {garisWaktu.ambangTampak ? ` · ambang ${garisWaktu.ambangHari} hari` : ""}
+          {garisWaktu.ambangTampak ? `${PEMISAH_RINGKAS}ambang ${garisWaktu.ambangHari} hari` : ""}
         </span>
         <span>{garisWaktu.akhir}</span>
       </div>
@@ -7096,7 +7216,7 @@ function GarisWaktu({
             />
             <span className="font-medium">{satu.label}</span>
             <span className="text-muted-foreground">
-              {tanggalHariPendek(satu.tanggal, satu.tanggal)} · hari ke-{satu.hariKe}
+              {tanggalHariPendek(satu.tanggal, satu.tanggal)}{PEMISAH_RINGKAS}hari ke-{satu.hariKe}
             </span>
           </li>
         ))}
@@ -7145,7 +7265,7 @@ function JedaSidang({ jeda }: { jeda: NonNullable<Status["analisa"]>["jedaSidang
       {jeda.rata !== null ? (
         <p className="pt-1 text-sm text-muted-foreground">
           Rata-rata antar sidang {jeda.rata} hari
-          {jeda.terpanjang ? ` · terpanjang ${jeda.terpanjang.hari} hari` : ""}.
+          {jeda.terpanjang ? `${PEMISAH_RINGKAS}terpanjang ${jeda.terpanjang.hari} hari` : ""}.
         </p>
       ) : null}
     </div>

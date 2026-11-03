@@ -14,6 +14,7 @@ import {
   type PihakDaftarStatus,
 } from "@/lib/ktp-pihak-tampil";
 import { bolehAksiLayar } from "@/lib/matriks-peran";
+import { PEMISAH_RINGKAS } from "@/lib/status-perkara-seamless";
 
 /* === 12OKT-E: Tanggal KTP pihak di Status Perkara (butir 8) === */
 
@@ -142,7 +143,7 @@ export function BarisTanggalKtp({
             </span>
           ) : null}
           <span className="text-muted-foreground" title={[teksCocokKtp(baris.cocok), teksSumberBacaKtp(baris.sumberBaca)].filter(Boolean).join("; ")}>
-            · dari berkas KTP e-Court{baris.kota ? ` (${baris.kota})` : ""}
+           ${PEMISAH_RINGKAS}dari berkas KTP e-Court{baris.kota ? ` (${baris.kota})` : ""}
           </span>
         </>
       ) : (

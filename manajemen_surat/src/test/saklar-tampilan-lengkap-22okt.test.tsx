@@ -152,6 +152,8 @@ const SEMUA_KUNCI_TERDAFTAR = new Set<string>([
 // Daftar saklar
 // ---------------------------------------------------------------------------
 
+// 3 Nov 2026 (butir 11): bawaan MATI atas keputusan Derry - tetap dapat dinyalakan dari panel Tampilan.
+const MATI_3NOV: readonly string[] = ["kesiapan-putusan", "draf-putusan-agen", "checklist-konseptor", "jam-dipanggil"];
 describe("Jadwal Sidang: saklar baru terdaftar", () => {
   it("tiap kunci baru ada di kelompoknya, menyala bawaan, bukan Tetap, ada contoh, dan dipakai menggambar", () => {
     const bawaan = tampilanBawaan();
@@ -160,8 +162,8 @@ describe("Jadwal Sidang: saklar baru terdaftar", () => {
       expect(saklar, kunci).toBeTruthy();
       expect(saklar?.kelompok, kunci).toBe(kelompok);
       expect(saklar?.wajib ?? false, kunci).toBe(false);
-      expect(saklar?.bawaanMati ?? false, kunci).toBe(false);
-      expect(bawaan[kunci], kunci).toBe(true);
+      expect(saklar?.bawaanMati ?? false, kunci).toBe(MATI_3NOV.includes(kunci));
+      expect(bawaan[kunci], kunci).toBe(!MATI_3NOV.includes(kunci));
       expect(CONTOH_TAMPILAN[kunci], kunci).toBeTruthy();
       expect(LAYAR_SIDANG, kunci).toContain(`"${kunci}"`);
       expect(saklar?.label.length, kunci).toBeGreaterThan(5);
@@ -189,9 +191,9 @@ describe("Jadwal Sidang: saklar baru terdaftar", () => {
 
   it("simpanan lama tanpa kuncinya tetap menyala; dimatikan = mati; yang Tetap tidak berubah", () => {
     for (const [kunci] of BARU_SIDANG) {
-      expect(tampil({}, kunci), kunci).toBe(true);
+      expect(tampil({}, kunci), kunci).toBe(!MATI_3NOV.includes(kunci));
       expect(tampil({ [kunci]: false }, kunci), kunci).toBe(false);
-      expect(bacaTampilan(JSON.stringify({ retur: false }))[kunci], kunci).toBe(true);
+      expect(bacaTampilan(JSON.stringify({ retur: false }))[kunci], kunci).toBe(!MATI_3NOV.includes(kunci));
     }
     // yang Tetap tidak bertambah oleh saklar baru, dan tetap menyala walau simpanan menyebut false
     for (const [kunci] of BARU_SIDANG) expect(SAKLAR_WAJIB, kunci).not.toContain(kunci);
@@ -202,7 +204,7 @@ describe("Jadwal Sidang: saklar baru terdaftar", () => {
     const lengkap = tampilanModeLengkap();
     const minimalis = tampilanModeMinimalis();
     for (const [kunci] of BARU_SIDANG) {
-      expect(lengkap[kunci], kunci).toBe(true);
+      expect(lengkap[kunci], kunci).toBe(!MATI_3NOV.includes(kunci));
       expect(minimalis[kunci], kunci).toBe(false);
     }
   });
@@ -514,7 +516,7 @@ describe("Jadwal Sidang (render): mematikan saklar menyembunyikan unsurnya", () 
     for (const [kunci] of BARU_SIDANG) {
       const label = SAKLAR_TAMPILAN.find((x) => x.kunci === kunci)!.label;
       const kotak = await screen.findByRole("checkbox", { name: label });
-      expect((kotak as HTMLInputElement).checked, kunci).toBe(true);
+      expect((kotak as HTMLInputElement).checked, kunci).toBe(!MATI_3NOV.includes(kunci));
       // ikon (i) keterangan
       expect(container.querySelector(`[data-info-saklar="${kunci}"]`), kunci).not.toBeNull();
     }
@@ -532,7 +534,7 @@ describe("Jadwal Sidang (render): mematikan saklar menyembunyikan unsurnya", () 
     await userEvent.click(screen.getByRole("button", { name: "Mode lengkap" }));
     for (const [kunci] of BARU_SIDANG) {
       const label = SAKLAR_TAMPILAN.find((x) => x.kunci === kunci)!.label;
-      expect((screen.getByRole("checkbox", { name: label }) as HTMLInputElement).checked, kunci).toBe(true);
+      expect((screen.getByRole("checkbox", { name: label }) as HTMLInputElement).checked, kunci).toBe(!MATI_3NOV.includes(kunci));
     }
   }, 120_000);
 });
