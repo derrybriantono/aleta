@@ -457,6 +457,40 @@ function hariKerjaBerikut(iso) {
   return t;
 }
 
+/* === KASIR E-LITIGASI 3 Nov === */
+/**
+ * Tergugat beracara elektronik (E-Litigasi) dan SEJAK KAPAN - fungsi MURNI.
+ * Arahan Derry 3 Nov 2026 22.15: Tergugat yang punya email dan setuju beracara
+ * elektronik dipanggil lewat e-Court/e-litigasi - panggilan ulangnya TANPA biaya.
+ *
+ * Status: aturan tunggal keputusan 144 (beracaraElektronik.tentukanBeracara -
+ * padanan portal lib/beracara-elektronik.ts) atas k.beracara (bacaKeadaan, dari
+ * kontakEcourtService.kontakParaPihak: email/WA SIPP lalu e-Court, persetujuan
+ * saluran elektronik e-Court). Hybrid, tidak setuju, belum menyetujui, verstek,
+ * tidak pernah hadir, atau data tidak terbaca -> null (perilaku lama, berbiaya).
+ *
+ * Sejak: e-Court tidak menyimpan tanggal persetujuan. Persetujuan Tergugat
+ * diberikan saat ia hadir, maka tanggal paling awal yang mungkin = sidang
+ * PERTAMA yang dihadiri Tergugat. Panggilan yang diterbitkan sebelumnya tetap
+ * lewat Pos (berbiaya).
+ *
+ * @returns {{ sejak: string, alasan: string } | null}
+ */
+function elitigasiTergugat(k, sidangBiasa) {
+  const b = k && k.beracara;
+  if (!b || typeof b !== "object") return null;
+  const urut = (Array.isArray(sidangBiasa) ? sidangBiasa : []).slice().sort((x, y) => angka(x.urutan) - angka(y.urutan) || bersih(x.tanggal).localeCompare(bersih(y.tanggal)));
+  const { SANDI_TERGUGAT_HADIR, tentukanBeracara } = require("./beracaraElektronik");
+  const hadir = urut.find((s) => s.dihadiriOleh !== null && s.dihadiriOleh !== undefined && SANDI_TERGUGAT_HADIR.includes(Number(s.dihadiriOleh)) && tanggalSah(s.tanggal));
+  const verstek = Boolean(k.putusan && bersih(k.putusan.verstek).toUpperCase() === "Y");
+  const tercatat = urut.some((s) => Number(s.dihadiriOleh) > 0);
+  const pernahHadir = verstek ? false : hadir ? true : tercatat ? false : null;
+  const hasil = tentukanBeracara({ eCourt: b.eCourt === true, tergugat: b.tergugat, tergugatPernahHadir: pernahHadir });
+  if (!hasil || hasil.jenis !== "e-litigasi" || !hadir) return null;
+  return { sejak: tanggalSah(hadir.tanggal), alasan: hasil.alasan };
+}
+/* === AKHIR KASIR E-LITIGASI === */
+
 /**
  * ============================================================================
  * MESIN USULAN - FUNGSI MURNI
@@ -593,6 +627,13 @@ function susunUsulan(k) {
   const adaSidangPertama = sidangBiasa.length > 0;
   const peristiwaPanggil = new Map(); // pihakId -> [{sidang, relaas, ikrar, ...}]
   const kedudukanDipanggil = permohonan ? [] : [2, 4];
+  // KASIR E-LITIGASI 3 Nov: Tergugat beracara elektronik sejak sidang yang dihadirinya.
+  const elit = permohonan ? null : elitigasiTergugat(k, sidangBiasa);
+  if (elit) {
+    catatan.push(
+      `${sebutan.dua} beracara elektronik (E-Litigasi) sejak ${tanggalLayar(elit.sejak)}: panggilan ulang lewat e-Court tanpa biaya panggilan. Relaas Pos/RRI yang tercatat tetap berbiaya.`
+    );
+  }
 
   /** Panggilan untuk satu deret sidang (biasa atau ikrar) bagi satu pihak. */
   const deretPanggilan = (p, deret, ikrar) => {
@@ -612,6 +653,14 @@ function susunUsulan(k) {
         dasar = `sidang ${ikrar ? "ikrar talak" : "pertama"} ${s.tanggal} - relaas belum tercatat di SIPP`;
         yakin = "sedang";
         pilih = !hariIni || bersih(s.tanggal) >= hariIni;
+      } else if ((hadirSebelum === 2 || hadirSebelum === 4) && elit && p.ke === 2 && !ikrar && bersih(sebelum.tanggal) >= elit.sejak) {
+        // KASIR E-LITIGASI 3 Nov: panggilan diterbitkan SESUDAH Tergugat hadir dan menyetujui
+        // e-Court - lewat e-Court tanpa biaya. Ditawarkan tanpa centang (kasir tetap dapat
+        // memilihnya bila ternyata dipanggil lewat Pos); relaas S/R yang tercatat menang di atas.
+        // Ukur sipp_donggala 2025-2026: 63 dari 65 panggilan begini tanpa Biaya Panggilan di jurnal.
+        dasar = `sidang ${s.tanggal}: ${sebutan.dua} beracara elektronik sejak ${tanggalLayar(elit.sejak)} - panggilan lewat e-Court tanpa biaya`;
+        yakin = "rendah";
+        pilih = false;
       } else if (hadirSebelum === 2 || hadirSebelum === 4) {
         dasar = `sidang ${s.tanggal}: sidang sebelumnya ${p.ke === 2 || p.ke === 4 ? sebutan.dua : "pihak"} tidak hadir - relaas belum tercatat`;
         yakin = "sedang";
@@ -1274,17 +1323,23 @@ function susunKejadian(k, hasil) {
   }
   const relaasSemua = Array.isArray(k && k.relaas) ? k.relaas : [];
   const pihakDua = new Set((Array.isArray(k && k.pihak) ? k.pihak : []).filter((p) => p.ke === 2 || p.ke === 4).map((p) => Number(p.pihakId)));
+  const elitTunda = permohonan ? null : elitigasiTergugat(k, sidangBiasa);
   sidangBiasa.forEach((s, i) => {
     const berikut = sidangBiasa[i + 1];
     if (!berikut) return;
     const rBerikut = relaasSemua.filter((r) => Number(r.sidangId) === Number(berikut.id) && pihakDua.has(Number(r.pihakId)));
     const elektronik = rBerikut.length > 0 && rBerikut.every((r) => KET_TANPA_BIAYA.has(bersih(r.ket).toUpperCase()));
+    // KASIR E-LITIGASI 3 Nov: belum ada relaas, Tergugat tidak hadir, sudah beracara elektronik.
+    const lewatEcourt =
+      !elektronik && elitTunda && rBerikut.length === 0 && [2, 4].includes(Number(s.dihadiriOleh)) && bersih(s.tanggal) >= elitTunda.sejak;
     buat(
       `tunda:${s.id}`,
       "tunda",
       s.tanggal,
       `Sidang ${tanggalLayar(s.tanggal)} ditunda ke ${tanggalLayar(berikut.tanggal)}`,
-      `${teksKehadiran(s.dihadiriOleh, sebutan, permohonan)}${elektronik ? " Panggilan elektronik/tanpa biaya." : ""}`,
+      `${teksKehadiran(s.dihadiriOleh, sebutan, permohonan)}${elektronik ? " Panggilan elektronik/tanpa biaya." : ""}${
+        lewatEcourt ? ` ${sebutan.dua} beracara elektronik sejak ${tanggalLayar(elitTunda.sejak)} - panggilan lewat e-Court tanpa biaya.` : ""
+      }`,
       permohonan ? [] : [`Biaya Panggilan ${sebutan.dua} (bila tidak hadir)`]
     );
   });
@@ -1471,6 +1526,11 @@ function buatLayanan(deps = {}) {
   const jeda = deps.jeda || ((jenis, opsi) => require("./jedaManusiaService").jeda(jenis, opsi));
   // Nama lengkap SIPP -> username (pola akunPetugasMasuk penetapan, butir 39).
   const akunLewatNama = deps.akunPetugasMasuk || ((nama, ip) => require("./penetapanTulisService").akunPetugasMasuk(nama, ip));
+  // KASIR E-LITIGASI 3 Nov: kontak + persetujuan e-Court para pihak (sumber yang sama dengan
+  // Status Perkara/Para pihak). Uji yang memberi deps.kueri tanpa deps.kontakParaPihak: tidak
+  // terbaca (null) - perilaku lama, tanpa sambungan ke basis data sungguhan.
+  const kontakParaPihak =
+    deps.kontakParaPihak || (deps.kueri ? async () => null : (nomor) => require("./kontakEcourtService").kontakParaPihak(nomor));
 
   async function satu(sql, params) {
     const baris = await kueri(sql, params);
@@ -1586,7 +1646,7 @@ function buatLayanan(deps = {}) {
       penetapanHariSidang: tanggalSah(p.penetapanHariSidang),
     };
 
-    const [hari, jurnal, pihakMentah, jurusitaMentah, sidangMentah, relaasMentah, putusanMentah, pbtMentah, ikrarMentah, jenisMentah, mediasiMentah] =
+    const [hari, jurnal, pihakMentah, jurusitaMentah, sidangMentah, relaasMentah, putusanMentah, pbtMentah, ikrarMentah, jenisMentah, mediasiMentah, kontakMentah] =
       await Promise.all([
         saatBasisData().then((s) => s.slice(0, 10)),
         bacaJurnal(id),
@@ -1650,6 +1710,10 @@ function buatLayanan(deps = {}) {
           [id]
         ).catch(() => []),
         /* === AKHIR K-KEJADIAN === */
+        // KASIR E-LITIGASI 3 Nov: gagal/tidak terbaca -> null (perilaku lama).
+        Promise.resolve()
+          .then(() => kontakParaPihak(perkara.nomorPerkara))
+          .catch(() => null),
       ]);
 
     const jenisBiaya = {};
@@ -1724,6 +1788,8 @@ function buatLayanan(deps = {}) {
         .map((m) => ({ id: Number(m.id) || 0, tanggal: tanggalSah(m.tanggal), selesai: tanggalSah(m.selesai), hasil: bersih(m.hasil) }))
         .filter((m) => m.tanggal),
       /* === AKHIR K-KEJADIAN === */
+      // KASIR E-LITIGASI 3 Nov: { eCourt, ecourtTerbaca, tergugat: [{nama, email: "ada"|null, wa, setujuElektronik}] } | null
+      beracara: require("./beracaraElektronik").masukanDariKontakPara(kontakMentah),
     };
     keadaan.tarif = await muatTarif(keadaan);
     return { ok: true, keadaan };
@@ -2326,6 +2392,8 @@ module.exports = {
   JENIS_PER_PIHAK_OTOMATIS,
   putusanDariSidang,
   tanggalSah,
+  /* KASIR E-LITIGASI 3 Nov */
+  elitigasiTergugat,
   layanan: () => layananBawaan(),
   /* === AKHIR KASIR OTOMATIS === */
   cariPerkara: (teks) => layananBawaan().cariPerkara(teks),
