@@ -55,11 +55,10 @@ vi.mock("@/server/modules/aleta-bot/whatsapp-gateway-client", () => ({
 
 import {
   angkaSkum,
-  bolehRekeningPenuh,
-  pembayaranUntukPeran,
+  bolehLihatRekening,
+  pembayaranTampil,
   pemilikPembayaran,
   rupiahTitik,
-  samarkanRekening,
   tanggalIndonesia,
   type PembayaranEcourt,
 } from "@/lib/pembayaran-ecourt";
@@ -168,7 +167,13 @@ function akun(roleId: string, positionId = "", additionalRoleIds: string[] = [])
 const AKUN = {
   superadmin: akun("super-admin", "pos-pranata-komputer"),
   admin: akun("admin", "pos-pranata-komputer"),
+  ketua: akun("ketua", "pos-ketua"),
+  wakil: akun("wakil-ketua", "pos-wakil"),
   kasir: akun("pelaksana", "pos-staf-umum", ["kasir"]),
+  bendahara: akun("analis-keuangan", "pos-bendahara"),
+  js: akun("jurusita", "pos-jurusita"),
+  mediator: akun("pelaksana", "pos-staf-umum", ["mediator"]),
+  ti: akun("pranata-komputer", "pos-pranata-komputer"),
   panitera: akun("panitera", "pos-panitera"),
   panmud: akun("panitera-muda", "pos-panitera-muda-gugatan"),
   hakim: akun("hakim", "pos-hakim"),
@@ -193,21 +198,21 @@ const BAYAR: PembayaranEcourt = {
   skum: pembaca.extractSkumEcourt(HTML_DETIL),
 };
 
-describe("2. rekening penuh hanya untuk peran keuangan perkara; lainnya tersamar", () => {
-  it("penuh: kasir, panitera, panmud, Admin, Super Admin; tidak: hakim, PP, PTSP, sekretaris", () => {
-    for (const k of ["kasir", "panitera", "panmud", "admin", "superadmin"] as const) expect(bolehRekeningPenuh(AKUN[k]), k).toBe(true);
-    for (const k of ["hakim", "pp", "ptsp", "sekretaris", "staf"] as const) expect(bolehRekeningPenuh(AKUN[k]), k).toBe(false);
+const BOLEH = ["superadmin", "admin", "ketua", "wakil", "hakim", "panitera", "kasir", "bendahara", "ptsp"] as const;
+const TOLAK = ["panmud", "pp", "js", "mediator", "sekretaris", "ti", "staf"] as const;
+
+describe("2. rekening pembayar (keputusan Derry 3 Nov 17.55): penuh untuk 7 golongan, lainnya tidak sama sekali", () => {
+  it("boleh: Super Admin, Admin, Ketua/Wakil, hakim, panitera, kasir/bendahara, PTSP; tidak: panmud, PP, JS, mediator, sekretariat, TI, staf", () => {
+    for (const k of BOLEH) expect(bolehLihatRekening(AKUN[k]), k).toBe(true);
+    for (const k of TOLAK) expect(bolehLihatRekening(AKUN[k]), k).toBe(false);
   });
 
-  it("tersamar = ****1234, tanpa email atas-nama dan nomor pembayaran; isi SKUM tidak ikut", () => {
-    expect(samarkanRekening("9900112233")).toBe("****2233");
-    expect(samarkanRekening("")).toBe("");
-    const t = pembayaranUntukPeran(BAYAR, false);
-    expect(t).toMatchObject({ nomorRekening: "****2233", atasNama: "", nomorPembayaran: "", bank: "BNI", diterimaDari: "Budi Rekaan S. H", penuh: false, adaSkum: true });
-    expect(JSON.stringify(t)).not.toContain("9900112233");
-    expect(JSON.stringify(t)).not.toContain("contoh.test");
+  it("kiriman ke layar: rekening dan atas nama UTUH, isi SKUM (alamat/telepon) tidak ikut", () => {
+    const t = pembayaranTampil(BAYAR);
+    expect(t).toMatchObject({ nomorRekening: "9900112233", atasNama: "budi.rekaan@contoh.test", bank: "BNI", adaSkum: true });
     expect(t).not.toHaveProperty("skum");
-    expect(pembayaranUntukPeran(BAYAR, true)).toMatchObject({ nomorRekening: "9900112233", atasNama: "budi.rekaan@contoh.test", penuh: true });
+    expect(t).not.toHaveProperty("penuh");
+    expect(pembayaranTampil({ ...BAYAR, skum: null }).adaSkum).toBe(false);
   });
 
   it("pembayar dicocokkan ke pihak/kuasa (gelar diabaikan); tidak cocok = pihak pertama", () => {
@@ -241,26 +246,22 @@ const minta = (url: string) => new NextRequest(`http://127.0.0.1:3000/aleta${url
 const N = "12/Pdt.G/2026/PA.Xyz";
 
 describe("3. rute pembayaran-ecourt dan e-SKUM PDF", () => {
-  it("kasir menerima rekening utuh; hakim tersamar; sekretaris/staf 403", async () => {
+  it("7 golongan menerima rekening UTUH; panmud, PP, JS, mediator, sekretariat, TI, staf 403 tanpa isi", async () => {
     const { GET } = await import("@/app/api/aleta-ecourt/pembayaran-ecourt/route");
     keadaan.bayar = { [N]: BAYAR };
-    keadaan.aktor = AKUN.kasir as unknown as Record<string, unknown>;
-    let r = await GET(minta(`/api/aleta-ecourt/pembayaran-ecourt?nomor=${encodeURIComponent(N)}`));
-    let isi = (await r.json()).data;
-    expect(r.status).toBe(200);
-    expect(isi.penuh).toBe(true);
-    expect(isi.perkara[N].nomorRekening).toBe("9900112233");
-
-    keadaan.aktor = AKUN.hakim as unknown as Record<string, unknown>;
-    r = await GET(minta(`/api/aleta-ecourt/pembayaran-ecourt?nomor=${encodeURIComponent(N)}`));
-    isi = (await r.json()).data;
-    expect(isi.penuh).toBe(false);
-    expect(isi.perkara[N].nomorRekening).toBe("****2233");
-    expect(JSON.stringify(isi)).not.toContain("9900112233");
-
-    for (const k of ["sekretaris", "staf"] as const) {
+    for (const k of BOLEH) {
       keadaan.aktor = AKUN[k] as unknown as Record<string, unknown>;
-      expect((await GET(minta(`/api/aleta-ecourt/pembayaran-ecourt?nomor=${encodeURIComponent(N)}`))).status, k).toBe(403);
+      const r = await GET(minta(`/api/aleta-ecourt/pembayaran-ecourt?nomor=${encodeURIComponent(N)}`));
+      expect(r.status, k).toBe(200);
+      const isi = (await r.json()).data;
+      expect(isi.perkara[N].nomorRekening, k).toBe("9900112233");
+      expect(isi.perkara[N]).not.toHaveProperty("skum");
+    }
+    for (const k of TOLAK) {
+      keadaan.aktor = AKUN[k] as unknown as Record<string, unknown>;
+      const r = await GET(minta(`/api/aleta-ecourt/pembayaran-ecourt?nomor=${encodeURIComponent(N)}`));
+      expect(r.status, k).toBe(403);
+      expect(await r.text(), k).not.toContain("9900112233");
     }
   });
 
@@ -338,7 +339,7 @@ const usulan = () => [
   { kunci: "u1", jenisBiayaId: 29, kategoriId: 6, jenisTransaksi: -1, pihakKe: 2, pihakId: 12, uraian: "Biaya Panggilan Tergugat", jumlah: 29500, tanggal: HARI, keterangan: "", jurusitaId: 0, peristiwa: "Panggilan pertama", dasar: "tarif", yakin: "tinggi", pilih: true, perluResi: true, sisaOtomatis: false, tersedia: true },
 ];
 
-function bukaKartu(opsi: { tersamar?: boolean; skum?: boolean } = {}) {
+function bukaKartu(opsi: { ditolak?: boolean; skum?: boolean } = {}) {
   const dom = new JSDOM(`<!doctype html><html><body><div id="wadah"></div></body></html>`, {
     url: "http://192.168.10.10/SIPP/jurnal_perkara_list/ENC",
     runScripts: "outside-only",
@@ -366,8 +367,9 @@ function bukaKartu(opsi: { tersamar?: boolean; skum?: boolean } = {}) {
         : new Response(new Uint8Array([37, 80, 68, 70]), { headers: { "content-type": "application/pdf" } });
     }
     if (/\/pembayaran-ecourt\?/.test(url)) {
-      const t = pembayaranUntukPeran({ ...BAYAR, nomorPerkara: "601/Pdt.G/2026/PA.Xyz" }, !opsi.tersamar);
-      return data({ ok: true, penuh: !opsi.tersamar, perkara: { "601/Pdt.G/2026/PA.Xyz": t } });
+      if (opsi.ditolak) return Response.json({ ok: false, error: { message: "Rekening pembayar e-Court hanya untuk pimpinan, hakim, panitera, kasir, PTSP, dan admin." } }, { status: 403 });
+      const t = pembayaranTampil({ ...BAYAR, nomorPerkara: "601/Pdt.G/2026/PA.Xyz" });
+      return data({ ok: true, perkara: { "601/Pdt.G/2026/PA.Xyz": t } });
     }
     if (/\/kasir\/harian\?/.test(url)) {
       return data({
@@ -400,7 +402,7 @@ async function bukaManual(h: ReturnType<typeof bukaKartu>) {
 }
 
 describe("4. kartu Kasir Manual: pembayar e-Court, Cetak SKUM di kepala kartu, kolom sejajar, Rupiah bertitik", () => {
-  it("rekening pembayar di bawah nomor perkara (penuh untuk kasir), tombol Cetak SKUM di kepala kartu, PDF diunduh", async () => {
+  it("rekening pembayar di bawah nomor perkara (penuh), tombol Cetak SKUM di kepala kartu, PDF diunduh", async () => {
     const h = bukaKartu();
     const manual = await bukaManual(h);
     const kartu = manual.querySelector('[data-perkara="601"]') as HTMLElement;
@@ -425,13 +427,25 @@ describe("4. kartu Kasir Manual: pembayar e-Court, Cetak SKUM di kepala kartu, k
     h.dom.window.close();
   });
 
-  it("peran di luar keuangan perkara: rekening tersamar, tanpa email; SKUM belum terbaca = kabar jelas", async () => {
-    const h = bukaKartu({ tersamar: true, skum: false });
+  it("peran tanpa hak rekening (rute 403): tidak ada baris pembayar maupun tombol SKUM, Kasir tetap jalan", async () => {
+    const h = bukaKartu({ ditolak: true });
+    const manual = await bukaManual(h);
+    await sampai(() => h.dimintaUrl.some((u) => /pembayaran-ecourt\?/.test(u)), "permintaan pembayaran");
+    await tunggu(50);
+    const kartu = manual.querySelector('[data-perkara="601"]') as HTMLElement;
+    expect((kartu.querySelector(".aleta-kasir-pembayar") as HTMLElement).hidden).toBe(true);
+    expect((kartu.querySelector(".aleta-kasir-kartu-skum") as HTMLElement).hidden).toBe(true);
+    expect(kartu.querySelector("[data-rekening]")).toBeNull();
+    expect(kartu.textContent).not.toMatch(/9900112233|403|Rekening pembayar e-Court hanya/);
+    expect(kartu.querySelector('tr[data-usulan="u1"]')).not.toBeNull();
+    h.dom.window.close();
+  });
+
+  it("SKUM belum terbaca = kabar jelas tanpa label teknis", async () => {
+    const h = bukaKartu({ skum: false });
     const manual = await bukaManual(h);
     const kartu = manual.querySelector('[data-perkara="601"]') as HTMLElement;
-    const rek = await sampai(() => kartu.querySelector("[data-rekening]"), "rekening");
-    expect(rek.textContent).toBe("BNI ****2233");
-    expect(kartu.textContent).not.toContain("contoh.test");
+    await sampai(() => kartu.querySelector("[data-rekening]"), "rekening");
     (kartu.querySelector("button.aleta-kasir-cetak-skum") as HTMLButtonElement).click();
     const kabar = await sampai(
       () => Array.from(kartu.querySelectorAll(".aleta-kasir-pembayar-kabar .aleta-basmassal-kabar")).find((k) => /belum terbaca/.test(k.textContent || "")),

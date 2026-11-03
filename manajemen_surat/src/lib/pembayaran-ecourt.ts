@@ -13,20 +13,18 @@
  * SIPP maupun e-Court.
  *
  * ============================================================================
- * DATA KEUANGAN PRIBADI - PENUH HANYA UNTUK PERAN KEUANGAN PERKARA
+ * DATA KEUANGAN PRIBADI - HANYA PERAN YANG DITETAPKAN DERRY (3 Nov 2026 17.55)
  * ============================================================================
  *
- * Nomor rekening dan email atas-nama tampil UTUH hanya bagi peran yang mengurus uang perkara: kasir /
- * keuangan perkara / bendahara / analis keuangan, panitera dan panitera muda (pengawas keuangan perkara,
- * aksi `sidang.kasir-baca`), Admin dan Super Admin. Peran lain yang boleh melihat data pihak
- * (`status.data-pihak`) melihat nama pembayar, bank, dan rekening TERSAMAR (****2233) tanpa email.
- * Penyamaran dikerjakan di PELADEN (rute pembayaran-ecourt) - nilai utuh tidak pernah dikirim ke peramban
- * peran itu. Peran tanpa `status.data-pihak` tidak menerima apa pun (403).
+ * Yang boleh melihat rekening pembayar - semuanya PENUH: Super Admin, Admin, Ketua/Wakil Ketua, hakim,
+ * panitera, kasir (termasuk bendahara/analis keuangan yang menjalankan kasir), dan PTSP. Peran lain
+ * (panitera muda, PP, juru sita, mediator, sekretariat, TI, staf, penjaga sidang, dll.) TIDAK menerima apa
+ * pun - rute menjawab 403, layar tidak menggambar barisnya. Tidak ada tingkat tersamar.
  */
 
-import { bolehAksi } from "@/lib/matriks-peran";
+import { golonganPengguna, type GolonganPeran } from "@/lib/matriks-peran";
 
-type PenggunaGolongan = Parameters<typeof bolehAksi>[0];
+type PenggunaGolongan = Parameters<typeof golonganPengguna>[0];
 
 export type RincianSkum = { no: number; uraian: string; jumlah: number | null };
 
@@ -57,36 +55,27 @@ export type PembayaranEcourt = {
   skum: SkumEcourt | null;
 };
 
-/** Yang dikirim ke layar: rekening utuh ATAU tersamar, menurut peran. */
-export type PembayaranTampil = Omit<PembayaranEcourt, "skum"> & {
-  penuh: boolean;
-  adaSkum: boolean;
-};
+/** Yang dikirim ke layar: tanpa isi e-SKUM (alamat/telepon pembayar hanya lewat PDF untuk kasir). */
+export type PembayaranTampil = Omit<PembayaranEcourt, "skum"> & { adaSkum: boolean };
 
-/** Rekening utuh: peran keuangan perkara (sidang.kasir-baca) + Admin/Super Admin. */
-export function bolehRekeningPenuh(pengguna: PenggunaGolongan): boolean {
-  return bolehAksi(pengguna, "sidang.kasir-baca");
+/** Golongan yang boleh melihat rekening pembayar e-Court (keputusan Derry 3 Nov 2026 17.55). */
+export const GOLONGAN_REKENING_PEMBAYAR: readonly GolonganPeran[] = ["super-admin", "admin", "pimpinan", "hakim", "panitera", "kasir", "ptsp"];
+
+/** Boleh melihat rekening pembayar (penuh)? Peran lain tidak menerima apa pun. */
+export function bolehLihatRekening(pengguna: PenggunaGolongan): boolean {
+  return golonganPengguna(pengguna).some((g) => GOLONGAN_REKENING_PEMBAYAR.includes(g));
 }
 
-/** "9900112233" -> "****2233"; kosong tetap kosong. */
-export function samarkanRekening(nomor: string): string {
-  const angka = String(nomor || "").replace(/\D/g, "");
-  if (!angka) return "";
-  return `****${angka.slice(-4)}`;
+/** Untuk LAYAR: pengguna undefined = dirender tanpa PortalProvider (uji/layar lepas) - rute tetap penjaganya. */
+export function bolehLihatRekeningLayar(pengguna: PenggunaGolongan | undefined): boolean {
+  if (pengguna === undefined) return true;
+  return bolehLihatRekening(pengguna);
 }
 
-/** Saring satu pembayaran untuk peran: tersamar = rekening ****1234, email dan nomor pembayaran dibuang. */
-export function pembayaranUntukPeran(data: PembayaranEcourt, penuh: boolean): PembayaranTampil {
+/** Bentuk kiriman ke layar: isi SKUM tidak ikut, hanya tanda apakah sudah terbaca. */
+export function pembayaranTampil(data: PembayaranEcourt): PembayaranTampil {
   const { skum, ...dasar } = data;
-  if (penuh) return { ...dasar, penuh: true, adaSkum: Boolean(skum && skum.rincian && skum.rincian.length) };
-  return {
-    ...dasar,
-    nomorRekening: samarkanRekening(dasar.nomorRekening),
-    atasNama: "",
-    nomorPembayaran: "",
-    penuh: false,
-    adaSkum: Boolean(skum && skum.rincian && skum.rincian.length),
-  };
+  return { ...dasar, adaSkum: Boolean(skum && skum.rincian && skum.rincian.length) };
 }
 
 function bakuNama(nama: string): string {
@@ -150,7 +139,7 @@ export function tanggalIndonesia(iso: string): string {
   return `${Number(m[3])} ${BULAN[Number(m[2]) - 1] ?? m[2]} ${m[1]}`;
 }
 
-/** Satu kalimat ringkas pembayar untuk kartu/layar, mis. "Nama · BNI ****2233". */
+/** Satu kalimat ringkas pembayar untuk kartu/layar, mis. "Nama · BNI 9900112233". */
 export function ringkasPembayar(p: Pick<PembayaranTampil, "diterimaDari" | "bank" | "nomorRekening">): string {
   return [p.diterimaDari, [p.bank, p.nomorRekening].filter(Boolean).join(" ")].filter(Boolean).join(" · ");
 }

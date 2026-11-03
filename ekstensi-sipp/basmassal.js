@@ -2157,7 +2157,7 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
 
   /**
    * Pembayaran e-Court beberapa perkara (rute pembayaran-ecourt): pembayar, bank, nomor rekening pengguna
-   * (UTUH hanya untuk peran keuangan perkara + Admin; lainnya tersamar oleh portal), panjar, dan apakah
+   * (hanya pimpinan, hakim, panitera, kasir, PTSP, admin - peran lain 403 = tidak ada baris), panjar, dan apakah
    * e-SKUM sudah terbaca. Gagal = {} (baris pembayar tidak digambar; Kasir tetap jalan).
    */
   async function bacaPembayaranEcourt(daftarNomor) {
@@ -2207,7 +2207,6 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
       wadahSkum.hidden = !bayar;
     }
     if (!bayar) return;
-    wadah.setAttribute("data-rekening-penuh", bayar.penuh ? "ya" : "tidak");
     const ket = el("div", "aleta-kasir-pembayar-ket");
     ket.appendChild(el("span", "aleta-kasir-pembayar-label", "Pembayar e-Court"));
     ket.appendChild(el("span", "aleta-kasir-pembayar-nama", bayar.diterimaDari || "-"));
@@ -2215,10 +2214,10 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
     if (rek) {
       const r = el("span", "aleta-kasir-pembayar-rekening", rek);
       r.setAttribute("data-rekening", "");
-      r.title = bayar.penuh ? "Nomor rekening pengguna e-Court" : "Nomor rekening disamarkan untuk peran Anda";
+      r.title = "Nomor rekening pengguna e-Court";
       ket.appendChild(r);
     }
-    if (bayar.penuh && bayar.atasNama) ket.appendChild(el("span", "aleta-kasir-pembayar-lembut", `a.n. ${bayar.atasNama}`));
+    if (bayar.atasNama) ket.appendChild(el("span", "aleta-kasir-pembayar-lembut", `a.n. ${bayar.atasNama}`));
     const rinci = [bayar.panjar !== null && bayar.panjar !== undefined ? `Panjar ${rupiah(bayar.panjar)}` : "", bayar.tanggal ? `dibayar ${tanggalPanjang(bayar.tanggal)}${bayar.jam ? ` ${String(bayar.jam).slice(0, 5)}` : ""}` : ""].filter(Boolean).join(" · ");
     if (rinci) ket.appendChild(el("span", "aleta-kasir-pembayar-lembut", rinci));
     wadah.appendChild(ket);

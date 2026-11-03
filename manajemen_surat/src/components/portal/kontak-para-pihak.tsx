@@ -7,6 +7,7 @@ import { usePenggunaAktifOpsional } from "@/lib/app-state";
 import { bolehAksiLayar } from "@/lib/matriks-peran";
 import { modePersidangan } from "@/lib/mode-persidangan";
 import {
+  bolehLihatRekeningLayar,
   pemilikPembayaran,
   rupiahTitik,
   tanggalIndonesia,
@@ -122,7 +123,7 @@ export function useKontakParaPihak(nomorPerkara: string, bacaOtomatis = true): K
 /* === KASIR REKENING-SKUM 3 Nov === */
 /**
  * Pembayar e-Court (e-Payment) satu perkara: nama pembayar, bank, nomor rekening pengguna. Dibaca SEKALI
- * per perkara (sama dengan kontak). Rute menyamarkan rekening untuk peran di luar keuangan perkara; 403 =
+ * per perkara (sama dengan kontak). Hanya pimpinan, hakim, panitera, kasir, PTSP, admin (penuh); 403 =
  * tidak digambar. Perkara yang tidak lewat e-Court = tidak ada baris.
  */
 type KeadaanBayar = { tahap: "memuat" } | { tahap: "ditolak" } | { tahap: "kosong" } | { tahap: "siap"; data: PembayaranTampil };
@@ -160,7 +161,8 @@ export function bersihkanPembayaranEcourt() {
 
 export function usePembayaranEcourt(nomorPerkara: string): KeadaanBayar {
   const [, paksa] = useState(0);
-  const boleh = bolehAksiLayar(usePenggunaAktifOpsional(), "status.data-pihak");
+  // Keputusan 3 Nov 17.55: pimpinan, hakim, panitera, kasir, PTSP, admin (rute juga 403 bagi lainnya).
+  const boleh = bolehLihatRekeningLayar(usePenggunaAktifOpsional());
   useEffect(() => {
     const dengar = () => paksa((x) => x + 1);
     pendengar.add(dengar);
@@ -188,7 +190,7 @@ export function RuasPembayarEcourt({
     data.tanggal ? `dibayar ${tanggalIndonesia(data.tanggal)}${data.jam ? ` ${data.jam.slice(0, 5)}` : ""}` : "",
   ].filter(Boolean);
   return (
-    <div className="flex flex-wrap items-baseline gap-x-1.5" data-ruas-kontak="rekening-pembayar" data-rekening-penuh={data.penuh ? "ya" : "tidak"}>
+    <div className="flex flex-wrap items-baseline gap-x-1.5" data-ruas-kontak="rekening-pembayar">
       <span className="w-[8.5rem] shrink-0 text-muted-foreground">{kuasa ? "Pembayar (kuasa)" : "Rekening pembayar"}</span>
       {data.nomorRekening ? (
         <span className="font-medium tabular-nums" data-rekening>
@@ -197,7 +199,7 @@ export function RuasPembayarEcourt({
       ) : (
         <span className="text-muted-foreground">rekening belum terbaca</span>
       )}
-      {data.penuh && data.atasNama ? <span className="break-all text-muted-foreground">a.n. {data.atasNama}</span> : null}
+      {data.atasNama ? <span className="break-all text-muted-foreground">a.n. {data.atasNama}</span> : null}
       <span className="ml-1 rounded border border-border px-1 text-[0.65rem] uppercase text-muted-foreground">e-Court</span>
       {!cocok && data.diterimaDari ? <span className="text-muted-foreground">dibayar oleh {data.diterimaDari}</span> : null}
       {rincian.length ? <span className="text-muted-foreground">· {rincian.join(" · ")}</span> : null}

@@ -1,11 +1,11 @@
 import { type NextRequest } from "next/server";
 
-import { bolehRekeningPenuh, pembayaranUntukPeran, type PembayaranTampil } from "@/lib/pembayaran-ecourt";
+import { bolehLihatRekening, pembayaranTampil, type PembayaranTampil } from "@/lib/pembayaran-ecourt";
 import type { UserPersona } from "@/lib/types";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { getGatewayPembayaranEcourt } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
-import { pastikanAksiAktor } from "@/server/modules/akses/hak-peran";
+import { ApiError } from "@/server/shared/errors";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { appendAuditLog } from "@/server/shared/audit";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -22,16 +22,14 @@ export const dynamic = "force-dynamic";
  * ============================================================================
  *
  *   GET ?nomor=1/Pdt.G/2026/PA.Dgl&nomor=...   (<= 80)
- *     -> { ok, penuh, perkara: { [nomor]: { diterimaDari, nomorRekening, atasNama, bank, panjar, status,
- *          tanggal, jam, nomorPendaftaranOnline, nomorPembayaran, penuh, adaSkum } } }
+ *     -> { ok, perkara: { [nomor]: { diterimaDari, nomorRekening, atasNama, bank, panjar, status,
+ *          tanggal, jam, nomorPendaftaranOnline, nomorPembayaran, adaSkum } } }
  *
  * Dipakai data pihak Status Perkara (kontak-para-pihak.tsx) dan kartu perkara Kasir ALETA (basmassal.js).
  *
- * HAK: peran keuangan perkara (`sidang.kasir-baca`: kasir/bendahara/analis keuangan, panitera, panitera
- * muda) dan Admin/Super Admin menerima rekening UTUH. Peran lain dengan `status.data-pihak` menerima nama
- * pembayar, bank, panjar, dan rekening TERSAMAR (****1234) - tanpa email atas-nama dan nomor pembayaran;
- * penyamaran di sini, bukan di layar. Peran lain: 403. Tiap pembacaan dicatat di jejak audit (hitungan
- * saja, bukan nilai rekening).
+ * HAK (keputusan Derry 3 Nov 2026 17.55): Super Admin, Admin, Ketua/Wakil, hakim, panitera, kasir
+ * (bendahara/analis keuangan), PTSP - semuanya PENUH. Peran lain: 403, tidak menerima apa pun (tanpa tingkat
+ * tersamar). Tiap pembacaan dicatat di jejak audit (hitungan saja, bukan nilai rekening).
  */
 export async function GET(request: NextRequest) {
   let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
@@ -40,8 +38,9 @@ export async function GET(request: NextRequest) {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
     const aktor = (await pastikanKapabilitas(db, actorUserId, "panel")) as UserPersona;
-    const penuh = bolehRekeningPenuh(aktor);
-    if (!penuh) pastikanAksiAktor(aktor, "status.data-pihak");
+    if (!bolehLihatRekening(aktor)) {
+      throw new ApiError(403, "Rekening pembayar e-Court hanya untuk pimpinan, hakim, panitera, kasir, PTSP, dan admin.");
+    }
 
     const nomor = [
       ...new Set(
@@ -51,14 +50,13 @@ export async function GET(request: NextRequest) {
           .filter(Boolean)
       ),
     ].slice(0, 80);
-    if (!nomor.length) return ok({ available: true, ok: false, penuh, perkara: {}, alasan: "Nomor perkara wajib diisi." });
+    if (!nomor.length) return ok({ available: true, ok: false, perkara: {}, alasan: "Nomor perkara wajib diisi." });
 
     const hasil = await getGatewayPembayaranEcourt(nomor);
     if (!hasil.ok || !hasil.data || hasil.data.ok === false) {
       return ok({
         available: false,
         ok: false,
-        penuh,
         perkara: {},
         alasan: "Data pembayaran e-Court belum dapat dibaca. Coba lagi beberapa saat lagi.",
       });
@@ -68,7 +66,7 @@ export async function GET(request: NextRequest) {
     const peta = new Map(Object.entries(hasil.data.perkara || {}).map(([k, v]) => [kunci(k), v]));
     for (const n of nomor) {
       const p = peta.get(kunci(n));
-      if (p) perkara[n] = pembayaranUntukPeran(p, penuh);
+      if (p) perkara[n] = pembayaranTampil(p);
     }
 
     await appendAuditLog(db, {
@@ -78,12 +76,12 @@ export async function GET(request: NextRequest) {
       entityType: "perkara",
       entityId: nomor.length === 1 ? nomor[0] : `${nomor.length} perkara`,
       // Hitungan saja - nomor rekening tidak pernah masuk jejak audit.
-      payload: { jumlahDiminta: nomor.length, jumlahTerbaca: Object.keys(perkara).length, penuh },
+      payload: { jumlahDiminta: nomor.length, jumlahTerbaca: Object.keys(perkara).length },
     }).catch(() => {
       // Jejak yang gagal dicatat tidak membatalkan layar yang sudah terbaca.
     });
 
-    return ok({ available: true, ok: true, penuh, perkara });
+    return ok({ available: true, ok: true, perkara });
   } catch (error) {
     return handleAdminRouteError(error, request, {
       db,
