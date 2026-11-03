@@ -57,6 +57,16 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.66",
+    dirilis: "2026-11-03T19:00:00+08:00",
+    judul: "Tanya jawab saksi di penetapan itsbat, berita acara dan penetapan sinkron, alat bukti per baris",
+    butir: [
+      "Penetapan kabul Itsbat Nikah dan 43 blangko putusan lain yang memuat keterangan saksi (dispensasi kawin, perwalian, asal usul anak, ahli waris, dan lainnya) kini menampilkan bagian tanya jawab saksi di panel Blangko Derry dan panel ABT lama.",
+      "Susunan keterangan saksi itsbat nikah disamakan dengan bunyi penetapan [01] IN Kabul, sehingga berita acara dan penetapan sinkron; ditambah butir saksi tentang Pemohon tidak berpoligami.",
+      "Daftar alat bukti (P.1, P.2, dan seterusnya) tersimpan dan tercetak satu bukti per baris, diakhiri titik koma; isian yang terlanjur menyambung dirapikan sendiri saat blangko dibuka tanpa menimpa ketikan petugas.",
+    ],
+  },
+  {
     versi: "1.205.65",
     dirilis: "2026-11-03T18:00:00+08:00",
     judul: "Blangko itsbat saksi hadir di pesta, keterangan saksi rapi, ubin ALETA ABT, dan pustaka blangko di ALETA",
