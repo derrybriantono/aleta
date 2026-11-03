@@ -703,7 +703,7 @@ describe("nomor sidang diambil dari SIPP, bukan dari urutan baris", () => {
     expect(kepala[0]).toContain("Sidang ke-1 |");
     // Dulu tertulis "Sidang ke-2" - posisi kelompoknya, bukan sidangnya.
     expect(kepala[1]).toContain("Sidang ke-3 |");
-    expect(screen.queryByText(/^Sidang ke-2s*|/)).toBeNull();
+    expect(screen.queryByText(/^Sidang ke-2\s*\|/)).toBeNull();
   });
 
   it("relaas yang sidangId-nya tidak ada di jadwal tidak diberi nomor karangan", () => {
