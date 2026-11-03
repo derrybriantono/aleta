@@ -703,6 +703,18 @@ const RAMAH: Record<string, { nm: string; pil?: string[]; saran?: string; opsi?:
   "3790": { nm: "Pihak yang dipanggil untuk didengar (nama lengkap dan jabatan atau hubungan, mis. Kepala Kantor Urusan Agama Kecamatan ... atau ayah kandung Pemohon bernama ...)" },
   "3791": { nm: "Tempat kediaman atau alamat kantor pihak yang dipanggil untuk didengar" },
   /* === AKHIR W3a === */
+  /* Audit 4 Nov (A2-10): label teknis yang lolos ke panel (kode mentah #2026#, kurung terbuka "(isian", huruf besar). Label saja. */
+  "1246": { nm: "Tanggal meninggalnya almarhum/almarhumah" },
+  "1247": { nm: "Sebab meninggalnya almarhum/almarhumah" },
+  "7084": { nm: "Ada gugatan balik/rekonvensi (isi 1 bila ada)" },
+  "9881": { nm: "Jawaban, replik dan duplik: lisan atau tertulis" },
+  "9650": { nm: "Gugatan ditolak: alasan tidak terbukti" },
+  "9651": { nm: "Tidak dapat diterima: cacat formil gugatan" },
+  "9654": { nm: "Permohonan ditolak: fakta/alasan tidak terbukti" },
+  "9681": { nm: "Eksepsi kewenangan: isi eksepsi {T}" },
+  "9711": { nm: "Nafkah madliyah (cerai gugat): jumlah yang dikabulkan" },
+  "9712": { nm: "Nafkah iddah (cerai gugat): jumlah yang dikabulkan" },
+  "9713": { nm: "Mut'ah (cerai gugat): jumlah atau bentuk yang dikabulkan" },
 };
 // 27 Okt (w104): label bahasa mudah + pilihan isian perkara selain cerai (itsbat, DK, waris, perwalian, wali adhal, HB, poligami, ...).
 gabungRamahW104(RAMAH);
@@ -799,6 +811,40 @@ function hurufBiasa(t: string): string {
   if (kapital / huruf.length < 0.7) return t;
   const hasil = t.replace(/[A-Za-z][A-Za-z-]*/g, (w) => (SINGKATAN.has(w.toUpperCase()) ? w.toUpperCase() : w.toLowerCase()));
   return hasil.charAt(0).toUpperCase() + hasil.slice(1);
+}
+
+/**
+ * Nama ABT berbentuk "JUDUL PAKET: RINCIAN ..." (mis. "CIRI SAMPUL: GHAIB (...)", "IZIN POLIGAMI: STATUS CALON ISTRI KEDUA ...").
+ * Judul huruf besar, rincian diawali kata huruf besar. Petunjuk sesudah titik dua pada nama biasa ("Awal Konflik : bulan _") tidak cocok.
+ */
+const POLA_JUDUL_RINCIAN = /^([A-Z][A-Z0-9 '/&().,-]{3,}?)\s*:\s+([A-Z][A-Z'’]{2,}.*)$/;
+/** Singkatan yang tetap huruf besar di bagian rincian. */
+const SINGKATAN_RINCIAN = new Set([...SINGKATAN, "ASN", "HB", "NO", "DK", "IN"]);
+
+/**
+ * Label isian tangan ("Perlu diisi") untuk layar. Audit 4 Nov (A2-09): nama "JUDUL: RINCIAN" dulu terpotong di titik dua sehingga 93 isian hanya berlabel
+ * judul paketnya ("Ciri sampul", "Izin poligami") dan satu blangko memuat label kembar. Kini label menjadi "Judul: rincian" - HANYA
+ * bila label lama sama dengan judul saja; label lain tidak berubah. Variabel otomatis/pemicu tetap memakai rapikanNama. Tampilan saja: nama variabel ABT dan nilai isian tidak disentuh.
+ */
+export function rapikanNamaIsian(nama: string, sebutan: { P: string; T: string; gugatan?: string } = SEBUTAN_BAWAAN): string {
+  const dasar = rapikanNama(nama, sebutan);
+  const polos = polosHtml(nama).replace(/#111\d\d#/g, "").replace(/\s+/g, " ").trim();
+  const m = polos.match(POLA_JUDUL_RINCIAN);
+  if (!m) return dasar;
+  const judul = rapikanNama(m[1], sebutan);
+  if (!judul || dasar.toLowerCase() !== judul.toLowerCase()) return dasar;
+  // Rincian dipotong di " - ISIAN" atau petunjuk dalam kurung; kurung berangka ("ayat (2)") bagian dari rincian.
+  const inti = m[2].split(/\s+-\s+|\s\((?!\d)/)[0];
+  // Singkatan yang huruf besar di nama ABT (PNS, TNI, KTP) tetap huruf besar; kata huruf besar lain menjadi huruf kecil.
+  const singkatan = new Set((inti.match(/[A-Z][A-Z'’]+/g) || []).filter((w) => SINGKATAN_RINCIAN.has(w)));
+  let rinci = rapikanNama(inti, sebutan).replace(/[A-Za-z][A-Za-z'’]*/g, (w) =>
+    singkatan.has(w.toUpperCase()) ? w.toUpperCase() : /^[A-Z][A-Z'’]+$/.test(w) ? w.toLowerCase() : w
+  );
+  if (!rinci) return dasar;
+  const kataAwal = rinci.split(/[^A-Za-z'’]/)[0];
+  const sebutanAwal = [sebutan.P, sebutan.T].some((x) => x && rinci.startsWith(x));
+  if (!sebutanAwal && !singkatan.has(kataAwal.toUpperCase())) rinci = rinci.charAt(0).toLowerCase() + rinci.slice(1);
+  return `${judul}: ${rinci}`;
 }
 
 export function rapikanNama(nama: string, sebutan: { P: string; T: string; gugatan?: string } = SEBUTAN_BAWAAN): string {
@@ -1017,7 +1063,7 @@ export function susunIsian(
             : "tambahan";
     isian.push({
       kode: k,
-      nama: r ? isiSebutan(r.nm) : rapikanNama(d.nama, sebutan),
+      nama: r ? isiSebutan(r.nm) : rapikanNamaIsian(d.nama, sebutan),
       namaAsli: namaPolos,
       jenis,
       pemicu: pemicuAkhir,

@@ -863,11 +863,13 @@
     for (let i = 0; i < antre.length; i += 3) await Promise.all(antre.slice(i, i + 3).map((k) => muatBerkasKelompok(k)));
   }
   async function muatIndeks() {
-    if (S.indeks) return S.indeks;
+    // Audit 4 Nov (A1-09): hanya hasil yang BERHASIL diingat. Hasil gagal (jaringan sesaat, sesi habis) tetap dipasang supaya
+    // sebabnya terbaca di pesan galat, tetapi panggilan berikutnya mencoba lagi - tidak lagi "galat" sampai halaman dimuat ulang.
+    if (S.indeks && !S.indeks.gagalMuat) return S.indeks;
     try {
       S.indeks = await ambilPortal(`${API_BLANGKO}?indeks=1`, {}, "Membaca daftar folder blangko");
     } catch (e) {
-      S.indeks = { ada: false, folder: [], sebab: String((e && e.message) || e) };
+      S.indeks = { ada: false, folder: [], sebab: String((e && e.message) || e), gagalMuat: true };
     }
     return S.indeks;
   }

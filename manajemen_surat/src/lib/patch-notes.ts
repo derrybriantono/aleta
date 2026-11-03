@@ -1,6 +1,6 @@
-export const APP_VERSION = "2.43.0";
+export const APP_VERSION = "2.43.1";
 export const APP_VERSION_LABEL =
-  "ALETA Judicia v2.43.0 - November 2026";
+  "ALETA Judicia v2.43.1 - November 2026";
 
 export type PatchNote = {
   version: string;
@@ -21,6 +21,28 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.43.1",
+    title: "ALETA Judicia v2.43.1 - November 2026",
+    date: "2026-11-04",
+    status: "Terpasang bersama rilis ekstensi 1.205.70",
+    summary:
+      "Perbaikan hasil audit Blangko ABT by Derry Briantono sampai rilis ekstensi 1.205.70 (4 November 2026).",
+    added: [],
+    changed: [
+      "Label isian Perlu diisi berbentuk Judul: rincian; label teknis dirapikan; isian ciri sampul menjadi isian tambahan.",
+    ],
+    fixed: [
+      "Daftar blangko yang gagal dimuat sekali tidak lagi tertahan sampai halaman dimuat ulang.",
+    ],
+    security: [],
+    operationalNotes: [
+      "Paket ABT audit-mekanis-4nov lalu audit-ejaan-4nov dipasang sesudah paket ijab-yang-menikahkan-3nov.",
+    ],
+    knownLimitations: [
+      "Temuan audit yang mengubah bunyi hukum menunggu keputusan pengguna dan belum diubah.",
+    ],
+  },
   {
     version: "2.43.0",
     title: "ALETA Judicia v2.43.0 - November 2026",

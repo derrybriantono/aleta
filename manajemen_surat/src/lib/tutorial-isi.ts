@@ -645,8 +645,8 @@ export const TUTORIAL: readonly Tutorial[] = [
       "Kasir otomatis tidak menggantikan pemeriksaan. Baca daftar keadaan tiap butir, dan sunting yang tidak sesuai sebelum disimpan.",
       "Menu Kasir hanya untuk kasir, petugas keuangan perkara, bendahara, panitera, dan panitera muda. Panduan kasir bersorot hanya untuk kasir, Admin, dan Super Admin.",
     ],
-    kataKunci: ["jurnal", "panjar", "keuangan perkara", "pnbp", "bendahara", "biaya perkara", "rekap kasir"],
-    baruDi: { sumber: "ekstensi", versi: "1.205.1" },
+    kataKunci: ["jurnal", "panjar", "keuangan perkara", "pnbp", "bendahara", "biaya perkara", "rekap kasir", "tarif panggilan", "sisa panjar", "skum", "instrumen jurusita"],
+    baruDi: { sumber: "portal", versi: "2.43.0" },
   },
   {
     id: "relaas-massal",
