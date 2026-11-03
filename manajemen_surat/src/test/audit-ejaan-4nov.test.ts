@@ -102,7 +102,7 @@ describe("paket audit-ejaan-4nov", () => {
     };
     const mk = new Map(mekanis.map((d) => [d[1], d] as [string, string[]]));
     for (const d of daftar) {
-      let b = readFileSync(path.join(POHON, d[1]));
+      let b: Buffer = readFileSync(path.join(POHON, d[1]));
       const m = mk.get(d[1]);
       if (m) { b = terapkan(b, pm.filter((x) => x.kode === m[0])); expect(md5(b), d[1]).toBe(m[3]); }
       expect(md5(b), d[1]).toBe(d[2]);

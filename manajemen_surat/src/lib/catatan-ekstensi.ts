@@ -57,6 +57,16 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.70",
+    dirilis: "2026-11-04T08:30:00+08:00",
+    judul: "Label isian Blangko Derry lebih jelas dan daftar blangko lebih tahan gangguan",
+    butir: [
+      "Label isian di bagian Perlu diisi lebih jelas: isian yang dulu hanya berlabel judul (mis. Ciri sampul, Izin poligami) kini menyebut rinciannya, dan label berkode atau berkurung terbuka dirapikan.",
+      "Isian ciri sampul pindah ke bagian Isian tambahan; tetap bisa diisi dan nilainya tetap dicetak.",
+      "Daftar blangko yang sekali gagal dimuat dicoba lagi otomatis tanpa memuat ulang halaman.",
+    ],
+  },
+  {
     versi: "1.205.69",
     dirilis: "2026-11-04T08:20:00+08:00",
     judul: "Kasir: saran tarif panggilan per kecamatan dan panggilan ikrar e-litigasi tanpa biaya",
