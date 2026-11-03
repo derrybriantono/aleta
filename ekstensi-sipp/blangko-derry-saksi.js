@@ -445,6 +445,95 @@
   /** Satu isian teks rapi: rincian berbaris dirangkai, lalu rapiButir. */
   const rapiIsian = (t, ujung) => rapiButir(rapiDaftar(t), ujung || "");
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // 3 Nov 2026 (laporan Derry, itsbat 232/Pdt.P/2026): DAFTAR BUKTI SATU BUTIR SATU BARIS. Isian daftar bukti (P.1, P.2 ... / T.1 ...) yang
+  // bukan penyunting terstruktur (9958, 0378, 9955, ... - hanya 1214/9911 yang terstruktur) dulu ikut rapiIsian: baris dirangkai spasi, ";"
+  // di tengah jadi "," - di ABT jadi satu bukti panjang ("... paraf Ketua Majelis Fotokopi Kartu ..."), padahal fungsi cetak ABT
+  // (isian_rtf_bukti / isian_bukti_baris) menomori PER BARIS. Bentuk baku = bawaan variabel ABT blangko Derry: satu bukti per baris,
+  // diakhiri ";" (ABT menambah "1.<tab>" sendiri saat mencetak).
+  // ──────────────────────────────────────────────────────────────────────────
+  /** Isian daftar bukti di ABT (data_teks bertanda P.1/T.1 di bawaannya, ditambah daftar bukti elektronik). */
+  const KODE_DAFTAR_BUKTI = Object.freeze([
+    "0378", "1214", "1262", "3613", "3634", "3654", "3669", "3730", "3731", "3757", "3758", "3814", "3819", "3854", "3869", "3910", "3911",
+    "3938", "3983", "3984", "8131", "8132", "8133", "8134", "8135", "8621", "9135", "9470", "9488", "9489", "9492", "9493", "9804", "9805",
+    "9810", "9834", "9835", "9840", "9873", "9911", "9951", "9952", "9955", "9956", "9957", "9958",
+  ]);
+  /** Isian ini daftar bukti? Kode di atas, atau nama isian yang menyebut daftar bukti (isian baru dari paket ABT). */
+  function adalahDaftarBukti(kode, nama) {
+    if (KODE_DAFTAR_BUKTI.includes(String(kode == null ? "" : kode))) return true;
+    return /daftar bukti|bukti\s+surat\s+(?:pelawan|terlawan)|^bukti elektronik/i.test(String(nama == null ? "" : nama));
+  }
+  /** Tanda bukti di kalimat: "tanda P.1", "diberi tanda bukti T-2", "kode P1", "kode bukti (P.3)", "tanda PK.1". */
+  const RE_TANDA_BUKTI = /\b(?:tanda|bertanda|kode)\s*:?\s*(?:bukti\s+)?\(?\s*[PT][KR]?\s?[.-]?\s?\d+/i;
+  /** Awal butir bukti baru (huruf besar; boleh diawali nomor "2." / "2)"). */
+  const RE_AWAL_BUKTI =
+    /^(?:\(?\d{1,2}\s*[.)]\s*)?(?:Foto\s?kopi|Foto\s?[Cc]opy|Fotocopy|Photo\s?[Cc]opy|Photocopy|Asli|Salinan|Print\s?[Oo]ut|Printout|Tangkapan\s+[Ll]ayar|Screenshot|Rekaman|Kutipan|Duplikat|Surat|Akta|Akte|Kartu|Buku|Hasil\s+[Cc]etak|Cetakan)\b/;
+  /**
+   * Satu baris -> butir-butir bukti. Baris dipotong HANYA di spasi yang (a) diikuti awal butir bukti berhuruf besar dan (b) didahului tanda
+   * bukti (P.n/T.n) di butir yang sedang berjalan - "Fotokopi Kartu ..." di dalam satu butir tidak pernah terpotong. Kata tidak diubah.
+   */
+  function pisahBarisBukti(baris) {
+    const s = String(baris == null ? "" : baris);
+    const out = [];
+    let mulai = 0;
+    const ruang = /[;,]?\s+/g;
+    let m;
+    while ((m = ruang.exec(s))) {
+      const potong = m.index + (m[0][0] === ";" || m[0][0] === "," ? 1 : 0);
+      const sisa = s.slice(m.index + m[0].length);
+      if (!RE_AWAL_BUKTI.test(sisa) || !RE_TANDA_BUKTI.test(s.slice(mulai, m.index))) continue;
+      out.push(s.slice(mulai, potong).trim());
+      mulai = m.index + m[0].length;
+    }
+    out.push(s.slice(mulai).trim());
+    return out.filter(Boolean);
+  }
+  /**
+   * Teks isian daftar bukti -> butir per baris (tanpa merapikan tanda baca). Baris lanjutan (diawali huruf kecil atau tanda baca) ikut
+   * baris sebelumnya, sama dengan isian_bukti_baris/isian_rtf_bukti ABT. <br> dibaca sebagai ganti baris.
+   */
+  function pisahDaftarBukti(teks) {
+    const baris = String(teks == null ? "" : teks)
+      .replace(/<br\s*\/?>/gi, "\n")
+      .split(/\r\n|\r|\n/)
+      .map((x) => x.replace(/[\t  ]+/g, " ").trim())
+      .filter(Boolean);
+    const gabung = [];
+    for (const b of baris) {
+      if (gabung.length && /^[a-z;,.:]/.test(b)) gabung[gabung.length - 1] += ` ${b}`;
+      else gabung.push(b);
+    }
+    return gabung.flatMap(pisahBarisBukti);
+  }
+  /** Ujung butir bukti: butir bertanda bukti diakhiri ";" (bila belum diakhiri ";" atau "."); judul "A. Bukti Surat:" dibiarkan. */
+  function akhiriButirBukti(t) {
+    const x = String(t == null ? "" : t).replace(/\s+$/, "");
+    if (!RE_TANDA_BUKTI.test(x) || /[;.!?:]$/.test(x)) return x;
+    return `${x.replace(/[,\s]+$/, "")};`;
+  }
+  /** Daftar bukti rapi: satu butir per baris, tiap butir dirapikan seperti cetakan ABT (rapiButir) dan diakhiri ";". Idempoten. */
+  function rapiDaftarBukti(teks) {
+    return pisahDaftarBukti(teks)
+      .map((x) => akhiriButirBukti(rapiButir(x, "")))
+      .filter(Boolean)
+      .join("\n");
+  }
+  /** Huruf dan angka saja (pembanding: perapian hanya boleh mengubah pemisah, spasi, dan tanda baca). */
+  const kerangkaHuruf = (t) => String(t == null ? "" : t).replace(/[^0-9A-Za-zÀ-ɏ]/g, "");
+  /**
+   * Isian daftar bukti TERSIMPAN yang menyambung (dua bukti atau lebih dalam satu baris) dan dapat dipisah TANPA mengubah satu huruf pun:
+   * -> teks rapi; selain itu "" (tidak ditulis ulang - ketikan petugas yang memang sebaris/berbeda bentuk dibiarkan).
+   */
+  function perbaikiBuktiMenyambung(teks) {
+    const t = String(teks == null ? "" : teks);
+    if (!t.trim()) return "";
+    const lama = t.replace(/<br\s*\/?>/gi, "\n").split(/\r\n|\r|\n/).filter((x) => x.trim()).length;
+    const butir = pisahDaftarBukti(t);
+    if (butir.length <= lama) return "";
+    const rapi = rapiDaftarBukti(t);
+    return rapi && rapi !== t && kerangkaHuruf(rapi) === kerangkaHuruf(t) ? rapi : "";
+  }
+
   /** Merapikan jawaban saksi menjadi satu paragraf (19 Okt) - 30 Okt: aturan rapiIsian (titik koma di tengah jadi koma dst.). */
   function rapikanJawaban(teks) {
     return rapiIsian(teks, "");
@@ -591,6 +680,12 @@
     rapiButir,
     rapiDaftar,
     rapiIsian,
+    KODE_DAFTAR_BUKTI,
+    adalahDaftarBukti,
+    pisahBarisBukti,
+    pisahDaftarBukti,
+    rapiDaftarBukti,
+    perbaikiBuktiMenyambung,
     hurufBesarAwal,
     adaBarisBaru,
     geserJawaban,
