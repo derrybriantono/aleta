@@ -57,6 +57,14 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.68",
+    dirilis: "2026-11-04T08:10:00+08:00",
+    judul: "Kasir: tanpa biaya panggilan untuk Tergugat yang beracara elektronik",
+    butir: [
+      "Kasir ALETA tidak lagi mencentang Biaya Panggilan Tergugat untuk Tergugat yang beracara elektronik (email, WhatsApp, dan setuju) sesudah ia pernah hadir: panggilannya lewat e-Court tanpa biaya. Baris tetap ditawarkan dengan keterangan sebabnya; relaas Pos yang sudah tercatat tetap berbiaya.",
+    ],
+  },
+  {
     versi: "1.205.67",
     dirilis: "2026-11-04T08:00:00+08:00",
     judul: "Kasir ALETA baru: rekening pembayar, cetak SKUM, sisa panjar, instrumen jurusita, dan PBT perkara retur",

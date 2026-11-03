@@ -1,6 +1,6 @@
-export const APP_VERSION = "2.42.0";
+export const APP_VERSION = "2.42.1";
 export const APP_VERSION_LABEL =
-  "ALETA Judicia v2.42.0 - November 2026";
+  "ALETA Judicia v2.42.1 - November 2026";
 
 export type PatchNote = {
   version: string;
@@ -21,6 +21,28 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.42.1",
+    title: "ALETA Judicia v2.42.1 - November 2026",
+    date: "2026-11-04",
+    status: "Terpasang bersama rilis ekstensi 1.205.68",
+    summary:
+      "Perbaikan Kasir ALETA sampai rilis ekstensi 1.205.68 (4 November 2026): biaya panggilan Tergugat yang beracara elektronik.",
+    added: [],
+    changed: [
+      "Kasir tidak mencentang Biaya Panggilan Tergugat yang beracara elektronik sesudah ia pernah hadir; keterangan sebabnya tampil di baris itu.",
+    ],
+    fixed: [
+      "Usulan biaya panggilan tidak lagi muncul tercentang untuk panggilan lewat e-Court yang relaasnya belum tercatat.",
+    ],
+    security: [],
+    operationalNotes: [
+      "Relaas Pos atau RRI yang sudah tercatat selalu menang atas status beracara elektronik.",
+    ],
+    knownLimitations: [
+      "Panggilan ikrar talak belum memakai aturan ini; tanggal mulai beracara elektronik diambil dari sidang pertama yang dihadiri Tergugat.",
+    ],
+  },
   {
     version: "2.42.0",
     title: "ALETA Judicia v2.42.0 - November 2026",
