@@ -2741,7 +2741,11 @@ const A3_VAR_TANYA_JAWAB_SAKSI_LAIN = Object.freeze(["5058", "5059", "5060", "61
 
 function a3BlangkoMemuatSaksi(peta) {
   if (!peta || typeof peta.has !== "function") return false;
-  return [VAR_SAKSI_1, VAR_SAKSI_2, ...VAR_SAKSI_TANYA_JAWAB.P, ...VAR_SAKSI_TANYA_JAWAB.T, ...A3_VAR_TANYA_JAWAB_SAKSI_LAIN, ...VAR_NAMA_SAKSI.P, ...VAR_NAMA_SAKSI.T].some((k) =>
+  // 3 Nov 2026: + keterangan saksi otomatis putusan/penetapan #9259#-#9265# (dibaca dari tanya jawab saksi ABT). Blangko yang
+  // mencetaknya (Itsbat Nikah [01]-[01e], Dispensasi Kawin, Perwalian, ...) menampilkan Susun keterangan saksi seperti panel
+  // Blangko Derry (KETERANGAN_SAKSI_OTOMATIS di susun.ts portal), walau nama saksi tidak tertulis di blangko itu.
+  const keteranganOtomatis = ["9259", "9260", "9261", "9262", "9263", "9264", "9265"];
+  return [VAR_SAKSI_1, VAR_SAKSI_2, ...VAR_SAKSI_TANYA_JAWAB.P, ...VAR_SAKSI_TANYA_JAWAB.T, ...A3_VAR_TANYA_JAWAB_SAKSI_LAIN, ...VAR_NAMA_SAKSI.P, ...VAR_NAMA_SAKSI.T, ...keteranganOtomatis].some((k) =>
     peta.has(k)
   );
 }

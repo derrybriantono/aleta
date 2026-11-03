@@ -63,6 +63,17 @@ const SAH_2NOV: Record<string, Record<string, unknown>> = {
 const lamaSah = (j: string, q: any) => ({ ...q, ...(SAH_2NOV[j + "/" + q.id] ?? {}) });
 // 3 Nov 2026 (blangko [01f], keadaan bentukKesaksian "pesta"): butir lama hanya MENDAPAT jawaban "melihat" bersyarat pesta atau
 // syarat "bukan:bentukKesaksian": "pesta"; bila tambahan itu dilepas, isinya persis seperti semula (uji in-lupa-prosesi-3nov).
+// 3 Nov 2026 sore (sinkron putusan [01] IN, saksi-itsbat-sinkron-3nov): jawaban lama itsbat hanya MENDAPAT bunyi fakta putusan -
+// "..., selain itu ijab kabul juga disaksikan oleh banyak orang", "... tanpa jeda waktu yang lama", "hubungan darah (nasab)",
+// dan "... rukun sampai sekarang" (hidup bersama, dua pemohon). Dilepas = isinya persis seperti semula.
+const BANYAK_ORANG = /, (?:selain itu ijab kabul juga disaksikan oleh banyak orang|ijab kabul itu juga disaksikan oleh banyak orang|selain keduanya ijab kabul juga disaksikan oleh banyak orang yang hadir|ijab kabul itu disaksikan pula oleh banyak orang)/g;
+const tanpaSinkron3Nov = (id: string, s: string) => {
+  let t = s.replace(BANYAK_ORANG, "").replace(/ tanpa jeda waktu yang lama/g, "").replace(/\b(hubungan|pertalian) darah \(nasab\), semenda/g, "$1 nasab, semenda");
+  if (id === "q-in-hidup-bersama-pb") t = t.replace(/ sampai sekarang/g, "");
+  return t;
+};
+const lepasSinkron3Nov = (id: string, x: any): any =>
+  typeof x === "string" ? tanpaSinkron3Nov(id, x) : Array.isArray(x) ? x.map((y) => lepasSinkron3Nov(id, y)) : x && typeof x === "object" ? Object.fromEntries(Object.entries(x).map(([k, v]) => [k, k === "maksud" ? v : lepasSinkron3Nov(id, v)])) : x;
 const tanpaPesta = (q: any) => {
   if (!q) return q;
   const x = JSON.parse(JSON.stringify(q));
@@ -87,7 +98,11 @@ describe("katalog lama tidak dikurangi", () => {
       expect(baru.versi).toBe(lama.versi + 1);
       expect(baru.pertanyaan.length).toBeGreaterThan(lama.pertanyaan.length);
       // butir lama tidak berubah isinya
-      for (const q of lama.pertanyaan) expect(JSON.stringify(tanpaPesta(baru.pertanyaan.find((x: any) => x.id === q.id)))).toBe(JSON.stringify(lamaSah(kunci, q)));
+      for (const q of lama.pertanyaan) {
+        const kini = tanpaPesta(baru.pertanyaan.find((x: any) => x.id === q.id));
+        if (kunci === "itsbat-nikah" && kini && kini.jawaban) kini.jawaban = lepasSinkron3Nov(String(kini.id), kini.jawaban);
+        expect(JSON.stringify(kini)).toBe(JSON.stringify(lamaSah(kunci, q)));
+      }
     });
   }
   it("jumlah butir per saksi pada itsbat dua pemohon naik dari 20 menjadi 28 (tingkat bawaan)", () => {
@@ -96,7 +111,8 @@ describe("katalog lama tidak dikurangi", () => {
     // 23 Okt (T2, keputusan pengguna): butir penutup tidak lagi disusun/ditampilkan - satu butir lebih sedikit pada
     // keduanya; tambahan 8 butir katalog baru tetap utuh.
     expect(hitung(lama)).toBe(19);
-    expect(hitung(IN)).toBe(27);
+    // 3 Nov 2026 sore: + butir q-in-poligami-pb (fakta putusan [01] IN butir 10: Pemohon I tidak pernah berpoligami).
+    expect(hitung(IN)).toBe(28);
     expect(susun(IN, { keadaan: { bentuk: "permohonan-berdua" } }).saksi[0].baris.some((b: any) => /penutup/.test(String(b.butir)))).toBe(false);
   });
 });
