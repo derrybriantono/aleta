@@ -1,47 +1,47 @@
 SIDIK AWAL 37886602f6f292d16defad980eb46bb2
 == 1. pasang pertama
-    SIAP=720
+    SIAP=289
     BERKAS SIAP
     PRASYARAT COCOK
-    TAMBAL=720
+    TAMBAL=289
     BERKAS COCOK
     SELESAI - paket abt-audit-mekanis-4nov terpasang. Cadangan: /d/aleta-dev/wt/w205/abt-paket/audit-mekanis-4nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w205/abt-paket/audit-mekanis-4nov/paket-satker/pulih-satker.sh
     periksa: BERKAS COCOK
 == 2. pasang ulang (idempoten)
-    SUDAH=720
+    SUDAH=289
     BERKAS SIAP
     PRASYARAT COCOK
-    SUDAH=720
+    SUDAH=289
     BERKAS COCOK
     SELESAI - paket abt-audit-mekanis-4nov terpasang. Cadangan: /d/aleta-dev/wt/w205/abt-paket/audit-mekanis-4nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w205/abt-paket/audit-mekanis-4nov/paket-satker/pulih-satker.sh
     SIDIK TETAP
 == 3. pulih
-    PULIH=720
+    PULIH=289
     BERKAS PULIH
     PULIH COCOK
     SIDIK = AWAL
 == 4. pasang lagi sesudah pulih
-    SIAP=720
+    SIAP=289
     BERKAS SIAP
     PRASYARAT COCOK
-    TAMBAL=720
+    TAMBAL=289
     BERKAS COCOK
     SELESAI - paket abt-audit-mekanis-4nov terpasang. Cadangan: /d/aleta-dev/wt/w205/abt-paket/audit-mekanis-4nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w205/abt-paket/audit-mekanis-4nov/paket-satker/pulih-satker.sh
 == 5. md5 server berbeda (satu berkas disunting) -> BERHENTI tanpa ubahan
     GAGAL	derry_briantono/2 Itsbat Nikah/[03] [Tolak] IN - Rukun Tidak Terpenuhi (Wali Tidak Sah).rtf	md5 850c7aa30a83f05319e2c51aa5c91f82 bukan dasar 6f3d7bf886374841ce3562706b7dfebc (disunting orang/paket lain belum terpasang)
-    GAGAL=1 SIAP=719
+    GAGAL=1 SIAP=288
     BERKAS TIDAK SIAP
     GAGAL: berkas tujuan tidak sama dengan keadaan server sesudah paket ijab-yang-menikahkan-3nov - TIDAK ada yang diubah
     TIDAK ADA YANG BERUBAH
 == 6. paket ijab belum terpasang (5 berkas [01]-[01e] keadaan sebelum ijab) -> BERHENTI tanpa ubahan
-    GAGAL=5 SIAP=715
+    GAGAL=5 SIAP=284
     BERKAS TIDAK SIAP
     GAGAL: berkas tujuan tidak sama dengan keadaan server sesudah paket ijab-yang-menikahkan-3nov - TIDAK ada yang diubah
     TIDAK ADA YANG BERUBAH
 == 7. disunting sesudah pasang lalu pulih -> dibiarkan
     BIARKAN	derry_briantono/2 Itsbat Nikah/[03] [Tolak] IN - Rukun Tidak Terpenuhi (Wali Tidak Sah).rtf	(sudah disunting sesudah dipasang)
-    BIARKAN=1 PULIH=719
+    BIARKAN=1 PULIH=288
     BERKAS PULIH SEBAGIAN
-    GAGAL=1 SIAP=719
+    GAGAL=1 SIAP=288
     BERKAS TIDAK SIAP
     PULIH SEBAGIAN

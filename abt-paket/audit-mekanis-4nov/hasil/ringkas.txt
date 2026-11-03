@@ -33,12 +33,8 @@ K06	setidak-setidaknya	4 kali	1 berkas
 K06	sunguh	2 kali	2 berkas
 K06	testimonuim	4 kali	1 berkas
 K06	yaiitu	1 kali	1 berkas
-K07	Undang-Undang	17 kali	11 berkas
-K07	diatas	819 kali	501 berkas
-K07	dibawah	24 kali	11 berkas
-K07	dipersidangan	78 kali	76 berkas
 K09	penetapan-hakim-4004	131 kali	131 berkas
 K13	isbat	19 kali	8 berkas
 S01	saksi2-1202	1 kali	1 berkas
 S01	saksi2-1241	5 kali	5 berkas
-BERKAS 720 POTONGAN 1427
+BERKAS 289 POTONGAN 489

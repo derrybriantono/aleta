@@ -1,0 +1,45 @@
+SIDIK AWAL c95fe823bbd4fb99456538f84ec5cf28
+== 1. pasang pertama
+    SIAP=581
+    BERKAS SIAP
+    PRASYARAT COCOK
+    TAMBAL=581
+    BERKAS COCOK
+    SELESAI - paket abt-audit-ejaan-4nov terpasang. Cadangan: /d/aleta-dev/wt/w205/abt-paket/audit-ejaan-4nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w205/abt-paket/audit-ejaan-4nov/paket-satker/pulih-satker.sh
+== 2. pasang ulang (idempoten)
+    SUDAH=581
+    BERKAS SIAP
+    PRASYARAT COCOK
+    SUDAH=581
+    BERKAS COCOK
+    SELESAI - paket abt-audit-ejaan-4nov terpasang. Cadangan: /d/aleta-dev/wt/w205/abt-paket/audit-ejaan-4nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w205/abt-paket/audit-ejaan-4nov/paket-satker/pulih-satker.sh
+    SIDIK TETAP
+== 3. pulih
+    PULIH=581
+    BERKAS PULIH
+    PULIH COCOK
+    SIDIK = AWAL
+== 4. pasang lagi sesudah pulih
+    SIAP=581
+    BERKAS SIAP
+    PRASYARAT COCOK
+    TAMBAL=581
+    BERKAS COCOK
+    SELESAI - paket abt-audit-ejaan-4nov terpasang. Cadangan: /d/aleta-dev/wt/w205/abt-paket/audit-ejaan-4nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w205/abt-paket/audit-ejaan-4nov/paket-satker/pulih-satker.sh
+== 5. md5 server berbeda (satu berkas disunting) -> BERHENTI tanpa ubahan
+    GAGAL=1 SIAP=580
+    BERKAS TIDAK SIAP
+    GAGAL: berkas tujuan tidak sama dengan keadaan server sesudah paket audit-mekanis-4nov - TIDAK ada yang diubah
+    TIDAK ADA YANG BERUBAH
+== 6. paket audit-mekanis-4nov belum terpasang -> BERHENTI tanpa ubahan
+    GAGAL=150 SIAP=431
+    BERKAS TIDAK SIAP
+    GAGAL: berkas tujuan tidak sama dengan keadaan server sesudah paket audit-mekanis-4nov - TIDAK ada yang diubah
+    TIDAK ADA YANG BERUBAH
+== 7. disunting sesudah pasang lalu pulih -> dibiarkan
+    BIARKAN	derry_briantono/2 Itsbat Nikah/[03] [Tolak] IN - Rukun Tidak Terpenuhi (Wali Tidak Sah).rtf	(sudah disunting sesudah dipasang)
+    BIARKAN=1 PULIH=580
+    BERKAS PULIH SEBAGIAN
+    GAGAL=1 SIAP=580
+    BERKAS TIDAK SIAP
+    PULIH SEBAGIAN

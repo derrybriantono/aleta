@@ -1,4 +1,4 @@
-# pindai ulang pohon sesudah tambal (C1/sesudah = pohon terkini + paket ini; tambal_rtf.py periksa: BERKAS COCOK), python -B sumber/pindai_c1.py
+# pindai ulang pohon sesudah audit-mekanis-4nov saja (C1/sesudah1 = pohon terkini + paket ini; periksa: BERKAS COCOK). K07 = paket audit-ejaan-4nov.
 K01	hakim-ganda-8554	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
 K09	penetapan-hakim-4004	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
 K13	isbat	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
@@ -37,10 +37,10 @@ K06	testimonuim	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
 K06	dipertahankankan	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
 K06	diberikan-ganda	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
 K06	setidak-setidaknya	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
-K07	diatas	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
-K07	dipersidangan	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
-K07	dibawah	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
-K07	Undang-Undang	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K07	diatas	819 kali	501 berkas	tidak_harfiah=0	konteks_unik=42
+K07	dipersidangan	78 kali	76 berkas	tidak_harfiah=0	konteks_unik=4
+K07	dibawah	24 kali	11 berkas	tidak_harfiah=0	konteks_unik=7
+K07	Undang-Undang	17 kali	11 berkas	tidak_harfiah=0	konteks_unik=3
 TUMPANG 0 []
-S01	saksi2-1241-1202	0 kali	0 berkas	(identitas saksi ke-2 [nama #1203#] dengan #1241#/#1202#; saksi ke-1: 581 alamat #1202#, 257 hubungan #1241# | saksi ke-2: 581 #1208#, 257 #1242#)
-LAIN	Majelis Hakim Hakim / Hakim Hakim / Penetapan Hakim #4004# = 0; isteri = 346 (sengaja tidak disentuh); citakan = 2 (cita-citakan, benar)
+S01	saksi2-1241-1202	0 kali	0 berkas	(saksi ke-2 [nama #1203#] dengan #1241#/#1202# = 0; saksi ke-1/ke-2: 581/581 alamat, 257/257 hubungan)
+LAIN	#8554# Hakim / Penetapan Hakim #4004# = 0; isteri = 346 (tidak disentuh); citakan = 2 (cita-citakan, benar)

@@ -3,7 +3,7 @@
 # PASANG paket ABT "abt-audit-mekanis-4nov" (audit A3 4 Nov 2026, disetujui Derry). Dijalankan DI SERVER sebagai root, dari folder
 # paket. HANYA blangko pengguna derry_briantono. Tambalan MEKANIS atas teks blangko (lihat PASANG.md):
 #   K01 "#8554# Hakim" -> "#8554#" | K09 "Penetapan Hakim #4004#" -> "Penetapan #4004#" | K13 "isbat" -> "itsbat"
-#   K06 salah ketik jelas | K07 ejaan baku (diatas, dipersidangan, dibawah, Undang Undang) | S01 identitas saksi ke-2 -> variabel saksi ke-2
+#   K06 salah ketik jelas | S01 identitas saksi ke-2 -> variabel saksi ke-2. (Ejaan baku K07 = paket audit-ejaan-4nov, SESUDAH ini.)
 # Tanpa variabel, menu, fungsi, tabel, atau data yang diubah.
 # Urutan: md5 paket -> CEK berkas (md5 tiap berkas PERSIS keadaan server sesudah saksi-rapi-3nov + in-lupa-prosesi-3nov +
 #         ijab-yang-menikahkan-3nov; satu saja beda = BERHENTI, tidak ada yang diubah) -> PASANG (cadangan utuh tiap berkas di

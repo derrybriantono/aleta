@@ -30,13 +30,15 @@ def md5b(b):
     return hashlib.md5(b).hexdigest()
 
 
-def cari(teks):
+def cari(teks, pilih):
     """-> [(awal, akhir, kode, jenis, lama, baru)] urut, tanpa tumpang"""
     hasil = []
     for k, j, rx, g, t in DIKOMPILASI:
+        if k not in pilih:
+            continue
         for m in rx.finditer(teks):
             hasil.append((m.start(), m.end(), k, j, m.group(0), pengganti(m.group(0), g, t)))
-    for m in S01.finditer(teks):
+    for m in (S01.finditer(teks) if 'S01' in pilih else []):
         nama = [x for x in NAMA_SAKSI.finditer(teks, 0, m.start())]
         if nama and nama[-1].group(1) == '1203':
             lama = m.group(0)
@@ -76,6 +78,9 @@ def potong(b, pos, a, z, lama, baru):
 
 def main():
     akar, keluar, hasil_dir = sys.argv[1], sys.argv[2], sys.argv[3]
+    # paket audit-mekanis-4nov: K01,K06,K09,K13,S01 awalan M; paket audit-ejaan-4nov: K07 awalan E (atas pohon SESUDAH audit-mekanis)
+    pilih = set((sys.argv[4] if len(sys.argv) > 4 else 'K01,K06,K09,K13,S01').split(','))
+    awalan = sys.argv[5] if len(sys.argv) > 5 else 'M'
     dasar = os.path.join(akar, 'derry_briantono')
     berkas = []
     for d, _, fs in os.walk(dasar):
@@ -88,11 +93,11 @@ def main():
     for rel in berkas:
         b = open(os.path.join(akar, rel), 'rb').read()
         teks, pos = peta(b)
-        temu = cari(teks)
+        temu = cari(teks, pilih)
         if not temu:
             continue
         no += 1
-        kode = 'M%04d' % no
+        kode = '%s%04d' % (awalan, no)
         pot = []
         harap = teks
         for a, z, k, j, lama, baru in reversed(temu):
@@ -134,7 +139,8 @@ def main():
     if not os.path.isdir(keluar):
         os.makedirs(keluar)
     with open(os.path.join(keluar, 'daftar-tambal.tsv'), 'w', encoding='utf-8', newline='\n') as f:
-        f.write('# kode\tberkas\tmd5_lama (server 3 Nov sesudah saksi-rapi + in-lupa-prosesi + ijab-yang-menikahkan)\tmd5_baru\tpotongan\n')
+        dasar_ket = 'sesudah paket audit-mekanis-4nov' if awalan == 'E' else 'server 3 Nov sesudah saksi-rapi + in-lupa-prosesi + ijab-yang-menikahkan'
+        f.write('# kode\tberkas\tmd5_lama (%s)\tmd5_baru\tpotongan\n' % dasar_ket)
         for d in daftar:
             f.write('%s\t%s\t%s\t%s\t%d\n' % d)
     with open(os.path.join(keluar, 'tambal.tsv'), 'w', encoding='utf-8', newline='\n') as f:
