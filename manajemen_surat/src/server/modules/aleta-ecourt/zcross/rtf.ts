@@ -273,37 +273,94 @@ export function uraiRtf(s: string): HasilUrai {
 // Jangkar
 // ----------------------------------------------------------------------------
 export const POLA_UJUNG_DAFTAR = /(?:berikut|berupa)\s*:\s*$/i;
+/** 3 Nov: tanda Z bentuk bebas TANPA kotak "SC Z" juga dikenali sesudah "... berikut ini :" (BAS ALUR 05 [2] laporan mediasi - 20 blangko,
+ * keputusan 50: Z laporan mediasi memang dikehendaki); dulu dibiarkan bentuk lamanya (tinggi tetap, tidak sampai batas area teks). */
+export const POLA_UJUNG_LAMPIRAN = /(?:berikut(?:\s+ini)?|berupa)\s*:\s*$/i;
 
-export type JangkarRtf = { indeks: number; via: "bentuk" | "ujung-daftar"; paragrafUkur: ParagrafRtf; paragrafBentuk: ParagrafRtf | null };
+/**
+ * Satu tempat Z di naskah (3 Nov 2026: bisa lebih dari satu - BAS mediasi punya dua tanda "SC Z": formulir penjelasan mediasi dan penetapan
+ * mediator).
+ *   indeks       paragraf UKUR  = paragraf bertulisan bermakna terakhir (ekornya dicari di PDF);
+ *   teksIndeks   paragraf TEKS  = paragraf bertulisan TAMPAK terakhir sebelum/pada tanda Z, termasuk isian kosong "..." (BAS 631: jawaban
+ *                tertulis kosong -> "..." di bawah "...sebagai berikut;"). Garis atas Z sebaris dengan kata terakhir paragraf INI, bentuknya
+ *                ditambatkan di paragraf ini (paragraf bertulisan - LibreOffice membuang paragraf kosong penutup bagian beserta tambatannya);
+ *   akhirIndeks  paragraf pemilik tanda Z terakhir dalam kelompok (>= teksIndeks); ganti halaman dihitung SESUDAH paragraf ini.
+ */
+export type JangkarRtf = {
+  indeks: number;
+  teksIndeks: number;
+  akhirIndeks: number;
+  via: "bentuk" | "ujung-daftar";
+  paragrafUkur: ParagrafRtf;
+  paragrafBentuk: ParagrafRtf | null;
+  /** Paragraf pemilik tanda Z kelompok ini (urut naik). */
+  pemilik: number[];
+};
 
 const bermakna = (t: string): boolean => /\p{L}{2,}/u.test(t);
+const tampak = (t: string): boolean => /\S/.test(t);
 const bentukZ = (isi: string): boolean => /zcross-|SC\s*Z/.test(isi);
 /** Z gambar tangan blangko lama TANPA kotak "SC Z" (bentuk bebas "FreeForm") - keputusan 87 (1 Nov): ikut disesuaikan otomatis bila
  * paragraf bertulisan terdekat di atasnya penutup daftar ("...berikut:" / "...berupa:"). */
 const bentukFreeForm = (isi: string): boolean => /\{\\sv\s*FreeForm/i.test(isi);
 
 /**
- * Paragraf jangkar: (1) paragraf pemilik bentuk "SC Z" / "zcross-*" yang TERAKHIR (mundur ke paragraf bertulisan terdekat bila pemiliknya
- * kosong); (2) selainnya paragraf TERAKHIR yang kata akhirnya "berikut:" / "berupa:".
+ * SEMUA tempat Z (urut naik). Tanda Z = bentuk "SC Z" / "zcross-*", atau bentuk bebas FreeForm yang paragraf ukurnya berujung
+ * "berikut:" / "berupa:". Paragraf pemilik tanda yang hanya dipisah paragraf tanpa tulisan = satu kelompok (BAS ALUR 04 [2]: grup garis di
+ * paragraf "...sebagai berikut:" dan kotak "SC Z" di paragraf kosong sesudahnya).
+ */
+export function cariSemuaJangkarRtf(s: string, urai: HasilUrai): JangkarRtf[] {
+  const { paragraf } = urai;
+  const tanda = paragraf
+    .map((p) => {
+      const sc = p.shp.some(([a, b]) => bentukZ(s.slice(a, b)));
+      const ff = p.shp.some(([a, b]) => bentukFreeForm(s.slice(a, b)));
+      return { i: p.indeks, sc, ff };
+    })
+    .filter((x) => x.sc || x.ff);
+  const hasil: JangkarRtf[] = [];
+  let k = tanda.length - 1;
+  while (k >= 0) {
+    const akhir = tanda[k].i;
+    // paragraf teks = paragraf bertulisan tampak terakhir pada/sebelum pemilik tanda; paragraf ukur = bertulisan bermakna terakhir
+    let t = akhir;
+    while (t > 0 && !tampak(paragraf[t].teks)) t -= 1;
+    let u = t;
+    while (u > 0 && !bermakna(paragraf[u].teks)) u -= 1;
+    // tanda lain di rentang [t, akhir] = kelompok yang sama
+    const kelompok: typeof tanda = [];
+    while (k >= 0 && tanda[k].i >= t) {
+      kelompok.push(tanda[k]);
+      k -= 1;
+    }
+    const sc = kelompok.some((x) => x.sc);
+    if (!tampak(paragraf[t].teks) || !bermakna(paragraf[u].teks)) continue;
+    if (!sc && !POLA_UJUNG_LAMPIRAN.test(paragraf[u].teks)) continue;
+    // bentuk di dalam sel tabel tidak dapat ditambatkan dengan aman (letaknya relatif terhadap sel)
+    if (paragraf[t].penutup === "sel" || paragraf[t].penutup === "baris") continue;
+    hasil.push({
+      indeks: u,
+      teksIndeks: t,
+      akhirIndeks: akhir,
+      via: "bentuk",
+      paragrafUkur: paragraf[u],
+      paragrafBentuk: paragraf[akhir],
+      pemilik: kelompok.map((x) => x.i).sort((a, b) => a - b),
+    });
+  }
+  return hasil.reverse();
+}
+
+/**
+ * Paragraf jangkar TERAKHIR: (1) tempat Z bertanda (lihat cariSemuaJangkarRtf); (2) selainnya paragraf TERAKHIR yang kata akhirnya
+ * "berikut:" / "berupa:".
  */
 export function cariJangkarRtf(s: string, urai: HasilUrai): JangkarRtf | null {
+  const semua = cariSemuaJangkarRtf(s, urai);
+  if (semua.length) return semua[semua.length - 1];
   const { paragraf } = urai;
   for (let i = paragraf.length - 1; i >= 0; i -= 1) {
-    const p = paragraf[i];
-    const sc = p.shp.some(([a, b]) => bentukZ(s.slice(a, b)));
-    if (!sc && !p.shp.some(([a, b]) => bentukFreeForm(s.slice(a, b)))) continue;
-    let t = i;
-    // paragraf ukur = paragraf BERTULISAN terdekat; isian kosong "..." dilewati (ekornya tidak dapat dicari di PDF) - keputusan 87
-    while (t > 0 && !bermakna(paragraf[t].teks)) t -= 1;
-    if (!bermakna(paragraf[t].teks)) {
-      if (sc) return null;
-      continue;
-    }
-    if (!sc && !POLA_UJUNG_DAFTAR.test(paragraf[t].teks)) continue;
-    return { indeks: t, via: "bentuk", paragrafUkur: paragraf[t], paragrafBentuk: p };
-  }
-  for (let i = paragraf.length - 1; i >= 0; i -= 1) {
-    if (POLA_UJUNG_DAFTAR.test(paragraf[i].teks)) return { indeks: i, via: "ujung-daftar", paragrafUkur: paragraf[i], paragrafBentuk: null };
+    if (POLA_UJUNG_DAFTAR.test(paragraf[i].teks)) return { indeks: i, teksIndeks: i, akhirIndeks: i, via: "ujung-daftar", paragrafUkur: paragraf[i], paragrafBentuk: null, pemilik: [] };
   }
   return null;
 }
@@ -336,6 +393,8 @@ export type Pembersihan = {
   rtf: string;
   /** Kotak teks tanggal lama (RTF mentah grup {\shp ...}), bila ada: isinya dipakai ulang di tempat baru. */
   kotakTanggal: string | null;
+  /** 3 Nov: kotak tanggal lama per tempat Z (urut sama dengan cariSemuaJangkarRtf). */
+  kotakPerJangkar: Array<string | null>;
   jumlahBentukDibuang: number;
 };
 
@@ -354,41 +413,47 @@ function grupHanyaGaris(isi: string): boolean {
 export function bersihkanZRtf(sumber: string): Pembersihan {
   let s = sumber.replace(RE_PENANDA_RAPAT, "");
   const urai = uraiRtf(s);
-  const jangkar = cariJangkarRtf(s, urai);
+  const semua = cariSemuaJangkarRtf(s, urai);
   const buang: Segmen[] = [];
-  let kotak: string | null = null;
+  const sudah = new Set<number>();
+  const kotakPerJangkar: Array<string | null> = [];
   // Tanda Z ("SC Z" / FreeForm) dapat berada di paragraf jangkar ATAU di paragraf pemilik bentuk (kosong, sesudah jangkar): tandanya
-  // dilihat bersama untuk KEDUA paragraf, supaya garis Z lama di paragraf jangkar ikut dibuang walau kotak "SC Z"-nya di paragraf lain
-  // (2 Nov: BAS ALUR verstek - Z lama = grup tiga garis penghubung di paragraf "...berikut:", kotak "SC Z" di paragraf kosong sesudahnya).
-  const diperiksa: ParagrafRtf[] = [];
-  if (jangkar) {
-    diperiksa.push(jangkar.paragrafUkur);
-    if (jangkar.paragrafBentuk && jangkar.paragrafBentuk.indeks !== jangkar.paragrafUkur.indeks) diperiksa.push(jangkar.paragrafBentuk);
-  }
-  const adaTanda = diperiksa.some((p) => p.shp.some(([a, b]) => /SC\s*Z|\{\\sv\s*FreeForm/i.test(s.slice(a, b))));
-  const lihat = (p: ParagrafRtf) => {
-    // Z gambar tangan blangko lama berupa garis lurus (AutoShape garis / penghubung lurus), atau GRUP yang seluruh anggotanya garis /
-    // penghubung / bentuk bebas tanpa tulisan, di paragraf pemilik tanda Z ikut dibuang supaya tidak bertumpuk dengan Z otomatis
-    // (keputusan 87, BAS jawab-menjawab; 2 Nov grup garis BAS ALUR verstek).
-    for (const [a, b] of p.shp) {
-      const isi = s.slice(a, b);
-      const buatanKita = /zcross-/.test(isi);
-      const garisLama = adaTanda && /\{\\sn\s*shapeType\}\{\\sv\s*(?:20|32)\}/.test(isi) && !/\\shptxt/.test(isi);
-      const grupGarisLama = adaTanda && /^\{\\shpgrp/.test(isi) && !/\\shptxt/.test(isi) && grupHanyaGaris(isi);
-      const templat = /SC\s*Z/.test(isi) || /\{\\sv\s*FreeForm/i.test(isi) || garisLama || grupGarisLama;
-      if (!buatanKita && !templat) continue;
-      buang.push([a, b]);
-      if (/\\shptxt/.test(isi) && !kotak) kotak = isi;
+  // dilihat bersama untuk SELURUH paragraf kelompok (paragraf ukur s.d. pemilik terakhir), supaya garis Z lama di paragraf jangkar ikut
+  // dibuang walau kotak "SC Z"-nya di paragraf lain (2 Nov: BAS ALUR verstek - Z lama = grup tiga garis penghubung di paragraf
+  // "...berikut:", kotak "SC Z" di paragraf kosong sesudahnya). 3 Nov: semua tempat Z (BAS mediasi punya dua), dan kotak "SC Z" kedua di
+  // paragraf yang sama ikut dibuang (dulu tertinggal melayang di halaman).
+  for (const j of semua) {
+    let kotak: string | null = null;
+    const diperiksa = urai.paragraf.slice(j.indeks, j.akhirIndeks + 1);
+    const adaTanda = diperiksa.some((p) => p.shp.some(([a, b]) => /SC\s*Z|\{\\sv\s*FreeForm/i.test(s.slice(a, b))));
+    for (const p of diperiksa) {
+      sudah.add(p.indeks);
+      // Z gambar tangan blangko lama berupa garis lurus (AutoShape garis / penghubung lurus), atau GRUP yang seluruh anggotanya garis /
+      // penghubung / bentuk bebas tanpa tulisan, di paragraf pemilik tanda Z ikut dibuang supaya tidak bertumpuk dengan Z otomatis
+      // (keputusan 87, BAS jawab-menjawab; 2 Nov grup garis BAS ALUR verstek).
+      for (const [a, b] of p.shp) {
+        const isi = s.slice(a, b);
+        const buatanKita = /zcross-/.test(isi);
+        const garisLama = adaTanda && /\{\\sn\s*shapeType\}\{\\sv\s*(?:20|32)\}/.test(isi) && !/\\shptxt/.test(isi);
+        const grupGarisLama = adaTanda && /^\{\\shpgrp/.test(isi) && !/\\shptxt/.test(isi) && grupHanyaGaris(isi);
+        const templat = /SC\s*Z/.test(isi) || /\{\\sv\s*FreeForm/i.test(isi) || garisLama || grupGarisLama;
+        if (!buatanKita && !templat) continue;
+        buang.push([a, b]);
+        // kotak tanggal yang dipakai ulang: yang tulisannya PALING PANJANG ("SC Z 1x" + tanggal), bukan kotak "SC Z" kedua yang hanya
+        // bertulisan tanda (BAS mediasi)
+        if (/\\shptxt/.test(isi) && (!kotak || teksIsiKotak(isi).length > teksIsiKotak(kotak).length)) kotak = isi;
+      }
     }
-  };
-  for (const p of diperiksa) lihat(p);
+    kotakPerJangkar.push(kotak);
+  }
   // sisa bentuk buatan modul ini di mana pun (mis. jangkar bergeser sesudah disunting)
   for (const p of urai.paragraf) {
-    if (jangkar && (p.indeks === jangkar.paragrafUkur.indeks || p.indeks === jangkar.paragrafBentuk?.indeks)) continue;
+    if (sudah.has(p.indeks)) continue;
     for (const [a, b] of p.shp) if (/zcross-/.test(s.slice(a, b))) buang.push([a, b]);
   }
-  s = hapusRentang(s, buang);
-  return { rtf: s, kotakTanggal: kotak, jumlahBentukDibuang: buang.length };
+  const unik = [...new Map(buang.map((r) => [r[0], r] as const)).values()];
+  s = hapusRentang(s, unik);
+  return { rtf: s, kotakTanggal: kotakPerJangkar.find((k) => k) ?? null, kotakPerJangkar, jumlahBentukDibuang: unik.length };
 }
 
 // ----------------------------------------------------------------------------
@@ -474,9 +539,29 @@ export function bentukGarisZ(r: RencanaZ, idAwal: number): string {
 }
 
 /** Isi kotak teks tanggal bila tidak ada kotak lama: satu paragraf tanggal. */
-function isiKotakBaru(tanggal: string): string {
+function isiKotakBaru(tanggal: string, huruf = ""): string {
   const aman = tanggal.replace(/[\\{}]/g, "").replace(/[^\x20-\x7e]/g, (c) => `\\u${c.charCodeAt(0)}?`);
-  return `{\\shptxt \\pard\\plain\\li0\\ri0\\sa0\\sl240\\slmult1\\fs24 ${aman}\\par}`;
+  // 3 Nov (keputusan 59: tanda "SC Z 1x" tercetak di atas tanggal): blangko yang Z-nya bentuk bebas tanpa kotak "SC Z" (BAS ALUR 05 [2])
+  // juga mendapat tanda itu; huruf mengikuti paragraf jangkar (dulu huruf bawaan dokumen - tanggal tercetak dengan huruf berbeda).
+  const par = `\\pard\\plain\\li0\\ri0\\sa0\\sl240\\slmult1${huruf}\\fs24 `;
+  return `{\\shptxt ${par}SC Z 1x\\par ${par}${aman}\\par}`;
+}
+
+/** Kendali huruf (\fN) terakhir pada tulisan sebuah paragraf, "" bila tidak ada. */
+function hurufParagraf(s: string, p: ParagrafRtf): string {
+  const potong = s.slice(p.awal, p.akhirTeks >= 0 ? p.akhirTeks : p.akhir);
+  const semua = [...potong.matchAll(/\\f(\d+)(?![0-9a-zA-Z])/g)];
+  return semua.length ? `\\f${semua[semua.length - 1][1]}` : "";
+}
+
+/** Tulisan tampak isi kotak teks sebuah bentuk ("SC Z 1x 02 November 2026"), "" bila tidak ada. */
+export function teksIsiKotak(bentuk: string): string {
+  const g = ambilIsiKotak(bentuk);
+  if (!g) return "";
+  return uraiRtf(`{${g.slice("{\\shptxt".length)}`)
+    .paragraf.map((p) => p.teks.trim())
+    .filter(Boolean)
+    .join(" ");
 }
 
 /** Grup {\shptxt ...} seimbang dari RTF sebuah bentuk, atau null. */
@@ -500,13 +585,13 @@ function ambilIsiKotak(bentuk: string): string | null {
 }
 
 /** Kotak teks tanggal baru, atau kotak lama yang dipindahkan: isinya (SC Z 1x / tanggal) tetap persis. */
-export function bentukTanggal(r: RencanaZ, idAwal: number, lama: string | null, tanggal: string): string {
+export function bentukTanggal(r: RencanaZ, idAwal: number, lama: string | null, tanggal: string, huruf = ""): string {
   const kiri = keTwip(r.tanggal.x);
   const atas = keTwip(r.tanggal.y);
   const kanan = kiri + keTwip(r.tanggal.lebar);
   const bawah = atas + keTwip(r.tanggal.tinggi);
   const posisi = `\\shpleft${kiri}\\shptop${atas}\\shpright${kanan}\\shpbottom${bawah}\\shpfhdr0\\shpbxpage\\shpbxignore\\shpbypage\\shpbyignore\\shpwr3\\shpwrk0\\shpfblwtxt0\\shpz1\\shplid${idAwal}`;
-  const isiTeks = (lama ? ambilIsiKotak(lama) : null) ?? isiKotakBaru(tanggal);
+  const isiTeks = (lama ? ambilIsiKotak(lama) : null) ?? isiKotakBaru(tanggal, huruf);
   return (
     `{\\shp{\\*\\shpinst${posisi}` +
     sp("shapeType", 202) +
@@ -576,46 +661,76 @@ function kontrolSeksiBersih(kontrol: string): string {
  *   - bila tidak ada apa pun sesudahnya, tidak ada yang diubah selain bentuknya.
  */
 export function tulisZRtf(s: string, jangkarIndeks: number, m: MasukanTulis): { rtf: string; seksi: SeksiZ; nomorDitulis: number | null } {
+  const h = tulisBanyakZRtf(s, [{ teksIndeks: jangkarIndeks, akhirIndeks: jangkarIndeks, rencana: m.rencana, kotakTanggal: m.kotakTanggal, tanggal: m.tanggal, nomorBerikut: m.nomorBerikut }]);
+  return { rtf: h.rtf, seksi: h.per[0].seksi, nomorDitulis: h.per[0].nomorDitulis };
+}
+
+/** Satu tempat Z yang ditulis. rencana null = garis & tanggal TIDAK digambar (tanpa ruang / bersilang), ganti halaman & nomor tetap. */
+export type TulisZ = {
+  /** Paragraf teks: bentuk ditambatkan sesudah tulisannya. */
+  teksIndeks: number;
+  /** Paragraf terakhir kelompok tanda Z (>= teksIndeks): ganti halaman dihitung sesudahnya. */
+  akhirIndeks: number;
+  rencana: RencanaZ | null;
+  kotakTanggal: string | null;
+  tanggal: string;
+  nomorBerikut: number | null;
+};
+
+/**
+ * Menulis beberapa Z sekaligus ke RTF yang SUDAH dibersihkan (bersihkanZRtf) dan dikenai jarak huruf bila perlu. Tiap Z: bentuk di
+ * paragraf teks (bukan paragraf kosong pemilik tanda - LibreOffice membuangnya), lalu:
+ *   - bila sesudah paragraf terakhir kelompok sudah ada pemisah seksi (\sect) tanpa tulisan di antaranya, seksi itu dipakai (nomor ditimpa);
+ *   - bila masih ada tulisan sesudahnya tanpa pemisah, pemisah seksi halaman baru DISISIPKAN tepat sesudah paragraf terakhir kelompok;
+ *   - bila tidak ada apa pun sesudahnya, tidak ada yang diubah selain bentuknya.
+ * Isian kosong "..." di antara kalimat jangkar dan tanda Z TIDAK lagi dipindah ke halaman sendiri (3 Nov, BAS 631).
+ */
+export function tulisBanyakZRtf(s: string, daftar: ReadonlyArray<TulisZ>): { rtf: string; per: Array<{ seksi: SeksiZ; nomorDitulis: number | null }> } {
   const urai = uraiRtf(s);
-  const p = urai.paragraf[jangkarIndeks];
-  if (!p) throw new Error("Paragraf jangkar tidak ditemukan.");
-  const id = idBentukBerikut(s);
-  const bentuk = bentukGarisZ(m.rencana, id) + bentukTanggal(m.rencana, id + 1, m.kotakTanggal, m.tanggal);
+  let id = idBentukBerikut(s);
   const ubahan: Ubahan[] = [];
-  let seksi: SeksiZ = "tanpa-bagian-berikut";
+  const per: Array<{ seksi: SeksiZ; nomorDitulis: number | null }> = [];
+  for (const m of daftar) {
+    const p = urai.paragraf[m.teksIndeks];
+    const pa = urai.paragraf[Math.max(m.teksIndeks, m.akhirIndeks)];
+    if (!p || !pa) throw new Error("Paragraf jangkar tidak ditemukan.");
+    let seksi: SeksiZ = "tanpa-bagian-berikut";
+    const adaTeks = (q: ParagrafRtf) => q.teks.trim().length > 0;
+    const sectBerikut = urai.kejadian.find((k) => k.jenis === "sect" && k.pos >= pa.akhir);
+    const adaTeksSesudah = urai.paragraf.some((q) => q.indeks > pa.indeks && adaTeks(q));
+    const teksSebelumSect = sectBerikut ? urai.paragraf.some((q) => q.indeks > pa.indeks && adaTeks(q) && q.awal < sectBerikut.pos) : adaTeksSesudah;
 
-  const sectBerikut = urai.kejadian.find((k) => k.jenis === "sect" && k.pos >= p.akhir);
-  const adaTeksSesudah = urai.paragraf.some((q) => q.indeks > p.indeks && q.teks.trim().length > 0);
-  const teksSebelumSect = sectBerikut
-    ? urai.paragraf.some((q) => q.indeks > p.indeks && q.teks.trim().length > 0 && q.awal < sectBerikut.pos)
-    : adaTeksSesudah;
-
-  if (sectBerikut && !teksSebelumSect) {
-    const sd = urai.kejadian.find((k) => k.jenis === "sectd" && k.pos >= sectBerikut.akhir);
-    if (sd) {
-      seksi = "dipakai";
-      if (m.nomorBerikut != null) {
-        const lama = s.slice(sd.akhir, sd.akhirKontrol);
-        const sisa = lama.replace(/\\pgn(?:restart|cont|starts-?\d+)\s?/g, "").replace(/\\sbk(?:none|col)\s?/g, "").trim();
-        const jenis = /\\sbk(?:page|even|odd)/.test(sisa) ? "" : "\\sbkpage ";
-        ubahan.push({ dari: sd.akhir, sampai: sd.akhirKontrol, teks: `\\pgnrestart \\pgnstarts${m.nomorBerikut} ${jenis}${sisa} ` });
+    if (sectBerikut && !teksSebelumSect) {
+      const sd = urai.kejadian.find((k) => k.jenis === "sectd" && k.pos >= sectBerikut.akhir);
+      if (sd) {
+        seksi = "dipakai";
+        if (m.nomorBerikut != null) {
+          const lama = s.slice(sd.akhir, sd.akhirKontrol);
+          const sisa = lama.replace(/\\pgn(?:restart|cont|starts-?\d+)\s?/g, "").replace(/\\sbk(?:none|col)\s?/g, "").trim();
+          const jenis = /\\sbk(?:page|even|odd)/.test(sisa) ? "" : "\\sbkpage ";
+          ubahan.push({ dari: sd.akhir, sampai: sd.akhirKontrol, teks: `\\pgnrestart \\pgnstarts${m.nomorBerikut} ${jenis}${sisa} ` });
+        }
       }
+    } else if (adaTeksSesudah) {
+      seksi = "disisipkan";
+      let sd: KejadianRtf | null = null;
+      for (const k of urai.kejadian) if (k.jenis === "sectd" && k.pos <= pa.akhir) sd = k;
+      const kontrol = sd ? kontrolSeksiBersih(s.slice(sd.pos, sd.akhirKontrol)) : "\\sectd";
+      const nomor = m.nomorBerikut != null ? `\\pgnrestart \\pgnstarts${m.nomorBerikut} ` : "";
+      ubahan.push({ dari: pa.akhirGrup, sampai: pa.akhirGrup, teks: `\\sect${kontrol} \\sbkpage ${nomor}` });
     }
-  } else if (adaTeksSesudah) {
-    seksi = "disisipkan";
-    let sd: KejadianRtf | null = null;
-    for (const k of urai.kejadian) if (k.jenis === "sectd" && k.pos <= p.akhir) sd = k;
-    const kontrol = sd ? kontrolSeksiBersih(s.slice(sd.pos, sd.akhirKontrol)) : "\\sectd";
-    const nomor = m.nomorBerikut != null ? `\\pgnrestart \\pgnstarts${m.nomorBerikut} ` : "";
-    ubahan.push({ dari: p.akhirGrup, sampai: p.akhirGrup, teks: `\\sect${kontrol} \\sbkpage ${nomor}` });
+    if (m.rencana) {
+      const bentuk = bentukGarisZ(m.rencana, id) + bentukTanggal(m.rencana, id + 1, m.kotakTanggal, m.tanggal, hurufParagraf(s, p));
+      id += 2;
+      const posBentuk = p.akhirTeks >= 0 ? p.akhirTeks : p.akhir;
+      ubahan.push({ dari: posBentuk, sampai: posBentuk, teks: bentuk });
+    }
+    per.push({ seksi, nomorDitulis: seksi === "tanpa-bagian-berikut" ? null : m.nomorBerikut });
   }
-
-  const posBentuk = p.akhirTeks >= 0 ? p.akhirTeks : p.akhir;
-  ubahan.push({ dari: posBentuk, sampai: posBentuk, teks: bentuk });
 
   let hasil = s;
   for (const u of [...ubahan].sort((a, b) => b.dari - a.dari)) hasil = hasil.slice(0, u.dari) + u.teks + hasil.slice(u.sampai);
-  return { rtf: hasil, seksi, nomorDitulis: seksi === "tanpa-bagian-berikut" ? null : m.nomorBerikut };
+  return { rtf: hasil, per };
 }
 
 /** Tanggal pertama "tanggal 12 Agustus 2026" di naskah (tanggal sidang), selainnya null. */

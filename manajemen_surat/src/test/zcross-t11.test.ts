@@ -113,11 +113,16 @@ describe("Z cross - geometri murni", () => {
     expect(r.atas.x1).toBeGreaterThan(TEPI.kanan - 1.2 * CM);
   });
 
-  it("kata terakhir dekat dasar halaman: garis bawah diturunkan tetapi tetap di atas batas tanggal", () => {
+  // 3 Nov (DIUBAH SENGAJA, uji tangan BAS 631): dulu garis bawah + tanggal DITURUNKAN melewati batas area teks bila kata terakhir dekat
+  // dasar halaman (Z keluar area teks / menimpa kaki halaman). Aturan Derry: Z hanya menutup RUANG KOSONG - tanpa ruang = tanpa Z.
+  it("kata terakhir dekat dasar halaman: tidak ada ruang kosong -> Z tidak digambar (cukupRuang false), garis bawah tidak pernah turun melewati area teks", () => {
     const r = rencanaZ(letak({ yDasar: 842 - 3 * CM - 5 }), TEPI);
-    expect(r.bawah.y).toBeGreaterThan(842 - 3 * CM);
-    expect(r.bawah.y).toBeLessThan(842 - 1.2 * CM - 15);
-    expect(r.temuan.length).toBeGreaterThan(0);
+    expect(r.cukupRuang).toBe(false);
+    expect(r.bawah.y).toBeLessThanOrEqual(842 - JARAK_BAWAH_HALAMAN + 0.01);
+    expect(r.temuan.some((t) => t.tingkat === "peringatan" && /tidak digambar/.test(t.pesan))).toBe(true);
+    // ruang cukup (+-1 cm di bawah baris terakhir) -> tetap digambar
+    expect(rencanaZ(letak({ yDasar: 842 - 3 * CM - 40 }), TEPI).cukupRuang).toBe(true);
+    expect(rencanaZ(letak(), TEPI).cukupRuang).toBe(true);
   });
 
   it("nomor halaman bagian berikutnya = halaman Z + jumlah halaman bukti + 1 (bukti menempati halaman sesudah Z)", () => {
@@ -379,7 +384,9 @@ describe("Z cross - orkestrasi (mesin palsu)", () => {
     expect(lat1(h.bita)).toBe(s);
   });
 
-  it("mesin gagal: naskah dikembalikan apa adanya (tidak menggagalkan cetak/unduh/unggah)", async () => {
+  // 3 Nov (DIUBAH SENGAJA, arahan koordinator atas BAS 631): gagal sesudah tanda Z blangko dikenali = TANPA Z + peringatan. Dulu naskah
+  // dikirim apa adanya sehingga tanda Z lama tercetak di tempat yang tidak pernah diperiksa (LibreOffice: di atas tulisan halaman berikut).
+  it("mesin gagal: tidak menggagalkan cetak/unduh/unggah; tanda Z lama blangko DIBUANG (tanpa Z) + peringatan, teks naskah tetap", async () => {
     const rusak: Mesin = {
       nama: "uji",
       ubah: async () => {
@@ -388,9 +395,18 @@ describe("Z cross - orkestrasi (mesin palsu)", () => {
     };
     const s = buatBasRtf({ bukti: 2, isi: 1, templatZ: true });
     const h = await sesuaikanZcross(bita(s), "rtf", { mesin: rusak });
-    expect(h.laporan.diubah).toBe(false);
+    expect(h.laporan.diubah).toBe(true);
     expect(h.laporan.alasan).toMatch(/gagal/i);
-    expect(lat1(h.bita)).toBe(s);
+    const hasil = lat1(h.bita);
+    expect(hasil).not.toMatch(/SC\s*Z|FreeForm|zcross-/);
+    expect(seimbang(hasil)).toBe(true);
+    expect(uraiRtf(hasil).paragraf.map((p) => p.teks)).toEqual(uraiRtf(s).paragraf.map((p) => p.teks));
+    expect(h.laporan.temuan.some((t) => t.tingkat === "peringatan" && /tidak dapat dipasang/.test(t.pesan))).toBe(true);
+    // tanpa tanda Z sama sekali: tetap apa adanya
+    const polos = buatBasRtf({ bukti: 2, isi: 1 });
+    const h2 = await sesuaikanZcross(bita(polos), "rtf", { mesin: rusak, hanyaBentuk: true });
+    expect(h2.laporan.diubah).toBe(false);
+    expect(lat1(h2.bita)).toBe(polos);
   });
 });
 

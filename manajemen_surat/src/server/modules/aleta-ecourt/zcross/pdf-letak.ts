@@ -36,6 +36,9 @@ export function susunKata(halamanUkuran: Array<{ lebar: number; tinggi: number }
     for (const b of baris) {
       b.sort((a, c) => a.x - c.x);
       nomorBaris += 1;
+      // 3 Nov: Word kadang memecah SATU kata menjadi dua potongan berdempetan ("in" + "i" pada "berikut ini :", BAS ALUR 05 [2]) - potongan
+      // yang menempel (tanpa spasi, jarak <= 1,5 pt) disambung ke kata sebelumnya supaya ekor kalimat tetap ketemu.
+      let ujungSebelum: { x: number; spasi: boolean } | null = null;
       for (const it of b) {
         const teks = it.str;
         const lebarPerHuruf = teks.length ? it.lebar / teks.length : 0;
@@ -43,12 +46,19 @@ export function susunKata(halamanUkuran: Array<{ lebar: number; tinggi: number }
         let m: RegExpExecArray | null;
         const potongan: Array<{ t: string; dari: number; sampai: number }> = [];
         while ((m = re.exec(teks))) potongan.push({ t: m[0], dari: m.index, sampai: m.index + m[0].length });
-        for (const p of potongan) {
+        potongan.forEach((p, ke) => {
           const x1 = it.x + p.dari * lebarPerHuruf;
           // ujung kata: untuk kata terakhir item = ujung item tanpa spasi penutup (lebih pasti daripada pecahan lebar)
           const x2 = p.sampai >= teks.trimEnd().length ? it.x + teks.trimEnd().length * lebarPerHuruf : it.x + p.sampai * lebarPerHuruf;
-          hasil.push({ t: p.t, norm: normKata(p.t), halaman: hal, x1, x2, yDasar: tinggi - it.y, ukuran: it.tinggi, baris: nomorBaris });
-        }
+          const lalu = hasil[hasil.length - 1];
+          const menempel = ke === 0 && p.dari === 0 && ujungSebelum && !ujungSebelum.spasi && lalu && lalu.baris === nomorBaris && x1 - ujungSebelum.x <= 1.5;
+          if (menempel && lalu) {
+            lalu.t += p.t;
+            lalu.norm = normKata(lalu.t);
+            lalu.x2 = x2;
+          } else hasil.push({ t: p.t, norm: normKata(p.t), halaman: hal, x1, x2, yDasar: tinggi - it.y, ukuran: it.tinggi, baris: nomorBaris });
+        });
+        ujungSebelum = { x: it.x + teks.trimEnd().length * lebarPerHuruf, spasi: /\s$/.test(teks) };
       }
     }
   }

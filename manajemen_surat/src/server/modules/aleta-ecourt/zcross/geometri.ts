@@ -11,6 +11,8 @@
  *     ujung kertas, tidak masuk kaki halaman/nomor halaman) dan kotak tanggal tepat di bawahnya, masih di dalam area teks;
  *   - tanggal tepat di bawah garis, tidak menempel tepi kertas;
  *   - ganti halaman; nomor halaman bagian berikutnya = halaman Z + jumlah halaman bukti (dikonfirmasi: melompat).
+ *   - 3 Nov 2026 (uji tangan BAS 631): Z hanya menutup RUANG KOSONG sesudah tulisan terakhir sebelum tanda Z sampai batas area teks;
+ *     tidak pernah menimpa tulisan/tabel. Ruang tidak cukup (TINGGI_MIN_Z) = Z tidak digambar + peringatan (cukupRuang = false).
  */
 
 export const CM = 72 / 2.54;
@@ -28,6 +30,11 @@ export const SISA_TEPI_TANGGAL = 1.2 * CM;
 export const TINGGI_BARIS_TANGGAL = 15;
 /** Ruang kotak tanggal di bawah garis bawah (dua baris: tanda "SC Z 1x" + tanggal, 12 pt) bila garis ditarik ke batas area teks. */
 export const RUANG_TANGGAL_AREA_TEKS = 2 * TINGGI_BARIS_TANGGAL + 4;
+/**
+ * 3 Nov 2026 (uji tangan BAS 631): Z hanya menutup RUANG KOSONG. Tinggi Z (garis atas s.d. garis bawah) paling sedikit segini; kurang dari
+ * itu = halaman sudah penuh sampai batas area teks -> Z TIDAK digambar (dulu garis bawah diturunkan melewati area teks / kaki halaman).
+ */
+export const TINGGI_MIN_Z = 0.5 * CM;
 
 /** Letak kata terakhir paragraf jangkar, hasil pembacaan PDF. */
 export type LetakJangkar = {
@@ -59,6 +66,10 @@ export type RencanaZ = {
   tanggal: { x: number; y: number; lebar: number; tinggi: number };
   /** Kekurangan ruang (pt) yang harus ditutup dengan merapatkan kalimat; 0 = cukup. */
   kurangRuang: number;
+  /** 3 Nov: false = ruang kosong di bawah kalimat terakhir sampai batas area teks tidak cukup untuk Z + tanggal -> Z tidak digambar. */
+  cukupRuang: boolean;
+  /** Batas bawah area teks (pt dari atas) bila margin bawah diketahui; selainnya tepi kertas - 3 cm + ruang tanggal. */
+  batasAreaTeks: number;
   temuan: TemuanZ[];
 };
 
@@ -85,17 +96,19 @@ export function rencanaZ(j: LetakJangkar, tepi: Tepi): RencanaZ {
     temuan.push({ tingkat: "peringatan", pesan: "Garis atas Z sangat pendek (kurang dari 0,8 cm): kata terakhir hampir menyentuh batas kanan; periksa tampilannya." });
   }
 
-  const batasAreaTeks = typeof tepi.bawah === "number" && Number.isFinite(tepi.bawah) && tepi.bawah > 0 ? j.tinggiHalaman - tepi.bawah : null;
-  let yBawah = batasAreaTeks != null ? batasAreaTeks - RUANG_TANGGAL_AREA_TEKS : j.tinggiHalaman - JARAK_BAWAH_HALAMAN;
-  const terendah = j.tinggiHalaman - SISA_TEPI_TANGGAL - TINGGI_BARIS_TANGGAL - 2;
-  const terdekat = j.yDasar + 1 * CM;
-  if (yBawah < terdekat) {
-    yBawah = terdekat;
-    temuan.push({ tingkat: "info", pesan: "Kata terakhir dekat dasar halaman: garis bawah Z diturunkan dari 3 cm di atas tepi bawah." });
-  }
-  if (yBawah > terendah) {
-    yBawah = terendah;
-    temuan.push({ tingkat: "peringatan", pesan: "Ruang di bawah kata terakhir kurang dari 1 cm: Z dipadatkan, periksa tampilannya." });
+  const marginDiketahui = typeof tepi.bawah === "number" && Number.isFinite(tepi.bawah) && tepi.bawah > 0;
+  const batasAreaTeks = marginDiketahui ? j.tinggiHalaman - (tepi.bawah as number) : j.tinggiHalaman - JARAK_BAWAH_HALAMAN + RUANG_TANGGAL_AREA_TEKS;
+  // garis bawah: dekat batas bawah AREA TEKS, menyisakan dua baris tanda/tanggal di bawahnya (masih di dalam area teks)
+  const yBawah = Math.min(batasAreaTeks - RUANG_TANGGAL_AREA_TEKS, j.tinggiHalaman - SISA_TEPI_TANGGAL - TINGGI_BARIS_TANGGAL - 2);
+  // 3 Nov: Z hanya di ruang kosong - garis bawah TIDAK PERNAH diturunkan melewati area teks (dulu: kata terakhir dekat dasar halaman ->
+  // garis bawah + tanggal didorong ke kaki halaman). Tanpa ruang = tanpa Z.
+  const bawahBaris = Math.max(y, j.yDasar + 0.25 * j.ukuranHuruf);
+  const cukupRuang = yBawah - bawahBaris >= TINGGI_MIN_Z;
+  if (!cukupRuang) {
+    temuan.push({
+      tingkat: "peringatan",
+      pesan: "Ruang kosong sesudah kalimat terakhir sampai batas bawah halaman tidak cukup untuk garis Z dan tanggal: Z tidak digambar (tidak ada ruang kosong yang perlu ditutup).",
+    });
   }
   return {
     halaman: j.halaman,
@@ -105,7 +118,24 @@ export function rencanaZ(j: LetakJangkar, tepi: Tepi): RencanaZ {
     bawah: { x1: tepi.kiri, x2: tepi.kanan, y: yBawah },
     tanggal: { x: tepi.kiri, y: yBawah + 3, lebar: Math.min(tepi.kanan - tepi.kiri, 9 * CM), tinggi: 1.7 * CM },
     kurangRuang,
+    cukupRuang,
+    batasAreaTeks,
     temuan,
+  };
+}
+
+/**
+ * Ruas-ruas Z dan kotak tulisan "SC Z 1x / tanggal" sebuah rencana (poin, dari kiri-atas) - untuk pemeriksa silang. Kotak tulisan = dua
+ * baris di bawah garis bawah selebar tulisan terpanjang yang mungkin (+-5 cm), bukan seluruh kotak teks.
+ */
+export function bagianRencana(r: RencanaZ): { ruas: Array<{ x1: number; y1: number; x2: number; y2: number }>; kotakTulisan: { x1: number; y1: number; x2: number; y2: number } } {
+  return {
+    ruas: [
+      { x1: r.atas.x1, y1: r.atas.y, x2: r.atas.x2, y2: r.atas.y },
+      { x1: r.diagonal.x1, y1: r.diagonal.y1, x2: r.diagonal.x2, y2: r.diagonal.y2 },
+      { x1: r.bawah.x1, y1: r.bawah.y, x2: r.bawah.x2, y2: r.bawah.y },
+    ],
+    kotakTulisan: { x1: r.tanggal.x, y1: r.tanggal.y, x2: r.tanggal.x + Math.min(r.tanggal.lebar, 5 * CM), y2: r.tanggal.y + RUANG_TANGGAL_AREA_TEKS },
   };
 }
 
