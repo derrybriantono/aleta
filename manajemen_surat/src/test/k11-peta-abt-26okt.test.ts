@@ -67,6 +67,9 @@ describe("peta fitur K11 (abt.js): pernyataan", () => {
       "8c94ea761e5f": "33299623a933",
       "78b8c2c80adb": "389a1dca04e5",
       "efdab673681b": "2244840a6f2d",
+      // 3 Nov 2026 sore (saksi-itsbat-sinkron-3nov): a3BlangkoMemuatSaksi juga mengenal keterangan saksi otomatis #9259#-#9265#
+      // (penetapan kabul Itsbat Nikah dll.), sama dengan bagian Tanya jawab saksi panel Blangko Derry.
+      "4e35d4bec3e3": "933c32b63c14",
     };
     for (const [l, b] of Object.entries(SAH)) {
       if (lama.has(l) && baru.has(b)) {

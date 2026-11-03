@@ -830,6 +830,25 @@ export function rapikanNama(nama: string, sebutan: { P: string; T: string; gugat
   return t.replace(/[\s:_-]+$/, "").trim();
 }
 
+/**
+ * 3 Nov 2026 (laporan Derry, penetapan 232/Pdt.P/2026 blangko "2 Itsbat Nikah/[01] [Kabul] IN"): keterangan saksi otomatis
+ * #9259#-#9265# membaca tanya jawab saksi ABT lewat FUNGSI (isian_rtf_ket_saksi + nama saksi #1197#/...), bukan lewat
+ * variabel tanya jawab, sehingga blangko yang hanya memuat penanda ini (44 putusan/penetapan: Itsbat Nikah [01]-[01e],
+ * Dispensasi Kawin, Perwalian, Asal Usul Anak, Ahli Waris, dst.) tidak punya bagian "Tanya jawab saksi" di panel Blangko
+ * Derry - berbeda dari putusan cerai yang memuat #2021#/#2022# di grup tersembunyi {\*\isianasal}. Peta ini menautkan
+ * tiap keterangan otomatis ke variabel "Keterangan Saksi N P/T" yang membaca data yang SAMA (abt_keterangan_saksi), sehingga
+ * bagian saksi tampil untuk semua blangko yang mencetak keterangan saksi. Tanpa ubahan blangko ABT.
+ */
+export const KETERANGAN_SAKSI_OTOMATIS: Readonly<Record<string, string>> = Object.freeze({
+  "9259": "2021", // Keterangan Saksi 1 P
+  "9260": "2022", // Keterangan Saksi 2 P
+  "9261": "2031", // Keterangan Saksi 3 P
+  "9262": "8920", // Keterangan Saksi 4 P
+  "9263": "8932", // Keterangan Saksi 5 P
+  "9264": "2023", // Keterangan Saksi 1 T
+  "9265": "2024", // Keterangan Saksi 2 T
+});
+
 /** Kode yang dirujuk sebuah definisi (lewat #NNNN# di kueri/bawaan dan no_var = 'NNNN' di kueri). */
 export function rujukan(d: Definisi): string[] {
   const teks = `${d.sql || ""}\n${d.bawaan || ""}`;
@@ -890,6 +909,8 @@ export function susunIsian(
   const takDikenal: string[] = [];
   const otomatis: Susunan["otomatis"] = [];
   const manual: string[] = [];
+  /** Urutan tampil variabel tanya jawab yang ditautkan dari keterangan otomatis (= urutan penanda #9259#.. di naskah). */
+  const urutanTaut = new Map<string, number>();
   const tumpuk = [...new Set(penanda)];
   while (tumpuk.length) {
     const k = tumpuk.shift() as string;
@@ -906,6 +927,13 @@ export function susunIsian(
       continue;
     }
     otomatis.push({ kode: k, nama: rapikanNama(d.nama, sebutan), jenis: d.jenis || "", langsung: urutanRtf.has(k) });
+    const taut = KETERANGAN_SAKSI_OTOMATIS[k];
+    if (taut && katalog.get(taut)?.jenis === "tanya_jawab") {
+      if (!dipakaiOleh.has(taut)) dipakaiOleh.set(taut, new Set());
+      dipakaiOleh.get(taut)!.add(k);
+      if (!urutanTaut.has(taut) && urutanRtf.has(k)) urutanTaut.set(taut, urutanRtf.get(k)!);
+      if (!dilihat.has(taut)) tumpuk.push(taut);
+    }
     for (const r of rujukan(d)) {
       if (!dipakaiOleh.has(r)) dipakaiOleh.set(r, new Set());
       dipakaiOleh.get(r)!.add(k);
@@ -1020,7 +1048,9 @@ export function susunIsian(
     tuntutan.push({ ...t, isian: isianT });
     if (!pemicuDipakai.has(t.pemicu)) pemicuDipakai.set(t.pemicu, katalog.get(t.pemicu)?.nama || "");
   }
-  isian.sort((a, b) => urutanKode(a, urutanRtf) - urutanKode(b, urutanRtf) || a.kode.localeCompare(b.kode));
+  // Tanya jawab yang ditautkan dari #9259#.. berurutan menurut letak keterangannya di naskah (saksi 1 P, 2 P, ..., 1 T).
+  const urutanSusun = urutanTaut.size ? new Map([...urutanTaut, ...urutanRtf]) : urutanRtf;
+  isian.sort((a, b) => urutanKode(a, urutanSusun) - urutanKode(b, urutanSusun) || a.kode.localeCompare(b.kode));
 
   const pemicu = [...pemicuDipakai.entries()].map(([kode, nama]) => ({
     kode,
