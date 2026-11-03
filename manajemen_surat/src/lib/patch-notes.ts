@@ -1,6 +1,6 @@
-export const APP_VERSION = "2.41.0";
+export const APP_VERSION = "2.42.0";
 export const APP_VERSION_LABEL =
-  "ALETA Judicia v2.41.0 - Oktober 2026";
+  "ALETA Judicia v2.42.0 - November 2026";
 
 export type PatchNote = {
   version: string;
@@ -21,6 +21,27 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.42.0",
+    title: "ALETA Judicia v2.42.0 - November 2026",
+    date: "2026-11-03",
+    status: "Terpasang bersama rilis ekstensi 1.205.65",
+    summary:
+      "Pembaruan portal sampai rilis ekstensi 1.205.65 (3 November 2026). Mulai versi ini nomor portal naik setiap rilis yang mengubah portal; rincian per rilis ada di Catatan Ekstensi SIPP.",
+    added: [
+      "Pustaka blangko ALETA ABT: salinan blangko, isian, dan menu Blangko ABT by Derry Briantono di database ALETA sendiri, sinkron satu arah dari ABT yang tidak pernah menimpa perubahan di ALETA.",
+      "Ubin ALETA ABT di menu APS Badilag dan tautan ALETA ABT di portal, hanya bila ekstensi ALETA aktif.",
+      "Register kuasa, tombol Sync E-Court, tampilan baru Status Perkara, dan blangko itsbat saksi hadir di pesta.",
+    ],
+    changed: [
+      "Salinan putusan dan berita acara bertanda tangan, garis Z dan nomor halaman berita acara yang benar.",
+      "Keterangan saksi di putusan sejajar identitas saksi dan jawaban tidak tahu disebut lengkap.",
+    ],
+    fixed: [
+      "Keberatan pihak lain dalam keterangan saksi terbaca benar di rekomendasi putusan itsbat.",
+      "Pembacaan PDF di server kembali berjalan (tanda tangan, garis Z otomatis, lampiran e-Court, KTP dari PDF).",
+    ],
+  },
   {
     version: "2.41.0",
     title: "ALETA Judicia v2.41.0 - Oktober 2026",

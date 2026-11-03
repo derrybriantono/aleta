@@ -57,6 +57,21 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.65",
+    dirilis: "2026-11-03T18:00:00+08:00",
+    judul: "Blangko itsbat saksi hadir di pesta, keterangan saksi rapi, ubin ALETA ABT, dan pustaka blangko di ALETA",
+    butir: [
+      "Blangko baru Itsbat Nikah \"[01f] [Kabul] IN Kabul (Hadir Tapi Lupa Prosesi Nikah)\": saksi menghadiri pesta tetapi tidak mengetahui wali, lafaz akad, mahar, dan saksi nikah; disarankan otomatis bila dua saksi memilih keterangan itu dan tidak ada yang keberatan.",
+      "Susun keterangan saksi itsbat nikah punya pilihan baru \"Saksi hanya hadir di pesta pernikahan, tidak tahu prosesi akad nikah\" dengan beberapa variasi jawaban yang menyebut apa yang tidak diketahui.",
+      "Keterangan saksi yang menerangkan ada keluarga atau pihak lain yang keberatan kini terbaca benar di rekomendasi putusan itsbat; \"tidak ada yang keberatan\" tetap terbaca tidak ada.",
+      "Keterangan saksi di putusan sejajar dengan identitas saksinya, baris lanjutannya menggantung rapi, dan jawaban \"tidak tahu\" dilengkapi dengan apa yang tidak diketahui (ikut paket blangko ABT).",
+      "Halaman menu APS Badilag: ubin ALETA ABT di samping Blangko Tambahan SIPP langsung membuka Blangko ABT By Derry Briantono; tautan ALETA ABT juga ada di panel ekstensi di portal. Keduanya hanya tampil bila ekstensi ALETA aktif.",
+      "Menu APS Badilag, E-Keuangan, E-Pelaporan, dan E-Register lebih ringan: ekstensi tidak lagi memuat panel ABT di halaman-halaman itu.",
+      "Pengaturan SIPP & ABT: tab Pustaka blangko untuk Super Admin - salinan blangko, isian, dan menu Blangko ABT by Derry Briantono di ALETA sendiri, disinkronkan dari ABT tanpa pernah menimpa perubahan di ALETA.",
+      "Versi portal kini 2.42.0.",
+    ],
+  },
+  {
     versi: "1.205.64",
     dirilis: "2026-11-03T15:00:00+08:00",
     judul: "Salinan bertanda tangan, garis Z dan nomor halaman berita acara yang benar, Status Perkara baru, register kuasa, dan Sync E-Court",

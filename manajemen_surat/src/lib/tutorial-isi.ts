@@ -499,6 +499,7 @@ export const TUTORIAL: readonly Tutorial[] = [
       "Jenis perkara ditulis lengkap dengan kumulasinya, misalnya Cerai Gugat Kumulasi Hak Asuh Anak. Bila SIPP tidak mengisinya, ALETA membacanya dari petitum dan memberi tanda \"dari petitum\".",
       "Bagian Eksepsi, Rekonvensi, Sita, dan Eksekusi tampil bila ada. Tanggal KTP, email, WhatsApp, dan kesediaan e-Litigasi para pihak juga dapat dibaca di sini.",
       "Unduh seluruh berkas perkara dalam satu ZIP, lengkap dengan daftar isi dan sebab bila ada berkas yang gagal. Anda dapat memilih kategori berkas yang diunduh.",
+      "Tampilan baru (November 2026): sorotan Sidang berikutnya dan Perlu dikerjakan di atas, linimasa ringkas, bagian rinci terlipat, tombol unduh relaas dan resi, serta keterangan beracara E-Litigasi atau Hybrid.",
       "Tombol Cetak Status Perkara menyiapkan ringkasan untuk dicetak atau disimpan.",
       "Majelis, Panitera Pengganti, dan panitera juga melihat bagian analisa perkara sebagai bahan menyusun putusan.",
     ],
@@ -507,7 +508,7 @@ export const TUTORIAL: readonly Tutorial[] = [
       "Penanda riwayat hanya memakai pencocokan yang kuat (kode pihak, NIK sah, atau nama dan tanggal lahir). Nama saja tidak pernah dipakai.",
     ],
     kataKunci: ["cari perkara", "cetak status", "para pihak", "riwayat pihak", "ktp", "analisa", "unduh berkas", "zip", "kumulasi", "dari petitum"],
-    baruDi: { sumber: "portal", versi: "2.40.0" },
+    baruDi: { sumber: "portal", versi: "2.42.0" },
   },
   {
     id: "jadwal-mediasi",

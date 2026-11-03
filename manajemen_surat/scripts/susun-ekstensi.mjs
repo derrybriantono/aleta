@@ -265,6 +265,7 @@ const BERKAS = [
   // Menu ABT By Derry dan ALETA di bilah atas SIPP (22 Okt 2026) - skrip konten SIPP dan ABT;
   // butir menu bergaya SIPP, tab baru lewat pekerja latar, tanpa sandi apa pun.
   "menu-atas.js",
+  "aps-beranda.js",
   // Tombol "Sync E-Court" di samping Help (3 Nov 2026): panel Monitoring Sinkronisasi Data SIPP (membaca antrian, Sinkronisasi Data dengan konfirmasi) - skrip konten SIPP.
   "sinkron-ecourt.js",
   // Gelembung chat ALETA Ai (23 Okt 2026, T1 tahap 2b) - skrip konten SIPP, ABT, portal; hanya memanggil

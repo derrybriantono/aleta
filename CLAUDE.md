@@ -24,7 +24,7 @@ Kebersihan sesi (dijalankan pengguna): `/compact` saat percakapan panjang, `/cle
 - Typecheck: `npx tsc --noEmit` · Lint: `npm run lint`
 - Uji: **berkas sasaran saja** `npx vitest run src/test/<berkas>.test.ts`. Uji penuh hanya lewat skill `periksa-uji` (`node scripts/periksa-uji.mjs`), wajib hijau sebelum commit rilis — jangan diulang-ulang.
 - Rilis ekstensi: skill `rilis-ekstensi` (`node scripts/rilis-ekstensi.mjs`) — jangan ketik ulang langkahnya.
-- Jangan naikkan `APP_VERSION` portal.
+- `APP_VERSION` portal naik di commit rilis yang mengubah portal (minor = fitur, patch = perbaikan; keputusan Derry 3 Nov 2026), hanya oleh sesi yang merilis.
 - **Drive C: = SSD 128 GB, D: = hardisk.** Di luar `C:\aleta\` jangan menulis ke C: (TMP/TEMP = `D:\Aplikasi\aleta\tmp`). Pengecualian (disetujui 17 Okt): uji penuh dan `tsc` boleh dari salinan kerja SSD `C:\aleta\kerja` (git worktree terpisah, detached) dengan TMP/TEMP `C:\aleta\tmp` (otomatis bila cwd di C:, atau env `ALETA_UJI_TMP`). Sisa C: wajib ≥ 10 GB.
 
 ## Papan "kemajuan kerja ALETA" — WAJIB selalu hidup & selalu diperbarui
