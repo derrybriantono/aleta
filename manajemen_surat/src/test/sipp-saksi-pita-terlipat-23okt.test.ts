@@ -8,8 +8,9 @@ import { afterEach, describe, expect, it } from "vitest";
 
 /**
  * T6 (23 Okt 2026): kartu ALETA di atas form "Tambah Data Pihak Saksi"
- * (#frm_user) - pita "Saksi / Pihak" (L1) dan "Saksi Putusan" (M1) - bawaannya
- * TERLIPAT, dapat dibuka dengan klik/Enter, pilihan diingat, fungsinya utuh.
+ * (#frm_user) - pita "Saksi / Pihak" (L1) dan "Saksi Putusan" (M1). 3 Nov 2026
+ * (butir 10): lipatan diganti bilah mini - tersembunyi bila tidak mendesak, satu
+ * tombol kecil "ALETA" membukanya, yang mendesak tampil ringkas; fungsinya utuh.
  * Kode sungguhan di jsdom: panel-alat.js + sipp-ide-l1.js + sipp-ide-m1.js
  * + panel.css, chrome.storage tiruan. Nama/NIK rekaan.
  */
@@ -98,73 +99,65 @@ function buka(opsi: { simpanan?: Record<string, unknown>; tanpaAlat?: boolean; p
 }
 
 const PITA = { l1: ".aleta-l1-pita", m1: ".aleta-m1-pita" } as const;
-const pita = (w: W, k: keyof typeof PITA) => w.document.querySelector(`${PITA[k]}[data-${k}-jendela="saksi"]`);
-const tampil = (w: W, e: Element | null) => Boolean(e) && w.getComputedStyle(e).display !== "none";
-const kepala = (p: Element) => p.querySelector(".aleta-lipat-kepala") as HTMLElement;
+const pita = (w: W, k: keyof typeof PITA) => w.document.querySelector(`${PITA[k]}[data-${k}-jendela="saksi"]`) as HTMLElement | null;
+const bilah = (w: W) => w.document.querySelector(".aleta-mini-bilah") as HTMLElement | null;
+const tombol = (w: W) => bilah(w)!.querySelector("button.aleta-mini-tombol") as HTMLButtonElement;
 
+// 3 Nov 2026 (butir 10): lipatan T6 diganti BILAH MINI - pita tersembunyi bila tidak mendesak, satu tombol kecil
+// "ALETA" per borang membuka/menutup keduanya; yang mendesak tampil ringkas (hanya peringatannya).
 describe.each(["l1", "m1"] as const)("pita saksi %s", (k) => {
-  it("bawaan terlipat: hanya kepala (logo + judul) tampak, tombol & kabar tersembunyi", async () => {
+  it("bawaan tersembunyi bila tidak mendesak; satu tombol kecil ALETA tampak", async () => {
     const w = buka();
     const p = (await sampai(() => pita(w, k), `pita ${k}`)) as HTMLElement;
-    expect(p.getAttribute("data-terbuka")).toBe("tidak");
-    expect(kepala(p).getAttribute("aria-expanded")).toBe("false");
-    expect(tampil(w, kepala(p))).toBe(true);
-    expect(kepala(p).textContent).toContain("ALETA");
-    expect(kepala(p).textContent).toMatch(/Saksi/);
-    const isi = p.querySelector(`[data-${k}="isi"]`) as HTMLElement;
-    expect(isi).toBeTruthy();
-    expect(tampil(w, isi.parentElement)).toBe(false);
+    await sampai(() => bilah(w), "bilah mini");
+    expect(p.hidden).toBe(true);
+    expect(bilah(w)!.hidden).toBe(false);
+    expect(w.document.querySelectorAll(".aleta-mini-bilah").length).toBe(1);
+    expect(tombol(w).textContent).toBe("ALETA");
+    expect(tombol(w).getAttribute("aria-pressed")).toBe("false");
+    expect(tombol(w).getAttribute("data-mendesak")).toBe("tidak");
   });
 
-  it("klik kepala membuka (tombol tampak & masih berfungsi), klik lagi melipat, Enter juga bekerja", async () => {
+  it("tombol ALETA membuka pita (tombol Isi tampak & masih berfungsi), klik lagi menyembunyikannya", async () => {
     const w = buka();
     const p = (await sampai(() => pita(w, k), `pita ${k}`)) as HTMLElement;
-    kepala(p).click();
-    expect(p.getAttribute("data-terbuka")).toBe("ya");
+    await sampai(() => bilah(w), "bilah mini");
+    tombol(w).click();
+    expect(p.hidden).toBe(false);
+    expect(tombol(w).getAttribute("aria-pressed")).toBe("true");
     const isi = p.querySelector(`[data-${k}="isi"]`) as HTMLButtonElement;
-    expect(tampil(w, isi.parentElement)).toBe(true);
+    expect(isi).toBeTruthy();
     // fungsi utuh: tombol "Isi dengan ALETA" tetap mengisi pilihan yang pasti
     isi.click();
     await sampai(() => (p.querySelector(`[data-${k}="kabar"]`) as HTMLElement).textContent, `kabar ${k} terisi setelah Isi dengan ALETA`);
-    kepala(p).click();
-    expect(p.getAttribute("data-terbuka")).toBe("tidak");
-    expect(tampil(w, isi.parentElement)).toBe(false);
-    kepala(p).dispatchEvent(new w.KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
-    expect(p.getAttribute("data-terbuka")).toBe("ya");
-  });
-
-  it("pilihan diingat: pita yang dibuat lagi memakai pilihan terakhir; tersimpan di lipatTerbuka", async () => {
-    const w1 = buka();
-    const p1 = (await sampai(() => pita(w1, k), `pita ${k}`)) as HTMLElement;
-    kepala(p1).click();
-    await tunggu(20);
-    const tersimpan = w1.__simpanan.lipatTerbuka as Record<string, boolean>;
-    expect(Object.values(tersimpan)).toContain(true);
-    const w2 = buka({ simpanan: JSON.parse(JSON.stringify(w1.__simpanan)) });
-    const p2 = (await sampai(() => pita(w2, k), `pita ${k}`)) as HTMLElement;
-    await tunggu(30);
-    expect(p2.getAttribute("data-terbuka")).toBe("ya");
+    tombol(w).click();
+    expect(p.hidden).toBe(true);
+    expect(tombol(w).getAttribute("aria-pressed")).toBe("false");
   });
 });
 
 describe("tidak merusak fungsi", () => {
-  it("tanpa fungsi lipat seragam pita tetap terbuka lengkap", async () => {
+  it("tanpa fungsi lipat seragam: tombol ALETA tetap membuka pita lengkap", async () => {
     const w = buka({ tanpaAlat: true });
+    await sampai(() => pita(w, "l1") && pita(w, "m1") && bilah(w), "pita & bilah");
+    tombol(w).click();
     for (const k of ["l1", "m1"] as const) {
-      const p = (await sampai(() => pita(w, k), `pita ${k}`)) as HTMLElement;
+      const p = pita(w, k)!;
+      expect(p.hidden).toBe(false);
       expect(p.getAttribute("data-terbuka")).toBeNull();
-      expect(tampil(w, p.querySelector(`[data-${k}="isi"]`))).toBe(true);
+      expect(p.querySelector(`[data-${k}="isi"]`)).toBeTruthy();
     }
   });
 
-  it("jendela lain (mis. Arsip) tidak ikut terlipat", async () => {
+  it("pita saksi tidak lagi dilipat (tombol kecil menggantikan lipatan); hanya satu tombol untuk kedua pita", async () => {
     const w = buka();
-    await sampai(() => pita(w, "m1"), "pita m1");
-    expect(w.document.querySelectorAll(".aleta-lipatan").length).toBe(2);
+    await sampai(() => pita(w, "l1") && pita(w, "m1") && bilah(w), "pita & bilah");
+    expect(w.document.querySelectorAll(".aleta-lipatan").length).toBe(0);
+    expect(w.document.querySelectorAll(".aleta-mini-tombol").length).toBe(1);
   });
 });
 
-describe("peringatan membuka pita sendiri (keputusan 23 Okt)", () => {
+describe("yang mendesak tetap tampil sendiri (keputusan 23 Okt, bentuk 3 Nov)", () => {
   const ubahPilih = (w: W, v: string) => {
     const e = w.document.querySelector("#is_sela");
     e.value = v;
@@ -173,54 +166,44 @@ describe("peringatan membuka pita sendiri (keputusan 23 Okt)", () => {
   };
   const butirKuning = (p: Element) => p.querySelector('[data-m1="cek"]')!.textContent;
 
-  it("tanpa peringatan tetap terlipat", async () => {
+  it("tanpa peringatan tetap tersembunyi", async () => {
     const w = buka({ pilih: "0" });
     const p = (await sampai(() => pita(w, "m1"), "pita m1")) as HTMLElement;
     expect(butirKuning(p)).toBe("");
-    expect(p.getAttribute("data-terbuka")).toBe("tidak");
+    expect(p.hidden).toBe(true);
   });
 
-  it("peringatan kuning (Saksi Putusan belum dipilih) membuka pita; pita L1 tetap terlipat", async () => {
+  it("peringatan kuning (Saksi Putusan belum dipilih) menampilkan pita RINGKAS; pita L1 tetap tersembunyi", async () => {
     const w = buka({ pilih: "-1" });
     const p = (await sampai(() => pita(w, "m1"), "pita m1")) as HTMLElement;
-    await sampai(() => p.getAttribute("data-terbuka") === "ya", "pita m1 terbuka sendiri");
+    await sampai(() => !p.hidden, "pita m1 tampil sendiri");
+    expect(p.classList.contains("aleta-mini-ringkas")).toBe(true);
     expect(butirKuning(p)).toMatch(/Saksi Putusan belum dipilih/);
-    expect(tampil(w, p.querySelector('[data-m1="cek"]'))).toBe(true);
-    expect((await sampai(() => pita(w, "l1"), "pita l1")).getAttribute("data-terbuka")).toBe("tidak");
+    expect(pita(w, "l1")!.hidden).toBe(true);
+    expect(tombol(w).getAttribute("data-mendesak")).toBe("ya");
   });
 
-  it("bukaan otomatis tidak diingat sebagai pilihan pengguna", async () => {
+  it("tombol ALETA membuka rincian pita yang mendesak; klik lagi kembali ringkas (peringatan tidak hilang)", async () => {
     const w = buka({ pilih: "-1" });
     const p = (await sampai(() => pita(w, "m1"), "pita m1")) as HTMLElement;
-    await sampai(() => p.getAttribute("data-terbuka") === "ya", "terbuka");
-    await tunggu(30);
-    const peta = (w.__simpanan.lipatTerbuka || {}) as Record<string, boolean>;
-    expect(peta["sipp-ide-m1:saksi"]).not.toBe(true);
+    await sampai(() => !p.hidden, "tampil");
+    tombol(w).click();
+    expect(p.hidden).toBe(false);
+    expect(p.classList.contains("aleta-mini-ringkas")).toBe(false);
+    expect(pita(w, "l1")!.hidden).toBe(false);
+    tombol(w).click();
+    expect(p.hidden).toBe(false);
+    expect(p.classList.contains("aleta-mini-ringkas")).toBe(true);
+    expect(pita(w, "l1")!.hidden).toBe(true);
   });
 
-  it("ditutup pengguna selagi peringatan yang sama masih ada: tidak dibuka paksa lagi", async () => {
+  it("peringatan hilang -> pita tersembunyi lagi; muncul lagi -> tampil lagi", async () => {
     const w = buka({ pilih: "-1" });
     const p = (await sampai(() => pita(w, "m1"), "pita m1")) as HTMLElement;
-    await sampai(() => p.getAttribute("data-terbuka") === "ya", "terbuka");
-    kepala(p).click();
-    expect(p.getAttribute("data-terbuka")).toBe("tidak");
-    for (let i = 0; i < 3; i += 1) {
-      w.aletaSippIdeM1.pasang(w.document);
-      await tunggu(20);
-    }
-    expect(p.getAttribute("data-terbuka")).toBe("tidak");
-  });
-
-  it("peringatan BARU membuka lagi pita yang ditutup pengguna", async () => {
-    const w = buka({ pilih: "-1" });
-    const p = (await sampai(() => pita(w, "m1"), "pita m1")) as HTMLElement;
-    await sampai(() => p.getAttribute("data-terbuka") === "ya", "terbuka");
-    kepala(p).click();
-    expect(p.getAttribute("data-terbuka")).toBe("tidak");
-    ubahPilih(w, "0"); // peringatan hilang
-    await tunggu(20);
-    expect(p.getAttribute("data-terbuka")).toBe("tidak");
-    ubahPilih(w, "-1"); // muncul lagi = peringatan baru
-    await sampai(() => p.getAttribute("data-terbuka") === "ya", "terbuka lagi oleh peringatan baru");
+    await sampai(() => !p.hidden, "tampil");
+    ubahPilih(w, "0");
+    await sampai(() => p.hidden, "tersembunyi sesudah peringatan hilang");
+    ubahPilih(w, "-1");
+    await sampai(() => !p.hidden, "tampil lagi oleh peringatan baru");
   });
 });

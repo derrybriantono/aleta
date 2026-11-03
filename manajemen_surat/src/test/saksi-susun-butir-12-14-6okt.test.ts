@@ -492,6 +492,10 @@ describe("butir 12 - centang modus 'Hanya sebagian': sesuai posita di atas, lain
       const k = form.querySelectorAll(".aleta-sdg-alasan-saksi")[1];
       return k && /^posita:/.test(k.getAttribute("data-t6-kelompok") || "") ? k : null;
     }, "dikelompokkan");
+    // 2 Nov (keputusan 138): bawaan saksi II "sama" - pengguna memilih "sebagian" sendiri.
+    const modus2 = form.querySelectorAll(".aleta-sdg-modus")[1].querySelector("select") as any;
+    modus2.value = "sebagian";
+    modus2.dispatchEvent(new modus2.ownerDocument.defaultView.Event("change", { bubbles: true }));
     const judi = Array.from(kotak.querySelectorAll("details input[type=checkbox]")).find((c: any) => c.value === "judi") as any;
     judi.checked = true;
     const nafkah = Array.from(kotak.querySelectorAll("input[type=checkbox]")).find((c: any) => c.value === "tidak memberi nafkah") as any;

@@ -620,12 +620,17 @@ describe("SYARAT MUTLAK: tampilan Lama IDENTIK dengan abt.js sebelum Tahap 6 (fd
           .replace(/Blangko tanya jawab/g, "Templat pertanyaan")
           .replace(/blangko tanya jawab/g, "templat")
       );
-      expect(b).toEqual(a);
+      // 2 Nov (keputusan 138): satu-satunya selisih yang disengaja - bawaan saksi II "sama" (dulu "sebagian"),
+      // sehingga kotak centang "sebagian" saksi II tersembunyi; selain atribut hidden itu, DOM sama.
+      const tanpaSembunyiSaksi = (x: string) => x.replace(/(class="aleta-sdg-alasan aleta-sdg-alasan-saksi") hidden=""/g, "$1");
+      expect(b.map(tanpaSembunyiSaksi)).toEqual(a.map(tanpaSembunyiSaksi));
       await tunggu(40);
       expect(tanpaCap(kini.simpanan)).toEqual(tanpaCap(lama.simpanan));
       expect(kini.tulisan.sort()).toEqual(lama.tulisan.sort());
       const daftar = (h: Halaman) => h.minta.map((m) => `${m.cara} ${m.url.replace(ASAL, "")} ${m.badan.replace(/"pada":"[^"]*"/g, "")}`).sort();
-      expect(daftar(kini)).toEqual(daftar(lama));
+      // Keputusan 138 (lihat di atas): saksi II dikirim "sama" oleh abt.js kini, "sebagian" oleh abt.js lama.
+      const saksi2Sama = (x: string) => x.replace(/("saksi2":\{"modus":)"sebagian"/g, '$1"sama"').replace(/(\{"ke":2,"pihak":"P","modus":)"sebagian"/g, '$1"sama"');
+      expect(daftar(kini)).toEqual(daftar(lama).map(saksi2Sama));
       expect(mintaT6(kini)).toEqual([]);
       expect(kini.konfirmasi.length).toBe(1);
       expect(potret(kini)).not.toMatch(/aleta-t6|data-t6/);

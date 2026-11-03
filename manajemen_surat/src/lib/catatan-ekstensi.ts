@@ -57,6 +57,27 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.64",
+    dirilis: "2026-11-03T15:00:00+08:00",
+    judul: "Salinan bertanda tangan, garis Z dan nomor halaman berita acara yang benar, Status Perkara baru, register kuasa, dan Sync E-Court",
+    butir: [
+      "Salinan putusan: tulisan \"ttd\" kini tercetak di ruang tanda tangan Ketua Majelis, kedua Hakim Anggota, dan Panitera Sidang, dan blok \"Untuk Salinan\" memakai tanda tangan serta cap asli Panitera.",
+      "Salinan berita acara memakai tanda tangan asli Ketua Majelis dan Panitera Sidang, dan blok tanda tangan tidak lagi terbelah ke halaman berikutnya.",
+      "Garis Z berita acara hanya menutup ruang kosong sesudah tulisan terakhir, tidak lagi menimpa paragraf atau tabel; bila ruangnya tidak cukup, garis tidak digambar dan panel memberi peringatan.",
+      "Nomor halaman PDF berita acara bersambung sama dengan Word, termasuk berita acara yang mulai di halaman lebih dari 1.",
+      "Pembacaan PDF di server diperbaiki, sehingga tanda tangan, garis Z otomatis, lampiran e-Court, dan pembacaan KTP dari PDF kembali berjalan.",
+      "Tampilan baru Status Perkara: pencarian satu baris, sorotan perkara dengan Sidang berikutnya dan Perlu dikerjakan, linimasa ringkas, urutan bagian yang runut, dan bagian rinci terlipat.",
+      "Status Perkara menampilkan email dan nomor WhatsApp pihak, tombol unduh relaas dan resi, nama jurusita, serta keterangan beracara: E-Litigasi, Hybrid, atau Tergugat tidak pernah hadir.",
+      "Jadwal Sidang lebih ringkas: proses mediasi dan riwayat panggilan terlipat, kehadiran ditulis singkat, dan keterangan kumulasi serta eksepsi hanya tampil bila ada.",
+      "Layar kuasa hukum SIPP punya isian Nomor dan Tanggal Register Kuasa; kuasa yang sama dalam satu perkara memakai register yang sama secara otomatis.",
+      "Layar data pihak dan saksi SIPP lebih rapi: kotak kontak e-Court hanya tampil bila ada usulan, usulan ALETA pindah ke samping, dan bilah saksi hanya tampil bila ada yang mendesak.",
+      "Tombol Sync E-Court di samping Help menampilkan antrian sinkronisasi SIPP ke e-Court, dan halaman Monitoring Sinkronisasi Data ikut mode gelap.",
+      "Panel Blangko Derry: rekomendasi putusan di bawah kolom blangko, lama pisah rumah terisi otomatis, saran beracara elektronik tidak lagi muncul untuk perkara verstek, tanda kalimat contoh disembunyikan, dan PDF SALINAN langsung diunduh.",
+      "Susun keterangan saksi di panel ABT lama memakai bawaan saksi kedua yang sama dengan Blangko Derry.",
+      "Pengaturan AI: kunci API yang tersimpan tidak bisa disalin, dan koneksi Claude tidak perlu memilih model.",
+    ],
+  },
+  {
     versi: "1.205.63",
     dirilis: "2026-11-02T18:00:00+08:00",
     judul: "PDF berita acara dan putusan lebih rapi, panel Blangko Derry ringkas, pemasang Windows, dan unduhan berkas aman",
