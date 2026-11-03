@@ -124,7 +124,7 @@ describe("DaftarMajelisPetugas: dua blok", () => {
     const salinan = container.cloneNode(true) as HTMLElement;
     salinan.querySelector('[data-blok="majelis-ikrar"]')?.remove();
     expect(salinan.textContent).not.toContain("Ulfah");
-    expect(salinan.textContent).toMatch(/Arasy Latif[^·]*· Hakim Ketua/);
+    expect(salinan.textContent).toMatch(/Arasy Latif[^|]*\|\s*Hakim Ketua/);
     expect(salinan.textContent).toContain("Panitera pengganti:");
   });
 
@@ -181,9 +181,9 @@ describe("DaftarMajelisPetugas: dua blok", () => {
       />
     );
     // Teks pembaca layar tautan ("rekap dibuka di tab baru") berada di antaranya.
-    expect(container.textContent).toMatch(/Akbar Ali[^·]*· Hakim Ketua \(verzet\)/);
+    expect(container.textContent).toMatch(/Akbar Ali[^|]*\|\s*Hakim Ketua \(verzet\)/);
     expect(container.textContent).toMatch(/Dwi Sartono[^,]*\(banding\)/);
-    expect(container.textContent).not.toMatch(/Arasy Latif[^·]*· Hakim Ketua \(/);
+    expect(container.textContent).not.toMatch(/Arasy Latif[^|]*\|\s*Hakim Ketua \(/);
   });
 });
 
@@ -312,6 +312,9 @@ describe("layar Status Perkara: majelis pemeriksa dan majelis ikrar talak", () =
     await gambarLayar(statusUji());
     const bagian = document.getElementById("bagian-ikrar");
     expect(bagian).not.toBeNull();
+    // Terlipat bawaan menurut tahap (rancangan 3 Nov 2026): dibuka seperti oleh pengguna.
+    const kepalaIkrar = bagian!.querySelector("button");
+    if (kepalaIkrar && kepalaIkrar.getAttribute("aria-expanded") === "false") fireEvent.click(kepalaIkrar);
     expect(bagian!.textContent).not.toMatch(/<\/?br/i);
     // Tiap anggota majelis satu baris sendiri.
     expect(within(bagian!).getByText("Hakim Ketua: Ulfah, S.Ag., M.H.")).toBeTruthy();

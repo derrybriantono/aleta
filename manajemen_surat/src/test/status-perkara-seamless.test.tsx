@@ -70,11 +70,17 @@ describe("kelompok Seamless memuat SEMUA bagian Status Perkara", () => {
     }
   });
 
-  it("urutan bagian dalam kelompok sama dengan urutan di berkas (Kompleks dan Seamless terbaca sama)", () => {
+  it("urutan bagian dalam TIAP kelompok sama dengan urutan di berkas (Kompleks dan Seamless terbaca sama)", () => {
     const urutBerkas = [...berkasStatus.matchAll(/<Bagian\b[^>]*?kunci="([^"]+)"/g)].map((m) => m[1]);
-    const urutKelompok = KELOMPOK_SEAMLESS.flatMap((g) => g.bagian).filter((k) => urutBerkas.includes(k));
     const unik = urutBerkas.filter((k, i) => urutBerkas.indexOf(k) === i);
-    expect(urutKelompok).toEqual(unik);
+    for (const g of KELOMPOK_SEAMLESS) {
+      const harap = g.bagian.filter((k) => unik.includes(k));
+      expect(unik.filter((k) => g.bagian.includes(k)), g.id).toEqual(harap);
+    }
+  });
+
+  it("kelompok berurutan: Jalannya perkara, Pihak dan majelis, Putusan, Berkas, Penilaian", () => {
+    expect(KELOMPOK_SEAMLESS.map((g) => g.id)).toEqual(["B", "A", "C", "D", "E"]);
   });
 
   it("tiap bagian punya kata lain untuk pencarian", () => {
@@ -83,35 +89,51 @@ describe("kelompok Seamless memuat SEMUA bagian Status Perkara", () => {
 });
 
 describe("pecahan layar dipakai kedua tampilan (fungsi identik)", () => {
-  const mulai = berkasStatus.indexOf("  if (seamless) {\n    return (");
-  const kompleks = berkasStatus.indexOf('  return (\n    // Penanda pembungkus cetak');
-  const jsxSeamless = berkasStatus.slice(mulai, kompleks);
-  const jsxKompleks = berkasStatus.slice(kompleks, berkasStatus.indexOf("\n}\n", kompleks));
+  // Rancangan 3 Nov 2026 (keputusan 142): SATU perakitan untuk kedua tampilan.
+  const mulai = berkasStatus.indexOf("  // PERAKITAN BARU (rancangan 3 Nov 2026");
+  const jsx = berkasStatus.slice(mulai, berkasStatus.indexOf("\n}\n", mulai));
   const pakai = (teks: string) => new Set([...teks.matchAll(/\{(blok[A-Za-z]+)\}/g)].map((m) => m[1]));
 
-  it("Seamless memakai setiap blok yang dipakai Kompleks, kecuali bilah alat lama", () => {
+  it("kelima kelompok dirakit dalam urutan rancangan, dipakai Seamless dan Kompleks", () => {
     expect(mulai).toBeGreaterThan(-1);
-    expect(kompleks).toBeGreaterThan(mulai);
-    const dipakaiKompleks = pakai(jsxKompleks);
-    const dipakaiSeamless = pakai(jsxSeamless);
-    for (const blok of ["blokNomor", "blokUnduh", "blokLencana", "blokKumulasi", "blokAngka", "blokKartu", "blokPeringatan", "blokA", "blokB", "blokC", "blokD", "blokE"]) {
-      expect(dipakaiKompleks.has(blok) || blok === "blokNomor" || blok === "blokUnduh", `kompleks ${blok}`).toBe(true);
-      expect(dipakaiSeamless.has(blok), `seamless ${blok}`).toBe(true);
-    }
-    expect(dipakaiKompleks.has("blokAlat")).toBe(true);
+    expect(jsx).toContain("const urutKelompok = [blokB, blokA, blokC, blokD, blokE];");
+    expect(jsx).toContain("<DaftarKelompok>");
+    expect(jsx).toContain("<IndeksKompleks");
+    expect(jsx.match(/urutKelompok\.map/g)?.length).toBe(2);
   });
 
-  it("Seamless memakai komponen bilah alat yang sama (varian), bukan salinannya", () => {
-    expect(jsxSeamless).toContain('<AlatStatusPerkara\n          varian="seamless"');
-    expect(jsxSeamless).toContain("Cari perkara lain");
-    expect(jsxSeamless).toContain("onClick={onKembali}");
+  it("sorotan memuat nomor/jenis, lencana, kumulasi, linimasa, dan fakta; blok kolom kanan lama hilang", () => {
+    const dipakai = pakai(jsx);
+    for (const blok of ["blokNomor", "blokLencana"]) expect(dipakai.has(blok), blok).toBe(true);
+    expect(jsx).toContain("<SorotanPerkara");
+    expect(jsx).toContain("<BarisKumulasi");
+    expect(jsx).toContain("<LinimasaPerkara");
+    expect(jsx).toContain("<BarisFakta");
+    expect(jsx).toContain("<KotakBerikutnya") ;
+    expect(berkasStatus).not.toContain("const blokKartu");
+    expect(berkasStatus).not.toContain("const blokAngka");
+    expect(berkasStatus).not.toContain("<TataLetakSeamless");
   });
 
-  it("tampilan Kompleks tidak membungkus apa pun selain isinya", () => {
-    expect(berkasStatus).toContain('seamless ? "contents" : "grid gap-3 lg:grid-cols-2"');
+  it("kedua tampilan memakai komponen bilah alat yang sama (varian rancangan), bukan salinannya", () => {
+    expect(jsx).toContain('<AlatStatusPerkara\n            varian="rancangan"');
+    expect(jsx).toContain("Cari perkara lain");
+    expect(jsx).toContain("onClick={onKembali}");
   });
 
-  it("toggle ada di kartu luar, berdampingan dengan judul", () => {
+  it("tampilan Kompleks: judul kelompok kecil dan bagian dalam satu kartu", () => {
+    const { container } = render(
+      <KelompokKartu id="A" seamless={false} ringkas="x">
+        <p>isi</p>
+      </KelompokKartu>
+    );
+    expect(container.querySelector("[data-kelompok-kompleks='A']")).not.toBeNull();
+    expect(container.querySelector("h4")?.textContent).toContain("Pihak dan majelis");
+    expect(container.textContent).toContain("isi");
+    expect(container.querySelector("button")).toBeNull();
+  });
+
+  it("toggle ada di bilah cari satu baris", () => {
     expect(berkasStatus).toContain("<SakelarTampilanStatus nilai={tampilanStatus} onPilih={pilihTampilanStatus} />");
     expect(berkasStatus).toContain('seamless={tampilanStatus === "seamless"}');
   });
@@ -184,13 +206,30 @@ describe("pilihan tampilan diingat per pengguna", () => {
 describe("KelompokKartu", () => {
   beforeEach(() => window.localStorage.clear());
 
-  it("pada Kompleks hanya menggambar isinya - tanpa kartu, tanpa tombol", () => {
-    const { container } = render(
-      <KelompokKartu id="A" seamless={false} ringkas="x">
+  it("terbuka bawaan menurut tahap, dan pilihan diingat PER PERKARA", () => {
+    const { unmount } = render(
+      <KelompokKartu id="C" seamless ringkas="x" terbukaBawaan={false} kunciPerkara="1/Pdt.G/2026/PA.X">
         <p>isi</p>
       </KelompokKartu>
     );
-    expect(container.innerHTML).toBe("<p>isi</p>");
+    const tombol = screen.getByRole("button", { name: /Putusan dan tindak lanjut/ });
+    expect(tombol.getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(tombol);
+    expect(window.localStorage.getItem("aleta.status-perkara.kelompok2.1/Pdt.G/2026/PA.X.C")).toBe("buka");
+    unmount();
+    render(
+      <KelompokKartu id="C" seamless ringkas="x" terbukaBawaan={false} kunciPerkara="1/Pdt.G/2026/PA.X">
+        <p>isi</p>
+      </KelompokKartu>
+    );
+    expect(screen.getByRole("button", { name: /Putusan dan tindak lanjut/ }).getAttribute("aria-expanded")).toBe("true");
+    cleanup();
+    render(
+      <KelompokKartu id="C" seamless ringkas="x" terbukaBawaan={false} kunciPerkara="2/Pdt.G/2026/PA.X">
+        <p>isi</p>
+      </KelompokKartu>
+    );
+    expect(screen.getByRole("button", { name: /Putusan dan tindak lanjut/ }).getAttribute("aria-expanded")).toBe("false");
   });
 
   it("pada Seamless menggambar kartu berlipatan; isi tetap hidup saat dilipat", () => {
@@ -208,7 +247,7 @@ describe("KelompokKartu", () => {
     expect(tombol.getAttribute("aria-expanded")).toBe("false");
     // dilipat = disembunyikan, bukan dilepas: bagian di dalamnya tetap terdaftar
     expect(container.querySelector("#bagian-sidang")).not.toBeNull();
-    expect(window.localStorage.getItem("aleta.status-perkara.kelompok.B")).toBe("1");
+    expect(window.localStorage.getItem("aleta.status-perkara.kelompok2.-.B")).toBe("tutup");
   });
 });
 

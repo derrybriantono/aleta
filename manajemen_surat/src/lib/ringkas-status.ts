@@ -78,6 +78,8 @@ export type Peringatan = {
    * Dipakai memberi titik pada kelompoknya.
    */
   kelompok?: "A" | "B" | "C" | "D" | "E";
+  /** Kunci Bagian yang dibuka bila butir ini diketuk (rancangan 3 Nov 2026). */
+  bagian?: string;
 };
 
 export type Ringkasan = {
@@ -174,6 +176,7 @@ export function ringkasStatus(status: BahanRingkas, hariIni: string): Ringkasan 
       sebab: "Tanpa penetapan majelis, perkara tidak dapat dijadwalkan bersidang.",
       berat: true,
       kelompok: "A",
+      bagian: "majelis",
     });
   }
 
@@ -183,6 +186,7 @@ export function ringkasStatus(status: BahanRingkas, hariIni: string): Ringkasan 
       sebab: `Melewati lima bulan (SEMA 2/2014) — ambangnya ${AMBANG_HARI_SEMA} hari.`,
       berat: true,
       kelompok: "B",
+      bagian: "sidang",
     });
   }
 
@@ -192,6 +196,7 @@ export function ringkasStatus(status: BahanRingkas, hariIni: string): Ringkasan 
       sebab: `Melewati tiga puluh hari (PERMA 1/2016).`,
       berat: true,
       kelompok: "B",
+      bagian: "mediasi",
     });
   }
 
@@ -201,6 +206,7 @@ export function ringkasStatus(status: BahanRingkas, hariIni: string): Ringkasan 
       sebab: "Sidang terakhir sudah lewat dan tidak ada tanggal baru di SIPP.",
       berat: true,
       kelompok: "B",
+      bagian: "sidang",
     });
   }
 
@@ -211,6 +217,7 @@ export function ringkasStatus(status: BahanRingkas, hariIni: string): Ringkasan 
         sebab: "Berkas belum dapat diarsipkan sebelum minutasinya tercatat.",
         berat: true,
         kelompok: "C",
+      bagian: "putusan",
       });
     }
     if (!putusan.tanggalBht) {
@@ -219,6 +226,7 @@ export function ringkasStatus(status: BahanRingkas, hariIni: string): Ringkasan 
         sebab: "Akta cerai tidak dapat terbit sebelum BHT-nya tercatat.",
         berat: false,
         kelompok: "C",
+      bagian: "putusan",
       });
     }
     if (putusan.aktaCerai && !putusan.aktaCerai.diserahkanPihak1) {
@@ -227,6 +235,7 @@ export function ringkasStatus(status: BahanRingkas, hariIni: string): Ringkasan 
         sebab: `Akta ${putusan.aktaCerai.nomor || "sudah terbit"} tetapi penyerahannya belum tercatat.`,
         berat: false,
         kelompok: "C",
+      bagian: "putusan",
       });
     }
   }

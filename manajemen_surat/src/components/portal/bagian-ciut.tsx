@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -43,6 +43,15 @@ import { cn } from "@/lib/utils";
  * Karena itu pemakai baru memberi awalan sendiri - panel Rincian antrian
  * sidang memakai "sidang-majelis", "sidang-relaas-ini", dan seterusnya.
  */
+/**
+ * Status Perkara (rancangan 3 Nov 2026): pilihan buka-tutup diingat PER PERKARA
+ * (nilainya nomor perkara), dan bawaan terlipat dapat ditentukan layar menurut
+ * tahap perkara - tanpa menyentuh tiap <Bagian>. Di luar Status Perkara nilai
+ * bawaannya kosong dan Bagian berperilaku seperti sebelumnya.
+ */
+export const IngatanBagianKonteks = createContext<string>("");
+export const BawaanBagianKonteks = createContext<((kunci: string, dasar: boolean) => boolean) | null>(null);
+
 export function Bagian({
   judul,
   children,
@@ -67,19 +76,24 @@ export function Bagian({
   // Bentuk kuncinya milik `alat-bagian` - dua tempat yang menyusunnya
   // sendiri akan menyimpang diam-diam, dan yang menyimpang justru keadaan
   // yang diingat peramban.
-  const kunciSimpan = kunci ? kunciCiut(kunci) : "";
+  const ingatPer = useContext(IngatanBagianKonteks);
+  const bawaanLayar = useContext(BawaanBagianKonteks);
+  const kunciDasar = kunci ? kunciCiut(kunci) : "";
+  const kunciSimpan = kunciDasar && ingatPer ? `${kunciDasar}.${ingatPer}` : kunciDasar;
+  // Layar dapat menggantikan bawaan terlipat (Seamless menurut tahap perkara).
+  const ciutBawaanAkhir = bawaanLayar && kunci ? bawaanLayar(kunci, ciutBawaan) : ciutBawaan;
   const kunciVersi = kunciSimpan && versiBawaan ? `${kunciSimpan}.versi` : "";
 
   const [ciut, setCiut] = useState(() => {
-    if (!kunciSimpan) return ciutBawaan;
+    if (!kunciSimpan) return ciutBawaanAkhir;
     try {
-      if (kunciVersi && window.localStorage.getItem(kunciVersi) !== versiBawaan) return ciutBawaan;
+      if (kunciVersi && window.localStorage.getItem(kunciVersi) !== versiBawaan) return ciutBawaanAkhir;
       const tersimpan = window.localStorage.getItem(kunciSimpan);
-      return tersimpan === null ? ciutBawaan : tersimpan === "1";
+      return tersimpan === null ? ciutBawaanAkhir : tersimpan === "1";
     } catch {
       // Peramban yang memblokir penyimpanan situs tetap harus dapat memakai
       // layar ini - hanya keadaan ciutnya yang tidak diingat.
-      return ciutBawaan;
+      return ciutBawaanAkhir;
     }
   });
 
@@ -119,7 +133,7 @@ export function Bagian({
   }, [kunci, judul]);
 
   return (
-    <section id={kunci ? `bagian-${kunci}` : undefined} className="rounded-lg border bg-card scroll-mt-4">
+    <section id={kunci ? `bagian-${kunci}` : undefined} className="rounded-lg border bg-card scroll-mt-28">
       <button
         type="button"
         onClick={ganti}

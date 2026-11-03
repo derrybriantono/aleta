@@ -1,3 +1,4 @@
+import { PEMISAH_RINGKAS } from "@/lib/status-perkara-seamless";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -360,7 +361,7 @@ describe("menekan angkanya memunculkan daftar perkaranya", () => {
     expect(teks).toContain("sebelumnya");
     expect(teks).toContain("perkara ini");
     expect(teks).toContain("Dasar: NIK sama");
-    expect(teks).toContain("Cerai Gugat · Penggugat");
+    expect(teks).toContain(`Cerai Gugat${PEMISAH_RINGKAS}Penggugat`);
   });
 
   it("daftar perkara terkait: sesudahnya, keadaan, dasar pasangan beserta catatannya", async () => {

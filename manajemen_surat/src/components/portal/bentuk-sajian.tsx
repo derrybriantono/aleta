@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { tanggalHariPanjang, tanggalRingkas } from "@/lib/tanggal-indonesia";
 import type { PerjalananSidang, TitikPerjalanan } from "@/lib/perjalanan-sidang";
 import type { PitaWaktuPutus } from "@/lib/pita-waktu-putus";
+import { PEMISAH_RINGKAS } from "@/lib/status-perkara-seamless";
 
 /**
  * ============================================================================
@@ -476,7 +477,7 @@ const WARNA_PITA: Record<NadaPita, { latar: string; garis: string; teks: string;
 /** Rincian satu sidang - untuk tooltip dan baris rincian di bawah gambar. */
 function rincianTitik(t: TitikPerjalanan): string[] {
   return [
-    `Sidang ke-${t.ke} · ${tanggalHariPanjang(t.tanggal)}${t.hariPutus ? " · hari putusan" : ""}${
+    `Sidang ke-${t.ke}${PEMISAH_RINGKAS}${tanggalHariPanjang(t.tanggal)}${t.hariPutus ? "${PEMISAH_RINGKAS}hari putusan" : ""}${
       t.akanDatang ? " · belum berlangsung" : ""
     }`,
     `Agenda: ${t.agenda || "tanpa agenda"}`,
@@ -494,7 +495,7 @@ type LapisanPita = { dari: number; sampai: number; nada: NadaPita; label: string
 function sebutanPita(l: LapisanPita) {
   if (l.nada === "merah") return `lebih dari ${l.dari} hari`;
   const rentang = l.dari === 0 ? `sampai ${l.sampai} hari` : `${l.dari + 1}-${l.sampai} hari`;
-  return `${rentang} · ${l.label}`;
+  return `${rentang}${PEMISAH_RINGKAS}${l.label}`;
 }
 
 /**
@@ -528,8 +529,8 @@ export function ringkasUmurTerhadapBatas(pita: PitaUmur[], hariIniDihitung: numb
   const sisa = batas.sampai - hariIniDihitung;
   const nama = batas.label.split(" - ")[0];
   return sisa >= 0
-    ? `hari ke-${hariIniDihitung} · ${sisa} hari lagi sampai batas ${nama}`
-    : `hari ke-${hariIniDihitung} · batas ${nama} sudah lewat ${-sisa} hari`;
+    ? `hari ke-${hariIniDihitung}${PEMISAH_RINGKAS}${sisa} hari lagi sampai batas ${nama}`
+    : `hari ke-${hariIniDihitung}${PEMISAH_RINGKAS}batas ${nama} sudah lewat ${-sisa} hari`;
 }
 
 export function DiagramPerjalananSidang({
@@ -670,8 +671,8 @@ export function DiagramPerjalananSidang({
       : "",
     sisa !== null && batasAkhir
       ? sisa >= 0
-        ? `hari ke-${hariIniDihitung} · ${sisa} hari lagi sampai batas ${batasPendek}`
-        : `hari ke-${hariIniDihitung} · batas ${batasPendek} sudah lewat ${-sisa} hari`
+        ? `hari ke-${hariIniDihitung}${PEMISAH_RINGKAS}${sisa} hari lagi sampai batas ${batasPendek}`
+        : `hari ke-${hariIniDihitung}${PEMISAH_RINGKAS}batas ${batasPendek} sudah lewat ${-sisa} hari`
       : "",
     perjalanan.rentangMediasi.some((r) => r.tanpaLaporan) ? "ada mediasi tanpa tanggal laporan mediator - periksa" : "",
     perjalanan.tanpaTanggal > 0 ? `${perjalanan.tanpaTanggal} sidang tanpa tanggal tidak digambar` : "",
@@ -727,7 +728,7 @@ export function DiagramPerjalananSidang({
     <div>
       <Kepala judul={judul} />
       <p className="mb-2 text-xs leading-5 text-muted-foreground" data-ringkasan-perjalanan="">
-        {ringkasan.join(" · ")}
+        {ringkasan.join(PEMISAH_RINGKAS)}
         {penjelasan.length > 0 ? (
           <span
             role="img"
@@ -879,7 +880,7 @@ export function DiagramPerjalananSidang({
                     textAnchor="middle"
                     className={`text-[10px] tabular-nums ${t.akanDatang ? "fill-muted-foreground" : "fill-foreground font-medium"}`}
                   >
-                    {t.hariPutus ? `${t.hari} · putus` : t.hari}
+                    {t.hariPutus ? `${t.hari}${PEMISAH_RINGKAS}putus` : t.hari}
                   </text>
                 </g>
               );
@@ -948,7 +949,7 @@ export function DiagramPerjalananSidang({
         {/* Rincian terpilih - tooltip tidak ada pada layar sentuh. */}
         <p className="mt-1.5 min-h-[1.25rem] text-xs leading-5" aria-live="polite">
           {terpilih ? (
-            rincianTitik(terpilih).join(" · ")
+            rincianTitik(terpilih).join(PEMISAH_RINGKAS)
           ) : (
             <span className="text-muted-foreground">Arahkan atau ketuk titik untuk rincian sidangnya.</span>
           )}

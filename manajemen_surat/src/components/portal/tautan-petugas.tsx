@@ -6,6 +6,7 @@ import { withBasePath } from "@/lib/base-path";
 import { SEBUTAN_PERAN, alamatRekapPetugas, type PeranRekap } from "@/lib/rekap-petugas";
 import { daftarMediator } from "@/lib/sebutan-mediator";
 import { cn } from "@/lib/utils";
+import { PEMISAH_RINGKAS } from "@/lib/status-perkara-seamless";
 
 /**
  * ============================================================================
@@ -124,7 +125,7 @@ function DaftarHakim({ majelis, kosong }: { majelis: Hakim[]; kosong: string }) 
           <TautanPetugas peran="hakim" id={orang.id} nama={orang.nama} className="font-medium" />
           {orang.jabatan || akhiranTahapan(orang) ? (
             <span className="text-xs text-muted-foreground">
-              {orang.jabatan ? ` · ${orang.jabatan}` : ""}
+              {orang.jabatan ? `${PEMISAH_RINGKAS}${orang.jabatan}` : ""}
               {akhiranTahapan(orang)}
             </span>
           ) : null}

@@ -552,7 +552,7 @@ describe("kalender perkara digambar", () => {
 describe("relaas panggilan digambar runut per sidang", () => {
   it("tiap sidang menjadi satu kelompok, bernomor urut menaik", () => {
     render(<RelaasPanggilan status={status()} />);
-    const kepala = screen.getAllByText(/^Sidang ke-\d+ ·/).map((x) => x.textContent ?? "");
+    const kepala = screen.getAllByText(/^Sidang ke-\d+\s*\|/).map((x) => x.textContent ?? "");
     expect(kepala).toHaveLength(2);
     expect(kepala[0]).toContain("Sidang ke-1");
     expect(kepala[0]).toContain("Rabu, 05-08-2026");
@@ -579,7 +579,7 @@ describe("relaas panggilan digambar runut per sidang", () => {
 
   it("jejak pos, retur, dan hasil relaas ikut tergambar", () => {
     render(<RelaasPanggilan status={status()} />);
-    expect(screen.getByText(/dikirim pos Sab, 25-07-2026 · resi RESI-77/)).toBeTruthy();
+    expect(screen.getByText(/dikirim pos Sab, 25-07-2026\s*\|\s*resi RESI-77/)).toBeTruthy();
     // 22 Okt 2026: lencana retur menyebut sebabnya; status_pos 2 tanpa sebab tertulis = "Retur pos".
     expect(screen.getByText("Retur pos")).toBeTruthy();
     expect(screen.getByText("Disampaikan lewat Kepala Desa")).toBeTruthy();
@@ -622,7 +622,7 @@ describe("relaas panggilan digambar runut per sidang", () => {
   it("bot versi lama yang belum mengirim panggilan tidak menjatuhkan layarnya", () => {
     const tanpaPanggilan = status({ panggilan: undefined });
     expect(() => render(<RelaasPanggilan status={tanpaPanggilan} />)).not.toThrow();
-    expect(screen.getAllByText(/^Sidang ke-\d+ ·/)).toHaveLength(2);
+    expect(screen.getAllByText(/^Sidang ke-\d+\s*\|/)).toHaveLength(2);
   });
 
   it("perkara tanpa relaas sama sekali mengatakannya", () => {
@@ -698,12 +698,12 @@ describe("nomor sidang diambil dari SIPP, bukan dari urutan baris", () => {
 
   it("nomor relaas diambil dari jadwal, bukan dari urutan kelompok", () => {
     render(<RelaasPanggilan status={tigaSidang()} />);
-    const kepala = screen.getAllByText(/^Sidang ke-\d+ ·/).map((x) => x.textContent ?? "");
+    const kepala = screen.getAllByText(/^Sidang ke-\d+\s*\|/).map((x) => x.textContent ?? "");
     expect(kepala).toHaveLength(2);
-    expect(kepala[0]).toContain("Sidang ke-1 ·");
+    expect(kepala[0]).toContain("Sidang ke-1 |");
     // Dulu tertulis "Sidang ke-2" - posisi kelompoknya, bukan sidangnya.
-    expect(kepala[1]).toContain("Sidang ke-3 ·");
-    expect(screen.queryByText(/^Sidang ke-2 ·/)).toBeNull();
+    expect(kepala[1]).toContain("Sidang ke-3 |");
+    expect(screen.queryByText(/^Sidang ke-2s*|/)).toBeNull();
   });
 
   it("relaas yang sidangId-nya tidak ada di jadwal tidak diberi nomor karangan", () => {
@@ -717,7 +717,7 @@ describe("nomor sidang diambil dari SIPP, bukan dari urutan baris", () => {
         }}
       />
     );
-    expect(screen.getByText(/^Sidang · .*Kamis, 01-10-2026/)).toBeTruthy();
+    expect(screen.getByText(/^Sidang\s*\|.*Kamis, 01-10-2026/)).toBeTruthy();
     expect(screen.queryByText(/^Sidang ke-\d+ · .*Kamis, 01-10-2026/)).toBeNull();
   });
 
@@ -733,7 +733,7 @@ describe("nomor sidang diambil dari SIPP, bukan dari urutan baris", () => {
         }}
       />
     );
-    expect(screen.getByText(/^Sidang ke-1 & ke-4 ·/)).toBeTruthy();
+    expect(screen.getByText(/^Sidang ke-1 & ke-4\s*\|/)).toBeTruthy();
   });
 
   it("Court Calendar bernomor 1..N menurut tanggal, apa pun urutan kirimnya", () => {

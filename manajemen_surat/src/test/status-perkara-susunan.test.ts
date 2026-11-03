@@ -65,34 +65,36 @@ describe("susunan bagian mengikuti jalan perkara", () => {
     "pihak",
     // jalannya
     "tahapan",
-    "sidang",
-    // Grafik umur perkara (3 Nov 2026): terlipat bawaan, bersarang di dalam Perjalanan sidang.
-    "umur-sidang",
-    // Kalender menggambar sidang yang sama pada satu bulan; relaas menjawab
-    // bagaimana para pihak dipanggil untuk sidang-sidang itu. Keduanya hanya
-    // berarti SESUDAH daftar sidangnya dibaca, dan karena itu berdiri persis
-    // di belakangnya.
-    "kalender",
+    // Urutan rancangan 3 Nov 2026: tahapan -> relaas -> mediasi -> jawaban dan sita
+    // -> perjalanan sidang (grafik umur bersarang) -> kalender -> saksi.
     "relaas",
     "mediasi",
+    "jawaban",
+    "sidang",
+    "umur-sidang",
+    "kalender",
     "saksi",
     // hasil
     "putusan-lengkap",
     "putusan",
     "ikrar",
     "upaya",
+    // Eksekusi (3 Nov 2026): sesudah Upaya hukum, hanya bila tercatat.
+    "eksekusi",
     // sesudahnya
     "putusanEcourt",
     // Aksi e-Court (1 Okt 2026, E9-E11): e-litigasi, verifikasi, TTE - tepat
     // sesudah keadaan putusan e-Court yang menjadi alasannya.
     "ecourtAksi",
+    // Berkas lebih dulu: paling sering diambil (rancangan 3 Nov 2026).
+    "berkas",
     "arsip",
     "delegasi",
-    "berkas",
     "biaya",
     // kesimpulan
     "rubrik",
     "sk",
+    "analisa",
     // alat
     "analisa-lanjut",
     // Perbandingan adalah pertanyaan yang muncul SESUDAH satu perkara selesai
@@ -100,7 +102,6 @@ describe("susunan bagian mengikuti jalan perkara", () => {
     // pembuka. Karena itu ia berdiri sesudah analisis, bukan di antara fakta.
     "banding-perkara",
     "prompt-putusan",
-    "analisa",
   ];
 
   it("seluruh bagian ada, dan urutannya persis", () => {

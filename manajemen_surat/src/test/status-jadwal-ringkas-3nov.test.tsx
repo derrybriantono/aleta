@@ -196,6 +196,7 @@ describe("butir 12-14 - Status Perkara: terlipat bawaan, ringkasan tetap, tanpa 
   });
 
   it("kartu Majelis memuat jurusita di bawah panitera", () => {
-    expect(STATUS).toMatch(/Jurusita: \{status\.jurusita\.map/);
+    // Rancangan 3 Nov: kartu Majelis kolom kanan dihapus; jurusita naik ke baris majelis di sorotan.
+    expect(STATUS).toMatch(/JS \$\{status\.jurusita\.map/);
   });
 });

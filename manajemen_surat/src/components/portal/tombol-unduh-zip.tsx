@@ -52,6 +52,8 @@
 
 import { useState } from "react";
 
+import { ChevronDown } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { apiPath } from "@/lib/base-path";
 import { mulaiUnduhAman, type HasilUnduhAman } from "@/lib/unduh-alir";
@@ -95,13 +97,21 @@ export function TombolUnduhZip({
   isi = "berkas",
   label,
   ukuran = "sm",
+  menu = false,
 }: {
   nomorPerkara: string;
   sumber?: SumberZip;
   isi?: IsiZip;
   label?: string;
   ukuran?: "sm" | "default";
+  /**
+   * Status Perkara (rancangan 3 Nov 2026): pilihan tambahan - sertakan pindaian
+   * arsip dan "Pilih isi unduhan" - masuk ke menu kecil di samping tombol utama,
+   * tidak berdiri sebagai dua baris di kepala perkara. Fungsinya sama persis.
+   */
+  menu?: boolean;
 }) {
+  const [menuBuka, setMenuBuka] = useState(false);
   /** Bagian yang sedang menunggu kabar mulai unduh ("utama", "sipp", "ecourt"). */
   const [sibuk, setSibuk] = useState<"" | "utama" | "sipp" | "ecourt">("");
   const [catatan, setCatatan] = useState("");
@@ -204,11 +214,8 @@ export function TombolUnduhZip({
   // sumber (unduh("sipp"/"ecourt")) tetap ada di kode, tidak digambar.
   void pernahMulai;
 
-  return (
-    <div className="space-y-1">
-      <Button size={ukuran} variant="outline" disabled={Boolean(sibuk)} onClick={() => void unduh("utama")}>
-        {sibuk === "utama" ? kemajuan || "Menyusun…" : judul}
-      </Button>
+  const tambahan = (
+    <>
       {isi === "lengkap" ? (
         <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <input
@@ -281,7 +288,44 @@ export function TombolUnduhZip({
         </div>
       ) : null}
       {/* === AKHIR STATUS-ZIP === */}
-      {info ? (
+    </>
+  );
+  const tombolUtama = (
+    <Button size={ukuran} variant="outline" disabled={Boolean(sibuk)} onClick={() => void unduh("utama")}>
+        {sibuk === "utama" ? kemajuan || "Menyusun…" : judul}
+    </Button>
+  );
+
+  return (
+    <div className={menu ? "relative" : "space-y-1"}>
+      {menu ? (
+        <div className="inline-flex">
+          {tombolUtama}
+          {isi === "lengkap" ? (
+            <Button
+              size={ukuran}
+              variant="outline"
+              className="-ml-px rounded-l-none px-2"
+              aria-label="Pilihan unduhan"
+              aria-expanded={menuBuka}
+              onClick={() => setMenuBuka((x) => !x)}
+            >
+              <ChevronDown className="h-3.5 w-3.5" aria-hidden />
+            </Button>
+          ) : null}
+        </div>
+      ) : (
+        tombolUtama
+      )}
+      {menu ? (
+        menuBuka ? (
+          <div className="absolute left-0 top-full z-30 mt-1.5 w-80 max-w-[calc(100vw-2rem)] space-y-1.5 rounded-lg border border-border bg-card p-2.5 shadow-xl">
+            {tambahan}
+          </div>
+        ) : null
+      ) : (
+        tambahan
+      )}      {info ? (
         <p className="max-w-[24rem] text-xs text-muted-foreground" role="status" data-bagian="info-unduh-zip">
           {info}
         </p>

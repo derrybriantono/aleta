@@ -134,6 +134,7 @@ export function RincianJawabanSitaEksekusi({
   tampilSita,
   tampilEksekusi = false,
   hanyaYangAda = false,
+  tanpaKotak = false,
 }: {
   bahan: BahanRincianJawabanSita;
   tampilJawaban: boolean;
@@ -141,6 +142,8 @@ export function RincianJawabanSitaEksekusi({
   /** 12OKT-N: saklar penanda-eksekusi, terpisah dari penanda-sita. */
   tampilEksekusi?: boolean;
   hanyaYangAda?: boolean;
+  /** Di dalam Bagian Status Perkara: tanpa kotak dan judul sendiri - huruf mengikuti bagian lain. */
+  tanpaKotak?: boolean;
 }) {
   const isi = isiJawabanSitaEksekusi(bahan, { tampilJawaban, tampilSita, tampilEksekusi });
   const { adaJawaban, adaSita, adaEksekusi } = isi;
@@ -165,8 +168,8 @@ export function RincianJawabanSitaEksekusi({
     .join(", ");
   const judulTampil = hanyaYangAda ? judul.charAt(0).toUpperCase() + judul.slice(1) : judul;
   return (
-    <div className={KELAS_KOTAK_KETERANGAN} data-rincian-jawaban-sita="">
-      <div className="mb-1 font-semibold">{judulTampil}</div>
+    <div className={tanpaKotak ? "text-sm" : KELAS_KOTAK_KETERANGAN} data-rincian-jawaban-sita="">
+      {tanpaKotak ? null : <div className="mb-1 font-semibold">{judulTampil}</div>}
       <ul className="space-y-1">
         {baris.jawaban
           ? keadaanJawaban(bahan.penandaJawaban, bahan.penandaJawabanTerbaca)

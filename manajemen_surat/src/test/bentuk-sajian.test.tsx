@@ -366,7 +366,7 @@ describe("perjalanan sidang", () => {
   it("sumbu tidak dipaksa sampai 150 - batas yang jauh DISEBUT, dan keterangan hanya pita yang tampak", () => {
     render(<DiagramPerjalananSidang perjalanan={p385()} pita={PITA} />);
     expect(screen.getByText(/5 bulan - SEMA 2\/2014: 150 hari/)).toBeInTheDocument();
-    expect(screen.getByText(/sampai 90 hari · 3 bulan/)).toBeInTheDocument();
+    expect(screen.getByText(/sampai 90 hari\s*\|\s*3 bulan/)).toBeInTheDocument();
     expect(screen.queryByText(/lebih dari 150 hari/)).not.toBeInTheDocument();
     // Sumbu tegak BERANGKA - dulu tidak satu pun angka.
     for (const angka of ["0", "15", "30", "45", "60", "75", "90"]) {
@@ -388,7 +388,7 @@ describe("perjalanan sidang", () => {
 
   it("umur hari ini disebut terhadap batas terakhir", () => {
     render(<DiagramPerjalananSidang perjalanan={p385()} pita={PITA} hariIniDihitung={61} />);
-    expect(screen.getByText(/hari ke-61 · 89 hari lagi sampai batas 5 bulan/)).toBeInTheDocument();
+    expect(screen.getByText(/hari ke-61\s*\|\s*89 hari lagi sampai batas 5 bulan/)).toBeInTheDocument();
     // Penjelasan cara hitung tidak tampil bawaan; hanya ada di tooltip (i).
     expect(screen.queryByText(/Tinggi titik/)).toBeNull();
     expect(screen.queryByText(/SEMA 2\/2014\s*$/)).toBeNull();

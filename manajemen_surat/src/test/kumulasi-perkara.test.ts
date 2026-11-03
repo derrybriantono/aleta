@@ -385,7 +385,7 @@ describe("tersambung ke layar dan ke bot", () => {
       const t = baca(p);
       expect(t, p).toContain("useSaklarKumulasi()");
       expect(t, p).toContain("<JenisDenganKumulasi");
-      expect(t, p).toContain("<RincianKumulasi");
+      expect(t, p).toMatch(/<(RincianKumulasi|BarisKumulasi)/);
     }
   });
 

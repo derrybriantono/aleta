@@ -187,9 +187,7 @@ describe("Status Perkara - perkara yang tidak ada", () => {
   it("membuka perkara yang tidak ada dari riwayat: perkara lama tidak dibiarkan tampil di bawah pesannya", async () => {
     const A = "100/Pdt.G/2026/PA.Dgl";
     const HILANG = "777/Pdt.G/2020/PA.Dgl";
-    // Seamless menjadi bawaan (18 Okt 2026) dan menaruh riwayat di dalam menu; uji ini menjaga alur riwayat
-    // pada bilah alat, jadi tampilan Kompleks dipilih. Pengguna uji tanpa id memakai kunci "tamu".
-    window.localStorage.setItem("aleta.status-perkara.tampilan.tamu", "kompleks");
+    // Sejak rancangan 3 Nov 2026 kedua tampilan menaruh riwayat di menu Lainnya sorotan.
     window.localStorage.setItem(
       "aleta.status-perkara.riwayat",
       JSON.stringify([{ nomorPerkara: HILANG, jenisPerkara: "Cerai Gugat", dibuka: "2026-10-01" }])
@@ -209,6 +207,7 @@ describe("Status Perkara - perkara yang tidak ada", () => {
     );
     render(<AletaEcourtStatusPerkara nomorAwal={A} />);
     await screen.findByRole("heading", { level: 3, name: A });
+    fireEvent.click(await screen.findByRole("button", { name: /Lainnya/ }));
     fireEvent.click(await screen.findByRole("button", { name: new RegExp(HILANG.replace(/[./]/g, "\\$&")) }));
     await screen.findByText(`Perkara ${HILANG} tidak ditemukan di SIPP.`);
     expect(screen.queryByRole("heading", { level: 3, name: A })).toBeNull();
@@ -243,7 +242,7 @@ describe("Status Perkara - balapan dua pembukaan", () => {
     // Datang dari Jadwal Sidang dengan A (lambat), lalu pengguna mencari B.
     render(<AletaEcourtStatusPerkara nomorAwal={A} />);
     await tunggu(20);
-    const kotak = screen.getByPlaceholderText(/419, nama pihak/);
+    const kotak = screen.getByPlaceholderText(/Nomor, nama pihak/);
     fireEvent.change(kotak, { target: { value: "200" } });
     fireEvent.keyDown(kotak, { key: "Enter" });
     await screen.findByRole("heading", { level: 3, name: B });
