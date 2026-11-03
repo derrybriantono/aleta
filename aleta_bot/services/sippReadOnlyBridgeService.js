@@ -2803,8 +2803,9 @@ async function isiBlangko(params = {}) {
         .update(JSON.stringify([jalur, info.mtimeMs, opsi]))
         .digest("hex");
       const lama = ingatanIsi.get(kunci);
-      const h = lama && Date.now() - lama.saat < 60000 ? lama.hasil : await mesinVariabelAbt().isiRtf(rtf, opsi);
-      ingatanIsi.set(kunci, { saat: lama ? lama.saat : Date.now(), hasil: h });
+      // `segar` (pratinjau panel Blangko Derry): isian baru saja diketik dan disimpan ke ABT, jadi hasil 60 dtk yang lalu tidak dipakai ulang.
+      const h = !params.segar && lama && Date.now() - lama.saat < 60000 ? lama.hasil : await mesinVariabelAbt().isiRtf(rtf, opsi);
+      ingatanIsi.set(kunci, { saat: lama && !params.segar ? lama.saat : Date.now(), hasil: h });
       for (const [k, v] of ingatanIsi) if (Date.now() - v.saat >= 60000 || ingatanIsi.size > 40) ingatanIsi.delete(k);
       return {
         ok: true,

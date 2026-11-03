@@ -138,7 +138,43 @@ export type UsulanJurnal = {
   perluResi: boolean;
   sisaOtomatis: boolean;
   manual?: boolean;
+  /** 4 Nov 2026: tarif wilayah yang disarankan bot untuk baris panggilan/pemberitahuan pihak (hanya baris bertarif wilayah). */
+  tarif?: TarifSaranKasir | null;
 };
+
+/** Saran tarif panggilan/pemberitahuan per wilayah (aleta_bot/services/kasirTarifAlamat.js saranTarifPihak().tarif). */
+export type TarifSaranKasir = {
+  nilai: number | null;
+  yakin?: "pasti" | "periksa" | string;
+  tingkat?: string;
+  wilayah?: string;
+  ket?: string;
+};
+
+/** Tarif Pos SEBELUM 28 Okt 2024 - nominal ini memicu peringatan lunak (sama dengan bot kasirTarifAlamat.TARIF_LAMA). */
+export const TARIF_LAMA_KASIR: readonly number[] = [14000, 29000];
+
+/**
+ * Peringatan LUNAK tarif (4 Nov 2026, keputusan 183): nominal yang diketik berbeda dari tarif wilayah, atau masih tarif lama.
+ * Tidak menahan simpan - satu baris kecil dan tombol "pakai". Padanan bot: kasirTarifAlamat.peringatanNominal dan ekstensi
+ * basmassal.js peringatanTarif (tarif RRI tidak diperingatkan karena nominalnya memang lain-lain).
+ */
+export function peringatanTarifKasir(nilai: unknown, tarif: TarifSaranKasir | null | undefined): { teks: string; pakai: number | null } | null {
+  const n = Math.round(Number(nilai) || 0);
+  const saran = tarif && Number(tarif.nilai) > 0 ? Math.round(Number(tarif.nilai)) : null;
+  if (!(n > 0)) return null;
+  if (TARIF_LAMA_KASIR.includes(n)) {
+    return { teks: saran ? `Tarif lama - ${tarif?.wilayah || "wilayah ini"} ${rupiah(saran)}` : `${rupiah(n)} tarif lama (sebelum 28 Okt 2024)`, pakai: saran };
+  }
+  if (saran && n !== saran && tarif?.tingkat !== "rri") return { teks: `Tarif ${tarif?.wilayah || "wilayah ini"} biasanya ${rupiah(saran)}`, pakai: saran };
+  return null;
+}
+
+/** Keterangan sumber saran (untuk tooltip kotak jumlah); "periksa" ditandai agar kasir menimbangnya. */
+export function ketTarifKasir(tarif: TarifSaranKasir | null | undefined): string {
+  if (!tarif || !(Number(tarif.nilai) > 0)) return "";
+  return `${tarif.ket || `tarif ${tarif.wilayah || ""}`.trim()}${tarif.yakin === "pasti" ? "" : " - periksa"}`;
+}
 
 export type JenisBiayaKasir = { id: number; nama: string; kategoriId: number; kategori: string; jenisTransaksi: number; jumlahBawaan: number };
 export type PihakKasir = { id: number; ke: number; pihakId: number; nama: string; urutan: number };

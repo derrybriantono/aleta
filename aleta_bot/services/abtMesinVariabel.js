@@ -1050,21 +1050,21 @@ function buatMesin(p) {
           nilai.set(n, { rtf: amankanUntukRtf(cadangan[n]), asal: "cadangan" });
           return;
         }
-        nilai.set(n, { rtf: tandaKosong, asal: "kosong", nama: v ? v.nama : "", sebab: v ? v.sebab : `mesin ABT tidak terbaca: ${mesinGalat}` });
+        nilai.set(n, { rtf: tandaKosong, asal: "kosong", nama: v ? v.nama : "", sebab: v ? v.sebab : `mesin ABT tidak terbaca: ${mesinGalat}`, status: v ? v.status : "galat" });
       });
       rtf = rtf.replace(POLA_PENANDA, (utuh, n) => {
         const v = nilai.get(n);
         if (!v) return utuh;
         sumber[v.asal] += 1;
         if (v.asal === "kosong") {
-          if (!kosong.has(n)) kosong.set(n, { noVar: n, nama: v.nama || "", sebab: v.sebab || "" });
+          if (!kosong.has(n)) kosong.set(n, { noVar: n, nama: v.nama || "", sebab: v.sebab || "", status: v.status || "kosong" });
         } else terisi.add(n);
         return v.rtf;
       });
     }
     // Penjaga terakhir: tidak satu pun penanda mentah boleh keluar.
     rtf = rtf.replace(POLA_PENANDA, (utuh, n) => {
-      if (!kosong.has(n)) kosong.set(n, { noVar: n, nama: "", sebab: "penanda bersarang terlalu dalam" });
+      if (!kosong.has(n)) kosong.set(n, { noVar: n, nama: "", sebab: "penanda bersarang terlalu dalam", status: "galat" });
       return tandaKosong;
     });
 
