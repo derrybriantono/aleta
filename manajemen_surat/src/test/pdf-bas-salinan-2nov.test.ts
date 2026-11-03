@@ -115,7 +115,8 @@ describe("1-2. RTF dirapikan sebelum LibreOffice (bot)", () => {
   it.skipIf(!adaAlur38 || !adaSoffice)("BAS ALUR 38 sungguhan di LibreOffice: diagonal kanan-atas -> kiri-bawah dan nomor halaman di kanan bawah", async () => {
     const asli = readFileSync(ALUR38);
     const r = rapi.rapikanUntukSoffice(asli);
-    expect(r.laporan).toEqual({ cermin: 1, nomorHalaman: 2 });
+    // barisTtd (3 Nov): blangko bervariabel (#6034#, #4004#) belum berlabel pejabat - baris tanda tangannya belum dikenali
+    expect(r.laporan).toEqual({ cermin: 1, nomorHalaman: 2, barisTtd: 0 });
     const pdf = await mesinSoffice().ubah(new Uint8Array(r.isi), "rtf", "pdf");
     const kata = await bacaKataPdf(pdf);
     // jangkar Z = "berikut:" terakhir SEBELUM kotak "SC Z" (ada "sebagai berikut" lain di halaman saksi)

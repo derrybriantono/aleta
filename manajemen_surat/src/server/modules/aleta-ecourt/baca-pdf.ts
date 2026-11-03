@@ -100,6 +100,41 @@ export function pasangRintisanPeramban() {
   if (!lingkup.Path2D) lingkup.Path2D = class {};
 }
 
+/**
+ * ============================================================================
+ * pdfjs SIAP PAKAI DI SERVER - PEKERJANYA DIMUAT DI UTAS UTAMA (3 Nov 2026)
+ * ============================================================================
+ *
+ * Di Node pdfjs memakai "pekerja tiruan" yang memuat `./pdf.worker.mjs` lewat import() RELATIF terhadap berkas yang
+ * menjalankannya. Di portal terpasang (bundel Turbopack) berkas itu adalah potongan .next/server/chunks/ - di sana tidak ada
+ * pdf.worker.mjs, sehingga SETIAP pembacaan PDF gagal: "Setting up fake worker failed: Cannot find module
+ * '/app/.next/server/chunks/pdf.worker.mjs'" (diukur di container aleta-portal 1.205.63). Akibatnya tanda tangan Panitera di
+ * PDF SALINAN, tanda tangan asli salinan BAS, "Tambah tanda tangan", dan pengukuran Z tidak pernah jalan di server, padahal
+ * lolos di laptop/vitest (di sana import relatif itu menemukan berkasnya di node_modules).
+ *
+ * Penanganannya cara resmi pdfjs untuk utas utama: modul pekerja dimuat SEKALI dan pengendalinya dipasang di
+ * globalThis.pdfjsWorker - pdfjs memakainya tanpa import jalur apa pun, sama di laptop, vitest, dan bundel server.
+ */
+let pekerjaPdfjs: Promise<void> | null = null;
+
+export async function muatPdfjs() {
+  pasangRintisanPeramban();
+  const lingkup = globalThis as { pdfjsWorker?: { WorkerMessageHandler?: unknown } };
+  if (!lingkup.pdfjsWorker?.WorkerMessageHandler) {
+    pekerjaPdfjs ??= import("pdfjs-dist/legacy/build/pdf.worker.mjs")
+      .then((m) => {
+        if (!lingkup.pdfjsWorker?.WorkerMessageHandler && m.WorkerMessageHandler) lingkup.pdfjsWorker = { WorkerMessageHandler: m.WorkerMessageHandler };
+      })
+      .catch((galat) => {
+        pekerjaPdfjs = null;
+        throw galat;
+      });
+    await pekerjaPdfjs;
+  }
+  // Bangunan "legacy": bangunan biasa mengandaikan peramban dan gagal di Node dengan galat yang menyebut DOMMatrix.
+  return import("pdfjs-dist/legacy/build/pdf.mjs");
+}
+
 function kosong(berkas: string, sebab: string): IsiPdf {
   return { ada: false, sebab, berkas, jumlahHalaman: 0, halamanKosong: [], halaman: [] };
 }
@@ -156,12 +191,8 @@ export async function bacaPdf(jalur: string, batasHalaman = 500): Promise<IsiPdf
  */
 export async function bacaPdfDariBita(data: Uint8Array, berkas: string, batasHalaman = 500): Promise<IsiPdf> {
   try {
-    pasangRintisanPeramban();
-
-    // Bangunan "legacy" yang dipakai - bangunan biasa mengandaikan peramban
-    // dan gagal di Node dengan galat yang menyebut DOMMatrix, bukan menyebut
-    // sebab yang sesungguhnya.
-    const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+    // Rintisan peramban + pekerja pdfjs di utas utama (lihat muatPdfjs) - tanpanya pembacaan gagal di server terpasang.
+    const pdfjs = await muatPdfjs();
 
     const dokumen = await pdfjs.getDocument({
       // Salinan: pdfjs memindahkan (transfer) penyangganya.

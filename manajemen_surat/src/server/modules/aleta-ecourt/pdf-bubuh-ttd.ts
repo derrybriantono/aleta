@@ -1,8 +1,8 @@
-import { PDFDocument } from "pdf-lib";
+import { BlendMode, PDFDocument } from "pdf-lib";
 
 import { UKURAN_TTD_CAP_BAWAAN, tinggiTtdMaksMm } from "@/lib/ukuran-ttd-cap";
 
-import { pasangRintisanPeramban } from "./baca-pdf";
+import { muatPdfjs } from "./baca-pdf";
 
 /**
  * ============================================================================
@@ -253,10 +253,13 @@ export function hitungLetakTtd(p: {
   return { kiri, bawah, lebar, tinggi, terhimpit, dikecilkan: Math.round((1 - lebar / lebarAsal) * 100) / 100 };
 }
 
-/** Membaca potongan teks berkoordinat dan ukuran halaman dari PDF (pdfjs, tanpa menggambar). */
+/**
+ * Membaca potongan teks berkoordinat dan ukuran halaman dari PDF (pdfjs, tanpa menggambar).
+ * 3 Nov: pdfjs dimuat lewat muatPdfjs - tanpa itu pembacaan ini GAGAL di portal terpasang (pekerja pdfjs tidak ditemukan di
+ * bundel), sehingga tidak satu pun tanda tangan PDF (salinan, Tambah tanda tangan) maupun ukuran Z pernah jadi di server.
+ */
 export async function bacaItemPdf(bita: Uint8Array): Promise<{ halaman: UkuranHalaman[]; item: ItemTeks[] }> {
-  pasangRintisanPeramban();
-  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  const pdfjs = await muatPdfjs();
   const dokumen = await pdfjs.getDocument({ data: new Uint8Array(bita), useSystemFonts: true, isEvalSupported: false }).promise;
   const halaman: UkuranHalaman[] = [];
   const item: ItemTeks[] = [];
@@ -310,6 +313,12 @@ export type HasilBubuh = {
 /**
  * Membubuhkan tanda tangan (dan cap, bila ada) pada PDF. Tidak melempar karena nama tidak ditemukan - yang tak ditemukan
  * dilaporkan. Metadata PDF tidak diubah (updateMetadata: false) supaya Producer/Creator/tanggal tetap seperti hasil konversi.
+ *
+ * 3 Nov 2026:
+ *   - gambar digambar dengan campuran MULTIPLY: latar putih tanda tangan JPG (hasil pindai - Panitera, PP, sebagian hakim)
+ *     tidak lagi menutup nama di bawahnya maupun cap kantor; coretan tinta tetap pekat;
+ *   - kegagalan SATU gambar (atau capnya) tidak membatalkan yang lain: cap yang tak terbaca dilewati dan tanda tangannya
+ *     tetap dibubuhkan; sebabnya dilaporkan di `galat`.
  */
 export async function bubuhkanTtdPdf(
   bita: Uint8Array,
@@ -332,6 +341,7 @@ export async function bubuhkanTtdPdf(
     const baris = susunBaris(item);
     const dok = await PDFDocument.load(bita, { updateMetadata: false });
     const halamanPdf = dok.getPages();
+    const galatButir: string[] = [];
     for (const d of daftar) {
       const temuan = cariNamaDiBaris(baris, d.nama, { sebelumPenanda: opsi.sebelumPenanda, sesudahPenanda: opsi.sesudahPenanda });
       const uk = ukuranGambar(d.gambar);
@@ -342,10 +352,20 @@ export async function bubuhkanTtdPdf(
       const sekitar = item.filter((i) => i.halaman === temuan.halaman && !baris[temuan.indeks].item.includes(i));
       const letak = hitungLetakTtd({ nama: temuan, halaman: halaman[temuan.halaman - 1], rasio: uk.h / uk.w, atur, sekitar });
       const pg = halamanPdf[temuan.halaman - 1];
+      // Gambar disematkan LEBIH DULU: yang gagal dibaca tidak meninggalkan cap tanpa tanda tangan.
+      let gambar: Awaited<ReturnType<typeof dok.embedPng>>;
+      try {
+        gambar = uk.jenis === "png" ? await dok.embedPng(d.gambar) : await dok.embedJpg(d.gambar);
+      } catch (e) {
+        hasil.tidakDitemukan.push(d.nama);
+        galatButir.push(`${d.nama}: gambar tanda tangan tidak terbaca (${e instanceof Error ? e.message.slice(0, 80) : "?"})`);
+        continue;
+      }
       let geoCap: { kiri: number; bawah: number; diameter: number } | null = null;
       if (d.cap && d.cap.length) {
         const ukCap = ukuranGambar(d.cap);
-        if (ukCap && ukCap.w > 0 && ukCap.h > 0) {
+        try {
+          if (!ukCap || ukCap.w <= 0 || ukCap.h <= 0) throw new Error("bukan PNG/JPG");
           const kotak = (atur.lebarCapMm ?? 36) * PT_PER_MM;
           const lebarCap = ukCap.w >= ukCap.h ? kotak : (kotak * ukCap.w) / ukCap.h;
           const tinggiCap = ukCap.w >= ukCap.h ? (kotak * ukCap.h) / ukCap.w : kotak;
@@ -354,15 +374,17 @@ export async function bubuhkanTtdPdf(
           const margin = MARGIN_TEPI_MM * PT_PER_MM;
           px = Math.max(margin + lebarCap / 2, Math.min(px, halaman[temuan.halaman - 1].lebar - margin - lebarCap / 2));
           const gc = ukCap.jenis === "png" ? await dok.embedPng(d.cap) : await dok.embedJpg(d.cap);
-          pg.drawImage(gc, { x: px - lebarCap / 2, y: py - tinggiCap / 2, width: lebarCap, height: tinggiCap, opacity: atur.opasitasCap ?? 0.88 });
+          pg.drawImage(gc, { x: px - lebarCap / 2, y: py - tinggiCap / 2, width: lebarCap, height: tinggiCap, opacity: atur.opasitasCap ?? 0.88, blendMode: BlendMode.Multiply });
           geoCap = { kiri: px - lebarCap / 2, bawah: py - tinggiCap / 2, diameter: kotak };
+        } catch (e) {
+          galatButir.push(`cap ${d.nama} dilewati (${e instanceof Error ? e.message.slice(0, 80) : "?"})`);
         }
       }
-      const g = uk.jenis === "png" ? await dok.embedPng(d.gambar) : await dok.embedJpg(d.gambar);
-      pg.drawImage(g, { x: letak.kiri, y: letak.bawah, width: letak.lebar, height: letak.tinggi });
+      pg.drawImage(gambar, { x: letak.kiri, y: letak.bawah, width: letak.lebar, height: letak.tinggi, blendMode: BlendMode.Multiply });
       hasil.dipasang.push(d.nama);
       hasil.geometri.push({ nama: d.nama, halaman: temuan.halaman, ttd: letak, cap: geoCap, cara: temuan.cara });
     }
+    if (galatButir.length) hasil.galat = galatButir.join("; ").slice(0, 300);
     if (hasil.dipasang.length) hasil.pdf = await dok.save({ useObjectStreams: false });
   } catch (e) {
     hasil.pdf = bita;
