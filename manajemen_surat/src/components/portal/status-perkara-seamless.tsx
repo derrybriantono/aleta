@@ -411,9 +411,11 @@ function tanggalSingkat(iso: string) {
 export function LinimasaPerkara({ titik }: { titik: TitikLinimasa[] }) {
   if (titik.length === 0) return null;
   return (
-    <ol className="flex snap-x overflow-x-auto pb-1 [scrollbar-width:thin]" aria-label="Linimasa perkara">
+    // Tanpa gulir dalam di lebar mana pun: titik membungkus ke baris berikutnya di layar
+    // sempit; garis penyambung hanya digambar di lebar xl ke atas, tempat satu baris cukup.
+    <ol className="flex flex-wrap gap-y-2" aria-label="Linimasa perkara">
       {titik.map((t, i) => (
-        <li key={t.kunci} className="min-w-[4.6rem] flex-1 snap-center">
+        <li key={t.kunci} className="min-w-[4.2rem] flex-1">
           <button
             type="button"
             onClick={() => loncatKeBagian(t.ke)}
@@ -424,7 +426,7 @@ export function LinimasaPerkara({ titik }: { titik: TitikLinimasa[] }) {
               <span
                 aria-hidden
                 className={cn(
-                  "absolute left-[-50%] top-[0.4rem] h-[2.5px] w-full",
+                  "absolute left-[-50%] top-[0.4rem] hidden h-[2.5px] w-full xl:block",
                   t.keadaan === "depan" ? "bg-border" : "bg-primary"
                 )}
               />
@@ -483,13 +485,14 @@ export function SorotanPerkara({
       id="sorotan-perkara"
       aria-label="Perkara yang sedang dibuka"
       data-cetak-status-perkara=""
-      className="space-y-3.5 rounded-2xl border border-border bg-card p-4 shadow-sm"
+      className="space-y-3.5 overflow-visible rounded-2xl border border-border bg-card p-4 shadow-sm"
     >
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="min-w-0 flex-1 space-y-1.5 basis-[18rem]">{kepala}</div>
         <div className="print:hidden">{aksi}</div>
       </div>
-      <div className="grid gap-2.5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+      {/* Satu kolom di bawah ±900 px; tanpa tinggi tetap dan tanpa overflow - isi tidak boleh terpotong. */}
+      <div className="grid gap-2.5 min-[900px]:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] [&>*]:min-w-0">
         {berikutnya}
         {kerja}
       </div>
@@ -655,8 +658,8 @@ export function BilahLekat({
       data-bilah-lekat=""
       data-mengambang={mengambang ? "ya" : "tidak"}
       className={cn(
-        "sticky top-0 z-20 -mx-1 flex flex-col gap-2 bg-background/95 px-1 py-2 backdrop-blur print:static",
-        mengambang && "border-b border-border"
+        "sticky top-0 z-20 flex flex-col gap-2 rounded-xl border border-border bg-card/95 px-2.5 py-2 shadow-sm backdrop-blur print:static",
+        mengambang && "shadow-md"
       )}
     >
       {mengambang ? (

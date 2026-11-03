@@ -253,3 +253,28 @@ describe("tampilan baru Status Perkara (keputusan 142-144)", () => {
     expect(baca("src/components/portal/aleta-ecourt-sidang.tsx")).toMatch(/<LencanaBeracaraPerkara[\s\S]{0,200}bacaOtomatis=\{false\}/);
   });
 });
+
+describe("sorotan Status Perkara tidak boleh punya gulir dalam atau memotong isi", () => {
+  const sumber = baca("src/components/portal/status-perkara-seamless.tsx");
+  const a = sumber.indexOf("export function LinimasaPerkara");
+  const b = sumber.indexOf("export function BilahLekat");
+  const blok = sumber.slice(a, b);
+
+  it("tanpa overflow/tinggi tetap pada linimasa, sorotan, kotak berikutnya, kotak kerja, dan fakta", () => {
+    expect(a).toBeGreaterThan(-1);
+    expect(blok).not.toMatch(/overflow-(x|y)?-?(auto|scroll|hidden)/);
+    expect(blok).not.toMatch(/\bmax-h-|\bmin-h-|line-clamp|truncate/);
+    // Linimasa membungkus, bukan menggulir.
+    expect(blok).toContain("flex flex-wrap");
+  });
+
+  it("kotak Sidang berikutnya dan Perlu dikerjakan bertumpuk satu kolom di bawah 900 px", () => {
+    expect(blok).toContain("min-[900px]:grid-cols-");
+    expect(blok).not.toMatch(/(^|\s)grid-cols-\[/m);
+    expect(blok).toContain("[&>*]:min-w-0");
+  });
+
+  it("garis penyambung linimasa hanya di lebar xl (satu baris), titik tidak menggulir di HP", () => {
+    expect(blok).toContain("hidden h-[2.5px] w-full xl:block");
+  });
+});
