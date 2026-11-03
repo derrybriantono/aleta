@@ -376,6 +376,71 @@ function buatLayanan(deps = {}) {
     return { ok: true, setelan: await bacaSetelan() };
   }
 
+  /* === KASIR TARIF-ALAMAT 3 Nov === */
+  /**
+   * Setelan tarif panggilan/pemberitahuan (tanggal berlaku, tabel, tawaran
+   * yang ditolak) - tabel setelan Kasir yang SAMA, baris id 2, isi ringkas di
+   * kolom butir (kasirTarifAlamat.setelanRingkas, <= 300 huruf). Tanpa
+   * migrasi. Disinggahkan 60 detik; simpan membuang singgahan.
+   */
+  let singgahTarif = null;
+  async function bacaSetelanTarif() {
+    const TA = require("./kasirTarifAlamat");
+    if (singgahTarif && Date.now() - singgahTarif.saat < 60 * 1000) return singgahTarif.isi;
+    await pastikanTabel();
+    const baris = await kueriAleta(
+      `SELECT butir, diubah_oleh AS diubahOleh, DATE_FORMAT(${sqlSetempat("diubah")}, '%Y-%m-%d %H:%i:%s') AS diubah FROM ${TABEL_SETELAN} WHERE id = 2 LIMIT 1`,
+      []
+    );
+    const b = Array.isArray(baris) && baris[0];
+    let mentah = {};
+    try {
+      mentah = b ? JSON.parse(bersih(b.butir) || "{}") || {} : {};
+    } catch {
+      mentah = {};
+    }
+    const isi = TA.setelanSah({ ...mentah, diubahOleh: b ? bersih(b.diubahOleh) : "", diubah: b ? bersih(b.diubah) : "" });
+    singgahTarif = { saat: Date.now(), isi };
+    return isi;
+  }
+
+  /**
+   * aksi "setelan" { berlaku, tarif: { kode: nilai|null } } - Super Admin/Admin (dijaga portal)
+   * aksi "terima" | "tolak" { tawaran: { kabupaten, nilai, sejak } } - juga kasir
+   */
+  async function simpanSetelanTarif(minta = {}) {
+    const TA = require("./kasirTarifAlamat");
+    const operator = bersih(minta.operator).slice(0, 120);
+    if (!operator) return { ok: false, alasan: "operator_tidak_disebut" };
+    singgahTarif = null;
+    const lama = await bacaSetelanTarif();
+    let baru = null;
+    if (minta.aksi === "terima") baru = TA.terimaTarifBaru(lama, minta.tawaran);
+    else if (minta.aksi === "tolak") baru = TA.tolakTarifBaru(lama, minta.tawaran);
+    else if (minta.aksi === "setelan") {
+      const tarif = { ...lama.tarif };
+      for (const [kode, nilai] of Object.entries(minta.tarif && typeof minta.tarif === "object" ? minta.tarif : {})) {
+        const n = Math.round(Number(nilai));
+        if (nilai === null || nilai === "" || !(n > 0) || TA.TARIF_BAWAAN[kode] === n) delete tarif[kode];
+        else tarif[kode] = n;
+      }
+      const berlaku = minta.berlaku === undefined ? lama.berlaku : kasir.tanggalSah(minta.berlaku);
+      if (!berlaku) return { ok: false, alasan: "tanggal_berlaku_tidak_sah", pesan: "Tanggal berlaku tarif tidak sah." };
+      baru = TA.setelanSah({ ...lama, berlaku, tarif });
+    }
+    if (!baru) return { ok: false, alasan: "setelan_tarif_tidak_sah", pesan: "Setelan tarif tidak dikenali." };
+    const teks = TA.setelanRingkas(baru);
+    if (!teks) return { ok: false, alasan: "setelan_tarif_terlalu_panjang", pesan: "Tabel tarif terlalu panjang untuk disimpan." };
+    await kueriAleta(
+      `INSERT INTO ${TABEL_SETELAN} (id, nyala, butir, diubah_oleh, diubah) VALUES (2, 0, ?, ?, UTC_TIMESTAMP())
+       ON DUPLICATE KEY UPDATE butir = VALUES(butir), diubah_oleh = VALUES(diubah_oleh), diubah = UTC_TIMESTAMP()`,
+      [teks, operator]
+    );
+    singgahTarif = null;
+    return { ok: true, setelan: await bacaSetelanTarif() };
+  }
+  /* === AKHIR KASIR TARIF-ALAMAT === */
+
   // ─── Daftar perkara putus satu hari (hanya SELECT) ─────────────────────────
 
   async function daftar(tanggal, opsi = {}) {
@@ -426,6 +491,8 @@ function buatLayanan(deps = {}) {
       perkara,
       gagal,
       terpotong: calon.length > batas,
+      // KASIR TARIF-ALAMAT 3 Nov: setelan tarif + tabel + tawaran (bagian setelan terlipat, Super Admin/Admin).
+      tarif: jurnal.tarifSatker ? await jurnal.tarifSatker(hariIni).catch(() => null) : null,
       ringkas: {
         perkara: perkara.length,
         akanDiisi: perkara.filter((p) => p.kirim.length).length,
@@ -516,7 +583,7 @@ function buatLayanan(deps = {}) {
     }
   }
 
-  return { bacaSetelan, simpanSetelan, daftar, jalankanPerkara, tulisMuatan };
+  return { bacaSetelan, simpanSetelan, bacaSetelanTarif, simpanSetelanTarif, daftar, jalankanPerkara, tulisMuatan };
 }
 
 let bawaan = null;
@@ -535,6 +602,8 @@ module.exports = {
   buatLayanan,
   bacaSetelan: () => layananBawaan().bacaSetelan(),
   simpanSetelan: (minta) => layananBawaan().simpanSetelan(minta),
+  bacaSetelanTarif: () => layananBawaan().bacaSetelanTarif(),
+  simpanSetelanTarif: (minta) => layananBawaan().simpanSetelanTarif(minta),
   daftar: (tanggal, opsi) => layananBawaan().daftar(tanggal, opsi),
   jalankanPerkara: (minta) => layananBawaan().jalankanPerkara(minta),
   tulisMuatan: (muatan, opsi) => layananBawaan().tulisMuatan(muatan, opsi),
