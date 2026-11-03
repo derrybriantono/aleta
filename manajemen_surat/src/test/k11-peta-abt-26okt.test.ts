@@ -60,7 +60,14 @@ describe("peta fitur K11 (abt.js): pernyataan", () => {
     const tambah: string[] = [];
     // Perubahan isi yang DISENGAJA (sidik lama -> sidik baru), satu per keputusan pengguna:
     // 2 Nov 2026 (Derry): bawaan saksi II di "Susun keterangan saksi" panel ABT lama = "sama", disamakan dengan panel Blangko Derry.
-    const SAH: Record<string, string> = { "416f2fd8167a": "9ad3dda03378" };
+    // 3 Nov 2026 (rilis 1.205.64, gabungan ttd-salinan + sisa-1205-64): PDF SALINAN langsung diunduh (keputusan 154) dengan kalimat
+    // tanda tangan BAS dari ttd-salinan - kalimatSalinan, buatPdfSalinan, tampilkanPdfSalinan berubah dengan sengaja.
+    const SAH: Record<string, string> = {
+      "416f2fd8167a": "9ad3dda03378",
+      "8c94ea761e5f": "33299623a933",
+      "78b8c2c80adb": "389a1dca04e5",
+      "efdab673681b": "2244840a6f2d",
+    };
     for (const [l, b] of Object.entries(SAH)) {
       if (lama.has(l) && baru.has(b)) {
         lama.set(b, (lama.get(b) || 0) + (lama.get(l) || 0));
