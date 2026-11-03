@@ -282,6 +282,26 @@ async function ensureSchema() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     `);
 
+    // Kasir 3 Nov 2026: pembayaran e-Payment (rekening pengguna) dan isi e-SKUM per perkara.
+    // Data keuangan pribadi: nilai utuh hanya keluar lewat portal untuk peran keuangan perkara.
+    await botDb.query(`
+      CREATE TABLE IF NOT EXISTS aleta_bot_ecourt_pembayaran (
+        nomor_perkara VARCHAR(191) PRIMARY KEY,
+        diterima_dari VARCHAR(255) NOT NULL DEFAULT '',
+        nomor_rekening VARCHAR(64) NOT NULL DEFAULT '',
+        atas_nama VARCHAR(255) NOT NULL DEFAULT '',
+        bank VARCHAR(128) NOT NULL DEFAULT '',
+        nomor_pendaftaran VARCHAR(64) NOT NULL DEFAULT '',
+        nomor_pembayaran VARCHAR(64) NOT NULL DEFAULT '',
+        panjar BIGINT NULL,
+        status VARCHAR(64) NOT NULL DEFAULT '',
+        tanggal_bayar DATE NULL,
+        jam_bayar VARCHAR(16) NOT NULL DEFAULT '',
+        skum_json MEDIUMTEXT NULL,
+        terakhir_terlihat DATETIME NOT NULL
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    `);
+
     await botDb.query(`
       CREATE TABLE IF NOT EXISTS aleta_bot_ecourt_panggilan (
         id VARCHAR(64) PRIMARY KEY,
@@ -1930,6 +1950,110 @@ async function recordPersetujuanPihak(nomorPerkaraMentah, daftar) {
   return { tersimpan };
 }
 
+/**
+ * Pembayaran e-Payment dan e-SKUM satu perkara (Kasir 3 Nov 2026). Nilai yang sudah tersimpan
+ * tidak dihapus oleh kunjungan yang tidak membawanya (IF/COALESCE).
+ */
+async function recordPembayaranEcourt(nomorPerkaraMentah, pembayaran, skum) {
+  await ensureSchema();
+  const nomorPerkara = normalizeCaseNumber(nomorPerkaraMentah);
+  if (!nomorPerkara || (!pembayaran && !skum)) return { tersimpan: 0 };
+  const b = pembayaran || {};
+  const potong = (v, n) => cleanText(v).slice(0, n);
+  await botDb.query(
+    `INSERT INTO aleta_bot_ecourt_pembayaran
+       (nomor_perkara, diterima_dari, nomor_rekening, atas_nama, bank, nomor_pendaftaran, nomor_pembayaran,
+        panjar, status, tanggal_bayar, jam_bayar, skum_json, terakhir_terlihat)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON DUPLICATE KEY UPDATE
+       diterima_dari = IF(VALUES(diterima_dari) = '', diterima_dari, VALUES(diterima_dari)),
+       nomor_rekening = IF(VALUES(nomor_rekening) = '', nomor_rekening, VALUES(nomor_rekening)),
+       atas_nama = IF(VALUES(atas_nama) = '', atas_nama, VALUES(atas_nama)),
+       bank = IF(VALUES(bank) = '', bank, VALUES(bank)),
+       nomor_pendaftaran = IF(VALUES(nomor_pendaftaran) = '', nomor_pendaftaran, VALUES(nomor_pendaftaran)),
+       nomor_pembayaran = IF(VALUES(nomor_pembayaran) = '', nomor_pembayaran, VALUES(nomor_pembayaran)),
+       panjar = COALESCE(VALUES(panjar), panjar),
+       status = IF(VALUES(status) = '', status, VALUES(status)),
+       tanggal_bayar = COALESCE(VALUES(tanggal_bayar), tanggal_bayar),
+       jam_bayar = IF(VALUES(jam_bayar) = '', jam_bayar, VALUES(jam_bayar)),
+       skum_json = COALESCE(VALUES(skum_json), skum_json),
+       terakhir_terlihat = VALUES(terakhir_terlihat)`,
+    [
+      nomorPerkara,
+      potong(b.diterimaDari, 255),
+      potong(b.nomorRekening, 64),
+      potong(b.atasNama, 255),
+      potong(b.bank, 128),
+      potong(b.nomorPendaftaranOnline, 64),
+      potong(b.nomorPembayaran, 64),
+      Number.isFinite(b.panjar) ? b.panjar : null,
+      potong(b.status, 64),
+      /^\d{4}-\d{2}-\d{2}$/.test(String(b.tanggal || "")) ? b.tanggal : null,
+      potong(b.jam, 16),
+      skum ? JSON.stringify(skum).slice(0, 200000) : null,
+      botDb.toMysqlDate(new Date()),
+    ]
+  );
+  return { tersimpan: 1 };
+}
+
+/** Apakah isi e-SKUM perkara ini sudah tersimpan (supaya alamat SKUM dibaca sekali saja). */
+async function adaSkumEcourt(nomorPerkaraMentah) {
+  await ensureSchema();
+  const nomorPerkara = normalizeCaseNumber(nomorPerkaraMentah);
+  if (!nomorPerkara) return false;
+  const baris = await botDb.query(
+    `SELECT 1 AS ada FROM aleta_bot_ecourt_pembayaran WHERE nomor_perkara = ? AND skum_json IS NOT NULL LIMIT 1`,
+    [nomorPerkara]
+  );
+  return Array.isArray(baris) && baris.length > 0;
+}
+
+/** Pembayaran e-Court beberapa perkara sekaligus (paling banyak 80). Nilai utuh - portal yang menyamarkan. */
+async function bacaPembayaranEcourt(daftarNomor) {
+  await ensureSchema();
+  const masuk = Array.isArray(daftarNomor) ? daftarNomor : [daftarNomor];
+  const nomor = [...new Set(masuk.map((n) => normalizeCaseNumber(n)).filter(Boolean))].slice(0, 80);
+  if (!nomor.length) return {};
+  const baris = await botDb.query(
+    `SELECT * FROM aleta_bot_ecourt_pembayaran WHERE nomor_perkara IN (${nomor.map(() => "?").join(",")})`,
+    nomor
+  );
+  const hasil = {};
+  for (const r of Array.isArray(baris) ? baris : []) {
+    let skum = null;
+    try {
+      skum = r.skum_json ? JSON.parse(r.skum_json) : null;
+    } catch {
+      skum = null;
+    }
+    hasil[r.nomor_perkara] = {
+      nomorPerkara: r.nomor_perkara,
+      diterimaDari: r.diterima_dari || "",
+      nomorRekening: r.nomor_rekening || "",
+      atasNama: r.atas_nama || "",
+      bank: r.bank || "",
+      nomorPendaftaranOnline: r.nomor_pendaftaran || "",
+      nomorPembayaran: r.nomor_pembayaran || "",
+      panjar: r.panjar === null || r.panjar === undefined ? null : Number(r.panjar),
+      status: r.status || "",
+      tanggal: tanggalLokalDb(r.tanggal_bayar),
+      jam: r.jam_bayar || "",
+      skum,
+    };
+  }
+  return hasil;
+}
+
+/** DATE MySQL -> "YYYY-MM-DD" tanpa geser zona waktu. */
+function tanggalLokalDb(v) {
+  if (!v) return "";
+  if (typeof v === "string") return v.slice(0, 10);
+  const t = v instanceof Date ? v : new Date(v);
+  if (Number.isNaN(t.getTime())) return "";
+  return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
+}
+
 /** Menyimpan catatan panggilan elektronik (e-Summons). */
 async function recordPanggilanElektronik(nomorPerkaraMentah, daftar) {
   await ensureSchema();
@@ -2062,6 +2186,9 @@ module.exports = {
   recordDocument,
   recordPanggilanElektronik,
   recordPersetujuanPihak,
+  recordPembayaranEcourt,
+  adaSkumEcourt,
+  bacaPembayaranEcourt,
   bacaPanggilanPerkara,
   startSyncRun,
   terakhirDiperiksaPerkara,

@@ -5878,3 +5878,19 @@ export type GatewayArpResponse = { ok: boolean; mac: string; sebab: string; anta
 export async function bacaArpGateway(ip: string, timeoutMs = 1500): Promise<GatewayResult<GatewayArpResponse>> {
   return gatewayFetch<GatewayArpResponse>(`/internal/aleta-bot/perangkat/arp?ip=${encodeURIComponent(ip)}`, { timeoutMs });
 }
+
+/* === KASIR REKENING-SKUM 3 Nov === */
+/**
+ * Pembayaran e-Court (e-Payment) dan isi e-SKUM beberapa perkara sekaligus (<= 80), dari halaman detil
+ * pendaftaran yang dibaca jembatan e-Court. Nilai UTUH - rute portal pembayaran-ecourt menyamarkannya per
+ * peran (lib/pembayaran-ecourt.ts). Hanya baca.
+ */
+export async function getGatewayPembayaranEcourt(nomorPerkara: string[]) {
+  const kueri = new URLSearchParams();
+  for (const n of nomorPerkara.slice(0, 80)) kueri.append("nomor", n);
+  return gatewayFetch<{ ok: boolean; perkara: Record<string, import("@/lib/pembayaran-ecourt").PembayaranEcourt> }>(
+    `/internal/aleta-bot/ecourt/pembayaran?${kueri.toString()}`,
+    { timeoutMs: 15_000 }
+  );
+}
+/* === AKHIR KASIR REKENING-SKUM === */

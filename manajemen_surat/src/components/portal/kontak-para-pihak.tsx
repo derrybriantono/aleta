@@ -7,6 +7,13 @@ import { usePenggunaAktifOpsional } from "@/lib/app-state";
 import { bolehAksiLayar } from "@/lib/matriks-peran";
 import { modePersidangan } from "@/lib/mode-persidangan";
 import {
+  bolehLihatRekeningLayar,
+  pemilikPembayaran,
+  rupiahTitik,
+  tanggalIndonesia,
+  type PembayaranTampil,
+} from "@/lib/pembayaran-ecourt";
+import {
   tentukanBeracaraElektronik,
   type HasilBeracara,
   type MasukanBeracara,
@@ -112,6 +119,114 @@ export function useKontakParaPihak(nomorPerkara: string, bacaOtomatis = true): K
   if (!boleh) return { tahap: "ditolak" };
   return simpanan.get(nomorPerkara) ?? { tahap: "memuat" };
 }
+
+/* === KASIR REKENING-SKUM 3 Nov === */
+/**
+ * Pembayar e-Court (e-Payment) satu perkara: nama pembayar, bank, nomor rekening pengguna. Dibaca SEKALI
+ * per perkara (sama dengan kontak). Hanya pimpinan, hakim, panitera, kasir, PTSP, admin (penuh); 403 =
+ * tidak digambar. Perkara yang tidak lewat e-Court = tidak ada baris.
+ */
+type KeadaanBayar = { tahap: "memuat" } | { tahap: "ditolak" } | { tahap: "kosong" } | { tahap: "siap"; data: PembayaranTampil };
+const simpananBayar = new Map<string, KeadaanBayar>();
+const jalanBayar = new Set<string>();
+
+async function muatBayar(nomorPerkara: string) {
+  if (simpananBayar.has(nomorPerkara) || jalanBayar.has(nomorPerkara)) return;
+  jalanBayar.add(nomorPerkara);
+  simpananBayar.set(nomorPerkara, { tahap: "memuat" });
+  try {
+    const balasan = await fetch(
+      apiPath(`/api/aleta-ecourt/pembayaran-ecourt?nomor=${encodeURIComponent(nomorPerkara)}`),
+      { cache: "no-store" }
+    );
+    if (balasan.status === 403) {
+      simpananBayar.set(nomorPerkara, { tahap: "ditolak" });
+      return;
+    }
+    const isi = ((await balasan.json()) as { data?: { perkara?: Record<string, PembayaranTampil> } })?.data;
+    const p = isi?.perkara?.[nomorPerkara] ?? Object.values(isi?.perkara ?? {})[0];
+    simpananBayar.set(nomorPerkara, p ? { tahap: "siap", data: p } : { tahap: "kosong" });
+  } catch {
+    simpananBayar.set(nomorPerkara, { tahap: "kosong" });
+  } finally {
+    jalanBayar.delete(nomorPerkara);
+    beritahu();
+  }
+}
+
+export function bersihkanPembayaranEcourt() {
+  simpananBayar.clear();
+  beritahu();
+}
+
+export function usePembayaranEcourt(nomorPerkara: string): KeadaanBayar {
+  const [, paksa] = useState(0);
+  // Keputusan 3 Nov 17.55: pimpinan, hakim, panitera, kasir, PTSP, admin (rute juga 403 bagi lainnya).
+  const boleh = bolehLihatRekeningLayar(usePenggunaAktifOpsional());
+  useEffect(() => {
+    const dengar = () => paksa((x) => x + 1);
+    pendengar.add(dengar);
+    if (nomorPerkara && boleh) void muatBayar(nomorPerkara);
+    return () => {
+      pendengar.delete(dengar);
+    };
+  }, [nomorPerkara, boleh]);
+  if (!boleh) return { tahap: "ditolak" };
+  return simpananBayar.get(nomorPerkara) ?? { tahap: "memuat" };
+}
+
+/** Baris "Rekening pembayar" di bawah pihak/kuasa yang membayar panjar lewat e-Court. */
+export function RuasPembayarEcourt({
+  data,
+  kuasa,
+  cocok,
+}: {
+  data: PembayaranTampil;
+  kuasa: boolean;
+  cocok: boolean;
+}) {
+  const rincian = [
+    data.panjar !== null ? `panjar ${rupiahTitik(data.panjar)}` : "",
+    data.tanggal ? `dibayar ${tanggalIndonesia(data.tanggal)}${data.jam ? ` ${data.jam.slice(0, 5)}` : ""}` : "",
+  ].filter(Boolean);
+  return (
+    <div className="flex flex-wrap items-baseline gap-x-1.5" data-ruas-kontak="rekening-pembayar">
+      <span className="w-[8.5rem] shrink-0 text-muted-foreground">{kuasa ? "Pembayar (kuasa)" : "Rekening pembayar"}</span>
+      {data.nomorRekening ? (
+        <span className="font-medium tabular-nums" data-rekening>
+          {[data.bank, data.nomorRekening].filter(Boolean).join(" ")}
+        </span>
+      ) : (
+        <span className="text-muted-foreground">rekening belum terbaca</span>
+      )}
+      {data.atasNama ? <span className="break-all text-muted-foreground">a.n. {data.atasNama}</span> : null}
+      <span className="ml-1 rounded border border-border px-1 text-[0.65rem] uppercase text-muted-foreground">e-Court</span>
+      {!cocok && data.diterimaDari ? <span className="text-muted-foreground">dibayar oleh {data.diterimaDari}</span> : null}
+      {rincian.length ? <span className="text-muted-foreground">· {rincian.join(" · ")}</span> : null}
+    </div>
+  );
+}
+
+function PembayarEcourtPihak({
+  nomorPerkara,
+  orang,
+  semua,
+}: {
+  nomorPerkara: string;
+  orang: { nama: string; jenis: string; pihakKe: number | null };
+  semua: { nama: string; jenis: string; pihakKe: number | null }[];
+}) {
+  const keadaan = usePembayaranEcourt(nomorPerkara);
+  if (keadaan.tahap !== "siap") return null;
+  const pemilik = pemilikPembayaran(keadaan.data.diterimaDari, semua);
+  if (!pemilik.orang) return null;
+  const sama =
+    pemilik.orang.nama.trim().toLowerCase() === orang.nama.trim().toLowerCase() &&
+    (pemilik.orang.jenis === "kuasa") === (orang.jenis === "kuasa");
+  if (!sama) return null;
+  return <RuasPembayarEcourt data={keadaan.data} kuasa={pemilik.kuasa} cocok={pemilik.cocok} />;
+}
+/* === AKHIR KASIR REKENING-SKUM === */
 
 /** Mencari baris kontak untuk satu orang pada daftar pihak Status Perkara. */
 export function cariKontakPihak(
@@ -253,6 +368,8 @@ export function KontakPihak({
         nilai={baris.hp}
         kosong="WA belum ada"
       />
+      {/* KASIR REKENING-SKUM 3 Nov: rekening pengguna e-Court pada pihak/kuasa pembayar. */}
+      <PembayarEcourtPihak nomorPerkara={nomorPerkara} orang={orang} semua={keadaan.data.orang} />
       {beracara ? (
         <div className="flex flex-wrap items-baseline gap-x-1.5" data-ruas-kontak="beracara">
           <span className="w-[8.5rem] shrink-0 text-muted-foreground">Beracara</span>
