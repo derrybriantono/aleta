@@ -9664,10 +9664,24 @@
   /** Peringatan halaman runut dari portal -> log panel (yang menyebut BAS belum tercatat juga muncul sebagai pemberitahuan). */
   function laporRunut(peringatan) {
     for (const p of Array.isArray(peringatan) ? peringatan : []) {
-      if (!/halaman|BAS sidang/i.test(String(p))) continue;
+      if (!/halaman|BAS sidang/i.test(String(p)) || /garis Z/i.test(String(p))) continue;
       catatLog(`nomor halaman: ${p}`);
       if (/belum pernah dicetak|cetak ulang BAS sidang|tidak ditemukan di jadwal/i.test(String(p)) && typeof toast === "function") toast(String(p));
     }
+  }
+  /** 3 Nov: peringatan garis Z dari portal -> log panel; Z yang TIDAK digambar (tanpa ruang kosong / akan menimpa tulisan / gagal diukur) juga diberitahukan. */
+  let zDiberitahu = { t: "", saat: 0 };
+  function laporZ(peringatan) {
+    let beritahu = "";
+    for (const p of Array.isArray(peringatan) ? peringatan : []) {
+      if (!/garis Z/i.test(String(p))) continue;
+      catatLog(`garis Z: ${p}`);
+      if (!beritahu && /tidak digambar|tidak dapat dipasang/i.test(String(p))) beritahu = String(p);
+    }
+    // PDF dan PDF SALINAN dicetak bersamaan: pemberitahuan yang sama cukup sekali
+    if (!beritahu || typeof toast !== "function" || (zDiberitahu.t === beritahu && Date.now() - zDiberitahu.saat < 60000)) return;
+    zDiberitahu = { t: beritahu, saat: Date.now() };
+    toast(beritahu);
   }
   /** RTF BAS -> RTF dengan Z cross dan nomor halaman runut. Gagal / rute tak terjangkau = RTF apa adanya (tidak mengganggu unduhan). */
   async function zCrossRtf(rtf, jumlahBukti, catat = true) {
@@ -9684,11 +9698,15 @@
       if (!catat) badan.append("catat", "0");
       const d = await ambilPortal(API_ZCROSS, { method: "POST", body: badan, batasMs: BATAS_LAMA_MS }, "Memasang Z");
       if (d) laporRunut(d.peringatan);
+      if (d) laporZ(d.peringatan);
       if (!d || !d.diubah || !d.berkasBase64) return { rtf, ket: "" };
       const biner = Uint8Array.from(atob(d.berkasBase64), (c) => c.charCodeAt(0));
       // portal lama (tanpa nomor runut): diubah = Z dipasang
       const z = !d.laporan || d.laporan.diubah !== false;
-      const ketZ = !z ? "" : d.laporan.jumlahHalamanBuktiBawaan ? "Z dipasang; jumlah halaman bukti memakai bawaan 1 per bukti" : "Z dipasang";
+      // 3 Nov: tidak ada satu pun Z yang digambar (tanpa ruang / bersilang / gagal diukur - tanda Z blangko dibuang) -> tidak disebut "Z dipasang"
+      const daftarZ = d.laporan && Array.isArray(d.laporan.daftar) ? d.laporan.daftar : null;
+      const tanpaZ = Boolean(d.laporan) && (daftarZ ? !daftarZ.some((x) => x && x.digambar) : Boolean(d.laporan.alasan));
+      const ketZ = !z ? "" : tanpaZ ? "garis Z tidak digambar (lihat catatan)" : d.laporan.jumlahHalamanBuktiBawaan ? "Z dipasang; jumlah halaman bukti memakai bawaan 1 per bukti" : "Z dipasang";
       const ketH = d.runut && d.runut.awal ? `halaman ${d.runut.awal}${d.runut.akhir > d.runut.awal ? `-${d.runut.akhir}` : ""}` : "";
       const ket = [ketZ, ketH].filter(Boolean).join("; ");
       return { rtf: typeof rtf === "string" ? latin1(biner) : biner.buffer, ket };
@@ -9711,6 +9729,7 @@
     const d = await ambilPortal(API_PDF, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(badan), batasMs: BATAS_LAMA_MS }, salinan ? "Membuat PDF salinan" : "Membuat PDF");
     if (!d || !d.available) throw new Error((d && d.message) || "pengubah PDF tidak tersedia");
     if (d.runut) laporRunut(d.runut.peringatan);
+    if (d.zcross) laporZ(d.zcross.peringatan);
     const biner = Uint8Array.from(atob(d.pdfBase64), (c) => c.charCodeAt(0));
     const hasil = { blob: new Blob([biner], { type: "application/pdf" }), bita: biner, keterangan: d.salinan || null, ttdPdf: d.ttdPdf || null };
     if (!salinan) {
