@@ -619,7 +619,9 @@ function susunUsulan(k) {
   const elit = permohonan ? null : elitigasiTergugat(k, sidangBiasa);
   if (elit) {
     catatan.push(
-      `${sebutan.dua} beracara elektronik (E-Litigasi) sejak ${tanggalLayar(elit.sejak)}: panggilan ulang lewat e-Court tanpa biaya panggilan. Relaas Pos/RRI yang tercatat tetap berbiaya.`
+      `${sebutan.dua} beracara elektronik (E-Litigasi) sejak ${tanggalLayar(elit.sejak)}: panggilan ulang${
+        Number(perkara.jenisPerkaraId) === JENIS_CERAI_TALAK ? " dan panggilan ikrar talak" : ""
+      } lewat e-Court tanpa biaya panggilan. Relaas Pos/RRI yang tercatat tetap berbiaya.`
     );
   }
 
@@ -685,6 +687,13 @@ function susunUsulan(k) {
         e.pilih = false;
         e.yakin = "rendah";
         e.dasar = `${e.dasar}; sidang ikrar pertama dipanggil tanpa biaya (kode ${bersih(r0.ket).toUpperCase()})`;
+      } else if (elit && p.ke === 2) {
+        // KASIR E-LITIGASI 3 Nov (keputusan Derry 23.10): Termohon beracara elektronik dan
+        // pernah hadir - panggilan ikrar lewat e-Court tanpa biaya. Relaas Pos/RRI yang
+        // tercatat (berbiaya) tetap menang di atas; satu panggilan untuk rangkaian tetap.
+        e.pilih = false;
+        e.yakin = "rendah";
+        e.dasar = `${e.dasar}; ${sebutan.dua} beracara elektronik sejak ${tanggalLayar(elit.sejak)} - panggilan ikrar lewat e-Court tanpa biaya`;
       } else {
         // Belum ada relaas: dicentang selama rangkaian sidang ikrarnya belum lewat.
         e.pilih = !hariIni || bersih(akhir && akhir.tanggal) >= hariIni;
@@ -1353,7 +1362,9 @@ function susunKejadian(k, hasil) {
       "ikrar",
       tIkrar || (sidangIkrar[0] && sidangIkrar[0].tanggal) || "",
       `Ikrar talak${tIkrar ? ` ${tanggalLayar(tIkrar)}` : sidangIkrar[0] ? ` (sidang ${tanggalLayar(sidangIkrar[0].tanggal)})` : ""}`,
-      tIkrar ? "Sisa panjar dikembalikan pada hari ikrar." : "Ikrar belum diucapkan - sisa panjar menunggu hari ikrar.",
+      `${tIkrar ? "Sisa panjar dikembalikan pada hari ikrar." : "Ikrar belum diucapkan - sisa panjar menunggu hari ikrar."}${
+        elitTunda ? ` ${sebutan.dua} beracara elektronik sejak ${tanggalLayar(elitTunda.sejak)} - panggilan ikrar lewat e-Court tanpa biaya (kecuali relaas Pos/RRI tercatat).` : ""
+      }`,
       KEADAAN_KASIR.ikrar.lazim.slice()
     ).menunggu = !tIkrar;
   }
