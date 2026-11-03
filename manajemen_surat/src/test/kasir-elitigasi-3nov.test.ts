@@ -270,3 +270,67 @@ describe("Kasir otomatis memakai aturan yang sama (susunUsulan)", () => {
     expect(psp(baru).status).toBe("akan");
   });
 });
+
+describe("panggilan ikrar talak: Termohon e-litigasi (keputusan Derry 3 Nov 23.10)", () => {
+  /** Cerai talak dikabulkan 15 Okt; Termohon hadir 1 Okt; sidang ikrar 10 Nov (mendatang). */
+  const talak = (opsi: { beracara?: unknown; relaasIkrar?: Baris[]; ikrarKedua?: boolean; verstek?: string } = {}) => {
+    const k = keadaan({
+      beracara: opsi.beracara,
+      sidang: [
+        { id: 11, urutan: 1, tanggal: "2026-10-01", dihadiriOleh: opsi.verstek === "Y" ? 2 : 1, ikrar: false, ditunda: true, hasil: "ditunda", agenda: "" },
+        { id: 12, urutan: 2, tanggal: "2026-10-15", dihadiriOleh: 2, ikrar: false, ditunda: false, hasil: "putus dikabulkan", agenda: "" },
+        { id: 31, urutan: 3, tanggal: "2026-11-10", dihadiriOleh: null, ikrar: true, ditunda: false, hasil: "", agenda: "Ikrar talak" },
+        ...(opsi.ikrarKedua ? [{ id: 32, urutan: 4, tanggal: "2026-11-17", dihadiriOleh: null, ikrar: true, ditunda: false, hasil: "", agenda: "Ikrar talak" }] : []),
+      ],
+      putusan: { tanggal: "2026-10-15", statusId: 62, statusNama: "Dikabulkan", verstek: opsi.verstek || "T" },
+    });
+    k.perkara.jenisPerkaraId = 346;
+    k.perkara.jenisPerkaraNama = "Cerai Talak";
+    k.relaas.push(...(opsi.relaasIkrar || []));
+    return k;
+  };
+  const ikrar = (h: Baris) => h.usulan.filter((u: Baris) => u.jenisBiayaId === 14 && /Ikrar Talak/.test(u.uraian));
+
+  it("lama (tak terbaca): Biaya Panggilan Ikrar Talak dicentang", () => {
+    const [u] = ikrar(kasir.susunUsulan(talak()));
+    expect(u.pilih).toBe(true);
+  });
+
+  it("Termohon e-litigasi & pernah hadir: ikrar TIDAK dicentang, keterangan di baris, catatan, dan lini kejadian", () => {
+    const k = talak({ beracara: ELIT });
+    const h = kasir.susunUsulan(k);
+    const daftar = ikrar(h);
+    expect(daftar).toHaveLength(1);
+    expect(daftar[0].pilih).toBe(false);
+    expect(daftar[0].yakin).toBe("rendah");
+    expect(daftar[0].dasar).toContain("Termohon beracara elektronik sejak 01/10/2026 - panggilan ikrar lewat e-Court tanpa biaya");
+    expect(h.catatan.join(" ")).toContain("panggilan ulang dan panggilan ikrar talak lewat e-Court tanpa biaya");
+    const kj = kasir.susunKejadian(k).kejadian.find((e: Baris) => e.kunci === "ikrar");
+    expect(kj.keterangan).toContain("Termohon beracara elektronik sejak 01/10/2026 - panggilan ikrar lewat e-Court tanpa biaya");
+  });
+
+  it("relaas Pos (S) tercatat - pada sidang ikrar pertama ATAU kedua - tetap berbiaya; tetap SATU panggilan", () => {
+    const s1 = ikrar(kasir.susunUsulan(talak({ beracara: ELIT, relaasIkrar: [{ id: 41, sidangId: 31, pihakId: T, ket: "S", resi: "P2611030003333", tanggalRelaas: "2026-11-05", tanggalJursitPos: "2026-11-03" }] })));
+    expect(s1).toHaveLength(1);
+    expect(s1[0].pilih).toBe(true);
+    expect(s1[0].uraian).toBe("Biaya Panggilan Ikrar Talak/P2611030003333");
+    const s2 = ikrar(
+      kasir.susunUsulan(talak({ beracara: ELIT, ikrarKedua: true, relaasIkrar: [{ id: 42, sidangId: 32, pihakId: T, ket: "S", resi: "P2611120004444", tanggalRelaas: "2026-11-13", tanggalJursitPos: "2026-11-12" }] }))
+    );
+    expect(s2).toHaveLength(1);
+    expect(s2[0].pilih).toBe(true);
+    expect(s2[0].dasar).not.toMatch(/beracara elektronik/);
+    // Dua sidang ikrar tanpa relaas: satu baris, tidak dicentang.
+    const dua = ikrar(kasir.susunUsulan(talak({ beracara: ELIT, ikrarKedua: true })));
+    expect(dua).toHaveLength(1);
+    expect(dua[0].pilih).toBe(false);
+  });
+
+  it("hybrid atau Termohon tidak pernah hadir (verstek) -> ikrar tetap dicentang", () => {
+    const hybrid = ikrar(kasir.susunUsulan(talak({ beracara: { ...ELIT, tergugat: [{ ...ELIT.tergugat[0], wa: null }] } })));
+    expect(hybrid[0].pilih).toBe(true);
+    const verstek = ikrar(kasir.susunUsulan(talak({ beracara: ELIT, verstek: "Y" })));
+    expect(verstek[0].pilih).toBe(true);
+    expect(verstek[0].dasar).not.toMatch(/beracara elektronik/);
+  });
+});
