@@ -1,0 +1,42 @@
+SIDIK AWAL d27b0a97c1f913f9ffa93d5f1f3014ec
+== 1. pasang pertama
+    SIAP=5
+    BERKAS SIAP
+    PRASYARAT COCOK
+    TAMBAL=5
+    BERKAS COCOK
+    SELESAI - paket abt-ijab-yang-menikahkan-3nov terpasang. Cadangan: /d/aleta-dev/wt/w199/abt-paket/ijab-yang-menikahkan-3nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w199/abt-paket/ijab-yang-menikahkan-3nov/paket-satker/pulih-satker.sh
+== 2. pasang ulang (idempoten)
+    SUDAH=5
+    BERKAS SIAP
+    PRASYARAT COCOK
+    SUDAH=5
+    BERKAS COCOK
+    SELESAI - paket abt-ijab-yang-menikahkan-3nov terpasang. Cadangan: /d/aleta-dev/wt/w199/abt-paket/ijab-yang-menikahkan-3nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w199/abt-paket/ijab-yang-menikahkan-3nov/paket-satker/pulih-satker.sh
+    SIDIK TETAP
+== 3. pulih
+    PULIH=5
+    BERKAS PULIH
+    PULIH COCOK
+    SIDIK = AWAL
+== 4. pasang lagi sesudah pulih
+    SIAP=5
+    BERKAS SIAP
+    PRASYARAT COCOK
+    TAMBAL=5
+    BERKAS COCOK
+    SELESAI - paket abt-ijab-yang-menikahkan-3nov terpasang. Cadangan: /d/aleta-dev/wt/w199/abt-paket/ijab-yang-menikahkan-3nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w199/abt-paket/ijab-yang-menikahkan-3nov/paket-satker/pulih-satker.sh
+== 5. md5 server berbeda (satu berkas disunting) -> BERHENTI tanpa ubahan
+    GAGAL	derry_briantono/2 Itsbat Nikah/[01a] [Kabul] IN - Syahadah Al Istifadhah.rtf	md5 21d67757be0866c599662912e92b13cc bukan dasar 50ff2220883abef2ecc2d2a9a74bb890 (disunting orang/paket lain belum terpasang)
+    GAGAL=1 SIAP=4
+    BERKAS TIDAK SIAP
+    GAGAL: berkas tujuan tidak sama dengan keadaan server 3 Nov 15.20 - TIDAK ada yang diubah
+    TIDAK ADA YANG BERUBAH
+== 6. disunting sesudah pasang lalu pulih -> dibiarkan
+    BIARKAN	derry_briantono/2 Itsbat Nikah/[01] [Kabul] IN.rtf	(sudah disunting sesudah dipasang)
+    BIARKAN=1 PULIH=4
+    BERKAS PULIH SEBAGIAN
+    GAGAL	derry_briantono/2 Itsbat Nikah/[01] [Kabul] IN.rtf	md5 9376cacfd8e59dd80b348958687bddda bukan dasar 605b220f828267c36c1abd6540146f56 (disunting orang/paket lain belum terpasang)
+    GAGAL=1 SIAP=4
+    BERKAS TIDAK SIAP
+    PULIH SEBAGIAN
