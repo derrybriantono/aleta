@@ -75,67 +75,91 @@ function runBentuk(p: SimpulXml): SimpulXml[] {
 }
 
 const adalahZ = (potong: string): boolean => /zcross-|SC\s*Z|(?:name|id)="FreeForm/.test(potong);
+const adalahScZ = (potong: string): boolean => /zcross-|SC\s*Z/.test(potong);
+const bermaknaDocx = (t: string): boolean => /\p{L}{2,}/u.test(t);
+const tampakDocx = (t: string): boolean => /\S/.test(t);
 
-export type JangkarDocx = { indeks: number; via: "bentuk" | "ujung-daftar" };
+/** Sama dengan JangkarRtf (rtf.ts): indeks = paragraf ukur, teksIndeks = paragraf bertulisan tampak terakhir, akhirIndeks = pemilik tanda terakhir. */
+export type JangkarDocx = { indeks: number; teksIndeks: number; akhirIndeks: number; via: "bentuk" | "ujung-daftar"; pemilik: number[] };
+
+/** SEMUA tempat Z (urut naik) - aturan sama dengan cariSemuaJangkarRtf. */
+export function cariSemuaJangkarDocx(x: string, paragraf: ParagrafDocx[]): JangkarDocx[] {
+  const tanda = paragraf
+    .map((p) => {
+      const rb = runBentuk(p.simpul).map((r) => x.slice(r.awal, r.akhir));
+      return { i: p.indeks, z: rb.some(adalahZ), sc: rb.some(adalahScZ) };
+    })
+    .filter((t) => t.z);
+  const hasil: JangkarDocx[] = [];
+  let k = tanda.length - 1;
+  while (k >= 0) {
+    const akhir = tanda[k].i;
+    let t = akhir;
+    while (t > 0 && !tampakDocx(paragraf[t].teks)) t -= 1;
+    let u = t;
+    while (u > 0 && !bermaknaDocx(paragraf[u].teks)) u -= 1;
+    const kelompok: typeof tanda = [];
+    while (k >= 0 && tanda[k].i >= t) {
+      kelompok.push(tanda[k]);
+      k -= 1;
+    }
+    if (!tampakDocx(paragraf[t].teks) || !bermaknaDocx(paragraf[u].teks)) continue;
+    if (!kelompok.some((g) => g.sc) && !/(?:berikut(?:\s+ini)?|berupa)\s*:\s*$/i.test(paragraf[u].teks)) continue;
+    if (leluhur(paragraf[t].simpul, "w:tc")) continue; // bentuk di sel tabel letaknya relatif terhadap sel
+    hasil.push({ indeks: u, teksIndeks: t, akhirIndeks: akhir, via: "bentuk", pemilik: kelompok.map((g) => g.i).sort((a, b) => a - b) });
+  }
+  return hasil.reverse();
+}
 
 export function cariJangkarDocx(x: string, paragraf: ParagrafDocx[]): JangkarDocx | null {
-  for (let i = paragraf.length - 1; i >= 0; i -= 1) {
-    const rb = runBentuk(paragraf[i].simpul);
-    if (!rb.some((r) => adalahZ(x.slice(r.awal, r.akhir)))) continue;
-    let t = i;
-    while (t > 0 && !/\p{L}{2,}/u.test(paragraf[t].teks)) t -= 1;
-    if (!paragraf[t].teks.trim()) return null;
-    return { indeks: t, via: "bentuk" };
-  }
-  for (let i = paragraf.length - 1; i >= 0; i -= 1) if (/(?:berikut|berupa)\s*:\s*$/i.test(paragraf[i].teks)) return { indeks: i, via: "ujung-daftar" };
+  const semua = cariSemuaJangkarDocx(x, paragraf);
+  if (semua.length) return semua[semua.length - 1];
+  for (let i = paragraf.length - 1; i >= 0; i -= 1) if (/(?:berikut|berupa)\s*:\s*$/i.test(paragraf[i].teks)) return { indeks: i, teksIndeks: i, akhirIndeks: i, via: "ujung-daftar", pemilik: [] };
   return null;
 }
 
-export type PembersihanDocx = { xml: string; labelTanggal: string | null; jumlahBentukDibuang: number };
+export type PembersihanDocx = { xml: string; labelTanggal: string | null; labelPerJangkar: Array<string | null>; jumlahBentukDibuang: number };
+
+const teksLabel = (isi: string): string => dekodeEntitas(isi.replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim();
 
 export function bersihkanZDocx(sumber: string): PembersihanDocx {
   const akar = uraiXml(sumber);
   const paragraf = paragrafDocx(sumber, akar);
-  const jangkar = cariJangkarDocx(sumber, paragraf);
+  const semua = cariSemuaJangkarDocx(sumber, paragraf);
   const buang: Array<[number, number]> = [];
-  let label: string | null = null;
+  const labelPerJangkar: Array<string | null> = [];
   // Z gambar tangan lama berupa garis lurus (DrawingML garis/penghubung lurus, VML jenis 20/32) di paragraf-paragraf pemilik tanda Z ikut
   // dibuang (keputusan 87; DOC lama yang diubah Word ke DOCX menaruh garisnya di paragraf tetangga kotak "SC Z").
   const RE_GARIS = /prst="(?:line|straightConnector1)"|<v:line\b|o:spt="(?:20|32)"|type="#_x0000_t(?:20|32)"/;
-  let adaTanda = false;
-  const lihat = (p: SimpulXml) => {
-    for (const r of runBentuk(p)) {
-      const potong = sumber.slice(r.awal, r.akhir);
-      const garisLama = adaTanda && RE_GARIS.test(potong) && !/<w:txbxContent/.test(potong);
-      if (!adalahZ(potong) && !garisLama) continue;
-      buang.push([r.awal, r.akhir]);
-      if (!label) {
+  const diJangkar = new Set<number>();
+  for (const j of semua) {
+    let label: string | null = null;
+    // seluruh paragraf kelompok: paragraf ukur s.d. pemilik tanda terakhir (isian kosong "..." di antaranya ikut diperiksa)
+    const jendela: number[] = [];
+    for (let i = j.indeks; i <= j.akhirIndeks; i += 1) jendela.push(i);
+    const adaTanda = jendela.some((i) => runBentuk(paragraf[i].simpul).some((r) => adalahZ(sumber.slice(r.awal, r.akhir))));
+    for (const i of jendela) {
+      diJangkar.add(i);
+      for (const r of runBentuk(paragraf[i].simpul)) {
+        const potong = sumber.slice(r.awal, r.akhir);
+        const garisLama = adaTanda && RE_GARIS.test(potong) && !/<w:txbxContent/.test(potong);
+        if (!adalahZ(potong) && !garisLama) continue;
+        buang.push([r.awal, r.akhir]);
         const m = /<w:txbxContent[^>]*>([\s\S]*?)<\/w:txbxContent>/.exec(potong);
-        if (m) label = m[1];
+        // label yang dipakai ulang: tulisan terpanjang ("SC Z 1x" + tanggal), bukan kotak tanda kedua
+        if (m && (!label || teksLabel(m[1]).length > teksLabel(label).length)) label = m[1];
       }
     }
-  };
-  const diJangkar = new Set<number>();
-  if (jangkar) {
-    // pemilik bentuk bisa paragraf lain (kosong) di sesudah paragraf ukur; isian kosong "..." tidak menghentikan pencarian
-    const jendela: number[] = [];
-    for (let i = jangkar.indeks; i < Math.min(paragraf.length, jangkar.indeks + 4); i += 1) {
-      if (i > jangkar.indeks && /\p{L}{2,}/u.test(paragraf[i].teks)) break;
-      jendela.push(i);
-    }
-    adaTanda = jendela.some((i) => runBentuk(paragraf[i].simpul).some((r) => adalahZ(sumber.slice(r.awal, r.akhir))));
-    for (const i of jendela) {
-      lihat(paragraf[i].simpul);
-      diJangkar.add(i);
-    }
+    labelPerJangkar.push(label);
   }
   for (const p of paragraf) {
     if (diJangkar.has(p.indeks)) continue;
     for (const r of runBentuk(p.simpul)) if (/zcross-/.test(sumber.slice(r.awal, r.akhir))) buang.push([r.awal, r.akhir]);
   }
   let xml = sumber;
-  for (const [a, b] of [...buang].sort((x, y) => y[0] - x[0])) xml = xml.slice(0, a) + xml.slice(b);
-  return { xml, labelTanggal: label, jumlahBentukDibuang: buang.length };
+  const unik = [...new Map(buang.map((r) => [r[0], r] as const)).values()];
+  for (const [a, b] of unik.sort((x, y) => y[0] - x[0])) xml = xml.slice(0, a) + xml.slice(b);
+  return { xml, labelTanggal: labelPerJangkar.find((l) => l) ?? null, labelPerJangkar, jumlahBentukDibuang: unik.length };
 }
 
 const NS = 'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape"';
@@ -176,7 +200,9 @@ export function bentukGarisZDocx(r: RencanaZ, id: number): string {
 export function bentukTanggalDocx(r: RencanaZ, id: number, label: string | null, tanggal: string): string {
   const w = keEmu(r.tanggal.lebar);
   const h = keEmu(r.tanggal.tinggi);
-  const isiTeks = label ?? `<w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr><w:r><w:t xml:space="preserve">${enkodeEntitas(tanggal)}</w:t></w:r></w:p>`;
+  // 3 Nov (keputusan 59): label baru = "SC Z 1x" di atas tanggal (sama dengan kotak "SC Z" blangko)
+  const parLabel = (t: string) => `<w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr><w:r><w:t xml:space="preserve">${enkodeEntitas(t)}</w:t></w:r></w:p>`;
+  const isiTeks = label ?? `${parLabel("SC Z 1x")}${parLabel(tanggal)}`;
   const isi =
     `<wps:wsp><wps:cNvSpPr txBox="1"/><wps:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${w}" cy="${h}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/><a:ln><a:noFill/></a:ln></wps:spPr>` +
     `<wps:txbx><w:txbxContent>${isiTeks}</w:txbxContent></wps:txbx><wps:bodyPr rot="0" vert="horz" wrap="square" lIns="0" tIns="0" rIns="0" bIns="0" anchor="t" anchorCtr="0"><a:noAutofit/></wps:bodyPr></wps:wsp>`;
@@ -269,65 +295,90 @@ export type MasukanTulisDocx = { rencana: RencanaZ; labelTanggal: string | null;
  * Menulis Z ke document.xml yang sudah dibersihkan: bentuk di paragraf jangkar (sesudah teksnya) + ganti halaman + nomor halaman.
  */
 export function tulisZDocx(x: string, jangkarIndeks: number, m: MasukanTulisDocx): { xml: string; seksi: SeksiHasil; nomorDitulis: number | null } {
+  const h = tulisBanyakZDocx(x, [{ teksIndeks: jangkarIndeks, akhirIndeks: jangkarIndeks, rencana: m.rencana, labelTanggal: m.labelTanggal, tanggal: m.tanggal, nomorBerikut: m.nomorBerikut }]);
+  return { xml: h.xml, seksi: h.per[0].seksi, nomorDitulis: h.per[0].nomorDitulis };
+}
+
+/** Satu tempat Z (sama dengan TulisZ di rtf.ts); rencana null = garis & tanggal tidak digambar, ganti halaman & nomor tetap. */
+export type TulisZDocx = { teksIndeks: number; akhirIndeks: number; rencana: RencanaZ | null; labelTanggal: string | null; tanggal: string; nomorBerikut: number | null };
+
+/**
+ * Menulis beberapa Z ke document.xml yang sudah dibersihkan: bentuk di paragraf TEKS (sesudah tulisannya) + ganti halaman + nomor halaman
+ * dihitung sesudah paragraf terakhir kelompok tanda Z (isian kosong "..." tidak lagi dipindah ke halaman sendiri - 3 Nov).
+ */
+export function tulisBanyakZDocx(x: string, daftar: ReadonlyArray<TulisZDocx>): { xml: string; per: Array<{ seksi: SeksiHasil; nomorDitulis: number | null }> } {
   const akar = uraiXml(x);
   const paragraf = paragrafDocx(x, akar);
-  const p = paragraf[jangkarIndeks];
-  if (!p) throw new Error("Paragraf jangkar tidak ditemukan.");
   const seksi = seksiDocx(akar, paragraf);
-  const id = idDocPrBerikut(x);
-  const bentuk = bentukGarisZDocx(m.rencana, id) + bentukTanggalDocx(m.rencana, id + 1, m.labelTanggal, m.tanggal);
+  let id = idDocPrBerikut(x);
   const edit: Array<{ dari: number; sampai: number; teks: string }> = [];
-  let hasilSeksi: SeksiHasil = "tanpa-bagian-berikut";
-
-  // seksi tempat jangkar berada
-  const j = seksi.findIndex((s) => s.paragrafIndeks == null || s.paragrafIndeks >= p.indeks);
-  const sek = j >= 0 ? seksi[j] : null;
-  if (sek) {
-    const akhirSeksi = sek.paragrafIndeks ?? paragraf.length - 1;
-    const teksSesudah = adaTeks(paragraf, p.indeks + 1, akhirSeksi);
-    const berikut = seksi[j + 1];
-    if (!teksSesudah && sek.paragrafIndeks != null && berikut) {
-      hasilSeksi = "dipakai";
-      edit.push({ dari: berikut.sectPr.awal, sampai: berikut.sectPr.akhir, teks: ubahSectPr(x, berikut.sectPr, { nomorAwal: m.nomorBerikut, halamanBaru: true }) });
-    } else if (teksSesudah) {
-      hasilSeksi = "disisipkan";
-      // bagian pertama (sampai jangkar) memakai salinan sectPr asal; bagian sesudahnya = sectPr asal yang diberi halaman baru + nomor
-      const salinan = x.slice(sek.sectPr.awal, sek.sectPr.akhir);
-      const pPr = p.simpul.anak.find((a) => a.nama === "w:pPr");
-      if (pPr && !pPr.tertutupSendiri) {
-        const pc = pPr.anak.find((a) => a.nama === "w:pPrChange");
-        const pos = pc ? pc.awal : pPr.akhirIsi;
-        edit.push({ dari: pos, sampai: pos, teks: salinan });
-      } else if (pPr) edit.push({ dari: pPr.awal, sampai: pPr.akhir, teks: `<w:pPr>${salinan}</w:pPr>` });
-      else edit.push({ dari: p.simpul.awalIsi, sampai: p.simpul.awalIsi, teks: `<w:pPr>${salinan}</w:pPr>` });
-      edit.push({ dari: sek.sectPr.awal, sampai: sek.sectPr.akhir, teks: ubahSectPr(x, sek.sectPr, { nomorAwal: m.nomorBerikut, halamanBaru: true }) });
+  const per: Array<{ seksi: SeksiHasil; nomorDitulis: number | null }> = [];
+  for (const m of daftar) {
+    const p = paragraf[m.teksIndeks];
+    const pa = paragraf[Math.max(m.teksIndeks, m.akhirIndeks)];
+    if (!p || !pa) throw new Error("Paragraf jangkar tidak ditemukan.");
+    let hasilSeksi: SeksiHasil = "tanpa-bagian-berikut";
+    // seksi tempat paragraf terakhir kelompok berada
+    const j = seksi.findIndex((s) => s.paragrafIndeks == null || s.paragrafIndeks >= pa.indeks);
+    const sek = j >= 0 ? seksi[j] : null;
+    if (sek) {
+      const akhirSeksi = sek.paragrafIndeks ?? paragraf.length - 1;
+      const teksSesudah = adaTeks(paragraf, pa.indeks + 1, akhirSeksi);
+      const berikut = seksi[j + 1];
+      if (!teksSesudah && sek.paragrafIndeks != null && berikut) {
+        hasilSeksi = "dipakai";
+        edit.push({ dari: berikut.sectPr.awal, sampai: berikut.sectPr.akhir, teks: ubahSectPr(x, berikut.sectPr, { nomorAwal: m.nomorBerikut, halamanBaru: true }) });
+      } else if (teksSesudah) {
+        hasilSeksi = "disisipkan";
+        // bagian pertama (sampai paragraf terakhir kelompok) memakai salinan sectPr asal; bagian sesudahnya = sectPr asal + halaman baru + nomor
+        const salinan = x.slice(sek.sectPr.awal, sek.sectPr.akhir);
+        const pPr = pa.simpul.anak.find((a) => a.nama === "w:pPr");
+        if (pPr && !pPr.tertutupSendiri) {
+          const pc = pPr.anak.find((a) => a.nama === "w:pPrChange");
+          const pos = pc ? pc.awal : pPr.akhirIsi;
+          edit.push({ dari: pos, sampai: pos, teks: salinan });
+        } else if (pPr) edit.push({ dari: pPr.awal, sampai: pPr.akhir, teks: `<w:pPr>${salinan}</w:pPr>` });
+        else edit.push({ dari: pa.simpul.awalIsi, sampai: pa.simpul.awalIsi, teks: `<w:pPr>${salinan}</w:pPr>` });
+        edit.push({ dari: sek.sectPr.awal, sampai: sek.sectPr.akhir, teks: ubahSectPr(x, sek.sectPr, { nomorAwal: m.nomorBerikut, halamanBaru: true }) });
+      }
     }
+    if (m.rencana) {
+      const bentuk = bentukGarisZDocx(m.rencana, id) + bentukTanggalDocx(m.rencana, id + 1, m.labelTanggal, m.tanggal);
+      id += 2;
+      // bentuk: sesudah run bertulisan terakhir pada paragraf teks
+      let posBentuk = p.simpul.akhirIsi;
+      let terakhir: SimpulXml | null = null;
+      semuaKeturunan(p.simpul, (n) => {
+        if (TUJUAN_LEWATI.has(n.nama)) return false;
+        if (n.nama === "w:t") {
+          const r = runInduk(n);
+          if (r && !leluhur(r, "mc:AlternateContent")) terakhir = r;
+        }
+      });
+      const tr = terakhir as SimpulXml | null;
+      if (tr) posBentuk = tr.akhir;
+      else {
+        const ppr = p.simpul.anak.find((a) => a.nama === "w:pPr");
+        if (ppr) posBentuk = ppr.akhir;
+        else posBentuk = p.simpul.awalIsi;
+      }
+      edit.push({ dari: posBentuk, sampai: posBentuk, teks: bentuk });
+    }
+    per.push({ seksi: hasilSeksi, nomorDitulis: hasilSeksi === "tanpa-bagian-berikut" ? null : m.nomorBerikut });
   }
-
-  // bentuk: sesudah run bertulisan terakhir pada paragraf jangkar
-  let posBentuk = p.simpul.akhirIsi;
-  let terakhir: SimpulXml | null = null;
-  semuaKeturunan(p.simpul, (n) => {
-    if (TUJUAN_LEWATI.has(n.nama)) return false;
-    if (n.nama === "w:t") {
-      const r = runInduk(n);
-      if (r && !leluhur(r, "mc:AlternateContent")) terakhir = r;
-    }
+  // satu sectPr hanya boleh diubah sekali (dua Z di satu bagian tanpa pemisah: ubahan kedua atas sectPr yang sama dilewati - tidak merusak XML)
+  const sudah = new Set<string>();
+  const aman = edit.filter((e) => {
+    if (e.sampai === e.dari) return true;
+    const kunci = `${e.dari}:${e.sampai}`;
+    if (sudah.has(kunci)) return false;
+    sudah.add(kunci);
+    return true;
   });
-  const tr = terakhir as SimpulXml | null;
-  if (tr) posBentuk = tr.akhir;
-  else {
-    const ppr = p.simpul.anak.find((a) => a.nama === "w:pPr");
-    if (ppr) posBentuk = ppr.akhir;
-    else posBentuk = p.simpul.awalIsi;
-  }
-  edit.push({ dari: posBentuk, sampai: posBentuk, teks: bentuk });
-
-  // (jangkar yang tidak mengakhiri seksi dan tanpa bagian berikut: hanya bentuk)
-  edit.sort((a, b) => b.dari - a.dari);
+  aman.sort((a, b) => b.dari - a.dari);
   let hasil = x;
-  for (const e of edit) hasil = hasil.slice(0, e.dari) + e.teks + hasil.slice(e.sampai);
-  return { xml: hasil, seksi: hasilSeksi, nomorDitulis: hasilSeksi === "tanpa-bagian-berikut" ? null : m.nomorBerikut };
+  for (const e of aman) hasil = hasil.slice(0, e.dari) + e.teks + hasil.slice(e.sampai);
+  return { xml: hasil, per };
 }
 
 // ----------------------------------------------------------------------------

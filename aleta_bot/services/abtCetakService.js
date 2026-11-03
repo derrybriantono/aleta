@@ -45,6 +45,8 @@
  */
 
 const { rapikanUntukSoffice } = require("./rtfSofficeRapi");
+// 3 Nov: bentuk (tanda Z blangko) di paragraf kosong penutup bagian dipertahankan seperti di Word - lihat rtfBentukAkhirBagian.js
+const { rapikanBentukAkhirBagianBuffer } = require("./rtfBentukAkhirBagian");
 const { execFile } = require("node:child_process");
 const fs = require("node:fs/promises");
 const os = require("node:os");
@@ -224,7 +226,7 @@ async function rtfKePdf(isiRtf) {
   try {
     // Properti naskah ({\info}) tanpa tanda ALETA - Title PDF disalin dari sana.
     // 2 Nov: anggota grup bercermin (garis Z BAS ALUR) dan kotak nomor halaman di kaki dirapikan supaya PDF sama dengan Word/WPS.
-    await fs.writeFile(berkasRtf, tanpaTandaAletaMetadata(normalkanBahasaRtf(rapikanUntukSoffice(isiRtf).isi)));
+    await fs.writeFile(berkasRtf, tanpaTandaAletaMetadata(normalkanBahasaRtf(rapikanBentukAkhirBagianBuffer(rapikanUntukSoffice(isiRtf).isi))));
 
     // -env:UserInstallation memberi soffice profil tersendiri. Tanpa itu, dua
     // konversi yang berjalan bersamaan bertengkar atas profil yang sama dan
@@ -350,7 +352,7 @@ async function dokumenKePdf(isi) {
   const berkasPdf = path.join(folder, "naskah.pdf");
 
   try {
-    await fs.writeFile(berkasAsal, tanpaTandaAletaMetadata(jenis === "rtf" ? normalkanBahasaRtf(rapikanUntukSoffice(isi).isi) : isi));
+    await fs.writeFile(berkasAsal, tanpaTandaAletaMetadata(jenis === "rtf" ? normalkanBahasaRtf(rapikanBentukAkhirBagianBuffer(rapikanUntukSoffice(isi).isi)) : isi));
     await jalankan(
       SOFFICE,
       [
@@ -485,7 +487,7 @@ async function dokumenKeBentuk(isi, ke, opsi = {}) {
 
   try {
     // RTF -> PDF: dirapikan sama seperti rtfKePdf (pengukuran Z dan PDF unggahan memakai jalur ini).
-    const masuk = bentukAsal === "rtf" && tujuan === "pdf" ? rapikanUntukSoffice(isi).isi : isi;
+    const masuk = bentukAsal === "rtf" && tujuan === "pdf" ? rapikanBentukAkhirBagianBuffer(rapikanUntukSoffice(isi).isi) : isi;
     await fs.writeFile(berkasAsal, tanpaTandaAletaMetadata(masuk));
     await jalan(SOFFICE, argumenKonversi(tujuan, berkasAsal, folder), { cwd: folder });
     const hasil = await fs.readFile(berkasHasil);

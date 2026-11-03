@@ -76,6 +76,17 @@ export type DepsPekerjaan = {
 
 export const depsAsli: DepsPekerjaan = {
   konversiPdf: async (rtf) => {
+    // 3 Nov 2026: BAS bertanda Z (SC Z blangko) ikut Z otomatis seperti cetak PDF dari panel - tanpa ini tanda Z lama tercetak apa
+    // adanya (LibreOffice memindahkannya ke halaman berikut, di atas tulisan; BAS 631). Kerja ini di latar (pekerjaan server).
+    if (/SC\s*Z|zcross-|\{\\sv\s*FreeForm/.test(rtf.toString("latin1"))) {
+      try {
+        const { sesuaikanZcrossOtomatis } = await import("@/server/modules/aleta-ecourt/zcross/pakai");
+        const z = await sesuaikanZcrossOtomatis(new Uint8Array(rtf), "rtf", { keluar: "pdf" });
+        if (z.bentuk === "pdf" && Buffer.from(z.bita.subarray(0, 5)).toString("latin1") === "%PDF-") return { ok: true, pdf: z.bita };
+      } catch {
+        // Z gagal total: jalur konversi biasa di bawah
+      }
+    }
     const h = await getGatewayAbtPdf(rtf.toString("base64"));
     if (!h.ok) return { ok: false, sebab: h.error || "ALETA Bot belum dapat dihubungi." };
     const b64 = h.data?.pdfBase64 ?? "";

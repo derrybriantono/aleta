@@ -39,8 +39,10 @@ export function peringatanZcross(l: HasilZcross["laporan"]): string[] {
   if (!l.diubah) return [];
   const hasil: string[] = [];
   if (l.jumlahHalamanBuktiBawaan) {
+    // 3 Nov: Z jawab-menjawab / mediasi menutup LAMPIRAN, bukan bukti
+    const kata = l.daftar && l.daftar.length && l.daftar[l.daftar.length - 1].jenis === "lampiran" ? "lampiran" : "bukti";
     hasil.push(
-      `Garis Z dan tanggal dipasang otomatis. Jumlah halaman bukti memakai bawaan 1 halaman per bukti (${l.jumlahHalamanBukti ?? 0} halaman, menempati halaman ${l.halamanBuktiDari ?? "-"}-${l.halamanBuktiSampai ?? "-"}): halaman berikutnya bernomor ${l.nomorBagianBerikut ?? "-"}. Isi jumlah halaman bukti bila berbeda.`
+      `Garis Z dan tanggal dipasang otomatis. Jumlah halaman ${kata} memakai bawaan 1 halaman per ${kata} (${l.jumlahHalamanBukti ?? 0} halaman, menempati halaman ${l.halamanBuktiDari ?? "-"}-${l.halamanBuktiSampai ?? "-"}): halaman berikutnya bernomor ${l.nomorBagianBerikut ?? "-"}. Isi jumlah halaman ${kata} bila berbeda.`
     );
   }
   for (const t of l.temuan) if (t.tingkat === "peringatan") hasil.push(t.pesan);
