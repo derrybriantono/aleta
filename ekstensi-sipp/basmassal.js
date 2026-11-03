@@ -2155,6 +2155,59 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
     return m ? `${Number(m[3])} ${BULAN_ID[Number(m[2]) - 1] || m[2]} ${m[1]}` : "";
   };
 
+  /* === KASIR TARIF-ALAMAT 3 Nov === */
+  /*
+   * Tarif panggilan/pemberitahuan yang disarankan bot (u.tarif: nilai, yakin pasti|periksa, wilayah, ket) -
+   * TANPA langkah tambahan: nominal saran sudah terisi; keterangannya di tooltip kotak nominal; "periksa"
+   * hanya bergaris lembut. Peringatan lunak (satu baris kecil + "pakai") hanya bila nominal yang diketik
+   * berbeda dari tarif wilayah atau masih tarif lama 14.000/29.000 - tidak menahan simpan.
+   * Padanan bot: kasirTarifAlamat.peringatanNominal.
+   */
+  const TARIF_LAMA_KASIR = [14000, 29000];
+  function peringatanTarif(nilai, tarif) {
+    const n = Math.round(Number(nilai) || 0);
+    const t = tarif && typeof tarif === "object" ? tarif : null;
+    const saran = t && Number(t.nilai) > 0 ? Number(t.nilai) : null;
+    if (!(n > 0)) return null;
+    if (TARIF_LAMA_KASIR.includes(n)) return { teks: saran ? `Tarif lama - ${t.wilayah || "wilayah ini"} Rp${titik(saran)}` : `Rp${titik(n)} tarif lama (sebelum 28 Okt 2024)`, pakai: saran };
+    if (saran && n !== saran && t.tingkat !== "rri") return { teks: `Tarif ${t.wilayah || "wilayah ini"} biasanya Rp${titik(saran)}`, pakai: saran };
+    return null;
+  }
+  /**
+   * Pasang tanda tarif pada satu kotak nominal. kotak = pembungkus kotak nominal, masukan = <input>,
+   * pakai(nilai) = menerapkan nominal saran. Mengembalikan segarkan() - dipanggil sesudah nominal berubah.
+   */
+  function pasangTandaTarif(u, kotak, masukan, wadah, pakai) {
+    const t = u && u.tarif && typeof u.tarif === "object" ? u.tarif : null;
+    if (t && Number(t.nilai) > 0) {
+      kotak.setAttribute("data-kasir-tarif", t.yakin === "pasti" ? "pasti" : "periksa");
+      kotak.title = `${t.ket || `tarif ${t.wilayah || ""}`}${t.yakin === "pasti" ? "" : " - periksa"}`;
+    }
+    const saran = el("div", "aleta-kasir-tarif-saran");
+    saran.hidden = true;
+    const teks = el("span", "aleta-kasir-tarif-teks");
+    const tPakai = el("button", "aleta-kasir-tarif-pakai", "pakai");
+    tPakai.type = "button";
+    saran.appendChild(teks);
+    saran.appendChild(tPakai);
+    wadah.appendChild(saran);
+    let nilaiPakai = null;
+    tPakai.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (nilaiPakai > 0) pakai(nilaiPakai);
+    });
+    const segarkan = () => {
+      const p = peringatanTarif(angkaMasukan(masukan.value), t);
+      saran.hidden = !p;
+      teks.textContent = p ? `${p.teks} ` : "";
+      nilaiPakai = p ? p.pakai : null;
+      tPakai.hidden = !(nilaiPakai > 0);
+    };
+    segarkan();
+    return segarkan;
+  }
+  /* === AKHIR KASIR TARIF-ALAMAT === */
+
   /**
    * Pembayaran e-Court beberapa perkara (rute pembayaran-ecourt): pembayar, bank, nomor rekening pengguna
    * (hanya pimpinan, hakim, panitera, kasir, PTSP, admin - peran lain 403 = tidak ada baris), panjar, dan apakah
@@ -2845,6 +2898,12 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
           gambarBaris();
         });
         tdJumlah.appendChild(j);
+        // 3 Nov 2026: tanda tarif wilayah + peringatan lunak (lihat pasangTandaTarif).
+        const segarkanTarif = pasangTandaTarif(u, j, j, tdJumlah, (nilai) => {
+          j.value = String(nilai);
+          j.dispatchEvent(new Event("change"));
+        });
+        j.addEventListener("input", segarkanTarif);
       }
       tr.appendChild(tdJumlah);
       return tr;
@@ -2982,6 +3041,7 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
     atas.appendChild(tgl);
     const daftar = el("div", "aleta-basmassal-daftar");
     const akunWadah = el("div");
+    const tarifWadah = el("div");
     const kotakKabar = el("div");
     const aksi = el("div", "aleta-basmassal-aksi");
     let data = null;
@@ -3173,16 +3233,24 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
             j.setAttribute("aria-label", `Nominal ${u.uraian}`);
             const tanyaJumlah = el("div", "aleta-basmassal-salah aleta-kasir-peringatan", "Isi nominal (jumlah?)");
             tanyaJumlah.hidden = !(u.pilih && (u.jumlah === null || u.jumlah === undefined));
-            j.addEventListener("change", () => {
+            let segarkanTarif = () => undefined;
+            const ubahNominal = () => {
               u.jumlah = angkaMasukan(j.value);
               j.value = titik(u.jumlah);
               tanyaJumlah.hidden = !(u.pilih && u.jumlah === null);
+              segarkanTarif();
               segarkanSisa(p);
               gambarAksi();
-            });
+            };
+            j.addEventListener("change", ubahNominal);
             kotakRp.appendChild(j);
             tdJ.appendChild(kotakRp);
             tdJ.appendChild(tanyaJumlah);
+            // 3 Nov 2026: tarif wilayah - tooltip + garis lembut "periksa" + peringatan lunak bila nominal berbeda.
+            segarkanTarif = pasangTandaTarif(u, kotakRp, j, tdJ, (nilai) => {
+              j.value = titik(nilai);
+              ubahNominal();
+            });
           }
           tr.appendChild(tdJ);
           const tdH = el("td", "aleta-kasir-kol-aksi");
@@ -3359,6 +3427,7 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
         akunWadah.textContent = "";
         akun = barisAkunKasir(isiJawab.akun, baca);
         akunWadah.appendChild(akun.kotak);
+        gambarTawaranTarif(tarifWadah, isiJawab.bolehJawabTarif === true ? isiJawab.tawaranTarif : []);
         centang.clear();
         for (const p of data.perkara) centang.set(p.perkaraId, !p.perluPeriksa && barisKirim(p.usulan).length > 0);
         kabar(kotakKabar, "");
@@ -3396,6 +3465,7 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
     );
     isi.appendChild(atas);
     isi.appendChild(akunWadah);
+    isi.appendChild(tarifWadah);
     isi.appendChild(daftar);
     isi.appendChild(aksi);
     isi.appendChild(kotakKabar);
@@ -3774,6 +3844,110 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
     });
   }
 
+  /* === KASIR TARIF-ALAMAT 3 Nov === */
+  /** Kirim setelan/jawaban tarif ke rute Kasir otomatis (aksi tarif-*). */
+  async function kirimTarif(badan) {
+    return ambil(`${API}/otomatis`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(badan) });
+  }
+  /**
+   * Tawaran "tarif baru sejak tanggal X?" - SATU kabar kecil per kabupaten (bukan per baris), Ya/Tidak.
+   * Jawaban berlaku untuk satker (setelan ALETA, bukan SIPP); sesudah dijawab tidak muncul lagi.
+   */
+  function gambarTawaranTarif(wadah, tawaran) {
+    wadah.textContent = "";
+    for (const t of Array.isArray(tawaran) ? tawaran.slice(0, 3) : []) {
+      const k = el("div", "aleta-basmassal-kabar aleta-kasir-tarif-tawaran");
+      k.setAttribute("data-kasir-tawaran-tarif", String(t.kabupaten || ""));
+      k.appendChild(el("span", "", `Tarif baru ${t.nama || t.kabupaten} Rp${titik(t.nilai)} sejak ${tanggalPanjang(t.sejak)}? `));
+      const jawab = (aksi) => async () => {
+        for (const b of k.querySelectorAll("button")) b.disabled = true;
+        try {
+          const j = await kirimTarif({ aksi, tawaran: { kabupaten: t.kabupaten, nilai: t.nilai, sejak: t.sejak } });
+          if (j.ok === false || j.available === false) return kabar(k, String(j.pesan || j.alasan || "Jawaban tarif tidak tersimpan."), "salah");
+          k.textContent = "";
+          k.appendChild(el("span", "aleta-basmassal-lembut", aksi === "tarif-terima" ? `Tersimpan: ${t.nama || t.kabupaten} Rp${titik(t.nilai)} sejak ${tanggalPanjang(t.sejak)} - dipakai pada bacaan berikutnya.` : "Baik - tarif lama tetap dipakai."));
+        } catch (galat) {
+          kabar(k, String((galat && galat.message) || galat), "salah");
+        }
+      };
+      k.appendChild(tombol("Ya", "aleta-kasir-tarif-ya", jawab("tarif-terima")));
+      k.appendChild(tombol("Tidak", "", jawab("tarif-tolak")));
+      k.appendChild(ikonInfo(`${t.contoh} baris terbaru ${t.nama || ""} memakai Rp${titik(t.nilai)}${t.lama ? `, bukan Rp${titik(t.lama)}` : ""}.`, [`${t.contoh} baris jurnal TERBARU berturut-turut di ${t.nama || t.kabupaten} memakai Rp${titik(t.nilai)}${t.lama ? ` (tabel: Rp${titik(t.lama)})` : ""}, mulai ${tanggalPanjang(t.sejak)}.`, "Ya: saran tarif wilayah itu memakai nilai baru dan hanya belajar dari baris sejak tanggal itu. Tidak: tawaran ini tidak muncul lagi untuk nilai yang sama."], "Tarif baru?"));
+      wadah.appendChild(k);
+    }
+  }
+  /**
+   * Setelan tarif (bab Kasir otomatis, terlipat, Super Admin/Admin): tanggal berlaku + tabel bawaan.
+   * Kasir tidak melihat bagian ini - pekerjaannya tidak bertambah.
+   */
+  function gambarSetelanTarif(sub, tarif, padaSimpan) {
+    sub.isi.textContent = "";
+    const t = tarif && typeof tarif === "object" ? tarif : null;
+    if (!t || !t.setelan) {
+      sub.isi.appendChild(el("div", "aleta-basmassal-lembut", "Setelan tarif tidak terbaca."));
+      return;
+    }
+    const kotakKabar = el("div");
+    const atas = el("div", "aleta-basmassal-baris-atas");
+    atas.appendChild(el("span", "", "Berlaku sejak "));
+    const tg = el("input", "aleta-basmassal-pilih");
+    tg.type = "date";
+    tg.value = t.setelan.berlaku || t.berlakuBawaan || "";
+    tg.setAttribute("aria-label", "Tanggal berlaku tarif");
+    atas.appendChild(tg);
+    atas.appendChild(
+      ikonInfo("Saran tarif hanya belajar dari jurnal sejak tanggal ini.", [
+        `Saran tarif panggilan & pemberitahuan dipelajari HANYA dari jurnal sejak tanggal berlaku (bawaan ${tanggalPanjang(t.berlakuBawaan)} - panggilan lewat Pos).`,
+        "Urutan saran: pihak yang sama di perkara itu, lalu kecamatan (sekurangnya 3 contoh, 80% sama), lalu kabupaten (5 contoh, 80%), lalu tabel di bawah. Satu tarif untuk semua jenis panggilan/pemberitahuan.",
+      ], "Tarif panggilan & pemberitahuan")
+    );
+    sub.isi.appendChild(atas);
+    const tabel = el("table", "aleta-kasir-tabel aleta-kasir-tabel-tarif");
+    const tb = el("tbody");
+    const ubah = {};
+    for (const r of Array.isArray(t.tabel) ? t.tabel : []) {
+      const tr = el("tr");
+      tr.appendChild(el("td", "", r.nama || r.kode));
+      const td = el("td", "aleta-kasir-angka");
+      const kotakRp = el("span", "aleta-kasir-rp");
+      kotakRp.appendChild(el("span", "aleta-kasir-rp-awalan", "Rp"));
+      const j = el("input", "aleta-kasir-masukan aleta-kasir-angka aleta-kasir-nominal");
+      j.type = "text";
+      j.inputMode = "numeric";
+      j.value = titik(r.nilai);
+      j.setAttribute("aria-label", `Tarif ${r.nama || r.kode}`);
+      j.addEventListener("change", () => {
+        const n = angkaMasukan(j.value);
+        j.value = titik(n);
+        ubah[r.kode] = n;
+      });
+      kotakRp.appendChild(j);
+      td.appendChild(kotakRp);
+      tr.appendChild(td);
+      tr.appendChild(el("td", "aleta-basmassal-lembut", r.sejak ? `sejak ${tanggalPanjang(r.sejak)}` : r.bawaan ? "" : "diubah"));
+      tb.appendChild(tr);
+    }
+    tabel.appendChild(tb);
+    sub.isi.appendChild(tabel);
+    const aksi = el("div", "aleta-basmassal-aksi");
+    aksi.appendChild(
+      tombol("Simpan tarif", "", async () => {
+        try {
+          const j = await kirimTarif({ aksi: "tarif-setelan", berlaku: tg.value, tarif: ubah });
+          if (j.ok === false || j.available === false) return kabar(kotakKabar, String(j.pesan || j.alasan || "Setelan tarif tidak tersimpan."), "salah");
+          kabar(kotakKabar, "Setelan tarif tersimpan.", "baik");
+          if (typeof padaSimpan === "function") padaSimpan(j);
+        } catch (galat) {
+          kabar(kotakKabar, String((galat && galat.message) || galat), "salah");
+        }
+      })
+    );
+    sub.isi.appendChild(aksi);
+    sub.isi.appendChild(kotakKabar);
+    if (t.setelan.diubahOleh) sub.isi.appendChild(el("div", "aleta-basmassal-lembut", `Diubah ${t.setelan.diubahOleh}${t.setelan.diubah ? ` ${t.setelan.diubah}` : ""}.`));
+  }
+  /* === AKHIR KASIR TARIF-ALAMAT === */
+
   const JUDUL_STATUS_BUTIR = { sudah: "sudah tercatat", akan: "akan diisi", dilewati: "dilewati", "tidak-berlaku": "tidak berlaku" };
   const SELANG_OTOMATIS_MS = 10 * 60 * 1000;
 
@@ -3806,6 +3980,9 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
     const subButir = subBagian(isi, "Butir yang dikerjakan otomatis", "otomatis.butir");
     const butirWadah = el("div", "aleta-kasir-otomatis-butir");
     subButir.isi.appendChild(butirWadah);
+    // 3 Nov 2026: tanggal berlaku + tabel tarif panggilan/pemberitahuan - terlipat, Super Admin/Admin saja.
+    const subTarif = subBagian(isi, "Tarif panggilan & pemberitahuan", "otomatis.tarif");
+    subTarif.d.hidden = true;
     const subDaftar = subBagian(isi, "Perkara putus", "otomatis.perkara");
     const daftar = el("div", "aleta-basmassal-daftar");
     subDaftar.isi.appendChild(daftar);
@@ -4089,6 +4266,16 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
         akunWadah.textContent = "";
         akun = barisAkunKasir(j.akun, baca);
         akunWadah.appendChild(akun.kotak);
+        subTarif.d.hidden = j.bolehAturTarif !== true || !j.tarif;
+        if (!subTarif.d.hidden) {
+          gambarSetelanTarif(subTarif, j.tarif, (h) => {
+            if (data && h && h.setelan) data.tarif = { ...data.tarif, ...h };
+            gambarSetelanTarif(subTarif, data && data.tarif, null);
+          });
+          subTarif.tambahan.textContent = j.tarif.setelan ? ` (sejak ${tanggalPanjang(j.tarif.setelan.berlaku)})` : "";
+          // Pengaturan, bukan pekerjaan: terlipat bawaan.
+          subTarif.lipat.atur(0);
+        }
         gambar();
       } catch (galat) {
         kabar(kotakKabar, String((galat && galat.message) || galat), "salah");
