@@ -320,6 +320,7 @@
     isiSipp: { jalan: false, ulang: false, kunci: "", hasil: null }, // 19 Okt: isi otomatis dari SIPP
     el7: null, // ELITIGASI-7139: keputusan 1/2 yang diisi otomatis ke #7139# perkara ini
     el7Saran: null, // 19 Okt (isian 2): saran 1/2 bila belum cukup pasti untuk ditulis
+    el7Tak: null, // 3 Nov (keputusan 144): Tergugat tidak pernah hadir -> { keterangan }, tanpa saran
     menuSaran: null,
     bukti: { P: null, T: null },
     buktiEl: { P: null, T: null }, // 27 Okt: butir alat bukti elektronik per pihak { butir[], nomori }; tersembunyi sampai dipilih
@@ -1945,6 +1946,7 @@
     S.dariSipp = new Set();
     S.el7 = null;
     S.el7Saran = null;
+    S.el7Tak = null;
     S.bukti = { P: null, T: null };
     S.buktiEl = { P: null, T: null };
     S.buktiElBuka = {};
@@ -2200,6 +2202,8 @@
    * (hybrid: diunggah Panitera Sidang) menurut keputusan abt.js (el7Ambil7139, memakai kontak e-Court KONTAK-EC).
    * Isian manual menang: sudah terisi di ABT, diketik selagi menunggu, atau perkara berganti -> tidak ditulis.
    * Data tak cukup (verstek, belum disidang, bukan e-Court) -> dibiarkan kosong. Yang tersimpan hanya angka.
+   * 3 Nov (keputusan 144): padanan aturan portal beracara-elektronik.ts di isi-sipp-bersama.js (tentukanBeracara) - Tergugat tidak pernah
+   * hadir (termasuk verstek) tidak diberi saran; e-litigasi hanya bila Tergugat punya WA, email, dan setuju; selain itu hybrid.
    */
   async function isiElitigasiOtomatis(d) {
     try {
@@ -2207,13 +2211,40 @@
       if (!d.isian.some((b) => b.kode === "7139")) return;
       const ada = () => String(S.isi["7139"] || "").trim() || (S.nilai["7139"] && S.nilai["7139"].status === "terisi");
       if (ada()) return;
-      const keputusan = await el7Ambil7139(nomorPerkara(), null);
-      if (!keputusan) {
-        // 19 Okt (isian 2): belum cukup pasti untuk ditulis (email Tergugat belum pasti, atau Tergugat belum/tidak hadir) -> SARAN dari
-        // data e-Court/SIPP: perkara e-Court + Tergugat ber-email = penuh ("1"); perkara e-Court tanpa email Tergugat = hybrid ("2").
-        const m = mesinIsi();
-        const kontak = m && typeof el7AmbilKontak === "function" ? await el7AmbilKontak(nomorPerkara()) : null;
-        const saran = m && kontak ? m.saranElitigasi(kontak) : null;
+      const m = mesinIsi();
+      const kontak = typeof el7AmbilKontak === "function" ? await el7AmbilKontak(nomorPerkara()) : null;
+      if (S.susunan !== d || ada()) return;
+      const fakta = kontak && kontak.elitigasi && typeof kontak.elitigasi === "object" ? kontak.elitigasi : null;
+      const eCourt = fakta && fakta.lewatEcourt !== null && fakta.lewatEcourt !== undefined ? fakta.lewatEcourt === true : S.pk.lewatEcourt === true;
+      // 3 Nov (keputusan 144): Tergugat yang TIDAK PERNAH hadir (termasuk verstek) bukan e-litigasi maupun hybrid - tidak disarankan,
+      // tidak ditulis; kartunya hanya memberi tahu. Perkara bukan e-Court: tanpa saran sama sekali.
+      const tidakHadir = Boolean(faktaPolaPerkara().verstek) || Boolean(fakta && fakta.tergugatHadir === false);
+      if (eCourt && tidakHadir) {
+        S.el7Tak = { keterangan: "Tergugat tidak pernah hadir (termasuk verstek), jadi tidak ada persetujuan beracara secara elektronik yang perlu dicatat. Dibiarkan kosong." };
+        renderIsian();
+        return;
+      }
+      // Data WhatsApp dan persetujuan Tergugat ada di rute kontak para pihak (hak lihat menurut peran); bila tidak terbaca, aturan lama (email) dipakai.
+      let para = null;
+      try {
+        para = m && typeof m.masukanBeracaraDariKontakPara === "function" ? await ambilPortal(`/aleta/api/aleta-ecourt/kontak-para-pihak?nomor=${encodeURIComponent(nomorPerkara())}`, {}, "Membaca kontak para pihak") : null;
+      } catch {
+        para = null;
+      }
+      if (S.susunan !== d || ada()) return;
+      const hasil = para && para.ada !== false && m ? m.tentukanBeracara(m.masukanBeracaraDariKontakPara(para, fakta ? fakta.tergugatHadir : null)) : null;
+      const keputusan = await el7Ambil7139(nomorPerkara(), kontak);
+      if (S.susunan !== d || ada()) return;
+      // Aturan 144 menang atas keputusan lama bila berlainan: keputusan "pasti" lama hanya ditulis bila sama dengan hasil aturan baru.
+      const sejalan = !hasil || (hasil.nilai && keputusan && keputusan.nilai === hasil.nilai);
+      if (!keputusan || !sejalan) {
+        // 19 Okt (isian 2): belum cukup pasti untuk ditulis -> SARAN dari data e-Court/SIPP.
+        const saran =
+          hasil && hasil.nilai
+            ? { nilai: hasil.nilai, keterangan: hasil.nilai === "1" ? `Tergugat punya email dan WhatsApp dan setuju beracara elektronik (${hasil.alasan.toLowerCase()}).` : `Belum lengkap untuk e-litigasi penuh (${hasil.alasan.toLowerCase()}); dokumen Tergugat diunggah Panitera Sidang.` }
+            : m && kontak
+              ? m.saranElitigasi(kontak)
+              : null;
         if (saran && S.susunan === d && !ada() && !S.saranSipp["7139"]) {
           S.saranSipp["7139"] = { nilai: saran.nilai, keyakinan: "ragu", asal: "data e-Court dan SIPP" };
           S.el7Saran = saran;
@@ -2221,7 +2252,6 @@
         }
         return;
       }
-      if (S.susunan !== d || ada()) return;
       S.el7 = keputusan;
       konteksJejak.set("7139", { usulan: String(keputusan.nilai), asal: "e-litigasi", yakin: "", otomatis: true });
       try {
@@ -3002,13 +3032,14 @@
     if (b.pemicu) return false;
     if (!k) return true;
     if (k === "ghaib") return Boolean(p && p.ghaib === true);
-    if (k === "ecourt") return !p || p.lewatEcourt !== false;
+    // 3 Nov (keputusan 144): #7139# tidak berlaku bagi Tergugat yang tidak pernah hadir (termasuk verstek) - tidak ada persetujuan yang dicatat.
+    if (k === "ecourt") return (!p || p.lewatEcourt !== false) && !(ctx.el7Tak === true && b.kode === "7139" && !terisi(b));
     if (k === "insidentil") return Boolean(b.langsung) || terisi(b);
     // I7 18 Okt (revisi): isian 9430 (KUA tempat perkawinan) tidak dipakai lagi; keadaan "kuaKosong" dihapus bersama amar kirim salinan ke Pegawai Pencatat Nikah.
     if (k === "kuasaP" || k === "kuasaT" || k === "prodeo" || k === "alasanC" || k === "alasanH") return terisi(b);
     return true;
   }
-  const keadaanBerlaku = (b) => keadaanBerlakuMurni(b, { perkara: perkaraSipp(), menyala: pemicuMenyala, terisi, nilai: S.nilai });
+  const keadaanBerlaku = (b) => keadaanBerlakuMurni(b, { perkara: perkaraSipp(), menyala: pemicuMenyala, terisi, nilai: S.nilai, el7Tak: Boolean(S.el7Tak) });
   const keteranganKeadaan = (b) => (b.keadaan && KEADAAN_TEKS[b.keadaan]) || (b.pemicu ? keteranganPemicu(b.pemicu).replace(/ \(terbaca dari SIPP\)/, "") : "");
   // 20 Okt: isian OPSIONAL (mis. #9134 petunjuk perbaikan permohonan dari majelis) tidak ikut "Perlu diisi N dari M";
   // tampil di bagian tertutup "Isian tambahan (bila ada)". Penandanya `opsional: true` dari portal; #9134 juga dikenali langsung.
@@ -3152,7 +3183,7 @@
   /** "ct" (cerai talak: Pemohon/Termohon menurut nomor alur/jenis) atau "cg" - memilih kotak besaran utama. */
   const jenisCerai = () => (sebutan().P === "Pemohon" ? "ct" : "cg");
   const tuntutanDikenal = (p) => tuntutanBlangko().some((t) => t.pemicu === p) && S.nilai[p] !== undefined;
-  const ctxGolongan = () => ({ perkara: perkaraSipp(), menyala: pemicuMenyala, terisi, terisiTuntutan, nilai: S.nilai, jabatan: jabatanMenyala, keputusan: keputusanTuntutan, dikenal: tuntutanDikenal, opsional: isianOpsional, jenisCerai: jenisCerai() });
+  const ctxGolongan = () => ({ perkara: perkaraSipp(), menyala: pemicuMenyala, terisi, terisiTuntutan, nilai: S.nilai, jabatan: jabatanMenyala, keputusan: keputusanTuntutan, dikenal: tuntutanDikenal, opsional: isianOpsional, jenisCerai: jenisCerai(), el7Tak: Boolean(S.el7Tak) });
   const golonganIsian = (b) => golonganIsianMurni(b, ctxGolongan());
   /** Keadaan tiap tuntutan blangko ini: { pemicu, label, status: ya|tidak|ragu, kutipan, jabatan, keputusan, isian }. */
   function keadaanTuntutan() {
@@ -3361,6 +3392,7 @@
   }
   async function simpanIsian(kode, nilai) {
     if (!S.blangko || !S.pk) return false;
+    if (kode === "0246") jadwalSelarasLamaPisah();
     if (tes()) return false;
     if (!bolehTulis()) {
       S.tersimpan[kode] = `gagal: ${NAMA_JENIS[S.blangko.jenis] || "blangko ini"} hanya ditulis ${NAMA_PERAN[JENIS_PERAN[S.blangko.jenis]] || "pejabat perkara"}`;
@@ -3455,6 +3487,73 @@
     } catch {
       /* ingatan tertinggal; isiannya sudah tersimpan di ABT */
     }
+  }
+  /**
+   * 3 Nov (keputusan 141): "Lama pisah rumah" (9944) dihitung SENDIRI dari "Pisah rumah sejak" (0246) sampai sidang terpilih (tanpa sidang:
+   * hari ini) - bentuk "± 1 tahun 11 bulan". Hanya SARAN (Tab / "pakai usulan"), tidak pernah menimpa ketikan petugas; ikut berubah saat
+   * 0246 berubah. Tanda keyakinannya mengikuti 0246 (pasti/cukup/ragu); periode kasar (hanya tahun) atau saran 0246 yang belum dipakai = ragu.
+   * Sumber lain untuk 9944 (keterangan saksi, bawaan ABT) yang sudah ada tidak diganti. -> true bila saran berubah.
+   */
+  function selarasLamaPisah() {
+    const m = mesinIsi();
+    const d = S.susunan;
+    const ada = d && d.isian.some((b) => b.kode === "9944" && b.jenis === "teks");
+    const lamaInfo = S.info["9944"];
+    const lamaSaran = S.saranSipp["9944"];
+    const milikSendiri = Boolean(lamaSaran && lamaSaran.hitung === true);
+    const bersihkan = () => {
+      if (!milikSendiri && !(lamaInfo && lamaInfo.hitung === true)) return false;
+      delete S.saranSipp["9944"];
+      if (lamaInfo && lamaInfo.hitung === true) delete S.info["9944"];
+      return true;
+    };
+    if (!m || typeof m.hitungLamaPisah !== "function" || !ada || !S.pk) return bersihkan();
+    // Sumber lain yang sudah menjawab 9944 menang (kecuali tanda "diisi manual" yang tanpa nilai).
+    if ((lamaSaran && lamaSaran.hitung !== true && lamaSaran.nilai) || (S.saranH7 && S.saranH7["9944"]) || (lamaInfo && lamaInfo.hitung !== true && lamaInfo.golongan !== "manual" && lamaInfo.nilai)) return false;
+    const diIsi = String(S.isi["0246"] || "").trim();
+    const periode = diIsi || (S.saranSipp["0246"] && S.saranSipp["0246"].nilai) || (S.saranH7 && S.saranH7["0246"] && S.saranH7["0246"].nilai) || "";
+    const acuan = tanggalSidangIso();
+    const h = periode ? m.hitungLamaPisah(String(periode), acuan) : null;
+    if (!h) return bersihkan();
+    const info0 = S.info["0246"];
+    let kunci = "cukup";
+    if (!diIsi) kunci = "ragu";
+    else if (info0 && info0.nilai && samaKet(info0.nilai, diIsi) && (info0.keyakinan === "pasti" || info0.keyakinan === "cukup" || info0.keyakinan === "ragu")) kunci = info0.keyakinan;
+    if (h.kasar) kunci = "ragu";
+    const asal = "dihitung dari pisah rumah sejak";
+    if (milikSendiri && lamaSaran.nilai === h.nilai && lamaSaran.keyakinan === kunci && lamaInfo && lamaInfo.nilai === h.nilai && lamaInfo.sampai === acuan) return false;
+    S.saranSipp["9944"] = { nilai: h.nilai, keyakinan: kunci, asal, hitung: true };
+    S.info["9944"] = {
+      kode: "9944",
+      nilai: h.nilai,
+      golongan: "saran",
+      sebab: "dihitung",
+      keyakinan: kunci,
+      asal,
+      lencana: { yakin: m.NADA_TINGKAT[kunci], asal: { kelas: "kuning", teks: asal }, sepakat: null },
+      sumber: [{ label: "Pisah rumah sejak", kalimat: `${String(periode).trim()} sampai ${acuan ? tglIndo(acuan) : "hari ini"}` }],
+      catatan: "",
+      bentrok: "",
+      pilihan: [],
+      ganti: false,
+      hitung: true,
+      sampai: acuan,
+    };
+    return true;
+  }
+  let pewaktuLamaPisah = 0;
+  /** Sesudah "Pisah rumah sejak" berubah: hitung ulang saran lama pisah (ditunda sebentar - tanpa kerja di tiap ketikan) dan gambar ulang kartunya. */
+  function jadwalSelarasLamaPisah() {
+    clearTimeout(pewaktuLamaPisah);
+    pewaktuLamaPisah = setTimeout(() => {
+      try {
+        if (!selarasLamaPisah()) return;
+        const kartu = wadah.isian && cari('.bd-f[data-f="9944"]', wadah.isian);
+        if (kartu && !kartu.contains(document.activeElement)) segarKartu("9944");
+      } catch {
+        /* saran lama pisah hanya kemudahan */
+      }
+    }, 350);
   }
   /** Saran dari ingatan server untuk isian yang masih kosong; mengembalikan banyaknya saran baru. */
   async function saranDariIsianPerkara(daftar) {
@@ -6293,8 +6392,17 @@
     "Kode bukti, tanggal dan paraf Ketua Majelis ditulis otomatis. Bagian yang kosong tidak ikut ditulis.",
     "Pada Tulis manual, kalimat dicetak apa adanya. Kodenya diganti otomatis bila urutan bukti berubah; bila tidak ditulis, kode, tanggal dan paraf Ketua Majelis ditambahkan di akhir.",
   ];
-  /** Keterangan satu isian untuk ikon ⓘ: catatan usulan (disaring) dan selisih keterangan saksi. */
+  /** 3 Nov (butir 3): arti isian "Beracara secara elektronik" (#7139#) dengan kalimat awam, di ikon ⓘ. */
+  const KET_7139 = [
+    "Isian ini tidak tertulis langsung di blangko. Ia dibaca kalimat pertimbangan dan amar otomatis untuk menyebut cara perkara ini diperiksa.",
+    "E-Litigasi: Tergugat punya email dan WhatsApp dan setuju beracara secara elektronik. Hybrid: selain itu, dokumen Tergugat diunggah oleh Panitera Sidang.",
+    "Tergugat yang tidak pernah hadir (termasuk verstek) tidak dicatat di sini, dan perkara yang bukan e-Court tidak memakainya.",
+  ];
+  /** Keterangan satu isian untuk ikon ⓘ: penjelasan isian tertentu, lalu catatan usulan (disaring) dan selisih keterangan saksi. */
   function ketItem(b) {
+    return b && b.kode === "7139" ? [...KET_7139, ...ketItemDasar(b)] : ketItemDasar(b);
+  }
+  function ketItemDasar(b) {
     if (!b) return [];
     if (b.khusus === "bukti") return KET_BUKTI.slice();
     const i = S.info[b.kode];
@@ -6803,6 +6911,7 @@
       pilihBunyi +
       (b.kode === "7139" && S.el7 && v === S.el7.nilai ? `<span class="bd-catat bd-el7">${esc(S.el7.keterangan)}</span>` : "") +
       (b.kode === "7139" && S.el7Saran && !v.trim() ? `<span class="bd-catat bd-el7">Saran: ${esc(S.el7Saran.keterangan)}</span>` : "") +
+      (b.kode === "7139" && S.el7Tak && !v.trim() ? `<span class="bd-catat bd-el7">${esc(S.el7Tak.keterangan)}</span>` : "") +
       `<span class="bd-status" data-status="${b.kode}">${esc(teksStatus(st, b.kode))}</span>` +
       (st === "draf" && bolehTulis() ? `<button type="button" class="bd-tautankecil" data-bd2="ketsimpandraf" data-ket="${esc(b.kode)}">simpan draf ke ABT</button>` : "") +
       (b.kode === "8503" ? (() => { const w = peringatan8503(); return `<span class="bd-peringatan" data-peringatan="8503" role="alert" ${w ? "" : "hidden"}>${esc(w)}</span>`; })() : "") +
@@ -7152,6 +7261,7 @@
       w.innerHTML = `<p class="bd-catat" role="status">Membaca isian blangko ini…</p>`;
       return;
     }
+    selarasLamaPisah();
     const l = daftarPerlu();
     // Butir 10 (2 Nov sore): urutan di layar = isian Perlu diisi -> alat bukti surat (bukti elektronik di dalam kotaknya) -> TANYA JAWAB
     // SAKSI -> isian tambahan / tuntutan / isian di dalam bagian otomatis -> peta dalil / penilaian pembuktian. Kotak bukti ditaruh paling
@@ -10923,6 +11033,7 @@
       pulihCatatDraf(k, t.value); // 30 Okt: ketikan belum tersimpan sampai kotak dilepas; dicatat sebagai draf bila halaman dimuat ulang
       S.peringat = false;
       if (k === KODE_TGL_NIKAH) perbaruiPeringatanTglNikah();
+      if (k === "0246") jadwalSelarasLamaPisah();
       if (k === "8503") {
         const pos = t.selectionStart;
         if (daftarPerlu().map((x) => x.kode).join() !== sebelum) renderIsian();
@@ -11282,6 +11393,7 @@
     S.isiSipp = { jalan: false, ulang: false, kunci: "", hasil: null };
     S.el7 = null;
     S.el7Saran = null;
+    S.el7Tak = null;
     S.saranH7 = {}; // F4.2: saran draf H-7 milik perkara sebelumnya tidak terbawa.
     S.bukti = { P: null, T: null };
     S.buktiEl = { P: null, T: null };

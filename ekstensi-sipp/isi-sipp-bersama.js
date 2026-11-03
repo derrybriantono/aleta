@@ -37,6 +37,7 @@
     gugatan: "/aleta/api/aleta-ecourt/isi-gugatan",
     kuasa: "/aleta/api/aleta-ecourt/kuasa-gugatan",
     ktp: "/aleta/api/aleta-ecourt/ktp-pihak",
+    kontakPara: "/aleta/api/aleta-ecourt/kontak-para-pihak",
   });
 
   /** Pangkat keyakinan usulan - yang lebih yakin menang bila dua sumber mengusulkan variabel yang sama. */
@@ -160,6 +161,47 @@
     m = t.match(/^(?:tahun\s+)*(\d{4})$/i);
     if (m) return `tahun ${m[1]}`;
     return t;
+  }
+  /**
+   * 3 Nov (keputusan 141): "Lama pisah rumah" (9944) dihitung dari "Pisah rumah sejak" (0246) sampai tanggal acuan (sidang terpilih, bila
+   * tidak ada: hari ini). Selalu perkiraan ("± 1 tahun 11 bulan"): periode hanya sebulan/setahun, bukan tanggal.
+   *   bulan Desember 2024 -> awal bulan itu; awal tahun -> Januari; akhir tahun -> Desember; pertengahan/ "tahun 2024" saja -> Juli (kasar).
+   * periode: teks isian 0246; acuanIso: "YYYY-MM-DD" (kosong = hari ini). -> { nilai, bulan, kasar } atau null bila tidak terbaca/belum 1 bulan.
+   */
+  function hitungLamaPisah(periode, acuanIso) {
+    const t = formatPeriode(periode);
+    if (!t) return null;
+    const bulanRe = new RegExp("(" + NAMA_BULAN.join("|") + "|Pebruari|Nopember)\\s*,?\\s+(?:tahun\\s+)?(\\d{4})", "i");
+    let tahun = 0;
+    let bulan = 0;
+    let kasar = false;
+    let m = t.match(bulanRe);
+    if (m) {
+      const kecil = m[1].toLowerCase();
+      const baku = kecil === "pebruari" ? "februari" : kecil === "nopember" ? "november" : kecil;
+      bulan = NAMA_BULAN.findIndex((b) => b.toLowerCase() === baku) + 1;
+      tahun = Number(m[2]);
+    } else {
+      m = t.match(/^(awal|akhir|pertengahan)?\s*(?:tahun\s+)?(\d{4})$/i);
+      if (!m) return null;
+      tahun = Number(m[2]);
+      const letak = teks(m[1]).toLowerCase();
+      bulan = letak === "awal" ? 1 : letak === "akhir" ? 12 : 7;
+      kasar = letak !== "awal" && letak !== "akhir";
+    }
+    if (!(tahun >= 1950 && tahun <= 2100) || bulan < 1 || bulan > 12) return null;
+    const a = /^(\d{4})-(\d{2})-\d{2}/.exec(teks(acuanIso));
+    const kini = new Date();
+    const ay = a ? Number(a[1]) : kini.getFullYear();
+    const am = a ? Number(a[2]) : kini.getMonth() + 1;
+    const jumlah = ay * 12 + am - (tahun * 12 + bulan);
+    if (!(jumlah >= 1)) return null;
+    const th = Math.floor(jumlah / 12);
+    const bl = jumlah % 12;
+    const bagian = [];
+    if (th) bagian.push(`${th} tahun`);
+    if (bl) bagian.push(`${bl} bulan`);
+    return { nilai: `± ${bagian.join(" ")}`, bulan: jumlah, kasar };
   }
   /** Nilai bawaan kueri ABT yang jelas mentah: bertag/berentitas HTML, atau terlalu panjang untuk isian pendek (potongan posita). */
   function jelasMentah(kode, nilai) {
@@ -579,6 +621,54 @@
       : { nilai: "2", keterangan: "Perkara e-Court, tetapi tidak ada email Tergugat yang terbaca; berkas Tergugat diunggah Panitera Sidang." };
   }
 
+  /**
+   * 3 Nov (keputusan 144): beracara secara elektronik per perkara - PADANAN tentukanBeracaraElektronik di portal
+   * (manajemen_surat/src/lib/beracara-elektronik.ts; kasus ujinya sama: src/test/fixtures/beracara-elektronik-kasus.json).
+   *   bukan perkara e-Court                                  -> null (tanpa saran)
+   *   Tergugat TIDAK PERNAH hadir (termasuk verstek)          -> "tergugat-tidak-hadir" (BUKAN e-litigasi maupun hybrid)
+   *   semua Tergugat punya WhatsApp DAN email DAN setuju      -> "e-litigasi"   (nilai isian #7139# = "1")
+   *   selain itu                                              -> "hybrid"       (nilai isian #7139# = "2")
+   * Yang belum terbaca tidak ditebak: tergugatPernahHadir null = belum ada sidang tercatat (dinilai menurut kontak); daftar Tergugat kosong -> null.
+   * masukan: { eCourt, tergugat: [{ nama, email, wa, setujuElektronik: true|false|null }], tergugatPernahHadir: true|false|null }
+   * -> { jenis, nilai: "1"|"2"|"", alasan } | null
+   */
+  function tentukanBeracara(masukan) {
+    const m = masukan || {};
+    if (m.eCourt !== true) return null;
+    if (m.tergugatPernahHadir === false) {
+      return { jenis: "tergugat-tidak-hadir", nilai: "", alasan: "Tergugat tidak pernah hadir di persidangan (termasuk verstek) - tidak dinilai sebagai e-litigasi maupun hybrid." };
+    }
+    const daftar = Array.isArray(m.tergugat) ? m.tergugat : [];
+    if (!daftar.length) return null;
+    const per = daftar.map((t, i) => {
+      const x = t || {};
+      const adaEmail = Boolean(teks(x.email).trim());
+      const adaWa = Boolean(teks(x.wa).trim());
+      const setuju = x.setujuElektronik === true;
+      const bagian = [adaEmail ? "email ada" : "email belum ada", adaWa ? "WA ada" : "WA belum ada", setuju ? "setuju" : x.setujuElektronik === false ? "tidak setuju" : "belum menyetujui"];
+      return { nama: teks(x.nama).trim() || `Tergugat ${i + 1}`, memenuhi: adaEmail && adaWa && setuju, alasan: bagian.join(", ") };
+    });
+    const semua = per.every((p) => p.memenuhi);
+    const alasan = per.length > 1 ? per.map((p) => `${p.nama}: ${p.alasan}`).join("; ") : per[0].alasan.replace(/^./, (c) => c.toUpperCase());
+    return { jenis: semua ? "e-litigasi" : "hybrid", nilai: semua ? "1" : "2", alasan };
+  }
+  /** Masukan tentukanBeracara dari data rute kontak-para-pihak (Tergugat = pihak kedua, jenis "pihak"; WA hanya nomor HP). */
+  function masukanBeracaraDariKontakPara(data, pernahHadir) {
+    const orang = Array.isArray(data && data.orang) ? data.orang : [];
+    const tergugat = orang
+      .filter((x) => x && x.jenis === "pihak" && Number(x.pihakKe) === 2)
+      .map((x) => {
+        const st = x.elitigasi && x.elitigasi.status;
+        return {
+          nama: teks(x.nama),
+          email: teks(x.email && x.email.nilai) || null,
+          wa: x.hp && x.hp.bisaWhatsApp ? teks(x.hp.nilai) || null : null,
+          setujuElektronik: st === "ya" ? true : st === "tidak" ? false : null,
+        };
+      });
+    return { eCourt: Boolean(data && data.lewatEcourt === true), tergugat, tergugatPernahHadir: pernahHadir === true ? true : pernahHadir === false ? false : null };
+  }
+
   /** Usulan tanggal KTP per variabel dari pihak e-Court (ktp-pihak). Yang "ragu" menjadi saran; selain itu "cukup". */
   function usulanTanggalKtp(pihak, kodeAda) {
     const hasil = [];
@@ -704,6 +794,7 @@
     htmlKeTeks,
     bersihkanNilai,
     formatPeriode,
+    hitungLamaPisah,
     BENTUK_KODE,
     bentukIsian,
     sahBentuk,
@@ -725,6 +816,8 @@
     infoManual,
     usulanTanggalKtp,
     saranElitigasi,
+    tentukanBeracara,
+    masukanBeracaraDariKontakPara,
     kumpulkan,
   });
 })(typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : null);

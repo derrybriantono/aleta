@@ -269,7 +269,8 @@ describe("peta fitur K11: kelompok manifest dan modul malas", () => {
     // saksi-katalog-indeks.js: 1 Nov 2026 (H2 saksi-katalog) indeks hasil susun-saksi-katalog memuat 4 jenis baru (pengangkatan anak 745, izin poligami keluarga, perjanjian perkawinan, gugatan lain-lain); saksi-katalog.js (H1 saksi-perbaikan) kalimat sesuai pengetahuan, itsbat kontensius, keadaan tanpa pengaruh.
     // aleta.js, unduh-universal.js: 2 Nov 2026 (unduhan aman) MENAMBAH jenis jembatan "unduh-berkas", data-aleta-unduh-aman di portal,
     // dan unduhAman (dokumen offscreen ekstensi) di depan jalur lama; jenis/jalur lama tetap.
-    const diubah = new Set(["aleta.js", "unduh-universal.js", "saksi-katalog-indeks.js", "saksi-katalog.js", "konten.js", "abt.js", "manifest.json", "latar.js", "blangko-derry-isian.js", "blangko-derry-saksi-tampil.js", "blangko-derry-saksi.js", "saksi-susun.js", "blangko-derry.js", "deteksi-sisa-blangko.js", "panel-alat.js", "blangko-derry-katalog.js"]);
+    // isi-sipp-bersama.js: 3 Nov 2026 MENAMBAH hitungLamaPisah (saran lama pisah rumah dari "pisah rumah sejak") dan tentukanBeracara (beracara elektronik, keputusan 144); ekspor lama tetap.
+    const diubah = new Set(["aleta.js", "isi-sipp-bersama.js", "unduh-universal.js", "saksi-katalog-indeks.js", "saksi-katalog.js", "konten.js", "abt.js", "manifest.json", "latar.js", "blangko-derry-isian.js", "blangko-derry-saksi-tampil.js", "blangko-derry-saksi.js", "saksi-susun.js", "blangko-derry.js", "deteksi-sisa-blangko.js", "panel-alat.js", "blangko-derry-katalog.js"]);
     for (const [nama, info] of Object.entries(sebelum.berkas)) {
       if (diubah.has(nama) || !sesudah.berkas[nama]) continue;
       // berkas yang sengaja disentuh didaftarkan di KEMBALI_DISENTUH
