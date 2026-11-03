@@ -13,6 +13,7 @@ import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { ALETA_SIPP_PERMISSION, resolveAletaSippAccess } from "@/lib/aleta-sipp-types";
 import type { UserPersona } from "@/lib/types";
 import type { AletaDatabase } from "@/server/db/client";
+import { muatPdfjs } from "@/server/modules/aleta-ecourt/baca-pdf";
 import { badRequest, forbidden, notFound } from "@/server/shared/http";
 import {
   assertAletaSippRegisteredReadOnlySql,
@@ -694,7 +695,8 @@ async function auditAssessmentPdf(filePath: string): Promise<AssessmentPdfSummar
   }
 
   try {
-    const pdfjs = (await import("pdfjs-dist/legacy/build/pdf.mjs")) as unknown as MinimalPdfModule;
+    // Pekerja pdfjs dimuat di utas utama (muatPdfjs) - import relatif pdf.worker.mjs gagal di bundel server terpasang.
+    const pdfjs = (await muatPdfjs()) as unknown as MinimalPdfModule;
     const data = new Uint8Array(await readFile(filePath));
     const pdf = await pdfjs.getDocument({ data, disableWorker: true }).promise;
     const pageLimit = Math.min(pdf.numPages, 20);

@@ -1,5 +1,4 @@
-import path from "node:path";
-import { pathToFileURL } from "node:url";
+import { muatPdfjs } from "@/server/modules/aleta-ecourt/baca-pdf";
 
 function ensurePdfJsNodePolyfills() {
   const scope = globalThis as typeof globalThis & {
@@ -138,16 +137,11 @@ function ensurePdfJsNodePolyfills() {
   }
 }
 
-function getPdfJsWorkerSrc() {
-  return pathToFileURL(
-    path.join(process.cwd(), "node_modules", "pdfjs-dist", "legacy", "build", "pdf.worker.mjs")
-  ).href;
-}
-
 export async function extractTextFromPdfBuffer(buffer: ArrayBuffer, pageLimit = 5) {
   ensurePdfJsNodePolyfills();
-  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
-  pdfjs.GlobalWorkerOptions.workerSrc = getPdfJsWorkerSrc();
+  // 3 Nov 2026: satu cara untuk semua pembaca PDF server - pekerja pdfjs dimuat di utas utama (muatPdfjs), bukan lewat
+  // workerSrc berjalur node_modules dari cwd (bergantung pada letak folder kerja proses).
+  const pdfjs = await muatPdfjs();
 
   const documentTask = pdfjs.getDocument({
     data: new Uint8Array(buffer),
