@@ -1,0 +1,30 @@
+{
+  "tigaBagianBantu": "49f766f1751e0a5cf8c84caf30a27300",
+  "blokTigaBagian": [
+    6,
+    49
+  ],
+  "bas04_3_r1": {
+    "masuk": "13cc85bd13a30d99bdb32c30ce3fb3a5",
+    "keLibreOffice": "6bbf33419ad9b8c4d809eac69939b033",
+    "blok": [
+      4
+    ]
+  },
+  "bas04_3_r7": {
+    "masuk": "f0ac649bb6b0643392e96155922e9d36",
+    "keLibreOffice": "e1d3e6ae25417cfa7c5aa6bb55f291a7",
+    "blok": [
+      6,
+      10
+    ]
+  },
+  "bas04_3_r20": {
+    "masuk": "76c70a4983f8f8f2667469c36fe50152",
+    "keLibreOffice": "be3fb37a11a5719537b5b8b011e205ee",
+    "blok": [
+      19,
+      23
+    ]
+  }
+}

@@ -45,6 +45,8 @@
  */
 
 const { rapikanUntukSoffice } = require("./rtfSofficeRapi");
+// 3 Nov 2026: nomor halaman awal bagian yang diabaikan LibreOffice 7.4 dari RTF - lihat ubahDenganNomorHalaman.
+const nomorHalaman = require("./nomorHalamanSoffice");
 const { execFile } = require("node:child_process");
 const fs = require("node:fs/promises");
 const os = require("node:os");
@@ -190,6 +192,44 @@ function normalkanBahasaRtf(isi) {
 }
 
 /**
+ * 3 Nov 2026: nomor halaman awal bagian (\pgnstarts/\pgnstart) yang diabaikan LibreOffice 7.4 - BAS runut, lompatan lampiran,
+ * nomor sesudah Z. RTF yang di LibreOffice akan bernomor lain dari Word diberi halaman bantu (lihat nomorHalamanSoffice),
+ * diubah SEKALI, lalu halaman bantunya dibuang dari PDF. Bila halaman bantu tidak dapat dibuang dengan pasti, naskah diubah
+ * ulang tanpa halaman bantu (seperti sebelum 3 Nov). ALETA_NOMOR_HALAMAN_PDF=mati mematikan cara ini.
+ */
+function siapkanNomorHalaman(siap) {
+  if (String(process.env.ALETA_NOMOR_HALAMAN_PDF || "").trim().toLowerCase() === "mati") return null;
+  try {
+    const teks = Buffer.isBuffer(siap) ? siap.toString("latin1") : String(siap || "");
+    const h = nomorHalaman.sisipkanHalamanBantu(teks, nomorHalaman.rencanaNomor(teks));
+    return h ? { rtf: Buffer.from(h.rtf, "latin1"), blok: h.blok } : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Tulis RTF (dengan halaman bantu bila perlu), ubah, lalu buang halaman bantu dari PDF keluaran - atau ubah ulang tanpa. */
+async function ubahDenganNomorHalaman(jalan, { berkasMasuk, berkasKeluar, siap, argumen, opsiJalan, rtf }) {
+  const nomor = rtf ? siapkanNomorHalaman(siap) : null;
+  await fs.writeFile(berkasMasuk, nomor ? nomor.rtf : siap);
+  await jalan(SOFFICE, argumen, opsiJalan);
+  if (!nomor) return;
+  let bersih = null;
+  try {
+    bersih = nomorHalaman.buangHalamanBantu(await fs.readFile(berkasKeluar), nomor.blok);
+  } catch {
+    bersih = null;
+  }
+  if (bersih) {
+    await fs.writeFile(berkasKeluar, bersih);
+    return;
+  }
+  await fs.writeFile(berkasMasuk, siap);
+  await fs.rm(berkasKeluar, { force: true });
+  await jalan(SOFFICE, argumen, opsiJalan);
+}
+
+/**
  * Mengubah satu RTF menjadi PDF.
  *
  * @param {Buffer} isiRtf isi berkas RTF apa adanya
@@ -224,25 +264,20 @@ async function rtfKePdf(isiRtf) {
   try {
     // Properti naskah ({\info}) tanpa tanda ALETA - Title PDF disalin dari sana.
     // 2 Nov: anggota grup bercermin (garis Z BAS ALUR) dan kotak nomor halaman di kaki dirapikan supaya PDF sama dengan Word/WPS.
-    await fs.writeFile(berkasRtf, tanpaTandaAletaMetadata(normalkanBahasaRtf(rapikanUntukSoffice(isiRtf).isi)));
+    const siap = tanpaTandaAletaMetadata(normalkanBahasaRtf(rapikanUntukSoffice(isiRtf).isi));
 
     // -env:UserInstallation memberi soffice profil tersendiri. Tanpa itu, dua
     // konversi yang berjalan bersamaan bertengkar atas profil yang sama dan
     // salah satunya gagal tanpa keterangan - cara yang sama dipakai ABT.
-    await jalankan(
-      SOFFICE,
-      [
-        "--headless",
-        "--norestore",
-        `-env:UserInstallation=${profil.url}`,
-        "--convert-to",
-        "pdf",
-        berkasRtf,
-        "--outdir",
-        folder,
-      ],
-      { cwd: folder }
-    );
+    // 3 Nov: nomor awal halaman (BAS runut, lompatan lampiran, nomor sesudah Z) sama dengan Word - lihat ubahDenganNomorHalaman.
+    await ubahDenganNomorHalaman(jalankan, {
+      berkasMasuk: berkasRtf,
+      berkasKeluar: berkasPdf,
+      siap,
+      rtf: true,
+      argumen: ["--headless", "--norestore", `-env:UserInstallation=${profil.url}`, "--convert-to", "pdf", berkasRtf, "--outdir", folder],
+      opsiJalan: { cwd: folder },
+    });
 
     const pdf = await fs.readFile(berkasPdf);
     if (!pdf.subarray(0, 5).toString("latin1").startsWith("%PDF-")) {
@@ -350,21 +385,16 @@ async function dokumenKePdf(isi) {
   const berkasPdf = path.join(folder, "naskah.pdf");
 
   try {
-    await fs.writeFile(berkasAsal, tanpaTandaAletaMetadata(jenis === "rtf" ? normalkanBahasaRtf(rapikanUntukSoffice(isi).isi) : isi));
-    await jalankan(
-      SOFFICE,
-      [
-        "--headless",
-        "--norestore",
-        `-env:UserInstallation=file://${path.join(folder, "profil")}`,
-        "--convert-to",
-        "pdf",
-        berkasAsal,
-        "--outdir",
-        folder,
-      ],
-      { cwd: folder }
-    );
+    const siap = tanpaTandaAletaMetadata(jenis === "rtf" ? normalkanBahasaRtf(rapikanUntukSoffice(isi).isi) : isi);
+    // 3 Nov: nomor awal halaman RTF sama dengan Word (lihat rtfKePdf)
+    await ubahDenganNomorHalaman(jalankan, {
+      berkasMasuk: berkasAsal,
+      berkasKeluar: berkasPdf,
+      siap,
+      rtf: jenis === "rtf",
+      argumen: ["--headless", "--norestore", `-env:UserInstallation=file://${path.join(folder, "profil")}`, "--convert-to", "pdf", berkasAsal, "--outdir", folder],
+      opsiJalan: { cwd: folder },
+    });
 
     const pdf = await fs.readFile(berkasPdf);
     // Diperiksa HASILNYA, bukan kode keluar soffice. soffice pernah selesai
@@ -486,8 +516,15 @@ async function dokumenKeBentuk(isi, ke, opsi = {}) {
   try {
     // RTF -> PDF: dirapikan sama seperti rtfKePdf (pengukuran Z dan PDF unggahan memakai jalur ini).
     const masuk = bentukAsal === "rtf" && tujuan === "pdf" ? rapikanUntukSoffice(isi).isi : isi;
-    await fs.writeFile(berkasAsal, tanpaTandaAletaMetadata(masuk));
-    await jalan(SOFFICE, argumenKonversi(tujuan, berkasAsal, folder), { cwd: folder });
+    // 3 Nov: nomor awal halaman RTF sama dengan Word (lihat rtfKePdf); halaman fisik tidak berubah, jadi pengukuran Z tetap sama.
+    await ubahDenganNomorHalaman(jalan, {
+      berkasMasuk: berkasAsal,
+      berkasKeluar: berkasHasil,
+      siap: tanpaTandaAletaMetadata(masuk),
+      rtf: bentukAsal === "rtf" && tujuan === "pdf",
+      argumen: argumenKonversi(tujuan, berkasAsal, folder),
+      opsiJalan: { cwd: folder },
+    });
     const hasil = await fs.readFile(berkasHasil);
     // Diperiksa HASILNYA: kepala berkasnya harus bentuk yang diminta.
     if (kenaliDokumen(hasil) !== tujuan) {
