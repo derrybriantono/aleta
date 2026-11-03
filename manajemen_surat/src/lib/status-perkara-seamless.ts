@@ -52,7 +52,7 @@ export const KELOMPOK_SEAMLESS: readonly KelompokSeamless[] = [
     id: "B",
     nama: "Jalannya perkara",
     ikon: "J",
-    bagian: ["tahapan", "sidang", "kalender", "relaas", "mediasi", "saksi", "status-pandu-saksi", "status-pandu-saksi-pembuktian"],
+    bagian: ["tahapan", "sidang", "umur-sidang", "kalender", "relaas", "mediasi", "saksi", "status-pandu-saksi", "status-pandu-saksi-pembuktian"],
     lebar: true,
   },
   {
@@ -81,6 +81,7 @@ export const KATA_LAIN_BAGIAN: Readonly<Record<string, string>> = {
   pihak: "penggugat tergugat pemohon termohon kuasa advokat ktp nik kontak whatsapp telepon riwayat peta identitas",
   tahapan: "waktu input diagram",
   sidang: "jadwal agenda tunda penundaan hadir bas berita acara",
+  "umur-sidang": "umur lama perkara grafik batas hari sema",
   kalender: "bulan tanggal peristiwa",
   relaas: "panggilan jurusita patut",
   mediasi: "mediator damai",

@@ -118,18 +118,18 @@ export function RincianKumulasi({ kumulasi }: { kumulasi: KumulasiPerkara | null
   const butir = butirKumulasi(kumulasi);
   if (butir.length === 0) return null;
   return (
-    <div className="rounded-md border border-border/70 bg-card/60 p-2 text-xs" data-rincian-kumulasi="">
+    <div className="rounded-lg border border-border/70 bg-card/60 px-3 py-2 text-sm" data-rincian-kumulasi="">
       <div className="mb-1 font-semibold">Kumulasi perkara</div>
       <ul className="space-y-1">
         {butir.map((x) => (
           <li key={x.kode}>
             <span className="font-medium">{x.nama}</span>{" "}
             {x.sumber === "petitum" ? (
-              <Badge variant="warning" className="px-1.5 py-0 text-[10px]">
+              <Badge variant="warning" className="px-1.5 py-0 text-xs">
                 dari petitum
               </Badge>
             ) : (
-              <Badge variant="muted" className="px-1.5 py-0 text-[10px]">
+              <Badge variant="muted" className="px-1.5 py-0 text-xs">
                 SIPP
               </Badge>
             )}
@@ -140,7 +140,7 @@ export function RincianKumulasi({ kumulasi }: { kumulasi: KumulasiPerkara | null
         ))}
       </ul>
       {adaDariPetitum(kumulasi) ? (
-        <p className="mt-1 text-[11px] text-muted-foreground">
+        <p className="mt-1 text-xs text-muted-foreground">
           Yang bertanda &ldquo;dari petitum&rdquo; dibaca dari tuntutan primer karena kumulasinya belum diisi di SIPP -
           periksa, lalu lengkapi data kumulasi di SIPP.
         </p>

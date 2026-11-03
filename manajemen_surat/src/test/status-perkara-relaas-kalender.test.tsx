@@ -525,7 +525,8 @@ describe("kalender perkara digambar", () => {
     const tanpa = status({ courtCalendar: { terbaca: true, alasan: "", baris: [] } });
     render(<KalenderPerkara status={tanpa} />);
     expect(screen.getByText(/belum diisi di SIPP/)).toBeTruthy();
-    expect(screen.getByText(/bukan tanda ada yang keliru/)).toBeTruthy();
+    // 3 Nov 2026: penjelasan "lazim" tidak lagi ditampilkan.
+    expect(screen.queryByText(/bukan tanda ada yang keliru/)).toBeNull();
   });
 
   it("bot lama yang tidak mengirim Court Calendar tidak menuliskan apa pun tentangnya", () => {
@@ -598,7 +599,9 @@ describe("relaas panggilan digambar runut per sidang", () => {
     expect(screen.getByText("1 tidak patut")).toBeTruthy();
     expect(screen.getByText("1 salah saluran")).toBeTruthy();
     expect(screen.getByText("1 patut")).toBeTruthy();
-    expect(screen.getByText(/bukan penetapan sah tidaknya panggilan/)).toBeTruthy();
+    // 3 Nov 2026: kalimat teknis "alat bantu" dihapus; sidang acuannya tetap disebut.
+    expect(screen.queryByText(/bukan penetapan sah tidaknya panggilan/)).toBeNull();
+    expect(screen.getByText(/Dinilai untuk sidang terakhir/)).toBeTruthy();
   });
 
   it("alasan kepatutan berbunyi kalimat, bukan kode", () => {
@@ -653,7 +656,7 @@ describe("relaas panggilan digambar runut per sidang", () => {
     expect(screen.queryByText(/^dipakai /)).toBeNull();
     expect(screen.getByText("1 saluran belum pasti")).toBeTruthy();
     // Sidang yang dinilai disebut tanggalnya.
-    expect(screen.getByText(/\(Rabu, 09-09-2026\), menurut/)).toBeTruthy();
+    expect(screen.getByText(/Dinilai untuk sidang terakhir.*\(Rabu, 09-09-2026\)/)).toBeTruthy();
   });
 
   it("bot lama tanpa ruas saluran: tidak ada lencana atau catatan tambahan", () => {

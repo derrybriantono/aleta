@@ -66,6 +66,8 @@ describe("susunan bagian mengikuti jalan perkara", () => {
     // jalannya
     "tahapan",
     "sidang",
+    // Grafik umur perkara (3 Nov 2026): terlipat bawaan, bersarang di dalam Perjalanan sidang.
+    "umur-sidang",
     // Kalender menggambar sidang yang sama pada satu bulan; relaas menjawab
     // bagaimana para pihak dipanggil untuk sidang-sidang itu. Keduanya hanya
     // berarti SESUDAH daftar sidangnya dibaca, dan karena itu berdiri persis
@@ -186,7 +188,8 @@ describe("grafik memakai penggambar yang sudah ada", () => {
     // dibaca ALETA.
     const isi = readFileSync(berkas, "utf8");
     expect(isi).toContain("x.terbaca && x.poin !== null");
-    expect(isi).toContain("bukan dihitung");
+    // 3 Nov 2026: penjelasan "bukan dihitung nol" tidak lagi ditampilkan; yang tersisa jumlahnya.
+    expect(isi).toContain("unsur belum terbaca.");
   });
 });
 
@@ -550,8 +553,8 @@ describe("relaas panggilan berdiri sendiri dan runut per sidang", () => {
     expect(teks).toContain("function bunyiAlasanKepatutan");
     expect(teks).toContain("dikirim setelah hari sidang");
     expect(teks).toContain("penerimaannya belum terbukti");
-    // Penilaian ini alat bantu - kalimat itu harus ikut sampai ke layar.
-    expect(teks).toContain("bukan penetapan sah tidaknya panggilan");
+    // 3 Nov 2026 (keputusan Derry): kalimat teknis "alat bantu" tidak lagi tampil di layar.
+    expect(teks).not.toContain("bukan penetapan sah tidaknya panggilan");
   });
 
   it("daftar relaas tidak digambar dua kali", () => {

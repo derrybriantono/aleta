@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // Layar Status Perkara memanggil usePortal untuk kop cetak dan hak akses.
@@ -289,6 +289,9 @@ async function gambarLayar(status: Status) {
   return waitFor(() => {
     const bagian = document.getElementById("bagian-majelis");
     if (!bagian) throw new Error("bagian majelis belum tergambar");
+    // Terlipat bawaan (3 Nov 2026): dibuka dulu seperti yang dilakukan pengguna.
+    const kepala = bagian.querySelector("button");
+    if (kepala && kepala.getAttribute("aria-expanded") === "false") fireEvent.click(kepala);
     return bagian;
   });
 }

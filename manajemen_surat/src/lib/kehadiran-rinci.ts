@@ -288,7 +288,26 @@ function kalimatSaksi(label: string, daftar: KehadiranOrang[], diajukan: number,
  * tercatat DAN tidak ada saksi yang diajukan (tidak menambah baris yang tidak
  * menagih apa pun).
  */
-export function ringkasKehadiran(susun: KehadiranTersusun, bahan: BahanPerkaraHadir = {}): PotonganRingkas[] {
+/**
+ * Pilihan bentuk ringkasan.
+ *
+ * `singkat` (Jadwal Sidang, keputusan Derry 3 Nov 2026): "Penggugat hadir 08.53"
+ * menjadi "P 08:53" - huruf awal sebutan + jam, sama dengan baris jam ambil
+ * antrian. `jamAmbil` = jam ambil antrian tiap sisi yang SUDAH tampil sebagai
+ * "P 09:15 / T 09:15" di atasnya; sisi yang jamnya sama tidak diulang lagi.
+ * Tanpa pilihan ini bentuknya tidak berubah (dipakai layar lain).
+ */
+export type PilihanRingkas = { singkat?: boolean; jamAmbil?: { p1?: string; p2?: string } };
+
+function jamColon(jam: string): string {
+  return jamTitik(jam).replace(".", ":");
+}
+
+export function ringkasKehadiran(
+  susun: KehadiranTersusun,
+  bahan: BahanPerkaraHadir = {},
+  pilihan: PilihanRingkas = {}
+): PotonganRingkas[] {
   const satu = bahan.sebutanSatu || "Penggugat";
   const dua = bahan.sebutanDua || "Tergugat";
   const diajukanP = Math.max(0, Number(bahan.saksiDiajukanP) || 0);
@@ -296,12 +315,24 @@ export function ringkasKehadiran(susun: KehadiranTersusun, bahan: BahanPerkaraHa
   if (!susun.adaCatatan && susun.ruang === "belum") return [];
 
   const potongan: PotonganRingkas[] = [];
+  const singkat = Boolean(pilihan.singkat);
   const sisi = (kunci: string, sebutan: string, g: GolonganSisi) => {
+    // Huruf awal sebutan; turut tergugat dan intervensi tetap ditulis jelas.
+    const kode = kunci === "p1" || kunci === "p2" ? sebutan.charAt(0).toUpperCase() : sebutan;
     if (g.hadir) {
       const k = kalimatSisi(sebutan, g);
+      if (singkat) {
+        const ambil = kunci === "p1" ? pilihan.jamAmbil?.p1 : kunci === "p2" ? pilihan.jamAmbil?.p2 : undefined;
+        const polos = !g.semuaPulang && !g.kuasa.length && (g.dariAntrianSaja || g.sendiri.length > 0);
+        if (polos && ambil && jamTitik(ambil) && jamTitik(ambil) === jamTitik(g.jam)) return;
+        const jam = jamColon(g.jam);
+        const awal = g.sendiri.length && g.kuasa.length ? `${kode} + kuasa` : g.kuasa.length ? `Kuasa ${kode}` : kode;
+        potongan.push({ kunci, teks: sambung(awal, g.semuaPulang ? "pulang" : "", jam), judul: k.judul, nada: g.semuaPulang ? "abu" : "hijau" });
+        return;
+      }
       potongan.push({ kunci, teks: k.teks, judul: k.judul, nada: g.semuaPulang ? "abu" : "hijau" });
     } else {
-      potongan.push({ kunci, teks: `${sebutan} belum`, judul: `${sebutan} belum tercatat hadir hari ini.`, nada: "abu" });
+      potongan.push({ kunci, teks: `${singkat ? kode : sebutan} belum`, judul: `${sebutan} belum tercatat hadir hari ini.`, nada: "abu" });
     }
   };
   sisi("p1", satu, susun.pihak1);

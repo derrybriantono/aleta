@@ -78,10 +78,12 @@ afterEach(() => {
 
 describe("J5 - Mode lengkap dan Mode minimalis", () => {
   it("Mode lengkap: semua menyala KECUALI Kolom Siap dan Catatan cara menghitung", () => {
-    expect([...DIKECUALIKAN_MODE_LENGKAP]).toEqual(["kolom-siap", "catatan-cara-hitung", "ciutkan-selesai"]);
+    // 3 Nov 2026: draf putusan, kesiapan, daftar langkah, dan jam dipanggil bawaannya mati (keputusan Derry).
+    const DIKECUALIKAN = ["kolom-siap", "catatan-cara-hitung", "ciutkan-selesai", "kesiapan-putusan", "draf-putusan-agen", "checklist-konseptor", "jam-dipanggil"];
+    expect([...DIKECUALIKAN_MODE_LENGKAP]).toEqual(DIKECUALIKAN);
     const lengkap = tampilanModeLengkap();
     for (const s of SAKLAR_TAMPILAN) {
-      const harap = s.wajib ? true : !["kolom-siap", "catatan-cara-hitung", "ciutkan-selesai"].includes(s.kunci);
+      const harap = s.wajib ? true : !DIKECUALIKAN.includes(s.kunci);
       expect(tampil(lengkap, s.kunci), s.kunci).toBe(harap);
     }
     // Sama dengan keadaan bawaan - Mode lengkap tidak mengubah layar orang yang
@@ -664,8 +666,12 @@ describe("J7 - proses mediasi di rincian", () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ ok: true, data: { available: true, ok: true, mediasi: [mediasiContoh] } }))));
     const { ProsesMediasiRincian } = await import("@/components/portal/jadwal-sidang-1okt");
     render(createElement(ProsesMediasiRincian, { perkaraId: "10080" }));
+    // Terlipat bawaan (3 Nov 2026): kepalanya tetap terlihat, isinya terbuka sesudah ditekan.
+    const kepala = await screen.findByRole("button", { name: /Proses mediasi/ });
+    expect(kepala.getAttribute("aria-expanded")).toBe("false");
+    expect(screen.queryByText("Himawan Tatura Wijaya, S.H.I., M.H.")).toBeNull();
+    fireEvent.click(kepala);
     await screen.findByText("Himawan Tatura Wijaya, S.H.I., M.H.");
-    expect(screen.getByText("Proses mediasi")).toBeTruthy();
     expect(screen.getByText("Semua pihak", { exact: false })).toBeTruthy();
   });
 

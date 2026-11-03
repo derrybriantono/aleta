@@ -90,45 +90,96 @@ export type BahanRincianJawabanSita = {
 };
 
 /**
+ * SATU penentu "ada isi" untuk Jadwal Sidang dan Status Perkara (butir 21-22,
+ * 3 Nov 2026): yang tampil hanya yang ADA. Eksepsi/rekonvensi hanya bila
+ * diajukan, sita hanya bila ada permohonan/catatan, eksekusi hanya bila ada.
+ * Yang tidak dapat dibaca tetap dilaporkan (jangan diam atas data yang gagal
+ * dibaca), tetapi bukan "tidak ada".
+ */
+export function isiJawabanSitaEksekusi(
+  bahan: BahanRincianJawabanSita,
+  saklar: { tampilJawaban: boolean; tampilSita: boolean; tampilEksekusi?: boolean }
+) {
+  const adaJawaban = saklar.tampilJawaban && bahan.penandaJawabanTerbaca !== undefined;
+  const adaSita = saklar.tampilSita && bahan.sitaTerbaca !== undefined;
+  const adaEksekusi = Boolean(saklar.tampilEksekusi) && bahan.sitaTerbaca !== undefined;
+  const jawabanTakTerbaca = adaJawaban && bahan.penandaJawabanTerbaca === false;
+  const jawaban =
+    adaJawaban && !jawabanTakTerbaca
+      ? keadaanJawaban(bahan.penandaJawaban, bahan.penandaJawabanTerbaca).filter((k) => k.ada)
+      : [];
+  const sitaTakTerbaca = (adaSita || adaEksekusi) && bahan.sitaTerbaca === false;
+  const sita = adaSita && !sitaTakTerbaca ? butirSita(bahan.sita) : [];
+  const eksekusi = adaEksekusi && !sitaTakTerbaca && Array.isArray(bahan.eksekusi) ? bahan.eksekusi : [];
+  const tampil = jawaban.length > 0 || sita.length > 0 || eksekusi.length > 0 || jawabanTakTerbaca || sitaTakTerbaca;
+  return { adaJawaban, adaSita, adaEksekusi, jawaban, sita, eksekusi, jawabanTakTerbaca, sitaTakTerbaca, tampil };
+}
+
+/** Kelas kotak bersama Kumulasi/Eksepsi - huruf selaras layar sekitarnya (butir 21-22). */
+export const KELAS_KOTAK_KETERANGAN = "rounded-lg border border-border/70 bg-card/60 px-3 py-2 text-sm";
+
+/**
  * Bagian rincian: Eksepsi & Rekonvensi (saklar penanda-jawaban), Sita dan
  * Eksekusi (saklar penanda-eksekusi, terpisah sejak 12 Okt sore). Semua
  * saklar mati = tidak digambar.
  * Bot lama yang belum mengirim ruasnya (Terbaca undefined) = bagiannya diam.
+ *
+ * `hanyaYangAda` (Jadwal Sidang dan Status Perkara): seluruh blok hilang bila
+ * tidak ada isi, dan bila ada hanya baris yang berisi yang digambar. Komponen
+ * ini dipanggil dari SATU tempat per layar supaya letaknya mudah digeser.
  */
 export function RincianJawabanSitaEksekusi({
   bahan,
   tampilJawaban,
   tampilSita,
   tampilEksekusi = false,
+  hanyaYangAda = false,
 }: {
   bahan: BahanRincianJawabanSita;
   tampilJawaban: boolean;
   tampilSita: boolean;
   /** 12OKT-N: saklar penanda-eksekusi, terpisah dari penanda-sita. */
   tampilEksekusi?: boolean;
+  hanyaYangAda?: boolean;
 }) {
-  const adaJawaban = tampilJawaban && bahan.penandaJawabanTerbaca !== undefined;
-  const adaSita = tampilSita && bahan.sitaTerbaca !== undefined;
-  const adaEksekusi = tampilEksekusi && bahan.sitaTerbaca !== undefined;
+  const isi = isiJawabanSitaEksekusi(bahan, { tampilJawaban, tampilSita, tampilEksekusi });
+  const { adaJawaban, adaSita, adaEksekusi } = isi;
   if (!adaJawaban && !adaSita && !adaEksekusi) return null;
+  if (hanyaYangAda && !isi.tampil) return null;
   const sita = butirSita(bahan.sita);
   const eksekusi = Array.isArray(bahan.eksekusi) ? bahan.eksekusi : [];
+  const rinci = !hanyaYangAda;
+  const baris = rinci
+    ? { jawaban: adaJawaban, sita: adaSita, eksekusi: adaEksekusi }
+    : {
+        jawaban: adaJawaban && (isi.jawaban.length > 0 || isi.jawabanTakTerbaca),
+        sita: adaSita && (sita.length > 0 || bahan.sitaTerbaca === false),
+        eksekusi: adaEksekusi && (eksekusi.length > 0 || bahan.sitaTerbaca === false),
+      };
+  const judul = [
+    baris.jawaban ? "Eksepsi & rekonvensi" : "",
+    baris.sita ? "sita" : "",
+    baris.eksekusi ? "eksekusi" : "",
+  ]
+    .filter(Boolean)
+    .join(", ");
+  const judulTampil = hanyaYangAda ? judul.charAt(0).toUpperCase() + judul.slice(1) : judul;
   return (
-    <div className="rounded-md border border-border/70 bg-card/60 p-2 text-xs" data-rincian-jawaban-sita="">
-      <div className="mb-1 font-semibold">
-        {[adaJawaban ? "Eksepsi & rekonvensi" : "", adaSita ? "sita" : "", adaEksekusi ? "eksekusi" : ""].filter(Boolean).join(", ")}
-      </div>
+    <div className={KELAS_KOTAK_KETERANGAN} data-rincian-jawaban-sita="">
+      <div className="mb-1 font-semibold">{judulTampil}</div>
       <ul className="space-y-1">
-        {adaJawaban
-          ? keadaanJawaban(bahan.penandaJawaban, bahan.penandaJawabanTerbaca).map((k) => (
-              <li key={k.judul} data-keadaan-jawaban={k.ada ? "ada" : "tidak"}>
-                <span className="font-medium">{k.judul}:</span>{" "}
-                <span className={k.ada ? "font-semibold" : "text-muted-foreground"}>{k.isi}</span>
-                {k.kalimat ? <div className="mt-0.5 break-words italic text-muted-foreground">&ldquo;{k.kalimat}&rdquo;</div> : null}
-              </li>
-            ))
+        {baris.jawaban
+          ? keadaanJawaban(bahan.penandaJawaban, bahan.penandaJawabanTerbaca)
+              .filter((k) => rinci || k.ada || bahan.penandaJawabanTerbaca === false)
+              .map((k) => (
+                <li key={k.judul} data-keadaan-jawaban={k.ada ? "ada" : "tidak"}>
+                  <span className="font-medium">{k.judul}:</span>{" "}
+                  <span className={k.ada ? "font-semibold" : "text-muted-foreground"}>{k.isi}</span>
+                  {k.kalimat ? <div className="mt-0.5 break-words italic text-muted-foreground">&ldquo;{k.kalimat}&rdquo;</div> : null}
+                </li>
+              ))
           : null}
-        {adaSita ? (
+        {baris.sita ? (
           <li data-rincian-sita="">
             <span className="font-medium">Sita:</span>{" "}
             {bahan.sitaTerbaca === false ? (
@@ -140,7 +191,7 @@ export function RincianJawabanSitaEksekusi({
                 {sita.map((b) => (
                   <li key={`${b.kode}:${b.nama}`}>
                     <span className="font-semibold">{b.nama}</span>{" "}
-                    <Badge variant={b.sumber === "sipp" ? "muted" : "warning"} className="px-1.5 py-0 text-[10px]">
+                    <Badge variant={b.sumber === "sipp" ? "muted" : "warning"} className="px-1.5 py-0 text-xs">
                       {b.sumber === "petitum" ? "dari petitum" : b.sumber === "sipp" ? "SIPP" : "petitum + SIPP"}
                     </Badge>
                     {b.kutipan ? <div className="mt-0.5 break-words italic text-muted-foreground">&ldquo;{b.kutipan}&rdquo;</div> : null}
@@ -151,7 +202,7 @@ export function RincianJawabanSitaEksekusi({
             )}
           </li>
         ) : null}
-        {adaEksekusi ? (
+        {baris.eksekusi ? (
           <li data-rincian-eksekusi="">
             <span className="font-medium">Eksekusi:</span>{" "}
             {bahan.sitaTerbaca === false ? (
@@ -181,8 +232,8 @@ export function RincianJawabanSitaEksekusi({
           </li>
         ) : null}
       </ul>
-      {adaSita && sita.some((b) => b.sumber !== "sipp") ? (
-        <p className="mt-1 text-[11px] text-muted-foreground">
+      {!hanyaYangAda && adaSita && sita.some((b) => b.sumber !== "sipp") ? (
+        <p className="mt-1 text-xs text-muted-foreground">
           Sita bertanda &ldquo;dari petitum&rdquo; dibaca ALETA dari tuntutan primer - yang diminta penggugat, belum tentu
           sudah diletakkan.
         </p>

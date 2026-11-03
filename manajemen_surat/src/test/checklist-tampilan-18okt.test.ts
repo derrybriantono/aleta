@@ -62,6 +62,8 @@ function berkasLayar(): string[] {
   return Array.from(hasil).sort();
 }
 
+// 3 Nov 2026 (butir 11): bawaan MATI atas keputusan Derry - tetap dapat dinyalakan dari panel Tampilan.
+const MATI_3NOV: readonly string[] = ["kesiapan-putusan", "draf-putusan-agen", "checklist-konseptor", "jam-dipanggil"];
 describe("checklist Jadwal Sidang: fitur yang ditambahkan 18 Okt 2026", () => {
   const BARU = [
     ["pertanyaan-saksi", "alat"],
@@ -83,8 +85,8 @@ describe("checklist Jadwal Sidang: fitur yang ditambahkan 18 Okt 2026", () => {
       expect(saklar, kunci).toBeTruthy();
       expect(saklar?.kelompok, kunci).toBe(kelompok);
       expect(saklar?.wajib ?? false, kunci).toBe(false);
-      expect(saklar?.bawaanMati ?? false, kunci).toBe(false);
-      expect(bawaan[kunci], kunci).toBe(true);
+      expect(saklar?.bawaanMati ?? false, kunci).toBe(MATI_3NOV.includes(kunci));
+      expect(bawaan[kunci], kunci).toBe(!MATI_3NOV.includes(kunci));
       expect(CONTOH_TAMPILAN[kunci], kunci).toBeTruthy();
       expect(layar, kunci).toContain(`tampil(tampilan, "${kunci}")`);
       expect(saklar?.label.length, kunci).toBeGreaterThan(5);
@@ -94,7 +96,7 @@ describe("checklist Jadwal Sidang: fitur yang ditambahkan 18 Okt 2026", () => {
   it("dimatikan = fiturnya hilang dari gambar; simpanan lama tanpa kuncinya tetap menyala", () => {
     for (const [kunci] of BARU) {
       expect(tampil({ [kunci]: false }, kunci), kunci).toBe(false);
-      expect(tampil({}, kunci), kunci).toBe(true);
+      expect(tampil({}, kunci), kunci).toBe(!MATI_3NOV.includes(kunci));
     }
   });
 

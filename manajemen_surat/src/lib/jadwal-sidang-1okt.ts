@@ -26,7 +26,17 @@ import {
  * sesudah Hitung skor ditekan - bukan fakta perkara.
  */
 // ciutkan-selesai (6 Okt 2026, butir 8): menyembunyikan baris - Mode lengkap tidak boleh menyalakannya.
-export const DIKECUALIKAN_MODE_LENGKAP = ["kolom-siap", "catatan-cara-hitung", "ciutkan-selesai"] as const;
+// 3 Nov 2026: empat penanda yang bawaannya dimatikan atas keputusan Derry ikut dikecualikan,
+// supaya Mode lengkap tetap sama dengan keadaan bawaan.
+export const DIKECUALIKAN_MODE_LENGKAP = [
+  "kolom-siap",
+  "catatan-cara-hitung",
+  "ciutkan-selesai",
+  "kesiapan-putusan",
+  "draf-putusan-agen",
+  "checklist-konseptor",
+  "jam-dipanggil",
+] as const;
 
 export type ModeTampilan = "lengkap" | "minimalis" | "suai";
 

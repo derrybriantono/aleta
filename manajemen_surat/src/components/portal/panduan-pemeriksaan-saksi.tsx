@@ -115,6 +115,11 @@ export type PropsPanduanSaksi = {
   /** Menonjol: agenda pembuktian atau pemeriksaan saksi. */
   menonjol?: boolean;
   /**
+   * Bagian lipat TETAP terlipat bawaan walau agendanya pembuktian (Status
+   * Perkara, keputusan 3 Nov 2026) - sorotan cincinnya tetap menandai.
+   */
+  ciutSelalu?: boolean;
+  /**
    * "lipat" (bawaan, Status Perkara): bagian lipat di halaman.
    * "tombol" (Jadwal Sidang, 18 Okt 2026): hanya tombol kecil; panduan keluar sebagai jendela pop-up
    * ketika ditekan, tidak pernah terbuka sendiri.
@@ -134,7 +139,7 @@ export type PropsPanduanSaksi = {
  * admin, dan super admin).
  */
 export function PanduanPemeriksaanSaksi(props: PropsPanduanSaksi) {
-  const { menonjol = false, kunciBagian, pengguna, bentuk = "lipat" } = props;
+  const { menonjol = false, kunciBagian, pengguna, bentuk = "lipat", ciutSelalu = false } = props;
   if (!bolehAksiLayar(pengguna, "pandu.saksi")) return null;
   if (bentuk === "tombol") return <TombolPanduSaksi {...props} />;
   return (
@@ -148,8 +153,9 @@ export function PanduanPemeriksaanSaksi(props: PropsPanduanSaksi) {
         // peramban untuk keduanya tidak saling menimpa.
         judul="Panduan pertanyaan saksi"
         kunci={menonjol ? `${kunciBagian}-pembuktian` : kunciBagian}
-        ciutBawaan={!menonjol}
-        keterangan={menonjol ? "agenda pembuktian: panduan terbuka" : ""}
+        ciutBawaan={ciutSelalu || !menonjol}
+        versiBawaan={ciutSelalu ? "3nov" : ""}
+        keterangan={menonjol ? (ciutSelalu ? "agenda pembuktian" : "agenda pembuktian: panduan terbuka") : ""}
       >
         {/* Dipasang ulang bila perkara atau sidangnya berganti, supaya centang yang diingat selalu milik sidang ini. */}
         <PanduanPemeriksaanSaksiIsi key={kunciSimpanCentang(props.perkara.nomorPerkara, props.sidangId ?? "")} {...props} />

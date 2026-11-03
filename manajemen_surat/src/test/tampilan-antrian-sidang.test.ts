@@ -32,7 +32,17 @@ const baca = (jalur: string) =>
  * dan hilangnya tidak berbunyi.
  */
 // "ciutkan-selesai" (6 Okt 2026, butir 8): pengguna sendiri meminta "jangan jadikan default".
-const BOLEH_MATI_SEJAK_AWAL = ["kolom-siap", "catatan-cara-hitung", "ciutkan-selesai"];
+// 3 Nov 2026: Derry meminta draf putusan (lencana, kesiapan, daftar langkah) dan jam "dipanggil" tersembunyi bawaan -
+// semuanya hanya disembunyikan, tetap dapat dinyalakan dari panel Tampilan.
+const BOLEH_MATI_SEJAK_AWAL = [
+  "kolom-siap",
+  "catatan-cara-hitung",
+  "ciutkan-selesai",
+  "kesiapan-putusan",
+  "draf-putusan-agen",
+  "checklist-konseptor",
+  "jam-dipanggil",
+];
 
 describe("saklar tampilan", () => {
   it("bawaannya menyala, kecuali dua yang disebut pengguna", () => {

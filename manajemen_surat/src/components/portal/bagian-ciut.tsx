@@ -49,21 +49,31 @@ export function Bagian({
   kunci,
   ciutBawaan = false,
   keterangan = "",
+  versiBawaan = "",
 }: {
   judul: string;
   children: ReactNode;
   kunci?: string;
   ciutBawaan?: boolean;
   keterangan?: string;
+  /**
+   * Penanda versi bawaan (mis. "3nov"). Pilihan buka/tutup yang tersimpan
+   * sebelum versi ini ditulis diabaikan SEKALI - bawaan barunya berlaku -
+   * dan pilihan orangnya dihormati lagi begitu ia menekan kepala bagiannya.
+   * Dipakai saat bawaan sebuah bagian sengaja diubah (keputusan 3 Nov 2026).
+   */
+  versiBawaan?: string;
 }) {
   // Bentuk kuncinya milik `alat-bagian` - dua tempat yang menyusunnya
   // sendiri akan menyimpang diam-diam, dan yang menyimpang justru keadaan
   // yang diingat peramban.
   const kunciSimpan = kunci ? kunciCiut(kunci) : "";
+  const kunciVersi = kunciSimpan && versiBawaan ? `${kunciSimpan}.versi` : "";
 
   const [ciut, setCiut] = useState(() => {
     if (!kunciSimpan) return ciutBawaan;
     try {
+      if (kunciVersi && window.localStorage.getItem(kunciVersi) !== versiBawaan) return ciutBawaan;
       const tersimpan = window.localStorage.getItem(kunciSimpan);
       return tersimpan === null ? ciutBawaan : tersimpan === "1";
     } catch {
@@ -79,6 +89,7 @@ export function Bagian({
     if (!kunciSimpan) return;
     try {
       window.localStorage.setItem(kunciSimpan, baru ? "1" : "0");
+      if (kunciVersi) window.localStorage.setItem(kunciVersi, versiBawaan);
     } catch {
       /* lihat catatan di atas */
     }
