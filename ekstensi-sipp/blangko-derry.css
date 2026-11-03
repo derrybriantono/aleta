@@ -446,6 +446,9 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar .bd-tahap.bd-sebaris > [data-wadah="pilih-blangko"].bd-wadahkosong { display: block; flex-basis: 100%; }
 #aleta-bd-akar .bd-tahap.bd-sebaris [data-wadah="pilih-blangko"] > .bd-tk { flex: 1 1 420px; min-width: 0; }
 #aleta-bd-akar .bd-tahap.bd-sebaris [data-wadah="pilih-blangko"] > p { flex-basis: 100%; }
+/* 3 Nov: kotak Rekomendasi putusan di BAWAH baris blangko (satu baris penuh), bukan di samping tombol Ganti blangko; tombol sejajar Ganti perkara. */
+#aleta-bd-akar .bd-tahap.bd-sebaris [data-wadah="pilih-blangko"] > .bd-rekput { flex-basis: 100%; }
+#aleta-bd-akar .bd-tahap.bd-sebaris [data-wadah="pilih-blangko"] > .bd-tk { padding-right: var(--bd-ruang-massal, 0px); }
 /* 3 Perlu diisi: satu bingkai kuning menyeluruh (kotak isian sendiri TIDAK kuning) */
 #aleta-bd-akar .bd-tahap.bd-utama3 { border: 2px solid var(--accent); background: var(--accentbg); box-shadow: 0 0 0 4px rgba(233, 196, 106, .12); }
 #aleta-bd-akar .bd-tahap.bd-utama3 > .bd-tk .bd-tno { background: var(--accent); color: #1d1d1b; border-color: var(--accent); font-weight: 700; }
@@ -557,7 +560,7 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar textarea.bd-ed.bd-asal-ragu { background: var(--asal-ragu-bg); border-color: var(--asal-ragu-ln); box-shadow: inset 0 0 0 1px var(--asal-ragu-ln); }
 #aleta-bd-akar textarea.bd-ed.bd-asal-data { border-left: 4px solid var(--asal-data-ln); }
 #aleta-bd-akar textarea.bd-ed.bd-asal-manual { border-color: var(--line); }
-#aleta-bd-akar textarea.bd-ed.bd-asal-contoh { border: 1px dashed var(--asal-contoh-ln); border-left: 4px dashed var(--asal-contoh-ln); }
+/* 3 Nov (butir 23): kalimat contoh tampil seperti kotak biasa (bingkai biru putus-putus dihapus); asalnya tetap tercatat di data-asal. */
 #aleta-bd-akar .bd-asalcap:empty { display: none; }
 #aleta-bd-akar .bd-asalcap { display: block; margin-top: 3px; }
 #aleta-bd-akar .bd-asallencana { display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; padding: 0 8px; font-size: 11.5px; border: 1px solid var(--line); color: var(--muted); }

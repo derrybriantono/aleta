@@ -6005,7 +6005,7 @@ async function kerjakanSatuPerkaraAbt(butir, peta, opsi, olehUsername, lapor) {
  * (dicocokkan dengan nama di blok itu). Tanpa tanda tangan terdaftar PDF-nya
  * tetap dibuat, dan sebabnya disebut.
  *
- * Hasilnya dibuka di tab ekstensi (salinan.html) - bukan diunduh diam-diam.
+ * Hasilnya LANGSUNG diunduh (3 Nov 2026) - tidak lagi dibuka di tab ekstensi (salinan.html).
  */
 function kalimatSalinan(k) {
   if (!k) return "Keterangan salinan tidak terbaca dari bot (bot belum diperbarui?).";
@@ -6056,7 +6056,10 @@ function namaPdfSalinan(nomor, blangko) {
   return nama || namaBerkas(nomor, "pdf", "salinan");
 }
 
-/** Membuat lalu MENAMPILKAN PDF salinan. Tidak pernah melempar. */
+/**
+ * Membuat lalu MENGUNDUH PDF salinan (3 Nov 2026: langsung diunduh, tidak lagi dibuka di tab penampil salinan.html).
+ * Unduhan lewat ekstensi (unduhBlob) sudah punya cadangan sendiri bila pekerja latar tidak menjawab. Tidak pernah melempar.
+ */
 async function tampilkanPdfSalinan(isiRtf, nama, lapor) {
   const kabar = typeof lapor === "function" ? lapor : () => {};
   try {
@@ -6064,27 +6067,11 @@ async function tampilkanPdfSalinan(isiRtf, nama, lapor) {
     const { blob, keterangan } = await buatPdfSalinan(isiRtf);
     const kalimat = kalimatSalinan(keterangan);
     const awas = !(keterangan && keterangan.gambarTtdPanitera);
-    const alamat = await alatBlobKeData(blob);
-    const jawab = await new Promise((selesai) => {
-      try {
-        chrome.runtime.sendMessage({ sumber: "aleta-panel", jenis: "tampilkan-pdf", nama, alamat, pesan: kalimat, awas }, (h) => {
-          void chrome.runtime.lastError;
-          selesai(h);
-        });
-      } catch {
-        selesai(null);
-      }
-    });
-    if (!jawab || !jawab.ok) {
-      // Penampil tidak terbuka - salinannya tetap sampai ke tangan petugas.
-      await unduhBlob(blob, nama);
-      kabar(`PDF SALINAN diunduh (penampil tidak terbuka: ${(jawab && jawab.pesan) || "tanpa jawaban"}). ${kalimat}`, awas);
-      return { ok: true, keterangan };
-    }
-    kabar(`PDF SALINAN dibuka di tab baru. ${kalimat}`, awas);
+    await unduhBlob(blob, nama);
+    kabar(`PDF SALINAN diunduh. ${kalimat}`, awas);
     return { ok: true, keterangan };
   } catch (galat) {
-    kabar(`PDF SALINAN tidak dibuat: ${String((galat && galat.message) || galat)}`, true);
+    kabar(`PDF SALINAN belum dapat diunduh. Coba lagi; bila tetap gagal, muat ulang halaman ini. (${String((galat && galat.message) || galat)})`, true);
     return { ok: false };
   }
 }

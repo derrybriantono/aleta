@@ -990,6 +990,15 @@
     } catch {
       /* tanpa pengamat ukuran: nilai bawaan di CSS dipakai */
     }
+    // 3 Nov: tombol Ganti blangko sejajar dengan Ganti perkara - baris Blangko menyisakan ruang sebesar tombol Cetak massal (bila tampil) di kanannya.
+    try {
+      const massal = akar.querySelector("#bd-massal");
+      if (massal && typeof ResizeObserver === "function") {
+        new ResizeObserver(() => akar.style.setProperty("--bd-ruang-massal", massal.offsetWidth ? `${massal.offsetWidth + 10}px` : "0px")).observe(massal);
+      }
+    } catch {
+      /* tanpa pengamat ukuran: tombol Ganti blangko di tepi kanan */
+    }
     pasangHuruf();
     terapkanSkala();
     akar.addEventListener("click", saatKlik);

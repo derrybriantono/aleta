@@ -160,6 +160,22 @@ describe("Pengaturan AI atas basis data (pg-mem)", () => {
     expect(dalam?.apiKeyTakTerbaca).toBeUndefined();
   });
 
+  it("3 Nov (butir 7): respons simpan (yang dikirim ke peramban) tidak memuat kunci utuh, sandi, maupun awalan sandi - hanya petunjuk tersamar", async () => {
+    const hasil = await upsertAISettingsInDb(db, { actorUserId: "usr-super", connection: { providerId: "claude", label: "Claude Tanpa Bocor", modelId: "Claude Sonnet", apiKey: KUNCI } });
+    const respons = JSON.stringify(hasil);
+    expect(respons).not.toContain(KUNCI);
+    expect(respons).not.toContain("ENKRIPSI");
+    expect(respons).not.toContain(AWALAN_KUNCI_API);
+    const k = hasil.providers.find((p) => p.name === "Claude Tanpa Bocor")!;
+    expect(k.apiKey).toBe("");
+    expect(k.maskedApiKey).toBe(`••••${KUNCI.slice(-4)}`);
+    // simpan ulang tanpa kunci (borang sunting kosong): kunci lama tetap dipakai, respons tetap tanpa kunci
+    const ulang = await upsertAISettingsInDb(db, { actorUserId: "usr-super", connection: { id: k.id, providerId: "claude", label: "Claude Tanpa Bocor", modelId: "Claude Sonnet" } });
+    expect(JSON.stringify(ulang)).not.toContain(KUNCI);
+    const dalam = (await getAISettingsFromDb(db, { includeSecrets: true })).providers.find((p) => p.id === k.id);
+    expect(dalam?.apiKey).toBe(KUNCI);
+  });
+
   it("nilai polos lama: terbaca, dan dienkripsi ulang secara malas saat dibaca", async () => {
     const k = await simpan("claude", "Claude Polos Lama", KUNCI, "Claude Sonnet");
     // meniru baris lama: kunci polos + petunjuk lama (4 huruf awal)

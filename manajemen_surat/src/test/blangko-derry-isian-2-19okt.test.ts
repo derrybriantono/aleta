@@ -150,6 +150,10 @@ type Opsi = {
   el7?: { nilai: string; keterangan: string } | null;
   /** Kontak perkara (kontak-pihak) untuk saran beracara elektronik - el7AmbilKontak ditiru. */
   el7Kontak?: Record<string, unknown>;
+  /** Rute kontak-para-pihak (WhatsApp dan persetujuan Tergugat) - tanpa ini rute menjawab galat. */
+  kontakPara?: Record<string, unknown>;
+  /** Keterangan sidang kedua (bawaan: "putus DIKABULKAN (verstek)"); "" = bukan verstek. */
+  ketSidang?: string;
   /** Nilai bawaan kueri ABT (dihitung, belum tersimpan) per kode - dibaca jendela sembul edit_data. */
   bawaan?: Record<string, string>;
   /** Jawaban mintaPositaRapi (abt.js) - ditiru sebagai fungsi global yang mencatat panggilannya di window.__rapi. */
@@ -221,7 +225,7 @@ function buka(p: Opsi = {}): Halaman {
     if (url.includes("/ekstensi/siapa")) return json({ ok: true, data: { ...orang, kapabilitas: {}, peranTambahan: [], bolehKasir: false } });
     if (url.includes("/aleta-ecourt/perkara-saya")) {
       const admin = p.orang === "admin";
-      return json({ ok: true, data: { hariIni: HARI_INI, mode: "hari", dari: HARI_INI, sampai: HARI_INI, lihatSemua: admin, nama: orang.nama, sebagaiNama: "", sebagaiPeran: null, terpotong: false, jumlahSemua: 1, adaYangCocok: true, akun: admin ? AKUN : null, perkara: polos([PK({ sebagai: admin ? ["hakim", "pp", "js"] : [{ hakim: "hakim", pp: "pp", js: "js" }[p.orang ?? "hakim"]] })]) } });
+      return json({ ok: true, data: { hariIni: HARI_INI, mode: "hari", dari: HARI_INI, sampai: HARI_INI, lihatSemua: admin, nama: orang.nama, sebagaiNama: "", sebagaiPeran: null, terpotong: false, jumlahSemua: 1, adaYangCocok: true, akun: admin ? AKUN : null, perkara: polos([PK({ sebagai: admin ? ["hakim", "pp", "js"] : [{ hakim: "hakim", pp: "pp", js: "js" }[p.orang ?? "hakim"]], ...(p.ketSidang !== undefined ? { sidang: [SI("2026-10-01", "Sidang Pertama", "Panggil Tergugat", { urutan: 1 }), SI(HARI_INI, "Pemeriksaan pokok perkara", p.ketSidang, { urutan: 2 })] } : {}) })]) } });
     }
     if (url.includes("/aleta-ecourt/sidang?nomor=")) return json({ ok: true, data: { sipp: { jadwalPerkara: [] } } });
     if (url.includes("/aleta-ecourt/sidang?dari=")) {
@@ -257,6 +261,7 @@ function buka(p: Opsi = {}): Halaman {
       return json({ ok: true, data: { available: true, sipp: { ok: true, usulan: polos(p.usulan ?? []), jumlahKuasa: 0, prodeo: false } } });
     }
     if (url.includes("/aleta-ecourt/isi-gugatan")) return json({ ok: true, data: { usulan: polos(p.usulanGugatan ?? []), tanyaJawab: [], kalimat: [], kontak: null } });
+    if (url.includes("/aleta-ecourt/kontak-para-pihak")) return p.kontakPara ? json({ ok: true, data: polos(p.kontakPara) }) : json({ ok: false, alasan: "tidak ada" }, 404);
     if (url.includes("/aleta-ecourt/kuasa-gugatan")) return json({ ok: true, data: { usulan: [], ada: false } });
     if (url.includes("/aleta-ecourt/ktp-pihak")) return json({ ok: true, data: { pihak: [] } });
     if (url.includes("/aleta-ecourt/tanda-tangan")) return json({ ok: false, alasan: "tidak berwenang" }, 403);
@@ -645,8 +650,9 @@ describe("6. upaya damai oleh keluarga dan beracara secara elektronik", () => {
   });
 
   it("e-Court tanpa email Tergugat (belum cukup pasti untuk ditulis): SARAN 'hybrid' di pilihan, tidak tersimpan", async () => {
-    const kontak = { ada: true, elitigasi: { lewatEcourt: true, tergugatHadir: false, jumlahSidang: 1 }, domisili: { 1: null, 2: { email: "", milik: "pihak", asal: "" } }, orang: [] };
-    const h = buka({ el7: null as never, el7Kontak: kontak, usulan: [] });
+    // 3 Nov (keputusan 144): saran 1/2 hanya untuk Tergugat yang pernah hadir; yang tidak pernah hadir ada di uji bagian 11.
+    const kontak = { ada: true, elitigasi: { lewatEcourt: true, tergugatHadir: true, jumlahSidang: 1 }, domisili: { 1: null, 2: { email: "", milik: "pihak", asal: "" } }, orang: [] };
+    const h = buka({ el7: null as never, el7Kontak: kontak, ketSidang: "", usulan: [] });
     await sampaiPerkara(h);
     await pilih(h, BLANGKO_PUT);
     const pilihan = (await sampai(() => q(h, "#bd-i7139 option[value='']"), "pilihan beracara elektronik")) as HTMLOptionElement;
@@ -657,12 +663,12 @@ describe("6. upaya damai oleh keluarga dan beracara secara elektronik", () => {
   });
 
   it("e-Court dengan email Tergugat tetapi pemiliknya belum pasti: SARAN 'penuh'; bukan perkara e-Court: tanpa saran; keputusan pasti tetap ditulis", async () => {
-    const dengan = { ada: true, elitigasi: { lewatEcourt: true, tergugatHadir: false }, domisili: { 2: { email: "tergugat@gmail.com", milik: "pihak", asal: "ecourt", keyakinan: "ragu" } }, orang: [] };
-    const h = buka({ el7: null as never, el7Kontak: dengan, usulan: [] });
+    const dengan = { ada: true, elitigasi: { lewatEcourt: true, tergugatHadir: true }, domisili: { 2: { email: "tergugat@gmail.com", milik: "pihak", asal: "ecourt", keyakinan: "ragu" } }, orang: [] };
+    const h = buka({ el7: null as never, el7Kontak: dengan, ketSidang: "", usulan: [] });
     await sampaiPerkara(h);
     await pilih(h, BLANGKO_PUT);
     await sampai(() => /^saran: E-Litigasi penuh/.test((q(h, "#bd-i7139 option[value='']") as HTMLOptionElement | null)?.textContent || ""), "saran penuh");
-    const bukan = buka({ el7: null as never, el7Kontak: { ...dengan, elitigasi: { lewatEcourt: false, tergugatHadir: true } }, usulan: [] });
+    const bukan = buka({ el7: null as never, el7Kontak: { ...dengan, elitigasi: { lewatEcourt: false, tergugatHadir: true } }, ketSidang: "", usulan: [] });
     await sampaiPerkara(bukan);
     await pilih(bukan, BLANGKO_PUT);
     await tunggu2(250);
@@ -867,5 +873,154 @@ describe.skipIf(process.env.TANGKAP !== "1")("tangkapan layar", () => {
     ];
     const kontak = { ada: true, elitigasi: { lewatEcourt: true, tergugatHadir: false, jumlahSidang: 1 }, domisili: { 1: null, 2: { email: "", milik: "pihak", asal: "" } }, orang: [] };
     await potret(process.env.TANGKAP_NAMA || "putusan-sesudah", { abtAwal: { "1214": BAWAAN_1214_NOMOR }, bawaan: { "5178": POTONGAN_KUA }, el7: null as never, el7Kontak: kontak, usulan });
+  });
+});
+
+// ============================================================================
+describe("10. 3 Nov butir 2: lama pisah rumah dihitung dari 'pisah rumah sejak' sebagai saran", () => {
+  const ph = (h: Halaman, k: string) => (q(h, `#bd-i${k}`) as HTMLInputElement | HTMLTextAreaElement).getAttribute("placeholder");
+  const POS_0246 = { kode: "0246", nama: "Pisah Rumah", nilai: "bulan Desember 2024", keyakinan: "cukup", sumber: [{ saksi: 1, kalimat: "sejak Desember 2024 berpisah rumah" }] };
+
+  it("saran samar '± 1 tahun 10 bulan' sampai tanggal sidang terpilih; tidak tersimpan ke ABT; lencana menyebut asalnya", async () => {
+    const h = buka({ abtAwal: { "0246": "bulan Desember 2024" }, usulan: [] });
+    await sampaiPerkara(h);
+    await pilih(h, BLANGKO_PUT);
+    await sampai(() => ph(h, "9944") === "± 1 tahun 10 bulan", "saran lama pisah terpasang");
+    expect(nilaiKotak(h, "9944")).toBe("");
+    expect(lencanaTeks(h, "9944").join("|")).toContain("dihitung dari pisah rumah sejak");
+    await tunggu2(200);
+    expect(h.abt["9944"]).toBeUndefined();
+    expect(mintaKe(h, /edit_data\?no_var=9944/, "POST")).toEqual([]);
+  });
+
+  it("saran ikut berubah saat 'pisah rumah sejak' diubah petugas; isian lama pisah yang sudah diketik tidak ditimpa", async () => {
+    const h = buka({ abtAwal: { "0246": "bulan Desember 2024" }, usulan: [] });
+    await sampaiPerkara(h);
+    await pilih(h, BLANGKO_PUT);
+    await sampai(() => ph(h, "9944") === "± 1 tahun 10 bulan", "saran awal");
+    ketik(h, q(h, "#bd-i0246") as HTMLInputElement, "bulan Maret 2026");
+    await sampai(() => ph(h, "9944") === "± 7 bulan", "saran mengikuti isian baru");
+    ketik(h, q(h, "#bd-i0246") as HTMLInputElement, "akhir tahun 2024");
+    await sampai(() => ph(h, "9944") === "± 1 tahun 10 bulan", "periode akhir tahun = Desember");
+    // petugas mengetik sendiri: nilainya tetap, saran hanya muncul sebagai pembanding
+    ketik(h, q(h, "#bd-i9944") as HTMLInputElement, "2 tahun");
+    await sampai(() => h.abt["9944"] === "2 tahun", "ketikan tersimpan");
+    ketik(h, q(h, "#bd-i0246") as HTMLInputElement, "bulan Januari 2025");
+    await tunggu2(700);
+    expect(nilaiKotak(h, "9944")).toBe("2 tahun");
+    expect(h.abt["9944"]).toBe("2 tahun");
+  });
+
+  it("tanda keyakinan mengikuti sumbernya: periode dari mesin 'cukup' -> 'yakin: cukup'; periode kasar (hanya tahun) -> ragu; periode tak terbaca -> tanpa saran", async () => {
+    const dari = buka({ usulan: [POS_0246] });
+    await sampaiPerkara(dari);
+    await pilih(dari, BLANGKO_PUT);
+    await sampai(() => ph(dari, "9944") === "± 1 tahun 10 bulan", "saran dari periode mesin");
+    expect(lencanaTeks(dari, "9944").join("|")).toMatch(/yakin: (pasti|cukup)/);
+    const kasar = buka({ abtAwal: { "0246": "tahun 2024" }, usulan: [] });
+    await sampaiPerkara(kasar);
+    await pilih(kasar, BLANGKO_PUT);
+    await sampai(() => /^± /.test(ph(kasar, "9944") || ""), "saran dari tahun saja");
+    expect(lencanaTeks(kasar, "9944").join("|")).toContain("ragu");
+    const aneh = buka({ abtAwal: { "0246": "awal pernikahan" }, usulan: [] });
+    await sampaiPerkara(aneh);
+    await pilih(aneh, BLANGKO_PUT);
+    await tunggu2(300);
+    expect(ph(aneh, "9944") || "").not.toMatch(/^±/);
+  });
+
+  it("murni: hitungLamaPisah - bulan, awal/akhir tahun, batas satu bulan, periode di masa depan", () => {
+    const h = buka();
+    const m = h.w.AletaIsiSipp as { hitungLamaPisah: (p: string, a?: string) => { nilai: string; kasar: boolean } | null };
+    expect(m.hitungLamaPisah("bulan Desember 2024", "2026-11-02")?.nilai).toBe("± 1 tahun 11 bulan");
+    expect(m.hitungLamaPisah("bulan Februari 2026", "2026-11-02")?.nilai).toBe("± 9 bulan");
+    expect(m.hitungLamaPisah("awal tahun 2025", "2026-11-02")?.nilai).toBe("± 1 tahun 10 bulan");
+    expect(m.hitungLamaPisah("akhir tahun 2024", "2026-11-02")?.nilai).toBe("± 1 tahun 11 bulan");
+    expect(m.hitungLamaPisah("bulan Januari 2025", "2026-01-31")?.nilai).toBe("± 1 tahun");
+    expect(m.hitungLamaPisah("bulan Oktober 2026", "2026-11-02")?.nilai).toBe("± 1 bulan");
+    expect(m.hitungLamaPisah("bulan November 2026", "2026-11-02")).toBeNull();
+    expect(m.hitungLamaPisah("bulan Desember 2026", "2026-11-02")).toBeNull();
+    expect(m.hitungLamaPisah("tahun 2023", "2026-11-02")?.kasar).toBe(true);
+    expect(m.hitungLamaPisah("awal pernikahan", "2026-11-02")).toBeNull();
+    expect(m.hitungLamaPisah("", "2026-11-02")).toBeNull();
+  });
+});
+
+// ============================================================================
+describe("11. 3 Nov butir 3: beracara secara elektronik menurut keputusan 144", () => {
+  const TERGUGAT = (p: Record<string, unknown> = {}) => ({ jenis: "pihak", pihakKe: 2, nama: "Andi Rustam bin Syamsudin", email: { nilai: "andi@contoh.id" }, hp: { nilai: "081234567890", bisaWhatsApp: true }, elitigasi: { status: "ya" }, ...p });
+  const PARA = (orang: unknown[], lewatEcourt = true) => ({ ada: true, lewatEcourt, orang });
+  const FAKTA = (hadir: boolean | null, lewat = true) => ({ ada: true, elitigasi: { lewatEcourt: lewat, tergugatHadir: hadir, jumlahSidang: hadir === null ? 0 : 2 }, domisili: { 1: null, 2: { email: "" } }, orang: [] });
+  const opsiPilih = (h: Halaman) => (q(h, "#bd-i7139 option[value='']") as HTMLOptionElement | null)?.textContent || "";
+
+  it("Tergugat tidak pernah hadir (e-Court): TIDAK ada saran e-litigasi maupun hybrid, tidak ditulis - walau email, WA, dan persetujuan lengkap dan keputusan lama 'pasti'", async () => {
+    const h = buka({ el7: { nilai: "1", keterangan: "E-Litigasi: penuh (Tergugat ber-email)" }, el7Kontak: FAKTA(false), kontakPara: PARA([TERGUGAT()]), ketSidang: "", usulan: [] });
+    await sampaiPerkara(h);
+    await pilih(h, BLANGKO_PUT);
+    await tunggu2(600);
+    expect(h.abt["7139"]).toBeUndefined();
+    expect(mintaKe(h, /edit_data\?no_var=7139/, "POST")).toEqual([]);
+    expect(opsiPilih(h)).not.toMatch(/^saran:/);
+    // kartunya tidak ikut 'perlu diisi'
+    expect(q(h, '#bd-perlu .bd-f[data-f="7139"]')).toBeNull();
+  });
+
+  it("verstek menurut keterangan sidang juga dihitung tidak pernah hadir (walau kontak lengkap)", async () => {
+    const h = buka({ el7: null as never, el7Kontak: FAKTA(null), kontakPara: PARA([TERGUGAT()]), usulan: [] });
+    await sampaiPerkara(h);
+    await pilih(h, BLANGKO_PUT);
+    await tunggu2(600);
+    expect(h.abt["7139"]).toBeUndefined();
+    expect(opsiPilih(h)).not.toMatch(/^saran:/);
+  });
+
+  it("Tergugat pernah hadir, punya WA + email + setuju: saran E-Litigasi (penuh); tidak setuju atau tanpa WA: hybrid", async () => {
+    const lengkap = buka({ el7: null as never, el7Kontak: FAKTA(true), kontakPara: PARA([TERGUGAT()]), ketSidang: "", usulan: [] });
+    await sampaiPerkara(lengkap);
+    await pilih(lengkap, BLANGKO_PUT);
+    await sampai(() => /^saran: E-Litigasi penuh/.test(opsiPilih(lengkap)), "saran penuh");
+    expect(q(lengkap, '.bd-f[data-f="7139"] .bd-el7')?.textContent).toMatch(/email dan WhatsApp dan setuju/);
+    const tidakSetuju = buka({ el7: null as never, el7Kontak: FAKTA(true), kontakPara: PARA([TERGUGAT({ elitigasi: { status: "tidak" } })]), ketSidang: "", usulan: [] });
+    await sampaiPerkara(tidakSetuju);
+    await pilih(tidakSetuju, BLANGKO_PUT);
+    await sampai(() => /^saran: E-Litigasi hybrid/.test(opsiPilih(tidakSetuju)), "tidak setuju = hybrid");
+    const tanpaWa = buka({ el7: null as never, el7Kontak: FAKTA(true), kontakPara: PARA([TERGUGAT({ hp: { nilai: "0451421234", bisaWhatsApp: false } })]), ketSidang: "", usulan: [] });
+    await sampaiPerkara(tanpaWa);
+    await pilih(tanpaWa, BLANGKO_PUT);
+    await sampai(() => /^saran: E-Litigasi hybrid/.test(opsiPilih(tanpaWa)), "tanpa WA = hybrid");
+    expect(tanpaWa.abt["7139"]).toBeUndefined();
+  });
+
+  it("keputusan lama 'pasti 1' (email saja) tidak ditulis bila aturan baru menilai hybrid; yang sejalan tetap ditulis", async () => {
+    const bentrok = buka({ el7: { nilai: "1", keterangan: "E-Litigasi: penuh (Tergugat ber-email)" }, el7Kontak: FAKTA(true), kontakPara: PARA([TERGUGAT({ elitigasi: { status: "belum" } })]), ketSidang: "", usulan: [] });
+    await sampaiPerkara(bentrok);
+    await pilih(bentrok, BLANGKO_PUT);
+    await sampai(() => /^saran: E-Litigasi hybrid/.test(opsiPilih(bentrok)), "jadi saran hybrid");
+    expect(bentrok.abt["7139"]).toBeUndefined();
+    const sejalan = buka({ el7: { nilai: "1", keterangan: "E-Litigasi: penuh (Tergugat ber-email)" }, el7Kontak: FAKTA(true), kontakPara: PARA([TERGUGAT()]), ketSidang: "", usulan: [] });
+    await sampaiPerkara(sejalan);
+    await pilih(sejalan, BLANGKO_PUT);
+    await sampai(() => sejalan.abt["7139"] === "1", "keputusan sejalan ditulis");
+  });
+
+  it("bukan perkara e-Court: tanpa saran dan tanpa catatan", async () => {
+    const h = buka({ el7: null as never, el7Kontak: FAKTA(false, false), kontakPara: PARA([TERGUGAT()], false), usulan: [] });
+    await sampaiPerkara(h);
+    await pilih(h, BLANGKO_PUT);
+    await tunggu2(400);
+    expect(opsiPilih(h)).not.toMatch(/^saran:/);
+    expect(h.abt["7139"]).toBeUndefined();
+  });
+
+  it("ikon penjelasan menjelaskan fungsi isian dengan kalimat awam (tidak tertulis langsung di blangko; dibaca kalimat otomatis)", async () => {
+    const h = buka({ el7: null as never, el7Kontak: FAKTA(true), kontakPara: PARA([TERGUGAT()]), ketSidang: "", usulan: [] });
+    await sampaiPerkara(h);
+    await pilih(h, BLANGKO_PUT);
+    const ikon = (await sampai(() => q(h, '.bd-f[data-f="7139"] .bd-sumber'), "ikon isian 7139")) as HTMLElement;
+    const title = ikon.getAttribute("title") || "";
+    expect(title).toMatch(/tidak tertulis langsung di blangko/i);
+    expect(title).toMatch(/pertimbangan dan amar otomatis/i);
+    expect(title).toMatch(/Hybrid/);
+    expect(title).not.toMatch(/7139|#/);
   });
 });

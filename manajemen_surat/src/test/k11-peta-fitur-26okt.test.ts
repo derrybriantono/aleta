@@ -274,7 +274,8 @@ describe("peta fitur K11: kelompok manifest dan modul malas", () => {
     // jembatan.js: 3 Nov 2026 MENAMBAH jenis "dengar-simpan" (hanya mendengar jawaban SIPP atas borang kuasa yang dikirim petugas; jenis lama tetap).
     // saksiscan.js (modul malas): 3 Nov 2026 kotak Usulan di samping borang (baseline sidik diperbarui di fixture); konten-kontak.js: lajur kontak e-Court
     // tersembunyi bila tidak ada usulan (dua pernyataan k5 berubah - sidik pernyataannya diperbarui di fixture).
-    const diubah = new Set(["aleta.js", "unduh-universal.js", "saksi-katalog-indeks.js", "saksi-katalog.js", "konten.js", "abt.js", "manifest.json", "latar.js", "blangko-derry-isian.js", "blangko-derry-saksi-tampil.js", "blangko-derry-saksi.js", "saksi-susun.js", "blangko-derry.js", "deteksi-sisa-blangko.js", "panel-alat.js", "blangko-derry-katalog.js", "jembatan.js", "sipp-ide-l1.js", "sipp-ide-m1.js"]);
+    // isi-sipp-bersama.js: 3 Nov 2026 MENAMBAH hitungLamaPisah (saran lama pisah rumah dari "pisah rumah sejak") dan tentukanBeracara (beracara elektronik, keputusan 144); ekspor lama tetap.
+    const diubah = new Set(["aleta.js", "unduh-universal.js", "saksi-katalog-indeks.js", "saksi-katalog.js", "konten.js", "abt.js", "manifest.json", "latar.js", "blangko-derry-isian.js", "blangko-derry-saksi-tampil.js", "blangko-derry-saksi.js", "saksi-susun.js", "blangko-derry.js", "deteksi-sisa-blangko.js", "panel-alat.js", "blangko-derry-katalog.js", "jembatan.js", "sipp-ide-l1.js", "sipp-ide-m1.js", "isi-sipp-bersama.js"]);
     for (const [nama, info] of Object.entries(sebelum.berkas)) {
       if (diubah.has(nama) || !sesudah.berkas[nama]) continue;
       // berkas yang sengaja disentuh didaftarkan di KEMBALI_DISENTUH

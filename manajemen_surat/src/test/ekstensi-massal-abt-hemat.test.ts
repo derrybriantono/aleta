@@ -379,16 +379,17 @@ describe("satu perkara - permintaan yang hasilnya dipakai saja", () => {
     expect(h.ringkas).not.toContain("dilewati");
   });
 
-  it("unduh nyala tanpa unggah: PDF putusan dibuat SEKALI (+ satu PDF SALINAN yang ditampilkan), tiga berkas diunduh, tidak ada tulisan ke SIPP", async () => {
+  it("unduh nyala tanpa unggah: PDF putusan dibuat SEKALI (+ satu PDF SALINAN yang langsung diunduh), empat berkas diunduh, tidak ada tulisan ke SIPP", async () => {
     const { k, jam, permintaan, unduhan, ditampilkan } = muatAbt();
     const opsi = { draf: false, pdf: true, anonim: true, unduh: true, unggah: false };
     const h = await jam.sampaiSelesai(k.kerjakanSatuPerkaraAbt(butirKe(1), PETA, opsi, "petugas", () => {}));
-    // 14 Okt: sesudah PDF putusan, PDF SALINAN langsung ditampilkan (tab), bukan diunduh.
+    // 3 Nov: sesudah PDF putusan, PDF SALINAN langsung diunduh (tidak dibuka di tab penampil).
     expect(jalur(permintaan)).toEqual(["GET pratinjau ABT", "POST anonim ABT", "POST /abt/pdf", "POST /abt/pdf (salinan)"]);
-    expect(ditampilkan).toEqual(["101_Pdt.G_2026_PA.Dgl - [01] [Kabul Verstek] Cerai (Format Lengkap) - SALINAN.pdf"]);
-    expect(unduhan).toHaveLength(3);
+    expect(ditampilkan).toEqual([]);
+    expect(unduhan).toHaveLength(4);
+    expect(unduhan).toContain("101_Pdt.G_2026_PA.Dgl - [01] [Kabul Verstek] Cerai (Format Lengkap) - SALINAN.pdf");
     expect(unduhan.filter((n) => n.endsWith(".rtf"))).toHaveLength(2);
-    expect(unduhan.filter((n) => n.endsWith(".pdf"))).toHaveLength(1);
+    expect(unduhan.filter((n) => n.endsWith(".pdf"))).toHaveLength(2);
     expect(h.ringkas).toContain("3 berkas diunduh");
   });
 

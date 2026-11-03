@@ -185,10 +185,10 @@ describe("jalur PDF salinan: bot -> portal -> ekstensi", () => {
     expect(r).toContain("salinan: keteranganSalinan");
   });
 
-  it("ekstensi: sesudah PDF putusan (cetak tiga berkas & Kerjakan perkara ini) salinan langsung ditampilkan", () => {
+  it("ekstensi: sesudah PDF putusan (cetak tiga berkas & Kerjakan perkara ini) salinan langsung diunduh (3 Nov); penampil tab hanya cadangan panel Blangko Derry", () => {
     expect(abt).toMatch(/if \(hasil\.pdf === "tersimpan"\)[\s\S]{0,200}tampilkanPdfSalinan\(isiRtf/);
     expect(abt).toMatch(/siap\.dokumen\.pdf === "ok"[\s\S]{0,200}tampilkanPdfSalinan\(siap\.isiRtf/);
-    expect(abt).toContain('jenis: "tampilkan-pdf"');
+    expect(abt).not.toContain('jenis: "tampilkan-pdf"');
     expect(abt).toContain("BELUM terdaftar/disahkan");
     expect(latar).toContain('if (pesan.jenis === "tampilkan-pdf")');
     expect(latar).toContain("chrome.runtime.getURL(`salinan.html#${id}`)");

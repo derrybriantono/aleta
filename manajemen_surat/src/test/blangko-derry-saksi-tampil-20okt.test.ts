@@ -860,7 +860,8 @@ describe("Blangko Derry (20 Okt): kepala panel menempel saat digulir", () => {
       }
     };
     await sampaiPerkara(h);
-    expect(diamati).toBe(1);
+    // 3 Nov: pengamat kedua (lebar tombol Cetak massal, supaya Ganti blangko sejajar Ganti perkara) - yang dijaga: kepala ikut diamati.
+    expect(diamati).toBeGreaterThanOrEqual(1);
     expect(akar(h).style.getPropertyValue("--bd-tinggi-atas")).toMatch(/^\d+(\.\d+)?px$/);
   });
 });

@@ -514,6 +514,12 @@ describe("uji gabungan jsdom: itsbat 228/Pdt.P/2026 (2 pemohon, alur 16)", () =>
       // 30 Okt (G2a): kalimat dasar katalog yang belum diisi dari data = "contoh" (ditandai untuk disesuaikan petugas), bukan "manual"
       else expect(["data", "ragu", "contoh"]).toContain(asal);
     }
+    // 3 Nov (butir 23): tanda visual kalimat contoh (lencana + bingkai putus-putus) dan lencana hijau "kalimat berbeda" disembunyikan;
+    // asal "contoh" tetap tercatat (kelas bd-asal-contoh, ringkasan) tetapi lencana tidak digambar, dan lencana kuning "perlu dilengkapi" tetap ada.
+    expect(qd(h, "textarea[data-asal='contoh']").length).toBeGreaterThan(0);
+    expect(qd(h, ".bd-asallencana.contoh")).toHaveLength(0);
+    expect(akar(h).textContent).not.toMatch(/kalimat berbeda|kalimat contoh \(/);
+    expect(qd(h, "textarea[data-asal='kosong']").length === 0 || qd(h, ".bd-asallencana.kosong").length > 0).toBe(true);
     // ringkasan sama dengan hitungan kotak
     const n = asalDom(h);
     expect(ringkas(h)).toEqual({ terisi: n.data + n.manual, ragu: n.ragu, kosong: n.kosong });

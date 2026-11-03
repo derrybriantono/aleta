@@ -514,11 +514,12 @@ describe("3. keluaran disusun BERSAMAAN dari satu naskah; hasil dan urutan pesan
     expect(u.pdf).toBeGreaterThanOrEqual(TUNDA - 20);
     expect(u.salinan).toBeGreaterThanOrEqual(TUNDA - 20);
     // Nama berkas tiap jenis keluaran (tidak boleh berubah).
-    expect(unduhanLatar(h).sort()).toEqual([`${NAMA_DASAR} - anonim.pdf`, `${NAMA_DASAR}.pdf`, `${NAMA_DASAR}.rtf`].sort());
-    expect(tampilLatar(h)).toEqual([`${NAMA_DASAR} - SALINAN.pdf`]);
+    // 3 Nov (butir 4): PDF SALINAN langsung diunduh (nama sama), tidak membuka tab penampil.
+    expect(unduhanLatar(h).sort()).toEqual([`${NAMA_DASAR} - SALINAN.pdf`, `${NAMA_DASAR} - anonim.pdf`, `${NAMA_DASAR}.pdf`, `${NAMA_DASAR}.rtf`].sort());
+    expect(tampilLatar(h)).toEqual([]);
     // Urutan hasil di log = urutan lama: RTF, PDF, PDF SALINAN, anonim, PDF anonim.
     const log = isian(h).keadaan().log.join("\n");
-    const urut = ["RTF diunduh", "PDF diunduh", "PDF SALINAN dibuka di tab baru", "PDF anonim diunduh"].map((k) => log.lastIndexOf(k));
+    const urut = ["RTF diunduh", "PDF diunduh", "PDF SALINAN diunduh", "PDF anonim diunduh"].map((k) => log.lastIndexOf(k));
     expect(urut.every((x) => x >= 0)).toBe(true);
     expect([...urut]).toEqual([...urut].sort((a, b) => a - b));
   });
@@ -528,7 +529,8 @@ describe("3. keluaran disusun BERSAMAAN dari satu naskah; hasil dan urutan pesan
     await pilihPutusan(h);
     (q(h, '[data-fmt="salinan"]') as HTMLInputElement).click();
     await cetakSekarang(h);
-    await sampai(() => tampilLatar(h).length === 1, "salinan tampil", 8000);
+    await sampai(() => unduhanLatar(h).includes(`${NAMA_DASAR} - SALINAN.pdf`), "salinan diunduh", 8000);
+    expect(tampilLatar(h)).toEqual([]);
     expect(h.pdfBadan[0].salinan).toBe(true);
     expect(h.pdfBadan[0].ttd).toBeUndefined();
     expect(h.pdfRtf[0]).not.toContain("\\pict");
@@ -570,25 +572,44 @@ describe("3. keluaran disusun BERSAMAAN dari satu naskah; hasil dan urutan pesan
 });
 
 describe("4. unduhan panel Blangko Derry tidak pernah lewat <a download> dari halaman http", () => {
-  it("RTF + PDF + salinan + anonim: semuanya lewat pekerja latar (jenis unduh / tampilkan-pdf); tidak ada klik tautan halaman", async () => {
+  it("RTF + PDF + salinan + anonim: semuanya lewat pekerja latar (jenis unduh); tidak ada klik tautan halaman", async () => {
     const h = buka();
     await pilihPutusan(h);
     for (const f of ["pdf", "salinan", "anon"]) (q(h, `[data-fmt="${f}"]`) as HTMLInputElement).click();
     await cetakSekarang(h);
     await sampai(() => /PDF anonim diunduh/.test(akar(h).textContent || ""), "selesai", 15000);
-    expect(unduhanLatar(h)).toHaveLength(3);
+    expect(unduhanLatar(h)).toHaveLength(4);
     expect(h.klikJangkar.n).toBe(0);
     for (const m of h.latar.filter((x) => x.jenis === "unduh")) expect(String(m.alamat)).toMatch(/^data:/);
   });
 
-  it("penampil salinan gagal dibuka: salinan diunduh lewat pekerja latar dengan nama yang sama (bukan tautan halaman)", async () => {
-    const h = buka({ viewerGagal: true });
+  it("PDF SALINAN langsung diunduh lewat pekerja latar dengan nama yang sama; tab penampil TIDAK dibuka (3 Nov, butir 4)", async () => {
+    const h = buka();
     await pilihPutusan(h);
     (q(h, '[data-fmt="salinan"]') as HTMLInputElement).click();
     await cetakSekarang(h);
     await sampai(() => /PDF SALINAN diunduh/.test(akar(h).textContent || ""), "salinan diunduh", 8000);
     expect(unduhanLatar(h)).toContain(`${NAMA_DASAR} - SALINAN.pdf`);
+    expect(tampilLatar(h)).toEqual([]);
     expect(h.klikJangkar.n).toBe(0);
+  });
+
+  it("unduhan langsung SALINAN gagal: cadangan membuka tab penampil (dengan pesan awam); bila penampil pun gagal, pesan awam di panel", async () => {
+    const h = buka({ unduhGagal: true });
+    await pilihPutusan(h);
+    (q(h, '[data-fmt="salinan"]') as HTMLInputElement).click();
+    await cetakSekarang(h);
+    await sampai(() => /belum dapat diunduh langsung, jadi dibuka di tab baru/.test(akar(h).textContent || ""), "cadangan tab", 8000);
+    expect(tampilLatar(h)).toEqual([`${NAMA_DASAR} - SALINAN.pdf`]);
+    const kedua = buka({ unduhGagal: true, viewerGagal: true });
+    await pilihPutusan(kedua);
+    (q(kedua, '[data-fmt="salinan"]') as HTMLInputElement).click();
+    await cetakSekarang(kedua);
+    await sampai(() => /PDF SALINAN belum dapat diunduh\. Coba cetak sekali lagi/.test(akar(kedua).textContent || ""), "pesan awam", 8000);
+    const baris = (isian(kedua).keadaan().log as string[]).filter((x) => /PDF SALINAN/.test(x)).join(" | ");
+    expect(baris).toMatch(/belum dapat diunduh/);
+    expect(baris).not.toMatch(/pekerja latar|unduhan lewat ekstensi/);
+    expect(kedua.klikJangkar.n).toBe(0);
   });
 
   it("pekerja latar menolak unduhan: dilaporkan gagal, TIDAK jatuh ke tautan halaman (yang diblokir Chrome)", async () => {
