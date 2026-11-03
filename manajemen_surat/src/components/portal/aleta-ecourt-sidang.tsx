@@ -1,6 +1,7 @@
 "use client";
 
-import { LencanaModePersidanganPihak } from "@/components/portal/kontak-para-pihak";
+import { LencanaBeracaraPerkara, LencanaModePersidanganPihak } from "@/components/portal/kontak-para-pihak";
+import { tergugatPernahHadirDariSandi } from "@/lib/beracara-elektronik";
 import { useOverlayHanyaGagal } from "@/lib/global-loading";
 import { labelTidakPatut } from "@/lib/label-kepatutan";
 import type { CaraRelaas } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
@@ -8235,6 +8236,18 @@ export function AletaEcourtSidang({
                           ) : null}
                           {/* === 12OKT-B: Ghaib / Prodeo / Non e-Court di samping nomor === */}
                           <LencanaPerkaraBaris baris={baris} aktif={aktifPenandaPerkara} className="ml-2 align-middle" />
+                          {/* Beracara (3 Nov 2026): hanya dari kontak yang SUDAH terbaca - tanpa pembacaan per baris. */}
+                          {baris.lewatEcourt ? (
+                            <LencanaBeracaraPerkara
+                              nomorPerkara={baris.nomorPerkara}
+                              bacaOtomatis={false}
+                              className="ml-2 align-middle"
+                              pernahHadirTergugat={tergugatPernahHadirDariSandi(
+                                [baris.dihadiriOleh],
+                                baris.verstekPutusan === true
+                              )}
+                            />
+                          ) : null}
                           {/* === AKHIR 12OKT-B === */}
                           {/* Penanda panggilan tepat di samping nomor perkara:
                               itulah yang dicari mata saat menelusuri jadwal. */}

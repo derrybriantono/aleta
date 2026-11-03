@@ -6,6 +6,11 @@ import { apiPath } from "@/lib/base-path";
 import { usePenggunaAktifOpsional } from "@/lib/app-state";
 import { bolehAksiLayar } from "@/lib/matriks-peran";
 import { modePersidangan } from "@/lib/mode-persidangan";
+import {
+  tentukanBeracaraElektronik,
+  type HasilBeracara,
+  type MasukanBeracara,
+} from "@/lib/beracara-elektronik";
 import type { KontakParaPihak, KontakParaPihakBaris } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 
 /* === STATUS-ZIP 12 Okt === */
@@ -87,18 +92,23 @@ export function bersihkanKontakParaPihak(nomorPerkara?: string) {
   beritahu();
 }
 
-export function useKontakParaPihak(nomorPerkara: string): Keadaan {
+/**
+ * `bacaOtomatis=false`: hanya memakai yang SUDAH tersimpan (mis. baris Jadwal Sidang
+ * yang tidak boleh memicu satu pembacaan bot per baris); lencananya baru muncul
+ * sesudah perkaranya dibuka di tempat lain.
+ */
+export function useKontakParaPihak(nomorPerkara: string, bacaOtomatis = true): Keadaan {
   const [, paksa] = useState(0);
   // HAK-PERAN 12 Okt: kontak pribadi pihak = status.data-pihak; rute juga 403.
   const boleh = bolehAksiLayar(usePenggunaAktifOpsional(), "status.data-pihak");
   useEffect(() => {
     const dengar = () => paksa((x) => x + 1);
     pendengar.add(dengar);
-    if (nomorPerkara && boleh) void muat(nomorPerkara);
+    if (nomorPerkara && boleh && bacaOtomatis) void muat(nomorPerkara);
     return () => {
       pendengar.delete(dengar);
     };
-  }, [nomorPerkara, boleh]);
+  }, [nomorPerkara, boleh, bacaOtomatis]);
   if (!boleh) return { tahap: "ditolak" };
   return simpanan.get(nomorPerkara) ?? { tahap: "memuat" };
 }
@@ -208,9 +218,12 @@ export function LencanaModePersidanganPihak({
 export function KontakPihak({
   nomorPerkara,
   orang,
+  pernahHadirTergugat = null,
 }: {
   nomorPerkara: string;
   orang: { nama: string; jenis: string; pihakKe: number | null };
+  /** Tergugat pernah hadir? null = belum ada sidang yang tercatat (lihat beracara-elektronik.ts). */
+  pernahHadirTergugat?: boolean | null;
 }) {
   const keadaan = useKontakParaPihak(nomorPerkara);
   if (keadaan.tahap === "ditolak") return null;
@@ -224,18 +237,33 @@ export function KontakPihak({
   if (!baris) return null;
   const kuasa = baris.jenis === "kuasa";
   const e = LABEL_ELITIGASI[baris.elitigasi.status];
+  const beracara =
+    !kuasa && orang.pihakKe === 2
+      ? tentukanBeracaraElektronik(masukanBeracaraDariKontak(keadaan.data, pernahHadirTergugat))
+      : null;
 
   return (
     <div
       className="mt-0.5 space-y-0.5 rounded-md border border-border/60 bg-muted/20 px-2 py-1 text-xs"
       data-bagian="kontak-pihak"
     >
-      <RuasKontak label="Email" nilai={baris.email} kosong="belum ada di SIPP maupun e-Court" />
+      <RuasKontak label="Email" nilai={baris.email} kosong="email belum ada" />
       <RuasKontak
         label={baris.hp.bisaWhatsApp || !baris.hp.nilai ? "WhatsApp / HP" : "Telepon (bukan HP)"}
         nilai={baris.hp}
-        kosong="belum ada di SIPP maupun e-Court"
+        kosong="WA belum ada"
       />
+      {beracara ? (
+        <div className="flex flex-wrap items-baseline gap-x-1.5" data-ruas-kontak="beracara">
+          <span className="w-[8.5rem] shrink-0 text-muted-foreground">Beracara</span>
+          <span className="font-medium" data-beracara={beracara.jenis}>
+            {beracara.label}
+          </span>
+          <span className="text-muted-foreground">
+            {beracara.jenis === "tergugat-tidak-hadir" ? "" : `- ${beracara.alasan}`}
+          </span>
+        </div>
+      ) : null}
       {kuasa ? null : (
         <div className="flex flex-wrap items-baseline gap-x-1.5" data-ruas-kontak="elitigasi">
           <span className="w-[8.5rem] shrink-0 text-muted-foreground">Sidang elektronik</span>
@@ -254,3 +282,64 @@ export function KontakPihak({
   );
 }
 /* === AKHIR STATUS-ZIP === */
+
+/* === BERACARA ELEKTRONIK 3 Nov 2026 (keputusan 144) === */
+
+/** Masukan fungsi tunggal dari kontak para pihak yang SUDAH dibaca (Tergugat = pihak kedua). */
+export function masukanBeracaraDariKontak(data: KontakParaPihak, pernahHadir: boolean | null): MasukanBeracara {
+  const tergugat = data.orang
+    .filter((x) => x.jenis === "pihak" && x.pihakKe === 2)
+    .map((x) => ({
+      nama: x.nama,
+      email: x.email.nilai || null,
+      wa: x.hp.bisaWhatsApp ? x.hp.nilai || null : null,
+      setujuElektronik:
+        x.elitigasi.status === "ya" ? true : x.elitigasi.status === "tidak" ? false : null,
+    }));
+  return { eCourt: data.lewatEcourt === true, tergugat, tergugatPernahHadir: pernahHadir };
+}
+
+const KELAS_BERACARA: Record<HasilBeracara["jenis"], string> = {
+  "e-litigasi": "border-emerald-600/50 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  hybrid: "border-amber-600/50 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  "tergugat-tidak-hadir": "border-border bg-muted/40 text-muted-foreground",
+};
+
+/** Lencana beracara: hijau E-Litigasi, kuning Hybrid, abu "Tergugat tidak pernah hadir". */
+export function LencanaBeracara({ hasil, className = "" }: { hasil: HasilBeracara | null; className?: string }) {
+  if (!hasil) return null;
+  return (
+    <span
+      className={`inline-block whitespace-nowrap rounded-full border px-2 py-px text-xs font-semibold ${KELAS_BERACARA[hasil.jenis]} ${className}`}
+      title={hasil.alasan}
+      data-beracara-lencana={hasil.jenis}
+    >
+      {hasil.label}
+    </span>
+  );
+}
+
+/**
+ * Lencana beracara untuk satu perkara. `bacaOtomatis=false` (baris Jadwal Sidang):
+ * hanya dari kontak yang SUDAH terbaca - tidak memicu pembacaan per baris.
+ */
+export function LencanaBeracaraPerkara({
+  nomorPerkara,
+  pernahHadirTergugat,
+  bacaOtomatis = true,
+  className,
+}: {
+  nomorPerkara: string;
+  pernahHadirTergugat: boolean | null;
+  bacaOtomatis?: boolean;
+  className?: string;
+}) {
+  const keadaan = useKontakParaPihak(nomorPerkara, bacaOtomatis);
+  if (keadaan.tahap !== "siap") return null;
+  return (
+    <LencanaBeracara
+      hasil={tentukanBeracaraElektronik(masukanBeracaraDariKontak(keadaan.data, pernahHadirTergugat))}
+      className={className}
+    />
+  );
+}

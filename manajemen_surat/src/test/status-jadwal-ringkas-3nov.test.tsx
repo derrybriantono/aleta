@@ -200,3 +200,56 @@ describe("butir 12-14 - Status Perkara: terlipat bawaan, ringkasan tetap, tanpa 
     expect(STATUS).toMatch(/JS \$\{status\.jurusita\.map/);
   });
 });
+
+describe("tampilan baru Status Perkara (keputusan 142-144)", () => {
+  it("pemisah antar-butir satu konstanta, berjarak, dan tidak ada ' · ' tersisa di Status Perkara", async () => {
+    const { PEMISAH_RINGKAS, gabungRingkas, namaMajelisSingkat, namaTanpaGelar } = await import("@/lib/status-perkara-seamless");
+    expect(PEMISAH_RINGKAS).toMatch(/^\s\u2004\|\u2004\s$/);
+    expect(gabungRingkas(["a", "", "b", null, "c"])).toBe(`a${PEMISAH_RINGKAS}b${PEMISAH_RINGKAS}c`);
+    for (const f of ["aleta-ecourt-status-perkara.tsx", "bentuk-sajian.tsx", "tautan-petugas.tsx"]) {
+      const kode = baca(`src/components/portal/${f}`)
+        .split("\n")
+        .filter((l) => !/^\s*(\/\/|\*|\{\/\*)/.test(l) && /[`{<]/.test(l) && l.includes(" · "));
+      expect(kode, f).toEqual([]);
+    }
+    expect(namaTanpaGelar("Drs. H. Ahmad Fauzan, M.H.")).toBe("Ahmad Fauzan");
+    expect(
+      namaMajelisSingkat([
+        { nama: "Drs. H. Ahmad Fauzan, M.H.", jabatan: "Hakim Ketua" },
+        { nama: "Siti Rahmawati, S.H.I., M.H.", jabatan: "Hakim Anggota 1" },
+      ])
+    ).toBe("Ahmad Fauzan (K), Siti Rahmawati");
+  });
+
+  it("kelompok terbuka sendiri menurut tahap perkara", async () => {
+    const { bukaMenurutTahap } = await import("@/lib/status-perkara-seamless");
+    const dasar = { sudahPutus: false, sudahDiarsipkan: false, adaSidang: false, mediasiBerjalan: false, agendaBerikutPembuktian: false };
+    expect(bukaMenurutTahap(dasar).bagian.has("tahapan")).toBe(true);
+    expect(bukaMenurutTahap({ ...dasar, mediasiBerjalan: true }).bagian.has("mediasi")).toBe(true);
+    expect(bukaMenurutTahap({ ...dasar, adaSidang: true }).bagian.has("sidang")).toBe(true);
+    const bukti = bukaMenurutTahap({ ...dasar, adaSidang: true, agendaBerikutPembuktian: true });
+    expect([...bukti.bagian]).toEqual(expect.arrayContaining(["saksi", "status-pandu-saksi"]));
+    const putus = bukaMenurutTahap({ ...dasar, sudahPutus: true });
+    expect([...putus.kelompok]).toEqual(["C"]);
+    expect([...bukaMenurutTahap({ ...dasar, sudahPutus: true, sudahDiarsipkan: true }).kelompok].sort()).toEqual(["C", "D"]);
+    for (const t of [dasar, putus]) {
+      for (const k of ["majelis", "pihak", "sk"]) expect((t as { bagian?: Set<string> }).bagian?.has(k) ?? false, k).toBe(false);
+    }
+  });
+
+  it("lencana beracara: hijau, kuning, abu, dengan tooltip alasan; kedua layar memasangnya", async () => {
+    const { LencanaBeracara } = await import("@/components/portal/kontak-para-pihak");
+    const { tentukanBeracaraElektronik } = await import("@/lib/beracara-elektronik");
+    const hasil = tentukanBeracaraElektronik({
+      eCourt: true,
+      tergugatPernahHadir: true,
+      tergugat: [{ nama: "A", email: "a@x", wa: "081", setujuElektronik: true }],
+    });
+    const { container } = render(createElement(LencanaBeracara, { hasil }));
+    const el = container.querySelector("[data-beracara-lencana='e-litigasi']") as HTMLElement;
+    expect(el.textContent).toBe("E-Litigasi");
+    expect(el.getAttribute("title")).toContain("Email ada");
+    expect(STATUS).toMatch(/<LencanaBeracaraPerkara nomorPerkara=\{status\.identitas\.nomorPerkara\}/);
+    expect(baca("src/components/portal/aleta-ecourt-sidang.tsx")).toMatch(/<LencanaBeracaraPerkara[\s\S]{0,200}bacaOtomatis=\{false\}/);
+  });
+});

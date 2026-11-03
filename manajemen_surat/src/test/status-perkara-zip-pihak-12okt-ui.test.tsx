@@ -167,7 +167,7 @@ describe("butir 12 - kontak pada Para Pihak", () => {
     expect(rina.textContent).toContain("bersedia bersidang secara e-Litigasi - dari e-Court");
 
     // Tergugat: tidak ada kontak -> disebut jujur; kesediaan tidak diketahui + sebabnya.
-    expect(joko.textContent).toContain("belum ada di SIPP maupun e-Court");
+    expect(joko.textContent).toContain("email belum ada");
     expect(joko.querySelector('[data-elitigasi="tidak-diketahui"]')?.textContent).toBe("Tidak diketahui");
     expect(joko.textContent).toContain("belum terbaca pada persetujuan e-Court");
 

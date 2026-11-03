@@ -40,7 +40,8 @@ import { AletaPromptPutusan } from "@/components/portal/aleta-prompt-putusan";
 import { NomorSidang, TombolUnduh } from "@/components/portal/aleta-ecourt-sidang";
 import { TombolUnduhZip } from "@/components/portal/tombol-unduh-zip";
 /* === STATUS-ZIP 12 Okt === */
-import { KontakPihak } from "@/components/portal/kontak-para-pihak";
+import { KontakPihak, LencanaBeracaraPerkara } from "@/components/portal/kontak-para-pihak";
+import { tergugatPernahHadirDariSandi } from "@/lib/beracara-elektronik";
 /* === AKHIR STATUS-ZIP === */
 /* === 12OKT-E: tanggal KTP pihak === */
 import { TanggalKtpPihak } from "@/components/portal/status-perkara-ktp-pihak";
@@ -3145,6 +3146,11 @@ function IsiStatus({
     [seamless, tahapBuka]
   );
 
+  const pernahHadirTergugat = tergugatPernahHadirDariSandi(
+    status.jadwal.filter((x) => x.tanggalSidang < hariIni).map((x) => x.dihadiriOleh),
+    status.putusan?.verstek === true
+  );
+
   // Jawaban dan sita (Jalannya perkara) serta Eksekusi (Putusan dan tindak lanjut):
   // SATU penentu "ada isi"; yang tidak terdeteksi tidak tampil sama sekali.
   const isiJawabanSita = isiJawabanSitaEksekusi(status, { tampilJawaban: saklarJawaban, tampilSita: saklarSita });
@@ -3209,6 +3215,10 @@ function IsiStatus({
         <Badge variant={status.lewatEcourt ? "default" : "muted"}>
           {status.lewatEcourt ? "e-Court" : "perkara biasa"}
         </Badge>
+        {/* Beracara: E-Litigasi / Hybrid / Tergugat tidak pernah hadir (aturan tunggal di lib/beracara-elektronik.ts). */}
+        {status.lewatEcourt ? (
+          <LencanaBeracaraPerkara nomorPerkara={status.identitas.nomorPerkara} pernahHadirTergugat={pernahHadirTergugat} />
+        ) : null}
 
         {/* ==================================================================
             TANGGAL DAN STATUS DIPISAH JADI DUA PENANDA
@@ -3454,11 +3464,16 @@ function IsiStatus({
                     {/* === STATUS-ZIP 12 Okt === Email, nomor WhatsApp, dan kesediaan
                         sidang elektronik (e-Litigasi) pihak dan kuasa. Saksi tidak. */}
                     {orang.pihakKe === 1 || orang.pihakKe === 2 ? (
-                      <KontakPihak nomorPerkara={status.identitas.nomorPerkara} orang={orang} />
+                      <KontakPihak nomorPerkara={status.identitas.nomorPerkara} orang={orang} pernahHadirTergugat={pernahHadirTergugat} />
                     ) : null}
                     {/* === AKHIR STATUS-ZIP === */}
-                    {/* === 12OKT-E: Tanggal KTP pihak (dari berkas KTP e-Court) === */}
-                    <TanggalKtpPihak nomorPerkara={status.identitas.nomorPerkara} orang={orang} semuaPihak={status.pihak} />
+                    {/* === 12OKT-E: Tanggal KTP pihak (dari berkas KTP e-Court) ===
+                        3 Nov 2026 (keputusan 144B): baris keterangan di bawah nama diganti email dan
+                        WhatsApp (KontakPihak di atas); tanggal KTP pindah ke identitas yang dibuka
+                        (ketuk nama) - tidak dihapus. */}
+                    {terbuka ? (
+                      <TanggalKtpPihak nomorPerkara={status.identitas.nomorPerkara} orang={orang} semuaPihak={status.pihak} />
+                    ) : null}
                     {/* === AKHIR 12OKT-E === */}
                     {terbuka ? (
                       <KartuIdentitasPihak
