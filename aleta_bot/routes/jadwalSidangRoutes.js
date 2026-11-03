@@ -1178,6 +1178,39 @@ router.post("/kasir/otomatis/setelan", wajibToken, async (req, res) => {
   }
 });
 
+/* === KASIR TARIF-ALAMAT 3 Nov === */
+/**
+ * GET  /kasir/tarif                 setelan tarif + tabel + tawaran "tarif baru?" (hanya SELECT)
+ * POST /kasir/tarif { aksi: "setelan"|"terima"|"tolak", berlaku, tarif, tawaran, operator }
+ *                                   basis data ALETA bot saja (bukan SIPP). Hak dijaga portal:
+ *                                   setelan = Super Admin/Admin; terima/tolak = juga kasir.
+ */
+router.get("/kasir/tarif", wajibToken, async (req, res) => {
+  try {
+    res.json(await require("../services/kasirJurnalService").tarifSatker());
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
+
+router.post("/kasir/tarif", wajibToken, async (req, res) => {
+  try {
+    const badan = req.body || {};
+    const simpan = await require("../services/kasirOtomatisService").simpanSetelanTarif({
+      aksi: String(badan.aksi || ""),
+      berlaku: badan.berlaku,
+      tarif: badan.tarif && typeof badan.tarif === "object" ? badan.tarif : undefined,
+      tawaran: badan.tawaran && typeof badan.tawaran === "object" ? badan.tawaran : undefined,
+      operator: badan.operator,
+    });
+    if (!simpan.ok) return res.status(400).json(simpan);
+    res.json({ ...(await require("../services/kasirJurnalService").tarifSatker()), setelan: simpan.setelan });
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
+/* === AKHIR KASIR TARIF-ALAMAT === */
+
 router.post("/kasir/otomatis", wajibToken, async (req, res) => {
   let jejak = null;
   try {

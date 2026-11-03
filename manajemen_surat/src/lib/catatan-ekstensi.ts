@@ -57,6 +57,16 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.69",
+    dirilis: "2026-11-04T08:20:00+08:00",
+    judul: "Kasir: saran tarif panggilan per kecamatan dan panggilan ikrar e-litigasi tanpa biaya",
+    butir: [
+      "Kasir ALETA menyarankan biaya panggilan dan pemberitahuan menurut kecamatan pihak, hanya dari catatan sejak tanggal berlaku tarif Pos (28 Oktober 2024); nominal tetap langsung terisi, sumbernya tampil saat kotak disorot.",
+      "Bila nominal yang diketik berbeda dari tarif kecamatan atau masih tarif lama, muncul satu baris kecil dengan tautan pakai; simpan tidak ditahan.",
+      "Panggilan ikrar talak untuk Termohon yang beracara elektronik dan pernah hadir tidak lagi dicentang berbiaya; relaas Pos yang tercatat tetap berbiaya.",
+    ],
+  },
+  {
     versi: "1.205.68",
     dirilis: "2026-11-04T08:10:00+08:00",
     judul: "Kasir: tanpa biaya panggilan untuk Tergugat yang beracara elektronik",

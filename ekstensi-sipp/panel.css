@@ -9934,6 +9934,17 @@ html[data-aleta-teknis="sembunyi"] .aleta-teknis {
   line-height: 1.45;
 }
 .aleta-kasir-peringatan[hidden] { display: none; }
+/* 3 Nov 2026 (tarif wilayah): "periksa" hanya bergaris lembut; peringatan lunak satu baris kecil + "pakai". */
+.aleta-kasir-rp[data-kasir-tarif="periksa"],
+.aleta-kasir-masukan[data-kasir-tarif="periksa"] { border-style: dashed; border-color: color-mix(in srgb, var(--aleta-mendesak) 55%, var(--aleta-garis-kuat)); }
+.aleta-kasir-tarif-saran { display: block; margin-top: 2px; white-space: normal; overflow-wrap: anywhere; color: var(--aleta-tulisan-lembut); font-size: calc(11.5px * var(--aleta-skala-huruf, 1)); font-weight: 400; line-height: 1.35; text-align: right; }
+.aleta-kasir-tarif-saran[hidden] { display: none; }
+.aleta-kasir-tarif-pakai { padding: 0; border: none; background: none; color: var(--aleta-merek); font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; }
+.aleta-kasir-tarif-pakai[hidden] { display: none; }
+.aleta-kasir-tarif-tawaran { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; font-size: calc(12px * var(--aleta-skala-huruf, 1)); }
+.aleta-kasir-tabel-tarif { width: auto; min-width: 320px; justify-self: start; }
+.aleta-kasir-tabel-tarif td { padding: 3px 6px; }
+.aleta-kasir-tabel-tarif .aleta-kasir-nominal { width: 84px; border: none; background: transparent; font-variant-numeric: tabular-nums; text-align: right; outline: none; }
 .aleta-kasir-tabel-sunting .aleta-kasir-hapus { padding: 2px 8px; }
 .aleta-kasir-kartu-kepala .aleta-kasir-kartu-skum { order: 8; display: inline-flex; margin-left: auto; }
 .aleta-kasir-kartu-kepala:has(.aleta-kasir-kartu-skum:not([hidden])) .aleta-kasir-kartu-tautan { margin-left: 0; }

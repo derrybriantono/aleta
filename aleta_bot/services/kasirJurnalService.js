@@ -316,11 +316,6 @@ function petaModal(baris, kunciDari) {
   return hasil;
 }
 
-/** Uraian panggilan/pemberitahuan yang bukan pos biasa - tarifnya tidak mewakili pihak. */
-function uraianKhusus(uraian) {
-  return /RRI|PEMDA|radio|iklan|pengumuman/i.test(bersih(uraian));
-}
-
 /**
  * ============================================================================
  * PUTUSAN YANG BARU TERBACA DARI HASIL SIDANG
@@ -541,25 +536,16 @@ function susunUsulan(k) {
     return bawaan > 0 ? bawaan : null;
   };
 
-  /** Tarif pos untuk satu pihak: pihak itu sendiri > kecamatan > kabupaten. */
-  const tarifPihak = (p) => {
-    const sendiri = {};
-    for (const b of jurnal) {
-      if (Number(b.pihakId) !== Number(p.pihakId)) continue;
-      if (!JENIS_PANGGILAN.has(Number(b.jenisBiayaId)) && Number(b.jenisBiayaId) !== JB.PEMBERITAHUAN) continue;
-      if (uraianKhusus(b.uraian) || !(angka(b.jumlah) > 0)) continue;
-      sendiri[angka(b.jumlah)] = (sendiri[angka(b.jumlah)] || 0) + 1;
-    }
-    const n = terbanyak(sendiri);
-    if (n) return { jumlah: n, asal: "tarif panggilan pihak ini sebelumnya" };
-    const kec = tarif.kecamatan && p.kecamatan ? Number(tarif.kecamatan[p.kecamatan]) : 0;
-    if (kec > 0) return { jumlah: kec, asal: "tarif terbanyak di kecamatan pihak" };
-    const kab = tarif.kabupaten && p.kabupaten ? Number(tarif.kabupaten[p.kabupaten]) : 0;
-    // Kabupaten hanya perkiraan: uji balik 388/2026 - kabupaten 14.500,
-    // pihaknya 29.500. Keyakinan barisnya diturunkan.
-    if (kab > 0) return { jumlah: kab, asal: "tarif terbanyak di kabupaten pihak (perkiraan - periksa)", kira: true };
-    return { jumlah: null, asal: "tarif belum diketahui - isi jumlahnya" };
-  };
+  /* === KASIR TARIF-ALAMAT 3 Nov === */
+  /**
+   * Tarif pos untuk satu pihak - aturan tunggal kasirTarifAlamat.saranTarifPihak
+   * (keputusan Derry 3 Nov 2026 23.00): pihak yang sama di perkara ini (sejak
+   * tanggal berlaku) > kecamatan > tabel kecamatan > kabupaten > tabel. SATU tarif
+   * untuk semua jenis panggilan/pemberitahuan. Kabupaten & tabel = perkiraan
+   * (kira): uji balik 388/2026 - kabupaten 14.500, pihaknya 29.500.
+   */
+  const tarifPihak = (p) => require("./kasirTarifAlamat").saranTarifPihak(p, jurnal, tarif);
+  /* === AKHIR KASIR TARIF-ALAMAT === */
 
   const usulan = [];
   /* === KASIR PSP-PBT 3 Nov === PBT yang DITAWARKAN (tombol "Tambah biaya PBT"), bukan diusulkan. */
@@ -593,6 +579,8 @@ function susunUsulan(k) {
       /* === K-KEJADIAN 11 Okt === kejadian perkara yang melahirkan baris ini (susunKejadian) */
       kejadian: u.kejadian || "lain",
       /* === AKHIR K-KEJADIAN === */
+      /* KASIR TARIF-ALAMAT 3 Nov: { nilai, yakin: pasti|periksa, tingkat, wilayah, ket } - hanya baris bertarif wilayah */
+      tarif: u.tarif || null,
     });
   };
 
@@ -631,7 +619,9 @@ function susunUsulan(k) {
   const elit = permohonan ? null : elitigasiTergugat(k, sidangBiasa);
   if (elit) {
     catatan.push(
-      `${sebutan.dua} beracara elektronik (E-Litigasi) sejak ${tanggalLayar(elit.sejak)}: panggilan ulang lewat e-Court tanpa biaya panggilan. Relaas Pos/RRI yang tercatat tetap berbiaya.`
+      `${sebutan.dua} beracara elektronik (E-Litigasi) sejak ${tanggalLayar(elit.sejak)}: panggilan ulang${
+        Number(perkara.jenisPerkaraId) === JENIS_CERAI_TALAK ? " dan panggilan ikrar talak" : ""
+      } lewat e-Court tanpa biaya panggilan. Relaas Pos/RRI yang tercatat tetap berbiaya.`
     );
   }
 
@@ -697,6 +687,13 @@ function susunUsulan(k) {
         e.pilih = false;
         e.yakin = "rendah";
         e.dasar = `${e.dasar}; sidang ikrar pertama dipanggil tanpa biaya (kode ${bersih(r0.ket).toUpperCase()})`;
+      } else if (elit && p.ke === 2) {
+        // KASIR E-LITIGASI 3 Nov (keputusan Derry 23.10): Termohon beracara elektronik dan
+        // pernah hadir - panggilan ikrar lewat e-Court tanpa biaya. Relaas Pos/RRI yang
+        // tercatat (berbiaya) tetap menang di atas; satu panggilan untuk rangkaian tetap.
+        e.pilih = false;
+        e.yakin = "rendah";
+        e.dasar = `${e.dasar}; ${sebutan.dua} beracara elektronik sejak ${tanggalLayar(elit.sejak)} - panggilan ikrar lewat e-Court tanpa biaya`;
       } else {
         // Belum ada relaas: dicentang selama rangkaian sidang ikrarnya belum lewat.
         e.pilih = !hariIni || bersih(akhir && akhir.tanggal) >= hariIni;
@@ -874,12 +871,15 @@ function susunUsulan(k) {
           let uraian;
           let jumlah = t.jumlah;
           let asalTarif = t.asal;
+          let infoTarif = t.tarif;
           if (ev.ikrar) {
             // 28 Okt 2026: tanpa resi tidak ada garis miring menggantung; resi menyusul diketik kasir (perluResi menahannya).
             uraian = `Biaya Panggilan Ikrar Talak${ev.resi ? `/${ev.resi}` : ""}`;
           } else if (ev.ket === "R") {
             uraian = `Biaya Panggilan ${sebut}/RRI`;
-            jumlah = Number(tarif.rri) > 0 ? Number(tarif.rri) : null;
+            const rri = require("./kasirTarifAlamat").saranTarifRri(tarif);
+            jumlah = rri.jumlah;
+            infoTarif = rri.tarif;
             asalTarif = jumlah ? "tarif panggilan lewat RRI" : "tarif RRI belum diketahui - isi jumlahnya";
           } else if (ev.ket === "P") {
             uraian = `Biaya Panggilan ${sebut}/PEMDA${ev.resi ? `/${ev.resi}` : ""}`;
@@ -895,6 +895,7 @@ function susunUsulan(k) {
             tanggal: tanggalPanggil(ev),
             peristiwa: `${ev.ikrar ? "Panggilan ikrar talak" : i === 0 ? "Panggilan pertama" : `Panggilan ke-${i + 1}`} ${sebut} (sidang ${ev.sidang.tanggal})`,
             dasar: `${ev.dasar}; ${asalTarif}`,
+            tarif: infoTarif,
             yakin: jumlah && !(t.kira && ev.ket !== "R") ? ev.yakin : ev.yakin === "tinggi" ? "sedang" : ev.yakin,
             pilih: ev.pilih,
             perluResi: !ev.resi && ev.ket !== "R" && KET_BERBIAYA.has(ev.ket || "S") && ev.ket !== "Y" && ev.ket !== "T",
@@ -1003,6 +1004,7 @@ function susunUsulan(k) {
               tanggal: tPut,
               peristiwa: `Pemberitahuan putusan kepada ${sebutan.dua}${akhiranUrut(i, daftar.length)}`,
               dasar: `${dasar}; ${t.asal}`,
+              tarif: t.tarif,
               yakin: t.jumlah && !t.kira ? yakin : "sedang",
               pilih: pilihPbt,
               // "/P" memang kebiasaan hari putusan - resinya baru lahir sesudahnya.
@@ -1040,7 +1042,7 @@ function susunUsulan(k) {
         const dasar = `putusan ${tPut} (${cabut ? "dicabut" : "tidak dapat diterima"}); panggilan ${ket} kembali (retur)`;
         if (!cariAda((b) => Number(b.jenisBiayaId) === JB.PEMBERITAHUAN, p, "putusan")) {
           const t = tarifPihak(p);
-          tambah({ jenisBiayaId: JB.PEMBERITAHUAN, pihakKe: 2, pihakId: Number(p.pihakId), uraian: "Biaya Pemberitahuan/P", jumlah: t.jumlah, tanggal: tPut, peristiwa: `Pemberitahuan putusan kepada ${ket}`, dasar: `${dasar}; ${t.asal}`, yakin: t.jumlah && !t.kira ? "tinggi" : "sedang", pilih: true, kelompok: 54 + i * 2, kejadian: "putusan" });
+          tambah({ jenisBiayaId: JB.PEMBERITAHUAN, pihakKe: 2, pihakId: Number(p.pihakId), uraian: "Biaya Pemberitahuan/P", jumlah: t.jumlah, tanggal: tPut, peristiwa: `Pemberitahuan putusan kepada ${ket}`, dasar: `${dasar}; ${t.asal}`, tarif: t.tarif, yakin: t.jumlah && !t.kira ? "tinggi" : "sedang", pilih: true, kelompok: 54 + i * 2, kejadian: "putusan" });
         }
         if (!cariAda((b) => Number(b.jenisBiayaId) === JB.PNBP_PBT_T, p, "putusan")) {
           tambah({ jenisBiayaId: JB.PNBP_PBT_T, pihakKe: 2, pihakId: Number(p.pihakId), uraian: `PNBP Relaas Pemberitahuan Putusan Kepada ${ket}`, jumlah: lazim(JB.PNBP_PBT_T), tanggal: tPut, peristiwa: `Pemberitahuan putusan kepada ${ket}`, dasar, yakin: "tinggi", pilih: true, kelompok: 55 + i * 2, kejadian: "putusan" });
@@ -1360,7 +1362,9 @@ function susunKejadian(k, hasil) {
       "ikrar",
       tIkrar || (sidangIkrar[0] && sidangIkrar[0].tanggal) || "",
       `Ikrar talak${tIkrar ? ` ${tanggalLayar(tIkrar)}` : sidangIkrar[0] ? ` (sidang ${tanggalLayar(sidangIkrar[0].tanggal)})` : ""}`,
-      tIkrar ? "Sisa panjar dikembalikan pada hari ikrar." : "Ikrar belum diucapkan - sisa panjar menunggu hari ikrar.",
+      `${tIkrar ? "Sisa panjar dikembalikan pada hari ikrar." : "Ikrar belum diucapkan - sisa panjar menunggu hari ikrar."}${
+        elitTunda ? ` ${sebutan.dua} beracara elektronik sejak ${tanggalLayar(elitTunda.sejak)} - panggilan ikrar lewat e-Court tanpa biaya (kecuali relaas Pos/RRI tercatat).` : ""
+      }`,
       KEADAAN_KASIR.ikrar.lazim.slice()
     ).menunggu = !tIkrar;
   }
@@ -1531,6 +1535,10 @@ function buatLayanan(deps = {}) {
   // terbaca (null) - perilaku lama, tanpa sambungan ke basis data sungguhan.
   const kontakParaPihak =
     deps.kontakParaPihak || (deps.kueri ? async () => null : (nomor) => require("./kontakEcourtService").kontakParaPihak(nomor));
+  // KASIR TARIF-ALAMAT 3 Nov: setelan tarif (tanggal berlaku, tabel, tawaran) - basis data ALETA bot,
+  // baris id 2 tabel setelan Kasir otomatis. Uji dengan deps.kueri tanpa deps.setelanTarif: bawaan.
+  const bacaSetelanTarif =
+    deps.setelanTarif || (deps.kueri ? async () => null : () => require("./kasirOtomatisService").bacaSetelanTarif());
 
   async function satu(sql, params) {
     const baris = await kueri(sql, params);
@@ -1796,33 +1804,42 @@ function buatLayanan(deps = {}) {
   }
 
   /**
-   * Tarif yang lazim, dipelajari dari jurnal satker sendiri 18 bulan terakhir:
-   * per kecamatan & kabupaten pihak (panggilan/pemberitahuan pos), panggilan
-   * RRI, dan jumlah terbanyak per jenis biaya pada alur perkara ini.
+   * Tarif yang lazim, dipelajari dari jurnal satker sendiri:
+   *   - panggilan/pemberitahuan Pos per KODE kecamatan & kabupaten pihak, RRI -
+   *     HANYA baris sejak tanggal berlaku tarif (KASIR TARIF-ALAMAT 3 Nov,
+   *     kasirTarifAlamat.pelajari; bawaan 28 Okt 2024, setelan per satker);
+   *   - jumlah terbanyak per jenis biaya pada alur perkara ini (18 bulan).
    */
   //
   // DUA kueri untuk SELURUH satker, disimpan enam jam - bukan empat kueri per
   // perkara. Diukur di sipp_donggala: bentuk per perkara dengan
   // DATE_SUB(CURDATE()) makan 9-17 detik tiap kali; dengan tanggal tegas dan
-  // dikelompokkan sekali jalan 1-2 detik, lalu nol.
+  // dikelompokkan sekali jalan 1-2 detik, lalu nol. Setelan tarif yang berubah
+  // membuang simpanan (kunci simpanan memuat setelannya).
   let simpananTarif = null;
   async function petaTarifSatker(hariIni) {
+    const TA = require("./kasirTarifAlamat");
+    const setelan = TA.setelanSah(await Promise.resolve().then(() => bacaSetelanTarif()).catch(() => null));
+    const kunci = TA.setelanRingkas(setelan);
     const sekarang = Date.now();
-    if (simpananTarif && simpananTarif.hari === hariIni && sekarang - simpananTarif.saat < 6 * 3600 * 1000) return simpananTarif.isi;
+    if (simpananTarif && simpananTarif.hari === hariIni && simpananTarif.kunci === kunci && sekarang - simpananTarif.saat < 6 * 3600 * 1000) return simpananTarif.isi;
     const [t, b, h] = (tanggalSah(hariIni) || "2026-01-01").split("-").map(Number);
     const dari = new Date(Date.UTC(t, b - 1 - 18, h)).toISOString().slice(0, 10);
+    const dariTarif = [setelan.berlaku, ...Object.values(setelan.sejak)].sort()[0];
     // Kebiasaan menomori pemohon ("Pemohon I/II") pada perkara berpemohon
     // lebih dari satu BERUBAH: Jan-Jul 2026 hampir selalu bernomor, Agustus
     // 2026 43 dari 60 polos. Yang diikuti kebiasaan 90 hari terakhir.
     const dariNomor = new Date(Date.UTC(t, b - 1, h - 90)).toISOString().slice(0, 10);
     const [pos, lazimMentah, nomorMentah] = await Promise.all([
       semua(
-        `SELECT ph.kecamatan, ph.kabupaten, pb.jumlah,
-                (pb.uraian LIKE '%RRI%') AS rri, (pb.uraian LIKE '%RRI%' OR pb.uraian LIKE '%PEMDA%') AS khusus, COUNT(*) AS n
+        `SELECT ph.kecamatan, ph.kabupaten, pb.jumlah, DATE_FORMAT(pb.tanggal_transaksi, '%Y-%m-%d') AS tanggal,
+                (pb.uraian LIKE '%RRI%') AS rri,
+                (pb.uraian LIKE '%RRI%' OR pb.uraian LIKE '%PEMDA%' OR pb.uraian LIKE '%PA.%' OR pb.uraian LIKE '%tabayun%' OR pb.uraian LIKE '%delegasi%') AS khusus,
+                COUNT(*) AS n
            FROM perkara_biaya pb JOIN pihak ph ON ph.id = pb.pihak_id
-          WHERE pb.tanggal_transaksi >= ? AND pb.jenis_biaya_id IN (12,13,14,15,29) AND pb.jumlah > 0
-          GROUP BY ph.kecamatan, ph.kabupaten, pb.jumlah, rri, khusus`,
-        [dari]
+          WHERE pb.tanggal_transaksi >= ? AND pb.jenis_biaya_id IN (${TA.JENIS_TARIF_PIHAK.join(",")}) AND pb.jumlah > 0
+          GROUP BY ph.kecamatan, ph.kabupaten, pb.jumlah, tanggal, rri, khusus`,
+        [dariTarif]
       ).catch(() => []),
       semua(
         `SELECT p.alur_perkara_id AS alur, pb.jenis_biaya_id AS jb, pb.jumlah, COUNT(*) AS n
@@ -1840,20 +1857,31 @@ function buatLayanan(deps = {}) {
         [dariNomor]
       ).catch(() => []),
     ]);
+    // Nama wilayah untuk keterangan ("tarif Kec. Labuan sejak 28 Okt 2024, 42 contoh") - ref SIPP, hanya kode yang muncul.
+    const kodeKec = [...new Set(pos.map((x) => TA.kodeKecamatan(x.kecamatan)).filter(Boolean).concat(Object.keys(TA.tabelBerlaku(setelan)).filter((k) => k.length === 8)))];
+    const kodeKab = [...new Set(pos.map((x) => TA.kodeKabupaten(x.kabupaten, x.kecamatan)).filter(Boolean).concat(Object.keys(TA.tabelBerlaku(setelan)).filter((k) => k.length === 5)))];
+    const [refKec, refKab] = await Promise.all([
+      kodeKec.length ? semua(`SELECT kecamatan_kode AS kode, kecamatan_nama AS nama FROM ref_kecamatan_new WHERE kecamatan_kode IN (${kodeKec.map(() => "?").join(",")})`, kodeKec).catch(() => []) : [],
+      kodeKab.length ? semua(`SELECT kabupaten_kode AS kode, kabupaten_nama AS nama FROM ref_kabupaten_new WHERE kabupaten_kode IN (${kodeKab.map(() => "?").join(",")})`, kodeKab).catch(() => []) : [],
+    ]);
+    const nama = {};
+    for (const r of [...refKec, ...refKab]) if (bersih(r.kode) && bersih(r.nama)) nama[bersih(r.kode)] = bersih(r.nama);
     const nomor = nomorMentah[0] || {};
     const isi = {
       // null = tidak terukur -> bawaan bernomor (bentuk yang paling lama dipakai).
       nomorPemohon: Number(nomor.bernomor) + Number(nomor.polos) >= 5 ? Number(nomor.bernomor) >= Number(nomor.polos) : null,
-      kecamatan: petaModal(pos.filter((x) => !Number(x.khusus)), (x) => bersih(x.kecamatan)),
-      kabupaten: petaModal(pos.filter((x) => !Number(x.khusus)), (x) => bersih(x.kabupaten)),
-      rri: petaModal(pos.filter((x) => Number(x.rri)), () => "rri").rri || null,
+      setelan,
+      nama,
+      belajar: TA.pelajari(pos, setelan),
+      tawaran: TA.deteksiTarifBaru(pos, setelan, nama),
       lazim: petaModal(lazimMentah, (x) => `${Number(x.alur)}|${Number(x.jb)}`),
     };
-    simpananTarif = { hari: hariIni, saat: sekarang, isi };
+    simpananTarif = { hari: hariIni, saat: sekarang, kunci, isi };
     return isi;
   }
 
   async function muatTarif(k) {
+    const TA = require("./kasirTarifAlamat");
     const g = await petaTarifSatker(k.hariIni);
     const alur = Number(k.perkara.alurPerkaraId) || 0;
     const lazim = {};
@@ -1861,13 +1889,32 @@ function buatLayanan(deps = {}) {
       const [a, jb] = kunci.split("|");
       if (Number(a) === alur) lazim[jb] = jumlah;
     }
-    const kecamatan = {};
-    const kabupaten = {};
+    // Nama hanya untuk wilayah para pihak perkara ini (jawaban tetap ringkas).
+    const nama = {};
     for (const p of k.pihak) {
-      if (p.kecamatan && g.kecamatan[p.kecamatan]) kecamatan[p.kecamatan] = g.kecamatan[p.kecamatan];
-      if (p.kabupaten && g.kabupaten[p.kabupaten]) kabupaten[p.kabupaten] = g.kabupaten[p.kabupaten];
+      const kec = TA.kodeKecamatan(p.kecamatan);
+      const kab = TA.kodeKabupaten(p.kabupaten, p.kecamatan);
+      for (const kode of [kec, kab]) if (kode && g.nama[kode]) nama[kode] = g.nama[kode];
     }
-    return { kecamatan, kabupaten, rri: g.rri, lazim, nomorPemohon: g.nomorPemohon };
+    const bahan = TA.bahanTarif(g.belajar, g.setelan, k.pihak, nama);
+    return { ...bahan, lazim, nomorPemohon: g.nomorPemohon };
+  }
+
+  /**
+   * KASIR TARIF-ALAMAT 3 Nov: setelan tarif + tabel yang berlaku + tawaran "tarif baru sejak X?"
+   * (layar setelan Kasir dan kabar kecil di Kasir Manual). Hanya SELECT.
+   */
+  async function tarifSatker(hariIni) {
+    const TA = require("./kasirTarifAlamat");
+    const hari = tanggalSah(hariIni) || (await saatBasisData()).slice(0, 10);
+    const g = await petaTarifSatker(hari);
+    return {
+      ok: true,
+      setelan: g.setelan,
+      berlakuBawaan: TA.TANGGAL_BERLAKU_BAWAAN,
+      tabel: TA.daftarTabel(g.setelan, g.nama),
+      tawaran: g.tawaran.slice(0, 3),
+    };
   }
 
   /** Keadaan + usulan - jawaban GET /kasir. */
@@ -1989,6 +2036,8 @@ function buatLayanan(deps = {}) {
       gagal,
       terpotong,
       jumlahCalon: Math.min(calon.length, batas),
+      // KASIR TARIF-ALAMAT 3 Nov: "tarif baru sejak tanggal X?" - satu kabar, bukan per baris.
+      tawaranTarif: await tarifSatker().then((x) => x.tawaran).catch(() => []),
     };
   }
 
@@ -2358,7 +2407,7 @@ function buatLayanan(deps = {}) {
     };
   }
 
-  return { cariPerkara, bacaJurnal, bacaKeadaan, muatTarif, usulanPerkara, daftarHarian, akunPetugas, susunRencana, jalankanRencana, langkahDatar, langkahDatarDenganHasil };
+  return { cariPerkara, bacaJurnal, bacaKeadaan, muatTarif, tarifSatker, usulanPerkara, daftarHarian, akunPetugas, susunRencana, jalankanRencana, langkahDatar, langkahDatarDenganHasil };
 }
 
 let bawaan = null;
@@ -2399,6 +2448,7 @@ module.exports = {
   cariPerkara: (teks) => layananBawaan().cariPerkara(teks),
   usulanPerkara: (perkaraId) => layananBawaan().usulanPerkara(perkaraId),
   daftarHarian: (tanggal, opsi) => layananBawaan().daftarHarian(tanggal, opsi),
+  tarifSatker: (hariIni) => layananBawaan().tarifSatker(hariIni),
   susunRencana: (minta) => layananBawaan().susunRencana(minta),
   jalankanRencana: (rencana, opsi) => layananBawaan().jalankanRencana(rencana, opsi),
   langkahDatar: (rencana) => layananBawaan().langkahDatar(rencana),

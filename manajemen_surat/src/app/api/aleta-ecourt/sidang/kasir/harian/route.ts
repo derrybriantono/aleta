@@ -1,5 +1,6 @@
 import { type NextRequest } from "next/server";
 
+import { bolehMengerjakanKasir } from "@/lib/kasir-jurnal";
 import { getDatabase } from "@/server/db/client";
 import { panggilBotJadwalSidang } from "@/server/modules/aleta-ecourt/jadwal-sidang-gateway";
 import { bacaAkunKasir } from "@/server/modules/aleta-ecourt/kasir-akun";
@@ -37,7 +38,8 @@ export async function GET(request: NextRequest) {
       bacaAkunKasir(aktor),
     ]);
     if (!hasil.ok) return ok({ available: false, ok: false, alasan: hasil.error, tanggal });
-    return ok({ available: true, ...hasil.data, akun });
+    // 3 Nov 2026: tawaran "tarif baru sejak X?" dijawab kasir/admin (panitera hanya melihat).
+    return ok({ available: true, ...hasil.data, akun, bolehJawabTarif: bolehMengerjakanKasir(aktor) });
   } catch (error) {
     return handleAdminRouteError(error, request, {
       db,

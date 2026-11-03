@@ -32,6 +32,12 @@ export const dynamic = "force-dynamic";
  *   POST { aksi: "akun-kasir", username }
  *                              Super Admin/admin memilih akun kasir SIPP bila
  *                              akun kasirnya lebih dari satu.
+ *   POST { aksi: "tarif-setelan", berlaku, tarif }
+ *                              tanggal berlaku + tabel tarif panggilan/
+ *                              pemberitahuan - Super Admin/admin (3 Nov 2026).
+ *   POST { aksi: "tarif-terima" | "tarif-tolak", tawaran }
+ *                              jawaban "tarif baru sejak tanggal X?" - kasir
+ *                              dan admin. Basis data ALETA bot saja.
  *
  * Panitera/panitera muda: 403 untuk kedua POST (pastikanHakKasirTulis) - rute
  * yang menolak, bukan hanya tombol yang disembunyikan.
@@ -50,7 +56,7 @@ export async function GET(request: NextRequest) {
       panggilBotJadwalSidang(`/kasir/otomatis?${new URLSearchParams({ tanggal }).toString()}`, { timeoutMs: 60_000 }),
       bacaAkunKasir(aktor),
     ]);
-    const peran = { bolehUbah, pengawas: pengawasKasir(aktor) };
+    const peran = { bolehUbah, pengawas: pengawasKasir(aktor), bolehAturTarif: bolehPilihAkunKasir(aktor) };
     if (!hasil.ok) return ok({ available: false, ok: false, alasan: hasil.error, tanggal, ...peran });
     return ok({ available: true, ...hasil.data, ...peran, akun });
   } catch (error) {
@@ -89,6 +95,34 @@ export async function POST(request: NextRequest) {
     if (badan.aksi === "akun-kasir") {
       if (!bolehPilihAkunKasir(aktor)) throw new ApiError(403, "Akun kasir yang dipakai Kasir ALETA hanya dapat dipilih Super Admin atau admin.");
       const hasil = await panggilBotJadwalSidang("/kasir/akun", { method: "POST", body: { username: String(badan.username ?? "").slice(0, 60), operator }, timeoutMs: 15_000 });
+      if (!hasil.ok) return ok({ available: false, ok: false, alasan: hasil.error });
+      return ok({ available: true, ...hasil.data });
+    }
+
+    // KASIR TARIF-ALAMAT 3 Nov: setelan tarif (Super Admin/admin) dan jawaban tawaran tarif baru (kasir/admin).
+    if (badan.aksi === "tarif-setelan" || badan.aksi === "tarif-terima" || badan.aksi === "tarif-tolak") {
+      if (badan.aksi === "tarif-setelan" && !bolehPilihAkunKasir(aktor)) {
+        throw new ApiError(403, "Tanggal berlaku dan tabel tarif hanya dapat diubah Super Admin atau admin.");
+      }
+      const tarif: Record<string, number | null> = {};
+      if (badan.tarif && typeof badan.tarif === "object") {
+        for (const [kode, nilai] of Object.entries(badan.tarif as Record<string, unknown>).slice(0, 40)) {
+          if (!/^(\d{2}(\.\d{2}){0,2}|rri)$/.test(kode)) continue;
+          tarif[kode] = nilai === null || nilai === "" ? null : Math.round(Number(nilai)) || null;
+        }
+      }
+      const t = (badan.tawaran && typeof badan.tawaran === "object" ? badan.tawaran : {}) as Record<string, unknown>;
+      const hasil = await panggilBotJadwalSidang("/kasir/tarif", {
+        method: "POST",
+        body: {
+          aksi: String(badan.aksi).replace(/^tarif-/, ""),
+          berlaku: typeof badan.berlaku === "string" ? badan.berlaku.slice(0, 10) : undefined,
+          tarif,
+          tawaran: { kabupaten: String(t.kabupaten ?? "").slice(0, 5), nilai: Number(t.nilai) || 0, sejak: String(t.sejak ?? "").slice(0, 10) },
+          operator,
+        },
+        timeoutMs: 30_000,
+      });
       if (!hasil.ok) return ok({ available: false, ok: false, alasan: hasil.error });
       return ok({ available: true, ...hasil.data });
     }
