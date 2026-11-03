@@ -549,7 +549,10 @@ describe("pendaftaran: manifest, popup, dan latar", () => {
   it("menu-atas.js dimuat di SIPP dan ABT (tidak di portal ALETA)", () => {
     const grup = (cocok: string) => MANIFEST.content_scripts.filter((c: any) => (c.js || []).includes("menu-atas.js") && c.matches.some((m: string) => m.includes(cocok)));
     expect(grup("/SIPP/").length).toBe(1);
-    expect(grup("/aps_badilag/").length).toBe(1);
+    // 3 Nov 2026: dua grup APS - aplikasi ABT (berkas lengkap) dan halaman menu/e-Keuangan/
+    // e-Pelaporan (berkas ringan: menu-atas.js + aps-beranda.js) supaya niat "ABT By Derry"
+    // tetap diteruskan dari halaman menu APS sesudah masuk.
+    expect(grup("/aps_badilag/").length).toBe(2);
     expect(grup("/aleta/").length).toBe(0);
   });
 
