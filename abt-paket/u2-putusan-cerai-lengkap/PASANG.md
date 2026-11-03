@@ -35,7 +35,7 @@ Tidak ada pengisi baru yang menulis keputusan hakim. Pengisi baru (bot): 4106 (c
 - `paket-satker/pasang-satker.sh`, `pulih-satker.sh`, `MD5SUMS.txt`.
 - `sumber/susun_variabel.py` (pembangun katalog), `alat/` (bangun_rtf.py, bangun_paket.py, audit_putusan.py, uji_cepat.py, render_u2.py, uji_server.py, ukur_*.py), `data/variabel.json`.
 - `integrasi-u6/`: entri peta fakta + entri gerbang terukur untuk digabung ke cabang U6 (belum digabung di cabang ini).
-- `ukuran/` hasil ukur mentah, `contoh/` keluaran render nyata (teks).
+- `ukuran/` hasil ukur mentah, `contoh/` keluaran render nyata (teks) - TIDAK di repo (data pihak); salinan lokal D:/aleta-dev/kerja/contoh-data-asli.
 
 ## Pasang di satker (Git Bash, server hidup)
 

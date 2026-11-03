@@ -23,7 +23,7 @@ Isi dan alasan tiap perubahan: `docs/gelombang2/AUDIT-PUTUSAN-W2a.md`. Rujukan h
 | `asli-server-21okt/` | 99 RTF putusan asli server yang diukur 21 Okt (acuan tambal dan uji) |
 | `salinan-server-21okt/` | kueri 9768, 9769, 9770 (dan 9705, 9706) dari server, bawaan beberapa isian |
 | `alat/` | pembangun dan penguji: `variabel*.py`, `sqlkit.py`, `buktikit.py`, `rtfkit.py`, `tambal_hb/waris/lain.py`, `bangun_paket.py`, `klon_db.cjs`, `render_w2a.py` (cetak lewat ABT asli), `uji_paket_lokal.cjs`, `uji_semantik.cjs`, `periksa_selisih.py` |
-| `contoh/` | keluaran render ABT asli atas perkara nyata (sebelum/sesudah/selisih) |
+| `contoh/` | keluaran render ABT asli atas perkara nyata - TIDAK di repo (data pihak); salinan lokal D:/aleta-dev/kerja/contoh-data-asli |
 
 ## Variabel baru (ringkas)
 

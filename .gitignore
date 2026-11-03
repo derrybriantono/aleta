@@ -102,3 +102,6 @@ aleta_bot/resources/
 !manajemen_surat/src/app/**/export.pdf/**
 !manajemen_surat/src/app/**/reports/
 !manajemen_surat/src/app/**/reports/**
+
+# Keluaran render atas perkara NYATA (nama, NIK pihak) - simpan di luar repo (D:/aleta-dev/kerja/contoh-data-asli), 3 Nov 2026.
+abt-paket/*/contoh/
