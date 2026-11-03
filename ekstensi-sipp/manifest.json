@@ -188,6 +188,72 @@
         "blangko-derry.css",
         "blangko-derry-ai.css"
       ],
+      "run_at": "document_idle",
+      "exclude_matches": [
+        "http://192.168.10.10/aps_badilag/",
+        "http://192.168.10.10/aps_badilag/index.php",
+        "http://192.168.10.10/aps_badilag/index.php/",
+        "http://192.168.10.10/aps_badilag/main*",
+        "http://192.168.10.10/aps_badilag/index.php/main*",
+        "http://192.168.10.10/aps_badilag/keuangan/*",
+        "http://192.168.10.10/aps_badilag/index.php/keuangan/*",
+        "http://192.168.10.10/aps_badilag/pelaporan*",
+        "http://192.168.10.10/aps_badilag/index.php/pelaporan*",
+        "http://192.168.10.10/aps_badilag/register*",
+        "http://192.168.10.10/aps_badilag/index.php/register*",
+        "http://192.168.10.10/aps_badilag/transaksi_harian*",
+        "http://192.168.10.10/aps_badilag/index.php/transaksi_harian*",
+        "http://127.0.0.1/aps_badilag/",
+        "http://127.0.0.1/aps_badilag/index.php",
+        "http://127.0.0.1/aps_badilag/index.php/",
+        "http://127.0.0.1/aps_badilag/main*",
+        "http://127.0.0.1/aps_badilag/index.php/main*",
+        "http://127.0.0.1/aps_badilag/keuangan/*",
+        "http://127.0.0.1/aps_badilag/index.php/keuangan/*",
+        "http://127.0.0.1/aps_badilag/pelaporan*",
+        "http://127.0.0.1/aps_badilag/index.php/pelaporan*",
+        "http://127.0.0.1/aps_badilag/register*",
+        "http://127.0.0.1/aps_badilag/index.php/register*",
+        "http://127.0.0.1/aps_badilag/transaksi_harian*",
+        "http://127.0.0.1/aps_badilag/index.php/transaksi_harian*"
+      ]
+    },
+    {
+      "matches": [
+        "http://192.168.10.10/aps_badilag/",
+        "http://192.168.10.10/aps_badilag/index.php",
+        "http://192.168.10.10/aps_badilag/index.php/",
+        "http://192.168.10.10/aps_badilag/main*",
+        "http://192.168.10.10/aps_badilag/index.php/main*",
+        "http://192.168.10.10/aps_badilag/keuangan/*",
+        "http://192.168.10.10/aps_badilag/index.php/keuangan/*",
+        "http://192.168.10.10/aps_badilag/pelaporan*",
+        "http://192.168.10.10/aps_badilag/index.php/pelaporan*",
+        "http://192.168.10.10/aps_badilag/register*",
+        "http://192.168.10.10/aps_badilag/index.php/register*",
+        "http://192.168.10.10/aps_badilag/transaksi_harian*",
+        "http://192.168.10.10/aps_badilag/index.php/transaksi_harian*",
+        "http://127.0.0.1/aps_badilag/",
+        "http://127.0.0.1/aps_badilag/index.php",
+        "http://127.0.0.1/aps_badilag/index.php/",
+        "http://127.0.0.1/aps_badilag/main*",
+        "http://127.0.0.1/aps_badilag/index.php/main*",
+        "http://127.0.0.1/aps_badilag/keuangan/*",
+        "http://127.0.0.1/aps_badilag/index.php/keuangan/*",
+        "http://127.0.0.1/aps_badilag/pelaporan*",
+        "http://127.0.0.1/aps_badilag/index.php/pelaporan*",
+        "http://127.0.0.1/aps_badilag/register*",
+        "http://127.0.0.1/aps_badilag/index.php/register*",
+        "http://127.0.0.1/aps_badilag/transaksi_harian*",
+        "http://127.0.0.1/aps_badilag/index.php/transaksi_harian*"
+      ],
+      "js": [
+        "menu-atas.js",
+        "aps-beranda.js"
+      ],
+      "css": [
+        "panel.css"
+      ],
       "run_at": "document_idle"
     },
     {

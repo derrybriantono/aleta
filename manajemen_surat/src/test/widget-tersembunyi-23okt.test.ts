@@ -377,16 +377,21 @@ describe("4. popup ekstensi: Tampilkan di halaman ini", () => {
 });
 
 describe("5. cakupan", () => {
-  it("checklist.js dimuat di SIPP, ABT, dan portal ALETA - bukan di e-Keuangan (manifest tidak menyebutnya)", () => {
+  it("checklist.js dimuat di SIPP, ABT, dan portal ALETA - bukan di e-Keuangan", () => {
     const manifest = JSON.parse(baca("manifest.json")) as {
       host_permissions: string[];
-      content_scripts: Array<{ matches: string[]; js: string[] }>;
+      content_scripts: Array<{ matches: string[]; js: string[]; exclude_matches?: string[] }>;
     };
     const pakai = manifest.content_scripts.filter((c) => c.js.includes("checklist.js")).flatMap((c) => c.matches);
     expect(pakai.some((m) => m.includes("/SIPP/"))).toBe(true);
     expect(pakai.some((m) => m.includes("/aps_badilag/"))).toBe(true);
     expect(pakai.some((m) => m.includes("/aleta/"))).toBe(true);
-    expect(JSON.stringify(manifest).toLowerCase()).not.toContain("keuangan");
+    // 3 Nov 2026: e-Keuangan berada di /aps_badilag/keuangan/ - kelompok ABT yang memuat checklist.js
+    // mengecualikannya (exclude_matches); hanya kelompok ringan tanpa checklist.js yang menyebutnya.
+    for (const c of manifest.content_scripts.filter((x) => x.js.includes("checklist.js"))) {
+      expect(c.matches.some((m) => m.toLowerCase().includes("keuangan"))).toBe(false);
+      if (c.matches.some((m) => m.includes("/aps_badilag/"))) expect(c.exclude_matches || []).toContain("http://192.168.10.10/aps_badilag/keuangan/*");
+    }
   });
 
   it("tidak ada gaya baru yang di bawah 11.5px dan tidak ada warna mentah pada gaya menu", () => {

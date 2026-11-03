@@ -330,8 +330,34 @@ function bagianEkstensi(siapa) {
   return kotak;
 }
 
+/**
+ * ALETA ABT (3 Nov 2026) - Blangko ABT by Derry Briantono dari portal, hanya lewat
+ * panel ekstensi ini (tanpa ekstensi aktif, tautannya tidak pernah ada). Hak sama
+ * dengan butir "ABT By Derry" bilah SIPP dan ubin APS (menu-atas.js bolehDerry):
+ * admin, hakim/ketua, PP/panitera/panmud/analis, juru sita, PTSP.
+ */
+const ALETA_ABT_GOLONGAN = ["admin", "hakim", "ketua", "pp", "panitera", "panmud", "panitera-utama", "analis", "jurusita", "ptsp"];
+function bolehAletaAbt(siapa) {
+  if (!siapa || typeof siapa !== "object") return false;
+  const roleId = String(siapa.roleId || "").toLowerCase();
+  if (roleId === "super-admin" || roleId === "admin") return true;
+  let golongan = Array.isArray(siapa.golonganMenu) ? siapa.golonganMenu : [];
+  if (!golongan.length && typeof alatGolonganMenuSemua === "function") {
+    try {
+      golongan = alatGolonganMenuSemua(siapa);
+    } catch {
+      golongan = [];
+    }
+  }
+  return golongan.some((g) => ALETA_ABT_GOLONGAN.includes(String(g || "").toLowerCase()));
+}
+/** Beranda ABT dengan penanda yang membuat menu-atas.js membuka Blangko ABT by Derry Briantono sendiri. */
+function alamatAletaAbt() {
+  return `${asalSatkerPortal()}/aps_badilag/abt/main/beranda#aleta-derry=1`;
+}
+
 /** Perkara yang terakhir dibuka di SIPP - jalan kembali tanpa mencari lagi. */
-async function bagianSipp() {
+async function bagianSipp(siapa) {
   const { kotak, isi } = bagian("Kembali ke SIPP");
   let riwayat = [];
   try {
@@ -366,6 +392,13 @@ async function bagianSipp() {
   abt.target = "_blank";
   aksi.appendChild(sipp);
   aksi.appendChild(abt);
+  if (bolehAletaAbt(siapa)) {
+    const aletaAbt = tautan(alamatAletaAbt(), "ALETA ABT");
+    aletaAbt.target = "_blank";
+    aletaAbt.title = "Blangko ABT by Derry Briantono (tab baru). Belum masuk ABT: masuk dulu, lalu terbuka sendiri.";
+    aletaAbt.setAttribute("data-aleta-abt", "1");
+    aksi.appendChild(aletaAbt);
+  }
   isi.appendChild(aksi);
   return kotak;
 }
@@ -2792,7 +2825,7 @@ async function susunPanelPortal(siapa) {
 
   const isi = buatElemen("div", "aleta-isi");
   isi.appendChild(bagianEkstensi(siapa));
-  isi.appendChild(await bagianSipp());
+  isi.appendChild(await bagianSipp(siapa));
   const pintasan = bagianPintasan(siapa);
   if (pintasan) isi.appendChild(pintasan);
   isi.appendChild(bagianKewenangan(siapa));
