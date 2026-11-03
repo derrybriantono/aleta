@@ -5439,9 +5439,9 @@ function susunPanelAbt(jatiDiri) {
           o.textContent = nama;
           pilihModus.appendChild(o);
         }
-        // Bawaan: saksi pertama tahu semuanya, yang lain hanya sebagian -
-        // bentuk yang paling sering ditemui, dan yang paling sukar dipatahkan.
-        pilihModus.value = sebelum ? sebelum.pilihModus.value : urut === 0 ? "sama" : "sebagian";
+        // Bawaan (keputusan Derry 2 Nov, sama dengan panel Blangko Derry): semua saksi tahu
+        // seluruh alasan dan melihat sendiri; petugas tetap dapat memilih modus lain.
+        pilihModus.value = sebelum ? sebelum.pilihModus.value : "sama";
         baris.appendChild(pilihModus);
 
         const pilihSumber = document.createElement("select");
