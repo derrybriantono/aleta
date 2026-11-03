@@ -27,11 +27,12 @@ export const PATCH_NOTES: PatchNote[] = [
     date: "2026-11-03",
     status: "Terpasang bersama rilis ekstensi 1.205.65",
     summary:
-      "Pembaruan portal sampai rilis ekstensi 1.205.66 (3 November 2026). Mulai versi ini nomor portal naik setiap rilis yang mengubah portal; rincian per rilis ada di Catatan Ekstensi SIPP.",
+      "Pembaruan portal sampai rilis ekstensi 1.205.67 (4 November 2026). Mulai versi ini nomor portal naik setiap rilis yang mengubah portal; rincian per rilis ada di Catatan Ekstensi SIPP.",
     added: [
       "Pustaka blangko ALETA ABT: salinan blangko, isian, dan menu Blangko ABT by Derry Briantono di database ALETA sendiri, sinkron satu arah dari ABT yang tidak pernah menimpa perubahan di ALETA.",
       "Ubin ALETA ABT di menu APS Badilag dan tautan ALETA ABT di portal, hanya bila ekstensi ALETA aktif.",
       "Register kuasa, tombol Sync E-Court, tampilan baru Status Perkara, dan blangko itsbat saksi hadir di pesta.",
+      "Kasir ALETA baru: rekening pembayar e-Court, cetak SKUM, daftar pengembalian sisa panjar, instrumen panggilan dan PBT per jurusita.",
     ],
     changed: [
       "Salinan putusan dan berita acara bertanda tangan, garis Z dan nomor halaman berita acara yang benar.",

@@ -398,7 +398,8 @@ describe("(c) setiap kegagalan terbaca beserta sebabnya", () => {
     // Bagian Kasir: tidak ada konversi naskah, dan satu-satunya PDF-nya
     // adalah rekap kasir.
     expect(kasir, "basmassal.js (Tab Kasir)").not.toMatch(/abt\/pdf|rtfKePdf|dokumenKePdf|naskah\/konversi|\/bas\//);
-    expect((kasir.match(/application\/pdf/g) ?? []).length).toBeLessThanOrEqual(1);
+    // 3 Nov 2026 (1.205.67): PDF Kasir bertambah - rekap, daftar sisa panjar (PSP), instrumen per jurusita. Tetap bukan naskah BAS.
+    expect((kasir.match(/application\/pdf/g) ?? []).length).toBeLessThanOrEqual(3);
     if (kasir.includes("application/pdf")) expect(kasir).toContain("/rekap/pdf?periode=");
     expect(rute).toContain('"Content-Type": "application/rtf"');
   });

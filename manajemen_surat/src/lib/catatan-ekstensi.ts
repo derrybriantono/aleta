@@ -57,6 +57,18 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.67",
+    dirilis: "2026-11-04T08:00:00+08:00",
+    judul: "Kasir ALETA baru: rekening pembayar, cetak SKUM, sisa panjar, instrumen jurusita, dan PBT perkara retur",
+    butir: [
+      "Kasir ALETA lebih mudah dibaca: kolom tanggal, uraian, dan nominal sejajar, nominal Rupiah bertitik rata kanan, nomor resi Pos diisi langsung di barisnya, huruf berjenjang dan ikut ukuran huruf, mode terang dan gelap.",
+      "Rekening pembayar e-Court (bank, nomor, panjar, tanggal bayar) tampil di kartu Kasir dan data pihak Status Perkara, hanya untuk Super Admin, Admin, Ketua/Wakil, Hakim, Panitera, Kasir, dan PTSP.",
+      "Tombol Cetak SKUM e-Court di kartu perkara e-Court: PDF A4 atau F4 dengan kolom jumlah utuh.",
+      "Cetak daftar pengembalian sisa panjar per tanggal beserta rekening penerima, dan instrumen biaya panggilan serta PBT per jurusita yang dicetak terpisah.",
+      "Perkara dicabut atau tidak dapat diterima karena panggilan Tergugat kembali (retur) tidak mendapat biaya PBT otomatis; kasir dapat menambahkannya dengan tombol Tambah biaya PBT.",
+    ],
+  },
+  {
     versi: "1.205.66",
     dirilis: "2026-11-03T19:00:00+08:00",
     judul: "Tanya jawab saksi di penetapan itsbat, berita acara dan penetapan sinkron, alat bukti per baris",

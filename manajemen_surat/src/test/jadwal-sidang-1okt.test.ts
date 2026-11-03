@@ -815,7 +815,8 @@ describe("rute portal sidang/selesai dan sidang/mediator", () => {
     // 28 Okt 2026: GET/POST /hasil-mediasi-sipp - ke-33 dan ke-34 (hasil-mediasi-sipp-28okt.test.ts).
     // 30 Okt 2026 (G4): GET/POST /kehadiran-sidang (pembetulan kehadiran atas klik PP, kehadiran-sidang-30okt.test.ts) dan
     // GET /putusan-dokumen (cocok putusan SIPP vs dokumen, hanya SELECT; cocok-putusan-30okt.test.ts) - ke-38 s.d. ke-40, bertoken.
-    expect(jumlahRute).toBe(43); // +1 GET /putusan-akhir (pengukur draf P3, 2 Nov; hanya SELECT), +2: GET/POST /tunda-mediasi (26 Okt), +2 /hasil-mediasi-sipp (28 Okt), +3 /kasir/akun (GET/POST) dan /kasir/riwayat (28 Okt), +3 G4 (30 Okt), +2 GET /pencocok/lingkup dan /pencocok/fakta (N3, 1 Nov; hanya SELECT)
+    // 3 Nov 2026 (Kasir ALETA 1.205.67): GET /kasir/psp dan GET /kasir/instrumen-jurusita - ke-44 dan ke-45 (kasir-psp-instrumen-3nov.test.ts).
+    expect(jumlahRute).toBe(45); // +1 GET /putusan-akhir (pengukur draf P3, 2 Nov; hanya SELECT), +2: GET/POST /tunda-mediasi (26 Okt), +2 /hasil-mediasi-sipp (28 Okt), +3 /kasir/akun (GET/POST) dan /kasir/riwayat (28 Okt), +3 G4 (30 Okt), +2 GET /pencocok/lingkup dan /pencocok/fakta (N3, 1 Nov; hanya SELECT)
     // Sejak keputusan 104 (18 Okt 2026) rute tulis manual dibungkus manualJamKerja(...) - tetap bertoken.
     expect(rute.match(/wajibToken,\s*(?:async|manualJamKerja\()/g)?.length).toBe(jumlahRute);
     expect(rute).toContain("kering: badan.kering !== false");
