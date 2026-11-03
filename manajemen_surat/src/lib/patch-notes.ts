@@ -1,6 +1,6 @@
-export const APP_VERSION = "2.42.1";
+export const APP_VERSION = "2.43.0";
 export const APP_VERSION_LABEL =
-  "ALETA Judicia v2.42.1 - November 2026";
+  "ALETA Judicia v2.43.0 - November 2026";
 
 export type PatchNote = {
   version: string;
@@ -21,6 +21,32 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.43.0",
+    title: "ALETA Judicia v2.43.0 - November 2026",
+    date: "2026-11-04",
+    status: "Terpasang bersama rilis ekstensi 1.205.69",
+    summary:
+      "Kasir ALETA sampai rilis ekstensi 1.205.69 (4 November 2026): saran tarif panggilan per kecamatan dan panggilan ikrar e-litigasi.",
+    added: [
+      "Saran tarif panggilan dan pemberitahuan per kode kecamatan SIPP sejak tanggal berlaku tarif, dengan tabel bawaan dan tawaran tarif baru untuk Super Admin/Admin.",
+    ],
+    changed: [
+      "Panggilan ikrar talak Termohon yang beracara elektronik tidak dicentang berbiaya.",
+    ],
+    fixed: [
+      "Saran tarif tidak lagi bercampur tarif radius lama sebelum panggilan lewat Pos.",
+    ],
+    security: [
+      "Mengubah tanggal berlaku dan tabel tarif hanya untuk Super Admin dan Admin.",
+    ],
+    operationalNotes: [
+      "Tanggal berlaku tarif bawaan 28 Oktober 2024; disimpan di setelan kasir yang sudah ada, tanpa migrasi.",
+    ],
+    knownLimitations: [
+      "Halaman kasir per perkara di portal belum menampilkan tanda tarif dan peringatan lunak (nominal sarannya sudah terisi).",
+    ],
+  },
   {
     version: "2.42.1",
     title: "ALETA Judicia v2.42.1 - November 2026",
