@@ -49,9 +49,9 @@ describe("migrasi 0132", () => {
 
 describe("aturan murni", () => {
   it("nama kuasa: tanpa gelar, tanda baca, spasi, huruf besar", () => {
-    const sama = ["Imam Ayatullah, S.H.", "IMAM AYATULLAH S.H., M.H.", "imam  ayatullah", "Adv. Imam Ayatullah, SH", "Imam Ayatullah S. H."];
+    const sama = ["Rahmat Hidayat, S.H.", "RAHMAT HIDAYAT S.H., M.H.", "rahmat  hidayat", "Adv. Rahmat Hidayat, SH", "Rahmat Hidayat S. H."];
     const kunci = new Set(sama.map(kunciNamaKuasa));
-    expect([...kunci]).toEqual(["imamayatullah"]);
+    expect([...kunci]).toEqual(["rahmathidayat"]);
     expect(kunciNamaKuasa("Ahmad S. Mardjanu, S.H.")).toBe("ahmadsmardjanu");
     expect(kunciNamaKuasa("Siti Aminah")).not.toBe(kunciNamaKuasa("Siti Aminah Rahman"));
     expect(kunciNamaKuasa("")).toBe("");
@@ -87,7 +87,7 @@ describe("aturan murni", () => {
 describe("usulan untuk blangko (#8539# nomor, #0132# tanggal)", () => {
   const baris = (o: Partial<BarisRegisterKuasa>): BarisRegisterKuasa => ({
     id: "x",
-    namaKuasa: "Imam Ayatullah, S.H.",
+    namaKuasa: "Rahmat Hidayat, S.H.",
     pihakKe: 1,
     pihakNama: "",
     tanggalSuratKuasa: "2026-10-01",
@@ -139,19 +139,19 @@ describe("simpan dan baca (pg-mem, SQL migrasi sungguhan)", () => {
 
   it("satu nama kuasa = satu baris per tanggal surat kuasa; pihak lain (nama ditulis lain) memakai baris yang sama", async () => {
     const { db, baca } = await siapkan();
-    await simpanRegisterKuasa(db, "u1", { nomorPerkara: NOMOR, namaKuasa: "Imam Ayatullah,S.H.", pihakKe: 1, pihakNama: "Udin Bin Abide", tanggalSuratKuasa: "01/10/2026", nomorRegister: "12/SK/X/2026", tanggalRegister: "02/10/2026" });
+    await simpanRegisterKuasa(db, "u1", { nomorPerkara: NOMOR, namaKuasa: "Rahmat Hidayat,S.H.", pihakKe: 1, pihakNama: "Bahar Bin Salam", tanggalSuratKuasa: "01/10/2026", nomorRegister: "12/SK/X/2026", tanggalRegister: "02/10/2026" });
     // pihak lain, kuasa sama (nama ditulis berbeda gelar/spasi), surat kuasa tanggal sama -> memperbarui baris yang SAMA
-    await simpanRegisterKuasa(db, "u2", { nomorPerkara: NOMOR, namaKuasa: "IMAM AYATULLAH, S.H., M.H.", pihakKe: 1, pihakNama: "Akbar Bin Tahir", tanggalSuratKuasa: "01/10/2026", nomorRegister: "12/SK/X/2026", tanggalRegister: "02/10/2026" });
+    await simpanRegisterKuasa(db, "u2", { nomorPerkara: NOMOR, namaKuasa: "RAHMAT HIDAYAT, S.H., M.H.", pihakKe: 1, pihakNama: "Gani Bin Umar", tanggalSuratKuasa: "01/10/2026", nomorRegister: "12/SK/X/2026", tanggalRegister: "02/10/2026" });
     expect(await baca()).toHaveLength(1);
     // kuasa ditambahkan pada tanggal lain -> register BARU
-    await simpanRegisterKuasa(db, "u1", { nomorPerkara: NOMOR, namaKuasa: "Imam Ayatullah, S.H.", pihakKe: 1, tanggalSuratKuasa: "05/11/2026", nomorRegister: "20/SK/XI/2026", tanggalRegister: "05/11/2026" });
+    await simpanRegisterKuasa(db, "u1", { nomorPerkara: NOMOR, namaKuasa: "Rahmat Hidayat, S.H.", pihakKe: 1, tanggalSuratKuasa: "05/11/2026", nomorRegister: "20/SK/XI/2026", tanggalRegister: "05/11/2026" });
     const baris = await baca();
     expect(baris).toHaveLength(2);
     expect(baris.map((b) => [b.nomor_register, b.tanggal_surat_kuasa])).toEqual([
       ["20/SK/XI/2026", "2026-11-05"],
       ["12/SK/X/2026", "2026-10-01"],
     ].sort());
-    const daftar = await bacaRegisterKuasa(db, NOMOR, "imam ayatullah");
+    const daftar = await bacaRegisterKuasa(db, NOMOR, "rahmat hidayat");
     expect(daftar.map((d) => d.nomorRegister).sort()).toEqual(["12/SK/X/2026", "20/SK/XI/2026"]);
     expect(pilihRegister(daftar, "01/10/2026")).toMatchObject({ jenis: "pakai", sebab: "sama-tanggal" });
     expect(await bacaRegisterKuasa(db, NOMOR, "Orang Lain")).toEqual([]);
@@ -160,7 +160,7 @@ describe("simpan dan baca (pg-mem, SQL migrasi sungguhan)", () => {
 
   it("nomor dan tanggal kosong tidak membuat baris; tanggal tak sah dan nomor perkara tak sah ditolak dengan pesan awam", async () => {
     const { db, baca } = await siapkan();
-    expect(await simpanRegisterKuasa(db, "u1", { nomorPerkara: NOMOR, namaKuasa: "Imam Ayatullah", nomorRegister: "", tanggalRegister: "" })).toMatchObject({ disimpan: false });
+    expect(await simpanRegisterKuasa(db, "u1", { nomorPerkara: NOMOR, namaKuasa: "Rahmat Hidayat", nomorRegister: "", tanggalRegister: "" })).toMatchObject({ disimpan: false });
     expect(await baca()).toHaveLength(0);
     await expect(simpanRegisterKuasa(db, "u1", { nomorPerkara: NOMOR, namaKuasa: "Imam", nomorRegister: "1", tanggalRegister: "31/02/2026" })).rejects.toThrow(/tanggal register/i);
     await expect(simpanRegisterKuasa(db, "u1", { nomorPerkara: "ngawur", namaKuasa: "Imam", nomorRegister: "1" })).rejects.toThrow(/nomor perkara/i);
@@ -175,8 +175,8 @@ const FORM_KUASA = (opsi: { nama?: string; tglSurat?: string; pihakKe?: string }
 <form id="frm_user" method="post" action="http://192.168.10.10/SIPP/addPengacara/validateInput">
 <table id="tableDetilPerkara"><col width="38%"><col width="62%"><tbody>
 <tr><td colspan="2">TAMBAH DATA KUASA HUKUM PENGGUGAT</td></tr>
-<tr><td>Para Pihak <font color="red">*</font></td><td><input type="checkbox" name="para_pihak[]" value="a" checked> Udin Bin Abide<br><input type="checkbox" name="para_pihak[]" value="b"> Akbar Bin Tahir<br></td><input type="hidden" id="pihak_ke" name="pihak_ke" value="${opsi.pihakKe || "1"}"></tr>
-<tr><td>Nama <font color="red">*</font></td><td style="padding:0px;padding-left:5px;"><input type="text" id="fullname" name="fullname" value="${opsi.nama ?? "Imam Ayatullah,S.H."}" class="standard-input" readonly></td></tr>
+<tr><td>Para Pihak <font color="red">*</font></td><td><input type="checkbox" name="para_pihak[]" value="a" checked> Bahar Bin Salam<br><input type="checkbox" name="para_pihak[]" value="b"> Gani Bin Umar<br></td><input type="hidden" id="pihak_ke" name="pihak_ke" value="${opsi.pihakKe || "1"}"></tr>
+<tr><td>Nama <font color="red">*</font></td><td style="padding:0px;padding-left:5px;"><input type="text" id="fullname" name="fullname" value="${opsi.nama ?? "Rahmat Hidayat,S.H."}" class="standard-input" readonly></td></tr>
 <tr><td>Nomor Surat Kuasa<font color="red">*</font></td><td style="padding:0px;padding-left:5px;"><input id="nmr_kuasa" name="nmr_kuasa" value="" class="standard-input" maxlength="255"></td></tr>
 <tr><td>Tanggal Surat Kuasa<font color="red">*</font></td><td style="padding:0px;padding-left:5px;"><input id="tgl_kuasa" name="tgl_kuasa" value="${opsi.tglSurat ?? ""}" class="datepicker hasDatepicker" maxlength="10" placeholder="tgl/bln/tahun"></td></tr>
 <tr><td>Keterangan</td><td><textarea id="keterangan" name="keterangan"></textarea></td></tr>
@@ -235,7 +235,7 @@ describe("salinan aturan di ekstensi sama dengan TypeScript", () => {
   const { w } = buka();
   const J = w.eval("({krKunciNama, krTanggalIso, krPilihRegister, krTanggalTampil})");
   it("kunci nama dan tanggal", () => {
-    for (const n of ["Imam Ayatullah, S.H.", "ADV. IMAM AYATULLAH SH MH", "Ahmad S. Mardjanu, S.H.", "Dr. H. Ali Murtadha, M.Kn", "", "  "]) expect(J.krKunciNama(n)).toBe(kunciNamaKuasa(n));
+    for (const n of ["Rahmat Hidayat, S.H.", "ADV. RAHMAT HIDAYAT SH MH", "Ahmad S. Mardjanu, S.H.", "Dr. H. Ali Murtadha, M.Kn", "", "  "]) expect(J.krKunciNama(n)).toBe(kunciNamaKuasa(n));
     for (const t of ["04/11/2026", "4-1-2026", "2026-11-04", "31/02/2026", "tgl/bln/tahun", "", "01/01/1850"]) expect(J.krTanggalIso(t)).toBe(tanggalIso(t));
     expect(J.krTanggalTampil("2026-11-04")).toBe(tanggalTampil("2026-11-04"));
   });
@@ -365,9 +365,9 @@ describe("borang kuasa SIPP", () => {
     expect(t.dikirim[0].o.method).toBe("POST");
     expect(t.dikirim[0].badan).toEqual({
       nomorPerkara: "273/Pdt.G/2026/PA.Dgl",
-      namaKuasa: "Imam Ayatullah,S.H.",
+      namaKuasa: "Rahmat Hidayat,S.H.",
       pihakKe: 1,
-      pihakNama: "Udin Bin Abide",
+      pihakNama: "Bahar Bin Salam",
       tanggalSuratKuasa: "01/10/2026",
       nomorRegister: "12/SK/X/2026",
       tanggalRegister: "02/10/2026",
