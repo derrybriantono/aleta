@@ -747,7 +747,7 @@ describe("5d. Kasir Manual (satu hari) dapat disunting sebelum disimpan", () => 
     expect(uraian.value).toBe("Biaya Panggilan Tergugat");
     ubah(h, uraian, "Biaya Panggilan Tergugat/P2610280001", "input");
     expect(peringat.hidden).toBe(true);
-    ubah(h, baris(manual, "u2").querySelector('input[type="number"]') as HTMLInputElement, "40000", "change");
+    ubah(h, baris(manual, "u2").querySelector("input.aleta-kasir-nominal") as HTMLInputElement, "40000", "change");
     expect(baris(manual, "u3").querySelector("td.aleta-kasir-angka")!.textContent).toBe("Rp50.000");
     ubah(h, baris(manual, "u1").querySelector('input[type="date"]') as HTMLInputElement, "2026-10-27", "change");
     ubah(h, baris(manual, "u1").querySelector("input.aleta-kasir-uraian") as HTMLInputElement, "Redaksi putusan", "input");
@@ -783,7 +783,7 @@ describe("5d. Kasir Manual (satu hari) dapat disunting sebelum disimpan", () => 
     const manual = await bukaManual(h);
     (baris(manual, "u1").querySelector("button.aleta-kasir-hapus") as HTMLButtonElement).click();
     expect(manual.querySelector('tr[data-usulan="u1"]')).toBeNull();
-    const nominal = baris(manual, "u2").querySelector('input[type="number"]') as HTMLInputElement;
+    const nominal = baris(manual, "u2").querySelector("input.aleta-kasir-nominal") as HTMLInputElement;
     ubah(h, nominal, "", "change");
     expect((baris(manual, "u2").querySelector(".aleta-basmassal-salah:not([hidden])") as HTMLElement)?.textContent || "").toMatch(/jumlah\?|Nomor resi/);
     (Array.from(manual.querySelectorAll("button")).find((b) => b.textContent === "Pratinjau") as HTMLButtonElement).click();

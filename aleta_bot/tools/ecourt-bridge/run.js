@@ -899,6 +899,35 @@ async function processCase(page, url, ringkasan, args, acuan) {
   //
   // Karena itu penjagaannya bukan "bila ada isinya", melainkan "bila halaman
   // detailnya memang terbaca".
+  // ==================================================================
+  // PEMBAYARAN e-PAYMENT DAN e-SKUM (Kasir 3 Nov 2026)
+  // ==================================================================
+  //
+  // Dari halaman yang SAMA. Isi kotak "Lihat SKUM" yang tidak ikut di halaman
+  // dibaca SEKALI per perkara (GET di sesi yang sama, hanya bila belum
+  // tersimpan) - tidak ada login dan tidak ada aksi yang menulis ke e-Court.
+  // Gagal-terbuka: keterangan pelengkap, tidak menggagalkan penarikan dokumen.
+  if (detail.pembayaran || detail.skum) {
+    try {
+      let skum = detail.skum;
+      if (!skum && detail.pembayaran && detail.alamatSkum && scraper.diDalamEcourt(detail.alamatSkum)) {
+        const sudah = await ecourtStoreService.adaSkumEcourt(detail.nomorPerkara).catch(() => false);
+        if (!sudah) {
+          const teksSkum = await page
+            .evaluate(async (alamat) => {
+              const r = await fetch(alamat, { credentials: "include" });
+              return r.ok ? r.text() : "";
+            }, detail.alamatSkum)
+            .catch(() => "");
+          skum = teksSkum ? require("./pembayaranEcourt").extractSkumEcourt(teksSkum) : null;
+        }
+      }
+      await ecourtStoreService.recordPembayaranEcourt(detail.nomorPerkara, detail.pembayaran, skum);
+    } catch (galat) {
+      log(`  Pembayaran e-Court gagal disimpan: ${galat.message}`);
+    }
+  }
+
   if (detail.putusanEcourt) {
     await putusanEcourtService
       .simpan(detail.nomorPerkara, detail.putusanEcourt)

@@ -8264,6 +8264,27 @@ router.get("/sipp/kontak-para-pihak", requireInternalToken, async (req, res) => 
 });
 /* === AKHIR STATUS-ZIP === */
 
+/* === KASIR REKENING-SKUM 3 Nov === */
+/**
+ * Pembayaran e-Court (e-Payment: pembayar, rekening pengguna, bank, panjar) dan isi e-SKUM per perkara,
+ * dari halaman detil pendaftaran yang dibaca jembatan e-Court (aleta_bot_ecourt_pembayaran). Hanya SELECT;
+ * nilai rekening tidak ditulis ke log. Penyamaran per peran dikerjakan portal (rute pembayaran-ecourt).
+ *
+ *   GET /ecourt/pembayaran?nomor=1/Pdt.G/2026/PA.Dgl&nomor=...   (<= 80)
+ *     -> { ok, perkara: { [nomor]: { diterimaDari, nomorRekening, atasNama, bank, ..., skum } } }
+ */
+router.get("/ecourt/pembayaran", requireInternalToken, async (req, res) => {
+  try {
+    const mentah = req.query.nomor;
+    const nomor = (Array.isArray(mentah) ? mentah : [mentah]).map((n) => String(n || "").trim().slice(0, 80)).filter(Boolean);
+    if (!nomor.length) return res.status(400).json({ ok: false, alasan: "nomor_kosong" });
+    res.json({ ok: true, perkara: await ecourtStoreService.bacaPembayaranEcourt(nomor) });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error?.code || error?.message || error).slice(0, 120) });
+  }
+});
+/* === AKHIR KASIR REKENING-SKUM === */
+
 /* === PEKERJAAN 11 Okt === */
 /**
  * PEKERJAAN (11 Okt 2026, agen 7): kategori pekerjaan pihak (PNS/TNI/POLRI/BUMN/BUMD/desa; PPPK -> PNS) dari teks

@@ -14,6 +14,7 @@
  */
 
 const { cleanText, normalizeCaseNumber } = require("../../services/ecourtTextService");
+const pembayaranEcourt = require("./pembayaranEcourt");
 
 /**
  * Alamat e-Court. Hanya untuk SIMULASI di mesin pengembang, ALETA_ECOURT_ALAMAT_UJI
@@ -933,6 +934,10 @@ function parseCaseDetail(html) {
     // Keadaan tab Putusan - termasuk ketiadaannya, yang justru paling
     // perlu diketahui.
     putusanEcourt: extractPutusanEcourt(html),
+    // Kasir 3 Nov 2026: pembayaran e-Payment (rekening pengguna) dan e-SKUM dari halaman yang sama.
+    pembayaran: pembayaranEcourt.extractPembayaranEcourt(html),
+    skum: pembayaranEcourt.extractSkumEcourt(html),
+    alamatSkum: pembayaranEcourt.alamatSkumEcourt(html, absoluteUrl),
   };
 }
 

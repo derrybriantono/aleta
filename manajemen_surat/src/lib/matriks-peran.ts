@@ -748,7 +748,7 @@ export const AKSI = {
     crud: "R",
     golongan: ["kasir", "panitera", "panmud"],
     lingkup: "semua",
-    rute: ["GET /api/aleta-ecourt/sidang/kasir", "GET /api/aleta-ecourt/sidang/kasir/*"],
+    rute: ["GET /api/aleta-ecourt/sidang/kasir", "GET /api/aleta-ecourt/sidang/kasir/*", "GET /api/aleta-ecourt/pembayaran-ecourt/skum"],
     alasan: "Aturan Kasir 1.186 (bolehKasir): kasir/keuangan perkara/bendahara, panitera, panitera muda - keuangan SEMUA perkara. Pengawas (panitera/panmud) hanya membaca; dipakai juga tombol Kasir di Jurnal Keuangan Perkara SIPP (T3).",
   },
   "sidang.cetak-relaas": {
@@ -865,6 +865,8 @@ export const AKSI = {
       "GET /api/aleta-ecourt/identitas-pihak",
       "GET /api/aleta-ecourt/riwayat-pihak",
       "GET /api/aleta-ecourt/kontak-para-pihak",
+      // 3 Nov 2026: pembayar e-Court; rekening utuh hanya sidang.kasir-baca + Admin, lainnya tersamar.
+      "GET /api/aleta-ecourt/pembayaran-ecourt",
       "GET /api/aleta-ecourt/ktp-pihak-status",
       // 18 Okt 2026: rute data pribadi yang dipakai panel SIPP/ABT ikut dijaga (dulu hanya kemampuan panel = semua peran).
       "GET /api/aleta-ecourt/kontak-pihak",

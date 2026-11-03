@@ -2139,6 +2139,113 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
     return isi || {};
   }
 
+  // ─── Pembayar e-Court & cetak e-SKUM (Kasir 3 Nov 2026) ───────────────────
+
+  /** "29500" | "29.500" | "Rp29.500" -> 29500; kosong -> null. */
+  const angkaMasukan = (teks) => {
+    const t = String(teks == null ? "" : teks).replace(/\D/g, "");
+    return t === "" ? null : Math.max(0, Math.round(Number(t)));
+  };
+  /** 29500 -> "29.500" (isi kotak nominal; "Rp" di depan kotak). */
+  const titik = (n) => (n === null || n === undefined || n === "" ? "" : String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, "."));
+  const BULAN_ID = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+  /** "2026-05-14" -> "14 Mei 2026". */
+  const tanggalPanjang = (iso) => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ""));
+    return m ? `${Number(m[3])} ${BULAN_ID[Number(m[2]) - 1] || m[2]} ${m[1]}` : "";
+  };
+
+  /**
+   * Pembayaran e-Court beberapa perkara (rute pembayaran-ecourt): pembayar, bank, nomor rekening pengguna
+   * (UTUH hanya untuk peran keuangan perkara + Admin; lainnya tersamar oleh portal), panjar, dan apakah
+   * e-SKUM sudah terbaca. Gagal = {} (baris pembayar tidak digambar; Kasir tetap jalan).
+   */
+  async function bacaPembayaranEcourt(daftarNomor) {
+    const nomor = [...new Set((daftarNomor || []).map((n) => String(n || "").trim()).filter(Boolean))].slice(0, 80);
+    if (!nomor.length) return {};
+    try {
+      const isi = await ambil(`/aleta/api/aleta-ecourt/pembayaran-ecourt?${nomor.map((n) => `nomor=${encodeURIComponent(n)}`).join("&")}`);
+      return (isi && isi.ok !== false && isi.perkara) || {};
+    } catch {
+      return {};
+    }
+  }
+
+  /** Unduh e-SKUM e-Court satu perkara sebagai PDF utuh (A4/F4) lewat jalur unduhan ekstensi. */
+  async function cetakSkumEcourt(nomor, kertas, wadahKabar) {
+    kabar(wadahKabar, "Menyiapkan e-SKUM…");
+    try {
+      const jawab = await alatAmbil(`/aleta/api/aleta-ecourt/pembayaran-ecourt/skum?nomor=${encodeURIComponent(nomor)}&kertas=${kertas === "F4" ? "F4" : "A4"}`, { credentials: "include", cache: "no-store", batasMs: 60000 }, "e-SKUM e-Court");
+      if (!String(jawab.headers.get("content-type") || "").includes("application/pdf")) {
+        const luar = await jawab.json().catch(() => ({}));
+        const isi = luar && luar.data ? luar.data : luar;
+        const pesan = (isi && (isi.alasan || isi.pesan)) || (luar && luar.error && (luar.error.message || luar.error)) || "e-SKUM tidak dapat disiapkan saat ini.";
+        kabar(wadahKabar, String(pesan), "peringatan");
+        return false;
+      }
+      const berkas = await jawab.blob();
+      const u = await alatUnduh(berkas, `e-SKUM ${String(nomor).replace(/[\\/:*?"<>|]+/g, "-")}.pdf`);
+      if (!u || !u.ok) throw new Error((u && u.pesan) || "Unduhan tidak dimulai.");
+      kabar(wadahKabar, "e-SKUM terunduh.", "baik");
+      return true;
+    } catch (galat) {
+      kabar(wadahKabar, String((galat && galat.message) || galat), "salah");
+      return false;
+    }
+  }
+
+  /**
+   * Kartu perkara e-Court (3 Nov 2026): baris "Pembayar e-Court" tepat di bawah nomor perkara (nama · bank
+   * rekening · panjar · tanggal) dan tombol "Cetak SKUM e-Court" di KEPALA kartu (`wadahSkum`).
+   * Perkara tanpa pembayaran e-Court: keduanya kosong dan tersembunyi.
+   */
+  function isiPembayarEcourt(wadah, nomor, bayar, wadahSkum) {
+    wadah.textContent = "";
+    wadah.hidden = !bayar;
+    if (wadahSkum) {
+      wadahSkum.textContent = "";
+      wadahSkum.hidden = !bayar;
+    }
+    if (!bayar) return;
+    wadah.setAttribute("data-rekening-penuh", bayar.penuh ? "ya" : "tidak");
+    const ket = el("div", "aleta-kasir-pembayar-ket");
+    ket.appendChild(el("span", "aleta-kasir-pembayar-label", "Pembayar e-Court"));
+    ket.appendChild(el("span", "aleta-kasir-pembayar-nama", bayar.diterimaDari || "-"));
+    const rek = [bayar.bank, bayar.nomorRekening].filter(Boolean).join(" ");
+    if (rek) {
+      const r = el("span", "aleta-kasir-pembayar-rekening", rek);
+      r.setAttribute("data-rekening", "");
+      r.title = bayar.penuh ? "Nomor rekening pengguna e-Court" : "Nomor rekening disamarkan untuk peran Anda";
+      ket.appendChild(r);
+    }
+    if (bayar.penuh && bayar.atasNama) ket.appendChild(el("span", "aleta-kasir-pembayar-lembut", `a.n. ${bayar.atasNama}`));
+    const rinci = [bayar.panjar !== null && bayar.panjar !== undefined ? `Panjar ${rupiah(bayar.panjar)}` : "", bayar.tanggal ? `dibayar ${tanggalPanjang(bayar.tanggal)}${bayar.jam ? ` ${String(bayar.jam).slice(0, 5)}` : ""}` : ""].filter(Boolean).join(" · ");
+    if (rinci) ket.appendChild(el("span", "aleta-kasir-pembayar-lembut", rinci));
+    wadah.appendChild(ket);
+    const aksiSkum = el("div", "aleta-kasir-pembayar-aksi");
+    const kertas = el("select", "aleta-kasir-masukan aleta-kasir-kertas");
+    kertas.setAttribute("aria-label", "Ukuran kertas e-SKUM");
+    for (const k of ["A4", "F4"]) {
+      const o = el("option", "", k);
+      o.value = k;
+      kertas.appendChild(o);
+    }
+    const kabarSkum = el("div", "aleta-kasir-pembayar-kabar");
+    const b = tombol("Cetak SKUM e-Court", "aleta-kasir-cetak-skum", async () => {
+      b.disabled = true;
+      try {
+        await cetakSkumEcourt(nomor, kertas.value, kabarSkum);
+      } finally {
+        b.disabled = false;
+      }
+    });
+    b.title = bayar.adaSkum ? "Unduh e-SKUM e-Court perkara ini sebagai PDF (kolom jumlah utuh)" : "e-SKUM belum terbaca dari e-Court - tombol akan menjelaskan langkahnya";
+    aksiSkum.appendChild(kertas);
+    aksiSkum.appendChild(b);
+    (wadahSkum || wadah).appendChild(aksiSkum);
+    wadah.appendChild(kabarSkum);
+  }
+
   /** Usulan berbiaya Pos yang uraiannya belum memuat nomor resi ("Biaya Panggilan Tergugat/<resi>"). */
   const kurangResi = (u) => Boolean(u && u.perluResi) && !/\/\s*\S/.test(String(u.uraian || ""));
 
@@ -2654,6 +2761,8 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
     let sedang = false;
     const centang = new Map();
     const laporan = new Map();
+    /** Pembayaran e-Court per nomor perkara (3 Nov 2026); dibaca sesudah daftar, diisi di tempat. */
+    let pembayaran = {};
 
     /** Sisa panjar mengikuti suntingan: saldo sesudah baris tercentang (kembaran hitungSisaOtomatis bot). */
     const sisaTd = new Map();
@@ -2676,9 +2785,9 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
         )
       );
       for (const p of data.perkara) {
-        const baris = el("div", "aleta-basmassal-baris");
+        const baris = el("div", "aleta-basmassal-baris aleta-kasir-kartu");
         baris.setAttribute("data-perkara", String(p.perkaraId));
-        const kep = el("div", "aleta-basmassal-kepala");
+        const kep = el("div", "aleta-basmassal-kepala aleta-kasir-kartu-kepala");
         const lab = el("label", "aleta-basmassal-pilih-perkara");
         const cek = el("input");
         cek.type = "checkbox";
@@ -2689,25 +2798,47 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
           gambarAksi();
         });
         lab.appendChild(cek);
-        lab.appendChild(el("span", "aleta-basmassal-nomor", p.nomorPerkara));
+        lab.appendChild(el("span", "aleta-basmassal-nomor aleta-kasir-kartu-nomor", p.nomorPerkara));
         kep.appendChild(lab);
-        kep.appendChild(nomorTaut("Jurnal SIPP", p.perkaraId));
+        const tautJurnal = nomorTaut("Jurnal SIPP", p.perkaraId);
+        tautJurnal.classList.add("aleta-kasir-kartu-tautan");
+        kep.appendChild(tautJurnal);
         kep.appendChild(el("span", "aleta-kasir-keadaan", p.keadaan && p.keadaan.nama ? p.keadaan.nama : "-"));
+        // 3 Nov 2026: tombol Cetak SKUM e-Court di kepala kartu (hanya perkara e-Court; diisi sesudah dibaca).
+        const skumWadah = el("span", "aleta-kasir-kartu-skum");
+        skumWadah.hidden = true;
+        kep.appendChild(skumWadah);
         const sebab = (p.sebab || []).map((s) => SEBAB[s] || s).join(", ");
         if (sebab) kep.appendChild(ikonInfo(`Bergerak hari itu: ${sebab}`, [`Perkara ini ada di daftar karena ${sebab}.`], p.nomorPerkara));
         if (perluPeriksaKini(p)) kep.appendChild(el("span", "aleta-basmassal-tanda aleta-basmassal-tanda-belum", "perlu diperiksa"));
         const l = laporan.get(p.perkaraId);
         if (l) kep.appendChild(el("span", `aleta-basmassal-tanda ${l.ok ? "aleta-basmassal-tanda-baik" : "aleta-basmassal-tanda-belum"}`, l.pesan));
         baris.appendChild(kep);
+        // 3 Nov 2026: pembayar e-Court (rekening pengguna) + Cetak SKUM e-Court - diisi sesudah dibaca.
+        const bayarWadah = el("div", "aleta-kasir-pembayar");
+        bayarWadah.setAttribute("data-kasir-pembayar", p.nomorPerkara);
+        bayarWadah._skum = skumWadah;
+        isiPembayarEcourt(bayarWadah, p.nomorPerkara, pembayaran[p.nomorPerkara], skumWadah);
+        baris.appendChild(bayarWadah);
         // Baris usulan BISA DISUNTING sebelum disimpan (28 Okt 2026): centang, tanggal, uraian, nominal, hapus.
         // Yang tersimpan persis yang tampil di sini (barisKirim membaca u yang sama).
         const gulir = el("div", "aleta-kasir-gulir");
         const t = el("table", "aleta-kasir-tabel aleta-kasir-tabel-sunting");
+        // 3 Nov 2026: kepala kolom - tanggal | uraian | nominal | aksi sejajar di semua kartu.
+        const th = el("thead");
+        const trKepala = el("tr");
+        for (const [teks, kelas] of [["", "aleta-kasir-kol-pilih"], ["Tanggal", "aleta-kasir-kol-tanggal"], ["Uraian", "aleta-kasir-kol-uraian"], ["Nominal", "aleta-kasir-angka aleta-kasir-kol-nominal"], ["", "aleta-kasir-kol-aksi"]]) {
+          const sel = el("th", kelas, teks);
+          sel.scope = "col";
+          trKepala.appendChild(sel);
+        }
+        th.appendChild(trKepala);
+        t.appendChild(th);
         const tb = el("tbody");
         for (const u of p.usulan) {
           const tr = el("tr", u.pilih ? "" : "aleta-kasir-mati");
           tr.setAttribute("data-usulan", String(u.kunci));
-          const tdC = el("td");
+          const tdC = el("td", "aleta-kasir-kol-pilih");
           const cu = el("input");
           cu.type = "checkbox";
           cu.checked = Boolean(u.pilih);
@@ -2721,9 +2852,10 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
           });
           tdC.appendChild(cu);
           tr.appendChild(tdC);
-          const tdT = el("td");
+          const tdT = el("td", "aleta-kasir-kol-tanggal");
           const tg = el("input", "aleta-kasir-masukan");
           tg.type = "date";
+          tg.lang = "id";
           tg.value = u.tanggal || "";
           tg.max = data.hariIni || hariIni();
           tg.disabled = sedang;
@@ -2731,50 +2863,83 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
           tg.addEventListener("change", () => (u.tanggal = tg.value));
           tdT.appendChild(tg);
           tr.appendChild(tdT);
-          const tdU = el("td");
+          const tdU = el("td", "aleta-kasir-kol-uraian");
           const ur = el("input", "aleta-kasir-masukan aleta-kasir-uraian");
           ur.type = "text";
           ur.value = u.uraian || "";
           ur.disabled = sedang;
           ur.setAttribute("aria-label", "Uraian jurnal");
-          const peringatResi = el("div", "aleta-basmassal-salah", "Nomor resi Pos belum ada - lengkapi uraiannya.");
+          // 3 Nov 2026: peringatan ringkas - apa yang kurang dan di mana menambahkannya.
+          const peringatResi = el("div", "aleta-basmassal-salah aleta-kasir-peringatan aleta-kasir-resi");
+          peringatResi.appendChild(el("span", "aleta-kasir-resi-teks", "Nomor resi Pos belum ada"));
+          // Isian nomor resi langsung di baris: yang diketik menjadi "<uraian>/<resi>" (bentuk jurnal SIPP).
+          const resi = el("input", "aleta-kasir-masukan aleta-kasir-resi-isian");
+          resi.type = "text";
+          resi.placeholder = "ketik nomor resi";
+          resi.autocomplete = "off";
+          resi.disabled = sedang;
+          resi.setAttribute("aria-label", `Nomor resi Pos ${u.uraian || ""}`.trim());
+          const resiPakai = tombol("Pakai", "aleta-kasir-resi-pakai", () => {
+            const r = String(resi.value || "").trim().replace(/^\/+/, "");
+            if (!r) return resi.focus();
+            u.uraian = `${String(u.uraian || "").replace(/\/\s*$/, "")}/${r}`;
+            ur.value = u.uraian;
+            resi.value = "";
+            peringatResi.hidden = !(u.pilih && kurangResi(u));
+          });
+          resiPakai.disabled = sedang;
+          resi.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              resiPakai.click();
+            }
+          });
+          peringatResi.appendChild(resi);
+          peringatResi.appendChild(resiPakai);
           peringatResi.hidden = !(u.pilih && kurangResi(u));
           ur.addEventListener("input", () => {
             u.uraian = ur.value;
             peringatResi.hidden = !(u.pilih && kurangResi(u));
           });
-          tdU.appendChild(ur);
+          const urBaris = el("div", "aleta-kasir-uraian-baris");
+          urBaris.appendChild(ur);
           const dasarRinci = [u.peristiwa, u.dasar, u.yakin && u.yakin !== "tinggi" ? `Keyakinan mesin: ${u.yakin} - periksa sebelum disimpan.` : ""].filter(Boolean).map(String);
-          if (dasarRinci.length) tdU.appendChild(ikonInfo(String(u.peristiwa || u.dasar).slice(0, 160), dasarRinci, u.uraian || "Dasar usulan"));
+          if (dasarRinci.length) urBaris.appendChild(ikonInfo(String(u.peristiwa || u.dasar).slice(0, 160), dasarRinci, u.uraian || "Dasar usulan"));
+          tdU.appendChild(urBaris);
           tdU.appendChild(peringatResi);
           tr.appendChild(tdU);
-          const tdJ = el("td", "aleta-kasir-angka");
+          const tdJ = el("td", "aleta-kasir-angka aleta-kasir-kol-nominal");
           if (u.sisaOtomatis) {
             tdJ.textContent = rupiah(u.jumlah);
             tdJ.title = "Sisa panjar = saldo sesudah seluruh baris tercentang";
             sisaTd.set(u, tdJ);
           } else {
-            const j = el("input", "aleta-kasir-masukan aleta-kasir-angka");
-            j.type = "number";
-            j.min = "0";
-            j.step = "500";
-            j.value = u.jumlah === null || u.jumlah === undefined ? "" : String(u.jumlah);
-            j.placeholder = "jumlah";
+            // 3 Nov 2026: nominal berformat Rupiah bertitik ("Rp" di depan kotak, isi 29.500), rata kanan.
+            const kotakRp = el("span", "aleta-kasir-rp");
+            kotakRp.appendChild(el("span", "aleta-kasir-rp-awalan", "Rp"));
+            const j = el("input", "aleta-kasir-masukan aleta-kasir-angka aleta-kasir-nominal");
+            j.type = "text";
+            j.inputMode = "numeric";
+            j.autocomplete = "off";
+            j.value = titik(u.jumlah);
+            j.placeholder = "0";
             j.disabled = sedang;
             j.setAttribute("aria-label", `Nominal ${u.uraian}`);
-            const tanyaJumlah = el("div", "aleta-basmassal-salah", "jumlah?");
+            const tanyaJumlah = el("div", "aleta-basmassal-salah aleta-kasir-peringatan", "Isi nominal (jumlah?)");
             tanyaJumlah.hidden = !(u.pilih && (u.jumlah === null || u.jumlah === undefined));
             j.addEventListener("change", () => {
-              u.jumlah = j.value === "" ? null : Math.max(0, Math.round(Number(j.value)));
+              u.jumlah = angkaMasukan(j.value);
+              j.value = titik(u.jumlah);
               tanyaJumlah.hidden = !(u.pilih && u.jumlah === null);
               segarkanSisa(p);
               gambarAksi();
             });
-            tdJ.appendChild(j);
+            kotakRp.appendChild(j);
+            tdJ.appendChild(kotakRp);
             tdJ.appendChild(tanyaJumlah);
           }
           tr.appendChild(tdJ);
-          const tdH = el("td");
+          const tdH = el("td", "aleta-kasir-kol-aksi");
           const hapus = tombol("Hapus", "aleta-kasir-hapus", () => {
             p.usulan.splice(p.usulan.indexOf(u), 1);
             segarkanSisa(p);
@@ -2957,6 +3122,16 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
           bab.tambahan.textContent = ` (${data.perkara.length})`;
           bab.lipat.atur(data.perkara.length);
         }
+        // 3 Nov 2026: pembayar e-Court diisi di tempat (tanpa menggambar ulang kotak yang sedang disunting).
+        const dataKini = data;
+        void bacaPembayaranEcourt(data.perkara.map((p) => p.nomorPerkara)).then((peta) => {
+          if (data !== dataKini) return;
+          pembayaran = peta || {};
+          for (const w of Array.from(daftar.querySelectorAll("[data-kasir-pembayar]"))) {
+            const n = w.getAttribute("data-kasir-pembayar");
+            isiPembayarEcourt(w, n, pembayaran[n], w._skum);
+          }
+        });
       } catch (galat) {
         kabar(kotakKabar, String((galat && galat.message) || galat), "salah");
       }
