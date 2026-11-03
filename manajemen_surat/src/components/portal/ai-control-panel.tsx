@@ -110,6 +110,27 @@ const AI_FEATURE_MODULE_GROUPS: Array<{
   },
 ];
 
+/**
+ * Kunci API tersimpan hanya tampil tersamar ("••••" + 4 huruf terakhir) dan TIDAK dapat disalin: tidak dapat dipilih, tidak ada tombol
+ * salin atau lihat, salin/potong/seret/menu klik kanan dicegah. (Peladen sendiri tidak pernah mengirim kunci utuh ke peramban.)
+ */
+function KunciTersamar({ nilai, kosong }: { nilai?: string | null; kosong: string }) {
+  const cegah = (event: { preventDefault: () => void }) => event.preventDefault();
+  return (
+    <strong
+      className="select-none text-foreground"
+      style={{ userSelect: "none", WebkitUserSelect: "none" }}
+      data-kunci-tersamar="1"
+      onCopy={cegah}
+      onCut={cegah}
+      onDragStart={cegah}
+      onContextMenu={cegah}
+    >
+      {nilai || kosong}
+    </strong>
+  );
+}
+
 function statusMeta(status: ConnectionTestStatus) {
   if (status === "connected") return { label: "Berhasil terhubung", variant: "success" as const };
   if (status === "failed") return { label: "Gagal terhubung", variant: "danger" as const };
@@ -169,6 +190,8 @@ export function AIControlPanel() {
   const selectedProvider =
     liveProviders.find((provider) => provider.id === form.providerId) ?? defaultProvider;
   const selectedModels = useMemo(() => selectedProvider?.models ?? [], [selectedProvider]);
+  // Claude: model & ketelitian dipilih otomatis oleh ALETA Ai per tugas (yang tersimpan hanya model bawaan sebagai pengisi, bukan pilihan).
+  const modelOtomatis = form.providerId === "claude";
   const editingConnection =
     aiConfig.providers.find((provider) => provider.id === editingConnectionId) ?? null;
   const moduleConfigs: AIModuleConfig[] = aiConfig.moduleConfigs ?? [];
@@ -291,7 +314,7 @@ export function AIControlPanel() {
       return;
     }
 
-    if (!form.modelId.trim()) {
+    if (!modelOtomatis && !form.modelId.trim()) {
       setFormFeedback("Model AI wajib dipilih.");
       return;
     }
@@ -309,7 +332,7 @@ export function AIControlPanel() {
         id: editingConnectionId ?? undefined,
         providerId: form.providerId,
         label: form.label.trim(),
-        modelId: form.modelId,
+        modelId: form.modelId.trim() || selectedModels[0] || defaultModel,
         apiKey: form.apiKey.trim() || undefined,
         endpointUrl: form.endpointUrl.trim() || undefined,
         connectionStatus: lastTestStatus,
@@ -570,7 +593,9 @@ export function AIControlPanel() {
                     <p>
                       {activeConnection.providerName} • {activeConnection.modelId}
                     </p>
-                    <p>API key: {activeConnection.maskedApiKey || "Tersimpan"}</p>
+                    <p>
+                      API key: <KunciTersamar nilai={activeConnection.maskedApiKey} kosong="Tersimpan" />
+                    </p>
                   </div>
                 ) : (
                   <p className="mt-2 text-sm text-muted-foreground">
@@ -729,24 +754,30 @@ export function AIControlPanel() {
                   ))}
                 </NativeSelect>
               </Field>
-              <Field label="Model">
-                <NativeSelect
-                  value={form.modelId}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      modelId: event.target.value,
-                    }))
-                  }
-                  className="h-11 text-base"
-                >
-                  {selectedModels.map((model) => (
-                    <option key={model} value={model}>
-                      {model}
-                    </option>
-                  ))}
-                </NativeSelect>
-              </Field>
+              {modelOtomatis ? (
+                <div className="space-y-1 self-end text-sm text-muted-foreground" data-model-otomatis="1">
+                  <p>Model dan ketelitian dipilih otomatis oleh ALETA Ai sesuai tugasnya; di sini cukup memasukkan kunci.</p>
+                </div>
+              ) : (
+                <Field label="Model">
+                  <NativeSelect
+                    value={form.modelId}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        modelId: event.target.value,
+                      }))
+                    }
+                    className="h-11 text-base"
+                  >
+                    {selectedModels.map((model) => (
+                      <option key={model} value={model}>
+                        {model}
+                      </option>
+                    ))}
+                  </NativeSelect>
+                </Field>
+              )}
             </div>
 
             <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -759,7 +790,7 @@ export function AIControlPanel() {
                       label: event.target.value,
                     }))
                   }
-                  placeholder={`${selectedProvider?.name ?? "Provider"} - ${form.modelId}`}
+                  placeholder={modelOtomatis ? (selectedProvider?.name ?? "Provider") : `${selectedProvider?.name ?? "Provider"} - ${form.modelId}`}
                   className="h-11 text-base"
                 />
               </Field>
@@ -775,10 +806,13 @@ export function AIControlPanel() {
                   }
                   placeholder={editingConnection ? "Kosongkan jika tidak ingin mengganti API key" : "Tempel API key di sini"}
                   className="h-11 text-base"
+                  autoComplete="new-password"
+                  onCopy={(event) => event.preventDefault()}
+                  onCut={(event) => event.preventDefault()}
                 />
                 {editingConnection?.maskedApiKey ? (
                   <p className="text-xs text-muted-foreground">
-                    API key tersimpan saat ini: <strong className="text-foreground">{editingConnection.maskedApiKey}</strong>
+                    API key tersimpan saat ini: <KunciTersamar nilai={editingConnection.maskedApiKey} kosong="Tersimpan" />. Kunci tersimpan tidak dapat dilihat atau disalin.
                   </p>
                 ) : null}
               </Field>
@@ -908,7 +942,7 @@ export function AIControlPanel() {
                             {connection.providerName} • {connection.modelId}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            API key: <strong className="text-foreground">{connection.maskedApiKey || "Tidak tersedia"}</strong>
+                            API key: <KunciTersamar nilai={connection.maskedApiKey} kosong="Tidak tersedia" />
                           </p>
                         </div>
                         <Badge variant={connectionStatus.variant}>{connectionStatus.label}</Badge>
