@@ -117,6 +117,7 @@ import { TombolTutupPesan } from "@/components/portal/tombol-tutup-pesan";
 import { cn } from "@/lib/utils";
 import { kelasTulisanPutusan, warnaStatusPutusan } from "@/lib/warna-putusan";
 import { relaasElektronik } from "@/lib/hasil-relaas";
+import { namaBerkasRelaas, namaDokumenRelaas } from "@/lib/jadwal-sidang-1okt";
 import { LencanaKepatutanRelaas, LencanaRetur, kepatutanBarisRelaas } from "@/components/portal/lencana-kepatutan-relaas";
 import { KETERANGAN_CERMIN, teksCermin } from "@/lib/cermin-tampil";
 
@@ -3065,6 +3066,10 @@ function IsiStatus({
   // keduanya. sidangBerikut/sidangTerakhir di bawah sengaja tetap membaca
   // status.jadwal: "berikut" adalah pertanyaan tanggal, bukan nomor.
   const jadwalUrut = useMemo(() => urutkanMenurutNomorSidang(status.jadwal), [status.jadwal]);
+  const berurutan = useMemo(
+    () => new Map((status.jadwal ?? []).map((x) => [String(x.sidangId), Number(x.urutanSidang) || undefined] as const)),
+    [status.jadwal]
+  );
   const blangkoDerry = useMemo(
     () =>
       tautanBlangkoStatusPerkara({
@@ -5274,6 +5279,18 @@ function IsiStatus({
                   . Rincian dan unduhannya ada di bagian <strong>Relaas panggilan</strong>.
                 </p>
               )}
+              {status.relaas.some((x) => x.adaDokumen || x.adaResi) ? (
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {status.relaas.map((x) => (
+                    <TombolUnduhRelaas
+                      key={x.id}
+                      relaas={x}
+                      nomorPerkara={status.identitas.nomorPerkara}
+                      urutanSidang={berurutan.get(String(x.sidangId || ""))}
+                    />
+                  ))}
+                </div>
+              ) : null}
             </div>
 
             {/* --- Berita acara sidang --- */}
@@ -6640,6 +6657,7 @@ const SEBUTAN_JALUR: Record<string, string> = {
  * dan begitu pula bagian-bagian lain di layar ini disusun.
  */
 export function RelaasPanggilan({ status }: { status: Status }) {
+  const urutanPer = new Map((status.jadwal ?? []).map((x) => [String(x.sidangId), Number(x.urutanSidang) || undefined] as const));
   const panggilan = status.panggilan;
   const ringkasan = panggilan?.ringkasan;
 
@@ -6769,7 +6787,7 @@ export function RelaasPanggilan({ status }: { status: Status }) {
                 </div>
                 <ul className="space-y-1.5">
                   {baris.map((relaas) => (
-                    <BarisRelaas key={relaas.id} relaas={relaas} tanggalSidang={tanggal} />
+                    <BarisRelaas key={relaas.id} relaas={relaas} tanggalSidang={tanggal} nomorPerkara={status.identitas.nomorPerkara} urutanSidang={urutanPer.get(String(relaas.sidangId || ""))} />
                   ))}
                 </ul>
               </li>
@@ -6786,7 +6804,7 @@ export function RelaasPanggilan({ status }: { status: Status }) {
               </p>
               <ul className="space-y-1.5">
                 {tanpaSidang.map((relaas) => (
-                  <BarisRelaas key={relaas.id} relaas={relaas} tanggalSidang="" />
+                  <BarisRelaas key={relaas.id} relaas={relaas} tanggalSidang="" nomorPerkara={status.identitas.nomorPerkara} />
                 ))}
               </ul>
             </li>
@@ -6921,12 +6939,51 @@ export function RelaasPanggilan({ status }: { status: Status }) {
  * tidaknya panggilan - dan ia tidak dapat dibaca dari dua tanggal yang
  * berdampingan tanpa menghitung sendiri.
  */
+/**
+ * Tombol unduh Relaas dan Resi satu baris relaas - rute, penanganan unduhan,
+ * label, dan nama berkas SAMA dengan Riwayat panggilan di Jadwal Sidang
+ * (TombolUnduh + namaDokumenRelaas/namaBerkasRelaas). Tombol hanya ada bila
+ * berkasnya ada (adaDokumen / adaResi).
+ */
+function TombolUnduhRelaas({
+  relaas,
+  nomorPerkara,
+  urutanSidang,
+}: {
+  relaas: Status["relaas"][number];
+  nomorPerkara: string;
+  urutanSidang?: number;
+}) {
+  return (
+    <>
+      {relaas.adaDokumen ? (
+        <TombolUnduh
+          alamat={`/api/aleta-ecourt/berkas-sipp?jenis=relaas&id=${encodeURIComponent(relaas.id)}`}
+          label={namaDokumenRelaas(relaas, "relaas", urutanSidang)}
+          namaCadangan={namaBerkasRelaas(nomorPerkara, relaas, "relaas", urutanSidang)}
+        />
+      ) : null}
+      {relaas.adaResi ? (
+        <TombolUnduh
+          alamat={`/api/aleta-ecourt/berkas-sipp?jenis=resi&id=${encodeURIComponent(relaas.id)}`}
+          label={namaDokumenRelaas(relaas, "resi", urutanSidang)}
+          namaCadangan={namaBerkasRelaas(nomorPerkara, relaas, "resi", urutanSidang)}
+        />
+      ) : null}
+    </>
+  );
+}
+
 function BarisRelaas({
   relaas,
   tanggalSidang,
+  nomorPerkara,
+  urutanSidang,
 }: {
   relaas: Status["relaas"][number];
   tanggalSidang: string;
+  nomorPerkara: string;
+  urutanSidang?: number;
 }) {
   const jarakHari = (() => {
     if (!tanggalSidang || !relaas.tanggalRelaas) return null;
@@ -7025,22 +7082,8 @@ function BarisRelaas({
       {relaas.statusPos === 1 ? <Badge variant="success">pos sampai</Badge> : null}
 
       <span className="ml-auto flex flex-wrap items-center gap-1">
-        {relaas.adaDokumen ? (
-          <TombolUnduh
-            alamat={`/api/aleta-ecourt/berkas-sipp?jenis=relaas&id=${encodeURIComponent(relaas.id)}`}
-            label="Relaas"
-            namaCadangan={`relaas-${relaas.id}.pdf`}
-          />
-        ) : (
-          <span className="text-xs text-muted-foreground">relaas belum diunggah</span>
-        )}
-        {relaas.adaResi ? (
-          <TombolUnduh
-            alamat={`/api/aleta-ecourt/berkas-sipp?jenis=resi&id=${encodeURIComponent(relaas.id)}`}
-            label="Resi"
-            namaCadangan={`resi-${relaas.id}.pdf`}
-          />
-        ) : null}
+        <TombolUnduhRelaas relaas={relaas} nomorPerkara={nomorPerkara} urutanSidang={urutanSidang} />
+        {relaas.adaDokumen ? null : <span className="text-xs text-muted-foreground">relaas belum diunggah</span>}
       </span>
     </li>
   );

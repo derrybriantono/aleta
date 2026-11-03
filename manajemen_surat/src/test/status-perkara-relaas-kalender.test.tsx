@@ -588,6 +588,15 @@ describe("relaas panggilan digambar runut per sidang", () => {
     expect(screen.getAllByText(/oleh Munir, S.H./)).toHaveLength(2);
   });
 
+  it("tombol unduh Relaas dan Resi bernama seperti di Jadwal Sidang, hanya bila berkasnya ada", () => {
+    render(<RelaasPanggilan status={status()} />);
+    // r1: relaas ada, resi tidak; r2: resi ada, relaas tidak.
+    expect(screen.getAllByRole("button", { name: /^Relaas Panggilan Sidang ke-1 - Penggugat\/Pemohon$/ })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: /^Resi Pos Relaas Sidang ke-1 - Tergugat\/Termohon$/ })).toHaveLength(1);
+    expect(screen.queryByRole("button", { name: /^Relaas Panggilan Sidang ke-1 - Tergugat/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Resi Pos Relaas Sidang ke-1 - Penggugat/ })).toBeNull();
+  });
+
   it("relaas tanpa tautan sidang tetap tampil, di kelompoknya sendiri", () => {
     render(<RelaasPanggilan status={status()} />);
     expect(screen.getByText(/1 relaas tanpa tautan sidang/)).toBeTruthy();
