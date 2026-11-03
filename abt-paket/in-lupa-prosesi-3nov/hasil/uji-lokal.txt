@@ -1,0 +1,33 @@
+# uji lokal paket abt-in-lupa-prosesi-3nov (03 Nov 2026 14.10), basis ABT laptop aps_badilag_w180d, salinan folder '2 Itsbat Nikah' cadangan server 2 Nov (md5 sama dengan server 3 Nov)
+awal sidik 10f27424b18f
+== pasang
+PRASYARAT COCOK (82)
+BERKAS SIAP
+BUAT=1
+COCOK=1
+BERKAS COCOK
+SELESAI - paket abt-in-lupa-prosesi-3nov terpasang. Pulih: bash <uji>/paket/pulih-satker.sh
+sidik 632863585186
+== pasang ulang
+COCOK=1
+BERKAS COCOK
+SELESAI - paket abt-in-lupa-prosesi-3nov terpasang. Pulih: bash <uji>/paket/pulih-satker.sh
+sidik 632863585186
+== pulih
+HAPUS=1
+BERKAS PULIH
+PULIH COCOK
+sidik 10f27424b18f (= awal)
+== gagal 1: berkas lain bernama sama
+BERKAS TIDAK SIAP
+GAGAL: berkas tujuan tidak sesuai - TIDAK ada yang diubah
+sidik 10f27424b18f (= awal)
+== gagal 2: prasyarat tidak terpenuhi (basis tanpa abt_variabel)
+GAGAL: prasyarat '' (harus '82' = semua variabel yang dirujuk ada; lihat nomor-dirujuk.txt) - TIDAK ada yang diubah
+sidik 10f27424b18f (= awal)
+== pasang lagi, lalu berkas disunting, lalu pulih
+SELESAI - paket abt-in-lupa-prosesi-3nov terpasang. Pulih: bash <uji>/paket/pulih-satker.sh
+sidik 632863585186
+BIARKAN=1
+BERKAS PULIH SEBAGIAN
+PULIH SEBAGIAN - lihat di atas

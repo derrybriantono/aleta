@@ -1,0 +1,8 @@
+9c5e8b59fb67459296c30a60aaa8318e  abt-in-lupa-prosesi-3nov-PRASYARAT.sql
+4e903c40e5c67a2826bbe149126805bf  berkas_rtf.py
+8ede601678d5f4348eac2da93c744b99  daftar-rtf.tsv
+30811c258768ee39e62553276c9e25f7  folder-ada.txt
+ddc6df24864018aaa067a08647c0638d  nomor-dirujuk.txt
+f0bcfb4e1b76e0a8b2a2dba7de088ea5  pasang-satker.sh
+cebc42f68d4c1c819f000d69013823ff  pulih-satker.sh
+b9b46f231d5b6c720167433b056f307a  rtf/derry_briantono/2 Itsbat Nikah/[01f] [Kabul] IN Kabul (Hadir Tapi Lupa Prosesi Nikah).rtf
