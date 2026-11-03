@@ -239,6 +239,8 @@ const BERKAS = [
   // Tombol "Tarik data" di kepala halaman perkara SIPP (21 Okt 2026): menarik e-Court satu perkara saja,
   // di sela penarikan utama (antrean & batas laju di server); sebelah kiri "Selamat Datang <pengguna>".
   "tarik-satu-perkara.js",
+  // Nomor & tanggal register kuasa di borang kuasa hukum SIPP (3 Nov 2026): modul malas, dimuat bila borang addPengacara muncul.
+  "kuasa-register.js",
   // Unggah Putusan Terjadwal (21 Okt 2026, agen B3): tombol "Jadwalkan Putusan" di sebelah Putusan Otomatis (halaman perkara)
   // dan melayang di dashboard/daftar/jurnal; pemasangan berkas ke perkara (murni, dapat diuji); pelaksana peramban yang
   // mengisi & menyimpan Putusan Akhir pada waktunya lewat alur Putusan Otomatis. e-Doc dikerjakan server.
@@ -263,6 +265,8 @@ const BERKAS = [
   // Menu ABT By Derry dan ALETA di bilah atas SIPP (22 Okt 2026) - skrip konten SIPP dan ABT;
   // butir menu bergaya SIPP, tab baru lewat pekerja latar, tanpa sandi apa pun.
   "menu-atas.js",
+  // Tombol "Sync E-Court" di samping Help (3 Nov 2026): panel Monitoring Sinkronisasi Data SIPP (membaca antrian, Sinkronisasi Data dengan konfirmasi) - skrip konten SIPP.
+  "sinkron-ecourt.js",
   // Gelembung chat ALETA Ai (23 Okt 2026, T1 tahap 2b) - skrip konten SIPP, ABT, portal; hanya memanggil
   // rute portal seasal /aleta/api/aleta-ai (sesi ALETA), tanpa kunci API, tidak menulis ke SIPP/ABT.
   "aleta-ai-gelembung.js",

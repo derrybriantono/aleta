@@ -847,6 +847,7 @@
       kode: "saksi",
       judul: "Saksi Putusan",
       lipat: true, // T6 (23 Okt): pita bawaan terlipat, dibuka dengan klik pada kepalanya
+      mini: true, // 3 Nov 2026: tersembunyi bila tidak mendesak; satu tombol kecil "ALETA" membukanya (bersama pita L1)
       cocok: (f) => f.id === "frm_user" && /addPihak\/validateInput(?:[/?#]|$)/i.test(aksiForm(f)) && Boolean(f.querySelector('select[name="is_sela"]')),
       api: "saksi",
       usulan: usulanSaksi,
@@ -1001,6 +1002,12 @@ html[data-aleta-tema-sipp="gelap"] .aleta-m1-cek div.aleta-m1-info{color:#bfe6cc
     }
     const cek = cekJendela(p);
     bukaBilaPeringatanBaru(p, "cek", cek.filter((c) => c.nada === "merah" || c.nada === "kuning").map((c) => c.teks));
+    // 3 Nov 2026: bilah mini - tampil hanya bila ada peringatan (kuning/merah) atau sudah dibuka lewat tombol kecil "ALETA".
+    const mini = globalThis.aletaSippIdeL1 && globalThis.aletaSippIdeL1.mini;
+    if (p.jendela.mini && mini) {
+      p.pita.hidden = !mini.tampil(p.form, p.pita, cek.some((c) => c.nada === "merah" || c.nada === "kuning") || Boolean(p.kabar.classList.contains("aleta-m1-gagal") && sebaris(p.kabar.textContent)));
+      mini.tombol(p.form);
+    }
     // Digambar ulang hanya bila isinya berubah (tiap ketikan memanggil ini).
     const sidik = JSON.stringify(cek.map((c) => [c.nada, c.teks]));
     if (p.cekSidik !== sidik) {
@@ -1242,7 +1249,7 @@ html[data-aleta-tema-sipp="gelap"] .aleta-m1-cek div.aleta-m1-info{color:#bfe6cc
     if (j.kode === "sela" && !form.__aletaM1HariIni) form.__aletaM1HariIni = isoHariIni();
     const p = bangunPita(form, j);
     form.parentNode.insertBefore(p.pita, form);
-    if (j.lipat) lipatkanPita(p.pita, j.kode);
+    if (j.lipat && !j.mini) lipatkanPita(p.pita, j.kode); // pita mini: tombol kecil "ALETA" menggantikan lipatan
     form.__aletaM1 = p;
     pitaHidup.add(p);
     segarkan(p);

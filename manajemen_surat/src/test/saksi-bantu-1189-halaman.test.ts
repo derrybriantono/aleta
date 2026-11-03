@@ -250,7 +250,18 @@ describe("E. bantu data saksi di halaman SIPP", () => {
     el<HTMLElement>(h, "#popup_form").style.display = "none";
     el<HTMLElement>(h, "#popup_pihak").style.display = "block";
     const lajur = await sampai(() => el<HTMLElement>(h, ".aleta-c2-sbantu-ref"), "lajur usulan");
-    expect(lajur.nextElementSibling).toBe(el(h, "#frm_ref_pihak"));
+    // 3 Nov 2026: kotak usulan berdiri di samping/di bawah borang (tepat SESUDAH borang), tidak menyela tabel.
+    expect(lajur.previousElementSibling).toBe(el(h, "#frm_ref_pihak"));
+    // 3 Nov: bila ada ruang di kanan wadah borang kotak melayang di sampingnya (kecil, 260px); bila tidak, jatuh ke bawah borang.
+    const wadah = lajur.parentElement as HTMLElement;
+    expect(wadah.style.position).toBe("relative");
+    expect(lajur.classList.contains("aleta-c2-sbantu-samping")).toBe(true);
+    wadah.getBoundingClientRect = () => ({ right: 990 }) as DOMRect; // layar 1024: sisa 34px < 284px
+    await sampai(() => !lajur.classList.contains("aleta-c2-sbantu-samping"), "jatuh ke bawah bila sempit");
+    expect(lajur.previousElementSibling).toBe(el(h, "#frm_ref_pihak"));
+    wadah.getBoundingClientRect = () => ({ right: 500 }) as DOMRect;
+    await sampai(() => lajur.classList.contains("aleta-c2-sbantu-samping"), "kembali ke samping bila lega");
+    expect(lajur.querySelector(".aleta-c2-sbantu-judul")!.textContent).toBe("Usulan ALETA");
     await sampai(() => nilai(h, "#pihak_agama") === "1" && nilai(h, "#pihak_jenis_kelamin") === "2", "agama Islam & Perempuan diisi otomatis");
     await sampai(() => lajur.querySelector(".aleta-c2-sbantu-diisi")!.textContent!.includes("Perempuan"), "tercatat di lajur");
     // Usulan lemah hanya tombol - pekerjaan tidak diisi sendiri.

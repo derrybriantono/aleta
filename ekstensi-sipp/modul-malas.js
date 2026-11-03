@@ -69,6 +69,8 @@
     pihak: modul(["saksiscan"], ["pihak-lengkap.js", "konten-kontak.js"]),
     "penetapan-borang": modul([], ["penetapan-borang.js"]),
     "tarik-satu-perkara": modul([], ["tarik-satu-perkara.js"]),
+    // nomor & tanggal register kuasa di borang kuasa hukum SIPP (3 Nov 2026)
+    "kuasa-register": modul(["saksiscan"], ["kuasa-register.js"]),
     // potongan abt.js (panel blangko / beranda ABT) - dipanggil penunggu di abt.js (pasang, pasangMassalAbt)
     "abt-bersama": modul([], ["abt-panel-bersama.js"]),
     "abt-blangko": modul(["abt-bersama"], ["abt-panel-blangko.js"]),
@@ -88,6 +90,7 @@
   const PEMICU = Object.freeze([
     Object.freeze({ id: "saksiscan", selektor: "form#frm_ref_pihak, form#frm_ref_pengacara, form#frm_user" }),
     Object.freeze({ id: "pihak", selektor: "form#frm_ref_pihak, form#frm_ref_pengacara" }),
+    Object.freeze({ id: "kuasa-register", selektor: 'form#frm_user[action*="addPengacara/validateInput"]' }),
     Object.freeze({ id: "penetapan-borang", selektor: "form#frm_majelis, form#frm_panitera, form#frm_juru_sita, form#frm_sidang_pertama" }),
     Object.freeze({ id: "tarik-satu-perkara", url: /detil[_-]?perkara|detail[_-]?perkara/i }),
   ]);

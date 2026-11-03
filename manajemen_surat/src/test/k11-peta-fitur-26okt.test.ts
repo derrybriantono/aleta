@@ -209,7 +209,8 @@ describe("peta fitur K11: kelompok manifest dan modul malas", () => {
     // sinkron-isian-sipp.js = aturan isian dari SIPP yang ikut diperbarui saat data SIPP berubah (keduanya di luar K11).
     // 2 Nov 2026: blangko-derry-golongan.js (butir 9, pemisah daftar Pilih blangko), di luar K11.
     // 1 Nov 2026: blangko-derry-penilai-bukti.js (A2 Penilaian pembuktian) dan blangko-derry-keadaan-posita.js (U2 keadaan dari posita), di luar K11.
-    expect([...new Set(baru)].sort()).toEqual(["tampilan-sipp.js", "modul-malas.js", "bas-word-pdf.js", "sidang-terjadwal.js", "blangko-derry-pulih.js", "blangko-derry-ai.js", "blangko-derry-berkas.js", "blangko-derry-draf-saksi.js", "blangko-derry-saksi-arah.js", "blangko-derry-draf-bas.js", "blangko-derry-periksa.js", "blangko-derry-beda-cetak.js", "blangko-derry-pustaka.js", "blangko-derry-peta-dalil.js", "sinkron-isian-sipp.js", "temuan-perkara.js", "edoc-seret.js", "amar-petitum-sipp.js", "statistik-cetak.js", "blangko-derry-penilai-bukti.js", "blangko-derry-keadaan-posita.js", "blangko-derry-golongan.js"].sort());
+    // 3 Nov 2026: sinkron-ecourt.js = tombol "Sync E-Court" di samping Help + panel Monitoring Sinkronisasi Data (di luar K11).
+    expect([...new Set(baru)].sort()).toEqual(["tampilan-sipp.js", "modul-malas.js", "bas-word-pdf.js", "sidang-terjadwal.js", "blangko-derry-pulih.js", "blangko-derry-ai.js", "blangko-derry-berkas.js", "blangko-derry-draf-saksi.js", "blangko-derry-saksi-arah.js", "blangko-derry-draf-bas.js", "blangko-derry-periksa.js", "blangko-derry-beda-cetak.js", "blangko-derry-pustaka.js", "blangko-derry-peta-dalil.js", "sinkron-isian-sipp.js", "temuan-perkara.js", "edoc-seret.js", "amar-petitum-sipp.js", "statistik-cetak.js", "blangko-derry-penilai-bukti.js", "blangko-derry-keadaan-posita.js", "blangko-derry-golongan.js", "sinkron-ecourt.js"].sort());
     const tanpaTampilan = sesudah.kelompok.filter((k) => !(k.js.length === 1 && k.js[0] === "tampilan-sipp.js"));
     // 1 Nov 2026: blangko-derry-ai.css = gaya saklar/bilah/jendela ALETA Ai di panel Blangko Derry (di luar K11).
     expect(tanpaTampilan.map((k) => k.css.filter((c: string) => c !== "sidang-terjadwal.css" && c !== "blangko-derry-ai.css"))).toEqual(sebelum.kelompok.map((k) => k.css));
@@ -269,7 +270,11 @@ describe("peta fitur K11: kelompok manifest dan modul malas", () => {
     // saksi-katalog-indeks.js: 1 Nov 2026 (H2 saksi-katalog) indeks hasil susun-saksi-katalog memuat 4 jenis baru (pengangkatan anak 745, izin poligami keluarga, perjanjian perkawinan, gugatan lain-lain); saksi-katalog.js (H1 saksi-perbaikan) kalimat sesuai pengetahuan, itsbat kontensius, keadaan tanpa pengaruh.
     // aleta.js, unduh-universal.js: 2 Nov 2026 (unduhan aman) MENAMBAH jenis jembatan "unduh-berkas", data-aleta-unduh-aman di portal,
     // dan unduhAman (dokumen offscreen ekstensi) di depan jalur lama; jenis/jalur lama tetap.
-    const diubah = new Set(["aleta.js", "unduh-universal.js", "saksi-katalog-indeks.js", "saksi-katalog.js", "konten.js", "abt.js", "manifest.json", "latar.js", "blangko-derry-isian.js", "blangko-derry-saksi-tampil.js", "blangko-derry-saksi.js", "saksi-susun.js", "blangko-derry.js", "deteksi-sisa-blangko.js", "panel-alat.js", "blangko-derry-katalog.js"]);
+    // sipp-ide-l1.js, sipp-ide-m1.js: 3 Nov 2026 bilah mini "ALETA" di borang saksi (pita tersembunyi bila tidak mendesak; fungsi tetap).
+    // jembatan.js: 3 Nov 2026 MENAMBAH jenis "dengar-simpan" (hanya mendengar jawaban SIPP atas borang kuasa yang dikirim petugas; jenis lama tetap).
+    // saksiscan.js (modul malas): 3 Nov 2026 kotak Usulan di samping borang (baseline sidik diperbarui di fixture); konten-kontak.js: lajur kontak e-Court
+    // tersembunyi bila tidak ada usulan (dua pernyataan k5 berubah - sidik pernyataannya diperbarui di fixture).
+    const diubah = new Set(["aleta.js", "unduh-universal.js", "saksi-katalog-indeks.js", "saksi-katalog.js", "konten.js", "abt.js", "manifest.json", "latar.js", "blangko-derry-isian.js", "blangko-derry-saksi-tampil.js", "blangko-derry-saksi.js", "saksi-susun.js", "blangko-derry.js", "deteksi-sisa-blangko.js", "panel-alat.js", "blangko-derry-katalog.js", "jembatan.js", "sipp-ide-l1.js", "sipp-ide-m1.js"]);
     for (const [nama, info] of Object.entries(sebelum.berkas)) {
       if (diubah.has(nama) || !sesudah.berkas[nama]) continue;
       // berkas yang sengaja disentuh didaftarkan di KEMBALI_DISENTUH

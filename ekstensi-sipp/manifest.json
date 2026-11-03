@@ -103,6 +103,7 @@
         "putusan-terjadwal-peramban.js",
         "sidang-terjadwal.js",
         "menu-atas.js",
+        "sinkron-ecourt.js",
         "aleta-ai-gelembung.js"
       ],
       "css": [

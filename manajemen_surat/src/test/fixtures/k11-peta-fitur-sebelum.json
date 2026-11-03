@@ -1677,10 +1677,10 @@
     "8718ca2470c1",
     "9039f4eafeea",
     "0414ce983b81",
-    "732afa5fcbab",
+    "021d0f2d2aa2",
     "0802a66389d8",
     "8f157b9c00e2",
-    "44780c3ae230",
+    "0fb251fcfd5a",
     "7a1cc0d71c51",
     "67d1a6a9875b",
     "eb64c19bfd30",
@@ -1857,7 +1857,7 @@
     "0bb75c705872",
     "229af8b35b9f",
     "10cea25d3521",
-    "3a946d141396",
+    "81ef47bf5113",
     "762fd0a3bf31",
     "cc31fbccf6ab",
     "a753fde17776",
@@ -1962,7 +1962,8 @@
     "3531b8e7734c",
     "2420293f22c8",
     "5b9918b09b64",
-    "ee3f7167a822"
+    "ee3f7167a822",
+    "3945c6342641"
    ]
   },
   "aleta-ai-gelembung.js": {
@@ -4209,9 +4210,9 @@
     "6cd7c07904f8",
     "42f1885964e6",
     "da30f13ca3dc",
-    "9971e4b93274",
+    "ea6f40393c15",
     "6465f553be44",
-    "5c0f49e5e214",
+    "b193ff0381ce",
     "511c94f5d7d2",
     "bb8c0eb6d67e",
     "77111e81dbfd",
@@ -5097,7 +5098,7 @@
   },
   "saksiscan.js": {
    "byte": 128988,
-   "sidik": "e84fa2fbc650a57ebe82e6ff0c74fa9a6d2fb680",
+   "sidik": "2ec3eef2df2120bd97a606116607bc12a4a91278",
    "nama": [
     "SAKSIBANTU_API",
     "SAKSIBANTU_BORANG_REF",

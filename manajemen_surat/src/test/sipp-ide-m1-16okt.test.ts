@@ -626,6 +626,37 @@ describe("F. Saksi Putusan (is_sela, baru di 7.0.4)", () => {
     expect(ditanya).toBe(2);
   });
 
+  it("3 Nov: bilah mini - Saksi Putusan tersembunyi bila tidak mendesak; tombol kecil ALETA membukanya; mendesak = pita ringkas", () => {
+    const w = buka(SAKSI());
+    w.aletaSippIdeM1.pasang(w.document);
+    const mini = () => w.document.querySelector(".aleta-mini-bilah") as HTMLElement;
+    // belum dipilih (-1) = peringatan kuning = mendesak: pita tampil RINGKAS (hanya peringatan), tombol kecil ada untuk rinciannya
+    expect(pita(w, "saksi").hidden).toBe(false);
+    expect(pita(w, "saksi").classList.contains("aleta-mini-ringkas")).toBe(true);
+    expect(mini().hidden).toBe(false);
+    expect(mini().querySelector("button")!.getAttribute("data-mendesak")).toBe("ya");
+    // dipilih -> tidak ada yang mendesak: pita tersembunyi, satu tombol kecil "ALETA"
+    ubah(w, "is_sela", "0");
+    expect(pita(w, "saksi").hidden).toBe(true);
+    expect(mini().hidden).toBe(false);
+    expect(w.document.querySelectorAll(".aleta-mini-bilah").length).toBe(1);
+    const tombol = mini().querySelector("button") as HTMLButtonElement;
+    expect(tombol.textContent).toBe("ALETA");
+    // fungsi tetap dicapai: klik membuka, klik lagi menutup
+    tombol.click();
+    expect(pita(w, "saksi").hidden).toBe(false);
+    expect(tombol.getAttribute("aria-pressed")).toBe("true");
+    tombol.click();
+    expect(pita(w, "saksi").hidden).toBe(true);
+    // kembali mendesak: ringkas lagi; tombol kecil membuka rinciannya (tombol "Isi dengan ALETA" dkk.)
+    ubah(w, "is_sela", "-1");
+    expect(pita(w, "saksi").hidden).toBe(false);
+    expect(pita(w, "saksi").classList.contains("aleta-mini-ringkas")).toBe(true);
+    tombol.click();
+    expect(pita(w, "saksi").classList.contains("aleta-mini-ringkas")).toBe(false);
+    expect(tombol.getAttribute("aria-pressed")).toBe("true");
+  });
+
   it("pita L1 sudah ada di form Saksi -> M1 tanpa penghitung kedua", () => {
     const w = buka(SAKSI());
     const f = w.document.querySelector("#frm_user");

@@ -92,7 +92,7 @@
     { kode: "ppp", judul: "Penunjukan Panitera Pengganti", cocok: (f) => f.id === "frm_panitera", bagian: "penunjukan" },
     { kode: "pjs", judul: "Penunjukan Juru Sita", cocok: (f) => f.id === "frm_juru_sita", bagian: "penunjukan" },
     { kode: "phs", judul: "Penetapan Hari Sidang", cocok: (f) => f.id === "frm_sidang_pertama", bagian: "penunjukan" },
-    { kode: "saksi", judul: "Saksi / Pihak", cocok: (f) => f.id === "frm_user", dalam: ".aleta-c2-saksi, .aleta-c2-saksi-pemicu, .aleta-c2-sbantu", lipat: true },
+    { kode: "saksi", judul: "Saksi / Pihak", cocok: (f) => f.id === "frm_user", dalam: ".aleta-c2-saksi, .aleta-c2-saksi-pemicu, .aleta-c2-sbantu", lipat: true, mini: mendesakSaksi },
     { kode: "court-calendar", judul: "Court Calendar", cocok: (f) => f.id === "frm_input_cc", bagian: "courtCalendarOtomatis" },
   ];
 
@@ -966,11 +966,82 @@ html[data-aleta-tema-sipp="gelap"] .aleta-l1-awas{color:#f3e2b5}
     return h;
   }
 
+  /**
+   * 3 Nov 2026 - BILAH MINI: pita "ALETA Saksi / Pihak" dan "ALETA Saksi Putusan" di borang saksi tidak lagi selalu memakan
+   * tempat. Mereka TERSEMBUNYI bila tidak ada yang mendesak (tidak ada peringatan/usulan yang menunggu); fungsinya tetap
+   * dapat dicapai lewat SATU tombol kecil "ALETA" yang membuka/menutupnya (menggantikan lipatan lama). Bila ada yang
+   * mendesak, pita tampil RINGKAS (hanya peringatannya; kelas aleta-mini-ringkas) dan tombol kecil tetap ada untuk
+   * membuka rinciannya. Satu tombol bersama per borang - dipakai juga sipp-ide-m1.js.
+   */
+  function mendesakSaksi(p) {
+    const wadah = p.form.parentElement || p.form;
+    for (const e of Array.from(wadah.querySelectorAll(".aleta-c2-sbantu-peringatan, .aleta-c2-sbantu-calon, .aleta-c2-sbantu-usul"))) {
+      if (!e.hidden && sebaris(e.textContent) && tampak(e)) return true;
+    }
+    return Boolean(p.kabar && p.kabar.classList.contains("aleta-l1-gagal") && sebaris(p.kabar.textContent));
+  }
+  const miniKeadaan = (form) => form.__aletaMini || (form.__aletaMini = { buka: false, anggota: new Map(), tombol: null });
+  /** Daftarkan pita pada bilah mini borang; true = pita harus tampil (mendesak atau dibuka lewat tombol). */
+  function miniTampil(form, pita, mendesak) {
+    const m = miniKeadaan(form);
+    m.anggota.set(pita, Boolean(mendesak));
+    pita.classList.toggle("aleta-mini-ringkas", Boolean(mendesak) && !m.buka);
+    return Boolean(mendesak) || m.buka;
+  }
+  function miniLepas(form, pita) {
+    if (form.__aletaMini) form.__aletaMini.anggota.delete(pita);
+  }
+  /** Tombol kecil "ALETA": tampil selama ada pita terdaftar (mendesak atau tidak). */
+  function miniTombol(form) {
+    const m = miniKeadaan(form);
+    for (const pt of Array.from(m.anggota.keys())) if (!pt.isConnected) m.anggota.delete(pt);
+    const mendesak = Array.from(m.anggota.values()).some(Boolean);
+    if (!m.anggota.size) {
+      if (m.tombol) m.tombol.hidden = true;
+      return;
+    }
+    if (!m.tombol) {
+      // Bukan kelas aleta-sisip (gaya latar/garis kirinya tidak cocok untuk satu tombol); data-aleta-tanda = dilewati pengamat.
+      const wadah = el("div", "aleta-mini-bilah");
+      wadah.setAttribute("data-aleta-tanda", "mini");
+      const t = el("button", "aleta-mini-tombol", "ALETA");
+      t.type = "button";
+      t.title = "Bantuan ALETA untuk jendela ini (usulan isian) - klik untuk membuka atau menutup";
+      t.addEventListener("click", () => {
+        m.buka = !m.buka;
+        for (const [pt, mendesakKini] of m.anggota) {
+          pt.hidden = !(mendesakKini || m.buka);
+          pt.classList.toggle("aleta-mini-ringkas", mendesakKini && !m.buka);
+        }
+        t.setAttribute("aria-pressed", m.buka ? "true" : "false");
+      });
+      wadah.appendChild(t);
+      m.tombol = wadah;
+      m.tombolEl = t;
+    }
+    const urut = Array.from(m.anggota.keys()).sort((a, b) => (a.compareDocumentPosition(b) & 4 ? -1 : 1));
+    const pertama = urut[0];
+    if (pertama && pertama.parentNode && m.tombol.nextSibling !== pertama) pertama.parentNode.insertBefore(m.tombol, pertama);
+    m.tombol.hidden = false;
+    m.tombolEl.setAttribute("aria-pressed", m.buka ? "true" : "false");
+    m.tombolEl.setAttribute("data-mendesak", mendesak ? "ya" : "tidak");
+  }
+
   function segarkanPita(p) {
     const sumber = sumberUsulan(p.form, p.jendela);
     p.pita.hidden = !sumber;
     if (p.chip && !sumber) p.chip.hidden = true;
-    if (!sumber) return;
+    if (!sumber) {
+      if (p.jendela.mini) {
+        miniLepas(p.form, p.pita);
+        miniTombol(p.form);
+      }
+      return;
+    }
+    if (p.jendela.mini) {
+      p.pita.hidden = !miniTampil(p.form, p.pita, p.jendela.mini(p));
+      miniTombol(p.form);
+    }
     terapkanLipatPutusan(p);
     segarkanHitung(p);
     const kotak = p.jendela.bagian ? kotakPanel(p.jendela.bagian) : null;
@@ -1002,7 +1073,7 @@ html[data-aleta-tema-sipp="gelap"] .aleta-l1-awas{color:#f3e2b5}
     if (!j || !form.parentNode) return null;
     const p = bangunPita(form, j);
     form.parentNode.insertBefore(p.pita, form);
-    if (j.lipat) lipatkanPita(p.pita, j.kode);
+    if (j.lipat && !j.mini) lipatkanPita(p.pita, j.kode); // pita mini: tombol kecil "ALETA" menggantikan lipatan
     form.__aletaL1 = p;
     pitaHidup.add(p);
     segarkanPita(p);
@@ -1552,6 +1623,7 @@ html[data-aleta-tema-sipp="gelap"] .aleta-l1-awas{color:#f3e2b5}
     versi: "tahap-L1",
     pasang,
     segarkanSemua,
+    mini: { tampil: miniTampil, lepas: miniLepas, tombol: miniTombol },
     bersihkan,
     serahkanKeDerry,
     terimaSerahAbt,

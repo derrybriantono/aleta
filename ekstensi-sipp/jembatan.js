@@ -711,6 +711,16 @@
       jawab = isiMedan(pesan.penunjuk, pesan.jenisMedan, pesan.nilai);
     } else if (pesan.jenis === "tekan") {
       jawab = tekanTombol(pesan.penunjuk, pesan.bukti, pesan.setujuiKonfirmasi === true);
+    } else if (pesan.jenis === "dengar-simpan") {
+      // 3 Nov 2026: hanya MENDENGAR jawaban SIPP atas borang yang dikirim petugas sendiri (tanpa menekan apa pun);
+      // jawabannya datang kemudian sebagai pesan "bukti-simpan" bertanda id bukti (dipakai kuasa-register.js).
+      const borang = cariElemen(pesan.borang);
+      if (!borang || !pesan.bukti) {
+        jawab = { ok: false, alasan: "borang_tidak_ketemu" };
+      } else {
+        dengarJawabanSimpan(borang, String(pesan.bukti));
+        jawab = { ok: true };
+      }
     } else {
       jawab = { ok: false, alasan: "permintaan_tidak_dikenali" };
     }
