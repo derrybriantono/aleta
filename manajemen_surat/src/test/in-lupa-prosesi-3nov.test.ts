@@ -19,7 +19,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import type { SaksiMasuk } from "@/lib/penilai-bukti";
-import { rekomendasiPutusanDariBukti, type MasukanRekomendasiPutusan } from "@/lib/rekomendasi-putusan";
+import { keberatanDiterangkan, rekomendasiPutusanDariBukti, type MasukanRekomendasiPutusan } from "@/lib/rekomendasi-putusan";
 
 const REPO = path.resolve(process.cwd(), "..");
 const PAKET = path.join(REPO, "abt-paket/in-lupa-prosesi-3nov/paket-satker");
@@ -248,5 +248,63 @@ describe("rekomendasi putusan itsbat: saksi hanya hadir di pesta -> blangko [01f
       rekomendasiPutusanDariBukti(itsbat({ jenisPerkara: "Itsbat Nikah", nomorPerkara: "2/Pdt.G/2026/PA.Rkn" }))!,
     ].entries())
       expect(r.blangko.map((b) => b.berkas), `kasus ${i}`).not.toContain("[01f] [Kabul] IN Kabul (Hadir Tapi Lupa Prosesi Nikah).rtf");
+  });
+});
+
+// ─── Keberatan pihak lain (keputusan pengguna 3 Nov 14.45): pola lama tidak pernah cocok ─────────────────────────────
+describe("keberatan pihak lain menurut jawaban saksi: negasi menang atas kata 'ada'", () => {
+  const ADA = [
+    "Ada keluarga yang keberatan",
+    "pernah ada yang keberatan",
+    "keluarga Pemohon II keberatan",
+    "Ya, ada. Orang tua Pemohon II keberatan karena belum setuju",
+    "Ada, yaitu orang tua Pemohon II",
+    "Pernah, mantan istri Pemohon I mempermasalahkan pernikahan itu",
+    "Benar, ada pihak yang keberatan atas pernikahan tersebut",
+    "pernah ada kerabat yang mempersoalkan pernikahan Pemohon I dan Pemohon II, begitulah yang saya alami",
+    "Tidak ada yang keberatan, namun awalnya ibu Pemohon II sempat keberatan",
+  ];
+  const TIDAK = [
+    "tidak ada yang keberatan",
+    "tidak pernah ada yang keberatan",
+    "tidak seorang pun keberatan",
+    "tidak ada pihak yang keberatan atau merasa dirugikan",
+    "Saya tidak pernah mendengar ada pihak lain yang keberatan;",
+    "Tidak ada",
+    "Tidak, keluarga kedua belah pihak tidak keberatan",
+    "Keberatan dari pihak lain tidak ada",
+    "Belum pernah ada orang yang mempermasalahkan pernikahan mereka",
+    "Tak seorang pun keberatan",
+    "Semua keluarga setuju dan tanpa ada keberatan",
+    // jawaban umum katalog (tidak tahu / ragu / sebagian / mendengar) hanya menyebut pokok yang ditanya
+    "saya tidak mengetahui ada tidaknya pihak yang keberatan atas pernikahan itu",
+    "mengenai ada tidaknya pihak yang keberatan atas pernikahan itu ingatan saya kurang jelas dan saya ragu",
+    "mengenai ada tidaknya pihak yang keberatan atas pernikahan itu saya mendengar langsung dari mulut mereka sendiri",
+    "keberatan anggota keluarga atas rencana poligami tidak saya ketahui",
+  ];
+  it.each(ADA)("ADA: %s", (t) => expect(keberatanDiterangkan(t)).toBe(true));
+  it.each(TIDAK)("TIDAK: %s", (t) => expect(keberatanDiterangkan(t)).toBe(false));
+
+  it("semua kalimat butir keberatan katalog itsbat dan kumulasi: hanya versi 'berbeda' yang menerangkan keberatan", () => {
+    for (const kat of [IN, KM])
+      for (const q of kat.pertanyaan.filter((x: any) => /^q-in-keberatan-/.test(x.id)))
+        for (const [jenis, v] of Object.entries(q.jawaban) as [string, any][])
+          for (const o of Array.isArray(v) ? v : [v])
+            for (const [daftar, kalimat] of [["saksi1", o.saksi1], ["saksi2", o.saksi2]] as const)
+              for (const t of kalimat) {
+                const isi = t.replace(/\{[a-z]+\}/g, "ibu saya").replace(/#\d{4}#/g, "Pemohon");
+                // versi "berbeda": saksi 1 = tidak ada keberatan, saksi 2 = ada kerabat yang mempersoalkan
+                const harap = jenis === "berbeda" && daftar === "saksi2";
+                expect(keberatanDiterangkan(isi), `${q.id}/${jenis}/${daftar}: ${isi}`).toBe(harap);
+              }
+  });
+
+  it("rekomendasi itsbat: saksi menerangkan ada keluarga yang keberatan -> unsur keberatan tidak terbukti dan ragu (dulu terbaca terbukti)", () => {
+    const kb = (ke: number, j: string) => s(`kb${ke}`, ke, [["Pernahkah saksi mendengar ada pihak lain yang keberatan?", j]]);
+    const dasar = rekomendasiPutusanDariBukti(itsbat())!;
+    expect(dasar.unsur.find((u) => u.id === "keberatan")!.status).toBe("terbukti");
+    const r = rekomendasiPutusanDariBukti(itsbat({ saksi: [saksiPesta(1), kb(2, "Ya, ada keluarga Pemohon II yang keberatan;")] }))!;
+    expect(r.unsur.find((u) => u.id === "keberatan")!.status).toBe("tidak-terbukti");
+    expect(r.sebabRagu).toContain("ada pihak lain yang keberatan");
   });
 });

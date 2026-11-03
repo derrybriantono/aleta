@@ -759,13 +759,35 @@ const RE_ADA_HALANGAN = /\b(?:ada|terdapat|mempunyai) hubungan (?:darah|nasab|se
 const RE_TERIKAT =
   /\bmasih (?:terikat|bersuami|beristri|berstatus (?:istri|suami))\b|\bbelum (?:bercerai|cerai|resmi bercerai) (?:dengan|dari) (?:istri|suami)\b|\bmasih (?:dalam ikatan|menjadi (?:istri|suami)) (?:\S+\s+){0,3}(?:orang lain|lain|pertama)\b|\bistri (?:pertama|tua)\b|\bberistri (?:dua|lebih)\b|\b(?:ber)?poligami\b/;
 const RE_JANDA_DUDA = /\b(?:janda|duda)\b/;
-const RE_KEBERATAN_ADA = /\b(?:ada|pernah)\b(?:\S+\s+){0,4}\b(?:keberatan|mempermasalahkan|menggugat)\b/;
 // 3 Nov 2026 (blangko [01f] "IN Kabul (Hadir Tapi Lupa Prosesi Nikah)"): saksi hanya menghadiri pesta/walimah dan tidak mengikuti akad.
 const RE_PESTA = /\b(?:pesta|walimah|walimahan|resepsi)\b/;
 const RE_TANPA_AKAD = /\btidak (?:\S+\s+){0,3}?(?:mengikuti|menyaksikan|ikut|berada di tempat)\b[^.;]{0,40}?\bakad\b|\bakad(?: nikah)?(?:nya)? (?:tidak|tak) saya (?:ikuti|saksikan|hadiri|lihat)\b/;
 /** Jawaban "tidak tahu" (bukan keterangan tentang unsur itu). */
 const RE_TIDAK_TAHU_UNSUR = /\btidak (?:tahu|mengetahui|ingat|dapat menerangkan)\b|\btidak saya ketahui\b/;
-const RE_KEBERATAN_TIDAK = /\btidak (?:\S+\s+){0,4}(?:ada|pernah)\b(?:\S+\s+){0,6}\b(?:keberatan|mempermasalahkan)\b|\btidak ada (?:pihak|orang) (?:lain )?(?:yang )?keberatan\b/;
+/**
+ * Keberatan pihak lain menurut satu jawaban saksi (3 Nov 2026, keputusan pengguna). Pola lama tidak pernah cocok: sesudah "ada|pernah"
+ * tidak ada \s+ sehingga "Ada keluarga yang keberatan" terbaca TIDAK ada keberatan. Sekarang per anak kalimat (koma, titik koma,
+ * "namun", "tetapi", "akan tetapi", "sedangkan"): anak kalimat yang memuat kata keberatan ADA keberatan, kecuali dinegasikan -
+ * "tidak/tak/belum/bukan/tanpa/tiada" sebelumnya ("tidak ada yang keberatan", "tidak pernah mendengar ada pihak lain yang keberatan",
+ * "tidak seorang pun keberatan") atau "keberatan ... tidak ada/tidak pernah ada" sesudahnya. Negasi menang atas kata "ada".
+ * Jawaban pendek tanpa kata keberatan ("Ada, yaitu orang tua Pemohon II") = ada; "Tidak ada" = tidak.
+ */
+const RE_KATA_KEBERATAN = /\b(?:keberatan|berkeberatan|mempermasalahkan|mempersoalkan|menggugat|menentang|menolak|melarang)\b/;
+const RE_NEGASI_SEBELUM = /\b(?:tidak|tak|belum|bukan|tanpa|tiada)\b[^]{0,80}?\b(?:keberatan|berkeberatan|mempermasalahkan|mempersoalkan|menggugat|menentang|menolak|melarang)\b/;
+const RE_NEGASI_SESUDAH = /\b(?:keberatan|berkeberatan)\b[^]{0,40}?\b(?:tidak|tak) (?:pernah )?ada\b/;
+/** "ada tidaknya keberatan ..." hanya menyebut pokok yang ditanya (jawaban umum tidak tahu/ragu/sebagian/mendengar), bukan pernyataan. */
+// Juga anak kalimat yang hanya menyebut pokoknya ("mengenai keberatan ...", "pembicaraan ... yang menyinggung keberatan") atau tidak
+// yakin ("tidak saya ketahui", "ragu", "mungkin benar"): bukan keterangan bahwa ada yang keberatan.
+const RE_POKOK_SAJA =
+  /\bada(?:-|\s+)tidak(?:nya)?\b|\bada atau tidak(?:nya)?\b|\b(?:mengenai|tentang|perihal|soal|menyinggung|membicarakan|pembicaraan)\b|\btidak (?:tahu|mengetahui|ingat)\b|\btidak (?:saya|pernah saya) ketahui\b|\bragu\b|\bkurang (?:yakin|jelas|pasti)\b|\blupa\b|\bmengira\b|\bmungkin\b/;
+export function keberatanDiterangkan(jawaban: string): boolean {
+  const s = kecil(jawaban);
+  const anak = s.split(/[,;.!?]|\b(?:namun|tetapi|akan tetapi|sedangkan|melainkan)\b/).map((x) => x.trim()).filter(Boolean);
+  const berkata = anak.filter((a) => RE_KATA_KEBERATAN.test(a) && !RE_POKOK_SAJA.test(a));
+  if (!berkata.length && anak.some((a) => RE_POKOK_SAJA.test(a))) return false;
+  if (berkata.length) return berkata.some((a) => !RE_NEGASI_SEBELUM.test(a) && !RE_NEGASI_SESUDAH.test(a));
+  return /^(?:ya\s*,?\s*|benar\s*,?\s*)?(?:ada|pernah ada|pernah)\b/.test(s) && !/^(?:ya\s*,?\s*)?(?:ada|pernah)\s+(?:tidak|tak)\b/.test(s);
+}
 
 /** Umur yang disebut untuk Pemohon I / Pemohon II (atau calon suami / calon istri) dalam satu jawaban. */
 function umurDisebut(s: string): Array<{ siapa: string; umur: number }> {
@@ -911,7 +933,7 @@ function rekomendasiItsbat(m: MasukanRekomendasiPutusan, jenis: "itsbat" | "itsb
   }
   // Keberatan pihak lain.
   const kb = sp.map((x) => ({ x, r: barisCocok(x, RE_Q_KEBERATAN, RE_J_KEBERATAN) })).filter((y) => y.r);
-  const kbAda = kb.filter((y) => RE_KEBERATAN_ADA.test(y.r!.s) && !RE_KEBERATAN_TIDAK.test(y.r!.s));
+  const kbAda = kb.filter((y) => keberatanDiterangkan(y.r!.s));
   if (kb.length) unsurL.push(unsur("keberatan", "Tidak ada keberatan pihak lain", kbAda.length ? "tidak-terbukti" : "terbukti", kbAda.length ? `${sebutSaksi(kbAda.map((y) => y.x))} menerangkan ada pihak yang keberatan.` : `${sebutSaksi(kb.map((y) => y.x))} tidak pernah mendengar ada pihak lain yang keberatan.`, { saksi: kb.map((y) => saksiDari(y.x, y.r!)), dasar: [DASAR.sahAgama] }));
   if (kbAda.length) ragu.push("ada pihak lain yang keberatan");
   // Alasan itsbat (Pasal 7 ayat (3) KHI) - catatan.
@@ -941,10 +963,8 @@ function rekomendasiItsbat(m: MasukanRekomendasiPutusan, jenis: "itsbat" | "itsb
     const belum = rukun.filter((u) => u.status === "belum" || u.status === "tidak-terbukti");
     // [01f]: dua saksi atau lebih hanya hadir di pesta (tidak tahu wali, lafaz akad, mahar, saksi nikah), tidak ada halangan dan tidak ada
     // yang keberatan -> dikabulkan menurut indikasi (hidup rukun, tidak ada keberatan masyarakat), ragu: penilaian hakim.
-    // Keberatan yang diterangkan tanpa penyangkalan ("Ada keluarga yang keberatan") menahan [01f]; pertimbangannya bertumpu pada
-    // tidak adanya keberatan masyarakat.
-    const kbPositif = kb.filter((y) => !/\b(?:tidak|belum|bukan|tak)\b/.test(y.r!.s));
-    const pestaKabul = jenis === "itsbat" && sp.length >= 2 && pestaSaksi.length >= 2 && !kbAda.length && !kbPositif.length && !belum.some((u) => u.id === "halangan" && u.status === "tidak-terbukti");
+    // Keberatan yang diterangkan ("Ada keluarga yang keberatan") menahan [01f]: pertimbangannya bertumpu pada tidak adanya keberatan.
+    const pestaKabul = jenis === "itsbat" && sp.length >= 2 && pestaSaksi.length >= 2 && !kbAda.length &&!belum.some((u) => u.id === "halangan" && u.status === "tidak-terbukti");
     if (pestaKabul) {
       hasil = "dikabulkan";
       varian = "[01f] [Kabul] IN Kabul (Hadir Tapi Lupa Prosesi Nikah)";
