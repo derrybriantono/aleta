@@ -32,6 +32,7 @@ import {
 } from "@/server/modules/pengaturan-abt/identitas-satker";
 import { bacaLayarNomorSk, simpanNomorSk, terapkanNomorSkKeAbt } from "@/server/modules/pengaturan-abt/nomor-sk";
 import { bacaLayarAdvance, simpanPengaturanAdvance } from "@/server/modules/aleta-ecourt/putusan-advance-akun";
+import { mulaiSinkron, ringkasanPustaka } from "@/server/modules/aleta-abt-pustaka/service";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ApiError } from "@/server/shared/errors";
@@ -56,6 +57,7 @@ export const dynamic = "force-dynamic";
  *   GET ?bagian=logo-blangko&md5=          satu gambar blangko (pratinjau)
  *   GET ?bagian=nomor-sk                   nomor SK penunjukan di ALETA + keadaan variabel #9550# di ABT + rencana (17 Okt)
  *   GET ?bagian=putusan-advance            akun yang boleh memakai Putusan Advance (17 Okt; bawaan hanya Derry Briantono)
+ *   GET ?bagian=pustaka                    pustaka ALETA ABT: jumlah blangko/variabel/menu, bentrok, riwayat sinkron (3 Nov; Super Admin)
  *
  *   POST {tindakan: "simpan-menu", ubah:[{id,lama,baru}], config:[{name,lama,baru}]}
  *   POST {tindakan: "uji-variabel", noVar, perkaraId, sidangKe, sql_query?}   tidak menulis
@@ -70,6 +72,7 @@ export const dynamic = "force-dynamic";
  *   POST {tindakan: "terapkan-nomor-sk", kunci?:["majelis"]}   ke ABT (#9550#), tercatat jenis nomor_sk
  *   POST {tindakan: "simpan-putusan-advance", akun:[idAkun...]}   Super Admin & Admin
  *   POST {tindakan: "paket-logo-kop", md5:[...]}   paket di server; blangko diganti saat pasang.sh dijalankan
+ *   POST {tindakan: "sinkron-pustaka"}   salin blangko Derry ABT -> database ALETA di latar (3 Nov; Super Admin; ABT hanya dibaca)
  *
  * Membuka: Super Admin dan Admin. Mengubah hak menu/saklar dan kueri variabel:
  * Super Admin saja; isian bawaan dan template: Super Admin dan Admin
@@ -116,6 +119,10 @@ export async function GET(request: NextRequest) {
     if (bagian === "logo-pindai") return ok(await pindaiLogo());
     if (bagian === "nomor-sk") return ok({ ...(await bacaLayarNomorSk(db)), hak: a.hak });
     if (bagian === "putusan-advance") return ok(await bacaLayarAdvance(db));
+    if (bagian === "pustaka") {
+      if (!a.hak.ubahMenu) throw new ApiError(403, "Pustaka blangko hanya untuk Super Admin.");
+      return ok(await ringkasanPustaka(db));
+    }
     if (bagian === "satker-logo" || bagian === "logo-blangko") {
       const g = bagian === "satker-logo" ? await bacaLogoAleta(db) : await gambarBlangko(String(getSearchParam(request, "md5") ?? "").toLowerCase());
       if (!g) throw new ApiError(404, "Logo satker belum ada.");
@@ -182,6 +189,9 @@ export async function POST(request: NextRequest) {
         return ok(await paketLogoKop(db, a.aktor, ip, badan));
       case "simpan-putusan-advance":
         return ok(await simpanPengaturanAdvance(db, a.aktor, badan));
+      case "sinkron-pustaka":
+        if (!a.hak.ubahMenu) throw new ApiError(403, "Sinkron pustaka blangko hanya untuk Super Admin.");
+        return ok(await mulaiSinkron(db, a.aktor.name || a.aktor.id));
       case "kembalikan":
         return ok(await kembalikanSuntingan(db, a.aktor, ip, String(badan.id ?? "")));
       default:

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { BagianHariLibur } from "@/components/portal/hari-libur-pengaturan";
 import { BagianIdentitasSatker } from "@/components/portal/identitas-satker-abt";
+import { BagianPustakaAletaAbt } from "@/components/portal/pustaka-aleta-abt";
 import { BagianPutusanAdvance } from "@/components/portal/putusan-advance-akun-admin";
 import { SetSaksiAleta } from "@/components/portal/set-saksi-aleta";
 import { PageIntro } from "@/components/portal/shared";
@@ -53,7 +54,7 @@ import { menyebutAleta, pesanTandaAletaSipp } from "@/lib/tanda-aleta";
  * /api/pengaturan-sipp-abt yang menjaga peran.
  */
 
-type Bagian = "menu" | "variabel" | "templat" | "satker" | "libur" | "advance" | "riwayat";
+type Bagian = "menu" | "variabel" | "templat" | "satker" | "libur" | "advance" | "pustaka" | "riwayat";
 
 async function panggil<T>(alamat: string, init?: RequestInit): Promise<T> {
   const r = await fetch(apiPath(alamat), { cache: "no-store", ...init });
@@ -1057,6 +1058,8 @@ const BAGIAN: Array<[Bagian, string]> = [
   ["satker", "Identitas satker"],
   ["libur", "Hari libur"],
   ["advance", "Putusan Advance"],
+  // 3 Nov 2026: salinan Blangko Derry di database ALETA (Tahap 1 ALETA ABT) - Super Admin saja.
+  ["pustaka", "Pustaka blangko"],
   ["riwayat", "Riwayat semua"],
 ];
 
@@ -1075,6 +1078,7 @@ export function PengaturanSippAbt({ roleId }: { roleId: string }) {
         const q = new URLSearchParams(window.location.search);
         const b = q.get("bagian");
         if (b === "menu" || b === "variabel" || b === "templat" || b === "satker" || b === "libur" || b === "advance" || b === "riwayat") setBagian(b);
+        if (b === "pustaka" && roleId === "super-admin") setBagian(b);
         const n = (q.get("noVar") ?? "").replace(/\D/g, "").slice(0, 5);
         if (n) {
           setNoVarAwal(n.padStart(4, "0"));
@@ -1085,7 +1089,7 @@ export function PengaturanSippAbt({ roleId }: { roleId: string }) {
       }
     }, 0);
     return () => window.clearTimeout(t);
-  }, []);
+  }, [roleId]);
 
   return (
     <div className="space-y-5 p-4 sm:p-6">
@@ -1095,7 +1099,7 @@ export function PengaturanSippAbt({ roleId }: { roleId: string }) {
         description="Hak menu ABT untuk Blangko Derry, saklar kebijakan, isian blangko, blangko tanya jawab, dan identitas satker (kop, logo, kode surat). Setiap simpan langsung berlaku di ABT, dicatat, dan dapat dikembalikan."
       />
       <div role="tablist" aria-label="Bagian pengaturan" className="flex flex-wrap gap-2">
-        {BAGIAN.map(([k, t]) => (
+        {BAGIAN.filter(([k]) => k !== "pustaka" || roleId === "super-admin").map(([k, t]) => (
           <Button key={k} role="tab" aria-selected={bagian === k} variant={bagian === k ? "default" : "outline"} size="sm" onClick={() => setBagian(k)}>
             {t}
           </Button>
@@ -1114,6 +1118,7 @@ export function PengaturanSippAbt({ roleId }: { roleId: string }) {
       ) : null}
       {bagian === "libur" ? <BagianHariLibur bolehUbah={Boolean(hak?.ubahBawaan)} /> : null}
       {bagian === "advance" ? <BagianPutusanAdvance /> : null}
+      {bagian === "pustaka" && roleId === "super-admin" ? <BagianPustakaAletaAbt /> : null}
       {bagian === "riwayat" ? (
         <Card>
           <CardHeader>
