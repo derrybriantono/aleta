@@ -806,6 +806,13 @@
       "when": 1792351800001,
       "tag": "0132_aleta_register_kuasa",
       "breakpoints": true
+    },
+    {
+      "idx": 115,
+      "version": "7",
+      "when": 1792355400001,
+      "tag": "0133_aleta_abt_pustaka",
+      "breakpoints": true
     }
   ]
 }

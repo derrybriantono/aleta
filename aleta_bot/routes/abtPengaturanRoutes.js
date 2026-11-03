@@ -30,6 +30,10 @@
  *   30 Okt 2026 - statistik pemakaian blangko (G6 6.4):
  *   GET  /blangko-katalog[?segarkan=1]  blangko Derry aktif + pasangan mirip satu folder (baca saja)
  *                               (blangko TIDAK ditulis; dipasang petugas server)
+ *
+ *   3 Nov 2026 - pustaka ALETA ABT (Tahap 1; portal menyimpan, bot HANYA MEMBACA ABT & folder blangko):
+ *   GET  /pustaka/potret        semua berkas blangko Derry (md5, ukuran, penanda) + variabel dipakai + menu Derry, tanpa isi
+ *   POST /pustaka/isi           {jalur:[...]} isi berkas (base64), paling banyak 16 MB sekali panggil
  */
 
 const crypto = require("crypto");
@@ -39,6 +43,7 @@ const { readRuntimeConfig } = require("../config/runtime-config");
 const { layanan, kalimatAwam } = require("../services/abtPengaturanService");
 const { buatKatalog } = require("../services/katalogBlangkoDerry");
 const penjagaTandaSipp = require("../services/penjagaTandaSipp");
+const pustakaAbt = require("../services/pustakaAbtDerryService");
 
 const router = express.Router();
 
@@ -148,6 +153,9 @@ router.get(
     return katalogBlangko.katalog({ segarkan: String(req.query.segarkan || "") === "1" });
   })
 );
+
+router.get("/pustaka/potret", bungkus(() => pustakaAbt.layanan().potret()));
+router.post("/pustaka/isi", bungkus((req) => pustakaAbt.layanan().isi((req.body || {}).jalur)));
 
 module.exports = router;
 module.exports.pagarTanda = pagarTanda;

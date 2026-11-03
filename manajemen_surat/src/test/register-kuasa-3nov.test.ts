@@ -38,9 +38,11 @@ describe("migrasi 0132", () => {
     expect(rapat(DDL_ALETA_REGISTER_KUASA.tabel[0])).toBe(rapat(sqlTabel));
     expect(rapat(DDL_ALETA_REGISTER_KUASA.indeks[0])).toBe(rapat(/CREATE INDEX IF NOT EXISTS[^;]+/.exec(SQL)![0]));
     const e = JURNAL.entries;
-    const terakhir = e[e.length - 1];
+    // Dicari menurut tag (bukan entri terakhir): migrasi sesudahnya (0133 pustaka ALETA ABT) menambah entri di belakang.
+    const i = e.findIndex((x) => x.tag === "0132_aleta_register_kuasa");
+    const terakhir = e[i];
     expect(terakhir).toMatchObject({ idx: 114, tag: "0132_aleta_register_kuasa" });
-    expect(terakhir.when).toBeGreaterThan(e[e.length - 2].when);
+    expect(terakhir.when).toBeGreaterThan(e[i - 1].when);
     expect(new Set(e.map((x) => x.idx)).size).toBe(e.length);
     expect(KLIEN).toContain('"aleta_register_kuasa"');
     expect(SQL).not.toMatch(/REFERENCES|FOREIGN KEY/i);

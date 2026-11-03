@@ -446,6 +446,12 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_tenggat_kabar",
   // 3 November 2026 (0132): nomor & tanggal register kuasa khusus per perkara (tidak ada kolomnya di SIPP).
   "aleta_register_kuasa",
+  // 3 November 2026 (0133): pustaka ALETA ABT - blangko Derry, variabel berkode sendiri + peta nomor ABT, menu, riwayat sinkron.
+  "aleta_abt_berkas",
+  "aleta_abt_variabel",
+  "aleta_abt_peta_variabel",
+  "aleta_abt_menu",
+  "aleta_abt_sinkron",
   // 26 Oktober 2026 (0112): sunting sampul dan daftar isi berkas (halaman manual, ciri tangan, bawaan halaman).
   "aleta_berkas_susunan",
   "aleta_berkas_sampul",

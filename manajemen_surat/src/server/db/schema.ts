@@ -1471,6 +1471,129 @@ export const DDL_ALETA_REGISTER_KUASA = {
 } as const;
 
 /**
+ * Pustaka ALETA ABT (0133, 3 Nov 2026, Tahap 1): blangko Derry, variabel berkode ALETA ABT + peta nomor ABT per server,
+ * hak menu folder, riwayat sinkron. Cermin PERSIS dari drizzle/0133_aleta_abt_pustaka.sql (dijaga aleta-abt-pustaka-3nov.test.ts).
+ * Tanpa kunci asing.
+ */
+export const DDL_ALETA_ABT_PUSTAKA = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_abt_berkas (
+  id TEXT PRIMARY KEY,
+  folder TEXT NOT NULL DEFAULT '',
+  nama TEXT NOT NULL DEFAULT '',
+  arsip INTEGER NOT NULL DEFAULT 0,
+  isi TEXT NOT NULL DEFAULT '',
+  pengkodean TEXT NOT NULL DEFAULT 'latin1',
+  md5 TEXT NOT NULL DEFAULT '',
+  ukuran INTEGER NOT NULL DEFAULT 0,
+  waktu_berkas TEXT NOT NULL DEFAULT '',
+  penanda_asal TEXT NOT NULL DEFAULT '[]',
+  penanda_kode TEXT NOT NULL DEFAULT '[]',
+  asal TEXT NOT NULL DEFAULT 'abt',
+  asal_server TEXT NOT NULL DEFAULT '',
+  md5_asal TEXT NOT NULL DEFAULT '',
+  diubah INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'aktif',
+  bentrok_md5 TEXT NOT NULL DEFAULT '',
+  bentrok_at TEXT NOT NULL DEFAULT '',
+  hilang_at TEXT NOT NULL DEFAULT '',
+  disinkron_at TEXT NOT NULL DEFAULT '',
+  dibuat_at TEXT NOT NULL,
+  diubah_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_abt_variabel (
+  kode TEXT PRIMARY KEY,
+  nama TEXT NOT NULL DEFAULT '',
+  tipe TEXT,
+  data_tabel TEXT,
+  data_kolom TEXT,
+  urutan_data TEXT,
+  referensi_asal TEXT,
+  referensi_kode TEXT NOT NULL DEFAULT '',
+  sql_query TEXT,
+  default_data TEXT,
+  multi_sidang TEXT,
+  dikunci INTEGER NOT NULL DEFAULT 0,
+  pengubah_asal TEXT NOT NULL DEFAULT '',
+  waktu_asal TEXT NOT NULL DEFAULT '',
+  sumber TEXT NOT NULL DEFAULT 'blangko',
+  jumlah_blangko INTEGER NOT NULL DEFAULT 0,
+  rujukan_asal TEXT NOT NULL DEFAULT '[]',
+  rujukan_kode TEXT NOT NULL DEFAULT '[]',
+  asal TEXT NOT NULL DEFAULT 'abt',
+  asal_server TEXT NOT NULL DEFAULT '',
+  asal_no TEXT NOT NULL DEFAULT '',
+  sidik_asal TEXT NOT NULL DEFAULT '',
+  diubah INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'aktif',
+  bentrok_sidik TEXT NOT NULL DEFAULT '',
+  bentrok_at TEXT NOT NULL DEFAULT '',
+  hilang_at TEXT NOT NULL DEFAULT '',
+  disinkron_at TEXT NOT NULL DEFAULT '',
+  dibuat_at TEXT NOT NULL,
+  diubah_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_abt_peta_variabel (
+  id TEXT PRIMARY KEY,
+  server TEXT NOT NULL,
+  no_var TEXT NOT NULL,
+  kode TEXT NOT NULL,
+  sidik TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'aktif',
+  dibuat_at TEXT NOT NULL,
+  diubah_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_abt_menu (
+  id TEXT PRIMARY KEY,
+  nama TEXT,
+  nama_alias TEXT,
+  parent_direktori TEXT,
+  user_grup_id TEXT,
+  user_top_id TEXT,
+  user_validator TEXT,
+  user_cek TEXT,
+  proses_id_min TEXT,
+  proses_id_max TEXT,
+  perkara_id_min TEXT,
+  perkara_id_max TEXT,
+  perkara_id_referensi TEXT,
+  asal_id TEXT NOT NULL DEFAULT '',
+  waktu_asal TEXT NOT NULL DEFAULT '',
+  asal TEXT NOT NULL DEFAULT 'abt',
+  asal_server TEXT NOT NULL DEFAULT '',
+  sidik_asal TEXT NOT NULL DEFAULT '',
+  diubah INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'aktif',
+  bentrok_sidik TEXT NOT NULL DEFAULT '',
+  bentrok_at TEXT NOT NULL DEFAULT '',
+  hilang_at TEXT NOT NULL DEFAULT '',
+  disinkron_at TEXT NOT NULL DEFAULT '',
+  dibuat_at TEXT NOT NULL,
+  diubah_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_abt_sinkron (
+  id TEXT PRIMARY KEY,
+  server TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'jalan',
+  oleh TEXT NOT NULL DEFAULT '',
+  sidik TEXT NOT NULL DEFAULT '',
+  ringkasan TEXT NOT NULL DEFAULT '{}',
+  galat TEXT NOT NULL DEFAULT '',
+  mulai_at TEXT NOT NULL,
+  selesai_at TEXT NOT NULL DEFAULT ''
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_abt_berkas_folder ON aleta_abt_berkas(folder, status)`,
+    `CREATE INDEX IF NOT EXISTS idx_abt_variabel_status ON aleta_abt_variabel(status, asal_server)`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_abt_peta_server_no ON aleta_abt_peta_variabel(server, no_var)`,
+    `CREATE INDEX IF NOT EXISTS idx_abt_peta_kode ON aleta_abt_peta_variabel(kode, server)`,
+    `CREATE INDEX IF NOT EXISTS idx_abt_menu_status ON aleta_abt_menu(status, asal_server)`,
+    `CREATE INDEX IF NOT EXISTS idx_abt_sinkron_mulai ON aleta_abt_sinkron(mulai_at)`,
+  ],
+} as const;
+
+/**
  * Sampul berkas dan daftar isi berkas (0112, 26 Okt 2026): sunting petugas, halaman manual, ciri tangan, bawaan halaman.
  * Cermin PERSIS dari drizzle/0112_aleta_berkas_perkara.sql; berkas-perkara-26okt.test.ts membandingkan keduanya. Tanpa kunci asing.
  */
@@ -3802,6 +3925,7 @@ const schemaStatements = [
   ...DDL_ALETA_TENGGAT_KIRIM.tabel,
   ...DDL_ALETA_TENGGAT_KABAR.tabel,
   ...DDL_ALETA_REGISTER_KUASA.tabel,
+  ...DDL_ALETA_ABT_PUSTAKA.tabel,
   ...DDL_ALETA_BERKAS_PERKARA.tabel,
   // Cermin Perkara: perkara, sidang, pihak, mediasi, penanda, jejak (0090).
   ...DDL_ALETA_CERMIN_PERKARA.tabel,
@@ -5807,6 +5931,7 @@ const indexStatements = [
   ...DDL_ALETA_TENGGAT_KIRIM.indeks,
   ...DDL_ALETA_TENGGAT_KABAR.indeks,
   ...DDL_ALETA_REGISTER_KUASA.indeks,
+  ...DDL_ALETA_ABT_PUSTAKA.indeks,
   ...DDL_ALETA_BERKAS_PERKARA.indeks,
   ...DDL_ALETA_CERMIN_PERKARA.indeks,
   ...DDL_KESEHATAN_GALAT.indeks,
