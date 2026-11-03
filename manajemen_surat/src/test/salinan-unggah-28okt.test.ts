@@ -439,12 +439,12 @@ describe("1. RTF unggahan masuk ke jalur cetak yang SAMA dengan naskah ABT", () 
     expect(isian(h).keadaan().unggahan).toMatchObject({ nama: "Putusan saya.rtf", bentukAsal: "rtf", byte: Buffer.byteLength(RTF_UNGGAH, "latin1") });
     (q(h, '[data-fmt="salinan"]') as HTMLInputElement).click();
     klik(h, '[data-bd2="cetak"]');
-    await sampai(() => h.pdfRtf.length === 1 && tampilLatar(h).length === 1, "PDF SALINAN terbit", 8000);
+    await sampai(() => h.pdfRtf.length === 1 && unduhanLatar(h).some((m) => m.nama === `${NAMA_DASAR} - SALINAN.pdf`), "PDF SALINAN terbit", 8000);
     expect(h.pdfRtf[0]).toBe(RTF_UNGGAH);
     expect(h.pdfRtf[0]).toContain(KALIMAT_SUNTINGAN);
     expect(h.pdfBadan[0].salinan).toBe(true);
     expect(h.pdfBadan[0].ttd).toBeUndefined();
-    expect(tampilLatar(h)).toEqual([`${NAMA_DASAR} - SALINAN.pdf`]);
+    expect(tampilLatar(h)).toEqual([]); // 3 Nov (butir 4): salinan langsung diunduh, bukan dibuka di tab penampil
     // naskah ABT sama sekali tidak diminta, tidak ada tulisan ke ABT, pengingat isian kosong tidak muncul
     expect(pratinjauPermintaan(h)).toHaveLength(0);
     // (29 Okt: alat bukti 1214 yang tersusun otomatis ditulis sekali saat blangko dibuka, bukan oleh cetak unggahan)
@@ -453,7 +453,7 @@ describe("1. RTF unggahan masuk ke jalur cetak yang SAMA dengan naskah ABT", () 
     const log = isian(h).keadaan().log.join("\n");
     expect(log).toContain('memakai berkas unggahan "Putusan saya.rtf"');
     expect(log).not.toContain("meminta naskah dari ABT");
-    expect(log).toMatch(/PDF SALINAN dibuka di tab baru/);
+    expect(log).toMatch(/PDF SALINAN diunduh/);
   });
 
   it("RTF yang diunduh = berkas unggahan; PDF biasa + PDF SALINAN disusun bersamaan dari berkas yang sama dengan nama baku", async () => {
@@ -463,11 +463,11 @@ describe("1. RTF unggahan masuk ke jalur cetak yang SAMA dengan naskah ABT", () 
     await sampai(() => q(h, ".bd-sumberunggah"), "sumber");
     for (const f of ["pdf", "salinan"]) (q(h, `[data-fmt="${f}"]`) as HTMLInputElement).click();
     klik(h, '[data-bd2="cetak"]');
-    await sampai(() => h.pdfRtf.length === 2 && tampilLatar(h).length === 1 && unduhanLatar(h).length === 2, "semua terbit", 8000);
+    await sampai(() => h.pdfRtf.length === 2 && unduhanLatar(h).length === 3, "semua terbit", 8000);
     expect(h.pdfRtf).toEqual([RTF_UNGGAH, RTF_UNGGAH]);
     expect(h.pdfBadan.map((b) => Boolean(b.salinan)).sort()).toEqual([false, true]);
     const unduh = unduhanLatar(h);
-    expect(unduh.map((m) => String(m.nama)).sort()).toEqual([`${NAMA_DASAR}.pdf`, `${NAMA_DASAR}.rtf`]);
+    expect(unduh.map((m) => String(m.nama)).sort()).toEqual([`${NAMA_DASAR} - SALINAN.pdf`, `${NAMA_DASAR}.pdf`, `${NAMA_DASAR}.rtf`]);
     expect(dataLatin1(unduh.find((m) => String(m.nama).endsWith(".rtf"))!.alamat)).toBe(RTF_UNGGAH);
     expect(pratinjauPermintaan(h)).toHaveLength(0);
   });
@@ -523,11 +523,11 @@ describe("2. DOCX / DOC diubah ke RTF sekali; bentuk lain ditolak", () => {
     expect(q(h, ".bd-unggahcatat")!.textContent).toContain("DOCX diubah ke RTF");
     (q(h, '[data-fmt="salinan"]') as HTMLInputElement).click();
     klik(h, '[data-bd2="cetak"]');
-    await sampai(() => h.pdfRtf.length === 1 && tampilLatar(h).length === 1, "PDF SALINAN terbit", 8000);
+    await sampai(() => h.pdfRtf.length === 1 && unduhanLatar(h).some((m) => m.nama === `${NAMA_DASAR} - SALINAN.pdf`), "PDF SALINAN terbit", 8000);
     expect(h.pdfRtf[0]).toBe(RTF_HASIL_KONVERSI);
     expect(h.pdfBadan[0].salinan).toBe(true);
     expect(pratinjauPermintaan(h)).toHaveLength(0);
-    expect(tampilLatar(h)).toEqual([`${NAMA_DASAR} - SALINAN.pdf`]);
+    expect(tampilLatar(h)).toEqual([]); // 3 Nov (butir 4): salinan langsung diunduh, bukan dibuka di tab penampil
   });
 
   it("DOC lama diperlakukan sama (kepala OLE dikenali dari isi, bukan nama)", async () => {

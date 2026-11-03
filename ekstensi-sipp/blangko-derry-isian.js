@@ -280,6 +280,22 @@
     }
     return { ok: false, pesan: `unduhan lewat ekstensi gagal: ${sebab}` };
   }
+  /**
+   * 3 Nov (butir 4): PDF SALINAN LANGSUNG diunduh (nama berkas tidak berubah), tidak lagi membuka tab penampil.
+   * Hanya bila unduhan langsung gagal, PDF-nya dibuka di tab penampil sebagai cadangan; kalau itu pun gagal, pesan awam di panel.
+   * Mengembalikan kalimat laporan untuk panel.
+   */
+  async function terbitkanSalinan(blob, nama, ket, awas) {
+    const u = await unduh(blob, nama);
+    if (u.ok) return `PDF SALINAN diunduh "${nama}"${ket}`;
+    try {
+      const jawab = await kirimLatar({ jenis: "tampilkan-pdf", nama, alamat: await blobKeData(blob), pesan: "", awas: awas === true });
+      if (jawab && jawab.ok) return `PDF SALINAN belum dapat diunduh langsung, jadi dibuka di tab baru (simpan dari sana)${ket}`;
+    } catch {
+      /* penampil pun tidak terbuka: pesan di bawah */
+    }
+    return `PDF SALINAN belum dapat diunduh. Coba cetak sekali lagi; bila tetap gagal, muat ulang halaman ini lalu cetak lagi.${ket}`;
+  }
 
   // ──────────────────────────────────────────────────────────────────────────
   // Keadaan
@@ -9997,12 +10013,7 @@
           const ketBas = ada.length
             ? ` (tanda tangan asli tertempel: ${ada.join(", ")}${tanpa.length ? `; tanpa tanda tangan: ${tanpa.join(", ")}` : ""})`
             : ` (tanda tangan asli TIDAK tertempel${tanpa.length ? `: ${tanpa.join(", ")} belum terdaftar/disahkan atau namanya tidak ditemukan` : ": nama penanda tangan tidak dikenali"})`;
-          const jawabBas = await kirimLatar({ jenis: "tampilkan-pdf", nama, alamat: await blobKeData(blob), pesan: "", awas: !ada.length || tanpa.length > 0 });
-          if (jawabBas && jawabBas.ok) pesan.push(`PDF SALINAN dibuka di tab baru${ketBas}`);
-          else {
-            const u = await unduh(blob, nama);
-            pesan.push(u.ok ? `PDF SALINAN diunduh "${nama}"${ketBas}` : `PDF SALINAN gagal: ${u.pesan}`);
-          }
+          pesan.push(await terbitkanSalinan(blob, nama, ketBas, !ada.length || tanpa.length > 0));
           return selesai("salinan", mulai, pesan);
         }
         // 28 Okt (630/2026): pesan menyebut yang SUNGGUH terjadi - jumlah "ttd" yang tertulis (laporan bot) dan sebab tanda tangan
@@ -10021,12 +10032,7 @@
               : keterangan
                 ? ` (blok "Untuk Salinan" tidak ditemukan; ${bagianTtd})`
                 : "";
-        const jawab = await kirimLatar({ jenis: "tampilkan-pdf", nama, alamat: await blobKeData(blob), pesan: "", awas: !(keterangan && keterangan.gambarTtdPanitera) });
-        if (jawab && jawab.ok) pesan.push(`PDF SALINAN dibuka di tab baru${ket}`);
-        else {
-          const u = await unduh(blob, nama);
-          pesan.push(u.ok ? `PDF SALINAN diunduh "${nama}"${ket}` : `PDF SALINAN gagal: ${u.pesan}`);
-        }
+        pesan.push(await terbitkanSalinan(blob, nama, ket, !(keterangan && keterangan.gambarTtdPanitera)));
       } catch (e) {
         pesan.push(`PDF SALINAN gagal: ${String((e && e.message) || e)}`);
       }
