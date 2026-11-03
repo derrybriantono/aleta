@@ -560,7 +560,7 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar textarea.bd-ed.bd-asal-ragu { background: var(--asal-ragu-bg); border-color: var(--asal-ragu-ln); box-shadow: inset 0 0 0 1px var(--asal-ragu-ln); }
 #aleta-bd-akar textarea.bd-ed.bd-asal-data { border-left: 4px solid var(--asal-data-ln); }
 #aleta-bd-akar textarea.bd-ed.bd-asal-manual { border-color: var(--line); }
-#aleta-bd-akar textarea.bd-ed.bd-asal-contoh { border: 1px dashed var(--asal-contoh-ln); border-left: 4px dashed var(--asal-contoh-ln); }
+/* 3 Nov (butir 23): kalimat contoh tampil seperti kotak biasa (bingkai biru putus-putus dihapus); asalnya tetap tercatat di data-asal. */
 #aleta-bd-akar .bd-asalcap:empty { display: none; }
 #aleta-bd-akar .bd-asalcap { display: block; margin-top: 3px; }
 #aleta-bd-akar .bd-asallencana { display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; padding: 0 8px; font-size: 11.5px; border: 1px solid var(--line); color: var(--muted); }

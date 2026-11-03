@@ -7507,10 +7507,9 @@
     // - matriks dalil satu sumber, dibaca sekali per perkara di latar; tanpa matriks = tanpa tanda.
     if (a === "data") return lencanaDalilSaksi(r);
     // 30 Okt: kalimat contoh set pertanyaan (draf otomatis) - hal yang hanya diketahui saksi; alasannya di ikon (i).
-    if (a === "contoh") {
-      const alasan = m.alasanRagu(r);
-      return `<span class="bd-asallencana contoh">kalimat contoh <button type="button" class="bd-ikon bd-asalinfo" data-bd2="infoasal" title="${esc(alasan)}" aria-label="Kalimat contoh: ${esc(alasan)}">ⓘ</button></span>`;
-    }
+    // 3 Nov (butir 23): tanda visual kalimat contoh (bingkai biru putus-putus + label "kalimat contoh") disembunyikan - terlalu ramai. Asalnya
+    // tetap "contoh" (tidak dihitung sudah diisi, tetap dihitung di ringkasan); hanya lencananya tidak digambar.
+    if (a === "contoh") return "";
     return "";
   }
   function lencanaDalilSaksi(r) {
@@ -7745,7 +7744,7 @@
         const qBeda = norm(a.tanya) !== norm(b.tanya) && b.tanya.trim();
         return (
           `<div class="bd-sbrow"><div class="bd-sbno"><b>${i + 1}</b><span class="bd-sbgerak"><button type="button" class="bd-ikon" data-sbnaik="${i}" title="Naikkan baris tanya jawab ini (pertanyaan dan kedua jawaban)" aria-label="Naikkan baris ${i + 1}">↑</button><button type="button" class="bd-ikon" data-sbturun="${i}" title="Turunkan baris tanya jawab ini (pertanyaan dan kedua jawaban)" aria-label="Turunkan baris ${i + 1}">↓</button><button type="button" class="bd-ikon" data-sbhapus="${i}" title="Hapus pertanyaan ini beserta keterangan kedua saksi" aria-label="Hapus baris ${i + 1} untuk kedua saksi">✕</button>${bisaTambahP ? `<button type="button" class="bd-ikon" data-bd2="pilihq" data-pos="${i + 1}" title="Tambah pertanyaan dari katalog di bawah nomor ${i + 1}" aria-label="Tambah pertanyaan di bawah nomor ${i + 1}" aria-expanded="${pilihAdaDi(i)}">＋</button>` : ""}</span></div>` +
-          `<div class="bd-sbq"><textarea class="bd-ed" rows="2" data-sbq="${i}" aria-label="Pertanyaan ${i + 1}">${esc(a.tanya)}</textarea>${qBeda ? `<p class="bd-sbbeda">Pertanyaan ${esc(nb)} berbeda: “${esc(b.tanya)}” <button type="button" class="bd-chip bd-tombolchip" data-sbaksi="qsama:${i}">Samakan</button></p>` : ""}${tandaHanya(i)}<span class="bd-chip ${st[1]}">${st[0]}</span></div>` +
+          `<div class="bd-sbq"><textarea class="bd-ed" rows="2" data-sbq="${i}" aria-label="Pertanyaan ${i + 1}">${esc(a.tanya)}</textarea>${qBeda ? `<p class="bd-sbbeda">Pertanyaan ${esc(nb)} berbeda: “${esc(b.tanya)}” <button type="button" class="bd-chip bd-tombolchip" data-sbaksi="qsama:${i}">Samakan</button></p>` : ""}${tandaHanya(i)}${st[1] === "ok" ? "" : `<span class="bd-chip ${st[1]}">${st[0]}</span>`}</div>` +
           `<div class="bd-sba"><span class="bd-sblabel">${esc(na)}</span><textarea class="bd-ed${kelasAsal(a)}" rows="3" data-sba="${i}" data-sk="0"${atrAsal(a)} aria-label="Jawaban ${esc(na)} nomor ${i + 1}">${esc(a.jawab)}</textarea>${htmlCapAsal(a)}${mini(i, 0, na, nb, "→")}</div>` +
           `<div class="bd-sba"><span class="bd-sblabel">${esc(nb)}</span><textarea class="bd-ed${kelasAsal(b)}" rows="3" data-sba="${i}" data-sk="1"${atrAsal(b)} aria-label="Jawaban ${esc(nb)} nomor ${i + 1}">${esc(b.jawab)}</textarea>${htmlCapAsal(b)}${mini(i, 1, nb, na, "←")}</div></div>${pilihAdaDi(i) ? htmlPilihq() : ""}`
         );
