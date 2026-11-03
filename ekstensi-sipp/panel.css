@@ -4257,6 +4257,20 @@ html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(.box, .bo
   border-color: var(--s-garis) !important;
 }
 
+/* Kotak INFORMASI pada Monitoring Sinkronisasi Data (dan kotak serupa): SIPP menggambar latarnya dengan
+   gradasi putih (background: linear-gradient(#fff, #f5f5f5)) - warna latar saja tidak menutupinya, sehingga
+   kotak tetap putih dengan tulisan pudar. Gradasinya dibuang di tema gelap; tema terang tidak disentuh. */
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(.box, .box-body, .box-footer) {
+  background-image: none !important;
+  box-shadow: none !important;
+}
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] .konten .box :is(h1, h2, h3, h4, h5, ol, ul, li, p) {
+  color: var(--s-tulisan) !important;
+}
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] .konten .box :is(h2, h4) {
+  background: transparent !important;
+}
+
 html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(.box-header, .box-title) {
   background-color: var(--s-hijau-tua) !important;
   color: var(--s-tulisan-atas) !important;
@@ -11358,7 +11372,20 @@ html[data-aleta-tema-sipp="gelap"] .aleta-c2-sbantu {
   --c2-lewat: var(--s-merah);
 }
 .aleta-c2-sbantu [hidden] { display: none !important; }
-.aleta-c2-sbantu-ref { margin: 0 0 6px; }
+.aleta-c2-sbantu-ref { margin: 8px 0 0; }
+/* 3 Nov 2026: kotak "Usulan ALETA" di samping borang referensi pihak - kecil, sederhana, tidak menyela tabel. */
+.aleta-c2-sbantu-ref.aleta-c2-sbantu-samping {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  width: 260px;
+  margin: 0 0 0 12px;
+  padding: 5px 7px;
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+}
+.aleta-c2-sbantu-ref .aleta-c2-sbantu-judul { font-size: calc(12px * var(--aleta-skala-huruf, 1)); margin-bottom: 2px; }
+.aleta-k5-kontak[hidden], .aleta-c2-sbantu[hidden] { display: none !important; }
 .aleta-c2-sbantu-judul { font-weight: 700; margin-bottom: 4px; }
 .aleta-c2-sbantu-baris { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin: 3px 0; }
 .aleta-c2-sbantu :is(select, input[type="text"]) {
@@ -11386,6 +11413,8 @@ html[data-aleta-tema-sipp="gelap"] .aleta-c2-sbantu {
   text-align: left;
 }
 .aleta-c2-sbantu .aleta-tombol:hover { border-color: var(--c2-merek); }
+/* 3 Nov 2026: tombol kotak usulan terbaca di tema gelap (hijau SIPP gelap terlalu pekat sebagai warna tulisan). */
+html[data-aleta-tema-sipp="gelap"] .aleta-c2-sbantu .aleta-tombol { color: var(--s-hijau-terang, var(--c2-tulisan)); }
 .aleta-c2-sbantu-ganti, .aleta-c2-sbantu-rapikan { display: block; margin: 3px 0; }
 .aleta-c2-sbantu-hasil { font-weight: 600; margin: 3px 0; }
 .aleta-c2-sbantu-lembut { color: var(--c2-lembut); }
@@ -12123,3 +12152,113 @@ html[data-aleta-kulit="modern"] #aleta-panel-abt[data-t6="ui"]:not(.aleta-panel-
     flex: 1 1 100%;
   }
 }
+
+/* === 3 Nov 2026: tombol "Sync E-Court" di samping Help + panel Monitoring Sinkronisasi Data (sinkron-ecourt.js) ===
+ * Tombol memakai kelas .about SIPP sendiri (bentuk dan warna sama dengan Help); hanya lencana dan panel yang
+ * baru. Panel kecil melayang di bawah tombol; terang mengikuti palet kotak bantu, gelap mengikuti token SIPP gelap. */
+#cssmenu .about.aleta-sec-tombol { user-select: none; white-space: nowrap; }
+.aleta-sec-lencana {
+  display: inline-block;
+  min-width: 16px;
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: #d9822b;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+.aleta-sec-lencana[hidden] { display: none; }
+.aleta-sec-panel {
+  --c2-latar: #f6faf7;
+  --c2-garis: #c9d4ce;
+  --c2-tulisan: #1d2a24;
+  --c2-lembut: #52645a;
+  --c2-merek: #1f7a4d;
+  --c2-mendesak: #8a5a00;
+  --c2-lewat: #a32a1f;
+  position: fixed;
+  z-index: 2147483000;
+  width: min(420px, calc(100vw - 16px));
+  max-height: 70vh;
+  overflow: auto;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid var(--c2-garis);
+  border-left: 3px solid var(--c2-merek);
+  border-radius: 6px;
+  background: var(--c2-latar);
+  color: var(--c2-tulisan);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+  line-height: 1.45;
+  text-align: left;
+}
+html[data-aleta-tema-sipp="gelap"] .aleta-sec-panel {
+  --c2-latar: var(--s-permukaan-2);
+  --c2-garis: var(--s-garis);
+  --c2-tulisan: var(--s-tulisan);
+  --c2-lembut: var(--s-tulisan-lembut);
+  --c2-merek: var(--s-hijau);
+  --c2-mendesak: var(--s-kuning);
+  --c2-lewat: var(--s-merah);
+}
+.aleta-sec-kepala { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.aleta-sec-judul { font-weight: 700; font-size: 13px; }
+.aleta-sec-tutup { border: 0; background: transparent; color: inherit; font-size: 18px; line-height: 1; cursor: pointer; padding: 0 4px; }
+.aleta-sec-info, .aleta-sec-lembut { color: var(--c2-lembut); margin: 4px 0; }
+.aleta-sec-total { font-weight: 700; margin: 6px 0 4px; }
+.aleta-sec-ada { color: var(--c2-mendesak); }
+.aleta-sec-peringatan, .aleta-sec-gagal { color: var(--c2-lewat); font-weight: 600; margin: 4px 0; }
+.aleta-sec-kabar { margin: 6px 0 2px; font-weight: 600; }
+.aleta-sec-gulir { max-height: 200px; overflow: auto; border: 1px solid var(--c2-garis); border-radius: 4px; margin: 4px 0; }
+.aleta-sec-tabel { width: 100%; border-collapse: collapse; font-size: inherit; }
+.aleta-sec-tabel th, .aleta-sec-tabel td { padding: 2px 6px; border-bottom: 1px solid var(--c2-garis); text-align: left; background: transparent !important; color: var(--c2-tulisan) !important; }
+.aleta-sec-tabel th { position: sticky; top: 0; background: var(--c2-latar) !important; font-weight: 700; }
+.aleta-sec-aksi { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 2px; }
+.aleta-sec-btn {
+  padding: 4px 10px;
+  border: 1px solid var(--c2-garis);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--c2-merek);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+html[data-aleta-tema-sipp="gelap"] .aleta-sec-btn { color: var(--s-hijau-terang, var(--c2-tulisan)); }
+.aleta-sec-btn:hover:not(:disabled) { border-color: var(--c2-merek); }
+.aleta-sec-btn:disabled { opacity: 0.55; cursor: default; }
+.aleta-sec-utama { background: var(--c2-merek); color: #fff !important; border-color: var(--c2-merek); }
+.aleta-sec-konfirmasi { margin-top: 8px; padding: 6px 8px; border: 1px solid var(--c2-mendesak); border-radius: 4px; }
+.aleta-sec-konfirmasi[hidden] { display: none; }
+/* === AKHIR 3 Nov: Sync E-Court === */
+
+/* === 3 Nov 2026: bilah mini "ALETA" di borang saksi (sipp-ide-l1.js / sipp-ide-m1.js) === */
+.aleta-mini-bilah { display: block; margin: 2px 0 4px; text-align: right; }
+.aleta-mini-bilah[hidden], .aleta-m1-pita[hidden], .aleta-l1-pita[hidden] { display: none !important; }
+.aleta-mini-tombol {
+  padding: 0 10px;
+  border: 1px solid #2f9e44;
+  border-radius: 999px;
+  background: transparent;
+  color: #1f7a4d;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.6;
+  cursor: pointer;
+}
+.aleta-mini-tombol:hover { background: rgba(47, 158, 68, 0.12); }
+.aleta-mini-tombol[data-mendesak="ya"] { border-color: #d9822b; color: #8a5a00; }
+/* Pita mendesak yang belum dibuka: hanya peringatannya (kuning/merah) - kepala, tombol, dan usulan menyusul lewat tombol kecil "ALETA". */
+:is(.aleta-l1-pita, .aleta-m1-pita).aleta-mini-ringkas :is(.aleta-l1-lipat-kepala, .aleta-m1-lipat-kepala, .aleta-l1-baris, .aleta-m1-baris, .aleta-m1-penjelas, .aleta-m1-usulan) { display: none !important; }
+:is(.aleta-l1-pita, .aleta-m1-pita).aleta-mini-ringkas { margin: 2px 0 6px; padding: 3px 8px; }
+.aleta-mini-tombol[aria-pressed="true"] { background: #2f9e44; color: #fff; }
+html[data-aleta-tema-sipp="gelap"] .aleta-mini-tombol { color: #8fd6ae; border-color: #27342e; }
+html[data-aleta-tema-sipp="gelap"] .aleta-mini-tombol[data-mendesak="ya"] { color: #f3c969; border-color: #8a5a00; }
+html[data-aleta-tema-sipp="gelap"] .aleta-mini-tombol[aria-pressed="true"] { background: #1c5539; color: #dfe8e2; border-color: #1c5539; }
+/* === AKHIR 3 Nov: bilah mini === */

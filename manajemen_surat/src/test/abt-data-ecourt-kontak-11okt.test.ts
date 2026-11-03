@@ -422,13 +422,30 @@ describe("lajur 'Kontak dari e-Court' di blangko Data Pihak SIPP (blok KONTAK-EC
     expect(jembatan.some((j) => /simpan|submit/i.test(JSON.stringify(j)))).toBe(false);
   });
 
-  it("nama yang tidak sama dengan pihak perkara: tidak ada tombol, disebut terus terang", async () => {
+  it("nama yang tidak sama dengan pihak perkara: lajur DISEMBUNYIKAN (3 Nov: tanpa pesan 'tidak ada usulan kontak')", async () => {
     const f = borang("ORANG LAIN");
     const { api } = pasang({ ada: true, nomorPerkara: "324/Pdt.G/2026/PA.Dgl", orang: ORANG });
     await tunggu(api);
     const lajur = f.previousElementSibling as HTMLElement;
+    expect(lajur.hidden).toBe(true);
     expect(lajur.querySelectorAll("button").length).toBe(0);
-    expect(lajur.textContent).toContain("tidak sama dengan pihak perkara 324/Pdt.G/2026/PA.Dgl");
+    expect(lajur.textContent).toBe("");
+  });
+
+  it("3 Nov: lajur hanya tampil bila ada kontak yang benar-benar diusulkan (semua sudah sama = tersembunyi)", async () => {
+    const f = borang("SITI AMINAH binti RAHMAN", "siti.a@gmail.com", "085344445555");
+    const { api } = pasang({ ada: true, nomorPerkara: "x", orang: ORANG });
+    await tunggu(api);
+    const lajur = f.previousElementSibling as HTMLElement;
+    expect(lajur.hidden).toBe(true);
+    expect(lajur.textContent).toBe("");
+  });
+
+  it("3 Nov: e-Court tidak memuat kontak orang ini -> lajur tersembunyi", async () => {
+    const f = borang("SITI AMINAH binti RAHMAN");
+    const { api } = pasang({ ada: true, nomorPerkara: "x", orang: [{ ...ORANG[0], usulan: {} }] });
+    await tunggu(api);
+    expect((f.previousElementSibling as HTMLElement).hidden).toBe(true);
   });
 
   it("lajur bantu data saksi di antara lajur ini dan blangko tidak membuat keduanya saling memindahkan", async () => {

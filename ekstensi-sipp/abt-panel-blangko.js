@@ -11994,7 +11994,7 @@ async function soreBacaIsi(k) {
   }
   // 9 Okt (KUASA butir 1-4): kantor, alamat kantor, tanggal surat kuasa, dan
   // advokat dari surat gugatan e-Court (+ cadangan SIPP) - lihat a3UsulanKuasa.
-  if (A3_VAR_KUASA.some((kode) => barisVariabel().has(kode))) {
+  if (A3_VAR_KUASA_PEMICU.some((kode) => barisVariabel().has(kode))) {
     tugas.push(
       a3UsulanKuasa(nomorPerkaraAbt())
         .then((r) => {
@@ -12048,7 +12048,8 @@ function sorePilihUsulan(data) {
     for (const u of (sumber && sumber.usulan) || []) {
       if (!u || !u.kode || !peta.has(String(u.kode))) continue;
       const lama = perKode.get(String(u.kode));
-      if (!lama || soreBobot(u) > soreBobot(lama)) perKode.set(String(u.kode), u);
+      // 3 Nov 2026: usulan "utama" = register kuasa yang dicatat petugas di SIPP; mengalahkan dugaan dari kolom surat kuasa SIPP.
+      if (!lama || (u.utama === true && lama.utama !== true) || (lama.utama !== true && soreBobot(u) > soreBobot(lama))) perKode.set(String(u.kode), u);
     }
   }
   const tampil = [];
@@ -14935,13 +14936,15 @@ async function a3UsulanTanggalKtp(nomor) {
  * khusus) dan #8539# (nomor register) datang dari SIPP lewat usulan bot.
  */
 const A3_VAR_KUASA = Object.freeze(["0156", "0184", "8538", "8537"]);
+/** 3 Nov 2026: register kuasa yang dicatat di borang kuasa SIPP (nomor #8539#, tanggal #0132#) juga memicu bacaan rute kuasa. */
+const A3_VAR_KUASA_PEMICU = Object.freeze([...A3_VAR_KUASA, "8539", "0132"]);
 /** Variabel kuasa yang tetap berkartu (kosong, dapat disunting) pada perkara ber-kuasa. */
 const A3_VAR_KUASA_KARTU = Object.freeze(["0156", "0184", "8538", "8537", "8539", "0132"]);
 const ALETA_API_KUASA = "/aleta/api/aleta-ecourt/kuasa-gugatan";
 
 async function a3UsulanKuasa(nomor) {
   const peta = barisVariabel();
-  if (!nomor || !A3_VAR_KUASA.some((k) => peta.has(k))) return { usulan: [], ada: false, catatan: [] };
+  if (!nomor || !A3_VAR_KUASA_PEMICU.some((k) => peta.has(k))) return { usulan: [], ada: false, catatan: [] };
   const respons = await fetch(`${ALETA_API_KUASA}?nomor=${encodeURIComponent(nomor)}`, { credentials: "include", cache: "no-store" });
   // Server ALETA lama belum punya rutenya: diam, sama dengan sebelum fitur ini.
   if (respons.status === 404) return { usulan: [], ada: false, catatan: [] };

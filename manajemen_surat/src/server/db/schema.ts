@@ -1446,6 +1446,31 @@ export const DDL_ALETA_TENGGAT_KABAR = {
 } as const;
 
 /**
+ * Register kuasa hukum per perkara (0132, 3 Nov 2026): nomor & tanggal REGISTER kuasa khusus yang tidak punya kolom di SIPP.
+ * Cermin PERSIS dari drizzle/0132_aleta_register_kuasa.sql (dijaga register-kuasa-3nov.test.ts). Tanpa kunci asing.
+ */
+export const DDL_ALETA_REGISTER_KUASA = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_register_kuasa (
+  id TEXT PRIMARY KEY,
+  nomor_perkara TEXT NOT NULL,
+  kunci_nama TEXT NOT NULL,
+  nama_kuasa TEXT NOT NULL DEFAULT '',
+  pihak_ke INTEGER NOT NULL DEFAULT 1,
+  pihak_nama TEXT NOT NULL DEFAULT '',
+  tanggal_surat_kuasa TEXT NOT NULL DEFAULT '',
+  nomor_register TEXT NOT NULL DEFAULT '',
+  tanggal_register TEXT NOT NULL DEFAULT '',
+  dibuat_oleh TEXT NOT NULL DEFAULT '',
+  dibuat_at TEXT NOT NULL,
+  diubah_oleh TEXT NOT NULL DEFAULT '',
+  diubah_at TEXT NOT NULL
+)`,
+  ],
+  indeks: [`CREATE INDEX IF NOT EXISTS idx_register_kuasa_perkara ON aleta_register_kuasa(nomor_perkara, kunci_nama)`],
+} as const;
+
+/**
  * Sampul berkas dan daftar isi berkas (0112, 26 Okt 2026): sunting petugas, halaman manual, ciri tangan, bawaan halaman.
  * Cermin PERSIS dari drizzle/0112_aleta_berkas_perkara.sql; berkas-perkara-26okt.test.ts membandingkan keduanya. Tanpa kunci asing.
  */
@@ -3776,6 +3801,7 @@ const schemaStatements = [
   ...DDL_SAKSI_KATALOG.tabel,
   ...DDL_ALETA_TENGGAT_KIRIM.tabel,
   ...DDL_ALETA_TENGGAT_KABAR.tabel,
+  ...DDL_ALETA_REGISTER_KUASA.tabel,
   ...DDL_ALETA_BERKAS_PERKARA.tabel,
   // Cermin Perkara: perkara, sidang, pihak, mediasi, penanda, jejak (0090).
   ...DDL_ALETA_CERMIN_PERKARA.tabel,
@@ -5780,6 +5806,7 @@ const indexStatements = [
   ...DDL_SAKSI_KATALOG.indeks,
   ...DDL_ALETA_TENGGAT_KIRIM.indeks,
   ...DDL_ALETA_TENGGAT_KABAR.indeks,
+  ...DDL_ALETA_REGISTER_KUASA.indeks,
   ...DDL_ALETA_BERKAS_PERKARA.indeks,
   ...DDL_ALETA_CERMIN_PERKARA.indeks,
   ...DDL_KESEHATAN_GALAT.indeks,

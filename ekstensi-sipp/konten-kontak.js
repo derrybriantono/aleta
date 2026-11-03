@@ -155,34 +155,25 @@ async function k5Isi(b, kolom, nilai) {
   return Boolean(j && j.ok === true);
 }
 
-/** Lajur di atas blangko: satu baris per kolom (email, HP), dengan tombol isi / konfirmasi ganti. */
+/**
+ * Lajur di atas blangko: satu baris per kolom (email, HP), dengan tombol isi / konfirmasi ganti.
+ * 3 Nov 2026: lajur TERSEMBUNYI bila tidak ada kontak yang benar-benar diusulkan (nama blangko tidak
+ * sama dengan pihak perkara, e-Court tidak memuat kontak, masih mencari, atau semuanya sudah sama di
+ * blangko). Pesan "tidak ada usulan" tidak lagi ditampilkan - hanya usulan yang bisa ditindaklanjuti.
+ * @returns {boolean} true bila lajur tampil
+ */
 function k5Gambar(lajur, b, f, hasil, pesan) {
   lajur.textContent = "";
-  lajur.appendChild(k5El("div", "aleta-c2-sbantu-judul", "Kontak dari e-Court - periksa sebelum Simpan"));
-  if (pesan) {
-    lajur.appendChild(k5El("div", "aleta-c2-sbantu-lembut", pesan));
-    return;
-  }
+  lajur.hidden = true;
+  if (pesan) return false;
   const nama = String((f.querySelector(b.nama) || {}).value || "").trim();
   const o = hasil ? k5CariOrang(hasil.orang, nama, b.jenis) : null;
-  if (!o) {
-    lajur.appendChild(
-      k5El(
-        "div",
-        "aleta-c2-sbantu-lembut",
-        hasil && hasil.ada
-          ? `Nama di blangko tidak sama dengan ${b.jenis === "kuasa" ? "kuasa" : "pihak"} perkara ${hasil.nomorPerkara || "ini"} - tidak ada usulan kontak.`
-          : (hasil && hasil.catatan && hasil.catatan[0]) || "Tidak ada data kontak e-Court untuk nama ini."
-      )
-    );
-    return;
-  }
+  if (!o) return false;
   const blangko = { email: String((f.querySelector(b.email) || {}).value || ""), hp: String((f.querySelector(b.hp) || {}).value || "") };
   const baris = k5BarisUsulan(o, blangko);
-  if (!baris.length) {
-    lajur.appendChild(k5El("div", "aleta-c2-sbantu-lembut", "e-Court tidak memuat email atau nomor HP orang ini."));
-    return;
-  }
+  if (!baris.some((x) => x.keadaan !== "sama")) return false;
+  lajur.hidden = false;
+  lajur.appendChild(k5El("div", "aleta-c2-sbantu-judul", "Kontak dari e-Court - periksa sebelum Simpan"));
   for (const x of baris) {
     const wadah = k5El("div", "aleta-c2-sbantu-baris");
     wadah.appendChild(k5El("span", "aleta-c2-sbantu-hasil", `${x.label}: ${x.nilai}`));
@@ -220,6 +211,7 @@ function k5Gambar(lajur, b, f, hasil, pesan) {
     lajur.appendChild(wadah);
   }
   lajur.appendChild(k5El("div", "aleta-c2-sbantu-lembut", "Isian blangko yang sudah berisi tidak diganti tanpa centang. Simpan tetap Anda yang menekan."));
+  return true;
 }
 
 /**
@@ -246,6 +238,7 @@ async function k5Periksa() {
   }
   const { b, f } = terbuka;
   if (!k5Keadaan_.lajur) k5Keadaan_.lajur = k5El("div", "aleta-c2-sbantu aleta-c2-sbantu-ref aleta-k5-kontak");
+  k5Keadaan_.lajur.hidden = k5Keadaan_.lajur.childNodes.length === 0;
   const lajur = k5Keadaan_.lajur;
   if (!k5PosisiBenar(lajur, f) && f.parentElement) f.parentElement.insertBefore(lajur, f);
   const nama = String((f.querySelector(b.nama) || {}).value || "").replace(/\s+/g, " ").trim();

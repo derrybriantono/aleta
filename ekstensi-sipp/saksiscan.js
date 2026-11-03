@@ -2658,7 +2658,9 @@ function saksibantuPihakUntukAlamat() {
 
 function saksibantuBuatLajur() {
   const lajur = saksiscanEl("div", "aleta-c2-sbantu aleta-c2-sbantu-ref");
-  const kepala = saksiscanEl("div", "aleta-c2-sbantu-judul", "Usulan ALETA - periksa sebelum Simpan");
+  // 3 Nov 2026: kotak lebih kecil dan sederhana, berdiri DI SAMPING borang (saksibantuAturLetak); judulnya ringkas.
+  const kepala = saksiscanEl("div", "aleta-c2-sbantu-judul", "Usulan ALETA");
+  kepala.title = "Periksa sebelum Simpan - Simpan tetap Anda yang menekan";
   lajur.appendChild(kepala);
   // T7 (23 Okt): pilihan hubungan saksi juga di sini - sama dengan kotak di blangko saksi, satu pilihan bersama.
   const kotakHub = saksibantuBuatKotak();
@@ -2670,7 +2672,8 @@ function saksibantuBuatLajur() {
   kotak.checked = true;
   kotak.className = "aleta-c2-sbantu-otomatis";
   label.appendChild(kotak);
-  label.appendChild(saksiscanEl("span", "", " Isi otomatis medan kosong yang pasti (agama, jenis kelamin dari hubungan)"));
+  label.title = "Agama dan jenis kelamin dari hubungan saksi, bila medannya masih kosong";
+  label.appendChild(saksiscanEl("span", "", " Isi otomatis yang pasti"));
   kotak.addEventListener("change", () => {
     if (saksibantuKeadaan.ref) saksibantuKeadaan.ref.otomatis = kotak.checked;
     saksibantuKeadaan.potretRef = "";
@@ -2921,12 +2924,39 @@ async function saksibantuSegarkanLajur(f) {
   void saksibantuPeriksaGanda(sesudah);
 }
 
+const SAKSIBANTU_LEBAR_SAMPING = 260;
+
+/**
+ * 3 Nov 2026: kotak usulan berdiri DI SAMPING borang (kanan), tidak menyela tabel "Tambah Referensi Data Pihak".
+ * Letaknya di DOM tepat SESUDAH borang; bila ada ruang di kanan wadah borang (lebar kotak + jarak) ia melayang
+ * di sampingnya (kelas aleta-c2-sbantu-samping, panel.css), bila tidak ia jatuh ke bawah borang sebagai blok biasa -
+ * tetap terpisah dari tabel.
+ */
+function saksibantuAturLetak() {
+  const lajur = saksibantuKeadaan.lajur;
+  if (!lajur || !lajur.isConnected || !lajur.parentElement) return;
+  try {
+    const wadah = lajur.parentElement;
+    const letak = getComputedStyle(wadah).position;
+    if (!letak || letak === "static") wadah.style.position = "relative";
+    const lebarLayar = document.documentElement.clientWidth || window.innerWidth || 0;
+    const sisa = lebarLayar - wadah.getBoundingClientRect().right;
+    lajur.classList.toggle("aleta-c2-sbantu-samping", sisa >= SAKSIBANTU_LEBAR_SAMPING + 24);
+  } catch {
+    /* tata letak hanya kenyamanan: tanpa itu kotak tetap di bawah borang */
+  }
+}
+
 function saksibantuPasangLajur(f) {
-  if (saksibantuKeadaan.lajur && saksibantuKeadaan.lajur.isConnected && saksibantuKeadaan.lajur.nextElementSibling === f) return;
+  if (saksibantuKeadaan.lajur && saksibantuKeadaan.lajur.isConnected && saksibantuKeadaan.lajur.previousElementSibling === f) {
+    saksibantuAturLetak();
+    return;
+  }
   if (!saksibantuKeadaan.lajur) saksibantuKeadaan.lajur = saksibantuBuatLajur();
   saksibantuKeadaan.ref = null;
   saksibantuKeadaan.potretRef = "";
-  f.parentElement.insertBefore(saksibantuKeadaan.lajur, f);
+  f.parentElement.insertBefore(saksibantuKeadaan.lajur, f.nextSibling);
+  saksibantuAturLetak();
 }
 
 /* 10e. Pemantauan ───────────────────────────────────────────────────────── */

@@ -5,6 +5,7 @@ import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { pastikanAksi } from "@/server/modules/akses/hak-peran";
 import type { HasilKuasaGugatan } from "@/server/modules/aleta-ecourt/kuasa-gugatan";
 import { bacaKuasaEcourt } from "@/server/modules/aleta-ecourt/isi-sipp-sumber";
+import { bacaRegisterKuasa, usulanRegisterKuasa } from "@/server/modules/aleta-ecourt/register-kuasa";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
@@ -46,7 +47,19 @@ export async function GET(request: NextRequest) {
     if (!nomor) return ok({ ada: false, usulan: [], catatan: ["Nomor perkara kosong."] });
     const ulang = request.nextUrl.searchParams.get("ulang") === "1";
     const lama = singgah.get(nomor);
-    if (!ulang && lama && lama.sampai > Date.now()) return ok({ ...lama.hasil, dariSinggahan: true });
+    // 3 Nov 2026: register kuasa yang dicatat petugas di borang kuasa SIPP (aleta_register_kuasa, 0132) menjadi usulan
+    // #8539# dan #0132# yang MENGALAHKAN dugaan dari kolom surat kuasa SIPP. Dibaca tiap permintaan (bukan dari singgahan 30 menit).
+    const denganRegister = async (hasil: HasilKuasaGugatan) => {
+      try {
+        const reg = usulanRegisterKuasa(await bacaRegisterKuasa(db!, nomor));
+        if (!reg.length) return hasil;
+        const kode = new Set(reg.map((u) => u.kode));
+        return { ...hasil, ada: true, usulan: [...hasil.usulan.filter((u) => !kode.has(u.kode)), ...reg] };
+      } catch {
+        return hasil; // tanpa register tercatat: usulan lama tetap
+      }
+    };
+    if (!ulang && lama && lama.sampai > Date.now()) return ok({ ...(await denganRegister(lama.hasil)), dariSinggahan: true });
 
     // 19 Okt: pembaca yang sama dengan agen draf putusan (isi-sipp-sumber.ts).
     const hasil = await bacaKuasaEcourt(nomor);
@@ -54,7 +67,7 @@ export async function GET(request: NextRequest) {
     if (singgah.size > 300) {
       for (const [k, v] of singgah) if (v.sampai <= Date.now()) singgah.delete(k);
     }
-    return ok(hasil);
+    return ok(await denganRegister(hasil));
   } catch (error) {
     return handleAdminRouteError(error, request, {
       db,

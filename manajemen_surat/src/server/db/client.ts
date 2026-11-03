@@ -444,6 +444,8 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_tenggat_kirim",
   // 2 November 2026 (0127): kabar penjaga tenggat yang sudah terkirim per tahap (H-3, H-1, lewat, catatan).
   "aleta_tenggat_kabar",
+  // 3 November 2026 (0132): nomor & tanggal register kuasa khusus per perkara (tidak ada kolomnya di SIPP).
+  "aleta_register_kuasa",
   // 26 Oktober 2026 (0112): sunting sampul dan daftar isi berkas (halaman manual, ciri tangan, bawaan halaman).
   "aleta_berkas_susunan",
   "aleta_berkas_sampul",
