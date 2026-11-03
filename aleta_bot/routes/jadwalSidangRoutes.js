@@ -1052,6 +1052,31 @@ router.get("/kasir/rekap", wajibToken, async (req, res) => {
   }
 });
 
+/* === KASIR PSP-INSTRUMEN 3 Nov === */
+/**
+ * GET /kasir/psp?dari&sampai        Pengembalian Sisa Panjar pada rentang (hanya SELECT) + rekening e-Court
+ * GET /kasir/instrumen?dari&sampai  biaya panggilan & PBT berkategori jurusita + jurusitanya (hanya SELECT)
+ * Lihat services/kasirCetakService.js. Hak lihat rekening dijaga portal.
+ */
+router.get("/kasir/psp", wajibToken, async (req, res) => {
+  try {
+    const hasil = await require("../services/kasirCetakService").daftarPsp({ dari: req.query.dari, sampai: req.query.sampai });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
+
+router.get("/kasir/instrumen", wajibToken, async (req, res) => {
+  try {
+    const hasil = await require("../services/kasirCetakService").instrumen({ dari: req.query.dari, sampai: req.query.sampai });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
+/* === AKHIR KASIR PSP-INSTRUMEN === */
+
 router.get("/kasir/pengingat", wajibToken, async (req, res) => {
   try {
     res.json(await require("../services/kasirRekapService").pengingat({ hariIni: req.query.hariIni }));

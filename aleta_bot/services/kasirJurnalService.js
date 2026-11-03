@@ -528,6 +528,10 @@ function susunUsulan(k) {
   };
 
   const usulan = [];
+  /* === KASIR PSP-PBT 3 Nov === PBT yang DITAWARKAN (tombol "Tambah biaya PBT"), bukan diusulkan. */
+  let tawaranPbt = [];
+  let alasanTanpaPbt = "";
+  /* === AKHIR KASIR PSP-PBT === */
   let nomor = 0;
   const tambah = (u) => {
     nomor += 1;
@@ -900,11 +904,20 @@ function susunUsulan(k) {
       }
     }
 
+    /* === KASIR PSP-PBT 3 Nov ===
+     * Perkara DICABUT atau TIDAK DAPAT DITERIMA yang panggilan Tergugatnya kembali (retur): PBT kepada
+     * Tergugat itu TIDAK diusulkan (bawaan kasir: alamat tidak ditemukan), tetapi DITAWARKAN - kasir
+     * memutuskan lewat tombol "Tambah biaya PBT" di kartu perkara (keputusan manusia, bukan otomatis). */
+    const tidakDiterima = statusId === 64 || /tidak dapat diterima/i.test(bersih(putusan.statusNama));
+    const returPihak = (p) => relaas.some((r) => r.retur && Number(r.pihakId) === Number(p.pihakId));
+    const pbtDitahan = (cabut || tidakDiterima) && !permohonan ? new Set(pihakKe(2).filter(returPihak).map((p) => Number(p.pihakId))) : new Set();
+    /* === AKHIR KASIR PSP-PBT === */
     const tergugatAbsen = verstek || hadirPutus === 2 || hadirPutus === 4;
     if (!cabut && !permohonan && tergugatAbsen) {
       const daftar = pihakKe(2);
       const pemberitahuan = Array.isArray(k.pemberitahuan) ? k.pemberitahuan : [];
       daftar.forEach((p, i) => {
+        if (pbtDitahan.has(Number(p.pihakId))) return; // KASIR PSP-PBT 3 Nov: ditawarkan, bukan diusulkan
         const pb = pemberitahuan.find((x) => Number(x.pihakKe) === 2 && (Number(x.pihakRowId) === Number(p.id) || Number(x.pihakId) === Number(p.pihakId)));
         const ket = pb ? bersih(pb.ket).toUpperCase() : "";
         if (ket === "E") return;
@@ -968,6 +981,26 @@ function susunUsulan(k) {
         }
       });
     }
+
+    /* === KASIR PSP-PBT 3 Nov === baris tawaran PBT (bentuk sama dengan usulan; dicentang bila ditambahkan) */
+    if (pbtDitahan.size) {
+      const awal = usulan.length;
+      const ditahan = pihakKe(2).filter((p) => pbtDitahan.has(Number(p.pihakId)));
+      ditahan.forEach((p, i) => {
+        const ket = `${sebutan.dua}${akhiranUrut(i, ditahan.length)}`;
+        const dasar = `putusan ${tPut} (${cabut ? "dicabut" : "tidak dapat diterima"}); panggilan ${ket} kembali (retur)`;
+        if (!cariAda((b) => Number(b.jenisBiayaId) === JB.PEMBERITAHUAN, p, "putusan")) {
+          const t = tarifPihak(p);
+          tambah({ jenisBiayaId: JB.PEMBERITAHUAN, pihakKe: 2, pihakId: Number(p.pihakId), uraian: "Biaya Pemberitahuan/P", jumlah: t.jumlah, tanggal: tPut, peristiwa: `Pemberitahuan putusan kepada ${ket}`, dasar: `${dasar}; ${t.asal}`, yakin: t.jumlah && !t.kira ? "tinggi" : "sedang", pilih: true, kelompok: 54 + i * 2, kejadian: "putusan" });
+        }
+        if (!cariAda((b) => Number(b.jenisBiayaId) === JB.PNBP_PBT_T, p, "putusan")) {
+          tambah({ jenisBiayaId: JB.PNBP_PBT_T, pihakKe: 2, pihakId: Number(p.pihakId), uraian: `PNBP Relaas Pemberitahuan Putusan Kepada ${ket}`, jumlah: lazim(JB.PNBP_PBT_T), tanggal: tPut, peristiwa: `Pemberitahuan putusan kepada ${ket}`, dasar, yakin: "tinggi", pilih: true, kelompok: 55 + i * 2, kejadian: "putusan" });
+        }
+      });
+      tawaranPbt = usulan.splice(awal).map((u) => ({ ...u, kunci: `pbt-${u.kunci}`, tawaran: true }));
+      if (tawaranPbt.length) alasanTanpaPbt = `Panggilan ${sebutan.dua} kembali (retur) - PBT tidak ditambahkan otomatis.`;
+    }
+    /* === AKHIR KASIR PSP-PBT === */
 
     // Sisa panjar - selalu terakhir, selalu menghabiskan saldo.
     const sudahSisa = jurnal.some((b) => Number(b.jenisBiayaId) === JB.SISA);
@@ -1101,7 +1134,7 @@ function susunUsulan(k) {
   if (usulan.some((u) => u.tambahPanjar)) {
     catatan.push("Saldo panjar kurang - Tambahan Panjar Biaya Perkara ditawarkan (belum dicentang) sebelum biaya yang kekurangan. Centang sesudah pihak membayarnya; tanpa tambahan panjar saldo jurnal menjadi minus.");
   }
-  return { usulan, catatan, saldo, saldoAkhir, tutup: [...tutup].map(([jurnalId, kejadian]) => ({ jurnalId, kejadian })) };
+  return { usulan, catatan, saldo, saldoAkhir, tutup: [...tutup].map(([jurnalId, kejadian]) => ({ jurnalId, kejadian })), tawaranPbt, alasanTanpaPbt };
   /* === AKHIR K-KEJADIAN === */
 }
 
@@ -1577,6 +1610,7 @@ function buatLayanan(deps = {}) {
         ),
         semua(
           `SELECT id, sidang_id AS sidangId, pihak_id AS pihakId, ket_temu AS ket, no_resi_pos AS resi,
+                  status_pos AS statusPos, ket_hasil_relaas AS hasilRelaas,
                   DATE_FORMAT(tanggal_relaas, '%Y-%m-%d') AS tanggalRelaas,
                   DATE_FORMAT(tanggal_jursit_pos, '%Y-%m-%d') AS tanggalJursitPos
              FROM perkara_pelaksanaan_relaas WHERE perkara_id = ? ORDER BY id ASC`,
@@ -1665,6 +1699,8 @@ function buatLayanan(deps = {}) {
         resi: bersih(r.resi),
         tanggalRelaas: tanggalSah(r.tanggalRelaas),
         tanggalJursitPos: tanggalSah(r.tanggalJursitPos),
+        // KASIR PSP-PBT 3 Nov: surat panggilan kembali (retur) - aturan tunggal returRelaas.js.
+        retur: require("./returRelaas").relaasRetur(r.statusPos, r.hasilRelaas, r.ket, r.resi),
       })),
       putusan: putusanMentah && tanggalSah(putusanMentah.tanggal)
         ? {
@@ -1855,7 +1891,8 @@ function buatLayanan(deps = {}) {
             keadaan: keadaanPerkara(k),
             saldo: hasil.saldo,
           };
-          if (!dipilih.length) {
+          const tawaranPbt = Array.isArray(hasil.tawaranPbt) ? hasil.tawaranPbt : [];
+          if (!dipilih.length && !tawaranPbt.length) {
             lengkap.push(ringkas);
             continue;
           }
@@ -1865,6 +1902,9 @@ function buatLayanan(deps = {}) {
             usulan: dipilih,
             ditawarkan: hasil.usulan.filter((u) => !u.pilih).length,
             catatan: hasil.catatan,
+            /* KASIR PSP-PBT 3 Nov */
+            tawaranPbt,
+            alasanTanpaPbt: hasil.alasanTanpaPbt || "",
             perluPeriksa,
             saldoAkhir: hitungSisaOtomatis(dipilih.map((u) => ({ ...u })), hasil.saldo),
           });

@@ -9942,6 +9942,37 @@ html[data-aleta-teknis="sembunyi"] .aleta-teknis {
 .aleta-kasir-resi { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; padding: 3px 6px; }
 .aleta-kasir-resi[hidden] { display: none; }
 .aleta-kasir-tabel-sunting .aleta-kasir-resi .aleta-kasir-resi-isian { width: 150px; min-height: 22px; padding: 1px 6px; font-weight: 400; }
+.aleta-kasir-tambah-pbt { border-color: var(--aleta-mendesak); color: var(--aleta-tulisan); font-weight: 600; }
+.aleta-kasir-tanpa-pbt {
+  padding: 3px 8px;
+  border-left: 3px solid var(--aleta-mendesak);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--aleta-mendesak) 10%, transparent);
+  color: var(--aleta-tulisan);
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+}
+.aleta-kasir-cetak-rentang { flex-wrap: wrap; gap: 6px; }
+.aleta-kasir-cetak-bagian { display: grid; gap: 6px; padding: 8px 10px; border: 1px solid var(--aleta-garis); border-radius: 8px; background: var(--aleta-latar-naik); }
+.aleta-kasir-cetak-kepala { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; }
+.aleta-kasir-tabel-cetak td.aleta-kasir-angka,
+.aleta-kasir-tabel-cetak th.aleta-kasir-angka { text-align: right; font-variant-numeric: tabular-nums; }
+.aleta-kasir-tabel-cetak td { padding: 4px 6px; }
+.aleta-kasir-tabel-cetak thead th { color: var(--aleta-tulisan-lembut); font-size: calc(11.5px * var(--aleta-skala-huruf, 1)); font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+.aleta-kasir-rekening-kosong { color: var(--aleta-mendesak); font-size: calc(12px * var(--aleta-skala-huruf, 1)); font-style: italic; }
+.aleta-kasir-jurusita {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 10px;
+  padding: 5px 8px;
+  border: 1px solid var(--aleta-garis);
+  border-radius: 6px;
+  background: var(--aleta-latar);
+}
+.aleta-kasir-jurusita-ket { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
+.aleta-kasir-jurusita-nama { color: var(--aleta-tulisan); font-size: calc(13px * var(--aleta-skala-huruf, 1)); font-weight: 700; }
+.aleta-kasir-jurusita-total { color: var(--aleta-tulisan); font-variant-numeric: tabular-nums; font-weight: 700; }
 /* === AKHIR KASIR 3 Nov === */
 /* Ikon (i): tooltip saat disorot, pop-up saat diklik dua kali. */
 .aleta-kasir-info {
