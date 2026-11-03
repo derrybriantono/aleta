@@ -6007,8 +6007,16 @@ async function kerjakanSatuPerkaraAbt(butir, peta, opsi, olehUsername, lapor) {
  *
  * Hasilnya LANGSUNG diunduh (3 Nov 2026) - tidak lagi dibuka di tab ekstensi (salinan.html).
  */
-function kalimatSalinan(k) {
+function kalimatSalinan(k, ttdPdf) {
   if (!k) return "Keterangan salinan tidak terbaca dari bot (bot belum diperbarui?).";
+  // 3 Nov 2026: SALINAN BAS memakai tanda tangan ASLI tiap pejabat (Ketua Majelis/Hakim, Panitera Sidang) - bukan blok
+  // "Untuk Salinan"; yang tertempel dilaporkan portal (ttdPdf), sama dengan pesan panel Blangko Derry.
+  if (k.jenis === "bas") {
+    const ada = (ttdPdf && ttdPdf.dipasang) || [];
+    const tanpa = [...(k.tanpaTtd || []), ...((ttdPdf && ttdPdf.tidakDitemukan) || [])];
+    if (ada.length) return `Tanda tangan asli tertempel: ${ada.join(", ")}.${tanpa.length ? ` Tanpa tanda tangan: ${tanpa.join(", ")} (belum terdaftar/disahkan atau namanya tidak ditemukan).` : ""}`;
+    return `Tanda tangan asli TIDAK tertempel${tanpa.length ? `: ${tanpa.join(", ")} belum terdaftar/disahkan atau namanya tidak ditemukan` : ": nama penanda tangan tidak dikenali"}.`;
+  }
   const bagian = [];
   if (k.salinan === "tidak_ditemukan") bagian.push('Tulisan "SALINAN" tidak ditemukan di blangko.');
   if (k.gambarTtdPanitera) bagian.push(`Tanda tangan Panitera ${k.namaPanitera} tertempel.`);
@@ -6042,7 +6050,7 @@ async function buatPdfSalinan(isiRtf) {
   const isi = luar && luar.data ? luar.data : luar;
   if (!isi || !isi.available) throw new Error((isi && isi.message) || "pengubah PDF tidak tersedia");
   const biner = Uint8Array.from(atob(isi.pdfBase64), (c) => c.charCodeAt(0));
-  return { blob: new Blob([biner], { type: "application/pdf" }), keterangan: isi.salinan || null };
+  return { blob: new Blob([biner], { type: "application/pdf" }), keterangan: isi.salinan || null, ttdPdf: isi.ttdPdf || null };
 }
 
 /**
@@ -6064,9 +6072,13 @@ async function tampilkanPdfSalinan(isiRtf, nama, lapor) {
   const kabar = typeof lapor === "function" ? lapor : () => {};
   try {
     kabar("Menyusun PDF SALINAN…");
-    const { blob, keterangan } = await buatPdfSalinan(isiRtf);
-    const kalimat = kalimatSalinan(keterangan);
-    const awas = !(keterangan && keterangan.gambarTtdPanitera);
+    const { blob, keterangan, ttdPdf } = await buatPdfSalinan(isiRtf);
+    const kalimat = kalimatSalinan(keterangan, ttdPdf);
+    const awas =
+      keterangan && keterangan.jenis === "bas"
+        ? !(ttdPdf && ttdPdf.dipasang && ttdPdf.dipasang.length) || Boolean((keterangan.tanpaTtd || []).length || ((ttdPdf && ttdPdf.tidakDitemukan) || []).length)
+        : !(keterangan && keterangan.gambarTtdPanitera);
+    // 3 Nov (keputusan 154): PDF SALINAN langsung diunduh, tidak membuka tab baru.
     await unduhBlob(blob, nama);
     kabar(`PDF SALINAN diunduh. ${kalimat}`, awas);
     return { ok: true, keterangan };

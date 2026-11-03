@@ -276,15 +276,29 @@ function rapikanKotakNomorHalaman(rtf) {
   return { rtf: s, diubah };
 }
 
-/** Seluruh perapian untuk LibreOffice. Buffer masuk/keluar; bukan RTF atau memuat data biner mentah = apa adanya. */
-function rapikanUntukSoffice(isi) {
-  if (!Buffer.isBuffer(isi) || isi.length < 6 || isi.subarray(0, 5).toString("latin1") !== "{\\rtf") return { isi, laporan: { cermin: 0, nomorHalaman: 0 } };
-  const teks = isi.toString("latin1");
-  if (/\\bin\d/.test(teks)) return { isi, laporan: { cermin: 0, nomorHalaman: 0 } };
-  const a = rapikanBentukCermin(teks);
-  const b = rapikanKotakNomorHalaman(a.rtf);
-  const laporan = { cermin: a.diubah, nomorHalaman: b.diubah };
-  return { isi: a.diubah || b.diubah ? Buffer.from(b.rtf, "latin1") : isi, laporan };
+/**
+ * 3. (3 Nov 2026) BARIS TABEL TANDA TANGAN TERBELAH. Baris tabel berisi label pejabat lalu nama di sel yang sama tanpa \trkeep
+ *    dipecah LibreOffice di batas halaman: BAS 631/Pdt.G/2026 - "Panitera Sidang, / Ketua Majelis," di dasar halaman 2, kedua
+ *    nama sendirian di halaman 3. Baris itu diberi \trkeep (lihat blokTandaTanganRtf.jagaBarisTandaTangan).
+ */
+function jagaBarisTandaTangan(rtf) {
+  try {
+    return require("./blokTandaTanganRtf").jagaBarisTandaTangan(rtf);
+  } catch {
+    return { rtf: String(rtf || ""), diubah: 0 };
+  }
 }
 
-module.exports = { rapikanUntukSoffice, rapikanBentukCermin, rapikanKotakNomorHalaman, akhirGrup, LEBAR_KOTAK_NOMOR, TINGGI_KOTAK_NOMOR };
+/** Seluruh perapian untuk LibreOffice. Buffer masuk/keluar; bukan RTF atau memuat data biner mentah = apa adanya. */
+function rapikanUntukSoffice(isi) {
+  if (!Buffer.isBuffer(isi) || isi.length < 6 || isi.subarray(0, 5).toString("latin1") !== "{\\rtf") return { isi, laporan: { cermin: 0, nomorHalaman: 0, barisTtd: 0 } };
+  const teks = isi.toString("latin1");
+  if (/\\bin\d/.test(teks)) return { isi, laporan: { cermin: 0, nomorHalaman: 0, barisTtd: 0 } };
+  const a = rapikanBentukCermin(teks);
+  const b = rapikanKotakNomorHalaman(a.rtf);
+  const c = jagaBarisTandaTangan(b.rtf);
+  const laporan = { cermin: a.diubah, nomorHalaman: b.diubah, barisTtd: c.diubah };
+  return { isi: a.diubah || b.diubah || c.diubah ? Buffer.from(c.rtf, "latin1") : isi, laporan };
+}
+
+module.exports = { rapikanUntukSoffice, rapikanBentukCermin, rapikanKotakNomorHalaman, jagaBarisTandaTangan, akhirGrup, LEBAR_KOTAK_NOMOR, TINGGI_KOTAK_NOMOR };

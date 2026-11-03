@@ -2,6 +2,7 @@ import { inflateRawSync } from "node:zlib";
 
 import { rapikanAlamat, surelDariGugatan } from "@/lib/alamat-pihak";
 
+import { muatPdfjs } from "./baca-pdf";
 import { uraiPihakGugatan, type PihakGugatan } from "./pihak-gugatan";
 
 /**
@@ -334,7 +335,8 @@ export async function bacaBerkas(nama: string, data: Buffer): Promise<HasilBaca>
 
   // --- PDF -----------------------------------------------------------------
   try {
-    const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+    // muatPdfjs: rintisan peramban + pekerja pdfjs di utas utama (tanpanya pembacaan gagal di server terpasang).
+    const pdfjs = await muatPdfjs();
     const dokumen = await pdfjs.getDocument({
       data: new Uint8Array(data),
       useSystemFonts: true,

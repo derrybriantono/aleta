@@ -174,51 +174,70 @@ function salinanKeKiri(rtf) {
   return { rtf: `${s.slice(0, awal)}${wilayah}${s.slice(akhir)}`, cara: "bingkai" };
 }
 
-/** Label tempat tanda tangan pejabat persidangan (BUKAN "Panitera," salinan). */
-const LABEL_PEJABAT = /^(ketua majelis|hakim ketua|hakim anggota|hakim tunggal|hakim|panitera sidang|panitera pengganti),?$/i;
-const POLA_LABEL_GANTI = /(Ketua Majelis|Hakim Ketua|Hakim Anggota|Hakim Tunggal|Panitera Sidang|Panitera Pengganti|Hakim),/gi;
+/**
+ * Label tempat tanda tangan pejabat persidangan - satu sumber di blokTandaTanganRtf (3 Nov: "Panitera," ikut, untuk majelis
+ * yang panitera sidangnya Panitera sendiri). Blok "Untuk Salinan" tidak terjangkau: wilayah pencarian berhenti sebelumnya.
+ */
+const blokTtd = require("./blokTandaTanganRtf");
+
+const LABEL_PEJABAT = blokTtd.LABEL_PEJABAT;
+const POLA_LABEL_GANTI = /(Ketua Majelis|Hakim Ketua|Hakim Anggota|Hakim Tunggal|Panitera Sidang|Panitera Pengganti|Hakim|Panitera),/gi;
+
+/** Batas wilayah blok majelis: sesudah `bagian` naskah, sebelum "Untuk Salinan" (bila ada). */
+function wilayahMajelis(s, bagian) {
+  const mulai = Math.floor(s.length * bagian);
+  const i = s.indexOf("Untuk Salinan", mulai);
+  return { mulai, batas: i > 0 ? i : s.length };
+}
+
+/**
+ * b1. (3 Nov 2026) "ttd" untuk label yang SEPARAGRAF dengan ruang tanda tangan dan namanya - sel tabel #8500# blangko putusan
+ * ("Ketua Majelis,\par\par\par\par \b <nama>\b0\cell", 633/Pdt.G/2026) dan paragraf yang dipisah \line. "ttd" ditulis di baris
+ * kosong PERTAMA di bawah label (tidak menambah baris: tata letak dan halaman tetap); tanpa baris kosong, satu baris
+ * disisipkan sesudah label. Kolom bertab ikut: tiap label diganti "ttd".
+ */
+function tambahTtdSeparagraf(rtf) {
+  let s = String(rtf || "");
+  const { mulai, batas } = wilayahMajelis(s, 0.5);
+  const semua = blokTtd.bacaBaris(s).baris.filter((b) => b.ujungMulai >= mulai && b.ujungMulai < batas);
+  const sisip = [];
+  let ditambah = 0;
+  let sudahAda = 0;
+  for (const t of blokTtd.tempatTtdSeparagraf(s, semua)) {
+    if (t.sudahAda) {
+      sudahAda += t.jumlah;
+      continue;
+    }
+    const isi = `{${blokTtd.kerangkaTtd(t.label.teks)}}`;
+    if (t.kosong) sisip.push({ pos: t.kosong.ujungMulai, isi });
+    else sisip.push({ pos: t.label.ujungAkhir, isi: `${isi}\\${t.label.jenis === "line" ? "line" : "par"} ` });
+    ditambah += t.jumlah;
+  }
+  for (const g of sisip.sort((a, b) => b.pos - a.pos)) s = `${s.slice(0, g.pos)}${g.isi}${s.slice(g.pos)}`;
+  return { rtf: s, ditambah, sudahAda };
+}
 
 /**
  * b. "ttd" pada baris kosong pertama di bawah tiap baris label pejabat.
  *
- * Baris "ttd"-nya SALINAN dari baris labelnya dengan label diganti "ttd" -
- * tab dan kolomnya ikut, jadi "ttd" jatuh tepat di bawah tiap label (dua
- * kolom pada "Hakim Anggota, \tab Hakim Anggota,"). Yang sudah ber-"ttd"
- * dibiarkan dan dihitung, supaya tidak dobel.
+ * Dua susunan blangko:
+ *   - label, ruang, dan nama SEPARAGRAF (sel tabel #8500#, \line) - tambahTtdSeparagraf;
+ *   - label sebagai paragraf sendiri (\pard per baris, bertab atau sel bertumpuk) - baris "ttd"-nya SALINAN dari baris labelnya
+ *     dengan label diganti "ttd": tab, kolom, dan perataannya ikut, jadi "ttd" jatuh tepat di bawah tiap label (dua kolom pada
+ *     "Hakim Anggota, \tab Hakim Anggota,").
+ * Yang sudah ber-"ttd" dibiarkan dan dihitung, supaya tidak dobel.
  */
 function tambahTtdPejabat(rtf) {
-  let s = String(rtf || "");
-  const mulai = Math.floor(s.length * 0.5);
-  const batasUntukSalinan = (() => {
-    const i = s.indexOf("Untuk Salinan", mulai);
-    return i > 0 ? i : s.length;
-  })();
+  const awal = tambahTtdSeparagraf(rtf);
+  let s = awal.rtf;
+  const { mulai, batas: batasUntukSalinan } = wilayahMajelis(s, 0.5);
   const daftar = potongParagraf(s, mulai, batasUntukSalinan);
   const ganti = [];
-  let sudahAda = 0;
+  let sudahAda = awal.sudahAda;
   for (let k = 0; k < daftar.length; k += 1) {
     const p = daftar[k];
-    // 2 Nov: label dan nama dalam SATU paragraf dipisah pindah baris (\line): "ttd" disisipkan sesudah pindah baris pertama.
-    if (p.teks.includes("\n")) {
-      const lapis = p.teks.split("\n");
-      const kepala = lapis[0].split(/\t+/).map((x) => x.trim()).filter(Boolean);
-      if (kepala.length && kepala.every((b) => LABEL_PEJABAT.test(b))) {
-        const sisa = lapis.slice(1);
-        if (sisa.some((x) => /(^|\s)ttd\.?(\s|$)/i.test(x))) {
-          sudahAda += kepala.length;
-          continue;
-        }
-        if (sisa.length >= 2 && kosong(sisa[0])) {
-          const mentah = s.slice(p.awal, p.akhir);
-          const m = /\\line(?![a-z]) ?/.exec(mentah);
-          if (m) {
-            const isiTtd = lapis[0].replace(POLA_LABEL_GANTI, "ttd").replace(/\t/g, "\\tab ");
-            ganti.push({ awal: p.awal + m.index + m[0].length, akhir: p.awal + m.index + m[0].length, isi: `${isiTtd}`, jumlah: kepala.length });
-          }
-        }
-        continue;
-      }
-    }
+    // Paragraf berpindah baris (\line) sudah dikerjakan tambahTtdSeparagraf.
+    if (p.teks.includes("\n")) continue;
     const bagian = p.teks.split(/\t+/).map((x) => x.trim()).filter(Boolean);
     if (!bagian.length || !bagian.every((b) => LABEL_PEJABAT.test(b))) continue;
     // Paragraf berikutnya sampai paragraf berisi (nama).
@@ -249,7 +268,7 @@ function tambahTtdPejabat(rtf) {
   }
   // Dari belakang, supaya posisi yang belum diganti tetap benar.
   for (const g of ganti.sort((a, b) => b.awal - a.awal)) s = `${s.slice(0, g.awal)}${g.isi}${s.slice(g.akhir)}`;
-  return { rtf: s, ditambah: ganti.reduce((n, g) => n + g.jumlah, 0), sudahAda };
+  return { rtf: s, ditambah: awal.ditambah + ganti.reduce((n, g) => n + g.jumlah, 0), sudahAda };
 }
 
 /** Paragraf blok "Untuk Salinan": label "Panitera," dan nama sesudahnya. */
@@ -365,45 +384,19 @@ function buangUntukSalinanTersembunyi(rtf) {
 }
 
 /**
- * (2 Nov 2026) Penanda tangan naskah: nama di bawah tiap label pejabat (Ketua Majelis, Hakim Anggota, Panitera Sidang, ...),
- * dipasangkan per kolom (tab / sel tabel). Dipakai PDF SALINAN BAS - tanda tangan ASLI tiap pejabat dibubuhkan di atas namanya
- * (keputusan Derry: salinan BAS memakai tanda tangan asli, bukan "ttd"). Blok "Untuk Salinan" tidak ikut.
+ * (2 Nov 2026) Penanda tangan naskah: nama di bawah tiap label pejabat (Ketua Majelis, Hakim Anggota, Panitera Sidang, ...).
+ * Dipakai PDF SALINAN BAS - tanda tangan ASLI tiap pejabat dibubuhkan di atas namanya (keputusan Derry: salinan BAS memakai
+ * tanda tangan asli, bukan "ttd"). Blok "Untuk Salinan" tidak ikut.
+ *
+ * 3 Nov: dibaca per SEL tabel (blokTandaTanganRtf). BAS ALUR menaruh "Panitera Sidang," / ruang / nama di sel kiri dan
+ * "Ketua Majelis," / ruang / nama di sel kanan SATU baris tabel; isi sel kiri tertulis seluruhnya sebelum sel kanan, sehingga
+ * pembacaan per baris lintas sel (cara lama) tidak pernah menemukan pasangan label-nama (BAS 631/Pdt.G/2026: tanpa tanda tangan).
  */
 function pejabatPenandatangan(rtf) {
   const s = String(rtf || "");
-  const mulai = Math.floor(s.length * 0.3);
-  const batas = (() => {
-    const i = s.indexOf("Untuk Salinan", mulai);
-    return i > 0 ? i : s.length;
-  })();
-  // Kelompok tujuan (gambar, bentuk, field) dibuang; paragraf/baris/sel menjadi pemisah.
-  let potong = s.slice(mulai, batas);
-  potong = potong.replace(/\{\\(?:\*|pict|shp|object|fldinst)[^{}]*(?:\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}[^{}]*)*\}/g, "");
-  potong = potong.replace(/\\(?:par|row|sect|page)(?![a-z])/g, "\\line ").replace(/\\cell(?![a-z])/g, "\\tab ");
-  const baris = teksTampak(potong).split("\n");
-  const kolom = (t) => t.split(/\t+| {3,}/).map((x) => x.replace(/\s+/g, " ").trim()).filter(Boolean);
-  const hasil = [];
-  const sudah = new Set();
-  for (let k = 0; k < baris.length; k += 1) {
-    const label = kolom(baris[k]);
-    if (!label.length || !label.every((b) => LABEL_PEJABAT.test(b))) continue;
-    for (let j = k + 1; j < baris.length && j <= k + 12; j += 1) {
-      const isi = kolom(baris[j]).filter((x) => !/^ttd\.?$/i.test(x));
-      if (!isi.length) continue;
-      if (isi.every((b) => LABEL_PEJABAT.test(b))) break;
-      if (isi.length === label.length) {
-        isi.forEach((nama, n) => {
-          const kunci = nama.toLowerCase();
-          if (/[a-z]{3,}/i.test(nama) && !sudah.has(kunci)) {
-            sudah.add(kunci);
-            hasil.push({ label: label[n].replace(/,$/, ""), nama });
-          }
-        });
-      }
-      break;
-    }
-  }
-  return hasil;
+  const { mulai, batas } = wilayahMajelis(s, 0.3);
+  const baris = blokTtd.bacaBaris(s).baris.filter((b) => b.ujungMulai >= mulai && b.ujungMulai < batas);
+  return blokTtd.pasanganPejabat(baris).map((p) => ({ label: p.label, nama: p.nama }));
 }
 
 /** "bas" bila naskah berjudul BERITA ACARA (sidang), selainnya "putusan". */

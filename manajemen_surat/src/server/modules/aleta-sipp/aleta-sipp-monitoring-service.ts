@@ -13,6 +13,7 @@ import {
 } from "@/lib/aleta-sipp-types";
 import type { UserPersona } from "@/lib/types";
 import type { AletaDatabase, SqlInputValue } from "@/server/db/client";
+import { muatPdfjs } from "@/server/modules/aleta-ecourt/baca-pdf";
 import { AletaBotSippDataSource, getAletaSippDataSourceStatus } from "@/server/modules/aleta-sipp/aleta-sipp-datasource";
 import {
   PENDUKUNG2018_FEATURES,
@@ -2567,7 +2568,8 @@ async function extractPdfText(pdfPath: string) {
   };
   (globalThis as unknown as { ImageData?: unknown }).ImageData ??= class ImageData {};
   (globalThis as unknown as { Path2D?: unknown }).Path2D ??= class Path2D {};
-  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  // Pekerja pdfjs dimuat di utas utama (muatPdfjs) - import relatif pdf.worker.mjs gagal di bundel server terpasang.
+  const pdfjs = await muatPdfjs();
   const data = await readFile(/* turbopackIgnore: true */ pdfPath);
   const doc = await pdfjs.getDocument({
     data: new Uint8Array(data),
