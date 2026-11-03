@@ -1,0 +1,46 @@
+# pindai ulang pohon sesudah audit-mekanis-4nov saja (C1/sesudah1 = pohon terkini + paket ini; periksa: BERKAS COCOK). K07 = paket audit-ejaan-4nov.
+K01	hakim-ganda-8554	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K09	penetapan-hakim-4004	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K13	isbat	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K06	berkaitaan	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K06	berdasarkan-ganda	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K06	RI-ganda	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K06	Repblik	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K06	perempaun	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K06	satusa	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K06	perara	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K06	bahwa-ganda	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K06	Nomor-ganda	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K06	calon-istri-ganda	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K06	sebagai-istri-istri	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K06	bependapat	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K06	berdasakan	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K06	bersesuain	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K06	daapt	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K06	dipertimbangakan	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K06	istrri	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K06	kandunganya	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K06	khuasa	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K06	melangar	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K06	pendapaat	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K06	pokoknta	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K06	Rasullulah	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K06	rechtsground	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K06	sunguh	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K06	yaiitu	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K06	sebaga	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K06	segara	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K06	penunjukkan	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K06	hak-nya	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K06	dalan-konvensi	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K06	testimonuim	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K06	dipertahankankan	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K06	diberikan-ganda	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K06	setidak-setidaknya	0 kali	0 berkas	tidak_harfiah=0	konteks_unik=0
+K07	diatas	819 kali	501 berkas	tidak_harfiah=0	konteks_unik=42
+K07	dipersidangan	78 kali	76 berkas	tidak_harfiah=0	konteks_unik=4
+K07	dibawah	24 kali	11 berkas	tidak_harfiah=0	konteks_unik=7
+K07	Undang-Undang	17 kali	11 berkas	tidak_harfiah=0	konteks_unik=3
+TUMPANG 0 []
+S01	saksi2-1241-1202	0 kali	0 berkas	(saksi ke-2 [nama #1203#] dengan #1241#/#1202# = 0; saksi ke-1/ke-2: 581/581 alamat, 257/257 hubungan)
+LAIN	#8554# Hakim / Penetapan Hakim #4004# = 0; isteri = 346 (tidak disentuh); citakan = 2 (cita-citakan, benar)

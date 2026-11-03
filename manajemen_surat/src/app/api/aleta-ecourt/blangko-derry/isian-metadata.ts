@@ -303,4 +303,15 @@ export const ISIAN_OPSIONAL: Record<string, string> = {
   "3754": "Hanya bila ada sita jaminan untuk biaya hadhanah anak.",
   "3756": "Waktu pembayaran hanya bila majelis menentukannya dalam amar.",
   /* === AKHIR W3a === */
+  // Audit 4 Nov (A2-14): ciri sampul isian (kosong = tidak berlaku) diisi layar Berkas, bukan bagian "Perlu diisi"; nilai tersimpan tetap dicetak.
+  "5807": "Ciri sampul ghaib (diisi layar Berkas; kosong = tidak berlaku)",
+  "5808": "Ciri sampul mafqud (diisi layar Berkas; kosong = tidak berlaku)",
+  "5809": "Ciri sampul PNS/ASN (kosong = tidak berlaku)",
+  "5810": "Ciri sampul PPPK (kosong = tidak berlaku)",
+  "5811": "Ciri sampul TNI (kosong = tidak berlaku)",
+  "5812": "Ciri sampul POLRI (kosong = tidak berlaku)",
+  "5813": "Ciri sampul BUMN/BUMD (kosong = tidak berlaku)",
+  "5815": "Ciri sampul penerjemah (isi PENERJEMAH bila perlu juru bahasa; kosong = tidak ada)",
+  "5819": "Ciri sampul rekonvensi (kosong = tidak berlaku)",
+  "5821": "Ciri sampul sita (kosong = tidak berlaku)",
 };

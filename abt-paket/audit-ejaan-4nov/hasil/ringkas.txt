@@ -1,0 +1,5 @@
+K07	Undang-Undang	17 kali	11 berkas
+K07	diatas	819 kali	501 berkas
+K07	dibawah	24 kali	11 berkas
+K07	dipersidangan	78 kali	76 berkas
+BERKAS 581 POTONGAN 938
