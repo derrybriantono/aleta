@@ -12,6 +12,8 @@ export type HasilBotCermin<T> = { ok: true; data: T } | { ok: false; error: stri
 export type RingkasanSumber = {
   perkara: { jumlah: number; terkecil: number; terbesar: number };
   sidang: { jumlah: number; awal: string; akhir: string };
+  /** 5 Nov 2026: rentang jadwal mediasi SIPP; null/tidak ada = bot lama atau tabel tidak dikenal. */
+  mediasi?: { jumlah: number; awal: string; akhir: string } | null;
   hariIni: string;
 };
 
@@ -75,6 +77,22 @@ export type JendelaMediasi = {
   mediasi: MediasiSumber[];
 };
 
+/** Arsip antrian (5 Nov 2026): satu baris per perkara pada tanggal antriannya; bot lama tidak punya rutenya. */
+export type ArsipAntrianSumber = {
+  terbaca: boolean;
+  alasan: string;
+  dibacaPada: string;
+  baris: Array<{
+    perkaraId: string;
+    tanggalSidang: string;
+    nomor: number | null;
+    disidang: number | null;
+    keadaan: string;
+    jamAmbil: string;
+    jamHadirTerakhir: string;
+  }>;
+};
+
 export type KatalogTagSumber = {
   tag: Array<{ kunci: string; label: string; kelompok: string; nada: string; judul: string; balik: boolean }>;
   kelompok: Array<{ kunci: string; label: string }>;
@@ -120,6 +138,8 @@ export type BotCerminLengkap = BotCermin & {
   /** A5: katalog tag dan anggota tiap tag atas seluruh register. */
   tagKatalog: () => Promise<HasilBotCermin<KatalogTagSumber>>;
   tagPerkara: (kunci: string) => Promise<HasilBotCermin<PerkaraTagSumber>>;
+  /** 5 Nov 2026: arsip antrian (hanya SELECT ke sipp_turunan_antrian). Opsional: bot lama dan tiruan uji tidak punya. */
+  antrian?: () => Promise<HasilBotCermin<ArsipAntrianSumber>>;
 };
 
 function alamatBot() {
@@ -192,6 +212,7 @@ export const botCerminAsli: BotCerminLengkap = {
     panggilBotCermin<IdSidangSumber>(`/id-sidang?dari=${encodeURIComponent(dari)}&sampai=${encodeURIComponent(sampai)}`),
   mediasi: (dari, sampai) =>
     panggilBotCermin<JendelaMediasi>(`/mediasi?dari=${encodeURIComponent(dari)}&sampai=${encodeURIComponent(sampai)}`, 90_000),
+  antrian: () => panggilBotCermin<ArsipAntrianSumber>("/antrian", 30_000),
   tagKatalog: () => panggilBotCermin<KatalogTagSumber>("/tag-katalog", 20_000),
   tagPerkara: (kunci) => panggilBotCermin<PerkaraTagSumber>(`/tag-perkara?kunci=${encodeURIComponent(kunci)}`, 120_000),
 };

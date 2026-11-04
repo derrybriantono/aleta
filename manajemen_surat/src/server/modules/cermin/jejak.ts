@@ -10,6 +10,8 @@ export const KUNCI_JEJAK = {
   pembaruan: "pembaruan",
   pencocokan: "pencocokan",
   mediasi: "mediasi",
+  mediasiRiwayat: "mediasi-riwayat",
+  antrianArsip: "antrian-arsip",
   tag: "tag",
   tagKatalog: "tag-katalog",
 } as const;

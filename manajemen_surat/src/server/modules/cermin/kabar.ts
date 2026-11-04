@@ -89,7 +89,7 @@ export async function kabarPerubahanDariCermin(
     const r = baris[0];
     if (!r) return tidakAktif("belum-ada");
     const sidang = await db.queryAll<{ terbaru: string | null }>(
-      "SELECT MAX(cermin_diperbarui) AS terbaru FROM aleta_cermin_sidang WHERE perkara_id = ?",
+      "SELECT MAX(cermin_diperbarui) AS terbaru FROM aleta_cermin_sidang WHERE terhapus_at = '' AND perkara_id = ?",
       [String(r.perkara_id)]
     );
     const tPerkara = String(r.cermin_diperbarui || "");

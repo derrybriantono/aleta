@@ -16,8 +16,10 @@
  *   * tanpa pencarian (nama pihak hanya ada di SIPP);
  *   * sidang: pemindaian awal cermin SELESAI (sebelum itu riwayatnya belum
  *     lengkap) dan ada waktu sinkron berhasil yang dapat disebutkan;
- *   * mediasi: seluruh rentang ada di jendela yang terakhir berhasil dihitung
- *     (cermin mediasi hanya memuat jendelanya, bukan seluruh riwayat).
+ *   * mediasi: seluruh rentang tercakup jendela yang terakhir berhasil dihitung ATAU riwayat mediasi
+ *     yang pernah lengkap dibaca (mediasi-riwayat.ts); selain itu tidak dijawab.
+ *   * antrian: tidak pernah dijawab sebagai keadaan langsung (terbaca = false). Bila ada arsip antrian
+ *     (antrian-arsip.ts) disertakan terpisah di `antrian.arsip` dengan penanda basi dan waktu bacanya.
  *
  * Tidak memerlukan saklar layar menyala (saklar mengatur sumber NORMAL; ini
  * hanya pengganti galat) dan tidak pernah menulis ke SIPP. Antrian tidak
@@ -27,7 +29,9 @@
 import { waktuPengadilan } from "@/lib/waktu-pengadilan";
 import { getDatabase, type AletaDatabase } from "@/server/db/client";
 import { muatSidangCermin } from "@/server/modules/cermin/jadwal-cermin";
+import { muatArsipAntrian } from "@/server/modules/cermin/antrian-arsip";
 import { muatMediasiCermin, muatKeadaanMediasi } from "@/server/modules/cermin/mediasi";
+import { muatKeadaanRiwayatMediasi } from "@/server/modules/cermin/mediasi-riwayat";
 import { muatKeadaanPemindai } from "@/server/modules/cermin/pemindai";
 import { muatKeadaanPembaruan } from "@/server/modules/cermin/pembaruan";
 
@@ -98,6 +102,9 @@ export async function jadwalSidangDariCerminDarurat(
     if (!waktu) return null;
     const sidang = await muatSidangCermin(db, dari, sampai, p.batas);
     const sekarang = deps.sekarang();
+    // Arsip antrian (basi): gagal membaca = tanpa arsip, jadwal tetap dijawab.
+    const peta = await muatArsipAntrian(db, dari, sampai).catch(() => ({}));
+    const arsip = Object.keys(peta).length > 0 ? { basi: true, dibacaPada: Object.values(peta).map((x) => x.dibacaPada).sort().pop() ?? "", peta } : null;
     const keterangan = keteranganTakTerjangkau(waktu, sekarang);
     return {
       ok: true,
@@ -107,7 +114,7 @@ export async function jadwalSidangDariCerminDarurat(
         sampai,
         diperiksaPada: waktu,
         sidang,
-        antrian: { terbaca: false, alasan: "SIPP tidak terjangkau", peta: {}, tanggal: [] },
+        antrian: { terbaca: false, alasan: "SIPP tidak terjangkau", peta: {}, tanggal: [], ...(arsip ? { arsip } : {}) },
         dariCermin: true,
         waktuSinkron: waktu,
         keterangan,
@@ -144,13 +151,25 @@ export async function mediasiDariCerminDarurat(
     if (!TANGGAL_ISO.test(dari) || !TANGGAL_ISO.test(sampai) || sampai < dari) return null;
     const db = await deps.db();
     if ((await muatKeadaanPemindai(db)).status !== "selesai") return null;
-    const k = await muatKeadaanMediasi(db);
-    // Hanya jendela yang terakhir BERHASIL dihitung (jejak `terakhir` tidak maju saat gagal).
-    if (!k.terakhir || !sah(k.terakhir) || !TANGGAL_ISO.test(k.dari) || !TANGGAL_ISO.test(k.sampai)) return null;
-    if (dari < k.dari || sampai > k.sampai) return null;
+    const [k, riwayat] = await Promise.all([muatKeadaanMediasi(db), muatKeadaanRiwayatMediasi(db)]);
+    // Jendela layar: hanya yang terakhir BERHASIL dihitung (jejak `terakhir` tidak maju saat gagal).
+    const dalamJendela = sah(k.terakhir) && TANGGAL_ISO.test(k.dari) && TANGGAL_ISO.test(k.sampai) && dari >= k.dari && sampai <= k.sampai;
+    // Riwayat: rentang yang tercakup putaran penuh terakhir pemindai riwayat mediasi.
+    const dalamRiwayat = sah(riwayat.selesaiPada) && TANGGAL_ISO.test(riwayat.selesaiAwal) && TANGGAL_ISO.test(riwayat.selesaiAkhir) && dari >= riwayat.selesaiAwal && sampai <= riwayat.selesaiAkhir;
+    // Rentang yang menyeberangi keduanya: sisi riwayat dan sisi jendela harus menyambung tanpa celah.
+    const menyambung =
+      sah(riwayat.selesaiPada) && sah(k.terakhir) && TANGGAL_ISO.test(riwayat.selesaiAwal) && TANGGAL_ISO.test(riwayat.selesaiAkhir) && TANGGAL_ISO.test(k.dari) && TANGGAL_ISO.test(k.sampai) &&
+      dari >= riwayat.selesaiAwal && sampai <= (k.sampai > riwayat.selesaiAkhir ? k.sampai : riwayat.selesaiAkhir) && riwayat.selesaiAkhir >= k.dari;
+    if (!dalamJendela && !dalamRiwayat && !menyambung) return null;
+    // Waktu yang disebut = yang TERTUA dari sumber yang dipakai (jujur: sekurang-kurangnya sesegar itu).
+    const waktuPakai: string[] = [];
+    if (dalamJendela) waktuPakai.push(k.terakhir);
+    else if (dalamRiwayat) waktuPakai.push(riwayat.selesaiPada);
+    else waktuPakai.push(riwayat.selesaiPada, k.terakhir);
+    const waktu = waktuPakai.sort()[0];
     const sekarang = deps.sekarang();
     const mediasi = await muatMediasiCermin(db, dari, sampai, sekarang, p.batas);
-    const keterangan = keteranganTakTerjangkau(k.terakhir, sekarang);
+    const keterangan = keteranganTakTerjangkau(waktu, sekarang);
     return {
       ok: true,
       data: {
@@ -161,7 +180,7 @@ export async function mediasiDariCerminDarurat(
         alasan: "",
         mediasi,
         dariCermin: true,
-        waktuSinkron: k.terakhir,
+        waktuSinkron: waktu,
         keterangan,
       },
     };

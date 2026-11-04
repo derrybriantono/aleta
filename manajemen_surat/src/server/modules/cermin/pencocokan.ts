@@ -36,7 +36,7 @@ import type { AletaDatabase } from "@/server/db/client";
 import { KUNCI_JEJAK, bacaJejak, tulisJejak } from "@/server/modules/cermin/jejak";
 import { muatKeadaanPemindai } from "@/server/modules/cermin/pemindai";
 import { gabungAntrianTanggal, muatKeadaanPembaruan, segarkanRentangSidang, type DepsPembaruan } from "@/server/modules/cermin/pembaruan";
-import { hapusPerkaraCermin, simpanKelompokPerkara } from "@/server/modules/cermin/penyimpan";
+import { hapusPerkaraCermin, simpanKelompokPerkara, tandaiTerhapus } from "@/server/modules/cermin/penyimpan";
 
 const HALAMAN_PERKARA = 2000;
 /** Paling banyak tanggal yang dihitung ulang dalam satu pencocokan; sisanya masuk antrean pembaruan. */
@@ -144,7 +144,7 @@ export async function jalankanPencocokan(
         if (!r.ok) throw new Error(r.error);
         const lama = new Map<string, { tanggal: string; waktu: string }>();
         for (const x of await db.queryAll<{ sidang_id: string; tanggal_sidang: string; sipp_diperbarui: string }>(
-          "SELECT sidang_id, tanggal_sidang, sipp_diperbarui FROM aleta_cermin_sidang WHERE tanggal_sidang >= ? AND tanggal_sidang <= ?",
+          "SELECT sidang_id, tanggal_sidang, sipp_diperbarui FROM aleta_cermin_sidang WHERE terhapus_at = '' AND tanggal_sidang >= ? AND tanggal_sidang <= ?",
           [dari, sampai]
         )) {
           lama.set(String(x.sidang_id), { tanggal: String(x.tanggal_sidang), waktu: String(x.sipp_diperbarui || "") });
@@ -164,12 +164,9 @@ export async function jalankanPencocokan(
         }
         const hilang = [...lama.entries()].filter(([id]) => !ada.has(id));
         if (hilang.length > 0) {
-          // Hilang di SIPP (dihapus atau dipindah): hapus, dan hitung ulang tanggalnya
-          // (sidang yang dipindah muncul di tanggal barunya lewat daftar di atas).
-          for (let mulai = 0; mulai < hilang.length; mulai += 500) {
-            const bagian = hilang.slice(mulai, mulai + 500).map(([id]) => id);
-            await db.run(`DELETE FROM aleta_cermin_sidang WHERE sidang_id IN (${bagian.map(() => "?").join(", ")})`, bagian);
-          }
+          // Hilang di SIPP (dihapus atau dipindah): tandai terhapus (lembut, bukan DELETE), dan hitung ulang
+          // tanggalnya (sidang yang dipindah muncul di tanggal barunya lewat daftar di atas).
+          await tandaiTerhapus(db, "aleta_cermin_sidang", "sidang_id", hilang.map(([id]) => id), iso);
           hasil.sidangDihapus += hilang.length;
           for (const [, l] of hilang) tanggalPerlu.add(l.tanggal);
         }

@@ -91,7 +91,7 @@ export function urutanSidang(a: Record<string, unknown>, b: Record<string, unkno
 /** Sidang cermin pada [dari, sampai], urut seperti jalur lama dan dibatasi `batas` (bawaan 200, paling banyak 500). */
 export async function muatSidangCermin(db: AletaDatabase, dari: string, sampai: string, batasMasuk?: number): Promise<Array<Record<string, unknown>>> {
   const rows = await db.queryAll<{ baris_json: string }>(
-    "SELECT baris_json FROM aleta_cermin_sidang WHERE tanggal_sidang >= ? AND tanggal_sidang <= ?",
+    "SELECT baris_json FROM aleta_cermin_sidang WHERE terhapus_at = '' AND tanggal_sidang >= ? AND tanggal_sidang <= ?",
     [dari, sampai]
   );
   const semua: Array<Record<string, unknown>> = [];
