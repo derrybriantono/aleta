@@ -12466,9 +12466,62 @@ html[data-aleta-kulit="modern"] #aleta-panel-sipp .aleta-kasir-harian:where(.ale
 :where(.aleta-kasir-harian.aleta-kasir-baru) .aleta-kasir-ringkas-kartu[data-saring="lengkap"] .aleta-kasir-ringkas-angka { color: var(--aleta-aman); }
 :where(.aleta-kasir-harian.aleta-kasir-baru) .aleta-kasir-ringkas-judul { font-size: calc(13.5px * var(--aleta-skala-huruf, 1)); font-weight: 700; }
 :where(.aleta-kasir-harian.aleta-kasir-baru) .aleta-kasir-ringkas-ket { color: var(--aleta-tulisan-lembut); font-size: calc(11.5px * var(--aleta-skala-huruf, 1)); line-height: 1.35; }
-:where(.aleta-kasir-harian.aleta-kasir-baru) .aleta-kasir-hari { gap: 10px; }
+/* 4 Nov 2026: jarak antarperkara dilonggarkan agar kartu tidak terasa menyatu. */
+:where(.aleta-kasir-harian.aleta-kasir-baru) .aleta-kasir-hari { gap: 24px; }
 :where(.aleta-kasir-harian.aleta-kasir-baru) .aleta-kasir-kosong { padding: 10px; text-align: center; }
 :where(.aleta-kasir-harian.aleta-kasir-baru) .aleta-kasir-kosong[hidden] { display: none; }
+
+/* 4 Nov 2026: centang perkara kotak besar; centang biaya bulat kecil - bentuknya berbeda agar tidak tertukar. */
+:where(.aleta-kasir-harian.aleta-kasir-baru) .aleta-kasir-kartu-kepala .aleta-basmassal-pilih-perkara input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  margin: 0 4px 0 0;
+  accent-color: var(--aleta-merek);
+  cursor: pointer;
+}
+:where(.aleta-kasir-harian.aleta-kasir-baru) .aleta-kasir-kol-pilih input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-grid;
+  place-content: center;
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  border: 1.5px solid var(--aleta-garis-kuat);
+  border-radius: 50%;
+  background: var(--aleta-latar);
+  cursor: pointer;
+}
+:where(.aleta-kasir-harian.aleta-kasir-baru) .aleta-kasir-kol-pilih input[type="checkbox"]:checked { border-color: var(--aleta-aman); background: var(--aleta-aman); }
+:where(.aleta-kasir-harian.aleta-kasir-baru) .aleta-kasir-kol-pilih input[type="checkbox"]:checked::after {
+  content: "";
+  width: 7px;
+  height: 4px;
+  margin-top: -2px;
+  border-bottom: 2px solid var(--aleta-latar);
+  border-left: 2px solid var(--aleta-latar);
+  transform: rotate(-45deg);
+}
+:where(.aleta-kasir-harian.aleta-kasir-baru) .aleta-kasir-kol-pilih input[type="checkbox"]:focus-visible { outline: 2px solid var(--aleta-merek); outline-offset: 2px; }
+:where(.aleta-kasir-harian.aleta-kasir-baru) .aleta-kasir-uraian-baris .aleta-kasir-jurusita {
+  display: inline-grid;
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  flex: none;
+  place-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--aleta-merek);
+  border-radius: 5px;
+  background: var(--aleta-merek-latar);
+  color: var(--aleta-merek);
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  font-weight: 800;
+  cursor: help;
+}
+:where(.aleta-kasir-harian.aleta-kasir-baru) .aleta-kasir-peristiwa { margin-top: 2px; color: var(--aleta-tulisan-lembut); font-size: calc(12px * var(--aleta-skala-huruf, 1)); }
 
 /* Kartu perkara. */
 :where(.aleta-kasir-harian.aleta-kasir-baru) .aleta-kasir-kartu { gap: 0; padding: 0; overflow: hidden; border-radius: 10px; background: var(--aleta-latar); }

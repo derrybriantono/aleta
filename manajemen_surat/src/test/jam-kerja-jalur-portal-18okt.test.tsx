@@ -149,23 +149,10 @@ describe("Kasir otomatis massal di luar jam kerja", () => {
     await waitFor(() => expect(screen.getAllByText(/diantrekan, dikerjakan Senin/).length).toBeGreaterThan(0));
   });
 
-  it("pratinjau (uji coba) tidak menanyakan jam kerja", async () => {
-    const tulis: Array<Record<string, unknown>> = [];
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (_url: string, init?: RequestInit) => {
-        if (!init?.method || init.method === "GET") return bungkus(harian);
-        tulis.push(JSON.parse(String(init.body)) as Record<string, unknown>);
-        return bungkus({ ok: true, rencana: [{}] });
-      })
-    );
+  it("4 Nov 2026: tanpa tombol Pratinjau", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => bungkus(harian)));
     render(<BagianMassal onSunting={() => undefined} />);
-    const pratinjau = (await screen.findByRole("button", { name: /Pratinjau/ }, { timeout: 5000 })) as HTMLButtonElement;
-    // Tombol ada sebelum daftar terbaca; baru aktif sesudah perkara dicentang.
-    await waitFor(() => expect(pratinjau.disabled).toBe(false), { timeout: 5000 });
-    fireEvent.click(pratinjau);
-    await waitFor(() => expect(tulis).toHaveLength(1), { timeout: 5000 });
-    expect(tulis[0]).toMatchObject({ kering: true });
-    expect(tulis[0]).not.toHaveProperty("tanyaJamKerja");
+    await screen.findByRole("button", { name: /Masukkan ke jurnal SIPP/ }, { timeout: 5000 });
+    expect(screen.queryByRole("button", { name: /Pratinjau/ })).toBeNull();
   });
 });

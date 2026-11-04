@@ -631,7 +631,6 @@ export const TUTORIAL: readonly Tutorial[] = [
       "Di Jadwal Sidang, tekan tombol Kasir. Pilih perkara dari jadwal, atau cari nomornya.",
       "Jendela menampilkan Buku Jurnal Keuangan Perkara dan usulan baris baru: tanggal, uraian, pihak, pemasukan, pengeluaran, dan sisa.",
       "Periksa tiap baris. Usulan dapat disunting, dihapus, atau ditambah baris sendiri.",
-      "Tekan Pratinjau untuk melihat hasilnya tanpa menyimpan.",
       "Bila sudah benar, tekan Simpan ke SIPP dua kali (konfirmasi). Baris tersimpan memakai akun SIPP Anda.",
       "Untuk banyak perkara sekaligus, pakai Kasir harian, tab Hari ini: tiga kartu angka (Perkara bergerak, Perlu dijurnal, Sudah lengkap) dapat ditekan untuk menyaring, dan kolom Cari perkara mencari nomor atau nama pembayar.",
       "Centang perkara yang benar, lalu tekan Masukkan ke jurnal SIPP; jumlah baris dan total Rupiah tampil di kaki layar. Tab Sisa panjar dan Instrumen jurusita mencetak daftar pengembalian sisa panjar dan instrumen per jurusita.",
@@ -648,7 +647,7 @@ export const TUTORIAL: readonly Tutorial[] = [
       "Menu Kasir hanya untuk kasir, petugas keuangan perkara, bendahara, panitera, dan panitera muda. Panduan kasir bersorot hanya untuk kasir, Admin, dan Super Admin.",
     ],
     kataKunci: ["jurnal", "panjar", "keuangan perkara", "pnbp", "bendahara", "biaya perkara", "rekap kasir", "tarif panggilan", "sisa panjar", "skum", "instrumen jurusita"],
-    baruDi: { sumber: "portal", versi: "2.45.0" },
+    baruDi: { sumber: "portal", versi: "2.46.1" },
   },
   {
     id: "relaas-massal",

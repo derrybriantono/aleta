@@ -568,6 +568,7 @@ function susunUsulan(k) {
       tanggal: patut(u.tanggal),
       keterangan: "",
       jurusitaId: KATEGORI_JURUSITA.has(Number(jb.kategoriId) || u.kategoriId || 0) && jurusita ? Number(jurusita.jurusitaId) : 0,
+      jurusitaNama: KATEGORI_JURUSITA.has(Number(jb.kategoriId) || u.kategoriId || 0) && jurusita ? bersih(jurusita.nama) : "",
       peristiwa: u.peristiwa,
       dasar: u.dasar,
       yakin: u.yakin || "tinggi",
@@ -602,7 +603,15 @@ function susunUsulan(k) {
     const calon = jurnal.filter((b) => !terpakai.has(b.id) && saring(b));
     const tepat = p ? calon.find((b) => Number(b.pihakId) === Number(p.pihakId)) : null;
     const lainSekedudukan = p ? new Set(pihak.filter((x) => x.ke === p.ke && x !== p).map((x) => Number(x.pihakId))) : new Set();
-    const longgar = p ? calon.find((b) => !lainSekedudukan.has(Number(b.pihakId))) : calon[0];
+    // 4 Nov 2026 (250/2026, 243/2026): dua baris PNBP ditulis atas Pemohon I saja. Baris kelebihan pada pihak
+    // sekedudukan milik pihak yang belum tertutup; baris satu-satunya pihak lain tetap milik pihak itu.
+    const kelebihan = (b) => {
+      const id = Number(b.pihakId);
+      if (!lainSekedudukan.has(id)) return false;
+      const sudahTertutup = jurnal.some((x) => terpakai.has(x.id) && saring(x) && Number(x.pihakId) === id);
+      return sudahTertutup || calon.filter((x) => Number(x.pihakId) === id).length > 1;
+    };
+    const longgar = p ? calon.find((b) => !lainSekedudukan.has(Number(b.pihakId)) || kelebihan(b)) : calon[0];
     const hasil = tepat || longgar || null;
     if (hasil) terpakai.add(hasil.id);
     if (hasil && kejadian) tutup.set(hasil.id, kejadian);
@@ -804,9 +813,9 @@ function susunUsulan(k) {
           tanggal = hariKerjaBerikut(perkara.penetapanHariSidang);
         }
         if (!tanggal) tanggal = (r1 && tanggalSah(r1.tanggalRelaas)) || hariIni;
-        const nomori = !permohonan || tarif.nomorPemohon !== false;
+        // 4 Nov 2026: pihak sekedudukan lebih dari satu selalu disebut urutannya (Pemohon II).
         const uraian = permohonan
-          ? `PNBP Relaas Panggilan Pertama Pemohon${nomori ? akhiranUrut(i, daftar.length) : ""}`
+          ? `PNBP Relaas Panggilan Pertama Pemohon${akhiranUrut(i, daftar.length)}`
           : `PNBP Relaas Panggilan Pertama Kepada ${sebutKe(ke, sebutan)}${akhiranUrut(i, daftar.length)}`;
         tambah({
           jenisBiayaId: jb,
@@ -835,7 +844,7 @@ function susunUsulan(k) {
   for (const ke of kedudukanDipanggil) {
     for (const p of pihakKe(ke)) {
       const e = peristiwaPanggil.get(Number(p.pihakId)) || { biasa: [], ikrar: [] };
-      const sebut = sebutKe(ke, sebutan);
+      const sebut = `${sebutKe(ke, sebutan)}${akhiranUrut(pihakKe(ke).indexOf(p), pihakKe(ke).length)}`;
       for (const jenisDeret of ["biasa", "ikrar"]) {
         const deret = e[jenisDeret];
         if (!deret.length) continue;
@@ -1826,11 +1835,7 @@ function buatLayanan(deps = {}) {
     const [t, b, h] = (tanggalSah(hariIni) || "2026-01-01").split("-").map(Number);
     const dari = new Date(Date.UTC(t, b - 1 - 18, h)).toISOString().slice(0, 10);
     const dariTarif = [setelan.berlaku, ...Object.values(setelan.sejak)].sort()[0];
-    // Kebiasaan menomori pemohon ("Pemohon I/II") pada perkara berpemohon
-    // lebih dari satu BERUBAH: Jan-Jul 2026 hampir selalu bernomor, Agustus
-    // 2026 43 dari 60 polos. Yang diikuti kebiasaan 90 hari terakhir.
-    const dariNomor = new Date(Date.UTC(t, b - 1, h - 90)).toISOString().slice(0, 10);
-    const [pos, lazimMentah, nomorMentah] = await Promise.all([
+    const [pos, lazimMentah] = await Promise.all([
       semua(
         `SELECT ph.kecamatan, ph.kabupaten, pb.jumlah, DATE_FORMAT(pb.tanggal_transaksi, '%Y-%m-%d') AS tanggal,
                 (pb.uraian LIKE '%RRI%') AS rri,
@@ -1849,13 +1854,6 @@ function buatLayanan(deps = {}) {
           GROUP BY p.alur_perkara_id, pb.jenis_biaya_id, pb.jumlah`,
         [dari, TAHAPAN]
       ).catch(() => []),
-      semua(
-        `SELECT SUM(pb.uraian REGEXP 'Pemohon [IV1-9]') AS bernomor, SUM(pb.uraian NOT REGEXP 'Pemohon [IV1-9]') AS polos
-           FROM perkara_biaya pb
-          WHERE pb.tanggal_transaksi >= ? AND pb.jenis_biaya_id = 253
-            AND (SELECT COUNT(*) FROM perkara_pihak1 a WHERE a.perkara_id = pb.perkara_id) > 1`,
-        [dariNomor]
-      ).catch(() => []),
     ]);
     // Nama wilayah untuk keterangan ("tarif Kec. Labuan sejak 28 Okt 2024, 42 contoh") - ref SIPP, hanya kode yang muncul.
     const kodeKec = [...new Set(pos.map((x) => TA.kodeKecamatan(x.kecamatan)).filter(Boolean).concat(Object.keys(TA.tabelBerlaku(setelan)).filter((k) => k.length === 8)))];
@@ -1866,10 +1864,7 @@ function buatLayanan(deps = {}) {
     ]);
     const nama = {};
     for (const r of [...refKec, ...refKab]) if (bersih(r.kode) && bersih(r.nama)) nama[bersih(r.kode)] = bersih(r.nama);
-    const nomor = nomorMentah[0] || {};
     const isi = {
-      // null = tidak terukur -> bawaan bernomor (bentuk yang paling lama dipakai).
-      nomorPemohon: Number(nomor.bernomor) + Number(nomor.polos) >= 5 ? Number(nomor.bernomor) >= Number(nomor.polos) : null,
       setelan,
       nama,
       belajar: TA.pelajari(pos, setelan),
@@ -1897,7 +1892,7 @@ function buatLayanan(deps = {}) {
       for (const kode of [kec, kab]) if (kode && g.nama[kode]) nama[kode] = g.nama[kode];
     }
     const bahan = TA.bahanTarif(g.belajar, g.setelan, k.pihak, nama);
-    return { ...bahan, lazim, nomorPemohon: g.nomorPemohon };
+    return { ...bahan, lazim };
   }
 
   /**
@@ -2422,6 +2417,9 @@ module.exports = {
   KOLOM_BIAYA,
   SQL_SISIP_BIAYA,
   SQL_SISIP_AUDIT,
+  sebutanPerkara,
+  sebutKe,
+  akhiranUrut,
   JB,
   PESAN,
   KEADAAN_KASIR,

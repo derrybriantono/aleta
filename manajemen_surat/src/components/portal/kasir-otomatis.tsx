@@ -128,7 +128,7 @@ export function BagianMassal({ onSunting }: { onSunting: (perkaraId: string) => 
   const akunSiap = Boolean(akun?.ok);
   const dipilih = (data?.perkara ?? []).filter((p) => centang[p.perkaraId] && barisMassal(p).length > 0);
 
-  async function jalankan(kering: boolean, pilihJam?: PilihJamKerja) {
+  async function jalankan(pilihJam?: PilihJamKerja) {
     if (!data || sedang || !dipilih.length) return;
     setSedang(true);
     henti.current = false;
@@ -147,10 +147,11 @@ export function BagianMassal({ onSunting }: { onSunting: (perkaraId: string) => 
               body: JSON.stringify({
                 perkaraId: String(p.perkaraId),
                 baris: barisMassal(p),
-                kering,
+                kering: false,
                 massal: true,
                 // Di luar jam kerja bot bertanya dulu; pilihan petugas berlaku untuk semua perkara.
-                ...(kering ? {} : { tanyaJamKerja: true, ...(pilihJam ? { jamKerja: pilihJam } : {}) }),
+                tanyaJamKerja: true,
+                ...(pilihJam ? { jamKerja: pilihJam } : {}),
               }),
             })
           );
@@ -165,10 +166,6 @@ export function BagianMassal({ onSunting }: { onSunting: (perkaraId: string) => 
           }
           const ringkas = (isi.ringkas ?? {}) as { tersimpan?: number; gagal?: number; sebagian?: number; sudahAda?: number };
           const ditolak = Array.isArray(isi.ditolak) ? isi.ditolak.length : 0;
-          if (kering) {
-            const n = Array.isArray(isi.rencana) ? isi.rencana.length : 0;
-            return { ok: isi.ok !== false, tersimpan: 0, pesan: n ? `pratinjau: ${n} baris akan ditulis${ditolak ? `, ${ditolak} ditolak` : ""}` : String(isi.pesan || isi.alasan || "tidak ada baris yang perlu ditulis") };
-          }
           const bagian = [
             ringkas.tersimpan ? `${ringkas.tersimpan} baris tersimpan` : "",
             ringkas.sudahAda ? `${ringkas.sudahAda} sudah ada` : "",
@@ -179,7 +176,7 @@ export function BagianMassal({ onSunting }: { onSunting: (perkaraId: string) => 
           return { ok: isi.ok === true, tersimpan: Number(ringkas.tersimpan) || 0, pesan: bagian.join(", ") || String(isi.pesan || isi.alasan || "tidak ada yang tersimpan") };
         },
         {
-          jeda: kering ? undefined : () => jedaAntarPerkara(),
+          jeda: () => jedaAntarPerkara(),
           berhenti: () => henti.current,
           kabar: (h) => setLaporan((x) => ({ ...x, [h.perkaraId]: h })),
         }
@@ -201,7 +198,7 @@ export function BagianMassal({ onSunting }: { onSunting: (perkaraId: string) => 
       return;
     }
     setYakin(false);
-    void jalankan(false);
+    void jalankan();
   };
 
   const hasil = Object.values(laporan);
@@ -264,7 +261,7 @@ export function BagianMassal({ onSunting }: { onSunting: (perkaraId: string) => 
       {memuat ? <div className="min-h-[1.25rem]" aria-busy="true" /> : null}
       {galat ? <p className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-700 dark:text-rose-300">{galat}</p> : null}
       {data && !memuat ? (
-        <ul className="grid gap-3">
+        <ul className="grid gap-6">
           {data.perkara.length === 0 && saring !== "lengkap" ? <li className="text-sm text-muted-foreground">Tidak ada perkara yang perlu dijurnal pada tanggal ini.</li> : null}
           {data.perkara.length > 0 && perkaraTampil.length === 0 && lengkapTampil.length === 0 ? <li className="text-sm text-muted-foreground">Tidak ada perkara yang cocok dengan pilihan ini.</li> : null}
           {perkaraTampil.map((p) => {
@@ -321,7 +318,26 @@ export function BagianMassal({ onSunting }: { onSunting: (perkaraId: string) => 
                       {p.usulan.map((u) => (
                         <tr key={u.kunci} className="border-t">
                           <td className="whitespace-nowrap px-3.5 py-2">{tanggalPanjang(u.tanggal)}</td>
-                          <td className="px-2 py-2 font-semibold">{u.uraian}</td>
+                          <td className="px-2 py-2 font-semibold">
+                            <span className="inline-flex items-center gap-1.5">
+                              {u.uraian}
+                              {u.jurusitaNama ? (
+                                <span
+                                  title={`Jurusita: ${u.jurusitaNama}`}
+                                  aria-label={`Jurusita: ${u.jurusitaNama}`}
+                                  tabIndex={0}
+                                  className="inline-grid size-[18px] flex-none cursor-help place-content-center rounded-[5px] border border-primary bg-primary/10 text-[0.7rem] font-extrabold text-primary"
+                                >
+                                  J
+                                </span>
+                              ) : null}
+                            </span>
+                            {/\(sidang \d{4}-\d{2}-\d{2}\)$/.test(u.peristiwa || "") ? (
+                              <span className="block text-xs font-normal text-muted-foreground">
+                                {(u.peristiwa || "").replace(/ \(sidang (\d{4}-\d{2}-\d{2})\)$/, (_, t: string) => ` · sidang ${tanggalPanjang(t)}`)}
+                              </span>
+                            ) : null}
+                          </td>
                           <td className="whitespace-nowrap px-2 py-2 text-right font-bold tabular-nums">{u.jumlah === null ? "jumlah belum diketahui" : rupiah(u.jumlah)}</td>
                           <td className="px-3.5 py-2 text-xs text-muted-foreground">{u.dasar}</td>
                         </tr>
@@ -343,7 +359,7 @@ export function BagianMassal({ onSunting }: { onSunting: (perkaraId: string) => 
           ))}
         </ul>
       ) : null}
-      {tanyaJam !== null ? <TanyaJamKerja pesan={tanyaJam} sibuk={sedang} onPilih={(p) => void jalankan(false, p)} /> : null}
+      {tanyaJam !== null ? <TanyaJamKerja pesan={tanyaJam} sibuk={sedang} onPilih={(p) => void jalankan(p)} /> : null}
       {diantrekan ? <KabarDiantrekan pesan={diantrekan} /> : null}
       {hasil.length ? (
         <p className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
@@ -366,9 +382,6 @@ export function BagianMassal({ onSunting }: { onSunting: (perkaraId: string) => 
         ) : null}
         <Button size="sm" variant="outline" disabled={sedang || !dipilih.length} onClick={() => setCentang(Object.fromEntries((data?.perkara ?? []).map((p) => [p.perkaraId, false])))}>
           Batal pilih
-        </Button>
-        <Button size="sm" variant="outline" disabled={sedang || !dipilih.length || !akunSiap} onClick={() => void jalankan(true)}>
-          Pratinjau (uji coba)
         </Button>
         <Button size="sm" variant={yakin ? "destructive" : "default"} disabled={sedang || !dipilih.length || !akunSiap} onClick={tekanSimpan}>
           {yakin ? `Tekan sekali lagi: simpan ${dipilih.length} perkara ke SIPP` : "Masukkan ke jurnal SIPP"}

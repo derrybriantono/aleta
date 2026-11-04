@@ -131,6 +131,7 @@ export type UsulanJurnal = {
   tanggal: string;
   keterangan: string;
   jurusitaId: number;
+  jurusitaNama?: string;
   peristiwa: string;
   dasar: string;
   yakin: "tinggi" | "sedang" | "rendah";

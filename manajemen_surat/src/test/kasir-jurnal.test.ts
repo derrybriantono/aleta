@@ -250,11 +250,6 @@ describe("mesin usulan Kasir - perkara sungguhan yang dianonimkan", () => {
       [253, 501, "PNBP Relaas Panggilan Pertama Pemohon I", "2026-09-17"],
       [253, 502, "PNBP Relaas Panggilan Pertama Pemohon II", "2026-09-17"],
     ]);
-    k.tarif.nomorPemohon = false as never;
-    expect(kasir.susunUsulan(k).usulan.map((u: Usulan) => u.uraian)).toEqual([
-      "PNBP Relaas Panggilan Pertama Pemohon",
-      "PNBP Relaas Panggilan Pertama Pemohon",
-    ]);
   });
 
   it("tarif yang tidak diketahui TIDAK diisi nol; RRI memakai tarif RRI", () => {

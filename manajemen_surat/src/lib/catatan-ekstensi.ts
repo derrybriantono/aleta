@@ -57,6 +57,20 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.74",
+    dirilis: "2026-11-04T17:00:00+08:00",
+    judul: "Kasir: usulan ganda dibetulkan, urutan pihak, ikon jurusita, status pihak di Instrumen",
+    butir: [
+      "Kasir tidak lagi mengusulkan PNBP relaas pihak kedua bila petugas sudah menulis dua baris atas pihak yang sama.",
+      "Pihak sekedudukan yang lebih dari satu selalu disebut urutannya pada uraian biaya, misalnya Pemohon II atau Tergugat II.",
+      "Baris panggilan menyebut panggilan ke berapa dan untuk sidang tanggal berapa, sehingga panggilan ulang tidak terbaca sebagai baris yang sudah dijurnal.",
+      "Ikon J di samping biaya jurusita menampilkan nama jurusita saat tetikus di atasnya.",
+      "Centang perkara berbentuk kotak besar dan centang biaya berbentuk bulat kecil; jarak antarperkara dilonggarkan.",
+      "Tombol Pratinjau pada Kasir tampilan baru dan Kasir per perkara dihapus; Masukkan ke jurnal SIPP tetap ditekan dua kali.",
+      "Cetak Instrumen menyebut status pihak di bawah nomor perkara, dan nomor perkara tidak lagi menimpa kolom Pihak.",
+    ],
+  },
+  {
     versi: "1.205.73",
     dirilis: "2026-11-04T15:00:00+08:00",
     judul: "Tampilan baru Jadwal Sidang dan Mediasi, sinkron rekening e-Court, pilihan tampilan lama",

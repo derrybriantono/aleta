@@ -17,7 +17,7 @@
  *   usulan          disusun bot (kasirJurnalService) dari keadaan perkara dan
  *                   kebiasaan kasir satker yang diukur; tiap baris dapat
  *                   disunting, dihapus, dan ditambah manual
- *   simpan          Pratinjau (kering, bawaan) lalu "Simpan ke SIPP" dua
+ *   simpan          "Simpan ke SIPP" dua
  *                   tekanan; atas AKUN KASIR SIPP (28 Okt 2026), siapa pun yang masuk
  *
  * Tampil hanya bagi kasir/bendahara/panitera/admin (bolehKasir); rute
@@ -31,7 +31,6 @@ import { Plus, RotateCcw, Search, Wallet, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePortal } from "@/lib/app-state";
 import { apiPath } from "@/lib/base-path";
-import { keteranganAwam } from "@/lib/ringkasan-langkah-sipp";
 import {
   bolehMengerjakanKasir,
   hitungSisaOtomatis,
@@ -131,7 +130,6 @@ export function DialogKasir({ daftar, onTutup, awal }: { daftar: PerkaraPilihan[
   const [galat, setGalat] = useState("");
   const [sedang, setSedang] = useState(false);
   const [kabar, setKabar] = useState<{ teks: string; gagal: boolean } | null>(null);
-  const [pratinjau, setPratinjau] = useState<Array<{ ke: number; pernyataan: Array<{ keterangan: string; sql: string; nilai: unknown[] }> }> | null>(null);
   const [yakin, setYakin] = useState(false);
   const penundaYakin = useRef<ReturnType<typeof setTimeout> | null>(null);
   const kunciUrut = useRef(0);
@@ -162,7 +160,6 @@ export function DialogKasir({ daftar, onTutup, awal }: { daftar: PerkaraPilihan[
     setMemuat(true);
     setGalat("");
     setKabar(null);
-    setPratinjau(null);
     try {
       const isi = await bacaJson(await fetch(apiPath(`${ALAMAT}?perkaraId=${encodeURIComponent(id)}`), { cache: "no-store" }));
       if (isi.available === false || isi.ok === false) {
@@ -231,7 +228,6 @@ export function DialogKasir({ daftar, onTutup, awal }: { daftar: PerkaraPilihan[
 
   const ubah = (kunci: string, n: Partial<BarisSunting>) => {
     lepasYakin();
-    setPratinjau(null);
     setBaris((daftarBaris) =>
       daftarBaris.map((b) => (b.kunci === kunci ? { ...b, ...n, keadaan: n.keadaan ?? (b.keadaan === "tersimpan" ? b.keadaan : ""), pesan: n.pesan ?? "" } : b))
     );
@@ -256,7 +252,6 @@ export function DialogKasir({ daftar, onTutup, awal }: { daftar: PerkaraPilihan[
   const tambahManual = () => {
     if (!data) return;
     lepasYakin();
-    setPratinjau(null);
     kunciUrut.current += 1;
     const pembayar = data.pihak.find((p) => p.ke === 1);
     setBaris((x) => [
@@ -294,10 +289,10 @@ export function DialogKasir({ daftar, onTutup, awal }: { daftar: PerkaraPilihan[
   const tanpaResi = terpilih.filter((b) => uraianTanpaResi(b.uraian)).length;
   const akunSiap = Boolean(data?.akun?.ok);
 
-  async function kirim(kering: boolean) {
+  async function kirim() {
     if (!data || sedang || !terpilih.length) return;
     setSedang(true);
-    setKabar({ teks: kering ? "Menyusun pratinjau…" : `Menyimpan ${terpilih.length} baris ke jurnal SIPP…`, gagal: false });
+    setKabar({ teks: `Menyimpan ${terpilih.length} baris ke jurnal SIPP…`, gagal: false });
     const kunciKirim = terpilih.map((b) => b.kunci);
     try {
       const isi = await bacaJson(
@@ -316,7 +311,7 @@ export function DialogKasir({ daftar, onTutup, awal }: { daftar: PerkaraPilihan[
               keterangan: b.keterangan,
               jurusitaId: b.jurusitaId,
             })),
-            kering,
+            kering: false,
           }),
         })
       );
@@ -331,25 +326,11 @@ export function DialogKasir({ daftar, onTutup, awal }: { daftar: PerkaraPilihan[
       for (const h of (Array.isArray(isi.ditolak) ? isi.ditolak : []) as Array<{ ke: number; pesan: string }>) tandai(h.ke, "ditolak", h.pesan);
       for (const h of (Array.isArray(isi.dilewati) ? isi.dilewati : []) as Array<{ ke: number; pesan: string }>) tandai(h.ke, "sudah-ada", h.pesan);
 
-      if (kering) {
-        const rincian = (Array.isArray(isi.rencana) ? isi.rencana : []) as Array<{ ke: number; pernyataan: Array<{ keterangan: string; sql: string; nilai: unknown[] }> }>;
-        for (const r of rincian) tandai(r.ke, "akan-dikirim", "");
-        setPratinjau(rincian);
-        const akun = String((isi.akunSipp as { username?: string })?.username || "");
-        setKabar({
-          teks: rincian.length
-            ? `Pratinjau: ${rincian.length} baris jurnal akan ditulis ke jurnal keuangan perkara di SIPP atas akun SIPP ${akun}. Belum ada yang disimpan.`
-            : "Pratinjau: tidak ada baris yang perlu ditulis.",
-          gagal: false,
-        });
-        return;
-      }
       for (const h of (Array.isArray(isi.hasil) ? isi.hasil : []) as Array<{ ke: number; keadaan: string; pesan: string }>) {
         tandai(h.ke, (h.keadaan as Keadaan) || "gagal", h.pesan);
       }
       const sesudah = Array.isArray(isi.jurnalSesudah) ? (isi.jurnalSesudah as BarisJurnal[]) : null;
       if (sesudah) setData((d) => (d ? { ...d, jurnal: sesudah } : d));
-      setPratinjau(null);
       const r = (isi.ringkas ?? {}) as { tersimpan?: number; belumTerbaca?: number; sudahAda?: number; sebagian?: number; gagal?: number };
       const ditolak = Array.isArray(isi.ditolak) ? isi.ditolak.length : 0;
       const bagian = [
@@ -376,7 +357,7 @@ export function DialogKasir({ daftar, onTutup, awal }: { daftar: PerkaraPilihan[
       return;
     }
     lepasYakin();
-    void kirim(false);
+    void kirim();
   };
 
   const sebutPihak = (p: PihakKasir) => {
@@ -586,7 +567,6 @@ export function DialogKasir({ daftar, onTutup, awal }: { daftar: PerkaraPilihan[
                             title="Hapus baris ini dari usulan (tidak menyentuh SIPP)"
                             onClick={() => {
                               lepasYakin();
-                              setPratinjau(null);
                               setBaris((x) => x.filter((y) => y.kunci !== b.kunci));
                             }}
                           >
@@ -725,30 +705,6 @@ export function DialogKasir({ daftar, onTutup, awal }: { daftar: PerkaraPilihan[
               )}
             </section>
 
-            {pratinjau && pratinjau.length ? (
-              <details className="rounded-md border bg-muted/40 px-3 py-2 text-xs" open>
-                <summary className="cursor-pointer text-sm font-medium">Pratinjau yang akan ditulis ke SIPP ({pratinjau.length} baris jurnal)</summary>
-                <p className="mt-1 text-muted-foreground">
-                  Sama dengan blangko Tambah jurnal di SIPP; biaya panggilan atau pemberitahuan juga dicatat atas juru sita. Nomor dan jam
-                  ditetapkan saat menyimpan, sesudah jeda.
-                </p>
-                <ol className="mt-1 grid list-decimal gap-1 pl-5">
-                  {pratinjau.map((p) => (
-                    <li key={p.ke}>
-                      {p.pernyataan
-                        .map((x) => keteranganAwam(x.keterangan))
-                        .filter((k) => k !== "")
-                        .map((k, j) => (
-                          <div key={j} className="mb-0.5">
-                            {k}
-                          </div>
-                        ))}
-                    </li>
-                  ))}
-                </ol>
-              </details>
-            ) : null}
-
             {kabar ? (
               <p className={cn("rounded-md border px-3 py-2 text-sm", kabar.gagal ? "border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300" : "bg-muted/40")}>
                 {kabar.teks}
@@ -759,9 +715,6 @@ export function DialogKasir({ daftar, onTutup, awal }: { daftar: PerkaraPilihan[
               <span className="mr-auto text-xs text-muted-foreground">
                 {terpilih.length ? `${terpilih.length} baris dicentang${tanpaResi ? `, ${tanpaResi} belum bernomor resi` : ""}` : "Centang usulan atau tambah baris manual."}
               </span>
-              <Button size="sm" variant="outline" disabled={sedang || !terpilih.length || !akunSiap} onClick={() => void kirim(true)}>
-                Pratinjau (uji coba)
-              </Button>
               <Button
                 size="sm"
                 variant={yakin ? "destructive" : "default"}

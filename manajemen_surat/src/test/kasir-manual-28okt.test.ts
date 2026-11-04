@@ -766,25 +766,19 @@ describe("5d. Kasir Manual (satu hari) dapat disunting sebelum disimpan", () => 
     baris(manual, "u3").querySelector('input[type="checkbox"]')!.dispatchEvent(new h.w.Event("change", { bubbles: true }));
     expect(baris(manual, "u3").classList.contains("aleta-kasir-mati")).toBe(true);
 
-    // Pratinjau: kering:true, baris suntingan, hasil ditampilkan.
-    (Array.from(manual.querySelectorAll("button")).find((b) => b.textContent === "Pratinjau") as HTMLButtonElement).click();
-    await sampai(() => h.minta.some((m) => m.cara === "POST" && m.badan.kering === true), "POST pratinjau");
-    const pratinjau = h.minta.find((m) => m.cara === "POST")!;
-    expect(pratinjau.badan.baris.map((b: Baris) => [b.tanggal, b.uraian, b.jumlah])).toEqual([
-      ["2026-10-27", "Redaksi putusan", 10000],
-      [HARI, "Biaya Panggilan Tergugat/P2610280001", 40000],
-    ]);
-    await sampai(() => /Pratinjau: akan ditulis/.test(manual.textContent || ""), "hasil pratinjau tampil");
-
-    // Simpan (dua tekanan): baris yang sama, massal:true, tanpa akunSipp.
+    // 4 Nov 2026: tanpa Pratinjau. Simpan (dua tekanan): baris suntingan, massal:true, tanpa akunSipp.
+    expect(Array.from(manual.querySelectorAll("button")).some((b) => b.textContent === "Pratinjau")).toBe(false);
     (Array.from(manual.querySelectorAll("button")).find((b) => /^Masukkan ke jurnal SIPP$/.test(b.textContent || "")) as HTMLButtonElement).click();
     await tunggu(10);
     (Array.from(manual.querySelectorAll("button")).find((b) => /Tekan sekali lagi/.test(b.textContent || "")) as HTMLButtonElement).click();
-    await sampai(() => h.minta.filter((m) => m.cara === "POST").length >= 2, "POST simpan");
-    const simpan = h.minta.filter((m) => m.cara === "POST")[1];
+    await sampai(() => h.minta.some((m) => m.cara === "POST"), "POST simpan");
+    const simpan = h.minta.filter((m) => m.cara === "POST")[0];
     expect(simpan.badan).toMatchObject({ massal: true, kering: false, perkaraId: "501" });
     expect(simpan.badan).not.toHaveProperty("akunSipp");
-    expect(simpan.badan.baris.map((b: Baris) => [b.tanggal, b.uraian, b.jumlah])).toEqual(pratinjau.badan.baris.map((b: Baris) => [b.tanggal, b.uraian, b.jumlah]));
+    expect(simpan.badan.baris.map((b: Baris) => [b.tanggal, b.uraian, b.jumlah])).toEqual([
+      ["2026-10-27", "Redaksi putusan", 10000],
+      [HARI, "Biaya Panggilan Tergugat/P2610280001", 40000],
+    ]);
     expect(JSON.stringify(simpan.badan)).not.toMatch(/aleta/i);
   });
 
@@ -796,12 +790,14 @@ describe("5d. Kasir Manual (satu hari) dapat disunting sebelum disimpan", () => 
     const nominal = baris(manual, "u2").querySelector("input.aleta-kasir-nominal") as HTMLInputElement;
     ubah(h, nominal, "", "change");
     expect((baris(manual, "u2").querySelector(".aleta-basmassal-salah:not([hidden])") as HTMLElement)?.textContent || "").toMatch(/jumlah\?|Nomor resi/);
-    (Array.from(manual.querySelectorAll("button")).find((b) => b.textContent === "Pratinjau") as HTMLButtonElement).click();
-    await sampai(() => h.minta.some((m) => m.cara === "POST"), "POST pratinjau");
+    (Array.from(manual.querySelectorAll("button")).find((b) => /^Masukkan ke jurnal SIPP$/.test(b.textContent || "")) as HTMLButtonElement).click();
+    await tunggu(10);
+    (Array.from(manual.querySelectorAll("button")).find((b) => /Tekan sekali lagi/.test(b.textContent || "")) as HTMLButtonElement).click();
+    await sampai(() => h.minta.some((m) => m.cara === "POST"), "POST simpan");
     expect(h.minta.find((m) => m.cara === "POST")!.badan.baris.map((b: Baris) => b.uraian)).toEqual(["Pengembalian Sisa Panjar"]);
   });
 
-  it("tanpa akun kasir: Simpan dan Pratinjau mati", async () => {
+  it("tanpa akun kasir: Simpan mati", async () => {
     const h = bukaKasir({ akun: { akunKasir: true, ok: false, alasan: "akun_kasir_tidak_ada", pesan: "Belum ada akun kasir di SIPP.", calon: [], milik: [], dipilih: "", bolehPilih: false } });
     const manual = await bukaManual(h);
     for (const b of Array.from(manual.querySelectorAll(".aleta-basmassal-aksi button")).filter((x) => x.textContent !== "Batal pilih") as HTMLButtonElement[]) expect(b.disabled).toBe(true);
@@ -843,10 +839,14 @@ describe("5g. Kasir per perkara (jendela satu perkara) atas akun kasir juga", ()
     const titel = Array.from(h.wadah.querySelectorAll(".aleta-kasir-info")).map((i) => (i as HTMLElement).title).join(" ");
     expect(titel).toContain("Lazim pada keadaan ini");
     expect(titel).toContain("1 catatan tentang perkara ini");
-    (Array.from(h.wadah.querySelectorAll("button")).find((b) => b.textContent === "Pratinjau") as HTMLButtonElement).click();
-    await sampai(() => h.minta.some((m) => m.cara === "POST"), "POST pratinjau");
+    expect(Array.from(h.wadah.querySelectorAll("button")).some((b) => b.textContent === "Pratinjau")).toBe(false);
+    const simpan = Array.from(h.wadah.querySelectorAll("button")).find((b) => /^Simpan ke SIPP/.test(b.textContent || "")) as HTMLButtonElement;
+    simpan.click();
+    await tunggu(10);
+    simpan.click();
+    await sampai(() => h.minta.some((m) => m.cara === "POST"), "POST simpan");
     const badan = h.minta.find((m) => m.cara === "POST")!.badan;
-    expect(badan).toMatchObject({ perkaraId: "501", kering: true });
+    expect(badan).toMatchObject({ perkaraId: "501", kering: false });
     expect(badan).not.toHaveProperty("akunSipp");
   });
 
