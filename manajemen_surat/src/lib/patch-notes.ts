@@ -1,6 +1,6 @@
-export const APP_VERSION = "2.43.1";
+export const APP_VERSION = "2.44.0";
 export const APP_VERSION_LABEL =
-  "ALETA Judicia v2.43.1 - November 2026";
+  "ALETA Judicia v2.44.0 - November 2026";
 
 export type PatchNote = {
   version: string;
@@ -21,6 +21,33 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.44.0",
+    title: "ALETA Judicia v2.44.0 - November 2026",
+    date: "2026-11-04",
+    status: "Terpasang bersama rilis ekstensi 1.205.71",
+    summary:
+      "Keputusan atas audit Blangko ABT by Derry Briantono sampai rilis ekstensi 1.205.71 (4 November 2026).",
+    added: [
+      "Rute pratinjau Blangko Derry yang menyusun naskah dengan mesin ALETA, dengan jalur kembali ke pratinjau ABT.",
+      "Tanda sumber tarif dan peringatan lunak di halaman kasir per perkara.",
+    ],
+    changed: [
+      "Folder blangko tanpa menu ABT disembunyikan dari daftar panel; peringatan sebelum cetak untuk isian yang masih titik-titik.",
+    ],
+    fixed: [
+      "Tarif bawaan Banggai Laut Rp40.500 yang belum tercantum di tabel saran tarif.",
+    ],
+    security: [
+      "Rute pratinjau memakai aturan hak dokumen yang sama dengan pembacaan blangko; penolakan hak tidak dilewati lewat ABT.",
+    ],
+    operationalNotes: [
+      "Paket ABT keputusan-a-mekanis-4nov, keputusan-a-kerangka-4nov, keputusan-a-rekonvensi-4nov dipasang berurutan sesudah audit-ejaan-4nov.",
+    ],
+    knownLimitations: [
+      "Cetak resmi dan naskah latar masih disusun lewat ABT; hanya pratinjau yang pindah ke mesin ALETA.",
+    ],
+  },
   {
     version: "2.43.1",
     title: "ALETA Judicia v2.43.1 - November 2026",
