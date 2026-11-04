@@ -301,6 +301,13 @@ async function ensureSchema() {
         terakhir_terlihat DATETIME NOT NULL
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     `);
+    // 4 Nov 2026: nomor rekening disandikan (AES-GCM, ecourtRekeningService); kolom polos lama dikosongkan
+    // oleh sandikanBarisLama dan tidak ditulis lagi.
+    await botDb.addColumnIfMissing(
+      "aleta_bot_ecourt_pembayaran",
+      "nomor_rekening_sandi",
+      "VARCHAR(255) NOT NULL DEFAULT ''"
+    );
 
     await botDb.query(`
       CREATE TABLE IF NOT EXISTS aleta_bot_ecourt_panggilan (
@@ -1957,17 +1964,53 @@ async function recordPersetujuanPihak(nomorPerkaraMentah, daftar) {
 async function recordPembayaranEcourt(nomorPerkaraMentah, pembayaran, skum) {
   await ensureSchema();
   const nomorPerkara = normalizeCaseNumber(nomorPerkaraMentah);
-  if (!nomorPerkara || (!pembayaran && !skum)) return { tersimpan: 0 };
+  if (!nomorPerkara || (!pembayaran && !skum)) return { tersimpan: 0, berubah: false, baru: false, rekeningGagal: "" };
   const b = pembayaran || {};
   const potong = (v, n) => cleanText(v).slice(0, n);
+  const rekeningService = require("./ecourtRekeningService");
+
+  // Nomor rekening disandikan; tanpa kunci rekening TIDAK disimpan (tidak pernah polos) dan sebabnya dilaporkan.
+  const rekeningBaru = potong(b.nomorRekening, 64);
+  let rekeningSandi = "";
+  let rekeningGagal = "";
+  if (rekeningBaru) {
+    try {
+      rekeningSandi = rekeningService.sembunyiRekening(rekeningBaru);
+    } catch {
+      rekeningGagal = "kunci_penyandian_tidak_tersedia";
+    }
+  }
+
+  // Perubahan terhadap simpanan (rekening, bank, pembayar) - hanya untuk hitungan "berubah"; nilainya tidak dicatat.
+  let berubah = false;
+  let baru = true;
+  try {
+    const lama = await botDb.query(
+      `SELECT diterima_dari, nomor_rekening, nomor_rekening_sandi, bank FROM aleta_bot_ecourt_pembayaran WHERE nomor_perkara = ? LIMIT 1`,
+      [nomorPerkara]
+    );
+    if (Array.isArray(lama) && lama.length) {
+      baru = false;
+      const l = lama[0];
+      const rekeningLama = rekeningService.bukaRekening(l.nomor_rekening_sandi, l.nomor_rekening);
+      berubah =
+        (Boolean(rekeningBaru) && rekeningBaru !== rekeningLama) ||
+        (Boolean(potong(b.bank, 128)) && potong(b.bank, 128) !== String(l.bank || "")) ||
+        (Boolean(potong(b.diterimaDari, 255)) && potong(b.diterimaDari, 255) !== String(l.diterima_dari || ""));
+    }
+  } catch {
+    /* hitungan perubahan bukan syarat penyimpanan */
+  }
+
   await botDb.query(
     `INSERT INTO aleta_bot_ecourt_pembayaran
-       (nomor_perkara, diterima_dari, nomor_rekening, atas_nama, bank, nomor_pendaftaran, nomor_pembayaran,
+       (nomor_perkara, diterima_dari, nomor_rekening, nomor_rekening_sandi, atas_nama, bank, nomor_pendaftaran, nomor_pembayaran,
         panjar, status, tanggal_bayar, jam_bayar, skum_json, terakhir_terlihat)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     VALUES (?, ?, '', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON DUPLICATE KEY UPDATE
        diterima_dari = IF(VALUES(diterima_dari) = '', diterima_dari, VALUES(diterima_dari)),
-       nomor_rekening = IF(VALUES(nomor_rekening) = '', nomor_rekening, VALUES(nomor_rekening)),
+       nomor_rekening = IF(VALUES(nomor_rekening_sandi) = '', nomor_rekening, ''),
+       nomor_rekening_sandi = IF(VALUES(nomor_rekening_sandi) = '', nomor_rekening_sandi, VALUES(nomor_rekening_sandi)),
        atas_nama = IF(VALUES(atas_nama) = '', atas_nama, VALUES(atas_nama)),
        bank = IF(VALUES(bank) = '', bank, VALUES(bank)),
        nomor_pendaftaran = IF(VALUES(nomor_pendaftaran) = '', nomor_pendaftaran, VALUES(nomor_pendaftaran)),
@@ -1981,7 +2024,7 @@ async function recordPembayaranEcourt(nomorPerkaraMentah, pembayaran, skum) {
     [
       nomorPerkara,
       potong(b.diterimaDari, 255),
-      potong(b.nomorRekening, 64),
+      rekeningSandi,
       potong(b.atasNama, 255),
       potong(b.bank, 128),
       potong(b.nomorPendaftaranOnline, 64),
@@ -1994,7 +2037,7 @@ async function recordPembayaranEcourt(nomorPerkaraMentah, pembayaran, skum) {
       botDb.toMysqlDate(new Date()),
     ]
   );
-  return { tersimpan: 1 };
+  return { tersimpan: 1, berubah, baru, rekeningGagal };
 }
 
 /** Apakah isi e-SKUM perkara ini sudah tersimpan (supaya alamat SKUM dibaca sekali saja). */
@@ -2030,7 +2073,7 @@ async function bacaPembayaranEcourt(daftarNomor) {
     hasil[r.nomor_perkara] = {
       nomorPerkara: r.nomor_perkara,
       diterimaDari: r.diterima_dari || "",
-      nomorRekening: r.nomor_rekening || "",
+      nomorRekening: require("./ecourtRekeningService").bukaRekening(r.nomor_rekening_sandi, r.nomor_rekening),
       atasNama: r.atas_nama || "",
       bank: r.bank || "",
       nomorPendaftaranOnline: r.nomor_pendaftaran || "",

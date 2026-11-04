@@ -8278,9 +8278,60 @@ router.get("/ecourt/pembayaran", requireInternalToken, async (req, res) => {
     const mentah = req.query.nomor;
     const nomor = (Array.isArray(mentah) ? mentah : [mentah]).map((n) => String(n || "").trim().slice(0, 80)).filter(Boolean);
     if (!nomor.length) return res.status(400).json({ ok: false, alasan: "nomor_kosong" });
-    res.json({ ok: true, perkara: await ecourtStoreService.bacaPembayaranEcourt(nomor) });
+    // 4 Nov 2026: `cek` = kapan perkara terakhir dicek dan hasilnya (belum dicek / e-Court tak mencatat / gagal).
+    const [perkara, cek] = await Promise.all([
+      ecourtStoreService.bacaPembayaranEcourt(nomor),
+      require("../services/ecourtRekeningService").bacaCek(nomor).catch(() => ({})),
+    ]);
+    res.json({ ok: true, perkara, cek });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error?.code || error?.message || error).slice(0, 120) });
+  }
+});
+
+/**
+ * Sinkron rekening e-Court (4 Nov 2026): keadaan untuk halaman Integrasi e-Court dan tombol "Sinkron rekening".
+ * Tidak memuat nomor rekening. Status hanya membaca SIPP dan basis data bot (tidak menyentuh e-Court).
+ */
+router.get("/ecourt/rekening/status", requireInternalToken, async (req, res) => {
+  try {
+    const rekening = require("../services/ecourtRekeningService");
+    let nomorCakupan = null;
+    try {
+      const acuan = await require("../services/sippReadOnlyBridgeService").safeHandleBridgeOperation("ecourt.caseList", { limit: 2000 });
+      if (acuan.ok && acuan.data && Array.isArray(acuan.data.perkara)) nomorCakupan = acuan.data.perkara.map((p) => p.nomorPerkara);
+    } catch {
+      nomorCakupan = null;
+    }
+    const status = await rekening.ringkasStatus({ nomorCakupan });
+    const jadwal = ecourtSchedulerService.getStatus();
+    res.json({
+      ok: true,
+      status,
+      penjadwal: {
+        aktif: Boolean(jadwal.pengaturan && jadwal.pengaturan.aktif),
+        sedangJalan: Boolean(jadwal.sedangJalan),
+        sedangSinkronRekening: Boolean(jadwal.sedangJalan && jadwal.sumber === "portal-rekening"),
+        sumber: String(jadwal.sumber || ""),
+        dalamJamKerja: Boolean(jadwal.dalamJamKerja),
+        berikutnya: jadwal.berikutnya || null,
+        terakhirKode: jadwal.terakhirKode === undefined ? null : jadwal.terakhirKode,
+        terakhirCatatan: String(jadwal.terakhirCatatan || ""),
+        adaPenarikanLain: Boolean(jadwal.adaPenarikanLain),
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error?.code || error?.message || error).slice(0, 160) });
+  }
+});
+
+router.post("/ecourt/rekening/mulai", requireInternalToken, (req, res) => {
+  try {
+    const hasil = ecourtSchedulerService.mulaiSinkronRekening({ olehSiapa: String(req.body?.olehSiapa || "") });
+    // 200 dengan alasan (bukan 409) supaya portal menyampaikan sebabnya apa adanya.
+    res.json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error?.message || error).slice(0, 160) });
   }
 });
 /* === AKHIR KASIR REKENING-SKUM === */

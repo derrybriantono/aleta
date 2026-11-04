@@ -33,6 +33,8 @@ export function PitaRuangSidang({
   keteranganPerlu,
   sekarangMs,
   awal,
+  akhir,
+  tanpaRingkasan = false,
 }: {
   pil: ReadonlyArray<PilRuang>;
   /** Saklar "kartu-ruang": jumlah perkara dan perlu diperiksa. */
@@ -54,6 +56,9 @@ export function PitaRuangSidang({
    * dipakai justru pada hari ketika jadwal belum memperlihatkan ruangnya.
    */
   awal?: ReactNode;
+  /** Tampilan baru: satu tulisan ringkasan di ujung kanan pita (menggantikan ringkasan bawaan). */
+  akhir?: ReactNode;
+  tanpaRingkasan?: boolean;
 }) {
   const [rincian, setRincian] = useState<Rincian | null>(null);
   const wadah = useRef<HTMLElement | null>(null);
@@ -83,7 +88,7 @@ export function PitaRuangSidang({
   }, [rincian]);
 
   const tampakDiskors = tampilBerjalan ? diskors : [];
-  if (pil.length === 0 && tampakDiskors.length === 0 && !awal) return null;
+  if (pil.length === 0 && tampakDiskors.length === 0 && !awal && !akhir) return null;
   const ringkas = ringkasPita(pil);
   const kini = sekarangMs();
   const buka = (nama: string, tombol: HTMLElement) => {
@@ -108,7 +113,7 @@ export function PitaRuangSidang({
           </span>
         ) : null}
         <MapPin className="hidden h-3.5 w-3.5 shrink-0 text-muted-foreground sm:block" aria-hidden="true" />
-        {tampilJumlah ? (
+        {tampilJumlah && !tanpaRingkasan ? (
           <>
             {/* Di HP ringkasan jumlah disembunyikan supaya pil ruang - yang
                 paling dicari - langsung terlihat; angkanya tetap di rincian ▾. */}
@@ -210,6 +215,7 @@ export function PitaRuangSidang({
             semua ruang
           </button>
         ) : null}
+        {akhir ? <span className="ml-auto shrink-0 pl-2" data-pita-akhir="">{akhir}</span> : null}
       </div>
 
       {rincian && pilRincian ? (

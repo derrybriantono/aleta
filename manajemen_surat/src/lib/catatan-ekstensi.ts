@@ -57,6 +57,18 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.73",
+    dirilis: "2026-11-04T15:00:00+08:00",
+    judul: "Tampilan baru Jadwal Sidang dan Mediasi, sinkron rekening e-Court, pilihan tampilan lama",
+    butir: [
+      "Tampilan baru Jadwal Sidang dan Jadwal Mediasi: satu bilah atas yang menempel, baris tag keadaan, kotak cari berpil dengan saran per medan, kartu berlajur tetap, dan urutan bawaan nomor antrian.",
+      "Tunda, Putus, Konseptor, dan Keterangan selalu tampak di pita bawah tiap perkara; yang sudah terisi disorot, dan merah bila sidang selesai tetapi hasilnya belum dicatat.",
+      "Kalender ALETA di semua pemilihan tanggal menandai libur nasional dan cuti bersama; rentang tanggal dipilih dengan toggle di kalender.",
+      "Rekening dan bank pembayar e-Court tersinkron otomatis bersama Integrasi e-Court, dengan tombol Sinkron rekening, dan tampil di Kasir serta Status Perkara.",
+      "Tampilan lama Jadwal Sidang, Jadwal Mediasi, dan Kasir tetap dapat dipilih kembali.",
+    ],
+  },
+  {
     versi: "1.205.72",
     dirilis: "2026-11-04T12:30:00+08:00",
     judul: "Tampilan baru Kasir ALETA",

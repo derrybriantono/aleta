@@ -1,5 +1,6 @@
 "use client";
 
+import { Shuffle, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { apiPath } from "@/lib/base-path";
@@ -8,6 +9,7 @@ import { bolehAksiLayar } from "@/lib/matriks-peran";
 import { modePersidangan } from "@/lib/mode-persidangan";
 import {
   bolehLihatRekeningLayar,
+  keteranganRekeningBelumAda,
   pemilikPembayaran,
   rupiahTitik,
   tanggalIndonesia,
@@ -207,7 +209,7 @@ export function RuasPembayarEcourt({
             {[data.bank, data.nomorRekening].filter(Boolean).join(" ")}
           </span>
         ) : (
-          <span className="text-muted-foreground">rekening belum terbaca</span>
+          <span className="text-muted-foreground">{keteranganRekeningBelumAda(data.cek)}</span>
         )}
         {data.atasNama ? <span className="break-all text-muted-foreground">a.n. {data.atasNama}</span> : null}
         {!cocok && data.diterimaDari ? <span className="text-muted-foreground">(nama pembayar tidak sama dengan para pihak)</span> : null}
@@ -436,8 +438,30 @@ const KELAS_BERACARA: Record<HasilBeracara["jenis"], string> = {
 };
 
 /** Lencana beracara: hijau E-Litigasi, kuning Hybrid, abu "Tergugat tidak pernah hadir". */
-export function LencanaBeracara({ hasil, className = "" }: { hasil: HasilBeracara | null; className?: string }) {
+export function LencanaBeracara({
+  hasil,
+  className = "",
+  ikon = false,
+}: {
+  hasil: HasilBeracara | null;
+  className?: string;
+  /** Tampilan baru: E-Litigasi dan Hybrid menjadi ikon kecil bertooltip; lencana yang menuntut perhatian tetap tulisan. */
+  ikon?: boolean;
+}) {
   if (!hasil) return null;
+  if (ikon && (hasil.jenis === "e-litigasi" || hasil.jenis === "hybrid")) {
+    return (
+      <span
+        className={`inline-flex h-5 w-5 items-center justify-center rounded-full border ${KELAS_BERACARA[hasil.jenis]} ${className}`}
+        title={`${hasil.label} - ${hasil.alasan}`}
+        aria-label={hasil.label}
+        role="img"
+        data-beracara-lencana={hasil.jenis}
+      >
+        {hasil.jenis === "e-litigasi" ? <Zap className="h-3 w-3" aria-hidden="true" /> : <Shuffle className="h-3 w-3" aria-hidden="true" />}
+      </span>
+    );
+  }
   return (
     <span
       className={`inline-block whitespace-nowrap rounded-full border px-2 py-px text-xs font-semibold ${KELAS_BERACARA[hasil.jenis]} ${className}`}
@@ -458,11 +482,13 @@ export function LencanaBeracaraPerkara({
   pernahHadirTergugat,
   bacaOtomatis = true,
   className,
+  ikon = false,
 }: {
   nomorPerkara: string;
   pernahHadirTergugat: boolean | null;
   bacaOtomatis?: boolean;
   className?: string;
+  ikon?: boolean;
 }) {
   const keadaan = useKontakParaPihak(nomorPerkara, bacaOtomatis);
   if (keadaan.tahap !== "siap") return null;
@@ -470,6 +496,7 @@ export function LencanaBeracaraPerkara({
     <LencanaBeracara
       hasil={tentukanBeracaraElektronik(masukanBeracaraDariKontak(keadaan.data, pernahHadirTergugat))}
       className={className}
+      ikon={ikon}
     />
   );
 }

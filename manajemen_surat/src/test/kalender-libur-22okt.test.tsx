@@ -87,7 +87,8 @@ describe("kalender libur bersama", () => {
     expect(baca("hasil-sidang.tsx").match(/<PemilihTanggalSidang/g)?.length).toBeGreaterThanOrEqual(4);
     expect(baca("jadwal-keliling-hakim.tsx").match(/<PemilihTanggalSidang/g)?.length).toBeGreaterThanOrEqual(2);
     const sidang = baca("aleta-ecourt-sidang.tsx");
-    expect(sidang.match(/<PemilihTanggalSidang[\s\S]{0,200}liburBolehDipilih/g)?.length).toBe(2);
+    // 4 Nov 2026: + pemilih tanggal mulai di bilah lekat baru.
+    expect(sidang.match(/<PemilihTanggalSidang[\s\S]{0,200}liburBolehDipilih/g)?.length).toBe(3);
     expect(sidang).not.toMatch(/<Input\s+type="date"\s+value=\{dari\}/);
     const mediasi = baca("aleta-ecourt-mediasi.tsx");
     expect(mediasi.match(/<PemilihTanggalSidang[^>]*liburBolehDipilih/g)?.length).toBe(2);

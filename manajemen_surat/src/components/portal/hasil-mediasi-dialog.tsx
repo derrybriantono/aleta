@@ -675,7 +675,7 @@ export function HasilMediasiDialog({
                   ).map(([ruas, label]) => (
                     <label key={ruas} className="grid gap-0.5">
                       <span className="text-xs text-muted-foreground">{label}</span>
-                      <Input type="date" value={d[ruas]} onChange={(e) => ubahDokumen({ [ruas]: e.target.value })} className="h-8 w-44 text-sm" />
+                      <PemilihTanggalSidang value={d[ruas]} onChange={(v) => ubahDokumen({ [ruas]: v })} liburBolehDipilih sebutan={label} aria-label={label} className="h-8 w-36 text-sm" />
                     </label>
                   ))}
                 </div>

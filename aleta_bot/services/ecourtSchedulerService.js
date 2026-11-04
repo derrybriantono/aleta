@@ -391,6 +391,29 @@ function jembatanPath() {
   return path.resolve(__dirname, "..", "tools", "ecourt-bridge", "run.js");
 }
 
+/**
+ * Argumen proses jembatan e-Court untuk satu putaran - murni, diuji tanpa menjalankan apa pun.
+ * Sinkron rekening (--hanya-rekening) tidak pernah membawa --perkara atau --maks-perkara.
+ */
+function susunArgumenJembatan({ slotAkun = "", hanyaBelumAda = false, tanpaUnduh = false, hanyaRekening = false, nomorPerkara = "", daftarUtama = [], hanyaUtamakan = false, batas = 0 } = {}) {
+  const argumen = [jembatanPath(), "--terjadwal"];
+  if (slotAkun) argumen.push("--akun", slotAkun);
+  if (hanyaBelumAda) argumen.push("--hanya-belum-ada");
+  if (tanpaUnduh) argumen.push("--tanpa-unduh");
+  if (hanyaRekening) {
+    argumen.push("--hanya-rekening");
+    return argumen;
+  }
+  if (nomorPerkara) {
+    argumen.push("--perkara", String(nomorPerkara));
+  } else {
+    if (daftarUtama.length) argumen.push("--utamakan", daftarUtama.join(","));
+    if (daftarUtama.length && hanyaUtamakan) argumen.push("--hanya-utamakan");
+    else if (batas > 0) argumen.push("--maks-perkara", String(batas));
+  }
+  return argumen;
+}
+
 function jalankanSatuPutaran({
   nomorPerkara = "",
   permintaanId = "",
@@ -418,6 +441,8 @@ function jalankanSatuPutaran({
   // putaran yang sama (--utamakan); hanyaUtamakan = HANYA itu (tarikan pagi).
   utamakan = [],
   hanyaUtamakan = false,
+  // 4 Nov 2026: HANYA membaca rekening/pembayaran (--hanya-rekening), tanpa dokumen - lihat ecourtRekeningService.
+  hanyaRekening = false,
 } = {}) {
   const daftarUtama = (Array.isArray(utamakan) ? utamakan : []).map((x) => String(x || "").trim()).filter(Boolean);
   return new Promise((selesai) => {
@@ -483,17 +508,16 @@ function jalankanSatuPutaran({
 
     const batas = maksPerkara === null ? pengaturan.maksPerkara : Number(maksPerkara);
 
-    const argumen = [jembatanPath(), "--terjadwal"];
-    if (slotAkun) argumen.push("--akun", slotAkun);
-    if (hanyaBelumAda) argumen.push("--hanya-belum-ada");
-    if (tanpaUnduh) argumen.push("--tanpa-unduh");
-    if (nomorPerkara) {
-      argumen.push("--perkara", String(nomorPerkara));
-    } else {
-      if (daftarUtama.length) argumen.push("--utamakan", daftarUtama.join(","));
-      if (daftarUtama.length && hanyaUtamakan) argumen.push("--hanya-utamakan");
-      else if (batas > 0) argumen.push("--maks-perkara", String(batas));
-    }
+    const argumen = susunArgumenJembatan({
+      slotAkun,
+      hanyaBelumAda,
+      tanpaUnduh,
+      hanyaRekening,
+      nomorPerkara,
+      daftarUtama,
+      hanyaUtamakan,
+      batas,
+    });
 
     const anak = spawn(process.execPath, argumen, {
       cwd: path.resolve(__dirname, ".."),
@@ -1215,6 +1239,53 @@ function mulaiPenarikanPerkara(nomorPerkara, { olehSiapa = "" } = {}) {
 }
 
 /**
+ * Sinkron rekening dan bank pembayar dari e-Court SEKARANG (tombol di Integrasi e-Court, 4 Nov 2026).
+ *
+ * Pintu yang sama dengan penarikan lain (satu peramban, satu sesi, satu putaran sekaligus) - hanya membuka
+ * halaman perkara yang belum atau perlu dicek ulang, tanpa mengunduh berkas. Tidak ditunggu: hasilnya dibaca
+ * layar lewat ecourtRekeningService.ringkasStatus. Putaran yang berhenti sebelum sempat mencatat sendiri
+ * (sesi habis di login, jembatan gagal) dicatat di sini supaya tidak berhenti diam-diam.
+ */
+function mulaiSinkronRekening({ olehSiapa = "" } = {}) {
+  if (keadaan.sedangJalan) {
+    return { ok: false, alasan: "penarikan_sedang_berjalan", berkasLog: keadaan.berkasLog };
+  }
+  if (kunciMasihHidup()) {
+    return { ok: false, alasan: "penarikan_lain_masih_berjalan", berkasLog: "" };
+  }
+
+  void logService.logSecurityEvent({
+    eventType: "ecourt_sinkron_rekening_dimulai",
+    severity: "info",
+    message: "Sinkron rekening pembayar e-Court dimulai dari portal.",
+    metadata: { olehSiapa: String(olehSiapa || "") },
+  });
+
+  const mulaiMs = Date.now();
+  void jalankanSatuPutaran({
+    maksPerkara: 0,
+    hanyaRekening: true,
+    tanpaUnduh: true,
+    sumber: "portal-rekening",
+    batasMs: 45 * 60 * 1000,
+  })
+    .then(async (hasil) => {
+      if (!hasil || hasil.dilewati || hasil.kode === 0) return;
+      const rek = require("./ecourtRekeningService");
+      await rek.catatPutaran({
+        sumber: "portal-rekening",
+        status: hasil.kode === 2 ? "sesi_habis" : "gagal",
+        sebab: hasil.kode === 2 ? "sesi e-Court habis; perlu masuk dari portal" : String(hasil.catatan || "jembatan e-Court berhenti"),
+        mulai: mulaiMs,
+        selesai: Date.now(),
+      });
+    })
+    .catch(() => {});
+
+  return { ok: true, alasan: "", berkasLog: keadaan.berkasLog };
+}
+
+/**
  * Menghentikan penarikan yang sedang berjalan.
  *
  * Hanya dapat menghentikan penarikan yang DIMULAI bot ini. Penarikan dari
@@ -1266,9 +1337,11 @@ module.exports = {
   keadaanGiliran,
   hentikanPenarikan,
   jalankanSatuPutaran,
+  susunArgumenJembatan,
   mulaiPenarikanBelumAda,
   mulaiPenarikanMenyeluruh,
   mulaiPenarikanPerkara,
+  mulaiSinkronRekening,
   mulai,
   mulaiUlang,
   saveSettings,

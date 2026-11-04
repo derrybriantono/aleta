@@ -80,7 +80,8 @@ describe("butir 11 - nomor sidang di kiri daftar berkas", () => {
 
   it("dokumen e-Court punya kolomnya sendiri, dipetakan lewat tanggal", () => {
     expect(layar).toContain("const urutanSidangPerTanggal = useMemo(");
-    expect(layar).toContain('title="Sidang keberapa"');
+    // 4 Nov 2026: judul kolom kini dapat ditekan untuk mengurutkan; keterangan "Sidang keberapa" tetap ada di judulnya.
+    expect(layar).toContain('judul="Sidang keberapa - tekan untuk mengurutkan menurut tanggal sidang dokumen"');
   });
 
   it("hari yang memuat LEBIH DARI SATU sidang tidak dipetakan", () => {

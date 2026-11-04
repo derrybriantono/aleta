@@ -1,6 +1,6 @@
-export const APP_VERSION = "2.45.0";
+export const APP_VERSION = "2.46.0";
 export const APP_VERSION_LABEL =
-  "ALETA Judicia v2.45.0 - November 2026";
+  "ALETA Judicia v2.46.0 - November 2026";
 
 export type PatchNote = {
   version: string;
@@ -21,6 +21,35 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.46.0",
+    title: "ALETA Judicia v2.46.0 - November 2026",
+    date: "2026-11-04",
+    status: "Terpasang bersama rilis ekstensi 1.205.73",
+    summary:
+      "Tampilan baru Jadwal Sidang dan Jadwal Mediasi serta sinkron rekening e-Court sampai rilis ekstensi 1.205.73 (4 November 2026).",
+    added: [
+      "Tampilan baru Jadwal Sidang dan Jadwal Mediasi dengan kotak cari berpil, kepala lajur dapat diurutkan, dan pita Tunda, Putus, Konseptor, Keterangan.",
+      "Sinkron rekening dan bank pembayar e-Court otomatis dan tombol Sinkron rekening di Integrasi e-Court.",
+      "Pilihan Tampilan lama untuk Jadwal Sidang, Jadwal Mediasi, dan Kasir.",
+    ],
+    changed: [
+      "Semua pemilihan tanggal memakai kalender ALETA yang menandai libur nasional dan cuti bersama.",
+      "Jadwal penuh membaca tanggal pemberitahuan putusan untuk tindak lanjut PBT dan perkiraan BHT verstek.",
+    ],
+    fixed: [
+      "Rekening pembayar yang sebelumnya hanya terbaca bila halaman perkara kebetulan dibuka saat menarik dokumen.",
+    ],
+    security: [
+      "Nomor rekening disimpan tersandi, tidak masuk log atau audit; hak lihat tetap tujuh golongan.",
+    ],
+    operationalNotes: [
+      "Bot dibangun ulang karena ada rute baru. Tabel rekening dibuat sendiri oleh bot saat pertama dipakai; tanpa migrasi portal. Sinkron dapat dimatikan dengan ALETA_ECOURT_REKENING_OTOMATIS=0.",
+    ],
+    knownLimitations: [
+      "Pembacaan pembayaran dan penentuan pembayaran final perlu dicocokkan dengan e-Court asli. Jadwal yang dibaca dari salinan perkara tidak membawa PBT.",
+    ],
+  },
   {
     version: "2.45.0",
     title: "ALETA Judicia v2.45.0 - November 2026",

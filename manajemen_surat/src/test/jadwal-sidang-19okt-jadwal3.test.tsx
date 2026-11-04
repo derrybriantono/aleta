@@ -204,7 +204,8 @@ describe("butir 4: nama saksi terlipat", () => {
     expect(s?.bawaanMati ?? false).toBe(false);
     expect(tampilanBawaan()["saksi-lipat"]).toBe(true);
     expect(LAYAR_SIDANG).toContain('useSaksiLipat(currentUser?.id, !tampil(tampilan, "saksi-lipat"))');
-    expect(LAYAR_SIDANG.match(/<SaksiLipat\b/g)?.length).toBe(2);
+    // 4 Nov 2026: dua di tabel lama + dua di kartu baru (hanya satu tampilan yang digambar).
+    expect(LAYAR_SIDANG.match(/<SaksiLipat\b/g)?.length).toBe(4);
   });
 
   it("pilihan per baris: hanya yang berbeda dari bawaan disimpan, per akun", () => {

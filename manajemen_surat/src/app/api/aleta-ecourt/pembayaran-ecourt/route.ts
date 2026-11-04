@@ -1,6 +1,6 @@
 import { type NextRequest } from "next/server";
 
-import { bolehLihatRekening, pembayaranTampil, type PembayaranTampil } from "@/lib/pembayaran-ecourt";
+import { bolehLihatRekening, pembayaranTampil, type CekRekening, type PembayaranTampil } from "@/lib/pembayaran-ecourt";
 import type { UserPersona } from "@/lib/types";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
@@ -62,11 +62,17 @@ export async function GET(request: NextRequest) {
       });
     }
     const perkara: Record<string, PembayaranTampil> = {};
+    const cek: Record<string, CekRekening> = {};
     const kunci = (n: string) => n.replace(/\s+/g, "").toLowerCase();
     const peta = new Map(Object.entries(hasil.data.perkara || {}).map(([k, v]) => [kunci(k), v]));
+    // Hasil cek terakhir sinkron rekening (4 Nov 2026): hanya hasil dan waktu - sebab teknis tidak ikut.
+    const petaCek = new Map(Object.entries(hasil.data.cek || {}).map(([k, v]) => [kunci(k), v]));
     for (const n of nomor) {
+      const c = petaCek.get(kunci(n));
+      const cekN: CekRekening | null = c ? { hasil: String(c.hasil || ""), dicekPada: String(c.dicekPada || "") } : null;
+      if (cekN) cek[n] = cekN;
       const p = peta.get(kunci(n));
-      if (p) perkara[n] = pembayaranTampil(p);
+      if (p) perkara[n] = { ...pembayaranTampil(p), cek: cekN };
     }
 
     await appendAuditLog(db, {
@@ -81,7 +87,7 @@ export async function GET(request: NextRequest) {
       // Jejak yang gagal dicatat tidak membatalkan layar yang sudah terbaca.
     });
 
-    return ok({ available: true, ok: true, perkara });
+    return ok({ available: true, ok: true, perkara, cek });
   } catch (error) {
     return handleAdminRouteError(error, request, {
       db,

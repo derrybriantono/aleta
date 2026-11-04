@@ -288,7 +288,8 @@ describe("butir 10 - konseptor sementara DI BAWAH status", () => {
   });
 
   it("hanya satu tempat yang merendernya", () => {
-    expect((LAYAR.match(/<SelKonseptorSementara/g) ?? []).length).toBe(1);
+    // 4 Nov 2026: satu di baris tabel (tampilan lama), satu di pita kartu (tampilan baru); hanya salah satunya yang digambar.
+    expect((LAYAR.match(/<SelKonseptorSementara/g) ?? []).length).toBe(2);
   });
 });
 

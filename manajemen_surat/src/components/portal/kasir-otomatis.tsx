@@ -47,6 +47,8 @@ import {
   usePembayarMassal,
   type RentangCetak,
 } from "@/components/portal/kasir-tampilan";
+import { DialogKasirHarianLama, type TabKasirLama } from "@/components/portal/kasir-otomatis-lama";
+import { PilihTampilanKasir, useTampilanKasir } from "@/components/portal/kasir-pilihan-tampilan";
 import { KabarDiantrekan, TanyaJamKerja, type PilihJamKerja } from "@/components/portal/pilihan-jam-kerja";
 import { Button } from "@/components/ui/button";
 import { usePortal } from "@/lib/app-state";
@@ -774,8 +776,50 @@ const TAB_KASIR: Array<{ kunci: TabKasir; judul: string }> = [
   { kunci: "riwayat", judul: "Riwayat" },
 ];
 
+/**
+ * Jendela Kasir harian: memilih tampilan baru (bawaan) atau tampilan lama menurut pilihan pengguna ini
+ * (kasir-pilihan-tampilan). Tab yang sedang terbuka dibawa saat tampilan diganti.
+ */
 export function DialogKasirHarian({ onTutup, tabAwal, hanyaBaca = false }: { onTutup: () => void; tabAwal: TabKasir; hanyaBaca?: boolean }) {
-  const [tab, setTab] = useState<TabKasir>(hanyaBaca && tabAwal === "massal" ? "pengingat" : tabAwal);
+  const { pilihan, ganti, kabar } = useTampilanKasir();
+  const [tabIni, setTabIni] = useState<TabKasir>(tabAwal);
+  if (pilihan === "lama") {
+    return (
+      <DialogKasirHarianLama
+        tabAwal={tabIni as TabKasirLama}
+        hanyaBaca={hanyaBaca}
+        onTutup={onTutup}
+        pilihan={pilihan}
+        onGantiTampilan={ganti}
+        onTab={(t) => setTabIni(t as TabKasir)}
+      />
+    );
+  }
+  return <DialogKasirHarianBaru tabAwal={tabIni} hanyaBaca={hanyaBaca} onTutup={onTutup} pilihan={pilihan} onGantiTampilan={ganti} kabar={kabar} onTab={setTabIni} />;
+}
+
+function DialogKasirHarianBaru({
+  onTutup,
+  tabAwal,
+  hanyaBaca = false,
+  pilihan,
+  onGantiTampilan,
+  kabar,
+  onTab,
+}: {
+  onTutup: () => void;
+  tabAwal: TabKasir;
+  hanyaBaca?: boolean;
+  pilihan: "baru" | "lama";
+  onGantiTampilan: (p: "baru" | "lama") => void;
+  kabar: string;
+  onTab: (t: TabKasir) => void;
+}) {
+  const [tab, setTabDalam] = useState<TabKasir>(hanyaBaca && tabAwal === "massal" ? "pengingat" : tabAwal);
+  const setTab = (t: TabKasir) => {
+    setTabDalam(t);
+    onTab(t);
+  };
   const [sunting, setSunting] = useState("");
   // Satu rentang tanggal untuk Sisa panjar dan Instrumen jurusita (bawaan hari ini).
   const [rentang, setRentang] = useState<RentangCetak>(rentangHariIni);
@@ -791,10 +835,15 @@ export function DialogKasirHarian({ onTutup, tabAwal, hanyaBaca = false }: { onT
     <>
     <div className="fixed inset-0 z-[65] flex items-start justify-center overflow-y-auto tirai-latar p-2 sm:p-4" role="dialog" aria-modal="true" aria-label="Kasir harian" onClick={onTutup}>
       <div className="my-4 w-full max-w-5xl rounded-lg border bg-card text-card-foreground shadow-lg" onClick={(e) => e.stopPropagation()}>
-        <KepalaKasir onTutup={onTutup}>
+        <KepalaKasir onTutup={onTutup} aksi={<PilihTampilanKasir pilihan={pilihan} onGanti={onGantiTampilan} gelap />}>
           <BilahTab tab={tab} daftar={TAB_KASIR.filter((t) => !(hanyaBaca && t.kunci === "massal"))} onPilih={setTab} />
         </KepalaKasir>
         <div className="p-4">
+          {kabar ? (
+            <p className="mb-2 text-xs text-muted-foreground" role="status">
+              {kabar}
+            </p>
+          ) : null}
           {tab === "massal" && !hanyaBaca ? <BagianMassal onSunting={setSunting} /> : null}
           {tab === "psp" ? <BagianSisaPanjar rentang={rentang} onUbah={setRentang} /> : null}
           {tab === "instrumen" ? <BagianInstrumen rentang={rentang} onUbah={setRentang} /> : null}

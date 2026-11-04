@@ -39,13 +39,69 @@ import {
   PenLine,
   Printer,
   RotateCcw,
+  ShieldCheck,
   SlidersHorizontal,
   Smartphone,
   StickyNote,
+  Ticket,
   UserRound,
   Users,
   Wallet,
 } from "lucide-react";
+
+import {
+  BarisBilah,
+  BarisPil,
+  BilahLekat,
+  KartuSidang,
+  KepalaLajurSidang,
+  KodeMajelisTekan,
+  KotakCariBerpil,
+  KELAS_TOMBOL_PITA,
+  MenuTitik,
+  PanelSaringan,
+  PilihanAntarmuka,
+  PitaBawahKartu,
+  SegmenPilihan,
+  SegmenTundaPutus,
+  SidangBerikutnya,
+  TindakLanjutPutusan,
+  TitikTahap,
+  TombolIkon,
+  kelasRuasPita,
+  type KeadaanKartu,
+} from "@/components/portal/jadwal-sidang-baru";
+import { PemilihTanggalSidang } from "@/components/ui/pemilih-tanggal-sidang";
+import {
+  KUNCI_ANTARMUKA_SIDANG,
+  alihPil,
+  bacaSaringanTersimpan,
+  buatIndeksPil,
+  cocokPil,
+  jamDalamRentang,
+  keadaanSegmen,
+  lepasPil,
+  muatAntarmuka,
+  pasangRentangJam,
+  perkiraanBht,
+  perluPbt,
+  perluCatatHasil,
+  pisahNamaHakim,
+  rencanaCcBerikut,
+  saranCari,
+  simpanAntarmuka,
+  tahapDariAgenda,
+  tambahPil,
+  tanggalPendekId,
+  tanggalPendekTahunId,
+  tanggalTundaBedaCc,
+  BATAS_SARINGAN_TERSIMPAN,
+  type Antarmuka,
+  type PetaMedan,
+  type Pil,
+  type SaringanTersimpan,
+  type TagSaran,
+} from "@/lib/jadwal-baru";
 
 import { AletaEcourtCetakJadwal } from "@/components/portal/aleta-ecourt-cetak-jadwal";
 import { daftarRuangAktif, ruangPilihanBerlaku, saringKeRuang } from "@/lib/ruang-sidang-saring";
@@ -59,7 +115,6 @@ import {
 import { PitaRuangSidang } from "@/components/portal/pita-ruang-sidang";
 import { BarisTabelRingan, sidik, tabelRinganAktif, useAlatBaris } from "@/components/portal/baris-tabel-ringan";
 import { TombolTundaOtomatis } from "@/components/portal/tunda-otomatis-panel";
-import { PemilihTanggalSidang } from "@/components/ui/pemilih-tanggal-sidang";
 import { TombolBlangkoDerry } from "@/components/portal/tombol-blangko-derry";
 import { jenisBlangkoBoleh, jenisBlangkoMenurutKeadaan, saringJenisBlangko } from "@/lib/tautan-blangko-derry";
 import { susunPitaRuang } from "@/lib/pita-ruang-sidang";
@@ -208,6 +263,7 @@ import {
   TandaAntrianOnline,
   TandaAntrianOnlineRincian,
   TombolRuangSidang,
+  punyaAksiRuangLain,
 } from "@/components/portal/jadwal-sidang-2okt";
 import { tandaAntrianOnline, type TandaAntrianOnline as TandaOnline } from "@/lib/tanda-antrian-online";
 import { bahanKehadiranDariBaris, kunciKehadiran, ringkasKehadiran, susunKehadiran, type KehadiranOrang } from "@/lib/kehadiran-rinci"; /* F3.2 */
@@ -365,6 +421,8 @@ type SidangBaris = {
   statusPutusan: string;
   tanggalMinutasi: string;
   tanggalBht: string;
+  /** Pemberitahuan putusan (PBT) menurut SIPP; "" = belum ada; tidak ada ruasnya = tidak terbaca (jadwal dari salinan atau bot lama). */
+  tanggalPbt?: string;
   tanggalSidang: string;
   jamSidang: string;
   agenda: string;
@@ -2104,7 +2162,10 @@ function TombolAmbilAntrian({
   sudahAda,
   onSelesai,
   kehadiran = [],
+  ikon = false,
 }: {
+  /** Tampilan baru: hanya ikon tiket (tooltip tetap menyebut Antrian). */
+  ikon?: boolean;
   /** F3.2: yang sudah tercatat hadir pada sidang ini (kehadiran rinci). */
   kehadiran?: KehadiranOrang[];
   baris: SidangBaris;
@@ -2232,10 +2293,14 @@ function TombolAmbilAntrian({
             ? `Sudah bernomor ${sudahAda}. Menekan lagi mencatat kehadiran pihak lain tanpa menggeser nomornya.`
             : "Ambil nomor antrian untuk perkara ini"
         }
-        className="inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px] text-muted-foreground transition hover:bg-muted hover:text-foreground"
+        aria-label={ikon ? "Antrian" : undefined}
+        className={cn(
+          "inline-flex items-center gap-1 rounded border text-[11px] text-muted-foreground transition hover:bg-muted hover:text-foreground",
+          ikon ? "h-6 w-6 justify-center" : "px-1.5 py-0.5"
+        )}
       >
-        <ListOrdered className="h-3 w-3" />
-        Antrian
+        {ikon ? <Ticket className="h-3.5 w-3.5" /> : <ListOrdered className="h-3 w-3" />}
+        {ikon ? null : "Antrian"}
       </button>
 
       {terbuka ? (
@@ -2518,7 +2583,10 @@ export function LencanaVerifikasiMajelis({
   penanda,
   tarikan,
   onTarik,
+  ikonTenang = false,
 }: {
+  /** Tampilan baru: "sudah diverifikasi" (keadaan tenang) menjadi ikon kecil bertooltip. */
+  ikonTenang?: boolean;
   penanda: Penanda | null;
   /** 7 Okt 2026: keadaan tarik ulang e-Court perkara ini (lihat @/lib/tarik-belum-upload). */
   tarikan?: KeadaanTarik;
@@ -2527,6 +2595,19 @@ export function LencanaVerifikasiMajelis({
 }) {
   if (!penanda) return null;
   const kelas = cn("whitespace-nowrap rounded px-1.5 py-0.5 text-[11px] font-semibold", penanda.kelas);
+  if (ikonTenang && penanda.keadaan === "sudah" && !tarikan) {
+    return (
+      <span
+        data-verifikasi-majelis={penanda.keadaan}
+        role="img"
+        aria-label={penanda.label}
+        title={`${penanda.label} - ${penanda.keterangan}`}
+        className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-emerald-500/50 text-emerald-700 dark:text-emerald-300"
+      >
+        <ShieldCheck className="h-3 w-3" aria-hidden="true" />
+      </span>
+    );
+  }
   const berjalan = tarikan?.tahap === "berjalan";
   // Hanya "belum upload" yang dapat ditekan: keadaan lain tidak menunggu pihak,
   // jadi menarik ulang tidak menjawab apa pun yang ditanyakan penandanya.
@@ -3095,7 +3176,10 @@ export function SelKeteranganPerkara({
   onSimpan,
   tampilKosong = true,
   bolehTulis = true,
+  gaya,
 }: {
+  /** "pita" (tampilan baru): pemicu berbentuk ruas di pita bawah kartu; borangnya sama. */
+  gaya?: "pita";
   baris: SidangBaris;
   keadaan?: KeteranganPerkara;
   terbuka: boolean;
@@ -3119,6 +3203,32 @@ export function SelKeteranganPerkara({
   const adaIsi = Boolean(keadaan?.terkini?.isi);
 
   if (!terbuka && !adaIsi && (!tampilKosong || !bolehTulis)) return null;
+
+  if (!terbuka && gaya === "pita") {
+    const cuplikan = String(keadaan?.terkini?.isi ?? "").replace(/\s+/g, " ").trim();
+    return (
+      <button
+        type="button"
+        onClick={onBuka}
+        data-s="keterangan-perkara"
+        title={
+          adaIsi
+            ? `Keterangan: ${cuplikan} - ${keadaan?.jumlahRevisi ?? 1} kali diubah. Tekan untuk mengubah.`
+            : "Belum ada keterangan. Tekan untuk menulis."
+        }
+        className={cn(kelasRuasPita(adaIsi), adaIsi && "max-w-[26rem]")}
+      >
+        {adaIsi ? (
+          <>
+            <b>Keterangan</b>
+            <span className="min-w-0 truncate">{cuplikan}</span>
+          </>
+        ) : (
+          <span>+ Keterangan</span>
+        )}
+      </button>
+    );
+  }
 
   if (!terbuka) {
     return (
@@ -3344,7 +3454,13 @@ function SelKonseptorSementara({
   onBuka,
   onSimpan,
   tampilKosong = true,
+  gaya,
+  namaSipp,
 }: {
+  /** "pita" (tampilan baru): pemicu berbentuk ruas di pita bawah kartu; borangnya sama. */
+  gaya?: "pita";
+  /** Konseptor yang sudah tercatat di SIPP (dipakai ruas pita bila belum ada tunjukan sementara). */
+  namaSipp?: string;
   baris: SidangBaris;
   tunjukan?: KonseptorSementara;
   terbuka: boolean;
@@ -3390,6 +3506,34 @@ function SelKonseptorSementara({
 
   // Sesudah seluruh hook - hook harus dipanggil pada urutan yang sama tiap gambar.
   if (!terbuka && !tunjukan?.nama && !tampilKosong) return null;
+
+  if (!terbuka && gaya === "pita") {
+    const nama = tunjukan?.nama || namaSipp || "";
+    return (
+      <button
+        type="button"
+        onClick={onBuka}
+        data-s="tunjuk-konseptor"
+        title={
+          nama
+            ? `Konseptor sementara ${nama} - ditunjuk ${tunjukan?.ditetapkanOleh || "entah siapa"}. Tunjukan tangan, bukan catatan SIPP. Tekan untuk mengubah.`
+            : "Tunjuk konseptor sementara - berlaku sampai SIPP punya namanya sendiri."
+        }
+        className={kelasRuasPita(Boolean(nama))}
+      >
+        {nama ? (
+          <>
+            <b>Konseptor</b>
+            <span className="min-w-0 truncate" data-konseptor-sementara>
+              {nama}
+            </span>
+          </>
+        ) : (
+          <span>+ Konseptor</span>
+        )}
+      </button>
+    );
+  }
 
   if (!terbuka) {
     return (
@@ -4419,6 +4563,72 @@ function KalenderSidang({
  *   kelompok. Halaman induk yang berpindah menu - komponen ini tidak tahu
  *   menu apa saja yang ada, dan tidak seharusnya tahu.
  */
+
+/**
+ * Medan kotak cari berpil (tampilan baru). Satu fungsi murni atas baris yang
+ * SUDAH termuat: tidak ada kueri ke SIPP. Nilai tiap medan adalah daftar nilai
+ * yang dimiliki baris itu, supaya saran dapat dihitung per nilai beserta
+ * jumlahnya, dan pil dapat dicocokkan persis.
+ */
+function buatMedanPilSidang(o: {
+  peta: Record<string, AntrianBaris>;
+  saat: SaatPengadilan;
+  tunjukan: Record<string, KonseptorSementara>;
+  checklist: Record<string, { konseptorSipp: string[] }>;
+  keterangan: Record<string, KeteranganPerkara>;
+  pilihanHakim: Parameters<typeof majelisTampil>[1];
+}): PetaMedan<SidangBaris> {
+  const konseptor = (b: SidangBaris) =>
+    [o.tunjukan[String(b.perkaraId)]?.nama ?? "", ...(o.checklist[String(b.perkaraId)]?.konseptorSipp ?? [])].filter(Boolean);
+  const keadaan = (b: SidangBaris) => KEADAAN_SIDANG.filter((k) => k.cocok(b, o.peta, o.saat)).map((k) => k.label);
+  const ciri = (b: SidangBaris) => {
+    const hasil: string[] = [];
+    if (b.penandaPerkara?.ghaib || b.mafqud) hasil.push("Ghaib");
+    if (b.penandaPerkara?.prodeo) hasil.push("Prodeo");
+    if (perkaraVerzetDari(b.jenisPerkara)) hasil.push("Verzet");
+    if (b.ecourtTerbaca && !b.lewatEcourt) hasil.push("Non e-Court");
+    if (sidangElitigasi(b)) hasil.push("e-Litigasi");
+    if (sidangIkrar(b)) hasil.push("Ikrar talak");
+    if (b.adaKuasa || b.kuasaPihak1 || b.kuasaPihak2) hasil.push("Berkuasa hukum");
+    hasil.push(konseptor(b).length ? "Ada konseptor" : "Belum ada konseptor");
+    if (o.keterangan[String(b.perkaraId)]?.terkini?.isi) hasil.push("Ada keterangan");
+    return hasil;
+  };
+  return {
+    pihak: {
+      label: "Pihak",
+      ambil: (b) => [...b.pihak.penggugat, ...b.pihak.tergugat, ...(b.pihak.turutTergugat ?? []), ...(b.pihak.intervensi ?? [])],
+    },
+    saksi: {
+      label: "Saksi",
+      ambil: (b) => [...(b.saksiNamaPihak1 ?? []), ...(b.saksiNamaPihak2 ?? []), ...(b.pihak.saksi ?? [])],
+    },
+    nomor: { label: "Nomor", ambil: (b) => [b.nomorPerkara] },
+    jenis: { label: "Jenis", ambil: (b) => [b.jenisPerkara, ...(b.kumulasi?.daftar ?? []).map((x) => x.nama)].filter(Boolean) },
+    tahap: {
+      label: "Tahap",
+      ambil: (b) => [tahapDariAgenda(b.agenda, { permohonan: kelompokAlur(b.alurPerkaraId) === "permohonan", ikrar: sidangIkrar(b) }).nama],
+    },
+    agenda: { label: "Agenda", ambil: (b) => [b.agenda].filter(Boolean) },
+    majelis: { label: "Majelis", ambil: (b) => [b.majelisKode].filter(Boolean) },
+    hakim: { label: "Hakim", ambil: (b) => pisahNamaHakim(majelisTampil(b, o.pilihanHakim).nama) },
+    pp: { label: "PP", ambil: (b) => [b.paniteraNama].filter(Boolean) },
+    js: { label: "JS", ambil: (b) => [b.jurusitaNama].filter(Boolean) },
+    mediator: { label: "Mediator", ambil: (b) => [b.mediasi?.mediator ?? ""].filter(Boolean) },
+    konseptor: { label: "Konseptor", ambil: konseptor },
+    ruang: { label: "Ruang", ambil: (b) => [b.ruangan].filter(Boolean) },
+    jam: { label: "Jam", ambil: (b) => [String(b.jamSidang ?? "").slice(0, 5)].filter(Boolean) },
+    keadaan: { label: "Keadaan", ambil: keadaan },
+    ciri: { label: "Ciri", ambil: ciri },
+    jamRentang: { label: "Jam", sembunyi: true, uji: (b, v) => jamDalamRentang(b.jamSidang, v) },
+  };
+}
+
+/** Urutan medan di panel Saringan (hanya yang bermanfaat disaring dengan sekali tekan). */
+const MEDAN_PANEL_SARINGAN = ["jenis", "tahap", "majelis", "hakim", "pp", "js", "ruang", "keadaan"] as const;
+
+const KUNCI_SARINGAN_TERSIMPAN = "aleta.jadwal-sidang.saringan-tersimpan";
+
 export function AletaEcourtSidang({
   onBukaStatus,
   onBukaTunda,
@@ -4563,6 +4773,52 @@ export function AletaEcourtSidang({
   const [lanjutTerbuka, setLanjutTerbuka] = useState(false);
   const cariLanjut = useCariLanjut();
 
+  // ==========================================================================
+  // TAMPILAN BARU (4 Nov 2026)
+  // ==========================================================================
+  //
+  // Satu pilihan per pengguna, disimpan di peramban seperti pengaturan Tampilan
+  // yang sudah ada: "Tampilan baru" (bawaan) atau "Tampilan lama". Keduanya
+  // memakai data, izin, dan pemicu tulis yang SAMA di komponen ini; yang
+  // berbeda hanya cara menyusun layar. Tampilan lewat alamat (modeUrl) tetap
+  // lama: layar umum itu tidak berubah.
+  const [antarmuka, setAntarmuka] = useState<Antarmuka>("baru");
+  const [saringanTersimpan, setSaringanTersimpan] = useState<SaringanTersimpan[]>([]);
+  useEffect(() => {
+    if (modeUrl) return;
+    // Sama seperti pilihan Ringkas/Lengkap: dibaca sesudah gambar pertama (peramban saja yang tahu).
+    let batal = false;
+    void Promise.resolve().then(() => {
+      if (batal) return;
+      setAntarmuka(muatAntarmuka(KUNCI_ANTARMUKA_SIDANG));
+      try {
+        setSaringanTersimpan(bacaSaringanTersimpan(window.localStorage.getItem(KUNCI_SARINGAN_TERSIMPAN)));
+      } catch {
+        /* saringan tersimpan tidak terbaca: daftar kosong */
+      }
+    });
+    return () => {
+      batal = true;
+    };
+  }, [modeUrl]);
+  const baru = antarmuka === "baru" && !modeUrl;
+  const pilihAntarmuka = useCallback((a: Antarmuka) => {
+    setAntarmuka(a);
+    simpanAntarmuka(KUNCI_ANTARMUKA_SIDANG, a);
+  }, []);
+  const [pilCari, setPilCari] = useState<Pil[]>([]);
+  const [panelSaring, setPanelSaring] = useState(false);
+  const [rentangTerbuka, setRentangTerbuka] = useState(false);
+  const [majelisTerbuka, setMajelisTerbuka] = useState<string[]>([]);
+  const simpanDaftarSaringan = useCallback((daftar: SaringanTersimpan[]) => {
+    setSaringanTersimpan(daftar);
+    try {
+      window.localStorage.setItem(KUNCI_SARINGAN_TERSIMPAN, JSON.stringify(daftar));
+    } catch {
+      /* tetap berlaku selama halaman terbuka */
+    }
+  }, []);
+
   /**
    * Ada tidaknya saringan yang sedang menyempitkan daftar.
    *
@@ -4606,7 +4862,9 @@ export function AletaEcourtSidang({
   // yang baru membuka layar harus melihat alat yang tersedia, dan menemukan
   // layar yang alatnya tersembunyi jauh lebih membingungkan daripada layar
   // yang alatnya makan tempat.
-  const [kendaliCiut, setKendaliCiut] = useState(false);
+  const [kendaliCiutMentah, setKendaliCiut] = useState(false);
+  // Tampilan baru tidak punya tombol Ciutkan kendali (Lipat tag menggantikannya): di sana selalu terbentang.
+  const kendaliCiut = kendaliCiutMentah && !baru;
   /**
    * Deret kotak penanda diciutkan - dan yang dihemat TINGGINYA.
    *
@@ -4812,7 +5070,7 @@ export function AletaEcourtSidang({
     const tabel = kotak.querySelector("table");
     if (tabel) pengamat.observe(tabel);
     return () => pengamat.disconnect();
-  }, []);
+  }, [baru]);
 
   /**
    * Ringkas atau lengkap. Bawaannya LENGKAP - tampilan yang sudah ada -
@@ -5038,6 +5296,7 @@ export function AletaEcourtSidang({
     Boolean(cariCepat) ||
     Boolean(cari) ||
     cariLanjutBerlaku ||
+    (baru && pilCari.length > 0) ||
     Boolean(saringJenis) ||
     Boolean(saringTahap) ||
     Boolean(saringMajelis) ||
@@ -5664,10 +5923,35 @@ export function AletaEcourtSidang({
       teksBebas: (b: SidangBaris) => teksCariSidang(b, namaKonseptor(b)),
     };
   }, [antrian.peta, saat, tunjukan, checklistTanpaTunjukan, ruangSidang, petaSelesaiCiut, disidangPerKunci, tandaSelesai]);
-  const sidangTampil = useMemo(
-    () => (uraianKosong(uraiCari) ? sidangTampilDasar : sidangTampilDasar.filter((b) => cocokCariPintar(b, uraiCari, opsiCari))),
-    [sidangTampilDasar, uraiCari, opsiCari]
+  // --- Kotak cari berpil (tampilan baru). Semua atas baris yang sudah termuat, di-memo. ---
+  const medanPil = useMemo(
+    () =>
+      baru
+        ? buatMedanPilSidang({ peta: antrian.peta, saat, tunjukan, checklist: checklistTanpaTunjukan, keterangan, pilihanHakim })
+        : ({} as PetaMedan<SidangBaris>),
+    [baru, antrian.peta, saat, tunjukan, checklistTanpaTunjukan, keterangan, pilihanHakim]
   );
+  const indeksPil = useMemo(() => (baru ? buatIndeksPil(sidangTampilDasar, medanPil) : {}), [baru, sidangTampilDasar, medanPil]);
+  const tagSaran = useMemo<TagSaran[]>(
+    () =>
+      baru
+        ? KEADAAN_SIDANG.map((k) => ({
+            kunci: k.kunci,
+            label: k.label,
+            jumlah: jumlahKeadaan[k.kunci] ?? 0,
+            nyala: keadaanTerpilih.includes(k.kunci),
+          }))
+        : [],
+    [baru, jumlahKeadaan, keadaanTerpilih]
+  );
+  const saranBaru = useMemo(
+    () => (baru ? saranCari(cariCepat, medanPil, indeksPil, pilCari, tagSaran) : []),
+    [baru, cariCepat, medanPil, indeksPil, pilCari, tagSaran]
+  );
+  const sidangTampil = useMemo(() => {
+    const hasil = uraianKosong(uraiCari) ? sidangTampilDasar : sidangTampilDasar.filter((b) => cocokCariPintar(b, uraiCari, opsiCari));
+    return baru && pilCari.length > 0 ? hasil.filter((b) => cocokPil(b, pilCari, medanPil)) : hasil;
+  }, [sidangTampilDasar, uraiCari, opsiCari, baru, pilCari, medanPil]);
   const [fokusCari, setFokusCari] = useState(false);
   /* === AKHIR JADWAL-3 butir 1 === */
 
@@ -6031,6 +6315,7 @@ export function AletaEcourtSidang({
     bersihkanSaringan();
     setKeadaanTerpilih([]);
     setCariCepat("");
+    setPilCari([]);
     cariLanjut.bersihkan();
     // Kata kunci yang sudah dikirim ke SIPP ikut dilepas - kalau tidak,
     // tombol yang berbunyi "Reset ke 27 perkara" mengembalikan daftar yang
@@ -6365,6 +6650,8 @@ export function AletaEcourtSidang({
   const depsBarisBersama: readonly unknown[] = tabelRingan
     ? [
         tampilan,
+        baru,
+        majelisTerbuka,
         bolehJalannya,
         bolehTulisKeterangan,
         satuTanggalJadwal,
@@ -6397,824 +6684,81 @@ export function AletaEcourtSidang({
       ]
     : [];
 
-  return (
-    <UnduhTertutupTautan.Provider value={Boolean(modeUrl)}>
-    <Card
-      className={cn(
-        // Layar penuh BERJENDELA (J4): kartu menutupi seluruh jendela
-        // peramban - tab dan bilah peramban tetap ada. Isinya tetap sama
-        // persis, termasuk saklar Tampilan dan Ringkas/Lengkap.
-        // backdrop-blur-none: filter pada kartu menjadikannya bingkai bagi
-        // anak ber-position fixed (Kalender, dialog) - mereka akan ikut
-        // tergulung bersama isi kartu, bukan tetap di tengah jendela.
-        layarPenuh &&
-          "fixed inset-0 z-50 m-0 overflow-auto rounded-none border-0 bg-background shadow-none backdrop-blur-none dark:bg-background"
-      )}
-      data-layar-penuh={layarPenuh ? "ya" : undefined}
-    >
-      {/* ==================================================================
-          KEPALA SETIPIS MUNGKIN
-          ==================================================================
-
-          Yang dicari orang di layar ini adalah DAFTAR SIDANGNYA. Tiap baris
-          keterangan di atasnya mendorong daftar itu turun, dan pada layar
-          laptop 21 sidang berubah menjadi 6 yang terlihat.
-
-          Keterangan panjangnya dibuang seluruhnya: ia menerangkan hal yang
-          sudah jelas begitu tabelnya terlihat, dan hanya dibaca sekali seumur
-          hidup pemakainya. Judul cukup.
-
-          Tombol ciutkan menyembunyikan SELURUH kendali - tombol tindakan,
-          saringan, pencarian - dan menyisakan navigasi hari saja. Panitera
-          yang sedang membacakan jadwal tidak sedang menyaring apa pun; ia
-          hanya perlu melihat sebanyak mungkin baris sekaligus. */}
-      {/* flex-wrap, dan kelompok kanannya TIDAK lagi shrink-0.
-          Terukur sebabnya: judul + tiga tombol tidak muat pada 375px, dan
-          dengan shrink-0 kelompok kanannya tidak boleh mengecil maupun turun,
-          sehingga yang terjadi bukan pembungkusan melainkan tombol yang
-          terdorong keluar tepi. Sekarang ia turun ke baris berikutnya di
-          layar sempit dan tetap satu baris di layar lebar. */}
-      <CardHeader className="flex-row flex-wrap items-center justify-between gap-2 p-4 pb-2 pt-3 sm:p-5 sm:pb-2 sm:pt-3">
-        <CardTitle className="text-base font-bold uppercase tracking-wide sm:text-lg">
-          Jadwal perkara yang bersidang
-        </CardTitle>
-
-        {/* ==================================================================
-            SIAPA YANG SEDANG MEMBUKANYA - BUTIR 3
-            ==================================================================
-
-            Diminta pengguna 22 September 2026, menggantikan baris "Peran Anda
-            berhak melihat seluruh perkara satker" yang dibuang pada hari yang
-            sama. Keterangannya sama-sama tentang siapa yang membuka; bedanya
-            yang ini tidak memakan satu baris penuh di atas daftar.
-
-            Tepat di bawah judul, bukan di kelompok tombol kanan: ia keterangan,
-            bukan kendali - dan menaruhnya di antara tombol membuat orang
-            mencoba menekannya.
-
-            Jabatan dibaca dari daftar jabatan portal. Yang tidak ketemu tidak
-            menampilkan tanda kurung kosong - jabatan yang belum terisi adalah
-            keadaan yang sah, dan kurung kosong terbaca seperti data yang
-            hilang. */}
-        <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
-        {/* ==================================================================
-            "PERKARA SAYA" DI SUDUT KANAN ATAS
-            ==================================================================
-
-            Dahulu ia berdiri sendirian pada satu baris tepat di atas tabel.
-            Barisnya selebar layar sementara isinya hanya satu tombol, jadi
-            yang didapat sebuah baris kosong yang mendorong seluruh daftar
-            sidang turun - persis kerugian yang dihindari kepala setipis
-            mungkin di atas.
-
-            Di sini ia tidak memakai baris sama sekali: kepalanya sudah ada,
-            dan tingginya ditentukan judul yang lebih tinggi daripada tombol.
-
-            Ia ditaruh PALING KIRI di antara ketiganya - artinya paling dekat
-            ke judul - sebab urutan bacanya memang begitu: apa yang saya
-            lihat, seberapa padat, lalu apakah kendalinya dibuka.
-
-            Keterangan panjangnya tidak ikut pindah; ia menjadi title. Yang
-            TIDAK boleh menjadi title hanya peringatan namanya tidak ketemu -
-            title tidak terlihat tanpa disentuh, dan peringatan yang tidak
-            terlihat sama saja tidak ada. Itu tetap tinggal di atas tabel. */}
-        {!modeUrl && bolehKelolaTautan && tampil(tampilan, "tautan-jadwal") ? (
-          <a
-            href={withBasePath("/admin/akses-publik")}
-            data-tautan-jadwal=""
-            className="inline-flex h-8 items-center gap-1 rounded-md border px-2.5 text-xs text-muted-foreground transition hover:bg-muted hover:text-foreground"
-            title="Membuat atau mencabut tautan rahasia Jadwal Sidang (tanpa masuk akun, hanya dari jaringan kantor)."
-          >
-            <Link2 className="h-3.5 w-3.5" />
-            Tautan jadwal
-          </a>
-        ) : null}
-        {/* Tunda otomatis 16.30 (22 Okt 2026): daftar harian + saklar Super Admin. */}
-        {currentUser && !modeUrl && tampil(tampilan, "tombol-tunda-otomatis") ? <TombolTundaOtomatis tanggal={dari} /> : null}
-        {currentUser && !modeUrl && tampil(tampilan, "tombol-perkara-saya") ? (
-          <Button
-            type="button"
-            size="sm"
-            variant={hanyaMilikSaya ? "default" : "outline"}
-            className="h-8 px-2.5"
-            aria-pressed={hanyaMilikSaya}
-            onClick={() => setHanyaMilikSaya((x) => !x)}
-            title={
-              hanyaMilikSaya
-                ? `Sedang menampilkan perkara Anda saja${
-                    milikSaya.sebagai ? ` sebagai ${milikSaya.sebagai}` : ""
-                  } - tekan untuk melihat seluruh perkara satker.`
-                : "Sedang menampilkan seluruh perkara satker - tekan untuk menyaring ke perkara Anda."
-            }
-          >
-            <UserRound className="mr-1 h-3.5 w-3.5" />
-            {hanyaMilikSaya ? "Perkara saya" : "Semua perkara"}
-          </Button>
-        ) : null}
-
-        {/* ==================================================================
-            SAKLAR TAMPILAN
-            ==================================================================
-
-            Di kepala bersama pemilih Ringkas/Lengkap, sebab pertanyaannya satu
-            keluarga - keduanya menjawab "apa yang saya mau lihat", bukan
-            "perkara yang bagaimana". Menaruhnya di antara saringan akan
-            membuat orang menduga ia ikut menyaring baris, padahal ia hanya
-            menggambar atau tidak menggambar.
-
-            Angka pada tombolnya menyebut BERAPA yang sedang dimatikan. Tanpa
-            itu, layar yang penandanya sudah dipadamkan berbulan-bulan lalu
-            terbaca sebagai layar yang memang tidak punya penanda - dan yang
-            membacanya akan menyimpulkan perkaranya bersih. */}
-        {tampil(tampilan, "tombol-layar-penuh") || layarPenuh ? <TombolLayarPenuh penuh={layarPenuh} onUbah={setLayarPenuh} /> : null}
-
-        {/* Pemilih tampilan berdiri di kepala, bukan di antara saringan:
-            ia menjawab "seberapa padat saya mau melihatnya", satu keluarga
-            dengan tombol ciutkan - dan justru paling dibutuhkan ketika
-            kendali lainnya sedang disembunyikan. */}
-        {modeUrl ? null : (
-        <>
-        <div className="inline-flex overflow-hidden rounded-md border text-sm">
-          <button
-            type="button"
-            onClick={() => pilihModeRingkas(true)}
-            className={cn(
-              "px-2.5 py-1",
-              modeRingkas ? "bg-primary text-primary-foreground" : "hover:bg-muted"
-            )}
-          >
-            Ringkas
-          </button>
-          <button
-            type="button"
-            onClick={() => pilihModeRingkas(false)}
-            className={cn(
-              "border-l px-2.5 py-1",
-              modeRingkas ? "hover:bg-muted" : "bg-primary text-primary-foreground"
-            )}
-          >
-            Lengkap
-          </button>
-        </div>
-        <button
-          type="button"
-          onClick={() => setKendaliCiut((n) => !n)}
-          aria-expanded={!kendaliCiut}
-          title={kendaliCiut ? "Tampilkan kendali dan saringan" : "Ciutkan kendali agar daftar sidang lebih panjang"}
-          className="flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs text-muted-foreground transition hover:bg-muted hover:text-foreground"
-        >
-          {kendaliCiut ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}
-          {kendaliCiut ? "Kendali" : "Ciutkan"}
-        </button>
-        {/* 19 Okt 2026 (JADWAL-3 butir 2): Tampilan di SUDUT KANAN - paling
-            kanan di deret tombol kepala, sama dengan Jadwal Mediasi. */}
-        <button
-          type="button"
-          data-tombol-tampilan-sidang=""
-          onClick={() => setPanelTampilan((n) => !n)}
-          aria-expanded={panelTampilan}
-          title="Memilih penanda, keterangan, dan tombol mana yang digambar di layar ini."
-          className={cn(
-            "flex h-8 shrink-0 items-center gap-1.5 rounded-md border px-2.5 text-xs transition",
-            panelTampilan
-              ? "bg-primary text-primary-foreground"
-              : "text-muted-foreground hover:bg-muted hover:text-foreground"
-          )}
-        >
-          <SlidersHorizontal className="h-3.5 w-3.5" />
-          Tampilan
-          {dimatikan > 0 ? (
-            <span
-              className={cn(
-                "rounded-full px-1.5 text-[10px] font-semibold tabular-nums",
-                panelTampilan ? "bg-primary-foreground/20" : "bg-amber-100 text-amber-900 dark:bg-amber-900 dark:text-amber-100"
-              )}
-            >
-              {dimatikan}
-            </span>
-          ) : null}
-        </button>
-        </>
-        )}
-        </div>
-        {/* ==================================================================
-            SIAPA YANG SEDANG MEMBUKANYA - DI BAWAH, BUKAN DI ANTARA TOMBOL
-            ==================================================================
-
-            Menggantikan baris "Peran Anda berhak melihat seluruh perkara
-            satker" yang dibuang 22 September 2026.
-
-            Letaknya SESUDAH kelompok tombol, dan itu yang membuat tombolnya
-            duduk di kanan baris judul. Ketika ia berdiri di antara judul dan
-            tombol, w-full basis-full miliknya memaksa pembungkusan - dan
-            tombol terdorong ke baris ketiga, tempat justify-end tidak
-            berpengaruh apa pun sebab pembungkusnya menyusut ke isinya.
-
-            Ia keterangan, bukan kendali; menaruhnya di antara tombol membuat
-            orang mencoba menekannya. */}
-        {modeUrl ? (
-          <p className="w-full basis-full text-xs text-muted-foreground" data-nama-tautan="">
-            {namaTautan ? `Tautan: ${namaTautan}` : "Tautan jadwal sidang"}
-          </p>
-        ) : currentUser && tampil(tampilan, "identitas-pembuka") ? (
-          <p className="w-full basis-full text-xs text-muted-foreground">
-            {currentUser.name}
-            {jabatanSaya ? ` · ${jabatanSaya}` : ""}
-          </p>
-        ) : null}
-      </CardHeader>
-
-      <CardContent className="space-y-3 p-4 pt-0 sm:p-5 sm:pt-0">
-        <BannerGangguan keadaan={cobaLagiJadwal.keadaan} onCobaSekarang={cobaLagiJadwal.cobaSekarang} />
-        {/* G2a (keputusan 43): saran kecil BAS sidang besok yang sudah disiapkan, tautan per perkara. */}
-        <SaranBasBesok boleh={jenisBlangkoPeran.includes("bas")} setelanAps={setelanAps} />
-        {galat ? (
-          <p className="flex items-start gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-            <span className="min-w-0 flex-1">{galat}</span>
-            <button
-              type="button"
-              data-jadwal-coba-lagi=""
-              onClick={() => {
-                setGalat("");
-                void cobaLagiJadwal.cobaSekarang();
-              }}
-              className="shrink-0 rounded border border-rose-300 px-2 py-0.5 text-xs font-medium text-rose-700 transition hover:bg-rose-100"
-            >
-              Coba lagi
-            </button>
-            <TombolTutupPesan onTutup={() => setGalat("")} />
-          </p>
-        ) : null}
-
-        {/* ==================================================================
-            PANEL SAKLAR TAMPILAN
-            ==================================================================
-
-            Panel biasa yang mendorong isi di bawahnya, bukan popover
-            melayang. Sebabnya diukur, bukan selera: daftarnya tiga puluhan
-            saklar dalam empat kelompok, dan popover setinggi itu di layar
-            laptop menutupi justru daftar yang sedang disetel orangnya - ia
-            tidak dapat melihat akibat saklarnya sendiri.
-
-            Panel ini hanya terbuka selama disetel, jadi ruang yang dipakainya
-            tidak pernah menjadi ruang yang hilang permanen.
-
-            Yang WAJIB tetap digambar - menyala dan tidak dapat ditekan -
-            beserta sebabnya. Menghilangkannya dari daftar akan membuat orang
-            mengira penandanya sudah tidak ada lagi, lalu mencarinya di tempat
-            yang salah. */}
-        {panelTampilan ? (
-          <div className="rounded-xl border bg-muted/20 p-3">
-            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-              <p className="text-sm font-semibold">Apa yang digambar di layar ini</p>
-              <button
-                type="button"
-                onClick={() => setPanelTampilan(false)}
-                className="rounded-md border px-2 py-1 text-xs text-muted-foreground transition hover:bg-muted hover:text-foreground"
-              >
-                Tutup
-              </button>
-            </div>
-
-            {/* ==============================================================
-                MODE DI PALING ATAS, SUB-PILIHAN DI BAWAHNYA - PERBAIKAN 1 OKT
-                ==============================================================
-
-                Diminta pengguna (J5): "Nyalakan semua" menjadi Mode lengkap,
-                "Sembunyikan semua" menjadi Mode minimalis, diletakkan DI ATAS
-                kelompok Penanda, dan memilih mode ikut mengubah centang di
-                bawahnya. Lengkap = semua kecuali Kolom Siap dan Catatan cara
-                menghitung; minimalis = semua mati (yang bertanda "tetap"
-                tetap menyala). Mode yang menyala dibaca dari centangnya -
-                mengubah satu centang menjadikannya "Suai". */}
-            <div
-              className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border bg-card p-2"
-              role="group"
-              aria-label="Mode tampilan"
-            >
-              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Mode</span>
-              <button
-                type="button"
-                onClick={setelUlangTampilan}
-                aria-pressed={modeTampilan === "lengkap"}
-                title="Mode lengkap (dulu: Nyalakan semua) - semua menyala kecuali Kolom Siap dan Catatan cara menghitung."
-                className={cn(
-                  "rounded-md border px-2.5 py-1 text-xs font-medium transition",
-                  modeTampilan === "lengkap"
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                )}
-              >
-                Mode lengkap
-              </button>
-              <button
-                type="button"
-                onClick={sembunyikanSemuaTampilan}
-                aria-pressed={modeTampilan === "minimalis"}
-                title="Mode minimalis (dulu: Sembunyikan semua) - mematikan seluruh saklar yang dapat dimatikan; sesudahnya centang satu per satu yang hendak dilihat. Yang bertanda tetap tidak ikut; sebabnya di bawah daftar."
-                className={cn(
-                  "rounded-md border px-2.5 py-1 text-xs font-medium transition",
-                  modeTampilan === "minimalis"
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                )}
-              >
-                Mode minimalis
-              </button>
-              {modeTampilan === "suai" ? (
-                <span className="text-xs text-muted-foreground">
-                  Suai - centangnya diatur sendiri di bawah.
-                </span>
-              ) : null}
-            </div>
-
-            {/* Butir 11 (6 Okt 2026): saklar "Tampilkan contoh" DI ATAS daftar.
-                Menyala = contoh tampil/disembunyikan tiap fitur terpampang di bawah
-                saklarnya; tiap saklar juga punya ikon "i" yang memperlihatkan hal
-                yang sama saat disorot. */}
-            <label
-              className="mb-3 flex w-fit cursor-pointer items-center gap-2 rounded-lg border bg-card px-2 py-1.5 text-sm"
-              data-saklar-contoh=""
-              title="Memampangkan contoh bentuk tiap fitur saat tampil dan saat disembunyikan, langsung di bawah saklarnya."
-            >
-              <input
-                type="checkbox"
-                className="h-3.5 w-3.5 accent-primary"
-                checked={contohSaklar}
-                onChange={(e) => setContohSaklar(e.target.checked)}
-              />
-              <span className="font-medium">Tampilkan contoh semua fitur</span>
-              <span className="text-xs text-muted-foreground">(tampil dan disembunyikan)</span>
-            </label>
-
-            <p className="mb-3 text-xs text-muted-foreground">
-              Pilihannya tersimpan di peramban ini saja dan tidak mengubah data apa pun -
-              yang dimatikan hanya tidak digambar, bukan tidak ada. Penanda yang mendesak
-              tidak dapat dimatikan; sebabnya disebut pada tiap barisnya.
-            </p>
-
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              {kelompokTampilan().map((kelompok) => (
-                <div key={kelompok.kunci} className="rounded-lg border bg-card p-2">
-                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    {kelompok.label}
-                  </p>
-                  <ul className="space-y-1">
-                    {kelompok.anggota.map((saklar) => {
-                      const menyala = tampil(tampilan, saklar.kunci);
-                      return (
-                        <li key={saklar.kunci}>
-                          <div className="flex items-start gap-1">
-                          <label
-                            className={cn(
-                              "flex items-start gap-2 rounded-md px-1.5 py-1 text-sm",
-                              saklar.wajib ? "opacity-90" : "cursor-pointer hover:bg-muted/60"
-                            )}
-                            title={
-                              saklar.wajib
-                                ? `${saklar.keterangan} Tidak dapat dimatikan - lihat keterangan di bawah daftar.`
-                                : saklar.keterangan
-                            }
-                          >
-                            <input
-                              type="checkbox"
-                              className="mt-0.5 h-3.5 w-3.5 accent-primary"
-                              checked={menyala}
-                              disabled={saklar.wajib}
-                              onChange={(e) => ubahSaklar(saklar.kunci, e.target.checked)}
-                            />
-                            <span className="leading-tight">
-                              {saklar.label}
-                              {saklar.wajib ? (
-                                <span className="ml-1 rounded bg-rose-100 px-1 text-[10px] font-semibold text-rose-900 dark:bg-rose-950 dark:text-rose-200">
-                                  Tetap
-                                </span>
-                              ) : null}
-                            </span>
-                          </label>
-                          <InfoContohSaklar
-                            kunci={saklar.kunci}
-                            label={saklar.label}
-                            keterangan={saklar.keterangan}
-                            menyala={menyala}
-                          />
-                          </div>
-                          {contohSaklar ? (
-                            <div className="mb-1 ml-6 mt-0.5">
-                              <DuaKeadaan kunci={saklar.kunci} keterangan={saklar.keterangan} menyala={menyala} />
-                            </div>
-                          ) : null}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              ))}
-            </div>
-
-            {/* Butir 37 (5 Okt 2026): saklar fitur panggil petugas & pihak - simpanan sendiri. */}
-            <SaklarPanggil className="mt-3" />
-
-            <p className="mt-3 text-xs text-muted-foreground">
-              {/* Daftarnya DIHITUNG dari saklar yang wajib, bukan ditulis tangan:
-                  kalimat "empat penanda" sempat basi satu rilis penuh sesudah
-                  tenggang mepet masuk sebagai kotak merah. */}
-              <strong>Mengapa yang bertanda &ldquo;tetap&rdquo; tidak dapat dimatikan.</strong>{" "}
-              Saklar yang dimatikan hari ini tersimpan di peramban dan tidak dinyalakan lagi
-              besok. Untuk keterangan yang sekadar menolong itu tidak merugikan; untuk{" "}
-              {SAKLAR_TAMPILAN.filter((x) => x.wajib)
-                .map((x) => x.label.toLowerCase())
-                .join(", ")}{" "}
-              akibatnya sidang yang batal, berkas yang tidak pernah dijahit, atau hasil sidang
-              yang tidak pernah dicatat — dan yang membaca layar sesudahnya belum tentu orang
-              yang mematikannya.
-            </p>
-          </div>
-        ) : null}
-
-        {/* ==================================================================
-            BILAH ALAT: NAVIGASI HARI DI ATAS, SISANYA DI BAWAH
-            ==================================================================
-
-            Sebelumnya tujuh tombol berjajar dalam satu baris tanpa pengelompokan,
-            dan yang dipakai tiap hari - panah maju mundur - tenggelam di antara
-            yang jarang dipakai.
-
-            Sekarang navigasi hari berdiri sendiri sebagai satu kesatuan, dan
-            tanggal terbacanya diletakkan besar di sebelahnya: itulah yang
-            pertama dicari mata saat layar dibuka. */}
-        <div className="space-y-3">
-          <div className="flex flex-wrap items-center gap-3">
-            {/* ============================================================
-                SATU ALAT RENTANG, BUKAN DUA TANGGAL YANG BERJAUHAN
-                ============================================================
-
-                Tanggal mulai dan tanggal akhir menjawab SATU pertanyaan -
-                "jadwal tanggal berapa sampai berapa". Sebelumnya keduanya
-                dipisah oleh kotak pencarian, sehingga mata harus melompati
-                kotak yang tidak ada hubungannya untuk membaca satu rentang.
-
-                Sekarang keduanya menempel di dalam satu bingkai, dipisah tanda
-                pisah, dan panah maju-mundur mengapitnya. Kotak pencarian pindah
-                ke baris tindakan di bawah: ia menyaring yang SUDAH tampil, dan
-                itu pekerjaan yang lain sama sekali. */}
-            {/* 23 Okt 2026: tanpa overflow-hidden - bingkai ini memotong kalender
-                libur yang membuka ke bawah, sehingga tombolnya tampak tidak
-                berfungsi. Sudut tombol tepi dibulatkan sendiri (first:/last:). */}
-            <div className="flex items-center rounded-lg border bg-card shadow-sm">
-              <button
-                type="button"
-                aria-label="Hari sebelumnya"
-                onClick={() => pilihHari(geserHari(dari, -1))}
-                className="rounded-l-lg px-2.5 py-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-
-              <div className="flex items-center border-x bg-background/40">
-                {/* 22 Okt 2026: kalender bersama bertanda libur - tanggal tampilan, jadi libur boleh dibuka. */}
-                <PemilihTanggalSidang
-                  value={dari}
-                  onChange={(v) => pilihHari(v)}
-                  liburBolehDipilih
-                  tampilKalender={tampil(tampilan, "kalender-libur")}
-                  sebutan="Tanggal sidang"
-                  className="h-9 w-[8.75rem] rounded-none border-0 bg-transparent text-center focus-visible:ring-0"
-                  aria-label="Tanggal sidang mulai"
-                />
-                {modeUrl ? null : (
-                <>
-                <span aria-hidden className="select-none px-0.5 text-muted-foreground">
-                  –
-                </span>
-                <PemilihTanggalSidang
-                  value={sampai}
-                  min={dari}
-                  onChange={(v) => setSampai(v)}
-                  liburBolehDipilih
-                  tampilKalender={tampil(tampilan, "kalender-libur")}
-                  sebutan="Tanggal sidang"
-                  className="h-9 w-[8.75rem] rounded-none border-0 bg-transparent text-center focus-visible:ring-0"
-                  aria-label="Tanggal sidang sampai"
-                />
-                </>
-                )}
-              </div>
-
-              <button
-                type="button"
-                aria-label="Hari berikutnya"
-                onClick={() => pilihHari(geserHari(dari, 1))}
-                className="px-2.5 py-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => pilihHari(hariIni())}
-                className="border-l px-3 py-2 text-sm text-muted-foreground transition last:rounded-r-lg hover:bg-muted hover:text-foreground"
-              >
-                Hari ini
-              </button>
-
-              {/* Ikon saja - gambarnya sudah menerangkan dirinya, dan
-                  namanya hanya menambah lebar tanpa menambah keterangan.
-                  aria-label dan title menjaganya tetap terbaca bagi yang
-                  memakai pembaca layar maupun yang ragu. */}
-              {modeUrl || !tampil(tampilan, "tombol-kalender-sidang") ? null : (
-              <button
-                type="button"
-                aria-label="Pilih tanggal dari kalender"
-                title="Pilih tanggal dari kalender"
-                onClick={() => setKalenderTerbuka(true)}
-                className="rounded-r-lg border-l px-3 py-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
-              >
-                <CalendarDays className="h-4 w-4" />
-              </button>
-              )}
-            </div>
-
-            {/* JADWAL-3 butir 5: tulisan dan keadaannya TETAP selama memuat -
-                penyegaran latar (antrian, 45 detik) tidak boleh menggambar apa
-                pun. Tekanan ganda ditolak muatTanggal sendiri (memuatRef). */}
-            {modeUrl ? null : (
-            <Button size="sm" onClick={() => void muat()}>
-              Tampilkan
-            </Button>
-            )}
-
-            {/* Tanggal terbacanya, bukan angka - "Senin" adalah yang dicari
-                orang, bukan "31/08". */}
-            {/* 22 Okt 2026 (W57): dua saklar - tanggal terbaca + jumlah sidang, dan tanda
-                "diperbarui". Keduanya hanya gambar; pembaruan ringan di latar tetap jalan. */}
-            {tampil(tampilan, "tanggal-dan-jumlah") || tampil(tampilan, "tanda-diperbarui") ? (
-            <div className="ml-auto text-right">
-              {tampil(tampilan, "tanggal-dan-jumlah") ? (
-                <p className="text-sm font-semibold leading-tight">{tanggalHariPanjang(dari)}</p>
-              ) : null}
-              <p className="text-sm text-muted-foreground">
-                {tampil(tampilan, "tanggal-dan-jumlah")
-                  ? pertamaMuat && memuat
-                    ? "\u00a0"
-                    : sidang.length === 0
-                      ? "tidak ada sidang"
-                      : `${sidang.length} sidang${dari !== sampai ? " pada rentang ini" : ""}`
-                  : null}
-                {/* 22 Okt 2026: waktu bacaan terakhir yang berhasil (ringan atau lengkap). */}
-                {(pertamaMuat && memuat) || !tampil(tampilan, "tanda-diperbarui") ? null : (
-                  <TandaDiperbarui penyimpan={penyimpanDiperbarui} awalan={tampil(tampilan, "tanggal-dan-jumlah") ? " · " : ""} />
-                )}
-                {/* A4: daftar dibaca dari Cermin Perkara; antrian dan kehadiran tetap langsung dari sumbernya. */}
-                {cerminJadwal && !(pertamaMuat && memuat) ? (
-                  <span data-testid="tanda-cermin" title="Daftar sidang dibaca dari salinan keadaan perkara SIPP di ALETA (Cermin Perkara). Antrian dan kehadiran tetap langsung.">
-                    {" · Cermin · diperbarui "}
-                    {cerminJadwal.diperbaruiPada
-                      ? new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Makassar", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(cerminJadwal.diperbaruiPada)).replace(":", ".")
-                      : "-"}
-                  </span>
-                ) : null}
-              </p>
-            </div>
-            ) : null}
-          </div>
-
-          {/* ==============================================================
-              SATU KOTAK PENCARIAN - DI ATAS, TEPAT DI BAWAH TANGGAL
-              ==============================================================
-
-              Diminta pengguna 22 September 2026: "pada search terdapat 2
-              yaitu saring dan yang cari, buat jadi satu agar tidak
-              membingungkan, buat di atas (dibawah tanggal) pencariannya".
-
-              Sebabnya dapat diperiksa sendiri di layar lama: dua kotak
-              berbentuk sama, sama-sama bertuliskan pencarian, satu di sisi
-              tombol dan satu di bawah deretan penanda. Yang satu menuntut
-              tombol Tampilkan ditekan sesudahnya, yang lain bekerja seketika
-              - dan tidak ada pada bentuknya yang memberi tahu yang mana.
-
-              Sekarang: mengetik menyaring seketika; menekan Enter melebarkan
-              pencarian ke SIPP. Lihat catatan pada kirimCariKeSipp. */}
-          <div className={cn("space-y-1.5", kendaliCiut && "hidden")}>
-            {/* ==============================================================
-                LEBARNYA DIBATASI, DAN TEMANNYA DI SEBELAHNYA
-                ==============================================================
-
-                Diminta pengguna 22 September 2026: "rounded search terlalu
-                panjang jadi tidak estetik ... taruh tombol pencarian lanjutan
-                disampingnya".
-
-                Kotak selebar layar bukan sekadar tidak sedap dipandang: ia
-                menjanjikan isian sepanjang itu, padahal yang diketik orang
-                nomor perkara atau satu nama. Dan barisnya menjadi baris yang
-                isinya satu benda saja - satu baris penuh yang mendorong
-                seluruh daftar sidang turun.
-
-                Pencarian lanjutan, angka "x dari y", dan Reset pindah ke sini
-                dari baris tombol tindakan: ketiganya tentang MENYARING, dan
-                tempatnya memang di sebelah kotak saringnya. Yang tinggal di
-                baris tindakan hanya yang MENGERJAKAN sesuatu. */}
-            <div className="flex flex-wrap items-center gap-2">
-              {modeUrl ? null : (
-              <div className="relative min-w-[15rem] flex-1 sm:max-w-xl" data-cari-pintar-sidang="">
-                <FileSearch
-                  aria-hidden="true"
-                  className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-                />
-                <Input
-                  value={cariCepat}
-                  onChange={(e) => setCariCepat(e.target.value)}
-                  onFocus={() => setFokusCari(true)}
-                  onBlur={() => setFokusCari(false)}
-                  onKeyDown={(peristiwa) => {
-                    if (peristiwa.key === "Enter") kirimCariKeSipp();
-                    if (peristiwa.key === "Escape") setFokusCari(false);
-                  }}
-                  placeholder="Cari perkara, pihak, saksi, hakim, ghaib, konseptor… — Enter ke SIPP"
-                  aria-label="Cari perkara. Mengetik menyaring daftar yang tampil, termasuk kata kunci seperti ghaib, verstek, konseptor, belum BAS; menekan Enter mencari ke SIPP."
-                  className="h-9 pl-8 text-sm"
-                />
-                <PetunjukCariPintar
-                  terbuka={fokusCari}
-                  kataKunci={KATA_KUNCI_SIDANG}
-                  medan={MEDAN_SIDANG}
-                  contohMedan={CONTOH_MEDAN_SIDANG}
-                  urai={uraiCari}
-                  enterKeSipp
-                  onPilih={(kata) => setCariCepat((lama) => `${lama.trim()} ${kata}`.trim() + " ")}
-                />
-              </div>
-              )}
-
-              {!modeUrl && sidang.length > 0 && tampil(tampilan, "pencarian-lanjutan") ? (
-                <Button
-                  size="sm"
-                  variant={lanjutTerbuka || cariLanjut.jumlahAktif > 0 ? "default" : "outline"}
-                  onClick={() => setLanjutTerbuka((buka) => !buka)}
-                >
-                  <Filter className="mr-1.5 h-4 w-4" />
-                  Pencarian lanjutan
-                  {cariLanjut.jumlahAktif > 0 ? ` (${cariLanjut.jumlahAktif})` : ""}
-                </Button>
-              ) : null}
-
-              {/* 22 Okt 2026 (diminta pengguna): Cetak tepat di samping
-                  Pencarian lanjutan, lalu SATU tombol Menu yang memuat alat
-                  lainnya. Baris alat lama dan baris pil ruang sudah tiada. */}
-              {adaTombolCetak ? (
-              <div className="relative">
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={sidang.length === 0}
-                onClick={() => {
-                  // 22 Okt 2026 (pengguna): cetak seperti semula; saat Sidang keliling
-                  // menyala dan ada hakim pengganti, halamannya langsung dipisah per hakim.
-                  setCetakPerHakim(adaPilihanHakim(sidangTampil, pilihanHakim));
-                  setSedangCetak(true);
-                }}
-              >
-                <Printer className="mr-1.5 h-4 w-4" />
-                Cetak
-              </Button>
-              </div>
-              ) : null}
-
-              <MenuAlatJadwal
-                butir={butirMenuAlat}
-                onPilih={(kunci) => {
-                  if (kunci === "hitung-skor") {
-                    // Menyalakan skor HARUS memuat ulang. Sebelumnya tombolnya
-                    // hanya membalik penanda, sehingga tulisannya berubah jadi
-                    // "Skor: nyala" tetapi kolom Siap tetap bergaris - skornya
-                    // memang belum pernah diminta ke bot.
-                    const menyala = !nilaiKesiapan;
-                    setNilaiKesiapan(menyala);
-                    if (menyala) void muatTanggal(dari, sampai, true);
-                    else setKesiapan({});
-                  } else if (kunci === "per-panitera-sidang") setMejaPp((b) => !b);
-                  else if (kunci === "cetak-relaas") setCetakRelaasTerbuka(true);
-                  else if (kunci === "penetapan-kembali") setPenetapanKembaliTerbuka(true);
-                  else if (kunci === "daftar-antrian") void periksaSinkron();
-                  else if (kunci === "kasir") setKasirTerbuka(true);
-                  else if (kunci === "kasir-harian") kasirHarian.setBuka("massal");
-                  else if (kunci === "pengingat-kasir") kasirHarian.setBuka("pengingat");
+  // Lipat tag (tampilan baru): pil ruang naik sebaris dengan tag; baris tag dan pita ruang tetap di dalam bilah atas.
+  const pitaSebaris = baru && penandaCiut && sidang.length > 0;
+  const pitaRuangEl =
+    tampil(tampilan, "ringkasan-ruang") || tampil(tampilan, "kartu-ruang") || tampil(tampilan, "saring-ruang") || adaSaklarKeliling ? (
+              <PitaRuangSidang
+                tanpaRingkasan
+                akhir={
+                  tampil(tampilan, "tanggal-dan-jumlah") || tampil(tampilan, "tanda-diperbarui") ? (
+                    <span className="whitespace-nowrap text-xs text-muted-foreground" data-s="tanggal-dan-jumlah">
+                      {tampil(tampilan, "tanggal-dan-jumlah") ? (
+                        pertamaMuat && memuat ? (
+                          " "
+                        ) : sidang.length === 0 ? (
+                          "tidak ada sidang"
+                        ) : (
+                          <>
+                            <b className="tabular-nums text-foreground">{ruangAktif.length}</b> ruang ·{" "}
+                            <b className="tabular-nums text-foreground">
+                              {sidangTampil.length === sidang.length ? sidang.length : `${sidangTampil.length} dari ${sidang.length}`}
+                            </b>{" "}
+                            perkara
+                            {adaSaringan ? (
+                              <>
+                                {" "}
+                                <button type="button" onClick={resetSemuaSaringan} className="underline underline-offset-2 hover:text-foreground">
+                                  Reset
+                                </button>
+                              </>
+                            ) : null}
+                          </>
+                        )
+                      ) : null}
+                      {(pertamaMuat && memuat) || !tampil(tampilan, "tanda-diperbarui") ? null : (
+                        <TandaDiperbarui penyimpan={penyimpanDiperbarui} awalan={tampil(tampilan, "tanggal-dan-jumlah") ? " · " : ""} />
+                      )}
+                      {cerminJadwal && !(pertamaMuat && memuat) && cerminJadwal.diperbaruiPada ? (
+                        <span data-testid="tanda-cermin" title="Daftar sidang dibaca dari salinan keadaan perkara SIPP. Antrian dan kehadiran tetap langsung.">
+                          {" · salinan SIPP "}
+                          {new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Makassar", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
+                            .format(new Date(cerminJadwal.diperbaruiPada))
+                            .replace(":", ".")}
+                        </span>
+                      ) : null}
+                    </span>
+                  ) : undefined
+                }
+                awal={
+                  adaSaklarKeliling ? (
+                    <SaklarSidangKeliling ringkas kh={kh} daftar={sidang} penggunaId={String(currentUser?.id ?? "")} />
+                  ) : undefined
+                }
+                pil={pitaRuang}
+                tampilJumlah={tampil(tampilan, "kartu-ruang")}
+                tampilBerjalan={tampil(tampilan, "ringkasan-ruang")}
+                diskors={diskorsHariIni}
+                nomorPerkara={(k) => bahanTigaJarak.nomorPerkara[k] ?? ""}
+                ruangPilihan={ruangSaring}
+                onPilih={tampil(tampilan, "saring-ruang") || tampil(tampilan, "kartu-ruang") ? setRuangDipilih : undefined}
+                keteranganPerlu={keteranganPerluKartu}
+                sekarangMs={() => (patokanWaktu ? patokanWaktu.sekarangMs + (Date.now() - patokanWaktu.diterimaMs) : Date.now())}
+                onLihat={(k) => {
+                  const el = Array.from(document.querySelectorAll<HTMLElement>("[data-kunci-waktu]")).find((x) => x.dataset.kunciWaktu === k);
+                  el?.scrollIntoView({ block: "center", behavior: "smooth" });
                 }}
               />
-
-              {/* Angka "x dari y" menempel pada Reset: yang paling sering
-                  ditanyakan saat daftar menyusut adalah berapa yang
-                  disembunyikan. */}
-              {!modeUrl && adaSaringan && sidang.length > 0 ? (
-                <>
-                  <span className="text-sm text-muted-foreground">
-                    {sidangTampil.length} dari {sidang.length} perkara
-                  </span>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={resetSemuaSaringan}
-                    title={`Lepaskan seluruh saringan dan kembali ke ${sidang.length} perkara`}
-                  >
-                    <RotateCcw className="mr-1 h-3.5 w-3.5" />
-                    Reset ke {sidang.length} perkara
-                  </Button>
-                </>
-              ) : null}
-            </div>
-
-            {/* Kata kunci yang sedang berlaku DI SISI SIPP disebutkan, karena
-                ia tidak terlihat di mana pun selain di sini: daftarnya sudah
-                menyusut sebelum sampai ke layar. Tanpa baris ini, jadwal yang
-                tersaring akan disangka jadwal yang memang sepi. */}
-            {!modeUrl && cari ? (
-              <p className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                <span>
-                  Dicari ke SIPP: <strong className="text-foreground">{cari}</strong>
-                </span>
-                <button
-                  type="button"
-                  onClick={lepasCariSipp}
-                  disabled={pertamaMuat && memuat}
-                  className="rounded border px-1.5 py-0.5 transition hover:bg-muted hover:text-foreground disabled:opacity-50"
-                >
-                  lepaskan
-                </button>
-              </p>
-            ) : null}
-          </div>
-
-          {mejaPp && !modeUrl && satuTanggalJadwal && kh.keliling && tampil(tampilan, "menu-per-panitera") ? (
-            <MejaPaniteraSidang
-              daftar={sidang}
-              kh={kh}
-              sudahHasil={sidangSelesaiHariIni}
-              bolehTundaPutus={bolehTundaPutusMassal}
-              onSelesai={() => void muatTanggal(dari, sampai, nilaiKesiapan)}
-              onTutup={() => setMejaPp(false)}
-            />
-          ) : null}
-
-          {/* === 12OKT-C: kartu ruang sidang (butir 3) ===
-              Sejak 19 Okt 2026 (JADWAL-3 butir 3) kartu ruang tidak lagi
-              memakai baris sendiri di sini: ia menyatu dengan ringkasan ruang
-              sidang menjadi SATU pita di atas tabel - lihat PitaRuangSidang.
-              Saklar "kartu-ruang" tetap mengatur bagian jumlah/perlu diperiksa. */}
-        </div>
-
-
-        {/* ==================================================================
-            KOTAK KEADAAN
-            ==================================================================
-
-            Yang menuntut tindakan berwarna merah, yang perlu diperhatikan
-            kuning, yang sudah beres hijau. Warnanya menyebut arti, bukan
-            selera - dan itu yang membuat deretan ini terbaca sebelum
-            angkanya sempat dibaca.
-
-            Angkanya dihitung dari SELURUH sidang hari itu, bukan dari yang
-            sudah tersaring: kalau ikut menyusut, menyalakan satu saringan
-            membuat saringan lain tampak nol dan mustahil dilepas kembali. */}
-        {/* Kegagalan membaca antrian disebutkan apa adanya. Kolom antrian yang
-            kosong tanpa sebab akan disangka fitur yang belum jalan; yang
-            menyebutkan sambungannya bermasalah dapat ditindaklanjuti - dan
-            sambungannya memang dapat disunting dari menu Koneksi SQL. */}
-        {!antrian.terbaca && antrian.alasan && sidang.length > 0 ? (
-          <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
-            Nomor antrian tidak terbaca: {antrian.alasan} — periksa sambungan ke aplikasi antrian
-            di Admin ALETA Bot. Jadwalnya sendiri tetap benar.
-          </p>
-        ) : null}
-
-        {/* Tabel antrian memuat hari berjalan saja. Bila ia memuat lebih dari
-            satu tanggal, nomornya patut diragukan - rumus yang menjawab
-            WhatsApp pun tidak menyaring tanggal, sehingga nomor yang diterima
-            para pihak ikut bergeser. Disebutkan, bukan didiamkan. */}
-        {antrian.terbaca && antrian.tanggal.length > 1 ? (
-          <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
-            Aplikasi antrian memuat {antrian.tanggal.length} tanggal sekaligus (
-            {antrian.tanggal.map((t) => tanggalHariPendek(t, t)).join(", ")}). Nomor antrian dihitung dari seluruhnya, sama
-            seperti nomor yang dikirim lewat WhatsApp — periksa apakah data antrian hari-hari
-            sebelumnya sudah dibersihkan.
-          </p>
-        ) : null}
-
-        {/* ==================================================================
-            SATU DERET SARINGAN
-            ==================================================================
-
-            Alur perkara dan keadaan sidang disatukan. Keduanya mengerjakan
-            hal yang sama - menyaring tabel dengan menekan angka - dan dua
-            baris dengan dua bentuk kotak yang berbeda membuat pekerjaan
-            tunggal itu tampak seperti dua alat.
-
-            YANG BERNILAI NOL TIDAK DITAMPILKAN. Ia sudah dimatikan dan tidak
-            dapat menyaring apa pun; menampilkannya hanya memaksa mata
-            melewati sembilan kotak mati sebelum sampai ke yang hidup.
-            Kecualinya kotak yang sedang MENYALA - kalau ia ikut hilang saat
-            angkanya nol, saringannya tidak dapat dimatikan lagi. */}
-        {sidang.length > 0 && (modeUrl || !kendaliCiut) ? (
-          <div className="flex flex-wrap items-center gap-1.5">
+    ) : null;
+  const blokTag =
+    sidang.length > 0 && (modeUrl || !kendaliCiut) ? (
+          <div
+            className={cn(
+              "flex flex-wrap items-center gap-1.5",
+              // Tampilan baru di layar sempit: satu baris yang menggulir di dalam bilah (bilah lekat tidak memakan layar).
+              baru && "max-lg:flex-nowrap max-lg:overflow-x-auto max-lg:pb-0.5 max-lg:[&>*]:shrink-0"
+            )}
+          >
             {/* ============================================================
                 SAKLAR CIUT - DAN SARINGAN YANG MENYALA TIDAK IKUT HILANG
                 ============================================================
@@ -7257,6 +6801,18 @@ export function AletaEcourtSidang({
               )}
             </button>
             )}
+
+            {baru ? (
+              <button
+                type="button"
+                onClick={alihkanSeluruhPenanda}
+                aria-expanded={!penandaCiut}
+                title={penandaCiut ? "Bentangkan semua tag" : "Lipat tag: hanya yang menyala dan yang berisi yang tersisa"}
+                className="inline-flex h-6 items-center gap-1 rounded-full border border-border/70 bg-muted/40 px-2 text-[11px] text-muted-foreground transition hover:bg-muted hover:text-foreground"
+              >
+                {penandaCiut ? "Bentang tag" : "Lipat tag"}
+              </button>
+            ) : null}
 
             {ringkasAlur(sidang)
               .filter((k) => k.jumlah > 0 || alurTerpilih === k.kunci)
@@ -7373,7 +6929,10 @@ export function AletaEcourtSidang({
               return (
               <span
                 key={`kelompok-${kelompok.kunci}`}
-                className="inline-flex flex-wrap items-center gap-0.5 rounded-full border border-border/70 bg-muted/40 py-0.5 pl-1 pr-1"
+                className={cn(
+                  "inline-flex flex-wrap items-center gap-0.5 rounded-full border border-border/70 bg-muted/40 py-0.5 pl-1 pr-1",
+                  baru && "max-lg:flex-nowrap"
+                )}
               >
                 <button
                   type="button"
@@ -7420,545 +6979,11 @@ export function AletaEcourtSidang({
               </span>
               );
             })}
+            {pitaSebaris ? <div className="min-w-0 max-w-full flex-1 basis-80">{pitaRuangEl}</div> : null}
           </div>
-        ) : null}
+        ) : null;
 
-        {/* ==================================================================
-            KENDALI DICIUTKAN - "PERLU DIPERIKSA" TETAP TERLIHAT
-            ==================================================================
-
-            Menggantikan satu-satunya kelebihan papan "Perlu ditindaklanjuti"
-            yang dihapus 24 September 2026: papan itu tetap tampil walau
-            kendalinya diciutkan. Yang menciutkan kendali sedang
-            memperpanjang daftar, bukan sedang menolak tahu apa yang harus
-            diurus hari itu. */}
-        {sidang.length > 0 && kendaliCiut ? (
-          <div className="flex flex-wrap items-center gap-1.5">
-            {KEADAAN_PERLU_DIPERIKSA.map((keadaan) => (
-              <ChipSaring
-                key={keadaan.kunci}
-                label={keadaan.label}
-                jumlah={jumlahKeadaan[keadaan.kunci] ?? 0}
-                nada={keadaan.nada}
-                judul={`${keadaan.judul} ${keteranganBatasJam}`}
-                aktif={keadaanTerpilih.includes(keadaan.kunci)}
-                onTekan={() => alihkanKeadaan(keadaan.kunci)}
-              />
-            ))}
-          </div>
-        ) : null}
-
-        {lanjutTerbuka && sidang.length > 0 && tampil(tampilan, "pencarian-lanjutan") ? (
-          <PanelCariLanjut
-            medan={MEDAN_CARI_SIDANG}
-            isian={cariLanjut.isian}
-            onUbah={cariLanjut.ubah}
-            onBersihkan={cariLanjut.bersihkan}
-            jumlahAktif={cariLanjut.jumlahAktif}
-          />
-        ) : null}
-
-        {/* Rincian kelompok yang dipilih. Muncul HANYA saat diklik: menampilkan
-            rincian seluruh kelompok sekaligus mengembalikan tabel kedua yang
-            isinya sama dengan tabel utama. */}
-        {alurTerpilih ? (
-          <div className="rounded-xl border bg-muted/20 p-3">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <h4 className="text-sm font-semibold">
-                {KELOMPOK_ALUR.find((k) => k.kunci === alurTerpilih)?.label} —{" "}
-                {sidangTerpilih.length} sidang
-              </h4>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  setAlurTerpilih("");
-                  bersihkanSaringan();
-                }}
-              >
-                Tutup
-              </Button>
-            </div>
-
-            {/* ============================================================
-                RINGKASAN KELOMPOK
-                ============================================================
-
-                Empat pertanyaan yang ditanya sebelum sidang dimulai: perkara
-                apa saja hari ini, berapa yang sidang pertama, siapa memegang
-                berapa, dan ruang mana dipakai berapa kali.
-
-                Hanya yang ADA yang disebutkan - daftar berisi belasan jenis
-                perkara bernilai nol tidak menolong siapa pun. */}
-            <div className="mb-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-              <KartuRincian
-                judul="Jenis perkara"
-                baris={rincianJenis}
-                aktif={saringJenis}
-                onPilih={setSaringJenis}
-              />
-              <KartuRincian
-                judul="Tahap sidang"
-                baris={rincianTahap}
-                aktif={saringTahap}
-                onPilih={setSaringTahap}
-              />
-              <KartuRincian
-                judul="Majelis"
-                baris={rincianMajelis}
-                aktif={saringMajelis}
-                onPilih={setSaringMajelis}
-                monospasi
-              />
-              <KartuRincian
-                judul="Ruang sidang"
-                baris={rincianRuang}
-                aktif={saringRuang}
-                onPilih={setSaringRuang}
-              />
-            </div>
-
-            {/* Penyaring yang sedang berlaku disebutkan terang-terangan.
-                Daftar yang menyusut tanpa keterangan terbaca sebagai data yang
-                hilang, dan yang dilaporkan kemudian bukan "saya lupa melepas
-                saringan" melainkan "perkaranya tidak muncul". */}
-            {adaSaringanKartu ? (
-              <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 text-sm">
-                <span className="font-medium">
-                  Disaring: {sidangTersaring.length} dari {sidangTerpilih.length} sidang
-                </span>
-                {[
-                  ["Jenis", saringJenis, setSaringJenis] as const,
-                  ["Tahap", saringTahap, setSaringTahap] as const,
-                  ["Majelis", saringMajelis, setSaringMajelis] as const,
-                  ["Ruang", saringRuang, setSaringRuang] as const,
-                ]
-                  .filter(([, nilai]) => nilai)
-                  .map(([label, nilai, ubah]) => (
-                    <button
-                      key={label}
-                      type="button"
-                      onClick={() => ubah("")}
-                      title={`Lepas saringan ${label}`}
-                      className="rounded bg-primary/15 px-1.5 py-0.5 text-primary transition hover:bg-primary/25"
-                    >
-                      {label}: {nilai} &times;
-                    </button>
-                  ))}
-                <button
-                  type="button"
-                  onClick={bersihkanSaringan}
-                  className="ml-auto underline underline-offset-2 hover:text-primary"
-                >
-                  Lepas semua
-                </button>
-              </div>
-            ) : null}
-            {/* ==============================================================
-                KISI KARTU DIHAPUS - TABEL DI BAWAH SUDAH MENJADI DAFTARNYA
-                ==============================================================
-
-                Panel ini dulu memuat kisi kartu berisi perkara kelompoknya,
-                dan itu satu-satunya tempat daftar sealur dapat dilihat -
-                tabel utama waktu itu tetap memuat seluruh hari.
-
-                Sejak kotak alur menyaring tabelnya juga, kisi itu menjadi
-                salinan: perkara yang sama, keterangan yang sama, hanya
-                berbentuk kartu alih-alih baris, dua kali di satu halaman.
-                Dua daftar yang isinya sama membuat pembacanya membandingkan
-                keduanya untuk mencari beda yang tidak ada - dan yang di atas
-                selalu lebih miskin, sebab kartu tidak memuat antrian,
-                kesiapan, saksi, maupun hasil sidang.
-
-                Yang TINGGAL di panel ini keempat kartu ringkasan di atas -
-                jenis, tahap, majelis, ruang. Itu yang tidak ada di tabel:
-                jawaban atas "berapa banyak", bukan pengulangan "yang mana".
-                Keempatnya kini menyaring tabel di bawah secara langsung. */}
-            <p className="text-sm text-muted-foreground">
-              Daftar perkaranya ada di tabel di bawah — ia sudah mengikuti kelompok dan
-              keempat penyaring di atas.
-            </p>
-          </div>
-        ) : null}
-
-        {/* Kepala tabel menempel saat digulung: jadwal sehari dapat puluhan
-            baris, dan tanpa ini pembaca kehilangan nama kolomnya di tengah. */}
-        {/* ==================================================================
-            SUSUNAN KOLOM
-            ==================================================================
-
-            Diurut menurut apa yang dibaca lebih dulu saat menelusuri jadwal:
-            jam, lalu perkara apa, lalu siapa yang menyidangkan, lalu di mana.
-
-            Panitera dan juru sita digabung satu kolom - keduanya "petugas
-            sidang", jarang dibaca terpisah, dan memisahkannya memakan lebar
-            yang lebih berguna untuk nomor perkara.
-
-            Ukuran huruf mengikuti kepentingan: jam dan nomor perkara paling
-            besar, keterangan pendukung lebih kecil. */}
-        {/* ==================================================================
-            DUA KEDALAMAN, SATU TABEL
-            ==================================================================
-
-            RINGKAS untuk menelusuri - jam, perkara, agenda, ruang. Itu yang
-            dibaca saat mencari "sidang berikutnya apa" atau saat layarnya
-            ditampilkan ke orang banyak.
-
-            LENGKAP untuk memeriksa - ditambah kesiapan, majelis, petugas
-            sidang, dan keadaan putusan. Inilah tampilan yang sudah ada, dan ia
-            tetap menjadi bawaan supaya tidak ada yang kehilangan kolom yang
-            biasa dipakainya tanpa memintanya.
-
-            Yang disembunyikan hanya GAYA-nya, bukan selnya: jumlah sel tiap
-            baris tetap sama dengan jumlah kepala kolomnya, sehingga tidak ada
-            colSpan yang perlu dihitung ulang di lima tempat. */}
-        {/* Hasil pemeriksaan pendaftaran antrian - disebutkan apa adanya
-            sebelum apa pun ditulis. */}
-        {sinkronHasil ? (
-          <div className="mb-2 rounded-lg border bg-muted/20 px-3 py-2 text-sm">
-            {sinkronHasil.alasan ? (
-              <p className="flex items-start gap-2 text-rose-600">
-                <span className="min-w-0 flex-1">{sinkronHasil.alasan}</span>
-                <TombolTutupPesan onTutup={() => setSinkronHasil(null)} />
-              </p>
-            ) : sinkronHasil.ujiKering ? (
-              <div className="flex flex-wrap items-center gap-2">
-                <span>
-                  {sinkronHasil.akanDitambah.length} perkara akan didaftarkan ke antrian
-                  {sinkronHasil.dilewati.length > 0
-                    ? `, ${sinkronHasil.dilewati.length} sudah terdaftar`
-                    : ""}
-                  .
-                </span>
-                {sinkronHasil.akanDitambah.length > 0 ? (
-                  <Button size="sm" disabled={sinkronSibuk} onClick={() => void jalankanSinkron(true)}>
-                    {sinkronSibuk ? "Mendaftarkan…" : "Daftarkan sekarang"}
-                  </Button>
-                ) : null}
-                <button
-                  type="button"
-                  className="text-muted-foreground underline"
-                  onClick={() => setSinkronHasil(null)}
-                >
-                  tutup
-                </button>
-              </div>
-            ) : (
-              <p className={cn("flex items-start gap-2", sinkronHasil.gagal.length > 0 ? "text-rose-700" : "text-emerald-700")}>
-                <span className="min-w-0 flex-1">
-                  {sinkronHasil.ditambahkan} perkara didaftarkan ke antrian.
-                  {sinkronHasil.gagal.length > 0
-                    ? ` ${sinkronHasil.gagal.length} gagal: ${sinkronHasil.gagal[0].sebab}`
-                    : ""}{" "}
-                  Nomor antriannya baru terbit saat para pihak mengambilnya.
-                </span>
-                {/* Yang berhasil seluruhnya hilang sendiri; yang ada gagalnya menetap sampai ditutup. */}
-                {sinkronHasil.gagal.length > 0 ? <TombolTutupPesan onTutup={() => setSinkronHasil(null)} /> : null}
-              </p>
-            )}
-          </div>
-        ) : null}
-
-        {/* Batas tinggi 70vh/82vh dan gulir tegak di dalam kotak sudah DIBUANG
-            (28 September 2026) - lihat catatan di atas wadah tabel. Dahulu
-            batasnya hanya dari lg ke atas, sebab di ponsel gulir bersarang
-            membuat orang tersesat; kini tidak ada gulir bersarang di lebar
-            mana pun. */}
-        {/* ==================================================================
-            PERINGATAN KETIKA "PERKARA SAYA" TIDAK MENGENA SATU BARIS PUN
-            ==================================================================
-
-            Tombolnya sendiri sudah pindah ke sudut kanan atas - lihat
-            sebabnya di kepala. Yang TIDAK ikut pindah hanya peringatan ini,
-            dan itu disengaja.
-
-            Peringatan ini menjelaskan mengapa daftar yang seharusnya
-            tersaring justru tampil penuh. Kalau ia hanya menjadi title pada
-            tombolnya, ia tidak terlihat tanpa disentuh - dan yang membaca
-            daftar penuh akan menyangka seluruh perkara itu miliknya. Itu
-            kesimpulan yang salah tentang pekerjaan sendiri, dan tempatnya
-            harus di jalan baca, bukan di balik kursor.
-
-            Dua keterangan yang dahulu berdiri di sini - "Disaring atas nama
-            X" dan "Seluruh perkara satker" - sudah menjadi title tombolnya:
-            keduanya hanya mengulang apa yang sudah dikatakan tombol yang
-            sedang menyala. */}
-        {currentUser && perkaraSayaAktif && milikSaya.berlaku && !milikSaya.adaYangCocok ? (
-          <p className="mb-2 rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-xs text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100">
-            Nama <strong>{currentUser.name}</strong> tidak tercatat sebagai majelis,
-            panitera pengganti, atau jurusita pada perkara yang tampil — seluruh perkara
-            ditampilkan apa adanya.
-          </p>
-        ) : null}
-
-        {/* ==================================================================
-            BARIS "PERAN ANDA BERHAK MELIHAT SELURUH PERKARA" DIBUANG
-            ==================================================================
-
-            Ditambahkan 22 September 2026 pagi, dibuang atas permintaan
-            pengguna pada hari yang sama - dan permintaannya benar.
-
-            Ia lahir untuk menjawab keadaan yang sah: peran yang berhak melihat
-            seluruh perkara tidak disaring walau tombolnya ditekan, dan
-            sesudah keterangan "Disaring atas nama X" menjadi title, tidak ada
-            lagi petunjuk di layar.
-
-            Tetapi keadaan itu TETAP - ia berlaku sepanjang hari bagi ketua,
-            panitera, dan operator. Baris yang selalu ada bukan lagi
-            peringatan; ia menjadi perabot yang dibaca sekali lalu dilewati
-            selamanya, sambil memakan satu baris penuh di atas daftar yang
-            justru hendak dibaca.
-
-            Keterangannya tidak hilang: title tombol "Perkara saya" tetap
-            menyebutkan apa yang sedang disaring. Yang hilang hanya barisnya. */}
-
-        {/* ==================================================================
-            LEGENDA TIGA JARAK DIBUANG - ARTINYA PINDAH KE TITLE TIAP PIL
-            ==================================================================
-
-            Diminta pengguna 28 September 2026: "hapus tulisan Tiga angka
-            waktu di kolom Antrian ...". Paragraf empat baris itu dibaca sekali
-            lalu dilewati selamanya, sambil mendorong tabelnya ke bawah. Arti
-            tiap angka kini ada di title pilnya sendiri - lihat ARTI di
-            components/portal/tiga-jarak-sidang.tsx. */}
-
-        {/* ==================================================================
-            SELEBAR KARTUNYA, TANPA GULIR SAMPING, TANPA GULIR TEGAK SENDIRI
-            ==================================================================
-
-            Diminta pengguna 28 September 2026, tiga keluhan sekaligus pada
-            layar 1920 px: tabelnya punya gulir ke samping, lencana konseptor
-            terpotong di tepi kanan, dan "ada yang terlewat di bawah footer -
-            seharusnya yang memanjang ke bawah itu antrian sidangnya".
-
-            SEBAB GULIR SAMPING: tabelnya dikunci min-w-[980px], padahal
-            kartunya hanya 956 px, dan di dalamnya nama pihak serta nama saksi
-            ber-truncate max-w-[24rem] - yang tidak pernah menyempit di dalam
-            sel tabel, sebab lebar minimum sel adalah lebar isinya yang tidak
-            dapat dipatahkan (terukur: tabel 1.590 px di kartu 956 px). Kini
-            dari xl (1280 px) ke atas batas lebarnya dilepas dan isi sel
-            MELIPAT, sehingga tabel selebar kartunya. Di bawah xl batas lama
-            tetap: kolomnya terlalu sempit untuk dilipat, dan menggulir ke
-            samping lebih terbaca daripada kolom selebar satu kata.
-
-            SEBAB "TERLEWAT DI BAWAH FOOTER": wadahnya dibatasi 70vh (82vh
-            bila kendali diciutkan) dan menggulir sendiri. Halaman berakhir
-            pada footer sementara baris-baris sidang masih tersembunyi di dalam
-            kotak - terukur 2.115 px isi di kotak setinggi 754 px. Batas itu
-            DIBUANG: tabelnya setinggi isinya, halamanlah yang menggulung, dan
-            footer selalu di bawah baris terakhir. Kepala kolom tetap menempel
-            di puncak layar selama tabelnya muat - lihat tabelMuat. Pengecualian
-            rincian terbuka (sebab (2) pada catatan lebarTampak) ikut hilang,
-            sebab tidak ada lagi batas yang perlu dilepas. */}
-        {/* Siapa yang sedang disidangkan di tiap ruang - perbaikan 2 Okt
-            2026 (butir 10). Ditekan = menggulung ke barisnya. */}
-        {ciutkanSelesai && jumlahDiciutkan > 0 ? (
-          <p className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground" data-ciutkan-selesai="">
-            {jumlahDiciutkan} perkara yang sudah selesai diciutkan - yang tampil hanya yang berjalan dan belum selesai.
-            <button
-              type="button"
-              className="underline underline-offset-2 hover:text-foreground"
-              onClick={() => ubahSaklar("ciutkan-selesai", false)}
-            >
-              Tampilkan semua
-            </button>
-          </p>
-        ) : null}
-        {/* JADWAL-3 butir 3 (19 Okt 2026): SATU pita ruang sidang - kartu
-            ruang ("kartu-ruang": jumlah, perlu diperiksa, saring) dan
-            ringkasan ruang ("ringkasan-ruang": yang sedang disidang, diskors)
-            menyatu dalam satu baris setinggi ±36 px. Rancangan dan alasannya:
-            docs/rancangan/ruang-sidang-ringkas.html (pilihan A). */}
-        {tampil(tampilan, "ringkasan-ruang") || tampil(tampilan, "kartu-ruang") || tampil(tampilan, "saring-ruang") || adaSaklarKeliling ? (
-          <PitaRuangSidang
-            awal={
-              adaSaklarKeliling ? (
-                <SaklarSidangKeliling ringkas kh={kh} daftar={sidang} penggunaId={String(currentUser?.id ?? "")} />
-              ) : undefined
-            }
-            pil={pitaRuang}
-            tampilJumlah={tampil(tampilan, "kartu-ruang")}
-            tampilBerjalan={tampil(tampilan, "ringkasan-ruang")}
-            diskors={diskorsHariIni}
-            nomorPerkara={(k) => bahanTigaJarak.nomorPerkara[k] ?? ""}
-            ruangPilihan={ruangSaring}
-            onPilih={tampil(tampilan, "saring-ruang") || tampil(tampilan, "kartu-ruang") ? setRuangDipilih : undefined}
-            keteranganPerlu={keteranganPerluKartu}
-            sekarangMs={() => (patokanWaktu ? patokanWaktu.sekarangMs + (Date.now() - patokanWaktu.diterimaMs) : Date.now())}
-            onLihat={(k) => {
-              const el = Array.from(document.querySelectorAll<HTMLElement>("[data-kunci-waktu]")).find(
-                (x) => x.dataset.kunciWaktu === k
-              );
-              el?.scrollIntoView({ block: "center", behavior: "smooth" });
-            }}
-          />
-        ) : null}
-
-        <div
-          ref={kotakTabel}
-          data-tabel-muat={tabelMuat ? "ya" : "tidak"}
-          className={cn("rounded-xl border", tabelMuat ? "overflow-visible" : "overflow-x-auto")}
-        >
-          <table
-            className={cn(
-              "w-full text-sm",
-              modeRingkas
-                ? "min-w-[640px] xl:min-w-0 [&_.kolom-lengkap]:hidden"
-                : "min-w-[980px] xl:min-w-0 [&_.hanya-ringkas]:hidden"
-            )}
-          >
-            {/* Sudut atas kepala kolom ikut membulat: selama tabelnya muat,
-                wadahnya tidak lagi memotong isinya, dan latar bg-muted yang
-                bersudut siku akan menyembul keluar dari garis rounded-xl. */}
-            <thead className="sticky top-0 z-10 bg-muted text-left text-sm uppercase tracking-wide shadow-sm [&_th:first-child]:rounded-tl-xl [&_th:last-child]:rounded-tr-xl">
-              {/* Tiap kepala dapat ditekan: naik, turun, lalu kembali ke
-                  urutan asal. Putaran ketiga penting - tanpa jalan kembali,
-                  satu tekanan yang tidak disengaja mengunci tabelnya, dan
-                  satu-satunya cara pulih adalah memuat ulang halaman. */}
-              <tr>
-                <th className="px-2 py-2 text-right font-medium">No</th>
-                {/* Kepalanya ikut saklarnya, sama seperti selnya dan
-                    tombolnya. Sebelumnya hanya sel dan tombolnya yang dijaga,
-                    sehingga mematikan skor meninggalkan kolom berkepala "Siap"
-                    yang selalu kosong - memakan lebar, menawarkan pengurutan
-                    atas angka yang tidak ada, dan tanpa tombol pemulih sebab
-                    tombolnya sudah ikut hilang.
-
-                    Selnya TETAP digambar kosong - lihat catatannya di sana:
-                    jumlah sel tiap baris harus sama dengan jumlah kepala
-                    kolomnya, jadi kepala dan sel harus hilang BERSAMA. */}
-                {tampil(tampilan, "kolom-siap") ? (
-                  <KepalaUrut
-                    kunci="siap"
-                    urutan={urutTabel}
-                    onTekan={tekanUrut}
-                    className="px-2 kolom-lengkap"
-                    rata="tengah"
-                    judul="Urutkan menurut skor kesiapan sidang"
-                  >
-                    Siap
-                  </KepalaUrut>
-                ) : null}
-                <KepalaUrut
-                  kunci="antrian"
-                  urutan={urutTabel}
-                  onTekan={tekanUrut}
-                  className="max-w-[12rem] px-2"
-                  judul="Urutkan menurut nomor antrian; yang belum mengambil dan yang tanpa antrian jatuh ke bawah"
-                >
-                  Antrian / Jam
-                </KepalaUrut>
-                <KepalaUrut className="px-2" kunci="perkara" urutan={urutTabel} onTekan={tekanUrut}>
-                  Perkara &amp; Para Pihak
-                </KepalaUrut>
-                <KepalaUrut className={cn("px-2", LEBAR_KOLOM_AGENDA)} kunci="agenda" urutan={urutTabel} onTekan={tekanUrut}>
-                  Agenda
-                </KepalaUrut>
-                {/* ==============================================================
-                    TIGA KOLOM DISATUKAN MENJADI SATU
-                    ==============================================================
-
-                    Majelis, Petugas Sidang, dan Ruang dulu berdiri sendiri-
-                    sendiri. Ketiganya menjawab satu pertanyaan yang sama -
-                    SIAPA yang menyidangkan, dan DI MANA - dan memisahkannya
-                    justru memakan tempat, bukan memberi kejelasan:
-
-                      Majelis  nama hakimnya terpotong elipsis karena sempit
-                      Petugas  "Unun Fidiyasari Patangai, S.H." membungkus
-                               menjadi empat baris, dan seluruh baris tabel
-                               ikut meninggi karenanya
-                      Ruang    "Ruang Sidang 1 Dalam Gedung" membungkus
-                               menjadi empat baris untuk satu keterangan yang
-                               sama pada hampir seluruh perkara hari itu
-
-                    Disatukan, ketiganya muat dalam satu kolom lebar tanpa
-                    membungkus, dan tabel kehilangan dua kolom - itulah ruang
-                    yang selama ini dicari Perkara dan Agenda.
-
-                    Diurutkan menurut majelis, sebab itulah yang dicari orang
-                    ketika menekan kepala kolom ini.
-
-                    6 Okt 2026: "satu kolom lebar" itu kebablasan - tata letak
-                    tabel otomatis memberinya ±430px (nama tiga hakim + "PP ...
-                    · JS ..." dalam satu baris), dan Perkara/Agenda kembali
-                    tersempitkan. Dibatasi LEBAR_KOLOM_MAJELIS pada kepala DAN
-                    sel (pola yang sama dengan Antrian / Jam): namanya melipat,
-                    tidak ada yang dipotong. */}
-                <KepalaUrut className={cn("px-2 kolom-lengkap", LEBAR_KOLOM_MAJELIS)} kunci="majelis" urutan={urutTabel} onTekan={tekanUrut}>
-                  Majelis &amp; Petugas
-                </KepalaUrut>
-                <KepalaUrut
-                  kunci="putusan"
-                  className="px-2 kolom-lengkap"
-                  urutan={urutTabel}
-                  onTekan={tekanUrut}
-                  judul="Urutkan menurut tanggal putusan; yang belum putus jatuh ke bawah"
-                >
-                  Putusan
-                </KepalaUrut>
-                <th className="px-2 py-2 text-right font-medium">
-                  <span className="sr-only">Rincian</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {/* Hanya muatan PERTAMA yang boleh mengosongkan tabel - lihat
-                  catatan panjang pada pertamaMuat. Penyegaran berikutnya
-                  membiarkan barisnya terpasang, dan posisi gulir pembacanya
-                  tidak bergerak. */}
-              {pertamaMuat && memuat ? (
-                // JADWAL-3 butir 5: tanpa tulisan memuat - ruangnya saja yang
-                // dipesan, supaya baris sidang tidak membuat halaman melompat.
-                <tr aria-busy="true" data-tabel-menunggu="">
-                  <td className="h-40 px-3 py-6" colSpan={kolomTabel} />
-                </tr>
-              ) : sidangTampil.length === 0 && sidang.length > 0 ? (
-                <tr>
-                  <td className="px-3 py-10 text-center" colSpan={kolomTabel}>
-                    <p className="text-sm font-medium">
-                      Tidak ada sidang yang cocok dengan saringan ini.
-                    </p>
-                    {/* Bedanya penting: hari yang memang kosong menyuruh
-                        pindah tanggal, sedangkan hasil yang tersaring habis
-                        menyuruh melonggarkan saringannya. Menyamakan keduanya
-                        membuat orang mencari di tanggal lain padahal
-                        perkaranya ada di depan mata. */}
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {sidang.length} perkara pada rentang ini tidak satu pun cocok. Longgarkan
-                      saringannya, atau tekan Reset.
-                    </p>
-                    {/* Memakai reset PENUH - dan justru di sini bedanya paling
-                        menentukan. Tombol lama hanya melepas sebagian, sehingga
-                        menekannya pada keadaan kosong dapat tetap menghasilkan
-                        daftar kosong: alur perkara dan keempat penyaring kartu
-                        tidak ikut dilepas. Tombol pemulih yang tidak memulihkan
-                        apa pun adalah jalan buntu yang tampak seperti jalan. */}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="mt-3"
-                      onClick={resetSemuaSaringan}
-                    >
-                      <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                      Reset ke {sidang.length} perkara
-                    </Button>
-                  </td>
-                </tr>
-              ) : sidang.length === 0 ? (
-                <tr>
-                  <td className="px-3 py-10 text-center" colSpan={kolomTabel}>
-                    <CalendarDays className="mx-auto mb-2 h-8 w-8 text-muted-foreground/40" />
-                    <p className="text-sm font-medium">Tidak ada sidang pada tanggal ini.</p>
-                    {/* Keadaan kosong yang menawarkan langkah berikutnya, bukan
-                        sekadar memberitahu bahwa tidak ada apa-apa. */}
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Coba hari lain lewat panah, atau buka Kalender sidang untuk
-                      melihat hari mana saja yang ada sidangnya.
-                    </p>
-                  </td>
-                </tr>
-              ) : (
-                sidangTampil.map((baris, urutan) => {
+  const gambarSatuBaris = (baris: SidangBaris, urutan: number) => {
                   const kunci = `${baris.nomorPerkara}|${baris.sidangId}`;
                   // K13: fungsi pemicu dibaca dari `alat` (fungsi asli bila tabel ringan mati; pembungkus
                   // stabil bila menyala). Nama yang sama sengaja dipakai supaya isi baris tidak berubah.
@@ -7999,6 +7024,58 @@ export function AletaEcourtSidang({
                   /* === 12OKT-C: mediator di Majelis & Petugas (butir 6) === */
                   const mediatorIni = tampil(tampilan, "mediator-majelis") ? mediatorBaris(baris) : "";
                   /* === AKHIR 12OKT-C === */
+                  // Dipakai SATU kali oleh kedua tampilan (baris tabel lama dan kartu baru): pencatat hasil dan rincian.
+                  const catatEl =
+                    catat?.kunci === kunci ? (
+                      <CatatHasilRingkas
+                        jadwalId={baris.sidangId}
+                        nomorPerkara={baris.nomorPerkara}
+                        jalan={catat.jalan}
+                        onTutup={() => setCatat(null)}
+                        onSelesai={(hasilTulis) => {
+                          // 22 Okt 2026: baris langsung berubah dari jawaban penulisan, satu bacaan ringan
+                          // membenarkannya seketika, lalu jadwal lengkap menyusul seperti semula.
+                          if (hasilTulis) setSidang((lama) => terapkanHasilTulis(lama, baris.sidangId, hasilTulis));
+                          void segarkanRingan().finally(() => void muatTanggal(dari, sampai, nilaiKesiapan));
+                        }}
+                      />
+                    ) : null;
+                  const rincianEl =
+                    dibuka === kunci ? (
+                      memuatRincian ? (
+                        <div className="min-h-[6rem]" aria-busy="true" />
+                      ) : (
+                        <RincianSidang
+                          rincian={rincian}
+                          nomorPerkara={baris.nomorPerkara}
+                          perkaraId={baris.perkaraId}
+                          sidangId={baris.sidangId}
+                          tunjukan={tunjukan[String(baris.perkaraId)]}
+                          mediator={mediatorIni} /* 12OKT-C */
+                          tampilCatatanHitung={tampil(tampilan, "catatan-cara-hitung")}
+                          durasi={baris.durasi}
+                          pembebanan={sidangIkrar(baris) ? baris.pembebanan ?? null : null}
+                          penanda={baris} /* 12OKT-B */
+                          aktifPenandaPerkara={aktifPenandaPerkara}
+                          aktifPenandaPekerjaan={aktifPenandaPekerjaan}
+                          pihakHadir={hadirIni(baris)} /* 12OKT-H */
+                          /* === 12OKT-A: kumulasi perkara === */
+                          kumulasi={tampil(tampilan, "kumulasi-perkara") && baris.kumulasiTerbaca ? baris.kumulasi ?? null : undefined}
+                          /* === AKHIR 12OKT-A === */
+                          /* === 12OKT-K: eksepsi/rekonvensi, sita, eksekusi di rincian === */
+                          jawabanSita={baris}
+                          tampilJawaban={tampil(tampilan, "penanda-jawaban")}
+                          tampilSita={tampil(tampilan, "penanda-sita")}
+                          tampilEksekusi={tampil(tampilan, "penanda-eksekusi") /* 12OKT-N */}
+                          /* === AKHIR 12OKT-K === */
+                          tandaOnline={
+                            tampil(tampilan, "tanda-antrian-online")
+                              ? tandaAntrianOnline(antrianUntuk(antrian.peta, baris))
+                              : null
+                          }
+                        />
+                      )
+                    ) : null;
                   const gambarBaris = () => (
                     <Fragment key={kunci}>
                       {/* ==================================================
@@ -9606,18 +8683,7 @@ export function AletaEcourtSidang({
                                   : undefined
                               }
                             >
-                              <CatatHasilRingkas
-                                jadwalId={baris.sidangId}
-                                nomorPerkara={baris.nomorPerkara}
-                                jalan={catat.jalan}
-                                onTutup={() => setCatat(null)}
-                                onSelesai={(hasilTulis) => {
-                                  // 22 Okt 2026: baris langsung berubah dari jawaban penulisan, satu bacaan ringan
-                                  // membenarkannya seketika, lalu jadwal lengkap menyusul seperti semula.
-                                  if (hasilTulis) setSidang((lama) => terapkanHasilTulis(lama, baris.sidangId, hasilTulis));
-                                  void segarkanRingan().finally(() => void muatTanggal(dari, sampai, nilaiKesiapan));
-                                }}
-                              />
+                              {catatEl}
                             </div>
                           </td>
                         </tr>
@@ -9642,54 +8708,857 @@ export function AletaEcourtSidang({
                                   : undefined
                               }
                             >
-                              {memuatRincian ? (
-                                <div className="min-h-[6rem]" aria-busy="true" />
-                              ) : (
-                                <RincianSidang
-                                  rincian={rincian}
-                                  nomorPerkara={baris.nomorPerkara}
-                                  perkaraId={baris.perkaraId}
-                                  sidangId={baris.sidangId}
-                                  tunjukan={tunjukan[String(baris.perkaraId)]}
-                                  mediator={mediatorIni} /* 12OKT-C */
-                                  tampilCatatanHitung={tampil(tampilan, "catatan-cara-hitung")}
-                                  durasi={baris.durasi}
-                                  pembebanan={sidangIkrar(baris) ? baris.pembebanan ?? null : null}
-                                  penanda={baris} /* 12OKT-B */
-                                  aktifPenandaPerkara={aktifPenandaPerkara}
-                                  aktifPenandaPekerjaan={aktifPenandaPekerjaan}
-                                  pihakHadir={hadirIni(baris)} /* 12OKT-H */
-                                  /* === 12OKT-A: kumulasi perkara === */
-                                  kumulasi={tampil(tampilan, "kumulasi-perkara") && baris.kumulasiTerbaca ? baris.kumulasi ?? null : undefined}
-                                  /* === AKHIR 12OKT-A === */
-                                  /* === 12OKT-K: eksepsi/rekonvensi, sita, eksekusi di rincian === */
-                                  jawabanSita={baris}
-                                  tampilJawaban={tampil(tampilan, "penanda-jawaban")}
-                                  tampilSita={tampil(tampilan, "penanda-sita")}
-                                  tampilEksekusi={tampil(tampilan, "penanda-eksekusi") /* 12OKT-N */}
-                                  /* === AKHIR 12OKT-K === */
-                                  tandaOnline={
-                                    tampil(tampilan, "tanda-antrian-online")
-                                      ? tandaAntrianOnline(antrianUntuk(antrian.peta, baris))
-                                      : null
-                                  }
-                                />
-                              )}
+                              {rincianEl}
                             </div>
                           </td>
                         </tr>
                       ) : null}
                     </Fragment>
                   );
+                  // TAMPILAN BARU: kartu berlajur. Isi lajur memakai komponen, pemicu, dan izin yang SAMA dengan
+                  // baris tabel di atas; yang baru hanya susunannya.
+                  const gambarKartu = () => {
+                    const pidK = String(baris.perkaraId);
+                    const tglIni = String(baris.tanggalSidang).slice(0, 10);
+                    const antrianIni = antrianUntuk(antrian.peta, baris);
+                    const hadirDaftar = antrian.kehadiran?.[kunciKehadiran(baris.perkaraId, baris.tanggalSidang)]?.hadir;
+                    const susunHadir = susunKehadiran(hadirDaftar, antrianIni);
+                    const ikrarSel = ikrarSelesai(baris);
+                    const teksHasilPutus = hasilSidangPutusan(baris.ditunda, baris.alasanDitunda);
+                    const putusAda = baris.sudahPutus || Boolean(teksHasilPutus);
+                    const perluIni = KEADAAN_PERLU_DIPERIKSA.some((k) => k.cocok(baris, antrian.peta, saat));
+                    const keadaanKartu: KeadaanKartu = !warnaBaris
+                      ? ""
+                      : berjalanIni
+                        ? "berjalan"
+                        : skorsIni
+                          ? "diskors"
+                          : selesaiTanda.hijau
+                            ? "selesai"
+                            : perluIni
+                              ? "perlu"
+                              : "";
+                    const hasilAda = Boolean(baris.ditunda) || putusAda || ikrarSel;
+                    const antrianTerbuka =
+                      !hasilAda && !selesaiTanda.hijau && (!antrianIni || antrianIni.keadaan === "menunggu" || antrianIni.keadaan === "belum-ambil");
+                    const adaIkonAntrian = tampil(tampilan, "ambil-antrian");
+                    const mediatorPenanda = tampil(tampilan, "tombol-mediator")
+                      ? penandaMediator(baris, antrianIni, hariIni())
+                      : null;
+                    const segmen = keadaanSegmen({
+                      boleh: tampil(tampilan, "tombol-tunda-putus"),
+                      sidangSelesai,
+                      ditunda: Boolean(baris.ditunda) && tampil(tampilan, "hasil-tundaan"),
+                      sampaiPendek: baris.tanggalSidangBerikut ? tanggalPendekId(baris.tanggalSidangBerikut) : "",
+                      putus: putusAda && (tampil(tampilan, "hasil-tundaan") || statusPutusanTampil),
+                      amar: baris.sudahPutus ? baris.statusPutusan : "",
+                      ikrar: sidangIkrar(baris),
+                      ikrarSelesai: ikrarSel,
+                    });
+                    const perluCatat = perluCatatHasil({
+                      selesai: selesaiTanda.hijau,
+                      ditunda: Boolean(baris.ditunda),
+                      putus: putusAda,
+                      ikrarSelesai: ikrarSel,
+                    });
+                    const tahap = tahapDariAgenda(baris.agenda, {
+                      permohonan: kelompokAlur(baris.alurPerkaraId) === "permohonan",
+                      ikrar: sidangIkrar(baris),
+                    });
+                    const namaHakim = pisahNamaHakim(majelisTampil(baris, pilihanHakim).nama);
+                    const hakimDiganti = majelisTampil(baris, pilihanHakim).diganti;
+                    const kodeBuka = majelisTerbuka.includes(kunci);
+                    const cc = rencanaCcBerikut(baris.courtCalendar, tglIni);
+                    const tundaInfo =
+                      tampil(tampilan, "hasil-tundaan") && baris.ditunda
+                        ? {
+                            tanggal: baris.tanggalSidangBerikut ? tanggalPendekId(baris.tanggalSidangBerikut) : "belum ada tanggal",
+                            agenda: baris.alasanDitunda || "",
+                            judul: `Tundaan yang sudah dicatat${baris.tanggalSidangBerikut ? ` sampai ${tanggalPendekTahunId(baris.tanggalSidangBerikut)}` : ""}${baris.alasanDitunda ? ` - ${baris.alasanDitunda}` : ""}`,
+                          }
+                        : null;
+                    const tampilBerikutnya = !baris.sudahPutus && !teksHasilPutus ? true : sidangIkrar(baris) && !ikrarSel;
+                    const bht = baris.sudahPutus
+                      ? perkiraanBht({
+                          tanggalBht: baris.tanggalBht,
+                          tanggalPutusan: baris.tanggalPutusan,
+                          tanggalPbt: baris.tanggalPbt,
+                          verstek: baris.verstekPutusan,
+                          dihadiriOleh: baris.dihadiriOleh,
+                        })
+                      : null;
+                    const nomorEl = onBukaTunda ? (
+                      <button
+                        type="button"
+                        onClick={() => onBukaTunda({ nomorPerkara: baris.nomorPerkara, sidangId: baris.sidangId })}
+                        title={`Tunda atau putus sidang ${baris.nomorPerkara}`}
+                        className="text-left text-[0.95rem] font-extrabold tracking-tight underline decoration-transparent underline-offset-2 transition hover:text-primary hover:decoration-primary"
+                      >
+                        <NomorBolehPatah nomor={baris.nomorPerkara} />
+                      </button>
+                    ) : onBukaStatus ? (
+                      <button
+                        type="button"
+                        onClick={() => onBukaStatus(baris.nomorPerkara)}
+                        title={`Buka status perkara ${baris.nomorPerkara}`}
+                        className="text-left text-[0.95rem] font-extrabold tracking-tight underline decoration-transparent underline-offset-2 transition hover:text-primary hover:decoration-primary"
+                      >
+                        <NomorBolehPatah nomor={baris.nomorPerkara} />
+                      </button>
+                    ) : (
+                      <span className="text-[0.95rem] font-extrabold tracking-tight">
+                        <NomorBolehPatah nomor={baris.nomorPerkara} />
+                      </span>
+                    );
+                    const ikonAntrian =
+                      adaIkonAntrian && antrianTerbuka ? (
+                        <TombolAmbilAntrian
+                          ikon
+                          baris={baris}
+                          kehadiran={hadirDaftar}
+                          antrian={antrianIni}
+                          sudahAda={antrianIni?.nomor}
+                          onSelesai={() => void muatTanggal(dari, sampai, nilaiKesiapan)}
+                        />
+                      ) : null;
+                    // Selesai menjadi tombol utama hanya saat sidang berjalan (atau sudah ditandai, untuk membatalkan);
+                    // selain itu ia di Lainnya, dengan pemicu dan hak yang sama.
+                    const selesaiUtama = Boolean(berjalanIni) || selesaiTanda.ditandai;
+                    const aksiLainRuang = bolehJalannya && tampil(tampilan, "tombol-ruang-sidang") && punyaAksiRuangLain(aksiRuang);
+                    const adaSaksiNama = tampil(tampilan, "saksi") && aktifPanggilSaksi && (baris.saksiPihak1 ?? 0) + (baris.saksiPihak2 ?? 0) > 0;
+                    const itemLainnya = [
+                      aksiLainRuang ? (
+                        <div key="ruang" className="flex flex-col gap-1">
+                          <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Jalannya sidang</span>
+                          <TombolRuangSidang
+                            bagian="lain"
+                            baris={baris}
+                            aksi={aksiRuang}
+                            berjalan={berjalanIni}
+                            skors={skorsIni}
+                            bisaDipanggil={bisaDipanggilIni}
+                            info={infoRuangSidang}
+                            ruang={ruangIni}
+                            onBerubah={() => {
+                              tandaSelesai.muatUlang();
+                              void muatTanggal(dari, sampai, nilaiKesiapan);
+                            }}
+                          />
+                        </div>
+                      ) : null,
+                      bolehJalannya && tampil(tampilan, "tombol-selesai-sidang") && !selesaiUtama ? (
+                        <div key="selesai" className="flex flex-col gap-1">
+                          <TombolSelesaiSidang baris={baris} keadaan={selesaiTanda} onBerubah={tandaSelesai.muatUlang} />
+                        </div>
+                      ) : null,
+                      adaSaksiNama ? (
+                        <button
+                          key="panggil-saksi"
+                          type="button"
+                          onClick={() => {
+                            for (const sisi of ["P", "T"] as const) {
+                              const adaSisi = (sisi === "P" ? baris.saksiPihak1 : baris.saksiPihak2) ?? 0;
+                              const kunciSisi = kunciBarisSaksi(baris.perkaraId, sisi);
+                              if (adaSisi > 0 && !saksiLipat.terbuka(kunciSisi)) saksiLipat.alih(kunciSisi);
+                            }
+                          }}
+                          className="rounded-md border px-2 py-1 text-left text-xs transition hover:bg-muted"
+                          title="Membuka daftar nama saksi; menekan nama memanggilnya (WhatsApp atau pengeras suara)."
+                        >
+                          Panggil saksi
+                        </button>
+                      ) : null,
+                      adaIkonAntrian ? (
+                        <div key="antrian" className="flex items-center gap-2 text-xs">
+                          <span className="text-muted-foreground">Antrian dan kehadiran per orang</span>
+                          <TombolAmbilAntrian
+                            baris={baris}
+                            kehadiran={hadirDaftar}
+                            antrian={antrianIni}
+                            sudahAda={antrianIni?.nomor}
+                            onSelesai={() => void muatTanggal(dari, sampai, nilaiKesiapan)}
+                          />
+                        </div>
+                      ) : null,
+                      tampil(tampilan, "tarik-belum-upload") && baris.lewatEcourt ? (
+                        <button
+                          key="tarik"
+                          type="button"
+                          data-tutup-menu=""
+                          onClick={() => void tarikBelumUpload.tarik(baris)}
+                          className="rounded-md border px-2 py-1 text-left text-xs transition hover:bg-muted"
+                          title="Periksa e-Court sekarang - hanya perkara ini."
+                        >
+                          Periksa e-Court perkara ini
+                        </button>
+                      ) : null,
+                    ].filter(Boolean);
+                    const sebabTitle = (naskah: boolean) =>
+                      (naskah
+                        ? "Naskah putusan sudah diunggah ke SIPP tetapi minutasi belum bertanggal."
+                        : "Naskah putusan belum diunggah ke SIPP.") + " Buka rincian perkara untuk daftar lengkap berkas yang masih kurang.";
+
+                    const waktu = (
+                      <>
+                        {dari !== sampai ? (
+                          <span className="text-xs text-muted-foreground">{tanggalPendekId(tglIni)}</span>
+                        ) : null}
+                        <SelAntrianJam
+                          baris={baris}
+                          antrian={antrianIni}
+                          tanggalTampil={dari}
+                          sidangSelesai={sidangSelesai}
+                          tampilMenunggu={tampil(tampilan, "menunggu-lama")}
+                          tampilRincianAntrian={tampil(tampilan, "rincian-antrian")}
+                          tampilTandaOnline={tampil(tampilan, "tanda-antrian-online")}
+                          tampilJamPanggil={tampil(tampilan, "jam-dipanggil")}
+                          tungguBerjalan={tigaBaris?.tunggu}
+                          patokan={patokanWaktu}
+                        />
+                        {ikonAntrian}
+                        {tampil(tampilan, "kehadiran-rinci") ? (
+                          <RingkasKehadiran
+                            potongan={ringkasKehadiran(
+                              susunHadir,
+                              bahanKehadiranDariBaris(baris),
+                              {
+                                singkat: true,
+                                jamAmbil: tampil(tampilan, "rincian-antrian")
+                                  ? { p1: antrianIni?.pihak1, p2: antrianIni?.pihak2 }
+                                  : undefined,
+                              }
+                            ).filter((p) => p.kunci !== "saksiP" && p.kunci !== "saksiT")}
+                          />
+                        ) : null}
+                        {tampil(tampilan, "sedang-berjalan") && berjalanIni ? <LencanaSedangBerjalan berjalan={berjalanIni} /> : null}
+                        {tampil(tampilan, "sedang-berjalan") && skorsIni && !berjalanIni ? <LencanaDiskors catatan={skorsIni} /> : null}
+                        {tampil(tampilan, "jarak-sidang") ? (
+                          <TigaJarakSidang
+                            tiga={tigaBaris}
+                            baris={barisWaktuPerKunci[kunciTiga]}
+                            patokan={patokanWaktu}
+                            ambangTungguMenit={AMBANG_MENUNGGU_MENIT}
+                            sebutTetangga={(tetangga) => sebutTetangga(tetangga, baris.tanggalSidang)}
+                            nomorRekaman={antrianIni ? null : barisWaktuPerKunci[kunciTiga]?.nomorAntrian ?? null}
+                          />
+                        ) : null}
+                        {!modeRingkas && tampil(tampilan, "kolom-siap") ? (
+                          <LencanaKesiapan nilai={nilaiKesiapan ? kesiapan[kunci] : undefined} diminta={nilaiKesiapan} />
+                        ) : null}
+                      </>
+                    );
+
+                    const perkara = (
+                      <>
+                        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                          {nomorEl}
+                          {tampil(tampilan, "penanda-verzet") && perkaraVerzetDari(baris.jenisPerkara) ? (
+                            <Badge variant="danger" title="Perkara perlawanan terhadap putusan verstek.">
+                              verzet
+                            </Badge>
+                          ) : null}
+                          <LencanaPerkaraBaris baris={baris} aktif={aktifPenandaPerkara} ikonTenang />
+                          {baris.lewatEcourt ? (
+                            <LencanaBeracaraPerkara
+                              ikon
+                              nomorPerkara={baris.nomorPerkara}
+                              bacaOtomatis={false}
+                              pernahHadirTergugat={tergugatPernahHadirDariSandi([baris.dihadiriOleh], baris.verstekPutusan === true)}
+                            />
+                          ) : null}
+                          <PenandaPanggilan panggilan={baris.panggilan} />
+                          {tampil(tampilan, "verifikasi-majelis") ? (
+                            <LencanaVerifikasiMajelis
+                              ikonTenang
+                              penanda={penandaVerifikasi(baris, verifikasi, hariIni())}
+                              tarikan={tarikBelumUpload.keadaanUntuk(baris.nomorPerkara)}
+                              onTarik={tampil(tampilan, "tarik-belum-upload") ? () => void tarikBelumUpload.tarik(baris) : undefined}
+                            />
+                          ) : null}
+                          <LencanaCourtCalendarSinkron baris={baris} />
+                        </div>
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <span className="text-sm font-extrabold text-foreground/90">
+                            {!tampil(tampilan, "kumulasi-perkara") ? (
+                              <>{baris.jenisPerkara || "—"}</>
+                            ) : (
+                              <JenisDenganKumulasi jenis={baris.jenisPerkara} kumulasi={baris.kumulasi} />
+                            )}
+                          </span>
+                          {belumTundaLewatBatas(baris, saat) ? (
+                            <span
+                              className="inline-flex items-center rounded-full border border-rose-500 bg-rose-100 px-1.5 py-0.5 text-[11px] font-semibold text-rose-800 dark:border-rose-400 dark:bg-rose-950 dark:text-rose-200"
+                              title={
+                                baris.tanggalSidang < saat.tanggal
+                                  ? `Sidang ${tanggalHariPanjang(baris.tanggalSidang)} sampai sekarang belum dicatat hasilnya - belum ditunda, belum diputus, dan kolom hasil sidangnya di SIPP masih kosong.`
+                                  : `Sudah lewat pukul ${JAM_BATAS_HASIL_SIDANG.slice(0, 5)} WITA dan hasil sidang ini belum dicatat - belum ditunda, belum diputus, dan kolom hasil sidangnya di SIPP masih kosong. ${
+                                      tampil(tampilan, "tombol-tunda-putus")
+                                        ? "Catat lewat tombol tunda atau putus di bawahnya."
+                                        : "Catat di SIPP, atau nyalakan Tombol tunda | putus di menu Tampilan."
+                                    }`
+                              }
+                            >
+                              Belum ditunda
+                            </span>
+                          ) : null}
+                          {tampil(tampilan, "ikrar-selesai") && ikrarSel ? (
+                            <span
+                              className="inline-flex items-center rounded-full border border-emerald-500 bg-emerald-100 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-800 dark:border-emerald-400 dark:bg-emerald-950 dark:text-emerald-200"
+                              title={
+                                baris.ikrarTercatat
+                                  ? "Ikrar talak sudah tercatat di SIPP pada tanggal sidang ini - perkaranya selesai; tidak ada lagi yang ditunda atau diputus."
+                                  : `Hasil sidang di SIPP: "${baris.alasanDitunda}" - ikrar talak sudah dilaksanakan, perkaranya selesai.`
+                              }
+                            >
+                              Selesai · telah ikrar talak
+                            </span>
+                          ) : null}
+                        </div>
+                        {baris.pihak.penggugat.length > 0 ||
+                        baris.pihak.tergugat.length > 0 ||
+                        (baris.pihak.turutTergugat ?? []).length > 0 ||
+                        (baris.pihak.intervensi ?? []).length > 0 ? (
+                          <div className="space-y-0.5 text-sm text-muted-foreground">
+                            {baris.pihak.penggugat.length > 0 ? (
+                              <div className="break-words" title={baris.pihak.penggugat.join(", ")}>
+                                <span className="font-medium text-foreground/70">P:</span>{" "}
+                                <NamaPihakHadir aktif={aktifPihakHadir} hadir={hadirIni(baris).pihak1}>
+                                  <NamaDapatDipanggil golongan="pihak1" {...konteksPanggil}>
+                                    {baris.pihak.penggugat.join(", ")}
+                                  </NamaDapatDipanggil>
+                                </NamaPihakHadir>
+                                <LencanaPekerjaanBaris baris={baris} nama={baris.pihak.penggugat} aktif={aktifPenandaPekerjaan} />
+                              </div>
+                            ) : null}
+                            {pihakTampil(baris.pihak).tergugat.length > 0 ? (
+                              <div className="break-words" title={pihakTampil(baris.pihak).tergugat.join(", ")}>
+                                <span className="font-medium text-foreground/70">T:</span>{" "}
+                                <NamaPihakHadir aktif={aktifPihakHadir} hadir={hadirIni(baris).pihak2}>
+                                  <NamaDapatDipanggil golongan="pihak2" {...konteksPanggil}>
+                                    {pihakTampil(baris.pihak).tergugat.join(", ")}
+                                  </NamaDapatDipanggil>
+                                </NamaPihakHadir>
+                                <LencanaPekerjaanBaris baris={baris} nama={pihakTampil(baris.pihak).tergugat} aktif={aktifPenandaPekerjaan} />
+                              </div>
+                            ) : null}
+                            {tampil(tampilan, "pihak-turut-intervensi") && (baris.pihak.turutTergugat ?? []).length > 0 ? (
+                              <div className="break-words" title={`Turut Tergugat: ${(baris.pihak.turutTergugat ?? []).join(", ")}`} data-pihak-turut="">
+                                <span className="font-medium text-foreground/70">Turut T:</span>{" "}
+                                <NamaDapatDipanggil golongan="pihak4" {...konteksPanggil}>
+                                  {(baris.pihak.turutTergugat ?? []).join(", ")}
+                                </NamaDapatDipanggil>
+                                <LencanaPekerjaanBaris baris={baris} nama={baris.pihak.turutTergugat ?? []} aktif={aktifPenandaPekerjaan} />
+                              </div>
+                            ) : null}
+                            {tampil(tampilan, "pihak-turut-intervensi") && (baris.pihak.intervensi ?? []).length > 0 ? (
+                              <div className="break-words" title={`Intervensi: ${(baris.pihak.intervensi ?? []).join(", ")}`} data-pihak-intervensi="">
+                                <span className="font-medium text-foreground/70">Int:</span>{" "}
+                                <NamaDapatDipanggil golongan="pihak3" {...konteksPanggil}>
+                                  {(baris.pihak.intervensi ?? []).join(", ")}
+                                </NamaDapatDipanggil>
+                                <LencanaPekerjaanBaris baris={baris} nama={baris.pihak.intervensi ?? []} aktif={aktifPenandaPekerjaan} />
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : null}
+                        {tampil(tampilan, "saksi") && (baris.saksiPihak1 ?? 0) + (baris.saksiPihak2 ?? 0) > 0 ? (
+                          <div className="space-y-0.5 text-xs text-muted-foreground">
+                            {(baris.saksiPihak1 ?? 0) > 0 ? (
+                              <SaksiLipat
+                                label="Saksi P"
+                                jumlah={baris.saksiPihak1 ?? 0}
+                                hadir={tampil(tampilan, "kehadiran-rinci") ? susunHadir.saksiP.length : undefined}
+                                terbuka={saksiLipat.terbuka(kunciBarisSaksi(baris.perkaraId, "P"))}
+                                onAlih={() => saksiLipat.alih(kunciBarisSaksi(baris.perkaraId, "P"))}
+                                namaRingkas={(baris.saksiNamaPihak1 ?? []).join(", ")}
+                              >
+                                <DaftarNamaSaksi aktif={aktifPanggilSaksi} golongan="saksi1" nama={baris.saksiNamaPihak1 ?? []} konteks={konteksPanggil} />
+                              </SaksiLipat>
+                            ) : null}
+                            {(baris.saksiPihak2 ?? 0) > 0 ? (
+                              <SaksiLipat
+                                label="Saksi T"
+                                jumlah={baris.saksiPihak2 ?? 0}
+                                hadir={tampil(tampilan, "kehadiran-rinci") ? susunHadir.saksiT.length : undefined}
+                                terbuka={saksiLipat.terbuka(kunciBarisSaksi(baris.perkaraId, "T"))}
+                                onAlih={() => saksiLipat.alih(kunciBarisSaksi(baris.perkaraId, "T"))}
+                                namaRingkas={(baris.saksiNamaPihak2 ?? []).join(", ")}
+                              >
+                                <DaftarNamaSaksi aktif={aktifPanggilSaksi} golongan="saksi2" nama={baris.saksiNamaPihak2 ?? []} konteks={konteksPanggil} />
+                              </SaksiLipat>
+                            ) : null}
+                          </div>
+                        ) : null}
+                      </>
+                    );
+
+                    const agenda = (
+                      <>
+                        <span className="text-sm">
+                          {tampil(tampilan, "agenda-elitigasi") && sidangElitigasi(baris) ? (
+                            <span
+                              className="font-semibold text-red-700 dark:text-red-400"
+                              title="e-Litigasi: perkara terdaftar lewat e-Court, dan agenda ini tahapan yang dipertukarkan lewat aplikasi."
+                            >
+                              {baris.agenda}
+                            </span>
+                          ) : (
+                            baris.agenda || "—"
+                          )}
+                        </span>
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                          {tampil(tampilan, "urutan-sidang") && baris.urutanSidang > 0 ? (
+                            <span className="text-xs text-muted-foreground" data-s="urutan-sidang">
+                              sidang ke-{baris.urutanSidang}
+                            </span>
+                          ) : null}
+                          {tampil(tampilan, "umur-perkara") ? <UmurPerkara durasi={baris.durasi} telahIkrar={ikrarSel} /> : null}
+                        </div>
+                        <TitikTahap tahap={tahap} />
+                        <div className="flex flex-wrap items-center gap-1">
+                          {tampil(tampilan, "hari-putusan") && hariPutusan(baris) ? (
+                            <span
+                              className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-900 dark:bg-amber-950 dark:text-amber-200"
+                              title="Agendanya musyawarah majelis, pembacaan putusan, pembacaan penetapan, atau putusan sela - majelis harus lengkap dan naskahnya harus siap."
+                            >
+                              Hari Putusan
+                            </span>
+                          ) : null}
+                          {tampil(tampilan, "hari-putusan") && tampil(tampilan, "kesiapan-putusan") && hariPutusan(baris) ? (
+                            <LencanaKesiapanPutusan kemajuan={tunjukan[pidK]?.kemajuan ?? checklistTanpaTunjukan[pidK]?.kemajuan} />
+                          ) : null}
+                          {tampil(tampilan, "hari-putusan") &&
+                          tampil(tampilan, "draf-putusan-agen") &&
+                          !sudahPutusHariIni(baris) &&
+                          drafH7[pidK]?.tanggalSidang === tglIni ? (
+                            <LencanaDrafH7 ringkas={drafH7[pidK]} />
+                          ) : null}
+                          {!sudahPutusHariIni(baris) && drafH1[pidK]?.tanggalSidang === tglIni ? <LencanaBasH1 ringkas={drafH1[pidK]} /> : null}
+                          {!sudahPutusHariIni(baris) && kesiapanSidang[pidK]?.tanggalSidang === tglIni ? (
+                            <LencanaKesiapanSidang ringkas={kesiapanSidang[pidK]} />
+                          ) : null}
+                          {tampil(tampilan, "ikrar-talak") && sidangIkrar(baris) ? (
+                            <span
+                              className="rounded bg-sky-100 px-1.5 py-0.5 text-xs font-medium text-sky-900 dark:bg-sky-950 dark:text-sky-200"
+                              title="Sidang penyaksian ikrar talak. Putusannya - izin mengucapkan talak - sudah dijatuhkan sebelumnya; yang terjadi hari ini pengucapan ikrarnya di depan majelis."
+                            >
+                              Ikrar Talak
+                            </span>
+                          ) : null}
+                          {tampil(tampilan, "potensi-verstek") && potensiVerstek(baris) && !sudahPutusHariIni(baris) ? (
+                            <Badge
+                              variant="warning"
+                              title="Pada sidang sebelumnya hanya penggugat/pemohon yang hadir dan tergugat/termohon belum pernah hadir; bila hari ini pun tergugat tidak datang, jalan putusan verstek terbuka."
+                            >
+                              potensi verstek
+                            </Badge>
+                          ) : tampil(tampilan, "kehadiran") && baris.dihadiriOleh === 1 ? (
+                            <Badge variant="success" title="Kedua belah pihak hadir.">
+                              contradictoir
+                            </Badge>
+                          ) : tampil(tampilan, "kehadiran") && baris.dihadiriOleh ? (
+                            <Badge variant="muted">
+                              <PatahSesudahGaris teks={SEBUTAN_HADIR[baris.dihadiriOleh]} />
+                            </Badge>
+                          ) : null}
+                          {tampil(tampilan, "kuasa") && baris.adaKuasa ? (
+                            <span
+                              className="rounded bg-sky-100 px-1.5 py-0.5 text-xs font-medium text-sky-900 dark:bg-sky-950 dark:text-sky-200"
+                              title={`Memakai kuasa hukum: ${[baris.kuasaPihak1 ? "penggugat/pemohon" : "", baris.kuasaPihak2 ? "tergugat/termohon" : ""]
+                                .filter(Boolean)
+                                .join(" dan ") || "tercatat pada perkara"}`}
+                            >
+                              Kuasa{baris.kuasaPihak1 && !baris.kuasaPihak2 ? " P" : baris.kuasaPihak2 && !baris.kuasaPihak1 ? " T" : ""}
+                            </span>
+                          ) : null}
+                          {tampil(tampilan, "belum-bas") && !baris.adaBas ? (
+                            <span
+                              className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-900 dark:bg-amber-950 dark:text-amber-200"
+                              title="Berita acara sidang belum diunggah ke SIPP."
+                            >
+                              Belum ada BAS
+                            </span>
+                          ) : null}
+                          {tampil(tampilan, "lencana-putusan-ecourt") && (baris.sudahPutus || sudahPutusHariIni(baris)) ? (
+                            <EcourtLencanaPutusan
+                              nomorPerkara={baris.nomorPerkara}
+                              perkaraId={baris.perkaraId}
+                              keadaan={baris.putusanEcourt ?? undefined}
+                              kalimat
+                              className="text-xs"
+                            />
+                          ) : null}
+                          {TAMPILKAN_PUTUSAN_ECOURT && baris.putusanEcourt?.perluTindakan ? (
+                            <span
+                              className="rounded bg-rose-100 px-1.5 py-0.5 text-xs font-medium text-rose-900 dark:bg-rose-950 dark:text-rose-200"
+                              title={baris.putusanEcourt.keterangan || "Sudah putus, tetapi putusannya belum beres di e-Court."}
+                            >
+                              {formatLencana(baris.putusanEcourt.sebutan || "putusan e-Court")}
+                            </span>
+                          ) : null}
+                          {tampil(tampilan, "tidak-dipanggil") && baris.panggilan && baris.panggilan.wajibDipanggil.length === 0 ? (
+                            <span
+                              className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground"
+                              title="Semua pihak hadir pada sidang sebelumnya - tidak ada yang wajib dipanggil."
+                            >
+                              Tidak perlu dipanggil
+                            </span>
+                          ) : null}
+                        </div>
+                        <PenandaMediasiAgenda
+                          penanda={[
+                            tampil(tampilan, "penanda-mediasi") ? penandaPernahMediasi(baris) : null,
+                            tampil(tampilan, "hasil-mediasi") ? penandaHasilMediasi(baris) : null,
+                          ]}
+                          onBuka={onBukaStatus ? () => onBukaStatus(baris.nomorPerkara) : undefined}
+                        />
+                        {tampil(tampilan, "penanda-jawaban") ? (
+                          <PenandaJawabanAgenda baris={baris} onBuka={onBukaStatus ? () => onBukaStatus(baris.nomorPerkara) : undefined} />
+                        ) : null}
+                        {tampil(tampilan, "penanda-sita") ? (
+                          <PenandaSitaAgenda baris={baris} onBuka={onBukaStatus ? () => onBukaStatus(baris.nomorPerkara) : undefined} />
+                        ) : null}
+                        {tampil(tampilan, "court-calendar") ? (
+                          <div>
+                            <CourtCalendarSidang gaya="tombol" perkaraId={pidK} nomorPerkara={baris.nomorPerkara} jenisPerkara={baris.jenisPerkara} />
+                          </div>
+                        ) : null}
+                      </>
+                    );
+
+                    const majelis = (
+                      <>
+                        {baris.sudahPutus ? (
+                          <div className="flex flex-wrap gap-1">
+                            {statusPutusanTampil ? (
+                              <Badge variant={warnaStatusPutusan(baris.statusPutusan)}>{baris.statusPutusan || "Putus"}</Badge>
+                            ) : null}
+                            {statusPutusanTampil && baris.verstekPutusan ? <Badge variant="warning">verstek</Badge> : null}
+                          </div>
+                        ) : teksHasilPutus ? (
+                          <div className="flex flex-wrap gap-1">
+                            {statusPutusanTampil ? (
+                              <Badge variant="success" title={`Menurut catatan ruang sidang: ${teksHasilPutus}`}>
+                                putus (hasil sidang)
+                              </Badge>
+                            ) : null}
+                            <Badge
+                              variant="warning"
+                              title="Data putusannya belum diisi di SIPP - yang tertinggal pencatatannya, bukan keadaan perkaranya."
+                            >
+                              belum tercatat di SIPP
+                            </Badge>
+                          </div>
+                        ) : null}
+                        {baris.sudahPutus ? (
+                          <TindakLanjutPutusan
+                            minutasi={sudahDiminutasi(baris.tanggalMinutasi)}
+                            unggah={Boolean(baris.adaBerkasPutusan)}
+                            judulMinutasi={sebabTitle(Boolean(baris.adaBerkasPutusan))}
+                            bht={bht}
+                            pbt={
+                              baris.tanggalPbt !== undefined && perluPbt({ verstek: baris.verstekPutusan, dihadiriOleh: baris.dihadiriOleh })
+                                ? { iso: baris.tanggalPbt }
+                                : null
+                            }
+                            tampilBht
+                            formatTanggal={tanggalPendekTahunId}
+                          />
+                        ) : null}
+                        {tampilBerikutnya ? (
+                          <SidangBerikutnya
+                            tunda={tundaInfo}
+                            cc={cc ? { tanggal: tanggalPendekId(cc.tanggal), agenda: cc.agenda } : null}
+                            beda={Boolean(tundaInfo) && tanggalTundaBedaCc(baris.tanggalSidangBerikut, cc)}
+                          />
+                        ) : null}
+                        {tampil(tampilan, "pembebanan-ikrar") ? <LencanaPembebananIkrar baris={baris} /> : null}
+                        {!modeRingkas ? (
+                          <>
+                            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm" data-s="petugas">
+                              <KodeMajelisTekan
+                                kode={baris.majelisKode || "—"}
+                                terbuka={kodeBuka}
+                                onAlih={() => setMajelisTerbuka((l) => (l.includes(kunci) ? l.filter((x) => x !== kunci) : [...l, kunci]))}
+                                judul={namaHakim.length > 1 ? `Anggota majelis: ${namaHakim.slice(1).join(", ")}` : "Majelis"}
+                              />
+                              {hakimDiganti ? (
+                                <NamaHakimMenyidangkan baris={baris} pilihan={pilihanHakim} />
+                              ) : namaHakim[0] ? (
+                                <span className="min-w-0 break-words text-muted-foreground" title={baris.majelisNama}>
+                                  <NamaDapatDipanggil golongan="majelis" {...konteksPanggil}>
+                                    {namaHakim[0]}
+                                  </NamaDapatDipanggil>
+                                </span>
+                              ) : null}
+                              {!modeUrl && satuTanggalJadwal && tampil(tampilan, "pilih-hakim-baris") ? <PemilihHakimBaris baris={baris} kh={kh} /> : null}
+                            </div>
+                            {kodeBuka && !hakimDiganti && namaHakim.length > 1 ? (
+                              <div className="break-words text-sm text-muted-foreground" data-anggota-majelis="">
+                                <NamaDapatDipanggil golongan="majelis" {...konteksPanggil}>
+                                  {namaHakim.slice(1).join(", ")}
+                                </NamaDapatDipanggil>
+                              </div>
+                            ) : null}
+                            <div className="break-words text-xs text-muted-foreground">
+                              <span data-petugas-pp="">
+                                PP{" "}
+                                {baris.paniteraNama ? (
+                                  <NamaDapatDipanggil golongan="pp" {...konteksPanggil}>
+                                    {baris.paniteraNama}
+                                  </NamaDapatDipanggil>
+                                ) : (
+                                  "—"
+                                )}
+                              </span>
+                              {" · "}
+                              <span data-petugas-js="">
+                                JS{" "}
+                                {baris.jurusitaNama ? (
+                                  <NamaDapatDipanggil golongan="js" {...konteksPanggil}>
+                                    {baris.jurusitaNama}
+                                  </NamaDapatDipanggil>
+                                ) : (
+                                  "—"
+                                )}
+                              </span>
+                              {mediatorIni ? (
+                                <span title={`Mediator: ${mediatorIni}`} data-mediator-majelis="">
+                                  {" · "}Mediator {mediatorIni}
+                                </span>
+                              ) : null}
+                              {baris.ruangan ? <span>{" · "}{baris.ruangan}</span> : null}
+                            </div>
+                            {tampil(tampilan, "draf-putusan-agen") && drafH7[pidK]?.tanggalSidang === tglIni ? (
+                              <PanelDrafH7
+                                perkaraId={pidK}
+                                ringkas={drafH7[pidK]}
+                                tautan={{
+                                  sidangKe: baris.urutanSidang,
+                                  jumlahSaksiP: baris.saksiPihak1 ?? 0,
+                                  jumlahSaksiT: baris.saksiPihak2 ?? 0,
+                                  setelanAps,
+                                  boleh: jenisBlangkoPeran.includes("putusan"),
+                                }}
+                              />
+                            ) : null}
+                            {!tampil(tampilan, "checklist-konseptor") ? null : tunjukan[pidK]?.nama ? (
+                              <ChecklistKonseptor
+                                perkaraId={pidK}
+                                nomorPerkara={baris.nomorPerkara}
+                                kemajuan={tunjukan[pidK]?.kemajuan}
+                                onBerubah={() => void muatTunjukan()}
+                              />
+                            ) : checklistTanpaTunjukan[pidK] ? (
+                              <ChecklistKonseptor
+                                perkaraId={pidK}
+                                nomorPerkara={baris.nomorPerkara}
+                                kemajuan={checklistTanpaTunjukan[pidK].kemajuan}
+                                konseptorSipp={checklistTanpaTunjukan[pidK].konseptorSipp}
+                                onBerubah={() => void muatTunjukan()}
+                              />
+                            ) : null}
+                          </>
+                        ) : null}
+                      </>
+                    );
+
+                    const aksi = (
+                      <>
+                        {ikrarSel && !baris.ikrarTercatat && tampil(tampilan, "tombol-tunda-putus") && tampil(tampilan, "tombol-isi-ikrar") ? (
+                          <IsiIkrarTalak
+                            jadwalId={baris.sidangId}
+                            perkaraId={baris.perkaraId}
+                            nomorPerkara={baris.nomorPerkara}
+                            onSelesai={() => void muatTanggal(dari, sampai, nilaiKesiapan)}
+                          />
+                        ) : null}
+                        {bolehJalannya && tampil(tampilan, "tombol-ruang-sidang") ? (
+                          <TombolRuangSidang
+                            bagian="utama"
+                            baris={baris}
+                            aksi={aksiRuang}
+                            berjalan={berjalanIni}
+                            skors={skorsIni}
+                            bisaDipanggil={bisaDipanggilIni}
+                            info={infoRuangSidang}
+                            ruang={ruangIni}
+                            onBerubah={() => {
+                              tandaSelesai.muatUlang();
+                              void muatTanggal(dari, sampai, nilaiKesiapan);
+                            }}
+                          />
+                        ) : null}
+                        {bolehJalannya && tampil(tampilan, "tombol-selesai-sidang") && selesaiUtama ? (
+                          <TombolSelesaiSidang baris={baris} keadaan={selesaiTanda} onBerubah={tandaSelesai.muatUlang} />
+                        ) : null}
+                        {tampil(tampilan, "pertanyaan-saksi") &&
+                        sudahMasukPemeriksaan(disidangPerKunci[kunciTiga], {
+                          berjalan: Boolean(berjalanIni),
+                          diskors: Boolean(skorsIni),
+                          selesai: selesaiTanda.ditandai,
+                        }) ? (
+                          <PanduanPemeriksaanSaksi
+                            {...bahanPanduDariBaris(baris, institutionIdentity?.courtName || "")}
+                            bentuk="tombol"
+                            kunciBagian="sidang-pandu-saksi"
+                            pengguna={currentUser}
+                          />
+                        ) : null}
+                        {mediatorPenanda ? (
+                          <span data-penanda-mediator="" className="inline-flex">
+                            <TombolMediator baris={baris} onBukaStatus={onBukaStatus} sebabMediator={mediatorPenanda.keterangan} />
+                          </span>
+                        ) : null}
+                        <PenandaPernahDiskorsView penanda={pernahDiskorsIni(baris)} />
+                      </>
+                    );
+
+                    const konseptorSipp = checklistTanpaTunjukan[pidK]?.konseptorSipp?.[0] ?? "";
+                    const pita = (
+                      <PitaBawahKartu
+                        perlu={perluCatat}
+                        kanan={
+                          <>
+                            {tampil(tampilan, "tombol-status-perkara") && onBukaStatus ? (
+                              <button
+                                type="button"
+                                onClick={() => onBukaStatus(baris.nomorPerkara)}
+                                title={`Buka status perkara ${baris.nomorPerkara}`}
+                                className={KELAS_TOMBOL_PITA}
+                              >
+                                <FileSearch className="h-3.5 w-3.5" />
+                                Status
+                              </button>
+                            ) : null}
+                            {tampil(tampilan, "tombol-blangko") ? (
+                              <TombolBlangkoDerry
+                                data={{
+                                  nomor: baris.nomorPerkara,
+                                  perkaraId: baris.perkaraId,
+                                  sidangKe: baris.urutanSidang,
+                                  tanggalSidang: baris.tanggalSidang,
+                                  agenda: baris.agenda,
+                                  tunda: baris.alasanDitunda,
+                                  keterangan: keterangan[pidK]?.terkini?.isi ?? "",
+                                  amar: baris.sudahPutus ? baris.statusPutusan : "",
+                                  verstek: baris.sudahPutus ? Boolean(baris.verstekPutusan) : null,
+                                  jumlahSaksiP: baris.saksiPihak1 ?? 0,
+                                  jumlahSaksiT: baris.saksiPihak2 ?? 0,
+                                }}
+                                jenis={saringJenisBlangko(
+                                  jenisBlangkoMenurutKeadaan({
+                                    ikrarTalak: Boolean(baris.sidangIkrarTalak),
+                                    sudahPutus: baris.sudahPutus,
+                                    akanPutus: hariPutusan(baris),
+                                  }),
+                                  jenisBlangkoPeran
+                                )}
+                                setelanAps={setelanAps}
+                              />
+                            ) : null}
+                            {itemLainnya.length > 0 ? (
+                              <MenuTitik label={`Lainnya untuk ${baris.nomorPerkara}`} ikon={<>Lainnya ▾</>} kelasTombol={KELAS_TOMBOL_PITA}>
+                                {itemLainnya}
+                              </MenuTitik>
+                            ) : null}
+                            <button
+                              type="button"
+                              onClick={() => void buka(baris)}
+                              aria-expanded={dibuka === kunci}
+                              title={dibuka === kunci ? `Tutup rincian ${baris.nomorPerkara}` : `Buka rincian ${baris.nomorPerkara}`}
+                              className={cn(
+                                KELAS_TOMBOL_PITA,
+                                dibuka === kunci && "border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
+                              )}
+                            >
+                              {dibuka === kunci ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                              Rincian
+                            </button>
+                          </>
+                        }
+                      >
+                        <SegmenTundaPutus
+                          keadaan={segmen}
+                          perlu={perluCatat}
+                          nomorPerkara={baris.nomorPerkara}
+                          tundaTekan={catat?.kunci === kunci && catat.jalan === "tunda"}
+                          putusTekan={catat?.kunci === kunci && catat.jalan === "putus"}
+                          onTunda={() => setCatat((lama) => (lama && lama.kunci === kunci && lama.jalan === "tunda" ? null : { kunci, jalan: "tunda" }))}
+                          onPutus={() => setCatat((lama) => (lama && lama.kunci === kunci && lama.jalan === "putus" ? null : { kunci, jalan: "putus" }))}
+                          judulTunda={
+                            segmen.tundaNyala
+                              ? `Ditunda${baris.tanggalSidangBerikut ? ` sampai ${tanggalPendekTahunId(baris.tanggalSidangBerikut)}` : ""}${baris.alasanDitunda ? ` - ${baris.alasanDitunda}` : ""}`
+                              : `Tunda sidang ${baris.nomorPerkara} tanpa berpindah layar`
+                          }
+                          judulPutus={
+                            segmen.putusNyala ? "Hasil sidang tercatat" : `Catat putusan ${baris.nomorPerkara} tanpa berpindah layar`
+                          }
+                        />
+                        <span className={cn("min-w-0 max-w-full", tunjukKunci === kunci && "w-full basis-full")}>
+                          <SelKonseptorSementara
+                            gaya="pita"
+                            namaSipp={konseptorSipp}
+                            baris={baris}
+                            tunjukan={tunjukan[pidK]}
+                            terbuka={tunjukKunci === kunci}
+                            daftarHakim={hakim.daftar}
+                            alasanHakim={hakim.alasan}
+                            onBuka={() => setTunjukKunci((lama) => (lama === kunci ? null : kunci))}
+                            onSimpan={() => void muatTunjukan()}
+                            tampilKosong={tampil(tampilan, "tunjuk-konseptor") || Boolean(konseptorSipp)}
+                          />
+                        </span>
+                        <span className={cn("min-w-0 max-w-full", keteranganKunci === kunci && "w-full basis-full")}>
+                          <SelKeteranganPerkara
+                            gaya="pita"
+                            baris={baris}
+                            keadaan={keterangan[pidK]}
+                            terbuka={keteranganKunci === kunci}
+                            onBuka={() => setKeteranganKunci((lama) => (lama === kunci ? null : kunci))}
+                            onSimpan={() => void muatKeterangan()}
+                            tampilKosong={tampil(tampilan, "keterangan-perkara")}
+                            bolehTulis={bolehTulisKeterangan}
+                          />
+                        </span>
+                      </PitaBawahKartu>
+                    );
+
+                    return (
+                      <KartuSidang
+                        key={kunci}
+                        keadaan={keadaanKartu}
+                        terbuka={dibuka === kunci}
+                        ringkas={modeRingkas}
+                        ariaLabel={baris.nomorPerkara}
+                        data-kunci-waktu={kunciTiga}
+                        data-sedang-berjalan={berjalanIni ? "ya" : undefined}
+                        waktu={waktu}
+                        perkara={perkara}
+                        agenda={agenda}
+                        majelis={majelis}
+                        aksi={aksi}
+                        pita={pita}
+                        bawah={
+                          <>
+                            {catatEl ? <div className="border-t border-l-4 border-l-amber-500 bg-amber-500/[0.06] px-4 py-3 dark:bg-amber-400/[0.06]">{catatEl}</div> : null}
+                            {rincianEl ? <div className="border-t border-l-4 border-l-primary bg-muted/40 px-4 py-4">{rincianEl}</div> : null}
+                          </>
+                        }
+                      />
+                    );
+                  };
+
+                  const gambarIni = baru ? gambarKartu : gambarBaris;
                   // K13: saklar mati = jalur lama persis (baris digambar langsung).
-                  if (!tabelRingan) return gambarBaris();
+                  if (!tabelRingan) return gambarIni();
                   const pid = String(baris.perkaraId);
                   const berbuka = dibuka === kunci;
                   const kunciHadirIni = kunciKehadiran(baris.perkaraId, baris.tanggalSidang);
                   return (
                     <BarisTabelRingan
                       key={kunci}
-                      gambar={gambarBaris}
+                      gambar={gambarIni}
                       deps={[
                         ...depsBarisBersama,
                         urutan,
@@ -9739,11 +9608,1651 @@ export function AletaEcourtSidang({
                       ]}
                     />
                   );
-                })
+  };
+
+  return (
+    <UnduhTertutupTautan.Provider value={Boolean(modeUrl)}>
+    <Card
+      className={cn(
+        // Layar penuh BERJENDELA (J4): kartu menutupi seluruh jendela
+        // peramban - tab dan bilah peramban tetap ada. Isinya tetap sama
+        // persis, termasuk saklar Tampilan dan Ringkas/Lengkap.
+        // backdrop-blur-none: filter pada kartu menjadikannya bingkai bagi
+        // anak ber-position fixed (Kalender, dialog) - mereka akan ikut
+        // tergulung bersama isi kartu, bukan tetap di tengah jendela.
+        layarPenuh &&
+          "fixed inset-0 z-50 m-0 overflow-auto rounded-none border-0 bg-background shadow-none backdrop-blur-none dark:bg-background"
+      )}
+      data-layar-penuh={layarPenuh ? "ya" : undefined}
+    >
+      {/* ==================================================================
+          KEPALA SETIPIS MUNGKIN
+          ==================================================================
+
+          Yang dicari orang di layar ini adalah DAFTAR SIDANGNYA. Tiap baris
+          keterangan di atasnya mendorong daftar itu turun, dan pada layar
+          laptop 21 sidang berubah menjadi 6 yang terlihat.
+
+          Keterangan panjangnya dibuang seluruhnya: ia menerangkan hal yang
+          sudah jelas begitu tabelnya terlihat, dan hanya dibaca sekali seumur
+          hidup pemakainya. Judul cukup.
+
+          Tombol ciutkan menyembunyikan SELURUH kendali - tombol tindakan,
+          saringan, pencarian - dan menyisakan navigasi hari saja. Panitera
+          yang sedang membacakan jadwal tidak sedang menyaring apa pun; ia
+          hanya perlu melihat sebanyak mungkin baris sekaligus. */}
+      {/* flex-wrap, dan kelompok kanannya TIDAK lagi shrink-0.
+          Terukur sebabnya: judul + tiga tombol tidak muat pada 375px, dan
+          dengan shrink-0 kelompok kanannya tidak boleh mengecil maupun turun,
+          sehingga yang terjadi bukan pembungkusan melainkan tombol yang
+          terdorong keluar tepi. Sekarang ia turun ke baris berikutnya di
+          layar sempit dan tetap satu baris di layar lebar. */}
+      {baru ? null : (
+      <CardHeader className="flex-row flex-wrap items-center justify-between gap-2 p-4 pb-2 pt-3 sm:p-5 sm:pb-2 sm:pt-3">
+        <CardTitle className="text-base font-bold uppercase tracking-wide sm:text-lg">
+          Jadwal perkara yang bersidang
+        </CardTitle>
+
+        {/* ==================================================================
+            SIAPA YANG SEDANG MEMBUKANYA - BUTIR 3
+            ==================================================================
+
+            Diminta pengguna 22 September 2026, menggantikan baris "Peran Anda
+            berhak melihat seluruh perkara satker" yang dibuang pada hari yang
+            sama. Keterangannya sama-sama tentang siapa yang membuka; bedanya
+            yang ini tidak memakan satu baris penuh di atas daftar.
+
+            Tepat di bawah judul, bukan di kelompok tombol kanan: ia keterangan,
+            bukan kendali - dan menaruhnya di antara tombol membuat orang
+            mencoba menekannya.
+
+            Jabatan dibaca dari daftar jabatan portal. Yang tidak ketemu tidak
+            menampilkan tanda kurung kosong - jabatan yang belum terisi adalah
+            keadaan yang sah, dan kurung kosong terbaca seperti data yang
+            hilang. */}
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+        {/* ==================================================================
+            "PERKARA SAYA" DI SUDUT KANAN ATAS
+            ==================================================================
+
+            Dahulu ia berdiri sendirian pada satu baris tepat di atas tabel.
+            Barisnya selebar layar sementara isinya hanya satu tombol, jadi
+            yang didapat sebuah baris kosong yang mendorong seluruh daftar
+            sidang turun - persis kerugian yang dihindari kepala setipis
+            mungkin di atas.
+
+            Di sini ia tidak memakai baris sama sekali: kepalanya sudah ada,
+            dan tingginya ditentukan judul yang lebih tinggi daripada tombol.
+
+            Ia ditaruh PALING KIRI di antara ketiganya - artinya paling dekat
+            ke judul - sebab urutan bacanya memang begitu: apa yang saya
+            lihat, seberapa padat, lalu apakah kendalinya dibuka.
+
+            Keterangan panjangnya tidak ikut pindah; ia menjadi title. Yang
+            TIDAK boleh menjadi title hanya peringatan namanya tidak ketemu -
+            title tidak terlihat tanpa disentuh, dan peringatan yang tidak
+            terlihat sama saja tidak ada. Itu tetap tinggal di atas tabel. */}
+        {!modeUrl && bolehKelolaTautan && tampil(tampilan, "tautan-jadwal") ? (
+          <a
+            href={withBasePath("/admin/akses-publik")}
+            data-tautan-jadwal=""
+            className="inline-flex h-8 items-center gap-1 rounded-md border px-2.5 text-xs text-muted-foreground transition hover:bg-muted hover:text-foreground"
+            title="Membuat atau mencabut tautan rahasia Jadwal Sidang (tanpa masuk akun, hanya dari jaringan kantor)."
+          >
+            <Link2 className="h-3.5 w-3.5" />
+            Tautan jadwal
+          </a>
+        ) : null}
+        {/* Tunda otomatis 16.30 (22 Okt 2026): daftar harian + saklar Super Admin. */}
+        {currentUser && !modeUrl && tampil(tampilan, "tombol-tunda-otomatis") ? <TombolTundaOtomatis tanggal={dari} /> : null}
+        {currentUser && !modeUrl && tampil(tampilan, "tombol-perkara-saya") ? (
+          <Button
+            type="button"
+            size="sm"
+            variant={hanyaMilikSaya ? "default" : "outline"}
+            className="h-8 px-2.5"
+            aria-pressed={hanyaMilikSaya}
+            onClick={() => setHanyaMilikSaya((x) => !x)}
+            title={
+              hanyaMilikSaya
+                ? `Sedang menampilkan perkara Anda saja${
+                    milikSaya.sebagai ? ` sebagai ${milikSaya.sebagai}` : ""
+                  } - tekan untuk melihat seluruh perkara satker.`
+                : "Sedang menampilkan seluruh perkara satker - tekan untuk menyaring ke perkara Anda."
+            }
+          >
+            <UserRound className="mr-1 h-3.5 w-3.5" />
+            {hanyaMilikSaya ? "Perkara saya" : "Semua perkara"}
+          </Button>
+        ) : null}
+
+        {/* ==================================================================
+            SAKLAR TAMPILAN
+            ==================================================================
+
+            Di kepala bersama pemilih Ringkas/Lengkap, sebab pertanyaannya satu
+            keluarga - keduanya menjawab "apa yang saya mau lihat", bukan
+            "perkara yang bagaimana". Menaruhnya di antara saringan akan
+            membuat orang menduga ia ikut menyaring baris, padahal ia hanya
+            menggambar atau tidak menggambar.
+
+            Angka pada tombolnya menyebut BERAPA yang sedang dimatikan. Tanpa
+            itu, layar yang penandanya sudah dipadamkan berbulan-bulan lalu
+            terbaca sebagai layar yang memang tidak punya penanda - dan yang
+            membacanya akan menyimpulkan perkaranya bersih. */}
+        {tampil(tampilan, "tombol-layar-penuh") || layarPenuh ? <TombolLayarPenuh penuh={layarPenuh} onUbah={setLayarPenuh} /> : null}
+
+        {/* Pemilih tampilan berdiri di kepala, bukan di antara saringan:
+            ia menjawab "seberapa padat saya mau melihatnya", satu keluarga
+            dengan tombol ciutkan - dan justru paling dibutuhkan ketika
+            kendali lainnya sedang disembunyikan. */}
+        {modeUrl ? null : (
+        <>
+        <div className="inline-flex overflow-hidden rounded-md border text-sm">
+          <button
+            type="button"
+            onClick={() => pilihModeRingkas(true)}
+            className={cn(
+              "px-2.5 py-1",
+              modeRingkas ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+            )}
+          >
+            Ringkas
+          </button>
+          <button
+            type="button"
+            onClick={() => pilihModeRingkas(false)}
+            className={cn(
+              "border-l px-2.5 py-1",
+              modeRingkas ? "hover:bg-muted" : "bg-primary text-primary-foreground"
+            )}
+          >
+            Lengkap
+          </button>
+        </div>
+        <button
+          type="button"
+          onClick={() => setKendaliCiut((n) => !n)}
+          aria-expanded={!kendaliCiut}
+          title={kendaliCiut ? "Tampilkan kendali dan saringan" : "Ciutkan kendali agar daftar sidang lebih panjang"}
+          className="flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs text-muted-foreground transition hover:bg-muted hover:text-foreground"
+        >
+          {kendaliCiut ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}
+          {kendaliCiut ? "Kendali" : "Ciutkan"}
+        </button>
+        {/* 19 Okt 2026 (JADWAL-3 butir 2): Tampilan di SUDUT KANAN - paling
+            kanan di deret tombol kepala, sama dengan Jadwal Mediasi. */}
+        <button
+          type="button"
+          data-tombol-tampilan-sidang=""
+          onClick={() => setPanelTampilan((n) => !n)}
+          aria-expanded={panelTampilan}
+          title="Memilih penanda, keterangan, dan tombol mana yang digambar di layar ini."
+          className={cn(
+            "flex h-8 shrink-0 items-center gap-1.5 rounded-md border px-2.5 text-xs transition",
+            panelTampilan
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground hover:bg-muted hover:text-foreground"
+          )}
+        >
+          <SlidersHorizontal className="h-3.5 w-3.5" />
+          Tampilan
+          {dimatikan > 0 ? (
+            <span
+              className={cn(
+                "rounded-full px-1.5 text-[10px] font-semibold tabular-nums",
+                panelTampilan ? "bg-primary-foreground/20" : "bg-amber-100 text-amber-900 dark:bg-amber-900 dark:text-amber-100"
+              )}
+            >
+              {dimatikan}
+            </span>
+          ) : null}
+        </button>
+        </>
+        )}
+        </div>
+        {/* ==================================================================
+            SIAPA YANG SEDANG MEMBUKANYA - DI BAWAH, BUKAN DI ANTARA TOMBOL
+            ==================================================================
+
+            Menggantikan baris "Peran Anda berhak melihat seluruh perkara
+            satker" yang dibuang 22 September 2026.
+
+            Letaknya SESUDAH kelompok tombol, dan itu yang membuat tombolnya
+            duduk di kanan baris judul. Ketika ia berdiri di antara judul dan
+            tombol, w-full basis-full miliknya memaksa pembungkusan - dan
+            tombol terdorong ke baris ketiga, tempat justify-end tidak
+            berpengaruh apa pun sebab pembungkusnya menyusut ke isinya.
+
+            Ia keterangan, bukan kendali; menaruhnya di antara tombol membuat
+            orang mencoba menekannya. */}
+        {modeUrl ? (
+          <p className="w-full basis-full text-xs text-muted-foreground" data-nama-tautan="">
+            {namaTautan ? `Tautan: ${namaTautan}` : "Tautan jadwal sidang"}
+          </p>
+        ) : currentUser && tampil(tampilan, "identitas-pembuka") ? (
+          <p className="w-full basis-full text-xs text-muted-foreground">
+            {currentUser.name}
+            {jabatanSaya ? ` · ${jabatanSaya}` : ""}
+          </p>
+        ) : null}
+      </CardHeader>
+      )}
+
+      <CardContent className={cn("space-y-3 p-4 pt-0 sm:p-5 sm:pt-0", baru && "pt-3 sm:pt-3")}>
+        {baru ? (
+          <BilahLekat>
+            <BarisBilah>
+              <h2 className="shrink-0 whitespace-nowrap text-base font-extrabold">Jadwal Sidang</h2>
+              <span className="inline-flex shrink-0 items-center rounded-lg border bg-background" data-bilah-tanggal="">
+                <button
+                  type="button"
+                  aria-label="Hari sebelumnya"
+                  onClick={() => pilihHari(geserHari(dari, -1))}
+                  className="h-8 rounded-l-lg px-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <PemilihTanggalSidang
+                  value={dari}
+                  onChange={(v) => pilihHari(v)}
+                  liburBolehDipilih
+                  tampilKalender={tampil(tampilan, "kalender-libur")}
+                  sebutan="Tanggal sidang"
+                  className="h-8 w-[8.25rem] rounded-none border-0 bg-transparent text-center text-sm focus-visible:ring-0"
+                  aria-label="Tanggal sidang mulai"
+                />
+                {rentangTerbuka || dari !== sampai ? (
+                  <>
+                    <span aria-hidden className="select-none px-0.5 text-muted-foreground">
+                      –
+                    </span>
+                    <PemilihTanggalSidang
+                      value={sampai}
+                      min={dari}
+                      onChange={(v) => {
+                        // Tanpa tombol Tampilkan: memilih tanggal akhir langsung memuat.
+                        if (!v) return;
+                        setSampai(v);
+                        void muatTanggal(dari, v);
+                      }}
+                      liburBolehDipilih
+                      tampilKalender={tampil(tampilan, "kalender-libur")}
+                      sebutan="Tanggal sidang"
+                      className="h-8 w-[8.25rem] rounded-none border-0 bg-transparent text-center text-sm focus-visible:ring-0"
+                      aria-label="Tanggal sidang sampai"
+                    />
+                  </>
+                ) : null}
+                <button
+                  type="button"
+                  aria-label="Hari berikutnya"
+                  onClick={() => pilihHari(geserHari(dari, 1))}
+                  className="h-8 rounded-r-lg px-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </span>
+              <button
+                type="button"
+                aria-pressed={rentangTerbuka || dari !== sampai}
+                title="Rentang: lihat beberapa hari sekaligus (dari - sampai)"
+                onClick={() => {
+                  if (rentangTerbuka || dari !== sampai) {
+                    setRentangTerbuka(false);
+                    if (dari !== sampai) {
+                      setSampai(dari);
+                      void muatTanggal(dari, dari);
+                    }
+                  } else {
+                    setRentangTerbuka(true);
+                  }
+                }}
+                className={cn(
+                  "h-8 shrink-0 rounded-md border px-2 text-xs transition",
+                  rentangTerbuka || dari !== sampai ? "border-primary bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}
+              >
+                Rentang
+              </button>
+              {tampil(tampilan, "tombol-kalender-sidang") ? (
+                <TombolIkon label="Kalender sidang" judul="Kalender sidang: hari mana saja yang ada sidangnya" onClick={() => setKalenderTerbuka(true)}>
+                  <CalendarDays className="h-4 w-4" />
+                </TombolIkon>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => pilihHari(hariIni())}
+                className="h-8 shrink-0 rounded-md border px-2.5 text-xs text-muted-foreground transition hover:bg-muted hover:text-foreground"
+              >
+                Hari ini
+              </button>
+              <KotakCariBerpil
+                nilai={cariCepat}
+                onUbah={setCariCepat}
+                onEnter={kirimCariKeSipp}
+                saran={saranBaru}
+                medanLabel={(m) => medanPil[m]?.label ?? m}
+                onPilihSaran={(s) => {
+                  if (s.medan === "tag") alihkanKeadaan(s.nilai);
+                  else setPilCari((lama) => tambahPil(lama, { medan: s.medan, nilai: s.nilai }));
+                  setCariCepat("");
+                }}
+                placeholder="Cari apa saja: nama, nomor, hakim, jenis, jam… pilih saran agar presisi"
+                ariaLabel="Cari perkara. Mengetik menyaring daftar yang tampil dan menawarkan saran; memilih saran menjadi pil; menekan Enter mencari ke SIPP."
+                kakiTanpaTeks="Ketik apa saja, atau langsung medannya: pihak:, hakim:, saksi:, jam:, ruang:"
+                kakiDenganTeks={(t) => `Enter = cari "${t}" ke SIPP · tanpa memilih saran, daftar disaring sebagai teks bebas`}
+                disabled={modeUrl}
+              />
+              {sidang.length > 0 ? (
+                <TombolIkon
+                  label="Saringan"
+                  judul="Saringan: Jenis, Tahap, Majelis, Hakim, PP, JS, Ruang, Keadaan, rentang jam, dan Simpan saringan"
+                  tekan={panelSaring}
+                  badge={pilCari.length || null}
+                  onClick={() => setPanelSaring((x) => !x)}
+                  data-tombol-saringan=""
+                >
+                  <Filter className="h-4 w-4" />
+                </TombolIkon>
+              ) : null}
+              {currentUser && tampil(tampilan, "tombol-perkara-saya") ? (
+                <SegmenPilihan<"saya" | "semua">
+                  label="Perkara saya atau semua perkara"
+                  nilai={hanyaMilikSaya ? "saya" : "semua"}
+                  onPilih={(v) => setHanyaMilikSaya(v === "saya")}
+                  data-s="tombol-perkara-saya"
+                  pilihan={[
+                    {
+                      nilai: "saya",
+                      label: "Saya",
+                      judul: hanyaMilikSaya
+                        ? `Sedang menampilkan perkara Anda saja${milikSaya.sebagai ? ` sebagai ${milikSaya.sebagai}` : ""}`
+                        : "Menyaring ke perkara Anda",
+                    },
+                    { nilai: "semua", label: "Semua", judul: "Seluruh perkara satker" },
+                  ]}
+                />
+              ) : null}
+              <SegmenPilihan<"ringkas" | "lengkap">
+                label="Ringkas atau Lengkap"
+                nilai={modeRingkas ? "ringkas" : "lengkap"}
+                onPilih={(v) => pilihModeRingkas(v === "ringkas")}
+                pilihan={[
+                  { nilai: "ringkas", label: "Ringkas", judul: "Tanpa majelis dan petugas" },
+                  { nilai: "lengkap", label: "Lengkap" },
+                ]}
+              />
+              <TombolIkon
+                label="Tampilan"
+                judul="Tampilan: memilih penanda, keterangan, dan tombol mana yang digambar di layar ini"
+                tekan={panelTampilan}
+                badge={dimatikan > 0 ? dimatikan : null}
+                onClick={() => setPanelTampilan((n) => !n)}
+                data-tombol-tampilan-sidang=""
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+              </TombolIkon>
+              <MenuAlatJadwal
+                butir={butirMenuAlat}
+                onPilih={(kunci) => {
+                  if (kunci === "hitung-skor") {
+                    const menyala = !nilaiKesiapan;
+                    setNilaiKesiapan(menyala);
+                    if (menyala) void muatTanggal(dari, sampai, true);
+                    else setKesiapan({});
+                  } else if (kunci === "per-panitera-sidang") setMejaPp((b) => !b);
+                  else if (kunci === "cetak-relaas") setCetakRelaasTerbuka(true);
+                  else if (kunci === "penetapan-kembali") setPenetapanKembaliTerbuka(true);
+                  else if (kunci === "daftar-antrian") void periksaSinkron();
+                  else if (kunci === "kasir") setKasirTerbuka(true);
+                  else if (kunci === "kasir-harian") kasirHarian.setBuka("massal");
+                  else if (kunci === "pengingat-kasir") kasirHarian.setBuka("pengingat");
+                }}
+              />
+              {adaTombolCetak ? (
+                <TombolIkon
+                  label="Cetak"
+                  judul="Cetak jadwal"
+                  disabled={sidang.length === 0}
+                  onClick={() => {
+                    setCetakPerHakim(adaPilihanHakim(sidangTampil, pilihanHakim));
+                    setSedangCetak(true);
+                  }}
+                >
+                  <Printer className="h-4 w-4" />
+                </TombolIkon>
+              ) : null}
+              {tampil(tampilan, "tombol-layar-penuh") || layarPenuh ? <TombolLayarPenuh penuh={layarPenuh} onUbah={setLayarPenuh} ikon /> : null}
+              <MenuTitik label="Menu lain: tampilan lama atau baru, tautan jadwal, tunda otomatis">
+                <PilihanAntarmuka nilai={antarmuka} onPilih={pilihAntarmuka} nama="Jadwal Sidang" className="self-start" />
+                {!modeUrl && bolehKelolaTautan && tampil(tampilan, "tautan-jadwal") ? (
+                  <a
+                    href={withBasePath("/admin/akses-publik")}
+                    data-tautan-jadwal=""
+                    className="inline-flex h-8 items-center gap-1 rounded-md border px-2.5 text-xs text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                    title="Membuat atau mencabut tautan rahasia Jadwal Sidang (tanpa masuk akun, hanya dari jaringan kantor)."
+                  >
+                    <Link2 className="h-3.5 w-3.5" />
+                    Tautan jadwal
+                  </a>
+                ) : null}
+                {currentUser && !modeUrl && tampil(tampilan, "tombol-tunda-otomatis") ? <TombolTundaOtomatis tanggal={dari} /> : null}
+              </MenuTitik>
+            </BarisBilah>
+            <BarisPil
+              pil={pilCari.map((p) => ({ label: medanPil[p.medan]?.label ?? p.medan, nilai: p.nilai }))}
+              onLepas={(i) => setPilCari((l) => lepasPil(l, i))}
+              onLepasSemua={() => setPilCari([])}
+              tambahan={
+                cari ? (
+                  <button
+                    type="button"
+                    onClick={lepasCariSipp}
+                    disabled={pertamaMuat && memuat}
+                    title="Lepaskan pencarian ke SIPP"
+                    className="inline-flex items-center gap-1 rounded-full border border-primary/50 bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary transition hover:bg-primary/20 disabled:opacity-50"
+                  >
+                    Dicari ke SIPP: {cari} ✕
+                  </button>
+                ) : null
+              }
+            />
+            {blokTag}
+            {pitaSebaris ? null : pitaRuangEl}
+            {panelSaring && sidang.length > 0 ? (
+              <PanelSaringan
+                daftar={MEDAN_PANEL_SARINGAN.map((k) => ({ kunci: k, label: medanPil[k]?.label ?? k, nilai: indeksPil[k] ?? [] }))}
+                pil={pilCari}
+                onAlih={(m, v) => setPilCari((l) => alihPil(l, { medan: m, nilai: v }))}
+                onRentangJam={(a, b) => setPilCari((l) => pasangRentangJam(l, a, b))}
+                tersimpan={saringanTersimpan}
+                onSimpan={(nama) =>
+                  simpanDaftarSaringan(
+                    [{ nama, pil: pilCari }, ...saringanTersimpan.filter((x) => x.nama !== nama)].slice(0, BATAS_SARINGAN_TERSIMPAN)
+                  )
+                }
+                onPakai={(i) => setPilCari(saringanTersimpan[i]?.pil ?? [])}
+                onHapus={(i) => simpanDaftarSaringan(saringanTersimpan.filter((_, n) => n !== i))}
+                onLepasSemua={() => setPilCari([])}
+                onTutup={() => setPanelSaring(false)}
+              />
+            ) : null}
+          </BilahLekat>
+        ) : null}
+        <BannerGangguan keadaan={cobaLagiJadwal.keadaan} onCobaSekarang={cobaLagiJadwal.cobaSekarang} />
+        {/* G2a (keputusan 43): saran kecil BAS sidang besok yang sudah disiapkan, tautan per perkara. */}
+        <SaranBasBesok boleh={jenisBlangkoPeran.includes("bas")} setelanAps={setelanAps} />
+        {galat ? (
+          <p className="flex items-start gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+            <span className="min-w-0 flex-1">{galat}</span>
+            <button
+              type="button"
+              data-jadwal-coba-lagi=""
+              onClick={() => {
+                setGalat("");
+                void cobaLagiJadwal.cobaSekarang();
+              }}
+              className="shrink-0 rounded border border-rose-300 px-2 py-0.5 text-xs font-medium text-rose-700 transition hover:bg-rose-100"
+            >
+              Coba lagi
+            </button>
+            <TombolTutupPesan onTutup={() => setGalat("")} />
+          </p>
+        ) : null}
+
+        {/* ==================================================================
+            PANEL SAKLAR TAMPILAN
+            ==================================================================
+
+            Panel biasa yang mendorong isi di bawahnya, bukan popover
+            melayang. Sebabnya diukur, bukan selera: daftarnya tiga puluhan
+            saklar dalam empat kelompok, dan popover setinggi itu di layar
+            laptop menutupi justru daftar yang sedang disetel orangnya - ia
+            tidak dapat melihat akibat saklarnya sendiri.
+
+            Panel ini hanya terbuka selama disetel, jadi ruang yang dipakainya
+            tidak pernah menjadi ruang yang hilang permanen.
+
+            Yang WAJIB tetap digambar - menyala dan tidak dapat ditekan -
+            beserta sebabnya. Menghilangkannya dari daftar akan membuat orang
+            mengira penandanya sudah tidak ada lagi, lalu mencarinya di tempat
+            yang salah. */}
+        {panelTampilan ? (
+          <div className="rounded-xl border bg-muted/20 p-3">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-semibold">Apa yang digambar di layar ini</p>
+              <button
+                type="button"
+                onClick={() => setPanelTampilan(false)}
+                className="rounded-md border px-2 py-1 text-xs text-muted-foreground transition hover:bg-muted hover:text-foreground"
+              >
+                Tutup
+              </button>
+            </div>
+
+            {/* ==============================================================
+                MODE DI PALING ATAS, SUB-PILIHAN DI BAWAHNYA - PERBAIKAN 1 OKT
+                ==============================================================
+
+                Diminta pengguna (J5): "Nyalakan semua" menjadi Mode lengkap,
+                "Sembunyikan semua" menjadi Mode minimalis, diletakkan DI ATAS
+                kelompok Penanda, dan memilih mode ikut mengubah centang di
+                bawahnya. Lengkap = semua kecuali Kolom Siap dan Catatan cara
+                menghitung; minimalis = semua mati (yang bertanda "tetap"
+                tetap menyala). Mode yang menyala dibaca dari centangnya -
+                mengubah satu centang menjadikannya "Suai". */}
+            <div
+              className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border bg-card p-2"
+              role="group"
+              aria-label="Mode tampilan"
+            >
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Mode</span>
+              <button
+                type="button"
+                onClick={setelUlangTampilan}
+                aria-pressed={modeTampilan === "lengkap"}
+                title="Mode lengkap (dulu: Nyalakan semua) - semua menyala kecuali Kolom Siap dan Catatan cara menghitung."
+                className={cn(
+                  "rounded-md border px-2.5 py-1 text-xs font-medium transition",
+                  modeTampilan === "lengkap"
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}
+              >
+                Mode lengkap
+              </button>
+              <button
+                type="button"
+                onClick={sembunyikanSemuaTampilan}
+                aria-pressed={modeTampilan === "minimalis"}
+                title="Mode minimalis (dulu: Sembunyikan semua) - mematikan seluruh saklar yang dapat dimatikan; sesudahnya centang satu per satu yang hendak dilihat. Yang bertanda tetap tidak ikut; sebabnya di bawah daftar."
+                className={cn(
+                  "rounded-md border px-2.5 py-1 text-xs font-medium transition",
+                  modeTampilan === "minimalis"
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}
+              >
+                Mode minimalis
+              </button>
+              {modeTampilan === "suai" ? (
+                <span className="text-xs text-muted-foreground">
+                  Suai - centangnya diatur sendiri di bawah.
+                </span>
+              ) : null}
+            </div>
+
+            {/* Butir 11 (6 Okt 2026): saklar "Tampilkan contoh" DI ATAS daftar.
+                Menyala = contoh tampil/disembunyikan tiap fitur terpampang di bawah
+                saklarnya; tiap saklar juga punya ikon "i" yang memperlihatkan hal
+                yang sama saat disorot. */}
+            {modeUrl ? null : (
+              <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border bg-card p-2" data-antarmuka-jadwal="">
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Susunan layar</span>
+                <PilihanAntarmuka nilai={antarmuka} onPilih={pilihAntarmuka} nama="Jadwal Sidang" />
+                <span className="text-xs text-muted-foreground">Hanya cara menyusun layar; data dan tombolnya sama. Tersimpan di peramban ini.</span>
+              </div>
+            )}
+
+            <label
+              className="mb-3 flex w-fit cursor-pointer items-center gap-2 rounded-lg border bg-card px-2 py-1.5 text-sm"
+              data-saklar-contoh=""
+              title="Memampangkan contoh bentuk tiap fitur saat tampil dan saat disembunyikan, langsung di bawah saklarnya."
+            >
+              <input
+                type="checkbox"
+                className="h-3.5 w-3.5 accent-primary"
+                checked={contohSaklar}
+                onChange={(e) => setContohSaklar(e.target.checked)}
+              />
+              <span className="font-medium">Tampilkan contoh semua fitur</span>
+              <span className="text-xs text-muted-foreground">(tampil dan disembunyikan)</span>
+            </label>
+
+            <p className="mb-3 text-xs text-muted-foreground">
+              Pilihannya tersimpan di peramban ini saja dan tidak mengubah data apa pun -
+              yang dimatikan hanya tidak digambar, bukan tidak ada. Penanda yang mendesak
+              tidak dapat dimatikan; sebabnya disebut pada tiap barisnya.
+            </p>
+
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {kelompokTampilan().map((kelompok) => (
+                <div key={kelompok.kunci} className="rounded-lg border bg-card p-2">
+                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    {kelompok.label}
+                  </p>
+                  <ul className="space-y-1">
+                    {kelompok.anggota.map((saklar) => {
+                      const menyala = tampil(tampilan, saklar.kunci);
+                      return (
+                        <li key={saklar.kunci}>
+                          <div className="flex items-start gap-1">
+                          <label
+                            className={cn(
+                              "flex items-start gap-2 rounded-md px-1.5 py-1 text-sm",
+                              saklar.wajib ? "opacity-90" : "cursor-pointer hover:bg-muted/60"
+                            )}
+                            title={
+                              saklar.wajib
+                                ? `${saklar.keterangan} Tidak dapat dimatikan - lihat keterangan di bawah daftar.`
+                                : saklar.keterangan
+                            }
+                          >
+                            <input
+                              type="checkbox"
+                              className="mt-0.5 h-3.5 w-3.5 accent-primary"
+                              checked={menyala}
+                              disabled={saklar.wajib}
+                              onChange={(e) => ubahSaklar(saklar.kunci, e.target.checked)}
+                            />
+                            <span className="leading-tight">
+                              {saklar.label}
+                              {saklar.wajib ? (
+                                <span className="ml-1 rounded bg-rose-100 px-1 text-[10px] font-semibold text-rose-900 dark:bg-rose-950 dark:text-rose-200">
+                                  Tetap
+                                </span>
+                              ) : null}
+                            </span>
+                          </label>
+                          <InfoContohSaklar
+                            kunci={saklar.kunci}
+                            label={saklar.label}
+                            keterangan={saklar.keterangan}
+                            menyala={menyala}
+                          />
+                          </div>
+                          {contohSaklar ? (
+                            <div className="mb-1 ml-6 mt-0.5">
+                              <DuaKeadaan kunci={saklar.kunci} keterangan={saklar.keterangan} menyala={menyala} />
+                            </div>
+                          ) : null}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ))}
+            </div>
+
+            {/* Butir 37 (5 Okt 2026): saklar fitur panggil petugas & pihak - simpanan sendiri. */}
+            <SaklarPanggil className="mt-3" />
+
+            <p className="mt-3 text-xs text-muted-foreground">
+              {/* Daftarnya DIHITUNG dari saklar yang wajib, bukan ditulis tangan:
+                  kalimat "empat penanda" sempat basi satu rilis penuh sesudah
+                  tenggang mepet masuk sebagai kotak merah. */}
+              <strong>Mengapa yang bertanda &ldquo;tetap&rdquo; tidak dapat dimatikan.</strong>{" "}
+              Saklar yang dimatikan hari ini tersimpan di peramban dan tidak dinyalakan lagi
+              besok. Untuk keterangan yang sekadar menolong itu tidak merugikan; untuk{" "}
+              {SAKLAR_TAMPILAN.filter((x) => x.wajib)
+                .map((x) => x.label.toLowerCase())
+                .join(", ")}{" "}
+              akibatnya sidang yang batal, berkas yang tidak pernah dijahit, atau hasil sidang
+              yang tidak pernah dicatat — dan yang membaca layar sesudahnya belum tentu orang
+              yang mematikannya.
+            </p>
+          </div>
+        ) : null}
+
+        {/* ==================================================================
+            BILAH ALAT: NAVIGASI HARI DI ATAS, SISANYA DI BAWAH
+            ==================================================================
+
+            Sebelumnya tujuh tombol berjajar dalam satu baris tanpa pengelompokan,
+            dan yang dipakai tiap hari - panah maju mundur - tenggelam di antara
+            yang jarang dipakai.
+
+            Sekarang navigasi hari berdiri sendiri sebagai satu kesatuan, dan
+            tanggal terbacanya diletakkan besar di sebelahnya: itulah yang
+            pertama dicari mata saat layar dibuka. */}
+        <div className="space-y-3">
+          {baru ? null : (
+          <>
+          <div className="flex flex-wrap items-center gap-3">
+            {/* ============================================================
+                SATU ALAT RENTANG, BUKAN DUA TANGGAL YANG BERJAUHAN
+                ============================================================
+
+                Tanggal mulai dan tanggal akhir menjawab SATU pertanyaan -
+                "jadwal tanggal berapa sampai berapa". Sebelumnya keduanya
+                dipisah oleh kotak pencarian, sehingga mata harus melompati
+                kotak yang tidak ada hubungannya untuk membaca satu rentang.
+
+                Sekarang keduanya menempel di dalam satu bingkai, dipisah tanda
+                pisah, dan panah maju-mundur mengapitnya. Kotak pencarian pindah
+                ke baris tindakan di bawah: ia menyaring yang SUDAH tampil, dan
+                itu pekerjaan yang lain sama sekali. */}
+            {/* 23 Okt 2026: tanpa overflow-hidden - bingkai ini memotong kalender
+                libur yang membuka ke bawah, sehingga tombolnya tampak tidak
+                berfungsi. Sudut tombol tepi dibulatkan sendiri (first:/last:). */}
+            <div className="flex items-center rounded-lg border bg-card shadow-sm">
+              <button
+                type="button"
+                aria-label="Hari sebelumnya"
+                onClick={() => pilihHari(geserHari(dari, -1))}
+                className="rounded-l-lg px-2.5 py-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+
+              <div className="flex items-center border-x bg-background/40">
+                {/* 22 Okt 2026: kalender bersama bertanda libur - tanggal tampilan, jadi libur boleh dibuka. */}
+                <PemilihTanggalSidang
+                  value={dari}
+                  onChange={(v) => pilihHari(v)}
+                  liburBolehDipilih
+                  tampilKalender={tampil(tampilan, "kalender-libur")}
+                  sebutan="Tanggal sidang"
+                  className="h-9 w-[8.75rem] rounded-none border-0 bg-transparent text-center focus-visible:ring-0"
+                  aria-label="Tanggal sidang mulai"
+                />
+                {modeUrl ? null : (
+                <>
+                <span aria-hidden className="select-none px-0.5 text-muted-foreground">
+                  –
+                </span>
+                <PemilihTanggalSidang
+                  value={sampai}
+                  min={dari}
+                  onChange={(v) => setSampai(v)}
+                  liburBolehDipilih
+                  tampilKalender={tampil(tampilan, "kalender-libur")}
+                  sebutan="Tanggal sidang"
+                  className="h-9 w-[8.75rem] rounded-none border-0 bg-transparent text-center focus-visible:ring-0"
+                  aria-label="Tanggal sidang sampai"
+                />
+                </>
+                )}
+              </div>
+
+              <button
+                type="button"
+                aria-label="Hari berikutnya"
+                onClick={() => pilihHari(geserHari(dari, 1))}
+                className="px-2.5 py-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => pilihHari(hariIni())}
+                className="border-l px-3 py-2 text-sm text-muted-foreground transition last:rounded-r-lg hover:bg-muted hover:text-foreground"
+              >
+                Hari ini
+              </button>
+
+              {/* Ikon saja - gambarnya sudah menerangkan dirinya, dan
+                  namanya hanya menambah lebar tanpa menambah keterangan.
+                  aria-label dan title menjaganya tetap terbaca bagi yang
+                  memakai pembaca layar maupun yang ragu. */}
+              {modeUrl || !tampil(tampilan, "tombol-kalender-sidang") ? null : (
+              <button
+                type="button"
+                aria-label="Pilih tanggal dari kalender"
+                title="Pilih tanggal dari kalender"
+                onClick={() => setKalenderTerbuka(true)}
+                className="rounded-r-lg border-l px-3 py-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+              >
+                <CalendarDays className="h-4 w-4" />
+              </button>
+              )}
+            </div>
+
+            {/* JADWAL-3 butir 5: tulisan dan keadaannya TETAP selama memuat -
+                penyegaran latar (antrian, 45 detik) tidak boleh menggambar apa
+                pun. Tekanan ganda ditolak muatTanggal sendiri (memuatRef). */}
+            {modeUrl ? null : (
+            <Button size="sm" onClick={() => void muat()}>
+              Tampilkan
+            </Button>
+            )}
+
+            {/* Tanggal terbacanya, bukan angka - "Senin" adalah yang dicari
+                orang, bukan "31/08". */}
+            {/* 22 Okt 2026 (W57): dua saklar - tanggal terbaca + jumlah sidang, dan tanda
+                "diperbarui". Keduanya hanya gambar; pembaruan ringan di latar tetap jalan. */}
+            {tampil(tampilan, "tanggal-dan-jumlah") || tampil(tampilan, "tanda-diperbarui") ? (
+            <div className="ml-auto text-right">
+              {tampil(tampilan, "tanggal-dan-jumlah") ? (
+                <p className="text-sm font-semibold leading-tight">{tanggalHariPanjang(dari)}</p>
+              ) : null}
+              <p className="text-sm text-muted-foreground">
+                {tampil(tampilan, "tanggal-dan-jumlah")
+                  ? pertamaMuat && memuat
+                    ? "\u00a0"
+                    : sidang.length === 0
+                      ? "tidak ada sidang"
+                      : `${sidang.length} sidang${dari !== sampai ? " pada rentang ini" : ""}`
+                  : null}
+                {/* 22 Okt 2026: waktu bacaan terakhir yang berhasil (ringan atau lengkap). */}
+                {(pertamaMuat && memuat) || !tampil(tampilan, "tanda-diperbarui") ? null : (
+                  <TandaDiperbarui penyimpan={penyimpanDiperbarui} awalan={tampil(tampilan, "tanggal-dan-jumlah") ? " · " : ""} />
+                )}
+                {/* A4: daftar dibaca dari Cermin Perkara; antrian dan kehadiran tetap langsung dari sumbernya. */}
+                {cerminJadwal && !(pertamaMuat && memuat) ? (
+                  <span data-testid="tanda-cermin" title="Daftar sidang dibaca dari salinan keadaan perkara SIPP di ALETA (Cermin Perkara). Antrian dan kehadiran tetap langsung.">
+                    {" · Cermin · diperbarui "}
+                    {cerminJadwal.diperbaruiPada
+                      ? new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Makassar", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(cerminJadwal.diperbaruiPada)).replace(":", ".")
+                      : "-"}
+                  </span>
+                ) : null}
+              </p>
+            </div>
+            ) : null}
+          </div>
+
+          {/* ==============================================================
+              SATU KOTAK PENCARIAN - DI ATAS, TEPAT DI BAWAH TANGGAL
+              ==============================================================
+
+              Diminta pengguna 22 September 2026: "pada search terdapat 2
+              yaitu saring dan yang cari, buat jadi satu agar tidak
+              membingungkan, buat di atas (dibawah tanggal) pencariannya".
+
+              Sebabnya dapat diperiksa sendiri di layar lama: dua kotak
+              berbentuk sama, sama-sama bertuliskan pencarian, satu di sisi
+              tombol dan satu di bawah deretan penanda. Yang satu menuntut
+              tombol Tampilkan ditekan sesudahnya, yang lain bekerja seketika
+              - dan tidak ada pada bentuknya yang memberi tahu yang mana.
+
+              Sekarang: mengetik menyaring seketika; menekan Enter melebarkan
+              pencarian ke SIPP. Lihat catatan pada kirimCariKeSipp. */}
+          <div className={cn("space-y-1.5", kendaliCiut && "hidden")}>
+            {/* ==============================================================
+                LEBARNYA DIBATASI, DAN TEMANNYA DI SEBELAHNYA
+                ==============================================================
+
+                Diminta pengguna 22 September 2026: "rounded search terlalu
+                panjang jadi tidak estetik ... taruh tombol pencarian lanjutan
+                disampingnya".
+
+                Kotak selebar layar bukan sekadar tidak sedap dipandang: ia
+                menjanjikan isian sepanjang itu, padahal yang diketik orang
+                nomor perkara atau satu nama. Dan barisnya menjadi baris yang
+                isinya satu benda saja - satu baris penuh yang mendorong
+                seluruh daftar sidang turun.
+
+                Pencarian lanjutan, angka "x dari y", dan Reset pindah ke sini
+                dari baris tombol tindakan: ketiganya tentang MENYARING, dan
+                tempatnya memang di sebelah kotak saringnya. Yang tinggal di
+                baris tindakan hanya yang MENGERJAKAN sesuatu. */}
+            <div className="flex flex-wrap items-center gap-2">
+              {modeUrl ? null : (
+              <div className="relative min-w-[15rem] flex-1 sm:max-w-xl" data-cari-pintar-sidang="">
+                <FileSearch
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                />
+                <Input
+                  value={cariCepat}
+                  onChange={(e) => setCariCepat(e.target.value)}
+                  onFocus={() => setFokusCari(true)}
+                  onBlur={() => setFokusCari(false)}
+                  onKeyDown={(peristiwa) => {
+                    if (peristiwa.key === "Enter") kirimCariKeSipp();
+                    if (peristiwa.key === "Escape") setFokusCari(false);
+                  }}
+                  placeholder="Cari perkara, pihak, saksi, hakim, ghaib, konseptor… — Enter ke SIPP"
+                  aria-label="Cari perkara. Mengetik menyaring daftar yang tampil, termasuk kata kunci seperti ghaib, verstek, konseptor, belum BAS; menekan Enter mencari ke SIPP."
+                  className="h-9 pl-8 text-sm"
+                />
+                <PetunjukCariPintar
+                  terbuka={fokusCari}
+                  kataKunci={KATA_KUNCI_SIDANG}
+                  medan={MEDAN_SIDANG}
+                  contohMedan={CONTOH_MEDAN_SIDANG}
+                  urai={uraiCari}
+                  enterKeSipp
+                  onPilih={(kata) => setCariCepat((lama) => `${lama.trim()} ${kata}`.trim() + " ")}
+                />
+              </div>
+              )}
+
+              {!modeUrl && sidang.length > 0 && tampil(tampilan, "pencarian-lanjutan") ? (
+                <Button
+                  size="sm"
+                  variant={lanjutTerbuka || cariLanjut.jumlahAktif > 0 ? "default" : "outline"}
+                  onClick={() => setLanjutTerbuka((buka) => !buka)}
+                >
+                  <Filter className="mr-1.5 h-4 w-4" />
+                  Pencarian lanjutan
+                  {cariLanjut.jumlahAktif > 0 ? ` (${cariLanjut.jumlahAktif})` : ""}
+                </Button>
+              ) : null}
+
+              {/* 22 Okt 2026 (diminta pengguna): Cetak tepat di samping
+                  Pencarian lanjutan, lalu SATU tombol Menu yang memuat alat
+                  lainnya. Baris alat lama dan baris pil ruang sudah tiada. */}
+              {adaTombolCetak ? (
+              <div className="relative">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={sidang.length === 0}
+                onClick={() => {
+                  // 22 Okt 2026 (pengguna): cetak seperti semula; saat Sidang keliling
+                  // menyala dan ada hakim pengganti, halamannya langsung dipisah per hakim.
+                  setCetakPerHakim(adaPilihanHakim(sidangTampil, pilihanHakim));
+                  setSedangCetak(true);
+                }}
+              >
+                <Printer className="mr-1.5 h-4 w-4" />
+                Cetak
+              </Button>
+              </div>
+              ) : null}
+
+              <MenuAlatJadwal
+                butir={butirMenuAlat}
+                onPilih={(kunci) => {
+                  if (kunci === "hitung-skor") {
+                    // Menyalakan skor HARUS memuat ulang. Sebelumnya tombolnya
+                    // hanya membalik penanda, sehingga tulisannya berubah jadi
+                    // "Skor: nyala" tetapi kolom Siap tetap bergaris - skornya
+                    // memang belum pernah diminta ke bot.
+                    const menyala = !nilaiKesiapan;
+                    setNilaiKesiapan(menyala);
+                    if (menyala) void muatTanggal(dari, sampai, true);
+                    else setKesiapan({});
+                  } else if (kunci === "per-panitera-sidang") setMejaPp((b) => !b);
+                  else if (kunci === "cetak-relaas") setCetakRelaasTerbuka(true);
+                  else if (kunci === "penetapan-kembali") setPenetapanKembaliTerbuka(true);
+                  else if (kunci === "daftar-antrian") void periksaSinkron();
+                  else if (kunci === "kasir") setKasirTerbuka(true);
+                  else if (kunci === "kasir-harian") kasirHarian.setBuka("massal");
+                  else if (kunci === "pengingat-kasir") kasirHarian.setBuka("pengingat");
+                }}
+              />
+
+              {/* Angka "x dari y" menempel pada Reset: yang paling sering
+                  ditanyakan saat daftar menyusut adalah berapa yang
+                  disembunyikan. */}
+              {!modeUrl && adaSaringan && sidang.length > 0 ? (
+                <>
+                  <span className="text-sm text-muted-foreground">
+                    {sidangTampil.length} dari {sidang.length} perkara
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={resetSemuaSaringan}
+                    title={`Lepaskan seluruh saringan dan kembali ke ${sidang.length} perkara`}
+                  >
+                    <RotateCcw className="mr-1 h-3.5 w-3.5" />
+                    Reset ke {sidang.length} perkara
+                  </Button>
+                </>
+              ) : null}
+            </div>
+
+            {/* Kata kunci yang sedang berlaku DI SISI SIPP disebutkan, karena
+                ia tidak terlihat di mana pun selain di sini: daftarnya sudah
+                menyusut sebelum sampai ke layar. Tanpa baris ini, jadwal yang
+                tersaring akan disangka jadwal yang memang sepi. */}
+            {!modeUrl && cari ? (
+              <p className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                <span>
+                  Dicari ke SIPP: <strong className="text-foreground">{cari}</strong>
+                </span>
+                <button
+                  type="button"
+                  onClick={lepasCariSipp}
+                  disabled={pertamaMuat && memuat}
+                  className="rounded border px-1.5 py-0.5 transition hover:bg-muted hover:text-foreground disabled:opacity-50"
+                >
+                  lepaskan
+                </button>
+              </p>
+            ) : null}
+          </div>
+
+          </>
+          )}
+
+          {mejaPp && !modeUrl && satuTanggalJadwal && kh.keliling && tampil(tampilan, "menu-per-panitera") ? (
+            <MejaPaniteraSidang
+              daftar={sidang}
+              kh={kh}
+              sudahHasil={sidangSelesaiHariIni}
+              bolehTundaPutus={bolehTundaPutusMassal}
+              onSelesai={() => void muatTanggal(dari, sampai, nilaiKesiapan)}
+              onTutup={() => setMejaPp(false)}
+            />
+          ) : null}
+
+          {/* === 12OKT-C: kartu ruang sidang (butir 3) ===
+              Sejak 19 Okt 2026 (JADWAL-3 butir 3) kartu ruang tidak lagi
+              memakai baris sendiri di sini: ia menyatu dengan ringkasan ruang
+              sidang menjadi SATU pita di atas tabel - lihat PitaRuangSidang.
+              Saklar "kartu-ruang" tetap mengatur bagian jumlah/perlu diperiksa. */}
+        </div>
+
+
+        {/* ==================================================================
+            KOTAK KEADAAN
+            ==================================================================
+
+            Yang menuntut tindakan berwarna merah, yang perlu diperhatikan
+            kuning, yang sudah beres hijau. Warnanya menyebut arti, bukan
+            selera - dan itu yang membuat deretan ini terbaca sebelum
+            angkanya sempat dibaca.
+
+            Angkanya dihitung dari SELURUH sidang hari itu, bukan dari yang
+            sudah tersaring: kalau ikut menyusut, menyalakan satu saringan
+            membuat saringan lain tampak nol dan mustahil dilepas kembali. */}
+        {/* Kegagalan membaca antrian disebutkan apa adanya. Kolom antrian yang
+            kosong tanpa sebab akan disangka fitur yang belum jalan; yang
+            menyebutkan sambungannya bermasalah dapat ditindaklanjuti - dan
+            sambungannya memang dapat disunting dari menu Koneksi SQL. */}
+        {!antrian.terbaca && antrian.alasan && sidang.length > 0 ? (
+          <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
+            Nomor antrian tidak terbaca: {antrian.alasan} — periksa sambungan ke aplikasi antrian
+            di Admin ALETA Bot. Jadwalnya sendiri tetap benar.
+          </p>
+        ) : null}
+
+        {/* Tabel antrian memuat hari berjalan saja. Bila ia memuat lebih dari
+            satu tanggal, nomornya patut diragukan - rumus yang menjawab
+            WhatsApp pun tidak menyaring tanggal, sehingga nomor yang diterima
+            para pihak ikut bergeser. Disebutkan, bukan didiamkan. */}
+        {antrian.terbaca && antrian.tanggal.length > 1 ? (
+          <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
+            Aplikasi antrian memuat {antrian.tanggal.length} tanggal sekaligus (
+            {antrian.tanggal.map((t) => tanggalHariPendek(t, t)).join(", ")}). Nomor antrian dihitung dari seluruhnya, sama
+            seperti nomor yang dikirim lewat WhatsApp — periksa apakah data antrian hari-hari
+            sebelumnya sudah dibersihkan.
+          </p>
+        ) : null}
+
+        {/* ==================================================================
+            SATU DERET SARINGAN
+            ==================================================================
+
+            Alur perkara dan keadaan sidang disatukan. Keduanya mengerjakan
+            hal yang sama - menyaring tabel dengan menekan angka - dan dua
+            baris dengan dua bentuk kotak yang berbeda membuat pekerjaan
+            tunggal itu tampak seperti dua alat.
+
+            YANG BERNILAI NOL TIDAK DITAMPILKAN. Ia sudah dimatikan dan tidak
+            dapat menyaring apa pun; menampilkannya hanya memaksa mata
+            melewati sembilan kotak mati sebelum sampai ke yang hidup.
+            Kecualinya kotak yang sedang MENYALA - kalau ia ikut hilang saat
+            angkanya nol, saringannya tidak dapat dimatikan lagi. */}
+        {baru ? null : blokTag}
+
+        {/* ==================================================================
+            KENDALI DICIUTKAN - "PERLU DIPERIKSA" TETAP TERLIHAT
+            ==================================================================
+
+            Menggantikan satu-satunya kelebihan papan "Perlu ditindaklanjuti"
+            yang dihapus 24 September 2026: papan itu tetap tampil walau
+            kendalinya diciutkan. Yang menciutkan kendali sedang
+            memperpanjang daftar, bukan sedang menolak tahu apa yang harus
+            diurus hari itu. */}
+        {sidang.length > 0 && kendaliCiut ? (
+          <div className="flex flex-wrap items-center gap-1.5">
+            {KEADAAN_PERLU_DIPERIKSA.map((keadaan) => (
+              <ChipSaring
+                key={keadaan.kunci}
+                label={keadaan.label}
+                jumlah={jumlahKeadaan[keadaan.kunci] ?? 0}
+                nada={keadaan.nada}
+                judul={`${keadaan.judul} ${keteranganBatasJam}`}
+                aktif={keadaanTerpilih.includes(keadaan.kunci)}
+                onTekan={() => alihkanKeadaan(keadaan.kunci)}
+              />
+            ))}
+          </div>
+        ) : null}
+
+        {!baru && lanjutTerbuka && sidang.length > 0 && tampil(tampilan, "pencarian-lanjutan") ? (
+          <PanelCariLanjut
+            medan={MEDAN_CARI_SIDANG}
+            isian={cariLanjut.isian}
+            onUbah={cariLanjut.ubah}
+            onBersihkan={cariLanjut.bersihkan}
+            jumlahAktif={cariLanjut.jumlahAktif}
+          />
+        ) : null}
+
+        {/* Rincian kelompok yang dipilih. Muncul HANYA saat diklik: menampilkan
+            rincian seluruh kelompok sekaligus mengembalikan tabel kedua yang
+            isinya sama dengan tabel utama. */}
+        {alurTerpilih ? (
+          <div className="rounded-xl border bg-muted/20 p-3">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <h4 className="text-sm font-semibold">
+                {KELOMPOK_ALUR.find((k) => k.kunci === alurTerpilih)?.label} —{" "}
+                {sidangTerpilih.length} sidang
+              </h4>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setAlurTerpilih("");
+                  bersihkanSaringan();
+                }}
+              >
+                Tutup
+              </Button>
+            </div>
+
+            {/* ============================================================
+                RINGKASAN KELOMPOK
+                ============================================================
+
+                Empat pertanyaan yang ditanya sebelum sidang dimulai: perkara
+                apa saja hari ini, berapa yang sidang pertama, siapa memegang
+                berapa, dan ruang mana dipakai berapa kali.
+
+                Hanya yang ADA yang disebutkan - daftar berisi belasan jenis
+                perkara bernilai nol tidak menolong siapa pun. */}
+            <div className="mb-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <KartuRincian
+                judul="Jenis perkara"
+                baris={rincianJenis}
+                aktif={saringJenis}
+                onPilih={setSaringJenis}
+              />
+              <KartuRincian
+                judul="Tahap sidang"
+                baris={rincianTahap}
+                aktif={saringTahap}
+                onPilih={setSaringTahap}
+              />
+              <KartuRincian
+                judul="Majelis"
+                baris={rincianMajelis}
+                aktif={saringMajelis}
+                onPilih={setSaringMajelis}
+                monospasi
+              />
+              <KartuRincian
+                judul="Ruang sidang"
+                baris={rincianRuang}
+                aktif={saringRuang}
+                onPilih={setSaringRuang}
+              />
+            </div>
+
+            {/* Penyaring yang sedang berlaku disebutkan terang-terangan.
+                Daftar yang menyusut tanpa keterangan terbaca sebagai data yang
+                hilang, dan yang dilaporkan kemudian bukan "saya lupa melepas
+                saringan" melainkan "perkaranya tidak muncul". */}
+            {adaSaringanKartu ? (
+              <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 text-sm">
+                <span className="font-medium">
+                  Disaring: {sidangTersaring.length} dari {sidangTerpilih.length} sidang
+                </span>
+                {[
+                  ["Jenis", saringJenis, setSaringJenis] as const,
+                  ["Tahap", saringTahap, setSaringTahap] as const,
+                  ["Majelis", saringMajelis, setSaringMajelis] as const,
+                  ["Ruang", saringRuang, setSaringRuang] as const,
+                ]
+                  .filter(([, nilai]) => nilai)
+                  .map(([label, nilai, ubah]) => (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => ubah("")}
+                      title={`Lepas saringan ${label}`}
+                      className="rounded bg-primary/15 px-1.5 py-0.5 text-primary transition hover:bg-primary/25"
+                    >
+                      {label}: {nilai} &times;
+                    </button>
+                  ))}
+                <button
+                  type="button"
+                  onClick={bersihkanSaringan}
+                  className="ml-auto underline underline-offset-2 hover:text-primary"
+                >
+                  Lepas semua
+                </button>
+              </div>
+            ) : null}
+            {/* ==============================================================
+                KISI KARTU DIHAPUS - TABEL DI BAWAH SUDAH MENJADI DAFTARNYA
+                ==============================================================
+
+                Panel ini dulu memuat kisi kartu berisi perkara kelompoknya,
+                dan itu satu-satunya tempat daftar sealur dapat dilihat -
+                tabel utama waktu itu tetap memuat seluruh hari.
+
+                Sejak kotak alur menyaring tabelnya juga, kisi itu menjadi
+                salinan: perkara yang sama, keterangan yang sama, hanya
+                berbentuk kartu alih-alih baris, dua kali di satu halaman.
+                Dua daftar yang isinya sama membuat pembacanya membandingkan
+                keduanya untuk mencari beda yang tidak ada - dan yang di atas
+                selalu lebih miskin, sebab kartu tidak memuat antrian,
+                kesiapan, saksi, maupun hasil sidang.
+
+                Yang TINGGAL di panel ini keempat kartu ringkasan di atas -
+                jenis, tahap, majelis, ruang. Itu yang tidak ada di tabel:
+                jawaban atas "berapa banyak", bukan pengulangan "yang mana".
+                Keempatnya kini menyaring tabel di bawah secara langsung. */}
+            <p className="text-sm text-muted-foreground">
+              Daftar perkaranya ada di tabel di bawah — ia sudah mengikuti kelompok dan
+              keempat penyaring di atas.
+            </p>
+          </div>
+        ) : null}
+
+        {/* Kepala tabel menempel saat digulung: jadwal sehari dapat puluhan
+            baris, dan tanpa ini pembaca kehilangan nama kolomnya di tengah. */}
+        {/* ==================================================================
+            SUSUNAN KOLOM
+            ==================================================================
+
+            Diurut menurut apa yang dibaca lebih dulu saat menelusuri jadwal:
+            jam, lalu perkara apa, lalu siapa yang menyidangkan, lalu di mana.
+
+            Panitera dan juru sita digabung satu kolom - keduanya "petugas
+            sidang", jarang dibaca terpisah, dan memisahkannya memakan lebar
+            yang lebih berguna untuk nomor perkara.
+
+            Ukuran huruf mengikuti kepentingan: jam dan nomor perkara paling
+            besar, keterangan pendukung lebih kecil. */}
+        {/* ==================================================================
+            DUA KEDALAMAN, SATU TABEL
+            ==================================================================
+
+            RINGKAS untuk menelusuri - jam, perkara, agenda, ruang. Itu yang
+            dibaca saat mencari "sidang berikutnya apa" atau saat layarnya
+            ditampilkan ke orang banyak.
+
+            LENGKAP untuk memeriksa - ditambah kesiapan, majelis, petugas
+            sidang, dan keadaan putusan. Inilah tampilan yang sudah ada, dan ia
+            tetap menjadi bawaan supaya tidak ada yang kehilangan kolom yang
+            biasa dipakainya tanpa memintanya.
+
+            Yang disembunyikan hanya GAYA-nya, bukan selnya: jumlah sel tiap
+            baris tetap sama dengan jumlah kepala kolomnya, sehingga tidak ada
+            colSpan yang perlu dihitung ulang di lima tempat. */}
+        {/* Hasil pemeriksaan pendaftaran antrian - disebutkan apa adanya
+            sebelum apa pun ditulis. */}
+        {sinkronHasil ? (
+          <div className="mb-2 rounded-lg border bg-muted/20 px-3 py-2 text-sm">
+            {sinkronHasil.alasan ? (
+              <p className="flex items-start gap-2 text-rose-600">
+                <span className="min-w-0 flex-1">{sinkronHasil.alasan}</span>
+                <TombolTutupPesan onTutup={() => setSinkronHasil(null)} />
+              </p>
+            ) : sinkronHasil.ujiKering ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <span>
+                  {sinkronHasil.akanDitambah.length} perkara akan didaftarkan ke antrian
+                  {sinkronHasil.dilewati.length > 0
+                    ? `, ${sinkronHasil.dilewati.length} sudah terdaftar`
+                    : ""}
+                  .
+                </span>
+                {sinkronHasil.akanDitambah.length > 0 ? (
+                  <Button size="sm" disabled={sinkronSibuk} onClick={() => void jalankanSinkron(true)}>
+                    {sinkronSibuk ? "Mendaftarkan…" : "Daftarkan sekarang"}
+                  </Button>
+                ) : null}
+                <button
+                  type="button"
+                  className="text-muted-foreground underline"
+                  onClick={() => setSinkronHasil(null)}
+                >
+                  tutup
+                </button>
+              </div>
+            ) : (
+              <p className={cn("flex items-start gap-2", sinkronHasil.gagal.length > 0 ? "text-rose-700" : "text-emerald-700")}>
+                <span className="min-w-0 flex-1">
+                  {sinkronHasil.ditambahkan} perkara didaftarkan ke antrian.
+                  {sinkronHasil.gagal.length > 0
+                    ? ` ${sinkronHasil.gagal.length} gagal: ${sinkronHasil.gagal[0].sebab}`
+                    : ""}{" "}
+                  Nomor antriannya baru terbit saat para pihak mengambilnya.
+                </span>
+                {/* Yang berhasil seluruhnya hilang sendiri; yang ada gagalnya menetap sampai ditutup. */}
+                {sinkronHasil.gagal.length > 0 ? <TombolTutupPesan onTutup={() => setSinkronHasil(null)} /> : null}
+              </p>
+            )}
+          </div>
+        ) : null}
+
+        {/* Batas tinggi 70vh/82vh dan gulir tegak di dalam kotak sudah DIBUANG
+            (28 September 2026) - lihat catatan di atas wadah tabel. Dahulu
+            batasnya hanya dari lg ke atas, sebab di ponsel gulir bersarang
+            membuat orang tersesat; kini tidak ada gulir bersarang di lebar
+            mana pun. */}
+        {/* ==================================================================
+            PERINGATAN KETIKA "PERKARA SAYA" TIDAK MENGENA SATU BARIS PUN
+            ==================================================================
+
+            Tombolnya sendiri sudah pindah ke sudut kanan atas - lihat
+            sebabnya di kepala. Yang TIDAK ikut pindah hanya peringatan ini,
+            dan itu disengaja.
+
+            Peringatan ini menjelaskan mengapa daftar yang seharusnya
+            tersaring justru tampil penuh. Kalau ia hanya menjadi title pada
+            tombolnya, ia tidak terlihat tanpa disentuh - dan yang membaca
+            daftar penuh akan menyangka seluruh perkara itu miliknya. Itu
+            kesimpulan yang salah tentang pekerjaan sendiri, dan tempatnya
+            harus di jalan baca, bukan di balik kursor.
+
+            Dua keterangan yang dahulu berdiri di sini - "Disaring atas nama
+            X" dan "Seluruh perkara satker" - sudah menjadi title tombolnya:
+            keduanya hanya mengulang apa yang sudah dikatakan tombol yang
+            sedang menyala. */}
+        {currentUser && perkaraSayaAktif && milikSaya.berlaku && !milikSaya.adaYangCocok ? (
+          <p className="mb-2 rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-xs text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100">
+            Nama <strong>{currentUser.name}</strong> tidak tercatat sebagai majelis,
+            panitera pengganti, atau jurusita pada perkara yang tampil — seluruh perkara
+            ditampilkan apa adanya.
+          </p>
+        ) : null}
+
+        {/* ==================================================================
+            BARIS "PERAN ANDA BERHAK MELIHAT SELURUH PERKARA" DIBUANG
+            ==================================================================
+
+            Ditambahkan 22 September 2026 pagi, dibuang atas permintaan
+            pengguna pada hari yang sama - dan permintaannya benar.
+
+            Ia lahir untuk menjawab keadaan yang sah: peran yang berhak melihat
+            seluruh perkara tidak disaring walau tombolnya ditekan, dan
+            sesudah keterangan "Disaring atas nama X" menjadi title, tidak ada
+            lagi petunjuk di layar.
+
+            Tetapi keadaan itu TETAP - ia berlaku sepanjang hari bagi ketua,
+            panitera, dan operator. Baris yang selalu ada bukan lagi
+            peringatan; ia menjadi perabot yang dibaca sekali lalu dilewati
+            selamanya, sambil memakan satu baris penuh di atas daftar yang
+            justru hendak dibaca.
+
+            Keterangannya tidak hilang: title tombol "Perkara saya" tetap
+            menyebutkan apa yang sedang disaring. Yang hilang hanya barisnya. */}
+
+        {/* ==================================================================
+            LEGENDA TIGA JARAK DIBUANG - ARTINYA PINDAH KE TITLE TIAP PIL
+            ==================================================================
+
+            Diminta pengguna 28 September 2026: "hapus tulisan Tiga angka
+            waktu di kolom Antrian ...". Paragraf empat baris itu dibaca sekali
+            lalu dilewati selamanya, sambil mendorong tabelnya ke bawah. Arti
+            tiap angka kini ada di title pilnya sendiri - lihat ARTI di
+            components/portal/tiga-jarak-sidang.tsx. */}
+
+        {/* ==================================================================
+            SELEBAR KARTUNYA, TANPA GULIR SAMPING, TANPA GULIR TEGAK SENDIRI
+            ==================================================================
+
+            Diminta pengguna 28 September 2026, tiga keluhan sekaligus pada
+            layar 1920 px: tabelnya punya gulir ke samping, lencana konseptor
+            terpotong di tepi kanan, dan "ada yang terlewat di bawah footer -
+            seharusnya yang memanjang ke bawah itu antrian sidangnya".
+
+            SEBAB GULIR SAMPING: tabelnya dikunci min-w-[980px], padahal
+            kartunya hanya 956 px, dan di dalamnya nama pihak serta nama saksi
+            ber-truncate max-w-[24rem] - yang tidak pernah menyempit di dalam
+            sel tabel, sebab lebar minimum sel adalah lebar isinya yang tidak
+            dapat dipatahkan (terukur: tabel 1.590 px di kartu 956 px). Kini
+            dari xl (1280 px) ke atas batas lebarnya dilepas dan isi sel
+            MELIPAT, sehingga tabel selebar kartunya. Di bawah xl batas lama
+            tetap: kolomnya terlalu sempit untuk dilipat, dan menggulir ke
+            samping lebih terbaca daripada kolom selebar satu kata.
+
+            SEBAB "TERLEWAT DI BAWAH FOOTER": wadahnya dibatasi 70vh (82vh
+            bila kendali diciutkan) dan menggulir sendiri. Halaman berakhir
+            pada footer sementara baris-baris sidang masih tersembunyi di dalam
+            kotak - terukur 2.115 px isi di kotak setinggi 754 px. Batas itu
+            DIBUANG: tabelnya setinggi isinya, halamanlah yang menggulung, dan
+            footer selalu di bawah baris terakhir. Kepala kolom tetap menempel
+            di puncak layar selama tabelnya muat - lihat tabelMuat. Pengecualian
+            rincian terbuka (sebab (2) pada catatan lebarTampak) ikut hilang,
+            sebab tidak ada lagi batas yang perlu dilepas. */}
+        {/* Siapa yang sedang disidangkan di tiap ruang - perbaikan 2 Okt
+            2026 (butir 10). Ditekan = menggulung ke barisnya. */}
+        {ciutkanSelesai && jumlahDiciutkan > 0 ? (
+          <p className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground" data-ciutkan-selesai="">
+            {jumlahDiciutkan} perkara yang sudah selesai diciutkan - yang tampil hanya yang berjalan dan belum selesai.
+            <button
+              type="button"
+              className="underline underline-offset-2 hover:text-foreground"
+              onClick={() => ubahSaklar("ciutkan-selesai", false)}
+            >
+              Tampilkan semua
+            </button>
+          </p>
+        ) : null}
+        {/* JADWAL-3 butir 3 (19 Okt 2026): SATU pita ruang sidang - kartu
+            ruang ("kartu-ruang": jumlah, perlu diperiksa, saring) dan
+            ringkasan ruang ("ringkasan-ruang": yang sedang disidang, diskors)
+            menyatu dalam satu baris setinggi ±36 px. Rancangan dan alasannya:
+            docs/rancangan/ruang-sidang-ringkas.html (pilihan A). */}
+        {!baru && (tampil(tampilan, "ringkasan-ruang") || tampil(tampilan, "kartu-ruang") || tampil(tampilan, "saring-ruang") || adaSaklarKeliling) ? (
+          <PitaRuangSidang
+            awal={
+              adaSaklarKeliling ? (
+                <SaklarSidangKeliling ringkas kh={kh} daftar={sidang} penggunaId={String(currentUser?.id ?? "")} />
+              ) : undefined
+            }
+            pil={pitaRuang}
+            tampilJumlah={tampil(tampilan, "kartu-ruang")}
+            tampilBerjalan={tampil(tampilan, "ringkasan-ruang")}
+            diskors={diskorsHariIni}
+            nomorPerkara={(k) => bahanTigaJarak.nomorPerkara[k] ?? ""}
+            ruangPilihan={ruangSaring}
+            onPilih={tampil(tampilan, "saring-ruang") || tampil(tampilan, "kartu-ruang") ? setRuangDipilih : undefined}
+            keteranganPerlu={keteranganPerluKartu}
+            sekarangMs={() => (patokanWaktu ? patokanWaktu.sekarangMs + (Date.now() - patokanWaktu.diterimaMs) : Date.now())}
+            onLihat={(k) => {
+              const el = Array.from(document.querySelectorAll<HTMLElement>("[data-kunci-waktu]")).find(
+                (x) => x.dataset.kunciWaktu === k
+              );
+              el?.scrollIntoView({ block: "center", behavior: "smooth" });
+            }}
+          />
+        ) : null}
+
+        {baru ? (
+          <div className="flex flex-col gap-2" data-daftar-kartu="" data-tabel-muat="ya">
+            <KepalaLajurSidang urutan={urutTabel} onTekan={tekanUrut} adaSiap={!modeRingkas && tampil(tampilan, "kolom-siap")} />
+            {pertamaMuat && memuat ? (
+              <div aria-busy="true" data-tabel-menunggu="" className="h-40" />
+            ) : sidangTampil.length === 0 && sidang.length > 0 ? (
+              <div className="rounded-xl border px-3 py-10 text-center">
+                <p className="text-sm font-medium">Tidak ada sidang yang cocok dengan saringan ini.</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {sidang.length} perkara pada rentang ini tidak satu pun cocok. Longgarkan saringannya, atau tekan Reset.
+                </p>
+                <Button size="sm" variant="outline" className="mt-3" onClick={resetSemuaSaringan}>
+                  <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                  Reset ke {sidang.length} perkara
+                </Button>
+              </div>
+            ) : sidang.length === 0 ? (
+              <div className="rounded-xl border px-3 py-10 text-center">
+                <CalendarDays className="mx-auto mb-2 h-8 w-8 text-muted-foreground/40" />
+                <p className="text-sm font-medium">Tidak ada sidang pada tanggal ini.</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Coba hari lain lewat panah, atau buka Kalender sidang untuk melihat hari mana saja yang ada sidangnya.
+                </p>
+              </div>
+            ) : (
+              sidangTampil.map(gambarSatuBaris)
+            )}
+          </div>
+        ) : (
+        <div
+          ref={kotakTabel}
+          data-tabel-muat={tabelMuat ? "ya" : "tidak"}
+          className={cn("rounded-xl border", tabelMuat ? "overflow-visible" : "overflow-x-auto")}
+        >
+          <table
+            className={cn(
+              "w-full text-sm",
+              modeRingkas
+                ? "min-w-[640px] xl:min-w-0 [&_.kolom-lengkap]:hidden"
+                : "min-w-[980px] xl:min-w-0 [&_.hanya-ringkas]:hidden"
+            )}
+          >
+            {/* Sudut atas kepala kolom ikut membulat: selama tabelnya muat,
+                wadahnya tidak lagi memotong isinya, dan latar bg-muted yang
+                bersudut siku akan menyembul keluar dari garis rounded-xl. */}
+            <thead className="sticky top-0 z-10 bg-muted text-left text-sm uppercase tracking-wide shadow-sm [&_th:first-child]:rounded-tl-xl [&_th:last-child]:rounded-tr-xl">
+              {/* Tiap kepala dapat ditekan: naik, turun, lalu kembali ke
+                  urutan asal. Putaran ketiga penting - tanpa jalan kembali,
+                  satu tekanan yang tidak disengaja mengunci tabelnya, dan
+                  satu-satunya cara pulih adalah memuat ulang halaman. */}
+              <tr>
+                <th className="px-2 py-2 text-right font-medium">No</th>
+                {/* Kepalanya ikut saklarnya, sama seperti selnya dan
+                    tombolnya. Sebelumnya hanya sel dan tombolnya yang dijaga,
+                    sehingga mematikan skor meninggalkan kolom berkepala "Siap"
+                    yang selalu kosong - memakan lebar, menawarkan pengurutan
+                    atas angka yang tidak ada, dan tanpa tombol pemulih sebab
+                    tombolnya sudah ikut hilang.
+
+                    Selnya TETAP digambar kosong - lihat catatannya di sana:
+                    jumlah sel tiap baris harus sama dengan jumlah kepala
+                    kolomnya, jadi kepala dan sel harus hilang BERSAMA. */}
+                {tampil(tampilan, "kolom-siap") ? (
+                  <KepalaUrut
+                    kunci="siap"
+                    urutan={urutTabel}
+                    onTekan={tekanUrut}
+                    className="px-2 kolom-lengkap"
+                    rata="tengah"
+                    judul="Urutkan menurut skor kesiapan sidang"
+                  >
+                    Siap
+                  </KepalaUrut>
+                ) : null}
+                <KepalaUrut
+                  kunci="antrian"
+                  urutan={urutTabel}
+                  onTekan={tekanUrut}
+                  className="max-w-[12rem] px-2"
+                  judul="Urutkan menurut nomor antrian; yang belum mengambil dan yang tanpa antrian jatuh ke bawah"
+                >
+                  Antrian / Jam
+                </KepalaUrut>
+                <KepalaUrut className="px-2" kunci="perkara" urutan={urutTabel} onTekan={tekanUrut}>
+                  Perkara &amp; Para Pihak
+                </KepalaUrut>
+                <KepalaUrut className={cn("px-2", LEBAR_KOLOM_AGENDA)} kunci="agenda" urutan={urutTabel} onTekan={tekanUrut}>
+                  Agenda
+                </KepalaUrut>
+                {/* ==============================================================
+                    TIGA KOLOM DISATUKAN MENJADI SATU
+                    ==============================================================
+
+                    Majelis, Petugas Sidang, dan Ruang dulu berdiri sendiri-
+                    sendiri. Ketiganya menjawab satu pertanyaan yang sama -
+                    SIAPA yang menyidangkan, dan DI MANA - dan memisahkannya
+                    justru memakan tempat, bukan memberi kejelasan:
+
+                      Majelis  nama hakimnya terpotong elipsis karena sempit
+                      Petugas  "Unun Fidiyasari Patangai, S.H." membungkus
+                               menjadi empat baris, dan seluruh baris tabel
+                               ikut meninggi karenanya
+                      Ruang    "Ruang Sidang 1 Dalam Gedung" membungkus
+                               menjadi empat baris untuk satu keterangan yang
+                               sama pada hampir seluruh perkara hari itu
+
+                    Disatukan, ketiganya muat dalam satu kolom lebar tanpa
+                    membungkus, dan tabel kehilangan dua kolom - itulah ruang
+                    yang selama ini dicari Perkara dan Agenda.
+
+                    Diurutkan menurut majelis, sebab itulah yang dicari orang
+                    ketika menekan kepala kolom ini.
+
+                    6 Okt 2026: "satu kolom lebar" itu kebablasan - tata letak
+                    tabel otomatis memberinya ±430px (nama tiga hakim + "PP ...
+                    · JS ..." dalam satu baris), dan Perkara/Agenda kembali
+                    tersempitkan. Dibatasi LEBAR_KOLOM_MAJELIS pada kepala DAN
+                    sel (pola yang sama dengan Antrian / Jam): namanya melipat,
+                    tidak ada yang dipotong. */}
+                <KepalaUrut className={cn("px-2 kolom-lengkap", LEBAR_KOLOM_MAJELIS)} kunci="majelis" urutan={urutTabel} onTekan={tekanUrut}>
+                  Majelis &amp; Petugas
+                </KepalaUrut>
+                <KepalaUrut
+                  kunci="putusan"
+                  className="px-2 kolom-lengkap"
+                  urutan={urutTabel}
+                  onTekan={tekanUrut}
+                  judul="Urutkan menurut tanggal putusan; yang belum putus jatuh ke bawah"
+                >
+                  Putusan
+                </KepalaUrut>
+                <th className="px-2 py-2 text-right font-medium">
+                  <span className="sr-only">Rincian</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {/* Hanya muatan PERTAMA yang boleh mengosongkan tabel - lihat
+                  catatan panjang pada pertamaMuat. Penyegaran berikutnya
+                  membiarkan barisnya terpasang, dan posisi gulir pembacanya
+                  tidak bergerak. */}
+              {pertamaMuat && memuat ? (
+                // JADWAL-3 butir 5: tanpa tulisan memuat - ruangnya saja yang
+                // dipesan, supaya baris sidang tidak membuat halaman melompat.
+                <tr aria-busy="true" data-tabel-menunggu="">
+                  <td className="h-40 px-3 py-6" colSpan={kolomTabel} />
+                </tr>
+              ) : sidangTampil.length === 0 && sidang.length > 0 ? (
+                <tr>
+                  <td className="px-3 py-10 text-center" colSpan={kolomTabel}>
+                    <p className="text-sm font-medium">
+                      Tidak ada sidang yang cocok dengan saringan ini.
+                    </p>
+                    {/* Bedanya penting: hari yang memang kosong menyuruh
+                        pindah tanggal, sedangkan hasil yang tersaring habis
+                        menyuruh melonggarkan saringannya. Menyamakan keduanya
+                        membuat orang mencari di tanggal lain padahal
+                        perkaranya ada di depan mata. */}
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {sidang.length} perkara pada rentang ini tidak satu pun cocok. Longgarkan
+                      saringannya, atau tekan Reset.
+                    </p>
+                    {/* Memakai reset PENUH - dan justru di sini bedanya paling
+                        menentukan. Tombol lama hanya melepas sebagian, sehingga
+                        menekannya pada keadaan kosong dapat tetap menghasilkan
+                        daftar kosong: alur perkara dan keempat penyaring kartu
+                        tidak ikut dilepas. Tombol pemulih yang tidak memulihkan
+                        apa pun adalah jalan buntu yang tampak seperti jalan. */}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="mt-3"
+                      onClick={resetSemuaSaringan}
+                    >
+                      <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                      Reset ke {sidang.length} perkara
+                    </Button>
+                  </td>
+                </tr>
+              ) : sidang.length === 0 ? (
+                <tr>
+                  <td className="px-3 py-10 text-center" colSpan={kolomTabel}>
+                    <CalendarDays className="mx-auto mb-2 h-8 w-8 text-muted-foreground/40" />
+                    <p className="text-sm font-medium">Tidak ada sidang pada tanggal ini.</p>
+                    {/* Keadaan kosong yang menawarkan langkah berikutnya, bukan
+                        sekadar memberitahu bahwa tidak ada apa-apa. */}
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Coba hari lain lewat panah, atau buka Kalender sidang untuk
+                      melihat hari mana saja yang ada sidangnya.
+                    </p>
+                  </td>
+                </tr>
+              ) : (
+                sidangTampil.map(gambarSatuBaris)
               )}
             </tbody>
           </table>
         </div>
+        )}
 
         {/* Yang dicetak adalah yang SEDANG TAMPIL, bukan seluruh yang termuat.
             Menyaring ke Retur lalu menekan Cetak sebelumnya menghasilkan lembar
@@ -9891,6 +11400,11 @@ export function RincianSidang({
    */
   pembebanan?: PembebananIkrar | null;
 }) {
+  // 4 Nov 2026: tabel di rincian dapat diurutkan dengan menekan judul kolom (pembantu yang sama dengan daftar utama).
+  // Hanya urutan tampil di layar; isi dan logika barisnya tidak disentuh.
+  const urutRelaas = useUrutan(null);
+  const urutPihak = useUrutan(null);
+  const urutDokumen = useUrutan(null);
   /**
    * Urutan sidang menurut sidangId - dari jadwal perkara, bukan dari urutan
    * baris relaas.
@@ -10306,16 +11820,18 @@ export function RincianSidang({
             <table className="w-full min-w-[560px] text-sm">
               <thead className="bg-muted/40 text-left">
                 <tr>
-                  <th className="px-3 py-2 font-medium">Pihak</th>
-                  <th className="px-3 py-2 font-medium">Jenis &amp; tanggal</th>
-                  <th className="px-3 py-2 font-medium">Hasil</th>
-                  <th className="px-3 py-2 font-medium">Keterangan relaas</th>
-                  <th className="px-3 py-2 font-medium">Jurusita</th>
+                  <KepalaUrut biasa kunci="pihak" urutan={urutRelaas.urutan} onTekan={urutRelaas.tekan}>Pihak</KepalaUrut>
+                  <KepalaUrut biasa kunci="tanggal" urutan={urutRelaas.urutan} onTekan={urutRelaas.tekan}>Jenis &amp; tanggal</KepalaUrut>
+                  <KepalaUrut biasa kunci="hasil" urutan={urutRelaas.urutan} onTekan={urutRelaas.tekan}>Hasil</KepalaUrut>
+                  <KepalaUrut biasa kunci="keterangan" urutan={urutRelaas.urutan} onTekan={urutRelaas.tekan}>Keterangan relaas</KepalaUrut>
+                  <KepalaUrut biasa kunci="jurusita" urutan={urutRelaas.urutan} onTekan={urutRelaas.tekan}>Jurusita</KepalaUrut>
                   <th className="px-3 py-2 font-medium">Berkas</th>
                 </tr>
               </thead>
               <tbody>
-                {relaasSidangIni.map((baris) => (
+                {urutkan(relaasSidangIni, urutRelaas.urutan, (b, k) =>
+                  k === "pihak" ? b.namaPihak : k === "tanggal" ? b.tanggalRelaas : k === "hasil" ? b.retur : k === "keterangan" ? b.ketHasilRelaas : b.jurusitaNama
+                ).map((baris) => (
                   <tr key={baris.id} className="border-t border-border">
                     <td className="px-3 py-2">
                       <div className="font-medium">{baris.namaPihak || "—"}</div>
@@ -11044,16 +12560,18 @@ export function RincianSidang({
               <table className="w-full min-w-[860px] text-sm">
                 <thead className="bg-muted/40 text-left">
                   <tr>
-                    <th className="px-3 py-2 font-medium">Pihak</th>
-                    <th className="px-3 py-2 font-medium">Persetujuan e-Court</th>
-                    <th className="px-3 py-2 font-medium">Jalur seharusnya</th>
-                    <th className="px-3 py-2 font-medium">Pengiriman</th>
-                    <th className="px-3 py-2 font-medium">Penerimaan</th>
-                    <th className="px-3 py-2 font-medium">Kepatutan</th>
+                    <KepalaUrut biasa kunci="pihak" urutan={urutPihak.urutan} onTekan={urutPihak.tekan}>Pihak</KepalaUrut>
+                    <KepalaUrut biasa kunci="persetujuan" urutan={urutPihak.urutan} onTekan={urutPihak.tekan}>Persetujuan e-Court</KepalaUrut>
+                    <KepalaUrut biasa kunci="jalur" urutan={urutPihak.urutan} onTekan={urutPihak.tekan}>Jalur seharusnya</KepalaUrut>
+                    <KepalaUrut biasa kunci="kirim" urutan={urutPihak.urutan} onTekan={urutPihak.tekan}>Pengiriman</KepalaUrut>
+                    <KepalaUrut biasa kunci="terima" urutan={urutPihak.urutan} onTekan={urutPihak.tekan}>Penerimaan</KepalaUrut>
+                    <KepalaUrut biasa kunci="patut" urutan={urutPihak.urutan} onTekan={urutPihak.tekan}>Kepatutan</KepalaUrut>
                   </tr>
                 </thead>
                 <tbody>
-                  {kesiapan.panggilan.pihak.map((pihak) => (
+                  {urutkan(kesiapan.panggilan.pihak, urutPihak.urutan, (p, k) =>
+                    k === "pihak" ? p.nama : k === "persetujuan" ? p.persetujuan : k === "jalur" ? p.seharusnya : k === "kirim" ? p.tanggalPanggilan : k === "terima" ? p.tanggalPelaksanaanRelaas : p.kepatutan?.patut
+                  ).map((pihak) => (
                     <tr key={pihak.nama} className="border-t border-border align-top">
                       <td className="px-3 py-2">
                         <span className="font-medium">{pihak.nama}</span>
@@ -11237,17 +12755,19 @@ export function RincianSidang({
                 <tr>
                   {/* Angka saja - judul kolomnya pun satu kata. Diminta
                       pengguna 23 September 2026. */}
-                  <th className="w-10 px-2 py-2 text-center font-medium" title="Sidang keberapa">
+                  <KepalaUrut biasa kunci="sidang" rata="tengah" className="w-10 px-2" judul="Sidang keberapa - tekan untuk mengurutkan menurut tanggal sidang dokumen" urutan={urutDokumen.urutan} onTekan={urutDokumen.tekan}>
                     Sdg
-                  </th>
-                  <th className="px-3 py-2 font-medium">Judul Dokumen</th>
-                  <th className="px-3 py-2 font-medium">Pengunggah</th>
-                  <th className="px-3 py-2 font-medium">Verifikasi</th>
+                  </KepalaUrut>
+                  <KepalaUrut biasa kunci="judul" urutan={urutDokumen.urutan} onTekan={urutDokumen.tekan}>Judul Dokumen</KepalaUrut>
+                  <KepalaUrut biasa kunci="pengunggah" urutan={urutDokumen.urutan} onTekan={urutDokumen.tekan}>Pengunggah</KepalaUrut>
+                  <KepalaUrut biasa kunci="verifikasi" urutan={urutDokumen.urutan} onTekan={urutDokumen.tekan}>Verifikasi</KepalaUrut>
                   <th className="px-3 py-2 font-medium">Unduh</th>
                 </tr>
               </thead>
               <tbody>
-                {rincian.ecourt.map((dokumen) => (
+                {urutkan(rincian.ecourt, urutDokumen.urutan, (d, k) =>
+                  k === "sidang" ? d.tanggalSidang : k === "judul" ? d.judulDokumen : k === "pengunggah" ? d.peranPengunggah : d.statusVerifikasi
+                ).map((dokumen) => (
                   <tr key={dokumen.documentKey} className="border-t border-border">
                     {/* Kosong bila tanggal sidang dokumennya belum terisi -
                         dan pada sebagian besar dokumen ia memang masih kosong,

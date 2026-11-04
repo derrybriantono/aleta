@@ -717,10 +717,13 @@ export function CourtCalendarSidang({
   perkaraId,
   nomorPerkara,
   jenisPerkara = "",
+  gaya,
 }: {
   perkaraId: string;
   nomorPerkara: string;
   jenisPerkara?: string;
+  /** "tombol" (tampilan baru): tombol polos sewarna tema dengan angka; tanpa ini tampilan lama. */
+  gaya?: "tombol";
 }) {
   const { currentUser } = usePortal();
   const boleh = bolehIsiCourtCalendar(currentUser);
@@ -729,7 +732,26 @@ export function CourtCalendarSidang({
   const tutup = useCallback(() => setBuka(false), []);
   if (!boleh || !/^\d+$/.test(String(perkaraId))) return null;
   return (
-    <div className="mt-1">
+    <div className={gaya === "tombol" ? undefined : "mt-1"}>
+      {gaya === "tombol" ? (
+        <button
+          type="button"
+          data-s="court-calendar"
+          className={
+            jumlah === 0
+              ? "inline-flex items-center gap-1 rounded-md border border-dashed border-primary/60 px-2 py-0.5 text-xs font-medium text-primary transition hover:bg-primary/10"
+              : "inline-flex items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary transition hover:bg-primary/20"
+          }
+          title="Lihat, susun dari rekomendasi ALETA, tambah manual, atau sunting Court Calendar SIPP perkara ini"
+          onClick={() => setBuka(true)}
+        >
+          <CalendarClock className="h-3.5 w-3.5" aria-hidden="true" />
+          {jumlah === 0 ? "+ Court Calendar" : "Court Calendar"}
+          {jumlah === undefined || jumlah === 0 ? null : (
+            <span className="rounded-full bg-primary px-1.5 text-[10px] font-bold leading-4 text-primary-foreground">{jumlah === null ? "?" : jumlah}</span>
+          )}
+        </button>
+      ) : (
       <button
         type="button"
         className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
@@ -740,6 +762,7 @@ export function CourtCalendarSidang({
         Court Calendar
         <span className="text-muted-foreground">{jumlah === undefined ? "" : jumlah === null ? "(?)" : `(${jumlah})`}</span>
       </button>
+      )}
       {buka ? (
         <DialogCourtCalendar perkaraId={String(perkaraId)} nomorPerkara={nomorPerkara} jenisPerkara={jenisPerkara} onTutup={tutup} />
       ) : null}
