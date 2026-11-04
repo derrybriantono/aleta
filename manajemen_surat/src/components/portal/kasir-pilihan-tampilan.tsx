@@ -41,14 +41,13 @@ export function useTampilanKasir(): { pilihan: PilihanKasir; ganti: (p: PilihanK
   const { currentUser } = usePortal();
   const penggunaId = String((currentUser as { id?: string } | null | undefined)?.id || "");
   const kunci = kunciSalinanKasir(penggunaId);
-  const [pilihan, setPilihan] = useState<PilihanKasir>(PILIHAN_KASIR_BAWAAN);
+  // Tampil seketika dari yang terakhir diketahui (jendela Kasir hanya digambar di peramban, sesudah ditekan).
+  const [pilihan, setPilihan] = useState<PilihanKasir>(() => dariServer.get(penggunaId) ?? (typeof window === "undefined" ? null : bacaSalinan(kunci)) ?? PILIHAN_KASIR_BAWAAN);
   const [kabar, setKabar] = useState("");
 
   useEffect(() => {
     let hidup = true;
-    // Tampil seketika dari yang terakhir diketahui, lalu dikonfirmasi server (pilihan bisa diubah dari ekstensi).
-    const awal = dariServer.get(penggunaId) ?? bacaSalinan(kunci);
-    if (awal) setPilihan(awal);
+    // Dikonfirmasi server (pilihan bisa diubah dari ekstensi).
     void (async () => {
       try {
         const r = await fetch(apiPath(ALAMAT_SETELAN), { cache: "no-store" });
