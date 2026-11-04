@@ -648,7 +648,7 @@ export const TUTORIAL: readonly Tutorial[] = [
       "Menu Kasir hanya untuk kasir, petugas keuangan perkara, bendahara, panitera, dan panitera muda. Panduan kasir bersorot hanya untuk kasir, Admin, dan Super Admin.",
     ],
     kataKunci: ["jurnal", "panjar", "keuangan perkara", "pnbp", "bendahara", "biaya perkara", "rekap kasir", "tarif panggilan", "sisa panjar", "skum", "instrumen jurusita"],
-    baruDi: { sumber: "portal", versi: "2.43.0" },
+    baruDi: { sumber: "portal", versi: "2.45.0" },
   },
   {
     id: "relaas-massal",

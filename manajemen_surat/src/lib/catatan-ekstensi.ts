@@ -57,6 +57,16 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.72",
+    dirilis: "2026-11-04T12:30:00+08:00",
+    judul: "Tampilan baru Kasir ALETA",
+    butir: [
+      "Tampilan baru Kasir ALETA di kartu SIPP dan portal: tab Hari ini, Sisa panjar, Instrumen jurusita, Rekap, Pengingat, dan Riwayat, dengan tiga kartu angka yang dapat ditekan untuk menyaring.",
+      "Daftar yang perlu dijurnal langsung tampil saat Kasir dibuka; bagian bawah kartu selalu menyebut jumlah baris terpilih dan totalnya, dengan tombol Masukkan ke jurnal SIPP (tetap dua kali tekan).",
+      "Portal kini punya tab Sisa panjar dan Instrumen jurusita. Cetak Instrumen, daftar PSP, dan e-SKUM dirapikan: judul penuh, jumlah tugas, tanda tangan penyerah dan penerima, kolom paraf, dan status pembayaran.",
+    ],
+  },
+  {
     versi: "1.205.71",
     dirilis: "2026-11-04T10:30:00+08:00",
     judul: "Pratinjau Blangko Derry lewat mesin ALETA, folder tanpa menu disembunyikan, peringatan isian titik-titik",
