@@ -26,6 +26,7 @@ import { KabarDiantrekan, TanyaJamKerja, type PilihJamKerja } from "@/components
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { PemilihTanggalSidang } from "@/components/ui/pemilih-tanggal-sidang";
 import { apiPath } from "@/lib/base-path";
 import { PILIHAN_HASIL_SIPP, hasilBerkesepakatan, labelHasilSipp, type BawaanHasilSipp } from "@/lib/hasil-mediasi-sipp";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
@@ -338,15 +339,16 @@ export function HasilMediasiSippDialog({
                   </label>
                   <label className="block text-xs">
                     <span className="mb-0.5 block font-medium text-muted-foreground">Tanggal laporan mediator</span>
-                    <input
-                      type="date"
+                    <PemilihTanggalSidang
                       value={laporan}
                       min={keadaan.tanggalHasil || undefined}
                       max={keadaan.hariIni || undefined}
-                      onChange={(e) => {
+                      onChange={(v) => {
                         sentuh();
-                        setLaporan(e.target.value);
+                        setLaporan(v);
                       }}
+                      liburBolehDipilih
+                      sebutan="Tanggal laporan mediator"
                       className={kelasKotak}
                       aria-label="Tanggal laporan mediator"
                     />
@@ -357,14 +359,15 @@ export function HasilMediasiSippDialog({
                   <>
                     <label className="block text-xs sm:w-1/2">
                       <span className="mb-0.5 block font-medium text-muted-foreground">Tanggal kesepakatan perdamaian</span>
-                      <input
-                        type="date"
+                      <PemilihTanggalSidang
                         value={kesepakatan}
                         max={laporan || keadaan.hariIni || undefined}
-                        onChange={(e) => {
+                        onChange={(v) => {
                           sentuh();
-                          setKesepakatan(e.target.value);
+                          setKesepakatan(v);
                         }}
+                        liburBolehDipilih
+                        sebutan="Tanggal kesepakatan perdamaian"
                         className={kelasKotak}
                         aria-label="Tanggal kesepakatan perdamaian"
                       />

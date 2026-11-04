@@ -82,6 +82,7 @@ import { apiPath } from "@/lib/base-path";
 import { GOLONGAN_PENGUMUMAN_ITSBAT, namaUnduhanBlangko } from "@/lib/pengumuman-itsbat";
 import { namaCocokSatu } from "@/lib/perkara-sendiri";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
+import { PemilihTanggalSidang } from "@/components/ui/pemilih-tanggal-sidang";
 import { tanggalHariPanjang, tanggalHariPendek } from "@/lib/tanggal-indonesia";
 import { waktuPengadilan } from "@/lib/waktu-pengadilan";
 import type {
@@ -988,11 +989,12 @@ export function DialogCetakRelaas({
         <div className="flex flex-wrap items-end gap-2">
           <label className="flex flex-col gap-1 text-xs text-muted-foreground">
             Tanggal mencetak
-            <Input
-              type="date"
+            <PemilihTanggalSidang
               value={tanggal}
-              className="w-[11rem]"
-              onChange={(e) => gantiTanggal(e.target.value)}
+              className="w-[9rem]"
+              onChange={(v) => gantiTanggal(v)}
+              liburBolehDipilih
+              sebutan="Tanggal cetak relaas"
               aria-label="Tanggal cetak relaas"
             />
           </label>

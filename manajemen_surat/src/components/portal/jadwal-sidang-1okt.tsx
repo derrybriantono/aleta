@@ -230,20 +230,31 @@ export function useLayarPenuh() {
   return [penuh, setPenuh] as const;
 }
 
-export function TombolLayarPenuh({ penuh, onUbah }: { penuh: boolean; onUbah: (penuh: boolean) => void }) {
+export function TombolLayarPenuh({
+  penuh,
+  onUbah,
+  ikon = false,
+}: {
+  penuh: boolean;
+  onUbah: (penuh: boolean) => void;
+  /** Tampilan baru: hanya ikon (tooltip tetap menyebut Layar penuh). */
+  ikon?: boolean;
+}) {
   return (
     <button
       type="button"
       onClick={() => onUbah(!penuh)}
       aria-pressed={penuh}
       title={penuh ? "Keluar dari layar penuh (Esc)" : "Layar penuh di dalam jendela ini - Esc untuk keluar"}
+      aria-label={penuh ? "Keluar dari layar penuh" : "Layar penuh"}
       className={cn(
-        "flex h-8 shrink-0 items-center gap-1.5 rounded-md border px-2.5 text-xs transition",
+        "flex h-8 shrink-0 items-center gap-1.5 rounded-md border text-xs transition",
+        ikon ? "min-w-8 justify-center px-1.5" : "px-2.5",
         penuh ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"
       )}
     >
       {penuh ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
-      {penuh ? "Keluar layar penuh" : "Layar penuh"}
+      {ikon ? null : penuh ? "Keluar layar penuh" : "Layar penuh"}
     </button>
   );
 }

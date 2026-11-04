@@ -32,6 +32,8 @@ import {
   type BahanPenandaBaris,
   type KunciLencanaPerkara,
 } from "@/lib/penanda-perkara-pihak";
+import { MonitorOff } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 
 const KELAS_DASAR = "inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium align-middle";
@@ -52,7 +54,10 @@ export function LencanaPerkaraBaris({
   baris,
   aktif,
   className,
+  ikonTenang = false,
 }: {
+  /** Tampilan baru: lencana yang tenang (Non e-Court) menjadi ikon kecil bertooltip. */
+  ikonTenang?: boolean;
   baris: BahanPenandaBaris;
   /** Saklar `penanda-perkara`. */
   aktif: boolean;
@@ -63,16 +68,29 @@ export function LencanaPerkaraBaris({
   if (daftar.length === 0) return null;
   return (
     <span className={cn("inline-flex flex-wrap gap-1", className)} data-lencana-perkara="">
-      {daftar.map((l) => (
-        <span
-          key={l.kunci}
-          className={cn(KELAS_DASAR, KELAS_PERKARA[l.kunci])}
-          title={l.judul}
-          data-lencana={l.kunci}
-        >
-          {l.label}
-        </span>
-      ))}
+      {daftar.map((l) =>
+        ikonTenang && l.kunci === "non-ecourt" ? (
+          <span
+            key={l.kunci}
+            className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-border text-muted-foreground"
+            title={`${l.label} - ${l.judul}`}
+            aria-label={l.label}
+            data-lencana={l.kunci}
+            role="img"
+          >
+            <MonitorOff className="h-3 w-3" aria-hidden="true" />
+          </span>
+        ) : (
+          <span
+            key={l.kunci}
+            className={cn(KELAS_DASAR, KELAS_PERKARA[l.kunci])}
+            title={l.judul}
+            data-lencana={l.kunci}
+          >
+            {l.label}
+          </span>
+        )
+      )}
     </span>
   );
 }

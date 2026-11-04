@@ -59,6 +59,7 @@ export function SaksiLipat({
   terbuka,
   onAlih,
   namaRingkas,
+  hadir,
   children,
 }: {
   /** "Saksi P" atau "Saksi T". */
@@ -68,6 +69,8 @@ export function SaksiLipat({
   onAlih: () => void;
   /** Nama-nama dalam satu kalimat - untuk title saat terlipat. */
   namaRingkas: string;
+  /** Tampilan baru: berapa saksi yang sudah tercatat hadir hari ini (ditulis "· 1 hadir"). */
+  hadir?: number;
   /** Daftar nama (dapat diklik untuk memanggil) - hanya digambar saat terbuka. */
   children?: ReactNode;
 }) {
@@ -81,6 +84,7 @@ export function SaksiLipat({
         className="inline-flex items-center gap-0.5 rounded font-medium text-foreground/75 transition hover:text-foreground"
       >
         {label} ({jumlah})
+        {hadir && hadir > 0 ? <span className="font-normal text-muted-foreground"> · {hadir} hadir</span> : null}
         {terbuka ? (
           <ChevronDown className="h-3 w-3" aria-hidden="true" />
         ) : (

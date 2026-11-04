@@ -54,7 +54,33 @@ import {
   uraiCariPintar,
   uraianKosong,
 } from "@/lib/cari-pintar-jadwal";
-import { CalendarClock, ChevronDown, ChevronUp, ClipboardCheck, FileText, Filter, SlidersHorizontal, X } from "lucide-react";
+import { CalendarClock, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, ClipboardCheck, FileText, Filter, SlidersHorizontal, X } from "lucide-react";
+import {
+  BarisBilah,
+  BarisPil,
+  BilahLekat,
+  KartuSidang,
+  KepalaLajurMediasi,
+  KotakCariBerpil,
+  MenuTitik,
+  PilihanAntarmuka,
+  TombolIkon,
+  type KeadaanKartu,
+} from "@/components/portal/jadwal-sidang-baru";
+import {
+  KUNCI_ANTARMUKA_MEDIASI,
+  buatIndeksPil,
+  cocokPil,
+  lepasPil,
+  muatAntarmuka,
+  saranCari,
+  simpanAntarmuka,
+  tambahPil,
+  type Antarmuka,
+  type PetaMedan,
+  type Pil,
+  type TagSaran,
+} from "@/lib/jadwal-baru";
 import { HasilMediasiDialog } from "@/components/portal/hasil-mediasi-dialog";
 import { TundaMediasiDialog, type HasilTundaMediasi } from "@/components/portal/tunda-mediasi-dialog";
 import { HasilMediasiSippDialog, type HasilIsiMediasiSipp } from "@/components/portal/hasil-mediasi-sipp-dialog";
@@ -824,6 +850,19 @@ function opsiCariMediasi(status: Record<string, { keadaan: "berjalan" | "selesai
   };
 }
 
+/** Medan kotak cari berpil Jadwal Mediasi (tampilan baru): atas baris yang sudah termuat, tanpa kueri. */
+const MEDAN_PIL_MEDIASI: PetaMedan<Mediasi> = {
+  pihak: { label: "Pihak", ambil: (b) => namaPihakSemua(b) },
+  nomor: { label: "Nomor", ambil: (b) => [b.nomorPerkara] },
+  jenis: { label: "Jenis", ambil: (b) => [b.jenisPerkara, ...(b.kumulasi?.daftar ?? []).map((x) => x.nama)].filter(Boolean) },
+  mediator: { label: "Mediator", ambil: (b) => namaTiapMediator(b.mediator).filter(Boolean) },
+  sebutan: { label: "Status mediator", ambil: (b) => daftarMediator(b.mediator, b.statusMediator).map((o) => o.sebutan).filter(Boolean) },
+  tempat: { label: "Tempat", ambil: (b) => [b.tempat].filter(Boolean) },
+  hasil: { label: "Hasil", ambil: (b) => [b.hasilTeks].filter(Boolean) },
+  sk: { label: "Nomor SK", ambil: (b) => [b.nomorSk].filter(Boolean) },
+  sisa: { label: "Sisa tenggang", ambil: (b) => (b.selesai || b.sisaHariTenggat === null ? [] : [`${b.sisaHariTenggat} hari`]) },
+};
+
 export function AletaEcourtMediasi({
   onBukaStatus,
   pengguna = null,
@@ -878,6 +917,17 @@ export function AletaEcourtMediasi({
   const uraiCari = useMemo(() => uraiCariPintar(cariCepat, KATA_KUNCI_MEDIASI, MEDAN_MEDIASI), [cariCepat]);
   const [lanjutTerbuka, setLanjutTerbuka] = useState(false);
   const cariLanjut = useCariLanjut();
+  // TAMPILAN BARU (4 Nov 2026): pilihan per pengguna, bawaan baru; tampilan lama tetap utuh di bawah.
+  const [antarmuka, setAntarmuka] = useState<Antarmuka>("baru");
+  useEffect(() => {
+    setAntarmuka(muatAntarmuka(KUNCI_ANTARMUKA_MEDIASI));
+  }, []);
+  const baru = antarmuka === "baru";
+  const pilihAntarmuka = useCallback((a: Antarmuka) => {
+    setAntarmuka(a);
+    simpanAntarmuka(KUNCI_ANTARMUKA_MEDIASI, a);
+  }, []);
+  const [pilCari, setPilCari] = useState<Pil[]>([]);
 
   // Satu baris terbuka pada satu waktu. Membuka yang kedua menutup yang
   // pertama: dua panel rincian sekaligus mendorong daftarnya sedemikian jauh
@@ -1086,24 +1136,42 @@ export function AletaEcourtMediasi({
       hasil = hasil.filter((baris) => cocokCariLanjutMediasi(baris, cariLanjut.isian));
     }
 
+    if (baru && pilCari.length > 0) {
+      hasil = hasil.filter((baris) => cocokPil(baris, pilCari, MEDAN_PIL_MEDIASI));
+    }
+
     return urutkan(hasil, urutTabel, nilaiUrutMediasi);
-  }, [mediasi, keadaanTerpilih, uraiCari, statusMediasi.peta, cariLanjut.isian, cariLanjut.jumlahAktif, urutTabel, saringKeadaanTampil, pencarianTampil]);
+  }, [mediasi, keadaanTerpilih, uraiCari, statusMediasi.peta, cariLanjut.isian, cariLanjut.jumlahAktif, urutTabel, saringKeadaanTampil, pencarianTampil, baru, pilCari]);
+
+  const indeksPil = useMemo(() => (baru ? buatIndeksPil(mediasi, MEDAN_PIL_MEDIASI) : {}), [baru, mediasi]);
+  const tagSaran = useMemo<TagSaran[]>(
+    () => (baru ? KEADAAN_MEDIASI.map((k) => ({ kunci: k.kunci, label: k.label, jumlah: jumlahKeadaan[k.kunci] ?? 0, nyala: keadaanTerpilih.includes(k.kunci) })) : []),
+    [baru, jumlahKeadaan, keadaanTerpilih]
+  );
+  const saranBaru = useMemo(
+    () => (baru ? saranCari(cariCepat, MEDAN_PIL_MEDIASI, indeksPil, pilCari, tagSaran, { medanAwal: "mediator", batasAwalTag: 6 }) : []),
+    [baru, cariCepat, indeksPil, pilCari, tagSaran]
+  );
 
   const adaPenyaringTabel =
     (saringKeadaanTampil && keadaanTerpilih.length > 0) ||
-    (pencarianTampil && (cariCepat.trim() !== "" || cariLanjut.jumlahAktif > 0));
+    (pencarianTampil && (cariCepat.trim() !== "" || cariLanjut.jumlahAktif > 0)) ||
+    (baru && pilCari.length > 0);
 
   const bersihkanTabel = () => {
     setKeadaanTerpilih([]);
     setCariCepat("");
+    setPilCari([]);
     cariLanjut.bersihkan();
   };
 
   return (
     <Card>
-      <CardHeader>
+      {baru && !panelTampilan ? null : (
+      <CardHeader className={baru ? "p-3 pb-0" : undefined}>
         {/* 19 Okt 2026 (JADWAL-3 butir 2): satu baris kepala - judul di kiri,
             tombol di kanan, dan Tampilan PALING KANAN, sama dengan Jadwal Sidang. */}
+        {baru ? null : (
         <div className="flex flex-wrap items-center gap-2">
           <CardTitle className="mr-auto">Jadwal mediasi</CardTitle>
           <PengaturanPanggil />
@@ -1118,7 +1186,8 @@ export function AletaEcourtMediasi({
             Tampilan
           </Button>
         </div>
-        {tampilMediasi(tampilan, "pengantar-layar") ? (
+        )}
+        {!baru && tampilMediasi(tampilan, "pengantar-layar") ? (
         <p className="text-sm text-muted-foreground">
           Pertemuan mediasi tersimpan terpisah dari jadwal sidang di SIPP, sehingga tidak muncul di
           layar Jadwal Sidang. Tenggangnya 30 hari sejak mediator ditetapkan &mdash; PERMA 1/2016
@@ -1127,6 +1196,10 @@ export function AletaEcourtMediasi({
         ) : null}
         {panelTampilan ? (
           <div className="mt-2 rounded-lg border bg-card p-2">
+            <div className="mb-2 flex flex-wrap items-center gap-2" data-antarmuka-jadwal="">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Susunan layar</span>
+              <PilihanAntarmuka nilai={antarmuka} onPilih={pilihAntarmuka} nama="Jadwal Mediasi" />
+            </div>
             <p className="mb-1.5 text-xs text-muted-foreground">
               Tersimpan di peramban ini saja dan tidak mengubah data apa pun - yang dimatikan hanya tidak digambar.
             </p>
@@ -1187,9 +1260,220 @@ export function AletaEcourtMediasi({
           </div>
         ) : null}
       </CardHeader>
+      )}
 
-      <CardContent className="space-y-4">
+      <CardContent className={cn("space-y-4", baru && "pt-3")}>
+        {baru ? (
+          <BilahLekat>
+            <BarisBilah>
+              <h2 className="shrink-0 whitespace-nowrap text-base font-extrabold">Jadwal Mediasi</h2>
+              <span className="inline-flex shrink-0 items-center rounded-lg border bg-background" data-bilah-tanggal="">
+                <button
+                  type="button"
+                  aria-label="Hari sebelumnya"
+                  onClick={() => geserHari(-1)}
+                  className="h-8 rounded-l-lg px-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <PemilihTanggalSidang
+                  value={dari}
+                  onChange={(v) => {
+                    // Tanpa tombol Tampilkan: memilih tanggal langsung memuat.
+                    if (!v) return;
+                    const akhir = sampai < v ? v : sampai;
+                    setDari(v);
+                    setSampai(akhir);
+                    void muatRentang(v, akhir, cari);
+                  }}
+                  liburBolehDipilih
+                  tampilKalender={kalenderLiburTampil}
+                  sebutan="Tanggal mediasi"
+                  aria-label="Dari tanggal"
+                  className="h-8 w-[8.25rem] rounded-none border-0 bg-transparent text-center text-sm focus-visible:ring-0"
+                />
+                <span aria-hidden className="select-none px-0.5 text-muted-foreground">
+                  –
+                </span>
+                <PemilihTanggalSidang
+                  value={sampai}
+                  min={dari}
+                  onChange={(v) => {
+                    if (!v) return;
+                    setSampai(v);
+                    void muatRentang(dari, v, cari);
+                  }}
+                  liburBolehDipilih
+                  tampilKalender={kalenderLiburTampil}
+                  sebutan="Tanggal mediasi"
+                  aria-label="Sampai tanggal"
+                  className="h-8 w-[8.25rem] rounded-none border-0 bg-transparent text-center text-sm focus-visible:ring-0"
+                />
+                <button
+                  type="button"
+                  aria-label="Hari berikutnya"
+                  onClick={() => geserHari(1)}
+                  className="h-8 rounded-r-lg px-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setDari(hariIni());
+                  setSampai(hariIni());
+                  void muatRentang(hariIni(), hariIni(), cari);
+                }}
+                className="h-8 shrink-0 rounded-md border px-2.5 text-xs text-muted-foreground transition hover:bg-muted hover:text-foreground"
+              >
+                Hari ini
+              </button>
+              <KotakCariBerpil
+                nilai={cariCepat}
+                onUbah={setCariCepat}
+                onEnter={() => {
+                  const kata = uraiCari.sisa;
+                  if (!kata && !cari) return;
+                  setCari(kata);
+                  void muatRentang(dari, sampai, kata);
+                }}
+                saran={saranBaru}
+                medanLabel={(m) => MEDAN_PIL_MEDIASI[m]?.label ?? m}
+                onPilihSaran={(s) => {
+                  if (s.medan === "tag") alihkanKeadaan(s.nilai);
+                  else setPilCari((lama) => tambahPil(lama, { medan: s.medan, nilai: s.nilai }));
+                  setCariCepat("");
+                }}
+                placeholder="Cari apa saja: nama, nomor, mediator, tempat, hasil… pilih saran agar presisi"
+                ariaLabel="Cari pertemuan mediasi. Mengetik menyaring daftar yang tampil dan menawarkan saran; memilih saran menjadi pil; menekan Enter mencari ke server."
+                kakiTanpaTeks="Ketik apa saja, atau langsung medannya: pihak:, mediator:, tempat:, hasil:"
+                kakiDenganTeks={(t) => `Enter = cari "${t}" ke server · tanpa memilih saran, daftar disaring sebagai teks bebas`}
+              />
+              <TombolIkon
+                label="Tampilan"
+                judul="Tampilan: memilih keterangan dan tombol mana yang digambar di layar ini"
+                tekan={panelTampilan}
+                onClick={() => setPanelTampilan((x) => !x)}
+                data-tampilan-mediasi=""
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+              </TombolIkon>
+              <PengaturanPanggil />
+              <MenuTitik label="Menu lain: tampilan lama atau baru">
+                <PilihanAntarmuka nilai={antarmuka} onPilih={pilihAntarmuka} nama="Jadwal Mediasi" className="self-start" />
+              </MenuTitik>
+            </BarisBilah>
+            <BarisPil
+              pil={pilCari.map((p) => ({ label: MEDAN_PIL_MEDIASI[p.medan]?.label ?? p.medan, nilai: p.nilai }))}
+              onLepas={(i) => setPilCari((l) => lepasPil(l, i))}
+              onLepasSemua={() => setPilCari([])}
+              tambahan={
+                cari ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCari("");
+                      void muatRentang(dari, sampai, "");
+                    }}
+                    title="Lepaskan pencarian ke server"
+                    className="inline-flex items-center gap-1 rounded-full border border-primary/50 bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary transition hover:bg-primary/20"
+                  >
+                    Dicari ke server: {cari} ✕
+                  </button>
+                ) : null
+              }
+            />
+            <p className="text-xs text-muted-foreground" data-s="tanggal-dan-jumlah">
+              <b className="tabular-nums text-foreground">
+                {mediasiTampil.length === mediasi.length ? mediasi.length : `${mediasiTampil.length} dari ${mediasi.length}`}
+              </b>{" "}
+              pertemuan
+              {adaPenyaringTabel || pilCari.length > 0 ? (
+                <>
+                  {" · "}
+                  <button type="button" onClick={bersihkanTabel} className="underline underline-offset-2 hover:text-foreground">
+                    Bersihkan
+                  </button>
+                </>
+              ) : null}
+              {cerminMediasi && !memuat && cerminMediasi.diperbaruiPada ? (
+                <span data-testid="tanda-cermin-mediasi" title={KETERANGAN_CERMIN}>
+                  {" · salinan SIPP "}
+                  {new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Makassar", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
+                    .format(new Date(cerminMediasi.diperbaruiPada))
+                    .replace(":", ".")}
+                </span>
+              ) : null}
+              {tampilMediasi(tampilan, "pengantar-layar") ? (
+                <span className="hidden sm:inline"> · tersimpan terpisah dari jadwal sidang di SIPP; tenggang 30 hari sejak mediator ditetapkan (PERMA 1/2016 Pasal 24)</span>
+              ) : null}
+            </p>
+          </BilahLekat>
+        ) : null}
+        {baru && mediasi.length > 0 ? (
+          <div className="grid gap-2 md:grid-cols-2" data-sorotan-mediasi="">
+            <div className="rounded-xl border bg-card p-3 text-sm">
+              <p className="mb-1 text-[11px] font-extrabold uppercase tracking-wide text-muted-foreground">Hari ini</p>
+              {(() => {
+                const ini = hariIni();
+                const hariItu = mediasi.filter((b) => b.tanggal.slice(0, 10) === ini);
+                const jalan = hariItu.find((b) => statusMediasi.peta[`${b.mediasiId}|${b.tanggal}`]?.keadaan === "berjalan");
+                const berikut = hariItu
+                  .filter((b) => !statusMediasi.peta[`${b.mediasiId}|${b.tanggal}`]?.keadaan && !b.selesai)
+                  .sort((a, b) => a.jam.localeCompare(b.jam));
+                return (
+                  <div className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-x-2 gap-y-1">
+                    <span className="text-xs text-muted-foreground">Sekarang</span>
+                    <span>
+                      {jalan ? (
+                        <>
+                          <b className="text-primary">{jalan.nomorPerkara}</b> · {jalan.tempat || "—"} ·{" "}
+                          {namaTiapMediator(jalan.mediator).join("; ") || "mediator belum ada"}
+                        </>
+                      ) : (
+                        <span className="text-muted-foreground">tidak ada</span>
+                      )}
+                    </span>
+                    <span className="text-xs text-muted-foreground">Berikutnya</span>
+                    <span>
+                      {berikut.length
+                        ? berikut.slice(0, 4).map((b) => (
+                            <span key={`${b.mediasiId}|${b.tanggal}`} className="block">
+                              {b.jam || "—"} · {b.nomorPerkara} · {b.tempat || "—"}
+                            </span>
+                          ))
+                        : "—"}
+                    </span>
+                  </div>
+                );
+              })()}
+            </div>
+            <div className="rounded-xl border bg-card p-3 text-sm">
+              <p className="mb-1 text-[11px] font-extrabold uppercase tracking-wide text-muted-foreground">Tagihan laporan mediator</p>
+              {(() => {
+                const tagih = mediasi.filter((b) => !b.selesai && b.lewatTenggang && !b.laporanMediator);
+                return tagih.length ? (
+                  <ul className="space-y-0.5 text-xs">
+                    {tagih.slice(0, 5).map((b) => (
+                      <li key={`${b.mediasiId}|${b.tanggal}`}>
+                        <b className="text-rose-700 dark:text-rose-300">{b.nomorPerkara}</b>
+                        {b.sisaHariTenggat !== null ? ` · lewat ${Math.abs(b.sisaHariTenggat)} hari, laporan belum masuk` : " · laporan belum masuk"}
+                        {namaTiapMediator(b.mediator).length ? ` · ${namaTiapMediator(b.mediator).join("; ")}` : ""}
+                      </li>
+                    ))}
+                    {tagih.length > 5 ? <li className="text-muted-foreground">dan {tagih.length - 5} lainnya</li> : null}
+                  </ul>
+                ) : (
+                  <span className="text-xs text-muted-foreground">Tidak ada.</span>
+                );
+              })()}
+            </div>
+          </div>
+        ) : null}
+
         {/* --- Penelusuran tanggal --- */}
+        {baru ? null : (
         <div className="flex flex-wrap items-end gap-2">
           <Button size="sm" variant="outline" onClick={() => geserHari(-1)} title="Hari sebelumnya">
             ‹
@@ -1236,6 +1520,7 @@ export function AletaEcourtMediasi({
             Tampilkan
           </Button>
         </div>
+        )}
 
         <BannerGangguan keadaan={cobaLagiMediasi.keadaan} onCobaSekarang={cobaLagiMediasi.cobaSekarang} />
         {/* Pesan di sini selalu kegagalan - menetap sampai pemuatan berikutnya atau ditutup. */}
@@ -1330,7 +1615,7 @@ export function AletaEcourtMediasi({
         {/* Terpisah dari kotak Cari di atas, dan sengaja: yang di atas dikirim
             ke SIPP dan menuntut tombol Tampilkan; yang ini menyaring baris yang
             sudah termuat, seketika, tanpa satu pun kueri. */}
-        {pencarianTampil && mediasi.length > 0 ? (
+        {!baru && pencarianTampil && mediasi.length > 0 ? (
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative min-w-[14rem] max-w-md flex-1" data-cari-pintar-mediasi="">
               <Input
@@ -1384,7 +1669,7 @@ export function AletaEcourtMediasi({
           </div>
         ) : null}
 
-        {pencarianTampil && lanjutTerbuka && mediasi.length > 0 ? (
+        {!baru && pencarianTampil && lanjutTerbuka && mediasi.length > 0 ? (
           <PanelCariLanjut
             medan={MEDAN_CARI_MEDIASI}
             isian={cariLanjut.isian}
@@ -1415,6 +1700,240 @@ export function AletaEcourtMediasi({
             <Button size="sm" variant="outline" className="mt-3" onClick={bersihkanTabel}>
               Bersihkan saringan
             </Button>
+          </div>
+        ) : baru ? (
+          <div className="flex flex-col gap-2" data-daftar-kartu-mediasi="">
+            <KepalaLajurMediasi urutan={urutTabel} onTekan={tekanUrut} />
+            {mediasiTampil.map((baris, urutan) => {
+              const kunciBaris = `${baris.mediasiId}|${baris.tanggal}`;
+              const statusBaris = statusMediasi.peta[kunciBaris];
+              const keadaanKartu: KeadaanKartu = !tampilMediasi(tampilan, "lencana-status-mediasi")
+                ? ""
+                : statusBaris?.keadaan === "selesai"
+                  ? "selesai"
+                  : statusBaris?.keadaan === "berjalan"
+                    ? "berjalan"
+                    : !baris.selesai && baris.lewatTenggang
+                      ? "perlu"
+                      : "";
+              const orangMediator = daftarMediator(baris.mediator, baris.statusMediator);
+              const konteksNama = {
+                perkaraId: String(baris.perkaraId),
+                tanggal: baris.tanggal,
+                nomorPerkara: baris.nomorPerkara,
+                ruang: baris.tempat,
+                konteks: "mediasi" as const,
+                mediasiId: String(baris.mediasiId),
+              };
+              const sisi = susunanPihak(baris);
+              const persen =
+                baris.selesai || baris.sisaHariTenggat === null ? 0 : Math.max(0, Math.min(100, ((30 - baris.sisaHariTenggat) / 30) * 100));
+              const warnaBilah = baris.laporanMediator
+                ? "bg-emerald-500"
+                : baris.sisaHariTenggat === null
+                  ? "bg-muted-foreground/40"
+                  : baris.sisaHariTenggat < 0
+                    ? "bg-rose-500"
+                    : baris.sisaHariTenggat <= 7
+                      ? "bg-amber-500"
+                      : "bg-primary";
+              const barisKunci = `${kunciBaris}-${baris.jam}-${urutan}`;
+              return (
+                <KartuSidang
+                  key={barisKunci}
+                  keadaan={keadaanKartu}
+                  terbuka={dibuka === kunciBaris}
+                  ariaLabel={baris.nomorPerkara}
+                  namaLajur={["Perkara", "Mediator & tempat", "Tenggang & hasil", "Aksi"]}
+                  waktu={
+                    <>
+                      <span className="text-lg font-extrabold tabular-nums">{baris.jam || "—"}</span>
+                      {baris.sampaiJam ? <span className="text-xs text-muted-foreground">s.d. {baris.sampaiJam}</span> : null}
+                      {baris.tanggal !== dari ? (
+                        <span className="text-xs text-muted-foreground">{tanggalHariPendek(baris.tanggal, baris.tanggal)}</span>
+                      ) : null}
+                      {baris.ditunda && tampilMediasi(tampilan, "lencana-ditunda") ? (
+                        <span>
+                          <Badge variant="warning">ditunda</Badge>
+                        </span>
+                      ) : null}
+                      {tampilMediasi(tampilan, "lencana-status-mediasi") ? <LencanaStatusMediasi status={statusBaris} /> : null}
+                    </>
+                  }
+                  perkara={
+                    <>
+                      {onBukaStatus ? (
+                        <button
+                          type="button"
+                          className="self-start text-left text-[0.95rem] font-extrabold text-primary underline-offset-2 hover:underline"
+                          onClick={() => onBukaStatus(baris.nomorPerkara)}
+                          title={`Buka status perkara ${baris.nomorPerkara}`}
+                        >
+                          {baris.nomorPerkara}
+                        </button>
+                      ) : (
+                        <span className="text-[0.95rem] font-extrabold">{baris.nomorPerkara}</span>
+                      )}
+                      <span className="text-sm font-bold text-foreground/90">
+                        {saklarKumulasi ? <JenisDenganKumulasi jenis={baris.jenisPerkara} kumulasi={baris.kumulasi} /> : baris.jenisPerkara || "—"}
+                      </span>
+                      {sisi.length > 0 ? (
+                        <dl className="max-w-[26rem] space-y-0.5 text-sm">
+                          {sisi.map((s) => (
+                            <div key={s.kunci} data-sisi={s.kunci}>
+                              <dt className="inline text-muted-foreground">{s.sebutan}: </dt>
+                              <dd className="inline break-words font-medium">
+                                <NamaDapatDipanggil golongan={golonganSisi(s.kunci)} {...konteksNama}>
+                                  {s.nama.join("; ")}
+                                </NamaDapatDipanggil>
+                              </dd>
+                            </div>
+                          ))}
+                        </dl>
+                      ) : null}
+                    </>
+                  }
+                  agenda={
+                    <>
+                      {orangMediator.length === 0 ? (
+                        <span className="text-sm font-bold text-rose-700 dark:text-rose-300">Mediator belum ada</span>
+                      ) : (
+                        orangMediator.map((orang, ke) => (
+                          <div key={`${orang.nama}-${ke}`} className="text-sm">
+                            <div className="font-bold">
+                              <NamaDapatDipanggil golongan={orang.nama ? "mediator" : null} {...konteksNama}>
+                                {orang.nama || "Nama mediator belum tercatat"}
+                              </NamaDapatDipanggil>
+                            </div>
+                            {sebutanMediatorTampil ? (
+                              <div className={orang.golongan === "belum-tercatat" ? "text-xs text-amber-700 dark:text-amber-300" : "text-xs text-muted-foreground"}>
+                                {orang.sebutan}
+                              </div>
+                            ) : null}
+                          </div>
+                        ))
+                      )}
+                      {tampilMediasi(tampilan, "penetapan-mediator") && baris.penetapanMediator ? (
+                        <span className="text-xs text-muted-foreground" data-s="penetapan-mediator">
+                          ditetapkan {tanggalHariPendek(baris.penetapanMediator, baris.penetapanMediator)}
+                          {baris.nomorSk ? ` · SK ${baris.nomorSk}` : ""}
+                        </span>
+                      ) : null}
+                      <span className="text-sm">{baris.tempat || "—"}</span>
+                      {dihadiriTampil && baris.dihadiri ? <span className="text-xs text-muted-foreground">dihadiri {baris.dihadiri}</span> : null}
+                    </>
+                  }
+                  majelis={
+                    <>
+                      <div className="text-xs">
+                        <KeteranganTenggang baris={baris} />
+                      </div>
+                      {baris.sisaHariTenggat !== null && !baris.selesai ? (
+                        <span
+                          className="block h-1.5 w-full max-w-[14rem] overflow-hidden rounded-full bg-muted"
+                          title={`Hari ke-${30 - baris.sisaHariTenggat} dari 30`}
+                          aria-hidden="true"
+                        >
+                          <i className={cn("block h-full", warnaBilah)} style={{ width: `${persen}%` }} />
+                        </span>
+                      ) : null}
+                      {batasLaporanTampil && baris.tenggatPerma && !baris.selesai ? (
+                        <span className="text-xs text-muted-foreground">batas {tanggalHariPendek(baris.tenggatPerma, baris.tenggatPerma)}</span>
+                      ) : null}
+                      {batasLaporanTampil && baris.laporanMediator ? (
+                        <span className="text-xs text-muted-foreground">laporan {tanggalHariPendek(baris.laporanMediator, baris.laporanMediator)}</span>
+                      ) : null}
+                      {baris.hasilTeks ? (
+                        <span
+                          className={cn(
+                            "text-sm font-medium",
+                            /berhasil/i.test(baris.hasilTeks) && !/tidak/i.test(baris.hasilTeks) && "text-emerald-700 dark:text-emerald-400"
+                          )}
+                        >
+                          {baris.hasilTeks}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">belum ada hasil</span>
+                      )}
+                    </>
+                  }
+                  aksi={
+                    <>
+                      {bolehCatatMediasi && tampilMediasi(tampilan, "tombol-status-mediasi") ? (
+                        <TombolStatusMediasi
+                          baris={{
+                            mediasiId: String(baris.mediasiId),
+                            perkaraId: String(baris.perkaraId),
+                            nomorPerkara: baris.nomorPerkara,
+                            tanggal: baris.tanggal.slice(0, 10),
+                            tempat: baris.tempat,
+                          }}
+                          status={statusBaris}
+                          onBerubah={statusMediasi.muatUlang}
+                        />
+                      ) : null}
+                      {bolehHasilSippLayar && !baris.ditunda ? (
+                        <button
+                          type="button"
+                          onClick={() => setHasilSippDibuka(baris)}
+                          title="Isi hasil mediasi dan laporan mediator - tertulis di SIPP seperti Edit Hasil Mediasi di SIPP"
+                          className="inline-flex items-center gap-1 rounded-md border border-emerald-600/50 px-2 py-1 text-xs font-medium text-emerald-800 transition hover:bg-emerald-500/10 dark:text-emerald-300"
+                          data-tombol-hasil-mediasi-sipp={baris.nomorPerkara}
+                        >
+                          <ClipboardCheck className="h-3.5 w-3.5" />
+                          {baris.hasilTeks ? "Ubah hasil (SIPP)" : "Isi hasil (SIPP)"}
+                        </button>
+                      ) : null}
+                      {bolehTundaMediasiLayar && tampilMediasi(tampilan, "tombol-tunda-mediasi") && !baris.ditunda && !baris.selesai ? (
+                        <button
+                          type="button"
+                          onClick={() => setTundaDibuka(baris)}
+                          title="Tunda pertemuan mediasi ini dan jadwalkan pertemuan berikutnya - tertulis di SIPP seperti Tunda di SIPP"
+                          className="inline-flex items-center gap-1 rounded-md border border-amber-500/50 px-2 py-1 text-xs font-medium text-amber-800 transition hover:bg-amber-500/10 dark:text-amber-300"
+                          data-tombol-tunda-mediasi={baris.nomorPerkara}
+                        >
+                          <CalendarClock className="h-3.5 w-3.5" />
+                          Tunda
+                        </button>
+                      ) : null}
+                      {tombolHasilTampil && bolehBuatHasilMediasi(pengguna, baris.mediator) ? (
+                        <button
+                          type="button"
+                          onClick={() => setHasilDibuka({ nomorPerkara: baris.nomorPerkara, mediasiId: String(baris.mediasiId) })}
+                          title="Buat laporan hasil mediasi dan kesepakatan perdamaian (.rtf) - hanya bagi mediator perkara ini"
+                          className="inline-flex items-center gap-1 rounded-md border border-primary/40 px-2 py-1 text-xs font-medium text-primary transition hover:bg-primary/10"
+                          data-tombol-hasil-mediasi={baris.nomorPerkara}
+                        >
+                          <FileText className="h-3.5 w-3.5" />
+                          Buat hasil mediasi (.rtf)
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() => setDibuka((lama) => (lama === kunciBaris ? "" : kunciBaris))}
+                        aria-expanded={dibuka === kunciBaris}
+                        title={dibuka === kunciBaris ? "Tutup rincian mediasi" : "Buka rincian mediasi"}
+                        className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition ${
+                          dibuka === kunciBaris
+                            ? "border-primary bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        }`}
+                      >
+                        {dibuka === kunciBaris ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                        Rincian
+                      </button>
+                    </>
+                  }
+                  bawah={
+                    dibuka === kunciBaris ? (
+                      <div className="border-t border-l-4 border-l-primary bg-muted/40 px-4 py-3">
+                        <RincianMediasi baris={baris} bolehCatat={bolehCatatMediasi} tampilKehadiran={kehadiranRincianTampil} />
+                      </div>
+                    ) : null
+                  }
+                />
+              );
+            })}
           </div>
         ) : (
           <div className="max-h-[70vh] overflow-auto rounded-xl border">
