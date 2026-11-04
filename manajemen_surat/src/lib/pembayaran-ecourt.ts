@@ -55,8 +55,31 @@ export type PembayaranEcourt = {
   skum: SkumEcourt | null;
 };
 
+/** Hasil cek terakhir satu perkara dari sinkron rekening e-Court (tanpa sebab teknis, tanpa nomor rekening). */
+export type CekRekening = { hasil: "terbaca" | "tanpa_rekening" | "tidak_ada" | "tidak_ketemu" | "gagal" | string; dicekPada: string };
+
 /** Yang dikirim ke layar: tanpa isi e-SKUM (alamat/telepon pembayar hanya lewat PDF untuk kasir). */
-export type PembayaranTampil = Omit<PembayaranEcourt, "skum"> & { adaSkum: boolean };
+export type PembayaranTampil = Omit<PembayaranEcourt, "skum"> & { adaSkum: boolean; cek?: CekRekening | null };
+
+/**
+ * Keterangan untuk layar bila nomor rekening BELUM ada, menurut hasil cek terakhir. Tanpa label teknis;
+ * `undefined` = perkara belum pernah dicek (rekening dibaca otomatis dari e-Court).
+ */
+export function keteranganRekeningBelumAda(cek: CekRekening | null | undefined, perkaraEcourt = true): string {
+  if (!cek) return perkaraEcourt ? "rekening belum terbaca dari e-Court (dibaca otomatis)" : "rekening belum ada";
+  switch (cek.hasil) {
+    case "tanpa_rekening":
+      return "e-Court tidak mencatat nomor rekening untuk perkara ini";
+    case "tidak_ada":
+      return "e-Court belum mencatat pembayaran perkara ini";
+    case "tidak_ketemu":
+      return "perkara tidak ditemukan di e-Court";
+    case "gagal":
+      return "rekening belum berhasil dibaca dari e-Court (dicoba lagi otomatis)";
+    default:
+      return "rekening belum terbaca dari e-Court (dibaca otomatis)";
+  }
+}
 
 /** Golongan yang boleh melihat rekening pembayar e-Court (keputusan Derry 3 Nov 2026 17.55). */
 export const GOLONGAN_REKENING_PEMBAYAR: readonly GolonganPeran[] = ["super-admin", "admin", "pimpinan", "hakim", "panitera", "kasir", "ptsp"];

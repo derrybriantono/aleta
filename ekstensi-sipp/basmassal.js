@@ -2269,6 +2269,20 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
       r.setAttribute("data-rekening", "");
       r.title = "Nomor rekening pengguna e-Court";
       ket.appendChild(r);
+    } else {
+      // 4 Nov 2026: rekening dibaca otomatis dari e-Court; bila belum ada, katakan sebabnya (hasil cek terakhir).
+      const h = bayar.cek && bayar.cek.hasil;
+      ket.appendChild(
+        el(
+          "span",
+          "aleta-kasir-pembayar-lembut",
+          h === "tanpa_rekening"
+            ? "e-Court tidak mencatat nomor rekening"
+            : h === "gagal"
+              ? "rekening belum berhasil dibaca (dicoba lagi otomatis)"
+              : "rekening belum terbaca (dibaca otomatis dari e-Court)"
+        )
+      );
     }
     if (bayar.atasNama) ket.appendChild(el("span", "aleta-kasir-pembayar-lembut", `a.n. ${bayar.atasNama}`));
     const rinci = [bayar.panjar !== null && bayar.panjar !== undefined ? `Panjar ${rupiah(bayar.panjar)}` : "", bayar.tanggal ? `dibayar ${tanggalPanjang(bayar.tanggal)}${bayar.jam ? ` ${String(bayar.jam).slice(0, 5)}` : ""}` : ""].filter(Boolean).join(" · ");
@@ -2418,7 +2432,7 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
           } else {
             const kosong = el("span", "aleta-kasir-rekening-kosong", x.ecourt ? "rekening belum terbaca" : "rekening belum ada");
             kosong.title = x.ecourt
-              ? "Perkara e-Court: tekan Tarik data di halaman perkara SIPP agar rekening pembayar terbaca."
+              ? "Perkara e-Court: rekening pembayar dibaca otomatis dari e-Court. Bila belum muncul, tekan Tarik data di halaman perkara SIPP."
               : "Perkara bukan e-Court: minta nomor rekening penerima kepada pihak/kuasa (atau serahkan tunai), lalu catat di daftar cetak.";
             td.appendChild(kosong);
           }

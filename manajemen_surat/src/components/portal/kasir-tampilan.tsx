@@ -20,7 +20,7 @@ import { usePortal } from "@/lib/app-state";
 import { apiPath } from "@/lib/base-path";
 import { namaBerkasAman, penerimaPsp, teksRekeningPsp, type DaftarPsp, type KelompokInstrumen } from "@/lib/kasir-cetak";
 import { rupiah } from "@/lib/kasir-jurnal";
-import { bolehLihatRekening, tanggalIndonesia, type PembayaranTampil } from "@/lib/pembayaran-ecourt";
+import { bolehLihatRekening, keteranganRekeningBelumAda, tanggalIndonesia, type PembayaranTampil } from "@/lib/pembayaran-ecourt";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 import { cn } from "@/lib/utils";
 import { waktuPengadilan } from "@/lib/waktu-pengadilan";
@@ -225,7 +225,9 @@ export function BarisPembayar({ data }: { data: PembayaranTampil }) {
         <span className="font-semibold tabular-nums" data-rekening>
           {rek}
         </span>
-      ) : null}
+      ) : (
+        <span className="text-muted-foreground">{keteranganRekeningBelumAda(data.cek)}</span>
+      )}
       {data.atasNama ? <span className="break-all text-muted-foreground">a.n. {data.atasNama}</span> : null}
       {rincian.length ? <span className="text-muted-foreground">{rincian.join(" · ")}</span> : null}
     </div>
@@ -423,7 +425,7 @@ export function BagianSisaPanjar({ rentang, onUbah }: { rentang: RentangCetak; o
                               className="italic text-amber-700 dark:text-amber-300"
                               title={
                                 b.ecourt
-                                  ? "Perkara e-Court: tekan Tarik data di halaman perkara SIPP agar rekening pembayar terbaca."
+                                  ? "Perkara e-Court: rekening pembayar dibaca otomatis dari e-Court. Bila belum muncul, tekan Tarik data di halaman perkara SIPP."
                                   : "Perkara bukan e-Court: minta nomor rekening penerima kepada pihak atau kuasa (atau serahkan tunai), lalu catat di daftar cetak."
                               }
                             >
