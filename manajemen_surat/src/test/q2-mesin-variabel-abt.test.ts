@@ -125,6 +125,17 @@ describe("Q2 penjaga: seluruh Blangko Derry punya jalur pengisian", () => {
     const h = await mesin.isiRtf("{\\rtf1 #7000#}", { perkaraId: "1" });
     expect(h.rtf).not.toMatch(/#\d{3,5}#/);
     expect(h.kosong.map((k: { noVar: string }) => k.noVar)).toEqual(["7000"]);
+    // 4 Nov 2026: tiap variabel kosong membawa statusnya (galat / takada / kosong) agar pratinjau panel tahu mesin ragu atau sekadar kosong.
+    expect(h.kosong[0].status).toBe("galat");
+  });
+
+  it("status variabel kosong: tidak ada di katalog = takada, isian belum diisi = kosong", async () => {
+    const katalog = [{ no_var: "7001", nama: "Isian", data_type: "data_teks", sql_query: null }];
+    const mesin = mesinAbt.buatMesin({ kueri: async (sql: string) => (/abt_variabel/.test(sql) ? katalog : []) });
+    const h = await mesin.isiRtf("{\rtf1 #7001# #7999#}", { perkaraId: "1" });
+    const status = Object.fromEntries(h.kosong.map((k: { noVar: string; status: string }) => [k.noVar, k.status]));
+    expect(status["7999"]).toBe("takada");
+    expect(["kosong", "galat"]).toContain(status["7001"]);
   });
 
   it("mesin mengisi SEMUA penanda tiap blangko - nol penanda mentah, yang kosong bersorot dan disebut", async () => {

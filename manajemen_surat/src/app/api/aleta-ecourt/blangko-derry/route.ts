@@ -3,7 +3,6 @@ import { type NextRequest } from "next/server";
 import { berkasVarianUkuran } from "@/lib/berkas-perkara";
 import { golonganPengguna } from "@/lib/matriks-peran";
 import { isPrivilegedAdmin } from "@/lib/permissions";
-import { buangGrupTersembunyiRtf } from "@/lib/buang-grup-tersembunyi-rtf";
 import { folderDerryTanpaMenu, jalurBlangkoTerhapus } from "@/lib/tugas-blangko";
 import { VARIABEL_TITIK_KALIMAT, kodeTitikDalamBlangko, nilaiMasihTitik } from "@/lib/variabel-titik-kalimat";
 import { getDatabase } from "@/server/db/client";
@@ -309,100 +308,6 @@ export async function GET(request: NextRequest) {
       action: "BLANGKO_DERRY_READ_FAILED",
       feature: "aleta_ecourt",
       entityId: "blangko-derry",
-    });
-  }
-}
-
-type HasilIsiPratinjau = {
-  ok?: boolean;
-  sebab?: string;
-  berkas?: string;
-  jumlahTerisi?: number;
-  kosong?: Array<{ noVar: string; nama?: string; sebab?: string; status?: string }>;
-  mesinGalat?: string;
-  rtfBase64?: string;
-};
-
-/** Pratinjau memakai mesin variabel di bot (puluhan kueri dengan ingatan per naskah, ±0,5 dtk); lebih dari ini diserahkan ke ABT. */
-const BATAS_PRATINJAU_MS = 60_000;
-
-/**
- * ============================================================================
- * PRATINJAU NASKAH PANEL BLANGKO DERRY - MESIN ALETA, HITUNG SAJA (keputusan pengguna 4 Nov 2026, audit A1-01/A1-02)
- * ============================================================================
- *
- *   POST { perkaraId, sidangKe?, folder, berkas, sebagaiPeran? }
- *
- * Blangko dibaca dari server dan semua penandanya diisi mesin variabel di bot dari data perkara dan isian yang SUDAH tersimpan di
- * ABT (tanpa ketikan lepas, tanpa menyimpan apa pun) - bentuk yang sama dengan abt/preview tetapi tanpa menghitung ulang tiap
- * kemunculan penanda dan tanpa memanggil prosedur penataan jadwal sidang yang MENULIS ke SIPP. Hanya untuk PRATINJAU: cetak resmi
- * tetap lewat ABT. Hak dokumen sama dengan GET di atas (jenis folder dinilai dari sesi) ditambah kemampuan "blangko-abt" karena
- * naskah memuat data perkara. Jawaban memuat `galat` bila mesin ragu (variabel galat / tidak ada di katalog / mesin tak terbaca):
- * ekstensi lalu memakai pratinjau ABT lama.
- */
-export async function POST(request: NextRequest) {
-  let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
-  let actorUserId: string | null = null;
-  try {
-    db = await getDatabase();
-    actorUserId = await resolveActorUserId(request);
-    const actor = await pastikanKapabilitas(db, actorUserId, "panel");
-    const badan = (await request.json().catch(() => null)) as Record<string, unknown> | null;
-    if (!badan || typeof badan !== "object") return Response.json({ ok: false, alasan: "Badan permintaan harus JSON." }, { status: 400 });
-
-    const perkaraId = teks(badan.perkaraId);
-    const folder = teks(badan.folder).replace(/^\/+|\/+$/g, "");
-    const berkas = teks(badan.berkas);
-    const sidangKe = Math.max(0, Math.min(99, Math.trunc(Number(badan.sidangKe) || 0)));
-    if (!/^\d+$/.test(perkaraId) || !folder || !berkas) {
-      return Response.json({ ok: false, alasan: "Perkara, folder, dan berkas harus disebutkan." }, { status: 400 });
-    }
-    if (folder.includes("..") || folder.includes("\\") || berkas.includes("/") || berkas.includes("\\") || berkas.includes("..")) {
-      return Response.json({ ok: false, alasan: "Nama folder atau berkas tidak sah." }, { status: 400 });
-    }
-    const jenisBoleh = await jenisBolehSesi(actor, teks(badan.sebagaiPeran).toLowerCase());
-    const jenisFolder = jenisFolderDariJalur(folder);
-    if (!jenisFolder || !jenisBoleh.includes(jenisFolder)) {
-      throw new ApiError(403, "Folder blangko ini bukan untuk peran akun Anda.");
-    }
-    await pastikanKapabilitas(db, actorUserId, "blangko-abt");
-
-    const namaBerkas = /\.(rtf|docx?|odt)$/i.test(berkas) ? berkas : `${berkas}.rtf`;
-    const jalurFolder = folder.startsWith(`${AKAR_DERRY}/`) || folder === AKAR_DERRY ? folder : `${AKAR_DERRY}/${folder}`;
-
-    const hasil = await callAletaBotSippBridge<HasilIsiPratinjau>(
-      "blangko.isi",
-      { folder: jalurFolder, berkas: namaBerkas, perkaraId, sidangKe, nilai: {}, cadangan: {}, tanyaJawabSaksi: {}, segar: true },
-      { timeoutMs: BATAS_PRATINJAU_MS }
-    );
-    const data = hasil.data;
-    if (!hasil.ok || !data?.ok || !data.rtfBase64) {
-      return Response.json({ ok: false, alasan: data?.sebab ?? hasil.error ?? "Blangko tidak dapat diisi." }, { status: 502 });
-    }
-    const kosong = (data.kosong ?? []).map((k) => ({ noVar: teks(k.noVar), nama: teks(k.nama), sebab: teks(k.sebab), status: teks(k.status) }));
-    // Variabel yang GALAT (kueri gagal, lingkaran, tidak ada di katalog) berbeda dari yang sekadar kosong: ABT yang berwenang menjawabnya.
-    const galat = kosong.filter((k) => k.status === "galat" || k.status === "takada" || /^mesin ABT tidak terbaca/i.test(k.sebab));
-    const rtf = Buffer.from(buangGrupTersembunyiRtf(Buffer.from(data.rtfBase64, "base64")));
-    return ok(
-      {
-        berkas: data.berkas ?? namaBerkas,
-        rtfBase64: rtf.toString("base64"),
-        byte: rtf.length,
-        jumlahTerisi: data.jumlahTerisi ?? 0,
-        kosong: kosong.length,
-        galat: galat.map((k) => ({ nama: k.nama, sebab: k.sebab })).slice(0, 12),
-        jumlahGalat: galat.length,
-        mesinGalat: data.mesinGalat ?? "",
-      },
-      { headers: { "Cache-Control": "no-store" } }
-    );
-  } catch (error) {
-    return handleAdminRouteError(error, request, {
-      db,
-      actorUserId,
-      action: "BLANGKO_DERRY_PRATINJAU_FAILED",
-      feature: "aleta_ecourt",
-      entityId: "blangko-derry-pratinjau",
     });
   }
 }

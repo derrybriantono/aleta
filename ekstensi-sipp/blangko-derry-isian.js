@@ -2059,8 +2059,8 @@
       renderIsian();
       renderCetak();
       laporKeKerangka();
-      void muatSaranAbt(d);
       jadwalkanTitikVariabel();
+      void muatSaranAbt(d);
       S.janjiBukti = siapkanBukti();
       void muatSematan();
       void saranDariPustakaAwal(d);
@@ -8630,7 +8630,7 @@
     let d;
     try {
       d = await ambilPortal(
-        API_BLANGKO,
+        `${API_BLANGKO}/pratinjau`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
