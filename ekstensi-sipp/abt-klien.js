@@ -910,11 +910,23 @@ function abtKlienBuat(opsi) {
      * `sidang` = urutan sidang untuk variabel multi_sidang & tanya jawab BAS (d).
      * Pulang { ok, rtf:ArrayBuffer, nama, ukuran, periksa:{penandaSisa, jumlahTitikTiga} } .
      */
-    async cetak({ a, b, perkaraId, perkTemp, sidang }) {
+    async cetak({ a, b, perkaraId, perkTemp, sidang, batasMs }) {
       const kueri = { a, b, c: perkaraId || "", e: perkTemp || "", d: sidang || "" };
-      const r = await ambil(`${asal}/preview?${q(kueri)}`, { credentials: "include", cache: "no-store" });
-      if (r.status >= 400) return gagal(`ABT menjawab ${r.status}.`);
-      const mentah = await r.arrayBuffer();
+      // 4 Nov (audit A1-10): `batasMs` (opsional, dipakai pratinjau cadangan) menghentikan permintaan yang menggantung; tanpa itu perilaku lama.
+      const kendali = batasMs > 0 && typeof AbortController !== "undefined" ? new AbortController() : null;
+      const jam = kendali ? setTimeout(() => kendali.abort(), batasMs) : null;
+      let r;
+      let mentah;
+      try {
+        r = await ambil(`${asal}/preview?${q(kueri)}`, { credentials: "include", cache: "no-store", ...(kendali ? { signal: kendali.signal } : {}) });
+        if (r.status >= 400) return gagal(`ABT menjawab ${r.status}.`);
+        mentah = await r.arrayBuffer();
+      } catch (galat) {
+        if (kendali && kendali.signal.aborted) return gagal(`ABT belum selesai menyusun naskah setelah ${Math.round(batasMs / 60000) || 1} menit - dihentikan supaya layar tidak menunggu terus. Coba lagi sebentar lagi.`);
+        throw galat;
+      } finally {
+        if (jam) clearTimeout(jam);
+      }
       const awal = new TextDecoder("latin1").decode(new Uint8Array(mentah).subarray(0, 6));
       if (!awal.startsWith("{\\rtf")) {
         const teks = new TextDecoder("latin1").decode(new Uint8Array(mentah).subarray(0, 8000));

@@ -66,7 +66,8 @@
    *   namaIsian Map kode -> nama isian tampil (opsional; untuk menyebut isian, bukan nomornya)
    *   relaas    { ada, P: [iso], T: [iso] } tanggal relaas SIPP per pihak (opsional; butir 50), sebutanP/sebutanT, jenisNaskah put|bas
    *   bertentangan [{ kode, nama, isi, usulan }] isian pihak vs usulan PASTI keterangan kedua saksi (keputusan 17; peringatan pasif)
-   *   kutipan   { temuan: [{ jenis, pasti, rujukan, pesan, jumlah }], lebih } dasar hukum vs rak peraturan (P1 1 Nov; rute portal
+   *   titikVariabel [{ nama }] variabel otomatis kalimat berlubang yang masih kosong (4 Nov, audit A3-V04); satu baris peringatan, tanpa tombol
+ *   kutipan   { temuan: [{ jenis, pasti, rujukan, pesan, jumlah }], lebih } dasar hukum vs rak peraturan (P1 1 Nov; rute portal
    *             periksa-kutipan, sekali per naskah) - butir INFO, tidak menahan cetak, naskah tidak diubah
    * -> [{ jenis, teks, perbaiki: { aksi: "isian"|"rapikan"|"pratinjau", kode? } | null, judulTombol }]
    */
@@ -217,6 +218,17 @@
     }
     const sisaKut = Math.max(0, kut.length - BATAS_KUTIPAN) + (b.kutipan && Number(b.kutipan.lebih) > 0 ? Number(b.kutipan.lebih) : 0);
     if (sisaKut) hasil.push({ jenis: "kutipan-lain", teks: `${sisaKut} catatan dasar hukum lain.`, perbaiki: { aksi: "pratinjau" }, judulTombol: "Membuka pratinjau naskah" });
+    // 6c. 4 Nov (audit A3-V04): variabel otomatis yang bila kosong mencetak titik-titik DI DALAM kalimat (kesimpulan kedua pihak, biaya
+    //     verzet, penolakan kawin, ...). Peringatan lunak satu baris; cetak tidak ditahan dan tidak ada klik tambahan.
+    const titikVar = [...new Set((Array.isArray(b.titikVariabel) ? b.titikVariabel : []).map((x) => teks(x && x.nama).trim()).filter(Boolean))];
+    if (titikVar.length) {
+      hasil.push({
+        jenis: "titikvariabel",
+        teks: `Masih kosong, akan tercetak titik-titik di dalam kalimat: ${titikVar.slice(0, 4).join("; ")}${titikVar.length > 4 ? " dan lainnya" : ""}. Lengkapi isian terkait bila perlu.`,
+        perbaiki: null,
+        judulTombol: "",
+      });
+    }
     // 7. Isian penting yang masih kosong (sama dengan pengingat Cetak).
     const kos = (Array.isArray(b.kosong) ? b.kosong : []).filter((x) => x && x.kode && !sudah.has(teks(x.kode)));
     for (const x of kos.slice(0, BATAS_ISIAN)) {

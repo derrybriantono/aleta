@@ -363,6 +363,7 @@
     semua: null, // "Lihat semua isi data"
     semuaBuka: false,
     prat: { terbuka: false, memuat: false, rtf: null, html: "", galat: "", suntingPenuh: false, kotor: true, penanda: [] },
+    titik: null, // 4 Nov: { kunci, adaVariabel, daftar } peringatan kalimat berlubang (blangko-derry-isian periksaTitikVariabel)
     versiIsian: 0, // naik tiap isian/tanya jawab tersimpan atau berganti sidang: naskah yang disusun pada versi lama tidak dipakai (cetak cepat)
     fmt: { rtf: true, pdf: false, salinan: false, anon: false, edoc: false },
     // 28 Okt: putusan yang disunting sendiri oleh hakim - { untuk: nomor perkara, nama, bentukAsal, rtf: ArrayBuffer (RTF), catatan: [] }.
@@ -2058,6 +2059,7 @@
       renderIsian();
       renderCetak();
       laporKeKerangka();
+      jadwalkanTitikVariabel();
       void muatSaranAbt(d);
       S.janjiBukti = siapkanBukti();
       void muatSematan();
@@ -8472,9 +8474,59 @@
     S.versiIsian += 1;
     if (S.prat) S.prat.kotor = true;
     perbaruiKetSiap();
+    jadwalkanTitikVariabel();
   }
+  // ──────────────────────────────────────────────────────────────────────────
+  // PERINGATAN "TITIK-TITIK DI DALAM KALIMAT" (4 Nov 2026, audit A3-V04)
+  // ──────────────────────────────────────────────────────────────────────────
+  // Enam variabel otomatis (kesimpulan kedua pihak, biaya verzet, penolakan kawin, ...) mencetak kalimat berlubang bila isian
+  // sumbernya kosong. Nilainya dibaca ringan dari server (GET titik=1: hanya variabel itu, bukan seluruh susunan) begitu blangko
+  // terbuka dan, ditunda 2,5 dtk, sesudah isian berubah; hasilnya satu baris di "Periksa sebelum cetak". Blangko yang tidak memuat
+  // variabel itu dicatat sekali dan tidak ditanyakan lagi. Tidak menahan cetak; galat apa pun = tidak ada peringatan.
+  let jamTitik = null;
+  let percobaanTitik = 0;
+  const kunciTitik = () => (S.blangko && S.pk ? [perkaraId(), S.blangko.folder || "", S.blangko.berkas || "", sidangUrutan()].join("|") : "");
+  function jadwalkanTitikVariabel() {
+    if (tes() || !S.blangko || !S.pk || S.blangko.khusus || (S.titik && S.titik.kunci === kunciTitik() && S.titik.adaVariabel === false)) return;
+    if (jamTitik) clearTimeout(jamTitik);
+    jamTitik = setTimeout(() => {
+      jamTitik = null;
+      // Masih ada ketikan yang belum tersimpan: nilai di server pasti basi; ulangi sebentar lagi (paling banyak 6 kali).
+      if ((S.diketik.size || Object.values(S.tersimpan).some((v) => v === "dicoba")) && percobaanTitik < 6) {
+        percobaanTitik += 1;
+        jadwalkanTitikVariabel();
+        return;
+      }
+      percobaanTitik = 0;
+      void periksaTitikVariabel();
+    }, 2500);
+  }
+  async function periksaTitikVariabel() {
+    const b = S.blangko;
+    const kunci = kunciTitik();
+    if (tes() || !b || !S.pk || b.khusus || b.hak !== "ok" || !S.susunan || !kunci) return;
+    if (S.titik && S.titik.kunci === kunci && S.titik.adaVariabel === false) return;
+    try {
+      const q = new URLSearchParams();
+      q.set("folder", b.folder || "");
+      q.set("berkas", b.berkas);
+      q.set("perkaraId", perkaraId());
+      q.set("sidangKe", sidangUrutan());
+      q.set("titik", "1");
+      const sebagai = sebagaiPeranMinta();
+      if (sebagai) q.set("sebagaiPeran", sebagai);
+      const d = await ambilPortal(`${API_BLANGKO}?${q.toString()}`, {}, "Memeriksa bagian kalimat berlubang");
+      if (S.blangko !== b || kunciTitik() !== kunci) return;
+      if (!d || d.ada === false) return; // bot tidak menjawab: peringatan lama dibiarkan, tidak ada alarm palsu
+      S.titik = { kunci, adaVariabel: d.adaVariabel !== false, daftar: Array.isArray(d.titik) ? d.titik.filter((x) => x && x.nama) : [] };
+      perbaruiPeriksa();
+    } catch {
+      /* diam: peringatan ini tambahan, tidak boleh mengganggu isian atau cetak */
+    }
+  }
+  const titikVariabelSekarang = () => (S.titik && S.titik.kunci === kunciTitik() ? S.titik.daftar : []);
   const naskahSegar = (pr) => Boolean(pr && pr.rtf && !pr.kotor && pr.sidik === sidikIsian() && Date.now() - (pr.saat || 0) < UMUR_NASKAH_MS);
-  async function ambilRtf(paksa) {
+  async function ambilRtf(paksa, opsi) {
     if (!S.blangko || !S.pk) throw new Error("Pilih perkara dan blangko dulu.");
     if (S.blangko.hak !== "ok") throw new Error(S.blangko.hak === "periksa" ? "Hak buka blangko ini masih diperiksa ke ABT; tunggu sebentar." : "ABT tidak mengizinkan blangko ini untuk perkara ini.");
     // 29 Okt: alat bukti yang belum tertulis ke ABT ditulis dulu (tanpa itu BAS tercetak tanpa bukti); sudah tertulis = tidak menunggu apa pun.
@@ -8484,7 +8536,7 @@
     // Penyusunan yang sedang berjalan untuk keadaan isian yang sama (mis. disiapkan di latar) ditunggu bersama, bukan diminta dua kali ke ABT.
     if (!paksa && pr.janji && pr.janji.versi === S.versiIsian && pr.janji.blangko === S.blangko) return pr.janji.proses;
     const versi = S.versiIsian;
-    const proses = ambilRtfBaru(pr, versi, sidikIsian(), S.blangko);
+    const proses = ambilRtfBaru(pr, versi, sidikIsian(), S.blangko, opsi);
     const janji = { versi, blangko: S.blangko, proses };
     pr.janji = janji;
     try {
@@ -8493,36 +8545,46 @@
       if (pr.janji === janji) pr.janji = null;
     }
   }
-  async function ambilRtfBaru(pr, versi, sidik, blangkoAwal) {
-    const h = tes() ? await cetakTes() : await klienAbt().cetak({ a: S.blangko.a, b: S.blangko.b, perkaraId: perkaraId(), sidang: sidangUrutan() });
-    if (!h.ok) throw new Error(h.pesan || "ABT tidak mengembalikan naskah.");
+  /**
+   * Pembersihan yang sama untuk SEMUA naskah keluaran (ABT maupun mesin pratinjau): header penanda kecil, kotak acuan variabel (tabel
+   * mengambang berhuruf 1 pt), dan kalimat penutup keterangan saksi. Mengubah h.rtf (dan h.periksa bila kotak terbuang) dan memulangkan hitungan.
+   */
+  function bersihkanNaskahKeluaran(h) {
     // Header penanda kecil buang dari semua keluaran cetak (RTF, PDF, salinan, anonim, e-Doc); berkas di ABT tidak diubah.
     const bersih = bersihkanHeaderPenanda(h.rtf);
     h.rtf = bersih.rtf;
-    pr.headerDibuang = bersih.jumlah;
+    const hitung = { header: bersih.jumlah, kotak: h.kotakDibuang || 0, penutup: 0 };
     // Kotak acuan variabel di BADAN naskah (tabel mengambang berhuruf 1 pt): klien ABT sudah membuangnya; jalur Tes putusan tidak
     // lewat klien itu, jadi dibersihkan lagi di sini (idempoten) dan hitungan titik-titik dihitung ulang dari naskah bersih.
-    pr.kotakDibuang = h.kotakDibuang || 0;
     if (typeof abtKlienBuangKotakPenanda === "function") {
       const kotak = abtKlienBuangKotakPenanda(h.rtf);
       if (kotak.jumlah) {
         h.rtf = kotak.rtf;
-        pr.kotakDibuang += kotak.jumlah;
+        hitung.kotak += kotak.jumlah;
         if (typeof abtKlienPeriksaRtf === "function") h.periksa = abtKlienPeriksaRtf(latin1(h.rtf));
       }
     }
     // Putusan: paragraf kalimat penutup keterangan saksi dibuang dari keluaran cetak saja (ABT/SIPP dan BAS tidak disentuh).
-    pr.penutupDibuang = 0;
     if (S.blangko.jenis === "put") {
       const tutup = bersihkanPenutupSaksiRtf(h.rtf);
       h.rtf = tutup.rtf;
-      pr.penutupDibuang = tutup.jumlah;
+      hitung.penutup = tutup.jumlah;
     } else if (S.blangko.jenis === "bas") {
       // 21 Okt (x6): BAS - pasangan baris tabel tanya-jawab saksi yang jawabannya hanya kalimat penutup tidak ikut tercetak.
       const tutup = bersihkanPenutupTabelRtf(h.rtf);
       h.rtf = tutup.rtf;
-      pr.penutupDibuang = tutup.jumlah;
+      hitung.penutup = tutup.jumlah;
     }
+    return hitung;
+  }
+  async function ambilRtfBaru(pr, versi, sidik, blangkoAwal, opsi) {
+    const batasMs = opsi && opsi.batasMs > 0 ? opsi.batasMs : 0;
+    const h = tes() ? await cetakTes() : await klienAbt().cetak({ a: S.blangko.a, b: S.blangko.b, perkaraId: perkaraId(), sidang: sidangUrutan(), ...(batasMs ? { batasMs } : {}) });
+    if (!h.ok) throw new Error(h.pesan || "ABT tidak mengembalikan naskah.");
+    const hitung = bersihkanNaskahKeluaran(h);
+    pr.headerDibuang = hitung.header;
+    pr.kotakDibuang = hitung.kotak;
+    pr.penutupDibuang = hitung.penutup;
     // Konteks berganti selama ABT menyusun (blangko/perkara lain dipilih): hasil ini bukan milik layar sekarang.
     if (S.prat !== pr || S.blangko !== blangkoAwal) throw new Error("Blangko atau perkara diganti saat naskah disusun; tekan lagi.");
     pr.rtf = h.rtf;
@@ -8535,15 +8597,108 @@
     pr.titikTiga = h.periksa ? h.periksa.jumlahTitikTiga : 0;
     return h.rtf;
   }
+  // ──────────────────────────────────────────────────────────────────────────
+  // PRATINJAU CEPAT (4 Nov 2026, keputusan pengguna; audit A1-01/A1-02/A1-05/A1-10)
+  // ──────────────────────────────────────────────────────────────────────────
+  // Pratinjau naskah disusun mesin variabel ALETA di bot (rute POST blangko-derry; ingatan per naskah, ±1-3 dtk), bukan abt/preview ABT
+  // yang menghitung ulang tiap kemunculan penanda (1-5 menit) dan memanggil prosedur penataan jadwal sidang yang MENULIS ke SIPP.
+  // HANYA untuk pratinjau: naskah itu tidak pernah disimpan di S.prat.rtf, jadi Cetak, naskah latar, beda-cetak, dan semua keluaran
+  // resmi tetap memakai ambilRtf (ABT) seperti sebelumnya. Jalan kembali: bila mesin ALETA galat atau ada bagian yang tidak bisa
+  // dihitungnya, pratinjau jatuh ke ABT lama dengan pesan yang jelas dan batas waktu 6 menit.
+  const BATAS_PRATINJAU_ALETA_MS = 75000;
+  const BATAS_PRATINJAU_ABT_MS = 6 * 60 * 1000;
+  function sebagaiPeranMinta() {
+    const a = api();
+    const kd = a && typeof a.keadaan === "function" ? a.keadaan() : null;
+    return !tes() && adm() && kd && kd.sebagai && kd.sebagai.nama && kd.sebagai.peran ? String(kd.sebagai.peran) : "";
+  }
+  /** Alasan singkat (tanpa label teknis) mengapa pratinjau cepat tidak dipakai; dipajang bersama pesan cadangan. */
+  function alasanPratinjauCepat(d, e) {
+    if (d) {
+      const nama = [...new Set((Array.isArray(d.galat) ? d.galat : []).map((x) => String((x && x.nama) || "").replace(/\s+/g, " ").trim()).filter(Boolean))];
+      if (nama.length) return `bagian yang belum bisa dihitung: ${nama.slice(0, 3).join(", ")}${nama.length > 3 ? " dan lainnya" : ""}`;
+      return "ada bagian naskah yang belum bisa dihitung";
+    }
+    return e && e.status ? "layanan penyusun cepat belum menjawab" : "penyusun cepat sedang tidak tersambung";
+  }
+  /**
+   * Naskah dari mesin ALETA -> { ok:true, h:{ rtf, periksa } } atau { ok:false, d, e } (d = jawaban dengan galat, e = galat jaringan/rute).
+   * Hak ditolak (401/403) dilempar apa adanya: tidak boleh dilewati lewat ABT.
+   */
+  async function naskahDariMesinAleta() {
+    const b = S.blangko;
+    let d;
+    try {
+      d = await ambilPortal(
+        `${API_BLANGKO}/pratinjau`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ perkaraId: perkaraId(), sidangKe: Number(sidangUrutan()) || 0, folder: b.folder || "", berkas: b.berkas, sebagaiPeran: sebagaiPeranMinta() }),
+          batasMs: BATAS_PRATINJAU_ALETA_MS,
+        },
+        "Menyusun pratinjau"
+      );
+    } catch (e) {
+      if (e && (e.status === 401 || e.status === 403)) throw e;
+      return { ok: false, d: null, e };
+    }
+    if (!d || Number(d.jumlahGalat) > 0 || String(d.mesinGalat || "").trim()) return { ok: false, d: d || {}, e: null };
+    const mentah = atob(String(d.rtfBase64 || ""));
+    if (mentah.length < 6 || !mentah.startsWith("{\\rtf")) return { ok: false, d: { galat: [] }, e: null };
+    const biner = new Uint8Array(mentah.length);
+    for (let i = 0; i < mentah.length; i += 1) biner[i] = mentah.charCodeAt(i);
+    return { ok: true, h: { rtf: biner.buffer, periksa: typeof abtKlienPeriksaRtf === "function" ? abtKlienPeriksaRtf(mentah) : { jumlahTitikTiga: 0 } } };
+  }
+  /** Menunggu `janji` paling lama `ms`; lewat itu ditolak dengan `pesan` (permintaan di belakangnya dibiarkan selesai sendiri). */
+  function tungguBatas(janji, ms, pesan) {
+    let jam;
+    return Promise.race([janji, new Promise((_, tolak) => (jam = setTimeout(() => tolak(new Error(pesan)), ms)))]).finally(() => clearTimeout(jam));
+  }
+  /** RTF untuk PRATINJAU. Hanya mengembalikan naskah; tidak mengisi S.prat.rtf/sidik/saat (itu milik jalur ABT untuk Cetak). */
+  async function ambilRtfPratinjau(paksa) {
+    if (tes()) return ambilRtf(paksa);
+    if (!S.blangko || !S.pk) throw new Error("Pilih perkara dan blangko dulu.");
+    if (S.blangko.hak !== "ok") throw new Error(S.blangko.hak === "periksa" ? "Hak buka blangko ini masih diperiksa ke ABT; tunggu sebentar." : "ABT tidak mengizinkan blangko ini untuk perkara ini.");
+    const pr = S.prat;
+    // Naskah ABT yang SUDAH siap (disiapkan di latar untuk Cetak) tampil seketika: tidak ada yang perlu dihitung lagi.
+    if (!paksa && naskahSegar(pr)) return pr.rtf;
+    await pastikanBuktiTertulis();
+    const blangkoAwal = S.blangko;
+    const hasil = await naskahDariMesinAleta();
+    if (hasil.ok) {
+      if (S.prat !== pr || S.blangko !== blangkoAwal) throw new Error("Blangko atau perkara diganti saat naskah disusun; tekan lagi.");
+      bersihkanNaskahKeluaran(hasil.h);
+      pr.catatSumber = "";
+      return hasil.h.rtf;
+    }
+    // Jalan kembali: ABT lama (pesan jelas, batas waktu 6 menit). Pesan dipajang selama naskah disusun.
+    pr.catatSumber = `Penyusun cepat belum bisa dipakai untuk naskah ini (${alasanPratinjauCepat(hasil.d, hasil.e)}). Naskah disusun lewat ABT, bisa 1-5 menit; mohon ditunggu.`;
+    renderPratinjau();
+    try {
+      return await tungguBatas(ambilRtf(paksa, { batasMs: BATAS_PRATINJAU_ABT_MS }), BATAS_PRATINJAU_ABT_MS + 15000, "ABT belum selesai menyusun naskah setelah 6 menit - dihentikan supaya layar tidak menunggu terus. Coba lagi sebentar lagi.");
+    } finally {
+      pr.catatSumber = "";
+    }
+  }
+  /** Pratinjau yang tampil sudah tertinggal dari isian sekarang? (versi isian saat naskahnya disusun dibandingkan dengan sekarang) */
+  const pratKotor = (p) => Boolean(p && p.html && p.versiHtml !== undefined ? p.versiHtml !== S.versiIsian : p && p.kotor);
+  /** Penanda yang belum terbaca di pratinjau YANG TAMPIL (naskah pratinjau bisa dari mesin cepat, bukan dari naskah ABT milik Cetak). */
+  const penandaPratinjau = (p) => (p && p.versiHtml !== undefined && Array.isArray(p.penandaPrat) ? p.penandaPrat : (p && p.penanda) || []);
   async function muatPratinjau(paksa) {
     const pr = S.prat;
     if (pr.memuat) return;
     pr.memuat = true;
     pr.galat = "";
     renderPratinjau();
+    const versi = S.versiIsian;
     try {
-      const rtf = await ambilRtf(paksa);
-      if (S.prat === pr) pr.html = rtfKeHtml(rtf, pembuatPenanda());
+      const rtf = await ambilRtfPratinjau(paksa);
+      if (S.prat === pr) {
+        pr.html = rtfKeHtml(rtf, pembuatPenanda());
+        pr.versiHtml = versi;
+        pr.penandaPrat = cekPenandaRtf(rtf);
+      }
     } catch (e) {
       if (S.prat === pr) pr.galat = String((e && e.message) || e);
     }
@@ -8565,16 +8720,16 @@
     const sunting = p.suntingPenuh;
     w.innerHTML =
       pitaTes() +
-      `<button type="button" class="bd-pratbuka" data-bd2="bukaprat" aria-expanded="${p.terbuka}"><span class="bd-pana">${p.terbuka ? "▾" : "▸"}</span><span class="bd-tj">Pratinjau naskah</span><span class="bd-catat">${p.terbuka ? "klik untuk melipat" : (naskahSegar(p) ? "klik untuk melihat hasil (naskah sudah siap, langsung tampil)" : "klik untuk melihat hasil (ABT menyusun naskahnya; blangko besar bisa 1-5 menit)")}</span>${p.kotor && p.html && p.terbuka ? `<span class="bd-chip sebagian">isian berubah - muat ulang</span>` : ""}</button>` +
+      `<button type="button" class="bd-pratbuka" data-bd2="bukaprat" aria-expanded="${p.terbuka}"><span class="bd-pana">${p.terbuka ? "▾" : "▸"}</span><span class="bd-tj">Pratinjau naskah</span><span class="bd-catat">${p.terbuka ? "klik untuk melipat" : (naskahSegar(p) ? "klik untuk melihat hasil (naskah sudah siap, langsung tampil)" : "klik untuk melihat hasil (disusun dalam beberapa detik)")}</span>${pratKotor(p) && p.html && p.terbuka ? `<span class="bd-chip sebagian">isian berubah - muat ulang</span>` : ""}</button>` +
       (p.terbuka
         ? `<div class="bd-pisi">` +
-          (p.memuat ? `<p class="bd-catat" role="status">${tes() ? "Naskah tes sedang disusun dari data perkara acuan… (menghitung semua bagian otomatis)" : "ABT sedang menyusun naskah perkara ini… (menghitung semua bagian otomatis)"}</p>` : "") +
+          (p.memuat ? `<p class="bd-catat" role="status">${esc(tes() ? "Naskah tes sedang disusun dari data perkara acuan… (menghitung semua bagian otomatis)" : p.catatSumber || "Naskah perkara ini sedang disusun… (menghitung semua bagian otomatis)")}</p>` : "") +
           (p.galat ? `<p class="bd-peringatan">${esc(p.galat)} <button type="button" class="bd-btn kecil" data-bd2="muatprat">Coba lagi</button></p>` : "") +
           (p.html
             ? `<div class="bd-baris"><p class="bd-petunjukedit">${sunting ? "Ubah kotak yang berwarna, lalu Simpan ke ABT." : "Klik dua kali bagian berwarna (isian Anda) untuk mengubahnya di sini; bagian lain berasal dari SIPP."}</p>` +
               (bolehTulis() ? (sunting ? `<button type="button" class="bd-btn kecil utama" data-bd2="simpansunting">Simpan ke ABT</button><button type="button" class="bd-btn kecil" data-bd2="batalsunting">Batal</button>` : `<button type="button" class="bd-btn kecil" data-bd2="suntingpenuh">Sunting pratinjau</button>`) : "") +
-              `<button type="button" class="bd-btn kecil" data-bd2="muatprat">${tes() ? "Muat ulang dengan ketikan terbaru" : "Muat ulang dari ABT"}</button>` +
-              (p.penanda.length ? `<span class="bd-chip belum">${p.penanda.length} penanda belum terbaca: ${esc(p.penanda.map((k) => `#${k}#`).join(" "))}</span>` : "") +
+              `<button type="button" class="bd-btn kecil" data-bd2="muatprat">${tes() ? "Muat ulang dengan ketikan terbaru" : "Muat ulang"}</button>` +
+              (penandaPratinjau(p).length ? `<span class="bd-chip belum">${penandaPratinjau(p).length} penanda belum terbaca: ${esc(penandaPratinjau(p).map((k) => `#${k}#`).join(" "))}</span>` : "") +
               `</div><div class="bd-kertas${sunting ? " edit" : ""}" id="bd-kertas">${p.html}</div>`
             : "") +
           `</div>`
@@ -9392,6 +9547,8 @@
           naskah: (naskahPeriksa = bahanNaskahPeriksa()),
           // P1 (1 Nov): dasar hukum vs rak peraturan - sekali per naskah, hanya info.
           kutipan: kutipanUntukPeriksa(naskahPeriksa),
+          // 4 Nov (audit A3-V04): variabel kalimat berlubang yang masih kosong - peringatan lunak satu baris.
+          titikVariabel: titikVariabelSekarang(),
           // Butir 50 (30 Okt malam): relaas SIPP per pihak, dibaca sekali per perkara sesudah naskah siap (hanya baca).
           relaas: relaasUntukPeriksa(),
           sebutanP: sebutan().P,
@@ -10563,7 +10720,7 @@
     if (kode === "bukaprat") {
       S.prat.terbuka = !S.prat.terbuka;
       renderPratinjau();
-      if (S.prat.terbuka && (!S.prat.html || S.prat.kotor)) void muatPratinjau(S.prat.kotor);
+      if (S.prat.terbuka && (!S.prat.html || pratKotor(S.prat))) void muatPratinjau(pratKotor(S.prat));
       return;
     }
     if (kode === "muatprat") return void muatPratinjau(true);

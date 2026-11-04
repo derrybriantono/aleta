@@ -5,6 +5,8 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import { ketTarifKasir, peringatanTarifKasir } from "@/lib/kasir-jurnal";
+
 /**
  * ============================================================================
  * KASIR 3 NOV 2026 (23.00): TARIF PANGGILAN/PEMBERITAHUAN PER WILAYAH
@@ -98,9 +100,86 @@ describe("urutan saran tarif", () => {
     expect([sl.jumlah, sl.tarif.tingkat]).toEqual([null, "kosong"]);
   });
 
-  it("tabel bawaan sesuai keputusan: Donggala 14.500, Labuan 29.500, Sigi/Palu 29.500, Sulteng 29.500, Banggai 38.500, RRI 200.000", () => {
-    expect(TA.TARIF_BAWAAN).toEqual({ "72.03.09": 29500, "72.03": 14500, "72.10": 29500, "72.71": 29500, "72.01": 38500, 72: 29500, rri: 200000 });
+  it("tabel bawaan sesuai keputusan: Donggala 14.500, Labuan 29.500, Sigi/Palu 29.500, Sulteng 29.500, Banggai 38.500, Banggai Laut 40.500 (4 Nov), RRI 200.000", () => {
+    expect(TA.TARIF_BAWAAN).toEqual({ "72.03.09": 29500, "72.03": 14500, "72.10": 29500, "72.71": 29500, "72.01": 38500, "72.11": 40500, 72: 29500, rri: 200000 });
     expect(TA.TANGGAL_BERLAKU_BAWAAN).toBe("2024-10-28");
+  });
+});
+
+describe("tarif kasir 4 Nov 2026 (keputusan 183: Labuan, Banggai Laut, luar Sulawesi Tengah)", () => {
+  const kosongSatker: Baris[] = [];
+
+  it("Kec. Labuan 29.500 dari tabel (tanpa contoh), bukan 14.500 milik Kab. Donggala", () => {
+    const p = pihakDi(LABUAN);
+    const s = TA.saranTarifPihak(p, [], bahan(kosongSatker, [p]));
+    expect([s.jumlah, s.tarif.wilayah, s.tarif.tingkat]).toEqual([29500, "Kec. Labuan", "tabel"]);
+  });
+
+  it("Kab. Banggai Laut (kode SIPP 72.11) 40.500 dari tabel bawaan; Banggai (72.01) tetap 38.500", () => {
+    const laut = pihakDi("72.11.02");
+    const s = TA.saranTarifPihak(laut, [], bahan(kosongSatker, [laut]));
+    expect([s.jumlah, s.tarif.wilayah, s.tarif.tingkat, s.tarif.yakin]).toEqual([40500, "Kab. Banggai Laut", "tabel", "periksa"]);
+    const banggai = pihakDi("72.01.06");
+    expect(TA.saranTarifPihak(banggai, [], bahan(kosongSatker, [banggai])).jumlah).toBe(38500);
+    // peringatan lunak: nominal lain dari tarif wilayah -> satu baris + "pakai"
+    expect(TA.peringatanNominal(38500, s.tarif)).toEqual({ teks: "Tarif Kab. Banggai Laut biasanya Rp40.500", pakai: 40500 });
+    expect(TA.peringatanNominal(40500, s.tarif)).toBeNull();
+    // layar setelan memuat barisnya
+    expect(TA.daftarTabel(null).find((r: Baris) => r.kode === "72.11")).toMatchObject({ nama: "Kab. Banggai Laut", nilai: 40500, bawaan: true });
+  });
+
+  it("luar Sulawesi Tengah: tanpa saran bila riwayatnya kurang dari 3; ada saran bila >= 3 riwayat sejak tanggal berlaku (80% sama)", () => {
+    const luar = pihakDi("32.73.12");
+    expect(TA.saranTarifPihak(luar, [], bahan(kosongSatker, [luar]))).toMatchObject({ jumlah: null, tarif: { nilai: null, tingkat: "kosong" } });
+    expect(TA.saranTarifPihak(luar, [], bahan([rek("32.73.12", 41500, 2)], [luar])).jumlah).toBeNull();
+    // riwayat sebelum tanggal berlaku (era radius) tidak dihitung
+    expect(TA.saranTarifPihak(luar, [], bahan([rek("32.73.12", 41500, 5, "2024-06-01")], [luar])).jumlah).toBeNull();
+    const cukup = TA.saranTarifPihak(luar, [], bahan([rek("32.73.12", 41500, 3)], [luar]));
+    expect([cukup.jumlah, cukup.tarif.tingkat]).toEqual([41500, "kecamatan"]);
+    // provinsi tabel (72) tidak bocor ke luar Sulteng
+    expect(TA.saranTarifPihak(pihakDi("73.71.01"), [], bahan(kosongSatker, [pihakDi("73.71.01")])).jumlah).toBeNull();
+  });
+});
+
+describe("halaman kasir per perkara di portal: tanda tarif + peringatan lunak (4 Nov, keputusan 183)", () => {
+  const labuan = { nilai: 29500, yakin: "periksa", tingkat: "tabel", wilayah: "Kec. Labuan", ket: "tabel tarif Kec. Labuan Rp29.500" };
+  const donggala = { nilai: 14500, yakin: "pasti", tingkat: "kecamatan", wilayah: "Kec. Banawa", ket: "tarif Kec. Banawa sejak 28 Okt 2024, 40 contoh" };
+  const rri = { nilai: 200000, yakin: "periksa", tingkat: "rri", wilayah: "RRI", ket: "tarif panggilan lewat RRI Rp200.000" };
+
+  it("sama persis dengan peringatan bot (kasirTarifAlamat.peringatanNominal) untuk nominal sama/beda/lama/kosong", () => {
+    for (const t of [labuan, donggala, rri, null]) {
+      for (const n of [0, 14000, 14500, 29000, 29500, 38500, 200000, "29500", null]) {
+        const bot = TA.peringatanNominal(n, t);
+        const portal = peringatanTarifKasir(n, t);
+        expect(portal === null).toBe(bot === null);
+        if (bot && portal) expect(portal).toEqual({ teks: bot.teks, pakai: bot.pakai });
+      }
+    }
+  });
+
+  it("nominal sama tidak ditegur; beda -> satu baris + pakai; tarif lama -> disebut; RRI tidak ditegur", () => {
+    expect(peringatanTarifKasir(29500, labuan)).toBeNull();
+    expect(peringatanTarifKasir(14500, labuan)).toEqual({ teks: "Tarif Kec. Labuan biasanya Rp29.500", pakai: 29500 });
+    expect(peringatanTarifKasir(14000, donggala)).toEqual({ teks: "Tarif lama - Kec. Banawa Rp14.500", pakai: 14500 });
+    expect(peringatanTarifKasir(29000, null)).toEqual({ teks: "Rp29.000 tarif lama (sebelum 28 Okt 2024)", pakai: null });
+    expect(peringatanTarifKasir(150000, rri)).toBeNull();
+    expect(peringatanTarifKasir(14500, { nilai: null, tingkat: "kosong" })).toBeNull();
+  });
+
+  it("tooltip kotak jumlah memuat sumber saran; 'periksa' ditandai, 'pasti' tidak", () => {
+    expect(ketTarifKasir(donggala)).toBe("tarif Kec. Banawa sejak 28 Okt 2024, 40 contoh");
+    expect(ketTarifKasir(labuan)).toBe("tabel tarif Kec. Labuan Rp29.500 - periksa");
+    expect(ketTarifKasir({ nilai: null })).toBe("");
+    expect(ketTarifKasir(null)).toBe("");
+  });
+
+  it("dialog kasir per perkara memasang tanda dan peringatan itu pada kotak jumlah (tanpa menahan simpan)", () => {
+    const sumber = readFileSync(path.join(process.cwd(), "src/components/portal/kasir-jurnal.tsx"), "utf8");
+    expect(sumber).toContain("peringatanTarifKasir(b.jumlah, b.tarif)");
+    expect(sumber).toContain("ketTarifKasir(b.tarif)");
+    expect(sumber).toContain('data-kasir-tarif-saran="1"');
+    // peringatan tidak ikut perhitungan "salah" yang menahan simpan
+    expect(sumber).not.toMatch(/periksaBarisKasir\([^)]*peringatanTarif/);
   });
 });
 

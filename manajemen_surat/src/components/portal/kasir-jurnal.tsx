@@ -35,6 +35,8 @@ import { keteranganAwam } from "@/lib/ringkasan-langkah-sipp";
 import {
   bolehMengerjakanKasir,
   hitungSisaOtomatis,
+  ketTarifKasir,
+  peringatanTarifKasir,
   periksaBarisKasir,
   rupiah,
   saldoJurnal,
@@ -561,6 +563,8 @@ export function DialogKasir({ daftar, onTutup, awal }: { daftar: PerkaraPilihan[
                   {barisHitung.map((b, i) => {
                     const kunci = sedang || b.keadaan === "tersimpan";
                     const salah = b.pilih && b.keadaan !== "tersimpan" && !(b.sisaOtomatis && !(Number(b.jumlah) > 0)) ? periksaBarisKasir(b, bahanPeriksa) : "";
+                    // 4 Nov 2026 (keputusan 183): peringatan lunak tarif wilayah - tidak menahan simpan; baris sisa otomatis dan baris yang sudah tersimpan tidak ditegur.
+                    const peringatanTarif = b.sisaOtomatis || b.keadaan === "tersimpan" ? null : peringatanTarifKasir(b.jumlah, b.tarif);
                     const jenisPilih = data.jenisBiaya.find((j) => j.id === b.jenisBiayaId);
                     return (
                       <li key={b.kunci} className={cn("rounded-md border px-2 py-1.5", !b.pilih && "opacity-70")}>
@@ -642,14 +646,23 @@ export function DialogKasir({ daftar, onTutup, awal }: { daftar: PerkaraPilihan[
                             disabled={kunci}
                             onChange={(e) => ubah(b.kunci, { uraian: e.target.value })}
                           />
+                          <div>
                           <div className="flex items-center gap-1.5">
                             <input
                               type="number"
                               aria-label="Jumlah"
                               min={0}
                               step={500}
-                              className={cn(kelasMedan, "w-full text-right", b.pilih && !(Number(b.jumlah) > 0) && !b.sisaOtomatis && "border-rose-500")}
+                              className={cn(
+                                kelasMedan,
+                                "w-full text-right",
+                                b.pilih && !(Number(b.jumlah) > 0) && !b.sisaOtomatis && "border-rose-500",
+                                // 4 Nov: saran tarif wilayah yang belum pasti hanya bergaris putus-putus lembut.
+                                b.tarif && Number(b.tarif.nilai) > 0 && b.tarif.yakin !== "pasti" && "border-dashed border-amber-500/60"
+                              )}
                               placeholder="Jumlah"
+                              title={ketTarifKasir(b.tarif) || undefined}
+                              data-kasir-tarif={b.tarif && Number(b.tarif.nilai) > 0 ? (b.tarif.yakin === "pasti" ? "pasti" : "periksa") : undefined}
                               value={b.jumlah ?? ""}
                               disabled={kunci || b.sisaOtomatis}
                               onChange={(e) => ubah(b.kunci, { jumlah: e.target.value === "" ? null : Number(e.target.value) })}
@@ -665,6 +678,22 @@ export function DialogKasir({ daftar, onTutup, awal }: { daftar: PerkaraPilihan[
                                 otomatis
                               </button>
                             ) : null}
+                          </div>
+                          {peringatanTarif ? (
+                            <p className="mt-0.5 text-right text-[11px] text-muted-foreground" data-kasir-tarif-saran="1">
+                              {peringatanTarif.teks}{" "}
+                              {peringatanTarif.pakai ? (
+                                <button
+                                  type="button"
+                                  className="font-semibold text-primary underline disabled:opacity-50"
+                                  disabled={kunci}
+                                  onClick={() => ubah(b.kunci, { jumlah: peringatanTarif.pakai })}
+                                >
+                                  pakai
+                                </button>
+                              ) : null}
+                            </p>
+                          ) : null}
                           </div>
                           <input
                             type="text"

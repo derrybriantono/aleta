@@ -3,7 +3,8 @@ import { type NextRequest } from "next/server";
 import { berkasVarianUkuran } from "@/lib/berkas-perkara";
 import { golonganPengguna } from "@/lib/matriks-peran";
 import { isPrivilegedAdmin } from "@/lib/permissions";
-import { jalurBlangkoTerhapus } from "@/lib/tugas-blangko";
+import { folderDerryTanpaMenu, jalurBlangkoTerhapus } from "@/lib/tugas-blangko";
+import { VARIABEL_TITIK_KALIMAT, kodeTitikDalamBlangko, nilaiMasihTitik } from "@/lib/variabel-titik-kalimat";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { callAletaBotSippBridge } from "@/server/modules/aleta-sipp/aleta-sipp-datasource";
@@ -127,6 +128,7 @@ async function indeksDerry(): Promise<IndeksDerry> {
         const jalur = teks(b.jalur);
         const m = jalur.match(/^derry_briantono\/([^/]+)\/([^/]+)$/);
         if (!m || jalurBlangkoTerhapus(jalur)) continue; // I7 17 Okt: derry_briantono/terhapus bukan blangko aktif
+        if (folderDerryTanpaMenu(m[1])) continue; // 4 Nov (audit A3-K11): 19 folder tanpa menu ABT disembunyikan dari panel; berkasnya tidak disentuh
         if (berkasVarianUkuran(m[2])) continue; // 26 Okt: varian F4/Legal sampul & daftar isi dipilih di layar kerja, bukan di daftar
         if (!folder.has(m[1])) folder.set(m[1], []);
         folder.get(m[1])!.push(m[2]);
@@ -139,7 +141,7 @@ async function indeksDerry(): Promise<IndeksDerry> {
   if (!folder.size) {
     try {
       const k = await callAletaBotSippBridge<JawabanKatalogFolder>("blangko.katalog", { folder: AKAR_DERRY }, { timeoutMs: 15000 });
-      const set = k.ok && k.data?.ada ? (k.data.set ?? []).map((s) => teks(s.nama)).filter((n) => Boolean(n) && !jalurBlangkoTerhapus(n)) : [];
+      const set = k.ok && k.data?.ada ? (k.data.set ?? []).map((s) => teks(s.nama)).filter((n) => Boolean(n) && !jalurBlangkoTerhapus(n) && !folderDerryTanpaMenu(n)) : [];
       for (let i = 0; i < set.length; i += 6) {
         const kelompok = set.slice(i, i + 6);
         const jawaban = await Promise.all(
@@ -248,6 +250,23 @@ export async function GET(request: NextRequest) {
     // 21 Okt: urutan dan himpunan penanda PERSIS tabel variabel ABT (bot penandaAbt); bot lama tanpa itu = daftar terurut lama.
     const penandaAbt = Array.isArray(dibaca.data.penandaAbt) ? dibaca.data.penandaAbt.map(teks).filter((x) => /^\d{3,5}$/.test(x)) : [];
     const penanda = penandaAbt.length ? penandaAbt : (dibaca.data.penanda ?? []).map(teks).filter((x) => /^\d{3,5}$/.test(x));
+    // 4 Nov (audit A3-V04): peringatan lunak "bagian ini masih titik-titik" - hanya enam variabel kalimat berlubang, dinilai sebentar
+    // (tanpa katalog, tanpa susunan isian). Tidak menahan cetak; bot tidak menjawab = tidak ada peringatan (bukan alarm palsu).
+    if (q.get("titik") === "1") {
+      const kodeTitik = kodeTitikDalamBlangko(penanda);
+      const idTitik = teks(q.get("perkaraId"));
+      if (!kodeTitik.length || !/^\d+$/.test(idTitik)) return ok({ ada: true, adaVariabel: false, titik: [] });
+      await pastikanKapabilitas(db, actorUserId, "blangko-abt");
+      const hasilTitik = await nilaiPenanda(idTitik, Number(q.get("sidangKe") || 0) || 0, kodeTitik);
+      if (!hasilTitik.ada) return ok({ ada: false, adaVariabel: true, titik: [] });
+      const titik = kodeTitik
+        .filter((k) => {
+          const v = hasilTitik.nilai[k];
+          return Boolean(v) && (v.status === "kosong" || (v.status === "terisi" && nilaiMasihTitik(v.teks)));
+        })
+        .map((k) => ({ kode: k, nama: VARIABEL_TITIK_KALIMAT[k] }));
+      return ok({ ada: true, adaVariabel: true, titik });
+    }
     const { peta, sumber } = await katalogVariabel(db);
     const sebutan = {
       P: teks(q.get("sebutanP")) || "Penggugat/Pemohon",
