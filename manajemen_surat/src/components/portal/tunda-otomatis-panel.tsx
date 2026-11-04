@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { BagianPutusOtomatis } from "@/components/portal/putus-otomatis-bagian";
+import { KepalaUrut, urutkan, useUrutan } from "@/components/portal/tabel-kendali";
 import { apiPath } from "@/lib/base-path";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 import type { KeputusanTundaOtomatis, SetelanTundaOtomatis } from "@/lib/tunda-otomatis";
@@ -80,6 +81,8 @@ export function TombolTundaOtomatis({ tanggal }: { tanggal: string }) {
   const [daftar, setDaftar] = useState<Daftar | null>(null);
   const [sibuk, setSibuk] = useState("");
   const [pesan, setPesan] = useState("");
+  // 4 Nov 2026: daftar dapat diurutkan dengan menekan judul kolom (hanya urutan tampil).
+  const urutButir = useUrutan(null);
 
   const muat = useCallback(
     async (segarkan = false) => {
@@ -222,16 +225,18 @@ export function TombolTundaOtomatis({ tanggal }: { tanggal: string }) {
               <table className="w-full text-left text-xs">
                 <thead className="sticky top-0 bg-card">
                   <tr className="border-b">
-                    <th className="p-2">Perkara</th>
-                    <th className="p-2">Hasil</th>
-                    <th className="p-2">Tanggal berikut</th>
-                    <th className="p-2">Aturan dan alasan</th>
-                    <th className="p-2">SIPP</th>
+                    <KepalaUrut biasa kunci="perkara" className="p-2 text-xs" urutan={urutButir.urutan} onTekan={urutButir.tekan}>Perkara</KepalaUrut>
+                    <KepalaUrut biasa kunci="hasil" className="p-2 text-xs" urutan={urutButir.urutan} onTekan={urutButir.tekan}>Hasil</KepalaUrut>
+                    <KepalaUrut biasa kunci="tanggal" className="p-2 text-xs" urutan={urutButir.urutan} onTekan={urutButir.tekan}>Tanggal berikut</KepalaUrut>
+                    <KepalaUrut biasa kunci="aturan" className="p-2 text-xs" urutan={urutButir.urutan} onTekan={urutButir.tekan}>Aturan dan alasan</KepalaUrut>
+                    <KepalaUrut biasa kunci="sipp" className="p-2 text-xs" urutan={urutButir.urutan} onTekan={urutButir.tekan}>SIPP</KepalaUrut>
                     <th className="p-2" />
                   </tr>
                 </thead>
                 <tbody>
-                  {(daftar?.butir ?? []).map((b) => {
+                  {urutkan(daftar?.butir ?? [], urutButir.urutan, (b, k) =>
+                    k === "perkara" ? b.nomorPerkara : k === "hasil" ? b.keputusan.jenis : k === "tanggal" ? (b.keputusan.jenis === "tunda" ? `${b.keputusan.tanggal} ${b.keputusan.jam}` : "") : k === "aturan" ? ("alasan" in b.keputusan ? b.keputusan.alasan : "penjelasan" in b.keputusan ? b.keputusan.penjelasan : "") : b.tulis?.status
+                  ).map((b) => {
                     const k = b.keputusan;
                     const dibatalkan = k.jenis === "lewati" && k.sebab === "dibatalkan-petugas";
                     const bisaBatal = k.jenis === "tunda" && (!b.tulis || b.tulis.status === "diantrekan");

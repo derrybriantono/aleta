@@ -921,7 +921,8 @@ describe("kotak gabungan Perlu diperiksa", () => {
     expect(blok).toContain("JAM_BATAS_HASIL_SIDANG");
     // Tepat tiga pemakaian: cocok gabungan, hitungan judulnya, dan tanda
     // baris. Pemakaian keempat - mis. kotak saringan kembar - menyala merah.
-    expect(isi.split("belumTundaLewatBatas(baris, saat)").length - 1).toBe(3);
+    // 4 Nov 2026: + tanda "Belum ditunda" di kartu baru (tetap tanda baris, bukan kotak saringan).
+    expect(isi.split("belumTundaLewatBatas(baris, saat)").length - 1).toBe(4);
   });
 
   it("kotak gabungan tidak ikut menyapu dirinya sendiri", () => {

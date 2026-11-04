@@ -276,9 +276,10 @@ describe("C. penjaga kebergantungan baris", () => {
 
     let panggilan: import("typescript").ArrowFunction | null = null;
     const cari = (n: import("typescript").Node) => {
-      if (ts.isCallExpression(n) && n.expression.getText(sf).endsWith("sidangTampil.map") && n.arguments[0] && ts.isArrowFunction(n.arguments[0])) {
-        const badanFn = n.arguments[0];
-        if (badanFn.getText(sf).includes("const gambarBaris")) panggilan = badanFn;
+      // 4 Nov 2026: callback baris dipindah menjadi gambarSatuBaris (dipakai tabel lama DAN kartu baru); penjaga
+      // yang sama kini mengawal keduanya karena kartu dibaca dari callback yang sama.
+      if (ts.isVariableDeclaration(n) && n.name.getText(sf) === "gambarSatuBaris" && n.initializer && ts.isArrowFunction(n.initializer)) {
+        if (n.initializer.getText(sf).includes("const gambarBaris") && n.initializer.getText(sf).includes("const gambarKartu")) panggilan = n.initializer;
       }
       ts.forEachChild(n, cari);
     };
@@ -363,7 +364,8 @@ describe("C. penjaga kebergantungan baris", () => {
 
   it("jalur lama persis bila saklar mati: baris digambar langsung, tanpa pembungkus", () => {
     const teks = sumber();
-    expect(teks).toContain("if (!tabelRingan) return gambarBaris();");
+    expect(teks).toContain("const gambarIni = baru ? gambarKartu : gambarBaris;");
+    expect(teks).toContain("if (!tabelRingan) return gambarIni();");
     expect(teks).toContain("useAlatBaris(tabelRingan,");
     const modul = readFileSync(path.join(AKAR, "src/components/portal/baris-tabel-ringan.tsx"), "utf8");
     expect(modul).toContain('process.env.NEXT_PUBLIC_ALETA_TABEL_RINGAN === "1"');

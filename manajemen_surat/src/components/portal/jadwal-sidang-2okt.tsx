@@ -507,6 +507,11 @@ export async function setelTandaBerjalan(opsi: {
   }
 }
 
+/** Ada aksi jarang (Lompat ke sini / Batalkan tanda) untuk menu Lainnya? */
+export function punyaAksiRuangLain(aksi: AksiRuangSidang): boolean {
+  return Boolean((aksi.lompat && aksi.asal) || aksi.batalTanda);
+}
+
 export function TombolRuangSidang({
   baris,
   aksi,
@@ -516,7 +521,14 @@ export function TombolRuangSidang({
   info,
   onBerubah,
   ruang,
+  bagian = "semua",
 }: {
+  /**
+   * Tampilan baru (4 Nov 2026): "utama" = hanya aksi utama menurut keadaan (Skors, Lanjutkan, Tandai berjalan);
+   * "lain" = aksi jarang (Lompat ke sini, Batalkan tanda) untuk menu Lainnya. "semua" = seperti dulu.
+   * Pemicu dan hak sama persis; yang berbeda hanya tombol mana yang digambar di mana.
+   */
+  bagian?: "semua" | "utama" | "lain";
   baris: { perkaraId: string; nomorPerkara: string; tanggalSidang: string };
   aksi: AksiRuangSidang;
   berjalan: SidangBerjalan | null | undefined;
@@ -580,9 +592,11 @@ export function TombolRuangSidang({
   const tombol =
     "inline-flex items-center justify-center gap-1 rounded-md border px-2 py-1 text-xs transition disabled:cursor-default disabled:opacity-60";
 
+  const tampilUtama = bagian !== "lain";
+  const tampilLain = bagian !== "utama";
   return (
     <span className="inline-flex flex-col gap-0.5" data-ruang-sidang="">
-      {aksi.skors && berjalan ? (
+      {tampilUtama && aksi.skors && berjalan ? (
         <button
           type="button"
           disabled={sibuk}
@@ -595,7 +609,7 @@ export function TombolRuangSidang({
           {sibuk ? "…" : "Skors"}
         </button>
       ) : null}
-      {aksi.skors && berjalan && jendelaSkors ? (
+      {tampilUtama && aksi.skors && berjalan && jendelaSkors ? (
         <JendelaSkors
           nomorPerkara={baris.nomorPerkara || info(baris.perkaraId).nomorPerkara || "perkara ini"}
           tanggalSidang={baris.tanggalSidang}
@@ -618,7 +632,7 @@ export function TombolRuangSidang({
           }}
         />
       ) : null}
-      {aksi.lompat && aksi.asal ? (
+      {tampilLain && aksi.lompat && aksi.asal ? (
         <button
           type="button"
           disabled={sibuk}
@@ -632,7 +646,7 @@ export function TombolRuangSidang({
           {sibuk ? "…" : "Lompat ke sini"}
         </button>
       ) : null}
-      {aksi.lanjut && skors ? (
+      {tampilUtama && aksi.lanjut && skors ? (
         <button
           type="button"
           disabled={sibuk}
@@ -651,7 +665,7 @@ export function TombolRuangSidang({
           {sibuk ? "…" : "Lanjutkan"}
         </button>
       ) : null}
-      {aksi.tandai ? (
+      {tampilUtama && aksi.tandai ? (
         <button
           type="button"
           disabled={sibuk}
@@ -664,7 +678,7 @@ export function TombolRuangSidang({
           {sibuk ? "…" : "Tandai berjalan"}
         </button>
       ) : null}
-      {aksi.batalTanda ? (
+      {tampilLain && aksi.batalTanda ? (
         <button
           type="button"
           disabled={sibuk}

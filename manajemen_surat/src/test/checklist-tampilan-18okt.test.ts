@@ -199,7 +199,8 @@ describe("tombol Pertanyaan saksi di Jadwal Sidang", () => {
     const layar = baca(LAYAR_SIDANG);
     expect(layar).not.toContain("penggunaPandu");
     expect(layar).not.toContain("pandu = null");
-    expect(layar.match(/<PanduanPemeriksaanSaksi/g)?.length).toBe(1);
+    // 4 Nov 2026: satu di tabel lama, satu di lajur Aksi kartu baru (hanya salah satu yang digambar).
+    expect(layar.match(/<PanduanPemeriksaanSaksi/g)?.length).toBe(2);
   });
 
   it("Status Perkara tetap memakai bagian lipat", () => {

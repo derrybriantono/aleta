@@ -219,8 +219,9 @@ describe("layar: lencana digambar lewat saklar", () => {
     expect(layar).toContain('tampil(tampilan, "penanda-perkara")');
     expect(layar).toContain('tampil(tampilan, "penanda-pekerjaan")');
     // baris + rincian
-    expect(layar.match(/<LencanaPerkaraBaris /g)?.length).toBe(2);
-    expect(layar.match(/<LencanaPekerjaanBaris /g)?.length).toBe(4 + 1);
+    // 4 Nov 2026: + kartu baru (satu baris perkara, empat sisi pihak).
+    expect(layar.match(/<LencanaPerkaraBaris /g)?.length).toBe(3);
+    expect(layar.match(/<LencanaPekerjaanBaris /g)?.length).toBe(4 + 4 + 1);
     expect(layar).toContain("aktif={aktifPenandaPerkara}");
     expect(layar).toContain("aktif={aktifPenandaPekerjaan}");
   });

@@ -4,6 +4,7 @@
  * Baris pil ruang dihapus (fungsinya di pita ruang), saklar Sidang keliling
  * pindah ke AWAL pita ruang. Render nyata AletaEcourtSidang.
  */
+import { pakaiAntarmukaLama } from "./antarmuka-lama";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createElement } from "react";
@@ -104,6 +105,7 @@ const bukaMenu = async () => userEvent.click(await screen.findByRole("button", {
 
 beforeEach(() => {
   window.localStorage.clear();
+  pakaiAntarmukaLama();
   keadaan.portal.currentUser = { id: "u1", name: "Admin Uji", roleId: "admin" };
   pasangFetch();
 });
