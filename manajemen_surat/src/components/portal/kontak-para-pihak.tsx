@@ -9,6 +9,7 @@ import { bolehAksiLayar } from "@/lib/matriks-peran";
 import { modePersidangan } from "@/lib/mode-persidangan";
 import {
   bolehLihatRekeningLayar,
+  keteranganRekeningBelumAda,
   pemilikPembayaran,
   rupiahTitik,
   tanggalIndonesia,
@@ -208,7 +209,7 @@ export function RuasPembayarEcourt({
             {[data.bank, data.nomorRekening].filter(Boolean).join(" ")}
           </span>
         ) : (
-          <span className="text-muted-foreground">rekening belum terbaca</span>
+          <span className="text-muted-foreground">{keteranganRekeningBelumAda(data.cek)}</span>
         )}
         {data.atasNama ? <span className="break-all text-muted-foreground">a.n. {data.atasNama}</span> : null}
         {!cocok && data.diterimaDari ? <span className="text-muted-foreground">(nama pembayar tidak sama dengan para pihak)</span> : null}

@@ -5888,9 +5888,62 @@ export async function bacaArpGateway(ip: string, timeoutMs = 1500): Promise<Gate
 export async function getGatewayPembayaranEcourt(nomorPerkara: string[]) {
   const kueri = new URLSearchParams();
   for (const n of nomorPerkara.slice(0, 80)) kueri.append("nomor", n);
-  return gatewayFetch<{ ok: boolean; perkara: Record<string, import("@/lib/pembayaran-ecourt").PembayaranEcourt> }>(
-    `/internal/aleta-bot/ecourt/pembayaran?${kueri.toString()}`,
-    { timeoutMs: 15_000 }
-  );
+  return gatewayFetch<{
+    ok: boolean;
+    perkara: Record<string, import("@/lib/pembayaran-ecourt").PembayaranEcourt>;
+    cek?: Record<string, { hasil: string; sebab?: string; dicekPada: string }>;
+  }>(`/internal/aleta-bot/ecourt/pembayaran?${kueri.toString()}`, { timeoutMs: 15_000 });
+}
+
+/** Keadaan sinkron rekening e-Court untuk halaman Integrasi e-Court (tanpa nomor rekening). */
+export type GatewayRekeningStatus = {
+  ok: boolean;
+  status: {
+    otomatis: boolean;
+    perPutaran: number;
+    maksManual: number;
+    terakhirCek: string;
+    jumlah: Record<string, number>;
+    sebabGagal: { sebab: string; jumlah: number }[];
+    tersimpan: { perkara: number; denganRekening: number };
+    cakupan: { total: number; sudahDicek: number; belumDicek: number; denganRekening: number } | null;
+    putaranTerakhir: {
+      sumber: string;
+      status: string;
+      sebab: string;
+      mulai: string;
+      selesai: string;
+      sasaran: number;
+      terbaca: number;
+      tanpaRekening: number;
+      tidakAda: number;
+      gagal: number;
+      berubah: number;
+    }[];
+  };
+  penjadwal: {
+    aktif: boolean;
+    sedangJalan: boolean;
+    sedangSinkronRekening: boolean;
+    sumber: string;
+    dalamJamKerja: boolean;
+    berikutnya: string | number | null;
+    terakhirKode: number | null;
+    terakhirCatatan: string;
+    adaPenarikanLain: boolean;
+  };
+};
+
+export async function getGatewayRekeningStatus() {
+  return gatewayFetch<GatewayRekeningStatus>("/internal/aleta-bot/ecourt/rekening/status", { timeoutMs: 20_000 });
+}
+
+/** Menjalankan sinkron rekening sekarang (tidak ditunggu; hasilnya dibaca lewat status). */
+export async function mulaiGatewayRekeningSinkron(olehSiapa: string) {
+  return gatewayFetch<{ ok: boolean; alasan?: string }>("/internal/aleta-bot/ecourt/rekening/mulai", {
+    method: "POST",
+    body: JSON.stringify({ olehSiapa }),
+    timeoutMs: 15_000,
+  });
 }
 /* === AKHIR KASIR REKENING-SKUM === */

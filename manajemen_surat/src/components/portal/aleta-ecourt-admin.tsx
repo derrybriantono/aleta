@@ -28,6 +28,7 @@ import { AletaEcourtArsip } from "@/components/portal/aleta-ecourt-arsip";
 import { AletaEcourtAkun } from "@/components/portal/aleta-ecourt-akun";
 import { AletaEcourtPanggilanPengaturan } from "@/components/portal/aleta-ecourt-panggilan-pengaturan";
 import { AletaEcourtPenarikan } from "@/components/portal/aleta-ecourt-penarikan";
+import { AletaEcourtRekening } from "@/components/portal/aleta-ecourt-rekening";
 import { EcourtStatusPenarikan } from "@/components/portal/ecourt-status-penarikan";
 import { AletaEcourtSkMajelis } from "@/components/portal/aleta-ecourt-sk-majelis";
 import { AletaEcourtNomorSk } from "@/components/portal/aleta-ecourt-nomor-sk";
@@ -189,6 +190,8 @@ export function AletaEcourtAdmin() {
       {/* Penarikan tepat setelah arsip: keduanya menjawab pertanyaan yang
           sama - berkas mana yang belum ada, dan bagaimana melengkapinya. */}
       <AletaEcourtPenarikan />
+      {/* 4 Nov 2026: sinkron rekening dan bank pembayar (Super Admin dan Admin). Jangkar #rekening-ecourt. */}
+      <AletaEcourtRekening />
       {/* === 12OKT-E === Penarikan tanggal KTP pihak: pengaturan penyapu latar + histori per nomor perkara.
           Sesudah penarikan: berkas KTP datang dari arsip yang ditarik di atas. Jangkar #ktp-pihak. */}
       <AletaEcourtKtpPihak />

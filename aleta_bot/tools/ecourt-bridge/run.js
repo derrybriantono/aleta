@@ -169,6 +169,8 @@ function parseArgs(argv) {
     hanyaBelumAda: false,
     utamakan: [],
     hanyaUtamakan: false,
+    // 4 Nov 2026: HANYA membaca rekening/pembayaran perkara yang belum atau perlu dicek ulang (tanpa dokumen).
+    hanyaRekening: false,
     // Kosong berarti slot bawaan - lihat sesi.js.
     akun: "",
   };
@@ -190,6 +192,7 @@ function parseArgs(argv) {
         .filter(Boolean);
     } else if (item === "--hanya-utamakan") args.hanyaUtamakan = true;
     else if (item === "--hanya-belum-ada") args.hanyaBelumAda = true;
+    else if (item === "--hanya-rekening") args.hanyaRekening = true;
     // Slot akun e-Court. Tiap akun punya folder profil sendiri; tanpa ini,
     // seluruh akun berbagi satu profil dan saling menimpa sesinya.
     else if (item === "--akun") args.akun = String(argv[++i] || "").trim();
@@ -833,6 +836,76 @@ function catatPihakElektronik(ringkasan, diag, detail) {
   for (const id of diag.tab || []) if (r.tab[id] || Object.keys(r.tab).length < 25) r.tab[id] = (r.tab[id] || 0) + 1;
 }
 
+/**
+ * Pembayaran e-Payment (rekening pengguna) dan e-SKUM dari halaman detail yang SUDAH terbuka. Catatan cek
+ * perkara ditulis untuk setiap halaman - juga yang tidak memuat bagian pembayaran - supaya "belum dicek" dan
+ * "e-Court memang tidak mencatat" dapat dibedakan (ecourtRekeningService). Gagal-terbuka: keterangan
+ * pelengkap, tidak menggagalkan penarikan dokumen. Isi kotak "Lihat SKUM" dibaca SEKALI per perkara (GET di
+ * sesi yang sama, hanya bila belum tersimpan); tidak ada login dan tidak ada aksi yang menulis ke e-Court.
+ */
+async function simpanPembayaranHalaman(page, detail) {
+  const rekening = require("../../services/ecourtRekeningService");
+  try {
+    let skum = detail.skum;
+    if (!skum && detail.pembayaran && detail.alamatSkum && scraper.diDalamEcourt(detail.alamatSkum)) {
+      const sudah = await ecourtStoreService.adaSkumEcourt(detail.nomorPerkara).catch(() => false);
+      if (!sudah) {
+        const teksSkum = await page
+          .evaluate(async (alamat) => {
+            const r = await fetch(alamat, { credentials: "include" });
+            return r.ok ? r.text() : "";
+          }, detail.alamatSkum)
+          .catch(() => "");
+        skum = teksSkum ? require("./pembayaranEcourt").extractSkumEcourt(teksSkum) : null;
+      }
+    }
+    return await rekening.catatBaca(detail.nomorPerkara, { pembayaran: detail.pembayaran, skum });
+  } catch (galat) {
+    log(`  Pembayaran e-Court gagal disimpan: ${galat.message}`);
+    await rekening.catatGagal(detail.nomorPerkara, `simpan_gagal: ${String(galat.message || "").slice(0, 120)}`).catch(() => {});
+    return { hasil: "gagal", berubah: false, baru: false };
+  }
+}
+
+/**
+ * Sinkron rekening dalam sesi jembatan yang sama (4 Nov 2026): perkara yang BELUM pernah dicek didahulukan,
+ * lalu yang sudah jatuh tempo; halaman dibuka tanpa mengunduh berkas. Alamat dari sapuan daftar yang sudah
+ * dikerjakan putaran ini - tidak ada login atau sapuan tambahan. Tidak pernah melempar.
+ */
+async function sinkronRekeningLatar(page, acuan, { maks, batasMs, sumber }) {
+  const rekening = require("../../services/ecourtRekeningService");
+  const hasil = await rekening.sinkronkan({
+    acuan,
+    maks,
+    batasMs,
+    sumber,
+    log,
+    simpanHalaman: (detail) => simpanPembayaranHalaman(page, detail),
+    bacaSatu: async (url) => {
+      try {
+        await page.goto(url, { waitUntil: "networkidle2", timeout: 60000 });
+        await jedaManusiawi();
+        const html = await page.content();
+        const detail = scraper.parseCaseDetail(html);
+        if (!detail.nomorPerkara) {
+          catatIrama(false);
+          if (scraper.LOGIN_PATH_PATTERN.test(page.url()) || /id="captchaimage"|Login Page/i.test(html)) {
+            return { status: "sesi_habis" };
+          }
+          return { status: "gagal", sebab: "halaman_bukan_perkara" };
+        }
+        catatIrama(true);
+        return { status: "ok", detail };
+      } catch (galat) {
+        catatIrama(false);
+        return { status: "gagal", sebab: `galat_peramban: ${String(galat && galat.message).slice(0, 120)}` };
+      }
+    },
+  });
+  if (hasil.status === "sesi_habis") KODE_KELUAR = 2;
+  return hasil;
+}
+
 /** Memproses satu halaman detail perkara. */
 async function processCase(page, url, ringkasan, args, acuan) {
   await page.goto(url, { waitUntil: "networkidle2", timeout: 60000 });
@@ -907,26 +980,7 @@ async function processCase(page, url, ringkasan, args, acuan) {
   // dibaca SEKALI per perkara (GET di sesi yang sama, hanya bila belum
   // tersimpan) - tidak ada login dan tidak ada aksi yang menulis ke e-Court.
   // Gagal-terbuka: keterangan pelengkap, tidak menggagalkan penarikan dokumen.
-  if (detail.pembayaran || detail.skum) {
-    try {
-      let skum = detail.skum;
-      if (!skum && detail.pembayaran && detail.alamatSkum && scraper.diDalamEcourt(detail.alamatSkum)) {
-        const sudah = await ecourtStoreService.adaSkumEcourt(detail.nomorPerkara).catch(() => false);
-        if (!sudah) {
-          const teksSkum = await page
-            .evaluate(async (alamat) => {
-              const r = await fetch(alamat, { credentials: "include" });
-              return r.ok ? r.text() : "";
-            }, detail.alamatSkum)
-            .catch(() => "");
-          skum = teksSkum ? require("./pembayaranEcourt").extractSkumEcourt(teksSkum) : null;
-        }
-      }
-      await ecourtStoreService.recordPembayaranEcourt(detail.nomorPerkara, detail.pembayaran, skum);
-    } catch (galat) {
-      log(`  Pembayaran e-Court gagal disimpan: ${galat.message}`);
-    }
-  }
+  await simpanPembayaranHalaman(page, detail);
 
   if (detail.putusanEcourt) {
     await putusanEcourtService
@@ -1603,6 +1657,18 @@ async function utama() {
     // tersedia - dan jalan lama di bawah yang mengambil alih.
     let tautan = await kumpulkanTautan(page, acuan, ringkasan);
 
+    // Sinkron rekening dari portal (4 Nov 2026): hanya membaca rekening/pembayaran, tanpa dokumen. Sapuan daftar
+    // di atas sudah menyediakan alamat; hasilnya (termasuk sebab gagal) dicatat di ecourtRekeningService.
+    if (args.hanyaRekening) {
+      const rek = require("../../services/ecourtRekeningService");
+      await sinkronRekeningLatar(page, acuan, {
+        maks: rek.maksManual(),
+        batasMs: Number(process.env.ALETA_ECOURT_REKENING_BATAS_MANUAL_MS || 40 * 60 * 1000),
+        sumber: "portal-rekening",
+      });
+      return;
+    }
+
     if (tautan.length === 0) {
       const html = await page.content();
       tautan = scraper.extractCaseLinks(html);
@@ -1881,6 +1947,30 @@ async function utama() {
         log(`  Gagal memproses perkara: ${error.message}`);
         ringkasan.jumlahGalat += 1;
         ringkasan.galatTerakhir = error.message;
+      }
+    }
+
+    // Sinkron rekening otomatis (4 Nov 2026): di ujung putaran berkala, di sesi dan daftar alamat yang SAMA.
+    // Hanya putaran biasa (bukan tarik satu perkara, tarikan pagi, atau penarikan menyeluruh/belum-ada); berhenti
+    // bila sesi bermasalah. Dimatikan dengan ALETA_ECOURT_REKENING_OTOMATIS=0.
+    if (
+      args.terjadwal &&
+      args.maksPerkara > 0 &&
+      !args.perkara &&
+      !args.hanyaUtamakan &&
+      !args.hanyaBelumAda &&
+      KODE_KELUAR === 0 &&
+      ringkasan.status === "selesai" &&
+      require("../../services/ecourtRekeningService").otomatisAktif()
+    ) {
+      try {
+        await sinkronRekeningLatar(page, acuan, {
+          maks: require("../../services/ecourtRekeningService").perPutaran(),
+          batasMs: Number(process.env.ALETA_ECOURT_REKENING_BATAS_MS || 10 * 60 * 1000),
+          sumber: "jadwal",
+        });
+      } catch (galat) {
+        log(`  Sinkron rekening berhenti: ${galat.message}`);
       }
     }
 
