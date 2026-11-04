@@ -9,6 +9,7 @@
  * tunda-mediasi-26okt.test.ts; di sini yang dijaga: tidak ada yang terkirim
  * sebagai tulisan sebelum Simpan ke SIPP ditekan.
  */
+import { pakaiAntarmukaLama } from "./antarmuka-lama";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { createElement } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -136,6 +137,7 @@ const tombolTunda = (nomor: string) => document.querySelector(`[data-tombol-tund
 
 beforeEach(() => {
   window.localStorage.clear();
+  pakaiAntarmukaLama();
   pengguna.nilai = undefined;
 });
 afterEach(() => {

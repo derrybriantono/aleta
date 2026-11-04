@@ -3501,7 +3501,7 @@ function SelKonseptorSementara({
   };
 
   // Sesudah seluruh hook - hook harus dipanggil pada urutan yang sama tiap gambar.
-  if (!terbuka && !tunjukan?.nama && !namaSipp && !tampilKosong) return null;
+  if (!terbuka && !tunjukan?.nama && !tampilKosong) return null;
 
   if (!terbuka && gaya === "pita") {
     const nama = tunjukan?.nama || namaSipp || "";
@@ -4850,8 +4850,9 @@ export function AletaEcourtSidang({
   // yang baru membuka layar harus melihat alat yang tersedia, dan menemukan
   // layar yang alatnya tersembunyi jauh lebih membingungkan daripada layar
   // yang alatnya makan tempat.
-  const [kendaliCiut, setKendaliCiut] = useState(false);
-  const kendaliCiutNyata = kendaliCiut && !baru;
+  const [kendaliCiutMentah, setKendaliCiut] = useState(false);
+  // Tampilan baru tidak punya tombol Ciutkan kendali (Lipat tag menggantikannya): di sana selalu terbentang.
+  const kendaliCiut = kendaliCiutMentah && !baru;
   /**
    * Deret kotak penanda diciutkan - dan yang dihemat TINGGINYA.
    *
@@ -9141,7 +9142,7 @@ export function AletaEcourtSidang({
                             alasanHakim={hakim.alasan}
                             onBuka={() => setTunjukKunci((lama) => (lama === kunci ? null : kunci))}
                             onSimpan={() => void muatTunjukan()}
-                            tampilKosong={tampil(tampilan, "tunjuk-konseptor")}
+                            tampilKosong={tampil(tampilan, "tunjuk-konseptor") || Boolean(konseptorSipp)}
                           />
                         </span>
                         <span className={cn("min-w-0 max-w-full", keteranganKunci === kunci && "w-full basis-full")}>
@@ -10377,7 +10378,7 @@ export function AletaEcourtSidang({
             melewati sembilan kotak mati sebelum sampai ke yang hidup.
             Kecualinya kotak yang sedang MENYALA - kalau ia ikut hilang saat
             angkanya nol, saringannya tidak dapat dimatikan lagi. */}
-        {sidang.length > 0 && (modeUrl || !kendaliCiutNyata) ? (
+        {sidang.length > 0 && (modeUrl || !kendaliCiut) ? (
           <div className="flex flex-wrap items-center gap-1.5">
             {/* ============================================================
                 SAKLAR CIUT - DAN SARINGAN YANG MENYALA TIDAK IKUT HILANG
@@ -10608,7 +10609,7 @@ export function AletaEcourtSidang({
             kendalinya diciutkan. Yang menciutkan kendali sedang
             memperpanjang daftar, bukan sedang menolak tahu apa yang harus
             diurus hari itu. */}
-        {sidang.length > 0 && kendaliCiutNyata ? (
+        {sidang.length > 0 && kendaliCiut ? (
           <div className="flex flex-wrap items-center gap-1.5">
             {KEADAAN_PERLU_DIPERIKSA.map((keadaan) => (
               <ChipSaring

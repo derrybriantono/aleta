@@ -99,7 +99,8 @@ describe("22 Okt 2026 - baris alat diganti satu tombol Menu", () => {
     expect(iLanjut).toBeGreaterThan(-1);
     expect(iCetak).toBeGreaterThan(iLanjut);
     expect(iMenu).toBeGreaterThan(iCetak);
-    expect(layar.match(/<MenuAlatJadwal/g)).toHaveLength(1);
+    // 4 Nov 2026: satu di baris pencarian lama, satu di bilah lekat baru (hanya salah satu yang digambar).
+    expect(layar.match(/<MenuAlatJadwal/g)).toHaveLength(2);
   });
 });
 

@@ -19,6 +19,7 @@
  *
  * Nomor perkara dan nama di sini karangan.
  */
+import { pakaiAntarmukaLama } from "./antarmuka-lama";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
@@ -278,8 +279,9 @@ describe("penjaga: tidak ada unsur tanpa saklar", () => {
     // tiga penanda warna baris dikawal satu saklar
     expect((LAYAR_SIDANG.match(/warnaBaris &&/g) ?? []).length).toBe(3);
     // pemilih tanggal: kedua pemilih Jadwal Sidang dan kedua pemilih Jadwal Mediasi
-    expect((LAYAR_SIDANG.match(/tampilKalender=\{tampil\(tampilan, "kalender-libur"\)\}/g) ?? []).length).toBe(2);
-    expect((LAYAR_MEDIASI.match(/tampilKalender=\{kalenderLiburTampil\}/g) ?? []).length).toBe(2);
+    // 4 Nov 2026: + dua pemilih di bilah lekat baru; semuanya tetap dikawal saklar yang sama.
+    expect((LAYAR_SIDANG.match(/tampilKalender=\{tampil\(tampilan, "kalender-libur"\)\}/g) ?? []).length).toBe(4);
+    expect((LAYAR_MEDIASI.match(/tampilKalender=\{kalenderLiburTampil\}/g) ?? []).length).toBe(4);
   });
 });
 
@@ -373,6 +375,7 @@ function pasangFetchSidang() {
 
 async function gambarSidang(props: Record<string, unknown> = {}, simpanan?: Record<string, boolean>) {
   window.localStorage.clear();
+  pakaiAntarmukaLama();
   if (simpanan) window.localStorage.setItem(KUNCI_SIMPANAN_TAMPILAN, JSON.stringify(simpanan));
   pasangFetchSidang();
   const { AletaEcourtSidang } = await import("@/components/portal/aleta-ecourt-sidang");
@@ -388,6 +391,7 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
   window.localStorage.clear();
+  pakaiAntarmukaLama();
 });
 
 /** Keadaan unsur-unsur penting di layar Jadwal Sidang. */
@@ -613,6 +617,7 @@ function pasangFetchMediasi() {
 
 async function gambarMediasi(simpanan?: Record<string, boolean>, simpananSidang?: Record<string, boolean>) {
   window.localStorage.clear();
+  pakaiAntarmukaLama();
   if (simpanan) window.localStorage.setItem(KUNCI_SIMPANAN_TAMPILAN_MEDIASI, JSON.stringify(simpanan));
   if (simpananSidang) window.localStorage.setItem(KUNCI_SIMPANAN_TAMPILAN, JSON.stringify(simpananSidang));
   pasangFetchMediasi();

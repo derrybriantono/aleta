@@ -14,6 +14,7 @@
  * Sisi server (hash, jaringan kantor, jejak, batas laju) di tautan-jadwal-20okt.test.ts.
  * Nomor perkara dan nama di sini karangan.
  */
+import { pakaiAntarmukaLama } from "./antarmuka-lama";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
@@ -165,6 +166,7 @@ const teksTombol = (wadah: HTMLElement) =>
 
 beforeEach(() => {
   window.localStorage.clear();
+  pakaiAntarmukaLama();
   keadaan.portal.currentUser = { id: "u1", name: "Admin Uji", roleId: "admin" };
   keadaan.rahasia = undefined;
 });

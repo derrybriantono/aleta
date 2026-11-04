@@ -1168,7 +1168,7 @@ export function AletaEcourtMediasi({
   return (
     <Card>
       {baru && !panelTampilan ? null : (
-      <CardHeader className={baru ? "p-3 pb-0" : undefined}>
+      <CardHeader>
         {/* 19 Okt 2026 (JADWAL-3 butir 2): satu baris kepala - judul di kiri,
             tombol di kanan, dan Tampilan PALING KANAN, sama dengan Jadwal Sidang. */}
         {baru ? null : (
