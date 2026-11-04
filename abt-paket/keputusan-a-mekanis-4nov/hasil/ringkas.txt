@@ -1,0 +1,9 @@
+A11	#0690#-ke-8554	188 kali	65 berkas
+A11	#4004#-ke-8555	57 kali	43 berkas
+A13	cq-majelis-8554	1 kali	1 berkas
+A13	isteri-istri	217 kali	39 berkas
+A3	catatan-kerja-dibuang	1 kali	1 berkas
+A6	pemutus-8555-ke-8554	35 kali	4 berkas
+E2	tujuan-itsbat-8171	6 kali	6 berkas
+ISTERI diubah 217, dibiarkan 135 (kutipan)
+BERKAS 151 POTONGAN 505

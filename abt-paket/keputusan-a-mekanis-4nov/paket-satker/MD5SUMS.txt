@@ -1,0 +1,5 @@
+d949a1c1e10c9b60e8cc4fd18adc9b54 *tambal_rtf.py
+13009ad45b8ead7c781829ae7085a54b *daftar-tambal.tsv
+2796018fb76f7ffb7f0ff82144dcc803 *tambal.tsv
+5a53f17e714c157366e748930b2b2df0 *pasang-satker.sh
+e4b7ef0113012a9cc355baa390cd27bc *pulih-satker.sh

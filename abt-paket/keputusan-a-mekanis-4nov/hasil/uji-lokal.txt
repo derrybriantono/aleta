@@ -1,0 +1,46 @@
+SIDIK AWAL c0cbb9a905d160f60740419fa5a6424e
+== 1. pasang pertama
+    SIAP=151
+    BERKAS SIAP
+    PRASYARAT COCOK
+    TAMBAL=151
+    BERKAS COCOK
+    SELESAI - paket abt-keputusan-a-mekanis-4nov terpasang. Cadangan: /d/aleta-dev/wt/w206/abt-paket/keputusan-a-mekanis-4nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w206/abt-paket/keputusan-a-mekanis-4nov/paket-satker/pulih-satker.sh
+    periksa: BERKAS COCOK
+== 2. pasang ulang (idempoten)
+    SUDAH=151
+    BERKAS SIAP
+    PRASYARAT COCOK
+    SUDAH=151
+    BERKAS COCOK
+    SELESAI - paket abt-keputusan-a-mekanis-4nov terpasang. Cadangan: /d/aleta-dev/wt/w206/abt-paket/keputusan-a-mekanis-4nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w206/abt-paket/keputusan-a-mekanis-4nov/paket-satker/pulih-satker.sh
+    SIDIK TETAP
+== 3. pulih
+    PULIH=151
+    BERKAS PULIH
+    PULIH COCOK
+    SIDIK = AWAL
+== 4. pasang lagi sesudah pulih
+    SIAP=151
+    BERKAS SIAP
+    PRASYARAT COCOK
+    TAMBAL=151
+    BERKAS COCOK
+    SELESAI - paket abt-keputusan-a-mekanis-4nov terpasang. Cadangan: /d/aleta-dev/wt/w206/abt-paket/keputusan-a-mekanis-4nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w206/abt-paket/keputusan-a-mekanis-4nov/paket-satker/pulih-satker.sh
+== 5. md5 server berbeda (satu berkas disunting) -> BERHENTI tanpa ubahan
+    GAGAL=1 SIAP=150
+    BERKAS TIDAK SIAP
+    GAGAL: berkas tujuan tidak sama dengan keadaan server sesudah ijab-yang-menikahkan-3nov + audit-mekanis-4nov + audit-ejaan-4nov - TIDAK ada yang diubah
+    TIDAK ADA YANG BERUBAH
+== 6. audit-ejaan belum terpasang (pohon sebelum ejaan) -> BERHENTI tanpa ubahan
+    GAGAL=122 SIAP=29
+    BERKAS TIDAK SIAP
+    GAGAL: berkas tujuan tidak sama dengan keadaan server sesudah ijab-yang-menikahkan-3nov + audit-mekanis-4nov + audit-ejaan-4nov - TIDAK ada yang diubah
+    TIDAK ADA YANG BERUBAH
+== 7. disunting sesudah pasang lalu pulih -> dibiarkan
+    BIARKAN	derry_briantono/2 Itsbat Nikah/[01] [Kabul] IN.rtf	(sudah disunting sesudah dipasang)
+    BIARKAN=1 PULIH=150
+    BERKAS PULIH SEBAGIAN
+    GAGAL=1 SIAP=150
+    BERKAS TIDAK SIAP
+    PULIH SEBAGIAN
