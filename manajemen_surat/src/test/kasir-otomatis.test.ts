@@ -605,7 +605,7 @@ describe("6. ekstensi - tab Kasir (basmassal.js IIFE)", () => {
     massal.open = true;
     massal.dispatchEvent(new h.w.Event("toggle"));
     await sampai(() => massal.querySelector(".aleta-basmassal-baris input[type=checkbox]:checked"), "perkara tercentang");
-    const simpan = Array.from(massal.querySelectorAll("button")).find((b) => /Simpan 1 perkara/.test(b.textContent || "")) as HTMLButtonElement;
+    const simpan = Array.from(massal.querySelectorAll("button")).find((b) => /^Masukkan ke jurnal SIPP/.test(b.textContent || "")) as HTMLButtonElement;
     simpan.click();
     await tunggu(10);
     (Array.from(massal.querySelectorAll("button")).find((b) => /Tekan sekali lagi/.test(b.textContent || "")) as HTMLButtonElement).click();
@@ -637,13 +637,13 @@ describe("6. ekstensi - tab Kasir (basmassal.js IIFE)", () => {
     expect(await h.w.aletaKasirPasangHarian(h.wadah, { situs: "sipp" })).toBe(true);
     await sampai(() => /Kembalikan sisa panjar \(1\)/.test(h.wadah.textContent || ""), "pengingat");
     expect(h.wadah.textContent).toContain("Setor PNBP ke kas negara (1)");
-    expect(h.minta.some((m) => m.url.includes("/kasir/harian"))).toBe(false);
+    expect(h.minta.some((m) => m.url.includes("/kasir/harian"))).toBe(true); // 4 Nov: tab Hari ini (Kasir Manual) dibaca begitu Kasir dibuka
     const massal = Array.from(h.wadah.querySelectorAll("details")).find((d) => /Kasir Manual/.test(d.querySelector("summary")?.textContent || "")) as HTMLDetailsElement;
     massal.open = true;
     massal.dispatchEvent(new h.w.Event("toggle"));
     await sampai(() => massal.querySelector(".aleta-basmassal-baris input[type=checkbox]:checked"), "perkara tercentang");
     expect(massal.textContent).toContain("Putus verstek");
-    const simpan = Array.from(massal.querySelectorAll("button")).find((b) => /Simpan 1 perkara/.test(b.textContent || "")) as HTMLButtonElement;
+    const simpan = Array.from(massal.querySelectorAll("button")).find((b) => /^Masukkan ke jurnal SIPP/.test(b.textContent || "")) as HTMLButtonElement;
     simpan.click();
     await tunggu(10);
     expect(h.minta.filter((m) => m.cara === "POST")).toEqual([]);

@@ -134,7 +134,7 @@ describe("Kasir otomatis massal di luar jam kerja", () => {
       })
     );
     render(<BagianMassal onSunting={() => undefined} />);
-    const simpan = await screen.findByRole("button", { name: /Simpan ke SIPP \(1 perkara\)/ }, { timeout: 5000 });
+    const simpan = await screen.findByRole("button", { name: /Masukkan ke jurnal SIPP/ }, { timeout: 5000 });
     fireEvent.click(simpan);
     fireEvent.click(await screen.findByRole("button", { name: /Tekan sekali lagi/ }, { timeout: 5000 }));
 
