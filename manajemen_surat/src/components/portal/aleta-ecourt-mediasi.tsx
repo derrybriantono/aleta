@@ -903,6 +903,8 @@ export function AletaEcourtMediasi({
   const [alasan, setAlasan] = useState("");
   // A5 (25 Okt 2026): bila daftar dibaca dari Cermin Perkara (saklar Mediasi menyala dan cermin segar).
   const [cerminMediasi, setCerminMediasi] = useState<{ diperbaruiPada: string | null } | null>(null);
+  // 5 Nov 2026: kalimat bila SIPP tidak terjangkau dan daftar ini salinan terakhir.
+  const [keteranganSipp, setKeteranganSipp] = useState("");
   const sedangMuat = useRef(false);
 
   // ==========================================================================
@@ -1080,6 +1082,7 @@ export function AletaEcourtMediasi({
         setAlasan(String(data?.alasan || ""));
         setMediasi(Array.isArray(data?.mediasi) ? (data.mediasi as Mediasi[]) : []);
         setCerminMediasi((data?.cermin ?? null) as { diperbaruiPada: string | null } | null);
+        setKeteranganSipp(String(data?.keterangan ?? ""));
         rentangTampil.current = rentang;
       } catch (galat) {
         if (!laporGagalMediasi(galat)) {
@@ -1407,6 +1410,9 @@ export function AletaEcourtMediasi({
                     Bersihkan
                   </button>
                 </>
+              ) : null}
+              {keteranganSipp && !memuat ? (
+                <span data-testid="tanda-sipp-tidak-terjangkau" className="text-amber-700 dark:text-amber-400">{" · "}{keteranganSipp}</span>
               ) : null}
               {cerminMediasi && !memuat && cerminMediasi.diperbaruiPada ? (
                 <span data-testid="tanda-cermin-mediasi" title={KETERANGAN_CERMIN}>

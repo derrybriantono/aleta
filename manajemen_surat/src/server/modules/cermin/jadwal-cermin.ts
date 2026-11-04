@@ -88,6 +88,26 @@ export function urutanSidang(a: Record<string, unknown>, b: Record<string, unkno
   return teks(a.nomorPerkara) < teks(b.nomorPerkara) ? -1 : teks(a.nomorPerkara) > teks(b.nomorPerkara) ? 1 : 0;
 }
 
+/** Sidang cermin pada [dari, sampai], urut seperti jalur lama dan dibatasi `batas` (bawaan 200, paling banyak 500). */
+export async function muatSidangCermin(db: AletaDatabase, dari: string, sampai: string, batasMasuk?: number): Promise<Array<Record<string, unknown>>> {
+  const rows = await db.queryAll<{ baris_json: string }>(
+    "SELECT baris_json FROM aleta_cermin_sidang WHERE tanggal_sidang >= ? AND tanggal_sidang <= ?",
+    [dari, sampai]
+  );
+  const semua: Array<Record<string, unknown>> = [];
+  for (const r of rows) {
+    try {
+      const b = JSON.parse(r.baris_json) as Record<string, unknown>;
+      if (b && typeof b === "object") semua.push(b);
+    } catch {
+      // Baris cermin rusak dilewati; pencocokan mingguan memperbaikinya.
+    }
+  }
+  semua.sort(urutanSidang);
+  const batas = Math.min(Math.max(Number(batasMasuk) || 200, 1), 500);
+  return semua.slice(0, batas);
+}
+
 export type AlasanTidakDariCermin =
   | "saklar-mati"
   | "ada-pencarian"
@@ -155,22 +175,7 @@ export async function bacaJadwalDariCermin(
       catat?.("cermin-tertinggal", "menunggu tulisan terakhir masuk cermin");
       return null;
     }
-    const rows = await db.queryAll<{ baris_json: string }>(
-      "SELECT baris_json FROM aleta_cermin_sidang WHERE tanggal_sidang >= ? AND tanggal_sidang <= ?",
-      [putusan.dari, putusan.sampai]
-    );
-    const semua: Array<Record<string, unknown>> = [];
-    for (const r of rows) {
-      try {
-        const b = JSON.parse(r.baris_json) as Record<string, unknown>;
-        if (b && typeof b === "object") semua.push(b);
-      } catch {
-        // Baris cermin rusak dilewati; pencocokan mingguan memperbaikinya.
-      }
-    }
-    semua.sort(urutanSidang);
-    const batas = Math.min(Math.max(Number(p.batas) || 200, 1), 500);
-    const sidang = semua.slice(0, batas);
+    const sidang = await muatSidangCermin(db, putusan.dari, putusan.sampai, p.batas);
 
     const pel = await deps.pelengkap(
       sidang.map((b) => ({ perkaraId: String(b.perkaraId ?? ""), tanggalSidang: String(b.tanggalSidang ?? "") })),

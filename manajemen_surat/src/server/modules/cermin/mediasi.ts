@@ -281,6 +281,31 @@ export function urutanMediasi(a: Record<string, unknown>, b: Record<string, unkn
   return s(a.nomorPerkara) < s(b.nomorPerkara) ? -1 : s(a.nomorPerkara) > s(b.nomorPerkara) ? 1 : 0;
 }
 
+/** Mediasi cermin pada [dari, sampai] urut seperti jalur lama; sisa tenggang PERMA dihitung ulang terhadap HARI INI. */
+export async function muatMediasiCermin(db: AletaDatabase, dari: string, sampai: string, sekarang: Date, batasMasuk?: number): Promise<Array<Record<string, unknown>>> {
+  const rows = await db.queryAll<{ baris_json: string }>("SELECT baris_json FROM aleta_cermin_mediasi WHERE tanggal >= ? AND tanggal <= ?", [dari, sampai]);
+  const hariIni = waktuPengadilan(sekarang).tanggal;
+  const semua: Array<Record<string, unknown>> = [];
+  for (const r of rows) {
+    try {
+      const b = JSON.parse(r.baris_json) as Record<string, unknown>;
+      if (!b || typeof b !== "object") continue;
+      // Bergantung pada HARI INI: dihitung ulang dengan rumus bot (selisihHari(hariIni, tenggat) bila belum selesai).
+      const tenggat = String(b.tenggatPerma ?? "");
+      const selesai = Boolean(String(b.laporanMediator ?? ""));
+      const sisa = tenggat && !selesai ? selisihHariIso(hariIni, tenggat) : null;
+      b.sisaHariTenggat = sisa;
+      b.lewatTenggang = sisa !== null && sisa < 0;
+      semua.push(b);
+    } catch {
+      // Baris cermin rusak dilewati; pencocokan mingguan memperbaikinya.
+    }
+  }
+  semua.sort(urutanMediasi);
+  const batas = Math.min(Math.max(Math.floor(Number(batasMasuk) || 200), 1), 500);
+  return semua.slice(0, batas);
+}
+
 /**
  * Kesegaran mediasi: pemindaian awal selesai (kesegaranCermin) DAN jendela mediasi
  * dihitung ulang baru-baru ini (tidak lebih tua dari max(30 menit, 4 x mediasiMenit),
@@ -323,29 +348,10 @@ export async function bacaMediasiDariCermin(
       catat?.("cermin-tertinggal", segar.alasan);
       return null;
     }
-    const rows = await db.queryAll<{ baris_json: string }>("SELECT baris_json FROM aleta_cermin_mediasi WHERE tanggal >= ? AND tanggal <= ?", [putusan.dari, putusan.sampai]);
-    const hariIni = waktuPengadilan(sekarang).tanggal;
-    const semua: Array<Record<string, unknown>> = [];
-    for (const r of rows) {
-      try {
-        const b = JSON.parse(r.baris_json) as Record<string, unknown>;
-        if (!b || typeof b !== "object") continue;
-        // Bergantung pada HARI INI: dihitung ulang dengan rumus bot (selisihHari(hariIni, tenggat) bila belum selesai).
-        const tenggat = String(b.tenggatPerma ?? "");
-        const selesai = Boolean(String(b.laporanMediator ?? ""));
-        const sisa = tenggat && !selesai ? selisihHariIso(hariIni, tenggat) : null;
-        b.sisaHariTenggat = sisa;
-        b.lewatTenggang = sisa !== null && sisa < 0;
-        semua.push(b);
-      } catch {
-        // Baris cermin rusak dilewati; pencocokan mingguan memperbaikinya.
-      }
-    }
-    semua.sort(urutanMediasi);
-    const batas = Math.min(Math.max(Math.floor(Number(p.batas) || 200), 1), 500);
+    const mediasi = await muatMediasiCermin(db, putusan.dari, putusan.sampai, sekarang, p.batas);
     return {
       ok: true,
-      data: { ok: true, dari: putusan.dari, sampai: putusan.sampai, terbaca: true, alasan: "", mediasi: semua.slice(0, batas), cermin: { diperbaruiPada: segar.diperbaruiPada } },
+      data: { ok: true, dari: putusan.dari, sampai: putusan.sampai, terbaca: true, alasan: "", mediasi, cermin: { diperbaruiPada: segar.diperbaruiPada } },
     };
   } catch (galat) {
     catat?.("galat", galat instanceof Error ? galat.message : "galat");

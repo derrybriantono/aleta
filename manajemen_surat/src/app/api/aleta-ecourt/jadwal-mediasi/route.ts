@@ -4,6 +4,7 @@ import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { pastikanTab } from "@/server/modules/akses/hak-peran";
 import { getGatewayJadwalMediasi } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
+import { mediasiDariCerminDarurat, sippTakTerjangkau } from "@/server/modules/cermin/darurat";
 import { bacaMediasiDariCermin } from "@/server/modules/cermin/mediasi";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -48,7 +49,12 @@ export async function GET(request: NextRequest) {
     // A5 (25 Okt 2026): dari Cermin Perkara bila saklar `mediasi` menyala dan cermin segar (tanpa
     // pencarian, rentang di jendela mediasi); selain itu SIPP lewat bot seperti sebelumnya.
     const dariCermin = await bacaMediasiDariCermin(masukan);
-    const hasil = dariCermin ?? (await getGatewayJadwalMediasi(masukan));
+    let hasil = dariCermin ?? (await getGatewayJadwalMediasi(masukan));
+    // 5 Nov 2026: SIPP tidak terjangkau -> salinan terakhir di cermin dengan keterangan, bukan layar kosong.
+    if (!hasil.ok && sippTakTerjangkau(hasil)) {
+      const darurat = await mediasiDariCerminDarurat(masukan);
+      if (darurat) hasil = darurat as unknown as typeof hasil;
+    }
 
     if (!hasil.ok) {
       return ok({
@@ -67,6 +73,10 @@ export async function GET(request: NextRequest) {
       mediasi: hasil.data?.mediasi ?? [],
       // A5: daftar ini dibaca dari Cermin Perkara - layar menampilkan "Cermin - diperbarui hh.mm"; null = dari SIPP.
       cermin: (hasil.data as { cermin?: { diperbaruiPada: string | null } } | undefined)?.cermin ?? null,
+      // 5 Nov 2026: true bila SIPP tidak terjangkau dan daftar ini salinan terakhir; `keterangan` = kalimat untuk petugas.
+      dariCermin: (hasil.data as { dariCermin?: boolean } | undefined)?.dariCermin === true,
+      waktuSinkron: (hasil.data as { waktuSinkron?: string } | undefined)?.waktuSinkron ?? null,
+      keterangan: (hasil.data as { keterangan?: string } | undefined)?.keterangan ?? "",
     });
   } catch (error) {
     return handleAdminRouteError(error, request, {
