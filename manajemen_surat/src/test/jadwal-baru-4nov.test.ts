@@ -12,6 +12,7 @@ import {
   lepasPil,
   pasangRentangJam,
   perkiraanBht,
+  perluPbt,
   perluCatatHasil,
   pisahNamaHakim,
   rencanaCcBerikut,
@@ -242,15 +243,24 @@ describe("perkiraan BHT: tidak mengarang", () => {
     expect(perkiraanBht({ tanggalBht: "2026-11-30", tanggalPutusan: "2026-11-01", verstek: true })).toEqual({ iso: "2026-11-30", sumber: "sipp" });
   });
   it("kontradiktoir: putusan + 14 hari, ditandai perkiraan", () => {
-    expect(perkiraanBht({ tanggalPutusan: "2026-11-03", dihadiriOleh: 1, verstek: false })).toEqual({ iso: "2026-11-17", sumber: "perkiraan" });
+    expect(perkiraanBht({ tanggalPutusan: "2026-11-03", dihadiriOleh: 1, verstek: false })).toEqual({ iso: "2026-11-17", sumber: "perkiraan-putusan" });
   });
-  it("verstek TIDAK ditebak (menunggu pemberitahuan putusan yang tidak ada di data jadwal)", () => {
+  it("verstek: PBT + 14 hari bila PBT terbaca; tanpa PBT TIDAK ditebak", () => {
+    expect(perkiraanBht({ tanggalPutusan: "2026-11-03", tanggalPbt: "2026-11-06", dihadiriOleh: 2, verstek: true })).toEqual({ iso: "2026-11-20", sumber: "perkiraan-pbt" });
     expect(perkiraanBht({ tanggalPutusan: "2026-11-03", dihadiriOleh: 1, verstek: true })).toBeNull();
+    // verstek tidak pernah dihitung dari tanggal putusan, walau PBT ada
+    expect(perkiraanBht({ tanggalPutusan: "2026-11-03", tanggalPbt: "2026-11-10", dihadiriOleh: 1, verstek: true })?.iso).toBe("2026-11-24");
   });
-  it("tidak semua pihak hadir atau tanggal putusan tak ada: tidak ditebak", () => {
+  it("tidak semua pihak hadir (bukan verstek): menunggu PBT; tanggal putusan tak ada: tidak ditebak", () => {
     expect(perkiraanBht({ tanggalPutusan: "2026-11-03", dihadiriOleh: 2 })).toBeNull();
+    expect(perkiraanBht({ tanggalPutusan: "2026-11-03", tanggalPbt: "2026-11-05", dihadiriOleh: 2 })?.iso).toBe("2026-11-19");
     expect(perkiraanBht({ tanggalPutusan: "", dihadiriOleh: 1 })).toBeNull();
-    expect(perkiraanBht({ tanggalBht: "0000-00-00", tanggalPutusan: "", dihadiriOleh: 1 })).toBeNull();
+    expect(perkiraanBht({ tanggalBht: "0000-00-00", tanggalPbt: "0000-00-00", tanggalPutusan: "", dihadiriOleh: 1 })).toBeNull();
+  });
+  it("yang menunggu PBT: verstek atau tidak semua pihak hadir", () => {
+    expect(perluPbt({ verstek: true, dihadiriOleh: 1 })).toBe(true);
+    expect(perluPbt({ verstek: false, dihadiriOleh: 2 })).toBe(true);
+    expect(perluPbt({ verstek: false, dihadiriOleh: 1 })).toBe(false);
   });
 });
 

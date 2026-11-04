@@ -136,6 +136,7 @@ export function KepalaUrut({
   className,
   rata = "kiri",
   judul,
+  biasa = false,
   children,
 }: {
   kunci: string;
@@ -144,6 +145,8 @@ export function KepalaUrut({
   className?: string;
   rata?: "kiri" | "kanan" | "tengah";
   judul?: string;
+  /** Tulisan biasa (bukan huruf besar): untuk tabel di dalam rincian dan jendela. */
+  biasa?: boolean;
   children: React.ReactNode;
 }) {
   const aktif = urutan?.kunci === kunci;
@@ -159,7 +162,8 @@ export function KepalaUrut({
         onClick={() => onTekan(kunci)}
         title={judul ?? `Urutkan menurut ${typeof children === "string" ? children : kunci}`}
         className={cn(
-          "inline-flex w-full items-center gap-1 rounded uppercase tracking-wide transition hover:text-foreground",
+          "inline-flex w-full items-center gap-1 rounded transition hover:text-foreground",
+          !biasa && "uppercase tracking-wide",
           rata === "kanan" && "justify-end",
           rata === "tengah" && "justify-center",
           aktif ? "text-foreground" : "text-muted-foreground"

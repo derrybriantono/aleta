@@ -310,6 +310,8 @@ function RincianMediasi({
   // Butir 3 (5 Okt 2026): "Tersimpan N catatan" hilang sendiri; yang gagal menetap.
   const [pesan, setPesan] = usePesanSementara();
   const [putaran, setPutaran] = useState(0);
+  // 4 Nov 2026: tabel kehadiran dapat diurutkan dengan menekan judul kolom; hanya urutan tampil.
+  const urutHadir = useUrutan(null);
   /* === 12OKT-A: kumulasi perkara === */
   // Saklar "Kumulasi perkara" milik panel Tampilan Jadwal Sidang.
   const saklarKumulasi = useSaklarKumulasi();
@@ -492,14 +494,17 @@ function RincianMediasi({
               <table className="w-full min-w-[640px] text-sm">
                 <thead className="text-left text-xs uppercase tracking-wide text-muted-foreground">
                   <tr>
-                    <th className="py-1 font-medium">Kedudukan</th>
-                    <th className="py-1 font-medium">Hadir</th>
-                    <th className="py-1 font-medium">Nama yang hadir</th>
-                    <th className="py-1 font-medium">Alasan bila tidak hadir</th>
+                    <KepalaUrut biasa kunci="kedudukan" className="px-0 py-1" urutan={urutHadir.urutan} onTekan={urutHadir.tekan}>Kedudukan</KepalaUrut>
+                    <KepalaUrut biasa kunci="hadir" className="px-0 py-1" urutan={urutHadir.urutan} onTekan={urutHadir.tekan}>Hadir</KepalaUrut>
+                    <KepalaUrut biasa kunci="nama" className="px-0 py-1" urutan={urutHadir.urutan} onTekan={urutHadir.tekan}>Nama yang hadir</KepalaUrut>
+                    <KepalaUrut biasa kunci="alasan" className="px-0 py-1" urutan={urutHadir.urutan} onTekan={urutHadir.tekan}>Alasan bila tidak hadir</KepalaUrut>
                   </tr>
                 </thead>
                 <tbody>
-                  {KEDUDUKAN_MEDIASI.map((kedudukan) => {
+                  {urutkan([...KEDUDUKAN_MEDIASI], urutHadir.urutan, (kd, k) => {
+                    const isi = kehadiran.find((x) => x.kedudukan === kd.kunci);
+                    return k === "kedudukan" ? kd.label : k === "hadir" ? isi?.hadir : k === "nama" ? isi?.nama : isi?.alasan;
+                  }).map((kedudukan) => {
                     const isi = kehadiran.find((x) => x.kedudukan === kedudukan.kunci);
                     if (!isi) return null;
                     return (

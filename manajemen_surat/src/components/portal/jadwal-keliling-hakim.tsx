@@ -42,6 +42,7 @@ import {
   type JalanMassal,
   type KeadaanMassal,
 } from "@/lib/tunda-putus-massal";
+import { KepalaUrut, urutkan, useUrutan } from "@/components/portal/tabel-kendali";
 import { cn } from "@/lib/utils";
 
 /**
@@ -674,6 +675,8 @@ export function MejaPaniteraSidang({
   const alatAda: AlatMeja[] = [...(kh.bolehHakim ? (["hakim"] as const) : []), ...(bolehTundaPutus ? (["tunda", "putus"] as const) : [])];
   const [alat, setAlat] = useState<AlatMeja>(alatAda[0] ?? "hakim");
   const perkara = useMemo(() => (panitera ? perkaraPanitera(daftar, panitera) : []), [daftar, panitera]);
+  // 4 Nov 2026: meja dapat diurutkan dengan menekan judul Perkara / Majelis (hanya urutan tampil; centang dan isian tak berubah).
+  const urutMeja = useUrutan(null);
 
   // Centang bawaan disusun ulang tiap panitera, alat, atau daftar yang sudah
   // diberi hasil berubah (mis. sesudah menyimpan: yang baru ditunda tidak
@@ -1083,8 +1086,12 @@ export function MejaPaniteraSidang({
               <thead className="hidden md:table-header-group">
                 <tr className="border-b text-left text-xs text-muted-foreground">
                   <th className="w-8 py-1.5" />
-                  <th className="py-1.5 pr-2">Perkara</th>
-                  <th className="py-1.5 pr-2">{alat === "hakim" ? "Majelis / hakim" : "Kehadiran"}</th>
+                  <KepalaUrut biasa kunci="perkara" className="px-0 py-1.5 pr-2 text-xs text-muted-foreground" urutan={urutMeja.urutan} onTekan={urutMeja.tekan}>Perkara</KepalaUrut>
+                  {alat === "hakim" ? (
+                    <KepalaUrut biasa kunci="majelis" className="px-0 py-1.5 pr-2 text-xs text-muted-foreground" urutan={urutMeja.urutan} onTekan={urutMeja.tekan}>Majelis / hakim</KepalaUrut>
+                  ) : (
+                    <th className="py-1.5 pr-2">Kehadiran</th>
+                  )}
                   {alat === "tunda" ? (
                     <>
                       <th className="py-1.5 pr-2">Alasan tunda</th>
@@ -1100,7 +1107,7 @@ export function MejaPaniteraSidang({
                 </tr>
               </thead>
               <tbody className="block md:table-row-group">
-                {perkara.map((b) => {
+                {urutkan(perkara, urutMeja.urutan, (b, k) => (k === "perkara" ? b.nomorPerkara : b.majelisNama)).map((b) => {
                   const id = String(b.sidangId);
                   const s = isianBaris(id);
                   const selesai = sudahHasil(b);

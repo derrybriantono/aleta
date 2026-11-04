@@ -84,6 +84,7 @@ import {
   muatAntarmuka,
   pasangRentangJam,
   perkiraanBht,
+  perluPbt,
   perluCatatHasil,
   pisahNamaHakim,
   rencanaCcBerikut,
@@ -262,6 +263,7 @@ import {
   TandaAntrianOnline,
   TandaAntrianOnlineRincian,
   TombolRuangSidang,
+  punyaAksiRuangLain,
 } from "@/components/portal/jadwal-sidang-2okt";
 import { tandaAntrianOnline, type TandaAntrianOnline as TandaOnline } from "@/lib/tanda-antrian-online";
 import { bahanKehadiranDariBaris, kunciKehadiran, ringkasKehadiran, susunKehadiran, type KehadiranOrang } from "@/lib/kehadiran-rinci"; /* F3.2 */
@@ -419,6 +421,8 @@ type SidangBaris = {
   statusPutusan: string;
   tanggalMinutasi: string;
   tanggalBht: string;
+  /** Pemberitahuan putusan (PBT) menurut SIPP; "" = belum ada; tidak ada ruasnya = tidak terbaca (jadwal dari salinan atau bot lama). */
+  tanggalPbt?: string;
   tanggalSidang: string;
   jamSidang: string;
   agenda: string;
@@ -6680,6 +6684,305 @@ export function AletaEcourtSidang({
       ]
     : [];
 
+  // Lipat tag (tampilan baru): pil ruang naik sebaris dengan tag; baris tag dan pita ruang tetap di dalam bilah atas.
+  const pitaSebaris = baru && penandaCiut && sidang.length > 0;
+  const pitaRuangEl =
+    tampil(tampilan, "ringkasan-ruang") || tampil(tampilan, "kartu-ruang") || tampil(tampilan, "saring-ruang") || adaSaklarKeliling ? (
+              <PitaRuangSidang
+                tanpaRingkasan
+                akhir={
+                  tampil(tampilan, "tanggal-dan-jumlah") || tampil(tampilan, "tanda-diperbarui") ? (
+                    <span className="whitespace-nowrap text-xs text-muted-foreground" data-s="tanggal-dan-jumlah">
+                      {tampil(tampilan, "tanggal-dan-jumlah") ? (
+                        pertamaMuat && memuat ? (
+                          " "
+                        ) : sidang.length === 0 ? (
+                          "tidak ada sidang"
+                        ) : (
+                          <>
+                            <b className="tabular-nums text-foreground">{ruangAktif.length}</b> ruang ·{" "}
+                            <b className="tabular-nums text-foreground">
+                              {sidangTampil.length === sidang.length ? sidang.length : `${sidangTampil.length} dari ${sidang.length}`}
+                            </b>{" "}
+                            perkara
+                            {adaSaringan ? (
+                              <>
+                                {" "}
+                                <button type="button" onClick={resetSemuaSaringan} className="underline underline-offset-2 hover:text-foreground">
+                                  Reset
+                                </button>
+                              </>
+                            ) : null}
+                          </>
+                        )
+                      ) : null}
+                      {(pertamaMuat && memuat) || !tampil(tampilan, "tanda-diperbarui") ? null : (
+                        <TandaDiperbarui penyimpan={penyimpanDiperbarui} awalan={tampil(tampilan, "tanggal-dan-jumlah") ? " · " : ""} />
+                      )}
+                      {cerminJadwal && !(pertamaMuat && memuat) && cerminJadwal.diperbaruiPada ? (
+                        <span data-testid="tanda-cermin" title="Daftar sidang dibaca dari salinan keadaan perkara SIPP. Antrian dan kehadiran tetap langsung.">
+                          {" · salinan SIPP "}
+                          {new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Makassar", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
+                            .format(new Date(cerminJadwal.diperbaruiPada))
+                            .replace(":", ".")}
+                        </span>
+                      ) : null}
+                    </span>
+                  ) : undefined
+                }
+                awal={
+                  adaSaklarKeliling ? (
+                    <SaklarSidangKeliling ringkas kh={kh} daftar={sidang} penggunaId={String(currentUser?.id ?? "")} />
+                  ) : undefined
+                }
+                pil={pitaRuang}
+                tampilJumlah={tampil(tampilan, "kartu-ruang")}
+                tampilBerjalan={tampil(tampilan, "ringkasan-ruang")}
+                diskors={diskorsHariIni}
+                nomorPerkara={(k) => bahanTigaJarak.nomorPerkara[k] ?? ""}
+                ruangPilihan={ruangSaring}
+                onPilih={tampil(tampilan, "saring-ruang") || tampil(tampilan, "kartu-ruang") ? setRuangDipilih : undefined}
+                keteranganPerlu={keteranganPerluKartu}
+                sekarangMs={() => (patokanWaktu ? patokanWaktu.sekarangMs + (Date.now() - patokanWaktu.diterimaMs) : Date.now())}
+                onLihat={(k) => {
+                  const el = Array.from(document.querySelectorAll<HTMLElement>("[data-kunci-waktu]")).find((x) => x.dataset.kunciWaktu === k);
+                  el?.scrollIntoView({ block: "center", behavior: "smooth" });
+                }}
+              />
+    ) : null;
+  const blokTag =
+    sidang.length > 0 && (modeUrl || !kendaliCiut) ? (
+          <div
+            className={cn(
+              "flex flex-wrap items-center gap-1.5",
+              // Tampilan baru di layar sempit: satu baris yang menggulir di dalam bilah (bilah lekat tidak memakan layar).
+              baru && "max-lg:flex-nowrap max-lg:overflow-x-auto max-lg:pb-0.5 max-lg:[&>*]:shrink-0"
+            )}
+          >
+            {/* ============================================================
+                SAKLAR CIUT - DAN SARINGAN YANG MENYALA TIDAK IKUT HILANG
+                ============================================================
+
+                Kotak yang sedang MENYALA tetap digambar walau deretnya
+                diciutkan. Tanpa itu, saringan yang terlanjur aktif menjadi
+                tidak dapat dimatikan lagi: daftarnya tampak kehilangan baris
+                tanpa satu pun keterangan mengapa. Aturan yang sama sudah
+                berlaku bagi kotak bernilai nol tepat di bawah ini. */}
+            {/* IKON SAJA - TETAPI NAMANYA TIDAK IKUT HILANG.
+
+                Diminta pengguna 22 September 2026. Kata "Penanda" dibuang dari
+                layar, bukan dari tombolnya: aria-label tetap menyebutkannya,
+                sehingga pembaca layar dan pencarian di dalam halaman masih
+                menemukannya. Tombol tanpa nama sama sekali tidak dapat disebut
+                oleh siapa pun yang tidak melihatnya.
+
+                Ikonnya menggambarkan PERBUATANNYA, bukan keadaannya - dua anak
+                panah yang merapat berarti "ciutkan", yang merenggang berarti
+                "bentangkan". Panah tunggal atas/bawah, yang dipakai sebelum
+                ini, baru terbaca setelah ada tulisan di sebelahnya; tanpa
+                tulisan ia menjadi tebakan. */}
+            {modeUrl ? null : (
+            <button
+              type="button"
+              onClick={alihkanSeluruhPenanda}
+              aria-expanded={!penandaCiut}
+              aria-label={penandaCiut ? "Bentangkan penanda" : "Ciutkan penanda"}
+              title={
+                penandaCiut
+                  ? "Bentangkan keempat kelompok penanda sekaligus"
+                  : "Ciutkan keempat kelompok penanda agar daftar sidang lebih panjang - tiap kelompok juga punya saklarnya sendiri"
+              }
+              className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-border/70 bg-muted/40 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+            >
+              {penandaCiut ? (
+                <ChevronsUpDown className="h-3.5 w-3.5" aria-hidden="true" />
+              ) : (
+                <ChevronsDownUp className="h-3.5 w-3.5" aria-hidden="true" />
+              )}
+            </button>
+            )}
+
+            {baru ? (
+              <button
+                type="button"
+                onClick={alihkanSeluruhPenanda}
+                aria-expanded={!penandaCiut}
+                title={penandaCiut ? "Bentangkan semua tag" : "Lipat tag: hanya yang menyala dan yang berisi yang tersisa"}
+                className="inline-flex h-6 items-center gap-1 rounded-full border border-border/70 bg-muted/40 px-2 text-[11px] text-muted-foreground transition hover:bg-muted hover:text-foreground"
+              >
+                {penandaCiut ? "Bentang tag" : "Lipat tag"}
+              </button>
+            ) : null}
+
+            {ringkasAlur(sidang)
+              .filter((k) => k.jumlah > 0 || alurTerpilih === k.kunci)
+              .filter((k) => !penandaCiut || alurTerpilih === k.kunci)
+              .map((kelompok) => (
+                <ChipSaring
+                  key={`alur-${kelompok.kunci}`}
+                  label={kelompok.label}
+                  jumlah={kelompok.jumlah}
+                  nada="netral"
+                  judul={`Hanya ${kelompok.label}.`}
+                  aktif={alurTerpilih === kelompok.kunci}
+                  onTekan={() => {
+                    setAlurTerpilih(alurTerpilih === kelompok.kunci ? "" : kelompok.kunci);
+                    bersihkanSaringan();
+                  }}
+                />
+              ))}
+
+            {/* Pemisah tipis: alur perkara menjawab "perkara apa", keadaan
+                menjawab "bagaimana keadaannya". */}
+            {penandaCiut ? null : <span aria-hidden className="mx-1 h-5 w-px bg-border" />}
+
+            {/* Kotak gabungan lebih dulu, di luar kelompok mana pun: ia
+                daftar pekerjaan, bukan saringan - lihat catatannya pada
+                KEADAAN_SIDANG.
+
+                DIGAMBAR WALAU NOL, berbeda dari kotak satuan di belakangnya.
+                Sejak papan "Perlu ditindaklanjuti" dihapus (24 September
+                2026, diminta pengguna: "fungsi itu sudah ada di perlu
+                diperiksa"), kotak inilah satu-satunya yang menjawab "hari ini
+                beres atau belum" - dan nol adalah jawaban, bukan ketiadaan
+                jawaban. ChipSaring melukis nol dengan redup dan tidak dapat
+                ditekan. */}
+            {KEADAAN_PERLU_DIPERIKSA.map((keadaan) => (
+              <Fragment key={keadaan.kunci}>
+                <ChipSaring
+                  label={keadaan.label}
+                  jumlah={jumlahKeadaan[keadaan.kunci] ?? 0}
+                  nada={keadaan.nada}
+                  judul={`${keadaan.judul} ${keteranganBatasJam}`}
+                  aktif={keadaanTerpilih.includes(keadaan.kunci)}
+                  onTekan={() => alihkanKeadaan(keadaan.kunci)}
+                />
+                {/* Garis kedua: kotak gabungan menjawab "apa pekerjaan saya
+                    hari ini", yang di belakangnya menjawab "tunjukkan yang
+                    begini". Tanpa pemisah, yang pertama terbaca sebagai
+                    salah satu dari yang kedua - dan tidak akan pernah
+                    ditekan orang yang sedang mencari pekerjaannya. */}
+                {keadaan.kunci === KUNCI_PERLU_DIPERIKSA ? (
+                  <span aria-hidden className="mx-1 h-5 w-px bg-border" />
+                ) : null}
+              </Fragment>
+            ))}
+
+            {/* ==========================================================
+                KOTAK SATUAN, BERKELOMPOK MENURUT MAKSUDNYA
+                ==========================================================
+
+                Panggilan, jalannya sidang, putusan, antrian - tiap kelompok
+                menjawab satu pertanyaan dan diberi judul kecil, supaya yang
+                membaca tidak perlu menebak "Tidak perlu dipanggil" itu soal
+                apa. Di dalam kelompok yang merah lebih dulu. Kelompok yang
+                seluruh kotaknya nol tidak digambar sama sekali - judul
+                tanpa satu pun kotak di bawahnya hanya membingungkan.
+
+                Sebelumnya lima belas kotak berjajar menurut urutan
+                penambahannya, dan yang berkaitan berjauhan: "Tidak perlu
+                dipanggil" sembilan kotak dari "Belum dipanggil". */}
+            {/* ==========================================================
+                SATU PIL PER KELOMPOK - JUDULNYA IKUT MASUK KE DALAMNYA
+                ==========================================================
+
+                Bentuk sebelumnya: judul kelompok berdiri sendiri di antara
+                garis pemisah, kotaknya berbaris di belakangnya, dan
+                seluruhnya membungkus ke baris berikutnya sekehendak lebar
+                layar - sehingga "ANTRIAN" dapat berakhir di ujung baris
+                pertama sementara kedua kotaknya turun ke baris kedua.
+
+                Sekarang judul dan kotaknya dikurung satu pil. Ia tidak
+                pernah terpisah, dan pilnya yang membungkus - bukan isinya.
+                Diukur atas deretan yang sungguhnya digambar layar ini,
+                tinggi yang benar-benar dipakai:
+
+                    lebar isi   sebelum   sesudah
+                      1400 px    68 px     27 px    dua baris menjadi satu
+                      1100 px    68 px     57 px
+                       820 px   105 px     57 px
+
+                Tidak satu kotak pun dibuang. */}
+            {/* ==================================================================
+                SATU SAKLAR UNTUK TIAP KELOMPOK
+                ==================================================================
+
+                Namanya sendiri yang menjadi tombolnya - tidak ada tombol
+                tambahan yang harus dicari, dan tempat yang sudah dipakai label
+                itu memang tempat yang dilihat orang ketika mencari kelompoknya.
+
+                Yang diciutkan tetap memajang kotak yang sedang MENYALA, dan
+                menyebutkan berapa yang disembunyikan. Saringan yang terlanjur
+                aktif lalu hilang dari layar tidak dapat dimatikan lagi:
+                daftarnya tampak kehilangan baris tanpa satu pun keterangan.
+
+                Kelompok yang seluruh isinya tersembunyi TETAP digambar - lihat
+                jumlah anggota sebelum penciutan di bawah. Membuangnya akan
+                membuang saklarnya sendiri, dan kelompok itu tidak akan pernah
+                dapat dibentangkan kembali. */}
+            {kelompokKeadaanTampak(jumlahKeadaan, keadaanTerpilih).map((kelompok) => {
+              const ciut = !modeUrl && kelompokCiut.includes(kelompok.kunci);
+              const tampak = ciut
+                ? kelompok.anggota.filter((k) => keadaanTerpilih.includes(k.kunci))
+                : kelompok.anggota;
+              const tersembunyi = kelompok.anggota.length - tampak.length;
+              return (
+              <span
+                key={`kelompok-${kelompok.kunci}`}
+                className={cn(
+                  "inline-flex flex-wrap items-center gap-0.5 rounded-full border border-border/70 bg-muted/40 py-0.5 pl-1 pr-1",
+                  baru && "max-lg:flex-nowrap"
+                )}
+              >
+                <button
+                  type="button"
+                  onClick={() => alihkanKelompokPenanda(kelompok.kunci)}
+                  disabled={modeUrl}
+                  aria-expanded={!ciut}
+                  title={
+                    ciut
+                      ? `Bentangkan kotak penanda ${kelompok.label}`
+                      : `Ciutkan kotak penanda ${kelompok.label}`
+                  }
+                  className="mr-0.5 inline-flex items-center gap-0.5 rounded-full px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                >
+                  {modeUrl ? null : ciut ? (
+                    <ChevronRight className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
+                  ) : (
+                    <ChevronDown className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
+                  )}
+                  {kelompok.label}
+                  {tersembunyi > 0 ? (
+                    <span className="font-normal normal-case tracking-normal">
+                      +{tersembunyi}
+                    </span>
+                  ) : null}
+                </button>
+                {tampak.map((keadaan) => (
+                  <ChipSaring
+                    key={keadaan.kunci}
+                    padat
+                    label={keadaan.labelPendek ?? keadaan.label}
+                    jumlah={jumlahKeadaan[keadaan.kunci] ?? 0}
+                    nada={keadaan.nada}
+                    // Label utuhnya tidak hilang - ia dibawa judul gantung,
+                    // di depan keterangan panjangnya.
+                    judul={
+                      keadaan.labelPendek
+                        ? `${keadaan.label} — ${keadaan.judul}`
+                        : keadaan.judul
+                    }
+                    aktif={keadaanTerpilih.includes(keadaan.kunci)}
+                    onTekan={() => alihkanKeadaan(keadaan.kunci)}
+                  />
+                ))}
+              </span>
+              );
+            })}
+            {pitaSebaris ? <div className="min-w-0 max-w-full flex-1 basis-80">{pitaRuangEl}</div> : null}
+          </div>
+        ) : null;
+
   const gambarSatuBaris = (baris: SidangBaris, urutan: number) => {
                   const kunci = `${baris.nomorPerkara}|${baris.sidangId}`;
                   // K13: fungsi pemicu dibaca dari `alat` (fungsi asli bila tabel ringan mati; pembungkus
@@ -8479,6 +8782,7 @@ export function AletaEcourtSidang({
                       ? perkiraanBht({
                           tanggalBht: baris.tanggalBht,
                           tanggalPutusan: baris.tanggalPutusan,
+                          tanggalPbt: baris.tanggalPbt,
                           verstek: baris.verstekPutusan,
                           dihadiriOleh: baris.dihadiriOleh,
                         })
@@ -8517,10 +8821,56 @@ export function AletaEcourtSidang({
                           onSelesai={() => void muatTanggal(dari, sampai, nilaiKesiapan)}
                         />
                       ) : null;
+                    // Selesai menjadi tombol utama hanya saat sidang berjalan (atau sudah ditandai, untuk membatalkan);
+                    // selain itu ia di Lainnya, dengan pemicu dan hak yang sama.
+                    const selesaiUtama = Boolean(berjalanIni) || selesaiTanda.ditandai;
+                    const aksiLainRuang = bolehJalannya && tampil(tampilan, "tombol-ruang-sidang") && punyaAksiRuangLain(aksiRuang);
+                    const adaSaksiNama = tampil(tampilan, "saksi") && aktifPanggilSaksi && (baris.saksiPihak1 ?? 0) + (baris.saksiPihak2 ?? 0) > 0;
                     const itemLainnya = [
-                      adaIkonAntrian && !antrianTerbuka ? (
+                      aksiLainRuang ? (
+                        <div key="ruang" className="flex flex-col gap-1">
+                          <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Jalannya sidang</span>
+                          <TombolRuangSidang
+                            bagian="lain"
+                            baris={baris}
+                            aksi={aksiRuang}
+                            berjalan={berjalanIni}
+                            skors={skorsIni}
+                            bisaDipanggil={bisaDipanggilIni}
+                            info={infoRuangSidang}
+                            ruang={ruangIni}
+                            onBerubah={() => {
+                              tandaSelesai.muatUlang();
+                              void muatTanggal(dari, sampai, nilaiKesiapan);
+                            }}
+                          />
+                        </div>
+                      ) : null,
+                      bolehJalannya && tampil(tampilan, "tombol-selesai-sidang") && !selesaiUtama ? (
+                        <div key="selesai" className="flex flex-col gap-1">
+                          <TombolSelesaiSidang baris={baris} keadaan={selesaiTanda} onBerubah={tandaSelesai.muatUlang} />
+                        </div>
+                      ) : null,
+                      adaSaksiNama ? (
+                        <button
+                          key="panggil-saksi"
+                          type="button"
+                          onClick={() => {
+                            for (const sisi of ["P", "T"] as const) {
+                              const adaSisi = (sisi === "P" ? baris.saksiPihak1 : baris.saksiPihak2) ?? 0;
+                              const kunciSisi = kunciBarisSaksi(baris.perkaraId, sisi);
+                              if (adaSisi > 0 && !saksiLipat.terbuka(kunciSisi)) saksiLipat.alih(kunciSisi);
+                            }
+                          }}
+                          className="rounded-md border px-2 py-1 text-left text-xs transition hover:bg-muted"
+                          title="Membuka daftar nama saksi; menekan nama memanggilnya (WhatsApp atau pengeras suara)."
+                        >
+                          Panggil saksi
+                        </button>
+                      ) : null,
+                      adaIkonAntrian ? (
                         <div key="antrian" className="flex items-center gap-2 text-xs">
-                          <span className="text-muted-foreground">Antrian</span>
+                          <span className="text-muted-foreground">Antrian dan kehadiran per orang</span>
                           <TombolAmbilAntrian
                             baris={baris}
                             kehadiran={hadirDaftar}
@@ -8906,6 +9256,11 @@ export function AletaEcourtSidang({
                             unggah={Boolean(baris.adaBerkasPutusan)}
                             judulMinutasi={sebabTitle(Boolean(baris.adaBerkasPutusan))}
                             bht={bht}
+                            pbt={
+                              baris.tanggalPbt !== undefined && perluPbt({ verstek: baris.verstekPutusan, dihadiriOleh: baris.dihadiriOleh })
+                                ? { iso: baris.tanggalPbt }
+                                : null
+                            }
                             tampilBht
                             formatTanggal={tanggalPendekTahunId}
                           />
@@ -9020,6 +9375,7 @@ export function AletaEcourtSidang({
                         ) : null}
                         {bolehJalannya && tampil(tampilan, "tombol-ruang-sidang") ? (
                           <TombolRuangSidang
+                            bagian="utama"
                             baris={baris}
                             aksi={aksiRuang}
                             berjalan={berjalanIni}
@@ -9033,7 +9389,7 @@ export function AletaEcourtSidang({
                             }}
                           />
                         ) : null}
-                        {bolehJalannya && tampil(tampilan, "tombol-selesai-sidang") ? (
+                        {bolehJalannya && tampil(tampilan, "tombol-selesai-sidang") && selesaiUtama ? (
                           <TombolSelesaiSidang baris={baris} keadaan={selesaiTanda} onBerubah={tandaSelesai.muatUlang} />
                         ) : null}
                         {tampil(tampilan, "pertanyaan-saksi") &&
@@ -9702,69 +10058,8 @@ export function AletaEcourtSidang({
                 ) : null
               }
             />
-            {tampil(tampilan, "ringkasan-ruang") || tampil(tampilan, "kartu-ruang") || tampil(tampilan, "saring-ruang") || adaSaklarKeliling ? (
-              <PitaRuangSidang
-                tanpaRingkasan
-                akhir={
-                  tampil(tampilan, "tanggal-dan-jumlah") || tampil(tampilan, "tanda-diperbarui") ? (
-                    <span className="whitespace-nowrap text-xs text-muted-foreground" data-s="tanggal-dan-jumlah">
-                      {tampil(tampilan, "tanggal-dan-jumlah") ? (
-                        pertamaMuat && memuat ? (
-                          " "
-                        ) : sidang.length === 0 ? (
-                          "tidak ada sidang"
-                        ) : (
-                          <>
-                            <b className="tabular-nums text-foreground">{ruangAktif.length}</b> ruang ·{" "}
-                            <b className="tabular-nums text-foreground">
-                              {sidangTampil.length === sidang.length ? sidang.length : `${sidangTampil.length} dari ${sidang.length}`}
-                            </b>{" "}
-                            perkara
-                            {adaSaringan ? (
-                              <>
-                                {" "}
-                                <button type="button" onClick={resetSemuaSaringan} className="underline underline-offset-2 hover:text-foreground">
-                                  Reset
-                                </button>
-                              </>
-                            ) : null}
-                          </>
-                        )
-                      ) : null}
-                      {(pertamaMuat && memuat) || !tampil(tampilan, "tanda-diperbarui") ? null : (
-                        <TandaDiperbarui penyimpan={penyimpanDiperbarui} awalan={tampil(tampilan, "tanggal-dan-jumlah") ? " · " : ""} />
-                      )}
-                      {cerminJadwal && !(pertamaMuat && memuat) && cerminJadwal.diperbaruiPada ? (
-                        <span data-testid="tanda-cermin" title="Daftar sidang dibaca dari salinan keadaan perkara SIPP. Antrian dan kehadiran tetap langsung.">
-                          {" · salinan SIPP "}
-                          {new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Makassar", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
-                            .format(new Date(cerminJadwal.diperbaruiPada))
-                            .replace(":", ".")}
-                        </span>
-                      ) : null}
-                    </span>
-                  ) : undefined
-                }
-                awal={
-                  adaSaklarKeliling ? (
-                    <SaklarSidangKeliling ringkas kh={kh} daftar={sidang} penggunaId={String(currentUser?.id ?? "")} />
-                  ) : undefined
-                }
-                pil={pitaRuang}
-                tampilJumlah={tampil(tampilan, "kartu-ruang")}
-                tampilBerjalan={tampil(tampilan, "ringkasan-ruang")}
-                diskors={diskorsHariIni}
-                nomorPerkara={(k) => bahanTigaJarak.nomorPerkara[k] ?? ""}
-                ruangPilihan={ruangSaring}
-                onPilih={tampil(tampilan, "saring-ruang") || tampil(tampilan, "kartu-ruang") ? setRuangDipilih : undefined}
-                keteranganPerlu={keteranganPerluKartu}
-                sekarangMs={() => (patokanWaktu ? patokanWaktu.sekarangMs + (Date.now() - patokanWaktu.diterimaMs) : Date.now())}
-                onLihat={(k) => {
-                  const el = Array.from(document.querySelectorAll<HTMLElement>("[data-kunci-waktu]")).find((x) => x.dataset.kunciWaktu === k);
-                  el?.scrollIntoView({ block: "center", behavior: "smooth" });
-                }}
-              />
-            ) : null}
+            {blokTag}
+            {pitaSebaris ? null : pitaRuangEl}
             {panelSaring && sidang.length > 0 ? (
               <PanelSaringan
                 daftar={MEDAN_PANEL_SARINGAN.map((k) => ({ kunci: k, label: medanPil[k]?.label ?? k, nilai: indeksPil[k] ?? [] }))}
@@ -10386,227 +10681,7 @@ export function AletaEcourtSidang({
             melewati sembilan kotak mati sebelum sampai ke yang hidup.
             Kecualinya kotak yang sedang MENYALA - kalau ia ikut hilang saat
             angkanya nol, saringannya tidak dapat dimatikan lagi. */}
-        {sidang.length > 0 && (modeUrl || !kendaliCiut) ? (
-          <div className="flex flex-wrap items-center gap-1.5">
-            {/* ============================================================
-                SAKLAR CIUT - DAN SARINGAN YANG MENYALA TIDAK IKUT HILANG
-                ============================================================
-
-                Kotak yang sedang MENYALA tetap digambar walau deretnya
-                diciutkan. Tanpa itu, saringan yang terlanjur aktif menjadi
-                tidak dapat dimatikan lagi: daftarnya tampak kehilangan baris
-                tanpa satu pun keterangan mengapa. Aturan yang sama sudah
-                berlaku bagi kotak bernilai nol tepat di bawah ini. */}
-            {/* IKON SAJA - TETAPI NAMANYA TIDAK IKUT HILANG.
-
-                Diminta pengguna 22 September 2026. Kata "Penanda" dibuang dari
-                layar, bukan dari tombolnya: aria-label tetap menyebutkannya,
-                sehingga pembaca layar dan pencarian di dalam halaman masih
-                menemukannya. Tombol tanpa nama sama sekali tidak dapat disebut
-                oleh siapa pun yang tidak melihatnya.
-
-                Ikonnya menggambarkan PERBUATANNYA, bukan keadaannya - dua anak
-                panah yang merapat berarti "ciutkan", yang merenggang berarti
-                "bentangkan". Panah tunggal atas/bawah, yang dipakai sebelum
-                ini, baru terbaca setelah ada tulisan di sebelahnya; tanpa
-                tulisan ia menjadi tebakan. */}
-            {modeUrl ? null : (
-            <button
-              type="button"
-              onClick={alihkanSeluruhPenanda}
-              aria-expanded={!penandaCiut}
-              aria-label={penandaCiut ? "Bentangkan penanda" : "Ciutkan penanda"}
-              title={
-                penandaCiut
-                  ? "Bentangkan keempat kelompok penanda sekaligus"
-                  : "Ciutkan keempat kelompok penanda agar daftar sidang lebih panjang - tiap kelompok juga punya saklarnya sendiri"
-              }
-              className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-border/70 bg-muted/40 text-muted-foreground transition hover:bg-muted hover:text-foreground"
-            >
-              {penandaCiut ? (
-                <ChevronsUpDown className="h-3.5 w-3.5" aria-hidden="true" />
-              ) : (
-                <ChevronsDownUp className="h-3.5 w-3.5" aria-hidden="true" />
-              )}
-            </button>
-            )}
-
-            {baru ? (
-              <button
-                type="button"
-                onClick={alihkanSeluruhPenanda}
-                aria-expanded={!penandaCiut}
-                title={penandaCiut ? "Bentangkan semua tag" : "Lipat tag: hanya yang menyala dan yang berisi yang tersisa"}
-                className="inline-flex h-6 items-center gap-1 rounded-full border border-border/70 bg-muted/40 px-2 text-[11px] text-muted-foreground transition hover:bg-muted hover:text-foreground"
-              >
-                {penandaCiut ? "Bentang tag" : "Lipat tag"}
-              </button>
-            ) : null}
-
-            {ringkasAlur(sidang)
-              .filter((k) => k.jumlah > 0 || alurTerpilih === k.kunci)
-              .filter((k) => !penandaCiut || alurTerpilih === k.kunci)
-              .map((kelompok) => (
-                <ChipSaring
-                  key={`alur-${kelompok.kunci}`}
-                  label={kelompok.label}
-                  jumlah={kelompok.jumlah}
-                  nada="netral"
-                  judul={`Hanya ${kelompok.label}.`}
-                  aktif={alurTerpilih === kelompok.kunci}
-                  onTekan={() => {
-                    setAlurTerpilih(alurTerpilih === kelompok.kunci ? "" : kelompok.kunci);
-                    bersihkanSaringan();
-                  }}
-                />
-              ))}
-
-            {/* Pemisah tipis: alur perkara menjawab "perkara apa", keadaan
-                menjawab "bagaimana keadaannya". */}
-            {penandaCiut ? null : <span aria-hidden className="mx-1 h-5 w-px bg-border" />}
-
-            {/* Kotak gabungan lebih dulu, di luar kelompok mana pun: ia
-                daftar pekerjaan, bukan saringan - lihat catatannya pada
-                KEADAAN_SIDANG.
-
-                DIGAMBAR WALAU NOL, berbeda dari kotak satuan di belakangnya.
-                Sejak papan "Perlu ditindaklanjuti" dihapus (24 September
-                2026, diminta pengguna: "fungsi itu sudah ada di perlu
-                diperiksa"), kotak inilah satu-satunya yang menjawab "hari ini
-                beres atau belum" - dan nol adalah jawaban, bukan ketiadaan
-                jawaban. ChipSaring melukis nol dengan redup dan tidak dapat
-                ditekan. */}
-            {KEADAAN_PERLU_DIPERIKSA.map((keadaan) => (
-              <Fragment key={keadaan.kunci}>
-                <ChipSaring
-                  label={keadaan.label}
-                  jumlah={jumlahKeadaan[keadaan.kunci] ?? 0}
-                  nada={keadaan.nada}
-                  judul={`${keadaan.judul} ${keteranganBatasJam}`}
-                  aktif={keadaanTerpilih.includes(keadaan.kunci)}
-                  onTekan={() => alihkanKeadaan(keadaan.kunci)}
-                />
-                {/* Garis kedua: kotak gabungan menjawab "apa pekerjaan saya
-                    hari ini", yang di belakangnya menjawab "tunjukkan yang
-                    begini". Tanpa pemisah, yang pertama terbaca sebagai
-                    salah satu dari yang kedua - dan tidak akan pernah
-                    ditekan orang yang sedang mencari pekerjaannya. */}
-                {keadaan.kunci === KUNCI_PERLU_DIPERIKSA ? (
-                  <span aria-hidden className="mx-1 h-5 w-px bg-border" />
-                ) : null}
-              </Fragment>
-            ))}
-
-            {/* ==========================================================
-                KOTAK SATUAN, BERKELOMPOK MENURUT MAKSUDNYA
-                ==========================================================
-
-                Panggilan, jalannya sidang, putusan, antrian - tiap kelompok
-                menjawab satu pertanyaan dan diberi judul kecil, supaya yang
-                membaca tidak perlu menebak "Tidak perlu dipanggil" itu soal
-                apa. Di dalam kelompok yang merah lebih dulu. Kelompok yang
-                seluruh kotaknya nol tidak digambar sama sekali - judul
-                tanpa satu pun kotak di bawahnya hanya membingungkan.
-
-                Sebelumnya lima belas kotak berjajar menurut urutan
-                penambahannya, dan yang berkaitan berjauhan: "Tidak perlu
-                dipanggil" sembilan kotak dari "Belum dipanggil". */}
-            {/* ==========================================================
-                SATU PIL PER KELOMPOK - JUDULNYA IKUT MASUK KE DALAMNYA
-                ==========================================================
-
-                Bentuk sebelumnya: judul kelompok berdiri sendiri di antara
-                garis pemisah, kotaknya berbaris di belakangnya, dan
-                seluruhnya membungkus ke baris berikutnya sekehendak lebar
-                layar - sehingga "ANTRIAN" dapat berakhir di ujung baris
-                pertama sementara kedua kotaknya turun ke baris kedua.
-
-                Sekarang judul dan kotaknya dikurung satu pil. Ia tidak
-                pernah terpisah, dan pilnya yang membungkus - bukan isinya.
-                Diukur atas deretan yang sungguhnya digambar layar ini,
-                tinggi yang benar-benar dipakai:
-
-                    lebar isi   sebelum   sesudah
-                      1400 px    68 px     27 px    dua baris menjadi satu
-                      1100 px    68 px     57 px
-                       820 px   105 px     57 px
-
-                Tidak satu kotak pun dibuang. */}
-            {/* ==================================================================
-                SATU SAKLAR UNTUK TIAP KELOMPOK
-                ==================================================================
-
-                Namanya sendiri yang menjadi tombolnya - tidak ada tombol
-                tambahan yang harus dicari, dan tempat yang sudah dipakai label
-                itu memang tempat yang dilihat orang ketika mencari kelompoknya.
-
-                Yang diciutkan tetap memajang kotak yang sedang MENYALA, dan
-                menyebutkan berapa yang disembunyikan. Saringan yang terlanjur
-                aktif lalu hilang dari layar tidak dapat dimatikan lagi:
-                daftarnya tampak kehilangan baris tanpa satu pun keterangan.
-
-                Kelompok yang seluruh isinya tersembunyi TETAP digambar - lihat
-                jumlah anggota sebelum penciutan di bawah. Membuangnya akan
-                membuang saklarnya sendiri, dan kelompok itu tidak akan pernah
-                dapat dibentangkan kembali. */}
-            {kelompokKeadaanTampak(jumlahKeadaan, keadaanTerpilih).map((kelompok) => {
-              const ciut = !modeUrl && kelompokCiut.includes(kelompok.kunci);
-              const tampak = ciut
-                ? kelompok.anggota.filter((k) => keadaanTerpilih.includes(k.kunci))
-                : kelompok.anggota;
-              const tersembunyi = kelompok.anggota.length - tampak.length;
-              return (
-              <span
-                key={`kelompok-${kelompok.kunci}`}
-                className="inline-flex flex-wrap items-center gap-0.5 rounded-full border border-border/70 bg-muted/40 py-0.5 pl-1 pr-1"
-              >
-                <button
-                  type="button"
-                  onClick={() => alihkanKelompokPenanda(kelompok.kunci)}
-                  disabled={modeUrl}
-                  aria-expanded={!ciut}
-                  title={
-                    ciut
-                      ? `Bentangkan kotak penanda ${kelompok.label}`
-                      : `Ciutkan kotak penanda ${kelompok.label}`
-                  }
-                  className="mr-0.5 inline-flex items-center gap-0.5 rounded-full px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground transition hover:bg-muted hover:text-foreground"
-                >
-                  {modeUrl ? null : ciut ? (
-                    <ChevronRight className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
-                  ) : (
-                    <ChevronDown className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
-                  )}
-                  {kelompok.label}
-                  {tersembunyi > 0 ? (
-                    <span className="font-normal normal-case tracking-normal">
-                      +{tersembunyi}
-                    </span>
-                  ) : null}
-                </button>
-                {tampak.map((keadaan) => (
-                  <ChipSaring
-                    key={keadaan.kunci}
-                    padat
-                    label={keadaan.labelPendek ?? keadaan.label}
-                    jumlah={jumlahKeadaan[keadaan.kunci] ?? 0}
-                    nada={keadaan.nada}
-                    // Label utuhnya tidak hilang - ia dibawa judul gantung,
-                    // di depan keterangan panjangnya.
-                    judul={
-                      keadaan.labelPendek
-                        ? `${keadaan.label} — ${keadaan.judul}`
-                        : keadaan.judul
-                    }
-                    aktif={keadaanTerpilih.includes(keadaan.kunci)}
-                    onTekan={() => alihkanKeadaan(keadaan.kunci)}
-                  />
-                ))}
-              </span>
-              );
-            })}
-          </div>
-        ) : null}
+        {baru ? null : blokTag}
 
         {/* ==================================================================
             KENDALI DICIUTKAN - "PERLU DIPERIKSA" TETAP TERLIHAT
@@ -11325,6 +11400,11 @@ export function RincianSidang({
    */
   pembebanan?: PembebananIkrar | null;
 }) {
+  // 4 Nov 2026: tabel di rincian dapat diurutkan dengan menekan judul kolom (pembantu yang sama dengan daftar utama).
+  // Hanya urutan tampil di layar; isi dan logika barisnya tidak disentuh.
+  const urutRelaas = useUrutan(null);
+  const urutPihak = useUrutan(null);
+  const urutDokumen = useUrutan(null);
   /**
    * Urutan sidang menurut sidangId - dari jadwal perkara, bukan dari urutan
    * baris relaas.
@@ -11740,16 +11820,18 @@ export function RincianSidang({
             <table className="w-full min-w-[560px] text-sm">
               <thead className="bg-muted/40 text-left">
                 <tr>
-                  <th className="px-3 py-2 font-medium">Pihak</th>
-                  <th className="px-3 py-2 font-medium">Jenis &amp; tanggal</th>
-                  <th className="px-3 py-2 font-medium">Hasil</th>
-                  <th className="px-3 py-2 font-medium">Keterangan relaas</th>
-                  <th className="px-3 py-2 font-medium">Jurusita</th>
+                  <KepalaUrut biasa kunci="pihak" urutan={urutRelaas.urutan} onTekan={urutRelaas.tekan}>Pihak</KepalaUrut>
+                  <KepalaUrut biasa kunci="tanggal" urutan={urutRelaas.urutan} onTekan={urutRelaas.tekan}>Jenis &amp; tanggal</KepalaUrut>
+                  <KepalaUrut biasa kunci="hasil" urutan={urutRelaas.urutan} onTekan={urutRelaas.tekan}>Hasil</KepalaUrut>
+                  <KepalaUrut biasa kunci="keterangan" urutan={urutRelaas.urutan} onTekan={urutRelaas.tekan}>Keterangan relaas</KepalaUrut>
+                  <KepalaUrut biasa kunci="jurusita" urutan={urutRelaas.urutan} onTekan={urutRelaas.tekan}>Jurusita</KepalaUrut>
                   <th className="px-3 py-2 font-medium">Berkas</th>
                 </tr>
               </thead>
               <tbody>
-                {relaasSidangIni.map((baris) => (
+                {urutkan(relaasSidangIni, urutRelaas.urutan, (b, k) =>
+                  k === "pihak" ? b.namaPihak : k === "tanggal" ? b.tanggalRelaas : k === "hasil" ? b.retur : k === "keterangan" ? b.ketHasilRelaas : b.jurusitaNama
+                ).map((baris) => (
                   <tr key={baris.id} className="border-t border-border">
                     <td className="px-3 py-2">
                       <div className="font-medium">{baris.namaPihak || "—"}</div>
@@ -12478,16 +12560,18 @@ export function RincianSidang({
               <table className="w-full min-w-[860px] text-sm">
                 <thead className="bg-muted/40 text-left">
                   <tr>
-                    <th className="px-3 py-2 font-medium">Pihak</th>
-                    <th className="px-3 py-2 font-medium">Persetujuan e-Court</th>
-                    <th className="px-3 py-2 font-medium">Jalur seharusnya</th>
-                    <th className="px-3 py-2 font-medium">Pengiriman</th>
-                    <th className="px-3 py-2 font-medium">Penerimaan</th>
-                    <th className="px-3 py-2 font-medium">Kepatutan</th>
+                    <KepalaUrut biasa kunci="pihak" urutan={urutPihak.urutan} onTekan={urutPihak.tekan}>Pihak</KepalaUrut>
+                    <KepalaUrut biasa kunci="persetujuan" urutan={urutPihak.urutan} onTekan={urutPihak.tekan}>Persetujuan e-Court</KepalaUrut>
+                    <KepalaUrut biasa kunci="jalur" urutan={urutPihak.urutan} onTekan={urutPihak.tekan}>Jalur seharusnya</KepalaUrut>
+                    <KepalaUrut biasa kunci="kirim" urutan={urutPihak.urutan} onTekan={urutPihak.tekan}>Pengiriman</KepalaUrut>
+                    <KepalaUrut biasa kunci="terima" urutan={urutPihak.urutan} onTekan={urutPihak.tekan}>Penerimaan</KepalaUrut>
+                    <KepalaUrut biasa kunci="patut" urutan={urutPihak.urutan} onTekan={urutPihak.tekan}>Kepatutan</KepalaUrut>
                   </tr>
                 </thead>
                 <tbody>
-                  {kesiapan.panggilan.pihak.map((pihak) => (
+                  {urutkan(kesiapan.panggilan.pihak, urutPihak.urutan, (p, k) =>
+                    k === "pihak" ? p.nama : k === "persetujuan" ? p.persetujuan : k === "jalur" ? p.seharusnya : k === "kirim" ? p.tanggalPanggilan : k === "terima" ? p.tanggalPelaksanaanRelaas : p.kepatutan?.patut
+                  ).map((pihak) => (
                     <tr key={pihak.nama} className="border-t border-border align-top">
                       <td className="px-3 py-2">
                         <span className="font-medium">{pihak.nama}</span>
@@ -12671,17 +12755,19 @@ export function RincianSidang({
                 <tr>
                   {/* Angka saja - judul kolomnya pun satu kata. Diminta
                       pengguna 23 September 2026. */}
-                  <th className="w-10 px-2 py-2 text-center font-medium" title="Sidang keberapa">
+                  <KepalaUrut biasa kunci="sidang" rata="tengah" className="w-10 px-2" judul="Sidang keberapa - tekan untuk mengurutkan menurut tanggal sidang dokumen" urutan={urutDokumen.urutan} onTekan={urutDokumen.tekan}>
                     Sdg
-                  </th>
-                  <th className="px-3 py-2 font-medium">Judul Dokumen</th>
-                  <th className="px-3 py-2 font-medium">Pengunggah</th>
-                  <th className="px-3 py-2 font-medium">Verifikasi</th>
+                  </KepalaUrut>
+                  <KepalaUrut biasa kunci="judul" urutan={urutDokumen.urutan} onTekan={urutDokumen.tekan}>Judul Dokumen</KepalaUrut>
+                  <KepalaUrut biasa kunci="pengunggah" urutan={urutDokumen.urutan} onTekan={urutDokumen.tekan}>Pengunggah</KepalaUrut>
+                  <KepalaUrut biasa kunci="verifikasi" urutan={urutDokumen.urutan} onTekan={urutDokumen.tekan}>Verifikasi</KepalaUrut>
                   <th className="px-3 py-2 font-medium">Unduh</th>
                 </tr>
               </thead>
               <tbody>
-                {rincian.ecourt.map((dokumen) => (
+                {urutkan(rincian.ecourt, urutDokumen.urutan, (d, k) =>
+                  k === "sidang" ? d.tanggalSidang : k === "judul" ? d.judulDokumen : k === "pengunggah" ? d.peranPengunggah : d.statusVerifikasi
+                ).map((dokumen) => (
                   <tr key={dokumen.documentKey} className="border-t border-border">
                     {/* Kosong bila tanggal sidang dokumennya belum terisi -
                         dan pada sebagian besar dokumen ia memang masih kosong,

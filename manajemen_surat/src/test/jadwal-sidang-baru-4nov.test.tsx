@@ -308,12 +308,24 @@ describe("isi lajur", () => {
     expect(screen.getByText("Unggah ✓")).toBeTruthy();
     expect(screen.getByText("Minutasi ✗").getAttribute("title")).toBe("sebab");
     expect(screen.queryByText(/BHT/)).toBeNull();
-    rerender(<TindakLanjutPutusan minutasi unggah={false} bht={{ iso: "2026-11-17", sumber: "perkiraan" }} tampilBht formatTanggal={format} />);
+    rerender(<TindakLanjutPutusan minutasi unggah={false} bht={{ iso: "2026-11-17", sumber: "perkiraan-putusan" }} tampilBht formatTanggal={format} />);
     expect(screen.getByText("Minutasi ✓")).toBeTruthy();
     expect(screen.getByText("Unggah ✗")).toBeTruthy();
     expect(screen.getByText(/Perkiraan BHT 2026-11-17/)).toBeTruthy();
     rerender(<TindakLanjutPutusan minutasi unggah bht={{ iso: "2026-11-17", sumber: "sipp" }} tampilBht={false} formatTanggal={format} />);
     expect(screen.queryByText(/BHT/)).toBeNull();
+  });
+
+  it("PBT: dilaksanakan (tanggal), belum (✗ + BHT menunggu PBT), tidak terbaca (tidak digambar)", () => {
+    const format = (iso: string) => iso;
+    const { rerender } = render(<TindakLanjutPutusan minutasi unggah bht={{ iso: "2026-11-20", sumber: "perkiraan-pbt" }} pbt={{ iso: "2026-11-06" }} tampilBht formatTanggal={format} />);
+    expect(screen.getByText("PBT ✓").getAttribute("title")).toContain("2026-11-06");
+    expect(screen.getByText(/Perkiraan BHT 2026-11-20/).getAttribute("title")).toContain("pemberitahuan putusan + 14 hari");
+    rerender(<TindakLanjutPutusan minutasi unggah bht={null} pbt={{ iso: "" }} tampilBht formatTanggal={format} />);
+    expect(screen.getByText("PBT ✗")).toBeTruthy();
+    expect(screen.getByText("BHT menunggu PBT")).toBeTruthy();
+    rerender(<TindakLanjutPutusan minutasi unggah bht={null} pbt={null} tampilBht formatTanggal={format} />);
+    expect(screen.queryByText(/PBT/)).toBeNull();
   });
 });
 

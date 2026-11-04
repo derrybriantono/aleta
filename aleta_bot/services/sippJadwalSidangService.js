@@ -314,7 +314,7 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200, bi
   ] = await Promise.all([
     aman(() => pihakBanyakPerkara(idPerkara)),
     aman(() => petugasBanyakPerkara(idPerkara)),
-    aman(() => putusanBanyakPerkara(idPerkara), "putusan"),
+    aman(() => putusanBanyakPerkara(idPerkara, { denganPbt: true }), "putusan"),
     aman(() =>
       keadaanPanggilanSidang(
         rows.map((row) => ({ sidangId: row.sidangId, perkaraId: row.perkaraId }))
@@ -568,6 +568,7 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200, bi
       statusPutusan: (petaPutusan[String(row.perkaraId)] || {}).statusPutusan || "",
       tanggalMinutasi: (petaPutusan[String(row.perkaraId)] || {}).tanggalMinutasi || "",
       tanggalBht: (petaPutusan[String(row.perkaraId)] || {}).tanggalBht || "",
+      tanggalPbt: (petaPutusan[String(row.perkaraId)] || {}).tanggalPbt || "",
       verstekPutusan: Boolean((petaPutusan[String(row.perkaraId)] || {}).verstek),
       // 30 Okt (G2B): amar SIPP menyebut verstek walau kolom putusan_verstek bukan 'Y' - saran blangko memperlakukannya verstek.
       amarVerstek: Boolean((petaPutusan[String(row.perkaraId)] || {}).amarVerstek),
@@ -681,6 +682,7 @@ const RUAS_RINGKAS = Object.freeze([
   "statusPutusan",
   "tanggalMinutasi",
   "tanggalBht",
+  "tanggalPbt",
   "verstekPutusan",
   "amarVerstek",
   "adaBerkasPutusan",
@@ -695,7 +697,7 @@ async function susunJawabanRingkas({ mulai, akhir, rows, idPerkara, aman, gagal 
   const [petaPihak, petaPetugas, petaPutusan, petaEcourt, bahanPenanda] = await Promise.all([
     aman(() => pihakBanyakPerkara(idPerkara)),
     aman(() => petugasBanyakPerkara(idPerkara)),
-    aman(() => putusanBanyakPerkara(idPerkara), "putusan"),
+    aman(() => putusanBanyakPerkara(idPerkara, { denganPbt: true }), "putusan"),
     aman(() => ecourtBanyakPerkara(idPerkara), "ecourt"),
     // Hanya ghaib + prodeo (penanda PERKARA); lencana pekerjaan & izin cerai tidak dibaca.
     penandaPerkaraPihakService.bahanPenanda(idPerkara, {}, { hanyaPerkara: true }).catch(() => null),
@@ -740,6 +742,7 @@ async function susunJawabanRingkas({ mulai, akhir, rows, idPerkara, aman, gagal 
         statusPutusan: putusan.statusPutusan || "",
         tanggalMinutasi: putusan.tanggalMinutasi || "",
         tanggalBht: putusan.tanggalBht || "",
+        tanggalPbt: putusan.tanggalPbt || "",
         verstekPutusan: Boolean(putusan.verstek),
         amarVerstek: Boolean(putusan.amarVerstek),
         adaBerkasPutusan: Boolean(putusan.adaBerkasPutusan),
@@ -1925,7 +1928,7 @@ function sebutanHasilMediasi(sandi) {
   return HASIL_MEDIASI[kode] || kode;
 }
 
-async function putusanBanyakPerkara(daftarPerkaraId = []) {
+async function putusanBanyakPerkara(daftarPerkaraId = [], opsi = {}) {
   const id = [...new Set(daftarPerkaraId.map((x) => Number(x)).filter((x) => Number.isFinite(x) && x > 0))];
   if (id.length === 0) return {};
 
@@ -1991,7 +1994,32 @@ async function putusanBanyakPerkara(daftarPerkaraId = []) {
       // belum diminutasi - keadaan yang menagih panitera pengganti, dan yang
       // sebelumnya hanya terlihat sesudah membuka rincian satu per satu.
       adaBerkasPutusan: Number(baris.adaBerkasPutusan) === 1,
+      tanggalPbt: "",
     };
+  }
+
+  // 4 Nov 2026: tanggal pemberitahuan putusan (PBT), HANYA-BACA, hanya bila pemanggil memintanya (jadwal penuh dan
+  // ringkas; jalur ringan 8 detik dan pembaca lain tidak membayar kueri ini) dan hanya untuk perkara yang sudah
+  // diputus. Satu kueri berkelompok; gagal membacanya tidak boleh menghilangkan putusan yang sudah terbaca.
+  if (opsi.denganPbt) {
+    const putus = Object.keys(hasil).filter((k) => hasil[k].tanggalPutusan);
+    if (putus.length > 0) {
+      try {
+        const pbt = await runQuery(
+          `SELECT pp.perkara_id AS perkaraId, MAX(pp.tanggal_pemberitahuan_putusan) AS tanggal
+             FROM perkara_putusan_pemberitahuan_putusan pp
+            WHERE pp.perkara_id IN (${putus.map(() => "?").join(", ")})
+            GROUP BY pp.perkara_id`,
+          putus
+        );
+        for (const b of Array.isArray(pbt) ? pbt : []) {
+          const tanggal = isoTanggal(b.tanggal);
+          if (hasil[String(b.perkaraId)] && tanggal && !tanggal.startsWith("0000")) hasil[String(b.perkaraId)].tanggalPbt = tanggal;
+        }
+      } catch {
+        /* PBT tidak terbaca: layar tidak menggambar PBT, putusan tetap utuh */
+      }
+    }
   }
   return hasil;
 }

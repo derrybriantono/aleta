@@ -449,3 +449,136 @@ describe("Jadwal Mediasi: tampilan baru dan cadangan lama", () => {
     await waitFor(() => expect(container.querySelector("table")).not.toBeNull());
   });
 });
+
+// ---------------------------------------------------------------------------
+// Lajur Aksi (satu tombol utama), Lipat tag, PBT/BHT - data lebih kaya
+// ---------------------------------------------------------------------------
+
+const TGL_POLOS = HARI_INI;
+const kaya = (ubah: Record<string, unknown>) => barisSidang({ tanggalSidang: TGL_POLOS, tanggalPbt: "", lewatEcourt: true, ecourtTerbaca: true, ...ubah });
+const SIDANG_KAYA = [
+  kaya({ sidangId: "6001", perkaraId: "9101", nomorPerkara: "911/Pdt.G/2026/PA.Dgl", pihak: { penggugat: ["Satu Rekaan"], tergugat: ["Dua Rekaan"] } }),
+  kaya({ sidangId: "6002", perkaraId: "9102", nomorPerkara: "912/Pdt.G/2026/PA.Dgl", jamSidang: "09:30", pihak: { penggugat: ["Tiga Rekaan"], tergugat: ["Empat Rekaan"] } }),
+  kaya({
+    sidangId: "6003",
+    perkaraId: "9103",
+    nomorPerkara: "913/Pdt.G/2026/PA.Dgl",
+    jamSidang: "10:00",
+    sudahPutus: true,
+    tanggalPutusan: HARI_INI,
+    statusPutusan: "Dikabulkan",
+    verstekPutusan: true,
+    dihadiriOleh: 2,
+    agenda: "Putusan",
+    tanggalPbt: "2026-10-30",
+    pihak: { penggugat: ["Lima Rekaan"], tergugat: ["Enam Rekaan"] },
+  }),
+  kaya({ sidangId: "6004", perkaraId: "9104", nomorPerkara: "914/Pdt.G/2026/PA.Dgl", jamSidang: "10:30", sudahPutus: true, tanggalPutusan: HARI_INI, statusPutusan: "Dikabulkan", verstekPutusan: true, dihadiriOleh: 2, agenda: "Putusan", tanggalPbt: "", pihak: { penggugat: ["Tujuh Rekaan"], tergugat: ["Delapan Rekaan"] } }),
+];
+const WAKTU_KAYA = {
+  terbaca: true,
+  alasan: "",
+  sekarang: `${HARI_INI} 10:12:00`,
+  hariIni: HARI_INI,
+  langsungTerbaca: true,
+  rekamanTerbaca: true,
+  baris: [
+    { tanggalSidang: TGL_POLOS, perkaraId: "9101", nomorAntrian: 1, noRuang: 1, ruanganId: 1, ambilPihak1: `${HARI_INI} 08:11:00`, ambilPihak2: `${HARI_INI} 08:25:00`, ambilSaksi: "", ambilTerawal: `${HARI_INI} 08:11:00`, jamJadwal: "09:00", panggilPertama: `${HARI_INI} 09:05:00`, panggilTerakhir: `${HARI_INI} 09:05:00`, jumlahPanggil: 1, online: false, namaPetugas: "P", sumber: "gabungan", disidang: 1 },
+  ],
+};
+const PETA_KAYA = {
+  "9101": { nomor: 1, tanggalSidang: TGL_POLOS, waktuAmbil: `${HARI_INI} 08:11:00`, online: false, pihak1: `${HARI_INI} 08:11:00`, pihak2: `${HARI_INI} 08:25:00`, saksi: "", keadaan: "dipanggil", menitMenunggu: 54, jamPanggil: "09:05", noRuang: 1, ruanganId: 1, namaPetugas: "P", majelisKode: "A" },
+};
+
+async function gambarKaya() {
+  window.localStorage.clear();
+  pakaiAntarmukaLama("baru");
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (url: string) => {
+      const u = String(url);
+      let isi: unknown = { ok: true, data: {} };
+      if (/\/api\/aleta-ecourt\/sidang\?/.test(u)) {
+        isi = { ok: true, data: { available: true, sidang: SIDANG_KAYA, kesiapan: {}, antrian: { terbaca: true, alasan: "", tanggal: [TGL_POLOS], peta: PETA_KAYA }, waktuAntrian: WAKTU_KAYA } };
+      } else if (/\/api\/aleta-ecourt\/sidang\/keliling/.test(u)) {
+        isi = { ok: true, data: { keliling: { tanggal: HARI_INI, aktif: false, diputuskan: true, diubahNama: "", diubahPada: "" }, bolehUbah: true } };
+      }
+      return { ok: true, status: 200, json: async () => isi, text: async () => JSON.stringify(isi) } as unknown as Response;
+    })
+  );
+  const { AletaEcourtSidang } = await import("@/components/portal/aleta-ecourt-sidang");
+  const hasil = render(createElement(AletaEcourtSidang as never, {}));
+  await waitFor(() => expect(screen.queryByText("911/Pdt.G/2026/PA.Dgl")).not.toBeNull(), { timeout: 20_000 });
+  await waitFor(() => expect(hasil.container.querySelector('[data-sedang-berjalan="ya"]')).not.toBeNull(), { timeout: 20_000 });
+  return hasil;
+}
+
+describe("Jadwal Sidang baru: lajur Aksi, Lipat tag, PBT", () => {
+  it("sidang berjalan: tombol utama Selesai + Skors; yang belum berjalan: Tandai berjalan, Selesai di Lainnya", async () => {
+    const { container } = await gambarKaya();
+    const [satu, dua] = Array.from(container.querySelectorAll("article")) as HTMLElement[];
+    expect(within(satu).getByRole("button", { name: "Skors" })).toBeTruthy();
+    expect(within(satu).getByRole("button", { name: "Selesai" })).toBeTruthy();
+    expect(within(satu).queryByRole("button", { name: "Tandai berjalan" })).toBeNull();
+    expect(within(dua).getByRole("button", { name: "Tandai berjalan" })).toBeTruthy();
+    expect(within(dua).queryByRole("button", { name: "Selesai" })).toBeNull();
+    fireEvent.click(within(dua).getByRole("button", { name: /Lainnya untuk 912/ }));
+    expect(within(dua).getByRole("button", { name: "Selesai" })).toBeTruthy();
+    expect(within(dua).getByText(/Antrian dan kehadiran per orang/)).toBeTruthy();
+  });
+
+  it("Lipat tag: pil ruang naik sebaris dengan tag, dua-duanya di dalam bilah atas; Bentang tag mengembalikan", async () => {
+    const { container } = await gambarKaya();
+    const bilah = container.querySelector("[data-bilah-jadwal]") as HTMLElement;
+    const ruang = () => bilah.querySelector("[data-pita-ruang-sidang]") as HTMLElement;
+    const tag = () => within(bilah).getByRole("button", { name: /Lipat tag|Bentang tag/ });
+    const barisTag = () => tag().parentElement as HTMLElement;
+    expect(ruang()).not.toBeNull();
+    expect(barisTag().contains(ruang())).toBe(false);
+    fireEvent.click(tag());
+    await waitFor(() => expect(tag().textContent).toBe("Bentang tag"));
+    expect(bilah.contains(ruang())).toBe(true);
+    expect(barisTag().contains(ruang())).toBe(true);
+    fireEvent.click(tag());
+    await waitFor(() => expect(barisTag().contains(ruang())).toBe(false));
+    expect(bilah.contains(ruang())).toBe(true);
+  });
+
+  it("PBT: terbaca memberi PBT ✓ dan perkiraan BHT = PBT + 14; belum ada: PBT ✗ dan BHT menunggu PBT", async () => {
+    const { container } = await gambarKaya();
+    const kartu = Array.from(container.querySelectorAll("article")) as HTMLElement[];
+    const ada = kartu.find((k) => k.getAttribute("aria-label")?.startsWith("913"))!;
+    const tl = ada.querySelector("[data-tindak-lanjut]") as HTMLElement;
+    expect(within(tl).getByText("PBT ✓")).toBeTruthy();
+    expect(within(tl).getByText(/Perkiraan BHT 13 Nov 2026/)).toBeTruthy();
+    const belum = kartu.find((k) => k.getAttribute("aria-label")?.startsWith("914"))!;
+    const tl2 = belum.querySelector("[data-tindak-lanjut]") as HTMLElement;
+    expect(within(tl2).getByText("PBT ✗")).toBeTruthy();
+    expect(within(tl2).getByText("BHT menunggu PBT")).toBeTruthy();
+  });
+
+  it("tabel di Rincian: judul kolom dapat ditekan untuk mengurutkan (pembantu yang sama dengan daftar)", async () => {
+    const { KepalaUrut, urutkan, useUrutan } = await import("@/components/portal/tabel-kendali");
+    function Tabel() {
+      const u = useUrutan(null);
+      const data = [{ n: "Budi" }, { n: "Ani" }, { n: "Citra" }];
+      return createElement(
+        "table",
+        null,
+        createElement("thead", null, createElement("tr", null, createElement(KepalaUrut, { biasa: true, kunci: "n", urutan: u.urutan, onTekan: u.tekan }, "Nama"))),
+        createElement("tbody", null, ...urutkan(data, u.urutan, (b: { n: string }) => b.n).map((b) => createElement("tr", { key: b.n }, createElement("td", null, b.n))))
+      );
+    }
+    const { container } = render(createElement(Tabel));
+    const isi = () => Array.from(container.querySelectorAll("tbody td")).map((x) => x.textContent);
+    expect(isi()).toEqual(["Budi", "Ani", "Citra"]);
+    const kepala = screen.getByRole("button", { name: /Nama/ });
+    expect(kepala.className).not.toContain("uppercase");
+    fireEvent.click(kepala);
+    expect(isi()).toEqual(["Ani", "Budi", "Citra"]);
+    fireEvent.click(kepala);
+    expect(isi()).toEqual(["Citra", "Budi", "Ani"]);
+    fireEvent.click(kepala);
+    expect(isi()).toEqual(["Budi", "Ani", "Citra"]);
+  });
+});

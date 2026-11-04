@@ -722,6 +722,8 @@ describe("dialog Cetak relaas - mengirim ke ekstensi", () => {
 // ============================================================================
 /** 22 Okt 2026: alat Jadwal Sidang pindah ke tombol Menu di baris pencarian. */
 async function bukaMenuAlat() {
+  // 4 Nov 2026: pilihan tampilan (lama, dipasang setup uji) dibaca sesudah gambar pertama; tunggu sampai tampilan lama berdiri.
+  await waitFor(() => expect(document.querySelector("[data-bilah-jadwal]")).toBeNull(), { timeout: 15_000 });
   const tombol = await screen.findByRole("button", { name: /^Menu$/ }, { timeout: 15_000 });
   await userEvent.click(tombol);
   return tombol;

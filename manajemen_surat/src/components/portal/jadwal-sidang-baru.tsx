@@ -632,7 +632,7 @@ export function KartuSidang({
       {...sisa}
     >
       <div className={cn("grid gap-x-4 gap-y-2.5 px-3", ringkas ? "py-2" : "pb-2.5 pt-3", KISI_LAJUR)}>
-        <Lajur className="min-w-0 sm:flex-col lg:flex-col">{waktu}</Lajur>
+        <Lajur className="min-w-0 sm:row-span-3 lg:row-span-1">{waktu}</Lajur>
         <Lajur nama={namaLajur[0]}>{perkara}</Lajur>
         <Lajur nama={namaLajur[1]} className="sm:col-start-2 lg:col-auto">
           {agenda}
@@ -816,9 +816,12 @@ export function TindakLanjutPutusan({
   tampilBht,
   formatTanggal,
   judulMinutasi,
+  pbt,
 }: {
   /** Rincian sebab bila minutasi belum bertanggal (tooltip). */
   judulMinutasi?: string;
+  /** PBT (pemberitahuan putusan): null = tidak digambar (tidak terbaca / tidak diperlukan); iso kosong = belum dilaksanakan. */
+  pbt?: { iso: string } | null;
   minutasi: boolean;
   unggah: boolean;
   bht: PerkiraanBht | null;
@@ -842,12 +845,23 @@ export function TindakLanjutPutusan({
     <span className="flex flex-wrap items-center gap-1" data-tindak-lanjut="">
       {pil(minutasi, "Minutasi", minutasi ? "Minutasi sudah bertanggal" : (judulMinutasi ?? "Naskah belum diminutasi"), "belum-minutasi")}
       {pil(unggah, "Unggah", unggah ? "Naskah sudah diunggah ke SIPP" : "Naskah belum diunggah ke SIPP", "belum-unggah-putusan")}
+      {pbt ? pil(Boolean(pbt.iso), "PBT", pbt.iso ? `Pemberitahuan putusan dilaksanakan ${formatTanggal(pbt.iso)}` : "Pemberitahuan putusan belum dilaksanakan", "belum-pbt") : null}
       {tampilBht && bht ? (
         <span
           className="whitespace-nowrap px-0.5 text-[11.5px] font-semibold text-muted-foreground"
-          title={bht.sumber === "sipp" ? "Berkekuatan hukum tetap menurut SIPP" : "Perkiraan berkekuatan hukum tetap: tanggal putusan + 14 hari"}
+          title={
+            bht.sumber === "sipp"
+              ? "Berkekuatan hukum tetap menurut SIPP"
+              : bht.sumber === "perkiraan-pbt"
+                ? "Perkiraan berkekuatan hukum tetap: tanggal pemberitahuan putusan + 14 hari"
+                : "Perkiraan berkekuatan hukum tetap: tanggal putusan + 14 hari"
+          }
         >
           {bht.sumber === "sipp" ? "BHT" : "Perkiraan BHT"} {formatTanggal(bht.iso)}
+        </span>
+      ) : pbt && !pbt.iso && tampilBht ? (
+        <span className="whitespace-nowrap px-0.5 text-[11.5px] text-muted-foreground" title="Menunggu pemberitahuan putusan">
+          BHT menunggu PBT
         </span>
       ) : null}
     </span>

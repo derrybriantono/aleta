@@ -257,17 +257,18 @@ export function geserIso(iso: string, hari: number): string {
   return t.toISOString().slice(0, 10);
 }
 
-export type PerkiraanBht = { iso: string; sumber: "sipp" | "perkiraan" };
+export type PerkiraanBht = { iso: string; sumber: "sipp" | "perkiraan-putusan" | "perkiraan-pbt" };
 
 /**
- * BHT. Tanggal dari SIPP selalu dipakai bila ada. Tanpa itu, perkiraan hanya
- * dibuat untuk putusan kontradiktoir (semua pihak hadir, bukan verstek):
- * tanggal putusan + 14 hari. Verstek menunggu pemberitahuan putusan yang
- * tanggalnya tidak ada di data jadwal, jadi TIDAK ditebak (null).
+ * BHT. Tanggal dari SIPP selalu dipakai bila ada. Tanpa itu:
+ *  - putusan kontradiktoir (semua pihak hadir, bukan verstek): tanggal putusan + 14 hari;
+ *  - verstek, atau tidak semua pihak hadir: tanggal pemberitahuan putusan (PBT) + 14 hari, BILA PBT terbaca;
+ *    tanpa PBT tidak ditebak (null).
  */
 export function perkiraanBht(p: {
   tanggalBht?: string | null;
   tanggalPutusan?: string | null;
+  tanggalPbt?: string | null;
   verstek?: boolean;
   dihadiriOleh?: number | null;
 }): PerkiraanBht | null {
@@ -275,10 +276,16 @@ export function perkiraanBht(p: {
   const sah = (x: string) => /^\d{4}-\d{2}-\d{2}$/.test(x) && !x.startsWith("0000");
   const sipp = (p.tanggalBht ?? "").slice(0, 10);
   if (sah(sipp)) return { iso: sipp, sumber: "sipp" };
+  const kontradiktoir = !p.verstek && p.dihadiriOleh === 1;
   const putus = (p.tanggalPutusan ?? "").slice(0, 10);
-  if (!sah(putus)) return null;
-  if (p.verstek || p.dihadiriOleh !== 1) return null;
-  return { iso: geserIso(putus, 14), sumber: "perkiraan" };
+  if (kontradiktoir) return sah(putus) ? { iso: geserIso(putus, 14), sumber: "perkiraan-putusan" } : null;
+  const pbt = (p.tanggalPbt ?? "").slice(0, 10);
+  return sah(pbt) ? { iso: geserIso(pbt, 14), sumber: "perkiraan-pbt" } : null;
+}
+
+/** Putusan yang BHT-nya menunggu pemberitahuan putusan: verstek atau tidak semua pihak hadir. */
+export function perluPbt(p: { verstek?: boolean; dihadiriOleh?: number | null }): boolean {
+  return Boolean(p.verstek) || p.dihadiriOleh !== 1;
 }
 
 // ============================================================================
