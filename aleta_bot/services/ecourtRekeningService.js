@@ -431,7 +431,7 @@ async function sinkronkan({
         break;
       }
       if (n > 0 && n % istirahatTiap === 0) {
-        log(`  Istirahat sesudah ${n} perkara (beban peladen e-Court).`);
+        log(`  Istirahat sesudah ${n} perkara (beban server e-Court).`);
         await alat.tidur(istirahatMs);
       }
       n += 1;
