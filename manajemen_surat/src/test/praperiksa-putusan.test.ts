@@ -555,7 +555,8 @@ describe("sambungan: rute portal, gerbang bot, dan ekstensi", () => {
   it("panel tunggal: Isikan mati saat ditahan; tetap mengisi harus dinyatakan; Simpan tidak ditekan sendiri", () => {
     const badan = konten.slice(konten.indexOf("function bagianIsiPutusan("));
     const fungsi = badan.slice(0, badan.indexOf("\n}\n"));
-    expect(fungsi).toContain("raporAgen = await jalankanPraperiksaPanel(nomorPerkara, wadah);");
+    // Argumen ketiga (5 Nov 2026): "ganti" yang dicentang petugas membuat "sudah putus" tidak menahan; tombol biasa tetap menahan.
+    expect(fungsi).toMatch(/raporAgen = await jalankanPraperiksaPanel\(nomorPerkara, wadah, \{ timpa: Boolean\(otoMenunggu && otoMenunggu\.opsi && otoMenunggu\.opsi\.timpaIsi === true\) \}\);/);
     expect(fungsi).toContain("if (raporAgen && raporAgen.hentikan) {\n      terap.disabled = true;");
     expect(fungsi).toContain("Simpan TIDAK akan ditekan sendiri");
     // Gerbang sebelum simpanPutusanLaluBuka, bukan sesudahnya.

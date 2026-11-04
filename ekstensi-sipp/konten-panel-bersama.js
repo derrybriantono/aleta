@@ -947,6 +947,8 @@ const PESAN_GAGAL_UNGGAH = {
     "Naskahnya tersimpan sebagai e-Doc, tetapi PDF untuk Direktori Putusan belum dapat " +
     "dibuat. Barisnya ditunda, bukan dibatalkan.",
   berkas_kosong: "Berkasnya kosong.",
+  sudah_ada: "Sudah ada di SIPP dan tidak diganti. Centang untuk mengganti bila memang hendak ditimpa.",
+  keadaan_lama_tidak_terbaca: "Keadaan e-Doc yang lama belum terbaca dari SIPP, jadi tidak ditimpa.",
 };
 
 function pesanGagalUnggah(b) {
@@ -1069,7 +1071,7 @@ let nomorBuktiSimpan = 0;
  * jembatan (jenis "bukti-simpan") dengan id miliknya sendiri. Dipasang
  * SEBELUM tombol ditekan, supaya jawaban yang tiba cepat tidak terlewat.
  */
-function dengarBuktiSimpan() {
+function dengarBuktiSimpan(saatJawaban) {
   nomorBuktiSimpan += 1;
   const id = `aleta-bukti-${Date.now()}-${nomorBuktiSimpan}`;
   let jawaban = null;
@@ -1084,6 +1086,14 @@ function dengarBuktiSimpan() {
       st: isi.st === 0 || isi.st === 1 ? isi.st : null,
       pesan: String(isi.pesan || "").slice(0, 400),
     };
+    // Dipakai pengerjaan terjadwal: jawaban SIPP dicatat SEGERA, sebab halaman dapat dimuat ulang sesudah menyimpan.
+    if (typeof saatJawaban === "function") {
+      try {
+        saatJawaban(jawaban);
+      } catch {
+        /* pencatat tambahan: tidak boleh mengganggu penyimpanan */
+      }
+    }
     if (penunggu) penunggu(jawaban);
   };
   window.addEventListener("message", dengar);
@@ -1227,7 +1237,7 @@ async function simpanPutusanLaluBuka(nomorPerkara, kabar, opsi) {
   const o = opsi || {};
   const dibacaPemanggil = o.sebelum ? await Promise.resolve(o.sebelum).catch(() => null) : null;
   const sebelum = dibacaPemanggil || (await bacaPutusanSegar(nomorPerkara));
-  const telinga = dengarBuktiSimpan();
+  const telinga = dengarBuktiSimpan(o.saatJawaban);
   const ditekan = await tekanSimpanPutusan(telinga.id);
   const belumTerjawab = ditekan.alasan === "jembatan_tidak_menjawab";
   if (!ditekan.ok && !belumTerjawab) {
@@ -1257,13 +1267,16 @@ async function simpanPutusanLaluBuka(nomorPerkara, kabar, opsi) {
     // Berubah berarti tersimpan. Perkara yang belum pernah diputus berubah
     // dari sudahPutus=false; yang diperbaiki berubah tanggal atau statusnya.
     const berubah = !samaPutusan(sebelum, sesudah) || (!sebelum && sesudah.sudahPutus);
+    // MENIMPA putusan yang sudah ada: tanpa keadaan "sebelum" yang terbaca, perbandingan tidak berarti apa-apa
+    // (putusannya memang sudah ada) - hanya jawaban SIPP sendiri (tersimpan) yang menjadi bukti.
+    const berubahPasti = o.timpa === true && !sebelum ? Boolean(jawaban && jawaban.st === 1) : berubah;
     // SIPP menjawab tersimpan atas perkara yang SUDAH putus, dan tanggal serta
     // statusnya memang tidak berubah: yang disimpan ulang naskahnya, yang
     // tidak terbaca dari keadaan putusan. Jawaban SIPP itulah buktinya.
     const simpanUlang = !berubah && jawaban && jawaban.st === 1 && sebelum && sebelum.sudahPutus;
-    if (berubah || simpanUlang) {
+    if (berubahPasti || simpanUlang) {
       telinga.lepas();
-      const bunyi = berubah
+      const bunyi = berubahPasti
         ? "Tersimpan di SIPP."
         : `Tersimpan di SIPP (${jawaban.pesan || "SIPP menjawab berhasil"}); tanggal dan status putusannya memang tidak berubah.`;
       // Butir 19: edoc putusan + anonimisasi SESUDAH tersimpan terbukti dan
@@ -1403,14 +1416,15 @@ async function bacaUsulanBorangPutusan() {
 }
 
 /** Meminta rapor praperiksa dari ALETA. Melempar bila ALETA tidak menjawab. */
-async function mintaPraperiksaPutusan(nomorPerkara, usulan) {
+async function mintaPraperiksaPutusan(nomorPerkara, usulan, opsi) {
   const respons = await alatAmbil(
     ALETA_API_PRAPERIKSA_PUTUSAN,
     {
       method: "POST",
       credentials: "include",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ nomorPerkara: nomorPerkara || "", ...(usulan || {}) }),
+      // timpa: petugas mencentang "ganti" Putusan Akhir yang sudah terisi - "sudah putus" tidak lagi menahan.
+      body: JSON.stringify({ nomorPerkara: nomorPerkara || "", ...(usulan || {}), ...(opsi && opsi.timpa === true ? { timpa: true } : {}) }),
     },
     "Praperiksa putusan"
   );
@@ -1466,11 +1480,11 @@ function gambarRaporAgen(rapor) {
  * Tidak dapat diminta bukan lolos, tetapi juga bukan pertentangan: dicatat
  * di kotak hitam, dan antrean berjalan seperti sebelum agen ini ada.
  */
-async function praperiksaSebelumMengisi(nomorPerkara, kabar) {
+async function praperiksaSebelumMengisi(nomorPerkara, kabar, opsi) {
   if (kabar) kabar.textContent = "Praperiksa: mengadu draf dengan fakta SIPP…";
   try {
     const usulan = await bacaUsulanBorangPutusan();
-    const rapor = await mintaPraperiksaPutusan(nomorPerkara, usulan);
+    const rapor = await mintaPraperiksaPutusan(nomorPerkara, usulan, opsi);
     if (!rapor || !rapor.ada) {
       alatCatat("praperiksa", `${nomorPerkara}: tidak dijalankan - ${(rapor && rapor.sebab) || "tidak ada jawaban"}`, "");
       return null;
@@ -4302,6 +4316,10 @@ async function a30UnggahEdoc(p) {
   // Anonimisasi buatan penyamar: sisa nama pihak/NIK yang masih lolos disamarkan lagi di rute
   // pada salinan anonimisasi (putusan asli tidak diubah) - sama dengan unggah massal di ABT.
   if (p.samarkanSisa && p.anonimisasi) badan.append("samarkanSisa", "1");
+  // 5 Nov 2026: MENIMPA hanya atas tanda eksplisit per slot (dicentang petugas atau tersimpan pada jadwalnya).
+  // Tanpa tanda, e-Doc yang sudah terisi tidak disentuh (rute menjawab "sudah_ada" untuk slot itu).
+  if (p.putusan && p.timpaPutusan === true) badan.append("timpaPutusan", "1");
+  if (p.anonimisasi && p.timpaAnonim === true) badan.append("timpaAnonim", "1");
   try {
     // 12OKT-I: keputusan "Tetap unggah" dari dialog pemeriksa ikut; penolakan
     // server yang membolehkan ditawarkan di wadah pemanggil (bila ada). Hanya
@@ -4352,7 +4370,7 @@ async function a30UnggahEdoc(p) {
           : sambungSebab("Edoc tidak terunggah", (sendiri && (sendiri.sebab || sendiri.pesan)) || galat.message, true),
       });
     }
-    if (!jawab.ok) return akhiri({ ok: false, bunyi: sambungSebab("Edoc tidak terunggah", jawab.sebab || jawab.pesan || jawab.alasan || "ditolak", true) });
+    if (!jawab.ok) return akhiri({ ok: false, berkas: Array.isArray(jawab.berkas) ? jawab.berkas : [], bunyi: sambungSebab("Edoc tidak terunggah", jawab.sebab || jawab.pesan || jawab.alasan || "ditolak", true) });
     const semua = jawab.berkas || [];
     const gagal = semua.filter((b) => !b.ok);
     if (!semua.length || gagal.length) {
@@ -4509,12 +4527,15 @@ function a30PilihSesudahBatas(wadah, sebab, janji, berlaku) {
 async function a30OpsiSimpanPutusan(p) {
   const opsi = { sebelum: p.sebelum || null, jajakCepat: true };
   if (!p.edoc || !p.edoc.asli) return opsi;
+  // Panel satu perkara: naskah dipilih dan Isikan ditekan petugas sendiri, jadi e-Doc yang sudah ada diganti seperti semula
+  // (rute meminta tanda eksplisit sejak 5 Nov 2026). Antrean massal TIDAK membawa tanda: yang sudah ada tidak disentuh.
+  const tandaTimpa = p.timpaEdoc === true ? { timpaPutusan: true, timpaAnonim: true } : {};
   // Perbaikan 1 Okt (S, butir 4 - hanya UI Baru yang mengisi edoc.anonim):
   // anonimisasi yang DIPILIH petugas diunggah apa adanya, tanpa dibuat ulang.
   if (p.edoc.anonim) {
     const anonimDipilih = p.edoc.anonim;
     opsi.sesudahTersimpan = (kabar) =>
-      a30UnggahEdoc({ nomorPerkara: p.nomorPerkara, putusan: p.edoc.asli, anonimisasi: anonimDipilih, kabar });
+      a30UnggahEdoc({ nomorPerkara: p.nomorPerkara, putusan: p.edoc.asli, anonimisasi: anonimDipilih, kabar, ...tandaTimpa });
     return opsi;
   }
   // UI Baru (perbaikan 1 Okt, butir 12): anonimisasi yang sudah disiapkan di
@@ -4551,7 +4572,7 @@ async function a30OpsiSimpanPutusan(p) {
     // disimpan, edoc putusan tetap diunggah, anonimisasinya menyusul lewat
     // "Unggah putusan ke SIPP".
     opsi.sesudahTersimpan = async (kabar) => {
-      const unggah = await a30UnggahEdoc({ nomorPerkara: p.nomorPerkara, putusan: p.edoc.asli, anonimisasi: null, kabar });
+      const unggah = await a30UnggahEdoc({ nomorPerkara: p.nomorPerkara, putusan: p.edoc.asli, anonimisasi: null, kabar, ...tandaTimpa });
       return {
         ok: false,
         // Laporan per langkah: putusan menurut hasil unggah, anonimisasi menurut sebab di bawah.
@@ -4576,7 +4597,7 @@ async function a30OpsiSimpanPutusan(p) {
   }
   if (!anon) {
     opsi.sesudahTersimpan = (kabar) =>
-      a30UnggahEdoc({ nomorPerkara: p.nomorPerkara, putusan: p.edoc.asli, anonimisasi: null, kabar });
+      a30UnggahEdoc({ nomorPerkara: p.nomorPerkara, putusan: p.edoc.asli, anonimisasi: null, kabar, ...tandaTimpa });
     return opsi;
   }
   opsi.sesudahTersimpan = (kabar) =>
@@ -4587,6 +4608,7 @@ async function a30OpsiSimpanPutusan(p) {
       kabar,
       tetapUnggah: anon.tetapUnggah || null,
       wadah: p.wadah || null,
+      ...tandaTimpa,
     });
   return opsi;
 }

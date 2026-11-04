@@ -22,7 +22,7 @@
  *      dapat dimatikan: "Buka halaman perkara sendiri");
  *   3. Selain itu                              -> spanduk "jatuh tempo" dengan tombol "Kerjakan sekarang".
  *
- * Mengerjakan satu butir: (a) cek SIPP - sudah terisi = DILEWATI, tidak ditimpa; (b) portal menyiapkan draf dari
+ * Mengerjakan satu butir: (a) cek SIPP - sudah terisi = DILEWATI, tidak ditimpa, KECUALI butir bertanda pilihan.timpa.form (dicentang penjadwal; lalu diganti lewat borang Edit SIPP); (b) portal menyiapkan draf dari
  * berkas yang dipasang; (c) pilihan form yang ditetapkan petugas dipasang lebih dulu; (d) alur Putusan Otomatis
  * TANPA e-Doc (e-Doc dikerjakan server sesudahnya, 30-150 detik kemudian); (e) hasil dilaporkan ke portal. Yang
  * ditahan praperiksa, atau tidak terbukti tersimpan, dilaporkan "tertahan"/"gagal" dengan sebabnya dan TIDAK
@@ -254,7 +254,9 @@
   // ──────────────────────────────────────────────────────────────────────────
   // Mengerjakan satu butir di halaman perkaranya
   // ──────────────────────────────────────────────────────────────────────────
-  async function jalankanIsi(butir) {
+  async function jalankanIsi(butir, opsi) {
+    // Penjadwal mencentang "ganti" Putusan Akhir yang sudah terisi (pilihan.timpa.form) DAN SIPP memang memuatnya.
+    const timpaIsi = Boolean(opsi && opsi.timpaIsi === true);
     const buka = fungsi("s1BukaBlangkoPutusan");
     if (!buka) return { hasil: "gagal", catatan: "Pembuka blangko Putusan Akhir belum termuat." };
     const b = await buka();
@@ -277,10 +279,34 @@
     const pil = await pasangPilihan(butir.pilihan);
     if (!pil.ok) return { hasil: "tertahan", catatan: pil.sebab };
     // Tahap "menyimpan": Simpan SIPP memuat ulang halaman; sesudahnya keadaan SIPP diperiksa sebelum melapor.
-    await simpanCatatan({ tahap: "menyimpan" });
-    const h = await bagian.otomatis({ edoc: false, denganPutusan: false, denganAnonim: false, melayang: true });
+    // Menimpa: keadaan SEBELUM dititipkan di catatan - sesudah Simpan SIPP memuat ulang halaman, dan putusan yang sudah
+    // ada tidak membedakan "tersimpan ulang" dari "tidak tersimpan" kecuali lewat jawaban SIPP (juga dititipkan) atau perubahan tanggal/status.
+    await simpanCatatan({
+      tahap: "menyimpan",
+      ...(timpaIsi ? { timpaIsi: true, sebelum: { tanggal: String((opsi && opsi.sebelum && opsi.sebelum.tanggal) || ""), status: String((opsi && opsi.sebelum && opsi.sebelum.status) || "") }, jawabanSimpan: 0 } : { timpaIsi: false }),
+    });
+    const h = await bagian.otomatis({
+      edoc: false,
+      denganPutusan: false,
+      denganAnonim: false,
+      melayang: true,
+      ...(timpaIsi
+        ? {
+            timpaIsi: true,
+            // Jawaban "tersimpan" dari SIPP dicatat SEGERA - halaman dapat dimuat ulang sebelum kembalian otomatis() tiba.
+            saatJawaban: (j) => {
+              if (j && j.st === 1) void simpanCatatan({ jawabanSimpan: 1 });
+            },
+          }
+        : {}),
+    });
     if (h && h.tersimpan) {
-      return { hasil: "selesai", catatan: `Tersimpan di SIPP${pil.terpasang.length ? ` (pilihan Anda: ${pil.terpasang.join(", ")})` : ""}.` };
+      return {
+        hasil: "selesai",
+        catatan: timpaIsi
+          ? `Putusan Akhir disimpan ulang di SIPP (menimpa isi lama)${pil.terpasang.length ? `; pilihan Anda: ${pil.terpasang.join(", ")}` : ""}.`
+          : `Tersimpan di SIPP${pil.terpasang.length ? ` (pilihan Anda: ${pil.terpasang.join(", ")})` : ""}.`,
+      };
     }
     const pesan = sebaris((h && (h.pesan || h.bunyi)) || "Pengisian berhenti sebelum Simpan.");
     // Praperiksa/pilihan wajib/medan tambahan menahan = butuh orang; selain itu gagal.
@@ -395,7 +421,7 @@
       catatanKini = { ...rec };
       await simpanCatatan({ tahap: "jalan" });
       mulaiDetakJantung();
-      // (a) SIPP sudah memuat Putusan Akhir -> dilewati, tidak ditimpa.
+      // (a) SIPP sudah memuat Putusan Akhir -> dilewati, tidak ditimpa (kecuali butir bertanda timpa.form).
       const baca = fungsi("b6KeadaanPutusanTerisi");
       let terisi = null;
       if (baca) {
@@ -405,7 +431,9 @@
           terisi = null;
         }
       }
-      if (terisi && terisi.terisi) {
+      // Tanda timpa tersimpan pada butirnya: tanpa tanda (termasuk jadwal lama) yang sudah terisi tetap dilewati.
+      const diminta = Boolean(rec.pilihan && rec.pilihan.timpa && rec.pilihan.timpa.form === true);
+      if (terisi && terisi.terisi && !diminta) {
         hasil = { hasil: "dilewati", catatan: `Putusan Akhir sudah terisi di SIPP${terisi.tanggal ? ` (tanggal ${terisi.tanggal})` : ""} - tidak ditimpa.` };
       } else {
         // (b) draf dari berkas yang dipasang.
@@ -414,7 +442,7 @@
         if (!d.ok || dd.ok === false) {
           hasil = { hasil: "gagal", catatan: dd.sebab || d.pesan || "Draf putusan tidak dapat disiapkan." };
         } else {
-          hasil = await jalankanIsi(rec);
+          hasil = await jalankanIsi(rec, { timpaIsi: Boolean(diminta && terisi && terisi.terisi), sebelum: terisi && terisi.terisi ? terisi : null });
         }
       }
     } catch (galat) {
@@ -471,7 +499,15 @@
           terisi = null;
         }
       }
-      if (terisi && terisi.terisi) await laporAman(rec.id, "selesai", `Tersimpan di SIPP (terbukti setelah halaman dimuat ulang${terisi.tanggal ? `, tanggal ${terisi.tanggal}` : ""}).`);
+      if (rec.timpaIsi === true && terisi && terisi.terisi) {
+        // MENIMPA: putusan sudah ada sebelum Simpan, jadi "terisi" tidak membuktikan apa pun. Bukti yang sah: jawaban SIPP
+        // (dititipkan di catatan) atau tanggal/status yang berubah dari keadaan sebelumnya.
+        const sblm = rec.sebelum || {};
+        const berubah = String(terisi.tanggal || "") !== String(sblm.tanggal || "") || String(terisi.status || "") !== String(sblm.status || "");
+        if (rec.jawabanSimpan === 1) await laporAman(rec.id, "selesai", "Putusan Akhir disimpan ulang di SIPP (menimpa isi lama; terbukti dari jawaban SIPP, halaman dimuat ulang sesudahnya).");
+        else if (berubah) await laporAman(rec.id, "selesai", `Putusan Akhir disimpan ulang di SIPP (menimpa isi lama; tanggal/status berubah${terisi.tanggal ? `: ${terisi.tanggal}` : ""}).`);
+        else await laporAman(rec.id, "gagal", "Halaman dimuat ulang, tetapi belum terbukti Putusan Akhir yang lama berhasil diganti (isi lama dan baru tidak dapat dibedakan dari SIPP). Periksa perkaranya, lalu ulangi bila perlu.");
+      } else if (terisi && terisi.terisi) await laporAman(rec.id, "selesai", `Tersimpan di SIPP (terbukti setelah halaman dimuat ulang${terisi.tanggal ? `, tanggal ${terisi.tanggal}` : ""}).`);
       else if (terisi) await laporAman(rec.id, "gagal", "Halaman dimuat ulang tetapi Putusan Akhir belum terbukti tersimpan di SIPP. Periksa perkaranya, lalu ulangi bila perlu.");
       else await laporAman(rec.id, "gagal", "Putusan Akhir mungkin tersimpan, tetapi keadaan SIPP belum dapat dibaca untuk memastikannya. Periksa perkaranya.");
       hentikanDetakJantung();

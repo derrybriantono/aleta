@@ -254,7 +254,16 @@ export async function laporPeramban(
   const b = await butirMilik(db, pelaku, masukan.id);
   if (b.klaim_oleh !== pemegang(pelaku) || b.status !== "jalan") throw new ApiError(409, "Butir ini tidak sedang Anda pegang (masa pegang habis atau sudah dilepas).");
   const hasil: HasilLaporan = (["selesai", "dilewati", "tertahan", "gagal"] as const).includes(masukan.hasil) ? masukan.hasil : "gagal";
-  const catatan = sebaris(masukan.catatan, 400) || (hasil === "selesai" ? "Putusan Akhir tersimpan di SIPP." : hasil === "dilewati" ? "Putusan Akhir sudah terisi di SIPP - tidak ditimpa." : "");
+  const menimpaForm = pilihanDariBaris(b).timpa?.form === true;
+  const catatan =
+    sebaris(masukan.catatan, 400) ||
+    (hasil === "selesai"
+      ? menimpaForm
+        ? "Putusan Akhir disimpan ulang di SIPP (menimpa isi lama)."
+        : "Putusan Akhir tersimpan di SIPP."
+      : hasil === "dilewati"
+        ? "Putusan Akhir sudah terisi di SIPP - tidak ditimpa."
+        : "");
   const langkah = langkahDariBaris(b);
   const perubahan: PerubahanButir = { isi: { status: hasil as StatusLangkah, catatan }, lain: { klaim_oleh: "", klaim_sampai: "" } };
   let edocSesudah = "";

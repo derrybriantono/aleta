@@ -3824,6 +3824,9 @@ function bagianUnggahPutusanSipp(nomorPerkara) {
     badan.append("nomorPerkara", nomorPerkara || "");
     badan.append("olehUsername", namaPenggunaSipp() || "");
     badan.append(jenis, berkas);
+    // Berkas dipilih dan "Unggah ke SIPP" ditekan petugas sendiri: itu keputusan mengganti e-Doc yang sudah ada
+    // (seperti sebelum rute meminta tanda eksplisit per slot, 5 Nov 2026).
+    badan.append(jenis === "anonimisasi" ? "timpaAnonim" : "timpaPutusan", "1");
     return kirimBadanUnggahSipp(badan);
   };
 
@@ -4125,6 +4128,9 @@ function bagianUnggahEdocTerpisah(nomorPerkara) {
     badan.append("olehUsername", namaPenggunaSipp() || "");
     if (putusan) badan.append("putusan", putusan);
     if (anonimisasi) badan.append("anonimisasi", anonimisasi);
+    // Petugas memilih berkas dan menekan "Unggah ke SIPP" sendiri = keputusan mengganti e-Doc yang sudah ada.
+    if (putusan) badan.append("timpaPutusan", "1");
+    if (anonimisasi) badan.append("timpaAnonim", "1");
     kabar.className = "aleta-abt-kabar";
     kabar.textContent =
       putusan && anonimisasi
@@ -4252,6 +4258,8 @@ function b2PasangUlangEdoc(p) {
         putusan: p.putusan || null,
         putusanRtf: p.putusanRtf || null,
         anonim: p.anonim || null,
+        timpaPutusan: p.timpaPutusan === true,
+        timpaAnonim: p.timpaAnonim === true,
       });
       if (!b2LaporkanEdoc(p.nomorPerkara, p.tempat.laporan, h, "Putusan Akhir tersimpan di SIPP.")) {
         mod.gambarLangkah(p.tempat.laporan, "Hasil unggah ulang", h.langkah || []);
@@ -4267,13 +4275,13 @@ function b2PasangUlangEdoc(p) {
  * Menjalankan praperiksa dan menggambarnya ke wadah. Pulang rapornya, atau
  * null bila tidak dapat diminta - dan ketidakdapatan itu ikut digambar.
  */
-async function jalankanPraperiksaPanel(nomorPerkara, wadah) {
+async function jalankanPraperiksaPanel(nomorPerkara, wadah, opsi) {
   const tempat = buatElemen("div", "aleta-praperiksa-tempat");
   tempat.appendChild(buatElemen("div", "aleta-memuat", "Praperiksa: membaca fakta SIPP dan mengadunya dengan draf…"));
   wadah.appendChild(tempat);
   try {
     const usulan = await bacaUsulanBorangPutusan();
-    const rapor = await mintaPraperiksaPutusan(nomorPerkara, usulan);
+    const rapor = await mintaPraperiksaPutusan(nomorPerkara, usulan, opsi);
     tempat.textContent = "";
     if (!rapor || !rapor.ada) {
       tempat.appendChild(
@@ -4954,7 +4962,9 @@ function bagianIsiPutusan(nomorPerkara) {
 
     // Praperiksa lebih dulu daripada usulan isian: yang membaca panel ini
     // harus melihat pertentangannya SEBELUM melihat tombol Isikan.
-    raporAgen = await jalankanPraperiksaPanel(nomorPerkara, wadah);
+    // Putusan Akhir yang sudah terisi DICENTANG petugas untuk diganti (Putusan Otomatis, opsi.timpaIsi): "sudah putus"
+    // dicatat saja, tidak menahan. Pemeriksaan lain tetap berlaku. Dari tombol panel biasa: tetap menahan seperti semula.
+    raporAgen = await jalankanPraperiksaPanel(nomorPerkara, wadah, { timpa: Boolean(otoMenunggu && otoMenunggu.opsi && otoMenunggu.opsi.timpaIsi === true) });
 
     for (const satu of jawab.catatan || []) {
       wadah.appendChild(buatElemen("div", "aleta-tetap-sebab", satu));
@@ -5417,7 +5427,9 @@ function bagianIsiPutusan(nomorPerkara) {
       terap.disabled = true;
       // Butir 6 (1.189.x): putusan yang sudah terisi di SIPP tidak ditimpa
       // tanpa persetujuan petugas.
-      if (!(await b6KonfirmasiTimpaPutusan(nomorPerkara))) {
+      // Dari Putusan Otomatis dengan "ganti" dicentang (opsi.timpaIsi) pertanyaan ini sudah dijawab petugas lewat centang itu.
+      const timpaIsiEksplisit = Boolean(otoMenunggu && otoMenunggu.opsi && otoMenunggu.opsi.timpaIsi === true);
+      if (!timpaIsiEksplisit && !(await b6KonfirmasiTimpaPutusan(nomorPerkara))) {
         terap.disabled = false;
         hasilTerap.textContent = "Dibatalkan - putusan lama di SIPP tidak diubah, blangko tidak diisi.";
         return;
@@ -5466,6 +5478,7 @@ function bagianIsiPutusan(nomorPerkara) {
         }
         opsiAwalA30 = a30OpsiSimpanPutusan({
           nomorPerkara,
+          timpaEdoc: true,
           kabar: kabarAnon,
           wadah,
           sebelum: sebelumA30,
@@ -5614,6 +5627,7 @@ function bagianIsiPutusan(nomorPerkara) {
       } else if (a30Nyala && typeof a30OpsiSimpanPutusan === "function") {
         opsiSimpanA30 = await a30OpsiSimpanPutusan({
           nomorPerkara,
+          timpaEdoc: true,
           kabar: hasilTerap,
           wadah,
           sebelum: sebelumA30,
@@ -5651,8 +5665,16 @@ function bagianIsiPutusan(nomorPerkara) {
               putusanRtf: putusanRtfOto,
               denganPutusan: !(opsiOto && opsiOto.denganPutusan === false),
               denganAnonim: !(opsiOto && opsiOto.denganAnonim === false),
+              // Tanda timpa eksplisit per slot dari panel Putusan Otomatis; tanpa tanda yang sudah ada dilewati.
+              timpaPutusan: Boolean(opsiOto && opsiOto.timpaPutusan === true),
+              timpaAnonim: Boolean(opsiOto && opsiOto.timpaAnonim === true),
             });
         }
+      }
+      // Putusan Akhir yang sudah tersimpan DIGANTI atas centang petugas: bukti simpan menuntut jawaban SIPP,
+      // dan jawabannya dicatat segera (halaman dapat dimuat ulang sesudah Simpan).
+      if (opsiOto && opsiOto.timpaIsi === true) {
+        opsiSimpanA30 = { ...(opsiSimpanA30 || {}), timpa: true, ...(typeof opsiOto.saatJawaban === "function" ? { saatJawaban: opsiOto.saatJawaban } : {}) };
       }
       // 26 Okt 2026: niat e-Doc dicatat SEBELUM Simpan. Halaman yang dimuat ulang sesudah Putusan Akhir tersimpan
       // mematikan skrip ini sebelum e-Doc terunggah (perkara 615): catatan yang masih ada saat halaman perkara
@@ -5664,6 +5686,8 @@ function bagianIsiPutusan(nomorPerkara) {
             nomorPerkara,
             denganPutusan: !(opsiOto && opsiOto.denganPutusan === false),
             denganAnonim: !(opsiOto && opsiOto.denganAnonim === false),
+            timpaPutusan: Boolean(opsiOto && opsiOto.timpaPutusan === true),
+            timpaAnonim: Boolean(opsiOto && opsiOto.timpaAnonim === true),
             putusan: putusanOto,
             putusanRtf: putusanRtfOto,
             anonim: anonimPilihan || null,
@@ -5693,6 +5717,8 @@ function bagianIsiPutusan(nomorPerkara) {
           putusan: !otoTentukanEdoc && sekaligus && sekaligus.dipakai() && naskahEdoc ? naskahEdoc.asli : putusanOto,
           putusanRtf: !otoTentukanEdoc && sekaligus && sekaligus.dipakai() && naskahEdoc ? naskahEdoc.rtf : putusanRtfOto,
           anonim: anonimPilihan || null,
+          timpaPutusan: Boolean(opsiOto && opsiOto.timpaPutusan === true),
+          timpaAnonim: Boolean(opsiOto && opsiOto.timpaAnonim === true),
           perluBerkas: Boolean(hasilSimpan.edoc.perluBerkas),
         });
       }

@@ -58,7 +58,8 @@ describe("nama berkas dan letaknya meniru SIPP", () => {
     expect(bot).toContain(
       'function jalurRelatif(nomorPerkara, jenis, tanggalPutusan, ekstensi = "pdf")'
     );
-    expect(bot).toContain("SELECT tanggal_putusan FROM perkara_putusan");
+    // Kolom e-Doc lama ikut dibaca pada kueri yang sama (5 Nov 2026) - tanggal putusan tetap sumber folder.
+    expect(bot).toContain("SELECT tanggal_putusan, amar_putusan_dok, amar_putusan_anonimisasi_dok FROM perkara_putusan");
     expect(bot).toContain("resources/file/${FOLDER[jenis]}/${tgl[0]}/${tgl[1]}/${berkas}");
   });
 
@@ -123,7 +124,8 @@ describe("baris yang ditulis ke SIPP", () => {
   });
 
   it("anonimisasi selalu published, putusan akhir tidak", () => {
-    expect(bot).toContain('const published = jenis === "anonimisasi" ? 1 : 0;');
+    // Bawaan putusan akhir 0; hanya saat MENIMPA baris lama pilihan "Publikasi" yang sudah ada dipertahankan.
+    expect(bot).toMatch(/const published = jenis === "anonimisasi" \? 1 : menimpaBaris \? \(Number\(dirputLama\.published\) === 1 \? 1 : 0\) : 0;/);
   });
 });
 

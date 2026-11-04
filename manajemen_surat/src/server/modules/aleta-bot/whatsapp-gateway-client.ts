@@ -3812,6 +3812,12 @@ export async function gatewayUnggahPutusanSipp(muatan: {
    * kosong atau di luar daftar itu - lapis kedua di belakang rute portal.
    */
   peranPenekan?: string;
+  /**
+   * Tanda timpa EKSPLISIT per slot (5 Nov 2026). Tanpa tanda, e-Doc yang sudah terisi di SIPP
+   * tidak disentuh: bot menjawab alasan "sudah_ada" untuk slot itu. Menimpa bukan bawaan rute.
+   */
+  timpaPutusan?: boolean;
+  timpaAnonim?: boolean;
 }) {
   return gatewayFetch<{
     ok: boolean;
@@ -3825,6 +3831,8 @@ export async function gatewayUnggahPutusanSipp(muatan: {
       pesan?: string;
       jalur?: string;
       published?: number;
+      /** true bila e-Doc lama diganti (timpa eksplisit atas slot yang sudah terisi). */
+      ditimpa?: boolean;
     }>;
   }>("/internal/aleta-bot/sipp/putusan-unggah", {
     method: "POST",

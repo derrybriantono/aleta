@@ -67,7 +67,10 @@ export async function POST(request: NextRequest) {
       statusPutusan?: string;
       verstek?: string;
       mintaAi?: boolean;
+      /** Petugas mencentang "ganti" Putusan Akhir yang sudah terisi: "sudah putus" tidak lagi menahan. Hanya `true`. */
+      timpa?: boolean;
     }>(request);
+    const timpa = badan?.timpa === true;
     const nomorPerkara = String(badan?.nomorPerkara ?? "").trim();
     if (!nomorPerkara) return ok({ ada: false, sebab: "Nomor perkara belum disebut." });
 
@@ -113,7 +116,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    let rapor = nilaiPraperiksa(fakta.data, usulan);
+    let rapor = nilaiPraperiksa(fakta.data, usulan, { timpa });
 
     let pendapat: PendapatAi | null = null;
     if (badan?.mintaAi !== false && !rapor.hentikan) {
@@ -125,10 +128,10 @@ export async function POST(request: NextRequest) {
         anak: fakta.data.anak,
       });
       pendapat = jawaban.ok ? jawaban.data : { ok: false, alasan: jawaban.error };
-      rapor = nilaiPraperiksa(fakta.data, usulan, { pendapat });
+      rapor = nilaiPraperiksa(fakta.data, usulan, { pendapat, timpa });
     } else if (rapor.hentikan) {
       pendapat = { ok: false, alasan: "Tidak diminta: sudah ada pertentangan yang menahan." };
-      rapor = nilaiPraperiksa(fakta.data, usulan, { pendapat });
+      rapor = nilaiPraperiksa(fakta.data, usulan, { pendapat, timpa });
     }
 
     const jadwal = fakta.data.jadwal ?? [];

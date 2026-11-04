@@ -470,15 +470,15 @@ describe("halaman perkara: panel, seret-lepas banyak berkas, pasangan", () => {
     expect(q(h, '[data-ptj="utama"]')).toBeTruthy();
   });
 
-  it("Putusan Akhir yang SUDAH terisi di SIPP: langkah isi dimatikan dan tidak dapat dicentang (tidak ditimpa)", async () => {
+  it("Putusan Akhir yang SUDAH terisi di SIPP (5 Nov 2026): langkah isi tetap tampil, tidak tercentang sendiri, dan dapat dicentang untuk mengganti", async () => {
     const h = buka({ sudahPutus: true });
     await panelSiap(h);
     await sampai(() => api(h).keadaan().kandidat[0].sudahPutus === true, "keadaan SIPP terbaca");
     const k = api(h).keadaan();
     const c = q(h, `[data-ptj-langkah="${k.kandidat[0].kunci}:isi"]`) as HTMLInputElement;
     expect(c.checked).toBe(false);
-    expect(c.disabled).toBe(true);
-    expect(panel(h)!.textContent).toMatch(/sudah terisi di SIPP: tidak ditimpa/);
+    expect(c.disabled).toBe(false);
+    expect(panel(h)!.textContent).toMatch(/sudah ada di SIPP\. Centang untuk mengganti\./);
   });
 
   it("satu berkas diseret: diunggah ke server, dipasang menurut nomor di NAMA, langkah e-Doc menyala, ringkasan form tampil", async () => {
@@ -785,7 +785,7 @@ describe("massal (dashboard dan daftar perkara): perkara menurut tanggal", () =>
     expect(k41).toMatchObject({ nomor: "41/Pdt.G/2026/PA.Dgl", sudahPutus: true, adaPutusan: true, adaAnonim: false });
     const c = (j: string) => q(h, `[data-ptj-langkah="${k41.kunci}:${j}"]`) as HTMLInputElement;
     expect(c("isi").checked).toBe(false);
-    expect(c("isi").disabled).toBe(true);
+    expect(c("isi").disabled).toBe(false);
     await seret(h, ["41_Pdt.G_2026_PA.Dgl putusan.rtf"]);
     await sampai(() => !c("putusan").disabled, "e-Doc dapat dipilih");
     // e-Doc putusan sudah ada di SIPP: tidak dicentang bawaannya; anonimisasi menunggu.

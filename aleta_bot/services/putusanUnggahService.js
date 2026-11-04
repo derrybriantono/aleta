@@ -389,10 +389,30 @@ async function unggahSatu({
   // Teks dari SIPP yang memuat kata ALETA (nama pihak perkara ini) - tidak dihitung
   // oleh penjaga isi berkas (penjagaTandaSipp).
   dariSipp = [],
+  // Keadaan e-Doc slot ini SEBELUM ditulis: { ada: boolean, jalurLama: string }. null = pemanggil lama
+  // (uji) yang tidak membaca keadaan - diperlakukan belum ada.
+  keadaanLama = null,
+  // Tanda timpa EKSPLISIT slot ini (5 Nov 2026). Tanpa tanda, slot yang sudah terisi di SIPP tidak
+  // disentuh sama sekali (alasan "sudah_ada"); menimpa bukan bawaan.
+  timpa = false,
+  // Baris dirput_dokumen lama untuk slot ini (dibaca SEBELUM menulis bila timpa): { id, published } | null.
+  dirputLama = null,
 }) {
   const kolom = KOLOM_DOK[jenis];
   if (!kolom) return { jenis, ok: false, alasan: "jenis_tidak_didukung" };
   if (!pdf || !pdf.length) return { jenis, ok: false, alasan: "berkas_kosong" };
+  const adaLama = Boolean(keadaanLama && keadaanLama.ada);
+  if (adaLama && timpa !== true) {
+    return {
+      jenis,
+      ok: false,
+      alasan: "sudah_ada",
+      pesan:
+        `e-Doc ${jenis === "anonimisasi" ? "anonimisasi" : "putusan"} sudah ada di SIPP` +
+        `${keadaanLama.jalurLama ? ` (${String(keadaanLama.jalurLama).split("/").pop()})` : ""} dan tidak diganti. ` +
+        "Centang untuk mengganti bila memang hendak ditimpa.",
+    };
+  }
 
   // ==========================================================================
   // JENISNYA DIKENALI DARI BITANYA, BUKAN DARI NAMANYA
@@ -568,6 +588,7 @@ async function unggahSatu({
       sebagian: true,
       jalur: relatifAsli,
       bentuk,
+      ditimpa: adaLama,
       tabel: tabelDisentuh,
       alasan: "pdf_belum_dapat_dibuat",
       pesan:
@@ -590,8 +611,12 @@ async function unggahSatu({
   }
 
   // published: anonimisasi SELALU 1 - itulah yang terbit di Direktori Putusan.
-  // Putusan akhir mengikuti pilihan petugas, dan bawaannya 0.
-  const published = jenis === "anonimisasi" ? 1 : 0;
+  // Putusan akhir mengikuti pilihan petugas, dan bawaannya 0. Saat MENIMPA putusan, pilihan itu
+  // dipertahankan seperti borang SIPP yang menyimpan ulang tanpa mengubah isian "Publikasi"
+  // (fileupload_putusan_c.php:validatePost meneruskan status_publish dari borang yang sudah terpilih
+  // sesuai baris lama - fileupload_m.php:get_put_publikasi). Putusan yang sudah terbit tidak ditarik diam-diam.
+  const menimpaBaris = Boolean(adaLama && timpa === true && dirputLama);
+  const published = jenis === "anonimisasi" ? 1 : menimpaBaris ? (Number(dirputLama.published) === 1 ? 1 : 0) : 0;
 
   const lama = await runQuery(
     `SELECT id FROM dirput_dokumen WHERE perkara_id = ? AND dokumen_ref_id = ? LIMIT 1`,
@@ -599,7 +624,33 @@ async function unggahSatu({
   ).catch(() => []);
   const idLama = Number((Array.isArray(lama) && lama[0] && lama[0].id) || 0);
 
-  if (idLama) {
+  if (idLama && menimpaBaris) {
+    // MENIMPA meniru SIPP: dirput_model.php:convert_insert (dan convert_insert_Annmous) memakai
+    // $this->db->replace('dirput_dokumen', ...) dengan id NULL - baris lama (kunci utama perkara_id,
+    // general_id, dokumen_ref_id, pihak_detil_id, pengajuan_id) diganti baris yang ditulis utuh:
+    // created_date hari ini, keterangan/flag_sync/link_dirput kembali kosong (tersinkron ulang).
+    // Hasil baris yang sama kita tulis dengan UPDATE, bukan REPLACE: REPLACE menuntut hak DELETE pada
+    // akun basis data bot dan menghapus di tengah penulisan yang tidak atomik. Satu-satunya selisih
+    // dengan SIPP: nomor urut `id` (surrogate auto-increment) tetap, tidak berganti.
+    const kosongkan = [];
+    for (const k of ["keterangan", "flag_sync", "link_dirput"]) {
+      let ada = false;
+      try {
+        ada = await sippSkemaService.kolomAda("dirput_dokumen", k);
+      } catch {
+        ada = false;
+      }
+      if (ada) kosongkan.push(`${k} = NULL`);
+    }
+    await runQuery(
+      `UPDATE dirput_dokumen
+          SET filename = ?, path_filename = ?, created_by = 'SYSTEM', created_date = ?,
+              updated_by = 'SYSTEM', updated_date = ?, pengajuan_id = 1,
+              published = ?${kosongkan.length ? `, ${kosongkan.join(", ")}` : ""}
+        WHERE id = ?`,
+      [path.basename(relatifPdf), relatifPdf, waktu.slice(0, 10), waktu.slice(0, 10), published, idLama]
+    );
+  } else if (idLama) {
     await runQuery(
       `UPDATE dirput_dokumen
           SET filename = ?, path_filename = ?, updated_by = 'SYSTEM', updated_date = ?,
@@ -630,6 +681,8 @@ async function unggahSatu({
     bentuk,
     dokumenRefId: ref,
     published,
+    ditimpa: adaLama,
+    ...(adaLama ? { jalurLama: String(keadaanLama.jalurLama || "") } : {}),
     tabel: tabelDisentuh,
   };
 }
@@ -660,6 +713,9 @@ async function unggahPutusan({
   jam = null,
   // Pencatat jejak ALETA - ditiru uji.
   catatJejak = catatJejakBawaan,
+  // Tanda timpa EKSPLISIT per slot ({ putusan, anonimisasi }), 5 Nov 2026. Tanpa tanda, slot yang
+  // e-Doc-nya sudah terisi di SIPP dijawab "sudah_ada" dan tidak ditulis sama sekali.
+  timpa = {},
 }) {
   const id = Number(perkaraId);
   if (!Number.isFinite(id) || id <= 0) return { ok: false, alasan: "perkara_tidak_sah" };
@@ -686,12 +742,28 @@ async function unggahPutusan({
 
   // Tanggal putusan menentukan folder tahun/bulan - dan perkara yang belum
   // diputus tidak punya berkas putusan untuk diunggah sama sekali.
+  // Keadaan e-Doc lama ikut dibaca di sini (satu kueri): kolom dokumen terisi = slot sudah ada.
+  // Kueri gagal dibaca TIDAK diperlakukan "belum ada" - menimpa membabi buta lebih buruk daripada berhenti.
+  let barisPutusanGagal = "";
   const barisPutusan = await runQuery(
-    `SELECT tanggal_putusan FROM perkara_putusan WHERE perkara_id = ? LIMIT 1`,
+    `SELECT tanggal_putusan, amar_putusan_dok, amar_putusan_anonimisasi_dok FROM perkara_putusan WHERE perkara_id = ? LIMIT 1`,
     [id]
-  ).catch(() => []);
+  ).catch((galat) => {
+    barisPutusanGagal = String((galat && galat.message) || galat).slice(0, 160);
+    return [];
+  });
   const tanggalPutusan =
     (Array.isArray(barisPutusan) && barisPutusan[0] && barisPutusan[0].tanggal_putusan) || null;
+  if (barisPutusanGagal) {
+    await Promise.resolve(
+      catatJejak({ ...jejakDasar, berhasil: false, alasan: "keadaan_tidak_terbaca", langkah: [] })
+    ).catch(() => false);
+    return {
+      ok: false,
+      alasan: "keadaan_tidak_terbaca",
+      pesan: `Keadaan putusan di SIPP belum terbaca (${barisPutusanGagal}), jadi tidak ada yang ditulis. Coba lagi sebentar lagi.`,
+    };
+  }
   if (!tanggalPutusan) {
     await Promise.resolve(
       catatJejak({ ...jejakDasar, berhasil: false, alasan: "belum_ada_putusan", langkah: [] })
@@ -709,14 +781,47 @@ async function unggahPutusan({
         )}`
       : String(tanggalPutusan).slice(0, 10);
 
+  // Keadaan lama tiap slot (e-Doc sudah terisi?) dan - bila slot itu MENIMPA - baris Direktori Putusan
+  // lamanya, dibaca SEBELUM satu pun tulisan. Slot yang sudah terisi tanpa tanda timpa dijawab
+  // "sudah_ada" oleh unggahSatu; baris lama yang gagal dibaca saat menimpa menghentikan slotnya.
+  const barisLamaPutusan = (Array.isArray(barisPutusan) && barisPutusan[0]) || {};
+  const keadaanLamaSlot = (jenis) => {
+    const jalur = String(barisLamaPutusan[KOLOM_DOK[jenis]] || "").trim();
+    return { ada: jalur !== "", jalurLama: jalur };
+  };
+  const timpaSlot = { putusan: timpa && timpa.putusan === true, anonimisasi: timpa && timpa.anonimisasi === true };
+  const bacaDirputLama = async (jenis) => {
+    if (!keadaanLamaSlot(jenis).ada || !timpaSlot[jenis]) return { ok: true, baris: null };
+    const ref = await dokumenRefId(id, jenis);
+    if (!ref) return { ok: true, baris: null };
+    try {
+      const b = await runQuery(`SELECT id, published FROM dirput_dokumen WHERE perkara_id = ? AND dokumen_ref_id = ? LIMIT 1`, [id, ref]);
+      const r = Array.isArray(b) && b[0] ? b[0] : null;
+      return { ok: true, baris: r ? { id: Number(r.id) || 0, published: Number(r.published) === 1 ? 1 : 0 } : null };
+    } catch (galat) {
+      return { ok: false, sebab: String((galat && galat.message) || galat).slice(0, 160) };
+    }
+  };
+
   // Kedua konversi dimulai SEKARANG, bersamaan; penulisannya tetap berurutan
   // (putusan dahulu). Lihat mulaiUbahKePdf.
   const dariSipp = await penjagaTandaSipp.dataSippMemuatAleta(id, runQuery);
-  const ubahPutusan = pdfPutusan ? mulaiUbahKePdf(pdfPutusan) : null;
-  const ubahAnonimisasi = pdfAnonimisasi ? mulaiUbahKePdf(pdfAnonimisasi) : null;
+  // Slot yang akan ditolak "sudah_ada" tidak perlu diubah ke PDF (percuma memakai soffice).
+  const tertahanSudahAda = (jenis) => keadaanLamaSlot(jenis).ada && !timpaSlot[jenis];
+  const ubahPutusan = pdfPutusan && !tertahanSudahAda("putusan") ? mulaiUbahKePdf(pdfPutusan) : null;
+  const ubahAnonimisasi = pdfAnonimisasi && !tertahanSudahAda("anonimisasi") ? mulaiUbahKePdf(pdfAnonimisasi) : null;
 
   const hasil = [];
+  const tahanBacaLama = (jenis, sebab) => ({
+    jenis,
+    ok: false,
+    alasan: "keadaan_lama_tidak_terbaca",
+    pesan: `Baris Direktori Putusan yang lama belum terbaca (${sebab}), jadi e-Doc ${jenis === "anonimisasi" ? "anonimisasi" : "putusan"} tidak ditimpa.`,
+  });
   if (pdfPutusan) {
+    const dl = await bacaDirputLama("putusan");
+    if (!dl.ok) hasil.push(tahanBacaLama("putusan", dl.sebab));
+    else
     hasil.push(
       await unggahSatu({
         perkaraId: id,
@@ -729,10 +834,16 @@ async function unggahPutusan({
         ubahan: ubahPutusan,
         jam,
         dariSipp,
+        keadaanLama: keadaanLamaSlot("putusan"),
+        timpa: timpaSlot.putusan,
+        dirputLama: dl.baris,
       })
     );
   }
   if (pdfAnonimisasi) {
+    const dl = await bacaDirputLama("anonimisasi");
+    if (!dl.ok) hasil.push(tahanBacaLama("anonimisasi", dl.sebab));
+    else
     hasil.push(
       await unggahSatu({
         perkaraId: id,
@@ -745,6 +856,9 @@ async function unggahPutusan({
         ubahan: ubahAnonimisasi,
         jam,
         dariSipp,
+        keadaanLama: keadaanLamaSlot("anonimisasi"),
+        timpa: timpaSlot.anonimisasi,
+        dirputLama: dl.baris,
       })
     );
   }
@@ -783,7 +897,7 @@ async function unggahPutusan({
       langkah.push({
         tabel: t,
         aksi: t === "perkara_putusan" ? "UPDATE" : "TULIS",
-        keterangan: `${h.jenis}: ${t === "perkara_putusan" ? h.jalur || "" : h.jalurPdf || ""}`,
+        keterangan: `${h.jenis}: ${t === "perkara_putusan" ? h.jalur || "" : h.jalurPdf || ""}${h.ditimpa ? " (menimpa e-Doc lama)" : ""}`,
       });
     }
     if (!h.ok) langkah.push({ tabel: "", aksi: "GAGAL", keterangan: `${h.jenis}: ${h.alasan || "gagal"}` });

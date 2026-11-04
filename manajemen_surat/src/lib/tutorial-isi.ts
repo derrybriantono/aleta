@@ -1003,7 +1003,8 @@ export const TUTORIAL: readonly Tutorial[] = [
       "Periksa isian formulir Putusan Akhir yang diisi otomatis dari putusan, lalu simpan.",
       "Tekan unggah. Untuk banyak perkara, pakai unggah massal dari daftar perkara: hakim untuk putusan dan salinan anonim, dengan pemeriksaan ganda dan riwayat.",
       "Putusan anonim menyamarkan nama pihak (termasuk yang beralias), saksi, anak, NIK, dan alamat. Bila baru sebagian yang tersamar, tersedia tombol Tetap unggah. Bila tidak ada yang tersamar, unggahan tetap ditolak.",
-      "Bila putusan sudah terisi di SIPP, tugas Putusan otomatis disembunyikan dan baru muncul lagi dengan peringatan saat blangko dibuka ulang. E-Doc yang sudah terunggah meminta konfirmasi sebelum ditimpa.",
+      "Putusan Akhir, e-Doc putusan, dan e-Doc anonimisasi yang sudah ada di SIPP (diisi petugas maupun ALETA) tetap tampil dan dapat dicentang untuk diganti, di Putusan Otomatis maupun Jadwalkan Putusan. Bawaannya tidak tercentang; yang tercentang menimpa yang lama tanpa perlu menghapus dulu, dan tiap langkah berdiri sendiri. Laporannya menyebut \"diganti\" terpisah dari \"tercatat\" dan \"sudah ada\".",
+      "Pemeriksaan isi tetap berlaku saat mengganti: naskah yang bukan putusan, nomor perkara yang berbeda, dan anonimisasi yang masih memuat nama pihak tetap ditolak.",
     ],
     peringatan: [
       "Hanya hakim (termasuk Ketua dan Wakil), admin, dan Super Admin yang dapat mengunggah putusan.",

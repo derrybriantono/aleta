@@ -308,6 +308,8 @@ export async function POST(request: NextRequest) {
           "(putusan asli tidak diubah)."
       );
     }
+    const timpaPutusan = String(formulir.get("timpaPutusan") ?? "") === "1";
+    const timpaAnonim = String(formulir.get("timpaAnonim") ?? "") === "1";
     const bitaSlot = (slot: SlotUnggahSipp) => berkas.find((b) => b.slot === slot)?.bita;
     const putusan = bitaSlot("putusan");
     const anonimisasi = bitaSlot("anonimisasi");
@@ -329,13 +331,20 @@ export async function POST(request: NextRequest) {
       // Alamat peramban petugas itu, untuk kolom ipaddress baris audit SIPP.
       // Kosong bila tidak ada alamat IPv4 yang sah - tidak pernah dikarang.
       ip: alamatIpPeramban(request),
+      // Tanda timpa EKSPLISIT per slot (5 Nov 2026) - hanya untuk slot yang memang dikirim. Tanpa tanda,
+      // e-Doc yang sudah terisi di SIPP tidak disentuh (bot menjawab "sudah_ada"): menimpa BUKAN bawaan rute.
+      ...(putusan && timpaPutusan ? { timpaPutusan: true } : {}),
+      ...(anonimisasi && timpaAnonim ? { timpaAnonim: true } : {}),
     });
 
     if (!hasil.ok) {
+      // Rincian per slot ikut dibawa (mis. "sudah_ada") supaya pemanggil dapat menyebut slot mana yang tidak ditulis.
+      const berkasBot = (hasil.badan as { berkas?: unknown } | undefined)?.berkas;
       return ok({
         ok: false,
         sebab: hasil.error || "ALETA Bot belum dapat dihubungi.",
         peringatan: periksa.peringatan,
+        ...(Array.isArray(berkasBot) ? { berkas: berkasBot } : {}),
       });
     }
     return ok({

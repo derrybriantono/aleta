@@ -606,6 +606,7 @@
     clearTimeout(pewaktuPasangan);
     pewaktuPasangan = setTimeout(() => {
       void muatRingkasanForm();
+      void muatKeadaanEdoc();
       void muatPratinjau();
     }, 350);
   }
@@ -641,7 +642,47 @@
     const isi = b.langkah.isi == null ? !k.sudahPutus : b.langkah.isi === true;
     const putusan = berkas ? (b.langkah.putusan == null ? !k.adaPutusan : b.langkah.putusan === true) : false;
     const anonim = berkas ? (b.langkah.anonim == null ? !k.adaAnonim : b.langkah.anonim === true) : false;
-    return { isi, putusan, anonim, berkas, ada: isi || putusan || anonim };
+    // Tanda MENIMPA eksplisit per langkah: dicentang DAN terbukti sudah ada di SIPP. Yang tidak terbukti ada
+    // (tidak terbaca) dikerjakan seperti biasa dan dilewati server bila ternyata sudah ada.
+    const timpa = { form: isi && k.sudahPutus === true, putusan: putusan && k.adaPutusan === true, anonim: anonim && k.adaAnonim === true };
+    return { isi, putusan, anonim, berkas, timpa, ada: isi || putusan || anonim };
+  }
+
+  /**
+   * e-Doc yang sudah ada di SIPP untuk perkara yang SUDAH putus dan terpilih, dibaca sekali per perkara
+   * (kandidat dari daftar "putus" sudah membawanya). Dipakai supaya langkah e-Doc yang sudah ada tampil
+   * "sudah ada di SIPP - centang untuk mengganti" dan tidak tercentang sendiri. Gagal terbaca = keadaan lama.
+   */
+  let sedangCekEdoc = false;
+  async function muatKeadaanEdoc() {
+    if (!S || sedangCekEdoc) return;
+    const mod = globalThis.aletaPutusanEdoc;
+    if (!mod || typeof mod.cekSlot !== "function") return;
+    const perlu = S.kandidat.filter((k) => S.terpilih.has(k.kunci) && k.sudahPutus && !k.edocDibaca && k.dari !== "putus" && /^\d+$/.test(String(k.perkaraId || "")));
+    if (!perlu.length) return;
+    sedangCekEdoc = true;
+    try {
+      for (const k of perlu.slice(0, 40)) {
+        k.edocDibaca = true;
+        let c = null;
+        try {
+          c = await mod.cekSlot(k.perkaraId);
+        } catch {
+          c = null;
+        }
+        if (!S) return;
+        if (c && c.ok) {
+          k.adaPutusan = Boolean(c.adaPutusan);
+          k.adaAnonim = Boolean(c.adaAnonim);
+        }
+      }
+    } finally {
+      sedangCekEdoc = false;
+    }
+    if (S) {
+      gambarBaris();
+      gambarKaki();
+    }
   }
 
   function bodyJam() {
@@ -1121,7 +1162,8 @@
       for (const [kunci, nama] of Object.entries(NAMA_LANGKAH)) {
         const c = masukan("checkbox");
         c.checked = ef[kunci];
-        const mati = (kunci === "isi" && k.sudahPutus && !ef.isi) || (kunci !== "isi" && !ef.berkas);
+        // Yang sudah ada di SIPP TIDAK mati: dapat dicentang untuk diganti. Hanya e-Doc tanpa berkas yang mati.
+        const mati = kunci !== "isi" && !ef.berkas;
         c.disabled = mati;
         c.setAttribute("data-ptj-langkah", `${k.kunci}:${kunci}`);
         c.addEventListener("change", () => {
@@ -1131,7 +1173,14 @@
         langkah.appendChild(berlabel("", (() => { const s = el("span"); s.append(c, ` ${nama}`); return s; })()));
       }
       td2.appendChild(langkah);
-      if (k.sudahPutus) td2.appendChild(el("div", "aleta-ptj-ket", "Putusan Akhir sudah terisi di SIPP: tidak ditimpa."));
+      // Keterangan singkat per langkah yang sudah ada: bawaan tidak tercentang, centang = mengganti.
+      const adaDi = { isi: k.sudahPutus === true, putusan: k.adaPutusan === true, anonim: k.adaAnonim === true };
+      for (const [kunci, nama] of Object.entries(NAMA_LANGKAH)) {
+        if (!adaDi[kunci] || (kunci !== "isi" && !ef.berkas)) continue;
+        const ket = el("div", "aleta-ptj-ket", `${nama}: ${ef[kunci] ? "sudah ada di SIPP. Akan diganti." : "sudah ada di SIPP. Centang untuk mengganti."}`);
+        ket.setAttribute("data-ptj-ada", `${k.kunci}:${kunci}`);
+        td2.appendChild(ket);
+      }
       // Pilihan form
       const td3 = el("td");
       if (ef.isi) {
@@ -1349,13 +1398,15 @@
     let isi = 0;
     let putusan = 0;
     let anonim = 0;
+    let ganti = 0;
     for (const k of baris) {
       const ef = langkahEfektif(k);
       if (ef.isi) isi += 1;
       if (ef.putusan) putusan += 1;
       if (ef.anonim) anonim += 1;
+      ganti += (ef.timpa.form ? 1 : 0) + (ef.timpa.putusan ? 1 : 0) + (ef.timpa.anonim ? 1 : 0);
     }
-    return { perkara: baris.length, isi, putusan, anonim };
+    return { perkara: baris.length, isi, putusan, anonim, ganti };
   }
 
   function siapMenjadwalkan() {
@@ -1377,7 +1428,7 @@
       ? "Menjadwalkan…"
       : r.perkara === 0
         ? "Belum ada yang dijadwalkan."
-        : `${r.perkara} perkara · ${r.isi} isi Putusan Akhir · ${r.putusan} e-Doc putusan · ${r.anonim} e-Doc anonimisasi`;
+        : `${r.perkara} perkara · ${r.isi} isi Putusan Akhir · ${r.putusan} e-Doc putusan · ${r.anonim} e-Doc anonimisasi${r.ganti ? ` · ${r.ganti} langkah mengganti yang sudah ada` : ""}`;
     const aksi = el("div", "aleta-ptj-baris-aksi");
     const utama = tombol(r.perkara ? `Jadwalkan ${r.perkara} perkara` : "Jadwalkan", "aleta-ptj-utama");
     utama.setAttribute("data-ptj", "utama");
@@ -1391,7 +1442,11 @@
       const ket = [];
       if (r.isi) ket.push(`Putusan Akhir diisi dan disimpan lewat SIPP yang terbuka di peramban ini (akun ${namaSippMasuk() || "yang sedang masuk"}) - buka SIPP di peramban ini pada jamnya`);
       if (r.putusan || r.anonim) ket.push("e-Doc diunggah oleh server (tidak perlu laptop menyala)");
-      ket.push("yang sudah ada di SIPP tidak diganti; yang ditahan pemeriksaan dilaporkan di Antrean terjadwal");
+      ket.push(
+        r.ganti
+          ? "yang sudah ada di SIPP hanya diganti pada langkah yang Anda centang; selebihnya dilewati. Yang ditahan pemeriksaan dilaporkan di Antrean terjadwal"
+          : "yang sudah ada di SIPP tidak diganti; yang ditahan pemeriksaan dilaporkan di Antrean terjadwal"
+      );
       kaki.appendChild(el("p", "aleta-ptj-ket", `${ket.join("; ")}.`));
     }
     gambarKonfirm();
@@ -1415,7 +1470,7 @@
     if (r.isi) rincian.push(`${r.isi} Putusan Akhir akan diisi dan DISIMPAN lewat SIPP yang terbuka di peramban ini (akun ${namaSippMasuk() || "yang sedang masuk"}) - buka SIPP di peramban ini pada jamnya`);
     if (r.putusan || r.anonim) rincian.push(`${r.putusan} e-Doc putusan dan ${r.anonim} e-Doc anonimisasi diunggah oleh server (tidak perlu laptop menyala)`);
     kotak.appendChild(el("p", "aleta-ptj-ket", `${rincian.join("; ")}.`));
-    kotak.appendChild(el("p", "aleta-ptj-ket", "Dicatat atas akun SIPP Anda. Yang sudah terisi/terunggah di SIPP tidak diganti; yang ditahan pemeriksaan (praperiksa, data pribadi yang tersisa) berhenti dan dilaporkan di Antrean terjadwal. Dapat dibatalkan atau ditunda sebelum dikerjakan."));
+    kotak.appendChild(el("p", "aleta-ptj-ket", "Dicatat atas akun SIPP Anda. Yang sudah terisi/terunggah di SIPP hanya diganti pada langkah yang Anda centang; yang ditahan pemeriksaan (praperiksa, data pribadi yang tersisa) berhenti dan dilaporkan di Antrean terjadwal. Dapat dibatalkan atau ditunda sebelum dikerjakan."));
     if (S.pilihAkun.length) {
       const sel = document.createElement("select");
       sel.setAttribute("data-ptj", "pilih-akun");
@@ -1475,7 +1530,14 @@
           jenisPerkara: k.jenis || "",
           ...(ef.berkas ? { berkasId: ef.berkas.id } : {}),
           langkah: { isi: ef.isi, putusan: ef.putusan, anonim: ef.anonim },
-          pilihan: ef.isi ? { statusPutusan: b.pilihan.statusPutusan || "", verstek: b.pilihan.verstek || "" } : {},
+          pilihan: {
+            ...(ef.isi ? { statusPutusan: b.pilihan.statusPutusan || "", verstek: b.pilihan.verstek || "" } : {}),
+            // Tanda menimpa tersimpan pada barisnya: pengerjaan belakangan (server dan peramban) menghormatinya.
+            // Tanpa tanda, perilaku lama: yang sudah ada dilewati.
+            ...(ef.timpa.form || ef.timpa.putusan || ef.timpa.anonim
+              ? { timpa: { ...(ef.timpa.form ? { form: true } : {}), ...(ef.timpa.putusan ? { putusan: true } : {}), ...(ef.timpa.anonim ? { anonim: true } : {}) } }
+              : {}),
+          },
         });
       }
       const badan = {
@@ -1647,7 +1709,9 @@
         for (const k of ["isi", "putusan", "anonim"]) {
           if (!b.langkah[k]) continue;
           const st = b.statusLangkah[k];
-          const chip = el("span", `aleta-ptj-chip aleta-ptj-c-${NADA_STATUS[st] || "lewat"}`, `${NAMA_LANGKAH[k]}: ${NAMA_STATUS[st] || st}`);
+          // Langkah yang dijadwalkan untuk MENGGANTI yang sudah ada diberi tanda, supaya terbaca di antrean.
+          const ganti = Boolean(b.pilihan && b.pilihan.timpa && b.pilihan.timpa[k === "isi" ? "form" : k] === true);
+          const chip = el("span", `aleta-ptj-chip aleta-ptj-c-${NADA_STATUS[st] || "lewat"}`, `${NAMA_LANGKAH[k]}: ${NAMA_STATUS[st] || st}${ganti ? " · mengganti" : ""}`);
           chip.setAttribute("data-ptj-status", `${k}:${st}`);
           if (b.catatan[k]) chip.title = b.catatan[k];
           langkah.appendChild(chip);
@@ -1748,6 +1812,9 @@
         putusan: berkas,
         denganPutusan: perlu("putusan"),
         denganAnonim: perlu("anonim"),
+        // Tanda timpa yang dipilih penjadwal ikut (tanpa tanda, e-Doc yang sudah ada dilewati seperti semula).
+        timpaPutusan: Boolean(b.pilihan && b.pilihan.timpa && b.pilihan.timpa.putusan === true),
+        timpaAnonim: Boolean(b.pilihan && b.pilihan.timpa && b.pilihan.timpa.anonim === true),
         kabar,
         wadah,
       });
@@ -1837,7 +1904,8 @@
       segarkanPasangan();
       void perkaraIdUntuk(S.nomor).then(async (id) => {
         if (k) k.perkaraId = id;
-        // Putusan yang sudah terisi tidak ditimpa: langkah isi dimatikan bila SIPP sudah memuatnya.
+        // Putusan yang sudah terisi: langkah isi tidak tercentang sendiri (mengganti adalah keputusan petugas),
+        // tetapi tetap tampil dan dapat dicentang untuk menimpa.
         const baca = fungsi("b6KeadaanPutusanTerisi");
         if (baca) {
           try {
