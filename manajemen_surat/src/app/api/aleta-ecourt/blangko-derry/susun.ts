@@ -893,6 +893,8 @@ export const KETERANGAN_SAKSI_OTOMATIS: Readonly<Record<string, string>> = Objec
   "9263": "8932", // Keterangan Saksi 5 P
   "9264": "2023", // Keterangan Saksi 1 T
   "9265": "2024", // Keterangan Saksi 2 T
+  "9266": "2032", // Keterangan Saksi 3 T (4 Nov 2026, paket keputusan-a-kerangka-4nov)
+  "9267": "8942", // Keterangan Saksi 4 T (4 Nov 2026, paket keputusan-a-kerangka-4nov)
 });
 
 /** Kode yang dirujuk sebuah definisi (lewat #NNNN# di kueri/bawaan dan no_var = 'NNNN' di kueri). */

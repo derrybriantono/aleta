@@ -1,0 +1,21 @@
+cc83d81786aeb9446759911d8a599d58  abt-keputusan-a-kerangka-4nov-PASANG.sql
+e1170ed2a5a09f21786d9b5562f84e1c  abt-keputusan-a-kerangka-4nov-PERIKSA.sql
+f76396a6939e4c8f663da07889521949  abt-keputusan-a-kerangka-4nov-PRASYARAT.sql
+f393cef37e55f74c22efb469cc01c691  abt-keputusan-a-kerangka-4nov-PULIH.sql
+4e903c40e5c67a2826bbe149126805bf  berkas_rtf.py
+d43b067bbb4261b08951f3aeff2f6a37  daftar-rtf.tsv
+5a7aca2cf65487c145ce2e4848628a22  daftar-tambal.tsv
+ac51a9523705c642bb052b3521238091  daftar-timpa.tsv
+978c4b681572afdf31bf2961cbaee1eb  folder-ada.txt
+d41d8cd98f00b204e9800998ecf8427e  folder-baru.txt
+2dcb80568dc38cea2c56ed6d1bacc2e0  harap.txt
+737f08ff1589bb843ca4072faf4d79ec  nomor-variabel.txt
+98f88f0670f9b6c77af1730a8d3b4ad0  pasang-satker.sh
+06d0955793149ed4f5f75e153de2c5f1  pulih-satker.sh
+1995d0d333dfa5fd9aaf45e7507a6f14  rtf/derry_briantono/1 Perceraian CG/[02] [Kabul] CG - F - (3 Saksi T).rtf
+0f283227d3e200f0482f640cffe01588  rtf/derry_briantono/1 Perceraian CG/[02] [Kabul] CG - F - (4 Saksi T).rtf
+2adcc4f7179cb0d533c3ac77ea1e0689  rtf/derry_briantono/1a Perceraian CT/[02] [Kabul] CT - F - (3 Saksi T).rtf
+1aad612600cc59ca013c1c514bcc03f6  rtf/derry_briantono/1a Perceraian CT/[02] [Kabul] CT - F - (4 Saksi T).rtf
+e7a5e25822319d7edfd02dd4d08262e0  tambal.tsv
+d949a1c1e10c9b60e8cc4fd18adc9b54  tambal_rtf.py
+7ee8536f0fe0677a35c60eb4a62b22e3  uji-kueri.tsv
