@@ -3704,6 +3704,42 @@ function pasangkanBerkasUnggah(daftar, nomorHalaman) {
 /* === AKHIR 12OKT-I === */
 
 /**
+ * Panel manual "Unggah putusan ke SIPP" (5 Nov 2026): keadaan e-Doc DIBACA dulu. Belum ada = langsung seperti biasa,
+ * tanpa klik tambahan. Sudah ada = pertanyaan sebaris "Anda yakin menimpa?" dan tanda timpa HANYA untuk slot yang
+ * disetujui. Gagal terbaca = tidak ada tanda (e-Doc yang sudah ada tidak diganti; server menolaknya "sudah_ada").
+ *
+ * @param {HTMLElement} wadah  tempat pertanyaan sebaris
+ * @param {string} nomorPerkara
+ * @param {string[]} dikirim   slot yang akan dikirim: "putusan" dan/atau "anonim"
+ * @returns {Promise<{lanjut:boolean, timpa:{putusan:boolean, anonim:boolean}, terbaca:boolean}>}
+ */
+async function bacaDanTanyaTimpa(wadah, nomorPerkara, dikirim) {
+  const id = String(perkaraIdDariHalaman() || "");
+  let ada = null;
+  if (typeof alatBacaKeadaanBanyak === "function" && /^\d+$/.test(id)) {
+    const peta = await alatBacaKeadaanBanyak([id]);
+    ada = peta.get(id) || null;
+  }
+  const timpa = { putusan: dikirim.includes("putusan") && Boolean(ada && ada.putusan), anonim: dikirim.includes("anonim") && Boolean(ada && ada.anonim) };
+  const slot = [timpa.putusan ? "putusan" : "", timpa.anonim ? "anonim" : ""].filter(Boolean);
+  if (slot.length) {
+    const ya = await alatKonfirmasiTimpa(wadah, alatDaftarTimpa([{ nomor: nomorPerkara, slot }]));
+    if (!ya) return { lanjut: false, timpa: { putusan: false, anonim: false }, terbaca: Boolean(ada) };
+  }
+  return { lanjut: true, timpa, terbaca: Boolean(ada) };
+}
+
+/** Penanda satu baris: "Putusan Akhir: Sudah terisi · e-Doc putusan: Sudah diunggah · e-Doc anonimisasi: Belum diunggah". */
+async function isiPenandaManual(elemen) {
+  const id = String(perkaraIdDariHalaman() || "");
+  let ada = null;
+  if (typeof alatBacaKeadaanBanyak === "function" && /^\d+$/.test(id)) ada = (await alatBacaKeadaanBanyak([id])).get(id) || null;
+  elemen.textContent = ["form", "putusan", "anonim"]
+    .map((k) => `${ALAT_NAMA_SLOT[k]}: ${alatPenandaSlot(k, ada ? ada[k] : null)}`)
+    .join(" · ");
+}
+
+/**
  * ============================================================================
  * PUTUSAN LEBIH DAHULU, ANONIMISASI LANGSUNG SESUDAHNYA
  * ============================================================================
@@ -3814,19 +3850,31 @@ function bagianUnggahPutusanSipp(nomorPerkara) {
   tombol.type = "button";
   tombol.disabled = true;
   const kabar = buatElemen("div", "aleta-abt-kabar");
-  for (const el of [daftarPasangan, tombol, kabar]) isi.appendChild(el);
+  const penandaManual = buatElemen("div", "aleta-tetap-sebab aleta-remeh");
+  penandaManual.setAttribute("data-aleta-penanda", "unggah-putusan");
+  const wadahTanyaManual = buatElemen("div", "aleta-timpa-wadah");
+  for (const el of [daftarPasangan, penandaManual, tombol, wadahTanyaManual, kabar]) isi.appendChild(el);
+  let penandaTerbaca = false;
+  const muatPenandaSekali = () => {
+    if (penandaTerbaca) return;
+    penandaTerbaca = true;
+    void isiPenandaManual(penandaManual).catch(() => {
+      penandaManual.textContent = "Keadaan e-Doc: Belum terbaca";
+    });
+  };
+  pemilih.addEventListener("change", muatPenandaSekali);
 
   // Satu berkas, satu permintaan. Akun SIPP yang sedang membuka halaman ini
   // yang tercatat di SIPP - bukan akun ALETA.
+  let bendera = { putusan: false, anonim: false };
   const kirim = (jenis, berkas) => {
     const badan = new FormData();
     badan.append("perkaraId", perkaraIdDariHalaman());
     badan.append("nomorPerkara", nomorPerkara || "");
     badan.append("olehUsername", namaPenggunaSipp() || "");
     badan.append(jenis, berkas);
-    // Berkas dipilih dan "Unggah ke SIPP" ditekan petugas sendiri: itu keputusan mengganti e-Doc yang sudah ada
-    // (seperti sebelum rute meminta tanda eksplisit per slot, 5 Nov 2026).
-    badan.append(jenis === "anonimisasi" ? "timpaAnonim" : "timpaPutusan", "1");
+    // Tanda timpa hanya untuk slot yang sudah ada dan DISETUJUI petugas di pertanyaan sebaris (bacaDanTanyaTimpa).
+    if (jenis === "anonimisasi" ? bendera.anonim : bendera.putusan) badan.append(jenis === "anonimisasi" ? "timpaAnonim" : "timpaPutusan", "1");
     return kirimBadanUnggahSipp(badan);
   };
 
@@ -3930,6 +3978,14 @@ function bagianUnggahPutusanSipp(nomorPerkara) {
     }
     tombol.disabled = true;
     pemilih.disabled = true;
+    // Keadaan dibaca dulu; hanya bila ada yang akan ditimpa muncul pertanyaan sebaris. "Tidak" = tidak ada yang dikirim.
+    const tanya = await bacaDanTanyaTimpa(wadahTanyaManual, nomorPerkara || "", [terpilih.putusan ? "putusan" : "", terpilih.anonimisasi ? "anonim" : ""].filter(Boolean));
+    if (!tanya.lanjut) {
+      tombol.disabled = false;
+      pemilih.disabled = false;
+      return;
+    }
+    bendera = tanya.timpa;
     let hasil = { adaYangMasuk: false, gagal: "" };
     try {
       hasil = await unggahBerpasangan(
@@ -4078,8 +4134,22 @@ function bagianUnggahEdocTerpisah(nomorPerkara) {
   // KEDUA slot sekaligus. Dapat dilepas centangnya: putusan saja.
   const anonOtomatis = typeof a30BarisAnonimOtomatis === "function" ? a30BarisAnonimOtomatis() : null;
   if (anonOtomatis) isi.appendChild(anonOtomatis.baris);
+  const penandaManual = buatElemen("div", "aleta-tetap-sebab aleta-remeh");
+  penandaManual.setAttribute("data-aleta-penanda", "unggah-putusan");
+  const wadahTanya = buatElemen("div", "aleta-timpa-wadah");
+  isi.appendChild(penandaManual);
   isi.appendChild(tombol);
+  isi.appendChild(wadahTanya);
   isi.appendChild(kabar);
+  let penandaTerbaca = false;
+  const muatPenandaSekali = () => {
+    if (penandaTerbaca) return;
+    penandaTerbaca = true;
+    void isiPenandaManual(penandaManual).catch(() => {
+      penandaManual.textContent = "Keadaan e-Doc: Belum terbaca";
+    });
+  };
+  for (const kunciSlot of Object.keys(slot)) slot[kunciSlot].pemilih.addEventListener("change", muatPenandaSekali);
 
   const laporkan = (jawab) => {
     const rinci = buatElemen("div", "aleta-unggah-rinci");
@@ -4102,7 +4172,14 @@ function bagianUnggahEdocTerpisah(nomorPerkara) {
     let anonimisasi = slot.anonimisasi.berkas;
     let tetapUnggah = null; // 12OKT-I: nama yang direlakan petugas di dialog pemeriksa
     if ((!putusan && !anonimisasi) || berkasSama()) return;
+    // Keadaan dibaca dulu; hanya bila ada yang akan ditimpa muncul pertanyaan sebaris. "Tidak" = tidak ada yang dikirim.
     tombol.disabled = true;
+    const slotDikirim = [putusan ? "putusan" : "", anonimisasi || (putusan && anonOtomatis && anonOtomatis.dipakai()) ? "anonim" : ""].filter(Boolean);
+    const tanya = await bacaDanTanyaTimpa(wadahTanya, nomorPerkara || "", slotDikirim);
+    if (!tanya.lanjut) {
+      tombol.disabled = false;
+      return;
+    }
     tombol.dataset.sibuk = "ya";
     slot.putusan.pemilih.disabled = true;
     slot.anonimisasi.pemilih.disabled = true;
@@ -4128,9 +4205,9 @@ function bagianUnggahEdocTerpisah(nomorPerkara) {
     badan.append("olehUsername", namaPenggunaSipp() || "");
     if (putusan) badan.append("putusan", putusan);
     if (anonimisasi) badan.append("anonimisasi", anonimisasi);
-    // Petugas memilih berkas dan menekan "Unggah ke SIPP" sendiri = keputusan mengganti e-Doc yang sudah ada.
-    if (putusan) badan.append("timpaPutusan", "1");
-    if (anonimisasi) badan.append("timpaAnonim", "1");
+    // Tanda timpa hanya untuk slot yang sudah ada dan DISETUJUI di pertanyaan sebaris.
+    if (putusan && tanya.timpa.putusan) badan.append("timpaPutusan", "1");
+    if (anonimisasi && tanya.timpa.anonim) badan.append("timpaAnonim", "1");
     kabar.className = "aleta-abt-kabar";
     kabar.textContent =
       putusan && anonimisasi

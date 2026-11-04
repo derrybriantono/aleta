@@ -5908,6 +5908,8 @@ router.get("/sipp/unggah-massal/daftar", requireInternalToken, async (req, res) 
   try {
     const hasil = await require("../services/unggahMassalService").daftar({
       sejakHari: Number(req.query.sejak || 0) || undefined,
+      // 5 Nov 2026: putusan yang kedua e-Doc-nya sudah ada ikut, untuk dicentang MENGGANTI.
+      putusanAda: String(req.query.putusanAda || "") === "1",
       // Butir 43 (17 Okt): BAS yang sudah ada ikut, untuk tombol "Ganti".
       basAda: String(req.query.basAda || "") === "1",
     });
@@ -5918,6 +5920,17 @@ router.get("/sipp/unggah-massal/daftar", requireInternalToken, async (req, res) 
 });
 router.get("/sipp/unggah-massal/cek", requireInternalToken, async (req, res) => {
   try {
+    // Banyak perkara sekaligus (daftar dipisah koma): SATU kueri untuk penanda sudah/belum diunggah.
+    if (String(req.query.jenis || "") === "putusan" && String(req.query.nomor || "")) {
+      const banyakNomor = await require("../services/unggahMassalService").cekBanyak({ nomor: String(req.query.nomor || "") });
+      res.status(banyakNomor.ok ? 200 : 400).json(banyakNomor);
+      return;
+    }
+    if (String(req.query.jenis || "") === "putusan" && String(req.query.perkaraId || "").includes(",")) {
+      const banyak = await require("../services/unggahMassalService").cekBanyak({ perkaraId: String(req.query.perkaraId || "") });
+      res.status(banyak.ok ? 200 : 400).json(banyak);
+      return;
+    }
     const hasil = await require("../services/unggahMassalService").cek({
       jenis: String(req.query.jenis || ""),
       perkaraId: String(req.query.perkaraId || ""),

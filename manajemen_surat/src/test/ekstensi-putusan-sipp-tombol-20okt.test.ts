@@ -786,6 +786,14 @@ describe("MENGGANTI yang sudah ada (5 Nov 2026): tiga langkah berdiri sendiri, b
     tombolPu(h)!.click();
     return sampai(() => (api(h).pasang(h.d), api(h).keadaan()?.dibaca ? panel(h) : null), "dibaca");
   };
+  /** Menekan tombol utama saat ada yang ditimpa: pertanyaan sebaris muncul; dijawab "Ya, timpa" lalu pekerjaan berjalan. */
+  const klikLaluYakin = async (h: Halaman) => {
+    utama(h).click();
+    const kotak = await sampai(() => panel(h)!.querySelector('[data-aleta-timpa="konfirmasi"]'), "pertanyaan menimpa");
+    expect(kotak.textContent).toContain("Anda yakin menimpa?");
+    (kotak.querySelector('[data-aleta-timpa="ya"]') as HTMLButtonElement).click();
+    return sampai(() => panel(h)!.querySelector(".aleta-pusipp-kerja") || (api(h).keadaan().sibuk === false && h.urut.length ? panel(h) : null), "kemajuan tampil");
+  };
   const ubahCek = (h: Halaman, j: string, nilai: boolean) => {
     cek(h, j).checked = nilai;
     cek(h, j).dispatchEvent(new h.w.Event("change"));
@@ -812,7 +820,7 @@ describe("MENGGANTI yang sudah ada (5 Nov 2026): tiga langkah berdiri sendiri, b
     const h = buka({ terisi: true, adaPutusan: true, adaAnonim: true });
     await panelDibaca(h);
     ubahCek(h, "isi", true);
-    await klikSatuKali(h);
+    await klikLaluYakin(h);
     await sampai(() => status(h, "isi") === "ditimpa", () => `status isi: ${status(h, "isi")}`);
     expect(h.urut).toEqual(["buka-blangko", "gambar-ulang", "otomatis"]);
     expect(h.opsiOto[0]).toMatchObject({ edoc: false, denganPutusan: false, denganAnonim: false, timpaIsi: true, timpaPutusan: false, timpaAnonim: false });
@@ -834,7 +842,7 @@ describe("MENGGANTI yang sudah ada (5 Nov 2026): tiga langkah berdiri sendiri, b
     });
     await panelDibaca(h);
     ubahCek(h, "anonim", true);
-    await klikSatuKali(h);
+    await klikLaluYakin(h);
     await sampai(() => status(h, "anonim") === "ditimpa", () => `status anonim: ${status(h, "anonim")}`);
     expect(h.urut).toEqual(["kunci:ambil", "edoc:jalankan", "kunci:lepas"]);
     expect(h.opsiOto[0]).toMatchObject({ edocSaja: true, denganPutusan: false, denganAnonim: true, timpaPutusan: false, timpaAnonim: true });
@@ -848,7 +856,7 @@ describe("MENGGANTI yang sudah ada (5 Nov 2026): tiga langkah berdiri sendiri, b
     expect(cek(h, "putusan").checked).toBe(false);
     expect(cek(h, "anonim").checked).toBe(true);
     ubahCek(h, "putusan", true);
-    await klikSatuKali(h);
+    await klikLaluYakin(h);
     await sampai(() => status(h, "anonim") === "ok", "selesai");
     expect(h.opsiOto[0]).toMatchObject({ edocSaja: true, denganPutusan: true, denganAnonim: true, timpaPutusan: true, timpaAnonim: false });
   });
@@ -860,8 +868,80 @@ describe("MENGGANTI yang sudah ada (5 Nov 2026): tiga langkah berdiri sendiri, b
     semua.checked = true;
     semua.dispatchEvent(new h.w.Event("change"));
     expect(["isi", "putusan", "anonim"].map((j) => status(h, j))).toEqual(["timpa", "timpa", "timpa"]);
-    await klikSatuKali(h);
+    await klikLaluYakin(h);
     await sampai(() => status(h, "isi") === "ditimpa", "selesai");
     expect(h.opsiOto[0]).toMatchObject({ edoc: true, timpaIsi: true, timpaPutusan: true, timpaAnonim: true });
+  });
+
+  it("pertanyaan menyebut nomor perkara dan yang diganti, dua tombol sebaris; BUKAN window.confirm", async () => {
+    const h = buka({ terisi: true, adaPutusan: true, adaAnonim: true });
+    h.w.confirm = () => {
+      throw new Error("window.confirm tidak boleh dipakai");
+    };
+    await panelDibaca(h);
+    ubahCek(h, "putusan", true);
+    ubahCek(h, "isi", true);
+    utama(h).click();
+    const kotak = await sampai(() => panel(h)!.querySelector('[data-aleta-timpa="konfirmasi"]'), "pertanyaan menimpa");
+    expect(kotak.textContent).toContain("Anda yakin menimpa?");
+    expect(kotak.textContent).toContain("684/Pdt.G/2026: Putusan Akhir, e-Doc putusan");
+    expect(kotak.querySelector('[data-aleta-timpa="ya"]')!.textContent).toBe("Ya, timpa");
+    expect(kotak.querySelector('[data-aleta-timpa="tidak"]')!.textContent).toBe("Tidak");
+    (kotak.querySelector('[data-aleta-timpa="tidak"]') as HTMLButtonElement).click();
+  });
+
+  it("'Tidak': kembali ke pilihan, TIDAK ADA satu pun tulisan (blangko tidak dibuka, e-Doc tidak dikirim), centang tetap", async () => {
+    const h = buka({ terisi: true, adaPutusan: true, adaAnonim: false });
+    await panelDibaca(h);
+    ubahCek(h, "isi", true);
+    ubahCek(h, "putusan", true);
+    // anonimisasi belum ada dan tercentang: pekerjaan yang BUKAN timpa pun tidak boleh jalan sebelum ia memilih.
+    expect(cek(h, "anonim").checked).toBe(true);
+    utama(h).click();
+    const kotak = await sampai(() => panel(h)!.querySelector('[data-aleta-timpa="konfirmasi"]'), "pertanyaan menimpa");
+    (kotak.querySelector('[data-aleta-timpa="tidak"]') as HTMLButtonElement).click();
+    await tunggu(30);
+    expect(h.urut).toEqual([]);
+    expect(h.opsiOto).toEqual([]);
+    expect(panel(h)!.querySelector('[data-aleta-timpa="konfirmasi"]')).toBeNull();
+    expect(api(h).keadaan().sibuk).toBe(false);
+    expect(status(h, "isi")).toBe("timpa");
+    expect(status(h, "anonim")).toBe("tunggu");
+    expect(utama(h).disabled).toBe(false);
+  });
+
+  it("TANPA yang ditimpa tidak ada pertanyaan sama sekali (perkara belum diputus: langsung bekerja)", async () => {
+    const h = buka();
+    await panelSiap(h);
+    utama(h).click();
+    expect(panel(h)!.querySelector('[data-aleta-timpa="konfirmasi"]')).toBeNull();
+    await sampai(() => status(h, "anonim") === "ok", "selesai");
+    expect(h.urut).toContain("otomatis");
+  });
+
+  it("slot yang sudah ada TIDAK ditimpa tanpa dicentang dan tidak ditanyakan: hanya e-Doc anonimisasi yang belum ada dikerjakan", async () => {
+    const h = buka({ terisi: true, adaPutusan: true, adaAnonim: false });
+    await panelDibaca(h);
+    expect(cek(h, "putusan").checked).toBe(false);
+    utama(h).click();
+    expect(panel(h)!.querySelector('[data-aleta-timpa="konfirmasi"]')).toBeNull();
+    await sampai(() => status(h, "anonim") === "ok", "selesai");
+    expect(h.opsiOto[0]).toMatchObject({ edocSaja: true, denganPutusan: false, denganAnonim: true, timpaPutusan: false, timpaAnonim: false });
+  });
+
+  it("penanda tulisan biasa per slot: Sudah terisi / Belum terisi / Sudah diunggah / Belum diunggah", async () => {
+    const h = buka({ terisi: true, adaPutusan: true, adaAnonim: false });
+    await panelDibaca(h);
+    const penanda = (j: string) => baris(h, j).querySelector("[data-pusipp-penanda]")!.textContent;
+    expect(["isi", "putusan", "anonim"].map(penanda)).toEqual(["Sudah terisi", "Sudah diunggah", "Belum diunggah"]);
+    const b = buka({});
+    await panelSiap(b);
+    expect(["isi", "putusan", "anonim"].map((j) => baris(b, j).querySelector("[data-pusipp-penanda]")!.textContent)).toEqual(["Belum terisi", "Belum diunggah", "Belum diunggah"]);
+  });
+
+  it("e-Doc yang gagal terbaca: penanda 'Belum terbaca' dan tidak ada tanda timpa", async () => {
+    const h = buka({ cekGagal: true });
+    await panelSiap(h);
+    expect(["putusan", "anonim"].map((j) => baris(h, j).querySelector("[data-pusipp-penanda]")!.textContent)).toEqual(["Belum terbaca", "Belum terbaca"]);
   });
 });

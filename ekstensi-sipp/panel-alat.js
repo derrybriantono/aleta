@@ -8901,6 +8901,11 @@ function alatBuatAntrean(pilihan) {
     perkaraId: String(x.perkaraId || ""),
     jenis: String(x.jenis || ""),
     enc: String(x.enc || ""),
+    // Tanda MENIMPA per langkah (5 Nov 2026), hanya bila ada: isi = Putusan Akhir yang sudah terisi diganti,
+    // putusan / anonim = e-Doc yang sudah ada diganti. Tanpa tanda (antrean lama) yang sudah ada dilewati.
+    ...(x.timpa && (x.timpa.isi === true || x.timpa.putusan === true || x.timpa.anonim === true)
+      ? { timpa: { isi: x.timpa.isi === true, putusan: x.timpa.putusan === true, anonim: x.timpa.anonim === true } }
+      : {}),
     keadaan: "menunggu",
     catatan: "",
     dokumen: { rtf: "", pdf: "", anonim: "", unggah: "" },
@@ -11902,4 +11907,151 @@ function alatJagaGulirHalaman(panel) {
   panel.addEventListener("pointerover", segarkan, { passive: true });
   panel.addEventListener("wheel", segarkan, { passive: true });
   alatSegarkanMeluap(panel);
+}
+
+/*
+ * ============================================================================
+ * PENANDA "SUDAH/BELUM DIUNGGAH" DAN KONFIRMASI MENIMPA (5 Nov 2026)
+ * ============================================================================
+ *
+ * Satu bentuk untuk SEMUA jalur yang dapat mengganti Putusan Akhir, e-Doc putusan, atau e-Doc anonimisasi
+ * yang sudah ada (Putusan Otomatis, Jadwalkan Putusan, massal dari berkas, unggah massal ABT, Kerjakan di
+ * panel ABT, unggah e-Doc Blangko Derry, panel Unggah putusan ke SIPP):
+ *
+ *   - alatPenandaSlot       tulisan penanda tiap slot; keadaan yang gagal terbaca = "Belum terbaca" dan TIDAK
+ *                           boleh ditimpa;
+ *   - alatBacaKeadaanBanyak keadaan banyak perkara dengan SATU permintaan (bukan satu per perkara);
+ *   - alatDaftarTimpa       daftar singkat "nomor perkara: yang diganti" dari rencana;
+ *   - alatKonfirmasiTimpa   pertanyaan SEBARIS "Anda yakin menimpa?" dengan "Ya, timpa" / "Tidak" (bukan
+ *                           window.confirm). Hanya dipanggil bila ada yang ditimpa; "Tidak" = tidak ada tulisan.
+ */
+const ALAT_NAMA_SLOT = { form: "Putusan Akhir", putusan: "e-Doc putusan", anonim: "e-Doc anonimisasi" };
+
+/** Tulisan penanda satu slot. ada: true | false | null/undefined (tidak terbaca). */
+function alatPenandaSlot(slot, ada) {
+  if (ada === true) return slot === "form" ? "Sudah terisi" : "Sudah diunggah";
+  if (ada === false) return slot === "form" ? "Belum terisi" : "Belum diunggah";
+  return "Belum terbaca";
+}
+
+/**
+ * Keadaan banyak perkara dengan SATU permintaan ke rute cek (daftar nomor induk dipisah koma, paling banyak 200
+ * per permintaan). Pulang Map nomorInduk -> { form, putusan, anonim } (boolean); perkara yang tidak terbaca TIDAK
+ * ada di peta (pemanggil menulis "Belum terbaca"). Tidak pernah melempar.
+ */
+async function alatBacaKeadaanBanyak(daftarId) {
+  const peta = new Map();
+  const id = [...new Set((daftarId || []).map((x) => String(x || "").trim()).filter((x) => /^\d{1,12}$/.test(x)))];
+  for (let i = 0; i < id.length; i += 200) {
+    const potong = id.slice(i, i + 200);
+    try {
+      // Satu id tetap dikirim dengan koma di belakang supaya jalur yang sama (banyak) dipakai.
+      const alamat = `/aleta/api/aleta-ecourt/unggah-massal/cek?jenis=putusan&perkaraId=${encodeURIComponent(potong.length === 1 ? `${potong[0]},` : potong.join(","))}`;
+      const r = await alatAmbil(alamat, { credentials: "include", cache: "no-store" }, "Memeriksa e-Doc di SIPP");
+      if (!r.ok) continue;
+      const luar = await r.json();
+      const d = luar && luar.data ? luar.data : luar;
+      if (!d || d.ok === false || !Array.isArray(d.daftar)) continue;
+      for (const x of d.daftar) {
+        peta.set(String(x.perkaraId), { form: Boolean(x.adaBaris), putusan: Boolean(x.adaPutusan), anonim: Boolean(x.adaAnonim) });
+      }
+    } catch {
+      /* tidak terbaca: perkara-perkara itu tidak masuk peta */
+    }
+  }
+  return peta;
+}
+
+/**
+ * Keadaan banyak perkara menurut NOMOR perkara (layar yang hanya mengenal nama berkas), SATU permintaan per 200 nomor.
+ * Pulang Map nomorPerkara(huruf kecil, tanpa spasi) -> { perkaraId, form, putusan, anonim }; yang tidak terbaca atau
+ * tidak ditemukan tidak ada di peta. Tidak pernah melempar.
+ */
+async function alatBacaKeadaanNomor(daftarNomor) {
+  const peta = new Map();
+  const baku = (n) => String(n || "").replace(/\s+/g, "").toLowerCase();
+  const nomor = [...new Set((daftarNomor || []).map((x) => String(x || "").trim()).filter(Boolean))];
+  for (let i = 0; i < nomor.length; i += 200) {
+    try {
+      const alamat = `/aleta/api/aleta-ecourt/unggah-massal/cek?jenis=putusan&nomor=${encodeURIComponent(nomor.slice(i, i + 200).join("|"))}`;
+      const r = await alatAmbil(alamat, { credentials: "include", cache: "no-store" }, "Memeriksa e-Doc di SIPP");
+      if (!r.ok) continue;
+      const luar = await r.json();
+      const d = luar && luar.data ? luar.data : luar;
+      if (!d || d.ok === false || !Array.isArray(d.daftar)) continue;
+      for (const x of d.daftar) peta.set(baku(x.nomorPerkara), { perkaraId: String(x.perkaraId), form: Boolean(x.adaBaris), putusan: Boolean(x.adaPutusan), anonim: Boolean(x.adaAnonim) });
+    } catch {
+      /* tidak terbaca: nomor-nomor itu tidak masuk peta */
+    }
+  }
+  return peta;
+}
+
+/**
+ * Daftar singkat yang akan ditimpa: [{ nomor, slot: ["form"|"putusan"|"anonim", ...] }] -> ["520/Pdt.G/2026: e-Doc putusan", ...].
+ * Perkara tanpa slot yang ditimpa tidak muncul.
+ */
+function alatDaftarTimpa(rencana) {
+  const hasil = [];
+  for (const r of rencana || []) {
+    const slot = (r.slot || []).filter((s) => ALAT_NAMA_SLOT[s]);
+    if (!slot.length) continue;
+    const nomor = String(r.nomor || "").replace(/\/PA\.[A-Za-z]+$/, "");
+    hasil.push(`${nomor}: ${slot.map((s) => ALAT_NAMA_SLOT[s]).join(", ")}`);
+  }
+  return hasil;
+}
+
+/**
+ * Konfirmasi sebaris di `wadah`. Pulang Promise<boolean>: true = "Ya, timpa", false = "Tidak". Daftar kosong =
+ * tidak ada yang ditimpa: TIDAK ada konfirmasi, langsung true. Wadah dikosongkan lagi sesudah dijawab.
+ */
+function alatKonfirmasiTimpa(wadah, daftar) {
+  const baris = (daftar || []).filter(Boolean);
+  if (!baris.length) return Promise.resolve(true);
+  if (!wadah) return Promise.resolve(false);
+  return new Promise((selesai) => {
+    const kotak = document.createElement("div");
+    kotak.className = "aleta-timpa-konfirm";
+    kotak.setAttribute("role", "alertdialog");
+    kotak.setAttribute("aria-label", "Konfirmasi menimpa");
+    kotak.setAttribute("data-aleta-timpa", "konfirmasi");
+    kotak.style.cssText = "margin:8px 0;padding:10px 12px;border:1px solid #c49a00;border-left-width:4px;border-radius:6px;background:Canvas;color:CanvasText;font-size:13px;line-height:1.45";
+    const tanya = document.createElement("div");
+    tanya.style.fontWeight = "600";
+    tanya.textContent = "Anda yakin menimpa? ";
+    const ul = document.createElement("ul");
+    ul.style.cssText = "margin:6px 0 8px 18px;padding:0";
+    for (const t of baris.slice(0, 12)) {
+      const li = document.createElement("li");
+      li.textContent = t;
+      ul.appendChild(li);
+    }
+    if (baris.length > 12) {
+      const li = document.createElement("li");
+      li.textContent = `dan ${baris.length - 12} perkara lain`;
+      ul.appendChild(li);
+    }
+    const aksi = document.createElement("div");
+    aksi.style.cssText = "display:flex;gap:8px";
+    const buat = (teks, kunci) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = teks;
+      b.setAttribute("data-aleta-timpa", kunci);
+      b.className = "aleta-permintaan-tombol";
+      return b;
+    };
+    const ya = buat("Ya, timpa", "ya");
+    const tidak = buat("Tidak", "tidak");
+    const tutup = (jawab) => {
+      kotak.remove();
+      selesai(jawab);
+    };
+    ya.addEventListener("click", () => tutup(true));
+    tidak.addEventListener("click", () => tutup(false));
+    aksi.append(ya, tidak);
+    kotak.append(tanya, ul, aksi);
+    wadah.appendChild(kotak);
+  });
 }

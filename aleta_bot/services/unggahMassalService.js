@@ -131,7 +131,7 @@ function buatLayanan(depsMasuk) {
    * Seluruh e-Doc yang menunggu. Pulang
    *   { ok:true, hariIni, sejak, putusan[]|null, tertahan[]|null, bas[]|null, galat[] }
    */
-  async function daftar({ sejakHari = HARI_BAWAAN, basAda = false } = {}) {
+  async function daftar({ sejakHari = HARI_BAWAAN, basAda = false, putusanAda = false } = {}) {
     const d = deps();
     const galat = [];
     const sebabDari = (e) => String((e && (e.sqlMessage || e.code || e.message)) || e || "tidak diketahui").slice(0, 160);
@@ -171,8 +171,8 @@ function buatLayanan(depsMasuk) {
            JOIN perkara p ON p.perkara_id = pp.perkara_id
            ${adaStatus ? "LEFT JOIN status_putusan sp ON sp.id = pp.status_putusan_id" : ""}
           WHERE pp.tanggal_putusan IS NOT NULL AND pp.tanggal_putusan <= ? AND pp.tanggal_putusan >= ?
-            AND (pp.amar_putusan_dok IS NULL OR pp.amar_putusan_dok = ''
-                 OR pp.amar_putusan_anonimisasi_dok IS NULL OR pp.amar_putusan_anonimisasi_dok = '')
+            ${putusanAda ? "" : `AND (pp.amar_putusan_dok IS NULL OR pp.amar_putusan_dok = ''
+                 OR pp.amar_putusan_anonimisasi_dok IS NULL OR pp.amar_putusan_anonimisasi_dok = '')`}
           ORDER BY pp.tanggal_putusan DESC, p.perkara_id DESC
           LIMIT ${BATAS_PUTUSAN}`,
         [hariIni, sejak]
@@ -401,7 +401,59 @@ function buatLayanan(depsMasuk) {
     return { ok: false, alasan: "jenis_tidak_dikenal" };
   }
 
-  return { daftar, cek };
+  /**
+   * Keadaan BANYAK perkara dengan SATU kueri (5 Nov 2026) - penanda "sudah/belum diunggah" di layar massal:
+   *   { ok, daftar: [{ perkaraId, adaBaris, adaPutusan, adaAnonim }] }
+   * adaBaris = Putusan Akhir sudah terisi (baris perkara_putusan ada). Perkara tanpa baris dikembalikan
+   * adaBaris:false. Paling banyak 200 perkara; kueri gagal = ok:false (pemanggil menulis "Belum terbaca").
+   */
+  async function cekBanyak({ perkaraId, nomor } = {}) {
+    const d = deps();
+    // Menurut NOMOR perkara (layar yang hanya mengenal nama berkas): satu kueri yang sama, perkara yang nomornya tidak
+    // ditemukan tidak muncul (pemanggil menulis "Belum terbaca"). nomorPerkara ikut dikembalikan sebagai kunci.
+    const daftarNomor = [...new Set((Array.isArray(nomor) ? nomor : String(nomor || "").split("|")).map((x) => String(x).trim()).filter(Boolean))].slice(0, 200);
+    if (daftarNomor.length) {
+      const b = await d.kueriSipp(
+        `SELECT p.perkara_id, p.nomor_perkara, pp.perkara_id AS ada_baris, pp.amar_putusan_dok, pp.amar_putusan_anonimisasi_dok
+           FROM perkara p LEFT JOIN perkara_putusan pp ON pp.perkara_id = p.perkara_id
+          WHERE p.nomor_perkara IN (${daftarNomor.map(() => "?").join(",")})`,
+        daftarNomor
+      );
+      return {
+        ok: true,
+        daftar: (Array.isArray(b) ? b : []).map((r) => ({
+          perkaraId: String(angka(r.perkara_id)),
+          nomorPerkara: teks(r.nomor_perkara),
+          adaBaris: Boolean(r.ada_baris),
+          adaPutusan: Boolean(teks(r.amar_putusan_dok)),
+          adaAnonim: Boolean(teks(r.amar_putusan_anonimisasi_dok)),
+        })),
+      };
+    }
+    const id = [...new Set((Array.isArray(perkaraId) ? perkaraId : String(perkaraId || "").split(","))
+      .map((x) => Number(String(x).trim())).filter((n) => Number.isInteger(n) && n > 0))].slice(0, 200);
+    if (!id.length) return { ok: false, alasan: "perkara_tidak_sah" };
+    const b = await d.kueriSipp(
+      `SELECT perkara_id, amar_putusan_dok, amar_putusan_anonimisasi_dok
+         FROM perkara_putusan WHERE perkara_id IN (${id.map(() => "?").join(",")})`,
+      id
+    );
+    const peta = new Map((Array.isArray(b) ? b : []).map((r) => [angka(r.perkara_id), r]));
+    return {
+      ok: true,
+      daftar: id.map((n) => {
+        const r = peta.get(n);
+        return {
+          perkaraId: String(n),
+          adaBaris: Boolean(r),
+          adaPutusan: Boolean(r && teks(r.amar_putusan_dok)),
+          adaAnonim: Boolean(r && teks(r.amar_putusan_anonimisasi_dok)),
+        };
+      }),
+    };
+  }
+
+  return { daftar, cek, cekBanyak };
 }
 
 const bawaan = buatLayanan();
@@ -410,5 +462,6 @@ module.exports = {
   buatLayanan,
   daftar: (...a) => bawaan.daftar(...a),
   cek: (...a) => bawaan.cek(...a),
+  cekBanyak: (...a) => bawaan.cekBanyak(...a),
   _murni: { tgl, mundurHari, daftarNama },
 };

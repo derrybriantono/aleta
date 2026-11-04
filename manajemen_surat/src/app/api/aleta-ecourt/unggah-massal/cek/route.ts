@@ -31,6 +31,34 @@ export async function GET(request: NextRequest) {
     const q = request.nextUrl.searchParams;
     const jenis = q.get("jenis") === "bas" ? "bas" : q.get("jenis") === "putusan" ? "putusan" : null;
     const perkaraId = String(q.get("perkaraId") ?? "").trim();
+    // Banyak perkara menurut NOMOR (layar massal dari berkas yang hanya mengenal nama berkas), dipisah "|".
+    const nomorBanyak = String(q.get("nomor") ?? "").trim();
+    if (jenis === "putusan" && nomorBanyak) {
+      const nomor = [...new Set(nomorBanyak.split("|").map((x) => x.trim()).filter(Boolean))];
+      if (nomor.length > 200 || !nomor.every((x) => /^[0-9A-Za-z./ -]{3,60}$/.test(x))) {
+        return Response.json({ ok: false, alasan: "Daftar nomor perkara tidak sah (paling banyak 200)." }, { status: 400 });
+      }
+      if (!hakUnggahMassal(actor).putusan) {
+        return Response.json({ ok: false, alasan: "Peran Anda tidak diberi hak unggah untuk jenis dokumen ini." }, { status: 403 });
+      }
+      const menurutNomor = await getGatewayUnggahMassalCek({ jenis: "putusan", perkaraId: "", nomor: nomor.join("|") });
+      if (!menurutNomor.ok) return Response.json({ ok: false, alasan: menurutNomor.error || "SIPP belum dapat dibaca." }, { status: 502 });
+      return ok(menurutNomor.data);
+    }
+    // Banyak perkara sekaligus (5 Nov 2026): penanda sudah/belum diunggah di layar massal, SATU kueri.
+    if (jenis === "putusan" && perkaraId.includes(",")) {
+      const id = [...new Set(perkaraId.split(",").map((x) => x.trim()).filter(Boolean))];
+      if (id.length > 200 || !id.every((x) => /^\d{1,12}$/.test(x))) {
+        return Response.json({ ok: false, alasan: "Daftar perkara tidak sah (paling banyak 200 nomor induk)." }, { status: 400 });
+      }
+      const hakBanyak = hakUnggahMassal(actor);
+      if (!hakBanyak.putusan) {
+        return Response.json({ ok: false, alasan: "Peran Anda tidak diberi hak unggah untuk jenis dokumen ini." }, { status: 403 });
+      }
+      const banyak = await getGatewayUnggahMassalCek({ jenis: "putusan", perkaraId: id.join(",") });
+      if (!banyak.ok) return Response.json({ ok: false, alasan: banyak.error || "SIPP belum dapat dibaca." }, { status: 502 });
+      return ok(banyak.data);
+    }
     const sidangId = String(q.get("sidangId") ?? "").trim();
     if (!jenis || !/^\d{1,12}$/.test(perkaraId) || (jenis === "bas" && !/^\d{1,12}$/.test(sidangId))) {
       return Response.json({ ok: false, alasan: "Perkara atau sidang belum disebut dengan benar." }, { status: 400 });

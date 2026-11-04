@@ -349,6 +349,34 @@ async function siapkanPerkaraAbt(butir, peta, opsi, lapor) {
 }
 
 /**
+ * Halaman ABT satu perkara (5 Nov 2026): keadaan e-Doc DIBACA dulu. Belum ada = langsung seperti biasa, tanpa klik
+ * tambahan. Sudah ada = pertanyaan sebaris "Anda yakin menimpa?" dengan "Ya, timpa" / "Tidak". Gagal terbaca = tidak
+ * ada tanda timpa (yang sudah ada tidak mungkin ditimpa; server menolaknya "sudah_ada").
+ *
+ * @returns {Promise<{lanjut:boolean, timpa:{putusan:boolean, anonim:boolean}, terbaca:boolean}>}
+ */
+async function abtBacaDanTanyaTimpa(wadah, butir, denganAnonim) {
+  const id = String((butir && butir.perkaraId) || "");
+  let ada = null;
+  if (typeof alatBacaKeadaanBanyak === "function" && /^\d+$/.test(id)) ada = (await alatBacaKeadaanBanyak([id])).get(id) || null;
+  const timpa = { putusan: Boolean(ada && ada.putusan), anonim: Boolean(denganAnonim && ada && ada.anonim) };
+  const slot = [timpa.putusan ? "putusan" : "", timpa.anonim ? "anonim" : ""].filter(Boolean);
+  if (slot.length) {
+    const ya = await alatKonfirmasiTimpa(wadah, alatDaftarTimpa([{ nomor: (butir && butir.nomor) || "", slot }]));
+    if (!ya) return { lanjut: false, timpa: { putusan: false, anonim: false }, terbaca: Boolean(ada) };
+  }
+  return { lanjut: true, timpa, terbaca: Boolean(ada) };
+}
+
+/** Penanda satu baris untuk halaman ABT: "Putusan Akhir: Sudah terisi · e-Doc putusan: ... · e-Doc anonimisasi: ...". */
+async function abtIsiPenanda(elemen, butir) {
+  const id = String((butir && butir.perkaraId) || "");
+  let ada = null;
+  if (typeof alatBacaKeadaanBanyak === "function" && /^\d+$/.test(id)) ada = (await alatBacaKeadaanBanyak([id])).get(id) || null;
+  elemen.textContent = ["form", "putusan", "anonim"].map((k) => `${ALAT_NAMA_SLOT[k]}: ${alatPenandaSlot(k, ada ? ada[k] : null)}`).join(" · ");
+}
+
+/**
  * Tulisan ke SIPP untuk satu perkara: RTF putusan dan - bila dibuat - RTF
  * anonimisasinya, dalam SATU permintaan. Berkasnya RTF apa adanya: 87,7% e-Doc
  * satker berbentuk RTF, rute unggah-sipp memeriksa isinya, dan bot yang
@@ -429,10 +457,10 @@ async function kirimUnggahSippAbt(siap, olehUsername, denganAnonim) {
   badan.append("nomorPerkara", b.nomor);
   badan.append("olehUsername", olehUsername || "");
   badan.append("putusan", new Blob([siap.isiRtf], { type: "application/rtf" }), `${siap.namaDasar}.rtf`);
-  // "Kerjakan perkara ini" dengan "Unggah ke SIPP" dicentang = keputusan petugas mengganti e-Doc yang sudah
-  // ada (perilaku semula); rute meminta tanda eksplisit per slot sejak 5 Nov 2026.
-  badan.append("timpaPutusan", "1");
-  if (denganAnonim) badan.append("timpaAnonim", "1");
+  // Tanda timpa HANYA untuk slot yang sudah ada dan disetujui petugas di pertanyaan sebaris (siap.timpa, diisi
+  // abtBacaDanTanyaTimpa). Tanpa tanda, rute menolak slot yang sudah terisi ("sudah_ada").
+  if (siap.timpa && siap.timpa.putusan === true) badan.append("timpaPutusan", "1");
+  if (denganAnonim && siap.timpa && siap.timpa.anonim === true) badan.append("timpaAnonim", "1");
   if (denganAnonim) {
     badan.append("anonimisasi", new Blob([siap.isiAnonim], { type: "application/rtf" }), `${siap.namaDasar} - anonim.rtf`);
     // 16 Okt (F1.2): ABT hanya menyamarkan nama SIPP utuh persis hurufnya; nasab anak,

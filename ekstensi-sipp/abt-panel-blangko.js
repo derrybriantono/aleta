@@ -5888,8 +5888,22 @@ function bagianUnggahSatuAbt(isi) {
   const tombol = buatElemen("button", "aleta-abt-tombol", "Kerjakan perkara ini");
   tombol.type = "button";
   const kabar = buatElemen("div", "aleta-abt-kabar");
+  // Penanda sudah/belum terisi-diunggah, dibaca sekali saat panel lahir (satu permintaan).
+  // Tampilan Lama TIDAK berubah (DOM dan permintaan sama persis): penanda dan tempat pertanyaan hanya di Baru/UI Baru;
+  // di Lama tempat pertanyaan dibuat seketika bila memang ada yang ditimpa.
+  const wadahTanyaTimpa = buatElemen("div", "aleta-timpa-wadah");
   kotak.appendChild(tombol);
   kotak.appendChild(kabar);
+  if (t6Aktif()) {
+    const penandaAbt = buatElemen("div", "aleta-tetap-sebab aleta-remeh");
+    penandaAbt.setAttribute("data-aleta-penanda", "kerjakan");
+    penandaAbt.textContent = "Keadaan di SIPP: memeriksa…";
+    kotak.insertBefore(penandaAbt, tombol);
+    kotak.appendChild(wadahTanyaTimpa);
+    void abtIsiPenanda(penandaAbt, { perkaraId: jatiDiri.perkaraId }).catch(() => {
+      penandaAbt.textContent = "Keadaan di SIPP: Belum terbaca";
+    });
+  }
 
   tombol.addEventListener("click", async () => {
     tombol.disabled = true;
@@ -5929,6 +5943,17 @@ function bagianUnggahSatuAbt(isi) {
         // PDF hanya untuk unduhan - SIPP menerima RTF apa adanya.
         pdf: pilihan.unduh.checked,
       };
+      // Keadaan e-Doc dibaca DULU, sebelum apa pun dikerjakan. Hanya bila ada yang ditimpa muncul pertanyaan sebaris;
+      // "Tidak" = tidak ada satu pun pekerjaan (juga yang bukan timpa) sebelum petugas memilih lagi.
+      if (opsi.unggah) {
+        if (!wadahTanyaTimpa.isConnected) kotak.appendChild(wadahTanyaTimpa);
+        const tanya = await abtBacaDanTanyaTimpa(wadahTanyaTimpa, butir, opsi.anonim);
+        if (!tanya.lanjut) {
+          kabar.textContent = "";
+          return;
+        }
+        opsi.timpa = tanya.timpa;
+      }
       const hasil = await kerjakanSatuPerkaraAbt(
         butir,
         petaJenis,
@@ -5979,6 +6004,8 @@ function abtKunciUnggahBilaTolak(akar) {
 async function kerjakanSatuPerkaraAbt(butir, peta, opsi, olehUsername, lapor) {
   const o = opsi || {};
   const siap = await siapkanPerkaraAbt(butir, peta, o, lapor);
+  // Tanda timpa per slot dari pertanyaan sebaris (abtBacaDanTanyaTimpa); tanpa tanda yang sudah ada tidak disentuh.
+  siap.timpa = o.timpa || { putusan: false, anonim: false };
   // Tahap 6 (ide abt-26): anonim diperiksa sebelum diunggah, dan petugas yang
   // memutuskan. t6Aktif() lebih dahulu - dalam tampilan Lama tidak ada satu
   // pun tunggu tambahan di jalur ini.

@@ -181,8 +181,11 @@ describe("baris audit unggah: bentuk SIPP, tanpa tanda ALETA", () => {
     const [putusan, anonim] = auditDari(kueri);
     expect(putusan.formname).toBe("UPLOAD E-DOCS PUTUSAN AKHIR");
     expect(putusan.title).toBe("Unggah Dokumen Putusan Akhir <br />dengan perkara_id [id=901]");
-    expect(anonim.formname).toBe("UPLOAD E-DOCS PUTUSAN ANONIMISASI");
-    expect(anonim.title).toBe("Unggah Dokumen Putusan Anonimisasi <br />dengan perkara_id [id=901]");
+    // 5 Nov 2026: SIPP mengaudit KEDUA berkas dengan satu bentuk (fileupload_m.php:277-279,713 - update_data("put")
+    // dipanggil fileupload_putusan_c.php untuk formulir putusan maupun anonimisasi); yang membedakan hanya kolom di deskripsi.
+    expect(anonim.formname).toBe("UPLOAD E-DOCS PUTUSAN AKHIR");
+    expect(anonim.title).toBe("Unggah Dokumen Putusan Akhir <br />dengan perkara_id [id=901]");
+    expect(anonim.description).toContain("amar_putusan_anonimisasi_dok");
     for (const baris of [putusan, anonim]) {
       expect(baris.description.startsWith('<br><table style="vertical-align:top" cellspacing="0" cellpadding="1" border="1">')).toBe(true);
       for (const [kolom, nilai] of Object.entries(baris)) {
@@ -253,7 +256,10 @@ describe("baris audit unggah: bentuk SIPP, tanpa tanda ALETA", () => {
     const hasil = await layanan.unggahPutusan({ ...MASUKAN, pdfAnonimisasi: RTF_ANONIM });
     expect(hasil.berkas.map((b) => b.jenis)).toEqual(["anonimisasi"]);
     const audit = auditDari(kueri);
-    expect(audit.map((a) => a.formname)).toEqual(["UPLOAD E-DOCS PUTUSAN ANONIMISASI"]);
+    expect(audit.map((a) => a.formname)).toEqual(["UPLOAD E-DOCS PUTUSAN AKHIR"]);
+    // Seperti SIPP: unggah anonimisasi sendirian TIDAK menambah antrean Direktori Putusan.
+    expect(hasil.antrean).toBe(false);
+    expect(kueri.some((q) => q.sql.includes("dirput_antrian") && /^INSERT/i.test(q.sql.trim()))).toBe(false);
     expect(audit[0].description).toContain("amar_putusan_anonimisasi_dok");
   });
 

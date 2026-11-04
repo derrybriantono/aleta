@@ -342,6 +342,11 @@ function buatDunia(perkara: Perkara[], opsi: OpsiDunia = {}) {
     simpan,
     isiTersembunyi,
     unggahNaskah,
+    /** Permintaan keadaan banyak perkara menurut nomor (rute cek) - MENIMPA, 5 Nov 2026. */
+    cekNomor: [] as string[],
+    /** Keadaan e-Doc per nomor perkara; Putusan Akhir mengikuti per.putus. */
+    edocAda: new Map<string, { putusan: boolean; anonim: boolean }>(),
+    cekGagal: false,
     usulan,
     usulanPer,
     praperiksaDiminta,
@@ -456,7 +461,7 @@ afterEach(() => {
 });
 
 type IsianPilihan = { medan: string; nilai: string; asal: string };
-type Butir = { nomor: string; keadaan: string; catatan: string; sebabTahan?: string; pemegang?: string; isianPilihan?: IsianPilihan[] };
+type Butir = { nomor: string; keadaan: string; catatan: string; timpa?: { isi: boolean; putusan: boolean; anonim: boolean }; sebabTahan?: string; pemegang?: string; isianPilihan?: IsianPilihan[] };
 type Antrean = { id: string; asal?: string; tahap: string; modus: string; butir: Butir[] };
 type Kotak = HTMLDivElement & { isi: HTMLDivElement };
 type OpsiHalaman = {
@@ -581,6 +586,19 @@ function muatHalaman(dunia: Dunia, simpanan: Record<string, unknown>, opsi: Opsi
         opsi.edoc.unggah.push({ nomor: String(badan.get("nomorPerkara")), putusan: put ? put.name : "", anonimisasi: anon ? anon.name : "" });
         if (opsi.edoc.tolakUnggah) return jawab({ data: { ok: false, sebab: "Folder SIPP tidak terjangkau dari ALETA." } });
         return jawab({ data: { ok: true, berkas: [{ jenis: "putusan", ok: true }, ...(anon ? [{ jenis: "anonimisasi", ok: true }] : [])] } });
+      }
+      if (url.includes("/unggah-massal/cek") && url.includes("nomor=")) {
+        dunia.cekNomor.push(url);
+        if (dunia.cekGagal) throw new TypeError("Failed to fetch");
+        const nomor = decodeURIComponent(url.split("nomor=")[1] || "").split("|").filter(Boolean);
+        return jawab({
+          data: {
+            ok: true,
+            daftar: nomor
+              .filter((n) => dunia.per.has(n))
+              .map((n) => ({ perkaraId: `9${n.split("/")[0]}`, nomorPerkara: n, adaBaris: Boolean(dunia.per.get(n)!.putus), adaPutusan: Boolean(dunia.edocAda.get(n)?.putusan), adaAnonim: Boolean(dunia.edocAda.get(n)?.anonim) })),
+          },
+        });
       }
       if (url.includes("/putusan/unggah-naskah")) {
         const badan = o?.body as FormData;
@@ -1816,5 +1834,143 @@ describe("J. edoc putusan + edoc anonimisasi sesudah Simpan antrean (butir 6, 6 
     expect(b.keadaan).toBe("selesai");
     expect(b.edoc).toBeUndefined();
     expect(e.unggah).toEqual([]);
+  });
+});
+
+// ===========================================================================
+describe("K. MENIMPA di Putusan massal dari berkas (5 Nov 2026): penanda per slot, satu pembacaan, Ganti per slot, pertanyaan sebaris", () => {
+  const NAMA = [
+    "101_Pdt.G_2026_PA.Dgl - [01] [Kabul] Cerai Gugat.rtf",
+    "PA.Dgl_2026_Pdt.G_102_putusan_akhir.rtf",
+    "103_Pdt.G_2026_PA.Dgl - [01] [Kabul] Cerai Gugat.rtf",
+  ];
+  /** Halaman daftar dengan tiga berkas dipilih; belum menekan tombol kirim. */
+  async function siapDaftar(dunia: Dunia, simpanan: Record<string, unknown>) {
+    const h = muatHalaman(dunia, simpanan);
+    const wadah = h.dokumen.body.appendChild(h.dokumen.createElement("div"));
+    const kotak = h.uji.bagianMassalBerkas(wadah);
+    const pemilih = kotak.querySelector("input[type=file]") as HTMLInputElement;
+    const daftar = NAMA.map((n) => new globalThis.File([`{\\rtf1 naskah ${n}}`], n, { type: "application/rtf" }));
+    Object.defineProperty(pemilih, "files", { value: daftar, configurable: true });
+    pemilih.dispatchEvent(new h.k.Event("change"));
+    return { h, kotak };
+  }
+  /** Menunggu sampai elemennya ada, lalu mengembalikannya. */
+  async function elemen(cari: () => Element | null, ketr: string): Promise<HTMLElement> {
+    const mulai = Date.now();
+    for (;;) {
+      const e = cari();
+      if (e) return e as HTMLElement;
+      if (Date.now() - mulai > 4000) throw new Error(`tidak tercapai: ${ketr}`);
+      await new Promise((r) => setTimeout(r, 5));
+    }
+  }
+  const ket = (kotak: HTMLElement, nomor: string) => kotak.querySelector(`[data-aleta-penanda="${nomor}"]`) as HTMLElement | null;
+  const tombolKirim = (kotak: HTMLElement) => kotak.querySelector("button") as HTMLButtonElement;
+  const dunia3 = () => {
+    const dunia = buatDunia([
+      { nomor: N1, jenis: "Cerai Gugat", putus: true, amar: AMAR_SAH },
+      { nomor: N2, jenis: "Cerai Talak", putus: false, amar: AMAR_SAH },
+      { nomor: N3, jenis: "Cerai Gugat", putus: true, amar: AMAR_SAH },
+    ]);
+    dunia.edocAda.set(N1, { putusan: true, anonim: false });
+    return dunia;
+  };
+
+  it("keadaan tiga perkara dibaca dengan SATU permintaan; penanda tiap slot; centang Ganti hanya untuk slot yang sudah ada; bawaan mati", async () => {
+    const dunia = dunia3();
+    const { kotak } = await siapDaftar(dunia, {});
+    await tunggu(() => Boolean(ket(kotak, N1)?.textContent?.includes("Sudah")), "penanda terbaca");
+    expect(dunia.cekNomor).toHaveLength(1);
+    expect(decodeURIComponent(dunia.cekNomor[0].split("nomor=")[1]).split("|").sort()).toEqual([N1, N2, N3].sort());
+    expect(ket(kotak, N1)!.textContent).toContain("Putusan Akhir: Sudah terisi");
+    expect(ket(kotak, N1)!.textContent).toContain("e-Doc putusan: Sudah diunggah");
+    expect(ket(kotak, N1)!.textContent).toContain("e-Doc anonimisasi: Belum diunggah");
+    expect(ket(kotak, N2)!.textContent).toContain("Putusan Akhir: Belum terisi");
+    expect(ket(kotak, N3)!.textContent).toContain("Putusan Akhir: Sudah terisi");
+    const ganti = (n: string, s: string) => kotak.querySelector(`[data-aleta-ganti="${n}|${s}"]`) as HTMLInputElement | null;
+    expect(ganti(N1, "form")).not.toBeNull();
+    expect(ganti(N1, "putusan")).not.toBeNull();
+    expect(ganti(N1, "anonim")).toBeNull();
+    expect(ganti(N2, "form")).toBeNull();
+    expect([ganti(N1, "form")!.checked, ganti(N1, "putusan")!.checked, ganti(N3, "form")!.checked]).toEqual([false, false, false]);
+  });
+
+  it("gagal terbaca: 'Belum terbaca' pada semua slot dan tidak ada centang Ganti (tidak boleh menimpa)", async () => {
+    const dunia = dunia3();
+    dunia.cekGagal = true;
+    const { kotak } = await siapDaftar(dunia, {});
+    await tunggu(() => dunia.cekNomor.length > 0, "dibaca");
+    await tunggu(() => Boolean(ket(kotak, N1)?.textContent?.includes("Belum terbaca")), "penanda belum terbaca");
+    expect(ket(kotak, N1)!.textContent).toBe("Putusan Akhir: Belum terbaca · e-Doc putusan: Belum terbaca · e-Doc anonimisasi: Belum terbaca");
+    expect(kotak.querySelector("[data-aleta-ganti]")).toBeNull();
+  });
+
+  it("tanpa Ganti: tidak ada pertanyaan dan butir antrean TANPA tanda timpa (perilaku lama)", async () => {
+    const dunia = dunia3();
+    const simpanan: Record<string, unknown> = {};
+    const { kotak } = await siapDaftar(dunia, simpanan);
+    await tunggu(() => Boolean(ket(kotak, N1)?.textContent?.includes("Sudah")), "penanda terbaca");
+    tombolKirim(kotak).click();
+    await tunggu(() => Boolean(antreanTersimpan(simpanan)), "antrean tersimpan");
+    expect(kotak.querySelector('[data-aleta-timpa="konfirmasi"]')).toBeNull();
+    for (const b of antreanTersimpan(simpanan)!.butir) expect(b).not.toHaveProperty("timpa");
+  });
+
+  it("Ganti dicentang: pertanyaan sebaris menyebut perkara dan slot; 'Tidak' = tidak ada naskah terkirim dan tidak ada antrean; 'Ya, timpa' = butir membawa tanda timpa", async () => {
+    const dunia = dunia3();
+    const simpanan: Record<string, unknown> = {};
+    const { h, kotak } = await siapDaftar(dunia, simpanan);
+    await tunggu(() => Boolean(ket(kotak, N1)?.textContent?.includes("Sudah")), "penanda terbaca");
+    const centang = (n: string, s: string) => {
+      const c = kotak.querySelector(`[data-aleta-ganti="${n}|${s}"]`) as HTMLInputElement;
+      c.checked = true;
+      c.dispatchEvent(new h.k.Event("change"));
+    };
+    centang(N1, "putusan");
+    centang(N3, "form");
+    tombolKirim(kotak).click();
+    const tanya = await elemen(() => kotak.querySelector('[data-aleta-timpa="konfirmasi"]'), "pertanyaan menimpa");
+    expect(tanya.textContent).toContain("Anda yakin menimpa?");
+    expect(tanya.textContent).toContain("101/Pdt.G/2026: e-Doc putusan");
+    expect(tanya.textContent).toContain("103/Pdt.G/2026: Putusan Akhir");
+    expect(tanya.textContent).not.toContain("102/Pdt.G/2026");
+    // "Tidak": tidak ada naskah terkirim, tidak ada antrean; tombol menyala lagi.
+    (tanya.querySelector('[data-aleta-timpa="tidak"]') as HTMLButtonElement).click();
+    await new Promise((r) => setTimeout(r, 60));
+    expect(dunia.unggahNaskah).toEqual([]);
+    expect(antreanTersimpan(simpanan)).toBeFalsy();
+    expect(kotak.querySelector('[data-aleta-timpa="konfirmasi"]')).toBeNull();
+    expect(tombolKirim(kotak).disabled).toBe(false);
+    // "Ya, timpa".
+    tombolKirim(kotak).click();
+    const tanya2 = await elemen(() => kotak.querySelector('[data-aleta-timpa="konfirmasi"]'), "pertanyaan lagi");
+    (tanya2.querySelector('[data-aleta-timpa="ya"]') as HTMLButtonElement).click();
+    await tunggu(() => Boolean(antreanTersimpan(simpanan)), "antrean tersimpan");
+    expect(butirDi(simpanan, N1).timpa).toEqual({ isi: false, putusan: true, anonim: false });
+    expect(butirDi(simpanan, N3).timpa).toEqual({ isi: true, putusan: false, anonim: false });
+    expect(butirDi(simpanan, N2)).not.toHaveProperty("timpa");
+    expect(dunia.unggahNaskah.sort()).toEqual([N1, N2, N3].sort());
+  });
+
+  it("antrean: butir TANPA tanda yang sudah putus tetap DILEWATI; butir bertanda timpa.isi mengisi ulang lewat jalur yang sama dan Simpan dibuktikan", async () => {
+    const dunia = dunia3();
+    const simpanan: Record<string, unknown> = {};
+    const h0 = muatHalaman(dunia, simpanan);
+    await h0.uji.alatSimpanAntrean(
+      h0.uji.alatBuatAntrean({ tahap: "sipp", asal: "berkas", modus: "otomatis", butir: [{ nomor: N1 }, { nomor: N3, timpa: { isi: true } }] })
+    );
+    // N1 (tanpa tanda, sudah putus): dilewati, tidak ada Simpan, praperiksa tidak diminta.
+    await kerjakanOtomatis(dunia, simpanan, N1);
+    expect(butirDi(simpanan, N1).keadaan).toBe("dilewati");
+    expect(butirDi(simpanan, N1).catatan).toContain("sudah putus");
+    expect(dunia.simpan.filter((x) => x.nomor === N1)).toEqual([]);
+    expect(dunia.praperiksaDiminta.filter((x) => x.nomorPerkara === N1)).toEqual([]);
+    // N3 (bertanda timpa.isi): dikerjakan; praperiksa diminta dengan timpa:true; Simpan ditekan dan diterima.
+    await kerjakanOtomatis(dunia, simpanan, N3, { praperiksaAsli: true });
+    expect(dunia.simpan.filter((x) => x.nomor === N3).map((x) => x.diterima)).toEqual([true]);
+    expect(dunia.praperiksaDiminta.filter((x) => x.nomorPerkara === N3).every((x) => x.timpa === true)).toBe(true);
+    expect(dunia.praperiksaDiminta.some((x) => x.nomorPerkara === N3)).toBe(true);
+    expect(butirDi(simpanan, N3).keadaan).toBe("selesai");
   });
 });

@@ -10153,6 +10153,28 @@
         }
       }
     }
+    // 5 Nov 2026: keadaan e-Doc DIBACA dulu bila e-Doc SIPP akan diunggah. Belum ada = langsung seperti biasa, tanpa klik tambahan.
+    // Sudah ada = pertanyaan sebaris "Anda yakin menimpa?" (Ya, timpa / Tidak); "Tidak" = tidak ada satu pun keluaran dikerjakan.
+    // Gagal terbaca = tidak ada tanda timpa (e-Doc yang sudah ada tidak mungkin ditimpa; rute menolaknya "sudah_ada").
+    let timpaEdoc = { putusan: false, anonim: false };
+    if (S.fmt.edoc && j === "put" && !tes() && typeof alatBacaKeadaanBanyak === "function") {
+      const id = String(perkaraId() || "");
+      const ada = /^\d+$/.test(id) ? (await alatBacaKeadaanBanyak([id])).get(id) || null : null;
+      const rencana = { putusan: Boolean(ada && ada.putusan), anonim: Boolean(ada && ada.anonim) };
+      if (typeof alatPenandaSlot === "function") {
+        tampilStatus(`Keadaan di SIPP - ${["form", "putusan", "anonim"].map((k) => `${ALAT_NAMA_SLOT[k]}: ${alatPenandaSlot(k, ada ? ada[k] : null)}`).join(" · ")}`);
+      }
+      const slot = [rencana.putusan ? "putusan" : "", rencana.anonim ? "anonim" : ""].filter(Boolean);
+      if (slot.length && wadah.cetak && typeof alatKonfirmasiTimpa === "function") {
+        const ya = await alatKonfirmasiTimpa(wadah.cetak, alatDaftarTimpa([{ nomor, slot }]));
+        if (!ya) {
+          catatLog("dibatalkan: petugas memilih tidak menimpa e-Doc yang sudah ada");
+          toast("Dibatalkan. Tidak ada yang dicetak atau diunggah.");
+          return;
+        }
+        timpaEdoc = rencana;
+      }
+    }
     // CETAK CEPAT: dari SATU naskah, keluaran yang saling bebas (PDF, PDF SALINAN, anonim) disusun BERSAMAAN; urutan penulisan hasil
     // dan nama berkas sama dengan alur berurutan yang lama. RTF tetap diunduh lebih dulu (tanpa menunggu pengubah PDF).
     const mulaiCetak = Date.now();
@@ -10301,7 +10323,7 @@
       if (pilih === "batal") pesan = ["e-Doc SIPP: unggah dibatalkan dari pratinjau anonim"];
       else {
         catatLog("mengunggah putusan ke e-Doc SIPP…");
-        pesan = [await unggahEdoc(rtfBuf, pilih === "tanpa" ? null : anonimRtf)];
+        pesan = [await unggahEdoc(rtfBuf, pilih === "tanpa" ? null : anonimRtf, timpaEdoc)];
       }
       /* === AKHIR 16OKT-F43 === */
       return selesai("edoc", mulai, pesan);
@@ -10319,7 +10341,7 @@
     for (const h of hasil) catatLog(h);
     toast(hasil.join(" · "));
   }
-  async function unggahEdoc(rtfBuf, anonimRtf) {
+  async function unggahEdoc(rtfBuf, anonimRtf, timpa) {
     if (tes()) return "e-Doc SIPP: tidak diunggah (mode Tes putusan)";
     const akun = api() && typeof api().siapa === "function" ? api().siapa() : null;
     const nomor = nomorPerkara();
@@ -10331,9 +10353,9 @@
       badan.append("olehUsername", (akun && (akun.usernameSipp || akun.username)) || "");
       badan.append("putusan", new Blob([rtfBuf], { type: "application/rtf" }), `${namaDasar}.rtf`);
       if (denganAnonim) badan.append("anonimisasi", new Blob([anonimRtf], { type: "application/rtf" }), `${namaDasar} - anonim.rtf`);
-      // Tombol unggah e-Doc Blangko Derry ditekan petugas sendiri = keputusan mengganti yang sudah ada (perilaku semula).
-      badan.append("timpaPutusan", "1");
-      if (denganAnonim) badan.append("timpaAnonim", "1");
+      // Tanda timpa HANYA untuk slot yang sudah ada dan disetujui di pertanyaan sebaris (lakukanCetak).
+      if (timpa && timpa.putusan === true) badan.append("timpaPutusan", "1");
+      if (denganAnonim && timpa && timpa.anonim === true) badan.append("timpaAnonim", "1");
       const r = typeof alatAmbil === "function" ? await alatAmbil(API_UNGGAH_SIPP, { method: "POST", body: badan, credentials: "include", batasMs: BATAS_LAMA_MS }, "Mengunggah putusan ke SIPP") : await fetch(API_UNGGAH_SIPP, { method: "POST", body: badan, credentials: "include" });
       const luar = await r.json().catch(() => null);
       const jawab = luar && luar.data ? luar.data : luar;

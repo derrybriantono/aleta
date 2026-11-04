@@ -126,6 +126,14 @@ function runQuery(sql, params = []) {
   });
 }
 
+/** Galat hak akses MySQL/MariaDB (1142 tabel, 1227 hak): akun bot tidak boleh menjalankan perintah itu. */
+function hakDitolak(galat) {
+  const kode = String((galat && (galat.code || galat.sqlState)) || "");
+  const no = Number(galat && (galat.errno || galat.number));
+  const pesan = String((galat && galat.message) || "");
+  return kode === "ER_TABLEACCESS_DENIED_ERROR" || kode === "ER_SPECIFIC_ACCESS_DENIED_ERROR" || no === 1142 || no === 1227 || /DELETE command denied/i.test(pesan);
+}
+
 function duaAngka(n) {
   return String(n).padStart(2, "0");
 }
@@ -214,16 +222,16 @@ async function dokumenRefId(perkaraId, jenis) {
  *   username     akun SIPP petugas yang memicu (lihat akunSippPemicu)
  *   datetime     jam dinding saat kolom itu ditulis - tidak digeser
  *   ipaddress    alamat peramban petugas (IPv4 sah, selain itu kosong)
- *   formname     "UPLOAD E-DOCS PUTUSAN AKHIR" / "... PUTUSAN ANONIMISASI"
+ *   formname     "UPLOAD E-DOCS PUTUSAN AKHIR" (juga untuk anonimisasi, seperti SIPP)
  *   action       "UNGGAH"
  *   title        "Unggah Dokumen Putusan Akhir <br />dengan perkara_id [id=N]"
  *   description  tabel Nama Kolom / Nilai, seperti keteranganAudit penetapan
  *
  * Bentuk putusan akhir TERUKUR pada sys_audittrail satker (18 Sep 2026: baris
  * 500582 "perkara_putusan UNGGAH" oleh petugas yang sama, terpisah dari baris
- * "tambah"). Bentuk anonimisasi DISIMPULKAN dari judul tingkap SIPP
- * (fileupload_putusan_c.php: $title = 'PUTUSAN ANONIMISASI') - pastikan pada
- * satker sebelum dianggap pasti:
+ * "tambah"). Anonimisasi memakai bentuk YANG SAMA: kode SIPP sendiri
+ * (fileupload_putusan_c.php memanggil update_data(...,"put") untuk kedua formulir,
+ * fileupload_m.php:277-279,713) tidak membedakannya. Untuk memeriksa pada satker:
  *
  *   SELECT formname, action, title FROM sys_audittrail
  *    WHERE tablename = 'perkara_putusan' AND formname LIKE 'UPLOAD E-DOCS%'
@@ -238,7 +246,10 @@ async function dokumenRefId(perkaraId, jenis) {
  */
 const BORANG_UNGGAH = {
   putusan: { formname: "UPLOAD E-DOCS PUTUSAN AKHIR", judul: "Unggah Dokumen Putusan Akhir" },
-  anonimisasi: { formname: "UPLOAD E-DOCS PUTUSAN ANONIMISASI", judul: "Unggah Dokumen Putusan Anonimisasi" },
+  // SIPP mengaudit KEDUA berkas dengan satu bentuk: fileupload_m.php update_data("put") menulis formname
+  // 'UPLOAD E-DOCS PUTUSAN AKHIR' dan judul "Unggah Dokumen Putusan Akhir" juga untuk anonimisasi (baris 277-279, 713).
+  // Dulu bentuk anonimisasi hanya DISIMPULKAN dari judul tingkap; kini disamakan dengan yang dibaca (5 Nov 2026).
+  anonimisasi: { formname: "UPLOAD E-DOCS PUTUSAN AKHIR", judul: "Unggah Dokumen Putusan Akhir" },
 };
 const AKSI_UNGGAH = "UNGGAH";
 
@@ -624,32 +635,46 @@ async function unggahSatu({
   ).catch(() => []);
   const idLama = Number((Array.isArray(lama) && lama[0] && lama[0].id) || 0);
 
+  let catatanTulis = "";
   if (idLama && menimpaBaris) {
-    // MENIMPA meniru SIPP: dirput_model.php:convert_insert (dan convert_insert_Annmous) memakai
+    // MENIMPA persis SIPP: dirput_model.php:convert_insert (dan convert_insert_Annmous) memakai
     // $this->db->replace('dirput_dokumen', ...) dengan id NULL - baris lama (kunci utama perkara_id,
-    // general_id, dokumen_ref_id, pihak_detil_id, pengajuan_id) diganti baris yang ditulis utuh:
-    // created_date hari ini, keterangan/flag_sync/link_dirput kembali kosong (tersinkron ulang).
-    // Hasil baris yang sama kita tulis dengan UPDATE, bukan REPLACE: REPLACE menuntut hak DELETE pada
-    // akun basis data bot dan menghapus di tengah penulisan yang tidak atomik. Satu-satunya selisih
-    // dengan SIPP: nomor urut `id` (surrogate auto-increment) tetap, tidak berganti.
-    const kosongkan = [];
-    for (const k of ["keterangan", "flag_sync", "link_dirput"]) {
-      let ada = false;
-      try {
-        ada = await sippSkemaService.kolomAda("dirput_dokumen", k);
-      } catch {
-        ada = false;
+    // general_id, dokumen_ref_id, pihak_detil_id, pengajuan_id) dibuang dan baris utuh yang baru ditulis:
+    // id baru, created_date hari ini, keterangan/flag_sync/link_dirput kosong (tersinkron ulang).
+    // Diukur di salinan lokal (sipp_donggala, dalam transaksi yang dibatalkan): satu baris per kunci, jumlah
+    // baris tidak bertambah. REPLACE menuntut hak DELETE; bila akun basis data bot ditolak (galat akses 1142),
+    // jatuh ke UPDATE yang menghasilkan baris sama kecuali nomor `id`, dan hal itu DICATAT (tidak diam-diam).
+    try {
+      await runQuery(
+        `REPLACE INTO dirput_dokumen
+           (id, perkara_id, dokumen_ref_id, filename, path_filename, created_by, created_date,
+            updated_by, updated_date, keterangan, pengajuan_id, published)
+         VALUES (NULL,?,?,?,?, 'SYSTEM', ?, 'SYSTEM', ?, NULL, 1, ?)`,
+        [perkaraId, ref, path.basename(relatifPdf), relatifPdf, waktu.slice(0, 10), waktu.slice(0, 10), published]
+      );
+      catatanTulis = "REPLACE";
+    } catch (galat) {
+      if (!hakDitolak(galat)) throw galat;
+      const kosongkan = [];
+      for (const k of ["keterangan", "flag_sync", "link_dirput"]) {
+        let ada = false;
+        try {
+          ada = await sippSkemaService.kolomAda("dirput_dokumen", k);
+        } catch {
+          ada = false;
+        }
+        if (ada) kosongkan.push(`${k} = NULL`);
       }
-      if (ada) kosongkan.push(`${k} = NULL`);
+      await runQuery(
+        `UPDATE dirput_dokumen
+            SET filename = ?, path_filename = ?, created_by = 'SYSTEM', created_date = ?,
+                updated_by = 'SYSTEM', updated_date = ?, pengajuan_id = 1,
+                published = ?${kosongkan.length ? `, ${kosongkan.join(", ")}` : ""}
+          WHERE id = ?`,
+        [path.basename(relatifPdf), relatifPdf, waktu.slice(0, 10), waktu.slice(0, 10), published, idLama]
+      );
+      catatanTulis = "UPDATE (REPLACE ditolak hak akses: DELETE tidak diizinkan; id baris tetap)";
     }
-    await runQuery(
-      `UPDATE dirput_dokumen
-          SET filename = ?, path_filename = ?, created_by = 'SYSTEM', created_date = ?,
-              updated_by = 'SYSTEM', updated_date = ?, pengajuan_id = 1,
-              published = ?${kosongkan.length ? `, ${kosongkan.join(", ")}` : ""}
-        WHERE id = ?`,
-      [path.basename(relatifPdf), relatifPdf, waktu.slice(0, 10), waktu.slice(0, 10), published, idLama]
-    );
   } else if (idLama) {
     await runQuery(
       `UPDATE dirput_dokumen
@@ -683,6 +708,7 @@ async function unggahSatu({
     published,
     ditimpa: adaLama,
     ...(adaLama ? { jalurLama: String(keadaanLama.jalurLama || "") } : {}),
+    ...(catatanTulis ? { tulisDirput: catatanTulis } : {}),
     tabel: tabelDisentuh,
   };
 }
@@ -865,7 +891,10 @@ async function unggahPutusan({
 
   const berhasil = hasil.filter((x) => x.ok);
   let antrean = false;
-  if (berhasil.length > 0) {
+  // Seperti SIPP: HANYA unggah putusan akhir yang mengantre (fileupload_putusan_c.php: _convert_insert_put memanggil
+  // insert_antrian_upload; cabang anonimisasi tidak - baris insert_antrian_upload di _convert_insert_put_Annmous
+  // dikomentari). Unggah anonimisasi sendirian tidak menambah antrean.
+  if (berhasil.some((x) => x.jenis === "putusan")) {
     // Antrean baru: status 0, keterangan kosong - persis insert_antrian_upload.
     // Yang sudah mengantre dan BELUM dikerjakan tidak digandakan.
     const menunggu = await runQuery(
@@ -896,8 +925,8 @@ async function unggahPutusan({
     for (const t of h.tabel || []) {
       langkah.push({
         tabel: t,
-        aksi: t === "perkara_putusan" ? "UPDATE" : "TULIS",
-        keterangan: `${h.jenis}: ${t === "perkara_putusan" ? h.jalur || "" : h.jalurPdf || ""}${h.ditimpa ? " (menimpa e-Doc lama)" : ""}`,
+        aksi: t === "perkara_putusan" ? "UPDATE" : t === "dirput_dokumen" && h.tulisDirput === "REPLACE" ? "REPLACE" : "TULIS",
+        keterangan: `${h.jenis}: ${t === "perkara_putusan" ? h.jalur || "" : h.jalurPdf || ""}${h.ditimpa ? " (menimpa e-Doc lama)" : ""}${t === "dirput_dokumen" && h.tulisDirput && h.tulisDirput !== "REPLACE" ? ` - ${h.tulisDirput}` : ""}`,
       });
     }
     if (!h.ok) langkah.push({ tabel: "", aksi: "GAGAL", keterangan: `${h.jenis}: ${h.alasan || "gagal"}` });

@@ -46,7 +46,8 @@ export async function GET(request: NextRequest) {
     }
 
     const basAda = request.nextUrl.searchParams.get("basAda") === "1" && hak.bas;
-    const jawab = await getGatewayUnggahMassalDaftar(BATAS_TUGAS_BAS_HARI, basAda);
+    const putusanAda = request.nextUrl.searchParams.get("putusanAda") === "1" && hak.putusan;
+    const jawab = await getGatewayUnggahMassalDaftar(BATAS_TUGAS_BAS_HARI, basAda, putusanAda);
     if (!jawab.ok) {
       return Response.json({ ok: false, alasan: jawab.error || "Daftar belum dapat dibaca dari ALETA Bot." }, { status: 502 });
     }

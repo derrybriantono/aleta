@@ -46,9 +46,16 @@ afterEach(() => {
 
 const NOMOR = "1/Pdt.G/2026/PA.Dgl";
 
-function muat(modeAwal: string) {
+const panelAlat = () =>
+  readFileSync(path.resolve(process.cwd(), "../ekstensi-sipp/panel-alat.js"), "utf8").replace(/\r\n/g, "\n");
+
+function muat(modeAwal: string, o: { keadaan?: { form: boolean; putusan: boolean; anonim: boolean }; cekGagal?: boolean } = {}) {
   const isi = konten();
-  const dom = new JSDOM("<!doctype html><html><body><div>Selamat Datang <font>petugas.satu</font></div><div id='wadah'></div></body></html>");
+  const alat = panelAlat();
+  const dom = new JSDOM(
+    `<!doctype html><html><body><div>Selamat Datang <font>petugas.satu</font></div>${o.keadaan || o.cekGagal ? "<input name='perkara_id' value='901'>" : ""}<div id='wadah'></div></body></html>`
+  );
+  const cekDipanggil: string[] = [];
   halaman.push(dom);
   const permintaan: Array<{ badan: FormData; batasMs: number }> = [];
   const muatUlang: number[] = [];
@@ -69,6 +76,12 @@ function muat(modeAwal: string) {
     alatUjiMode: () => mode,
     alatPesanGagal: (_g: unknown, status: number, apa: string) => `${apa} gagal: ${status}.`,
     alatAmbil: async (_a: string, opsi: { body: FormData; batasMs: number }) => {
+      if (String(_a).includes("/unggah-massal/cek")) {
+        cekDipanggil.push(decodeURIComponent(String(_a).split("perkaraId=")[1] || ""));
+        if (o.cekGagal || !o.keadaan) return { ok: false, status: 502, json: async () => ({}) };
+        const ada = o.keadaan;
+        return { ok: true, status: 200, json: async () => ({ data: { ok: true, daftar: [{ perkaraId: "901", adaBaris: ada.form, adaPutusan: ada.putusan, adaAnonim: ada.anonim }] } }) };
+      }
       permintaan.push({ badan: opsi.body, batasMs: opsi.batasMs });
       return { ok: true, status: 200, json: async () => ({ data: jawab(opsi.body) }) };
     },
@@ -89,6 +102,8 @@ function muat(modeAwal: string) {
       tetapan(isi, "BATAS_UNGGAH_SIPP_MS"),
       tetapan(isi, "PESAN_GAGAL_UNGGAH"),
       tetapan(isi, "unggahEdocPakaiCaraLama"),
+      tetapan(alat, "ALAT_NAMA_SLOT"),
+      ...["alatPenandaSlot", "alatBacaKeadaanBanyak", "alatDaftarTimpa", "alatKonfirmasiTimpa"].map((nama) => potongFungsi(alat, nama)),
       ...[
         "buatElemen",
         "perkaraIdDariHalaman",
@@ -100,6 +115,8 @@ function muat(modeAwal: string) {
         "pasangkanBerkasUnggah",
         "kirimBadanUnggahSipp",
         "unggahBerpasangan",
+        "bacaDanTanyaTimpa",
+        "isiPenandaManual",
         "bagianUnggahPutusanSipp",
         "unggahEdocTerpisahBerlaku",
         "bagianUnggahEdocTerpisah",
@@ -132,6 +149,7 @@ function muat(modeAwal: string) {
     pilih,
     redam,
     permintaan,
+    cekDipanggil,
     muatUlang,
     setMode: (m: string) => {
       mode = m;
@@ -254,5 +272,117 @@ describe("tampilan Baru dan UI Baru: edoc putusan dan edoc anonimisasi terpisah"
     expect(v.d.querySelectorAll("input[type=file]").length).toBe(1);
     v.setMode("baru");
     expect(v.d.querySelectorAll(".aleta-edoc-slot").length).toBe(2);
+  });
+});
+
+// ============================================================================
+describe("panel manual Unggah putusan (5 Nov 2026): keadaan dibaca dulu; yang ditimpa dikonfirmasi sebaris", () => {
+  const pasangDua = (u: ReturnType<typeof muat>) => {
+    u.pasang();
+    u.pilih(slotPemilih(u.d, "putusan"), [berkas("PA.Dgl_2026_Pdt.G_1_putusan_akhir.rtf")]);
+    u.pilih(slotPemilih(u.d, "anonimisasi"), [berkas("salinan disamarkan.rtf", "{\\rtf1 samar}")]);
+  };
+  const tombolKonfirm = (d: Document, kunci: string) => d.querySelector(`[data-aleta-timpa="${kunci}"]`) as HTMLButtonElement | null;
+
+  it("BELUM ada: langsung dikirim tanpa pertanyaan dan tanpa tanda timpa", async () => {
+    const u = muat("baru", { keadaan: { form: true, putusan: false, anonim: false } });
+    pasangDua(u);
+    tombolUnggah(u.d).click();
+    await u.redam();
+    // Satu pembacaan untuk penanda (saat berkas dipilih) dan satu TEPAT sebelum mengirim.
+    expect(u.cekDipanggil).toEqual(["901,", "901,"]);
+    expect(tombolKonfirm(u.d, "konfirmasi")).toBeNull();
+    expect(u.permintaan).toHaveLength(1);
+    expect(u.permintaan[0].badan.has("timpaPutusan")).toBe(false);
+    expect(u.permintaan[0].badan.has("timpaAnonim")).toBe(false);
+  });
+
+  it("SUDAH ada: pertanyaan sebaris menyebut perkara dan slot; 'Tidak' = tidak ada satu pun kiriman; tombol kembali menyala", async () => {
+    const u = muat("baru", { keadaan: { form: true, putusan: true, anonim: false } });
+    pasangDua(u);
+    tombolUnggah(u.d).click();
+    await u.redam();
+    const kotak = u.d.querySelector('[data-aleta-timpa="konfirmasi"]')!;
+    expect(kotak.textContent).toContain("Anda yakin menimpa?");
+    expect(kotak.textContent).toContain("1/Pdt.G/2026: e-Doc putusan");
+    expect(kotak.textContent).not.toContain("anonimisasi");
+    expect(tombolKonfirm(u.d, "ya")!.textContent).toBe("Ya, timpa");
+    tombolKonfirm(u.d, "tidak")!.click();
+    await u.redam();
+    expect(u.permintaan).toHaveLength(0);
+    expect(u.d.querySelector('[data-aleta-timpa="konfirmasi"]')).toBeNull();
+    expect(tombolUnggah(u.d).disabled).toBe(false);
+    expect(u.muatUlang).toHaveLength(0);
+  });
+
+  it("'Ya, timpa': dikirim dengan tanda HANYA untuk slot yang sudah ada (anonimisasi yang belum ada tanpa tanda)", async () => {
+    const u = muat("baru", { keadaan: { form: true, putusan: true, anonim: false } });
+    pasangDua(u);
+    tombolUnggah(u.d).click();
+    await u.redam();
+    tombolKonfirm(u.d, "ya")!.click();
+    await u.redam();
+    expect(u.permintaan).toHaveLength(1);
+    expect(u.permintaan[0].badan.get("timpaPutusan")).toBe("1");
+    expect(u.permintaan[0].badan.has("timpaAnonim")).toBe(false);
+  });
+
+  it("keduanya sudah ada: kedua slot disebut dan kedua tanda dikirim setelah 'Ya, timpa'", async () => {
+    const u = muat("baru", { keadaan: { form: true, putusan: true, anonim: true } });
+    pasangDua(u);
+    tombolUnggah(u.d).click();
+    await u.redam();
+    expect(u.d.querySelector('[data-aleta-timpa="konfirmasi"]')!.textContent).toContain("1/Pdt.G/2026: e-Doc putusan, e-Doc anonimisasi");
+    tombolKonfirm(u.d, "ya")!.click();
+    await u.redam();
+    expect(u.permintaan[0].badan.get("timpaPutusan")).toBe("1");
+    expect(u.permintaan[0].badan.get("timpaAnonim")).toBe("1");
+  });
+
+  it("keadaan GAGAL terbaca: tidak ada pertanyaan dan TIDAK ADA tanda timpa (yang sudah ada tidak mungkin ditimpa)", async () => {
+    const u = muat("baru", { cekGagal: true });
+    pasangDua(u);
+    tombolUnggah(u.d).click();
+    await u.redam();
+    expect(u.cekDipanggil).toHaveLength(2);
+    expect(u.d.querySelector('[data-aleta-timpa="konfirmasi"]')).toBeNull();
+    expect(u.permintaan).toHaveLength(1);
+    expect(u.permintaan[0].badan.has("timpaPutusan")).toBe(false);
+    expect(u.permintaan[0].badan.has("timpaAnonim")).toBe(false);
+  });
+
+  it("penanda tulisan biasa tampil sesudah berkas dipilih: Sudah terisi / Sudah diunggah / Belum diunggah; gagal = Belum terbaca", async () => {
+    const u = muat("baru", { keadaan: { form: true, putusan: true, anonim: false } });
+    u.pasang();
+    u.pilih(slotPemilih(u.d, "putusan"), [berkas("PA.Dgl_2026_Pdt.G_1_putusan_akhir.rtf")]);
+    await u.redam();
+    expect(u.d.querySelector("[data-aleta-penanda]")!.textContent).toBe("Putusan Akhir: Sudah terisi · e-Doc putusan: Sudah diunggah · e-Doc anonimisasi: Belum diunggah");
+    const g = muat("baru", { cekGagal: true });
+    g.pasang();
+    g.pilih(slotPemilih(g.d, "putusan"), [berkas("PA.Dgl_2026_Pdt.G_1_putusan_akhir.rtf")]);
+    await g.redam();
+    expect(g.d.querySelector("[data-aleta-penanda]")!.textContent).toBe("Putusan Akhir: Belum terbaca · e-Doc putusan: Belum terbaca · e-Doc anonimisasi: Belum terbaca");
+  });
+
+  it("panel tampilan Lama (satu pemilih): keadaan dibaca, 'Tidak' tidak mengirim apa pun; tanpa yang ditimpa langsung kirim", async () => {
+    const u = muat("lama", { keadaan: { form: true, putusan: true, anonim: false } });
+    u.pasang();
+    const pemilih = u.d.querySelector("input[type=file]") as HTMLInputElement;
+    u.pilih(pemilih, [berkas("PA.Dgl_2026_Pdt.G_1_putusan_akhir.rtf")]);
+    await u.redam();
+    const tombol = Array.from(u.d.querySelectorAll("button")).find((b) => b.textContent === "Unggah ke SIPP") as HTMLButtonElement;
+    tombol.click();
+    await u.redam();
+    expect(u.d.querySelector('[data-aleta-timpa="konfirmasi"]')!.textContent).toContain("1/Pdt.G/2026: e-Doc putusan");
+    tombolKonfirm(u.d, "tidak")!.click();
+    await u.redam();
+    expect(u.permintaan).toHaveLength(0);
+    expect(tombol.disabled).toBe(false);
+    tombol.click();
+    await u.redam();
+    tombolKonfirm(u.d, "ya")!.click();
+    await u.redam();
+    expect(u.permintaan).toHaveLength(1);
+    expect(u.permintaan[0].badan.get("timpaPutusan")).toBe("1");
   });
 });

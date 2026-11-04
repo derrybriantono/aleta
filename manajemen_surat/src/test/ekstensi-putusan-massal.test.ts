@@ -284,7 +284,7 @@ describe("pemasangan - ketiga panel, dan penjaganya", () => {
   it("perkara yang sudah putus TIDAK diisi ulang", () => {
     const badan = konten.slice(konten.indexOf("async function jalankanSatuAntreanSipp("));
     const fungsi = badan.slice(0, badan.indexOf("\n}\n", badan.indexOf("bacaPutusanSegar")));
-    expect(fungsi).toContain("if (segar && segar.sudahPutus) {");
+    expect(fungsi).toContain("if (segar && segar.sudahPutus && !timpaIsiButir) {");
     expect(fungsi).toContain('butir.keadaan = "dilewati";');
   });
 

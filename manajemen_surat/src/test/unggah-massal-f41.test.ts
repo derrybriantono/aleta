@@ -136,6 +136,65 @@ describe("A. bot unggahMassalService - daftar e-Doc yang menunggu (SELECT saja)"
 // ----------------------------------------------------------------------------
 // B. basUnggahService
 // ----------------------------------------------------------------------------
+describe("A2. bot unggahMassalService - keadaan banyak perkara dengan SATU kueri (5 Nov 2026)", () => {
+  const layanan = req(path.join(AKAR, "aleta_bot/services/unggahMassalService.js"));
+  function deps(baris: Array<Record<string, unknown>>) {
+    const sql: Array<{ s: string; p: unknown[] }> = [];
+    return {
+      sql,
+      d: {
+        hariIni: async () => "2026-10-17",
+        tabelAda: async () => true,
+        kolomAda: async () => true,
+        kueriSipp: async (s: string, p: unknown[]) => {
+          sql.push({ s, p });
+          return baris;
+        },
+        kueriAbt: async () => [],
+      },
+    };
+  }
+
+  it("menurut nomor induk: SATU SELECT IN; perkara tanpa baris putusan dikembalikan adaBaris:false", async () => {
+    const t = deps([{ perkara_id: 9851, amar_putusan_dok: "resources/file/doc/2026/07/a.rtf", amar_putusan_anonimisasi_dok: "" }]);
+    const h = await layanan.buatLayanan(t.d).cekBanyak({ perkaraId: "9851,9852,9851,abc" });
+    expect(t.sql).toHaveLength(1);
+    expect(t.sql[0].s).toMatch(/^\s*SELECT[\s\S]*FROM perkara_putusan WHERE perkara_id IN \(\?,\?\)/);
+    expect(t.sql[0].p).toEqual([9851, 9852]);
+    expect(h.daftar).toEqual([
+      { perkaraId: "9851", adaBaris: true, adaPutusan: true, adaAnonim: false },
+      { perkaraId: "9852", adaBaris: false, adaPutusan: false, adaAnonim: false },
+    ]);
+  });
+
+  it("menurut NOMOR perkara: SATU SELECT dengan IN berparameter; nomor yang tidak ditemukan tidak muncul", async () => {
+    const t = deps([{ perkara_id: 9851, nomor_perkara: "348/Pdt.G/2026/PA.Dgl", ada_baris: 9851, amar_putusan_dok: "x.rtf", amar_putusan_anonimisasi_dok: "y.rtf" }]);
+    const h = await layanan.buatLayanan(t.d).cekBanyak({ nomor: "348/Pdt.G/2026/PA.Dgl|349/Pdt.G/2026/PA.Dgl" });
+    expect(t.sql).toHaveLength(1);
+    expect(t.sql[0].s).toMatch(/p\.nomor_perkara IN \(\?,\?\)/);
+    expect(t.sql[0].p).toEqual(["348/Pdt.G/2026/PA.Dgl", "349/Pdt.G/2026/PA.Dgl"]);
+    expect(h.daftar).toEqual([{ perkaraId: "9851", nomorPerkara: "348/Pdt.G/2026/PA.Dgl", adaBaris: true, adaPutusan: true, adaAnonim: true }]);
+  });
+
+  it("tanpa masukan sah: ditolak tanpa kueri; kueri yang gagal dilempar (pemanggil menulis 'Belum terbaca')", async () => {
+    const t = deps([]);
+    expect((await layanan.buatLayanan(t.d).cekBanyak({ perkaraId: "x,y" })).ok).toBe(false);
+    expect(t.sql).toHaveLength(0);
+    const gagal = layanan.buatLayanan({ ...t.d, kueriSipp: async () => { throw new Error("koneksi putus"); } });
+    await expect(gagal.cekBanyak({ perkaraId: "1,2" })).rejects.toThrow("koneksi putus");
+  });
+
+  it("daftar putusanAda:true membuang syarat 'e-Doc belum lengkap' (yang lengkap ikut tampil); bawaan tetap menyaring", async () => {
+    const a = deps([]);
+    await layanan.buatLayanan(a.d).daftar({});
+    const b = deps([]);
+    await layanan.buatLayanan(b.d).daftar({ putusanAda: true });
+    const putusanSql = (t: ReturnType<typeof deps>) => t.sql.map((x) => x.s).find((x) => /FROM perkara_putusan pp/.test(x)) || "";
+    expect(putusanSql(a)).toMatch(/pp\.amar_putusan_dok = ''/);
+    expect(putusanSql(b)).not.toMatch(/pp\.amar_putusan_dok = ''/);
+  });
+});
+
 describe("B. bot basUnggahService - e-Doc BAS persis tingkap SIPP, dobel tidak diganti", () => {
   const svc = req(path.join(AKAR, "aleta_bot/services/basUnggahService.js"));
   const RTF = Buffer.from("{\\rtf1 BERITA ACARA SIDANG}", "latin1");
@@ -382,6 +441,8 @@ const rute = vi.hoisted(() => ({
   aktor: null as unknown,
   daftar: null as unknown,
   unggahBas: [] as Array<Record<string, unknown>>,
+  cekPanggilan: [] as Array<Record<string, unknown>>,
+  daftarPanggilan: [] as Array<unknown[]>,
   jawabBas: { ok: true, data: { ok: true, jalur: "resources/file/doc/2026/09/x.rtf", nama: "x.rtf", urutan: 2, bentuk: "rtf", diganti: false, jalurLama: "" } } as Record<string, unknown>,
 }));
 vi.mock("@/server/db/client", () => ({ getDatabase: async () => ({ queryAll: async () => [] }) }));
@@ -393,9 +454,16 @@ vi.mock("@/server/shared/admin-access-audit", () => ({
   },
 }));
 vi.mock("@/server/modules/aleta-bot/whatsapp-gateway-client", () => ({
-  getGatewayUnggahMassalDaftar: async () => ({ ok: true, data: rute.daftar }),
+  getGatewayUnggahMassalDaftar: async (...a: unknown[]) => {
+    rute.daftarPanggilan.push(a);
+    return { ok: true, data: rute.daftar };
+  },
   // 17 Okt (audit A4): PP hanya BAS perkaranya - PP uji (Andini Puspita Sari) adalah PP perkara ini.
-  getGatewayUnggahMassalCek: async () => ({ ok: true, data: { ok: true, adaBas: false, panitera: ["Andini Puspita Sari, S.Sy."] } }),
+  getGatewayUnggahMassalCek: async (p: Record<string, unknown>) => {
+    rute.cekPanggilan.push(p);
+    if (p.nomor || String(p.perkaraId).includes(",")) return { ok: true, data: { ok: true, daftar: [{ perkaraId: "9851", nomorPerkara: "348/Pdt.G/2026/PA.Dgl", adaBaris: true, adaPutusan: true, adaAnonim: false }] } };
+    return { ok: true, data: { ok: true, adaBas: false, panitera: ["Andini Puspita Sari, S.Sy."] } };
+  },
   gatewayUnggahBasSipp: async (m: Record<string, unknown>) => {
     rute.unggahBas.push(m);
     return rute.jawabBas;
@@ -425,6 +493,40 @@ describe("D. rute portal unggah massal", () => {
     const a = await daftar(AKTOR.admin, "?bas=semua&putusan=semua");
     expect(a.isi.data.bas).toHaveLength(2);
     expect(a.isi.data.putusan).toHaveLength(2);
+  });
+
+  async function cekBanyak(aktor: unknown, q: string) {
+    rute.aktor = aktor;
+    rute.cekPanggilan = [];
+    const mod = await import("@/app/api/aleta-ecourt/unggah-massal/cek/route");
+    const r = await mod.GET(new NextRequest(`http://uji.local/aleta/api/aleta-ecourt/unggah-massal/cek${q}`));
+    return { status: r.status, isi: await r.json() };
+  }
+
+  it("GET cek BANYAK (5 Nov 2026): daftar nomor induk atau nomor perkara -> SATU permintaan ke bot; hanya yang berhak putusan; masukan rusak 400", async () => {
+    const ids = await cekBanyak(AKTOR.hakim, "?jenis=putusan&perkaraId=9851,9852,");
+    expect(ids.status).toBe(200);
+    expect(ids.isi.data.daftar[0]).toMatchObject({ perkaraId: "9851", adaBaris: true, adaPutusan: true, adaAnonim: false });
+    expect(rute.cekPanggilan).toEqual([{ jenis: "putusan", perkaraId: "9851,9852" }]);
+    const nomor = await cekBanyak(AKTOR.hakim, `?jenis=putusan&nomor=${encodeURIComponent("348/Pdt.G/2026/PA.Dgl|349/Pdt.G/2026/PA.Dgl")}`);
+    expect(nomor.status).toBe(200);
+    expect(rute.cekPanggilan).toEqual([{ jenis: "putusan", perkaraId: "", nomor: "348/Pdt.G/2026/PA.Dgl|349/Pdt.G/2026/PA.Dgl" }]);
+    // Peran tanpa hak unggah putusan (PP): 403 tanpa menyentuh bot.
+    const pp = await cekBanyak(AKTOR.pp, "?jenis=putusan&perkaraId=9851,9852");
+    expect(pp.status).toBe(403);
+    expect(rute.cekPanggilan).toEqual([]);
+    expect((await cekBanyak(AKTOR.hakim, "?jenis=putusan&perkaraId=9851,abc")).status).toBe(400);
+    const banyak = Array.from({ length: 201 }, (_, i) => String(1000 + i)).join(",");
+    expect((await cekBanyak(AKTOR.hakim, `?jenis=putusan&perkaraId=${banyak}`)).status).toBe(400);
+    expect((await cekBanyak(AKTOR.hakim, `?jenis=putusan&nomor=${encodeURIComponent("drop table;--")}`)).status).toBe(400);
+    expect(rute.cekPanggilan).toEqual([]);
+  });
+
+  it("GET daftar putusanAda=1 diteruskan ke bot HANYA bagi yang berhak putusan", async () => {
+    rute.daftarPanggilan = [];
+    await daftar(AKTOR.hakim, "?putusan=saya&putusanAda=1");
+    await daftar(AKTOR.hakim, "?putusan=saya");
+    expect(rute.daftarPanggilan.map((a) => a[2])).toEqual([true, false]);
   });
 
   async function unggahBas(aktor: unknown, isi: string, tambah: Record<string, string> = {}) {
@@ -774,6 +876,136 @@ describe("E. ekstensi abt.js 17OKT-F41 - layar", () => {
     expect(tanya[0]).toMatch(/dipindah ke folder "terhapus"/);
     expect((d.querySelector('[data-f41-centang="bas:509"]') as HTMLInputElement).checked).toBe(true);
     expect(d.querySelector('[data-f41="unggah"]')!.textContent).toBe("Unggah 1 berkas");
+  });
+});
+
+// ----------------------------------------------------------------------------
+// E2. MENIMPA e-Doc putusan/anonimisasi di unggah massal (5 Nov 2026)
+// ----------------------------------------------------------------------------
+describe("E2. unggah massal putusan: penanda per slot, centang Ganti per slot, pertanyaan sebaris hanya bila ada yang ditimpa", () => {
+  const tunggu = (ms = 0) => new Promise((r) => setTimeout(r, ms));
+  async function sampai<T>(fn: () => T, ket: string): Promise<NonNullable<T>> {
+    const mulai = Date.now();
+    for (;;) {
+      const h = fn();
+      if (h) return h as NonNullable<T>;
+      if (Date.now() - mulai > 4000) throw new Error(`tidak tercapai: ${ket}`);
+      await tunggu(5);
+    }
+  }
+  const BARIS = (id: string, ada: { putusan: boolean; anonim: boolean }) => ({
+    ...BARIS_PUT(id, { putusan: !ada.putusan, anonim: !ada.anonim }),
+    adaPutusan: ada.putusan,
+    adaAnonim: ada.anonim,
+  });
+  const SUSUN_HAKIM = (putusan: unknown[]) => ({
+    hariIni: "2026-10-17",
+    sejak: "2026-06-19",
+    hak: { putusan: true, bas: false, semua: { putusan: false, bas: false }, peranPutusan: "hakim", peranBas: null },
+    saringan: { putusan: "saya", bas: "saya" },
+    putusan,
+    bas: [],
+    tertahan: [],
+    jumlah: { putusanSaya: putusan.length, putusanSemua: putusan.length, basSaya: 0, basSemua: 0, basTertunggak: 0 },
+    galat: [],
+  });
+  function siap(o: { cek?: (q: URLSearchParams) => Record<string, unknown>; gantiDaftar?: boolean } = {}) {
+    const { w, f } = bukaEkstensi();
+    // Pembantu bersama (panel-alat.js): penanda, daftar timpa, pertanyaan sebaris.
+    const alat = baca("ekstensi-sipp/panel-alat.js");
+    const blok = alat.slice(alat.indexOf("const ALAT_NAMA_SLOT")).replace("const ALAT_NAMA_SLOT", "var ALAT_NAMA_SLOT");
+    w.eval(blok);
+    w.confirm = () => true;
+    const t = depsTiruan({ cek: o.cek });
+    const asli = t.deps.ambil;
+    const daftarAwal = [BARIS("601", { putusan: true, anonim: false }), BARIS("603", { putusan: false, anonim: false })];
+    const daftarLengkap = [...daftarAwal, BARIS("602", { putusan: true, anonim: true })];
+    t.deps.ambil = async (url: string, opsi: any) => {
+      if (/^\/aleta\/api\/aleta-ecourt\/unggah-massal(\?|$)/.test(url)) {
+        t.minta.push({ url, opsi });
+        return jsonRes(200, { ok: true, data: { ok: true, ...SUSUN_HAKIM(url.includes("putusanAda=1") ? daftarLengkap : daftarAwal) } });
+      }
+      return asli(url, opsi);
+    };
+    f.aletaUnggahMassalBuka("", t.deps);
+    return { w, d: w.document as Document, t };
+  }
+  const baris = (d: Document, id: string) => d.querySelector(`[data-kunci="put:${id}"]`) as HTMLElement;
+
+  it("penanda tulisan biasa per slot; 'Tampilkan juga yang sudah ada' meminta putusanAda; Centang semua TIDAK mencentang yang sudah lengkap; Ganti per slot hanya untuk yang sudah ada", async () => {
+    const { w, d, t } = siap();
+    await sampai(() => baris(d, "601"), "daftar awal");
+    expect(baris(d, "601").textContent).toContain("Putusan Akhir: Sudah terisi");
+    expect(baris(d, "601").textContent).toContain("e-Doc putusan: Sudah diunggah");
+    expect(baris(d, "601").textContent).toContain("e-Doc anonimisasi: Belum diunggah");
+    expect(baris(d, "603").textContent).toContain("e-Doc putusan: Belum diunggah");
+    // Centang Ganti hanya untuk slot yang SUDAH ada.
+    expect(d.querySelector('[data-f41-ganti-slot="put:601|putusan"]')).not.toBeNull();
+    expect(d.querySelector('[data-f41-ganti-slot="put:601|anonim"]')).toBeNull();
+    expect(d.querySelector('[data-f41-ganti-slot="put:603|putusan"]')).toBeNull();
+    expect((d.querySelector('[data-f41-ganti-slot="put:601|putusan"]') as HTMLInputElement).checked).toBe(false);
+    const saklar = d.querySelector('[data-f41="putusan-ada"]') as HTMLInputElement;
+    saklar.checked = true;
+    saklar.dispatchEvent(new w.Event("change", { bubbles: true }));
+    await sampai(() => baris(d, "602"), "yang sudah lengkap ikut tampil");
+    expect(t.minta.some((m) => m.url.includes("putusanAda=1"))).toBe(true);
+    expect(d.querySelector('[data-f41-ganti-slot="put:602|putusan"]')).not.toBeNull();
+    expect(d.querySelector('[data-f41-ganti-slot="put:602|anonim"]')).not.toBeNull();
+    (d.querySelector('[data-f41="semua"]') as HTMLElement).click();
+    expect((d.querySelector('[data-f41-centang="put:602"]') as HTMLInputElement).checked).toBe(false);
+    expect((d.querySelector('[data-f41-centang="put:601"]') as HTMLInputElement).checked).toBe(true);
+  });
+
+  it("tanpa Ganti: tidak ada pertanyaan sama sekali dan unggahan TANPA tanda timpa (hanya slot yang kosong dikirim)", async () => {
+    const { d, t } = siap({ cek: (q) => (q.get("perkaraId") === "601" ? { adaPutusan: true, adaAnonim: false } : {}) });
+    await sampai(() => baris(d, "601"), "daftar");
+    (d.querySelector('[data-f41="semua"]') as HTMLElement).click();
+    (d.querySelector('[data-f41="periksa"]') as HTMLElement).click();
+    await sampai(() => (d.querySelector('[data-f41="unggah"]') as HTMLButtonElement).disabled === false, "tombol unggah aktif");
+    (d.querySelector('[data-f41="unggah"]') as HTMLElement).click();
+    await sampai(() => t.kaliUnggah >= 2, "dua unggahan");
+    expect(d.querySelector('[data-aleta-timpa="konfirmasi"]')).toBeNull();
+    for (const m of t.minta.filter((x) => x.url === "/aleta/api/aleta-ecourt/putusan/unggah-sipp")) {
+      expect(m.opsi.body.has("timpaPutusan")).toBe(false);
+      expect(m.opsi.body.has("timpaAnonim")).toBe(false);
+    }
+    const u601 = t.minta.filter((x) => x.url === "/aleta/api/aleta-ecourt/putusan/unggah-sipp").find((x) => x.opsi.body.get("nomorPerkara") === "601/Pdt.G/2026/PA.Dgl")!;
+    expect(u601.opsi.body.has("putusan")).toBe(false); // e-Doc putusan 601 sudah ada: tidak dikirim
+    expect(u601.opsi.body.has("anonimisasi")).toBe(true);
+  });
+
+  it("Ganti e-Doc putusan: pertanyaan sebaris menyebut perkara dan slot; 'Tidak' = tidak ada satu pun unggahan; 'Ya, timpa' = putusan dikirim dengan tanda, anonimisasi yang kosong tanpa tanda", async () => {
+    const { w, d, t } = siap({ cek: (q) => (q.get("perkaraId") === "601" ? { adaPutusan: true, adaAnonim: false } : {}) });
+    w.confirm = () => {
+      throw new Error("pertanyaan menimpa tidak boleh memakai window.confirm");
+    };
+    await sampai(() => baris(d, "601"), "daftar");
+    const g = d.querySelector('[data-f41-ganti-slot="put:601|putusan"]') as HTMLInputElement;
+    g.checked = true;
+    g.dispatchEvent(new w.Event("change", { bubbles: true }));
+    expect((d.querySelector('[data-f41-centang="put:601"]') as HTMLInputElement).checked).toBe(true);
+    (d.querySelector('[data-f41="periksa"]') as HTMLElement).click();
+    await sampai(() => (d.querySelector('[data-f41="unggah"]') as HTMLButtonElement).disabled === false, "tombol unggah aktif");
+    expect(baris(d, "601").querySelector(".aleta-f41-rinci")!.textContent).toContain("MENGGANTI e-Doc putusan");
+    w.confirm = () => true;
+    const jumlahSebelum = t.kaliUnggah;
+    (d.querySelector('[data-f41="unggah"]') as HTMLElement).click();
+    const kotak = await sampai(() => d.querySelector('[data-aleta-timpa="konfirmasi"]'), "pertanyaan menimpa");
+    expect(kotak.textContent).toContain("Anda yakin menimpa?");
+    expect(kotak.textContent).toContain("601/Pdt.G/2026: e-Doc putusan");
+    expect(kotak.textContent).not.toContain("anonimisasi");
+    (kotak.querySelector('[data-aleta-timpa="tidak"]') as HTMLButtonElement).click();
+    await tunggu(40);
+    expect(t.kaliUnggah).toBe(jumlahSebelum);
+    expect(d.querySelector('[data-aleta-timpa="konfirmasi"]')).toBeNull();
+    (d.querySelector('[data-f41="unggah"]') as HTMLElement).click();
+    const kotak2 = await sampai(() => d.querySelector('[data-aleta-timpa="konfirmasi"]'), "pertanyaan lagi");
+    (kotak2.querySelector('[data-aleta-timpa="ya"]') as HTMLButtonElement).click();
+    await sampai(() => t.kaliUnggah > jumlahSebelum, "unggah berjalan");
+    const u601 = t.minta.filter((x) => x.url === "/aleta/api/aleta-ecourt/putusan/unggah-sipp").find((x) => x.opsi.body.get("nomorPerkara") === "601/Pdt.G/2026/PA.Dgl")!;
+    expect(u601.opsi.body.get("timpaPutusan")).toBe("1");
+    expect(u601.opsi.body.has("timpaAnonim")).toBe(false);
+    expect(u601.opsi.body.has("putusan")).toBe(true);
   });
 });
 

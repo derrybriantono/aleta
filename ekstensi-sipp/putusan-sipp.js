@@ -561,7 +561,11 @@
       label.append(cek, ` ${NAMA[j]}`);
       const st = el("span", `aleta-pusipp-status aleta-pusipp-s-${STATUS[ctx.status[j]].nada}`, STATUS[ctx.status[j]].teks);
       st.setAttribute("data-pusipp-status", ctx.status[j]);
-      baris.append(label, st);
+      // Penanda tulisan biasa per slot: Sudah terisi / Belum terisi / Sudah diunggah / Belum diunggah / Belum terbaca.
+      const ada = j === "isi" ? ctx.keadaan.terisi : ctx.dibaca && !ctx.keadaan.galatEdoc ? (j === "putusan" ? ctx.keadaan.adaPutusan : ctx.keadaan.adaAnonim) : null;
+      const penanda = el("span", "aleta-pusipp-penanda", typeof alatPenandaSlot === "function" ? alatPenandaSlot(j === "isi" ? "form" : j, ada) : "");
+      penanda.setAttribute("data-pusipp-penanda", j);
+      baris.append(label, penanda, st);
       if (ctx.catatan[j]) baris.appendChild(el("div", "aleta-pusipp-ket", ctx.catatan[j]));
       daftar.appendChild(baris);
     }
@@ -616,11 +620,12 @@
           : `${r.isi ? `1 Putusan Akhir akan ${r.timpa.isi ? "diganti" : "diisi"} dan disimpan${berkasSiap() ? " dari berkas yang dipilih" : ""}` : "Putusan Akhir tidak diisi"} · ${r.edoc} e-Doc akan diunggah${berkasSiap() && r.edoc ? " dari berkas yang dipilih" : ""}${jumlahGanti(r) ? ` (${jumlahGanti(r)} di antaranya mengganti yang sudah ada)` : ""}`;
     const utama = akar.querySelector("[data-pusipp='utama']");
     const berkasBelum = Boolean(ctx.berkas && (ctx.berkas.status === "periksa" || ctx.berkas.status === "ubah"));
-    utama.disabled = ctx.sibuk || r.total === 0 || !ctx.dibaca || berkasBelum || tanpaSumber;
+    utama.disabled = ctx.sibuk || Boolean(ctx.menungguTimpa) || r.total === 0 || !ctx.dibaca || berkasBelum || tanpaSumber;
 
     // 30 Okt 2026: bukan pertanyaan lagi - selama bekerja, apa yang sedang dikerjakan tampil sebagai kemajuan.
     const wadahKonfirm = akar.querySelector(".aleta-pusipp-konfirm-wadah");
-    wadahKonfirm.textContent = "";
+    // Pertanyaan "Anda yakin menimpa?" yang sedang menunggu jawaban tidak boleh terhapus oleh gambar ulang.
+    if (!ctx.menungguTimpa) wadahKonfirm.textContent = "";
     if (ctx.sibuk && ctx.kerjaTeks) {
       const kotak = el("div", "aleta-pusipp-kerja");
       kotak.setAttribute("role", "status");
@@ -666,10 +671,29 @@
   }
 
   async function jalankan() {
-    if (!ctx || ctx.sibuk || !ctx.dibaca) return;
+    if (!ctx || ctx.sibuk || ctx.menungguTimpa || !ctx.dibaca) return;
     const r = rencana();
     if (r.total === 0 || tanpaSumberIsi()) return;
     const nomor = ctx.nomor;
+    // Konfirmasi SEBARIS hanya bila ada yang ditimpa. "Tidak" = kembali ke pilihan: tidak ada satu pun tulisan, dan
+    // langkah lain yang bukan timpa juga belum berjalan. Tanpa yang ditimpa tidak ada pertanyaan sama sekali.
+    const ditimpa = [r.timpa.isi ? "form" : "", r.timpa.putusan ? "putusan" : "", r.timpa.anonim ? "anonim" : ""].filter(Boolean);
+    if (ditimpa.length && typeof alatKonfirmasiTimpa === "function") {
+      const wadahTanya = ctx.akar && ctx.akar.querySelector(".aleta-pusipp-konfirm-wadah");
+      ctx.menungguTimpa = true;
+      render();
+      let setuju = false;
+      try {
+        setuju = await alatKonfirmasiTimpa(wadahTanya, alatDaftarTimpa([{ nomor, slot: ditimpa }]));
+      } finally {
+        if (ctx) ctx.menungguTimpa = false;
+      }
+      if (!ctx || ctx.nomor !== nomor) return;
+      if (!setuju) {
+        render();
+        return;
+      }
+    }
     ctx.sibuk = true;
     ctx.konfirm = false;
     ctx.kerjaTeks = teksKerja(r);

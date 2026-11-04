@@ -83,6 +83,9 @@ type Opsi = {
   sidang?: Array<Record<string, unknown>>;
   massal?: { putusan?: any[]; tertahan?: any[] };
   tanpaPasangan?: boolean;
+  /** Keadaan e-Doc per nomor induk untuk rute cek (banyak perkara sekaligus). */
+  keadaan?: Record<string, { adaBaris: boolean; adaPutusan: boolean; adaAnonim: boolean }>;
+  cekGagal?: boolean;
 };
 
 function buka(o: Opsi = {}) {
@@ -147,6 +150,7 @@ function buka(o: Opsi = {}) {
   const panggilan: Panggilan[] = [];
   const selesaiDikirim: any[] = [];
   const jalanDengan: any[] = [];
+  const cekDipanggil: string[] = [];
   const berkasServer = new Map<string, { nama: string; bentuk: string; nomorIsi: string }>();
   let urutBerkas = 0;
   const jawab = (data: unknown, status = 200, galat?: { pesan: string; rincian?: unknown }) => ({
@@ -187,6 +191,12 @@ function buka(o: Opsi = {}) {
         ringkasan[b.berkasId] = { ada: true, sebab: "", status: { label: "Dikabulkan", keyakinan: "pasti", kutipan: "Mengabulkan gugatan", alasan: "" }, verstek: { label: "Ya", keyakinan: "pasti", kutipan: "verstek", alasan: "" } };
       }
       return jawab({ ok: true, statusTersedia: ["Dikabulkan", "Ditolak", "Tidak Diterima"], ringkasan });
+    }
+    if (alamat.includes("/unggah-massal/cek")) {
+      cekDipanggil.push(decodeURIComponent(alamat.split("perkaraId=")[1] || ""));
+      if (o.cekGagal) return jawab({ ok: false }, 502);
+      const id = decodeURIComponent(alamat.split("perkaraId=")[1] || "").split(",").filter(Boolean);
+      return jawab({ ok: true, daftar: id.filter((x) => o.keadaan && o.keadaan[x]).map((x) => ({ perkaraId: x, ...o.keadaan![x] })) });
     }
     if (alamat.includes("/unggah-massal")) return jawab({ ok: true, putusan: o.massal?.putusan ?? [], tertahan: o.massal?.tertahan ?? [] });
     if (alamat.includes("/aleta-ecourt/sidang")) return jawab({ available: true, sidang: o.sidang ?? [] });
@@ -244,7 +254,7 @@ function buka(o: Opsi = {}) {
     baris.insertBefore(put, l1);
   }
   vm.runInContext(PTJ, ctx, { filename: "putusan-terjadwal.js" });
-  return { w, d: w.document as Document, panggilan, simpanan, berkasServer, selesaiDikirim, jalanDengan };
+  return { w, d: w.document as Document, panggilan, simpanan, berkasServer, selesaiDikirim, jalanDengan, cekDipanggil };
 }
 type Halaman = ReturnType<typeof buka>;
 
@@ -478,7 +488,7 @@ describe("halaman perkara: panel, seret-lepas banyak berkas, pasangan", () => {
     const c = q(h, `[data-ptj-langkah="${k.kandidat[0].kunci}:isi"]`) as HTMLInputElement;
     expect(c.checked).toBe(false);
     expect(c.disabled).toBe(false);
-    expect(panel(h)!.textContent).toMatch(/sudah ada di SIPP\. Centang untuk mengganti\./);
+    expect(panel(h)!.textContent).toMatch(/Putusan Akhir: Sudah terisi\. Centang untuk mengganti\./);
   });
 
   it("satu berkas diseret: diunggah ke server, dipasang menurut nomor di NAMA, langkah e-Doc menyala, ringkasan form tampil", async () => {
@@ -952,5 +962,114 @@ describe("tidak ada tulisan ke SIPP dari layar ini", () => {
     const alamat = [...PTJ.matchAll(/"(\/aleta\/api\/[^"]+)"/g)].map((m) => m[1]);
     expect(alamat.length).toBeGreaterThan(4);
     expect(alamat.every((a) => a.startsWith("/aleta/api/aleta-ecourt/"))).toBe(true);
+  });
+});
+
+// ============================================================================
+describe("MENIMPA di Jadwalkan Putusan massal (5 Nov 2026): penanda per slot, satu pembacaan, konfirmasi sebaris saat menjadwalkan", () => {
+  const KEADAAN = {
+    "30012": { adaBaris: true, adaPutusan: true, adaAnonim: false },
+    "30013": { adaBaris: true, adaPutusan: false, adaAnonim: false },
+    "30014": { adaBaris: false, adaPutusan: false, adaAnonim: false },
+  };
+  const teksSlot = (h: Halaman, kunci: string, j: string) => (q(h, `[data-ptj-ada="${kunci}:${j}"]`) as HTMLElement).textContent;
+  async function siapMassal(h: Halaman) {
+    await panelSiap(h, true);
+    q(h, '[data-ptj="dari-halaman"]').click();
+    await seret(h, ["12_Pdt.G_2026_PA.Dgl putusan.rtf"]);
+    await sampai(() => h.cekDipanggil.length > 0, "keadaan dibaca");
+    await sampai(() => api(h).keadaan().kandidat.every((x: any) => x.edocDibaca), "keadaan terpasang");
+  }
+  const lepasSelain12 = (h: Halaman) => {
+    for (const k of api(h).keadaan().kandidat.filter((x: any) => !x.nomor.startsWith("12/"))) {
+      const cek = q(h, `[data-ptj-kandidat="${k.kunci}"]`) as HTMLInputElement;
+      cek.checked = false;
+      cek.dispatchEvent(new h.w.Event("change", { bubbles: true }));
+    }
+  };
+
+  it("keadaan tiga perkara dibaca dengan SATU permintaan; penanda tiap slot: Sudah/Belum terisi, Sudah/Belum diunggah", async () => {
+    const h = buka({ halaman: "daftar", keadaan: KEADAAN });
+    await siapMassal(h);
+    expect(h.cekDipanggil).toHaveLength(1);
+    expect(h.cekDipanggil[0].split(",").sort()).toEqual(["30012", "30013", "30014"]);
+    const k12 = api(h).keadaan().kandidat.find((x: any) => x.nomor.startsWith("12/")).kunci;
+    const k13 = api(h).keadaan().kandidat.find((x: any) => x.nomor.startsWith("13/")).kunci;
+    const k14 = api(h).keadaan().kandidat.find((x: any) => x.nomor.startsWith("14/")).kunci;
+    expect(teksSlot(h, k12, "isi")).toContain("Putusan Akhir: Sudah terisi.");
+    expect(teksSlot(h, k12, "putusan")).toContain("e-Doc putusan: Sudah diunggah.");
+    expect(teksSlot(h, k12, "anonim")).toContain("e-Doc anonimisasi: Belum diunggah.");
+    expect(teksSlot(h, k13, "isi")).toContain("Putusan Akhir: Sudah terisi.");
+    expect(teksSlot(h, k14, "isi")).toContain("Putusan Akhir: Belum terisi.");
+    // Bawaan centang MATI untuk yang sudah ada; yang belum ada tetap dikerjakan.
+    const c = (kunci: string, j: string) => q(h, `[data-ptj-langkah="${kunci}:${j}"]`) as HTMLInputElement;
+    expect(c(k12, "isi").checked).toBe(false);
+    expect(c(k12, "putusan").checked).toBe(false);
+    expect(c(k12, "anonim").checked).toBe(true);
+    expect(c(k12, "isi").disabled).toBe(false);
+  });
+
+  it("keadaan gagal terbaca: 'Belum terbaca' pada semua slot, tidak ada yang bisa bertanda timpa, tidak ada pertanyaan saat menjadwalkan", async () => {
+    const h = buka({ halaman: "daftar", cekGagal: true });
+    await panelSiap(h, true);
+    q(h, '[data-ptj="dari-halaman"]').click();
+    await seret(h, ["12_Pdt.G_2026_PA.Dgl putusan.rtf"]);
+    await sampai(() => h.cekDipanggil.length > 0 && api(h).keadaan().kandidat.every((x: any) => x.edocDibaca === "gagal"), "pembacaan gagal tercatat");
+    const k12 = api(h).keadaan().kandidat.find((x: any) => x.nomor.startsWith("12/")).kunci;
+    for (const j of ["isi", "putusan", "anonim"]) expect(teksSlot(h, k12, j)).toContain("Belum terbaca");
+    lepasSelain12(h);
+    await sampai(() => api(h).keadaan().pratinjau && api(h).keadaan().pratinjau.ok && !(q(h, '[data-ptj="utama"]') as HTMLButtonElement).disabled, "siap");
+    (q(h, '[data-ptj="utama"]') as HTMLButtonElement).click();
+    expect(q(h, '[data-aleta-timpa="konfirmasi"]')).toBeNull();
+    await sampai(() => h.panggilan.some((p) => p.metode === "POST" && /putusan-terjadwal$/.test(p.alamat)), "jadwal terkirim");
+    const kirim = h.panggilan.find((p) => p.metode === "POST" && /putusan-terjadwal$/.test(p.alamat))!.badan;
+    expect(JSON.stringify(kirim.butir)).not.toContain("timpa");
+  });
+
+  it("menjadwalkan yang MENIMPA: pertanyaan sebaris menyebut perkara dan yang diganti; 'Tidak' = tidak ada jadwal; 'Ya, timpa' = jadwal membawa tanda timpa", async () => {
+    const h = buka({ halaman: "daftar", keadaan: KEADAAN });
+    await siapMassal(h);
+    lepasSelain12(h);
+    const k12 = api(h).keadaan().kandidat.find((x: any) => x.nomor.startsWith("12/")).kunci;
+    // Petugas mencentang e-Doc putusan yang sudah ada untuk diganti (anonimisasi yang belum ada tetap tercentang).
+    const cp = q(h, `[data-ptj-langkah="${k12}:putusan"]`) as HTMLInputElement;
+    cp.checked = true;
+    cp.dispatchEvent(new h.w.Event("change", { bubbles: true }));
+    await sampai(() => api(h).keadaan().pratinjau && api(h).keadaan().pratinjau.ok && !(q(h, '[data-ptj="utama"]') as HTMLButtonElement).disabled, "siap");
+    const utama = () => q(h, '[data-ptj="utama"]') as HTMLButtonElement;
+    utama().click();
+    const kotak = await sampai(() => q(h, '[data-aleta-timpa="konfirmasi"]'), "pertanyaan menimpa");
+    expect(kotak.textContent).toContain("Anda yakin menimpa?");
+    expect(kotak.textContent).toContain("12/Pdt.G/2026: e-Doc putusan");
+    expect(kotak.textContent).not.toContain("e-Doc anonimisasi");
+    expect(utama().disabled).toBe(true);
+    // "Tidak": tidak ada jadwal sama sekali.
+    (kotak.querySelector('[data-aleta-timpa="tidak"]') as HTMLButtonElement).click();
+    await tunggu(40);
+    expect(h.panggilan.some((p) => p.metode === "POST" && /putusan-terjadwal$/.test(p.alamat))).toBe(false);
+    expect(q(h, '[data-aleta-timpa="konfirmasi"]')).toBeNull();
+    expect(utama().disabled).toBe(false);
+    // "Ya, timpa": jadwal dikirim dan butirnya membawa tanda timpa.
+    utama().click();
+    const kotak2 = await sampai(() => q(h, '[data-aleta-timpa="konfirmasi"]'), "pertanyaan lagi");
+    (kotak2.querySelector('[data-aleta-timpa="ya"]') as HTMLButtonElement).click();
+    await sampai(() => h.panggilan.some((p) => p.metode === "POST" && /putusan-terjadwal$/.test(p.alamat)), "jadwal terkirim");
+    const kirim = h.panggilan.find((p) => p.metode === "POST" && /putusan-terjadwal$/.test(p.alamat))!.badan;
+    expect(kirim.butir).toHaveLength(1);
+    expect(kirim.butir[0].langkah).toEqual({ isi: false, putusan: true, anonim: true });
+    expect(kirim.butir[0].pilihan.timpa).toEqual({ putusan: true });
+  });
+
+  it("tidak ada yang ditimpa (yang sudah ada dibiarkan tidak tercentang): jadwal langsung dikirim tanpa pertanyaan", async () => {
+    const h = buka({ halaman: "daftar", keadaan: KEADAAN });
+    await siapMassal(h);
+    lepasSelain12(h);
+    await sampai(() => api(h).keadaan().pratinjau && api(h).keadaan().pratinjau.ok && !(q(h, '[data-ptj="utama"]') as HTMLButtonElement).disabled, "siap");
+    (q(h, '[data-ptj="utama"]') as HTMLButtonElement).click();
+    expect(q(h, '[data-aleta-timpa="konfirmasi"]')).toBeNull();
+    await sampai(() => h.panggilan.some((p) => p.metode === "POST" && /putusan-terjadwal$/.test(p.alamat)), "jadwal terkirim");
+    const kirim = h.panggilan.find((p) => p.metode === "POST" && /putusan-terjadwal$/.test(p.alamat))!.badan;
+    expect(kirim.butir[0].langkah).toEqual({ isi: false, putusan: false, anonim: true });
+    expect(kirim.butir[0].pilihan).toEqual({});
   });
 });

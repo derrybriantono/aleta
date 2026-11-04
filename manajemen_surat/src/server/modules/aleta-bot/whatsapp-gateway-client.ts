@@ -5816,17 +5816,19 @@ export type UnggahMassalDaftarBot = {
 };
 
 /** e-Doc putusan/BAS yang menunggu diunggah, seluruh satker (SELECT saja). */
-export async function getGatewayUnggahMassalDaftar(sejakHari?: number, basAda = false) {
+export async function getGatewayUnggahMassalDaftar(sejakHari?: number, basAda = false, putusanAda = false) {
   const kueri = new URLSearchParams();
   if (sejakHari) kueri.set("sejak", String(sejakHari));
   if (basAda) kueri.set("basAda", "1"); // butir 43: BAS yang sudah ada ikut (tombol Ganti)
+  if (putusanAda) kueri.set("putusanAda", "1"); // 5 Nov 2026: putusan yang e-Doc-nya lengkap ikut (centang ganti)
   const q = kueri.toString() ? `?${kueri.toString()}` : "";
   return gatewayFetch<UnggahMassalDaftarBot>(`/internal/aleta-bot/sipp/unggah-massal/daftar${q}`, { timeoutMs: 30_000 });
 }
 
 /** Keadaan satu e-Doc saat ini - cek dobel tepat sebelum unggah (SELECT saja). */
-export async function getGatewayUnggahMassalCek(p: { jenis: "putusan" | "bas"; perkaraId: string; sidangId?: string }) {
+export async function getGatewayUnggahMassalCek(p: { jenis: "putusan" | "bas"; perkaraId: string; sidangId?: string; nomor?: string }) {
   const q = new URLSearchParams({ jenis: p.jenis, perkaraId: p.perkaraId, sidangId: p.sidangId ?? "" });
+  if (p.nomor) q.set("nomor", p.nomor); // 5 Nov 2026: banyak perkara menurut nomor (dipisah |)
   return gatewayFetch<Record<string, unknown> & { ok: true }>(`/internal/aleta-bot/sipp/unggah-massal/cek?${q.toString()}`, {
     timeoutMs: 15_000,
   });

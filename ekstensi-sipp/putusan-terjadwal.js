@@ -649,31 +649,54 @@
   }
 
   /**
-   * e-Doc yang sudah ada di SIPP untuk perkara yang SUDAH putus dan terpilih, dibaca sekali per perkara
-   * (kandidat dari daftar "putus" sudah membawanya). Dipakai supaya langkah e-Doc yang sudah ada tampil
-   * "sudah ada di SIPP - centang untuk mengganti" dan tidak tercentang sendiri. Gagal terbaca = keadaan lama.
+   * Keadaan tiap slot satu perkara untuk PENANDA di layar: true = sudah ada, false = belum ada, null = tidak
+   * terbaca ("Belum terbaca" - dan tidak pernah ditimpa). Sumber yang sudah membawa keadaannya (daftar putusan,
+   * sidang putusan yang belum diisi) tidak dibaca lagi.
+   */
+  const ALAT_NAMA_SLOT_PTJ = { form: "Putusan Akhir", putusan: "e-Doc putusan", anonim: "e-Doc anonimisasi" };
+  const alatPenandaSlotPtj = (slot, ada) => (typeof alatPenandaSlot === "function" ? alatPenandaSlot(slot, ada) : "Belum terbaca");
+  function keadaanSlot(k) {
+    if (k.dari === "putus") return { form: true, putusan: Boolean(k.adaPutusan), anonim: Boolean(k.adaAnonim) };
+    if (k.dari === "tertahan" || (k.dari === "sidang" && k.sudahPutus === false)) return { form: false, putusan: false, anonim: false };
+    if (k.edocDibaca === "ok") return { form: Boolean(k.sudahPutus), putusan: Boolean(k.adaPutusan), anonim: Boolean(k.adaAnonim) };
+    return { form: k.sudahPutus === true ? true : null, putusan: null, anonim: null };
+  }
+
+  /**
+   * Membaca keadaan perkara yang terpilih dengan SATU permintaan (bukan satu per perkara): Putusan Akhir sudah
+   * terisi? e-Doc putusan dan anonimisasi sudah diunggah? Nomor induk yang belum diketahui dicari dulu (paling
+   * banyak 40, berurutan). Gagal terbaca = "Belum terbaca": slotnya tidak boleh ditimpa dan perilaku lama berlaku.
    */
   let sedangCekEdoc = false;
   async function muatKeadaanEdoc() {
     if (!S || sedangCekEdoc) return;
-    const mod = globalThis.aletaPutusanEdoc;
-    if (!mod || typeof mod.cekSlot !== "function") return;
-    const perlu = S.kandidat.filter((k) => S.terpilih.has(k.kunci) && k.sudahPutus && !k.edocDibaca && k.dari !== "putus" && /^\d+$/.test(String(k.perkaraId || "")));
+    const baca = fungsi("alatBacaKeadaanBanyak");
+    if (!baca) return;
+    const perlu = S.kandidat.filter(
+      (k) => S.terpilih.has(k.kunci) && !k.edocDibaca && k.dari !== "putus" && k.dari !== "tertahan" && !(k.dari === "sidang" && k.sudahPutus === false)
+    );
     if (!perlu.length) return;
     sedangCekEdoc = true;
     try {
-      for (const k of perlu.slice(0, 40)) {
-        k.edocDibaca = true;
-        let c = null;
-        try {
-          c = await mod.cekSlot(k.perkaraId);
-        } catch {
-          c = null;
+      const sasaran = perlu.slice(0, 40);
+      for (const k of sasaran) {
+        if (!/^\d+$/.test(String(k.perkaraId || ""))) {
+          const id = await perkaraIdUntuk(k.nomor);
+          if (!S) return;
+          if (id) k.perkaraId = id;
         }
-        if (!S) return;
-        if (c && c.ok) {
-          k.adaPutusan = Boolean(c.adaPutusan);
-          k.adaAnonim = Boolean(c.adaAnonim);
+      }
+      const peta = await baca(sasaran.map((k) => k.perkaraId).filter((id) => /^\d+$/.test(String(id || ""))));
+      if (!S) return;
+      for (const k of sasaran) {
+        const d = peta.get(String(k.perkaraId));
+        if (d) {
+          k.sudahPutus = d.form;
+          k.adaPutusan = d.putusan;
+          k.adaAnonim = d.anonim;
+          k.edocDibaca = "ok";
+        } else {
+          k.edocDibaca = "gagal";
         }
       }
     } finally {
@@ -1174,10 +1197,13 @@
       }
       td2.appendChild(langkah);
       // Keterangan singkat per langkah yang sudah ada: bawaan tidak tercentang, centang = mengganti.
-      const adaDi = { isi: k.sudahPutus === true, putusan: k.adaPutusan === true, anonim: k.adaAnonim === true };
-      for (const [kunci, nama] of Object.entries(NAMA_LANGKAH)) {
-        if (!adaDi[kunci] || (kunci !== "isi" && !ef.berkas)) continue;
-        const ket = el("div", "aleta-ptj-ket", `${nama}: ${ef[kunci] ? "sudah ada di SIPP. Akan diganti." : "sudah ada di SIPP. Centang untuk mengganti."}`);
+      // Penanda tulisan biasa per slot (Sudah terisi / Belum terisi / Sudah diunggah / Belum diunggah / Belum terbaca).
+      const keadaan = keadaanSlot(k);
+      const slotDari = { isi: "form", putusan: "putusan", anonim: "anonim" };
+      for (const kunci of ["isi", "putusan", "anonim"]) {
+        const ada = keadaan[slotDari[kunci]];
+        const tambah = ada === true && (kunci === "isi" || ef.berkas) ? (ef[kunci] ? " Akan diganti." : " Centang untuk mengganti.") : "";
+        const ket = el("div", "aleta-ptj-ket", `${ALAT_NAMA_SLOT_PTJ[slotDari[kunci]]}: ${alatPenandaSlotPtj(slotDari[kunci], ada)}.${tambah}`);
         ket.setAttribute("data-ptj-ada", `${k.kunci}:${kunci}`);
         td2.appendChild(ket);
       }
@@ -1410,7 +1436,7 @@
   }
 
   function siapMenjadwalkan() {
-    if (!S || S.sibuk) return false;
+    if (!S || S.sibuk || S.menungguTimpa) return false;
     const r = ringkasanRencana();
     if (!r.perkara) return false;
     if (S.berkas.some((b) => b.status === "antre" || b.status === "periksa" || b.status === "unggah")) return false;
@@ -1454,6 +1480,8 @@
 
   function gambarKonfirm() {
     if (!S || !S.r) return;
+    // Pertanyaan "Anda yakin menimpa?" yang menunggu jawaban tidak boleh terhapus oleh gambar ulang.
+    if (S.menungguTimpa) return;
     const wadah = S.r.konfirm;
     wadah.textContent = "";
     if (!S.konfirm || S.sibuk || !siapMenjadwalkan()) return;
@@ -1506,7 +1534,35 @@
   // ──────────────────────────────────────────────────────────────────────────
   // Mengirim jadwal
   // ──────────────────────────────────────────────────────────────────────────
+  /** Rencana yang MENIMPA: [{ nomor, slot }] untuk perkara terpilih yang langkahnya dicentang padahal sudah ada. */
+  function rencanaTimpa() {
+    return barisTermasuk()
+      .map((k) => {
+        const ef = langkahEfektif(k);
+        return { nomor: k.nomor, slot: [ef.timpa.form ? "form" : "", ef.timpa.putusan ? "putusan" : "", ef.timpa.anonim ? "anonim" : ""].filter(Boolean) };
+      })
+      .filter((r) => r.slot.length);
+  }
+
   async function kirimJadwal() {
+    if (!S || S.sibuk || !siapMenjadwalkan()) return;
+    // Konfirmasi SEBARIS hanya bila ada yang ditimpa, SAAT menjadwalkan; "Tidak" = tidak ada jadwal yang dibuat.
+    const daftarTimpa = typeof alatDaftarTimpa === "function" ? alatDaftarTimpa(rencanaTimpa()) : [];
+    if (daftarTimpa.length && typeof alatKonfirmasiTimpa === "function") {
+      S.menungguTimpa = true;
+      gambarKaki();
+      let setuju = false;
+      try {
+        setuju = await alatKonfirmasiTimpa(S.r.konfirm, daftarTimpa);
+      } finally {
+        if (S) S.menungguTimpa = false;
+      }
+      if (!S) return;
+      if (!setuju) {
+        gambarKaki();
+        return;
+      }
+    }
     if (!S || S.sibuk || !siapMenjadwalkan()) return;
     S.sibuk = true;
     S.konfirm = false;

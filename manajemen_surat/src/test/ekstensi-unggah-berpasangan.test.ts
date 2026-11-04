@@ -196,6 +196,8 @@ function muatUnggah() {
         "pasangkanBerkasUnggah",
         "kirimBadanUnggahSipp",
         "unggahBerpasangan",
+        "bacaDanTanyaTimpa",
+        "isiPenandaManual",
         "bagianUnggahPutusanSipp",
       ].map((nama) => potongFungsi(isi, nama)),
       "this.__uji = { pasangkanBerkasUnggah, unggahBerpasangan, bagianUnggahPutusanSipp, BATAS_UNGGAH_SIPP_MS };",

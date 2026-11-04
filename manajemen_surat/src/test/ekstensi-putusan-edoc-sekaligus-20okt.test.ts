@@ -654,7 +654,8 @@ return a30OpsiEdocMassal;`
     expect(opsi.jajakCepat).toBe(true);
     const h = await opsi.sesudahTersimpan(kabar);
     expect(h.ok).toBe(true);
-    expect(panggilan).toEqual([{ nomorPerkara: NOMOR, kabar, wadah: null }]);
+    // Tanda timpa per slot dari butir (5 Nov 2026): butir tanpa tanda = tidak menimpa.
+    expect(panggilan).toEqual([{ nomorPerkara: NOMOR, kabar, wadah: null, timpaPutusan: false, timpaAnonim: false }]);
   });
 
   it("saklar mati: jalan keluar lama (TIDAK diunggah beserta alasannya), modul tidak dipanggil", async () => {

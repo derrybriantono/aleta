@@ -60,6 +60,12 @@ type KeadaanSipp = {
   gagalBacaPutusan?: boolean;
   gagalBacaDirput?: boolean;
   tanpaKolomDirput?: boolean;
+  /** Akun basis data bot tidak punya hak DELETE: REPLACE ditolak dengan galat akses 1142. */
+  tolakDelete?: boolean;
+  /** REPLACE gagal karena sebab lain (bukan hak). */
+  replaceGagalLain?: boolean;
+  /** Tabel dirput_dokumen tiruan menurut kunci utama, untuk membuktikan REPLACE tidak menggandakan. */
+  tabelDirput?: Map<string, { id: number; published: number }>;
 };
 
 function muatLayanan(k: KeadaanSipp = {}) {
@@ -91,6 +97,15 @@ function muatLayanan(k: KeadaanSipp = {}) {
       }
       if (s.includes("SELECT id FROM dirput_dokumen")) return balik(null, k.dirput ? [{ id: k.dirput.id }] : []);
       if (s.startsWith("SELECT")) return balik(null, []);
+      if (/^\s*REPLACE\s+INTO\s+dirput_dokumen/i.test(s)) {
+        if (k.tolakDelete) return balik(Object.assign(new Error("DELETE command denied to user for table dirput_dokumen"), { code: "ER_TABLEACCESS_DENIED_ERROR", errno: 1142 }), null);
+        if (k.replaceGagalLain) return balik(Object.assign(new Error("Lock wait timeout exceeded"), { code: "ER_LOCK_WAIT_TIMEOUT", errno: 1205 }), null);
+        // Meniru MariaDB: kunci utama (perkara_id, general_id, dokumen_ref_id, pihak_detil_id, pengajuan_id) - yang bentrok dibuang, id baru.
+        if (k.tabelDirput) {
+          const kunci = `${params[0]}|0|${params[1]}|0|1`;
+          k.tabelDirput.set(kunci, { id: Math.max(0, ...[...k.tabelDirput.values()].map((x) => x.id)) + 1, published: Number(params[6]) });
+        }
+      }
       return balik(null, { affectedRows: 1 });
     },
   });
@@ -118,7 +133,7 @@ function muatLayanan(k: KeadaanSipp = {}) {
       antrean: boolean;
       alasan: string;
       pesan?: string;
-      berkas: Array<{ jenis: string; ok: boolean; alasan?: string; pesan?: string; ditimpa?: boolean; jalur?: string; published?: number; jalurLama?: string }>;
+      berkas: Array<{ jenis: string; ok: boolean; alasan?: string; pesan?: string; ditimpa?: boolean; jalur?: string; published?: number; jalurLama?: string; tulisDirput?: string }>;
     }>;
   };
   delete (require_.cache as Record<string, unknown>)[require_.resolve(path.join(akarBot, "services/abtCetakService"))];
@@ -189,10 +204,11 @@ describe("A. bot: menimpa hanya atas tanda eksplisit per slot", () => {
     const audit = auditDari(kueri);
     expect(audit).toHaveLength(1);
     expect(audit[0].description).toContain("amar_putusan_anonimisasi_dok");
+    // Seperti SIPP: anonimisasi sendirian TIDAK menambah antrean (insert_antrian_upload hanya di cabang putusan).
+    expect(h.antrean).toBe(false);
     expect(tabelDan(kueri)).toEqual([
       ["perkara_putusan", "UPDATE"],
-      ["dirput_dokumen", "UPDATE"],
-      ["dirput_antrian", "INSERT"],
+      ["dirput_dokumen", "REPLACE"],
     ]);
     // Slot putusan tidak menyentuh kolomnya sama sekali.
     expect(kueri.some((q) => q.sql.includes("SET amar_putusan_dok"))).toBe(false);
@@ -204,10 +220,10 @@ describe("A. bot: menimpa hanya atas tanda eksplisit per slot", () => {
     expect(h.ok).toBe(true);
     expect(h.berkas[0]).toMatchObject({ jenis: "putusan", ok: true, ditimpa: true, jalur: LAMA_PUTUSAN, jalurLama: LAMA_PUTUSAN });
 
-    // Persis rangkaian unggah biasa: kolom dokumen -> audit UNGGAH -> baris Direktori Putusan -> antrean.
+    // Persis rangkaian SIPP: kolom dokumen -> audit UNGGAH -> REPLACE baris Direktori Putusan -> antrean.
     expect(tabelDan(kueri)).toEqual([
       ["perkara_putusan", "UPDATE"],
-      ["dirput_dokumen", "UPDATE"],
+      ["dirput_dokumen", "REPLACE"],
       ["dirput_antrian", "INSERT"],
     ]);
     const ubahKolom = kueri.find((q) => q.sql.startsWith("UPDATE perkara_putusan"))!;
@@ -222,21 +238,24 @@ describe("A. bot: menimpa hanya atas tanda eksplisit per slot", () => {
 
     // Meniru dirput_model::convert_insert (REPLACE dengan id NULL): kolom yang tidak ditulis SIPP dikosongkan,
     // created_date hari ini, "Publikasi" mengikuti baris lama (borang SIPP terpilih sesuai baris lama).
-    const dirput = kueri.find((q) => q.sql.includes("UPDATE dirput_dokumen"))!;
-    expect(dirput.sql).toMatch(/created_date = \?/);
-    expect(dirput.sql).toContain("flag_sync = NULL");
-    expect(dirput.sql).toContain("link_dirput = NULL");
-    expect(dirput.sql).toContain("pengajuan_id = 1");
+    // dirput_model::convert_insert: $this->db->replace('dirput_dokumen', id NULL, ...). Kolom yang tidak ditulis SIPP
+    // (flag_sync, link_dirput, general_id, pihak_detil_id) tidak disebut - kembali ke bawaan tabel (NULL / 0).
+    const dirput = kueri.find((q) => /^\s*REPLACE INTO dirput_dokumen/i.test(q.sql))!;
+    expect(dirput.sql).toMatch(/VALUES \(NULL,\?,\?,\?,\?, 'SYSTEM', \?, 'SYSTEM', \?, NULL, 1, \?\)/);
+    expect(dirput.sql).not.toMatch(/flag_sync|link_dirput/);
     expect(dirput.params).toEqual([
+      901,
+      89,
       "PA.Dgl_2026_Pdt.G_12_putusan_akhir.pdf",
       "resources/file/doc/2026/09/PA.Dgl_2026_Pdt.G_12_putusan_akhir.pdf",
       expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
       expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
       1,
-      77,
     ]);
-    // Putusan tidak dibatalkan: tidak ada penghapusan, tidak ada REPLACE, kolom dokumen tidak pernah dikosongkan.
-    expect(kueri.some((q) => /^\s*(DELETE|REPLACE)\b/i.test(q.sql))).toBe(false);
+    expect(h.berkas[0].tulisDirput).toBe("REPLACE");
+    // Putusan tidak dibatalkan: tidak ada DELETE terpisah, tidak ada UPDATE dirput, kolom dokumen tidak pernah dikosongkan.
+    expect(kueri.some((q) => /^\s*DELETE\b/i.test(q.sql))).toBe(false);
+    expect(kueri.some((q) => q.sql.includes("UPDATE dirput_dokumen"))).toBe(false);
     expect(kueri.some((q) => /perkara_putusan SET .*= (NULL|'')/i.test(q.sql))).toBe(false);
     expect(ubahKolom.params[0]).not.toBe("");
   });
@@ -244,8 +263,8 @@ describe("A. bot: menimpa hanya atas tanda eksplisit per slot", () => {
   it("'Publikasi' putusan yang tadinya 0 tetap 0 saat ditimpa; anonimisasi selalu 1", async () => {
     const { layanan, kueri } = muatLayanan({ dokPutusan: LAMA_PUTUSAN, dokAnonim: LAMA_ANONIM, dirput: { id: 77, published: 0 } });
     await layanan.unggahPutusan({ ...MASUKAN, pdfPutusan: RTF_PUTUSAN, pdfAnonimisasi: RTF_ANONIM, timpa: { putusan: true, anonimisasi: true } });
-    const ubah = kueri.filter((q) => q.sql.includes("UPDATE dirput_dokumen"));
-    expect(ubah.map((q) => q.params[4])).toEqual([0, 1]);
+    const ubah = kueri.filter((q) => /^\s*REPLACE INTO dirput_dokumen/i.test(q.sql));
+    expect(ubah.map((q) => q.params[6])).toEqual([0, 1]);
   });
 
   it("berkas LAMA tidak dihapus (seperti SIPP): ekstensi lain tetap ada; nama yang sama tertimpa isinya", async () => {
@@ -268,7 +287,7 @@ describe("A. bot: menimpa hanya atas tanda eksplisit per slot", () => {
     expect(h.ok).toBe(true);
     expect(h.berkas[0].ditimpa).toBe(false);
     expect(tabelDan(kueri)).toContainEqual(["dirput_dokumen", "INSERT"]);
-    expect(kueri.some((q) => q.sql.includes("UPDATE dirput_dokumen"))).toBe(false);
+    expect(kueri.some((q) => q.sql.includes("UPDATE dirput_dokumen") || /^\s*REPLACE/i.test(q.sql))).toBe(false);
   });
 
   it("tanpa tanda dan belum ada: perilaku lama utuh (ditulis, tanpa 'ditimpa')", async () => {
@@ -294,11 +313,68 @@ describe("A. bot: menimpa hanya atas tanda eksplisit per slot", () => {
     expect(tulis(kueri)).toEqual([]);
   });
 
-  it("kolom flag_sync/link_dirput tidak ada di SIPP satker: UPDATE tidak menyebutnya", async () => {
-    const { layanan, kueri } = muatLayanan({ dokPutusan: LAMA_PUTUSAN, dirput: { id: 77, published: 0 }, tanpaKolomDirput: true });
+  it("REPLACE tidak menggandakan: kunci yang sama diganti, id baru, jumlah baris tetap (meniru kunci utama SIPP)", async () => {
+    const tabelDirput = new Map([["901|0|89|0|1", { id: 77, published: 1 }], ["902|0|89|0|1", { id: 78, published: 0 }]]);
+    const { layanan } = muatLayanan({ dokPutusan: LAMA_PUTUSAN, dirput: { id: 77, published: 1 }, tabelDirput });
+    await layanan.unggahPutusan({ ...MASUKAN, pdfPutusan: RTF_PUTUSAN, timpa: { putusan: true } });
+    expect(tabelDirput.size).toBe(2);
+    expect(tabelDirput.get("901|0|89|0|1")).toEqual({ id: 79, published: 1 });
+    expect(tabelDirput.get("902|0|89|0|1")).toEqual({ id: 78, published: 0 });
+  });
+
+  it("hak DELETE ditolak (galat akses 1142): jatuh ke UPDATE yang sama hasilnya, DICATAT di jejak - tidak gagal diam-diam", async () => {
+    const { layanan, kueri, jejak } = muatLayanan({ dokPutusan: LAMA_PUTUSAN, dirput: { id: 77, published: 1 }, tolakDelete: true });
+    const h = await layanan.unggahPutusan({ ...MASUKAN, pdfPutusan: RTF_PUTUSAN, timpa: { putusan: true } });
+    expect(h.ok).toBe(true);
+    const upd = kueri.find((q) => q.sql.includes("UPDATE dirput_dokumen"))!;
+    expect(upd.sql).toContain("flag_sync = NULL");
+    expect(upd.sql).toContain("link_dirput = NULL");
+    expect(upd.params[4]).toBe(1);
+    expect(h.berkas[0].tulisDirput).toMatch(/^UPDATE \(REPLACE ditolak hak akses/);
+    const langkah = (jejak[0] as { langkah: Array<{ tabel: string; aksi: string; keterangan: string }> }).langkah;
+    const dirput = langkah.find((l) => l.tabel === "dirput_dokumen")!;
+    expect(dirput.aksi).toBe("TULIS");
+    expect(dirput.keterangan).toContain("REPLACE ditolak hak akses");
+  });
+
+  it("REPLACE sukses dicatat REPLACE di jejak", async () => {
+    const { layanan, jejak } = muatLayanan({ dokPutusan: LAMA_PUTUSAN, dirput: { id: 77, published: 0 } });
+    await layanan.unggahPutusan({ ...MASUKAN, pdfPutusan: RTF_PUTUSAN, timpa: { putusan: true } });
+    const langkah = (jejak[0] as { langkah: Array<{ tabel: string; aksi: string }> }).langkah;
+    expect(langkah.find((l) => l.tabel === "dirput_dokumen")!.aksi).toBe("REPLACE");
+  });
+
+  it("REPLACE gagal karena sebab LAIN (bukan hak): galat dilempar, tidak ditelan menjadi UPDATE", async () => {
+    const { layanan } = muatLayanan({ dokPutusan: LAMA_PUTUSAN, dirput: { id: 77, published: 0 }, replaceGagalLain: true });
+    await expect(layanan.unggahPutusan({ ...MASUKAN, pdfPutusan: RTF_PUTUSAN, timpa: { putusan: true } })).rejects.toThrow(/Lock wait timeout/);
+  });
+
+  it("kolom flag_sync/link_dirput tidak ada di SIPP satker: UPDATE cadangan tidak menyebutnya", async () => {
+    const { layanan, kueri } = muatLayanan({ dokPutusan: LAMA_PUTUSAN, dirput: { id: 77, published: 0 }, tanpaKolomDirput: true, tolakDelete: true });
     await layanan.unggahPutusan({ ...MASUKAN, pdfPutusan: RTF_PUTUSAN, timpa: { putusan: true } });
     const dirput = kueri.find((q) => q.sql.includes("UPDATE dirput_dokumen"))!;
     expect(dirput.sql).not.toMatch(/flag_sync|link_dirput|keterangan/);
+  });
+
+  it("antrean Direktori Putusan: hanya unggah PUTUSAN yang mengantre (seperti SIPP); anonimisasi sendirian tidak", async () => {
+    const a = muatLayanan({});
+    const putusan = await a.layanan.unggahPutusan({ ...MASUKAN, pdfPutusan: RTF_PUTUSAN });
+    expect(putusan.antrean).toBe(true);
+    const b = muatLayanan({});
+    const anonim = await b.layanan.unggahPutusan({ ...MASUKAN, pdfAnonimisasi: RTF_ANONIM });
+    expect(anonim.ok).toBe(true);
+    expect(anonim.antrean).toBe(false);
+  });
+
+  it("audit anonimisasi berbentuk SIPP: formname dan judul sama dengan putusan (fileupload_m.php:277-279,713), kolom anonimisasi di deskripsi", async () => {
+    const { layanan, kueri } = muatLayanan({ dokAnonim: LAMA_ANONIM, dirput: { id: 78, published: 1 } });
+    await layanan.unggahPutusan({ ...MASUKAN, pdfAnonimisasi: RTF_ANONIM, timpa: { anonimisasi: true } });
+    const [a] = auditDari(kueri);
+    expect([a.tablename, a.formname, a.action, a.title]).toEqual(["perkara_putusan", "UPLOAD E-DOCS PUTUSAN AKHIR", "UNGGAH", "Unggah Dokumen Putusan Akhir <br />dengan perkara_id [id=901]"]);
+    expect(a.description).toBe(
+      '<br><table style="vertical-align:top" cellspacing="0" cellpadding="1" border="1"><tr><th>Nama Kolom</th><th>Nilai</th></tr>' +
+        `<tr><td>amar_putusan_anonimisasi_dok</td><td>${LAMA_ANONIM}</td></tr></table>`
+    );
   });
 
   it("tak satu kata ALETA pun pada tulisan ke SIPP saat menimpa (SQL, parameter, audit)", async () => {
@@ -896,41 +972,33 @@ describe("F. modul e-Doc ekstensi: tanda timpa per slot", () => {
 // ============================================================================
 // G. kabel yang tidak dapat dijalankan di sini (ditandai terus terang)
 // ============================================================================
-describe("G. kabel formulir unggah ekstensi (pemeriksaan teks, bukan eksekusi)", () => {
+describe("G. kabel formulir unggah ekstensi (pemeriksaan teks; perilakunya dijalankan di berkas uji tiap jalur)", () => {
   const baca = (b: string) => readFileSync(path.join(AKAR_EKSTENSI, b), "utf8").replace(/\r\n/g, "\n");
   it("a30UnggahEdoc mengirim timpaPutusan/timpaAnonim hanya untuk slot yang dikirim dan bertanda true", () => {
     const k = baca("konten-panel-bersama.js");
     expect(k).toContain('if (p.putusan && p.timpaPutusan === true) badan.append("timpaPutusan", "1");');
     expect(k).toContain('if (p.anonimisasi && p.timpaAnonim === true) badan.append("timpaAnonim", "1");');
   });
-  it("jalur yang memang bermaksud mengganti (Kerjakan perkara ini, tombol unggah Blangko Derry, panel Unggah putusan ke SIPP) mengirim tanda eksplisit", () => {
-    expect(baca("abt-panel-bersama.js")).toContain('badan.append("timpaPutusan", "1");');
-    expect(baca("blangko-derry-isian.js")).toContain('badan.append("timpaPutusan", "1");');
+  it("tidak ada jalur yang mengirim tanda timpa secara TETAP: semuanya bersyarat pada keadaan yang dibaca dan disetujui", () => {
+    expect(baca("abt-panel-bersama.js")).toContain('if (siap.timpa && siap.timpa.putusan === true) badan.append("timpaPutusan", "1");');
+    expect(baca("blangko-derry-isian.js")).toContain('if (timpa && timpa.putusan === true) badan.append("timpaPutusan", "1");');
     const p = baca("konten-panel-perkara.js");
-    expect(p).toContain('if (putusan) badan.append("timpaPutusan", "1");');
-    expect(p).toContain('badan.append(jenis === "anonimisasi" ? "timpaAnonim" : "timpaPutusan", "1");');
+    expect(p).toContain('if (putusan && tanya.timpa.putusan) badan.append("timpaPutusan", "1");');
+    expect(p).toContain('if (jenis === "anonimisasi" ? bendera.anonim : bendera.putusan)');
+    // F41 (unggah massal ABT): tanda hanya untuk slot yang sudah ada dan dicentang Ganti per slot.
+    expect(baca("abt.js")).toContain('if (k.putusan && !kosong.putusan && s.timpa && s.timpa.putusan) badan.append("timpaPutusan", "1");');
   });
-  it("panel satu perkara (naskah dipilih petugas) membawa tanda ke e-Doc seperti semula; antrean massal TIDAK", () => {
+  it("panel satu perkara (naskah dipilih petugas, sudah dikonfirmasi) membawa tanda ke e-Doc seperti semula; antrean massal membawa tanda dari butirnya saja", () => {
     const b = baca("konten-panel-bersama.js");
     const awal = b.indexOf("async function a30OpsiSimpanPutusan(p) {");
     const akhir = b.indexOf("EDOC PADA PUTUSAN MASSAL", awal);
     const fungsi = b.slice(awal, akhir);
-    expect(fungsi).toContain("const tandaTimpa = p.timpaEdoc === true ? { timpaPutusan: true, timpaAnonim: true } : {};");
+    expect(fungsi).toContain("p.timpaEdoc === true || p.timpaPutusan === true");
     expect(fungsi.match(/\.\.\.tandaTimpa/g)).toHaveLength(4);
     const perkara = baca("konten-panel-perkara.js");
     expect(perkara.match(/timpaEdoc: true,/g)).toHaveLength(2);
-    // Pemanggil massal (a30OpsiEdocMassal) tidak menyebut timpaEdoc.
     const massal = b.slice(b.indexOf("async function a30OpsiEdocMassal(p)"));
-    expect(massal.slice(0, massal.indexOf("a30OpsiSimpanPutusan({") + 400)).not.toContain("timpaEdoc");
-  });
-  it("unggah massal F41 (abt.js) TIDAK mengirim tanda: ia memeriksa ulang lalu hanya mengirim slot yang kosong", () => {
-    const abt = baca("abt.js");
-    const awal = abt.indexOf("const kosong = slotKosong(b, c);");
-    const akhir = abt.indexOf("kabar(`mengunggah ${isinya}", awal);
-    expect(awal).toBeGreaterThan(0);
-    expect(akhir).toBeGreaterThan(awal);
-    const potongan = abt.slice(awal, akhir);
-    expect(potongan).toContain("k = { putusan: k.putusan && kosong.putusan, anonim: k.anonim && kosong.anonim };");
-    expect(potongan).not.toMatch(/timpaPutusan|timpaAnonim/);
+    expect(massal.slice(0, massal.indexOf("a30OpsiSimpanPutusan({") + 500)).not.toContain("timpaEdoc");
+    expect(b).toContain("timpaPutusan: Boolean(butir.timpa && butir.timpa.putusan === true),");
   });
 });

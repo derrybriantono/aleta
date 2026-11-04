@@ -908,8 +908,36 @@ function bagianMassalBerkas(isi, sesudahSusun) {
   tombol.disabled = true;
   kotak.appendChild(tombol);
 
+  const wadahTimpa = buatElemen("div", "aleta-timpa-wadah");
+  kotak.appendChild(wadahTimpa);
   const kabar = buatElemen("div", "aleta-abt-kabar");
   kotak.appendChild(kabar);
+
+  // MENIMPA (5 Nov 2026): keadaan tiap perkara dibaca dengan SATU permintaan; yang sudah ada tampil dengan penanda dan
+  // centang Ganti per slot (bawaan MATI); gagal terbaca = "Belum terbaca" dan tidak bisa ditimpa.
+  const bakuNomor = (n) => String(n || "").replace(/\s+/g, "").toLowerCase();
+  /** nomor baku -> { perkaraId, form, putusan, anonim } | null (tidak terbaca) */
+  const keadaanSlot = new Map();
+  /** nomor baku -> { form, putusan, anonim } : slot yang DICENTANG petugas untuk diganti */
+  const gantiSlot = new Map();
+  const slotTimpa = (nomor) => {
+    const k = keadaanSlot.get(bakuNomor(nomor));
+    const g = gantiSlot.get(bakuNomor(nomor));
+    if (!k || !g) return [];
+    return ["form", "putusan", "anonim"].filter((s) => k[s] === true && g[s] === true);
+  };
+  const butirTimpa = (nomor) => {
+    const s = slotTimpa(nomor);
+    return s.length ? { timpa: { isi: s.includes("form"), putusan: s.includes("putusan"), anonim: s.includes("anonim") } } : {};
+  };
+  async function muatKeadaan() {
+    const baru = pasangan.filter((p) => dikirim(p)).map((p) => p.nomor).filter((n) => !keadaanSlot.has(bakuNomor(n)));
+    if (!baru.length || typeof alatBacaKeadaanNomor !== "function") return;
+    for (const n of baru) keadaanSlot.set(bakuNomor(n), null); // sedang dibaca / tidak terbaca = null
+    const peta = await alatBacaKeadaanNomor(baru);
+    for (const n of baru) keadaanSlot.set(bakuNomor(n), peta.get(bakuNomor(n)) || null);
+    gambarDaftar();
+  }
 
   /** Berkas beserta nomor perkara yang terbaca dari namanya (pilahBerkasMassal). */
   let pasangan = [];
@@ -951,6 +979,7 @@ function bagianMassalBerkas(isi, sesudahSusun) {
         pilih.addEventListener("change", () => {
           pilihanGanda.set(p.nomor, p);
           gambarDaftar();
+          void muatKeadaan();
         });
         baris.appendChild(pilih);
       }
@@ -966,7 +995,36 @@ function bagianMassalBerkas(isi, sesudahSusun) {
       tanda.classList.add(dikirim(p) ? "aleta-lencana-aman" : "aleta-lencana-mendesak");
       baris.appendChild(tanda);
       daftar.appendChild(baris);
-      if (dikirim(p)) cocok += 1;
+      if (dikirim(p)) {
+        cocok += 1;
+        // Penanda per slot (tulisan biasa) + centang Ganti untuk yang SUDAH ada.
+        if (typeof alatPenandaSlot === "function") {
+          const k = keadaanSlot.has(bakuNomor(p.nomor)) ? keadaanSlot.get(bakuNomor(p.nomor)) : null;
+          const g = gantiSlot.get(bakuNomor(p.nomor)) || { form: false, putusan: false, anonim: false };
+          const ket = buatElemen("div", "aleta-tetap-sebab aleta-remeh");
+          ket.setAttribute("data-aleta-penanda", p.nomor);
+          for (const s of ["form", "putusan", "anonim"]) {
+            const ada = k ? k[s] : null;
+            const bagian = buatElemen("span", "", `${ALAT_NAMA_SLOT[s]}: ${alatPenandaSlot(s, ada)}`);
+            ket.appendChild(bagian);
+            if (ada === true) {
+              const label = document.createElement("label");
+              label.style.marginLeft = "4px";
+              const cek = document.createElement("input");
+              cek.type = "checkbox";
+              cek.checked = Boolean(g[s]);
+              cek.setAttribute("data-aleta-ganti", `${p.nomor}|${s}`);
+              cek.addEventListener("change", () => {
+                gantiSlot.set(bakuNomor(p.nomor), { ...(gantiSlot.get(bakuNomor(p.nomor)) || { form: false, putusan: false, anonim: false }), [s]: cek.checked });
+              });
+              label.append(cek, " Ganti");
+              ket.appendChild(label);
+            }
+            ket.appendChild(document.createTextNode(s === "anonim" ? "" : " · "));
+          }
+          daftar.appendChild(ket);
+        }
+      }
     }
     tombol.disabled = cocok === 0;
     kabar.className = "aleta-abt-kabar";
@@ -975,10 +1033,13 @@ function bagianMassalBerkas(isi, sesudahSusun) {
 
   pemilih.addEventListener("change", () => {
     pilihanGanda.clear();
+    keadaanSlot.clear();
+    gantiSlot.clear();
     pasangan = bentukLainA30
       ? pilahBerkasMassal(pemilih.files || [], nomorDariNama, true)
       : pilahBerkasMassal(pemilih.files || [], nomorDariNama);
     gambarDaftar();
+    void muatKeadaan();
   });
 
   tombol.addEventListener("click", async () => {
@@ -986,6 +1047,17 @@ function bagianMassalBerkas(isi, sesudahSusun) {
     if (dikerjakan.length === 0) return;
     tombol.disabled = true;
     pemilih.disabled = true;
+    // Konfirmasi SEBARIS hanya bila ada yang ditimpa. "Tidak" = tidak ada satu pun naskah terkirim dan tidak ada antrean
+    // disusun (yang bukan timpa pun belum berjalan); pilihan tetap seperti semula.
+    const rencanaTimpa = dikerjakan.map((p) => ({ nomor: p.nomor, slot: slotTimpa(p.nomor) })).filter((r) => r.slot.length);
+    if (rencanaTimpa.length && typeof alatKonfirmasiTimpa === "function") {
+      const ya = await alatKonfirmasiTimpa(wadahTimpa, alatDaftarTimpa(rencanaTimpa));
+      if (!ya) {
+        tombol.disabled = false;
+        pemilih.disabled = false;
+        return;
+      }
+    }
 
     const berhasil = [];
     let gagal = 0;
@@ -1028,7 +1100,7 @@ function bagianMassalBerkas(isi, sesudahSusun) {
         const luar = await respons.json();
         const jawab = luar && luar.data ? luar.data : luar;
         if (!jawab || !jawab.ok) throw new Error((jawab && jawab.sebab) || "naskahnya tidak dapat dibaca");
-        berhasil.push({ nomor: p.nomor, perkaraId: "", jenis: "" });
+        berhasil.push({ nomor: p.nomor, perkaraId: "", jenis: "", ...butirTimpa(p.nomor) });
         // Butir 6 (6 Okt, Baru & UI Baru): naskah aslinya disimpan di peramban
         // ini supaya antrean dapat mengunggah edoc putusan + anonimisasinya di
         // halaman perkara (a30OpsiEdocMassal). Gagal menyimpan tidak menggagalkan draf.

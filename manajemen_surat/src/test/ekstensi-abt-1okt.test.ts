@@ -168,7 +168,15 @@ type Minta = { url: string; cara: string; badan: string; tubuh: unknown };
 type Jawab = { status?: number; isi?: unknown; mentah?: string; jenis?: string };
 type Pengganti = (url: string, cara: string, badan: string) => Jawab | undefined;
 
+/** Keadaan e-Doc yang dijawab rute cek (banyak perkara); null = rute tidak dapat dibaca. Diatur per uji MENIMPA (5 Nov 2026). */
+let keadaanCek: { adaBaris: boolean; adaPutusan: boolean; adaAnonim: boolean } | null = null;
+
 function jawabBaku(peran: string, nama: string, url: string, cara: string, badan: string): Jawab {
+  if (url.includes("/unggah-massal/cek")) {
+    if (!keadaanCek) return { status: 502, isi: { ok: false, error: { message: "SIPP belum dapat dibaca" } } };
+    const id = decodeURIComponent(url.split("perkaraId=")[1] || "").split(",").filter(Boolean);
+    return { isi: { ok: true, data: { ok: true, daftar: id.map((x) => ({ perkaraId: x, ...keadaanCek })) } } };
+  }
   if (url.includes("/aleta-bot/abt/usulan")) {
     const muatan = JSON.parse(badan || "{}");
     if (muatan.sumber === "siapa") return { isi: { data: { available: true, pengguna: { nama, peran }, kapabilitas: {} } } };
@@ -1015,5 +1023,86 @@ describe("4 Okt (1.183.0): Unggah putusan hanya di blangko putusan", () => {
     expect(bagian(h).hasAttribute("data-a3-jenis")).toBe(false);
     expect(tombolBagian(h).hidden).toBe(false);
     expect(Array.from(bagian(h).querySelector("select").options).map((o: any) => o.value)).not.toContain("__halaman-ini");
+  });
+});
+
+// ============================================================================
+describe("MENIMPA di Kerjakan perkara ini (5 Nov 2026): keadaan dibaca dulu, pertanyaan sebaris hanya bila ada yang ditimpa", () => {
+  const bagian = (h: Halaman) => q(h, ".aleta-abt-bagian");
+  const kerjakan = (h: Halaman) => Array.from(bagian(h).querySelectorAll("button")).find((b: any) => b.textContent === "Kerjakan perkara ini") as any;
+  const unggahan = (h: Halaman) => h.minta.filter((m) => m.url.includes("unggah-sipp"));
+  const tulisan = (h: Halaman) => h.minta.filter((m) => /unggah-naskah|main\/anonim|unggah-sipp/.test(m.url));
+  async function siapKlik(h: Halaman) {
+    await selesaiIsi(h);
+    await sampai(() => (bagian(h)?.querySelector("select")?.value === "__halaman-ini" ? true : null), "blangko halaman ini");
+    h.minta.length = 0;
+  }
+  afterEach(() => {
+    keadaanCek = null;
+  });
+
+  it("penanda tulisan biasa tampil di panel (UI Baru): Sudah terisi / Sudah diunggah / Belum diunggah", async () => {
+    keadaanCek = { adaBaris: true, adaPutusan: true, adaAnonim: false };
+    const h = buka({ simpanan: ui([], nyata) });
+    await siapKlik(h);
+    await sampai(() => (bagian(h).querySelector("[data-aleta-penanda]")?.textContent || "").includes("Sudah"), "penanda terbaca");
+    expect(bagian(h).querySelector("[data-aleta-penanda]")!.textContent).toBe("Putusan Akhir: Sudah terisi · e-Doc putusan: Sudah diunggah · e-Doc anonimisasi: Belum diunggah");
+  });
+
+  it("BELUM ada: langsung bekerja, tanpa pertanyaan dan tanpa tanda timpa", async () => {
+    keadaanCek = { adaBaris: true, adaPutusan: false, adaAnonim: false };
+    const h = buka({ simpanan: ui([], nyata) });
+    await siapKlik(h);
+    kerjakan(h).click();
+    await sampai(() => unggahan(h).length > 0, "unggah", 8000);
+    expect(bagian(h).querySelector('[data-aleta-timpa="konfirmasi"]')).toBeNull();
+    const badan = unggahan(h)[0].tubuh as any;
+    expect(badan.has("timpaPutusan")).toBe(false);
+    expect(badan.has("timpaAnonim")).toBe(false);
+  });
+
+  it("SUDAH ada: pertanyaan sebaris menyebut perkara dan slot; 'Tidak' = tidak ada satu pun tulisan (draf, anonim, unggah)", async () => {
+    keadaanCek = { adaBaris: true, adaPutusan: true, adaAnonim: false };
+    const h = buka({ simpanan: ui([], nyata) });
+    await siapKlik(h);
+    kerjakan(h).click();
+    const kotak = await sampai(() => bagian(h).querySelector('[data-aleta-timpa="konfirmasi"]'), "pertanyaan menimpa");
+    expect(kotak.textContent).toContain("Anda yakin menimpa?");
+    expect(kotak.textContent).toContain("e-Doc putusan");
+    expect(kotak.textContent).not.toContain("anonimisasi: ");
+    h.w.confirm = () => {
+      throw new Error("window.confirm tidak boleh dipakai");
+    };
+    (kotak.querySelector('[data-aleta-timpa="tidak"]') as HTMLButtonElement).click();
+    await tunggu(80);
+    expect(tulisan(h)).toEqual([]);
+    expect(bagian(h).querySelector('[data-aleta-timpa="konfirmasi"]')).toBeNull();
+    expect(kerjakan(h).disabled).toBe(false);
+  });
+
+  it("'Ya, timpa': dikerjakan dan unggahan membawa tanda HANYA untuk slot yang sudah ada", async () => {
+    keadaanCek = { adaBaris: true, adaPutusan: true, adaAnonim: false };
+    const h = buka({ simpanan: ui([], nyata) });
+    await siapKlik(h);
+    kerjakan(h).click();
+    const kotak = await sampai(() => bagian(h).querySelector('[data-aleta-timpa="konfirmasi"]'), "pertanyaan menimpa");
+    (kotak.querySelector('[data-aleta-timpa="ya"]') as HTMLButtonElement).click();
+    await sampai(() => unggahan(h).length > 0, "unggah", 8000);
+    const badan = unggahan(h)[0].tubuh as any;
+    expect(badan.get("timpaPutusan")).toBe("1");
+    expect(badan.has("timpaAnonim")).toBe(false);
+  });
+
+  it("gagal terbaca: tidak ada pertanyaan dan TIDAK ADA tanda timpa", async () => {
+    keadaanCek = null;
+    const h = buka({ simpanan: ui([], nyata) });
+    await siapKlik(h);
+    await sampai(() => (bagian(h).querySelector("[data-aleta-penanda]")?.textContent || "").includes("Belum terbaca"), "penanda belum terbaca");
+    kerjakan(h).click();
+    await sampai(() => unggahan(h).length > 0, "unggah", 8000);
+    expect(bagian(h).querySelector('[data-aleta-timpa="konfirmasi"]')).toBeNull();
+    const badan = unggahan(h)[0].tubuh as any;
+    expect(badan.has("timpaPutusan")).toBe(false);
+    expect(badan.has("timpaAnonim")).toBe(false);
   });
 });

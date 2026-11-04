@@ -2642,9 +2642,11 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
     return;
   }
 
-  // 1. Jangan isi ulang yang sudah putus.
+  // 1. Jangan isi ulang yang sudah putus - KECUALI butir ini bertanda timpa.isi (dicentang petugas saat menyusun antrean
+  // dan sudah dikonfirmasi): lalu Putusan Akhir yang ada diisi ulang lewat borang Edit SIPP, tanpa dibatalkan dulu.
   const segar = await bacaPutusanSegar(butir.nomor);
-  if (segar && segar.sudahPutus) {
+  const timpaIsiButir = Boolean(butir.timpa && butir.timpa.isi === true && segar && segar.sudahPutus);
+  if (segar && segar.sudahPutus && !timpaIsiButir) {
     butir.keadaan = "dilewati";
     butir.catatan = "sudah putus - tidak diisi ulang";
     await tulisButir();
@@ -3061,7 +3063,7 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
   // dipilih ANTREAN SENDIRI tidak pernah diperiksa: "Dikabulkan" atas amar
   // "Menolak" tersimpan. Kini ia membaca isian yang akan disimpan. Yang
   // ditahan di sini sudah terisi di borang, tetapi Simpan tidak ditekan.
-  const raporAgen = await praperiksaSebelumMengisi(butir.nomor, kabar);
+  const raporAgen = await praperiksaSebelumMengisi(butir.nomor, kabar, { timpa: timpaIsiButir });
   if (raporAgen && raporAgen.hentikan) {
     butir.keadaan = "tertahan";
     butir.sebabTahan = "praperiksa";
@@ -3132,6 +3134,9 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
       opsiSimpanA30 = await a30OpsiEdocMassal({
         opsi: opsiSimpanA30,
         nomorPerkara: butir.nomor,
+        // Tanda timpa e-Doc per slot dari butir (dicentang petugas); tanpa tanda yang sudah ada tidak disentuh.
+        timpaPutusan: Boolean(butir.timpa && butir.timpa.putusan === true),
+        timpaAnonim: Boolean(butir.timpa && butir.timpa.anonim === true),
         kabar,
         // Mode manual: petugas ada di depan layar - temuan pemeriksa anonim
         // ditanyakan. Otomatis: tidak ditanyakan; edocnya tidak diunggah.
@@ -3177,6 +3182,9 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
     if (tombol) tombol.disabled = false;
     return;
   }
+
+  // Menimpa Putusan Akhir yang sudah ada: bukti simpan menuntut jawaban SIPP sendiri (lihat simpanPutusanLaluBuka).
+  if (timpaIsiButir) opsiSimpanA30 = { ...(opsiSimpanA30 || {}), timpa: true };
 
   // 4. Simpan, dibuktikan dari SIPP. Baru & UI Baru (butir 10): keadaan
   // "sebelum" yang dibaca di langkah 1 dipakai lagi - satu bacaan
@@ -4529,7 +4537,10 @@ async function a30OpsiSimpanPutusan(p) {
   if (!p.edoc || !p.edoc.asli) return opsi;
   // Panel satu perkara: naskah dipilih dan Isikan ditekan petugas sendiri, jadi e-Doc yang sudah ada diganti seperti semula
   // (rute meminta tanda eksplisit sejak 5 Nov 2026). Antrean massal TIDAK membawa tanda: yang sudah ada tidak disentuh.
-  const tandaTimpa = p.timpaEdoc === true ? { timpaPutusan: true, timpaAnonim: true } : {};
+  const tandaTimpa = {
+    ...(p.timpaEdoc === true || p.timpaPutusan === true ? { timpaPutusan: true } : {}),
+    ...(p.timpaEdoc === true || p.timpaAnonim === true ? { timpaAnonim: true } : {}),
+  };
   // Perbaikan 1 Okt (S, butir 4 - hanya UI Baru yang mengisi edoc.anonim):
   // anonimisasi yang DIPILIH petugas diunggah apa adanya, tanpa dibuat ulang.
   if (p.edoc.anonim) {
@@ -4781,7 +4792,13 @@ async function a30OpsiEdocMassal(p) {
         ...dasar,
         lanjutWalauEdocGagal: true,
         sesudahTersimpan: (kabarLangkah) =>
-          mod.jalankan({ nomorPerkara: p.nomorPerkara, kabar: p.kabar || kabarLangkah || null, wadah: p.wadahTanya || null }),
+          mod.jalankan({
+            nomorPerkara: p.nomorPerkara,
+            kabar: p.kabar || kabarLangkah || null,
+            wadah: p.wadahTanya || null,
+            timpaPutusan: p.timpaPutusan === true,
+            timpaAnonim: p.timpaAnonim === true,
+          }),
       };
     }
     return {
@@ -4802,6 +4819,8 @@ async function a30OpsiEdocMassal(p) {
     wadah: p.wadahTanya || null,
     sebelum: dasar.sebelum || null,
     edoc: naskah,
+    timpaPutusan: p.timpaPutusan === true,
+    timpaAnonim: p.timpaAnonim === true,
   });
   // Terunggah: a30UnggahEdoc sendiri membuang naskah tersimpannya.
   return { ...dasar, ...opsi, lanjutWalauEdocGagal: true };
