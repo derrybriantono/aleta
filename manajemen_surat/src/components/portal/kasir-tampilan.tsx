@@ -66,7 +66,7 @@ export async function unduhPdf(alamat: string, nama: string): Promise<string> {
 
 // ─── Kepala dan tab ──────────────────────────────────────────────────────────
 
-export function KepalaKasir({ children, onTutup }: { children?: ReactNode; onTutup: () => void }) {
+export function KepalaKasir({ children, onTutup, aksi }: { children?: ReactNode; onTutup: () => void; aksi?: ReactNode }) {
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-t-lg bg-primary px-4 py-3 text-primary-foreground">
       <div className="min-w-[10rem] flex-1">
@@ -74,6 +74,7 @@ export function KepalaKasir({ children, onTutup }: { children?: ReactNode; onTut
         <h3 className="text-lg font-extrabold leading-tight">Jurnal Keuangan Perkara</h3>
       </div>
       {children}
+      {aksi}
       <button
         type="button"
         aria-label="Tutup"

@@ -48,8 +48,11 @@ export async function GET(request: NextRequest) {
     db = dasar.db;
     actorUserId = dasar.actorUserId;
     const hasil = await getGatewayRekeningStatus();
-    if (!hasil.ok || !hasil.data || hasil.data.ok === false) {
+    if (!hasil.ok) {
       return ok({ available: false, message: hasil.error || "ALETA Bot belum dapat dihubungi." });
+    }
+    if (!hasil.data || hasil.data.ok === false) {
+      return ok({ available: false, message: "Keadaan sinkron rekening belum dapat dibaca dari ALETA Bot." });
     }
     return ok({ available: true, status: hasil.data.status, penjadwal: hasil.data.penjadwal });
   } catch (error) {
@@ -71,7 +74,7 @@ export async function POST(request: NextRequest) {
     db = dasar.db;
     actorUserId = dasar.actorUserId;
     const hasil = await mulaiGatewayRekeningSinkron(dasar.actor.name);
-    if (!hasil.ok || !hasil.data) {
+    if (!hasil.ok) {
       return ok({ available: false, ok: false, message: hasil.error || "ALETA Bot belum dapat dihubungi." });
     }
     const dimulai = hasil.data.ok === true;

@@ -122,7 +122,7 @@ export function AletaEcourtRekening() {
         <div>
           <CardTitle className="flex items-center gap-2">
             Rekening dan bank pembayar
-            {s ? <Badge variant={s.otomatis ? "default" : "secondary"}>{s.otomatis ? "Otomatis menyala" : "Otomatis mati"}</Badge> : null}
+            {s ? <Badge variant={s.otomatis ? "default" : "muted"}>{s.otomatis ? "Otomatis menyala" : "Otomatis mati"}</Badge> : null}
             {berjalan ? <Badge variant="outline">Sedang berjalan</Badge> : null}
           </CardTitle>
           <CardDescription>

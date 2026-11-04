@@ -211,7 +211,7 @@ export const KUNCI_PENGATURAN_SINKRON = [
 
 const PENGATURAN_SINKRON = new Set<string>(KUNCI_PENGATURAN_SINKRON);
 
-export const KUNCI_SETELAN = ["checklist.tanda", "pintasan.portal", "pengaturan.ekstensi", "widget.tata", "panel.bawaan", "konteks.perkara", "perangkat.versi", "tampilan.sipp", "tampil.halaman"] as const;
+export const KUNCI_SETELAN = ["checklist.tanda", "pintasan.portal", "pengaturan.ekstensi", "widget.tata", "panel.bawaan", "konteks.perkara", "perangkat.versi", "tampilan.sipp", "tampil.halaman", "kasir.tampilan"] as const;
 export type KunciSetelan = (typeof KUNCI_SETELAN)[number];
 
 export function kunciSetelanSah(x: unknown): x is KunciSetelan {
@@ -232,6 +232,8 @@ export const BATAS_BITA_SETELAN: Record<KunciSetelan, number> = {
   "tampilan.sipp": 8192,
   // 28 Okt 2026: saklar induk "Tampilkan ALETA di SIPP / portal" (tampilAletaHalaman 1.205.52) ikut akun.
   "tampil.halaman": 256,
+  // 4 Nov 2026: pilihan tampilan Kasir per pengguna (portal dan ekstensi): {tampilan: "baru" | "lama"}.
+  "kasir.tampilan": 128,
 };
 
 export const BATAS_TANDA_CHECKLIST = 500;
@@ -487,6 +489,20 @@ function normalkanTampilanSipp(nilai: unknown) {
 // salinan peramban dan akun yang berlaku (panel-alat.js 3c').
 export const SITUS_TAMPIL_HALAMAN = ["sipp", "aleta"] as const;
 
+// kasir.tampilan - {tampilan: "baru" | "lama"}: tampilan Kasir yang dipilih pengguna ini (bawaan "baru" bila belum
+// pernah dipilih). Dibaca portal (kasir-otomatis) dan ekstensi (basmassal.js) dari setelan akun yang sama.
+export const PILIHAN_KASIR_TAMPILAN = ["baru", "lama"] as const;
+
+function normalkanKasirTampilan(nilai: unknown) {
+  const mentah = nilai && typeof nilai === "object" && !Array.isArray(nilai) ? (nilai as Record<string, unknown>) : null;
+  const t = mentah ? mentah.tampilan : null;
+  if (typeof t !== "string" || !(PILIHAN_KASIR_TAMPILAN as readonly string[]).includes(t)) {
+    throw new GalatSetelan('kasir.tampilan harus berupa obyek {tampilan: "baru" atau "lama"}.');
+  }
+  const dibuang = Object.keys(mentah as Record<string, unknown>).filter((k) => k !== "tampilan");
+  return { nilai: { tampilan: t as (typeof PILIHAN_KASIR_TAMPILAN)[number] }, dibuang };
+}
+
 function normalkanTampilHalaman(nilai: unknown) {
   if (!nilai || typeof nilai !== "object" || Array.isArray(nilai)) {
     throw new GalatSetelan("tampil.halaman harus berupa obyek {sipp, aleta}.");
@@ -537,7 +553,9 @@ export function normalkanSetelan(
                   ? normalkanTampilanSipp(nilai)
                   : kunci === "tampil.halaman"
                     ? normalkanTampilHalaman(nilai)
-                    : normalkanPengaturan(nilai);
+                    : kunci === "kasir.tampilan"
+                      ? normalkanKasirTampilan(nilai)
+                      : normalkanPengaturan(nilai);
 
   let json: string;
   try {

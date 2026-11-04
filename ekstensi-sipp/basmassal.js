@@ -2128,6 +2128,16 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
   }
 
   /** JSON portal dibuka bungkusnya; HTTP gagal = Error berbunyi pesan portal. */
+  /**
+   * Tampilan Kasir yang dipilih pengguna ini (4 Nov 2026): "baru" (bawaan) atau "lama" (tampilan rilis 1.205.71,
+   * tetap tersedia). Tersimpan di setelan akun "kasir.tampilan" - sama dengan portal. Hanya memilih cara menggambar
+   * kartu; logika baca/tulis Kasir (usulan, hitung, kirim ke SIPP) satu dan sama untuk keduanya.
+   */
+  let kasirBaru = true;
+  const KUNCI_PILIHAN_KASIR = "kasir.tampilan";
+  /** Kelas tambahan yang hanya berlaku di tampilan baru (kosong di tampilan lama). */
+  const kelasBaru = (kelas) => (kasirBaru ? ` ${kelas}` : "");
+
   async function ambil(alamat, opsi) {
     const r = await alatAmbil(alamat, { credentials: "include", cache: "no-store", ...(opsi || {}) }, "Kasir");
     const luar = await r.json().catch(() => ({}));
@@ -2137,6 +2147,65 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
       throw new Error(String(pesan));
     }
     return isi || {};
+  }
+
+  /** Pilihan eksplisit pengguna pada sesi halaman ini; menang atas bacaan server sampai halaman dimuat ulang. */
+  let pilihanSesiKasir = null;
+  let pilihanKasirDibacaPada = 0;
+  const SEGAR_PILIHAN_KASIR_MS = 60 * 1000;
+
+  /** Membaca pilihan tampilan Kasir akun ini (setelan "kasir.tampilan"); gagal = pilihan terakhir (bawaan baru). */
+  async function bacaPilihanKasir() {
+    if (pilihanSesiKasir) {
+      kasirBaru = pilihanSesiKasir !== "lama";
+      return;
+    }
+    if (Date.now() - pilihanKasirDibacaPada < SEGAR_PILIHAN_KASIR_MS) return;
+    try {
+      const isi = await ambil("/aleta/api/aleta-ecourt/ekstensi/setelan");
+      const butir = isi && isi.setelan && isi.setelan[KUNCI_PILIHAN_KASIR];
+      const nilai = butir && butir.nilai;
+      const t = nilai && typeof nilai === "object" ? nilai.tampilan : nilai;
+      kasirBaru = t !== "lama";
+      pilihanKasirDibacaPada = Date.now();
+    } catch {
+      /* server tak terjangkau: pilihan terakhir tetap (bawaan: baru) */
+    }
+  }
+
+  /** Menyimpan pilihan ke akun; berlaku seketika di halaman ini walau penyimpanan gagal. */
+  async function simpanPilihanKasir(pilihan) {
+    pilihanSesiKasir = pilihan === "lama" ? "lama" : "baru";
+    kasirBaru = pilihanSesiKasir !== "lama";
+    try {
+      await ambil("/aleta/api/aleta-ecourt/ekstensi/setelan", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kunci: KUNCI_PILIHAN_KASIR, nilai: { tampilan: pilihanSesiKasir } }),
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /** Dua tombol "Tampilan baru" / "Tampilan lama"; menyimpan lalu memasang ulang Kasir dengan tampilan yang dipilih. */
+  function pilihanTampilanKasir(wadah, opsi) {
+    const kotak = el("span", "aleta-kasir-pilih-tampilan");
+    kotak.setAttribute("role", "group");
+    kotak.setAttribute("aria-label", "Tampilan Kasir");
+    for (const [kunci, judul] of [["baru", "Tampilan baru"], ["lama", "Tampilan lama"]]) {
+      const aktif = (kunci === "baru") === kasirBaru;
+      const b = tombol(judul, "aleta-kasir-pilih-tampilan-tombol", async () => {
+        if (aktif) return;
+        b.disabled = true;
+        await simpanPilihanKasir(kunci);
+        await pasangHarian(wadah, opsi);
+      });
+      b.setAttribute("aria-pressed", aktif ? "true" : "false");
+      kotak.appendChild(b);
+    }
+    return kotak;
   }
 
   // ─── Pembayar e-Court & cetak e-SKUM (Kasir 3 Nov 2026) ───────────────────
@@ -2352,7 +2421,7 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
    * jurusita - tiap jurusita satu PDF (Cetak), atau "Cetak semua (terpisah)". Tombol hanya untuk mencetak.
    */
   function bagianCetak(isi, bab) {
-    const atas = el("div", "aleta-basmassal-baris-atas aleta-kasir-cetak-rentang aleta-kasir-alat");
+    const atas = el("div", `aleta-basmassal-baris-atas aleta-kasir-cetak-rentang${kelasBaru("aleta-kasir-alat")}`);
     const dari = el("input", "aleta-basmassal-pilih");
     dari.type = "date";
     dari.lang = "id";
@@ -2363,9 +2432,9 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
     sampai.lang = "id";
     sampai.value = hariIni();
     sampai.setAttribute("aria-label", "Sampai tanggal");
-    atas.appendChild(el("span", "aleta-kasir-alat-label", "Dari tanggal"));
+    atas.appendChild(kasirBaru ? el("span", "aleta-kasir-alat-label", "Dari tanggal") : el("span", "aleta-basmassal-lembut", "Tanggal"));
     atas.appendChild(dari);
-    atas.appendChild(el("span", "aleta-kasir-alat-label", "sampai tanggal"));
+    atas.appendChild(kasirBaru ? el("span", "aleta-kasir-alat-label", "sampai tanggal") : el("span", "aleta-basmassal-lembut", "s.d."));
     atas.appendChild(sampai);
     const pspWadah = el("div", "aleta-kasir-cetak-bagian");
     pspWadah.setAttribute("data-kasir-cetak", "psp");
@@ -2404,7 +2473,7 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
         return;
       }
       const sembunyi = Boolean(data.rekeningDisembunyikan);
-      pspWadah.appendChild(el("div", "aleta-basmassal-lembut aleta-kasir-cetak-ringkas", `${data.jumlah} perkara mengembalikan sisa panjar pada ${teksPeriode(data.dari, data.sampai)} · sumber: jurnal keuangan SIPP`));
+      if (kasirBaru) pspWadah.appendChild(el("div", "aleta-basmassal-lembut aleta-kasir-cetak-ringkas", `${data.jumlah} perkara mengembalikan sisa panjar pada ${teksPeriode(data.dari, data.sampai)} · sumber: jurnal keuangan SIPP`));
       const gulir = el("div", "aleta-kasir-gulir");
       const t = el("table", "aleta-kasir-tabel aleta-kasir-tabel-cetak");
       const th = el("thead");
@@ -2419,10 +2488,14 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
         tr.appendChild(el("td", "aleta-kasir-tak-patah aleta-kasir-nomor", x.nomorPerkara));
         tr.appendChild(el("td", "aleta-kasir-tak-patah", tanggalPanjang(x.tanggal)));
         const pen = x.rekening && x.rekening.diterimaDari ? x.rekening.diterimaDari : x.kuasa ? `${x.penerima} (kuasa: ${x.kuasa})` : x.penerima;
-        const tdPen = el("td", "aleta-kasir-penerima");
-        tdPen.appendChild(el("b", "", pen || "-"));
-        tdPen.appendChild(el("span", "aleta-kasir-pembayar-lembut", x.ecourt ? "pembayar e-Court" : "pendaftaran langsung (bukan e-Court)"));
-        tr.appendChild(tdPen);
+        if (kasirBaru) {
+          const tdPen = el("td", "aleta-kasir-penerima");
+          tdPen.appendChild(el("b", "", pen || "-"));
+          tdPen.appendChild(el("span", "aleta-kasir-pembayar-lembut", x.ecourt ? "pembayar e-Court" : "pendaftaran langsung (bukan e-Court)"));
+          tr.appendChild(tdPen);
+        } else {
+          tr.appendChild(el("td", "", pen || "-"));
+        }
         if (!sembunyi) {
           const td = el("td", "aleta-kasir-tak-patah");
           if (x.rekening && x.rekening.nomorRekening) {
@@ -2451,15 +2524,19 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
       t.appendChild(tb);
       gulir.appendChild(t);
       pspWadah.appendChild(gulir);
-      pspWadah.appendChild(
-        el(
-          "div",
-          "aleta-basmassal-lembut",
-          sembunyi
-            ? "Nomor rekening tidak ditampilkan untuk peran Anda."
-            : "Nomor rekening tampil hanya untuk Super Admin, Admin, Ketua/Wakil, Hakim, Panitera, Kasir, dan PTSP."
-        )
-      );
+      if (kasirBaru) {
+        pspWadah.appendChild(
+          el(
+            "div",
+            "aleta-basmassal-lembut",
+            sembunyi
+              ? "Nomor rekening tidak ditampilkan untuk peran Anda."
+              : "Nomor rekening tampil hanya untuk Super Admin, Admin, Ketua/Wakil, Hakim, Panitera, Kasir, dan PTSP."
+          )
+        );
+      } else if (sembunyi) {
+        pspWadah.appendChild(el("div", "aleta-basmassal-lembut", "Nomor rekening tidak ditampilkan untuk peran Anda."));
+      }
       pspWadah.appendChild(kabarPsp);
     };
 
@@ -2538,7 +2615,7 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
     });
     sampai.addEventListener("change", () => void baca());
     atas.appendChild(tombol("Baca", "", () => void baca()));
-    // 4 Nov 2026: pintasan rentang - hanya mengisi kedua tanggal lalu membaca ulang daftar.
+    // 4 Nov 2026: pintasan rentang - hanya mengisi kedua tanggal lalu membaca ulang daftar (tampilan baru).
     const pintas = el("span", "aleta-kasir-pintas");
     for (const [judulP, mundur] of [["Hari ini", 0], ["Kemarin", 1], ["7 hari", 6]]) {
       pintas.appendChild(
@@ -2550,7 +2627,7 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
         })
       );
     }
-    atas.appendChild(pintas);
+    if (kasirBaru) atas.appendChild(pintas);
     atas.appendChild(
       ikonInfo(
         "Daftar dibaca otomatis dari jurnal keuangan SIPP pada tanggal yang dipilih.",
@@ -2623,9 +2700,11 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
     if (siap) {
       const nama = a.nama || a.username;
       // 4 Nov 2026: lencana akun (inisial lewat CSS dari data-inisial), label "Dicatat atas akun kasir".
-      kotak.classList.add("aleta-kasir-akun");
-      kotak.setAttribute("data-inisial", inisialNama(nama));
-      kotak.appendChild(el("span", "aleta-kasir-akun-label", "Dicatat atas akun kasir: "));
+      if (kasirBaru) {
+        kotak.classList.add("aleta-kasir-akun");
+        kotak.setAttribute("data-inisial", inisialNama(nama));
+      }
+      kotak.appendChild(kasirBaru ? el("span", "aleta-kasir-akun-label", "Dicatat atas akun kasir: ") : el("span", "", "Akun kasir: "));
       kotak.appendChild(el("b", "", nama));
       kotak.appendChild(
         ikonInfo(
@@ -3084,12 +3163,12 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
   // ─── Massal satu hari ──────────────────────────────────────────────────────
 
   function bagianMassal(isi, bab) {
-    const atas = el("div", "aleta-basmassal-baris-atas aleta-kasir-alat");
+    const atas = el("div", `aleta-basmassal-baris-atas${kelasBaru("aleta-kasir-alat")}`);
     const tgl = el("input", "aleta-basmassal-pilih");
     tgl.type = "date";
     tgl.value = hariIni();
     tgl.setAttribute("aria-label", "Tanggal kasir massal");
-    atas.appendChild(el("span", "aleta-kasir-alat-label", "Tanggal kas"));
+    if (kasirBaru) atas.appendChild(el("span", "aleta-kasir-alat-label", "Tanggal kas"));
     atas.appendChild(tgl);
     // 4 Nov 2026: Cari perkara - hanya menyaring daftar di layar (tanpa memuat ulang, tanpa panggilan ke server).
     const cari = el("input", "aleta-basmassal-pilih aleta-kasir-cari aleta-kasir-cari-perkara");
@@ -3098,11 +3177,11 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
     cari.setAttribute("aria-label", "Cari perkara");
     let saring = "semua";
     let kata = "";
-    const daftar = el("div", "aleta-basmassal-daftar aleta-kasir-hari");
+    const daftar = el("div", `aleta-basmassal-daftar${kelasBaru("aleta-kasir-hari")}`);
     const akunWadah = el("div");
     const tarifWadah = el("div");
     const kotakKabar = el("div");
-    const aksi = el("div", "aleta-basmassal-aksi aleta-kasir-kaki");
+    const aksi = el("div", `aleta-basmassal-aksi${kelasBaru("aleta-kasir-kaki")}`);
     let data = null;
     let akun = null;
     let henti = false;
@@ -3146,17 +3225,29 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
         });
         return b;
       };
-      ringkasan.appendChild(kartuRingkas("semua", "Perkara bergerak", data.jumlahCalon, `Ada transaksi pada ${tanggalTeks(data.tanggal)}${gagalN ? `; ${gagalN} tidak terbaca` : ""}${data.terpotong ? " (daftar terpotong)" : ""}`));
-      ringkasan.appendChild(kartuRingkas("perlu", "Perlu dijurnal", data.perkara.length, "Belum tercatat di jurnal SIPP"));
-      ringkasan.appendChild(kartuRingkas("lengkap", "Sudah lengkap", lengkapDaftar.length, "Jurnal SIPP sudah sesuai"));
-      daftar.appendChild(ringkasan);
+      if (kasirBaru) {
+        ringkasan.appendChild(kartuRingkas("semua", "Perkara bergerak", data.jumlahCalon, `Ada transaksi pada ${tanggalTeks(data.tanggal)}${gagalN ? `; ${gagalN} tidak terbaca` : ""}${data.terpotong ? " (daftar terpotong)" : ""}`));
+        ringkasan.appendChild(kartuRingkas("perlu", "Perlu dijurnal", data.perkara.length, "Belum tercatat di jurnal SIPP"));
+        ringkasan.appendChild(kartuRingkas("lengkap", "Sudah lengkap", lengkapDaftar.length, "Jurnal SIPP sudah sesuai"));
+        daftar.appendChild(ringkasan);
+      } else {
+        daftar.appendChild(
+          el(
+            "div",
+            "aleta-basmassal-lembut",
+            `${data.jumlahCalon} perkara bergerak ${tanggalTeks(data.tanggal)}: ${data.perkara.length} perlu dijurnal, ${data.lengkap.length} sudah lengkap${data.gagal.length ? `, ${data.gagal.length} tidak terbaca` : ""}${data.terpotong ? " (terpotong)" : ""}.`
+          )
+        );
+      }
       const kosongSaring = el("div", "aleta-basmassal-lembut aleta-kasir-kosong", "Tidak ada perkara yang cocok dengan pilihan ini.");
       kosongSaring.hidden = true;
       for (const p of data.perkara) {
         const baris = el("div", "aleta-basmassal-baris aleta-kasir-kartu");
         baris.setAttribute("data-perkara", String(p.perkaraId));
-        baris.setAttribute("data-kartu", "perlu");
-        baris.setAttribute("data-cari", cariTeks(p, pembayaran[p.nomorPerkara]));
+        if (kasirBaru) {
+          baris.setAttribute("data-kartu", "perlu");
+          baris.setAttribute("data-cari", cariTeks(p, pembayaran[p.nomorPerkara]));
+        }
         const kep = el("div", "aleta-basmassal-kepala aleta-kasir-kartu-kepala");
         const kepKiri = el("div", "aleta-kasir-kartu-judul");
         const kepKanan = el("div", "aleta-kasir-kartu-aksi");
@@ -3171,14 +3262,24 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
         });
         lab.appendChild(cek);
         lab.appendChild(el("span", "aleta-basmassal-nomor aleta-kasir-kartu-nomor", p.nomorPerkara));
-        kepKiri.appendChild(lab);
-        if (p.jenisPerkara) kepKiri.appendChild(el("span", "aleta-kasir-kartu-jenis", p.jenisPerkara));
-        kepKiri.appendChild(el("span", "aleta-kasir-keadaan", p.keadaan && p.keadaan.nama ? p.keadaan.nama : "-"));
+        const spanKeadaan = el("span", "aleta-kasir-keadaan", p.keadaan && p.keadaan.nama ? p.keadaan.nama : "-");
+        if (kasirBaru) {
+          kepKiri.appendChild(lab);
+          if (p.jenisPerkara) kepKiri.appendChild(el("span", "aleta-kasir-kartu-jenis", p.jenisPerkara));
+          kepKiri.appendChild(spanKeadaan);
+        } else {
+          kep.appendChild(lab);
+        }
         const tautJurnal = nomorTaut("Jurnal SIPP", p.perkaraId);
         tautJurnal.classList.add("aleta-kasir-kartu-tautan");
         // 3 Nov 2026: tombol Cetak SKUM e-Court di kepala kartu (hanya perkara e-Court; diisi sesudah dibaca).
         const skumWadah = el("span", "aleta-kasir-kartu-skum");
         skumWadah.hidden = true;
+        if (!kasirBaru) {
+          kep.appendChild(tautJurnal);
+          kep.appendChild(spanKeadaan);
+          kep.appendChild(skumWadah);
+        }
         // 3 Nov 2026 (PBT cabut/NO-retur): PBT TIDAK otomatis; kasir yang memutuskan lewat tombol ini.
         const tawaranPbt = Array.isArray(p.tawaranPbt) ? p.tawaranPbt : [];
         const pbtBelum = tawaranPbt.filter((x) => !p.usulan.some((u) => u.kunci === x.kunci));
@@ -3194,19 +3295,26 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
           });
           bPbt.title = "Tambahkan Biaya Pemberitahuan dan PNBP Relaas Pemberitahuan Putusan (tarif seperti panggilan pihak itu); baris dapat disunting atau dihapus";
           bPbt.disabled = sedang || bacaSaja();
-          bPbt.classList.add("aleta-kasir-pita-tombol");
-          tombolPbt = bPbt;
+          if (kasirBaru) {
+            bPbt.classList.add("aleta-kasir-pita-tombol");
+            tombolPbt = bPbt;
+          } else {
+            kep.appendChild(bPbt);
+          }
         }
         const sebab = (p.sebab || []).map((s) => SEBAB[s] || s).join(", ");
-        if (sebab) kepKanan.appendChild(ikonInfo(`Bergerak hari itu: ${sebab}`, [`Perkara ini ada di daftar karena ${sebab}.`], p.nomorPerkara));
-        kepKanan.appendChild(el("span", "aleta-kasir-status aleta-kasir-status-perlu", "Perlu dijurnal"));
-        if (perluPeriksaKini(p)) kepKanan.appendChild(el("span", "aleta-basmassal-tanda aleta-basmassal-tanda-belum", "perlu diperiksa"));
+        const wadahTanda = kasirBaru ? kepKanan : kep;
+        if (sebab) wadahTanda.appendChild(ikonInfo(`Bergerak hari itu: ${sebab}`, [`Perkara ini ada di daftar karena ${sebab}.`], p.nomorPerkara));
+        if (kasirBaru) wadahTanda.appendChild(el("span", "aleta-kasir-status aleta-kasir-status-perlu", "Perlu dijurnal"));
+        if (perluPeriksaKini(p)) wadahTanda.appendChild(el("span", "aleta-basmassal-tanda aleta-basmassal-tanda-belum", "perlu diperiksa"));
         const l = laporan.get(p.perkaraId);
-        if (l) kepKanan.appendChild(el("span", `aleta-basmassal-tanda ${l.ok ? "aleta-basmassal-tanda-baik" : "aleta-basmassal-tanda-belum"}`, l.pesan));
-        kepKanan.appendChild(tautJurnal);
-        kepKanan.appendChild(skumWadah);
-        kep.appendChild(kepKiri);
-        kep.appendChild(kepKanan);
+        if (l) wadahTanda.appendChild(el("span", `aleta-basmassal-tanda ${l.ok ? "aleta-basmassal-tanda-baik" : "aleta-basmassal-tanda-belum"}`, l.pesan));
+        if (kasirBaru) {
+          kepKanan.appendChild(tautJurnal);
+          kepKanan.appendChild(skumWadah);
+          kep.appendChild(kepKiri);
+          kep.appendChild(kepKanan);
+        }
         baris.appendChild(kep);
         // 3 Nov 2026: pembayar e-Court (rekening pengguna) + Cetak SKUM e-Court - diisi sesudah dibaca.
         const bayarWadah = el("div", "aleta-kasir-pembayar");
@@ -3214,6 +3322,7 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
         bayarWadah._skum = skumWadah;
         isiPembayarEcourt(bayarWadah, p.nomorPerkara, pembayaran[p.nomorPerkara], skumWadah);
         baris.appendChild(bayarWadah);
+        if (!kasirBaru && pbtBelum.length && p.alasanTanpaPbt) baris.appendChild(el("div", "aleta-kasir-tanpa-pbt", p.alasanTanpaPbt));
         // Baris usulan BISA DISUNTING sebelum disimpan (28 Okt 2026): centang, tanggal, uraian, nominal, hapus.
         // Yang tersimpan persis yang tampil di sini (barisKirim membaca u yang sama).
         const gulir = el("div", "aleta-kasir-gulir");
@@ -3377,7 +3486,7 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
         daftar.appendChild(baris);
       }
       // 4 Nov 2026: perkara yang jurnalnya sudah lengkap - ringkas, tanpa baris (memang tidak ada usulan).
-      for (const p of lengkapDaftar) {
+      for (const p of kasirBaru ? lengkapDaftar : []) {
         const baris = el("div", "aleta-kasir-kartu aleta-kasir-kartu-lengkap");
         baris.setAttribute("data-lengkap", String(p.perkaraId));
         baris.setAttribute("data-kartu", "lengkap");
@@ -3397,8 +3506,10 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
         baris.appendChild(kep);
         daftar.appendChild(baris);
       }
-      daftar.appendChild(kosongSaring);
-      terapkanSaring();
+      if (kasirBaru) {
+        daftar.appendChild(kosongSaring);
+        terapkanSaring();
+      }
     };
 
     /** Teks pencarian satu kartu: nomor, jenis, tahap, dan nama pembayar e-Court bila sudah terbaca (huruf kecil). */
@@ -3440,6 +3551,18 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
     };
     const gambarAksi = () => {
       aksi.textContent = "";
+      if (!kasirBaru) {
+        // Tampilan lama: dua tombol saja (kaki lengket dan total hanya di tampilan baru).
+        const nLama = dipilih().length;
+        if (sedang) {
+          aksi.appendChild(tombol("Hentikan", "", () => (henti = true)));
+          return;
+        }
+        aksi.appendChild(tombol("Pratinjau", "", () => void jalankan(true)));
+        aksi.appendChild(tombol(kering() ? `Simpan ${nLama} perkara (mode kering: pratinjau)` : `Simpan ${nLama} perkara ke SIPP`, "aleta-basmassal-tombol-utama", tekanSimpan));
+        for (const b of aksi.querySelectorAll("button")) b.disabled = !nLama || !(akun && akun.siap) || bacaSaja();
+        return;
+      }
       const h = hitungKiriman();
       const n = h.perkara;
       // 4 Nov 2026: kaki lengket - jumlah baris dan total Rupiah yang akan dijurnal, lalu tombol.
@@ -3621,7 +3744,7 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
             const pk = data.perkara.find((x) => x.nomorPerkara === n);
             if (kartuIni && pk) kartuIni.setAttribute("data-cari", cariTeks(pk, pembayaran[n]));
           }
-          terapkanSaring();
+          if (kasirBaru) terapkanSaring();
         });
       } catch (galat) {
         kabar(kotakKabar, String((galat && galat.message) || galat), "salah");
@@ -3639,14 +3762,21 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
         "Kasir Manual (satu hari)"
       )
     );
-    atas.appendChild(el("span", "aleta-kasir-dorong"));
-    atas.appendChild(cari);
+    if (kasirBaru) {
+      atas.appendChild(el("span", "aleta-kasir-dorong"));
+      atas.appendChild(cari);
+    }
     isi.appendChild(atas);
     isi.appendChild(akunWadah);
     isi.appendChild(tarifWadah);
     isi.appendChild(daftar);
-    isi.appendChild(kotakKabar);
-    isi.appendChild(aksi);
+    if (kasirBaru) {
+      isi.appendChild(kotakKabar);
+      isi.appendChild(aksi);
+    } else {
+      isi.appendChild(aksi);
+      isi.appendChild(kotakKabar);
+    }
     return baca;
   }
 
@@ -3711,7 +3841,7 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
   }
 
   function bagianRekap(isi) {
-    const atas = el("div", "aleta-basmassal-baris-atas aleta-kasir-alat");
+    const atas = el("div", `aleta-basmassal-baris-atas${kelasBaru("aleta-kasir-alat")}`);
     atas.appendChild(el("span", "aleta-basmassal-lembut", "Tanggal acuan"));
     const tgl = el("input", "aleta-basmassal-pilih");
     tgl.type = "date";
@@ -3768,7 +3898,7 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
    * kasir, pengguna ALETA yang menjalankan, dan hasilnya. Dibaca dari jejak ALETA; disaring tanggal dan nomor.
    */
   function bagianRiwayat(isi, bab) {
-    const atas = el("div", "aleta-basmassal-baris-atas aleta-kasir-alat");
+    const atas = el("div", `aleta-basmassal-baris-atas${kelasBaru("aleta-kasir-alat")}`);
     const dari = el("input", "aleta-basmassal-pilih");
     dari.type = "date";
     dari.value = mundurHari(hariIni(), 6);
@@ -4481,6 +4611,107 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
   }
 
   /**
+   * Kasir harian TAMPILAN LAMA (dipulihkan dari rilis 1.205.71, dipilih per pengguna): tiga bab berlipat yang
+   * diingat petugas. Bab-bab di dalamnya memakai fungsi yang SAMA dengan tampilan baru (bagianMassal, bagianCetak,
+   * dst., yang menggambar menurut `kasirBaru`) - tidak ada logika baca/tulis yang digandakan.
+   */
+  async function pasangHarianLama(wadah, o) {
+    const lamaAda = wadah.querySelector(":scope > .aleta-kasir-harian");
+    if (lamaAda) lamaAda.remove();
+    const akar = el("div", "aleta-kasir aleta-kasir-harian aleta-basmassal");
+    akar.setAttribute("data-aleta-kasir", "harian");
+    if (o.judul !== false) {
+      const j = el("div", "aleta-basmassal-judul");
+      j.appendChild(el("span", "aleta-basmassal-judul-teks", "Kasir"));
+      j.appendChild(pilihanTampilanKasir(wadah, o));
+      akar.appendChild(j);
+    } else {
+      const baris = el("div", "aleta-kasir-pilih-baris");
+      baris.appendChild(pilihanTampilanKasir(wadah, o));
+      akar.appendChild(baris);
+    }
+    await muatLipatan();
+    // Tiap bab berlipat: jumlah pekerjaan di judul, pilihan buka/lipat diingat (lihat pasangLipat).
+    const bagian = (judul, kunci) => {
+      const d = el("details", "aleta-basmassal-rinci aleta-kasir-bagian");
+      d.setAttribute("data-kasir-bagian", kunci);
+      const s = el("summary", "", judul);
+      const tambahan = el("span", "aleta-kasir-jumlah");
+      s.appendChild(tambahan);
+      d.appendChild(s);
+      const isi = el("div", "aleta-kasir-isi");
+      d.appendChild(isi);
+      akar.appendChild(d);
+      return { d, isi, tambahan, lipat: pasangLipat(d, kunci) };
+    };
+    // 13 Okt (butir 10): saklar Kasir otomatis hari putus - paling atas.
+    const bOtomatis = bagian("Kasir otomatis (perkara putus hari ini)", "otomatis");
+    const bPengingat = bagian("Pengingat tugas kasir", "pengingat");
+    // 28 Okt 2026: "Kasir otomatis massal (satu hari)" berganti nama Kasir Manual (satu hari).
+    const bMassal = bagian("Kasir Manual (satu hari)", "manual");
+    // 3 Nov 2026: cetak daftar PSP (rekening penerima) dan instrumen panggilan & PBT per jurusita.
+    const bCetak = bagian("Cetak: sisa panjar & instrumen jurusita", "cetak");
+    const bRekap = bagian("Rekap pengeluaran", "rekap");
+    const bRiwayat = bagian("Riwayat", "riwayat");
+    const mulaiOtomatis = bagianOtomatis(bOtomatis.isi, bOtomatis);
+    const muatPengingat = bagianPengingat(bPengingat.isi, bPengingat);
+    const bacaMassal = bagianMassal(bMassal.isi, bMassal);
+    const bacaCetak = bagianCetak(bCetak.isi, bCetak);
+    const segarRekap = bagianRekap(bRekap.isi);
+    const muatRiwayat = bagianRiwayat(bRiwayat.isi, bRiwayat);
+    // Dibaca saat dibuka pertama kali (jumlahnya belum diketahui): terlipat dulu.
+    for (const x of [bMassal, bCetak, bRekap, bRiwayat]) x.lipat.atur(0);
+    let cetakDibaca = false;
+    bCetak.d.addEventListener("toggle", () => {
+      if (bCetak.d.open && !cetakDibaca) {
+        cetakDibaca = true;
+        void bacaCetak();
+      }
+    });
+    if (bCetak.d.open) {
+      cetakDibaca = true;
+      void bacaCetak();
+    }
+    let massalDibaca = false;
+    bMassal.d.addEventListener("toggle", () => {
+      if (bMassal.d.open && !massalDibaca) {
+        massalDibaca = true;
+        void bacaMassal();
+      }
+    });
+    if (bMassal.d.open) {
+      massalDibaca = true;
+      void bacaMassal();
+    }
+    let rekapDibaca = false;
+    bRekap.d.addEventListener("toggle", () => {
+      if (bRekap.d.open && !rekapDibaca) {
+        rekapDibaca = true;
+        segarRekap();
+      }
+    });
+    if (bRekap.d.open) {
+      rekapDibaca = true;
+      segarRekap();
+    }
+    let riwayatDibaca = false;
+    bRiwayat.d.addEventListener("toggle", () => {
+      if (bRiwayat.d.open && !riwayatDibaca) {
+        riwayatDibaca = true;
+        void muatRiwayat();
+      }
+    });
+    if (bRiwayat.d.open) {
+      riwayatDibaca = true;
+      void muatRiwayat();
+    }
+    wadah.appendChild(akar);
+    void muatPengingat(false);
+    void mulaiOtomatis();
+    return true;
+  }
+
+  /**
    * Kasir harian: bilah tab (4 Nov 2026, rancangan Kasir ALETA) di atas enam bagian. Tiap bagian tetap satu
    * <details data-kasir-bagian> yang berisi pekerjaan lamanya; tab hanya memilih bagian mana yang tampak
    * (yang lain hidden + tertutup, dibaca saat tabnya dibuka pertama kali). Tidak ada pekerjaan yang berubah.
@@ -4488,14 +4719,21 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
   async function pasangHarian(wadah, opsi) {
     const o = opsi || {};
     if (!wadah || modeLama() || boleh() === false) return false;
+    await bacaPilihanKasir();
+    if (!kasirBaru) return pasangHarianLama(wadah, o);
     const lama = wadah.querySelector(":scope > .aleta-kasir-harian");
     if (lama) lama.remove();
-    const akar = el("div", "aleta-kasir aleta-kasir-harian aleta-basmassal");
+    const akar = el("div", "aleta-kasir aleta-kasir-harian aleta-kasir-baru aleta-basmassal");
     akar.setAttribute("data-aleta-kasir", "harian");
     if (o.judul !== false) {
       const j = el("div", "aleta-basmassal-judul");
       j.appendChild(el("span", "aleta-basmassal-judul-teks", "Kasir"));
+      j.appendChild(pilihanTampilanKasir(wadah, o));
       akar.appendChild(j);
+    } else {
+      const baris = el("div", "aleta-kasir-pilih-baris");
+      baris.appendChild(pilihanTampilanKasir(wadah, o));
+      akar.appendChild(baris);
     }
     await muatLipatan();
     akar.setAttribute("data-kasir-tab", "hari");
