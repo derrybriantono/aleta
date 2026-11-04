@@ -321,7 +321,6 @@ export function KotakCariBerpil({
         autoComplete="off"
         placeholder={placeholder}
         aria-label={ariaLabel}
-        aria-expanded={buka}
         aria-autocomplete="list"
         onChange={(e) => {
           onUbah(e.target.value);
@@ -452,10 +451,10 @@ function TombolUrut({
   const aktif = urutan?.kunci === kunci;
   const naik = aktif && urutan?.arah === "naik";
   return (
+    <span role="columnheader" aria-sort={aktif ? (naik ? "ascending" : "descending") : "none"} className="inline-flex">
     <button
       type="button"
       onClick={() => onTekan(kunci)}
-      aria-sort={aktif ? (naik ? "ascending" : "descending") : "none"}
       title={judul ?? `Urutkan menurut ${typeof children === "string" ? children : kunci}: naik, turun, lalu kembali ke urutan antrian`}
       className={cn(
         "inline-flex items-center gap-1 rounded uppercase tracking-wide transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
@@ -465,6 +464,7 @@ function TombolUrut({
       <span>{children}</span>
       {aktif ? naik ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" /> : <ChevronsUpDown className="h-3 w-3 opacity-40" />}
     </button>
+    </span>
   );
 }
 
@@ -484,7 +484,7 @@ export function KepalaLajurSidang({
       data-kepala-lajur=""
       className={cn("hidden gap-x-4 px-[17px] pb-0.5 text-[10.5px] font-extrabold lg:grid", KISI_LAJUR)}
     >
-      <div role="columnheader" className="flex flex-wrap items-center gap-x-2">
+      <div role="presentation" className="flex flex-wrap items-center gap-x-2">
         <TombolUrut kunci="antrian" urutan={urutan} onTekan={onTekan} judul="Urutkan menurut nomor antrian (urutan bawaan); yang belum mengambil jatuh ke bawah">
           Waktu
         </TombolUrut>
@@ -494,17 +494,17 @@ export function KepalaLajurSidang({
           </TombolUrut>
         ) : null}
       </div>
-      <div role="columnheader">
+      <div role="presentation">
         <TombolUrut kunci="perkara" urutan={urutan} onTekan={onTekan}>
           Perkara &amp; para pihak
         </TombolUrut>
       </div>
-      <div role="columnheader">
+      <div role="presentation">
         <TombolUrut kunci="agenda" urutan={urutan} onTekan={onTekan}>
           Agenda
         </TombolUrut>
       </div>
-      <div role="columnheader" className="flex flex-wrap items-center gap-x-2">
+      <div role="presentation" className="flex flex-wrap items-center gap-x-2">
         <TombolUrut kunci="majelis" urutan={urutan} onTekan={onTekan}>
           Majelis
         </TombolUrut>
@@ -513,7 +513,7 @@ export function KepalaLajurSidang({
           Putusan
         </TombolUrut>
       </div>
-      <div role="columnheader" className="text-muted-foreground">
+      <div role="presentation" className="text-muted-foreground">
         Aksi
       </div>
     </div>
@@ -524,17 +524,17 @@ export function KepalaLajurSidang({
 export function KepalaLajurMediasi({ urutan, onTekan }: { urutan: UrutanLajur; onTekan: (kunci: string) => void }) {
   return (
     <div role="row" data-kepala-lajur="" className={cn("hidden gap-x-4 px-[17px] pb-0.5 text-[10.5px] font-extrabold lg:grid", KISI_LAJUR)}>
-      <div role="columnheader">
+      <div role="presentation">
         <TombolUrut kunci="waktu" urutan={urutan} onTekan={onTekan}>
           Waktu
         </TombolUrut>
       </div>
-      <div role="columnheader">
+      <div role="presentation">
         <TombolUrut kunci="perkara" urutan={urutan} onTekan={onTekan}>
           Perkara
         </TombolUrut>
       </div>
-      <div role="columnheader" className="flex flex-wrap items-center gap-x-2">
+      <div role="presentation" className="flex flex-wrap items-center gap-x-2">
         <TombolUrut kunci="mediator" urutan={urutan} onTekan={onTekan}>
           Mediator
         </TombolUrut>
@@ -543,7 +543,7 @@ export function KepalaLajurMediasi({ urutan, onTekan }: { urutan: UrutanLajur; o
           Tempat
         </TombolUrut>
       </div>
-      <div role="columnheader" className="flex flex-wrap items-center gap-x-2">
+      <div role="presentation" className="flex flex-wrap items-center gap-x-2">
         <TombolUrut kunci="tenggang" urutan={urutan} onTekan={onTekan} judul="Urutkan menurut sisa hari tenggang; yang laporannya sudah masuk jatuh ke bawah">
           Tenggang
         </TombolUrut>
@@ -552,7 +552,7 @@ export function KepalaLajurMediasi({ urutan, onTekan }: { urutan: UrutanLajur; o
           Hasil
         </TombolUrut>
       </div>
-      <div role="columnheader" className="text-muted-foreground">
+      <div role="presentation" className="text-muted-foreground">
         Aksi
       </div>
     </div>

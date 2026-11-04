@@ -149,11 +149,12 @@ describe("kepala lajur dapat diurutkan", () => {
     expect(tekan.mock.calls.map((c) => c[0])).toEqual(["antrian", "perkara", "agenda", "majelis", "putusan", "siap"]);
     const naik: UrutanLajur = { kunci: "agenda", arah: "naik" };
     rerender(<KepalaLajurSidang urutan={naik} onTekan={tekan} />);
-    expect(screen.getByRole("button", { name: /Agenda/ }).getAttribute("aria-sort")).toBe("ascending");
-    expect(screen.getByRole("button", { name: /Perkara/ }).getAttribute("aria-sort")).toBe("none");
+    const arah = (nama: RegExp) => screen.getByRole("button", { name: nama }).closest("[aria-sort]")?.getAttribute("aria-sort");
+    expect(arah(/Agenda/)).toBe("ascending");
+    expect(arah(/Perkara/)).toBe("none");
     expect(screen.queryByRole("button", { name: /Siap/ })).toBeNull();
     rerender(<KepalaLajurSidang urutan={{ kunci: "agenda", arah: "turun" }} onTekan={tekan} />);
-    expect(screen.getByRole("button", { name: /Agenda/ }).getAttribute("aria-sort")).toBe("descending");
+    expect(arah(/Agenda/)).toBe("descending");
   });
 
   it("kepala lajur Mediasi memakai kunci yang dikenal pengurut lama", () => {

@@ -920,7 +920,13 @@ export function AletaEcourtMediasi({
   // TAMPILAN BARU (4 Nov 2026): pilihan per pengguna, bawaan baru; tampilan lama tetap utuh di bawah.
   const [antarmuka, setAntarmuka] = useState<Antarmuka>("baru");
   useEffect(() => {
-    setAntarmuka(muatAntarmuka(KUNCI_ANTARMUKA_MEDIASI));
+    let batal = false;
+    void Promise.resolve().then(() => {
+      if (!batal) setAntarmuka(muatAntarmuka(KUNCI_ANTARMUKA_MEDIASI));
+    });
+    return () => {
+      batal = true;
+    };
   }, []);
   const baru = antarmuka === "baru";
   const pilihAntarmuka = useCallback((a: Antarmuka) => {

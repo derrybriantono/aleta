@@ -292,15 +292,16 @@ describe("Jadwal Sidang: tampilan baru", () => {
     const urutan = () => Array.from(container.querySelectorAll("article")).map((a) => a.getAttribute("aria-label")!.slice(0, 3));
     const awal = urutan();
     const agenda = within(container.querySelector("[data-kepala-lajur]") as HTMLElement).getByRole("button", { name: /Agenda/ });
+    const arah = () => agenda.closest("[aria-sort]")?.getAttribute("aria-sort");
     fireEvent.click(agenda);
-    await waitFor(() => expect(agenda.getAttribute("aria-sort")).toBe("ascending"));
+    await waitFor(() => expect(arah()).toBe("ascending"));
     // "Pembuktian Penggugat" (901, 902; sama -> urutan asal terjaga) < "Putusan" (903)
     expect(urutan()).toEqual(["901", "902", "903"]);
     fireEvent.click(agenda);
-    await waitFor(() => expect(agenda.getAttribute("aria-sort")).toBe("descending"));
+    await waitFor(() => expect(arah()).toBe("descending"));
     expect(urutan()).toEqual(["903", "901", "902"]);
     fireEvent.click(agenda);
-    await waitFor(() => expect(agenda.getAttribute("aria-sort")).toBe("none"));
+    await waitFor(() => expect(arah()).toBe("none"));
     expect(urutan()).toEqual(awal);
   });
 });

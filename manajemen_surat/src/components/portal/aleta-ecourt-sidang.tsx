@@ -4779,14 +4779,23 @@ export function AletaEcourtSidang({
   // berbeda hanya cara menyusun layar. Tampilan lewat alamat (modeUrl) tetap
   // lama: layar umum itu tidak berubah.
   const [antarmuka, setAntarmuka] = useState<Antarmuka>("baru");
+  const [saringanTersimpan, setSaringanTersimpan] = useState<SaringanTersimpan[]>([]);
   useEffect(() => {
     if (modeUrl) return;
-    setAntarmuka(muatAntarmuka(KUNCI_ANTARMUKA_SIDANG));
-    try {
-      setSaringanTersimpan(bacaSaringanTersimpan(window.localStorage.getItem(KUNCI_SARINGAN_TERSIMPAN)));
-    } catch {
-      /* saringan tersimpan tidak terbaca: daftar kosong */
-    }
+    // Sama seperti pilihan Ringkas/Lengkap: dibaca sesudah gambar pertama (peramban saja yang tahu).
+    let batal = false;
+    void Promise.resolve().then(() => {
+      if (batal) return;
+      setAntarmuka(muatAntarmuka(KUNCI_ANTARMUKA_SIDANG));
+      try {
+        setSaringanTersimpan(bacaSaringanTersimpan(window.localStorage.getItem(KUNCI_SARINGAN_TERSIMPAN)));
+      } catch {
+        /* saringan tersimpan tidak terbaca: daftar kosong */
+      }
+    });
+    return () => {
+      batal = true;
+    };
   }, [modeUrl]);
   const baru = antarmuka === "baru" && !modeUrl;
   const pilihAntarmuka = useCallback((a: Antarmuka) => {
@@ -4797,7 +4806,6 @@ export function AletaEcourtSidang({
   const [panelSaring, setPanelSaring] = useState(false);
   const [rentangTerbuka, setRentangTerbuka] = useState(false);
   const [majelisTerbuka, setMajelisTerbuka] = useState<string[]>([]);
-  const [saringanTersimpan, setSaringanTersimpan] = useState<SaringanTersimpan[]>([]);
   const simpanDaftarSaringan = useCallback((daftar: SaringanTersimpan[]) => {
     setSaringanTersimpan(daftar);
     try {
