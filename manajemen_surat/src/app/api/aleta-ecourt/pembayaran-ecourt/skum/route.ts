@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { bolehLihatRekening } from "@/lib/pembayaran-ecourt";
+import type { UserPersona } from "@/lib/types";
 import { getDatabase } from "@/server/db/client";
 import { getGatewayPembayaranEcourt } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { pastikanHakKasir } from "@/server/modules/aleta-ecourt/kasir-otomatis";
@@ -30,7 +32,7 @@ export async function GET(request: NextRequest) {
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
-    await pastikanHakKasir(db, actorUserId);
+    const aktor = await pastikanHakKasir(db, actorUserId);
     const q = request.nextUrl.searchParams;
     const nomor = String(q.get("nomor") || "").trim().slice(0, 80);
     const kertas = String(q.get("kertas") || "").toUpperCase() === "F4" ? "F4" : "A4";
@@ -50,7 +52,18 @@ export async function GET(request: NextRequest) {
           : "Perkara ini belum tercatat membayar lewat e-Court (atau belum ditarik dari e-Court).",
       });
     }
-    const isi = await buatPdfSkumEcourt(p.skum, { kertas, nomorPerkara: nomor });
+    // Rincian pembayaran ikut tercetak (rancangan 4 Nov 2026); bank/rekening hanya untuk peran yang berhak melihatnya.
+    const isi = await buatPdfSkumEcourt(p.skum, {
+      kertas,
+      nomorPerkara: nomor,
+      pembayaran: {
+        status: p.status,
+        tanggal: p.tanggal,
+        jam: p.jam,
+        nomorPembayaran: p.nomorPembayaran,
+        ...(bolehLihatRekening(aktor as UserPersona) ? { bank: p.bank, nomorRekening: p.nomorRekening } : {}),
+      },
+    });
     await appendAuditLog(db, {
       id: await nextPrefixedId(db, "audit_logs", "adt"),
       actorUserId,

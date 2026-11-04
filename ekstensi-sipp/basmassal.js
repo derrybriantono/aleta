@@ -4608,6 +4608,14 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
         };
         if (typeof MutationObserver === "function") new MutationObserver(segar).observe(sumber, { childList: true, characterData: true, subtree: true });
       }
+      // Sedang menulis ke SIPP (Kasir otomatis atau Kasir Manual): titik berdenyut di tabnya, walau tab lain yang tampak.
+      if ((kunci === "hari" || kunci === "otomatis") && typeof MutationObserver === "function") {
+        const isiBagian = peta[bk].isi;
+        new MutationObserver(() => {
+          if (isiBagian.hasAttribute("data-kasir-sibuk")) tb.setAttribute("data-sibuk", "");
+          else tb.removeAttribute("data-sibuk");
+        }).observe(isiBagian, { attributes: true, attributeFilter: ["data-kasir-sibuk"] });
+      }
     }
     pilihTab("hari");
     wadah.appendChild(akar);
