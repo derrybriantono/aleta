@@ -68,6 +68,21 @@ function jenisInstrumen(b) {
 }
 
 /** Alamat singkat: satu baris, paling banyak 90 huruf. */
+/** "Tergugat", "Pemohon II" - urutan disebut hanya bila sekedudukannya lebih dari satu. */
+function statusPihak(b, pihak) {
+  const { sebutanPerkara, sebutKe, akhiranUrut } = require("./kasirJurnalService");
+  const sebutan = sebutanPerkara({
+    alurPerkaraId: b.alurPerkaraId,
+    jenisPerkaraId: b.jenisPerkaraId,
+    jenisPerkaraNama: b.jenisPerkaraNama,
+    nomorPerkara: b.nomorPerkara,
+  });
+  const milik = pihak.find((x) => x.pihakId === Number(b.pihakId));
+  if (!milik) return Number(b.pihakKe) > 0 ? sebutKe(Number(b.pihakKe), sebutan) : "";
+  const sederet = pihak.filter((x) => x.ke === milik.ke);
+  return `${sebutKe(milik.ke, sebutan)}${akhiranUrut(sederet.indexOf(milik), sederet.length)}`;
+}
+
 function alamatSingkat(teks) {
   const t = bersih(teks).replace(/\s+/g, " ");
   return t.length > 90 ? `${t.slice(0, 87).trimEnd()}...` : t;
@@ -86,6 +101,22 @@ function buatLayanan(deps = {}) {
   async function semua(sql, params) {
     const baris = await kueri(sql, params);
     return Array.isArray(baris) ? baris : [];
+  }
+
+  /** Pihak tiap perkara per kedudukan, urut sesuai SIPP. Gagal baca = kosong; statusnya dari pihak_ke baris jurnal. */
+  async function bacaKedudukan(idPerkara) {
+    if (!idPerkara.length) return {};
+    const tanda = idPerkara.map(() => "?").join(",");
+    const bagian = [1, 2, 3, 4].map(
+      (ke) => `SELECT perkara_id AS perkaraId, ${ke} AS ke, urutan, id, pihak_id AS pihakId FROM perkara_pihak${ke} WHERE perkara_id IN (${tanda})`
+    );
+    const baris = await semua(
+      `${bagian.join(" UNION ALL ")} ORDER BY perkaraId ASC, ke ASC, urutan ASC, id ASC`,
+      [...idPerkara, ...idPerkara, ...idPerkara, ...idPerkara]
+    ).catch(() => []);
+    const peta = {};
+    for (const b of baris) (peta[Number(b.perkaraId)] = peta[Number(b.perkaraId)] || []).push({ ke: Number(b.ke), pihakId: Number(b.pihakId) });
+    return peta;
   }
 
   /**
@@ -149,6 +180,7 @@ function buatLayanan(deps = {}) {
     if (!r.ok) return r;
     const baris = await semua(
       `SELECT pb.id, pb.perkara_id AS perkaraId, p.nomor_perkara AS nomorPerkara,
+              p.alur_perkara_id AS alurPerkaraId, p.jenis_perkara_id AS jenisPerkaraId, p.jenis_perkara_nama AS jenisPerkaraNama,
               DATE_FORMAT(pb.tanggal_transaksi, '%Y-%m-%d') AS tanggal, pb.jenis_biaya_id AS jenisBiayaId,
               pb.uraian, pb.jumlah, pb.pihak_id AS pihakId, pb.pihak_ke AS pihakKe, ph.nama AS namaPihak, ph.alamat,
               c.jurusita_id AS jurusitaId, j.nama_gelar AS jurusitaNama,
@@ -178,6 +210,9 @@ function buatLayanan(deps = {}) {
       ).catch(() => []);
       for (const x of js) if (!aktif[Number(x.perkaraId)]) aktif[Number(x.perkaraId)] = { jurusitaId: Number(x.jurusitaId) || 0, nama: bersih(x.nama) };
     }
+    // 4 Nov 2026: status pihak di bawah nomor perkara (Tergugat, Pemohon II) - kedudukan dari tabel pihak perkara.
+    const idPerkara = [...new Set(baris.map((b) => Number(b.perkaraId)))];
+    const petaPihak = await bacaKedudukan(idPerkara);
     const daftar = baris.map((b) => {
       const cad = aktif[Number(b.perkaraId)] || { jurusitaId: 0, nama: "" };
       const ada = Number(b.jurusitaId) > 0;
@@ -191,6 +226,7 @@ function buatLayanan(deps = {}) {
         jenis: jenisInstrumen(b),
         jumlah: angka(b.jumlah),
         pihak: bersih(b.namaPihak),
+        statusPihak: statusPihak(b, petaPihak[Number(b.perkaraId)] || []),
         alamat: alamatSingkat(b.alamat),
         jurusitaId: ada ? Number(b.jurusitaId) : cad.jurusitaId,
         jurusita: ada ? bersih(b.jurusitaNama) : cad.nama,
@@ -213,6 +249,7 @@ module.exports = {
   buatLayanan,
   jenisInstrumen,
   alamatSingkat,
+  statusPihak,
   rentangSah,
   daftarPsp: (minta) => layananBawaan().daftarPsp(minta),
   instrumen: (minta) => layananBawaan().instrumen(minta),

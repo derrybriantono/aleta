@@ -267,7 +267,7 @@ describe("tutorial hidup - pencarian, kelompok, dan tombol ? per halaman", () =>
     const kasir = TUTORIAL.find((t) => t.id === "kasir")!;
     expect(cocokDenganKata(kasir, "KASIR")).toBe(true);
     expect(cocokDenganKata(kasir, "panjar")).toBe(true);
-    expect(cocokDenganKata(kasir, "pratinjau simpan")).toBe(true);
+    expect(cocokDenganKata(kasir, "konfirmasi simpan")).toBe(true);
     expect(cocokDenganKata(kasir, "mediasi")).toBe(false);
     expect(cocokDenganKata(kasir, "   ")).toBe(true);
   });

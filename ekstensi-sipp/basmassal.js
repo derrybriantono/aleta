@@ -3044,7 +3044,7 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
     const aksi = el("div", "aleta-basmassal-aksi");
     let yakin = false;
     let penunda = 0;
-    const kirim = async (keringKah) => {
+    const kirim = async () => {
       const baris = barisKirim(usulan.filter((u) => u.hasil !== "tersimpan"));
       if (!baris.length) return kabar(kotakKabar, "Tidak ada baris tercentang yang berjumlah.", "peringatan");
       if (!akun.siap) return kabar(kotakKabar, (data.akun && data.akun.pesan) || "Akun kasir SIPP belum ada - tidak ada yang dapat disimpan.", "salah");
@@ -3053,18 +3053,17 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
         // yang akan disimpan disebut di sini saja, tanpa satu permintaan pun.
         return kabar(kotakKabar, `Mode kering menyala - tidak ada yang dikirim. Yang akan disimpan: ${baris.map((x) => `${x.uraian} ${rupiah(x.jumlah)}`).join("; ")}.`, "peringatan");
       }
-      const sungguh = !keringKah;
-      kabar(kotakKabar, sungguh ? `Menyimpan ${baris.length} baris ke jurnal SIPP…` : "Menyusun pratinjau…");
+      kabar(kotakKabar, `Menyimpan ${baris.length} baris ke jurnal SIPP…`);
       for (const b of aksi.querySelectorAll("button")) b.disabled = true;
       akar.setAttribute("data-kasir-sibuk", "");
       try {
         // Sebelum menulis: alamat halaman disimpan supaya muat ulang sesudahnya tetap di sini (muat-ulang-sipp.js).
-        if (sungguh && globalThis.aletaMuatUlangSipp) await globalThis.aletaMuatUlangSipp.catatAlamat("").catch(() => undefined);
+        if (globalThis.aletaMuatUlangSipp) await globalThis.aletaMuatUlangSipp.catatAlamat("").catch(() => undefined);
         const isi = await ambil(API, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           // Akun SIPP tidak dikirim: server memakai AKUN KASIR.
-          body: JSON.stringify({ perkaraId: String(data.perkara.perkaraId), baris, kering: !sungguh }),
+          body: JSON.stringify({ perkaraId: String(data.perkara.perkaraId), baris, kering: false }),
         });
         const dikirim = usulan.filter((u) => u.hasil !== "tersimpan" && u.pilih && Number(u.jumlah) > 0);
         const tandai = (ke, hasil, pesan) => {
@@ -3076,17 +3075,6 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
         };
         for (const h of Array.isArray(isi.ditolak) ? isi.ditolak : []) tandai(h.ke, "ditolak", h.pesan);
         for (const h of Array.isArray(isi.dilewati) ? isi.dilewati : []) tandai(h.ke, "sudah-ada", h.pesan);
-        if (!sungguh) {
-          const n = Array.isArray(isi.rencana) ? isi.rencana.length : 0;
-          gambarBaris();
-          return kabar(
-            kotakKabar,
-            n
-              ? `Pratinjau: ${n} baris akan ditulis di jurnal SIPP atas akun kasir ${(data.akun && (data.akun.nama || data.akun.username)) || ""}. Belum ada yang disimpan.`
-              : String(isi.pesan || isi.alasan || "Pratinjau: tidak ada baris yang perlu ditulis."),
-            n ? "" : "peringatan"
-          );
-        }
         for (const h of Array.isArray(isi.hasil) ? isi.hasil : []) tandai(h.ke, h.keadaan || "gagal", h.pesan);
         gambarBaris();
         const r = isi.ringkas || {};
@@ -3131,7 +3119,6 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
         for (const b of aksi.querySelectorAll("button")) b.disabled = false;
       }
     };
-    const tPratinjau = tombol("Pratinjau", "", () => void kirim(true));
     const tSimpan = tombol(kering() ? "Simpan (mode kering: pratinjau)" : "Simpan ke SIPP", "aleta-basmassal-tombol-utama", () => {
       if (!yakin && !kering()) {
         yakin = true;
@@ -3146,13 +3133,12 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
       yakin = false;
       clearTimeout(penunda);
       tSimpan.textContent = kering() ? "Simpan (mode kering: pratinjau)" : "Simpan ke SIPP";
-      void kirim(false);
+      void kirim();
     });
-    aksi.appendChild(tPratinjau);
     aksi.appendChild(tSimpan);
     aksi.appendChild(tombol("Susun ulang", "", () => void muatUlang()));
     if (bacaSaja(data)) {
-      for (const b of [tPratinjau, tSimpan]) b.disabled = true;
+      tSimpan.disabled = true;
       akar.setAttribute("data-kasir-baca", "");
       kotakKabar.appendChild(el("div", "aleta-basmassal-kabar aleta-basmassal-kabar-peringatan", KABAR_BACA_SAJA));
     }
@@ -3408,7 +3394,18 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
           urBaris.appendChild(ur);
           const dasarRinci = [u.peristiwa, u.dasar, u.yakin && u.yakin !== "tinggi" ? `Keyakinan mesin: ${u.yakin} - periksa sebelum disimpan.` : ""].filter(Boolean).map(String);
           if (dasarRinci.length) urBaris.appendChild(ikonInfo(String(u.peristiwa || u.dasar).slice(0, 160), dasarRinci, u.uraian || "Dasar usulan"));
+          // 4 Nov 2026: J = baris ini dicatat atas jurusita; namanya tampil saat tetikus di atasnya.
+          if (kasirBaru && u.jurusitaNama) {
+            const j = el("span", "aleta-kasir-jurusita", "J");
+            j.title = `Jurusita: ${u.jurusitaNama}`;
+            j.setAttribute("aria-label", `Jurusita: ${u.jurusitaNama}`);
+            j.setAttribute("tabindex", "0");
+            urBaris.appendChild(j);
+          }
           tdU.appendChild(urBaris);
+          // 4 Nov 2026: panggilan ke berapa dan untuk sidang kapan, agar tidak terbaca sebagai baris yang sudah dijurnal.
+          const sidangUntuk = kasirBaru ? /^(.*?) \(sidang (\d{4}-\d{2}-\d{2})\)$/.exec(String(u.peristiwa || "")) : null;
+          if (sidangUntuk) tdU.appendChild(el("div", "aleta-kasir-peristiwa", `${sidangUntuk[1]} · sidang ${tanggalTeks(sidangUntuk[2])}`));
           tdU.appendChild(peringatResi);
           tr.appendChild(tdU);
           const tdJ = el("td", "aleta-kasir-angka aleta-kasir-kol-nominal");
@@ -3584,10 +3581,8 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
       });
       tBatal.disabled = !n;
       tombolKaki.appendChild(tBatal);
-      const tPratinjau = tombol("Pratinjau", "", () => void jalankan(true));
       const tSimpan = tombol(kering() ? "Masukkan ke jurnal SIPP (mode kering: pratinjau)" : "Masukkan ke jurnal SIPP", "aleta-basmassal-tombol-utama", tekanSimpan);
-      for (const b of [tPratinjau, tSimpan]) b.disabled = !n || !(akun && akun.siap) || bacaSaja();
-      tombolKaki.appendChild(tPratinjau);
+      tSimpan.disabled = !n || !(akun && akun.siap) || bacaSaja();
       tombolKaki.appendChild(tSimpan);
     };
     let yakin = false;

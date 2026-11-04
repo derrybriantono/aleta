@@ -79,11 +79,26 @@ function kepalaTabel(k: Kanvas, kolom: Kolom[]) {
   k.y -= tinggi + 2;
 }
 
+/** 4 Nov 2026: kata tanpa spasi (nomor perkara) yang lebih lebar dari kolom dipatah di garis miring, agar tidak menimpa kolom sebelah. */
+function pasKolom(huruf: PDFFont, baris: string, ukuran: number, lebar: number): string[] {
+  const hasil: string[] = [];
+  let sisa = baris;
+  while (huruf.widthOfTextAtSize(sisa, ukuran) > lebar) {
+    let potong = sisa.lastIndexOf("/");
+    while (potong > 0 && huruf.widthOfTextAtSize(sisa.slice(0, potong + 1), ukuran) > lebar) potong = sisa.lastIndexOf("/", potong - 1);
+    if (potong <= 0) break;
+    hasil.push(sisa.slice(0, potong + 1));
+    sisa = sisa.slice(potong + 1);
+  }
+  hasil.push(sisa);
+  return hasil;
+}
+
 /** Satu baris tabel; sel dipatah, tinggi baris = sel tertinggi. Halaman baru bila tidak muat. */
 function barisTabel(k: Kanvas, kolom: Kolom[], sel: string[], opsi: { tebal?: boolean } = {}) {
   const UK = 8.5;
   const huruf = opsi.tebal ? k.tebal : k.biasa;
-  const isi = sel.map((s, i) => patahBaris(huruf, s || "", UK, kolom[i].lebar - 8));
+  const isi = sel.map((s, i) => (s || "").split("\n").flatMap((bagian) => patahBaris(huruf, bagian, UK, kolom[i].lebar - 8)).flatMap((b) => pasKolom(huruf, b, UK, kolom[i].lebar - 8)));
   const tinggi = Math.max(...isi.map((x) => x.length)) * (UK + 2.5) + 5;
   if (k.y - tinggi < 60) {
     k.hal = k.dok.addPage([k.lebarKertas, k.tinggiKertas]);
@@ -172,10 +187,10 @@ export async function buatPdfInstrumen(
       `Tanggal: ${periode(opsi.dari, opsi.sampai)}`,
     ]
   );
-  const kolom = susunKolom(k, [["No", 0.45], ["Nomor perkara", 1.75], ["Pihak", 1.9], ["Alamat", 2.6], ["Jenis", 1.8], ["Tanggal", 1.15], ["Biaya", 1.25, true]]);
+  const kolom = susunKolom(k, [["No", 0.45], ["Nomor perkara", 2.15], ["Pihak", 1.85], ["Alamat", 2.35], ["Jenis", 1.8], ["Tanggal", 1.15], ["Biaya", 1.25, true]]);
   kepalaTabel(k, kolom);
   kelompok.baris.forEach((b, i) => {
-    barisTabel(k, kolom, [String(i + 1), b.nomorPerkara, b.pihak || "-", b.alamat || "-", b.jenis, tanggalIndonesia(b.tanggal), rupiahTitik(b.jumlah)]);
+    barisTabel(k, kolom, [String(i + 1), b.statusPihak ? `${b.nomorPerkara}\n${b.statusPihak}` : b.nomorPerkara, b.pihak || "-", b.alamat || "-", b.jenis, tanggalIndonesia(b.tanggal), rupiahTitik(b.jumlah)]);
   });
   barisTabel(k, kolom, ["", "Jumlah diterima jurusita", "", "", "", "", rupiahTitik(kelompok.total)], { tebal: true });
   tandaTangan(k, "Yang menyerahkan, Kasir,", "Yang menerima, Jurusita,", periode(opsi.sampai, opsi.sampai), "", kelompok.jurusitaId > 0 ? kelompok.jurusita : "");

@@ -1,6 +1,6 @@
-export const APP_VERSION = "2.46.0";
+export const APP_VERSION = "2.46.1";
 export const APP_VERSION_LABEL =
-  "ALETA Judicia v2.46.0 - November 2026";
+  "ALETA Judicia v2.46.1 - November 2026";
 
 export type PatchNote = {
   version: string;
@@ -21,6 +21,36 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.46.1",
+    title: "ALETA Judicia v2.46.1 - November 2026",
+    date: "2026-11-04",
+    status: "Terpasang bersama rilis ekstensi 1.205.74",
+    summary:
+      "Perbaikan Kasir sampai rilis ekstensi 1.205.74 (4 November 2026): usulan ganda, urutan pihak, ikon jurusita, dan status pihak pada Instrumen.",
+    added: [
+      "Ikon J berisi nama jurusita dan keterangan panggilan ke berapa untuk sidang tanggal berapa pada baris biaya Kasir.",
+      "Status pihak di bawah nomor perkara pada cetak Instrumen.",
+    ],
+    changed: [
+      "Uraian biaya selalu menyebut urutan pihak bila sekedudukannya lebih dari satu.",
+      "Centang perkara dan centang biaya dibedakan; jarak antarperkara dilonggarkan.",
+      "Tombol Pratinjau dihapus dari Kasir tampilan baru dan Kasir per perkara; tampilan lama tetap memilikinya.",
+    ],
+    fixed: [
+      "Usulan PNBP relaas pihak kedua yang muncul lagi padahal dua baris sudah ditulis atas pihak pertama.",
+      "Nomor perkara yang menimpa kolom Pihak pada cetak Instrumen.",
+    ],
+    security: [
+      "Tidak ada perubahan keamanan.",
+    ],
+    operationalNotes: [
+      "Bot dan portal dibangun ulang; tanpa migrasi. Bot hanya membaca tambahan data pihak perkara untuk Instrumen.",
+    ],
+    knownLimitations: [
+      "Panggilan ulang sesudah sidang ditunda tetap diusulkan walau relaas dan resinya belum ada, karena memang belum dijurnal.",
+    ],
+  },
   {
     version: "2.46.0",
     title: "ALETA Judicia v2.46.0 - November 2026",

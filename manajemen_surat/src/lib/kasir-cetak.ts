@@ -44,6 +44,8 @@ export type BarisInstrumen = {
   jenis: string;
   jumlah: number;
   pihak: string;
+  /** "Tergugat", "Pemohon II"; kosong bila baris jurnal tidak menunjuk pihak. */
+  statusPihak?: string;
   alamat: string;
   jurusitaId: number;
   jurusita: string;

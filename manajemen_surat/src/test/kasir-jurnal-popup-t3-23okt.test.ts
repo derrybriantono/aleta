@@ -16,7 +16,7 @@ import { afterEach, describe, expect, it } from "vitest";
  * Yang dijaga:
  *   - kasir/Admin: tombol ada di bawah judul; membuka POP-UP berisi Kasir per perkara (GET kasir?perkaraId=...);
  *     satu klik di luar kotak tidak menutup, klik DUA KALI / Escape DUA KALI menutup; tombol tulis hidup;
- *   - pengawas (panitera/panmud): tombol ada, tetapi isinya hanya membaca - Pratinjau/Simpan mati, tidak ada POST;
+ *   - pengawas (panitera/panmud): tombol ada, tetapi isinya hanya membaca - Simpan mati, tidak ada POST;
  *   - hakim / peran lain / Tampilan Lama / halaman lain: tidak ada tombol;
  *   - daftar jurnal: Kasir harian; selama simpan berjalan penutupan DITAHAN;
  *   - warna: gaya tombol memakai token --s-* (cadangan di var()), tanpa angka warna di aturan tema gelap.
@@ -231,7 +231,7 @@ describe("1. Kasir: tombol di bawah judul, pop-up berisi Kasir per perkara", () 
 });
 
 describe("2. Pengawas (panitera/panmud): membaca saja", () => {
-  it("tombol ada; isi pop-up bermode baca; Pratinjau & Simpan mati; tidak satu pun POST", async () => {
+  it("tombol ada; isi pop-up bermode baca; Simpan mati; tidak satu pun POST", async () => {
     const h = buka(PENGAWAS);
     const tb = await sampai(() => tombolDari(h), "tombol pengawas");
     tb.click();
@@ -239,10 +239,9 @@ describe("2. Pengawas (panitera/panmud): membaca saja", () => {
     await sampai(() => tombolTeks(k, /Simpan/), "isi Kasir");
     expect(k.querySelector(".aleta-kj-baca")!.textContent).toMatch(/Mode baca/);
     expect(k.querySelector("[data-kasir-baca]")).not.toBeNull();
-    for (const b of [tombolTeks(k, /Simpan/)!, tombolTeks(k, /Pratinjau/)!]) {
-      expect(b.disabled).toBe(true);
-      b.click();
-    }
+    const simpan = tombolTeks(k, /Simpan/)!;
+    expect(simpan.disabled).toBe(true);
+    simpan.click();
     await tunggu(30);
     expect(h.permintaan.filter((p) => p.metode === "POST")).toHaveLength(0);
   });
