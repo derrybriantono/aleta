@@ -429,6 +429,10 @@ async function kirimUnggahSippAbt(siap, olehUsername, denganAnonim) {
   badan.append("nomorPerkara", b.nomor);
   badan.append("olehUsername", olehUsername || "");
   badan.append("putusan", new Blob([siap.isiRtf], { type: "application/rtf" }), `${siap.namaDasar}.rtf`);
+  // "Kerjakan perkara ini" dengan "Unggah ke SIPP" dicentang = keputusan petugas mengganti e-Doc yang sudah
+  // ada (perilaku semula); rute meminta tanda eksplisit per slot sejak 5 Nov 2026.
+  badan.append("timpaPutusan", "1");
+  if (denganAnonim) badan.append("timpaAnonim", "1");
   if (denganAnonim) {
     badan.append("anonimisasi", new Blob([siap.isiAnonim], { type: "application/rtf" }), `${siap.namaDasar} - anonim.rtf`);
     // 16 Okt (F1.2): ABT hanya menyamarkan nama SIPP utuh persis hurufnya; nasab anak,

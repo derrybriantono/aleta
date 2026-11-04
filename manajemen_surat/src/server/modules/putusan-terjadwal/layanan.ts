@@ -16,6 +16,7 @@ import {
   ringkasPilihanForm,
   sebutWaktuWita,
   susunJadwal,
+  timpaSesuaiLangkah,
   witaKeMs,
   type HasilJadwal,
   type PilihanForm,
@@ -67,8 +68,10 @@ import { susunRingkasanForm, type RingkasanForm } from "./ringkasan-form";
  *     perkara LAIN tidak dipasang; berkas dipasang ke satu butir saja.
  *   - Satu perkara satu jadwal aktif: perkara yang sudah dijadwalkan (menunggu /
  *     sedang dikerjakan) tidak dijadwalkan lagi.
- *   - Tidak menimpa apa pun: pelaksana memeriksa SIPP tepat sebelum menulis dan
- *     melewati putusan/e-Doc yang sudah ada.
+ *   - Tidak menimpa tanpa tanda: pelaksana memeriksa SIPP tepat sebelum menulis dan
+ *     melewati putusan/e-Doc yang sudah ada, KECUALI langkah yang oleh penjadwal dicentang untuk
+ *     diganti (pilihan.timpa.form/putusan/anonim, tersimpan pada butirnya). Jadwal tanpa tanda itu
+ *     (termasuk jadwal lama) tidak pernah menimpa.
  *   - Tidak ada kata ALETA yang ditulis ke SIPP; di sini hanya catatan ALETA.
  */
 
@@ -361,7 +364,9 @@ export async function buatJadwal(
       if (galat instanceof ApiError) throw new ApiError(galat.status, `${sebut}: ${galat.message}`);
       throw galat;
     }
-    bersih.push({ m, id: perkaraId, berkas, langkah, pilihan: bersihkanPilihanForm(m.pilihan) });
+    // Tanda timpa hanya berarti untuk langkah yang dipilih (timpaSesuaiLangkah).
+    const pilihan = timpaSesuaiLangkah(bersihkanPilihanForm(m.pilihan), langkah);
+    bersih.push({ m, id: perkaraId, berkas, langkah, pilihan });
   }
 
   // Jam: server menghitung dengan benih yang sama dengan pratinjau.

@@ -5871,7 +5871,15 @@ router.post("/sipp/putusan-unggah", requireInternalToken, async (req, res) => {
       // Uji rilis U1 (9 Okt 2026): akun ALETA penekan untuk jejak ALETA -
       // sebelumnya tidak diteruskan, kolom operator jejak unggah kosong.
       operator: String(badan.operator || ""),
+      // Tanda timpa EKSPLISIT per slot (5 Nov 2026): hanya `true` yang menimpa; tanpa tanda, e-Doc yang
+      // sudah terisi dijawab "sudah_ada" dan tidak disentuh.
+      timpa: { putusan: badan.timpaPutusan === true, anonimisasi: badan.timpaAnonim === true },
     });
+    // Penolakan seluruhnya (mis. semua slot "sudah_ada") tetap membawa kalimatnya: gerbang membaca `error`.
+    if (!hasil.ok && !hasil.error) {
+      const sebab = hasil.pesan || ((hasil.berkas || []).find((x) => x && !x.ok && x.pesan) || {}).pesan;
+      if (sebab) hasil.error = sebab;
+    }
     res.status(hasil.ok ? 200 : 400).json(hasil);
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });

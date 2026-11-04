@@ -20,7 +20,9 @@
  * lanjut di tempat yang sama:
  *
  *   1. cek       e-Doc apa yang SUDAH ada di SIPP (rute unggah-massal/cek);
- *                yang sudah ada TIDAK diganti, hanya dilaporkan "sudah ada";
+ *                yang sudah ada TIDAK diganti dan dilaporkan "sudah ada" - KECUALI slot yang
+ *                dicentang petugas untuk diganti (timpaPutusan / timpaAnonim, 5 Nov 2026), yang
+ *                lalu ditimpa dan dilaporkan "diganti" terpisah dari "terunggah" dan "dilewati";
  *   2. putusan   berkas putusan: berkas yang dipilih petugas di panel bila ada;
  *                bila tidak, RTF yang dicetak ABT dari Blangko Derry putusan
  *                perkara ini (blangko dipilih menurut jenis, status, verstek,
@@ -38,8 +40,9 @@
  * ATURAN YANG DIJAGA
  *   - Putusan Akhir yang SUDAH tersimpan tidak pernah dibatalkan oleh langkah
  *     e-Doc mana pun. Anonimisasi yang gagal tidak menahan e-Doc putusan.
- *   - Tidak ada e-Doc yang ditimpa. Cek gagal terbaca = tidak mengunggah apa
- *     pun (lebih baik berhenti daripada menimpa), dengan tombol mengulang.
+ *   - e-Doc tidak ditimpa tanpa tanda eksplisit per slot (timpaPutusan / timpaAnonim). Cek
+ *     gagal terbaca = tidak mengunggah apa pun (lebih baik berhenti daripada menimpa), dengan
+ *     tombol mengulang - juga bila slotnya bertanda timpa.
  *   - Berkas putusan/anonimisasi belum tersedia (blangko belum dipetakan,
  *     token ABT belum tercatat, sesi ABT habis, ...) = disebut sebabnya, dan
  *     tombol "Ulangi unggah e-Doc saja" mengulang LANGKAH e-Doc tanpa
@@ -392,7 +395,10 @@
       if (!kirim[kunci]) continue;
       const b = dari(kunci);
       if (b && b.ok) {
-        hasilLangkah.push(langkah(kunci, `terunggah${b.jalur ? ` (${b.jalur})` : ""}`, "ok"));
+        // "Diganti" disebut terpisah dari "terunggah": e-Doc lama memang ada dan sengaja ditimpa petugas.
+        const l = langkah(kunci, `${b.ditimpa ? "diganti (menimpa e-Doc lama)" : "terunggah"}${b.jalur ? ` (${b.jalur})` : ""}`, "ok");
+        if (b.ditimpa) l.ditimpa = true;
+        hasilLangkah.push(l);
       } else if (b) {
         const pesanGagal = fungsi("pesanGagalUnggah");
         hasilLangkah.push(langkah(kunci, `gagal - ${pesanGagal ? pesanGagal(b) : sebaris(b.alasan || b.pesan || "ditolak")}`, "salah"));
@@ -415,7 +421,9 @@
    * Menjalankan langkah e-Doc SESUDAH Putusan Akhir tersimpan (atau diulang sendirian).
    *
    * @param {{nomorPerkara:string, kabar?:HTMLElement, wadah?:HTMLElement, putusan?:File|null,
-   *          anonim?:File|null, denganAnonim?:boolean, perkaraId?:string, deps?:object}} p
+   *          anonim?:File|null, denganAnonim?:boolean, perkaraId?:string, deps?:object,
+   *          timpaPutusan?:boolean, timpaAnonim?:boolean}} p
+   *   timpaPutusan / timpaAnonim  tanda eksplisit: ganti e-Doc yang sudah ada (bawaan: dilewati)
    *   putusan  berkas pilihan petugas (bila ada); kosong = dicetak dari ABT
    *   anonim   berkas anonimisasi pilihan petugas (bila ada); kosong = dibuat
    * @returns {Promise<{ok:boolean, bunyi:string, langkah:Array, perluBerkas?:boolean}>} TIDAK PERNAH melempar
@@ -459,7 +467,7 @@
       }
       arg.perkaraId = perkaraId;
 
-      // 1. Yang sudah ada di SIPP tidak diganti.
+      // 1. Yang sudah ada di SIPP tidak diganti, kecuali slot bertanda timpa eksplisit.
       lapor("Memeriksa e-Doc yang sudah ada di SIPP…");
       const c = await (arg.deps.cek || cekSlot)(perkaraId);
       if (!c.ok) {
@@ -473,8 +481,11 @@
         if (denganAnonim) hasil.push(langkah("anonimisasi", denganPutusan ? "tidak dikerjakan - Putusan Akhir belum terbaca di SIPP" : "gagal - Putusan Akhir belum terbaca di SIPP, jadi e-Doc belum dapat diunggah", "salah"));
         return selesai(false);
       }
-      const perluPutusan = denganPutusan && !c.adaPutusan;
-      const perluAnonim = denganAnonim && !c.adaAnonim;
+      // Hanya tanda `true` yang menimpa; slot bertanda timpa yang ternyata belum ada ditulis sebagai biasa.
+      const timpaPutusan = arg.timpaPutusan === true && Boolean(c.adaPutusan);
+      const timpaAnonim = arg.timpaAnonim === true && Boolean(c.adaAnonim);
+      const perluPutusan = denganPutusan && (!c.adaPutusan || timpaPutusan);
+      const perluAnonim = denganAnonim && (!c.adaAnonim || timpaAnonim);
       if (denganPutusan && !perluPutusan) hasil.push(langkah("putusan", `sudah ada di SIPP${c.jalurPutusan ? ` (${c.jalurPutusan})` : ""}, dilewati - tidak diganti`, "lewat"));
       if (denganAnonim && !perluAnonim) {
         hasil.push(langkah("anonimisasi", `sudah ada di SIPP${c.jalurAnonim ? ` (${c.jalurAnonim})` : ""}, dilewati - tidak diganti`, "lewat"));
@@ -508,7 +519,7 @@
       }
       if (perluAnonim && !anonim) hasil.push(langkah("anonimisasi", `tidak diunggah - ${sebabAnonim}`, "salah"));
 
-      const kirim = { putusan: perluPutusan, anonimisasi: Boolean(anonim) };
+      const kirim = { putusan: perluPutusan, anonimisasi: Boolean(anonim), timpaPutusan: perluPutusan && timpaPutusan, timpaAnonim: Boolean(anonim) && timpaAnonim };
       if (!kirim.putusan && !kirim.anonimisasi) return selesai(false);
 
       // 4. Satu kiriman.
@@ -527,6 +538,9 @@
         wadah: arg.wadah || null,
         tetapUnggah: (anonim && anonim.tetapUnggah) || null,
         samarkanSisa: Boolean(anonim && anonim.samarkanSisa),
+        // Tanda timpa eksplisit per slot - tanpa tanda, rute menolak slot yang sudah terisi ("sudah_ada").
+        timpaPutusan: kirim.timpaPutusan,
+        timpaAnonim: kirim.timpaAnonim,
       });
       hasil.push(...langkahDariUnggah(r, kirim));
       return selesai(hasil.every((l) => l.nada !== "salah"));
@@ -656,7 +670,7 @@
   // perkara tidak dilepas (perkara 615/Pdt.G/2026/PA.Dgl). Karena itu niat "Putusan Otomatis + e-Doc" dicatat di
   // penyimpanan ekstensi SEBELUM Simpan ditekan dan dihapus begitu jalan ini selesai melaporkan; catatan yang
   // masih ada saat halaman perkara itu termuat berarti jalannya terputus, dan e-Doc dilanjutkan di sini
-  // (e-Doc yang sudah ada di SIPP tetap tidak diganti: cekSlot di jalankan()).
+  // (e-Doc yang sudah ada di SIPP tetap tidak diganti tanpa tanda timpa - yang dititipkan di catatan ini: cekSlot di jalankan()).
   const KUNCI_TERTUNDA = "putusanEdocTertunda";
   const BATAS_TERTUNDA_MS = 20 * 60 * 1000;
   const BATAS_BERKAS_BYTE = 4 * 1024 * 1024;
@@ -722,6 +736,10 @@
         perkaraId: sebaris(p.perkaraId),
         denganPutusan: p.denganPutusan !== false,
         denganAnonim: p.denganAnonim !== false,
+        // Tanda timpa ikut dititipkan: halaman yang dimuat ulang sesudah Simpan tidak boleh diam-diam
+        // mengubah "ganti" menjadi "lewati".
+        timpaPutusan: p.timpaPutusan === true,
+        timpaAnonim: p.timpaAnonim === true,
         putusan: await berkasKeTeks(p.putusan),
         putusanRtf: await berkasKeTeks(p.putusanRtf),
         anonim: await berkasKeTeks(p.anonim),
@@ -791,6 +809,8 @@
         wadah: arg.wadah,
         denganPutusan: rec.denganPutusan !== false,
         denganAnonim: rec.denganAnonim !== false,
+        timpaPutusan: rec.timpaPutusan === true,
+        timpaAnonim: rec.timpaAnonim === true,
         putusan: teksKeBerkas(rec.putusan),
         putusanRtf: teksKeBerkas(rec.putusanRtf),
         anonim: teksKeBerkas(rec.anonim),

@@ -592,7 +592,7 @@ function susunRapor(
 export function nilaiPraperiksa(
   fakta: FaktaPraperiksa,
   usulan: UsulanPutusan,
-  opsi: { pendapat?: PendapatAi | null } = {}
+  opsi: { pendapat?: PendapatAi | null; timpa?: boolean } = {}
 ): RaporPraperiksa {
   const temuan: Temuan[] = [];
   const diperiksa: string[] = [];
@@ -605,14 +605,15 @@ export function nilaiPraperiksa(
   // ── 1. Sudah putus ───────────────────────────────────────────────────────
   diperiksa.push("sudah-putus");
   if (fakta.putusan?.ada && fakta.putusan.tanggalPutusan) {
-    tambah(
-      temuan,
-      "sudah-putus",
-      "hentikan",
-      "Perkara ini SUDAH putus di SIPP",
-      `Tercatat putusan ${tanggalRingkas(fakta.putusan.tanggalPutusan)}${fakta.putusan.statusPutusan ? ` (${fakta.putusan.statusPutusan})` : ""}. Mengisi ulang akan menimpa putusan yang sudah ada.`,
-      "sipp"
-    );
+    const rincianAda = `Tercatat putusan ${tanggalRingkas(fakta.putusan.tanggalPutusan)}${fakta.putusan.statusPutusan ? ` (${fakta.putusan.statusPutusan})` : ""}.`;
+    if (opsi.timpa === true) {
+      // 5 Nov 2026: petugas SENDIRI mencentang "ganti" Putusan Akhir yang sudah terisi - itu keputusannya,
+      // jadi keadaan "sudah putus" bukan lagi pertentangan yang menahan. Hanya dicatat; pemeriksaan lain
+      // (tanggal, status, verstek, majelis, pihak) tetap berlaku seperti biasa.
+      tambah(temuan, "sudah-putus", "catatan", "Perkara ini sudah putus; isian ini sengaja menimpa", `${rincianAda} Anda memilih mengganti Putusan Akhir yang sudah tersimpan.`, "sipp");
+    } else {
+      tambah(temuan, "sudah-putus", "hentikan", "Perkara ini SUDAH putus di SIPP", `${rincianAda} Mengisi ulang akan menimpa putusan yang sudah ada.`, "sipp");
+    }
   }
 
   // ── 2. Tanggal putusan ───────────────────────────────────────────────────

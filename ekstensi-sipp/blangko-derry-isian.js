@@ -10331,6 +10331,9 @@
       badan.append("olehUsername", (akun && (akun.usernameSipp || akun.username)) || "");
       badan.append("putusan", new Blob([rtfBuf], { type: "application/rtf" }), `${namaDasar}.rtf`);
       if (denganAnonim) badan.append("anonimisasi", new Blob([anonimRtf], { type: "application/rtf" }), `${namaDasar} - anonim.rtf`);
+      // Tombol unggah e-Doc Blangko Derry ditekan petugas sendiri = keputusan mengganti yang sudah ada (perilaku semula).
+      badan.append("timpaPutusan", "1");
+      if (denganAnonim) badan.append("timpaAnonim", "1");
       const r = typeof alatAmbil === "function" ? await alatAmbil(API_UNGGAH_SIPP, { method: "POST", body: badan, credentials: "include", batasMs: BATAS_LAMA_MS }, "Mengunggah putusan ke SIPP") : await fetch(API_UNGGAH_SIPP, { method: "POST", body: badan, credentials: "include" });
       const luar = await r.json().catch(() => null);
       const jawab = luar && luar.data ? luar.data : luar;

@@ -555,8 +555,78 @@ describe("tahan muat ulang, dua tab, dan pengerjaan terputus", () => {
 describe("tidak ada penulis SIPP baru", () => {
   it("modul ini tidak memanggil rute SIPP/bot sendiri dan tidak memuat e-Doc: hanya portal + alur Putusan Otomatis yang sudah ada", () => {
     expect(PERAMBAN).not.toMatch(/manage_|validateInput|\/SIPP\/(?!perkara_detil)|aletaPutusanEdoc|jalankan\(\{/);
-    expect(PERAMBAN).toContain("bagian.otomatis({ edoc: false, denganPutusan: false, denganAnonim: false, melayang: true })");
+    // Hanya Putusan Akhir yang diisi dari sini (e-Doc oleh server); tanda timpa form ikut bila dicentang penjadwal.
+    expect(PERAMBAN).toMatch(/bagian\.otomatis\(\{\s*edoc: false,\s*denganPutusan: false,\s*denganAnonim: false,\s*melayang: true,/);
     const alamat = [...PERAMBAN.matchAll(/"(\/aleta\/api\/[^"]+)"/g)].map((m) => m[1]);
     expect(alamat).toEqual(["/aleta/api/aleta-ecourt/putusan-terjadwal/peramban"]);
+  });
+});
+
+// ============================================================================
+describe("MENIMPA Putusan Akhir yang sudah terisi (5 Nov 2026): hanya atas tanda eksplisit pada butirnya", () => {
+  const rec = (ekstra: Record<string, unknown> = {}) => ({ id: "ptb-1", nomorPerkara: NOMOR, perkaraId: "30684", pilihan: {}, akunSipp: "hakim.satu", mulai: Date.now(), pada: Date.now(), tahap: "menuju", ...ekstra });
+  const TERISI = { terisi: true, tanggal: "2026-10-19", status: "Dikabulkan" };
+
+  it("butir bertanda timpa.form + SIPP memuat putusan: draf disiapkan, blangko dibuka lewat alur yang sama, otomatis() dipanggil dengan timpaIsi; dilaporkan selesai (menimpa)", async () => {
+    const h = buka({ terisi: TERISI });
+    await siap(h);
+    h.server.giliran = BUTIR({ pilihan: { timpa: { form: true } } });
+    await mod(h).periksaSekarang();
+    expect(h.urut).toEqual(["cek-terisi", "draf", "buka-blangko", "gambar-ulang", "otomatis", "lapor:selesai"]);
+    expect(h.opsiOto).toHaveLength(1);
+    expect(h.opsiOto[0]).toMatchObject({ edoc: false, denganPutusan: false, denganAnonim: false, melayang: true, timpaIsi: true });
+    expect(typeof h.opsiOto[0].saatJawaban).toBe("function");
+    expect(h.server.laporan[0]).toMatchObject({ id: "ptb-1", hasil: "selesai" });
+    expect(h.server.laporan[0].catatan).toMatch(/disimpan ulang di SIPP \(menimpa isi lama\)/);
+  });
+
+  it("TANPA tanda (jadwal lama, pilihan kosong): yang sudah terisi tetap DILEWATI - tidak ada draf, tidak ada pengisian", async () => {
+    const h = buka({ terisi: TERISI });
+    await siap(h);
+    h.server.giliran = BUTIR({ pilihan: {} });
+    await mod(h).periksaSekarang();
+    expect(h.urut).toEqual(["cek-terisi", "lapor:dilewati"]);
+    expect(h.opsiOto).toEqual([]);
+  });
+
+  it("tanda timpa.form tetapi SIPP belum memuat putusan: dikerjakan seperti biasa (tanpa timpaIsi)", async () => {
+    const h = buka({ terisi: { terisi: false } });
+    await siap(h);
+    h.server.giliran = BUTIR({ pilihan: { timpa: { form: true } } });
+    await mod(h).periksaSekarang();
+    expect(h.opsiOto[0]).not.toHaveProperty("timpaIsi");
+    expect(h.server.laporan[0].catatan).toBe("Tersimpan di SIPP.");
+  });
+
+  it("tanda hanya untuk e-Doc (timpa.putusan): Putusan Akhir yang sudah terisi tetap dilewati - tiga langkah berdiri sendiri", async () => {
+    const h = buka({ terisi: TERISI });
+    await siap(h);
+    h.server.giliran = BUTIR({ pilihan: { timpa: { putusan: true } } });
+    await mod(h).periksaSekarang();
+    expect(h.urut).toEqual(["cek-terisi", "lapor:dilewati"]);
+  });
+
+  it("sesudah Simpan memuat ulang halaman: MENIMPA terbukti hanya dari jawaban SIPP yang dititipkan atau tanggal/status yang berubah; selain itu GAGAL (tidak diklaim selesai)", async () => {
+    const dasar = { tahap: "menyimpan", pada: Date.now() - 20_000, timpaIsi: true, sebelum: { tanggal: "2026-10-19", status: "Dikabulkan" } };
+    const mula = (ekstra: Record<string, unknown>, terisi: unknown) => buka({ terisi, simpanan: { ujiTampilan: "ui", ujiIzinkanNyata: true, putusanTerjadwalAktif: rec({ ...dasar, ...ekstra }) } });
+
+    const jawaban = mula({ jawabanSimpan: 1 }, TERISI);
+    await siap(jawaban);
+    await mod(jawaban).periksaSekarang();
+    expect(jawaban.server.laporan[0]).toMatchObject({ hasil: "selesai" });
+    expect(jawaban.server.laporan[0].catatan).toMatch(/terbukti dari jawaban SIPP/);
+
+    const berubah = mula({ jawabanSimpan: 0 }, { terisi: true, tanggal: "2026-10-20", status: "Dikabulkan" });
+    await siap(berubah);
+    await mod(berubah).periksaSekarang();
+    expect(berubah.server.laporan[0]).toMatchObject({ hasil: "selesai" });
+    expect(berubah.server.laporan[0].catatan).toMatch(/tanggal\/status berubah/);
+
+    const tanpaBukti = mula({ jawabanSimpan: 0 }, TERISI);
+    await siap(tanpaBukti);
+    await mod(tanpaBukti).periksaSekarang();
+    expect(tanpaBukti.server.laporan[0]).toMatchObject({ hasil: "gagal" });
+    expect(tanpaBukti.server.laporan[0].catatan).toMatch(/belum terbukti Putusan Akhir yang lama berhasil diganti/);
+    expect(tanpaBukti.urut).not.toContain("otomatis");
   });
 });

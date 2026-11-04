@@ -34,6 +34,7 @@ import {
   bacaPengaturan,
   catatJejak,
   langkahDariBaris,
+  pilihanDariBaris,
   sebaris,
   ubahButir,
   type BarisButir,
@@ -67,7 +68,9 @@ import {
  *   2. kunci perkara bersama penetapan/putusan (perkara dikerjakan pekerjaan
  *      lain = ditunda, tidak ditulis);
  *   3. cek ulang SIPP: Putusan Akhir sudah terisi; e-Doc yang SUDAH ada
- *      DILEWATI dan tidak pernah diganti (cek gagal = tidak mengunggah apa pun);
+ *      DILEWATI dan tidak diganti - KECUALI slot yang oleh penjadwal dicentang untuk diganti
+ *      (pilihan.timpa.putusan / .anonim pada butirnya, tanda eksplisit per slot; jadwal lama
+ *      tanpa tanda tetap melewati). Cek gagal = tidak mengunggah apa pun;
  *   4. berkas di penyimpanan utuh (sha256 sama dengan saat diunggah);
  *   5. pemeriksaan isi yang sama dengan rute unggah-sipp (nomor perkara di isi,
  *      bukan BAS/PHS/relaas, anonimisasi tidak memuat nama pihak);
@@ -111,7 +114,10 @@ export type DepsPelaksana = {
     operator: string;
     peranPenekan: string;
     ip: string;
-  }) => Promise<{ ok: boolean; sebab?: string; berkas: Array<{ jenis: string; ok: boolean; alasan?: string; pesan?: string }> }>;
+    /** Tanda timpa eksplisit per slot yang dikirim; tanpa tanda bot menolak slot yang sudah terisi ("sudah_ada"). */
+    timpaPutusan?: boolean;
+    timpaAnonim?: boolean;
+  }) => Promise<{ ok: boolean; sebab?: string; berkas: Array<{ jenis: string; ok: boolean; alasan?: string; pesan?: string; ditimpa?: boolean }> }>;
   muatLibur: (db: AletaDatabase) => Promise<(iso: string) => boolean>;
 };
 
@@ -200,8 +206,13 @@ export function depsAsli(): DepsPelaksana {
         operator: m.operator,
         peranPenekan: m.peranPenekan,
         ip: m.ip,
+        ...(m.putusan && m.timpaPutusan ? { timpaPutusan: true } : {}),
+        ...(m.anonimisasi && m.timpaAnonim ? { timpaAnonim: true } : {}),
       });
-      if (!r.ok) return { ok: false, sebab: r.error || "ALETA Bot belum dapat dihubungi.", berkas: [] };
+      if (!r.ok) {
+        const berkasBot = (r.badan as { berkas?: unknown } | undefined)?.berkas;
+        return { ok: false, sebab: r.error || "ALETA Bot belum dapat dihubungi.", berkas: Array.isArray(berkasBot) ? (berkasBot as never) : [] };
+      }
       return { ok: r.data.ok !== false, sebab: r.data.alasan, berkas: r.data.berkas ?? [] };
     },
     muatLibur: liburAsli,
@@ -297,7 +308,10 @@ async function edocDenganKunci(
 ): Promise<HasilEdocButir> {
   void db;
   const hasil: HasilEdocButir = {};
-  // 4. Cek SIPP: Putusan Akhir sudah ada; e-Doc yang ada tidak diganti.
+  // 4. Cek SIPP: Putusan Akhir sudah ada; e-Doc yang ada tidak diganti kecuali slot yang bertanda timpa.
+  const timpa = pilihanDariBaris(b).timpa ?? {};
+  const timpaPutusan = mau.putusan && timpa.putusan === true;
+  const timpaAnonim = mau.anonim && timpa.anonim === true;
   const cek = await deps.cekSlot(b.perkara_id);
   if (!cek.ok) return { tunda: { detik: 180, sebab: `e-Doc yang sudah ada belum dapat diperiksa (${sebaris(cek.sebab, 160)}); tidak ada yang diunggah supaya tidak menimpa.` } };
   if (!cek.adaBaris) {
@@ -305,14 +319,17 @@ async function edocDenganKunci(
   }
   let perluPutusan = mau.putusan;
   let perluAnonim = mau.anonim;
-  if (mau.putusan && cek.adaPutusan) {
+  if (mau.putusan && cek.adaPutusan && !timpaPutusan) {
     hasil.putusan = { status: "dilewati", catatan: "e-Doc putusan sudah ada di SIPP - tidak diganti." };
     perluPutusan = false;
   }
-  if (mau.anonim && cek.adaAnonim) {
+  if (mau.anonim && cek.adaAnonim && !timpaAnonim) {
     hasil.anonim = { status: "dilewati", catatan: "e-Doc anonimisasi sudah ada di SIPP - tidak diganti." };
     perluAnonim = false;
   }
+  // Slot bertanda timpa yang ternyata BELUM ada di SIPP ditulis sebagai biasa (bukan "ditimpa").
+  const akanDitimpaPutusan = perluPutusan && timpaPutusan && cek.adaPutusan;
+  const akanDitimpaAnonim = perluAnonim && timpaAnonim && cek.adaAnonim;
   if (!perluPutusan && !perluAnonim) return hasil;
 
   // 5. Nama pihak (penjaga isi) dari SIPP.
@@ -389,6 +406,8 @@ async function edocDenganKunci(
     operator: sebaris(aktor.name || aktor.email || aktor.id, 120),
     peranPenekan: peran,
     ip: b.ip,
+    ...(kirim.putusan && akanDitimpaPutusan ? { timpaPutusan: true } : {}),
+    ...(kirim.anonimisasi && akanDitimpaAnonim ? { timpaAnonim: true } : {}),
   });
   const dari = (jenis: SlotEdoc) => u.berkas.find((x) => x.jenis === jenis);
   const gagalSebab = (jenis: SlotEdoc) => {
@@ -406,11 +425,20 @@ async function edocDenganKunci(
     if (x && !x.ok) hasil[slot] = { status: "gagal", catatan: `Ditolak: ${gagalSebab(jenis)}` };
     else if (!x && !u.ok) hasil[slot] = { status: "gagal", catatan: `Tidak terkirim: ${gagalSebab(jenis)}` };
     else if (ada(jenis) === false) hasil[slot] = { status: "gagal", catatan: "Bot menjawab berhasil tetapi SIPP belum memuat e-Doc-nya; diperiksa manual." };
-    else
+    else {
+      // "Ditimpa" disebut terpisah dari "terunggah": bot menjawab ditimpa bila e-Doc lama memang terbaca ada dan diganti.
+      const ditimpa = x?.ditimpa === true || (jenis === "putusan" ? akanDitimpaPutusan : akanDitimpaAnonim);
       hasil[slot] = {
         status: "selesai",
-        catatan: ada(jenis) === true ? "Terunggah dan terbukti ada di SIPP." : "Terunggah (pembacaan ulang SIPP tidak tersedia; diperiksa manual bila ragu).",
+        catatan: ditimpa
+          ? ada(jenis) === true
+            ? "Ditimpa: e-Doc lama diganti dan SIPP memuat e-Doc-nya."
+            : "Ditimpa (pembacaan ulang SIPP tidak tersedia; diperiksa manual bila ragu)."
+          : ada(jenis) === true
+            ? "Terunggah dan terbukti ada di SIPP."
+            : "Terunggah (pembacaan ulang SIPP tidak tersedia; diperiksa manual bila ragu).",
       };
+    }
   };
   tetapkan("putusan", "putusan");
   tetapkan("anonim", "anonimisasi");
@@ -448,7 +476,7 @@ export async function pulihkanMacet(db: AletaDatabase, kini: Date): Promise<numb
           ? "Terputus berkali-kali di tengah jalan; dihentikan. Periksa SIPP, lalu ulangi."
           : k === "isi"
             ? "Pengerjaan sebelumnya terputus; keadaan SIPP diperiksa dulu sebelum diulang."
-            : "Pengerjaan sebelumnya terputus; e-Doc yang sudah ada di SIPP tidak diganti saat diulang.",
+            : "Pengerjaan sebelumnya terputus; e-Doc yang sudah ada di SIPP tidak diganti saat diulang kecuali yang dicentang untuk diganti.",
       };
     }
     const baru = await ubahButir(db, b.id, perubahan, { kini, syaratStatus: ["jalan"] });

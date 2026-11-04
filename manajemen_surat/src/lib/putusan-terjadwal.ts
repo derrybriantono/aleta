@@ -417,7 +417,27 @@ export type PilihanForm = {
   statusPutusan?: string;
   /** Putusan verstek: "Y" ya, "T" tidak. */
   verstek?: "Y" | "T";
+  /**
+   * Tanda MENIMPA eksplisit per langkah (5 Nov 2026). Tanpa tanda, yang sudah terisi/terunggah di SIPP
+   * dilewati seperti semula - jadwal lama yang tersimpan tanpa tanda ini tidak pernah menimpa.
+   *   form     isi & simpan ulang Putusan Akhir yang sudah tersimpan (lewat borang Edit SIPP)
+   *   putusan  ganti e-Doc putusan yang sudah ada
+   *   anonim   ganti e-Doc anonimisasi yang sudah ada
+   */
+  timpa?: TimpaLangkah;
 };
+
+export type TimpaLangkah = { form?: boolean; putusan?: boolean; anonim?: boolean };
+
+/** Hanya `true` yang menimpa; nilai lain (termasuk "1", 1, "ya") TIDAK. Kosong = tidak ada tanda. */
+export function bersihkanTimpa(mentah: unknown): TimpaLangkah {
+  const x = mentah && typeof mentah === "object" ? (mentah as Record<string, unknown>) : {};
+  const hasil: TimpaLangkah = {};
+  if (x.form === true) hasil.form = true;
+  if (x.putusan === true) hasil.putusan = true;
+  if (x.anonim === true) hasil.anonim = true;
+  return hasil;
+}
 
 export function bersihkanPilihanForm(mentah: unknown): PilihanForm {
   const x = mentah && typeof mentah === "object" ? (mentah as Record<string, unknown>) : {};
@@ -426,13 +446,43 @@ export function bersihkanPilihanForm(mentah: unknown): PilihanForm {
   if (status) hasil.statusPutusan = status;
   const v = String(x.verstek ?? "").trim().toUpperCase();
   if (v === "Y" || v === "T") hasil.verstek = v;
+  const timpa = bersihkanTimpa(x.timpa);
+  if (Object.keys(timpa).length > 0) hasil.timpa = timpa;
   return hasil;
+}
+
+/**
+ * Tanda timpa hanya berarti untuk langkah yang SUNGGUH dipilih pada butirnya; langkah yang tidak dipilih tidak
+ * membawa tanda (jadwal tidak boleh menyimpan niat menimpa yang tidak pernah dijalankan). Murni.
+ */
+export function timpaSesuaiLangkah(pilihan: PilihanForm, langkah: { isi: boolean; putusan: boolean; anonim: boolean }): PilihanForm {
+  if (!pilihan.timpa) return pilihan;
+  const t: TimpaLangkah = {
+    ...(pilihan.timpa.form && langkah.isi ? { form: true } : {}),
+    ...(pilihan.timpa.putusan && langkah.putusan ? { putusan: true } : {}),
+    ...(pilihan.timpa.anonim && langkah.anonim ? { anonim: true } : {}),
+  };
+  const { timpa: _lama, ...sisa } = pilihan;
+  void _lama;
+  return Object.keys(t).length ? { ...sisa, timpa: t } : sisa;
+}
+
+/** Kalimat ringkas yang menyebut apa yang akan DIGANTI; kosong bila tidak ada tanda timpa. */
+export function ringkasTimpa(t: TimpaLangkah | undefined): string {
+  if (!t) return "";
+  const nama: string[] = [];
+  if (t.form) nama.push("Putusan Akhir");
+  if (t.putusan) nama.push("e-Doc putusan");
+  if (t.anonim) nama.push("e-Doc anonimisasi");
+  return nama.length ? `Mengganti yang sudah ada: ${nama.join(", ")}` : "";
 }
 
 export function ringkasPilihanForm(p: PilihanForm): string {
   const bagian: string[] = [];
   bagian.push(`Status putusan: ${p.statusPutusan ? p.statusPutusan : "dipilih ALETA dari bunyi amar"}`);
   bagian.push(`Verstek: ${p.verstek === "Y" ? "ya" : p.verstek === "T" ? "tidak" : "dipilih ALETA dari kehadiran para pihak"}`);
+  const timpa = ringkasTimpa(p.timpa);
+  if (timpa) bagian.push(timpa);
   return bagian.join(" · ");
 }
 
