@@ -24,6 +24,7 @@ TAMBAH = {
     '9268': 'Rp600.000,00 (enam ratus ribu rupiah)', '9269': 'Rp20.000,00 (dua puluh ribu rupiah)', '6054': 'sejumlah Rp1.800.000,00 (satu juta delapan ratus ribu rupiah)',
     '5058': 'Apakah saksi kenal dengan para Pemohon?\\par - Ya, saya kenal karena saya paman Pemohon I;\\par Apakah saksi tahu maksud Pemohon menghadap?\\par - Ya, untuk mengesahkan pernikahan;',
     '5059': 'Apakah saksi kenal dengan para Pemohon?\\par - Ya, saya kenal karena saya tetangga Pemohon II;\\par Apakah saksi hadir saat pernikahan?\\par - Ya, saya hadir;',
+    '11405': 'menolak semua tuntutan karena menurutnya istri tidak berhak', '9944': '1 (satu) tahun 2 (dua) bulan', '2004': 'Termohon', '5110': 'ANAK REKAAN', '7035': 'Termohon', '5127': 'perselisihan terus-menerus', '1001': 'seperangkat alat sholat dan uang Rp100.000,00', '0100': 'wiraswasta', '5171': 'dengan penghasilan tidak tetap', '0104': 'ibu rumah tangga', '5271': 'tanpa penghasilan tetap',
     '8171': 'pengurusan akta kelahiran anak dan keperluan lainnya', '0378': 'P.1 Fotokopi KTP; P.2 Fotokopi Kutipan Akta Nikah', '12040': 'P.1 Fotokopi KTP;',
 }
 
