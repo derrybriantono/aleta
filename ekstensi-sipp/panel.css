@@ -12341,6 +12341,224 @@ html[data-aleta-tema-sipp="gelap"] .aleta-mini-tombol {
 }
 /* === AKHIR 3 Nov: bilah mini === */
 
+/* === KASIR 4 Nov 2026: tampilan baru Kasir ALETA (rancangan kasir-aleta + Main/Psp/Instrumen) ===
+ * Bilah tab menggantikan bab terlipat; toolbar tanggal/akun/cari; tiga kartu angka penyaring; kartu perkara
+ * dengan kepala (nomor, jenis, tahap, status, tautan, SKUM), pembayar e-Court, tabel, pita PBT; kaki lengket
+ * berisi jumlah baris + total. Hanya token --aleta-*; huruf ikut skala (>= 11.5px). Tidak ada ukuran layar. */
+.aleta-kasir-harian { gap: 10px; }
+.aleta-kasir-tab {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--aleta-garis);
+  border-radius: 10px;
+  background: var(--aleta-latar-naik);
+}
+.aleta-kasir-tab-tombol {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--aleta-tulisan);
+  font: inherit;
+  font-size: calc(13px * var(--aleta-skala-huruf, 1));
+  font-weight: 600;
+  cursor: pointer;
+}
+.aleta-kasir-tab-tombol:hover { background: var(--aleta-merek-latar, var(--aleta-latar)); }
+.aleta-kasir-tab-tombol[aria-selected="true"] { background: var(--aleta-merek); color: var(--aleta-latar); font-weight: 700; }
+.aleta-kasir-tab-tombol:focus-visible { outline: 2px solid var(--aleta-merek); outline-offset: 2px; }
+.aleta-kasir-tab-lencana {
+  min-width: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--aleta-mendesak) 24%, transparent);
+  color: var(--aleta-tulisan);
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  font-weight: 700;
+  line-height: 1.5;
+  text-align: center;
+}
+.aleta-kasir-tab-lencana[hidden] { display: none; }
+.aleta-kasir-tab-tombol[data-sibuk]::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--aleta-mendesak);
+  animation: aleta-kasir-denyut 1.2s ease-in-out infinite;
+}
+@keyframes aleta-kasir-denyut { 50% { opacity: 0.25; } }
+@media (prefers-reduced-motion: reduce) { .aleta-kasir-tab-tombol[data-sibuk]::after { animation: none; } }
+.aleta-kasir-tab-tombol[aria-selected="true"] .aleta-kasir-tab-lencana { background: color-mix(in srgb, var(--aleta-latar) 30%, transparent); color: var(--aleta-latar); }
+
+/* Tab memilih bagian: bab tidak lagi berkotak/terlipat. */
+.aleta-kasir-harian[data-kasir-tab] > details.aleta-kasir-bagian > summary { display: none; }
+.aleta-kasir-harian[data-kasir-tab] > details.aleta-kasir-bagian[hidden] { display: none; }
+.aleta-kasir-harian[data-kasir-tab] > details.aleta-kasir-bagian { margin: 0; padding: 0; border: 0; background: transparent; }
+html[data-aleta-kulit="modern"] #aleta-panel-sipp .aleta-kasir-harian[data-kasir-tab] > details.aleta-kasir-bagian { margin: 0; padding: 0; border: 0; background: transparent; }
+html[data-aleta-kulit="modern"] #aleta-panel-sipp .aleta-kasir-harian[data-kasir-tab] > details.aleta-kasir-bagian > .aleta-kasir-isi { padding: 0; }
+.aleta-kasir-harian[data-kasir-tab="psp"] [data-kasir-cetak="instrumen"],
+.aleta-kasir-harian[data-kasir-tab="instrumen"] [data-kasir-cetak="psp"] { display: none; }
+
+/* Toolbar: Tanggal kas | akun kasir | Cari perkara. */
+.aleta-kasir-alat {
+  gap: 8px 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--aleta-garis);
+  border-radius: 10px;
+  background: var(--aleta-latar-naik);
+}
+.aleta-kasir-alat-label { color: var(--aleta-tulisan-lembut); font-size: calc(12.5px * var(--aleta-skala-huruf, 1)); font-weight: 600; }
+.aleta-kasir-dorong { flex: 1 1 4px; }
+.aleta-kasir .aleta-kasir-alat .aleta-basmassal-pilih { min-height: 30px; }
+.aleta-kasir .aleta-kasir-cari-perkara { flex: 1 1 200px; min-width: 150px; }
+.aleta-kasir-akun {
+  padding: 6px 10px;
+  border: 1px solid var(--aleta-garis);
+  border-radius: 10px;
+  background: var(--aleta-latar-naik);
+}
+.aleta-kasir-akun[data-inisial]::before {
+  content: attr(data-inisial);
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--aleta-merek);
+  color: var(--aleta-latar);
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  font-weight: 800;
+}
+.aleta-kasir-akun-label { color: var(--aleta-tulisan-lembut); }
+.aleta-kasir-pintas { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.aleta-kasir .aleta-kasir-pintas-tombol { padding: 3px 10px; border-radius: 999px; }
+
+/* Tiga kartu angka = penyaring daftar. */
+.aleta-kasir-ringkas { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.aleta-kasir-ringkas-kartu {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 2px solid var(--aleta-garis);
+  border-radius: 10px;
+  background: var(--aleta-latar);
+  color: var(--aleta-tulisan);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.aleta-kasir-ringkas-kartu:hover { border-color: var(--aleta-garis-kuat); }
+.aleta-kasir-ringkas-kartu[aria-pressed="true"] { border-color: var(--aleta-merek); background: var(--aleta-merek-latar, var(--aleta-latar-naik)); }
+.aleta-kasir-ringkas-kartu:focus-visible { outline: 2px solid var(--aleta-merek); outline-offset: 2px; }
+.aleta-kasir-ringkas-angka { font-size: calc(24px * var(--aleta-skala-huruf, 1)); font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.aleta-kasir-ringkas-kartu[data-saring="perlu"] .aleta-kasir-ringkas-angka { color: var(--aleta-mendesak); }
+.aleta-kasir-ringkas-kartu[data-saring="lengkap"] .aleta-kasir-ringkas-angka { color: var(--aleta-aman); }
+.aleta-kasir-ringkas-judul { font-size: calc(13.5px * var(--aleta-skala-huruf, 1)); font-weight: 700; }
+.aleta-kasir-ringkas-ket { color: var(--aleta-tulisan-lembut); font-size: calc(11.5px * var(--aleta-skala-huruf, 1)); line-height: 1.35; }
+.aleta-kasir-hari { gap: 10px; }
+.aleta-kasir-kosong { padding: 10px; text-align: center; }
+.aleta-kasir-kosong[hidden] { display: none; }
+
+/* Kartu perkara. */
+.aleta-kasir-kartu { gap: 0; padding: 0; overflow: hidden; border-radius: 10px; background: var(--aleta-latar); }
+.aleta-kasir-kartu[hidden] { display: none; }
+.aleta-kasir-kartu .aleta-kasir-kartu-kepala {
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px 12px;
+  padding: 10px 12px 8px;
+  background: var(--aleta-latar-naik);
+}
+.aleta-kasir-kartu-judul,
+.aleta-kasir-kartu-aksi { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-width: 0; }
+.aleta-kasir-kartu-aksi { margin-left: auto; justify-content: flex-end; }
+.aleta-kasir-kartu-jenis { color: var(--aleta-tulisan-lembut); font-size: calc(12.5px * var(--aleta-skala-huruf, 1)); }
+.aleta-kasir-status {
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+  font-weight: 800;
+  white-space: nowrap;
+}
+.aleta-kasir-status-perlu { background: color-mix(in srgb, var(--aleta-mendesak) 18%, transparent); color: var(--aleta-mendesak); }
+.aleta-kasir-status-lengkap { background: color-mix(in srgb, var(--aleta-aman) 18%, transparent); color: var(--aleta-aman); }
+.aleta-kasir-kartu .aleta-kasir-kartu-kepala .aleta-kasir-kartu-aksi > .aleta-kasir-kartu-tautan {
+  order: 0;
+  margin-left: 0;
+  padding: 4px 10px;
+  border: 1px solid var(--aleta-garis-kuat);
+  border-radius: 7px;
+  font-size: calc(12.5px * var(--aleta-skala-huruf, 1));
+  font-weight: 700;
+  text-decoration: none;
+}
+.aleta-kasir-kartu .aleta-kasir-kartu-kepala .aleta-kasir-kartu-aksi > .aleta-kasir-kartu-skum { order: 0; margin-left: 0; }
+.aleta-kasir-kartu .aleta-kasir-kartu-kepala .aleta-kasir-kartu-aksi > .aleta-kasir-kartu-skum[hidden] { display: none; }
+.aleta-kasir-kartu .aleta-kasir-cetak-skum { border-color: var(--aleta-merek); background: var(--aleta-merek); color: var(--aleta-latar); font-weight: 700; }
+.aleta-kasir-kartu .aleta-kasir-pembayar {
+  margin: 0;
+  padding: 0 12px 10px;
+  border: 0;
+  border-radius: 0;
+  background: var(--aleta-latar-naik);
+}
+.aleta-kasir-kartu .aleta-kasir-gulir { border-top: 1px solid var(--aleta-garis); }
+.aleta-kasir-kartu .aleta-kasir-tabel-sunting td { padding: 7px 8px; }
+.aleta-kasir-kartu .aleta-kasir-tabel-sunting .aleta-kasir-rp .aleta-kasir-nominal { font-size: calc(13px * var(--aleta-skala-huruf, 1)); font-weight: 700; }
+.aleta-kasir-kartu .aleta-basmassal-hasil,
+.aleta-kasir-kartu > .aleta-basmassal-salah { padding: 6px 12px; }
+.aleta-kasir-kartu-lengkap .aleta-kasir-kartu-kepala { align-items: center; padding: 8px 12px; }
+.aleta-kasir-pita-pbt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--aleta-garis);
+  background: color-mix(in srgb, var(--aleta-mendesak) 12%, transparent);
+}
+.aleta-kasir-pita-pbt .aleta-kasir-tanpa-pbt { flex: 1 1 220px; min-width: 0; padding: 0; border: 0; border-radius: 0; background: transparent; }
+.aleta-kasir-pita-pbt .aleta-kasir-pita-tombol { border-color: var(--aleta-merek); background: var(--aleta-latar); color: var(--aleta-merek-tulisan, var(--aleta-tulisan)); font-weight: 800; }
+
+/* Kaki lengket: berapa baris dan berapa Rupiah yang akan dijurnal. */
+.aleta-kasir-kaki {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--aleta-garis-kuat);
+  border-radius: 10px;
+  background: var(--aleta-latar-naik);
+  box-shadow: 0 -8px 14px color-mix(in srgb, var(--aleta-latar) 75%, transparent);
+}
+.aleta-kasir-kaki-ringkas { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.aleta-kasir-kaki-baris { color: var(--aleta-tulisan-lembut); font-size: calc(12.5px * var(--aleta-skala-huruf, 1)); }
+.aleta-kasir-kaki-total { font-size: calc(20px * var(--aleta-skala-huruf, 1)); font-weight: 800; font-variant-numeric: tabular-nums; }
+.aleta-kasir-kaki-tombol { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.aleta-kasir-kaki .aleta-basmassal-tombol { padding: 7px 14px; border-radius: 8px; font-weight: 700; }
+.aleta-kasir-kaki .aleta-basmassal-tombol-utama { padding: 8px 18px; font-size: calc(14px * var(--aleta-skala-huruf, 1)); }
+
+/* Sisa panjar dan instrumen jurusita. */
+.aleta-kasir-cetak-bagian { padding: 12px; border-radius: 10px; }
+.aleta-kasir-cetak-ringkas { margin-bottom: 2px; }
+.aleta-kasir-penerima b { display: block; color: var(--aleta-tulisan); }
+.aleta-kasir-penerima .aleta-kasir-pembayar-lembut { display: block; }
+.aleta-kasir-jurusita { padding: 10px 12px; border-radius: 10px; }
+.aleta-kasir-jurusita-nama { font-size: calc(14px * var(--aleta-skala-huruf, 1)); }
+.aleta-kasir-jurusita .aleta-basmassal-tombol { font-weight: 700; }
+/* === AKHIR KASIR 4 Nov === */
+
 /* ==========================================================================
    V2 LAYAR (18 Okt 2026) - PANEL MENYESUAIKAN LAPTOP KECIL SAMPAI TV
    ==========================================================================

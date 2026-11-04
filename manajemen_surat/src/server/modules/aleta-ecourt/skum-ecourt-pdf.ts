@@ -54,9 +54,22 @@ export function patahBaris(huruf: PDFFont, teks: string, ukuran: number, lebar: 
   return baris.length ? baris : [""];
 }
 
+/** Rincian pembayaran yang menyertai e-SKUM (rancangan 4 Nov 2026); rekening hanya bila pencetak berhak melihatnya. */
+export type PembayaranSkum = { status?: string; tanggal?: string; jam?: string; nomorPembayaran?: string; bank?: string; nomorRekening?: string };
+
+const HARI_ID = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+const BULAN_ID = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+/** "2026-11-03" -> "Selasa, 3 November 2026". */
+function hariTanggal(iso: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ""));
+  if (!m) return String(iso || "");
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+  return `${HARI_ID[d.getUTCDay()]}, ${Number(m[3])} ${BULAN_ID[Number(m[2]) - 1]} ${m[1]}`;
+}
+
 export async function buatPdfSkumEcourt(
   skum: SkumEcourt,
-  opsi: { kertas?: KertasSkum; nomorPerkara?: string } = {}
+  opsi: { kertas?: KertasSkum; nomorPerkara?: string; pembayaran?: PembayaranSkum } = {}
 ): Promise<Uint8Array> {
   const kertas: KertasSkum = opsi.kertas === "F4" ? "F4" : "A4";
   const [lebarKertas, tinggiKertas] = UKURAN[kertas];
@@ -103,8 +116,9 @@ export async function buatPdfSkumEcourt(
   const UK = 10;
   hal.drawText(aman(biasa, "Kami yang bertanda tangan di bawah ini :"), { x: kiri, y, size: UK, font: biasa, color: HITAM });
   y -= UK + 6;
-  const xNilai = kiri + 64;
+  const xNilai = kiri + (opsi.nomorPerkara ? 78 : 64);
   for (const [label, nilai] of [
+    ...(opsi.nomorPerkara ? ([["Nomor Perkara", opsi.nomorPerkara]] as const) : []),
     ["Nama", skum.nama],
     ["Alamat", skum.alamat],
     ["Telp/HP", skum.telp],
@@ -158,5 +172,24 @@ export async function buatPdfSkumEcourt(
   hal.drawText("Total yang harus di bayarkan (Rp.)", { x: kiri + 8, y: y - 6, size: 11, font: tebal, color: HITAM });
   kananTeks(angkaSkum(skum.total), xJumlahKanan, tebal, 13, y - 7);
   y -= tinggiTotal + 10;
+
+  // Rincian pembayaran (rancangan 4 Nov 2026): status, tanggal, nomor pembayaran, dan bank/rekening bila berhak.
+  const by = opsi.pembayaran;
+  if (by) {
+    const baris: string[] = [];
+    if (by.status) baris.push(`Status pembayaran: ${by.status}`);
+    if (by.tanggal) baris.push(`Tanggal: ${hariTanggal(by.tanggal)}${by.jam ? ` pukul ${String(by.jam).slice(0, 5)}` : ""}`);
+    if (by.nomorPembayaran) baris.push(`Nomor pembayaran: ${by.nomorPembayaran}`);
+    if (by.bank || by.nomorRekening) baris.push(`Bank: ${[by.bank, by.nomorRekening ? `rekening ${by.nomorRekening}` : ""].filter(Boolean).join(" · ")}`);
+    if (baris.length) {
+      if (y - baris.length * (UK + 4) < 60) halBaru();
+      for (const b of baris) {
+        for (const p of patahBaris(biasa, b, UK, lebarIsi)) {
+          hal.drawText(p, { x: kiri, y, size: UK, font: biasa, color: HITAM });
+          y -= UK + 4;
+        }
+      }
+    }
+  }
   return dok.save();
 }

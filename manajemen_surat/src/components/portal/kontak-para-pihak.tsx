@@ -189,20 +189,33 @@ export function RuasPembayarEcourt({
     data.panjar !== null ? `panjar ${rupiahTitik(data.panjar)}` : "",
     data.tanggal ? `dibayar ${tanggalIndonesia(data.tanggal)}${data.jam ? ` ${data.jam.slice(0, 5)}` : ""}` : "",
   ].filter(Boolean);
+  // 4 Nov 2026 (rancangan Pihak): tiga baris berlabel - Pembayar panjar, Rekening, Untuk. Hak lihat tetap di rute/hook.
+  const label = "w-[8.5rem] shrink-0 text-muted-foreground";
   return (
-    <div className="flex flex-wrap items-baseline gap-x-1.5" data-ruas-kontak="rekening-pembayar">
-      <span className="w-[8.5rem] shrink-0 text-muted-foreground">{kuasa ? "Pembayar (kuasa)" : "Rekening pembayar"}</span>
-      {data.nomorRekening ? (
-        <span className="font-medium tabular-nums" data-rekening>
-          {[data.bank, data.nomorRekening].filter(Boolean).join(" ")}
-        </span>
-      ) : (
-        <span className="text-muted-foreground">rekening belum terbaca</span>
-      )}
-      {data.atasNama ? <span className="break-all text-muted-foreground">a.n. {data.atasNama}</span> : null}
-      <span className="ml-1 rounded border border-border px-1 text-[0.65rem] uppercase text-muted-foreground">e-Court</span>
-      {!cocok && data.diterimaDari ? <span className="text-muted-foreground">dibayar oleh {data.diterimaDari}</span> : null}
-      {rincian.length ? <span className="text-muted-foreground">· {rincian.join(" · ")}</span> : null}
+    <div className="mt-1 space-y-0.5 border-t border-dashed border-border/70 pt-1" data-ruas-kontak="rekening-pembayar">
+      <div className="flex flex-wrap items-baseline gap-x-1.5">
+        <span className={label}>Pembayar panjar</span>
+        <b>{data.diterimaDari || "-"}</b>
+        {kuasa ? <span className="text-muted-foreground">(kuasa)</span> : null}
+        <span className="text-muted-foreground">· dari e-Court</span>
+        {rincian.length ? <span className="text-muted-foreground">· {rincian.join(" · ")}</span> : null}
+      </div>
+      <div className="flex flex-wrap items-baseline gap-x-1.5">
+        <span className={label}>Rekening</span>
+        {data.nomorRekening ? (
+          <span className="font-semibold tabular-nums" data-rekening>
+            {[data.bank, data.nomorRekening].filter(Boolean).join(" ")}
+          </span>
+        ) : (
+          <span className="text-muted-foreground">rekening belum terbaca</span>
+        )}
+        {data.atasNama ? <span className="break-all text-muted-foreground">a.n. {data.atasNama}</span> : null}
+        {!cocok && data.diterimaDari ? <span className="text-muted-foreground">(nama pembayar tidak sama dengan para pihak)</span> : null}
+      </div>
+      <div className="flex flex-wrap items-baseline gap-x-1.5">
+        <span className={label}>Untuk</span>
+        <span>Pengembalian sisa panjar ke rekening pembayar</span>
+      </div>
     </div>
   );
 }

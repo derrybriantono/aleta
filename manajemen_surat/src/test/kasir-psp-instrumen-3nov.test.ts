@@ -302,7 +302,7 @@ async function bukaBab(x: ReturnType<typeof buka>, kunci: string) {
   await sampai(() => x.w.__mode() === "baru", "mode baru");
   expect(await x.w.aletaKasirPasangHarian(x.wadah, { situs: "sipp" })).toBe(true);
   const d = x.wadah.querySelector(`details[data-kasir-bagian="${kunci}"]`) as HTMLDetailsElement;
-  expect(d.open).toBe(false); // terlipat bawaan
+  if (kunci !== "manual") expect(d.open).toBe(false); // hanya tab Hari ini (Kasir Manual) terbuka bawaan; tab lain dibuka saat ditekan
   d.open = true;
   d.dispatchEvent(new x.w.Event("toggle"));
   return d;
@@ -315,7 +315,7 @@ describe("5. ekstensi: Tambah biaya PBT, bab Cetak (PSP & instrumen per jurusita
     const kartu = await sampai(() => manual.querySelector('[data-perkara="701"]') as HTMLElement | null, "kartu");
     const lain = manual.querySelector('[data-perkara="702"]') as HTMLElement;
     expect(lain.querySelector("button.aleta-kasir-tambah-pbt")).toBeNull();
-    const tombolPbt = kartu.querySelector(".aleta-kasir-kartu-kepala button.aleta-kasir-tambah-pbt") as HTMLButtonElement;
+    const tombolPbt = kartu.querySelector(".aleta-kasir-pita-pbt button.aleta-kasir-tambah-pbt") as HTMLButtonElement;
     expect(tombolPbt.textContent).toBe("Tambah biaya PBT");
     expect(kartu.querySelector(".aleta-kasir-tanpa-pbt")!.textContent).toMatch(/kembali \(retur\) - PBT tidak ditambahkan otomatis/);
     const sebelum = kartu.querySelectorAll("tbody tr[data-usulan]").length;
