@@ -69,7 +69,8 @@ describe("peta fitur K11 (abt.js): pernyataan", () => {
       "efdab673681b": "2244840a6f2d",
       // 3 Nov 2026 sore (saksi-itsbat-sinkron-3nov): a3BlangkoMemuatSaksi juga mengenal keterangan saksi otomatis #9259#-#9265#
       // (penetapan kabul Itsbat Nikah dll.), sama dengan bagian Tanya jawab saksi panel Blangko Derry.
-      "4e35d4bec3e3": "933c32b63c14",
+      // 4 Nov 2026 (keputusan-a-kerangka-4nov): daftar itu bertambah #9266#/#9267# (keterangan saksi 3 T dan 4 T).
+      "4e35d4bec3e3": "d88c7afd744c",
     };
     for (const [l, b] of Object.entries(SAH)) {
       if (lama.has(l) && baru.has(b)) {

@@ -56,6 +56,11 @@ const KATALOG = new Map<string, Definisi>([
   def("8920", "Keterangan Saksi 4 P", "tanya_jawab"),
   def("8932", "Keterangan Saksi 5 P", "tanya_jawab"),
   def("2024", "Keterangan Saksi 2 T", "tanya_jawab"),
+  def("9265", "KETERANGAN SAKSI 2 #0047# TANPA BARIS KOSONG (OTOMATIS)", "data_sql", kueriKet("#6106#")),
+  def("2032", "Keterangan Saksi 3 T", "tanya_jawab"),
+  def("8942", "Keterangan Saksi 4 T", "tanya_jawab"),
+  def("9266", "KETERANGAN SAKSI 3 #0047# TANPA BARIS KOSONG (OTOMATIS)", "data_sql", kueriKet("#6138#")),
+  def("9267", "KETERANGAN SAKSI 4 #0047# TANPA BARIS KOSONG (OTOMATIS)", "data_sql", kueriKet("#8934#")),
   def("5058", "TanyaJwb Saksi 1 P", "tanya_jawab"),
   def("5059", "TanyaJwb Saksi 2 P", "tanya_jawab"),
   def("6120", "TanyaJwb Saksi 1 T", "tanya_jawab"),
@@ -89,8 +94,12 @@ describe("A. penetapan kabul itsbat: menu tanya jawab saksi tampil", () => {
     expect(tjDari(["9264", "9259"]).map((b) => b.tj?.kunci)).toEqual(["saksi 1 t", "saksi 1 p"]);
     expect(tjDari(["0001", "0046", "5197", "1046"])).toEqual([]);
   });
-  it("peta tautan lengkap #9259#-#9265# dan semua sasarannya variabel Keterangan Saksi", () => {
-    expect(Object.keys(KETERANGAN_SAKSI_OTOMATIS)).toEqual(["9259", "9260", "9261", "9262", "9263", "9264", "9265"]);
+  it("keterangan saksi 3 dan 4 lawan (#9266#/#9267#, paket keputusan-a-kerangka-4nov) ikut: menu Tanya jawab Saksi 3 T dan 4 T, urut menurut letak", () => {
+    expect(tjDari(["9264", "9265", "9266", "9267"]).map((b) => b.tj?.kunci)).toEqual(["saksi 1 t", "saksi 2 t", "saksi 3 t", "saksi 4 t"]);
+    expect(tjDari(["9267", "9266"]).map((b) => b.tj?.kunci)).toEqual(["saksi 4 t", "saksi 3 t"]);
+  });
+  it("peta tautan lengkap #9259#-#9267# (9266/9267 = saksi 3/4 T, paket keputusan-a-kerangka-4nov) dan semua sasarannya variabel Keterangan Saksi", () => {
+    expect(Object.keys(KETERANGAN_SAKSI_OTOMATIS)).toEqual(["9259", "9260", "9261", "9262", "9263", "9264", "9265", "9266", "9267"]);
     for (const [asal, ke] of Object.entries(KETERANGAN_SAKSI_OTOMATIS)) expect(KATALOG.get(ke)?.nama, `${asal}->${ke}`).toMatch(/^Keterangan Saksi \d [PT]$/);
   });
   it("panel ABT lama: a3BlangkoMemuatSaksi menyalakan Susun keterangan saksi untuk kode yang sama (fungsi dijalankan)", () => {
