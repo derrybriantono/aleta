@@ -84,9 +84,10 @@ function idSah(daftar) {
  * (indeks kunci utama dan tanggal_sidang); dasar kemajuan pemindai awal.
  */
 async function ringkasanSumber() {
-  const [perkara, sidang] = await Promise.all([
+  const [perkara, sidang, mediasi] = await Promise.all([
     runQuery("SELECT COUNT(*) AS jumlah, MIN(perkara_id) AS terkecil, MAX(perkara_id) AS terbesar FROM perkara"),
     runQuery("SELECT COUNT(*) AS jumlah, MIN(tanggal_sidang) AS awal, MAX(tanggal_sidang) AS akhir FROM perkara_jadwal_sidang"),
+    ringkasanMediasi(),
   ]);
   const p = perkara[0] || {};
   const s = sidang[0] || {};
@@ -101,8 +102,58 @@ async function ringkasanSumber() {
       awal: tanggalIso(s.awal),
       akhir: tanggalIso(s.akhir),
     },
+    // 5 Nov 2026: rentang jadwal mediasi untuk pemindai riwayat mediasi (null = tabel/kolom tidak dikenal).
+    mediasi,
     hariIni: tanggalHariIni(),
   };
+}
+
+/**
+ * Jumlah dan rentang tanggal perkara_jadwal_mediasi (satu kueri, hanya SELECT). Nama kolom tanggal hanya dari
+ * daftar calon tertutup sippSkemaService; gagal baca = null (pemindai riwayat mediasi menolak mulai).
+ */
+async function ringkasanMediasi() {
+  try {
+    const skema = require("./sippSkemaService");
+    if (!(await skema.tabelAda("perkara_jadwal_mediasi"))) return null;
+    const kolom = await skema.kolomTerpilih();
+    if (!kolom || !kolom.jadwalMediasiTanggal || !/^[A-Za-z0-9_]+$/.test(String(kolom.jadwalMediasiTanggal))) return null;
+    const rows = await runQuery(
+      `SELECT COUNT(*) AS jumlah, MIN(${kolom.jadwalMediasiTanggal}) AS awal, MAX(${kolom.jadwalMediasiTanggal}) AS akhir FROM perkara_jadwal_mediasi`
+    );
+    const m = rows[0] || {};
+    return { jumlah: Number(m.jumlah) || 0, awal: tanggalIso(m.awal), akhir: tanggalIso(m.akhir) };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Arsip antrian untuk cermin (5 Nov 2026): peta antrian hari berjalan dalam bentuk datar, satu baris per
+ * perkara. Hanya SELECT ke sipp_turunan_antrian (dua kueri yang sama dengan layar Jadwal, lewat
+ * antrianSidangService.petaAntrian). Layar TETAP membaca antrian langsung; ini hanya arsip dan bahan
+ * jawaban darurat, jadi selalu membawa waktu baca.
+ */
+async function antrianArsip(deps = {}) {
+  const antrian = deps.antrianSidangService || require("./antrianSidangService");
+  const dibacaPada = new Date().toISOString();
+  const peta = await antrian.petaAntrian();
+  if (!peta || peta.terbaca !== true) {
+    return { terbaca: false, alasan: String((peta && peta.alasan) || "antrian tidak terbaca").slice(0, 200), dibacaPada, baris: [] };
+  }
+  const baris = Object.entries(peta.peta || {}).map(([perkaraId, a]) => {
+    const jam = [a.pihak1, a.pihak2, a.saksi].filter(Boolean).sort().pop() || "";
+    return {
+      perkaraId: String(perkaraId),
+      tanggalSidang: String(a.tanggalSidang || ""),
+      nomor: a.nomor === null || a.nomor === undefined ? null : Number(a.nomor),
+      disidang: a.disidang === null || a.disidang === undefined ? null : Number(a.disidang),
+      keadaan: String(a.keadaan || ""),
+      jamAmbil: String(a.waktuAmbil || ""),
+      jamHadirTerakhir: jam,
+    };
+  });
+  return { terbaca: true, alasan: "", dibacaPada, baris };
 }
 
 const KOLOM_DASAR = `perkara_id AS perkaraId, nomor_perkara AS nomorPerkara,
@@ -333,6 +384,7 @@ module.exports = {
   perkaraDenganId,
   sidangJendela,
   mediasiJendela,
+  antrianArsip,
   // Untuk uji.
   _tanggalIso: tanggalIso,
   _waktuIso: waktuIso,

@@ -321,7 +321,7 @@ class MediasiPalsu {
 }
 
 const depsMediasi = (palsu: MediasiPalsu): DepsMediasi => ({ db: async () => db, bot: palsu.bot(), pengaturan: async () => pengaturan, sekarang: () => new Date(jam) });
-const idMediasiCermin = async () => (await db.queryAll<{ id: string }>("SELECT id FROM aleta_cermin_mediasi ORDER BY id")).map((r) => String(r.id));
+const idMediasiCermin = async () => (await db.queryAll<{ id: string }>("SELECT id FROM aleta_cermin_mediasi WHERE terhapus_at = '' ORDER BY id")).map((r) => String(r.id));
 
 describe("C. Jadwal Mediasi dari cermin", () => {
   it("kunci baris: mediasiId|tanggal|jam, baris kembar diberi nomor urut", () => {
@@ -884,7 +884,7 @@ describe("E. bot", () => {
 
   it("rute baru semuanya GET + token; layanan penanda tidak berisi kata kunci tulis", () => {
     const rute = baca("aleta_bot/routes/cerminRoutes.js");
-    expect(rute.match(/router\.get\(/g)?.length).toBe(11);
+    expect(rute.match(/router\.get\(/g)?.length).toBe(12); // 5 Nov 2026: +GET /antrian (arsip antrian)
     expect(rute).not.toMatch(/router\.(post|put|patch|delete)\(/);
     for (const jalur of ["/mediasi", "/tag-katalog", "/tag-perkara"]) expect(rute).toContain(`router.get("${jalur}", wajibToken`);
     for (const b of ["aleta_bot/services/cerminTagService.js", "aleta_bot/services/cerminService.js"]) {

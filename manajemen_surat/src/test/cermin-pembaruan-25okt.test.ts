@@ -301,7 +301,7 @@ async function pemindaianSelesai() {
 }
 const baris = async (sql: string, p: unknown[] = []) => db.queryAll<Record<string, any>>(sql, p as never);
 const idPerkaraCermin = async () => (await baris("SELECT perkara_id FROM aleta_cermin_perkara ORDER BY perkara_id")).map((r) => String(r.perkara_id));
-const idSidangCermin = async () => (await baris("SELECT sidang_id FROM aleta_cermin_sidang ORDER BY sidang_id")).map((r) => String(r.sidang_id));
+const idSidangCermin = async () => (await baris("SELECT sidang_id FROM aleta_cermin_sidang WHERE terhapus_at = '' ORDER BY sidang_id")).map((r) => String(r.sidang_id));
 
 beforeEach(async () => {
   db = await createAletaDatabase({ useInMemory: true, seed: false });

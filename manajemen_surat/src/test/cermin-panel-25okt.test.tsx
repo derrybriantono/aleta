@@ -32,7 +32,7 @@ function halaman(ubah: Partial<HalamanPemantauCermin> = {}): HalamanPemantauCerm
     persen: persenKemajuan(keadaan),
     perkiraanSelesai: null,
     jendela: { mulai: "18:00", selesai: "06:30", dalamJendelaSekarang: true, jamSekarang: "22:00" },
-    hitungan: { perkara: 0, sidang: 0, pihak: 0, mediasi: 0, tag: 0, perkaraTerbaru: "", sidangTerbaru: "" },
+    hitungan: { perkara: 0, sidang: 0, pihak: 0, mediasi: 0, tag: 0, sidangTerhapus: 0, mediasiTerhapus: 0, perkaraTerbaru: "", sidangTerbaru: "" },
     proses: { menyala: true, sedangMembaca: false, terakhir: null },
     ...ubah,
   };

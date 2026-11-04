@@ -17,6 +17,8 @@
  *   GET /id-sidang?dari&sampai         daftar ringan sidang satu jendela (idem)
  *   GET /mediasi?dari&sampai           pertemuan mediasi satu jendela tanggal (baris
  *                                      persis seperti layar Jadwal Mediasi)
+ *   GET /antrian                       arsip antrian hari berjalan, datar per perkara (5 Nov 2026; hanya SELECT
+ *                                      ke sipp_turunan_antrian)
  *   GET /tag-katalog                   katalog tag Status Perkara (tanpa menyentuh SIPP)
  *   GET /tag-perkara?kunci             seluruh perkara_id yang memenuhi satu tag
  *   GET /pelengkap-jadwal?waktu&baris  keterangan LANGSUNG layar Jadwal yang tidak
@@ -185,6 +187,14 @@ router.get("/mediasi", wajibToken, async (req, res) => {
       return;
     }
     res.json({ ok: true, ...(await cerminService.mediasiJendela({ dari, sampai })) });
+  } catch (error) {
+    galat(res, error);
+  }
+});
+
+router.get("/antrian", wajibToken, async (_req, res) => {
+  try {
+    res.json({ ok: true, ...(await cerminService.antrianArsip()) });
   } catch (error) {
     galat(res, error);
   }

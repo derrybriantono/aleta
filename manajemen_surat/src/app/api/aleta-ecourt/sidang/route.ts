@@ -126,6 +126,8 @@ export async function GET(request: NextRequest) {
       // publik yang memuat ulang berkala - tidak memintanya dan tidak
       // menanggung kuerinya. Temuan penelaah 27 September 2026.
       waktu: true,
+      // 5 Nov 2026: SIPP tidak terjangkau -> salinan terakhir di cermin dengan keterangan, bukan layar kosong.
+      daruratCermin: true,
     });
 
     if (!hasil.ok) {
@@ -302,6 +304,10 @@ export async function GET(request: NextRequest) {
       // A4: daftar ini dibaca dari Cermin Perkara (saklar Jadwal menyala dan cermin segar) - layar menampilkan
       // "Cermin - diperbarui hh:mm". null = dibaca dari SIPP seperti biasa.
       cermin: (hasil.data as { cermin?: { diperbaruiPada: string | null } } | undefined)?.cermin ?? null,
+      // 5 Nov 2026: true bila SIPP tidak terjangkau dan daftar ini salinan terakhir; `keterangan` = kalimat untuk petugas.
+      dariCermin: (hasil.data as { dariCermin?: boolean } | undefined)?.dariCermin === true,
+      waktuSinkron: (hasil.data as { waktuSinkron?: string } | undefined)?.waktuSinkron ?? null,
+      keterangan: (hasil.data as { keterangan?: string } | undefined)?.keterangan ?? "",
       // Q3 16 Okt: keadaan putusan tiap baris (mediasi sebagian, T tidak hadir setelah mediasi, ...) untuk pemilihan blangko putusan
       // per keadaan di ekstensi (lib/keadaan-putusan.ts). Ruas tambahan; ekstensi lama mengabaikannya.
       // Q3 16 Okt: ?rekomendasi=1 menambahkan rekomendasiBlangko (BAS, putusan, relaas menurut alasan tunda/agenda) per baris untuk tampilan Blangko ABT.

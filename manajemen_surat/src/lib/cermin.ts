@@ -521,6 +521,80 @@ export function bersihkanKeadaanMediasi(mentah: unknown): KeadaanMediasi {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Pemindai RIWAYAT mediasi (5 Nov 2026; kunci jejak "mediasi-riwayat")
+// ---------------------------------------------------------------------------
+
+export type StatusRiwayatMediasi = "belum" | "berjalan" | "jeda" | "selesai" | "galat";
+export const LEBAR_RIWAYAT_MEDIASI_BAWAAN = 31;
+/** Pemindai riwayat mediasi diulang (seluruh riwayat dibaca ulang, tulisan hanya selisih) bila selesai lebih dari ini. */
+export const ULANG_RIWAYAT_MEDIASI_HARI = 7;
+
+export type KeadaanRiwayatMediasi = {
+  status: StatusRiwayatMediasi;
+  /** Rentang tanggal jadwal mediasi SIPP saat pemindaian dimulai (awal/akhir) dan tanggal awal jendela berikutnya. */
+  awal: string;
+  akhir: string;
+  kursor: string;
+  lebarHari: number;
+  total: number;
+  diproses: number;
+  mulaiPada: string;
+  /** Selesai putaran penuh TERAKHIR (ISO UTC); kosong = belum pernah lengkap. Tetap terisi saat pemindaian diulang. */
+  selesaiPada: string;
+  /** Rentang yang tercakup putaran penuh terakhir itu - dasar jawaban darurat. */
+  selesaiAwal: string;
+  selesaiAkhir: string;
+  putaranTerakhir: string;
+  galat: { terakhir: string; pada: string; beruntun: number };
+  peringatan: string[];
+};
+
+export function keadaanRiwayatMediasiAwal(): KeadaanRiwayatMediasi {
+  return {
+    status: "belum",
+    awal: "",
+    akhir: "",
+    kursor: "",
+    lebarHari: LEBAR_RIWAYAT_MEDIASI_BAWAAN,
+    total: 0,
+    diproses: 0,
+    mulaiPada: "",
+    selesaiPada: "",
+    selesaiAwal: "",
+    selesaiAkhir: "",
+    putaranTerakhir: "",
+    galat: { terakhir: "", pada: "", beruntun: 0 },
+    peringatan: [],
+  };
+}
+
+export function bersihkanKeadaanRiwayatMediasi(mentah: unknown): KeadaanRiwayatMediasi {
+  const dasar = keadaanRiwayatMediasiAwal();
+  if (!mentah || typeof mentah !== "object") return dasar;
+  const x = mentah as Record<string, any>;
+  const teks = (n: unknown) => (typeof n === "string" ? n : "");
+  const angka = (n: unknown) => (Number.isFinite(Number(n)) && Number(n) >= 0 ? Math.floor(Number(n)) : 0);
+  const g = x.galat && typeof x.galat === "object" ? x.galat : {};
+  const status: StatusRiwayatMediasi = ["belum", "berjalan", "jeda", "selesai", "galat"].includes(x.status) ? x.status : dasar.status;
+  return {
+    status,
+    awal: teks(x.awal),
+    akhir: teks(x.akhir),
+    kursor: teks(x.kursor),
+    lebarHari: Math.max(1, Math.min(93, angka(x.lebarHari) || LEBAR_RIWAYAT_MEDIASI_BAWAAN)),
+    total: angka(x.total),
+    diproses: angka(x.diproses),
+    mulaiPada: teks(x.mulaiPada),
+    selesaiPada: teks(x.selesaiPada),
+    selesaiAwal: teks(x.selesaiAwal),
+    selesaiAkhir: teks(x.selesaiAkhir),
+    putaranTerakhir: teks(x.putaranTerakhir),
+    galat: { terakhir: teks(g.terakhir), pada: teks(g.pada), beruntun: angka(g.beruntun) },
+    peringatan: Array.isArray(x.peringatan) ? x.peringatan.filter((d: unknown) => typeof d === "string").slice(-20) : [],
+  };
+}
+
 export type KeadaanTag = {
   /** ISO UTC: awal siklus yang sedang/terakhir berjalan. */
   siklusMulai: string;

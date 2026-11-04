@@ -17,6 +17,7 @@ import {
   type KeadaanMediasi,
   type KeadaanPembaruan,
   type KeadaanPemindai,
+  type KeadaanRiwayatMediasi,
   type KeadaanTag,
   type KeadaanPencocokan,
   type LayarCermin,
@@ -31,6 +32,15 @@ import { depsPembaruanAsli, muatKeadaanPembaruan, putaranPembaruan, type HasilPe
 import { jalankanPencocokan, muatKeadaanPencocokan, type HasilJalanPencocokan } from "@/server/modules/cermin/pencocokan";
 import { depsMediasiAsli, muatKeadaanMediasi, putaranMediasi, type HasilMediasi } from "@/server/modules/cermin/mediasi";
 import { depsTagAsli, muatKeadaanTag, putaranTag, type HasilTag } from "@/server/modules/cermin/tag";
+import { depsArsipAntrianAsli, muatKeadaanArsipAntrian, putaranArsipAntrian, type HasilArsipAntrian, type KeadaanArsipAntrian } from "@/server/modules/cermin/antrian-arsip";
+import {
+  depsRiwayatMediasiAsli,
+  lanjutkanRiwayatMediasi,
+  muatKeadaanRiwayatMediasi,
+  putaranRiwayatMediasi,
+  ulangRiwayatMediasi,
+  type HasilRiwayatMediasi,
+} from "@/server/modules/cermin/mediasi-riwayat";
 import {
   keadaanProsesPemindai,
   lanjutkanPemindai,
@@ -51,6 +61,9 @@ export type HalamanPemantauCermin = {
   pembaruan: KeadaanPembaruan;
   pencocokan: KeadaanPencocokan & { bersih: boolean };
   mediasi: KeadaanMediasi;
+  /** 5 Nov 2026: pemindai riwayat mediasi penuh dan arsip antrian. */
+  riwayatMediasi?: KeadaanRiwayatMediasi;
+  arsipAntrian?: KeadaanArsipAntrian;
   tag: KeadaanTag;
   persen: number;
   perkiraanSelesai: string | null;
@@ -70,12 +83,14 @@ async function adalahSuperAdmin(db: AletaDatabase, actorUserId: string | null | 
 
 export async function halamanPemantauCermin(db: AletaDatabase, actorUserId: string | null | undefined): Promise<HalamanPemantauCermin> {
   await pastikanAdminIstimewa(db, actorUserId, "membuka Pemantau Cermin Perkara");
-  const [pengaturan, keadaan, pembaruan, pencocokan, mediasi, tag, hitungan, bolehMengubah] = await Promise.all([
+  const [pengaturan, keadaan, pembaruan, pencocokan, mediasi, riwayatMediasi, arsipAntrian, tag, hitungan, bolehMengubah] = await Promise.all([
     pengaturanCerminBerlaku(db),
     muatKeadaanPemindai(db),
     muatKeadaanPembaruan(db),
     muatKeadaanPencocokan(db),
     muatKeadaanMediasi(db),
+    muatKeadaanRiwayatMediasi(db),
+    muatKeadaanArsipAntrian(db),
     muatKeadaanTag(db),
     hitunganCermin(db),
     adalahSuperAdmin(db, actorUserId),
@@ -91,6 +106,8 @@ export async function halamanPemantauCermin(db: AletaDatabase, actorUserId: stri
     pembaruan,
     pencocokan: { ...pencocokan, bersih: pencocokanBersih(pencocokan.terakhir) },
     mediasi,
+    riwayatMediasi,
+    arsipAntrian,
     tag,
     persen: persenKemajuan(keadaan),
     perkiraanSelesai: perkiraanSelesai(keadaan, kini, { mulai: pengaturan.jendelaMulai, selesai: pengaturan.jendelaSelesai }),
@@ -124,14 +141,18 @@ export type AksiPemantauCermin =
   | "pembaruan-sekarang"
   | "pencocokan-sekarang"
   | "mediasi-sekarang"
-  | "tag-sekarang";
+  | "tag-sekarang"
+  | "riwayat-mediasi-sekarang"
+  | "riwayat-mediasi-lanjutkan"
+  | "riwayat-mediasi-ulang"
+  | "antrian-arsip-sekarang";
 
 export async function aksiPemantauCermin(
   db: AletaDatabase,
   actorUserId: string | null | undefined,
   aksi: AksiPemantauCermin,
   opsi: { konfirmasi?: boolean } = {}
-): Promise<{ aksi: AksiPemantauCermin; hasil?: HasilPutaran | HasilPembaruan | HasilJalanPencocokan | HasilMediasi | HasilTag }> {
+): Promise<{ aksi: AksiPemantauCermin; hasil?: HasilPutaran | HasilPembaruan | HasilJalanPencocokan | HasilMediasi | HasilTag | HasilRiwayatMediasi | HasilArsipAntrian }> {
   await pastikanSuperAdmin(db, actorUserId);
   if (aksi === "putaran-sekarang") {
     // Satu kelompok sekarang, melewati saklar dan jendela jam (tindakan Super Admin yang sadar).
@@ -142,6 +163,21 @@ export async function aksiPemantauCermin(
   }
   if (aksi === "mediasi-sekarang") {
     return { aksi, hasil: await putaranMediasi(depsMediasiAsli, { paksa: true }) };
+  }
+  if (aksi === "riwayat-mediasi-sekarang") {
+    return { aksi, hasil: await putaranRiwayatMediasi(depsRiwayatMediasiAsli, { paksa: true }) };
+  }
+  if (aksi === "riwayat-mediasi-lanjutkan") {
+    await lanjutkanRiwayatMediasi(db);
+    return { aksi };
+  }
+  if (aksi === "riwayat-mediasi-ulang") {
+    if (opsi.konfirmasi !== true) throw new ApiError(400, "Mulai ulang pembacaan riwayat mediasi harus dikonfirmasi.");
+    await ulangRiwayatMediasi(db);
+    return { aksi };
+  }
+  if (aksi === "antrian-arsip-sekarang") {
+    return { aksi, hasil: await putaranArsipAntrian(depsArsipAntrianAsli, { paksa: true }) };
   }
   if (aksi === "tag-sekarang") {
     return { aksi, hasil: await putaranTag(depsTagAsli, { paksa: true }) };

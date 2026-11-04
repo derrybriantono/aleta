@@ -102,7 +102,7 @@ export async function keadaanPerkaraDariCermin(
     const id = String(r.perkara_id);
     const hariIni = sekarang.toISOString().slice(0, 10);
     const sidang = await db.queryAll<{ tanggal_sidang: string; jam_sidang: string; ruangan: string; agenda: string; ditunda: number }>(
-      "SELECT tanggal_sidang, jam_sidang, ruangan, agenda, ditunda FROM aleta_cermin_sidang WHERE perkara_id = ? AND tanggal_sidang >= ? ORDER BY tanggal_sidang ASC, jam_sidang ASC LIMIT 3",
+      "SELECT tanggal_sidang, jam_sidang, ruangan, agenda, ditunda FROM aleta_cermin_sidang WHERE terhapus_at = '' AND perkara_id = ? AND tanggal_sidang >= ? ORDER BY tanggal_sidang ASC, jam_sidang ASC LIMIT 3",
       [id, hariIni]
     );
 

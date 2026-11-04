@@ -11,6 +11,7 @@ import { createHash } from "node:crypto";
 
 import { withTransaction, type AletaDatabase } from "@/server/db/client";
 import type { JendelaSidang, PerkaraSumber, SidangSumber } from "@/server/modules/cermin/bot";
+import { NAMA_KOLOM_SIDANG, kolomSidangDariBaris } from "@/server/modules/cermin/jadwal-kolom";
 
 export function sidikIsi(isi: unknown): string {
   return createHash("sha1").update(JSON.stringify(isi)).digest("hex");
@@ -29,6 +30,58 @@ async function sidikTersimpan(db: AletaDatabase, tabel: string, kunci: string, i
     for (const r of rows) peta.set(String(r.k), String(r.sidik));
   }
   return peta;
+}
+
+/**
+ * Sidik baris sidang/mediasi yang BOLEH dilewati penulis: hanya baris yang masih ada di SIPP (terhapus_at kosong)
+ * dan kolom bawahnya sudah terisi. Baris terhapus lembut (sidik sama tetapi harus hidup lagi) dan baris lama
+ * (kolom belum diisi) dikembalikan sebagai sidik kosong, jadi penulis menuliskannya ulang.
+ */
+export async function sidikJadwalAktif(
+  db: AletaDatabase,
+  tabel: "aleta_cermin_sidang" | "aleta_cermin_mediasi",
+  kunci: "sidang_id" | "id",
+  id: string[]
+): Promise<Map<string, string>> {
+  const peta = new Map<string, string>();
+  for (let mulai = 0; mulai < id.length; mulai += 500) {
+    const bagian = id.slice(mulai, mulai + 500);
+    const rows = await db.queryAll<{ k: string; sidik: string; terhapus_at: string; kolom_diisi: number }>(
+      `SELECT ${kunci} AS k, sidik, terhapus_at, kolom_diisi FROM ${tabel} WHERE ${kunci} IN (${bagian.map(() => "?").join(", ")})`,
+      bagian
+    );
+    for (const r of rows) {
+      const lewati = String(r.terhapus_at ?? "") === "" && Number(r.kolom_diisi) === 1;
+      peta.set(String(r.k), lewati ? String(r.sidik) : "");
+    }
+  }
+  return peta;
+}
+
+/**
+ * Menandai baris sidang/mediasi HILANG dari SIPP (terhapus lembut): terhapus_at diisi, barisnya tetap ada.
+ * Hanya baris yang masih hidup yang ditandai (waktu hilang pertama dipertahankan). Mengembalikan jumlah yang ditandai.
+ */
+export async function tandaiTerhapus(
+  db: AletaDatabase,
+  tabel: "aleta_cermin_sidang" | "aleta_cermin_mediasi",
+  kunci: "sidang_id" | "id",
+  id: string[],
+  sekarang: string
+): Promise<number> {
+  let jumlah = 0;
+  for (let mulai = 0; mulai < id.length; mulai += 500) {
+    const bagian = id.slice(mulai, mulai + 500);
+    const hidup = await db.queryAll<{ k: string }>(
+      `SELECT ${kunci} AS k FROM ${tabel} WHERE terhapus_at = '' AND ${kunci} IN (${bagian.map(() => "?").join(", ")})`,
+      bagian
+    );
+    if (hidup.length === 0) continue;
+    const idHidup = hidup.map((r) => String(r.k));
+    await db.run(`UPDATE ${tabel} SET terhapus_at = ? WHERE ${kunci} IN (${idHidup.map(() => "?").join(", ")})`, [sekarang, ...idHidup]);
+    jumlah += idHidup.length;
+  }
+  return jumlah;
 }
 
 const nullAngka = (n: number | null | undefined) => (n === null || n === undefined || !Number.isFinite(Number(n)) ? null : Number(n));
@@ -129,7 +182,7 @@ export async function simpanJendelaSidang(
 ): Promise<HasilSimpan> {
   const daftar: SidangSumber[] = jendela.sidang ?? [];
   if (daftar.length === 0) return { ditulis: 0, tetap: 0 };
-  const lama = await sidikTersimpan(db, "aleta_cermin_sidang", "sidang_id", daftar.map((s) => String(s.sidangId)));
+  const lama = await sidikJadwalAktif(db, "aleta_cermin_sidang", "sidang_id", daftar.map((s) => String(s.sidangId)));
   const baru = daftar.map((s) => ({ s, sidik: sidikIsi(s) })).filter(({ s, sidik }) => lama.get(String(s.sidangId)) !== sidik);
   if (baru.length > 0) {
     await withTransaction(db, async (tx) => {
@@ -137,8 +190,9 @@ export async function simpanJendelaSidang(
         await tx.run(
           `INSERT INTO aleta_cermin_sidang
              (sidang_id, perkara_id, tanggal_sidang, jam_sidang, ruangan, agenda, ditunda,
-              baris_json, sipp_diperbarui, cermin_diperbarui, sidik)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              baris_json, sipp_diperbarui, cermin_diperbarui, sidik, terhapus_at, kolom_diisi,
+              ${NAMA_KOLOM_SIDANG.join(", ")})
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '', 1, ${NAMA_KOLOM_SIDANG.map(() => "?").join(", ")})
            ON CONFLICT (sidang_id) DO UPDATE SET
              perkara_id = excluded.perkara_id,
              tanggal_sidang = excluded.tanggal_sidang,
@@ -149,7 +203,10 @@ export async function simpanJendelaSidang(
              baris_json = excluded.baris_json,
              sipp_diperbarui = excluded.sipp_diperbarui,
              cermin_diperbarui = excluded.cermin_diperbarui,
-             sidik = excluded.sidik`,
+             sidik = excluded.sidik,
+             terhapus_at = '',
+             kolom_diisi = 1,
+             ${NAMA_KOLOM_SIDANG.map((k) => `${k} = excluded.${k}`).join(",\n             ")}`,
           [
             String(s.sidangId),
             String(s.perkaraId),
@@ -162,6 +219,7 @@ export async function simpanJendelaSidang(
             s.sippDiperbarui,
             sekarang,
             sidik,
+            ...NAMA_KOLOM_SIDANG.map((k) => kolomSidangDariBaris(s.baris)[k]),
           ]
         );
       }
@@ -172,12 +230,14 @@ export async function simpanJendelaSidang(
 
 /** Hitungan baris tiap tabel cermin (untuk layar pemantau). */
 export async function hitunganCermin(db: AletaDatabase) {
-  const [p, s, pi, m, t] = await Promise.all([
+  const [p, s, pi, m, t, sh, mh] = await Promise.all([
     db.queryAll<{ n: number; terbaru: string | null }>("SELECT COUNT(*) AS n, MAX(cermin_diperbarui) AS terbaru FROM aleta_cermin_perkara"),
-    db.queryAll<{ n: number; terbaru: string | null }>("SELECT COUNT(*) AS n, MAX(cermin_diperbarui) AS terbaru FROM aleta_cermin_sidang"),
+    db.queryAll<{ n: number; terbaru: string | null }>("SELECT COUNT(*) AS n, MAX(cermin_diperbarui) AS terbaru FROM aleta_cermin_sidang WHERE terhapus_at = ''"),
     db.queryAll<{ n: number }>("SELECT COUNT(*) AS n FROM aleta_cermin_pihak"),
-    db.queryAll<{ n: number }>("SELECT COUNT(*) AS n FROM aleta_cermin_mediasi"),
+    db.queryAll<{ n: number }>("SELECT COUNT(*) AS n FROM aleta_cermin_mediasi WHERE terhapus_at = ''"),
     db.queryAll<{ n: number }>("SELECT COUNT(*) AS n FROM aleta_cermin_tag"),
+    db.queryAll<{ n: number }>("SELECT COUNT(*) AS n FROM aleta_cermin_sidang WHERE terhapus_at <> ''"),
+    db.queryAll<{ n: number }>("SELECT COUNT(*) AS n FROM aleta_cermin_mediasi WHERE terhapus_at <> ''"),
   ]);
   return {
     perkara: Number(p[0]?.n) || 0,
@@ -185,6 +245,9 @@ export async function hitunganCermin(db: AletaDatabase) {
     pihak: Number(pi[0]?.n) || 0,
     mediasi: Number(m[0]?.n) || 0,
     tag: Number(t[0]?.n) || 0,
+    /** 5 Nov 2026: baris yang hilang dari SIPP (terhapus lembut) - tidak dihitung pada `sidang`/`mediasi`. */
+    sidangTerhapus: Number(sh[0]?.n) || 0,
+    mediasiTerhapus: Number(mh[0]?.n) || 0,
     perkaraTerbaru: p[0]?.terbaru ?? "",
     sidangTerbaru: s[0]?.terbaru ?? "",
   };
@@ -208,13 +271,13 @@ export async function gantiSidangRentang(
   let dihapus = 0;
   if (!opsi.terpotong) {
     const ada = new Set(sidang.map((s) => String(s.sidangId)));
-    const lama = await db.queryAll<{ sidang_id: string }>("SELECT sidang_id FROM aleta_cermin_sidang WHERE tanggal_sidang >= ? AND tanggal_sidang <= ?", [dari, sampai]);
+    // Hanya yang masih hidup; yang sudah ditandai hilang tidak ditandai lagi (waktu hilang pertama dipertahankan).
+    const lama = await db.queryAll<{ sidang_id: string }>(
+      "SELECT sidang_id FROM aleta_cermin_sidang WHERE terhapus_at = '' AND tanggal_sidang >= ? AND tanggal_sidang <= ?",
+      [dari, sampai]
+    );
     const hapus = lama.map((r) => String(r.sidang_id)).filter((id) => !ada.has(id));
-    for (let mulai = 0; mulai < hapus.length; mulai += 500) {
-      const bagian = hapus.slice(mulai, mulai + 500);
-      await db.run(`DELETE FROM aleta_cermin_sidang WHERE sidang_id IN (${bagian.map(() => "?").join(", ")})`, bagian);
-    }
-    dihapus = hapus.length;
+    dihapus = await tandaiTerhapus(db, "aleta_cermin_sidang", "sidang_id", hapus, sekarang);
   }
   return { ...simpan, dihapus };
 }
@@ -227,9 +290,11 @@ export async function hapusPerkaraCermin(db: AletaDatabase, id: string[]): Promi
     const tanda = bagian.map(() => "?").join(", ");
     await withTransaction(db, async (tx) => {
       await tx.run(`DELETE FROM aleta_cermin_perkara WHERE perkara_id IN (${tanda})`, bagian);
-      await tx.run(`DELETE FROM aleta_cermin_sidang WHERE perkara_id IN (${tanda})`, bagian);
+      // Sidang dan mediasi ditandai hilang (terhapus lembut), bukan di-DELETE; pihak dan penanda tetap dihapus.
+      const sekarang = new Date().toISOString();
+      await tx.run(`UPDATE aleta_cermin_sidang SET terhapus_at = ? WHERE terhapus_at = '' AND perkara_id IN (${tanda})`, [sekarang, ...bagian]);
       await tx.run(`DELETE FROM aleta_cermin_pihak WHERE perkara_id IN (${tanda})`, bagian);
-      await tx.run(`DELETE FROM aleta_cermin_mediasi WHERE perkara_id IN (${tanda})`, bagian);
+      await tx.run(`UPDATE aleta_cermin_mediasi SET terhapus_at = ? WHERE terhapus_at = '' AND perkara_id IN (${tanda})`, [sekarang, ...bagian]);
       await tx.run(`DELETE FROM aleta_cermin_tag WHERE perkara_id IN (${tanda})`, bagian);
     });
   }

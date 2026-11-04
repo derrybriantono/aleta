@@ -1400,6 +1400,53 @@ export const DDL_ALETA_CERMIN_PERKARA_TANGGAL = {
 } as const;
 
 /**
+ * Cermin Jadwal Sidang & Mediasi lengkap (0134, 5 Nov 2026): terhapus lembut, kolom yang dapat dicari, dan arsip
+ * antrian pada aleta_cermin_sidang / aleta_cermin_mediasi. Cermin PERSIS dari
+ * drizzle/0134_aleta_cermin_jadwal_lengkap.sql; penjaga jadwal-cermin-lengkap-5nov.test.ts membandingkan keduanya.
+ * Hanya tambah kolom/indeks: tanpa tabel baru.
+ */
+export const DDL_ALETA_CERMIN_JADWAL_LENGKAP = {
+  kolom: [
+    `ALTER TABLE aleta_cermin_sidang ADD COLUMN IF NOT EXISTS terhapus_at TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_cermin_sidang ADD COLUMN IF NOT EXISTS kolom_diisi INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE aleta_cermin_sidang ADD COLUMN IF NOT EXISTS nomor_perkara TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_cermin_sidang ADD COLUMN IF NOT EXISTS jenis_perkara TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_cermin_sidang ADD COLUMN IF NOT EXISTS alasan_tunda TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_cermin_sidang ADD COLUMN IF NOT EXISTS dihadiri_oleh INTEGER`,
+    `ALTER TABLE aleta_cermin_sidang ADD COLUMN IF NOT EXISTS urutan_sidang INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE aleta_cermin_sidang ADD COLUMN IF NOT EXISTS sidang_keliling INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE aleta_cermin_sidang ADD COLUMN IF NOT EXISTS sidang_ikrar INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE aleta_cermin_sidang ADD COLUMN IF NOT EXISTS ada_bas INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE aleta_cermin_sidang ADD COLUMN IF NOT EXISTS antrian_nomor INTEGER`,
+    `ALTER TABLE aleta_cermin_sidang ADD COLUMN IF NOT EXISTS antrian_disidang INTEGER`,
+    `ALTER TABLE aleta_cermin_sidang ADD COLUMN IF NOT EXISTS antrian_keadaan TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_cermin_sidang ADD COLUMN IF NOT EXISTS antrian_jam_ambil TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_cermin_sidang ADD COLUMN IF NOT EXISTS antrian_jam_hadir TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_cermin_sidang ADD COLUMN IF NOT EXISTS antrian_dibaca_at TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_cermin_mediasi ADD COLUMN IF NOT EXISTS terhapus_at TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_cermin_mediasi ADD COLUMN IF NOT EXISTS kolom_diisi INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE aleta_cermin_mediasi ADD COLUMN IF NOT EXISTS nomor_perkara TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_cermin_mediasi ADD COLUMN IF NOT EXISTS jenis_perkara TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_cermin_mediasi ADD COLUMN IF NOT EXISTS tempat TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_cermin_mediasi ADD COLUMN IF NOT EXISTS ditunda INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE aleta_cermin_mediasi ADD COLUMN IF NOT EXISTS dihadiri TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_cermin_mediasi ADD COLUMN IF NOT EXISTS status_mediator TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_cermin_mediasi ADD COLUMN IF NOT EXISTS jenis_mediasi TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_cermin_mediasi ADD COLUMN IF NOT EXISTS nomor_sk TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_cermin_mediasi ADD COLUMN IF NOT EXISTS penetapan_mediator TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_cermin_mediasi ADD COLUMN IF NOT EXISTS laporan_mediator TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_cermin_mediasi ADD COLUMN IF NOT EXISTS hasil TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE aleta_cermin_mediasi ADD COLUMN IF NOT EXISTS hasil_teks TEXT NOT NULL DEFAULT ''`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_cermin_sidang_nomor ON aleta_cermin_sidang(nomor_perkara)`,
+    `CREATE INDEX IF NOT EXISTS idx_cermin_sidang_terhapus ON aleta_cermin_sidang(terhapus_at, tanggal_sidang)`,
+    `CREATE INDEX IF NOT EXISTS idx_cermin_mediasi_nomor ON aleta_cermin_mediasi(nomor_perkara)`,
+    `CREATE INDEX IF NOT EXISTS idx_cermin_mediasi_terhapus ON aleta_cermin_mediasi(terhapus_at, tanggal)`,
+  ],
+} as const;
+
+/**
  * Penjaga Tenggat Terjadwal (0110, 25 Okt 2026, G1): catatan kirim pengingat WhatsApp per penerima per tanggal.
  * Cermin PERSIS dari drizzle/0110_aleta_tenggat_kirim.sql; penjaga tenggat-terjadwal-25okt.test.ts
  * membandingkan keduanya. Tanpa kunci asing.
@@ -5934,6 +5981,7 @@ const indexStatements = [
   ...DDL_ALETA_ABT_PUSTAKA.indeks,
   ...DDL_ALETA_BERKAS_PERKARA.indeks,
   ...DDL_ALETA_CERMIN_PERKARA.indeks,
+  ...DDL_ALETA_CERMIN_JADWAL_LENGKAP.indeks,
   ...DDL_KESEHATAN_GALAT.indeks,
   ...DDL_VERIFIKASI_DUA_LANGKAH.indeks,
   ...DDL_PENJAGA_INTEGRITAS.indeks,
@@ -6484,6 +6532,7 @@ const migrationStatements = [
   ...DDL_ALETA_AI_DOMPET.kolom,
   ...DDL_ALETA_AI_PROMO.kolom,
   ...DDL_ALETA_CERMIN_PERKARA_TANGGAL.kolom,
+  ...DDL_ALETA_CERMIN_JADWAL_LENGKAP.kolom,
   // Versi ekstensi per PC (0094).
   ...DDL_KESEHATAN_GALAT.kolom,
 ];

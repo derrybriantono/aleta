@@ -27,6 +27,8 @@ import { KUNCI_JEJAK, bacaJejak, tulisJejak } from "@/server/modules/cermin/jeja
 import { kesegaranCermin } from "@/server/modules/cermin/kesegaran";
 import { muatKeadaanPemindai } from "@/server/modules/cermin/pemindai";
 import { pengaturanCerminBerlaku, sumberPengaturanCermin } from "@/server/modules/cermin/pengaturan";
+import { NAMA_KOLOM_MEDIASI, kolomMediasiDariBaris } from "@/server/modules/cermin/jadwal-kolom";
+import { sidikJadwalAktif, tandaiTerhapus } from "@/server/modules/cermin/penyimpan";
 import { tulisCerminTerakhirMs } from "@/server/modules/cermin/setelah-tulisan";
 
 export type DepsMediasi = {
@@ -84,22 +86,16 @@ export async function gantiMediasiRentang(
 ): Promise<{ ditulis: number; tetap: number; dihapus: number }> {
   const sekarang = opsi.sekarang ?? new Date().toISOString();
   const kunci = kunciBarisMediasi(rows);
-  const lama = new Map<string, string>();
-  for (let mulai = 0; mulai < kunci.length; mulai += 500) {
-    const bagian = kunci.slice(mulai, mulai + 500);
-    const ada = await db.queryAll<{ id: string; sidik: string }>(
-      `SELECT id, sidik FROM aleta_cermin_mediasi WHERE id IN (${bagian.map(() => "?").join(", ")})`,
-      bagian
-    );
-    for (const r of ada) lama.set(String(r.id), String(r.sidik));
-  }
+  // Baris terhapus lembut dan baris lama (kolom belum diisi) dianggap berbeda, jadi ditulis ulang (hidup lagi).
+  const lama = await sidikJadwalAktif(db, "aleta_cermin_mediasi", "id", kunci);
   const baru = rows.map((r, i) => ({ r, id: kunci[i], sidik: sidikIsi(r) })).filter((x) => lama.get(x.id) !== x.sidik);
   if (baru.length > 0) {
     await withTransaction(db, async (tx) => {
       for (const { r, id, sidik } of baru) {
         await tx.run(
-          `INSERT INTO aleta_cermin_mediasi (id, perkara_id, tanggal, mediator, status, baris_json, sipp_diperbarui, cermin_diperbarui, sidik)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `INSERT INTO aleta_cermin_mediasi (id, perkara_id, tanggal, mediator, status, baris_json, sipp_diperbarui, cermin_diperbarui, sidik,
+              terhapus_at, kolom_diisi, ${NAMA_KOLOM_MEDIASI.join(", ")})
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, '', 1, ${NAMA_KOLOM_MEDIASI.map(() => "?").join(", ")})
            ON CONFLICT (id) DO UPDATE SET
              perkara_id = excluded.perkara_id,
              tanggal = excluded.tanggal,
@@ -108,8 +104,22 @@ export async function gantiMediasiRentang(
              baris_json = excluded.baris_json,
              sipp_diperbarui = excluded.sipp_diperbarui,
              cermin_diperbarui = excluded.cermin_diperbarui,
-             sidik = excluded.sidik`,
-          [id, teks(r.perkaraId), teks(r.tanggal), teks(r.mediator), r.selesai === true ? "selesai" : "berjalan", JSON.stringify(r), "", sekarang, sidik]
+             sidik = excluded.sidik,
+             terhapus_at = '',
+             kolom_diisi = 1,
+             ${NAMA_KOLOM_MEDIASI.map((k) => `${k} = excluded.${k}`).join(",\n             ")}`,
+          [
+            id,
+            teks(r.perkaraId),
+            teks(r.tanggal),
+            teks(r.mediator),
+            r.selesai === true ? "selesai" : "berjalan",
+            JSON.stringify(r),
+            "",
+            sekarang,
+            sidik,
+            ...NAMA_KOLOM_MEDIASI.map((k) => kolomMediasiDariBaris(r)[k]),
+          ]
         );
       }
     });
@@ -117,13 +127,10 @@ export async function gantiMediasiRentang(
   let dihapus = 0;
   if (opsi.hapus) {
     const ada = new Set(kunci);
-    const semua = await db.queryAll<{ id: string }>("SELECT id FROM aleta_cermin_mediasi WHERE tanggal >= ? AND tanggal <= ?", [dari, sampai]);
+    const semua = await db.queryAll<{ id: string }>("SELECT id FROM aleta_cermin_mediasi WHERE terhapus_at = '' AND tanggal >= ? AND tanggal <= ?", [dari, sampai]);
     const hapus = semua.map((x) => String(x.id)).filter((id) => !ada.has(id));
-    for (let mulai = 0; mulai < hapus.length; mulai += 500) {
-      const bagian = hapus.slice(mulai, mulai + 500);
-      await db.run(`DELETE FROM aleta_cermin_mediasi WHERE id IN (${bagian.map(() => "?").join(", ")})`, bagian);
-    }
-    dihapus = hapus.length;
+    // Terhapus lembut: ditandai hilang, bukan di-DELETE; hidup lagi bila SIPP memilikinya kembali.
+    dihapus = await tandaiTerhapus(db, "aleta_cermin_mediasi", "id", hapus, sekarang);
   }
   return { ditulis: baru.length, tetap: rows.length - baru.length, dihapus };
 }
@@ -281,6 +288,31 @@ export function urutanMediasi(a: Record<string, unknown>, b: Record<string, unkn
   return s(a.nomorPerkara) < s(b.nomorPerkara) ? -1 : s(a.nomorPerkara) > s(b.nomorPerkara) ? 1 : 0;
 }
 
+/** Mediasi cermin pada [dari, sampai] urut seperti jalur lama; sisa tenggang PERMA dihitung ulang terhadap HARI INI. */
+export async function muatMediasiCermin(db: AletaDatabase, dari: string, sampai: string, sekarang: Date, batasMasuk?: number): Promise<Array<Record<string, unknown>>> {
+  const rows = await db.queryAll<{ baris_json: string }>("SELECT baris_json FROM aleta_cermin_mediasi WHERE terhapus_at = '' AND tanggal >= ? AND tanggal <= ?", [dari, sampai]);
+  const hariIni = waktuPengadilan(sekarang).tanggal;
+  const semua: Array<Record<string, unknown>> = [];
+  for (const r of rows) {
+    try {
+      const b = JSON.parse(r.baris_json) as Record<string, unknown>;
+      if (!b || typeof b !== "object") continue;
+      // Bergantung pada HARI INI: dihitung ulang dengan rumus bot (selisihHari(hariIni, tenggat) bila belum selesai).
+      const tenggat = String(b.tenggatPerma ?? "");
+      const selesai = Boolean(String(b.laporanMediator ?? ""));
+      const sisa = tenggat && !selesai ? selisihHariIso(hariIni, tenggat) : null;
+      b.sisaHariTenggat = sisa;
+      b.lewatTenggang = sisa !== null && sisa < 0;
+      semua.push(b);
+    } catch {
+      // Baris cermin rusak dilewati; pencocokan mingguan memperbaikinya.
+    }
+  }
+  semua.sort(urutanMediasi);
+  const batas = Math.min(Math.max(Math.floor(Number(batasMasuk) || 200), 1), 500);
+  return semua.slice(0, batas);
+}
+
 /**
  * Kesegaran mediasi: pemindaian awal selesai (kesegaranCermin) DAN jendela mediasi
  * dihitung ulang baru-baru ini (tidak lebih tua dari max(30 menit, 4 x mediasiMenit),
@@ -323,29 +355,10 @@ export async function bacaMediasiDariCermin(
       catat?.("cermin-tertinggal", segar.alasan);
       return null;
     }
-    const rows = await db.queryAll<{ baris_json: string }>("SELECT baris_json FROM aleta_cermin_mediasi WHERE tanggal >= ? AND tanggal <= ?", [putusan.dari, putusan.sampai]);
-    const hariIni = waktuPengadilan(sekarang).tanggal;
-    const semua: Array<Record<string, unknown>> = [];
-    for (const r of rows) {
-      try {
-        const b = JSON.parse(r.baris_json) as Record<string, unknown>;
-        if (!b || typeof b !== "object") continue;
-        // Bergantung pada HARI INI: dihitung ulang dengan rumus bot (selisihHari(hariIni, tenggat) bila belum selesai).
-        const tenggat = String(b.tenggatPerma ?? "");
-        const selesai = Boolean(String(b.laporanMediator ?? ""));
-        const sisa = tenggat && !selesai ? selisihHariIso(hariIni, tenggat) : null;
-        b.sisaHariTenggat = sisa;
-        b.lewatTenggang = sisa !== null && sisa < 0;
-        semua.push(b);
-      } catch {
-        // Baris cermin rusak dilewati; pencocokan mingguan memperbaikinya.
-      }
-    }
-    semua.sort(urutanMediasi);
-    const batas = Math.min(Math.max(Math.floor(Number(p.batas) || 200), 1), 500);
+    const mediasi = await muatMediasiCermin(db, putusan.dari, putusan.sampai, sekarang, p.batas);
     return {
       ok: true,
-      data: { ok: true, dari: putusan.dari, sampai: putusan.sampai, terbaca: true, alasan: "", mediasi: semua.slice(0, batas), cermin: { diperbaruiPada: segar.diperbaruiPada } },
+      data: { ok: true, dari: putusan.dari, sampai: putusan.sampai, terbaca: true, alasan: "", mediasi, cermin: { diperbaruiPada: segar.diperbaruiPada } },
     };
   } catch (galat) {
     catat?.("galat", galat instanceof Error ? galat.message : "galat");

@@ -37,6 +37,7 @@
  */
 
 import { bacaJadwalDariCermin } from "@/server/modules/cermin/jadwal-cermin";
+import { jadwalSidangDariCerminDarurat, sippTakTerjangkau } from "@/server/modules/cermin/darurat";
 import { getGatewayJadwalSidang } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { RUANG_SINGGAH } from "@/server/modules/aleta-bot/singgah-tulisan";
 import { intipSinggah, singgahSingkat, ttlDariEnv, type Cakupan } from "@/server/shared/singgah-singkat";
@@ -62,7 +63,11 @@ export function ttlSinggahDisidang() {
   return ttlDariEnv("ALETA_SINGGAH_DISIDANG_MS", process.env.NODE_ENV === "test" ? 0 : 2000);
 }
 
-type MasukanJadwal = Parameters<typeof getGatewayJadwalSidang>[0];
+/**
+ * `daruratCermin` (5 Nov 2026): hanya layar yang meminta yang boleh dijawab dari salinan cermin bila SIPP tidak
+ * terjangkau (Jadwal Sidang, Perkara Saya); layar publik tidak - lebih baik kosong daripada menampilkan urutan basi.
+ */
+type MasukanJadwal = Parameters<typeof getGatewayJadwalSidang>[0] & { daruratCermin?: boolean };
 type HasilJadwal = Awaited<ReturnType<typeof getGatewayJadwalSidang>>;
 
 /** Kunci yang sama = permintaan ke bot yang sama persis. */
@@ -143,7 +148,13 @@ async function jadwalSumber(p: MasukanJadwal): Promise<HasilJadwal> {
     const dariCermin = await bacaJadwalDariCermin(p);
     if (dariCermin) return dariCermin as unknown as HasilJadwal;
   }
-  return getGatewayJadwalSidang(p);
+  const hasil = await getGatewayJadwalSidang(p);
+  // 5 Nov 2026: SIPP/bot tidak terjangkau -> salinan terakhir di cermin + keterangan (tidak disinggahkan).
+  if (p.daruratCermin && !hasil.ok && sippTakTerjangkau(hasil) && (process.env.NODE_ENV !== "test" || process.env.ALETA_CERMIN_JADWAL_UJI === "1")) {
+    const darurat = await jadwalSidangDariCerminDarurat(p);
+    if (darurat) return darurat as unknown as HasilJadwal;
+  }
+  return hasil;
 }
 
 export function getGatewayJadwalSidangSinggah(p: MasukanJadwal): ReturnType<typeof getGatewayJadwalSidang> {
@@ -153,7 +164,7 @@ export function getGatewayJadwalSidangSinggah(p: MasukanJadwal): ReturnType<type
     if (pinjaman) return Promise.resolve(pinjaman);
   }
   return singgahSingkat(RUANG_SINGGAH_JADWAL, kunciSinggahJadwal(p), ttl, () => jadwalSumber(p), {
-    simpanBila: (hasil) => hasil.ok === true,
+    simpanBila: (hasil) => hasil.ok === true && !(hasil.data as { dariCermin?: boolean } | undefined)?.dariCermin,
     cakupan: cakupanJadwal(p),
   });
 }

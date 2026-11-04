@@ -5041,6 +5041,8 @@ export function AletaEcourtSidang({
   const [penyimpanDiperbarui] = useState(buatPenyimpanDiperbarui);
   // A4 (25 Okt 2026): bila daftar dibaca dari Cermin Perkara - kapan cermin terakhir dihitung ulang (null = dari SIPP seperti biasa).
   const [cerminJadwal, setCerminJadwal] = useState<{ diperbaruiPada: string | null } | null>(null);
+  // 5 Nov 2026: kalimat bila SIPP tidak terjangkau dan daftar ini salinan terakhir ("Data terakhir 09.12, SIPP sedang tidak terjangkau.").
+  const [keteranganSipp, setKeteranganSipp] = useState("");
   const [galat, setGalat] = useState("");
 
   const [kalenderTerbuka, setKalenderTerbuka] = useState(false);
@@ -6162,6 +6164,7 @@ export function AletaEcourtSidang({
       const waktu = (data.waktuAntrian ?? WAKTU_ANTRIAN_KOSONG) as WaktuAntrian;
       setWaktuAntrian(waktu);
       setCerminJadwal((data.cermin ?? null) as { diperbaruiPada: string | null } | null);
+      setKeteranganSipp(String(data.keterangan ?? ""));
       // Date.now() di sini hanya menandai KAPAN data diterima; yang berjalan
       // dihitung dari beda Date.now() sesudahnya, tidak dari jam komputernya.
       const sekarangMs = bacaWaktu(waktu.sekarang);
@@ -6781,6 +6784,9 @@ export function AletaEcourtSidang({
                       {(pertamaMuat && memuat) || !tampil(tampilan, "tanda-diperbarui") ? null : (
                         <TandaDiperbarui penyimpan={penyimpanDiperbarui} awalan={tampil(tampilan, "tanggal-dan-jumlah") ? " · " : ""} />
                       )}
+                      {keteranganSipp && !(pertamaMuat && memuat) ? (
+                        <span data-testid="tanda-sipp-tidak-terjangkau" className="text-amber-700 dark:text-amber-400">{" · "}{keteranganSipp}</span>
+                      ) : null}
                       {cerminJadwal && !(pertamaMuat && memuat) && cerminJadwal.diperbaruiPada ? (
                         <span data-testid="tanda-cermin" title="Daftar sidang dibaca dari salinan keadaan perkara SIPP. Antrian dan kehadiran tetap langsung.">
                           {" · salinan SIPP "}
@@ -10496,6 +10502,9 @@ export function AletaEcourtSidang({
                   <TandaDiperbarui penyimpan={penyimpanDiperbarui} awalan={tampil(tampilan, "tanggal-dan-jumlah") ? " · " : ""} />
                 )}
                 {/* A4: daftar dibaca dari Cermin Perkara; antrian dan kehadiran tetap langsung dari sumbernya. */}
+                {keteranganSipp && !(pertamaMuat && memuat) ? (
+                  <span data-testid="tanda-sipp-tidak-terjangkau-2" className="text-amber-700 dark:text-amber-400">{" · "}{keteranganSipp}</span>
+                ) : null}
                 {cerminJadwal && !(pertamaMuat && memuat) ? (
                   <span data-testid="tanda-cermin" title="Daftar sidang dibaca dari salinan keadaan perkara SIPP di ALETA (Cermin Perkara). Antrian dan kehadiran tetap langsung.">
                     {" · Cermin · diperbarui "}

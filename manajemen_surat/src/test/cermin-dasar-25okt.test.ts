@@ -507,7 +507,7 @@ describe("D. bot - tidak ada satu pun tulisan ke SIPP", () => {
       expect(kode, b).not.toMatch(/v_pihak_perkara/);
     }
     const rute = baca("aleta_bot/routes/cerminRoutes.js");
-    expect(rute.match(/router\.get\(/g)?.length).toBe(11);
+    expect(rute.match(/router\.get\(/g)?.length).toBe(12); // 5 Nov 2026: +GET /antrian (arsip antrian)
     expect(rute.match(/wajibToken/g)!.length).toBeGreaterThanOrEqual(12); // definisi + sebelas rute
   });
 
