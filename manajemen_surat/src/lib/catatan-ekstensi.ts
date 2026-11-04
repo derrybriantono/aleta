@@ -57,6 +57,17 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.71",
+    dirilis: "2026-11-04T10:30:00+08:00",
+    judul: "Pratinjau Blangko Derry lewat mesin ALETA, folder tanpa menu disembunyikan, peringatan isian titik-titik",
+    butir: [
+      "Pratinjau di panel Blangko Derry disusun mesin ALETA: lebih cepat dan tidak lagi mengubah urutan jadwal sidang di SIPP. Bila naskah belum bisa disusun cepat, pratinjau otomatis kembali lewat ABT dengan batas tunggu 6 menit.",
+      "Folder blangko tanpa menu ABT tidak lagi tampil di daftar panel; berkasnya tetap ada.",
+      "Sebelum cetak muncul satu baris peringatan bila isian seperti kesimpulan atau biaya verzet masih titik-titik; cetak tidak ditahan.",
+      "Keterangan saksi Tergugat ke-3 dan ke-4 ikut tersusun untuk putusan kontradiktoir cerai dengan 3-4 saksi Tergugat.",
+    ],
+  },
+  {
     versi: "1.205.70",
     dirilis: "2026-11-04T08:30:00+08:00",
     judul: "Label isian Blangko Derry lebih jelas dan daftar blangko lebih tahan gangguan",

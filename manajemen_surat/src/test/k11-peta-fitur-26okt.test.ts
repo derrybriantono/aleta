@@ -279,7 +279,8 @@ describe("peta fitur K11: kelompok manifest dan modul malas", () => {
     // isi-sipp-bersama.js: 3 Nov 2026 MENAMBAH hitungLamaPisah (saran lama pisah rumah dari "pisah rumah sejak") dan tentukanBeracara (beracara elektronik, keputusan 144); ekspor lama tetap.
     // basmassal.js: 3 Nov 2026 (kasir rekening-skum) MENAMBAH pembayar e-Court + Cetak SKUM di kartu Kasir Manual, kepala kolom,
     // nominal Rupiah bertitik, isian nomor resi di baris; ekspor lama (aletaKasirPasang/-Harian) tetap.
-    const diubah = new Set(["basmassal.js", "aleta.js", "unduh-universal.js", "saksi-katalog-indeks.js", "saksi-katalog.js", "konten.js", "abt.js", "manifest.json", "latar.js", "blangko-derry-isian.js", "blangko-derry-saksi-tampil.js", "blangko-derry-saksi.js", "saksi-susun.js", "blangko-derry.js", "deteksi-sisa-blangko.js", "panel-alat.js", "blangko-derry-katalog.js", "jembatan.js", "sipp-ide-l1.js", "sipp-ide-m1.js", "isi-sipp-bersama.js"]);
+    // abt-klien.js: 4 Nov 2026 cetak({ batasMs }) opsional (pratinjau cadangan dihentikan setelah 6 menit); tanpa batasMs perilaku lama.
+    const diubah = new Set(["basmassal.js", "aleta.js", "unduh-universal.js", "saksi-katalog-indeks.js", "saksi-katalog.js", "konten.js", "abt.js", "manifest.json", "latar.js", "blangko-derry-isian.js", "blangko-derry-saksi-tampil.js", "blangko-derry-saksi.js", "saksi-susun.js", "blangko-derry.js", "deteksi-sisa-blangko.js", "panel-alat.js", "blangko-derry-katalog.js", "jembatan.js", "sipp-ide-l1.js", "sipp-ide-m1.js", "isi-sipp-bersama.js", "abt-klien.js"]);
     for (const [nama, info] of Object.entries(sebelum.berkas)) {
       if (diubah.has(nama) || !sesudah.berkas[nama]) continue;
       // berkas yang sengaja disentuh didaftarkan di KEMBALI_DISENTUH

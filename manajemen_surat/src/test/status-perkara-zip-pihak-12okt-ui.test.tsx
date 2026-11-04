@@ -150,8 +150,9 @@ describe("butir 12 - kontak pada Para Pihak", () => {
       </div>
     );
     await waitFor(() => expect(screen.getAllByText("rina.wati@yahoo.co.id").length).toBe(1));
-    expect(fetchPalsu).toHaveBeenCalledTimes(1);
-    expect(String((fetchPalsu.mock.calls[0] as unknown[])[0])).toContain("/api/aleta-ecourt/kontak-para-pihak?nomor=");
+    // Baris rekening pembayar (1.205.67) ikut membaca /pembayaran-ecourt sesudah kontak tampil; yang dijaga di sini hanya kontak.
+    const bacaKontak = fetchPalsu.mock.calls.filter((c) => String((c as unknown[])[0]).includes("/api/aleta-ecourt/kontak-para-pihak?nomor="));
+    expect(bacaKontak).toHaveLength(1);
 
     const blok = document.querySelectorAll('[data-bagian="kontak-pihak"]');
     expect(blok).toHaveLength(3);

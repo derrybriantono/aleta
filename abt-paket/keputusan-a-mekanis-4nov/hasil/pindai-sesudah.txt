@@ -1,0 +1,13 @@
+A11 #0690# di 106 berkas	sebelum 188	sesudah 0
+A11 #4004# di 106 berkas	sebelum 57	sesudah 0
+A6 "#8555# <pemutus>" di 4 putusan	sebelum 23	sesudah 0
+A6 #8555# tersisa (memimpin sidang) di 4 putusan	sebelum 53	sesudah 18
+A3 "apabila tau" di seluruh pohon	sebelum 1	sesudah 0
+E2 "untuk mendapatkan Buku Nikah" seluruh pohon	sebelum 6	sesudah 0
+E2 "adalah untuk #8171#" seluruh pohon	sebelum 0	sesudah 6
+A13 "c/q Majelis #8554#" seluruh pohon	sebelum 1	sesudah 0
+A13 "fijtelijkeground" (harus tetap 3)	sebelum 3	sesudah 3
+A13 isteri seluruh pohon (sisa = kutipan)	sebelum 352	sesudah 135
+[98] Cabut "dikabulkan #8555# maka" (sengaja tetap)	sebelum 6	sesudah 6
+BAS/arsip: #0690# di luar 106 berkas (harus sama)	sebelum 2842	sesudah 2842
+BAS/arsip: #4004# di luar 106 berkas (harus sama)	sebelum 15936	sesudah 15936

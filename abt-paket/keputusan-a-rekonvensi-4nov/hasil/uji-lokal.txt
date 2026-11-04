@@ -1,0 +1,48 @@
+SIDIK AWAL f0da4b39138f54cb8173f13337773fdd
+== 1. pasang pertama
+    PRASYARAT COCOK (147)
+    SIAP=1
+    BERKAS SIAP
+    TAMBAL=1
+    BERKAS COCOK
+    SELESAI - paket abt-keputusan-a-rekonvensi-4nov terpasang. Cadangan: /d/aleta-dev/wt/w206/abt-paket/keputusan-a-rekonvensi-4nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w206/abt-paket/keputusan-a-rekonvensi-4nov/paket-satker/pulih-satker.sh
+    periksa: BERKAS COCOK
+== 2. pasang ulang (idempoten)
+    PRASYARAT COCOK (147)
+    SUDAH=1
+    BERKAS SIAP
+    SUDAH=1
+    BERKAS COCOK
+    SELESAI - paket abt-keputusan-a-rekonvensi-4nov terpasang. Cadangan: /d/aleta-dev/wt/w206/abt-paket/keputusan-a-rekonvensi-4nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w206/abt-paket/keputusan-a-rekonvensi-4nov/paket-satker/pulih-satker.sh
+    SIDIK TETAP
+== 3. pulih
+    PULIH=1
+    BERKAS PULIH
+    PULIH COCOK
+    SIDIK = AWAL
+== 4. pasang lagi sesudah pulih
+    BERKAS COCOK
+    SELESAI - paket abt-keputusan-a-rekonvensi-4nov terpasang. Cadangan: /d/aleta-dev/wt/w206/abt-paket/keputusan-a-rekonvensi-4nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w206/abt-paket/keputusan-a-rekonvensi-4nov/paket-satker/pulih-satker.sh
+    SAMA DENGAN PASANG PERTAMA
+== 5. md5 berkas berbeda (berkas disunting) -> BERHENTI tanpa ubahan
+    PRASYARAT COCOK (147)
+    GAGAL=1
+    BERKAS TIDAK SIAP
+    GAGAL: berkas tujuan tidak sama dengan keadaan sesudah keputusan-a-mekanis-4nov - TIDAK ada yang diubah
+    TIDAK ADA YANG BERUBAH
+== 6. keputusan-a-mekanis belum terpasang (berkas keadaan dasar) -> BERHENTI tanpa ubahan
+    PRASYARAT COCOK (147)
+    GAGAL=1
+    BERKAS TIDAK SIAP
+    GAGAL: berkas tujuan tidak sama dengan keadaan sesudah keputusan-a-mekanis-4nov - TIDAK ada yang diubah
+    TIDAK ADA YANG BERUBAH
+== 7. keputusan-a-kerangka belum terpasang (variabel 9268/9269 tidak ada) -> BERHENTI tanpa ubahan
+    GAGAL: prasyarat '145' (harus '147' = semua variabel yang dirujuk ada; paket keputusan-a-kerangka-4nov belum terpasang?) - TIDAK ada yang diubah
+    TIDAK ADA YANG BERUBAH
+== 8. disunting sesudah pasang lalu pulih -> dibiarkan
+    BIARKAN	derry_briantono/1a Perceraian CT/[02] [Kabul] [Rekonvensi] CT - F (Mutah iddah nafkah anak).rtf	(sudah disunting sesudah dipasang)
+    BIARKAN=1
+    BERKAS PULIH SEBAGIAN
+    GAGAL=1
+    BERKAS TIDAK SIAP
+    PULIH SEBAGIAN

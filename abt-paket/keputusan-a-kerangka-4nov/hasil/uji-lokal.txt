@@ -1,0 +1,85 @@
+SIDIK AWAL d5c4a395fa3897cace78397f00a746cb | VARIABEL AWAL 3007 bceb069f762873850d28437a2af2ec75 
+== 1. pasang pertama
+    PRASYARAT COCOK (0|0|6)
+    SIAP=12
+    BERKAS SIAP
+    
+    BERKAS SIAP
+    CADANGAN: /d/aleta-dev/wt/w206/abt-paket/keputusan-a-kerangka-4nov/paket-satker/cadangan (berkas lama dicadangkan oleh tambal_rtf.py di tahap BERKAS)
+    PERIKSA: SEMUA COCOK
+    UJI: 4 kueri berjalan (perkara 10225)
+    TAMBAL=12
+    BUAT=4
+    BERKAS COCOK
+    BERKAS COCOK
+    SELESAI - paket abt-keputusan-a-kerangka-4nov terpasang. Cadangan: /d/aleta-dev/wt/w206/abt-paket/keputusan-a-kerangka-4nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w206/abt-paket/keputusan-a-kerangka-4nov/paket-satker/pulih-satker.sh
+    variabel sesudah: 3011 b319eb8bc5564afc9d36d4fada3d573f 
+== 2. pasang ulang (idempoten)
+    PRASYARAT COCOK (0|4|6)
+    SUDAH=12
+    BERKAS SIAP
+    SUDAH_BARU=4
+    BERKAS SIAP
+    CADANGAN: /d/aleta-dev/wt/w206/abt-paket/keputusan-a-kerangka-4nov/paket-satker/cadangan (berkas lama dicadangkan oleh tambal_rtf.py di tahap BERKAS)
+    PERIKSA: SEMUA COCOK
+    UJI: 4 kueri berjalan (perkara 10225)
+    SUDAH=12
+    SUDAH=4
+    BERKAS COCOK
+    BERKAS COCOK
+    SELESAI - paket abt-keputusan-a-kerangka-4nov terpasang. Cadangan: /d/aleta-dev/wt/w206/abt-paket/keputusan-a-kerangka-4nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w206/abt-paket/keputusan-a-kerangka-4nov/paket-satker/pulih-satker.sh
+    SIDIK DAN VARIABEL TETAP
+== 3. pulih
+    HAPUS=4
+    BERKAS PULIH
+    PULIH=12
+    BERKAS PULIH
+    PULIH COCOK (0|0|6)
+    SIDIK = AWAL
+    VARIABEL = AWAL
+== 4. pasang lagi sesudah pulih
+    PRASYARAT COCOK (0|0|6)
+    SIAP=12
+    BERKAS SIAP
+    
+    BERKAS SIAP
+    CADANGAN: /d/aleta-dev/wt/w206/abt-paket/keputusan-a-kerangka-4nov/paket-satker/cadangan (berkas lama dicadangkan oleh tambal_rtf.py di tahap BERKAS)
+    PERIKSA: SEMUA COCOK
+    UJI: 4 kueri berjalan (perkara 10225)
+    TAMBAL=12
+    BUAT=4
+    BERKAS COCOK
+    BERKAS COCOK
+    SELESAI - paket abt-keputusan-a-kerangka-4nov terpasang. Cadangan: /d/aleta-dev/wt/w206/abt-paket/keputusan-a-kerangka-4nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w206/abt-paket/keputusan-a-kerangka-4nov/paket-satker/pulih-satker.sh
+    SAMA DENGAN PASANG PERTAMA
+== 5. md5 berkas berbeda (satu berkas CT disunting) -> BERHENTI tanpa ubahan
+    PRASYARAT COCOK (0|0|6)
+    GAGAL=1 SIAP=11
+    BERKAS TIDAK SIAP
+    GAGAL: berkas tujuan tidak sesuai (paket keputusan-a-mekanis-4nov belum terpasang, atau blangko berubah) - TIDAK ada yang diubah
+    TIDAK ADA YANG BERUBAH
+== 6. keputusan-a-mekanis belum terpasang (pohon dasar) -> BERHENTI tanpa ubahan
+    PRASYARAT COCOK (0|0|6)
+    GAGAL=9 SIAP=3
+    BERKAS TIDAK SIAP
+    GAGAL: berkas tujuan tidak sesuai (paket keputusan-a-mekanis-4nov belum terpasang, atau blangko berubah) - TIDAK ada yang diubah
+    TIDAK ADA YANG BERUBAH
+== 7. nomor variabel 9268 sudah dipakai paket/orang lain -> BERHENTI tanpa ubahan
+    GAGAL: prasyarat '1|0|6' (harus '0|0|6' pasang pertama atau '0|4|6' pasang ulang) - TIDAK ada yang diubah. Arti angka: lihat abt-keputusan-a-kerangka-4nov-PRASYARAT.sql
+    TIDAK ADA YANG BERUBAH
+== 8. blangko baru sudah ada dengan isi lain -> BERHENTI tanpa ubahan
+    PRASYARAT COCOK (0|0|6)
+    SIAP=12
+    BERKAS SIAP
+    GAGAL: berkas lain bernama sama sudah ada derry_briantono/1 Perceraian CG/[02] [Kabul] CG - F - (3 Saksi T).rtf
+    GAGAL=1
+    BERKAS TIDAK SIAP
+    GAGAL: folder/berkas baru tidak sesuai (berkas bernama sama sudah ada?) - TIDAK ada yang diubah
+    TIDAK ADA YANG BERUBAH
+== 9. disunting sesudah pasang lalu pulih -> dibiarkan
+    BIARKAN: sudah disunting sesudah dipasang, tidak dihapus: derry_briantono/1 Perceraian CG/[02] [Kabul] CG - F - (4 Saksi T).rtf
+    BIARKAN=1 HAPUS=3
+    BERKAS PULIH SEBAGIAN
+    PULIH=12
+    BERKAS PULIH
+    PULIH SEBAGIAN: prasyarat sekarang '1|0|6' (ada yang sudah disunting orang, dibiarkan)

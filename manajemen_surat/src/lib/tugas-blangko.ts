@@ -251,6 +251,43 @@ export function jalurBlangkoTerhapus(jalur: string): boolean {
   return String(jalur || "").replace(/\\/g, "/").split("/").some((b) => b.trim().toLowerCase() === "terhapus");
 }
 
+/**
+ * 4 Nov 2026 (keputusan pengguna, audit A3-K11): 19 folder di derry_briantono yang TIDAK punya menu ABT (97 berkas: "ALUR 01"-"ALUR 13"
+ * dan empat "- BAS ... -" lama serta dua folder BAS gugur/kumulasi). Padanannya yang sudah diperbaiki ada di folder menu
+ * ("<jenis> - BAS"); versi di folder ini tertinggal. Folder ini DISEMBUNYIKAN dari daftar panel Blangko Derry - berkasnya tidak
+ * dipindah dan tidak dihapus, dan rute baca/cetak tetap melayani bila ada yang membukanya langsung.
+ */
+export const FOLDER_DERRY_TANPA_MENU: readonly string[] = [
+  "- BAS ASAL USUL ANAK -",
+  "- BAS CONTRA PERCERAIAN -",
+  "- BAS ITSTBAT NIKAH -",
+  "- BAS VERSTEK PERCERAIAN -",
+  "ALUR 01 Cerai Verstek 1 Sidang (Putus Sidang Pertama)",
+  "ALUR 02 Cerai Verstek 2 Sidang",
+  "ALUR 03 Cerai Verstek 3 Sidang atau Lebih",
+  "ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)",
+  "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)",
+  "ALUR 06 Cerai T Hadir Mediasi lalu Tidak Hadir",
+  "ALUR 07 Cerai Gugur",
+  "ALUR 08 Cerai Dicabut",
+  "ALUR 09 Cerai Tidak Dapat Diterima (NO)",
+  "ALUR 10 Cerai Talak Sidang Ikrar Talak",
+  "ALUR 11 Itsbat Nikah 1 Sidang",
+  "ALUR 12 Dispensasi Kawin",
+  "ALUR 13 Asal Usul Anak",
+  "BAS Itsbat Nikah Gugur dan Cabut",
+  "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)",
+];
+
+const FOLDER_TANPA_MENU_KECIL = new Set(FOLDER_DERRY_TANPA_MENU.map((n) => n.trim().toLowerCase()));
+
+/** Nama folder di bawah derry_briantono (atau jalur "derry_briantono/<nama>") yang termasuk 19 folder tanpa menu ABT. */
+export function folderDerryTanpaMenu(nama: string): boolean {
+  const bagian = String(nama || "").replace(/\\/g, "/").split("/").map((b) => b.trim()).filter(Boolean);
+  const dasar = bagian[0] && bagian[0].toLowerCase() === "derry_briantono" ? bagian[1] : bagian[0];
+  return Boolean(dasar) && FOLDER_TANPA_MENU_KECIL.has(dasar.toLowerCase());
+}
+
 export function folderTugas(direktori: string, akar = "derry_briantono"): FolderTugas | null {
   const d = String(direktori || "").trim();
   if (!d || d.startsWith(".") || d.startsWith("_") || jalurBlangkoTerhapus(d)) return null;

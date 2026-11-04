@@ -1,0 +1,107 @@
+# A3-V03: putusan/penetapan non-BAS yang memakai #0690#/#4004# (audit A3 4 Nov 2026), relatif derry_briantono/
+2 Itsbat Nikah/[99a] [NO] IN - Pemohon Tidak Hadir Lagi (SEMA 1 2022).rtf
+3 Dispensasi Kawin/[99] [NO] DK - Pemohon Tidak Hadir Lagi (SEMA 1 2022).rtf
+3a Izin Kawin/[01] [Kabul] Izin Kawin - Orang Tua atau Wali Hadir dan Berbeda Pendapat.rtf
+3a Izin Kawin/[01a] [Kabul] Izin Kawin - Orang Tua atau Wali Dipanggil Patut Tidak Hadir atau Tidak Menyatakan Pendapat.rtf
+3a Izin Kawin/[01b] [Kabul] Izin Kawin - Salah Seorang Orang Tua Meninggal atau Tidak Mampu Menyatakan Kehendak.rtf
+3a Izin Kawin/[01c] [Kabul] Izin Kawin - Kedua Orang Tua Meninggal atau Tidak Mampu, Wali atau Keluarga Garis Lurus Berbeda Pendapat.rtf
+3a Izin Kawin/[03] [Tolak] Izin Kawin - Keberatan Orang Tua atau Wali Beralasan Hukum.rtf
+3a Izin Kawin/[03a] [Tolak] Izin Kawin - Syarat Perkawinan Tidak Terpenuhi.rtf
+3a Izin Kawin/[98] [Cabut] Izin Kawin.rtf
+3a Izin Kawin/[99] [NO] Izin Kawin - Pemohon Tidak Hadir Lagi (SEMA 1 2022).rtf
+3a Izin Kawin/[99a] [NO] Izin Kawin - Pemohon Belum Berumur 19 Tahun (Bukan Izin Kawin tetapi Dispensasi Kawin).rtf
+3a Izin Kawin/[99b] [NO] Izin Kawin - Pemohon Sudah Berumur 21 Tahun (Tidak Perlu Izin).rtf
+3a Izin Kawin/[99c] [NO] Izin Kawin - Orang Tua atau Wali Telah Memberi Izin (Tidak Ada Perbedaan Pendapat).rtf
+4d Hibah/[01p] [Kabul] Hibah - Permohonan Penetapan (Pemohon Hadir).rtf
+4d Hibah/[03p] [Tolak] Hibah - Dalil Permohonan Tidak Terbukti.rtf
+4d Hibah/[99p] [NO] Hibah - Permohonan Tidak Dapat Diterima (Formil).rtf
+4e Wakaf/[01p] [Kabul] Wakaf - Permohonan Penetapan (Pemohon Hadir).rtf
+4e Wakaf/[03p] [Tolak] Wakaf - Dalil Permohonan Tidak Terbukti.rtf
+4e Wakaf/[99p] [NO] Wakaf - Permohonan Tidak Dapat Diterima (Formil).rtf
+5 Izin Poligami/[99] [NO] Izin Poligami - Pemohon Tidak Hadir Lagi (SEMA 1 2022).rtf
+5b Pencegahan Perkawinan/[01] [Kabul] Pencegahan Perkawinan - Calon Mempelai Hadir.rtf
+5b Pencegahan Perkawinan/[01a] [Kabul] Pencegahan Perkawinan - Calon Mempelai Tidak Hadir.rtf
+5b Pencegahan Perkawinan/[03] [Tolak] Pencegahan Perkawinan - Alasan Pencegahan Tidak Terbukti.rtf
+5b Pencegahan Perkawinan/[99] [NO] Pencegahan Perkawinan - Pemohon Tidak Hadir Lagi (SEMA 1 2022).rtf
+5b Pencegahan Perkawinan/[99a] [NO] Pencegahan Perkawinan - Pemohon Tidak Berhak Mencegah.rtf
+5b Pencegahan Perkawinan/[99b] [NO] Pencegahan Perkawinan - Perkawinan Telah Dilangsungkan.rtf
+5c Penolakan Perkawinan/[01] [Kabul] Penolakan Perkawinan - PPN Didengar atau Menyerahkan Surat Penolakan.rtf
+5c Penolakan Perkawinan/[01a] [Kabul] Penolakan Perkawinan - PPN Tidak Hadir.rtf
+5c Penolakan Perkawinan/[03] [Tolak] Penolakan Perkawinan - Larangan Perkawinan Terbukti.rtf
+5c Penolakan Perkawinan/[98] [Cabut] Penolakan Perkawinan.rtf
+5c Penolakan Perkawinan/[99] [NO] Penolakan Perkawinan - Pemohon Tidak Hadir Lagi (SEMA 1 2022).rtf
+5c Penolakan Perkawinan/[99a] [NO] Penolakan Perkawinan - Belum Ada Penolakan Tertulis PPN.rtf
+5c Penolakan Perkawinan/[99b] [NO] Penolakan Perkawinan - PPN Berkedudukan di Luar Wilayah Hukum.rtf
+5d Perkawinan Campuran/[01] [Kabul] Perkawinan Campuran - Pejabat Didengar atau Menyerahkan Surat Penolakan.rtf
+5d Perkawinan Campuran/[01a] [Kabul] Perkawinan Campuran - Pejabat Tidak Hadir.rtf
+5d Perkawinan Campuran/[03] [Tolak] Perkawinan Campuran - Syarat Perkawinan Belum Terpenuhi.rtf
+5d Perkawinan Campuran/[98] [Cabut] Perkawinan Campuran.rtf
+5d Perkawinan Campuran/[99] [NO] Perkawinan Campuran - Pemohon Tidak Hadir Lagi (SEMA 1 2022).rtf
+5d Perkawinan Campuran/[99a] [NO] Perkawinan Campuran - Calon Mempelai Tidak Beragama Islam.rtf
+5d Perkawinan Campuran/[99b] [NO] Perkawinan Campuran - Belum Ada Penolakan Pejabat.rtf
+5d Perkawinan Campuran/[99c] [NO] Perkawinan Campuran - Bukan Perkawinan Campuran.rtf
+6 Perwalian/[99] [NO] Perwalian - Pemohon Tidak Hadir Lagi (SEMA 1 2022).rtf
+6d Pencabutan Kekuasaan Orang Tua/[01p] [Kabul] Pencabutan Kekuasaan Orang Tua - Permohonan (Pemohon Hadir).rtf
+6d Pencabutan Kekuasaan Orang Tua/[03p] [Tolak] Pencabutan Kekuasaan Orang Tua - Dalil Permohonan Tidak Terbukti.rtf
+6d Pencabutan Kekuasaan Orang Tua/[99p] [NO] Pencabutan Kekuasaan Orang Tua - Permohonan Tidak Dapat Diterima (Formil).rtf
+6e Pencabutan Kekuasaan Wali/[01p] [Kabul] Pencabutan Kekuasaan Wali - Permohonan (Pemohon Hadir).rtf
+6e Pencabutan Kekuasaan Wali/[03p] [Tolak] Pencabutan Kekuasaan Wali - Dalil Permohonan Tidak Terbukti.rtf
+6e Pencabutan Kekuasaan Wali/[99p] [NO] Pencabutan Kekuasaan Wali - Permohonan Tidak Dapat Diterima (Formil).rtf
+6f Penunjukan Wali oleh Pengadilan/[01p] [Kabul] Penunjukan Wali oleh Pengadilan - Permohonan (Pemohon Hadir).rtf
+6f Penunjukan Wali oleh Pengadilan/[03p] [Tolak] Penunjukan Wali oleh Pengadilan - Dalil Permohonan Tidak Terbukti.rtf
+6f Penunjukan Wali oleh Pengadilan/[99p] [NO] Penunjukan Wali oleh Pengadilan - Permohonan Tidak Dapat Diterima (Formil).rtf
+7 Wali Adhal/[01] [Kabul] Wali Adhal - Wali Tidak Hadir.rtf
+7 Wali Adhal/[01a] [Kabul] Wali Adhal - Wali Hadir Tetap Enggan.rtf
+7 Wali Adhal/[03] [Tolak] Wali Adhal - Keengganan Wali Beralasan Hukum.rtf
+7 Wali Adhal/[98] [Cabut] Wali Adhal.rtf
+7 Wali Adhal/[99] [NO] Wali Adhal - Pemohon Tidak Hadir Lagi (SEMA 1 2022).rtf
+8 Asal Usul Anak/[03] [Tolak] AUA - Dalil Tidak Terbukti.rtf
+8 Asal Usul Anak/[99a] [NO] AUA - Pemohon Tidak Hadir Lagi (SEMA 1 2022).rtf
+8a Pengesahan Anak/[01] [Kabul] Pengesahan Anak - Anak Lahir dalam Perkawinan Sah yang Belum atau Baru Dicatat.rtf
+8a Pengesahan Anak/[01a] [Kabul] Pengesahan Anak - Anak Lahir Sebelum Pernikahan Para Pemohon (Pengakuan atau Hubungan Darah).rtf
+8a Pengesahan Anak/[03] [Tolak] Pengesahan Anak - Dalil Pengesahan Tidak Terbukti.rtf
+8a Pengesahan Anak/[03a] [Tolak] Pengesahan Anak - Hubungan Darah atau Pengakuan Tidak Terbukti.rtf
+8a Pengesahan Anak/[98] [Cabut] Pengesahan Anak.rtf
+8a Pengesahan Anak/[99] [NO] Pengesahan Anak - Pemohon Tidak Hadir Lagi (SEMA 1 2022).rtf
+8a Pengesahan Anak/[99a] [NO] Pengesahan Anak - Pernikahan Orang Tua Belum Terbukti Sah (Itsbat Nikah Lebih Dahulu).rtf
+8a Pengesahan Anak/[99b] [NO] Pengesahan Anak - Pemohon Bukan Orang Tua atau Tidak Berkepentingan.rtf
+8a Pengesahan Anak/[99c] [NO] Pengesahan Anak - Anak Sudah Mempunyai Akta Kelahiran.rtf
+9 Penetapan Ahli Waris/[03] [Tolak] PAW - Dalil Tidak Terbukti.rtf
+9 Penetapan Ahli Waris/[99a] [NO] PAW - Pemohon Tidak Hadir Lagi (SEMA 1 2022).rtf
+97 Sita/[01] [Kabul] Putusan Sela - Sita Dikabulkan.rtf
+97 Sita/[02] [Tolak] Putusan Sela - Sita Ditolak.rtf
+97a Putusan Sela/[13] [Sela] Sumpah Pelengkap (Suppletoir) - Gugatan.rtf
+97a Putusan Sela/[14] [Sela] Sumpah Pelengkap (Suppletoir) - Permohonan (Penetapan Sela).rtf
+98 Relaas/[JS] 0. Relaas Panggilan Sidang Pertama P.rtf
+98 Relaas/[JS] 0. Relaas Panggilan Sidang Pertama T.rtf
+98 Relaas/[JS] 1. Relaas Panggilan Sidang P (Sidang Lanjutan).rtf
+98 Relaas/[JS] 1. Relaas Panggilan Sidang T (Sidang Lanjutan).rtf
+98 Relaas/[JS] 11.1. Relaas Panggilan Sidang Pencegahan Perkawinan - Pemohon.rtf
+98 Relaas/[JS] 11.2. Relaas Panggilan Sidang Pencegahan Perkawinan - Calon Suami.rtf
+98 Relaas/[JS] 11.3. Relaas Panggilan Sidang Pencegahan Perkawinan - Calon Istri.rtf
+98 Relaas/[JS] 12.1. Relaas Panggilan Sidang Penolakan Perkawinan - Pegawai Pencatat Nikah.rtf
+98 Relaas/[JS] 13.1. Relaas Panggilan Sidang Izin Kawin - Orang Tua atau Wali.rtf
+98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan P.rtf
+98 Relaas/[JS] 2. Relaas Pemberitahuan Putusan T.rtf
+98 Relaas/[JS] 3.a. Permohonan Bantuan Panggilan Delegasi.rtf
+98 Relaas/[JS] 3.b. Relaas Panggilan Sidang P dan T.rtf
+98 Relaas/[JS] 4. Relaas Panggilan Ikrar Talak P dan T.rtf
+98 Relaas/[JS] 9.1. Pengumuman Permohonan Itsbat Nikah (2 Pemohon).rtf
+98 Relaas/[JS] 9.2. Pengumuman Permohonan Itsbat Nikah (1 Pemohon).rtf
+99 PTSP/@ 0 - PMH - PHS.rtf
+99 PTSP/@ 2 - PHS.rtf
+99 PTSP/@ 2a - PHS - Sita Dikabulkan.rtf
+99 PTSP/@ 2b - PHS - Sita Ditolak.rtf
+99 PTSP/@ 3 - PMH - PHS Ikrar Talak.rtf
+99 PTSP/@ 3a - PHS Ikrar Talak.rtf
+99 PTSP/@ 3b - PHS Ikrar Talak Lanjutan.rtf
+99 PTSP/@ 4 - Penetapan Penunjukan Mediator.rtf
+99 PTSP/@ 4a - Penetapan Penunjukan Mediator - Mediasi Elektronik (PERMA 3 2022).rtf
+9a Lain-Lain (Pengangkatan Anak)/[03] [Tolak] Pengangkatan Anak - Dalil Tidak Terbukti.rtf
+9a Lain-Lain (Pengangkatan Anak)/[99] [NO] Pengangkatan Anak - Pemohon Tidak Hadir Lagi (SEMA 1 2022).rtf
+9b Permohonan Umum/[01] [Kabul] Permohonan Umum - Permohonan Dikabulkan.rtf
+9b Permohonan Umum/[03] [Tolak] Permohonan Umum - Dalil Permohonan Tidak Terbukti.rtf
+9b Permohonan Umum/[99] [NO] Permohonan - Pemohon Tidak Hadir Lagi (SEMA 1 2022).rtf
+9c Penetapan Mafqud/[01] [Kabul] Mafqud - Orang Hilang Ditetapkan Meninggal Secara Hukum.rtf
+9c Penetapan Mafqud/[03] [Tolak] Mafqud - Dalil Permohonan Tidak Terbukti.rtf
+9c Penetapan Mafqud/[99] [NO] Mafqud - Permohonan Tidak Dapat Diterima (Formil).rtf

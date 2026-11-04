@@ -11,7 +11,8 @@
  * (panggilan sidang, pemberitahuan putusan, ikrar, mediasi):
  *
  *   Kab. Donggala 14.500 kecuali Kec. Labuan 29.500, Kab. Sigi 29.500,
- *   Kota Palu 29.500, kabupaten lain Sulawesi Tengah 29.500 (Banggai 38.500),
+ *   Kota Palu 29.500, kabupaten lain Sulawesi Tengah 29.500 (Banggai 38.500,
+ *   Banggai Laut 40.500 - keputusan 4 Nov 2026),
  *   panggilan lewat RRI 200.000.
  *
  * Aturan lama belajar dari 18 bulan terakhir (bercampur era radius) dengan
@@ -45,6 +46,7 @@ const TARIF_BAWAAN = Object.freeze({
   "72.10": 29500,
   "72.71": 29500,
   "72.01": 38500,
+  "72.11": 40500,
   72: 29500,
   rri: 200000,
 });
@@ -56,6 +58,7 @@ const NAMA_BAWAAN = Object.freeze({
   "72.10": "Kab. Sigi",
   "72.71": "Kota Palu",
   "72.01": "Kab. Banggai",
+  "72.11": "Kab. Banggai Laut",
   72: "Sulawesi Tengah",
   rri: "RRI",
 });
