@@ -175,7 +175,7 @@ export function LencanaSedangBerjalan({ berjalan, className }: { berjalan: Sidan
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-500 opacity-75 motion-reduce:animate-none" />
           <span className="relative inline-flex h-2 w-2 rounded-full bg-sky-500" />
         </span>
-        sedang disidangkan
+        Sedang disidangkan
       </span>
       <span className="text-[10px] text-sky-800 dark:text-sky-300">
         {berjalan.ruang}
@@ -222,7 +222,7 @@ export function LencanaDiskors({ catatan, className }: { catatan: CatatanSkors; 
       title={judul}
     >
       <PauseCircle className="h-3 w-3" aria-hidden />
-      diskors · belum selesai
+      Diskors · belum selesai
     </span>
   );
   if (!rinci) return lencana;
@@ -402,7 +402,7 @@ export function TandaAntrianOnline({
     >
       <Smartphone className="h-3 w-3 shrink-0" aria-hidden />
       <span className="kolom-lengkap" aria-hidden>
-        online
+        Online
       </span>
     </span>
   );

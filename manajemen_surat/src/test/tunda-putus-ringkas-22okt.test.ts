@@ -98,11 +98,9 @@ function gambar(jalan: "tunda" | "putus", onTutup = vi.fn(), onSelesai = vi.fn()
 
 async function isiTunda() {
   await screen.findByLabelText("Alasan penundaan", {}, { timeout: 10000 });
-  fireEvent.change(screen.getByLabelText("Alasan penundaan"), { target: { value: "__ketik__" } });
   fireEvent.change(screen.getByLabelText("Alasan penundaan"), { target: { value: "Pemanggilan Tergugat" } });
   const agenda = screen.getByLabelText("Agenda sidang berikutnya") as HTMLSelectElement;
   if (!agenda.value) {
-    fireEvent.change(agenda, { target: { value: "__ketik__" } });
     fireEvent.change(screen.getByLabelText("Agenda sidang berikutnya"), { target: { value: "Jawaban" } });
   }
 }

@@ -206,20 +206,22 @@ describe("tiap ide popup-N hanya tampil bila saklarnya menyala dan tampilan buka
 
   for (const [kode, pemilih, pendamping] of PENANDA) {
     it(`${kode} (${pemilih})`, async () => {
+      // popup-27 hanya untuk Super Admin (yang dikenal, jadi selalu UI Baru); lainnya diuji lewat jalur belum-dikenal.
+      const perluSuperAdmin = kode === "popup-27";
       const nyala = { [kode]: true as const, ...(pendamping || {}) };
       const tanpa = { ...(pendamping || {}) };
       for (const mode of ["baru", "ui"]) {
         // popup-1 dan popup-3 dalam UI Baru: ringkasan dan kelompok adalah
         // D1/D2, selalu ada; yang bergerbang hanya tombol lompat (popup-3).
-        const p = bukaPopup({ simpan: { ujiTampilan: mode, ujiFitur: nyala }, tabUrl: null });
+        const p = bukaPopup({ simpan: { ujiTampilan: mode, ujiFitur: nyala }, tabUrl: null, belumMasuk: !perluSuperAdmin });
         await tenang(p);
         await sampai(() => p.d.querySelector(pemilih) !== null, `${kode} tampil dalam ${mode}`);
         if (kode === "popup-1" && mode === "ui") continue;
-        const q = bukaPopup({ simpan: { ujiTampilan: mode, ujiFitur: tanpa }, tabUrl: null });
+        const q = bukaPopup({ simpan: { ujiTampilan: mode, ujiFitur: tanpa }, tabUrl: null, belumMasuk: !perluSuperAdmin });
         await tenang(q);
         expect(q.d.querySelector(pemilih), `${kode} tanpa saklar dalam ${mode}`).toBeNull();
       }
-      const l = bukaPopup({ simpan: { ujiTampilan: "lama", ujiFitur: nyala } });
+      const l = bukaPopup({ belumMasuk: true, simpan: { ujiTampilan: "lama", ujiFitur: nyala } });
       await tenang(l);
       expect(l.d.querySelector(pemilih), `${kode} dalam Lama`).toBeNull();
     });
@@ -292,22 +294,18 @@ describe("UI Baru: susunan baru dari elemen yang sama", () => {
     expect(p.d.documentElement.getAttribute("data-tema")).toBe("terang");
   });
 
-  it("pengalih ke UI Baru lalu kembali ke Lama mengembalikan susunan asli sepenuhnya", async () => {
-    const p = bukaPopup({ simpan: { ujiFitur: SEMUA_POPUP } });
+  it("pengalih Lama/Baru/UI Baru sudah dihapus; Super Admin tetap UI Baru walau tersimpan ujiTampilan 'lama'", async () => {
+    for (const id of ["ujiLama", "ujiBaru", "ujiUi", "ujiKet", "ujiNyataBaris", "ujiIzinkanNyata", "ujiLainBaris", "ujiKembaliLama"]) {
+      expect(popupHtml.includes(`id="${id}"`), id).toBe(false);
+    }
+    const p = bukaPopup({ simpan: { ujiTampilan: "lama", ujiFitur: SEMUA_POPUP } });
     await tenang(p);
-    await sampai(() => !(p.d.getElementById("bagianUji") as HTMLElement).hidden, "pengalih tampil");
-    const sebelum = sidik(p.d, true);
-    (p.d.getElementById("ujiUi") as HTMLButtonElement).click();
     await sampai(() => p.d.getElementById("uiStatus") !== null, "UI Baru tersusun");
-    expect(p.d.getElementById("tbLampu")).not.toBeNull();
-    (p.d.getElementById("ujiBaru") as HTMLButtonElement).click();
-    await sampai(() => p.d.getElementById("fiturCoba") !== null && !p.d.getElementById("uiStatus"), "Baru tersusun");
-    (p.d.getElementById("ujiLama") as HTMLButtonElement).click();
-    await sampai(() => p.d.getElementById("fiturCoba") === null, "susunan dipulihkan");
-    await tunggu(40);
-    expect(sidik(p.d, true)).toBe(sebelum);
-    expect(p.d.getElementById("skalaKurang")!.textContent).toBe("−");
-    expect(p.d.getElementById("aktif")!.closest("label.saklar")).not.toBeNull();
+    await sampai(() => p.d.getElementById("tbLampu") !== null, "saklar fitur Super Admin berlaku");
+    expect(p.d.getElementById("fiturCoba")).toBeNull();
+    expect(p.d.getElementById("skalaKurang")!.textContent).toBe("A−");
+    // Saklar utama tetap ada dan dapat dipakai dalam susunan UI Baru.
+    expect((p.d.getElementById("aktif") as HTMLInputElement).type).toBe("checkbox");
   });
 });
 

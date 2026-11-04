@@ -243,22 +243,22 @@ describe("penyimpanan ekstensi menolak menulis: saklar tidak boleh berbohong", (
     expect(p.d.body.textContent).toMatch(/tidak tersimpan/i);
   });
 
-  it("Izinkan tindakan nyata (Super Admin, Baru): mematikannya yang gagal tidak membuat popup berkata 'mode coba'", async () => {
+  it("Saklar fitur (Super Admin): menyalakan satu tersimpan dan hitungannya jujur; kotak 'izinkan tindakan nyata' sudah tidak ada", async () => {
     const p = bukaPopup({
       peran: "Super Admin",
       simpan: { ujiTampilan: "baru", ujiIzinkanNyata: true },
-      tolakTulis: (k) => k.includes("ujiIzinkanNyata"),
     });
     await tenang(p);
     await sampai(() => el(p, "bagianUji").hidden === false, "bagian uji");
-    const kotak = el<HTMLInputElement>(p, "ujiIzinkanNyata");
-    expect(kotak.checked).toBe(true);
-    kotak.checked = false;
+    expect(p.d.getElementById("ujiIzinkanNyata")).toBeNull();
+    expect(p.d.getElementById("ujiKet")).toBeNull();
+    el<HTMLDetailsElement>(p, "ujiFiturLaci").open = true;
+    await sampai(() => p.d.getElementById("uji-fitur-sipp-5") !== null, "kotak fitur");
+    const kotak = p.d.getElementById("uji-fitur-sipp-5") as HTMLInputElement;
+    kotak.checked = true;
     kotak.dispatchEvent(new p.w.Event("change"));
-    await sampai(() => kotak.checked === true, "centang dikembalikan");
-    expect(p.simpanan.ujiIzinkanNyata).toBe(true);
-    expect(el(p, "ujiKet").textContent).toMatch(/DIIZINKAN/);
-    expect(p.d.body.textContent).toMatch(/tidak tersimpan/i);
+    await sampai(() => JSON.stringify(p.simpanan.ujiFitur) === '{"sipp-5":true}', "sipp-5 tersimpan");
+    expect(el(p, "ujiFiturHitung").textContent).toMatch(/^1\/\d+ nyala$/);
   });
 
   it("saklar induk dan checklist: centang dikembalikan, sebab disebut; tulisan yang berhasil sesudahnya menghapus kabarnya", async () => {

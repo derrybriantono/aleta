@@ -516,7 +516,7 @@ describe("butir 13 - UI Baru wajib bagi selain Super Admin", () => {
         expect(p.d.documentElement.getAttribute("data-kulit"), `${o.peran} ${JSON.stringify(simpan)}`).toBe("modern");
         expect(p.d.documentElement.getAttribute("data-susunan")).toBe("ui");
         expect((p.d.getElementById("bagianUji") as HTMLElement).hidden).toBe(true);
-        expect((p.d.getElementById("ujiLainBaris") as HTMLElement).hidden).toBe(true);
+        expect(p.d.getElementById("ujiLainBaris")).toBeNull();
       }
     }
   });
@@ -531,22 +531,20 @@ describe("butir 13 - UI Baru wajib bagi selain Super Admin", () => {
     expect(b.d.documentElement.getAttribute("data-kulit")).toBe("modern");
   });
 
-  it("Super Admin boleh memilih Lama, Baru, dan UI Baru", async () => {
-    const p = bukaPopup({ orang: ORANG.admin });
-    await sampai(() => !(p.d.getElementById("bagianUji") as HTMLElement).hidden, "pengalih tampil");
-    expect(p.d.documentElement.hasAttribute("data-kulit")).toBe(false);
-    for (const [id, mode, kulit] of [
-      ["ujiUi", "ui", "modern"],
-      ["ujiBaru", "baru", null],
-      ["ujiLama", "lama", null],
-    ] as const) {
-      (p.d.getElementById(id) as HTMLButtonElement).click();
-      await sampai(() => p.simpanan.ujiTampilan === mode, `tersimpan ${mode}`);
-      expect(p.d.documentElement.getAttribute("data-kulit")).toBe(kulit);
+  it("Super Admin juga selalu UI Baru (5 Nov 2026): tersimpan 'lama'/'baru' tidak mengubahnya, pengalih tidak ada, bagian Saklar fitur tampil", async () => {
+    for (const id of ["ujiLama", "ujiBaru", "ujiUi", "ujiKet", "ujiNyataBaris", "ujiIzinkanNyata", "ujiLainBaris", "ujiKembaliLama"]) {
+      expect(popupHtml.includes(`id="${id}"`), id).toBe(false);
+    }
+    for (const simpan of [{}, { ujiTampilan: "lama" }, { ujiTampilan: "baru" }]) {
+      const p = bukaPopup({ orang: ORANG.admin, simpanan: { ...simpan } });
+      await sampai(() => !(p.d.getElementById("bagianUji") as HTMLElement).hidden, "bagian saklar fitur tampil");
+      await tunggu(60);
+      expect(p.d.documentElement.getAttribute("data-kulit"), JSON.stringify(simpan)).toBe("modern");
+      expect(p.d.documentElement.getAttribute("data-susunan")).toBe("ui");
     }
   });
 
-  it("panel (panel-alat.js): peran bukan Super Admin selalu 'ui', tanpa mode coba; Super Admin memakai pilihannya", async () => {
+  it("panel (panel-alat.js): semua peran yang dikenal (Super Admin ikut) selalu 'ui', tanpa mode coba; belum dikenal memakai aturan lama", async () => {
     const jalankanAlat = async (awal: Record<string, unknown>) => {
       const simpanan: Record<string, unknown> = JSON.parse(JSON.stringify(awal));
       const atribut = new Map<string, string>();
@@ -599,10 +597,12 @@ describe("butir 13 - UI Baru wajib bagi selain Super Admin", () => {
         expect(k.alatCobaAktif(), `${peran}/${lokal} tanpa mode coba`).toBe(false);
       }
     }
-    const super1 = await jalankanAlat({ tampilanServer: sv("super-admin", true), ujiTampilan: "baru" });
-    expect(super1.alatUjiMode()).toBe("baru");
-    const super2 = await jalankanAlat({ tampilanServer: sv("super-admin", true), ujiTampilan: "lama" });
-    expect(super2.alatUjiMode()).toBe("lama");
+    for (const lokal of ["lama", "baru", "ui"]) {
+      const sup = await jalankanAlat({ tampilanServer: sv("super-admin", true), ujiTampilan: lokal });
+      expect(sup.alatUjiMode(), `super-admin/${lokal}`).toBe("ui");
+      expect(sup.alatKulit()).toBe("modern");
+      expect(sup.alatCobaAktif(), `super-admin/${lokal} tanpa mode coba`).toBe(false);
+    }
     // Peran belum diketahui (belum masuk / portal lama): aturan lama.
     const tanpa = await jalankanAlat({ ujiTampilan: "lama" });
     expect(tanpa.alatUjiMode()).toBe("lama");

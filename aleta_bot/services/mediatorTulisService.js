@@ -235,6 +235,20 @@ function buatLayanan(deps = {}) {
       ).catch(() => []);
       for (const h of Array.isArray(hk) ? hk : []) majelis.add(Number(h.hakimId));
     }
+    // Beban mediator tahun berjalan: mediasi (jenis 1) dan mediasi sukarela (jenis 2) digabung, dihitung per perkara.
+    // Tidak terbaca = angkanya tidak ditampilkan, bukan nol; memilih mediator tidak boleh gagal karena angka ini.
+    const tahun = new Date().getFullYear();
+    const hitungan = await kueri(
+      `SELECT mediator_id AS mediatorId, COUNT(DISTINCT perkara_id) AS jumlah
+         FROM perkara_mediasi
+        WHERE jenis_mediasi IN (1, 2)
+          AND penetapan_penunjukan_mediator >= ? AND penetapan_penunjukan_mediator < ?
+        GROUP BY mediator_id`,
+      [`${tahun}-01-01`, `${tahun + 1}-01-01`]
+    ).catch(() => null);
+    const jumlahPerMediator = Array.isArray(hitungan)
+      ? new Map(hitungan.map((h) => [Number(h.mediatorId), Number(h.jumlah) || 0]))
+      : null;
     return (Array.isArray(baris) ? baris : []).map((m) => ({
       id: Number(m.id),
       status: bersih(m.status),
@@ -244,6 +258,7 @@ function buatLayanan(deps = {}) {
       // Keterangan, BUKAN larangan: 25 dari 118 penetapan 2025-2026 menunjuk
       // anggota majelis perkaranya sendiri.
       anggotaMajelis: m.hakimId !== null && majelis.has(Number(m.hakimId)),
+      ...(jumlahPerMediator ? { jumlahTahunIni: jumlahPerMediator.get(Number(m.id)) || 0 } : {}),
     }));
   }
 

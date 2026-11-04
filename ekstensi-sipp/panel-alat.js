@@ -3817,7 +3817,11 @@ function alatUjiBerlaku() {
   /* === UIBARU-WAJIB 12 Okt === */
   if (alatUjiWajibUi()) {
     const w = alatUji.server;
-    return { mode: "ui", fitur: w && w.diterapkan === true && w.fitur ? w.fitur : {}, sumber: "wajib" };
+    const dariServer = w && w.diterapkan === true && w.fitur ? w.fitur : {};
+    // Super Admin memakai saklar fitur di popup PC ini bila pernah diisi; selain itu saklar yang diterapkan lewat portal.
+    const saklarSendiri = alatUji.fitur && typeof alatUji.fitur === "object" && Object.keys(alatUji.fitur).length > 0;
+    const superAdmin = String((w && w.profil && w.profil.peran) || "") === "super-admin";
+    return { mode: "ui", fitur: superAdmin && saklarSendiri ? alatUji.fitur : dariServer, sumber: "wajib" };
   }
   /* === AKHIR UIBARU-WAJIB === */
   if (alatUji.mode !== "lama") return { mode: alatUji.mode, fitur: alatUji.fitur, sumber: "coba" };
@@ -3861,19 +3865,17 @@ function alatCobaAktif() {
   return alatUji.mode !== "lama" && alatUji.izinkanNyata !== true;
 }
 
-/* === UIBARU-WAJIB 12 Okt ===
- * Selain Super Admin, tampilan SELALU UI Baru (keputusan pengguna 12 Okt):
- * pilihan Lama/Baru tersimpan diabaikan dan pengalihnya disembunyikan di popup.
+/* === UIBARU-WAJIB 12 Okt, Super Admin ikut sejak 5 Nov 2026 ===
+ * Akun yang sudah dikenali SELALU UI Baru: pilihan Lama/Baru dihapus dari popup dan yang tersimpan di PC diabaikan.
  * Peran dibaca dari profil yang disinggahkan GET /ekstensi/tampilan
  * (data.profil.peran = kunci peran: "super-admin", "admin", "hakim", ...).
- * Peran belum diketahui (belum masuk, portal lama) = aturan lama berlaku.
  * Satu fungsi penentu: konten.js/abt.js/checklist.js/aleta.js membaca mode lewat
  * alatUjiBerlaku/alatUjiMode (t7Aktif, s1Aktif, a30Aktif ...), jadi ikut seluruhnya. */
 function alatUjiWajibUi() {
   const s = alatUji.server;
   const p = s && typeof s === "object" ? s.profil : null;
   const peran = p && typeof p === "object" ? String(p.peran || "") : "";
-  return Boolean(peran) && peran !== "super-admin";
+  return Boolean(peran);
 }
 /* === AKHIR UIBARU-WAJIB === */
 

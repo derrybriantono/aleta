@@ -1107,10 +1107,12 @@ const ujiKeadaan = { mode: "lama", fitur: {}, nyata: false, server: null };
  * Super Admin tetap membaca pilihan LOKAL (ujiKeadaan.mode).
  */
 function modePopupBerlaku() {
-  // UIBARU-WAJIB 12 Okt: selain Super Admin, popup selalu UI Baru.
+  // UIBARU-WAJIB: akun yang sudah dikenali selalu UI Baru (Super Admin ikut sejak 5 Nov 2026).
   if (popupWajibUi()) {
     const w = ujiKeadaan.server;
-    return { mode: "ui", fitur: w && w.diterapkan === true && w.fitur && typeof w.fitur === "object" ? w.fitur : {} };
+    const dariServer = w && w.diterapkan === true && w.fitur && typeof w.fitur === "object" ? w.fitur : {};
+    const superAdmin = Boolean(identitasPopup && identitasPopup.golongan.semua.includes("super-admin")) || golonganTersimpan === "super-admin";
+    return { mode: "ui", fitur: superAdmin && Object.keys(ujiKeadaan.fitur).length > 0 ? ujiKeadaan.fitur : dariServer };
   }
   if (ujiKeadaan.mode !== "lama") return { mode: ujiKeadaan.mode, fitur: ujiKeadaan.fitur };
   const s = ujiKeadaan.server;
@@ -1161,39 +1163,11 @@ function daftarFiturUji() {
 }
 
 function tulisKetUji() {
-  const ket = document.getElementById("ujiKet");
-  const barisNyata = document.getElementById("ujiNyataBaris");
-  const kotakNyata = document.getElementById("ujiIzinkanNyata");
   const hitung = document.getElementById("ujiFiturHitung");
-  const lama = ujiKeadaan.mode === "lama";
-  if (ket) {
-    const coba = lama
-      ? ""
-      : ujiKeadaan.nyata
-        ? " Tindakan nyata DIIZINKAN - kirim dan simpan berlaku sungguhan."
-        : " Mode coba: kirim WhatsApp dan simpan ke SIPP/ABT/ALETA ditahan.";
-    ket.textContent = KET_UJI[ujiKeadaan.mode] + coba;
-  }
-  if (barisNyata) barisNyata.hidden = lama;
-  if (kotakNyata) kotakNyata.checked = ujiKeadaan.nyata;
-  // 13 (12 Okt sore): blok ini bawaannya diciutkan; ringkasan satu baris
-  // memberi tahu tampilan yang dicoba dan apakah tindakan nyata menyala.
-  const ringkasan = document.getElementById("ujiRingkasan");
-  if (ringkasan) {
-    const nama = { lama: "Lama", baru: "Baru", ui: "UI Baru" }[ujiKeadaan.mode] || "Lama";
-    ringkasan.textContent = lama
-      ? `Tampilan uji · ${nama}`
-      : `Tampilan uji · ${nama} · tindakan nyata ${ujiKeadaan.nyata ? "NYALA" : "mati"}`;
-    if (!lama && ujiKeadaan.nyata) ringkasan.setAttribute("data-nyata", "ya");
-    else ringkasan.removeAttribute("data-nyata");
-  }
   if (hitung) {
     const semua = daftarFiturUji();
     const nyala = semua.filter((x) => ujiKeadaan.fitur[x.kode] === true).length;
-    hitung.textContent = `${nyala}/${semua.length} nyala${lama && nyala ? " (mati selama Lama)" : ""}`;
-  }
-  for (const b of document.querySelectorAll("[data-uji-mode]")) {
-    b.setAttribute("aria-pressed", b.getAttribute("data-uji-mode") === ujiKeadaan.mode ? "true" : "false");
+    hitung.textContent = `${nyala}/${semua.length} nyala`;
   }
 }
 
@@ -1287,55 +1261,15 @@ function susunDaftarFiturUji() {
 
 async function pasangUjiTampilan(peran) {
   const bagian = document.getElementById("bagianUji");
-  const lain = document.getElementById("ujiLainBaris");
   if (!bagian) return;
   await ujiSiap;
+  // Hanya Super Admin yang melihat saklar fitur; tampilannya sama bagi semua akun, selalu UI Baru (5 Nov 2026).
   if (!/super/i.test(String(peran || ""))) {
     bagian.hidden = true;
-    // POPUP-PERAN / UIBARU-WAJIB 12 Okt: bukan Super Admin = selalu UI Baru, tanpa
-    // pengalih. Keterangan teknis "tampilan uji Super Admin sedang menyala"
-    // tidak ditampilkan; pilihan uji yang tertinggal di PC ini dipulihkan ke
-    // Lama (bawaan aman) dan tidak berlaku bagi akun ini.
-    if (lain) lain.hidden = true;
-    if (ujiKeadaan.mode !== "lama") {
-      ujiKeadaan.mode = "lama";
-      if (penyimpanan) void penyimpanan.set({ [KUNCI_UJI_TAMPILAN]: "lama" });
-      terapkanKulitPopup();
-    }
-    const kembali = document.getElementById("ujiKembaliLama");
-    if (kembali && !kembali.dataset.terpasang) {
-      kembali.dataset.terpasang = "ya";
-      kembali.addEventListener("click", () => {
-        ujiKeadaan.mode = "lama";
-        if (penyimpanan) void penyimpanan.set({ [KUNCI_UJI_TAMPILAN]: "lama" });
-        terapkanKulitPopup();
-        if (lain) lain.hidden = true;
-      });
-    }
     return;
   }
-  if (lain) lain.hidden = true;
   if (!bagian.dataset.terpasang) {
     bagian.dataset.terpasang = "ya";
-    for (const b of bagian.querySelectorAll("[data-uji-mode]")) {
-      b.addEventListener("click", () => {
-        ujiKeadaan.mode = bersihModeUji(b.getAttribute("data-uji-mode"));
-        if (penyimpanan) void penyimpanan.set({ [KUNCI_UJI_TAMPILAN]: ujiKeadaan.mode });
-        terapkanKulitPopup();
-        tulisKetUji();
-      });
-    }
-    const kotakNyata = document.getElementById("ujiIzinkanNyata");
-    if (kotakNyata) {
-      kotakNyata.addEventListener("change", () => {
-        ujiKeadaan.nyata = kotakNyata.checked;
-        void simpanSaklar({ [KUNCI_UJI_NYATA]: ujiKeadaan.nyata }, kotakNyata, () => {
-          ujiKeadaan.nyata = kotakNyata.checked;
-          tulisKetUji();
-        });
-        tulisKetUji();
-      });
-    }
     const laci = document.getElementById("ujiFiturLaci");
     if (laci) laci.addEventListener("toggle", () => laci.open && susunDaftarFiturUji());
     const semuaNyala = document.getElementById("ujiSemuaNyala");
@@ -4128,7 +4062,7 @@ function relevanPopup() {
 /** UIBARU-WAJIB 12 Okt: selain Super Admin popup selalu UI Baru (identitas, atau yang terakhir tersimpan). */
 function popupWajibUi() {
   const g = identitasPopup ? identitasPopup.golongan.semua : golonganTersimpan ? [golonganTersimpan] : null;
-  return Boolean(g && !g.includes("super-admin"));
+  return Boolean(g);
 }
 
 /** Tombol "muat ulang ekstensi" di pemberitahuan puncak - sesudah pemasangan perlu muat ulang. */

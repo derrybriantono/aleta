@@ -351,7 +351,7 @@ describe("butir 25: profil peran (K4) di panel-alat.js", () => {
 // ============================================================================
 // UIBARU-WAJIB 12 Okt: pilihan Lama/Baru dan saklar fitur lokal hanya milik Super Admin,
 // jadi popup uji memakai Super Admin kecuali diminta lain.
-function bukaPopup(simpan: Record<string, unknown>, peran = "Super Admin") {
+function bukaPopup(simpan: Record<string, unknown>, peran: string | null = "Super Admin") {
   const html = POPUP_HTML.replace(/<script[\s\S]*?<\/script>/g, "");
   const dom = new JSDOM(html, { url: "chrome-extension://aleta/popup.html", runScripts: "outside-only" });
   terbuka.push(dom);
@@ -381,6 +381,8 @@ function bukaPopup(simpan: Record<string, unknown>, peran = "Super Admin") {
   w.fetch = async (alamat: string) => {
     const a = String(alamat);
     if (a.includes("info=siapa")) {
+      // peran null = belum masuk/belum dikenal: aturan lama Lama/Baru dari simpanan ujiTampilan berlaku.
+      if (peran === null) return { ok: false, status: 401, json: async () => ({ ok: false }) };
       return { ok: true, status: 200, json: async () => ({ ok: true, data: { pengguna: { nama: "Uji", peran }, versi: "1.174.1" } }) };
     }
     return { ok: true, status: 200, url: a, json: async () => ({}) };
@@ -427,7 +429,7 @@ describe("popup: profil saklar hanya bagi Super Admin dan Admin (butir 25)", () 
   });
 
   it("Lama: tidak ada kalimat profil maupun elemen buatan", async () => {
-    const p = bukaPopup({ tampilanServer: { ...SERVER_UI(PROFIL_HAKIM), diterapkan: false } });
+    const p = bukaPopup({ tampilanServer: { ...SERVER_UI(PROFIL_HAKIM), diterapkan: false } }, null);
     await popupTenang(p);
     expect(p.d.querySelectorAll('[class^="tb-"], [class*=" tb-"]').length).toBe(0);
   });
@@ -435,7 +437,7 @@ describe("popup: profil saklar hanya bagi Super Admin dan Admin (butir 25)", () 
 
 describe("popup: penjelasan panjang di balik ⓘ (butir 6/26)", () => {
   it("Baru dengan popup-1: pengantar panjang dilipat, ⓘ membukanya; Lama tidak", async () => {
-    const p = bukaPopup({ ujiTampilan: "baru", ujiFitur: { "popup-1": true }, ujiIzinkanNyata: true });
+    const p = bukaPopup({ ujiTampilan: "baru", ujiFitur: { "popup-1": true }, ujiIzinkanNyata: true }, null);
     await popupTenang(p);
     const pengantar = p.d.querySelector(".isi .pengantar") as HTMLElement;
     expect(pengantar.hidden).toBe(true);
@@ -449,14 +451,14 @@ describe("popup: penjelasan panjang di balik ⓘ (butir 6/26)", () => {
     tombol.click();
     expect(pengantar.hidden).toBe(true);
 
-    const lama = bukaPopup({ ujiTampilan: "lama", ujiFitur: { "popup-1": true } });
+    const lama = bukaPopup({ ujiTampilan: "lama", ujiFitur: { "popup-1": true } }, null);
     await popupTenang(lama);
     expect((lama.d.querySelector(".isi .pengantar") as HTMLElement).hidden).toBe(false);
     expect(lama.d.querySelector(".tb-lipat")).toBeNull();
   });
 
   it("ⓘ di dalam label saklar tidak membalik saklarnya", async () => {
-    const p = bukaPopup({ ujiTampilan: "baru", ujiFitur: { "popup-1": true }, ujiIzinkanNyata: true, aktif: true });
+    const p = bukaPopup({ ujiTampilan: "baru", ujiFitur: { "popup-1": true }, ujiIzinkanNyata: true, aktif: true }, null);
     await popupTenang(p);
     const aktif = p.d.getElementById("aktif") as HTMLInputElement;
     const sebelum = aktif.checked;

@@ -368,7 +368,7 @@ const qw = (h: Halaman, pemilih: string) => {
 };
 
 describe("widget checklist: saklar dan tanda", () => {
-  it("Lama: tidak ada saklar, tidak ada kelas, akar tanpa data-teknis", async () => {
+  it("Lama (identitas belum dikenal): tidak ada saklar, tidak ada kelas, akar tanpa data-teknis", async () => {
     const h = buka({ simpanan: { ...LAMA, checklistMilestone: true }, checklist: true });
     await sampai(() => qw(h, ".aleta-cm-kelompok"), "widget tergambar");
     await tunggu(40);
@@ -451,7 +451,7 @@ describe("panel portal: tanda teknis hanya di Baru/UI Baru", () => {
 // Popup
 // ============================================================================
 // UIBARU-WAJIB 12 Okt: pilihan Lama/Baru hanya milik Super Admin.
-function bukaPopup(simpan: Record<string, unknown>, peran = "Super Admin") {
+function bukaPopup(simpan: Record<string, unknown>, peran: string | null = "Super Admin") {
   const html = POPUP_HTML.replace(/<script[\s\S]*?<\/script>/g, "");
   const dom = new JSDOM(html, { url: "chrome-extension://aleta/popup.html", runScripts: "outside-only" });
   terbuka.push(dom);
@@ -468,6 +468,8 @@ function bukaPopup(simpan: Record<string, unknown>, peran = "Super Admin") {
   w.fetch = async (alamat: string) => {
     const a = String(alamat);
     if (a.includes("info=siapa")) {
+      // peran null = belum dikenal: aturan Lama/Baru dari simpanan ujiTampilan berlaku.
+      if (peran === null) return { ok: false, status: 401, json: async () => ({ ok: false }) };
       return { ok: true, status: 200, json: async () => ({ ok: true, data: { pengguna: { nama: "Uji", peran }, versi: "1.175.0" } }) };
     }
     return { ok: true, status: 200, url: a, json: async () => ({}) };
@@ -484,9 +486,9 @@ async function tenangPopup(p: ReturnType<typeof bukaPopup>) {
 }
 
 describe("popup: saklar 'Sembunyikan penjelasan teknis'", () => {
-  it("Lama: tidak ada saklar dan tidak ada penanda, walau kuncinya tersimpan", async () => {
+  it("Lama (identitas belum dikenal): tidak ada saklar dan tidak ada penanda, walau kuncinya tersimpan", async () => {
     for (const simpan of [{}, { sembunyikanTeknis: true }, { ujiTampilan: "lama", sembunyikanTeknis: false }]) {
-      const p = bukaPopup(simpan);
+      const p = bukaPopup(simpan, null);
       await tenangPopup(p);
       expect(p.d.getElementById("sembunyikanTeknis"), JSON.stringify(simpan)).toBeNull();
       expect(p.d.documentElement.hasAttribute("data-aleta-teknis")).toBe(false);
@@ -494,8 +496,8 @@ describe("popup: saklar 'Sembunyikan penjelasan teknis'", () => {
     }
   });
 
-  it("Baru: tercentang bawaan, penanda terpasang, sesudah Ukuran huruf panel; menghapus centang menulis false", async () => {
-    const p = bukaPopup({ ujiTampilan: "baru" });
+  it("Baru (identitas belum dikenal): tercentang bawaan, penanda terpasang, sesudah Ukuran huruf panel; menghapus centang menulis false", async () => {
+    const p = bukaPopup({ ujiTampilan: "baru" }, null);
     await tenangPopup(p);
     const kotak = (await sampai(() => p.d.getElementById("sembunyikanTeknis"), "saklar lahir")) as HTMLInputElement;
     expect(kotak.checked).toBe(true);
@@ -520,23 +522,21 @@ describe("popup: saklar 'Sembunyikan penjelasan teknis'", () => {
   });
 
   it("kunci false tersimpan: tidak tercentang, tanpa penanda", async () => {
-    const p = bukaPopup({ ujiTampilan: "baru", sembunyikanTeknis: false });
+    const p = bukaPopup({ ujiTampilan: "baru", sembunyikanTeknis: false }, null);
     await tenangPopup(p);
     const kotak = (await sampai(() => p.d.getElementById("sembunyikanTeknis"), "saklar lahir")) as HTMLInputElement;
     expect(kotak.checked).toBe(false);
     expect(p.d.documentElement.hasAttribute("data-aleta-teknis")).toBe(false);
   });
 
-  it("UI Baru: di kelompok Tampilan; kembali ke Lama melepas saklar, penanda, dan kelas", async () => {
-    const p = bukaPopup({ ujiTampilan: "ui" }, "Super Admin");
+  it("UI Baru: di kelompok Tampilan; Super Admin tersimpan ujiTampilan 'lama' tetap UI Baru, saklar dan penanda tetap ada", async () => {
+    const p = bukaPopup({ ujiTampilan: "lama" }, "Super Admin");
     await tenangPopup(p);
     const kotak = await sampai(() => p.d.getElementById("sembunyikanTeknis"), "saklar lahir");
     expect(kotak.closest("#kelompok-tampilan")).not.toBeNull();
     expect(p.d.documentElement.getAttribute("data-aleta-teknis")).toBe("sembunyi");
-    (p.d.getElementById("ujiLama") as HTMLButtonElement).click();
-    await sampai(() => p.d.getElementById("sembunyikanTeknis") === null, "saklar hilang di Lama");
-    expect(p.d.documentElement.hasAttribute("data-aleta-teknis")).toBe(false);
-    expect(p.d.querySelectorAll(".aleta-teknis").length).toBe(0);
+    expect(p.d.getElementById("ujiLama")).toBeNull();
+    expect(p.d.querySelectorAll(".aleta-teknis").length).toBeGreaterThan(0);
   });
 
   it("ekspor/impor mengenal kuncinya", () => {

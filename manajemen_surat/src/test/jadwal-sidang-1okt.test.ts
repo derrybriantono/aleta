@@ -565,7 +565,7 @@ describe("J1 - isian di layar", () => {
     expect(periksaIsianMediator({ ...sah, mediatorId: null }, "2026-10-01").join()).toContain("Mediator");
   });
 
-  it("dua langkah: Periksa (kering) lalu 'Ya, tulis ke SIPP' (kering: false)", async () => {
+  it("dua langkah: Simpan (kering) lalu 'Ya, simpan' (kering: false)", async () => {
     const kiriman: Array<Record<string, unknown>> = [];
     vi.stubGlobal(
       "fetch",
@@ -600,15 +600,16 @@ describe("J1 - isian di layar", () => {
     );
     const { IsianMediator } = await import("@/components/portal/jadwal-sidang-1okt");
     render(createElement(IsianMediator, { perkaraId: "10063", nomorPerkara: "520/Pdt.G/2026/PA.Dgl", tanggalSidang: "2026-09-29" }));
-    fireEvent.click(await screen.findByRole("option", { name: /Himawan Tatura Wijaya/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Periksa penetapan mediator" }));
-    await screen.findByText("Periksa sebelum ditulis ke SIPP");
+    const pilihMediator = (await screen.findByRole("option", { name: /Himawan Tatura Wijaya/ })).closest("select") as HTMLSelectElement;
+    fireEvent.change(pilihMediator, { target: { value: "25" } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan" }));
+    await screen.findByRole("button", { name: "Ya, simpan" });
     expect(kiriman).toHaveLength(1);
     expect(kiriman[0]).toMatchObject({ kering: true, mediatorId: 25, tanggalPenetapan: "2026-09-29", nomorSk: "520/Pdt.G/2026/PA.Dgl" });
-    fireEvent.click(screen.getByRole("button", { name: "Ya, tulis ke SIPP" }));
+    fireEvent.click(screen.getByRole("button", { name: "Ya, simpan" }));
     await waitFor(() => expect(kiriman).toHaveLength(2));
     expect(kiriman[1]).toMatchObject({ kering: false });
-    await screen.findByText(/tertulis di SIPP \(14 langkah\)/);
+    await screen.findByText("Penetapan mediator tersimpan.");
   });
 
   it("tombol mediator Jadwal Sidang dan kartu Hasil Sidang memakai komponen yang SAMA", () => {

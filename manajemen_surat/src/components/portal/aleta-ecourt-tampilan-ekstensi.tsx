@@ -12,8 +12,8 @@ import { apiPath } from "@/lib/base-path";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 
 /**
- * Tampilan ekstensi - menerapkan Lama / Baru / UI Baru dan saklar fitur yang
- * dicoba Super Admin kepada pegawai lain.
+ * Tampilan ekstensi - menerapkan saklar fitur yang dicoba Super Admin kepada
+ * pegawai lain. Sejak 5 Nov 2026 tampilannya selalu UI Baru bagi semua akun.
  *
  * ============================================================================
  * DAFTAR FITUR, PERAN, DAN MODE DIBACA DARI SERVER
@@ -98,7 +98,7 @@ export function AletaEcourtTampilanEkstensi() {
   const [lingkup, setLingkup] = useState<Lingkup>("semua");
   const [peranDipilih, setPeranDipilih] = useState("");
   const [orangDipilih, setOrangDipilih] = useState<{ userId: string; nama: string } | null>(null);
-  const [mode, setMode] = useState<Mode>("baru");
+  const mode: Mode = "ui";
   const [fitur, setFitur] = useState<Record<string, true>>({});
   const [catatan, setCatatan] = useState("");
 
@@ -232,7 +232,6 @@ export function AletaEcourtTampilanEkstensi() {
     setLingkup(p.lingkup);
     if (p.lingkup === "peran") setPeranDipilih(p.sasaran);
     if (p.lingkup === "pengguna") setOrangDipilih({ userId: p.sasaran, nama: p.labelSasaran });
-    setMode(p.mode);
     setFitur({ ...p.fitur });
     setCatatan(p.catatan);
     setKabar("Penerapan untuk " + p.labelSasaran + " dimuat ke isian di bawah. Ubah lalu tekan Terapkan.");
@@ -246,7 +245,7 @@ export function AletaEcourtTampilanEkstensi() {
       <CardHeader>
         <CardTitle>Tampilan ekstensi</CardTitle>
         <CardDescription>
-          Menerapkan tampilan ekstensi (Lama, Baru, atau UI Baru) beserta saklar fiturnya kepada semua pegawai, satu
+          Menerapkan saklar fitur ekstensi kepada semua pegawai, satu
           peran, atau satu orang. Tampilan yang diterapkan di sini BUKAN mode coba: pegawai yang menerimanya bekerja
           seperti biasa dan tulisannya tidak ditahan. Hanya Super Admin yang dapat menerapkan; Admin dapat membaca.
         </CardDescription>
@@ -287,22 +286,11 @@ export function AletaEcourtTampilanEkstensi() {
             {/* ---------------------------------------------------------- */}
             <section className="space-y-3">
               <h3 className="text-sm font-semibold">Siapa mendapat apa</h3>
-              <div className="grid gap-3 sm:grid-cols-3">
-                {data.mode.map((m) => (
-                  <div key={m.mode} className="rounded-lg border bg-card p-3">
-                    <p className="text-2xl font-semibold tabular-nums">{data.ringkasan.jumlah[m.mode] ?? 0}</p>
-                    <p className="text-sm font-medium">pegawai memakai tampilan {m.label}</p>
-                  </div>
-                ))}
-              </div>
-              {data.mode.map((m) => {
-                const orang = data.ringkasan.pegawai.filter((p) => p.mode === m.mode);
+              {[data.ringkasan.pegawai].map((orang) => {
                 if (orang.length === 0) return null;
                 return (
-                  <details key={m.mode} className="rounded-md border px-3 py-2">
-                    <summary className="cursor-pointer text-sm font-medium">
-                      {m.label} - {orang.length} pegawai
-                    </summary>
+                  <details key="pegawai" className="rounded-md border px-3 py-2">
+                    <summary className="cursor-pointer text-sm font-medium">{orang.length} pegawai</summary>
                     <ul className="mt-2 divide-y text-sm">
                       {orang.map((p) => (
                         <li key={p.userId} className="flex flex-wrap items-baseline justify-between gap-2 py-1.5">
@@ -487,29 +475,6 @@ export function AletaEcourtTampilanEkstensi() {
                 </div>
               ) : null}
 
-              <div className="space-y-1">
-                <p className="text-xs font-medium text-muted-foreground">Tampilan</p>
-                <div className="flex flex-wrap gap-2">
-                  {data.mode.map((m) => (
-                    <Button
-                      key={m.mode}
-                      size="sm"
-                      variant={mode === m.mode ? "default" : "outline"}
-                      disabled={!data.bolehMenyunting}
-                      aria-pressed={mode === m.mode}
-                      onClick={() => setMode(m.mode)}
-                    >
-                      {m.label}
-                    </Button>
-                  ))}
-                </div>
-                {mode === "lama" ? (
-                  <p className="text-xs text-muted-foreground">
-                    Tampilan Lama mematikan semua fitur baru, apa pun isi saklarnya.
-                  </p>
-                ) : null}
-              </div>
-
               <details className="rounded-md border px-3 py-2">
                 <summary className="cursor-pointer text-sm font-medium">
                   Saklar fitur ({jumlahMenyala} dari {data.daftarFitur.length} menyala)
@@ -577,7 +542,7 @@ export function AletaEcourtTampilanEkstensi() {
                   onClick={() =>
                     void kirim(
                       "PUT",
-                      { lingkup, sasaran: sasaranSekarang, mode, fitur: mode === "lama" ? {} : fitur, catatan },
+                      { lingkup, sasaran: sasaranSekarang, mode, fitur, catatan },
                       "Tampilan diterapkan."
                     )
                   }

@@ -838,20 +838,7 @@
 
 <div id="bagianUji" class="bagian-uji" hidden>
   <details id="ujiBagianLaci" class="uji-ringkas">
-    <summary id="ujiRingkasan">Tampilan uji</summary>
-    <div class="uji-kepala">
-      <span class="baris-warna-label">tampilan uji</span>
-      <span class="uji-seg" role="group" aria-label="Tampilan yang dicoba">
-        <button type="button" id="ujiLama" data-uji-mode="lama" aria-pressed="true">Lama</button>
-        <button type="button" id="ujiBaru" data-uji-mode="baru" aria-pressed="false">Baru</button>
-        <button type="button" id="ujiUi" data-uji-mode="ui" aria-pressed="false">UI Baru</button>
-      </span>
-    </div>
-    <p id="ujiKet" class="saklar-ket"></p>
-    <label class="uji-nyata" id="ujiNyataBaris" hidden>
-      <input type="checkbox" id="ujiIzinkanNyata">
-      <span>Izinkan tindakan nyata - kirim WhatsApp dan simpan ke SIPP, ABT, ALETA berlaku sungguhan</span>
-    </label>
+    <summary id="ujiRingkasan">Saklar fitur</summary>
     <details id="ujiFiturLaci" class="uji-fitur">
       <summary>Saklar fitur ide · <span id="ujiFiturHitung">0 nyala</span></summary>
       <div class="uji-fitur-aksi">
@@ -916,15 +903,6 @@
 </div>
 <!-- === AKHIR 22OKT-W50 === -->
 
-<!-- Bagi yang BUKAN Super Admin, bila Super Admin meninggalkan tampilan uji
-     menyala di PC ini: disebut, dan dapat dikembalikan ke Lama. Kembali ke
-     Lama selalu aman - itu keadaan bawaan ekstensi. -->
-<div id="ujiLainBaris" class="bagian-uji" hidden>
-  <p class="uji-pesan-lain">Tampilan uji Super Admin sedang menyala di PC ini; kirim dan simpan ditahan.</p>
-  <div class="uji-fitur-aksi">
-    <button type="button" id="ujiKembaliLama" class="uji-kecil">kembali ke tampilan Lama</button>
-  </div>
-</div>
 
 <!-- ===================================================================
      PEMETAAN BLANGKO PUTUSAN - JENIS PERKARA -> BERKAS ABT

@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { statusTanpaVerstek, verstekBawaan } from "@/lib/verstek-bawaan";
-import { AlertTriangle, CheckCircle2, FileSearch, Gavel, Info, PauseCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronDown, FileSearch, Gavel, Info, PauseCircle } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -1185,11 +1185,13 @@ function KartuMediator({
 }
 
 /**
- * Pilih dari daftar, atau ketik sendiri. Nilai yang tidak ada di daftar
- * membuka kotak ketik dengan sendirinya - usulan yang dikarang aturan tetap
- * dapat diganti, dan kalimat petugas sendiri tetap dapat ditulis.
+ * Satu kotak: pilih dari daftar, lalu sunting langsung di kotak yang sama (5 Nov 2026).
+ *
+ * Dulu pilihan dan ketikan dua hal terpisah: memilih "Lainnya" membuka kotak kedua, dan kalimat yang dipilih tidak
+ * dapat disunting. Kini kalimat pilihan langsung masuk ke kotak dan dapat diubah di tempat; yang diketik dengan
+ * kalimat sendiri tetap sah, jadi daftar hanya tawaran, bukan batas.
  */
-function PilihAtauKetik({
+export function PilihAtauKetik({
   nilai,
   onUbah,
   pilihan,
@@ -1202,54 +1204,111 @@ function PilihAtauKetik({
   label: string;
   className?: string;
 }) {
-  const [ketik, setKetik] = useState(false);
-  const adaDiDaftar = pilihan.includes(nilai);
-  const modeKetik = ketik || (nilai.trim() !== "" && !adaDiDaftar);
-  if (modeKetik) {
-    return (
-      <span className="flex gap-1">
-        <input
-          value={nilai}
-          onChange={(e) => onUbah(e.target.value)}
-          aria-label={label}
-          placeholder="Ketik sendiri"
-          className={cn("h-8 w-full rounded-md border bg-background px-2 text-sm", className)}
-        />
-        <button
-          type="button"
-          className="shrink-0 rounded-md border px-1.5 text-[11px] text-muted-foreground hover:bg-muted"
-          title="Kembali memilih dari daftar"
-          onClick={() => {
-            setKetik(false);
-            if (!adaDiDaftar) onUbah("");
-          }}
-        >
-          daftar
-        </button>
-      </span>
-    );
-  }
+  const [terbuka, setTerbuka] = useState(false);
+  // Panah membuka daftar utuh; mengetik menyaringnya. Kalimat yang sudah terpilih tidak boleh menyempitkan daftar.
+  const [saring, setSaring] = useState(false);
+  const [sorot, setSorot] = useState(-1);
+  const wadah = useRef<HTMLSpanElement | null>(null);
+  const idDaftar = useId();
+
+  useEffect(() => {
+    if (!terbuka) return;
+    const diLuar = (peristiwa: MouseEvent) => {
+      if (wadah.current && !wadah.current.contains(peristiwa.target as Node)) setTerbuka(false);
+    };
+    document.addEventListener("mousedown", diLuar);
+    return () => document.removeEventListener("mousedown", diLuar);
+  }, [terbuka]);
+
+  const kunciSaring = nilai.trim().toLowerCase();
+  const daftar = saring && kunciSaring ? pilihan.filter((p) => p.toLowerCase().includes(kunciSaring)) : pilihan;
+  const tampak = terbuka && daftar.length > 0;
+  const pakai = (p: string) => {
+    onUbah(p);
+    setTerbuka(false);
+    setSaring(false);
+    setSorot(-1);
+  };
+
   return (
-    <NativeSelect
-      value={nilai}
-      aria-label={label}
-      onChange={(e) => {
-        if (e.target.value === "__ketik__") {
-          setKetik(true);
-          return;
-        }
-        onUbah(e.target.value);
-      }}
-      className={cn("h-8 text-sm", className)}
-    >
-      <option value="">Pilih…</option>
-      {pilihan.map((p) => (
-        <option key={p} value={p}>
-          {p}
-        </option>
-      ))}
-      <option value="__ketik__">Lainnya - ketik sendiri…</option>
-    </NativeSelect>
+    <span ref={wadah} className="relative block">
+      <input
+        value={nilai}
+        role="combobox"
+        aria-label={label}
+        aria-expanded={tampak}
+        aria-controls={idDaftar}
+        aria-autocomplete="list"
+        autoComplete="off"
+        placeholder="Pilih atau ketik"
+        onChange={(e) => {
+          onUbah(e.target.value);
+          setSaring(true);
+          setTerbuka(true);
+          setSorot(-1);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+            e.preventDefault();
+            if (!tampak) {
+              setSaring(false);
+              setTerbuka(true);
+              setSorot(0);
+              return;
+            }
+            const arah = e.key === "ArrowDown" ? 1 : -1;
+            setSorot((lama) => (lama + arah + daftar.length) % daftar.length);
+          } else if (e.key === "Enter" && tampak && daftar[sorot]) {
+            e.preventDefault();
+            pakai(daftar[sorot]);
+          } else if (e.key === "Escape" && tampak) {
+            e.stopPropagation();
+            setTerbuka(false);
+          }
+        }}
+        className={cn("h-8 w-full rounded-md border bg-background pl-2 pr-7 text-sm", className)}
+      />
+      <button
+        type="button"
+        tabIndex={-1}
+        aria-label={`Daftar ${label.toLowerCase()}`}
+        onClick={() => {
+          setSaring(false);
+          setSorot(-1);
+          setTerbuka((buka) => !(buka && !saring));
+        }}
+        className="absolute inset-y-0 right-0 flex w-7 items-center justify-center rounded-r-md text-muted-foreground hover:bg-muted"
+      >
+        <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
+      </button>
+      {tampak ? (
+        <ul
+          id={idDaftar}
+          role="listbox"
+          className="absolute left-0 right-0 top-full z-40 mt-1 max-h-52 overflow-y-auto rounded-md border bg-card py-1 text-sm shadow-lg"
+        >
+          {daftar.map((p, ke) => (
+            <li key={p} role="option" aria-selected={p === nilai}>
+              <button
+                type="button"
+                // mousedown, bukan click: kotak ketik tidak boleh kehilangan fokus sebelum pilihannya terpakai.
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  pakai(p);
+                }}
+                className={cn(
+                  "block w-full px-2 py-1 text-left hover:bg-muted",
+                  ke === sorot && "bg-muted",
+                  p === nilai && "font-semibold"
+                )}
+              >
+                {p}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </span>
   );
 }
 

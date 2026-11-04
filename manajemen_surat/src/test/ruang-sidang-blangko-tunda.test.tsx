@@ -258,11 +258,9 @@ describe("blangko Tunda sidang: ruang sidang + sidang keliling", () => {
     expect(keliling.checked).toBe(true);
 
     // Isian wajib lainnya.
-    fireEvent.change(screen.getByLabelText("Alasan penundaan"), { target: { value: "__ketik__" } });
     fireEvent.change(screen.getByLabelText("Alasan penundaan"), { target: { value: "Pemanggilan Tergugat" } });
     const agenda = screen.getByLabelText("Agenda sidang berikutnya") as HTMLSelectElement;
     if (!agenda.value) {
-      fireEvent.change(agenda, { target: { value: "__ketik__" } });
       fireEvent.change(screen.getByLabelText("Agenda sidang berikutnya"), { target: { value: "Pembacaan Gugatan" } });
     }
     fireEvent.click(screen.getByRole("button", { name: "Simpan" }));

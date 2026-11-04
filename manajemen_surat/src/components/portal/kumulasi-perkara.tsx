@@ -84,7 +84,7 @@ export function LencanaDariPetitum({ kumulasi }: { kumulasi: KumulasiPerkara | n
       data-kumulasi-petitum=""
       title={keteranganKumulasi(kumulasi)}
     >
-      dari petitum
+      Dari petitum
     </Badge>
   );
 }
@@ -140,7 +140,7 @@ export function RincianKumulasi({
             <span className="font-medium">{x.nama}</span>{" "}
             {x.sumber === "petitum" ? (
               <Badge variant="warning" className="px-1.5 py-0 text-xs">
-                dari petitum
+                Dari petitum
               </Badge>
             ) : (
               <Badge variant="muted" className="px-1.5 py-0 text-xs">

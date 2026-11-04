@@ -468,19 +468,23 @@ describe("popup: pengalih khusus Super Admin", () => {
     }
   });
 
+  it("pengalih tampilan dan 'izinkan tindakan nyata' sudah tidak ada di popup.html (5 Nov 2026)", () => {
+    for (const id of ["ujiLama", "ujiBaru", "ujiUi", "ujiKet", "ujiNyataBaris", "ujiIzinkanNyata", "ujiLainBaris", "ujiKembaliLama"]) {
+      expect(popupHtml.includes(`id="${id}"`), id).toBe(false);
+    }
+  });
+
   it("tersembunyi bagi yang bukan Super Admin; selalu UI Baru (UIBARU-WAJIB 12 Okt)", async () => {
     const p = bukaPopup("Panitera Pengganti");
     await tunggu(60);
     expect((p.d.getElementById("bagianUji") as HTMLElement).hidden).toBe(true);
-    expect((p.d.getElementById("ujiLainBaris") as HTMLElement).hidden).toBe(true);
     expect(p.d.documentElement.getAttribute("data-kulit")).toBe("modern");
   });
 
-  it("Super Admin melihatnya, bawaan Lama, dan semua saklar fitur mati", async () => {
+  it("Super Admin melihat bagian Saklar fitur, langsung UI Baru, dan semua saklar fitur mati", async () => {
     const p = bukaPopup("Super Admin");
     await sampai(() => !(p.d.getElementById("bagianUji") as HTMLElement).hidden, "bagian uji tampil");
-    expect(p.d.getElementById("ujiLama")!.getAttribute("aria-pressed")).toBe("true");
-    expect((p.d.getElementById("ujiNyataBaris") as HTMLElement).hidden).toBe(true);
+    expect(p.d.documentElement.getAttribute("data-kulit")).toBe("modern");
     const laci = p.d.getElementById("ujiFiturLaci") as HTMLDetailsElement;
     laci.open = true;
     await sampai(() => p.d.querySelectorAll("#ujiFiturDaftar input[data-kode]").length === 120, "laci tersusun");
@@ -490,18 +494,16 @@ describe("popup: pengalih khusus Super Admin", () => {
     expect(p.d.getElementById("ujiFiturHitung")!.textContent).toBe("0/120 nyala");
   });
 
-  it("memilih UI Baru menyimpan pilihannya, memasang kulit Modern, dan menyebut mode coba", async () => {
-    const p = bukaPopup("Super Admin");
-    await sampai(() => !(p.d.getElementById("bagianUji") as HTMLElement).hidden, "bagian uji tampil");
-    (p.d.getElementById("ujiUi") as HTMLButtonElement).click();
-    await sampai(() => p.simpanan.ujiTampilan === "ui", "tersimpan");
-    expect(p.d.documentElement.getAttribute("data-kulit")).toBe("modern");
-    expect(p.d.getElementById("ujiKet")!.textContent).toMatch(/Mode coba/);
-    expect((p.d.getElementById("ujiNyataBaris") as HTMLElement).hidden).toBe(false);
-    (p.d.getElementById("ujiLama") as HTMLButtonElement).click();
-    await sampai(() => p.simpanan.ujiTampilan === "lama", "kembali lama");
-    expect(p.d.documentElement.hasAttribute("data-kulit")).toBe(false);
-  });
+  for (const lama of ["lama", "baru"]) {
+    it(`Super Admin tetap UI Baru walau tersimpan ujiTampilan '${lama}'; pilihan lama tidak ditulis ulang`, async () => {
+      const p = bukaPopup("Super Admin", { ujiTampilan: lama });
+      await sampai(() => !(p.d.getElementById("bagianUji") as HTMLElement).hidden, "bagian uji tampil");
+      await tunggu(60);
+      expect(p.d.documentElement.getAttribute("data-kulit")).toBe("modern");
+      expect(p.d.getElementById("uiStatus")).not.toBeNull();
+      expect(p.simpanan.ujiTampilan).toBe(lama);
+    });
+  }
 
   it("saklar fitur: menyalakan satu menyimpan hanya yang menyala", async () => {
     const p = bukaPopup("Super Admin", { ujiTampilan: "baru" });
@@ -517,11 +519,11 @@ describe("popup: pengalih khusus Super Admin", () => {
     await sampai(() => JSON.stringify(p.simpanan.ujiFitur) === "{}", "semua mati");
   });
 
-  it("bukan Super Admin, pilihan uji tertinggal di PC ini: keterangan teknis tidak tampil, pilihan dipulihkan ke Lama, tampilan tetap UI Baru", async () => {
+  it("bukan Super Admin, pilihan uji tertinggal di PC ini: bagian uji tersembunyi dan tampilan tetap UI Baru", async () => {
     const p = bukaPopup("Hakim", { ujiTampilan: "baru" });
-    await sampai(() => p.simpanan.ujiTampilan === "lama", "pilihan uji dipulihkan");
+    await tunggu(100);
     expect((p.d.getElementById("bagianUji") as HTMLElement).hidden).toBe(true);
-    expect((p.d.getElementById("ujiLainBaris") as HTMLElement).hidden).toBe(true);
     expect(p.d.documentElement.getAttribute("data-kulit")).toBe("modern");
+    expect(p.d.getElementById("uiStatus")).not.toBeNull();
   });
 });

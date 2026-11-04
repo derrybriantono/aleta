@@ -279,8 +279,8 @@ describe("butir 6: dialog pilih mediator tanpa keterangan teknis", () => {
     expect(SATU_OKT).toContain('title="Pilih mediator untuk perkara ini"');
     expect(SATU_OKT).not.toContain("mengikuti tanggal penetapan, seperti SIPP");
   });
-  it("catatan kaki satu kalimat awam", () => {
-    expect(LAYAR_SIDANG).toContain('catatan="Jadwal pertemuan, laporan mediator, dan hasil mediasi masih ditulis di SIPP."');
+  it("tanpa catatan kaki: borang langsung isian (5 Nov 2026)", () => {
+    expect(LAYAR_SIDANG).not.toContain("masih ditulis di SIPP");
     expect(LAYAR_SIDANG).not.toContain("belum ada jalur yang menuliskannya");
   });
 });

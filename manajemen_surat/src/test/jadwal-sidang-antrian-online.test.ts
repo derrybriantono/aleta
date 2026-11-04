@@ -168,7 +168,7 @@ describe("sel Antrian/Jam menggambar ikonnya", () => {
     const html = renderToStaticMarkup(
       createElement(TandaAntrianOnline, { tanda: tandaAntrianOnline({ online: true, pihak2: "10:01" }) })
     );
-    expect(html).toMatch(/<span class="kolom-lengkap"[^>]*>online<\/span>/);
+    expect(html).toMatch(/<span class="kolom-lengkap"[^>]*>Online<\/span>/);
     expect(html).toContain("<svg");
     const layar = readFileSync(
       path.resolve(__dirname, "../components/portal/aleta-ecourt-sidang.tsx"),

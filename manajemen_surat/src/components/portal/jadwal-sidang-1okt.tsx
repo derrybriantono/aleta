@@ -21,7 +21,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Bagian } from "@/components/portal/bagian-ciut";
 import { apiPath } from "@/lib/base-path";
-import { ringkasTabel, sebutanTabel } from "@/lib/ringkasan-langkah-sipp";
 import {
   bawaanPenetapanMediator,
   JENIS_PENETAPAN_MEDIATOR,
@@ -270,6 +269,8 @@ type MediatorPilihan = {
   namaGelar: string;
   noSertifikasi: string;
   anggotaMajelis: boolean;
+  /** Perkara mediasi dan mediasi sukarela mediator ini tahun berjalan; tidak ada = belum terbaca. */
+  jumlahTahunIni?: number;
 };
 
 type DataMediasi = {
@@ -334,11 +335,14 @@ export function IsianMediator({
   nomorPerkara,
   tanggalSidang,
   onTertulis,
+  lebar = false,
 }: {
   perkaraId: string;
   nomorPerkara: string;
   tanggalSidang: string;
   onTertulis?: () => void;
+  /** Di pita kartu (selebar kartu): isian berjajar satu baris. */
+  lebar?: boolean;
 }) {
   const { data, memuat, muatUlang } = useDataMediasi(perkaraId, true);
   const bawaan = bawaanPenetapanMediator({ tanggalSidang, nomorPerkara });
@@ -347,7 +351,6 @@ export function IsianMediator({
   const [nomorSk, setNomorSk] = useState(bawaan.nomorSk);
   const [jenis, setJenis] = useState<string>(bawaan.jenisPenetapan);
   const [atasNama, setAtasNama] = useState<"hakim" | "panitera">(bawaan.atasNama);
-  const [cari, setCari] = useState("");
   // Rencana yang sudah diperiksa disimpan BESERTA isian yang memeriksanya:
   // isian yang berubah membatalkannya dengan sendirinya - konfirmasi tidak
   // boleh berlaku untuk isian yang lain dari yang diperlihatkan.
@@ -359,7 +362,6 @@ export function IsianMediator({
   // Butir 3 (5 Okt 2026): "tertulis di SIPP" hilang sendiri; penolakan menetap.
   const [pesan, setPesan] = usePesanSementara();
   const [sibuk, setSibuk] = useState(false);
-  const [tertulis, setTertulis] = useState(false);
 
   const mediasiPertama = (data?.mediasi ?? []).find((m) => m.tahapanId === 10 && m.jenisMediasi === 1);
   const salah = periksaIsianMediator({ mediatorId, tanggalPenetapan: tanggal, jenisPenetapan: jenis, nomorSk }, hariIniLokal());
@@ -384,19 +386,15 @@ export function IsianMediator({
         })
       );
       if (isi.available === false || isi.ok === false) {
-        // gagal_menulis = SIPP menolak satu langkah; sejak uji rilis 9 Okt 2026
-        // seluruh langkahnya satu transaksi, jadi sebutkan nasibnya.
-        const gagalTulis = isi.alasan === "gagal_menulis";
-        const pada = (isi.pada as { tabel?: string } | undefined)?.tabel;
+        // gagal_menulis = SIPP menolak satu langkah; seluruh langkahnya satu transaksi, jadi sebutkan nasibnya.
         setPesan({
           ok: false,
-          teks: gagalTulis
-            ? `SIPP menolak salah satu langkah penulisan (${pada ? sebutanTabel(pada).toLowerCase() : "penulisan"}) - ${
-                isi.dipulihkan === true
-                  ? "seluruh penetapan mediator dibatalkan, tidak ada yang tertinggal di SIPP. Dapat dicoba lagi."
-                  : "periksa tab Mediasi di SIPP sebelum mencoba lagi."
-              }`
-            : String(isi.alasan || isi.pesan || "Penetapan mediator ditolak."),
+          teks:
+            isi.alasan === "gagal_menulis"
+              ? isi.dipulihkan === true
+                ? "Penetapan mediator belum tersimpan. Tidak ada yang berubah, silakan coba lagi."
+                : "Penetapan mediator belum tentu tersimpan. Periksa bagian Mediasi perkara ini sebelum mencoba lagi."
+              : String(isi.alasan || isi.pesan || "Penetapan mediator ditolak."),
         });
         setRencana(null);
         return;
@@ -405,9 +403,8 @@ export function IsianMediator({
         setRencana(isi);
         return;
       }
-      setTertulis(true);
       setRencana(null);
-      setPesan({ ok: true, teks: `Penetapan mediator tertulis di SIPP (${Number(isi.jumlahLangkah) || 0} langkah).` });
+      setPesan({ ok: true, teks: "Penetapan mediator tersimpan." });
       muatUlang();
       onTertulis?.();
     } catch (galat) {
@@ -436,26 +433,45 @@ export function IsianMediator({
           {ringkasMediasi(mediasiPertama, hariIniLokal())}
         </p>
         {pesan ? <p className={pesan.ok ? "text-emerald-700 dark:text-emerald-300" : "text-rose-600"}>{pesan.teks}</p> : null}
-        {!tertulis ? (
-          <p className="text-[11px] text-muted-foreground">
-            Mengganti mediator yang sudah ditetapkan dikerjakan lewat Edit Penetapan Mediasi di SIPP.
-          </p>
-        ) : null}
       </div>
     );
   }
 
-  const daftar = (data?.daftarMediator ?? []).filter((m) =>
-    `${m.namaGelar} ${m.noSertifikasi}`.toLowerCase().includes(cari.trim().toLowerCase())
-  );
+  const daftar = data?.daftarMediator ?? [];
+  const dipilih = daftar.find((m) => m.id === mediatorId) ?? null;
   const akun = data?.akun;
-  const langkah = Array.isArray(rencana?.rencana) ? (rencana?.rencana as Array<{ tabel: string; aksi: string }>) : [];
+  const tahunIni = hariIniLokal().slice(0, 4);
+  // Daftar dikelompokkan menurut status; yang statusnya tidak dikenal tetap ditawarkan di kelompok "Lainnya".
+  const kelompokMediator = [...new Set(daftar.map((m) => SEBUTAN_STATUS_MEDIATOR[m.status] || "Lainnya"))];
 
   return (
     <div className="space-y-2 text-xs" data-isian-mediator="">
-      <div className="grid gap-2 sm:grid-cols-2">
-        <label className="space-y-0.5">
-          <span className="text-muted-foreground">Tgl Penetapan Mediator *</span>
+      <div className={cn("grid gap-2 sm:grid-cols-2", lebar && "lg:grid-cols-12")}>
+        <label className={cn("space-y-0.5 sm:col-span-2", lebar && "lg:col-span-4")}>
+          <span className="text-muted-foreground">Mediator</span>
+          <select
+            value={mediatorId ?? ""}
+            onChange={(e) => setMediatorId(e.target.value ? Number(e.target.value) : null)}
+            title={`Angka di samping nama: jumlah perkara mediasi dan mediasi sukarela mediator ini tahun ${tahunIni}.`}
+            className="h-8 w-full rounded-md border bg-background px-2"
+          >
+            <option value="">Pilih mediator</option>
+            {kelompokMediator.map((sebutan) => (
+              <optgroup key={sebutan} label={sebutan}>
+                {daftar
+                  .filter((m) => (SEBUTAN_STATUS_MEDIATOR[m.status] || "Lainnya") === sebutan)
+                  .map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {typeof m.jumlahTahunIni === "number" ? `${m.namaGelar} (${m.jumlahTahunIni})` : m.namaGelar}
+                    </option>
+                  ))}
+              </optgroup>
+            ))}
+          </select>
+          {dipilih?.anggotaMajelis ? <span className="block text-muted-foreground">Anggota majelis perkara ini.</span> : null}
+        </label>
+        <label className={cn("space-y-0.5", lebar && "lg:col-span-2")}>
+          <span className="text-muted-foreground">Tanggal penetapan</span>
           <input
             type="date"
             value={tanggal}
@@ -464,8 +480,8 @@ export function IsianMediator({
             className="h-8 w-full rounded-md border bg-background px-2"
           />
         </label>
-        <label className="space-y-0.5">
-          <span className="text-muted-foreground">No. Penetapan Mediator</span>
+        <label className={cn("space-y-0.5", lebar && "lg:col-span-2")}>
+          <span className="text-muted-foreground">Nomor penetapan</span>
           <input
             type="text"
             value={nomorSk}
@@ -474,8 +490,8 @@ export function IsianMediator({
             className="h-8 w-full rounded-md border bg-background px-2"
           />
         </label>
-        <label className="space-y-0.5 sm:col-span-2">
-          <span className="text-muted-foreground">Jenis Penetapan Mediator *</span>
+        <label className={cn("space-y-0.5 sm:col-span-2", lebar && "lg:col-span-2")}>
+          <span className="text-muted-foreground">Jenis penetapan</span>
           <select
             value={jenis}
             onChange={(e) => setJenis(e.target.value)}
@@ -488,69 +504,20 @@ export function IsianMediator({
             ))}
           </select>
         </label>
+        <label className={cn("space-y-0.5 sm:col-span-2", lebar && "lg:col-span-2")}>
+          <span className="text-muted-foreground">Atas nama</span>
+          <select
+            value={atasNama}
+            onChange={(e) => setAtasNama(e.target.value === "panitera" ? "panitera" : "hakim")}
+            className="h-8 w-full rounded-md border bg-background px-2"
+          >
+            <option value="hakim">Ketua majelis{akun?.hakim ? ` - ${akun.hakim.namaLengkap || akun.hakim.username}` : ""}</option>
+            <option value="panitera">Panitera pengganti{akun?.panitera ? ` - ${akun.panitera.namaLengkap || akun.panitera.username}` : ""}</option>
+          </select>
+        </label>
       </div>
 
-      <div className="space-y-1">
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-muted-foreground">Mediator *</span>
-          <input
-            type="search"
-            value={cari}
-            onChange={(e) => setCari(e.target.value)}
-            placeholder="Cari nama / sertifikat"
-            className="h-7 w-40 rounded-md border bg-background px-2"
-          />
-        </div>
-        <ul className="max-h-44 overflow-y-auto rounded-md border" role="listbox" aria-label="Daftar mediator">
-          {daftar.length === 0 ? (
-            <li className="px-2 py-1.5 text-muted-foreground">Data tidak ditemukan.</li>
-          ) : (
-            daftar.map((m) => (
-              <li key={m.id}>
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={mediatorId === m.id}
-                  onClick={() => setMediatorId(m.id)}
-                  className={cn(
-                    "flex w-full flex-wrap items-baseline gap-x-2 px-2 py-1 text-left hover:bg-muted",
-                    mediatorId === m.id && "bg-teal-600/15 font-semibold"
-                  )}
-                >
-                  <span>{m.namaGelar}</span>
-                  <span className="text-[11px] text-muted-foreground">
-                    {SEBUTAN_STATUS_MEDIATOR[m.status] || "-"}
-                    {m.noSertifikasi ? ` · ${m.noSertifikasi}` : ""}
-                  </span>
-                  {m.anggotaMajelis ? (
-                    <Badge variant="muted" title="Hakim ini anggota majelis perkara ini - boleh, sekadar keterangan.">
-                      majelis perkara ini
-                    </Badge>
-                  ) : null}
-                </button>
-              </li>
-            ))
-          )}
-        </ul>
-      </div>
-
-      <label className="block space-y-0.5">
-        <span className="text-muted-foreground">Ditulis atas nama (akun SIPP)</span>
-        <select
-          value={atasNama}
-          onChange={(e) => setAtasNama(e.target.value === "panitera" ? "panitera" : "hakim")}
-          className="h-8 w-full rounded-md border bg-background px-2"
-        >
-          <option value="hakim">Ketua majelis{akun?.hakim ? ` - ${akun.hakim.namaLengkap || akun.hakim.username}` : " (tidak ada akun aktif)"}</option>
-          <option value="panitera">
-            Panitera pengganti{akun?.panitera ? ` - ${akun.panitera.namaLengkap || akun.panitera.username}` : " (tidak ada akun aktif)"}
-          </option>
-        </select>
-      </label>
-
-      <p className="text-muted-foreground">Tgl Mulai Mediasi: {tanggal || "—"}</p>
-
-      {salah.length > 0 ? (
+      {salah.length > 0 && mediatorId !== null ? (
         <ul className="list-disc pl-4 text-amber-700 dark:text-amber-300">
           {salah.map((s) => (
             <li key={s}>{s}</li>
@@ -559,25 +526,21 @@ export function IsianMediator({
       ) : null}
 
       {rencana ? (
-        <div className="rounded-md border border-amber-500/50 bg-amber-500/10 p-2">
-          <p className="font-semibold">Periksa sebelum ditulis ke SIPP</p>
-          <p>
-            {String((rencana.mediator as { nama?: string })?.nama || "")} · {String((rencana.penetapan as { tanggal?: string })?.tanggal || "")} ·
-            atas nama {String((rencana.atasNama as { namaLengkap?: string; username?: string })?.namaLengkap || (rencana.atasNama as { username?: string })?.username || "")}
+        <div className="flex flex-wrap items-center gap-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-2">
+          <p className="min-w-0 flex-1">
+            Simpan penetapan: <b>{String((rencana.mediator as { nama?: string })?.nama || dipilih?.namaGelar || "")}</b> ·{" "}
+            {String((rencana.penetapan as { tanggal?: string })?.tanggal || tanggal)}?
           </p>
-          <p className="text-muted-foreground">Akan ditulis ke SIPP: {ringkasTabel(langkah).toLowerCase()}.</p>
-          <div className="mt-1.5 flex gap-2">
-            <Button size="sm" disabled={sibuk} onClick={() => void kirim(false)}>
-              {sibuk ? "Menulis…" : "Ya, tulis ke SIPP"}
-            </Button>
-            <Button size="sm" variant="outline" disabled={sibuk} onClick={() => setRencana(null)}>
-              Batal
-            </Button>
-          </div>
+          <Button size="sm" disabled={sibuk} onClick={() => void kirim(false)}>
+            {sibuk ? "Menyimpan…" : "Ya, simpan"}
+          </Button>
+          <Button size="sm" variant="outline" disabled={sibuk} onClick={() => setRencana(null)}>
+            Batal
+          </Button>
         </div>
       ) : (
-        <Button size="sm" variant="outline" disabled={sibuk || salah.length > 0} onClick={() => void kirim(true)}>
-          {sibuk ? "Memeriksa…" : "Periksa penetapan mediator"}
+        <Button size="sm" disabled={sibuk || salah.length > 0} onClick={() => void kirim(true)}>
+          {sibuk ? "Memeriksa…" : "Simpan"}
         </Button>
       )}
 
@@ -599,15 +562,15 @@ export function TombolPilihMediator({
   baris,
   onBukaStatus,
   kelasPanel = "bg-card",
-  catatan,
+  gaya = "tombol",
 }: {
   baris: { perkaraId: string; nomorPerkara: string; tanggalSidang: string };
   sebab: string;
   onBukaStatus?: (nomorPerkara: string) => void;
   /** Latar panel - bg-card; token popover tidak ada pada tema ini. */
   kelasPanel?: string;
-  /** Batas yang disebut terus terang di kaki panel. */
-  catatan?: string;
+  /** "pita" (kartu baru): tombol sebaris Tunda dan Konseptor, isiannya terbuka selebar kartu. */
+  gaya?: "tombol" | "pita";
 }) {
   const [terbuka, setTerbuka] = useState(false);
   const wadah = useRef<HTMLSpanElement | null>(null);
@@ -628,6 +591,27 @@ export function TombolPilihMediator({
     };
   }, [terbuka]);
 
+  if (gaya === "pita") {
+    return (
+      <span ref={wadah} className={cn("inline-flex min-w-0 max-w-full flex-col gap-2", terbuka && "w-full basis-full")}>
+        <button
+          type="button"
+          onClick={() => setTerbuka((buka) => !buka)}
+          aria-expanded={terbuka}
+          title={`Tetapkan mediator perkara ${baris.nomorPerkara}`}
+          className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-teal-600 bg-teal-600/15 px-2.5 py-1 text-[13px] font-bold leading-tight text-teal-700 transition hover:bg-teal-600/25 dark:text-teal-300"
+        >
+          Tetapkan mediator
+        </button>
+        {terbuka ? (
+          <span className="block rounded-lg border bg-card p-2.5">
+            <IsianMediator lebar perkaraId={baris.perkaraId} nomorPerkara={baris.nomorPerkara} tanggalSidang={baris.tanggalSidang} />
+          </span>
+        ) : null}
+      </span>
+    );
+  }
+
   return (
     <span ref={wadah} className="relative ml-1 inline-flex align-middle">
       <button
@@ -645,7 +629,7 @@ export function TombolPilihMediator({
             : "border-teal-600/50 text-teal-700 hover:bg-teal-600/10 dark:text-teal-300"
         )}
       >
-        mediator
+        Mediator
       </button>
 
       {terbuka ? (
@@ -655,10 +639,9 @@ export function TombolPilihMediator({
             kelasPanel
           )}
         >
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Penetapan mediator · {baris.nomorPerkara}
           </p>
-          <p className="mb-1 mt-0.5 text-xs text-muted-foreground">Pilih mediator yang ditunjuk untuk perkara ini.</p>
           <IsianMediator perkaraId={baris.perkaraId} nomorPerkara={baris.nomorPerkara} tanggalSidang={baris.tanggalSidang} />
           {onBukaStatus ? (
             <button
@@ -670,15 +653,8 @@ export function TombolPilihMediator({
               className="mt-2 w-full rounded-md border px-2 py-1 text-left text-xs font-medium transition hover:bg-muted"
             >
               Buka Status Perkara → bagian Mediasi
-              <span className="mt-0.5 block text-[11px] font-normal text-muted-foreground">
-                Mediator, nomor SK, tanggal penetapan, tenggat 30 hari, laporan, hasil, dan jadwal pertemuannya.
-              </span>
             </button>
           ) : null}
-          <p className="mt-2 border-t pt-2 text-[11px] leading-snug text-muted-foreground">
-            {catatan ||
-              "Jadwal pertemuan, laporan, dan hasil mediasi masih ditulis di SIPP."}
-          </p>
         </div>
       ) : null}
     </span>

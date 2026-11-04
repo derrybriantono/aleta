@@ -1551,7 +1551,8 @@ const KEADAAN_DASAR: KeadaanSidang[] = [
       // menyempitkan tipe, dan sebelumnya ini lolos hanya karena akses indeks
       // Record mengaku selalu mengembalikan nilai. Sesudah pencocokan tanggal,
       // "tidak ada" menjadi kemungkinan yang sebenarnya.
-      return punya !== undefined && !punya.nomor;
+      // Yang sudah ada hasil sidangnya (biasanya sidang elektronik) tidak lagi ditagih mengambil nomor.
+      return punya !== undefined && !punya.nomor && !sidangSelesaiHariIni(x);
     },
   },
   {
@@ -3109,11 +3110,13 @@ function TombolMediator({
   baris,
   onBukaStatus,
   sebabMediator,
+  gaya,
 }: {
   baris: SidangBaris;
   onBukaStatus?: (nomorPerkara: string) => void;
   /** Butir 7 (6 Okt 2026): kalimat "kedua belah pihak hadir pertama kali" dari penandaMediator. */
   sebabMediator?: string;
+  gaya?: "tombol" | "pita";
 }) {
   const sebab = sebabMediator || sebabBerbauMediasi(baris.agenda, baris.alasanDitunda);
   return (
@@ -3124,7 +3127,7 @@ function TombolMediator({
       // bg-card, BUKAN token popover: token itu tidak ada pada tema ini dan
       // menu yang memakainya tembus pandang.
       kelasPanel="bg-card"
-      catatan="Jadwal pertemuan, laporan mediator, dan hasil mediasi masih ditulis di SIPP."
+      gaya={gaya}
     />
   );
 }
@@ -3571,11 +3574,11 @@ function SelKonseptorSementara({
           <PenLine className="mt-px h-3 w-3 shrink-0" aria-hidden="true" />
           {tunjukan?.nama ? (
             <span className="min-w-0 break-words" data-konseptor-sementara>
-              <span className="font-normal opacity-75">konseptor sementara</span>{" "}
+              <span className="font-normal opacity-75">Konseptor sementara</span>{" "}
               <span className="font-semibold">{tunjukan.nama}</span>
             </span>
           ) : (
-            <span className="min-w-0">tunjuk konseptor</span>
+            <span className="min-w-0">Tunjuk konseptor</span>
           )}
         </button>
       </div>
@@ -3888,6 +3891,14 @@ function NomorBolehPatah({ nomor }: { nomor: string }) {
   );
 }
 
+/** Kotak nomor antrian di kartu baru: selalu sebesar ini supaya jam di sampingnya segaris pada semua kartu. */
+const KELAS_NOMOR_ANTRIAN =
+  "inline-flex h-8 min-w-8 shrink-0 items-center justify-center rounded-lg px-1.5 text-base font-extrabold leading-none tabular-nums";
+const KELAS_NOMOR_SELESAI = cn(
+  KELAS_NOMOR_ANTRIAN,
+  "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+);
+
 export function SelAntrianJam({
   baris,
   antrian,
@@ -3899,10 +3910,13 @@ export function SelAntrianJam({
   tampilJamPanggil = true,
   tungguBerjalan,
   patokan = null,
+  gayaKartu = false,
 }: {
   baris: SidangBaris;
   antrian?: AntrianBaris;
   tanggalTampil: string;
+  /** Kartu baru: nomor dalam kotak, jam di sampingnya; perkara tanpa nomor yang sudah ada hasilnya tetap tampak. */
+  gayaKartu?: boolean;
   /** Saklar "menunggu-lama" - lencana menunggu N menit. */
   tampilMenunggu?: boolean;
   /**
@@ -3939,7 +3953,30 @@ export function SelAntrianJam({
   // @/lib/tanda-antrian-online (yang tidak pasti tidak ditebak).
   const tandaOnline = tampilTandaOnline ? tandaAntrianOnline(antrian) : null;
 
+  // Perkara yang disidangkan tanpa mengambil nomor (biasanya sidang elektronik) tidak boleh terbaca "belum ambil"
+  // sesudah hasilnya tercatat: ia sudah melewati antrian, hanya tanpa nomor. Mesin antrian tidak ditulisi.
+  const tanpaNomorSelesai = gayaKartu && sidangSelesai && !antrian?.nomor;
+  const nomorTanpaAntrian = tanpaNomorSelesai ? (
+    <div className="flex items-center gap-2.5">
+      <span
+        className={KELAS_NOMOR_SELESAI}
+        title={
+          sidangElitigasi(baris)
+            ? "Sidang elektronik: tidak mengambil nomor antrian, hasil sidangnya sudah tercatat."
+            : "Tidak mengambil nomor antrian, hasil sidangnya sudah tercatat."
+        }
+      >
+        {sidangElitigasi(baris) ? "E" : "–"}
+      </span>
+      <span className="min-w-0">
+        <span className="block font-semibold tabular-nums leading-tight">{jam}</span>
+        <span className="block text-xs leading-tight text-muted-foreground">Tanpa antrian</span>
+      </span>
+    </div>
+  ) : null;
+
   if (!antrian) {
+    if (nomorTanpaAntrian) return nomorTanpaAntrian;
     return (
       <>
         <div className="font-semibold tabular-nums">{jam}</div>
@@ -3972,7 +4009,30 @@ export function SelAntrianJam({
   // berpindah hanya arti warnanya.
   return (
     <>
-      {antrian.nomor ? (
+      {nomorTanpaAntrian ? (
+        nomorTanpaAntrian
+      ) : antrian.nomor && gayaKartu ? (
+        <div className="flex items-center gap-2.5">
+          <span
+            className={
+              sidangSelesai
+                ? KELAS_NOMOR_SELESAI
+                : cn(KELAS_NOMOR_ANTRIAN, antrian.keadaan === "dipanggil" ? "bg-primary text-primary-foreground" : "bg-primary/15 text-primary")
+            }
+            title={
+              sidangSelesai
+                ? `Nomor antrian ${antrian.nomor} — sidangnya sudah selesai`
+                : antrian.keadaan === "dipanggil"
+                  ? `Nomor antrian ${antrian.nomor} — sudah dipanggil masuk, sidangnya belum selesai`
+                  : `Nomor antrian ${antrian.nomor} — menunggu dipanggil`
+            }
+          >
+            {antrian.nomor}
+          </span>
+          <span className="font-semibold tabular-nums leading-tight">{jam}</span>
+          <TandaAntrianOnline tanda={tandaOnline} className="self-center" />
+        </div>
+      ) : antrian.nomor ? (
         <div
           className={cn(
             "flex items-baseline gap-1.5",
@@ -4031,7 +4091,7 @@ export function SelAntrianJam({
           className="text-sm italic text-muted-foreground"
           title="Terdaftar di mesin antrian, tetapi belum ada pihak yang mengambil nomor."
         >
-          belum ambil
+          Belum ambil
         </div>
       )}
 
@@ -4087,7 +4147,9 @@ export function SelAntrianJam({
         />
       ) : null}
 
-      <div className="mt-0.5 text-sm tabular-nums text-muted-foreground">{jam}</div>
+      {gayaKartu && (antrian.nomor || tanpaNomorSelesai) ? null : (
+        <div className="mt-0.5 text-sm tabular-nums text-muted-foreground">{jam}</div>
+      )}
 
       {/* Kode majelis aplikasi antrian ("C1|C2|C3", butir 4 5 Okt 2026) DIBUANG
           dari sel ini 6 Okt 2026 (butir 6): ia mengulang kode di kolom
@@ -7527,7 +7589,7 @@ export function AletaEcourtSidang({
                                       : "border-amber-400 text-amber-700 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-500/15"
                                   )}
                                 >
-                                  tunda
+                                  Tunda
                                 </button>
                                 <button
                                   type="button"
@@ -7548,7 +7610,7 @@ export function AletaEcourtSidang({
                                       : "border-primary/50 text-primary hover:bg-primary/10"
                                   )}
                                 >
-                                  putus
+                                  Putus
                                 </button>
                               </span>
                               ) : null
@@ -8152,7 +8214,7 @@ export function AletaEcourtSidang({
                             {baris.sudahPutus ? (
                               <Badge variant="success">{baris.statusPutusan || "Putus"}</Badge>
                             ) : (
-                              <span className="text-xs text-muted-foreground">belum putus</span>
+                              <span className="text-xs text-muted-foreground">Belum putus</span>
                             )}
                           </div>
                           ) : null}
@@ -8379,7 +8441,7 @@ export function AletaEcourtSidang({
                               </Badge>
                             </div>
                           ) : statusPutusanTampil ? (
-                            <span className="text-muted-foreground">belum putus</span>
+                            <span className="text-muted-foreground">Belum putus</span>
                           ) : null}
 
                           {/* Pembebanan saat ikrar talak (6 Okt 2026): di
@@ -8914,6 +8976,7 @@ export function AletaEcourtSidang({
                           tampilJamPanggil={tampil(tampilan, "jam-dipanggil")}
                           tungguBerjalan={tigaBaris?.tunggu}
                           patokan={patokanWaktu}
+                          gayaKartu
                         />
                         {ikonAntrian}
                         {tampil(tampilan, "kehadiran-rinci") ? (
@@ -9156,7 +9219,9 @@ export function AletaEcourtSidang({
                             <Badge variant="success" title="Kedua belah pihak hadir.">
                               contradictoir
                             </Badge>
-                          ) : tampil(tampilan, "kehadiran") && baris.dihadiriOleh ? (
+                          ) : tampil(tampilan, "kehadiran") && baris.dihadiriOleh && !hadirIni(baris).pihak1 && !hadirIni(baris).pihak2 ? (
+                            // Warna nama hanya menyala dari antrian hari ini. Tag ini tinggal untuk yang warnanya tidak bercerita:
+                            // hari lain, atau sidang tanpa nomor antrian (biasanya elektronik).
                             <Badge variant="muted">
                               <PatahSesudahGaris teks={SEBUTAN_HADIR[baris.dihadiriOleh]} />
                             </Badge>
@@ -9405,11 +9470,6 @@ export function AletaEcourtSidang({
                             pengguna={currentUser}
                           />
                         ) : null}
-                        {mediatorPenanda ? (
-                          <span data-penanda-mediator="" className="inline-flex">
-                            <TombolMediator baris={baris} onBukaStatus={onBukaStatus} sebabMediator={mediatorPenanda.keterangan} />
-                          </span>
-                        ) : null}
                         <PenandaPernahDiskorsView penanda={pernahDiskorsIni(baris)} />
                       </>
                     );
@@ -9521,6 +9581,11 @@ export function AletaEcourtSidang({
                             bolehTulis={bolehTulisKeterangan}
                           />
                         </span>
+                        {mediatorPenanda ? (
+                          <span data-penanda-mediator="" className="contents">
+                            <TombolMediator gaya="pita" baris={baris} onBukaStatus={onBukaStatus} sebabMediator={mediatorPenanda.keterangan} />
+                          </span>
+                        ) : null}
                       </PitaBawahKartu>
                     );
 
