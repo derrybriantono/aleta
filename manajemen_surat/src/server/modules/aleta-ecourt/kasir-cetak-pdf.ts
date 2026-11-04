@@ -111,7 +111,7 @@ function susunKolom(k: Kanvas, bagian: [string, number, boolean?][]): Kolom[] {
   return bagian.map(([j, b, kanan]) => ({ judul: j, lebar: (lebar * b) / jumlah, kanan: Boolean(kanan) }));
 }
 
-function tandaTangan(k: Kanvas, kiri: string, kanan: string, tempatTanggal: string, namaKiri = "") {
+function tandaTangan(k: Kanvas, kiri: string, kanan: string, tempatTanggal: string, namaKiri = "", namaKanan = "") {
   if (k.y < 150) {
     k.hal = k.dok.addPage([k.lebarKertas, k.tinggiKertas]);
     k.y = k.tinggiKertas - 60;
@@ -129,7 +129,7 @@ function tandaTangan(k: Kanvas, kiri: string, kanan: string, tempatTanggal: stri
   tulisTengah(kanan, tengahKanan, k.biasa);
   k.y -= 64;
   tulisTengah(namaKiri ? `(${patahBaris(k.biasa, namaKiri, 9.5, 10_000)[0] ?? ""})` : "(..................................)", tengahKiri, k.biasa);
-  tulisTengah("(..................................)", tengahKanan, k.biasa);
+  tulisTengah(namaKanan ? `(${patahBaris(k.biasa, namaKanan, 9.5, 10_000)[0] ?? ""})` : "(..................................)", tengahKanan, k.biasa);
 }
 
 function periode(dari: string, sampai: string) {
@@ -141,16 +141,17 @@ export async function buatPdfPsp(data: DaftarPsp, opsi: { kertas?: KertasSkum; s
   const k = await kanvasBaru(opsi.kertas === "F4" ? "F4" : "A4", `Pengembalian Sisa Panjar ${data.dari}`);
   judul(k, ["DAFTAR PENGEMBALIAN SISA PANJAR", ...(opsi.satker ? [opsi.satker.toUpperCase()] : [])], [`Tanggal: ${periode(data.dari, data.sampai)} · ${data.jumlah} perkara`]);
   const sembunyi = Boolean(data.rekeningDisembunyikan);
+  // 4 Nov 2026 (rancangan): kolom "Paraf / bukti transfer" di ujung kanan - diisi tangan saat diserahkan atau ditransfer.
   const kolom = susunKolom(k, sembunyi
-    ? [["No", 0.5], ["Nomor perkara", 2], ["Tanggal", 1.3], ["Penerima", 3.2], ["Jumlah", 1.5, true]]
-    : [["No", 0.5], ["Nomor perkara", 2], ["Tanggal", 1.2], ["Penerima", 2.4], ["Bank / Nomor rekening", 2.2], ["Jumlah", 1.4, true]]);
+    ? [["No", 0.5], ["Nomor perkara", 2], ["Tanggal", 1.3], ["Penerima", 2.6], ["Sisa panjar", 1.4, true], ["Paraf / bukti transfer", 1.8]]
+    : [["No", 0.5], ["Nomor perkara", 2], ["Tanggal", 1.2], ["Penerima", 2.2], ["Bank / Nomor rekening", 2], ["Sisa panjar", 1.3, true], ["Paraf / bukti transfer", 1.6]]);
   kepalaTabel(k, kolom);
   data.daftar.forEach((b, i) => {
     const dasar = [String(i + 1), b.nomorPerkara, tanggalIndonesia(b.tanggal), penerimaPsp(b)];
-    barisTabel(k, kolom, sembunyi ? [...dasar, rupiahTitik(b.jumlah)] : [...dasar, teksRekeningPsp(b), rupiahTitik(b.jumlah)]);
+    barisTabel(k, kolom, sembunyi ? [...dasar, rupiahTitik(b.jumlah), ""] : [...dasar, teksRekeningPsp(b), rupiahTitik(b.jumlah), ""]);
   });
-  barisTabel(k, kolom, sembunyi ? ["", "Total", "", "", rupiahTitik(data.total)] : ["", "Total", "", "", "", rupiahTitik(data.total)], { tebal: true });
-  tandaTangan(k, "Mengetahui,", "Kasir,", periode(data.sampai, data.sampai));
+  barisTabel(k, kolom, sembunyi ? ["", "Total", "", "", rupiahTitik(data.total), ""] : ["", "Total", "", "", "", rupiahTitik(data.total), ""], { tebal: true });
+  tandaTangan(k, "Mengetahui, Panitera,", "Kasir,", periode(data.sampai, data.sampai));
   return k.dok.save();
 }
 
@@ -160,17 +161,23 @@ export async function buatPdfInstrumen(
   opsi: { dari: string; sampai: string; kertas?: KertasSkum; satker?: string }
 ): Promise<Uint8Array> {
   const k = await kanvasBaru(opsi.kertas === "F4" ? "F4" : "A4", `Instrumen ${kelompok.jurusita} ${opsi.dari}`);
+  // 4 Nov 2026 (rancangan): judul tanpa singkatan, jumlah tugas disebut, penyerah (kasir) di kiri dan penerima (jurusita) di kanan.
+  const tugas = kelompok.baris.length;
   judul(
     k,
-    ["INSTRUMEN BIAYA PANGGILAN DAN PEMBERITAHUAN (PBT)", ...(opsi.satker ? [opsi.satker.toUpperCase()] : [])],
-    [`Jurusita: ${kelompok.jurusita}`, `Tanggal: ${periode(opsi.dari, opsi.sampai)} · ${kelompok.jumlahPanggilan} panggilan, ${kelompok.jumlahPbt} PBT`]
+    ["INSTRUMEN BIAYA PANGGILAN DAN PEMBERITAHUAN PUTUSAN", ...(opsi.satker ? [opsi.satker.toUpperCase()] : [])],
+    [
+      `Jurusita: ${kelompok.jurusita}`,
+      `Jumlah tugas: ${tugas} relaas (${kelompok.jumlahPanggilan} panggilan, ${kelompok.jumlahPbt} PBT)`,
+      `Tanggal: ${periode(opsi.dari, opsi.sampai)}`,
+    ]
   );
   const kolom = susunKolom(k, [["No", 0.45], ["Nomor perkara", 1.75], ["Pihak", 1.9], ["Alamat", 2.6], ["Jenis", 1.8], ["Tanggal", 1.15], ["Biaya", 1.25, true]]);
   kepalaTabel(k, kolom);
   kelompok.baris.forEach((b, i) => {
     barisTabel(k, kolom, [String(i + 1), b.nomorPerkara, b.pihak || "-", b.alamat || "-", b.jenis, tanggalIndonesia(b.tanggal), rupiahTitik(b.jumlah)]);
   });
-  barisTabel(k, kolom, ["", "Total", "", "", "", "", rupiahTitik(kelompok.total)], { tebal: true });
-  tandaTangan(k, "Jurusita,", "Kasir,", periode(opsi.sampai, opsi.sampai), kelompok.jurusitaId > 0 ? kelompok.jurusita : "");
+  barisTabel(k, kolom, ["", "Jumlah diterima jurusita", "", "", "", "", rupiahTitik(kelompok.total)], { tebal: true });
+  tandaTangan(k, "Yang menyerahkan, Kasir,", "Yang menerima, Jurusita,", periode(opsi.sampai, opsi.sampai), "", kelompok.jurusitaId > 0 ? kelompok.jurusita : "");
   return k.dok.save();
 }

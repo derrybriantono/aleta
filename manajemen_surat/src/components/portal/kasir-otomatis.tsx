@@ -26,11 +26,27 @@
  * transaksi; Kasir Manual atas AKUN KASIR SIPP sejak 28 Okt 2026, jejak di aleta_*).
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { CalendarClock, FileDown, ListChecks, X } from "lucide-react";
+import { CalendarClock, FileDown, ListChecks } from "lucide-react";
 
 import { DialogKasir } from "@/components/portal/kasir-jurnal";
+import {
+  ALAMAT_KASIR,
+  BagianInstrumen,
+  BagianSisaPanjar,
+  BarisPembayar,
+  BilahTab,
+  KartuRingkas,
+  KepalaKasir,
+  LencanaAkun,
+  TombolSkum,
+  bacaJson,
+  kelasMedan,
+  rentangHariIni,
+  usePembayarMassal,
+  type RentangCetak,
+} from "@/components/portal/kasir-tampilan";
 import { KabarDiantrekan, TanyaJamKerja, type PilihJamKerja } from "@/components/portal/pilihan-jam-kerja";
 import { Button } from "@/components/ui/button";
 import { usePortal } from "@/lib/app-state";
@@ -53,20 +69,8 @@ import {
   type PeriodeRekap,
   type RekapKasir,
 } from "@/lib/kasir-otomatis";
-import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 import { cn } from "@/lib/utils";
 import { waktuPengadilan } from "@/lib/waktu-pengadilan";
-
-const ALAMAT_KASIR = "/api/aleta-ecourt/sidang/kasir";
-
-async function bacaJson(jawaban: Response): Promise<Record<string, unknown>> {
-  const isi = (await jawaban.json().catch(() => ({}))) as Record<string, unknown>;
-  if (!jawaban.ok) throw new Error(pesanGalatPortal(isi, `HTTP ${jawaban.status}`));
-  return ((isi && (isi.data as Record<string, unknown>)) ?? isi) as Record<string, unknown>;
-}
-
-const kelasMedan =
-  "h-8 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60";
 
 type Akun = { ok: boolean; username?: string; nama?: string; milik?: string[]; pesan?: string; alasan?: string };
 
@@ -84,6 +88,9 @@ export function BagianMassal({ onSunting }: { onSunting: (perkaraId: string) => 
   // Di luar jam kerja (keputusan 104): kalimat pertanyaan Antrekan / Tulis sekarang.
   const [tanyaJam, setTanyaJam] = useState<string | null>(null);
   const [diantrekan, setDiantrekan] = useState("");
+  // 4 Nov 2026: penyaring kartu angka dan kolom Cari perkara - hanya menyembunyikan kartu di layar.
+  const [saring, setSaring] = useState<"semua" | "perlu" | "lengkap">("semua");
+  const [kata, setKata] = useState("");
   const henti = useRef(false);
 
   const muat = useCallback(async (t: string) => {
@@ -196,87 +203,142 @@ export function BagianMassal({ onSunting }: { onSunting: (perkaraId: string) => 
   };
 
   const hasil = Object.values(laporan);
+  const daftarLengkap = data?.lengkap ?? [];
+  const nomorBaca = useMemo(() => [...(data?.perkara ?? []).map((p) => p.nomorPerkara), ...(data?.lengkap ?? []).map((p) => p.nomorPerkara)], [data]);
+  const bayar = usePembayarMassal(nomorBaca);
+  const kunciCari = kata.trim().toLowerCase();
+  const cocok = (p: { nomorPerkara: string; jenisPerkara: string; keadaan: { nama: string } }) =>
+    !kunciCari || [p.nomorPerkara, p.jenisPerkara, p.keadaan?.nama, bayar[p.nomorPerkara]?.diterimaDari].filter(Boolean).join(" ").toLowerCase().includes(kunciCari);
+  const perkaraTampil = saring === "lengkap" ? [] : (data?.perkara ?? []).filter(cocok);
+  const lengkapTampil = saring === "perlu" ? [] : daftarLengkap.filter(cocok);
+  const kiriman = dipilih.reduce(
+    (a2, p) => {
+      const b2 = barisMassal(p);
+      return { baris: a2.baris + b2.length, total: a2.total + b2.reduce((t, x) => t + (Number(x.jumlah) || 0), 0) };
+    },
+    { baris: 0, total: 0 }
+  );
   return (
     <div className="grid gap-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <input type="date" aria-label="Tanggal" className={kelasMedan} value={tanggal} onChange={(e) => setTanggal(e.target.value)} />
-        <Button size="sm" variant="outline" disabled={memuat || sedang} onClick={() => void muat(tanggal)}>
-          Baca
-        </Button>
-        {data ? (
-          <span className="text-xs text-muted-foreground">
-            {data.jumlahCalon} perkara bergerak {tanggalPanjang(data.tanggal)}: {data.perkara.length} perlu dijurnal, {data.lengkap.length} sudah lengkap
-            {data.gagal.length ? `, ${data.gagal.length} tidak terbaca` : ""}
-            {data.terpotong ? " (daftar terpotong)" : ""}
+      <div className="flex flex-wrap items-end gap-3 rounded-lg border bg-muted/30 p-3">
+        <label className="grid gap-1 text-xs font-semibold text-muted-foreground">
+          Tanggal kas
+          <span className="flex items-center gap-2">
+            <input type="date" aria-label="Tanggal" className={kelasMedan} value={tanggal} onChange={(e) => setTanggal(e.target.value)} />
+            <Button size="sm" variant="outline" disabled={memuat || sedang} onClick={() => void muat(tanggal)}>
+              Baca
+            </Button>
           </span>
-        ) : null}
-      </div>
-      {akun ? (
-        <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
-          {akun.ok ? (
-            <span>
-              Ditulis di SIPP atas akun kasir: <b>{akun.nama || akun.username}</b>.
-            </span>
+        </label>
+        {akun ? (
+          akun.ok ? (
+            <LencanaAkun nama={akun.nama || akun.username || ""} />
           ) : (
-            <span className="text-amber-700 dark:text-amber-300">{akun.pesan || "Akun kasir SIPP belum ada - usulan dapat dilihat, tetapi tidak dapat disimpan."}</span>
-          )}
+            <p className="max-w-md rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-sm text-amber-800 dark:text-amber-300">
+              {akun.pesan || "Akun kasir SIPP belum ada - usulan dapat dilihat, tetapi tidak dapat disimpan."}
+            </p>
+          )
+        ) : null}
+        <label className="grid min-w-[12rem] flex-1 gap-1 text-xs font-semibold text-muted-foreground">
+          Cari perkara
+          <input type="search" className={cn(kelasMedan, "w-full")} placeholder="Nomor perkara atau nama pembayar" value={kata} onChange={(e) => setKata(e.target.value)} />
+        </label>
+      </div>
+      {data ? (
+        <div className="grid gap-2 sm:grid-cols-3" role="group" aria-label={`Perkara bergerak ${tanggalPanjang(data.tanggal)}`}>
+          <KartuRingkas
+            nama="semua"
+            angka={data.jumlahCalon}
+            judul="Perkara bergerak"
+            ket={`Ada transaksi pada ${tanggalPanjang(data.tanggal)}${data.gagal.length ? `; ${data.gagal.length} tidak terbaca` : ""}${data.terpotong ? " (daftar terpotong)" : ""}`}
+            aktif={saring === "semua"}
+            warna="biasa"
+            onPilih={() => setSaring("semua")}
+          />
+          <KartuRingkas nama="perlu" angka={data.perkara.length} judul="Perlu dijurnal" ket="Belum tercatat di jurnal SIPP" aktif={saring === "perlu"} warna="awas" onPilih={() => setSaring("perlu")} />
+          <KartuRingkas nama="lengkap" angka={daftarLengkap.length} judul="Sudah lengkap" ket="Jurnal SIPP sudah sesuai" aktif={saring === "lengkap"} warna="baik" onPilih={() => setSaring("lengkap")} />
         </div>
       ) : null}
       {memuat ? <div className="min-h-[1.25rem]" aria-busy="true" /> : null}
       {galat ? <p className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-700 dark:text-rose-300">{galat}</p> : null}
       {data && !memuat ? (
-        <ul className="grid gap-2">
-          {data.perkara.length === 0 ? <li className="text-sm text-muted-foreground">Tidak ada perkara yang perlu dijurnal pada tanggal ini.</li> : null}
-          {data.perkara.map((p) => {
+        <ul className="grid gap-3">
+          {data.perkara.length === 0 && saring !== "lengkap" ? <li className="text-sm text-muted-foreground">Tidak ada perkara yang perlu dijurnal pada tanggal ini.</li> : null}
+          {data.perkara.length > 0 && perkaraTampil.length === 0 && lengkapTampil.length === 0 ? <li className="text-sm text-muted-foreground">Tidak ada perkara yang cocok dengan pilihan ini.</li> : null}
+          {perkaraTampil.map((p) => {
             const l = laporan[p.perkaraId];
+            const by = bayar[p.nomorPerkara];
             return (
-              <li key={p.perkaraId} className={cn("rounded-md border px-3 py-2", !centang[p.perkaraId] && "opacity-80")}>
-                <div className="flex flex-wrap items-center gap-2 text-sm">
-                  <label className="inline-flex items-center gap-1.5">
-                    <input
-                      type="checkbox"
-                      checked={Boolean(centang[p.perkaraId])}
-                      disabled={sedang}
-                      onChange={(e) => setCentang((x) => ({ ...x, [p.perkaraId]: e.target.checked }))}
-                    />
-                    <b>{p.nomorPerkara}</b>
-                  </label>
-                  <span className="text-xs text-muted-foreground">{p.jenisPerkara}</span>
-                  <span className="rounded border border-sky-500/40 bg-sky-500/10 px-1.5 text-xs text-sky-700 dark:text-sky-300">{p.keadaan.nama}</span>
-                  <span className="text-xs text-muted-foreground">{p.sebab.map((s) => SEBAB_HARIAN[s] ?? s).join(", ")}</span>
-                  {p.perluPeriksa ? <span className="rounded border border-amber-500/40 px-1.5 text-xs text-amber-700 dark:text-amber-300">perlu diperiksa</span> : null}
-                  {l ? (
-                    <span
-                      className={cn(
-                        "rounded border px-1.5 text-xs",
-                        l.keadaan === "tersimpan" ? "border-emerald-500/40 text-emerald-700 dark:text-emerald-300" : l.keadaan === "dilewati" ? "border-border text-muted-foreground" : "border-rose-500/40 text-rose-700 dark:text-rose-300"
-                      )}
-                    >
-                      {l.pesan || l.keadaan}
-                    </span>
-                  ) : null}
-                  <Button size="sm" variant="ghost" className="ml-auto h-7 text-xs" disabled={sedang} onClick={() => onSunting(String(p.perkaraId))}>
-                    Sunting
-                  </Button>
+              <li key={p.perkaraId} data-perkara={p.perkaraId} className={cn("overflow-hidden rounded-xl border bg-card", !centang[p.perkaraId] && "opacity-90")}>
+                <div className="flex flex-wrap items-start gap-x-4 gap-y-2 bg-muted/40 px-3.5 py-3">
+                  <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2.5 gap-y-1">
+                    <label className="inline-flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(centang[p.perkaraId])}
+                        disabled={sedang}
+                        onChange={(e) => setCentang((x) => ({ ...x, [p.perkaraId]: e.target.checked }))}
+                      />
+                      <b className="font-mono text-[0.95rem]">{p.nomorPerkara}</b>
+                    </label>
+                    {p.jenisPerkara ? <span className="text-sm text-muted-foreground">{p.jenisPerkara}</span> : null}
+                    <span className="rounded-full border border-sky-500/40 bg-sky-500/10 px-2 py-0.5 text-xs font-semibold text-sky-700 dark:text-sky-300">{p.keadaan.nama}</span>
+                    <span className="text-xs text-muted-foreground">{p.sebab.map((s) => SEBAB_HARIAN[s] ?? s).join(", ")}</span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-extrabold text-amber-800 dark:text-amber-300">Perlu dijurnal</span>
+                    {p.perluPeriksa ? <span className="rounded-full border border-amber-500/40 px-2 py-0.5 text-xs text-amber-700 dark:text-amber-300">perlu diperiksa</span> : null}
+                    {l ? (
+                      <span
+                        className={cn(
+                          "rounded-full border px-2 py-0.5 text-xs",
+                          l.keadaan === "tersimpan" ? "border-emerald-500/40 text-emerald-700 dark:text-emerald-300" : l.keadaan === "dilewati" ? "border-border text-muted-foreground" : "border-rose-500/40 text-rose-700 dark:text-rose-300"
+                        )}
+                      >
+                        {l.pesan || l.keadaan}
+                      </span>
+                    ) : null}
+                    {by ? <TombolSkum nomor={p.nomorPerkara} adaSkum={by.adaSkum} /> : null}
+                    <Button size="sm" variant="outline" className="h-8 text-xs" disabled={sedang} onClick={() => onSunting(String(p.perkaraId))}>
+                      Sunting
+                    </Button>
+                  </div>
                 </div>
-                <div className="aleta-tabel-gulir">
-                <table className="mt-1 w-full text-xs">
-                  <tbody>
-                    {p.usulan.map((u) => (
-                      <tr key={u.kunci} className="border-t">
-                        <td className="whitespace-nowrap py-0.5 pr-2">{tanggalPanjang(u.tanggal)}</td>
-                        <td className="py-0.5 pr-2">{u.uraian}</td>
-                        <td className="whitespace-nowrap py-0.5 pr-2 text-right">{u.jumlah === null ? "jumlah belum diketahui" : rupiah(u.jumlah)}</td>
-                        <td className="py-0.5 text-muted-foreground">{u.dasar}</td>
+                {by ? <BarisPembayar data={by} /> : null}
+                <div className="aleta-tabel-gulir border-t">
+                  <table className="w-full min-w-[520px] text-sm">
+                    <thead className="text-left text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                      <tr>
+                        <th className="px-3.5 py-1.5">Tanggal</th>
+                        <th className="px-2 py-1.5">Uraian</th>
+                        <th className="px-2 py-1.5 text-right">Jumlah</th>
+                        <th className="px-3.5 py-1.5">Dasar</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {p.usulan.map((u) => (
+                        <tr key={u.kunci} className="border-t">
+                          <td className="whitespace-nowrap px-3.5 py-2">{tanggalPanjang(u.tanggal)}</td>
+                          <td className="px-2 py-2 font-semibold">{u.uraian}</td>
+                          <td className="whitespace-nowrap px-2 py-2 text-right font-bold tabular-nums">{u.jumlah === null ? "jumlah belum diketahui" : rupiah(u.jumlah)}</td>
+                          <td className="px-3.5 py-2 text-xs text-muted-foreground">{u.dasar}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-                {p.catatan.length ? <p className="mt-1 text-[11px] text-amber-700 dark:text-amber-300">{p.catatan.join(" ")}</p> : null}
+                {p.catatan.length ? <p className="border-t bg-amber-500/10 px-3.5 py-2 text-xs text-amber-800 dark:text-amber-300">{p.catatan.join(" ")}</p> : null}
               </li>
             );
           })}
+          {lengkapTampil.map((p) => (
+            <li key={`lengkap-${p.perkaraId}`} data-lengkap={p.perkaraId} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border bg-card px-3.5 py-2.5">
+              <b className="font-mono text-[0.95rem]">{p.nomorPerkara}</b>
+              {p.jenisPerkara ? <span className="text-sm text-muted-foreground">{p.jenisPerkara}</span> : null}
+              <span className="rounded-full border border-sky-500/40 bg-sky-500/10 px-2 py-0.5 text-xs font-semibold text-sky-700 dark:text-sky-300">{p.keadaan?.nama}</span>
+              <span className="ml-auto rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-extrabold text-emerald-800 dark:text-emerald-300">Sudah lengkap</span>
+            </li>
+          ))}
         </ul>
       ) : null}
       {tanyaJam !== null ? <TanyaJamKerja pesan={tanyaJam} sibuk={sedang} onPilih={(p) => void jalankan(false, p)} /> : null}
@@ -287,20 +349,27 @@ export function BagianMassal({ onSunting }: { onSunting: (perkaraId: string) => 
           {hasil.filter((h) => h.keadaan === "gagal").length} gagal, {hasil.filter((h) => h.keadaan === "dilewati").length} dihentikan.
         </p>
       ) : null}
-      <div className="flex flex-wrap items-center justify-end gap-2 border-t pt-3">
-        <span className="mr-auto text-xs text-muted-foreground">
-          {dipilih.length} perkara dicentang - disimpan satu per satu dengan jeda; satu yang gagal tidak menghentikan yang lain.
-        </span>
+      <div className="sticky bottom-0 z-10 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border bg-card/95 p-3 shadow-[0_-8px_16px_-12px_rgba(0,0,0,0.35)] backdrop-blur">
+        <div className="mr-auto grid min-w-0 gap-0.5">
+          <span className="text-sm text-muted-foreground">
+            {kiriman.baris} baris dipilih untuk dijurnal{dipilih.length ? ` (${dipilih.length} perkara)` : ""}
+          </span>
+          <span className="text-xl font-extrabold tabular-nums">{rupiah(kiriman.total)}</span>
+          <span className="text-[0.7rem] text-muted-foreground">Disimpan satu per satu dengan jeda; satu yang gagal tidak menghentikan yang lain.</span>
+        </div>
         {sedang ? (
           <Button size="sm" variant="outline" onClick={() => (henti.current = true)}>
             Hentikan
           </Button>
         ) : null}
+        <Button size="sm" variant="outline" disabled={sedang || !dipilih.length} onClick={() => setCentang(Object.fromEntries((data?.perkara ?? []).map((p) => [p.perkaraId, false])))}>
+          Batal pilih
+        </Button>
         <Button size="sm" variant="outline" disabled={sedang || !dipilih.length || !akunSiap} onClick={() => void jalankan(true)}>
           Pratinjau (uji coba)
         </Button>
         <Button size="sm" variant={yakin ? "destructive" : "default"} disabled={sedang || !dipilih.length || !akunSiap} onClick={tekanSimpan}>
-          {yakin ? `Tekan sekali lagi: simpan ${dipilih.length} perkara ke SIPP` : `Simpan ke SIPP (${dipilih.length} perkara)`}
+          {yakin ? `Tekan sekali lagi: simpan ${dipilih.length} perkara ke SIPP` : "Masukkan ke jurnal SIPP"}
         </Button>
       </div>
     </div>
@@ -693,11 +762,23 @@ export function BagianRiwayat() {
   );
 }
 
-export type TabKasir = "massal" | "rekap" | "pengingat" | "riwayat";
+export type TabKasir = "massal" | "psp" | "instrumen" | "rekap" | "pengingat" | "riwayat";
+
+/** Tab jendela Kasir (rancangan 4 Nov 2026): Hari ini = Kasir Manual satu hari; Sisa panjar dan Instrumen jurusita = cetak. */
+const TAB_KASIR: Array<{ kunci: TabKasir; judul: string }> = [
+  { kunci: "massal", judul: "Hari ini" },
+  { kunci: "psp", judul: "Sisa panjar" },
+  { kunci: "instrumen", judul: "Instrumen jurusita" },
+  { kunci: "rekap", judul: "Rekap" },
+  { kunci: "pengingat", judul: "Pengingat" },
+  { kunci: "riwayat", judul: "Riwayat" },
+];
 
 export function DialogKasirHarian({ onTutup, tabAwal, hanyaBaca = false }: { onTutup: () => void; tabAwal: TabKasir; hanyaBaca?: boolean }) {
   const [tab, setTab] = useState<TabKasir>(hanyaBaca && tabAwal === "massal" ? "pengingat" : tabAwal);
   const [sunting, setSunting] = useState("");
+  // Satu rentang tanggal untuk Sisa panjar dan Instrumen jurusita (bawaan hari ini).
+  const [rentang, setRentang] = useState<RentangCetak>(rentangHariIni);
   useEffect(() => {
     const tekan = (e: KeyboardEvent) => {
       if (e.key === "Escape" && !sunting) onTutup();
@@ -709,43 +790,18 @@ export function DialogKasirHarian({ onTutup, tabAwal, hanyaBaca = false }: { onT
   return createPortal(
     <>
     <div className="fixed inset-0 z-[65] flex items-start justify-center overflow-y-auto tirai-latar p-2 sm:p-4" role="dialog" aria-modal="true" aria-label="Kasir harian" onClick={onTutup}>
-      <div className="my-4 w-full max-w-5xl rounded-lg border bg-card p-4 text-card-foreground shadow-lg" onClick={(e) => e.stopPropagation()}>
-        <div className="mb-3 flex items-start justify-between gap-2">
-          <div>
-            <h3 className="text-base font-semibold">Kasir harian</h3>
-            <p className="text-sm text-muted-foreground">Jurnal otomatis per keadaan perkara untuk satu hari, rekap pengeluaran, dan pengingat tugas kasir.</p>
-          </div>
-          <Button size="sm" variant="ghost" onClick={onTutup} aria-label="Tutup">
-            <X className="h-4 w-4" />
-          </Button>
+      <div className="my-4 w-full max-w-5xl rounded-lg border bg-card text-card-foreground shadow-lg" onClick={(e) => e.stopPropagation()}>
+        <KepalaKasir onTutup={onTutup}>
+          <BilahTab tab={tab} daftar={TAB_KASIR.filter((t) => !(hanyaBaca && t.kunci === "massal"))} onPilih={setTab} />
+        </KepalaKasir>
+        <div className="p-4">
+          {tab === "massal" && !hanyaBaca ? <BagianMassal onSunting={setSunting} /> : null}
+          {tab === "psp" ? <BagianSisaPanjar rentang={rentang} onUbah={setRentang} /> : null}
+          {tab === "instrumen" ? <BagianInstrumen rentang={rentang} onUbah={setRentang} /> : null}
+          {tab === "rekap" ? <BagianRekap /> : null}
+          {tab === "riwayat" ? <BagianRiwayat /> : null}
+          {tab === "pengingat" ? <BagianPengingatKasir onSunting={hanyaBaca ? undefined : setSunting} hanyaBaca={hanyaBaca} /> : null}
         </div>
-        <div className="mb-3 flex gap-1 border-b" role="tablist">
-          {(
-            [
-              ["massal", "Kasir Manual (satu hari)"],
-              ["rekap", "Rekap"],
-              ["pengingat", "Pengingat"],
-              ["riwayat", "Riwayat"],
-            ] as Array<[TabKasir, string]>
-          )
-            .filter(([k]) => !(hanyaBaca && k === "massal"))
-            .map(([k, judul]) => (
-            <button
-              key={k}
-              type="button"
-              role="tab"
-              aria-selected={tab === k}
-              className={cn("-mb-px border-b-2 px-3 py-1.5 text-sm", tab === k ? "border-primary font-semibold text-primary" : "border-transparent text-muted-foreground hover:text-foreground")}
-              onClick={() => setTab(k)}
-            >
-              {judul}
-            </button>
-          ))}
-        </div>
-        {tab === "massal" && !hanyaBaca ? <BagianMassal onSunting={setSunting} /> : null}
-        {tab === "rekap" ? <BagianRekap /> : null}
-        {tab === "riwayat" ? <BagianRiwayat /> : null}
-        {tab === "pengingat" ? <BagianPengingatKasir onSunting={hanyaBaca ? undefined : setSunting} hanyaBaca={hanyaBaca} /> : null}
       </div>
     </div>
     {/* Di luar latar dialog ini: klik di dialog Kasir tidak menutup Kasir harian. */}

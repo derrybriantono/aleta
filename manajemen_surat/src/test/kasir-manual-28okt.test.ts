@@ -574,15 +574,27 @@ const pengingatContoh = (): Baris[] => [
   { jenis: "pnbp-belum-setor", perkaraId: 0, nomorPerkara: "", tanggal: "2026-10-26", tenggat: "2026-10-27", jumlah: 30000, keterangan: "PNBP 2026-10-26: Rp30.000." },
 ];
 
-describe("5a. lipatan bab dan sub-bab", () => {
-  it("tanpa pekerjaan: Kasir otomatis, Pengingat, Kasir Manual, Rekap, Riwayat terlipat bawaan; judul berangka", async () => {
+describe("5a. bilah tab (4 Nov 2026), lencana jumlah, dan sub-bab berlipat", () => {
+  const tab = (h: ReturnType<typeof bukaKasir>, k: string) => h.wadah.querySelector(`button[data-kasir-tab-ke="${k}"]`) as HTMLButtonElement;
+  const lencana = (h: ReturnType<typeof bukaKasir>, k: string) => tab(h, k).querySelector(".aleta-kasir-tab-lencana") as HTMLElement;
+
+  it("tanpa pekerjaan: hanya tab Hari ini (Kasir Manual) yang tampak, bagian lain tertutup dan tersembunyi; judul berangka; lencana kosong", async () => {
     const h = bukaKasir({ akanDiisi: false, pengingat: [] });
     await pasang(h);
     await sampai(() => /\(mati\)/.test(bab(h, "otomatis").querySelector("summary")!.textContent || ""), "judul otomatis");
     await sampai(() => /Pengingat tugas kasir \(0\)/.test(h.wadah.textContent || ""), "pengingat 0");
     await tunggu(30);
-    for (const d of Array.from(h.wadah.querySelectorAll("details.aleta-kasir-bagian")) as HTMLDetailsElement[]) expect(d.open, d.querySelector("summary")!.textContent || "").toBe(false);
-    const judul = Array.from(h.wadah.querySelectorAll("details.aleta-kasir-bagian > summary")).map((s) => s.textContent);
+    for (const d of Array.from(h.wadah.querySelectorAll("details.aleta-kasir-bagian")) as HTMLDetailsElement[]) {
+      const aktif = d.getAttribute("data-kasir-bagian") === "manual";
+      expect(d.open, d.querySelector("summary")!.textContent || "").toBe(aktif);
+      expect(d.hidden).toBe(!aktif);
+    }
+    expect(h.wadah.querySelector(".aleta-kasir-harian")!.getAttribute("data-kasir-tab")).toBe("hari");
+    expect(tab(h, "hari").getAttribute("aria-selected")).toBe("true");
+    expect(Array.from(h.wadah.querySelectorAll(".aleta-kasir-tab-judul")).map((x) => x.textContent)).toEqual(["Hari ini", "Sisa panjar", "Instrumen jurusita", "Rekap", "Pengingat", "Kasir otomatis", "Riwayat"]);
+    expect(lencana(h, "pengingat").hidden).toBe(true);
+    expect(lencana(h, "otomatis").hidden).toBe(true);
+    const judul = Array.from(h.wadah.querySelectorAll("details.aleta-kasir-bagian > summary")).map((x) => x.textContent);
     expect(judul.some((j) => /^Kasir Manual \(satu hari\)/.test(j || ""))).toBe(true);
     expect(judul.some((j) => /^Riwayat/.test(j || ""))).toBe(true);
     // Sub-bab perkara putus berangka dan terlipat (0 akan diisi).
@@ -593,61 +605,59 @@ describe("5a. lipatan bab dan sub-bab", () => {
     expect(h.wadah.textContent).not.toMatch(/punya baris yang akan diisi/);
   });
 
-  it("ada pekerjaan: bab terbuka, sub-bab berjudul jumlah (Setor PNBP ke kas negara (23))", async () => {
+  it("ada pekerjaan: lencana tab berisi jumlahnya, sub-bab berjudul jumlah (Setor PNBP ke kas negara (23))", async () => {
     const banyak = Array.from({ length: 23 }, (_, i) => ({ jenis: "pnbp-belum-setor", perkaraId: 0, nomorPerkara: "", tanggal: `2026-09-${String((i % 28) + 1).padStart(2, "0")}`, tenggat: "2026-10-27", jumlah: 1000, keterangan: `PNBP ${i}` }));
     const h = bukaKasir({ akanDiisi: true, pengingat: [...pengingatContoh().slice(0, 1), ...banyak] });
     await pasang(h);
     await sampai(() => /Setor PNBP ke kas negara \(23\)/.test(h.wadah.textContent || ""), "sub-bab setor");
     expect(h.wadah.textContent).toContain("Kembalikan sisa panjar (1)");
     const pengingat = bab(h, "pengingat");
-    await sampai(() => pengingat.open, "pengingat terbuka");
     expect(pengingat.querySelector("summary")!.textContent).toMatch(/Pengingat tugas kasir \(24\)/);
-    await sampai(() => bab(h, "otomatis").open, "otomatis terbuka (1 perkara akan diisi)");
+    await sampai(() => !lencana(h, "pengingat").hidden, "lencana pengingat");
+    expect(lencana(h, "pengingat").textContent).toBe("24");
+    await sampai(() => !lencana(h, "otomatis").hidden, "lencana otomatis (1 perkara akan diisi)");
+    expect(lencana(h, "otomatis").textContent).toBe("1");
     expect(bab(h, "otomatis").querySelector("summary")!.textContent).toMatch(/1 perkara akan diisi/);
     const sub = h.wadah.querySelector('details[data-kasir-sub="pengingat.pnbp-belum-setor"]') as HTMLDetailsElement;
     expect(sub.open).toBe(true);
   });
 
-  it("pilihan buka/lipat petugas diingat di penyimpanan ekstensi, dan dipakai pada pemasangan berikutnya", async () => {
-    const h = bukaKasir({ akanDiisi: false, pengingat: pengingatContoh() });
+  it("menekan tab menampilkan bagiannya saja; Sisa panjar dan Instrumen jurusita berbagi bagian Cetak; bagian dibaca saat tabnya dibuka", async () => {
+    const h = bukaKasir({ akanDiisi: false, pengingat: pengingatContoh(), riwayat: [] });
     await pasang(h);
-    const pengingat = bab(h, "pengingat");
-    await sampai(() => pengingat.open, "pengingat terbuka");
-    pengingat.open = false; // petugas melipat
-    pengingat.dispatchEvent(new h.w.Event("toggle"));
-    const rekap = bab(h, "rekap");
-    rekap.open = true; // petugas membuka bab yang terlipat bawaan
-    rekap.dispatchEvent(new h.w.Event("toggle"));
-    await sampai(() => (h.simpanan.aletaKasirLipatan as Baris | undefined)?.rekap?.buka === true, "tersimpan");
-    const tersimpan = h.simpanan.aletaKasirLipatan as Baris;
-    expect(tersimpan.pengingat).toMatchObject({ buka: false, ada: true });
-    expect(tersimpan.rekap).toMatchObject({ buka: true });
-
-    // Pemasangan baru dengan pilihan itu: pengingat tetap terlipat walau ada pekerjaan, rekap terbuka walau kosong.
-    const h2 = bukaKasir({ akanDiisi: false, pengingat: pengingatContoh(), lipatan: tersimpan });
-    await pasang(h2);
-    await sampai(() => /Kembalikan sisa panjar \(1\)/.test(h2.wadah.textContent || ""), "pengingat terbaca");
-    expect(bab(h2, "pengingat").open).toBe(false);
-    await sampai(() => bab(h2, "rekap").open, "rekap terbuka sesuai pilihan");
-  });
-
-  it("bagian yang berubah dari 0 menjadi ada pekerjaan dibuka lagi walau petugas pernah melipatnya", async () => {
-    const h = bukaKasir({ akanDiisi: false, pengingat: pengingatContoh(), lipatan: { pengingat: { ada: false, buka: false } } });
-    await pasang(h);
-    await sampai(() => /Kembalikan sisa panjar \(1\)/.test(h.wadah.textContent || ""), "pengingat terbaca");
-    await sampai(() => bab(h, "pengingat").open, "dibuka lagi karena dulu 0, kini ada");
+    expect(h.minta.some((m) => /\/kasir\/riwayat/.test(m.url))).toBe(false);
+    tab(h, "pengingat").click();
+    expect(bab(h, "pengingat").hidden).toBe(false);
+    expect(bab(h, "pengingat").open).toBe(true);
+    expect(bab(h, "manual").hidden).toBe(true);
+    expect(tab(h, "pengingat").getAttribute("aria-selected")).toBe("true");
+    expect(tab(h, "hari").getAttribute("aria-selected")).toBe("false");
+    tab(h, "psp").click();
+    const akar = h.wadah.querySelector(".aleta-kasir-harian") as HTMLElement;
+    expect(akar.getAttribute("data-kasir-tab")).toBe("psp");
+    expect(bab(h, "cetak").hidden).toBe(false);
+    tab(h, "instrumen").click();
+    expect(akar.getAttribute("data-kasir-tab")).toBe("instrumen");
+    expect(bab(h, "cetak").hidden).toBe(false);
+    tab(h, "riwayat").click();
+    await sampai(() => h.minta.some((m) => /\/kasir\/riwayat/.test(m.url)), "riwayat dibaca saat tabnya dibuka");
+    expect(bab(h, "cetak").hidden).toBe(true);
+    // Papan tombol: panah kanan memindahkan tab.
+    tab(h, "hari").dispatchEvent(new h.w.KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true, cancelable: true }));
+    expect(akar.getAttribute("data-kasir-tab")).toBe("psp");
   });
 });
 
 describe("5b. akun kasir, ikon (i), dan keterangan teknis", () => {
-  it("menampilkan 'Akun kasir: <nama>' (bukan akun petugas); ikon (i): tooltip saat disorot, klik dua kali = pop-up dalam halaman; Esc menutup", async () => {
+  it("menampilkan 'Dicatat atas akun kasir: <nama>' (bukan akun petugas); ikon (i): tooltip saat disorot, klik dua kali = pop-up dalam halaman; Esc menutup", async () => {
     const h = bukaKasir({ akanDiisi: true });
     await pasang(h);
     const otomatisBab = bab(h, "otomatis");
     await sampai(() => otomatisBab.querySelector("[data-akun-kasir]"), "akun");
     const akun = otomatisBab.querySelector("[data-akun-kasir]") as HTMLElement;
     expect(akun.getAttribute("data-akun-kasir")).toBe("kasir_sipp");
-    expect(akun.textContent).toContain("Akun kasir: Kasir SIPP");
+    expect(akun.textContent).toContain("Dicatat atas akun kasir: Kasir SIPP");
+    expect(akun.getAttribute("data-inisial")).toBe("KS");
     expect(h.wadah.textContent).not.toContain("akun SIPP Anda");
     const ikon = akun.querySelector(".aleta-kasir-info") as HTMLElement;
     expect(ikon.title).toContain("Ditulis di SIPP atas akun kasir: Kasir SIPP.");
@@ -702,7 +712,7 @@ describe("5c. pengingat: nomor perkara = tautan ke jurnal SIPP", () => {
     await pasang(h);
     const a = (await sampai(() => h.wadah.querySelector("a.aleta-kasir-nomor"), "tautan nomor")) as HTMLAnchorElement;
     expect(a.textContent).toBe("21/Pdt.G/2026/PA.Dgl");
-    expect(h.wadah.querySelectorAll("a.aleta-kasir-nomor").length).toBe(1); // setoran PNBP tidak per perkara
+    expect(bab(h, "pengingat").querySelectorAll("a.aleta-kasir-nomor").length).toBe(1); // setoran PNBP tidak per perkara
     a.dispatchEvent(new h.w.MouseEvent("mouseenter"));
     await sampai(() => a.getAttribute("href") !== "#", "alamat tersusun");
     expect(a.getAttribute("href")).toBe("http://192.168.10.10/SIPP/perkara_detil_agama/ENC21/11#aleta-tab=11");
@@ -767,7 +777,7 @@ describe("5d. Kasir Manual (satu hari) dapat disunting sebelum disimpan", () => 
     await sampai(() => /Pratinjau: akan ditulis/.test(manual.textContent || ""), "hasil pratinjau tampil");
 
     // Simpan (dua tekanan): baris yang sama, massal:true, tanpa akunSipp.
-    (Array.from(manual.querySelectorAll("button")).find((b) => /^Simpan 1 perkara ke SIPP$/.test(b.textContent || "")) as HTMLButtonElement).click();
+    (Array.from(manual.querySelectorAll("button")).find((b) => /^Masukkan ke jurnal SIPP$/.test(b.textContent || "")) as HTMLButtonElement).click();
     await tunggu(10);
     (Array.from(manual.querySelectorAll("button")).find((b) => /Tekan sekali lagi/.test(b.textContent || "")) as HTMLButtonElement).click();
     await sampai(() => h.minta.filter((m) => m.cara === "POST").length >= 2, "POST simpan");
@@ -794,7 +804,7 @@ describe("5d. Kasir Manual (satu hari) dapat disunting sebelum disimpan", () => 
   it("tanpa akun kasir: Simpan dan Pratinjau mati", async () => {
     const h = bukaKasir({ akun: { akunKasir: true, ok: false, alasan: "akun_kasir_tidak_ada", pesan: "Belum ada akun kasir di SIPP.", calon: [], milik: [], dipilih: "", bolehPilih: false } });
     const manual = await bukaManual(h);
-    for (const b of Array.from(manual.querySelectorAll(".aleta-basmassal-aksi button")) as HTMLButtonElement[]) expect(b.disabled).toBe(true);
+    for (const b of Array.from(manual.querySelectorAll(".aleta-basmassal-aksi button")).filter((x) => x.textContent !== "Batal pilih") as HTMLButtonElement[]) expect(b.disabled).toBe(true);
     expect(manual.textContent).toContain("Belum ada akun kasir di SIPP.");
   });
 });
@@ -823,10 +833,10 @@ describe("5g. Kasir per perkara (jendela satu perkara) atas akun kasir juga", ()
     return h;
   }
 
-  it("menampilkan 'Akun kasir: <nama>' + ikon (i); lazim dan catatan biasa di balik ikon; simpan tidak mengirim akun petugas", async () => {
+  it("menampilkan 'Dicatat atas akun kasir: <nama>' + ikon (i); lazim dan catatan biasa di balik ikon; simpan tidak mengirim akun petugas", async () => {
     const h = await bukaPerkara(AKUN_OK);
     const akun = h.wadah.querySelector("[data-akun-kasir]") as HTMLElement;
-    expect(akun.textContent).toContain("Akun kasir: Kasir SIPP");
+    expect(akun.textContent).toContain("Dicatat atas akun kasir: Kasir SIPP");
     expect((akun.querySelector(".aleta-kasir-info") as HTMLElement).title).toContain("Ditulis di SIPP atas akun kasir: Kasir SIPP.");
     expect(h.wadah.textContent).not.toContain("Lazim");
     expect(h.wadah.textContent).not.toContain("Saldo panjar habis");
@@ -896,7 +906,7 @@ describe("5f. nama dan penjaga teks lama", () => {
     const sisa = bas.split("\n").filter((l: string) => /otomatis massal/i.test(l) && !/^\s*(\/\/|\*|\/\*)/.test(l));
     expect(sisa).toEqual([]);
     const portal = readFileSync(path.join(process.cwd(), "src/components/portal/kasir-otomatis.tsx"), "utf8");
-    expect(portal).toContain('["massal", "Kasir Manual (satu hari)"]');
+    expect(portal).toContain('{ kunci: "massal", judul: "Hari ini" }'); // 4 Nov: tab Hari ini = Kasir Manual satu hari
     expect(portal).not.toMatch(/Massal hari ini/);
     expect(portal).not.toMatch(/Ditulis di SIPP atas akun SIPP Anda/);
   });

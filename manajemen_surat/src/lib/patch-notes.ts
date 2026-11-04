@@ -1,6 +1,6 @@
-export const APP_VERSION = "2.44.0";
+export const APP_VERSION = "2.45.0";
 export const APP_VERSION_LABEL =
-  "ALETA Judicia v2.44.0 - November 2026";
+  "ALETA Judicia v2.45.0 - November 2026";
 
 export type PatchNote = {
   version: string;
@@ -21,6 +21,30 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.45.0",
+    title: "ALETA Judicia v2.45.0 - November 2026",
+    date: "2026-11-04",
+    status: "Terpasang bersama rilis ekstensi 1.205.72",
+    summary:
+      "Tampilan baru Kasir ALETA sampai rilis ekstensi 1.205.72 (4 November 2026).",
+    added: [
+      "Tab Sisa panjar dan Instrumen jurusita di jendela Kasir portal, membaca rute yang sudah ada.",
+    ],
+    changed: [
+      "Tata letak Kasir di kartu SIPP dan portal: tab, kartu angka, kaki lengket jumlah baris dan total, blok Pembayar panjar, cetak Instrumen, PSP, dan e-SKUM.",
+    ],
+    fixed: [],
+    security: [
+      "Bank dan rekening di e-SKUM hanya tercetak untuk peran yang berhak melihat rekening.",
+    ],
+    operationalNotes: [
+      "Hanya tampilan; logika tulis jurnal SIPP, hitung biaya, tarif, dan izin rute tidak berubah. Tanpa migrasi.",
+    ],
+    knownLimitations: [
+      "Penyuntingan baris di tab Hari ini portal tetap lewat tombol Sunting. Cari perkara belum menyaring nama pihak karena bot belum mengirimnya.",
+    ],
+  },
   {
     version: "2.44.0",
     title: "ALETA Judicia v2.44.0 - November 2026",
