@@ -565,7 +565,7 @@ describe("Jadwal Sidang baru: lajur Aksi, Lipat tag, PBT", () => {
       return createElement(
         "table",
         null,
-        createElement("thead", null, createElement("tr", null, createElement(KepalaUrut, { biasa: true, kunci: "n", urutan: u.urutan, onTekan: u.tekan }, "Nama"))),
+        createElement("thead", null, createElement("tr", null, <KepalaUrut biasa kunci="n" urutan={u.urutan} onTekan={u.tekan}>Nama</KepalaUrut>)),
         createElement("tbody", null, ...urutkan(data, u.urutan, (b: { n: string }) => b.n).map((b) => createElement("tr", { key: b.n }, createElement("td", null, b.n))))
       );
     }
