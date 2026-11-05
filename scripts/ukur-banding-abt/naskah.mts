@@ -373,6 +373,8 @@ async function waktu([ulang = "3"]: string[]) {
   const tengah = (a: number[]) => [...a].sort((x, y) => x - y)[Math.floor(a.length / 2)] ?? 0;
   hasil.push(`Tengah hangat ${tengah(hangat).toFixed(0)} ms, terlama hangat ${Math.max(0, ...hangat).toFixed(0)} ms, tengah dingin ${tengah(dinginMs).toFixed(0)} ms; ${hangat.filter((x) => x < 1000).length} dari ${hangat.length} naskah hangat di bawah 1 detik.`);
   tulis(path.join(KELUAR, "waktu.txt"), hasil.join(LB) + LB);
+  const rata = semuaMs.reduce((x, y) => x + y, 0) / semuaMs.length;
+  tulis(path.join(KELUAR, "waktu.json"), JSON.stringify({ jumlah: semuaMs.length, rata, tengah: tengah(semuaMs), terlama: Math.max(0, ...semuaMs), tempat: `laptop pengembangan (${os.cpus().length} inti), mesin sepi, mesin + penguraian saja` }));
   console.log(hasil.join(LB));
   kolam.end();
 }
@@ -442,6 +444,15 @@ const median = (a: number[]) => {
   return s.length ? s[Math.floor(s.length / 2)] : 0;
 };
 
+/** Waktu dari perintah waktu (mesin sepi) bila ada; selain itu waktu naskah yang diukur sambil beberapa proses berjalan. */
+function waktuSepi() {
+  try {
+    return JSON.parse(baca(path.join(KELUAR, "waktu.json"))) as { jumlah: number; rata: number; tengah: number; terlama: number; tempat: string };
+  } catch {
+    return null;
+  }
+}
+
 function laporan() {
   const semua: HasilNaskah[] = [];
   for (const f of fs.existsSync(dirHasil()) ? fs.readdirSync(dirHasil()) : []) {
@@ -504,7 +515,7 @@ function laporan() {
     perKelas: perKel,
     beda: bedaLaporan.map(({ _urut, ...x }) => x),
     belumTerukur,
-    waktu: { jumlah: semua.length, rata: semua.length ? waktu.reduce((a, b) => a + b, 0) / semua.length : 0, tengah: median(waktu), terlama: Math.max(0, ...waktu), tempat: `${os.hostname() ? "laptop pengembangan" : "laptop"}, ${os.cpus().length} inti, Windows` },
+    waktu: waktuSepi() ?? { jumlah: semua.length, rata: semua.length ? waktu.reduce((a, b) => a + b, 0) / semua.length : 0, tengah: median(waktu), terlama: Math.max(0, ...waktu), tempat: `laptop pengembangan (${os.cpus().length} inti), sambil 4 proses lain berjalan` },
   };
   tulis(path.join(KELUAR, "laporan-t5.json"), JSON.stringify(laporanJson, null, 1));
   const teks: string[] = [];
