@@ -1674,6 +1674,30 @@ export const DDL_ALETA_ABT_PENYUNTING = {
 } as const;
 
 /**
+ * Pembanding isi ABT untuk blangko yang berbeda (0136, 5 Nov 2026, Tahap 9): isi ABT terbaru disimpan di samping hanya untuk blangko
+ * yang berbeda. Cermin PERSIS dari drizzle/0136_aleta_abt_banding.sql (dijaga aleta-abt-sinkron-5nov.test.ts).
+ */
+export const DDL_ALETA_ABT_BANDING = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_abt_berkas_banding (
+  id TEXT PRIMARY KEY,
+  berkas_id TEXT NOT NULL,
+  md5 TEXT NOT NULL,
+  peran TEXT NOT NULL DEFAULT 'beda',
+  isi TEXT NOT NULL DEFAULT '',
+  pengkodean TEXT NOT NULL DEFAULT 'latin1',
+  ukuran INTEGER NOT NULL DEFAULT 0,
+  penanda_asal TEXT NOT NULL DEFAULT '[]',
+  diambil_at TEXT NOT NULL
+)`,
+  ],
+  indeks: [
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_abt_banding_berkas_md5 ON aleta_abt_berkas_banding(berkas_id, md5)`,
+    `CREATE INDEX IF NOT EXISTS idx_abt_banding_peran ON aleta_abt_berkas_banding(berkas_id, peran)`,
+  ],
+} as const;
+
+/**
  * Sampul berkas dan daftar isi berkas (0112, 26 Okt 2026): sunting petugas, halaman manual, ciri tangan, bawaan halaman.
  * Cermin PERSIS dari drizzle/0112_aleta_berkas_perkara.sql; berkas-perkara-26okt.test.ts membandingkan keduanya. Tanpa kunci asing.
  */
@@ -4007,6 +4031,7 @@ const schemaStatements = [
   ...DDL_ALETA_REGISTER_KUASA.tabel,
   ...DDL_ALETA_ABT_PUSTAKA.tabel,
   ...DDL_ALETA_ABT_PENYUNTING.tabel,
+  ...DDL_ALETA_ABT_BANDING.tabel,
   ...DDL_ALETA_BERKAS_PERKARA.tabel,
   // Cermin Perkara: perkara, sidang, pihak, mediasi, penanda, jejak (0090).
   ...DDL_ALETA_CERMIN_PERKARA.tabel,
@@ -6014,6 +6039,7 @@ const indexStatements = [
   ...DDL_ALETA_REGISTER_KUASA.indeks,
   ...DDL_ALETA_ABT_PUSTAKA.indeks,
   ...DDL_ALETA_ABT_PENYUNTING.indeks,
+  ...DDL_ALETA_ABT_BANDING.indeks,
   ...DDL_ALETA_BERKAS_PERKARA.indeks,
   ...DDL_ALETA_CERMIN_PERKARA.indeks,
   ...DDL_ALETA_CERMIN_JADWAL_LENGKAP.indeks,

@@ -407,6 +407,7 @@ Dari salinan lokal ABT (hanya dibaca, paket yang siap; yang berjalan di server d
 | ALETA ABT di HP (siapa boleh membuka) | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Penyunting blangko ALETA ABT | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Cetak ALETA ABT dan laporan pembanding | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Beda dengan ABT (sinkron ALETA ABT) | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Sinkron kembaran (mode laptop saat server mati) | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Fitur Satker (stabil, uji coba, mati per fitur) | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Integrasi e-Court (akun, akses ekstensi, penarikan) | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
@@ -429,6 +430,7 @@ Catatan kewenangan:
 - **ALETA ABT di HP (siapa boleh membuka)**: Mengubah saklar hanya Super Admin dan tercatat di audit. Pilihan per pengguna menang atas pilihan peran.
 - **Penyunting blangko ALETA ABT**: Hanya Super Admin, diputuskan di server (bukan saklar ALETA ABT di HP). Tiap membuka, menyimpan, mengembalikan, dan menerbitkan tercatat di audit.
 - **Cetak ALETA ABT dan laporan pembanding**: Hanya Super Admin, diputuskan di server: akun Super Admin dan tanda berumur pendek dari ekstensi di PC, atau hak ALETA ABT di HP yang menyala. Penjaga yang sama dipakai untuk simpan, kembalikan, dan terbitkan di penyunting. Tiap cetak tercatat di audit tanpa isi naskah.
+- **Beda dengan ABT (sinkron ALETA ABT)**: Hanya Super Admin, diputuskan di server. Tiap membuka beda, memilih, mengatur jadwal, dan mengunduh paket tercatat di audit. ABT hanya dibaca dan paket tidak dipasang dari portal.
 - **Sinkron kembaran (mode laptop saat server mati)**: Persetujuan pengiriman ke server hanya Super Admin.
 - **Integrasi e-Court (akun, akses ekstensi, penarikan)**: Mengubah kemampuan ekstensi per peran hanya Super Admin; Admin membaca matriksnya. Pegawai lain hanya melihat kartu Sesi e-Court saya.
 - **Pengaturan SIPP & ABT (menu pengelola)**: Pembagian rincian Super Admin dan Admin ada di butir Blangko: Pengaturan SIPP & ABT.

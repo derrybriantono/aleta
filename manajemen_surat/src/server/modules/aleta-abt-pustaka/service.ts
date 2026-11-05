@@ -13,6 +13,7 @@ import {
   type RingkasanPustaka,
   type RiwayatSinkron,
 } from "@/lib/aleta-abt-pustaka";
+import { BATAS_BANDING } from "@/lib/aleta-abt-sinkron";
 import { withTransaction, type AletaDatabase } from "@/server/db/client";
 import { panggilBotPengaturanAbt } from "@/server/modules/pengaturan-abt/gateway";
 import { ApiError } from "@/server/shared/errors";
@@ -93,6 +94,9 @@ export type DepsSinkron = {
   kini?: () => string;
 };
 
+/** Versi hasil ambil-otomatis dari ABT yang disimpan per blangko (yang lebih lama dibuang; versi 1 dan suntingan manusia tidak disentuh). */
+export const BATAS_VERSI_OTOMATIS = 8;
+export const CATATAN_AMBIL_ABT = "Diambil dari ABT";
 const BATAS_BATCH_BYTE = 12 * 1024 * 1024;
 const BATAS_BATCH_JUMLAH = 150;
 const UMUR_JALAN_MS = 30 * 60 * 1000;
@@ -154,6 +158,89 @@ function barisRencana(semua: BarisKeadaanDb[], server: string, masuk: Set<string
   return semua.filter((b) => b.asal_server === server || masuk.has(String(b.kunci))).map(keadaan);
 }
 
+export type IsiTersimpan = { isi: string; pengkodean: string; md5: string; ukuran: number };
+
+export const isiTersimpanDari = (bita: Buffer): IsiTersimpan => ({ ...simpananIsi(bita), md5: md5(bita), ukuran: bita.length });
+
+/**
+ * Isi ABT yang baru menjadi versi TERBIT blangko dan isi lamanya disimpan sebagai versi sebelumnya (Tahap 9). Dipanggil di dalam
+ * transaksi pemanggil, hanya untuk blangko yang belum disunting (sinkron) atau atas pilihan Super Admin (ambil dari ABT).
+ * Tabel versi dibaca/ditulis seperti penyunting (aleta_abt_berkas_versi, 0135); versi 1 dibuat dari isi lama bila belum ada.
+ */
+export async function simpanSebagaiVersiAbt(
+  tx: AletaDatabase,
+  berkasId: string,
+  lama: IsiTersimpan,
+  baru: IsiTersimpan,
+  sekarang: string,
+  catatan: { versiSatu: string; ambil: string; nama: string; oleh?: string }
+): Promise<number> {
+  const m = await tx.queryAll<{ m: number | string | null }>("SELECT MAX(nomor) AS m FROM aleta_abt_berkas_versi WHERE berkas_id = ?", [berkasId]);
+  let nomor = Number(m[0]?.m) || 0;
+  if (!nomor) {
+    await tx.run(
+      `INSERT INTO aleta_abt_berkas_versi (id, berkas_id, nomor, isi, pengkodean, md5, ukuran, jenis, status, dari_nomor, catatan, ringkas, dibuat_oleh, dibuat_nama, dibuat_at)
+       VALUES (?, ?, 1, ?, ?, ?, ?, 'asal', 'lama', 0, ?, '', ?, ?, ?)`,
+      [randomUUID(), berkasId, lama.isi, lama.pengkodean, lama.md5, lama.ukuran, catatan.versiSatu, catatan.oleh ?? "", catatan.nama, sekarang]
+    );
+    nomor = 1;
+  }
+  const sebelum = await tx.queryAll<{ nomor: number | string }>("SELECT nomor FROM aleta_abt_berkas_versi WHERE berkas_id = ? AND status = 'terbit' ORDER BY nomor DESC LIMIT 1", [berkasId]);
+  await tx.run("UPDATE aleta_abt_berkas_versi SET status = 'lama' WHERE berkas_id = ? AND status = 'terbit'", [berkasId]);
+  const baruNomor = nomor + 1;
+  await tx.run(
+    `INSERT INTO aleta_abt_berkas_versi (id, berkas_id, nomor, isi, pengkodean, md5, ukuran, jenis, status, dari_nomor, catatan, ringkas, dibuat_oleh, dibuat_nama, dibuat_at, terbit_oleh, terbit_nama, terbit_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, 'asal', 'terbit', ?, ?, '', ?, ?, ?, ?, ?, ?)`,
+    [
+      randomUUID(),
+      berkasId,
+      baruNomor,
+      baru.isi,
+      baru.pengkodean,
+      baru.md5,
+      baru.ukuran,
+      sebelum.length ? Number(sebelum[0].nomor) : 0,
+      catatan.ambil,
+      catatan.oleh ?? "",
+      catatan.nama,
+      sekarang,
+      catatan.oleh ?? "",
+      catatan.nama,
+      sekarang,
+    ]
+  );
+  // Disk: versi hasil ambil-otomatis yang lebih lama dari BATAS_VERSI_OTOMATIS dibuang (versi 1 dan suntingan manusia tidak disentuh).
+  const otomatis = (
+    await tx.queryAll<{ id: string; nomor: number | string; catatan: string }>("SELECT id, nomor, catatan FROM aleta_abt_berkas_versi WHERE berkas_id = ? AND jenis = 'asal' ORDER BY nomor DESC", [berkasId])
+  ).filter((x) => String(x.catatan ?? "").startsWith(CATATAN_AMBIL_ABT));
+  for (const x of otomatis.slice(BATAS_VERSI_OTOMATIS)) await tx.run("DELETE FROM aleta_abt_berkas_versi WHERE id = ?", [x.id]);
+  return baruNomor;
+}
+
+/** Simpan isi ABT sebagai pembanding blangko yang berbeda; yang lebih lama dari BATAS_BANDING dibuang (peran 'dasar' tidak dihitung). */
+export async function simpanBanding(tx: AletaDatabase, berkasId: string, md5Abt: string, isi: IsiTersimpan, penanda: string[], sekarang: string) {
+  const id = `${berkasId}|${md5Abt}`;
+  const ada = (await tx.queryAll<{ id: string }>("SELECT id FROM aleta_abt_berkas_banding WHERE id = ?", [id]))[0];
+  if (!ada) {
+    await tx.run(
+      "INSERT INTO aleta_abt_berkas_banding (id, berkas_id, md5, peran, isi, pengkodean, ukuran, penanda_asal, diambil_at) VALUES (?, ?, ?, 'beda', ?, ?, ?, ?, ?)",
+      [id, berkasId, md5Abt, isi.isi, isi.pengkodean, isi.ukuran, json(penanda), sekarang]
+    );
+  }
+  const beda = await tx.queryAll<{ id: string }>("SELECT id FROM aleta_abt_berkas_banding WHERE berkas_id = ? AND peran = 'beda' ORDER BY diambil_at DESC, id DESC", [berkasId]);
+  for (const x of beda.slice(BATAS_BANDING)) await tx.run("DELETE FROM aleta_abt_berkas_banding WHERE id = ?", [x.id]);
+}
+
+async function pastikanTabelTahap9(db: AletaDatabase) {
+  for (const t of ["aleta_abt_berkas_versi", "aleta_abt_berkas_banding"]) {
+    try {
+      await db.queryAll(`SELECT 1 FROM ${t} LIMIT 1`);
+    } catch {
+      throw new ApiError(500, `Tabel ${t} belum ada. Jalankan migrasi basis data (0135 dan 0136) lebih dulu; tidak ada yang diubah.`);
+    }
+  }
+}
+
 function validasiPotret(p: PotretAbt): PotretAbt {
   if (!p || !Array.isArray(p.berkas) || !Array.isArray(p.variabel) || !Array.isArray(p.menu)) throw new ApiError(502, "Data blangko dari ABT tidak lengkap.");
   if (!p.berkas.length) throw new ApiError(502, "Folder Blangko Derry di server kosong atau tidak terbaca - sinkron dibatalkan agar tidak ada yang ditandai hilang.");
@@ -200,6 +287,7 @@ async function sinkronInti(
   kini: () => string,
   transaksi: <T>(kerja: (tx: AletaDatabase) => Promise<T>) => Promise<T>
 ): Promise<HasilSinkron> {
+  await pastikanTabelTahap9(db);
   const p = validasiPotret(await deps.ambilPotret());
   const server = String(p.server || "setempat").trim().slice(0, 60) || "setempat";
   const sekarang = kini();
@@ -410,6 +498,12 @@ async function sinkronInti(
     barisRencana(berkasDb, server, new Set(berkasMasuk.keys())),
     [...berkasMasuk.values()].map((b) => ({ kunci: b.jalur, sidik: b.md5 }))
   );
+  // Tahap 9: blangko yang sudah diubah di ALETA ABT dan berbeda dari ABT -> isi ABT terbaru disimpan di samping (hanya yang berbeda).
+  const adaBanding = new Set((await db.queryAll<{ id: string }>("SELECT id FROM aleta_abt_berkas_banding")).map((b) => String(b.id)));
+  // Ubahan ALETA ABT yang ternyata sama persis dengan isi ABT yang baru: tidak ada beda sungguhan.
+  const selaras = new Set(rBerkas.bentrok.filter((j) => berkasDbPeta.get(j)?.md5 === berkasMasuk.get(j)?.md5));
+  const perluBanding = rBerkas.bentrok.filter((j) => !selaras.has(j) && !adaBanding.has(`${j}|${berkasMasuk.get(j)!.md5}`));
+  const bandingSet = new Set(perluBanding);
   const penandaKode = (b: BerkasPotret) => json(petaRujukan(b.penanda || [], petaKini).kode);
   const terkunciBerkas = (j: string) => {
     const a = berkasDbPeta.get(j);
@@ -420,6 +514,7 @@ async function sinkronInti(
     ...rBerkas.baru,
     ...rBerkas.berubah,
     ...rBerkas.kembali.filter((j) => !terkunciBerkas(j) && berkasDbPeta.get(j)?.md5 !== berkasMasuk.get(j)?.md5),
+    ...perluBanding,
   ];
   const tanpaIsi = rBerkas.kembali.filter((j) => !perluIsi.includes(j));
   let gagal = 0;
@@ -455,6 +550,15 @@ async function sinkronInti(
             continue;
           }
           const s = simpananIsi(bita);
+          if (bandingSet.has(j)) {
+            const barisBerkas = (await tx.queryAll<{ diubah: number | string; asal: string }>("SELECT diubah, asal FROM aleta_abt_berkas WHERE id = ?", [j]))[0];
+            // Tidak disentuh bila blangko ternyata sudah tidak berbeda/terkunci lagi saat ini.
+            if (barisBerkas && (Number(barisBerkas.diubah) === 1 || barisBerkas.asal === "aleta")) {
+              await simpanBanding(tx, j, b.md5, { ...s, md5: b.md5, ukuran: bita.length }, b.penanda || [], sekarang);
+              tulis += 1;
+            }
+            continue;
+          }
           if (baruSet.has(j)) {
             await tx.run(
               `INSERT INTO aleta_abt_berkas (id, folder, nama, arsip, isi, pengkodean, md5, ukuran, waktu_berkas, penanda_asal, penanda_kode, asal, asal_server, md5_asal,
@@ -463,6 +567,30 @@ async function sinkronInti(
               [j, b.folder, b.nama, b.arsip ? 1 : 0, s.isi, s.pengkodean, b.md5, bita.length, String(b.waktu ?? ""), json(b.penanda || []), penandaKode(b), server, b.md5, sekarang, sekarang, sekarang]
             );
           } else {
+            // Tahap 9: isi ABT yang berubah untuk blangko yang BELUM disunting diambil, dan isi lamanya disimpan sebagai versi.
+            // Dibaca ulang di dalam transaksi: bila sementara itu disunting di ALETA ABT, ubahannya tidak ditimpa - bedanya dicatat.
+            const lama = (
+              await tx.queryAll<{ isi: string; pengkodean: string; md5: string; ukuran: number | string; diubah: number | string; asal: string }>(
+                "SELECT isi, pengkodean, md5, ukuran, diubah, asal FROM aleta_abt_berkas WHERE id = ?",
+                [j]
+              )
+            )[0];
+            if (lama && (Number(lama.diubah) === 1 || lama.asal === "aleta")) {
+              await tx.run("UPDATE aleta_abt_berkas SET bentrok_md5 = ?, bentrok_at = ? WHERE id = ?", [b.md5, sekarang, j]);
+              await simpanBanding(tx, j, b.md5, { ...s, md5: b.md5, ukuran: bita.length }, b.penanda || [], sekarang);
+              tulis += 1;
+              continue;
+            }
+            if (lama && lama.md5 !== b.md5) {
+              await simpanSebagaiVersiAbt(
+                tx,
+                j,
+                { isi: lama.isi, pengkodean: lama.pengkodean, md5: lama.md5, ukuran: Number(lama.ukuran) || 0 },
+                { ...s, md5: b.md5, ukuran: bita.length },
+                sekarang,
+                { versiSatu: "Salinan dari ABT (sebelum diperbarui dari ABT)", ambil: `${CATATAN_AMBIL_ABT} (sinkron)`, nama: "Sinkron dari ABT" }
+              );
+            }
             await tx.run(
               `UPDATE aleta_abt_berkas SET folder = ?, nama = ?, arsip = ?, isi = ?, pengkodean = ?, md5 = ?, ukuran = ?, waktu_berkas = ?, penanda_asal = ?, penanda_kode = ?,
                  md5_asal = ?, status = 'aktif', hilang_at = '', bentrok_md5 = '', bentrok_at = '', disinkron_at = ?, diubah_at = ? WHERE id = ?`,
@@ -500,9 +628,17 @@ async function sinkronInti(
       tulis += 1;
     }
     for (const j of rBerkas.bentrokBaru) {
+      if (selaras.has(j)) continue;
       await tx.run("UPDATE aleta_abt_berkas SET bentrok_md5 = ?, bentrok_at = ? WHERE id = ?", [berkasMasuk.get(j)!.md5, sekarang, j]);
       tulis += 1;
     }
+    for (const j of selaras) {
+      // Ubahan ALETA ABT sama persis dengan isi ABT yang baru: ABT dicatat sebagai dasar, tidak ada beda yang perlu ditinjau.
+      await tx.run("UPDATE aleta_abt_berkas SET md5_asal = ?, bentrok_md5 = '', bentrok_at = '' WHERE id = ?", [berkasMasuk.get(j)!.md5, j]);
+      tulis += 1;
+    }
+    // Pembanding hanya untuk blangko yang masih berbeda.
+    await tx.run("DELETE FROM aleta_abt_berkas_banding WHERE peran = 'beda' AND berkas_id NOT IN (SELECT id FROM aleta_abt_berkas WHERE bentrok_md5 <> '')");
     for (const j of rBerkas.hilang) {
       await tx.run("UPDATE aleta_abt_berkas SET status = 'hilang', hilang_at = ? WHERE id = ?", [sekarang, j]);
       tulis += 1;

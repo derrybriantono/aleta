@@ -35,6 +35,7 @@ import {
 const M = process.cwd();
 const SQL_0133 = readFileSync(path.join(M, "drizzle/0133_aleta_abt_pustaka.sql"), "utf8");
 const SQL_0135 = readFileSync(path.join(M, "drizzle/0135_aleta_abt_penyunting.sql"), "utf8");
+const SQL_0136 = readFileSync(path.join(M, "drizzle/0136_aleta_abt_banding.sql"), "utf8");
 const JURNAL = JSON.parse(readFileSync(path.join(M, "drizzle/meta/_journal.json"), "utf8")) as { entries: Array<{ idx: number; when: number; tag: string }> };
 const KLIEN = readFileSync(path.join(M, "src/server/db/client.ts"), "utf8");
 const rapat = (s: string) => s.replace(/--.*$/gm, "").replace(/\s+/g, " ").replace(/\( /g, "(").replace(/ \)/g, ")").trim();
@@ -60,6 +61,7 @@ async function siapkan() {
   const mem = newDb();
   mem.public.none(SQL_0133);
   mem.public.none(SQL_0135);
+  mem.public.none(SQL_0136);
   const { Client } = mem.adapters.createPg();
   const c = new Client();
   await c.connect();
