@@ -37,6 +37,7 @@ describe("susunNaskah", () => {
       {
         pustaka,
         panggil: (async (op: string, p: Record<string, unknown>) => {
+          if (op !== "blangko.isiPustaka") return { ok: false, error: "tidak dipakai di uji ini" };
           terkirim = { op, p };
           return { ok: true, data: { ok: true, jumlahTerisi: 1, kosong: [], lolosCetak: true, rtfBase64: Buffer.from(RTF.replace("#0046#", "Siti Rekaan"), "latin1").toString("base64"), waktuMs: 33, jumlahKueri: 2 } };
         }) as never,
@@ -56,15 +57,17 @@ describe("susunNaskah", () => {
     }
   });
 
-  it("cetak final: isian kosong menahan dan naskah tidak ikut, bahkan bila bot mengirimnya", async () => {
+  it("cetak final: katalog tidak terbaca berarti semua isian kosong menahan dan naskah tidak ikut, bahkan bila bot mengirimnya", async () => {
     const h = await susunNaskah(
       dbBerkas(BERKAS),
       { berkasId: "b1", perkaraId: "9", sidangKe: 0, cetakFinal: true },
       {
         pustaka,
-        panggil: (async (_op: string, p: Record<string, unknown>) => {
-          expect(p.cetakFinal).toBe(true);
-          return { ok: true, data: { ok: true, ditahan: true, lolosCetak: false, kosong: [{ noVar: "0046", nama: "PIHAK I", sebab: "", status: "kosong" }], rtfBase64: Buffer.from(RTF).toString("base64") } };
+        panggil: (async (op: string, p: Record<string, unknown>) => {
+          if (op !== "blangko.isiPustaka") return { ok: false, error: "katalog tidak terbaca" };
+          expect(p.tanpaSorotKosong).toBe(true);
+          expect(p).not.toHaveProperty("cetakFinal");
+          return { ok: true, data: { ok: true, lolosCetak: false, kosong: [{ noVar: "0046", nama: "PIHAK I", sebab: "", status: "kosong" }], rtfBase64: Buffer.from(RTF).toString("base64") } };
         }) as never,
       }
     );

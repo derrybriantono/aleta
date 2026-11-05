@@ -138,6 +138,17 @@ describe("layar cetak ALETA ABT", () => {
     expect(screen.getByText("Pekerjaan Pemohon")).toBeTruthy();
   });
 
+  it("yang perlu dilihat tidak mematikan unduhan, dan namanya tetap tampil", async () => {
+    pratinjau = { ...PRATINJAU, lolosCetak: true, kosong: [], perluDilihat: [{ nama: "Nama Mediator", sebab: "" }], catatan: [{ nama: "Kesimpulan", sebab: "" }] } as typeof PRATINJAU;
+    pasangFetch();
+    await sampaiPratinjau();
+    expect((screen.getByRole("button", { name: "Unduh RTF" }) as HTMLButtonElement).disabled).toBe(false);
+    expect(screen.getByText("Siap dicetak")).toBeTruthy();
+    expect(screen.getByText("1 perlu dilihat")).toBeTruthy();
+    expect(screen.getByText("Nama Mediator")).toBeTruthy();
+    expect(screen.getByText(/1 isian lain kosong/)).toBeTruthy();
+  });
+
   it("nama berkas unduhan tidak memuat kata ALETA (berkas dapat diunggah ke SIPP/e-Court)", async () => {
     const nama: string[] = [];
     const klik = HTMLAnchorElement.prototype.click;

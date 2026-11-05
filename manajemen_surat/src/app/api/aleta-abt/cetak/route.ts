@@ -197,6 +197,8 @@ export async function POST(request: NextRequest) {
           terpotong: p.terpotong,
           jumlahTerisi: n.jumlahTerisi,
           kosong: n.kosong,
+          perluDilihat: n.perluDilihat,
+          catatan: n.catatan,
           lolosCetak: n.lolosCetak,
           mesinGalat: n.mesinGalat,
           ringkasanKeyakinan: n.ringkasanKeyakinan,
@@ -207,7 +209,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (tindakan === "rtf" || tindakan === "pdf" || tindakan === "salinan") {
-      // Cetak apa pun selalu final: isian kosong menahan, naskah tidak keluar.
+      // Cetak apa pun selalu final: ketikan dan tanya jawab wajib yang kosong menahan, naskah tidak keluar.
       const n = await susunNaskah(a.db, { ...m, cetakFinal: true });
       if (!n.ok) return Response.json({ ok: false, ditahan: n.ditahan === true, kosong: n.kosong ?? [], alasan: n.alasan }, { status: n.status, headers: tak });
       const naskah: NaskahJadi = n;

@@ -195,6 +195,19 @@ describe("sumber dan keyakinan per isian", () => {
 });
 
 describe("isian kosong tidak lolos cetak final", () => {
+  it("tanpaSorotKosong: naskah akhir jalur ALETA mencetak titik-titik tanpa sorotan; tanpa jalur ALETA opsi ini tidak berlaku", async () => {
+    const { kueri } = basisPalsu(KATALOG, { teks: null });
+    const RTF = "{\\rtf1{\\colortbl;\\red0\\green0\\blue0;}#4444#}";
+    const jalur = mesinAbt.buatMesin({ kueri, skemaAbt: "aps_badilag", jalurAleta: { pustaka: {}, alias: {} } });
+    const akhir = await jalur.isiRtf(RTF, { perkaraId: "7", tanpaSorotKosong: true });
+    expect(akhir.rtf).toContain("...");
+    expect(akhir.rtf).not.toContain("\\highlight");
+    const pratinjau = await jalur.isiRtf(RTF, { perkaraId: "7" });
+    expect(pratinjau.rtf).toContain("\\highlight");
+    const panel = mesinAbt.buatMesin({ kueri, skemaAbt: "aps_badilag" });
+    expect((await panel.isiRtf(RTF, { perkaraId: "7", tanpaSorotKosong: true })).rtf).toContain("\\highlight");
+  });
+
   it("cetakFinal menahan naskah dan menyebut isian kosong", async () => {
     const { kueri } = basisPalsu(KATALOG, { teks: null });
     const mesin = mesinAbt.buatMesin({ kueri, skemaAbt: "aps_badilag", jalurAleta: { pustaka: {}, alias: {} } });

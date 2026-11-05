@@ -2944,9 +2944,22 @@ async function isiBlangkoPustaka(params = {}) {
       cadangan: {},
       tanyaJawabSaksi: {},
       ...(params.cetakFinal === true ? { cetakFinal: true } : {}),
+      ...(params.tanpaSorotKosong === true ? { tanpaSorotKosong: true } : {}),
     });
+    // Nilai isian untuk penahan cetak di portal: ketikan yang hanya dibaca rumus tidak terlihat dari daftar kosong. Gagal = tidak dikirim, dan portal menahan semua yang kosong.
+    let nilaiIsian;
+    if (Array.isArray(params.nilaiIsian) && params.nilaiIsian.length) {
+      try {
+        const daftar = params.nilaiIsian.map((x) => safeString(x)).filter((x) => /^\d{1,6}$/.test(x)).slice(0, 2000);
+        const peta = await mesin.nilaiPenanda({ perkaraId, sidangKe: Number(params.sidangKe) || 0 }, daftar);
+        nilaiIsian = Object.fromEntries([...peta].map(([k, v]) => [k, { status: v.status, teks: String(v.polos ?? "").slice(0, 2000) }]));
+      } catch {
+        nilaiIsian = undefined;
+      }
+    }
     return {
       ok: true,
+      nilaiIsian,
       berkas: safeString(params.nama).slice(0, 200),
       jumlahTerisi: h.terisi.length,
       kosong: h.kosong,

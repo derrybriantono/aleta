@@ -1,10 +1,13 @@
 import { alineaDariRtf, bandingAlinea, kertasDariRtf, type HasilBandingAlinea, type KertasNaskah } from "@/lib/aleta-abt-naskah";
 import type { PustakaMesin } from "@/lib/aleta-abt-pustaka";
 import { AKSARA_KOTAK, uraiRtf, type Rata } from "@/lib/aleta-abt-rtf";
+import { nilaiTahan, type ButirTahan, type KosongMesin, type NilaiIsian } from "@/lib/aleta-abt-tahan";
 import type { AletaDatabase } from "@/server/db/client";
 import { bitaIsi, muatPustakaMesin } from "@/server/modules/aleta-abt-pustaka/service";
 import { callAletaBotSippBridge } from "@/server/modules/aleta-sipp/aleta-sipp-datasource";
 import { ApiError } from "@/server/shared/errors";
+
+import { bahanTahan } from "./tahan";
 
 /**
  * ============================================================================
@@ -12,8 +15,9 @@ import { ApiError } from "@/server/shared/errors";
  * ============================================================================
  *
  * Blangko diambil dari PUSTAKA ALETA (aleta_abt_berkas - isi yang TERBIT; versi draf tidak pernah dipakai), isiannya diisi mesin
- * jalur ALETA di bot (bridge blangko.isiPustaka). ABT PHP tidak dipanggil sama sekali. Isian kosong menahan cetak final
- * (cetakFinal): naskah tidak keluar, hanya daftar yang harus diisi. Hanya membaca SIPP/ABT; tidak menulis apa pun.
+ * jalur ALETA di bot (bridge blangko.isiPustaka). ABT PHP tidak dipanggil sama sekali. Ketikan dan tanya jawab wajib yang kosong menahan cetak final
+ * (cetakFinal): naskah tidak keluar, hanya daftar yang harus diisi; rumus tanpa data dan isian yang tidak wajib hanya diberitahukan (aleta-abt-tahan.ts,
+ * keputusan pemilik 6 Nov 2026). Hanya membaca SIPP/ABT; tidak menulis apa pun.
  * Pemanggil (rute) yang menjaga hak; berkas ini tidak menilai peran.
  */
 
@@ -30,6 +34,7 @@ type HasilBot = {
   kosong?: Array<{ noVar: string; nama?: string; sebab?: string; status?: string }>;
   mesinGalat?: string;
   rtfBase64?: string;
+  nilaiIsian?: Record<string, NilaiIsian>;
   isian?: KeteranganIsian[];
   lolosCetak?: boolean;
   ditahan?: boolean;
@@ -46,7 +51,12 @@ export type NaskahJadi = {
   rtf: Buffer;
   kertas: KertasNaskah;
   jumlahTerisi: number;
+  /** Isian yang menahan cetak. */
   kosong: Array<{ nama: string; sebab: string; status: string }>;
+  /** Tidak menahan, tetapi perlu dilihat: tercetak titik-titik bila tetap kosong. */
+  perluDilihat: ButirTahan[];
+  /** Tidak menahan: isian pilihan, tambahan, atau yang tidak berlaku. */
+  catatan: ButirTahan[];
   lolosCetak: boolean;
   mesinGalat: string;
   ringkasanKeyakinan: Record<string, number>;
@@ -77,6 +87,7 @@ export async function susunNaskah(
   const blangko = await ambilBlangkoPustaka(db, p.berkasId);
   const pustaka = deps.pustaka ?? (await muatPustakaMesin(db));
   const panggil = deps.panggil ?? callAletaBotSippBridge;
+  const bahan = await bahanTahan(panggil, { rtfLatin1: blangko.rtf.toString("latin1"), folder: blangko.folder, pustaka });
   const hasil = await panggil<HasilBot>(
     "blangko.isiPustaka",
     {
@@ -85,14 +96,24 @@ export async function susunNaskah(
       perkaraId: p.perkaraId,
       sidangKe: p.sidangKe,
       jalurAleta: { sidik: pustaka.sidik, pustaka: pustaka.pustaka, alias: pustaka.alias },
-      ...(p.cetakFinal ? { cetakFinal: true } : {}),
+      ...(bahan ? { nilaiIsian: bahan.kodeNilai } : {}),
+      // Naskah akhir tanpa sorotan kuning; penahannya diputuskan di sini, bukan di bot.
+      ...(p.cetakFinal ? { tanpaSorotKosong: true } : {}),
     },
     { timeoutMs: BATAS_MS }
   );
   const data = hasil.data;
   if (!hasil.ok || !data?.ok) return { ok: false, status: 502, alasan: String(data?.sebab ?? hasil.error ?? "Naskah tidak dapat disusun.") };
-  const kosong = (data.kosong ?? []).map((k) => ({ nama: String(k.nama ?? "") || `Isian ${String(k.noVar ?? "")}`, sebab: String(k.sebab ?? ""), status: String(k.status ?? "") }));
-  if (p.cetakFinal && (data.ditahan === true || data.lolosCetak !== true || !data.rtfBase64)) {
+  const kosongMesin: KosongMesin[] = (data.kosong ?? []).map((k) => ({ noVar: String(k.noVar ?? ""), nama: String(k.nama ?? ""), sebab: String(k.sebab ?? ""), status: String(k.status ?? "") }));
+  // Katalog atau nilai tidak terbaca: tidak ada dasar untuk melonggarkan, jadi semua isian kosong tetap menahan.
+  const tahan =
+    bahan && data.nilaiIsian
+      ? nilaiTahan({ susunan: bahan.susunan, nilai: data.nilaiIsian, kosong: kosongMesin, jenisCerai: bahan.jenisCerai, jenisKatalog: (kode) => bahan.katalog.get(kode)?.jenis ?? "" })
+      : { menahan: kosongMesin.map((k) => ({ kode: k.noVar, nama: k.nama || `Isian ${k.noVar}`, sebab: k.sebab })), perluDilihat: [] as ButirTahan[], catatan: [] as ButirTahan[] };
+  const statusKode = new Map(kosongMesin.map((k) => [k.noVar, k.status]));
+  const kosong = tahan.menahan.map((k) => ({ nama: k.nama, sebab: k.sebab, status: statusKode.get(k.kode) ?? "kosong" }));
+  const lolosCetak = kosong.length === 0 && !data.mesinGalat;
+  if (p.cetakFinal && (!lolosCetak || !data.rtfBase64)) {
     return { ok: false, status: 409, ditahan: true, kosong, alasan: `Cetak final ditahan: ${kosong.length} isian masih kosong${data.mesinGalat ? " dan mesin ragu" : ""}.` };
   }
   const rtf = Buffer.from(String(data.rtfBase64 ?? ""), "base64");
@@ -103,7 +124,9 @@ export async function susunNaskah(
     kertas: kertasDariRtf(rtf.toString("latin1")),
     jumlahTerisi: data.jumlahTerisi ?? 0,
     kosong,
-    lolosCetak: data.lolosCetak === true,
+    perluDilihat: tahan.perluDilihat,
+    catatan: tahan.catatan,
+    lolosCetak,
     mesinGalat: String(data.mesinGalat ?? ""),
     ringkasanKeyakinan: data.ringkasanKeyakinan ?? {},
     jumlahKueri: data.jumlahKueri ?? 0,

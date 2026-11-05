@@ -896,7 +896,7 @@ export const TUTORIAL: readonly Tutorial[] = [
     langkah: [
       "Ketik sebagian nomor perkara lalu pilih perkaranya, kemudian pilih blangko dari pustaka. Untuk berita acara sidang, isi sidang ke berapa.",
       "Tekan Pratinjau naskah. Naskah tampil per alinea bersama kertas yang dipakai dan lamanya menyusun. Isian yang masih kosong disebut namanya.",
-      "Bila semua isian terisi, tekan Unduh RTF, Unduh PDF, atau Unduh PDF SALINAN. Isian yang masih kosong menahan cetak sampai terisi di SIPP atau ABT.",
+      "Bila tertulis siap dicetak, tekan Unduh RTF, Unduh PDF, atau Unduh PDF SALINAN. Ketikan dan tanya jawab wajib yang masih kosong menahan cetak sampai terisi di SIPP atau ABT. Data yang belum ada di SIPP hanya tampil sebagai perlu dilihat, dan tercetak titik-titik bila tetap kosong.",
       "Untuk PDF SALINAN dari berkas yang sudah ada, pilih berkas putusan atau penetapan (RTF, DOCX, DOC, atau PDF yang masih kosong) pada kotak PDF SALINAN dari berkas. PDF SALINAN langsung diunduh. Berita acara sidang dalam bentuk PDF ditolak.",
       "Untuk membandingkan, pilih RTF yang dicetak dari ABT untuk perkara dan blangko yang sama. Layar menghitung alinea yang identik dan menampilkan yang berbeda berdampingan.",
       "Jumlah halaman dan letak tanda tangan dibandingkan dari dua PDF: unduh PDF dari layar ini, lalu pilih PDF dari ABT. Laporan hasil pengukuran skrip dibuka di halaman Laporan pembanding.",

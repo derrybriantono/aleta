@@ -29,6 +29,8 @@ type Pratinjau = {
   terpotong: boolean;
   jumlahTerisi: number;
   kosong: Array<{ nama: string; sebab: string; status: string }>;
+  perluDilihat?: Array<{ nama: string; sebab: string }>;
+  catatan?: Array<{ nama: string; sebab: string }>;
   lolosCetak: boolean;
   mesinGalat: string;
   ringkasanKeyakinan: Record<string, number>;
@@ -426,7 +428,8 @@ export function CetakAletaAbt() {
           <CardHeader>
             <CardTitle className="flex flex-wrap items-center gap-2">
               Pratinjau
-              <Badge variant={tahanKosong ? "warning" : "success"}>{tahanKosong ? `${pratinjau.kosong.length} isian kosong` : "semua isian terisi"}</Badge>
+              <Badge variant={tahanKosong ? "warning" : "success"}>{tahanKosong ? `${pratinjau.kosong.length} isian kosong` : "siap dicetak"}</Badge>
+              {pratinjau.perluDilihat?.length ? <Badge variant="outline">{pratinjau.perluDilihat.length} perlu dilihat</Badge> : null}
             </CardTitle>
             <CardDescription>
               Kertas <Ukuran k={pratinjau.kertas} />. Disusun {detik(pratinjau.waktu.totalMs)} (mesin {detik(pratinjau.waktu.botMs)}); itu waktu pada server yang sedang dipakai, bukan jaminan kecepatan.
@@ -446,6 +449,19 @@ export function CetakAletaAbt() {
                 </ul>
               </div>
             ) : null}
+            {pratinjau.perluDilihat?.length ? (
+              <details className="rounded-xl border border-border px-3 py-2 text-sm">
+                <summary className="cursor-pointer font-medium">Perlu dilihat: {pratinjau.perluDilihat.length} bagian tidak menahan cetak, dan tercetak titik-titik bila tetap kosong</summary>
+                <ul className="mt-1 list-disc pl-5 text-muted-foreground">
+                  {pratinjau.perluDilihat.slice(0, 40).map((k, i) => (
+                    <li key={`${k.nama}-${i}`} className="break-words">
+                      {k.nama}
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            ) : null}
+            {pratinjau.catatan?.length ? <p className="text-sm text-muted-foreground">{pratinjau.catatan.length} isian lain kosong, tetapi tidak wajib atau tidak berlaku untuk perkara ini.</p> : null}
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
               <Button variant="outline" onClick={() => cetak("rtf")} disabled={sibuk !== "" || !!tahanKosong} className="w-full sm:w-auto">
                 {sibuk === "rtf" ? "Menyiapkan..." : "Unduh RTF"}

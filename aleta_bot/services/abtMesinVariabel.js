@@ -1253,7 +1253,8 @@ function buatMesin(p) {
 
     const satu = satukanPenandaTerpecah(rtfAsli);
     let rtf = satu.rtf;
-    const sorot = siapkanSorot(rtf);
+    // Naskah akhir jalur ALETA: titik-titik tanpa sorotan kuning, seperti cetakan ABT (keputusan pemilik 6 Nov 2026). Jalur lain tidak memakai opsi ini.
+    const sorot = jalurAleta && opsi.tanpaSorotKosong === true ? { rtf, indeks: null } : siapkanSorot(rtf);
     rtf = sorot.rtf;
     const tandaKosong = sorot.indeks === null ? "..." : `{\\highlight${sorot.indeks} ...}`;
     // Tombol Lihat di naskah (5 Nov 2026): hasil tiap isian diapit penanda ASCII agar panel dapat menghitung temuannya.

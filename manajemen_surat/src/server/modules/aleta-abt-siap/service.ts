@@ -126,6 +126,6 @@ export async function periksaNaskahSiap(db: AletaDatabase, p: { berkasId: string
     pasti: Number(k.pasti ?? 0),
     lolosCetak: n.lolosCetak,
     mesinGalat: n.mesinGalat,
-    dapatDicetak: n.lolosCetak && n.kosong.length === 0,
+    dapatDicetak: n.lolosCetak,
   };
 }
