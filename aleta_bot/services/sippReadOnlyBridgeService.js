@@ -2758,8 +2758,17 @@ async function nilaiPenandaAbt(params = {}) {
   const penanda = (Array.isArray(params.penanda) ? params.penanda : []).map(safeString).filter((x) => /^\d{3,5}$/.test(x)).slice(0, 600);
   const peta = await mesinVariabelAbt().nilaiPenanda({ perkaraId, sidangKe: Number(params.sidangKe) || 0 }, penanda);
   const nilai = {};
-  for (const [noVar, v] of peta) nilai[noVar] = { status: v.status, nama: v.nama, sebab: v.sebab, teks: v.polos };
-  return { ok: true, nilai };
+  const peringatan = [];
+  for (const [noVar, v] of peta) {
+    nilai[noVar] = { status: v.status, nama: v.nama, sebab: v.sebab, teks: v.polos };
+    // Tanggal tidak wajar (peringatan saja): tanpa nilai tanggalnya, tidak masuk log.
+    if (Array.isArray(v.peringatan) && v.peringatan.length) {
+      const w = { nomor: noVar, nama: v.nama, sebab: v.peringatan.join("; "), manual: v.manual === true };
+      nilai[noVar].peringatan = w.sebab;
+      peringatan.push(w);
+    }
+  }
+  return { ok: true, nilai, peringatan };
 }
 
 /**
@@ -2811,6 +2820,7 @@ async function isiBlangko(params = {}) {
           terpecahDisatukan: h.terpecahDisatukan,
           jumlahKueri: h.jumlahKueri,
           mesinGalat: h.mesinGalat,
+          peringatan: h.peringatan || [],
           isian: h.isian,
           lolosCetak: h.lolosCetak,
           ditahan: h.ditahan === true,
@@ -2833,6 +2843,7 @@ async function isiBlangko(params = {}) {
           terpecahDisatukan: hTes.terpecahDisatukan,
           jumlahKueri: hTes.jumlahKueri,
           mesinGalat: hTes.mesinGalat,
+          peringatan: hTes.peringatan || [],
           rtfBase64: params.tanpaRtf ? "" : Buffer.from(hTes.rtf, "latin1").toString("base64"),
         };
       }
@@ -2859,6 +2870,7 @@ async function isiBlangko(params = {}) {
         terpecahDisatukan: h.terpecahDisatukan,
         jumlahKueri: h.jumlahKueri,
         mesinGalat: h.mesinGalat,
+        peringatan: h.peringatan || [],
         rtfBase64: params.tanpaRtf ? "" : Buffer.from(h.rtf, "latin1").toString("base64"),
       };
     }

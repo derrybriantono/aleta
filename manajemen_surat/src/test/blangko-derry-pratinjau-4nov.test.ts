@@ -114,7 +114,7 @@ afterEach(async () => {
   while (terbuka.length) terbuka.pop()!.window.close();
 });
 
-function buka(p: { orang?: string; simpanan?: Record<string, unknown>; pratinjau?: (badan: any) => Response | Promise<Response>; titik?: Array<{ kode: string; nama: string }> } = {}): Halaman {
+function buka(p: { orang?: string; simpanan?: Record<string, unknown>; pratinjau?: (badan: any) => Response | Promise<Response>; titik?: Array<{ kode: string; nama: string }>; peringatan?: Array<Record<string, unknown>> } = {}): Halaman {
   const orang = ORANG[p.orang ?? "hakim"];
   const badan = `<div id="header"><div class="h_right"><b>Pengguna</b> ${orang.header}</div></div><div id="wrapper"><div id="navbar">${MENU}</div><div id="content"></div></div>`;
   const dom = new JSDOM(`<!doctype html><html><head><title>ABT</title></head><body>${badan}</body></html>`, { url: BERANDA, runScripts: "outside-only", pretendToBeVisual: true } as ConstructorParameters<typeof JSDOM>[1]);
@@ -200,7 +200,7 @@ function buka(p: { orang?: string; simpanan?: Record<string, unknown>; pratinjau
       const kode = kodeUntukNilai(s, q.get("semua") === "1");
       const nilai: Record<string, unknown> = {};
       for (const k of kode) nilai[k] = statusNilaiLayar(abt[k] ? { status: "terisi", teks: abt[k], nama: "", sebab: "" } : { status: "kosong", teks: "", nama: "", sebab: "" }, kodeTanyaJawab(s).has(k));
-      return json({ ok: true, data: { ada: true, folder: `derry_briantono/${q.get("folder")}`, berkas: `${q.get("berkas")}.rtf`, jumlahPenanda: s.penanda.length, sumberKatalog: "abt", katalogTersedia: true, ...s, nilai, nilaiAda: true, nilaiSebab: "" } });
+      return json({ ok: true, data: { ada: true, folder: `derry_briantono/${q.get("folder")}`, berkas: `${q.get("berkas")}.rtf`, jumlahPenanda: s.penanda.length, sumberKatalog: "abt", katalogTersedia: true, ...s, nilai, nilaiAda: true, nilaiSebab: "", ...(p.peringatan ? { peringatan: p.peringatan } : {}) } });
     }
     if (url.includes("/aleta-bot/abt/pdf")) return json({ ok: true, data: { available: true, message: "", pdfBase64: Buffer.from("%PDF-1.4 uji").toString("base64"), byte: 12 } });
     if (url.includes("/aleta-ecourt/tanda-tangan")) return json({ ok: false, alasan: "tidak berwenang" }, 403);
@@ -428,5 +428,45 @@ describe("A12. peringatan titik-titik di dalam kalimat (4 Nov 2026)", () => {
     await sampai(() => mintaKe(h, /titik=1/).length >= 1, "pemeriksaan jalan", 9000);
     await tunggu(100);
     expect(q(h, '[data-periksa="titikvariabel"]')).toBeNull();
+  });
+});
+
+describe("B. peringatan tanggal tidak wajar (5 Nov 2026)", () => {
+  const TGL = [{ nomor: "0347", nama: "Tgl. Lahir #0047#", sebab: "tercatat kosong", manual: false }];
+
+  it("peringatan ikut jawaban isian blangko: satu butir di 'Periksa sebelum cetak', tanpa nomor, tanpa tombol, tanpa permintaan baru", async () => {
+    const h = buka({ orang: "hakim", peringatan: TGL });
+    await pilihAcuan(h);
+    await bukaCT(h);
+    const butir = await sampai(() => q(h, '[data-periksa="tanggal-takwajar"]'), "butir tanggal tampil", 9000);
+    expect(butir.textContent).toContain("tidak wajar di SIPP (tercatat kosong). Periksa data di SIPP.");
+    expect(butir.textContent).toContain("Tanggal Lahir");
+    expect(butir.textContent).not.toMatch(/#|\d{4}/);
+    expect(butir.querySelector("button")).toBeNull();
+    expect(mintaKe(h, /blangko-derry\/pratinjau/, "POST")).toHaveLength(0);
+    // tidak ada permintaan baru khusus peringatan, dan tidak ada tulisan apa pun yang membawa peringatan
+    expect(h.minta.filter((m) => /peringatan|tanggal-tak/i.test(m.url) || /tercatat kosong/.test(m.badan))).toHaveLength(0);
+  });
+
+  it("peringatan dari pratinjau cepat ikut ditambahkan ke daftar yang sama", async () => {
+    const jawab = { berkas: "naskah.rtf", rtfBase64: Buffer.from(RTF_MESIN, "latin1").toString("base64"), byte: RTF_MESIN.length, jumlahTerisi: 3, kosong: 0, galat: [], jumlahGalat: 0, mesinGalat: "", peringatan: [{ nomor: "0348", nama: "Tgl. Putusan", sebab: "tahun di bawah 1900", manual: false }] };
+    const h = buka({ orang: "hakim", pratinjau: () => jsonRespons({ ok: true, data: jawab }) });
+    await pilihAcuan(h);
+    await bukaCT(h);
+    expect(q(h, '[data-periksa="tanggal-takwajar"]')).toBeNull();
+    klik(h, '[data-bd2="bukaprat"]');
+    await sampai(() => q(h, "#bd-kertas"), "pratinjau tampil");
+    const butir = await sampai(() => qq(h, '[data-periksa="tanggal-takwajar"]').find((x) => /Putusan/.test(x.textContent || "")), "butir dari pratinjau", 9000);
+    expect(butir.textContent).toContain("tahun di bawah 1900");
+    expect(q(h, "#bd-kertas")!.textContent).not.toMatch(/tidak wajar|tahun di bawah/);
+  });
+
+  it("tanpa peringatan dari server tidak ada butir (bot lama tidak menimbulkan alarm palsu)", async () => {
+    const h = buka({ orang: "hakim" });
+    await pilihAcuan(h);
+    await bukaCT(h);
+    await sampai(() => mintaKe(h, /titik=1/).length >= 1, "pemeriksaan jalan", 9000);
+    await tunggu(100);
+    expect(q(h, '[data-periksa="tanggal-takwajar"]')).toBeNull();
   });
 });

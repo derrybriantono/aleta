@@ -135,6 +135,71 @@ function tglIndo2(tgl) {
   return `${p[2] ?? ""} ${bulan} ${p[0] ?? ""}`;
 }
 
+// ---------------------------------------------------------------------------
+// Penilai tanggal (5 Nov 2026) - hanya PERINGATAN: nilai yang dicetak TIDAK diubah.
+// ---------------------------------------------------------------------------
+
+const BULAN_TANGGAL = {
+  januari: 1, februari: 2, pebruari: 2, maret: 3, april: 4, mei: 5, juni: 6, juli: 7,
+  agustus: 8, september: 9, oktober: 10, november: 11, nopember: 11, desember: 12,
+};
+/** Bentuk longgar: dipakai bila isiannya memang bertipe tanggal (lolos tanggalYmd). */
+const POLA_TGL_YMD = /^(\d{1,4})[-/](\d{1,2})[-/](\d{1,2})(?:[ T]\d{1,2}:\d{2}(?::\d{2})?)?$/;
+/** Bentuk ketat: untuk nilai biasa yang kebetulan berbentuk tanggal ISO (empat-dua-dua angka). */
+const POLA_TGL_YMD_KETAT = /^(\d{4})[-/](\d{2})[-/](\d{2})(?:[ T]\d{2}:\d{2}(?::\d{2})?)?$/;
+const POLA_TGL_INDO = new RegExp("^(\\d{1,2}) (" + Object.keys(BULAN_TANGGAL).join("|") + ") (\\d{4})$", "i");
+/** Hasil format tanggal nol: "00 0000" (hari, bulan tak terbaca, tahun). */
+const POLA_TGL_INDO_NOL = /^(\d{1,2}) (\d{4})$/;
+
+/**
+ * Menilai SATU nilai yang diduga tanggal. Murni: tanpa basis data, tanpa log.
+ *   nilai  "2026-03-05" / "2026/03/05" (boleh berjam), "05 Maret 2026", atau "00 0000" (hasil format tanggal nol)
+ *   opsi   tanggal  isian bertipe tanggal: bentuk Y-m-d dinilai longgar; selain itu hanya yang berbentuk tanggal ISO utuh
+ *          lahir    isian tanggal lahir: tanggal di masa depan tidak wajar
+ *          sekarang Date acuan (uji); bawaan: saat ini
+ * Tidak wajar: tanggal nol, tahun di bawah 1900 atau di atas tahun berjalan + 5, bulan di atas 12, hari di atas 31, tanggal lahir di
+ * masa depan. Teks selain tanggal TIDAK dinilai ({tanggal:false}) - tidak ada angka sembarang yang dianggap tanggal.
+ * Teks sebab tidak memuat nilai tanggalnya (data pihak).
+ * @returns {{tanggal: boolean, sebab: string[]}}
+ */
+function nilaiTanggalTakWajar(nilai, opsi = {}) {
+  const bukan = { tanggal: false, sebab: [] };
+  const t = String(nilai === null || nilai === undefined ? "" : nilai).replace(/\s+/g, " ").trim();
+  if (!t || t.length > 40) return bukan;
+  let y;
+  let m;
+  let d;
+  let cocok = (opsi.tanggal ? POLA_TGL_YMD : POLA_TGL_YMD_KETAT).exec(t);
+  if (cocok) {
+    y = Number(cocok[1]);
+    m = Number(cocok[2]);
+    d = Number(cocok[3]);
+  } else if ((cocok = POLA_TGL_INDO.exec(t))) {
+    d = Number(cocok[1]);
+    m = BULAN_TANGGAL[cocok[2].toLowerCase()];
+    y = Number(cocok[3]);
+  } else if ((cocok = POLA_TGL_INDO_NOL.exec(t))) {
+    // "05 2020" bisa apa saja; hanya "00 0000" yang pasti tanggal nol.
+    return Number(cocok[1]) === 0 && Number(cocok[2]) === 0 ? { tanggal: true, sebab: ["tercatat kosong"] } : bukan;
+  } else return bukan;
+  if (y === 0 && m === 0 && d === 0) return { tanggal: true, sebab: ["tercatat kosong"] };
+  const kini = opsi.sekarang instanceof Date && !Number.isNaN(opsi.sekarang.getTime()) ? opsi.sekarang : new Date();
+  const tahunIni = kini.getFullYear();
+  const sebab = [];
+  if (y < 1900) sebab.push("tahun di bawah 1900");
+  else if (y > tahunIni + 5) sebab.push("tahun terlalu jauh di depan");
+  if (m > 12) sebab.push("bulan lebih dari 12");
+  if (d > 31) sebab.push("hari lebih dari 31");
+  if (m === 0) sebab.push("bulan kosong");
+  if (d === 0) sebab.push("hari kosong");
+  if (m >= 1 && m <= 12 && d >= 1 && d <= 31 && y >= 1 && new Date(Date.UTC(y, m - 1, d)).getUTCDate() !== d) sebab.push("tanggal tidak ada di kalender");
+  if (opsi.lahir && !sebab.length) {
+    const hariIni = Date.UTC(tahunIni, kini.getMonth(), kini.getDate());
+    if (Date.UTC(y, Math.max(m, 1) - 1, Math.max(d, 1)) > hariIni) sebab.push("tanggal lahir di masa depan");
+  }
+  return { tanggal: true, sebab };
+}
+
 /** strtotime() untuk bentuk yang dipakai ABT ("Y-m-d", "Y/m/d", berjam atau tidak). */
 function strtotimeHari(tgl) {
   const m = /^\s*(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:[ T]\d{1,2}:\d{2}(?::\d{2})?)?\s*$/.exec(String(tgl));
@@ -642,10 +707,12 @@ function sumberDariDefinisi(def) {
 
 /**
  * Keyakinan sebuah isian: pasti (data terstruktur yang terisi), periksa (terisi tetapi turunan teks gugatan atau memuat
- * penanda [PERIKSA ...] / titik-titik), kosong (tidak terisi).
+ * penanda [PERIKSA ...] / titik-titik / tanggal tidak wajar), kosong (tidak terisi).
  */
-function keyakinanIsian({ asal, status, sumber, nilai }) {
+function keyakinanIsian({ asal, status, sumber, nilai, takWajar }) {
   if (asal === "kosong" || (status && status !== "terisi")) return "kosong";
+  // Tanggal tidak wajar (tanggal nol, tahun mustahil, tanggal lahir di masa depan): terisi tetapi perlu dilihat petugas.
+  if (takWajar === true) return "periksa";
   const teks = String(nilai ?? "");
   if (asal === "cadangan") return "periksa";
   if (/\[PERIKSA/i.test(teks) || /\.\.\./.test(teks)) return "periksa";
@@ -669,7 +736,8 @@ function buatMesin(p) {
   const timpaKatalog = p.timpaKatalog && typeof p.timpaKatalog === "object" ? p.timpaKatalog : {};
   /**
    * JALUR ALETA ABT (Tahap 4, 5 Nov 2026) - HANYA bila diminta lewat opsi ini (rute pratinjau Super Admin). Tanpa opsi ini mesin
-   * berperilaku persis seperti sebelumnya: semua pemanggil lama (panel Blangko Derry, BAS massal, Tes putusan) tidak berubah.
+   * berperilaku seperti sebelumnya (panel Blangko Derry, BAS massal, Tes putusan), kecuali dua keputusan pemilik aplikasi 5 Nov yang
+   * berlaku untuk semua pemanggil: "{}" dari rumus dibuang, dan peringatan tanggal tidak wajar ikut di keluaran (tanpa mengubah nilai).
    *   pustaka {noVar: {nama, data_type, data_tabel, data_kolom, urutan_data, referensi, sql_query, default_data, multi_sidang, kode?}}
    *           rumus dari pustaka ALETA (aleta_abt_variabel); dipakai bila barisnya ada, selain itu jatuh ke katalog ABT.
    *   alias   {kodeBermakna: noVar}  `#kode#` dikenali sebagai nomor lama; nomor #NNNN# tetap dikenali.
@@ -1001,7 +1069,7 @@ function buatMesin(p) {
       else if (tanggalYmd(varData)) value = tglIndo2(varData);
       else value = varData;
       if (!s) return { value: "DATA_TIDAK_ADA", varData: null, valueType: multi, status: "kosong", sebab: ctx.sidangKe ? `sidang ke-${ctx.sidangKe} belum ada di SIPP` : "jadwal sidang belum ada di SIPP" };
-      return { value, varData, valueType: multi, status: "terisi", sebab: "" };
+      return { value, varData, valueType: multi, status: "terisi", sebab: "", ...(tanggalYmd(varData) ? { tanggalMentah: varData } : {}) };
     }
 
     // PANGGIL DATA KOSTUM (referensi)
@@ -1027,7 +1095,7 @@ function buatMesin(p) {
         const v = ucwordsLower(d);
         return { value: v, varData: v, valueType: "teks_biasa", status: "terisi", sebab: "" };
       }
-      if (tanggalYmd(d)) return { value: tglIndo2(d), varData: d.split("-").join("/"), valueType: "tanggal", status: "terisi", sebab: "" };
+      if (tanggalYmd(d)) return { value: tglIndo2(d), varData: d.split("-").join("/"), valueType: "tanggal", status: "terisi", sebab: "", tanggalMentah: d };
       if (phpNumerik(d) && String(d).includes("0.00")) return { value: formatAngka(d), varData: d, valueType: "angka", status: "terisi", sebab: "" };
       // sql: nilai dihitung rumus katalog (bukan ketikan) - kode RTF di dalamnya (mis. 8500: tabel tanda tangan majelis lewat REPLACE '~' -> garis miring) ABT cetak apa adanya.
       if (jenis === "data_teks" || jenis === "data_sql") return { value: nl2br(d), varData: d, valueType: "teks_biasa", status: "terisi", sebab: "", sql: jenis === "data_sql" };
@@ -1045,6 +1113,10 @@ function buatMesin(p) {
     const d = await detil(ctx, noVar);
     const kat = await katalog().catch(() => new Map());
     const nama = String((kat.get(noVar) || {}).nama || "");
+    // Penilai tanggal: isian bertipe tanggal (lolos tanggalYmd) atau nilai yang berbentuk tanggal utuh; hanya peringatan, nilai tak diubah.
+    const jenisKat = String((kat.get(noVar) || {}).data_type || "");
+    const tglKandidat = typeof d.tanggalMentah === "string" ? d.tanggalMentah : d.status === "terisi" && !d.tabel && (d.valueType === "teks_biasa" || d.valueType === "teks_sipp") && typeof d.value === "string" ? d.value : "";
+    const peringatan = tglKandidat ? nilaiTanggalTakWajar(tglKandidat, { tanggal: typeof d.tanggalMentah === "string", lahir: /lahir/i.test(nama) }).sebab : [];
     const peta = new Map();
     const polos = new Map();
     let nomor = 0;
@@ -1059,12 +1131,13 @@ function buatMesin(p) {
     else mentah = d.value === null || d.value === undefined ? "" : String(d.value);
     // Kode RTF dari rumus katalog dipertahankan (tidak dilolos) - persis ABT, yang tidak melolos garis miring apa pun.
     if (d.sql && !d.tabel) mentah = mentah.replace(KENDALI_RTF_RUMUS, (m) => wakil(m));
-    // Jalur ALETA: "{}" yang ditulis rumus adalah kelompok RTF kosong (penutup kode kendali) - ABT meneruskannya mentah sehingga tidak tampak;
-    // jalur lama melolosnya menjadi "{}" yang tercetak. Diperbaiki HANYA di jalur ALETA (usulan untuk jalur lama: lihat laporan Tahap 4).
-    if (jalurAleta && d.sql && !d.tabel) mentah = mentah.split("{}").join("");
+    // "{}" yang ditulis rumus adalah kelompok RTF kosong (penutup kode kendali) - ABT meneruskannya mentah sehingga tidak tampak;
+    // dulu mesin melolosnya menjadi "{}" yang tercetak. Sejak keputusan pemilik aplikasi (5 Nov 2026) dibuang di SEMUA pemanggil
+    // (panel Blangko ABT by Derry Briantono, BAS massal, jalur ALETA ABT), bukan hanya jalur ALETA.
+    if (d.sql && !d.tabel) mentah = mentah.split("{}").join("");
     if (mentah.length > PANJANG_NILAI_MAKS) mentah = mentah.slice(0, PANJANG_NILAI_MAKS);
     const bersih = bersihkanHtmlAbt(mentah);
-    return { status: d.status, sebab: d.sebab, nama, rtf: keRtf(bersih, peta), polos: kePolos(bersih, polos) };
+    return { status: d.status, sebab: d.sebab, nama, rtf: keRtf(bersih, peta), polos: kePolos(bersih, polos), peringatan, manual: jenisKat === "data_teks" || jenisKat === "data_tanggal" };
   }
 
   /** Menjalankan fungsi atas daftar dengan paralel terbatas. */
@@ -1117,6 +1190,8 @@ function buatMesin(p) {
 
     const terisi = new Set();
     const kosong = new Map();
+    /** noVar -> {nomor, nama, sebab, manual}: isian bernilai tanggal tidak wajar yang dipakai naskah ini (tanpa nilai tanggalnya). */
+    const peringatanTanggal = new Map();
     const sumber = { aleta: 0, abt: 0, cadangan: 0, kosong: 0 };
     /** noVar -> asal nilai (aleta|abt|cadangan|kosong); dipakai hanya oleh jalur ALETA untuk keterangan per isian. */
     const jejak = new Map();
@@ -1143,7 +1218,7 @@ function buatMesin(p) {
           }
         }
         if (v && v.status === "terisi") {
-          nilai.set(n, { rtf: v.rtf, asal: "abt" });
+          nilai.set(n, { rtf: v.rtf, asal: "abt", peringatan: v.peringatan, nama: v.nama, manual: v.manual });
           return;
         }
         if (ada(cadangan, n)) {
@@ -1157,6 +1232,9 @@ function buatMesin(p) {
         if (!v) return utuh;
         sumber[v.asal] += 1;
         if (!jejak.has(n)) jejak.set(n, v.asal);
+        if (v.asal === "abt" && Array.isArray(v.peringatan) && v.peringatan.length && !peringatanTanggal.has(n)) {
+          peringatanTanggal.set(n, { nomor: n, nama: String(v.nama || ""), sebab: v.peringatan.join("; "), manual: v.manual === true });
+        }
         if (v.asal === "kosong") {
           if (!kosong.has(n)) kosong.set(n, { noVar: n, nama: v.nama || "", sebab: v.sebab || "", status: v.status || "kosong" });
         } else terisi.add(n);
@@ -1177,10 +1255,12 @@ function buatMesin(p) {
       terpecahDisatukan: satu.jumlah,
       jumlahKueri: ctx.jumlahKueri,
       mesinGalat,
+      /** Peringatan tanggal tidak wajar per isian (hanya peringatan; tidak masuk naskah dan tidak ditulis ke mana pun). */
+      peringatan: [...peringatanTanggal.values()].sort((a, b) => a.nomor.localeCompare(b.nomor)),
     };
     if (jalurAleta) {
       // Keterangan per isian (sumber, keyakinan) dan pagar cetak final. Tidak ada di jalur lama.
-      hasil.isian = await keteranganIsian(ctx, jejak, kosong);
+      hasil.isian = await keteranganIsian(ctx, jejak, kosong, peringatanTanggal);
       hasil.lolosCetak = hasil.kosong.length === 0 && !mesinGalat;
       hasil.ringkasanKeyakinan = hasil.isian.reduce((r, x) => ({ ...r, [x.keyakinan]: (r[x.keyakinan] || 0) + 1 }), { pasti: 0, periksa: 0, kosong: 0 });
       if (opsi.cetakFinal === true && !hasil.lolosCetak) {
@@ -1193,7 +1273,7 @@ function buatMesin(p) {
   }
 
   /** Asal rumus + sumber data + keyakinan tiap isian yang muncul di naskah (jalur ALETA). */
-  async function keteranganIsian(ctx, jejak, kosong) {
+  async function keteranganIsian(ctx, jejak, kosong, peringatanTanggal = new Map()) {
     const kat = await katalog().catch(() => new Map());
     const daftar = [];
     for (const [n, asal] of [...jejak.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
@@ -1202,15 +1282,17 @@ function buatMesin(p) {
       const k = kosong.get(n);
       const sumber = asal === "aleta" || asal === "cadangan" ? "manual" : await sumberIsian(kat, n);
       const status = k ? k.status || "kosong" : "terisi";
+      const tglTakWajar = peringatanTanggal.get(n);
       daftar.push({
         noVar: n,
         kode: kodeAleta.get(n) || "",
         nama: String(def.nama || ""),
         asalRumus: asal === "aleta" || asal === "cadangan" ? asal : def.asalRumus || "katalog",
         sumber,
-        keyakinan: keyakinanIsian({ asal, status, sumber, nilai: d ? d.value : "" }),
+        keyakinan: keyakinanIsian({ asal, status, sumber, nilai: d ? d.value : "", takWajar: Boolean(tglTakWajar) }),
         status,
         sebab: k ? String(k.sebab || "").slice(0, 160) : "",
+        peringatan: tglTakWajar ? tglTakWajar.sebab : "",
       });
     }
     return daftar;
@@ -1254,6 +1336,7 @@ module.exports = {
   penandaUrutAbt,
   siapkanSorot,
   tglIndo2,
+  nilaiTanggalTakWajar,
   getHari,
   hijriah,
   terbilangAbt,

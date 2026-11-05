@@ -14,7 +14,7 @@ import { ApiError } from "@/server/shared/errors";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
 
-import { jenisDokumenAkun, jenisFolderDariJalur, jenisFolderDerry, kodeTanyaJawab, kodeUntukNilai, saringIsianBas, statusNilaiLayar, susunIsian, type Definisi, type JenisDokumenDerry, type PeranTiruan, type Susunan } from "./susun";
+import { jenisDokumenAkun, jenisFolderDariJalur, jenisFolderDerry, kodeTanyaJawab, kodeUntukNilai, peringatanTanggal, saringIsianBas, statusNilaiLayar, susunIsian, type Definisi, type JenisDokumenDerry, type PeranTiruan, type Susunan } from "./susun";
 import { terapkanPetunjukS5 } from "./petunjuk-s5";
 import { terapkanPetunjukS6 } from "./petunjuk-s6";
 
@@ -67,7 +67,7 @@ type JawabanKatalog = { ada?: boolean; variabel?: Array<{ noVar?: unknown; nama?
 type JawabanBaca = { ada?: boolean; sebab?: string; berkas?: string; penanda?: string[]; penandaAbt?: string[] };
 type JawabanPohon = { ada?: boolean; berkas?: Array<{ jalur?: unknown; folder?: unknown; berkas?: unknown }> };
 type JawabanKatalogFolder = { ada?: boolean; set?: Array<{ nama?: unknown }>; blangko?: Array<{ berkas?: unknown }> };
-type JawabanNilai = { ok?: boolean; nilai?: Record<string, { status?: string; teks?: string; nama?: string; sebab?: string }> };
+type JawabanNilai = { ok?: boolean; nilai?: Record<string, { status?: string; teks?: string; nama?: string; sebab?: string; peringatan?: string }>; peringatan?: unknown };
 
 const teks = (x: unknown) => String(x ?? "").trim();
 
@@ -173,17 +173,17 @@ async function indeksDerry(): Promise<IndeksDerry> {
 
 async function nilaiPenanda(perkaraId: string, sidangKe: number, kode: string[]) {
   const daftar = [...new Set(kode)].slice(0, BATAS_NILAI);
-  if (!daftar.length) return { ada: false, nilai: {}, sebab: "" };
+  if (!daftar.length) return { ada: false, nilai: {}, sebab: "", peringatan: peringatanTanggal(null) };
   try {
     const j = await callAletaBotSippBridge<JawabanNilai>("abt.nilaiPenanda", { perkaraId, sidangKe, penanda: daftar }, { timeoutMs: 90000 });
-    if (!j.ok || !j.data?.ok) return { ada: false, nilai: {}, sebab: j.ok ? "Mesin variabel ABT di bot tidak memulangkan nilai." : teks(j.error) || "Bot ALETA tidak menjawab." };
-    const nilai: Record<string, { status: string; teks: string; nama: string; sebab: string }> = {};
+    if (!j.ok || !j.data?.ok) return { ada: false, nilai: {}, sebab: j.ok ? "Mesin variabel ABT di bot tidak memulangkan nilai." : teks(j.error) || "Bot ALETA tidak menjawab.", peringatan: peringatanTanggal(null) };
+    const nilai: Record<string, { status: string; teks: string; nama: string; sebab: string; peringatan?: string }> = {};
     for (const [k, v] of Object.entries(j.data.nilai || {})) {
       nilai[k] = { status: teks(v?.status) || "kosong", teks: String(v?.teks ?? ""), nama: teks(v?.nama), sebab: teks(v?.sebab) };
     }
-    return { ada: true, nilai, sebab: "" };
+    return { ada: true, nilai, sebab: "", peringatan: peringatanTanggal(j.data.peringatan) };
   } catch (e) {
-    return { ada: false, nilai: {}, sebab: teks((e as Error)?.message) || "Bot ALETA tidak menjawab." };
+    return { ada: false, nilai: {}, sebab: teks((e as Error)?.message) || "Bot ALETA tidak menjawab.", peringatan: peringatanTanggal(null) };
   }
 }
 
@@ -299,7 +299,7 @@ export async function GET(request: NextRequest) {
       sumberKatalog: sumber,
       katalogTersedia: peta.size > 0,
       ...susunan,
-      ...(nilai ? { nilai: nilai.nilai, nilaiAda: nilai.ada, nilaiSebab: nilai.sebab } : {}),
+      ...(nilai ? { nilai: nilai.nilai, nilaiAda: nilai.ada, nilaiSebab: nilai.sebab, peringatan: nilai.peringatan } : {}),
     });
   } catch (error) {
     return handleAdminRouteError(error, request, {

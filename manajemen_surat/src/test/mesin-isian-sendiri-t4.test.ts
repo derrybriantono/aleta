@@ -12,8 +12,9 @@ import { susunPustakaMesin, type BarisPustakaMesin } from "@/lib/aleta-abt-pusta
  * TAHAP 4 ALETA ABT - MESIN ISIAN SENDIRI (5 Nov 2026). Data rekaan; tidak ada data pihak nyata.
  *
  * Dijaga:
- *   1. Perilaku BAWAAN mesin tidak berubah: tanpa opsi jalurAleta keluaran isiRtf tidak memuat kolom baru, "{}" dari rumus tetap
- *      tercetak (perilaku lama), dan panel Blangko Derry/BAS massal tidak memanggil jalur baru.
+ *   1. Perilaku BAWAAN mesin tidak berubah: tanpa opsi jalurAleta keluaran isiRtf tidak memuat kolom jalur baru; "{}" dari rumus sejak
+ *      keputusan pemilik aplikasi 5 Nov 2026 dibuang di SEMUA pemanggil (dulu hanya jalur ALETA), dan daftar `peringatan` tanggal ikut.
+ *      Panel Blangko Derry/BAS massal tidak memanggil jalur baru.
  *   2. Jalur ALETA: rumus dari pustaka bila barisnya ada, katalog ABT bila belum; nomor #NNNN# dan kode bermakna sama-sama dikenali.
  *   3. Sumber (SIPP, e-Court, gugatan, saksi, manual) dan keyakinan (pasti, periksa, kosong) per isian.
  *   4. Isian kosong tidak lolos cetak final.
@@ -61,12 +62,14 @@ function basisPalsu(katalog: Def[] = KATALOG, opsi: { teks?: string | null } = {
 const DOK = "{\\rtf1 A #0046# B #1111# C #2222# D #3333# E #6666# F}";
 
 describe("perilaku bawaan tidak berubah", () => {
-  it("tanpa jalurAleta keluaran isiRtf tidak memuat kolom jalur baru dan '{}' rumus tetap tercetak", async () => {
+  it("tanpa jalurAleta keluaran isiRtf tidak memuat kolom jalur baru dan '{}' rumus tidak tercetak (keputusan 5 Nov)", async () => {
     const { kueri } = basisPalsu();
     const h = await mesinAbt.buatMesin({ kueri, skemaAbt: "aps_badilag" }).isiRtf("{\\rtf1 #0046# #6666#}", { perkaraId: "7" });
-    expect(Object.keys(h).sort()).toEqual(["jumlahKueri", "kosong", "mesinGalat", "rtf", "sumber", "terisi", "terpecahDisatukan"]);
+    expect(Object.keys(h).sort()).toEqual(["jumlahKueri", "kosong", "mesinGalat", "peringatan", "rtf", "sumber", "terisi", "terpecahDisatukan"]);
+    expect(h.peringatan).toEqual([]);
     expect(h.rtf).toContain("Siti Rekaan");
-    expect(h.rtf).toContain("nafkah\\{\\}");
+    expect(h.rtf).toContain("nafkah");
+    expect(h.rtf).not.toContain("\\{\\}");
   });
 
   it("opsi cetakFinal, alias, dan pustaka diabaikan tanpa jalurAleta", async () => {
@@ -81,7 +84,8 @@ describe("perilaku bawaan tidak berubah", () => {
   it("nilaiPenanda (dipakai Blangko ALETA DOCX/PDF) tidak berubah bentuknya", async () => {
     const { kueri } = basisPalsu();
     const peta = await mesinAbt.buatMesin({ kueri, skemaAbt: "aps_badilag" }).nilaiPenanda({ perkaraId: "7" }, ["0046"]);
-    expect(Object.keys(peta.get("0046")).sort()).toEqual(["nama", "polos", "rtf", "sebab", "status"]);
+    expect(Object.keys(peta.get("0046")).sort()).toEqual(["manual", "nama", "peringatan", "polos", "rtf", "sebab", "status"]);
+    expect(peta.get("0046").peringatan).toEqual([]);
   });
 
   it("rute pratinjau hanya bercabang ke jalur ALETA bila jalurAleta === true", () => {
@@ -142,12 +146,13 @@ describe("jalur ALETA: pustaka, katalog, dan alias", () => {
     expect(h.rtf).toContain("kepada Budi Rekaan");
   });
 
-  it("'{}' dari rumus tidak tercetak di jalur ALETA, tetap tercetak di jalur lama", async () => {
+  it("'{}' dari rumus tidak tercetak, baik di jalur ALETA maupun jalur bawaan (keputusan 5 Nov)", async () => {
     const { kueri } = basisPalsu();
     const lama = await mesinAbt.buatMesin({ kueri, skemaAbt: "aps_badilag" }).isiRtf("{\\rtf1 #6666#}", { perkaraId: "7" });
     const baru = await mesinAbt.buatMesin({ kueri, skemaAbt: "aps_badilag", jalurAleta: { pustaka: {}, alias: {} } }).isiRtf("{\\rtf1 #6666#}", { perkaraId: "7" });
-    expect(lama.rtf).toContain("\\{\\}");
+    expect(lama.rtf).not.toContain("\\{\\}");
     expect(baru.rtf).not.toContain("\\{\\}");
+    expect(lama.rtf).toContain("nafkah");
     expect(baru.rtf).toContain("nafkah");
   });
 });

@@ -95,7 +95,7 @@ async function mesin([perkaraF, kodeF, dir]) {
     });
     const teks = JSON.parse(baca(path.join(dir, `t${pid}.json`))).nilai;
     const kosong = Object.fromEntries(h.kosong.map((x) => [x.noVar, x.status + ":" + x.sebab.slice(0, 160)]));
-    fs.writeFileSync(f, JSON.stringify({ perkara: pid, detik: Math.round((Date.now() - t0) / 1000), mesinGalat: h.mesinGalat, teks, kosong, terisi: h.terisi }));
+    fs.writeFileSync(f, JSON.stringify({ perkara: pid, detik: Math.round((Date.now() - t0) / 1000), mesinGalat: h.mesinGalat, teks, kosong, terisi: h.terisi, peringatan: h.peringatan || [] }));
     fs.unlinkSync(rtfF);
     fs.unlinkSync(path.join(dir, `t${pid}.json`));
     console.log("mesin", pid, "detik", Math.round((Date.now() - t0) / 1000), "kosong", h.kosong.length);
