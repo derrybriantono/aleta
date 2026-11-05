@@ -2,7 +2,7 @@ import { type NextRequest } from "next/server";
 
 import { buangGrupTersembunyiRtf } from "@/lib/buang-grup-tersembunyi-rtf";
 import { golonganPengguna } from "@/lib/matriks-peran";
-import { isPrivilegedAdmin } from "@/lib/permissions";
+import { getEffectiveRoleId, isPrivilegedAdmin } from "@/lib/permissions";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { callAletaBotSippBridge } from "@/server/modules/aleta-sipp/aleta-sipp-datasource";
@@ -94,12 +94,15 @@ export async function POST(request: NextRequest) {
     }
     await pastikanKapabilitas(db, actorUserId, "blangko-abt");
 
+    // Tombol Lihat di naskah (keputusan 202): fitur ALETA ABT yang baru, sementara hanya Super Admin. Permintaan akun lain diabaikan.
+    const tandaLihat = badan.tandaLihat === true && getEffectiveRoleId(actor as Parameters<typeof getEffectiveRoleId>[0]) === "super-admin";
+
     const namaBerkas = /\.(rtf|docx?|odt)$/i.test(berkas) ? berkas : `${berkas}.rtf`;
     const jalurFolder = folder.startsWith(`${AKAR_DERRY}/`) || folder === AKAR_DERRY ? folder : `${AKAR_DERRY}/${folder}`;
 
     const hasil = await callAletaBotSippBridge<HasilIsiPratinjau>(
       "blangko.isi",
-      { folder: jalurFolder, berkas: namaBerkas, perkaraId, sidangKe, nilai: {}, cadangan: {}, tanyaJawabSaksi: {}, segar: true },
+      { folder: jalurFolder, berkas: namaBerkas, perkaraId, sidangKe, nilai: {}, cadangan: {}, tanyaJawabSaksi: {}, segar: true, ...(tandaLihat ? { tandaLihat: true } : {}) },
       { timeoutMs: BATAS_PRATINJAU_MS }
     );
     const data = hasil.data;

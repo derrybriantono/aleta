@@ -2777,6 +2777,7 @@ async function isiBlangko(params = {}) {
         timpa: nilai,
         cadangan: params.cadangan && typeof params.cadangan === "object" ? params.cadangan : {},
         tanyaJawabSaksi: params.tanyaJawabSaksi && typeof params.tanyaJawabSaksi === "object" ? params.tanyaJawabSaksi : {},
+        ...(params.tandaLihat === true ? { tandaLihat: true } : {}),
       };
       // TES PUTUSAN: ketikan petugas ("seolah tersimpan") dihitung di memori; tanpa ingatan 60 dtk, tanpa menulis apa pun.
       if (params.tes === true) {

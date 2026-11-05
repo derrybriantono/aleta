@@ -3121,6 +3121,7 @@
     kelompokBoleh: (k) => (tesAktif() ? Boolean(k) : kelompokBoleh(k, bahanHak())),
     /** 22 Okt: Tes putusan menyala (Super Admin)? Jalur tulis di blangko-derry-isian.js dan alat lain mati bila benar. */
     tesPutusan: () => tesAktif(),
+    superAdmin: () => superAdmin(),
     muatHak,
     siapa: () => (S.siapa ? { ...S.siapa, sebagai: { ...S.sebagai } } : null),
     /** 30 Okt: tetap di tempat saat dimuat ulang - dipakai blangko-derry-isian.js untuk mencatat blangko/draf dan menutup pemulihan. */

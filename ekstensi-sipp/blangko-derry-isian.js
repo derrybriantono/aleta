@@ -1980,6 +1980,9 @@
     S.semua = null;
     S.semuaBuka = false;
     S.prat = { terbuka: false, memuat: false, rtf: null, html: "", galat: "", suntingPenuh: false, kotor: true, penanda: [] };
+    S.lihat = null;
+    S.lihatNav = null;
+    jadwalkanLihat();
     S.peringat = false;
     S.ttdPilih = new Set();
     S.ttdManual = false;
@@ -6965,7 +6968,7 @@
           : "")
       : "";
     return (
-      `<div class="bd-f${v.trim() ? " beres" : ""}${panjang ? " panjang" : ""}${tanda}" data-f="${b.kode}"><div class="bd-fh"><label for="bd-i${b.kode}" title="${esc(namaIsian(b))}">${esc(namaIsian(b))}</label>${ikonSumber(b.kode, namaIsian(b), ketItem(b))}${tombolRiwayat(b)}${tombolPustaka(b, panjang || lebarSelalu)}</div>${muncul}${kepingKet(b)}${riwayatTanpaKartu(b)}` +
+      `<div class="bd-f${v.trim() ? " beres" : ""}${panjang ? " panjang" : ""}${tanda}" data-f="${b.kode}"><div class="bd-fh"><label for="bd-i${b.kode}" title="${esc(namaIsian(b))}">${esc(namaIsian(b))}</label>${ikonSumber(b.kode, namaIsian(b), ketItem(b))}${tombolRiwayat(b)}${tombolPustaka(b, panjang || lebarSelalu)}${tombolLihat(b.kode)}</div>${muncul}${kepingKet(b)}${riwayatTanpaKartu(b)}` +
       isian +
       panelPustaka(b, v) +
       sandingKet(b) +
@@ -7011,7 +7014,7 @@
         : `<p class="bd-catat" role="status">${esc(oto.pesan)}</p>`
       : "";
     return (
-      `<div class="bd-f lebar" data-f="${b.kode}"><div class="bd-fh"><label>${esc(b.nama)}</label>${ikonSumber(`bukti:${w}`, b.nama, ketItem(b))}<span class="bd-status" data-status="${b.kode}">${esc(teksStatus(S.tersimpan[b.kode] || ""))}</span></div>${keteranganOto}` +
+      `<div class="bd-f lebar" data-f="${b.kode}"><div class="bd-fh"><label>${esc(b.nama)}</label>${ikonSumber(`bukti:${w}`, b.nama, ketItem(b))}<span class="bd-status" data-status="${b.kode}">${esc(teksStatus(S.tersimpan[b.kode] || ""))}</span>${tombolLihat(b.kode)}</div>${keteranganOto}` +
       rows
         .map((r, i) => {
           const kode = `${w}.${i + 1}`;
@@ -8473,6 +8476,7 @@
   function tandaiKotor() {
     S.versiIsian += 1;
     if (S.prat) S.prat.kotor = true;
+    jadwalkanLihat();
     perbaruiKetSiap();
     jadwalkanTitikVariabel();
   }
@@ -8625,7 +8629,7 @@
    * Naskah dari mesin ALETA -> { ok:true, h:{ rtf, periksa } } atau { ok:false, d, e } (d = jawaban dengan galat, e = galat jaringan/rute).
    * Hak ditolak (401/403) dilempar apa adanya: tidak boleh dilewati lewat ABT.
    */
-  async function naskahDariMesinAleta() {
+  async function naskahDariMesinAleta(opsi) {
     const b = S.blangko;
     let d;
     try {
@@ -8634,7 +8638,7 @@
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ perkaraId: perkaraId(), sidangKe: Number(sidangUrutan()) || 0, folder: b.folder || "", berkas: b.berkas, sebagaiPeran: sebagaiPeranMinta() }),
+          body: JSON.stringify({ perkaraId: perkaraId(), sidangKe: Number(sidangUrutan()) || 0, folder: b.folder || "", berkas: b.berkas, sebagaiPeran: sebagaiPeranMinta(), ...(opsi && opsi.tandaLihat ? { tandaLihat: true } : {}) }),
           batasMs: BATAS_PRATINJAU_ALETA_MS,
         },
         "Menyusun pratinjau"
@@ -8705,6 +8709,239 @@
     pr.memuat = false;
     if (S.prat === pr) renderPratinjau();
   }
+  // ────────────────────────────────────────────────────────────────────
+  // TOMBOL LIHAT DI NASKAH (5 Nov 2026, keputusan 201-203; sementara hanya Super Admin)
+  // ────────────────────────────────────────────────────────────────────
+  // Mesin pratinjau di bot mengapit hasil tiap isian dengan penanda; di sini penanda itu menjadi blok dan daftar temuan per isian.
+  // Naskah berpenanda hanya menjadi HTML di layar: tidak pernah disimpan di S.prat.rtf, jadi Cetak dan semua keluaran resmi tidak mengenalnya.
+  // Berikutnya dan Sebelumnya hanya berpindah di layar, tanpa permintaan ke server.
+  const POLA_LIHAT = /~~ALV:(\d{3,5})~~|~~\/ALV~~/g;
+  const JEDA_LIHAT_MS = 2500;
+  const UMUR_LIHAT_MS = 15000;
+  const JUDUL_BAGIAN = [["DUDUKPERKARA", "Duduk perkara"], ["PERTIMBANGANHUKUM", "Pertimbangan"], ["MENGADILI", "Amar"], ["MENETAPKAN", "Amar"]];
+  const bolehLihat = () => {
+    const a = api();
+    return Boolean(a && typeof a.superAdmin === "function" && a.superAdmin() && !tes());
+  };
+  function pembuatPenandaLihat(temuan) {
+    const dasar = pembuatPenanda();
+    const tumpuk = [];
+    const hitung = new Map();
+    const bungkus = (r, t) => {
+      if (!t) return "";
+      const isi = dasar({ ...r, t });
+      if (!tumpuk.length) return isi;
+      if (t.trim()) {
+        for (const x of tumpuk) {
+          if (!temuan[x.kode]) temuan[x.kode] = [];
+          if (!temuan[x.kode].includes(x.ke)) temuan[x.kode].push(x.ke);
+        }
+      }
+      return `<span class="bd-lh${t.trim() === "..." ? " kos" : ""}" data-lh="${tumpuk.map((x) => `${x.kode}.${x.ke}`).join(" ")}">${isi}</span>`;
+    };
+    return (r) => {
+      const t = String(r.t || "");
+      let pos = 0;
+      let keluar = "";
+      for (const m of t.matchAll(POLA_LIHAT)) {
+        keluar += bungkus(r, t.slice(pos, m.index));
+        pos = m.index + m[0].length;
+        if (m[1]) {
+          const ke = (hitung.get(m[1]) || 0) + 1;
+          hitung.set(m[1], ke);
+          tumpuk.push({ kode: m[1], ke });
+        } else tumpuk.pop();
+      }
+      return keluar + bungkus(r, t.slice(pos));
+    };
+  }
+  const petaLihatBerlaku = () => (S.lihat && S.lihat.blangko === S.blangko && S.lihat.html ? S.lihat : null);
+  const temuanLihat = (kode) => {
+    const L = petaLihatBerlaku();
+    return (L && L.temuan[kode]) || [];
+  };
+  const labelLihat = (kode) => (petaLihatBerlaku() ? `Lihat · ${temuanLihat(kode).length}` : "Lihat");
+  function tombolLihat(kode) {
+    if (!bolehLihat()) return "";
+    return `<button type="button" class="bd-btn kecil bd-lihat" data-bd2="lihat" data-kode="${esc(String(kode))}" title="Lihat hasil isian ini di naskah">${esc(labelLihat(kode))}</button>`;
+  }
+  function segarkanTombolLihat() {
+    if (!wadah.akar) return;
+    for (const b of cariSemua('[data-bd2="lihat"]', wadah.akar)) b.textContent = labelLihat(b.getAttribute("data-kode"));
+  }
+  let jamLihat = null;
+  function jadwalkanLihat(ms) {
+    if (!bolehLihat()) return;
+    clearTimeout(jamLihat);
+    jamLihat = setTimeout(() => void muatPetaLihat(false), ms === undefined ? JEDA_LIHAT_MS : ms);
+  }
+  function muatPetaLihat(paksa) {
+    if (!bolehLihat() || !S.blangko || S.blangko.khusus || !S.pk) return Promise.resolve(null);
+    if (S.blangko.hak !== "ok") {
+      if (S.blangko.hak === "periksa") jadwalkanLihat(1500);
+      return Promise.resolve(null);
+    }
+    const blangko = S.blangko;
+    const versi = S.versiIsian;
+    const L = S.lihat;
+    if (!paksa && L && L.blangko === blangko && L.versi === versi && (L.html || L.galat)) return Promise.resolve(L);
+    if (S.lihatJalan && S.lihatJalan.blangko === blangko && S.lihatJalan.versi === versi) return S.lihatJalan.janji;
+    const janji = (async () => {
+      let hasil;
+      try {
+        hasil = await naskahDariMesinAleta({ tandaLihat: true });
+      } catch (e) {
+        hasil = { ok: false, d: null, e };
+      }
+      if (S.blangko !== blangko) return null;
+      if (hasil.ok) {
+        const temuan = {};
+        const html = rtfKeHtml(hasil.h.rtf, pembuatPenandaLihat(temuan));
+        S.lihat = { blangko, versi, html, temuan, penanda: cekPenandaRtf(hasil.h.rtf), galat: "", saat: Date.now() };
+      } else {
+        S.lihat = { blangko, versi, html: "", temuan: {}, penanda: [], galat: alasanPratinjauCepat(hasil.d, hasil.e), saat: Date.now() };
+      }
+      segarkanTombolLihat();
+      if (S.lihatNav) {
+        if (S.lihat.html) tampilkanNaskahLihat(false);
+        else renderPratinjau();
+      }
+      if (S.versiIsian !== versi) jadwalkanLihat();
+      return S.lihat;
+    })();
+    S.lihatJalan = { blangko, versi, janji };
+    return janji.finally(() => {
+      if (S.lihatJalan && S.lihatJalan.janji === janji) S.lihatJalan = null;
+    });
+  }
+  function tampilkanNaskahLihat(gulir) {
+    const L = petaLihatBerlaku();
+    const pr = S.prat;
+    if (!L || !pr || pr.suntingPenuh) return;
+    pr.html = L.html;
+    pr.versiHtml = L.versi;
+    pr.penandaPrat = L.penanda;
+    pr.galat = "";
+    pr.memuat = false;
+    renderPratinjau();
+    if (gulir) gulirKeLihat();
+  }
+  const namaIsianLihat = (kode) => {
+    const lab = wadah.akar ? cari(`.bd-f[data-f="${kode}"] label`, wadah.akar) : null;
+    return lab ? lab.textContent.trim() : "Isian";
+  };
+  function bilahLihat() {
+    const n = S.lihatNav;
+    if (!n) return "";
+    const jumlah = temuanLihat(n.kode).length;
+    const ragu = S.lihat && S.lihat.blangko === S.blangko && S.lihat.galat;
+    const adaPeta = Boolean(petaLihatBerlaku());
+    const hit = !adaPeta ? (ragu ? "" : "Menghitung…") : jumlah ? "" : "0 temuan";
+    const pesan = ragu
+      ? `Jumlah temuan belum tersedia untuk naskah ini (${ragu}).`
+      : adaPeta && !jumlah
+        ? "Tidak tertulis langsung di naskah ini. Isian ini mungkin hanya dibaca kalimat otomatis seperti amar, atau bagiannya tidak berlaku untuk perkara ini."
+        : "";
+    const mati = jumlah < 2 ? " disabled" : "";
+    return (
+      `<div class="bd-lihatbilah" id="bd-lihatbilah" role="status"><b>${esc(namaIsianLihat(n.kode))}</b><span class="hit" id="bd-lihathit">${esc(hit)}</span><span class="bag" id="bd-lihatbag"></span>` +
+      `<span class="kanan"><button type="button" class="bd-btn kecil" data-bd2="lihatbalik"${mati}>‹ Sebelumnya</button><button type="button" class="bd-btn kecil utama" data-bd2="lihatlanjut"${mati}>Berikutnya ›</button>` +
+      `<button type="button" class="bd-btn kecil" data-bd2="lihatkembali">Kembali ke isian</button><button type="button" class="bd-btn kecil" data-bd2="lihattutup">Tutup</button></span>` +
+      `<span class="pesan" id="bd-lihatpesan"${pesan ? "" : " hidden"}>${esc(pesan)}</span></div>`
+    );
+  }
+  function bagianNaskah(kertas, el) {
+    let kini = "";
+    let adaJudul = false;
+    for (const p of cariSemua("p", kertas)) {
+      const teks = (p.textContent || "").replace(/\s+/g, "").toUpperCase();
+      const j = teks.length <= 40 ? JUDUL_BAGIAN.find((x) => teks.startsWith(x[0])) : null;
+      if (j) {
+        adaJudul = true;
+        if (!p.contains(el) && p.compareDocumentPosition(el) & 4) kini = j[1];
+      }
+    }
+    return kini || (adaJudul ? "Kepala" : "");
+  }
+  function terapkanLihat() {
+    const w = wadah.pratinjau;
+    const kertas = w ? cari("#bd-kertas", w) : null;
+    if (!kertas) return null;
+    for (const e of cariSemua(".bd-lh.nyala", kertas)) e.classList.remove("nyala", "aktif");
+    const n = S.lihatNav;
+    if (!n) return null;
+    const daftar = temuanLihat(n.kode);
+    if (!daftar.length) return null;
+    n.i = ((n.i % daftar.length) + daftar.length) % daftar.length;
+    for (const ke of daftar) {
+      const bagian = cariSemua(`.bd-lh[data-lh~="${n.kode}.${ke}"]`, kertas);
+      for (const e of bagian) e.classList.add("nyala");
+      if (ke === daftar[n.i]) for (const e of bagian) e.classList.add("aktif");
+    }
+    const aktif = cari(`.bd-lh[data-lh~="${n.kode}.${daftar[n.i]}"]`, kertas);
+    const hit = cari("#bd-lihathit", w);
+    if (hit) hit.textContent = `${n.i + 1} dari ${daftar.length}`;
+    const bag = cari("#bd-lihatbag", w);
+    if (bag && aktif) bag.textContent = bagianNaskah(kertas, aktif);
+    return aktif;
+  }
+  function gulirKeLihat() {
+    const aktif = terapkanLihat();
+    const tujuan = aktif || (wadah.pratinjau ? cari("#bd-lihatbilah", wadah.pratinjau) : null) || wadah.pratinjau;
+    if (tujuan && typeof tujuan.scrollIntoView === "function") tujuan.scrollIntoView({ block: "center" });
+    const lanjut = wadah.pratinjau ? cari('[data-bd2="lihatlanjut"]:not([disabled]), [data-bd2="lihatkembali"]', wadah.pratinjau) : null;
+    if (lanjut && typeof lanjut.focus === "function") lanjut.focus({ preventScroll: true });
+  }
+  async function lihatBuka(kode) {
+    const pr = S.prat;
+    if (!pr) return;
+    if (pr.suntingPenuh) return toast("Simpan atau batalkan sunting naskah dulu.");
+    S.lihatNav = { kode, i: 0 };
+    pr.terbuka = true;
+    const L = petaLihatBerlaku();
+    const segar = L && L.versi === S.versiIsian && Date.now() - L.saat < UMUR_LIHAT_MS;
+    if (L) tampilkanNaskahLihat(true);
+    else {
+      pr.memuat = true;
+      renderPratinjau();
+      gulirKeLihat();
+    }
+    if (segar) return;
+    // Isian yang baru disimpan ikut dihitung: naskah disusun ulang dan bilah tetap pada isian yang sama.
+    try {
+      await pastikanBuktiTertulis();
+    } catch {
+      /* bukti gagal ditulis: naskah tetap ditampilkan dari yang tersimpan */
+    }
+    const H = await muatPetaLihat(true);
+    if (!S.lihatNav || S.lihatNav.kode !== kode || S.prat !== pr) return;
+    pr.memuat = false;
+    if (H && H.html) {
+      if (!L) gulirKeLihat();
+      return;
+    }
+    renderPratinjau();
+    if (!pr.html) void muatPratinjau(false);
+  }
+  function lihatPindah(arah) {
+    if (!S.lihatNav) return;
+    S.lihatNav.i += arah;
+    const aktif = terapkanLihat();
+    if (aktif && typeof aktif.scrollIntoView === "function") aktif.scrollIntoView({ block: "center" });
+  }
+  function lihatTutup() {
+    S.lihatNav = null;
+    renderPratinjau();
+  }
+  function lihatKembali() {
+    const n = S.lihatNav;
+    const f = n && wadah.akar ? cari(`.bd-f[data-f="${n.kode}"]`, wadah.akar) : null;
+    if (!f) return;
+    if (typeof f.scrollIntoView === "function") f.scrollIntoView({ block: "center" });
+    const kotak = f.querySelector("input, textarea, select");
+    if (kotak && typeof kotak.focus === "function") kotak.focus({ preventScroll: true });
+  }
+
   function renderPratinjau() {
     const w = wadah.pratinjau;
     if (!w) return;
@@ -8730,10 +8967,12 @@
               (bolehTulis() ? (sunting ? `<button type="button" class="bd-btn kecil utama" data-bd2="simpansunting">Simpan ke ABT</button><button type="button" class="bd-btn kecil" data-bd2="batalsunting">Batal</button>` : `<button type="button" class="bd-btn kecil" data-bd2="suntingpenuh">Sunting pratinjau</button>`) : "") +
               `<button type="button" class="bd-btn kecil" data-bd2="muatprat">${tes() ? "Muat ulang dengan ketikan terbaru" : "Muat ulang"}</button>` +
               (penandaPratinjau(p).length ? `<span class="bd-chip belum">${penandaPratinjau(p).length} penanda belum terbaca: ${esc(penandaPratinjau(p).map((k) => `#${k}#`).join(" "))}</span>` : "") +
-              `</div><div class="bd-kertas${sunting ? " edit" : ""}" id="bd-kertas">${p.html}</div>`
+              `</div>${sunting ? "" : bilahLihat()}<div class="bd-kertas${sunting ? " edit" : ""}" id="bd-kertas">${p.html}</div>`
             : "") +
+          (!p.html && !sunting ? bilahLihat() : "") +
           `</div>`
         : "");
+    if (!sunting) terapkanLihat();
     if (sunting) {
       for (const el of cariSemua("#bd-kertas .bd-v[data-kode]", w)) {
         if (el.querySelector("input, textarea")) continue;
@@ -10742,6 +10981,11 @@
       return void salinTeksJm(o.teks).then((ok) => toast(ok ? "Teks tersalin - tempel di penyunting lalu periksa." : "Gagal menyalin - pilih teks lalu Ctrl+C."));
     }
     if (kode === "simpantj") return void simpanTj(String(aksi.getAttribute("data-kunci") || "").split("|").filter(Boolean));
+    if (kode === "lihat") return void lihatBuka(String(aksi.getAttribute("data-kode") || ""));
+    if (kode === "lihatlanjut") return lihatPindah(1);
+    if (kode === "lihatbalik") return lihatPindah(-1);
+    if (kode === "lihatkembali") return lihatKembali();
+    if (kode === "lihattutup") return lihatTutup();
     if (kode === "bukaprat") {
       S.prat.terbuka = !S.prat.terbuka;
       renderPratinjau();
@@ -11492,6 +11736,17 @@
   }
   function saatTombol(e) {
     const t = e.target;
+    if (S.lihatNav && t && typeof t.closest === "function") {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        return lihatTutup();
+      }
+      const diKertas = t.closest("#bd-kertas");
+      if (e.key === "Enter" && ((e.shiftKey && (diKertas || t.closest("#bd-lihatbilah"))) || (diKertas && t.id === "bd-kertas"))) {
+        e.preventDefault();
+        return lihatPindah(e.shiftKey ? -1 : 1);
+      }
+    }
     // Kotak blangko di langkah 2: Enter atau Spasi membuka pemilih blangko (sama dengan klik dua kali).
     if (t && t.id === "bd-blringkas" && (e.key === "Enter" || e.key === " ")) {
       e.preventDefault();
@@ -11658,6 +11913,9 @@
     S.semua = null;
     S.semuaBuka = false;
     S.prat = { terbuka: false, memuat: false, rtf: null, html: "", galat: "", suntingPenuh: false, kotor: true, penanda: [] };
+    S.lihat = null;
+    S.lihatNav = null;
+    jadwalkanLihat();
     S.peringat = false;
     S.ttdPilih = new Set();
     S.log = [];
@@ -12595,6 +12853,13 @@
       tuntutan: S.susunan ? keadaanTuntutan().map((t) => ({ pemicu: t.pemicu, status: t.status, jabatan: t.jabatan, dipilih: t.dipilih })) : [],
       tandaKosong: Array.from(S.tandaKosong),
     }),
+    lihatMurni: {
+      rtfKeHtmlLihat: (rtf) => {
+        const temuan = {};
+        const html = rtfKeHtml(rtf, pembuatPenandaLihat(temuan));
+        return { html, temuan };
+      },
+    },
     murni: { sidikTeks, awalanBawaanEl, permintaanAbtAman, pilihanTunggalMurni, kerangkaBawaanMurni, daftarPilihanMurni, keputusanDipilihMurni, keputusanExOfficioMurni, bersihkanHeaderPenanda, bersihkanPenutupSaksiRtf, bersihkanPenutupTabelRtf, perkiraanSidang, keadaanBerlakuMurni, golonganIsianMurni, tuntutanAktifMurni, uraiKutipanTuntutan, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, susunTeksBukti, kalimatBuktiEl, pisahBuktiElektronik, butirElDariTeks, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranTtdBerlaku, berhakCap, UKURAN_TTD_CAP_BAWAAN, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, normalAbt, hurufAlasanDari, nilaiSimpan8503, jenisKelompok, namaTampil, adalahBlangkoIkrar, uraikanIkrar, kumpulkanIkrar, kumpulkanSela, adalahBlangkoSela, statusSela, saranIkrarCadangan, saranDariPortal, gabungBuktiBaku, jenisBuktiBaku, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel, ramahkanAlasan, pilihVarianSaksi, putuskanHurufAlasan },
   };
   globalThis.aletaBlangkoDerryIsian = apiIsian;

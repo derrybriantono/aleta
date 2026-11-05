@@ -368,7 +368,7 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar .bd-pana { color: var(--muted); }
 #aleta-bd-akar .bd-pisi { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
 #aleta-bd-akar .bd-petunjukedit { font-size: 12.8px; color: var(--muted); margin: 0; }
-#aleta-bd-akar .bd-kertas { --paper: #fffdf7; --ink: #1b1b1b; --isi: #e8f3ff; --anda: #d9f5e2; --kosong: #ffe3e3; background: var(--paper); color: var(--ink); font-family: "Times New Roman", "Bookman Old Style", serif; font-size: 13.5px; line-height: 1.55; border-radius: 4px; padding: 26px 32px; overflow-wrap: anywhere; max-width: 100%; overflow-x: auto; }
+#aleta-bd-akar .bd-kertas { --paper: #fffdf7; --ink: #1b1b1b; --isi: #e8f3ff; --anda: #d9f5e2; --kosong: #ffe3e3; --lh: #fbe7a6; --lh-kos: #ffc9c3; --lh-aktif: #f0a23a; --lh-garis: #a85a00; --lh-kos-aktif: #e5534b; --lh-kos-garis: #8a1c13; --lh-kos-tulis: #fff; background: var(--paper); color: var(--ink); font-family: "Times New Roman", "Bookman Old Style", serif; font-size: 13.5px; line-height: 1.55; border-radius: 4px; padding: 26px 32px; overflow-wrap: anywhere; max-width: 100%; overflow-x: auto; }
 #aleta-bd-akar .bd-kertas p { margin: 0 0 8px; color: var(--ink); text-align: left; }
 #aleta-bd-akar .bd-kertas p.qc, #aleta-bd-akar .bd-kertas td.qc { text-align: center; }
 #aleta-bd-akar .bd-kertas p.qr, #aleta-bd-akar .bd-kertas td.qr { text-align: right; }
@@ -943,3 +943,16 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar .bd-skkeadaanlipat .bd-skubah.buka, #aleta-bd-akar .bd-skkeadaanlipat[open] .bd-skubah.tutup { display: none; }
 #aleta-bd-akar .bd-skkeadaanlipat[open] .bd-skubah.buka { display: inline; }
 #aleta-bd-akar .bd-skkeadaanisi { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+
+/* Tombol Lihat di naskah (5 Nov 2026) */
+#aleta-bd-akar .bd-lihat { margin-left: auto; white-space: nowrap; flex: none; }
+#aleta-bd-akar .bd-lihatbilah { position: sticky; top: 56px; z-index: 3; display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; border: 2px solid var(--accent); background: var(--accentbg); border-radius: 10px; padding: 6px 10px; }
+#aleta-bd-akar .bd-lihatbilah .hit { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--accent); white-space: nowrap; }
+#aleta-bd-akar .bd-lihatbilah .bag { color: var(--muted); font-size: 12.8px; }
+#aleta-bd-akar .bd-lihatbilah .kanan { margin-left: auto; display: flex; flex-wrap: wrap; gap: 6px; }
+#aleta-bd-akar .bd-lihatbilah .pesan { flex-basis: 100%; font-size: 13px; color: var(--muted); }
+#aleta-bd-akar .bd-kertas .bd-lh.nyala { background: var(--lh); border-radius: 2px; }
+#aleta-bd-akar .bd-kertas .bd-lh.nyala .bd-v { background: transparent; }
+#aleta-bd-akar .bd-kertas .bd-lh.nyala.kos { background: var(--lh-kos); }
+#aleta-bd-akar .bd-kertas .bd-lh.aktif { background: var(--lh-aktif); color: var(--ink); outline: 2px solid var(--lh-garis); outline-offset: 1px; }
+#aleta-bd-akar .bd-kertas .bd-lh.aktif.kos { background: var(--lh-kos-aktif); color: var(--lh-kos-tulis); outline-color: var(--lh-kos-garis); }

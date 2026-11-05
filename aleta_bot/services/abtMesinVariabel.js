@@ -1017,6 +1017,9 @@ function buatMesin(p) {
     const sorot = siapkanSorot(rtf);
     rtf = sorot.rtf;
     const tandaKosong = sorot.indeks === null ? "..." : `{\\highlight${sorot.indeks} ...}`;
+    // Tombol Lihat di naskah (5 Nov 2026): hasil tiap isian diapit penanda ASCII agar panel dapat menghitung temuannya.
+    // Hanya atas permintaan rute pratinjau untuk Super Admin; naskah ini tidak pernah menjadi keluaran cetak.
+    const apitLihat = opsi.tandaLihat === true ? (n, isi) => `~~ALV:${n}~~${isi}~~/ALV~~` : (_n, isi) => isi;
 
     const terisi = new Set();
     const kosong = new Map();
@@ -1059,7 +1062,7 @@ function buatMesin(p) {
         if (v.asal === "kosong") {
           if (!kosong.has(n)) kosong.set(n, { noVar: n, nama: v.nama || "", sebab: v.sebab || "", status: v.status || "kosong" });
         } else terisi.add(n);
-        return v.rtf;
+        return apitLihat(n, v.rtf);
       });
     }
     // Penjaga terakhir: tidak satu pun penanda mentah boleh keluar.
