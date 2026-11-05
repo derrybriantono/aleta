@@ -7,6 +7,8 @@ import {
   bandingAlinea,
   bandingRingkasPdf,
   golonganBeda,
+  golongkanUlang,
+  KELAS_DIJELASKAN,
   kertasDariRtf,
   TOLERANSI_LETAK_MM,
 } from "@/lib/aleta-abt-naskah";
@@ -45,6 +47,43 @@ describe("banding alinea", () => {
     expect(golonganBeda("Nafkah", "Nafkah ...")).toBe("tanda-kosong");
     expect(golonganBeda("Nafkah", "Nafkah Rp 1")).toBe("isi");
     expect(golonganBeda("a ...", "b ...")).toBe("isi");
+  });
+
+  it("ABT menelan satu kata dan satu paragraf (\par menempel): dikenali persis dan tetap dihitung sebagai beda yang dijelaskan", () => {
+    const abt = ["Awal", "Majelis menyatakan prodeo atau cuma-cuma; , demi kepentingan pemeriksaan", "Akhir"];
+    const aleta = ["Awal", "Majelis menyatakan prodeo atau cuma-cuma;", "Bahwa, demi kepentingan pemeriksaan", "Akhir"];
+    const h = bandingAlinea(abt, aleta);
+    expect(h.perKelas["par-menempel"]).toBe(2);
+    expect(h.perKelas.isi + h.perKelas["hanya-aleta"]).toBe(0);
+    expect(h.identik).toBe(2);
+    expect(h.dijelaskan).toBe(2);
+    expect(h.identik + h.beda.length).toBe(h.total);
+    expect(KELAS_DIJELASKAN["par-menempel"] && KELAS_DIJELASKAN["tanda-kosong"] && KELAS_DIJELASKAN["tata-letak"]).toBe(true);
+    expect(KELAS_DIJELASKAN.isi || KELAS_DIJELASKAN["hanya-abt"] || KELAS_DIJELASKAN["hanya-aleta"] || KELAS_DIJELASKAN["tanda-baca"]).toBe(false);
+  });
+
+  it("tanggal nol: ABT mencetak 00 0000, ALETA kosong (keputusan pemilik) -> dijelaskan; selisih lain tetap isi", () => {
+    expect(golonganBeda("tanggal lahir , 00 0000, agama Islam", "tanggal lahir , , agama Islam")).toBe("tanggal-nol");
+    expect(golonganBeda("tanggal lahir , 00 0000, agama Islam", "tanggal lahir , 5 Mei 2000, agama Islam")).toBe("isi");
+    expect(KELAS_DIJELASKAN["tanggal-nol"]).toBe(true);
+  });
+
+  it("paragraf yang terpecah tetapi isinya tidak cocok tidak dianggap dijelaskan", () => {
+    const h = bandingAlinea(["Awal; , demi A", "Akhir"], ["Awal;", "Bahwa, demi B", "Akhir"]);
+    expect(h.perKelas["par-menempel"]).toBe(0);
+    expect(h.dijelaskan).toBe(0);
+    expect(h.perKelas.isi).toBe(1);
+    expect(h.perKelas["hanya-aleta"]).toBe(1);
+  });
+
+  it("golongkanUlang menghitung ulang daftar beda tersimpan", () => {
+    const beda = [
+      { kelas: "isi" as const, nomorAbt: 2, nomorAleta: 2, abt: "x; , lanjut", aleta: "x;" },
+      { kelas: "hanya-aleta" as const, nomorAbt: 0, nomorAleta: 3, abt: "", aleta: "Bahwa, lanjut" },
+    ];
+    const p = golongkanUlang(beda);
+    expect(p["par-menempel"]).toBe(2);
+    expect(p.isi).toBe(0);
   });
 
   it("alinea yang hanya ada di satu sisi", () => {
@@ -114,7 +153,7 @@ describe("laporan dari skrip", () => {
       ringkas: [{ jenis: "Cerai Gugat", naskah: 2, alinea: 10, identik: 9, persen: 90, naskahIdentik: 1, rahasia: "nama pihak" }],
       beda: [{ jenis: "Cerai Gugat", blangko: "X", perkara: "p1", kelas: "aneh", nomorAbt: 3, nomorAleta: 3, isian: ["PIHAK I"], abt: "teks pihak" }],
     });
-    expect(l?.ringkas[0]).toEqual({ jenis: "Cerai Gugat", naskah: 2, alinea: 10, identik: 9, persen: 90, naskahIdentik: 1 });
+    expect(l?.ringkas[0]).toEqual({ jenis: "Cerai Gugat", naskah: 2, alinea: 10, identik: 9, persen: 90, naskahIdentik: 1, dijelaskan: 0, belumDijelaskan: 0 });
     expect(l?.beda[0]).toEqual({ jenis: "Cerai Gugat", blangko: "X", perkara: "p1", kelas: "isi", nomorAbt: 3, nomorAleta: 3, isian: ["PIHAK I"] });
     expect(JSON.stringify(l)).not.toContain("teks pihak");
   });

@@ -22,7 +22,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { alineaDariRtf, bandingAlinea, golonganBeda, kertasDariRtf, type BedaAlinea, type KelasBeda } from "@/lib/aleta-abt-naskah";
+import { KELAS_DIJELASKAN, alineaDariRtf, bandingAlinea, golongkanUlang, kertasDariRtf, type BedaAlinea, type KelasBeda } from "@/lib/aleta-abt-naskah";
 import { uraiRtf } from "@/lib/aleta-abt-rtf";
 
 const SINI = path.dirname(fileURLToPath(import.meta.url));
@@ -63,7 +63,7 @@ const berkasPerkara = () => path.join(KELUAR, "perkara.tsv");
 const berkasBlangko = () => path.join(KELUAR, "blangko.tsv");
 const berkasKode = () => path.join(KELUAR, "kode-naskah.txt");
 const dirMentah = () => path.join(KELUAR, "abt-mentah");
-const dirHasil = () => path.join(KELUAR, "hasil");
+const dirHasil = () => path.join(KELUAR, process.env.HASIL || "hasil");
 
 type Blangko = { kelompok: string; jenis: string; folder: string; nama: string };
 const daftarBlangko = (): Blangko[] => baris(berkasBlangko()).map(([kelompok, jenis, folder, nama]) => ({ kelompok, jenis, folder, nama }));
@@ -264,7 +264,7 @@ async function banding([daftar]: string[]) {
     const mesin = mesinMod.buatMesin({ kueri, skemaAbt: ABT, umurKatalogMs: 3600 * 1000, batasKueriMs: 60000, jalurAleta: { pustaka: jalur.pustaka, alias: jalur.alias } });
     let dingin = true;
     let n = 0;
-    for (const b of blangko.filter((x) => x.jenis === jenis)) {
+    for (const b of blangko.filter((x) => x.jenis === jenis && (!process.env.KELOMPOK_UJI || x.kelompok === process.env.KELOMPOK_UJI))) {
       const kunci = `${b.folder}/${b.nama}`;
       if (sudah.has(kunci)) {
         dingin = false;
@@ -458,15 +458,9 @@ function laporan() {
   for (const f of fs.existsSync(dirHasil()) ? fs.readdirSync(dirHasil()) : []) {
     for (const l of baca(path.join(dirHasil(), f)).split("\n").filter(Boolean)) semua.push(JSON.parse(l) as HasilNaskah);
   }
-  const perKel: Record<KelasBeda, number> = { "tata-letak": 0, "tanda-baca": 0, "tanda-kosong": 0, isi: 0, "hanya-abt": 0, "hanya-aleta": 0 };
+  const perKel = Object.fromEntries(Object.keys(KELAS_DIJELASKAN).map((k) => [k, 0])) as Record<KelasBeda, number>;
   // Penggolongan dihitung ulang dari teks tersimpan dengan aturan terkini (hasil lama mungkin memakai penggolongan yang lebih kasar).
-  for (const h of semua) {
-    h.perKelas = { "tata-letak": 0, "tanda-baca": 0, "tanda-kosong": 0, isi: 0, "hanya-abt": 0, "hanya-aleta": 0 };
-    for (const d of h.beda) {
-      d.kelas = golonganBeda(d.abt, d.aleta);
-      h.perKelas[d.kelas] += 1;
-    }
-  }
+  for (const h of semua) h.perKelas = golongkanUlang(h.beda);
   const jenisKelompok = new Map<string, HasilNaskah[]>();
   for (const h of semua) {
     const k = `${h.jenis} - ${h.kelompok === "BAS" ? "berita acara sidang" : "putusan"}`;
@@ -477,7 +471,10 @@ function laporan() {
   const ringkas = [...jenisKelompok.entries()].sort().map(([jenis, hs]) => {
     const alinea = hs.reduce((a, h) => a + h.total, 0);
     const identik = hs.reduce((a, h) => a + h.identik, 0);
-    return { jenis, naskah: hs.length, alinea, identik, persen: alinea ? (identik / alinea) * 100 : 100, naskahIdentik: hs.filter((h) => h.identik === h.total).length };
+    const bedaSemua = hs.flatMap((h) => h.beda);
+    const dijelaskan = bedaSemua.filter((d) => KELAS_DIJELASKAN[d.kelas]).length;
+    const belumDijelaskan = bedaSemua.length - dijelaskan;
+    return { jenis, naskah: hs.length, alinea, identik, persen: alinea ? (identik / alinea) * 100 : 100, naskahIdentik: hs.filter((h) => h.identik === h.total).length, dijelaskan, belumDijelaskan };
   });
   const waktu = semua.map((h) => h.waktu.isiMs + h.waktu.uraiMs);
   const dingin = semua.filter((h) => h.waktu.dingin).map((h) => h.waktu.isiMs + h.waktu.uraiMs);
@@ -517,13 +514,13 @@ function laporan() {
     belumTerukur,
     waktu: waktuSepi() ?? { jumlah: semua.length, rata: semua.length ? waktu.reduce((a, b) => a + b, 0) / semua.length : 0, tengah: median(waktu), terlama: Math.max(0, ...waktu), tempat: `laptop pengembangan (${os.cpus().length} inti), sambil 4 proses lain berjalan` },
   };
-  tulis(path.join(KELUAR, "laporan-t5.json"), JSON.stringify(laporanJson, null, 1));
+  tulis(path.join(KELUAR, process.env.HASIL ? `laporan-t5-${process.env.HASIL}.json` : "laporan-t5.json"), JSON.stringify(laporanJson, null, 1));
   const teks: string[] = [];
   teks.push("PEMBANDING NASKAH UTUH TAHAP 5 - ALETA ABT lawan ABT (memuat nama blangko; TANPA data pihak)");
   teks.push(`Dibuat ${laporanJson.dibuat}. Salinan uji ${SIPP} + ${ABT}.`);
   teks.push(`Naskah dibandingkan: ${semua.length} dari ${blangkoUnik.size} blangko x ${perkaraUnik.size} perkara. Naskah dengan penanda tanpa nilai ABT: ${tanpaNilai}.`);
   teks.push("");
-  for (const r of ringkas) teks.push(`${r.jenis}: ${r.naskah} naskah, ${r.identik} dari ${r.alinea} alinea identik (${r.persen.toFixed(3)}%), ${r.naskahIdentik} naskah identik seluruhnya`);
+  for (const r of ringkas) teks.push(`${r.jenis}: ${r.naskah} naskah, ${r.alinea} alinea: ${r.identik} identik (${r.persen.toFixed(3)}%), ${r.dijelaskan} beda dijelaskan, ${r.belumDijelaskan} beda belum dijelaskan; identik + dijelaskan ${((100 * (r.identik + r.dijelaskan)) / r.alinea).toFixed(3)}%; ${r.naskahIdentik} naskah identik seluruhnya`);
   teks.push("");
   teks.push(`Beda per kelas (alinea): ${(Object.entries(perKel) as Array<[string, number]>).map(([k, v]) => `${k} ${v}`).join(", ")}`);
   teks.push(`Waktu menyusun ALETA (mesin + penguraian) di laptop, ms: rata ${laporanJson.waktu.rata.toFixed(0)}, tengah ${laporanJson.waktu.tengah}, terlama ${laporanJson.waktu.terlama}; naskah pertama per perkara (dingin) tengah ${median(dingin)}, berikutnya (hangat) tengah ${median(hangat)}`);
@@ -533,7 +530,7 @@ function laporan() {
   teks.push("");
   teks.push("Belum terukur:");
   for (const t of belumTerukur) teks.push("  - " + t);
-  tulis(path.join(KELUAR, "LAPORAN-T5.txt"), teks.join("\n") + "\n");
+  tulis(path.join(KELUAR, process.env.HASIL ? `LAPORAN-T5-${process.env.HASIL}.txt` : "LAPORAN-T5.txt"), teks.join("\n") + "\n");
   console.log(teks.slice(0, 14).join("\n"));
 }
 

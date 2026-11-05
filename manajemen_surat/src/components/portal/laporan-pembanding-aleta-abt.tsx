@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { KELAS_BEDA_NAMA, bacaLaporanBanding, type KelasBeda, type LaporanBanding } from "@/lib/aleta-abt-naskah";
+import { KELAS_BEDA_NAMA, KELAS_DIJELASKAN, bacaLaporanBanding, type KelasBeda, type LaporanBanding } from "@/lib/aleta-abt-naskah";
 
 /**
  * Laporan pembanding ALETA ABT lawan ABT (5 Nov 2026, Tahap 5). Membaca berkas hasil skrip pengukur (scripts/ukur-banding-abt/naskah.mts)
@@ -79,6 +79,10 @@ export function LaporanPembanding() {
                     <p className="text-xs text-muted-foreground">
                       {r.naskah} naskah, {r.identik} dari {r.alinea} alinea identik; {r.naskahIdentik} naskah identik seluruhnya
                     </p>
+                    <p className="text-xs text-muted-foreground">
+                      Beda dijelaskan: {r.dijelaskan}. Beda belum dijelaskan: {r.belumDijelaskan}. Identik ditambah dijelaskan:{" "}
+                      {r.alinea ? (((r.identik + r.dijelaskan) / r.alinea) * 100).toLocaleString("id-ID", { maximumFractionDigits: 3 }) : "100"}%
+                    </p>
                   </div>
                   <Persen nilai={r.persen} />
                 </div>
@@ -132,7 +136,7 @@ export function LaporanPembanding() {
                 <div key={i} className="rounded-xl border border-border p-2 text-sm">
                   <p className="break-words font-medium">{b.blangko}</p>
                   <p className="text-xs text-muted-foreground">
-                    {b.jenis}, perkara sampel {b.perkara}: {KELAS_BEDA_NAMA[b.kelas]}
+                    {b.jenis}, perkara sampel {b.perkara}: {KELAS_BEDA_NAMA[b.kelas]} ({KELAS_DIJELASKAN[b.kelas] ? "sudah dijelaskan" : "belum dijelaskan"})
                     {b.nomorAbt ? `, alinea ABT ${b.nomorAbt}` : ""}
                     {b.nomorAleta ? `, alinea ALETA ${b.nomorAleta}` : ""}
                   </p>

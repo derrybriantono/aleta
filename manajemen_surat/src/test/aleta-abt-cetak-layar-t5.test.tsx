@@ -52,6 +52,7 @@ function pasangFetch() {
       if (u.includes("bagian=perkara")) return jawab({ perkara: [{ nomorPerkara: "1/Pdt.G/2026/PA.Uji", perkaraId: "11", jenisPerkara: "Cerai Gugat" }] });
       if (badan?.tindakan === "pratinjau") return jawab(pratinjau);
       if (galatCetak) return jawab(galatCetak.badan, galatCetak.status);
+      if (badan?.tindakan === "salinan-berkas") return jawab({ pdfBase64: btoa("%PDF-uji"), byte: 8, bentuk: "rtf", waktuMs: 5 });
       if (badan?.tindakan === "rtf") return jawab({ nama: "Putusan Cerai Uji.rtf", rtfBase64: btoa("{\\rtf1 x}"), byte: 9 });
       if (badan?.tindakan === "banding") {
         return jawab({
@@ -154,6 +155,41 @@ describe("layar cetak ALETA ABT", () => {
     expect(nama[0]).not.toMatch(/aleta/i);
   });
 
+  it("PDF SALINAN dari berkas: berkas dikirim, PDF langsung terunduh tanpa kata ALETA di namanya", async () => {
+    const nama: string[] = [];
+    const klik = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function (this: HTMLAnchorElement) {
+      nama.push(this.download);
+    };
+    try {
+      render(<CetakAletaAbt />);
+      await screen.findByLabelText("Cari blangko");
+      const masukan = document.querySelector('input[type="file"][accept=".rtf,.docx,.doc,.pdf"]') as HTMLInputElement;
+      const berkas = new File(["{\rtf1 isi}"], "Putusan Uji 123.rtf", { type: "application/rtf" });
+      Object.defineProperty(berkas, "arrayBuffer", { value: async () => new TextEncoder().encode("{\rtf1 isi}").buffer });
+      fireEvent.change(masukan, { target: { files: [berkas] } });
+      await screen.findByText(/PDF SALINAN dari Putusan Uji 123.rtf sudah diunduh/);
+    } finally {
+      HTMLAnchorElement.prototype.click = klik;
+    }
+    const kirim = panggilan.find((p) => p.badan?.tindakan === "salinan-berkas");
+    expect(kirim?.badan).toMatchObject({ namaBerkas: "Putusan Uji 123.rtf" });
+    expect(nama).toEqual(["Putusan Uji 123 (SALINAN).pdf"]);
+    expect(nama[0]).not.toMatch(/aleta/i);
+  });
+
+  it("berita acara PDF ditolak: pesan dari server tampil dan tidak ada unduhan", async () => {
+    galatCetak = { status: 422, badan: { ok: false, kode: "bukan_putusan", alasan: "Berkas PDF ini berita acara sidang. PDF salinan dari berkas PDF hanya untuk putusan dan penetapan, karena salinan berita acara memakai tanda tangan asli." } };
+    render(<CetakAletaAbt />);
+    await screen.findByLabelText("Cari blangko");
+    const masukan = document.querySelector('input[type="file"][accept=".rtf,.docx,.doc,.pdf"]') as HTMLInputElement;
+    const berkas = new File(["%PDF-1.4"], "BAS.pdf");
+    Object.defineProperty(berkas, "arrayBuffer", { value: async () => new TextEncoder().encode("%PDF-1.4").buffer });
+    fireEvent.change(masukan, { target: { files: [berkas] } });
+    await screen.findByText(/Berkas PDF ini berita acara sidang/);
+    expect(screen.queryByText(/sudah diunduh/)).toBeNull();
+  });
+
   it("galat server tampil sebagai pesan, bukan layar kosong", async () => {
     await sampaiPratinjau();
     galatCetak = { status: 409, badan: { ok: false, ditahan: true, kosong: [{ nama: "Alamat Termohon" }], alasan: "Cetak final ditahan: 1 isian masih kosong." } };
@@ -194,7 +230,7 @@ describe("laporan pembanding", () => {
   const laporan = {
     dibuat: "2026-11-05",
     keterangan: "Sampel uji.",
-    ringkas: [{ jenis: "Cerai Gugat", naskah: 2, alinea: 100, identik: 99, persen: 99, naskahIdentik: 1 }],
+    ringkas: [{ jenis: "Cerai Gugat", naskah: 2, alinea: 100, identik: 99, persen: 99, naskahIdentik: 1, dijelaskan: 0, belumDijelaskan: 1 }],
     perKelas: { "tata-letak": 0, "tanda-baca": 0, isi: 1, "hanya-abt": 0, "hanya-aleta": 0 },
     beda: [{ jenis: "Cerai Gugat", blangko: "Putusan Cerai Uji", perkara: "p1", kelas: "isi", nomorAbt: 5, nomorAleta: 5, isian: ["Pekerjaan Pemohon"] }],
     belumTerukur: ["Jumlah halaman: tidak ada LibreOffice di mesin pengukur."],
@@ -208,6 +244,8 @@ describe("laporan pembanding", () => {
     fireEvent.change(masukan, { target: { files: [berkas] } });
     await screen.findByText("Cerai Gugat", { selector: "p" });
     expect(screen.getByText(/99 dari 100 alinea identik/)).toBeTruthy();
+    expect(screen.getByText(/Beda dijelaskan: 0\. Beda belum dijelaskan: 1\./)).toBeTruthy();
+    expect(screen.getByText(/belum dijelaskan\)/)).toBeTruthy();
     expect(screen.getByText(/tidak ada LibreOffice/)).toBeTruthy();
     expect(screen.getByText(/Isian pada alinea itu: Pekerjaan Pemohon/)).toBeTruthy();
     expect(screen.getByText(/bukan angka server/)).toBeTruthy();

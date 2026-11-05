@@ -1,12 +1,14 @@
 import { NextRequest } from "next/server";
 
 import { bandingRingkasPdf } from "@/lib/aleta-abt-naskah";
+import { buangGrupTersembunyiRtf } from "@/lib/buang-grup-tersembunyi-rtf";
 import { getEffectiveRoleId } from "@/lib/permissions";
 import { getDatabase } from "@/server/db/client";
 import { bandingkanRtf, paragrafPratinjau, susunNaskah, type NaskahJadi } from "@/server/modules/aleta-abt-cetak/naskah";
 import { ringkasPdf } from "@/server/modules/aleta-abt-cetak/pdf-ringkas";
 import { NAMA_KEPALA_TANDA, jagaCetakAletaAbt, type Penjaga } from "@/server/modules/aleta-abt-cetak/tanda";
 import { daftarBlangko } from "@/server/modules/aleta-abt-penyunting/service";
+import { BATAS_KONVERSI, kenaliBentukNaskah, konversiNaskah } from "@/server/modules/aleta-ecourt/konversi-naskah";
 import { callAletaBotSippBridge } from "@/server/modules/aleta-sipp/aleta-sipp-datasource";
 import { requireActorUser } from "@/server/modules/organization/service";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
@@ -37,6 +39,9 @@ export const dynamic = "force-dynamic";
  *   POST {tindakan:"pdf", ...} / {tindakan:"salinan", ...}        PDF / PDF SALINAN lewat LibreOffice (rute abt/pdf)  [audit]
  *   POST {tindakan:"banding", ..., rtfAbtBase64}                  banding alinea dengan RTF dari ABT
  *   POST {tindakan:"banding-pdf", pdfAbtBase64, pdfAletaBase64}   banding jumlah halaman dan letak tanda tangan
+ *   POST {tindakan:"salinan-berkas", berkasBase64, namaBerkas?}   PDF SALINAN dari berkas RTF/DOCX/DOC/PDF yang diunggah (keputusan 215):
+ *        PDF kosong -> rute salinan-dari-pdf; RTF -> rute PDF salinan; DOCX/DOC -> diubah ke RTF (konversi naskah) lalu rute PDF salinan.
+ *        Tidak ada logika salinan kedua di sini; berita acara dalam bentuk PDF ditolak oleh rute salinan-dari-pdf dengan pesannya sendiri.
  *
  * Audit tidak memuat isi naskah atau nama pihak: hanya blangko, nomor perkara internal, jenis, jalur penjaga, ukuran, waktu.
  */
@@ -83,21 +88,30 @@ function bitaBase64(nilai: unknown, nama: string): Buffer {
   return Buffer.from(s, "base64");
 }
 
-/** Memanggil rute PDF yang sudah ada (LibreOffice, SALINAN, tanda tangan, cap, Z, nomor halaman) dengan sesi yang sama. Metodenya tidak diubah. */
-async function pdfLewatRuteAbt(request: NextRequest, rtf: Buffer, salinan: boolean) {
-  const { POST: pdfPost } = await import("@/app/api/aleta-bot/abt/pdf/route");
+type JawabanRutePdf = { available?: boolean; kode?: string; message?: string; pdfBase64?: string; byte?: number; versiMesin?: string; salinan?: unknown };
+
+/** Memanggil rute lain yang sudah ada di dalam proses dengan sesi yang sama (tanpa menyalin logikanya). */
+async function panggilRute(request: NextRequest, path: string, rute: (r: NextRequest) => Promise<Response>, badan: Record<string, unknown>): Promise<JawabanRutePdf> {
   const kepala = new Headers(request.headers);
   kepala.set("content-type", "application/json");
   kepala.delete("content-length");
-  const dalam = new NextRequest(new URL("/api/aleta-bot/abt/pdf", request.url), {
-    method: "POST",
-    headers: kepala,
-    body: JSON.stringify({ rtfBase64: rtf.toString("base64"), salinan }),
-  });
-  const res = await pdfPost(dalam);
-  const isi = (await res.json().catch(() => null)) as { ok?: boolean; data?: { available?: boolean; message?: string; pdfBase64?: string; byte?: number; versiMesin?: string; salinan?: unknown } } | null;
+  const dalam = new NextRequest(new URL(path, request.url), { method: "POST", headers: kepala, body: JSON.stringify(badan) });
+  const res = await rute(dalam);
+  const isi = (await res.json().catch(() => null)) as { ok?: boolean; data?: JawabanRutePdf } | null;
   if (!res.ok || !isi || isi.ok === false) throw new ApiError(res.status || 502, "PDF tidak dapat dibuat.");
   return isi.data ?? {};
+}
+
+/** Rute PDF (LibreOffice, SALINAN, tanda tangan, cap, Z, nomor halaman). Metodenya tidak diubah. */
+async function pdfLewatRuteAbt(request: NextRequest, rtf: Buffer, salinan: boolean) {
+  const { POST } = await import("@/app/api/aleta-bot/abt/pdf/route");
+  return panggilRute(request, "/api/aleta-bot/abt/pdf", POST, { rtfBase64: rtf.toString("base64"), salinan });
+}
+
+/** PDF SALINAN dari PDF yang masih kosong (keputusan 215): rute yang sama dengan ekstensi. */
+async function salinanDariPdfLewatRute(request: NextRequest, pdf: Buffer) {
+  const { POST } = await import("@/app/api/aleta-ecourt/putusan/salinan-dari-pdf/route");
+  return panggilRute(request, "/api/aleta-ecourt/putusan/salinan-dari-pdf", POST, { pdfBase64: pdf.toString("base64") });
 }
 
 export async function GET(request: NextRequest) {
@@ -156,6 +170,29 @@ export async function POST(request: NextRequest) {
       const abt = await ringkasPdf(new Uint8Array(bitaBase64(badan.pdfAbtBase64, "PDF dari ABT")));
       const aleta = await ringkasPdf(new Uint8Array(bitaBase64(badan.pdfAletaBase64, "PDF ALETA ABT")));
       return ok({ abt, aleta, banding: bandingRingkasPdf(abt, aleta) }, { headers: tak });
+    }
+
+    if (tindakan === "salinan-berkas") {
+      const bita = bitaBase64(badan.berkasBase64, "Berkas");
+      if (bita.length > BATAS_KONVERSI) throw new ApiError(413, "Berkas terlalu besar.");
+      const bentuk = kenaliBentukNaskah(new Uint8Array(bita));
+      if (!bentuk) throw new ApiError(400, "Isi berkas bukan RTF, DOCX, DOC, maupun PDF, jadi salinan tidak dibuat.");
+      const namaBerkas = String(badan.namaBerkas ?? "").slice(0, 200);
+      const mulai = Date.now();
+      let pdf: JawabanRutePdf;
+      if (bentuk === "pdf") {
+        pdf = await salinanDariPdfLewatRute(request, bita);
+      } else {
+        // RTF dipakai apa adanya; DOCX/DOC diubah ke RTF oleh konversi naskah yang sama dengan ekstensi. Grup tersembunyi dibuang seperti RTF unduhan lain.
+        const rtf = bentuk === "rtf" ? bita : Buffer.from((await konversiNaskah({ bita: new Uint8Array(bita), namaBerkas, ke: "rtf" })).berkasBase64, "base64");
+        pdf = await pdfLewatRuteAbt(request, Buffer.from(buangGrupTersembunyiRtf(new Uint8Array(rtf))), true);
+      }
+      const waktuMs = Date.now() - mulai;
+      await catat(a.db, a.actorUserId, "ALETA_ABT_CETAK_SALINAN_BERKAS", "berkas", { lewat, bentuk, tersedia: pdf.available === true, kode: pdf.kode ?? "", byte: pdf.byte ?? 0, waktuMs });
+      if (pdf.available !== true || !pdf.pdfBase64) {
+        return Response.json({ ok: false, kode: pdf.kode ?? "", alasan: pdf.message || "PDF SALINAN belum dapat dibuat." }, { status: 422, headers: tak });
+      }
+      return ok({ pdfBase64: pdf.pdfBase64, byte: pdf.byte ?? 0, bentuk, ...(pdf.salinan ? { salinan: pdf.salinan } : {}), waktuMs }, { headers: tak });
     }
 
     const m = masukanNaskah(badan);

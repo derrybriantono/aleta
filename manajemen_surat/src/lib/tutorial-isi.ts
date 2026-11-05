@@ -895,11 +895,12 @@ export const TUTORIAL: readonly Tutorial[] = [
       "Ketik sebagian nomor perkara lalu pilih perkaranya, kemudian pilih blangko dari pustaka. Untuk berita acara sidang, isi sidang ke berapa.",
       "Tekan Pratinjau naskah. Naskah tampil per alinea bersama kertas yang dipakai dan lamanya menyusun. Isian yang masih kosong disebut namanya.",
       "Bila semua isian terisi, tekan Unduh RTF, Unduh PDF, atau Unduh PDF SALINAN. Isian yang masih kosong menahan cetak sampai terisi di SIPP atau ABT.",
+      "Untuk PDF SALINAN dari berkas yang sudah ada, pilih berkas putusan atau penetapan (RTF, DOCX, DOC, atau PDF yang masih kosong) pada kotak PDF SALINAN dari berkas. PDF SALINAN langsung diunduh. Berita acara sidang dalam bentuk PDF ditolak.",
       "Untuk membandingkan, pilih RTF yang dicetak dari ABT untuk perkara dan blangko yang sama. Layar menghitung alinea yang identik dan menampilkan yang berbeda berdampingan.",
       "Jumlah halaman dan letak tanda tangan dibandingkan dari dua PDF: unduh PDF dari layar ini, lalu pilih PDF dari ABT. Laporan hasil pengukuran skrip dibuka di halaman Laporan pembanding.",
     ],
     peringatan: [
-      "Hanya Super Admin. Cetak mensyaratkan ekstensi ALETA di PC atau hak ALETA ABT di HP yang menyala untuk akun Anda.",
+      "Hanya Super Admin. Cetak dan PDF SALINAN dari berkas mensyaratkan ekstensi ALETA di PC atau hak ALETA ABT di HP yang menyala untuk akun Anda.",
       "PDF dibuat LibreOffice di server, jadi tidak seketika. Waktu yang tampil adalah waktu pada server yang dipakai.",
       "Panel Blangko ABT by Derry Briantono dan cetak massal berita acara tidak memakai layar ini dan tidak berubah.",
     ],

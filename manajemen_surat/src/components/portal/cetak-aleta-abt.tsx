@@ -123,6 +123,7 @@ export function CetakAletaAbt() {
   const [pratinjau, setPratinjau] = useState<Pratinjau | null>(null);
   const [kosongTahan, setKosongTahan] = useState<string[]>([]);
   const [sibuk, setSibuk] = useState("");
+  const [infoBerkas, setInfoBerkas] = useState("");
   const [bandingRtf, setBandingRtf] = useState<HasilBandingRtf | null>(null);
   const [bandingPdf, setBandingPdf] = useState<HasilBandingPdf | null>(null);
   const [berdampingan, setBerdampingan] = useState(false);
@@ -212,6 +213,25 @@ export function CetakAletaAbt() {
       const g = e as Error & { kosong?: Array<{ nama: string }> };
       setGalat(g.message);
       if (g.kosong) setKosongTahan(g.kosong.map((k) => k.nama));
+    } finally {
+      setSibuk("");
+    }
+  };
+
+  const salinanDariBerkas = async (f: File | undefined) => {
+    if (!f) return;
+    setGalat("");
+    setKosongTahan([]);
+    setInfoBerkas("");
+    setSibuk("salinan-berkas");
+    try {
+      if (f.size > 20 * 1024 * 1024) throw new Error("Berkas terlalu besar (paling banyak 20 MB).");
+      const h = await kirim<{ pdfBase64: string }>({ tindakan: "salinan-berkas", namaBerkas: f.name, berkasBase64: dasarBase64(await f.arrayBuffer()) });
+      const dasar = f.name.replace(/\.[^./\\]+$/, "");
+      unduh(h.pdfBase64, namaBerkas(dasar, "pdf", " (SALINAN)"), "application/pdf");
+      setInfoBerkas(`PDF SALINAN dari ${f.name} sudah diunduh.`);
+    } catch (e) {
+      setGalat((e as Error).message);
     } finally {
       setSibuk("");
     }
@@ -375,6 +395,26 @@ export function CetakAletaAbt() {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader>
+          <CardTitle>PDF SALINAN dari berkas</CardTitle>
+          <CardDescription>
+            Pilih berkas putusan atau penetapan (RTF, DOCX, DOC, atau PDF yang masih kosong). PDF SALINAN langsung diunduh. Berita acara sidang dalam bentuk PDF ditolak karena salinannya memakai tanda tangan asli.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <label className="inline-flex w-full cursor-pointer items-center justify-center rounded-md border border-border px-3 py-2 text-sm hover:bg-muted sm:w-auto">
+            {sibuk === "salinan-berkas" ? "Membuat PDF salinan..." : "Pilih berkas lalu unduh PDF SALINAN"}
+            <input type="file" accept=".rtf,.docx,.doc,.pdf" className="sr-only" disabled={sibuk !== ""} onChange={(e) => { void salinanDariBerkas(e.target.files?.[0]); e.target.value = ""; }} />
+          </label>
+          {infoBerkas ? (
+            <div role="status" className="rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
+              {infoBerkas}
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
+
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         <Button onClick={susun} disabled={!siap || sibuk !== ""} className="w-full sm:w-auto">
           {sibuk === "pratinjau" ? "Menyusun naskah..." : "Pratinjau naskah"}
@@ -458,8 +498,9 @@ export function CetakAletaAbt() {
             <div>
               <BarisUkur nama="Teks per alinea">
                 {bandingRtf ? (
-                  <Tanda status={bandingRtf.alinea.identik === bandingRtf.alinea.total ? "hijau" : bandingRtf.alinea.persen >= 99 ? "kuning" : "merah"}>
+                  <Tanda status={bandingRtf.alinea.identik === bandingRtf.alinea.total ? "hijau" : bandingRtf.alinea.identik + bandingRtf.alinea.dijelaskan === bandingRtf.alinea.total ? "kuning" : "merah"}>
                     {bandingRtf.alinea.identik} dari {bandingRtf.alinea.total} identik
+                    {bandingRtf.alinea.dijelaskan ? `, ${bandingRtf.alinea.dijelaskan} beda dijelaskan` : ""}
                   </Tanda>
                 ) : (
                   <Tanda status="abu">belum dibandingkan</Tanda>

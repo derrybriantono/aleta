@@ -18,7 +18,10 @@ const keadaan = vi.hoisted(() => ({
   panggil: [] as string[],
   naskah: null as unknown,
   audit: [] as Array<{ action: string; entityId: string; payload: Record<string, unknown> }>,
-  pdfDipanggil: [] as Array<{ salinan: boolean; cookie: string | null }>,
+  pdfDipanggil: [] as Array<{ salinan: boolean; cookie: string | null; rtf: string }>,
+  dariPdf: [] as string[],
+  konversi: [] as string[],
+  jawabDariPdf: null as unknown,
 }));
 
 vi.mock("@/server/db/client", () => ({ getDatabase: async () => ({ marker: "db" }) }));
@@ -84,10 +87,28 @@ vi.mock("@/server/modules/aleta-abt-penyunting/service", () => {
 vi.mock("@/app/api/aleta-bot/abt/pdf/route", () => ({
   POST: async (r: Request) => {
     const b = (await r.json()) as { rtfBase64: string; salinan: boolean };
-    keadaan.pdfDipanggil.push({ salinan: b.salinan === true, cookie: r.headers.get("cookie") });
+    keadaan.pdfDipanggil.push({ salinan: b.salinan === true, cookie: r.headers.get("cookie"), rtf: Buffer.from(b.rtfBase64, "base64").toString("latin1") });
     return Response.json({ ok: true, data: { available: true, pdfBase64: Buffer.from("%PDF-uji").toString("base64"), byte: 8, versiMesin: "uji", ...(b.salinan ? { salinan: { jenis: "uji" } } : {}) } });
   },
 }));
+
+vi.mock("@/app/api/aleta-ecourt/putusan/salinan-dari-pdf/route", () => ({
+  POST: async (r: Request) => {
+    const b = (await r.json()) as { pdfBase64: string };
+    keadaan.dariPdf.push(Buffer.from(b.pdfBase64, "base64").toString("latin1"));
+    return Response.json(keadaan.jawabDariPdf ?? { ok: true, data: { available: true, message: "", pdfBase64: Buffer.from("%PDF-salinan").toString("base64"), byte: 12, salinan: { jenis: "putusan-pdf" } } });
+  },
+}));
+vi.mock("@/server/modules/aleta-ecourt/konversi-naskah", async () => {
+  const asli = await vi.importActual<typeof import("@/server/modules/aleta-ecourt/konversi-naskah")>("@/server/modules/aleta-ecourt/konversi-naskah");
+  return {
+    ...asli,
+    konversiNaskah: async (m: { namaBerkas: string; ke: string }) => {
+      keadaan.konversi.push(`${m.namaBerkas}->${m.ke}`);
+      return { berkasBase64: Buffer.from("{\\rtf1 hasil ubahan}", "latin1").toString("base64"), namaBerkas: "x.rtf", mime: "application/rtf", bentukAsal: "docx", peringatan: [] };
+    },
+  };
+});
 
 import { GET, POST } from "@/app/api/aleta-abt/cetak/route";
 import { GET as GET_TANDA } from "@/app/api/aleta-abt/tanda/route";
@@ -151,6 +172,9 @@ beforeEach(() => {
   keadaan.naskah = NASKAH_JADI;
   keadaan.audit = [];
   keadaan.pdfDipanggil = [];
+  keadaan.dariPdf = [];
+  keadaan.konversi = [];
+  keadaan.jawabDariPdf = null;
 });
 
 describe("tanda berumur pendek", () => {
@@ -194,7 +218,7 @@ describe("penjaga: peran lain ditolak di setiap bagian dan tindakan", () => {
       for (const cari of ["?bagian=hak", "?bagian=daftar", "?bagian=perkara&nomor=123", ""]) {
         expect((await GET(get(cari, kepala))).status, `${nama} GET ${cari}`).toBe(403);
       }
-      for (const tindakan of ["pratinjau", "rtf", "pdf", "salinan", "banding", "banding-pdf"]) {
+      for (const tindakan of ["pratinjau", "rtf", "pdf", "salinan", "banding", "banding-pdf", "salinan-berkas"]) {
         expect((await POST(post({ tindakan, ...PILIHAN }, kepala))).status, `${nama} POST ${tindakan}`).toBe(403);
       }
       expect(keadaan.panggil).toEqual([]);
@@ -282,7 +306,7 @@ describe("cetak", () => {
     expect(Buffer.from(pdf.data.pdfBase64, "base64").toString()).toBe("%PDF-uji");
     const sal = (await (await POST(post({ tindakan: "salinan", ...PILIHAN }, { cookie: "sesi=abc" }))).json()) as { data: { salinan?: unknown } };
     expect(sal.data.salinan).toBeTruthy();
-    expect(keadaan.pdfDipanggil).toEqual([
+    expect(keadaan.pdfDipanggil.map((p) => ({ salinan: p.salinan, cookie: p.cookie }))).toEqual([
       { salinan: false, cookie: "sesi=abc" },
       { salinan: true, cookie: "sesi=abc" },
     ]);
@@ -309,6 +333,62 @@ describe("cetak", () => {
     expect((await GET(get("?bagian=perkara&nomor=12"))).status).toBe(400);
     const r = await GET(get("?bagian=perkara&nomor=123"));
     expect(r.status).toBe(200);
+  });
+});
+
+describe("PDF SALINAN dari berkas (keputusan 215)", () => {
+  const b64 = (t: string) => Buffer.from(t, "latin1").toString("base64");
+  const kirim = (berkas: string, kepala: Record<string, string> = {}) => POST(post({ tindakan: "salinan-berkas", namaBerkas: "Putusan Uji.x", berkasBase64: b64(berkas) }, kepala));
+
+  it("PDF kosong lewat rute salinan-dari-pdf; rute PDF RTF tidak dipakai", async () => {
+    const r = await kirim("%PDF-1.4 isi", { cookie: "sesi=abc" });
+    const j = (await r.json()) as { data: { pdfBase64: string; bentuk: string } };
+    expect(r.status).toBe(200);
+    expect(j.data.bentuk).toBe("pdf");
+    expect(keadaan.dariPdf).toEqual(["%PDF-1.4 isi"]);
+    expect(keadaan.pdfDipanggil).toEqual([]);
+    expect(keadaan.audit.map((a) => a.action)).toContain("ALETA_ABT_CETAK_SALINAN_BERKAS");
+  });
+
+  it("RTF lewat rute PDF salinan tanpa konversi; grup tersembunyi dibuang", async () => {
+    const r = await kirim("{\\rtf1 Isi {\\*\\isianasal rahasia} putusan}");
+    expect(r.status).toBe(200);
+    expect(keadaan.konversi).toEqual([]);
+    expect(keadaan.pdfDipanggil).toHaveLength(1);
+    expect(keadaan.pdfDipanggil[0].salinan).toBe(true);
+    expect(keadaan.pdfDipanggil[0].rtf).toContain("Isi");
+    expect(keadaan.pdfDipanggil[0].rtf).not.toContain("rahasia");
+    expect(keadaan.dariPdf).toEqual([]);
+  });
+
+  it("DOCX dan DOC diubah ke RTF dulu, lalu rute PDF salinan", async () => {
+    for (const kepala of [`${String.fromCharCode(0x50, 0x4b, 3, 4)} isi docx`, `${String.fromCharCode(0xd0, 0xcf, 0x11, 0xe0)} isi doc`]) {
+      keadaan.pdfDipanggil = [];
+      const r = await kirim(kepala);
+      expect(r.status).toBe(200);
+      expect(keadaan.pdfDipanggil).toHaveLength(1);
+      expect(keadaan.pdfDipanggil[0].rtf).toContain("hasil ubahan");
+    }
+    expect(keadaan.konversi).toHaveLength(2);
+    expect(keadaan.konversi[0]).toBe("Putusan Uji.x->rtf");
+  });
+
+  it("berita acara PDF ditolak dengan pesan rute salinan-dari-pdf; tidak ada PDF yang keluar", async () => {
+    keadaan.jawabDariPdf = { ok: true, data: { available: false, kode: "bukan_putusan", message: "Berkas PDF ini berita acara sidang. PDF salinan dari berkas PDF hanya untuk putusan dan penetapan, karena salinan berita acara memakai tanda tangan asli." } };
+    const r = await kirim("%PDF-1.4 berita acara");
+    const j = (await r.json()) as Record<string, unknown>;
+    expect(r.status).toBe(422);
+    expect(String(j.alasan)).toContain("berita acara sidang");
+    expect(j.kode).toBe("bukan_putusan");
+    expect(JSON.stringify(j)).not.toContain("pdfBase64");
+  });
+
+  it("isi bukan RTF/DOCX/DOC/PDF ditolak; tanpa tanda dan hak HP mati ditolak sebelum menyentuh apa pun", async () => {
+    expect((await kirim("teks biasa")).status).toBe(400);
+    expect((await POST(post({ tindakan: "salinan-berkas", berkasBase64: "" }))).status).toBe(400);
+    keadaan.hp = false;
+    expect((await kirim("%PDF-1.4 isi")).status).toBe(403);
+    expect(keadaan.dariPdf).toEqual([]);
   });
 });
 

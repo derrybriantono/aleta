@@ -17,7 +17,26 @@ import { bacaRtf } from "@/lib/baca-rtf";
  * Tidak ada data perkara yang disimpan di sini; pemanggil yang memutuskan apa yang ditampilkan.
  */
 
-export type KelasBeda = "tata-letak" | "tanda-baca" | "tanda-kosong" | "isi" | "hanya-abt" | "hanya-aleta";
+export type KelasBeda = "tata-letak" | "tanda-baca" | "tanda-kosong" | "tanggal-nol" | "par-menempel" | "isi" | "hanya-abt" | "hanya-aleta";
+
+/**
+ * Beda yang SUDAH DIJELASKAN sebabnya (bukan salah isi di ALETA) tetapi tetap dihitung sebagai beda dan tetap terlihat:
+ *   - tata-letak: hanya spasi (ABT menempelkan kata, mis. "dilangsungkansecara");
+ *   - tanda-kosong: isian kosong, ALETA mencetak titik-titik bersorot, ABT mencetak kosong (kebijakan cetak, tidak diubah);
+ *   - tanggal-nol: tanggal 0000-00-00 dicetak ABT sebagai "00 0000", ALETA mencetak kosong dengan peringatan (keputusan pemilik aplikasi);
+ *   - par-menempel: nilai ABT berakhir dengan kata kendali \par yang menempel pada kata berikutnya di blangko ("\parBahwa"), sehingga
+ *     pembaca RTF menelan kata itu dan paragraf tidak terpisah; mesin ALETA memberi pembatas.
+ */
+export const KELAS_DIJELASKAN: Record<KelasBeda, boolean> = {
+  "tata-letak": true,
+  "tanda-baca": false,
+  "tanda-kosong": true,
+  "tanggal-nol": true,
+  "par-menempel": true,
+  isi: false,
+  "hanya-abt": false,
+  "hanya-aleta": false,
+};
 
 export type BedaAlinea = {
   kelas: KelasBeda;
@@ -33,6 +52,8 @@ export type HasilBandingAlinea = {
   total: number;
   identik: number;
   persen: number;
+  /** Alinea yang tidak identik tetapi sebabnya sudah dijelaskan (KELAS_DIJELASKAN); tidak ikut dalam `identik`. */
+  dijelaskan: number;
   jumlahAbt: number;
   jumlahAleta: number;
   /** Banyaknya beda per kelas. */
@@ -57,6 +78,7 @@ export function alineaDariRtf(rtf: string): string[] {
 const BATAS_RINCI = 400;
 
 const TITIK_KOSONG = "...";
+const TANGGAL_NOL = "00 0000";
 const tanpaTitik = (s: string) => lipat(s.split(TITIK_KOSONG).join(""));
 
 /**
@@ -68,6 +90,7 @@ export function golonganBeda(abt: string, aleta: string): KelasBeda {
   const b = lipat(aleta);
   if (!a && !b) return "tata-letak";
   if (b.includes(TITIK_KOSONG) && !a.includes(TITIK_KOSONG) && tanpaTitik(a) === tanpaTitik(b)) return "tanda-kosong";
+  if (a.includes(TANGGAL_NOL) && !b.includes(TANGGAL_NOL) && lipat(a.split(TANGGAL_NOL).join("")) === b) return "tanggal-nol";
   if (!a) return "hanya-aleta";
   if (!b) return "hanya-abt";
   if (tanpaSpasi(a) === tanpaSpasi(b)) return "tata-letak";
@@ -77,7 +100,7 @@ export function golonganBeda(abt: string, aleta: string): KelasBeda {
 
 export function bandingAlinea(abt: string[], aleta: string[]): HasilBandingAlinea {
   const ops = bedaDaftar(abt, aleta);
-  const perKelas: Record<KelasBeda, number> = { "tata-letak": 0, "tanda-baca": 0, "tanda-kosong": 0, isi: 0, "hanya-abt": 0, "hanya-aleta": 0 };
+  const perKelas: Record<KelasBeda, number> = { "tata-letak": 0, "tanda-baca": 0, "tanda-kosong": 0, "tanggal-nol": 0, "par-menempel": 0, isi: 0, "hanya-abt": 0, "hanya-aleta": 0 };
   const beda: BedaAlinea[] = [];
   let identik = 0;
   let total = 0;
@@ -119,7 +142,41 @@ export function bandingAlinea(abt: string[], aleta: string[]): HasilBandingAline
       catat({ kelas: golonganBeda("", aleta[op.b + i]), nomorAbt: 0, nomorAleta: op.b + i + 1, abt: "", aleta: aleta[op.b + i] });
     }
   }
-  return { total, identik, persen: total ? (identik / total) * 100 : 100, jumlahAbt: abt.length, jumlahAleta: aleta.length, perKelas, beda, terpotong };
+  tandaiParMenempel(beda, perKelas);
+  const dijelaskan = (Object.keys(perKelas) as KelasBeda[]).reduce((n, k) => n + (KELAS_DIJELASKAN[k] ? perKelas[k] : 0), 0);
+  return { total, identik, persen: total ? (identik / total) * 100 : 100, dijelaskan, jumlahAbt: abt.length, jumlahAleta: aleta.length, perKelas, beda, terpotong };
+}
+
+/** Menggolongkan ulang daftar beda tersimpan dengan aturan terkini (dipakai skrip pembanding atas hasil lama); mengembalikan hitungan per kelas. */
+export function golongkanUlang(beda: BedaAlinea[]): Record<KelasBeda, number> {
+  const perKelas = Object.fromEntries((Object.keys(KELAS_DIJELASKAN) as KelasBeda[]).map((k) => [k, 0])) as Record<KelasBeda, number>;
+  for (const b of beda) {
+    b.kelas = golonganBeda(b.abt, b.aleta);
+    perKelas[b.kelas] += 1;
+  }
+  tandaiParMenempel(beda, perKelas);
+  return perKelas;
+}
+
+const sisaSesudahKataPertama = (s: string) => lipat(s).replace(/^[\p{L}\p{N}]+/u, "");
+
+/**
+ * Mengenali satu alinea ABT yang menelan sebuah kata dan paragraf: pasangan "isi" lalu "hanya-aleta" yang berurutan, dengan
+ *   alinea ABT == alinea ALETA pertama + spasi + alinea ALETA kedua tanpa kata pertamanya.
+ * Hanya bentuk persis itu yang dijelaskan; selebihnya tetap "isi" dan "hanya-aleta".
+ */
+function tandaiParMenempel(beda: BedaAlinea[], perKelas: Record<KelasBeda, number>) {
+  for (let i = 0; i + 1 < beda.length; i += 1) {
+    const x = beda[i];
+    const y = beda[i + 1];
+    if (x.kelas !== "isi" || y.kelas !== "hanya-aleta" || y.nomorAleta !== x.nomorAleta + 1) continue;
+    if (lipat(`${x.aleta} ${sisaSesudahKataPertama(y.aleta)}`) !== lipat(x.abt)) continue;
+    for (const b of [x, y]) {
+      perKelas[b.kelas] -= 1;
+      b.kelas = "par-menempel";
+      perKelas["par-menempel"] += 1;
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -174,6 +231,8 @@ export const KELAS_BEDA_NAMA: Record<KelasBeda, string> = {
   "tata-letak": "hanya spasi",
   "tanda-baca": "hanya tanda baca atau huruf besar",
   "tanda-kosong": "isian kosong: ALETA mencetak titik-titik, ABT mencetak kosong",
+  "tanggal-nol": "tanggal nol: ABT mencetak 00 0000, ALETA mencetak kosong dengan peringatan",
+  "par-menempel": "ABT menempelkan akhir paragraf pada kata berikutnya sehingga kata itu hilang",
   isi: "isi berbeda",
   "hanya-abt": "hanya di ABT",
   "hanya-aleta": "hanya di ALETA",
@@ -183,7 +242,7 @@ export const KELAS_BEDA_NAMA: Record<KelasBeda, string> = {
 // Laporan pembanding dari skrip (scripts/ukur-banding-abt/naskah.mts) - dibaca layar /aleta-abt/pembanding
 // ---------------------------------------------------------------------------------------------------------------
 
-export type RingkasJenis = { jenis: string; naskah: number; alinea: number; identik: number; persen: number; naskahIdentik: number };
+export type RingkasJenis = { jenis: string; naskah: number; alinea: number; identik: number; persen: number; naskahIdentik: number; dijelaskan: number; belumDijelaskan: number };
 
 export type BedaLaporan = {
   jenis: string;
@@ -211,7 +270,7 @@ export type LaporanBanding = {
 
 const angkaAman = (x: unknown) => (typeof x === "number" && Number.isFinite(x) ? x : 0);
 const teksAman = (x: unknown, maks = 300) => String(x ?? "").slice(0, maks);
-const KELAS: KelasBeda[] = ["tata-letak", "tanda-baca", "tanda-kosong", "isi", "hanya-abt", "hanya-aleta"];
+const KELAS: KelasBeda[] = ["tata-letak", "tanda-baca", "tanda-kosong", "tanggal-nol", "par-menempel", "isi", "hanya-abt", "hanya-aleta"];
 
 /** Membaca laporan hasil skrip dengan ketat: apa pun yang tidak dikenal dibuang, bentuk rusak -> null. */
 export function bacaLaporanBanding(mentah: unknown): LaporanBanding | null {
@@ -225,7 +284,7 @@ export function bacaLaporanBanding(mentah: unknown): LaporanBanding | null {
     keterangan: teksAman(o.keterangan, 600),
     ringkas: o.ringkas.slice(0, 40).map((r) => {
       const x = (r ?? {}) as Record<string, unknown>;
-      return { jenis: teksAman(x.jenis, 80), naskah: angkaAman(x.naskah), alinea: angkaAman(x.alinea), identik: angkaAman(x.identik), persen: angkaAman(x.persen), naskahIdentik: angkaAman(x.naskahIdentik) };
+      return { jenis: teksAman(x.jenis, 80), naskah: angkaAman(x.naskah), alinea: angkaAman(x.alinea), identik: angkaAman(x.identik), persen: angkaAman(x.persen), naskahIdentik: angkaAman(x.naskahIdentik), dijelaskan: angkaAman(x.dijelaskan), belumDijelaskan: angkaAman(x.belumDijelaskan) };
     }),
     perKelas,
     beda: (Array.isArray(o.beda) ? o.beda : []).slice(0, 500).map((r) => {
