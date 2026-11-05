@@ -55,7 +55,7 @@ describe("B1. penilai tanggal murni", () => {
     expect(nilai("2026-13-01", { tanggal: true }).sebab).toEqual(["bulan lebih dari 12"]);
     expect(nilai("2026-02-32", { tanggal: true }).sebab).toEqual(["hari lebih dari 31"]);
     expect(nilai("2026-12-31", { tanggal: true }).sebab).toEqual([]);
-    expect(nilai("2026-02-30", { tanggal: true }).sebab).toEqual([]); // bukan batas yang diminta
+    expect(nilai("2026-02-30", { tanggal: true }).sebab).toEqual(["tanggal tidak ada di kalender"]);
   });
 
   it("tanggal lahir di masa depan, hanya untuk isian tanggal lahir", () => {
