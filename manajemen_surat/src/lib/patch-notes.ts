@@ -1,6 +1,6 @@
-export const APP_VERSION = "2.46.1";
+export const APP_VERSION = "2.47.0";
 export const APP_VERSION_LABEL =
-  "ALETA Judicia v2.46.1 - November 2026";
+  "ALETA Judicia v2.47.0 - November 2026";
 
 export type PatchNote = {
   version: string;
@@ -21,6 +21,37 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.47.0",
+    title: "ALETA Judicia v2.47.0 - November 2026",
+    date: "2026-11-05",
+    status: "Terpasang bersama rilis ekstensi 1.205.75",
+    summary:
+      "Sampai rilis ekstensi 1.205.75 (5 November 2026): UI Baru untuk semua akun, menimpa putusan dan e-Doc seperti SIPP, perbaikan Jadwal Sidang, dan cermin jadwal yang lebih lengkap.",
+    added: [
+      "Menimpa form Putusan Akhir, e-Doc putusan, dan e-Doc anonimisasi, dengan penanda per dokumen dan pertanyaan sebelum menimpa.",
+      "Tetapkan mediator di pita kartu Jadwal Sidang, dengan jumlah perkara mediasi dan mediasi sukarela mediator tahun ini.",
+      "Cermin jadwal menyimpan riwayat mediasi penuh, kolom yang dapat dicari, dan arsip nomor antrian. Bila SIPP tidak terjangkau, Jadwal Sidang dan Jadwal Mediasi menampilkan data terakhir.",
+    ],
+    changed: [
+      "Akun yang sudah dikenali selalu memakai UI Baru; layar penerapan tampilan tinggal saklar fitur.",
+      "Alasan penundaan menjadi satu kotak yang dapat dipilih lalu disunting; kolom Alasan lain dihapus.",
+      "Nomor antrian tampil dalam kotak di samping jam, dan tag kehadiran hanya tampil bila nama pihak tidak berwarna.",
+      "Audit e-Doc anonimisasi dan penulisan Direktori Putusan disamakan dengan SIPP.",
+    ],
+    fixed: [
+      "Perkara yang sudah ada hasilnya tanpa mengambil nomor tidak lagi terhitung Belum ambil antrian.",
+    ],
+    security: [
+      "Tidak ada perubahan keamanan. Mode coba Super Admin yang menahan tulisan ikut dihapus bersama pilihan tampilan.",
+    ],
+    operationalNotes: [
+      "Bot dan portal dibangun ulang; migrasi 0134 wajib dijalankan. Pemindaian riwayat mediasi berjalan malam hari dan hanya membaca.",
+    ],
+    knownLimitations: [
+      "Bila akun basis data tidak boleh REPLACE, menimpa Direktori Putusan memakai UPDATE dengan isi sama; hanya nomor urut barisnya yang tidak berganti.",
+    ],
+  },
   {
     version: "2.46.1",
     title: "ALETA Judicia v2.46.1 - November 2026",

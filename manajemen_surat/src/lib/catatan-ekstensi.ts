@@ -57,6 +57,20 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.75",
+    dirilis: "2026-11-05T12:00:00+08:00",
+    judul: "UI Baru untuk semua akun, menimpa putusan seperti SIPP, dan perbaikan Jadwal Sidang",
+    butir: [
+      "Akun yang sudah dikenali, termasuk Super Admin, selalu memakai UI Baru. Pilihan tampilan Lama dan Baru dihapus dari popup dan dari layar penerapan di portal.",
+      "Form Putusan Akhir, e-Doc putusan, dan e-Doc anonimisasi yang sudah ada dapat dicentang lalu ditimpa tanpa dihapus dahulu, dengan riwayat yang sama seperti saat petugas menimpa lewat SIPP.",
+      "Tiap perkara menampilkan penanda sudah atau belum diunggah per dokumen, juga pada jalur massal. Sebelum menimpa muncul pertanyaan Anda yakin menimpa dengan pilihan Ya, timpa dan Tidak.",
+      "Jadwal Sidang: alasan penundaan menjadi satu kotak yang dapat dipilih lalu disunting langsung; kolom Alasan lain dihapus. Kotak agenda ikut berubah sama.",
+      "Jadwal Sidang: nomor antrian tampil dalam kotak di samping jam. Perkara yang sudah ada hasilnya tanpa mengambil nomor tampil Tanpa antrian dan tidak lagi terhitung Belum ambil.",
+      "Jadwal Sidang: tag kehadiran hanya tampil bila nama pihak tidak berwarna, dan semua tag berhuruf awal kapital.",
+      "Tetapkan mediator tampil di pita kartu saat kedua pihak pertama kali hadir bersama. Isiannya langsung pilihan, dengan angka perkara mediasi dan mediasi sukarela tahun ini di samping nama mediator.",
+    ],
+  },
+  {
     versi: "1.205.74",
     dirilis: "2026-11-04T17:00:00+08:00",
     judul: "Kasir: usulan ganda dibetulkan, urutan pihak, ikon jurusita, status pihak di Instrumen",
