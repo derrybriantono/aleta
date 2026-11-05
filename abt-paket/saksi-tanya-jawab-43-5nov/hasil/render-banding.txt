@@ -1,0 +1,83 @@
+Render ABT asli sebelum dan sesudah paket. Grup isianasal tidak tercetak; teks tampak harus sama. Tanpa data pihak.
+kode	perkara	teks sama	sisa #NNNN# sesudah	kurung seimbang	bita sesudah - sebelum	berkas
+S0001	10126	ya	0	ya	36	1 Perceraian CG/[01a] [Kabul Verstek] Cerai - Alasan E (Qabla Ad Dukhul).rtf
+S0002	10126	ya	0	ya	36	1 Perceraian CG/[01ab] [Tolak Verstek] Cerai - Kurang 6 Bulan SEMA 1 Tahun 2022.rtf
+S0003	10126	ya	0	ya	36	1 Perceraian CG/[01ab] [Tolak Verstek] Cerai - Unus Testis Nullus Testis.rtf
+S0004	10126	ya	0	ya	90	1 Perceraian CG/[02] [Kabul] CG - F - (3 Saksi T).rtf
+S0004	10200	ya	0	ya	4535	1 Perceraian CG/[02] [Kabul] CG - F - (3 Saksi T).rtf
+S0005	10126	ya	0	ya	108	1 Perceraian CG/[02] [Kabul] CG - F - (4 Saksi T).rtf
+S0005	10200	ya	0	ya	4553	1 Perceraian CG/[02] [Kabul] CG - F - (4 Saksi T).rtf
+S0006	10126	ya	0	ya	72	1 Perceraian CG/[02] [Kabul] CG - F.rtf
+S0006	10200	ya	0	ya	4517	1 Perceraian CG/[02] [Kabul] CG - F.rtf
+S0007	10126	ya	0	ya	36	1 Perceraian CG/[02a] [Kabul] CG - T Tidak Hadir Setelah Mediasi - F.rtf
+S0008	10126	ya	0	ya	72	1 Perceraian CG/[02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf
+S0009	10126	ya	0	ya	72	1 Perceraian CG/[02c] [Kabul] CG - F - Pencabutan Ditolak T Sesudah Jawaban.rtf
+S0010	10126	ya	0	ya	72	1 Perceraian CG/[02c] [Kabul] CG - Kumulasi Nafkah Istri (Madliyah, Iddah, Mutah) - Kontradiktoir.rtf
+S0011	10126	ya	0	ya	36	1 Perceraian CG/[03a] [Tolak] Cerai - Kontradiktoir (T Hadir Jawab-Menjawab) - F Tidak Terbukti.rtf
+S0012	10126	ya	0	ya	72	1 Perceraian CG/[98] [NO] 8. Cerai P & T Hadir - Kontradiktoir - Cacat Formil Gugatan.rtf
+S0013	8781	ya	0	ya	18	10 Ekonomi Syariah/[01] [Kabul] ES Gugatan Sederhana - Wanprestasi - P & T Hadir.rtf
+S0014	8781	ya	0	ya	18	10 Ekonomi Syariah/[03] [Tolak] ES Gugatan Sederhana - Wanprestasi Tidak Terbukti.rtf
+S0015	10139	ya	0	ya	36	1a Perceraian CT/[01a] [Kabul Verstek] CT - F (Ex Offiicio mutah iddah dan nafkah anak).rtf
+S0016	10139	ya	0	ya	36	1a Perceraian CT/[01ab] [Tolak Verstek] Cerai - Kurang 6 Bulan SEMA 1 Tahun 2022.rtf
+S0017	10139	ya	0	ya	90	1a Perceraian CT/[02] [Kabul] CT - F - (3 Saksi T).rtf
+S0018	10139	ya	0	ya	108	1a Perceraian CT/[02] [Kabul] CT - F - (4 Saksi T).rtf
+S0019	10139	ya	0	ya	72	1a Perceraian CT/[02] [Kabul] CT - F.rtf
+S0020	10139	ya	0	ya	36	1a Perceraian CT/[02a] [Kabul] CT - T Tidak Hadir Setelah Mediasi - F.rtf
+S0021	10139	ya	0	ya	72	1a Perceraian CT/[02b] [Kabul] CT - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf
+S0022	10139	ya	0	ya	72	1a Perceraian CT/[02c] [Kabul] CT - F - Pencabutan Ditolak T Sesudah Jawaban.rtf
+S0023	10139	ya	0	ya	36	1a Perceraian CT/[03a] [Tolak] Cerai - Kontradiktoir (T Hadir Jawab-Menjawab) - F Tidak Terbukti.rtf
+S0024	10139	ya	0	ya	72	1a Perceraian CT/[98] [NO] 8. Cerai P & T Hadir - Kontradiktoir - Cacat Formil Permohonan.rtf
+S0025	10126	ya	0	ya	72	1c Perceraian Kumulasi Itsbat Nikah/[02] [Kabul] Putusan CG Kumulasi Itsbat Nikah - Kontradiktoir.rtf
+S0026	10139	ya	0	ya	72	1c Perceraian Kumulasi Itsbat Nikah/[02] [Kabul] Putusan CT Kumulasi Itsbat Nikah - Kontradiktoir.rtf
+S0027	10126	ya	0	ya	36	1c Perceraian Kumulasi Itsbat Nikah/[03] [Tolak] Putusan CG Kumulasi Itsbat Nikah - Itsbat Kabul, Cerai Ditolak (Kontradiktoir).rtf
+S0028	10126	ya	0	ya	36	1c Perceraian Kumulasi Itsbat Nikah/[03] [Tolak] Putusan CT Kumulasi Itsbat Nikah - Itsbat Kabul, Cerai Ditolak (Kontradiktoir).rtf
+S0029	10126	ya	0	ya	36	1c Perceraian Kumulasi Itsbat Nikah/[03b] [Tolak] Putusan CG Kumulasi Itsbat Nikah - Itsbat Ditolak (Rukun Syarat Tidak Terbukti), Cerai NO.rtf
+S0030	10126	ya	0	ya	36	1c Perceraian Kumulasi Itsbat Nikah/[03b] [Tolak] Putusan CT Kumulasi Itsbat Nikah - Itsbat Ditolak (Rukun Syarat Tidak Terbukti), Cerai NO.rtf
+S0031	10126	ya	0	ya	72	1c Perceraian Kumulasi Itsbat Nikah/[99b] [NO] Putusan CG Kumulasi Itsbat Nikah - Kontradiktoir - Cacat Formil Gugatan.rtf
+S0032	10139	ya	0	ya	72	1c Perceraian Kumulasi Itsbat Nikah/[99b] [NO] Putusan CT Kumulasi Itsbat Nikah - Kontradiktoir - Cacat Formil Gugatan.rtf
+S0033	10126	ya	0	ya	36	1c Perceraian Kumulasi Itsbat Nikah/[99d] [NO] Putusan CG Kumulasi Itsbat Nikah - Itsbat NO (Poligami Sirri), Cerai NO.rtf
+S0034	10126	ya	0	ya	36	1c Perceraian Kumulasi Itsbat Nikah/[99d] [NO] Putusan CT Kumulasi Itsbat Nikah - Itsbat NO (Poligami Sirri), Cerai NO.rtf
+S0035	10126	ya	0	ya	72	1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak/[02] [Kabul] Putusan CG Kumulasi Hak Asuh Anak - Kontradiktoir.rtf
+S0036	10126	ya	0	ya	72	1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak/[02b] [Kabul] Putusan CG Kumulasi Hak Asuh dan Nafkah Anak - Kontradiktoir.rtf
+S0037	10126	ya	0	ya	72	1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak/[99b] [NO] Putusan CG Kumulasi Hak Asuh Anak - Kontradiktoir - Cacat Formil Gugatan.rtf
+S0038	10276	ya	0	ya	36	2 Itsbat Nikah/[01] [Kabul] IN.rtf
+S0038	10200	ya	0	ya	4481	2 Itsbat Nikah/[01] [Kabul] IN.rtf
+S0039	10276	ya	0	ya	36	2 Itsbat Nikah/[01a] [Kabul] IN - Syahadah Al Istifadhah.rtf
+S0040	10276	ya	0	ya	36	2 Itsbat Nikah/[01b] [Kabul] IN Itsbat Terpadu.rtf
+S0041	10276	ya	0	ya	36	2 Itsbat Nikah/[01d] [Kabul] IN - Format Lengkap Rukun dan Syarat per Unsur.rtf
+S0042	10276	ya	0	ya	36	2 Itsbat Nikah/[01e] [Kabul] IN - Satu Pemohon (Pasangan Meninggal, Voluntair).rtf
+S0043	10276	ya	0	ya	36	2 Itsbat Nikah/[01f] [Kabul] IN Kabul (Hadir Tapi Lupa Prosesi Nikah).rtf
+S0044	10276	ya	0	ya	36	2 Itsbat Nikah/[03] [Tolak] IN - Rukun Tidak Terpenuhi (Wali Tidak Sah).rtf
+S0045	10276	ya	0	ya	36	2 Itsbat Nikah/[03a] [Tolak] IN - Rukun dan Syarat Nikah Tidak Terbukti.rtf
+S0046	10276	ya	0	ya	36	2 Itsbat Nikah/[03b] [Tolak] IN - Terdapat Halangan Perkawinan.rtf
+S0047	10276	ya	0	ya	36	2 Itsbat Nikah/[03c] [Tolak] IN - Alternatif Tolak - Salah Satu Pihak Masih Terikat Perkawinan Lain.rtf
+S0048	10276	ya	0	ya	36	2 Itsbat Nikah/[99c] [NO] IN - Poligami Sirri atau Masih Terikat Perkawinan Lain (SEMA 3 2018, Buku II 2026).rtf
+S0049	10276	ya	0	ya	36	2 Itsbat Nikah/[99d] [NO] IN - Pernikahan Sesudah 2019 Tidak Dicatatkan Tanpa Alasan Mendesak (UU Adminduk).rtf
+S0050	10276	ya	0	ya	36	2a Itsbat Nikah Kontensius/[01] [Kabul] IN Kontensius - Pasangan Meninggal, Ahli Waris Mengakui.rtf
+S0051	10276	ya	0	ya	36	2a Itsbat Nikah Kontensius/[01b] [Kabul Verstek] IN Kontensius - Pasangan Meninggal, Ahli Waris Tidak Hadir.rtf
+S0052	10276	ya	0	ya	36	2a Itsbat Nikah Kontensius/[01c] [Kabul] IN Kontensius - Pasangan Meninggal, Pencairan Dana (Taspen, BPJS, Bank).rtf
+S0053	10261	ya	0	ya	36	3 Dispensasi Kawin/[01] [Kabul] DK - (Anak P Cewek) Hamil.rtf
+S0053	10200	ya	0	ya	4481	3 Dispensasi Kawin/[01] [Kabul] DK - (Anak P Cewek) Hamil.rtf
+S0054	10261	ya	0	ya	36	3 Dispensasi Kawin/[01] [Kabul] DK - (Anak P Cowok) Calon Istri Hamil.rtf
+S0055	10261	ya	0	ya	36	3 Dispensasi Kawin/[01c] [Kabul] DK - (Anak P Cewek) Alasan Mendesak Otomatis (Hamil atau Pacaran Erat).rtf
+S0056	10261	ya	0	ya	36	3 Dispensasi Kawin/[01d] [Kabul] DK - Kedua Calon Mempelai di Bawah Umur (Dua Keluarga Pemohon, Hamil atau Pacaran Erat).rtf
+S0057	10261	ya	0	ya	36	3 Dispensasi Kawin/[02] [Kabul] DK - (Anak P Cewek) sudah berhubungan badan.rtf
+S0058	10261	ya	0	ya	36	3 Dispensasi Kawin/[02] [Kabul] DK - (Anak P Cowok) sudah berhubungan badan.rtf
+S0059	10261	ya	0	ya	36	3 Dispensasi Kawin/[03] [Tolak] DK - (Anak P Cewek) Belum Hamil.rtf
+S0060	10261	ya	0	ya	36	3 Dispensasi Kawin/[03a] [Tolak] DK - (Anak P Cowok) Calon Istri Belum Hamil, Hanya Berpacaran.rtf
+S0061	10261	ya	0	ya	36	3 Dispensasi Kawin/[03b] [Tolak] DK - (Anak P Cewek) Alasan Sangat Mendesak Tidak Terbukti (Alasan Lain, Isian 9771).rtf
+S0062	10261	ya	0	ya	36	3 Dispensasi Kawin/[03c] [Tolak] DK - (Anak P Cowok) Alasan Sangat Mendesak Tidak Terbukti (Alasan Lain, Isian 9771).rtf
+S0063	10025	ya	0	ya	72	4a Harta Bersama/[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf
+S0064	10096	ya	0	ya	36	6 Perwalian/Perwalian Anak oleh ortu kandung Kabul.rtf
+S0065	10096	ya	0	ya	36	6 Perwalian/Perwalian Anak oleh ortu kandung Tolak Primer Kabul Subsider.rtf
+S0066	10096	ya	0	ya	36	6 Perwalian/[01b] [Kabul] Perwalian - Anak Yatim Piatu oleh Kerabat (Bukan Orang Tua).rtf
+S0067	10090	ya	0	ya	5061	8 Asal Usul Anak/[01] [Kabul] AUA - Anak Sah dari Perkawinan Tercatat, Belum Punya Akta Kelahiran.rtf
+S0068	10090	ya	0	ya	5061	8 Asal Usul Anak/[01a] [Kabul] AUA - Perkawinan Siri Dicatat Kemudian, Anak Lahir Sebelum Pencatatan.rtf
+S0069	10090	ya	0	ya	5061	8 Asal Usul Anak/[01b] [Kabul] AUA - Anak Luar Perkawinan Sah, Hubungan Perdata (Ibu Saja atau Perkawinan Siri).rtf
+S0070	10090	ya	0	ya	5061	8 Asal Usul Anak/[01c] [Kabul] AUA - Anak Lahir Kurang dari Enam Bulan setelah Akad Nikah.rtf
+S0071	10090	ya	0	ya	5061	8 Asal Usul Anak/[98] [Cabut] AUA - Setelah Pembuktian.rtf
+S0072	10178	ya	0	ya	3141	9 Penetapan Ahli Waris/[01] [Kabul] PAW - Ahli Waris Anak Kandung (Suami-Istri dan Orang Tua Pewaris Telah Meninggal).rtf
+S0073	10178	ya	0	ya	3141	9 Penetapan Ahli Waris/[01b] [Kabul] PAW - Susunan Ahli Waris Dinamis (Pasangan, Anak, Ayah, Ibu - Pertimbangan Bagian Otomatis).rtf
+S0074	10178	ya	0	ya	3141	9 Penetapan Ahli Waris/[01c] [Kabul] PAW - Susunan Ahli Waris Lengkap (Cucu Pengganti, Kakek, Nenek, Saudara Seibu - Aul dan Radd Otomatis).rtf
+S0075	9024	ya	0	ya	2761	9a Lain-Lain (Pengangkatan Anak)/[01] [Kabul] Pengangkatan Anak.rtf
+GAGAL	0
