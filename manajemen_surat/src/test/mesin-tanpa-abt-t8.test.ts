@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 
@@ -146,5 +147,27 @@ describe("simbol kendali RTF dari rumus (Tahap 8)", () => {
       const h = await mesin.isiRtf("{\\rtf1 #0206#}", { perkaraId: "7" });
       expect(h.rtf).toContain("a\\par b");
     }
+  });
+});
+
+describe("nilai biner di jalur ALETA (Tahap 8)", () => {
+  const sumber = readFileSync(path.join(AKAR, "aleta_bot/services/sippReadOnlyBridgeService.js"), "latin1");
+
+  it("hanya mesin jalur ALETA yang memakai pembaca nilai biner latin1; panel Blangko Derry dan BAS massal tetap memakai kueriMesinSipp", () => {
+    expect(sumber).toContain("function kueriMesinSippJalurAleta(");
+    expect(sumber).toContain("buatMesin({ kueri: kueriMesinSippJalurAleta, jalurAleta:");
+    expect(sumber).toContain("mesinAbt = buatMesin({ kueri: kueriMesinSipp });");
+    expect((sumber.match(/kueriMesinSippJalurAleta/g) ?? []).length).toBe(2);
+    expect(sumber).toMatch(/charsetNr === 63/);
+  });
+
+  it("pembaca biner: nilai bukan biner tidak berubah, nilai biner dibaca sebagai latin1", () => {
+    const potong = sumber.slice(sumber.indexOf("function kueriMesinSippJalurAleta("));
+    const typeCast = /typeCast: (\(field\) => [^\n]+),\n/.exec(potong)![1];
+    const tc = new Function(`return ${typeCast}`)() as (f: unknown) => string;
+    const biner = { packet: { charsetNr: 63 }, type: "VAR_STRING", buffer: () => Buffer.from([0x65, 0x20, 0xb7, 0x20, 0x76]), string: () => "e � v" };
+    const biasa = { packet: { charsetNr: 33 }, type: "VAR_STRING", buffer: () => Buffer.from("x"), string: () => "café" };
+    expect(tc(biner)).toBe("e · v");
+    expect(tc(biasa)).toBe("café");
   });
 });
