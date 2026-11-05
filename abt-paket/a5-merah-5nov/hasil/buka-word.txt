@@ -1,0 +1,5 @@
+Word 16 membuka 65 berkas sesudah dan 65 sebelum (baca saja): 130 BUKA, 0 GALAT. Halaman beda: 4.
+1 Perceraian CG/[02a] [Kabul] CG - T Tidak Hadir Setelah Mediasi - F.rtf	20 -> 19
+1a Perceraian CT/[02] [Kabul] CT - F.rtf	29 -> 28
+1c Perceraian Kumulasi Itsbat Nikah/[02] [Kabul] Putusan CG Kumulasi Itsbat Nikah - Kontradiktoir.rtf	31 -> 30
+1c Perceraian Kumulasi Itsbat Nikah/[02] [Kabul] Putusan CT Kumulasi Itsbat Nikah - Kontradiktoir.rtf	31 -> 30

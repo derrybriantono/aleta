@@ -1,0 +1,2 @@
+Sidik aps_badilag_vs sebelum uji (variabel, abt_data_teks, abt_data_tanggal, fungsi), sesudah dikembalikan alat/siap_vs.py:
+{'abt_variabel': ['2881', '2780f6c9c31eb5f9994334d765767923'], 'abt_data_teks': ['16230', 'cfe57476b108dbd86203bd45d0833ce4'], 'abt_data_tanggal': ['1511', '361d2d5e0e306acfe8f1ced26875303e'], 'fungsi': [65, 'c75012a48db8da2d5ac190201db2bcdc']}

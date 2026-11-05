@@ -1,0 +1,57 @@
+SIDIK AWAL df0e26a66ea97258183ed37761b18dbd ; VARIABEL AWAL 3011 33254733fea28c943da3b13287b63dcf 
+== 1. pasang pertama
+    PRASYARAT COCOK (0|0|2)
+    SIAP=65
+    BERKAS SIAP
+    PERIKSA: SEMUA COCOK
+    TAMBAL=65
+    BERKAS COCOK
+    SELESAI - paket abt-a5-merah-5nov terpasang. Cadangan: /d/aleta-dev/wt/w221/abt-paket/a5-merah-5nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w221/abt-paket/a5-merah-5nov/paket-satker/pulih-satker.sh
+    periksa: BERKAS COCOK
+== 2. pasang ulang (idempoten)
+    PRASYARAT COCOK (0|9|2)
+    SUDAH=65
+    BERKAS SIAP
+    PERIKSA: SEMUA COCOK
+    SUDAH=65
+    BERKAS COCOK
+    SELESAI - paket abt-a5-merah-5nov terpasang. Cadangan: /d/aleta-dev/wt/w221/abt-paket/a5-merah-5nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w221/abt-paket/a5-merah-5nov/paket-satker/pulih-satker.sh
+    SIDIK & VARIABEL TETAP
+== 3. pulih
+    PULIH=65
+    BERKAS PULIH
+    PULIH COCOK (0|0|2)
+    SIDIK BERKAS = AWAL
+    VARIABEL = AWAL
+== 4. pasang lagi sesudah pulih
+    PRASYARAT COCOK (0|0|2)
+    SIAP=65
+    BERKAS SIAP
+    PERIKSA: SEMUA COCOK
+    TAMBAL=65
+    BERKAS COCOK
+    SELESAI - paket abt-a5-merah-5nov terpasang. Cadangan: /d/aleta-dev/wt/w221/abt-paket/a5-merah-5nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w221/abt-paket/a5-merah-5nov/paket-satker/pulih-satker.sh
+    SAMA DENGAN PASANG PERTAMA
+    PULIH COCOK (0|0|2)
+== 5. satu berkas disunting -> BERHENTI tanpa ubahan
+    PRASYARAT COCOK (0|0|2)
+    GAGAL=1 SIAP=64
+    BERKAS TIDAK SIAP
+    GAGAL: berkas tujuan tidak sama dengan keadaan server sesudah keputusan-a-rekonvensi-4nov - TIDAK ada yang diubah
+    TIDAK ADA YANG BERUBAH
+== 6. paket sebelumnya belum terpasang (berkas lama) -> BERHENTI tanpa ubahan
+    GAGAL=15 SIAP=50
+    BERKAS TIDAK SIAP
+    GAGAL: berkas tujuan tidak sama dengan keadaan server sesudah keputusan-a-rekonvensi-4nov - TIDAK ada yang diubah
+    TIDAK ADA YANG BERUBAH
+== 7. nomor 9285 dipakai variabel lain -> BERHENTI tanpa ubahan
+    GAGAL: prasyarat '1|0|2' (harus '0|0|2' pasang pertama atau '0|9|2' pasang ulang) - TIDAK ada yang diubah. Arti angka: lihat abt-a5-merah-5nov-PRASYARAT.sql
+    BERKAS TIDAK BERUBAH
+    VARIABEL = AWAL
+== 8. disunting sesudah pasang lalu pulih -> dibiarkan
+    BIARKAN=1 PULIH=64
+    BERKAS PULIH SEBAGIAN
+    GAGAL=1 SIAP=64
+    BERKAS TIDAK SIAP
+    PULIH SEBAGIAN: prasyarat sekarang '0|0|2' (ada yang sudah disunting orang, dibiarkan)
+AKHIR: VARIABEL = AWAL

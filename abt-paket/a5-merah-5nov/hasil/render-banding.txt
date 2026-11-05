@@ -1,0 +1,192 @@
+Render ABT asli (salinan vs30/abt, sipp_vs + aps_badilag_vs yang disamakan variabel/fungsinya) sebelum/sesudah. Isian baru belum diisi = "..." bawaan ABT.
+kode	perkara	sisa#NNNN# sebelum	sisa#NNNN# sesudah	"..." sebelum	"..." sesudah	merah sebelum	merah sesudah	beda kata	berkas
+A0001	10177	0	0	0	1	1	0	1	1 Perceraian CG - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+A0002	10126	0	0	84	84	83	57	3	1 Perceraian CG/[02] [Kabul] CG - F.rtf
+A0003	10126	0	0	45	45	44	28	2	1 Perceraian CG/[02a] [Kabul] CG - T Tidak Hadir Setelah Mediasi - F.rtf
+A0004	10126	0	0	88	88	93	67	3	1 Perceraian CG/[02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf
+A0005	10126	0	0	88	88	83	57	3	1 Perceraian CG/[02c] [Kabul] CG - F - Pencabutan Ditolak T Sesudah Jawaban.rtf
+A0006	10126	0	0	84	84	83	57	3	1 Perceraian CG/[02c] [Kabul] CG - Kumulasi Nafkah Istri (Madliyah, Iddah, Mutah) - Kontradiktoir.rtf
+A0007	10126	0	0	11	11	1	0	0	1 Perceraian CG/[98] [Cabut] 7. Cerai P & T Hadir - Sesudah Jawaban dengan Persetujuan T.rtf
+A0008	10126	0	0	52	52	5	0	0	1 Perceraian CG/[98] [NO] 8. Cerai P & T Hadir - Kontradiktoir - Cacat Formil Gugatan.rtf
+A0009	10126	0	0	15	15	5	0	0	1 Perceraian CG/[98e] [Sela] CG - Eksepsi Kewenangan Absolut Ditolak.rtf
+A0010	10126	0	0	15	15	5	0	0	1 Perceraian CG/[98f] [Sela] CG - Eksepsi Kewenangan Relatif Ditolak.rtf
+A0011	10126	0	0	15	15	5	0	0	1 Perceraian CG/[99c] [NO] CG - Eksepsi Kewenangan Absolut Dikabulkan.rtf
+A0012	10126	0	0	15	15	5	0	0	1 Perceraian CG/[99d] [NO] CG - Eksepsi Kewenangan Relatif Dikabulkan.rtf
+A0013	8781	0	0	6	7	1	0	1	10a Ekonomi Syariah Biasa - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+A0014	10137	0	0	0	1	1	0	1	1a Perceraian CT - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+A0015	10139	0	0	83	84	48	35	3	1a Perceraian CT/[02] [Kabul] CT - F.rtf
+A0016	10139	0	0	44	44	7	5	1	1a Perceraian CT/[02a] [Kabul] CT - T Tidak Hadir Setelah Mediasi - F.rtf
+A0017	10139	0	0	87	88	48	35	3	1a Perceraian CT/[02b] [Kabul] CT - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf
+A0018	10139	0	0	87	88	48	35	3	1a Perceraian CT/[02c] [Kabul] CT - F - Pencabutan Ditolak T Sesudah Jawaban.rtf
+A0019	10139	0	0	11	11	1	0	0	1a Perceraian CT/[98] [Cabut] 7. Cerai P & T Hadir - Sesudah Jawaban dengan Persetujuan T.rtf
+A0020	10139	0	0	52	52	5	0	0	1a Perceraian CT/[98] [NO] 8. Cerai P & T Hadir - Kontradiktoir - Cacat Formil Permohonan.rtf
+A0021	10139	0	0	15	15	5	0	0	1a Perceraian CT/[98e] [Sela] CT - Eksepsi Kewenangan Absolut Ditolak.rtf
+A0022	10139	0	0	15	15	5	0	0	1a Perceraian CT/[98f] [Sela] CT - Eksepsi Kewenangan Relatif Ditolak.rtf
+A0023	10139	0	0	15	15	5	0	0	1a Perceraian CT/[99c] [NO] CT - Eksepsi Kewenangan Absolut Dikabulkan.rtf
+A0024	10139	0	0	15	15	5	0	0	1a Perceraian CT/[99d] [NO] CT - Eksepsi Kewenangan Relatif Dikabulkan.rtf
+A0025	10126	0	0	100	100	83	57	3	1c Perceraian Kumulasi Itsbat Nikah/[02] [Kabul] Putusan CG Kumulasi Itsbat Nikah - Kontradiktoir.rtf
+A0026	10139	0	0	99	100	48	35	3	1c Perceraian Kumulasi Itsbat Nikah/[02] [Kabul] Putusan CT Kumulasi Itsbat Nikah - Kontradiktoir.rtf
+A0027	10126	0	0	11	11	1	0	0	1c Perceraian Kumulasi Itsbat Nikah/[98b] [Cabut] Putusan CG Kumulasi Itsbat Nikah - Sesudah Jawaban dengan Persetujuan T.rtf
+A0028	10139	0	0	11	11	1	0	0	1c Perceraian Kumulasi Itsbat Nikah/[98b] [Cabut] Putusan CT Kumulasi Itsbat Nikah - Sesudah Jawaban dengan Persetujuan T.rtf
+A0029	10126	0	0	52	52	5	0	0	1c Perceraian Kumulasi Itsbat Nikah/[99b] [NO] Putusan CG Kumulasi Itsbat Nikah - Kontradiktoir - Cacat Formil Gugatan.rtf
+A0030	10139	0	0	52	52	5	0	0	1c Perceraian Kumulasi Itsbat Nikah/[99b] [NO] Putusan CT Kumulasi Itsbat Nikah - Kontradiktoir - Cacat Formil Gugatan.rtf
+A0031	10126	0	0	0	1	1	0	1	1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS/BAS ALUR 37 CG Kumulasi Hak Asuh - Putus NO - Alamat T Salah.rtf
+A0032	10126	0	0	84	84	83	57	3	1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak/[02] [Kabul] Putusan CG Kumulasi Hak Asuh Anak - Kontradiktoir.rtf
+A0033	10126	0	0	89	89	83	57	3	1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak/[02b] [Kabul] Putusan CG Kumulasi Hak Asuh dan Nafkah Anak - Kontradiktoir.rtf
+A0034	10126	0	0	11	11	1	0	0	1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak/[98b] [Cabut] Putusan CG Kumulasi Hak Asuh Anak - Sesudah Jawaban dengan Persetujuan T.rtf
+A0035	10126	0	0	52	52	5	0	0	1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak/[99b] [NO] Putusan CG Kumulasi Hak Asuh Anak - Kontradiktoir - Cacat Formil Gugatan.rtf
+A0036	10177	0	0	0	1	1	0	1	1e Kelalaian Kewajiban Suami Istri - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+A0037	10177	0	0	0	1	1	0	1	1f Hak Bekas Istri - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+A0038	10276	0	0	30	31	11	10	1	2 Itsbat Nikah/[03] [Tolak] IN - Rukun Tidak Terpenuhi (Wali Tidak Sah).rtf
+A0039	10276	0	0	8	16	28	18	8	2 Itsbat Nikah/[99] [NO] IN - Masih Terikat Nikah Sebelumnya (Belum Cerai).rtf
+A0040	10276	0	0	2	3	1	0	1	2a Itsbat Nikah Kontensius - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+A0041	10025	0	0	0	1	1	0	1	4a Harta Bersama - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+A0042	10025	0	0	80	80	18	17	0	4a Harta Bersama/[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf
+A0043	10025	0	0	81	81	18	17	0	4a Harta Bersama/[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf
+A0044	10225	0	0	6	7	1	0	1	4b Kewarisan - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+A0045	9291	0	0	25	26	1	0	1	4c Wasiat - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+A0046	10177	0	0	0	1	1	0	1	4d Hibah - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+A0047	10177	0	0	0	1	1	0	1	4e Wakaf - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+A0048	8785	0	0	0	1	1	0	1	5 Izin Poligami - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+A0049	2306	0	0	1	2	1	0	1	5a Pembatalan Perkawinan - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+A0050	10096	0	0	111	111	5	4	0	6 Perwalian/Perwalian Anak oleh ortu kandung Kabul.rtf
+A0051	10096	0	0	54	56	13	8	3	6 Perwalian/Perwalian Anak oleh ortu kandung Tolak Primer Kabul Subsider.rtf
+A0052	10177	0	0	0	1	1	0	1	6a Hak Asuh Anak (Hadhanah) - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+A0053	10177	0	0	0	1	1	0	1	6b Penguasaan Anak - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+A0054	10177	0	0	0	1	1	0	1	6c Nafkah Anak - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+A0055	10177	0	0	0	1	1	0	1	6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+A0056	10177	0	0	0	1	1	0	1	6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+A0057	10177	0	0	0	1	1	0	1	6g Ganti Rugi terhadap Wali - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+A0058	10177	0	0	0	1	1	0	1	6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+A0059	10177	0	0	0	1	1	0	1	ALUR 09 Cerai Tidak Dapat Diterima (NO)/[2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+A0060	10276	0	0	3	3	0	0	0	2 Itsbat Nikah/[98] [Cabut] IN.rtf
+A0061	5061	0	0	2	2	0	0	2	5b Pencegahan Perkawinan/[98] [Cabut] Pencegahan Perkawinan - Permohonan Ditarik Kembali.rtf
+A0062	10096	0	0	0	0	0	0	2	6 Perwalian/[98] [Cabut] Perwalian.rtf
+A0063	10178	0	0	1	1	0	0	2	9 Penetapan Ahli Waris/[98] [Cabut] PAW.rtf
+A0064	9024	0	0	1	1	0	0	2	9a Lain-Lain (Pengangkatan Anak)/[98] [Cabut] Pengangkatan Anak.rtf
+A0065	9024	0	0	1	1	0	0	2	9b Permohonan Umum/[98] [Cabut] Permohonan.rtf
+
+Rincian beda kata (sebelum => sesudah), per berkas:
+A0001 1 Perceraian CG - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+   Lurah/Kepala Desa  =>  ...
+A0002 1 Perceraian CG/[02] [Kabul] CG - F.rtf
+   (PERTIMBANGAN APABILA SAKSI HANYA MENGETAHUI PISAH TAPI TIDAK MELIHAT LANGSUNG APA MASALAHNYA);  =>  
+   (PERTIMBANGAN APABILA SAKSI HANYA MENGETAHUI PISAH TAPI TIDAK MELIHAT LANGSUNG APA MASALAHNYA);  =>  
+   (APABILA SUAMI TIDAK BEKERJA/MALAS)  =>  
+A0003 1 Perceraian CG/[02a] [Kabul] CG - T Tidak Hadir Setelah Mediasi - F.rtf
+   (PERTIMBANGAN APABILA SAKSI HANYA MENGETAHUI PISAH TAPI TIDAK MELIHAT LANGSUNG APA MASALAHNYA);  =>  
+   (APABILA SUAMI TIDAK BEKERJA/MALAS)  =>  
+A0004 1 Perceraian CG/[02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf
+   (PERTIMBANGAN APABILA SAKSI HANYA MENGETAHUI PISAH TAPI TIDAK MELIHAT LANGSUNG APA MASALAHNYA);  =>  
+   (PERTIMBANGAN APABILA SAKSI HANYA MENGETAHUI PISAH TAPI TIDAK MELIHAT LANGSUNG APA MASALAHNYA);  =>  
+   (APABILA SUAMI TIDAK BEKERJA/MALAS)  =>  
+A0005 1 Perceraian CG/[02c] [Kabul] CG - F - Pencabutan Ditolak T Sesudah Jawaban.rtf
+   (PERTIMBANGAN APABILA SAKSI HANYA MENGETAHUI PISAH TAPI TIDAK MELIHAT LANGSUNG APA MASALAHNYA);  =>  
+   (PERTIMBANGAN APABILA SAKSI HANYA MENGETAHUI PISAH TAPI TIDAK MELIHAT LANGSUNG APA MASALAHNYA);  =>  
+   (APABILA SUAMI TIDAK BEKERJA/MALAS)  =>  
+A0006 1 Perceraian CG/[02c] [Kabul] CG - Kumulasi Nafkah Istri (Madliyah, Iddah, Mutah) - Kontradiktoir.rtf
+   (PERTIMBANGAN APABILA SAKSI HANYA MENGETAHUI PISAH TAPI TIDAK MELIHAT LANGSUNG APA MASALAHNYA);  =>  
+   (PERTIMBANGAN APABILA SAKSI HANYA MENGETAHUI PISAH TAPI TIDAK MELIHAT LANGSUNG APA MASALAHNYA);  =>  
+   (APABILA SUAMI TIDAK BEKERJA/MALAS)  =>  
+A0013 10a Ekonomi Syariah Biasa - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+   Lurah/Kepala Desa  =>  ...
+A0014 1a Perceraian CT - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+   Lurah/Kepala Desa  =>  ...
+A0015 1a Perceraian CT/[02] [Kabul] CT - F.rtf
+   _;  =>  ...;
+   (PERTIMBANGAN APABILA SAKSI HANYA MENGETAHUI PISAH TAPI TIDAK MELIHAT LANGSUNG APA MASALAHNYA);  =>  
+   (PERTIMBANGAN APABILA SAKSI HANYA MENGETAHUI PISAH TAPI TIDAK MELIHAT LANGSUNG APA MASALAHNYA);  =>  
+A0016 1a Perceraian CT/[02a] [Kabul] CT - T Tidak Hadir Setelah Mediasi - F.rtf
+   (PERTIMBANGAN APABILA SAKSI HANYA MENGETAHUI PISAH TAPI TIDAK MELIHAT LANGSUNG APA MASALAHNYA);  =>  
+A0017 1a Perceraian CT/[02b] [Kabul] CT - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf
+   _;  =>  ...;
+   (PERTIMBANGAN APABILA SAKSI HANYA MENGETAHUI PISAH TAPI TIDAK MELIHAT LANGSUNG APA MASALAHNYA);  =>  
+   (PERTIMBANGAN APABILA SAKSI HANYA MENGETAHUI PISAH TAPI TIDAK MELIHAT LANGSUNG APA MASALAHNYA);  =>  
+A0018 1a Perceraian CT/[02c] [Kabul] CT - F - Pencabutan Ditolak T Sesudah Jawaban.rtf
+   _;  =>  ...;
+   (PERTIMBANGAN APABILA SAKSI HANYA MENGETAHUI PISAH TAPI TIDAK MELIHAT LANGSUNG APA MASALAHNYA);  =>  
+   (PERTIMBANGAN APABILA SAKSI HANYA MENGETAHUI PISAH TAPI TIDAK MELIHAT LANGSUNG APA MASALAHNYA);  =>  
+A0025 1c Perceraian Kumulasi Itsbat Nikah/[02] [Kabul] Putusan CG Kumulasi Itsbat Nikah - Kontradiktoir.rtf
+   (PERTIMBANGAN APABILA SAKSI HANYA MENGETAHUI PISAH TAPI TIDAK MELIHAT LANGSUNG APA MASALAHNYA);  =>  
+   (PERTIMBANGAN APABILA SAKSI HANYA MENGETAHUI PISAH TAPI TIDAK MELIHAT LANGSUNG APA MASALAHNYA);  =>  
+   (APABILA SUAMI TIDAK BEKERJA/MALAS)  =>  
+A0026 1c Perceraian Kumulasi Itsbat Nikah/[02] [Kabul] Putusan CT Kumulasi Itsbat Nikah - Kontradiktoir.rtf
+   _;  =>  ...;
+   (PERTIMBANGAN APABILA SAKSI HANYA MENGETAHUI PISAH TAPI TIDAK MELIHAT LANGSUNG APA MASALAHNYA);  =>  
+   (PERTIMBANGAN APABILA SAKSI HANYA MENGETAHUI PISAH TAPI TIDAK MELIHAT LANGSUNG APA MASALAHNYA);  =>  
+A0031 1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS/BAS ALUR 37 CG Kumulasi Hak Asuh - Putus NO - Alamat T Salah.rtf
+   Lurah/Kepala Desa  =>  ...
+A0032 1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak/[02] [Kabul] Putusan CG Kumulasi Hak Asuh Anak - Kontradiktoir.rtf
+   (PERTIMBANGAN APABILA SAKSI HANYA MENGETAHUI PISAH TAPI TIDAK MELIHAT LANGSUNG APA MASALAHNYA);  =>  
+   (PERTIMBANGAN APABILA SAKSI HANYA MENGETAHUI PISAH TAPI TIDAK MELIHAT LANGSUNG APA MASALAHNYA);  =>  
+   (APABILA SUAMI TIDAK BEKERJA/MALAS)  =>  
+A0033 1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak/[02b] [Kabul] Putusan CG Kumulasi Hak Asuh dan Nafkah Anak - Kontradiktoir.rtf
+   (PERTIMBANGAN APABILA SAKSI HANYA MENGETAHUI PISAH TAPI TIDAK MELIHAT LANGSUNG APA MASALAHNYA);  =>  
+   (PERTIMBANGAN APABILA SAKSI HANYA MENGETAHUI PISAH TAPI TIDAK MELIHAT LANGSUNG APA MASALAHNYA);  =>  
+   (APABILA SUAMI TIDAK BEKERJA/MALAS)  =>  
+A0036 1e Kelalaian Kewajiban Suami Istri - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+   Lurah/Kepala Desa  =>  ...
+A0037 1f Hak Bekas Istri - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+   Lurah/Kepala Desa  =>  ...
+A0038 2 Itsbat Nikah/[03] [Tolak] IN - Rukun Tidak Terpenuhi (Wali Tidak Sah).rtf
+   tidak hadir acara pernikahan para Pemohon/berada di _,  =>  ...,
+A0039 2 Itsbat Nikah/[99] [NO] IN - Masih Terikat Nikah Sebelumnya (Belum Cerai).rtf
+   I/II  =>  ...
+   laki-laki/perempuan  =>  ...
+   I/II;  =>  ...;
+   I/II  =>  ...
+   suami/istri  =>  ...
+   Pemohon I / II masih terikat dengan perkawinan pria/wanita lain dan belum bercerai secara resmi/telah bercerai pada tanggal _ di Pengadilan Agama _,  =>  ...,
+   I/II  =>  ...
+   pria/wanita  =>  ...
+A0040 2a Itsbat Nikah Kontensius - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+   Lurah/Kepala Desa  =>  ...
+A0041 4a Harta Bersama - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+   Lurah/Kepala Desa  =>  ...
+A0044 4b Kewarisan - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+   Lurah/Kepala Desa  =>  ...
+A0045 4c Wasiat - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+   Lurah/Kepala Desa  =>  ...
+A0046 4d Hibah - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+   Lurah/Kepala Desa  =>  ...
+A0047 4e Wakaf - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+   Lurah/Kepala Desa  =>  ...
+A0048 5 Izin Poligami - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+   Lurah/Kepala Desa  =>  ...
+A0049 5a Pembatalan Perkawinan - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+   Lurah/Kepala Desa  =>  ...
+A0051 6 Perwalian/Perwalian Anak oleh ortu kandung Tolak Primer Kabul Subsider.rtf
+   (ANAK 1 PERSATU P NYA)  =>  
+   _ (_ tahun)  =>  ...
+   _ (_ tahun);  =>  ...;
+A0052 6a Hak Asuh Anak (Hadhanah) - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+   Lurah/Kepala Desa  =>  ...
+A0053 6b Penguasaan Anak - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+   Lurah/Kepala Desa  =>  ...
+A0054 6c Nafkah Anak - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+   Lurah/Kepala Desa  =>  ...
+A0055 6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+   Lurah/Kepala Desa  =>  ...
+A0056 6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+   Lurah/Kepala Desa  =>  ...
+A0057 6g Ganti Rugi terhadap Wali - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+   Lurah/Kepala Desa  =>  ...
+A0058 6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+   Lurah/Kepala Desa  =>  ...
+A0059 ALUR 09 Cerai Tidak Dapat Diterima (NO)/[2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
+   Lurah/Kepala Desa  =>  ...
+A0061 5b Pencegahan Perkawinan/[98] [Cabut] Pencegahan Perkawinan - Permohonan Ditarik Kembali.rtf
+   Ketua  =>  
+     =>  Hakim
+A0062 6 Perwalian/[98] [Cabut] Perwalian.rtf
+   Ketua  =>  
+     =>  Hakim
+A0063 9 Penetapan Ahli Waris/[98] [Cabut] PAW.rtf
+   Ketua  =>  
+     =>  Hakim
+A0064 9a Lain-Lain (Pengangkatan Anak)/[98] [Cabut] Pengangkatan Anak.rtf
+   Ketua  =>  
+     =>  Hakim
+A0065 9b Permohonan Umum/[98] [Cabut] Permohonan.rtf
+   Ketua  =>  
+     =>  Hakim
