@@ -15,7 +15,8 @@ import { newDb } from "pg-mem";
 import { describe, expect, it } from "vitest";
 
 import { GOLONGAN_ALUR, PERAN_ALUR, butirDariBaris, peranAlurDari, susunDaftarSiap } from "@/lib/aleta-abt-siap";
-import { KUNCI_PERSETUJUAN_HAK_FOLDER, bacaKeadaanHakFolder, simpanPersetujuan } from "@/server/modules/aleta-abt-alur/hak-folder";
+import { barisMenuDari, tingkatHakGabungan } from "@/lib/aleta-abt-hak-folder";
+import { KUNCI_PERSETUJUAN_HAK_FOLDER, bacaKeadaanHakFolder, bacaSinkronTerakhir, keadaanSaklarDariMenu, simpanPersetujuan } from "@/server/modules/aleta-abt-alur/hak-folder";
 import { bacaDaftarSiap } from "@/server/modules/aleta-abt-siap/service";
 
 const M = process.cwd();
@@ -178,6 +179,19 @@ describe("layanan daftar", () => {
   });
 });
 
+describe("folder arsip", () => {
+  it("saran dari folder arsip tidak tampil bagi peran yang dilihat, walau matriks belum disetujui", async () => {
+    const { db, dbUji } = await siapkan();
+    const sebelum = await bacaDaftarSiap(db, { peran: "pp", tanggal: "2026-11-05" }, { jadwal: jadwalTiruan([SIDANG_PUTUS]) });
+    const folder = sebelum.butir[0].saran[0].folder.replace(/^derry_briantono\//, "");
+    expect(sebelum.butir[0].saran.length).toBeGreaterThan(0);
+    await dbUji.run("INSERT INTO aleta_abt_berkas (id, folder, nama, arsip, dibuat_at, diubah_at) VALUES ('arsip-1', ?, 'x.rtf', 1, 't', 't')", [folder]);
+    const sesudah = await bacaDaftarSiap(db, { peran: "pp", tanggal: "2026-11-05" }, { jadwal: jadwalTiruan([SIDANG_PUTUS]) });
+    for (const x of sesudah.butir[0]?.saran ?? []) expect(x.folder.replace(/^derry_briantono\//, "")).not.toBe(folder);
+    expect(sesudah.butir[0].saran.length).toBe(sebelum.butir[0].saran.length - sebelum.butir[0].saran.filter((x) => x.folder.replace(/^derry_briantono\//, "") === folder).length);
+  });
+});
+
 describe("persetujuan matriks hak", () => {
   it("bawaan belum disetujui; menyetujui menuntut sidik yang sama; isi berubah = persetujuan gugur; dapat dicabut", async () => {
     const { db, menu, berkas } = await siapkan();
@@ -211,5 +225,42 @@ describe("persetujuan matriks hak", () => {
     const { db } = await siapkan();
     const { matriks } = await bacaKeadaanHakFolder(db);
     await expect(simpanPersetujuan(db, { id: "u1", name: "Derry" }, { setuju: true, sidik: matriks.sidik })).rejects.toMatchObject({ status: 422 });
+  });
+});
+
+describe("saklar PP boleh folder putusan dan Hakim boleh folder BAS ikut terhitung dari hak yang disalin", () => {
+  const menu = (id: string, grup: string, cek = "3") =>
+    barisMenuDari({ direktori: id, parent_direktori: "derry_briantono", user_cek: cek, user_grup_id: grup, user_top_id: "1", proses_id_min: "80", proses_id_max: "297", status: "aktif" });
+
+  it("mati, sebagian, nyala menurut isi user_grup_id folder yang terkena (aturan yang sama dengan Pengaturan SIPP dan ABT)", () => {
+    const mati = [menu("1 Perceraian CG", "1|10|20"), menu("1 Perceraian CG - BAS", "1|30|500")];
+    expect(keadaanSaklarDariMenu(mati)).toEqual({ ppPutusan: "mati", hakimBas: "mati" });
+    const sebagian = [menu("1 Perceraian CG", "1|10|20|500"), menu("2 Itsbat Nikah", "1|10|20")];
+    expect(keadaanSaklarDariMenu(sebagian).ppPutusan).toBe("sebagian");
+    const nyala = [menu("1 Perceraian CG", "1|10|20|500"), menu("1 Perceraian CG - BAS", "1|30|500|20")];
+    expect(keadaanSaklarDariMenu(nyala)).toEqual({ ppPutusan: "nyala", hakimBas: "nyala" });
+    expect(keadaanSaklarDariMenu([])).toEqual({ ppPutusan: "tidak-ada", hakimBas: "tidak-ada" });
+  });
+  it("folder arsip dan relaas tidak ikut menentukan keadaan saklar", () => {
+    const m = [menu("1 Perceraian CG", "1|10|20|500"), barisMenuDari({ direktori: "- BAS LAMA -", parent_direktori: "_arsip_derry_briantono", user_grup_id: "1", status: "aktif" }), menu("98 Relaas", "600")];
+    expect(keadaanSaklarDariMenu(m).ppPutusan).toBe("nyala");
+  });
+  it("saklar PP menyala = PP boleh (bila ditunjuk) di folder putusan; mati = tidak; hakim di folder BAS tetap hanya memvalidasi sampai saklarnya menyala", () => {
+    expect(tingkatHakGabungan(menu("1 Perceraian CG", "1|10|20"), ["pp"])).toBe("tidak");
+    expect(tingkatHakGabungan(menu("1 Perceraian CG", "1|10|20|500"), ["pp"])).toBe("ditunjuk");
+    const bas = barisMenuDari({ direktori: "1 Perceraian CG - BAS", parent_direktori: "derry_briantono", user_cek: "3", user_grup_id: "1|30|500", user_top_id: "1|30", user_validator: "10|20", status: "aktif" });
+    expect(tingkatHakGabungan(bas, ["hakim"])).toBe("validasi");
+    expect(tingkatHakGabungan({ ...bas, grup: [...bas.grup, 20] }, ["hakim"])).toBe("ditunjuk");
+  });
+  it("layanan melaporkan keadaan saklar dan pencocokan terakhir; Admin tidak diberi hak walau saklar menyala", async () => {
+    const { db, berkas, menu: simpanMenu } = await siapkan();
+    await berkas("p1", "1 Perceraian CG", "[01] Putusan.rtf");
+    await simpanMenu("1 Perceraian CG", { grup: "1|10|20|500", top: "1", cek: "3", pmin: "80", pmax: "297", jmin: "347", jmax: "347", ref: "jenis_perkara_id" });
+    const k = await bacaKeadaanHakFolder(db);
+    expect(k.saklar).toEqual({ ppPutusan: "nyala", hakimBas: "tidak-ada" });
+    const baris = k.matriks.baris.find((b) => b.folder === "1 Perceraian CG")!;
+    expect(baris.hak.pp).toBe("ditunjuk");
+    expect(baris.hak.admin).toBe("tidak");
+    expect(await bacaSinkronTerakhir(db)).toBeNull();
   });
 });

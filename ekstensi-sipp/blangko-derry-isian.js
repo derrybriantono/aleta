@@ -9912,7 +9912,8 @@
       const kunci = bedaKunci();
       const berkas = S.blangko.berkas;
       const id = perkaraId();
-      void m.simpan({ perkaraId: id, nomorPerkara: nomorPerkara(), berkas, teks: teksNaskahBeda(rtf) }).then((r) => {
+      // sidangKe = urutan sidang cetakan ini (tambahan 5 Nov 2026): dipakai Berdampingan membandingkan BAS; tidak ada permintaan tambahan.
+      void m.simpan({ perkaraId: id, nomorPerkara: nomorPerkara(), berkas, teks: teksNaskahBeda(rtf), sidangKe: Number(sidangUrutan()) || 0 }).then((r) => {
         if (r) bedaCache.set(kunci, r);
         if (bedaKunci() === kunci) perbaruiBedaCetak();
       });

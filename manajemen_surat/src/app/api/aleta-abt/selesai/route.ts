@@ -2,7 +2,7 @@ import { type NextRequest } from "next/server";
 
 import { ID_LANGKAH, LANGKAH_SELESAI, type IdLangkah, type JenisBerkasSelesai } from "@/lib/aleta-abt-selesai";
 import { aktorSuperAdminAlur, bacaBadanJson, catatAlur, type Db } from "@/server/modules/aleta-abt-alur/penjaga";
-import { bacaKeadaanSelesai, bacaSaklarTulis, jalankanSelesaikanBerkas, simpanSaklarTulis } from "@/server/modules/aleta-abt-selesai/service";
+import { bacaKeadaanSelesai, bacaSaklarTulis, daftarSelesaiPerkara, jalankanSelesaikanBerkas, simpanSaklarTulis } from "@/server/modules/aleta-abt-selesai/service";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { ApiError } from "@/server/shared/errors";
 import { ok } from "@/server/shared/http";
@@ -15,6 +15,7 @@ export const dynamic = "force-dynamic";
  * Selesaikan berkas ALETA ABT (5 Nov 2026, Tahap 6). HANYA Super Admin, diputuskan di server.
  *
  *   GET  ?perkaraId=&berkasId=                         keadaan tiap langkah + keadaan saklar tulis ke luar
+ *   GET  ?perkaraId=&daftar=1                          semua berkas perkara itu yang pernah diselesaikan (untuk layar Status Perkara)
  *   POST {tindakan:"jalankan", perkaraId, berkasId, jenis, nomorPerkara?, sidangKe?}   menjalankan langkah yang belum selesai           [audit]
  *   POST {tindakan:"ulangi", ..., langkah:["edoc-sipp"]}                               mengulang langkah yang disebut saja            [audit]
  *   POST {tindakan:"saklar", "edoc-sipp"?:bool, ecourt?:bool}                          mengubah saklar tulis ke luar (BAWAAN MATI)      [audit]
@@ -52,6 +53,10 @@ export async function GET(request: NextRequest) {
     const perkaraId = getSearchParam(request, "perkaraId") ?? "";
     const berkasId = getSearchParam(request, "berkasId") ?? "";
     const langkah = LANGKAH_SELESAI.map((l) => ({ id: l.id, judul: l.judul, keLuar: l.keLuar }));
+    if (perkaraId && !berkasId && getSearchParam(request, "daftar") === "1") {
+      if (!/^\d{1,12}$/.test(perkaraId)) throw new ApiError(400, "Perkara tidak sah.");
+      return ok({ daftar: await daftarSelesaiPerkara(a.db, perkaraId) }, { headers: { "Cache-Control": "no-store" } });
+    }
     if (!perkaraId || !berkasId) return ok({ langkah, saklar }, { headers: { "Cache-Control": "no-store" } });
     if (!/^\d{1,12}$/.test(perkaraId) || !/^[\w.:@-]{1,80}$/.test(berkasId)) throw new ApiError(400, "Perkara atau blangko tidak sah.");
     const k = await bacaKeadaanSelesai(a.db, perkaraId, berkasId);

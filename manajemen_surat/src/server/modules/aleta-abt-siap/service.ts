@@ -1,5 +1,5 @@
 import { GOLONGAN_ALUR, susunDaftarSiap, type ButirSiap, type BlangkoSaran, type PeranAlur } from "@/lib/aleta-abt-siap";
-import { periksaTahapan, labelJenis, labelTahapan, type TingkatHak } from "@/lib/aleta-abt-hak-folder";
+import { folderArsip, periksaTahapan, labelJenis, labelTahapan, type TingkatHak } from "@/lib/aleta-abt-hak-folder";
 import { waktuPengadilan } from "@/lib/waktu-pengadilan";
 import type { AletaDatabase } from "@/server/db/client";
 import { bacaKeadaanHakFolder, putusanHakFolder } from "@/server/modules/aleta-abt-alur/hak-folder";
@@ -71,9 +71,15 @@ export async function bacaDaftarSiap(db: AletaDatabase, p: { peran: PeranAlur; t
   for (const b of berkasDb) peta.set(`${String(b.folder).trim().toLowerCase()}|${kunciBerkas(b.nama)}`, String(b.id));
 
   const golongan = [GOLONGAN_ALUR[p.peran]];
+  // Keputusan 5 Nov 2026: folder arsip disembunyikan dari semua peran selain Super Admin; daftar ini selalu dilihat sebagai peran lain.
+  const arsipFolder = (f: string) => {
+    const k = f.trim().toLowerCase();
+    const m = keadaanHak.menu.find((x) => x.id.trim().toLowerCase() === k);
+    return (m ? folderArsip(m) : false) || keadaanHak.folder.some((x) => x.folder.trim().toLowerCase() === k && x.arsip);
+  };
   const butir: ButirSiapLengkap[] = daftar.butir.map((x) => ({
     ...x,
-    saran: x.saran.map((s) => {
+    saran: x.saran.filter((s) => !arsipFolder(folderPustaka(s.folder))).map((s) => {
       const folder = folderPustaka(s.folder);
       const id = peta.get(`${folder.toLowerCase()}|${kunciBerkas(s.berkas)}`) ?? "";
       const menu = keadaanHak.menu.find((m) => m.id.trim().toLowerCase() === folder.toLowerCase()) ?? null;

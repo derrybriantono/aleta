@@ -48,6 +48,7 @@ const M = process.cwd();
 const SQL_0133 = readFileSync(path.join(M, "drizzle/0133_aleta_abt_pustaka.sql"), "utf8");
 const SQL_0137 = readFileSync(path.join(M, "drizzle/0137_aleta_abt_alur_berdampingan.sql"), "utf8");
 const EKSTENSI = readFileSync(path.join(M, "../ekstensi-sipp/blangko-derry-beda-cetak.js"), "utf8");
+const EKSPOR_ASLI = EKSTENSI;
 
 // Menjalankan kode ekstensi apa adanya untuk membuktikan kesamaan sidik.
 const ekstensi = (() => {
@@ -426,5 +427,83 @@ describe("kesamaan dengan pembanding layar cetak", () => {
     const naskah = rtf("PUTUSAN", "Bahwa sidang terbuka.", "Mengadili:");
     const h = bandingRingkasan(ringkasAlinea(alineaDariRtf(naskah)), ringkasAlinea(alineaDariRtf(naskah)));
     expect(h.hasil).toBe("hijau");
+  });
+});
+
+describe("Berdampingan BAS: nomor sidang dikirim ekstensi saat cetak", () => {
+  const paragrafBas = ["BERITA ACARA SIDANG", "Pada hari ini sidang dihadiri Penggugat.", "Sidang ditunda."];
+  const BAS = "BAS ALUR 02 [1] BAS 1 P Hadir.rtf";
+
+  it("ekstensi mengirim sidangKe bila ada, dan tidak menambah permintaan apa pun (satu POST yang sama)", async () => {
+    const kirim: Array<{ url: string; body: Record<string, unknown> }> = [];
+    const konteks: Record<string, unknown> = {
+      fetch: async (url: string, init?: { method?: string; body?: string }) => {
+        kirim.push({ url, body: JSON.parse(String(init?.body ?? "{}")) });
+        return { ok: true, json: async () => ({ data: { dicetakPada: "2026-11-05T10:00:00.000Z" } }) };
+      },
+    };
+    vm.createContext(konteks);
+    vm.runInContext(EKSPOR_ASLI, konteks);
+    const m = konteks.aletaBedaCetak as { simpan: (x: Record<string, unknown>) => Promise<unknown> };
+    await m.simpan({ perkaraId: "123", nomorPerkara: "1/Pdt.G/2026/PA.Uji", berkas: BAS, teks: paragrafBas.join("\n"), sidangKe: 2 });
+    await m.simpan({ perkaraId: "123", nomorPerkara: "1/Pdt.G/2026/PA.Uji", berkas: BAS, teks: paragrafBas.join("\n"), sidangKe: 0 });
+    await m.simpan({ perkaraId: "123", nomorPerkara: "1/Pdt.G/2026/PA.Uji", berkas: BAS, teks: paragrafBas.join("\n") });
+    expect(kirim).toHaveLength(3); // satu permintaan per cetak, seperti sebelumnya
+    expect(kirim[0].body.sidangKe).toBe(2);
+    expect("sidangKe" in kirim[1].body).toBe(false);
+    expect("sidangKe" in kirim[2].body).toBe(false);
+    expect(Object.keys(kirim[2].body).sort()).toEqual(["bagian", "berkas", "nomorPerkara", "perkaraId"]); // bentuk lama tidak berubah
+  });
+
+  it("panel hanya menambah satu ruas pada kiriman yang sudah ada: tidak ada fetch baru di jalur cetak", () => {
+    const isian = readFileSync(path.join(M, "../ekstensi-sipp/blangko-derry-isian.js"), "utf8");
+    const a = isian.indexOf("function catatCetakTerakhir");
+    const fungsi = isian.slice(a, isian.indexOf("function catatLog", a));
+    expect(fungsi).toContain("sidangKe: Number(sidangUrutan()) || 0");
+    expect(fungsi).not.toMatch(/fetch\(/);
+    expect(fungsi.match(/m\.simpan\(/g)).toHaveLength(1);
+  });
+
+  it("BAS dengan nomor sidang dibandingkan otomatis: susun menerima sidangKe, hasil dicatat sebagai angka", async () => {
+    const { db, berkas, baca } = await siapkan();
+    await berkas("b1", "1 Perceraian CG - BAS", BAS);
+    await simpanSetelanBerdampingan(db, { id: "u1", name: "Derry" }, true);
+    const diterima: number[] = [];
+    const susun: NonNullable<DepsBanding["susun"]> = async (d, p) => {
+      diterima.push(p.sidangKe);
+      return susunTiruan(rtf(...paragrafBas))(d, p);
+    };
+    expect(await picuBerdampingan(db, CETAK_ABT(paragrafBas, { berkas: BAS, sidangKe: 2 }), { susun, env: {} })).toBe("antre");
+    await tungguAntreanBerdampingan();
+    expect(diterima).toEqual([2]);
+    const baris = await baca("SELECT * FROM aleta_abt_berdampingan");
+    expect(baris[0]).toMatchObject({ jenis_naskah: "bas", jenis_perkara: "cerai-gugat", sidang_ke: 2, hasil: "hijau", sebab_belum: "" });
+  });
+
+  it("BAS yang berbeda isi dibandingkan merah; spasi karena ABT kuning; titik-titik isian kosong kuning", async () => {
+    const { db, berkas } = await siapkan();
+    await berkas("b1", "1a Perceraian CT - BAS", BAS);
+    const abt = ["BERITA ACARA SIDANG", "Pada hari ini sidangdihadiri Penggugat.", "Hakim Anggota bernama ."];
+    const aleta = ["BERITA ACARA SIDANG", "Pada hari ini sidang dihadiri Penggugat.", "Hakim Anggota bernama ...."];
+    const kuning = await bandingkanCetakAbt(db, CETAK_ABT(abt, { berkas: BAS, sidangKe: 1 }), { susun: susunTiruan(rtf(...aleta)) });
+    expect(kuning).toMatchObject({ hasil: "kuning", jenisPerkara: "cerai-talak", jenisNaskah: "bas", belumDijelaskan: 0, dijelaskan: 2 });
+    const merah = await bandingkanCetakAbt(db, CETAK_ABT(abt, { berkas: BAS, sidangKe: 1 }), { susun: susunTiruan(rtf("BERITA ACARA SIDANG", "Pada hari ini sidang dihadiri Tergugat.", "Hakim Anggota bernama ....")) });
+    expect(merah.hasil).toBe("merah");
+  });
+
+  it("BAS tanpa nomor sidang (ekstensi lama) tetap dicatat belum diukur, tidak dihitung lulus", async () => {
+    const { db, berkas } = await siapkan();
+    await berkas("b1", "1 Perceraian CG - BAS", BAS);
+    const c = await bandingkanCetakAbt(db, CETAK_ABT(paragrafBas, { berkas: BAS }), { susun: susunTiruan(rtf(...paragrafBas)) });
+    expect(c).toMatchObject({ hasil: "belum-diukur", sebabBelum: "sidang-tidak-dikirim" });
+  });
+
+  it("BAS ikut hitungan 30 cetak per jenis", () => {
+    const kini = new Date("2026-11-20T08:00:00Z");
+    const data: BarisBerdampingan[] = Array.from({ length: 30 }, (_, i) => ({
+      id: `r${i}`, waktu: new Date(kini.getTime() - (20 + (i % 3)) * 86_400_000).toISOString(), pemicu: "cetak-abt", berkasNama: BAS,
+      jenisPerkara: "cerai-talak", jenisNaskah: "bas", perkaraId: String(i), hasil: "hijau", sebabBelum: "", totalAlinea: 5, identik: 5, dijelaskanN: 0, belumDijelaskanN: 0, jawaban: "",
+    }));
+    expect(ringkasBerdampingan(data, kini).perJenis.find((x) => x.jenis === "cerai-talak")).toMatchObject({ cetak: 30, memenuhiSyarat: true });
   });
 });

@@ -943,7 +943,7 @@ export const TUTORIAL: readonly Tutorial[] = [
       "Tekan Periksa naskah untuk melihat berapa isian yang pasti, berapa yang perlu dilihat, dan berapa yang masih kosong. Naskah tidak dicetak dan tidak disimpan.",
       "Tekan Selesaikan berkas untuk menjalankan lima langkah: PDF salinan, garis Z dan nomor halaman, e-Doc SIPP, e-Court, lalu catatan.",
       "Bila satu langkah gagal, tekan Ulangi langkah ini. Hanya langkah itu yang diulang.",
-      "Langkah yang menulis ke SIPP dan e-Court dimatikan sampai pemilik menyalakannya. Layar Hak folder berisi daftar siapa yang membuka folder blangko, untuk disetujui pemilik.",
+      "Langkah yang menulis ke SIPP dan e-Court dimatikan sampai pemilik menyalakannya. Layar Hak folder berisi daftar siapa yang membuka folder blangko, untuk disetujui pemilik; tombol Cocokkan ulang dengan ABT mencocokkan acuannya dengan ABT di server.",
     ],
     peringatan: [
       "Hanya Super Admin yang dapat membuka layar ini.",

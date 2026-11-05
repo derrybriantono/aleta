@@ -56,6 +56,7 @@ import {
   KartuIdentitasPihak,
   useIdentitasPihak,
 } from "@/components/portal/identitas-pihak";
+import { CatatanSelesaiAbt } from "@/components/portal/catatan-selesai-abt";
 import {
   PenandaRiwayatPihak,
   PenyediaRiwayatPihak,
@@ -3308,6 +3309,7 @@ function IsiStatus({
   const blokA = (
     <>
     <KelompokKartu id="A" seamless={seamless} ringkas={ringkasKelompok.A} perluTindakan={perluTindakanKelompok.A ?? 0} terbukaBawaan={tahapBuka.kelompok.has("A")} kunciPerkara={status.identitas.nomorPerkara}>
+      <CatatanSelesaiAbt perkaraId={status.identitas.perkaraId} pengguna={currentUser} />
       <div className="contents">
         <Bagian judul="Majelis dan petugas" kunci="majelis" ciutBawaan versiBawaan="3nov" keterangan={ringkasMajelisBagian}>
           {/* Tiap nama membuka rekap orangnya di tab baru, lewat ID SIPP -

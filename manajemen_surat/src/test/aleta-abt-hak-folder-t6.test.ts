@@ -111,8 +111,10 @@ describe("hak atas relaas (cek 0, grup 600) dan cek 2", () => {
 });
 
 describe("putusan hak runtime", () => {
-  it("folder tanpa baris menu: hak tidak diketahui, tidak ditebak", () => {
-    expect(periksaHakFolder(null, ["hakim"])).toMatchObject({ boleh: null, tingkat: null });
+  it("folder tanpa baris menu: hanya Super Admin sampai ditetapkan; peran lain ditolak dengan alasan", () => {
+    expect(periksaHakFolder(null, ["super-admin"])).toMatchObject({ boleh: true });
+    for (const g of GOLONGAN_PERAN.filter((x) => x !== "super-admin")) expect(periksaHakFolder(null, [g]), g).toMatchObject({ boleh: false });
+    expect(periksaHakFolder(null, ["hakim"]).alasan).toContain("hanya Super Admin");
   });
   it("ditunjuk: ya, tidak, belum diketahui", () => {
     expect(periksaHakFolder(PUTUSAN_CG, ["hakim"], { ditunjuk: true })).toMatchObject({ boleh: true, perluDitunjuk: true });
@@ -155,19 +157,33 @@ describe("matriks", () => {
 
   it("memuat semua folder: yang punya menu, yang hanya ada di pustaka, dan arsip", () => {
     expect(m.jumlahFolder).toBe(5);
+    expect(m.jumlahFolder).toBe(m.baris.length);
     expect(m.baris.map((b) => b.folder)).toContain("Folder tanpa menu");
   });
-  it("folder tanpa baris menu dan folder arsip ditandai ragu, folder biasa tidak", () => {
+  it("folder tanpa baris menu ditandai ragu; folder arsip dan folder biasa tidak (arsip sudah diputuskan)", () => {
     const ragu = new Set(m.baris.filter((b) => b.ragu.length).map((b) => b.folder));
     expect(ragu.has("Folder tanpa menu")).toBe(true);
-    expect(ragu.has("- BAS LAMA -")).toBe(true);
+    expect(ragu.has("- BAS LAMA -")).toBe(false);
     expect(ragu.has("1 Perceraian CG")).toBe(false);
     expect(ragu.has("98 Relaas")).toBe(false);
-    expect(m.jumlahRagu).toBe(2);
+    expect(m.jumlahRagu).toBe(1);
   });
-  it("folder tanpa menu: tidak ada peran yang diberi", () => {
+  it("folder tanpa menu: hanya Super Admin yang diberi hak", () => {
     const b = m.baris.find((x) => x.folder === "Folder tanpa menu")!;
-    expect(GOLONGAN_PERAN.every((g) => b.hak[g] === "tidak")).toBe(true);
+    expect(b.hak["super-admin"]).toBe("bebas");
+    expect(GOLONGAN_PERAN.filter((g) => g !== "super-admin").every((g) => b.hak[g] === "tidak")).toBe(true);
+  });
+  it("folder arsip: hanya Super Admin, walau grupnya di ABT masih tertulis untuk peran lain", () => {
+    const b = m.baris.find((x) => x.folder === "- BAS LAMA -")!;
+    expect(b.arsip).toBe(true);
+    expect(b.hak["super-admin"]).toBe("bebas");
+    for (const g of GOLONGAN_PERAN.filter((x) => x !== "super-admin")) expect(b.hak[g], g).toBe("tidak");
+  });
+  it("folder arsip menurut pustaka (bendera arsip) juga disembunyikan walau baris menunya bukan di induk arsip", () => {
+    const r = susunMatriks([PUTUSAN_CG], [{ folder: "1 Perceraian CG", arsip: true }]);
+    expect(r.baris[0].arsip).toBe(true);
+    expect(r.baris[0].hak.hakim).toBe("tidak");
+    expect(r.baris[0].hak["super-admin"]).toBe("bebas");
   });
   it("peran tanpa padanan di ABT terdaftar apa adanya", () => {
     expect(m.tanpaPadananAbt).toEqual(expect.arrayContaining(["mediator", "petugas-sidang", "ti", "pelaksana"]));
@@ -183,9 +199,22 @@ describe("matriks", () => {
     expect(sidikTeks("abc")).toBe(sidikTeks("abc"));
     expect(sidikTeks("abc")).not.toBe(sidikTeks("abd"));
   });
-  it("padanan peran yang dikira-kira disebut sebagai alasan ragu", () => {
-    const r = susunMatriks([baris({ direktori: "Folder meja", parent_direktori: "derry_briantono", user_cek: "0", user_grup_id: "1|1001", user_top_id: "1" })], []);
-    expect(r.baris[0].ragu.join(" ")).toContain("Meja I disamakan dengan PTSP");
+  it("Meja I = PTSP dan Meja II/III = Analis Perkara sudah diputuskan: dipakai tanpa tanda ragu", () => {
+    const r = susunMatriks([baris({ direktori: "Folder meja", parent_direktori: "derry_briantono", user_cek: "0", user_grup_id: "1|1001|1002|1033", user_top_id: "1" })], []);
+    expect(r.baris[0].ragu).toEqual([]);
+    expect(r.baris[0].hak.ptsp).toBe("bebas");
+    expect(r.baris[0].hak["analis-perkara"]).toBe("bebas");
+  });
+  it("padanan yang belum diputuskan (Staf Panitera Hukum, Koordinator Delegasi) tetap ditandai ragu", () => {
+    const r = susunMatriks([baris({ direktori: "Folder lain", parent_direktori: "derry_briantono", user_cek: "0", user_grup_id: "1|431|650", user_top_id: "1" })], []);
+    expect(r.baris[0].ragu.join(" ")).toContain("Staf Panitera Hukum");
+  });
+  it("mediator, petugas sidang, TI, pelaksana, dan Admin tanpa hak atas folder mana pun yang normal", () => {
+    const r = susunMatriks([PUTUSAN_CG, BAS_CG, RELAAS, ATAU], []);
+    for (const g of ["mediator", "petugas-sidang", "ti", "pelaksana"] as const) {
+      for (const b of r.baris.filter((x) => x.folder !== "Contoh cek dua")) expect(b.hak[g], `${g} ${b.folder}`).toBe("tidak");
+    }
+    for (const b of r.baris) expect(b.hak.admin, `admin ${b.folder}`).toBe("tidak");
   });
 });
 

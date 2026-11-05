@@ -11,10 +11,12 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { CatatanSelesaiAbt } from "@/components/portal/catatan-selesai-abt";
 import { BerdampinganAbt } from "@/components/portal/berdampingan-abt";
 import { HakFolderAbt } from "@/components/portal/hak-folder-abt";
 import { SelesaikanBerkasAbt } from "@/components/portal/selesaikan-berkas-abt";
 import { SiapDiperiksaAbt } from "@/components/portal/siap-diperiksa-abt";
+import type { UserPersona } from "@/lib/types";
 import { ID_LANGKAH, keadaanAwal, keadaanDariJson } from "@/lib/aleta-abt-selesai";
 
 const ok = (data: unknown) => new Response(JSON.stringify({ ok: true, data }), { status: 200, headers: { "content-type": "application/json" } });
@@ -293,5 +295,50 @@ describe("Berdampingan", () => {
     expect(container.textContent).toContain("1 alinea: isi berbeda (belum dijelaskan)");
     expect(container.textContent).toContain("hanya spasi (sudah dijelaskan)");
     expect(container.textContent).toContain("Alinea ABT / ALETA ABT: 4/4");
+  });
+});
+
+describe("Catatan selesaikan berkas di layar Status Perkara", () => {
+  const akun = (roleId: string) => ({ id: "u1", username: roleId, password: "", name: roleId, email: "x@y.z", roleId, positionId: "", additionalRoleIds: [], isActive: true }) as unknown as UserPersona;
+  const DAFTAR = { daftar: [{ berkasNama: "[02] Kabul", jenis: "putusan", status: "sebagian", diubahAt: "2026-11-05T10:00:00.000Z", langkah: [{ id: "pdf-salinan", status: "selesai", pesan: "" }, { id: "edoc-sipp", status: "dimatikan", pesan: "Dimatikan." }] }] };
+
+  it("peran selain Super Admin tidak melihat apa pun dan tidak memanggil rute", async () => {
+    const f = stub({ "/api/aleta-abt/selesai": () => ok(DAFTAR) });
+    for (const peran of ["admin", "hakim", "panitera", "panitera-pengganti", "jurusita", "pelaksana"]) {
+      const { container, unmount } = render(<CatatanSelesaiAbt perkaraId="123" pengguna={akun(peran)} />);
+      await new Promise((r) => setTimeout(r, 20));
+      expect(container.textContent, peran).toBe("");
+      unmount();
+    }
+    expect(f).not.toHaveBeenCalled();
+  });
+  it("Super Admin melihat status langkah; tanpa catatan tidak tampil", async () => {
+    stub({ "/api/aleta-abt/selesai": () => ok(DAFTAR) });
+    render(<CatatanSelesaiAbt perkaraId="123" pengguna={akun("super-admin")} />);
+    expect(await screen.findByText("Selesaikan berkas (hanya Super Admin)")).toBeTruthy();
+    expect(screen.getByText("Unggah ke e-Doc SIPP: dimatikan")).toBeTruthy();
+    document.body.replaceChildren();
+    stub({ "/api/aleta-abt/selesai": () => ok({ daftar: [] }) });
+    const { container } = render(<CatatanSelesaiAbt perkaraId="123" pengguna={akun("super-admin")} />);
+    await new Promise((r) => setTimeout(r, 30));
+    expect(container.textContent).toBe("");
+  });
+});
+
+describe("Hak folder: pencocokan ulang dan keputusan", () => {
+  it("tombol Cocokkan ulang dengan ABT memanggil tindakan cocokkan dan menyebut pencocokan terakhir serta saklar", async () => {
+    const MATRIKS = { baris: [], golongan: [], jumlahFolder: 0, jumlahRagu: 0, tanpaPadananAbt: [], sidik: "x" };
+    const f = stub({
+      "/api/aleta-abt/hak-folder": () =>
+        ok({ matriks: MATRIKS, persetujuan: { disetujui: false, sidik: "", oleh: "", pada: "" }, berlaku: false, saklar: { ppPutusan: "nyala", hakimBas: "mati" }, sinkron: { status: "gagal", mulaiAt: "2026-11-05T10:00:00.000Z", selesaiAt: "", galat: "ABT tidak terjangkau." } }),
+    });
+    render(<HakFolderAbt />);
+    expect(await screen.findByText(/harus dicocokkan ulang dengan ABT di server/)).toBeTruthy();
+    expect(screen.getByText(/gagal \(ABT tidak terjangkau\.\)/)).toBeTruthy();
+    expect(screen.getByText(/Panitera Pengganti membuka folder putusan menyala; Hakim membuka folder BAS mati/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Cocokkan ulang dengan ABT" }));
+    expect(await screen.findByText(/Pencocokan dengan ABT berjalan di latar/)).toBeTruthy();
+    const kirim = f.mock.calls.find((c) => (c[1] as RequestInit | undefined)?.method === "POST")!;
+    expect(JSON.parse(String((kirim[1] as RequestInit).body))).toEqual({ tindakan: "cocokkan" });
   });
 });

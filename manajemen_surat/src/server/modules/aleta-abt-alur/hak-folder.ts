@@ -8,6 +8,7 @@ import {
   type Matriks,
 } from "@/lib/aleta-abt-hak-folder";
 import type { GolonganPeran } from "@/lib/matriks-peran";
+import { jenisFolderDerry } from "@/app/api/aleta-ecourt/blangko-derry/susun";
 import type { AletaDatabase } from "@/server/db/client";
 import { bacaKunci, tulisKunci } from "@/server/modules/tunda-otomatis/layanan";
 import { ApiError } from "@/server/shared/errors";
@@ -48,13 +49,41 @@ export async function muatMenuDanFolder(db: AletaDatabase): Promise<{ menu: Bari
   };
 }
 
-export type KeadaanHakFolder = { matriks: Matriks; persetujuan: Persetujuan; berlaku: boolean };
+export type KeadaanSaklarFolder = "nyala" | "sebagian" | "mati" | "tidak-ada";
+export type SaklarHakAbt = { ppPutusan: KeadaanSaklarFolder; hakimBas: KeadaanSaklarFolder };
 
-export async function bacaKeadaanHakFolder(db: AletaDatabase): Promise<KeadaanHakFolder & { menu: BarisMenu[] }> {
+/**
+ * Saklar "PP boleh membuka folder putusan" dan "Hakim boleh membuka folder BAS" bekerja dengan menambah peran ke user_grup_id folder-folder itu
+ * di ABT (lib/pengaturan-abt.ts). Karena matriks dibaca dari hak yang sama, keadaan saklar SUDAH ikut terhitung di tabel; di sini hanya
+ * dilaporkan supaya terlihat. Aturannya sama dengan susunSaklar: nyala bila semua folder yang terkena memuatnya, sebagian bila sebagian.
+ */
+export function keadaanSaklarDariMenu(menu: readonly BarisMenu[]): SaklarHakAbt {
+  const hitung = (jenis: "put" | "bas", peran: number): KeadaanSaklarFolder => {
+    const kena = menu.filter((m) => m.aktif && m.parent === "derry_briantono" && jenisFolderDerry(m.id) === jenis);
+    if (!kena.length) return "tidak-ada";
+    const punya = kena.filter((m) => m.grup.includes(peran)).length;
+    return punya === 0 ? "mati" : punya === kena.length ? "nyala" : "sebagian";
+  };
+  return { ppPutusan: hitung("put", 500), hakimBas: hitung("bas", 20) };
+}
+
+export type KeadaanHakFolder = { matriks: Matriks; persetujuan: Persetujuan; berlaku: boolean; saklar: SaklarHakAbt };
+
+export async function bacaKeadaanHakFolder(db: AletaDatabase): Promise<KeadaanHakFolder & { menu: BarisMenu[]; folder: FolderPustaka[] }> {
   const { menu, folder } = await muatMenuDanFolder(db);
   const matriks = susunMatriks(menu, folder);
   const persetujuan = await bacaPersetujuan(db);
-  return { matriks, persetujuan, berlaku: persetujuan.disetujui && persetujuan.sidik === matriks.sidik, menu };
+  return { matriks, persetujuan, berlaku: persetujuan.disetujui && persetujuan.sidik === matriks.sidik, menu, folder, saklar: keadaanSaklarDariMenu(menu) };
+}
+
+export type SinkronTerakhir = { status: string; mulaiAt: string; selesaiAt: string; galat: string } | null;
+
+/** Putaran sinkron pustaka terakhir (sinkron yang sama dengan Pengaturan SIPP & ABT): acuan matriks harus dicocokkan ulang dengan ABT di server. */
+export async function bacaSinkronTerakhir(db: AletaDatabase): Promise<SinkronTerakhir> {
+  const b = await db
+    .queryOne<{ status: string; mulai_at: string; selesai_at: string; galat: string }>("SELECT status, mulai_at, selesai_at, galat FROM aleta_abt_sinkron ORDER BY mulai_at DESC LIMIT 1")
+    .catch(() => null);
+  return b ? { status: String(b.status), mulaiAt: String(b.mulai_at), selesaiAt: String(b.selesai_at ?? ""), galat: String(b.galat ?? "") } : null;
 }
 
 /** Menyetujui atau mencabut persetujuan. Menyetujui hanya sah atas sidik yang SAMA dengan matriks sekarang (yang dilihat pemilik). */
@@ -69,10 +98,19 @@ export async function simpanPersetujuan(db: AletaDatabase, aktor: { id: string; 
   return baru;
 }
 
-/** Hak sebuah folder untuk golongan tertentu menurut matriks - hanya bila matriks berlaku; selain itu tidak ada putusan (null). */
-export function putusanHakFolder(keadaan: { berlaku: boolean; menu: readonly BarisMenu[] }, folder: string, golongan: readonly GolonganPeran[], opsi: { ditunjuk?: boolean | null } = {}): HasilHakFolder | null {
+/**
+ * Hak sebuah folder untuk golongan tertentu menurut matriks - hanya bila matriks berlaku; selain itu tidak ada putusan (null).
+ * Folder arsip hanya untuk Super Admin; folder tanpa baris menu hanya untuk Super Admin sampai ditetapkan.
+ */
+export function putusanHakFolder(
+  keadaan: { berlaku: boolean; menu: readonly BarisMenu[]; folder?: readonly FolderPustaka[] },
+  folder: string,
+  golongan: readonly GolonganPeran[],
+  opsi: { ditunjuk?: boolean | null } = {}
+): HasilHakFolder | null {
   if (!keadaan.berlaku) return null;
   const k = folder.trim().toLowerCase();
   const baris = keadaan.menu.find((m) => m.id.trim().toLowerCase() === k) ?? null;
-  return periksaHakFolder(baris, golongan, opsi);
+  const arsip = keadaan.folder?.some((f) => f.folder.trim().toLowerCase() === k && f.arsip) === true;
+  return periksaHakFolder(baris, golongan, { ...opsi, arsip });
 }

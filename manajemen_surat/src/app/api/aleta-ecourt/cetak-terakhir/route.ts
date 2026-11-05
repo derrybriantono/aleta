@@ -27,7 +27,7 @@ function picuBerdampinganDiLatar(db: Awaited<ReturnType<typeof getDatabase>>, ba
         nomorPerkara: String(badan.nomorPerkara ?? "").slice(0, 80),
         berkas: String(badan.berkas ?? ""),
         bagian,
-        sidangKe: Number(badan.sidangKe) || 0,
+        sidangKe: Math.max(0, Math.min(99, Math.trunc(Number(badan.sidangKe) || 0))),
       });
     } catch {
       /* pembandingan hanya tambahan: cetak tidak terpengaruh */

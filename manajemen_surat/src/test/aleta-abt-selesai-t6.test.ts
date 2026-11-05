@@ -36,7 +36,7 @@ const SQL_0133 = readFileSync(path.join(M, "drizzle/0133_aleta_abt_pustaka.sql")
 const SQL_0137 = readFileSync(path.join(M, "drizzle/0137_aleta_abt_alur_berdampingan.sql"), "utf8");
 
 function tiruan(opsi: { jenis?: JenisBerkasSelesai; saklar?: Partial<Record<"edoc-sipp" | "ecourt", boolean>> | "galat"; pdf?: Partial<HasilPdfSelesai> | "galat"; edoc?: "ok" | "tolak" | "galat"; ecourt?: "ok" | "tolak" | "galat" } = {}) {
-  const panggil = { pdf: 0, edoc: 0, ecourt: 0, catat: 0, saklar: [] as string[] };
+  const panggil = { pdf: 0, pdfBiasa: 0, edocDapat: "", ecourtDapat: "", edoc: 0, ecourt: 0, catat: 0, saklar: [] as string[] };
   const deps: DepsSelesai = {
     jenis: opsi.jenis ?? "putusan",
     bangunPdf: async () => {
@@ -44,12 +44,19 @@ function tiruan(opsi: { jenis?: JenisBerkasSelesai; saklar?: Partial<Record<"edo
       if (opsi.pdf === "galat") throw new Error("LibreOffice tidak menjawab.");
       return { pdfBase64: "UERGLXJla2Fhbg==", ...(opsi.pdf ?? {}) };
     },
-    unggahEdoc: async () => {
+    bangunPdfBiasa: async () => {
+      panggil.pdfBiasa += 1;
+      if (opsi.pdf === "galat") throw new Error("LibreOffice tidak menjawab.");
+      return { pdfBase64: "UERGLWJpYXNh" };
+    },
+    unggahEdoc: async (h) => {
+      panggil.edocDapat = h.pdfBase64;
       panggil.edoc += 1;
       if (opsi.edoc === "galat") throw new Error("SIPP tidak terjangkau.");
       return opsi.edoc === "tolak" ? { ok: false, pesan: "Nomor perkara tidak cocok." } : { ok: true, pesan: "Terunggah ke e-Doc SIPP." };
     },
-    unggahEcourt: async () => {
+    unggahEcourt: async (h) => {
+      panggil.ecourtDapat = h.pdfBase64;
       panggil.ecourt += 1;
       if (opsi.ecourt === "galat") throw new Error("e-Court menolak sesi.");
       return opsi.ecourt === "tolak" ? { ok: false, pesan: "Sesi pribadi tidak ada." } : { ok: true, pesan: "Terunggah ke e-Court." };
@@ -112,6 +119,28 @@ describe("saklar menyala (uji dengan tiruan)", () => {
     const k2 = await jalankanSelesai(k, deps);
     expect(JSON.stringify(panggil)).toBe(n);
     expect(k2.status).toBe("selesai");
+  });
+});
+
+describe("PDF yang diunggah (keputusan 5 Nov 2026)", () => {
+  it("e-Doc SIPP menerima PDF BIASA, e-Court menerima PDF SALINAN", async () => {
+    const { deps, panggil } = tiruan({ saklar: { "edoc-sipp": true, ecourt: true } });
+    await jalankanSelesai(keadaanAwal(), deps);
+    expect(panggil.edocDapat).toBe("UERGLWJpYXNh"); // PDF biasa
+    expect(panggil.ecourtDapat).toBe("UERGLXJla2Fhbg=="); // PDF salinan (langkah 1)
+    expect(panggil.pdf).toBe(1);
+    expect(panggil.pdfBiasa).toBe(1);
+  });
+  it("saklar mati: PDF biasa tidak pernah dibuat (tidak ada pekerjaan yang tak perlu)", async () => {
+    const { deps, panggil } = tiruan();
+    await jalankanSelesai(keadaanAwal(), deps);
+    expect(panggil.pdfBiasa).toBe(0);
+  });
+  it("hanya e-Court menyala: PDF biasa tidak dibuat", async () => {
+    const { deps, panggil } = tiruan({ saklar: { ecourt: true } });
+    await jalankanSelesai(keadaanAwal(), deps);
+    expect(panggil.pdfBiasa).toBe(0);
+    expect(panggil.ecourtDapat).toBe("UERGLXJla2Fhbg==");
   });
 });
 

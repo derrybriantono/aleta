@@ -57,13 +57,24 @@ vi.mock("@/server/modules/aleta-abt-siap/service", () => ({
   periksaNaskahSiap: catat("periksa", { nama: "x.rtf", jumlahTerisi: 3, jumlahKosong: 1, periksaKembali: 2, pasti: 1, lolosCetak: false, mesinGalat: "", dapatDicetak: false }),
 }));
 vi.mock("@/server/modules/aleta-abt-alur/hak-folder", () => ({
-  bacaKeadaanHakFolder: catat("hak-baca", { matriks: { jumlahFolder: 107, jumlahRagu: 23, sidik: "abc12345", baris: [], golongan: [], tanpaPadananAbt: [] }, persetujuan: { disetujui: false, sidik: "", oleh: "", pada: "" }, berlaku: false }),
+  bacaSinkronTerakhir: async () => null,
+  bacaKeadaanHakFolder: catat("hak-baca", { saklar: { ppPutusan: "mati", hakimBas: "mati" }, matriks: { jumlahFolder: 107, jumlahRagu: 23, sidik: "abc12345", baris: [], golongan: [], tanpaPadananAbt: [] }, persetujuan: { disetujui: false, sidik: "", oleh: "", pada: "" }, berlaku: false }),
   simpanPersetujuan: async (_db: unknown, _a: unknown, m: { setuju: boolean; sidik: string }) => {
     keadaan.panggil.push("hak-setuju");
     return { disetujui: m.setuju, sidik: m.setuju ? m.sidik : "", oleh: "Derry", pada: "2026-11-05T10:00:00.000Z" };
   },
 }));
+vi.mock("@/server/modules/aleta-abt-pustaka/service", () => ({
+  mulaiSinkron: async () => {
+    keadaan.panggil.push("hak-cocokkan");
+    return { id: "s1", mulai: true };
+  },
+}));
 vi.mock("@/server/modules/aleta-abt-selesai/service", () => ({
+  daftarSelesaiPerkara: async (_db: unknown, perkaraId: string) => {
+    keadaan.panggil.push(`selesai-daftar:${perkaraId}`);
+    return [{ berkasNama: "[02] Kabul", jenis: "putusan", status: "sebagian", diubahAt: "2026-11-05T10:00:00.000Z", langkah: [] }];
+  },
   bacaSaklarTulis: async () => ({ "edoc-sipp": false, ecourt: false, diubahOleh: "", diubahPada: "" }),
   bacaKeadaanSelesai: catat("selesai-baca", { keadaan: { langkah: {}, status: "menunggu" }, ada: false, jenis: "", diubahAt: "" }),
   simpanSaklarTulis: async (_db: unknown, _a: unknown, b: Record<string, unknown>) => {
@@ -146,6 +157,8 @@ const PERMINTAAN: Array<[string, () => Promise<Response>]> = [
   ["hak-folder GET", () => GET_HAK(get("hak-folder"))],
   ["hak-folder POST setuju", () => POST_HAK(post("hak-folder", { tindakan: "setuju", setuju: true, sidik: "abc12345" }))],
   ["hak-folder POST cabut", () => POST_HAK(post("hak-folder", { tindakan: "setuju", setuju: false, sidik: "" }))],
+  ["hak-folder POST cocokkan", () => POST_HAK(post("hak-folder", { tindakan: "cocokkan" }))],
+  ["selesai GET daftar perkara", () => GET_SELESAI(get("selesai", "?perkaraId=123&daftar=1"))],
   ["selesai GET", () => GET_SELESAI(get("selesai"))],
   ["selesai GET keadaan", () => GET_SELESAI(get("selesai", "?perkaraId=1&berkasId=b1"))],
   ["selesai POST jalankan", () => POST_SELESAI(post("selesai", { tindakan: "jalankan", perkaraId: "1", berkasId: "b1", jenis: "putusan" }))],
@@ -223,6 +236,20 @@ describe("Super Admin: hak folder", () => {
   });
 });
 
+describe("Super Admin: mencocokkan ulang acuan dan daftar catatan per perkara", () => {
+  it("cocokkan memakai sinkron pustaka yang sudah ada dan tercatat; daftar per perkara hanya menerima nomor perkara berupa angka", async () => {
+    expect((await POST_HAK(post("hak-folder", { tindakan: "cocokkan" }))).status).toBe(200);
+    expect(keadaan.panggil).toEqual(["hak-cocokkan"]);
+    expect(keadaan.audit[0]).toMatchObject({ action: "ALETA_ABT_HAK_FOLDER_COCOKKAN", payload: { mulai: true } });
+    keadaan.panggil = [];
+    const r = await GET_SELESAI(get("selesai", "?perkaraId=123&daftar=1"));
+    expect(r.status).toBe(200);
+    expect(((await r.json()) as { data: { daftar: unknown[] } }).data.daftar).toHaveLength(1);
+    expect(keadaan.panggil).toEqual(["selesai-daftar:123"]);
+    expect((await GET_SELESAI(get("selesai", "?perkaraId=abc&daftar=1"))).status).toBe(400);
+  });
+});
+
 describe("Super Admin: selesaikan berkas", () => {
   it("jalankan dan ulangi satu langkah; hasil dicatat per status langkah saja", async () => {
     const dasar = { perkaraId: "123", berkasId: "b1", jenis: "putusan", nomorPerkara: "1/Pdt.G/2026/PA.Uji" };
@@ -282,6 +309,13 @@ describe("pemicu dari cetak ABT (jalur cetak-terakhir)", () => {
     expect(j.data.disimpan).toBe(true);
     await vi.waitFor(() => expect(keadaan.picu).toHaveLength(1));
     expect(keadaan.picu[0]).toMatchObject({ perkaraId: "123", berkas: "[02] Kabul.rtf", sidangKe: 2, bagian: [{ h: "aabbccdd" }, { h: "11223344" }] });
+  });
+  it("nomor sidang dibatasi 0-99 dan yang bukan angka menjadi 0", async () => {
+    await kirim({ ...badan, sidangKe: 999 });
+    await kirim({ ...badan, sidangKe: "abc" });
+    await kirim({ ...badan, sidangKe: -4 });
+    await vi.waitFor(() => expect(keadaan.picu).toHaveLength(3));
+    expect(keadaan.picu.map((p) => p.sidangKe)).toEqual([99, 0, 0]);
   });
   it("TIDAK MEMPERLAMBAT: pemicu yang tidak pernah selesai tidak menahan jawaban cetak", async () => {
     keadaan.picuTahan = true;

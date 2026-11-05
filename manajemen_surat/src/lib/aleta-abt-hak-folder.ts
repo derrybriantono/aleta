@@ -75,7 +75,6 @@ type Padanan = { golongan: GolonganPeran; ragu?: string };
 /** Grup ABT -> golongan ALETA. Padanan yang bukan jabatan yang sama persis membawa alasan ragu. */
 export const GRUP_KE_GOLONGAN: Record<number, Padanan> = {
   1: { golongan: "super-admin" },
-  2: { golongan: "admin" },
   10: { golongan: "pimpinan" },
   20: { golongan: "hakim" },
   30: { golongan: "panitera" },
@@ -99,23 +98,23 @@ export const GRUP_KE_GOLONGAN: Record<number, Padanan> = {
   900: { golongan: "sekretariat" },
   901: { golongan: "sekretariat" },
   802: { golongan: "ptsp" },
-  412: { golongan: "ptsp", ragu: "Meja I disamakan dengan PTSP" },
-  422: { golongan: "ptsp", ragu: "Meja I disamakan dengan PTSP" },
-  1001: { golongan: "ptsp", ragu: "Meja I disamakan dengan PTSP" },
-  1011: { golongan: "ptsp", ragu: "Meja I disamakan dengan PTSP" },
-  1032: { golongan: "ptsp", ragu: "Meja I disamakan dengan PTSP" },
+  412: { golongan: "ptsp" },
+  422: { golongan: "ptsp" },
+  1001: { golongan: "ptsp" },
+  1011: { golongan: "ptsp" },
+  1032: { golongan: "ptsp" },
   411: { golongan: "analis-perkara", ragu: "Admin Panitera disamakan dengan Analis Perkara" },
   421: { golongan: "analis-perkara", ragu: "Admin Panitera disamakan dengan Analis Perkara" },
   1031: { golongan: "analis-perkara", ragu: "Admin Panitera disamakan dengan Analis Perkara" },
-  413: { golongan: "analis-perkara", ragu: "Meja II/III disamakan dengan Analis Perkara" },
-  414: { golongan: "analis-perkara", ragu: "Meja II/III disamakan dengan Analis Perkara" },
-  423: { golongan: "analis-perkara", ragu: "Meja II/III disamakan dengan Analis Perkara" },
-  1002: { golongan: "analis-perkara", ragu: "Meja II/III disamakan dengan Analis Perkara" },
-  1003: { golongan: "analis-perkara", ragu: "Meja II/III disamakan dengan Analis Perkara" },
-  1012: { golongan: "analis-perkara", ragu: "Meja II/III disamakan dengan Analis Perkara" },
-  1013: { golongan: "analis-perkara", ragu: "Meja II/III disamakan dengan Analis Perkara" },
-  1033: { golongan: "analis-perkara", ragu: "Meja II/III disamakan dengan Analis Perkara" },
-  1034: { golongan: "analis-perkara", ragu: "Meja II/III disamakan dengan Analis Perkara" },
+  413: { golongan: "analis-perkara" },
+  414: { golongan: "analis-perkara" },
+  423: { golongan: "analis-perkara" },
+  1002: { golongan: "analis-perkara" },
+  1003: { golongan: "analis-perkara" },
+  1012: { golongan: "analis-perkara" },
+  1013: { golongan: "analis-perkara" },
+  1033: { golongan: "analis-perkara" },
+  1034: { golongan: "analis-perkara" },
 };
 
 /** Golongan ALETA yang tidak punya padanan grup di ABT: haknya "tidak diberi" sampai pemilik memutuskan lain. */
@@ -206,8 +205,16 @@ function grupDariGolongan(golongan: GolonganPeran): number[] {
  *   tidak    - tidak diberi.
  * Super Admin: bebas, melewati cek tahapan (seperti grup 1 di ABT).
  */
-export function tingkatHak(baris: BarisMenu, golongan: GolonganPeran): TingkatHak {
+export function folderArsip(baris: Pick<BarisMenu, "parent">, bendera = false): boolean {
+  return bendera || baris.parent === "_arsip_derry_briantono";
+}
+
+export function tingkatHak(baris: BarisMenu, golongan: GolonganPeran, opsi: { arsip?: boolean } = {}): TingkatHak {
   if (golongan === "super-admin") return "bebas";
+  // Keputusan 5 Nov 2026: Admin, mediator, petugas sidang, TI, dan pelaksana tanpa hak atas folder blangko.
+  if (golongan === "admin") return "tidak";
+  // Keputusan 5 Nov 2026: folder arsip disembunyikan dari semua peran selain Super Admin.
+  if (folderArsip(baris, opsi.arsip === true)) return "tidak";
   const grupnya = grupDariGolongan(golongan);
   const pegang = (daftar: number[]) => grupnya.some((g) => daftar.includes(g));
   if (pegang(baris.top)) return "bebas";
@@ -225,10 +232,10 @@ export const NAMA_TINGKAT: Record<TingkatHak, string> = {
 };
 
 /** Gabungan golongan satu orang: tingkat tertinggi. */
-export function tingkatHakGabungan(baris: BarisMenu, golongan: readonly GolonganPeran[]): TingkatHak {
+export function tingkatHakGabungan(baris: BarisMenu, golongan: readonly GolonganPeran[], opsi: { arsip?: boolean } = {}): TingkatHak {
   let terbaik: TingkatHak = "tidak";
   for (const g of golongan) {
-    const t = tingkatHak(baris, g);
+    const t = tingkatHak(baris, g, opsi);
     if (KUAT[t] > KUAT[terbaik]) terbaik = t;
   }
   return terbaik;
@@ -343,10 +350,17 @@ export type HasilHakFolder = { boleh: boolean | null; tingkat: TingkatHak | null
  * `baris` null = folder tanpa baris menu (hak tidak diketahui: tidak ditebak). `ditunjuk` null = belum diketahui.
  * Hanya dipakai bila matriks sudah disetujui; pemanggil yang memeriksa persetujuan.
  */
-export function periksaHakFolder(baris: BarisMenu | null, golongan: readonly GolonganPeran[], opsi: { ditunjuk?: boolean | null } = {}): HasilHakFolder {
-  if (!baris) return { boleh: null, tingkat: null, perluDitunjuk: false, alasan: "Folder ini belum punya aturan hak." };
-  const t = tingkatHakGabungan(baris, golongan);
-  if (t === "tidak") return { boleh: false, tingkat: t, perluDitunjuk: false, alasan: "Peran ini tidak diberi hak atas folder ini." };
+export function periksaHakFolder(baris: BarisMenu | null, golongan: readonly GolonganPeran[], opsi: { ditunjuk?: boolean | null; arsip?: boolean } = {}): HasilHakFolder {
+  // Keputusan 5 Nov 2026: folder tanpa baris menu hanya untuk Super Admin sampai ditetapkan.
+  if (!baris) {
+    return golongan.includes("super-admin")
+      ? { boleh: true, tingkat: "bebas", perluDitunjuk: false, alasan: "" }
+      : { boleh: false, tingkat: null, perluDitunjuk: false, alasan: "Folder ini belum punya aturan hak; sementara hanya Super Admin." };
+  }
+  const t = tingkatHakGabungan(baris, golongan, { arsip: opsi.arsip });
+  if (t === "tidak") {
+    return { boleh: false, tingkat: t, perluDitunjuk: false, alasan: folderArsip(baris, opsi.arsip === true) && !golongan.includes("super-admin") ? "Folder arsip hanya untuk Super Admin." : "Peran ini tidak diberi hak atas folder ini." };
+  }
   if (t === "validasi") return { boleh: false, tingkat: t, perluDitunjuk: false, alasan: "Peran ini hanya memvalidasi BAS, tidak membuka folder." };
   if (t === "ditunjuk") {
     if (opsi.ditunjuk === true) return { boleh: true, tingkat: t, perluDitunjuk: true, alasan: "" };
@@ -407,16 +421,15 @@ export function sidikTeks(teks: string): string {
   return h.toString(16).padStart(8, "0");
 }
 
-function alasanRagu(b: BarisMenu | null, folder: FolderPustaka | null, menuGanda: boolean): string[] {
+function alasanRagu(b: BarisMenu | null, menuGanda: boolean): string[] {
   const r: string[] = [];
   if (!b) {
-    r.push("Tidak ada baris menu di ABT untuk folder ini, jadi siapa yang berhak tidak diketahui.");
+    r.push("Tidak ada baris menu di ABT untuk folder ini; hanya Super Admin sampai ditetapkan.");
     return r;
   }
   if (!b.aktif) r.push("Baris menu sudah hilang dari ABT.");
   if (menuGanda) r.push("Nama folder ini dipakai lebih dari satu baris menu.");
   if (!INDUK_FOLDER_DERRY.includes(b.parent as (typeof INDUK_FOLDER_DERRY)[number])) r.push(`Folder berada di bawah "${b.parent || "tanpa induk"}", bukan di bawah blangko Derry.`);
-  if (b.parent === "_arsip_derry_briantono" || folder?.arsip) r.push("Folder arsip: hak masih tertulis di ABT, padahal blangkonya sudah tidak dipakai.");
   if (b.grup.length === 0 || (b.grup.length === 1 && b.grup[0] === -1)) r.push("Daftar peran yang berhak kosong atau -1.");
   if (b.grupTakTerbaca.length) r.push(`Ada peran yang tidak terbaca: ${b.grupTakTerbaca.join(", ")}.`);
   const tak = [...b.grup, ...b.top, ...b.validator].filter((g) => g >= 0 && !(g in GRUP_KE_GOLONGAN));
@@ -449,19 +462,21 @@ export function susunMatriks(menu: readonly BarisMenu[], folderPustaka: readonly
   for (const k of [...semua].sort((a, b) => a.localeCompare(b, "id", { numeric: true }))) {
     const m = menuPer.get(k) ?? null;
     const f = folderPer.get(k) ?? null;
-    const hak = Object.fromEntries(golongan.map((g) => [g, m ? tingkatHak(m, g) : ("tidak" as TingkatHak)])) as Record<GolonganPeran, TingkatHak>;
+    const arsip = Boolean(f?.arsip) || m?.parent === "_arsip_derry_briantono";
+    // Folder tanpa baris menu: hanya Super Admin sampai ditetapkan. Folder arsip: hanya Super Admin.
+    const hak = Object.fromEntries(golongan.map((g) => [g, m ? tingkatHak(m, g, { arsip }) : g === "super-admin" ? ("bebas" as TingkatHak) : ("tidak" as TingkatHak)])) as Record<GolonganPeran, TingkatHak>;
     const gr = m ? [...new Set([...m.grup, ...m.top])].filter((g) => g >= 0).map((g) => NAMA_GRUP_ABT[g] ?? `grup ${g}`) : [];
     baris.push({
       folder: m?.id ?? f?.folder ?? k,
       nama: m?.nama ?? "",
       adaMenu: Boolean(m),
-      arsip: Boolean(f?.arsip) || m?.parent === "_arsip_derry_briantono",
+      arsip,
       tahapan: m ? labelTahapan(m) : "tidak diketahui",
       jenis: m ? labelJenis(m) : "tidak diketahui",
       penunjukan: m ? (PENUNJUKAN[m.cek] ?? `kode ${m.cek}`) : "tidak diketahui",
       hak,
       grup: gr,
-      ragu: alasanRagu(m, f, (hitung.get(k) ?? 0) > 1),
+      ragu: alasanRagu(m, (hitung.get(k) ?? 0) > 1),
     });
   }
   const sidik = sidikTeks(JSON.stringify(baris.map((b) => [b.folder, b.hak, b.tahapan, b.jenis, b.penunjukan, b.ragu.length > 0])));

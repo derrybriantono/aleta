@@ -112,7 +112,7 @@
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ perkaraId: String(m.perkaraId), nomorPerkara: String(m.nomorPerkara || ""), berkas: String(m.berkas), bagian }),
+        body: JSON.stringify({ perkaraId: String(m.perkaraId), nomorPerkara: String(m.nomorPerkara || ""), berkas: String(m.berkas), bagian, ...(Number(m.sidangKe) > 0 ? { sidangKe: Math.min(99, Math.trunc(Number(m.sidangKe))) } : {}) }),
       });
       if (!r || !r.ok) return null;
       const d = buka(await r.json());

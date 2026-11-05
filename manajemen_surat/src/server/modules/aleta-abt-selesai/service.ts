@@ -26,7 +26,7 @@ import { ApiError } from "@/server/shared/errors";
  * Satu rancangan kode untuk lima langkah (lib/aleta-abt-selesai.ts). Di sini hanya penyimpanan keadaan (aleta_abt_selesai: status dan
  * pesan singkat, TANPA PDF dan TANPA isi naskah), saklar tulis ke luar, dan kabel ke JALUR YANG SUDAH ADA:
  *   - PDF salinan dan garis Z/nomor halaman : rute abt/pdf (LibreOffice, tanda tangan, cap, Z) lewat rute-pdf.ts - tidak menulis ke luar;
- *   - e-Doc SIPP : rute putusan/unggah-sipp  (MENULIS KE SIPP)    - hanya bila saklar "edoc-sipp" menyala;
+ *   - e-Doc SIPP : rute putusan/unggah-sipp  (MENULIS KE SIPP, PDF BIASA bukan salinan) - hanya bila saklar "edoc-sipp" menyala;
  *   - e-Court    : rute ecourt-putusan/unggah (MENULIS KE e-COURT) - hanya bila saklar "ecourt" menyala.
  * KEDUA SAKLAR BAWAAN MATI DAN TIDAK DINYALAKAN oleh kode ini. Rute-rute itu menjaga hak dan mencatat jejaknya sendiri; sesi pemanggil
  * diteruskan apa adanya. Hanya Super Admin yang sampai ke sini (rute pemanggil menjaganya di server).
@@ -67,6 +67,26 @@ export async function bacaKeadaanSelesai(db: AletaDatabase, perkaraId: string, b
   return { keadaan: keadaanDariJson(b.langkah), ada: true, jenis: String(b.jenis_berkas), diubahAt: String(b.diubah_at) };
 }
 
+export type CatatanSelesaiPerkara = { berkasNama: string; jenis: string; status: string; diubahAt: string; langkah: Array<{ id: IdLangkah; status: string; pesan: string }> };
+
+/** Semua berkas yang pernah diselesaikan untuk satu perkara (layar Status Perkara, hanya Super Admin): status langkah saja. */
+export async function daftarSelesaiPerkara(db: AletaDatabase, perkaraId: string): Promise<CatatanSelesaiPerkara[]> {
+  const baris = await db.queryAll<BarisSelesai>("SELECT * FROM aleta_abt_selesai WHERE perkara_id = ? ORDER BY diubah_at DESC LIMIT 20", [perkaraId]);
+  const hasil: CatatanSelesaiPerkara[] = [];
+  for (const b of baris) {
+    const k = keadaanDariJson(b.langkah);
+    const berkas = await db.queryOne<{ nama: string }>("SELECT nama FROM aleta_abt_berkas WHERE id = ?", [b.berkas_id]).catch(() => null);
+    hasil.push({
+      berkasNama: String(berkas?.nama ?? b.berkas_id).replace(/\.rtf$/i, ""),
+      jenis: String(b.jenis_berkas),
+      status: k.status,
+      diubahAt: String(b.diubah_at),
+      langkah: ID_LANGKAH.map((id) => ({ id, status: k.langkah[id].status, pesan: k.langkah[id].pesan })),
+    });
+  }
+  return hasil;
+}
+
 async function simpanKeadaan(db: AletaDatabase, p: { perkaraId: string; berkasId: string; jenis: JenisBerkasSelesai; oleh: string }, k: KeadaanSelesai) {
   const sekarang = new Date().toISOString();
   await db.run(
@@ -96,6 +116,7 @@ export type PermintaanSelesai = {
 export type KabelSelesai = {
   /** Mesin yang menyusun naskah dan membuat PDF. Bawaan: jalur yang sudah ada. */
   bangunPdf?: (p: PermintaanSelesai) => Promise<HasilPdfSelesai>;
+  bangunPdfBiasa?: (p: PermintaanSelesai) => Promise<HasilPdfSelesai>;
   unggahEdoc?: (p: PermintaanSelesai, pdf: HasilPdfSelesai) => Promise<HasilUnggah>;
   unggahEcourt?: (p: PermintaanSelesai, pdf: HasilPdfSelesai) => Promise<HasilUnggah>;
   saklar?: (langkah: "edoc-sipp" | "ecourt") => Promise<boolean>;
@@ -106,13 +127,18 @@ export type KabelSelesai = {
 // Kabel ke jalur yang sudah ada
 // ---------------------------------------------------------------------------------------------------------------
 
-export async function pdfSalinanDariNaskah(db: AletaDatabase, request: NextRequest, p: PermintaanSelesai): Promise<HasilPdfSelesai> {
+async function pdfDariNaskah(db: AletaDatabase, request: NextRequest, p: PermintaanSelesai, salinan: boolean): Promise<HasilPdfSelesai> {
   const n = await susunNaskah(db, { berkasId: p.berkasId, perkaraId: p.perkaraId, sidangKe: p.sidangKe, cetakFinal: true });
   if (!n.ok) throw new ApiError(n.status >= 400 && n.status < 600 ? n.status : 502, n.alasan);
-  const pdf: JawabanRutePdf = await pdfLewatRuteAbt(request, n.rtf, true);
-  if (pdf.available !== true || !pdf.pdfBase64) throw new ApiError(502, pdf.message || "PDF salinan belum dapat dibuat.");
+  const pdf: JawabanRutePdf = await pdfLewatRuteAbt(request, n.rtf, salinan);
+  if (pdf.available !== true || !pdf.pdfBase64) throw new ApiError(502, pdf.message || (salinan ? "PDF salinan belum dapat dibuat." : "PDF belum dapat dibuat."));
   return { pdfBase64: pdf.pdfBase64, ...(pdf.zcross ? { zcross: pdf.zcross } : {}), ...(pdf.runut ? { runut: pdf.runut } : {}) };
 }
+
+/** PDF SALINAN (langkah 1 dan e-Court). */
+export const pdfSalinanDariNaskah = (db: AletaDatabase, request: NextRequest, p: PermintaanSelesai) => pdfDariNaskah(db, request, p, true);
+/** PDF BIASA, bukan salinan (e-Doc SIPP). */
+export const pdfBiasaDariNaskah = (db: AletaDatabase, request: NextRequest, p: PermintaanSelesai) => pdfDariNaskah(db, request, p, false);
 
 /** Memanggil rute multipart yang sudah ada di dalam proses dengan sesi yang sama. */
 async function panggilRuteForm(request: NextRequest, path: string, rute: (r: NextRequest) => Promise<Response>, form: FormData): Promise<Record<string, unknown>> {
@@ -135,7 +161,7 @@ export async function unggahEdocLewatRute(request: NextRequest, p: PermintaanSel
   const f = new FormData();
   f.set("perkaraId", p.perkaraId);
   f.set("nomorPerkara", p.nomorPerkara);
-  f.set("putusan", berkasPdf(pdf.pdfBase64, "putusan.pdf"));
+  f.set("putusan", berkasPdf(pdf.pdfBase64, "putusan.pdf")); // PDF biasa, bukan salinan (keputusan 5 Nov 2026)
   const h = await panggilRuteForm(request, "/api/aleta-ecourt/putusan/unggah-sipp", POST, f);
   const ok = h.ok === true || h.berhasil === true;
   return { ok, pesan: ok ? "Terunggah ke e-Doc SIPP." : String(h.sebab ?? h.alasan ?? h.pesan ?? "e-Doc SIPP menolak berkas.").slice(0, 200) };
@@ -165,6 +191,7 @@ export async function jalankanSelesaikanBerkas(db: AletaDatabase, request: NextR
   const deps: DepsSelesai = {
     jenis: p.jenis,
     bangunPdf: () => (kabel.bangunPdf ? kabel.bangunPdf(p) : pdfSalinanDariNaskah(db, request, p)),
+    bangunPdfBiasa: () => (kabel.bangunPdfBiasa ? kabel.bangunPdfBiasa(p) : pdfBiasaDariNaskah(db, request, p)),
     unggahEdoc: (pdf) => (kabel.unggahEdoc ? kabel.unggahEdoc(p, pdf) : unggahEdocLewatRute(request, p, pdf)),
     unggahEcourt: (pdf) => (kabel.unggahEcourt ? kabel.unggahEcourt(p, pdf) : unggahEcourtLewatRute(request, p, pdf)),
     catatStatus: async () => ({ ok: true, pesan: "Dicatat di ALETA. Belum ditampilkan di layar Status Perkara." }),

@@ -6,8 +6,8 @@
  * Lima pekerjaan menjadi satu tombol:
  *   1. pdf-salinan     PDF salinan bertanda tangan dan cap                     (tidak menulis ke luar)
  *   2. garis-z-nomor   garis Z dan nomor halaman (dibuat bersama langkah 1)    (tidak menulis ke luar)
- *   3. edoc-sipp       unggah ke e-Doc SIPP                                    (MENULIS KE SIPP: di balik saklar, bawaan mati)
- *   4. ecourt          unggah ke e-Court                                       (MENULIS KE e-COURT: di balik saklar, bawaan mati)
+ *   3. edoc-sipp       unggah ke e-Doc SIPP (PDF BIASA, bukan salinan)         (MENULIS KE SIPP: di balik saklar, bawaan mati)
+ *   4. ecourt          unggah ke e-Court (PDF salinan)                         (MENULIS KE e-COURT: di balik saklar, bawaan mati)
  *   5. status-perkara  catatan di Status Perkara                               (hanya tulisan di database ALETA)
  *
  * Aturan keras:
@@ -91,7 +91,10 @@ export type HasilUnggah = { ok: boolean; pesan: string };
 
 export type DepsSelesai = {
   jenis: JenisBerkasSelesai;
+  /** PDF SALINAN (langkah 1, dan yang diunggah ke e-Court). */
   bangunPdf: () => Promise<HasilPdfSelesai>;
+  /** PDF BIASA (bukan salinan): yang diunggah ke e-Doc SIPP. Dibuat hanya saat langkah e-Doc benar-benar berjalan. */
+  bangunPdfBiasa: () => Promise<HasilPdfSelesai>;
   unggahEdoc: (pdf: HasilPdfSelesai) => Promise<HasilUnggah>;
   unggahEcourt: (pdf: HasilPdfSelesai) => Promise<HasilUnggah>;
   catatStatus: () => Promise<HasilUnggah>;
@@ -130,6 +133,8 @@ export async function jalankanSelesai(awal: KeadaanSelesai, deps: DepsSelesai, o
 
   let pdf: HasilPdfSelesai | null = null;
   const ambilPdf = async () => (pdf ??= await deps.bangunPdf());
+  let pdfBiasa: HasilPdfSelesai | null = null;
+  const ambilPdfBiasa = async () => (pdfBiasa ??= await deps.bangunPdfBiasa());
 
   const mulai = async (id: IdLangkah) => {
     const l = k.langkah[id];
@@ -178,7 +183,7 @@ export async function jalankanSelesai(awal: KeadaanSelesai, deps: DepsSelesai, o
 
   // 3 dan 4. Menulis ke luar: hanya bila saklar menyala, hanya untuk putusan (satu-satunya jenis yang punya jalur unggah),
   // dan hanya sesudah langkah 1-2 tuntas.
-  const keLuar = async (id: "edoc-sipp" | "ecourt", unggah: (p: HasilPdfSelesai) => Promise<HasilUnggah>) => {
+  const keLuar = async (id: "edoc-sipp" | "ecourt", unggah: (p: HasilPdfSelesai) => Promise<HasilUnggah>, ambil: () => Promise<HasilPdfSelesai>) => {
     if (tuntas(status(id))) return;
     if (!tuntas(status("pdf-salinan")) || !tuntas(status("garis-z-nomor"))) return tunggu(id, "Menunggu PDF salinan dan garis Z selesai.");
     // Berurutan seperti pekerjaan petugas: e-Court menunggu bila e-Doc SIPP gagal (yang dimatikan tidak menahan).
@@ -193,15 +198,16 @@ export async function jalankanSelesai(awal: KeadaanSelesai, deps: DepsSelesai, o
     if (!menyala) return tutup(id, "dimatikan", PESAN_DIMATIKAN[id]);
     await mulai(id);
     try {
-      const h = await ambilPdf();
+      const h = await ambil();
       const r = await unggah(h);
       await tutup(id, r.ok ? "selesai" : "gagal", r.pesan || (r.ok ? "Terunggah." : "Ditolak."));
     } catch (e) {
       await tutup(id, "gagal", pendekkan(e));
     }
   };
-  await keLuar("edoc-sipp", deps.unggahEdoc);
-  await keLuar("ecourt", deps.unggahEcourt);
+  // e-Doc SIPP memakai PDF biasa; e-Court menerima Dokumen Salinan Putusan, yaitu PDF salinan.
+  await keLuar("edoc-sipp", deps.unggahEdoc, ambilPdfBiasa);
+  await keLuar("ecourt", deps.unggahEcourt, ambilPdf);
 
   // 5. Catatan: hanya sesudah semua langkah sebelumnya tuntas
   if (!tuntas(status("status-perkara"))) {

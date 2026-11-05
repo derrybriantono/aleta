@@ -14,7 +14,11 @@ import { NAMA_TINGKAT, golonganBerhak, labelGolongan, type Matriks, type Tingkat
  */
 
 type Persetujuan = { disetujui: boolean; sidik: string; oleh: string; pada: string };
-type Jawaban = { matriks: Matriks; persetujuan: Persetujuan; berlaku: boolean };
+type StatusSaklar = "nyala" | "sebagian" | "mati" | "tidak-ada";
+type Sinkron = { status: string; mulaiAt: string; selesaiAt: string; galat: string } | null;
+type Jawaban = { matriks: Matriks; persetujuan: Persetujuan; berlaku: boolean; saklar?: { ppPutusan: StatusSaklar; hakimBas: StatusSaklar }; sinkron?: Sinkron };
+const NAMA_SAKLAR: Record<StatusSaklar, string> = { nyala: "menyala", sebagian: "menyala sebagian", mati: "mati", "tidak-ada": "tidak ada folder yang terkena" };
+const tanggalJam = (iso: string) => (iso ? `${iso.slice(0, 10).split("-").reverse().join("-")} ${iso.slice(11, 16).replace(":", ".")}` : "");
 
 const SINGKAT: Record<TingkatHak, string> = { bebas: "Boleh", ditunjuk: "Bila ditunjuk", validasi: "Validasi", tidak: "-" };
 const WARNA: Record<TingkatHak, string> = {
@@ -30,6 +34,7 @@ export function HakFolderAbt() {
   const [hanyaRagu, setHanyaRagu] = useState(false);
   const [sudahPeriksa, setSudahPeriksa] = useState(false);
   const [sibuk, setSibuk] = useState(false);
+  const [info, setInfo] = useState("");
 
   const muat = useCallback(async () => {
     setGalat("");
@@ -62,6 +67,20 @@ export function HakFolderAbt() {
     }
   };
 
+  const cocokkan = async () => {
+    setSibuk(true);
+    setGalat("");
+    setInfo("");
+    try {
+      await kirimAlur("hak-folder", { tindakan: "cocokkan" });
+      setInfo("Pencocokan dengan ABT berjalan di latar. Muat ulang beberapa saat lagi untuk melihat hasilnya.");
+    } catch (e) {
+      setGalat((e as Error).message);
+    } finally {
+      setSibuk(false);
+    }
+  };
+
   if (!j) return galat ? <GalatAlur pesan={galat} /> : <p className="text-sm text-muted-foreground">Membaca hak folder...</p>;
   const m = j.matriks;
 
@@ -87,9 +106,29 @@ export function HakFolderAbt() {
             </p>
           ) : null}
           <p className="text-xs text-muted-foreground">
-            Saklar tambahan yang membolehkan Panitera Pengganti memakai blangko putusan tidak ikut dihitung di tabel ini. Super Admin melewati pemeriksaan tahapan seperti di ABT, tetapi melihat peringatan bila blangko di luar tahapan. Peran ALETA tanpa padanan di ABT:{" "}
+            Folder arsip dan folder tanpa aturan hanya untuk Super Admin. Super Admin melewati pemeriksaan tahapan seperti di ABT, tetapi melihat peringatan bila blangko di luar tahapan. Peran ALETA tanpa padanan di ABT:{" "}
             {m.tanpaPadananAbt.length ? m.tanpaPadananAbt.map(labelGolongan).join(", ") : "tidak ada"}; mereka tidak diberi hak sampai pemilik memutuskan lain.
           </p>
+          {j.saklar ? (
+            <p className="text-xs text-muted-foreground">
+              Saklar yang berlaku di ABT ikut terhitung dari hak yang disalin: Panitera Pengganti membuka folder putusan {NAMA_SAKLAR[j.saklar.ppPutusan]}; Hakim membuka folder BAS {NAMA_SAKLAR[j.saklar.hakimBas]}.
+            </p>
+          ) : null}
+          <div className="space-y-2 rounded-lg border border-border p-2">
+            <p className="text-xs text-muted-foreground">
+              Acuan tabel ini adalah salinan hak ABT yang tersimpan di pustaka. Salinan awalnya diambil dari database setempat tanggal 3 Nov dan harus dicocokkan ulang dengan ABT di server saat server hidup.
+              {j.sinkron ? ` Pencocokan terakhir: ${tanggalJam(j.sinkron.mulaiAt)}, ${j.sinkron.status === "berhasil" ? "berhasil" : j.sinkron.status === "gagal" ? `gagal${j.sinkron.galat ? ` (${j.sinkron.galat})` : ""}` : "sedang berjalan"}.` : " Pencocokan belum pernah dijalankan."}
+            </p>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button size="sm" variant="outline" className="w-full sm:w-auto" disabled={sibuk} onClick={() => void cocokkan()}>
+                Cocokkan ulang dengan ABT
+              </Button>
+              <Button size="sm" variant="ghost" className="w-full sm:w-auto" disabled={sibuk} onClick={() => void muat()}>
+                Muat ulang tabel
+              </Button>
+            </div>
+            {info ? <p className="text-xs">{info}</p> : null}
+          </div>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={hanyaRagu} onChange={(e) => setHanyaRagu(e.target.checked)} />
             Tampilkan hanya folder yang ragu
