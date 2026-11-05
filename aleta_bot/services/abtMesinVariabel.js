@@ -48,6 +48,12 @@
 const POLA_PENANDA = /#(\d{3,5})#/g;
 /** Kata kendali RTF yang ditulis rumus katalog (\trowd, \cellx8400, \b, \par ...) dan hurufnya (\'e9). */
 const KENDALI_RTF_RUMUS = /\\(?:[a-z]{1,32}-?\d{0,10} ?|'[0-9a-fA-F]{2})/g;
+/**
+ * Jalur ALETA ABT (Tahap 8): simbol kendali RTF yang ditulis rumus ikut dipertahankan seperti ABT, yang tidak melolos garis miring apa pun:
+ * \~ (spasi tak terpecah), \- (tanda pisah suku kata), \_ (tanda hubung tak terpecah). Tanpa ini mesin melolosnya dan naskah mencetak "\~" sebagai
+ * tulisan (isian #0206# pada BAS e-Court). Panel Blangko Derry dan BAS massal tidak memakai pola ini: perilaku bawaan mereka tidak diubah.
+ */
+const KENDALI_RTF_RUMUS_JALUR = /\\(?:[a-z]{1,32}-?\d{0,10} ?|'[0-9a-fA-F]{2}|[~\-_])/g;
 const UMUR_KATALOG_MS = 30 * 1000;
 const BATAS_KUERI_MS = 10 * 1000;
 const PARALEL = 6;
@@ -648,6 +654,58 @@ function terapkanIsianTangan(sql, isian) {
   });
 }
 
+/**
+ * MODE TANPA ABT (Tahap 8, 5 Nov 2026) - hanya bila jalurAleta.tanpaAbt === true. Untuk satker yang memasang ALETA ABT tanpa ABT Derry:
+ * tabel ABT yang dibaca rumus isian (isian tangan, keterangan saksi/terdakwa, konfigurasi) dianggap KOSONG, bukan dibaca dari ABT. Nilai
+ * yang diketik petugas datang dari ALETA lewat opsi `cadangan`, `tanyaJawabSaksi`, dan isianTangan, bukan dari tabel ini. Tabel ABT lain
+ * yang disebut rumus tidak ditebak: kueri itu gagal dengan sebab yang jelas (isian itu kosong dan tercatat), bukan diam-diam kosong.
+ * Tidak mengubah perilaku tanpa opsi ini (panel Blangko Derry, BAS massal, jalur ALETA bawaan).
+ */
+const TABEL_ABT_KOSONG = {
+  abt_data_teks: ["no_var", "perkara_id", "data", "modifier", "modified"],
+  abt_data_tanggal: ["no_var", "perkara_id", "data", "modifier", "modified"],
+  abt_keterangan_saksi: ["id", "perkara_id", "sidang_id", "penanya_id", "saksi_id", "urutan_pertanyaan", "pertanyaan", "jawaban", "diinput_oleh", "diinput_tanggal", "diperbaharui_oleh", "diperbaharui_tanggal"],
+  abt_keterangan_terdakwa: ["id", "perkara_id", "sidang_id", "penanya_id", "pihak_id", "urutan_pertanyaan", "pertanyaan", "jawaban", "diinput_oleh", "diinput_tanggal", "diperbaharui_oleh", "diperbaharui_tanggal"],
+};
+
+/** Menulis ulang rujukan tabel ABT menjadi tabel turunan kosong (satu SELECT tetap). Melempar bila tabel ABT lain disebut. */
+/** Apakah posisi `pos` berada di dalam literal bertanda kutip ('...' atau "...") pada kueri; escape garis miring dan kutip ganda diperhatikan. */
+function dalamKutip(teks, pos) {
+  let kutip = "";
+  for (let i = 0; i < pos; i += 1) {
+    const c = teks[i];
+    if (kutip) {
+      if (c === "\\") i += 1;
+      else if (c === kutip) {
+        if (teks[i + 1] === kutip) i += 1;
+        else kutip = "";
+      }
+    } else if (c === "'" || c === '"') kutip = c;
+  }
+  return kutip !== "";
+}
+
+function tanpaTabelAbt(sql, skema) {
+  const POLA = /(?<![A-Za-z0-9_`])(?:`?([A-Za-z0-9_]+)`?\s*\.\s*)?`?(abt_[a-z_]+)`?(?![A-Za-z0-9_])/gi;
+  const skemaKecil = new Set([String(skema || "").toLowerCase(), "aps_badilag"]);
+  return String(sql).replace(POLA, (utuh, sk, tabel, posisi, seluruh) => {
+    if (sk && !skemaKecil.has(String(sk).toLowerCase())) return utuh;
+    // Nama tabel yang hanya TEKS di dalam kutip (mis. 'abt_keterangan_saksi' sebagai nilai kolom) bukan rujukan tabel.
+    if (dalamKutip(seluruh, posisi)) return utuh;
+    const kolom = TABEL_ABT_KOSONG[String(tabel).toLowerCase()];
+    if (!kolom) {
+      const g = new Error(`tabel ABT "${tabel}" tidak tersedia tanpa ABT`);
+      g.tanpaAbt = true;
+      throw g;
+    }
+    const sesudah = seluruh.slice(posisi + utuh.length);
+    const alias = sesudah.match(/^\s*(?:as\s+)?`?([A-Za-z_][A-Za-z0-9_]*)`?/i);
+    const adaAlias = Boolean(alias) && !KATA_BUKAN_ALIAS.has(alias[1].toLowerCase());
+    const turunan = `(SELECT ${kolom.map((k) => `NULL AS ${k}`).join(", ")} FROM DUAL WHERE 1 = 0)`;
+    return adaAlias ? turunan : `${turunan} ${String(tabel).toLowerCase()}`;
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Mesin
 // ---------------------------------------------------------------------------
@@ -748,6 +806,8 @@ function buatMesin(p) {
   const kodeAleta = new Map();
   for (const [no, d] of Object.entries(pustakaAleta)) if (d && d.kode) kodeAleta.set(String(no), String(d.kode));
   const polaAlias = jalurAleta && Object.keys(aliasAleta).length ? polaAliasDari(Object.keys(aliasAleta)) : null;
+  /** Mode tanpa ABT (Tahap 8): hanya bersama jalur ALETA. Katalog isian = pustaka ALETA saja; tabel ABT dianggap kosong. */
+  const tanpaAbt = Boolean(jalurAleta && jalurAleta.tanpaAbt === true);
   /** `#kodeBermakna#` -> `#NNNN#` (hanya jalur ALETA). */
   function luruskanAlias(teks) {
     if (!polaAlias) return teks;
@@ -806,6 +866,18 @@ function buatMesin(p) {
         teksKueri = ulang;
       }
     }
+    if (tanpaAbt) {
+      const ulang = tanpaTabelAbt(teksKueri, skema);
+      if (ulang !== teksKueri) {
+        const sebabUlang = pagarBaca(ulang);
+        if (sebabUlang) {
+          const g = new Error(`kueri ditolak: ${sebabUlang}`);
+          g.ditolak = true;
+          throw g;
+        }
+        teksKueri = ulang;
+      }
+    }
     const baris = await kueriMentah(teksKueri, params, { timeoutMs: batasMs });
     return Array.isArray(baris) ? baris : [];
   }
@@ -813,9 +885,9 @@ function buatMesin(p) {
   function katalog() {
     if (katalogJanji && Date.now() - katalogSaat < umurMs) return katalogJanji;
     katalogSaat = Date.now();
-    katalogJanji = kueri(
-      `SELECT no_var, nama, data_type, data_tabel, data_kolom, urutan_data, referensi, sql_query, default_data, multi_sidang FROM ${skema}.abt_variabel`
-    )
+    katalogJanji = (tanpaAbt
+      ? Promise.resolve([])
+      : kueri(`SELECT no_var, nama, data_type, data_tabel, data_kolom, urutan_data, referensi, sql_query, default_data, multi_sidang FROM ${skema}.abt_variabel`))
       .then((rows) => {
         const peta = new Map(rows.map((b) => [String(b.no_var ?? "").trim(), b]));
         // Jalur ALETA: rumus dari pustaka ALETA menggantikan katalog ABT untuk nomor yang barisnya ada; sisanya tetap katalog ABT.
@@ -840,7 +912,7 @@ function buatMesin(p) {
 
   function jenisKertas() {
     if (kertasJanji) return kertasJanji;
-    kertasJanji = kueri(`SELECT value FROM ${skema}.abt_config WHERE name = 'jenis_kertas' LIMIT 1`)
+    kertasJanji = (tanpaAbt ? Promise.resolve([]) : kueri(`SELECT value FROM ${skema}.abt_config WHERE name = 'jenis_kertas' LIMIT 1`))
       .then((r) => String((r[0] && r[0].value) || ""))
       .catch(() => {
         kertasJanji = null;
@@ -1123,14 +1195,14 @@ function buatMesin(p) {
     const wakil = (rtf) => {
       const c = String.fromCharCode(0xe100 + nomor++);
       peta.set(c, rtf);
-      polos.set(c, /\\row/.test(rtf) ? "\n" : /\\cell/.test(rtf) ? "\t" : /^\\par(?![a-z])/.test(rtf) ? "\n" : /^\\tab(?![a-z])/.test(rtf) ? "\t" : "");
+      polos.set(c, /\\row/.test(rtf) ? "\n" : /\\cell/.test(rtf) ? "\t" : /^\\par(?![a-z])/.test(rtf) ? "\n" : /^\\tab(?![a-z])/.test(rtf) ? "\t" : rtf === "\\~" ? " " : "");
       return c;
     };
     let mentah;
     if (d.tabel) mentah = tabelTanyaJawab(d.tabel, d.kertas, wakil) ?? "";
     else mentah = d.value === null || d.value === undefined ? "" : String(d.value);
     // Kode RTF dari rumus katalog dipertahankan (tidak dilolos) - persis ABT, yang tidak melolos garis miring apa pun.
-    if (d.sql && !d.tabel) mentah = mentah.replace(KENDALI_RTF_RUMUS, (m) => wakil(m));
+    if (d.sql && !d.tabel) mentah = mentah.replace(jalurAleta ? KENDALI_RTF_RUMUS_JALUR : KENDALI_RTF_RUMUS, (m) => wakil(m));
     // "{}" yang ditulis rumus adalah kelompok RTF kosong (penutup kode kendali) - ABT meneruskannya mentah sehingga tidak tampak;
     // dulu mesin melolosnya menjadi "{}" yang tercetak. Sejak keputusan pemilik aplikasi (5 Nov 2026) dibuang di SEMUA pemanggil
     // (panel Blangko ABT by Derry Briantono, BAS massal, jalur ALETA ABT), bukan hanya jalur ALETA.
@@ -1319,6 +1391,7 @@ function buatMesin(p) {
 
 module.exports = {
   buatMesin,
+  tanpaTabelAbt,
   sumberDariDefinisi,
   keyakinanIsian,
   URUTAN_SUMBER,

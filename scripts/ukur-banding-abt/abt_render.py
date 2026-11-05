@@ -2,6 +2,7 @@
 """Sisi ABT pengukur banding Tahap 4: nilai tiap #NNNN# menurut renderer php56 ABT ASLI (salinan milik sendiri).
 HANYA ABT salinan (sipp_vs + aps_badilag_vs) yang terlibat; render ABT menulis urutan sidang ke salinan itu, bukan ke SIPP sungguhan.
 pakai: python abt_render.py <kode,kode,...|@berkas> <perkara_id> <keluar.json>   (env UJI_ABT_DIR, UJI_PHP, TMP)
+       python abt_render.py --dari-mentah <p.json mentah> <kode.txt> <keluar.json>    (nilai tiap isian dari pecahan mentah Tahap 5/8, tanpa render PHP)
 Keluar memuat data perkara -> simpan di luar repo."""
 import json, os, re, subprocess, sys
 SINI = os.path.dirname(os.path.abspath(__file__))
@@ -32,6 +33,19 @@ def main():
         rtf, kode, keluar = sys.argv[2:5]
         kode = [k.strip() for k in re.split(r'[,\s]+', open(kode, encoding='utf-8').read()) if k.strip()]
         json.dump({'nilai': pisah(open(rtf, 'rb').read(), kode)}, open(keluar, 'w', encoding='utf-8'), ensure_ascii=False)
+        return
+    if sys.argv[1] == '--dari-mentah':
+        # sisi ABT dari pecahan RTF mentah hasil abt_render_mentah.py (Tahap 5/8): tidak merender ulang di PHP.
+        # Tiap pecahan dibungkus dokumen RTF yang sama dengan dokumen uji, lalu diubah dengan pengubah yang SAMA seperti keluaran ABT.
+        mentah, kode, keluar = sys.argv[2:5]
+        kode = [k.strip() for k in re.split(r'[,\s]+', open(kode, encoding='utf-8').read()) if k.strip()]
+        pec = json.load(open(mentah, encoding='utf-8'))
+        awal = '{' + B + 'rtf1' + B + 'ansi' + B + 'ansicpg1252' + B + 'deff0{' + B + 'fonttbl{' + B + 'f0 Times New Roman;}}' + chr(10) + B + 'pard '
+        nilai = {}
+        for k in kode:
+            f = pec['mentah'].get(k)
+            nilai[k] = '' if f is None else rtf_ke_teks(awal + f + B + 'par}').strip()
+        json.dump({'perkara': pec.get('perkara'), 'info': 'dari-mentah', 'nilai': nilai}, open(keluar, 'w', encoding='utf-8'), ensure_ascii=False)
         return
     kode, pid, keluar = sys.argv[1:4]
     kode = open(kode[1:], encoding='utf-8').read().strip() if kode.startswith('@') else kode

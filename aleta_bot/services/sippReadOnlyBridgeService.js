@@ -2716,6 +2716,23 @@ function kueriMesinSipp(sql, params, opsi) {
   );
 }
 /**
+ * Kueri mesin KHUSUS JALUR ALETA ABT (Tahap 8). Beda dengan kueriMesinSipp hanya pada nilai berkelompok huruf BINER (hasil CHAR(n) atau
+ * CONCAT yang memuat CHAR(n), mis. titik tengah CHAR(183) pada ciri perkara sampul): ABT (PHP, tanpa konversi) meneruskan bitanya apa
+ * adanya sehingga tercetak sebagai huruf latin1, sedangkan penerjemahan UTF-8 membuatnya menjadi huruf pengganti. Nilai biner kini dibaca
+ * sebagai latin1; nilai bukan biner tidak berubah. kueriMesinSipp (panel Blangko Derry, BAS massal) tidak diubah.
+ */
+function kueriMesinSippJalurAleta(sql, params, opsi) {
+  return externalDbService.query(
+    DEFAULT_CONNECTION_KEY,
+    {
+      sql,
+      timeout: (opsi && opsi.timeoutMs) || undefined,
+      typeCast: (field) => (field.packet && field.packet.charsetNr === 63 && /STRING|BLOB/.test(String(field.type)) ? field.buffer().toString("latin1") : field.string()),
+    },
+    params || []
+  );
+}
+/**
  * JALUR ALETA ABT (Tahap 4): mesin yang membaca rumus dari pustaka ALETA (dikirim portal) dan jatuh ke katalog ABT bila
  * barisnya tidak ada. Hanya untuk permintaan yang secara eksplisit membawa `jalurAleta` (portal menjaganya: Super Admin).
  * Satu mesin per sidik pustaka supaya katalog tidak dibaca ulang tiap permintaan; pemanggil lain tidak terpengaruh.
@@ -2727,7 +2744,7 @@ function mesinVariabelJalurAleta(jalur) {
   const lama = mesinJalurAleta.get(kunci);
   if (lama && Date.now() - lama.saat < 5 * 60 * 1000) return lama.mesin;
   const { buatMesin } = require("./abtMesinVariabel");
-  const mesin = buatMesin({ kueri: kueriMesinSipp, jalurAleta: { pustaka: jalur.pustaka || {}, alias: jalur.alias || {} } });
+  const mesin = buatMesin({ kueri: kueriMesinSippJalurAleta, jalurAleta: { pustaka: jalur.pustaka || {}, alias: jalur.alias || {} } });
   mesinJalurAleta.set(kunci, { saat: Date.now(), mesin });
   for (const [k, v] of mesinJalurAleta) if (Date.now() - v.saat >= 5 * 60 * 1000 || mesinJalurAleta.size > 4) mesinJalurAleta.delete(k);
   return mesin;

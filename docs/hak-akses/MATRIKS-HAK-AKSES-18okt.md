@@ -410,6 +410,7 @@ Dari salinan lokal ABT (hanya dibaca, paket yang siap; yang berjalan di server d
 | Beda dengan ABT (sinkron ALETA ABT) | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Alur kerja ALETA ABT (Siap diperiksa, Selesaikan berkas, hak folder) | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Berdampingan ALETA ABT dengan ABT | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Pindah ke ALETA ABT per jenis perkara (kesiapan dan tombol pindah) | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Sinkron kembaran (mode laptop saat server mati) | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Fitur Satker (stabil, uji coba, mati per fitur) | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Integrasi e-Court (akun, akses ekstensi, penarikan) | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
@@ -435,6 +436,7 @@ Catatan kewenangan:
 - **Beda dengan ABT (sinkron ALETA ABT)**: Hanya Super Admin, diputuskan di server. Tiap membuka beda, memilih, mengatur jadwal, dan mengunduh paket tercatat di audit. ABT hanya dibaca dan paket tidak dipasang dari portal.
 - **Alur kerja ALETA ABT (Siap diperiksa, Selesaikan berkas, hak folder)**: Hanya Super Admin, diputuskan di server; peran lain 403. Langkah yang menulis ke SIPP dan e-Court mati bawaan di balik saklar. Matriks hak belum berlaku sebelum disetujui. Tiap membuka, memeriksa, menjalankan, menyetujui, dan mengubah saklar tercatat di audit.
 - **Berdampingan ALETA ABT dengan ABT**: Hanya Super Admin, diputuskan di server. Bawaan mati; hanya menyimpan angka, nama blangko, dan jenis beda. Menyalakan, menjawab beda merah, dan mencatat dari layar cetak tercatat di audit.
+- **Pindah ke ALETA ABT per jenis perkara (kesiapan dan tombol pindah)**: Hanya Super Admin, diputuskan di server. Semua tombol mati bawaan dan menolak menyala bila syaratnya belum terpenuhi. Membuka, menyalakan, mematikan, penolakan, dan memuat hasil tercatat di audit tanpa isi naskah. Panel Blangko ABT by Derry Briantono tidak berubah selama tombol mati.
 - **Sinkron kembaran (mode laptop saat server mati)**: Persetujuan pengiriman ke server hanya Super Admin.
 - **Integrasi e-Court (akun, akses ekstensi, penarikan)**: Mengubah kemampuan ekstensi per peran hanya Super Admin; Admin membaca matriksnya. Pegawai lain hanya melihat kartu Sesi e-Court saya.
 - **Pengaturan SIPP & ABT (menu pengelola)**: Pembagian rincian Super Admin dan Admin ada di butir Blangko: Pengaturan SIPP & ABT.

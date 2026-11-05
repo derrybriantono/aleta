@@ -73,6 +73,21 @@ export default function HalamanAletaAbt() {
           </CardContent>
         </Card>
       ) : null}
+      {superAdmin ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Kesiapan pindah ke ALETA ABT</CardTitle>
+            <CardDescription>
+              Jenis perkara mana yang sudah terbukti sama dengan ABT dan boleh dicetak tanpa ABT. Semua jenis masih memakai ABT sampai Anda menyalakannya satu per satu.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild className="w-full sm:w-auto">
+              <Link href="/aleta-abt/kesiapan">Buka kesiapan pindah</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
       {superAdmin ? <KartuBedaAbt /> : null}
       <AletaAbtPintu />
     </div>

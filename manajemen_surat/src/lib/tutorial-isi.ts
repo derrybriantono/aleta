@@ -976,6 +976,28 @@ export const TUTORIAL: readonly Tutorial[] = [
     kataKunci: ["berdampingan", "bandingkan abt", "beda merah", "30 cetak", "dua pekan", "pindah dari abt", "aleta abt"],
   },
   {
+    id: "aleta-abt-kesiapan",
+    judul: "Kesiapan pindah ke ALETA ABT: jenis perkara mana yang boleh dicetak tanpa ABT",
+    ringkas: "Tiap jenis perkara punya tombol pindah sendiri, bawaannya mati. Tombol baru bisa dinyalakan bila naskahnya terbukti sama dengan ABT dan cetak berdampingannya cukup dan bersih.",
+    kelompok: "putusan",
+    mencakup: { aplikasi: ["aleta-abt"] },
+    halaman: ["/aleta-abt/kesiapan"],
+    tautan: { teks: "Buka kesiapan pindah", href: "/aleta-abt/kesiapan" },
+    langkah: [
+      "Muat hasil pengukuran dari komputer pengembang lewat tombol Muat hasil pengukuran. Yang dimuat hanya angka per jenis perkara.",
+      "Tiap jenis perkara menampilkan seberapa sama naskahnya dengan ABT dan berapa cetak berdampingan yang sudah dibandingkan.",
+      "Jenis yang belum punya perkara di salinan uji ditandai Belum terukur dan belum dapat dinyalakan.",
+      "Tombol Nyalakan ALETA ABT hanya aktif bila syaratnya terpenuhi. Server menolak menyalakan bila syarat belum terpenuhi, walaupun tombolnya ditekan dari tempat lain.",
+      "Tombol Matikan selalu boleh dan langsung mengembalikan jenis itu ke ABT.",
+    ],
+    peringatan: [
+      "Hanya Super Admin yang dapat membuka layar ini dan mengubah tombolnya; setiap perubahan tercatat di audit.",
+      "Semua tombol mati bawaan. Selama sebuah jenis mati, panel Blangko ABT by Derry Briantono tetap memakai ABT dan tidak berubah.",
+      "Layar ini hanya menyiapkan pindah. Sebelum pemakaian di server membuktikan syaratnya, belum ada jenis yang dipindah.",
+    ],
+    kataKunci: ["kesiapan pindah", "pindah ke aleta abt", "nyalakan aleta abt", "tombol pindah", "jenis perkara", "tanpa abt", "aleta abt"],
+  },
+  {
     id: "aleta-ai-dompet",
     judul: "Dompet ALETA Ai: perkiraan biaya, rincian, dan struk",
     ringkas: "Lihat perkiraan biaya sebelum mengirim, saldo, rincian biaya tiap jawaban, struk, dan pemberitahuan saldo menipis.",
