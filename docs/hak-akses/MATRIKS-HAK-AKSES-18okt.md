@@ -99,6 +99,7 @@ Jabatan (misalnya Panitera Muda Gugatan, Jurusita Pengganti, Pranata Komputer) d
 | ALETA e-Audit | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | E-Status | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Antrian Sidang | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| ALETA ABT | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | E-Keuangan | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Manajemen Aset | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Perpustakaan | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
@@ -115,6 +116,7 @@ Catatan kewenangan:
 - **ALETA e-Audit**: Belum dibuka untuk peran lain: aplikasi masih dalam penyempurnaan. Super Admin dapat membukanya per peran lewat Akses Menu.
 - **E-Status**: Belum dibuka untuk peran lain: aplikasi masih dalam penyempurnaan. Super Admin dapat membukanya per peran lewat Akses Menu.
 - **Antrian Sidang**: Belum dibuka untuk peran lain: aplikasi masih dalam penyempurnaan. Super Admin dapat membukanya per peran lewat Akses Menu.
+- **ALETA ABT**: Belum dibuka untuk peran lain: aplikasi masih dalam penyempurnaan. Super Admin dapat membukanya per peran lewat Akses Menu.
 - **E-Keuangan**: Belum dibuka untuk peran lain: aplikasi masih dalam penyempurnaan. Super Admin dapat membukanya per peran lewat Akses Menu.
 - **Manajemen Aset**: Belum dibuka untuk peran lain: aplikasi masih dalam penyempurnaan. Super Admin dapat membukanya per peran lewat Akses Menu.
 - **Perpustakaan**: Belum dibuka untuk peran lain: aplikasi masih dalam penyempurnaan. Super Admin dapat membukanya per peran lewat Akses Menu.
@@ -402,6 +404,7 @@ Dari salinan lokal ABT (hanya dibaca, paket yang siap; yang berjalan di server d
 | Kapasitas penyimpanan | U | L | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Sinkron dan cadangan | U | L | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Pemantau Cermin Perkara | U | L | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| ALETA ABT di HP (siapa boleh membuka) | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Sinkron kembaran (mode laptop saat server mati) | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Fitur Satker (stabil, uji coba, mati per fitur) | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Integrasi e-Court (akun, akses ekstensi, penarikan) | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
@@ -421,6 +424,7 @@ Dari salinan lokal ABT (hanya dibaca, paket yang siap; yang berjalan di server d
 Catatan kewenangan:
 
 - **Hak akses per peran (halaman ini)**: Super Admin melihat juga kunci, rute, dan daftar perubahan; Admin hanya membaca tabelnya.
+- **ALETA ABT di HP (siapa boleh membuka)**: Mengubah saklar hanya Super Admin dan tercatat di audit. Pilihan per pengguna menang atas pilihan peran.
 - **Sinkron kembaran (mode laptop saat server mati)**: Persetujuan pengiriman ke server hanya Super Admin.
 - **Integrasi e-Court (akun, akses ekstensi, penarikan)**: Mengubah kemampuan ekstensi per peran hanya Super Admin; Admin membaca matriksnya. Pegawai lain hanya melihat kartu Sesi e-Court saya.
 - **Pengaturan SIPP & ABT (menu pengelola)**: Pembagian rincian Super Admin dan Admin ada di butir Blangko: Pengaturan SIPP & ABT.

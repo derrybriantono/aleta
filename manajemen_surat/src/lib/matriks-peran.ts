@@ -447,6 +447,14 @@ export const ATURAN_APLIKASI: readonly AturanAplikasi[] = [
       "Layar antrean (TV/kios) berjalan lewat alamat publiknya sendiri; ubin pengelolaannya belum pernah dilepas ke pegawai (status quo: hanya Super Admin). Buka lewat Akses Menu untuk petugas antrean bila sudah dipakai.",
     hak: {},
   },
+  {
+    id: "aleta-abt",
+    label: "ALETA ABT",
+    status: "belum-fix",
+    alasan:
+      "Pintu menuju Blangko ABT by Derry Briantono dari portal; layar untuk HP masih dibangun. Sementara hanya Super Admin; akun atau peran lain dibuka lewat saklar ALETA ABT di HP (Pengaturan SIPP & ABT).",
+    hak: {},
+  },
   { id: "e-keuangan", label: "E-Keuangan", status: "belum-fix", alasan: "Kerangka (lencana Rencana) - belum ada isi.", hak: {} },
   { id: "manajemen-aset", label: "Manajemen Aset", status: "belum-fix", alasan: "Kerangka (lencana Rencana) - belum ada isi.", hak: {} },
   { id: "perpustakaan", label: "Perpustakaan", status: "belum-fix", alasan: "Kerangka (lencana Rencana) - belum ada isi.", hak: {} },

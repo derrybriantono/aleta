@@ -841,6 +841,26 @@ export const TUTORIAL: readonly Tutorial[] = [
     kataKunci: ["aleta ai", "chatbot", "asisten", "tanya jawab", "saldo", "pintasan", "biaya jawaban"],
   },
   {
+    id: "aleta-abt",
+    judul: "ALETA ABT: pintu ke Blangko ABT by Derry Briantono",
+    ringkas: "Membuka panel Blangko ABT by Derry Briantono dari portal. Layar ALETA ABT untuk HP sedang dibangun dan belum dapat dipakai.",
+    kelompok: "putusan",
+    mencakup: { aplikasi: ["aleta-abt"] },
+    halaman: ["/aleta-abt"],
+    tautan: { teks: "Buka ALETA ABT", href: "/aleta-abt" },
+    langkah: [
+      "Buka ALETA ABT dari Portal dengan Chrome di PC yang ekstensi ALETA-nya aktif.",
+      "Tekan Buka panel Blangko ABT. Panel terbuka di halaman ABT pada tab baru.",
+      "Tanpa ekstensi aktif, halaman ini hanya menerangkan keadaan akun Anda dan cara mengaktifkan ekstensi.",
+      "Super Admin mengatur siapa yang kelak boleh membuka ALETA ABT dari HP di Pengaturan SIPP & ABT, bagian ALETA ABT di HP.",
+    ],
+    peringatan: [
+      "Layar ALETA ABT untuk HP belum ada. Akun yang sudah diizinkan hanya akan melihat pemberitahuan bahwa layarnya sedang dibangun.",
+      "Pada tahap awal, menu ALETA ABT hanya tampil untuk Super Admin dan akun yang diizinkan Super Admin.",
+    ],
+    kataKunci: ["aleta abt", "blangko abt", "derry", "hp", "ekstensi", "panel blangko"],
+  },
+  {
     id: "aleta-ai-dompet",
     judul: "Dompet ALETA Ai: perkiraan biaya, rincian, dan struk",
     ringkas: "Lihat perkiraan biaya sebelum mengirim, saldo, rincian biaya tiap jawaban, struk, dan pemberitahuan saldo menipis.",

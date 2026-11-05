@@ -76,6 +76,7 @@ import {
   type TaskSourcesPayload,
 } from "@/lib/task-sources";
 import { PETA_ATURAN_APLIKASI } from "@/lib/matriks-peran";
+import { terapkanMenuAletaAbt } from "@/lib/aleta-abt-hp";
 import { portalApps } from "@/lib/mock-data";
 import {
   aturPilihanTema,
@@ -1167,6 +1168,8 @@ export function PortalProvider({
   const [taskSourcesSnapshot, setTaskSourcesSnapshot] = useState<TaskSourcesPayload | null>(null);
   // 18 Okt 2026 (hak akses): Blangko Saya tahap awal hanya Super Admin. Diingat PER AKUN; belum diketahui = ikut matriks.
   const [hakBlangkoSaya, setHakBlangkoSaya] = useState<{ userId: string; terbuka: boolean } | null>(null);
+  // 5 Nov 2026: menu ALETA ABT mengikuti hak server (peran/pengguna), per akun; belum diketahui = hanya Super Admin.
+  const [hakAletaAbt, setHakAletaAbt] = useState<{ userId: string; terbuka: boolean } | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [isHydrated, setIsHydrated] = useState(Boolean(initialState));
@@ -1412,7 +1415,7 @@ export function PortalProvider({
         kerangka ? requestBackendJson<InstitutionIdentity>("/api/settings/institution", undefined, actorUserId) : lewati,
         kerangka ? requestBackendJson<PanelSettings>("/api/settings/panel", undefined, actorUserId) : lewati,
         lain ? requestBackendJson<AssistantJudgeConfig>("/api/settings/assistant-judge", undefined, actorUserId) : lewati,
-        kerangka ? requestBackendJson<{ blangkoSayaTerbuka?: boolean }>("/api/hak-akses/saya", undefined, actorUserId) : lewati,
+        kerangka ? requestBackendJson<{ blangkoSayaTerbuka?: boolean; aletaAbtTerbuka?: boolean }>("/api/hak-akses/saya", undefined, actorUserId) : lewati,
       ]),
       30_000,
       "Sebagian data portal belum selesai dimuat. Data akan dicoba lagi saat halaman dimuat ulang."
@@ -1492,6 +1495,11 @@ export function PortalProvider({
         setHakBlangkoSaya(
           typeof hakSayaPayload?.blangkoSayaTerbuka === "boolean"
             ? { userId: actorUserId, terbuka: hakSayaPayload.blangkoSayaTerbuka }
+            : null
+        );
+        setHakAletaAbt(
+          typeof hakSayaPayload?.aletaAbtTerbuka === "boolean"
+            ? { userId: actorUserId, terbuka: hakSayaPayload.aletaAbtTerbuka }
             : null
         );
       }
@@ -1578,7 +1586,12 @@ export function PortalProvider({
   // aplikasi inti berikut (tetap dipotong lagi oleh hak akses role & Akses Menu).
   // HAK-PERAN 12 Okt: belum-fix/bawaan sudah disaring matriks peran di getAccessiblePortalApps.
   const blangkoSayaTerbuka = hakBlangkoSaya && hakBlangkoSaya.userId === currentUser?.id ? hakBlangkoSaya.terbuka : null;
-  const accessiblePortalApps = getAccessiblePortalApps(currentUser, state.moduleVisibility)
+  const aletaAbtTerbuka = hakAletaAbt && hakAletaAbt.userId === currentUser?.id ? hakAletaAbt.terbuka : null;
+  const accessiblePortalApps = terapkanMenuAletaAbt(
+    getAccessiblePortalApps(currentUser, state.moduleVisibility),
+    portalApps,
+    aletaAbtTerbuka
+  )
     .filter((app) => {
       if (app.id === "blangko-saya") return blangkoSayaTerbuka !== false;
       if (app.id !== "asisten-hakim") return true;

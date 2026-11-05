@@ -26,10 +26,17 @@
  * Dibuka di tab yang sama seperti ubin APS lain; sesi ABT = sesi APS yang sama.
  *
  * HAK. Hanya akun ALETA yang boleh membuka Blangko Derry (aturan bolehDerry
- * menu-atas.js: admin, hakim, PP/panitera, juru sita, PTSP). Hak belum diketahui
- * (belum masuk ALETA / ALETA tak terjangkau) = ubin TIDAK tampil. Jawaban
- * disimpan 5 menit di sessionStorage dengan kunci yang sama dengan menu-atas.js,
- * sehingga kunjungan berikutnya menggambar ubin seketika tanpa permintaan.
+ * menu-atas.js: admin, hakim, PP/panitera, juru sita, PTSP).
+ *   - sudah masuk dan berhak: ubin ke panel Blangko Derry (seperti semula);
+ *   - sudah masuk dan tidak berhak: ubin TIDAK tampil;
+ *   - BELUM masuk ALETA (GET /ekstensi/siapa dijawab 401, 5 Nov 2026): ubin tampil dan
+ *     mengantar ke layar masuk ALETA dengan ?kembali=/aleta-abt?dari=aps. Sesudah masuk
+ *     portal membuka halaman /aleta-abt, dan halaman itu membuka panel Blangko Derry bila
+ *     ekstensi aktif dan akun berhak. Hanya jalur di dalam portal (tujuanKembaliAman);
+ *   - ALETA tak terjangkau (galat jaringan / bukan 401): ubin TIDAK tampil.
+ * Jawaban "sudah masuk" disimpan 5 menit di sessionStorage dengan kunci yang sama dengan
+ * menu-atas.js, sehingga kunjungan berikutnya menggambar ubin seketika tanpa permintaan.
+ * Keadaan "belum masuk" TIDAK disimpan: begitu akun masuk, kunjungan berikutnya langsung benar.
  *
  * RINGAN. Tidak ada pengamat DOM dan tidak ada pewaktu berulang. Satu GET ke
  * /ekstensi/siapa paling banyak sekali per 5 menit, dan itu pun ditunda sampai
@@ -45,6 +52,8 @@
   const KUNCI_HAK = "aletaMenuAtasHak"; // sama dengan menu-atas.js
   const UMUR_HAK_MS = 5 * 60 * 1000;
   const HASH_DERRY = "aleta-derry=1";
+  /** Jalur DI DALAM portal (tanpa /aleta): halaman ALETA ABT yang membuka panel bila ?dari=aps. */
+  const KEMBALI_ALETA_ABT = "/aleta-abt?dari=aps";
   const ATRIBUT = "data-aleta-ubin";
   const ID_GAYA = "aleta-aps-ubin-gaya";
   const JUDUL = "ALETA ABT";
@@ -80,6 +89,12 @@
     return `${dasar}/main/beranda#${HASH_DERRY}`;
   }
 
+  /** Layar masuk ALETA; sesudah masuk portal mengantar ke halaman ALETA ABT (bukan ke alamat bebas). */
+  function alamatMasukAleta(loc) {
+    const l = loc || location;
+    return `${l.origin}/aleta/login?kembali=${encodeURIComponent(KEMBALI_ALETA_ABT)}`;
+  }
+
   /** Boleh membuka Blangko Derry? Memakai aturan menu-atas.js bila ada; selain itu golonganMenu server. */
   function boleh(siapa) {
     const m = globalThis.aletaMenuAtas;
@@ -108,10 +123,11 @@
     }
   }
 
-  /** true | false | null (belum diketahui: belum masuk ALETA / tak terjangkau). */
+  /** true | false | "belum-masuk" (HTTP 401) | null (ALETA tak terjangkau / jawaban tak terbaca). */
   async function ambilHak(ambil) {
     try {
       const r = await (ambil || fetch)(API_SIAPA, { credentials: "include", cache: "no-store" });
+      if (r && r.status === 401) return "belum-masuk";
       if (!r || !r.ok) return null;
       const j = await r.json().catch(() => null);
       const data = j && typeof j === "object" ? (j.data !== undefined ? j.data : j) : null;
@@ -181,7 +197,8 @@
 
   /**
    * Menyisipkan ubin (idempoten). Pulang { dipasang, alasan }. `tampil` false = ubin dibuang
-   * (hak dicabut) dan halaman kembali persis seperti aslinya.
+   * (hak dicabut) dan halaman kembali persis seperti aslinya. `belumMasuk` true = tujuan ubin
+   * layar masuk ALETA, bukan panel.
    */
   function pasangUbin(doc, opsi) {
     const d = doc || document;
@@ -193,9 +210,18 @@
     }
     const abt = cariUbinAbt(d);
     if (!abt) return { dipasang: false, alasan: "tanpa-ubin-abt" };
+    const tujuan = o.belumMasuk === true ? alamatMasukAleta(o.loc) : alamatDerry(abt.a, o.loc);
     const kolomKita = ada.find((e) => e.getAttribute(ATRIBUT) === "aleta-abt");
     const pemisah = ada.find((e) => e.getAttribute(ATRIBUT) === "pemisah");
-    if (kolomKita && pemisah && abt.kolom.nextElementSibling === kolomKita && kolomKita.nextElementSibling === pemisah) {
+    const tautanAda = kolomKita ? kolomKita.querySelector("a") : null;
+    if (
+      kolomKita &&
+      pemisah &&
+      tautanAda &&
+      tautanAda.getAttribute("href") === tujuan &&
+      abt.kolom.nextElementSibling === kolomKita &&
+      kolomKita.nextElementSibling === pemisah
+    ) {
       return { dipasang: true, alasan: "sudah" };
     }
     for (const e of ada) e.remove();
@@ -206,8 +232,8 @@
     kolom.setAttribute(ATRIBUT, "aleta-abt");
     const a = d.createElement("a");
     a.className = "aleta-aps-ubin";
-    a.href = alamatDerry(abt.a, o.loc);
-    a.title = `${KETERANGAN} (rencana: ABT ALETA)`;
+    a.href = tujuan;
+    a.title = o.belumMasuk === true ? `Masuk ke ALETA dulu, lalu ${KETERANGAN} terbuka` : `${KETERANGAN} (rencana: ABT ALETA)`;
     a.appendChild(gambarUbin(d));
     kolom.appendChild(a);
     const putus = d.createElement("div");
@@ -241,6 +267,7 @@
       if (d.readyState !== "complete" && !o.segera) await new Promise((r) => globalThis.addEventListener("load", r, { once: true }));
       if (!o.segera) await new Promise((r) => saatSenggang(r, 2000));
       const hak = await ambilHak(o.ambil);
+      if (hak === "belum-masuk") return { aksi: "belum-masuk", ...pasangUbin(d, { tampil: true, belumMasuk: true, loc: o.loc }) };
       if (hak === null) return { aksi: "hak-belum-diketahui", dipasang: false };
       return { aksi: "dari-server", ...pasangUbin(d, { tampil: hak, loc: o.loc }) };
     } catch {
@@ -252,7 +279,8 @@
     versi: "aps-beranda-1",
     mulai,
     pasangUbin,
-    murni: { halamanMenuAps, cariUbinAbt, alamatDerry, boleh },
+    murni: { halamanMenuAps, cariUbinAbt, alamatDerry, alamatMasukAleta, boleh },
+    KEMBALI_ALETA_ABT,
     KUNCI_HAK,
     API_SIAPA,
   };

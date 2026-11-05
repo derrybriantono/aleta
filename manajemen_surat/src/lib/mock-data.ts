@@ -1872,6 +1872,20 @@ export const portalApps: PortalAppConfig[] = [
     cardClass: "border-violet-200/80 bg-violet-50/80 dark:border-violet-500/20 dark:bg-slate-900/80",
   },
   {
+    // ALETA ABT (5 Nov 2026): sementara hanya Super Admin; akun lain dibuka lewat saklar
+    // "ALETA ABT di HP" (Pengaturan SIPP & ABT) - menu disaring lib/aleta-abt-hp.ts terapkanMenuAletaAbt.
+    id: "aleta-abt",
+    label: "ALETA ABT",
+    description: "Pintu menuju Blangko ABT by Derry Briantono. Layar untuk HP sedang dibangun.",
+    href: "/aleta-abt",
+    icon: "library-big",
+    roleIds: roles.map((role) => role.id),
+    badgeLabel: "Blangko",
+    iconBgClass: "bg-amber-100 dark:bg-amber-500/15",
+    iconFgClass: "text-amber-700 dark:text-amber-200",
+    cardClass: "border-amber-200/80 bg-amber-50/80 dark:border-amber-500/20 dark:bg-slate-900/80",
+  },
+  {
     id: "blangko-saya",
     label: "Blangko Saya",
     description: "Blangko pribadi: sunting atau unggah, petakan isiannya, lalu pakai untuk putusan mandiri atau ajukan untuk ABT.",

@@ -11,7 +11,8 @@
  *   1. ubin ALETA ABT tepat sesudah BLANGKO TAMBAHAN SIPP, E-PELAPORAN pindah ke
  *      baris berikutnya (juga bila ubin peran lebih sedikit), urutan ubin lain tetap;
  *   2. tautannya = alamat ubin ABT milik APS + /main/beranda#aleta-derry=1;
- *   3. peran tanpa hak Blangko Derry / belum masuk ALETA: halaman tidak berubah;
+ *   3. peran tanpa hak Blangko Derry / ALETA tak terjangkau: halaman tidak berubah; belum masuk
+ *      ALETA (5 Nov 2026, Cara A): ubin tampil dan mengantar ke layar masuk dengan tujuan kembali;
  *   4. tidak ada kerja sebelum halaman selesai dimuat; satu GET, lalu tersimpan di sesi;
  *   5. manifest: berkas ABT lengkap (3,8 MB) tidak lagi dimuat di halaman menu,
  *      e-Keuangan, e-Pelaporan, dan e-Register; aplikasi ABT dan halaman masuk tetap.
@@ -21,6 +22,9 @@ import path from "node:path";
 
 import { JSDOM } from "jsdom";
 import { afterEach, describe, expect, it } from "vitest";
+
+import { KEMBALI_DARI_UBIN_APS, bolehBlangkoDerry } from "@/lib/aleta-abt-hp";
+import { tujuanKembaliAman } from "@/lib/tujuan-kembali";
 
 const EKSTENSI = path.resolve(process.cwd(), "../ekstensi-sipp");
 const baca = (b: string) => readFileSync(path.join(EKSTENSI, b), "utf8").replace(/\r\n/g, "\n");
@@ -163,10 +167,19 @@ describe("hak per peran dan tanpa ekstensi", () => {
     expect(h.d.querySelector(".auto-form-wrapper")!.innerHTML).toBe(h.awal);
   });
 
-  it("belum masuk ALETA: hak belum diketahui -> ubin tidak tampil, halaman tidak berubah", async () => {
-    const h = buka({ siapa: BELUM_MASUK });
-    const r = await h.api.mulai({ segera: true });
-    expect(r).toMatchObject({ aksi: "hak-belum-diketahui", dipasang: false });
+  it("ALETA tak terjangkau (bukan 401): ubin tetap tersembunyi, halaman tidak berubah", async () => {
+    for (const siapa of [{ status: 500, data: {} }, { status: 502, data: {} }, { status: 404, data: {} }]) {
+      const h = buka({ siapa });
+      const r = await h.api.mulai({ segera: true });
+      expect(r, String(siapa.status)).toMatchObject({ aksi: "hak-belum-diketahui", dipasang: false });
+      expect(h.d.querySelector(".auto-form-wrapper")!.innerHTML).toBe(h.awal);
+    }
+    // galat jaringan (fetch melempar)
+    const h = buka({ siapa: HAKIM });
+    h.w.fetch = async () => {
+      throw new Error("jaringan putus");
+    };
+    expect(await h.api.mulai({ segera: true })).toMatchObject({ aksi: "hak-belum-diketahui", dipasang: false });
     expect(h.d.querySelector(".auto-form-wrapper")!.innerHTML).toBe(h.awal);
   });
 
@@ -192,6 +205,69 @@ describe("hak per peran dan tanpa ekstensi", () => {
     const h = buka({ alamat: `${ASAL}/aps_badilag/keuangan/dashboard` });
     expect(await h.api.mulai({ segera: true })).toEqual({ aksi: "bukan-menu-aps" });
     expect(h.fetchLog).toEqual([]);
+  });
+});
+
+// ============================================================================
+describe("ubin ALETA ABT bagi akun yang belum masuk ALETA (Cara A, 5 Nov 2026)", () => {
+  const LOGIN = `${ASAL}/aleta/login?kembali=${encodeURIComponent("/aleta-abt?dari=aps")}`;
+
+  it("belum masuk (401): ubin tampil di tempat yang sama dan mengantar ke layar masuk ALETA dengan tujuan kembali", async () => {
+    const h = buka({ siapa: BELUM_MASUK });
+    const r = await h.api.mulai({ segera: true });
+    expect(r).toMatchObject({ aksi: "belum-masuk", dipasang: true });
+    expect(susunan(h.d)).toEqual(["register", "keuangan/dashboard", "abt", "ALETA", "|", "pelaporan/mediator", "pelaporan", "pelaporan/Data_akta_nikah", "pelaporan/E_Berbanding", "pelaporan/E_akta_cerai"]);
+    const a = h.d.querySelector('[data-aleta-ubin="aleta-abt"] a') as HTMLAnchorElement;
+    expect(a.href).toBe(LOGIN);
+    expect(a.getAttribute("target")).toBeNull();
+  });
+
+  it("keadaan belum masuk tidak disimpan di sesi (sesudah masuk, kunjungan berikutnya langsung benar)", async () => {
+    const h = buka({ siapa: BELUM_MASUK });
+    await h.api.mulai({ segera: true });
+    expect(h.w.sessionStorage.getItem("aletaMenuAtasHak")).toBeNull();
+  });
+
+  it("sudah masuk dan berhak: ubin kembali ke panel Blangko Derry (tidak lagi ke layar masuk), tanpa menggandakan", async () => {
+    const h = buka({ siapa: BELUM_MASUK });
+    await h.api.mulai({ segera: true });
+    h.w.fetch = async () => ({ ok: true, status: 200, json: async () => ({ ok: true, data: HAKIM.data }) });
+    const r = await h.api.mulai({ segera: true });
+    expect(r).toMatchObject({ aksi: "dari-server", dipasang: true });
+    const a = h.d.querySelectorAll('[data-aleta-ubin="aleta-abt"] a');
+    expect(a.length).toBe(1);
+    expect((a[0] as HTMLAnchorElement).href).toBe(`${ASAL}/aps_badilag/abt/main/beranda#aleta-derry=1`);
+    expect(h.d.querySelectorAll('[data-aleta-ubin="pemisah"]').length).toBe(1);
+  });
+
+  it("sudah masuk tetapi tidak berhak: ubin disembunyikan, juga bila sebelumnya tampil sebagai ubin masuk", async () => {
+    const h = buka({ siapa: BELUM_MASUK });
+    await h.api.mulai({ segera: true });
+    h.w.fetch = async () => ({ ok: true, status: 200, json: async () => ({ ok: true, data: KASIR.data }) });
+    expect(await h.api.mulai({ segera: true })).toMatchObject({ dipasang: false, alasan: "tanpa-hak" });
+    expect(h.d.querySelector(".auto-form-wrapper")!.innerHTML).toBe(h.awal);
+  });
+
+  it("tujuan kembali hanya jalur di dalam portal dan lolos tujuanKembaliAman apa adanya", async () => {
+    const h = buka();
+    const url = new URL(h.api.murni.alamatMasukAleta({ origin: ASAL }));
+    expect(url.origin + url.pathname).toBe(`${ASAL}/aleta/login`);
+    const kembali = url.searchParams.get("kembali")!;
+    expect(kembali).toBe("/aleta-abt?dari=aps");
+    expect(kembali).toBe(h.api.KEMBALI_ALETA_ABT);
+    expect(tujuanKembaliAman(kembali)).toBe(kembali);
+    expect(KEMBALI_DARI_UBIN_APS).toBe(kembali);
+    // Pengalih ke alamat bebas tetap ditolak (tujuanKembaliAman tidak dilonggarkan).
+    for (const jahat of ["//evil.example/aleta-abt", "https://evil.example", "/\\evil.example", "/login", "/api/x"]) expect(tujuanKembaliAman(jahat)).toBe("/portal");
+  });
+
+  it("halaman portal: ?dari=aps + ekstensi aktif + akun berhak membuka panel; tanpa hak atau tanpa penanda tidak", () => {
+    for (const s of [SUPER, HAKIM, PP, SIAPA("Juru Sita", ["jurusita"]), SIAPA("PTSP", ["ptsp"])]) expect(bolehBlangkoDerry(s.data)).toBe(true);
+    for (const s of [KASIR, SIAPA("Sekretaris", ["sekretariat"])]) expect(bolehBlangkoDerry(s.data)).toBe(false);
+    expect(bolehBlangkoDerry(null)).toBe(false);
+    // Aturan portal = aturan ubin (aps-beranda.js boleh) untuk semua contoh.
+    const h = buka();
+    for (const s of [SUPER, HAKIM, PP, KASIR, SIAPA("Staf", ["lain"]), SIAPA("Ketua", ["ketua"])]) expect(bolehBlangkoDerry(s.data), String((s.data as any).peran)).toBe(h.api.murni.boleh(s.data));
   });
 });
 

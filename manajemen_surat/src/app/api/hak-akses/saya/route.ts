@@ -4,6 +4,7 @@ import { FITUR_BLANGKO_SAYA_SEMUA_PERAN, FITUR_LIHAT_SEBAGAI } from "@/lib/fitur
 import { LABEL_GOLONGAN, golonganPengguna } from "@/lib/matriks-peran";
 import { getEffectiveRoleId } from "@/lib/permissions";
 import { getDatabase } from "@/server/db/client";
+import { hakAbtHpUntuk } from "@/server/modules/aleta-abt/hak-hp";
 import { requireActorUser } from "@/server/modules/organization/service";
 import { fiturMenyala } from "@/server/modules/satker/fitur";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -16,7 +17,7 @@ export const dynamic = "force-dynamic";
  * Hak PEMANGGIL sendiri yang bergantung pada saklar satker, supaya menu portal tidak menampilkan
  * apa yang pasti ditolak server (18 Okt 2026).
  *
- *   GET -> { golongan[], blangkoSayaTerbuka, lihatSebagaiAktif }
+ *   GET -> { golongan[], blangkoSayaTerbuka, lihatSebagaiAktif, aletaAbtTerbuka }
  *
  * blangkoSayaTerbuka: Super Admin selalu; peran lain hanya bila saklar Fitur Satker
  * "Blangko Saya untuk semua peran" menyala (tahap awal: mati). Saklar tak terbaca = tertutup,
@@ -42,8 +43,16 @@ export async function GET(request: NextRequest) {
     } catch {
       lihatSebagaiAktif = false;
     }
+    // ALETA ABT (5 Nov 2026): hak pengguna -> peran -> bawaan; gagal baca = bawaan (hanya Super Admin).
+    let aletaAbtTerbuka = superAdmin;
+    try {
+      aletaAbtTerbuka = (await hakAbtHpUntuk(db, { id: actor.id, roleId: String(getEffectiveRoleId(actor) ?? actor.roleId ?? "") })).terbuka;
+    } catch {
+      aletaAbtTerbuka = superAdmin;
+    }
     return ok({
       lihatSebagaiAktif,
+      aletaAbtTerbuka,
       golongan: golonganPengguna(actor).map((kode) => ({ kode, label: LABEL_GOLONGAN[kode] })),
       blangkoSayaTerbuka: superAdmin || saklar,
     });

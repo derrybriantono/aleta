@@ -59,6 +59,7 @@ export type ModuleId =
   | "blangko-saya"
   // ALETA Ai (20 Okt 2026): asisten percakapan berbayar-per-pemakaian, layar gaya chatbot.
   | "aleta-ai"
+  | "aleta-abt"
   // Peta perkara - sebaran wilayah, faktor perceraian, dan siapa yang
   // mengajukan. Terpisah dari "statistik" sebagaimana beban konseptor:
   // statistik menghitung perkara, ini menghitung ASAL perkara.
@@ -130,6 +131,8 @@ export type PortalAppId =
   | "blangko-saya"
   // ALETA Ai (20 Okt 2026): asisten percakapan berbayar-per-pemakaian, layar gaya chatbot.
   | "aleta-ai"
+  // ALETA ABT (5 Nov 2026): pintu menuju Blangko ABT by Derry Briantono; hak per peran/pengguna di lib/aleta-abt-hp.ts.
+  | "aleta-abt"
   | "e-kepegawaian"
   | "e-status"
   | "sipp"
