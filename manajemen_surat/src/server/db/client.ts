@@ -456,6 +456,9 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_abt_berkas_versi",
   // 5 November 2026 (0136): isi ABT terbaru sebagai pembanding, hanya untuk blangko yang berbeda dari ALETA ABT.
   "aleta_abt_berkas_banding",
+  // 5 November 2026 (0137): keadaan "Selesaikan berkas" dan hasil banding cetakan ABT lawan ALETA ABT (hanya angka).
+  "aleta_abt_selesai",
+  "aleta_abt_berdampingan",
   // 26 Oktober 2026 (0112): sunting sampul dan daftar isi berkas (halaman manual, ciri tangan, bawaan halaman).
   "aleta_berkas_susunan",
   "aleta_berkas_sampul",

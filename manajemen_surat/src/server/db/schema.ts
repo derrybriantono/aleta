@@ -1698,6 +1698,55 @@ export const DDL_ALETA_ABT_BANDING = {
 } as const;
 
 /**
+ * Alur kerja per peran (Tahap 6) dan berdampingan dengan ABT (Tahap 7), 0137, 5 Nov 2026: keadaan "Selesaikan berkas" dan hasil banding
+ * cetakan ABT lawan naskah ALETA ABT (hanya angka). Cermin PERSIS dari drizzle/0137_aleta_abt_alur_berdampingan.sql (dijaga
+ * aleta-abt-alur-t6.test.ts).
+ */
+export const DDL_ALETA_ABT_ALUR = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_abt_selesai (
+  id TEXT PRIMARY KEY,
+  perkara_id TEXT NOT NULL,
+  berkas_id TEXT NOT NULL,
+  jenis_berkas TEXT NOT NULL DEFAULT 'putusan',
+  langkah TEXT NOT NULL DEFAULT '{}',
+  status TEXT NOT NULL DEFAULT 'menunggu',
+  oleh TEXT NOT NULL DEFAULT '',
+  dibuat_at TEXT NOT NULL,
+  diubah_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_abt_berdampingan (
+  id TEXT PRIMARY KEY,
+  waktu TEXT NOT NULL,
+  pemicu TEXT NOT NULL DEFAULT 'cetak-abt',
+  berkas_nama TEXT NOT NULL DEFAULT '',
+  folder TEXT NOT NULL DEFAULT '',
+  jenis_perkara TEXT NOT NULL DEFAULT 'tidak-diketahui',
+  jenis_naskah TEXT NOT NULL DEFAULT 'lain',
+  perkara_id TEXT NOT NULL DEFAULT '',
+  sidang_ke INTEGER NOT NULL DEFAULT 0,
+  hasil TEXT NOT NULL DEFAULT 'belum-diukur',
+  sebab_belum TEXT NOT NULL DEFAULT '',
+  total_alinea INTEGER NOT NULL DEFAULT 0,
+  identik INTEGER NOT NULL DEFAULT 0,
+  dijelaskan_n INTEGER NOT NULL DEFAULT 0,
+  belum_dijelaskan_n INTEGER NOT NULL DEFAULT 0,
+  per_kelas TEXT NOT NULL DEFAULT '{}',
+  nomor_beda TEXT NOT NULL DEFAULT '[]',
+  waktu_ms INTEGER NOT NULL DEFAULT 0,
+  jawaban TEXT NOT NULL DEFAULT '',
+  dijawab_oleh TEXT NOT NULL DEFAULT '',
+  dijawab_at TEXT NOT NULL DEFAULT ''
+)`
+  ],
+  indeks: [
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_abt_selesai_kunci ON aleta_abt_selesai(perkara_id, berkas_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_abt_berdampingan_waktu ON aleta_abt_berdampingan(waktu)`,
+    `CREATE INDEX IF NOT EXISTS idx_abt_berdampingan_jenis ON aleta_abt_berdampingan(jenis_perkara, hasil)`
+  ],
+} as const;
+
+/**
  * Sampul berkas dan daftar isi berkas (0112, 26 Okt 2026): sunting petugas, halaman manual, ciri tangan, bawaan halaman.
  * Cermin PERSIS dari drizzle/0112_aleta_berkas_perkara.sql; berkas-perkara-26okt.test.ts membandingkan keduanya. Tanpa kunci asing.
  */
@@ -4032,6 +4081,7 @@ const schemaStatements = [
   ...DDL_ALETA_ABT_PUSTAKA.tabel,
   ...DDL_ALETA_ABT_PENYUNTING.tabel,
   ...DDL_ALETA_ABT_BANDING.tabel,
+  ...DDL_ALETA_ABT_ALUR.tabel,
   ...DDL_ALETA_BERKAS_PERKARA.tabel,
   // Cermin Perkara: perkara, sidang, pihak, mediasi, penanda, jejak (0090).
   ...DDL_ALETA_CERMIN_PERKARA.tabel,
@@ -6040,6 +6090,7 @@ const indexStatements = [
   ...DDL_ALETA_ABT_PUSTAKA.indeks,
   ...DDL_ALETA_ABT_PENYUNTING.indeks,
   ...DDL_ALETA_ABT_BANDING.indeks,
+  ...DDL_ALETA_ABT_ALUR.indeks,
   ...DDL_ALETA_BERKAS_PERKARA.indeks,
   ...DDL_ALETA_CERMIN_PERKARA.indeks,
   ...DDL_ALETA_CERMIN_JADWAL_LENGKAP.indeks,

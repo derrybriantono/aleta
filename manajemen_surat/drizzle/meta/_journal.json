@@ -834,6 +834,13 @@
       "when": 1792366200001,
       "tag": "0136_aleta_abt_banding",
       "breakpoints": true
+    },
+    {
+      "idx": 119,
+      "version": "7",
+      "when": 1792369800001,
+      "tag": "0137_aleta_abt_alur_berdampingan",
+      "breakpoints": true
     }
   ]
 }
