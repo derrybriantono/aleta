@@ -281,7 +281,7 @@ describe("butir 10 - konseptor sementara DI BAWAH status", () => {
   it("tombolnya dirender sesudah cabang status, bukan sebelumnya", () => {
     // Permintaannya "tombol di bawah status". Semula ia terpasang di puncak
     // sel, sehingga tunjukan tangan mendahului fakta yang datang dari SIPP.
-    const iStatus = LAYAR.indexOf('<span className="text-muted-foreground">belum putus</span>');
+    const iStatus = LAYAR.indexOf('<span className="text-muted-foreground">Belum putus</span>');
     const iTombol = LAYAR.indexOf("<SelKonseptorSementara");
     expect(iStatus, "cabang status tidak ketemu").toBeGreaterThan(-1);
     expect(iTombol, "tombol konseptor ada DI ATAS status").toBeGreaterThan(iStatus);

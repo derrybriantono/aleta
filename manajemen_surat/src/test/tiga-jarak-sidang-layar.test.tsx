@@ -279,7 +279,7 @@ describe("layar jadwal sidang - tata letak 28 September 2026", () => {
     const tombol = nama.closest("button")!;
     expect(tombol.querySelector(".truncate")).toBeNull();
     expect(tombol.className).not.toMatch(/\btruncate\b|\brounded-full\b|whitespace-nowrap/);
-    expect(tombol.textContent).toBe("konseptor sementara Muhammad Rizky Lamarauna, S.H.I., M.H.");
+    expect(tombol.textContent).toBe("Konseptor sementara Muhammad Rizky Lamarauna, S.H.I., M.H.");
 
     // Nomor perkara punya satu tempat patah sesudah "Pdt.G/", teksnya utuh.
     // Tanpa onBukaTunda/onBukaStatus nomornya span biasa, bukan tombol.

@@ -401,7 +401,7 @@ describe("butir 1c - SATU fungsi bersama: kedua layar tidak memegang aturan send
     await waitFor(() => expect(tanggalDari(cRingkas)).toBe("2026-07-08"));
     await waitFor(() => expect(tanggalDari(cPenuh)).toBe("2026-07-08"));
 
-    fireEvent.change(cRingkas.querySelector('select[aria-label="Alasan penundaan"]') as HTMLSelectElement, { target: { value: "Proses Mediasi" } });
+    fireEvent.change(cRingkas.querySelector('input[role="combobox"][aria-label="Alasan penundaan"]') as HTMLInputElement, { target: { value: "Proses Mediasi" } });
     fireEvent.change(cPenuh.querySelector('input[list="alasan-lazim"]') as HTMLInputElement, { target: { value: "Proses Mediasi" } });
 
     for (const c of [cRingkas, cPenuh]) {
@@ -421,7 +421,7 @@ describe("butir 1c - SATU fungsi bersama: kedua layar tidak memegang aturan send
     for (const c of [cRingkas, cPenuh]) {
       fireEvent.change(c.querySelector('input[type="date"]') as HTMLInputElement, { target: { value: "2026-08-05" } });
     }
-    fireEvent.change(cRingkas.querySelector('select[aria-label="Alasan penundaan"]') as HTMLSelectElement, { target: { value: "Proses Mediasi" } });
+    fireEvent.change(cRingkas.querySelector('input[role="combobox"][aria-label="Alasan penundaan"]') as HTMLInputElement, { target: { value: "Proses Mediasi" } });
     fireEvent.change(cPenuh.querySelector('input[list="alasan-lazim"]') as HTMLInputElement, { target: { value: "Proses Mediasi" } });
     for (const c of [cRingkas, cPenuh]) {
       await waitFor(() => expect(c.querySelector("[data-sumber-tanggal]")?.getAttribute("data-sumber-tanggal")).toBe("manual"));

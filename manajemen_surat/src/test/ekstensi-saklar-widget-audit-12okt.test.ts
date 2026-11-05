@@ -417,30 +417,6 @@ describe("A. popup: tiap saklar menulis kunci dan nilai yang benar (dan membaca 
     expect(p.d.querySelector("[data-gagal-simpan]")).not.toBeNull();
   });
 
-  it("ujiIzinkanNyata (Super Admin, tampilan Baru): menulis ujiIzinkanNyata; menolak -> kembali", async () => {
-    const gudang = new Gudang({ ujiTampilan: "baru" });
-    const p = bukaPopup(gudang, "Super Admin");
-    await p.siap();
-    await tunggu(60);
-    expect(p.kotak("ujiIzinkanNyata").checked).toBe(false);
-    p.balik("ujiIzinkanNyata");
-    await sampai(() => gudang.terakhir("ujiIzinkanNyata") === true, "ujiIzinkanNyata true");
-    gudang.menolak = true;
-    p.balik("ujiIzinkanNyata");
-    await sampai(() => p.kotak("ujiIzinkanNyata").checked === true, "centang kembali true");
-  });
-
-  it("tiga pengalih tampilan menulis ujiTampilan lama|baru|ui", async () => {
-    const gudang = new Gudang({});
-    const p = bukaPopup(gudang, "Super Admin");
-    await p.siap();
-    await tunggu(60);
-    for (const [id, nilai] of [["ujiUi", "ui"], ["ujiBaru", "baru"], ["ujiLama", "lama"]] as const) {
-      p.d.getElementById(id)!.click();
-      await sampai(() => gudang.data.ujiTampilan === nilai, `ujiTampilan ${nilai}`);
-    }
-  });
-
   it("120 saklar fitur ide: tiap kotak menulis kodenya di peta ujiFitur (dan mati menghapusnya)", async () => {
     const gudang = new Gudang({ ujiTampilan: "ui" });
     const p = bukaPopup(gudang, "Super Admin");
@@ -473,7 +449,6 @@ describe("A. popup: tiap saklar menulis kunci dan nilai yang benar (dan membaca 
     await tunggu(150);
     const dikenal = new Set([
       ...STATIS.map((s) => s.id),
-      "ujiIzinkanNyata", // sendiri di atas
       "sembunyikanTeknis", // bagian C
       "bawaanPanel-aleta", "bawaanPanel-sipp", "bawaanPanel-abt", // bagian C
       "tampilHalaman-sipp", "tampilHalaman-aleta", // 28 Okt - diaudit di tampil-halaman-28okt.test.ts
@@ -558,22 +533,7 @@ describe("B. ujung ke ujung: popup membalik, halaman SIPP (pembaca) mengikuti", 
     await sampai(() => halaman.w.alatLatihanNyala() === false, "latihan mati");
   });
 
-  it("ujiTampilan + ujiIzinkanNyata: pengalih menentukan mode coba; 'Izinkan tindakan nyata' melepasnya", async () => {
-    const { halaman, popup } = await pasangan({});
-    expect(halaman.w.alatUjiMode()).toBe("lama");
-    expect(halaman.w.alatCobaAktif()).toBe(false);
-    popup.d.getElementById("ujiBaru")!.click();
-    await sampai(() => halaman.w.alatUjiMode() === "baru", "Baru");
-    expect(halaman.w.alatCobaAktif()).toBe(true);
-    popup.balik("ujiIzinkanNyata");
-    await sampai(() => halaman.w.alatCobaAktif() === false, "coba lepas");
-    popup.balik("ujiIzinkanNyata");
-    await sampai(() => halaman.w.alatCobaAktif() === true, "coba menahan lagi");
-    popup.d.getElementById("ujiLama")!.click();
-    await sampai(() => halaman.w.alatUjiMode() === "lama" && halaman.w.alatCobaAktif() === false, "kembali Lama");
-  });
-
-  it("ujiFitur: kotak fitur ide dibaca alatFiturNyala di halaman - hanya selama tampilan bukan Lama", async () => {
+  it("ujiFitur: kotak fitur ide dibaca alatFiturNyala di halaman", async () => {
     const { halaman, popup } = await pasangan({ ujiTampilan: "ui" });
     expect(halaman.w.alatFiturNyala("sipp-5")).toBe(false);
     (popup.d.getElementById("ujiFiturLaci") as HTMLDetailsElement).open = true;
@@ -582,8 +542,6 @@ describe("B. ujung ke ujung: popup membalik, halaman SIPP (pembaca) mengikuti", 
     popup.balik("uji-fitur-sipp-5");
     await sampai(() => halaman.w.alatFiturNyala("sipp-5") === true, "sipp-5 menyala di halaman");
     expect(halaman.w.alatFiturNyala("sipp-6")).toBe(false);
-    popup.d.getElementById("ujiLama")!.click();
-    await sampai(() => halaman.w.alatFiturNyala("sipp-5") === false, "Lama mematikan semua fitur");
   });
 
   it("sembunyikanTeknis (UI Baru): bawaan menyala; popup membalik -> alatTeknisTersembunyi di halaman; kunci dihapus = bawaan", async () => {
@@ -670,8 +628,8 @@ describe("D. halaman ABT: pembaca cetakTigaBerkas dan aktif", () => {
 });
 
 // ============================================================================
-describe("E. butir 13: blok 'tampilan uji' Super Admin bawaannya diciutkan, dengan ringkasan satu baris", () => {
-  it("markup: <details> TANPA open; seluruh isi lama (pengalih, izinkan nyata, laci fitur ide) ada di dalamnya", () => {
+describe("E. butir 13: blok saklar fitur Super Admin bawaannya diciutkan, dengan ringkasan satu baris", () => {
+  it("markup: <details> TANPA open; laci fitur ide ada di dalamnya, pengalih tampilan sudah tidak ada", () => {
     const dom = new JSDOM(POPUP_HTML.replace(/<script[\s\S]*?<\/script>/g, ""));
     terbuka.push(dom);
     const d = dom.window.document;
@@ -681,42 +639,27 @@ describe("E. butir 13: blok 'tampilan uji' Super Admin bawaannya diciutkan, deng
     expect(laci.hasAttribute("open")).toBe(false);
     expect(laci.parentElement!.id).toBe("bagianUji");
     expect(laci.firstElementChild!.id).toBe("ujiRingkasan");
-    for (const id of ["ujiLama", "ujiBaru", "ujiUi", "ujiKet", "ujiNyataBaris", "ujiIzinkanNyata", "ujiFiturLaci", "ujiSemuaNyala", "ujiSemuaMati", "ujiFiturDaftar"]) {
+    for (const id of ["ujiFiturLaci", "ujiSemuaNyala", "ujiSemuaMati", "ujiFiturDaftar"]) {
       expect(laci.contains(d.getElementById(id)), id).toBe(true);
+    }
+    for (const id of ["ujiLama", "ujiBaru", "ujiUi", "ujiKet", "ujiNyataBaris", "ujiIzinkanNyata"]) {
+      expect(d.getElementById(id), id).toBeNull();
     }
     // Mode latihan TIDAK ikut diciutkan: ia milik Admin juga dan saklar keselamatan.
     expect(laci.contains(d.getElementById("bagianLatihan"))).toBe(false);
   });
 
-  it("Super Admin: terlihat tetapi tertutup; ringkasan menyebut tampilan dan tindakan nyata, dan ikut berubah", async () => {
-    const gudang = new Gudang({});
+  it("Super Admin: terlihat tetapi tertutup, ringkasannya Saklar fitur; pilihan lama di penyimpanan tidak memengaruhinya", async () => {
+    const gudang = new Gudang({ ujiTampilan: "baru", ujiIzinkanNyata: true });
     const p = bukaPopup(gudang, "Super Admin");
     await p.siap();
     const laci = p.d.getElementById("ujiBagianLaci") as HTMLDetailsElement;
     const ringkasan = p.d.getElementById("ujiRingkasan") as HTMLElement;
     expect((p.d.getElementById("bagianUji") as HTMLElement).hidden).toBe(false);
     expect(laci.open).toBe(false);
-    expect(ringkasan.textContent).toBe("Tampilan uji · Lama");
+    expect(ringkasan.textContent).toBe("Saklar fitur");
     expect(ringkasan.hasAttribute("data-nyata")).toBe(false);
-
-    p.d.getElementById("ujiBaru")!.click(); // tombol tetap berfungsi walau laci tertutup
-    await sampai(() => ringkasan.textContent === "Tampilan uji · Baru · tindakan nyata mati", "ringkasan Baru");
-    p.balik("ujiIzinkanNyata");
-    await sampai(() => ringkasan.textContent === "Tampilan uji · Baru · tindakan nyata NYALA", "ringkasan nyata");
-    expect(ringkasan.getAttribute("data-nyata")).toBe("ya");
-    p.d.getElementById("ujiLama")!.click();
-    await sampai(() => ringkasan.textContent === "Tampilan uji · Lama", "kembali Lama");
-    expect(ringkasan.hasAttribute("data-nyata")).toBe(false);
-    expect(laci.open, "tidak pernah terbuka sendiri").toBe(false);
-  });
-
-  it("keadaan tersimpan (UI Baru + nyata) langsung tampil di ringkasan saat popup dibuka, laci tetap tertutup", async () => {
-    const gudang = new Gudang({ ujiTampilan: "ui", ujiIzinkanNyata: true });
-    const p = bukaPopup(gudang, "Super Admin");
-    await p.siap();
-    const ringkasan = p.d.getElementById("ujiRingkasan") as HTMLElement;
-    await sampai(() => ringkasan.textContent === "Tampilan uji · UI Baru · tindakan nyata NYALA", "ringkasan tersimpan");
-    expect((p.d.getElementById("ujiBagianLaci") as HTMLDetailsElement).open).toBe(false);
+    expect(p.d.documentElement.getAttribute("data-kulit")).toBe("modern");
   });
 
   it("peran lain: blok tetap tersembunyi seluruhnya", async () => {

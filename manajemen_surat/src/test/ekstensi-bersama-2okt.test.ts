@@ -523,7 +523,7 @@ describe("butir 4 - popup UI Baru: tiga saklar panel saat halaman dibuka", () =>
     await sampai(() => /akun Anda/.test(p.d.getElementById("bawaanPanelKabar")!.textContent || ""), "kabar");
   });
 
-  it("mode latihan: lokal saja, tanpa PUT; tampilan Lama: tidak ada saklarnya", async () => {
+  it("mode latihan: lokal saja, tanpa PUT", async () => {
     const p = bukaPopup({ ujiTampilan: "ui", ujiFitur: {}, modeLatihan: true });
     const kotak = await sampai(() => p.d.getElementById("bawaanPanel-abt") as HTMLInputElement | null, "saklar");
     kotak.checked = true;
@@ -531,10 +531,6 @@ describe("butir 4 - popup UI Baru: tiga saklar panel saat halaman dibuka", () =>
     await sampai(() => /Mode latihan/.test(p.d.getElementById("bawaanPanelKabar")!.textContent || ""), "kabar latihan");
     expect(p.panggilan.filter((x) => x.cara === "PUT")).toEqual([]);
     expect((p.simpanan.panelBawaanTampil as any).abt).toBe(true);
-
-    const lama = bukaPopup({});
-    await tunggu(150);
-    expect(lama.d.getElementById("kelompok-bawaan-panel")).toBeNull();
   });
 });
 

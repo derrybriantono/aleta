@@ -430,8 +430,11 @@ describe("F. rute laporan ketepatan", () => {
   });
 
   it("laporan: jejak kosong + riwayat harian lama terisi otomatis sekali; angka per aturan; saringan jenis dan rentang", async () => {
+    // Jam dibekukan pada tanggal contoh: sidang contohnya bertanggal tetap, jadi uji ini tidak boleh ikut kalender mesin.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(`${HARI}T08:00:00Z`));
     await simpanSetelan(d(), SUPER, { nyala: true, kering: false }, "");
-    await jalankanTundaOtomatis(d(), { pemicu: "jadwal", tanggal: new Date().toISOString().slice(0, 10), sumber: { ...sumberTunda(async () => ({ ok: false, galat: "ditolak penjaga" })), jadwal: async () => ({ ok: true, galat: "", sidang: [barisJadwal("1", { tanggalSidang: new Date().toISOString().slice(0, 10) })] }) } as SumberTundaOtomatis });
+    await jalankanTundaOtomatis(d(), { pemicu: "jadwal", tanggal: HARI, sumber: { ...sumberTunda(async () => ({ ok: false, galat: "ditolak penjaga" })), jadwal: async () => ({ ok: true, galat: "", sidang: [barisJadwal("1", { tanggalSidang: new Date().toISOString().slice(0, 10) })] }) } as SumberTundaOtomatis });
     await d().run("DELETE FROM aleta_otomatis_jejak");
     aturUlangJejak();
     const r = await panggil("GET", { query: "hari=30" });
@@ -451,6 +454,7 @@ describe("F. rute laporan ketepatan", () => {
     expect(ulang.status).toBe(200);
     expect(ulang.isi.data).toMatchObject({ hariTunda: 1 });
     expect((await panggil("POST", { badan: { aksi: "hapus" } })).status).toBe(400);
+    vi.useRealTimers();
   });
 
   it("migrasi belum dijalankan: jawaban jujur, bukan galat 500", async () => {

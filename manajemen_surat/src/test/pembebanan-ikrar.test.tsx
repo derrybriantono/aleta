@@ -255,7 +255,7 @@ describe("penanda di kolom Putusan - hanya pada sidang ikrar", () => {
 
   it("kolom Putusan memasangnya di BAWAH penanda putusan, dan Rincian hanya menerimanya dari sidang ikrar", () => {
     const isi = readFileSync(path.resolve(process.cwd(), "src/components/portal/aleta-ecourt-sidang.tsx"), "utf8");
-    const letakBelumPutus = isi.indexOf('<span className="text-muted-foreground">belum putus</span>');
+    const letakBelumPutus = isi.indexOf('<span className="text-muted-foreground">Belum putus</span>');
     const letakLencana = isi.indexOf("<LencanaPembebananIkrar baris={baris} />");
     const letakKonseptor = isi.indexOf("<SelKonseptorSementara");
     expect(letakBelumPutus).toBeGreaterThan(0);

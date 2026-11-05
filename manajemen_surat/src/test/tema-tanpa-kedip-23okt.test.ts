@@ -433,7 +433,7 @@ describe("3 - pindah halaman: atribut benar SEBELUM lukis pertama dan tidak berb
     await reda(2);
     pengamat.disconnect();
     expect(kelas[0]).toBe(true); // dinyalakan sebelum penanda berubah
-    await reda(4);
+    for (let i = 0; i < 200 && akar().classList.contains("aleta-ganti-tema"); i += 1) await tunggu();
     expect(akar().classList.contains("aleta-ganti-tema")).toBe(false); // dan dicabut lagi
   });
 

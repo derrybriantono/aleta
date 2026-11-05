@@ -327,7 +327,7 @@ describe("tampilan portal - jendela Skors dan lencana diskors", () => {
         catatan: { perkaraId: "7", tanggalSidang: HARI, diskorsPada: `${HARI} 09:40:00`, alasanKode: "saksi", alasan: "Menunggu saksi", perkiraanLanjut: `${HARI} 10:30:00` },
       })
     );
-    expect(container.textContent).toContain("diskors · belum selesai");
+    expect(container.textContent).toContain("Diskors · belum selesai");
     expect(container.textContent).toContain("sejak 09:40 · Menunggu saksi · lanjut ±10.30");
     expect(container.querySelector("[data-hitung-mundur-skors]")?.textContent).toBe("(12 mnt lagi)");
   });
@@ -335,7 +335,7 @@ describe("tampilan portal - jendela Skors dan lencana diskors", () => {
   it("lencana tanpa alasan/perkiraan tetap sama seperti sebelum F3.1", () => {
     const { container } = render(createElement(LencanaDiskors, { catatan: { perkaraId: "7", tanggalSidang: HARI, diskorsPada: `${HARI} 09:40:00` } }));
     expect(container.querySelector("[data-diskors-rinci]")).toBeNull();
-    expect(container.querySelector("[data-diskors]")?.textContent).toContain("diskors · belum selesai");
+    expect(container.querySelector("[data-diskors]")?.textContent).toContain("Diskors · belum selesai");
   });
 });
 

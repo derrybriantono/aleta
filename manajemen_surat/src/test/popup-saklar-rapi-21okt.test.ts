@@ -114,7 +114,7 @@ function bukaPopup(peran: string, simpan: Record<string, unknown> = {}, mode: "u
   w.fetch = async (alamat: string) => {
     const a = String(alamat);
     if (a.includes("info=siapa")) {
-      return { ok: true, status: 200, json: async () => ({ ok: true, data: { pengguna: { nama: "Uji", peran }, versi: "1.205.19" } }) };
+      return { ok: true, status: 200, json: async () => ({ ok: true, data: { pengguna: peran ? { nama: "Uji", peran } : null, versi: "1.205.19" } }) };
     }
     return { ok: true, status: 200, url: a, json: async () => ({}) };
   };
@@ -245,9 +245,9 @@ describe("X1 - saklar popup di bagian yang benar (UI Baru, Super Admin)", () => 
   });
 });
 
-describe("X1 - tampilan Lama: tiap saklar ada tepat sekali, urut logis, tanpa elemen buatan", () => {
+describe("X1 - tampilan Lama (akun belum dikenali): tiap saklar ada tepat sekali, urut logis, tanpa elemen buatan", () => {
   it("semua id tabel ada sekali dan tidak ada .tb-kelompok", async () => {
-    const p = bukaPopup("Super Admin", {}, "lama");
+    const p = bukaPopup("", {}, "lama");
     await sampai(() => !/memuat/.test(p.d.getElementById("akunAleta")!.textContent || ""), "portal terbaca");
     await tunggu(80);
     for (const b of TABEL) expect(p.d.querySelectorAll(`#${b.id}`).length, b.id).toBe(1);

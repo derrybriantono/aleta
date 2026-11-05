@@ -325,14 +325,14 @@ describe("popup: tampilan yang diterapkan admin", () => {
     await new Promise((r) => setTimeout(r, 80));
     expect(d.documentElement.getAttribute("data-kulit")).toBe("modern");
     expect((d.getElementById("bagianUji") as HTMLElement).hidden).toBe(true);
-    // Bukan tampilan uji yang tertinggal: pesan "kembali ke Lama" tidak muncul.
-    expect((d.getElementById("ujiLainBaris") as HTMLElement).hidden).toBe(true);
+    // 5 Nov 2026: pesan "kembali ke Lama" sudah dihapus bersama pilihan tampilannya.
+    expect(d.getElementById("ujiLainBaris")).toBeNull();
   });
 
-  it("tanpa penerapan: popup Lama bagi Super Admin; selain itu UI Baru wajib (12 Okt)", async () => {
+  it("tanpa penerapan: akun yang dikenal selalu UI Baru, Super Admin ikut (5 Nov)", async () => {
     const d = buka("Super Admin", {});
     await new Promise((r) => setTimeout(r, 80));
-    expect(d.documentElement.hasAttribute("data-kulit")).toBe(false);
+    expect(d.documentElement.getAttribute("data-kulit")).toBe("modern");
     const h = buka("Hakim", {});
     await new Promise((r) => setTimeout(r, 80));
     expect(h.documentElement.getAttribute("data-kulit")).toBe("modern");

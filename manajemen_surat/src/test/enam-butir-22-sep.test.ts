@@ -108,7 +108,8 @@ describe("butir 2 - tombol Mediator", () => {
     const i = layar.indexOf("function TombolMediator(");
     expect(i, "komponennya tidak ada").toBeGreaterThan(-1);
     const blok = layar.slice(i, layar.indexOf("function NomorSidang(", i));
-    expect(blok).toContain("masih ditulis di SIPP");
+    // 5 Nov 2026 (butir 11): borang mediator tanpa keterangan apa pun yang bersifat teknis.
+    expect(blok).not.toContain("masih ditulis di SIPP");
     // 19 Okt 2026 (JADWAL-3 butir 6): kalimat teknis "belum ada jalur yang
     // menuliskannya" dibuang - cukup satu kalimat awam.
     expect(blok).not.toContain("belum ada jalur");

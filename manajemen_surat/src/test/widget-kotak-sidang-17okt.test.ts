@@ -152,7 +152,7 @@ describe("1. widget: kotak sidang tanpa Checklist milestone", () => {
 
 describe("2. popup: centang = kotak yang tampil", () => {
   const popupHtml = baca("popup.html").replace(/<script[\s\S]*?<\/script>/g, "");
-  function bukaPopup(simpanan: Record<string, unknown>) {
+  function bukaPopup(simpanan: Record<string, unknown>, akunDikenal = true) {
     const dom = new JSDOM(popupHtml, { url: "chrome-extension://aleta/popup.html", runScripts: "outside-only" });
     terbuka.push(dom);
     const w = dom.window as Jendela;
@@ -189,7 +189,7 @@ describe("2. popup: centang = kotak yang tampil", () => {
           status: 200,
           json: async () => ({
             ok: true,
-            data: { pengguna: { nama: "Uji Admin", peran: "Super Admin", kunci: "kk-admin", golongan: { kode: "super-admin", semua: ["super-admin"] } }, versi: "1.205.0" },
+            data: { pengguna: akunDikenal ? { nama: "Uji Admin", peran: "Super Admin", kunci: "kk-admin", golongan: { kode: "super-admin", semua: ["super-admin"] } } : null, versi: "1.205.0" },
           }),
         };
       }
@@ -207,7 +207,7 @@ describe("2. popup: centang = kotak yang tampil", () => {
   };
 
   it("Baru (Klasik), Checklist milestone mati, saklar belum disentuh: TIDAK tercentang dan tidak dapat diubah", async () => {
-    const p = bukaPopup({ ujiTampilan: "baru", checklistMilestone: false });
+    const p = bukaPopup({ ujiTampilan: "baru", checklistMilestone: false }, false);
     await tenang(p);
     for (const id of ["widgetKehadiran", "widgetDrafH7"]) {
       expect(kotak(p, id).checked, id).toBe(false);
@@ -222,10 +222,17 @@ describe("2. popup: centang = kotak yang tampil", () => {
   });
 
   it("Baru (Klasik) dengan Checklist milestone + saklar dinyalakan sendiri: tercentang", async () => {
-    const p = bukaPopup({ ujiTampilan: "baru", checklistMilestone: true, widgetKehadiran: true });
+    const p = bukaPopup({ ujiTampilan: "baru", checklistMilestone: true, widgetKehadiran: true }, false);
     await tenang(p);
     expect(kotak(p, "widgetKehadiran").checked).toBe(true);
     expect(kotak(p, "widgetDrafH7").checked).toBe(false);
+  });
+
+  it("5 Nov: pilihan Baru yang tersisa di penyimpanan Super Admin tidak berlaku, popup tetap UI Baru", async () => {
+    const p = bukaPopup({ ujiTampilan: "baru", checklistMilestone: false });
+    await tenang(p);
+    expect(p.d.documentElement.getAttribute("data-kulit")).toBe("modern");
+    expect(kotak(p, "widgetKehadiran").checked).toBe(true);
   });
 
   it("UI Baru: bawaan tercentang walau Checklist milestone mati (kotaknya memang tampil)", async () => {

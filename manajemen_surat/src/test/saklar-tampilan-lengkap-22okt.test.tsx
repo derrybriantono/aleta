@@ -407,7 +407,7 @@ function adaDi(container: HTMLElement) {
     lanjutan: screen.queryByRole("button", { name: /Pencarian lanjutan/ }) !== null,
     keliling: screen.queryByRole("switch", { name: /Sidang keliling/ }) !== null,
     pilihHakim: screen.queryByRole("button", { name: /pilih hakim|ganti hakim/ }) !== null,
-    belumPutus: screen.queryAllByText("belum putus").length,
+    belumPutus: screen.queryAllByText("Belum putus").length,
     identitas: screen.queryByText(/^Admin Uji/) !== null,
   };
 }
@@ -501,7 +501,7 @@ describe("Jadwal Sidang (render): mematikan saklar menyembunyikan unsurnya", () 
 
   it("status putusan: tulisan 'belum putus' hilang, 'Rincian' dan nomor perkara tetap", async () => {
     await gambarSidang({}, { "status-putusan": false });
-    expect(screen.queryAllByText("belum putus").length).toBe(0);
+    expect(screen.queryAllByText("Belum putus").length).toBe(0);
     expect(screen.getAllByRole("button", { name: /Rincian/ }).length).toBeGreaterThan(0);
   }, 90_000);
 
