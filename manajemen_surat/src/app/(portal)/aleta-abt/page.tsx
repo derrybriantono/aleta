@@ -11,9 +11,9 @@ import { usePenggunaAktifOpsional } from "@/lib/app-state";
 import { getEffectiveRoleId } from "@/lib/permissions";
 
 /**
- * ALETA ABT (5 Nov 2026). Hak diputuskan server lewat /api/aleta-abt/hak; halaman tidak menyembunyikan apa pun
- * yang membahayakan, hanya menerangkan keadaan akun. Layar ALETA ABT untuk HP belum ada.
- * Penyunting blangko (Tahap 3) dan Beda dengan ABT (Tahap 9) hanya untuk Super Admin: kartunya hanya tampil bagi Super Admin dan rutenya menjaga ulang di server.
+ * ALETA ABT. Hak diputuskan server lewat /api/aleta-abt/hak; halaman tidak menyembunyikan apa pun yang membahayakan, hanya menerangkan keadaan akun.
+ * Semua layar di bawah hanya untuk Super Admin: kartunya hanya tampil bagi Super Admin dan rutenya menjaga ulang di server. Tanpa ekstensi (HP),
+ * kartu mengikuti saklar ALETA ABT di HP lewat AletaAbtPintu.
  */
 export default function HalamanAletaAbt() {
   const pengguna = usePenggunaAktifOpsional();
@@ -21,7 +21,7 @@ export default function HalamanAletaAbt() {
   return (
     <div className="space-y-5 p-4 sm:p-6">
       <PageIntro eyebrow="Blangko" title="ALETA ABT" description="Pintu menuju Blangko ABT by Derry Briantono." />
-      {superAdmin ? (
+      <AletaAbtPintu superAdmin={superAdmin}>
         <Card>
           <CardHeader>
             <CardTitle>Penyunting blangko</CardTitle>
@@ -36,8 +36,6 @@ export default function HalamanAletaAbt() {
             </Button>
           </CardContent>
         </Card>
-      ) : null}
-      {superAdmin ? (
         <Card>
           <CardHeader>
             <CardTitle>Cetak dan pembanding</CardTitle>
@@ -54,8 +52,6 @@ export default function HalamanAletaAbt() {
             </Button>
           </CardContent>
         </Card>
-      ) : null}
-      {superAdmin ? (
         <Card>
           <CardHeader>
             <CardTitle>Siap diperiksa dan hak folder</CardTitle>
@@ -72,8 +68,6 @@ export default function HalamanAletaAbt() {
             </Button>
           </CardContent>
         </Card>
-      ) : null}
-      {superAdmin ? (
         <Card>
           <CardHeader>
             <CardTitle>Kesiapan pindah ke ALETA ABT</CardTitle>
@@ -87,9 +81,8 @@ export default function HalamanAletaAbt() {
             </Button>
           </CardContent>
         </Card>
-      ) : null}
-      {superAdmin ? <KartuBedaAbt /> : null}
-      <AletaAbtPintu />
+        <KartuBedaAbt />
+      </AletaAbtPintu>
     </div>
   );
 }

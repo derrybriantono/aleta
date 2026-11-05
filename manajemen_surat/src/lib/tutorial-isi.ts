@@ -852,10 +852,10 @@ export const TUTORIAL: readonly Tutorial[] = [
       "Buka ALETA ABT dari Portal dengan Chrome di PC yang ekstensi ALETA-nya aktif.",
       "Tekan Buka panel Blangko ABT. Panel terbuka di halaman ABT pada tab baru.",
       "Tanpa ekstensi aktif, halaman ini hanya menerangkan keadaan akun Anda dan cara mengaktifkan ekstensi.",
-      "Super Admin mengatur siapa yang kelak boleh membuka ALETA ABT dari HP di Pengaturan SIPP & ABT, bagian ALETA ABT di HP.",
+      "Super Admin mengatur siapa yang boleh membuka ALETA ABT dari HP di Pengaturan SIPP & ABT, bagian ALETA ABT di HP.",
     ],
     peringatan: [
-      "Layar ALETA ABT untuk HP belum ada. Akun yang sudah diizinkan hanya akan melihat pemberitahuan bahwa layarnya sedang dibangun.",
+      "Dari HP, layar ALETA ABT terbuka bagi Super Admin bila saklarnya menyala. Akun lain yang sudah diizinkan melihat pemberitahuan sampai ALETA ABT dinyatakan stabil.",
       "Pada tahap awal, menu ALETA ABT hanya tampil untuk Super Admin dan akun yang diizinkan Super Admin.",
     ],
     kataKunci: ["aleta abt", "blangko abt", "derry", "hp", "ekstensi", "panel blangko"],

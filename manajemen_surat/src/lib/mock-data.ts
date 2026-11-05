@@ -1876,7 +1876,7 @@ export const portalApps: PortalAppConfig[] = [
     // "ALETA ABT di HP" (Pengaturan SIPP & ABT) - menu disaring lib/aleta-abt-hp.ts terapkanMenuAletaAbt.
     id: "aleta-abt",
     label: "ALETA ABT",
-    description: "Pintu menuju Blangko ABT by Derry Briantono. Layar untuk HP sedang dibangun.",
+    description: "Pintu menuju Blangko ABT by Derry Briantono, dan layar ALETA ABT bagi Super Admin.",
     href: "/aleta-abt",
     icon: "library-big",
     roleIds: roles.map((role) => role.id),

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,10 +10,12 @@ import { apiPath } from "@/lib/base-path";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 
 /**
- * Halaman ALETA ABT (5 Nov 2026). Layar ALETA ABT untuk HP BELUM ADA; halaman ini hanya pintu:
- *   - ekstensi ALETA aktif: tombol membuka panel Blangko ABT by Derry Briantono di halaman ABT;
- *   - tanpa ekstensi, hak menyala: pemberitahuan bahwa layar HP sedang dibangun dan belum dapat dipakai;
- *   - tanpa ekstensi, hak mati (mis. alamat dibuka langsung): ALETA ABT dibuka dari PC dengan ekstensi aktif.
+ * Halaman ALETA ABT. Keputusan pemilik 6 Nov 2026: layar ALETA ABT dibuka dari HP mengikuti saklar peran dan pengguna, dan ALETA ABT tetap
+ * khusus Super Admin sampai stabil (rute menjaga ulang di server):
+ *   - ekstensi ALETA aktif: tombol membuka panel Blangko ABT by Derry Briantono di halaman ABT, dan layar ALETA ABT bagi Super Admin;
+ *   - tanpa ekstensi, hak menyala, Super Admin: layar ALETA ABT terbuka di peramban ini;
+ *   - tanpa ekstensi, hak menyala, peran lain: izinnya tercatat, layarnya menunggu dibuka Super Admin;
+ *   - tanpa ekstensi, hak mati: ALETA ABT dibuka dari PC dengan ekstensi aktif.
  * Hak diputuskan server (/api/aleta-abt/hak); layar hanya menampilkannya.
  */
 
@@ -25,7 +27,7 @@ export function versiEkstensiAktif(): string {
   return String(document.documentElement.dataset.aletaEkstensi || "");
 }
 
-export function AletaAbtPintu() {
+export function AletaAbtPintu({ superAdmin = false, children }: { superAdmin?: boolean; children?: ReactNode }) {
   const [hak, setHak] = useState<Hak | null>(null);
   const [galat, setGalat] = useState("");
   const [versi, setVersi] = useState("");
@@ -98,45 +100,52 @@ export function AletaAbtPintu() {
 
   if (versi) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Ekstensi ALETA aktif</CardTitle>
-          <CardDescription>
-            Panel Blangko ABT by Derry Briantono dibuka di halaman ABT, lewat ekstensi ALETA di Chrome PC ini.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Button asChild className="w-full sm:w-auto">
-            <a href={alamat || undefined} target="_blank" rel="noopener noreferrer">
-              Buka panel Blangko ABT
-            </a>
-          </Button>
-          <p className="text-xs text-muted-foreground">
-            {membuka ? "Membuka panel Blangko ABT..." : `Versi ekstensi ${versi}. Panel terbuka di tab baru.`}
-          </p>
-        </CardContent>
-      </Card>
+      <>
+        {superAdmin ? children : null}
+        <Card>
+          <CardHeader>
+            <CardTitle>Ekstensi ALETA aktif</CardTitle>
+            <CardDescription>
+              Panel Blangko ABT by Derry Briantono dibuka di halaman ABT, lewat ekstensi ALETA di Chrome PC ini.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button asChild className="w-full sm:w-auto">
+              <a href={alamat || undefined} target="_blank" rel="noopener noreferrer">
+                Buka panel Blangko ABT
+              </a>
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              {membuka ? "Membuka panel Blangko ABT..." : `Versi ekstensi ${versi}. Panel terbuka di tab baru.`}
+            </p>
+          </CardContent>
+        </Card>
+      </>
     );
   }
 
   if (galat) {
     return (
-      <div role="alert" className="rounded-xl border border-rose-300 bg-rose-50 px-3 py-2 text-sm text-rose-800 dark:border-rose-800 dark:bg-rose-950/50 dark:text-rose-200">
-        {galat}
-      </div>
+      <>
+        {superAdmin ? children : null}
+        <div role="alert" className="rounded-xl border border-rose-300 bg-rose-50 px-3 py-2 text-sm text-rose-800 dark:border-rose-800 dark:bg-rose-950/50 dark:text-rose-200">
+          {galat}
+        </div>
+      </>
     );
   }
 
   if (!hak) return <p className="text-sm text-muted-foreground">Memeriksa akses Anda...</p>;
 
   if (hak.terbuka) {
+    if (superAdmin) return <>{children}</>;
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Layar ALETA ABT untuk HP sedang dibangun</CardTitle>
+          <CardTitle>ALETA ABT masih dipakai Super Admin</CardTitle>
           <CardDescription>
-            Akun Anda sudah diizinkan membuka ALETA ABT dari HP kelak, tetapi layarnya belum dapat dipakai. Sementara itu, buka ALETA ABT dari PC dengan
-            ekstensi ALETA aktif di Chrome.
+            Akun Anda sudah diizinkan membuka ALETA ABT dari HP. Layarnya terbuka untuk akun Anda setelah ALETA ABT dinyatakan stabil. Sementara itu, pakai Blangko ABT by Derry
+            Briantono dari PC dengan ekstensi ALETA aktif di Chrome.
           </CardDescription>
         </CardHeader>
       </Card>

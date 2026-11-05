@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 /**
  * ALETA ABT di HP (5 Nov 2026) - layar: halaman /aleta-abt dalam tiga keadaan dan kartu admin.
- * Tanpa ekstensi layar tidak boleh mengesankan fiturnya sudah bisa dipakai di HP.
+ * Keputusan 6 Nov: tanpa ekstensi, layar ALETA ABT terbuka bagi Super Admin bila saklarnya menyala; peran lain tetap menunggu sampai stabil.
  */
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -74,12 +74,45 @@ describe("halaman ALETA ABT", () => {
     expect(screen.queryByText("Membuka panel Blangko ABT...")).toBeNull();
   });
 
-  it("tanpa ekstensi, hak menyala: layar HP sedang dibangun dan belum dapat dipakai (tanpa tombol buka)", async () => {
+  const LAYAR = <p>layar ALETA ABT</p>;
+
+  it("tanpa ekstensi, hak menyala, Super Admin: layar ALETA ABT terbuka, tanpa tulisan sedang dibangun", async () => {
     stubHak(true);
-    render(<AletaAbtPintu />);
-    await screen.findByText("Layar ALETA ABT untuk HP sedang dibangun");
-    expect(screen.getByText(/belum dapat dipakai/i)).toBeTruthy();
+    render(<AletaAbtPintu superAdmin>{LAYAR}</AletaAbtPintu>);
+    await screen.findByText("layar ALETA ABT");
+    expect(screen.queryByText(/sedang dibangun/i)).toBeNull();
     expect(screen.queryByRole("link", { name: "Buka panel Blangko ABT" })).toBeNull();
+  });
+
+  it("tanpa ekstensi, hak menyala, peran lain: izin tercatat, layar tetap tertutup sampai stabil", async () => {
+    stubHak(true);
+    render(<AletaAbtPintu>{LAYAR}</AletaAbtPintu>);
+    await screen.findByText("ALETA ABT masih dipakai Super Admin");
+    expect(screen.queryByText("layar ALETA ABT")).toBeNull();
+    expect(screen.queryByText(/sedang dibangun/i)).toBeNull();
+  });
+
+  it("tanpa ekstensi, hak mati, Super Admin: mengikuti saklar, layar tidak tampil", async () => {
+    stubHak(false);
+    render(<AletaAbtPintu superAdmin>{LAYAR}</AletaAbtPintu>);
+    await screen.findByText("ALETA ABT dibuka dari PC dengan ekstensi aktif");
+    expect(screen.queryByText("layar ALETA ABT")).toBeNull();
+  });
+
+  it("ekstensi aktif, Super Admin: layar dan tombol panel tetap ada walau saklar HP mati", async () => {
+    document.documentElement.dataset.aletaEkstensi = "1.205.76";
+    stubHak(false);
+    render(<AletaAbtPintu superAdmin>{LAYAR}</AletaAbtPintu>);
+    await screen.findByText("layar ALETA ABT");
+    expect(screen.getByRole("link", { name: "Buka panel Blangko ABT" })).toBeTruthy();
+  });
+
+  it("ekstensi aktif, peran lain: hanya tombol panel, layar ALETA ABT tidak tampil", async () => {
+    document.documentElement.dataset.aletaEkstensi = "1.205.76";
+    stubHak(true);
+    render(<AletaAbtPintu>{LAYAR}</AletaAbtPintu>);
+    await screen.findByRole("link", { name: "Buka panel Blangko ABT" });
+    expect(screen.queryByText("layar ALETA ABT")).toBeNull();
   });
 
   it("tanpa ekstensi, hak mati: dibuka dari PC dengan ekstensi aktif, ada petunjuk mengaktifkan", async () => {
@@ -96,6 +129,13 @@ describe("halaman ALETA ABT", () => {
     render(<AletaAbtPintu />);
     await screen.findByRole("alert");
     expect(screen.queryByText(/sedang dibangun/i)).toBeNull();
+  });
+
+  it("server tidak menjawab bagi Super Admin: pesan tampil dan layar tidak hilang", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => jawab(null, false)));
+    render(<AletaAbtPintu superAdmin>{LAYAR}</AletaAbtPintu>);
+    await screen.findByRole("alert");
+    expect(screen.getByText("layar ALETA ABT")).toBeTruthy();
   });
 });
 
