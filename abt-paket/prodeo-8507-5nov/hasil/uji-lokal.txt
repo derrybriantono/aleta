@@ -1,0 +1,27 @@
+SELURUH VARIABEL AWAL 3020 d3ee253057ed39962a1d19dc13353cf8  ; 8507 AWAL 0a3a264a0310d50d6d71bc6b5fc66c80 2026-10-12 08:16:21 admin 
+== 1. pasang pertama
+    PRASYARAT COCOK (1|0)
+    PERIKSA: SEMUA COCOK
+    SELESAI - paket abt-prodeo-8507-5nov terpasang. Cadangan: (folder paket)
+    8507 SESUDAH 95a6487094847e1861016883387b7498 2026-10-12 08:16:21 admin 
+== 2. pasang ulang (idempoten)
+    PRASYARAT COCOK (0|1)
+    PERIKSA: SEMUA COCOK
+    SELESAI - paket abt-prodeo-8507-5nov terpasang. Cadangan: (folder paket)
+    TETAP
+== 3. pulih
+    PULIH COCOK (1|0)
+    SELURUH TABEL VARIABEL = AWAL (termasuk modified)
+== 4. pasang lagi sesudah pulih
+    PERIKSA: SEMUA COCOK
+    SELESAI - paket abt-prodeo-8507-5nov terpasang. Cadangan: (folder paket)
+    SAMA DENGAN PASANG PERTAMA
+    PULIH COCOK (1|0)
+== 5. rumus server berbeda -> BERHENTI tanpa ubahan
+    GAGAL: prasyarat '0|0' (harus '1|0' pasang pertama atau '0|1' pasang ulang): rumus 8507 di server berbeda - TIDAK ada yang diubah
+    TIDAK ADA YANG BERUBAH
+    DIKEMBALIKAN = AWAL
+== 6. diubah sesudah pasang lalu pulih -> dibiarkan
+    PULIH SEBAGIAN: prasyarat sekarang '0|0' (rumus sudah diubah orang, dibiarkan)
+    PULIH COCOK (1|0)
+AKHIR: SELURUH TABEL VARIABEL = AWAL
