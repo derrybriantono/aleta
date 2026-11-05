@@ -73,7 +73,8 @@ function unduh(base64: string, nama: string, jenis: string) {
   setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
 
-const namaBerkas = (nama: string, akhiran: string) => `${nama.replace(/\.rtf$/i, "").replace(/[\\/:*?"<>|]+/g, " ").trim()} (ALETA ABT).${akhiran}`;
+/** Nama berkas unduhan tanpa kata ALETA: berkas ini dapat diunggah ke SIPP/e-Court oleh petugas. */
+const namaBerkas = (nama: string, akhiran: string, tambahan = "") => `${nama.replace(/\.rtf$/i, "").replace(/[\\/:*?"<>|]+/g, " ").trim()}${tambahan}.${akhiran}`;
 
 function Galat({ pesan }: { pesan: string }) {
   if (!pesan) return null;
@@ -205,7 +206,7 @@ export function CetakAletaAbt() {
         pdfAleta.current = h.pdfBase64;
         setAdaPdfAleta(true);
         setPratinjau((p) => (p ? { ...p, waktu: { ...p.waktu, pdfMs: h.waktu.pdfMs } } : p));
-        unduh(h.pdfBase64, namaBerkas(h.nama, "pdf").replace(/\(ALETA ABT\)/, jenis === "salinan" ? "(ALETA ABT) SALINAN" : "(ALETA ABT)"), "application/pdf");
+        unduh(h.pdfBase64, namaBerkas(h.nama, "pdf", jenis === "salinan" ? " (SALINAN)" : ""), "application/pdf");
       }
     } catch (e) {
       const g = e as Error & { kosong?: Array<{ nama: string }> };

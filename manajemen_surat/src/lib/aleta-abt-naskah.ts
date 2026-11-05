@@ -161,7 +161,7 @@ export const KELAS_BEDA_NAMA: Record<KelasBeda, string> = {
 };
 
 // ---------------------------------------------------------------------------------------------------------------
-// Laporan pembanding dari skrip (scripts/ukur-banding-abt/naskah.ts) - dibaca layar /aleta-abt/pembanding
+// Laporan pembanding dari skrip (scripts/ukur-banding-abt/naskah.mts) - dibaca layar /aleta-abt/pembanding
 // ---------------------------------------------------------------------------------------------------------------
 
 export type RingkasJenis = { jenis: string; naskah: number; alinea: number; identik: number; persen: number; naskahIdentik: number };

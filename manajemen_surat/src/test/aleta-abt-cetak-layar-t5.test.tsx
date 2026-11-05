@@ -137,6 +137,23 @@ describe("layar cetak ALETA ABT", () => {
     expect(screen.getByText("Pekerjaan Pemohon")).toBeTruthy();
   });
 
+  it("nama berkas unduhan tidak memuat kata ALETA (berkas dapat diunggah ke SIPP/e-Court)", async () => {
+    const nama: string[] = [];
+    const klik = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function (this: HTMLAnchorElement) {
+      nama.push(this.download);
+    };
+    try {
+      await sampaiPratinjau();
+      fireEvent.click(screen.getByRole("button", { name: "Unduh RTF" }));
+      await waitFor(() => expect(nama.length).toBe(1));
+    } finally {
+      HTMLAnchorElement.prototype.click = klik;
+    }
+    expect(nama[0]).toBe("Putusan Cerai Uji.rtf");
+    expect(nama[0]).not.toMatch(/aleta/i);
+  });
+
   it("galat server tampil sebagai pesan, bukan layar kosong", async () => {
     await sampaiPratinjau();
     galatCetak = { status: 409, badan: { ok: false, ditahan: true, kosong: [{ nama: "Alamat Termohon" }], alasan: "Cetak final ditahan: 1 isian masih kosong." } };

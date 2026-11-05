@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { KELAS_BEDA_NAMA, bacaLaporanBanding, type KelasBeda, type LaporanBanding } from "@/lib/aleta-abt-naskah";
 
 /**
- * Laporan pembanding ALETA ABT lawan ABT (5 Nov 2026, Tahap 5). Membaca berkas hasil skrip pengukur (scripts/ukur-banding-abt/naskah.ts)
+ * Laporan pembanding ALETA ABT lawan ABT (5 Nov 2026, Tahap 5). Membaca berkas hasil skrip pengukur (scripts/ukur-banding-abt/naskah.mts)
  * LANGSUNG DI PERAMBAN: berkas tidak dikirim ke server dan tidak disimpan. Laporan hanya memuat penanda perkara sampel, jenis, kelas beda,
  * nomor alinea, dan nama isian; tidak memuat nama pihak atau nilai isian.
  */
