@@ -224,6 +224,42 @@ export function tingkatHak(baris: BarisMenu, golongan: GolonganPeran, opsi: { ar
   return "tidak";
 }
 
+/**
+ * Keputusan pemilik 6 Nov 2026 untuk folder Derry yang tidak punya baris menu di ABT: "4 Kebendaan" untuk hakim, "PTSP" untuk PTSP,
+ * "Relaas" untuk juru sita; Super Admin melihat semuanya. Kebendaan berisi putusan, jadi mengikuti aturan folder putusan yang sudah berlaku
+ * (hakim dan Ketua/Wakil, keputusan 9 & 16 Okt, bila ditunjuk di perkara). Hanya berlaku bila ABT tidak punya baris menunya: bila ada, hak ABT
+ * yang dipakai (folder mengikuti Blangko ABT by Derry). Folder baru lainnya tetap ikut tampil, hanya untuk Super Admin sampai ditetapkan.
+ */
+const TETAPAN_FOLDER_TANPA_MENU: Record<string, { grup: () => number[]; cek: number }> = {
+  "4 kebendaan": { grup: () => [10, 20], cek: 3 },
+  ptsp: { grup: () => grupDariGolongan("ptsp"), cek: 0 },
+  relaas: { grup: () => [600], cek: 0 },
+};
+
+/** Baris menu pengganti bagi folder yang haknya ditetapkan pemilik; null bila folder itu tidak termasuk. */
+export function barisTetapanPemilik(folder: string): BarisMenu | null {
+  const nama = folder.trim();
+  const t = Object.prototype.hasOwnProperty.call(TETAPAN_FOLDER_TANPA_MENU, nama.toLowerCase()) ? TETAPAN_FOLDER_TANPA_MENU[nama.toLowerCase()] : null;
+  if (!t) return null;
+  return {
+    id: nama,
+    nama: "",
+    namaAlias: "",
+    parent: "derry_briantono",
+    grup: t.grup(),
+    top: [],
+    validator: [],
+    grupTakTerbaca: [],
+    cek: t.cek,
+    prosesMin: null,
+    prosesMax: null,
+    perkaraMin: null,
+    perkaraMax: null,
+    referensi: "",
+    aktif: true,
+  };
+}
+
 export const NAMA_TINGKAT: Record<TingkatHak, string> = {
   bebas: "boleh",
   ditunjuk: "boleh bila ditunjuk di perkara",
@@ -460,16 +496,18 @@ export function susunMatriks(menu: readonly BarisMenu[], folderPustaka: readonly
   const golongan: GolonganPeran[] = [...GOLONGAN_PERAN];
   const baris: BarisMatriks[] = [];
   for (const k of [...semua].sort((a, b) => a.localeCompare(b, "id", { numeric: true }))) {
-    const m = menuPer.get(k) ?? null;
+    const adaBaris = menuPer.get(k) ?? null;
     const f = folderPer.get(k) ?? null;
-    const arsip = Boolean(f?.arsip) || m?.parent === "_arsip_derry_briantono";
+    // Folder tanpa baris menu yang haknya sudah ditetapkan pemilik memakai tetapan itu; hak ABT selalu didahulukan bila barisnya ada.
+    const m = adaBaris ?? (f ? barisTetapanPemilik(f.folder) : null);
+    const arsip = Boolean(f?.arsip) || adaBaris?.parent === "_arsip_derry_briantono";
     // Folder tanpa baris menu: hanya Super Admin sampai ditetapkan. Folder arsip: hanya Super Admin.
     const hak = Object.fromEntries(golongan.map((g) => [g, m ? tingkatHak(m, g, { arsip }) : g === "super-admin" ? ("bebas" as TingkatHak) : ("tidak" as TingkatHak)])) as Record<GolonganPeran, TingkatHak>;
     const gr = m ? [...new Set([...m.grup, ...m.top])].filter((g) => g >= 0).map((g) => NAMA_GRUP_ABT[g] ?? `grup ${g}`) : [];
     baris.push({
-      folder: m?.id ?? f?.folder ?? k,
-      nama: m?.nama ?? "",
-      adaMenu: Boolean(m),
+      folder: adaBaris?.id ?? f?.folder ?? k,
+      nama: adaBaris?.nama ?? "",
+      adaMenu: Boolean(adaBaris),
       arsip,
       tahapan: m ? labelTahapan(m) : "tidak diketahui",
       jenis: m ? labelJenis(m) : "tidak diketahui",

@@ -1,5 +1,6 @@
 import {
   barisMenuDari,
+  barisTetapanPemilik,
   periksaHakFolder,
   susunMatriks,
   type BarisMenu,
@@ -100,7 +101,7 @@ export async function simpanPersetujuan(db: AletaDatabase, aktor: { id: string; 
 
 /**
  * Hak sebuah folder untuk golongan tertentu menurut matriks - hanya bila matriks berlaku; selain itu tidak ada putusan (null).
- * Folder arsip hanya untuk Super Admin; folder tanpa baris menu hanya untuk Super Admin sampai ditetapkan.
+ * Folder arsip hanya untuk Super Admin. Folder tanpa baris menu memakai tetapan pemilik (4 Kebendaan, PTSP, Relaas); folder lain hanya untuk Super Admin sampai ditetapkan.
  */
 export function putusanHakFolder(
   keadaan: { berlaku: boolean; menu: readonly BarisMenu[]; folder?: readonly FolderPustaka[] },
@@ -110,7 +111,7 @@ export function putusanHakFolder(
 ): HasilHakFolder | null {
   if (!keadaan.berlaku) return null;
   const k = folder.trim().toLowerCase();
-  const baris = keadaan.menu.find((m) => m.id.trim().toLowerCase() === k) ?? null;
+  const baris = keadaan.menu.find((m) => m.id.trim().toLowerCase() === k) ?? barisTetapanPemilik(folder);
   const arsip = keadaan.folder?.some((f) => f.folder.trim().toLowerCase() === k && f.arsip) === true;
   return periksaHakFolder(baris, golongan, { ...opsi, arsip });
 }

@@ -45,7 +45,8 @@ const m = susunMatriks(menu, folder);
 mkdirSync(KELUAR, { recursive: true });
 const catatan = [
   `Folder diambil dari baris menu Derry (induk derry_briantono dan _arsip_derry_briantono) di database ${DB} ditambah ${folder.length} folder di cakram setempat.`,
-  "Keputusan 5 Nov 2026: folder arsip hanya untuk Super Admin; folder tanpa baris menu hanya untuk Super Admin sampai ditetapkan; Meja I disamakan dengan PTSP dan Meja II/III dengan Analis Perkara; mediator, petugas sidang, TI, pelaksana, dan Admin tanpa hak.",
+  "Keputusan 5 Nov 2026: folder arsip hanya untuk Super Admin; Meja I disamakan dengan PTSP dan Meja II/III dengan Analis Perkara; mediator, petugas sidang, TI, pelaksana, dan Admin tanpa hak.",
+  "Keputusan 6 Nov 2026: folder mengikuti Blangko ABT by Derry; folder baru yang belum ada boleh ditambah dan hanya untuk Super Admin sampai ditetapkan. 4 Kebendaan untuk hakim (dan Ketua/Wakil, sama seperti folder putusan lain), PTSP untuk PTSP, Relaas untuk juru sita, Super Admin melihat semua.",
   "Saklar PP boleh membuka folder putusan dan Hakim boleh membuka folder BAS bekerja dengan menambah peran ke hak folder di ABT, jadi ikut terhitung dari hak yang dibaca. Pada salinan ini kedua saklar mati; pada ABT di server dapat berbeda.",
   "Acuan ini harus dicocokkan ulang dengan ABT di server saat server hidup: layar Hak folder punya tombol Cocokkan ulang dengan ABT (sinkron pustaka).",
   "Angka 107 folder di pustaka ALETA di server tidak dapat dicocokkan dari sini karena server mati; matriks yang sama dapat dibangkitkan ulang dari pustaka ALETA di layar Alur kerja, bagian Hak folder.",

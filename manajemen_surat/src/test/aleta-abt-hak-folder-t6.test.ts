@@ -12,6 +12,7 @@ import {
   GRUP_KE_GOLONGAN,
   GOLONGAN_TANPA_GRUP_ABT,
   barisMenuDari,
+  barisTetapanPemilik,
   daftarAngka,
   labelJenis,
   labelTahapan,
@@ -24,6 +25,7 @@ import {
   type BarisMenu,
 } from "@/lib/aleta-abt-hak-folder";
 import { matriksKeHtml } from "@/lib/aleta-abt-hak-folder-html";
+import { putusanHakFolder } from "@/server/modules/aleta-abt-alur/hak-folder";
 import { GOLONGAN_PERAN, golonganPengguna, type GolonganPeran } from "@/lib/matriks-peran";
 import type { UserPersona } from "@/lib/types";
 
@@ -215,6 +217,72 @@ describe("matriks", () => {
       for (const b of r.baris.filter((x) => x.folder !== "Contoh cek dua")) expect(b.hak[g], `${g} ${b.folder}`).toBe("tidak");
     }
     for (const b of r.baris) expect(b.hak.admin, `admin ${b.folder}`).toBe("tidak");
+  });
+});
+
+describe("keputusan 6 Nov: folder mengikuti Blangko Derry, tiga folder tanpa baris menu ditetapkan pemilik", () => {
+  const m = susunMatriks(
+    [PUTUSAN_CG, RELAAS],
+    [
+      { folder: "4 Kebendaan", arsip: false },
+      { folder: "PTSP", arsip: false },
+      { folder: "Relaas", arsip: false },
+      { folder: "98 Relaas", arsip: false },
+      { folder: "12 Folder Baru", arsip: false },
+    ]
+  );
+  const hak = (folder: string) => m.baris.find((b) => b.folder === folder)!.hak;
+  const berhak = (folder: string) => GOLONGAN_PERAN.filter((g) => hak(folder)[g] !== "tidak");
+
+  it("4 Kebendaan: hakim dan Ketua/Wakil bila ditunjuk, sama seperti folder putusan lain; Super Admin bebas", () => {
+    expect(berhak("4 Kebendaan").sort()).toEqual(["hakim", "pimpinan", "super-admin"]);
+    expect(hak("4 Kebendaan").hakim).toBe("ditunjuk");
+    expect(hak("4 Kebendaan").pimpinan).toBe("ditunjuk");
+    expect(hak("4 Kebendaan")["super-admin"]).toBe("bebas");
+  });
+  it("PTSP hanya untuk PTSP dan Relaas hanya untuk juru sita, tanpa perlu ditunjuk; Super Admin melihat semua", () => {
+    expect(berhak("PTSP").sort()).toEqual(["ptsp", "super-admin"]);
+    expect(hak("PTSP").ptsp).toBe("bebas");
+    expect(berhak("Relaas").sort()).toEqual(["jurusita", "super-admin"]);
+    expect(hak("Relaas").jurusita).toBe("bebas");
+  });
+  it("ketiganya tidak lagi ragu dan tetap tertulis sebagai folder tanpa baris menu", () => {
+    for (const f of ["4 Kebendaan", "PTSP", "Relaas"]) {
+      const b = m.baris.find((x) => x.folder === f)!;
+      expect(b.ragu, f).toEqual([]);
+      expect(b.adaMenu, f).toBe(false);
+    }
+  });
+  it("folder baru yang belum ada di ABT ikut tampil, hanya untuk Super Admin, dan ditandai agar terlihat", () => {
+    expect(berhak("12 Folder Baru")).toEqual(["super-admin"]);
+    expect(m.baris.find((x) => x.folder === "12 Folder Baru")!.ragu.length).toBeGreaterThan(0);
+  });
+  it("bila ABT punya baris menunya, hak ABT yang dipakai, bukan tetapan", () => {
+    const r = susunMatriks([baris({ direktori: "PTSP", parent_direktori: "derry_briantono", user_cek: "0", user_grup_id: "1|500", user_top_id: "1" })], [{ folder: "PTSP", arsip: false }]);
+    expect(r.baris[0].adaMenu).toBe(true);
+    expect(r.baris[0].hak.pp).toBe("bebas");
+    expect(r.baris[0].hak.ptsp).toBe("tidak");
+  });
+  it("tetapan pada folder yang berbendera arsip tetap hanya Super Admin", () => {
+    const r = susunMatriks([], [{ folder: "Relaas", arsip: true }]);
+    expect(r.baris[0].hak.jurusita).toBe("tidak");
+    expect(r.baris[0].hak["super-admin"]).toBe("bebas");
+  });
+  it("pemeriksaan saat dipakai memakai tetapan bila matriks berlaku, dan tidak memutuskan apa pun bila belum disetujui", () => {
+    const berlaku = { berlaku: true, menu: [] as BarisMenu[], folder: [{ folder: "Relaas", arsip: false }] };
+    expect(putusanHakFolder(berlaku, "Relaas", ["jurusita"])).toMatchObject({ boleh: true });
+    expect(putusanHakFolder(berlaku, "Relaas", ["hakim"])).toMatchObject({ boleh: false });
+    expect(putusanHakFolder(berlaku, "12 Folder Baru", ["jurusita"])).toMatchObject({ boleh: false });
+    expect(putusanHakFolder(berlaku, "12 Folder Baru", ["super-admin"])).toMatchObject({ boleh: true });
+    expect(putusanHakFolder({ ...berlaku, berlaku: false }, "Relaas", ["jurusita"])).toBeNull();
+  });
+  it("saat dipakai: nama tidak peka huruf besar, dan nama lain tidak ikut", () => {
+    expect(periksaHakFolder(barisTetapanPemilik(" relaas "), ["jurusita"])).toMatchObject({ boleh: true });
+    expect(periksaHakFolder(barisTetapanPemilik("Relaas"), ["hakim"])).toMatchObject({ boleh: false });
+    expect(periksaHakFolder(barisTetapanPemilik("4 Kebendaan"), ["hakim"], { ditunjuk: true })).toMatchObject({ boleh: true, perluDitunjuk: true });
+    expect(periksaHakFolder(barisTetapanPemilik("4 Kebendaan"), ["hakim"], { ditunjuk: false })).toMatchObject({ boleh: false });
+    expect(barisTetapanPemilik("Relaas Lain")).toBeNull();
+    expect(barisTetapanPemilik("constructor")).toBeNull();
   });
 });
 
