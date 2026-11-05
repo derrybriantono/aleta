@@ -120,7 +120,7 @@ describe("2. urai", () => {
     ]);
     expect(doc.paragraf[0].rata).toBe("tengah");
     const bagian = bagianParagraf(doc.paragraf[2]);
-    expect(bagian.filter((b) => b.j === "isian")).toEqual([{ j: "isian", no: "0098", g: 0 }]);
+    expect(bagian.filter((b) => b.j === "isian")).toEqual([{ j: "isian", no: "0098", r: "0098", g: 0 }]);
     expect(bagian.some((b) => b.j === "teks" && b.g === 1 && b.t === "Nama:")).toBe(true);
     expect(bagian.some((b) => b.j === "teks" && b.g === 2 && b.t === "miring")).toBe(true);
   });
@@ -346,6 +346,39 @@ describe.skipIf(!existsSync(AKAR_CONTOH))("4. pulang-pergi atas blangko sungguha
     expect(gagal).toEqual([]);
     expect(diuji + tanpaTempat).toBe(berkas.length);
     expect(diuji).toBeGreaterThanOrEqual(20);
+  }, 120_000);
+  it("suntingan acak (sisip, hapus, ganti, huruf Latin/Arab, isian, tab, Enter) selalu lolos pemeriksa kecuali menyentuh kotak terkunci", () => {
+    let seed = 99;
+    const acak = (n: number) => {
+      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+      return seed % n;
+    };
+    let total = 0;
+    const gagal: string[] = [];
+    for (const f of berkas) {
+      const s = readFileSync(f).toString("latin1");
+      if (s.length > 1_200_000) continue;
+      const doc = uraiRtf(s);
+      const calon = doc.paragraf.filter((p) => p.teks.length > 3 && !p.terkunci);
+      for (let n = 0; n < 4 && calon.length; n += 1) {
+        const p = calon[acak(calon.length)];
+        let t = p.teks;
+        const i = acak(t.length);
+        const jenis = acak(6);
+        if (jenis === 0) t = `${t.slice(0, i)}sisipan baru${t.slice(i)}`;
+        else if (jenis === 1) t = t.slice(0, i) + t.slice(i + 1 + acak(8));
+        else if (jenis === 2) t = `${t.slice(0, i)}é“Xا${t.slice(i + 1 + acak(5))}`;
+        else if (jenis === 3) t = `${t.slice(0, i)} #0098# ${t.slice(i)}`;
+        else if (jenis === 4 && !p.tabel) t = `${t.slice(0, i)}${PEMISAH_PARAGRAF}${t.slice(i)}`;
+        else t = t.replace(/\S+/, "GANTI");
+        total += 1;
+        const h = terapkanSuntingan(s, doc, [{ indeks: p.indeks, teks: t }]);
+        if (!h.ok && !/terkunci/.test(h.sebab)) gagal.push(`${path.basename(f).slice(0, 40)} #${p.indeks}: ${h.sebab}`);
+        if (h.ok) expect(uraiRtf(h.rtf).paragraf.map((q) => q.teks).join("\n")).toContain(t.split(PEMISAH_PARAGRAF)[0].slice(0, 20));
+      }
+    }
+    expect(total).toBeGreaterThan(500);
+    expect(gagal).toEqual([]);
   }, 120_000);
   it("tebal-nipisnya: kotak, kepala/kaki, tabel, dan gambar muncul di contoh (uji tidak kosong)", () => {
     let kotak = 0;

@@ -1,6 +1,18 @@
 import { createHash, randomUUID } from "node:crypto";
 
 import { bedaDaftar, bedaKata, type PotongBeda } from "@/lib/aleta-abt-beda";
+import type {
+  BarisBeda,
+  BlangkoBuka,
+  BlangkoDaftar,
+  FolderDaftar,
+  HasilBeda,
+  HasilCoba,
+  HasilSimpan,
+  ParagrafLayar,
+  RingkasVersi,
+  TetapLayar,
+} from "@/lib/aleta-abt-penyunting-tipe";
 import { nomorBaku, petaRujukan } from "@/lib/aleta-abt-pustaka";
 import { nilaiRekaan, NAMA_PERKARA_REKAAN } from "@/lib/aleta-abt-rekaan";
 import {
@@ -35,6 +47,19 @@ import { ApiError } from "@/server/shared/errors";
  *   - penulisan RTF lewat lib/aleta-abt-rtf.ts (menambal bita, tidak membangun ulang);
  *   - tidak ada yang ditulis ke ABT/SIPP; jalur mana pun selain penyunting ini tidak membaca versi.
  */
+
+export type {
+  BarisBeda,
+  BlangkoBuka,
+  BlangkoDaftar,
+  FolderDaftar,
+  HasilBeda,
+  HasilCoba,
+  HasilSimpan,
+  ParagrafLayar,
+  RingkasVersi,
+  TetapLayar,
+} from "@/lib/aleta-abt-penyunting-tipe";
 
 export type Aktor = { id: string; name: string };
 
@@ -87,20 +112,6 @@ type BarisVersi = {
   terbit_at: string;
 };
 
-export type RingkasVersi = {
-  nomor: number;
-  jenis: "asal" | "sunting" | "pulih";
-  status: "draf" | "terbit" | "lama";
-  dariNomor: number;
-  catatan: string;
-  ringkas: string;
-  dibuatNama: string;
-  dibuatAt: string;
-  terbitNama: string;
-  terbitAt: string;
-  ukuran: number;
-  md5: string;
-};
 
 const SQL_VERSI_RINGKAS =
   "SELECT nomor, jenis, status, dari_nomor, catatan, ringkas, dibuat_nama, dibuat_at, terbit_nama, terbit_at, ukuran, md5 FROM aleta_abt_berkas_versi WHERE berkas_id = ? ORDER BY nomor ASC";
@@ -204,19 +215,6 @@ const ganti = (t: string, peta: Map<string, InfoIsian>, bentuk: (no: string, nam
 // Daftar
 // ---------------------------------------------------------------------------------------------------------------
 
-export type BlangkoDaftar = {
-  id: string;
-  nama: string;
-  rtf: boolean;
-  arsip: boolean;
-  hilang: boolean;
-  ukuran: number;
-  disunting: boolean;
-  versi: number;
-  terbit: number;
-  adaDraf: boolean;
-};
-export type FolderDaftar = { folder: string; label: string; blangko: BlangkoDaftar[] };
 
 export async function daftarBlangko(db: AletaDatabase): Promise<{ folder: FolderDaftar[]; jumlah: number; tersalin: boolean }> {
   const [berkas, menu, versi] = await Promise.all([
@@ -264,35 +262,8 @@ export async function daftarBlangko(db: AletaDatabase): Promise<{ folder: Folder
 // Buka
 // ---------------------------------------------------------------------------------------------------------------
 
-export type ParagrafLayar = {
-  i: number;
-  bagian: BagianTeks[];
-  rata: Rata;
-  li: number;
-  fi: number;
-  tabel: boolean;
-  awalan: string;
-  terkunci: string;
-};
 
-export type TetapLayar = { jenis: BagianTetap["jenis"]; baris: BagianTeks[][] };
 
-export type BlangkoBuka = {
-  id: string;
-  nama: string;
-  folder: string;
-  versi: RingkasVersi;
-  terakhir: number;
-  terbit: number;
-  dapatDisunting: boolean;
-  sebabTerkunci: string;
-  paragraf: ParagrafLayar[];
-  tetap: TetapLayar[];
-  isian: Record<string, { nama: string; bersyarat: boolean }>;
-  jumlahTerkunci: number;
-  /** Berkas belum punya riwayat tersimpan (masih salinan ABT). */
-  belumDisimpan: boolean;
-};
 
 function bagianTeksBiasa(t: string): BagianTeks[] {
   const hasil: BagianTeks[] = [];
@@ -301,7 +272,7 @@ function bagianTeksBiasa(t: string): BagianTeks[] {
   let m: RegExpExecArray | null;
   while ((m = re.exec(t))) {
     if (m.index > akhir) hasil.push({ j: "teks", t: t.slice(akhir, m.index), g: 0 });
-    hasil.push({ j: "isian", no: m[1].padStart(4, "0"), g: 0 });
+    hasil.push({ j: "isian", no: m[1].padStart(4, "0"), r: m[1], g: 0 });
     akhir = m.index + m[0].length;
   }
   if (akhir < t.length) hasil.push({ j: "teks", t: t.slice(akhir), g: 0 });
@@ -404,7 +375,6 @@ export type MasukanSimpan = {
   catatan?: string;
 };
 
-export type HasilSimpan = { nomor: number; md5: string; ukuran: number; ringkas: string; diubah: number; dihapus: number; dipecah: number };
 
 export async function simpanSuntingan(db: AletaDatabase, aktor: Aktor, masukan: MasukanSimpan, o: Opsi = {}): Promise<HasilSimpan> {
   const b = await ambilBerkas(db, masukan.id);
@@ -508,23 +478,7 @@ export async function riwayatVersi(db: AletaDatabase, id: string): Promise<{ id:
   return { id: b.id, nama: teks(b.nama).replace(/\.rtf$/i, ""), versi: versi.reverse(), belumDisimpan: !baris.length };
 }
 
-export type BarisBeda =
-  | { k: "sama"; a: BagianTeks[] }
-  | { k: "ubah"; a: PotongBeda[]; b: PotongBeda[] }
-  | { k: "tambah"; b: PotongBeda[] }
-  | { k: "hapus"; a: PotongBeda[] }
-  | { k: "lipat"; n: number };
 
-export type HasilBeda = {
-  a: { nomor: number; md5: string; ukuran: number };
-  b: { nomor: number; md5: string; ukuran: number };
-  samaBita: boolean;
-  samaTeks: boolean;
-  kepalaKakiBeda: boolean;
-  ringkas: { tambah: number; hapus: number; ubah: number };
-  baris: BarisBeda[];
-  terpotong: boolean;
-};
 
 const BATAS_BARIS_BEDA = 600;
 
@@ -611,16 +565,6 @@ export async function bedaAntarVersi(db: AletaDatabase, id: string, nomorA: numb
 // Coba pada perkara rekaan
 // ---------------------------------------------------------------------------------------------------------------
 
-export type HasilCoba = {
-  perkara: string;
-  versi: number;
-  paragraf: Array<{ i: number; bagian: BagianTeks[]; rata: Rata; li: number; fi: number; tabel: boolean; awalan: string }>;
-  terisi: number;
-  takBerContoh: number;
-  /** Berkas RTF contoh (base64) untuk dibuka di aplikasi pengolah kata; null bila tidak dapat dibuat aman. */
-  rtfBase64: string | null;
-  sebabTanpaBerkas: string;
-};
 
 export async function cobaBlangko(db: AletaDatabase, id: string, nomor: number | undefined, sertakanBerkas: boolean): Promise<HasilCoba> {
   const b = await ambilBerkas(db, id);

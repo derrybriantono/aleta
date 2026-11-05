@@ -840,7 +840,8 @@ export const POLA_ISIAN = /#(\d{3,5})#/g;
 
 export type BagianTeks =
   | { j: "teks"; t: string; g: number }
-  | { j: "isian"; no: string; g: number }
+  /** `no` dibakukan empat angka; `r` = angka seperti tertulis di berkas (agar tidak berubah bila paragraf disunting). */
+  | { j: "isian"; no: string; r: string; g: number }
   | { j: "kotak"; label: string; jenis: JenisKotak };
 
 /** Potong teks paragraf menjadi bagian: teks bergaya, isian (#NNNN#), dan kotak terkunci. */
@@ -867,7 +868,7 @@ export function bagianParagraf(p: Paragraf): BagianTeks[] {
     isian.lastIndex = i;
     const m = isian.exec(t);
     if (m && m.index === i) {
-      hasil.push({ j: "isian", no: m[1].padStart(4, "0"), g: gaya(i) });
+      hasil.push({ j: "isian", no: m[1].padStart(4, "0"), r: m[1], g: gaya(i) });
       i += m[0].length;
       continue;
     }

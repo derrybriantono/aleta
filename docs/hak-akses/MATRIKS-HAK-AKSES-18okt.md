@@ -405,6 +405,7 @@ Dari salinan lokal ABT (hanya dibaca, paket yang siap; yang berjalan di server d
 | Sinkron dan cadangan | U | L | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Pemantau Cermin Perkara | U | L | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | ALETA ABT di HP (siapa boleh membuka) | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Penyunting blangko ALETA ABT | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Sinkron kembaran (mode laptop saat server mati) | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Fitur Satker (stabil, uji coba, mati per fitur) | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Integrasi e-Court (akun, akses ekstensi, penarikan) | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
@@ -425,6 +426,7 @@ Catatan kewenangan:
 
 - **Hak akses per peran (halaman ini)**: Super Admin melihat juga kunci, rute, dan daftar perubahan; Admin hanya membaca tabelnya.
 - **ALETA ABT di HP (siapa boleh membuka)**: Mengubah saklar hanya Super Admin dan tercatat di audit. Pilihan per pengguna menang atas pilihan peran.
+- **Penyunting blangko ALETA ABT**: Hanya Super Admin, diputuskan di server (bukan saklar ALETA ABT di HP). Tiap membuka, menyimpan, mengembalikan, dan menerbitkan tercatat di audit.
 - **Sinkron kembaran (mode laptop saat server mati)**: Persetujuan pengiriman ke server hanya Super Admin.
 - **Integrasi e-Court (akun, akses ekstensi, penarikan)**: Mengubah kemampuan ekstensi per peran hanya Super Admin; Admin membaca matriksnya. Pegawai lain hanya melihat kartu Sesi e-Court saya.
 - **Pengaturan SIPP & ABT (menu pengelola)**: Pembagian rincian Super Admin dan Admin ada di butir Blangko: Pengaturan SIPP & ABT.
