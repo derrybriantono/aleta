@@ -177,7 +177,7 @@ export function pasangPenyunting(akar: HTMLElement, paragraf: ParagrafLayar[], o
     }
     const blok = document.createElement("div");
     blok.dataset.blok = "1";
-    blok.className = "min-h-[1.5em] min-w-0 flex-1 whitespace-pre-wrap break-words outline-none";
+    blok.className = "min-h-[1.5em] min-w-0 whitespace-pre-wrap break-words outline-none";
     blok.style.textAlign = p.rata === "tengah" ? "center" : p.rata === "kanan" ? "right" : p.rata === "rata" ? "justify" : "left";
     if (p.li > 0) blok.style.paddingLeft = `min(${px(p.li)}px, 12vw)`;
     if (p.fi > 0) blok.style.textIndent = `min(${px(p.fi)}px, 8vw)`;
@@ -193,7 +193,12 @@ export function pasangPenyunting(akar: HTMLElement, paragraf: ParagrafLayar[], o
       blok.setAttribute("aria-multiline", "true");
       blok.setAttribute("aria-label", `Paragraf ${p.i + 1}`);
     }
-    baris.appendChild(blok);
+    // Enter menaruh blok baru sesudah blok ini; satu kolom supaya tampil di bawahnya, bukan di sampingnya.
+    const kolom = document.createElement("div");
+    kolom.className = "min-w-0 flex-1 space-y-2";
+    kolom.dataset.kolom = "";
+    kolom.appendChild(blok);
+    baris.appendChild(kolom);
     g.appendChild(baris);
     if (p.terkunci) {
       const c = document.createElement("div");

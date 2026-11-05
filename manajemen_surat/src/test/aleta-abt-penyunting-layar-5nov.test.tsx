@@ -119,6 +119,10 @@ describe("dokumen yang bisa diketik", () => {
     sel.addRange(r);
     b.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
     expect(akar.querySelectorAll('[data-i="0"] [data-blok]')).toHaveLength(2);
+    // Paragraf hasil Enter ada dalam satu kolom di bawah paragraf asal, bukan di sampingnya (terlihat saat dicoba di peramban).
+    const dua = [...akar.querySelectorAll<HTMLElement>('[data-i="0"] [data-blok]')];
+    expect(dua[0].parentElement).toBe(dua[1].parentElement);
+    expect(dua[0].parentElement?.hasAttribute("data-kolom")).toBe(true);
     expect(p.ambil().suntingan).toEqual([{ i: 0, teks: "PUT USAN" }]);
     const t = blok(akar, 2);
     t.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
