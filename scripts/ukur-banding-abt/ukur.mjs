@@ -70,9 +70,12 @@ function bukaKolam() {
 }
 
 async function mesin([perkaraF, kodeF, dir]) {
-  const { buatMesin } = req(path.join(AKAR, "aleta_bot", "services", "abtMesinVariabel.js"));
+  // MESIN_BERKAS = salinan mesin dari rilis sebelumnya (pengukuran "sebelum"); bawaan = mesin di pohon kerja.
+  const { buatMesin } = req(process.env.MESIN_BERKAS || path.join(AKAR, "aleta_bot", "services", "abtMesinVariabel.js"));
   const { kolam, kueri } = bukaKolam();
   fs.mkdirSync(dir, { recursive: true });
+  // JALUR=aleta: mesin dijalankan dengan opsi jalurAleta; pustaka disusun dari KATALOG ABT yang sama (kesetaraan jalur pustaka = jalur katalog).
+  const jalurAleta = process.env.JALUR === "aleta" ? await jalurDariKatalog(kueri) : undefined;
   const kode = daftarKode(kodeF);
   // Dokumen uji yang SAMA persis dengan yang dirender ABT (abt_render.py): satu paragraf per penanda.
   const B = "\\";
@@ -82,7 +85,7 @@ async function mesin([perkaraF, kodeF, dir]) {
     const f = path.join(dir, `p${pid}.json`);
     if (fs.existsSync(f)) continue;
     const t0 = Date.now();
-    const m = buatMesin({ kueri, skemaAbt: ABT, umurKatalogMs: 3600 * 1000, batasKueriMs: 60000 });
+    const m = buatMesin({ kueri, skemaAbt: ABT, umurKatalogMs: 3600 * 1000, batasKueriMs: 60000, ...(jalurAleta ? { jalurAleta } : {}) });
     const h = await m.isiRtf(dok, { perkaraId: pid });
     const rtfF = path.join(dir, `p${pid}.rtf`);
     fs.writeFileSync(rtfF, h.rtf, "latin1");
@@ -98,6 +101,18 @@ async function mesin([perkaraF, kodeF, dir]) {
     console.log("mesin", pid, "detik", Math.round((Date.now() - t0) / 1000), "kosong", h.kosong.length);
   }
   kolam.end();
+}
+
+async function jalurDariKatalog(kueri) {
+  const baris = await kueri(`SELECT no_var, nama, data_type, data_tabel, data_kolom, urutan_data, referensi, sql_query, default_data, multi_sidang FROM ${ABT}.abt_variabel`);
+  const pustaka = {};
+  const alias = {};
+  for (const b of baris) {
+    const no = String(b.no_var).trim();
+    pustaka[no] = { ...b, no_var: no, kode: `AA${no.padStart(5, "0")}` };
+    alias[`AA${no.padStart(5, "0")}`] = no;
+  }
+  return { pustaka, alias };
 }
 
 async function abt([perkaraF, kodeF, dir, paralel = "2"]) {
@@ -144,7 +159,10 @@ function banding([perkaraF, kodeF, dirM, dirA, keluar]) {
       } else {
         j.beda += 1;
         isian[k].beda += 1;
-        ringkas.selisih.push({ perkara: pid, tag, jenis, isian: k, status: mm.kosong[k] ? "kosong" : "terisi", mesin: x.slice(0, 300), abt: y.slice(0, 300) });
+        let i = 0;
+        while (i < x.length && i < y.length && x[i] === y[i]) i += 1;
+        const potong = (t) => t.slice(Math.max(0, i - 50), i + 70);
+        ringkas.selisih.push({ perkara: pid, tag, jenis, isian: k, status: mm.kosong[k] ? "kosong" : "terisi", sebabMesin: mm.kosong[k] || "", pertamaBeda: i, panjangMesin: x.length, panjangAbt: y.length, mesin: potong(x), abt: potong(y) });
       }
     }
   }
