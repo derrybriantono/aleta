@@ -669,11 +669,29 @@ const TABEL_ABT_KOSONG = {
 };
 
 /** Menulis ulang rujukan tabel ABT menjadi tabel turunan kosong (satu SELECT tetap). Melempar bila tabel ABT lain disebut. */
+/** Apakah posisi `pos` berada di dalam literal bertanda kutip ('...' atau "...") pada kueri; escape garis miring dan kutip ganda diperhatikan. */
+function dalamKutip(teks, pos) {
+  let kutip = "";
+  for (let i = 0; i < pos; i += 1) {
+    const c = teks[i];
+    if (kutip) {
+      if (c === "\\") i += 1;
+      else if (c === kutip) {
+        if (teks[i + 1] === kutip) i += 1;
+        else kutip = "";
+      }
+    } else if (c === "'" || c === '"') kutip = c;
+  }
+  return kutip !== "";
+}
+
 function tanpaTabelAbt(sql, skema) {
   const POLA = /(?<![A-Za-z0-9_`])(?:`?([A-Za-z0-9_]+)`?\s*\.\s*)?`?(abt_[a-z_]+)`?(?![A-Za-z0-9_])/gi;
   const skemaKecil = new Set([String(skema || "").toLowerCase(), "aps_badilag"]);
   return String(sql).replace(POLA, (utuh, sk, tabel, posisi, seluruh) => {
     if (sk && !skemaKecil.has(String(sk).toLowerCase())) return utuh;
+    // Nama tabel yang hanya TEKS di dalam kutip (mis. 'abt_keterangan_saksi' sebagai nilai kolom) bukan rujukan tabel.
+    if (dalamKutip(seluruh, posisi)) return utuh;
     const kolom = TABEL_ABT_KOSONG[String(tabel).toLowerCase()];
     if (!kolom) {
       const g = new Error(`tabel ABT "${tabel}" tidak tersedia tanpa ABT`);

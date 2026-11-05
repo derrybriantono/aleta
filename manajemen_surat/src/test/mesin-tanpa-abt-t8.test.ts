@@ -113,6 +113,16 @@ describe("tanpaTabelAbt (penulis ulang)", () => {
     const aman = ["SELECT x FROM lain.abt_data_teks", "SELECT jenis_abt_x FROM sys_config", "SELECT 1 FROM perkara"];
     for (const q of aman) expect(tanpaTabelAbt(q, "aps_badilag")).toBe(q);
   });
+  it("nama tabel yang hanya teks di dalam kutip tidak ditulis ulang (nilai kolom 'abt_keterangan_saksi' pada pencarian pihak), yang di luar kutip tetap", () => {
+    const sql = "select (case when d.id is not null then 'abt_keterangan_saksi' end) tabel from aps_badilag.abt_keterangan_saksi k where a = \"abt_data_teks\" and b = 'it\\'s abt_menu'";
+    const hasil = tanpaTabelAbt(sql, "aps_badilag");
+    expect(hasil).toContain("then 'abt_keterangan_saksi' end");
+    expect(hasil).toContain('a = "abt_data_teks"');
+    expect(hasil).toContain("'it\\'s abt_menu'");
+    expect(hasil).toContain("WHERE 1 = 0) k where");
+    expect(hasil).not.toMatch(/aps_badilag\.abt_keterangan_saksi/);
+    expect(() => tanpaTabelAbt("select 'abt_menu' as x from dual", "aps_badilag")).not.toThrow();
+  });
   it("tabel ABT yang tidak dikenal melempar galat bertanda tanpaAbt", () => {
     expect(() => tanpaTabelAbt("SELECT * FROM aps_badilag.abt_menu", "aps_badilag")).toThrow(/tidak tersedia tanpa ABT/);
   });

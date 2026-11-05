@@ -77,9 +77,13 @@ function ganti_sys_config(sql: string): string {
 const mysql = req("mysql");
 const kolam = mysql.createPool({ host: "127.0.0.1", user: "root", database: SIPP, connectionLimit: 3, multipleStatements: false });
 const rujukanAbt: Record<string, number> = {};
+const contohRujukan: string[] = [];
 const fungsiDipakai = new Set<string>();
 const kueri = (sql: string, params: unknown[] = [], opsi?: { timeoutMs?: number }) => {
-  for (const m of String(sql).matchAll(/aps_badilag[A-Za-z0-9_]*\.(abt_[a-z_]+)/gi)) rujukanAbt[m[1]] = (rujukanAbt[m[1]] || 0) + 1;
+  for (const m of String(sql).matchAll(/aps_badilag[A-Za-z0-9_]*\.(abt_[a-z_]+)/gi)) {
+    rujukanAbt[m[1]] = (rujukanAbt[m[1]] || 0) + 1;
+    if (contohRujukan.length < 3) contohRujukan.push(String(sql).slice(Math.max(0, (m.index ?? 0) - 120), (m.index ?? 0) + 80).replace(/\s+/g, " "));
+  }
   for (const m of String(sql).matchAll(/aps_badilag[A-Za-z0-9_]*\.([A-Za-z_][A-Za-z0-9_]*)\s*\(/gi)) fungsiDipakai.add(m[1].toLowerCase());
   // Fungsi basis data paket (aps_badilag.isian_*(...)) dipanggil dari skema salinan uji; yang dibaca di sana hanya definisi fungsinya.
   const teks = ganti_sys_config(String(sql)).replace(/\baps_badilag\.([A-Za-z_][A-Za-z0-9_]*)\s*\(/g, `${FUNGSI_DB}.$1(`);
@@ -124,8 +128,11 @@ laporan.push(`Blangko RTF yang disusun: ${Math.min(berkas.length, maks)} dari ${
 const { buatMesin } = req(path.join(AKAR, "aleta_bot", "services", "abtMesinVariabel.js")) as {
   buatMesin: (p: Record<string, unknown>) => { isiRtf: (rtf: string, o: Record<string, unknown>) => Promise<{ rtf: string; kosong: Array<{ noVar: string; sebab: string }>; mesinGalat: string }> };
 };
-/** Kata khas satker pembuat paket yang tidak boleh muncul pada naskah satker rekaan. */
-const BOCOR = ["vatu bala", "pa-donggala", "082271115021", "pa.donggala", "w20-a11", "pengadilan agama donggala", "pengadilan tinggi agama palu"];
+/**
+ * Kata khas satker pembuat paket yang tidak boleh muncul pada naskah satker rekaan. "Pengadilan Agama Donggala" TIDAK dihitung di sini: di salinan uji kata itu
+ * muncul dari ISI perkara (mis. petitum "Apabila Pengadilan Agama Donggala cq. Majelis Hakim berpendapat lain"), bukan dari identitas satker.
+ */
+const BOCOR = ["vatu bala", "pa-donggala", "082271115021", "pa.donggala", "w20-a11", "pengadilan tinggi agama palu"];
 
 type Hitung = { naskah: number; penandaTersisa: number; naskahBocor: number; naskahGalat: number; kosong: number; tanpaKosong: number };
 const total: Hitung = { naskah: 0, penandaTersisa: 0, naskahBocor: 0, naskahGalat: 0, kosong: 0, tanpaKosong: 0 };
@@ -133,6 +140,7 @@ const perFolder = new Map<string, Hitung>();
 const contohTersisa: string[] = [];
 const contohBocor = new Map<string, number>();
 const bocorDi: string[] = [];
+const konteksBocor = new Set<string>();
 const sebabKosong = new Map<string, number>();
 const identitasTerbaca = new Set<string>();
 
@@ -141,6 +149,7 @@ for (const pid of perkara) {
   let n = 0;
   for (const b of berkas) {
     if (n >= maks) break;
+    if (process.env.FOLDER_UJI && !b.folder.startsWith(process.env.FOLDER_UJI)) continue;
     n += 1;
     const templat = bitaIsi(b.isi, b.pengkodean).toString("latin1");
     const h = await mesin.isiRtf(templat, { perkaraId: pid });
@@ -161,6 +170,11 @@ for (const pid of perkara) {
     for (const x of bocoranIdentitas(h.rtf, BOCOR)) {
       contohBocor.set(x, (contohBocor.get(x) || 0) + 1);
       if (bocorDi.length < 30) bocorDi.push(`${b.folder}/${b.nama} (perkara ${pid}): ${x}`);
+      if (process.env.KONTEKS_BOCOR && konteksBocor.size < 12) {
+        const teks = h.rtf.replace(/\\[a-z0-9-]+ ?|[{}]/gi, "");
+        const i = teks.toLowerCase().indexOf(x.toLowerCase());
+        if (i >= 0) konteksBocor.add(teks.slice(Math.max(0, i - 70), i + x.length + 40).replace(/\s+/g, " "));
+      }
     }
     for (const k of h.kosong) sebabKosong.set(String(k.sebab).slice(0, 80), (sebabKosong.get(String(k.sebab).slice(0, 80)) || 0) + 1);
     if (/PENGADILAN AGAMA CONTOH/i.test(h.rtf)) identitasTerbaca.add("nama pengadilan");
@@ -176,9 +190,11 @@ laporan.push(`Identitas satker rekaan terbaca dari sys_config di naskah: ${[...i
 const fungsiPaket = (JSON.parse(readFileSync(path.join(dirPaket, "manifest.json"), "utf8")) as { fungsi?: unknown[] }).fungsi?.length ?? 0;
 laporan.push(`Fungsi basis data yang dipanggil rumus isian pada uji ini: ${fungsiDipakai.size} dari ${fungsiPaket} fungsi di paket.`);
 laporan.push(`Rujukan ke tabel ABT pada kueri yang dikirim mesin (seharusnya semuanya sudah ditulis ulang di dalam mesin): ${JSON.stringify(rujukanAbt)}.`);
+if (contohRujukan.length) laporan.push("Contoh kueri yang masih menyebut tabel ABT:", ...contohRujukan.map((x) => `  ${x}`));
 if (contohTersisa.length) laporan.push("Contoh penanda tertinggal:", ...contohTersisa.map((x) => `  ${x}`));
 if (contohBocor.size) laporan.push("Kata khas satker pembuat paket yang muncul:", ...[...contohBocor.entries()].map(([k, v]) => `  ${k}: ${v} naskah`));
 if (bocorDi.length) laporan.push("Naskah yang memuat kata itu (nama blangko dan nomor perkara internal; kata itu dapat datang dari data perkara, bukan identitas):", ...bocorDi.map((x) => `  ${x}`));
+if (konteksBocor.size) laporan.push("Konteks kata itu (hanya untuk penyelidikan):", ...[...konteksBocor].map((x) => `  ${x}`));
 laporan.push("Sebab isian kosong terbanyak:", ...[...sebabKosong.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8).map(([k, v]) => `  ${v} x ${k}`));
 laporan.push("Per folder (naskah / tertinggal / bocor / galat):");
 for (const [folder, h] of [...perFolder.entries()].sort()) if (h.penandaTersisa || h.naskahBocor || h.naskahGalat) laporan.push(`  ${folder}: ${h.naskah} / ${h.penandaTersisa} / ${h.naskahBocor} / ${h.naskahGalat}`);
