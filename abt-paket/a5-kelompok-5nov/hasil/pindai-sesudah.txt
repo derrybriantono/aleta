@@ -1,6 +1,6 @@
 Pindai ulang lepas dari pembangun (rtfmini atas salinan terpasang).
 berkas 540 tanpa tambalan	1
-merah >=2 sesudah	11
+merah >=2 sesudah	5
 GAGAL	0
 Paragraf berisi baris hitamkan a5 dan baris tetap merah: 0
 Merah satu huruf sisa (tidak masuk daftar A5): {'_': 1, '2': 2}

@@ -1,4 +1,4 @@
-SIDIK AWAL 0d6a3029b748a06eacb7e59de54c0e58
+SIDIK AWAL 8e4364d6ca0a8f11b6a3dac7108255ae
 == 1. pasang pertama
     PRASYARAT COCOK (10)
     SIAP=75

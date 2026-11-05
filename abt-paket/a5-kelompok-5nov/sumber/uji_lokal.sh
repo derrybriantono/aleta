@@ -36,10 +36,12 @@ if [ -n "${SEBELUM_A5:-}" ] && [ -d "$SEBELUM_A5/derry_briantono" ]; then
 else
   echo "    (dilewati: SEBELUM_A5 tidak diberikan)"
 fi
-echo "== 7. nomor 12155 dipakai variabel lain -> BERHENTI tanpa ubahan"; salin "$ASAL"; S7=$(sidik "$U")
-$M -e "INSERT INTO abt_variabel (no_var, nama, data_type, sql_query, locked, modifier) VALUES (12155, 'BENTROK UJI', 'data_teks', NULL, 0, 'uji')" >/dev/null
+for NB in 12155 12182; do
+echo "== 7. nomor $NB dipakai variabel lain -> BERHENTI tanpa ubahan"; salin "$ASAL"; S7=$(sidik "$U")
+$M -e "INSERT INTO abt_variabel (no_var, nama, data_type, sql_query, locked, modifier) VALUES ($NB, 'BENTROK UJI', 'data_teks', NULL, 0, 'uji')" >/dev/null
 jalan pasang-satker.sh; [ "$(sidik "$U")" = "$S7" ] && echo "    BERKAS TIDAK BERUBAH"
-$M -e "DELETE FROM abt_variabel WHERE no_var = 12155" >/dev/null; [ "$(snap)" = "$V0" ] && echo "    VARIABEL = AWAL"
+$M -e "DELETE FROM abt_variabel WHERE no_var = $NB" >/dev/null; [ "$(snap)" = "$V0" ] && echo "    VARIABEL = AWAL"
+done
 echo "== 8. disunting sesudah pasang lalu pulih -> dibiarkan"; salin "$ASAL"; jalan pasang-satker.sh >/dev/null
 printf ' ' >> "$U/derry_briantono/6 Perwalian/Perwalian Anak oleh ortu kandung Kabul.rtf"; jalan pulih-satker.sh | tail -5
 rm -rf "$U" "$P/cadangan"; [ "$(snap)" = "$V0" ] && echo "AKHIR: VARIABEL = AWAL"

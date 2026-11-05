@@ -102,7 +102,8 @@ def pulih(cad):
     for rw in d['var_beda_baris']:
         # HEX() kolom angka adalah heks bilangan, bukan heks teks
         nilai = ','.join('NULL' if v == 'NULL' else (str(int(v, 16)) if k in ANGKA else ('CONVERT(0x%s USING latin1)' % v if v else "''")) for k, v in zip(kol, rw))
-        q(UJI, 'REPLACE INTO abt_variabel (%s) VALUES (%s)' % (','.join(kol), nilai))
+        # JANGAN REPLACE INTO: REPLACE menghapus baris lama lalu menyisipkan, dan abt_data_teks/abt_data_tanggal punya FK ON DELETE CASCADE (data isian ikut hilang).
+        q(UJI, 'INSERT INTO abt_variabel (%s) VALUES (%s) ON DUPLICATE KEY UPDATE %s' % (','.join(kol), nilai, ','.join('%s=VALUES(%s)' % (c, c) for c in kol[1:])))
     for n in d['fungsi_baru']:
         q(UJI, 'DROP FUNCTION IF EXISTS `%s`; DROP PROCEDURE IF EXISTS `%s`;' % (n, n))
     for n, (jenis, c) in d['fungsi_lama'].items():

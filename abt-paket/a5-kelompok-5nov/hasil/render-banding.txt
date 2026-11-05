@@ -18,10 +18,10 @@ K0015	10276	0/0	85/85/85	10/10/10	14/0/0	2 Itsbat Nikah/[99] [NO] IN - Masih Ter
 K0016	10276	0/0	16/15/15	0/0/0	2/0/0	2 Itsbat Nikah/[99aa] Pertimbangan - Cerai Hidup P1 P2 Pasangan Sebelumnya.rtf
 K0017	10276	0/0	16/15/15	0/0/0	2/0/0	2 Itsbat Nikah/[99aa] Pertimbangan - Cerai Mati P1 P2 Pasangan Sebelumnya.rtf
 K0018	10261	0/0	209/209/209	12/12/12	1/0/0	3 Dispensasi Kawin/[03] [Tolak] DK - (Anak P Cewek) Belum Hamil.rtf
-K0019	10025	0/0	281/281/281	17/17/17	16/5/5	4a Harta Bersama/[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf
-K0019	9789	0/0	428/427/427	17/17/17	16/5/5	4a Harta Bersama/[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf
-K0020	10025	0/0	282/282/282	16/16/16	16/5/5	4a Harta Bersama/[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf
-K0020	9789	0/0	429/428/428	16/16/16	16/5/5	4a Harta Bersama/[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf
+K0019	10025	0/0	281/281/284	17/17/17	16/2/2	4a Harta Bersama/[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf
+K0019	9789	0/0	428/427/430	17/17/17	16/2/2	4a Harta Bersama/[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf
+K0020	10025	0/0	282/282/285	16/16/16	16/2/2	4a Harta Bersama/[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf
+K0020	9789	0/0	429/428/431	16/16/16	16/2/2	4a Harta Bersama/[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf
 K0021	10096	0/0	166/166/166	15/15/15	3/0/0	6 Perwalian/Perwalian Anak oleh ortu kandung Kabul.rtf
 K0022	10096	0/0	209/209/209	16/16/16	7/0/0	6 Perwalian/Perwalian Anak oleh ortu kandung Tolak Primer Kabul Subsider.rtf
 GAGAL	0
@@ -206,8 +206,14 @@ K0018 3 Dispensasi Kawin/[03] [Tolak] DK - (Anak P Cewek) Belum Hamil.rtf perkar
 K0019 4a Harta Bersama/[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf perkara 10025
  a5 => pakai:
    dalam  =>  
+   ISI KETERANGAN SAKSI TERGUGAT YANG RELEVAN. KETERANGAN MERAH INI DIHAPUS SESUDAH DIISI  =>  REKAAN-saksi paragraf satu REKAAN-saksi paragraf dua
+   ISI PERTIMBANGAN PER OBJEK SENGKETA (waktu perolehan, harta bawaan/hadiah/warisan, penguasaan objek, hasil sit  =>  REKAAN-objek paragraf satu REKAAN-objek paragraf dua REKAAN-objek paragraf tiga
+   ISI PERTIMBANGAN PEMBUKTIAN PER OBJEK REKONVENSI (bukti surat, saksi, persesuaian). KETERANGAN MERAH INI DIHAP  =>  REKAAN-bukti satu paragraf
  pakai => tidak (yang hilang saat tidak dipakai, ringkas):
    .... Selanjutnya telah dilakukan peletakan sita jaminan terh ... ang ditentukan dalam amar putusan a quo;  =>  ...;
+   REKAAN-saksi paragraf satu REKAAN-saksi paragraf dua ...  paragraf satu REKAAN-saksi paragraf dua  =>  ...
+   REKAAN-objek paragraf satu REKAAN-objek paragraf dua REKAAN- ...  paragraf dua REKAAN-objek paragraf tiga  =>  ...
+   REKAAN-bukti satu paragraf ... REKAAN-bukti satu paragraf  =>  ...
 K0019 4a Harta Bersama/[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf perkara 9789
  a5 => pakai:
    dalam Tergugat dalam persidangan mengajukan surat kuasa kepada Advokat yang bernama ... telah melampirkan foto  =>  
@@ -219,13 +225,25 @@ K0019 4a Harta Bersama/[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonv
    maupun kuasa hukum Tergugat  =>  
    maupun kuasa hukum Tergugat  =>  
    maupun Tergugat  =>  
+   ISI KETERANGAN SAKSI TERGUGAT YANG RELEVAN. KETERANGAN MERAH INI DIHAPUS SESUDAH DIISI  =>  REKAAN-saksi paragraf satu REKAAN-saksi paragraf dua
+   ISI PERTIMBANGAN PER OBJEK SENGKETA (waktu perolehan, harta bawaan/hadiah/warisan, penguasaan objek, hasil sit  =>  REKAAN-objek paragraf satu REKAAN-objek paragraf dua REKAAN-objek paragraf tiga
+   ISI PERTIMBANGAN PEMBUKTIAN PER OBJEK REKONVENSI (bukti surat, saksi, persesuaian). KETERANGAN MERAH INI DIHAP  =>  REKAAN-bukti satu paragraf
  pakai => tidak (yang hilang saat tidak dipakai, ringkas):
    .... Selanjutnya telah dilakukan peletakan sita jaminan terh ... ang ditentukan dalam amar putusan a quo;  =>  ...;
+   REKAAN-saksi paragraf satu REKAAN-saksi paragraf dua ...  paragraf satu REKAAN-saksi paragraf dua  =>  ...
+   REKAAN-objek paragraf satu REKAAN-objek paragraf dua REKAAN- ...  paragraf dua REKAAN-objek paragraf tiga  =>  ...
+   REKAAN-bukti satu paragraf ... REKAAN-bukti satu paragraf  =>  ...
 K0020 4a Harta Bersama/[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf perkara 10025
  a5 => pakai:
    dalam  =>  
+   ISI KETERANGAN SAKSI TERGUGAT YANG RELEVAN. KETERANGAN MERAH INI DIHAPUS SESUDAH DIISI  =>  REKAAN-saksi paragraf satu REKAAN-saksi paragraf dua
+   ISI PERTIMBANGAN PER OBJEK SENGKETA (waktu perolehan, harta bawaan/hadiah/warisan, penguasaan objek, hasil sit  =>  REKAAN-objek paragraf satu REKAAN-objek paragraf dua REKAAN-objek paragraf tiga
+   ISI PERTIMBANGAN PEMBUKTIAN PER OBJEK REKONVENSI (bukti surat, saksi, persesuaian). KETERANGAN MERAH INI DIHAP  =>  REKAAN-bukti satu paragraf
  pakai => tidak (yang hilang saat tidak dipakai, ringkas):
    .... Selanjutnya telah dilakukan peletakan sita jaminan terh ... ang ditentukan dalam amar putusan a quo;  =>  ...;
+   REKAAN-saksi paragraf satu REKAAN-saksi paragraf dua ...  paragraf satu REKAAN-saksi paragraf dua  =>  ...
+   REKAAN-objek paragraf satu REKAAN-objek paragraf dua REKAAN- ...  paragraf dua REKAAN-objek paragraf tiga  =>  ...
+   REKAAN-bukti satu paragraf ... REKAAN-bukti satu paragraf  =>  ...
 K0020 4a Harta Bersama/[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf perkara 9789
  a5 => pakai:
    dalam Tergugat dalam persidangan mengajukan surat kuasa kepada Advokat yang bernama ... telah melampirkan foto  =>  
@@ -237,8 +255,14 @@ K0020 4a Harta Bersama/[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekon
    maupun kuasa hukum Tergugat  =>  
    maupun kuasa hukum Tergugat  =>  
    maupun Tergugat  =>  
+   ISI KETERANGAN SAKSI TERGUGAT YANG RELEVAN. KETERANGAN MERAH INI DIHAPUS SESUDAH DIISI  =>  REKAAN-saksi paragraf satu REKAAN-saksi paragraf dua
+   ISI PERTIMBANGAN PER OBJEK SENGKETA (waktu perolehan, harta bawaan/hadiah/warisan, penguasaan objek, hasil sit  =>  REKAAN-objek paragraf satu REKAAN-objek paragraf dua REKAAN-objek paragraf tiga
+   ISI PERTIMBANGAN PEMBUKTIAN PER OBJEK REKONVENSI (bukti surat, saksi, persesuaian). KETERANGAN MERAH INI DIHAP  =>  REKAAN-bukti satu paragraf
  pakai => tidak (yang hilang saat tidak dipakai, ringkas):
    .... Selanjutnya telah dilakukan peletakan sita jaminan terh ... ang ditentukan dalam amar putusan a quo;  =>  ...;
+   REKAAN-saksi paragraf satu REKAAN-saksi paragraf dua ...  paragraf satu REKAAN-saksi paragraf dua  =>  ...
+   REKAAN-objek paragraf satu REKAAN-objek paragraf dua REKAAN- ...  paragraf dua REKAAN-objek paragraf tiga  =>  ...
+   REKAAN-bukti satu paragraf ... REKAAN-bukti satu paragraf  =>  ...
 K0021 6 Perwalian/Perwalian Anak oleh ortu kandung Kabul.rtf perkara 10096
  a5 => pakai:
    P.1 sampai dengan P.6  =>  REKAAN-kode-bukti

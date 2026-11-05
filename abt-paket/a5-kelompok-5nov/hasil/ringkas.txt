@@ -1,11 +1,11 @@
 berkas tanpa ubahan	1
 buang	2
-isian	27
+isian	33
 isian otomatis	18
 kalimat anak kedua bersyarat	1
 kalimat pilihan	397
 tetap	85
-tetap merah	11
+tetap merah	5
 berkas paket	22
-potongan	1022
-variabel baru	30
+potongan	1040
+variabel baru	33

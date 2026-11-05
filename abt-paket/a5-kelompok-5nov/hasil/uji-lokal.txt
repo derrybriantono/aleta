@@ -6,16 +6,16 @@ SIDIK AWAL aa8b563a7d745f6dab8e5b8b8caa7765 ; VARIABEL AWAL 3020 c297777320b72a0
     PERIKSA: SEMUA COCOK
     TAMBAL=22
     BERKAS COCOK
-    SELESAI - paket abt-a5-kelompok-5nov terpasang. Cadangan: /d/aleta-dev/wt/w221/abt-paket/a5-kelompok-5nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w221/abt-paket/a5-kelompok-5nov/paket-satker/pulih-satker.sh
+    SELESAI - paket abt-a5-kelompok-5nov terpasang. Cadangan: /d/aleta-dev/wt/w218/abt-paket/a5-kelompok-5nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w218/abt-paket/a5-kelompok-5nov/paket-satker/pulih-satker.sh
     periksa: BERKAS COCOK
 == 2. pasang ulang (idempoten)
-    PRASYARAT COCOK (0|30|6)
+    PRASYARAT COCOK (0|33|6)
     SUDAH=22
     BERKAS SIAP
     PERIKSA: SEMUA COCOK
     SUDAH=22
     BERKAS COCOK
-    SELESAI - paket abt-a5-kelompok-5nov terpasang. Cadangan: /d/aleta-dev/wt/w221/abt-paket/a5-kelompok-5nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w221/abt-paket/a5-kelompok-5nov/paket-satker/pulih-satker.sh
+    SELESAI - paket abt-a5-kelompok-5nov terpasang. Cadangan: /d/aleta-dev/wt/w218/abt-paket/a5-kelompok-5nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w218/abt-paket/a5-kelompok-5nov/paket-satker/pulih-satker.sh
     SIDIK & VARIABEL TETAP
 == 3. pulih
     PULIH=22
@@ -30,7 +30,7 @@ SIDIK AWAL aa8b563a7d745f6dab8e5b8b8caa7765 ; VARIABEL AWAL 3020 c297777320b72a0
     PERIKSA: SEMUA COCOK
     TAMBAL=22
     BERKAS COCOK
-    SELESAI - paket abt-a5-kelompok-5nov terpasang. Cadangan: /d/aleta-dev/wt/w221/abt-paket/a5-kelompok-5nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w221/abt-paket/a5-kelompok-5nov/paket-satker/pulih-satker.sh
+    SELESAI - paket abt-a5-kelompok-5nov terpasang. Cadangan: /d/aleta-dev/wt/w218/abt-paket/a5-kelompok-5nov/paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w218/abt-paket/a5-kelompok-5nov/paket-satker/pulih-satker.sh
     SAMA DENGAN PASANG PERTAMA
     PULIH COCOK (0|0|6)
 == 5. satu berkas disunting -> BERHENTI tanpa ubahan
@@ -45,7 +45,11 @@ SIDIK AWAL aa8b563a7d745f6dab8e5b8b8caa7765 ; VARIABEL AWAL 3020 c297777320b72a0
     GAGAL: berkas tujuan tidak sama dengan keadaan server sesudah a5-merah-5nov - TIDAK ada yang diubah
     TIDAK ADA YANG BERUBAH
 == 7. nomor 12155 dipakai variabel lain -> BERHENTI tanpa ubahan
-    GAGAL: prasyarat '1|0|6' (harus '0|0|6' pasang pertama atau '0|30|6' pasang ulang) - TIDAK ada yang diubah. Arti angka: lihat abt-a5-kelompok-5nov-PRASYARAT.sql
+    GAGAL: prasyarat '1|0|6' (harus '0|0|6' pasang pertama atau '0|33|6' pasang ulang) - TIDAK ada yang diubah. Arti angka: lihat abt-a5-kelompok-5nov-PRASYARAT.sql
+    BERKAS TIDAK BERUBAH
+    VARIABEL = AWAL
+== 7. nomor 12182 dipakai variabel lain -> BERHENTI tanpa ubahan
+    GAGAL: prasyarat '1|0|6' (harus '0|0|6' pasang pertama atau '0|33|6' pasang ulang) - TIDAK ada yang diubah. Arti angka: lihat abt-a5-kelompok-5nov-PRASYARAT.sql
     BERKAS TIDAK BERUBAH
     VARIABEL = AWAL
 == 8. disunting sesudah pasang lalu pulih -> dibiarkan

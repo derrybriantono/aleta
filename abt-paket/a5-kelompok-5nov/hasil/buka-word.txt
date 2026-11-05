@@ -1,0 +1,49 @@
+Word 16 membuka (baca saja) 94 berkas: 22 berkas paket sesudah dipasang + 72 hasil render ABT (a5, tidak, pakai). 94 BUKA, 0 GALAT.
+Isian panjang Harta Bersama (keadaan pakai, nilai rekaan, 2 perkara x 2 berkas): paragraf isian berwarna otomatis (bukan merah), rata kiri-kanan (justify), satu paragraf Word per baris ketikan:
+  paragraf 161 warna=-16777216 rata=3  REKAAN-saksi paragraf satu
+  paragraf 162 warna=-16777216 rata=3  REKAAN-saksi paragraf dua
+  paragraf 165 warna=-16777216 rata=3  REKAAN-objek paragraf satu
+  paragraf 166 warna=-16777216 rata=3  REKAAN-objek paragraf dua
+  paragraf 167 warna=-16777216 rata=3  REKAAN-objek paragraf tiga
+  paragraf 219 warna=-16777216 rata=3  REKAAN-bukti satu paragraf
+  paragraf 308 warna=-16777216 rata=3  REKAAN-saksi paragraf satu
+  paragraf 309 warna=-16777216 rata=3  REKAAN-saksi paragraf dua
+  paragraf 312 warna=-16777216 rata=3  REKAAN-objek paragraf satu
+  paragraf 313 warna=-16777216 rata=3  REKAAN-objek paragraf dua
+  paragraf 314 warna=-16777216 rata=3  REKAAN-objek paragraf tiga
+  paragraf 366 warna=-16777216 rata=3  REKAAN-bukti satu paragraf
+  paragraf 161 warna=-16777216 rata=3  REKAAN-saksi paragraf satu
+  paragraf 162 warna=-16777216 rata=3  REKAAN-saksi paragraf dua
+  paragraf 165 warna=-16777216 rata=3  REKAAN-objek paragraf satu
+  paragraf 166 warna=-16777216 rata=3  REKAAN-objek paragraf dua
+  paragraf 167 warna=-16777216 rata=3  REKAAN-objek paragraf tiga
+  paragraf 219 warna=-16777216 rata=3  REKAAN-bukti satu paragraf
+  paragraf 308 warna=-16777216 rata=3  REKAAN-saksi paragraf satu
+  paragraf 309 warna=-16777216 rata=3  REKAAN-saksi paragraf dua
+  paragraf 312 warna=-16777216 rata=3  REKAAN-objek paragraf satu
+  paragraf 313 warna=-16777216 rata=3  REKAAN-objek paragraf dua
+  paragraf 314 warna=-16777216 rata=3  REKAAN-objek paragraf tiga
+  paragraf 366 warna=-16777216 rata=3  REKAAN-bukti satu paragraf
+Halaman Word, 22 berkas sesudah paket:
+  29	1 Perceraian CG/[02] [Kabul] CG - F.rtf
+  19	1 Perceraian CG/[02a] [Kabul] CG - T Tidak Hadir Setelah Mediasi - F.rtf
+  30	1 Perceraian CG/[02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf
+  29	1 Perceraian CG/[02c] [Kabul] CG - F - Pencabutan Ditolak T Sesudah Jawaban.rtf
+  29	1 Perceraian CG/[02c] [Kabul] CG - Kumulasi Nafkah Istri (Madliyah, Iddah, Mutah) - Kontradiktoir.rtf
+  28	1a Perceraian CT/[02] [Kabul] CT - F.rtf
+  19	1a Perceraian CT/[02a] [Kabul] CT - T Tidak Hadir Setelah Mediasi - F.rtf
+  30	1a Perceraian CT/[02b] [Kabul] CT - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf
+  29	1a Perceraian CT/[02c] [Kabul] CT - F - Pencabutan Ditolak T Sesudah Jawaban.rtf
+  30	1c Perceraian Kumulasi Itsbat Nikah/[02] [Kabul] Putusan CG Kumulasi Itsbat Nikah - Kontradiktoir.rtf
+  30	1c Perceraian Kumulasi Itsbat Nikah/[02] [Kabul] Putusan CT Kumulasi Itsbat Nikah - Kontradiktoir.rtf
+  30	1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak/[02] [Kabul] Putusan CG Kumulasi Hak Asuh Anak - Kontradiktoir.rtf
+  31	1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak/[02b] [Kabul] Putusan CG Kumulasi Hak Asuh dan Nafkah Anak - Kontradiktoir.rtf
+  8	2 Itsbat Nikah/[03] [Tolak] IN - Rukun Tidak Terpenuhi (Wali Tidak Sah).rtf
+  5	2 Itsbat Nikah/[99] [NO] IN - Masih Terikat Nikah Sebelumnya (Belum Cerai).rtf
+  2	2 Itsbat Nikah/[99aa] Pertimbangan - Cerai Hidup P1 P2 Pasangan Sebelumnya.rtf
+  2	2 Itsbat Nikah/[99aa] Pertimbangan - Cerai Mati P1 P2 Pasangan Sebelumnya.rtf
+  19	3 Dispensasi Kawin/[03] [Tolak] DK - (Anak P Cewek) Belum Hamil.rtf
+  22	4a Harta Bersama/[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf
+  22	4a Harta Bersama/[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf
+  14	6 Perwalian/Perwalian Anak oleh ortu kandung Kabul.rtf
+  19	6 Perwalian/Perwalian Anak oleh ortu kandung Tolak Primer Kabul Subsider.rtf

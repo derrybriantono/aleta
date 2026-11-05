@@ -3,7 +3,7 @@
 # PASANG paket ABT "abt-a5-kelompok-5nov" (keputusan Derry, 5 Nov 2026). Dijalankan DI SERVER sebagai root, dari folder paket.
 # HANYA blangko pengguna derry_briantono dan isian baru untuk blangko itu. Isi (lihat PASANG.md): 45 kelompok teks merah sisa daftar A5:
 #   hitamkan, isian ketik, isian otomatis kuasa dari SIPP, kalimat pilihan (bawaan tidak dipakai, tanpa alinea kosong), dua petunjuk kerja dibuang, dua salah ketik.
-# URUTAN PASANG: SESUDAH a5-merah-5nov (md5 berkas = keadaan sesudah paket itu). Variabel baru 12150-12179. Tanpa fungsi, menu, tabel, atau data perkara.
+# URUTAN PASANG: SESUDAH a5-merah-5nov (md5 berkas = keadaan sesudah paket itu). Variabel baru 12150-12182. Tanpa fungsi, menu, tabel, atau data perkara.
 # Urutan: md5 paket -> PRASYARAT SQL + BERKAS (baca saja) -> PASANG SQL (satu transaksi) -> PERIKSA -> BERKAS (cadangan utuh, tulis atomik,
 #         baca ulang) -> PERIKSA BERKAS. Gagal sesudah PASANG SQL = pulih otomatis (berkas lebih dulu, lalu variabel).
 # Laptop: ABT_LOKAL=1 ABT_DB=<basis ABT uji> ABT_BLANGKO=<_blangko_abt uji> PY=python bash pasang-satker.sh  (mysql lewat PATH)

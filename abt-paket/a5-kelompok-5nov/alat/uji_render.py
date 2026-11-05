@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Uji render ABT asli paket a5-kelompok-5nov: semua berkas paket, keadaan TIDAK (isian belum diisi, bawaan tidak dipakai) dan PAKAI (semua pilihan pakai + nilai rekaan), dibanding keadaan a5-merah.
-Harta Bersama juga dirender atas perkara dengan dan tanpa kuasa Tergugat. Keluaran RTF (data perkara) di luar repo; ringkasan tanpa data pihak.
+Harta Bersama juga dirender atas perkara dengan dan tanpa kuasa Tergugat; isian panjang 12180-12182 diuji kosong (tercetak "...") dan berisi beberapa paragraf. Keluaran RTF (data perkara) di luar repo; ringkasan tanpa data pihak.
 Baris uji di abt_data_teks diberi modifier 'uji' dan dihapus sesudahnya.
 pakai: python -B alat/uji_render.py <akar a5> <akar sesudah> <paket-satker> <keluar> <hasil.txt> [pekerja]"""
 import concurrent.futures as cf
@@ -27,7 +27,10 @@ MY = os.path.join(os.environ.get('MYSQL_BIN', r'D:\satker asal\website pa bungku
 PILIH = [12150, 12152, 12154, 12156, 12158, 12160, 12162, 12164]
 NILAI = {12167: 'REKAAN-angka-empat', 12168: 'REKAAN-angka-satu', 12169: 'REKAAN-kode-bukti', 12170: 'REKAAN-lama-satu', 12171: 'REKAAN-lama-dua', 12172: 'REKAAN-kelas',
          12173: 'REKAAN-anak-satu', 12174: 'REKAAN-anak-dua', 12175: 'REKAAN-sebutan-satu', 12176: 'REKAAN-sebutan-dua', 12178: 'REKAAN-keadaan', 12179: 'REKAAN-tanggal-cerai',
-         9285: 'REKAAN-romawi', 9287: 'REKAAN-pasangan', 9288: 'REKAAN-suami', 9289: 'REKAAN-dalil'}
+         9285: 'REKAAN-romawi', 9287: 'REKAAN-pasangan', 9288: 'REKAAN-suami', 9289: 'REKAAN-dalil',
+         # isian panjang Harta Bersama (6 Nov): beberapa paragraf, dipisah baris baru
+         12180: 'REKAAN-saksi paragraf satu\nREKAAN-saksi paragraf dua', 12181: 'REKAAN-bukti satu paragraf',
+         12182: 'REKAAN-objek paragraf satu\nREKAAN-objek paragraf dua\nREKAAN-objek paragraf tiga'}
 TANPA_KUASA, ADA_KUASA = 9789, 10025
 
 

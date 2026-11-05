@@ -7,7 +7,8 @@ Berkas a5-merah dihitung dari dasar + tambal.tsv a5-merah (md5 diperiksa). Tiap 
   blok      : paragraf/potongan dibungkus {#K#...}. #K# (data_sql) kosong bila dipakai; bila tidak dipakai bernilai kata kendali \\nonshppict sehingga pembaca RTF
               melewati seluruh grup, tanpa alinea kosong (diukur: hasil/ukur-alinea.txt)
   buang     : petunjuk kerja 38, 39 dibuang
-  biarkan   : petunjuk kerja 21-24, 36, 37 dan kelompok 42 tetap merah
+  panjang   : kelompok 22, 23, 24 (blangko Harta Bersama, petunjuk "ISI ...") menjadi SATU isian ketik per kelompok (keputusan Derry 6 Nov 2026); boleh beberapa paragraf
+  biarkan   : petunjuk kerja 21, 36, 37 dan kelompok 42 tetap merah
 BERHENTI bila ada pemeriksaan gagal."""
 import base64
 import collections
@@ -40,6 +41,7 @@ K_KUASA = 12166
 ANGKA45, ANGKA12, BUKTI, LAMA1, LAMA2, KELAS = 12167, 12168, 12169, 12170, 12171, 12172
 ANAK1, ANAK2, SBT1, SBT2, K_ANAK2 = 12173, 12174, 12175, 12176, 12177
 BLM, TGL = 12178, 12179
+HB_SAKSI, HB_BUKTI, HB_OBJEK = 12180, 12181, 12182
 
 
 def sql_pakai(p):
@@ -76,7 +78,10 @@ VARIABEL = (
      dict(no=K_ANAK2, nama='PERWALIAN: KALIMAT ANAK KEDUA (OTOMATIS: kosong bila isian #%04d# terisi; selain itu bagian ini tidak tercetak)' % ANAK2, jenis='data_sql',
           sql="SELECT IF((SELECT COUNT(*) FROM aps_badilag.abt_data_teks WHERE no_var = %d AND perkara_id = '#perkara_id#' AND TRIM(IFNULL(data, '')) <> '') > 0, '', CONCAT(CONVERT(CHAR(92) USING utf8), 'nonshppict')) AS data" % ANAK2),
      dict(no=BLM, nama='ITSBAT NO TERIKAT NIKAH: KEADAAN PERCERAIAN - PILIH: belum bercerai / bercerai', jenis='data_teks', bawaan='belum bercerai\nbercerai'),
-     dict(no=TGL, nama='ITSBAT NO TERIKAT NIKAH: TANGGAL PERCERAIAN RESMI - ISIAN', jenis='data_teks', bawaan=None)]
+     dict(no=TGL, nama='ITSBAT NO TERIKAT NIKAH: TANGGAL PERCERAIAN RESMI - ISIAN', jenis='data_teks', bawaan=None),
+     dict(no=HB_SAKSI, nama='HARTA BERSAMA: KETERANGAN SAKSI TERGUGAT YANG RELEVAN - ISIAN (boleh beberapa paragraf)', jenis='data_teks', bawaan=None),
+     dict(no=HB_BUKTI, nama='HARTA BERSAMA: PERTIMBANGAN PEMBUKTIAN PER OBJEK REKONVENSI - ISIAN (bukti surat, saksi, persesuaian; boleh beberapa paragraf)', jenis='data_teks', bawaan=None),
+     dict(no=HB_OBJEK, nama='HARTA BERSAMA: PERTIMBANGAN PER OBJEK SENGKETA - ISIAN (waktu perolehan, harta bawaan/hadiah/warisan, penguasaan objek, hasil sita; boleh beberapa paragraf)', jenis='data_teks', bawaan=None)]
 )
 DIPAKAI_ADA = (9285, 9287, 9288, 9289, 46, 47)
 
@@ -84,7 +89,8 @@ DIPAKAI_ADA = (9285, 9287, 9288, 9289, 46, 47)
 TETAP = {1, 8, 9, 10, 11, 26, 34, 35}
 BLOK = {2: K_SKS_P, 3: K_BEL, 4: K_BEL, 5: K_BEL, 6: K_KLG, 7: K_SKS_T, 12: K_SKS_D, 15: K_KRJ, 14: K_KRJ, 25: K_KUASA}
 INLINE_KUASA = {13, 18, 29}
-BIARKAN = {21, 22, 23, 24, 36, 37, 42}
+BIARKAN = {21, 36, 37, 42}
+PANJANG = {22: (HB_SAKSI, 'ISI KETERANGAN SAKSI TERGUGAT'), 23: (HB_BUKTI, 'ISI PERTIMBANGAN PEMBUKTIAN PER OBJEK REKONVENSI'), 24: (HB_OBJEK, 'ISI PERTIMBANGAN PER OBJEK SENGKETA')}
 BUANG = {38, 39}
 GANTI = {20: ('4, 5 dan 6', '#%d#' % ANGKA45), 27: ('P.1 sampai dengan P.6', '#%d#' % BUKTI), 28: ('1 dan 2', '#%d#' % ANGKA12), 41: ('_', '#%d#' % KELAS),
          16: ('…', '#9289#'), 31: ('I / II', '#9285#'), 43: ('pria/wanita', '#9287#')}
@@ -368,6 +374,19 @@ def kerjakan(B, tx, run0, baris, no, catat, hit):
             B.warna_blok(B.batas[k - 2][0], B.batas[k - 1][0])
         catat_baris('tetap', 'hitam')
         hit['tetap'] += len(baris)
+        return
+    if no in PANJANG:
+        # seluruh paragraf petunjuk merah menjadi satu penanda isian ketik; warna merah (teks dan penutup paragraf) dihapus
+        nomor_var, awal = PANJANG[no]
+        pt = B.p['para'][k]
+        sisa = pt[:run[0]['p0']] + pt[run[-1]['p0'] + len(run[-1]['teks']):]
+        if sisa.strip() or len(run) != 1 or not tx.startswith(awal):
+            raise SystemExit('kelompok %d bukan satu paragraf petunjuk utuh: %s %r' % (no, B.rel, tx[:60]))
+        B.warna_token(merah)
+        B.warna_blok(B.batas[k - 1][0], B.batas[k][0])
+        B.ganti_run(run, '#%d#' % nomor_var)
+        catat_baris('isian', '#%d (isian ketik, beberapa paragraf)' % nomor_var)
+        hit['isian'] += len(baris)
         return
     if no == 17:
         tetap()
