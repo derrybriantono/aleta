@@ -106,7 +106,7 @@ describe("menetralkan isian satker", () => {
     expect(n.variabel.sql_query).toContain("WHEN '' THEN ''");
     expect(n.perubahan.map((x) => x.jenis).sort()).toEqual(["cabang-satker", "provinsi-cepat"]);
     // idempotent, dan isian lain yang memuat potongan serupa tidak diubah
-    expect(netralkanVariabelInduk({ no: "9276", ...n.variabel }).perubahan).toEqual([]);
+    expect(netralkanVariabelInduk({ ...n.variabel }).perubahan).toEqual([]);
     expect(netralkanVariabelInduk({ no: "1234", sql_query: sql9276.replace("CASE", "CASE"), default_data: null }).variabel.sql_query).toContain("FROM perkara_pihak1 p JOIN pihak b ON b.id = p.pihak_id");
   });
 
