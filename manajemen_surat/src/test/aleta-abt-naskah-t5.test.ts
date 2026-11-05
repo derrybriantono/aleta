@@ -6,6 +6,7 @@ import {
   bacaLaporanBanding,
   bandingAlinea,
   bandingRingkasPdf,
+  golonganBeda,
   kertasDariRtf,
   TOLERANSI_LETAK_MM,
 } from "@/lib/aleta-abt-naskah";
@@ -34,6 +35,16 @@ describe("banding alinea", () => {
     expect(h.identik).toBe(0);
     expect(h.perKelas).toMatchObject({ "tata-letak": 1, "tanda-baca": 1, isi: 1, "hanya-abt": 0, "hanya-aleta": 0 });
     expect(h.total).toBe(3);
+  });
+
+  it("isian kosong: ALETA mencetak titik-titik, ABT kosong -> tanda-kosong, bukan beda isi", () => {
+    const h = bandingAlinea(["Sebelum", "Sesudah"], ["Sebelum", "...", "Sesudah"]);
+    expect(h.perKelas["tanda-kosong"]).toBe(1);
+    expect(h.perKelas["hanya-aleta"]).toBe(0);
+    expect(h.identik).toBe(2);
+    expect(golonganBeda("Nafkah", "Nafkah ...")).toBe("tanda-kosong");
+    expect(golonganBeda("Nafkah", "Nafkah Rp 1")).toBe("isi");
+    expect(golonganBeda("a ...", "b ...")).toBe("isi");
   });
 
   it("alinea yang hanya ada di satu sisi", () => {

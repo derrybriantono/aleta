@@ -17,7 +17,7 @@ import { bacaRtf } from "@/lib/baca-rtf";
  * Tidak ada data perkara yang disimpan di sini; pemanggil yang memutuskan apa yang ditampilkan.
  */
 
-export type KelasBeda = "tata-letak" | "tanda-baca" | "isi" | "hanya-abt" | "hanya-aleta";
+export type KelasBeda = "tata-letak" | "tanda-baca" | "tanda-kosong" | "isi" | "hanya-abt" | "hanya-aleta";
 
 export type BedaAlinea = {
   kelas: KelasBeda;
@@ -56,9 +56,28 @@ export function alineaDariRtf(rtf: string): string[] {
 
 const BATAS_RINCI = 400;
 
+const TITIK_KOSONG = "...";
+const tanpaTitik = (s: string) => lipat(s.split(TITIK_KOSONG).join(""));
+
+/**
+ * Menggolongkan dua alinea yang tidak identik (salah satunya boleh kosong). "tanda-kosong": mesin ALETA mencetak titik-titik bersorot untuk
+ * isian yang kosong (supaya petugas melihatnya dan cetak final ditahan), sedangkan ABT mencetak kosong; selain titik-titik itu kedua alinea sama.
+ */
+export function golonganBeda(abt: string, aleta: string): KelasBeda {
+  const a = lipat(abt);
+  const b = lipat(aleta);
+  if (!a && !b) return "tata-letak";
+  if (b.includes(TITIK_KOSONG) && !a.includes(TITIK_KOSONG) && tanpaTitik(a) === tanpaTitik(b)) return "tanda-kosong";
+  if (!a) return "hanya-aleta";
+  if (!b) return "hanya-abt";
+  if (tanpaSpasi(a) === tanpaSpasi(b)) return "tata-letak";
+  if (tanpaTanda(a) === tanpaTanda(b)) return "tanda-baca";
+  return "isi";
+}
+
 export function bandingAlinea(abt: string[], aleta: string[]): HasilBandingAlinea {
   const ops = bedaDaftar(abt, aleta);
-  const perKelas: Record<KelasBeda, number> = { "tata-letak": 0, "tanda-baca": 0, isi: 0, "hanya-abt": 0, "hanya-aleta": 0 };
+  const perKelas: Record<KelasBeda, number> = { "tata-letak": 0, "tanda-baca": 0, "tanda-kosong": 0, isi: 0, "hanya-abt": 0, "hanya-aleta": 0 };
   const beda: BedaAlinea[] = [];
   let identik = 0;
   let total = 0;
@@ -83,14 +102,13 @@ export function bandingAlinea(abt: string[], aleta: string[]): HasilBandingAline
         if (i < pasang) {
           const a = abt[op.a + i];
           const b = aleta[lanjut!.b + i];
-          const kelas: KelasBeda = tanpaSpasi(a) === tanpaSpasi(b) ? "tata-letak" : tanpaTanda(a) === tanpaTanda(b) ? "tanda-baca" : "isi";
-          catat({ kelas, nomorAbt: op.a + i + 1, nomorAleta: lanjut!.b + i + 1, abt: a, aleta: b });
-        } else catat({ kelas: "hanya-abt", nomorAbt: op.a + i + 1, nomorAleta: 0, abt: abt[op.a + i], aleta: "" });
+          catat({ kelas: golonganBeda(a, b), nomorAbt: op.a + i + 1, nomorAleta: lanjut!.b + i + 1, abt: a, aleta: b });
+        } else catat({ kelas: golonganBeda(abt[op.a + i], ""), nomorAbt: op.a + i + 1, nomorAleta: 0, abt: abt[op.a + i], aleta: "" });
       }
       if (lanjut && lanjut.t === "+") {
         for (let i = pasang; i < lanjut.n; i += 1) {
           total += 1;
-          catat({ kelas: "hanya-aleta", nomorAbt: 0, nomorAleta: lanjut.b + i + 1, abt: "", aleta: aleta[lanjut.b + i] });
+          catat({ kelas: golonganBeda("", aleta[lanjut.b + i]), nomorAbt: 0, nomorAleta: lanjut.b + i + 1, abt: "", aleta: aleta[lanjut.b + i] });
         }
         k += 1;
       }
@@ -98,7 +116,7 @@ export function bandingAlinea(abt: string[], aleta: string[]): HasilBandingAline
     }
     for (let i = 0; i < op.n; i += 1) {
       total += 1;
-      catat({ kelas: "hanya-aleta", nomorAbt: 0, nomorAleta: op.b + i + 1, abt: "", aleta: aleta[op.b + i] });
+      catat({ kelas: golonganBeda("", aleta[op.b + i]), nomorAbt: 0, nomorAleta: op.b + i + 1, abt: "", aleta: aleta[op.b + i] });
     }
   }
   return { total, identik, persen: total ? (identik / total) * 100 : 100, jumlahAbt: abt.length, jumlahAleta: aleta.length, perKelas, beda, terpotong };
@@ -155,6 +173,7 @@ export function bandingRingkasPdf(abt: RingkasPdf, aleta: RingkasPdf): BandingPd
 export const KELAS_BEDA_NAMA: Record<KelasBeda, string> = {
   "tata-letak": "hanya spasi",
   "tanda-baca": "hanya tanda baca atau huruf besar",
+  "tanda-kosong": "isian kosong: ALETA mencetak titik-titik, ABT mencetak kosong",
   isi: "isi berbeda",
   "hanya-abt": "hanya di ABT",
   "hanya-aleta": "hanya di ALETA",
@@ -192,7 +211,7 @@ export type LaporanBanding = {
 
 const angkaAman = (x: unknown) => (typeof x === "number" && Number.isFinite(x) ? x : 0);
 const teksAman = (x: unknown, maks = 300) => String(x ?? "").slice(0, maks);
-const KELAS: KelasBeda[] = ["tata-letak", "tanda-baca", "isi", "hanya-abt", "hanya-aleta"];
+const KELAS: KelasBeda[] = ["tata-letak", "tanda-baca", "tanda-kosong", "isi", "hanya-abt", "hanya-aleta"];
 
 /** Membaca laporan hasil skrip dengan ketat: apa pun yang tidak dikenal dibuang, bentuk rusak -> null. */
 export function bacaLaporanBanding(mentah: unknown): LaporanBanding | null {

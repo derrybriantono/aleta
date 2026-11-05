@@ -9,6 +9,7 @@
  *   sampel [perJenis=6]      pilih perkara dari sampel Tahap 4 (jenis & keadaan beragam, bukan yang lambat), daftar blangko pohon, dan penanda
  *   abt [paralel=2]          render pecahan RTF mentah tiap penanda per perkara (python abt_render_mentah.py), memakan beberapa menit per perkara
  *   banding [perkara,...]    bandingkan tiap blangko x perkara sejenis: ABT dirakit dari pecahan, ALETA lewat mesin; hasil jsonl per perkara
+ *   waktu [putaran=3]        waktu pratinjau 10 blangko di mesin SEPI (jalankan sendirian; angka laptop)
  *   verifikasi [per=3]       buktikan rakitan ABT == render naskah utuh ABT (bita per bita): tiap jenis x putusan/BAS x blangko terkecil, tengah, terbesar
  *   laporan                  ringkas per jenis -> LAPORAN-T5.txt (tanpa data pihak) dan laporan-t5.json (untuk layar Laporan pembanding)
  *
@@ -21,7 +22,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { alineaDariRtf, bandingAlinea, kertasDariRtf, type BedaAlinea, type KelasBeda } from "@/lib/aleta-abt-naskah";
+import { alineaDariRtf, bandingAlinea, golonganBeda, kertasDariRtf, type BedaAlinea, type KelasBeda } from "@/lib/aleta-abt-naskah";
 import { uraiRtf } from "@/lib/aleta-abt-rtf";
 
 const SINI = path.dirname(fileURLToPath(import.meta.url));
@@ -318,6 +319,65 @@ async function banding([daftar]: string[]) {
 }
 
 // ---------------------------------------------------------------------------------------------------------------
+// waktu: pratinjau 10 blangko di mesin yang sepi (jalankan SENDIRIAN; angka laptop, bukan angka server)
+// ---------------------------------------------------------------------------------------------------------------
+
+/**
+ * Waktu yang diukur = bagian pratinjau yang berjalan di laptop: mesin mengisi blangko (isiRtf, satu mesin hidup seperti di bot) dan portal
+ * menguraikan hasilnya menjadi paragraf layar (uraiRtf + pemetaan). TIDAK termasuk jaringan portal-bot, pemuatan pustaka dari basis data
+ * portal, dan JSON ke peramban: itu hanya dapat diukur di server. Dingin = naskah pertama sesudah mesin dibuat (katalog dibaca), hangat =
+ * naskah berikutnya pada mesin yang sama.
+ */
+async function waktu([ulang = "3"]: string[]) {
+  const semua = daftarBlangko();
+  const perkara = baris(berkasPerkara()).find((b) => b[2] === "Cerai Gugat");
+  if (!perkara) throw new Error("belum ada perkara: jalankan sampel");
+  const pid = perkara[0];
+  const kandidat = semua.filter((b) => b.jenis === "Cerai Gugat");
+  const urut = (k: string) =>
+    kandidat
+      .filter((b) => b.kelompok === k)
+      .map((b) => ({ b, ukuran: fs.statSync(path.join(POHON, b.folder, b.nama)).size }))
+      .sort((x, y) => x.ukuran - y.ukuran);
+  const ambil = (k: string, n: number) => {
+    const u = urut(k);
+    return Array.from({ length: n }, (_, i) => u[Math.min(u.length - 1, Math.round((i * (u.length - 1)) / (n - 1)))]);
+  };
+  const pilih = [...ambil("putusan", 5), ...ambil("BAS", 5)];
+  const { kolam, kueri } = bukaKolam();
+  const jalur = await jalurDariKatalog(kueri);
+  const hasil: string[] = [`Pratinjau 10 blangko Cerai Gugat (5 putusan, 5 berita acara; terkecil sampai terbesar), ${ulang} putaran. Mesin ${os.cpus().length} inti, ${Math.round(os.totalmem() / 1e9)} GB, Windows. Hanya mesin + penguraian; bukan angka server.`];
+  const semuaMs: number[] = [];
+  const dinginMs: number[] = [];
+  for (let putar = 0; putar < Number(ulang); putar += 1) {
+    const mesin = mesinMod.buatMesin({ kueri, skemaAbt: ABT, umurKatalogMs: 3600 * 1000, batasKueriMs: 60000, jalurAleta: { pustaka: jalur.pustaka, alias: jalur.alias } });
+    let pertama = true;
+    for (const { b, ukuran } of pilih) {
+      const templat = bacaBlangko(b);
+      const t0 = performance.now();
+      const h = await mesin.isiRtf(templat, { perkaraId: pid });
+      const t1 = performance.now();
+      const doc = uraiRtf(h.rtf);
+      const paragraf = doc.paragraf.map((p) => ({ i: p.indeks, teks: p.teks.replace(/\s+/g, " ").trim(), rata: p.rata, li: p.li, fi: p.fi }));
+      const t2 = performance.now();
+      const ms = t2 - t0;
+      semuaMs.push(ms);
+      if (pertama) dinginMs.push(ms);
+      hasil.push(
+        `putaran ${putar + 1} ${pertama ? "dingin" : "hangat"} ${b.kelompok} ${Math.round(ukuran / 1024)} KB: mesin ${(t1 - t0).toFixed(0)} ms + uraian ${(t2 - t1).toFixed(0)} ms = ${ms.toFixed(0)} ms (${paragraf.length} alinea, ${h.kosong.length} isian kosong)`
+      );
+      pertama = false;
+    }
+  }
+  const hangat = semuaMs.filter((_, i) => i % pilih.length !== 0);
+  const tengah = (a: number[]) => [...a].sort((x, y) => x - y)[Math.floor(a.length / 2)] ?? 0;
+  hasil.push(`Tengah hangat ${tengah(hangat).toFixed(0)} ms, terlama hangat ${Math.max(0, ...hangat).toFixed(0)} ms, tengah dingin ${tengah(dinginMs).toFixed(0)} ms; ${hangat.filter((x) => x < 1000).length} dari ${hangat.length} naskah hangat di bawah 1 detik.`);
+  tulis(path.join(KELUAR, "waktu.txt"), hasil.join(LB) + LB);
+  console.log(hasil.join(LB));
+  kolam.end();
+}
+
+// ---------------------------------------------------------------------------------------------------------------
 // verifikasi: rakitan ABT harus sama persis dengan render naskah utuh ABT
 // ---------------------------------------------------------------------------------------------------------------
 
@@ -387,7 +447,15 @@ function laporan() {
   for (const f of fs.existsSync(dirHasil()) ? fs.readdirSync(dirHasil()) : []) {
     for (const l of baca(path.join(dirHasil(), f)).split("\n").filter(Boolean)) semua.push(JSON.parse(l) as HasilNaskah);
   }
-  const perKel: Record<KelasBeda, number> = { "tata-letak": 0, "tanda-baca": 0, isi: 0, "hanya-abt": 0, "hanya-aleta": 0 };
+  const perKel: Record<KelasBeda, number> = { "tata-letak": 0, "tanda-baca": 0, "tanda-kosong": 0, isi: 0, "hanya-abt": 0, "hanya-aleta": 0 };
+  // Penggolongan dihitung ulang dari teks tersimpan dengan aturan terkini (hasil lama mungkin memakai penggolongan yang lebih kasar).
+  for (const h of semua) {
+    h.perKelas = { "tata-letak": 0, "tanda-baca": 0, "tanda-kosong": 0, isi: 0, "hanya-abt": 0, "hanya-aleta": 0 };
+    for (const d of h.beda) {
+      d.kelas = golonganBeda(d.abt, d.aleta);
+      h.perKelas[d.kelas] += 1;
+    }
+  }
   const jenisKelompok = new Map<string, HasilNaskah[]>();
   for (const h of semua) {
     const k = `${h.jenis} - ${h.kelompok === "BAS" ? "berita acara sidang" : "putusan"}`;
@@ -459,9 +527,9 @@ function laporan() {
 }
 
 const [cmd, ...arg] = process.argv.slice(2);
-const peta: Record<string, (a: string[]) => unknown> = { sampel, abt, banding, verifikasi, laporan };
+const peta: Record<string, (a: string[]) => unknown> = { sampel, abt, banding, waktu, verifikasi, laporan };
 if (!peta[cmd]) {
-  console.error("perintah: sampel | abt | banding | verifikasi | laporan");
+  console.error("perintah: sampel | abt | banding | waktu | verifikasi | laporan");
   process.exit(2);
 }
 await peta[cmd](arg);
