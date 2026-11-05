@@ -603,12 +603,12 @@ describe("F. langkah 5 runut", () => {
     await pilihBas(pp);
     await sampai(() => q(pp, '[data-wadah="cetak"] .bd-unggah'), "baris unggah");
     const cetakPp = q(pp, '[data-wadah="cetak"]')!.textContent || "";
-    expect(cetakPp).toContain("Unggah BAS sendiri (RTF/DOCX/DOC)");
+    expect(cetakPp).toContain("Unggah BAS sendiri (RTF/DOCX/DOC/PDF)");
     expect(cetakPp).toContain("BAS yang sudah Anda sunting sendiri");
     expect(cetakPp).not.toContain("Unggah putusan sendiri");
     const hk = buka();
     await pilihPutusan(hk);
-    expect(q(hk, '[data-wadah="cetak"]')!.textContent).toContain("Unggah putusan sendiri (RTF/DOCX/DOC)");
+    expect(q(hk, '[data-wadah="cetak"]')!.textContent).toContain("Unggah putusan sendiri (RTF/DOCX/DOC/PDF)");
   });
 });
 

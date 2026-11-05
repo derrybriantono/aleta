@@ -16,6 +16,11 @@
  *     keputusan petugas - dan yang tercentang menimpa tanpa langkah hapus lebih dulu,
  *     lewat jalur yang sama dengan SIPP (borang Edit Putusan Akhir, unggah e-Doc ulang).
  *     Tiga langkah berdiri sendiri: boleh hanya mengganti salah satu;
+ *   - centang keempat "Ubah jadi PDF salinan" (5 Nov 2026, bawaan MATI, di luar "Centang semua"): dari BERKAS PUTUSAN yang dipilih
+ *     di kotak "Berkas putusan" dibuat PDF SALINAN lewat metode yang SAMA dengan Blangko Derry (panel-alat.js: RTF/DOCX/DOC lewat
+ *     rute PDF salinan, PDF yang masih kosong lewat rute salinan-dari-pdf) lalu langsung diunduh ke komputer ini. Berjalan bersamaan
+ *     dengan langkah SIPP tetapi berdiri sendiri (gagalnya tidak membatalkan isi form/unggah, dan sebaliknya); TIDAK diunggah ke SIPP;
+ *     berkas anonimisasi tidak pernah dipakai sebagai dasar. Tanpa centang ini tidak ada permintaan tambahan sama sekali;
  *   - SATU tombol yang LANGSUNG menjalankan semua langkah yang dicentang (30 Okt
  *     2026, permintaan pengguna: tanpa tombol kedua/konfirmasi); apa yang sedang
  *     dikerjakan tampil sebagai kemajuan. Yang benar-benar menahan (praperiksa,
@@ -72,11 +77,15 @@
     timpa: { teks: "akan diganti", nada: "tunggu" },
     ditimpa: { teks: "diganti", nada: "ok" },
     gagal: { teks: "gagal", nada: "salah" },
+    // 5 Nov 2026: PDF salinan - dibuat dari berkas putusan yang dipilih, langsung diunduh ke komputer ini (tidak diunggah ke SIPP).
+    unduh: { teks: "diunduh", nada: "ok" },
     tidak: { teks: "tidak dicentang", nada: "lewat" },
     baca: { teks: "memeriksa…", nada: "jalan" },
     perlu: { teks: "perlu berkas putusan", nada: "salah" },
   };
-  const TIDAK_DIKERJAKAN = "Tidak dikerjakan: Putusan Akhir belum tersimpan (sebabnya tertulis di langkah pertama).";
+  const NAMA_SALINAN = "Ubah jadi PDF salinan";
+  const KET_SALINAN = "Dibuat dari berkas putusan yang dipilih di bawah (RTF, DOCX, DOC, atau PDF), lalu langsung diunduh ke komputer ini. Tidak diunggah ke SIPP.";
+  const TIDAK_DIKERJAKAN ="Tidak dikerjakan: Putusan Akhir belum tersimpan (sebabnya tertulis di langkah pertama).";
 
   const sebaris = (t) => String(t == null ? "" : t).replace(/\s+/g, " ").trim();
   function el(tag, kelas, teks) {
@@ -214,8 +223,10 @@
       memuat: false,
       dibaca: false,
       konfirm: false,
-      pilih: { isi: true, putusan: true, anonim: true },
-      keadaan: { terisi: null, adaPutusan: null, adaAnonim: null, galatEdoc: "", draf: null, versiDraf: null, sebabDraf: "" },
+      // salinan (5 Nov 2026): bawaan MATI, berdiri sendiri di luar tiga langkah SIPP; tidak ikut "Centang semua langkah".
+      pilih: { isi: true, putusan: true, anonim: true, salinan: false },
+      salinan: { status: "tidak", catatan: KET_SALINAN, hasil: false },
+      keadaan:{ terisi: null, adaPutusan: null, adaAnonim: null, galatEdoc: "", draf: null, versiDraf: null, sebabDraf: "" },
       status: { isi: "tunggu", putusan: "tunggu", anonim: "tunggu" },
       catatan: { isi: "", putusan: "", anonim: "" },
       info: "",
@@ -238,7 +249,8 @@
     const anonim = ctx.pilih.anonim ? 1 : 0;
     // Tanda timpa eksplisit per langkah: hanya untuk yang dicentang DAN terbukti sudah ada di SIPP.
     const timpa = { isi: isi === 1 && k.terisi === true, putusan: putusan === 1 && k.adaPutusan === true, anonim: anonim === 1 && k.adaAnonim === true };
-    return { isi, putusan, anonim, edoc: putusan + anonim, total: isi + putusan + anonim, timpa };
+    // salinan: tidak menulis ke SIPP, jadi tidak masuk total langkah SIPP; tombol utama tetap hidup bila hanya ini yang dicentang.
+    return { isi, putusan, anonim, edoc: putusan + anonim, total: isi + putusan + anonim, timpa, salinan: ctx.pilih.salinan ? 1 : 0 };
   }
 
   /** Berapa e-Doc yang dicentang untuk DIGANTI (sudah ada di SIPP). */
@@ -281,6 +293,131 @@
     [s, c] = awal("anonim", k.adaAnonim);
     ctx.status.anonim = s;
     ctx.catatan.anonim = k.adaAnonim === true ? (ctx.pilih.anonim ? "Sudah ada di SIPP. Akan diganti." : "Sudah ada di SIPP. Centang untuk mengganti.") : c;
+    segarkanSalinan();
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // PDF salinan (5 Nov 2026) - centang tambahan, tidak menulis apa pun ke SIPP
+  // ──────────────────────────────────────────────────────────────────────────
+  /** Keadaan baris salinan sebelum dijalankan (hasil putaran terakhir bertahan sampai centang atau berkas berubah). */
+  function segarkanSalinan() {
+    const sl = ctx.salinan;
+    if (sl.hasil || ctx.sibuk) return;
+    if (!ctx.pilih.salinan) {
+      sl.status = "tidak";
+      sl.catatan = KET_SALINAN;
+      return;
+    }
+    const b = ctx.berkas;
+    if (!b) {
+      sl.status = "perlu";
+      sl.catatan = "Seret berkas putusan (RTF, DOCX, DOC, atau PDF) ke kotak \"Berkas putusan\" di bawah; salinan dibuat dari berkas itu.";
+    } else if (b.status === "ditolak") {
+      sl.status = "perlu";
+      sl.catatan = `Berkas ${b.nama} ditolak (${b.tolak}), jadi belum ada berkas untuk dibuat salinannya.`;
+    } else {
+      sl.status = "tunggu";
+      sl.catatan =
+        b.bentuk === "pdf"
+          ? `Dibuat dari PDF ${b.nama}: tulisan SALINAN, ttd, dan blok Untuk Salinan ditambahkan di atas halamannya, lalu langsung diunduh ke komputer ini. Tidak diunggah ke SIPP.`
+          : `Dibuat dari berkas ${b.nama}, lalu langsung diunduh ke komputer ini. Tidak diunggah ke SIPP.`;
+    }
+  }
+
+  /** Nama dasar salinan dari nama berkas yang dipilih: tanpa ekstensi, tanpa kata ALETA (nama berkas tidak boleh memuatnya). */
+  function namaDasarSalinan(namaBerkas) {
+    const batang = String(namaBerkas || "")
+      .replace(/\.[A-Za-z0-9]{2,5}$/, "")
+      .replace(/a[\s._-]*l[\s._-]*e[\s._-]*t[\s._-]*a/gi, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    return batang || "Putusan";
+  }
+
+  async function bacaBita(berkas) {
+    if (berkas && typeof berkas.arrayBuffer === "function") return new Uint8Array(await berkas.arrayBuffer());
+    return await new Promise((selesai, gagal) => {
+      const r = new FileReader();
+      r.onload = () => selesai(new Uint8Array(r.result));
+      r.onerror = () => gagal(new Error("berkas tidak terbaca"));
+      r.readAsArrayBuffer(berkas);
+    });
+  }
+
+  /**
+   * Membuat PDF SALINAN dari berkas putusan yang dipilih lalu mengunduhnya. Metodenya SATU SUMBER dengan Blangko Derry
+   * (panel-alat.js: alatMintaPdf, alatTerbitkanSalinan, alatKetSalinanPutusan) - panel Blangko Derry tidak dibuka.
+   * TIDAK PERNAH melempar. Pulang { status: "unduh"|"gagal"|"perlu", catatan }.
+   */
+  async function buatSalinan(nomor) {
+    const b = berkasSiap();
+    if (!b) return { status: "perlu", catatan: "Belum ada berkas putusan yang siap dipakai, jadi salinan tidak dibuat. Pilih berkas putusan RTF, DOCX, DOC, atau PDF." };
+    const minta = fungsi("alatMintaPdf");
+    const mintaDariPdf = fungsi("alatMintaSalinanDariPdf");
+    const terbit = fungsi("alatTerbitkanSalinan");
+    const ketSalinan = fungsi("alatKetSalinanPutusan");
+    const kenali = fungsi("alatKenaliBentukBerkas");
+    const namaUnduhan = fungsi("alatNamaUnduhanBlangko");
+    if (!minta || !mintaDariPdf || !terbit || !ketSalinan || !kenali || !namaUnduhan) return { status: "gagal", catatan: "Pembuat PDF salinan belum termuat di halaman ini. Muat ulang halaman, lalu ulangi." };
+    try {
+      // Bentuk dikenali dari ISI berkas yang dipilih (bukan nama).
+      const bentukAsli = kenali((await bacaBita(b.file)).subarray(0, 8));
+      if (!bentukAsli) return { status: "gagal", catatan: `Isi berkas ${b.nama} bukan RTF, DOCX, DOC, maupun PDF, jadi salinan tidak dibuat.` };
+      // PDF yang masih kosong: tambahan digambar langsung di atas halaman PDF di server (satu metode dengan Blangko Derry dan ALETA ABT).
+      if (bentukAsli === "pdf") {
+        const dariPdf = await mintaDariPdf(await bacaBita(b.file));
+        const namaPdf = namaUnduhan(nomor, `${namaDasarSalinan(b.nama)} - SALINAN`, "pdf");
+        const tp = await terbit(dariPdf.blob, namaPdf, ketSalinan(dariPdf.d.salinan || null), !(dariPdf.d.salinan && dariPdf.d.salinan.gambarTtdPanitera));
+        return { status: tp.ok ? "unduh" : "gagal", catatan: sebaris(tp.kalimat) };
+      }
+      // RTF dipakai apa adanya; DOCX/DOC sudah diubah ke RTF di server saat berkas dipilih (jalur konversi naskah yang sama dengan Blangko Derry).
+      if (!b.rtf) {
+        const sebab = (b.peringatan && b.peringatan[0]) || "";
+        return { status: "gagal", catatan: `Berkas ${b.nama} belum dapat diubah menjadi RTF di server, jadi salinan tidak dibuat.${sebab ? ` ${sebab}` : ""}` };
+      }
+      let bita = await bacaBita(b.rtf);
+      if (kenali(bita.subarray(0, 8)) !== "rtf") return { status: "gagal", catatan: `Hasil ubahan ${b.nama} bukan RTF, jadi salinan tidak dibuat.` };
+      // Jejak sistem di RTF (grup tersembunyi, properti info) dibuang seperti pada RTF unduhan lain: tidak boleh sampai ke metadata PDF.
+      const penjaga = globalThis.AletaPenjagaTanda;
+      if (penjaga && typeof penjaga.bersihkanRtf === "function") {
+        let teks = "";
+        for (let k = 0; k < bita.length; k += 8192) teks += String.fromCharCode.apply(null, bita.subarray(k, k + 8192));
+        const bersih = penjaga.bersihkanRtf(teks);
+        if (bersih !== teks) {
+          bita = new Uint8Array(bersih.length);
+          for (let k = 0; k < bersih.length; k += 1) bita[k] = bersih.charCodeAt(k) & 255;
+        }
+      }
+      let biner = "";
+      for (let k = 0; k < bita.length; k += 0x8000) biner += String.fromCharCode.apply(null, bita.subarray(k, k + 0x8000));
+      const hasil = await minta({ rtfBase64: btoa(biner), salinan: true });
+      const nama = namaUnduhan(nomor, `${namaDasarSalinan(b.nama)} - SALINAN`, "pdf");
+      const ket = ketSalinan(hasil.d.salinan || null);
+      const t = await terbit(hasil.blob, nama, ket, !(hasil.d.salinan && hasil.d.salinan.gambarTtdPanitera));
+      return { status: t.ok ? "unduh" : "gagal", catatan: sebaris(t.kalimat) };
+    } catch (galat) {
+      return { status: "gagal", catatan: `PDF salinan belum dapat dibuat: ${sebaris((galat && galat.message) || galat)}` };
+    }
+  }
+
+  /** Menjalankan salinan di latar langkah SIPP: hasilnya masuk baris salinan; kegagalannya tidak menyentuh langkah lain. TIDAK PERNAH melempar. */
+  async function kerjakanSalinan(nomor) {
+    const sl = ctx.salinan;
+    sl.hasil = false;
+    sl.status = "jalan";
+    sl.catatan = "Membuat PDF salinan…";
+    render();
+    let h;
+    try {
+      h = await buatSalinan(nomor);
+    } catch (galat) {
+      h = { status: "gagal", catatan: sebaris((galat && galat.message) || galat) };
+    }
+    if (!ctx || ctx.nomor !== nomor) return;
+    ctx.salinan.status = h.status;
+    ctx.salinan.catatan = h.catatan;
+    ctx.salinan.hasil = true;
+    render();
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -374,6 +511,7 @@
       return;
     }
     ctx.berkas = e;
+    ctx.salinan.hasil = false;
     segarkanStatusAwal();
     render();
     const nomor = ctx.nomor;
@@ -424,6 +562,7 @@
   function buangBerkas() {
     if (!ctx || ctx.sibuk) return;
     ctx.berkas = null;
+    ctx.salinan.hasil = false;
     segarkanStatusAwal();
     render();
   }
@@ -570,6 +709,33 @@
       daftar.appendChild(baris);
     }
 
+    // Baris tambahan "Ubah jadi PDF salinan" (5 Nov 2026): centang sendiri di luar tiga langkah SIPP, tidak menulis apa pun ke SIPP.
+    {
+      const sl = ctx.salinan;
+      const st0 = STATUS[sl.status] || STATUS.tidak;
+      const barisS = el("div", `aleta-pusipp-baris aleta-pusipp-${st0.nada}`);
+      barisS.setAttribute("data-pusipp-salinan", "baris");
+      const labelS = el("label", "aleta-pusipp-pilih");
+      labelS.title = KET_SALINAN;
+      const cekS = document.createElement("input");
+      cekS.type = "checkbox";
+      cekS.checked = ctx.pilih.salinan;
+      cekS.disabled = ctx.sibuk;
+      cekS.setAttribute("data-pusipp-cek", "salinan");
+      cekS.addEventListener("change", () => {
+        ctx.pilih.salinan = cekS.checked;
+        ctx.salinan.hasil = false;
+        segarkanStatusAwal();
+        render();
+      });
+      labelS.append(cekS, ` ${NAMA_SALINAN}`);
+      const stS = el("span", `aleta-pusipp-status aleta-pusipp-s-${st0.nada}`, st0.teks);
+      stS.setAttribute("data-pusipp-status", sl.status);
+      barisS.append(labelS, stS);
+      if (sl.catatan) barisS.appendChild(el("div", "aleta-pusipp-ket", sl.catatan));
+      daftar.appendChild(barisS);
+    }
+
     // Berkas yang dipilih
     if (ctx.berkasTerpilih) {
       const k = ctx.berkasTerpilih;
@@ -611,16 +777,22 @@
     }
     const ringkas = akar.querySelector(".aleta-pusipp-ringkas");
     const tanpaSumber = tanpaSumberIsi();
+    const tanpaBerkasSalinan = r.salinan === 1 && r.total === 0 && !berkasSiap();
+    const kalimatSalinan = ctx.salinan.hasil && ctx.salinan.status !== "tidak" ? ` · PDF salinan: ${ctx.salinan.catatan}` : r.salinan ? " · 1 PDF salinan akan diunduh ke komputer ini (tidak diunggah ke SIPP)" : "";
     ringkas.textContent = ctx.sibuk
       ? "Sedang bekerja - jangan menutup atau memuat ulang halaman ini."
+      : r.total === 0 && r.salinan
+        ? tanpaBerkasSalinan
+          ? "Pilih berkas putusan lebih dulu: PDF salinan dibuat dari berkas itu."
+          : kalimatSalinan.replace(/^ · /, "")
       : r.total === 0
         ? "Tidak ada yang dicentang. Yang sudah ada di SIPP dapat dicentang untuk diganti."
         : tanpaSumber
           ? "Pilih berkas putusan lebih dulu: belum ada draf putusan ALETA untuk mengisi Putusan Akhir."
-          : `${r.isi ? `1 Putusan Akhir akan ${r.timpa.isi ? "diganti" : "diisi"} dan disimpan${berkasSiap() ? " dari berkas yang dipilih" : ""}` : "Putusan Akhir tidak diisi"} · ${r.edoc} e-Doc akan diunggah${berkasSiap() && r.edoc ? " dari berkas yang dipilih" : ""}${jumlahGanti(r) ? ` (${jumlahGanti(r)} di antaranya mengganti yang sudah ada)` : ""}`;
+          : `${r.isi ? `1 Putusan Akhir akan ${r.timpa.isi ? "diganti" : "diisi"} dan disimpan${berkasSiap() ? " dari berkas yang dipilih" : ""}` : "Putusan Akhir tidak diisi"} · ${r.edoc} e-Doc akan diunggah${berkasSiap() && r.edoc ? " dari berkas yang dipilih" : ""}${jumlahGanti(r) ? ` (${jumlahGanti(r)} di antaranya mengganti yang sudah ada)` : ""}${kalimatSalinan}`;
     const utama = akar.querySelector("[data-pusipp='utama']");
     const berkasBelum = Boolean(ctx.berkas && (ctx.berkas.status === "periksa" || ctx.berkas.status === "ubah"));
-    utama.disabled = ctx.sibuk || Boolean(ctx.menungguTimpa) || r.total === 0 || !ctx.dibaca || berkasBelum || tanpaSumber;
+    utama.disabled = ctx.sibuk || Boolean(ctx.menungguTimpa) || (r.total === 0 && !r.salinan) || tanpaBerkasSalinan || !ctx.dibaca || berkasBelum || tanpaSumber;
 
     // 30 Okt 2026: bukan pertanyaan lagi - selama bekerja, apa yang sedang dikerjakan tampil sebagai kemajuan.
     const wadahKonfirm = akar.querySelector(".aleta-pusipp-konfirm-wadah");
@@ -673,7 +845,7 @@
   async function jalankan() {
     if (!ctx || ctx.sibuk || ctx.menungguTimpa || !ctx.dibaca) return;
     const r = rencana();
-    if (r.total === 0 || tanpaSumberIsi()) return;
+    if ((r.total === 0 && !r.salinan) || tanpaSumberIsi()) return;
     const nomor = ctx.nomor;
     // Konfirmasi SEBARIS hanya bila ada yang ditimpa. "Tidak" = kembali ke pilihan: tidak ada satu pun tulisan, dan
     // langkah lain yang bukan timpa juga belum berjalan. Tanpa yang ditimpa tidak ada pertanyaan sama sekali.
@@ -699,11 +871,15 @@
     ctx.kerjaTeks = teksKerja(r);
     if (ctx.laporan) ctx.laporan.textContent = "";
     for (const j of LANGKAH) if (ctx.status[j] === "tunggu" || ctx.status[j] === "timpa") ctx.status[j] = "jalan";
+    // PDF salinan (5 Nov 2026) berjalan bersamaan dengan langkah SIPP dan berdiri sendiri: gagalnya tidak membatalkan isi form
+    // atau unggah e-Doc, dan gagalnya unggah tidak membatalkan salinan (selama berkasnya ada). Tidak ada tulisan ke SIPP darinya.
+    const janjiSalinan = r.salinan ? kerjakanSalinan(nomor) : null;
     render();
 
     const mod = globalThis.aletaPutusanEdoc;
     const akhir = [];
     try {
+      if (r.total === 0) return; // hanya salinan yang dicentang: tidak ada langkah SIPP
       if (!mod) throw new Error("Pengunggah e-Doc belum termuat di halaman ini");
       if (r.isi) {
         // Isi & simpan: alur panel ekstensi yang SAMA.
@@ -833,7 +1009,12 @@
       const pesan = sebaris((galat && galat.message) || galat);
       for (const j of LANGKAH) if (ctx && ctx.status[j] === "jalan") setStatus(j, "gagal", pesan);
     } finally {
-      if (ctx) {
+      if (janjiSalinan) await janjiSalinan;
+      if (ctx && r.total === 0) {
+        // Hanya salinan: keadaan SIPP tidak berubah, jadi tidak dibaca ulang.
+        ctx.sibuk = false;
+        render();
+      } else if (ctx) {
         ctx.sibuk = false;
         for (const j of LANGKAH) if (ctx.status[j] === "jalan") ctx.status[j] = "gagal";
         // Keadaan SIPP dibaca lagi: yang baru tercatat tampil sebagai "sudah ada" pada putaran berikutnya.
