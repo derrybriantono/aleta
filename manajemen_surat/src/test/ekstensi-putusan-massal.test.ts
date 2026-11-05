@@ -571,7 +571,8 @@ describe("pemetaan menurut NAMA - token menyusul dari halaman ABT (1.131.0)", ()
     );
     expect(badan).toContain('pilih.className = "aleta-massal-pilih-berkas";');
     expect(badan).toContain(".filter((s) => alatBlangkoLengkap(petaUntuk(s)))");
-    expect(badan).toContain("const peta = petaUntuk(butir);");
+    // Tidak lewat `badan`: pecahan K11 menata ulang pernyataan yang berubah, jalankanMassalAbt dapat jatuh sesudah kerjakanSatuPerkaraAbt.
+    expect(abt).toContain("const peta = petaUntuk(butir);");
     expect(badan).not.toContain("keadaan.peta[alatKunciJenis(butir.jenis)]");
   });
 
