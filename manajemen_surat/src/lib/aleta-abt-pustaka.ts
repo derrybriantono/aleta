@@ -175,3 +175,57 @@ export type RiwayatSinkron = {
     takDikenal?: number;
   };
 };
+
+// ---------------------------------------------------------------------------------------------------------------
+// Mesin isian sendiri (Tahap 4, 5 Nov 2026): pustaka ALETA -> bentuk yang dibaca mesin variabel di bot
+// ---------------------------------------------------------------------------------------------------------------
+
+export type BarisPustakaMesin = {
+  no_var: string;
+  kode: string;
+  nama: string | null;
+  tipe: string | null;
+  data_tabel: string | null;
+  data_kolom: string | null;
+  urutan_data: string | null;
+  referensi_asal: string | null;
+  sql_query: string | null;
+  default_data: string | null;
+  multi_sidang: string | null;
+};
+
+export type PustakaMesin = {
+  /** Sidik isi pustaka; bot menyimpan mesin per sidik. */
+  sidik: string;
+  /** {nomor ABT baku: definisi dalam bentuk kolom abt_variabel + kode} */
+  pustaka: Record<string, Record<string, string | null>>;
+  /** {kode ALETA ABT (atau nama bermakna): nomor ABT baku} - `#kode#` dikenali sebagai `#NNNN#`. */
+  alias: Record<string, string>;
+};
+
+/**
+ * Menyusun pustaka untuk mesin. Hanya baris AKTIF yang punya peta di server itu; nomor tanpa baris pustaka tidak muncul sehingga
+ * mesin jatuh ke katalog ABT. Hasil berurut dan sidiknya hanya bergantung pada isi (bukan urutan baris dari basis data).
+ */
+export function susunPustakaMesin(baris: BarisPustakaMesin[], sidikDari: (teks: string) => string): PustakaMesin {
+  const pustaka: PustakaMesin["pustaka"] = {};
+  const alias: Record<string, string> = {};
+  const urut = [...baris].sort((a, b) => nomorBaku(a.no_var).localeCompare(nomorBaku(b.no_var)));
+  for (const b of urut) {
+    const no = nomorBaku(b.no_var);
+    pustaka[no] = {
+      kode: b.kode,
+      nama: b.nama ?? "",
+      data_type: b.tipe ?? "",
+      data_tabel: b.data_tabel,
+      data_kolom: b.data_kolom,
+      urutan_data: b.urutan_data,
+      referensi: b.referensi_asal === null || b.referensi_asal === "" ? null : nomorBaku(b.referensi_asal),
+      sql_query: b.sql_query,
+      default_data: b.default_data,
+      multi_sidang: b.multi_sidang,
+    };
+    if (b.kode) alias[b.kode] = no;
+  }
+  return { sidik: sidikDari(JSON.stringify([pustaka, alias])), pustaka, alias };
+}

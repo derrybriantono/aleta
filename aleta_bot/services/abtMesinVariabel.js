@@ -593,6 +593,72 @@ function terapkanIsianTangan(sql, isian) {
  *   menjalankan SATU SELECT; nilai kolom dipulangkan sebagai TEKS (seperti mysqli PHP).
  * @param {string} [p.skemaAbt]
  */
+// ---------------------------------------------------------------------------
+// Jalur ALETA: sumber data dan keyakinan per isian
+// ---------------------------------------------------------------------------
+
+/** Urutan sumber: SIPP, e-Court, gugatan, saksi, manual (yang lebih awal lebih dipercaya). */
+const URUTAN_SUMBER = ["sipp", "ecourt", "gugatan", "saksi", "manual"];
+function urutSumber(daftar) {
+  const ada = new Set(daftar);
+  return URUTAN_SUMBER.find((x) => ada.has(x)) || "";
+}
+
+/**
+ * Sumber data utama dari DEFINISI (tanpa mengikuti rujukan). "" bila definisi tidak menyebut tabel apa pun (hanya merujuk isian lain).
+ *   data_teks/data_tanggal = ketikan petugas (manual); tanya_jawab = saksi; data_sipp = kolom SIPP (posita/petitum = gugatan);
+ *   data_sql = tabel yang dibaca rumus. Rumus yang hanya membaca tabel isian tangan ABT (abt_data_*) = manual.
+ */
+function sumberDariDefinisi(def) {
+  const jenis = String((def && def.data_type) || "");
+  if (jenis === "data_teks" || jenis === "data_tanggal") return "manual";
+  if (jenis === "tanya_jawab") return "saksi";
+  if (jenis === "multi_sidang") return "sipp";
+  if (jenis === "data_sipp") {
+    const t = `${def.data_tabel || ""}.${def.data_kolom || ""}`.toLowerCase();
+    if (/ecourt/.test(t)) return "ecourt";
+    if (/posita|petitum|gugat/.test(t)) return "gugatan";
+    if (/saksi/.test(t)) return "saksi";
+    return "sipp";
+  }
+  if (jenis !== "data_sql") return "";
+  const sql = String(def.sql_query || "")
+    .replace(POLA_SAPU, " ")
+    .toLowerCase();
+  const tabel = new Set([...sql.matchAll(/\b(?:from|join)\s+`?([a-z0-9_.]+)`?/g)].map((m) => m[1].replace(/^.*\./, "")));
+  const sumber = new Set();
+  for (const t of tabel) {
+    if (/ecourt/.test(t)) sumber.add("ecourt");
+    else if (/saksi|tanyajawab/.test(t)) sumber.add("saksi");
+    else if (/perbaikan.*gugat|gugat.*web/.test(t)) sumber.add("gugatan");
+    else if (/^abt_(data|temp)_/.test(t)) sumber.add("manual");
+    else if (t !== "dual") sumber.add("sipp");
+  }
+  if (/\b(?:posita|petitum)\b/.test(sql)) sumber.add("gugatan");
+  // Rumus yang membaca perkara DAN isian tangan: nilai pokoknya dari SIPP; manual hanya bila itu satu-satunya.
+  if (sumber.size > 1) sumber.delete("manual");
+  return urutSumber([...sumber]);
+}
+
+/**
+ * Keyakinan sebuah isian: pasti (data terstruktur yang terisi), periksa (terisi tetapi turunan teks gugatan atau memuat
+ * penanda [PERIKSA ...] / titik-titik), kosong (tidak terisi).
+ */
+function keyakinanIsian({ asal, status, sumber, nilai }) {
+  if (asal === "kosong" || (status && status !== "terisi")) return "kosong";
+  const teks = String(nilai ?? "");
+  if (asal === "cadangan") return "periksa";
+  if (/\[PERIKSA/i.test(teks) || /\.\.\./.test(teks)) return "periksa";
+  if (sumber === "gugatan") return "periksa";
+  return "pasti";
+}
+
+/** Pola `#kode#` untuk daftar kode bermakna (hanya kode yang sah: huruf diawali, huruf/angka/_.-, 3-64). */
+function polaAliasDari(kode) {
+  const sah = kode.filter((k) => /^[A-Za-z][A-Za-z0-9_.-]{2,63}$/.test(k)).sort((x, y) => y.length - x.length);
+  return sah.length ? new RegExp(`#(${sah.map(lolosRegex).join("|")})#`, "g") : null;
+}
+
 function buatMesin(p) {
   const kueriMentah = p.kueri;
   const skema = String(p.skemaAbt || process.env.ALETA_ABT_SKEMA || "aps_badilag").trim();
@@ -601,6 +667,24 @@ function buatMesin(p) {
   const umurMs = p.umurKatalogMs === undefined ? UMUR_KATALOG_MS : Number(p.umurKatalogMs);
   /** {noVar: {sql_query?, default_data?}} - definisi pengganti untuk uji, tidak pernah ditulis. */
   const timpaKatalog = p.timpaKatalog && typeof p.timpaKatalog === "object" ? p.timpaKatalog : {};
+  /**
+   * JALUR ALETA ABT (Tahap 4, 5 Nov 2026) - HANYA bila diminta lewat opsi ini (rute pratinjau Super Admin). Tanpa opsi ini mesin
+   * berperilaku persis seperti sebelumnya: semua pemanggil lama (panel Blangko Derry, BAS massal, Tes putusan) tidak berubah.
+   *   pustaka {noVar: {nama, data_type, data_tabel, data_kolom, urutan_data, referensi, sql_query, default_data, multi_sidang, kode?}}
+   *           rumus dari pustaka ALETA (aleta_abt_variabel); dipakai bila barisnya ada, selain itu jatuh ke katalog ABT.
+   *   alias   {kodeBermakna: noVar}  `#kode#` dikenali sebagai nomor lama; nomor #NNNN# tetap dikenali.
+   */
+  const jalurAleta = p.jalurAleta && typeof p.jalurAleta === "object" ? p.jalurAleta : null;
+  const pustakaAleta = jalurAleta && jalurAleta.pustaka && typeof jalurAleta.pustaka === "object" ? jalurAleta.pustaka : {};
+  const aliasAleta = jalurAleta && jalurAleta.alias && typeof jalurAleta.alias === "object" ? jalurAleta.alias : {};
+  const kodeAleta = new Map();
+  for (const [no, d] of Object.entries(pustakaAleta)) if (d && d.kode) kodeAleta.set(String(no), String(d.kode));
+  const polaAlias = jalurAleta && Object.keys(aliasAleta).length ? polaAliasDari(Object.keys(aliasAleta)) : null;
+  /** `#kodeBermakna#` -> `#NNNN#` (hanya jalur ALETA). */
+  function luruskanAlias(teks) {
+    if (!polaAlias) return teks;
+    return String(teks).replace(polaAlias, (utuh, k) => (Object.prototype.hasOwnProperty.call(aliasAleta, k) ? `#${aliasAleta[k]}#` : utuh));
+  }
   /**
    * Tes putusan (22 Okt 2026): { perkaraId, nilai: {noVar: teks} } = ketikan yang BELUM (dan tidak akan) disimpan. Diperlakukan seolah
    * baris abt_data_teks / abt_data_tanggal perkara itu sudah ada - lewat penulisan ulang kueri baca, bukan penulisan basis data.
@@ -666,6 +750,12 @@ function buatMesin(p) {
     )
       .then((rows) => {
         const peta = new Map(rows.map((b) => [String(b.no_var ?? "").trim(), b]));
+        // Jalur ALETA: rumus dari pustaka ALETA menggantikan katalog ABT untuk nomor yang barisnya ada; sisanya tetap katalog ABT.
+        for (const [no, d] of Object.entries(pustakaAleta)) {
+          if (!d || typeof d !== "object") continue;
+          const lama = peta.get(no) || {};
+          peta.set(no, { ...lama, ...d, no_var: no, asalRumus: "pustaka" });
+        }
         // Uji suntingan (Pengaturan SIPP & ABT, 16 Okt 2026): definisi yang
         // BELUM disimpan dihitung seolah sudah ada di katalog - tanpa menulis.
         for (const [no, ganti] of Object.entries(timpaKatalog)) {
@@ -751,6 +841,7 @@ function buatMesin(p) {
 
   /** Abt_model::variabel_var_data - penanda di dalam KUERI diganti var_data (tanggal: nilai tampil). */
   async function gantiVarData(ctx, teks, tumpuk) {
+    teks = luruskanAlias(teks);
     const nomor = [...new Set([...String(teks).matchAll(/#([0-9]+)#/g)].map((m) => m[1]))];
     let hasil = String(teks);
     for (const n of nomor) {
@@ -968,6 +1059,9 @@ function buatMesin(p) {
     else mentah = d.value === null || d.value === undefined ? "" : String(d.value);
     // Kode RTF dari rumus katalog dipertahankan (tidak dilolos) - persis ABT, yang tidak melolos garis miring apa pun.
     if (d.sql && !d.tabel) mentah = mentah.replace(KENDALI_RTF_RUMUS, (m) => wakil(m));
+    // Jalur ALETA: "{}" yang ditulis rumus adalah kelompok RTF kosong (penutup kode kendali) - ABT meneruskannya mentah sehingga tidak tampak;
+    // jalur lama melolosnya menjadi "{}" yang tercetak. Diperbaiki HANYA di jalur ALETA (usulan untuk jalur lama: lihat laporan Tahap 4).
+    if (jalurAleta && d.sql && !d.tabel) mentah = mentah.split("{}").join("");
     if (mentah.length > PANJANG_NILAI_MAKS) mentah = mentah.slice(0, PANJANG_NILAI_MAKS);
     const bersih = bersihkanHtmlAbt(mentah);
     return { status: d.status, sebab: d.sebab, nama, rtf: keRtf(bersih, peta), polos: kePolos(bersih, polos) };
@@ -1024,11 +1118,14 @@ function buatMesin(p) {
     const terisi = new Set();
     const kosong = new Map();
     const sumber = { aleta: 0, abt: 0, cadangan: 0, kosong: 0 };
+    /** noVar -> asal nilai (aleta|abt|cadangan|kosong); dipakai hanya oleh jalur ALETA untuk keterangan per isian. */
+    const jejak = new Map();
     let mesinGalat = "";
 
     // Nilai dari ABT dapat memuat penanda lagi (isian teks yang menyebut #1268#):
     // diulang sampai habis, paling banyak 4 putaran.
     for (let putaran = 0; putaran < 4; putaran += 1) {
+      rtf = luruskanAlias(rtf);
       const nomor = [...new Set([...rtf.matchAll(POLA_PENANDA)].map((m) => m[1]))];
       if (nomor.length === 0) break;
       const nilai = new Map();
@@ -1059,6 +1156,7 @@ function buatMesin(p) {
         const v = nilai.get(n);
         if (!v) return utuh;
         sumber[v.asal] += 1;
+        if (!jejak.has(n)) jejak.set(n, v.asal);
         if (v.asal === "kosong") {
           if (!kosong.has(n)) kosong.set(n, { noVar: n, nama: v.nama || "", sebab: v.sebab || "", status: v.status || "kosong" });
         } else terisi.add(n);
@@ -1071,7 +1169,7 @@ function buatMesin(p) {
       return tandaKosong;
     });
 
-    return {
+    const hasil = {
       rtf,
       terisi: [...terisi].sort(),
       kosong: [...kosong.values()].sort((a, b) => a.noVar.localeCompare(b.noVar)),
@@ -1080,6 +1178,58 @@ function buatMesin(p) {
       jumlahKueri: ctx.jumlahKueri,
       mesinGalat,
     };
+    if (jalurAleta) {
+      // Keterangan per isian (sumber, keyakinan) dan pagar cetak final. Tidak ada di jalur lama.
+      hasil.isian = await keteranganIsian(ctx, jejak, kosong);
+      hasil.lolosCetak = hasil.kosong.length === 0 && !mesinGalat;
+      hasil.ringkasanKeyakinan = hasil.isian.reduce((r, x) => ({ ...r, [x.keyakinan]: (r[x.keyakinan] || 0) + 1 }), { pasti: 0, periksa: 0, kosong: 0 });
+      if (opsi.cetakFinal === true && !hasil.lolosCetak) {
+        // Isian kosong tidak lolos ke cetak final: naskah TIDAK dikembalikan, hanya daftar yang harus diisi.
+        hasil.rtf = "";
+        hasil.ditahan = true;
+      }
+    }
+    return hasil;
+  }
+
+  /** Asal rumus + sumber data + keyakinan tiap isian yang muncul di naskah (jalur ALETA). */
+  async function keteranganIsian(ctx, jejak, kosong) {
+    const kat = await katalog().catch(() => new Map());
+    const daftar = [];
+    for (const [n, asal] of [...jejak.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+      const def = kat.get(n) || {};
+      const d = asal === "abt" ? await detil(ctx, n).catch(() => null) : null;
+      const k = kosong.get(n);
+      const sumber = asal === "aleta" || asal === "cadangan" ? "manual" : await sumberIsian(kat, n);
+      const status = k ? k.status || "kosong" : "terisi";
+      daftar.push({
+        noVar: n,
+        kode: kodeAleta.get(n) || "",
+        nama: String(def.nama || ""),
+        asalRumus: asal === "aleta" || asal === "cadangan" ? asal : def.asalRumus || "katalog",
+        sumber,
+        keyakinan: keyakinanIsian({ asal, status, sumber, nilai: d ? d.value : "" }),
+        status,
+        sebab: k ? String(k.sebab || "").slice(0, 160) : "",
+      });
+    }
+    return daftar;
+  }
+
+  /** Sumber data utama sebuah isian menurut definisinya; rumus yang hanya merujuk isian lain mengikuti rujukannya (maks 4 tingkat). */
+  async function sumberIsian(kat, n, tingkat = 0, lihat = new Set()) {
+    const def = kat.get(n);
+    if (!def) return "sipp";
+    const langsung = sumberDariDefinisi(def);
+    if (langsung) return langsung;
+    if (tingkat >= 4 || lihat.has(n)) return "sipp";
+    lihat = new Set(lihat).add(n);
+    const rujuk = new Set();
+    if (phpBenar(def.referensi)) rujuk.add(String(def.referensi).padStart(4, "0"));
+    for (const m of String(def.sql_query || "").matchAll(/#(\d{1,5})#/g)) rujuk.add(m[1].padStart(4, "0"));
+    const hasil = [];
+    for (const r of rujuk) hasil.push(await sumberIsian(kat, r, tingkat + 1, lihat));
+    return urutSumber(hasil) || "sipp";
   }
 
   return { katalog, nilaiPenanda, isiRtf, detil: (opsi, n) => detil(konteks(opsi), n) };
@@ -1087,6 +1237,9 @@ function buatMesin(p) {
 
 module.exports = {
   buatMesin,
+  sumberDariDefinisi,
+  keyakinanIsian,
+  URUTAN_SUMBER,
   terapkanIsianTangan,
   jalurPengisian,
   pagarBaca,
