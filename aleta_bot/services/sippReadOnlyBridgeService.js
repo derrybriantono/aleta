@@ -2715,6 +2715,23 @@ function kueriMesinSipp(sql, params, opsi) {
     params || []
   );
 }
+/**
+ * JALUR ALETA ABT (Tahap 4): mesin yang membaca rumus dari pustaka ALETA (dikirim portal) dan jatuh ke katalog ABT bila
+ * barisnya tidak ada. Hanya untuk permintaan yang secara eksplisit membawa `jalurAleta` (portal menjaganya: Super Admin).
+ * Satu mesin per sidik pustaka supaya katalog tidak dibaca ulang tiap permintaan; pemanggil lain tidak terpengaruh.
+ */
+const mesinJalurAleta = new Map();
+function mesinVariabelJalurAleta(jalur) {
+  const sidik = String((jalur && jalur.sidik) || "");
+  const kunci = sidik || crypto.createHash("sha1").update(JSON.stringify(jalur || {})).digest("hex");
+  const lama = mesinJalurAleta.get(kunci);
+  if (lama && Date.now() - lama.saat < 5 * 60 * 1000) return lama.mesin;
+  const { buatMesin } = require("./abtMesinVariabel");
+  const mesin = buatMesin({ kueri: kueriMesinSipp, jalurAleta: { pustaka: jalur.pustaka || {}, alias: jalur.alias || {} } });
+  mesinJalurAleta.set(kunci, { saat: Date.now(), mesin });
+  for (const [k, v] of mesinJalurAleta) if (Date.now() - v.saat >= 5 * 60 * 1000 || mesinJalurAleta.size > 4) mesinJalurAleta.delete(k);
+  return mesin;
+}
 function mesinVariabelAbt() {
   if (!mesinAbt) {
     const { buatMesin } = require("./abtMesinVariabel");
@@ -2779,6 +2796,28 @@ async function isiBlangko(params = {}) {
         tanyaJawabSaksi: params.tanyaJawabSaksi && typeof params.tanyaJawabSaksi === "object" ? params.tanyaJawabSaksi : {},
         ...(params.tandaLihat === true ? { tandaLihat: true } : {}),
       };
+      // JALUR ALETA ABT (Tahap 4): hanya bila portal membawa pustaka secara eksplisit. Tanpa itu jalur di bawah tidak berubah.
+      if (params.jalurAleta && typeof params.jalurAleta === "object" && params.jalurAleta.pustaka) {
+        const mesin = mesinVariabelJalurAleta(params.jalurAleta);
+        const h = await mesin.isiRtf(rtf, { ...opsi, ...(params.cetakFinal === true ? { cetakFinal: true } : {}) });
+        return {
+          ok: true,
+          berkas: path.basename(jalur),
+          jumlahTerisi: h.terisi.length,
+          terisi: h.terisi,
+          tersisa: h.kosong.map((k) => k.noVar),
+          kosong: h.kosong,
+          sumber: h.sumber,
+          terpecahDisatukan: h.terpecahDisatukan,
+          jumlahKueri: h.jumlahKueri,
+          mesinGalat: h.mesinGalat,
+          isian: h.isian,
+          lolosCetak: h.lolosCetak,
+          ditahan: h.ditahan === true,
+          ringkasanKeyakinan: h.ringkasanKeyakinan,
+          rtfBase64: params.tanpaRtf || h.ditahan ? "" : Buffer.from(h.rtf, "latin1").toString("base64"),
+        };
+      }
       // TES PUTUSAN: ketikan petugas ("seolah tersimpan") dihitung di memori; tanpa ingatan 60 dtk, tanpa menulis apa pun.
       if (params.tes === true) {
         const ketikan = params.isianTangan && typeof params.isianTangan === "object" ? params.isianTangan : {};

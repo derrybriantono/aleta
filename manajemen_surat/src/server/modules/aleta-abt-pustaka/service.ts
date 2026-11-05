@@ -6,6 +6,9 @@ import {
   nomorBaku,
   petaRujukan,
   rencanaSinkron,
+  susunPustakaMesin,
+  type BarisPustakaMesin,
+  type PustakaMesin,
   type KeadaanBaris,
   type RingkasanPustaka,
   type RiwayatSinkron,
@@ -625,4 +628,25 @@ export async function ringkasanPustaka(db: AletaDatabase): Promise<RingkasanPust
     riwayat: daftarRiwayat,
     bentrok: daftarBentrok,
   };
+}
+
+/**
+ * Pustaka ALETA untuk mesin isian sendiri (Tahap 4): rumus variabel aktif yang punya peta di server ABT yang dipakai. Server yang
+ * dipakai = server dengan peta aktif terbanyak (ALETA membaca satu ABT). Hanya membaca basis data ALETA; tanpa pustaka (belum
+ * pernah sinkron) hasilnya kosong sehingga mesin memakai katalog ABT seluruhnya.
+ */
+export async function muatPustakaMesin(db: AletaDatabase): Promise<PustakaMesin> {
+  const peta = await db.queryAll<{ server: string; jumlah: number | string }>(
+    "SELECT server, COUNT(*) AS jumlah FROM aleta_abt_peta_variabel WHERE status <> 'hilang' GROUP BY server ORDER BY jumlah DESC, server LIMIT 1"
+  );
+  const server = peta[0]?.server;
+  if (!server) return susunPustakaMesin([], sha1);
+  const baris = await db.queryAll<BarisPustakaMesin>(
+    `SELECT p.no_var AS no_var, v.kode AS kode, v.nama AS nama, v.tipe AS tipe, v.data_tabel AS data_tabel, v.data_kolom AS data_kolom,
+            v.urutan_data AS urutan_data, v.referensi_asal AS referensi_asal, v.sql_query AS sql_query, v.default_data AS default_data, v.multi_sidang AS multi_sidang
+       FROM aleta_abt_peta_variabel p JOIN aleta_abt_variabel v ON v.kode = p.kode
+      WHERE p.server = ? AND p.status <> 'hilang' AND v.status = 'aktif'`,
+    [server]
+  );
+  return susunPustakaMesin(baris, sha1);
 }

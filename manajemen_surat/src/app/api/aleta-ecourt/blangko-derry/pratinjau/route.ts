@@ -5,6 +5,7 @@ import { golonganPengguna } from "@/lib/matriks-peran";
 import { getEffectiveRoleId, isPrivilegedAdmin } from "@/lib/permissions";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { isiJalurAleta } from "@/server/modules/aleta-abt-pustaka/jalur";
 import { callAletaBotSippBridge } from "@/server/modules/aleta-sipp/aleta-sipp-datasource";
 import { bacaHakBlangko } from "@/server/modules/pengaturan-abt/service";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
@@ -99,6 +100,13 @@ export async function POST(request: NextRequest) {
 
     const namaBerkas = /\.(rtf|docx?|odt)$/i.test(berkas) ? berkas : `${berkas}.rtf`;
     const jalurFolder = folder.startsWith(`${AKAR_DERRY}/`) || folder === AKAR_DERRY ? folder : `${AKAR_DERRY}/${folder}`;
+
+    // Jalur ALETA ABT (Tahap 4): HANYA bila diminta eksplisit (`jalurAleta: true`) dan hanya Super Admin (dijaga di jalur.ts, 403 untuk lainnya).
+    // Tanpa opsi ini seluruh alur di bawah tidak berubah.
+    if (badan.jalurAleta === true) {
+      const j = await isiJalurAleta(actor as Parameters<typeof isiJalurAleta>[0], { folder: jalurFolder, berkas: namaBerkas, perkaraId, sidangKe, cetakFinal: badan.cetakFinal === true });
+      return Response.json(j.ok ? { ok: true, data: j.badan } : j.badan, { status: j.ok ? 200 : j.status, headers: { "Cache-Control": "no-store" } });
+    }
 
     const hasil = await callAletaBotSippBridge<HasilIsiPratinjau>(
       "blangko.isi",
