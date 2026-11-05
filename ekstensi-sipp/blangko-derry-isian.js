@@ -266,19 +266,8 @@
    * pulang { ok: false, pesan } supaya petugas mengulang, bukan mendapat unduhan yang diblokir.
    */
   async function unduh(blob, nama) {
-    let sebab = "pekerja latar tidak menjawab";
-    for (let coba = 0; coba < 2; coba += 1) {
-      try {
-        const alamat = await blobKeData(blob);
-        const jawab = await kirimLatar({ jenis: "unduh", nama, alamat });
-        if (jawab && jawab.ok) return { ok: true, lewat: "ekstensi" };
-        if (jawab) return { ok: false, pesan: `unduhan lewat ekstensi gagal: ${jawab.pesan || "ditolak peramban"}` };
-      } catch (e) {
-        sebab = String((e && e.message) || e);
-      }
-      if (coba === 0) await new Promise((selesai) => setTimeout(selesai, 600));
-    }
-    return { ok: false, pesan: `unduhan lewat ekstensi gagal: ${sebab}` };
+    // Satu sumber dengan Putusan Otomatis di SIPP (panel-alat.js, 5 Nov 2026).
+    return alatUnduhLewatEkstensi(blob, nama);
   }
   /**
    * 3 Nov (butir 4): PDF SALINAN LANGSUNG diunduh (nama berkas tidak berubah), tidak lagi membuka tab penampil.
@@ -286,15 +275,8 @@
    * Mengembalikan kalimat laporan untuk panel.
    */
   async function terbitkanSalinan(blob, nama, ket, awas) {
-    const u = await unduh(blob, nama);
-    if (u.ok) return `PDF SALINAN diunduh "${nama}"${ket}`;
-    try {
-      const jawab = await kirimLatar({ jenis: "tampilkan-pdf", nama, alamat: await blobKeData(blob), pesan: "", awas: awas === true });
-      if (jawab && jawab.ok) return `PDF SALINAN belum dapat diunduh langsung, jadi dibuka di tab baru (simpan dari sana)${ket}`;
-    } catch {
-      /* penampil pun tidak terbuka: pesan di bawah */
-    }
-    return `PDF SALINAN belum dapat diunduh. Coba cetak sekali lagi; bila tetap gagal, muat ulang halaman ini lalu cetak lagi.${ket}`;
+    // Unduh langsung + cadangan tab penampil: satu sumber dengan Putusan Otomatis di SIPP (panel-alat.js, 5 Nov 2026).
+    return (await alatTerbitkanSalinan(blob, nama, ket, awas, "PDF SALINAN belum dapat diunduh. Coba cetak sekali lagi; bila tetap gagal, muat ulang halaman ini lalu cetak lagi.")).kalimat;
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -9458,11 +9440,12 @@
   function daftarFmt() {
     const j = S.blangko ? S.blangko.jenis : "";
     const o = [];
-    if (S.fmt.rtf) o.push("RTF");
-    if (S.fmt.pdf) o.push(`PDF${S.ttdPilih.size ? ` (${S.ttdPilih.size} tanda tangan)` : ""}`);
+    const pdfSaja = dasarPdf();
+    if (S.fmt.rtf && !pdfSaja) o.push("RTF");
+    if (S.fmt.pdf) o.push(`PDF${S.ttdPilih.size && !pdfSaja ? ` (${S.ttdPilih.size} tanda tangan)` : ""}`);
     if (S.fmt.salinan) o.push("PDF SALINAN");
-    if (S.fmt.anon && j === "put") o.push("PDF anonim");
-    if (S.fmt.edoc && j === "put" && !tes()) o.push("unggah ke e-Doc SIPP");
+    if (S.fmt.anon && j === "put" && !pdfSaja) o.push("PDF anonim");
+    if (S.fmt.edoc && j === "put" && !tes() && !pdfSaja) o.push("unggah ke e-Doc SIPP");
     return o;
   }
   /** 29 Okt: ikon (i) keterangan fitur dari blangko-derry.js (arahkan = singkat, klik dua kali = pop-up); kosong bila belum ada. */
@@ -9484,13 +9467,13 @@
     const u = unggahanBerlaku();
     const mati = S.sibuk || S.unggahSibuk ? " disabled" : "";
     const namaDok = NAMA_DOK_UNGGAH[S.blangko && S.blangko.jenis] || "putusan";
-    const jenisBerkas = ".rtf,.docx,.doc,application/rtf,text/rtf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    const jenisBerkas = ".rtf,.docx,.doc,.pdf,application/rtf,text/rtf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf";
     if (S.unggahSibuk) return `<div class="bd-utas bd-unggah" role="status"><span class="bd-catat">Membaca berkas unggahan…</span></div>`;
     if (!u) {
       return (
         `<div class="bd-utas bd-unggah" role="group" aria-label="Putusan dari berkas sendiri">` +
-        `<label class="bd-btn kecil${mati ? " mati" : ""}">Unggah ${namaDok} sendiri (RTF/DOCX/DOC)<input type="file" id="bd-unggahputusan" accept="${jenisBerkas}" hidden${mati}></label>` +
-        `<span class="bd-catat">${namaDok.charAt(0).toUpperCase()}${namaDok.slice(1)} yang sudah Anda sunting sendiri: semua pilihan cetak di atas dibuat dari berkas itu, bukan dari naskah ABT.</span></div>`
+        `<label class="bd-btn kecil${mati ? " mati" : ""}">Unggah ${namaDok} sendiri (RTF/DOCX/DOC/PDF)<input type="file" id="bd-unggahputusan" accept="${jenisBerkas}" hidden${mati}></label>` +
+        `<span class="bd-catat">${namaDok.charAt(0).toUpperCase()}${namaDok.slice(1)} yang sudah Anda sunting sendiri: semua pilihan cetak di atas dibuat dari berkas itu, bukan dari naskah ABT. Berkas PDF hanya dapat menjadi PDF dan PDF SALINAN.</span></div>`
       );
     }
     return (
@@ -9516,12 +9499,15 @@
     const j = S.blangko.jenis;
     const sudah = S.cetakTercatat[`${nomorPerkara()}|${j}`];
     const matiTes = (k) => tes() && k === "edoc";
-    const pil = (k, label, ket) => `<label class="bd-pilc${k === "edoc" || k === "anon" ? (j === "put" && !matiTes(k) ? "" : " mati") : ""}"><input type="checkbox" data-fmt="${k}" ${S.fmt[k] && !matiTes(k) ? "checked" : ""} ${((k === "edoc" || k === "anon") && j !== "put") || matiTes(k) ? "disabled" : ""}> ${label}${ket ? `<small>${esc(ket)}</small>` : ""}</label>`;
+    // 5 Nov 2026: dasar PDF mematikan pilihan yang butuh naskah yang dapat disunting (RTF, PDF anonim, unggah e-Doc) dengan keterangan.
+    const pdfSaja = dasarPdf();
+    const matiPdf = (k) => pdfSaja && (k === "rtf" || k === "anon" || k === "edoc");
+    const pil = (k, label, ket) => `<label class="bd-pilc${k === "edoc" || k === "anon" ? (j === "put" && !matiTes(k) && !matiPdf(k) ? "" : " mati") : matiPdf(k) ? " mati" : ""}"><input type="checkbox" data-fmt="${k}" ${S.fmt[k] && !matiTes(k) && !matiPdf(k) ? "checked" : ""} ${((k === "edoc" || k === "anon") && j !== "put") || matiTes(k) || matiPdf(k) ? "disabled" : ""}> ${label}${matiPdf(k) ? `<small>${esc("butuh RTF/DOCX/DOC")}</small>` : ket ? `<small>${esc(ket)}</small>` : ""}</label>`;
     w.innerHTML =
       pitaTes() +
       // 29 Okt (audit runut): "Tambah tanda tangan" tepat sesudah PDF - ia hanya berlaku pada PDF, bukan PDF SALINAN; tiap pilihan berikon (i).
       `<div class="bd-utas" role="group" aria-label="Pilihan cetak">${pil("rtf", "RTF")}${pil("pdf", "PDF")}${ikonKet("fmt-pdf")}` +
-      `<button type="button" class="bd-btn kecil" id="bd-btnttd" data-bd2="popttd" aria-expanded="false" aria-controls="bd-popttd" title="Tanda tangan hanya dibubuhkan pada PDF">Tambah tanda tangan${S.ttdPilih.size ? ` (${S.ttdPilih.size})` : ""} ▾</button>${ikonKet("fmt-ttd")}` +
+      `<button type="button" class="bd-btn kecil" id="bd-btnttd" data-bd2="popttd" aria-expanded="false" aria-controls="bd-popttd" ${pdfSaja ? "disabled " : ""}title="${pdfSaja ? "Tanda tangan butuh naskah RTF/DOCX/DOC; tidak untuk dasar PDF" : "Tanda tangan hanya dibubuhkan pada PDF"}">Tambah tanda tangan${S.ttdPilih.size ? ` (${S.ttdPilih.size})` : ""} ▾</button>${ikonKet("fmt-ttd")}` +
       `${pil("salinan", "PDF SALINAN")}${ikonKet("fmt-salinan")}` +
       `${pil("anon", "PDF anonim", j === "put" ? "" : "hanya putusan")}${ikonKet("fmt-anon")}${pil("edoc", "Unggah ke e-Doc SIPP", tes() ? "mati pada Tes putusan" : j === "put" ? "" : "hanya putusan; BAS dan relaas diunggah lewat SIPP")}${ikonKet("fmt-edoc")}</div>` +
       htmlUnggahanPutusan() +
@@ -10045,13 +10031,13 @@
   // ──────────────────────────────────────────────────────────────────────────
   /** Bentuk berkas dikenali dari KEPALA-nya (bukan dari nama): rtf | docx | doc | pdf | "". */
   function kenaliBentukBerkas(u8) {
-    if (!u8 || u8.length < 5) return "";
-    const awal = String.fromCharCode(u8[0], u8[1], u8[2], u8[3], u8[4]);
-    if (awal === "%PDF-") return "pdf";
-    if (awal === "{\\rtf") return "rtf";
-    if (u8[0] === 0x50 && u8[1] === 0x4b && u8[2] === 0x03 && u8[3] === 0x04) return "docx";
-    if (u8[0] === 0xd0 && u8[1] === 0xcf && u8[2] === 0x11 && u8[3] === 0xe0) return "doc";
-    return "";
+    return alatKenaliBentukBerkas(u8);
+  }
+  const KET_DASAR_PDF = "Dasar PDF: hanya PDF dan PDF SALINAN yang dapat dibuat. RTF, tanda tangan, PDF anonim, dan unggah e-Doc butuh naskah yang dapat disunting (RTF/DOCX/DOC) dan dimatikan.";
+  /** Dasar cetak berupa PDF yang diunggah petugas (bukan naskah yang dapat disunting). */
+  function dasarPdf() {
+    const u = unggahanBerlaku();
+    return Boolean(u && u.bentukAsal === "pdf");
   }
   /** Berkas unggahan yang masih berlaku untuk perkara yang sedang dibuka (berganti perkara = dilepas). */
   function unggahanBerlaku() {
@@ -10074,8 +10060,25 @@
     try {
       const asli = new Uint8Array(await berkas.arrayBuffer());
       const bentuk = kenaliBentukBerkas(asli);
-      if (bentuk === "pdf") throw new Error("PDF tidak dapat dipakai sebagai sumber; unggah putusan dalam bentuk RTF, DOCX, atau DOC.");
-      if (!bentuk) throw new Error("Isi berkas bukan RTF, DOCX, maupun DOC.");
+      if (!bentuk) throw new Error("Isi berkas bukan RTF, DOCX, DOC, maupun PDF.");
+      if (bentuk === "pdf") {
+        // 5 Nov 2026: PDF yang masih kosong diterima. Dasar PDF hanya dapat menjadi PDF dan PDF SALINAN (tulisan SALINAN, "ttd", dan blok
+        // Untuk Salinan digambar di atas halaman PDF oleh server); RTF, tanda tangan, PDF anonim, dan unggah e-Doc butuh naskah yang
+        // dapat disunting dan dimatikan selama dasarnya PDF.
+        S.unggahan = {
+          untuk: nomorPerkara(),
+          nama: berkas.name,
+          bentukAsal: "pdf",
+          rtf: null,
+          pdf: asli.buffer.slice(asli.byteOffset, asli.byteOffset + asli.byteLength),
+          catatan: [KET_DASAR_PDF],
+        };
+        catatLog(`berkas PDF "${berkas.name}" dipakai sebagai sumber (hanya PDF dan PDF SALINAN)`);
+        toast(`Sumber cetak: PDF "${berkas.name}" - hanya PDF dan PDF SALINAN yang dapat dibuat.`);
+        S.unggahSibuk = false;
+        renderCetak();
+        return;
+      }
       const catatan = [];
       let rtf = asli.buffer.slice(asli.byteOffset, asli.byteOffset + asli.byteLength);
       if (bentuk !== "rtf") {
@@ -10105,6 +10108,35 @@
     renderCetak();
     toast("Berkas unggahan dilepas; Cetak kembali memakai naskah dari ABT.");
   }
+  /**
+   * 5 Nov 2026: cetak dari PDF unggahan - hanya PDF (berkas itu sendiri, tidak diubah) dan PDF SALINAN (digambar di atas halaman PDF di
+   * server: alatMintaSalinanDariPdf, SATU metode dengan Isian SIPP dan ALETA ABT). Tidak menulis ke SIPP/ABT.
+   */
+  async function cetakDariPdf(u) {
+    const nomor = nomorPerkara();
+    const berkas = S.blangko.berkas;
+    const bita = new Uint8Array(u.pdf);
+    const hasil = [];
+    if (S.fmt.pdf) {
+      const nama = namaUnduhan(nomor, berkas, "pdf");
+      const r = await unduh(new Blob([bita], { type: "application/pdf" }), nama);
+      hasil.push(r.ok ? `PDF diunduh "${nama}"` : `PDF gagal: ${r.pesan}`);
+    }
+    if (S.fmt.salinan) {
+      try {
+        catatLog("membuat PDF SALINAN dari PDF…");
+        const h = await alatMintaSalinanDariPdf(bita);
+        const nama = namaUnduhan(nomor, `${berkas} - SALINAN`, "pdf");
+        const ket = alatKetSalinanPutusan(h.d.salinan || null);
+        hasil.push(await terbitkanSalinan(h.blob, nama, ket, !(h.d.salinan && h.d.salinan.gambarTtdPanitera)));
+      } catch (e) {
+        hasil.push(`PDF SALINAN gagal: ${String((e && e.message) || e)}`);
+      }
+    }
+    tampilStatus(hasil[hasil.length - 1] || "");
+    for (const h of hasil) catatLog(h);
+    toast(hasil.join(" · "));
+  }
   /** Cetak dari berkas unggahan: melewati ABT sama sekali (naskah, isian, pengingat isian kosong); deteksi sisa blangko tetap berjalan di lakukanCetak. */
   async function cetakUnggahan() {
     const u = unggahanBerlaku();
@@ -10113,7 +10145,8 @@
     renderCetak();
     try {
       catatLog(`memakai berkas unggahan "${u.nama}" (naskah ABT tidak diminta)`);
-      await lakukanCetak(u.rtf.slice(0));
+      if (u.bentukAsal === "pdf") await cetakDariPdf(u);
+      else await lakukanCetak(u.rtf.slice(0));
     } catch (e) {
       catatLog(`gagal: ${String((e && e.message) || e)}`);
       toast(`Cetak gagal: ${String((e && e.message) || e)}`);
@@ -10290,12 +10323,11 @@
     // 2 Nov: PDF SALINAN BAS juga dikirimi konteks runut dan jumlah bukti - nomor halaman dan Z salinan sama dengan PDF biasa.
     const basRunut = S.blangko && S.blangko.jenis === "bas" && !tes() ? konteksRunutBas() : null;
     const badan = { rtfBase64: base64DariBuffer(buf), ...(S.jumlahBuktiZ > 0 ? { jumlahBukti: S.jumlahBuktiZ } : {}), ...(salinan ? { salinan: true } : {}), ...(adaTtd ? { ttd: ttd.map((x) => ({ nama: x.nama, pngBase64: x.pngBase64 })) } : {}), ...(basRunut && (basRunut.perkaraId || basRunut.nomorPerkara) ? { basRunut } : {}) };
-    const d = await ambilPortal(API_PDF, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(badan), batasMs: BATAS_LAMA_MS }, salinan ? "Membuat PDF salinan" : "Membuat PDF");
-    if (!d || !d.available) throw new Error((d && d.message) || "pengubah PDF tidak tersedia");
+    // Permintaan ke rute PDF = satu sumber dengan Putusan Otomatis di SIPP (panel-alat.js, 5 Nov 2026); pengambilnya tetap ambilPortal (penjaga Tes putusan).
+    const { d, biner, blob } = await alatMintaPdf(badan, { ambil: ambilPortal });
     if (d.runut) laporRunut(d.runut.peringatan);
     if (d.zcross) laporZ(d.zcross.peringatan);
-    const biner = Uint8Array.from(atob(d.pdfBase64), (c) => c.charCodeAt(0));
-    const hasil = { blob: new Blob([biner], { type: "application/pdf" }), bita: biner, keterangan: d.salinan || null, ttdPdf: d.ttdPdf || null };
+    const hasil = { blob, bita: biner, keterangan: d.salinan || null, ttdPdf: d.ttdPdf || null };
     if (!salinan) {
       cachePdf.unshift({ rtf: rtfLatin1, ttd: kunciTtd, bita: biner, ttdPdf: hasil.ttdPdf, saat: Date.now() });
       cachePdf.length = Math.min(cachePdf.length, 3);
@@ -10495,22 +10527,9 @@
           pesan.push(await terbitkanSalinan(blob, nama, ketBas, !ada.length || tanpa.length > 0));
           return selesai("salinan", mulai, pesan);
         }
-        // 28 Okt (630/2026): pesan menyebut yang SUNGGUH terjadi - jumlah "ttd" yang tertulis (laporan bot) dan sebab tanda tangan
-        // Panitera tidak tertempel - bukan kalimat tetap yang terdengar berhasil walau "ttd" tidak tertulis.
-        const nTtd = keterangan ? Number(keterangan.ttdDitambah || 0) + Number(keterangan.ttdSudahAda || 0) : 0;
-        const bagianTtd = keterangan ? (nTtd ? `majelis dan panitera sidang: ttd (${nTtd})` : "tulisan ttd TIDAK tertulis - blok tanda tangan majelis tidak dikenali") : "";
-        const sebabTanpa = {
-          ttd_tidak_ada: "tanda tangannya belum terdaftar/disahkan",
-          nama_panitera_tidak_ditemukan_di_pdf: "namanya tidak ditemukan di PDF",
-        };
-        const ket =
-          keterangan && keterangan.gambarTtdPanitera
-            ? ` (tanda tangan Panitera ${keterangan.namaPanitera || ""} tertempel; ${bagianTtd})`
-            : keterangan && keterangan.namaPanitera
-              ? ` (tanpa tanda tangan Panitera ${keterangan.namaPanitera}${keterangan.alasanTanpaGambar ? `: ${sebabTanpa[keterangan.alasanTanpaGambar] || keterangan.alasanTanpaGambar}` : ""}; ${bagianTtd})`
-              : keterangan
-                ? ` (blok "Untuk Salinan" tidak ditemukan; ${bagianTtd})`
-                : "";
+        // 28 Okt (630/2026): pesan menyebut yang SUNGGUH terjadi (jumlah "ttd" dan sebab tanda tangan Panitera tidak tertempel) - kalimatnya
+        // satu sumber dengan Putusan Otomatis di SIPP (alatKetSalinanPutusan, panel-alat.js).
+        const ket = alatKetSalinanPutusan(keterangan);
         pesan.push(await terbitkanSalinan(blob, nama, ket, !(keterangan && keterangan.gambarTtdPanitera)));
       } catch (e) {
         pesan.push(`PDF SALINAN gagal: ${String((e && e.message) || e)}`);
@@ -12841,7 +12860,7 @@
       prat: { terbuka: S.prat.terbuka, memuat: S.prat.memuat, adaRtf: Boolean(S.prat.rtf), penanda: S.prat.penanda.slice(), kotor: S.prat.kotor, galat: S.prat.galat, siap: naskahSegar(S.prat), sedangDisiapkan: Boolean(S.prat.janji), versiIsian: S.versiIsian },
       ukurCetak: S.ukurCetak ? { ...S.ukurCetak } : null,
       fmt: { ...S.fmt },
-      unggahan: unggahanBerlaku() ? { nama: S.unggahan.nama, bentukAsal: S.unggahan.bentukAsal, untuk: S.unggahan.untuk, byte: S.unggahan.rtf.byteLength } : null,
+      unggahan: unggahanBerlaku() ? { nama: S.unggahan.nama, bentukAsal: S.unggahan.bentukAsal, untuk: S.unggahan.untuk, byte: (S.unggahan.rtf || S.unggahan.pdf).byteLength } : null,
       ttdPilih: Array.from(S.ttdPilih),
       peringat: S.peringat,
       log: S.log.slice(),

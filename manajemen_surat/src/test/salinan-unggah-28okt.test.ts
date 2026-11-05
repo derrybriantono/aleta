@@ -147,7 +147,7 @@ afterEach(async () => {
   while (terbuka.length) terbuka.pop()!.window.close();
 });
 
-function buka(p: { tundaAnon?: number; viewerGagal?: boolean; unduhGagal?: boolean; tundaPdf?: number; tundaPreview?: number; portalLama?: boolean; orang?: string; simpanan?: Record<string, unknown>; hakTolak?: boolean; tjGagal?: boolean; botMati?: boolean; abtAwal?: Record<string, string>; rtfBytes?: Uint8Array; ttd?: { status?: number; baris?: unknown[]; akunId?: string; gambarTolak?: boolean } } = {}): Halaman {
+function buka(p: { salinanPdfTolak?: string; tundaAnon?: number; viewerGagal?: boolean; unduhGagal?: boolean; tundaPdf?: number; tundaPreview?: number; portalLama?: boolean; orang?: string; simpanan?: Record<string, unknown>; hakTolak?: boolean; tjGagal?: boolean; botMati?: boolean; abtAwal?: Record<string, string>; rtfBytes?: Uint8Array; ttd?: { status?: number; baris?: unknown[]; akunId?: string; gambarTolak?: boolean } } = {}): Halaman {
   const badan = `<div id="header"><div class="h_right"><b>Pengguna</b> Panitera</div></div><div id="wrapper"><div id="navbar">${MENU}</div><div id="content"></div></div>`;
   const dom = new JSDOM(`<!doctype html><html><head><title>ABT</title></head><body>${badan}</body></html>`, { url: BERANDA, runScripts: "outside-only", pretendToBeVisual: true } as ConstructorParameters<typeof JSDOM>[1]);
   terbuka.push(dom);
@@ -256,6 +256,10 @@ function buka(p: { tundaAnon?: number; viewerGagal?: boolean; unduhGagal?: boole
       const s = susunIsian(put ? PENANDA_PUT : PENANDA_BAS, KATALOG, { P: q.get("sebutanP") || "Penggugat", T: q.get("sebutanT") || "Tergugat" });
       const kode = kodeUntukNilai(s, q.get("semua") === "1");
       return json({ ok: true, data: { ada: true, folder: `derry_briantono/${q.get("folder")}`, berkas: `${berkas}.rtf`, jumlahPenanda: s.penanda.length, sumberKatalog: "abt", katalogTersedia: true, ...s, nilai: q.get("perkaraId") && !p.botMati ? nilaiDari(kode, kodeTanyaJawab(s)) : undefined, nilaiAda: Boolean(q.get("perkaraId")) && !p.botMati, nilaiSebab: "" } });
+    }
+    if (url.includes("/putusan/salinan-dari-pdf")) {
+      if (p.salinanPdfTolak) return json({ ok: true, data: { available: false, kode: "sudah_salinan", message: p.salinanPdfTolak } });
+      return json({ ok: true, data: { available: true, message: "", pdfBase64: Buffer.from("%PDF-1.4 salinan uji").toString("base64"), byte: 20, salinan: { jenis: "putusan-pdf", salinan: "di_atas_judul", ttdDitambah: 3, ttdSudahAda: 0, namaPanitera: "PP Satu", gambarTtdPanitera: true, alasanTanpaGambar: "", capPanitera: true, blokHalamanBaru: false } } });
     }
     if (url.includes("/aleta-bot/abt/pdf")) {
       if (p.tundaPdf) await tunggu(p.tundaPdf);
@@ -420,14 +424,15 @@ function pasangKonversi(h: Halaman, hasilRtf: string, opsi: { gagal?: boolean } 
 }
 
 describe("1. RTF unggahan masuk ke jalur cetak yang SAMA dengan naskah ABT", () => {
-  it("langkah Cetak menyediakan 'Unggah putusan sendiri (RTF/DOCX/DOC)'; belum ada berkas = belum ada sumber unggahan", async () => {
+  it("langkah Cetak menyediakan 'Unggah putusan sendiri (RTF/DOCX/DOC/PDF)'; belum ada berkas = belum ada sumber unggahan", async () => {
     const h = buka();
     await pilihPutusan(h);
     expect(q(h, "#bd-unggahputusan")).not.toBeNull();
-    expect(akar(h).textContent).toContain("Unggah putusan sendiri (RTF/DOCX/DOC)");
+    expect(akar(h).textContent).toContain("Unggah putusan sendiri (RTF/DOCX/DOC/PDF)");
     expect(q(h, ".bd-sumberunggah")).toBeNull();
     expect(isian(h).keadaan().unggahan).toBeNull();
     expect((q(h, "#bd-unggahputusan") as HTMLInputElement).accept).toContain(".docx");
+    expect((q(h, "#bd-unggahputusan") as HTMLInputElement).accept).toContain(".pdf");
   });
 
   it("PDF SALINAN dari RTF unggahan: byte sama persis dikirim ke pengubah PDF (salinan:true), ABT tidak diminta naskah, tanpa pengingat isian kosong", async () => {
@@ -554,15 +559,12 @@ describe("2. DOCX / DOC diubah ke RTF sekali; bentuk lain ditolak", () => {
     await sampai(() => pratinjauPermintaan(h).length >= 1, "naskah ABT diminta", 8000);
   });
 
-  it("PDF dan berkas yang bukan putusan ditolak tanpa menghubungi server", async () => {
+  it("berkas yang bukan putusan ditolak tanpa menghubungi server (PDF kini diterima: lihat bagian 6)", async () => {
     const h = buka();
     await pilihPutusan(h);
     const dikirim = pasangKonversi(h, RTF_HASIL_KONVERSI);
-    await unggah(h, "salinan.pdf", "%PDF-1.4 isi");
-    await sampai(() => /tidak dapat dipakai/.test(toastTeks(h)), "PDF ditolak", 4000);
-    expect(toastTeks(h)).toContain("PDF tidak dapat dipakai sebagai sumber");
     await unggah(h, "foto.docx", "GIF89a bukan dokumen");
-    await sampai(() => /bukan RTF, DOCX, maupun DOC/.test(toastTeks(h)), "bukan dokumen ditolak", 4000);
+    await sampai(() => /bukan RTF, DOCX, DOC, maupun PDF/.test(toastTeks(h)), "bukan dokumen ditolak", 4000);
     expect(dikirim).toEqual([]);
     expect(isian(h).keadaan().unggahan).toBeNull();
     expect(q(h, ".bd-sumberunggah")).toBeNull();
@@ -758,5 +760,112 @@ describe("5. penjaga", () => {
     expect(blok).toContain("var(--okln)");
     expect(blok).toContain("var(--okbg)");
     expect(blok).not.toMatch(/#[0-9a-f]{3,6}\b/i);
+  });
+});
+
+// ============================================================================
+// 6. PDF yang masih kosong diterima sebagai dasar (5 Nov 2026): hanya PDF dan PDF SALINAN
+// ============================================================================
+const PDF_KOSONG = "%PDF-1.4\n% putusan kosong rekaan\n";
+describe("6. PDF unggahan: hanya PDF dan PDF SALINAN; jalur RTF/DOCX/DOC tidak berubah", () => {
+  const ambilSalinanPdf = (h: Halaman) => mintaKe(h, /putusan\/salinan-dari-pdf/, "POST");
+
+  it("PDF diterima (tanpa konversi, tanpa naskah ABT): sumber tampil dengan keterangan, RTF/PDF anonim/e-Doc/tanda tangan dimatikan", async () => {
+    const h = buka();
+    await pilihPutusan(h);
+    const dikirim = pasangKonversi(h, RTF_HASIL_KONVERSI);
+    await unggah(h, "Putusan kosong.pdf", PDF_KOSONG);
+    await sampai(() => q(h, ".bd-sumberunggah"), "sumber unggahan tampil");
+    expect(q(h, ".bd-sumberunggah")!.textContent).toBe("Sumber cetak: berkas unggahan Putusan kosong.pdf");
+    expect(isian(h).keadaan().unggahan).toMatchObject({ nama: "Putusan kosong.pdf", bentukAsal: "pdf", byte: Buffer.byteLength(PDF_KOSONG, "latin1") });
+    expect(akar(h).textContent).toContain("hanya PDF dan PDF SALINAN yang dapat dibuat");
+    for (const k of ["rtf", "anon", "edoc"]) {
+      const c = q(h, `[data-fmt="${k}"]`) as HTMLInputElement;
+      expect(c.disabled, k).toBe(true);
+      expect(c.checked, k).toBe(false);
+    }
+    expect((q(h, "#bd-btnttd") as HTMLButtonElement).disabled).toBe(true);
+    expect((q(h, '[data-fmt="pdf"]') as HTMLInputElement).disabled).toBe(false);
+    expect((q(h, '[data-fmt="salinan"]') as HTMLInputElement).disabled).toBe(false);
+    expect(dikirim).toEqual([]);
+    expect(pratinjauPermintaan(h)).toHaveLength(0);
+    expect(ambilSalinanPdf(h)).toHaveLength(0); // tanpa permintaan sampai Cetak
+  });
+
+  it("PDF SALINAN dari PDF: berkas dikirim ke rute salinan-dari-pdf (bukan rute RTF), diunduh langsung dengan nama baku", async () => {
+    const h = buka();
+    await pilihPutusan(h);
+    await unggah(h, "x.pdf", PDF_KOSONG);
+    await sampai(() => q(h, ".bd-sumberunggah"), "sumber");
+    (q(h, '[data-fmt="salinan"]') as HTMLInputElement).click();
+    klik(h, '[data-bd2="cetak"]');
+    await sampai(() => unduhanLatar(h).some((m) => m.nama === `${NAMA_DASAR} - SALINAN.pdf`), "PDF SALINAN terbit", 8000);
+    const k = ambilSalinanPdf(h);
+    expect(k).toHaveLength(1);
+    const badan = JSON.parse(k[0].badan);
+    expect(Buffer.from(badan.pdfBase64, "base64").toString("latin1")).toBe(PDF_KOSONG);
+    expect(h.pdfRtf).toEqual([]); // rute PDF dari RTF tidak dipakai
+    expect(tampilLatar(h)).toEqual([]);
+    expect(pratinjauPermintaan(h)).toHaveLength(0);
+    expect(isian(h).keadaan().log.join("\n")).toMatch(/PDF SALINAN diunduh/);
+  });
+
+  it("PDF biasa dari PDF = berkas itu sendiri tanpa diubah; RTF/anonim/e-Doc tidak pernah dikerjakan walau tercentang sebelumnya", async () => {
+    const h = buka();
+    await pilihPutusan(h);
+    (q(h, '[data-fmt="rtf"]') as HTMLInputElement).click(); // dicentang SEBELUM berkas PDF dipilih
+    await unggah(h, "x.pdf", PDF_KOSONG);
+    await sampai(() => q(h, ".bd-sumberunggah"), "sumber");
+    (q(h, '[data-fmt="pdf"]') as HTMLInputElement).click();
+    klik(h, '[data-bd2="cetak"]');
+    await sampai(() => unduhanLatar(h).length >= 1, "PDF terbit", 8000);
+    await tunggu(50);
+    const unduh = unduhanLatar(h);
+    expect(unduh.map((m) => String(m.nama))).toEqual([`${NAMA_DASAR}.pdf`]);
+    expect(Buffer.from(String(unduh[0].alamat).split(",")[1], "base64").toString("latin1")).toBe(PDF_KOSONG);
+    expect(ambilSalinanPdf(h)).toHaveLength(0);
+    expect(h.pdfRtf).toEqual([]);
+    expect(mintaKe(h, /unggah-sipp/)).toHaveLength(0);
+  });
+
+  it("PDF yang ditolak server (mis. sudah bertuliskan SALINAN) = pesan jelas, tidak ada unduhan, tidak ada tulisan ke SIPP/ABT", async () => {
+    const h = buka({ salinanPdfTolak: "Berkas PDF ini sudah bertuliskan SALINAN, jadi tidak diubah lagi supaya tidak bertumpuk." });
+    await pilihPutusan(h);
+    await unggah(h, "x.pdf", PDF_KOSONG);
+    await sampai(() => q(h, ".bd-sumberunggah"), "sumber");
+    (q(h, '[data-fmt="salinan"]') as HTMLInputElement).click();
+    klik(h, '[data-bd2="cetak"]');
+    await sampai(() => /sudah bertuliskan SALINAN/.test(toastTeks(h)), "pesan penolakan", 8000);
+    expect(toastTeks(h)).toContain("PDF SALINAN gagal");
+    expect(unduhanLatar(h)).toEqual([]);
+    expect(mintaKe(h, /edit_data\?/, "POST").filter((m) => !/no_var=1214/.test(m.url))).toEqual([]);
+    expect(mintaKe(h, /unggah-sipp/)).toHaveLength(0);
+  });
+
+  it("jalur RTF TIDAK berubah: RTF unggahan tetap ke rute PDF dari RTF, tidak ke rute salinan-dari-pdf, pilihan RTF/anonim/e-Doc tetap hidup", async () => {
+    const h = buka();
+    await pilihPutusan(h);
+    await unggah(h, "Putusan saya.rtf", RTF_UNGGAH);
+    await sampai(() => q(h, ".bd-sumberunggah"), "sumber");
+    for (const k of ["rtf", "anon", "edoc"]) expect((q(h, `[data-fmt="${k}"]`) as HTMLInputElement).disabled, k).toBe(false);
+    expect((q(h, "#bd-btnttd") as HTMLButtonElement).disabled).toBe(false);
+    (q(h, '[data-fmt="salinan"]') as HTMLInputElement).click();
+    klik(h, '[data-bd2="cetak"]');
+    await sampai(() => h.pdfRtf.length === 1 && unduhanLatar(h).some((m) => m.nama === `${NAMA_DASAR} - SALINAN.pdf`), "PDF SALINAN terbit", 8000);
+    expect(h.pdfRtf[0]).toBe(RTF_UNGGAH);
+    expect(ambilSalinanPdf(h)).toHaveLength(0);
+    expect(akar(h).textContent).not.toContain("Dasar PDF");
+  });
+
+  it("berganti dari PDF ke RTF melepas keterbatasan PDF (Ganti berkas)", async () => {
+    const h = buka();
+    await pilihPutusan(h);
+    await unggah(h, "x.pdf", PDF_KOSONG);
+    await sampai(() => q(h, ".bd-sumberunggah"), "sumber PDF");
+    expect((q(h, '[data-fmt="rtf"]') as HTMLInputElement).disabled).toBe(true);
+    await unggah(h, "y.rtf", RTF_UNGGAH);
+    await sampai(() => /y\.rtf/.test(q(h, ".bd-sumberunggah")?.textContent || ""), "sumber RTF");
+    expect((q(h, '[data-fmt="rtf"]') as HTMLInputElement).disabled).toBe(false);
+    expect(isian(h).keadaan().unggahan).toMatchObject({ nama: "y.rtf", bentukAsal: "rtf" });
   });
 });

@@ -2354,6 +2354,159 @@ function alatNamaUnduhanBlangko(nomorPerkara, berkasBlangko, akhiranBawaan) {
 }
 
 /**
+ * ============================================================================
+ * PDF SALINAN BERSAMA (5 Nov 2026)
+ * ============================================================================
+ *
+ * Satu sumber untuk membuat dan menerbitkan PDF SALINAN dari RTF, dipakai Blangko Derry di ABT (blangko-derry-isian.js) dan
+ * "Putusan Otomatis" di halaman perkara SIPP (putusan-sipp.js, centang "Ubah jadi PDF salinan"): permintaan ke rute PDF portal,
+ * unduhan langsung lewat pekerja latar (chrome.downloads), cadangan tab penampil, dan kalimat laporannya. Tidak ada yang ditulis
+ * ke SIPP maupun ABT dari sini.
+ */
+const ALAT_API_PDF = "/aleta/api/aleta-bot/abt/pdf";
+const ALAT_BATAS_PDF_MS = 150000;
+
+/** Bentuk berkas dikenali dari KEPALA-nya (bukan dari nama): rtf | docx | doc | pdf | "". */
+function alatKenaliBentukBerkas(u8) {
+  if (!u8 || u8.length < 5) return "";
+  const awal = String.fromCharCode(u8[0], u8[1], u8[2], u8[3], u8[4]);
+  if (awal === "%PDF-") return "pdf";
+  if (awal === "{\\rtf") return "rtf";
+  if (u8[0] === 0x50 && u8[1] === 0x4b && u8[2] === 0x03 && u8[3] === 0x04) return "docx";
+  if (u8[0] === 0xd0 && u8[1] === 0xcf && u8[2] === 0x11 && u8[3] === 0xe0) return "doc";
+  return "";
+}
+
+/** Permintaan JSON ke portal (alatAmbil: batas waktu dan pesan baku). Pulang isi `data`; galat dilempar dengan sebab yang terbaca. */
+async function alatAmbilJsonPortal(alamat, opsi, yang) {
+  const r = await alatAmbil(alamat, { credentials: "include", cache: "no-store", ...(opsi || {}) }, yang);
+  const luar = await r.json().catch(() => null);
+  if (!r.ok || !luar || luar.ok === false) {
+    const sebab = (luar && (luar.alasan || luar.sebab || (luar.error && luar.error.message))) || `${yang} gagal (kode ${r.status}).`;
+    const e = new Error(String(sebab));
+    e.status = r.status;
+    throw e;
+  }
+  return luar.data !== undefined ? luar.data : luar;
+}
+
+/**
+ * Meminta PDF dari RTF ke rute PDF portal. `badan` = { rtfBase64, salinan?, ttd?, jumlahBukti?, basRunut? }.
+ * opsi.ambil = pengambil JSON lain (Blangko Derry memakai ambilPortal-nya yang menjaga mode Tes putusan).
+ * Pulang { d (jawaban portal), biner (Uint8Array), blob }; melempar bila pengubah PDF tidak tersedia.
+ */
+async function alatMintaPdf(badan, opsi) {
+  const ambil = opsi && typeof opsi.ambil === "function" ? opsi.ambil : alatAmbilJsonPortal;
+  const yang = badan && badan.salinan ? "Membuat PDF salinan" : "Membuat PDF";
+  const d = await ambil((opsi && opsi.alamat) || ALAT_API_PDF, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(badan), batasMs: ALAT_BATAS_PDF_MS }, yang);
+  if (!d || !d.available) throw new Error((d && d.message) || "pengubah PDF tidak tersedia");
+  const biner = Uint8Array.from(atob(d.pdfBase64), (c) => c.charCodeAt(0));
+  return { d, biner, blob: new Blob([biner], { type: "application/pdf" }) };
+}
+
+/** Bita -> base64 (per potongan: tanpa tumpukan panggilan raksasa). */
+function alatBase64DariBita(bita) {
+  let biner = "";
+  for (let i = 0; i < bita.length; i += 0x8000) biner += String.fromCharCode.apply(null, bita.subarray(i, i + 0x8000));
+  return btoa(biner);
+}
+
+/**
+ * PDF SALINAN dari PDF yang masih kosong (rute salinan-dari-pdf, 5 Nov 2026): tulisan SALINAN, "ttd", dan blok Untuk Salinan digambar
+ * langsung di atas halaman PDF di server (letaknya dari lapisan teks). Ditolak = melempar Error berisi sebab bahasa Indonesia
+ * (pindaian tanpa teks, sudah bertuliskan SALINAN, label pejabat tak ditemukan, Panitera pengesah tak dapat ditentukan, ...).
+ * Pulang seperti alatMintaPdf: { d, biner, blob }.
+ */
+const ALAT_API_SALINAN_PDF = "/aleta/api/aleta-ecourt/putusan/salinan-dari-pdf";
+async function alatMintaSalinanDariPdf(bita, opsi) {
+  return alatMintaPdf({ pdfBase64: alatBase64DariBita(bita), salinan: true }, { ...(opsi || {}), alamat: ALAT_API_SALINAN_PDF });
+}
+
+/**
+ * Menyimpan blob lewat pekerja latar (chrome.downloads, data: URL, asal chrome-extension:// tepercaya). TIDAK ADA cadangan <a download>
+ * dari halaman http SIPP/ABT: Chrome menahannya ("Insecure download blocked"). Pekerja latar yang belum menjawab dicoba sekali lagi.
+ * Pulang { ok:true, lewat:"ekstensi" } | { ok:false, pesan }.
+ */
+async function alatUnduhLewatEkstensi(blob, nama) {
+  const kirim = (pesan) =>
+    new Promise((selesai) => {
+      const jam = setTimeout(() => selesai(null), 20000);
+      try {
+        chrome.runtime.sendMessage({ sumber: "aleta-panel", ...pesan }, (h) => {
+          void chrome.runtime.lastError;
+          clearTimeout(jam);
+          selesai(h || null);
+        });
+      } catch {
+        clearTimeout(jam);
+        selesai(null);
+      }
+    });
+  let sebab = "pekerja latar tidak menjawab";
+  for (let coba = 0; coba < 2; coba += 1) {
+    try {
+      const alamat = await alatBlobKeData(blob);
+      const jawab = await kirim({ jenis: "unduh", nama, alamat });
+      if (jawab && jawab.ok) return { ok: true, lewat: "ekstensi" };
+      if (jawab) return { ok: false, pesan: `unduhan lewat ekstensi gagal: ${jawab.pesan || "ditolak peramban"}` };
+    } catch (e) {
+      sebab = String((e && e.message) || e);
+    }
+    if (coba === 0) await new Promise((selesai) => setTimeout(selesai, 600));
+  }
+  return { ok: false, pesan: `unduhan lewat ekstensi gagal: ${sebab}` };
+}
+
+/**
+ * 3 Nov (butir 4): PDF SALINAN LANGSUNG diunduh (nama berkas tidak berubah), tidak membuka tab penampil. Hanya bila unduhan langsung
+ * gagal, PDF-nya dibuka di tab penampil sebagai cadangan; kalau itu pun gagal, pesan awam (pesanGagal = kalimat pemanggil sendiri). Pulang { ok, kalimat }.
+ */
+async function alatTerbitkanSalinan(blob, nama, ket, awas, pesanGagal) {
+  const u = await alatUnduhLewatEkstensi(blob, nama);
+  if (u.ok) return { ok: true, kalimat: `PDF SALINAN diunduh "${nama}"${ket || ""}` };
+  try {
+    const alamat = await alatBlobKeData(blob);
+    const jawab = await new Promise((selesai) => {
+      const jam = setTimeout(() => selesai(null), 20000);
+      try {
+        chrome.runtime.sendMessage({ sumber: "aleta-panel", jenis: "tampilkan-pdf", nama, alamat, pesan: "", awas: awas === true }, (h) => {
+          void chrome.runtime.lastError;
+          clearTimeout(jam);
+          selesai(h || null);
+        });
+      } catch {
+        clearTimeout(jam);
+        selesai(null);
+      }
+    });
+    if (jawab && jawab.ok) return { ok: true, kalimat: `PDF SALINAN belum dapat diunduh langsung, jadi dibuka di tab baru (simpan dari sana)${ket || ""}` };
+  } catch {
+    /* penampil pun tidak terbuka: pesan di bawah */
+  }
+  return { ok: false, kalimat: `${pesanGagal || "PDF SALINAN belum dapat diunduh. Coba sekali lagi; bila tetap gagal, muat ulang halaman ini lalu ulangi."}${ket || ""}` };
+}
+
+/**
+ * Keterangan di belakang kalimat "PDF SALINAN diunduh" untuk salinan PUTUSAN (bukan BAS): tanda tangan Panitera dan jumlah "ttd" yang
+ * tertulis, menurut laporan bot (28 Okt, 630/2026: menyebut yang SUNGGUH terjadi, bukan kalimat tetap yang terdengar berhasil).
+ */
+function alatKetSalinanPutusan(keterangan) {
+  const nTtd = keterangan ? Number(keterangan.ttdDitambah || 0) + Number(keterangan.ttdSudahAda || 0) : 0;
+  const bagianTtd = keterangan ? (nTtd ? `majelis dan panitera sidang: ttd (${nTtd})` : "tulisan ttd TIDAK tertulis - blok tanda tangan majelis tidak dikenali") : "";
+  const sebabTanpa = {
+    ttd_tidak_ada: "tanda tangannya belum terdaftar/disahkan",
+    nama_panitera_tidak_ditemukan_di_pdf: "namanya tidak ditemukan di PDF",
+  };
+  return keterangan && keterangan.gambarTtdPanitera
+    ? ` (tanda tangan Panitera ${keterangan.namaPanitera || ""} tertempel; ${bagianTtd})`
+    : keterangan && keterangan.namaPanitera
+      ? ` (tanpa tanda tangan Panitera ${keterangan.namaPanitera}${keterangan.alasanTanpaGambar ? `: ${sebabTanpa[keterangan.alasanTanpaGambar] || keterangan.alasanTanpaGambar}` : ""}; ${bagianTtd})`
+      : keterangan
+        ? ` (blok "Untuk Salinan" tidak ditemukan; ${bagianTtd})`
+        : "";
+}
+
+/**
  * Satu permintaan, dengan batas waktunya sendiri.
  *
  * batasMs boleh disebut pemanggil untuk pekerjaan yang memang lebih lama

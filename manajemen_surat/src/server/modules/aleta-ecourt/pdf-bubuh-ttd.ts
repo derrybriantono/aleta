@@ -282,7 +282,7 @@ export async function bacaItemPdf(bita: Uint8Array): Promise<{ halaman: UkuranHa
   return { halaman, item };
 }
 
-function ukuranGambar(bita: Uint8Array): { jenis: "png" | "jpg"; w: number; h: number } | null {
+export function ukuranGambar(bita: Uint8Array): { jenis: "png" | "jpg"; w: number; h: number } | null {
   const b = Buffer.from(bita);
   if (b.length > 24 && b[0] === 0x89 && b[1] === 0x50) return { jenis: "png", w: b.readUInt32BE(16), h: b.readUInt32BE(20) };
   if (b.length > 4 && b[0] === 0xff && b[1] === 0xd8) {
