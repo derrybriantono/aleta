@@ -31,6 +31,8 @@ export const PATCH_NOTES: PatchNote[] = [
     added: [
       "Layar ALETA ABT untuk Super Admin: penyunting blangko, cetak, pembanding, beda dengan ABT, siap diperiksa, hak folder, kesiapan per jenis perkara, dan cetak berdampingan dengan ABT.",
       "Pengaturan admin untuk membuka ALETA ABT di HP, per peran dan per pengguna, bawaan menyala hanya untuk Super Admin.",
+      "Dari HP, layar ALETA ABT terbuka bagi Super Admin bila saklarnya menyala. Peran lain yang diizinkan melihat pemberitahuan sampai ALETA ABT stabil.",
+      "Hak folder 4 Kebendaan, PTSP, dan Relaas ditetapkan pemilik; folder mengikuti Blangko ABT by Derry, dan folder baru khusus Super Admin sampai ditetapkan.",
       "Ubah jadi PDF salinan dari berkas yang diunggah, termasuk PDF blangko yang masih kosong.",
       "Saklar pindah per jenis perkara, bawaan mati; server menolak menyalakan selama syaratnya belum terpenuhi.",
       "Paket pasang ALETA ABT untuk satker lain, belum dipakai.",
