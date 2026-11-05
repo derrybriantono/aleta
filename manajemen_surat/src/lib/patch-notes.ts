@@ -1,6 +1,6 @@
-export const APP_VERSION = "2.48.0";
+export const APP_VERSION = "2.49.0";
 export const APP_VERSION_LABEL =
-  "ALETA Judicia v2.48.0 - November 2026";
+  "ALETA Judicia v2.49.0 - November 2026";
 
 export type PatchNote = {
   version: string;
@@ -21,6 +21,38 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.49.0",
+    title: "ALETA Judicia v2.49.0 - November 2026",
+    date: "2026-11-06",
+    status: "Terpasang bersama rilis ekstensi 1.205.77",
+    summary:
+      "Sampai rilis ekstensi 1.205.77 (6 November 2026): ALETA ABT lengkap untuk Super Admin, Ubah jadi PDF salinan, dan peringatan tanggal aneh. Blangko ABT by Derry tetap dipakai semua pengguna.",
+    added: [
+      "Layar ALETA ABT untuk Super Admin: penyunting blangko, cetak, pembanding, beda dengan ABT, siap diperiksa, hak folder, kesiapan per jenis perkara, dan cetak berdampingan dengan ABT.",
+      "Pengaturan admin untuk membuka ALETA ABT di HP, per peran dan per pengguna, bawaan menyala hanya untuk Super Admin.",
+      "Ubah jadi PDF salinan dari berkas yang diunggah, termasuk PDF blangko yang masih kosong.",
+      "Saklar pindah per jenis perkara, bawaan mati; server menolak menyalakan selama syaratnya belum terpenuhi.",
+      "Paket pasang ALETA ABT untuk satker lain, belum dipakai.",
+    ],
+    changed: [
+      "Warna ALETA ABT mengikuti tema Blangko ABT by Derry.",
+      "Mesin isian membuang tanda kurung kurawal kosong dan memberi peringatan tanggal yang tidak wajar.",
+    ],
+    fixed: [
+      "Berita acara berbentuk PDF tidak lagi dapat dijadikan PDF salinan putusan.",
+    ],
+    security: [
+      "Semua rute ALETA ABT dijaga Super Admin di server dan perubahan saklar tercatat di audit.",
+    ],
+    operationalNotes: [
+      "Bot dan portal dibangun ulang; ada migrasi basis data 0135, 0136, dan 0137.",
+      "Sesudah pasang, jalankan Sinkron dari ABT dua kali dan coba satu perkara uji sebelum dipakai.",
+    ],
+    knownLimitations: [
+      "E-Doc dan e-Court pada Selesaikan Berkas tetap mati. Jumlah halaman, tanda tangan, dan PDF ALETA ABT belum diuji di server.",
+    ],
+  },
   {
     version: "2.48.0",
     title: "ALETA Judicia v2.48.0 - November 2026",

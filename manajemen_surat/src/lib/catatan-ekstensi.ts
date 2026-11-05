@@ -57,6 +57,17 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.77",
+    dirilis: "2026-11-06T03:00:00+08:00",
+    judul: "Ubah jadi PDF salinan, peringatan tanggal, dan pintu ALETA ABT untuk Super Admin",
+    butir: [
+      "Aleta Isian SIPP punya centang baru Ubah jadi PDF salinan: berkas putusan yang diunggah dijadikan PDF salinan lalu otomatis terunduh ke laptop.",
+      "Blangko ABT by Derry menerima berkas PDF, tombol Lihat juga berlaku untuknya, dan cetak mengikuti sidang yang sedang dibuka.",
+      "Pemeriksaan blangko memperingatkan tanggal yang aneh, misalnya tanggal kosong atau tidak ada di kalender. Isiannya tetap kosong, tidak diisi tebakan.",
+      "Ubin ALETA ABT di beranda ABT tetap tampil saat belum masuk dan mengarahkan ke halaman masuk. ALETA ABT masih khusus Super Admin.",
+    ],
+  },
+  {
     versi: "1.205.76",
     dirilis: "2026-11-05T15:00:00+08:00",
     judul: "Tombol Lihat di Blangko ABT by Derry, sementara khusus Super Admin",
