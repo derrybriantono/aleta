@@ -1,0 +1,5 @@
+Bentuk	halaman Word	kata merukunkan (3 = butir d merah tidak tercetak, 4 = tercetak)	sesudah akhir butir c) pada PDF Word (pdftotext -layout)
+pakai	27	4	baris kosong 1, baris berikutnya: d) Bahwa keluarga sudah 
+kosong	27	3	baris kosong 1, baris berikutnya: d)
+v1	27	4	baris kosong 1, baris berikutnya: d) Bahwa keluarga sudah 
+lewat	27	3	baris kosong 1, baris berikutnya: - Keterangan para saksi 

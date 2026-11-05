@@ -1,0 +1,12 @@
+Pindai ulang lepas dari pembangun (rtfmini atas salinan terpasang).
+berkas 540 tanpa tambalan	1
+merah >=2 sesudah	11
+GAGAL	0
+Paragraf berisi baris hitamkan a5 dan baris tetap merah: 0
+Merah satu huruf sisa (tidak masuk daftar A5): {'_': 1, '2': 2}
+Huruf unicode/Arab di bawah warna merah sisa: 0
+Paragraf campur merah dan hitam sisa: 4
+  1 Perceraian CG/[01a] [Kabul Verstek] Cerai - Alasan E (Qabla Ad Dukhu | merah: mengidap penyakit yang menghalangi terjadi hubungan suami istri, hal i | awal paragraf: -Bahwa berdasarkan fakta angka 2 dan 3, #0046# dan #0047# setelah menikah tidak pernah tinggal bersama dan tidak melakuk
+  2 Itsbat Nikah/[99] [NO] IN - Masih Terikat Nikah Sebelumnya (Belum Ce | merah: _ | awal paragraf: -Bahwa #0046# #9285# telah melakukan perceraian dengan #9288# terdahulu secara resmi pada tahun _;
+  6 Perwalian/Perwalian Anak oleh ortu kandung Kabul.rtf | merah: 2 | awal paragraf: Menimbang bahwa berdasarkan bukti P.5 yang bernilai sebagai akta otentik dan berkekuatan sebagai bukti sempurna dan meng
+  6 Perwalian/Perwalian Anak oleh ortu kandung Tolak Primer Kabul Subsid | merah: 2 | awal paragraf: Menimbang bahwa berdasarkan bukti P.5 yang bernilai sebagai akta otentik dan berkekuatan sebagai bukti sempurna dan meng

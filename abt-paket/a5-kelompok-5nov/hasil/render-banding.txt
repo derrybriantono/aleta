@@ -1,0 +1,266 @@
+Render ABT asli: keadaan a5 (sebelum paket), tidak (isian belum diisi), pakai (semua pilihan pakai + nilai rekaan). Tanpa data pihak.
+kode	perkara	sisa#NNNN# tidak/pakai	par a5/tidak/pakai	par kosong a5/tidak/pakai	merah>=2 a5/tidak/pakai	berkas
+K0001	10126	0/0	254/244/254	21/21/21	47/0/0	1 Perceraian CG/[02] [Kabul] CG - F.rtf
+K0002	10126	0/0	198/194/198	23/23/23	22/0/0	1 Perceraian CG/[02a] [Kabul] CG - T Tidak Hadir Setelah Mediasi - F.rtf
+K0003	10126	0/0	268/258/268	22/22/22	51/0/0	1 Perceraian CG/[02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf
+K0004	10126	0/0	258/248/258	21/21/21	47/0/0	1 Perceraian CG/[02c] [Kabul] CG - F - Pencabutan Ditolak T Sesudah Jawaban.rtf
+K0005	10126	0/0	255/245/255	22/22/22	47/0/0	1 Perceraian CG/[02c] [Kabul] CG - Kumulasi Nafkah Istri (Madliyah, Iddah, Mutah) - Kontradiktoir.rtf
+K0006	10139	0/0	247/240/247	19/19/19	31/0/0	1a Perceraian CT/[02] [Kabul] CT - F.rtf
+K0007	10139	0/0	190/189/190	20/20/20	5/0/0	1a Perceraian CT/[02a] [Kabul] CT - T Tidak Hadir Setelah Mediasi - F.rtf
+K0008	10139	0/0	261/254/261	20/20/20	31/0/0	1a Perceraian CT/[02b] [Kabul] CT - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf
+K0009	10139	0/0	251/244/251	19/19/19	31/0/0	1a Perceraian CT/[02c] [Kabul] CT - F - Pencabutan Ditolak T Sesudah Jawaban.rtf
+K0010	10126	0/0	267/257/267	21/21/21	47/0/0	1c Perceraian Kumulasi Itsbat Nikah/[02] [Kabul] Putusan CG Kumulasi Itsbat Nikah - Kontradiktoir.rtf
+K0011	10139	0/0	260/253/260	19/19/19	31/0/0	1c Perceraian Kumulasi Itsbat Nikah/[02] [Kabul] Putusan CT Kumulasi Itsbat Nikah - Kontradiktoir.rtf
+K0012	10126	0/0	261/251/261	21/21/21	47/0/0	1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak/[02] [Kabul] Putusan CG Kumulasi Hak Asuh Anak - Kontradiktoir.rtf
+K0013	10126	0/0	265/255/265	21/21/21	47/0/0	1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak/[02b] [Kabul] Putusan CG Kumulasi Hak Asuh dan Nafkah Anak - Kontradiktoir.rtf
+K0014	10276	0/0	115/115/115	11/11/11	2/0/0	2 Itsbat Nikah/[03] [Tolak] IN - Rukun Tidak Terpenuhi (Wali Tidak Sah).rtf
+K0015	10276	0/0	85/85/85	10/10/10	14/0/0	2 Itsbat Nikah/[99] [NO] IN - Masih Terikat Nikah Sebelumnya (Belum Cerai).rtf
+K0016	10276	0/0	16/15/15	0/0/0	2/0/0	2 Itsbat Nikah/[99aa] Pertimbangan - Cerai Hidup P1 P2 Pasangan Sebelumnya.rtf
+K0017	10276	0/0	16/15/15	0/0/0	2/0/0	2 Itsbat Nikah/[99aa] Pertimbangan - Cerai Mati P1 P2 Pasangan Sebelumnya.rtf
+K0018	10261	0/0	209/209/209	12/12/12	1/0/0	3 Dispensasi Kawin/[03] [Tolak] DK - (Anak P Cewek) Belum Hamil.rtf
+K0019	10025	0/0	281/281/281	17/17/17	16/5/5	4a Harta Bersama/[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf
+K0019	9789	0/0	428/427/427	17/17/17	16/5/5	4a Harta Bersama/[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf
+K0020	10025	0/0	282/282/282	16/16/16	16/5/5	4a Harta Bersama/[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf
+K0020	9789	0/0	429/428/428	16/16/16	16/5/5	4a Harta Bersama/[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf
+K0021	10096	0/0	166/166/166	15/15/15	3/0/0	6 Perwalian/Perwalian Anak oleh ortu kandung Kabul.rtf
+K0022	10096	0/0	209/209/209	16/16/16	7/0/0	6 Perwalian/Perwalian Anak oleh ortu kandung Tolak Primer Kabul Subsider.rtf
+GAGAL	0
+
+K0001 1 Perceraian CG/[02] [Kabul] CG - F.rtf perkara 10126
+ a5 => pakai:
+   …;  =>  REKAAN-dalil;
+   Penggugat#  =>  Penggugat
+ pakai => tidak (yang hilang saat tidak dipakai, ringkas):
+   REKAAN-dalil; ... REKAAN-dalil;  =>  ...;
+   - Bahwa mengenai peristiwa perselisihan dan pertengkaran Pen ... kekuatan hukum sebagai dalil pembuktian;  =>  
+   - Bahwa syarat materiil yang harus dipenuhi dalam alat bukti ... inya dapat dipertimbangkan lebih lanjut;  =>  
+   d) Bahwa keluarga sudah merukunkan Penggugat dan Tergugat, n ... ugat dan Tergugat, namun tidak berhasil;  =>  
+   - Bahwa mengenai peristiwa perselisihan dan pertengkaran Ter ... kekuatan hukum sebagai dalil pembuktian;  =>  
+   Menimbang, bahwa ternyata saksi-saksi yang diajukan Pengguga ... tangga antara Penggugat dengan Tergugat;  =>  
+   Majelis Hakim perlu mempertimbangkan fakta Tergugat tidak be ... idak tertahankan lagi”; Menimbang, bahwa  =>  
+K0002 1 Perceraian CG/[02a] [Kabul] CG - T Tidak Hadir Setelah Mediasi - F.rtf perkara 10126
+ a5 => pakai:
+   Penggugat#  =>  Penggugat
+ pakai => tidak (yang hilang saat tidak dipakai, ringkas):
+   - Bahwa mengenai peristiwa perselisihan dan pertengkaran Pen ... kekuatan hukum sebagai dalil pembuktian;  =>  
+   Menimbang, bahwa Majelis Hakim perlu mempertimbangkan fakta  ... ngan kadar yang tidak tertahankan lagi”;  =>  
+K0003 1 Perceraian CG/[02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf perkara 10126
+ a5 => pakai:
+   …;  =>  REKAAN-dalil;
+   Penggugat#  =>  Penggugat
+ pakai => tidak (yang hilang saat tidak dipakai, ringkas):
+   REKAAN-dalil; ... REKAAN-dalil;  =>  ...;
+   - Bahwa mengenai peristiwa perselisihan dan pertengkaran Pen ... kekuatan hukum sebagai dalil pembuktian;  =>  
+   - Bahwa syarat materiil yang harus dipenuhi dalam alat bukti ... inya dapat dipertimbangkan lebih lanjut;  =>  
+   d) Bahwa keluarga sudah merukunkan Penggugat dan Tergugat, n ... ugat dan Tergugat, namun tidak berhasil;  =>  
+   - Bahwa mengenai peristiwa perselisihan dan pertengkaran Ter ... kekuatan hukum sebagai dalil pembuktian;  =>  
+   Menimbang, bahwa ternyata saksi-saksi yang diajukan Pengguga ... tangga antara Penggugat dengan Tergugat;  =>  
+   Majelis Hakim perlu mempertimbangkan fakta Tergugat tidak be ... idak tertahankan lagi”; Menimbang, bahwa  =>  
+K0004 1 Perceraian CG/[02c] [Kabul] CG - F - Pencabutan Ditolak T Sesudah Jawaban.rtf perkara 10126
+ a5 => pakai:
+   …;  =>  REKAAN-dalil;
+   Penggugat#  =>  Penggugat
+ pakai => tidak (yang hilang saat tidak dipakai, ringkas):
+   REKAAN-dalil; ... REKAAN-dalil;  =>  ...;
+   - Bahwa mengenai peristiwa perselisihan dan pertengkaran Pen ... kekuatan hukum sebagai dalil pembuktian;  =>  
+   - Bahwa syarat materiil yang harus dipenuhi dalam alat bukti ... inya dapat dipertimbangkan lebih lanjut;  =>  
+   d) Bahwa keluarga sudah merukunkan Penggugat dan Tergugat, n ... ugat dan Tergugat, namun tidak berhasil;  =>  
+   - Bahwa mengenai peristiwa perselisihan dan pertengkaran Ter ... kekuatan hukum sebagai dalil pembuktian;  =>  
+   Menimbang, bahwa ternyata saksi-saksi yang diajukan Pengguga ... tangga antara Penggugat dengan Tergugat;  =>  
+   Majelis Hakim perlu mempertimbangkan fakta Tergugat tidak be ... idak tertahankan lagi”; Menimbang, bahwa  =>  
+K0005 1 Perceraian CG/[02c] [Kabul] CG - Kumulasi Nafkah Istri (Madliyah, Iddah, Mutah) - Kontradiktoir.rtf perkara 10126
+ a5 => pakai:
+   …;  =>  REKAAN-dalil;
+   Penggugat#  =>  Penggugat
+ pakai => tidak (yang hilang saat tidak dipakai, ringkas):
+   REKAAN-dalil; ... REKAAN-dalil;  =>  ...;
+   - Bahwa mengenai peristiwa perselisihan dan pertengkaran Pen ... kekuatan hukum sebagai dalil pembuktian;  =>  
+   - Bahwa syarat materiil yang harus dipenuhi dalam alat bukti ... inya dapat dipertimbangkan lebih lanjut;  =>  
+   d) Bahwa keluarga sudah merukunkan Penggugat dan Tergugat, n ... ugat dan Tergugat, namun tidak berhasil;  =>  
+   - Bahwa mengenai peristiwa perselisihan dan pertengkaran Ter ... kekuatan hukum sebagai dalil pembuktian;  =>  
+   Menimbang, bahwa ternyata saksi-saksi yang diajukan Pengguga ... tangga antara Penggugat dengan Tergugat;  =>  
+   Majelis Hakim perlu mempertimbangkan fakta Tergugat tidak be ... idak tertahankan lagi”; Menimbang, bahwa  =>  
+K0006 1a Perceraian CT/[02] [Kabul] CT - F.rtf perkara 10139
+ a5 => pakai:
+   ...;  =>  REKAAN-dalil;
+ pakai => tidak (yang hilang saat tidak dipakai, ringkas):
+   REKAAN-dalil; ... REKAAN-dalil;  =>  ...;
+   - Bahwa mengenai peristiwa perselisihan dan pertengkaran Pem ... kekuatan hukum sebagai dalil pembuktian;  =>  
+   - Bahwa syarat materiil yang harus dipenuhi dalam alat bukti ... inya dapat dipertimbangkan lebih lanjut;  =>  
+   d) Bahwa keluarga sudah merukunkan Pemohon dan Termohon, nam ... ohon dan Termohon, namun tidak berhasil;  =>  
+   - Bahwa mengenai peristiwa perselisihan dan pertengkaran Ter ... kekuatan hukum sebagai dalil pembuktian;  =>  
+   Menimbang, bahwa ternyata saksi-saksi yang diajukan Pemohon  ... h tangga antara Pemohon dengan Termohon;  =>  
+K0007 1a Perceraian CT/[02a] [Kabul] CT - T Tidak Hadir Setelah Mediasi - F.rtf perkara 10139
+ a5 => pakai:
+ pakai => tidak (yang hilang saat tidak dipakai, ringkas):
+   - Bahwa mengenai peristiwa perselisihan dan pertengkaran Pem ... kekuatan hukum sebagai dalil pembuktian;  =>  
+K0008 1a Perceraian CT/[02b] [Kabul] CT - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf perkara 10139
+ a5 => pakai:
+   ...;  =>  REKAAN-dalil;
+ pakai => tidak (yang hilang saat tidak dipakai, ringkas):
+   REKAAN-dalil; ... REKAAN-dalil;  =>  ...;
+   - Bahwa mengenai peristiwa perselisihan dan pertengkaran Pem ... kekuatan hukum sebagai dalil pembuktian;  =>  
+   - Bahwa syarat materiil yang harus dipenuhi dalam alat bukti ... inya dapat dipertimbangkan lebih lanjut;  =>  
+   d) Bahwa keluarga sudah merukunkan Pemohon dan Termohon, nam ... ohon dan Termohon, namun tidak berhasil;  =>  
+   - Bahwa mengenai peristiwa perselisihan dan pertengkaran Ter ... kekuatan hukum sebagai dalil pembuktian;  =>  
+   Menimbang, bahwa ternyata saksi-saksi yang diajukan Pemohon  ... h tangga antara Pemohon dengan Termohon;  =>  
+K0009 1a Perceraian CT/[02c] [Kabul] CT - F - Pencabutan Ditolak T Sesudah Jawaban.rtf perkara 10139
+ a5 => pakai:
+   ...;  =>  REKAAN-dalil;
+ pakai => tidak (yang hilang saat tidak dipakai, ringkas):
+   REKAAN-dalil; ... REKAAN-dalil;  =>  ...;
+   - Bahwa mengenai peristiwa perselisihan dan pertengkaran Pem ... kekuatan hukum sebagai dalil pembuktian;  =>  
+   - Bahwa syarat materiil yang harus dipenuhi dalam alat bukti ... inya dapat dipertimbangkan lebih lanjut;  =>  
+   d) Bahwa keluarga sudah merukunkan Pemohon dan Termohon, nam ... ohon dan Termohon, namun tidak berhasil;  =>  
+   - Bahwa mengenai peristiwa perselisihan dan pertengkaran Ter ... kekuatan hukum sebagai dalil pembuktian;  =>  
+   Menimbang, bahwa ternyata saksi-saksi yang diajukan Pemohon  ... h tangga antara Pemohon dengan Termohon;  =>  
+K0010 1c Perceraian Kumulasi Itsbat Nikah/[02] [Kabul] Putusan CG Kumulasi Itsbat Nikah - Kontradiktoir.rtf perkara 10126
+ a5 => pakai:
+   …;  =>  REKAAN-dalil;
+   Penggugat#  =>  Penggugat
+ pakai => tidak (yang hilang saat tidak dipakai, ringkas):
+   REKAAN-dalil; ... REKAAN-dalil;  =>  ...;
+   - Bahwa mengenai peristiwa perselisihan dan pertengkaran Pen ... kekuatan hukum sebagai dalil pembuktian;  =>  
+   - Bahwa syarat materiil yang harus dipenuhi dalam alat bukti ... inya dapat dipertimbangkan lebih lanjut;  =>  
+   d) Bahwa keluarga sudah merukunkan Penggugat dan Tergugat, n ... ugat dan Tergugat, namun tidak berhasil;  =>  
+   - Bahwa mengenai peristiwa perselisihan dan pertengkaran Ter ... kekuatan hukum sebagai dalil pembuktian;  =>  
+   Menimbang, bahwa ternyata saksi-saksi yang diajukan Pengguga ... tangga antara Penggugat dengan Tergugat;  =>  
+   Majelis Hakim perlu mempertimbangkan fakta Tergugat tidak be ... idak tertahankan lagi”; Menimbang, bahwa  =>  
+K0011 1c Perceraian Kumulasi Itsbat Nikah/[02] [Kabul] Putusan CT Kumulasi Itsbat Nikah - Kontradiktoir.rtf perkara 10139
+ a5 => pakai:
+   ...;  =>  REKAAN-dalil;
+ pakai => tidak (yang hilang saat tidak dipakai, ringkas):
+   REKAAN-dalil; ... REKAAN-dalil;  =>  ...;
+   - Bahwa mengenai peristiwa perselisihan dan pertengkaran Pem ... kekuatan hukum sebagai dalil pembuktian;  =>  
+   - Bahwa syarat materiil yang harus dipenuhi dalam alat bukti ... inya dapat dipertimbangkan lebih lanjut;  =>  
+   d) Bahwa keluarga sudah merukunkan Pemohon dan Termohon, nam ... ohon dan Termohon, namun tidak berhasil;  =>  
+   - Bahwa mengenai peristiwa perselisihan dan pertengkaran Ter ... kekuatan hukum sebagai dalil pembuktian;  =>  
+   Menimbang, bahwa ternyata saksi-saksi yang diajukan Pemohon  ... h tangga antara Pemohon dengan Termohon;  =>  
+K0012 1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak/[02] [Kabul] Putusan CG Kumulasi Hak Asuh Anak - Kontradiktoir.rtf perkara 10126
+ a5 => pakai:
+   …;  =>  REKAAN-dalil;
+   Penggugat#  =>  Penggugat
+ pakai => tidak (yang hilang saat tidak dipakai, ringkas):
+   REKAAN-dalil; ... REKAAN-dalil;  =>  ...;
+   - Bahwa mengenai peristiwa perselisihan dan pertengkaran Pen ... kekuatan hukum sebagai dalil pembuktian;  =>  
+   - Bahwa syarat materiil yang harus dipenuhi dalam alat bukti ... inya dapat dipertimbangkan lebih lanjut;  =>  
+   d) Bahwa keluarga sudah merukunkan Penggugat dan Tergugat, n ... ugat dan Tergugat, namun tidak berhasil;  =>  
+   - Bahwa mengenai peristiwa perselisihan dan pertengkaran Ter ... kekuatan hukum sebagai dalil pembuktian;  =>  
+   Menimbang, bahwa ternyata saksi-saksi yang diajukan Pengguga ... tangga antara Penggugat dengan Tergugat;  =>  
+   Majelis Hakim perlu mempertimbangkan fakta Tergugat tidak be ... idak tertahankan lagi”; Menimbang, bahwa  =>  
+K0013 1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak/[02b] [Kabul] Putusan CG Kumulasi Hak Asuh dan Nafkah Anak - Kontradiktoir.rtf perkara 10126
+ a5 => pakai:
+   …;  =>  REKAAN-dalil;
+   Penggugat#  =>  Penggugat
+ pakai => tidak (yang hilang saat tidak dipakai, ringkas):
+   REKAAN-dalil; ... REKAAN-dalil;  =>  ...;
+   - Bahwa mengenai peristiwa perselisihan dan pertengkaran Pen ... kekuatan hukum sebagai dalil pembuktian;  =>  
+   - Bahwa syarat materiil yang harus dipenuhi dalam alat bukti ... inya dapat dipertimbangkan lebih lanjut;  =>  
+   d) Bahwa keluarga sudah merukunkan Penggugat dan Tergugat, n ... ugat dan Tergugat, namun tidak berhasil;  =>  
+   - Bahwa mengenai peristiwa perselisihan dan pertengkaran Ter ... kekuatan hukum sebagai dalil pembuktian;  =>  
+   Menimbang, bahwa ternyata saksi-saksi yang diajukan Pengguga ... tangga antara Penggugat dengan Tergugat;  =>  
+   Menimbang, bahwa Majelis Hakim perlu mempertimbangkan fakta  ... ngan kadar yang tidak tertahankan lagi”;  =>  
+K0014 2 Itsbat Nikah/[03] [Tolak] IN - Rukun Tidak Terpenuhi (Wali Tidak Sah).rtf perkara 10276
+ a5 => pakai:
+   _ (_)  =>  REKAAN-lama-satu
+   _ (_)  =>  REKAAN-lama-dua
+ pakai => tidak (yang hilang saat tidak dipakai, ringkas):
+   REKAAN-lama-satu ... REKAAN-lama-satu  =>  ...
+   REKAAN-lama-dua ... REKAAN-lama-dua  =>  ...
+K0015 2 Itsbat Nikah/[99] [NO] IN - Masih Terikat Nikah Sebelumnya (Belum Cerai).rtf perkara 10276
+ a5 => pakai:
+   ...  =>  REKAAN-romawi
+   ...  =>  REKAAN-pasangan
+   ...  =>  REKAAN-romawi
+   ...  =>  REKAAN-suami
+   I / II  =>  REKAAN-romawi
+   pria/wanita  =>  REKAAN-pasangan
+   belum bercerai/ bercerai  =>  REKAAN-keadaan
+   I / II  =>  REKAAN-romawi
+   suaminya/istrinya  =>  REKAAN-suaminya
+   _;  =>  REKAAN-tanggal-cerai;
+   ...  =>  REKAAN-romawi
+   ...  =>  REKAAN-pasangan
+ pakai => tidak (yang hilang saat tidak dipakai, ringkas):
+   REKAAN-romawi ... REKAAN-romawi  =>  ...
+   REKAAN-pasangan ... REKAAN-pasangan  =>  ...
+   REKAAN-romawi ... REKAAN-romawi  =>  ...
+   REKAAN-suami ... REKAAN-suami  =>  ...
+   REKAAN-romawi ... REKAAN-romawi  =>  ...
+   REKAAN-pasangan lain karena REKAAN-keadaan secara resmi, bar ...  secara resmi pada REKAAN-tanggal-cerai;  =>  ... lain;
+   REKAAN-romawi ... REKAAN-romawi  =>  ...
+   REKAAN-pasangan ... REKAAN-pasangan  =>  ...
+K0016 2 Itsbat Nikah/[99aa] Pertimbangan - Cerai Hidup P1 P2 Pasangan Sebelumnya.rtf perkara 10276
+ a5 => pakai:
+   MULAI DARI SINI (NAMA AKTA CERAI DIUBAH URUTANNYA SESUAI DENGAN AC NYA)  =>  
+ pakai => tidak (yang hilang saat tidak dipakai, ringkas):
+K0017 2 Itsbat Nikah/[99aa] Pertimbangan - Cerai Mati P1 P2 Pasangan Sebelumnya.rtf perkara 10276
+ a5 => pakai:
+   MULAI DARI SINI  =>  
+ pakai => tidak (yang hilang saat tidak dipakai, ringkas):
+K0018 3 Dispensasi Kawin/[03] [Tolak] DK - (Anak P Cewek) Belum Hamil.rtf perkara 10261
+ a5 => pakai:
+   _  =>  REKAAN-kelas
+ pakai => tidak (yang hilang saat tidak dipakai, ringkas):
+   REKAAN-kelas ... REKAAN-kelas  =>  ...
+K0019 4a Harta Bersama/[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf perkara 10025
+ a5 => pakai:
+   dalam  =>  
+ pakai => tidak (yang hilang saat tidak dipakai, ringkas):
+   .... Selanjutnya telah dilakukan peletakan sita jaminan terh ... ang ditentukan dalam amar putusan a quo;  =>  ...;
+K0019 4a Harta Bersama/[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf perkara 9789
+ a5 => pakai:
+   dalam Tergugat dalam persidangan mengajukan surat kuasa kepada Advokat yang bernama ... telah melampirkan foto  =>  
+   maupun Tergugat  =>  
+   maupun Tergugat  =>  
+   maupun Tergugat  =>  
+   maupun Tergugat  =>  
+   maupun surat kuasa khusus Tergugat  =>  
+   maupun kuasa hukum Tergugat  =>  
+   maupun kuasa hukum Tergugat  =>  
+   maupun Tergugat  =>  
+ pakai => tidak (yang hilang saat tidak dipakai, ringkas):
+   .... Selanjutnya telah dilakukan peletakan sita jaminan terh ... ang ditentukan dalam amar putusan a quo;  =>  ...;
+K0020 4a Harta Bersama/[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf perkara 10025
+ a5 => pakai:
+   dalam  =>  
+ pakai => tidak (yang hilang saat tidak dipakai, ringkas):
+   .... Selanjutnya telah dilakukan peletakan sita jaminan terh ... ang ditentukan dalam amar putusan a quo;  =>  ...;
+K0020 4a Harta Bersama/[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf perkara 9789
+ a5 => pakai:
+   dalam Tergugat dalam persidangan mengajukan surat kuasa kepada Advokat yang bernama ... telah melampirkan foto  =>  
+   maupun Tergugat  =>  
+   maupun Tergugat  =>  
+   maupun Tergugat  =>  
+   maupun Tergugat  =>  
+   maupun surat kuasa khusus Tergugat  =>  
+   maupun kuasa hukum Tergugat  =>  
+   maupun kuasa hukum Tergugat  =>  
+   maupun Tergugat  =>  
+ pakai => tidak (yang hilang saat tidak dipakai, ringkas):
+   .... Selanjutnya telah dilakukan peletakan sita jaminan terh ... ang ditentukan dalam amar putusan a quo;  =>  ...;
+K0021 6 Perwalian/Perwalian Anak oleh ortu kandung Kabul.rtf perkara 10096
+ a5 => pakai:
+   P.1 sampai dengan P.6  =>  REKAAN-kode-bukti
+   1 dan 2  =>  REKAAN-angka-satu
+   4, 5 dan 6  =>  REKAAN-angka-empat
+ pakai => tidak (yang hilang saat tidak dipakai, ringkas):
+   REKAAN-kode-bukti ... REKAAN-kode-bukti  =>  ...
+   REKAAN-angka-satu ... REKAAN-angka-satu  =>  ...
+   REKAAN-angka-empat ... REKAAN-angka-empat  =>  ...
+K0022 6 Perwalian/Perwalian Anak oleh ortu kandung Tolak Primer Kabul Subsider.rtf perkara 10096
+ a5 => pakai:
+   P.1 sampai dengan P.6  =>  REKAAN-kode-bukti
+   ANAK 1  =>  REKAAN-anak-satu
+   putri  =>  REKAAN-sebutan-satu
+   ANAK 2  =>  REKAAN-anak-dua
+   putra  =>  REKAAN-sebutan-dua
+   1 dan 2  =>  REKAAN-angka-satu
+   4, 5 dan 6  =>  REKAAN-angka-empat
+ pakai => tidak (yang hilang saat tidak dipakai, ringkas):
+   REKAAN-kode-bukti ... REKAAN-kode-bukti  =>  ...
+   REKAAN-anak-satu ... REKAAN-anak-satu  =>  ...
+   REKAAN-sebutan-satu dari Pemohon yang lahir tanggal ... tan-satu dari Pemohon yang lahir tanggal  =>  
+   dan REKAAN-anak-dua merupakan REKAAN-sebutan-dua ... AN-anak-dua merupakan REKAAN-sebutan-dua  =>  
+   REKAAN-angka-satu ... REKAAN-angka-satu  =>  ...
+   REKAAN-angka-empat ... REKAAN-angka-empat  =>  ...
