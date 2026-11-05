@@ -1,0 +1,13 @@
+batal isian (kutipan Arab)	8
+berkas tanpa ubahan	4
+buang	33
+cabut	6
+cara warna kendali	330
+hitamkan	293
+isian	37
+berkas buang	14
+berkas cabut	6
+berkas hitamkan	36
+berkas isian	29
+berkas paket	65
+potongan	406

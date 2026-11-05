@@ -1,0 +1,7 @@
+a14e967cfd469281fdddc8f8d1da212d *pasang-satker.sh
+3ae25f88f5c5a4b69a5d5e24de5cea5b *pulih-satker.sh
+1d5400616908a0c525d61f35adea4334 *abt-prodeo-8507-5nov-PASANG.sql
+8f6d36cc6238608799e9ff790d3dffe3 *abt-prodeo-8507-5nov-PERIKSA.sql
+f1e310ec3d90c57f1cebd4f56c86738d *abt-prodeo-8507-5nov-PRASYARAT.sql
+613017dd35621ac3a13da41763b1d067 *abt-prodeo-8507-5nov-PULIH.sql
+daeb681c8178c4bb5fd4aba0fe8d0106 *harap.txt

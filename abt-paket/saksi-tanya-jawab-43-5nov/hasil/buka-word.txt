@@ -1,0 +1,1 @@
+Word 16 membuka 75 berkas sesudah paket (baca saja): 75 BUKA, 0 GALAT.

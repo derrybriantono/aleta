@@ -1,0 +1,11 @@
+d949a1c1e10c9b60e8cc4fd18adc9b54 *tambal_rtf.py
+483892e7df604e12029207a2383f254f *daftar-tambal.tsv
+8dd468e71737090b03aa0e3481f5e8de *tambal.tsv
+b0cb12c47043e4bb12e2f5a9e6552c77 *pasang-satker.sh
+b37b5533dd3bfb23ec20d0b54065545a *pulih-satker.sh
+a4ff27719f33f2db3a93690bfa4dcfaa *abt-a5-kelompok-5nov-PASANG.sql
+e0187126311adb2f22b3c90651452374 *abt-a5-kelompok-5nov-PERIKSA.sql
+59b795c9a1f41e93443ffe6db28b3a8e *abt-a5-kelompok-5nov-PRASYARAT.sql
+8f2b7f66e10f89842f4be24bd06c8fb1 *abt-a5-kelompok-5nov-PULIH.sql
+16a0a82b63939ca8a2866e0e65174f5e *harap.txt
+e26be6bfa40d4c9235ecff21c70e127c *nomor-variabel.txt

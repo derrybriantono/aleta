@@ -1,0 +1,22 @@
+Pindai ulang lepas dari pembangun (rtfmini atas salinan terpasang).
+berkas cabut di luar daftar	6
+berkas daftar	63
+merah sebelum	911
+merah sesudah	548
+GAGAL	0
+
+Beda kata sebelum => sesudah (hanya berkas yang memuat isian/buang), jumlah kali:
+24	(PERTIMBANGAN APABILA SAKSI HANYA MENGETAHUI PISAH TAPI TIDAK MELIHAT LANGSUNG APA MASALAHNYA);  =>  
+22	Lurah/Kepala Desa  =>  #9284#
+8	(APABILA SUAMI TIDAK BEKERJA/MALAS)  =>  
+4	_;  =>  #9289#;
+3	I/II  =>  #9285#
+1	tidak hadir acara pernikahan para #0046#/berada di _,  =>  #9294#,
+1	laki-laki/perempuan  =>  #9287#
+1	I/II;  =>  #9286#;
+1	suami/istri  =>  #9288#
+1	#0046# I / II masih terikat dengan perkawinan pria/wanita lain dan belum bercerai secara resmi/telah bercerai   =>  #9683#,
+1	pria/wanita  =>  #9287#
+1	(ANAK 1 PERSATU P NYA)  =>  
+1	_ (_ tahun)  =>  #9295#
+1	_ (_ tahun);  =>  #9296#;

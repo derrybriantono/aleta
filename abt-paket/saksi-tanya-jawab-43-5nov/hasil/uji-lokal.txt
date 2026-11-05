@@ -1,0 +1,43 @@
+SIDIK AWAL 0d6a3029b748a06eacb7e59de54c0e58
+== 1. pasang pertama
+    PRASYARAT COCOK (10)
+    SIAP=75
+    BERKAS SIAP
+    TAMBAL=75
+    BERKAS COCOK
+    SELESAI - paket abt-saksi-tanya-jawab-43-5nov terpasang. Cadangan: (folder paket)
+== 2. pasang ulang (idempoten)
+    PRASYARAT COCOK (10)
+    SUDAH=75
+    BERKAS SIAP
+    SUDAH=75
+    BERKAS COCOK
+    SELESAI - paket abt-saksi-tanya-jawab-43-5nov terpasang. Cadangan: (folder paket)
+    SIDIK TETAP
+== 3. pulih
+    PULIH=75
+    BERKAS PULIH
+    PULIH COCOK
+    SIDIK = AWAL
+== 4. pasang lagi sesudah pulih
+    BERKAS COCOK
+    SELESAI - paket abt-saksi-tanya-jawab-43-5nov terpasang. Cadangan: (folder paket)
+    SAMA DENGAN PASANG PERTAMA
+== 5. satu berkas disunting -> BERHENTI tanpa ubahan
+    PRASYARAT COCOK (10)
+    GAGAL=1 SIAP=74
+    BERKAS TIDAK SIAP
+    GAGAL: berkas tujuan tidak sama dengan keadaan server sesudah a5-kelompok-5nov - TIDAK ada yang diubah
+    TIDAK ADA YANG BERUBAH
+== 6. a5-kelompok belum terpasang (berkas lama) -> BERHENTI tanpa ubahan
+    GAGAL=18 SIAP=57
+    BERKAS TIDAK SIAP
+    GAGAL: berkas tujuan tidak sama dengan keadaan server sesudah a5-kelompok-5nov - TIDAK ada yang diubah
+    TIDAK ADA YANG BERUBAH
+== 7. disunting sesudah pasang lalu pulih -> dibiarkan
+    BIARKAN=1 PULIH=74
+    BERKAS PULIH SEBAGIAN
+    GAGAL=1 SIAP=74
+    BERKAS TIDAK SIAP
+    PULIH SEBAGIAN
+AKHIR
