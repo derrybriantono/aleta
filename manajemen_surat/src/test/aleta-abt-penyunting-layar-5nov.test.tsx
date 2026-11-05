@@ -269,7 +269,11 @@ describe("layar penyunting", () => {
     const simpan = screen.getByRole("button", { name: /Simpan sebagai versi baru/ }) as HTMLButtonElement;
     expect(simpan.disabled).toBe(true);
     // Ketik di paragraf 1 lewat DOM yang dipasang komponen.
-    const b = document.querySelector<HTMLElement>('[data-i="1"] [data-blok]')!;
+    const b = await waitFor(() => {
+      const x = document.querySelector<HTMLElement>('[data-i="1"] [data-blok]');
+      if (!x) throw new Error("dokumen belum terpasang");
+      return x;
+    });
     const teks = b.querySelector("span:not([data-no]):not([data-kotak])") as HTMLElement;
     teks.textContent = "Perkara antara ";
     act(() => {
