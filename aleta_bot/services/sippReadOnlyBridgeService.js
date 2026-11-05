@@ -2892,6 +2892,51 @@ async function isiBlangko(params = {}) {
 }
 
 /**
+ * NASKAH ALETA ABT dari blangko PUSTAKA ALETA (5 Nov 2026, Tahap 5): isi RTF blangko dikirim portal (aleta_abt_berkas, yang terbit),
+ * bukan dibaca dari cakram bot, lalu diisi mesin jalur ALETA (rumus pustaka ALETA, jatuh ke katalog ABT). Tidak memanggil PHP ABT.
+ * Hanya atas permintaan portal untuk Super Admin; hanya membaca SIPP/ABT; tidak menyimpan apa pun. `isiBlangko` tidak berubah.
+ */
+async function isiBlangkoPustaka(params = {}) {
+  const jalur = params.jalurAleta;
+  if (!jalur || typeof jalur !== "object" || !jalur.pustaka) return { ok: false, sebab: "Pustaka ALETA ABT tidak dikirim." };
+  const perkaraId = safeNumericId(params.perkaraId);
+  if (!perkaraId) return { ok: false, sebab: "Perkara tidak disebut." };
+  const b64 = typeof params.rtfBase64 === "string" ? params.rtfBase64 : "";
+  if (!b64 || b64.length > Math.ceil((BATAS_BLANGKO_BYTE * 4) / 3) + 8) return { ok: false, sebab: "Isi blangko kosong atau terlalu besar." };
+  const rtf = Buffer.from(b64, "base64").toString("latin1");
+  if (!/^\s*\{\rtf\d/.test(rtf.slice(0, 200))) return { ok: false, sebab: "Blangko ini bukan RTF." };
+  const mulai = Date.now();
+  try {
+    const mesin = mesinVariabelJalurAleta(jalur);
+    const h = await mesin.isiRtf(rtf, {
+      perkaraId,
+      sidangKe: Number(params.sidangKe) || 0,
+      timpa: {},
+      cadangan: {},
+      tanyaJawabSaksi: {},
+      ...(params.cetakFinal === true ? { cetakFinal: true } : {}),
+    });
+    return {
+      ok: true,
+      berkas: safeString(params.nama).slice(0, 200),
+      jumlahTerisi: h.terisi.length,
+      kosong: h.kosong,
+      sumber: h.sumber,
+      jumlahKueri: h.jumlahKueri,
+      mesinGalat: h.mesinGalat,
+      isian: h.isian,
+      lolosCetak: h.lolosCetak,
+      ditahan: h.ditahan === true,
+      ringkasanKeyakinan: h.ringkasanKeyakinan,
+      waktuMs: Date.now() - mulai,
+      rtfBase64: h.ditahan ? "" : Buffer.from(h.rtf, "latin1").toString("base64"),
+    };
+  } catch (error) {
+    return { ok: false, sebab: "Naskah tidak dapat disusun: " + safeString(error && error.message).slice(0, 160) };
+  }
+}
+
+/**
  * Seluruh blangko RTF di bawah akar, menurun sampai ke anak folder.
  *
  * ============================================================================
@@ -3256,6 +3301,7 @@ async function handleBridgeOperation(operation, params = {}) {
     "ecourt.dokumenPerkara": getDokumenECourt,
     "blangko.baca": bacaBlangko,
     "blangko.isi": isiBlangko,
+    "blangko.isiPustaka": isiBlangkoPustaka,
     "berkas.fakta": (params) => require("./berkasPerkaraService").fakta(params),
     "berkas.pelajari": (params) => require("./berkasPerkaraService").pelajari(params),
     "berkas.bundel": (params) => require("./berkasPerkaraService").bundelBahan(params),

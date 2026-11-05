@@ -13,6 +13,7 @@ import {
   simpanSuntingan,
   terbitkanVersi,
 } from "@/server/modules/aleta-abt-penyunting/service";
+import { NAMA_KEPALA_TANDA, jagaCetakAletaAbt } from "@/server/modules/aleta-abt-cetak/tanda";
 import { requireActorUser } from "@/server/modules/organization/service";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { appendAuditLog } from "@/server/shared/audit";
@@ -39,6 +40,7 @@ export const dynamic = "force-dynamic";
  *   POST {tindakan:"pulihkan", id, nomor}                       salinan persis per bita menjadi versi baru   [audit]
  *   POST {tindakan:"terbitkan", id, nomor}                      isi pustaka diganti versi itu               [audit]
  *
+ * Semua POST (simpan, kembalikan, terbitkan) melewati juga penjaga layar baru (tanda ekstensi di PC atau hak ALETA ABT di HP).
  * Tidak ada yang ditulis ke SIPP/ABT. Audit tidak memuat isi blangko, hanya berkas, nomor versi, dan sidik.
  */
 async function aktorSuperAdmin(request: NextRequest) {
@@ -47,7 +49,7 @@ async function aktorSuperAdmin(request: NextRequest) {
   const actor = await requireActorUser(db, actorUserId);
   const roleId = String(getEffectiveRoleId(actor) ?? actor.roleId ?? "");
   if (roleId !== "super-admin") throw new ApiError(403, "Penyunting blangko ALETA ABT hanya untuk Super Admin.");
-  return { db, actorUserId, aktor: { id: String(actor.id), name: String(actor.name || actor.id) } };
+  return { db, actorUserId, actor, aktor: { id: String(actor.id), name: String(actor.name || actor.id) } };
 }
 
 async function catat(db: Awaited<ReturnType<typeof getDatabase>>, actorUserId: string, action: string, entityId: string, payload: Record<string, unknown>) {
@@ -125,6 +127,8 @@ export async function POST(request: NextRequest) {
     const a = await aktorSuperAdmin(request);
     db = a.db;
     actorUserId = a.actorUserId;
+    // Simpan/kembalikan/terbitkan (keputusan 206, Tahap 5): Super Admin DAN (tanda ekstensi di PC ATAU hak ALETA ABT di HP menyala).
+    await jagaCetakAletaAbt(a.db, a.actor, request.headers.get(NAMA_KEPALA_TANDA));
     let badan: Record<string, unknown> = {};
     try {
       const isi = (await request.json()) as unknown;

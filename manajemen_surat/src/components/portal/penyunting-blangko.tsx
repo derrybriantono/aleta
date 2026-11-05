@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { apiPath } from "@/lib/base-path";
 import { pasangPenyunting, type PenyuntingDom } from "@/lib/aleta-abt-penyunting-dom";
+import { kepalaTanda } from "@/lib/aleta-abt-tanda-klien";
 import type {
   BlangkoBuka,
   FolderDaftar,
@@ -27,7 +28,7 @@ import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
  */
 
 async function panggil<T>(cari: string, init?: RequestInit): Promise<T> {
-  const r = await fetch(apiPath(`/api/aleta-abt/penyunting${cari}`), { cache: "no-store", ...init });
+  const r = await fetch(apiPath(`/api/aleta-abt/penyunting${cari}`), { cache: "no-store", ...init, headers: { ...(await kepalaTanda()), ...((init?.headers as Record<string, string> | undefined) ?? {}) } });
   const isi = (await r.json().catch(() => null)) as { ok?: boolean; data?: T } | null;
   if (!r.ok || !isi || isi.ok === false) throw new Error(pesanGalatPortal(isi, `Permintaan gagal (HTTP ${r.status}).`));
   return isi.data as T;

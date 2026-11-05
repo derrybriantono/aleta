@@ -36,6 +36,24 @@ export default function HalamanAletaAbt() {
           </CardContent>
         </Card>
       ) : null}
+      {superAdmin ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Cetak dan pembanding</CardTitle>
+            <CardDescription>
+              Pilih perkara dan blangko, lihat naskah yang disusun ALETA ABT tanpa ABT, lalu unduh RTF, PDF, atau PDF SALINAN. Hasilnya dapat dibandingkan dengan cetakan ABT alinea demi alinea.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-2 sm:flex-row">
+            <Button asChild className="w-full sm:w-auto">
+              <Link href="/aleta-abt/cetak">Buka layar cetak</Link>
+            </Button>
+            <Button asChild variant="outline" className="w-full sm:w-auto">
+              <Link href="/aleta-abt/pembanding">Buka laporan pembanding</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
       <AletaAbtPintu />
     </div>
   );

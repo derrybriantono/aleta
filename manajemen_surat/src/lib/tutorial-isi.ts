@@ -884,6 +884,28 @@ export const TUTORIAL: readonly Tutorial[] = [
     kataKunci: ["penyunting", "sunting blangko", "versi", "riwayat versi", "terbitkan", "kembalikan", "perkara rekaan", "aleta abt"],
   },
   {
+    id: "aleta-abt-cetak",
+    judul: "Cetak ALETA ABT: pratinjau, RTF, PDF, PDF SALINAN, dan pembanding",
+    ringkas: "Menyusun naskah dari blangko pustaka tanpa ABT, melihatnya di layar, mengunduhnya, dan membandingkannya dengan cetakan ABT.",
+    kelompok: "putusan",
+    mencakup: { aplikasi: ["aleta-abt"] },
+    halaman: ["/aleta-abt/cetak", "/aleta-abt/pembanding"],
+    tautan: { teks: "Buka layar cetak", href: "/aleta-abt/cetak" },
+    langkah: [
+      "Ketik sebagian nomor perkara lalu pilih perkaranya, kemudian pilih blangko dari pustaka. Untuk berita acara sidang, isi sidang ke berapa.",
+      "Tekan Pratinjau naskah. Naskah tampil per alinea bersama kertas yang dipakai dan lamanya menyusun. Isian yang masih kosong disebut namanya.",
+      "Bila semua isian terisi, tekan Unduh RTF, Unduh PDF, atau Unduh PDF SALINAN. Isian yang masih kosong menahan cetak sampai terisi di SIPP atau ABT.",
+      "Untuk membandingkan, pilih RTF yang dicetak dari ABT untuk perkara dan blangko yang sama. Layar menghitung alinea yang identik dan menampilkan yang berbeda berdampingan.",
+      "Jumlah halaman dan letak tanda tangan dibandingkan dari dua PDF: unduh PDF dari layar ini, lalu pilih PDF dari ABT. Laporan hasil pengukuran skrip dibuka di halaman Laporan pembanding.",
+    ],
+    peringatan: [
+      "Hanya Super Admin. Cetak mensyaratkan ekstensi ALETA di PC atau hak ALETA ABT di HP yang menyala untuk akun Anda.",
+      "PDF dibuat LibreOffice di server, jadi tidak seketika. Waktu yang tampil adalah waktu pada server yang dipakai.",
+      "Panel Blangko ABT by Derry Briantono dan cetak massal berita acara tidak memakai layar ini dan tidak berubah.",
+    ],
+    kataKunci: ["cetak aleta abt", "pembanding", "pdf salinan", "rtf", "bandingkan abt", "laporan pembanding", "pratinjau naskah", "aleta abt"],
+  },
+  {
     id: "aleta-ai-dompet",
     judul: "Dompet ALETA Ai: perkiraan biaya, rincian, dan struk",
     ringkas: "Lihat perkiraan biaya sebelum mengirim, saldo, rincian biaya tiap jawaban, struk, dan pemberitahuan saldo menipis.",
