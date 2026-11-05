@@ -20,7 +20,7 @@ import { muatPustakaMesin } from "./service";
 
 const BATAS_MS = 90_000;
 
-type KeteranganIsian = { noVar: string; kode: string; nama: string; asalRumus: string; sumber: string; keyakinan: "pasti" | "periksa" | "kosong"; status: string; sebab: string };
+type KeteranganIsian = { noVar: string; kode: string; nama: string; asalRumus: string; sumber: string; keyakinan: "pasti" | "periksa" | "kosong"; status: string; sebab: string; peringatan?: string };
 
 type HasilBot = {
   ok?: boolean;

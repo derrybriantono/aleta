@@ -31,6 +31,24 @@
   const teks = (v) => (v === null || v === undefined ? "" : String(v));
   const BATAS_ISIAN = 8;
   const BATAS_KUTIPAN = 6;
+  const BATAS_TANGGAL = 4;
+
+  /**
+   * Nama isian katalog ("Tgl. Lahir #0047#") -> label tampil tanpa nomor variabel dan tanpa nama pihak: #0046# = pihak pertama
+   * (sebutanP), #0047# = pihak kedua (sebutanT); nomor lain dibuang. "Tgl." menjadi "Tanggal".
+   */
+  function labelIsianTanggal(nama, sebutanP, sebutanT) {
+    const p = teks(sebutanP) || "Penggugat/Pemohon";
+    const t = teks(sebutanT) || "Tergugat/Termohon";
+    const l = teks(nama)
+      .replace(/#0*46#/g, p)
+      .replace(/#0*47#/g, t)
+      .replace(/#\d{1,6}#/g, "")
+      .replace(/\bTgl\.?(?=\s)/gi, "Tanggal")
+      .replace(/\s+/g, " ")
+      .trim();
+    return l || "Isian tanggal";
+  }
 
   /** Bunyi penanda di naskah -> jenis temuan. Bunyi baru dan lama. */
   const POLA_HURUF = /\[HURUF ALASAN PERCERAIAN BELUM DIPILIH\]|TIDAK BENAR QUERY NYA \/ BELUM ISI ALASAN|BELUM ISI ALASAN DI KOLOM ABT/i;
@@ -67,6 +85,8 @@
    *   relaas    { ada, P: [iso], T: [iso] } tanggal relaas SIPP per pihak (opsional; butir 50), sebutanP/sebutanT, jenisNaskah put|bas
    *   bertentangan [{ kode, nama, isi, usulan }] isian pihak vs usulan PASTI keterangan kedua saksi (keputusan 17; peringatan pasif)
    *   titikVariabel [{ nama }] variabel otomatis kalimat berlubang yang masih kosong (4 Nov, audit A3-V04); satu baris peringatan, tanpa tombol
+ *   tanggalTakWajar [{ nomor, nama, sebab, manual }] isian bernilai tanggal tidak wajar (5 Nov; dari mesin variabel bot, tanpa nilai
+ *             tanggalnya): satu baris per isian, tidak menahan cetak
  *   kutipan   { temuan: [{ jenis, pasti, rujukan, pesan, jumlah }], lebih } dasar hukum vs rak peraturan (P1 1 Nov; rute portal
    *             periksa-kutipan, sekali per naskah) - butir INFO, tidak menahan cetak, naskah tidak diubah
    * -> [{ jenis, teks, perbaiki: { aksi: "isian"|"rapikan"|"pratinjau", kode? } | null, judulTombol }]
@@ -228,6 +248,31 @@
         perbaiki: null,
         judulTombol: "",
       });
+    }
+    // 6d. 5 Nov: isian bernilai tanggal tidak wajar (tanggal nol, tahun mustahil, tanggal lahir di masa depan) - peringatan dari mesin
+    //     variabel di bot. Satu butir per isian, tidak menahan cetak; naskah dan data tidak diubah. Tombol Perbaiki hanya bila isian itu
+    //     memang kotak isian di blangko ini; tanggal dari SIPP hanya disebut (diperbaiki di SIPP, bukan di sini).
+    const tglPeringatan = Array.isArray(b.tanggalTakWajar) ? b.tanggalTakWajar : [];
+    const tglSudah = new Set();
+    const tglButir = [];
+    for (const x of tglPeringatan) {
+      const nomor = teks(x && x.nomor).trim();
+      const sebab = potong(x && x.sebab, 80);
+      if (!nomor || !sebab || tglSudah.has(nomor)) continue;
+      tglSudah.add(nomor);
+      tglButir.push({ nomor, sebab, manual: x.manual === true, label: labelIsianTanggal(x.nama, b.sebutanP, b.sebutanT) });
+    }
+    for (const x of tglButir.slice(0, BATAS_TANGGAL)) {
+      const keIsian = x.manual && kodeAda.has(x.nomor);
+      hasil.push({
+        jenis: "tanggal-takwajar",
+        teks: `${x.label} tidak wajar${x.manual ? "" : " di SIPP"} (${x.sebab}). ${x.manual ? "Periksa isiannya." : "Periksa data di SIPP."}`,
+        perbaiki: keIsian ? { aksi: "isian", kode: x.nomor } : null,
+        judulTombol: keIsian ? "Membuka isian ini" : "",
+      });
+    }
+    if (tglButir.length > BATAS_TANGGAL) {
+      hasil.push({ jenis: "tanggal-takwajar-lain", teks: `${tglButir.length - BATAS_TANGGAL} isian tanggal lain juga tidak wajar. Periksa datanya.`, perbaiki: null, judulTombol: "" });
     }
     // 7. Isian penting yang masih kosong (sama dengan pengingat Cetak).
     const kos = (Array.isArray(b.kosong) ? b.kosong : []).filter((x) => x && x.kode && !sudah.has(teks(x.kode)));

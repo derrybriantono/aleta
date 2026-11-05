@@ -1252,7 +1252,29 @@ export function kodeTanyaJawab(susunan: Susunan): Set<string> {
   return k;
 }
 
-export type NilaiPenanda = { status: string; teks: string; nama: string; sebab: string };
+export type NilaiPenanda = { status: string; teks: string; nama: string; sebab: string; peringatan?: string };
+
+/** Isian bernilai tanggal tidak wajar (5 Nov 2026): peringatan dari mesin variabel bot, tanpa nilai tanggalnya. */
+export type PeringatanTanggal = { nomor: string; nama: string; sebab: string; manual: boolean };
+
+/**
+ * Daftar peringatan tanggal dari bot -> bentuk yang aman diteruskan ke layar: hanya nomor angka, nama isian katalog, dan sebab
+ * singkat; dibatasi jumlah dan panjangnya. Bukan bentuk yang diharapkan (bot lama) = daftar kosong, tidak ada peringatan palsu.
+ */
+export function peringatanTanggal(mentah: unknown): PeringatanTanggal[] {
+  if (!Array.isArray(mentah)) return [];
+  const hasil: PeringatanTanggal[] = [];
+  for (const x of mentah) {
+    if (!x || typeof x !== "object") continue;
+    const w = x as Record<string, unknown>;
+    const nomor = String(w.nomor ?? "").trim();
+    const sebab = String(w.sebab ?? "").replace(/\s+/g, " ").trim().slice(0, 160);
+    if (!/^\d{3,6}$/.test(nomor) || !sebab) continue;
+    hasil.push({ nomor, nama: String(w.nama ?? "").replace(/\s+/g, " ").trim().slice(0, 120), sebab, manual: w.manual === true });
+    if (hasil.length >= 40) break;
+  }
+  return hasil;
+}
 
 /**
  * Status nilai penanda UNTUK LAYAR Blangko Derry (17 Okt 2026, temuan pemeriksaan 1.203.0).

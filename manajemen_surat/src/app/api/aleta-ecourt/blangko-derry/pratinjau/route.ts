@@ -13,7 +13,7 @@ import { ApiError } from "@/server/shared/errors";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
 
-import { jenisDokumenAkun, jenisFolderDariJalur, type JenisDokumenDerry, type PeranTiruan } from "../susun";
+import { jenisDokumenAkun, jenisFolderDariJalur, peringatanTanggal, type JenisDokumenDerry, type PeranTiruan } from "../susun";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -49,6 +49,7 @@ type HasilIsiPratinjau = {
   kosong?: Array<{ noVar: string; nama?: string; sebab?: string; status?: string }>;
   mesinGalat?: string;
   rtfBase64?: string;
+  peringatan?: Array<{ nomor?: string; nama?: string; sebab?: string; manual?: boolean }>;
 };
 
 /** Pratinjau memakai mesin variabel di bot (puluhan kueri dengan ingatan per naskah, ±0,5 dtk); lebih dari ini diserahkan ke ABT. */
@@ -131,6 +132,8 @@ export async function POST(request: NextRequest) {
         galat: galat.map((k) => ({ nama: k.nama, sebab: k.sebab })).slice(0, 12),
         jumlahGalat: galat.length,
         mesinGalat: data.mesinGalat ?? "",
+        // Tanggal tidak wajar per isian (peringatan saja; tanpa nilai tanggalnya). Ikut jawaban yang sama, bukan permintaan baru.
+        peringatan: peringatanTanggal(data.peringatan),
       },
       { headers: { "Cache-Control": "no-store" } }
     );

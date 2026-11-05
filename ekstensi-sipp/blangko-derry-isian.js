@@ -2048,6 +2048,7 @@
       S.susunan = d;
       ktSeragamkanNama(d);
       S.nilai = d.nilai && typeof d.nilai === "object" ? d.nilai : {};
+      catatTanggalTakWajar("susunan", d.peringatan);
       if (!d.nilaiAda) await nilaiDariAbt(d);
       if (S.blangko !== blangko) return;
       for (const b of d.isian) {
@@ -8529,6 +8530,17 @@
     }
   }
   const titikVariabelSekarang = () => (S.titik && S.titik.kunci === kunciTitik() ? S.titik.daftar : []);
+  // 5 Nov: isian bernilai tanggal tidak wajar (tanggal nol, tahun mustahil, tanggal lahir di masa depan) dari mesin variabel di bot.
+  // TIDAK ada permintaan baru: daftarnya ikut jawaban yang sudah ada - pembacaan isian blangko (GET) dan pratinjau cepat (POST). Tiap
+  // sumber mengganti daftarnya sendiri (data yang sudah dibetulkan di SIPP tidak tertinggal); hanya peringatan di "Periksa sebelum cetak".
+  function catatTanggalTakWajar(sumber, daftar, segarkan) {
+    const kunci = kunciTitik();
+    if (!kunci || !Array.isArray(daftar)) return;
+    if (!S.tglTakWajar || S.tglTakWajar.kunci !== kunci) S.tglTakWajar = { kunci, sumber: {} };
+    S.tglTakWajar.sumber[sumber] = daftar.filter((x) => x && x.nomor && x.sebab);
+    if (segarkan && !tes()) perbaruiPeriksa();
+  }
+  const tanggalTakWajarSekarang = () => (S.tglTakWajar && S.tglTakWajar.kunci === kunciTitik() ? Object.values(S.tglTakWajar.sumber).flat() : []);
   const naskahSegar = (pr) => Boolean(pr && pr.rtf && !pr.kotor && pr.sidik === sidikIsian() && Date.now() - (pr.saat || 0) < UMUR_NASKAH_MS);
   async function ambilRtf(paksa, opsi) {
     if (!S.blangko || !S.pk) throw new Error("Pilih perkara dan blangko dulu.");
@@ -8647,6 +8659,7 @@
       if (e && (e.status === 401 || e.status === 403)) throw e;
       return { ok: false, d: null, e };
     }
+    if (d && S.blangko === b) catatTanggalTakWajar("pratinjau", d.peringatan, true);
     if (!d || Number(d.jumlahGalat) > 0 || String(d.mesinGalat || "").trim()) return { ok: false, d: d || {}, e: null };
     const mentah = atob(String(d.rtfBase64 || ""));
     if (mentah.length < 6 || !mentah.startsWith("{\\rtf")) return { ok: false, d: { galat: [] }, e: null };
@@ -9788,6 +9801,8 @@
           kutipan: kutipanUntukPeriksa(naskahPeriksa),
           // 4 Nov (audit A3-V04): variabel kalimat berlubang yang masih kosong - peringatan lunak satu baris.
           titikVariabel: titikVariabelSekarang(),
+          // 5 Nov: tanggal tidak wajar dari mesin variabel (ikut jawaban isian & pratinjau yang sudah ada) - peringatan saja.
+          tanggalTakWajar: tanggalTakWajarSekarang(),
           // Butir 50 (30 Okt malam): relaas SIPP per pihak, dibaca sekali per perkara sesudah naskah siap (hanya baca).
           relaas: relaasUntukPeriksa(),
           sebutanP: sebutan().P,
