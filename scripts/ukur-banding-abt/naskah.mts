@@ -500,14 +500,14 @@ function laporan() {
     .slice(0, 500)
     .map((e, i) => ({ jenis: e.jenis, blangko: e.blangko.split("/").pop()!.replace(/\.rtf$/i, ""), perkara: `sampel ${[...e.perkara].length} perkara`, kelas: e.kelas, nomorAbt: e.contoh.nomorAbt, nomorAleta: e.contoh.nomorAleta, isian: e.isian, _urut: i }));
   const belumTerukur = [
-    "Jumlah halaman: butuh PDF dari LibreOffice, tidak ada di mesin pengukur. Pembandingnya (bandingRingkasPdf) sudah ada dan teruji dengan PDF rekaan.",
-    "Letak tanda tangan: sama dengan jumlah halaman, butuh PDF. Nomor halaman dan garis Z juga hanya terlihat di PDF.",
-    "Waktu PDF dan waktu pada server: tidak diukur di sini.",
-    "Sidang ke-n pada berita acara: naskah dibandingkan dengan pilihan sidang bawaan kedua sisi (kosong), bukan tiap sidang.",
+    "Jumlah halaman dan letak tanda tangan: butuh PDF dari server.",
+    "Nomor halaman dan garis Z: hanya terlihat di PDF.",
+    "Waktu PDF dan waktu di server.",
+    "Berita acara dibandingkan pada sidang bawaan, belum tiap sidang.",
   ];
   const laporanJson = {
     dibuat: new Date().toISOString(),
-    keterangan: `Naskah utuh ALETA ABT (mesin jalur ALETA) lawan naskah ABT yang dirakit dari nilai renderer ABT asli pada salinan uji. ${semua.length} naskah dari ${blangkoUnik.size} blangko dan ${perkaraUnik.size} perkara sampel.`,
+    keterangan: `Naskah ALETA ABT dibandingkan dengan hasil ABT pada salinan uji. ${semua.length} naskah dari ${blangkoUnik.size} blangko dan ${perkaraUnik.size} perkara sampel.`,
     ringkas,
     perKelas: perKel,
     beda: bedaLaporan.map(({ _urut, ...x }) => x),

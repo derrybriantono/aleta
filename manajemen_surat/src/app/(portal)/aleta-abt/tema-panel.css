@@ -1,0 +1,57 @@
+/*
+ * Satu tema dengan panel Blangko ABT by Derry Briantono (keputusan 5 Nov 2026), supaya pengguna tidak kaget saat pindah.
+ * Warna diambil dari ekstensi-sipp/blangko-derry.css. Hanya berlaku di dalam halaman ALETA ABT.
+ */
+.aleta-abt-tema {
+  --background: 140 14% 96%;
+  --foreground: 148 25% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: 148 25% 12%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 148 25% 12%;
+  --primary: 152 43% 30%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 46 100% 94%;
+  --secondary-foreground: 42 100% 30%;
+  --muted: 142 20% 92%;
+  --muted-foreground: 147 11% 37%;
+  --accent: 142 20% 92%;
+  --accent-foreground: 148 25% 12%;
+  --border: 145 17% 81%;
+  --input: 145 17% 81%;
+  --ring: 42 100% 30%;
+  --radius: 0.75rem;
+  color: hsl(var(--foreground));
+  background: hsl(var(--background));
+  font-family: "IBM Plex Sans", system-ui, "Segoe UI", Arial, sans-serif;
+  border-radius: 12px;
+  min-height: 100%;
+}
+.dark .aleta-abt-tema {
+  --background: 156 47% 11%;
+  --foreground: 147 24% 93%;
+  --card: 159 48% 14%;
+  --card-foreground: 147 24% 93%;
+  --popover: 159 48% 14%;
+  --popover-foreground: 147 24% 93%;
+  --primary: 150 44% 33%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 55 35% 12%;
+  --secondary-foreground: 43 74% 66%;
+  --muted: 157 47% 18%;
+  --muted-foreground: 151 17% 71%;
+  --accent: 157 47% 18%;
+  --accent-foreground: 147 24% 93%;
+  --border: 154 35% 26%;
+  --input: 154 35% 26%;
+  --ring: 43 74% 66%;
+}
+.aleta-abt-tema h1,
+.aleta-abt-tema h2,
+.aleta-abt-tema h3 {
+  font-family: inherit;
+}
+/* Bayangan biru bawaan portal diganti garis tepi, seperti kartu di panel. */
+.aleta-abt-tema [class*="shadow-"] {
+  box-shadow: none;
+}

@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { KELAS_BEDA_NAMA, type BedaAlinea, type BandingPdf, type HasilBandingAlinea, type KertasNaskah, type RingkasPdf } from "@/lib/aleta-abt-naskah";
 import type { FolderDaftar } from "@/lib/aleta-abt-penyunting-tipe";
-import { kepalaTanda, versiEkstensiTerbaca } from "@/lib/aleta-abt-tanda-klien";
+import { kepalaTanda } from "@/lib/aleta-abt-tanda-klien";
 import { apiPath } from "@/lib/base-path";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 
@@ -149,7 +149,6 @@ export function CetakAletaAbt() {
     };
   }, []);
 
-  const adaEkstensi = useMemo(() => Boolean(versiEkstensiTerbaca()), []);
 
   const cari = useCallback(async () => {
     setGalat("");
@@ -304,7 +303,7 @@ export function CetakAletaAbt() {
       <Card>
         <CardHeader>
           <CardTitle>1. Pilih perkara</CardTitle>
-          <CardDescription>Ketik sebagian nomor perkara, lalu pilih. {adaEkstensi ? "Ekstensi ALETA terbaca di peramban ini." : "Ekstensi ALETA tidak terbaca; cetak mengikuti hak ALETA ABT di HP."}</CardDescription>
+          <CardDescription>Ketik sebagian nomor perkara, lalu pilih.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <form

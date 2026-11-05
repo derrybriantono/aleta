@@ -49,7 +49,7 @@ export function LaporanPembanding() {
       <Card>
         <CardHeader>
           <CardTitle>Buka laporan hasil pengukuran</CardTitle>
-          <CardDescription>Pilih berkas laporan dari skrip pembanding. Berkas dibaca di peramban ini saja, tidak dikirim ke server.</CardDescription>
+          <CardDescription>Pilih berkas laporan pembanding. Berkas dibaca di peramban ini saja, tidak dikirim ke server.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <label className="inline-flex w-full cursor-pointer items-center justify-center rounded-md border border-border px-3 py-2 text-sm hover:bg-muted sm:w-auto">
