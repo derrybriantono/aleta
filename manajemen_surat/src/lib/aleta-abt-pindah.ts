@@ -252,17 +252,24 @@ export function nilaiKesiapan(
   const u = masukan.ukur;
   const terukur = Boolean(u && u.perkara > 0 && u.naskah > 0 && u.alinea > 0);
   const sukuBeda = terukur ? u!.belumDijelaskan : 0;
+  // Pengukuran yang baru separuh jalan (sebabBelum terisi) atau yang masih menyisakan isian beda tanpa penjelasan tidak cukup untuk lulus.
+  const lengkap = terukur && !u!.sebabBelum;
+  const isianBeda = terukur ? Math.max(0, u!.isianNilai - u!.isianCocok - u!.isianDijelaskan) : 0;
   const syaratUkur: SyaratPindah = {
     kunci: "pengukuran",
     judul: "Naskah sama dengan ABT di salinan uji",
-    lulus: terukur && sukuBeda === 0,
+    lulus: lengkap && sukuBeda === 0 && isianBeda === 0,
     keterangan: !terukur
       ? u?.sebabBelum
         ? `Belum terukur: ${u.sebabBelum}`
         : "Belum terukur: belum ada hasil pengukuran untuk jenis ini."
-      : sukuBeda === 0
-        ? `${u!.naskah} naskah dari ${u!.perkara} perkara sama dengan ABT, atau bedanya sudah dijelaskan.`
-        : `${sukuBeda} paragraf naskah beda dan belum dijelaskan sebabnya.`,
+      : !lengkap
+        ? `Pengukuran belum lengkap: ${u!.sebabBelum}.`
+        : sukuBeda > 0
+          ? `${sukuBeda} paragraf naskah beda dan belum dijelaskan sebabnya.`
+          : isianBeda > 0
+            ? `${isianBeda} isian beda dan belum dijelaskan sebabnya.`
+            : `${u!.naskah} naskah dari ${u!.perkara} perkara sama dengan ABT, atau bedanya sudah dijelaskan.`,
   };
   const kurang = Math.max(0, SYARAT_CETAK - d.cetak);
   const syaratDampingan: SyaratPindah = {

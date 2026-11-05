@@ -159,6 +159,17 @@ describe("syarat kesiapan", () => {
     expect(nilaiKesiapan(gugat, { ukur: ukur(), berdampingan: barusan, aktif: false }, KINI).siap).toBe(false);
   });
 
+  it("pengukuran setengah jalan atau isian beda tanpa penjelasan tidak lulus", () => {
+    const cukup = baris(SYARAT_CETAK, "hijau", CG, "2026-10-01T00:00:00.000Z");
+    const separuh = nilaiKesiapan(gugat, { ukur: ukur({ sebabBelum: "baru 400 dari 685 naskah" }), berdampingan: cukup, aktif: false }, KINI);
+    expect(separuh.siap).toBe(false);
+    expect(separuh.syarat[0].keterangan).toBe("Pengukuran belum lengkap: baru 400 dari 685 naskah.");
+    const isian = nilaiKesiapan(gugat, { ukur: ukur({ isianNilai: 5000, isianCocok: 4990, isianDijelaskan: 4 }), berdampingan: cukup, aktif: false }, KINI);
+    expect(isian.siap).toBe(false);
+    expect(isian.syarat[0].keterangan).toBe("6 isian beda dan belum dijelaskan sebabnya.");
+    expect(nilaiKesiapan(gugat, { ukur: ukur({ isianNilai: 5000, isianCocok: 4990, isianDijelaskan: 10 }), berdampingan: cukup, aktif: false }, KINI).siap).toBe(true);
+  });
+
   it("cetak jenis lain dan folder asing tidak dihitung untuk keluarga ini; belum diukur tidak dihitung cetak", () => {
     const campur = [...baris(40, "hijau", "1a Perceraian CT", "2026-10-01T00:00:00.000Z"), ...baris(5, "hijau", "Entah", "2026-10-01T00:00:00.000Z"), ...baris(9, "belum-diukur", CG, "2026-10-01T00:00:00.000Z")];
     const k = nilaiKesiapan(gugat, { ukur: ukur(), berdampingan: campur, aktif: false }, KINI);

@@ -13,6 +13,18 @@
  *   verifikasi [per=3]       buktikan rakitan ABT == render naskah utuh ABT (bita per bita): tiap jenis x putusan/BAS x blangko terkecil, tengah, terbesar
  *   laporan                  ringkas per jenis -> LAPORAN-T5.txt (tanpa data pihak) dan laporan-t5.json (untuk layar Laporan pembanding)
  *
+ * TAHAP 8 (semua jenis perkara; env KELUAR_T5=D:/aleta-dev/kerja/aleta-abt/t8):
+ *   sampel-semua [perJenis=3]  pilih perkara per KELUARGA blangko (aleta-abt-pindah.ts) langsung dari sipp_vs dan menulis perkara.tsv
+ *                              (kolom 3 = kunci keluarga), blangko.tsv (semua folder RTF di pohon), kode-naskah.txt (semua penanda)
+ *   kode-pid                   tulis kode-pid/p<perkara>.txt: penanda yang dipakai blangko keluarga tiap perkara (render ABT jauh lebih ringan)
+ *   abt                        (sama seperti Tahap 5; untuk Tahap 8 pakai abt_render_mentah.py per perkara dengan @kode-pid/p<perkara>.txt)
+ *   banding [perkara,...]      (sama; env BATAS_KUERI_MS = batas waktu satu kueri mesin, bawaan 240 dtk di skrip ini)
+ *   ulang-tak-cocok            buang dari hasil naskah yang bedanya belum dijelaskan atau punya isian kosong karena galat, supaya disusun ulang
+ *   laporan-semua [isian.json] ringkas per keluarga -> LAPORAN-T8.txt (tanpa data pihak) dan laporan-t8.json (dimuat di layar kesiapan);
+ *                              isian.json = keluaran `node ukur.mjs banding` (nilai tiap isian) bila ada
+ * Urutan: sampel-semua, kode-pid, render ABT per perkara, banding (beberapa proses boleh jalan bersama), ukur.mjs mesin/dari-mentah/banding
+ * (env KODE_DIR=<kode-pid>), laporan-semua. Mesin yang sibuk membuat kueri habis waktu dan mengubah hasil: periksa `kosongGalat`.
+ *
  * UKURAN YANG TIDAK DIUKUR DI SINI: jumlah halaman dan letak tanda tangan (butuh PDF dari LibreOffice; tidak ada di laptop ini).
  */
 import { spawn, spawnSync } from "node:child_process";
@@ -23,6 +35,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { KELAS_DIJELASKAN, alineaDariRtf, bandingAlinea, golongkanUlang, kertasDariRtf, type BedaAlinea, type KelasBeda } from "@/lib/aleta-abt-naskah";
+import { FOLDER_BUKAN_BLANGKO, KELUARGA_PINDAH, keluargaDariFolder, type UkurKeluarga } from "@/lib/aleta-abt-pindah";
 import { uraiRtf } from "@/lib/aleta-abt-rtf";
 
 const SINI = path.dirname(fileURLToPath(import.meta.url));
@@ -37,6 +50,8 @@ const ABT_DIR = process.env.UJI_ABT_DIR || "D:/Aplikasi/aleta/tmp/vs30/abt";
 /** Berkas sementara tidak boleh ke drive C: (aturan proyek). */
 const TMP_UJI = process.env.TMP || "D:/Aplikasi/aleta/tmp";
 const LB = String.fromCharCode(10);
+/** Batas waktu satu kueri mesin; blangko berat (daftar isi) butuh lebih dari 60 dtk bila mesin sedang sibuk. Bawaan 240 dtk. */
+const BATAS_KUERI_MS = Number(process.env.BATAS_KUERI_MS) || 240000;
 
 if (!/_vs$/.test(SIPP) || !/_vs$/.test(ABT)) {
   console.error(`Berhenti: SIPP_DB=${SIPP} dan ABT_DB=${ABT} bukan pasangan salinan uji (_vs). Skrip ini tidak boleh menyentuh basis data lain.`);
@@ -105,7 +120,7 @@ function bukaKolam() {
   const kueri = (sql: string, params?: unknown[], opsi?: { timeoutMs?: number }) => {
     const teks = String(sql).replace(/\baps_badilag\./g, `${ABT}.`);
     return new Promise<Array<Record<string, string>>>((ok, gagal) =>
-      kolam.query({ sql: teks, values: params || [], timeout: opsi?.timeoutMs || 60000, typeCast: (f: { string: () => string }) => f.string() }, (g: Error | null, r: Array<Record<string, string>>) => (g ? gagal(g) : ok(r)))
+      kolam.query({ sql: teks, values: params || [], timeout: opsi?.timeoutMs || 60000, typeCast: (f: { string: () => string; buffer: () => Buffer; type?: string; packet?: { charsetNr?: number } }) => (f.packet && f.packet.charsetNr === 63 && /STRING|BLOB/.test(String(f.type)) ? f.buffer().toString("latin1") : f.string()) }, (g: Error | null, r: Array<Record<string, string>>) => (g ? gagal(g) : ok(r)))
     );
   };
   return { kolam, kueri };
@@ -185,7 +200,8 @@ function sampel([perJenis = "6"]: string[]) {
 
 async function abt([paralel = "2"]: string[]) {
   fs.mkdirSync(dirMentah(), { recursive: true });
-  const antre = baris(berkasPerkara()).map((b) => b[0]).filter((pid) => !fs.existsSync(path.join(dirMentah(), `p${pid}.json`)));
+  // satu perkara dapat mewakili beberapa keluarga (barisnya berulang di perkara.tsv): render sekali saja
+  const antre = [...new Set(baris(berkasPerkara()).map((b) => b[0]))].filter((pid) => !fs.existsSync(path.join(dirMentah(), `p${pid}.json`)));
   const env = { ...process.env, TMP: TMP_UJI, TEMP: TMP_UJI, UJI_ABT_DIR: ABT_DIR };
   async function pekerja() {
     while (antre.length) {
@@ -221,6 +237,8 @@ type HasilNaskah = {
   kertasAleta: string;
   tanpaNilaiAbt: string[];
   kosongAleta: number;
+  /** Isian kosong karena galat (mis. waktu kueri habis), bukan karena datanya memang kosong: naskah dengan angka ini > 0 tidak boleh dipercaya bedanya. */
+  kosongGalat?: number;
   mesinGalat: string;
   waktu: { isiMs: number; uraiMs: number; dingin: boolean };
 };
@@ -261,7 +279,7 @@ async function banding([daftar]: string[]) {
     const fh = path.join(dirHasil(), `p${pid}.jsonl`);
     const sudah = new Set(fs.existsSync(fh) ? baca(fh).split("\n").filter(Boolean).map((l) => (JSON.parse(l) as HasilNaskah).blangko) : []);
     // satu mesin per perkara: katalog dibaca sekali (naskah pertama = "dingin"), seperti bot yang menyimpan mesin 5 menit
-    const mesin = mesinMod.buatMesin({ kueri, skemaAbt: ABT, umurKatalogMs: 3600 * 1000, batasKueriMs: 60000, jalurAleta: { pustaka: jalur.pustaka, alias: jalur.alias } });
+    const mesin = mesinMod.buatMesin({ kueri, skemaAbt: ABT, umurKatalogMs: 3600 * 1000, batasKueriMs: BATAS_KUERI_MS, jalurAleta: { pustaka: jalur.pustaka, alias: jalur.alias } });
     let dingin = true;
     let n = 0;
     for (const b of blangko.filter((x) => x.jenis === jenis && (!process.env.KELOMPOK_UJI || x.kelompok === process.env.KELOMPOK_UJI))) {
@@ -305,6 +323,7 @@ async function banding([daftar]: string[]) {
         kertasAleta: kertasDariRtf(h.rtf).nama,
         tanpaNilaiAbt: a.tanpaNilai,
         kosongAleta: h.kosong.length,
+        kosongGalat: (h.kosong as Array<{ status?: string }>).filter((x) => x.status === "galat").length,
         mesinGalat: h.mesinGalat,
         waktu: { isiMs, uraiMs, dingin },
       };
@@ -350,7 +369,7 @@ async function waktu([ulang = "3"]: string[]) {
   const semuaMs: number[] = [];
   const dinginMs: number[] = [];
   for (let putar = 0; putar < Number(ulang); putar += 1) {
-    const mesin = mesinMod.buatMesin({ kueri, skemaAbt: ABT, umurKatalogMs: 3600 * 1000, batasKueriMs: 60000, jalurAleta: { pustaka: jalur.pustaka, alias: jalur.alias } });
+    const mesin = mesinMod.buatMesin({ kueri, skemaAbt: ABT, umurKatalogMs: 3600 * 1000, batasKueriMs: BATAS_KUERI_MS, jalurAleta: { pustaka: jalur.pustaka, alias: jalur.alias } });
     let pertama = true;
     for (const { b, ukuran } of pilih) {
       const templat = bacaBlangko(b);
@@ -534,10 +553,332 @@ function laporan() {
   console.log(teks.slice(0, 14).join("\n"));
 }
 
+// ---------------------------------------------------------------------------------------------------------------
+// Tahap 8: semua keluarga blangko
+// ---------------------------------------------------------------------------------------------------------------
+
+/**
+ * Pilih perkara per keluarga langsung dari salinan SIPP. Keadaan beragam: berputar menurut proses_terakhir_id yang berbeda, bukan
+ * sekadar yang pertama. Cerai gugat dan cerai talak memakai sampel Tahap 5 (keadaan sudah beragam dan bukan yang lambat).
+ */
+async function sampelSemua([perJenis = "3"]: string[]) {
+  const { kolam, kueri } = bukaKolam();
+  const n = Number(perJenis);
+  const t5 = path.join(T4, "..", "t5", "perkara.tsv");
+  const keadaanT5 = fs.existsSync(t5) ? baris(t5) : [];
+  // perkara salinan lambat dibaca (kolom teks panjang): satu kali saja untuk semua keluarga, urut menurut nomor
+  const semuaPerkara = (await kueri("SELECT perkara_id, jenis_perkara_nama, proses_terakhir_id FROM perkara")).sort((x, y) => Number(x.perkara_id) - Number(y.perkara_id));
+  const dipilih: Array<{ pid: string; tag: string; keluarga: string }> = [];
+  const belumAda: string[] = [];
+  const dariKeluarga = new Map<string, string[][]>();
+  for (const k of KELUARGA_PINDAH) {
+    if (k.umum) continue;
+    let cocok: string[][] = [];
+    const jenisCerai = k.jenisSipp.length === 1 && /^Cerai (Gugat|Talak)$/.test(k.jenisSipp[0]) ? k.jenisSipp[0] : "";
+    if (jenisCerai && keadaanT5.length) {
+      const tagPertama = new Set<string>();
+      for (const b of keadaanT5.filter((x) => x[2] === jenisCerai)) {
+        const t = b[1].split(",")[0];
+        if (!tagPertama.has(t) && cocok.length < 5) {
+          tagPertama.add(t);
+          cocok.push([b[0], b[1]]);
+        }
+      }
+    } else {
+      const pola = k.jenisSipp.map((x) => new RegExp(`^${x.split("%").map(lolosRegex).join(".*")}$`, "i"));
+      const rows = semuaPerkara.filter((b) => pola.some((re) => re.test(String(b.jenis_perkara_nama ?? ""))));
+      const per = new Map<string, string[]>();
+      for (const b of rows) {
+        const g = String(b.proses_terakhir_id ?? "");
+        if (!per.has(g)) per.set(g, []);
+        per.get(g)!.push(String(b.perkara_id));
+      }
+      const kel = [...per.entries()].sort((a, b) => b[1].length - a[1].length);
+      for (let putar = 0; cocok.length < n && putar < 50; putar += 1) {
+        for (const [g, ids] of kel) {
+          if (cocok.length >= n) break;
+          const id = ids[Math.min(ids.length - 1, Math.floor(ids.length / 2) + putar)];
+          if (id && !cocok.some((h) => h[0] === id)) cocok.push([id, `proses${g}`]);
+        }
+      }
+    }
+    dariKeluarga.set(k.kunci, cocok);
+    if (!cocok.length) belumAda.push(k.kunci);
+    for (const [pid, tag] of cocok) dipilih.push({ pid, tag, keluarga: k.kunci });
+  }
+  // keluarga lintas jenis: 2 cerai gugat, 2 cerai talak, 1 itsbat
+  const umum = KELUARGA_PINDAH.find((k) => k.umum);
+  if (umum) {
+    const sumber = [...(dariKeluarga.get("cerai-gugat") ?? []).slice(0, 2), ...(dariKeluarga.get("cerai-talak") ?? []).slice(0, 2), ...(dariKeluarga.get("itsbat-nikah") ?? []).slice(0, 1)];
+    for (const [pid, tag] of sumber) dipilih.push({ pid, tag, keluarga: umum.kunci });
+  }
+  tulis(berkasPerkara(), dipilih.map((b) => [b.pid, b.tag, b.keluarga].join("\t")).join("\n") + "\n");
+
+  const hasil: Blangko[] = [];
+  const kodeAbt = new Set<string>();
+  const tanpaKeluarga: string[] = [];
+  for (const folder of fs.readdirSync(POHON).sort()) {
+    const dir = path.join(POHON, folder);
+    if (!fs.statSync(dir).isDirectory()) continue;
+    const kel = keluargaDariFolder(folder);
+    const rtfs = fs.readdirSync(dir).filter((x) => /\.rtf$/i.test(x)).sort();
+    if (!kel) {
+      if (rtfs.length && !FOLDER_BUKAN_BLANGKO.includes(folder)) tanpaKeluarga.push(folder);
+      continue;
+    }
+    for (const nama of rtfs) {
+      hasil.push({ kelompok: / - BAS$|^BAS /.test(folder) ? "BAS" : "putusan", jenis: kel, folder, nama });
+      const rtf = fs.readFileSync(path.join(dir, nama)).toString("latin1");
+      for (const x of mesinMod.penandaUrutAbt(rtf)) if (x !== "") kodeAbt.add(x);
+      for (const x of mesinMod.penandaUrutAbt(mesinMod.satukanPenandaTerpecah(rtf).rtf)) if (x !== "") kodeAbt.add(x);
+    }
+  }
+  tulis(berkasBlangko(), hasil.map((b) => [b.kelompok, b.jenis, b.folder, b.nama].join("\t")).join("\n") + "\n");
+  tulis(berkasKode(), [...kodeAbt].sort().join(",") + "\n");
+  const perkaraUnik = new Set(dipilih.map((b) => b.pid)).size;
+  console.log(`perkara ${dipilih.length} baris (${perkaraUnik} unik); blangko ${hasil.length}; penanda ${kodeAbt.size}; keluarga tanpa perkara di salinan: ${belumAda.join(", ") || "-"}; folder RTF tanpa keluarga: ${tanpaKeluarga.join(", ") || "-"}`);
+  kolam.end();
+}
+
+type IsianKeluarga = { perkara: number; nilai: number; cocok: number; spasi: number; beda: number; tandaKosong?: number; cacatAbt?: number; waktuHabis?: number };
+
+/**
+ * Cacat ABT pada tingkat alinea: nilai ABT yang memuat kata kendali RTF tercetak sebagai teks (mis. "rowd rqc rgaph85"; kasus tanda tangan
+ * majelis verzet: ABT mengubah "~" menjadi tab dan karakter kendali) membuat ABT mencetak sampah, sedangkan ALETA mencetak tabel yang benar.
+ * Alinea ALETA yang menjadi pasangannya (satu sel satu alinea di ALETA, satu baris tabel satu alinea di ABT) ikut terbawa: satu BLOK beda
+ * berurutan dihitung cacat ABT bila ada satu alinea ABT di dalamnya yang bocor. Hanya blok seperti itu; beda lain tetap belum dijelaskan.
+ */
+/** Urutan bita UTF-8 yang terbaca sebagai huruf latin1 diubah kembali menjadi hurufnya (sama dengan ukur.mjs); huruf latin1 tunggal dibiarkan. */
+function perbaikiMojibake(t: string): string {
+  return t.replace(/[\u00c2-\u00f4][\u0080-\u00bf]{1,3}/g, (m) => {
+    const u = Buffer.from(m, "latin1").toString("utf8");
+    return u.includes("\ufffd") ? m : u;
+  });
+}
+const BOCOR_KENDALI = /(^|\s)(rowd|trqc|trgaph\d+|trleft\d+|cellx\d+|pardintbl\w*)(\s|$)/;
+function indeksCacatAbt(beda: BedaHasil[]): Set<number> {
+  const hasil = new Set<number>();
+  let blok: number[] = [];
+  let bocor = false;
+  let terakhir = -10;
+  const tutup = () => {
+    if (bocor) for (const i of blok) hasil.add(i);
+    blok = [];
+    bocor = false;
+  };
+  beda.forEach((d, i) => {
+    const nomor = Math.max(d.nomorAleta || 0, d.nomorAbt || 0);
+    if (blok.length && nomor > terakhir + 1) tutup();
+    blok.push(i);
+    terakhir = nomor;
+    if (d.abt && d.abt !== d.aleta && perbaikiMojibake(String(d.abt)) === d.aleta) {
+      // mojibake ABT pada satu alinea (huruf UTF-8 dibaca sebagai latin1): ALETA mencetak hurufnya dengan benar
+      hasil.add(i);
+      return;
+    }
+    if (BOCOR_KENDALI.test(String(d.abt ?? "")) || /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(String(d.abt ?? ""))) bocor = true;
+  });
+  tutup();
+  return hasil;
+}
+
+/**
+ * Ringkasan per keluarga (angka saja). Alinea: dari hasil banding naskah (jsonl per perkara). Isian: dari keluaran `ukur.mjs banding`
+ * (per_jenis, kuncinya = keluarga). Beda isian TIDAK dianggap dijelaskan di sini: sebab tiap beda ditinjau manusia dan dicatat sebagai
+ * penjelasan tersendiri, tidak dilulukan diam-diam oleh skrip.
+ */
+function laporanSemua([isianBerkas]: string[]) {
+  const semua: HasilNaskah[] = [];
+  for (const f of fs.existsSync(dirHasil()) ? fs.readdirSync(dirHasil()) : []) {
+    for (const l of baca(path.join(dirHasil(), f)).split("\n").filter(Boolean)) semua.push(JSON.parse(l) as HasilNaskah);
+  }
+  for (const h of semua) h.perKelas = golongkanUlang(h.beda);
+  const isian: Record<string, IsianKeluarga> = isianBerkas && fs.existsSync(isianBerkas) ? (JSON.parse(baca(isianBerkas)) as { per_jenis: Record<string, IsianKeluarga> }).per_jenis : {};
+  const blangkoTotal = new Map<string, number>();
+  for (const b of daftarBlangko()) blangkoTotal.set(b.jenis, (blangkoTotal.get(b.jenis) ?? 0) + 1);
+  const perkaraBaris = baris(berkasPerkara());
+  // Blangko yang tidak dapat diukur karena isiannya belum ada di katalog salinan uji (atau memanggil fungsi yang tidak ada): dihitung per keluarga.
+  const terhalangPer = new Map<string, number>();
+  const fileTerhalang = path.join(KELUAR, "blangko-terhalang.tsv");
+  if (fs.existsSync(fileTerhalang)) for (const l of baca(fileTerhalang).split("\n").filter(Boolean)) terhalangPer.set(l.split("\t")[0], (terhalangPer.get(l.split("\t")[0]) ?? 0) + 1);
+  const keluarga: UkurKeluarga[] = [];
+  const teks: string[] = ["PEMBANDING SEMUA JENIS PERKARA TAHAP 8 - ALETA ABT lawan ABT (memuat nama blangko; TANPA data pihak)"];
+  teks.push(`Dibuat ${new Date().toISOString()}. Salinan uji ${SIPP} + ${ABT}. Naskah dibandingkan ${semua.length}.`);
+  teks.push("");
+  for (const k of KELUARGA_PINDAH) {
+    const hs = semua.filter((h) => h.jenis === k.kunci);
+    const perkaraK = new Set(perkaraBaris.filter((b) => b[2] === k.kunci).map((b) => b[0]));
+    const adaBlangko = blangkoTotal.get(k.kunci) ?? 0;
+    const i = isian[k.kunci];
+    if (!perkaraK.size || !hs.length) {
+      const sebab = perkaraK.size ? "belum ada naskah terukur" : "tidak ada perkara jenis ini di salinan uji";
+      keluarga.push({ kunci: k.kunci, perkara: 0, naskah: 0, alinea: 0, identik: 0, dijelaskan: 0, belumDijelaskan: 0, isianNilai: 0, isianCocok: 0, isianDijelaskan: 0, sebabBelum: sebab });
+      teks.push(`${k.nama} (${k.kunci}): BELUM TERUKUR - ${sebab}; ${adaBlangko} blangko menunggu`);
+      continue;
+    }
+    const alinea = hs.reduce((a, h) => a + h.total, 0);
+    const identik = hs.reduce((a, h) => a + h.identik, 0);
+    const bedaSemua = hs.flatMap((h) => h.beda);
+    const cacatPerNaskah = hs.map((h) => indeksCacatAbt(h.beda));
+    const cacatAbtN = cacatPerNaskah.reduce((a, c, n) => a + [...c].filter((idx) => !KELAS_DIJELASKAN[hs[n].beda[idx].kelas]).length, 0);
+    const dijelaskan = bedaSemua.filter((d) => KELAS_DIJELASKAN[d.kelas]).length + cacatAbtN;
+    const belum = bedaSemua.length - dijelaskan;
+    const naskahIdentik = hs.filter((h) => h.identik === h.total).length;
+    const diharap = adaBlangko * perkaraK.size;
+    keluarga.push({
+      kunci: k.kunci,
+      perkara: perkaraK.size,
+      naskah: hs.length,
+      alinea,
+      identik,
+      dijelaskan,
+      belumDijelaskan: belum,
+      isianNilai: i ? i.nilai : 0,
+      isianCocok: i ? i.cocok + i.spasi : 0,
+      isianDijelaskan: i ? (i.tandaKosong ?? 0) + (i.cacatAbt ?? 0) : 0,
+      sebabBelum: [
+        hs.length >= diharap ? "" : `baru ${hs.length} dari ${diharap} naskah`,
+        terhalangPer.get(k.kunci) ? `${terhalangPer.get(k.kunci)} dari ${adaBlangko + (terhalangPer.get(k.kunci) ?? 0)} blangko belum dapat diukur karena isiannya belum ada di salinan uji` : "",
+      ]
+        .filter(Boolean)
+        .join("; "),
+    });
+    teks.push(
+      `${k.nama} (${k.kunci}): ${perkaraK.size} perkara, ${hs.length}/${diharap} naskah${terhalangPer.get(k.kunci) ? ` (tidak termasuk ${terhalangPer.get(k.kunci)} blangko terhalang)` : ""}, ${alinea} alinea: ${identik} identik (${((100 * identik) / alinea).toFixed(3)}%), ${dijelaskan} beda dijelaskan, ${belum} BELUM dijelaskan; identik + dijelaskan ${((100 * (identik + dijelaskan)) / alinea).toFixed(3)}%; ${naskahIdentik} naskah identik seluruhnya` +
+        (cacatAbtN ? `; ${cacatAbtN} beda karena cacat ABT` : "") +
+        (i ? `; isian ${i.nilai} nilai: ${i.cocok} cocok, ${i.spasi} beda spasi, ${i.tandaKosong ?? 0} titik-titik isian kosong, ${i.cacatAbt ?? 0} cacat ABT, ${i.waktuHabis ?? 0} waktu kueri habis (diukur ulang), ${i.beda} beda isi belum dijelaskan (${((100 * (i.cocok + i.spasi + (i.tandaKosong ?? 0) + (i.cacatAbt ?? 0))) / i.nilai).toFixed(3)}% cocok atau dijelaskan)` : "; isian belum diukur")
+    );
+    const kel = new Map<string, { blangko: string; kelas: string; banyak: number; perkara: Set<string>; isian: string }>();
+    for (const [n, h] of hs.entries()) {
+      for (const [idx, d] of h.beda.entries()) {
+        if (KELAS_DIJELASKAN[d.kelas] || cacatPerNaskah[n].has(idx)) continue;
+        const kunci = `${h.blangko}|${d.kelas}|${d.isianNo.join(",")}`;
+        const e = kel.get(kunci) ?? { blangko: h.blangko.split("/").pop()!, kelas: d.kelas, banyak: 0, perkara: new Set<string>(), isian: d.isianNama.join(", ") };
+        e.banyak += 1;
+        e.perkara.add(h.perkara);
+        kel.set(kunci, e);
+      }
+    }
+    for (const e of [...kel.values()].sort((a, b) => b.banyak - a.banyak).slice(0, 8)) teks.push(`    belum dijelaskan: ${e.blangko} | ${e.kelas} | ${e.banyak} alinea | ${e.perkara.size} perkara | ${e.isian || "isian tak terlacak"}`);
+  }
+  teks.push("");
+  const terukur = keluarga.filter((x) => x.naskah > 0);
+  teks.push(`Terukur ${terukur.length} dari ${keluarga.length} keluarga. Belum terukur: ${keluarga.filter((x) => !x.naskah).map((x) => x.kunci).join(", ") || "-"}.`);
+  tulis(path.join(KELUAR, "LAPORAN-T8.txt"), teks.join("\n") + "\n");
+  tulis(path.join(KELUAR, "laporan-t8.json"), JSON.stringify({ dibuat: new Date().toISOString(), keterangan: `Naskah ALETA ABT dibandingkan dengan ABT pada salinan uji, ${semua.length} naskah.`, keluarga }, null, 1));
+  console.log(teks.join("\n"));
+}
+
+/**
+ * Membuang dari hasil naskah yang TIDAK boleh dipercaya atau perlu diukur ulang: yang punya beda belum dijelaskan (isi, hanya-abt, hanya-aleta,
+ * tanda-baca) dan yang punya isian kosong karena galat (mis. waktu kueri habis). Dipakai sesudah mesin diperbaiki atau sesudah mesin sempat
+ * sibuk; `banding` berikutnya menyusunnya lagi. Beda yang sudah dijelaskan tidak diulang.
+ */
+function ulangTakCocok() {
+  let dibuang = 0;
+  let tinggal = 0;
+  for (const f of fs.existsSync(dirHasil()) ? fs.readdirSync(dirHasil()) : []) {
+    const berkas = path.join(dirHasil(), f);
+    const baru: string[] = [];
+    for (const l of baca(berkas).split("\n").filter(Boolean)) {
+      const h = JSON.parse(l) as HasilNaskah;
+      golongkanUlang(h.beda);
+      const cacat = indeksCacatAbt(h.beda);
+      const buruk = (h.kosongGalat ?? 0) > 0 || h.beda.some((d, i) => !KELAS_DIJELASKAN[d.kelas] && !cacat.has(i)) || (h.mesinGalat ?? "") !== "";
+      if (buruk) dibuang += 1;
+      else {
+        baru.push(l);
+        tinggal += 1;
+      }
+    }
+    fs.writeFileSync(berkas, baru.length ? baru.join("\n") + "\n" : "");
+  }
+  console.log(`dibuang ${dibuang} naskah untuk disusun ulang, tinggal ${tinggal}`);
+}
+
+/**
+ * Daftar penanda per perkara (kode-pid/p<perkara>.txt): hanya penanda yang dipakai blangko keluarga perkara itu. Merender ABT sepanjang
+ * seluruh penanda (1772) makan puluhan menit per perkara pada mesin sibuk; sepotong daftar cukup karena nilai tiap penanda tidak bergantung
+ * pada penanda lain (lihat abt_render_mentah.py). Satu perkara yang mewakili beberapa keluarga memakai gabungannya.
+ */
+async function kodePerPerkara() {
+  const dir = path.join(KELUAR, "kode-pid");
+  fs.mkdirSync(dir, { recursive: true });
+  // Isian yang memanggil fungsi basis data yang TIDAK ADA di salinan uji (langsung atau lewat isian lain) tidak dapat dihitung ABT: satu galat SQL
+  // menghentikan seluruh render ABT. Isian itu dikeluarkan dari daftar dan blangko yang memuatnya dicatat "belum terukur", tidak ditebak.
+  const { kolam, kueri } = bukaKolam();
+  const ada = new Set((await kueri("SELECT ROUTINE_NAME AS n FROM information_schema.routines WHERE ROUTINE_SCHEMA = ?", [ABT])).map((r) => String(r.n).toLowerCase()));
+  const katalog = await kueri(`SELECT no_var, sql_query, default_data, referensi FROM ${ABT}.abt_variabel`);
+  const nomorBaku = (x: unknown) => String(x ?? "").trim().replace(/^0+(?=\d{4})/, "").padStart(4, "0");
+  const rujukan = new Map<string, Set<string>>();
+  const adaDiKatalog = new Set(katalog.map((v) => nomorBaku(v.no_var)));
+  const terhalang = new Set<string>();
+  const hilangFungsi = new Set<string>();
+  for (const v of katalog) {
+    const no = nomorBaku(v.no_var);
+    const teks = `${v.sql_query ?? ""}\n${v.default_data ?? ""}`;
+    rujukan.set(no, new Set([...teks.matchAll(/#(\d{3,5})#/g)].map((m) => nomorBaku(m[1]))));
+    for (const m of teks.matchAll(/aps_badilag[a-z0-9_]*\.([a-z_][a-z0-9_]*)\s*\(/gi)) {
+      if (!ada.has(m[1].toLowerCase())) {
+        terhalang.add(no);
+        hilangFungsi.add(m[1].toLowerCase());
+      }
+    }
+  }
+  for (let berubah = true; berubah; ) {
+    berubah = false;
+    for (const [no, rj] of rujukan) if (!terhalang.has(no) && [...rj].some((r) => terhalang.has(r))) (terhalang.add(no), (berubah = true));
+  }
+  kolam.end();
+  tulis(path.join(dir, "terhalang.txt"), [...terhalang].sort().join(",") + "\n");
+  const semuaBlangko = fs.existsSync(path.join(KELUAR, "blangko-semua.tsv")) ? path.join(KELUAR, "blangko-semua.tsv") : berkasBlangko();
+  if (!fs.existsSync(path.join(KELUAR, "blangko-semua.tsv"))) fs.copyFileSync(berkasBlangko(), path.join(KELUAR, "blangko-semua.tsv"));
+  const dipakai: Blangko[] = [];
+  const dihalangi: string[] = [];
+  const perJenis = new Map<string, Set<string>>();
+  for (const [kelompok, jenis, folder, nama] of baris(semuaBlangko)) {
+    const b: Blangko = { kelompok, jenis, folder, nama };
+    const rtf = bacaBlangko(b);
+    const penanda = new Set<string>();
+    for (const x of mesinMod.penandaUrutAbt(rtf)) if (x !== "") penanda.add(nomorBaku(x));
+    for (const x of mesinMod.penandaUrutAbt(mesinMod.satukanPenandaTerpecah(rtf).rtf)) if (x !== "") penanda.add(nomorBaku(x));
+    // terhalang: isian yang memanggil fungsi yang tidak ada, atau isian yang BELUM ADA di katalog salinan uji (salinan lebih tua dari pohon blangko)
+    const halang = [...penanda].filter((x) => terhalang.has(x) || !adaDiKatalog.has(x));
+    if (halang.length) {
+      dihalangi.push([jenis, folder, nama, halang.slice(0, 6).join(",")].join("\t"));
+      continue;
+    }
+    dipakai.push(b);
+    const himpunan = perJenis.get(jenis) ?? new Set<string>();
+    for (const x of penanda) himpunan.add(x);
+    perJenis.set(jenis, himpunan);
+  }
+  tulis(berkasBlangko(), dipakai.map((b) => [b.kelompok, b.jenis, b.folder, b.nama].join("\t")).join("\n") + "\n");
+  tulis(path.join(KELUAR, "blangko-terhalang.tsv"), dihalangi.join("\n") + (dihalangi.length ? "\n" : ""));
+  const tanpaKatalog = new Set<string>();
+  for (const l of dihalangi) for (const x of (l.split("	")[3] ?? "").split(",")) if (x && !adaDiKatalog.has(x)) tanpaKatalog.add(x);
+  console.log(`isian pada blangko yang tidak ada di katalog salinan uji: ${tanpaKatalog.size} (tampak pada daftar enam pertama blangko terhalang)`);
+  console.log(`fungsi dipanggil isian tetapi tidak ada di salinan uji: ${[...hilangFungsi].sort().join(", ") || "-"}; isian terhalang ${terhalang.size}; blangko terhalang ${dihalangi.length} dari ${dipakai.length + dihalangi.length}`);
+  const perPid = new Map<string, Set<string>>();
+  for (const [pid, , jenis] of baris(berkasPerkara())) {
+    const g = perPid.get(pid) ?? new Set<string>();
+    for (const x of perJenis.get(jenis) ?? []) g.add(x);
+    perPid.set(pid, g);
+  }
+  const ukuran: Array<[string, number]> = [];
+  for (const [pid, g] of perPid) {
+    tulis(path.join(dir, `p${pid}.txt`), [...g].sort().join(",") + "\n");
+    ukuran.push([pid, g.size]);
+  }
+  ukuran.sort((a, b) => a[1] - b[1]);
+  tulis(path.join(dir, "urutan.txt"), ukuran.map(([pid]) => pid).join("\n") + "\n");
+  console.log(`penanda per perkara: ${ukuran.length} perkara, ${ukuran[0]?.[1]} sampai ${ukuran[ukuran.length - 1]?.[1]} penanda (semua: ${new Set([...perPid.values()].flatMap((g) => [...g])).size})`);
+}
+
 const [cmd, ...arg] = process.argv.slice(2);
-const peta: Record<string, (a: string[]) => unknown> = { sampel, abt, banding, waktu, verifikasi, laporan };
+const peta: Record<string, (a: string[]) => unknown> = { sampel, abt, banding, waktu, verifikasi, laporan, "sampel-semua": sampelSemua, "laporan-semua": laporanSemua, "ulang-tak-cocok": ulangTakCocok, "kode-pid": kodePerPerkara };
 if (!peta[cmd]) {
-  console.error("perintah: sampel | abt | banding | waktu | verifikasi | laporan");
+  console.error("perintah: sampel | abt | banding | waktu | verifikasi | laporan | sampel-semua | laporan-semua | ulang-tak-cocok");
   process.exit(2);
 }
 await peta[cmd](arg);

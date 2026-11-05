@@ -25,7 +25,12 @@ export const FORMAT_PAKET = 1;
 export const KODE_SURAT_KOSONG = "W00-A00";
 
 const KODE_PN = /^[A-Za-z]{2,4}\.[A-Za-z0-9]{2,6}$/;
+/** Kepala CASE isian satker (sama dengan identitas-satker.ts): tanpa satu pun WHEN sesudahnya kueri tidak sah di MariaDB. */
+const KEPALA_CASE = /CASE\s*\(\s*SELECT\s+TRIM\(\s*value\s*\)\s+FROM\s+sys_config\s+WHERE\s+name\s*=\s*'KodePN'\s+LIMIT\s+1\s*\)/i;
 const CABANG_KODE = /\bWHEN\s+'((?:[^'\\]|''|\\.)*)'\s+THEN\s+'(?:[^'\\]|''|\\.)*'/gi;
+const NO_VAR_PROVINSI = "9276";
+const PIHAK_SEMUA = "FROM perkara_pihak1 p JOIN pihak b ON b.id = p.pihak_id";
+const PIHAK_TERBARU = "FROM (SELECT pihak_id FROM perkara_pihak1 ORDER BY perkara_id DESC LIMIT 1000) p JOIN pihak b ON b.id = p.pihak_id";
 /** Kata yang menandakan isi khas satu daerah (sesudah dinetralkan). */
 const KATA_DAERAH = /Donggala|PA\.Dgl|Palu\b|Banawa|Sulawesi|Sigi\b|Parigi|Poso|Bungku/i;
 
@@ -35,7 +40,7 @@ export type VariabelInduk = {
   default_data: string | null;
 };
 
-export type PerubahanNetral = { noVar: string; jenis: "cabang-satker" | "kode-surat"; keterangan: string };
+export type PerubahanNetral = { noVar: string; jenis: "cabang-satker" | "kode-surat" | "provinsi-cepat"; keterangan: string };
 
 /** Menetralkan SATU definisi. Mengembalikan definisi baru dan daftar perubahan (kosong bila tidak ada yang khas satker). */
 export function netralkanVariabelInduk<T extends VariabelInduk>(v: T): { variabel: T; perubahan: PerubahanNetral[] } {
@@ -52,6 +57,18 @@ export function netralkanVariabelInduk<T extends VariabelInduk>(v: T): { variabe
       sql = gantiCabangSatker(sql, k, "");
       perubahan.push({ noVar: v.no, jenis: "cabang-satker", keterangan: `cabang satker ${k} dibuang; satker lain memakai data SIPP setempat atau kosong` });
     }
+    // CASE tanpa WHEN sama sekali bukan SQL yang sah: sisakan satu cabang penjaga untuk KodePN kosong (tidak pernah cocok dengan satker nyata),
+    // seperti pada isian #11850#. Cabang satker pemasang kelak disisipkan tepat di belakang kepala CASE oleh Identitas satker.
+    if (kode.size && !/\bWHEN\b/i.test(sql)) {
+      const kepala = KEPALA_CASE.exec(sql);
+      if (kepala) sql = `${sql.slice(0, kepala.index + kepala[0].length)} WHEN '' THEN ''${sql.slice(kepala.index + kepala[0].length)}`;
+    }
+  }
+  // Isian provinsi satker (#9276#): cabang ELSE menghitung provinsi terbanyak dari SEMUA pihak di SIPP (di salinan uji 8-17 dtk, melewati batas
+  // kueri bawaan bot 10 dtk, sehingga hukum acara #11850# kosong). Cukup 1000 pihak perkara terbaru: provinsi satker tidak berubah karenanya.
+  if (sql && v.no.replace(/^0+/, "") === NO_VAR_PROVINSI && sql.includes(PIHAK_SEMUA)) {
+    sql = sql.replace(PIHAK_SEMUA, PIHAK_TERBARU);
+    perubahan.push({ noVar: v.no, jenis: "provinsi-cepat", keterangan: "provinsi satker dihitung dari 1000 pihak perkara terbaru, bukan seluruh pihak di SIPP, supaya selesai dalam batas waktu kueri" });
   }
   if (v.no.replace(/^0+/, "") === NO_VAR_KODE_SURAT && bawaan) {
     const lama = kodeSuratDari(bawaan);
@@ -196,7 +213,10 @@ export function periksaManifest(m: unknown): string[] {
   // Isian satker tidak boleh membawa cabang kode satker mana pun.
   for (const v of x.variabel!) {
     const sql = String((v as { sql_query?: unknown }).sql_query ?? "");
-    if (bentukSatker(sql)) for (const mm of sql.matchAll(CABANG_KODE)) if (KODE_PN.test(mm[1].replace(/''/g, "'"))) masalah.push(`Isian ${String((v as { no?: unknown }).no)} masih memuat cabang satker ${mm[1]}.`);
+    if (bentukSatker(sql)) {
+      for (const mm of sql.matchAll(CABANG_KODE)) if (KODE_PN.test(mm[1].replace(/''/g, "'"))) masalah.push(`Isian ${String((v as { no?: unknown }).no)} masih memuat cabang satker ${mm[1]}.`);
+      if (!/\bWHEN\b/i.test(sql)) masalah.push(`Isian ${String((v as { no?: unknown }).no)} berbentuk CASE tanpa satu pun WHEN: kuerinya tidak sah.`);
+    }
   }
   return masalah.slice(0, 50);
 }

@@ -13,16 +13,18 @@ paket-induk/
   fungsi/<nama>.sql  dan fungsi/semua.sql (fungsi basis data yang dipanggil rumus isian)
 ```
 
-Paket dibuat dari pohon blangko Derry dan katalog isian ABT salinan uji. Tidak ada data pihak di dalamnya. Dua hal sudah dinetralkan dari isi khas satu satker:
+Paket dibuat dari pohon blangko Derry dan katalog isian ABT salinan uji. Tidak ada data pihak di dalamnya. Empat hal diubah dari isi khas satu satker (semuanya tercatat di `perubahan` pada manifest):
 
 - isian satker (alamat, telepon, laman, surel, provinsi) tidak lagi membawa cabang khusus Pengadilan Agama Donggala. Satker lain jatuh ke data SIPP setempat (alamat, provinsi) atau dikosongkan (telepon, laman, surel; barisnya tidak dicetak bila kosong);
 - kode surat pada nomor surat relaas (isian 1154) diganti kode netral `W00-A00`. Satker mengisi kode suratnya sendiri di Pengaturan SIPP & ABT, bagian Identitas satker.
+- isian provinsi satker (9276) dihitung dari 1000 pihak perkara terbaru, bukan seluruh pihak di SIPP. Di salinan uji menghitung semua pihak butuh 8 sampai 17 detik, melewati batas kueri bawaan bot (10 detik), dan akibatnya hukum acara (11850, RBg atau HIR) ikut kosong;
+- isian berbentuk CASE yang semua cabang satkernya dibuang tidak dibiarkan tanpa WHEN (tidak sah di MariaDB): tersisa satu cabang penjaga untuk kode satker kosong, dan cabang satker pemasang disisipkan di depannya oleh Identitas satker.
 
 Isian lain yang masih memuat kata khas daerah (media pengumuman setempat, penanda kota di Sulawesi Tengah, kalimat contoh) **tidak diubah diam-diam**. Namanya tercatat di `perluDisesuaikan` pada manifest (saat paket ini disusun: 2224, 7045, 7063, 8508, 8547, 8706). Petugas satker meninjaunya sebelum memakai blangko yang memuatnya.
 
 ## Fungsi basis data (syarat yang mudah terlewat)
 
-Sekitar sepertiga isian Derry memanggil **fungsi basis data** buatan Derry (`aps_badilag.isian_rtf_*`, `isian_bukti_*`, `bulan_romawi`, dan sebagainya; 70 fungsi pada salinan uji). Fungsi itu dibuat di skema ABT, bukan di ALETA. Satker tanpa ABT Derry tidak memilikinya, dan tanpa fungsi itu isian yang memanggilnya kosong dengan galat "FUNCTION ... does not exist" (pada uji awal: nama pihak, identitas pihak, terbilang, bukti, dan semua isian yang bergantung padanya).
+Sekitar sepertiga isian Derry memanggil **fungsi basis data** buatan Derry (`aps_badilag.isian_rtf_*`, `isian_bukti_*`, `bulan_romawi`, dan sebagainya; 65 fungsi pada salinan uji). Fungsi itu dibuat di skema ABT, bukan di ALETA. Satker tanpa ABT Derry tidak memilikinya, dan tanpa fungsi itu isian yang memanggilnya kosong dengan galat "FUNCTION ... does not exist" (pada uji awal: nama pihak, identitas pihak, terbilang, bukti, dan semua isian yang bergantung padanya).
 
 Paket menyertakan semuanya di folder `fungsi/` (satu berkas per fungsi, dan `semua.sql` yang siap dijalankan; DEFINER dibuang). Sidiknya ikut sidik paket. **Memasangnya adalah pekerjaan administrator basis data satker, di luar ALETA**: ALETA tidak menulis ke basis data SIPP atau ABT. Fungsi dipasang di skema bernama `aps_badilag` pada MariaDB yang sama dengan SIPP satker (skema itu boleh hanya berisi fungsi). Fungsi ditulis untuk MariaDB 5.5.
 

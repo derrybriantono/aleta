@@ -84,7 +84,7 @@ const kueri = (sql: string, params: unknown[] = [], opsi?: { timeoutMs?: number 
   // Fungsi basis data paket (aps_badilag.isian_*(...)) dipanggil dari skema salinan uji; yang dibaca di sana hanya definisi fungsinya.
   const teks = ganti_sys_config(String(sql)).replace(/\baps_badilag\.([A-Za-z_][A-Za-z0-9_]*)\s*\(/g, `${FUNGSI_DB}.$1(`);
   return new Promise<Array<Record<string, string>>>((ok, gagal) =>
-    kolam.query({ sql: teks, values: params, timeout: opsi?.timeoutMs || 60000, typeCast: (f: { string: () => string }) => f.string() }, (g: Error | null, r: Array<Record<string, string>>) => (g ? gagal(g) : ok(r)))
+    kolam.query({ sql: teks, values: params, timeout: opsi?.timeoutMs || 60000, typeCast: (f: { string: () => string; buffer: () => Buffer; type?: string; packet?: { charsetNr?: number } }) => (f.packet && f.packet.charsetNr === 63 && /STRING|BLOB/.test(String(f.type)) ? f.buffer().toString("latin1") : f.string()) }, (g: Error | null, r: Array<Record<string, string>>) => (g ? gagal(g) : ok(r)))
   );
 };
 

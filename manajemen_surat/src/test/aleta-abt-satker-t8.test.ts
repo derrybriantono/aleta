@@ -34,7 +34,7 @@ import {
   sidikPaket,
   type ManifestPaket,
 } from "@/lib/aleta-abt-satker";
-import { bentukSatker, isiCabangSatker, kodeSuratDari } from "@/lib/identitas-satker";
+import { bentukSatker, gantiCabangSatker, isiCabangSatker, kodeSuratDari } from "@/lib/identitas-satker";
 import { bacaPaket, jalurDiPaket, muatPustakaInduk, pasangPaketInduk, periksaIsiPaket } from "@/server/modules/aleta-abt-satker/paket";
 import { muatPustakaMesin } from "@/server/modules/aleta-abt-pustaka/service";
 
@@ -55,6 +55,18 @@ describe("menetralkan isian satker", () => {
     expect(bentukSatker(variabel.sql_query!)).toBe(true);
     expect(isiCabangSatker(variabel.sql_query!, "PA.Dgl").ada).toBe(false);
     expect(perubahan).toEqual([{ noVar: "9271", jenis: "cabang-satker", keterangan: expect.stringContaining("PA.Dgl") }]);
+  });
+
+  it("CASE tidak pernah dibiarkan tanpa WHEN (tidak sah di MariaDB): tersisa satu cabang penjaga untuk KodePN kosong; cabang satker pemasang masih dapat disisipkan", () => {
+    const { variabel } = netralkanVariabelInduk({ no: "9271", sql_query: SQL_ALAMAT, default_data: null });
+    expect(variabel.sql_query).toMatch(/CASE\s*\(SELECT TRIM\(value\) FROM sys_config WHERE name = 'KodePN' LIMIT 1\)\s+WHEN '' THEN ''\s+ELSE/);
+    const sesudahTerapkan = gantiCabangSatker(variabel.sql_query!, "PA.Xyz", "Jalan Pemasang 5");
+    expect(sesudahTerapkan).toContain("WHEN 'PA.Xyz' THEN 'Jalan Pemasang 5'");
+    expect(sesudahTerapkan).toContain("WHEN '' THEN ''");
+    expect(isiCabangSatker(sesudahTerapkan, "PA.Xyz")).toEqual({ ada: true, nilai: "Jalan Pemasang 5" });
+    // cabang yang sudah ada selain milik pembuat paket tidak diganti penjaga
+    const hukum = netralkanVariabelInduk({ no: "11850", sql_query: SQL_HUKUM, default_data: null });
+    expect(hukum.variabel.sql_query).toBe(SQL_HUKUM);
   });
 
   it("beberapa cabang kode: semuanya dibuang; cabang kosong (WHEN '') tidak disentuh", () => {
@@ -83,6 +95,19 @@ describe("menetralkan isian satker", () => {
     const n = netralkanVariabelInduk(biasa);
     expect(n.variabel).toEqual(biasa);
     expect(n.perubahan).toEqual([]);
+  });
+
+  it("provinsi satker (#9276#) dihitung dari 1000 pihak perkara terbaru supaya selesai dalam batas waktu kueri; isian lain tidak disentuh", () => {
+    const sql9276 =
+      "SELECT CASE (SELECT TRIM(value) FROM sys_config WHERE name = 'KodePN' LIMIT 1) WHEN 'PA.Dgl' THEN 'Sulawesi Tengah' ELSE (SELECT COALESCE(r.provinsi_nama, x.propinsi) FROM (SELECT TRIM(b.propinsi) AS propinsi, COUNT(*) AS n FROM perkara_pihak1 p JOIN pihak b ON b.id = p.pihak_id WHERE IFNULL(TRIM(b.propinsi), '') <> '' GROUP BY TRIM(b.propinsi) ORDER BY n DESC LIMIT 1) x LEFT JOIN ref_provinsi_new r ON r.provinsi_kode = x.propinsi) END AS data";
+    const n = netralkanVariabelInduk({ no: "9276", sql_query: sql9276, default_data: null });
+    expect(n.variabel.sql_query).toContain("FROM (SELECT pihak_id FROM perkara_pihak1 ORDER BY perkara_id DESC LIMIT 1000) p JOIN pihak b ON b.id = p.pihak_id");
+    expect(n.variabel.sql_query).not.toContain("PA.Dgl");
+    expect(n.variabel.sql_query).toContain("WHEN '' THEN ''");
+    expect(n.perubahan.map((x) => x.jenis).sort()).toEqual(["cabang-satker", "provinsi-cepat"]);
+    // idempotent, dan isian lain yang memuat potongan serupa tidak diubah
+    expect(netralkanVariabelInduk({ no: "9276", ...n.variabel }).perubahan).toEqual([]);
+    expect(netralkanVariabelInduk({ no: "1234", sql_query: sql9276.replace("CASE", "CASE"), default_data: null }).variabel.sql_query).toContain("FROM perkara_pihak1 p JOIN pihak b ON b.id = p.pihak_id");
   });
 
   it("isian khas daerah hanya didaftar, tidak diubah", () => {
@@ -210,6 +235,14 @@ describe("manifest", () => {
     expect(periksaManifest(ganda).join(" ")).toContain("Berkas dobel");
     const md5Buruk = { ...manifest, berkas: [{ ...manifest.berkas[0], md5: "zzz" }, manifest.berkas[1]] };
     expect(periksaManifest(md5Buruk).join(" ")).toContain("Sidik berkas tidak sah");
+  });
+
+  it("isian berbentuk CASE tanpa satu pun WHEN ditolak (kueri tidak sah)", () => {
+    const tanpaWhen = "SELECT CASE (SELECT TRIM(value) FROM sys_config WHERE name = 'KodePN' LIMIT 1) ELSE 'x' END AS data";
+    const berkas = susunPaketUji().manifest.berkas;
+    const v = [variabelPaket("9271", { sql_query: tanpaWhen })];
+    const m = { format: FORMAT_PAKET, server: SERVER_INDUK, berkas, variabel: v, sidik: sidikPaket(berkas, v) };
+    expect(periksaManifest(m).join(" ")).toContain("CASE tanpa satu pun WHEN");
   });
 
   it("fungsi basis data: ikut sidik, nama dan sidik diperiksa, berkasnya diperiksa utuh sebelum pemasangan", async () => {
