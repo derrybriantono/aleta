@@ -147,7 +147,9 @@ function variabelPaket(no: string, lain: Record<string, unknown> = {}) {
   return { no, nama: `Isian ${no}`, data_type: "data_sql", data_tabel: null, data_kolom: null, urutan_data: null, referensi: null, sql_query: `SELECT 'nilai ${no}' AS data`, default_data: null, multi_sidang: null, locked: 0, modifier: "", modified: "", sumber: "blangko", jumlahBlangko: 1, rujukan: [], ...lain };
 }
 
-function susunPaketUji(lain: { rtfCg?: string; variabel?: Array<Record<string, unknown>> } = {}) {
+const FUNGSI_UJI = "DROP FUNCTION IF EXISTS `isian_rtf_spasi`$$\nCREATE FUNCTION `isian_rtf_spasi`(x TEXT) RETURNS text RETURN TRIM(x)$$\n";
+
+function susunPaketUji(lain: { rtfCg?: string; variabel?: Array<Record<string, unknown>>; denganFungsi?: boolean } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "paket-t8-"));
   dirSementara.push(dir);
   const berkas = [
@@ -160,10 +162,16 @@ function susunPaketUji(lain: { rtfCg?: string; variabel?: Array<Record<string, u
     fs.writeFileSync(tujuan, Buffer.from(b.isi, "latin1"));
   }
   const variabel = lain.variabel ?? [variabelPaket("0046"), variabelPaket("0047"), variabelPaket("8008"), variabelPaket("9271", { sql_query: netralkanVariabelInduk({ no: "9271", sql_query: SQL_ALAMAT, default_data: null }).variabel.sql_query })];
+  const fungsi = lain.denganFungsi ? [{ nama: "isian_rtf_spasi", md5: md5(FUNGSI_UJI), ukuran: Buffer.byteLength(FUNGSI_UJI, "latin1") }] : undefined;
+  if (fungsi) {
+    fs.mkdirSync(path.join(dir, "fungsi"), { recursive: true });
+    fs.writeFileSync(path.join(dir, "fungsi", "isian_rtf_spasi.sql"), Buffer.from(FUNGSI_UJI, "latin1"));
+  }
   const manifest: ManifestPaket = {
     format: FORMAT_PAKET,
     dibuat: "2026-11-05T10:00:00.000Z",
     server: SERVER_INDUK,
+    ...(fungsi ? { fungsi } : {}),
     berkas: berkas.map((b) => {
       const bagian = b.jalur.split("/");
       return { jalur: b.jalur, folder: bagian[0], nama: bagian[1], arsip: false, md5: md5(b.isi), ukuran: Buffer.byteLength(b.isi, "latin1"), waktu: "2026-11-02T10:00:00.000Z", penanda: b.penanda };
@@ -174,7 +182,7 @@ function susunPaketUji(lain: { rtfCg?: string; variabel?: Array<Record<string, u
     perluDisesuaikan: [],
     sidik: "",
   };
-  manifest.sidik = sidikPaket(manifest.berkas, manifest.variabel);
+  manifest.sidik = sidikPaket(manifest.berkas, manifest.variabel, manifest.fungsi);
   fs.writeFileSync(path.join(dir, "manifest.json"), JSON.stringify(manifest));
   return { dir, manifest };
 }
@@ -202,6 +210,22 @@ describe("manifest", () => {
     expect(periksaManifest(ganda).join(" ")).toContain("Berkas dobel");
     const md5Buruk = { ...manifest, berkas: [{ ...manifest.berkas[0], md5: "zzz" }, manifest.berkas[1]] };
     expect(periksaManifest(md5Buruk).join(" ")).toContain("Sidik berkas tidak sah");
+  });
+
+  it("fungsi basis data: ikut sidik, nama dan sidik diperiksa, berkasnya diperiksa utuh sebelum pemasangan", async () => {
+    const { manifest, dir } = susunPaketUji({ denganFungsi: true });
+    expect(periksaManifest(manifest)).toEqual([]);
+    expect(sidikPaket(manifest.berkas, manifest.variabel)).not.toBe(manifest.sidik); // fungsi ikut sidik
+    expect(periksaManifest({ ...manifest, fungsi: [{ nama: "../x", md5: "zzz", ukuran: 1 }] }).join(" ")).toContain("Nama fungsi tidak sah");
+    expect(periksaManifest({ ...manifest, fungsi: [manifest.fungsi![0], manifest.fungsi![0]] }).join(" ")).toContain("Fungsi dobel");
+    expect(periksaManifest({ ...manifest, fungsi: [{ ...manifest.fungsi![0], md5: "salah" }] }).join(" ")).toContain("Sidik fungsi tidak sah");
+    expect(periksaManifest({ ...manifest, fungsi: [{ ...manifest.fungsi![0], md5: "0".repeat(32) }] }).join(" ")).toContain("Sidik paket tidak cocok");
+    const p = await bacaPaket(dir);
+    expect(await periksaIsiPaket(p)).toEqual([]);
+    fs.appendFileSync(path.join(dir, "fungsi", "isian_rtf_spasi.sql"), "-- diubah");
+    expect((await periksaIsiPaket(p)).join(" ")).toContain("Isi fungsi tidak cocok dengan manifest: isian_rtf_spasi");
+    fs.rmSync(path.join(dir, "fungsi", "isian_rtf_spasi.sql"));
+    expect((await periksaIsiPaket(p)).join(" ")).toContain("Berkas fungsi hilang dari paket: isian_rtf_spasi");
   });
 
   it("isian yang masih membawa cabang satker ditolak", () => {

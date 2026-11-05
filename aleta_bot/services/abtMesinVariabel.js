@@ -48,6 +48,12 @@
 const POLA_PENANDA = /#(\d{3,5})#/g;
 /** Kata kendali RTF yang ditulis rumus katalog (\trowd, \cellx8400, \b, \par ...) dan hurufnya (\'e9). */
 const KENDALI_RTF_RUMUS = /\\(?:[a-z]{1,32}-?\d{0,10} ?|'[0-9a-fA-F]{2})/g;
+/**
+ * Jalur ALETA ABT (Tahap 8): simbol kendali RTF yang ditulis rumus ikut dipertahankan seperti ABT, yang tidak melolos garis miring apa pun:
+ * \~ (spasi tak terpecah), \- (tanda pisah suku kata), \_ (tanda hubung tak terpecah). Tanpa ini mesin melolosnya dan naskah mencetak "\~" sebagai
+ * tulisan (isian #0206# pada BAS e-Court). Panel Blangko Derry dan BAS massal tidak memakai pola ini: perilaku bawaan mereka tidak diubah.
+ */
+const KENDALI_RTF_RUMUS_JALUR = /\\(?:[a-z]{1,32}-?\d{0,10} ?|'[0-9a-fA-F]{2}|[~\-_])/g;
 const UMUR_KATALOG_MS = 30 * 1000;
 const BATAS_KUERI_MS = 10 * 1000;
 const PARALEL = 6;
@@ -1171,14 +1177,14 @@ function buatMesin(p) {
     const wakil = (rtf) => {
       const c = String.fromCharCode(0xe100 + nomor++);
       peta.set(c, rtf);
-      polos.set(c, /\\row/.test(rtf) ? "\n" : /\\cell/.test(rtf) ? "\t" : /^\\par(?![a-z])/.test(rtf) ? "\n" : /^\\tab(?![a-z])/.test(rtf) ? "\t" : "");
+      polos.set(c, /\\row/.test(rtf) ? "\n" : /\\cell/.test(rtf) ? "\t" : /^\\par(?![a-z])/.test(rtf) ? "\n" : /^\\tab(?![a-z])/.test(rtf) ? "\t" : rtf === "\\~" ? " " : "");
       return c;
     };
     let mentah;
     if (d.tabel) mentah = tabelTanyaJawab(d.tabel, d.kertas, wakil) ?? "";
     else mentah = d.value === null || d.value === undefined ? "" : String(d.value);
     // Kode RTF dari rumus katalog dipertahankan (tidak dilolos) - persis ABT, yang tidak melolos garis miring apa pun.
-    if (d.sql && !d.tabel) mentah = mentah.replace(KENDALI_RTF_RUMUS, (m) => wakil(m));
+    if (d.sql && !d.tabel) mentah = mentah.replace(jalurAleta ? KENDALI_RTF_RUMUS_JALUR : KENDALI_RTF_RUMUS, (m) => wakil(m));
     // "{}" yang ditulis rumus adalah kelompok RTF kosong (penutup kode kendali) - ABT meneruskannya mentah sehingga tidak tampak;
     // dulu mesin melolosnya menjadi "{}" yang tercetak. Sejak keputusan pemilik aplikasi (5 Nov 2026) dibuang di SEMUA pemanggil
     // (panel Blangko ABT by Derry Briantono, BAS massal, jalur ALETA ABT), bukan hanya jalur ALETA.

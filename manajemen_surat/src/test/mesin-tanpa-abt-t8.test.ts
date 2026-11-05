@@ -116,3 +116,35 @@ describe("tanpaTabelAbt (penulis ulang)", () => {
     expect(() => tanpaTabelAbt("SELECT * FROM aps_badilag.abt_menu", "aps_badilag")).toThrow(/tidak tersedia tanpa ABT/);
   });
 });
+
+describe("simbol kendali RTF dari rumus (Tahap 8)", () => {
+  const PUSTAKA_SIMBOL = { "0206": { nama: "E-COURT", data_type: "data_sql", sql_query: "select concat(char(92), '~secara elektronik') as data from dual", kode: "AA00206" } };
+  const kueriSimbol = async (sql: string) => {
+    if (/char\(92\)/.test(sql) && !/abt_variabel/.test(sql)) return [{ data: "\\~secara elektronik" }];
+    if (/FROM \w+\.abt_variabel/.test(sql)) return [{ no_var: "0206", nama: "E-COURT", data_type: "data_sql", sql_query: "select concat(char(92), '~secara elektronik') as data from dual" }];
+    return [];
+  };
+  const DOK = "{\\rtf1 yang dilangsungkan #0206# di ruang}";
+
+  it("jalur ALETA mempertahankan simbol spasi tak terpecah persis seperti ABT", async () => {
+    const mesin = mesinAbt.buatMesin({ kueri: kueriSimbol, skemaAbt: "aps_badilag", jalurAleta: { pustaka: PUSTAKA_SIMBOL, alias: { AA00206: "0206" } } });
+    const h = await mesin.isiRtf(DOK, { perkaraId: "7" });
+    expect(h.rtf).toContain("yang dilangsungkan \\~secara elektronik di ruang");
+    expect(h.rtf).not.toContain("\\\\~");
+  });
+
+  it("tanpa jalurAleta perilaku bawaan tidak berubah: simbol dilolos seperti sebelumnya (panel Blangko Derry dan BAS massal)", async () => {
+    const mesin = mesinAbt.buatMesin({ kueri: kueriSimbol, skemaAbt: "aps_badilag" });
+    const h = await mesin.isiRtf(DOK, { perkaraId: "7" });
+    expect(h.rtf).toContain("\\\\~secara elektronik");
+  });
+
+  it("kata kendali biasa tetap dipertahankan di kedua jalur", async () => {
+    const kueri = async (sql: string) => (/char\(92\)/.test(sql) && !/abt_variabel/.test(sql) ? [{ data: "a\\par b" }] : /FROM \w+\.abt_variabel/.test(sql) ? [{ no_var: "0206", nama: "X", data_type: "data_sql", sql_query: "select concat(char(92), 'par') as data from dual" }] : []);
+    for (const jalur of [undefined, { pustaka: {}, alias: {} }]) {
+      const mesin = mesinAbt.buatMesin({ kueri, skemaAbt: "aps_badilag", ...(jalur ? { jalurAleta: jalur } : {}) });
+      const h = await mesin.isiRtf("{\\rtf1 #0206#}", { perkaraId: "7" });
+      expect(h.rtf).toContain("a\\par b");
+    }
+  });
+});

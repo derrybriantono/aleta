@@ -4,6 +4,7 @@
  *
  * Keluaran:   <keluar>/manifest.json   potret pustaka (server "induk"), isian SUDAH DINETRALKAN dari isi khas satu satker, sidik paket
  *             <keluar>/blangko/<jalur> blangko RTF apa adanya (folder "terhapus" tidak ikut)
+ *             <keluar>/fungsi/*.sql    fungsi basis data yang dipanggil rumus isian (tanpa DEFINER); semua.sql = semuanya, siap dipasang administrator
  *
  * Jalankan dari manajemen_surat/:
  *   POHON_AKAR=<folder yang memuat derry_briantono> npx tsx ../scripts/paket-satker-aleta-abt/susun.mts <keluar>
@@ -11,6 +12,7 @@
  * Tidak ada data pihak di paket: hanya blangko, definisi isian, dan nama-nama isian yang perlu disesuaikan satker. Pemasangan memakai
  * pasangPaketInduk (src/server/modules/aleta-abt-satker/paket.ts); skrip ini tidak memasang ke mana pun.
  */
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
@@ -72,6 +74,25 @@ while (sisa.length) {
   sisa = [...lanjut, ...sisa.slice(120)];
 }
 
+// Fungsi basis data Derry (dibuat di skema ABT; rumus isian memanggilnya sebagai aps_badilag.isian_*). Dibaca saja, tanpa DEFINER.
+const daftarFungsi = await kueri("SELECT ROUTINE_NAME AS nama FROM information_schema.routines WHERE ROUTINE_SCHEMA = ? AND ROUTINE_TYPE = 'FUNCTION' ORDER BY ROUTINE_NAME", [ABT]);
+fs.mkdirSync(path.join(keluar, "fungsi"), { recursive: true });
+const fungsi: Array<{ nama: string; md5: string; ukuran: number }> = [];
+const semuaSql: string[] = ["-- Fungsi basis data Derry untuk rumus isian ALETA ABT. Pasang di skema bernama aps_badilag pada MariaDB satker (oleh administrator basis data).", "DELIMITER $$"];
+for (const { nama } of daftarFungsi) {
+  const n = String(nama);
+  const r = await kueri(`SHOW CREATE FUNCTION \`${ABT}\`.\`${n}\``);
+  const definisi = String(r[0]?.["Create Function"] ?? "").replace(/^CREATE DEFINER=`[^`]*`@`[^`]*` FUNCTION/, "CREATE FUNCTION").replace(/\r\n/g, "\n");
+  if (!/^CREATE FUNCTION/.test(definisi)) throw new Error(`definisi fungsi ${n} tidak terbaca`);
+  const teks = `DROP FUNCTION IF EXISTS \`${n}\`$$\n${definisi}$$\n`;
+  const bita = Buffer.from(teks, "latin1");
+  fs.writeFileSync(path.join(keluar, "fungsi", `${n}.sql`), bita);
+  fungsi.push({ nama: n, md5: createHash("md5").update(bita).digest("hex"), ukuran: bita.length });
+  semuaSql.push(teks.trimEnd());
+}
+semuaSql.push("DELIMITER ;");
+fs.writeFileSync(path.join(keluar, "fungsi", "semua.sql"), semuaSql.join("\n") + "\n", "latin1");
+
 const perubahan: PerubahanNetral[] = [];
 const variabel = potret.variabel.map((v) => {
   const n = netralkanVariabelInduk({ no: String(v.no), sql_query: (v.sql_query as string | null) ?? null, default_data: (v.default_data as string | null) ?? null });
@@ -84,15 +105,16 @@ const manifest: ManifestPaket = {
   dibuat: new Date().toISOString(),
   server: SERVER_INDUK,
   berkas: berkas.map((b) => ({ ...(b as unknown as ManifestPaket["berkas"][number]) })),
+  fungsi,
   variabel,
   takDikenal: potret.takDikenal ?? [],
   perubahan,
   perluDisesuaikan: perluDisesuaikan(variabel as unknown as Array<{ no: string; sql_query: string | null; default_data: string | null }>),
   sidik: "",
 };
-manifest.sidik = sidikPaket(manifest.berkas, manifest.variabel);
+manifest.sidik = sidikPaket(manifest.berkas, manifest.variabel, manifest.fungsi);
 fs.writeFileSync(path.join(keluar, "manifest.json"), JSON.stringify(manifest));
 console.log(
-  `paket induk: ${manifest.berkas.length} blangko (${tertulis} ditulis), ${manifest.variabel.length} isian, ${perubahan.length} perubahan netral (${perubahan.filter((p) => p.jenis === "cabang-satker").length} cabang satker, ${perubahan.filter((p) => p.jenis === "kode-surat").length} kode surat), ${manifest.perluDisesuaikan.length} isian perlu disesuaikan satker (${manifest.perluDisesuaikan.join(", ")}), tak dikenal ${manifest.takDikenal.length}; sidik ${manifest.sidik}`
+  `paket induk: ${manifest.berkas.length} blangko (${tertulis} ditulis), ${manifest.variabel.length} isian, ${fungsi.length} fungsi basis data, ${perubahan.length} perubahan netral (${perubahan.filter((p) => p.jenis === "cabang-satker").length} cabang satker, ${perubahan.filter((p) => p.jenis === "kode-surat").length} kode surat), ${manifest.perluDisesuaikan.length} isian perlu disesuaikan satker (${manifest.perluDisesuaikan.join(", ")}), tak dikenal ${manifest.takDikenal.length}; sidik ${manifest.sidik}`
 );
 kolam.end();

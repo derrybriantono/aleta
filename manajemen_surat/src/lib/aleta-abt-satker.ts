@@ -129,11 +129,15 @@ export function periksaIdentitasSipp(s: IdentitasSipp, kodeSuratSatker = ""): Te
 
 export type BerkasManifest = { jalur: string; folder: string; nama: string; arsip: boolean; md5: string; ukuran: number; waktu: string; penanda: string[] };
 
+/** Fungsi basis data yang dipanggil rumus isian Derry (dibuat di skema ABT). Satker tanpa ABT Derry memasangnya sendiri; ALETA tidak menulis ke basis data SIPP/ABT. */
+export type FungsiManifest = { nama: string; md5: string; ukuran: number };
+
 export type ManifestPaket = {
   format: number;
   dibuat: string;
   server: string;
   berkas: BerkasManifest[];
+  fungsi?: FungsiManifest[];
   /** Isian induk dalam bentuk potret (sudah dinetralkan). */
   variabel: Array<Record<string, unknown>>;
   takDikenal: string[];
@@ -145,10 +149,15 @@ export type ManifestPaket = {
 const sha1 = (x: unknown) => createHash("sha1").update(JSON.stringify(x)).digest("hex");
 
 /** Sidik paket: hanya bergantung pada isi (md5 berkas dan definisi isian), bukan urutan atau waktu dibuat. */
-export function sidikPaket(berkas: ReadonlyArray<Pick<BerkasManifest, "jalur" | "md5">>, variabel: ReadonlyArray<Record<string, unknown>>): string {
+export function sidikPaket(
+  berkas: ReadonlyArray<Pick<BerkasManifest, "jalur" | "md5">>,
+  variabel: ReadonlyArray<Record<string, unknown>>,
+  fungsi: ReadonlyArray<Pick<FungsiManifest, "nama" | "md5">> = []
+): string {
   const b = [...berkas].map((x) => `${x.jalur}\t${x.md5}`).sort();
   const v = [...variabel].map((x) => JSON.stringify([x.no, x.nama, x.data_type, x.data_tabel, x.data_kolom, x.urutan_data, x.referensi, x.sql_query, x.default_data, x.multi_sidang, x.locked])).sort();
-  return sha1([b, v]);
+  // Tanpa fungsi (paket lama) sidiknya sama seperti sebelumnya.
+  return fungsi.length ? sha1([b, v, [...fungsi].map((f) => `${f.nama}\t${f.md5}`).sort()]) : sha1([b, v]);
 }
 
 /** Temuan pada manifest (tanpa membaca berkas): bentuk, jalur aman, sidik cocok. Kosong = baik. */
@@ -169,7 +178,21 @@ export function periksaManifest(m: unknown): string[] {
     lihat.add(j);
     if (!/^[0-9a-f]{32}$/.test(String(b.md5 ?? ""))) masalah.push(`Sidik berkas tidak sah: ${j.slice(0, 80)}.`);
   }
-  if (sidikPaket(x.berkas!, x.variabel!) !== x.sidik) masalah.push("Sidik paket tidak cocok dengan isinya: paket rusak atau diubah.");
+  if (x.fungsi !== undefined) {
+    if (!Array.isArray(x.fungsi)) masalah.push("Daftar fungsi pada paket tidak terbaca.");
+    else {
+      const namaFungsi = new Set<string>();
+      for (const f of x.fungsi) {
+        const n = String(f.nama ?? "");
+        if (!/^[A-Za-z0-9_]{1,64}$/.test(n)) masalah.push(`Nama fungsi tidak sah: ${n.slice(0, 40)}.`);
+        if (namaFungsi.has(n)) masalah.push(`Fungsi dobel di paket: ${n.slice(0, 40)}.`);
+        namaFungsi.add(n);
+        if (!/^[0-9a-f]{32}$/.test(String(f.md5 ?? ""))) masalah.push(`Sidik fungsi tidak sah: ${n.slice(0, 40)}.`);
+      }
+    }
+  }
+  if (masalah.length) return masalah.slice(0, 50);
+  if (sidikPaket(x.berkas!, x.variabel!, Array.isArray(x.fungsi) ? x.fungsi : []) !== x.sidik) masalah.push("Sidik paket tidak cocok dengan isinya: paket rusak atau diubah.");
   // Isian satker tidak boleh membawa cabang kode satker mana pun.
   for (const v of x.variabel!) {
     const sql = String((v as { sql_query?: unknown }).sql_query ?? "");

@@ -8,8 +8,9 @@ Satu **paket induk**: semua blangko Derry (folder blangko, tanpa folder `terhapu
 
 ```
 paket-induk/
-  manifest.json      daftar blangko dan isian, sidik paket, daftar perubahan netral, daftar isian yang perlu ditinjau
+  manifest.json      daftar blangko, isian, dan fungsi basis data; sidik paket; daftar perubahan netral; daftar isian yang perlu ditinjau
   blangko/<folder>/<berkas>.rtf
+  fungsi/<nama>.sql  dan fungsi/semua.sql (fungsi basis data yang dipanggil rumus isian)
 ```
 
 Paket dibuat dari pohon blangko Derry dan katalog isian ABT salinan uji. Tidak ada data pihak di dalamnya. Dua hal sudah dinetralkan dari isi khas satu satker:
@@ -18,6 +19,12 @@ Paket dibuat dari pohon blangko Derry dan katalog isian ABT salinan uji. Tidak a
 - kode surat pada nomor surat relaas (isian 1154) diganti kode netral `W00-A00`. Satker mengisi kode suratnya sendiri di Pengaturan SIPP & ABT, bagian Identitas satker.
 
 Isian lain yang masih memuat kata khas daerah (media pengumuman setempat, penanda kota di Sulawesi Tengah, kalimat contoh) **tidak diubah diam-diam**. Namanya tercatat di `perluDisesuaikan` pada manifest (saat paket ini disusun: 2224, 7045, 7063, 8508, 8547, 8706). Petugas satker meninjaunya sebelum memakai blangko yang memuatnya.
+
+## Fungsi basis data (syarat yang mudah terlewat)
+
+Sekitar sepertiga isian Derry memanggil **fungsi basis data** buatan Derry (`aps_badilag.isian_rtf_*`, `isian_bukti_*`, `bulan_romawi`, dan sebagainya; 70 fungsi pada salinan uji). Fungsi itu dibuat di skema ABT, bukan di ALETA. Satker tanpa ABT Derry tidak memilikinya, dan tanpa fungsi itu isian yang memanggilnya kosong dengan galat "FUNCTION ... does not exist" (pada uji awal: nama pihak, identitas pihak, terbilang, bukti, dan semua isian yang bergantung padanya).
+
+Paket menyertakan semuanya di folder `fungsi/` (satu berkas per fungsi, dan `semua.sql` yang siap dijalankan; DEFINER dibuang). Sidiknya ikut sidik paket. **Memasangnya adalah pekerjaan administrator basis data satker, di luar ALETA**: ALETA tidak menulis ke basis data SIPP atau ABT. Fungsi dipasang di skema bernama `aps_badilag` pada MariaDB yang sama dengan SIPP satker (skema itu boleh hanya berisi fungsi). Fungsi ditulis untuk MariaDB 5.5.
 
 ## Yang terbaca dari SIPP setempat
 
@@ -33,7 +40,7 @@ Nama pengadilan, pengadilan tinggi, alamat kantor, zona waktu, dan kode satker d
 
 1. Salin folder paket ke server satker; periksa sidik yang sama dengan yang tercatat di laporan.
 2. Pasang portal ALETA dan bot di server satker, hubungkan ke SIPP setempat (baca saja).
-3. Jalankan `pasangPaketInduk(db, "<folder paket>", "<nama pemasang>")`. Paket diperiksa utuh dulu (ukuran dan md5 tiap berkas); paket rusak tidak dipasang setengah. Memasang ulang paket yang sama tidak menulis apa pun.
+3. Administrator basis data satker menjalankan `fungsi/semua.sql` di skema `aps_badilag` (lihat bagian Fungsi basis data). Lalu jalankan `pasangPaketInduk(db, "<folder paket>", "<nama pemasang>")`. Paket diperiksa utuh dulu (ukuran dan md5 tiap berkas); paket rusak tidak dipasang setengah. Memasang ulang paket yang sama tidak menulis apa pun.
 4. Isi Identitas satker: kode surat, telepon, laman, surel, logo kop. Tinjau isian yang tercatat `perluDisesuaikan`.
 5. Uji pada perkara satker itu dengan layar cetak ALETA ABT; bandingkan dengan blangko satker yang ada bila punya.
 
@@ -52,7 +59,7 @@ npx tsx ../scripts/paket-satker-aleta-abt/uji-bersih.mts <folder paket> <perkara
 
 ## Batas yang jujur
 
-- Diuji di laptop: pemasangan, pustaka induk, mode tanpa ABT, identitas rekaan, penanda tertinggal, bocoran identitas.
+- Diuji di laptop: pemasangan, pustaka induk, mode tanpa ABT, identitas rekaan, penanda tertinggal, bocoran identitas. Pada uji itu fungsi basis data dibaca dari skema salinan uji (`aps_badilag_vs`) karena tidak boleh membuat skema baru di server lokal; bahwa definisi di paket sama dengan yang di salinan itu dijamin oleh cara paket disusun (dibaca dari sana), bukan diuji dengan memasangnya ulang.
 - Belum diuji: SIPP satker lain yang sungguhan (versi SIPP dapat berbeda), ABT versi lain, folder blangko yang diubah satker, PDF dan halaman, jumlah isian yang kosong karena tidak ada isian tangan di salinan bersih.
 - Keterangan saksi dan isian tangan dalam mode tanpa ABT bergantung pada penyambungan dari ALETA; yang belum tersambung tampil sebagai isian kosong bersorot, tidak pernah diisi dengan tebakan.
 - Tidak ada yang ditulis ke ABT, SIPP, atau e-Court, dan tidak ada kata ALETA yang dikirim ke sistem luar.

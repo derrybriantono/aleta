@@ -65,6 +65,17 @@ export async function periksaIsiPaket(p: PaketDiDisk): Promise<string[]> {
     if (isi.length !== b.ukuran || md5(isi) !== b.md5) masalah.push(`Isi berkas tidak cocok dengan manifest: ${b.jalur}`);
     if (masalah.length >= 50) break;
   }
+  for (const f of p.manifest.fungsi ?? []) {
+    let isi: Buffer;
+    try {
+      isi = await fs.readFile(path.join(p.dir, "fungsi", `${f.nama}.sql`));
+    } catch {
+      masalah.push(`Berkas fungsi hilang dari paket: ${f.nama}`);
+      continue;
+    }
+    if (isi.length !== f.ukuran || md5(isi) !== f.md5) masalah.push(`Isi fungsi tidak cocok dengan manifest: ${f.nama}`);
+    if (masalah.length >= 50) break;
+  }
   return masalah;
 }
 
