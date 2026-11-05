@@ -194,6 +194,12 @@ describe("PDF kosong menjadi PDF SALINAN: penanda di tempat yang benar", () => {
 });
 
 describe("yang tidak dapat dikerjakan ditolak seluruhnya dengan pesan Indonesia yang jelas", () => {
+  it("PDF berita acara sidang keluaran LibreOffice ditolak: salinannya memakai tanda tangan asli, bukan ttd", async () => {
+    const bas = new Uint8Array(readFileSync(path.join(process.cwd(), "src/test/fixtures/nomor-halaman-3nov/bas-04-3-r1-lo74.pdf")));
+    const e = await ditolak(bas);
+    expect(e.message).toMatch(/berita acara sidang/);
+  });
+
   it("PDF yang sudah bertuliskan SALINAN (rekaan dan keluaran LibreOffice) tidak ditumpuk", async () => {
     const a = await ditolak(await buatPdfRekaan({ sudahSalinan: true }));
     expect(a.kode).toBe("sudah_salinan");

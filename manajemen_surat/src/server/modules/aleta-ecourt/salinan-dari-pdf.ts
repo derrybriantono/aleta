@@ -44,6 +44,7 @@ export type KodeTolakSalinanPdf =
   | "pdf_tidak_terbaca"
   | "tanpa_teks"
   | "sudah_salinan"
+  | "bukan_putusan"
   | "label_tidak_ada"
   | "ruang_ttd_kurang"
   | "penanda_tak_muat"
@@ -127,6 +128,10 @@ export function analisisSalinan(halaman: UkuranHalaman[], item: ItemTeks[]): Ana
   const baris = susunBaris(item);
   if (baris.some((b) => padatkan(b.teks) === "salinan" || padatkan(b.teks).includes("untuksalinan"))) {
     tolak("sudah_salinan", "Berkas PDF ini sudah bertuliskan SALINAN (atau memuat blok \"Untuk Salinan\"), jadi tidak diubah lagi supaya tidak bertumpuk.");
+  }
+  // Salinan berita acara memakai tanda tangan asli Ketua Majelis dan Panitera Sidang, bukan "ttd"; jalur ini hanya untuk putusan dan penetapan.
+  if (baris.slice(0, 12).some((b) => padatkan(b.teks) === "beritaacarasidang" || padatkan(b.teks) === "beritaacara")) {
+    tolak("bukan_putusan", "Berkas PDF ini berita acara sidang. PDF salinan dari berkas PDF hanya untuk putusan dan penetapan, karena salinan berita acara memakai tanda tangan asli.");
   }
   const segmen = susunSegmen(item);
 
