@@ -1641,6 +1641,39 @@ export const DDL_ALETA_ABT_PUSTAKA = {
 } as const;
 
 /**
+ * Penyunting blangko dan versi ALETA ABT (0135, 5 Nov 2026, Tahap 3): tiap simpan = satu baris versi; isi aleta_abt_berkas
+ * hanya berganti saat versi diterbitkan. Cermin PERSIS dari drizzle/0135_aleta_abt_penyunting.sql (dijaga aleta-abt-penyunting-5nov.test.ts).
+ */
+export const DDL_ALETA_ABT_PENYUNTING = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_abt_berkas_versi (
+  id TEXT PRIMARY KEY,
+  berkas_id TEXT NOT NULL,
+  nomor INTEGER NOT NULL,
+  isi TEXT NOT NULL DEFAULT '',
+  pengkodean TEXT NOT NULL DEFAULT 'latin1',
+  md5 TEXT NOT NULL DEFAULT '',
+  ukuran INTEGER NOT NULL DEFAULT 0,
+  jenis TEXT NOT NULL DEFAULT 'sunting',
+  status TEXT NOT NULL DEFAULT 'draf',
+  dari_nomor INTEGER NOT NULL DEFAULT 0,
+  catatan TEXT NOT NULL DEFAULT '',
+  ringkas TEXT NOT NULL DEFAULT '',
+  dibuat_oleh TEXT NOT NULL DEFAULT '',
+  dibuat_nama TEXT NOT NULL DEFAULT '',
+  dibuat_at TEXT NOT NULL,
+  terbit_oleh TEXT NOT NULL DEFAULT '',
+  terbit_nama TEXT NOT NULL DEFAULT '',
+  terbit_at TEXT NOT NULL DEFAULT ''
+)`,
+  ],
+  indeks: [
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_abt_versi_berkas_nomor ON aleta_abt_berkas_versi(berkas_id, nomor)`,
+    `CREATE INDEX IF NOT EXISTS idx_abt_versi_status ON aleta_abt_berkas_versi(berkas_id, status)`,
+  ],
+} as const;
+
+/**
  * Sampul berkas dan daftar isi berkas (0112, 26 Okt 2026): sunting petugas, halaman manual, ciri tangan, bawaan halaman.
  * Cermin PERSIS dari drizzle/0112_aleta_berkas_perkara.sql; berkas-perkara-26okt.test.ts membandingkan keduanya. Tanpa kunci asing.
  */
@@ -3973,6 +4006,7 @@ const schemaStatements = [
   ...DDL_ALETA_TENGGAT_KABAR.tabel,
   ...DDL_ALETA_REGISTER_KUASA.tabel,
   ...DDL_ALETA_ABT_PUSTAKA.tabel,
+  ...DDL_ALETA_ABT_PENYUNTING.tabel,
   ...DDL_ALETA_BERKAS_PERKARA.tabel,
   // Cermin Perkara: perkara, sidang, pihak, mediasi, penanda, jejak (0090).
   ...DDL_ALETA_CERMIN_PERKARA.tabel,
@@ -5979,6 +6013,7 @@ const indexStatements = [
   ...DDL_ALETA_TENGGAT_KABAR.indeks,
   ...DDL_ALETA_REGISTER_KUASA.indeks,
   ...DDL_ALETA_ABT_PUSTAKA.indeks,
+  ...DDL_ALETA_ABT_PENYUNTING.indeks,
   ...DDL_ALETA_BERKAS_PERKARA.indeks,
   ...DDL_ALETA_CERMIN_PERKARA.indeks,
   ...DDL_ALETA_CERMIN_JADWAL_LENGKAP.indeks,

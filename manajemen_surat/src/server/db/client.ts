@@ -452,6 +452,8 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_abt_peta_variabel",
   "aleta_abt_menu",
   "aleta_abt_sinkron",
+  // 5 November 2026 (0135): versi blangko ALETA ABT (tiap simpan di penyunting = satu versi; terbit hanya oleh Super Admin).
+  "aleta_abt_berkas_versi",
   // 26 Oktober 2026 (0112): sunting sampul dan daftar isi berkas (halaman manual, ciri tangan, bawaan halaman).
   "aleta_berkas_susunan",
   "aleta_berkas_sampul",
