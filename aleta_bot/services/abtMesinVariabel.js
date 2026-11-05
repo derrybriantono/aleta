@@ -190,6 +190,9 @@ function nilaiTanggalTakWajar(nilai, opsi = {}) {
   else if (y > tahunIni + 5) sebab.push("tahun terlalu jauh di depan");
   if (m > 12) sebab.push("bulan lebih dari 12");
   if (d > 31) sebab.push("hari lebih dari 31");
+  if (m === 0) sebab.push("bulan kosong");
+  if (d === 0) sebab.push("hari kosong");
+  if (m >= 1 && m <= 12 && d >= 1 && d <= 31 && y >= 1 && new Date(Date.UTC(y, m - 1, d)).getUTCDate() !== d) sebab.push("tanggal tidak ada di kalender");
   if (opsi.lahir && !sebab.length) {
     const hariIni = Date.UTC(tahunIni, kini.getMonth(), kini.getDate());
     if (Date.UTC(y, Math.max(m, 1) - 1, Math.max(d, 1)) > hariIni) sebab.push("tanggal lahir di masa depan");

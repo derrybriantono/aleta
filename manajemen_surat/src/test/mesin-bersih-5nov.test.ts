@@ -23,6 +23,18 @@ const baca = (f: string) => readFileSync(path.join(AKAR, f), "utf8");
 const SEKARANG = new Date(2026, 10, 5); // 5 Nov 2026
 const nilai = (v: unknown, o: Record<string, unknown> = {}) => mesinAbt.nilaiTanggalTakWajar(v, { ...o, sekarang: SEKARANG }) as { tanggal: boolean; sebab: string[] };
 
+describe("tanggal bernol sebagian dan tanggal yang tidak ada di kalender", () => {
+  it("bulan atau hari nol dan tanggal mustahil tidak wajar; tanggal kabisat yang sah wajar", () => {
+    expect(nilai("1990-00-15").sebab).toEqual(["bulan kosong"]);
+    expect(nilai("1990-05-00").sebab).toEqual(["hari kosong"]);
+    expect(nilai("1990-00-00").sebab).toEqual(["bulan kosong", "hari kosong"]);
+    expect(nilai("2023-02-31").sebab).toEqual(["tanggal tidak ada di kalender"]);
+    expect(nilai("2023-02-29").sebab).toEqual(["tanggal tidak ada di kalender"]);
+    expect(nilai("2024-02-29").sebab).toEqual([]);
+    expect(nilai("31 April 2020").sebab).toEqual(["tanggal tidak ada di kalender"]);
+  });
+});
+
 describe("B1. penilai tanggal murni", () => {
   it("tanggal nol: bentuk ISO, berjam, bergaris miring, dan hasil format '00 0000'", () => {
     for (const v of ["0000-00-00", "0000/00/00", "0000-00-00 00:00:00", "00 0000", "00  0000"]) {
