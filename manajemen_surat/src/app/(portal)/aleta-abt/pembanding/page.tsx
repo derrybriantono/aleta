@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import { BerdampinganAbt } from "@/components/portal/berdampingan-abt";
 import { LaporanPembanding } from "@/components/portal/laporan-pembanding-aleta-abt";
 import { PageIntro } from "@/components/portal/shared";
 import { usePenggunaAktifOpsional } from "@/lib/app-state";
@@ -9,7 +10,7 @@ import { getEffectiveRoleId } from "@/lib/permissions";
 
 /**
  * Laporan pembanding ALETA ABT lawan ABT (5 Nov 2026, Tahap 5). Hanya Super Admin. Laporan dibaca di peramban dari berkas hasil
- * skrip pengukur; tidak ada yang dikirim atau disimpan di peladen.
+ * skrip pengukur; tidak ada yang dikirim atau disimpan di peladen. Di atasnya: ringkasan berdampingan dengan ABT (Tahap 7; hanya angka).
  */
 export default function HalamanLaporanPembanding() {
   const pengguna = usePenggunaAktifOpsional();
@@ -26,7 +27,12 @@ export default function HalamanLaporanPembanding() {
           </Link>
         }
       />
-      {pengguna && roleId !== "super-admin" ? <p className="text-sm text-muted-foreground">Laporan pembanding hanya untuk Super Admin.</p> : <LaporanPembanding />}
+      {pengguna && roleId !== "super-admin" ? <p className="text-sm text-muted-foreground">Laporan pembanding hanya untuk Super Admin.</p> : (
+        <>
+          <BerdampinganAbt />
+          <LaporanPembanding />
+        </>
+      )}
     </div>
   );
 }

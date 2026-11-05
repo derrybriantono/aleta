@@ -1,4 +1,8 @@
 // @vitest-environment node
+import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
+import path from "node:path";
+
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -22,6 +26,7 @@ const keadaan = vi.hoisted(() => ({
   dariPdf: [] as string[],
   konversi: [] as string[],
   jawabDariPdf: null as unknown,
+  catatan: [] as Array<Record<string, unknown>>,
 }));
 
 vi.mock("@/server/db/client", () => ({ getDatabase: async () => ({ marker: "db" }) }));
@@ -58,6 +63,12 @@ vi.mock("@/server/modules/aleta-abt-cetak/naskah", async () => {
     },
   };
 });
+vi.mock("@/server/modules/aleta-abt-berdampingan/service", () => ({
+  catatBandingManual: async (_db: unknown, m: Record<string, unknown>) => {
+    keadaan.catatan.push(m);
+    return { id: "bdp-uji", hasil: "merah", jenisPerkara: "cerai-gugat" };
+  },
+}));
 vi.mock("@/server/modules/aleta-abt-cetak/pdf-ringkas", () => ({
   ringkasPdf: async (b: Uint8Array) => ({ jumlahHalaman: b.length, letakTandaTangan: { halaman: b.length, dariAtasMm: 100 } }),
 }));
@@ -175,6 +186,7 @@ beforeEach(() => {
   keadaan.dariPdf = [];
   keadaan.konversi = [];
   keadaan.jawabDariPdf = null;
+  keadaan.catatan = [];
 });
 
 describe("tanda berumur pendek", () => {
@@ -321,6 +333,22 @@ describe("cetak", () => {
     expect(j.data.kertas.abt.nama).toBe("A4");
   });
 
+  it("banding dengan catat:true menyimpan HASIL (angka) di pembanding berdampingan dan mencatat audit; tanpa catat tidak menyimpan apa pun", async () => {
+    const abt = "{\\rtf1\\paperw11906\\paperh16838 Isi naskah uji\\par}";
+    const tanpa = await POST(post({ tindakan: "banding", ...PILIHAN, rtfAbtBase64: Buffer.from(abt, "latin1").toString("base64") }));
+    expect(((await tanpa.json()) as { data: Record<string, unknown> }).data.tercatat).toBeUndefined();
+    expect(keadaan.catatan).toEqual([]);
+
+    const r = await POST(post({ tindakan: "banding", ...PILIHAN, catat: true, jenisPerkara: "Cerai Gugat", rtfAbtBase64: Buffer.from(abt, "latin1").toString("base64") }));
+    const j = (await r.json()) as { data: { alinea: { total: number }; tercatat: { hasil: string; jenisPerkara: string } } };
+    expect(r.status).toBe(200);
+    expect(j.data.tercatat).toEqual({ hasil: "merah", jenisPerkara: "cerai-gugat" });
+    expect(keadaan.catatan).toHaveLength(1);
+    expect(keadaan.catatan[0]).toMatchObject({ berkasId: "berkas-uji", perkaraId: "123", sidangKe: 2, jenisPerkara: "Cerai Gugat" });
+    expect(keadaan.audit.map((a) => a.action)).toContain("ALETA_ABT_BERDAMPINGAN_CATAT");
+    // Layanan pencatat (aleta-abt-berdampingan-t7.test.ts) hanya menyimpan angka dari hasil ini; teks beda tidak ikut tersimpan.
+  });
+
   it("banding PDF membandingkan jumlah halaman dan letak tanda tangan", async () => {
     const b = (n: number) => Buffer.alloc(n).toString("base64");
     const r = await POST(post({ tindakan: "banding-pdf", pdfAbtBase64: b(5), pdfAletaBase64: b(5) }));
@@ -359,6 +387,26 @@ describe("PDF SALINAN dari berkas (keputusan 215)", () => {
     expect(keadaan.pdfDipanggil[0].rtf).toContain("Isi");
     expect(keadaan.pdfDipanggil[0].rtf).not.toContain("rahasia");
     expect(keadaan.dariPdf).toEqual([]);
+  });
+
+  it("berita acara berbentuk RTF TIDAK ditolak di sini: pembeda jenis ada di rute PDF salinan (bot memilih tanda tangan asli untuk BAS)", async () => {
+    const bas = "{\\rtf1\\ansi\\pard\\qc BERITA ACARA SIDANG\\par Perkara Nomor 1/Pdt.G/2026/PA.Uji\\par}";
+    const r = await kirim(bas);
+    expect(r.status).toBe(200);
+    expect(keadaan.pdfDipanggil).toHaveLength(1);
+    expect(keadaan.pdfDipanggil[0]).toMatchObject({ salinan: true });
+    expect(keadaan.pdfDipanggil[0].rtf).toContain("BERITA ACARA SIDANG");
+  });
+
+  it("bukti: pembeda jenis di bot membedakan berita acara dari putusan, dan hanya berita acara memakai tanda tangan asli", () => {
+    const bot = createRequire(path.join(process.cwd(), "../aleta_bot/package.json"))("./services/salinanPutusanService.js") as { jenisNaskahSalinan: (rtf: string) => string };
+    const bas = "{\\rtf1\\ansi{\\fonttbl{\\f0 Arial;}}\\pard\\qc BERITA ACARA SIDANG\\par Perkara Nomor 1/Pdt.G/2026/PA.Uji\\par}";
+    const putusan = "{\\rtf1\\ansi{\\fonttbl{\\f0 Arial;}}\\pard\\qc PUTUSAN\\par Nomor 1/Pdt.G/2026/PA.Uji\\par}";
+    expect(bot.jenisNaskahSalinan(bas)).toBe("bas");
+    expect(bot.jenisNaskahSalinan(putusan)).toBe("putusan");
+    const rute = readFileSync(path.join(process.cwd(), "../aleta_bot/routes/internalGatewayRoutes.js"), "utf8");
+    expect(rute).toMatch(/jenisNaskahSalinan\(isi\.toString\("latin1"\)\) === "bas"/);
+    expect(rute).toContain("tanda tangan ASLI");
   });
 
   it("DOCX dan DOC diubah ke RTF dulu, lalu rute PDF salinan", async () => {

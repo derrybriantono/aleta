@@ -34,7 +34,7 @@ type Pratinjau = {
   ringkasanKeyakinan: Record<string, number>;
   waktu: Waktu;
 };
-type HasilBandingRtf = { alinea: HasilBandingAlinea; kertas: { abt: KertasNaskah; aleta: KertasNaskah }; waktu: Waktu };
+type HasilBandingRtf = { alinea: HasilBandingAlinea; kertas: { abt: KertasNaskah; aleta: KertasNaskah }; waktu: Waktu; tercatat?: { hasil: string; jenisPerkara: string } };
 type HasilBandingPdf = { abt: RingkasPdf; aleta: RingkasPdf; banding: BandingPdf };
 type Hak = { boleh: boolean; lewat: string; sebab: string };
 
@@ -127,6 +127,7 @@ export function CetakAletaAbt() {
   const [bandingRtf, setBandingRtf] = useState<HasilBandingRtf | null>(null);
   const [bandingPdf, setBandingPdf] = useState<HasilBandingPdf | null>(null);
   const [berdampingan, setBerdampingan] = useState(false);
+  const [catatBanding, setCatatBanding] = useState(false);
   const pdfAleta = useRef<string>("");
   const [adaPdfAleta, setAdaPdfAleta] = useState(false);
 
@@ -241,7 +242,7 @@ export function CetakAletaAbt() {
     setGalat("");
     setSibuk("banding");
     try {
-      setBandingRtf(await kirim<HasilBandingRtf>(badan("banding", { rtfAbtBase64: dasarBase64(await f.arrayBuffer()) })));
+      setBandingRtf(await kirim<HasilBandingRtf>(badan("banding", { rtfAbtBase64: dasarBase64(await f.arrayBuffer()), ...(catatBanding ? { catat: true, jenisPerkara: perkara?.jenisPerkara ?? "" } : {}) })));
     } catch (e) {
       setGalat((e as Error).message);
     } finally {
@@ -493,6 +494,14 @@ export function CetakAletaAbt() {
                 <input type="file" accept=".pdf" disabled={!adaPdfAleta} className="sr-only" onChange={(e) => void pilihPdfAbt(e.target.files?.[0])} />
               </label>
             </div>
+            <label className="flex items-start gap-2 text-sm">
+              <input type="checkbox" checked={catatBanding} onChange={(e) => setCatatBanding(e.target.checked)} className="mt-1" />
+              <span>
+                Catat hasil teks di pembanding berdampingan
+                <span className="block text-xs text-muted-foreground">Yang tersimpan hanya angka, nama blangko, dan jenis beda; bukan isi naskah.</span>
+              </span>
+            </label>
+            {bandingRtf?.tercatat ? <p className="text-xs text-muted-foreground">Tercatat di pembanding berdampingan sebagai {bandingRtf.tercatat.hasil}.</p> : null}
             {!adaPdfAleta ? <p className="text-xs text-muted-foreground">Untuk membandingkan halaman, unduh dulu PDF dari layar ini (PDF dibuat LibreOffice di server).</p> : null}
             <div>
               <BarisUkur nama="Teks per alinea">

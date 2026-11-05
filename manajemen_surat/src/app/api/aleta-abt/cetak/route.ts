@@ -6,7 +6,9 @@ import { getEffectiveRoleId } from "@/lib/permissions";
 import { getDatabase } from "@/server/db/client";
 import { bandingkanRtf, paragrafPratinjau, susunNaskah, type NaskahJadi } from "@/server/modules/aleta-abt-cetak/naskah";
 import { ringkasPdf } from "@/server/modules/aleta-abt-cetak/pdf-ringkas";
+import { pdfLewatRuteAbt, salinanDariPdfLewatRute, type JawabanRutePdf } from "@/server/modules/aleta-abt-cetak/rute-pdf";
 import { NAMA_KEPALA_TANDA, jagaCetakAletaAbt, type Penjaga } from "@/server/modules/aleta-abt-cetak/tanda";
+import { catatBandingManual } from "@/server/modules/aleta-abt-berdampingan/service";
 import { daftarBlangko } from "@/server/modules/aleta-abt-penyunting/service";
 import { BATAS_KONVERSI, kenaliBentukNaskah, konversiNaskah } from "@/server/modules/aleta-ecourt/konversi-naskah";
 import { callAletaBotSippBridge } from "@/server/modules/aleta-sipp/aleta-sipp-datasource";
@@ -37,7 +39,7 @@ export const dynamic = "force-dynamic";
  *   POST {tindakan:"pratinjau", berkasId, perkaraId, sidangKe?}   paragraf + isian kosong + waktu
  *   POST {tindakan:"rtf", ...}                                    RTF final (isian kosong menahan)       [audit]
  *   POST {tindakan:"pdf", ...} / {tindakan:"salinan", ...}        PDF / PDF SALINAN lewat LibreOffice (rute abt/pdf)  [audit]
- *   POST {tindakan:"banding", ..., rtfAbtBase64}                  banding alinea dengan RTF dari ABT
+ *   POST {tindakan:"banding", ..., rtfAbtBase64[, catat:true, jenisPerkara]}  banding alinea dengan RTF dari ABT; catat:true menyimpan HASIL (angka) di pembanding berdampingan
  *   POST {tindakan:"banding-pdf", pdfAbtBase64, pdfAletaBase64}   banding jumlah halaman dan letak tanda tangan
  *   POST {tindakan:"salinan-berkas", berkasBase64, namaBerkas?}   PDF SALINAN dari berkas RTF/DOCX/DOC/PDF yang diunggah (keputusan 215):
  *        PDF kosong -> rute salinan-dari-pdf; RTF -> rute PDF salinan; DOCX/DOC -> diubah ke RTF (konversi naskah) lalu rute PDF salinan.
@@ -86,32 +88,6 @@ function bitaBase64(nilai: unknown, nama: string): Buffer {
   if (!s) throw new ApiError(400, `${nama} belum dipilih.`);
   if (s.length > BATAS_BASE64) throw new ApiError(413, `${nama} terlalu besar.`);
   return Buffer.from(s, "base64");
-}
-
-type JawabanRutePdf = { available?: boolean; kode?: string; message?: string; pdfBase64?: string; byte?: number; versiMesin?: string; salinan?: unknown };
-
-/** Memanggil rute lain yang sudah ada di dalam proses dengan sesi yang sama (tanpa menyalin logikanya). */
-async function panggilRute(request: NextRequest, path: string, rute: (r: NextRequest) => Promise<Response>, badan: Record<string, unknown>): Promise<JawabanRutePdf> {
-  const kepala = new Headers(request.headers);
-  kepala.set("content-type", "application/json");
-  kepala.delete("content-length");
-  const dalam = new NextRequest(new URL(path, request.url), { method: "POST", headers: kepala, body: JSON.stringify(badan) });
-  const res = await rute(dalam);
-  const isi = (await res.json().catch(() => null)) as { ok?: boolean; data?: JawabanRutePdf } | null;
-  if (!res.ok || !isi || isi.ok === false) throw new ApiError(res.status || 502, "PDF tidak dapat dibuat.");
-  return isi.data ?? {};
-}
-
-/** Rute PDF (LibreOffice, SALINAN, tanda tangan, cap, Z, nomor halaman). Metodenya tidak diubah. */
-async function pdfLewatRuteAbt(request: NextRequest, rtf: Buffer, salinan: boolean) {
-  const { POST } = await import("@/app/api/aleta-bot/abt/pdf/route");
-  return panggilRute(request, "/api/aleta-bot/abt/pdf", POST, { rtfBase64: rtf.toString("base64"), salinan });
-}
-
-/** PDF SALINAN dari PDF yang masih kosong (keputusan 215): rute yang sama dengan ekstensi. */
-async function salinanDariPdfLewatRute(request: NextRequest, pdf: Buffer) {
-  const { POST } = await import("@/app/api/aleta-ecourt/putusan/salinan-dari-pdf/route");
-  return panggilRute(request, "/api/aleta-ecourt/putusan/salinan-dari-pdf", POST, { pdfBase64: pdf.toString("base64") });
 }
 
 export async function GET(request: NextRequest) {
@@ -203,7 +179,13 @@ export async function POST(request: NextRequest) {
       if (tindakan === "banding") {
         const hasil = bandingkanRtf(n.rtf, bitaBase64(badan.rtfAbtBase64, "RTF dari ABT"));
         await catat(a.db, a.actorUserId, "ALETA_ABT_CETAK_BANDING", m.berkasId, { perkaraId: m.perkaraId, lewat, identik: hasil.alinea.identik, total: hasil.alinea.total });
-        return ok({ ...hasil, waktu: n.waktu }, { headers: tak });
+        // Tahap 7: bila diminta, hasil banding dicatat di pembanding berdampingan (hanya angka, nama blangko, dan jenis beda).
+        const tercatat =
+          badan.catat === true
+            ? await catatBandingManual(a.db, { berkasId: m.berkasId, perkaraId: m.perkaraId, sidangKe: m.sidangKe, jenisPerkara: badan.jenisPerkara, hasil: hasil.alinea, waktuMs: n.waktu.totalMs })
+            : null;
+        if (tercatat) await catat(a.db, a.actorUserId, "ALETA_ABT_BERDAMPINGAN_CATAT", m.berkasId, { perkaraId: m.perkaraId, hasil: tercatat.hasil, jenisPerkara: tercatat.jenisPerkara });
+        return ok({ ...hasil, waktu: n.waktu, ...(tercatat ? { tercatat: { hasil: tercatat.hasil, jenisPerkara: tercatat.jenisPerkara } } : {}) }, { headers: tak });
       }
       const p = paragrafPratinjau(n.rtf);
       return ok(
