@@ -168,6 +168,18 @@ export async function register() {
     mulaiPencocokBerkala(getDatabase);
   }
   /* === AKHIR PENCOCOK DATA === */
+  /* === SINKRON ABT TERJADWAL 5 Nov (Tahap 9) === detak 5 menit; SAKLAR MATI bawaan (Super Admin menyalakan di Pustaka blangko) = hanya membaca
+     satu baris setelan. Menyala: SEKALI per tanggal WITA sesudah jam pilihan (bawaan 23.00), tidak pada jam kerja sidang tanpa izin; yang
+     dijalankan sinkron pustaka yang sama dengan tombol Sinkron dari ABT (ABT hanya dibaca, tidak menimpa suntingan ALETA ABT).
+     Matikan seluruhnya dengan ALETA_ABT_SINKRON=0. */
+  if (process.env.ALETA_ABT_SINKRON !== "0") {
+    const [{ mulaiSinkronAbtBerkala }, { getDatabase }] = await Promise.all([
+      import("@/server/modules/aleta-abt-sinkron/service"),
+      import("@/server/db/client"),
+    ]);
+    mulaiSinkronAbtBerkala(getDatabase);
+  }
+  /* === AKHIR SINKRON ABT TERJADWAL === */
   /* === KAIT KEAMANAN 26 Okt (gabung rantai E + Bagian 6) === mengisi kait keamanan/kait.ts: langkah kedua pengaman aksi admin
      (authenticator E5) dan laporan uji pulih gagal ke Catatan error Pusat kesehatan (E2). Tidak mengubah bawaan: saklar
      authenticator, saklar langkah kedua, dan saklar uji pulih tetap MATI sampai Super Admin menyalakannya. */

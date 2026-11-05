@@ -672,7 +672,7 @@ function TetapKunci({ judul, baris, isian }: { judul: string; baris: BagianTeks[
   );
 }
 
-function PotongBedaTampil({ potong }: { potong: Array<{ t: string; d?: "hapus" | "tambah" }> }) {
+export function PotongBedaTampil({ potong }: { potong: Array<{ t: string; d?: "hapus" | "tambah" }> }) {
   return (
     <>
       {potong.map((p, i) =>
@@ -713,6 +713,18 @@ function TampilBeda({ beda, isian, saatKembali }: { beda: HasilBeda; isian: Blan
         <Button size="sm" variant="outline" onClick={saatKembali}>
           Kembali ke riwayat
         </Button>
+        <BarisBedaTampil beda={beda} isian={isian} />
+      </CardContent>
+    </Card>
+  );
+}
+
+/** Daftar baris beda (sama/ubah/tambah/hapus/lipat). Dipakai beda antarversi di sini dan layar Beda dengan ABT. */
+export type KataBeda = { sebelum: string; sesudah: string; tambah: string; hapus: string };
+const KATA_BEDA_VERSI: KataBeda = { sebelum: "Sebelum", sesudah: "Sesudah", tambah: "Ditambah", hapus: "Dihapus" };
+
+export function BarisBedaTampil({ beda, isian, kata = KATA_BEDA_VERSI }: { beda: HasilBeda; isian: BlangkoBuka["isian"]; kata?: KataBeda }) {
+  return (
         <div className="space-y-1 text-[15px] leading-relaxed">
           {beda.baris.map((b, i) => {
             if (b.k === "lipat") return <p key={i} className="rounded bg-muted px-2 py-0.5 text-center text-xs text-muted-foreground">{b.n} paragraf tidak berubah</p>;
@@ -720,19 +732,17 @@ function TampilBeda({ beda, isian, saatKembali }: { beda: HasilBeda; isian: Blan
             if (b.k === "ubah") {
               return (
                 <div key={i} className="rounded-lg border border-border p-2">
-                  <p className="whitespace-pre-wrap break-words text-xs text-muted-foreground">Sebelum</p>
+                  <p className="whitespace-pre-wrap break-words text-xs text-muted-foreground">{kata.sebelum}</p>
                   <p className="whitespace-pre-wrap break-words"><PotongBedaTampil potong={b.a} /></p>
-                  <p className="mt-1 whitespace-pre-wrap break-words text-xs text-muted-foreground">Sesudah</p>
+                  <p className="mt-1 whitespace-pre-wrap break-words text-xs text-muted-foreground">{kata.sesudah}</p>
                   <p className="whitespace-pre-wrap break-words"><PotongBedaTampil potong={b.b} /></p>
                 </div>
               );
             }
-            if (b.k === "tambah") return <p key={i} className="whitespace-pre-wrap break-words rounded-lg border border-emerald-300 p-2 dark:border-emerald-800"><span className="mr-1 text-xs text-muted-foreground">Ditambah</span><PotongBedaTampil potong={b.b} /></p>;
-            return <p key={i} className="whitespace-pre-wrap break-words rounded-lg border border-rose-300 p-2 dark:border-rose-800"><span className="mr-1 text-xs text-muted-foreground">Dihapus</span><PotongBedaTampil potong={b.a} /></p>;
+            if (b.k === "tambah") return <p key={i} className="whitespace-pre-wrap break-words rounded-lg border border-emerald-300 p-2 dark:border-emerald-800"><span className="mr-1 text-xs text-muted-foreground">{kata.tambah}</span><PotongBedaTampil potong={b.b} /></p>;
+            return <p key={i} className="whitespace-pre-wrap break-words rounded-lg border border-rose-300 p-2 dark:border-rose-800"><span className="mr-1 text-xs text-muted-foreground">{kata.hapus}</span><PotongBedaTampil potong={b.a} /></p>;
           })}
           {beda.terpotong ? <p className="text-xs text-muted-foreground">Daftar beda dipotong; banyak sekali yang berbeda.</p> : null}
         </div>
-      </CardContent>
-    </Card>
   );
 }

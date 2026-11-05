@@ -487,9 +487,21 @@ export async function bedaAntarVersi(db: AletaDatabase, id: string, nomorA: numb
   const A = (await ambilVersi(db, b, nomorA)).versi;
   const B = (await ambilVersi(db, b, nomorB)).versi;
   const peta = await petaIsian(db);
+  return bedaDuaIsi({ nomor: A.nomor, md5: A.md5, ukuran: bilangan(A.ukuran), rtf: rtfDari(A) }, { nomor: B.nomor, md5: B.md5, ukuran: bilangan(B.ukuran), rtf: rtfDari(B) }, peta);
+}
+
+/**
+ * Beda dua isi RTF (paragraf demi paragraf, lalu kata demi kata di paragraf yang berubah). Dipakai beda antarversi (Tahap 3) dan
+ * layar Beda dengan ABT (Tahap 9: isi ALETA ABT melawan isi ABT terbaru). `nomor` 0 = bukan versi tersimpan (isi ABT pembanding).
+ */
+export function bedaDuaIsi(
+  A: { nomor: number; md5: string; ukuran: number; rtf: string },
+  B: { nomor: number; md5: string; ukuran: number; rtf: string },
+  peta: Map<string, InfoIsian>
+): HasilBeda {
   const nama = (t: string) => ganti(t, peta, (_no, n) => `‹${n}›`);
-  const docA = uraiRtf(rtfDari(A));
-  const docB = uraiRtf(rtfDari(B));
+  const docA = uraiRtf(A.rtf);
+  const docB = uraiRtf(B.rtf);
   const ta = docA.paragraf.map((p) => nama(p.teks).replace(/￼/g, "□"));
   const tb = docB.paragraf.map((p) => nama(p.teks).replace(/￼/g, "□"));
   const ops = bedaDaftar(ta, tb);
@@ -550,8 +562,8 @@ export async function bedaAntarVersi(db: AletaDatabase, id: string, nomorA: numb
   if (!adaBeda && !baris.length) baris.length = 0;
   const terpotong = baris.length > BATAS_BARIS_BEDA;
   return {
-    a: { nomor: A.nomor, md5: A.md5, ukuran: bilangan(A.ukuran) },
-    b: { nomor: B.nomor, md5: B.md5, ukuran: bilangan(B.ukuran) },
+    a: { nomor: A.nomor, md5: A.md5, ukuran: A.ukuran },
+    b: { nomor: B.nomor, md5: B.md5, ukuran: B.ukuran },
     samaBita: A.md5 === B.md5,
     samaTeks: ta.length === tb.length && ta.every((x, i) => x === tb[i]),
     kepalaKakiBeda: JSON.stringify(docA.tetap) !== JSON.stringify(docB.tetap),

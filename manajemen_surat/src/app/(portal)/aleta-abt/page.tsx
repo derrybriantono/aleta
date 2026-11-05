@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { AletaAbtPintu } from "@/components/portal/aleta-abt-pintu";
 import { PageIntro } from "@/components/portal/shared";
+import { KartuBedaAbt } from "@/components/portal/sinkron-abt-kartu";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePenggunaAktifOpsional } from "@/lib/app-state";
@@ -12,7 +13,7 @@ import { getEffectiveRoleId } from "@/lib/permissions";
 /**
  * ALETA ABT (5 Nov 2026). Hak diputuskan server lewat /api/aleta-abt/hak; halaman tidak menyembunyikan apa pun
  * yang membahayakan, hanya menerangkan keadaan akun. Layar ALETA ABT untuk HP belum ada.
- * Penyunting blangko (Tahap 3) hanya untuk Super Admin: kartunya hanya tampil bagi Super Admin dan rutenya menjaga ulang di server.
+ * Penyunting blangko (Tahap 3) dan Beda dengan ABT (Tahap 9) hanya untuk Super Admin: kartunya hanya tampil bagi Super Admin dan rutenya menjaga ulang di server.
  */
 export default function HalamanAletaAbt() {
   const pengguna = usePenggunaAktifOpsional();
@@ -36,6 +37,7 @@ export default function HalamanAletaAbt() {
           </CardContent>
         </Card>
       ) : null}
+      {superAdmin ? <KartuBedaAbt /> : null}
       <AletaAbtPintu />
     </div>
   );

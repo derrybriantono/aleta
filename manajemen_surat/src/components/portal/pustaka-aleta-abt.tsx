@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import Link from "next/link";
+
+import { JadwalSinkronAbt } from "@/components/portal/sinkron-abt-kartu";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -152,6 +155,7 @@ export function BagianPustakaAletaAbt() {
             {pesan.teks}
           </div>
         ) : null}
+        <JadwalSinkronAbt />
         {kosong ? <p className="text-sm text-muted-foreground">Belum pernah disalin. Tekan Sinkron dari ABT untuk salinan pertama.</p> : null}
         {data && !kosong ? (
           <div className="grid gap-3 sm:grid-cols-3">
@@ -173,6 +177,15 @@ export function BagianPustakaAletaAbt() {
             <div className="text-sm font-medium text-foreground">
               Beda dengan ubahan ALETA ({angka(data.berkas.bentrok + data.variabel.bentrok + data.menu.bentrok)}) - ubahan ALETA dibiarkan, isi ABT tidak disalin
             </div>
+            {data.berkas.bentrok ? (
+              <p className="text-xs text-muted-foreground">
+                {angka(data.berkas.bentrok)} blangko menunggu Anda tinjau.{" "}
+                <Link href="/aleta-abt/beda" className="underline">
+                  Buka Beda dengan ABT
+                </Link>{" "}
+                untuk melihat bedanya dan memilih isi yang dipakai.
+              </p>
+            ) : null}
             <ul className="space-y-1">
               {data.bentrok.map((b) => (
                 <li key={`${b.jenis}:${b.kunci}`} className="flex flex-wrap gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
