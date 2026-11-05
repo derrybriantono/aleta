@@ -42,7 +42,7 @@ export default function HalamanAletaAbt() {
           <CardHeader>
             <CardTitle>Cetak dan pembanding</CardTitle>
             <CardDescription>
-              Pilih perkara dan blangko, lihat naskah yang disusun ALETA ABT tanpa ABT, lalu unduh RTF, PDF, atau PDF SALINAN. Hasilnya dapat dibandingkan dengan cetakan ABT alinea demi alinea.
+              Pilih perkara dan blangko, lihat naskah yang disusun ALETA ABT tanpa ABT, lalu unduh RTF, PDF, atau PDF SALINAN. Hasilnya dapat dibandingkan dengan cetakan ABT alinea demi alinea, dan ringkasan berdampingan dengan ABT ada di laporan pembanding.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-2 sm:flex-row">
@@ -51,6 +51,24 @@ export default function HalamanAletaAbt() {
             </Button>
             <Button asChild variant="outline" className="w-full sm:w-auto">
               <Link href="/aleta-abt/pembanding">Buka laporan pembanding</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
+      {superAdmin ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Siap diperiksa dan hak folder</CardTitle>
+            <CardDescription>
+              Pekerjaan tiap peran dari jadwal sidang beserta blangko yang disarankan, tombol Selesaikan berkas, dan daftar siapa yang membuka folder blangko untuk disetujui pemilik.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-2 sm:flex-row">
+            <Button asChild className="w-full sm:w-auto">
+              <Link href="/aleta-abt/siap">Buka Siap diperiksa</Link>
+            </Button>
+            <Button asChild variant="outline" className="w-full sm:w-auto">
+              <Link href="/aleta-abt/hak">Buka hak folder</Link>
             </Button>
           </CardContent>
         </Card>
