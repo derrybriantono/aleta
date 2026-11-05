@@ -1,6 +1,6 @@
-export const APP_VERSION = "2.47.0";
+export const APP_VERSION = "2.48.0";
 export const APP_VERSION_LABEL =
-  "ALETA Judicia v2.47.0 - November 2026";
+  "ALETA Judicia v2.48.0 - November 2026";
 
 export type PatchNote = {
   version: string;
@@ -21,6 +21,30 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.48.0",
+    title: "ALETA Judicia v2.48.0 - November 2026",
+    date: "2026-11-05",
+    status: "Terpasang bersama rilis ekstensi 1.205.76",
+    summary:
+      "Sampai rilis ekstensi 1.205.76 (5 November 2026): tombol Lihat per isian di Blangko ABT by Derry, sementara khusus Super Admin.",
+    added: [
+      "Tombol Lihat per isian: hasil isian diblok di Pratinjau, dengan jumlah temuan, Sebelumnya, Berikutnya, dan Kembali ke isian.",
+    ],
+    changed: [
+      "Rute pratinjau blangko dapat meminta penanda letak isian. Penanda hanya dipakai untuk tampilan pratinjau dan tidak ikut ke naskah Cetak.",
+    ],
+    fixed: [],
+    security: [
+      "Permintaan penanda diabaikan server bila akun yang masuk bukan Super Admin.",
+    ],
+    operationalNotes: [
+      "Bot dan portal dibangun ulang; tidak ada migrasi basis data.",
+    ],
+    knownLimitations: [
+      "Isian yang hanya dibaca kueri di dalam isian lain belum dapat ditemukan dan tampil Lihat 0. Isian di kepala dan kaki halaman serta kotak gambar tidak tampil di pratinjau, jadi tidak terhitung.",
+    ],
+  },
   {
     version: "2.47.0",
     title: "ALETA Judicia v2.47.0 - November 2026",

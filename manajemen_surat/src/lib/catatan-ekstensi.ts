@@ -57,6 +57,16 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.76",
+    dirilis: "2026-11-05T15:00:00+08:00",
+    judul: "Tombol Lihat di Blangko ABT by Derry, sementara khusus Super Admin",
+    butir: [
+      "Tiap isian punya tombol Lihat dengan jumlah temuannya. Saat ditekan, Pratinjau terbuka dan hasil isian itu diblok di naskah.",
+      "Bilah di atas naskah menyebut nama isian, urutan temuan, dan bagian naskahnya, dengan tombol Sebelumnya, Berikutnya, Kembali ke isian, dan Tutup.",
+      "Isian yang hanya dibaca kueri, misalnya huruf alasan pada amar, belum dapat ditemukan dan tampil Lihat 0. Isian di kepala dan kaki halaman serta kotak gambar tidak tampil di pratinjau, jadi tidak terhitung.",
+    ],
+  },
+  {
     versi: "1.205.75",
     dirilis: "2026-11-05T12:00:00+08:00",
     judul: "UI Baru untuk semua akun, menimpa putusan seperti SIPP, dan perbaikan Jadwal Sidang",
