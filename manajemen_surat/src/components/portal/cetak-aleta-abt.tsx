@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { BuktiAletaAbt } from "@/components/portal/bukti-aleta-abt";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -502,6 +503,8 @@ export function CetakAletaAbt() {
           </CardContent>
         </Card>
       ) : null}
+
+      {pratinjau && perkara ? <BuktiAletaAbt alinea={pratinjau.paragraf} perkaraId={perkara.perkaraId} nomor={perkara.nomorPerkara} /> : null}
 
       {pratinjau ? (
         <Card>

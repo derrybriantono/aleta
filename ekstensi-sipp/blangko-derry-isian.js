@@ -4091,6 +4091,8 @@
     ["Rekaman suara dalam flashdisk", "rekaman suara"],
     ["Rekaman video dalam flashdisk", "rekaman video"],
     ["Surel (e-mail)", "surel"],
+    ["Print Out/Hasil Cetak Dokumen Elektronik", "cetak dokumen elektronik"],
+    ["Berkas digital dalam flashdisk", "berkas digital"],
   ];
   const PIL_PERIKSA_EL = [
     "Tidak dapat dicocokkan (pihak tidak dapat menghadirkan alatnya), tanpa digital forensic",
@@ -4119,6 +4121,8 @@
     if (/rekaman|suara|audio/i.test(b)) return "rekaman suara";
     if (/tangkapan|screenshot|layar/i.test(b)) return "tangkapan layar";
     if (/surel|e-?mail/i.test(b)) return "surel";
+    if (/dokumen elektronik/i.test(b)) return "cetak dokumen elektronik";
+    if (/berkas digital/i.test(b)) return "berkas digital";
     return "cetak foto";
   };
   /** Butir yang belum diisi apa pun (selain bawaan) tidak ikut ditulis ke ABT. */
@@ -6987,7 +6991,89 @@
     }
   }
   const LABEL_NOMOR = { ktp: ["NIK", "16 angka NIK"], kk: ["Nomor KK", "nomor Kartu Keluarga"], "": ["Nomor surat", "boleh kosong"] };
+  // ── Alat bukti tertulis (6 Nov 2026): katalog, tanda beda dengan SIPP, pindaian e-Court, dan tampilan lengkap sebagai pop-up ──
+  const BT = () => (typeof globalThis !== "undefined" && globalThis.AletaBuktiTertulis) || null;
+  /** Bahan SIPP sekali per perkara. Gagal dibaca = tanpa tanda, kotak bukti tetap seperti biasa. */
+  let bahanBukti = { kunci: "", data: null, janji: null };
+  function muatBahanBukti() {
+    const id = String(perkaraId() || "");
+    if (!BT() || !/^\d+$/.test(id) || tes() || bahanBukti.kunci === id) return;
+    const jaga = (bahanBukti = { kunci: id, data: null, janji: null });
+    jaga.janji = ambilPortal(`${API_BLANGKO}/bukti-sipp?perkaraId=${encodeURIComponent(id)}&nomor=${encodeURIComponent(nomorPerkara())}`, {}, "Membaca data SIPP untuk alat bukti")
+      .then((d) => {
+        if (bahanBukti !== jaga) return;
+        jaga.data = d && typeof d === "object" ? d : null;
+        renderIsian();
+      })
+      .catch(() => undefined);
+  }
+  const berkasBukti = (nama) => (BT() && bahanBukti.data ? BT().berkasUntukBukti(nama, bahanBukti.data.dokumen || []) : null);
+  /** Urutan KTP baris ini pada sisinya: dipakai bila nama pada bukti tidak cocok dengan pihak mana pun. */
+  function urutanKtp(w, i) {
+    let n = 0;
+    for (let k = 0; k < i; k += 1) if (BT().jenisBuktiDari((S.bukti[w][k] || {}).nm) === "ktp") n += 1;
+    return n;
+  }
+  const bandingBukti = (w, i) => (BT() && S.bukti[w] && S.bukti[w][i] ? BT().bandingBaris(S.bukti[w][i], w, urutanKtp(w, i), bahanBukti.data) : {});
+  /** Mengisi tanda di bawah isian tanpa menggambar ulang kotak, supaya petugas yang sedang mengetik tidak terganggu. */
+  function segarBandingBukti(w) {
+    if (!BT() || !wadah.isian) return;
+    for (const el of Array.from(wadah.isian.querySelectorAll("[data-bkbanding]"))) {
+      const [sisi, i] = el.getAttribute("data-bkbanding").split(".");
+      if (w && sisi !== w) continue;
+      const kolom = el.getAttribute("data-isi");
+      const h = bandingBukti(sisi, Number(i))[kolom];
+      el.className = `bd-bsipp${h ? ` ${h.keadaan}` : ""}`;
+      el.innerHTML = !h
+        ? ""
+        : h.keadaan === "sama"
+          ? "Sama dengan SIPP"
+          : `<span>Di SIPP tertulis ${esc(kolom === "tgl" ? BT().tanggalIndo(h.sipp) : h.sipp)}</span>${h.pakai === null ? "" : `<button type="button" class="bd-btn kecil" data-bkpakai="${sisi}.${i}" data-isi="${esc(kolom)}">Pakai data SIPP</button>`}`;
+    }
+  }
+  function pakaiDataSipp(w, i, kolom) {
+    const r = S.bukti[w] && S.bukti[w][i];
+    const h = bandingBukti(w, i)[kolom];
+    if (!r || !h || h.pakai === null) return;
+    r[kolom] = h.pakai;
+    simpanBukti(w, true);
+    renderIsian();
+  }
+  function tukarPindaian(id, tombol) {
+    const wadahPindai = cari(`[data-bkpindaiwadah="${id}"]`, wadah.isian);
+    const [w, i] = id.split(".");
+    const r = S.bukti[w] && S.bukti[w][Number(i)];
+    const d = r ? berkasBukti(r.nm) : null;
+    if (!wadahPindai || !d) return;
+    const buka = wadahPindai.hidden;
+    wadahPindai.hidden = !buka;
+    wadahPindai.innerHTML = buka ? BT().htmlPindaian(d, esc) : "";
+    if (tombol) {
+      tombol.textContent = buka ? "Tutup pindaian" : "Lihat pindaian";
+      tombol.setAttribute("aria-expanded", String(buka));
+    }
+  }
+  function bukaBuktiLengkap(w) {
+    if (!BT() || !S.bukti[w]) return;
+    BT().bukaLengkap(wadah.akar, {
+      judul: `Alat bukti ${(sebutan() || {})[w] || ""}`.trim(),
+      nomor: nomorPerkara(),
+      sisi: w,
+      baris: () => S.bukti[w],
+      banding: (i) => bandingBukti(w, i),
+      berkas: (nama) => berkasBukti(nama),
+      kalimat: (i) => kalimatBukti(S.bukti[w][i], w, i),
+      ubah: (i, kolom, nilai) => {
+        S.bukti[w][i][kolom] = nilai;
+        simpanBukti(w, true);
+      },
+      esc,
+      saatTutup: () => renderIsian(),
+    });
+  }
   function kotakBukti(b) {
+    muatBahanBukti();
+    if (BT() && bahanBukti.data) setTimeout(() => segarBandingBukti(b.pihak), 0);
     const rows = S.bukti[b.pihak];
     const w = b.pihak;
     if (!rows) return `<div class="bd-f lebar" data-f="${b.kode}"><div class="bd-fh"><label>${esc(b.nama)}</label>${ikonSumber(`bukti:${w}`, b.nama, ketItem(b))}</div><p class="bd-catat">Membaca bukti bawaan dari ABT…</p></div>`;
@@ -6999,15 +7085,19 @@
         : `<p class="bd-catat" role="status">${esc(oto.pesan)}</p>`
       : "";
     return (
-      `<div class="bd-f lebar" data-f="${b.kode}"><div class="bd-fh"><label>${esc(b.nama)}</label>${ikonSumber(`bukti:${w}`, b.nama, ketItem(b))}<span class="bd-status" data-status="${b.kode}">${esc(teksStatus(S.tersimpan[b.kode] || ""))}</span>${tombolLihat(b.kode)}</div>${keteranganOto}` +
+      `<div class="bd-f lebar" data-f="${b.kode}"><div class="bd-fh"><label>${esc(b.nama)}</label>${ikonSumber(`bukti:${w}`, b.nama, ketItem(b))}<span class="bd-status" data-status="${b.kode}">${esc(teksStatus(S.tersimpan[b.kode] || ""))}</span>${tombolLihat(b.kode)}${BT() ? `<button type="button" class="bd-btn kecil" data-bklengkap="${w}" title="Membuka semua alat bukti pihak ini dalam tampilan lengkap">Tampilan lengkap</button>` : ""}</div>${keteranganOto}` +
       rows
         .map((r, i) => {
           const kode = `${w}.${i + 1}`;
           const id = `${w}.${i}`;
           const manual = typeof r.manual === "string";
           const [lblNo, phNo] = LABEL_NOMOR[jenisBukti(r.nm)];
+          const kol = BT() ? BT().kolomBukti(r.nm) : { an: "Atas nama", no: lblNo, contohNo: phNo, tgl: "Tanggal" };
+          const tandaSipp = (isi) => (BT() ? `<span class="bd-bsipp" data-bkbanding="${id}" data-isi="${isi}"></span>` : "");
+          const adaPindaian = BT() ? Boolean(berkasBukti(r.nm)) : false;
           const kepala =
             `<div class="bd-bkepala"><span class="bd-kodeP">${kode}</span><input class="bd-bnama" data-bk="${id}" data-isi="nm" value="${esc(r.nm)}" aria-label="Nama bukti ${kode}" ${manual ? "disabled" : ""}>` +
+            (adaPindaian && !manual ? `<button type="button" class="bd-btn kecil" data-bkpindai="${id}" aria-expanded="false">Lihat pindaian</button>` : "") +
             `<button type="button" class="bd-btn kecil" data-bkmanual="${id}" aria-pressed="${manual}" title="${manual ? "Kembali menyusun kalimat dari isian" : "Sunting kalimat bukti ini bebas (bentuk bukti beragam)"}">${manual ? "Pakai isian" : "Tulis manual"}</button>` +
             `<button type="button" class="bd-ikon" data-bkhapus="${id}" aria-label="Hapus bukti ${kode}">✕</button></div>`;
           if (manual)
@@ -7017,13 +7107,14 @@
             );
           return (
             `<div class="bd-bukti">${kepala}` +
-            `<div class="bd-bgrid"><label>Atas nama<input data-bk="${id}" data-isi="an" value="${esc(r.an || "")}" placeholder="boleh kosong"></label><label>${lblNo}<input data-bk="${id}" data-isi="no" value="${esc(r.no)}" placeholder="${esc(phNo)}"></label><label>Tanggal<input type="date" data-bk="${id}" data-isi="tgl" value="${esc(r.tgl)}"></label><label class="dua2">Dikeluarkan oleh<input data-bk="${id}" data-isi="oleh" value="${esc(r.oleh)}" placeholder="boleh kosong"></label></div>` +
+            `<div class="bd-bpindaiwadah" data-bkpindaiwadah="${id}" hidden></div>` +
+            `<div class="bd-bgrid"><label>${esc(kol.an)}<input data-bk="${id}" data-isi="an" value="${esc(r.an || "")}" placeholder="boleh kosong">${tandaSipp("an")}</label><label>${esc(kol.no)}<input data-bk="${id}" data-isi="no" value="${esc(r.no)}" placeholder="${esc(kol.contohNo)}">${tandaSipp("no")}</label><label>${esc(kol.tgl)}<input type="date" data-bk="${id}" data-isi="tgl" value="${esc(r.tgl)}">${tandaSipp("tgl")}</label><label class="dua2">Dikeluarkan oleh<input data-bk="${id}" data-isi="oleh" value="${esc(r.oleh)}" placeholder="boleh kosong">${tandaSipp("oleh")}</label></div>` +
             `<div class="bd-bgrid bd-bpilih"><label>Meterai<select data-bk="${id}" data-isi="meterai">${PIL_METERAI.map((o, j) => `<option value="${j}" ${Number(r.meterai) === j ? "selected" : ""}>${o}</option>`).join("")}</select></label><label class="dua2">Dicocokkan dengan aslinya<select data-bk="${id}" data-isi="cocok">${PIL_COCOK.map((o, j) => `<option value="${j}" ${Number(r.cocok) === j ? "selected" : ""}>${o}</option>`).join("")}</select></label></div>` +
             `</div>`
           );
         })
         .join("") +
-      `<div class="bd-baris"><span class="bd-lbl">Tambah bukti</span>${BUKTI_CEPAT.map(([n, o]) => `<button type="button" class="bd-chip bd-tombolchip" data-bktambah="${w}" data-nama="${esc(n)}" data-oleh="${esc(o)}">+ ${esc(n)}</button>`).join("")}<button type="button" class="bd-chip bd-tombolchip" data-bktambah="${w}" data-nama="" data-oleh="">+ Bukti lain</button></div>${htmlBukabt(w, "surat")}${htmlBuktiEl(w)}</div>`
+      `<div class="bd-baris"><span class="bd-lbl">Tambah bukti</span>${BUKTI_CEPAT.map(([n, o]) => `<button type="button" class="bd-chip bd-tombolchip" data-bktambah="${w}" data-nama="${esc(n)}" data-oleh="${esc(o)}">+ ${esc(n)}</button>`).join("")}<button type="button" class="bd-chip bd-tombolchip" data-bktambah="${w}" data-nama="" data-oleh="">+ Bukti lain</button>${BT() ? `<select class="bd-bkatalog" data-bkkatalog="${w}" aria-label="Tambah bukti dari katalog">${BT().htmlKatalogSurat(esc)}</select>` : ""}</div>${htmlBukabt(w, "surat")}${htmlBuktiEl(w)}</div>`
     );
   }
   // ── Alat bukti elektronik (27 Okt): tersembunyi bawaan, dibuka lewat "+ Alat bukti elektronik"; hasilnya ikut ruas alat bukti surat ──
@@ -7081,7 +7172,7 @@
       .join("");
     return (
       `<div class="bd-bel">${kepala}<datalist id="bd-bentukel-${w}">${BENTUK_EL.map(([n]) => `<option value="${esc(n)}"></option>`).join("")}</datalist>${tiap}` +
-      `<div class="bd-baris"><button type="button" class="bd-chip bd-tombolchip" data-beltambah="${w}">+ Butir bukti elektronik</button><label class="bd-cek"><input type="checkbox" data-benomori="${w}" ${el.nomori !== false ? "checked" : ""}> Beri nomor urut di depan butir</label></div>${htmlBukabt(w, "el")}</div>`
+      `<div class="bd-baris"><button type="button" class="bd-chip bd-tombolchip" data-beltambah="${w}">+ Butir bukti elektronik</button>${BT() ? `<select class="bd-bkatalog" data-belkatalog="${w}" aria-label="Tambah bukti elektronik dari katalog">${BT().htmlKatalogElektronik(esc)}</select>` : ""}<label class="bd-cek"><input type="checkbox" data-benomori="${w}" ${el.nomori !== false ? "checked" : ""}> Beri nomor urut di depan butir</label></div>${htmlBukabt(w, "el")}</div>`
     );
   }
   /** Bagian tertutup "Isian tambahan (bila ada)" di bawah kartu wajib; terbuka sendiri bila salah satunya sudah berisi. */
@@ -11151,6 +11242,16 @@
       if (i) i.focus();
       return;
     }
+    const bukaLengkapBukti = c("[data-bklengkap]");
+    if (bukaLengkapBukti) return bukaBuktiLengkap(bukaLengkapBukti.getAttribute("data-bklengkap"));
+    const pindaiBukti = c("[data-bkpindai]");
+    if (pindaiBukti) return tukarPindaian(pindaiBukti.getAttribute("data-bkpindai"), pindaiBukti);
+    const pakaiSipp = c("[data-bkpakai]");
+    if (pakaiSipp) {
+      e.preventDefault();
+      const [wp, ip] = pakaiSipp.getAttribute("data-bkpakai").split(".");
+      return pakaiDataSipp(wp, Number(ip), pakaiSipp.getAttribute("data-isi"));
+    }
     const tambahBukti = c("[data-bktambah]");
     if (tambahBukti) {
       const w = tambahBukti.getAttribute("data-bktambah");
@@ -11628,6 +11729,7 @@
         S.peringat = false;
         renderProgres();
         segarStatusBuktiAbt(w);
+        segarBandingBukti(w);
       }
       return;
     }
@@ -11739,6 +11841,30 @@
       }
       return;
     }
+    const katalogSurat = t.getAttribute && t.getAttribute("data-bkkatalog");
+    if (katalogSurat && BT()) {
+      const j = BT().katalogMenurutKunci(t.value);
+      t.value = "";
+      if (j) {
+        if (!S.bukti[katalogSurat]) S.bukti[katalogSurat] = [];
+        S.bukti[katalogSurat].push(buktiBaru(`Fotokopi ${j.nama}`, j.oleh));
+        simpanBukti(katalogSurat, false);
+        renderIsian();
+      }
+      return;
+    }
+    const katalogEl = t.getAttribute && t.getAttribute("data-belkatalog");
+    if (katalogEl && BT()) {
+      const j = BT().elektronikMenurutKunci(t.value);
+      t.value = "";
+      if (j) {
+        const el = elPihak(katalogEl);
+        el.butir.push({ ...butirElBaru(katalogEl, awalanBawaanEl(S.bukti[katalogEl], katalogEl)), bentuk: j.bentuk, objek: j.objek });
+        simpanBukti(katalogEl, false);
+        renderIsian();
+      }
+      return;
+    }
     const bk = t.getAttribute && t.getAttribute("data-bk");
     if (bk !== null && bk !== undefined) {
       const [w, i] = bk.split(".");
@@ -11747,6 +11873,7 @@
         const isi = t.getAttribute("data-isi");
         r[isi] = t.tagName === "SELECT" ? Number(t.value) : t.value;
         simpanBukti(w, true);
+        segarBandingBukti(w);
       }
       return;
     }

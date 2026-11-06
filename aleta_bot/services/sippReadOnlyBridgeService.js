@@ -3333,6 +3333,8 @@ async function handleBridgeOperation(operation, params = {}) {
     "case.pertimbangan": getPertimbanganHukum,
     "case.pemeriksaanSaksi": getPemeriksaanSaksi,
     // G1 30 Okt: tanggal relaas panggilan per pihak (aturan 11120/11121) untuk Periksa sebelum cetak Blangko Derry. Baca saja.
+    // 6 Nov 2026: nama, NIK, dan data pernikahan untuk pemeriksaan alat bukti tertulis. Baca saja; NIK utuh berhenti di rute portal.
+    "case.buktiSipp": (input) => require("./buktiSippService").buktiSipp((sql, p) => runReadOnly(normalizeConnectionKey(input && input.connectionKey), sql, p), input && input.perkaraId),
     "case.relaasPanggilan": (input) => require("./relaasPanggilanService").tanggalRelaasPerPihak((sql, p) => runReadOnly(normalizeConnectionKey(input && input.connectionKey), sql, p), input && input.perkaraId),
     "abt.katalogTanyaJawab": getKatalogTanyaJawab,
     "abt.tanyaJawab": getTanyaJawab,

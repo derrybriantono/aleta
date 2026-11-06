@@ -57,6 +57,17 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.80",
+    dirilis: "2026-11-06T22:00:00+08:00",
+    judul: "Alat bukti tertulis dan elektronik: katalog, tanda beda dengan SIPP, dan tampilan lengkap",
+    butir: [
+      "Kotak alat bukti di Blangko ABT by Derry menyesuaikan jenis bukti dan menandai isian KTP serta Kutipan Akta Nikah yang berbeda dari SIPP, lengkap dengan tombol Pakai data SIPP.",
+      "Katalog 108 jenis bukti surat dan 74 jenis bukti elektronik bisa dipilih saat menambah bukti.",
+      "Tombol Tampilan lengkap membuka semua bukti dalam pop-up, dan Lihat pindaian membuka berkasnya dari arsip e-Court.",
+      "Layar cetak ALETA ABT menampilkan pemeriksaan yang sama. Di sana perubahan belum tersimpan ke ABT; kalimatnya bisa disalin.",
+    ],
+  },
+  {
     versi: "1.205.79",
     dirilis: "2026-11-06T19:00:00+08:00",
     judul: "Pilih sendiri bagian naskah yang diperbaiki dengan centang",

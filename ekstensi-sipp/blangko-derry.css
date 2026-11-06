@@ -956,3 +956,43 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar .bd-kertas .bd-lh.nyala.kos { background: var(--lh-kos); }
 #aleta-bd-akar .bd-kertas .bd-lh.aktif { background: var(--lh-aktif); color: var(--ink); outline: 2px solid var(--lh-garis); outline-offset: 1px; }
 #aleta-bd-akar .bd-kertas .bd-lh.aktif.kos { background: var(--lh-kos-aktif); color: var(--lh-kos-tulis); outline-color: var(--lh-kos-garis); }
+
+/* ===== 6 Nov 2026: alat bukti tertulis: tanda beda dengan SIPP, pindaian, katalog, dan tampilan lengkap sebagai pop-up. Semua warna dari variabel tema panel. ===== */
+#aleta-bd-akar .bd-bsipp:empty { display: none; }
+#aleta-bd-akar .bd-bsipp { font-size: 12px; font-weight: 600; }
+#aleta-bd-akar .bd-bsipp.sama { color: var(--ok); }
+#aleta-bd-akar .bd-bsipp.beda { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; color: var(--warn); background: var(--warnbg); border-radius: 6px; padding: 4px 6px; }
+#aleta-bd-akar .bd-bsipp.beda > span { flex: 1 1 120px; min-width: 0; }
+#aleta-bd-akar .bd-bpindaiwadah iframe { width: 100%; height: 420px; border: 1px solid var(--line); border-radius: 8px; }
+#aleta-bd-akar .bd-bkatalog { background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 2px 8px; height: 30px; font-size: 13px; max-width: min(100%, 300px); }
+#aleta-bd-akar .bd-blk-tirai { z-index: 70; align-items: center; padding: 16px; }
+#aleta-bd-akar .bd-blk { width: min(1160px, 100%); height: min(92vh, 1000px); display: flex; flex-direction: column; background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+#aleta-bd-akar .bd-blk-kepala { flex: none; display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--hijau); color: var(--bd-teks-di-hijau); }
+#aleta-bd-akar .bd-blk-kepala b { flex: 1; min-width: 0; font-size: 15px; }
+#aleta-bd-akar .bd-blk-keluar { width: 36px; height: 36px; border: 0; border-radius: 7px; background: transparent; color: var(--bd-teks-di-hijau); font-size: 22px; line-height: 1; }
+#aleta-bd-akar .bd-blk-isi { flex: 1; min-height: 0; overflow: auto; padding: 16px; display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+#aleta-bd-akar .bd-blk-daftar { flex: 1 1 260px; max-width: 320px; min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+#aleta-bd-akar .bd-blk-pilih { text-align: left; color: inherit; background: var(--panel); min-height: 44px; border: 1px solid var(--line); border-radius: 8px; padding: 10px; display: flex; gap: 10px; }
+#aleta-bd-akar .bd-blk-pilih[aria-current="true"] { border-color: var(--ok); background: var(--okbg); }
+#aleta-bd-akar .bd-blk-pilih b { color: var(--accent); flex: none; width: 34px; }
+#aleta-bd-akar .bd-blk-pilih small { display: block; font-size: 12px; color: var(--muted); }
+#aleta-bd-akar .bd-blk-kanan { flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+#aleta-bd-akar .bd-blk-kartu { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+#aleta-bd-akar .bd-blk-judul { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; justify-content: space-between; }
+#aleta-bd-akar .bd-blk-judul b { font-size: 20px; }
+#aleta-bd-akar .bd-blk-judul b span { color: var(--accent); }
+#aleta-bd-akar .bd-blk-kuat { font-size: 13px; font-weight: 600; color: var(--ok); background: var(--okbg); border-radius: 999px; padding: 4px 12px; }
+#aleta-bd-akar .bd-blk-dua { display: flex; flex-wrap: wrap; gap: 18px; }
+#aleta-bd-akar .bd-blk-pindai { flex: 1 1 240px; min-width: 0; min-height: 190px; border: 1px dashed var(--line); border-radius: 8px; background: var(--deep); display: flex; align-items: center; justify-content: center; text-align: center; padding: 12px; font-size: 13px; color: var(--muted); }
+#aleta-bd-akar .bd-blk-pindai iframe { width: 100%; height: 340px; border: 0; }
+#aleta-bd-akar .bd-blk-medan { flex: 2 1 340px; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+#aleta-bd-akar .bd-blk label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; color: var(--fg); }
+#aleta-bd-akar .bd-blk input, #aleta-bd-akar .bd-blk select { font-size: 15px; font-weight: 400; min-height: 40px; width: 100%; padding: 6px 10px; border-radius: 7px; background: var(--deep); color: var(--fg); border: 1px solid var(--line); }
+#aleta-bd-akar .bd-blk-tanda { font-size: 12px; font-weight: 600; color: var(--ok); }
+#aleta-bd-akar .bd-blk-tanda.beda { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; color: var(--warn); background: var(--warnbg); border-radius: 7px; padding: 6px 8px; }
+#aleta-bd-akar .bd-blk-tanda.beda span { flex: 1 1 160px; min-width: 0; }
+#aleta-bd-akar .bd-blk-tanda button { font-size: 12px; font-weight: 700; min-height: 32px; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--warn); background: var(--panel); color: var(--warn); }
+#aleta-bd-akar .bd-blk-bunyi { font-family: "Times New Roman", serif; font-size: 17px; line-height: 1.6; background: var(--deep); border-radius: 8px; padding: 14px 16px; }
+#aleta-bd-akar .bd-blk-aksi { display: flex; justify-content: flex-end; }
+#aleta-bd-akar .bd-blk-aksi button { font-size: 14px; font-weight: 700; min-height: 44px; padding: 8px 16px; border-radius: 8px; border: 1px solid var(--hijau); background: var(--hijau); color: var(--bd-teks-di-hijau); }
+#aleta-bd-akar .bd-blk-catat { font-size: 12px; line-height: 1.5; color: var(--muted); }

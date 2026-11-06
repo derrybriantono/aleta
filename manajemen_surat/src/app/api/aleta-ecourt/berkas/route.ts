@@ -73,7 +73,9 @@ export async function GET(request: NextRequest) {
       status: 200,
       headers: {
         "Content-Type": respons.headers.get("content-type") || "application/octet-stream",
-        "Content-Disposition": respons.headers.get("content-disposition") || "attachment",
+        // tampil=1: pindaian dibuka di dalam halaman (pemeriksaan alat bukti), bukan diunduh. Selain itu perilaku lama.
+        "Content-Disposition":
+          request.nextUrl.searchParams.get("tampil") === "1" && format === "pdf" ? "inline" : respons.headers.get("content-disposition") || "attachment",
         "Content-Length": String(isi.byteLength),
         "Cache-Control": "no-store",
       },

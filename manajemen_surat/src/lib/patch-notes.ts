@@ -41,6 +41,7 @@ export const PATCH_NOTES: PatchNote[] = [
       "Warna ALETA ABT mengikuti tema Blangko ABT by Derry.",
       "Mesin isian membuang tanda kurung kurawal kosong dan memberi peringatan tanggal yang tidak wajar.",
       "Pemeriksaan naskah sebelum diunduh atau sebelum putus punya centang per temuan: yang dicentang diperbaiki, yang tidak dicentang dibiarkan. Berlaku di Blangko ABT by Derry, ALETA ABT, dan Putusan Otomatis.",
+      "Layar cetak ALETA ABT menampilkan pemeriksaan alat bukti tertulis dari naskah: isian dibandingkan dengan SIPP dan pindaian e-Court bisa dibuka.",
       "Cetak ALETA ABT hanya ditahan oleh ketikan dan tanya jawab wajib yang kosong, termasuk keterangan saksi yang hanya dibaca rumus; data yang belum ada di SIPP tampil sebagai perlu dilihat.",
     ],
     fixed: [

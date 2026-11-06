@@ -155,6 +155,8 @@ const BERKAS = [
   "blangko-derry-keadaan-posita.js",
   "blangko-derry-berkas.js",
   // Periksa sebelum cetak (G1, 30 Okt 2026): satu daftar temuan di langkah Cetak; murni, sebelum blangko-derry-isian.js.
+  "bukti-katalog.js",
+  "bukti-tertulis.js",
   "blangko-derry-periksa.js",
   // Keterangan pasif "N bagian berubah sejak cetakan terakhir" (30 Okt 2026) dan pustaka kalimat pribadi (30 Okt 2026); dimuat sebelum blangko-derry-isian.js.
   "blangko-derry-beda-cetak.js",
