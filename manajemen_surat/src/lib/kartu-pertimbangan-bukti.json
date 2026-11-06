@@ -1231,6 +1231,8 @@
    "id": "dk-formil-kabul",
    "kunci": [
     "ktp",
+    "kk",
+    "nikah",
     "kia",
     "lahir",
     "ijazah",
@@ -1339,6 +1341,8 @@
    "id": "dk-formil-tolak",
    "kunci": [
     "ktp",
+    "kk",
+    "nikah",
     "kia",
     "lahir",
     "ijazah",
@@ -1423,6 +1427,8 @@
    "id": "dk-cocok-tidak",
    "kunci": [
     "ktp",
+    "kk",
+    "nikah",
     "kia",
     "lahir",
     "ijazah",
@@ -1627,7 +1633,8 @@
      "alinea": 5,
      "sisiSumber": "P"
     }
-   ]
+   ],
+   "maks": 1
   },
   {
    "id": "dk-lahir-kabul",
@@ -1675,6 +1682,7 @@
      "sisiSumber": "P"
     }
    ],
+   "maks": 1,
    "butuh": [
     "anak"
    ]
@@ -1719,6 +1727,7 @@
      "sisiSumber": "P"
     }
    ],
+   "maks": 1,
    "butuh": [
     "anak"
    ]
@@ -1769,6 +1778,7 @@
      "sisiSumber": "P"
     }
    ],
+   "maks": 1,
    "butuh": [
     "anak"
    ]
@@ -1801,6 +1811,7 @@
      "sisiSumber": "P"
     }
    ],
+   "maks": 1,
    "anak": "P",
    "butuh": [
     "anak"
@@ -1834,6 +1845,7 @@
      "sisiSumber": "P"
     }
    ],
+   "maks": 1,
    "anak": "L",
    "butuh": [
     "anak"

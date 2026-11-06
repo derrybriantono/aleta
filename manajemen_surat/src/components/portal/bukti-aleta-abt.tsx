@@ -22,7 +22,7 @@ import {
   type BarisBukti,
   type DataSipp,
 } from "@/lib/bukti-tertulis";
-import { bacaKeadaan, susunParagrafBukti, type BuktiMasuk, type JenisCerai } from "@/lib/sinkron-pertimbangan-bukti";
+import { bacaKeadaan, jenisPerkaraBukti, permohonanBukti, susunParagrafBukti, type BuktiMasuk, type IsianPermohonan } from "@/lib/sinkron-pertimbangan-bukti";
 
 type Dokumen = { judul: string; documentKey: string };
 type Bahan = DataSipp & { dokumen: Dokumen[] };
@@ -214,7 +214,7 @@ export function BuktiAletaAbt({ alinea, perkaraId, nomor, jenisPerkara = "" }: {
           </div>
         </div>
       </CardContent>
-      <PertimbanganBukti daftar={daftar} alinea={alinea} jenisPerkara={jenisPerkara} tglNikah={bahan?.nikah?.tglNikah} />
+      <PertimbanganBukti daftar={daftar} alinea={alinea} jenisPerkara={jenisPerkara} tglNikah={bahan?.nikah?.tglNikah} jumlahPemohonSipp={bahan?.P?.length} />
     </Card>
   );
 }
@@ -241,11 +241,32 @@ function bacaDariNaskah(alinea: ReadonlyArray<{ teks: string }>): { status: stri
   return { status, verstek: /verstek|tidak pernah hadir/i.test(t) };
 }
 
+const ISIAN_LAYAR: ReadonlyArray<{ kunci: keyof IsianPermohonan; label: string; contoh: string; dk?: boolean }> = [
+  { kunci: "alamat", label: "Alamat Pemohon", contoh: "desa, kecamatan, kabupaten (untuk kalimat KTP)" },
+  { kunci: "anak", label: "Nama anak", contoh: "bila belum ada di akta kelahiran", dk: true },
+  { kunci: "calon", label: "Nama calon pasangan anak", contoh: "untuk kalimat penolakan KUA", dk: true },
+  { kunci: "usiaAnak", label: "Usia anak", contoh: "mis. 17 tahun 3 bulan", dk: true },
+  { kunci: "tglLahirAnak", label: "Tanggal lahir anak", contoh: "mis. 2008-05-14", dk: true },
+];
+
 /**
- * Pertimbangan dari alat bukti (cerai gugat dan cerai talak). Bunyi dari Blangko ABT by Derry Briantono lewat kartu aturan; layar ini hanya
- * menampilkan dan menyalin, tidak menyisipkan ke naskah dan tidak menulis ke SIPP atau ABT.
+ * Pertimbangan dari alat bukti (cerai gugat, cerai talak, itsbat nikah, dispensasi kawin). Bunyi dari Blangko ABT by Derry Briantono lewat kartu
+ * aturan; layar ini hanya menampilkan dan menyalin, tidak menyisipkan ke naskah dan tidak menulis ke SIPP atau ABT. Jenis perkara lain: kosong
+ * dengan keterangan.
  */
-function PertimbanganBukti({ daftar, alinea, jenisPerkara, tglNikah }: { daftar: Butir[]; alinea: ReadonlyArray<{ teks: string }>; jenisPerkara: string; tglNikah?: string }) {
+function PertimbanganBukti({
+  daftar,
+  alinea,
+  jenisPerkara,
+  tglNikah,
+  jumlahPemohonSipp,
+}: {
+  daftar: Butir[];
+  alinea: ReadonlyArray<{ teks: string }>;
+  jenisPerkara: string;
+  tglNikah?: string;
+  jumlahPemohonSipp?: number;
+}) {
   const awal = useMemo(() => bacaDariNaskah(alinea), [alinea]);
   const [status, setStatus] = useState(awal.status);
   const [verstek, setVerstek] = useState(awal.verstek);
@@ -253,27 +274,50 @@ function PertimbanganBukti({ daftar, alinea, jenisPerkara, tglNikah }: { daftar:
   const [agenda, setAgenda] = useState(0);
   const [dipilih, setDipilih] = useState<ReadonlySet<string>>(new Set());
   const [tersalin, setTersalin] = useState(false);
-  const jenisCerai: JenisCerai | null = /talak/i.test(jenisPerkara) ? "CT" : /cerai/i.test(jenisPerkara) ? "CG" : null;
+  const [jumlahPilih, setJumlahPilih] = useState<"" | "1" | "2">("");
+  const [anak, setAnak] = useState<"P" | "L">("P");
+  const [isian, setIsian] = useState<IsianPermohonan>({});
+  const jenis = jenisPerkaraBukti(jenisPerkara);
+  const permohonan = jenis ? permohonanBukti(jenis) : false;
+  const verstekPakai = permohonan ? false : verstek;
+  const jumlahPemohon = jumlahPilih ? Number(jumlahPilih) : jumlahPemohonSipp === 1 ? 1 : 2;
 
   const masuk: BuktiMasuk[] = daftar.map((x) => ({ sisi: x.sisi, nomor: x.nomor, baris: x.baris }));
   const hasil = useMemo(
     () =>
-      jenisCerai
-        ? susunParagrafBukti({ jenisCerai, status, verstek, lawanHadir: !verstek, lawanMembantah, agendaPembuktianKe: agenda, bukti: masuk, konteks: { tglNikah } })
+      jenis
+        ? susunParagrafBukti({
+            jenisPerkara: jenis,
+            status,
+            verstek: verstekPakai,
+            lawanHadir: !verstekPakai,
+            lawanMembantah,
+            agendaPembuktianKe: agenda,
+            bukti: masuk,
+            konteks: { tglNikah, jumlahPemohon, anak, isian },
+          })
         : null,
     // masuk dibuat ulang tiap render; isi daftar yang menentukan.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [jenisCerai, status, verstek, lawanMembantah, agenda, daftar, tglNikah]
+    [jenis, status, verstekPakai, lawanMembantah, agenda, daftar, tglNikah, jumlahPemohon, anak, isian]
   );
-  if (!jenisCerai || !hasil) return null;
+  if (!jenis || !hasil)
+    return (
+      <CardContent className="flex flex-col gap-2 border-t border-border pt-4">
+        <p className="text-lg font-bold">Pertimbangan dari alat bukti</p>
+        <p className="rounded-lg bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+          {jenisPerkara ? `Jenis perkara "${jenisPerkara}"` : "Jenis perkara ini"} belum punya bunyi pertimbangan alat bukti di blangko. Yang tersedia: cerai gugat, cerai talak, itsbat nikah (permohonan), dan dispensasi kawin.
+        </p>
+      </CardContent>
+    );
 
   const otomatis = hasil.paragraf.filter((p) => p.cara === "otomatis");
   const usulan = hasil.paragraf.filter((p) => p.cara === "usulan");
   const kunciUsulan = (p: { kode: string; bunyi: string }, i: number) => `${i}|${p.kode}|${p.bunyi.slice(0, 40)}`;
   const terpilih = usulan.filter((p, i) => dipilih.has(kunciUsulan(p, i)));
   const salinan = [...otomatis, ...terpilih].map((p) => p.bunyi).join("\n\n");
-  const bacaan = bacaKeadaan(status, verstek);
-  const bisaLawanBantah = !verstek && (bacaan.kunci === "kabul" || bacaan.kunci === "cabut");
+  const bacaan = bacaKeadaan(status, verstekPakai, permohonan);
+  const bisaLawanBantah = !permohonan && !verstek && (bacaan.kunci === "kabul" || bacaan.kunci === "cabut");
 
   return (
     <CardContent className="flex flex-col gap-4 border-t border-border pt-4">
@@ -307,10 +351,32 @@ function PertimbanganBukti({ daftar, alinea, jenisPerkara, tglNikah }: { daftar:
             </NativeSelect>
           </label>
         ) : null}
-        <label className="flex min-h-11 items-center justify-between gap-3 rounded-xl border border-border px-3 text-sm font-medium">
-          Lawan tidak hadir (verstek)
-          <Switch checked={verstek} onCheckedChange={setVerstek} aria-label="Lawan tidak hadir (verstek)" />
-        </label>
+        {!permohonan ? (
+          <label className="flex min-h-11 items-center justify-between gap-3 rounded-xl border border-border px-3 text-sm font-medium">
+            Lawan tidak hadir (verstek)
+            <Switch checked={verstek} onCheckedChange={setVerstek} aria-label="Lawan tidak hadir (verstek)" />
+          </label>
+        ) : (
+          <label className="flex flex-col gap-1 text-sm font-medium">
+            Jumlah Pemohon
+            <NativeSelect value={String(jumlahPemohon)} onChange={(e) => setJumlahPilih(e.target.value === "1" ? "1" : "2")}>
+              <option value="2">Dua atau lebih (para Pemohon)</option>
+              <option value="1">Satu Pemohon</option>
+            </NativeSelect>
+            <span className="text-xs font-normal text-muted-foreground">
+              {jumlahPilih ? "Dipilih sendiri." : jumlahPemohonSipp ? `Terbaca ${jumlahPemohonSipp} Pemohon dari SIPP.` : "Belum terbaca dari SIPP: dianggap dua."}
+            </span>
+          </label>
+        )}
+        {jenis === "DK" ? (
+          <label className="flex flex-col gap-1 text-sm font-medium">
+            Anak Pemohon
+            <NativeSelect value={anak} onChange={(e) => setAnak(e.target.value === "L" ? "L" : "P")}>
+              <option value="P">Perempuan</option>
+              <option value="L">Laki-laki</option>
+            </NativeSelect>
+          </label>
+        ) : null}
         {bisaLawanBantah ? (
           <label className="flex min-h-11 items-center justify-between gap-3 rounded-xl border border-border px-3 text-sm font-medium">
             Lawan membantah
@@ -318,6 +384,16 @@ function PertimbanganBukti({ daftar, alinea, jenisPerkara, tglNikah }: { daftar:
           </label>
         ) : null}
       </div>
+      {permohonan ? (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {ISIAN_LAYAR.filter((f) => jenis === "DK" || !f.dk).map((f) => (
+            <label key={f.kunci} className="flex flex-col gap-1 text-sm font-medium">
+              {f.label} <span className="text-xs font-normal text-muted-foreground">boleh kosong, {f.contoh}</span>
+              <Input value={isian[f.kunci] ?? ""} onChange={(e) => setIsian((s) => ({ ...s, [f.kunci]: e.target.value }))} />
+            </label>
+          ))}
+        </div>
+      ) : null}
       {hasil.catatan.map((c) => (
         <p key={c} className="rounded-lg bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
           {c}

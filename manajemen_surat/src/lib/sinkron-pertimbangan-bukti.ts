@@ -93,7 +93,7 @@ export const POKOK_PERKARA: Readonly<Record<JenisPerkaraBukti, ReadonlySet<strin
   CG: new Set(["ktp", "nikah"]),
   CT: new Set(["ktp", "nikah"]),
   IN: new Set(["ktp"]),
-  DK: new Set(["ktp", "kia", "lahir", "ijazah", "tolak", "hamil", "bidan"]),
+  DK: new Set(["ktp", "kk", "nikah", "kia", "lahir", "ijazah", "tolak", "hamil", "bidan"]),
 };
 /** Nama isian untuk pesan "Lengkapi dulu". */
 export const LABEL_ISIAN: Readonly<Record<string, string>> = {
@@ -192,7 +192,13 @@ function lolosSyarat(s: SyaratKartu | undefined, b: BuktiMasuk): boolean {
   return meterai(r) === 0 && cocok(r) === 0; // lengkap
 }
 const cocokKunci = (k: Kartu, jenis: string, pokok: ReadonlySet<string>) => (k.kunci === "*" ? !pokok.has(jenis) : k.kunci.includes(jenis));
-const rujukan = (k: Kartu) => (k.asal[0] ? `${k.asal[0].folder}, ${k.asal[0].berkas}, alinea ${k.asal[0].alinea + 1}` : (k.sumberKhusus ?? ""));
+const TANDA_BERKAS: Partial<Record<KeadaanKartu, RegExp>> = { kabul: /\[Kabul\]/, tolak: /\[Tolak\]/, tdt: /\[NO\]/ };
+/** Rujukan blangko; bila ada, yang berasal dari blangko keadaan yang sedang disusun (Kabul, Tolak, atau NO) didahulukan. */
+const rujukan = (k: Kartu, keadaan: KeadaanKartu) => {
+  const tanda = TANDA_BERKAS[keadaan];
+  const a = (tanda ? k.asal.find((x) => tanda.test(x.berkas)) : undefined) ?? k.asal[0];
+  return a ? `${a.folder}, ${a.berkas}, alinea ${a.alinea + 1}` : (k.sumberKhusus ?? "");
+};
 
 /** Jenis yang isinya tentang anak Pemohon (dispensasi kawin) dan yang aslinya dikeluarkan untuk perkara ini (bukan fotokopi menurut blangko). */
 const JENIS_ANAK = new Set(["lahir", "kia", "ijazah"]);
@@ -258,7 +264,7 @@ function susunUntuk(
     if (!belum.some((x) => x.kode === kode && x.alasan === alasan)) belum.push({ kode, kunci: jenisBuktiDari(b.baris.nm), nama: String(b.baris.nm ?? "").trim() || "Tanpa nama", alasan });
   };
   const keluar = (kar: Kartu, kode: string, jenisBukti: string, p: Pengganti) =>
-    paragraf.push({ kode, kunci: jenisBukti, bunyi: isiKartu(kar.bunyi, p, tanpaBantahan), cara: paksaUsulan || kar.kategori === "pelengkap" ? "usulan" : "otomatis", asal: rujukan(kar) });
+    paragraf.push({ kode, kunci: jenisBukti, bunyi: isiKartu(kar.bunyi, p, tanpaBantahan), cara: paksaUsulan || kar.kategori === "pelengkap" ? "usulan" : "otomatis", asal: rujukan(kar, keadaan) });
   const kurang = (kar: Kartu, p: Pengganti) => (kar.butuh ?? []).filter((n) => !rapi(p[n]));
 
   const terbaca = new Set<BuktiMasuk>();
