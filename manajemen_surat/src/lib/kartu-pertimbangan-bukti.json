@@ -1,7 +1,7 @@
 {
- "versi": 2,
+ "versi": 3,
  "sumber": "Blangko ABT by Derry Briantono, isi blangko tanpa data perkara",
- "dibuat": "2026-11-06",
+ "dibuat": "2026-11-07",
  "kartu": [
   {
    "id": "verstek-ktp",
@@ -2224,6 +2224,1863 @@
     }
    ],
    "catatan": "Blangko menulis alinea ini untuk bukti elektronik Tergugat atau Termohon yang tidak dapat dicocokkan dan tidak disertai digital forensic, pada putusan dikabulkan dengan lawan hadir dan tidak membantah. Hanya sebagai usulan karena bukti elektronik adalah bukti pelengkap."
+  },
+  {
+   "id": "hb-formil-verstek",
+   "kunci": [
+    "kb-ktp",
+    "kb-kk",
+    "kb-nikah",
+    "kb-cerai",
+    "kb-tanah",
+    "kb-kendaraan",
+    "kb-uang"
+   ],
+   "perkara": [
+    "HB"
+   ],
+   "keadaan": [
+    "kabul-verstek",
+    "tolak-verstek"
+   ],
+   "sisi": "P",
+   "kategori": "pokok",
+   "syarat": "lengkap",
+   "kelompok": true,
+   "bunyi": "Menimbang, bahwa bukti-bukti surat yang diajukan {pihak} telah bermeterai cukup dan dinazegelen sesuai Pasal 3 ayat (1) huruf b dan Pasal 5 serta Pasal 28 huruf b dan huruf c Undang-Undang Nomor 10 Tahun 2020, dan yang berupa fotokopi telah dicocokkan dengan aslinya sesuai Pasal 1888 Kitab Undang-Undang Hukum Perdata, sedangkan akta otentik yang dikeluarkan oleh pejabat yang berwenang mempunyai kekuatan pembuktian sempurna dan mengikat sebagaimana {pasalAkta};",
+   "asal": [
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01b] [Kabul Verstek] HB.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[02a] [Kabul] HB - T Tidak Hadir Setelah Mediasi.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[03b] [Tolak Verstek] HB - Objek Bukan Harta Bersama.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    }
+   ]
+  },
+  {
+   "id": "hb-formil-kontra-p",
+   "kunci": [
+    "kb-ktp",
+    "kb-kk",
+    "kb-nikah",
+    "kb-cerai",
+    "kb-tanah",
+    "kb-kendaraan",
+    "kb-uang"
+   ],
+   "perkara": [
+    "HB"
+   ],
+   "keadaan": [
+    "kabul"
+   ],
+   "sisi": "P",
+   "kategori": "pokok",
+   "syarat": "lengkap",
+   "kelompok": true,
+   "bunyi": "Menimbang, bahwa bukti-bukti surat {pihak} telah bermeterai cukup dan telah dinazegelen sesuai Pasal 3 ayat (1) huruf b, Pasal 5 serta Pasal 28 huruf b dan huruf c Undang-Undang Nomor 10 Tahun 2020 tentang Bea Meterai, dan yang berupa fotokopi telah dicocokkan dan sesuai dengan aslinya sebagaimana ketentuan Pasal 1888 Kitab Undang-Undang Hukum Perdata, sehingga bukti-bukti tersebut patut dipertimbangkan lebih lanjut;",
+   "asal": [
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf",
+     "alinea": 15,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf",
+     "alinea": 15,
+     "sisiSumber": "P"
+    }
+   ]
+  },
+  {
+   "id": "hb-akta-kontra",
+   "kunci": [
+    "kb-ktp",
+    "kb-kk",
+    "kb-nikah",
+    "kb-cerai",
+    "kb-tanah",
+    "kb-kendaraan",
+    "kb-uang"
+   ],
+   "perkara": [
+    "HB"
+   ],
+   "keadaan": [
+    "kabul"
+   ],
+   "sisi": "PT",
+   "kategori": "pokok",
+   "kelompok": true,
+   "sekali": true,
+   "bunyi": "Menimbang, bahwa bukti surat yang dikeluarkan oleh pejabat yang berwenang merupakan akta otentik yang mempunyai kekuatan pembuktian sempurna dan mengikat (volledig en bindende bewijskracht) sesuai {pasalAkta} jo. Pasal 1868 Kitab Undang-Undang Hukum Perdata, sedangkan bukti surat di bawah tangan kekuatan pembuktiannya bergantung pada pengakuan pihak lawan dan persesuaiannya dengan alat bukti lain sebagaimana {pasalBawahTangan};",
+   "asal": [
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf",
+     "alinea": 16,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf",
+     "alinea": 16,
+     "sisiSumber": "P"
+    }
+   ]
+  },
+  {
+   "id": "hb-formil-kontra-t",
+   "kunci": [
+    "kb-ktp",
+    "kb-kk",
+    "kb-nikah",
+    "kb-cerai",
+    "kb-tanah",
+    "kb-kendaraan",
+    "kb-uang",
+    "kb-foto",
+    "kb-lain"
+   ],
+   "perkara": [
+    "HB"
+   ],
+   "keadaan": [
+    "kabul"
+   ],
+   "sisi": "T",
+   "kategori": "pokok",
+   "kelompok": true,
+   "bunyi": "Menimbang, bahwa terhadap syarat formil dan materiil bukti surat dan saksi-saksi {pihak}, {majelis} menunjuk pertimbangan alat bukti {lawan} di atas yang berlaku secara mutatis mutandis dalam pertimbangan ini;",
+   "asal": [
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf",
+     "alinea": 20,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf",
+     "alinea": 20,
+     "sisiSumber": "P"
+    }
+   ],
+   "periksa": "kalimat blangko ini juga menyebut saksi-saksi pihak lawan; hapus bagian itu bila perkara ini tidak punya saksi."
+  },
+  {
+   "id": "hb-elektronik-kontra",
+   "kunci": [
+    "elektronik"
+   ],
+   "perkara": [
+    "HB"
+   ],
+   "keadaan": [
+    "kabul"
+   ],
+   "sisi": "PT",
+   "kategori": "pelengkap",
+   "kelompok": true,
+   "sekali": true,
+   "bunyi": "Menimbang, bahwa bukti elektronik yang diajukan para pihak berupa hasil cetak Informasi dan/atau Dokumen Elektronik merupakan alat bukti yang sah sepanjang memenuhi syarat formil dan materiil sebagaimana Pasal 5 dan Pasal 6 Undang-Undang Nomor 11 Tahun 2008 tentang Informasi dan Transaksi Elektronik sebagaimana telah diubah terakhir dengan Undang-Undang Nomor 1 Tahun 2024, sehingga nilai pembuktiannya dipertimbangkan bersama-sama dengan alat bukti lainnya;",
+   "asal": [
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf",
+     "alinea": 21,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf",
+     "alinea": 21,
+     "sisiSumber": "P"
+    }
+   ]
+  },
+  {
+   "id": "hb-formil-tolak",
+   "kunci": [
+    "kb-ktp",
+    "kb-kk",
+    "kb-nikah",
+    "kb-cerai",
+    "kb-tanah",
+    "kb-kendaraan",
+    "kb-uang"
+   ],
+   "perkara": [
+    "HB"
+   ],
+   "keadaan": [
+    "tolak"
+   ],
+   "sisi": "PT",
+   "kategori": "pokok",
+   "syarat": "meterai0",
+   "kelompok": true,
+   "sekali": true,
+   "bunyi": "Menimbang, bahwa terhadap bukti surat yang diajukan para pihak, secara keseluruhan bukti-bukti tersebut telah bermeterai cukup dan telah dilakukan pemeteraian kemudian (nazegelen) sesuai ketentuan Pasal 3 ayat (1) huruf b, Pasal 5, serta Pasal 28 huruf b dan huruf c Undang-Undang Nomor 10 Tahun 2020 tentang Bea Meterai, sehingga telah memenuhi syarat untuk diajukan sebagai alat bukti di persidangan;",
+   "asal": [
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[03] [Tolak] HB - Kontradiktoir - Objek Bukan Harta Bersama.rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    }
+   ]
+  },
+  {
+   "id": "hb-akta-tolak",
+   "kunci": [
+    "kb-ktp",
+    "kb-kk",
+    "kb-nikah",
+    "kb-cerai",
+    "kb-tanah",
+    "kb-kendaraan",
+    "kb-uang"
+   ],
+   "perkara": [
+    "HB"
+   ],
+   "keadaan": [
+    "tolak"
+   ],
+   "sisi": "PT",
+   "kategori": "pokok",
+   "kelompok": true,
+   "sekali": true,
+   "bunyi": "Menimbang, bahwa terhadap akta otentik (authentieke akte) sebagaimana dimaksud Pasal 1868 Kitab Undang-Undang Hukum Perdata, {majelis} pada asasnya melekatkan kekuatan pembuktian yang sempurna dan mengikat sepanjang tidak terdapat bukti lawan (tegenbewijs) yang kuat mengenai cacat formil maupun materiilnya, sedangkan terhadap alat bukti berupa fotokopi, sesuai ketentuan Pasal 1888 Kitab Undang-Undang Hukum Perdata kekuatan pembuktiannya terletak pada aslinya, sehingga fotokopi yang tidak dapat dicocokkan dengan aslinya dinilai secara terbatas sebagai bukti permulaan;",
+   "asal": [
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[03] [Tolak] HB - Kontradiktoir - Objek Bukan Harta Bersama.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    }
+   ]
+  },
+  {
+   "id": "hb-ktp",
+   "kunci": [
+    "kb-ktp"
+   ],
+   "perkara": [
+    "HB"
+   ],
+   "keadaan": [
+    "kabul-verstek",
+    "tolak-verstek",
+    "kabul",
+    "tolak"
+   ],
+   "sisi": "PT",
+   "kategori": "pokok",
+   "syarat": "lengkap",
+   "kelompok": true,
+   "bunyi": "Menimbang, bahwa bukti {kode} (Kartu Tanda Penduduk) telah bermeterai cukup, di-nazegelen, dan cocok dengan aslinya, merupakan akta otentik yang mempunyai kekuatan pembuktian sempurna dan mengikat (volledig bidende bewijskracht) sesuai {pasalAkta} jo. Pasal 1868 Kitab Undang-Undang Hukum Perdata, yang membuktikan identitas dan tempat tinggal para pihak;",
+   "asal": [
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf",
+     "alinea": 16,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf",
+     "alinea": 21,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf",
+     "alinea": 16,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf",
+     "alinea": 21,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01b] [Kabul Verstek] HB.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[02a] [Kabul] HB - T Tidak Hadir Setelah Mediasi.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[03] [Tolak] HB - Kontradiktoir - Objek Bukan Harta Bersama.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[03b] [Tolak Verstek] HB - Objek Bukan Harta Bersama.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    }
+   ],
+   "rumus": {
+    "no": "4807",
+    "cabang": "k1"
+   }
+  },
+  {
+   "id": "hb-kk",
+   "kunci": [
+    "kb-kk"
+   ],
+   "perkara": [
+    "HB"
+   ],
+   "keadaan": [
+    "kabul-verstek",
+    "tolak-verstek",
+    "kabul",
+    "tolak"
+   ],
+   "sisi": "PT",
+   "kategori": "pokok",
+   "syarat": "lengkap",
+   "kelompok": true,
+   "bunyi": "Menimbang, bahwa bukti {kode} (Kartu Keluarga) telah bermeterai cukup, di-nazegelen, dan cocok dengan aslinya, merupakan akta otentik yang mempunyai kekuatan pembuktian sempurna dan mengikat (volledig bidende bewijskracht) sesuai {pasalAkta} jo. Pasal 1868 Kitab Undang-Undang Hukum Perdata, yang membuktikan susunan keluarga dan tempat tinggal para pihak;",
+   "asal": [
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf",
+     "alinea": 16,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf",
+     "alinea": 21,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf",
+     "alinea": 16,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf",
+     "alinea": 21,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01b] [Kabul Verstek] HB.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[02a] [Kabul] HB - T Tidak Hadir Setelah Mediasi.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[03] [Tolak] HB - Kontradiktoir - Objek Bukan Harta Bersama.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[03b] [Tolak Verstek] HB - Objek Bukan Harta Bersama.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    }
+   ],
+   "rumus": {
+    "no": "4807",
+    "cabang": "k2"
+   }
+  },
+  {
+   "id": "hb-nikah",
+   "kunci": [
+    "kb-nikah"
+   ],
+   "perkara": [
+    "HB"
+   ],
+   "keadaan": [
+    "kabul-verstek",
+    "tolak-verstek",
+    "kabul",
+    "tolak"
+   ],
+   "sisi": "PT",
+   "kategori": "pokok",
+   "syarat": "lengkap",
+   "kelompok": true,
+   "bunyi": "Menimbang, bahwa bukti {kode} (Kutipan Akta Nikah) telah bermeterai cukup, di-nazegelen, dan cocok dengan aslinya, merupakan akta otentik yang mempunyai kekuatan pembuktian sempurna dan mengikat (volledig bidende bewijskracht) sesuai {pasalAkta} jo. Pasal 1868 Kitab Undang-Undang Hukum Perdata, yang membuktikan adanya perkawinan yang sah antara {penggugat} dan {tergugat} sehingga masa perkawinan dihitung sejak tanggal perkawinan tersebut;",
+   "asal": [
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf",
+     "alinea": 16,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf",
+     "alinea": 21,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf",
+     "alinea": 16,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf",
+     "alinea": 21,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01b] [Kabul Verstek] HB.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[02a] [Kabul] HB - T Tidak Hadir Setelah Mediasi.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[03] [Tolak] HB - Kontradiktoir - Objek Bukan Harta Bersama.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[03b] [Tolak Verstek] HB - Objek Bukan Harta Bersama.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    }
+   ],
+   "rumus": {
+    "no": "4807",
+    "cabang": "k3"
+   }
+  },
+  {
+   "id": "hb-cerai",
+   "kunci": [
+    "kb-cerai"
+   ],
+   "perkara": [
+    "HB"
+   ],
+   "keadaan": [
+    "kabul-verstek",
+    "tolak-verstek",
+    "kabul",
+    "tolak"
+   ],
+   "sisi": "PT",
+   "kategori": "pokok",
+   "syarat": "lengkap",
+   "kelompok": true,
+   "bunyi": "Menimbang, bahwa bukti {kode} (akta cerai atau putusan perceraian) telah bermeterai cukup, di-nazegelen, dan cocok dengan aslinya, merupakan akta otentik yang mempunyai kekuatan pembuktian sempurna dan mengikat (volledig bidende bewijskracht) sesuai {pasalAkta} jo. Pasal 1868 Kitab Undang-Undang Hukum Perdata, yang membuktikan bahwa perkawinan {penggugat} dan {tergugat} telah putus karena perceraian yang berkekuatan hukum tetap, sehingga harta bersama dapat dibagi sesuai Pasal 37 Undang-Undang Nomor 1 Tahun 1974 jo. Pasal 97 Kompilasi Hukum Islam;",
+   "asal": [
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf",
+     "alinea": 16,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf",
+     "alinea": 21,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf",
+     "alinea": 16,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf",
+     "alinea": 21,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01b] [Kabul Verstek] HB.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[02a] [Kabul] HB - T Tidak Hadir Setelah Mediasi.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[03] [Tolak] HB - Kontradiktoir - Objek Bukan Harta Bersama.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[03b] [Tolak Verstek] HB - Objek Bukan Harta Bersama.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    }
+   ],
+   "rumus": {
+    "no": "4807",
+    "cabang": "k4"
+   }
+  },
+  {
+   "id": "hb-tanah",
+   "kunci": [
+    "kb-tanah"
+   ],
+   "perkara": [
+    "HB"
+   ],
+   "keadaan": [
+    "kabul-verstek",
+    "tolak-verstek",
+    "kabul",
+    "tolak"
+   ],
+   "sisi": "PT",
+   "kategori": "pokok",
+   "syarat": "lengkap",
+   "kelompok": true,
+   "bunyi": "Menimbang, bahwa bukti {kode} (surat-surat hak atas tanah dan bangunan) telah bermeterai cukup, di-nazegelen, dan cocok dengan aslinya, yang membuktikan nama yang tercatat sebagai pemegang hak, letak, luas dan waktu perolehan objek; nama yang tercatat dalam bukti tersebut tidak menentukan status objek sebagai harta bersama, sebab status harta ditentukan oleh waktu dan cara perolehannya sebagaimana Pasal 35 ayat (1) Undang-Undang Nomor 1 Tahun 1974, sehingga bukti tersebut dinilai bersama keterangan saksi dan alat bukti lainnya;",
+   "asal": [
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf",
+     "alinea": 16,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf",
+     "alinea": 21,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf",
+     "alinea": 16,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf",
+     "alinea": 21,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01b] [Kabul Verstek] HB.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[02a] [Kabul] HB - T Tidak Hadir Setelah Mediasi.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[03] [Tolak] HB - Kontradiktoir - Objek Bukan Harta Bersama.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[03b] [Tolak Verstek] HB - Objek Bukan Harta Bersama.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    }
+   ],
+   "rumus": {
+    "no": "4807",
+    "cabang": "k5"
+   }
+  },
+  {
+   "id": "hb-kendaraan",
+   "kunci": [
+    "kb-kendaraan"
+   ],
+   "perkara": [
+    "HB"
+   ],
+   "keadaan": [
+    "kabul-verstek",
+    "tolak-verstek",
+    "kabul",
+    "tolak"
+   ],
+   "sisi": "PT",
+   "kategori": "pokok",
+   "syarat": "lengkap",
+   "kelompok": true,
+   "bunyi": "Menimbang, bahwa bukti {kode} (surat-surat kendaraan bermotor) telah bermeterai cukup, di-nazegelen, dan cocok dengan aslinya, yang membuktikan identitas kendaraan dan nama yang tercatat; nama yang tercatat dalam bukti tersebut tidak menentukan status kendaraan sebagai harta bersama, sebab status harta ditentukan oleh waktu dan cara perolehannya sebagaimana Pasal 35 ayat (1) Undang-Undang Nomor 1 Tahun 1974, sehingga bukti tersebut dinilai bersama keterangan saksi dan alat bukti lainnya;",
+   "asal": [
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf",
+     "alinea": 16,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf",
+     "alinea": 21,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf",
+     "alinea": 16,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf",
+     "alinea": 21,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01b] [Kabul Verstek] HB.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[02a] [Kabul] HB - T Tidak Hadir Setelah Mediasi.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[03] [Tolak] HB - Kontradiktoir - Objek Bukan Harta Bersama.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[03b] [Tolak Verstek] HB - Objek Bukan Harta Bersama.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    }
+   ],
+   "rumus": {
+    "no": "4807",
+    "cabang": "k6"
+   }
+  },
+  {
+   "id": "hb-uang",
+   "kunci": [
+    "kb-uang"
+   ],
+   "perkara": [
+    "HB"
+   ],
+   "keadaan": [
+    "kabul-verstek",
+    "tolak-verstek",
+    "kabul",
+    "tolak"
+   ],
+   "sisi": "PT",
+   "kategori": "pokok",
+   "syarat": "lengkap",
+   "kelompok": true,
+   "bunyi": "Menimbang, bahwa bukti {kode} (surat-surat keuangan, perbankan atau tanda pembayaran) telah bermeterai cukup, di-nazegelen, dan cocok dengan aslinya, yang merupakan surat di bawah tangan atau bukti dari lembaga keuangan, kekuatan pembuktiannya bergantung pada pengakuan pihak lawan dan persesuaiannya dengan alat bukti lain sebagaimana {pasalBawahTangan}, serta relevan dengan dalil perolehan dan nilai objek;",
+   "asal": [
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf",
+     "alinea": 16,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf",
+     "alinea": 21,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf",
+     "alinea": 16,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf",
+     "alinea": 21,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01b] [Kabul Verstek] HB.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[02a] [Kabul] HB - T Tidak Hadir Setelah Mediasi.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[03] [Tolak] HB - Kontradiktoir - Objek Bukan Harta Bersama.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[03b] [Tolak Verstek] HB - Objek Bukan Harta Bersama.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    }
+   ],
+   "rumus": {
+    "no": "4807",
+    "cabang": "k7"
+   }
+  },
+  {
+   "id": "hb-foto",
+   "kunci": [
+    "kb-foto"
+   ],
+   "perkara": [
+    "HB"
+   ],
+   "keadaan": [
+    "kabul-verstek",
+    "tolak-verstek",
+    "kabul",
+    "tolak"
+   ],
+   "sisi": "PT",
+   "kategori": "pelengkap",
+   "kelompok": true,
+   "bunyi": "Menimbang, bahwa bukti {kode} (foto, tangkapan layar atau rekaman) merupakan bukti elektronik yang sah sepanjang memenuhi syarat formil dan materiil sebagaimana Pasal 5 dan Pasal 6 Undang-Undang Nomor 11 Tahun 2008 tentang Informasi dan Transaksi Elektronik sebagaimana telah diubah terakhir dengan Undang-Undang Nomor 1 Tahun 2024, sehingga nilai pembuktiannya dipertimbangkan bersama alat bukti lainnya;",
+   "asal": [
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf",
+     "alinea": 16,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf",
+     "alinea": 21,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf",
+     "alinea": 16,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf",
+     "alinea": 21,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01b] [Kabul Verstek] HB.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[02a] [Kabul] HB - T Tidak Hadir Setelah Mediasi.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[03] [Tolak] HB - Kontradiktoir - Objek Bukan Harta Bersama.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[03b] [Tolak Verstek] HB - Objek Bukan Harta Bersama.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    }
+   ],
+   "rumus": {
+    "no": "4807",
+    "cabang": "k8"
+   }
+  },
+  {
+   "id": "hb-lain",
+   "kunci": [
+    "kb-lain"
+   ],
+   "perkara": [
+    "HB"
+   ],
+   "keadaan": [
+    "kabul-verstek",
+    "tolak-verstek",
+    "kabul",
+    "tolak"
+   ],
+   "sisi": "PT",
+   "kategori": "pelengkap",
+   "syarat": "lengkap",
+   "kelompok": true,
+   "bunyi": "Menimbang, bahwa bukti {kode} telah bermeterai cukup, di-nazegelen, dan cocok dengan aslinya, serta relevan dengan dalil yang hendak dibuktikan oleh {penggugat} dan {tergugat};",
+   "asal": [
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf",
+     "alinea": 16,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf",
+     "alinea": 21,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf",
+     "alinea": 16,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf",
+     "alinea": 21,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[01b] [Kabul Verstek] HB.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[02a] [Kabul] HB - T Tidak Hadir Setelah Mediasi.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[03] [Tolak] HB - Kontradiktoir - Objek Bukan Harta Bersama.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4a Harta Bersama",
+     "berkas": "[03b] [Tolak Verstek] HB - Objek Bukan Harta Bersama.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    }
+   ],
+   "rumus": {
+    "no": "4807",
+    "cabang": "k99"
+   }
+  },
+  {
+   "id": "hb-cocok-tidak",
+   "kunci": [
+    "kb-ktp",
+    "kb-kk",
+    "kb-nikah",
+    "kb-cerai",
+    "kb-tanah",
+    "kb-kendaraan",
+    "kb-uang"
+   ],
+   "perkara": [
+    "HB"
+   ],
+   "keadaan": [
+    "kabul-verstek",
+    "tolak-verstek",
+    "kabul",
+    "tolak"
+   ],
+   "sisi": "PT",
+   "kategori": "pokok",
+   "syarat": "cocok1",
+   "kelompok": true,
+   "bunyi": "- Bahwa bukti {kode} adalah fotokopi yang tidak dapat dicocokkan dengan aslinya;",
+   "asal": [],
+   "sumberKhusus": "Keputusan pemilik: bukti tanpa asli cukup berbunyi \"tidak dapat dicocokkan dengan aslinya\". Bunyi tidak ada di blangko."
+  },
+  {
+   "id": "hb-cocok-tidak-lain",
+   "kunci": [
+    "kb-foto",
+    "kb-lain"
+   ],
+   "perkara": [
+    "HB"
+   ],
+   "keadaan": [
+    "kabul-verstek",
+    "tolak-verstek",
+    "kabul",
+    "tolak"
+   ],
+   "sisi": "PT",
+   "kategori": "pelengkap",
+   "syarat": "cocok1",
+   "kelompok": true,
+   "bunyi": "- Bahwa bukti {kode} adalah fotokopi yang tidak dapat dicocokkan dengan aslinya;",
+   "asal": [],
+   "sumberKhusus": "Keputusan pemilik: bukti tanpa asli cukup berbunyi \"tidak dapat dicocokkan dengan aslinya\". Bunyi tidak ada di blangko."
+  },
+  {
+   "id": "kw-formil-verstek",
+   "kunci": [
+    "kb-ktp",
+    "kb-kk",
+    "kb-mati",
+    "kb-nikah",
+    "kb-lahir",
+    "kb-silsilah",
+    "kb-tanah",
+    "kb-uang"
+   ],
+   "perkara": [
+    "KW"
+   ],
+   "keadaan": [
+    "kabul-verstek",
+    "tolak-verstek"
+   ],
+   "sisi": "P",
+   "kategori": "pokok",
+   "syarat": "lengkap",
+   "kelompok": true,
+   "bunyi": "Menimbang, bahwa bukti-bukti surat yang diajukan {pihak} telah bermeterai cukup dan dinazegelen sesuai Pasal 3 ayat (1) huruf b dan Pasal 5 serta Pasal 28 huruf b dan huruf c Undang-Undang Nomor 10 Tahun 2020, dan yang berupa fotokopi telah dicocokkan dengan aslinya sesuai Pasal 1888 Kitab Undang-Undang Hukum Perdata, sedangkan akta otentik yang dikeluarkan oleh pejabat yang berwenang mempunyai kekuatan pembuktian sempurna dan mengikat sebagaimana {pasalAkta};",
+   "asal": [
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01a] [Kabul] Kewarisan - T Tidak Hadir Setelah Mediasi.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01b] [Kabul Verstek] Kewarisan.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[03b] [Tolak Verstek] Kewarisan - Dalil Tidak Terbukti.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    }
+   ]
+  },
+  {
+   "id": "kw-formil-kontra",
+   "kunci": [
+    "kb-ktp",
+    "kb-kk",
+    "kb-mati",
+    "kb-nikah",
+    "kb-lahir",
+    "kb-silsilah",
+    "kb-tanah",
+    "kb-uang"
+   ],
+   "perkara": [
+    "KW"
+   ],
+   "keadaan": [
+    "kabul",
+    "tolak"
+   ],
+   "sisi": "PT",
+   "kategori": "pokok",
+   "syarat": "meterai0",
+   "kelompok": true,
+   "sekali": true,
+   "bunyi": "Menimbang, bahwa terhadap bukti surat yang diajukan para pihak, secara keseluruhan bukti-bukti tersebut telah bermeterai cukup dan telah dilakukan pemeteraian kemudian (nazegelen) sesuai ketentuan Pasal 3 ayat (1) huruf b, Pasal 5, serta Pasal 28 huruf b dan huruf c Undang-Undang Nomor 10 Tahun 2020 tentang Bea Meterai, sehingga telah memenuhi syarat untuk diajukan sebagai alat bukti di persidangan;",
+   "asal": [
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01] [Kabul] Kewarisan - Kontradiktoir.rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01c] [Kabul] Kewarisan - Kontradiktoir - Pencabutan Ditolak T Sesudah Jawaban.rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[03] [Tolak] Kewarisan - Kontradiktoir - Dalil Tidak Terbukti.rtf",
+     "alinea": 6,
+     "sisiSumber": "P"
+    }
+   ]
+  },
+  {
+   "id": "kw-akta-kontra",
+   "kunci": [
+    "kb-ktp",
+    "kb-kk",
+    "kb-mati",
+    "kb-nikah",
+    "kb-lahir",
+    "kb-silsilah",
+    "kb-tanah",
+    "kb-uang"
+   ],
+   "perkara": [
+    "KW"
+   ],
+   "keadaan": [
+    "kabul",
+    "tolak"
+   ],
+   "sisi": "PT",
+   "kategori": "pokok",
+   "kelompok": true,
+   "sekali": true,
+   "bunyi": "Menimbang, bahwa terhadap akta otentik (authentieke akte) sebagaimana dimaksud Pasal 1868 Kitab Undang-Undang Hukum Perdata, {majelis} pada asasnya melekatkan kekuatan pembuktian yang sempurna dan mengikat sepanjang tidak terdapat bukti lawan (tegenbewijs) yang kuat mengenai cacat formil maupun materiilnya, sedangkan terhadap alat bukti berupa fotokopi, sesuai ketentuan Pasal 1888 Kitab Undang-Undang Hukum Perdata kekuatan pembuktiannya terletak pada aslinya, sehingga fotokopi yang tidak dapat dicocokkan dengan aslinya dinilai secara terbatas sebagai bukti permulaan;",
+   "asal": [
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01] [Kabul] Kewarisan - Kontradiktoir.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01c] [Kabul] Kewarisan - Kontradiktoir - Pencabutan Ditolak T Sesudah Jawaban.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[03] [Tolak] Kewarisan - Kontradiktoir - Dalil Tidak Terbukti.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    }
+   ]
+  },
+  {
+   "id": "kw-ktp",
+   "kunci": [
+    "kb-ktp"
+   ],
+   "perkara": [
+    "KW"
+   ],
+   "keadaan": [
+    "kabul-verstek",
+    "tolak-verstek",
+    "kabul",
+    "tolak"
+   ],
+   "sisi": "PT",
+   "kategori": "pokok",
+   "syarat": "lengkap",
+   "kelompok": true,
+   "bunyi": "Menimbang, bahwa bukti {kode} (Kartu Tanda Penduduk) telah bermeterai cukup, di-nazegelen, dan cocok dengan aslinya, merupakan akta otentik yang mempunyai kekuatan pembuktian sempurna dan mengikat (volledig bidende bewijskracht) sesuai {pasalAkta} jo. Pasal 1868 Kitab Undang-Undang Hukum Perdata, yang membuktikan identitas dan tempat tinggal pihak yang bersangkutan;",
+   "asal": [
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01] [Kabul] Kewarisan - Kontradiktoir.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01a] [Kabul] Kewarisan - T Tidak Hadir Setelah Mediasi.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01b] [Kabul Verstek] Kewarisan.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01c] [Kabul] Kewarisan - Kontradiktoir - Pencabutan Ditolak T Sesudah Jawaban.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[03] [Tolak] Kewarisan - Kontradiktoir - Dalil Tidak Terbukti.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[03b] [Tolak Verstek] Kewarisan - Dalil Tidak Terbukti.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    }
+   ],
+   "rumus": {
+    "no": "4829",
+    "cabang": "k1"
+   }
+  },
+  {
+   "id": "kw-kk",
+   "kunci": [
+    "kb-kk"
+   ],
+   "perkara": [
+    "KW"
+   ],
+   "keadaan": [
+    "kabul-verstek",
+    "tolak-verstek",
+    "kabul",
+    "tolak"
+   ],
+   "sisi": "PT",
+   "kategori": "pokok",
+   "syarat": "lengkap",
+   "kelompok": true,
+   "bunyi": "Menimbang, bahwa bukti {kode} (Kartu Keluarga) telah bermeterai cukup, di-nazegelen, dan cocok dengan aslinya, merupakan akta otentik yang mempunyai kekuatan pembuktian sempurna dan mengikat (volledig bidende bewijskracht) sesuai {pasalAkta} jo. Pasal 1868 Kitab Undang-Undang Hukum Perdata, yang membuktikan susunan keluarga dan hubungan para pihak dengan pewaris;",
+   "asal": [
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01] [Kabul] Kewarisan - Kontradiktoir.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01a] [Kabul] Kewarisan - T Tidak Hadir Setelah Mediasi.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01b] [Kabul Verstek] Kewarisan.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01c] [Kabul] Kewarisan - Kontradiktoir - Pencabutan Ditolak T Sesudah Jawaban.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[03] [Tolak] Kewarisan - Kontradiktoir - Dalil Tidak Terbukti.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[03b] [Tolak Verstek] Kewarisan - Dalil Tidak Terbukti.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    }
+   ],
+   "rumus": {
+    "no": "4829",
+    "cabang": "k2"
+   }
+  },
+  {
+   "id": "kw-mati",
+   "kunci": [
+    "kb-mati"
+   ],
+   "perkara": [
+    "KW"
+   ],
+   "keadaan": [
+    "kabul-verstek",
+    "tolak-verstek",
+    "kabul",
+    "tolak"
+   ],
+   "sisi": "PT",
+   "kategori": "pokok",
+   "syarat": "lengkap",
+   "kelompok": true,
+   "bunyi": "Menimbang, bahwa bukti {kode} (akta atau surat keterangan kematian) telah bermeterai cukup, di-nazegelen, dan cocok dengan aslinya, merupakan akta otentik yang mempunyai kekuatan pembuktian sempurna dan mengikat (volledig bidende bewijskracht) sesuai {pasalAkta} jo. Pasal 1868 Kitab Undang-Undang Hukum Perdata[[, yang membuktikan telah meninggalnya {almarhum} {pewaris} sebagai pewaris sehingga warisan terbuka]];",
+   "asal": [
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01] [Kabul] Kewarisan - Kontradiktoir.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01a] [Kabul] Kewarisan - T Tidak Hadir Setelah Mediasi.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01b] [Kabul Verstek] Kewarisan.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01c] [Kabul] Kewarisan - Kontradiktoir - Pencabutan Ditolak T Sesudah Jawaban.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[03] [Tolak] Kewarisan - Kontradiktoir - Dalil Tidak Terbukti.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[03b] [Tolak Verstek] Kewarisan - Dalil Tidak Terbukti.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    }
+   ],
+   "rumus": {
+    "no": "4829",
+    "cabang": "k3"
+   },
+   "catatan": "Nama pewaris dari isian layar; bila kosong, anak kalimat \"yang membuktikan telah meninggalnya ...\" tidak ditulis."
+  },
+  {
+   "id": "kw-nikah",
+   "kunci": [
+    "kb-nikah"
+   ],
+   "perkara": [
+    "KW"
+   ],
+   "keadaan": [
+    "kabul-verstek",
+    "tolak-verstek",
+    "kabul",
+    "tolak"
+   ],
+   "sisi": "PT",
+   "kategori": "pokok",
+   "syarat": "lengkap",
+   "kelompok": true,
+   "bunyi": "Menimbang, bahwa bukti {kode} (Kutipan Akta Nikah) telah bermeterai cukup, di-nazegelen, dan cocok dengan aslinya, merupakan akta otentik yang mempunyai kekuatan pembuktian sempurna dan mengikat (volledig bidende bewijskracht) sesuai {pasalAkta} jo. Pasal 1868 Kitab Undang-Undang Hukum Perdata, yang membuktikan adanya perkawinan yang sah antara pewaris dengan pasangannya;",
+   "asal": [
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01] [Kabul] Kewarisan - Kontradiktoir.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01a] [Kabul] Kewarisan - T Tidak Hadir Setelah Mediasi.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01b] [Kabul Verstek] Kewarisan.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01c] [Kabul] Kewarisan - Kontradiktoir - Pencabutan Ditolak T Sesudah Jawaban.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[03] [Tolak] Kewarisan - Kontradiktoir - Dalil Tidak Terbukti.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[03b] [Tolak Verstek] Kewarisan - Dalil Tidak Terbukti.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    }
+   ],
+   "rumus": {
+    "no": "4829",
+    "cabang": "k4"
+   }
+  },
+  {
+   "id": "kw-lahir",
+   "kunci": [
+    "kb-lahir"
+   ],
+   "perkara": [
+    "KW"
+   ],
+   "keadaan": [
+    "kabul-verstek",
+    "tolak-verstek",
+    "kabul",
+    "tolak"
+   ],
+   "sisi": "PT",
+   "kategori": "pokok",
+   "syarat": "lengkap",
+   "kelompok": true,
+   "bunyi": "Menimbang, bahwa bukti {kode} (akta atau surat keterangan kelahiran) telah bermeterai cukup, di-nazegelen, dan cocok dengan aslinya, merupakan akta otentik yang mempunyai kekuatan pembuktian sempurna dan mengikat (volledig bidende bewijskracht) sesuai {pasalAkta} jo. Pasal 1868 Kitab Undang-Undang Hukum Perdata, yang membuktikan hubungan nasab anak dengan orang tuanya;",
+   "asal": [
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01] [Kabul] Kewarisan - Kontradiktoir.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01a] [Kabul] Kewarisan - T Tidak Hadir Setelah Mediasi.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01b] [Kabul Verstek] Kewarisan.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01c] [Kabul] Kewarisan - Kontradiktoir - Pencabutan Ditolak T Sesudah Jawaban.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[03] [Tolak] Kewarisan - Kontradiktoir - Dalil Tidak Terbukti.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[03b] [Tolak Verstek] Kewarisan - Dalil Tidak Terbukti.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    }
+   ],
+   "rumus": {
+    "no": "4829",
+    "cabang": "k5"
+   }
+  },
+  {
+   "id": "kw-silsilah",
+   "kunci": [
+    "kb-silsilah"
+   ],
+   "perkara": [
+    "KW"
+   ],
+   "keadaan": [
+    "kabul-verstek",
+    "tolak-verstek",
+    "kabul",
+    "tolak"
+   ],
+   "sisi": "PT",
+   "kategori": "pokok",
+   "syarat": "lengkap",
+   "kelompok": true,
+   "bunyi": "Menimbang, bahwa bukti {kode} (surat keterangan atau penetapan tentang ahli waris dan silsilah) telah bermeterai cukup, di-nazegelen, dan cocok dengan aslinya, yang menjelaskan silsilah keluarga pewaris dan para ahli warisnya, sehingga bukti tersebut dinilai bersama keterangan saksi-saksi dan alat bukti lainnya;",
+   "asal": [
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01] [Kabul] Kewarisan - Kontradiktoir.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01a] [Kabul] Kewarisan - T Tidak Hadir Setelah Mediasi.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01b] [Kabul Verstek] Kewarisan.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01c] [Kabul] Kewarisan - Kontradiktoir - Pencabutan Ditolak T Sesudah Jawaban.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[03] [Tolak] Kewarisan - Kontradiktoir - Dalil Tidak Terbukti.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[03b] [Tolak Verstek] Kewarisan - Dalil Tidak Terbukti.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    }
+   ],
+   "rumus": {
+    "no": "4829",
+    "cabang": "k6"
+   }
+  },
+  {
+   "id": "kw-tanah",
+   "kunci": [
+    "kb-tanah"
+   ],
+   "perkara": [
+    "KW"
+   ],
+   "keadaan": [
+    "kabul-verstek",
+    "tolak-verstek",
+    "kabul",
+    "tolak"
+   ],
+   "sisi": "PT",
+   "kategori": "pokok",
+   "syarat": "lengkap",
+   "kelompok": true,
+   "bunyi": "Menimbang, bahwa bukti {kode} (surat-surat hak atas tanah, bangunan atau kendaraan) telah bermeterai cukup, di-nazegelen, dan cocok dengan aslinya, yang membuktikan nama yang tercatat sebagai pemegang hak, letak dan luas objek; nama yang tercatat dalam bukti tersebut tidak menentukan objek sebagai harta peninggalan pewaris, sehingga bukti tersebut dinilai bersama keterangan saksi dan alat bukti lainnya;",
+   "asal": [
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01] [Kabul] Kewarisan - Kontradiktoir.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01a] [Kabul] Kewarisan - T Tidak Hadir Setelah Mediasi.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01b] [Kabul Verstek] Kewarisan.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01c] [Kabul] Kewarisan - Kontradiktoir - Pencabutan Ditolak T Sesudah Jawaban.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[03] [Tolak] Kewarisan - Kontradiktoir - Dalil Tidak Terbukti.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[03b] [Tolak Verstek] Kewarisan - Dalil Tidak Terbukti.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    }
+   ],
+   "rumus": {
+    "no": "4829",
+    "cabang": "k7"
+   }
+  },
+  {
+   "id": "kw-uang",
+   "kunci": [
+    "kb-uang"
+   ],
+   "perkara": [
+    "KW"
+   ],
+   "keadaan": [
+    "kabul-verstek",
+    "tolak-verstek",
+    "kabul",
+    "tolak"
+   ],
+   "sisi": "PT",
+   "kategori": "pokok",
+   "syarat": "lengkap",
+   "kelompok": true,
+   "bunyi": "Menimbang, bahwa bukti {kode} (surat-surat keuangan, perbankan, jaminan sosial atau tanda pembayaran) telah bermeterai cukup, di-nazegelen, dan cocok dengan aslinya, yang kekuatan pembuktiannya bergantung pada persesuaiannya dengan alat bukti lain sebagaimana {pasalBawahTangan}, serta relevan dengan dalil tentang harta peninggalan pewaris;",
+   "asal": [
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01] [Kabul] Kewarisan - Kontradiktoir.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01a] [Kabul] Kewarisan - T Tidak Hadir Setelah Mediasi.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01b] [Kabul Verstek] Kewarisan.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01c] [Kabul] Kewarisan - Kontradiktoir - Pencabutan Ditolak T Sesudah Jawaban.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[03] [Tolak] Kewarisan - Kontradiktoir - Dalil Tidak Terbukti.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[03b] [Tolak Verstek] Kewarisan - Dalil Tidak Terbukti.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    }
+   ],
+   "rumus": {
+    "no": "4829",
+    "cabang": "k8"
+   }
+  },
+  {
+   "id": "kw-foto",
+   "kunci": [
+    "kb-foto"
+   ],
+   "perkara": [
+    "KW"
+   ],
+   "keadaan": [
+    "kabul-verstek",
+    "tolak-verstek",
+    "kabul",
+    "tolak"
+   ],
+   "sisi": "PT",
+   "kategori": "pelengkap",
+   "kelompok": true,
+   "bunyi": "Menimbang, bahwa bukti {kode} (foto, tangkapan layar atau rekaman) merupakan bukti elektronik yang sah sepanjang memenuhi syarat formil dan materiil sebagaimana Pasal 5 dan Pasal 6 Undang-Undang Nomor 11 Tahun 2008 tentang Informasi dan Transaksi Elektronik sebagaimana telah diubah terakhir dengan Undang-Undang Nomor 1 Tahun 2024, sehingga nilai pembuktiannya dipertimbangkan bersama alat bukti lainnya;",
+   "asal": [
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01] [Kabul] Kewarisan - Kontradiktoir.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01a] [Kabul] Kewarisan - T Tidak Hadir Setelah Mediasi.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01b] [Kabul Verstek] Kewarisan.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01c] [Kabul] Kewarisan - Kontradiktoir - Pencabutan Ditolak T Sesudah Jawaban.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[03] [Tolak] Kewarisan - Kontradiktoir - Dalil Tidak Terbukti.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[03b] [Tolak Verstek] Kewarisan - Dalil Tidak Terbukti.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    }
+   ],
+   "rumus": {
+    "no": "4829",
+    "cabang": "k9"
+   }
+  },
+  {
+   "id": "kw-lain",
+   "kunci": [
+    "kb-lain"
+   ],
+   "perkara": [
+    "KW"
+   ],
+   "keadaan": [
+    "kabul-verstek",
+    "tolak-verstek",
+    "kabul",
+    "tolak"
+   ],
+   "sisi": "PT",
+   "kategori": "pelengkap",
+   "syarat": "lengkap",
+   "kelompok": true,
+   "bunyi": "Menimbang, bahwa bukti {kode} telah bermeterai cukup, di-nazegelen, dan cocok dengan aslinya, serta relevan dengan dalil yang hendak dibuktikan oleh {penggugat} dan {tergugat};",
+   "asal": [
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01] [Kabul] Kewarisan - Kontradiktoir.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01a] [Kabul] Kewarisan - T Tidak Hadir Setelah Mediasi.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01b] [Kabul Verstek] Kewarisan.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[01c] [Kabul] Kewarisan - Kontradiktoir - Pencabutan Ditolak T Sesudah Jawaban.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[03] [Tolak] Kewarisan - Kontradiktoir - Dalil Tidak Terbukti.rtf",
+     "alinea": 7,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "4b Kewarisan",
+     "berkas": "[03b] [Tolak Verstek] Kewarisan - Dalil Tidak Terbukti.rtf",
+     "alinea": 3,
+     "sisiSumber": "P"
+    }
+   ],
+   "rumus": {
+    "no": "4829",
+    "cabang": "k99"
+   }
+  },
+  {
+   "id": "kw-cocok-tidak",
+   "kunci": [
+    "kb-ktp",
+    "kb-kk",
+    "kb-mati",
+    "kb-nikah",
+    "kb-lahir",
+    "kb-silsilah",
+    "kb-tanah",
+    "kb-uang"
+   ],
+   "perkara": [
+    "KW"
+   ],
+   "keadaan": [
+    "kabul-verstek",
+    "tolak-verstek",
+    "kabul",
+    "tolak"
+   ],
+   "sisi": "PT",
+   "kategori": "pokok",
+   "syarat": "cocok1",
+   "kelompok": true,
+   "bunyi": "- Bahwa bukti {kode} adalah fotokopi yang tidak dapat dicocokkan dengan aslinya;",
+   "asal": [],
+   "sumberKhusus": "Keputusan pemilik: bukti tanpa asli cukup berbunyi \"tidak dapat dicocokkan dengan aslinya\". Bunyi tidak ada di blangko."
+  },
+  {
+   "id": "kw-cocok-tidak-lain",
+   "kunci": [
+    "kb-foto",
+    "kb-lain"
+   ],
+   "perkara": [
+    "KW"
+   ],
+   "keadaan": [
+    "kabul-verstek",
+    "tolak-verstek",
+    "kabul",
+    "tolak"
+   ],
+   "sisi": "PT",
+   "kategori": "pelengkap",
+   "syarat": "cocok1",
+   "kelompok": true,
+   "bunyi": "- Bahwa bukti {kode} adalah fotokopi yang tidak dapat dicocokkan dengan aslinya;",
+   "asal": [],
+   "sumberKhusus": "Keputusan pemilik: bukti tanpa asli cukup berbunyi \"tidak dapat dicocokkan dengan aslinya\". Bunyi tidak ada di blangko."
+  },
+  {
+   "id": "paw-meterai-kabul",
+   "kunci": [
+    "kb-surat"
+   ],
+   "perkara": [
+    "PAW"
+   ],
+   "keadaan": [
+    "kabul"
+   ],
+   "sisi": "P",
+   "kategori": "pokok",
+   "syarat": "meterai0",
+   "kelompok": true,
+   "bunyi": "Menimbang, bahwa untuk menguatkan dalil {perkara}nya {para}{pihak} telah mengajukan bukti-bukti tertulis berupa fotokopi bermeterai cukup, maka {majelis} menilai alat bukti tersebut sah sebagai alat bukti berdasarkan Pasal 3 ayat (1) jo. Pasal 5 Undang-Undang Nomor 10 Tahun 2020 tentang Bea Meterai jo. Surat Edaran Direktorat Jenderal Badan Peradilan Agama Nomor 1 Tahun 2021 tentang Penyesuaian Bea Meterai di Lingkungan Peradilan Agama;",
+   "asal": [
+    {
+     "folder": "9 Penetapan Ahli Waris",
+     "berkas": "[01] [Kabul] PAW - Ahli Waris Anak Kandung (Suami-Istri dan Orang Tua Pewaris Telah Meninggal).rtf",
+     "alinea": 1,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "9 Penetapan Ahli Waris",
+     "berkas": "[01b] [Kabul] PAW - Susunan Ahli Waris Dinamis (Pasangan, Anak, Ayah, Ibu - Pertimbangan Bagian Otomatis).rtf",
+     "alinea": 1,
+     "sisiSumber": "P"
+    },
+    {
+     "folder": "9 Penetapan Ahli Waris",
+     "berkas": "[01c] [Kabul] PAW - Susunan Ahli Waris Lengkap (Cucu Pengganti, Kakek, Nenek, Saudara Seibu - Aul dan Radd Otomatis).rtf",
+     "alinea": 1,
+     "sisiSumber": "P"
+    }
+   ]
+  },
+  {
+   "id": "paw-formil-tolak",
+   "kunci": [
+    "kb-surat"
+   ],
+   "perkara": [
+    "PAW"
+   ],
+   "keadaan": [
+    "tolak"
+   ],
+   "sisi": "P",
+   "kategori": "pokok",
+   "syarat": "lengkap",
+   "kelompok": true,
+   "bunyi": "Menimbang, bahwa bukti-bukti surat yang diajukan {pihak} merupakan fotokopi akta autentik dan surat yang dikeluarkan oleh pejabat yang berwenang, telah bermeterai cukup, telah dinazegelen dan dicocokkan dengan aslinya, sehingga memenuhi syarat formil dan materiil sebagai alat bukti dan mempunyai kekuatan pembuktian yang sempurna dan mengikat sebagaimana dimaksud {pasalAkta} jo. Pasal 1870 KUH Perdata;",
+   "asal": [
+    {
+     "folder": "9 Penetapan Ahli Waris",
+     "berkas": "[03] [Tolak] PAW - Dalil Tidak Terbukti.rtf",
+     "alinea": 2,
+     "sisiSumber": "P"
+    }
+   ]
+  },
+  {
+   "id": "paw-cocok-tidak",
+   "kunci": [
+    "kb-surat"
+   ],
+   "perkara": [
+    "PAW"
+   ],
+   "keadaan": [
+    "kabul",
+    "tolak"
+   ],
+   "sisi": "P",
+   "kategori": "pokok",
+   "syarat": "cocok1",
+   "kelompok": true,
+   "bunyi": "- Bahwa bukti {kode} adalah fotokopi yang tidak dapat dicocokkan dengan aslinya;",
+   "asal": [],
+   "sumberKhusus": "Keputusan pemilik: bukti tanpa asli cukup berbunyi \"tidak dapat dicocokkan dengan aslinya\". Bunyi tidak ada di blangko."
   }
  ]
 }

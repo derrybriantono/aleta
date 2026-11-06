@@ -24,7 +24,17 @@ import {
   type ButirElektronik,
   type DataSipp,
 } from "@/lib/bukti-tertulis";
-import { bacaKeadaan, jenisPerkaraBukti, permohonanBukti, susunParagrafBukti, type BuktiMasuk, type IsianPermohonan, type ParagrafBukti } from "@/lib/sinkron-pertimbangan-bukti";
+import {
+  adaKalimatBantahan,
+  bacaKeadaan,
+  jenisPerkaraBukti,
+  permohonanBukti,
+  susunParagrafBukti,
+  type BuktiMasuk,
+  type IsianPermohonan,
+  type JenisPerkaraBukti,
+  type ParagrafBukti,
+} from "@/lib/sinkron-pertimbangan-bukti";
 import type { RencanaSisip } from "@/lib/sisip-pertimbangan-bukti";
 
 type Dokumen = { judul: string; documentKey: string };
@@ -262,6 +272,7 @@ function keteranganPeriksaEl(p: ButirElektronik["periksa"]): string {
 const PILIHAN_STATUS = [
   { nilai: "", teks: "Belum dipilih" },
   { nilai: "Dikabulkan", teks: "Dikabulkan" },
+  { nilai: "Dikabulkan sebagian", teks: "Dikabulkan sebagian" },
   { nilai: "Ditolak", teks: "Ditolak" },
   { nilai: "Tidak Dapat Diterima", teks: "Tidak dapat diterima" },
   { nilai: "Dicabut", teks: "Dicabut" },
@@ -278,7 +289,17 @@ const PILIHAN_AGENDA = [
 /** Keadaan putusan yang tertulis di naskah, sebagai tebakan awal yang bisa diubah. */
 function bacaDariNaskah(alinea: ReadonlyArray<{ teks: string }>): { status: string; verstek: boolean } {
   const t = alinea.map((a) => a.teks).join("\n");
-  const status = /tidak dapat diterima/i.test(t) ? "Tidak Dapat Diterima" : /mencabut|dicabut/i.test(t) ? "Dicabut" : /menolak/i.test(t) ? "Ditolak" : /mengabulkan/i.test(t) ? "Dikabulkan" : "";
+  const status = /tidak dapat diterima/i.test(t)
+    ? "Tidak Dapat Diterima"
+    : /mencabut|dicabut/i.test(t)
+      ? "Dicabut"
+      : /mengabulkan[^.]{0,80}sebagian/i.test(t)
+        ? "Dikabulkan sebagian"
+        : /menolak/i.test(t)
+          ? "Ditolak"
+          : /mengabulkan/i.test(t)
+            ? "Dikabulkan"
+            : "";
   return { status, verstek: /verstek|tidak pernah hadir/i.test(t) };
 }
 
@@ -296,16 +317,17 @@ function keteranganSisipan(masukkan: boolean, rencana: RencanaSisip | null): str
   return bagian.join(" ");
 }
 
-const ISIAN_LAYAR: ReadonlyArray<{ kunci: keyof IsianPermohonan; label: string; contoh: string; dk?: boolean }> = [
-  { kunci: "alamat", label: "Alamat Pemohon", contoh: "desa, kecamatan, kabupaten (untuk kalimat KTP)" },
-  { kunci: "anak", label: "Nama anak", contoh: "bila belum ada di akta kelahiran", dk: true },
-  { kunci: "calon", label: "Nama calon pasangan anak", contoh: "untuk kalimat penolakan KUA", dk: true },
-  { kunci: "usiaAnak", label: "Usia anak", contoh: "mis. 17 tahun 3 bulan", dk: true },
-  { kunci: "tglLahirAnak", label: "Tanggal lahir anak", contoh: "mis. 2008-05-14", dk: true },
+const ISIAN_LAYAR: ReadonlyArray<{ kunci: keyof IsianPermohonan; label: string; contoh: string; untuk: readonly JenisPerkaraBukti[] }> = [
+  { kunci: "alamat", label: "Alamat Pemohon", contoh: "desa, kecamatan, kabupaten (untuk kalimat KTP)", untuk: ["IN", "DK"] },
+  { kunci: "anak", label: "Nama anak", contoh: "bila belum ada di akta kelahiran", untuk: ["DK"] },
+  { kunci: "calon", label: "Nama calon pasangan anak", contoh: "untuk kalimat penolakan KUA", untuk: ["DK"] },
+  { kunci: "usiaAnak", label: "Usia anak", contoh: "mis. 17 tahun 3 bulan", untuk: ["DK"] },
+  { kunci: "tglLahirAnak", label: "Tanggal lahir anak", contoh: "mis. 2008-05-14", untuk: ["DK"] },
+  { kunci: "pewaris", label: "Nama pewaris", contoh: "untuk kalimat surat kematian, mis. Fulan bin Fulin", untuk: ["KW"] },
 ];
 
 /**
- * Pertimbangan dari alat bukti (cerai gugat, cerai talak, itsbat nikah, dispensasi kawin). Bunyi dari Blangko ABT by Derry Briantono lewat kartu
+ * Pertimbangan dari alat bukti (cerai gugat, cerai talak, itsbat nikah, dispensasi kawin, harta bersama, kewarisan, penetapan ahli waris). Bunyi dari Blangko ABT by Derry Briantono lewat kartu
  * aturan; layar ini hanya menampilkan dan menyalin, tidak menyisipkan ke naskah dan tidak menulis ke SIPP atau ABT. Jenis perkara lain: kosong
  * dengan keterangan.
  */
@@ -412,7 +434,7 @@ function PertimbanganBukti({
       <CardContent className="flex flex-col gap-2 border-t border-border pt-4">
         <p className="text-lg font-bold">Pertimbangan dari alat bukti</p>
         <p className="rounded-lg bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
-          {jenisPerkara ? `Jenis perkara "${jenisPerkara}"` : "Jenis perkara ini"} belum punya bunyi pertimbangan alat bukti di blangko. Yang tersedia: cerai gugat, cerai talak, itsbat nikah (permohonan), dan dispensasi kawin.
+          {jenisPerkara ? `Jenis perkara "${jenisPerkara}"` : "Jenis perkara ini"} belum punya bunyi pertimbangan alat bukti di blangko. Yang tersedia: cerai gugat, cerai talak, itsbat nikah (permohonan), dispensasi kawin, harta bersama, kewarisan, dan penetapan ahli waris.
         </p>
       </CardContent>
     );
@@ -420,7 +442,8 @@ function PertimbanganBukti({
   const salinan = [...otomatis, ...terpilih].map((p) => p.bunyi).join("\n\n");
   const bacaan = bacaKeadaan(status, verstekPakai, permohonan);
   const keteranganSisip = keteranganSisipan(masukkan, kunciNaskah ? rencana : null);
-  const bisaLawanBantah = !permohonan && !verstek && (bacaan.kunci === "kabul" || bacaan.kunci === "cabut");
+  const bisaLawanBantah = adaKalimatBantahan(jenis) && !verstek && (bacaan.kunci === "kabul" || bacaan.kunci === "cabut");
+  const isianLayar = ISIAN_LAYAR.filter((f) => f.untuk.includes(jenis));
 
   return (
     <CardContent className="flex flex-col gap-4 border-t border-border pt-4">
@@ -498,9 +521,9 @@ function PertimbanganBukti({
           </label>
         ) : null}
       </div>
-      {permohonan ? (
+      {isianLayar.length ? (
         <div className="grid gap-3 sm:grid-cols-2">
-          {ISIAN_LAYAR.filter((f) => jenis === "DK" || !f.dk).map((f) => (
+          {isianLayar.map((f) => (
             <label key={f.kunci} className="flex flex-col gap-1 text-sm font-medium">
               {f.label} <span className="text-xs font-normal text-muted-foreground">boleh kosong, {f.contoh}</span>
               <Input value={isian[f.kunci] ?? ""} onChange={(e) => setIsian((s) => ({ ...s, [f.kunci]: e.target.value }))} />

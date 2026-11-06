@@ -65,7 +65,8 @@ describe("jenis perkara dan keadaan permohonan", () => {
     expect(jenisPerkaraBukti("Itsbat Nikah")).toBe("IN");
     expect(jenisPerkaraBukti("Pengesahan Perkawinan/Istbat Nikah")).toBe("IN");
     expect(jenisPerkaraBukti("Itsbat Nikah Kontensius")).toBeNull();
-    expect(jenisPerkaraBukti("Harta Bersama")).toBeNull();
+    expect(jenisPerkaraBukti("Wasiat")).toBeNull();
+    expect(jenisPerkaraBukti("Hibah")).toBeNull();
     expect(jenisPerkaraBukti("")).toBeNull();
   });
   it("permohonan tidak menyebut lawan atau verstek", () => {
@@ -421,7 +422,7 @@ describe("layar Pertimbangan dari alat bukti", () => {
     expect(screen.queryByText("Jumlah Pemohon")).toBeNull();
   });
   it("jenis lain: kosong dengan keterangan", async () => {
-    pasang("Harta Bersama");
+    pasang("Wasiat");
     expect(await screen.findByText("Pertimbangan dari alat bukti")).toBeTruthy();
     expect(screen.getByText(/belum punya bunyi pertimbangan alat bukti di blangko/)).toBeTruthy();
     expect(screen.queryByText("Keadaan putusan")).toBeNull();

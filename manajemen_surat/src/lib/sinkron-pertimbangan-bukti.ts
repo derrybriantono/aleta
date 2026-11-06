@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * PERTIMBANGAN DARI ALAT BUKTI - CERAI GUGAT, CERAI TALAK, ITSBAT NIKAH, DISPENSASI KAWIN (6 Nov 2026)
+ * PERTIMBANGAN DARI ALAT BUKTI - CERAI, ITSBAT NIKAH, DISPENSASI KAWIN, HARTA BERSAMA, KEWARISAN, PENETAPAN AHLI WARIS (6-7 Nov 2026)
  * ============================================================================
  *
  * Penyusun murni (tanpa DOM, tanpa jaringan) untuk layar cetak ALETA ABT. Dari daftar alat bukti dan keadaan putusan, tersusun paragraf
@@ -18,6 +18,12 @@
  *
  * Itsbat nikah (IN) dan dispensasi kawin (DK) adalah permohonan: tidak ada lawan, jadi tidak ada verstek dan tidak ada kalimat "tidak dibantah".
  * Kartu mereka memakai keadaan kabul, tolak, dan tdt (tidak dapat diterima) menurut blangko Kabul, Tolak, dan NO.
+ *
+ * Perkara kebendaan (7 Nov 2026): harta bersama (HB) dan kewarisan (KW) adalah gugatan seperti cerai gugat (verstek dan kontradiktoir), penetapan
+ * ahli waris (PAW) adalah permohonan. Blangko mereka menilai bukti surat per KELOMPOK lewat rumus variabel 4807/4808 (HB) dan 4829/4830 (KW): rumus
+ * itu menggolongkan baris bukti menurut kata kunci pada namanya (urutan CASE menentukan; jenisKebendaan menirunya), lalu menulis satu kalimat per
+ * kelompok dengan daftar kode "P.1, P.2 dan P.3". Kalimat per kelompok ini diambil dari rumus (kartu ber-`rumus`), bukan dari SQL yang dijalankan.
+ * Rumus itu tidak membedakan meterai atau pencocokan: kelompok hanya ditulis untuk bukti yang bermeterai cukup dan dicocokkan (syarat "lengkap").
  */
 
 import { jenisBuktiDari, katalogDari, tanggalIndo, type BarisBukti } from "./bukti-tertulis";
@@ -25,8 +31,8 @@ import kartuJson from "./kartu-pertimbangan-bukti.json";
 import kartuUsulanJson from "./kartu-usulan-bukti.json";
 
 export type JenisCerai = "CG" | "CT";
-/** CG cerai gugat, CT cerai talak, IN itsbat nikah, DK dispensasi kawin. */
-export type JenisPerkaraBukti = "CG" | "CT" | "IN" | "DK";
+/** CG cerai gugat, CT cerai talak, IN itsbat nikah, DK dispensasi kawin, HB harta bersama, KW kewarisan, PAW penetapan ahli waris. */
+export type JenisPerkaraBukti = "CG" | "CT" | "IN" | "DK" | "HB" | "KW" | "PAW";
 export type KeadaanKartu = "kabul-verstek" | "kabul" | "tolak-verstek" | "tolak" | "tdt";
 /** elektronik0: bukti elektronik yang tidak dapat dicocokkan dan tidak disertai digital forensic, pada perkara yang lawannya hadir dan tidak membantah. */
 export type SyaratKartu = "meterai0" | "cocok0" | "cocok1" | "aktaOtentik" | "lengkap" | "elektronik0";
@@ -42,6 +48,10 @@ export type Kartu = {
   asal: AsalKartu[];
   syarat?: SyaratKartu;
   kelompok?: boolean;
+  /** Satu paragraf untuk bukti kedua sisi sekaligus ("para pihak"); kodenya gabungan P lalu T. Tidak memakai sebutan pihak menurut sisi. */
+  sekali?: boolean;
+  /** Kalimat kelompok ini diambil dari cabang rumus variabel blangko (no = nomor variabel Penggugat/Pemohon, cabang = k1, k2, ...). */
+  rumus?: { no: string; cabang: string };
   /** Hanya bukti ke-1 sampai ke-maks dari jenis yang sama pada sisi itu (mis. dua KTP Pemohon). */
   maks?: number;
   /** Hanya bila anak Pemohon perempuan (P) atau laki-laki (L); kosong = keduanya. */
@@ -85,8 +95,8 @@ export type BuktiMasuk = {
   /** Keadaan pemeriksaan bukti elektronik: 0 tidak dapat dicocokkan dan tanpa digital forensic, 1 dicocokkan dengan aslinya, 2 disertai hasil digital forensic; null tidak terbaca. */
   periksaEl?: 0 | 1 | 2 | null;
 };
-/** Isian tambahan untuk itsbat nikah dan dispensasi kawin; semuanya boleh kosong (bagian kalimat yang membutuhkannya tidak ditulis). */
-export type IsianPermohonan = { alamat?: string; anak?: string; calon?: string; usiaAnak?: string; tglLahirAnak?: string };
+/** Isian tambahan untuk itsbat nikah, dispensasi kawin, dan kewarisan (pewaris); semuanya boleh kosong (bagian kalimat yang membutuhkannya tidak ditulis). */
+export type IsianPermohonan = { alamat?: string; anak?: string; calon?: string; usiaAnak?: string; tglLahirAnak?: string; pewaris?: string };
 export type KonteksPerkara = {
   /** Nama pengadilan. Kosong: ditulis "Pengadilan ini". */
   satker?: string;
@@ -136,6 +146,9 @@ export const POKOK_PERKARA: Readonly<Record<JenisPerkaraBukti, ReadonlySet<strin
   CT: new Set(["ktp", "nikah"]),
   IN: new Set(["ktp"]),
   DK: new Set(["ktp", "kk", "nikah", "kia", "lahir", "ijazah", "tolak", "hamil", "bidan"]),
+  HB: new Set(["kb-ktp", "kb-kk", "kb-nikah", "kb-cerai", "kb-tanah", "kb-kendaraan", "kb-uang"]),
+  KW: new Set(["kb-ktp", "kb-kk", "kb-mati", "kb-nikah", "kb-lahir", "kb-silsilah", "kb-tanah", "kb-uang"]),
+  PAW: new Set(["kb-surat"]),
 };
 /** Nama isian untuk pesan "Lengkapi dulu". */
 export const LABEL_ISIAN: Readonly<Record<string, string>> = {
@@ -145,20 +158,60 @@ export const LABEL_ISIAN: Readonly<Record<string, string>> = {
   oleh: "penerbit surat (kolom Dikeluarkan oleh)",
   fotokopi: "bukti yang berupa fotokopi",
 };
-/** Kunci jenis satu bukti: bukti elektronik selalu "elektronik" (katalog surat tidak dipakai untuknya). */
-const jenisB = (b: BuktiMasuk): string => (b.elektronik ? "elektronik" : jenisBuktiDari(b.baris.nm));
+/** Perkara kebendaan: harta bersama, kewarisan, dan penetapan ahli waris. */
+export const perkaraKebendaan = (j: JenisPerkaraBukti) => j === "HB" || j === "KW" || j === "PAW";
+
+/**
+ * Golongan bukti surat menurut rumus blangko (variabel 4807/4808 harta bersama, 4829/4830 kewarisan): kata kunci pada nama bukti, diuji berurutan,
+ * yang pertama cocok menang. Rumus menguji 140 huruf pertama baris bukti; di sini nama bukti, dengan satu spasi di belakang agar "foto " cocok.
+ * Penetapan ahli waris tidak digolongkan: semua surat satu golongan "kb-surat".
+ */
+export function jenisKebendaan(nama: unknown, perkara: "HB" | "KW" | "PAW"): string {
+  if (perkara === "PAW") return "kb-surat";
+  const t = `${String(nama ?? "").replace(/\s+/g, " ").trim().toLowerCase().slice(0, 140)} `;
+  const ada = (...kata: string[]) => kata.some((k) => t.includes(k));
+  if (ada("kartu tanda penduduk", "ktp")) return "kb-ktp";
+  if (ada("kartu keluarga")) return "kb-kk";
+  const foto = ada("foto ", "foto-", "foto,", "tangkapan layar", "screenshot", "video", "rekaman");
+  if (perkara === "HB") {
+    if (ada("akta nikah", "buku nikah", "kutipan akta nikah")) return "kb-nikah";
+    if (ada("akta cerai", "putusan")) return "kb-cerai";
+    if (foto) return "kb-foto";
+    if (ada("bpkb", "stnk", "kendaraan", "faktur")) return "kb-kendaraan";
+    if (ada("sertifikat", "sertipikat", "hak milik", "hak guna", "akta jual beli", "ajb", "girik", "sppt", "pbb", "imb", "sporadik", "tanah", "rumah")) return "kb-tanah";
+    if (ada("rekening", "tabungan", "deposito", "slip gaji", "kwitansi", "kuitansi", "kuintansi", "surat utang", "perjanjian kredit", "bank")) return "kb-uang";
+    return "kb-lain";
+  }
+  if (ada("akta kematian", "keterangan kematian", "surat kematian", "keterangan meninggal")) return "kb-mati";
+  if (ada("akta nikah", "buku nikah", "kutipan akta nikah")) return "kb-nikah";
+  if (ada("akta kelahiran", "keterangan lahir", "surat kelahiran")) return "kb-lahir";
+  if (ada("silsilah", "silsila", "keterangan ahli waris", "keterangan waris", "pernyataan ahli waris", "penetapan ahli waris")) return "kb-silsilah";
+  if (foto) return "kb-foto";
+  if (ada("rekening", "tabungan", "deposito", "bpjs", "taspen", "asuransi", "polis", "bank", "kwitansi", "kuitansi")) return "kb-uang";
+  if (ada("sertifikat", "sertipikat", "hak milik", "akta jual beli", "ajb", "girik", "sppt", "pbb", "bpkb", "stnk", "tanah", "rumah", "kendaraan")) return "kb-tanah";
+  return "kb-lain";
+}
+
+/** Kunci jenis satu bukti: bukti elektronik selalu "elektronik" (katalog surat tidak dipakai untuknya); perkara kebendaan memakai golongan rumus blangko. */
+const jenisBPer = (b: BuktiMasuk, perkara: JenisPerkaraBukti): string =>
+  b.elektronik ? "elektronik" : perkaraKebendaan(perkara) ? jenisKebendaan(b.baris.nm, perkara as "HB" | "KW" | "PAW") : jenisBuktiDari(b.baris.nm);
 const kodeDari = (b: BuktiMasuk) => (b.kode && b.kode.trim() ? b.kode.trim() : `${b.sisi}.${b.nomor}`);
 
-/** Jenis perkara dari teks jenis perkara SIPP. null bila belum punya bunyi (termasuk itsbat nikah kontensius). */
+/** Jenis perkara dari teks jenis perkara SIPP. null bila belum punya bunyi (termasuk itsbat nikah kontensius, wasiat, hibah, wakaf). */
 export function jenisPerkaraBukti(jenisPerkara: unknown): JenisPerkaraBukti | null {
   const t = String(jenisPerkara ?? "");
   if (/talak/i.test(t)) return "CT";
   if (/cerai/i.test(t)) return "CG";
   if (/dispensasi/i.test(t)) return "DK";
   if (/itsbat|istbat|isbat|pengesahan\s+perkawinan/i.test(t) && !/kontensius/i.test(t)) return "IN";
+  if (/p3hp|ahli\s+waris/i.test(t)) return "PAW";
+  if (/harta\s+bersama/i.test(t)) return "HB";
+  if (/kewarisan|waris/i.test(t)) return "KW";
   return null;
 }
-export const permohonanBukti = (j: JenisPerkaraBukti) => j === "IN" || j === "DK";
+export const permohonanBukti = (j: JenisPerkaraBukti) => j === "IN" || j === "DK" || j === "PAW";
+/** Perkara yang kalimat "tidak dibantah"-nya ada di blangko (hanya cerai); kebendaan tidak punya. */
+export const adaKalimatBantahan = (j: JenisPerkaraBukti) => j === "CG" || j === "CT";
 
 /** Satu sebutan: "P.1", "P.1 dan P.2", "P.1, P.2 dan P.3". */
 export function gabungKode(kode: readonly string[]): string {
@@ -192,6 +245,11 @@ export function bacaKeadaan(status: string, verstek: boolean, permohonan = false
   if (/gugur|damai/.test(s)) return { kunci: "kosong", teks: "Perkara gugur atau berakhir damai" };
   if (/cabut/.test(s)) return { kunci: "cabut", teks: "Perkara dicabut" };
   if (/tidak\s+dapat\s+diterima|niet|^no$/.test(s)) return { kunci: "tdt", teks: permohonan ? "Permohonan tidak dapat diterima" : "Gugatan atau permohonan tidak dapat diterima" };
+  // Dikabulkan sebagian memakai bunyi blangko Dikabulkan (blangko tidak punya berkas terpisah untuk sebagian).
+  if (/kabul/.test(s) && /sebagian/.test(s)) {
+    if (permohonan) return { kunci: "kabul", teks: "Dikabulkan sebagian" };
+    return verstek ? { kunci: "kabul-verstek", teks: "Dikabulkan sebagian, lawan tidak hadir (verstek)" } : { kunci: "kabul", teks: "Dikabulkan sebagian, lawan hadir" };
+  }
   if (permohonan) {
     if (/tolak/.test(s)) return { kunci: "tolak", teks: "Ditolak" };
     if (/kabul/.test(s)) return { kunci: "kabul", teks: "Dikabulkan" };
@@ -213,6 +271,13 @@ function pasalAkta(h?: "RBg" | "HIR"): string {
   if (h === "HIR") return "Pasal 165 HIR";
   if (h === "RBg") return "Pasal 285 RBg";
   return "Pasal 285 RBg/Pasal 165 HIR";
+}
+
+/** Pasal akta di bawah tangan (variabel 11897: Pasal 288 RBg, atau Pasal 1875 KUHPerdata untuk HIR). */
+function pasalBawahTangan(h?: "RBg" | "HIR"): string {
+  if (h === "HIR") return "Pasal 1875 Kitab Undang-Undang Hukum Perdata";
+  if (h === "RBg") return "Pasal 288 RBg";
+  return "Pasal 288 RBg/Pasal 1875 Kitab Undang-Undang Hukum Perdata";
 }
 
 type Pengganti = Record<string, string>;
@@ -247,10 +312,17 @@ function lolosSyarat(s: SyaratKartu | undefined, b: BuktiMasuk, tanpaBantahan: b
 const cocokKunci = (k: Kartu, jenis: string, pokok: ReadonlySet<string>) => (k.kunci === "*" ? jenis !== "elektronik" && !pokok.has(jenis) : k.kunci.includes(jenis));
 const TANDA_BERKAS: Partial<Record<KeadaanKartu, RegExp>> = { kabul: /\[Kabul\]/, tolak: /\[Tolak\]/, tdt: /\[NO\]/ };
 /** Rujukan blangko; bila ada, yang berasal dari blangko keadaan yang sedang disusun (Kabul, Tolak, atau NO) didahulukan. */
-const rujukan = (k: Kartu, keadaan: KeadaanKartu) => {
-  const tanda = TANDA_BERKAS[keadaan];
-  const a = (tanda ? k.asal.find((x) => tanda.test(x.berkas)) : undefined) ?? k.asal[0];
-  return a ? `${a.folder}, ${a.berkas}, alinea ${a.alinea + 1}` : (k.sumberKhusus ?? "");
+const TANDA_VERSTEK: Partial<Record<KeadaanKartu, RegExp>> = { "kabul-verstek": /\[Kabul Verstek\]/, "tolak-verstek": /\[Tolak Verstek\]/ };
+const FOLDER_KEBENDAAN: Partial<Record<JenisPerkaraBukti, string>> = { HB: "4a ", KW: "4b ", PAW: "9 " };
+/** Perkara kebendaan memilih rujukan di foldernya sendiri (kartu HB dan KW berbagi bunyi) dan mengenali berkas verstek. */
+const rujukan = (k: Kartu, keadaan: KeadaanKartu, jenis: JenisPerkaraBukti) => {
+  const folder = FOLDER_KEBENDAAN[jenis];
+  const tanda = TANDA_BERKAS[keadaan] ?? (folder ? TANDA_VERSTEK[keadaan] : undefined);
+  const daerah = folder ? k.asal.filter((x) => x.folder.startsWith(folder)) : k.asal;
+  const a = (tanda ? daerah.find((x) => tanda.test(x.berkas)) : undefined) ?? daerah[0];
+  if (!a) return k.sumberKhusus ?? "";
+  const lokasi = `${a.folder}, ${a.berkas}, alinea ${a.alinea + 1}`;
+  return k.rumus ? `Rumus variabel ${k.rumus.no} (cabang ${k.rumus.cabang}), dipanggil di ${lokasi}` : lokasi;
 };
 
 /** Jenis yang isinya tentang anak Pemohon (dispensasi kawin) dan yang aslinya dikeluarkan untuk perkara ini (bukan fotokopi menurut blangko). */
@@ -262,6 +334,8 @@ const rapi = (x: unknown) => String(x ?? "").replace(/\s+/g, " ").trim();
 /** Mengapa bukti elektronik tidak punya paragraf: blangko hanya menulisnya untuk satu keadaan. */
 function alasanElektronik(b: BuktiMasuk, keadaan: KeadaanKartu, jenis: JenisPerkaraBukti, tanpaBantahan: boolean): string {
   const awal = "Blangko hanya memuat bunyi bukti elektronik";
+  if (jenis === "HB") return keadaan === "kabul" ? "Blangko tidak memuat bunyi untuk bukti elektronik ini." : `${awal} pada putusan dikabulkan dengan lawan hadir.`;
+  if (jenis === "KW" || jenis === "PAW") return "Blangko kewarisan dan penetapan ahli waris tidak memuat bunyi bukti elektronik terpisah.";
   if (jenis !== "CG" && jenis !== "CT") return "Blangko itsbat nikah dan dispensasi kawin tidak memuat bunyi bukti elektronik.";
   if (b.sisi !== "T") return `${awal} yang diajukan Tergugat atau Termohon.`;
   if (keadaan !== "kabul") return `${awal} pada putusan dikabulkan dengan lawan hadir.`;
@@ -277,6 +351,8 @@ function susunUntuk(
   bukti: readonly BuktiMasuk[],
   paksaUsulan: boolean
 ): { paragraf: ParagrafBukti[]; belum: BelumAdaBunyi[]; perlu: PerluDisetujui[] } {
+  const jenisB = (b: BuktiMasuk) => jenisBPer(b, jenis);
+  const kebendaan = perkaraKebendaan(jenis);
   const k = m.konteks ?? {};
   const isian = k.isian ?? {};
   const permohonan = permohonanBukti(jenis);
@@ -289,6 +365,11 @@ function susunUntuk(
   const dasar = (s: "P" | "T"): Pengganti => ({
     pihak: pihak(s),
     lawan: pihak(s === "P" ? "T" : "P"),
+    penggugat: pihak("P"),
+    tergugat: pihak("T"),
+    pasalBawahTangan: pasalBawahTangan(k.hukumAcara),
+    pewaris: rapi(isian.pewaris),
+    almarhum: rapi(isian.pewaris) ? (/binti/i.test(isian.pewaris ?? "") ? "Almarhumah" : "Almarhum") : "",
     perkara: permohonan || jenis === "CT" ? "permohonan" : "gugatan",
     majelis: (k.majelis ?? "").trim() || "Majelis Hakim",
     satker: (k.satker ?? "").trim() || "Pengadilan ini",
@@ -329,17 +410,22 @@ function susunUntuk(
     if (!belum.some((x) => x.kode === kode && x.alasan === alasan)) belum.push({ kode, kunci: jenisB(b), nama: String(b.baris.nm ?? "").trim() || "Tanpa nama", alasan });
   };
   const keluar = (kar: Kartu, kode: string, jenisBukti: string, p: Pengganti) =>
-    paragraf.push({ kode, kunci: jenisBukti, bunyi: isiKartu(kar.bunyi, p, tanpaBantahan), cara: paksaUsulan || kar.kategori === "pelengkap" ? "usulan" : "otomatis", asal: rujukan(kar, keadaan) + (kar.periksa ? `. Periksa: ${kar.periksa}` : "") });
+    paragraf.push({ kode, kunci: jenisBukti, bunyi: isiKartu(kar.bunyi, p, tanpaBantahan), cara: paksaUsulan || kar.kategori === "pelengkap" ? "usulan" : "otomatis", asal: rujukan(kar, keadaan, jenis) + (kar.periksa ? `. Periksa: ${kar.periksa}` : "") });
   const kurang = (kar: Kartu, p: Pengganti) => (kar.butuh ?? []).filter((n) => !rapi(p[n]));
 
   const terbaca = new Set<BuktiMasuk>();
   const tahan = new Set<BuktiMasuk>();
+  // Pada verstek lawan tidak hadir: bukti sisi T tidak punya bunyi (dicatat di belumAdaBunyi).
+  const verstekKeadaan = keadaan.endsWith("-verstek");
   for (const sisi of ["P", "T"] as const) {
+    if (verstekKeadaan && sisi === "T") continue;
     const baris = bukti.filter((b) => b.sisi === sisi);
     const urutanJenis = (b: BuktiMasuk) => baris.filter((x) => jenisB(x) === jenisB(b)).indexOf(b);
     for (const kar of kartuBerlaku) {
       if (!kar.sisi.includes(sisi)) continue;
-      const cocokan = baris.filter((b) => cocokKunci(kar, jenisB(b), pokok) && (kar.maks == null || urutanJenis(b) < kar.maks));
+      if (kar.sekali && sisi === "T") continue;
+      const dasarBaris = kar.sekali ? bukti.filter((b) => !(verstekKeadaan && b.sisi === "T")) : baris;
+      const cocokan = dasarBaris.filter((b) => cocokKunci(kar, jenisB(b), pokok) && (kar.maks == null || urutanJenis(b) < kar.maks));
       if (!cocokan.length) continue;
       const lolos = cocokan.filter((b) => lolosSyarat(kar.syarat, b, tanpaBantahan));
       if (!lolos.length) continue;
@@ -357,7 +443,9 @@ function susunUntuk(
           continue;
         }
         keluar(kar, kodeSemua, Array.isArray(kar.kunci) ? kar.kunci.join("/") : "*", p);
-        if (kar.kunci !== "*") lolos.forEach((b) => terbaca.add(b));
+        // Perkara kebendaan: alinea umum (tanpa {kode}, mis. penilaian formil) tidak menggantikan kalimat kelompok bukti itu; bukti elektronik hanya punya alinea umum.
+        const perBukti = !kebendaan || kar.bunyi.includes("{kode}") || kar.kunci.includes("elektronik");
+        if (kar.kunci !== "*" && perBukti) lolos.forEach((b) => terbaca.add(b));
       } else {
         for (const b of lolos) {
           const p = { ...dasar(sisi), kode: kodeDari(b), ...dariBaris(b) };
@@ -402,9 +490,19 @@ function susunUntuk(
       if (!terbaca.has(b)) catatBelum(b, alasanElektronik(b, keadaan, jenis, tanpaBantahan));
       continue;
     }
-    if (keadaan === "kabul" && !bebas(r)) {
+    const sebelum = belum.length;
+    if ((keadaan === "kabul" || kebendaan) && !bebas(r)) {
       if (meterai(r) === 1 || meterai(r) === 2) catatBelum(b, "Blangko hanya memuat bunyi bukti bermeterai cukup dan dinazegelen.");
       if (cocok(r) === 2 || cocok(r) === 3) catatBelum(b, "Blangko tidak memuat bunyi pencocokan dari fotokopi atau dari kopian sebelumnya.");
+    }
+    if (kebendaan) {
+      if (!terbaca.has(b) && !tahan.has(b) && belum.length === sebelum)
+        catatBelum(b, verstekKeadaan && b.sisi === "T" ? "Pada verstek lawan tidak hadir, blangko tidak memuat bukti sisi lawan." : bebas(r)
+            ? "Bukti disunting bebas, bunyi blangko tidak berlaku."
+            : jenis === "PAW"
+              ? "Bunyi per bukti di blangko penetapan ahli waris terikat susunan ahli waris tertentu, jadi tidak dipakai."
+              : "Blangko tidak memuat bunyi untuk bukti ini pada keadaan yang dipilih.");
+      continue;
     }
     if (tahan.has(b) && !terbaca.has(b)) continue;
     if (keadaan === "tolak" && !terbaca.has(b)) {
@@ -418,7 +516,8 @@ function susunUntuk(
 }
 
 function gabungKodeTerurut(b: readonly BuktiMasuk[]): string {
-  return gabungKode([...b].sort((x, y) => x.nomor - y.nomor).map(kodeDari));
+  const urutSisi = (x: BuktiMasuk) => (x.sisi === "P" ? 0 : 1);
+  return gabungKode([...b].sort((x, y) => urutSisi(x) - urutSisi(y) || x.nomor - y.nomor).map(kodeDari));
 }
 
 /** Penyusun utama. Lihat catatan berkas untuk aturan keadaan. */
@@ -429,7 +528,7 @@ export function susunParagrafBukti(m: MasukanPertimbangan): HasilPertimbangan {
   const bacaan = bacaKeadaan(m.status, verstek, permohonan);
   const kosong = (catatan: string[]): HasilPertimbangan => ({ keadaan: bacaan.teks, paragraf: [], belumAdaBunyi: [], perluDisetujui: [], catatan });
   const daftar = m.bukti.filter((b) => b && b.baris && String(b.baris.nm ?? "").trim());
-  const belumSemua = (alasan: string) => daftar.map((b) => ({ kode: kodeDari(b), kunci: jenisB(b), nama: String(b.baris.nm).trim(), alasan }));
+  const belumSemua = (alasan: string) => daftar.map((b) => ({ kode: kodeDari(b), kunci: jenisBPer(b, jenis), nama: String(b.baris.nm).trim(), alasan }));
   if (bacaan.kunci === "kosong") return kosong([bacaan.teks === "Keadaan putusan belum terbaca" ? "Status putusan tidak dikenali, jadi tidak ada paragraf." : "Pada keadaan ini tidak ada paragraf pertimbangan bukti."]);
   if (jenis === "DK" && (m.konteks?.jumlahPemohon ?? 2) < 2)
     return {
@@ -461,5 +560,7 @@ export function susunParagrafBukti(m: MasukanPertimbangan): HasilPertimbangan {
   const hasil = susunUntuk(bacaan.kunci, m, jenis, daftar, false);
   const catatan: string[] = [];
   if (bacaan.kunci === "tolak" || bacaan.kunci === "tolak-verstek") catatan.push("Ditolak: bukti dinilai tanpa menyimpulkan bahwa dalil terbukti.");
+  if (jenis === "PAW") catatan.push("Penetapan ahli waris: hanya pertimbangan umum bukti tertulis dari blangko yang dipakai; kalimat per bukti di blangko hanya untuk susunan ahli waris tertentu (anak kandung, pasangan dan orang tua pewaris telah meninggal).");
+  if (/sebagian/.test(bacaan.teks)) catatan.push("Dikabulkan sebagian: bunyi blangko Dikabulkan dipakai. Periksa kembali bukti objek yang tidak dikabulkan.");
   return { keadaan: bacaan.teks, paragraf: hasil.paragraf, belumAdaBunyi: hasil.belum, perluDisetujui: hasil.perlu, catatan };
 }
