@@ -682,10 +682,26 @@
   }
 
   /** Rentang sisa blangko pada SATU paragraf (yang tertelan rentang lebih besar sudah disisihkan), terurut menurut letaknya. */
+  // 6 Nov 2026 (Derry): "Ganti" pada alamat adalah nama tempat (Desa/Kelurahan Ganti, Kecamatan Banawa), bukan kata petunjuk blangko.
+  // Yang berada di dalam nama itu, ulangannya, dan tanda baca yang menempel di belakangnya bukan temuan. Salinan di deteksi-sisa-blangko.ts.
+  const NAMA_TEMPAT_BUKAN_TEMUAN = /\b(?:desa|kelurahan|kel\.?|ds\.?)\s+ganti\b|\bganti(?=\s*,?\s*(?:kec(?:amatan|\.)?\s*)?banawa\b)/gi;
+  function bagianNamaTempat(p, dari, sampai) {
+    const isi = p.slice(dari, sampai);
+    for (const m of p.matchAll(NAMA_TEMPAT_BUKAN_TEMUAN)) {
+      const a = m.index;
+      const z = a + m[0].length;
+      if (dari >= a && sampai <= z) return true;
+      if (dari >= a && dari < z && (/^ganti[\s,]+ganti$/i.test(isi) || /^ganti\s{2,}\p{L}+$/iu.test(isi))) return true;
+      if (dari >= z && /^\s*$/.test(p.slice(z, dari)) && /^[\s,.]+$/.test(isi)) return true;
+    }
+    return false;
+  }
+
   function rentangParagraf(par, opsi, dalamJurusita) {
     {
       const p = par.teks.replace(/\u00a0/g, " ");
       const rentang = [];
+      const adaNamaTempat = /ganti/i.test(p);
       // Merah lebih dulu: satu temuan per rentang merah.
       // Rentang merah yang hanya dipisah spasi digabung: "Saksi kenal dengan" satu temuan, bukan tiga.
       const gabung = [];
@@ -697,6 +713,7 @@
       for (const [dari, sampai] of gabung) {
         // Tanda baca saja yang berwarna merah (",", ";", "-") bukan sisa tulisan.
         if (!/[\p{L}\p{N}]/u.test(p.slice(dari, sampai))) continue;
+        if (adaNamaTempat && bagianNamaTempat(p, dari, sampai)) continue;
         rentang.push({ jenis: "merah", dari, sampai });
       }
       for (const a of ATURAN) {
@@ -707,6 +724,7 @@
           const dari = m.index;
           const sampai = dari + m[0].length;
           if (a.lewat && a.lewat(m[0], p, dari, sampai, opsi)) continue;
+          if (adaNamaTempat && bagianNamaTempat(p, dari, sampai)) continue;
           rentang.push({ jenis: a.jenis, dari, sampai });
         }
       }
@@ -775,6 +793,27 @@
   }
 
   /** Periksa daftar paragraf -> { temuan, jumlahParagraf, jumlahHalaman, terpotong[, infoPihak] }. */
+  /**
+   * 6 Nov 2026: bunyi rapi satu temuan yang tidak perlu diketik petugas ("para Para" -> "para", " ," -> ","). null = hanya bisa dihapus
+   * atau diganti dengan ketikan petugas. Salinan di deteksi-sisa-blangko.ts.
+   */
+  function usulRapi(jenis, isi) {
+    if (jenis === "ulang") return isi.split(/\s+/)[0];
+    if (jenis === "ragu") {
+      if (/^\s+,$/.test(isi)) return ",";
+      if (/^,\s*\.$/.test(isi)) return ".";
+      if (isi === "..") return ".";
+      if (/\s{2,}/.test(isi)) return isi.replace(/\s{2,}/g, " ");
+      return null;
+    }
+    if (jenis === "kosong") {
+      if (/^,(?:\s*,)+$/.test(isi)) return ",";
+      if (/^\(\s*\)$/.test(isi)) return "";
+      if (/\s{2,}/.test(isi)) return isi.replace(/\s{2,}/g, " ");
+    }
+    return null;
+  }
+
   function periksaParagraf(daftar, opsi) {
     const temuan = [];
     const infoPihak = [];
@@ -792,6 +831,7 @@
           continue;
         }
         const k = kutipanSekitar(p, r.dari, r.sampai);
+        const rapi = usulRapi(r.jenis, p.slice(r.dari, r.sampai));
         tujuan.push({
           jenis: r.jenis,
           label: LABEL[r.jenis],
@@ -800,6 +840,9 @@
           sesudah: k.sesudah,
           paragraf: par.nomor,
           halaman: par.halaman,
+          dari: r.dari,
+          sampai: r.sampai,
+          ...(rapi === null ? {} : { rapi }),
         });
       }
     }
@@ -1424,6 +1467,7 @@
    * Dialog peringatan. Pulang "lanjut" | "batal".
    * o: { nama, jenis ("putusan"|"bas"|"relaas"), aksi ("unduh"|"unggah"), terpotong, tawarkanIngat, judul?, jenisTeks?, labelLanjut? }
    * (judul/jenisTeks/labelLanjut: seret-lepas e-Doc 30 Okt - jenis dokumen selain putusan/BAS/relaas dan temuan kesesuaian)
+   * o.bisaPerbaiki (6 Nov 2026): tiap temuan bercentang; pulang { cara: "perbaiki", daftar } bila petugas memperbaiki yang dicentang.
    */
   function tampilkanDialog(temuan, o) {
     return new Promise((selesai) => {
@@ -1445,17 +1489,69 @@
         ringkas.appendChild(buat("span", "background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;", `${r.label}: ${r.jumlah}`));
       }
       kepala.appendChild(ringkas);
+      const bisaCentang = Boolean(o && o.bisaPerbaiki);
+      if (bisaCentang) {
+        kepala.appendChild(buat("div", "margin-top:10px;font-size:13px;color:#374151;", "Centang bagian yang memang perlu diperbaiki. Yang tidak dicentang dibiarkan apa adanya."));
+      }
       const isi = buat("div", "padding:8px 20px;overflow:auto;flex:1;");
       const daftar = buat("ol", "margin:0;padding-left:20px;");
-      const tampil = temuan.slice(0, 12);
+      const tampil = bisaCentang ? temuan : temuan.slice(0, 12);
+      const centangan = [];
+      let segarkanCentang = () => {};
       for (const t of tampil) {
         const li = buat("li", "margin:0 0 8px;");
-        li.appendChild(buat("div", "font-weight:600;font-size:13px;", `${t.label} - ${letak(t)}`));
         const k = buat("div", "font-size:13px;color:#374151;word-break:break-word;");
         k.appendChild(document.createTextNode(t.sebelum ? `${t.sebelum} ` : ""));
         k.appendChild(buat("mark", "background:#fecaca;color:#7f1d1d;padding:0 2px;border-radius:3px;", t.cocok));
         k.appendChild(document.createTextNode(t.sesudah ? ` ${t.sesudah}` : ""));
-        li.appendChild(k);
+        if (bisaCentang) {
+          const baris = buat("label", "display:flex;gap:6px;align-items:flex-start;cursor:pointer;font-weight:600;font-size:13px;");
+          const c = buat("input", "margin-top:3px;flex:none;");
+          c.type = "checkbox";
+          c.setAttribute("data-sisa-centang", "1");
+          baris.appendChild(c);
+          baris.appendChild(document.createTextNode(`${t.label} - ${letak(t)}`));
+          li.appendChild(baris);
+          li.appendChild(k);
+          const ubah = buat("div", "display:none;margin-top:4px;font-size:13px;color:#374151;gap:6px;flex-wrap:wrap;align-items:center;");
+          ubah.setAttribute("data-sisa-ubah", "1");
+          const gayaIsian = "font:inherit;padding:3px 6px;border:1px solid #d1d5db;border-radius:6px;background:#fff;color:#111827;";
+          let bacaCara;
+          if (t.rapi !== undefined) {
+            ubah.appendChild(buat("span", "", t.rapi ? `Dirapikan menjadi "${t.rapi}".` : "Dihapus."));
+            bacaCara = () => ({ cara: "rapi", ganti: t.rapi });
+          } else {
+            let pilihCara = null;
+            if (t.jenis === "merah") {
+              pilihCara = buat("select", gayaIsian);
+              for (const [nilai, teks] of [["hitam", "Hitamkan, tulisan tetap"], ["hapus", "Hapus tulisan ini"]]) {
+                const op = buat("option", "", teks);
+                op.value = nilai;
+                pilihCara.appendChild(op);
+              }
+              ubah.appendChild(pilihCara);
+            }
+            const ketik = buat("input", `${gayaIsian}flex:1;min-width:180px;`);
+            ketik.type = "text";
+            ketik.setAttribute("data-sisa-ketik", "1");
+            ketik.placeholder = t.jenis === "merah" ? "Atau ganti dengan..." : "Ganti dengan... (kosong = dihapus)";
+            ubah.appendChild(ketik);
+            bacaCara = () => {
+              const nilai = String(ketik.value || "").trim();
+              if (nilai) return { cara: "ganti", ganti: nilai };
+              return { cara: pilihCara ? pilihCara.value : "hapus" };
+            };
+          }
+          li.appendChild(ubah);
+          c.addEventListener("change", () => {
+            ubah.style.display = c.checked ? "flex" : "none";
+            segarkanCentang();
+          });
+          centangan.push({ c, ubah, t, bacaCara });
+        } else {
+          li.appendChild(buat("div", "font-weight:600;font-size:13px;", `${t.label} - ${letak(t)}`));
+          li.appendChild(k);
+        }
         daftar.appendChild(li);
       }
       isi.appendChild(daftar);
@@ -1478,6 +1574,37 @@
       const bLanjut = buat("button", gayaTombol, (o && o.labelLanjut) || "Lanjut saja");
       const bBatal = buat("button", gayaTombol, "Batal");
       for (const b of [bUnduh, bLanjut, bBatal]) b.type = "button";
+      let bPerbaiki = null;
+      let semua = null;
+      if (bisaCentang) {
+        // Tombol utama adalah memperbaiki; unduh daftar tetap ada sebagai pilihan biasa.
+        bUnduh.style.cssText = gayaTombol;
+        bPerbaiki = buat("button", `${gayaTombol}background:#1d4ed8;border-color:#1d4ed8;color:#fff;font-weight:600;`, "Perbaiki yang dicentang lalu lanjut");
+        bPerbaiki.type = "button";
+        bPerbaiki.disabled = true;
+        bPerbaiki.style.opacity = "0.5";
+        const labelSemua = buat("label", "display:flex;gap:6px;align-items:center;font-size:13px;color:#374151;");
+        semua = buat("input");
+        semua.type = "checkbox";
+        semua.setAttribute("data-sisa-semua", "1");
+        labelSemua.appendChild(semua);
+        labelSemua.appendChild(document.createTextNode("Centang semua"));
+        kaki.appendChild(labelSemua);
+        segarkanCentang = () => {
+          const jumlah = centangan.filter((x) => x.c.checked).length;
+          bPerbaiki.disabled = jumlah === 0;
+          bPerbaiki.style.opacity = jumlah === 0 ? "0.5" : "1";
+          bPerbaiki.textContent = jumlah ? `Perbaiki ${jumlah} yang dicentang lalu lanjut` : "Perbaiki yang dicentang lalu lanjut";
+          semua.checked = jumlah === centangan.length;
+        };
+        semua.addEventListener("change", () => {
+          for (const x of centangan) {
+            x.c.checked = semua.checked;
+            x.ubah.style.display = semua.checked ? "flex" : "none";
+          }
+          segarkanCentang();
+        });
+      }
       let selesaiSudah = false;
       const tutup = (pilihan) => {
         if (selesaiSudah) return;
@@ -1489,7 +1616,7 @@
         } catch {
           /* fokus tidak wajib */
         }
-        if (pilihan === "lanjut" && ingat && ingat.checked) abaikanSampai = Date.now() + 2 * 60 * 1000;
+        if ((pilihan === "lanjut" || (pilihan && pilihan.cara === "perbaiki")) && ingat && ingat.checked) abaikanSampai = Date.now() + 2 * 60 * 1000;
         selesai(pilihan);
       };
       const tombolKeyboard = (e) => {
@@ -1508,9 +1635,18 @@
         await simpanTxt(namaTxt(o && o.nama), susunDaftarTxt(temuan, o));
         tutup("lanjut");
       });
+      if (bPerbaiki) {
+        bPerbaiki.addEventListener("click", () => {
+          const pilihan = centangan
+            .filter((x) => x.c.checked)
+            .map((x) => ({ paragraf: x.t.paragraf, dari: x.t.dari, sampai: x.t.sampai, jenis: x.t.jenis, ...x.bacaCara() }));
+          if (pilihan.length) tutup({ cara: "perbaiki", daftar: pilihan });
+        });
+      }
       baris.appendChild(bBatal);
       baris.appendChild(bLanjut);
       baris.appendChild(bUnduh);
+      if (bPerbaiki) baris.appendChild(bPerbaiki);
       kaki.appendChild(baris);
       kotak.appendChild(kepala);
       kotak.appendChild(isi);
@@ -1518,7 +1654,8 @@
       tabir.appendChild(kotak);
       document.body.appendChild(tabir);
       try {
-        bUnduh.focus();
+        if (centangan.length) centangan[0].c.focus();
+        else bUnduh.focus();
       } catch {
         /* fokus tidak wajib */
       }
@@ -1526,8 +1663,147 @@
   }
 
   // ==========================================================================
+  // Perbaikan yang dicentang petugas (6 Nov 2026). Salinan di deteksi-sisa-blangko.ts.
+  // ==========================================================================
+  /** Teks ketikan menjadi teks RTF: hanya ASCII yang tertulis apa adanya; latin1 lewat \'xx, selebihnya lewat \uN?. */
+  function teksKeRtf(teks) {
+    let hasil = "";
+    for (const c of String(teks).replace(/\s+/g, " ")) {
+      const kode = c.codePointAt(0);
+      if (c === "\\" || c === "{" || c === "}") hasil += `\\${c}`;
+      else if (kode >= 0x20 && kode < 0x7f) hasil += c;
+      else if (kode >= 0xa0 && kode <= 0xff) hasil += `\\'${kode.toString(16).padStart(2, "0")}`;
+      else if (kode <= 0xffff) hasil += `\\u${kode > 32767 ? kode - 65536 : kode}?`;
+      else {
+        const a = c.charCodeAt(0);
+        const b = c.charCodeAt(1);
+        hasil += `\\u${a - 65536}?\\u${b - 65536}?`;
+      }
+    }
+    return hasil;
+  }
+
+  /** Akhir sumber satu huruf; huruf \uN membawa huruf cadangan di belakangnya yang harus ikut. */
+  function akhirSumber(baca, src, n) {
+    const b = src[n][1];
+    if (!/^\\u-?\d/.test(baca.slice(src[n][0], src[n][0] + 8))) return b;
+    if (src[n + 1] && src[n + 1][0] === b) return b;
+    if (baca[b] === "\\" && baca[b + 1] === "'") return b + 4;
+    if (baca[b] && !/[\\{}\r\n]/.test(baca[b])) return b + 1;
+    return b;
+  }
+
+  /**
+   * Menerapkan temuan yang dicentang pada RTF. Hanya huruf di dalam rentang temuan yang disentuh; yang tidak dicentang, format, dan
+   * perintah RTF di luar rentang tetap. Temuan yang sudah tidak cocok dengan naskah dilewati dan dihitung, tidak ditebak.
+   * pilihan: [{ paragraf, dari, sampai, jenis, cara: "rapi"|"ganti"|"hapus"|"hitam", ganti? }]
+   * opsi: sama dengan opsi saat memeriksa (jenis, teksPihak), ditambah untukBaca (RTF hasil dekode, panjang sama).
+   */
+  function perbaikiRtf(rtfMasuk, pilihan, opsi) {
+    const rtf = String(rtfMasuk == null ? "" : rtfMasuk);
+    const daftar = Array.isArray(pilihan) ? pilihan : [];
+    const tanpaUbah = { rtf, jumlah: 0, terlewat: daftar.length };
+    try {
+      const baca = opsi && typeof opsi.untukBaca === "string" && opsi.untukBaca.length === rtf.length ? opsi.untukBaca : rtf;
+      const semua = bacaRtfParagraf(baca, true);
+      const jur = blokJurusita(semua);
+      const letakPar = new Map(semua.map((par, n) => [par.nomor, n]));
+      const ubah = [];
+      let jumlah = 0;
+      let terlewat = 0;
+      let parTerakhir = -1;
+      let sampaiTerakhir = -1;
+      const urut = daftar.slice().sort((x, y) => x.paragraf - y.paragraf || x.dari - y.dari);
+      for (const c of urut) {
+        const n = letakPar.get(c.paragraf);
+        const par = n === undefined ? null : semua[n];
+        if (!par || !par.src || par.src.length !== par.teks.length) {
+          terlewat += 1;
+          continue;
+        }
+        const { p, pemenang } = rentangParagraf(par, opsi, jur[n]);
+        const batasKiri = c.paragraf === parTerakhir ? sampaiTerakhir : 0;
+        if (!pemenang.some((r) => r.dari === c.dari && r.sampai === c.sampai && r.jenis === c.jenis) || c.dari < batasKiri) {
+          terlewat += 1;
+          continue;
+        }
+        if (c.cara === "hitam") {
+          const warnaLatar = /\\(?:highlight|chcbpat)\d/.test(rtf);
+          let mulai = c.dari;
+          for (let k = c.dari; k < c.sampai; k += 1) {
+            const putus = k === c.sampai - 1 || par.src[k + 1][0] !== par.src[k][1] || par.src[k + 1][2] !== par.src[k][2];
+            if (!putus) continue;
+            const s = par.src[mulai];
+            ubah.push({ a: s[0], b: s[0], teks: `\\cf0${warnaLatar ? "\\highlight0\\chcbpat0" : ""} `, urut: ubah.length });
+            const akhir = akhirSumber(baca, par.src, k);
+            ubah.push({ a: akhir, b: akhir, teks: `\\cf${s[2]} `, urut: ubah.length });
+            mulai = k + 1;
+          }
+        } else {
+          let d = c.dari;
+          let z = c.sampai;
+          const teks = c.cara === "hapus" ? "" : String(c.ganti == null ? "" : c.ganti);
+          if (!teks) {
+            // Menghapus tidak meninggalkan spasi ganda atau spasi di depan tanda baca.
+            const kiriKosong = d === 0 || /\s/.test(p[d - 1]);
+            const kananRapat = z >= p.length || /[\s,.;:)]/.test(p[z]);
+            if (kiriKosong && kananRapat) {
+              if (d > batasKiri) d -= 1;
+              else if (z < p.length && /\s/.test(p[z])) z += 1;
+            }
+          }
+          const potonganAkhir = [];
+          for (let k = d; k < z; k += 1) {
+            const a = par.src[k][0];
+            const b = akhirSumber(baca, par.src, k);
+            const akhirPotongan = potonganAkhir[potonganAkhir.length - 1];
+            if (akhirPotongan && akhirPotongan.b === a) akhirPotongan.b = b;
+            else if (!akhirPotongan || a >= akhirPotongan.b) potonganAkhir.push({ a, b });
+          }
+          potonganAkhir.forEach((x, i) => {
+            // Perintah RTF tanpa pemisah tepat di depan huruf yang dihapus jangan menempel pada huruf sesudahnya.
+            const pemisah = /(?<!\\)\\[a-zA-Z]+-?\d*$/.test(rtf.slice(Math.max(0, x.a - 32), x.a)) ? " " : "";
+            ubah.push({ a: x.a, b: x.b, teks: `${pemisah}${i === 0 ? teksKeRtf(teks) : ""}`, urut: ubah.length });
+          });
+          z = Math.max(z, c.sampai);
+          sampaiTerakhir = z;
+          parTerakhir = c.paragraf;
+        }
+        if (c.cara === "hitam") {
+          sampaiTerakhir = c.sampai;
+          parTerakhir = c.paragraf;
+        }
+        jumlah += 1;
+      }
+      if (!ubah.length) return { rtf, jumlah: 0, terlewat };
+      ubah.sort((x, y) => x.a - y.a || x.urut - y.urut);
+      let hasil = "";
+      let akhir = 0;
+      for (const u of ubah) {
+        hasil += rtf.slice(akhir, u.a) + u.teks;
+        akhir = Math.max(akhir, u.b);
+      }
+      hasil += rtf.slice(akhir);
+      return { rtf: hasil, jumlah, terlewat };
+    } catch {
+      return tanpaUbah;
+    }
+  }
+
+  // ==========================================================================
   // Pintu utama untuk pemanggil: tinjau(sumber, opsi)
   // ==========================================================================
+  function bitaKeLatin1(bita) {
+    let hasil = "";
+    for (let k = 0; k < bita.length; k += 8192) hasil += String.fromCharCode.apply(null, bita.subarray(k, k + 8192));
+    return hasil;
+  }
+  function latin1KeBita(teks) {
+    const hasil = new Uint8Array(teks.length);
+    for (let k = 0; k < teks.length; k += 1) hasil[k] = teks.charCodeAt(k) & 255;
+    return hasil;
+  }
+
   async function bitaDari(sumber) {
     if (typeof sumber === "string") return new TextEncoder().encode(sumber);
     if (sumber instanceof Uint8Array) return sumber;
@@ -1559,8 +1835,10 @@
   /**
    * Memeriksa satu naskah dan, bila ada temuan, menanyakan petugas.
    * @param sumber Blob | File | ArrayBuffer | Uint8Array | string (RTF/teks)
-   * @param opsi { nama, jenis, aksi: "unduh"|"unggah", bacaPdf?, tanpaDialog? }
-   * @returns Promise<{ lanjut: boolean, periksa: boolean, temuan: [] }>  tidak pernah melempar
+   * @param opsi { nama, jenis, aksi: "unduh"|"unggah", bacaPdf?, tanpaDialog?, bisaPerbaiki? }
+   *   bisaPerbaiki: pemanggil memakai naskah hasil perbaikan; hanya RTF yang bercentang.
+   * @returns Promise<{ lanjut: boolean, periksa: boolean, temuan: [], dipilih?: true, perbaikan?: { jumlah, terlewat }, bitaBersih?: Uint8Array, rtfBersih?: string }>
+   *   tidak pernah melempar
    */
   async function tinjau(sumber, opsi) {
     const o = opsi || {};
@@ -1578,6 +1856,7 @@
       while (jejakTanya.length && sekarang - jejakTanya[0] > CEPAT_MS) jejakTanya.shift();
       const beruntun = jejakTanya.length >= 1;
       jejakTanya.push(sekarang);
+      const bisaPerbaiki = o.bisaPerbaiki === true && h.bentuk === "rtf" && h.hasil.temuan.every((t) => Number.isInteger(t.dari) && Number.isInteger(t.sampai));
       const pilihan = await tampilkanDialog(h.hasil.temuan, {
         nama: o.nama,
         jenis: o.jenis,
@@ -1586,7 +1865,16 @@
         catatan: o.catatan,
         infoPihak: h.hasil.infoPihak,
         tawarkanIngat: beruntun || o.massal === true,
+        bisaPerbaiki,
       });
+      if (pilihan && pilihan.cara === "perbaiki") {
+        const mentah = bitaKeLatin1(bita);
+        const f = perbaikiRtf(mentah, pilihan.daftar, { jenis: o.jenis, teksPihak: o.teksPihak, untukBaca: new TextDecoder("windows-1252").decode(bita) });
+        ingatan.set(kunci, Date.now());
+        const perbaikan = { jumlah: f.jumlah, terlewat: f.terlewat };
+        if (!f.jumlah) return { lanjut: true, periksa: true, temuan: h.hasil.temuan, dipilih: true, perbaikan };
+        return { lanjut: true, periksa: true, temuan: h.hasil.temuan, dipilih: true, perbaikan, bitaBersih: latin1KeBita(f.rtf), rtfBersih: f.rtf };
+      }
       if (pilihan === "lanjut") ingatan.set(kunci, Date.now());
       return { lanjut: pilihan === "lanjut", periksa: true, temuan: h.hasil.temuan };
     } catch {
@@ -1728,6 +2016,7 @@
     ringkasJenis,
     susunDaftarTxt,
     tampilkanDialog,
+    perbaikiRtf,
     tinjau,
     tinjauFormData,
     jenisDariBorangSipp,

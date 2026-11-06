@@ -10420,6 +10420,9 @@
     }
     // Deteksi sisa blangko (17 Okt 2026): naskah diperiksa SEKALI untuk semua keluaran (RTF, PDF,
     // e-Doc). Bila masih ada sisa blangko/perbaikan, petugas diperingatkan - tetap boleh lanjut.
+    // 6 Nov 2026: tiap temuan bercentang. Yang dicentang diperbaiki pada naskah ini sebelum semua keluaran dibuat; yang tidak dicentang
+    // dinyatakan petugas tidak salah, jadi dibiarkan apa adanya dan tidak diwarnai merah.
+    let temuanSudahDipilih = false;
     if (deteksiAda) {
       const jenisNaskah = jenisNaskahCetak;
       if (jenisNaskah) {
@@ -10431,6 +10434,7 @@
             aksi: S.fmt.edoc && j === "put" && !tes() ? "unggah" : "unduh",
             catatan: catatanRapi,
             teksPihak: teksPihakKini(),
+            bisaPerbaiki: true,
           });
         } catch {
           tinjau = { lanjut: true }; // galat pemeriksa tidak boleh menahan cetak/unggah
@@ -10439,6 +10443,25 @@
           catatLog("dibatalkan: petugas membatalkan karena naskah masih memuat sisa blangko");
           toast("Dibatalkan. Perbaiki sisa blangko di naskah, lalu cetak lagi.");
           return;
+        }
+        if (tinjau && tinjau.dipilih) {
+          temuanSudahDipilih = true;
+          if (typeof tinjau.rtfBersih === "string") {
+            let bersih = tinjau.rtfBersih;
+            // Alinea yang seluruh isinya dihapus tidak meninggalkan baris kosong.
+            if (typeof aletaDeteksiSisa.rapikanBarisKosong === "function") {
+              try {
+                const r = aletaDeteksiSisa.rapikanBarisKosong(bersih);
+                if (r && r.dihapus > 0) bersih = r.rtf;
+              } catch {
+                /* merapikan gagal tidak menahan cetak */
+              }
+            }
+            rtfBuf = typeof rtfBuf === "string" ? bersih : bufDariLatin1(bersih);
+          }
+          const hasilPerbaikan = tinjau.perbaikan || { jumlah: 0, terlewat: 0 };
+          catatLog(`perbaikan naskah: ${hasilPerbaikan.jumlah} dicentang diperbaiki, ${hasilPerbaikan.terlewat} dilewati`);
+          toast(`${hasilPerbaikan.jumlah} bagian diperbaiki${hasilPerbaikan.terlewat ? `, ${hasilPerbaikan.terlewat} tidak dapat diperbaiki` : ""}.`);
         }
       }
     }
@@ -10472,7 +10495,7 @@
     // 31 Okt 2026: sisa blangko tingkat PASTI diwarnai MERAH pada RTF dan PDF yang dicetak/diunduh (tingkat RAGU hanya di daftar .txt).
     // Naskah untuk e-Doc SIPP dan salinan anonim tetap apa adanya (unggahan ke SIPP tidak membawa warna; pemeriksa unggah tetap jalan).
     let rtfCetak = rtfBuf;
-    if (deteksiAda && jenisNaskahCetak && typeof aletaDeteksiSisa.merahkanRtf === "function") {
+    if (!temuanSudahDipilih && deteksiAda && jenisNaskahCetak && typeof aletaDeteksiSisa.merahkanRtf === "function") {
       try {
         const m = aletaDeteksiSisa.merahkanRtf(latin1(rtfBuf), { jenis: jenisNaskahCetak, untukBaca: rtfTeks(rtfBuf), teksPihak: teksPihakKini() });
         if (m && m.jumlah > 0) {

@@ -96,6 +96,7 @@ const ATURAN_UMUM = [
   'Jangan mengarang fakta, nama, tanggal, nomor, atau pasal. Bila datanya tidak ada, tulis "..." (tiga titik) atau lewati bagian itu.',
   "Kode samaran seperti [NAMA-1], [NIK-1], [ALAMAT-1] dipertahankan persis; jangan menebak isinya.",
   "Kalimat yang berasal dari para pihak atau saksi dikutip APA ADANYA; jangan dibetulkan ejaannya atau dirapikan.",
+  '"Ganti" pada alamat (Desa atau Kelurahan Ganti, Kecamatan Banawa) adalah nama tempat, bukan perintah atau sisa blangko; jangan dijadikan temuan.',
   "Jangan menyebut nama aplikasi atau kecerdasan buatan di dalam hasil. Pakai bahasa Indonesia baku hukum acara; tanpa emoji.",
   'Dasar hukum (pasal, undang-undang, SEMA) hanya boleh disebut bila tercantum di data atau pengetahuan proyek; selain itu tulis "[PERLU VERIFIKASI]" tepat sesudahnya.',
 ].join("\n");

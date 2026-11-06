@@ -492,7 +492,7 @@
    */
   async function terimaBerkas(daftar) {
     if (!ctx || ctx.sibuk) return;
-    const file = Array.from(daftar || [])[0];
+    let file = Array.from(daftar || [])[0];
     if (!file) return;
     const nama = String(file.name || "");
     const e = { file, nama, ukuran: file.size || 0, status: "periksa", tolak: "", rtf: null, peringatan: [], bentuk: (/\.([a-z]+)$/i.exec(nama) || [, ""])[1].toLowerCase() };
@@ -519,8 +519,14 @@
     if (deteksi && typeof deteksi.tinjau === "function") {
       let lanjut = true;
       try {
-        const h = await deteksi.tinjau(file, { nama, jenis: "putusan", aksi: "unggah", massal: false });
+        const h = await deteksi.tinjau(file, { nama, jenis: "putusan", aksi: "unggah", massal: false, bisaPerbaiki: true });
         lanjut = !h || h.lanjut !== false;
+        // 6 Nov 2026: bagian yang dicentang sudah diperbaiki; berkas hasilnya yang dipakai mengisi dan diunggah.
+        if (lanjut && h && h.bitaBersih) {
+          file = new File([h.bitaBersih], nama, { type: file.type || "application/rtf" });
+          e.file = file;
+          e.ukuran = file.size || 0;
+        }
       } catch {
         lanjut = true;
       }

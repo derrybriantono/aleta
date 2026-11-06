@@ -201,11 +201,23 @@ export function CetakAletaAbt() {
     setKosongTahan([]);
     setSibuk(jenis);
     try {
+      // Naskah diperiksa dulu di peramban: bagian yang dicentang diperbaiki sebelum keluar, yang tidak dicentang dibiarkan.
+      const { jenisNaskahDariNama } = await import("@/lib/deteksi-sisa-blangko");
+      const { tinjauSisaBlangko } = await import("@/lib/dialog-sisa-blangko");
+      const periksa = async (nama: string, rtfBase64: string) => {
+        const bita = Uint8Array.from(atob(rtfBase64), (c) => c.charCodeAt(0));
+        return tinjauSisaBlangko(bita, { nama: `${nama}.rtf`, jenis: jenisNaskahDariNama(nama) || "putusan", aksi: "unduh", bisaPerbaiki: true });
+      };
       if (jenis === "rtf") {
         const h = await kirim<{ nama: string; rtfBase64: string }>(badan("rtf"));
-        unduh(h.rtfBase64, namaBerkas(h.nama, "rtf"), "application/rtf");
+        const t = await periksa(h.nama, h.rtfBase64);
+        if (!t.lanjut) return;
+        unduh(t.bitaBersih ? dasarBase64(t.bitaBersih.buffer) : h.rtfBase64, namaBerkas(h.nama, "rtf"), "application/rtf");
       } else {
-        const h = await kirim<{ nama: string; pdfBase64: string; waktu: Waktu }>(badan(jenis));
+        const r = await kirim<{ nama: string; rtfBase64: string }>(badan("rtf", { untukPeriksa: true }));
+        const t = await periksa(r.nama, r.rtfBase64);
+        if (!t.lanjut) return;
+        const h = await kirim<{ nama: string; pdfBase64: string; waktu: Waktu }>(badan(jenis, t.bitaBersih ? { rtfDiperbaikiBase64: dasarBase64(t.bitaBersih.buffer) } : {}));
         pdfAleta.current = h.pdfBase64;
         setAdaPdfAleta(true);
         setPratinjau((p) => (p ? { ...p, waktu: { ...p.waktu, pdfMs: h.waktu.pdfMs } } : p));

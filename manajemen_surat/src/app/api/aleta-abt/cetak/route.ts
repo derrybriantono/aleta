@@ -39,6 +39,8 @@ export const dynamic = "force-dynamic";
  *   POST {tindakan:"pratinjau", berkasId, perkaraId, sidangKe?}   paragraf + isian kosong + waktu
  *   POST {tindakan:"rtf", ...}                                    RTF final (isian kosong menahan)       [audit]
  *   POST {tindakan:"pdf", ...} / {tindakan:"salinan", ...}        PDF / PDF SALINAN lewat LibreOffice (rute abt/pdf)  [audit]
+ *        untukPeriksa:true pada rtf = naskah untuk pemeriksa temuan di peramban, belum diunduh (tanpa audit cetak).
+ *        rtfDiperbaikiBase64 pada pdf/salinan = naskah yang bagian dicentangnya sudah diperbaiki petugas; penjaga isian kosong tetap berlaku.
  *   POST {tindakan:"banding", ..., rtfAbtBase64[, catat:true, jenisPerkara]}  banding alinea dengan RTF dari ABT; catat:true menyimpan HASIL (angka) di pembanding berdampingan
  *   POST {tindakan:"banding-pdf", pdfAbtBase64, pdfAletaBase64}   banding jumlah halaman dan letak tanda tangan
  *   POST {tindakan:"salinan-berkas", berkasBase64, namaBerkas?}   PDF SALINAN dari berkas RTF/DOCX/DOC/PDF yang diunggah (keputusan 215):
@@ -214,11 +216,20 @@ export async function POST(request: NextRequest) {
       if (!n.ok) return Response.json({ ok: false, ditahan: n.ditahan === true, kosong: n.kosong ?? [], alasan: n.alasan }, { status: n.status, headers: tak });
       const naskah: NaskahJadi = n;
       if (tindakan === "rtf") {
-        await catat(a.db, a.actorUserId, "ALETA_ABT_CETAK_RTF", m.berkasId, { perkaraId: m.perkaraId, lewat, byte: naskah.rtf.length, waktuMs: naskah.waktu.totalMs });
+        if (badan.untukPeriksa !== true) {
+          await catat(a.db, a.actorUserId, "ALETA_ABT_CETAK_RTF", m.berkasId, { perkaraId: m.perkaraId, lewat, byte: naskah.rtf.length, waktuMs: naskah.waktu.totalMs });
+        }
         return ok({ nama: naskah.nama, rtfBase64: naskah.rtf.toString("base64"), byte: naskah.rtf.length, kertas: naskah.kertas, waktu: naskah.waktu }, { headers: tak });
       }
       const mulaiPdf = Date.now();
-      const pdf = await pdfLewatRuteAbt(request, naskah.rtf, tindakan === "salinan");
+      let rtfUntukPdf = naskah.rtf;
+      if (typeof badan.rtfDiperbaikiBase64 === "string" && badan.rtfDiperbaikiBase64) {
+        if (badan.rtfDiperbaikiBase64.length > BATAS_BASE64) throw new ApiError(413, "Naskah terlalu besar.");
+        const diperbaiki = Buffer.from(badan.rtfDiperbaikiBase64, "base64");
+        if (diperbaiki.subarray(0, 5).toString("latin1") !== "{\\rtf") throw new ApiError(400, "Naskah yang diperbaiki bukan RTF.");
+        rtfUntukPdf = diperbaiki;
+      }
+      const pdf = await pdfLewatRuteAbt(request, rtfUntukPdf, tindakan === "salinan");
       const pdfMs = Date.now() - mulaiPdf;
       await catat(a.db, a.actorUserId, tindakan === "salinan" ? "ALETA_ABT_CETAK_PDF_SALINAN" : "ALETA_ABT_CETAK_PDF", m.berkasId, {
         perkaraId: m.perkaraId,

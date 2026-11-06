@@ -234,6 +234,20 @@
     return b;
   }
 
+  /** 6 Nov 2026: tombol keluar di ujung kanan atas kotak. saat = pekerjaan sebelum kotak ditutup. */
+  function pasangKeluar(kotak, saat) {
+    const b = el("button", "aleta-mu-keluar", "\u00d7");
+    b.type = "button";
+    b.setAttribute("data-mu", "keluar");
+    b.setAttribute("aria-label", "Tutup");
+    b.title = "Tutup";
+    b.addEventListener("click", () => {
+      if (saat) saat();
+      kotak.remove();
+    });
+    kotak.appendChild(b);
+  }
+
   function pindah(alamat) {
     // Satu tempat bernavigasi: uji menggantinya lewat aletaUjiPindah.
     if (typeof globalThis.aletaUjiPindah === "function") return globalThis.aletaUjiPindah(alamat);
@@ -314,6 +328,8 @@
     const ket = el("p", "aleta-mu-ket");
     const baris = el("div", "aleta-mu-aksi");
     kotak.append(ket, baris);
+    // Ditutup saat hitung mundur berjalan: halaman tidak disegarkan lagi sesudah petugas menutupnya.
+    pasangKeluar(kotak, () => batal());
     const sekarang = tombolKotak("Segarkan sekarang", "sekarang", true);
     sekarang.addEventListener("click", () => void muatUlangSekarang(nomor, r));
     baris.appendChild(sekarang);
@@ -465,6 +481,7 @@
     const tutup = tombolKotak("Tutup", "tutup", true);
     tutup.addEventListener("click", () => kotak.remove());
     kotak.appendChild(el("div", "aleta-mu-aksi")).appendChild(tutup);
+    pasangKeluar(kotak);
     document.body.appendChild(kotak);
     void (async () => {
       const peta = await baca();

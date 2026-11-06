@@ -1048,7 +1048,7 @@ describe("muat ulang otomatis sesudah penetapan - tetap di perkaranya", () => {
     for (const j of JENIS) expect(n.querySelector(`[data-jenis="${j}"]`)!.textContent).toMatch(/tercatat/);
     expect(n.textContent).toMatch(/disegarkan dalam \d+ detik/);
     expect(n.textContent).toContain("tetap di halaman ini");
-    expect(Array.from(n.querySelectorAll("button")).map((b) => b.textContent)).toEqual(["Segarkan sekarang", "Jangan segarkan"]);
+    expect(Array.from(n.querySelectorAll("button")).map((b) => b.textContent)).toEqual(["Segarkan sekarang", "Jangan segarkan", "×"]);
     expect(h.navigasi).toEqual([]); // belum memuat ulang: ringkasan sempat terbaca
     simpanTangkapan(h, "7-muat-ulang");
   });

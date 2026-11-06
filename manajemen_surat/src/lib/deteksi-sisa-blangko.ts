@@ -41,6 +41,11 @@ export type Temuan = {
   sesudah: string;
   paragraf: number;
   halaman: number;
+  /** Letak di dalam paragraf (huruf), dipakai perbaikan yang dicentang petugas. */
+  dari?: number;
+  sampai?: number;
+  /** Bunyi rapi yang tidak perlu diketik petugas; tidak ada = hanya bisa dihapus atau diganti ketikan. */
+  rapi?: string;
 };
 
 export type HasilPeriksa = {
@@ -56,6 +61,8 @@ export type Paragraf = {
   teks: string;
   /** Rentang [dari, sampai) yang berwarna merah. */
   merah: Array<[number, number]>;
+  /** Hanya bila dibaca dengan peta: [awal, akhir, cf] per huruf (letak di RTF). */
+  src?: Array<[number, number, number]>;
   halaman: number;
   nomor: number;
   /** Halaman tempat tulisan paragraf dimulai (diisi pembangun). */
@@ -140,7 +147,7 @@ function indeksMerahRtf(rtf: string): Set<number> {
 }
 
 type Bangun = {
-  tulis(teks: string, merah: boolean): void;
+  tulis(teks: string, merah: boolean, sumber?: Array<[number, number, number]>): void;
   akhiriParagraf(): void;
   halamanBaru(nyata: boolean): void;
   selesai(): Paragraf[];
@@ -153,9 +160,13 @@ function pembangunParagraf(): Bangun {
   let muatan = 0;
   let lastRendered = false;
   const api: Bangun = {
-    tulis(teks, merah) {
+    tulis(teks, merah, sumber) {
       if (!teks) return;
       const dari = cur.teks.length;
+      if (sumber) {
+        if (!cur.src) cur.src = [];
+        for (const x of sumber) cur.src.push(x);
+      }
       // Halaman paragraf = halaman tempat tulisannya DIMULAI (pemisah halaman di tengah paragraf tidak memecahnya).
       if (cur.halamanMulai === undefined && /\S/.test(teks)) cur.halamanMulai = lastRendered ? keras + 1 : keras + 1 + Math.floor(muatan / HURUF_PER_HALAMAN);
       cur.teks += teks;
@@ -189,7 +200,7 @@ function pembangunParagraf(): Bangun {
 
 type KeadaanRtf = { cf: number; hl: number; uc: number; buang: boolean };
 
-export function bacaRtfParagraf(rtfMasuk: string): Paragraf[] {
+export function bacaRtfParagraf(rtfMasuk: string, peta = false): Paragraf[] {
   const rtf = String(rtfMasuk == null ? "" : rtfMasuk);
   const merahIdx = indeksMerahRtf(rtf);
   const bangun = pembangunParagraf();
@@ -198,16 +209,23 @@ export function bacaRtfParagraf(rtfMasuk: string): Paragraf[] {
   let lewati = 0;
   let i = 0;
   const merahSekarang = () => merahIdx.has(k.cf) || merahIdx.has(k.hl);
-  const tulis = (masuk: string) => {
+  // a, b: letak sumber di RTF (b kosong = tiap huruf teks satu posisi sumber mulai dari a). Hanya dipakai bila peta=true.
+  const tulis = (masuk: string, a: number, b?: number) => {
     let t = masuk;
     if (k.buang || !t) return;
+    let sum: Array<[number, number, number]> | undefined;
+    if (peta) {
+      sum = [];
+      for (let n = 0; n < t.length; n += 1) sum.push(b === undefined ? [a + n, a + n + 1, k.cf] : [a, b, k.cf]);
+    }
     if (lewati > 0) {
       const pakai = Math.min(lewati, t.length);
       lewati -= pakai;
       t = t.slice(pakai);
+      if (sum) sum = sum.slice(pakai);
       if (!t) return;
     }
-    bangun.tulis(t, merahSekarang());
+    bangun.tulis(t, merahSekarang(), sum);
   };
   while (i < rtf.length) {
     const h = rtf[i];
@@ -229,18 +247,18 @@ export function bacaRtfParagraf(rtfMasuk: string): Paragraf[] {
     if (h === "\\") {
       const s = rtf[i + 1];
       if (s === "\\" || s === "{" || s === "}") {
-        tulis(s);
+        tulis(s, i, i + 2);
         i += 2;
         continue;
       }
       if (s === "'") {
         const kode = Number.parseInt(rtf.slice(i + 2, i + 4), 16);
-        if (!Number.isNaN(kode) && (kode >= 0x20 || kode === 0x09)) tulis(CP1252[kode] || String.fromCharCode(kode));
+        if (!Number.isNaN(kode) && (kode >= 0x20 || kode === 0x09)) tulis(CP1252[kode] || String.fromCharCode(kode), i, i + 4);
         i += 4;
         continue;
       }
       if (s === "~") {
-        tulis(" ");
+        tulis(" ", i, i + 2);
         i += 2;
         continue;
       }
@@ -278,7 +296,7 @@ export function bacaRtfParagraf(rtfMasuk: string): Paragraf[] {
           break;
         case "line":
         case "tab":
-          tulis(" ");
+          tulis(" ", i - c[0].length, i);
           break;
         case "page":
         case "pagebb":
@@ -300,7 +318,7 @@ export function bacaRtfParagraf(rtfMasuk: string): Paragraf[] {
           break;
         case "u":
           if (angka !== null) {
-            tulis(String.fromCharCode(angka < 0 ? angka + 65536 : angka));
+            tulis(String.fromCharCode(angka < 0 ? angka + 65536 : angka), i - c[0].length, i);
             lewati = k.uc;
           }
           break;
@@ -308,7 +326,7 @@ export function bacaRtfParagraf(rtfMasuk: string): Paragraf[] {
           if (angka && angka > 0) i += angka;
           break;
         default:
-          if (Object.prototype.hasOwnProperty.call(RTF_TEKS_KENDALI, kata)) tulis(RTF_TEKS_KENDALI[kata]);
+          if (Object.prototype.hasOwnProperty.call(RTF_TEKS_KENDALI, kata)) tulis(RTF_TEKS_KENDALI[kata], i - c[0].length, i);
           break;
       }
       continue;
@@ -319,7 +337,7 @@ export function bacaRtfParagraf(rtfMasuk: string): Paragraf[] {
     }
     let j = i;
     while (j < rtf.length && rtf[j] !== "\\" && rtf[j] !== "{" && rtf[j] !== "}" && rtf[j] !== "\r" && rtf[j] !== "\n") j += 1;
-    tulis(rtf.slice(i, j));
+    tulis(rtf.slice(i, j), i);
     i = j;
   }
   return bangun.selesai();
@@ -729,9 +747,25 @@ export function blokJurusita(daftar: Paragraf[]): boolean[] {
  * lebih besar disisihkan), terurut menurut letaknya. Dipakai periksaParagraf dan
  * penanda kekosongan pada perintah AI - satu aturan, satu hasil.
  */
+// 6 Nov 2026 (Derry): "Ganti" pada alamat adalah nama tempat (Desa/Kelurahan Ganti, Kecamatan Banawa), bukan kata petunjuk blangko.
+// Yang berada di dalam nama itu, ulangannya, dan tanda baca yang menempel di belakangnya bukan temuan. Salinan di ekstensi.
+const NAMA_TEMPAT_BUKAN_TEMUAN = /\b(?:desa|kelurahan|kel\.?|ds\.?)\s+ganti\b|\bganti(?=\s*,?\s*(?:kec(?:amatan|\.)?\s*)?banawa\b)/gi;
+function bagianNamaTempat(p: string, dari: number, sampai: number): boolean {
+  const isi = p.slice(dari, sampai);
+  for (const m of p.matchAll(NAMA_TEMPAT_BUKAN_TEMUAN)) {
+    const a = m.index ?? 0;
+    const z = a + m[0].length;
+    if (dari >= a && sampai <= z) return true;
+    if (dari >= a && dari < z && (/^ganti[\s,]+ganti$/i.test(isi) || /^ganti\s{2,}\p{L}+$/iu.test(isi))) return true;
+    if (dari >= z && /^\s*$/.test(p.slice(z, dari)) && /^[\s,.]+$/.test(isi)) return true;
+  }
+  return false;
+}
+
 export function rentangParagraf(par: Paragraf, opsi?: OpsiPeriksa, dalamJurusita?: boolean): { p: string; pemenang: RentangTemuan[] } {
     const p = par.teks.replace(/ /g, " ");
     const rentang: Array<{ jenis: JenisTemuan; dari: number; sampai: number }> = [];
+    const adaNamaTempat = /ganti/i.test(p);
     // Rentang merah yang hanya dipisah spasi digabung: "Saksi kenal dengan" satu temuan, bukan tiga.
     const gabung: Array<[number, number]> = [];
     for (const r of par.merah) {
@@ -742,6 +776,7 @@ export function rentangParagraf(par: Paragraf, opsi?: OpsiPeriksa, dalamJurusita
     for (const [dari, sampai] of gabung) {
       // Tanda baca saja yang berwarna merah (",", ";", "-") bukan sisa tulisan.
       if (!/[\p{L}\p{N}]/u.test(p.slice(dari, sampai))) continue;
+      if (adaNamaTempat && bagianNamaTempat(p, dari, sampai)) continue;
       rentang.push({ jenis: "merah", dari, sampai });
     }
     for (const a of ATURAN) {
@@ -752,6 +787,7 @@ export function rentangParagraf(par: Paragraf, opsi?: OpsiPeriksa, dalamJurusita
         const dari = m.index ?? 0;
         const sampai = dari + m[0].length;
         if (a.lewat && a.lewat(m[0], p, dari, sampai, opsi)) continue;
+        if (adaNamaTempat && bagianNamaTempat(p, dari, sampai)) continue;
         rentang.push({ jenis: a.jenis, dari, sampai });
       }
     }
@@ -817,6 +853,27 @@ export function tandaiPihak(daftar: Paragraf[], teksPihak: unknown): boolean[] |
 }
 
 /** Periksa daftar paragraf -> { temuan, jumlahParagraf, jumlahHalaman, terpotong[, infoPihak] }. */
+/**
+ * 6 Nov 2026: bunyi rapi satu temuan yang tidak perlu diketik petugas ("para Para" -> "para", " ," -> ","). null = hanya bisa dihapus
+ * atau diganti dengan ketikan petugas. Salinan di ekstensi.
+ */
+export function usulRapi(jenis: JenisTemuan, isi: string): string | null {
+  if (jenis === "ulang") return isi.split(/\s+/)[0];
+  if (jenis === "ragu") {
+    if (/^\s+,$/.test(isi)) return ",";
+    if (/^,\s*\.$/.test(isi)) return ".";
+    if (isi === "..") return ".";
+    if (/\s{2,}/.test(isi)) return isi.replace(/\s{2,}/g, " ");
+    return null;
+  }
+  if (jenis === "kosong") {
+    if (/^,(?:\s*,)+$/.test(isi)) return ",";
+    if (/^\(\s*\)$/.test(isi)) return "";
+    if (/\s{2,}/.test(isi)) return isi.replace(/\s{2,}/g, " ");
+  }
+  return null;
+}
+
 export function periksaParagraf(daftar: Paragraf[], opsi?: OpsiPeriksa): HasilPeriksa {
   const temuan: Temuan[] = [];
   const infoPihak: Temuan[] = [];
@@ -834,6 +891,7 @@ export function periksaParagraf(daftar: Paragraf[], opsi?: OpsiPeriksa): HasilPe
         continue;
       }
       const k = kutipanSekitar(p, r.dari, r.sampai);
+      const rapi = usulRapi(r.jenis, p.slice(r.dari, r.sampai));
       tujuan.push({
         jenis: r.jenis,
         label: LABEL[r.jenis],
@@ -842,11 +900,147 @@ export function periksaParagraf(daftar: Paragraf[], opsi?: OpsiPeriksa): HasilPe
         sesudah: k.sesudah,
         paragraf: par.nomor,
         halaman: par.halaman,
+        dari: r.dari,
+        sampai: r.sampai,
+        ...(rapi === null ? {} : { rapi }),
       });
     }
   }
   const jumlahHalaman = daftar.length ? daftar[daftar.length - 1].halaman : 0;
   return { temuan, jumlahParagraf: daftar.length, jumlahHalaman, terpotong, ...(pihak ? { infoPihak } : {}) };
+}
+
+// ==========================================================================
+// Perbaikan yang dicentang petugas (6 Nov 2026). Salinan di ekstensi.
+// ==========================================================================
+export type PilihanPerbaikan = {
+  paragraf: number;
+  dari: number;
+  sampai: number;
+  jenis: JenisTemuan;
+  cara: "rapi" | "ganti" | "hapus" | "hitam";
+  ganti?: string;
+};
+export type HasilPerbaikan = { rtf: string; jumlah: number; terlewat: number };
+
+/** Teks ketikan menjadi teks RTF: hanya ASCII yang tertulis apa adanya; latin1 lewat \'xx, selebihnya lewat \uN?. */
+function teksKeRtf(teks: string): string {
+  let hasil = "";
+  for (const c of String(teks).replace(/\s+/g, " ")) {
+    const kode = c.codePointAt(0) ?? 0;
+    if (c === "\\" || c === "{" || c === "}") hasil += `\\${c}`;
+    else if (kode >= 0x20 && kode < 0x7f) hasil += c;
+    else if (kode >= 0xa0 && kode <= 0xff) hasil += `\\'${kode.toString(16).padStart(2, "0")}`;
+    else if (kode <= 0xffff) hasil += `\\u${kode > 32767 ? kode - 65536 : kode}?`;
+    else {
+      const a = c.charCodeAt(0);
+      const b = c.charCodeAt(1);
+      hasil += `\\u${a - 65536}?\\u${b - 65536}?`;
+    }
+  }
+  return hasil;
+}
+
+/** Akhir sumber satu huruf; huruf \uN membawa huruf cadangan di belakangnya yang harus ikut. */
+function akhirSumber(baca: string, src: Array<[number, number, number]>, n: number): number {
+  const b = src[n][1];
+  if (!/^\\u-?\d/.test(baca.slice(src[n][0], src[n][0] + 8))) return b;
+  if (src[n + 1] && src[n + 1][0] === b) return b;
+  if (baca[b] === "\\" && baca[b + 1] === "'") return b + 4;
+  if (baca[b] && !/[\\{}\r\n]/.test(baca[b])) return b + 1;
+  return b;
+}
+
+/**
+ * Menerapkan temuan yang dicentang pada RTF. Hanya huruf di dalam rentang temuan yang disentuh; yang tidak dicentang, format, dan
+ * perintah RTF di luar rentang tetap. Temuan yang sudah tidak cocok dengan naskah dilewati dan dihitung, tidak ditebak.
+ */
+export function perbaikiRtf(rtfMasuk: string, pilihan: PilihanPerbaikan[], opsi?: OpsiPeriksa & { untukBaca?: string }): HasilPerbaikan {
+  const rtf = String(rtfMasuk == null ? "" : rtfMasuk);
+  const daftar = Array.isArray(pilihan) ? pilihan : [];
+  const tanpaUbah = { rtf, jumlah: 0, terlewat: daftar.length };
+  try {
+    const baca = opsi && typeof opsi.untukBaca === "string" && opsi.untukBaca.length === rtf.length ? opsi.untukBaca : rtf;
+    const semua = bacaRtfParagraf(baca, true);
+    const jur = blokJurusita(semua);
+    const letakPar = new Map(semua.map((par, n) => [par.nomor, n]));
+    const ubah: Array<{ a: number; b: number; teks: string; urut: number }> = [];
+    let jumlah = 0;
+    let terlewat = 0;
+    let parTerakhir = -1;
+    let sampaiTerakhir = -1;
+    const urut = daftar.slice().sort((x, y) => x.paragraf - y.paragraf || x.dari - y.dari);
+    for (const c of urut) {
+      const n = letakPar.get(c.paragraf);
+      const par = n === undefined ? null : semua[n];
+      const src = par?.src;
+      if (n === undefined || !par || !src || src.length !== par.teks.length) {
+        terlewat += 1;
+        continue;
+      }
+      const { p, pemenang } = rentangParagraf(par, opsi, jur[n]);
+      const batasKiri = c.paragraf === parTerakhir ? sampaiTerakhir : 0;
+      if (!pemenang.some((r) => r.dari === c.dari && r.sampai === c.sampai && r.jenis === c.jenis) || c.dari < batasKiri) {
+        terlewat += 1;
+        continue;
+      }
+      if (c.cara === "hitam") {
+        const warnaLatar = /\\(?:highlight|chcbpat)\d/.test(rtf);
+        let mulai = c.dari;
+        for (let k = c.dari; k < c.sampai; k += 1) {
+          const putus = k === c.sampai - 1 || src[k + 1][0] !== src[k][1] || src[k + 1][2] !== src[k][2];
+          if (!putus) continue;
+          const x = src[mulai];
+          ubah.push({ a: x[0], b: x[0], teks: `\\cf0${warnaLatar ? "\\highlight0\\chcbpat0" : ""} `, urut: ubah.length });
+          const akhir = akhirSumber(baca, src, k);
+          ubah.push({ a: akhir, b: akhir, teks: `\\cf${x[2]} `, urut: ubah.length });
+          mulai = k + 1;
+        }
+        sampaiTerakhir = c.sampai;
+      } else {
+        let d = c.dari;
+        let z = c.sampai;
+        const teks = c.cara === "hapus" ? "" : String(c.ganti == null ? "" : c.ganti);
+        if (!teks) {
+          // Menghapus tidak meninggalkan spasi ganda atau spasi di depan tanda baca.
+          const kiriKosong = d === 0 || /\s/.test(p[d - 1]);
+          const kananRapat = z >= p.length || /[\s,.;:)]/.test(p[z]);
+          if (kiriKosong && kananRapat) {
+            if (d > batasKiri) d -= 1;
+            else if (z < p.length && /\s/.test(p[z])) z += 1;
+          }
+        }
+        const potonganAkhir: Array<{ a: number; b: number }> = [];
+        for (let k = d; k < z; k += 1) {
+          const a = src[k][0];
+          const b = akhirSumber(baca, src, k);
+          const akhirPotongan = potonganAkhir[potonganAkhir.length - 1];
+          if (akhirPotongan && akhirPotongan.b === a) akhirPotongan.b = b;
+          else if (!akhirPotongan || a >= akhirPotongan.b) potonganAkhir.push({ a, b });
+        }
+        potonganAkhir.forEach((x, i) => {
+          // Perintah RTF tanpa pemisah tepat di depan huruf yang dihapus jangan menempel pada huruf sesudahnya.
+          const pemisah = /(?<!\\)\\[a-zA-Z]+-?\d*$/.test(rtf.slice(Math.max(0, x.a - 32), x.a)) ? " " : "";
+          ubah.push({ a: x.a, b: x.b, teks: `${pemisah}${i === 0 ? teksKeRtf(teks) : ""}`, urut: ubah.length });
+        });
+        sampaiTerakhir = Math.max(z, c.sampai);
+      }
+      parTerakhir = c.paragraf;
+      jumlah += 1;
+    }
+    if (!ubah.length) return { rtf, jumlah: 0, terlewat };
+    ubah.sort((x, y) => x.a - y.a || x.urut - y.urut);
+    let hasil = "";
+    let akhir = 0;
+    for (const u of ubah) {
+      hasil += rtf.slice(akhir, u.a) + u.teks;
+      akhir = Math.max(akhir, u.b);
+    }
+    hasil += rtf.slice(akhir);
+    return { rtf: hasil, jumlah, terlewat };
+  } catch {
+    return tanpaUbah;
+  }
 }
 
 export function periksaTeks(teks: string, opsi?: OpsiPeriksa): HasilPeriksa {

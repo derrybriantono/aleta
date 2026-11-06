@@ -57,6 +57,17 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.79",
+    dirilis: "2026-11-06T19:00:00+08:00",
+    judul: "Pilih sendiri bagian naskah yang diperbaiki dengan centang",
+    butir: [
+      "Pemeriksaan naskah sebelum diunduh atau sebelum putus kini punya centang per temuan pada Blangko ABT by Derry, ALETA ABT, dan Putusan Otomatis: yang dicentang langsung diperbaiki pada naskah, yang tidak dicentang dibiarkan apa adanya dan tidak diwarnai merah.",
+      "Kata berulang dan spasi di depan koma dirapikan sendiri; isian yang belum terisi boleh diketik langsung atau dihapus; tulisan merah boleh dihitamkan atau dihapus.",
+      "Kotak hasil sesudah Putusan Otomatis selesai punya tombol keluar di ujung kanan atas.",
+      "Desa atau Kelurahan Ganti dikenali sebagai nama tempat, jadi tidak lagi menjadi temuan.",
+    ],
+  },
+  {
     versi: "1.205.78",
     dirilis: "2026-11-06T16:00:00+08:00",
     judul: "Isian panjang Harta Bersama tetap berparagraf",

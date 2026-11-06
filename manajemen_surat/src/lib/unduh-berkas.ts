@@ -106,7 +106,7 @@ export async function tanganiUnduhan(
   }
 
   const nama = opsi.nama || namaDariDisposisi(respons.headers.get("content-disposition")) || opsi.namaCadangan;
-  const blob = await respons.blob();
+  let blob = await respons.blob();
   if (blob.size > 0) {
     // Putusan, BAS, dan relaas diperiksa dulu: bila masih ada sisa blangko petugas
     // diperingatkan (tetap boleh lanjut). Tanpa temuan -> alur lama persis.
@@ -116,8 +116,9 @@ export async function tanganiUnduhan(
         let batalkan = false;
         try {
           const { tinjauSisaBlangko } = await import("@/lib/dialog-sisa-blangko");
-          const tinjau = await tinjauSisaBlangko(blob, { nama, jenis, aksi: "unduh" });
+          const tinjau = await tinjauSisaBlangko(blob, { nama, jenis, aksi: "unduh", bisaPerbaiki: true });
           batalkan = tinjau.lanjut === false;
+          if (tinjau.bitaBersih) blob = new Blob([tinjau.bitaBersih], { type: blob.type || "application/rtf" });
         } catch {
           // Galat pemeriksa (termasuk gagal memuat modul dialog) TIDAK BOLEH menahan unduhan.
           batalkan = false;

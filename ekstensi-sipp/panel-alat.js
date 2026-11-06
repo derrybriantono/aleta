@@ -2259,8 +2259,10 @@ async function alatUnduh(blob, namaMentah, opsi) {
     try {
       const jenisNaskah = (opsi && opsi.jenisNaskah) || aletaDeteksiSisa.jenisNaskahDariNama(nama);
       if (jenisNaskah) {
-        const tinjau = await aletaDeteksiSisa.tinjau(blob, { nama, jenis: jenisNaskah, aksi: "unduh", massal: Boolean(opsi && opsi.massal) });
+        const massal = Boolean(opsi && opsi.massal);
+        const tinjau = await aletaDeteksiSisa.tinjau(blob, { nama, jenis: jenisNaskah, aksi: "unduh", massal, bisaPerbaiki: !massal });
         if (tinjau && tinjau.lanjut === false) batalkan = true;
+        else if (tinjau && tinjau.bitaBersih) blob = new Blob([tinjau.bitaBersih], { type: blob.type || "application/rtf" });
       }
     } catch {
       /* galat pemeriksa tidak boleh menahan unduhan */

@@ -19,15 +19,17 @@ import {
   jenisNaskahDariNama,
   letakTemuan,
   NAMA_NASKAH,
+  perbaikiRtf,
   periksaBita,
   ringkasJenis,
   susunDaftarTxt,
   type JenisNaskah,
   type Paragraf,
+  type PilihanPerbaikan,
   type Temuan,
 } from "@/lib/deteksi-sisa-blangko";
 
-export type PilihanSisa = "lanjut" | "batal";
+export type PilihanSisa = "lanjut" | "batal" | { cara: "perbaiki"; daftar: PilihanPerbaikan[] };
 
 export type OpsiTinjau = {
   nama?: string;
@@ -37,6 +39,8 @@ export type OpsiTinjau = {
   aksi: "unduh" | "unggah";
   /** Pembaca PDF (bita -> paragraf). Tanpa ini PDF dilewati. */
   bacaPdf?: (bita: Uint8Array) => Promise<Paragraf[]>;
+  /** Pemanggil memakai naskah hasil perbaikan; hanya RTF yang bercentang. */
+  bisaPerbaiki?: boolean;
 };
 
 const INGAT_MS = 3 * 60 * 1000;
@@ -72,10 +76,10 @@ function buat<K extends keyof HTMLElementTagNameMap>(tag: K, gaya?: string, teks
   return e;
 }
 
-/** Dialog peringatan. Pulang "lanjut" atau "batal". */
+/** Dialog peringatan. Pulang "lanjut", "batal", atau daftar yang dicentang bila o.bisaPerbaiki. */
 export function tampilkanDialogSisa(
   temuan: Temuan[],
-  o: { nama?: string; jenis?: JenisNaskah | ""; aksi: "unduh" | "unggah"; terpotong?: number }
+  o: { nama?: string; jenis?: JenisNaskah | ""; aksi: "unduh" | "unggah"; terpotong?: number; bisaPerbaiki?: boolean }
 ): Promise<PilihanSisa> {
   return new Promise((selesai) => {
     if (typeof document === "undefined" || !document.body) return selesai("lanjut");
@@ -107,17 +111,72 @@ export function tampilkanDialogSisa(
       ringkas.appendChild(buat("span", "background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;", `${r.label}: ${r.jumlah}`));
     }
     kepala.appendChild(ringkas);
+    const bisaCentang = o.bisaPerbaiki === true;
+    if (bisaCentang) {
+      kepala.appendChild(buat("div", "margin-top:10px;font-size:13px;opacity:.85;", "Centang bagian yang memang perlu diperbaiki. Yang tidak dicentang dibiarkan apa adanya."));
+    }
     const isi = buat("div", "padding:8px 20px;overflow:auto;flex:1;");
     const daftar = buat("ol", "margin:0;padding-left:20px;");
-    const tampil = temuan.slice(0, 12);
+    const tampil = bisaCentang ? temuan : temuan.slice(0, 12);
+    type Centangan = { c: HTMLInputElement; ubah: HTMLDivElement; t: Temuan; bacaCara: () => Pick<PilihanPerbaikan, "cara" | "ganti"> };
+    const centangan: Centangan[] = [];
+    let segarkanCentang = () => {};
     for (const t of tampil) {
       const li = buat("li", "margin:0 0 8px;");
-      li.appendChild(buat("div", "font-weight:600;font-size:13px;", `${t.label} - ${letakTemuan(t)}`));
       const k = buat("div", "font-size:13px;opacity:.9;word-break:break-word;");
       k.appendChild(document.createTextNode(t.sebelum ? `${t.sebelum} ` : ""));
       k.appendChild(buat("mark", "background:#fecaca;color:#7f1d1d;padding:0 2px;border-radius:3px;", t.cocok));
       k.appendChild(document.createTextNode(t.sesudah ? ` ${t.sesudah}` : ""));
-      li.appendChild(k);
+      if (bisaCentang) {
+        const baris = buat("label", "display:flex;gap:6px;align-items:flex-start;cursor:pointer;font-weight:600;font-size:13px;");
+        const c = buat("input", "margin-top:3px;flex:none;");
+        c.type = "checkbox";
+        c.setAttribute("data-sisa-centang", "1");
+        baris.appendChild(c);
+        baris.appendChild(document.createTextNode(`${t.label} - ${letakTemuan(t)}`));
+        li.appendChild(baris);
+        li.appendChild(k);
+        const ubah = buat("div", "display:none;margin-top:4px;font-size:13px;gap:6px;flex-wrap:wrap;align-items:center;");
+        ubah.setAttribute("data-sisa-ubah", "1");
+        const gayaIsian = "font:inherit;padding:3px 6px;border:1px solid hsl(var(--border));border-radius:6px;background:transparent;color:inherit;";
+        let bacaCara: Centangan["bacaCara"];
+        if (t.rapi !== undefined) {
+          const bunyi = t.rapi;
+          ubah.appendChild(buat("span", "", bunyi ? `Dirapikan menjadi "${bunyi}".` : "Dihapus."));
+          bacaCara = () => ({ cara: "rapi", ganti: bunyi });
+        } else {
+          let pilihCara: HTMLSelectElement | null = null;
+          if (t.jenis === "merah") {
+            pilihCara = buat("select", gayaIsian);
+            for (const [nilai, teks] of [["hitam", "Hitamkan, tulisan tetap"], ["hapus", "Hapus tulisan ini"]]) {
+              const op = buat("option", "", teks);
+              op.value = nilai;
+              pilihCara.appendChild(op);
+            }
+            ubah.appendChild(pilihCara);
+          }
+          const ketik = buat("input", `${gayaIsian}flex:1;min-width:180px;`);
+          ketik.type = "text";
+          ketik.setAttribute("data-sisa-ketik", "1");
+          ketik.placeholder = t.jenis === "merah" ? "Atau ganti dengan..." : "Ganti dengan... (kosong = dihapus)";
+          ubah.appendChild(ketik);
+          const cara = pilihCara;
+          bacaCara = () => {
+            const nilai = String(ketik.value || "").trim();
+            if (nilai) return { cara: "ganti", ganti: nilai };
+            return { cara: cara ? (cara.value as "hitam" | "hapus") : "hapus" };
+          };
+        }
+        li.appendChild(ubah);
+        c.addEventListener("change", () => {
+          ubah.style.display = c.checked ? "flex" : "none";
+          segarkanCentang();
+        });
+        centangan.push({ c, ubah, t, bacaCara });
+      } else {
+        li.appendChild(buat("div", "font-weight:600;font-size:13px;", `${t.label} - ${letakTemuan(t)}`));
+        li.appendChild(k);
+      }
       daftar.appendChild(li);
     }
     isi.appendChild(daftar);
@@ -130,6 +189,37 @@ export function tampilkanDialogSisa(
     const bLanjut = buat("button", gayaTombol, "Lanjut saja");
     const bBatal = buat("button", gayaTombol, "Batal");
     for (const b of [bUnduh, bLanjut, bBatal]) b.type = "button";
+    let bPerbaiki: HTMLButtonElement | null = null;
+    if (bisaCentang) {
+      // Tombol utama adalah memperbaiki; unduh daftar tetap ada sebagai pilihan biasa.
+      bUnduh.style.cssText = gayaTombol;
+      const utama = buat("button", `${gayaTombol}background:#1d4ed8;border-color:#1d4ed8;color:#fff;font-weight:600;`, "Perbaiki yang dicentang lalu lanjut");
+      utama.type = "button";
+      utama.disabled = true;
+      utama.style.opacity = "0.5";
+      bPerbaiki = utama;
+      const labelSemua = buat("label", "display:flex;gap:6px;align-items:center;font-size:13px;margin-right:auto;");
+      const semua = buat("input");
+      semua.type = "checkbox";
+      semua.setAttribute("data-sisa-semua", "1");
+      labelSemua.appendChild(semua);
+      labelSemua.appendChild(document.createTextNode("Centang semua"));
+      kaki.appendChild(labelSemua);
+      segarkanCentang = () => {
+        const jumlah = centangan.filter((x) => x.c.checked).length;
+        utama.disabled = jumlah === 0;
+        utama.style.opacity = jumlah === 0 ? "0.5" : "1";
+        utama.textContent = jumlah ? `Perbaiki ${jumlah} yang dicentang lalu lanjut` : "Perbaiki yang dicentang lalu lanjut";
+        semua.checked = jumlah === centangan.length;
+      };
+      semua.addEventListener("change", () => {
+        for (const x of centangan) {
+          x.c.checked = semua.checked;
+          x.ubah.style.display = semua.checked ? "flex" : "none";
+        }
+        segarkanCentang();
+      });
+    }
 
     let selesaiSudah = false;
     const tombolKeyboard = (e: KeyboardEvent) => {
@@ -162,16 +252,24 @@ export function tampilkanDialogSisa(
       }
       tutup("lanjut");
     });
+    bPerbaiki?.addEventListener("click", () => {
+      const pilihan: PilihanPerbaikan[] = centangan
+        .filter((x) => x.c.checked)
+        .map((x) => ({ paragraf: x.t.paragraf, dari: x.t.dari ?? 0, sampai: x.t.sampai ?? 0, jenis: x.t.jenis, ...x.bacaCara() }));
+      if (pilihan.length) tutup({ cara: "perbaiki", daftar: pilihan });
+    });
     kaki.appendChild(bBatal);
     kaki.appendChild(bLanjut);
     kaki.appendChild(bUnduh);
+    if (bPerbaiki) kaki.appendChild(bPerbaiki);
     kotak.appendChild(kepala);
     kotak.appendChild(isi);
     kotak.appendChild(kaki);
     tabir.appendChild(kotak);
     document.body.appendChild(tabir);
     try {
-      bUnduh.focus();
+      if (centangan.length) centangan[0].c.focus();
+      else bUnduh.focus();
     } catch {
       /* fokus tidak wajib */
     }
@@ -210,7 +308,10 @@ export async function bacaPdfPeramban(bita: Uint8Array, batasHalaman = 120): Pro
  * Periksa lalu (bila ada temuan) tanyakan petugas. Tidak pernah melempar: gagal
  * memeriksa berarti lanjut seperti biasa.
  */
-export async function tinjauSisaBlangko(sumber: Blob | Uint8Array | ArrayBuffer, opsi: OpsiTinjau): Promise<{ lanjut: boolean; temuan: Temuan[] }> {
+export async function tinjauSisaBlangko(
+  sumber: Blob | Uint8Array | ArrayBuffer,
+  opsi: OpsiTinjau
+): Promise<{ lanjut: boolean; temuan: Temuan[]; dipilih?: boolean; perbaikan?: { jumlah: number; terlewat: number }; bitaBersih?: Uint8Array<ArrayBuffer> }> {
   try {
     const jenis = opsi.jenis || jenisNaskahDariAlamat(opsi.alamat) || jenisNaskahDariNama(opsi.nama);
     if (!jenis) return { lanjut: true, temuan: [] };
@@ -221,7 +322,19 @@ export async function tinjauSisaBlangko(sumber: Blob | Uint8Array | ArrayBuffer,
     if (w && Date.now() - w < INGAT_MS) return { lanjut: true, temuan: [] };
     const h = await periksaBita(bita, opsi.nama, { bacaPdf: opsi.bacaPdf ?? bacaPdfPeramban });
     if (!h.dibaca || !h.hasil || !h.hasil.temuan.length) return { lanjut: true, temuan: [] };
-    const pilihan = await tampilkanDialogSisa(h.hasil.temuan, { nama: opsi.nama, jenis, aksi: opsi.aksi, terpotong: h.hasil.terpotong });
+    const bisaPerbaiki = opsi.bisaPerbaiki === true && h.bentuk === "rtf" && h.hasil.temuan.every((t) => Number.isInteger(t.dari) && Number.isInteger(t.sampai));
+    const pilihan = await tampilkanDialogSisa(h.hasil.temuan, { nama: opsi.nama, jenis, aksi: opsi.aksi, terpotong: h.hasil.terpotong, bisaPerbaiki });
+    if (typeof pilihan === "object") {
+      let mentah = "";
+      for (let k = 0; k < bita.length; k += 8192) mentah += String.fromCharCode(...bita.subarray(k, k + 8192));
+      const f = perbaikiRtf(mentah, pilihan.daftar, { jenis, untukBaca: new TextDecoder("windows-1252").decode(bita) });
+      ingatan.set(kunci, Date.now());
+      const perbaikan = { jumlah: f.jumlah, terlewat: f.terlewat };
+      if (!f.jumlah) return { lanjut: true, temuan: h.hasil.temuan, dipilih: true, perbaikan };
+      const bitaBersih = new Uint8Array(f.rtf.length);
+      for (let k = 0; k < f.rtf.length; k += 1) bitaBersih[k] = f.rtf.charCodeAt(k) & 255;
+      return { lanjut: true, temuan: h.hasil.temuan, dipilih: true, perbaikan, bitaBersih };
+    }
     if (pilihan === "lanjut") ingatan.set(kunci, Date.now());
     return { lanjut: pilihan === "lanjut", temuan: h.hasil.temuan };
   } catch {

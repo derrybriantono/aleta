@@ -562,7 +562,7 @@ describe("berhasil -> pesan + segarkan di halaman yang sama", () => {
     const kotakMu = await sampai(() => h.d.querySelector(".aleta-mu"), "kotak hasil");
     expect(kotakMu.textContent).toContain("Berhasil: 1 perkara dijadwalkan.");
     expect(kotakMu.textContent).toContain("Antrean terjadwal tetap terbuka");
-    expect(Array.from(kotakMu.querySelectorAll("button")).map((b) => b.textContent)).toEqual(["Segarkan halaman"]);
+    expect(Array.from(kotakMu.querySelectorAll("button")).map((b) => b.textContent)).toEqual(["Segarkan halaman", "×"]);
     await tunggu(600);
     expect(h.navigasi).toEqual([]);
     (kotakMu.querySelector('[data-mu="sekarang"]') as HTMLButtonElement).click();
