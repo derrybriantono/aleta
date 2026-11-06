@@ -49,23 +49,50 @@ const MENGADILI = /^\s*MENGADILI\s*:?\s*$/i;
 const FAKTA = /fakta[- ]fakta\s+hukum|fakta\s+hukum|ditemukan\s+fakta|analisis\s+bukti/i;
 /** Alinea yang menilai satu bukti: dibuka dengan "Menimbang, bahwa (alat) bukti ..." atau "- Bahwa bukti ...". */
 const PENILAIAN = /^\s*[-–—•*]?\s*(?:Menimbang,?\s+)?(?:bahwa\s+)?(?:terhadap\s+|mengenai\s+)?(?:alat\s+)?bukti\b/i;
-const KODE_DALAM = /(?<![A-Za-z0-9\-/.])([PT])\.(\d+)(?!\d)/g;
-const RENTANG = /(?<![A-Za-z0-9\-/.])([PT])\.(\d+)\s*(?:sampai(?:\s+dengan)?|s\/d|s\.d\.?|hingga|[-–—])\s*(?:([PT])\.)?(\d+)(?!\d)/gi;
+/**
+ * Kode bukti: P.n dan T.n (sisi penggugat/pemohon dan tergugat/termohon) serta kode naskah rekonvensi PK.n, TK.n (konvensi), PR.n, TR.n (rekonvensi).
+ * PK.n disamakan dengan P.n dan TK.n dengan T.n; PR.n dan TR.n berdiri sendiri karena sisinya tidak bisa dipastikan dari kodenya.
+ */
+const SISI_KODE = String.raw`PK|TK|PR|TR|P|T`;
+const KODE_DALAM = new RegExp(String.raw`(?<![A-Za-z0-9\-/.])(${SISI_KODE})\.(\d+)(?!\d)`, "g");
+/** Pasangan satu bukti berkode ganda ("PK.1/TR.1"); hanya dibaca bila salah satunya kode dua huruf, jadi "P.1/T.1" biasa tidak berubah. */
+const PASANGAN = new RegExp(String.raw`(?<![A-Za-z0-9\-/.])(${SISI_KODE})\.(\d+)/(${SISI_KODE})\.(\d+)(?!\d)`, "g");
+const RENTANG = new RegExp(
+  String.raw`(?<![A-Za-z0-9\-/.])(${SISI_KODE})\.(\d+)(?:/(PK|TK|PR|TR)\.(\d+))?\s*(?:sampai(?:\s+dengan)?|s/d|s\.d\.?|hingga|[-–—])\s*(?:(${SISI_KODE})\.)?(\d+)(?:/(PK|TK|PR|TR)\.(\d+))?(?!\d)`,
+  "gi"
+);
+const KODE_CALON = new RegExp(String.raw`(?<![A-Za-z0-9])(${SISI_KODE})\.(\d+)(?!\d)`, "g");
+
+/** Bentuk baku sisi: PK menjadi P, TK menjadi T, lainnya apa adanya. */
+const sisiBaku = (s: string): string => {
+  const u = s.toUpperCase();
+  return u === "PK" ? "P" : u === "TK" ? "T" : u;
+};
 
 const rapi = (x: unknown) => String(x ?? "").replace(/\s+/g, " ").trim();
-const kodeDari = (kode: string): string[] => [...kode.matchAll(/(?<![A-Za-z0-9])([PT])\.(\d+)(?!\d)/g)].map((m) => `${m[1]}.${m[2]}`);
+const kodeDari = (kode: string): string[] => [...kode.matchAll(KODE_CALON)].map((m) => `${sisiBaku(m[1])}.${m[2]}`);
 
 /** Semua kode bukti yang disebut satu alinea, termasuk yang tersirat dalam rentang ("P.1 sampai P.3" menyebut P.1, P.2, P.3). */
 export function kodeDisebut(teks: string): Set<string> {
   const hasil = new Set<string>();
   const t = String(teks ?? "").replace(/ /g, " ");
-  for (const m of t.matchAll(KODE_DALAM)) hasil.add(`${m[1].toUpperCase()}.${m[2]}`);
+  for (const m of t.matchAll(KODE_DALAM)) hasil.add(`${sisiBaku(m[1])}.${m[2]}`);
+  for (const m of t.matchAll(PASANGAN)) {
+    if (m[1].length === 2 || m[3].length === 2) {
+      hasil.add(`${sisiBaku(m[1])}.${m[2]}`);
+      hasil.add(`${sisiBaku(m[3])}.${m[4]}`);
+    }
+  }
   for (const m of t.matchAll(RENTANG)) {
     const sisi = m[1].toUpperCase();
-    if (m[3] && m[3].toUpperCase() !== sisi) continue;
+    if (m[5] && m[5].toUpperCase() !== sisi) continue;
     const a = Number(m[2]);
-    const b = Number(m[4]);
-    if (b > a && b - a <= 60) for (let n = a; n <= b; n += 1) hasil.add(`${sisi}.${n}`);
+    const b = Number(m[6]);
+    if (b > a && b - a <= 60) {
+      for (let n = a; n <= b; n += 1) hasil.add(`${sisiBaku(sisi)}.${n}`);
+      // Kode pasangan ("PK.1/TR.1 sampai PK.3/TR.3") ikut bila nomornya sama dengan kode utamanya.
+      if (m[3] && m[7] && Number(m[4]) === a && Number(m[8]) === b) for (let n = a; n <= b; n += 1) hasil.add(`${sisiBaku(m[3])}.${n}`);
+    }
   }
   return hasil;
 }
@@ -147,7 +174,8 @@ function saringCalon(paragraf: ReadonlyArray<ParagrafSisip>): { calon: Calon[]; 
   // Urut menurut kode: sisi P dahulu, lalu nomor; urutan masukan dipertahankan untuk kode yang sama.
   const urut = (c: Calon) => {
     const [sisi, nomor] = c.daftarKode[0].split(".");
-    return (sisi === "P" ? 0 : 1) * 100000 + Number(nomor);
+    const urutSisi = sisi === "P" ? 0 : sisi === "PR" ? 2 : sisi === "TR" ? 3 : 1;
+    return urutSisi * 100000 + Number(nomor);
   };
   calon.sort((a, b) => urut(a) - urut(b));
   return { calon, tidak };

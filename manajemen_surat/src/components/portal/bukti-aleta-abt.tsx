@@ -26,7 +26,7 @@ import { bacaKeadaan, jenisPerkaraBukti, permohonanBukti, susunParagrafBukti, ty
 import type { RencanaSisip } from "@/lib/sisip-pertimbangan-bukti";
 
 type Dokumen = { judul: string; documentKey: string };
-type Bahan = DataSipp & { dokumen: Dokumen[] };
+type Bahan = DataSipp & { dokumen: Dokumen[]; agendaPembuktianKe?: number | null };
 type Butir = { sisi: "P" | "T"; nomor: number; baris: BarisBukti; diperiksa: boolean };
 
 /**
@@ -228,7 +228,7 @@ export function BuktiAletaAbt({
           </div>
         </div>
       </CardContent>
-      <PertimbanganBukti daftar={daftar} alinea={alinea} jenisPerkara={jenisPerkara} tglNikah={bahan?.nikah?.tglNikah} jumlahPemohonSipp={bahan?.P?.length} onParagraf={onParagraf} />
+      <PertimbanganBukti daftar={daftar} alinea={alinea} jenisPerkara={jenisPerkara} tglNikah={bahan?.nikah?.tglNikah} jumlahPemohonSipp={bahan?.P?.length} agendaSipp={bahan?.agendaPembuktianKe ?? null} onParagraf={onParagraf} />
     </Card>
   );
 }
@@ -246,6 +246,7 @@ const PILIHAN_AGENDA = [
   { nilai: 0, teks: "Sebelum ada pembuktian" },
   { nilai: 1, teks: "Pada pembuktian pertama" },
   { nilai: 2, teks: "Pada pembuktian kedua" },
+  { nilai: 3, teks: "Pada pembuktian ketiga atau sesudahnya" },
 ];
 
 /** Keadaan putusan yang tertulis di naskah, sebagai tebakan awal yang bisa diubah. */
@@ -288,6 +289,7 @@ function PertimbanganBukti({
   jenisPerkara,
   tglNikah,
   jumlahPemohonSipp,
+  agendaSipp = null,
   onParagraf,
 }: {
   daftar: Butir[];
@@ -295,6 +297,8 @@ function PertimbanganBukti({
   jenisPerkara: string;
   tglNikah?: string;
   jumlahPemohonSipp?: number;
+  /** Jumlah sidang beragenda pembuktian menurut jadwal SIPP; null = tidak terbaca (pilihan agenda tetap seperti semula). */
+  agendaSipp?: number | null;
   onParagraf?: (paragraf: ParagrafBukti[]) => void;
 }) {
   const awal = useMemo(() => bacaDariNaskah(alinea), [alinea]);
@@ -302,6 +306,13 @@ function PertimbanganBukti({
   const [verstek, setVerstek] = useState(awal.verstek);
   const [lawanMembantah, setLawanMembantah] = useState(false);
   const [agenda, setAgenda] = useState(0);
+  const [agendaDiubah, setAgendaDiubah] = useState(false);
+  const [agendaTerbaca, setAgendaTerbaca] = useState<number | null>(null);
+  // Nilai awal pilihan agenda dari jadwal SIPP, dipakai sekali per nilai baru dan tidak pernah menimpa pilihan yang sudah diubah pengguna.
+  if (agendaSipp !== null && agendaTerbaca !== agendaSipp) {
+    setAgendaTerbaca(agendaSipp);
+    if (!agendaDiubah) setAgenda(Math.min(Math.max(Math.trunc(agendaSipp), 0), 3));
+  }
   const [dipilih, setDipilih] = useState<ReadonlySet<string>>(new Set());
   const [tersalin, setTersalin] = useState(false);
   const [jumlahPilih, setJumlahPilih] = useState<"" | "1" | "2">("");
@@ -403,13 +414,24 @@ function PertimbanganBukti({
         {bacaan.kunci === "cabut" ? (
           <label className="flex flex-col gap-1 text-sm font-medium">
             Perkara dicabut
-            <NativeSelect value={String(agenda)} onChange={(e) => setAgenda(Number(e.target.value))}>
+            <NativeSelect
+              value={String(agenda)}
+              onChange={(e) => {
+                setAgendaDiubah(true);
+                setAgenda(Number(e.target.value));
+              }}
+            >
               {PILIHAN_AGENDA.map((o) => (
                 <option key={o.nilai} value={o.nilai}>
                   {o.teks}
                 </option>
               ))}
             </NativeSelect>
+            {agendaSipp !== null ? (
+              <span className="text-xs font-normal text-muted-foreground">
+                Menurut jadwal SIPP, {agendaSipp} sidang berjalan beragenda pembuktian. Pilihan ini dapat diubah.
+              </span>
+            ) : null}
           </label>
         ) : null}
         {!permohonan ? (

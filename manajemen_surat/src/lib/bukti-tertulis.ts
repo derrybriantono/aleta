@@ -93,6 +93,11 @@ export function samarkanNik(nik: unknown): string {
   return `${d.slice(0, 4)} •••• •••• ${d.slice(-4)}`;
 }
 
+/** Jumlah sidang beragenda pembuktian dari bot: bilangan bulat 1 sampai 50; selain itu (kosong, nol, pecahan, bukan angka) = null. */
+export function bersihAgendaPembuktian(x: unknown): number | null {
+  return typeof x === "number" && Number.isInteger(x) && x >= 1 && x <= 50 ? x : null;
+}
+
 /** Sidik pembanding NIK (FNV-1a). Halaman SIPP/ABT bukan konteks aman, jadi WebCrypto tidak tersedia; hanya untuk mendeteksi salah ketik. */
 export function sidikNik(nik: unknown): string {
   const d = String(nik ?? "").replace(/\D/g, "");

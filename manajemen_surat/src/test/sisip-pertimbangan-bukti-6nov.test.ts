@@ -295,3 +295,78 @@ describe("hanya paragraf yang berhak masuk", () => {
     expect(teks).not.toMatch(/aleta/i);
   });
 });
+
+describe("kode naskah rekonvensi (PK, TK, PR, TR)", () => {
+  const NILAI_PK1 = "- Bahwa bukti PK.1/TR.1 berupa fotokopi Kartu Tanda Penduduk Pemohon merupakan identitas resmi penduduk;";
+  const NILAI_PK2 = "- Bahwa bukti PK.2/TR.2 berupa fotokopi Kutipan Akta Nikah merupakan bukti utama perkawinan;";
+  const SARING = "Menimbang, bahwa untuk membuktikan dalil permohonannya, Pemohon telah mengajukan bukti tertulis PK.1/TR.1 sampai dengan PK.2/TR.2;";
+
+  it("kode dua huruf dibaca sebagai bukti: PK sama dengan P, TK sama dengan T, PR dan TR berdiri sendiri", () => {
+    expect([...kodeDisebut("bukti PK.1 dan TK.2")].sort()).toEqual(["P.1", "T.2"]);
+    expect([...kodeDisebut("bukti PR.1 dan TR.2")].sort()).toEqual(["PR.1", "TR.2"]);
+    expect([...kodeDisebut("bukti PK.1/TR.1")].sort()).toEqual(["P.1", "TR.1"]);
+    // Urutan pasangan dibalik: kode kedua tidak hilang karena didahului garis miring.
+    expect([...kodeDisebut("bukti TR.3/PK.3")].sort()).toEqual(["P.3", "TR.3"]);
+    expect([...kodeDisebut("bukti PK.1/TR.1 sampai dengan PK.3/TR.3")].sort()).toEqual(["P.1", "P.2", "P.3", "TR.1", "TR.2", "TR.3"]);
+    expect([...kodeDisebut("bukti PR.1 sampai PR.3")].sort()).toEqual(["PR.1", "PR.2", "PR.3"]);
+    expect(kodeDisebut("bukti PK.1 sampai TR.3").has("P.2")).toBe(false);
+  });
+
+  it("kode P dan T biasa tidak berubah: garis miring biasa tidak dipasangkan, nomor surat dan huruf menempel tetap diabaikan", () => {
+    expect([...kodeDisebut("bukti P.1/T.1")]).toEqual(["P.1"]);
+    expect([...kodeDisebut("bukti P.1/P.2")]).toEqual(["P.1"]);
+    expect([...kodeDisebut("bukti P.1 sampai P.3")].sort()).toEqual(["P.1", "P.2", "P.3"]);
+    expect([...kodeDisebut("Nomor 445/PK.1/2026, SPK.2, BPR.3, KTR.4 dan XTK.5")]).toEqual([]);
+  });
+
+  it("jangkar dan penanda sudah ada dikenali pada naskah berkode PK/TR", () => {
+    const teks = [...DUDUK, SARING, NILAI_PK1, NILAI_PK2, ...AKHIR];
+    const b = bacaBagianNaskah(teks);
+    expect(teks[b.jangkar]).toBe(NILAI_PK2);
+    expect(b.disebut.has("P.1") && b.disebut.has("P.2")).toBe(true);
+  });
+
+  it("paragraf baru masuk sesudah penilaian bukti terakhir; yang sudah disebut dengan kode PK tidak digandakan", () => {
+    const rtf = naskah([SARING, NILAI_PK1, NILAI_PK2]);
+    const h = sisipkanParagrafBukti(rtf, [{ kode: "P.2", bunyi: "Menimbang, bahwa alat bukti P.2 baru;" }, P3]);
+    expect(h.sudahAda).toEqual(["P.2"]);
+    expect(h.disisipkan).toEqual(["P.3"]);
+    expect(h.tidakDisisip).toEqual([]);
+    const sebelum = teksDari(rtf);
+    const sesudah = teksDari(h.rtf);
+    expect(sesudah.length).toBe(sebelum.length + 1);
+    expect(sesudah[sebelum.indexOf(NILAI_PK2) + 1]).toBe(P3.bunyi);
+    expect(selisihKurungRtf(h.rtf)).toBe(selisihKurungRtf(rtf));
+    // Diulang: tidak pernah ganda.
+    const lagi = sisipkanParagrafBukti(h.rtf, [P3]);
+    expect(lagi.disisipkan).toEqual([]);
+    expect(lagi.rtf).toBe(h.rtf);
+  });
+
+  it("kode calon berawalan PK, TK, PR, TR dikenali dan diurut sesudah P dan T", () => {
+    const rtf = naskah([SARING, NILAI_PK1, NILAI_PK2]);
+    const h = sisipkanParagrafBukti(rtf, [
+      { kode: "TR.4", bunyi: "Menimbang, bahwa alat bukti TR.4 begini;" },
+      { kode: "PR.4", bunyi: "Menimbang, bahwa alat bukti PR.4 begini;" },
+      { kode: "TK.4", bunyi: "Menimbang, bahwa alat bukti TK.4 begini;" },
+      { kode: "PK.1", bunyi: "Menimbang, bahwa alat bukti PK.1 sudah ada;" },
+    ]);
+    expect(h.sudahAda).toEqual(["PK.1"]);
+    expect(h.disisipkan).toEqual(["TK.4", "PR.4", "TR.4"]);
+    expect(h.tidakDisisip).toEqual([]);
+  });
+
+  it("naskah rekonvensi tanpa jangkar tetap dibiarkan dengan sebab yang jelas", () => {
+    const rtf = naskah([SARING]);
+    const h = sisipkanParagrafBukti(rtf, [P3]);
+    expect(h.rtf).toBe(rtf);
+    expect(h.tidakDisisip).toEqual([{ kode: "P.3", sebab: SEBAB_SISIP.tanpaJangkar }]);
+  });
+
+  it("perkiraan dari teks alinea sama dengan hasil sisip", () => {
+    const teks = [...DUDUK, SARING, NILAI_PK1, NILAI_PK2, ...AKHIR];
+    const r = rencanakanSisipan(teks, [{ kode: "P.1", bunyi: "Menimbang, bahwa alat bukti P.1 begini;" }, P3]);
+    expect(r.sudahAda).toEqual(["P.1"]);
+    expect(r.akanMasuk).toEqual(["P.3"]);
+  });
+});

@@ -1,6 +1,6 @@
 import { type NextRequest } from "next/server";
 
-import { sidikNik, samarkanNik } from "@/lib/bukti-tertulis";
+import { bersihAgendaPembuktian, sidikNik, samarkanNik } from "@/lib/bukti-tertulis";
 import { getDatabase } from "@/server/db/client";
 import { pastikanAksi } from "@/server/modules/akses/hak-peran";
 import { getGatewayArsipRincian } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
@@ -19,9 +19,17 @@ export const dynamic = "force-dynamic";
  * Bahan pemeriksaan alat bukti tertulis di Blangko ABT by Derry dan ALETA ABT: nama dan NIK pihak serta data pernikahan dari SIPP, dan
  * daftar berkas e-Court untuk tombol pindaian. NIK utuh TIDAK keluar dari server: yang dikirim bentuk samaran dan sidik pembanding.
  * Tanpa hak data pihak: nama dan NIK tidak dikirim. Tanpa hak berkas: daftar berkas tidak dikirim. Sumber yang gagal = bagian itu kosong.
+ * agendaPembuktianKe (7 Nov 2026): jumlah sidang berjalan beragenda pembuktian menurut jadwal SIPP, nilai awal pilihan agenda pada perkara
+ * dicabut di layar cetak; null bila tidak terbaca. Hanya angka, bukan data pihak.
  */
 type PihakBot = { nama?: string; nik?: string };
-type HasilBot = { ada?: boolean; P?: PihakBot[]; T?: PihakBot[]; nikah?: { nomor?: string; tglKutipan?: string; kua?: string; tglNikah?: string } | null };
+type HasilBot = {
+  ada?: boolean;
+  P?: PihakBot[];
+  T?: PihakBot[];
+  nikah?: { nomor?: string; tglKutipan?: string; kua?: string; tglNikah?: string } | null;
+  agendaPembuktianKe?: number | null;
+};
 
 export async function GET(request: NextRequest) {
   let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
@@ -32,7 +40,7 @@ export async function GET(request: NextRequest) {
     await pastikanKapabilitas(db, actorUserId, "panel");
     const perkaraId = String(request.nextUrl.searchParams.get("perkaraId") || "").trim();
     const nomor = String(request.nextUrl.searchParams.get("nomor") || "").trim();
-    if (!/^\d+$/.test(perkaraId)) return ok({ ada: false, P: [], T: [], nikah: null, dokumen: [] });
+    if (!/^\d+$/.test(perkaraId)) return ok({ ada: false, P: [], T: [], nikah: null, agendaPembuktianKe: null, dokumen: [] });
 
     const bolehPihak = await pastikanAksi(db, actorUserId, "status.data-pihak").then(
       () => true,
@@ -60,7 +68,14 @@ export async function GET(request: NextRequest) {
           .slice(0, 80);
       }
     }
-    return ok({ ada: Boolean(data), P: bersihPihak(data?.P), T: bersihPihak(data?.T), nikah: data?.nikah ?? null, dokumen });
+    return ok({
+      ada: Boolean(data),
+      P: bersihPihak(data?.P),
+      T: bersihPihak(data?.T),
+      nikah: data?.nikah ?? null,
+      agendaPembuktianKe: bersihAgendaPembuktian(data?.agendaPembuktianKe),
+      dokumen,
+    });
   } catch (error) {
     return handleAdminRouteError(error, request, {
       db,
