@@ -7,6 +7,10 @@
  * pertimbangan menurut kartu aturan (kartu-pertimbangan-bukti.json). Semua bunyi berasal dari Blangko ABT by Derry Briantono; jenis bukti
  * yang tidak punya bunyi di blangko dilaporkan di belumAdaBunyi, tidak dikarang. Tidak menulis ke SIPP atau ABT.
  *
+ * Usulan bunyi (kartu-usulan-bukti.json, 7 Nov 2026) terpisah dari blangko: kartu `disetujui: false` hanya dipulangkan di perluDisetujui, tidak
+ * pernah masuk paragraf; `disetujui: true` menjadi usulan bercentang di belakang semua paragraf blangko. Jenis yang punya bunyi sendiri di blangko
+ * tidak memakai kartu usulan.
+ *
  * Keputusan pemilik yang dijalankan di sini:
  *  - bukti pokok tertulis otomatis, bukti pelengkap menjadi usulan;
  *  - kalimat "tidak dibantah" hanya bila lawan hadir dan tidak membantah;
@@ -18,6 +22,7 @@
 
 import { jenisBuktiDari, katalogDari, tanggalIndo, type BarisBukti } from "./bukti-tertulis";
 import kartuJson from "./kartu-pertimbangan-bukti.json";
+import kartuUsulanJson from "./kartu-usulan-bukti.json";
 
 export type JenisCerai = "CG" | "CT";
 /** CG cerai gugat, CT cerai talak, IN itsbat nikah, DK dispensasi kawin. */
@@ -46,6 +51,24 @@ export type Kartu = {
   sumberKhusus?: string;
 };
 export const KARTU_PERTIMBANGAN: readonly Kartu[] = (kartuJson as unknown as { kartu: Kartu[] }).kartu;
+
+/** Bunyi susunan AI yang menunggu pemeriksaan pemilik; bukan dari blangko. */
+export type KartuUsulan = {
+  id: string;
+  kunci: string;
+  perkara: JenisPerkaraBukti[];
+  keadaan: KeadaanKartu[];
+  sisi: "P" | "T" | "PT";
+  bunyi: string;
+  /** Apa yang diterangkan bukti itu, tanpa kesimpulan. */
+  isi: string;
+  dasar: string[];
+  perluDicek: string[];
+  disetujui: boolean;
+};
+const dataUsulan = kartuUsulanJson as unknown as { kartu: KartuUsulan[]; bunyiTanpaAsli: Partial<Record<KeadaanKartu, string>> };
+export const KARTU_USULAN: readonly KartuUsulan[] = dataUsulan.kartu;
+export const BUNYI_TANPA_ASLI: Readonly<Partial<Record<KeadaanKartu, string>>> = dataUsulan.bunyiTanpaAsli;
 
 export type BuktiMasuk = { sisi: "P" | "T"; nomor: number; baris: BarisBukti; agendaKe?: number };
 /** Isian tambahan untuk itsbat nikah dan dispensasi kawin; semuanya boleh kosong (bagian kalimat yang membutuhkannya tidak ditulis). */
@@ -77,14 +100,19 @@ export type MasukanPertimbangan = {
   agendaPembuktianKe: number;
   bukti: readonly BuktiMasuk[];
   konteks?: KonteksPerkara;
+  /** Bawaan: kartu-usulan-bukti.json. */
+  kartuUsulan?: readonly KartuUsulan[];
 };
 export type ParagrafBukti = { kode: string; kunci: string; bunyi: string; cara: "otomatis" | "usulan"; asal: string };
 export type BelumAdaBunyi = { kode: string; kunci: string; nama: string; alasan: string };
+/** Usulan yang belum diperiksa pemilik: hanya untuk ditinjau, tidak untuk paragraf atau teks salin. */
+export type PerluDisetujui = { id: string; kode: string; kunci: string; nama: string; bunyi: string; dasar: string[] };
 export type HasilPertimbangan = {
   /** Keadaan yang terbaca, dalam bahasa sehari-hari, untuk ditampilkan. */
   keadaan: string;
   paragraf: ParagrafBukti[];
   belumAdaBunyi: BelumAdaBunyi[];
+  perluDisetujui: PerluDisetujui[];
   catatan: string[];
 };
 
@@ -212,7 +240,7 @@ function susunUntuk(
   jenis: JenisPerkaraBukti,
   bukti: readonly BuktiMasuk[],
   paksaUsulan: boolean
-): { paragraf: ParagrafBukti[]; belum: BelumAdaBunyi[] } {
+): { paragraf: ParagrafBukti[]; belum: BelumAdaBunyi[]; perlu: PerluDisetujui[] } {
   const k = m.konteks ?? {};
   const isian = k.isian ?? {};
   const permohonan = permohonanBukti(jenis);
@@ -308,6 +336,28 @@ function susunUntuk(
       }
     }
   }
+  // Kartu usulan, sesudah semua kartu blangko supaya blangko tetap di depan. Jenis yang punya bunyi sendiri di blangko tidak memakainya.
+  const punyaBunyiSendiri = (j: string) => kartuBerlaku.some((x) => x.kunci !== "*" && x.kunci.includes(j) && !x.syarat);
+  const perlu: PerluDisetujui[] = [];
+  for (const b of bukti) {
+    const r = b.baris;
+    const j = jenisBuktiDari(r.nm);
+    if (!j || punyaBunyiSendiri(j)) continue;
+    const kar = (m.kartuUsulan ?? KARTU_USULAN).find((x) => x.kunci === j && x.perkara.includes(jenis) && x.keadaan.includes(keadaan) && x.sisi.includes(b.sisi));
+    if (!kar) continue;
+    // Meterai atau pencocokan yang tidak punya bunyi: tidak ada usulan, keterangan di belumAdaBunyi tetap berlaku.
+    if (!bebas(r) && (meterai(r) === 1 || meterai(r) === 2 || cocok(r) === 2 || cocok(r) === 3)) continue;
+    const kode = kodeDari(b);
+    const tanpaAsli = !bebas(r) && cocok(r) === 1;
+    if (tanpaAsli && paragraf.some((p) => /tidak dapat dicocokkan/.test(p.bunyi) && p.kode.split(/,\s*|\s+dan\s+/).includes(kode))) continue;
+    const bunyi = isiKartu(tanpaAsli ? (BUNYI_TANPA_ASLI[keadaan] ?? kar.bunyi) : kar.bunyi, { ...dasar(b.sisi), kode, ...dariBaris(b) }, false);
+    if (kar.disetujui) {
+      paragraf.push({ kode, kunci: j, bunyi, cara: "usulan", asal: "usulan yang sudah Bapak setujui, bukan dari blangko" });
+      terbaca.add(b);
+    } else {
+      perlu.push({ id: kar.id, kode, kunci: j, nama: String(r.nm).trim(), bunyi, dasar: tanpaAsli ? [] : kar.dasar });
+    }
+  }
   // Bagian isian yang tidak punya bunyi di blangko.
   for (const b of bukti) {
     const r = b.baris;
@@ -323,7 +373,7 @@ function susunUntuk(
       catatBelum(b, j && !pokok.has(j) ? "Blangko tidak memuat bunyi untuk jenis bukti ini." : "Blangko tidak memuat bunyi untuk bukti ini pada keadaan yang dipilih.");
     }
   }
-  return { paragraf, belum };
+  return { paragraf, belum, perlu };
 }
 
 function gabungKodeTerurut(b: readonly BuktiMasuk[]): string {
@@ -336,7 +386,7 @@ export function susunParagrafBukti(m: MasukanPertimbangan): HasilPertimbangan {
   const permohonan = permohonanBukti(jenis);
   const verstek = permohonan ? false : m.verstek;
   const bacaan = bacaKeadaan(m.status, verstek, permohonan);
-  const kosong = (catatan: string[]): HasilPertimbangan => ({ keadaan: bacaan.teks, paragraf: [], belumAdaBunyi: [], catatan });
+  const kosong = (catatan: string[]): HasilPertimbangan => ({ keadaan: bacaan.teks, paragraf: [], belumAdaBunyi: [], perluDisetujui: [], catatan });
   const daftar = m.bukti.filter((b) => b && b.baris && String(b.baris.nm ?? "").trim());
   const belumSemua = (alasan: string) => daftar.map((b) => ({ kode: kodeDari(b), kunci: jenisBuktiDari(b.baris.nm), nama: String(b.baris.nm).trim(), alasan }));
   if (bacaan.kunci === "kosong") return kosong([bacaan.teks === "Keadaan putusan belum terbaca" ? "Status putusan tidak dikenali, jadi tidak ada paragraf." : "Pada keadaan ini tidak ada paragraf pertimbangan bukti."]);
@@ -345,6 +395,7 @@ export function susunParagrafBukti(m: MasukanPertimbangan): HasilPertimbangan {
       keadaan: bacaan.teks,
       paragraf: [],
       belumAdaBunyi: belumSemua("Blangko dispensasi kawin hanya ditulis untuk dua Pemohon (kedua orang tua)."),
+      perluDisetujui: [],
       catatan: ["Dengan satu Pemohon, blangko dispensasi kawin tidak punya bunyi bukti; jumlah Pemohon dapat diubah di atas."],
     };
   if (bacaan.kunci === "tdt") {
@@ -353,20 +404,21 @@ export function susunParagrafBukti(m: MasukanPertimbangan): HasilPertimbangan {
         keadaan: bacaan.teks,
         paragraf: [],
         belumAdaBunyi: belumSemua("Blangko Tidak Dapat Diterima tidak memuat bunyi per alat bukti."),
+        perluDisetujui: [],
         catatan: ["Putusan berhenti pada syarat formil; blangko tidak menguraikan alat bukti satu per satu."],
       };
     const hasil = susunUntuk("tdt", m, jenis, daftar, false);
-    return { keadaan: bacaan.teks, paragraf: hasil.paragraf, belumAdaBunyi: hasil.belum, catatan: ["Tidak dapat diterima: hanya blangko NO yang memuat penilaian bukti yang dipakai; bunyi lain tidak ada."] };
+    return { keadaan: bacaan.teks, paragraf: hasil.paragraf, belumAdaBunyi: hasil.belum, perluDisetujui: hasil.perlu, catatan: ["Tidak dapat diterima: hanya blangko NO yang memuat penilaian bukti yang dipakai; bunyi lain tidak ada."] };
   }
   if (bacaan.kunci === "cabut") {
     const agenda = Number(m.agendaPembuktianKe) || 0;
     if (agenda < 2) return kosong([agenda < 1 ? "Dicabut sebelum ada pembuktian: tidak ada paragraf." : "Dicabut pada agenda pembuktian pertama: belum ada pembuktian sebelumnya yang dapat ditawarkan."]);
     const lama = daftar.filter((b) => (b.agendaKe ?? 1) < agenda);
     const hasil = susunUntuk(verstek ? "kabul-verstek" : "kabul", m, jenis, lama, true);
-    return { keadaan: bacaan.teks, paragraf: hasil.paragraf, belumAdaBunyi: hasil.belum, catatan: [`Dicabut pada agenda pembuktian ke-${agenda}: bukti pembuktian sebelumnya ditawarkan sebagai usulan.`] };
+    return { keadaan: bacaan.teks, paragraf: hasil.paragraf, belumAdaBunyi: hasil.belum, perluDisetujui: hasil.perlu, catatan: [`Dicabut pada agenda pembuktian ke-${agenda}: bukti pembuktian sebelumnya ditawarkan sebagai usulan.`] };
   }
   const hasil = susunUntuk(bacaan.kunci, m, jenis, daftar, false);
   const catatan: string[] = [];
   if (bacaan.kunci === "tolak" || bacaan.kunci === "tolak-verstek") catatan.push("Ditolak: bukti dinilai tanpa menyimpulkan bahwa dalil terbukti.");
-  return { keadaan: bacaan.teks, paragraf: hasil.paragraf, belumAdaBunyi: hasil.belum, catatan };
+  return { keadaan: bacaan.teks, paragraf: hasil.paragraf, belumAdaBunyi: hasil.belum, perluDisetujui: hasil.perlu, catatan };
 }
