@@ -502,8 +502,8 @@ function PertimbanganBukti({
       ) : null}
       {hasil.perluDisetujui.length ? (
         <div className="flex flex-col gap-2 rounded-lg border border-border px-3 py-2.5">
-          <p className="text-sm font-semibold">Usulan bunyi, perlu Bapak setujui</p>
-          <p className="text-xs text-muted-foreground">Bunyi ini susunan AI, bukan dari blangko. Belum dipakai dan tidak ikut tersalin sebelum Bapak periksa.</p>
+          <p className="text-sm font-semibold">Usulan bunyi, perlu disetujui</p>
+          <p className="text-xs text-muted-foreground">Bunyi ini susunan AI, bukan dari blangko. Belum dipakai dan tidak ikut tersalin sebelum diperiksa pemilik blangko.</p>
           {hasil.perluDisetujui.map((p) => (
             <div key={`${p.id}-${p.kode}`} className="min-w-0 font-serif text-base leading-relaxed">
               {p.bunyi}

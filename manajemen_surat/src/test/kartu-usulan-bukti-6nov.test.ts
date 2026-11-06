@@ -371,7 +371,7 @@ describe("layar", () => {
     const alinea = [{ teks: "Mengabulkan gugatan." }, ...barisUji.map((r, i) => ({ teks: kalimatBaris(r, "P", i) }))];
     render(createElement(BuktiAletaAbt, { alinea, perkaraId: "1", nomor: "1/Pdt.G/2026/PA.Uji", jenisPerkara: "Cerai Gugat" }));
 
-    const judul = await screen.findByText("Usulan bunyi, perlu Bapak setujui");
+    const judul = await screen.findByText("Usulan bunyi, perlu disetujui");
     const bagian = judul.parentElement as HTMLElement;
     expect(bagian.textContent).toContain("bukan dari blangko");
     expect(bagian.textContent).toContain("menerangkan tempat tinggal");
