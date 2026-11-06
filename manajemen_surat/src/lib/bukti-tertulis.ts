@@ -295,3 +295,52 @@ export function buktiDariAlinea(alinea: ReadonlyArray<{ teks: string }>): BuktiN
   }
   return hasil;
 }
+
+export type ButirElektronik = {
+  sisi: "P" | "T";
+  nomor: number;
+  /** Kode tanda seperti tertulis di naskah ("T.3", "TK.4", ...). */
+  kode: string;
+  /** Nama dari katalog elektronik bila dikenali; selain itu bagian depan kalimat naskah. */
+  nama: string;
+  /** Kunci katalog elektronik (mis. "el-wa"); "" bila tidak dikenali. */
+  jenis: string;
+  /** Keadaan pemeriksaan menurut kalimat: 0 tidak dapat dicocokkan dan tanpa digital forensic, 1 dicocokkan dengan aslinya, 2 disertai hasil digital forensic; null tidak terbaca. */
+  periksa: 0 | 1 | 2 | null;
+};
+
+/** Jenis katalog elektronik dari bagian depan kalimat (bentuk + objek): objek terpanjang yang tersebut menang. */
+export function jenisElektronikDari(teks: unknown): JenisElektronik | null {
+  const t = String(teks ?? "").toLowerCase();
+  let terbaik: JenisElektronik | null = null;
+  for (const x of KATALOG_ELEKTRONIK) {
+    const o = x.objek.toLowerCase();
+    if (o && t.includes(o) && (!terbaik || o.length > terbaik.objek.length)) terbaik = x;
+  }
+  return terbaik;
+}
+
+/**
+ * Bukti elektronik yang tertulis di naskah: alinea yang memuat "bukti elektronik tersebut" dan "diberi tanda" diikuti kode (P.n, T.n, PK.n, TK.n, PR.n, TR.n).
+ * Bunyi kalimat sama dengan kalimatBuktiEl di Blangko Derry. Urut seperti di naskah; kode berulang dihitung sekali.
+ */
+export function butirElektronikDariAlinea(alinea: ReadonlyArray<{ teks: string }>): ButirElektronik[] {
+  const hasil: ButirElektronik[] = [];
+  const sudah = new Set<string>();
+  const pola = new RegExp(String.raw`diberi tanda\s+(${POLA_KODE_TANDA})`, "i");
+  for (const a of alinea) {
+    const t = String(a.teks ?? "").replace(/\s+/g, " ").trim();
+    if (!/bukti elektronik tersebut/i.test(t)) continue;
+    const m = pola.exec(t);
+    if (!m) continue;
+    const kode = rapikanKodeTanda(m[1]);
+    const b = bacaKodeTanda(kode);
+    if (!b || sudah.has(kode)) continue;
+    sudah.add(kode);
+    const depan = t.replace(/^\d+[.)]\s*/, "").split(/,\s*bukti (?:surat|elektronik) tersebut/i)[0].trim();
+    const periksa: ButirElektronik["periksa"] = /tidak (?:dapat )?dicocokkan/i.test(t) || /tidak disertai/i.test(t) ? 0 : /disertai dengan hasil digital forensic/i.test(t) ? 2 : /telah dicocokkan/i.test(t) ? 1 : null;
+    const jenis = jenisElektronikDari(depan);
+    hasil.push({ sisi: b.sisi, nomor: b.nomor, kode, nama: jenis ? jenis.nama : depan || "Bukti elektronik", jenis: jenis ? jenis.kunci : "", periksa });
+  }
+  return hasil;
+}

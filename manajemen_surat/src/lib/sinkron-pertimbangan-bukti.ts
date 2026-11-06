@@ -28,7 +28,8 @@ export type JenisCerai = "CG" | "CT";
 /** CG cerai gugat, CT cerai talak, IN itsbat nikah, DK dispensasi kawin. */
 export type JenisPerkaraBukti = "CG" | "CT" | "IN" | "DK";
 export type KeadaanKartu = "kabul-verstek" | "kabul" | "tolak-verstek" | "tolak" | "tdt";
-export type SyaratKartu = "meterai0" | "cocok0" | "cocok1" | "aktaOtentik" | "lengkap";
+/** elektronik0: bukti elektronik yang tidak dapat dicocokkan dan tidak disertai digital forensic, pada perkara yang lawannya hadir dan tidak membantah. */
+export type SyaratKartu = "meterai0" | "cocok0" | "cocok1" | "aktaOtentik" | "lengkap" | "elektronik0";
 export type AsalKartu = { folder: string; berkas: string; alinea: number; sisiSumber: "P" | "T" };
 export type Kartu = {
   id: string;
@@ -49,6 +50,8 @@ export type Kartu = {
   butuh?: string[];
   catatan?: string;
   sumberKhusus?: string;
+  /** Hal yang harus diperiksa pengguna sebelum paragraf dipakai; ditampilkan sesudah rujukan blangko. */
+  periksa?: string;
 };
 export const KARTU_PERTIMBANGAN: readonly Kartu[] = (kartuJson as unknown as { kartu: Kartu[] }).kartu;
 
@@ -77,6 +80,10 @@ export type BuktiMasuk = {
   agendaKe?: number;
   /** Kode tanda seperti tertulis di naskah ("PK.2", "TR.3", "PK.2/TR.2"). Kosong: "P.n" atau "T.n" dari sisi dan nomor. Sisi hanya memilih bunyi. */
   kode?: string;
+  /** Bukti elektronik (dibaca dari kalimat "bukti elektronik tersebut" di naskah). Jenisnya selalu "elektronik"; baris.nm memuat nama untuk tampilan. */
+  elektronik?: boolean;
+  /** Keadaan pemeriksaan bukti elektronik: 0 tidak dapat dicocokkan dan tanpa digital forensic, 1 dicocokkan dengan aslinya, 2 disertai hasil digital forensic; null tidak terbaca. */
+  periksaEl?: 0 | 1 | 2 | null;
 };
 /** Isian tambahan untuk itsbat nikah dan dispensasi kawin; semuanya boleh kosong (bagian kalimat yang membutuhkannya tidak ditulis). */
 export type IsianPermohonan = { alamat?: string; anak?: string; calon?: string; usiaAnak?: string; tglLahirAnak?: string };
@@ -138,6 +145,8 @@ export const LABEL_ISIAN: Readonly<Record<string, string>> = {
   oleh: "penerbit surat (kolom Dikeluarkan oleh)",
   fotokopi: "bukti yang berupa fotokopi",
 };
+/** Kunci jenis satu bukti: bukti elektronik selalu "elektronik" (katalog surat tidak dipakai untuknya). */
+const jenisB = (b: BuktiMasuk): string => (b.elektronik ? "elektronik" : jenisBuktiDari(b.baris.nm));
 const kodeDari = (b: BuktiMasuk) => (b.kode && b.kode.trim() ? b.kode.trim() : `${b.sisi}.${b.nomor}`);
 
 /** Jenis perkara dari teks jenis perkara SIPP. null bila belum punya bunyi (termasuk itsbat nikah kontensius). */
@@ -193,6 +202,13 @@ export function bacaKeadaan(status: string, verstek: boolean, permohonan = false
   return { kunci: "kosong", teks: "Keadaan putusan belum terbaca" };
 }
 
+/** Pasal alat bukti (Pasal 284 RBg = Pasal 164 HIR), seperti variabel hukum acara di blangko. */
+function pasalAlatBukti(h?: "RBg" | "HIR"): string {
+  if (h === "HIR") return "Pasal 164 HIR";
+  if (h === "RBg") return "Pasal 284 RBg";
+  return "Pasal 284 RBg/Pasal 164 HIR";
+}
+
 function pasalAkta(h?: "RBg" | "HIR"): string {
   if (h === "HIR") return "Pasal 165 HIR";
   if (h === "RBg") return "Pasal 285 RBg";
@@ -216,8 +232,10 @@ export function isiKartu(bunyi: string, p: Pengganti, tanpaBantahan: boolean): s
 const cocok = (r: BarisBukti) => Number(r.cocok) || 0;
 const meterai = (r: BarisBukti) => Number(r.meterai) || 0;
 const bebas = (r: BarisBukti) => typeof r.manual === "string";
-function lolosSyarat(s: SyaratKartu | undefined, b: BuktiMasuk): boolean {
+function lolosSyarat(s: SyaratKartu | undefined, b: BuktiMasuk, tanpaBantahan: boolean): boolean {
   if (!s) return true;
+  if (s === "elektronik0") return Boolean(b.elektronik) && b.periksaEl === 0 && tanpaBantahan;
+  if (b.elektronik) return false;
   const r = b.baris;
   if (s === "aktaOtentik") return katalogDari(r.nm)?.kuat === "Akta otentik";
   if (bebas(r)) return false;
@@ -226,7 +244,7 @@ function lolosSyarat(s: SyaratKartu | undefined, b: BuktiMasuk): boolean {
   if (s === "cocok1") return cocok(r) === 1;
   return meterai(r) === 0 && cocok(r) === 0; // lengkap
 }
-const cocokKunci = (k: Kartu, jenis: string, pokok: ReadonlySet<string>) => (k.kunci === "*" ? !pokok.has(jenis) : k.kunci.includes(jenis));
+const cocokKunci = (k: Kartu, jenis: string, pokok: ReadonlySet<string>) => (k.kunci === "*" ? jenis !== "elektronik" && !pokok.has(jenis) : k.kunci.includes(jenis));
 const TANDA_BERKAS: Partial<Record<KeadaanKartu, RegExp>> = { kabul: /\[Kabul\]/, tolak: /\[Tolak\]/, tdt: /\[NO\]/ };
 /** Rujukan blangko; bila ada, yang berasal dari blangko keadaan yang sedang disusun (Kabul, Tolak, atau NO) didahulukan. */
 const rujukan = (k: Kartu, keadaan: KeadaanKartu) => {
@@ -240,6 +258,17 @@ const JENIS_ANAK = new Set(["lahir", "kia", "ijazah"]);
 const JENIS_ASLI = new Set(["tolak", "hamil", "bidan"]);
 const TINGKAT = /\b(SD|MI|SMP|MTs|SLTP|SMA|SMK|MA|SLTA|Paket [ABC])\b/i;
 const rapi = (x: unknown) => String(x ?? "").replace(/\s+/g, " ").trim();
+
+/** Mengapa bukti elektronik tidak punya paragraf: blangko hanya menulisnya untuk satu keadaan. */
+function alasanElektronik(b: BuktiMasuk, keadaan: KeadaanKartu, jenis: JenisPerkaraBukti, tanpaBantahan: boolean): string {
+  const awal = "Blangko hanya memuat bunyi bukti elektronik";
+  if (jenis !== "CG" && jenis !== "CT") return "Blangko itsbat nikah dan dispensasi kawin tidak memuat bunyi bukti elektronik.";
+  if (b.sisi !== "T") return `${awal} yang diajukan Tergugat atau Termohon.`;
+  if (keadaan !== "kabul") return `${awal} pada putusan dikabulkan dengan lawan hadir.`;
+  if (b.periksaEl !== 0) return `${awal} yang tidak dapat dicocokkan dengan aslinya dan tidak disertai digital forensic.`;
+  if (!tanpaBantahan) return `${awal} yang tidak dibantah lawan.`;
+  return "Blangko tidak memuat bunyi untuk bukti elektronik ini.";
+}
 
 function susunUntuk(
   keadaan: KeadaanKartu,
@@ -256,7 +285,7 @@ function susunUntuk(
   const pihak = (s: "P" | "T") => (permohonan || jenis === "CT" ? (s === "P" ? "Pemohon" : "Termohon") : s === "P" ? "Penggugat" : "Tergugat");
   const anakGlobal =
     rapi(isian.anak) ||
-    rapi(bukti.find((b) => JENIS_ANAK.has(jenisBuktiDari(b.baris.nm)) && rapi(b.baris.an))?.baris.an);
+    rapi(bukti.find((b) => JENIS_ANAK.has(jenisB(b)) && rapi(b.baris.an))?.baris.an);
   const dasar = (s: "P" | "T"): Pengganti => ({
     pihak: pihak(s),
     lawan: pihak(s === "P" ? "T" : "P"),
@@ -265,18 +294,19 @@ function susunUntuk(
     satker: (k.satker ?? "").trim() || "Pengadilan ini",
     tglNikah: k.tglNikah ? tanggalIndo(k.tglNikah) : "",
     pasalAkta: pasalAkta(k.hukumAcara),
+    pasalAlatBukti: pasalAlatBukti(k.hukumAcara),
     para: (k.jumlahPemohon ?? 2) >= 2 ? "para " : "",
     alamat: rapi(isian.alamat),
     anak: anakGlobal,
     calon: rapi(isian.calon),
     usiaAnak: rapi(isian.usiaAnak),
     tglLahirAnak: tanggalIndo(rapi(isian.tglLahirAnak)),
-    kodeKeluarga: gabungKodeTerurut(bukti.filter((b) => b.sisi === s && ["kk", "nikah"].includes(jenisBuktiDari(b.baris.nm)))),
+    kodeKeluarga: gabungKodeTerurut(bukti.filter((b) => b.sisi === s && ["kk", "nikah"].includes(jenisB(b)))),
   });
   /** Isian yang hanya dibaca dari baris bukti itu sendiri. */
   const dariBaris = (b: BuktiMasuk): Pengganti => {
     const r = b.baris;
-    const j = jenisBuktiDari(r.nm);
+    const j = jenisB(b);
     const an = rapi(r.an);
     const e: Pengganti = {
       namaTanpaBin: namaTanpaBin(r.an),
@@ -296,27 +326,27 @@ function susunUntuk(
   const belum: BelumAdaBunyi[] = [];
   const catatBelum = (b: BuktiMasuk, alasan: string) => {
     const kode = kodeDari(b);
-    if (!belum.some((x) => x.kode === kode && x.alasan === alasan)) belum.push({ kode, kunci: jenisBuktiDari(b.baris.nm), nama: String(b.baris.nm ?? "").trim() || "Tanpa nama", alasan });
+    if (!belum.some((x) => x.kode === kode && x.alasan === alasan)) belum.push({ kode, kunci: jenisB(b), nama: String(b.baris.nm ?? "").trim() || "Tanpa nama", alasan });
   };
   const keluar = (kar: Kartu, kode: string, jenisBukti: string, p: Pengganti) =>
-    paragraf.push({ kode, kunci: jenisBukti, bunyi: isiKartu(kar.bunyi, p, tanpaBantahan), cara: paksaUsulan || kar.kategori === "pelengkap" ? "usulan" : "otomatis", asal: rujukan(kar, keadaan) });
+    paragraf.push({ kode, kunci: jenisBukti, bunyi: isiKartu(kar.bunyi, p, tanpaBantahan), cara: paksaUsulan || kar.kategori === "pelengkap" ? "usulan" : "otomatis", asal: rujukan(kar, keadaan) + (kar.periksa ? `. Periksa: ${kar.periksa}` : "") });
   const kurang = (kar: Kartu, p: Pengganti) => (kar.butuh ?? []).filter((n) => !rapi(p[n]));
 
   const terbaca = new Set<BuktiMasuk>();
   const tahan = new Set<BuktiMasuk>();
   for (const sisi of ["P", "T"] as const) {
     const baris = bukti.filter((b) => b.sisi === sisi);
-    const urutanJenis = (b: BuktiMasuk) => baris.filter((x) => jenisBuktiDari(x.baris.nm) === jenisBuktiDari(b.baris.nm)).indexOf(b);
+    const urutanJenis = (b: BuktiMasuk) => baris.filter((x) => jenisB(x) === jenisB(b)).indexOf(b);
     for (const kar of kartuBerlaku) {
       if (!kar.sisi.includes(sisi)) continue;
-      const cocokan = baris.filter((b) => cocokKunci(kar, jenisBuktiDari(b.baris.nm), pokok) && (kar.maks == null || urutanJenis(b) < kar.maks));
+      const cocokan = baris.filter((b) => cocokKunci(kar, jenisB(b), pokok) && (kar.maks == null || urutanJenis(b) < kar.maks));
       if (!cocokan.length) continue;
-      const lolos = cocokan.filter((b) => lolosSyarat(kar.syarat, b));
+      const lolos = cocokan.filter((b) => lolosSyarat(kar.syarat, b, tanpaBantahan));
       if (!lolos.length) continue;
       if (kar.kelompok) {
         const kodeSemua = gabungKodeTerurut(lolos);
-        const asli = lolos.filter((b) => JENIS_ASLI.has(jenisBuktiDari(b.baris.nm)));
-        const fotokopi = lolos.filter((b) => !JENIS_ASLI.has(jenisBuktiDari(b.baris.nm)));
+        const asli = lolos.filter((b) => JENIS_ASLI.has(jenisB(b)));
+        const fotokopi = lolos.filter((b) => !JENIS_ASLI.has(jenisB(b)));
         const p = { ...dasar(sisi), kode: kodeSemua, fotokopi: gabungKodeRentang(fotokopi), asli: gabungKodeTerurut(asli), berkaitan: gabungKodeRentang(fotokopi) };
         const kurangnya = kurang(kar, p);
         if (kurangnya.length) {
@@ -337,7 +367,7 @@ function susunUntuk(
             catatBelum(b, `Lengkapi dulu: ${kurangnya.map((n) => LABEL_ISIAN[n] ?? n).join(", ")}.`);
             continue;
           }
-          keluar(kar, kodeDari(b), jenisBuktiDari(b.baris.nm), p);
+          keluar(kar, kodeDari(b), jenisB(b), p);
           terbaca.add(b);
         }
       }
@@ -348,7 +378,7 @@ function susunUntuk(
   const perlu: PerluDisetujui[] = [];
   for (const b of bukti) {
     const r = b.baris;
-    const j = jenisBuktiDari(r.nm);
+    const j = jenisB(b);
     if (!j || punyaBunyiSendiri(j)) continue;
     const kar = (m.kartuUsulan ?? KARTU_USULAN).find((x) => x.kunci === j && x.perkara.includes(jenis) && x.keadaan.includes(keadaan) && x.sisi.includes(b.sisi));
     if (!kar) continue;
@@ -368,15 +398,19 @@ function susunUntuk(
   // Bagian isian yang tidak punya bunyi di blangko.
   for (const b of bukti) {
     const r = b.baris;
+    if (b.elektronik) {
+      if (!terbaca.has(b)) catatBelum(b, alasanElektronik(b, keadaan, jenis, tanpaBantahan));
+      continue;
+    }
     if (keadaan === "kabul" && !bebas(r)) {
       if (meterai(r) === 1 || meterai(r) === 2) catatBelum(b, "Blangko hanya memuat bunyi bukti bermeterai cukup dan dinazegelen.");
       if (cocok(r) === 2 || cocok(r) === 3) catatBelum(b, "Blangko tidak memuat bunyi pencocokan dari fotokopi atau dari kopian sebelumnya.");
     }
     if (tahan.has(b) && !terbaca.has(b)) continue;
     if (keadaan === "tolak" && !terbaca.has(b)) {
-      catatBelum(b, b.sisi === "P" && pokok.has(jenisBuktiDari(b.baris.nm)) ? "Isian meterai atau pencocokan berbeda dari bunyi blangko Ditolak." : "Blangko Ditolak hanya memuat bunyi bukti surat pokok sisi penggugat atau pemohon.");
+      catatBelum(b, b.sisi === "P" && pokok.has(jenisB(b)) ? "Isian meterai atau pencocokan berbeda dari bunyi blangko Ditolak." : "Blangko Ditolak hanya memuat bunyi bukti surat pokok sisi penggugat atau pemohon.");
     } else if (keadaan !== "tolak" && !terbaca.has(b)) {
-      const j = jenisBuktiDari(b.baris.nm);
+      const j = jenisB(b);
       catatBelum(b, j && !pokok.has(j) ? "Blangko tidak memuat bunyi untuk jenis bukti ini." : "Blangko tidak memuat bunyi untuk bukti ini pada keadaan yang dipilih.");
     }
   }
@@ -395,7 +429,7 @@ export function susunParagrafBukti(m: MasukanPertimbangan): HasilPertimbangan {
   const bacaan = bacaKeadaan(m.status, verstek, permohonan);
   const kosong = (catatan: string[]): HasilPertimbangan => ({ keadaan: bacaan.teks, paragraf: [], belumAdaBunyi: [], perluDisetujui: [], catatan });
   const daftar = m.bukti.filter((b) => b && b.baris && String(b.baris.nm ?? "").trim());
-  const belumSemua = (alasan: string) => daftar.map((b) => ({ kode: kodeDari(b), kunci: jenisBuktiDari(b.baris.nm), nama: String(b.baris.nm).trim(), alasan }));
+  const belumSemua = (alasan: string) => daftar.map((b) => ({ kode: kodeDari(b), kunci: jenisB(b), nama: String(b.baris.nm).trim(), alasan }));
   if (bacaan.kunci === "kosong") return kosong([bacaan.teks === "Keadaan putusan belum terbaca" ? "Status putusan tidak dikenali, jadi tidak ada paragraf." : "Pada keadaan ini tidak ada paragraf pertimbangan bukti."]);
   if (jenis === "DK" && (m.konteks?.jumlahPemohon ?? 2) < 2)
     return {

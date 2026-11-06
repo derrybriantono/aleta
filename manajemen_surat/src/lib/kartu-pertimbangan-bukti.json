@@ -2025,6 +2025,205 @@
     "oleh"
    ],
    "catatan": "Pada blangko Anak Cowok, yang hamil adalah calon istri, tetapi kalimatnya tetap menyebut Anak Para Pemohon."
+  },
+  {
+   "id": "el-kabul-pengantar",
+   "kunci": [
+    "elektronik"
+   ],
+   "perkara": [
+    "CG",
+    "CT"
+   ],
+   "keadaan": [
+    "kabul"
+   ],
+   "sisi": "T",
+   "kategori": "pelengkap",
+   "syarat": "elektronik0",
+   "kelompok": true,
+   "bunyi": "Menimbang, bahwa bukti {kode} yang diajukan oleh {pihak} merupakan alat bukti elektronik yang harus memenuhi syarat formil dan materiil sebagaimana ketentuan Undang-Undang Nomor 11 Tahun 2008 tentang Informasi dan Transaksi Elektronik sebagaimana telah diubah dengan Undang-Undang Nomor 19 Tahun 2016, karenanya {majelis} menilai bukti-bukti tersebut dengan pertimbangan sebagai berikut:",
+   "asal": [
+    {
+     "folder": "1 Perceraian CG",
+     "berkas": "[02] [Kabul] CG - F.rtf",
+     "alinea": 25,
+     "sisiSumber": "T"
+    },
+    {
+     "folder": "1a Perceraian CT",
+     "berkas": "[02] [Kabul] CT - F.rtf",
+     "alinea": 25,
+     "sisiSumber": "T"
+    }
+   ],
+   "catatan": "Blangko menulis alinea ini untuk bukti elektronik Tergugat atau Termohon yang tidak dapat dicocokkan dan tidak disertai digital forensic, pada putusan dikabulkan dengan lawan hadir dan tidak membantah. Hanya sebagai usulan karena bukti elektronik adalah bukti pelengkap."
+  },
+  {
+   "id": "el-kabul-kedudukan",
+   "kunci": [
+    "elektronik"
+   ],
+   "perkara": [
+    "CG",
+    "CT"
+   ],
+   "keadaan": [
+    "kabul"
+   ],
+   "sisi": "T",
+   "kategori": "pelengkap",
+   "syarat": "elektronik0",
+   "kelompok": true,
+   "bunyi": "- Bahwa meskipun bukti elektronik di atas merupakan alat bukti yang sah dan dapat dipertimbangkan namun bila mendasarkan pada ketentuan Pasal 5 ayat (2) Undang-Undang Nomor 11 Tahun 2008 tentang Informasi dan Transaksi Elektronik, yang menyatakan bahwa Informasi Elektronik dan/atau Dokumen Elektronik dan/atau hasil cetaknya merupakan perluasan dari alat bukti yang sah sesuai dengan Hukum Acara yang berlaku di Indonesia, akan menimbulkan multi tafsir terhadap ketentuan tersebut, apakah alat bukti elektronik tersebut sebagai alat bukti yang berdiri sendiri menjadi alat bukti yang keenam atau termasuk bagian dari salah satu lima alat bukti yang sudah ditentukan dalam perkara perdata yaitu bukti surat, bukti saksi, persangkaan, pengakuan dan sumpah (vide {pasalAlatBukti} dan Pasal 1866 Kitab Undang-Undang Hukum Perdata). Dalam hal ini sesuai petunjuk Buku II Pedoman Pelaksanaan Tugas dan Administrasi Peradilan Agama Edisi Revisi 2010 cetakan 2013 yang diberlakukan dengan Keputusan Ketua Mahkamah Agung Nomor KMA/032/SK/IV/2006, halaman 96 poin 7 yang menentukan bahwa seiring dengan perkembangan teknologi, fax, email, SMS, fotocopy, rekaman, dan sebagainya (bukti elektronik dan hasil cetakannya), dapat diterima sebagai alat bukti persangkaan, maka {majelis} berpendapat bahwa informasi dari bukti elektronik sepanjang diakui oleh {lawan} di atas, menjadi dasar persangkaan {majelis};",
+   "asal": [
+    {
+     "folder": "1 Perceraian CG",
+     "berkas": "[02] [Kabul] CG - F.rtf",
+     "alinea": 26,
+     "sisiSumber": "T"
+    },
+    {
+     "folder": "1a Perceraian CT",
+     "berkas": "[02] [Kabul] CT - F.rtf",
+     "alinea": 26,
+     "sisiSumber": "T"
+    }
+   ],
+   "catatan": "Blangko menulis alinea ini untuk bukti elektronik Tergugat atau Termohon yang tidak dapat dicocokkan dan tidak disertai digital forensic, pada putusan dikabulkan dengan lawan hadir dan tidak membantah. Hanya sebagai usulan karena bukti elektronik adalah bukti pelengkap."
+  },
+  {
+   "id": "el-kabul-formil",
+   "kunci": [
+    "elektronik"
+   ],
+   "perkara": [
+    "CG",
+    "CT"
+   ],
+   "keadaan": [
+    "kabul"
+   ],
+   "sisi": "T",
+   "kategori": "pelengkap",
+   "syarat": "elektronik0",
+   "kelompok": true,
+   "bunyi": "- Bahwa dari aspek syarat formil, bukti {kode} telah memenuhi syarat formil alat bukti elektronik sebagaimana ketentuan Pasal 5 Ayat (4) Undang-Undang Nomor 11 Tahun 2008 tentang Informasi dan Transaksi Elektronik sebagaimana telah diubah dengan Undang-Undang Nomor 19 Tahun 2016, yaitu bukan dokumen atau surat yang menurut perundang-undangan harus dalam bentuk tertulis;",
+   "asal": [
+    {
+     "folder": "1 Perceraian CG",
+     "berkas": "[02] [Kabul] CG - F.rtf",
+     "alinea": 27,
+     "sisiSumber": "T"
+    },
+    {
+     "folder": "1a Perceraian CT",
+     "berkas": "[02] [Kabul] CT - F.rtf",
+     "alinea": 27,
+     "sisiSumber": "T"
+    }
+   ],
+   "catatan": "Blangko menulis alinea ini untuk bukti elektronik Tergugat atau Termohon yang tidak dapat dicocokkan dan tidak disertai digital forensic, pada putusan dikabulkan dengan lawan hadir dan tidak membantah. Hanya sebagai usulan karena bukti elektronik adalah bukti pelengkap."
+  },
+  {
+   "id": "el-kabul-materiil",
+   "kunci": [
+    "elektronik"
+   ],
+   "perkara": [
+    "CG",
+    "CT"
+   ],
+   "keadaan": [
+    "kabul"
+   ],
+   "sisi": "T",
+   "kategori": "pelengkap",
+   "syarat": "elektronik0",
+   "kelompok": true,
+   "bunyi": "- Bahwa syarat materiil yang harus dipenuhi dalam alat bukti elektronik adalah harus dapat dijamin keotentikannya, keutuhannya, dan ketersediaannya yang untuk itu dibutuhkan digital forensic, sebagaimana ketentuan Pasal 6, Pasal 15 dan Pasal 16 Undang-Undang Nomor 11 Tahun 2008 tentang Informasi dan Transaksi Elektronik sebagaimana telah diubah dengan Undang-Undang Nomor 19 Tahun 2016, dan dalam hal ini {pihak} tidak dapat menunjukkan hasil digital forensic di depan persidangan;",
+   "asal": [
+    {
+     "folder": "1 Perceraian CG",
+     "berkas": "[02] [Kabul] CG - F.rtf",
+     "alinea": 28,
+     "sisiSumber": "T"
+    },
+    {
+     "folder": "1a Perceraian CT",
+     "berkas": "[02] [Kabul] CT - F.rtf",
+     "alinea": 28,
+     "sisiSumber": "T"
+    }
+   ],
+   "catatan": "Blangko menulis alinea ini untuk bukti elektronik Tergugat atau Termohon yang tidak dapat dicocokkan dan tidak disertai digital forensic, pada putusan dikabulkan dengan lawan hadir dan tidak membantah. Hanya sebagai usulan karena bukti elektronik adalah bukti pelengkap."
+  },
+  {
+   "id": "el-kabul-isi",
+   "kunci": [
+    "elektronik"
+   ],
+   "perkara": [
+    "CG",
+    "CT"
+   ],
+   "keadaan": [
+    "kabul"
+   ],
+   "sisi": "T",
+   "kategori": "pelengkap",
+   "syarat": "elektronik0",
+   "kelompok": true,
+   "bunyi": "- Bahwa bukti {kode} pada pokoknya menerangkan komunikasi yang tidak baik antara {pihak} dengan {lawan} akibat adanya permasalahan rumah tangga sehingga menyebabkan {pihak} dan {lawan} sama-sama menginginkan adanya perceraian;",
+   "asal": [
+    {
+     "folder": "1 Perceraian CG",
+     "berkas": "[02] [Kabul] CG - F.rtf",
+     "alinea": 29,
+     "sisiSumber": "T"
+    },
+    {
+     "folder": "1a Perceraian CT",
+     "berkas": "[02] [Kabul] CT - F.rtf",
+     "alinea": 29,
+     "sisiSumber": "T"
+    }
+   ],
+   "catatan": "Blangko menulis alinea ini untuk bukti elektronik Tergugat atau Termohon yang tidak dapat dicocokkan dan tidak disertai digital forensic, pada putusan dikabulkan dengan lawan hadir dan tidak membantah. Hanya sebagai usulan karena bukti elektronik adalah bukti pelengkap.",
+   "periksa": "isi bukti harus sesuai dengan yang diterangkan alinea ini (blangko mencontohkan komunikasi yang tidak baik antara kedua pihak)."
+  },
+  {
+   "id": "el-kabul-pengakuan",
+   "kunci": [
+    "elektronik"
+   ],
+   "perkara": [
+    "CG",
+    "CT"
+   ],
+   "keadaan": [
+    "kabul"
+   ],
+   "sisi": "T",
+   "kategori": "pelengkap",
+   "syarat": "elektronik0",
+   "kelompok": true,
+   "bunyi": "- Bahwa meskipun {pihak} tidak dapat menunjukkan digital forensic guna menjamin keotentikan isi bukti tersebut, namun karena isi dan materi bukti-bukti itu pihak {lawan} tidak membantah atau menyangkal tentang keberadaan dan kebenarannya, hal mana dapat dinilai sebagai pengakuan atas bukti (vide Yurisprudensi Mahkamah Agung nomor 986 K/Sip/1971 tanggal 22 Maret 1971 dan nomor 4434K/Pdt/1986, diambil alih menjadi pertimbangan {majelis}), oleh karena itu bukti elektronik tersebut mempunyai nilai pembuktian dalam perkara a quo sehingga materinya dapat dipertimbangkan lebih lanjut;",
+   "asal": [
+    {
+     "folder": "1 Perceraian CG",
+     "berkas": "[02] [Kabul] CG - F.rtf",
+     "alinea": 30,
+     "sisiSumber": "T"
+    },
+    {
+     "folder": "1a Perceraian CT",
+     "berkas": "[02] [Kabul] CT - F.rtf",
+     "alinea": 30,
+     "sisiSumber": "T"
+    }
+   ],
+   "catatan": "Blangko menulis alinea ini untuk bukti elektronik Tergugat atau Termohon yang tidak dapat dicocokkan dan tidak disertai digital forensic, pada putusan dikabulkan dengan lawan hadir dan tidak membantah. Hanya sebagai usulan karena bukti elektronik adalah bukti pelengkap."
   }
  ]
 }

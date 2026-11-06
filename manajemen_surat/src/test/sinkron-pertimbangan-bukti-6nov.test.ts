@@ -244,6 +244,7 @@ function majuKeKartu(t: string, sisi: "P" | "T"): string {
     .replace(/#1011#/g, "{tglNikah}")
     .replace(/#4048#|#4050#/g, "{namaTanpaBin}")
     .replace("Pasal #11886# #11851#", "{pasalAkta}")
+    .replace("Pasal #11885# #11851#", "{pasalAlatBukti}")
     .replace(/\b[PT]\.\d dan [PT]\.\d/g, "{kode}")
     .replace(/\b[PT]\.\d\b/g, "{kode}");
   return x;

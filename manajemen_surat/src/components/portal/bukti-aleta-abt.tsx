@@ -13,6 +13,7 @@ import {
   bandingBaris,
   berkasUntukBukti,
   buktiDariAlinea,
+  butirElektronikDariAlinea,
   kalimatBaris,
   katalogDari,
   kolomBukti,
@@ -20,6 +21,7 @@ import {
   PIL_METERAI,
   tanggalIndo,
   type BarisBukti,
+  type ButirElektronik,
   type DataSipp,
 } from "@/lib/bukti-tertulis";
 import { bacaKeadaan, jenisPerkaraBukti, permohonanBukti, susunParagrafBukti, type BuktiMasuk, type IsianPermohonan, type ParagrafBukti } from "@/lib/sinkron-pertimbangan-bukti";
@@ -54,6 +56,8 @@ export function BuktiAletaAbt({
   const [aktif, setAktif] = useState(0);
   const [bahan, setBahan] = useState<Bahan | null>(null);
   const [tersalin, setTersalin] = useState(false);
+  // Bukti elektronik dibaca dari naskah (kalimat "bukti elektronik tersebut"); hanya tampil dan menjadi bahan pertimbangan, tidak disunting di sini.
+  const elektronik = useMemo(() => butirElektronikDariAlinea(alinea), [alinea]);
 
   // Pratinjau baru: daftar dibaca ulang dari naskah.
   if (sumber !== alinea) {
@@ -167,6 +171,20 @@ export function BuktiAletaAbt({
               </button>
             );
           })}
+          {elektronik.length ? (
+            <div className="mt-1 flex flex-col gap-1.5 border-t border-border pt-2">
+              <p className="text-xs font-semibold text-muted-foreground">Bukti elektronik, dibaca dari naskah</p>
+              {elektronik.map((x) => (
+                <div key={x.kode} className="flex gap-2.5 rounded-lg border border-border bg-card p-2.5">
+                  <span className="min-w-8 max-w-28 flex-none break-all text-sm font-bold text-primary">{x.kode}</span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold">{x.nama}</span>
+                    <span className="block text-xs text-muted-foreground">{keteranganPeriksaEl(x.periksa)}</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : null}
         </div>
         <div className="flex min-w-0 flex-[999_1_520px] flex-col gap-4">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -228,9 +246,17 @@ export function BuktiAletaAbt({
           </div>
         </div>
       </CardContent>
-      <PertimbanganBukti daftar={daftar} alinea={alinea} jenisPerkara={jenisPerkara} tglNikah={bahan?.nikah?.tglNikah} jumlahPemohonSipp={bahan?.P?.length} agendaSipp={bahan?.agendaPembuktianKe ?? null} onParagraf={onParagraf} />
+      <PertimbanganBukti daftar={daftar} elektronik={elektronik} alinea={alinea} jenisPerkara={jenisPerkara} tglNikah={bahan?.nikah?.tglNikah} jumlahPemohonSipp={bahan?.P?.length} agendaSipp={bahan?.agendaPembuktianKe ?? null} onParagraf={onParagraf} />
     </Card>
   );
+}
+
+/** Keterangan keadaan pemeriksaan bukti elektronik di daftar. */
+function keteranganPeriksaEl(p: ButirElektronik["periksa"]): string {
+  if (p === 0) return "Tidak dapat dicocokkan dengan aslinya, tanpa digital forensic";
+  if (p === 1) return "Telah dicocokkan dengan aslinya";
+  if (p === 2) return "Disertai hasil digital forensic";
+  return "Keadaan pemeriksaan tidak terbaca dari naskah";
 }
 
 const PILIHAN_STATUS = [
@@ -285,6 +311,7 @@ const ISIAN_LAYAR: ReadonlyArray<{ kunci: keyof IsianPermohonan; label: string; 
  */
 function PertimbanganBukti({
   daftar,
+  elektronik,
   alinea,
   jenisPerkara,
   tglNikah,
@@ -293,6 +320,7 @@ function PertimbanganBukti({
   onParagraf,
 }: {
   daftar: Butir[];
+  elektronik: ButirElektronik[];
   alinea: ReadonlyArray<{ teks: string }>;
   jenisPerkara: string;
   tglNikah?: string;
@@ -325,7 +353,10 @@ function PertimbanganBukti({
   const verstekPakai = permohonan ? false : verstek;
   const jumlahPemohon = jumlahPilih ? Number(jumlahPilih) : jumlahPemohonSipp === 1 ? 1 : 2;
 
-  const masuk: BuktiMasuk[] = daftar.map((x) => ({ sisi: x.sisi, nomor: x.nomor, kode: x.kode, baris: x.baris }));
+  const masuk: BuktiMasuk[] = [
+    ...daftar.map((x) => ({ sisi: x.sisi, nomor: x.nomor, kode: x.kode, baris: x.baris })),
+    ...elektronik.map((x) => ({ sisi: x.sisi, nomor: x.nomor, kode: x.kode, elektronik: true, periksaEl: x.periksa, baris: { nm: x.nama, manual: null } as BarisBukti })),
+  ];
   const hasil = useMemo(
     () =>
       jenis
@@ -342,7 +373,7 @@ function PertimbanganBukti({
         : null,
     // masuk dibuat ulang tiap render; isi daftar yang menentukan.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [jenis, status, verstekPakai, lawanMembantah, agenda, daftar, tglNikah, jumlahPemohon, anak, isian]
+    [jenis, status, verstekPakai, lawanMembantah, agenda, daftar, elektronik, tglNikah, jumlahPemohon, anak, isian]
   );
   const kunciUsulan = (p: { kode: string; bunyi: string }, i: number) => `${i}|${p.kode}|${p.bunyi.slice(0, 40)}`;
   const otomatis = hasil ? hasil.paragraf.filter((p) => p.cara === "otomatis") : [];
