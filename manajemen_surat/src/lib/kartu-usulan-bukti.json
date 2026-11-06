@@ -1,0 +1,967 @@
+{
+  "versi": 1,
+  "sumber": "Usulan bunyi susunan AI, BUKAN dari Blangko ABT by Derry Briantono. Tidak dipakai sebelum diperiksa pemilik (disetujui: true).",
+  "dibuat": "2026-11-07",
+  "bunyiTanpaAsli": {
+    "kabul": "- Bahwa bukti {kode} adalah fotokopi yang tidak dapat dicocokkan dengan aslinya;",
+    "kabul-verstek": "Menimbang, bahwa alat bukti {kode} adalah fotokopi yang tidak dapat dicocokkan dengan aslinya;"
+  },
+  "kartu": [
+    {
+      "id": "us-cerai-hadir-kk",
+      "kunci": "kk",
+      "perkara": [
+        "CG",
+        "CT"
+      ],
+      "keadaan": [
+        "kabul"
+      ],
+      "sisi": "PT",
+      "bunyi": "- Bahwa bukti {kode} yang diajukan {pihak} berupa Kartu Keluarga[[ dengan kepala keluarga {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan susunan anggota keluarga dan hubungan di antara mereka sebagaimana tertulis di dalamnya. Bukti tersebut merupakan akta autentik yang dibuat oleh pejabat yang berwenang, yang mempunyai nilai kekuatan pembuktian sempurna dan mengikat sepanjang mengenai apa yang termuat di dalamnya, sebagaimana ketentuan {pasalAkta} jo. Pasal 1870 Kitab Undang-Undang Hukum Perdata;",
+      "isi": "susunan anggota keluarga dan hubungan di antara mereka sebagaimana tertulis di dalamnya",
+      "dasar": [
+        "Pasal 285 RBg/Pasal 165 HIR",
+        "Pasal 1870 Kitab Undang-Undang Hukum Perdata"
+      ],
+      "perluDicek": [
+        "Katalog menandai Kartu Keluarga sebagai akta autentik; mohon dicek apakah kekuatan itu yang Bapak kehendaki.",
+        "Rujukan kependudukan (Undang-Undang Nomor 23 Tahun 2006) belum terverifikasi di rak, jadi pasalnya tidak ditulis."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-cerai-hadir-lahir",
+      "kunci": "lahir",
+      "perkara": [
+        "CG",
+        "CT"
+      ],
+      "keadaan": [
+        "kabul"
+      ],
+      "sisi": "PT",
+      "bunyi": "- Bahwa bukti {kode} yang diajukan {pihak} berupa Kutipan Akta Kelahiran[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan kelahiran seorang anak beserta nama orang tuanya sebagaimana tertulis di dalamnya. Bukti tersebut merupakan akta autentik yang dibuat oleh pejabat yang berwenang, yang mempunyai nilai kekuatan pembuktian sempurna dan mengikat sepanjang mengenai apa yang termuat di dalamnya, sebagaimana ketentuan {pasalAkta} jo. Pasal 1870 Kitab Undang-Undang Hukum Perdata;",
+      "isi": "kelahiran seorang anak beserta nama orang tuanya sebagaimana tertulis di dalamnya",
+      "dasar": [
+        "Pasal 285 RBg/Pasal 165 HIR",
+        "Pasal 1870 Kitab Undang-Undang Hukum Perdata"
+      ],
+      "perluDicek": [
+        "Bunyi tidak menyatakan anak itu anak kedua pihak; hubungannya dinilai dari bukti lain.",
+        "Rujukan kependudukan (Undang-Undang Nomor 23 Tahun 2006) belum terverifikasi di rak, jadi pasalnya tidak ditulis."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-cerai-hadir-duplikat",
+      "kunci": "duplikat",
+      "perkara": [
+        "CG",
+        "CT"
+      ],
+      "keadaan": [
+        "kabul"
+      ],
+      "sisi": "PT",
+      "bunyi": "- Bahwa bukti {kode} yang diajukan {pihak} berupa Duplikat Kutipan Akta Nikah[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan tercatatnya pernikahan antara orang yang namanya tertulis di dalamnya. Bukti tersebut merupakan akta autentik yang dibuat oleh pejabat yang berwenang, yang mempunyai nilai kekuatan pembuktian sempurna dan mengikat sepanjang mengenai apa yang termuat di dalamnya, sebagaimana ketentuan {pasalAkta} jo. Pasal 1870 Kitab Undang-Undang Hukum Perdata;",
+      "isi": "tercatatnya pernikahan antara orang yang namanya tertulis di dalamnya",
+      "dasar": [
+        "Pasal 285 RBg/Pasal 165 HIR",
+        "Pasal 1870 Kitab Undang-Undang Hukum Perdata"
+      ],
+      "perluDicek": [
+        "Apakah duplikat disamakan dengan Kutipan Akta Nikah yang punya bunyi sendiri di blangko? Usulan ini sengaja tidak menyatakan para pihak suami istri."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-cerai-hadir-domisili",
+      "kunci": "domisili",
+      "perkara": [
+        "CG",
+        "CT"
+      ],
+      "keadaan": [
+        "kabul"
+      ],
+      "sisi": "PT",
+      "bunyi": "- Bahwa bukti {kode} yang diajukan {pihak} berupa Surat Keterangan Domisili[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan tempat tinggal orang yang namanya tertulis di dalamnya. Bukti tersebut dinilai bersama alat bukti lain;",
+      "isi": "tempat tinggal orang yang namanya tertulis di dalamnya",
+      "dasar": [],
+      "perluDicek": [
+        "Bunyi tidak menyimpulkan kewenangan wilayah; bila itu yang dituju, perlu kalimat sendiri."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-cerai-hadir-hilangakta",
+      "kunci": "hilangakta",
+      "perkara": [
+        "CG",
+        "CT"
+      ],
+      "keadaan": [
+        "kabul"
+      ],
+      "sisi": "PT",
+      "bunyi": "- Bahwa bukti {kode} yang diajukan {pihak} berupa Surat Tanda Kehilangan Akta Nikah[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan adanya laporan kehilangan akta nikah sebagaimana tertulis di dalamnya. Bukti tersebut dinilai bersama alat bukti lain;",
+      "isi": "adanya laporan kehilangan akta nikah sebagaimana tertulis di dalamnya",
+      "dasar": [],
+      "perluDicek": [
+        "Surat ini menerangkan adanya laporan kehilangan, bukan adanya pernikahan. Apakah perlu rujukan? Belum ada yang terverifikasi untuk ini."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-cerai-hadir-izincerai",
+      "kunci": "izincerai",
+      "perkara": [
+        "CG",
+        "CT"
+      ],
+      "keadaan": [
+        "kabul"
+      ],
+      "sisi": "PT",
+      "bunyi": "- Bahwa bukti {kode} yang diajukan {pihak} berupa Surat Izin Perceraian dari Atasan[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan isi izin perceraian dari pejabat yang menandatanganinya. Bukti tersebut dinilai bersama alat bukti lain;",
+      "isi": "isi izin perceraian dari pejabat yang menandatanganinya",
+      "dasar": [],
+      "perluDicek": [
+        "Peraturan Pemerintah Nomor 10 Tahun 1983 ada di rak tetapi belum terverifikasi, jadi pasalnya tidak ditulis.",
+        "Bunyi tidak menyebut akibat bila izin tidak ada."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-cerai-hadir-lapor",
+      "kunci": "lapor",
+      "perkara": [
+        "CG",
+        "CT"
+      ],
+      "keadaan": [
+        "kabul"
+      ],
+      "sisi": "PT",
+      "bunyi": "- Bahwa bukti {kode} yang diajukan {pihak} berupa Surat Tanda Penerimaan Laporan Polisi[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan adanya laporan dan pokok laporannya sebagaimana tertulis di dalamnya, tidak menerangkan kebenaran peristiwa yang dilaporkan. Bukti tersebut dinilai bersama alat bukti lain;",
+      "isi": "adanya laporan dan pokok laporannya sebagaimana tertulis di dalamnya, tidak menerangkan kebenaran peristiwa yang dilaporkan",
+      "dasar": [],
+      "perluDicek": [
+        "Anak kalimat \"tidak menerangkan kebenaran peristiwa\" adalah tambahan penyusun, bukan pola blangko; mohon dicek apakah tetap perlu."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-cerai-hadir-visum",
+      "kunci": "visum",
+      "perkara": [
+        "CG",
+        "CT"
+      ],
+      "keadaan": [
+        "kabul"
+      ],
+      "sisi": "PT",
+      "bunyi": "- Bahwa bukti {kode} yang diajukan {pihak} berupa Visum et Repertum[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan hasil pemeriksaan atas orang yang namanya tertulis di dalamnya. Bukti tersebut dinilai bersama alat bukti lain;",
+      "isi": "hasil pemeriksaan atas orang yang namanya tertulis di dalamnya",
+      "dasar": [],
+      "perluDicek": [
+        "Katalog menandai visum bukan akta autentik, jadi tertulis dinilai bersama alat bukti lain; mohon dicek."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-cerai-hadir-pidana",
+      "kunci": "pidana",
+      "perkara": [
+        "CG",
+        "CT"
+      ],
+      "keadaan": [
+        "kabul"
+      ],
+      "sisi": "PT",
+      "bunyi": "- Bahwa bukti {kode} yang diajukan {pihak} berupa Putusan Pidana[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan amar putusan terhadap terdakwa yang namanya tertulis di dalamnya. Bukti tersebut merupakan akta autentik yang dibuat oleh pejabat yang berwenang, yang mempunyai nilai kekuatan pembuktian sempurna dan mengikat sepanjang mengenai apa yang termuat di dalamnya, sebagaimana ketentuan {pasalAkta} jo. Pasal 1870 Kitab Undang-Undang Hukum Perdata;",
+      "isi": "amar putusan terhadap terdakwa yang namanya tertulis di dalamnya",
+      "dasar": [
+        "Pasal 285 RBg/Pasal 165 HIR",
+        "Pasal 1870 Kitab Undang-Undang Hukum Perdata"
+      ],
+      "perluDicek": [
+        "Isian bukti tidak memuat apakah putusan sudah berkekuatan hukum tetap; mohon dicek per perkara.",
+        "Bunyi tidak mengaitkan putusan dengan alasan perceraian."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-cerai-hadir-kerja",
+      "kunci": "kerja",
+      "perkara": [
+        "CG",
+        "CT"
+      ],
+      "keadaan": [
+        "kabul"
+      ],
+      "sisi": "PT",
+      "bunyi": "- Bahwa bukti {kode} yang diajukan {pihak} berupa Surat Keterangan Kerja[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan pekerjaan atau jabatan orang yang namanya tertulis di dalamnya. Bukti tersebut dinilai bersama alat bukti lain;",
+      "isi": "pekerjaan atau jabatan orang yang namanya tertulis di dalamnya",
+      "dasar": [],
+      "perluDicek": [
+        "Hanya relevan bila perkara menilai nafkah. Penyusun tidak membaca tuntutan, jadi usulan muncul tiap ada bukti jenis ini."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-cerai-hadir-gaji",
+      "kunci": "gaji",
+      "perkara": [
+        "CG",
+        "CT"
+      ],
+      "keadaan": [
+        "kabul"
+      ],
+      "sisi": "PT",
+      "bunyi": "- Bahwa bukti {kode} yang diajukan {pihak} berupa Daftar Gaji atau Slip Gaji[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan jumlah gaji orang yang namanya tertulis di dalamnya pada masa yang tertulis. Bukti tersebut dinilai bersama alat bukti lain;",
+      "isi": "jumlah gaji orang yang namanya tertulis di dalamnya pada masa yang tertulis",
+      "dasar": [],
+      "perluDicek": [
+        "Hanya relevan bila perkara menilai nafkah. Penyusun tidak membaca tuntutan, jadi usulan muncul tiap ada bukti jenis ini."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-cerai-hadir-kethasil",
+      "kunci": "kethasil",
+      "perkara": [
+        "CG",
+        "CT"
+      ],
+      "keadaan": [
+        "kabul"
+      ],
+      "sisi": "PT",
+      "bunyi": "- Bahwa bukti {kode} yang diajukan {pihak} berupa Surat Keterangan Penghasilan[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan jumlah penghasilan orang yang namanya tertulis di dalamnya. Bukti tersebut dinilai bersama alat bukti lain;",
+      "isi": "jumlah penghasilan orang yang namanya tertulis di dalamnya",
+      "dasar": [],
+      "perluDicek": [
+        "Hanya relevan bila perkara menilai nafkah. Penyusun tidak membaca tuntutan, jadi usulan muncul tiap ada bukti jenis ini."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-cerai-verstek-kk",
+      "kunci": "kk",
+      "perkara": [
+        "CG",
+        "CT"
+      ],
+      "keadaan": [
+        "kabul-verstek"
+      ],
+      "sisi": "P",
+      "bunyi": "Menimbang, bahwa alat bukti {kode} yang diajukan {pihak} berupa Kartu Keluarga[[ dengan kepala keluarga {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan susunan anggota keluarga dan hubungan di antara mereka sebagaimana tertulis di dalamnya. Bukti tersebut merupakan akta autentik yang dibuat oleh pejabat yang berwenang, yang mempunyai nilai kekuatan pembuktian sempurna dan mengikat sepanjang mengenai apa yang termuat di dalamnya, sebagaimana ketentuan {pasalAkta} jo. Pasal 1870 Kitab Undang-Undang Hukum Perdata;",
+      "isi": "susunan anggota keluarga dan hubungan di antara mereka sebagaimana tertulis di dalamnya",
+      "dasar": [
+        "Pasal 285 RBg/Pasal 165 HIR",
+        "Pasal 1870 Kitab Undang-Undang Hukum Perdata"
+      ],
+      "perluDicek": [
+        "Katalog menandai Kartu Keluarga sebagai akta autentik; mohon dicek apakah kekuatan itu yang Bapak kehendaki.",
+        "Rujukan kependudukan (Undang-Undang Nomor 23 Tahun 2006) belum terverifikasi di rak, jadi pasalnya tidak ditulis.",
+        "Blangko verstek memakai kalimat \"identitas dan domisili\" untuk bukti identitas tanpa menyebut Kartu Keluarga; usulan ini tidak memakainya."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-cerai-verstek-lahir",
+      "kunci": "lahir",
+      "perkara": [
+        "CG",
+        "CT"
+      ],
+      "keadaan": [
+        "kabul-verstek"
+      ],
+      "sisi": "P",
+      "bunyi": "Menimbang, bahwa alat bukti {kode} yang diajukan {pihak} berupa Kutipan Akta Kelahiran[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan kelahiran seorang anak beserta nama orang tuanya sebagaimana tertulis di dalamnya. Bukti tersebut merupakan akta autentik yang dibuat oleh pejabat yang berwenang, yang mempunyai nilai kekuatan pembuktian sempurna dan mengikat sepanjang mengenai apa yang termuat di dalamnya, sebagaimana ketentuan {pasalAkta} jo. Pasal 1870 Kitab Undang-Undang Hukum Perdata;",
+      "isi": "kelahiran seorang anak beserta nama orang tuanya sebagaimana tertulis di dalamnya",
+      "dasar": [
+        "Pasal 285 RBg/Pasal 165 HIR",
+        "Pasal 1870 Kitab Undang-Undang Hukum Perdata"
+      ],
+      "perluDicek": [
+        "Bunyi tidak menyatakan anak itu anak kedua pihak; hubungannya dinilai dari bukti lain.",
+        "Rujukan kependudukan (Undang-Undang Nomor 23 Tahun 2006) belum terverifikasi di rak, jadi pasalnya tidak ditulis."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-cerai-verstek-duplikat",
+      "kunci": "duplikat",
+      "perkara": [
+        "CG",
+        "CT"
+      ],
+      "keadaan": [
+        "kabul-verstek"
+      ],
+      "sisi": "P",
+      "bunyi": "Menimbang, bahwa alat bukti {kode} yang diajukan {pihak} berupa Duplikat Kutipan Akta Nikah[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan tercatatnya pernikahan antara orang yang namanya tertulis di dalamnya. Bukti tersebut merupakan akta autentik yang dibuat oleh pejabat yang berwenang, yang mempunyai nilai kekuatan pembuktian sempurna dan mengikat sepanjang mengenai apa yang termuat di dalamnya, sebagaimana ketentuan {pasalAkta} jo. Pasal 1870 Kitab Undang-Undang Hukum Perdata;",
+      "isi": "tercatatnya pernikahan antara orang yang namanya tertulis di dalamnya",
+      "dasar": [
+        "Pasal 285 RBg/Pasal 165 HIR",
+        "Pasal 1870 Kitab Undang-Undang Hukum Perdata"
+      ],
+      "perluDicek": [
+        "Apakah duplikat disamakan dengan Kutipan Akta Nikah yang punya bunyi sendiri di blangko? Usulan ini sengaja tidak menyatakan para pihak suami istri."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-cerai-verstek-domisili",
+      "kunci": "domisili",
+      "perkara": [
+        "CG",
+        "CT"
+      ],
+      "keadaan": [
+        "kabul-verstek"
+      ],
+      "sisi": "P",
+      "bunyi": "Menimbang, bahwa alat bukti {kode} yang diajukan {pihak} berupa Surat Keterangan Domisili[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan tempat tinggal orang yang namanya tertulis di dalamnya. Bukti tersebut dinilai bersama alat bukti lain;",
+      "isi": "tempat tinggal orang yang namanya tertulis di dalamnya",
+      "dasar": [],
+      "perluDicek": [
+        "Bunyi tidak menyimpulkan kewenangan wilayah; bila itu yang dituju, perlu kalimat sendiri."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-cerai-verstek-hilangakta",
+      "kunci": "hilangakta",
+      "perkara": [
+        "CG",
+        "CT"
+      ],
+      "keadaan": [
+        "kabul-verstek"
+      ],
+      "sisi": "P",
+      "bunyi": "Menimbang, bahwa alat bukti {kode} yang diajukan {pihak} berupa Surat Tanda Kehilangan Akta Nikah[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan adanya laporan kehilangan akta nikah sebagaimana tertulis di dalamnya. Bukti tersebut dinilai bersama alat bukti lain;",
+      "isi": "adanya laporan kehilangan akta nikah sebagaimana tertulis di dalamnya",
+      "dasar": [],
+      "perluDicek": [
+        "Surat ini menerangkan adanya laporan kehilangan, bukan adanya pernikahan. Apakah perlu rujukan? Belum ada yang terverifikasi untuk ini."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-cerai-verstek-izincerai",
+      "kunci": "izincerai",
+      "perkara": [
+        "CG",
+        "CT"
+      ],
+      "keadaan": [
+        "kabul-verstek"
+      ],
+      "sisi": "P",
+      "bunyi": "Menimbang, bahwa alat bukti {kode} yang diajukan {pihak} berupa Surat Izin Perceraian dari Atasan[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan isi izin perceraian dari pejabat yang menandatanganinya. Bukti tersebut dinilai bersama alat bukti lain;",
+      "isi": "isi izin perceraian dari pejabat yang menandatanganinya",
+      "dasar": [],
+      "perluDicek": [
+        "Peraturan Pemerintah Nomor 10 Tahun 1983 ada di rak tetapi belum terverifikasi, jadi pasalnya tidak ditulis.",
+        "Bunyi tidak menyebut akibat bila izin tidak ada."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-cerai-verstek-lapor",
+      "kunci": "lapor",
+      "perkara": [
+        "CG",
+        "CT"
+      ],
+      "keadaan": [
+        "kabul-verstek"
+      ],
+      "sisi": "P",
+      "bunyi": "Menimbang, bahwa alat bukti {kode} yang diajukan {pihak} berupa Surat Tanda Penerimaan Laporan Polisi[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan adanya laporan dan pokok laporannya sebagaimana tertulis di dalamnya, tidak menerangkan kebenaran peristiwa yang dilaporkan. Bukti tersebut dinilai bersama alat bukti lain;",
+      "isi": "adanya laporan dan pokok laporannya sebagaimana tertulis di dalamnya, tidak menerangkan kebenaran peristiwa yang dilaporkan",
+      "dasar": [],
+      "perluDicek": [
+        "Anak kalimat \"tidak menerangkan kebenaran peristiwa\" adalah tambahan penyusun, bukan pola blangko; mohon dicek apakah tetap perlu."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-cerai-verstek-visum",
+      "kunci": "visum",
+      "perkara": [
+        "CG",
+        "CT"
+      ],
+      "keadaan": [
+        "kabul-verstek"
+      ],
+      "sisi": "P",
+      "bunyi": "Menimbang, bahwa alat bukti {kode} yang diajukan {pihak} berupa Visum et Repertum[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan hasil pemeriksaan atas orang yang namanya tertulis di dalamnya. Bukti tersebut dinilai bersama alat bukti lain;",
+      "isi": "hasil pemeriksaan atas orang yang namanya tertulis di dalamnya",
+      "dasar": [],
+      "perluDicek": [
+        "Katalog menandai visum bukan akta autentik, jadi tertulis dinilai bersama alat bukti lain; mohon dicek."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-cerai-verstek-pidana",
+      "kunci": "pidana",
+      "perkara": [
+        "CG",
+        "CT"
+      ],
+      "keadaan": [
+        "kabul-verstek"
+      ],
+      "sisi": "P",
+      "bunyi": "Menimbang, bahwa alat bukti {kode} yang diajukan {pihak} berupa Putusan Pidana[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan amar putusan terhadap terdakwa yang namanya tertulis di dalamnya. Bukti tersebut merupakan akta autentik yang dibuat oleh pejabat yang berwenang, yang mempunyai nilai kekuatan pembuktian sempurna dan mengikat sepanjang mengenai apa yang termuat di dalamnya, sebagaimana ketentuan {pasalAkta} jo. Pasal 1870 Kitab Undang-Undang Hukum Perdata;",
+      "isi": "amar putusan terhadap terdakwa yang namanya tertulis di dalamnya",
+      "dasar": [
+        "Pasal 285 RBg/Pasal 165 HIR",
+        "Pasal 1870 Kitab Undang-Undang Hukum Perdata"
+      ],
+      "perluDicek": [
+        "Isian bukti tidak memuat apakah putusan sudah berkekuatan hukum tetap; mohon dicek per perkara.",
+        "Bunyi tidak mengaitkan putusan dengan alasan perceraian."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-cerai-verstek-kerja",
+      "kunci": "kerja",
+      "perkara": [
+        "CG",
+        "CT"
+      ],
+      "keadaan": [
+        "kabul-verstek"
+      ],
+      "sisi": "P",
+      "bunyi": "Menimbang, bahwa alat bukti {kode} yang diajukan {pihak} berupa Surat Keterangan Kerja[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan pekerjaan atau jabatan orang yang namanya tertulis di dalamnya. Bukti tersebut dinilai bersama alat bukti lain;",
+      "isi": "pekerjaan atau jabatan orang yang namanya tertulis di dalamnya",
+      "dasar": [],
+      "perluDicek": [
+        "Hanya relevan bila perkara menilai nafkah. Penyusun tidak membaca tuntutan, jadi usulan muncul tiap ada bukti jenis ini."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-cerai-verstek-gaji",
+      "kunci": "gaji",
+      "perkara": [
+        "CG",
+        "CT"
+      ],
+      "keadaan": [
+        "kabul-verstek"
+      ],
+      "sisi": "P",
+      "bunyi": "Menimbang, bahwa alat bukti {kode} yang diajukan {pihak} berupa Daftar Gaji atau Slip Gaji[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan jumlah gaji orang yang namanya tertulis di dalamnya pada masa yang tertulis. Bukti tersebut dinilai bersama alat bukti lain;",
+      "isi": "jumlah gaji orang yang namanya tertulis di dalamnya pada masa yang tertulis",
+      "dasar": [],
+      "perluDicek": [
+        "Hanya relevan bila perkara menilai nafkah. Penyusun tidak membaca tuntutan, jadi usulan muncul tiap ada bukti jenis ini."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-cerai-verstek-kethasil",
+      "kunci": "kethasil",
+      "perkara": [
+        "CG",
+        "CT"
+      ],
+      "keadaan": [
+        "kabul-verstek"
+      ],
+      "sisi": "P",
+      "bunyi": "Menimbang, bahwa alat bukti {kode} yang diajukan {pihak} berupa Surat Keterangan Penghasilan[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan jumlah penghasilan orang yang namanya tertulis di dalamnya. Bukti tersebut dinilai bersama alat bukti lain;",
+      "isi": "jumlah penghasilan orang yang namanya tertulis di dalamnya",
+      "dasar": [],
+      "perluDicek": [
+        "Hanya relevan bila perkara menilai nafkah. Penyusun tidak membaca tuntutan, jadi usulan muncul tiap ada bukti jenis ini."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-cerai-verstek-ghaib",
+      "kunci": "ghaib",
+      "perkara": [
+        "CG",
+        "CT"
+      ],
+      "keadaan": [
+        "kabul-verstek"
+      ],
+      "sisi": "P",
+      "bunyi": "Menimbang, bahwa alat bukti {kode} yang diajukan {pihak} berupa Surat Keterangan Ghaib[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan bahwa tempat tinggal orang yang namanya tertulis di dalamnya tidak diketahui. Bukti tersebut dinilai bersama alat bukti lain;",
+      "isi": "bahwa tempat tinggal orang yang namanya tertulis di dalamnya tidak diketahui",
+      "dasar": [],
+      "perluDicek": [
+        "Pasal 20 ayat (2) Peraturan Pemerintah Nomor 9 Tahun 1975 terverifikasi di rak, tetapi bunyinya tentang gugatan perceraian; tidak ditulis karena kartu ini dipakai juga untuk cerai talak."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-itsbat-kk",
+      "kunci": "kk",
+      "perkara": [
+        "IN"
+      ],
+      "keadaan": [
+        "kabul"
+      ],
+      "sisi": "P",
+      "bunyi": "- Bahwa bukti {kode} yang diajukan {para}{pihak} berupa Kartu Keluarga[[ dengan kepala keluarga {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan susunan anggota keluarga dan hubungan di antara mereka sebagaimana tertulis di dalamnya. Bukti tersebut merupakan akta autentik yang dibuat oleh pejabat yang berwenang, yang mempunyai nilai kekuatan pembuktian sempurna dan mengikat sepanjang mengenai apa yang termuat di dalamnya, sebagaimana ketentuan {pasalAkta} jo. Pasal 1870 Kitab Undang-Undang Hukum Perdata;",
+      "isi": "susunan anggota keluarga dan hubungan di antara mereka sebagaimana tertulis di dalamnya",
+      "dasar": [
+        "Pasal 285 RBg/Pasal 165 HIR",
+        "Pasal 1870 Kitab Undang-Undang Hukum Perdata"
+      ],
+      "perluDicek": [
+        "Bunyi tidak menyatakan para Pemohon terikat pernikahan, walau Kartu Keluarga dapat menulis status kawin.",
+        "Rujukan kependudukan (Undang-Undang Nomor 23 Tahun 2006) belum terverifikasi di rak, jadi pasalnya tidak ditulis."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-itsbat-lahir",
+      "kunci": "lahir",
+      "perkara": [
+        "IN"
+      ],
+      "keadaan": [
+        "kabul"
+      ],
+      "sisi": "P",
+      "bunyi": "- Bahwa bukti {kode} yang diajukan {para}{pihak} berupa Kutipan Akta Kelahiran[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan kelahiran seorang anak beserta nama orang tuanya sebagaimana tertulis di dalamnya. Bukti tersebut merupakan akta autentik yang dibuat oleh pejabat yang berwenang, yang mempunyai nilai kekuatan pembuktian sempurna dan mengikat sepanjang mengenai apa yang termuat di dalamnya, sebagaimana ketentuan {pasalAkta} jo. Pasal 1870 Kitab Undang-Undang Hukum Perdata;",
+      "isi": "kelahiran seorang anak beserta nama orang tuanya sebagaimana tertulis di dalamnya",
+      "dasar": [
+        "Pasal 285 RBg/Pasal 165 HIR",
+        "Pasal 1870 Kitab Undang-Undang Hukum Perdata"
+      ],
+      "perluDicek": [
+        "Bunyi tidak menyatakan anak lahir dari pernikahan yang dimohonkan.",
+        "Rujukan kependudukan (Undang-Undang Nomor 23 Tahun 2006) belum terverifikasi di rak, jadi pasalnya tidak ditulis."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-itsbat-domisili",
+      "kunci": "domisili",
+      "perkara": [
+        "IN"
+      ],
+      "keadaan": [
+        "kabul"
+      ],
+      "sisi": "P",
+      "bunyi": "- Bahwa bukti {kode} yang diajukan {para}{pihak} berupa Surat Keterangan Domisili[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan tempat tinggal orang yang namanya tertulis di dalamnya. Bukti tersebut dinilai bersama alat bukti lain;",
+      "isi": "tempat tinggal orang yang namanya tertulis di dalamnya",
+      "dasar": [],
+      "perluDicek": [
+        "Bunyi tidak menyimpulkan kewenangan wilayah; bila itu yang dituju, perlu kalimat sendiri."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-itsbat-kua",
+      "kunci": "kua",
+      "perkara": [
+        "IN"
+      ],
+      "keadaan": [
+        "kabul"
+      ],
+      "sisi": "P",
+      "bunyi": "- Bahwa bukti {kode} yang diajukan {para}{pihak} berupa Surat Keterangan Kantor Urusan Agama[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan keadaan pencatatan pernikahan orang yang namanya tertulis di dalamnya. Bukti tersebut dinilai bersama alat bukti lain;",
+      "isi": "keadaan pencatatan pernikahan orang yang namanya tertulis di dalamnya",
+      "dasar": [],
+      "perluDicek": [
+        "Katalog menandai surat ini bukan akta autentik walau penerbitnya pejabat; mohon dicek.",
+        "Isi surat dapat berupa tidak tercatat atau hilang, jadi bunyi ditulis umum: keadaan pencatatan."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-itsbat-desanikah",
+      "kunci": "desanikah",
+      "perkara": [
+        "IN"
+      ],
+      "keadaan": [
+        "kabul"
+      ],
+      "sisi": "P",
+      "bunyi": "- Bahwa bukti {kode} yang diajukan {para}{pihak} berupa Surat Keterangan Kepala Desa tentang Pernikahan[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan pernikahan orang yang namanya tertulis di dalamnya menurut keterangan penerbit surat. Bukti tersebut dinilai bersama alat bukti lain;",
+      "isi": "pernikahan orang yang namanya tertulis di dalamnya menurut keterangan penerbit surat",
+      "dasar": [],
+      "perluDicek": [
+        "Bunyi tidak menyatakan rukun dan syarat nikah terpenuhi."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-itsbat-hilangakta",
+      "kunci": "hilangakta",
+      "perkara": [
+        "IN"
+      ],
+      "keadaan": [
+        "kabul"
+      ],
+      "sisi": "P",
+      "bunyi": "- Bahwa bukti {kode} yang diajukan {para}{pihak} berupa Surat Tanda Kehilangan Akta Nikah[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan adanya laporan kehilangan akta nikah sebagaimana tertulis di dalamnya. Bukti tersebut dinilai bersama alat bukti lain berkenaan dengan keadaan yang disebut dalam Pasal 7 ayat (3) huruf b Kompilasi Hukum Islam;",
+      "isi": "adanya laporan kehilangan akta nikah sebagaimana tertulis di dalamnya",
+      "dasar": [
+        "Pasal 7 ayat (3) huruf b Kompilasi Hukum Islam"
+      ],
+      "perluDicek": [
+        "Pasal hanya disebut sebagai keadaan yang berkenaan; bunyi tidak menyatakan akta memang hilang."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-itsbat-janda",
+      "kunci": "janda",
+      "perkara": [
+        "IN"
+      ],
+      "keadaan": [
+        "kabul"
+      ],
+      "sisi": "P",
+      "bunyi": "- Bahwa bukti {kode} yang diajukan {para}{pihak} berupa Surat Keterangan Janda atau Duda[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan status janda atau duda orang yang namanya tertulis di dalamnya. Bukti tersebut dinilai bersama alat bukti lain;",
+      "isi": "status janda atau duda orang yang namanya tertulis di dalamnya",
+      "dasar": [],
+      "perluDicek": [
+        "Isian bukti tidak memuat peran orang ini dalam perkara, jadi bunyi hanya menyebut orang yang namanya tertulis."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-itsbat-belumnikah",
+      "kunci": "belumnikah",
+      "perkara": [
+        "IN"
+      ],
+      "keadaan": [
+        "kabul"
+      ],
+      "sisi": "P",
+      "bunyi": "- Bahwa bukti {kode} yang diajukan {para}{pihak} berupa Surat Keterangan Belum Menikah[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan status belum menikah orang yang namanya tertulis di dalamnya pada waktu surat itu dibuat. Bukti tersebut dinilai bersama alat bukti lain;",
+      "isi": "status belum menikah orang yang namanya tertulis di dalamnya pada waktu surat itu dibuat",
+      "dasar": [],
+      "perluDicek": [
+        "Isian bukti tidak memuat peran orang ini dalam perkara, jadi bunyi hanya menyebut orang yang namanya tertulis.",
+        "Bunyi tidak menyatakan tidak ada halangan nikah."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-itsbat-cerai",
+      "kunci": "cerai",
+      "perkara": [
+        "IN"
+      ],
+      "keadaan": [
+        "kabul"
+      ],
+      "sisi": "P",
+      "bunyi": "- Bahwa bukti {kode} yang diajukan {para}{pihak} berupa Akta Cerai[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan perceraian orang yang namanya tertulis di dalamnya. Bukti tersebut merupakan akta autentik yang dibuat oleh pejabat yang berwenang, yang mempunyai nilai kekuatan pembuktian sempurna dan mengikat sepanjang mengenai apa yang termuat di dalamnya, sebagaimana ketentuan {pasalAkta} jo. Pasal 1870 Kitab Undang-Undang Hukum Perdata;",
+      "isi": "perceraian orang yang namanya tertulis di dalamnya",
+      "dasar": [
+        "Pasal 285 RBg/Pasal 165 HIR",
+        "Pasal 1870 Kitab Undang-Undang Hukum Perdata"
+      ],
+      "perluDicek": [
+        "Isian bukti tidak memuat peran orang ini dalam perkara, jadi bunyi hanya menyebut orang yang namanya tertulis.",
+        "Bunyi tidak menyatakan halangan perkawinan telah hapus."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-itsbat-mati",
+      "kunci": "mati",
+      "perkara": [
+        "IN"
+      ],
+      "keadaan": [
+        "kabul"
+      ],
+      "sisi": "P",
+      "bunyi": "- Bahwa bukti {kode} yang diajukan {para}{pihak} berupa Surat Keterangan Kematian[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan meninggalnya orang yang namanya tertulis di dalamnya. Bukti tersebut dinilai bersama alat bukti lain;",
+      "isi": "meninggalnya orang yang namanya tertulis di dalamnya",
+      "dasar": [],
+      "perluDicek": [
+        "Isian bukti tidak memuat peran orang ini dalam perkara, jadi bunyi hanya menyebut orang yang namanya tertulis.",
+        "Bunyi tidak menyatakan halangan perkawinan telah hapus."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-itsbat-aktamati",
+      "kunci": "aktamati",
+      "perkara": [
+        "IN"
+      ],
+      "keadaan": [
+        "kabul"
+      ],
+      "sisi": "P",
+      "bunyi": "- Bahwa bukti {kode} yang diajukan {para}{pihak} berupa Kutipan Akta Kematian[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan meninggalnya orang yang namanya tertulis di dalamnya. Bukti tersebut merupakan akta autentik yang dibuat oleh pejabat yang berwenang, yang mempunyai nilai kekuatan pembuktian sempurna dan mengikat sepanjang mengenai apa yang termuat di dalamnya, sebagaimana ketentuan {pasalAkta} jo. Pasal 1870 Kitab Undang-Undang Hukum Perdata;",
+      "isi": "meninggalnya orang yang namanya tertulis di dalamnya",
+      "dasar": [
+        "Pasal 285 RBg/Pasal 165 HIR",
+        "Pasal 1870 Kitab Undang-Undang Hukum Perdata"
+      ],
+      "perluDicek": [
+        "Isian bukti tidak memuat peran orang ini dalam perkara, jadi bunyi hanya menyebut orang yang namanya tertulis.",
+        "Bunyi tidak menyatakan halangan perkawinan telah hapus.",
+        "Rujukan kependudukan (Undang-Undang Nomor 23 Tahun 2006) belum terverifikasi di rak, jadi pasalnya tidak ditulis."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-dk-kk",
+      "kunci": "kk",
+      "perkara": [
+        "DK"
+      ],
+      "keadaan": [
+        "kabul"
+      ],
+      "sisi": "P",
+      "bunyi": "Menimbang, bahwa bukti {kode} yang diajukan {para}{pihak} berupa Kartu Keluarga[[ dengan kepala keluarga {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan susunan anggota keluarga dan hubungan di antara mereka sebagaimana tertulis di dalamnya. Bukti tersebut merupakan akta autentik yang dibuat oleh pejabat yang berwenang, yang mempunyai nilai kekuatan pembuktian sempurna dan mengikat sepanjang mengenai apa yang termuat di dalamnya, sebagaimana ketentuan {pasalAkta} jo. Pasal 1870 Kitab Undang-Undang Hukum Perdata;",
+      "isi": "susunan anggota keluarga dan hubungan di antara mereka sebagaimana tertulis di dalamnya",
+      "dasar": [
+        "Pasal 285 RBg/Pasal 165 HIR",
+        "Pasal 1870 Kitab Undang-Undang Hukum Perdata"
+      ],
+      "perluDicek": [
+        "Blangko memakai Kartu Keluarga hanya sebagai penghubung pada kalimat akta kelahiran; bunyi ini berdiri sendiri.",
+        "Rujukan kependudukan (Undang-Undang Nomor 23 Tahun 2006) belum terverifikasi di rak, jadi pasalnya tidak ditulis."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-dk-nikah",
+      "kunci": "nikah",
+      "perkara": [
+        "DK"
+      ],
+      "keadaan": [
+        "kabul"
+      ],
+      "sisi": "P",
+      "bunyi": "Menimbang, bahwa bukti {kode} yang diajukan {para}{pihak} berupa Kutipan Akta Nikah[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan tercatatnya pernikahan antara orang yang namanya tertulis di dalamnya. Bukti tersebut merupakan akta autentik yang dibuat oleh pejabat yang berwenang, yang mempunyai nilai kekuatan pembuktian sempurna dan mengikat sepanjang mengenai apa yang termuat di dalamnya, sebagaimana ketentuan {pasalAkta} jo. Pasal 1870 Kitab Undang-Undang Hukum Perdata;",
+      "isi": "tercatatnya pernikahan antara orang yang namanya tertulis di dalamnya",
+      "dasar": [
+        "Pasal 285 RBg/Pasal 165 HIR",
+        "Pasal 1870 Kitab Undang-Undang Hukum Perdata"
+      ],
+      "perluDicek": [
+        "Isian bukti tidak memuat peran orang ini dalam perkara, jadi bunyi hanya menyebut orang yang namanya tertulis.",
+        "Blangko memakai kutipan nikah hanya sebagai penghubung pada kalimat akta kelahiran; bunyi ini berdiri sendiri."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-dk-domisili",
+      "kunci": "domisili",
+      "perkara": [
+        "DK"
+      ],
+      "keadaan": [
+        "kabul"
+      ],
+      "sisi": "P",
+      "bunyi": "Menimbang, bahwa bukti {kode} yang diajukan {para}{pihak} berupa Surat Keterangan Domisili[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan tempat tinggal orang yang namanya tertulis di dalamnya. Bukti tersebut dinilai bersama alat bukti lain;",
+      "isi": "tempat tinggal orang yang namanya tertulis di dalamnya",
+      "dasar": [],
+      "perluDicek": [
+        "Bunyi tidak menyimpulkan kewenangan wilayah; bila itu yang dituju, perlu kalimat sendiri.",
+        "Isian bukti tidak memuat peran orang ini dalam perkara, jadi bunyi hanya menyebut orang yang namanya tertulis."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-dk-belumnikah",
+      "kunci": "belumnikah",
+      "perkara": [
+        "DK"
+      ],
+      "keadaan": [
+        "kabul"
+      ],
+      "sisi": "P",
+      "bunyi": "Menimbang, bahwa bukti {kode} yang diajukan {para}{pihak} berupa Surat Keterangan Belum Menikah[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan status belum menikah orang yang namanya tertulis di dalamnya pada waktu surat itu dibuat. Bukti tersebut dinilai bersama alat bukti lain;",
+      "isi": "status belum menikah orang yang namanya tertulis di dalamnya pada waktu surat itu dibuat",
+      "dasar": [],
+      "perluDicek": [
+        "Isian bukti tidak memuat peran orang ini dalam perkara, jadi bunyi hanya menyebut orang yang namanya tertulis.",
+        "Peraturan Mahkamah Agung Nomor 5 Tahun 2019 ada di rak tetapi belum terverifikasi, jadi pasalnya tidak ditulis."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-dk-pengantarnikah",
+      "kunci": "pengantarnikah",
+      "perkara": [
+        "DK"
+      ],
+      "keadaan": [
+        "kabul"
+      ],
+      "sisi": "P",
+      "bunyi": "Menimbang, bahwa bukti {kode} yang diajukan {para}{pihak} berupa Formulir Pengantar Nikah[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan pengantar nikah bagi calon yang namanya tertulis di dalamnya. Bukti tersebut dinilai bersama alat bukti lain;",
+      "isi": "pengantar nikah bagi calon yang namanya tertulis di dalamnya",
+      "dasar": [],
+      "perluDicek": [
+        "Isian bukti tidak memuat peran orang ini dalam perkara, jadi bunyi hanya menyebut orang yang namanya tertulis."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-dk-suratkelahiran",
+      "kunci": "suratkelahiran",
+      "perkara": [
+        "DK"
+      ],
+      "keadaan": [
+        "kabul"
+      ],
+      "sisi": "P",
+      "bunyi": "Menimbang, bahwa bukti {kode} yang diajukan {para}{pihak} berupa Surat Keterangan Lahir[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan kelahiran seorang anak beserta nama ibunya sebagaimana tertulis di dalamnya. Bukti tersebut dinilai bersama alat bukti lain;",
+      "isi": "kelahiran seorang anak beserta nama ibunya sebagaimana tertulis di dalamnya",
+      "dasar": [],
+      "perluDicek": [
+        "Katalog menandai surat ini bukan akta autentik; berbeda dengan Kutipan Akta Kelahiran yang punya bunyi sendiri di blangko."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-dk-sehat",
+      "kunci": "sehat",
+      "perkara": [
+        "DK"
+      ],
+      "keadaan": [
+        "kabul"
+      ],
+      "sisi": "P",
+      "bunyi": "Menimbang, bahwa bukti {kode} yang diajukan {para}{pihak} berupa Surat Keterangan Berbadan Sehat[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan hasil pemeriksaan kesehatan orang yang namanya tertulis di dalamnya. Bukti tersebut dinilai bersama alat bukti lain;",
+      "isi": "hasil pemeriksaan kesehatan orang yang namanya tertulis di dalamnya",
+      "dasar": [],
+      "perluDicek": [
+        "Isian bukti tidak memuat peran orang ini dalam perkara, jadi bunyi hanya menyebut orang yang namanya tertulis.",
+        "Peraturan Mahkamah Agung Nomor 5 Tahun 2019 ada di rak tetapi belum terverifikasi, jadi pasalnya tidak ditulis."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-dk-konseling",
+      "kunci": "konseling",
+      "perkara": [
+        "DK"
+      ],
+      "keadaan": [
+        "kabul"
+      ],
+      "sisi": "P",
+      "bunyi": "Menimbang, bahwa bukti {kode} yang diajukan {para}{pihak} berupa Surat Rekomendasi Konseling atau Psikolog[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan isi rekomendasi pembuatnya atas orang yang namanya tertulis di dalamnya. Bukti tersebut dinilai bersama alat bukti lain;",
+      "isi": "isi rekomendasi pembuatnya atas orang yang namanya tertulis di dalamnya",
+      "dasar": [],
+      "perluDicek": [
+        "Peraturan Mahkamah Agung Nomor 5 Tahun 2019 ada di rak tetapi belum terverifikasi, jadi pasalnya tidak ditulis."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-dk-narkoba",
+      "kunci": "narkoba",
+      "perkara": [
+        "DK"
+      ],
+      "keadaan": [
+        "kabul"
+      ],
+      "sisi": "P",
+      "bunyi": "Menimbang, bahwa bukti {kode} yang diajukan {para}{pihak} berupa Surat Keterangan Pemeriksaan Narkoba[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan hasil pemeriksaan atas orang yang namanya tertulis di dalamnya. Bukti tersebut dinilai bersama alat bukti lain;",
+      "isi": "hasil pemeriksaan atas orang yang namanya tertulis di dalamnya",
+      "dasar": [],
+      "perluDicek": [
+        "Isian bukti tidak memuat peran orang ini dalam perkara, jadi bunyi hanya menyebut orang yang namanya tertulis."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-dk-tanggungjawabortu",
+      "kunci": "tanggungjawabortu",
+      "perkara": [
+        "DK"
+      ],
+      "keadaan": [
+        "kabul"
+      ],
+      "sisi": "P",
+      "bunyi": "Menimbang, bahwa bukti {kode} yang diajukan {para}{pihak} berupa Surat Pernyataan Orang Tua[[ yang dibuat oleh {namaTanpaBin}]] menerangkan isi pernyataan pembuatnya sebagaimana tertulis di dalamnya. Bukti tersebut dinilai bersama alat bukti lain;",
+      "isi": "isi pernyataan pembuatnya sebagaimana tertulis di dalamnya",
+      "dasar": [],
+      "perluDicek": [
+        "Surat buatan pihak sendiri; bunyi hanya menerangkan isi pernyataan, bukan kebenarannya."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-dk-takkeras",
+      "kunci": "takkeras",
+      "perkara": [
+        "DK"
+      ],
+      "keadaan": [
+        "kabul"
+      ],
+      "sisi": "P",
+      "bunyi": "Menimbang, bahwa bukti {kode} yang diajukan {para}{pihak} berupa Surat Pernyataan Tidak Melakukan Kekerasan[[ yang dibuat oleh {namaTanpaBin}]] menerangkan isi pernyataan pembuatnya sebagaimana tertulis di dalamnya. Bukti tersebut dinilai bersama alat bukti lain;",
+      "isi": "isi pernyataan pembuatnya sebagaimana tertulis di dalamnya",
+      "dasar": [],
+      "perluDicek": [
+        "Surat buatan pihak sendiri; bunyi hanya menerangkan isi pernyataan, bukan kebenarannya."
+      ],
+      "disetujui": false
+    },
+    {
+      "id": "us-dk-kethasil",
+      "kunci": "kethasil",
+      "perkara": [
+        "DK"
+      ],
+      "keadaan": [
+        "kabul"
+      ],
+      "sisi": "P",
+      "bunyi": "Menimbang, bahwa bukti {kode} yang diajukan {para}{pihak} berupa Surat Keterangan Penghasilan[[ atas nama {namaTanpaBin}]][[ yang dikeluarkan oleh {oleh}]] menerangkan jumlah penghasilan orang yang namanya tertulis di dalamnya. Bukti tersebut dinilai bersama alat bukti lain;",
+      "isi": "jumlah penghasilan orang yang namanya tertulis di dalamnya",
+      "dasar": [],
+      "perluDicek": [
+        "Isian bukti tidak memuat peran orang ini dalam perkara, jadi bunyi hanya menyebut orang yang namanya tertulis.",
+        "Hanya relevan bila kesanggupan ekonomi dinilai."
+      ],
+      "disetujui": false
+    }
+  ]
+}
