@@ -22,7 +22,8 @@ import {
   type BarisBukti,
   type DataSipp,
 } from "@/lib/bukti-tertulis";
-import { bacaKeadaan, jenisPerkaraBukti, permohonanBukti, susunParagrafBukti, type BuktiMasuk, type IsianPermohonan } from "@/lib/sinkron-pertimbangan-bukti";
+import { bacaKeadaan, jenisPerkaraBukti, permohonanBukti, susunParagrafBukti, type BuktiMasuk, type IsianPermohonan, type ParagrafBukti } from "@/lib/sinkron-pertimbangan-bukti";
+import type { RencanaSisip } from "@/lib/sisip-pertimbangan-bukti";
 
 type Dokumen = { judul: string; documentKey: string };
 type Bahan = DataSipp & { dokumen: Dokumen[] };
@@ -33,7 +34,20 @@ type Butir = { sisi: "P" | "T"; nomor: number; baris: BarisBukti; diperiksa: boo
  * data SIPP (rute bukti-sipp). Layar ini TIDAK menulis ke SIPP atau ABT: perubahan hanya tampil di sini dan kalimatnya dapat disalin. Penyimpanan
  * ke ABT tetap lewat kotak alat bukti di Blangko ABT by Derry Briantono.
  */
-export function BuktiAletaAbt({ alinea, perkaraId, nomor, jenisPerkara = "" }: { alinea: ReadonlyArray<{ teks: string }>; perkaraId: string; nomor: string; jenisPerkara?: string }) {
+export function BuktiAletaAbt({
+  alinea,
+  perkaraId,
+  nomor,
+  jenisPerkara = "",
+  onParagraf,
+}: {
+  alinea: ReadonlyArray<{ teks: string }>;
+  perkaraId: string;
+  nomor: string;
+  jenisPerkara?: string;
+  /** Paragraf pertimbangan bukti yang akan disisipkan ke naskah cetak (kosong bila dimatikan atau tidak ada). Dipanggil tiap isinya berubah. */
+  onParagraf?: (paragraf: ParagrafBukti[]) => void;
+}) {
   const dariNaskah = (l: ReadonlyArray<{ teks: string }>) => buktiDariAlinea(l).map((x) => ({ ...x, diperiksa: false }));
   const [sumber, setSumber] = useState(alinea);
   const [daftar, setDaftar] = useState<Butir[]>(() => dariNaskah(alinea));
@@ -214,7 +228,7 @@ export function BuktiAletaAbt({ alinea, perkaraId, nomor, jenisPerkara = "" }: {
           </div>
         </div>
       </CardContent>
-      <PertimbanganBukti daftar={daftar} alinea={alinea} jenisPerkara={jenisPerkara} tglNikah={bahan?.nikah?.tglNikah} jumlahPemohonSipp={bahan?.P?.length} />
+      <PertimbanganBukti daftar={daftar} alinea={alinea} jenisPerkara={jenisPerkara} tglNikah={bahan?.nikah?.tglNikah} jumlahPemohonSipp={bahan?.P?.length} onParagraf={onParagraf} />
     </Card>
   );
 }
@@ -241,6 +255,20 @@ function bacaDariNaskah(alinea: ReadonlyArray<{ teks: string }>): { status: stri
   return { status, verstek: /verstek|tidak pernah hadir/i.test(t) };
 }
 
+/** Keterangan singkat kotak "Masukkan paragraf otomatis": paragraf mana yang akan masuk, yang sudah ada di naskah, dan yang belum bisa disisip. */
+function keteranganSisipan(masukkan: boolean, rencana: RencanaSisip | null): string {
+  if (!masukkan) return "Tidak dimasukkan: naskah cetak tetap seperti pratinjau di atas.";
+  if (!rencana) return "Memeriksa letak sisipan di naskah...";
+  const bagian: string[] = [];
+  bagian.push(rencana.akanMasuk.length ? `Akan masuk: ${rencana.akanMasuk.join(", ")}.` : "Tidak ada paragraf yang akan ditambahkan.");
+  if (rencana.sudahAda.length) bagian.push(`Sudah ada di naskah, tidak ditambah: ${rencana.sudahAda.join(", ")}.`);
+  const sebabSama = [...new Set(rencana.tidakDisisip.map((t) => t.sebab))];
+  if (sebabSama.length)
+    bagian.push(`Belum dapat disisip: ${sebabSama.map((sebab) => `${rencana.tidakDisisip.filter((t) => t.sebab === sebab).map((t) => t.kode || "tanpa kode").join(", ")} (${sebab})`).join("; ")}.`);
+  bagian.push("Ini perkiraan dari pratinjau; hasil pastinya tampil saat naskah diunduh.");
+  return bagian.join(" ");
+}
+
 const ISIAN_LAYAR: ReadonlyArray<{ kunci: keyof IsianPermohonan; label: string; contoh: string; dk?: boolean }> = [
   { kunci: "alamat", label: "Alamat Pemohon", contoh: "desa, kecamatan, kabupaten (untuk kalimat KTP)" },
   { kunci: "anak", label: "Nama anak", contoh: "bila belum ada di akta kelahiran", dk: true },
@@ -260,12 +288,14 @@ function PertimbanganBukti({
   jenisPerkara,
   tglNikah,
   jumlahPemohonSipp,
+  onParagraf,
 }: {
   daftar: Butir[];
   alinea: ReadonlyArray<{ teks: string }>;
   jenisPerkara: string;
   tglNikah?: string;
   jumlahPemohonSipp?: number;
+  onParagraf?: (paragraf: ParagrafBukti[]) => void;
 }) {
   const awal = useMemo(() => bacaDariNaskah(alinea), [alinea]);
   const [status, setStatus] = useState(awal.status);
@@ -277,6 +307,8 @@ function PertimbanganBukti({
   const [jumlahPilih, setJumlahPilih] = useState<"" | "1" | "2">("");
   const [anak, setAnak] = useState<"P" | "L">("P");
   const [isian, setIsian] = useState<IsianPermohonan>({});
+  const [masukkan, setMasukkan] = useState(true);
+  const [rencana, setRencana] = useState<RencanaSisip | null>(null);
   const jenis = jenisPerkaraBukti(jenisPerkara);
   const permohonan = jenis ? permohonanBukti(jenis) : false;
   const verstekPakai = permohonan ? false : verstek;
@@ -301,6 +333,38 @@ function PertimbanganBukti({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [jenis, status, verstekPakai, lawanMembantah, agenda, daftar, tglNikah, jumlahPemohon, anak, isian]
   );
+  const kunciUsulan = (p: { kode: string; bunyi: string }, i: number) => `${i}|${p.kode}|${p.bunyi.slice(0, 40)}`;
+  const otomatis = hasil ? hasil.paragraf.filter((p) => p.cara === "otomatis") : [];
+  const usulan = hasil ? hasil.paragraf.filter((p) => p.cara === "usulan") : [];
+  const terpilih = usulan.filter((p, i) => dipilih.has(kunciUsulan(p, i)));
+
+  // Paragraf yang akan disisipkan ke naskah cetak dilaporkan ke induk; perkiraan "masuk, sudah ada, atau belum bisa" dihitung dari teks pratinjau.
+  const kunciNaskah = [...otomatis, ...terpilih].map((p) => `${p.kode}|${p.bunyi}`).join("\n");
+  useEffect(() => {
+    let batal = false;
+    if (!hasil || !masukkan || !kunciNaskah) {
+      onParagraf?.([]);
+      return;
+    }
+    void import("@/lib/sisip-pertimbangan-bukti").then((m) => {
+      if (batal) return;
+      const paragraf = m.paragrafUntukNaskah(hasil, terpilih);
+      setRencana(m.rencanakanSisipan(alinea.map((a) => a.teks), paragraf));
+      onParagraf?.(paragraf);
+    });
+    return () => {
+      batal = true;
+    };
+    // terpilih diwakili kunciNaskah; hasil dan alinea menentukan isinya.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasil, masukkan, kunciNaskah, alinea, onParagraf]);
+  useEffect(
+    () => () => {
+      onParagraf?.([]);
+    },
+    [onParagraf]
+  );
+
   if (!jenis || !hasil)
     return (
       <CardContent className="flex flex-col gap-2 border-t border-border pt-4">
@@ -311,12 +375,9 @@ function PertimbanganBukti({
       </CardContent>
     );
 
-  const otomatis = hasil.paragraf.filter((p) => p.cara === "otomatis");
-  const usulan = hasil.paragraf.filter((p) => p.cara === "usulan");
-  const kunciUsulan = (p: { kode: string; bunyi: string }, i: number) => `${i}|${p.kode}|${p.bunyi.slice(0, 40)}`;
-  const terpilih = usulan.filter((p, i) => dipilih.has(kunciUsulan(p, i)));
   const salinan = [...otomatis, ...terpilih].map((p) => p.bunyi).join("\n\n");
   const bacaan = bacaKeadaan(status, verstekPakai, permohonan);
+  const keteranganSisip = keteranganSisipan(masukkan, kunciNaskah ? rencana : null);
   const bisaLawanBantah = !permohonan && !verstek && (bacaan.kunci === "kabul" || bacaan.kunci === "cabut");
 
   return (
@@ -324,7 +385,7 @@ function PertimbanganBukti({
       <div>
         <p className="text-lg font-bold">Pertimbangan dari alat bukti</p>
         <p className="text-sm text-muted-foreground">
-          Paragraf disusun dari bunyi Blangko ABT by Derry Briantono menurut keadaan putusan dan isian bukti di atas. Belum disisipkan ke naskah cetak: salin lalu tempel bila cocok.
+          Paragraf disusun dari bunyi Blangko ABT by Derry Briantono menurut keadaan putusan dan isian bukti di atas. Yang bertanda tertulis otomatis, dan usulan yang dicentang, ikut masuk ke naskah cetak bila kotak di bawahnya dicentang; menyalin tetap bisa.
         </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
@@ -464,6 +525,15 @@ function PertimbanganBukti({
             ))}
           </ul>
         </div>
+      ) : null}
+      {otomatis.length || terpilih.length ? (
+        <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border px-3 py-2.5">
+          <input type="checkbox" className="mt-1 size-5 flex-none" checked={masukkan} onChange={(e) => setMasukkan(e.target.checked)} />
+          <span className="min-w-0 text-sm">
+            <span className="block font-medium">Masukkan paragraf otomatis ke naskah cetak</span>
+            <span className="mt-0.5 block text-xs text-muted-foreground">{keteranganSisip}</span>
+          </span>
+        </label>
       ) : null}
       <div className="flex flex-wrap justify-end gap-2">
         <Button

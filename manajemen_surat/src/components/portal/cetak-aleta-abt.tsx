@@ -12,6 +12,8 @@ import type { FolderDaftar } from "@/lib/aleta-abt-penyunting-tipe";
 import { kepalaTanda } from "@/lib/aleta-abt-tanda-klien";
 import { apiPath } from "@/lib/base-path";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
+import type { HasilSisip } from "@/lib/sisip-pertimbangan-bukti";
+import type { ParagrafBukti } from "@/lib/sinkron-pertimbangan-bukti";
 
 /**
  * Layar cetak ALETA ABT (5 Nov 2026, Tahap 5) - Super Admin saja; rute /api/aleta-abt/cetak menjaga ulang di server
@@ -62,6 +64,15 @@ function dasarBase64(b: ArrayBuffer): string {
   let s = "";
   for (let i = 0; i < bita.length; i += 8192) s += String.fromCharCode(...bita.subarray(i, i + 8192));
   return btoa(s);
+}
+
+/** Satu baris hasil sisipan paragraf pertimbangan alat bukti. */
+function ringkasSisipan(h: HasilSisip): string {
+  const n = h.disisipkan.length;
+  const bagian = [n ? `${n} paragraf pertimbangan alat bukti ditambahkan ke naskah (${h.disisipkan.join(", ")})` : "Tidak ada paragraf pertimbangan alat bukti yang ditambahkan"];
+  if (h.sudahAda.length) bagian.push(`${h.sudahAda.length} sudah ada di naskah`);
+  if (h.tidakDisisip.length) bagian.push(`${h.tidakDisisip.length} belum dapat disisip (${[...new Set(h.tidakDisisip.map((t) => t.sebab))].join("; ")})`);
+  return `${bagian.join(", ")}.`;
 }
 
 function unduh(base64: string, nama: string, jenis: string) {
@@ -132,6 +143,11 @@ export function CetakAletaAbt() {
   const [berdampingan, setBerdampingan] = useState(false);
   const [catatBanding, setCatatBanding] = useState(false);
   const pdfAleta = useRef<string>("");
+  const paragrafBukti = useRef<ParagrafBukti[]>([]);
+  const isiParagrafBukti = useCallback((p: ParagrafBukti[]) => {
+    paragrafBukti.current = p;
+  }, []);
+  const [infoSisip, setInfoSisip] = useState("");
   const [adaPdfAleta, setAdaPdfAleta] = useState(false);
 
   useEffect(() => {
@@ -185,6 +201,7 @@ export function CetakAletaAbt() {
     setBandingPdf(null);
     pdfAleta.current = "";
     setAdaPdfAleta(false);
+    setInfoSisip("");
     setSibuk("pratinjau");
     try {
       setPratinjau(await kirim<Pratinjau>(badan("pratinjau")));
@@ -200,8 +217,29 @@ export function CetakAletaAbt() {
     if (!siap || !berkas) return;
     setGalat("");
     setKosongTahan([]);
+    setInfoSisip("");
     setSibuk(jenis);
     try {
+      // Urutan: ambil RTF, sisipkan paragraf pertimbangan alat bukti (bila ada dan dicentang), baru tinjau sisa blangko dan unduh.
+      // Tanpa paragraf bukti, alurnya sama dengan sebelumnya.
+      const sisipkan = async (rtfBase64: string): Promise<{ base64: string; ubah: boolean; info: string }> => {
+        const paragraf = paragrafBukti.current;
+        if (!paragraf.length) return { base64: rtfBase64, ubah: false, info: "" };
+        try {
+          const { sisipkanParagrafBukti } = await import("@/lib/sisip-pertimbangan-bukti");
+          const bita = Uint8Array.from(atob(rtfBase64), (c) => c.charCodeAt(0));
+          let mentah = "";
+          for (let k = 0; k < bita.length; k += 8192) mentah += String.fromCharCode(...bita.subarray(k, k + 8192));
+          const h = sisipkanParagrafBukti(mentah, paragraf, { untukBaca: new TextDecoder("windows-1252").decode(bita) });
+          const info = ringkasSisipan(h);
+          if (!h.disisipkan.length) return { base64: rtfBase64, ubah: false, info };
+          const baru = new Uint8Array(h.rtf.length);
+          for (let k = 0; k < h.rtf.length; k += 1) baru[k] = h.rtf.charCodeAt(k) & 255;
+          return { base64: dasarBase64(baru.buffer), ubah: true, info };
+        } catch {
+          return { base64: rtfBase64, ubah: false, info: "Paragraf pertimbangan alat bukti tidak dapat disisipkan; naskah dibiarkan seperti pratinjau." };
+        }
+      };
       // Naskah diperiksa dulu di peramban: bagian yang dicentang diperbaiki sebelum keluar, yang tidak dicentang dibiarkan.
       const { jenisNaskahDariNama } = await import("@/lib/deteksi-sisa-blangko");
       const { tinjauSisaBlangko } = await import("@/lib/dialog-sisa-blangko");
@@ -211,14 +249,19 @@ export function CetakAletaAbt() {
       };
       if (jenis === "rtf") {
         const h = await kirim<{ nama: string; rtfBase64: string }>(badan("rtf"));
-        const t = await periksa(h.nama, h.rtfBase64);
+        const sisip = await sisipkan(h.rtfBase64);
+        const t = await periksa(h.nama, sisip.base64);
         if (!t.lanjut) return;
-        unduh(t.bitaBersih ? dasarBase64(t.bitaBersih.buffer) : h.rtfBase64, namaBerkas(h.nama, "rtf"), "application/rtf");
+        setInfoSisip(sisip.info);
+        unduh(t.bitaBersih ? dasarBase64(t.bitaBersih.buffer) : sisip.base64, namaBerkas(h.nama, "rtf"), "application/rtf");
       } else {
         const r = await kirim<{ nama: string; rtfBase64: string }>(badan("rtf", { untukPeriksa: true }));
-        const t = await periksa(r.nama, r.rtfBase64);
+        const sisip = await sisipkan(r.rtfBase64);
+        const t = await periksa(r.nama, sisip.base64);
         if (!t.lanjut) return;
-        const h = await kirim<{ nama: string; pdfBase64: string; waktu: Waktu }>(badan(jenis, t.bitaBersih ? { rtfDiperbaikiBase64: dasarBase64(t.bitaBersih.buffer) } : {}));
+        setInfoSisip(sisip.info);
+        const diperbaiki = t.bitaBersih ? dasarBase64(t.bitaBersih.buffer) : sisip.ubah ? sisip.base64 : "";
+        const h = await kirim<{ nama: string; pdfBase64: string; waktu: Waktu }>(badan(jenis, diperbaiki ? { rtfDiperbaikiBase64: diperbaiki } : {}));
         pdfAleta.current = h.pdfBase64;
         setAdaPdfAleta(true);
         setPratinjau((p) => (p ? { ...p, waktu: { ...p.waktu, pdfMs: h.waktu.pdfMs } } : p));
@@ -487,6 +530,11 @@ export function CetakAletaAbt() {
               </Button>
             </div>
             {pratinjau.waktu.pdfMs !== undefined ? <p className="text-xs text-muted-foreground">PDF terakhir dibuat dalam {detik(pratinjau.waktu.pdfMs)} (termasuk LibreOffice di server).</p> : null}
+            {infoSisip ? (
+              <p role="status" className="text-xs text-muted-foreground">
+                {infoSisip}
+              </p>
+            ) : null}
             <div className="rounded-xl border border-border bg-card px-3 py-3 text-[15px] leading-relaxed sm:px-5">
               {pratinjau.paragraf.map((p) => (
                 <p
@@ -504,7 +552,7 @@ export function CetakAletaAbt() {
         </Card>
       ) : null}
 
-      {pratinjau && perkara ? <BuktiAletaAbt alinea={pratinjau.paragraf} perkaraId={perkara.perkaraId} nomor={perkara.nomorPerkara} jenisPerkara={perkara.jenisPerkara} /> : null}
+      {pratinjau && perkara ? <BuktiAletaAbt alinea={pratinjau.paragraf} perkaraId={perkara.perkaraId} nomor={perkara.nomorPerkara} jenisPerkara={perkara.jenisPerkara} onParagraf={isiParagrafBukti} /> : null}
 
       {pratinjau ? (
         <Card>
