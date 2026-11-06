@@ -6,7 +6,7 @@ import type { ButirIsian, Susunan } from "@/app/api/aleta-ecourt/blangko-derry/s
  * ============================================================================
  *
  * Menggolongkan isian kosong sebuah naskah:
- *   menahan      ketikan atau tanya jawab wajib yang berlaku, termasuk isian di dalam rumus bila tuntutannya aktif dan alasan perceraian (#8503#),
+ *   menahan      ketikan atau tanya jawab saksi wajib yang berlaku (juga yang hanya dibaca rumus), termasuk isian di dalam rumus bila tuntutannya aktif dan alasan perceraian (#8503#),
  *                serta isian yang gagal dihitung. Naskah tidak keluar.
  *   perluDilihat rumus atau kolom SIPP yang tidak memulangkan data, seperti nama mediator, dan isian yang keadaannya tidak diketahui di sini
  *                (ghaib, e-Court). Tidak menahan; bila tetap kosong tercetak titik-titik seperti ABT.
@@ -120,6 +120,11 @@ export function golonganIsian(b: ButirIsian, c: KonteksTahan): GolonganTahan {
   return k === null ? "taktahu" : k ? "utama" : "takberlaku";
 }
 
+/** Tanya jawab sudah ada di ABT bila kode penandanya atau kode penyuntingnya berstatus terisi (teksnya memang kosong: nilainya tabel). Sama dengan nilaiTerisi panel. */
+export function tanyaJawabTerisi(b: Pick<ButirIsian, "kode" | "tj">, nilai: Readonly<Record<string, NilaiIsian | undefined>>): boolean {
+  return [b.kode, b.tj?.kodeSunting].some((k) => Boolean(k && nilai[k]?.status === "terisi"));
+}
+
 const SEBAB = {
   isi: "Belum diisi.",
   rumus: "Datanya belum ada di SIPP atau ABT.",
@@ -167,7 +172,13 @@ export function nilaiTahan(m: MasukanTahan): HasilTahan {
   }
   // Ketikan yang hanya dibaca rumus: mesin tidak menyebutnya, karena rumus luarnya tetap menghasilkan teks.
   for (const b of m.susunan.isian) {
-    if (b.langsung || b.jenis === "tj" || !b.wajib) continue;
+    if (!b.wajib) continue;
+    // Tanya jawab saksi (6 Nov, S-03): nilainya tabel, jadi kosongnya dilihat dari status, bukan teks. Isian ini ada di susunan hanya bila blangko memakainya.
+    if (b.jenis === "tj") {
+      if (!tanyaJawabTerisi(b, m.nilai) && golonganIsian(b, c) === "utama" && b.tingkat !== "tambahan") masuk("menahan", b.kode, b.nama, SEBAB.isi);
+      continue;
+    }
+    if (b.langsung) continue;
     const bertuntutan = Array.isArray(b.tuntutan) && b.tuntutan.length > 0;
     const kosong = bertuntutan || pilihanSah(b).length ? kerangkaBawaan(b, m.nilai[b.kode]?.teks) : !terisi(c, b.kode);
     if (!kosong) continue;

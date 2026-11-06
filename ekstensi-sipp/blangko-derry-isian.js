@@ -3415,6 +3415,8 @@
     // 31 Okt (jawab-replik): naskah jawab-menjawab berparagraf - Enter tetap pemisah paragraf, tidak dirangkai satu baris.
     const mi = mesinIsi();
     if (mi && Array.isArray(mi.KODE_NASKAH_BERBARIS) && mi.KODE_NASKAH_BERBARIS.includes(String(kode))) return typeof nilai === "string" ? mi.rapikanNaskah(nilai) : nilai;
+    // 6 Nov (audit S-02): isian panjang Harta Bersama 12180-12182 - satu Enter satu paragraf, jangan dirangkai satu baris dan titik koma tidak diubah.
+    if (mi && Array.isArray(mi.KODE_PARAGRAF_ISIAN) && mi.KODE_PARAGRAF_ISIAN.includes(String(kode))) return typeof nilai === "string" ? mi.rapikanNaskah(nilai) : nilai;
     // Keputusan 55 (1 Nov): isian yang berisi salinan teks para pihak disimpan APA ADANYA - aturan rapi 30 Okt (titik koma, tanda baca, huruf)
     // tidak berlaku pada tulisan pihak.
     if (mi && Array.isArray(mi.KODE_TEKS_PIHAK) && mi.KODE_TEKS_PIHAK.includes(String(kode))) return nilai;
@@ -6505,7 +6507,7 @@
   }
   // 19 Okt (isian 2): isian yang kalimatnya PANJANG per sifatnya (rincian alasan cerai, uraian, pertimbangan) selalu selebar penuh dan berkotak
   // textarea yang tumbuh sesuai isi - walau masih kosong - supaya tidak sempit lalu melonjak setelah terisi.
-  const KODE_LEBAR = new Set(["5227", "8729", "8433", "7178", "8899", "8901", "8902", "9162", "9163", "9164", "9305", "9309", "9310", "9329", "9330", "9345", "9346", "9352", "9432", "9434", "9501"]);
+  const KODE_LEBAR = new Set(["5227", "8729", "8433", "7178", "8899", "8901", "8902", "9162", "9163", "9164", "9305", "9309", "9310", "9329", "9330", "9345", "9346", "9352", "9432", "9434", "9501", "12180", "12181", "12182"]);
   const POLA_NAMA_LEBAR = /(rincian|uraian|pertimbangan|penilaian|isi kesepakatan|pokok kesepakatan|amar kesepakatan|alasan pencabutan|alasan permohonan|alasan panggilan)/i;
   const isianLebar = (b) => b.jenis === "teks" && !(b.opsi && b.opsi.length) && (KODE_LEBAR.has(b.kode) || POLA_NAMA_LEBAR.test(String(b.nama || "")));
   /** Tinggi awal textarea (baris): perkiraan lipatan pada ±60 huruf per baris, min 2 maks 8; kemudian tumbuh sesuai isi. */

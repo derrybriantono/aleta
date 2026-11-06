@@ -88,6 +88,14 @@
    * Sama dengan KODE_TEKS_PIHAK_ISIAN di aleta_bot/services/naskahJawabMenjawabService.js.
    */
   const KODE_TEKS_PIHAK = Object.freeze([...KODE_NASKAH_BERBARIS, "8436", "8437", "9355", "9491", "9681", "9164"]);
+  /**
+   * 6 Nov 2026 (audit S-02): isian ketik panjang Harta Bersama yang SATU Enter = SATU paragraf di berkas (paket abt-paket/a5-kelompok-5nov):
+   * 12180 keterangan saksi Tergugat yang relevan, 12181 pertimbangan pembuktian per objek rekonvensi, 12182 pertimbangan per objek sengketa.
+   * Tiap baris disimpan apa adanya (hanya spasi dirapatkan, baris kosong dibuang); aturan rapi isian 30 Okt (baris dirangkai satu, titik koma
+   * tengah menjadi koma) tidak berlaku. Daftar ini SENGAJA terpisah dari KODE_NASKAH_BERBARIS, yang menandai naskah jawab-menjawab e-Court
+   * (pemilih berkas e-Court, penyetel "tertulis" 9881) dan dijaga sama dengan aleta_bot/services/naskahJawabMenjawabService.js.
+   */
+  const KODE_PARAGRAF_ISIAN = Object.freeze(["12180", "12181", "12182"]);
   /** Simpanan isian berparagraf: tiap baris dirapatkan (spasi ganda, spasi tepi), baris kosong dibuang; isi tidak diubah. */
   function rapikanNaskah(t) {
     return teks(t)
@@ -785,6 +793,7 @@
     KODE_HTML,
     KODE_NASKAH_BERBARIS,
     KODE_TEKS_PIHAK,
+    KODE_PARAGRAF_ISIAN,
     rapikanNaskah,
     KODE_PERIODE,
     ISIAN_PENDEK,

@@ -11,7 +11,7 @@ import { JSDOM } from "jsdom";
 import { afterAll, describe, expect, it } from "vitest";
 
 import { susunIsian, type ButirIsian, type Definisi } from "@/app/api/aleta-ecourt/blangko-derry/susun";
-import { golonganIsian, kerangkaBawaan, nilaiTahan, type KosongMesin, type NilaiIsian } from "@/lib/aleta-abt-tahan";
+import { golonganIsian, kerangkaBawaan, nilaiTahan, tanyaJawabTerisi, type KosongMesin, type NilaiIsian } from "@/lib/aleta-abt-tahan";
 import { gabungKatalog, penandaBlangko } from "@/server/modules/aleta-abt-cetak/tahan";
 
 const def = (kode: string, nama: string, jenis: string, sql = "", bawaan = ""): [string, Definisi] => [kode, { kode, nama, jenis, sql, bawaan }];
@@ -30,9 +30,14 @@ const KATALOG = new Map<string, Definisi>([
   def("9134", "Petunjuk perbaikan", "data_teks"),
   def("11111", "Pemicu kuasa", "data_sql", "SELECT 1"),
   def("4140", "Pemicu hak asuh", "data_sql", "SELECT 1"),
+  def("9001", "Keterangan Saksi 1 P", "tanya_jawab"),
+  def("9002", "TanyaJwb Saksi 1 P", "tanya_jawab"),
+  def("9010", "Pertimbangan keterangan saksi", "data_sql", "Saksi menerangkan #9001#"),
 ]);
 const PENANDA = ["1006", "8436", "0184", "0056", "8510", "4001", "4119", "7139", "9134"];
 const SUSUNAN = susunIsian(PENANDA, KATALOG);
+// Blangko yang hanya membaca keterangan saksi lewat rumus (#9010#): saksinya tidak tertulis langsung di RTF.
+const SUSUNAN_TJ = susunIsian(["8503", "9010"], KATALOG);
 const nilai = (isi: Record<string, string>): Record<string, NilaiIsian> => Object.fromEntries(Object.entries(isi).map(([k, teks]) => [k, { status: teks ? "terisi" : "kosong", teks }]));
 const kosong = (...kode: string[]): KosongMesin[] => kode.map((noVar) => ({ noVar, nama: KATALOG.get(noVar)?.nama ?? "", sebab: "", status: "kosong" }));
 const tahan = (isi: Record<string, string>, ...k: string[]) => nilaiTahan({ susunan: SUSUNAN, nilai: nilai(isi), kosong: kosong(...k), jenisCerai: "cg", jenisKatalog: (x) => KATALOG.get(x)?.jenis ?? "" });
@@ -92,6 +97,43 @@ describe("golongan isian kosong", () => {
   });
 });
 
+describe("tanya jawab saksi yang hanya dibaca rumus (S-03)", () => {
+  const tahanTj = (isi: Record<string, { status: string; teks: string }>, susunan = SUSUNAN_TJ) =>
+    nilaiTahan({ susunan, nilai: { "8503": { status: "terisi", teks: "F" }, ...isi }, kosong: [], jenisCerai: "cg", jenisKatalog: (x) => KATALOG.get(x)?.jenis ?? "" });
+  it("susunan memuat saksi itu sebagai tanya jawab tidak langsung, dengan penyuntingnya", () => {
+    const b = SUSUNAN_TJ.isian.find((x) => x.jenis === "tj");
+    expect(b?.kode).toBe("9001");
+    expect(b?.langsung).toBe(false);
+    expect(b?.tj?.kodeSunting).toBe("9002");
+  });
+  it("kosong dan berlaku: menahan, walau mesin tidak menyebutnya", () => {
+    expect(kode(tahanTj({ "9001": { status: "kosong", teks: "" } }).menahan)).toEqual(["9001"]);
+    expect(kode(tahanTj({}).menahan)).toEqual(["9001"]);
+  });
+  it("sudah ada di ABT (status terisi, teks kosong karena nilainya tabel): tidak menahan, lewat kode penanda maupun penyunting", () => {
+    expect(tahanTj({ "9001": { status: "terisi", teks: "" } }).menahan).toEqual([]);
+    expect(tahanTj({ "9001": { status: "kosong", teks: "" }, "9002": { status: "terisi", teks: "" } }).menahan).toEqual([]);
+  });
+  it("blangko tanpa saksi atau saksi yang tidak disebut blangko tidak menahan", () => {
+    expect(tahan({ "8503": "F" }).menahan).toEqual([]);
+    expect(SUSUNAN.isian.some((x) => x.jenis === "tj")).toBe(false);
+    expect(kode(tahanTj({ "9001": { status: "terisi", teks: "" } }, SUSUNAN).menahan)).toEqual([]);
+  });
+  it("tanya jawab tidak wajib atau berkeadaan tidak berlaku tidak menahan", () => {
+    const b = SUSUNAN_TJ.isian.find((x) => x.jenis === "tj")!;
+    for (const ubah of [{ wajib: false }, { tingkat: "tambahan" as const }, { opsional: true, khusus: "" as const }]) {
+      const s2 = { ...SUSUNAN_TJ, isian: SUSUNAN_TJ.isian.map((x) => (x === b ? { ...x, ...ubah } : x)) };
+      expect(kode(tahanTj({}, s2).menahan), JSON.stringify(ubah)).not.toContain("9001");
+    }
+  });
+  it("tanyaJawabTerisi mengikuti nilaiTerisi panel", () => {
+    const b = { kode: "9001", tj: { kunci: "saksi 1 p", sebutan: "Saksi 1 P", peran: "keterangan" as const, kodeSunting: "9002" } };
+    expect(tanyaJawabTerisi(b, {})).toBe(false);
+    expect(tanyaJawabTerisi(b, { "9002": { status: "terisi", teks: "" } })).toBe(true);
+    expect(tanyaJawabTerisi({ ...b, tj: null }, { "9002": { status: "terisi", teks: "" } })).toBe(false);
+  });
+});
+
 describe("bahan penahan", () => {
   it("penanda angka dan kode bermakna; kode tanpa peta dilewati", () => {
     expect(penandaBlangko("{#0046# #AA00047# #0046# #tanpapeta# #12#}", { AA00047: "0047" })).toEqual(["0046", "0047"]);
@@ -114,9 +156,10 @@ w.eval(baca("blangko-derry-isian.js"));
 afterAll(() => dom.window.close());
 
 describe("sama dengan panel Blangko ABT by Derry", () => {
+  const ASAL = SUSUNAN;
   const KEADAAN: Array<Record<string, string>> = [{}, { "8503": "F" }, { "11111": "1" }, { "4140": "1" }, { "4140": "1", "4100": "dikabulkan seluruhnya" }, { "1006": "12", "0184": "2026-01-01" }, { "9134": "ada" }];
   it("golongan semua isian sama pada tiap keadaan, kecuali keadaan yang butuh data daftar perkara", () => {
-    for (const isi of KEADAAN) {
+    for (const SUSUNAN of [ASAL, SUSUNAN_TJ]) for (const isi of KEADAAN) {
       const n = nilai(isi);
       const pemicuTuntutan = (SUSUNAN.tuntutan ?? []).map((t) => t.pemicu);
       for (const p of pemicuTuntutan) if (!n[p]) n[p] = { status: "kosong", teks: "" };
