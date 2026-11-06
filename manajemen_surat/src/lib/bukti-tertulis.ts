@@ -274,6 +274,10 @@ export function uraiKalimatBukti(teks: string): BarisBukti {
 
 export type BuktiNaskah = { sisi: "P" | "T"; nomor: number; /** Kode seperti tertulis di naskah: "P.1", "PK.2", "TR.3", atau "PK.2/TR.2". */ kode: string; baris: BarisBukti };
 
+/** Alinea uraian satu surat, bukan alinea pertimbangan yang kebetulan menyebut tanda bukti. */
+const uraianSuratLepas = (t: string): boolean =>
+  !/^\s*(?:\d+[.)]\s*)?(?:-\s*)?(?:Menimbang|Bahwa)\b/i.test(t) && /foto\s?-?(?:kopi|copy)|kopi|salinan|\bscan\b|\basli\b|meterai/i.test(t);
+
 /**
  * Bukti surat yang tertulis di naskah: alinea yang memuat "diberi tanda" diikuti kode (P.n, T.n, PK.n, TK.n, PR.n, TR.n, atau pasangan "PK.2/TR.2"),
  * tanpa bukti elektronik. Urut seperti di naskah. Kode dibawa apa adanya; sisi menurut SISI_KODE_NASKAH.
@@ -282,10 +286,12 @@ export function buktiDariAlinea(alinea: ReadonlyArray<{ teks: string }>): BuktiN
   const hasil: BuktiNaskah[] = [];
   const sudah = new Set<string>();
   const pola = new RegExp(String.raw`diberi tanda\s+(${POLA_KODE_TANDA})\s+serta diberi tanggal`, "i");
+  // Naskah yang diketik sendiri punya bentuk lain: "lalu diberi tanda P.1;", "dengan tanda P.1", "diberi kode bukti (P.1)". Kalimatnya tampil apa adanya.
+  const polaLain = new RegExp(String.raw`(?:diberi tanda|dengan tanda(?:\s+tanda)?|diberi kode bukti)\s*\(?\s*(${POLA_KODE_TANDA})(?!\d)`, "i");
   for (const a of alinea) {
     const t = String(a.teks ?? "");
     if (/bukti elektronik tersebut/i.test(t)) continue;
-    const m = pola.exec(t);
+    const m = pola.exec(t) ?? (uraianSuratLepas(t) ? polaLain.exec(t) : null);
     if (!m) continue;
     const kode = rapikanKodeTanda(m[1]);
     const b = bacaKodeTanda(kode);
