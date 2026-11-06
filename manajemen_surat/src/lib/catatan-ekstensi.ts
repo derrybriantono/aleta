@@ -57,6 +57,15 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.78",
+    dirilis: "2026-11-06T16:00:00+08:00",
+    judul: "Isian panjang Harta Bersama tetap berparagraf",
+    butir: [
+      "Tiga isian panjang pada blangko Harta Bersama yang baru tetap tersimpan per paragraf, karena dulu tiap Enter akan dirangkai menjadi satu baris dan titik koma di tengah berubah koma.",
+      "Kotak ketiga isian itu selalu berbentuk kotak besar, supaya tombol Enter bisa dipakai sejak isian masih kosong.",
+    ],
+  },
+  {
     versi: "1.205.77",
     dirilis: "2026-11-06T03:00:00+08:00",
     judul: "Ubah jadi PDF salinan, peringatan tanggal, dan pintu ALETA ABT untuk Super Admin",
