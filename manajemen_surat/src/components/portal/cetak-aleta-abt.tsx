@@ -504,7 +504,7 @@ export function CetakAletaAbt() {
         </Card>
       ) : null}
 
-      {pratinjau && perkara ? <BuktiAletaAbt alinea={pratinjau.paragraf} perkaraId={perkara.perkaraId} nomor={perkara.nomorPerkara} /> : null}
+      {pratinjau && perkara ? <BuktiAletaAbt alinea={pratinjau.paragraf} perkaraId={perkara.perkaraId} nomor={perkara.nomorPerkara} jenisPerkara={perkara.jenisPerkara} /> : null}
 
       {pratinjau ? (
         <Card>

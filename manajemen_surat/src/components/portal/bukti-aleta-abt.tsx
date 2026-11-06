@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Switch } from "@/components/ui/switch";
 import { apiPath } from "@/lib/base-path";
 import {
   bandingBaris,
@@ -20,6 +22,7 @@ import {
   type BarisBukti,
   type DataSipp,
 } from "@/lib/bukti-tertulis";
+import { bacaKeadaan, susunParagrafBukti, type BuktiMasuk, type JenisCerai } from "@/lib/sinkron-pertimbangan-bukti";
 
 type Dokumen = { judul: string; documentKey: string };
 type Bahan = DataSipp & { dokumen: Dokumen[] };
@@ -30,7 +33,7 @@ type Butir = { sisi: "P" | "T"; nomor: number; baris: BarisBukti; diperiksa: boo
  * data SIPP (rute bukti-sipp). Layar ini TIDAK menulis ke SIPP atau ABT: perubahan hanya tampil di sini dan kalimatnya dapat disalin. Penyimpanan
  * ke ABT tetap lewat kotak alat bukti di Blangko ABT by Derry Briantono.
  */
-export function BuktiAletaAbt({ alinea, perkaraId, nomor }: { alinea: ReadonlyArray<{ teks: string }>; perkaraId: string; nomor: string }) {
+export function BuktiAletaAbt({ alinea, perkaraId, nomor, jenisPerkara = "" }: { alinea: ReadonlyArray<{ teks: string }>; perkaraId: string; nomor: string; jenisPerkara?: string }) {
   const dariNaskah = (l: ReadonlyArray<{ teks: string }>) => buktiDariAlinea(l).map((x) => ({ ...x, diperiksa: false }));
   const [sumber, setSumber] = useState(alinea);
   const [daftar, setDaftar] = useState<Butir[]>(() => dariNaskah(alinea));
@@ -211,6 +214,182 @@ export function BuktiAletaAbt({ alinea, perkaraId, nomor }: { alinea: ReadonlyAr
           </div>
         </div>
       </CardContent>
+      <PertimbanganBukti daftar={daftar} alinea={alinea} jenisPerkara={jenisPerkara} tglNikah={bahan?.nikah?.tglNikah} />
     </Card>
+  );
+}
+
+const PILIHAN_STATUS = [
+  { nilai: "", teks: "Belum dipilih" },
+  { nilai: "Dikabulkan", teks: "Dikabulkan" },
+  { nilai: "Ditolak", teks: "Ditolak" },
+  { nilai: "Tidak Dapat Diterima", teks: "Tidak dapat diterima" },
+  { nilai: "Dicabut", teks: "Dicabut" },
+  { nilai: "Gugur", teks: "Gugur atau digugurkan" },
+  { nilai: "Perdamaian", teks: "Berakhir damai" },
+];
+const PILIHAN_AGENDA = [
+  { nilai: 0, teks: "Sebelum ada pembuktian" },
+  { nilai: 1, teks: "Pada pembuktian pertama" },
+  { nilai: 2, teks: "Pada pembuktian kedua" },
+];
+
+/** Keadaan putusan yang tertulis di naskah, sebagai tebakan awal yang bisa diubah. */
+function bacaDariNaskah(alinea: ReadonlyArray<{ teks: string }>): { status: string; verstek: boolean } {
+  const t = alinea.map((a) => a.teks).join("\n");
+  const status = /tidak dapat diterima/i.test(t) ? "Tidak Dapat Diterima" : /mencabut|dicabut/i.test(t) ? "Dicabut" : /menolak/i.test(t) ? "Ditolak" : /mengabulkan/i.test(t) ? "Dikabulkan" : "";
+  return { status, verstek: /verstek|tidak pernah hadir/i.test(t) };
+}
+
+/**
+ * Pertimbangan dari alat bukti (cerai gugat dan cerai talak). Bunyi dari Blangko ABT by Derry Briantono lewat kartu aturan; layar ini hanya
+ * menampilkan dan menyalin, tidak menyisipkan ke naskah dan tidak menulis ke SIPP atau ABT.
+ */
+function PertimbanganBukti({ daftar, alinea, jenisPerkara, tglNikah }: { daftar: Butir[]; alinea: ReadonlyArray<{ teks: string }>; jenisPerkara: string; tglNikah?: string }) {
+  const awal = useMemo(() => bacaDariNaskah(alinea), [alinea]);
+  const [status, setStatus] = useState(awal.status);
+  const [verstek, setVerstek] = useState(awal.verstek);
+  const [lawanMembantah, setLawanMembantah] = useState(false);
+  const [agenda, setAgenda] = useState(0);
+  const [dipilih, setDipilih] = useState<ReadonlySet<string>>(new Set());
+  const [tersalin, setTersalin] = useState(false);
+  const jenisCerai: JenisCerai | null = /talak/i.test(jenisPerkara) ? "CT" : /cerai/i.test(jenisPerkara) ? "CG" : null;
+
+  const masuk: BuktiMasuk[] = daftar.map((x) => ({ sisi: x.sisi, nomor: x.nomor, baris: x.baris }));
+  const hasil = useMemo(
+    () =>
+      jenisCerai
+        ? susunParagrafBukti({ jenisCerai, status, verstek, lawanHadir: !verstek, lawanMembantah, agendaPembuktianKe: agenda, bukti: masuk, konteks: { tglNikah } })
+        : null,
+    // masuk dibuat ulang tiap render; isi daftar yang menentukan.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [jenisCerai, status, verstek, lawanMembantah, agenda, daftar, tglNikah]
+  );
+  if (!jenisCerai || !hasil) return null;
+
+  const otomatis = hasil.paragraf.filter((p) => p.cara === "otomatis");
+  const usulan = hasil.paragraf.filter((p) => p.cara === "usulan");
+  const kunciUsulan = (p: { kode: string; bunyi: string }, i: number) => `${i}|${p.kode}|${p.bunyi.slice(0, 40)}`;
+  const terpilih = usulan.filter((p, i) => dipilih.has(kunciUsulan(p, i)));
+  const salinan = [...otomatis, ...terpilih].map((p) => p.bunyi).join("\n\n");
+  const bacaan = bacaKeadaan(status, verstek);
+  const bisaLawanBantah = !verstek && (bacaan.kunci === "kabul" || bacaan.kunci === "cabut");
+
+  return (
+    <CardContent className="flex flex-col gap-4 border-t border-border pt-4">
+      <div>
+        <p className="text-lg font-bold">Pertimbangan dari alat bukti</p>
+        <p className="text-sm text-muted-foreground">
+          Paragraf disusun dari bunyi Blangko ABT by Derry Briantono menurut keadaan putusan dan isian bukti di atas. Belum disisipkan ke naskah cetak: salin lalu tempel bila cocok.
+        </p>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="flex flex-col gap-1 text-sm font-medium">
+          Keadaan putusan
+          <NativeSelect value={status} onChange={(e) => setStatus(e.target.value)}>
+            {PILIHAN_STATUS.map((o) => (
+              <option key={o.nilai} value={o.nilai}>
+                {o.teks}
+              </option>
+            ))}
+          </NativeSelect>
+          <span className="text-xs font-normal text-muted-foreground">{status ? `Terbaca: ${hasil.keadaan}` : "Pilih keadaan putusan agar paragraf tersusun."}</span>
+        </label>
+        {bacaan.kunci === "cabut" ? (
+          <label className="flex flex-col gap-1 text-sm font-medium">
+            Perkara dicabut
+            <NativeSelect value={String(agenda)} onChange={(e) => setAgenda(Number(e.target.value))}>
+              {PILIHAN_AGENDA.map((o) => (
+                <option key={o.nilai} value={o.nilai}>
+                  {o.teks}
+                </option>
+              ))}
+            </NativeSelect>
+          </label>
+        ) : null}
+        <label className="flex min-h-11 items-center justify-between gap-3 rounded-xl border border-border px-3 text-sm font-medium">
+          Lawan tidak hadir (verstek)
+          <Switch checked={verstek} onCheckedChange={setVerstek} aria-label="Lawan tidak hadir (verstek)" />
+        </label>
+        {bisaLawanBantah ? (
+          <label className="flex min-h-11 items-center justify-between gap-3 rounded-xl border border-border px-3 text-sm font-medium">
+            Lawan membantah
+            <Switch checked={lawanMembantah} onCheckedChange={setLawanMembantah} aria-label="Lawan membantah" />
+          </label>
+        ) : null}
+      </div>
+      {hasil.catatan.map((c) => (
+        <p key={c} className="rounded-lg bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+          {c}
+        </p>
+      ))}
+      {otomatis.length ? (
+        <div className="flex flex-col gap-2">
+          <p className="text-sm font-semibold">Tertulis otomatis</p>
+          {otomatis.map((p, i) => (
+            <div key={`${p.kode}-${i}`} className="rounded-lg bg-muted/50 px-4 py-3 font-serif text-base leading-relaxed">
+              {p.bunyi}
+              <span className="mt-1 block font-sans text-xs text-muted-foreground">Bukti {p.kode}. Dari {p.asal}</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+      {usulan.length ? (
+        <div className="flex flex-col gap-2">
+          <p className="text-sm font-semibold">Usulan, centang yang dipakai</p>
+          {usulan.map((p, i) => {
+            const k = kunciUsulan(p, i);
+            return (
+              <label key={k} className="flex cursor-pointer items-start gap-3 rounded-lg border border-border px-3 py-2.5">
+                <input
+                  type="checkbox"
+                  className="mt-1 size-5 flex-none"
+                  checked={dipilih.has(k)}
+                  onChange={(e) =>
+                    setDipilih((s) => {
+                      const n = new Set(s);
+                      if (e.target.checked) n.add(k);
+                      else n.delete(k);
+                      return n;
+                    })
+                  }
+                />
+                <span className="min-w-0 font-serif text-base leading-relaxed">
+                  {p.bunyi}
+                  <span className="mt-1 block font-sans text-xs text-muted-foreground">Bukti {p.kode}. Dari {p.asal}</span>
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      ) : null}
+      {hasil.belumAdaBunyi.length ? (
+        <div className="rounded-lg border border-amber-300 bg-amber-100 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+          <p className="font-semibold">Belum ada bunyinya di blangko</p>
+          <ul className="list-disc pl-5">
+            {hasil.belumAdaBunyi.map((b) => (
+              <li key={`${b.kode}-${b.alasan}`}>
+                {b.kode} {b.nama}: {b.alasan}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      <div className="flex flex-wrap justify-end gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          disabled={!salinan}
+          onClick={() => {
+            void navigator.clipboard
+              .writeText(salinan)
+              .then(() => setTersalin(true))
+              .catch(() => setTersalin(false));
+          }}
+        >
+          {tersalin ? "Tersalin" : "Salin pertimbangan"}
+        </Button>
+      </div>
+    </CardContent>
   );
 }
