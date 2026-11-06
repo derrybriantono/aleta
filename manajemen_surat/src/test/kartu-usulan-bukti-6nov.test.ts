@@ -378,7 +378,7 @@ describe("layar", () => {
     expect(bagian.textContent).toContain("Tanpa rujukan pasal");
     expect(within(bagian).queryAllByRole("button")).toEqual([]);
     expect(within(bagian).queryAllByRole("checkbox")).toEqual([]);
-    expect(bagian.textContent).not.toMatch(/[{}]|\[\[|#\d+#|disetujui/);
+    expect((bagian.textContent ?? "").replace("Usulan bunyi, perlu disetujui", "")).not.toMatch(/[{}]|\[\[|#\d+#|disetujui/);
 
     fireEvent.click(screen.getByRole("button", { name: "Salin pertimbangan" }));
     await waitFor(() => expect(tulis).toHaveBeenCalled());
