@@ -439,6 +439,20 @@ function PertimbanganBukti({
           })}
         </div>
       ) : null}
+      {hasil.perluDisetujui.length ? (
+        <div className="flex flex-col gap-2 rounded-lg border border-border px-3 py-2.5">
+          <p className="text-sm font-semibold">Usulan bunyi, perlu Bapak setujui</p>
+          <p className="text-xs text-muted-foreground">Bunyi ini susunan AI, bukan dari blangko. Belum dipakai dan tidak ikut tersalin sebelum Bapak periksa.</p>
+          {hasil.perluDisetujui.map((p) => (
+            <div key={`${p.id}-${p.kode}`} className="min-w-0 font-serif text-base leading-relaxed">
+              {p.bunyi}
+              <span className="mt-1 block font-sans text-xs text-muted-foreground">
+                Bukti {p.kode} {p.nama}. {p.dasar.length ? `Rujukan: ${p.dasar.join("; ")}.` : "Tanpa rujukan pasal."}
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : null}
       {hasil.belumAdaBunyi.length ? (
         <div className="rounded-lg border border-amber-300 bg-amber-100 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
           <p className="font-semibold">Belum ada bunyinya di blangko</p>
